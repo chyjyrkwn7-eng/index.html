@@ -23874,12 +23874,26 @@ function formatCalendarDate(iso){
 
 function applySaved(){
   if(store.opts){
-    ["mode", "source", "size", "shuffle", "recall", "countdown", "revealCorrect",
+    /* revealCorrect is deliberately NOT restored. Its control was
+       removed (Review covers it), and it is a stored setting - so an
+       account that left it on would otherwise come back with every
+       answer highlighted before it was picked and nothing anywhere to
+       turn it off. Left out here, cfg keeps its own `false` default
+       whatever the stored copy says. */
+    ["mode", "source", "size", "shuffle", "recall", "countdown",
      "timer", "timerMinutes", "gameSpeed"].forEach(k => {
       if(store.opts[k] !== undefined) cfg[k] = store.opts[k];
     });
   }
-  if(store.units) cfg.units = store.units.slice();
+  /* UNITS ARE NOT RESTORED, per explicit request - "if I select units
+     and then leave that screen they shouldn't still be checked". They
+     used to persist, so switching from Drill to Exam arrived with the
+     previous mode's selection already ticked and it was easy to start
+     a test over units you had picked for something else. Every visit
+     to unit selection now starts empty. store.units is still written
+     by rememberConfig (harmless, and it keeps the shape of the saved
+     object stable for anything already storing it); nothing reads it
+     back. */
   cfg.source = "all";   // never open straight into a weak-list run
 }
 
@@ -31167,9 +31181,26 @@ function showSetup(){
     const valDisplay = document.createElement("span");
     valDisplay.className = "sliderval";
     valDisplay.textContent = formatVal(get());
+    /* THE TOP OF THE TRACK MEANS ALL OF THEM. A range input snaps to
+       its step lattice measured from `min`, and the pool almost never
+       lands on it: with 894 questions, min 5 and step 5 the highest
+       reachable stop is 890, so dragging the whole way right asked for
+       890 of 894 and quietly left four behind. Reported as the length
+       bar not working - "if you move it all the way to the right that
+       would be all the questions".
+       So the last stop is special-cased to the real maximum rather
+       than to the lattice value under it. Every other position is
+       unchanged, and this cannot overshoot: topStop is by construction
+       the largest lattice value that is still <= dynMax. */
+    function effectiveFrom(raw){
+      const dynMax = Math.max(min, getMax());
+      const topStop = min + Math.floor((dynMax - min) / step) * step;
+      return raw >= topStop ? dynMax : raw;
+    }
     slider.addEventListener("input", () => {
-      set(Number(slider.value));
-      valDisplay.textContent = formatVal(Number(slider.value));
+      const v = effectiveFrom(Number(slider.value));
+      set(v);
+      valDisplay.textContent = formatVal(v);
       paint(); refresh();
     });
     wrap.append(slider, valDisplay);
@@ -31277,7 +31308,11 @@ function showSetup(){
       }
     });
   };
-  panel.appendChild(speedSect);
+  /* Speed goes into the Review & Start sheet, not onto the page,
+     per explicit request. It is the same argument the time limit
+     just lost: the sheet is where every other "how should this run
+     go" answer lives, and a control under a long unit list is easy
+     to walk straight past on the way to Start. */
 
   const recentCount = recentMissedIndexes().length;
   const flaggedCount = flaggedIndexes().length;
@@ -31359,7 +31394,7 @@ function showSetup(){
   moreToggle.className = "more-toggle";
   moreToggle.setAttribute("aria-expanded", "false");
   const moreToggleText = document.createElement("span");
-  moreToggleText.textContent = "Timer & options";
+  moreToggleText.textContent = "Timer";
   const moreToggleIcon = document.createElement("span");
   moreToggleIcon.className = "more-toggle-icon";
   moreToggleIcon.setAttribute("aria-hidden", "true");
@@ -31381,12 +31416,12 @@ function showSetup(){
     [{ value: "off", label: "Off" }, { value: "up", label: "Stopwatch" },
      { value: "down", label: "Countdown" }],
     () => cfg.timer, v => { cfg.timer = v; });
-  moreBodyInner.appendChild(timerSect);
+  optionsModalBody.appendChild(timerSect);
 
   const minutesSect = plainSlider("Time limit", 5, 90, 5,
     () => cfg.timerMinutes, v => { cfg.timerMinutes = v; },
     v => v + " min");
-  moreBodyInner.appendChild(minutesSect);
+  optionsModalBody.appendChild(minutesSect);
 
   /* --- toggles --- */
   const optSect = document.createElement("div");
@@ -31430,18 +31465,30 @@ function showSetup(){
     "Read the question and answer it in your head first, then reveal.",
     () => cfg.recall, v => { cfg.recall = v; });
   optSect.appendChild(recallRow);
-  /* Drill mode only, per explicit request \u2014 the row itself is always
-     built (an existing mechanism further below already hides it for
-     Game and Exam: revealRow.hidden = isGame || isExam), so the
-     declaration stays unconditional here rather than wrapped in its
-     own mode check, which would leave that later line referencing an
-     undefined variable whenever Exam or Game builds this screen. */
-  const revealRow = toggle("Show all correct answers",
-    "Highlights the right answer before you pick.",
-    () => cfg.revealCorrect, v => { cfg.revealCorrect = v; });
-  optSect.appendChild(revealRow);
-  moreBodyInner.appendChild(optSect);
-  optionsModalBody.appendChild(moreWrap);
+  /* "Show all correct answers" is GONE, per explicit request - "we
+     don't need it anymore because of the review button". It highlighted
+     the right answer before you picked, which the Review mode on this
+     same sheet now covers properly: that shows every question with its
+     answer, to read, rather than giving the game away mid-drill.
+     cfg.revealCorrect survives as a defaulted, unreadable field (see
+     applySaved) so an account that had it switched on does not come
+     back with answers revealed and no control left to switch it off. */
+  optionsModalBody.appendChild(optSect);
+  /* THE SHEET IS A FLAT, LABELLED LIST NOW, per explicit request that
+     it reads confusingly in Drill. What it had was one disclosure
+     called "Timer & options" holding two unrelated things - the timer
+     AND the shuffle/recall toggles - so in Drill the settings that
+     change how the run behaves were hidden behind a control whose
+     label only described half of them, under two sections (Draw from,
+     Length) that were already visible. Two levels, an ambiguous name,
+     and no way to see what you had set without opening it.
+     Every section is on the sheet directly now, each under its own
+     heading, in the order you would decide them: what to draw from,
+     how many, how fast (Game), the timer, then the options. Nothing is
+     hidden, so nothing has to be named vaguely enough to cover a mix.
+     Speed sits here rather than on the page for the same reason the
+     time limit does. */
+  optionsModalBody.appendChild(speedSect);
 
   /* The actual "go" action for this sheet \u2014 everything Start used to
      do immediately (rememberConfig, build the pool, beginRun) now
@@ -31609,9 +31656,11 @@ function showSetup(){
      themselves. Sits just above that same bottom bar so both pieces
      of information (what you've picked, and the button to act on it)
      are visible together at all times, not just the button alone. */
-  const selectionSummary = document.createElement("div");
-  selectionSummary.className = "unit-selection-summary";
-  panel.appendChild(selectionSummary);
+  /* The floating "N units selected - N questions" pill is GONE, per
+     explicit request, on every mode. It restated what the checked
+     cards already show, it sat over the list in white, and the same
+     two numbers are on the Review & Start sheet a tap away - which is
+     where you are about to look anyway. */
 
   const bar = document.createElement("div");
   bar.className = "startbar";
@@ -31653,20 +31702,12 @@ function showSetup(){
     aboutTake.textContent = cfg.units.length === 0 ? "" :
       "Taking: " + (cfg.units.length === all.length ? "All units" : cfg.units.join(", "));
 
-    /* Same n and cfg.units.length already computed just above for
-       aboutTake \u2014 no separate recalculation needed, just a second,
-       always-visible place for the same numbers to show up. */
-    if(cfg.units.length === 0){
-      selectionSummary.hidden = true;
-    } else {
-      selectionSummary.hidden = false;
-      selectionSummary.textContent = cfg.units.length + (cfg.units.length === 1 ? " unit" : " units") +
-        " selected \u00b7 " + n + (n === 1 ? " question" : " questions");
-    }
-
-    speedSect.hidden = !isGame;
-    timerSect.hidden = isGame;
-    minutesSect.hidden = cfg.timer !== "down" || isGame;
+    /* One answer per section, in one place. These used to be split
+       across two spots in this function - the wrapper's own hidden
+       rule and these - which is how a section ends up with two rules
+       that disagree. */
+    speedSect.hidden = !isGame || reviewAllMode;
+    minutesSect.hidden = cfg.timer !== "down" || isGame || reviewAllMode;
     /* The whole "Timer & options" toggle hidden for Game specifically
        (matching timerSect's own condition, not Exam's) — every row
        inside it (timer, recall, shuffle, reveal) was already excluded
@@ -31681,10 +31722,14 @@ function showSetup(){
        Length, and this whole Timer & options toggle, recall/shuffle/
        reveal included), since none of them mean anything once you're
        just browsing every Q&A instead of running a drill. */
-    moreWrap.hidden = isGame || reviewAllMode;
+    /* Review mode hides everything that is not about reading the
+       questions back; the individual sections below already answer
+       their own mode questions (speedSect for Game, timerSect for
+       everything else), so there is no longer a wrapper to hide. */
+    timerSect.hidden = isGame || reviewAllMode;
+    optSect.hidden = isGame || reviewAllMode;
     recallRow.hidden = isGame || isExam;
     shuffleRow.hidden = isGame || isExam;
-    revealRow.hidden = isGame || isExam;
     reviewSect.hidden = isGame || isExam;
     srcSect.hidden = isGame || isExam || reviewAllMode;
     /* Live-updates "Most missed" and "Flagged" to reflect only the
@@ -32561,7 +32606,7 @@ function advanceWithSlide(){
   clone.style.cssText =
     "position:fixed; top:" + rect.top + "px; left:" + rect.left + "px; " +
     "width:" + rect.width + "px; margin:0; z-index:250; " +
-    "transition:transform .32s cubic-bezier(.32,.72,0,1); pointer-events:none; " +
+    "transition:transform .2s cubic-bezier(.32,.72,0,1); pointer-events:none; " +
     "will-change:transform;";
   document.body.appendChild(clone);
 
@@ -32585,10 +32630,24 @@ function advanceWithSlide(){
   // Force layout so the starting position is actually committed before
   // the transition below is allowed to animate toward its own target.
   void incoming.offsetWidth;
-  incoming.style.transition = "transform .32s cubic-bezier(.32,.72,0,1)";
+  incoming.style.transition = "transform .2s cubic-bezier(.32,.72,0,1)";
+  /* TWO frames, not one. advance() above rebuilds the whole next
+     question synchronously - new text, new choice buttons, each with
+     its own borders and radii - and that work lands between the clone
+     being inserted and this transform being set. With a single rAF the
+     browser was still doing that layout and paint on the very frame
+     the animation was supposed to start on, so the slide began by
+     dropping frames: the stutter reads as the transition itself being
+     slow. Giving it one clear frame to settle first means the
+     animation starts on a laid-out, already-promoted layer.
+     It costs ~16ms and removes far more than that in dropped frames.
+     The duration came down from .32s to .2s in the same pass; .32s was
+     simply longer than it needed to be for a slide this short. */
   requestAnimationFrame(() => {
-    clone.style.transform = "translateX(-100%)";
-    incoming.style.transform = "translateX(0)";
+    requestAnimationFrame(() => {
+      clone.style.transform = "translateX(-100%)";
+      incoming.style.transform = "translateX(0)";
+    });
   });
   setTimeout(() => {
     clone.remove();
@@ -32602,7 +32661,7 @@ function advanceWithSlide(){
        on every future static render of this same panel. */
     incoming.style.willChange = "";
     slideTransitionInFlight = false;
-  }, 340);
+  }, 215);
 }
 
 function advance(){
@@ -32806,7 +32865,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-97";
+const APP_BUILD = "2026-09-22-100";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -35325,7 +35384,14 @@ function showVirtualRoomSetup(){
     return btn;
   });
   timeSect.appendChild(timeRow);
-  panel.appendChild(timeSect);
+  /* NOT appended to the page. It goes into the Review & Start sheet
+     below instead, per explicit request. The note above used to argue
+     the opposite - that a time limit is a primary, mode-defining
+     choice like Game's Speed grid and so belongs beside the units -
+     and that reasoning is superseded: the sheet is where every other
+     "how should this run go" answer already lives, and the unit list
+     is long enough that a control under it is easy to walk straight
+     past on the way to Start. */
 
   /* --- start: floating pill + "Review & Start" bottom sheet \u2014 the
      same pattern Drill/Exam/Game's own showSetup() uses, replacing the
@@ -35337,9 +35403,8 @@ function showVirtualRoomSetup(){
      "go" action (createVirtualRoomLobby) is a lobby write, not a run.
      Every class name below is one showSetup() already defines the CSS
      for, so this matches it pixel-for-pixel with no new styling. */
-  const selectionSummary = document.createElement("div");
-  selectionSummary.className = "unit-selection-summary";
-  panel.appendChild(selectionSummary);
+  /* The Virtual Room has its own copy of that floating pill and it
+     goes for the same reason - "REMOVE FOR ALL MODES". */
 
   const bar = document.createElement("div");
   bar.className = "startbar";
@@ -35359,6 +35424,7 @@ function showVirtualRoomSetup(){
   const sheetSummaryTime = document.createElement("p");
   sheetSummaryTime.className = "sheet-summary-line";
   sheetSummary.append(sheetSummaryMode, sheetSummaryLine, sheetSummaryTime);
+  optionsModalBody.appendChild(timeSect);
   optionsModalBody.appendChild(sheetSummary);
 
   /* The actual "go" action, matching showSetup()'s own beginBtn \u2014
@@ -35447,14 +35513,6 @@ function showVirtualRoomSetup(){
   function refresh(){
     const n = [...picked].reduce((sum, name) =>
       sum + QUESTIONS.filter(x => (x.topic || "").trim() === name).length, 0);
-
-    if(picked.size === 0){
-      selectionSummary.hidden = true;
-    } else {
-      selectionSummary.hidden = false;
-      selectionSummary.textContent = picked.size + (picked.size === 1 ? " unit" : " units") +
-        " selected \u00b7 " + n + (n === 1 ? " question" : " questions");
-    }
 
     sheetSummaryLine.textContent = picked.size === 0
       ? "No units selected yet"
@@ -38905,6 +38963,7 @@ pauseBtn.addEventListener("click", pauseRun);
 
 /* ---------- swipe to advance (optional, Appearance) ---------------------- */
 
+let swipeLocked = false;
 let swipeStartX = null;
 let swipeTouchId = null;
 let swipeStartY = null;
@@ -39531,15 +39590,43 @@ function applyGlassRefraction(el, mapImgId){
    and a second finger abandons the gesture rather than redefining it. */
 stage.addEventListener("touchstart", (e) => {
   if(!theme.swipeAdvance) return;
-  if(e.touches.length !== 1){ swipeStartX = null; swipeStartY = null; swipeTouchId = null; return; }
+  if(e.touches.length !== 1){ swipeStartX = null; swipeStartY = null; swipeTouchId = null; swipeLocked = false; return; }
   const t = e.touches[0];
   swipeTouchId = t.identifier;
   swipeStartX = t.clientX;
   swipeStartY = t.clientY;
+  swipeLocked = false;
 }, { passive: true });
 
-function endSwipeGesture(){ swipeStartX = null; swipeStartY = null; swipeTouchId = null; }
+function endSwipeGesture(){
+  swipeStartX = null; swipeStartY = null; swipeTouchId = null; swipeLocked = false;
+}
 stage.addEventListener("touchcancel", endSwipeGesture, { passive: true });
+
+/* THE REASON THIS GESTURE DID NOT FIRE, and it is the same one the tab
+   swipe was fixed for months ago - the fix simply never reached here.
+   With no touchmove handling at all, the browser's own vertical scroll
+   claims the gesture the instant a real thumb drifts off horizontal.
+   A question panel is tall enough to scroll, so by the time touchend
+   arrives the page has scrolled and dy has grown past the ratio test
+   below: the swipe silently fails and the question never advances.
+   Once the drag is clearly more sideways than vertical, claim it
+   before the native scroll can. An ordinary vertical scroll never
+   crosses that threshold, so scrolling a long question still works.
+   passive:false is required - preventDefault does nothing otherwise,
+   which is exactly how a listener like this ends up looking present
+   and doing nothing. */
+stage.addEventListener("touchmove", (e) => {
+  if(!theme.swipeAdvance || swipeStartX === null) return;
+  let t = null;
+  for(let i = 0; i < e.touches.length; i++){
+    if(e.touches[i].identifier === swipeTouchId){ t = e.touches[i]; break; }
+  }
+  if(!t) return;
+  const dx = t.clientX - swipeStartX, dy = t.clientY - swipeStartY;
+  if(!swipeLocked && Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) swipeLocked = true;
+  if(swipeLocked) e.preventDefault();
+}, { passive: false });
 
 stage.addEventListener("touchend", (e) => {
   if(!theme.swipeAdvance || swipeStartX === null) return;
@@ -39553,9 +39640,20 @@ stage.addEventListener("touchend", (e) => {
   endSwipeGesture();
   /* A clear, mostly-horizontal left swipe, and only while an actual
      question (with its answer choices) is on screen. */
-  if(dx < -55 && Math.abs(dx) > Math.abs(dy) * 3 && document.querySelector(".choices")){
+  /* A locked drag has already proved itself horizontal, so it only has
+     to clear a shorter distance; an unlocked one still has to pass the
+     old, stricter test. */
+  const wasLocked = swipeLocked;
+  if(dx < (wasLocked ? -40 : -55)
+     && (wasLocked || Math.abs(dx) > Math.abs(dy) * 3)
+     && document.querySelector(".choices")){
     const next = document.getElementById("nextbtn");
-    if(next && !next.hidden && !next.disabled) next.click();
+    /* advanceWithSlide() directly rather than next.click(): the button
+       is only a way to reach it, and going through a synthetic click
+       meant the gesture depended on the button being hit-testable as
+       well as visible. Its own re-entry guard still covers a double
+       swipe. */
+    if(next && !next.hidden && !next.disabled) advanceWithSlide();
   }
 }, { passive: true });
 
