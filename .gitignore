@@ -1,0 +1,14 @@
+# Python bytecode, produced whenever a tools/ script is imported rather than
+# run directly (the icon generator gets imported by ad-hoc comparison
+# scripts). Nothing in here belongs in the repo.
+__pycache__/
+*.pyc
+
+# Screenshots written by tools/shoot-flow.py (and anything else pointed at
+# SHOOT_OUT). Regenerated on every run, ~130MB a time, and nothing at runtime
+# reads them - they exist to be looked at once and sent on.
+tools/walk/
+
+# GIFs written by tools/record-cutscenes.py. Same reasoning as tools/walk/:
+# regenerated on demand, several MB each, looked at once and sent on.
+recordings/
