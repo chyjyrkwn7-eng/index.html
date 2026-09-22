@@ -23874,7 +23874,13 @@ function formatCalendarDate(iso){
 
 function applySaved(){
   if(store.opts){
-    ["mode", "source", "size", "shuffle", "recall", "countdown", "revealCorrect",
+    /* revealCorrect is deliberately NOT restored. Its control was
+       removed (Review covers it), and it is a stored setting - so an
+       account that left it on would otherwise come back with every
+       answer highlighted before it was picked and nothing anywhere to
+       turn it off. Left out here, cfg keeps its own `false` default
+       whatever the stored copy says. */
+    ["mode", "source", "size", "shuffle", "recall", "countdown",
      "timer", "timerMinutes", "gameSpeed"].forEach(k => {
       if(store.opts[k] !== undefined) cfg[k] = store.opts[k];
     });
@@ -31167,9 +31173,26 @@ function showSetup(){
     const valDisplay = document.createElement("span");
     valDisplay.className = "sliderval";
     valDisplay.textContent = formatVal(get());
+    /* THE TOP OF THE TRACK MEANS ALL OF THEM. A range input snaps to
+       its step lattice measured from `min`, and the pool almost never
+       lands on it: with 894 questions, min 5 and step 5 the highest
+       reachable stop is 890, so dragging the whole way right asked for
+       890 of 894 and quietly left four behind. Reported as the length
+       bar not working - "if you move it all the way to the right that
+       would be all the questions".
+       So the last stop is special-cased to the real maximum rather
+       than to the lattice value under it. Every other position is
+       unchanged, and this cannot overshoot: topStop is by construction
+       the largest lattice value that is still <= dynMax. */
+    function effectiveFrom(raw){
+      const dynMax = Math.max(min, getMax());
+      const topStop = min + Math.floor((dynMax - min) / step) * step;
+      return raw >= topStop ? dynMax : raw;
+    }
     slider.addEventListener("input", () => {
-      set(Number(slider.value));
-      valDisplay.textContent = formatVal(Number(slider.value));
+      const v = effectiveFrom(Number(slider.value));
+      set(v);
+      valDisplay.textContent = formatVal(v);
       paint(); refresh();
     });
     wrap.append(slider, valDisplay);
@@ -31430,16 +31453,14 @@ function showSetup(){
     "Read the question and answer it in your head first, then reveal.",
     () => cfg.recall, v => { cfg.recall = v; });
   optSect.appendChild(recallRow);
-  /* Drill mode only, per explicit request \u2014 the row itself is always
-     built (an existing mechanism further below already hides it for
-     Game and Exam: revealRow.hidden = isGame || isExam), so the
-     declaration stays unconditional here rather than wrapped in its
-     own mode check, which would leave that later line referencing an
-     undefined variable whenever Exam or Game builds this screen. */
-  const revealRow = toggle("Show all correct answers",
-    "Highlights the right answer before you pick.",
-    () => cfg.revealCorrect, v => { cfg.revealCorrect = v; });
-  optSect.appendChild(revealRow);
+  /* "Show all correct answers" is GONE, per explicit request - "we
+     don't need it anymore because of the review button". It highlighted
+     the right answer before you picked, which the Review mode on this
+     same sheet now covers properly: that shows every question with its
+     answer, to read, rather than giving the game away mid-drill.
+     cfg.revealCorrect survives as a defaulted, unreadable field (see
+     applySaved) so an account that had it switched on does not come
+     back with answers revealed and no control left to switch it off. */
   moreBodyInner.appendChild(optSect);
   optionsModalBody.appendChild(moreWrap);
 
@@ -31684,7 +31705,6 @@ function showSetup(){
     moreWrap.hidden = isGame || reviewAllMode;
     recallRow.hidden = isGame || isExam;
     shuffleRow.hidden = isGame || isExam;
-    revealRow.hidden = isGame || isExam;
     reviewSect.hidden = isGame || isExam;
     srcSect.hidden = isGame || isExam || reviewAllMode;
     /* Live-updates "Most missed" and "Flagged" to reflect only the
@@ -32806,7 +32826,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-97";
+const APP_BUILD = "2026-09-22-98";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
