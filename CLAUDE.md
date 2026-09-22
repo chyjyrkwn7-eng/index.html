@@ -2005,6 +2005,37 @@ re-evaluated on the next check.
   and the mount animation stays off; the inline `none` goes away with the
   panel at the next question.
 
+- **AN EASE-OUT CURVE CAN BE SO AGGRESSIVE THAT THE ANIMATION READS AS
+  LAG, and the way to see it is to sample the distance per frame.**
+  The next-question slide ran `cubic-bezier(.32,.72,0,1)` over 200ms.
+  Sampled frame by frame at 4x CPU throttle it moved 87, 124, 100, 40,
+  19, 12, 7, 5, 3, 2 px — 78% of the distance in three frames, then
+  EIGHT more (60% of the duration) creeping through the last 22%, with
+  a 124px frame followed by a 40px one. A 3x deceleration inside one
+  frame is what "it's still slightly noticeable" was pointing at: not
+  a dropped frame, a badly distributed one. `easeOutQuad`
+  (`cubic-bezier(.25,.46,.45,.94)`) at 170ms gives 73, 72, 64, 53, 43,
+  33, 24, 18, 12, 8 — still decelerating, no crawl, and finishes
+  slightly sooner than the curve it replaced.
+  **Both halves carry the same curve and duration or the two questions
+  visibly separate** — the clone's is in its `cssText`, the incoming
+  one's is set separately. And the cleanup timeout has to be retuned
+  with the duration; `check-behaviour` section 8 stubs it by a RANGE
+  rather than the literal, because a gate that hardcodes that number
+  stops holding the clone the moment anyone retunes the animation.
+- **Two `requestAnimationFrame`s before starting a transition is ~33ms
+  of a frozen screen, and the eye times a gesture from the TAP.** The
+  slide waited two frames before setting its final transforms, bought
+  to stop the animation dropping frames at its start. That symptom was
+  real, but its cause was the outgoing clone fighting `screen-fade-in`
+  (above); with that fixed the head start buys nothing. Measured, the
+  tap did nothing at all for 46.6ms — four frames — of which only 13ms
+  was real work. What a transition actually needs is for the starting
+  positions to be COMMITTED before the final ones are set, and a
+  forced layout read (`void el.offsetWidth`) does that synchronously
+  for a fraction of a frame. One per element: only the incoming panel
+  was being flushed, never the clone.
+
 - **A RUNNING ANIMATION BEATS A TRANSITION ON THE SAME PROPERTY**, and that
   is what made the next-question slide read as "the screen glitching".
   `advanceWithSlide()` clones the outgoing question and transitions it to

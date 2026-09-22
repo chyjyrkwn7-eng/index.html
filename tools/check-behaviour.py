@@ -642,9 +642,12 @@ def check_slide(br):
        and then jumped 6px down and settled again. So this also asserts
        nothing is animating the panel once the slide is over.
 
-    setTimeout is stubbed for the one 215ms cleanup call, and only for
-    the length of the call, so the clone survives long enough to be
-    measured. Everything about the slide itself is the app's own code.
+    setTimeout is stubbed for the slide's own cleanup call - matched by
+    a RANGE, not the literal 215, because that number is tuned with the
+    transition duration and a gate that hardcodes it silently stops
+    holding the clone the moment somebody retunes the animation, which
+    is exactly when this check matters most. It already went stale once
+    when the duration moved to .19s. Everything about the slide itself is the app's own code.
     """
     print("\n8. the next question slides in beside the old one, and then stops")
     for label, w, h in DEVICES:
@@ -683,7 +686,7 @@ def check_slide(br):
         pg.wait_for_timeout(500)
         worst = pg.evaluate("""async ()=>{
           const st=window.setTimeout;
-          window.setTimeout=function(fn,ms){ return ms===215 ? 0 : st(fn,ms); };
+          window.setTimeout=function(fn,ms){ return (ms>=150&&ms<=400) ? 0 : st(fn,ms); };
           advanceWithSlide();
           window.setTimeout=st;
           let worst=0, frames=0;

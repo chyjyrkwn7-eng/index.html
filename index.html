@@ -32588,7 +32588,7 @@ function advanceWithSlide(){
   clone.style.cssText =
     "position:fixed; top:" + rect.top + "px; left:" + rect.left + "px; " +
     "width:" + rect.width + "px; margin:0; z-index:250; animation:none; " +
-    "transition:transform .2s cubic-bezier(.32,.72,0,1); pointer-events:none; " +
+    "transition:transform .17s cubic-bezier(.25,.46,.45,.94); pointer-events:none; " +
     "will-change:transform;";
   document.body.appendChild(clone);
 
@@ -32612,25 +32612,46 @@ function advanceWithSlide(){
   // Force layout so the starting position is actually committed before
   // the transition below is allowed to animate toward its own target.
   void incoming.offsetWidth;
-  incoming.style.transition = "transform .2s cubic-bezier(.32,.72,0,1)";
-  /* TWO frames, not one. advance() above rebuilds the whole next
-     question synchronously - new text, new choice buttons, each with
-     its own borders and radii - and that work lands between the clone
-     being inserted and this transform being set. With a single rAF the
-     browser was still doing that layout and paint on the very frame
-     the animation was supposed to start on, so the slide began by
-     dropping frames: the stutter reads as the transition itself being
-     slow. Giving it one clear frame to settle first means the
-     animation starts on a laid-out, already-promoted layer.
-     It costs ~16ms and removes far more than that in dropped frames.
-     The duration came down from .32s to .2s in the same pass; .32s was
-     simply longer than it needed to be for a slide this short. */
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      clone.style.transform = "translateX(-100%)";
-      incoming.style.transform = "translateX(0)";
-    });
-  });
+  /* THE CURVE IS WHAT WAS LEFT OF THE "LAG", and it was measurable.
+     cubic-bezier(.32,.72,0,1) is an extremely aggressive ease-out. Over
+     a 200ms slide its tail is long enough to watch: sampled frame by
+     frame at 4x CPU throttle, the question covered 78% of the distance
+     in the first 3 moving frames and then spent EIGHT MORE - 60% of
+     the whole duration - creeping through the last 22%. It rushes and
+     then crawls to a stop, and the crawl is what reads as not smooth.
+     easeOutQuad spreads the same distance evenly: still decelerating,
+     so it does not stop dead, but with no long creep at the end. The
+     duration comes down a notch with it because an even curve does not
+     need the extra time the old tail was spending.
+     Both halves must carry the SAME curve and duration or the two
+     questions travel at different speeds and visibly separate - the
+     clone's is set in its cssText above. */
+  incoming.style.transition = "transform .17s cubic-bezier(.25,.46,.45,.94)";
+  /* NO rAF AT ALL, AND THAT IS THE REST OF THE "LAG". This used to
+     wait TWO frames before setting the final transforms. Measured at
+     4x CPU throttle: the tap did nothing whatsoever for 46.6ms - four
+     whole frames - of which only 13ms was real work (advance()
+     rebuilding the next question, plus the clone). The other ~33ms
+     was these two rAFs burning frames on purpose. A screen that sits
+     frozen for three frames and THEN starts moving reads as lag no
+     matter how smooth the movement after it is; the eye times the
+     gesture from the tap, not from the first frame of animation.
+     The two frames were bought to stop the slide dropping frames at
+     its start, and that was a real symptom - but its cause was the
+     outgoing clone still running screen-fade-in and fighting this
+     transform, which is fixed above. With that gone the animation has
+     nothing to contend with and does not need a head start.
+     What it does need is for both starting positions to be COMMITTED
+     before the final ones are set, or the browser coalesces the two
+     and there is no transition at all. That is what the forced
+     layout reads are for - one per element, since the clone was
+     never flushed and only the incoming one was. A forced layout is
+     synchronous and costs a fraction of a frame; a rAF costs a whole
+     one. */
+  void clone.offsetWidth;
+  void incoming.offsetWidth;
+  clone.style.transform = "translateX(-100%)";
+  incoming.style.transform = "translateX(0)";
   setTimeout(() => {
     clone.remove();
     incoming.style.transform = "";
@@ -32659,7 +32680,7 @@ function advanceWithSlide(){
        on every future static render of this same panel. */
     incoming.style.willChange = "";
     slideTransitionInFlight = false;
-  }, 215);
+  }, 185);
 }
 
 function advance(){
@@ -32863,7 +32884,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-105";
+const APP_BUILD = "2026-09-22-106";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
