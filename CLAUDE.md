@@ -1966,6 +1966,17 @@ re-evaluated on the next check.
   behind it because reduce-motion switches transitions off and
   `transitionend` then never fires. **Use it rather than toggling the
   class by hand**, and never give a scrollable region a pixel cap.
+- **Setting `style.animation = ""` does not mean "it already ran, leave it" —
+  it RESTARTS the animation from frame zero.** The same `advanceWithSlide()`
+  cleanup that removed the clone also cleared the incoming panel's inline
+  `animation:none`, which un-suppressed `#stage > *{animation:screen-fade-in
+  .3s}` — so the question that had just finished sliding in jumped 6px down
+  and settled again over the next 300ms. Measured: slide done at ~200ms,
+  second movement starting at 215ms. Every question arrived and then bumped.
+  A panel that was slid in was never mounted, so the slide IS its entrance
+  and the mount animation stays off; the inline `none` goes away with the
+  panel at the next question.
+
 - **A RUNNING ANIMATION BEATS A TRANSITION ON THE SAME PROPERTY**, and that
   is what made the next-question slide read as "the screen glitching".
   `advanceWithSlide()` clones the outgoing question and transitions it to

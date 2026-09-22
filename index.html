@@ -3923,34 +3923,7 @@
      visible on this screen. Sized and positioned to clear the dual-
      pill layout's own height with room to spare, verified directly
      against its measured height rather than guessed. */
-  /* The offset carries the safe-area inset, and that is the whole bug:
-     a flat 6.6rem is 106px off the bottom edge, and the bar's own
-     footprint on an iPhone is the 34px inset plus .6rem plus its 76px
-     height - 120px. The line was 14px BEHIND the bar it is supposed to
-     sit above, which is what "it's accidentally hiding underneath the
-     bottom tab" is. The bar carries the inset, so anything clearing it
-     has to carry it too; the tablet gets its own figure below because
-     its bar is 25px taller. */
-  .unit-selection-summary{
-    position:fixed; left:50%; transform:translateX(-50%);
-    bottom:calc(6.6rem + env(safe-area-inset-bottom, 0px));
-    z-index:14; padding:.5rem 1rem; border-radius:999px;
-    font-size:.82rem; font-weight:700; color:var(--soft); text-align:center;
-    background:var(--panel); border:1px solid var(--rule);
-    box-shadow:0 2px 10px rgba(18,26,32,.18); white-space:nowrap;
-  }
-  [data-layout="modern"] .unit-selection-summary{
-    background:rgba(255,255,255,.72); border:1px solid rgba(255,255,255,.5);
-    will-change:backdrop-filter; backdrop-filter:blur(16px) saturate(1.5); -webkit-backdrop-filter:blur(16px) saturate(1.5);
-  }
-  [data-theme="dark"][data-layout="modern"] .unit-selection-summary{
-    background:rgba(28,33,40,.72); border:1px solid rgba(255,255,255,.09);
-  }
-  [data-theme="dark"] .unit-selection-summary{ box-shadow:0 2px 10px rgba(0,0,0,.4); }
-  @media (min-width:40rem){
-    .unit-selection-summary{ bottom:calc(8.2rem + env(safe-area-inset-bottom, 0px)); }
-  }
-  .settings-done-bar{ margin-top:2.2rem; }
+    .settings-done-bar{ margin-top:2.2rem; }
   .settings-done-btn{
     width:100%; padding:.9rem 1.5rem; font-size:1.05rem;
   }
@@ -31865,8 +31838,6 @@ function showSetup(){
       startSimpleTour([
         { target: ".pick", align: "left", vplacement: "below",
           text: "Tap a unit to add it to this test. The bar under each one is how close you are to its badge \u2014 35 hundos masters it, and a unit you have mastered shows its badge instead." },
-        { target: ".unit-selection-summary", align: "left", vplacement: "above",
-          text: "This keeps count of how many units and questions you have picked, and updates as you go." },
         { target: "#bottomtab-start", align: "right", vplacement: "above",
           text: "Once you've picked your units, tap here \u2014 it opens a quick summary and lets you set the timer and other options before you begin." }
       ]);
@@ -32668,7 +32639,23 @@ function advanceWithSlide(){
   setTimeout(() => {
     clone.remove();
     incoming.style.transform = "";
-    incoming.style.animation = "";
+    /* THE ANIMATION STAYS OFF, and clearing it here was a second,
+       separate hiccup at the end of every single transition.
+       screen-fade-in is `#stage > *{animation:screen-fade-in .3s}` --
+       a 6px translateY settle every mounted screen plays. Setting
+       style.animation back to "" does not mean "it already ran, leave
+       it"; it un-suppresses the CSS rule, and an animation that has
+       been suppressed for its whole duration then starts from frame
+       zero AT THAT MOMENT. Measured: the question finished sliding in
+       at ~200ms and at 215ms jumped 6px down and settled again over
+       the next 300ms. So every question arrived, stopped, and then
+       bumped -- which is the other half of what "the screen was like
+       glitching" was pointing at.
+       This panel does not want a mount animation at all: it was not
+       mounted, it was slid in, and the slide IS its entrance. Nothing
+       else animates .qpanel (the only shake in the app is on the sync
+       code field), so leaving the inline none on it costs nothing and
+       it goes away with the panel at the next question. */
     incoming.style.transition = "";
     /* Cleared once the slide is actually over, not left on
        indefinitely -- will-change keeps a compositor layer (real GPU
@@ -32881,7 +32868,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-101";
+const APP_BUILD = "2026-09-22-102";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -35592,8 +35579,6 @@ function showVirtualRoomSetup(){
       startSimpleTour([
         { target: ".pick", align: "left", vplacement: "below",
           text: "Tap a unit to add it to this test. The bar under each one is how close you are to its badge \u2014 35 hundos masters it, and a unit you have mastered shows its badge instead." },
-        { target: ".unit-selection-summary", align: "left", vplacement: "above",
-          text: "This keeps count of how many units and questions you have picked, and updates as you go." },
         { target: "#bottomtab-start", align: "right", vplacement: "above",
           text: "Once you've picked your units, tap here \u2014 it opens a quick summary and lets you set the timer and other options before you begin." }
       ]);
