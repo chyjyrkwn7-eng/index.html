@@ -1550,6 +1550,18 @@ all keyed by them, so renaming a key is a migration for a cosmetic gain.
   with `decorateAvatar()` — the fix goes in the builder, the screen
   that matters never calls it — so the cure is the same: one function,
   both call sites. A new screen that lists units calls it too.
+- **EVERY UNIT CARD CARRIES THE SAME INSTRUMENT, A MASTERED ONE
+  INCLUDED.** It used to drop both the bar and the count once the
+  badge was earned and show a lone badge, which left a hole exactly
+  where every other card in the grid has its bar — the one card that
+  did not match. *"They should all look the same."* A mastered card
+  now reads `35 / 35` on a full bar.
+  **This is not a revert of the earlier decision, and the difference
+  matters.** What came off before was a card reading "Mastered —
+  1,204": a word repeating what the badge already says, beside a
+  running count of something nobody is working towards. A capped
+  `35 / 35` says the unit is done in the same language every other
+  card uses for how far along it is, and it stops counting.
 - **THE UNIT CARD MEASURES ONE THING IN EVERY MODE: the badge, and
   hundos towards 35.** It is not mode-dependent and must not become so
   again. A hundo is a full-unit 100% run and `unitPerfectCount` reads

@@ -30791,22 +30791,30 @@ function appendUnitProgress(row, name){
   const perfectCount = unitPerfectCount(name);
   const progCurrent = Math.min(perfectCount, BADGE_THRESHOLD);
   const progMax = BADGE_THRESHOLD;
-  /* A mastered unit says so with its badge and nothing else - the word
-     and the running count were the same fact twice over. */
-  const barCount = earned ? "" : perfectCount + " / " + BADGE_THRESHOLD;
+  /* EVERY CARD CARRIES THE SAME INSTRUMENT, INCLUDING A MASTERED ONE.
+     A mastered unit used to drop both the bar and the count and show
+     a lone badge, which left a hole exactly where every other card in
+     the grid has its bar - the one card that did not match the rest.
+     "They should all look the same."
+     This is not a return to what was taken off before. The objection
+     then was a card reading "Mastered - 1,204": a word repeating what
+     the badge already says, beside a running count of something
+     nobody is working towards any more. A full bar reading 35 / 35 is
+     the same instrument every other card has, capped - it says the
+     unit is done in the same language the others say how far along
+     they are, and it stops counting rather than running away. */
+  const barCount = progCurrent + " / " + BADGE_THRESHOLD;
   /* Badge first at every width. The old text-first order was Game's,
      and existed only because Game's marker was a star that stayed
      invisible until earned while still reserving its width. */
   starsWrap.appendChild(badgeMark);
   starsWrap.appendChild(progLabel);
   row.appendChild(starsWrap);
-  /* A 3px hairline, and only while there is progress left to make: a
-     mastered unit shows its badge and no bar, so the list only draws
-     bars for the units still going. The number sits beside the track
-     rather than inside it - nothing legible fits inside 3px - and both
-     go in the BADGE's row, because the badge is what the bar is
-     filling towards. */
-  if(progCurrent < progMax){
+  /* A 3px hairline on every card, full on a mastered one. The number
+     sits beside the track rather than inside it - nothing legible
+     fits inside 3px - and both go in the BADGE's row, because the
+     badge is what the bar is filling towards. */
+  {
     const barRow = document.createElement("span");
     barRow.className = "pick-barrow";
     const barTrack = document.createElement("span");
@@ -32849,7 +32857,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-107";
+const APP_BUILD = "2026-09-22-108";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
