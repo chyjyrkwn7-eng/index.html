@@ -520,6 +520,46 @@ Every bug below was invisible at 390×844 in a desktop browser, which is where
 - The tab bar was a fixed 344px wide, off both edges of a 320px phone; the
   Rewards tab switcher overflowed sideways below 384px.
 
+**`button{touch-action:manipulation}` IS WHY SWIPE-TO-ADVANCE DID NOT
+WORK ON A PHONE, and why it always passed in Chromium.** `body` is
+`touch-action:pan-y`, which hands the HORIZONTAL axis to the app so the
+swipe can claim it — but every answer choice is a `<button>`, and the
+global button rule resets them to `manipulation`, giving both axes back
+to the browser. The choices fill most of the question screen, so a real
+thumb swipe almost always starts on one: iOS took the gesture before
+`touchmove` could `preventDefault`, and the page moved instead of the
+question. **Chromium honours a JS `preventDefault` far more readily
+than iOS**, so the harness advanced the question every time while the
+device did nothing — three fixes were shipped at this symptom before
+the cause was found. `touch-action` is DECLARATIVE: it settles who owns
+the axis before the first `touchmove` fires instead of racing for it.
+The question panel, its buttons and `#nextbtn` are `pan-y` while
+`body.has-active-question` is set.
+
+**THE FIRESTORE RULES DENY WRITES TO `leaderboard`, AND THE APP
+SWALLOWS IT.** Tested directly over the REST API: `progress` write
+**200**, `vrooms` write **200**, `leaderboard` write **403**. Reads and
+lists are allowed, which is why the board renders and is simply empty.
+`pushToCloud()` ends its `.set()` in `.catch(() => {})`, so every
+rejected write is silent — the collection held 0 documents while
+everyone's own progress synced perfectly. **No change to `index.html`
+can fix this**; the rules have to be edited in the Firebase console.
+Before debugging an empty board again, run the write test rather than
+reading the client code.
+
+**THE RESULTS SCREEN IS THREE MATCHED CARDS AND A MATCHED BUTTON
+ROW.** It used to go card, card, loose paragraph, two mismatched
+pills. The review block was the only one of the three without a
+surface, and its hierarchy was inverted — heading in `.qnum` (small,
+grey, the label style) over body in `.qtext` (the QUESTION text style,
+large and bold). `.results-review` joins `.points-breakdown` /
+`.results-level` in the shared surface rules, with the title bold and
+the body soft. `.actions.actions-results` makes both buttons equal
+width; they measured 176 vs 137 before.
+**Verify this screen on a REAL finished run.** `shoot-results.py`
+builds it its own way and showed no change at all while the DOM from
+an actual drill already had the card and the matched row.
+
 **NO TEXT FIELD MAY COMPUTE TO UNDER 16px.** iOS Safari zooms the whole
 page in when it focuses one that does, and does not reliably zoom back
 out — the page is left magnified with no way to pinch out of it.
