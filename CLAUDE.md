@@ -2027,6 +2027,27 @@ re-evaluated on the next check.
   and the mount animation stays off; the inline `none` goes away with the
   panel at the next question.
 
+- **ON AUTO-ADVANCE, THE BIGGEST PART OF THE WAIT BETWEEN QUESTIONS IS
+  NOT THE ANIMATION — it is `scheduleAutoAdvance`'s deliberate beat**,
+  and it was 500ms against a 170ms slide. Measured end to end from the
+  tap, the question did not begin changing for ~510ms and everything
+  settled at 1038ms. Tuning the slide cannot touch that; it is three
+  times the slide's own length. It is 300ms now — still a clear beat
+  to see whether you got it right, 40% off the wait, 1038ms → 509ms
+  end to end. Anyone who wants none of it turns auto-advance off,
+  which is the default. **Check this number before tuning the
+  animation again**: if a report of "lag" comes from somebody with
+  auto-advance ON, the animation is the smaller half of what they are
+  feeling.
+- **"VERSION 6.0" NEVER CHANGES, SO IT CANNOT ANSWER "ARE YOU RUNNING
+  THE FIX?"** An installed home-screen app can sit on a cached copy
+  indefinitely and looks identical to an up-to-date one — reported as
+  *"the lag is still here, has it not been pushed through yet?"* when
+  the fix had been live and Pages-deployed for twenty minutes. The
+  What's New screen now prints `VERSION 6.0 · BUILD <APP_BUILD>`, which
+  is the one place in the app that can settle that without guessing.
+  Ask for it before re-diagnosing a bug that is already fixed.
+
 - **AN EASE-OUT CURVE CAN BE SO AGGRESSIVE THAT THE ANIMATION READS AS
   LAG, and the way to see it is to sample the distance per frame.**
   The next-question slide ran `cubic-bezier(.32,.72,0,1)` over 200ms.

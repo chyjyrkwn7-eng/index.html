@@ -27979,7 +27979,15 @@ function showWhatsNew(){
 
   const badge = document.createElement("p");
   badge.className = "releasenotes-badge";
-  badge.textContent = "VERSION " + RELEASE_NOTES[0].version;
+  /* THE BUILD, NOT JUST THE VERSION. "Version 6.0" never changes, so
+     when somebody reports a bug that was already fixed there is no way
+     to tell whether they are running the fix - an installed
+     home-screen app can sit on a cached copy for a long time and looks
+     identical to an up-to-date one. Reported as "the lag is still
+     here, has it not been pushed through yet?" when the fix had been
+     live for twenty minutes. This is the one place in the app that can
+     answer that question without guessing. */
+  badge.textContent = "VERSION " + RELEASE_NOTES[0].version + " \u00b7 BUILD " + APP_BUILD;
   panel.appendChild(badge);
 
   const title = document.createElement("p");
@@ -32408,7 +32416,17 @@ function scheduleAutoAdvance(qi){
     if(runMode === "exam" && picked[capturedQi] === undefined) return;
     if(runMode !== "exam" && !cleared) return;
     advanceWithSlide();
-  }, 500);
+    /* 500ms was HALF A SECOND OF NOTHING HAPPENING, and on
+       auto-advance it is by far the largest part of the wait between
+       questions - bigger than the slide it precedes by a factor of
+       three. Measured end to end from the tap: the question did not
+       begin changing for ~510ms, and the slide itself is 170.
+       It is a deliberate beat, not a bug - you have to be able to see
+       whether you got it right before the screen moves - but 300ms is
+       still a clear beat and takes 40% off the wait. Anyone who wants
+       none of it can turn auto-advance off in Settings, which is the
+       default. */
+  }, 300);
 }
 
 function choose(slot){
@@ -32857,7 +32875,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-108";
+const APP_BUILD = "2026-09-22-109";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
