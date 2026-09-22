@@ -1015,6 +1015,18 @@ Everything below follows from that.
   untouched on a miss and the next save pushes it all back, so ~40 phones
   would rebuild the board within a day. Clearing devices on its own
   leaves every written-down code working.
+- **FRESH_START IS DISARMED (0) AND MUST STAY THAT WAY while the class
+  is using the app.** It shipped armed and reached `main`, against this
+  file's own "TO DISARM: set FRESH_START back to 0 before this reaches
+  `main`". Measured on the live build: a device that had not yet run
+  the wipe — a new install, or one whose `localStorage` iOS evicted —
+  booted with a seeded, onboarded account and came back
+  `onboardingComplete:false`, no name, no sync code, sitting on
+  Welcome. Its progress was gone and, per **Accounts and the sync
+  code**, creating an account from that screen overwrites what is
+  behind it. Arm it only for a deliberate, announced reset, and take
+  it back to 0 in the same session.
+
 - **The fresh-start marker lives in `localStorage`, never on `store`.**
   The wipe clears `store`, so a flag there would be erased by the very
   thing it exists to stop and the account would be wiped again on every
