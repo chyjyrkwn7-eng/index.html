@@ -1446,6 +1446,7 @@
      Scoped to the question screen so nothing else changes: pan-y
      still allows vertical scrolling of a long question, and only the
      horizontal axis comes back to the app. */
+  body.has-active-question .wrap,
   body.has-active-question #stage .panel,
   body.has-active-question #stage .panel button,
   body.has-active-question #nextbtn{ touch-action:pan-y; }
@@ -8325,6 +8326,31 @@
     display:flex; width:fit-content; margin-left:auto; margin-right:auto;
   }
   [data-layout="modern"] .modedisplay-top .modeiconpath{ stroke:var(--accent); }
+  /* EACH MODE'S ICON IN ITS OWN COLOUR AT THE TOP OF UNIT SELECTION,
+     and it has to live HERE, prefixed, or it does nothing.
+     The rule directly above paints this icon in var(--accent), which
+     on the default theme is var(--ink) - so Drill and Exam came out
+     near-white while Game was magenta, because Game is the one mode
+     whose per-mode rule sets `fill` rather than `stroke` and so was
+     never overridden. Measured before: drill stroke rgb(231,237,241),
+     exam stroke rgb(231,237,241), game fill rgb(194,59,122).
+     Reported as "the game icon has color, ensure all the icons within
+     that mode have color too."
+     The first attempt at this fix put the same rules up beside
+     .modedisplay-icon, ~4,400 lines above, at one class MORE
+     specificity - and they still lost, because the rule above is
+     [data-layout="modern"] + two classes, the same 0,3,0, and later
+     in the file. That is the exact trap this file already documents
+     for .panel padding: an override of anything in the modern-layout
+     block needs the [data-layout="modern"] prefix and needs to sit
+     after it, or it silently does nothing.
+     The colours are the ones the Mode Select cards already use, so
+     the icon means the same thing on both screens. */
+  [data-layout="modern"] .modedisplay-top .modeicon-drill .modeiconpath{ stroke:var(--theme-c1); fill:none; }
+  [data-layout="modern"] .modedisplay-top .modeicon-exam .modeiconpath{ stroke:var(--theme-c2); fill:none; }
+  [data-layout="modern"] .modedisplay-top .modeicon-game .modeiconpath{ fill:var(--theme-c3); stroke:none; }
+  [data-layout="modern"] .modedisplay-top .modeicon-vroom .modeiconpath{ stroke:#4A9FE8; fill:none; }
+  [data-layout="modern"] .modedisplay-top .modeicon-vroom circle.modeiconpath{ fill:#4A9FE8; }
   [data-layout="modern"] .modedisplay-icon{ width:1.05rem; height:1.05rem; }
   [data-layout="modern"] .units-overall{ color:var(--accent); }
   [data-layout="modern"] .chip{ border-radius:999px; padding:.55rem 1.05rem; }
@@ -32952,7 +32978,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-110";
+const APP_BUILD = "2026-09-22-111";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -39689,7 +39715,20 @@ function applyGlassRefraction(el, mapImgId){
    whatever touch arrived last, so resting a thumb mid-swipe moved the
    start under the gesture. The origin is pinned to one identifier now
    and a second finger abandons the gesture rather than redefining it. */
-stage.addEventListener("touchstart", (e) => {
+/* THE WHOLE SCREEN, NOT JUST #stage. These listeners were on #stage,
+   which is only the panel - so the strip along the TOP of a question
+   (the progress dots and the unit line) is outside it and a swipe
+   started there reached nothing at all. Measured: swiping from the
+   question text, a choice, the Next button or empty panel space all
+   advanced; swiping from the top bar did not, on both reference
+   devices. Reported as the swipe working on the button but "not by
+   swiping on the screen".
+   document is the honest surface for a gesture that means "the whole
+   screen": every guard below still applies, and the one that matters
+   is that a question with its .choices has to be on screen, so this
+   cannot fire anywhere else in the app. */
+const SWIPE_SURFACE = document;
+SWIPE_SURFACE.addEventListener("touchstart", (e) => {
   if(!theme.swipeAdvance) return;
   if(e.touches.length !== 1){ swipeStartX = null; swipeStartY = null; swipeTouchId = null; swipeLocked = false; return; }
   const t = e.touches[0];
@@ -39702,7 +39741,7 @@ stage.addEventListener("touchstart", (e) => {
 function endSwipeGesture(){
   swipeStartX = null; swipeStartY = null; swipeTouchId = null; swipeLocked = false;
 }
-stage.addEventListener("touchcancel", endSwipeGesture, { passive: true });
+SWIPE_SURFACE.addEventListener("touchcancel", endSwipeGesture, { passive: true });
 
 /* THE REASON THIS GESTURE DID NOT FIRE, and it is the same one the tab
    swipe was fixed for months ago - the fix simply never reached here.
@@ -39717,7 +39756,7 @@ stage.addEventListener("touchcancel", endSwipeGesture, { passive: true });
    passive:false is required - preventDefault does nothing otherwise,
    which is exactly how a listener like this ends up looking present
    and doing nothing. */
-stage.addEventListener("touchmove", (e) => {
+SWIPE_SURFACE.addEventListener("touchmove", (e) => {
   if(!theme.swipeAdvance || swipeStartX === null) return;
   let t = null;
   for(let i = 0; i < e.touches.length; i++){
@@ -39729,7 +39768,7 @@ stage.addEventListener("touchmove", (e) => {
   if(swipeLocked) e.preventDefault();
 }, { passive: false });
 
-stage.addEventListener("touchend", (e) => {
+SWIPE_SURFACE.addEventListener("touchend", (e) => {
   if(!theme.swipeAdvance || swipeStartX === null) return;
   let t = null;
   for(let i = 0; i < e.changedTouches.length; i++){

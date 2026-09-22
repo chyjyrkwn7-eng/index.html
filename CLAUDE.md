@@ -520,6 +520,34 @@ Every bug below was invisible at 390×844 in a desktop browser, which is where
 - The tab bar was a fixed 344px wide, off both edges of a 320px phone; the
   Rewards tab switcher overflowed sideways below 384px.
 
+**THE SWIPE LISTENS ON `document`, NOT `#stage`, AND THAT MATTERS.**
+`#stage` is only the panel, so the strip along the TOP of a question —
+the progress dots and the unit line — is outside it, and a swipe
+started there reached no listener at all. Measured on both reference
+devices: question text, a choice, the Next button and empty panel
+space all advanced; the top bar did not. Reported as the swipe working
+on the button but "not by swiping on the screen". `SWIPE_SURFACE` is
+`document`; every guard still applies, and the one that matters is
+that a question with its `.choices` must be on screen, so it cannot
+fire anywhere else in the app. `body.has-active-question .wrap` carries
+`touch-action:pan-y` for the same reason the panel does.
+
+**THE MODE ICON AT THE TOP OF UNIT SELECTION IS PER-MODE COLOURED, and
+the fix has to sit below the modern-layout block.** `[data-layout=
+"modern"] .modedisplay-top .modeiconpath{stroke:var(--accent)}` paints
+it in `--accent`, which on the default theme is `--ink` — so Drill and
+Exam came out near-white while Game was magenta, because Game is the
+one mode whose per-mode rule sets `fill` rather than `stroke` and so
+was never overridden. Measured before: drill and exam both
+`rgb(231,237,241)`, game `rgb(194,59,122)`.
+**The first attempt put the override 4,400 lines higher at one class
+MORE specificity and still lost** — the modern rule is an attribute
+plus two classes, the same 0,3,0, and later in the file. Same trap as
+`.panel` padding: an override of anything in the modern-layout block
+needs the `[data-layout="modern"]` prefix AND has to come after it.
+Now drill `--theme-c1`, exam `--theme-c2`, game `--theme-c3`, vroom
+`#4A9FE8` — the same colours the Mode Select cards use.
+
 **`button{touch-action:manipulation}` IS WHY SWIPE-TO-ADVANCE DID NOT
 WORK ON A PHONE, and why it always passed in Chromium.** `body` is
 `touch-action:pan-y`, which hands the HORIZONTAL axis to the app so the
