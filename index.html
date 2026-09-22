@@ -3923,34 +3923,7 @@
      visible on this screen. Sized and positioned to clear the dual-
      pill layout's own height with room to spare, verified directly
      against its measured height rather than guessed. */
-  /* The offset carries the safe-area inset, and that is the whole bug:
-     a flat 6.6rem is 106px off the bottom edge, and the bar's own
-     footprint on an iPhone is the 34px inset plus .6rem plus its 76px
-     height - 120px. The line was 14px BEHIND the bar it is supposed to
-     sit above, which is what "it's accidentally hiding underneath the
-     bottom tab" is. The bar carries the inset, so anything clearing it
-     has to carry it too; the tablet gets its own figure below because
-     its bar is 25px taller. */
-  .unit-selection-summary{
-    position:fixed; left:50%; transform:translateX(-50%);
-    bottom:calc(6.6rem + env(safe-area-inset-bottom, 0px));
-    z-index:14; padding:.5rem 1rem; border-radius:999px;
-    font-size:.82rem; font-weight:700; color:var(--soft); text-align:center;
-    background:var(--panel); border:1px solid var(--rule);
-    box-shadow:0 2px 10px rgba(18,26,32,.18); white-space:nowrap;
-  }
-  [data-layout="modern"] .unit-selection-summary{
-    background:rgba(255,255,255,.72); border:1px solid rgba(255,255,255,.5);
-    will-change:backdrop-filter; backdrop-filter:blur(16px) saturate(1.5); -webkit-backdrop-filter:blur(16px) saturate(1.5);
-  }
-  [data-theme="dark"][data-layout="modern"] .unit-selection-summary{
-    background:rgba(28,33,40,.72); border:1px solid rgba(255,255,255,.09);
-  }
-  [data-theme="dark"] .unit-selection-summary{ box-shadow:0 2px 10px rgba(0,0,0,.4); }
-  @media (min-width:40rem){
-    .unit-selection-summary{ bottom:calc(8.2rem + env(safe-area-inset-bottom, 0px)); }
-  }
-  .settings-done-bar{ margin-top:2.2rem; }
+    .settings-done-bar{ margin-top:2.2rem; }
   .settings-done-btn{
     width:100%; padding:.9rem 1.5rem; font-size:1.05rem;
   }
@@ -22945,21 +22918,62 @@ function onFirebaseReady(cb){
   if(fbDb){ cb(); return; }
   fbReadyCallbacks.push(cb);
 }
+/* THE RETRY BUDGET WAS 300/800/1500ms AND THAT IS WHY THE LEADERBOARD
+   WAS EMPTY. Both Firebase script tags carry `defer`, so fbDb is
+   GUARANTEED to still be null when the boot code further down runs -
+   deferred scripts execute after the document is parsed, which is
+   after this inline script. So every launch depends entirely on this
+   retry to attach the live listener and push. It gave up after 1.5
+   seconds. Two Firebase SDK bundles off a CDN take longer than that on
+   class wifi or a cold cellular connection all the time, and when they
+   did, NOTHING tried again: no live listener, no push, no leaderboard
+   row, for the entire session. Measured against the live project, the
+   leaderboard collection held zero documents while progress sync was
+   working fine for everyone.
+   It is the same mistake the update check made and has a note of its
+   own about - a retry budget that silently runs out. The first-run
+   splash alone is 8 SECONDS, so the old budget expired before the app
+   had even finished launching.
+   Fixed three ways, because any one of them alone can still lose:
+   a real budget (~20s of backoff), the window load event, and the
+   script tags' own onload. Whichever wins calls the same drain, which
+   is idempotent - initFirebase() no-ops once fbDb is set. */
+let fbReadyDrained = false;
+function firebaseBecameReady(){
+  if(fbReadyDrained || !fbDb) return;
+  fbReadyDrained = true;
+  if(syncCode){
+    attachLiveListener(syncCode);
+    pushToCloud();
+  }
+  const appearanceBtnEl = document.getElementById("appearancebtn");
+  if(appearanceBtnEl && appearanceBtnEl.getAttribute("aria-current") === "page") showAppearance();
+  const pending = fbReadyCallbacks.splice(0);
+  pending.forEach(cb => { try { cb(); } catch(e){} });
+}
+function tryFirebaseNow(){
+  if(fbDb){ firebaseBecameReady(); return true; }
+  if(initFirebase()){ firebaseBecameReady(); return true; }
+  return false;
+}
 if(!fbDb){
-  [300, 800, 1500].forEach(delay => {
-    setTimeout(() => {
-      if(!fbDb && initFirebase()){
-        if(syncCode){
-          attachLiveListener(syncCode);
-          pushToCloud();
-        }
-        const appearanceBtnEl = document.getElementById("appearancebtn");
-        if(appearanceBtnEl && appearanceBtnEl.getAttribute("aria-current") === "page") showAppearance();
-        const pending = fbReadyCallbacks.splice(0);
-        pending.forEach(cb => { try { cb(); } catch(e){} });
-      }
-    }, delay);
-  });
+  /* Roughly 20 seconds in total, front-loaded so a fast connection is
+     still picked up within a few hundred ms. */
+  let attempt = 0;
+  (function poll(){
+    if(fbDb || attempt > 28) return;
+    const delay = attempt < 10 ? 150 : (attempt < 20 ? 500 : 1500);
+    attempt++;
+    setTimeout(() => { if(!tryFirebaseNow()) poll(); }, delay);
+  })();
+  window.addEventListener("load", tryFirebaseNow);
+  try {
+    document.querySelectorAll('script[src*="firebasejs"]').forEach(el => {
+      el.addEventListener("load", tryFirebaseNow);
+    });
+  } catch(e){}
+} else {
+  firebaseBecameReady();
 }
 
 /* A resilient onSnapshot wrapper \u2014 the actual, complete fix for the
@@ -29035,8 +29049,13 @@ function showWelcomeCharacterPrompt(){
 function finishWelcomeStartFresh(){
   setSyncCode(generateSyncCode());
   saveStore();
-  pushToCloud();
-  attachLiveListener(syncCode);
+  /* onFirebaseReady, not a bare call. Sign-up is the one moment a
+     person is MOST likely to be on a slow connection with the SDK
+     still in flight, and a bare pushToCloud() here just returns - so
+     the brand-new account never reached the board at all until some
+     later save happened to catch a ready fbDb. Several classmates
+     signed up and never appeared. */
+  onFirebaseReady(() => { pushToCloud(); attachLiveListener(syncCode); });
   pendingMainMenuTour = true;
   showWelcomeCodeReveal();
 }
@@ -30912,8 +30931,17 @@ function showSetup(){
       } else if(unitGameUnlocked(name)){
         const beat = gameBeat(name);
         const levelsBeat = (beat.easy ? 1 : 0) + (beat.average ? 1 : 0) + (beat.hardcore ? 1 : 0);
-        progLabel.textContent = levelsBeat + "/3 levels beaten for the Game star";
+        /* MATCHES THE MASTERY TRACK, which is the whole point. This
+           still read "0/3 levels beaten for the Game star" as loose
+           text beside the bar - the exact shape that was reported and
+           fixed for Drill ("the way it shows 0/35 is bad ... it needs
+           to be in the progress bar") and then reported again here.
+           The count belongs ON the bar, where it reads as the number
+           belonging to the thing measuring it, and the bar is already
+           labelled by the mode the person is setting up. */
+        progLabel.textContent = "";
         progCurrent = levelsBeat; progMax = 3;
+        barCount = levelsBeat + " / 3";
       } else {
         progLabel.textContent = "Reach 10 perfect Drill runs to unlock Game mode";
         progCurrent = 0; progMax = 1;
@@ -31865,8 +31893,6 @@ function showSetup(){
       startSimpleTour([
         { target: ".pick", align: "left", vplacement: "below",
           text: "Tap a unit to add it to this test. The bar under each one is how close you are to its badge \u2014 35 hundos masters it, and a unit you have mastered shows its badge instead." },
-        { target: ".unit-selection-summary", align: "left", vplacement: "above",
-          text: "This keeps count of how many units and questions you have picked, and updates as you go." },
         { target: "#bottomtab-start", align: "right", vplacement: "above",
           text: "Once you've picked your units, tap here \u2014 it opens a quick summary and lets you set the timer and other options before you begin." }
       ]);
@@ -32603,9 +32629,25 @@ function advanceWithSlide(){
      question panel is real work that happens in between), gives the
      browser the most possible lead time to do that promotion off the
      animation's own critical path. */
+  /* animation:none IS THE GLITCH FIX, and it is the same fix the
+     INCOMING panel already had for the same reason - it simply never
+     got applied to the outgoing clone.
+     The panel being cloned is usually still running screen-fade-in (a
+     translateY settle). A running animation beats a transition on the
+     same property, so the clone ignored the translateX(-100%) set
+     below and instead played out the tail of that vertical settle -
+     measured frame by frame, its transform went (0,6) to (0,2.4) to
+     (0,0.87) to (0,0.07) over about 100ms and only THEN snapped to
+     -400. So the outgoing question did not slide away at all: it sat
+     there, wobbled a pixel, and vanished.
+     And .panel has a fully transparent background - measured
+     rgba(0,0,0,0) - so while it sat there the incoming question was
+     sliding in UNDERNEATH it, and both questions were legible on top
+     of each other for those ~100ms. That is the reported glitching:
+     not a slow animation, two questions drawn over each other. */
   clone.style.cssText =
     "position:fixed; top:" + rect.top + "px; left:" + rect.left + "px; " +
-    "width:" + rect.width + "px; margin:0; z-index:250; " +
+    "width:" + rect.width + "px; margin:0; z-index:250; animation:none; " +
     "transition:transform .2s cubic-bezier(.32,.72,0,1); pointer-events:none; " +
     "will-change:transform;";
   document.body.appendChild(clone);
@@ -32652,7 +32694,23 @@ function advanceWithSlide(){
   setTimeout(() => {
     clone.remove();
     incoming.style.transform = "";
-    incoming.style.animation = "";
+    /* THE ANIMATION STAYS OFF, and clearing it here was a second,
+       separate hiccup at the end of every single transition.
+       screen-fade-in is `#stage > *{animation:screen-fade-in .3s}` --
+       a 6px translateY settle every mounted screen plays. Setting
+       style.animation back to "" does not mean "it already ran, leave
+       it"; it un-suppresses the CSS rule, and an animation that has
+       been suppressed for its whole duration then starts from frame
+       zero AT THAT MOMENT. Measured: the question finished sliding in
+       at ~200ms and at 215ms jumped 6px down and settled again over
+       the next 300ms. So every question arrived, stopped, and then
+       bumped -- which is the other half of what "the screen was like
+       glitching" was pointing at.
+       This panel does not want a mount animation at all: it was not
+       mounted, it was slid in, and the slide IS its entrance. Nothing
+       else animates .qpanel (the only shake in the app is on the sync
+       code field), so leaving the inline none on it costs nothing and
+       it goes away with the panel at the next question. */
     incoming.style.transition = "";
     /* Cleared once the slide is actually over, not left on
        indefinitely -- will-change keeps a compositor layer (real GPU
@@ -32865,7 +32923,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-100";
+const APP_BUILD = "2026-09-22-104";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -34633,8 +34691,7 @@ function showAppearance(){
       startBtn.textContent = "Start syncing";
       startBtn.addEventListener("click", () => {
         setSyncCode(generateSyncCode());
-        pushToCloud();
-        attachLiveListener(syncCode);
+        onFirebaseReady(() => { pushToCloud(); attachLiveListener(syncCode); });
         renderSyncBody();
         showToast("Sync is on \u2014 your code is ready to view above.");
       });
@@ -35576,8 +35633,6 @@ function showVirtualRoomSetup(){
       startSimpleTour([
         { target: ".pick", align: "left", vplacement: "below",
           text: "Tap a unit to add it to this test. The bar under each one is how close you are to its badge \u2014 35 hundos masters it, and a unit you have mastered shows its badge instead." },
-        { target: ".unit-selection-summary", align: "left", vplacement: "above",
-          text: "This keeps count of how many units and questions you have picked, and updates as you go." },
         { target: "#bottomtab-start", align: "right", vplacement: "above",
           text: "Once you've picked your units, tap here \u2014 it opens a quick summary and lets you set the timer and other options before you begin." }
       ]);
@@ -39637,13 +39692,21 @@ stage.addEventListener("touchend", (e) => {
   if(!t){ if(e.touches.length === 0) endSwipeGesture(); return; }
   const dx = t.clientX - swipeStartX;
   const dy = t.clientY - swipeStartY;
+  /* READ THE LOCK BEFORE CLEARING IT. endSwipeGesture() sets
+     swipeLocked = false, and `const wasLocked = swipeLocked` used to
+     sit BELOW this call - so it read the value the reset had just
+     written and was false on every swipe that ever happened. The whole
+     touchmove lock, which is the thing that makes a real thumb swipe
+     work at all, was being thrown away one line before it was used and
+     every swipe fell back to the strict -55px / 3:1 test it was added
+     to replace. That is why "the swipe still isn't working". */
+  const wasLocked = swipeLocked;
   endSwipeGesture();
   /* A clear, mostly-horizontal left swipe, and only while an actual
      question (with its answer choices) is on screen. */
   /* A locked drag has already proved itself horizontal, so it only has
      to clear a shorter distance; an unlocked one still has to pass the
      old, stricter test. */
-  const wasLocked = swipeLocked;
   if(dx < (wasLocked ? -40 : -55)
      && (wasLocked || Math.abs(dx) > Math.abs(dy) * 3)
      && document.querySelector(".choices")){
@@ -39721,6 +39784,14 @@ loadStore();
    back within a day. Clearing devices on its own leaves the old codes
    working, so anyone who kept one could sign straight back in.
 
+   DISARMED (0) ON BUILD 104, and it must stay that way. The class is
+   using the app live, so a device that has not yet run the wipe - a
+   new install, or one whose localStorage iOS evicted - would have
+   been wiped mid-use and landed back on Welcome with its progress
+   gone. The reset it was written for has already happened; leaving it
+   armed only puts real work at risk now. Raise the number only for a
+   deliberate, announced class-wide reset.
+
    TO DISARM: set FRESH_START back to 0 before this reaches `main`.
    Once a device has run it that device records the number and never
    runs it again, so lowering it afterwards stops future installs but
@@ -39733,7 +39804,7 @@ loadStore();
    would wipe the account again, forever. It is also written BEFORE the
    wipe rather than after, so a crash halfway through costs one reset
    rather than an endless loop. */
-const FRESH_START = 1;
+const FRESH_START = 0;
 const FRESH_START_KEY = "class26e.freshstart";
 (function freshStartOnce(){
   if(!FRESH_START) return;
@@ -39814,14 +39885,21 @@ if(store.onboardingComplete && (store.tourRev || 0) < TOUR_REV){
 }
 
 if(syncCode){
-  const localTimeAtBoot = store.lastModified || 0;
-  pullFromCloud(syncCode, (ok) => {
-    if(ok && store.lastModified > localTimeAtBoot){
-      updateHeaderTitle();
-      if(stage.querySelector(".panel.home")) showHome();
-    }
+  /* onFirebaseReady for the same reason: the Firebase tags are
+     `defer`, so fbDb is null here on EVERY launch without exception,
+     and both of these were simply returning. The retry above used to
+     be the only thing that saved it, and only if the SDK arrived
+     inside 1.5s. */
+  onFirebaseReady(() => {
+    const localTimeAtBoot = store.lastModified || 0;
+    pullFromCloud(syncCode, (ok) => {
+      if(ok && store.lastModified > localTimeAtBoot){
+        updateHeaderTitle();
+        if(stage.querySelector(".panel.home")) showHome();
+      }
+    });
+    attachLiveListener(syncCode);
   });
-  attachLiveListener(syncCode);
 }
 
 /* localStorage came back empty — check the IndexedDB mirror in the
