@@ -2027,6 +2027,25 @@ re-evaluated on the next check.
   and the mount animation stays off; the inline `none` goes away with the
   panel at the next question.
 
+- **PROMOTING THE QUESTION PANEL'S COMPOSITOR LAYER UP FRONT WAS TRIED
+  AND REJECTED, and the reason is text.** `will-change:transform` on
+  the question panel (scoped to `body.has-active-question`) would
+  create its layer at mount rather than mid-gesture, which is a real
+  cost on iOS. But promoting an element drops subpixel antialiasing
+  for greyscale, and this is the most-read text in the app.
+  Pixel-diffed: **3,863 pixels changed on an unanswered iPhone screen,
+  13,571 on an iPad**; `contain:paint` on top made it 19,251 by
+  clipping what paints outside the panel box. **The control — the same
+  build diffed against itself — is 0**, which is what makes those
+  numbers trustworthy rather than run-to-run noise. Always run that
+  control before believing a pixel diff.
+  Measured against it: the slide is **already frame-perfect in
+  Chromium — 16.7ms median, zero frames over 24ms at 1x, 4x and 6x CPU
+  throttle**. So this bought nothing measurable in exchange for worse
+  text. If it is revisited, check on a REAL DEVICE first whether
+  promotion actually costs anything there, because this machine cannot
+  show it.
+
 - **ON AUTO-ADVANCE, THE BIGGEST PART OF THE WAIT BETWEEN QUESTIONS IS
   NOT THE ANIMATION — it is `scheduleAutoAdvance`'s deliberate beat**,
   and it was 500ms against a 170ms slide. Measured end to end from the

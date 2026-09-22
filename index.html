@@ -1488,6 +1488,29 @@
      edge, not scrolling content), so they're excluded outright rather
      than worked around. */
   #stage > *:not(.floatbtn):not(:has(.floatbtn)){ animation:screen-fade-in .3s ease-out; }
+  /* PROMOTING THE QUESTION PANEL'S LAYER UP FRONT WAS TRIED AND
+     REJECTED, with numbers, so nobody spends the afternoon on it
+     again. The idea was sound: advanceWithSlide() sets will-change at
+     the same moment it sets the transform, so the compositor layer is
+     created in the middle of the interaction, and on iOS that lands on
+     the first frames of the animation - exactly where a transition
+     feels rough. `body.has-active-question #stage > .panel{
+     will-change:transform }` would promote it once at mount instead.
+     What it actually does is change how the TEXT RENDERS. Promoting an
+     element to its own layer drops subpixel antialiasing for greyscale,
+     and this is the most-read text in the app. Pixel-diffed against
+     the build without it: 3,863 pixels different on an unanswered
+     iPhone screen, 13,571 on an iPad. The control - the same build
+     diffed against itself - is 0, so that is a real change and not
+     measurement noise. Adding `contain:paint` on top made it worse
+     again (19,251 on an answered iPhone) by clipping what paints
+     outside the panel box.
+     Measured in Chromium the slide is already frame-perfect - 16.7ms
+     median, zero frames over 24ms at 1x, 4x and 6x CPU throttle - so
+     this was buying nothing measurable in exchange for worse text.
+     If it is ever revisited, the thing to check FIRST is whether a
+     real device actually shows a promotion cost, because this machine
+     cannot. */
   /* The question screen is the one place this animation runs back to
      back, dozens of times in a row, on a panel full of backdrop-filter
      surfaces - every one of which is re-sampled on every frame the
