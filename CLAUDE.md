@@ -1540,6 +1540,22 @@ all keyed by them, so renaming a key is a migration for a cosmetic gain.
   391px wide inside a 375px phone. **The screenshots did not show it**,
   because the overflow scrolls sideways rather than clipping; the sweep
   did, and only because the Profile tabs were added to `SCREENS`.
+- **THE UNIT CARD MEASURES ONE THING IN EVERY MODE: the badge, and
+  hundos towards 35.** It is not mode-dependent and must not become so
+  again. A hundo is a full-unit 100% run and `unitPerfectCount` reads
+  `store.unitPerfects`, which Drill, Exam, Game and the Virtual Room
+  all write to — so there has only ever been one number for the card to
+  report. Game used to show its own star and "0/3 speeds beaten"
+  instead, which made the same unit read as two different amounts of
+  progress depending on the mode picked one screen earlier. Reported:
+  *"it's not based on modes, it just needs the badge icon and the 0/35,
+  because the 35 hundos counts from any mode. That goes for any
+  mode."* The Game star still exists and is still earned — it is on the
+  stats popover via `totalStarsFor("game")` — it is simply not what
+  this card is for. The badge leads the row at every width now; the
+  text-first order was Game's, and existed only because Game's marker
+  was an invisible-until-earned star that still reserved its width.
+
 - **`SCREENS` entries may carry arguments** (`"showProfile('badges')"`).
   Profile is four tabs and a bare `showProfile()` lays out only one of
   them, so three quarters of that screen had no gate at all.
