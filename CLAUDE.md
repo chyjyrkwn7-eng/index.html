@@ -1966,6 +1966,24 @@ re-evaluated on the next check.
   behind it because reduce-motion switches transitions off and
   `transitionend` then never fires. **Use it rather than toggling the
   class by hand**, and never give a scrollable region a pixel cap.
+- **A RUNNING ANIMATION BEATS A TRANSITION ON THE SAME PROPERTY**, and that
+  is what made the next-question slide read as "the screen glitching".
+  `advanceWithSlide()` clones the outgoing question and transitions it to
+  `translateX(-100%)` while the incoming panel slides in from the right. The
+  clone was still running `screen-fade-in` — a `translateY` settle — so the
+  animation won and the transition was ignored: measured frame by frame the
+  clone went (0,6) → (0,2.4) → (0,0.87) → (0,0.07) over ~100ms and only then
+  snapped to -400. The outgoing question never slid; it sat in place and
+  wobbled. And **`.panel` has a fully transparent background**
+  (`rgba(0,0,0,0)`, measured), so the incoming question slid in *underneath*
+  it and both were legible at once. The incoming panel had carried
+  `animation="none"` for exactly this reason for a long time; the clone never
+  did. **Frame-drop numbers cannot see this** — the "before" build dropped
+  frames, the fixed one did not, and both readings were consistent with a
+  perfectly smooth animation of the wrong thing. It took capturing real
+  frames off the compositor (`Page.startScreencast`) and logging BOTH
+  transforms per frame.
+
 - **Adjacent vertical margins collapse to the larger, they don't add.** A gap
   "smaller than the two margins suggest" is collapse, not specificity.
 - **Don't copy the corner-positioning formula from `.daily-question-fab` /

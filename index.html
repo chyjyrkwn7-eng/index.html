@@ -32603,9 +32603,25 @@ function advanceWithSlide(){
      question panel is real work that happens in between), gives the
      browser the most possible lead time to do that promotion off the
      animation's own critical path. */
+  /* animation:none IS THE GLITCH FIX, and it is the same fix the
+     INCOMING panel already had for the same reason - it simply never
+     got applied to the outgoing clone.
+     The panel being cloned is usually still running screen-fade-in (a
+     translateY settle). A running animation beats a transition on the
+     same property, so the clone ignored the translateX(-100%) set
+     below and instead played out the tail of that vertical settle -
+     measured frame by frame, its transform went (0,6) to (0,2.4) to
+     (0,0.87) to (0,0.07) over about 100ms and only THEN snapped to
+     -400. So the outgoing question did not slide away at all: it sat
+     there, wobbled a pixel, and vanished.
+     And .panel has a fully transparent background - measured
+     rgba(0,0,0,0) - so while it sat there the incoming question was
+     sliding in UNDERNEATH it, and both questions were legible on top
+     of each other for those ~100ms. That is the reported glitching:
+     not a slow animation, two questions drawn over each other. */
   clone.style.cssText =
     "position:fixed; top:" + rect.top + "px; left:" + rect.left + "px; " +
-    "width:" + rect.width + "px; margin:0; z-index:250; " +
+    "width:" + rect.width + "px; margin:0; z-index:250; animation:none; " +
     "transition:transform .2s cubic-bezier(.32,.72,0,1); pointer-events:none; " +
     "will-change:transform;";
   document.body.appendChild(clone);
@@ -32865,7 +32881,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-100";
+const APP_BUILD = "2026-09-22-101";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
