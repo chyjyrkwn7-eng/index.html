@@ -32581,7 +32581,7 @@ function advanceWithSlide(){
   clone.style.cssText =
     "position:fixed; top:" + rect.top + "px; left:" + rect.left + "px; " +
     "width:" + rect.width + "px; margin:0; z-index:250; " +
-    "transition:transform .32s cubic-bezier(.32,.72,0,1); pointer-events:none; " +
+    "transition:transform .2s cubic-bezier(.32,.72,0,1); pointer-events:none; " +
     "will-change:transform;";
   document.body.appendChild(clone);
 
@@ -32605,10 +32605,24 @@ function advanceWithSlide(){
   // Force layout so the starting position is actually committed before
   // the transition below is allowed to animate toward its own target.
   void incoming.offsetWidth;
-  incoming.style.transition = "transform .32s cubic-bezier(.32,.72,0,1)";
+  incoming.style.transition = "transform .2s cubic-bezier(.32,.72,0,1)";
+  /* TWO frames, not one. advance() above rebuilds the whole next
+     question synchronously - new text, new choice buttons, each with
+     its own borders and radii - and that work lands between the clone
+     being inserted and this transform being set. With a single rAF the
+     browser was still doing that layout and paint on the very frame
+     the animation was supposed to start on, so the slide began by
+     dropping frames: the stutter reads as the transition itself being
+     slow. Giving it one clear frame to settle first means the
+     animation starts on a laid-out, already-promoted layer.
+     It costs ~16ms and removes far more than that in dropped frames.
+     The duration came down from .32s to .2s in the same pass; .32s was
+     simply longer than it needed to be for a slide this short. */
   requestAnimationFrame(() => {
-    clone.style.transform = "translateX(-100%)";
-    incoming.style.transform = "translateX(0)";
+    requestAnimationFrame(() => {
+      clone.style.transform = "translateX(-100%)";
+      incoming.style.transform = "translateX(0)";
+    });
   });
   setTimeout(() => {
     clone.remove();
@@ -32622,7 +32636,7 @@ function advanceWithSlide(){
        on every future static render of this same panel. */
     incoming.style.willChange = "";
     slideTransitionInFlight = false;
-  }, 340);
+  }, 215);
 }
 
 function advance(){
@@ -32826,7 +32840,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-98";
+const APP_BUILD = "2026-09-22-99";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -35345,7 +35359,14 @@ function showVirtualRoomSetup(){
     return btn;
   });
   timeSect.appendChild(timeRow);
-  panel.appendChild(timeSect);
+  /* NOT appended to the page. It goes into the Review & Start sheet
+     below instead, per explicit request. The note above used to argue
+     the opposite - that a time limit is a primary, mode-defining
+     choice like Game's Speed grid and so belongs beside the units -
+     and that reasoning is superseded: the sheet is where every other
+     "how should this run go" answer already lives, and the unit list
+     is long enough that a control under it is easy to walk straight
+     past on the way to Start. */
 
   /* --- start: floating pill + "Review & Start" bottom sheet \u2014 the
      same pattern Drill/Exam/Game's own showSetup() uses, replacing the
@@ -35379,6 +35400,7 @@ function showVirtualRoomSetup(){
   const sheetSummaryTime = document.createElement("p");
   sheetSummaryTime.className = "sheet-summary-line";
   sheetSummary.append(sheetSummaryMode, sheetSummaryLine, sheetSummaryTime);
+  optionsModalBody.appendChild(timeSect);
   optionsModalBody.appendChild(sheetSummary);
 
   /* The actual "go" action, matching showSetup()'s own beginBtn \u2014
@@ -38925,6 +38947,7 @@ pauseBtn.addEventListener("click", pauseRun);
 
 /* ---------- swipe to advance (optional, Appearance) ---------------------- */
 
+let swipeLocked = false;
 let swipeStartX = null;
 let swipeTouchId = null;
 let swipeStartY = null;
@@ -39551,15 +39574,43 @@ function applyGlassRefraction(el, mapImgId){
    and a second finger abandons the gesture rather than redefining it. */
 stage.addEventListener("touchstart", (e) => {
   if(!theme.swipeAdvance) return;
-  if(e.touches.length !== 1){ swipeStartX = null; swipeStartY = null; swipeTouchId = null; return; }
+  if(e.touches.length !== 1){ swipeStartX = null; swipeStartY = null; swipeTouchId = null; swipeLocked = false; return; }
   const t = e.touches[0];
   swipeTouchId = t.identifier;
   swipeStartX = t.clientX;
   swipeStartY = t.clientY;
+  swipeLocked = false;
 }, { passive: true });
 
-function endSwipeGesture(){ swipeStartX = null; swipeStartY = null; swipeTouchId = null; }
+function endSwipeGesture(){
+  swipeStartX = null; swipeStartY = null; swipeTouchId = null; swipeLocked = false;
+}
 stage.addEventListener("touchcancel", endSwipeGesture, { passive: true });
+
+/* THE REASON THIS GESTURE DID NOT FIRE, and it is the same one the tab
+   swipe was fixed for months ago - the fix simply never reached here.
+   With no touchmove handling at all, the browser's own vertical scroll
+   claims the gesture the instant a real thumb drifts off horizontal.
+   A question panel is tall enough to scroll, so by the time touchend
+   arrives the page has scrolled and dy has grown past the ratio test
+   below: the swipe silently fails and the question never advances.
+   Once the drag is clearly more sideways than vertical, claim it
+   before the native scroll can. An ordinary vertical scroll never
+   crosses that threshold, so scrolling a long question still works.
+   passive:false is required - preventDefault does nothing otherwise,
+   which is exactly how a listener like this ends up looking present
+   and doing nothing. */
+stage.addEventListener("touchmove", (e) => {
+  if(!theme.swipeAdvance || swipeStartX === null) return;
+  let t = null;
+  for(let i = 0; i < e.touches.length; i++){
+    if(e.touches[i].identifier === swipeTouchId){ t = e.touches[i]; break; }
+  }
+  if(!t) return;
+  const dx = t.clientX - swipeStartX, dy = t.clientY - swipeStartY;
+  if(!swipeLocked && Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) swipeLocked = true;
+  if(swipeLocked) e.preventDefault();
+}, { passive: false });
 
 stage.addEventListener("touchend", (e) => {
   if(!theme.swipeAdvance || swipeStartX === null) return;
@@ -39573,9 +39624,20 @@ stage.addEventListener("touchend", (e) => {
   endSwipeGesture();
   /* A clear, mostly-horizontal left swipe, and only while an actual
      question (with its answer choices) is on screen. */
-  if(dx < -55 && Math.abs(dx) > Math.abs(dy) * 3 && document.querySelector(".choices")){
+  /* A locked drag has already proved itself horizontal, so it only has
+     to clear a shorter distance; an unlocked one still has to pass the
+     old, stricter test. */
+  const wasLocked = swipeLocked;
+  if(dx < (wasLocked ? -40 : -55)
+     && (wasLocked || Math.abs(dx) > Math.abs(dy) * 3)
+     && document.querySelector(".choices")){
     const next = document.getElementById("nextbtn");
-    if(next && !next.hidden && !next.disabled) next.click();
+    /* advanceWithSlide() directly rather than next.click(): the button
+       is only a way to reach it, and going through a synthetic click
+       meant the gesture depended on the button being hit-testable as
+       well as visible. Its own re-entry guard still covers a double
+       swipe. */
+    if(next && !next.hidden && !next.disabled) advanceWithSlide();
   }
 }, { passive: true });
 
