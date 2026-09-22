@@ -23885,7 +23885,15 @@ function applySaved(){
       if(store.opts[k] !== undefined) cfg[k] = store.opts[k];
     });
   }
-  if(store.units) cfg.units = store.units.slice();
+  /* UNITS ARE NOT RESTORED, per explicit request - "if I select units
+     and then leave that screen they shouldn't still be checked". They
+     used to persist, so switching from Drill to Exam arrived with the
+     previous mode's selection already ticked and it was easy to start
+     a test over units you had picked for something else. Every visit
+     to unit selection now starts empty. store.units is still written
+     by rememberConfig (harmless, and it keeps the shape of the saved
+     object stable for anything already storing it); nothing reads it
+     back. */
   cfg.source = "all";   // never open straight into a weak-list run
 }
 
@@ -31300,7 +31308,11 @@ function showSetup(){
       }
     });
   };
-  panel.appendChild(speedSect);
+  /* Speed goes into the Review & Start sheet, not onto the page,
+     per explicit request. It is the same argument the time limit
+     just lost: the sheet is where every other "how should this run
+     go" answer lives, and a control under a long unit list is easy
+     to walk straight past on the way to Start. */
 
   const recentCount = recentMissedIndexes().length;
   const flaggedCount = flaggedIndexes().length;
@@ -31382,7 +31394,7 @@ function showSetup(){
   moreToggle.className = "more-toggle";
   moreToggle.setAttribute("aria-expanded", "false");
   const moreToggleText = document.createElement("span");
-  moreToggleText.textContent = "Timer & options";
+  moreToggleText.textContent = "Timer";
   const moreToggleIcon = document.createElement("span");
   moreToggleIcon.className = "more-toggle-icon";
   moreToggleIcon.setAttribute("aria-hidden", "true");
@@ -31404,12 +31416,12 @@ function showSetup(){
     [{ value: "off", label: "Off" }, { value: "up", label: "Stopwatch" },
      { value: "down", label: "Countdown" }],
     () => cfg.timer, v => { cfg.timer = v; });
-  moreBodyInner.appendChild(timerSect);
+  optionsModalBody.appendChild(timerSect);
 
   const minutesSect = plainSlider("Time limit", 5, 90, 5,
     () => cfg.timerMinutes, v => { cfg.timerMinutes = v; },
     v => v + " min");
-  moreBodyInner.appendChild(minutesSect);
+  optionsModalBody.appendChild(minutesSect);
 
   /* --- toggles --- */
   const optSect = document.createElement("div");
@@ -31461,8 +31473,22 @@ function showSetup(){
      cfg.revealCorrect survives as a defaulted, unreadable field (see
      applySaved) so an account that had it switched on does not come
      back with answers revealed and no control left to switch it off. */
-  moreBodyInner.appendChild(optSect);
-  optionsModalBody.appendChild(moreWrap);
+  optionsModalBody.appendChild(optSect);
+  /* THE SHEET IS A FLAT, LABELLED LIST NOW, per explicit request that
+     it reads confusingly in Drill. What it had was one disclosure
+     called "Timer & options" holding two unrelated things - the timer
+     AND the shuffle/recall toggles - so in Drill the settings that
+     change how the run behaves were hidden behind a control whose
+     label only described half of them, under two sections (Draw from,
+     Length) that were already visible. Two levels, an ambiguous name,
+     and no way to see what you had set without opening it.
+     Every section is on the sheet directly now, each under its own
+     heading, in the order you would decide them: what to draw from,
+     how many, how fast (Game), the timer, then the options. Nothing is
+     hidden, so nothing has to be named vaguely enough to cover a mix.
+     Speed sits here rather than on the page for the same reason the
+     time limit does. */
+  optionsModalBody.appendChild(speedSect);
 
   /* The actual "go" action for this sheet \u2014 everything Start used to
      do immediately (rememberConfig, build the pool, beginRun) now
@@ -31630,9 +31656,11 @@ function showSetup(){
      themselves. Sits just above that same bottom bar so both pieces
      of information (what you've picked, and the button to act on it)
      are visible together at all times, not just the button alone. */
-  const selectionSummary = document.createElement("div");
-  selectionSummary.className = "unit-selection-summary";
-  panel.appendChild(selectionSummary);
+  /* The floating "N units selected - N questions" pill is GONE, per
+     explicit request, on every mode. It restated what the checked
+     cards already show, it sat over the list in white, and the same
+     two numbers are on the Review & Start sheet a tap away - which is
+     where you are about to look anyway. */
 
   const bar = document.createElement("div");
   bar.className = "startbar";
@@ -31674,20 +31702,12 @@ function showSetup(){
     aboutTake.textContent = cfg.units.length === 0 ? "" :
       "Taking: " + (cfg.units.length === all.length ? "All units" : cfg.units.join(", "));
 
-    /* Same n and cfg.units.length already computed just above for
-       aboutTake \u2014 no separate recalculation needed, just a second,
-       always-visible place for the same numbers to show up. */
-    if(cfg.units.length === 0){
-      selectionSummary.hidden = true;
-    } else {
-      selectionSummary.hidden = false;
-      selectionSummary.textContent = cfg.units.length + (cfg.units.length === 1 ? " unit" : " units") +
-        " selected \u00b7 " + n + (n === 1 ? " question" : " questions");
-    }
-
-    speedSect.hidden = !isGame;
-    timerSect.hidden = isGame;
-    minutesSect.hidden = cfg.timer !== "down" || isGame;
+    /* One answer per section, in one place. These used to be split
+       across two spots in this function - the wrapper's own hidden
+       rule and these - which is how a section ends up with two rules
+       that disagree. */
+    speedSect.hidden = !isGame || reviewAllMode;
+    minutesSect.hidden = cfg.timer !== "down" || isGame || reviewAllMode;
     /* The whole "Timer & options" toggle hidden for Game specifically
        (matching timerSect's own condition, not Exam's) — every row
        inside it (timer, recall, shuffle, reveal) was already excluded
@@ -31702,7 +31722,12 @@ function showSetup(){
        Length, and this whole Timer & options toggle, recall/shuffle/
        reveal included), since none of them mean anything once you're
        just browsing every Q&A instead of running a drill. */
-    moreWrap.hidden = isGame || reviewAllMode;
+    /* Review mode hides everything that is not about reading the
+       questions back; the individual sections below already answer
+       their own mode questions (speedSect for Game, timerSect for
+       everything else), so there is no longer a wrapper to hide. */
+    timerSect.hidden = isGame || reviewAllMode;
+    optSect.hidden = isGame || reviewAllMode;
     recallRow.hidden = isGame || isExam;
     shuffleRow.hidden = isGame || isExam;
     reviewSect.hidden = isGame || isExam;
@@ -32840,7 +32865,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-99";
+const APP_BUILD = "2026-09-22-100";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -35378,9 +35403,8 @@ function showVirtualRoomSetup(){
      "go" action (createVirtualRoomLobby) is a lobby write, not a run.
      Every class name below is one showSetup() already defines the CSS
      for, so this matches it pixel-for-pixel with no new styling. */
-  const selectionSummary = document.createElement("div");
-  selectionSummary.className = "unit-selection-summary";
-  panel.appendChild(selectionSummary);
+  /* The Virtual Room has its own copy of that floating pill and it
+     goes for the same reason - "REMOVE FOR ALL MODES". */
 
   const bar = document.createElement("div");
   bar.className = "startbar";
@@ -35489,14 +35513,6 @@ function showVirtualRoomSetup(){
   function refresh(){
     const n = [...picked].reduce((sum, name) =>
       sum + QUESTIONS.filter(x => (x.topic || "").trim() === name).length, 0);
-
-    if(picked.size === 0){
-      selectionSummary.hidden = true;
-    } else {
-      selectionSummary.hidden = false;
-      selectionSummary.textContent = picked.size + (picked.size === 1 ? " unit" : " units") +
-        " selected \u00b7 " + n + (n === 1 ? " question" : " questions");
-    }
 
     sheetSummaryLine.textContent = picked.size === 0
       ? "No units selected yet"
