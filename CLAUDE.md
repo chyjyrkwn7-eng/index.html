@@ -1540,6 +1540,16 @@ all keyed by them, so renaming a key is a migration for a cosmetic gain.
   391px wide inside a 375px phone. **The screenshots did not show it**,
   because the overflow scrolls sideways rather than clipping; the sweep
   did, and only because the Profile tabs were added to `SCREENS`.
+- **THERE IS ONE UNIT-CARD BUILDER, `appendUnitProgress(row, name)`,
+  AND BOTH SCREENS THAT DRAW UNIT CARDS CALL IT.** The test setup
+  screen and the Virtual Room's unit list each had their own markup;
+  the Virtual Room's was a checkbox, a name and a question count and
+  nothing else, so its units looked like a different app's. *"It should
+  look just how the drill mode unit cards look. All modes should have
+  that same look."* This is the same mistake the rankings boards made
+  with `decorateAvatar()` — the fix goes in the builder, the screen
+  that matters never calls it — so the cure is the same: one function,
+  both call sites. A new screen that lists units calls it too.
 - **THE UNIT CARD MEASURES ONE THING IN EVERY MODE: the badge, and
   hundos towards 35.** It is not mode-dependent and must not become so
   again. A hundo is a full-unit 100% run and `unitPerfectCount` reads

@@ -30760,6 +30760,72 @@ function showPracticeTestConfirm(){
   toTop();
 }
 
+/* ONE BUILDER FOR THE UNIT CARD'S PROGRESS, because there are two
+   screens that draw unit cards and they had drifted. The test setup
+   screen (showSetup) had the badge, the bar and the count; the Virtual
+   Room's unit list had none of it - a bare checkbox, a name and a
+   question count. Asked for directly: "it should look just how the
+   drill mode unit cards look. All modes should have that same look."
+   A hundo is a full-unit 100% run and unitPerfectCount reads
+   store.unitPerfects, which Drill, Exam, Game and the Virtual Room all
+   write to, so there is exactly one number here and no screen has any
+   business showing a different one. This file already has a note about
+   what two row builders for one idea costs - the rankings boards kept
+   a level chip for weeks after it was taken off everywhere else,
+   because the fix went into decorateAvatar() and the boards never
+   called it. Same mistake, same cure: one function, both call sites. */
+function appendUnitProgress(row, name){
+  const starsWrap = document.createElement("span");
+  starsWrap.className = "pick-stars";
+  const earned = unitDrillStarEarned(name);
+  const badgeMark = document.createElement("span");
+  badgeMark.className = "pick-badge" + (earned ? " earned" : "");
+  badgeMark.appendChild(buildUnitBadgeSVG(name, earned));
+  badgeMark.title = earned ? name + " badge earned" : name + " badge not yet earned";
+  /* Blank, and kept only because the grid reserves a cell for it - the
+     count rides on the bar instead ("the way it shows 0/35 is bad ...
+     it needs to be in the progress bar"). */
+  const progLabel = document.createElement("span");
+  progLabel.className = "pick-progress-label";
+  progLabel.textContent = "";
+  const perfectCount = unitPerfectCount(name);
+  const progCurrent = Math.min(perfectCount, BADGE_THRESHOLD);
+  const progMax = BADGE_THRESHOLD;
+  /* A mastered unit says so with its badge and nothing else - the word
+     and the running count were the same fact twice over. */
+  const barCount = earned ? "" : perfectCount + " / " + BADGE_THRESHOLD;
+  /* Badge first at every width. The old text-first order was Game's,
+     and existed only because Game's marker was a star that stayed
+     invisible until earned while still reserving its width. */
+  starsWrap.appendChild(badgeMark);
+  starsWrap.appendChild(progLabel);
+  row.appendChild(starsWrap);
+  /* A 3px hairline, and only while there is progress left to make: a
+     mastered unit shows its badge and no bar, so the list only draws
+     bars for the units still going. The number sits beside the track
+     rather than inside it - nothing legible fits inside 3px - and both
+     go in the BADGE's row, because the badge is what the bar is
+     filling towards. */
+  if(progCurrent < progMax){
+    const barRow = document.createElement("span");
+    barRow.className = "pick-barrow";
+    const barTrack = document.createElement("span");
+    barTrack.className = "pick-bar-track";
+    const barFill = document.createElement("span");
+    barFill.className = "pick-bar-fill";
+    barFill.style.width = Math.round((progCurrent / progMax) * 1000) / 10 + "%";
+    barTrack.appendChild(barFill);
+    barRow.appendChild(barTrack);
+    if(barCount){
+      const barNum = document.createElement("span");
+      barNum.className = "pick-bar-count";
+      barNum.textContent = barCount;
+      barRow.appendChild(barNum);
+    }
+    starsWrap.appendChild(barRow);
+  }
+}
+
 function showSetup(){
   stopTimer(); stopQuestionTimer();
   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
@@ -30877,108 +30943,7 @@ function showSetup(){
     count.className = "pcount";
     count.textContent = QUESTIONS.filter(x => (x.topic || "").trim() === name).length + " questions";
     row.appendChild(count);
-    const starsWrap = document.createElement("span");
-    starsWrap.className = "pick-stars";
-    const drillStarEarned = unitDrillStarEarned(name);
-    const gameStarEarned = unitGameStarEarned(name);
-    /* ONE MARKER AND ONE NUMBER, THE SAME IN EVERY MODE - the badge,
-       and hundos towards 35. A hundo is a full-unit 100% run and
-       `unitPerfectCount` reads store.unitPerfects, which every mode
-       writes to: Drill, Exam, Game and the Virtual Room all credit the
-       same counter. So the unit card has only ever had one thing to
-       report, and the mode being set up does not change it.
-       Game used to show its own star and its own "0/3 speeds beaten"
-       here instead, which said something true about Game but was not
-       what the card is for, and made the same unit read as two
-       different amounts of progress depending on which mode you had
-       picked. Reported directly: "it's not based on modes, it just
-       needs the badge icon and the 0/35, because the 35 hundos counts
-       from any mode. That goes for any mode."
-       The Game star itself still exists and is still earned - it is on
-       the stats popover, via totalStarsFor("game"). It is simply not
-       what this card measures. */
-    const badgeMark = document.createElement("span");
-    badgeMark.className = "pick-badge" + (drillStarEarned ? " earned" : "");
-    badgeMark.appendChild(buildUnitBadgeSVG(name, drillStarEarned));
-    badgeMark.title = drillStarEarned ? name + " badge earned" : name + " badge not yet earned";
-    const activeStarIcon = badgeMark;
-
-    const progLabel = document.createElement("span");
-    progLabel.className = "pick-progress-label";
-    let progCurrent = 0, progMax = 1;
-    /* The number rides ON the bar rather than sitting beside it -
-       "the way it shows 0/35 is bad ... it needs to be in the progress
-       bar". */
-    let barCount = "";
-    const perfectCount = unitPerfectCount(name);
-    /* A mastered unit says so with its badge and nothing else. It used
-       to read "Mastered - 1,204" beside the badge, which is the same
-       fact three times: the badge is the award, the word repeats it,
-       and the running count is a number nobody is working towards any
-       more. Per explicit request both come off once it is earned.
-       Still counting up to it, the count is the whole point. */
-    progLabel.textContent = "";
-    progCurrent = Math.min(perfectCount, BADGE_THRESHOLD);
-    progMax = BADGE_THRESHOLD;
-    barCount = drillStarEarned ? "" : perfectCount + " / " + BADGE_THRESHOLD;
-    /* Text first, star second — per explicit report, the progress
-       text (the actually meaningful part) needs to sit to the left,
-       not pushed right past the star's own reserved width first. On
-       the narrow 2-per-row card layout, that reserved width (even
-       while the star itself is invisible pre-earn) was exactly what
-       ran "0/40 perfect runs" past the card's right edge. Putting the
-       text flush at the start of the row instead gives it the most
-       room, with the small star glyph now trailing at the end where
-       it's the one that can get tight against the edge instead. */
-    /* Badge first now, then the label. The note above about text-first
-       was written when the marker was a star that stayed INVISIBLE
-       until earned and still reserved its width - a badge is drawn
-       either way, so leading with it costs nothing and gives the
-       glyph the edge that cannot get clipped. */
-    /* Badge first in EVERY mode. The text-first order was Game's, and
-       it existed because Game's marker was an invisible-until-earned
-       star that still reserved its width. There is no such marker any
-       more - the badge is drawn either way - so there is nothing left
-       for the two orders to disagree about. */
-    starsWrap.appendChild(activeStarIcon);
-    starsWrap.appendChild(progLabel);
-    row.appendChild(starsWrap);
-
-    /* A bar again, per explicit request, and deliberately not the one
-       that was taken out before: that was a thick bar under every card
-       and read as clutter down a long list. This is a 3px hairline
-       that only appears while there is progress left to make - a
-       mastered unit shows its badge and its count and no bar at all,
-       so the list only draws bars for the units still going. */
-    if(progMax > 1 && progCurrent < progMax){
-      /* One row, not two things stacked: the bar and its number read as
-         a single instrument. The bar keeps the 3px it was liked at -
-         "I like how thin the progress bar is" - and the number sits on
-         its line rather than inside it, because nothing legible fits
-         inside 3px. */
-      const barRow = document.createElement("span");
-      barRow.className = "pick-barrow";
-      const barTrack = document.createElement("span");
-      barTrack.className = "pick-bar-track";
-      const barFill = document.createElement("span");
-      barFill.className = "pick-bar-fill";
-      barFill.style.width = Math.round((progCurrent / progMax) * 1000) / 10 + "%";
-      barTrack.appendChild(barFill);
-      barRow.appendChild(barTrack);
-      if(barCount){
-        const barNum = document.createElement("span");
-        barNum.className = "pick-bar-count";
-        barNum.textContent = barCount;
-        barRow.appendChild(barNum);
-      }
-      /* Into the badge's own row, not a row of its own below it. The
-         badge is what the bar is filling towards, and two separate rows
-         made them read as two unrelated pieces of furniture with dead
-         space between - which is most of what "seems kinda boring and
-         lame" was about. Side by side they are one instrument: the
-         award, how far along it is, and the number. */
-      starsWrap.appendChild(barRow);
-    }
+    appendUnitProgress(row, name);
 
     const bestMs = bestMsForUnitAnyMode(name);
     if(bestMs != null){
@@ -32884,7 +32849,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-106";
+const APP_BUILD = "2026-09-22-107";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -35326,6 +35291,12 @@ function showVirtualRoomSetup(){
     count.className = "pcount";
     count.textContent = QUESTIONS.filter(x => (x.topic || "").trim() === name).length + " questions";
     row.appendChild(count);
+    /* The same badge, bar and count the test setup screen draws. This
+       list had none of it - a checkbox, a name and a question count -
+       so the Virtual Room's units looked like a different app's. A
+       Virtual Room run credits hundos exactly like every other mode
+       does, so there was never a reason for its cards to say less. */
+    appendUnitProgress(row, name);
     list.appendChild(row);
   });
   unitSect.appendChild(list);
