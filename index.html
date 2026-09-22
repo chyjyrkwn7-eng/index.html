@@ -1426,6 +1426,29 @@
     -webkit-tap-highlight-color:transparent;
     -webkit-user-select:none; user-select:none;
   }
+  /* THE ACTUAL REASON SWIPE-TO-ADVANCE DID NOT WORK ON A PHONE, and
+     the reason it always passed here.
+     `body` is touch-action:pan-y, which is what hands the HORIZONTAL
+     axis to the app and lets the swipe gesture claim it. But every
+     answer choice is a <button>, and the rule directly above resets
+     buttons to `manipulation` - which gives BOTH axes back to the
+     browser. The choices fill most of the question screen, so a real
+     thumb swipe almost always starts on one: iOS took the horizontal
+     gesture before the touchmove handler could preventDefault, and by
+     the time the finger lifted the page had moved instead of the
+     question.
+     Chromium never showed this. It honours a JS preventDefault far
+     more readily than iOS does, so the gesture "worked" in every
+     harness run while failing on the device - which is exactly the
+     shape of bug this file warns about elsewhere. touch-action is
+     DECLARATIVE: it settles who owns the axis before the first
+     touchmove ever fires, instead of racing the browser for it.
+     Scoped to the question screen so nothing else changes: pan-y
+     still allows vertical scrolling of a long question, and only the
+     horizontal axis comes back to the app. */
+  body.has-active-question #stage .panel,
+  body.has-active-question #stage .panel button,
+  body.has-active-question #nextbtn{ touch-action:pan-y; }
 
   body{
     background:var(--paper); color:var(--ink);
@@ -4045,18 +4068,21 @@
      The 16rem cap came off with them: it made the XP box a narrow card
      sitting under a full-width one. */
   .points-breakdown,
-  .results-level{
+  .results-level,
+  .results-review{
     margin:1.1rem 0 1.3rem; padding:.9rem 1rem; background:var(--panel);
     border:1px solid var(--rule); border-radius:2px;
   }
   [data-layout="modern"] .points-breakdown,
-  [data-layout="modern"] .results-level{
+  [data-layout="modern"] .results-level,
+  [data-layout="modern"] .results-review{
     background:rgba(255,255,255,.55); border:1px solid rgba(255,255,255,.5); border-radius:14px;
     will-change:backdrop-filter; backdrop-filter:blur(16px) saturate(1.5); -webkit-backdrop-filter:blur(16px) saturate(1.5);
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .points-breakdown,
-  [data-theme="dark"][data-layout="modern"] .results-level{
+  [data-theme="dark"][data-layout="modern"] .results-level,
+  [data-theme="dark"][data-layout="modern"] .results-review{
     background:rgba(28,33,40,.55); border:1px solid rgba(255,255,255,.09);
     box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.06);
   }
@@ -5257,6 +5283,26 @@
   .review .rq{ font-family:var(--serif); font-size:1.05rem; line-height:1.45; }
   .review .ra{ font-size:.88rem; color:var(--soft); margin-top:.3rem; }
 
+  /* THE THIRD BLOCK ON THE RESULTS SCREEN WAS THE ONLY ONE WITHOUT A
+     CARD, which is most of why the screen did not read as one thing.
+     The XP breakdown and the level bar sat in matched surfaces and
+     then "Nothing to review" was bare text underneath them, so the
+     screen went card, card, loose paragraph, buttons.
+     Its hierarchy was also inverted: the heading used .qnum (small,
+     grey, the label style) and the body used .qtext (the QUESTION
+     text style - large, bold, serif). Small grey title over big bold
+     body is backwards everywhere else in the app. Inside this card
+     the title is the bold one and the body is soft, like every other
+     card on the screen. */
+  .results-review .qnum{
+    font-size:.95rem; font-weight:700; color:var(--ink); margin:0 0 .45rem;
+  }
+  .results-review .qtext{
+    font-family:inherit; font-size:.92rem; font-weight:500; line-height:1.45;
+    color:var(--soft); margin:0;
+  }
+  .results-review .review{ margin:0; }
+  .results-review .review li:last-child .ra{ margin-bottom:0; }
   .actions{ display:flex; gap:.6rem; flex-wrap:wrap; }
   /* Both buttons sharing the row equally, per explicit request \u2014
      specifically for "Retake missed questions (N)" beside "Main
@@ -5266,6 +5312,13 @@
      (e.g. "New run" / "Main menu") are already similar lengths and
      don't have this problem. */
   .actions.actions-equal-width button{ flex:1 1 0; }
+  /* Every results pair is equal-width now, not just the long one. The
+     note above reasoned that "New run" / "Main menu" were close enough
+     in length not to need it - measured on a device they are visibly
+     different widths, and two differently-sized pills sitting side by
+     side is exactly the mismatch that rule exists to stop. One row,
+     two halves, whatever the words are. */
+  .actions.actions-results button{ flex:1 1 0; min-width:0; }
 
   .err{ border-left:6px solid var(--wrong); padding:.5rem 0 .5rem 1rem; font-size:.95rem; }
 
@@ -8629,7 +8682,8 @@
   [data-layout="modern"] .unlock-row.got{ border-color:var(--accent); }
   [data-layout="modern"] .info-note{ border-radius:10px; }
   [data-layout="modern"] .points-breakdown,
-  [data-layout="modern"] .results-level{ border-radius:10px; }
+  [data-layout="modern"] .results-level,
+  [data-layout="modern"] .results-review{ border-radius:10px; }
   [data-layout="modern"] .achbar-detail{ border-radius:10px; }
   [data-layout="modern"] .levelup{ border-radius:10px; }
   [data-layout="modern"] .homestat-card, [data-layout="modern"] .homenext-card{ box-shadow:0 2px 8px rgba(18,26,32,.06); }
@@ -32898,7 +32952,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-109";
+const APP_BUILD = "2026-09-22-110";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -33996,10 +34050,16 @@ function summarize(){
   }
 
   if(!isMissedRetake){
+    /* One card, like the XP breakdown and the level bar above it.
+       This block used to sit bare on the panel underneath two carded
+       ones, which is most of why the screen read as a pile rather
+       than a set. */
+    const reviewCard = document.createElement("div");
+    reviewCard.className = "results-review";
     const head = document.createElement("p");
     head.className = "qnum";
     head.textContent = missed.length ? "Review these" : "Nothing to review";
-    panel.appendChild(head);
+    reviewCard.appendChild(head);
 
     if(missed.length){
       const ul = document.createElement("ul");
@@ -34027,19 +34087,24 @@ function summarize(){
         li.appendChild(box);
         ul.appendChild(li);
       });
-      panel.appendChild(ul);
+      reviewCard.appendChild(ul);
     } else {
       const p = document.createElement("p");
       p.className = "qtext";
       p.textContent = runMode === "exam"
         ? "You got every question right."
         : "You cleared every question on the first try.";
-      panel.appendChild(p);
+      reviewCard.appendChild(p);
     }
+    panel.appendChild(reviewCard);
   }
 
   const actions = document.createElement("div");
-  actions.className = "actions";
+  /* actions-results: both buttons share the row equally. They are a
+     pair of equals here - neither is the obvious next step - and two
+     pills of different widths sitting side by side was the last thing
+     on this screen that did not line up with anything else. */
+  actions.className = "actions actions-results";
 
   /* Trimmed down to at most two buttons per scenario, picked for what's
      actually most useful right then, instead of offering every possible
