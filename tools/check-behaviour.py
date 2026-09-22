@@ -611,6 +611,98 @@ def check_review_reach(br):
         ctx.close()
 
 
+def _answer(pg):
+    """Answer the question on screen correctly, whatever it is."""
+    pg.evaluate("""()=>{ const all=[...document.querySelectorAll('.choice')];
+      const qi=order[pos], oo=optionOrder(qi);
+      all[oo.indexOf(QUESTIONS[qi].answer)].click(); }""")
+
+
+def check_slide(br):
+    """The next question SLIDES, and nothing else moves after it.
+
+    Reported as "the lag it has when it goes to the next question was
+    so bad the screen was like glitching", and it was two defects in
+    one function, both invisible to a frame-drop count.
+
+    1. advanceWithSlide() clones the outgoing question and transitions
+       the clone to translateX(-100%), but the clone was still running
+       screen-fade-in - a translateY settle - and a running animation
+       beats a transition on the SAME property. So the clone ignored
+       the slide and played out the tail of the settle instead: it sat
+       there, moved a pixel, and snapped away at the end. .panel has a
+       fully transparent background, so the incoming question slid in
+       UNDERNEATH it and both were legible at once. That is what this
+       checks by geometry: the two boxes must never overlap on screen.
+
+    2. The cleanup then set incoming.style.animation = "", which does
+       not mean "it already ran, leave it" - it un-suppresses the CSS
+       rule and an animation suppressed for its whole duration starts
+       from frame zero at that moment. The question finished sliding in
+       and then jumped 6px down and settled again. So this also asserts
+       nothing is animating the panel once the slide is over.
+
+    setTimeout is stubbed for the one 215ms cleanup call, and only for
+    the length of the call, so the clone survives long enough to be
+    measured. Everything about the slide itself is the app's own code.
+    """
+    print("\n8. the next question slides in beside the old one, and then stops")
+    for label, w, h in DEVICES:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, touch=True)
+        pg.evaluate("""()=>{ cfg.units=[topicsIn(QUESTIONS)[0]]; cfg.mode='drill';
+          cfg.size=12; cfg.source='all';
+          const u=topicsIn(QUESTIONS)[0], idx=[];
+          QUESTIONS.forEach((q,i)=>{ if(q.topic===u && idx.length<12) idx.push(i); });
+          beginRun(idx); }""")
+        pg.wait_for_selector(".choice", timeout=20000)
+        pg.wait_for_timeout(700)
+
+        # A real slide first, with nothing stubbed, so the app's own
+        # cleanup runs and the flag it sets is cleared normally.
+        _answer(pg)
+        pg.wait_for_timeout(500)
+        pg.evaluate("()=>advanceWithSlide()")
+        pg.wait_for_timeout(800)
+        after = pg.evaluate("""()=>{
+          const p=document.querySelector('#stage > .panel');
+          if(!p) return null;
+          const s=getComputedStyle(p);
+          return { clone: !!document.querySelector('body > .panel'),
+                   anim: s.animationName, transform: s.transform }; }""")
+        check("%s the arriving question does not re-run its mount animation" % label,
+              bool(after) and not after["clone"] and after["anim"] == "none"
+              and after["transform"] in ("none", "matrix(1, 0, 0, 1, 0, 0)"), after)
+
+        # Then the geometry, which needs the clone held past its own
+        # cleanup. THE STUB LEAVES slideTransitionInFlight SET - the
+        # flag is cleared in the timeout that was skipped - so this has
+        # to be the LAST thing done in this context, or the next
+        # advanceWithSlide() returns early and the check that follows
+        # measures an ordinary mount and calls it a slide. It did.
+        _answer(pg)
+        pg.wait_for_timeout(500)
+        worst = pg.evaluate("""async ()=>{
+          const st=window.setTimeout;
+          window.setTimeout=function(fn,ms){ return ms===215 ? 0 : st(fn,ms); };
+          advanceWithSlide();
+          window.setTimeout=st;
+          let worst=0, frames=0;
+          for(let i=0;i<40;i++){
+            await new Promise(r=>requestAnimationFrame(r));
+            const c=document.querySelector('body > .panel');
+            const n=document.querySelector('#stage > .panel');
+            if(!c||!n) break;
+            const a=c.getBoundingClientRect(), b=n.getBoundingClientRect();
+            worst=Math.max(worst, Math.min(a.right,b.right)-Math.max(a.left,b.left));
+            frames++;
+            if(Math.abs(b.left-a.left) < 2) break;
+          }
+          return { worst: Math.round(worst), frames }; }""")
+        check("%s the two questions never overlap while sliding" % label,
+              worst["frames"] > 3 and worst["worst"] <= 2, worst)
+        ctx.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=CHROME)
@@ -622,6 +714,7 @@ def main():
             check_cutscene(br)
             check_ranks(br)
             check_review_reach(br)
+            check_slide(br)
         finally:
             br.close()
     SERVER.shutdown()
