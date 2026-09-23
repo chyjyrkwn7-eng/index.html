@@ -1125,8 +1125,32 @@ The three things the app measures are **XP → level**, **badges**, and
   cap came with the curve: 500 at +15% compounded 80 times asks for about
   200 million XP when an aced three-unit test pays under a thousand, so
   the ceiling Madison asked for was unreachable until the curve moved.
-  **Check that a curve change cannot lower anybody's level** before
-  making one — that property is what made this one safe.
+  **Check what a curve change does to existing levels before making
+  one**, by running BOTH builds' `levelProgress()` over a few thousand
+  XP totals and diffing. The first curve change was safe because
+  nothing went down; the second (below) lowers levels above 20 and was
+  allowed to.
+- **THE CURVE STEEPENS AFTER LEVEL 20 AND IS UNTOUCHED BELOW IT.**
+  *"Do not let leveling up be too easy ... after level 40 or 50 it
+  should [take] multiple tests to even level up. It can [be] easy for
+  the first 10-20 levels but needs to be decently hard as it goes on
+  ... someone being level 14 without mastering a single unit is kinda
+  crazy."* Growth holds at `LEVEL_GROWTH` (1.05) through
+  `LEVEL_RAMP_FROM` (20), then climbs by `LEVEL_RAMP_STEP` (0.0008) a
+  level to `LEVEL_GROWTH_MAX` (1.075). At ~250 XP for a small perfect
+  drill: level 25 ≈ 3.7 tests, 30 ≈ 4.9, 40 ≈ 8.8, 50 ≈ 17.3, 60 ≈
+  35.7, 80 ≈ 152. Total to the cap goes 277k → 549k.
+  **The growth RATE has to stay near 1 and only creep.** The first
+  attempt used +11%/+15%/+19% bands and asked **seventeen million XP**
+  for level 80 — the same runaway the note above records for a flat
+  +15%. Compounding over 80 levels punishes any real increase.
+  **Verified by diffing both builds' own `levelProgress()` over 4,380
+  XP totals**: zero level changes at or below 20, nobody gains a
+  level, first drop at 15,344 XP (27 → 26), biggest at the cap (78 →
+  68). Lowering above 20 was explicitly accepted — *"if peoples levels
+  get slightly lowered to fix this based on their current earned so
+  then so be it"* — and nothing is reset: the XP total is untouched and
+  the level is derived from it.
 
 ### Ranks
 

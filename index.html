@@ -24146,6 +24146,40 @@ const TIER_ORDER_FULL = ["rookie", "ranger", "veteran", "vanguard", "adept", "el
 const LEVEL_BASE_POINTS = 300;
 const LEVEL_GROWTH = 1.05;
 const LEVEL_CAP = 80;
+/* THE CURVE GETS STEEPER AFTER 20, AND IS UNTOUCHED BELOW IT.
+   Asked for directly: "do not let leveling up be too easy ... after
+   level 40 or 50 it should [take] multiple tests to even level up. It
+   can [be] easy for the first 10-20 levels but needs to be decently
+   hard as it goes on ... someone being level 14 without mastering a
+   single unit is kinda crazy."
+   A flat +5% is gentle exactly where it should not be: level 40 cost
+   under 8 tests and level 30 under 5. Growth now holds at 1.05 through
+   level 20 and then climbs by 0.0008 a level to a ceiling of 1.075.
+   Measured at ~250 XP for a small perfect drill:
+     level 25  ~3.7 tests      level 50  ~17.3 tests
+     level 30  ~4.9 tests      level 60  ~35.7 tests
+     level 40  ~8.8 tests      level 80  ~152 tests
+   Total to the cap goes from 277,210 XP to 549,744 - twice the climb,
+   and still a climb rather than the unreachable wall a flat higher
+   rate produces. The first attempt at this used +11%/+15%/+19% bands
+   and asked SEVENTEEN MILLION XP for level 80, which is the same
+   mistake recorded above for +15%: compounding over 80 levels runs
+   away, so the growth RATE has to stay near 1 and only creep.
+   NOBODY'S LEVEL DROPS. Growth below 21 is byte-identical, so every
+   threshold up to level 20 is unchanged, and the whole class is under
+   level 10 today. Above 20 a recalculated level can come down - the
+   cap itself would be a 10-level drop - and that was explicitly
+   accepted ("if peoples levels get slightly lowered to fix this based
+   on their current earned so then so be it"). Nothing is reset: the
+   XP total is untouched and the level is derived from it, as always. */
+const LEVEL_RAMP_FROM = 20;
+const LEVEL_RAMP_STEP = 0.0008;
+const LEVEL_GROWTH_MAX = 1.075;
+function levelGrowthAt(lvl){
+  if(lvl <= LEVEL_RAMP_FROM) return LEVEL_GROWTH;
+  return Math.min(LEVEL_GROWTH_MAX,
+                  LEVEL_GROWTH + (lvl - LEVEL_RAMP_FROM) * LEVEL_RAMP_STEP);
+}
 
 /* Where a given XP total sits: the level, how far into it, and how far
    across. One function so the bar, the number under it and the board
@@ -24156,7 +24190,7 @@ function levelProgress(points){
   const p = Math.max(0, Number(points) || 0);
   let lvl = 1, need = LEVEL_BASE_POINTS, spent = 0;
   while(lvl < LEVEL_CAP && p >= spent + need){
-    spent += need; need = Math.round(need * LEVEL_GROWTH); lvl += 1;
+    spent += need; lvl += 1; need = Math.round(need * levelGrowthAt(lvl));
   }
   const atCap = lvl >= LEVEL_CAP;
   return {
@@ -33054,7 +33088,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-23-113";
+const APP_BUILD = "2026-09-23-114";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
