@@ -1197,13 +1197,15 @@ Everything below follows from that.
 The three things the app measures are **XP → level**, **badges**, and
 **hundos**, and every screen that shows progress is built on those three.
 
-- **A badge is a mastered unit, and mastery is `BADGE_THRESHOLD` (30)
+- **A badge is a mastered unit, and mastery is `BADGE_THRESHOLD` (35)
   hundos in it.** Sixteen units, sixteen badges. `DRILL_STAR_THRESHOLD` is
   *written as that same constant* rather than as another literal, because
   it was a separate 40 for the same idea and a unit could read "Advanced"
   on its own card while still not being starred.
-  **It was 35 until build 116** and came down with the level curve, asked
-  for in one breath: *"take the hundo requirement for badges down to 30,
+  **It went to 30 for a single build and came straight back to 35** the
+  same night (*"make the mastery 35 for each still ... essentially
+  revert that change"*). The reasoning for the drop, kept because it
+  applies in reverse and explains the reconciler: it was asked *"take the hundo requirement for badges down to 30,
   and ensure it all syncs up ... by the time you reach level 30 you
   should have close to 6 badges."* Lowering it can only ADD badges to an
   existing account, because a badge is `hundos >= BADGE_THRESHOLD`
@@ -1251,63 +1253,77 @@ The three things the app measures are **XP → level**, **badges**, and
   get slightly lowered to fix this based on their current earned so
   then so be it"* — and nothing is reset: the XP total is untouched and
   the level is derived from it.
-- **THE CURVE IS FLAT AFTER THE RAMP, AND THAT IS THE ONLY SHAPE THAT
-  CAN HOLD "A MASTERY IS WORTH SEVEN LEVELS".** Two earlier attempts
-  tuned bands for feel and both left the same hole, because the hole is
-  structural: **XP is paid per correct question**, so it accrues on
-  every run, while a hundo needs a flawless full-unit run and a badge
-  needs thirty of them. Grinding always outruns mastering. Reported as
-  *"someone is already level 24"* — with no badges at all — and again
-  after the fix was designed but before it shipped.
-  *"Each unit mastery should get you maybe 7 levels. Take that into
-  account. It needs to [be] much harder to level up."*
-  **A compounding curve cannot satisfy that at two points on the
-  ladder.** If a level costs more the higher you are, the number of
-  levels a fixed lump of XP buys shrinks as you climb, so "seven levels
-  per mastery" can be true in exactly one place. `LEVEL_COST_MAX`
-  (9,000) is a ceiling on what one level costs: `LEVEL_GROWTH` is 1.40
-  but only runs for eleven levels before the cost flattens, after which
-  a fixed lump always buys the same number of levels. The steep rate is
-  safe *because* it stops — unchecked it is the same runaway this file
-  records twice.
-- **`MASTERY_BONUS` IS THE OTHER HALF, AND WITHOUT IT THE ASK IS
-  IMPOSSIBLE.** Per-question XP scales with unit size and a badge does
-  not, so on grind alone a 12-question unit's mastery is worth under
-  two levels and Penal Code's (340 questions) is worth forty. A flat
-  36,000 XP paid for the badge ITSELF — four levels at the plateau —
-  is what makes every mastery worth roughly the same. Measured on the
-  real bank at three attempts per hundo and ~95% accuracy: a typical
-  29-question unit costs ~27,800 XP of grinding, so a mastery is
-  27,800 + 36,000 = **7.1 levels**. Smallest unit 5.5, largest 9.7 —
-  the spread is real work, centred on the seven asked for.
-  **It is paid off the badge DIFF in `summarize()`**, the same diff the
-  cutscene is queued off, so the XP and the celebration can never
-  disagree. That also means dropping `BADGE_THRESHOLD` to 30 could not
-  retro-pay it: a unit already past 30 produces no diff. **Itemise it
-  on the results screen** — it is by far the largest single number that
-  screen can show, and an unexplained +36,000 reads as a bug.
-- **The cap is 100, up from 80**, asked for by name, and it is what
-  makes the correction survivable: *"to counter the early mistake of
-  people jumping high on levels right now, the new max level is level
-  100."* Thirteen typical masteries reach it, so the top of the ladder
-  is most of the course rather than something anyone grinds into.
-- **EVERY LEVEL IN THE CLASS DROPPED, and that was the point.**
-  Measured against the live build: **24 → 9, 20 → 8, 16 → 7, 10 → 6,
-  6 → 4.** Nothing is reset — the XP total is untouched and the level
-  is derived from it, as always. The only place a level can go UP is
-  above the old 80 cap, which is the new ceiling doing its job, and
-  nobody is within 600,000 XP of it. The earlier rule about checking
-  that a curve change cannot lower anybody still stands as the thing to
-  CHECK; it is no longer the thing to guarantee, because lowering was
-  explicitly requested twice.
-- **`TIER_UNLOCKS` levels sit deliberately BEHIND what the badge count
-  implies, so the badge is the gate.** Rescaled for the 100 cap to 10,
-  18, 30, 42, 55, 72, 90 against unchanged badge counts of 1, 2, 4, 6,
-  8, 11, 14. At ~7 levels a mastery, four badges is around level 37 and
-  veteran asks for 30 — so anyone earning badges clears the level
-  requirement automatically, and anyone grinding XP without mastering
-  anything is stopped by the badges. That is the whole of the complaint
-  this came from. The KEYS did not move, so nothing stored migrates.
+- **NOBODY'S LEVEL MAY CHANGE, AND THAT IS THE FIRST CONSTRAINT, NOT A
+  NICETY.** *"Just to CLEAR! I don't want peoples current level to go
+  backwards!!"* and then *"I don't want peoples levels to change at
+  all."* A level is DERIVED from XP every time it is shown, so making a
+  level dearer silently takes it off anybody who had already reached it
+  — there is no grandfathering to fall back on. Two fits in a row got
+  this wrong by freezing the early curve at the NEW build's prices
+  instead of the ones that produced those levels; both dropped the top
+  of the board from 25 to about 10.
+  **Levels 1–25 are byte-identical to the live curve** (base 300,
+  ×1.05), and that is verified by walking **every XP total from 0 to
+  14,306 one at a time** rather than by spot checks. Above that,
+  `preserveLegacyLevel()` is a one-shot top-up that holds anyone the new
+  curve would demote — insurance for somebody who levels past 25 on the
+  old build before they update. **It must stay one-shot**: topping up
+  raises the total, the old curve is cheaper, so a second pass reads a
+  higher old level and tops up again, walking someone to the cap.
+- **THE CLIMB STARTS AT 26, AND THE TWO NUMBERS ARE SOLVED, NOT
+  CHOSEN.** *"A lot more xp needed to level up starting at level 25
+  going into 26."* `LEVEL_STEP_UP` (3.1102) makes level 26 cost 2,864
+  against level 25's 921; `LEVEL_LATE_GROWTH` (1.0354) compounds from
+  there to 18,751 at the cap. Both come out of solving two anchors at
+  once: **a second badge lands on level 30, and twenty badges land on
+  level 80** (480,850 XP of badges against 480,810 to the cap).
+- **THE ATTEMPT RATE IS MEASURED, NOT GUESSED — GETTING IT WRONG COST
+  TWO FITS.** Assuming "about two tests per hundo" priced a badge at
+  nearly double what one costs, and the ladder came out so expensive
+  that the best player in the class would have earned **all twenty
+  badges at level 69 and never seen the cap**. The real number is on
+  the board: 1,068 correct answers and 44 hundos, and **1068 ÷ 44 =
+  24.3, which IS his average unit size** — a hundo is a whole unit with
+  zero misses, so that ratio matching the unit size means essentially
+  every test he took was a hundo. Reported exactly that way before the
+  arithmetic caught it: *"he didn't take 50 tests for one badge."*
+  **The leaderboard is the instrument here** — `correct` and `hundos`
+  per person, and their ratio is the attempt rate. Re-measure it before
+  re-fitting anything; the progress documents cannot be read (403 on a
+  list, by design), so this ratio is the only window onto how people
+  actually play.
+  Fitting at one test per hundo also puts the error on the right side:
+  anyone who DOES need extra attempts earns more XP per badge and runs
+  slightly ahead on level, which leaves the badge as the thing gating a
+  rank.
+- **`MASTERY_BONUS` is 2,500 and no back-pay is ever paid.** It was
+  36,000 once and that was the mistake — big enough to decide the curve
+  on its own, it dragged one badge to level 32 when the target was 25.
+  At 2,500 it shows up in the results breakdown without moving the
+  ladder, and the curve is fitted WITH it included. Existing totals are
+  treated as already containing it, by instruction (*"let's just assume
+  he was already given the mastery bonus"*), which is also what keeps it
+  from moving a single existing level. A reconciler that back-paid it
+  was built and removed for exactly that reason.
+- **A RANK SOMEBODY REACHED TODAY IS NOT SOMETHING TO TAKE BACK.**
+  *"Alex did rank up today, so ensure that his rank requirements don't
+  change, but the others might."* So **Iron stays exactly as the live
+  build has it — level 5, 1 badge** — and every rank above it moved.
+  It costs the ladder nothing: a badge is 35 hundos, about 14,400 XP,
+  which is level 25 anyway, so the level half of that rule never binds
+  and the badge is what grants it. The rest are read off the measured
+  badge line (1 → 21, 3 → 31, 5 → 38, 8 → 47, 11 → 54, 15 → 67, 20 → 80
+  taking the smallest units first): **Bronze 29/3, Silver 36/5, Gold
+  45/8, Sapphire 52/11, Amethyst 65/15, Supernova 80/20.**
+  **Check the board before changing a threshold.** Every rank needs at
+  least one badge and only one person in the class has one, so a
+  `firestore-admin.py list` answers "can anybody lose a rank" in thirty
+  seconds. Supernova's 20 badges is unreachable today on purpose — there
+  are 16 units — because it is what the extra units are for.
+- **The cap is 80.** It went to 100 for one build and came straight back
+  out; 100 is held for when the extra units land alongside a rank above
+  Supernova. Raising it means re-solving the two anchors, not nudging
+  the constants.
 
 ### Ranks
 
@@ -1917,7 +1933,18 @@ is set in exactly two places in the whole file (`showWelcome` and
 no list of excluded screens to keep up to date, and a new screen is excluded
 by default. Verified by grep, not assumed.
 
-**THE UPDATE IS PUSHED NOW, NOT OFFERED.** *"Force an update, next time
+**THE UPDATE IS A TAP, AND THE PUSH IS OPT-IN PER RELEASE.** Pushing it
+without asking was built, shipped and asked against the same night:
+*"I want them to have the interactive to select the update button, it's
+more fun that way ... I'll tell you when I need an update pushed
+through."* So the banner is the normal path and the forced push is
+gated on `force: true` in **version.json** — a sidecar file, so turning
+it on for one release is a one-line change that needs no code to reach
+anybody first. Everything below describes that push, which still
+exists and still works; it just does not fire unless the release asks
+for it.
+
+**The original note, kept because the mechanics still apply:** *"Force an update, next time
 people finish any test they are on it, push their update ... If they
 aren't on a test go ahead and push it for those people. I need the
 update to be pushed immediately."* So the app finds a newer build, puts

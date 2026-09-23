@@ -22110,9 +22110,22 @@ const AVATAR_CHARACTERS = [
   { id: "alien", kind: "alien" },
   { id: "samurai", kind: "samurai" },
   { id: "dragon", kind: "dragon" },
-  { id: "officer",   kind: "officer",   unlock: "vanguard" },
+  /* REORDERED BY HOW HARD EACH ONE SHOULD BE, asked for in that order:
+     "the astronaut needs to be the hardest one to get, the police men
+     the second hardest, the robot the easiest, and the clown the 3rd
+     hardest." So easiest to hardest: robot, clown, officer, astronaut,
+     sitting on the top four ranks in that order.
+     This overturns the note that used to live here - that the Officer
+     belonged on the first aspirational rank because this is a police
+     academy class and it is the one character that is what the course
+     is FOR. That reasoning is why it is second-hardest now rather than
+     merely somewhere in the set: the closer to the top, the more it is
+     worth holding. The Astronaut still ends the ladder, because the app
+     is Nova, the top rank is Supernova and the emblems are the life of
+     a star. */
+  { id: "robot",     kind: "robot",     unlock: "vanguard" },
   { id: "clown",     kind: "clown",     unlock: "adept" },
-  { id: "robot",     kind: "robot",     unlock: "elite" },
+  { id: "officer",   kind: "officer",   unlock: "elite" },
   { id: "astronaut", kind: "astronaut", unlock: "titan" }
 ];
 const AVATAR_DISPLAY_NAME = {
@@ -23015,6 +23028,12 @@ function applyLoadedData(got){
     : [];
   store.pendingSupernovaCutscene = typeof got.pendingSupernovaCutscene === "boolean"
     ? got.pendingSupernovaCutscene : false;
+  /* Defaults to FALSE for an existing account, which is the opposite of
+     the usual rule on purpose: this is the one flag that is SUPPOSED to
+     fire for people who are already here. See preserveLegacyLevel().
+     A new account has no XP, so it tops up nothing. */
+  store.levelPreserved = typeof got.levelPreserved === "boolean"
+    ? got.levelPreserved : false;
   /* The weekly board's two fields. weekPoints defaults to 0 and weekKey
      to THIS week rather than to null: an existing account has a lifetime
      total but no record of when any of it was earned, and crediting all
@@ -24194,28 +24213,46 @@ const TIER_UNLOCKS = {
      tier says something you can check against your own screen. Levels
      come steadily and badges do not - BADGE_THRESHOLD hundos each - which is what
      gives the gaps their shape. */
-  /* RESCALED FOR THE 100 CAP, AND THE LEVELS SIT DELIBERATELY BEHIND
-     THE BADGES. With a mastery worth about seven levels, somebody on
-     four badges is around level 37 - so asking for level 30 here means
-     the BADGE is what gates the rank and the level only confirms it.
-     That is the whole complaint this came from: a classmate was level
-     24 with no badges at all, and a rank you can grind into without
-     mastering anything is not a rank. The badge counts are unchanged;
-     only the level numbers moved, and they moved to stay roughly the
-     same fraction of a ladder that is now 100 tall rather than 80. */
-  rookie:   { level: 10, badges: 1,  label: "Reach level 10 and 1 badge" },
-  ranger:   { level: 18, badges: 2,  label: "Reach level 18 and 2 badges" },
-  veteran:  { level: 30, badges: 4,  label: "Reach level 30 and 4 badges" },
-  vanguard: { level: 42, badges: 6,  label: "Reach level 42 and 6 badges" },
-  adept:    { level: 55, badges: 8,  label: "Reach level 55 and 8 badges" },
-  elite:    { level: 72, badges: 11, label: "Reach level 72 and 11 badges" },
+  /* THE LEVELS ARE READ OFF THE MEASURED BADGE LINE, NOT CHOSEN.
+     With the curve above, what a badge count actually earns is
+     1 -> 21, 3 -> 31, 5 -> 38, 8 -> 47, 11 -> 54, 15 -> 67, 20 -> 80
+     taking the smallest units first, which is the fastest route there
+     is. Each rank asks two levels less than that, so the BADGE is
+     what gates it and the level is always already there or a short
+     grind away. Badge counts run 1, 3, 5, 8, 11, 15, 20 - Supernova's
+     20 asked for by name, the rest spread to keep the growing-gap shape
+     the ladder has always had.
+     RE-MEASURE THESE whenever the curve or the question bank moves.
+     They are downstream of both, and a rank that asks for a level the
+     badges no longer reach is the ladder quietly coming apart. */
+  /* IRON IS LEFT EXACTLY AS THE LIVE BUILD HAS IT - level 5, 1 badge -
+     because somebody reached it TODAY and a rank you have been given is
+     not something to take back the same night. "Alex did rank up today,
+     so ensure that his rank requirements don't change, but the others
+     might."
+     It costs the ladder nothing: a badge is 35 hundos, which is around
+     14,400 XP and therefore level 25 anyway, so the level half of this
+     rule never binds and the BADGE is the gate - which is what the
+     first rank should be. Every rank above it moved. */
+  rookie:   { level: 5,  badges: 1,  label: "Reach level 5 and 1 badge" },
+  ranger:   { level: 29, badges: 3,  label: "Reach level 29 and 3 badges" },
+  veteran:  { level: 36, badges: 5,  label: "Reach level 36 and 5 badges" },
+  vanguard: { level: 45, badges: 8,  label: "Reach level 45 and 8 badges" },
+  adept:    { level: 52, badges: 11, label: "Reach level 52 and 11 badges" },
+  elite:    { level: 65, badges: 15, label: "Reach level 65 and 15 badges" },
   /* Supernova, the genuine top of the ladder, now also requires
      finding every Mystery Star \u2014 not just points and stars from
      studying, but having fully explored the app itself. Named
      "Secret Flares" for display, distinct from the Mastery Ladder's
      own "Flares" (the orbiting badges) since these are a different,
      hidden thing to find rather than a tier to climb. */
-  titan:    { level: 90, badges: 14, label: "Reach level 90 and 14 badges" }
+  /* THE CAP AND TWENTY BADGES, AND IT IS OUT OF REACH TODAY ON
+     PURPOSE. There are 16 units, so 20 badges cannot be earned yet:
+     "supernova needs to be 20 badges, I know there isn't [20] units
+     available but there will be eventually." Supernova is the thing
+     the extra units unlock, and it is the only rank that asks for the
+     max level itself. */
+  titan:    { level: 80, badges: 20, label: "Reach level 80 and 20 badges" }
 };
 /* The full, ordered tier sequence — used anywhere code needs to walk
    every tier in climbing order (the ladder display, unlock checks,
@@ -24240,8 +24277,7 @@ const TIER_ORDER_FULL = ["rookie", "ranger", "veteran", "vanguard", "adept", "el
 
 /* HISTORY, kept because each paragraph records a curve that was tried
    and why it failed. What ships now is described at LEVEL_COST_MAX and
-   MASTERY_BONUS below; the ceiling is 100, not the 80 this paragraph
-   was written for.
+   LEVEL_STEP_UP and LEVEL_LATE_GROWTH below; the ceiling is 80.
    Each level costs 5% more XP than the last, starting at 300. Level 1
    is the floor - nobody is level 0 - and 80 was the ceiling, per
    explicit request at the time.
@@ -24260,7 +24296,14 @@ const LEVEL_BASE_POINTS = 300;
    LEVEL_COST_MAX, after which every level costs the same. A rate this
    steep would be the compounding runaway this file warns about twice
    over if it ran all the way to the cap; it runs for eleven levels. */
-const LEVEL_GROWTH = 1.40;
+/* BACK TO 1.05 - THE RATE THE LEVELS PEOPLE ARE STANDING ON WERE BUILT
+   WITH. This is the whole of "I don't want people's current level to go
+   backwards": a level is derived from XP every time it is displayed, so
+   the only way somebody keeps the level they have is for the XP their
+   level cost to be unchanged. Charging even slightly more for the early
+   levels takes levels off real people, which it did - a correct-looking
+   change that dropped the top of the board from 25 to 13. */
+const LEVEL_GROWTH = 1.05;
 /* THE CEILING ON WHAT ONE LEVEL COSTS, and the number the whole
    system is built on. Once a level costs a flat amount, a badge worth
    a fixed amount of XP always buys the same number of levels - which
@@ -24268,11 +24311,74 @@ const LEVEL_GROWTH = 1.40;
    can be true at level 15 and still be true at level 85. With a
    compounding curve it cannot be true twice. */
 const LEVEL_COST_MAX = 9000;
-/* 100, up from 80, asked for by name: "the new max level is level
-   100". It is also what makes the correction below survivable - every
-   level in the class drops, and a taller ladder leaves somewhere to
-   climb back up. */
-const LEVEL_CAP = 100;
+/* THE FIRST 25 LEVELS ARE FROZEN, AND THAT IS A FAIRNESS DECISION
+   RATHER THAN A CURVE ONE. "Look at whoever the highest level is ...
+   every level up until his level don't change the xp amounts so
+   everyone has a fair chance to catch up to him. Whatever level sauce
+   is working towards currently is the one that needs to start the
+   update to the xp needed."
+   Sauce was the top of the board at level 25, so levels 1-25 cost
+   exactly what the shipped build already charged - not a point more -
+   and every level from 26 up is where the climb starts. */
+/* 25, THE TOP OF THE BOARD, AND THE CLIMB STARTS THE VERY NEXT LEVEL.
+   "There will [need] to be a lot more xp needed to level up starting at
+   level 25 going into 26."
+   Everything at or below 25 costs exactly what the live build charges,
+   so nobody standing on one of those levels moves. The one residual
+   risk is somebody crossing INTO 26 on the old build before they
+   update: level 26 costs 2,258 here against 967 there, so they would
+   come back to 25. That is the deliberate consequence of starting the
+   ramp where it was asked to start, and the window begins at 14,308 XP. */
+const LEVEL_FREEZE_THROUGH = 25;
+/* From 26 the cost compounds again, gently, and stops at a ceiling.
+   1.024 over 55 levels takes a level from 9,000 to ~33,000; the same
+   rate over the whole ladder would be the runaway this file records
+   three times now. The ceiling is what keeps a badge worth a knowable
+   number of levels at the top instead of an ever-shrinking one. */
+/* A STEP, THEN A CLIMB. Level 26 costs 3.1102x what level 25 did -
+   2,864 against 921 - and every level after is 3.54% dearer than the
+   one before, reaching 18,751 at the cap. The step is the "a lot more xp ...
+   starting at level 25 going into 26" part; the compounding is what
+   keeps it getting harder rather than settling.
+   BOTH NUMBERS ARE FITTED TO TWO ANCHORS AT ONCE, not chosen:
+     - twenty badges lands on the cap
+     - a second badge lands on level 30
+   "Everyone should be able to get about 1 badge by level 25 but by
+   level 30 they may already have a second."
+   THE ATTEMPT RATE IS MEASURED, NOT GUESSED, and getting it wrong is
+   what made two earlier fits too expensive. An assumed "about two
+   tests per hundo" priced a badge at nearly double what one costs:
+   the only real player with a badge has 1,068 correct answers and 44
+   hundos, and 1068/44 = 24.3, which IS his average unit size. A hundo
+   is a whole unit with zero misses, so that ratio being equal to the
+   unit size means essentially EVERY test he took was a hundo. At the
+   inflated rate he would have finished all twenty badges at level 69
+   and never seen the cap.
+   So it is solved at one test per hundo, over the real bank (35 hundos
+   a unit, units running 13 to 340 questions, plus MASTERY_BONUS on
+   each): 480,850 XP for twenty badges against 480,798 for level 80,
+   one badge on a 24-question unit at level 25 and two at exactly 30.
+   Anyone who DOES need extra attempts earns more XP per badge and so
+   runs slightly ahead on level - which is the right way round, because
+   it leaves the badge as the thing that gates a rank.
+   THE TWO NUMBERS MOVE TOGETHER WITH MASTERY_BONUS. Change the bonus
+   and this fit is stale: the badge line shifts and the ranks below it
+   are measured off that line. Re-solve, do not nudge. */
+const LEVEL_STEP_UP = 3.1102;
+const LEVEL_LATE_GROWTH = 1.0354;
+/* A guard rather than a working value - the curve tops out at 77,649 a
+   level, so this never binds. It exists so a future change to the
+   growth rate cannot quietly produce a level nobody can afford. */
+const LEVEL_COST_TOP = 150000;   /* a guard; the curve tops out at 41,971 */
+/* BACK TO 80. It went to 100 for one build on an explicit request and
+   came back the same night on another: 100 is being held for when the
+   extra units land alongside a rank above Supernova. "Down the line,
+   the plan is to add an even better rank than supernova, like
+   ultranova or something ... that's also when we will raise the max
+   level to 100 or something."
+   80 is also the anchor the whole curve is fitted to - see
+   LEVEL_LATE_GROWTH: twenty badges is meant to land you at the cap. */
+const LEVEL_CAP = 80;
 /* THE CURVE GETS STEEPER AFTER 20, AND IS UNTOUCHED BELOW IT.
    Asked for directly: "do not let leveling up be too easy ... after
    level 40 or 50 it should [take] multiple tests to even level up. It
@@ -24312,12 +24418,15 @@ const LEVEL_CAP = 100;
    Two things fix it together, and neither works alone:
      - A FLAT COST PER LEVEL (LEVEL_COST_MAX) once the ramp is done, so
        a fixed lump of XP always buys the same number of levels.
-     - MASTERY_BONUS, a flat lump paid for the badge ITSELF, which is
-       what makes a small unit's badge worth the same as a big one's.
-       Without it a 12-question unit's mastery is worth under two
-       levels and Penal Code's is worth forty, because per-question XP
-       scales with unit size and a badge does not.
-   Fitted: 9,000 XP a level, a 36,000 XP mastery bonus. A typical unit's
+     - A lump paid for the badge ITSELF. THIS WAS TRIED AND REMOVED:
+       it made every badge worth the same number of levels, which reads
+       well but pushed one badge to level 32 when the target was 23.
+       Levels come from the work; badges are the other axis, and the
+       ranks are what require both. Don't reintroduce it without
+       re-fitting the curve to the badge targets at the same time.
+   Fitted: see LEVEL_LATE_GROWTH. The paragraph below describes an
+   earlier fit and is kept for the reasoning, not the numbers.
+   A typical unit's
    mastery is then 27,800 grind + 36,000 bonus = 63,800 XP, which is
    7.1 levels. The smallest unit is 5.5 levels, the largest 9.7 - the
    spread is real work, and it is centred on the seven asked for.
@@ -24337,7 +24446,17 @@ const LEVEL_CAP = 100;
    number of levels a badge buys shrinks as you climb, and no choice of
    rates makes "a mastery is worth about seven levels" hold anywhere but
    one spot on the ladder. A flat cost makes it hold everywhere. */
-function levelGrowthAt(){ return LEVEL_GROWTH; }
+function levelGrowthAt(lvl){
+  if(lvl <= LEVEL_FREEZE_THROUGH) return LEVEL_GROWTH;
+  /* The one-off step into the first level past the freeze. A multiplier
+     on the level before it rather than a flat cost, so it cannot drift
+     out of step if the frozen curve is ever re-based. */
+  if(lvl === LEVEL_FREEZE_THROUGH + 1) return LEVEL_STEP_UP;
+  return LEVEL_LATE_GROWTH;
+}
+function levelCostCeiling(lvl){
+  return lvl <= LEVEL_FREEZE_THROUGH ? LEVEL_COST_MAX : LEVEL_COST_TOP;
+}
 
 /* Where a given XP total sits: the level, how far into it, and how far
    across. One function so the bar, the number under it and the board
@@ -24349,7 +24468,12 @@ function levelProgress(points){
   let lvl = 1, need = LEVEL_BASE_POINTS, spent = 0;
   while(lvl < LEVEL_CAP && p >= spent + need){
     spent += need; lvl += 1;
-    need = Math.min(LEVEL_COST_MAX, Math.round(need * levelGrowthAt(lvl)));
+    /* lvl + 1, not lvl: `need` becomes the cost of the NEXT level, and
+       both the rate and the ceiling change at the freeze line. Passing
+       lvl here charges level 26 at the frozen rate and the whole tail
+       shifts by one. */
+    need = Math.min(levelCostCeiling(lvl + 1),
+                    Math.round(need * levelGrowthAt(lvl + 1)));
   }
   const atCap = lvl >= LEVEL_CAP;
   return {
@@ -24363,6 +24487,62 @@ function levelProgress(points){
   };
 }
 function levelFromPoints(points){ return levelProgress(points).level; }
+
+/* ---------- nobody's level goes backwards -------------------------------
+   "Just to CLEAR! I don't want peoples current level to go backwards!!
+   If you changed someone's level from earlier put it back."
+
+   A level is DERIVED from XP every time it is shown, so making a level
+   dearer silently takes it off anybody who had already reached it. The
+   freeze below level 26 covers everyone standing still, but it cannot
+   cover somebody who levels up on the OLD build tonight and updates
+   tomorrow - level 26 costs 2,258 here against 967 there, so they would
+   come back down. Which is not something to leave to whether they
+   happen to play before they update.
+
+   So the old curve is kept as a function, and on the first launch of
+   this build anyone the new curve would demote is topped up with the
+   XP that keeps the level they already had. It is the level they
+   earned; the curve changing underneath them is not their problem.
+
+   ONE SHOT, and it has to be. Topping up raises the total, the old
+   curve is cheaper, so a second pass would read a higher old level and
+   top up again - a runaway that walks somebody to the cap. The flag is
+   what stops it, and it lives on `store` so it syncs rather than firing
+   once per device. */
+const LEGACY_BASE_POINTS = 300;
+const LEGACY_GROWTH = 1.05;
+function legacyLevelOf(points){
+  const p = Math.max(0, Number(points) || 0);
+  let lvl = 1, need = LEGACY_BASE_POINTS, spent = 0;
+  while(lvl < LEVEL_CAP && p >= spent + need){
+    spent += need; lvl += 1; need = Math.round(need * LEGACY_GROWTH);
+  }
+  return lvl;
+}
+/* What a level costs under the CURRENT curve. Mirrors levelProgress()'s
+   stepping exactly - if one is ever changed the other has to move with
+   it, which is why they sit together. */
+function xpForLevel(target){
+  let lvl = 1, need = LEVEL_BASE_POINTS, spent = 0;
+  while(lvl < target && lvl < LEVEL_CAP){
+    spent += need; lvl += 1;
+    need = Math.min(levelCostCeiling(lvl + 1),
+                    Math.round(need * levelGrowthAt(lvl + 1)));
+  }
+  return spent;
+}
+function preserveLegacyLevel(){
+  if(store.levelPreserved) return 0;
+  store.levelPreserved = true;
+  const pts = (store.lifetime && store.lifetime.points) || 0;
+  const want = legacyLevelOf(pts);
+  let owed = 0;
+  if(levelFromPoints(pts) < want) owed = Math.max(0, xpForLevel(want) - pts);
+  if(owed) awardXp(owed);
+  saveStore();
+  return owed;
+}
 function levelOf(st){
   return levelFromPoints(st && st.lifetime ? st.lifetime.points : 0);
 }
@@ -24376,7 +24556,22 @@ function levelOf(st){
    calling "Advanced" all along. DRILL_STAR_THRESHOLD was a separate
    40 for the same idea, so the app held two different answers to
    "have I mastered this unit". They are one number now. */
-/* 30, DOWN FROM 35, AND IT MOVES WITH THE LEVEL CURVE. Asked for
+/* BACK TO 35. It was 30 for a single build and reverted the same
+   night: "make the mastery 35 for each still ... essentially revert
+   that change."
+   RAISING IT CAN TAKE A BADGE AWAY, which is the whole risk, because a
+   badge is `hundos >= BADGE_THRESHOLD` computed fresh rather than a
+   stored flag - anyone sitting on 30-34 in a unit holds one at 30 and
+   does not at 35. Checked against the live board before making the
+   change: exactly one person in the class holds a badge (Sauce, 44
+   hundos), his device was still running the 35 build when it published
+   that, so the unit behind it has 35 or more and the badge survives;
+   nobody else has one at all. Check the same way before touching this
+   number again - the board publishes a badge count per person.
+   No XP rides on a badge, so losing one costs nothing but the badge
+   itself, which comes straight back at 35. */
+/* The note this replaced, kept because the reasoning still applies in
+   the other direction: 30, DOWN FROM 35, AND IT MOVED WITH THE CURVE. Asked for
    together: "take the hundo requirement for badges down to 30, and
    ensure it all syncs up ... by the time you reach level 30 you should
    have close to 6 badges."
@@ -24387,7 +24582,20 @@ function levelOf(st){
    summarize() detects a new badge by diffing the list either side of
    its own recording call, so a badge that was already earned before
    the run produces no diff and no cutscene. */
-const BADGE_THRESHOLD = 30;
+const BADGE_THRESHOLD = 35;
+/* A SMALL LUMP FOR THE BADGE ITSELF - 2,500, which is about a quarter
+   of what the grinding to earn one pays. It was 36,000 once and that
+   was the mistake: big enough to decide the level curve on its own, it
+   dragged one badge to level 32 when the target was 25. At 2,500 it is
+   a reward that shows up in the results breakdown without moving the
+   ladder, and the curve above is fitted WITH it included rather than
+   in spite of it.
+   NO BACK-PAY, by explicit instruction: "let's just assume he was
+   already given the mastery bonus and that's how he got so high." So
+   nobody's total is adjusted for badges earned before this existed -
+   the XP they already have is treated as having included it. That is
+   also what keeps this from moving a single existing level. */
+const MASTERY_BONUS = 2500;
 /* WHAT A BADGE IS WORTH IN XP, AND WHY IT IS A FLAT LUMP. Four levels
    at LEVEL_COST_MAX, paid once, the moment a unit is mastered. The
    grinding that earned it pays its own way on top - about three more
@@ -24402,7 +24610,6 @@ const BADGE_THRESHOLD = 30;
    BADGE_THRESHOLD to 30 cannot retro-pay it, because a unit already
    past 30 produces no diff. Nobody gets a windfall for a badge they
    already held. */
-const MASTERY_BONUS = 4 * LEVEL_COST_MAX;
 function unitBadgeEarned(name){
   return (store.unitPerfects[name] || 0) >= BADGE_THRESHOLD;
 }
@@ -28126,7 +28333,7 @@ const RELEASE_NOTES = [
       ]},
       { label: "Ranks, Badges & Unlocks", items: [
         { icon: buildLadderIcon, color: "#FFD84D", title: "Seven Ranks to Climb", body: "Iron, Bronze, Silver, Gold, Sapphire, Amethyst and Supernova. Each one asks for a level and a number of badges together, not either on its own, and each has its own emblem that sits beside your name everywhere people can see you." },
-        { icon: buildStarIcon, color: "#4DD0E1", title: "A Badge for Every Unit", body: "Sixteen units, sixteen badges, each one cut to its own shape. Finish a unit at 100% thirty times and its badge drops into place \u2014 and until then the empty slot shows you exactly what you are working towards." },
+        { icon: buildStarIcon, color: "#4DD0E1", title: "A Badge for Every Unit", body: "Sixteen units, sixteen badges, each one cut to its own shape. Finish a unit at 100% thirty-five times and its badge drops into place \u2014 and until then the empty slot shows you exactly what you are working towards." },
         { icon: buildPersonIcon, color: "#4ADE80", title: "Characters Behind the Top Ranks", body: "The last four ranks each hand over a character nobody starts with \u2014 an officer, a clown, a robot and an astronaut. You can see all four from day one, locked, so you know what is up there." },
         { icon: buildSwatchClusterIcon, color: "#C583FF", title: "A Theme Colour Per Rank", body: "Every rank hands over its own colour, and picking one recolours the whole app \u2014 the sphere, the glow behind every screen, the loading screen and the accent on every control." },
         { icon: buildRocketIcon, color: "#FF6B6B", title: "The Supernova Event", body: "Reach the very top and a full-screen event plays out, leaving your Home screen's orbit permanently brighter afterward." }
@@ -32200,7 +32407,7 @@ function showSetup(){
     setTimeout(() => {
       startSimpleTour([
         { target: ".pick", align: "left", vplacement: "below",
-          text: "Tap a unit to add it to this test. The bar under each one is how close you are to its badge \u2014 30 hundos masters it, and a unit you have mastered shows its badge instead." },
+          text: "Tap a unit to add it to this test. The bar under each one is how close you are to its badge \u2014 35 hundos masters it, and a unit you have mastered shows its badge instead." },
         { target: "#bottomtab-start", align: "right", vplacement: "above",
           text: "Once you've picked your units, tap here \u2014 it opens a quick summary and lets you set the timer and other options before you begin." }
       ]);
@@ -33289,7 +33496,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-23-117";
+const APP_BUILD = "2026-09-23-123";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -33512,12 +33719,19 @@ async function checkForUpdate(force){
      wipe the other banner off the screen mid-read anyway. The frame
      notice is not lost - it is re-evaluated on the very next check. */
   if(typeof info.build === "string" && info.build !== APP_BUILD){
-    /* PUSHED, NOT OFFERED - see startForcedUpdate above. The dismissal
-       key is deliberately not consulted on this path: it recorded an
-       answer to "would you like to update", which is no longer the
-       question. It is still honoured by the banner fallback below, which
-       is what a device that has already burned its attempts gets. */
-    if(forcedTriesFor(info.build) < FORCED_UPDATE_TRIES){
+    /* OFF BY DEFAULT, AND THAT IS THE POINT. Pushing the update without
+       asking was built, shipped, and asked against the same night: "I
+       want them to have the interactive to select the update button,
+       it's more fun that way ... I'll tell you when I need an update
+       pushed through." So the banner is the normal path and the forced
+       push is opt-in PER RELEASE, from version.json's `force` flag -
+       which is a sidecar file, so turning it on for one build is a
+       one-line change and needs no code to reach anybody.
+       The dismissal key is deliberately not consulted on the forced
+       path: it recorded an answer to "would you like to update", which
+       is not the question being asked when force is set. It is still
+       honoured by the banner below, which is the everyday path. */
+    if(info.force === true && forcedTriesFor(info.build) < FORCED_UPDATE_TRIES){
       forcedUpdateInfo = info;
       startForcedUpdate();
       return;
@@ -33793,6 +34007,9 @@ function forcedUpdateBlocked(){
 
 function startForcedUpdate(){
   if(!forcedUpdateInfo || forcedUpdateStarted) return;
+  /* Belt and braces with the caller's check: nothing may push itself
+     onto a device unless that specific release asked to be pushed. */
+  if(forcedUpdateInfo.force !== true) return;
   /* Retries rather than abandoning: this is how "next time they finish
      the test they are on" is implemented. Whoever is mid-test when the
      update lands simply waits here, and the moment summarize() clears
@@ -34146,9 +34363,9 @@ function summarize(){
       store.pendingBadgeUnlocks = (store.pendingBadgeUnlocks || []).concat(badgesEarnedThisRun);
       /* Paid off the same diff the cutscene is queued off, so the XP and
          the celebration can never disagree about whether a badge was
-         earned. Awarded here rather than at the other awardXp() call
-         above because the diff is not known until every recording call
-         has run; the level block is built further down and picks it up. */
+         earned. Awarded here rather than at the other awardXp() above
+         because the diff is not known until every recording call has
+         run; the level block is built further down and picks it up. */
       masteryBonusEarned = MASTERY_BONUS * badgesEarnedThisRun.length;
       awardXp(masteryBonusEarned);
       saveStore();
@@ -34348,10 +34565,6 @@ function summarize(){
       );
       ptsWrap.appendChild(ptsRow3);
     }
-    /* Itemised like every other component, and it has to be: this is by
-       far the largest single number the screen can show, and an
-       unexplained +36,000 reads as a bug rather than as the thing you
-       just spent thirty hundos earning. */
     if(masteryBonusEarned > 0){
       const ptsRow4 = document.createElement("p");
       ptsRow4.className = "points-line";
@@ -34359,8 +34572,9 @@ function summarize(){
         Object.assign(document.createElement("span"), { className: "points-label",
           textContent: badgesEarnedThisRun.length > 1
             ? badgesEarnedThisRun.length + " units mastered"
-            : "Unit mastered \u2014 " + badgesEarnedThisRun[0] }),
-        Object.assign(document.createElement("span"), { className: "points-val", textContent: "+" + masteryBonusEarned })
+            : "Unit mastered" }),
+        Object.assign(document.createElement("span"), { className: "points-val",
+          textContent: "+" + masteryBonusEarned })
       );
       ptsWrap.appendChild(ptsRow4);
     }
@@ -34369,7 +34583,8 @@ function summarize(){
     ptsTotal.append(
       Object.assign(document.createElement("span"), { className: "points-label", textContent: "XP earned" }),
       Object.assign(document.createElement("span"), { className: "points-val",
-        textContent: "+" + (pointsEarned + perfectBonusEarned + multiTestBonusEarned + masteryBonusEarned) })
+        textContent: "+" + (pointsEarned + perfectBonusEarned + multiTestBonusEarned
+                            + masteryBonusEarned) })
     );
     ptsWrap.appendChild(ptsTotal);
     panel.appendChild(ptsWrap);
@@ -36158,7 +36373,7 @@ function showVirtualRoomSetup(){
     setTimeout(() => {
       startSimpleTour([
         { target: ".pick", align: "left", vplacement: "below",
-          text: "Tap a unit to add it to this test. The bar under each one is how close you are to its badge \u2014 30 hundos masters it, and a unit you have mastered shows its badge instead." },
+          text: "Tap a unit to add it to this test. The bar under each one is how close you are to its badge \u2014 35 hundos masters it, and a unit you have mastered shows its badge instead." },
         { target: "#bottomtab-start", align: "right", vplacement: "above",
           text: "Once you've picked your units, tap here \u2014 it opens a quick summary and lets you set the timer and other options before you begin." }
       ]);
@@ -40433,6 +40648,12 @@ if(store.onboardingComplete && !syncCode && !syncOff){
   setSyncCode(generateSyncCode());
   onFirebaseReady(() => { pushToCloud(); attachLiveListener(syncCode); });
 }
+
+/* Hold everybody at the level they already had - see
+   preserveLegacyLevel(). Silent: it is not an award, it is the curve
+   change declining to cost somebody something they earned. */
+if(store.onboardingComplete) preserveLegacyLevel();
+
 
 /* The tooltips that changed, shown once to the people who already saw
    the old ones. Gated on onboardingComplete so it can never fire in the
