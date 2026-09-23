@@ -361,7 +361,15 @@ def check_cutscene(br):
         pg.wait_for_timeout(2600)
         second = pg.evaluate("""()=>{const o=document.getElementById('badge-cutscene');
           return o ? (o.querySelector('.badge-cutscene-name')||{}).textContent : null;}""")
-        check("%s the second follows it" % label, second == "TCOLE Rules", second)
+        # NAMES THE UNIT, DOES NOT QUOTE THE WHOLE LINE. This asserted the
+        # literal "TCOLE Rules" and went red the moment the cutscene started
+        # calling a badge by its name ("TCOLE Rules badge") - the fifth time
+        # in this file a check has encoded a copy decision and then failed the
+        # app for being right. What matters is that the SECOND queued unit is
+        # the one now on screen, so it tests for the unit inside whatever the
+        # line says.
+        check("%s the second follows it" % label,
+              bool(second) and "TCOLE Rules" in second, second)
         # POLL FOR THE DRAIN, DO NOT SAMPLE AT ONE INSTANT. A fixed
         # 3200ms wait here summed to 7300ms, and the second badge's
         # overlay is removed at 7293ms on a phone and 7341ms on an
