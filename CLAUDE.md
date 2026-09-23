@@ -1185,6 +1185,37 @@ Everything below follows from that.
   launch, forever. It is also written BEFORE the wipe, so a crash
   half-way through costs one reset rather than a loop. Same shape as
   `tourRev`, and the opposite storage choice for the same reason.
+- **REMOVING A HOME SCREEN WEB APP DESTROYS ITS WHOLE STORAGE JAR, AND
+  THE RE-ADD NOTICE USED TO TELL PEOPLE TO DO EXACTLY THAT.** Reported
+  from a device: somebody followed the notice, re-added, and came back
+  to Welcome not signed in. `class26e.synccode` goes and **the
+  IndexedDB mirror beside it goes at the same moment** - they are in
+  the same jar. The progress document survives in the cloud because it
+  is keyed by the code, but the only copy of the code was inside the
+  thing they were told to delete, so there is nothing left to sign in
+  with.
+  **The boot recovery does not cover this and never did.** It reads the
+  code back out of IndexedDB IN THE SAME JAR, which is the right answer
+  for iOS evicting localStorage under a still-installed app and no
+  answer at all for the app being removed. Two different failures that
+  look identical from the Welcome screen.
+  The notice also said *"Your progress stays."* It could not keep that
+  promise, and saying it is what made people comfortable doing the
+  destructive thing. **Any copy that tells somebody to remove, reset or
+  reinstall has to show them the code in the same breath** - the code
+  IS the account, and it lives in exactly one place until it is written
+  down.
+  `showFrameNotice()` is two steps now: the code, selectable with a Copy
+  button and the word "remove" nowhere on that step, gated behind "I've
+  saved it"; then the re-add instructions. A device with no `syncCode`
+  is never offered the re-add at all, because for that person removing
+  the app genuinely would erase everything.
+  **`frameId: ""` in version.json is the kill switch** -
+  `maybeShowFrameNotice()` bails on a falsy id, version.json is fetched
+  live, so emptying it stops the notice on every device at the next
+  check with no code change and no update prompt. That is how this was
+  stopped the same night it was reported, and it is the thing to reach
+  for first whenever a notice turns out to be harmful.
 - **Safari and the installed app are separate storage jars on iOS.** The
   re-add notice's `x-safari-https:` hand-off lands in a jar with no
   progress in it, showing Welcome. Signing in with the code is the way

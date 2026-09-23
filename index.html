@@ -5066,6 +5066,28 @@
     padding:.9rem 1.1rem 1rem;
   }
   .update-banner.is-frame .update-banner-text{ padding-right:1.5rem; }
+  /* The sync code inside the re-add notice. Centred, mono and
+     letter-spaced for the same reason the code field on the sign-in
+     screen is: a code is a fixed-length string of characters, not
+     prose, and a proportional face lets the characters drift relative
+     to each other. user-select is explicit because the notice sits in
+     a banner where nothing else is selectable - reading it off the
+     screen is the fallback that works when the clipboard will not. */
+  .frame-code-wrap{
+    display:flex; justify-content:center;
+    margin:.55rem 0 .2rem;
+  }
+  .frame-code{
+    font-family:var(--mono);
+    font-size:max(16px, 1.05rem);
+    letter-spacing:.14em;
+    text-align:center;
+    color:var(--ink);
+    background:color-mix(in srgb, var(--ink) 10%, transparent);
+    border-radius:.5rem;
+    padding:.4rem .7rem;
+    -webkit-user-select:text; user-select:text;
+  }
   .update-banner-row{ display:flex; gap:.5rem; }
   /* Equal halves, so neither action reads as the default one. Re-adding
      the icon and saying it is already done are both legitimate answers. */
@@ -33496,7 +33518,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-23-123";
+const APP_BUILD = "2026-09-23-124";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -33809,6 +33831,24 @@ function maybeShowFrameNotice(info){
   syncNoticeVisibility();
 }
 
+/* THE CODE COMES FIRST, AND THE REMOVE INSTRUCTIONS DO NOT EXIST UNTIL
+   IT HAS BEEN SAVED. This notice used to say "Your progress stays" and
+   then tell somebody to delete the app. Reported from a device: they
+   did it, re-added, and came back to Welcome not signed in.
+
+   That is what removing a Home Screen web app does - it destroys that
+   app's whole storage jar, so class26e.synccode goes AND the IndexedDB
+   mirror beside it goes, together. The progress document in the cloud
+   survives, because it is keyed by the code, but the only copy of the
+   code was in the jar they were told to delete. The boot-time recovery
+   cannot help: it reads the code back out of IndexedDB IN THE SAME JAR,
+   which covers iOS evicting localStorage under a still-installed app
+   and nothing else.
+
+   So it is two steps now. Step one shows the code and will not move on
+   until the person says they have it. Step two is the old notice. A
+   device with no code at all never gets past step one, because there
+   is nothing there to write down and re-adding would strand it. */
 function showFrameNotice(info){
   const bar = document.createElement("div");
   bar.className = "update-banner is-frame";
@@ -33816,69 +33856,98 @@ function showFrameNotice(info){
 
   const text = document.createElement("span");
   text.className = "update-banner-text";
-  /* Worded as a condition rather than an instruction on purpose. There is
-     no way to read back what iOS actually painted, so this cannot know
-     for certain that any given person is affected - and a flat "your app
-     is out of date" shown to someone whose app looks perfectly fine reads
-     as a bug in the app itself. Letting people check their own screen
-     costs nothing and is never wrong. */
-  /* Names the Home Screen case out loud rather than assuming the reader
-     knows they are in it. The standalone check above already means a
-     browser tab never sees this, but plenty of people genuinely do not
-     know whether the thing they tapped was "an app" or "a website" - so
-     the sentence leads with the condition, and anyone it does not
-     describe can simply ignore it. */
-  text.textContent = info.frameNote ||
-    "Opening Nova from your Home Screen? If the bar at the very top looks grey, remove the Nova icon and add it again to fix it. Your progress stays.";
-
   const row = document.createElement("div");
   row.className = "update-banner-row";
 
-  /* target="_blank" does NOT reach Safari from a standalone Home Screen
-     app on current iOS - a same-origin link simply navigates inside the
-     app, which presents as the app reloading and showing its own splash
-     while never leaving. Confirmed on a real device. The x-safari-https
-     scheme is what actually hands a URL to Safari from inside a web app,
-     and openInSafari() below falls back to a copyable link if even that
-     does nothing, so this can never be a button that silently fails. */
-  const open = document.createElement("button");
-  open.className = "update-banner-btn";
-  open.textContent = "Open in Safari";
-  open.addEventListener("click", () => openInSafari(bar, info));
-
-  /* Self-reported, because it has to be: nothing readable from a web page
-     changes when an icon is re-added, so there is no way to confirm it
-     independently. Acknowledging stores the frameId rather than a plain
-     flag, so a future icon or name change can re-prompt everyone simply
-     by bumping frameId in version.json. */
-  const done = document.createElement("button");
-  done.className = "update-banner-btn ghost";
-  done.textContent = "I've done this";
-  done.addEventListener("click", () => {
-    try{ localStorage.setItem(FRAME_OK_KEY, info.frameId); }catch(e){}
-    pendingNotice = null;
-    hideBanner();
-  });
-
-  row.append(open, done);
-
-  /* Dismiss here is "not now", deliberately NOT "never" - it stores
-     nothing, so the notice returns on the next launch. The only way to
-     stop it for good is saying it is done, which is the outcome this
-     exists to produce. */
+  /* "Not now" stores nothing, so this is a snooze rather than a refusal:
+     gone for this sitting, offered again next launch. */
   const close = document.createElement("button");
   close.className = "update-banner-close";
   close.setAttribute("aria-label", "Not now");
-  close.textContent = "×";
-  /* "Not now" stores nothing, so this is a snooze rather than a refusal:
-     gone for this sitting, offered again next launch. */
+  close.textContent = "\u00d7";
   close.addEventListener("click", () => {
     frameSnoozed = true;
     pendingNotice = null;
     hideBanner();
   });
 
-  bar.append(close, text, row);
+  /* ---- step two: the original notice, reached only after the code ---- */
+  function showRemoveStep(){
+    text.textContent = info.frameNote ||
+      "Now remove the Nova icon from your Home Screen and add it back. " +
+      "Sign in with the code you just saved \u2014 your progress is in the cloud, " +
+      "not on the phone.";
+    row.replaceChildren();
+
+    const open = document.createElement("button");
+    open.className = "update-banner-btn";
+    open.textContent = "Open in Safari";
+    open.addEventListener("click", () => openInSafari(bar, info));
+
+    /* Self-reported, because it has to be: nothing readable from a web
+       page changes when an icon is re-added. Acknowledging stores the
+       frameId rather than a plain flag, so a future icon or name change
+       re-prompts everyone by bumping frameId in version.json. */
+    const done = document.createElement("button");
+    done.className = "update-banner-btn ghost";
+    done.textContent = "I've done this";
+    done.addEventListener("click", () => {
+      try{ localStorage.setItem(FRAME_OK_KEY, info.frameId); }catch(e){}
+      pendingNotice = null;
+      hideBanner();
+    });
+    row.append(open, done);
+  }
+
+  /* ---- step one: here is the code, and you will need it ---- */
+  const codeWrap = document.createElement("div");
+  codeWrap.className = "frame-code-wrap";
+  const codeEl = document.createElement("span");
+  codeEl.className = "frame-code";
+  /* Selectable on purpose: the clipboard is the convenience, reading it
+     off the screen is the thing that always works. */
+  codeEl.textContent = syncCode || "\u2014";
+  codeWrap.appendChild(codeEl);
+
+  if(!syncCode){
+    /* No code means nothing to sign back in with, so this device must
+       not be told to re-add anything. Boot issues a code to any
+       onboarded account without one, so this is the sync-turned-off
+       case - and that person's progress lives only on this phone. */
+    text.textContent = "Before you re-add Nova: this device has no sign-in code, " +
+      "so removing the app would erase your progress. Turn syncing on in " +
+      "Settings first, then this will come back.";
+    bar.append(close, text, row);
+    showNoticeBar(bar);
+    return;
+  }
+
+  text.textContent = "Re-adding Nova wipes this phone's copy. Write this code down " +
+    "first \u2014 it is the only way back into your account.";
+
+  const copy = document.createElement("button");
+  copy.className = "update-banner-btn";
+  copy.textContent = "Copy code";
+  copy.addEventListener("click", async () => {
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      try{
+        await navigator.clipboard.writeText(syncCode);
+        copy.textContent = "Copied";
+        return;
+      }catch(e){}
+    }
+    /* No clipboard, or it refused: the code is on screen and selectable,
+       which is the fallback that cannot fail. */
+    copy.textContent = "Write it down";
+  });
+
+  const saved = document.createElement("button");
+  saved.className = "update-banner-btn ghost";
+  saved.textContent = "I've saved it";
+  saved.addEventListener("click", showRemoveStep);
+
+  row.append(copy, saved);
+  bar.append(close, text, codeWrap, row);
   showNoticeBar(bar);
 }
 
