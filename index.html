@@ -3494,7 +3494,46 @@
   .sliderwrap{ display:flex; align-items:center; gap:.9rem; margin-top:.7rem; }
   .sliderwrap[hidden]{ display:none; }
   .sliderwrap.dim{ opacity:.4; pointer-events:none; }
-  .slider{ flex:1 1 auto; accent-color:var(--accent); height:1.5rem; }
+  /* THE SLIDER OWNS ITS OWN GESTURE, and without this it barely moves
+     under a finger. `body` is touch-action:pan-y - which is what lets
+     the question screen claim horizontal swipes - and a range input
+     inherits that constraint, so the browser would not run its own
+     native horizontal thumb drag: the page had claimed the axis.
+     Reported as "the length and countdown adjustable thing does not
+     seem to be working with my finger."
+     touch-action:none is the correct value for a slider: it is a
+     control whose whole job is to consume the drag, on both axes, and
+     it can never be the thing you scroll the page by.
+     The thumb is also a real 28px target now. It was the browser
+     default - around 12px - inside a 24px track, which is well under
+     the 44px minimum this file sets for everything else and is most
+     of why it "barely works with the cursor" either. */
+  .slider{
+    flex:1 1 auto; accent-color:var(--accent); height:2.75rem;
+    touch-action:none; -webkit-appearance:none; appearance:none;
+    background:transparent; cursor:pointer;
+  }
+  .slider::-webkit-slider-runnable-track{
+    height:.5rem; border-radius:999px;
+    background:color-mix(in srgb, var(--ink) 16%, transparent);
+  }
+  .slider::-moz-range-track{
+    height:.5rem; border-radius:999px;
+    background:color-mix(in srgb, var(--ink) 16%, transparent);
+  }
+  .slider::-webkit-slider-thumb{
+    -webkit-appearance:none; appearance:none;
+    width:1.75rem; height:1.75rem; border-radius:999px;
+    background:var(--accent); border:2px solid rgba(255,255,255,.85);
+    box-shadow:0 2px 8px rgba(0,0,0,.35);
+    margin-top:-.625rem;
+  }
+  .slider::-moz-range-thumb{
+    width:1.75rem; height:1.75rem; border-radius:999px;
+    background:var(--accent); border:2px solid rgba(255,255,255,.85);
+    box-shadow:0 2px 8px rgba(0,0,0,.35);
+  }
+  .slider:active::-webkit-slider-thumb{ transform:scale(1.12); }
   .sliderval{
     font-family:var(--mono); font-size:.92rem; font-weight:700; color:var(--ink);
     min-width:5.5rem; text-align:right; font-variant-numeric:tabular-nums;
@@ -31295,7 +31334,20 @@ function showSetup(){
     const wrap = document.createElement("div");
     wrap.className = "sliderwrap";
     const slider = document.createElement("input");
-    slider.type = "range"; slider.min = min; slider.max = getMax(); slider.step = step;
+    /* THE TRACK ENDS ON THE STEP LATTICE, which is what removes the
+       dead space at the right-hand end. A range input snaps to steps
+       measured from `min`, so with 894 questions, min 5 and step 5 the
+       highest reachable stop is 890 - but `max` was set to 894, so the
+       last 4 questions' worth of TRACK existed with nothing on it and
+       the thumb stopped short of the end. Reported as "if I scroll all
+       the way to the right it should be max questions ... there
+       shouldn't be available space there, it needs to matchup
+       perfectly."
+       Setting max to the top lattice stop instead means the thumb
+       reaches the true right edge, and effectiveFrom() below turns
+       that stop into the real maximum. */
+    slider.type = "range"; slider.min = min; slider.step = step;
+    slider.max = topStopFor(getMax());
     slider.value = get();
     slider.className = "slider";
     slider.setAttribute("aria-label", labelText + " (specific number)");
@@ -31313,10 +31365,13 @@ function showSetup(){
        than to the lattice value under it. Every other position is
        unchanged, and this cannot overshoot: topStop is by construction
        the largest lattice value that is still <= dynMax. */
+    function topStopFor(rawMax){
+      const dynMax = Math.max(min, rawMax);
+      return Math.max(min, min + Math.floor((dynMax - min) / step) * step);
+    }
     function effectiveFrom(raw){
       const dynMax = Math.max(min, getMax());
-      const topStop = min + Math.floor((dynMax - min) / step) * step;
-      return raw >= topStop ? dynMax : raw;
+      return raw >= topStopFor(dynMax) ? dynMax : raw;
     }
     slider.addEventListener("input", () => {
       const v = effectiveFrom(Number(slider.value));
@@ -31340,7 +31395,7 @@ function showSetup(){
          picking a custom size larger than the new, smaller pool left
          cfg.size silently requesting more questions than exist. */
       const dynMax = Math.max(min, getMax());
-      slider.max = dynMax;
+      slider.max = topStopFor(dynMax);
       if(!every){
         if(get() > dynMax){
           /* Rounded down to the nearest reachable step, not dynMax itself
@@ -33088,7 +33143,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-23-114";
+const APP_BUILD = "2026-09-23-115";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -39838,8 +39893,33 @@ function applyGlassRefraction(el, mapImgId){
    is that a question with its .choices has to be on screen, so this
    cannot fire anywhere else in the app. */
 const SWIPE_SURFACE = document;
+/* THE GESTURE ONLY EXISTS ON A QUESTION, AND NEVER ON A CONTROL THAT
+   DRAGS. Moving these listeners to `document` in build 111 fixed the
+   dead strip at the top of a question and broke the sliders: the
+   touchmove handler below calls preventDefault() once a drag looks
+   horizontal, and on any other screen that was cancelling the native
+   drag of `<input type=range>`. Reported as "the length and countdown
+   adjustable thing does not seem to be working with my finger."
+   Proved rather than guessed: a BARE range input in this same browser
+   follows a synthetic touch drag to its maximum, so the harness was
+   not the problem - the app was eating the gesture.
+   Two guards, both needed. A question has to be on screen at all
+   (.choices is the same test touchend already used before advancing,
+   just applied earlier so the drag is never claimed in the first
+   place), and the touch must not have STARTED on something that owns
+   its own drag - a slider, a text field, a scrollable box. */
+const SWIPE_BLOCKING_TARGET = "input, textarea, select, [contenteditable]";
+function swipeGestureAllowed(target){
+  if(!document.querySelector(".choices")) return false;
+  if(target && target.closest && target.closest(SWIPE_BLOCKING_TARGET)) return false;
+  return true;
+}
 SWIPE_SURFACE.addEventListener("touchstart", (e) => {
   if(!theme.swipeAdvance) return;
+  if(!swipeGestureAllowed(e.target)){
+    swipeStartX = null; swipeStartY = null; swipeTouchId = null; swipeLocked = false;
+    return;
+  }
   if(e.touches.length !== 1){ swipeStartX = null; swipeStartY = null; swipeTouchId = null; swipeLocked = false; return; }
   const t = e.touches[0];
   swipeTouchId = t.identifier;

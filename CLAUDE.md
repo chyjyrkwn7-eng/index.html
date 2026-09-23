@@ -520,6 +520,40 @@ Every bug below was invisible at 390×844 in a desktop browser, which is where
 - The tab bar was a fixed 344px wide, off both edges of a 320px phone; the
   Rewards tab switcher overflowed sideways below 384px.
 
+**A `document`-LEVEL `preventDefault` EATS EVERY NATIVE DRAG IN THE
+APP.** Moving the swipe listeners to `document` (build 111) fixed the
+dead strip at the top of a question and silently broke both sliders:
+the touchmove handler calls `preventDefault()` once a drag looks
+horizontal, and on every other screen that cancelled the native drag of
+`<input type=range>`. Reported as *"the length and countdown adjustable
+thing does not seem to be working with my finger."*
+**The control experiment is what proved it**: a bare range input in the
+same browser follows a synthetic touch drag to its maximum, so the
+harness was fine and the app was eating the gesture. Run that before
+blaming the harness.
+`swipeGestureAllowed()` now guards both `touchstart` and `touchmove`:
+a question with its `.choices` must be on screen, and the touch must
+not have started on `input, textarea, select, [contenteditable]` —
+anything that owns its own drag.
+Sliders also carry **`touch-action:none`** (a control whose job is to
+consume the drag on both axes, and which can never be the thing you
+scroll by) and a **28px thumb in a 44px track**; the browser default
+was ~12px in 24px, well under the 44px minimum this file sets, which
+is most of why it "barely works with the cursor" either.
+
+**A RANGE INPUT'S `max` MUST LAND ON ITS STEP LATTICE, or the last
+stretch of track is dead.** Steps are measured from `min`, so with 894
+questions, min 5 and step 5 the highest reachable stop is 890 — but
+`max` was 894, so the thumb stopped short of the end and four
+questions' worth of track had nothing on it. *"If I scroll all the way
+to the right it should be max questions ... there shouldn't be
+available space there, it needs to matchup perfectly."* `topStopFor()`
+sets `max` to the top lattice stop and `effectiveFrom()` turns that
+stop into the real pool size, so the far right is both reachable and
+means *all of them*. Verified by dragging: thumb at `max`, display
+"894 questions", `cfg.size` 894 of a 894 pool. The countdown slider
+(5–90 step 5) is already exact and needed nothing.
+
 **THE SWIPE LISTENS ON `document`, NOT `#stage`, AND THAT MATTERS.**
 `#stage` is only the panel, so the strip along the TOP of a question —
 the progress dots and the unit line — is outside it, and a swipe
