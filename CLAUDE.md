@@ -2135,6 +2135,35 @@ re-evaluated on the next check.
   is the one place in the app that can settle that without guessing.
   Ask for it before re-diagnosing a bug that is already fixed.
 
+- **THE NEXT-QUESTION TRANSITION IS A FADE-THROUGH, NOT A SLIDE, and
+  that is a deliberate reversal.** Reported after four rounds of
+  tuning the slide: *"that motion is not easy on the eyes at all ...
+  maybe it needs to fade into the next question."* She was right, and
+  the reason is that the panel is nearly IDENTICAL between one
+  question and the next — same header, same progress dots, same Pause,
+  same Next bar. Sliding the whole thing a full screen width animates
+  a great many pixels that did not change and asks the eye to track
+  the entire display for what is really a swap of text. **No amount of
+  curve or duration tuning fixes an animation that is moving the wrong
+  thing** — three builds were spent proving that.
+  Now: the outgoing clone fades out over 100ms while drifting
+  `SLIDE_DRIFT` (14px) left; the incoming fades in over 150ms after an
+  85ms delay while drifting 14px back to 0. The fade carries the
+  change and the drift only says which direction it went.
+  **`SLIDE_IN_DELAY` is load-bearing**: it holds the incoming half
+  until the outgoing one is GONE, which is what makes this a fade
+  *through* rather than a cross-fade. Two blocks of body text
+  dissolving through each other at 50% opacity is unreadable mush, and
+  this screen has already been reported once for showing two questions
+  at once. Measured frame by frame, the worst simultaneous opacity is
+  **0.00**.
+  **`check-behaviour` section 8 asserts opacity, not geometry.** It
+  used to check that the two boxes never overlap horizontally — the
+  right test for a full-width slide, and meaningless now that both
+  panels sit in the same place on purpose. What it guards is the thing
+  the geometry stood in for: the two questions are never readable at
+  once. A gate has to track the decision it guards.
+
 - **AN EASE-OUT CURVE CAN BE SO AGGRESSIVE THAT THE ANIMATION READS AS
   LAG, and the way to see it is to sample the distance per frame.**
   The next-question slide ran `cubic-bezier(.32,.72,0,1)` over 200ms.

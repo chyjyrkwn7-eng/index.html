@@ -32608,6 +32608,22 @@ function choose(slot){
    the right behind it. Fixed positioning specifically because #stage
    itself has no positioning context of its own to anchor an absolute
    overlay to, and pinning by measured rect sidesteps needing one. */
+/* A FADE, NOT A SLIDE, and the travel is 14px rather than the width of
+   the screen. Reported directly: "that motion is not easy on the eyes
+   at all ... maybe it needs to fade into the next question."
+   She is right, and the reason is that the panel is nearly IDENTICAL
+   between one question and the next - same header, same progress dots,
+   same Pause, same Next bar. Sliding the whole thing a full screen
+   width animates a lot of pixels that did not change, and asks the eye
+   to track the entire display for something that is really only a
+   swap of text. The fade carries the change; the 14px drift only says
+   which direction it went.
+   It is also far cheaper: opacity and a tiny transform on an already
+   promoted layer, instead of two full-screen layers travelling.
+   SLIDE_IN_DELAY holds the incoming half back until the outgoing one
+   has finished fading, so the two are never legible together. */
+const SLIDE_DRIFT = 14;
+const SLIDE_IN_DELAY = 85;
 let slideTransitionInFlight = false;
 function advanceWithSlide(){
   /* The actual root cause of the reported "glitchy/buggy, slow"
@@ -32682,8 +32698,8 @@ function advanceWithSlide(){
   clone.style.cssText =
     "position:fixed; top:" + rect.top + "px; left:" + rect.left + "px; " +
     "width:" + rect.width + "px; margin:0; z-index:250; animation:none; " +
-    "transition:transform .17s cubic-bezier(.25,.46,.45,.94); pointer-events:none; " +
-    "will-change:transform;";
+    "transition:opacity .1s ease-out, transform .1s ease-out; " +
+    "pointer-events:none; will-change:opacity, transform;";
   document.body.appendChild(clone);
 
   advance();
@@ -32700,9 +32716,10 @@ function advanceWithSlide(){
      never actually rendering. Explicitly turning the animation off
      here removes that competition. */
   incoming.style.animation = "none";
-  incoming.style.transform = "translateX(100%)";
+  incoming.style.opacity = "0";
+  incoming.style.transform = "translateX(" + SLIDE_DRIFT + "px)";
   incoming.style.transition = "none";
-  incoming.style.willChange = "transform";
+  incoming.style.willChange = "opacity, transform";
   // Force layout so the starting position is actually committed before
   // the transition below is allowed to animate toward its own target.
   void incoming.offsetWidth;
@@ -32720,7 +32737,14 @@ function advanceWithSlide(){
      Both halves must carry the SAME curve and duration or the two
      questions travel at different speeds and visibly separate - the
      clone's is set in its cssText above. */
-  incoming.style.transition = "transform .17s cubic-bezier(.25,.46,.45,.94)";
+  /* The incoming half waits for the outgoing one to be GONE before it
+     starts. That delay is what keeps this a fade-THROUGH rather than a
+     cross-fade: two pieces of body text dissolving through each other
+     at 50% opacity is unreadable mush, and this screen has already
+     been reported once for showing two questions at once. */
+  incoming.style.transition =
+    "opacity .15s ease-out " + SLIDE_IN_DELAY + "ms, " +
+    "transform .15s cubic-bezier(.25,.46,.45,.94) " + SLIDE_IN_DELAY + "ms";
   /* NO rAF AT ALL, AND THAT IS THE REST OF THE "LAG". This used to
      wait TWO frames before setting the final transforms. Measured at
      4x CPU throttle: the tap did nothing whatsoever for 46.6ms - four
@@ -32744,10 +32768,13 @@ function advanceWithSlide(){
      one. */
   void clone.offsetWidth;
   void incoming.offsetWidth;
-  clone.style.transform = "translateX(-100%)";
+  clone.style.opacity = "0";
+  clone.style.transform = "translateX(-" + SLIDE_DRIFT + "px)";
+  incoming.style.opacity = "1";
   incoming.style.transform = "translateX(0)";
   setTimeout(() => {
     clone.remove();
+    incoming.style.opacity = "";
     incoming.style.transform = "";
     /* THE ANIMATION STAYS OFF, and clearing it here was a second,
        separate hiccup at the end of every single transition.
@@ -32774,7 +32801,7 @@ function advanceWithSlide(){
        on every future static render of this same panel. */
     incoming.style.willChange = "";
     slideTransitionInFlight = false;
-  }, 185);
+  }, 270);
 }
 
 function advance(){
@@ -32978,7 +33005,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-111";
+const APP_BUILD = "2026-09-22-112";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

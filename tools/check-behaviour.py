@@ -619,21 +619,27 @@ def _answer(pg):
 
 
 def check_slide(br):
-    """The next question SLIDES, and nothing else moves after it.
+    """The next question FADES THROUGH, and nothing else moves after it.
 
     Reported as "the lag it has when it goes to the next question was
     so bad the screen was like glitching", and it was two defects in
     one function, both invisible to a frame-drop count.
 
-    1. advanceWithSlide() clones the outgoing question and transitions
-       the clone to translateX(-100%), but the clone was still running
-       screen-fade-in - a translateY settle - and a running animation
-       beats a transition on the SAME property. So the clone ignored
-       the slide and played out the tail of the settle instead: it sat
-       there, moved a pixel, and snapped away at the end. .panel has a
-       fully transparent background, so the incoming question slid in
-       UNDERNEATH it and both were legible at once. That is what this
-       checks by geometry: the two boxes must never overlap on screen.
+    1. advanceWithSlide() clones the outgoing question and animates the
+       clone away, but the clone was still running screen-fade-in - a
+       translateY settle - and a running animation beats a transition
+       on the SAME property. So the clone ignored the transition: it
+       sat there, moved a pixel, and snapped away at the end. .panel
+       has a fully transparent background, so the incoming question
+       arrived UNDERNEATH it and both were legible at once.
+       THE ASSERTION IS ABOUT OPACITY, NOT GEOMETRY. It used to check
+       that the two boxes never overlap horizontally, which was the
+       right test for a full-width slide and is meaningless now that
+       the transition is a fade-through - the two panels sit in almost
+       exactly the same place on purpose. What has to stay true is the
+       thing the geometry was standing in for: the two questions are
+       never READABLE at the same time. A gate has to track the
+       decision it guards, or it fails the app for being right.
 
     2. The cleanup then set incoming.style.animation = "", which does
        not mean "it already ran, leave it" - it un-suppresses the CSS
@@ -649,7 +655,7 @@ def check_slide(br):
     is exactly when this check matters most. It already went stale once
     when the duration moved to .19s. Everything about the slide itself is the app's own code.
     """
-    print("\n8. the next question slides in beside the old one, and then stops")
+    print("\n8. the next question fades through cleanly, and then stops")
     for label, w, h in DEVICES:
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, touch=True)
         pg.evaluate("""()=>{ cfg.units=[topicsIn(QUESTIONS)[0]]; cfg.mode='drill';
@@ -689,20 +695,23 @@ def check_slide(br):
           window.setTimeout=function(fn,ms){ return (ms>=150&&ms<=400) ? 0 : st(fn,ms); };
           advanceWithSlide();
           window.setTimeout=st;
-          let worst=0, frames=0;
-          for(let i=0;i<40;i++){
+          let worst=0, frames=0, sawOut=false, sawIn=false;
+          for(let i=0;i<50;i++){
             await new Promise(r=>requestAnimationFrame(r));
             const c=document.querySelector('body > .panel');
             const n=document.querySelector('#stage > .panel');
             if(!c||!n) break;
-            const a=c.getBoundingClientRect(), b=n.getBoundingClientRect();
-            worst=Math.max(worst, Math.min(a.right,b.right)-Math.max(a.left,b.left));
+            const oc=+getComputedStyle(c).opacity, on=+getComputedStyle(n).opacity;
+            if(oc > .9) sawOut = true;
+            if(on > .9) sawIn = true;
+            worst=Math.max(worst, Math.min(oc,on));
             frames++;
-            if(Math.abs(b.left-a.left) < 2) break;
+            if(sawIn && oc < .01) break;
           }
-          return { worst: Math.round(worst), frames }; }""")
-        check("%s the two questions never overlap while sliding" % label,
-              worst["frames"] > 3 and worst["worst"] <= 2, worst)
+          return { worst: +worst.toFixed(2), frames, sawOut, sawIn }; }""")
+        check("%s the two questions are never readable at once" % label,
+              worst["frames"] > 3 and worst["sawOut"] and worst["sawIn"]
+              and worst["worst"] <= 0.15, worst)
         ctx.close()
 
 
