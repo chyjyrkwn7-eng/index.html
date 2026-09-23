@@ -1,7 +1,8 @@
 """The two screens the walk cannot reach, because both need run state."""
-import re, os, io, http.server, threading, functools, socket, sys
+import os, re, os, io, http.server, threading, functools, socket, sys
 from playwright.sync_api import sync_playwright
-ROOT="/home/user/Nova-Test"; CHROME="/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
+# Derived, never hardcoded - see check-positions.py.
+ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__))); CHROME="/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
 OUT=sys.argv[1]
 INSET=re.compile(r"env\(safe-area-inset-(top|right|bottom|left)(?:,\s*[^)]*)?\)")
 os.makedirs(OUT, exist_ok=True)

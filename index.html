@@ -2454,7 +2454,7 @@
      max() rather than a flat 16px so it still tracks a larger root font
      size, and never falls under the floor if one is ever set smaller. */
   .searchbox{
-    display:block; width:100%; font:inherit; font-size:max(16px, 1rem); color:var(--ink);
+    display:block; width:100%; font:inherit; font-size:max(17px, 1rem); color:var(--ink);
     background:#fff; border:1px solid var(--rule); border-radius:2px;
     padding:.7rem .9rem .7rem 2.5rem; margin:0; -webkit-appearance:none; appearance:none;
   }
@@ -2465,7 +2465,7 @@
      class that sets its own size at or above 16px. */
   input[type="text"], input[type="search"], input[type="email"],
   input[type="number"], input[type="tel"], input[type="password"],
-  textarea, select{ font-size:max(16px, 1rem); }
+  textarea, select{ font-size:max(17px, 1rem); }
   /* .searchbox's own left padding (2.5rem) is sized for the magnifying
      icon that sits inside the actual unit-search field \u2014 every other
      text input in the app (username, sync codes, name changes) reuses
@@ -2622,6 +2622,144 @@
   .cal-today-badge{
     font-size:.66rem; font-weight:800; letter-spacing:.04em; color:var(--accent-ink);
     background:var(--accent); padding:.15rem .5rem; border-radius:999px;
+  }
+
+  /* THE MONTH GRID. A real wall calendar is what was asked for, with
+     the old day-by-day list kept behind a toggle rather than replaced.
+     Seven columns of minmax(0,1fr), never a bare 1fr: a bare 1fr sizes
+     its track to the widest content in it, and "28" is wider than "3",
+     so the columns come out uneven on a narrow phone. */
+  .cal-grid-nav{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:.6rem; margin:0 0 .9rem;
+  }
+  .cal-grid-month{
+    font-family:var(--serif); font-size:1.15rem; font-weight:800;
+    color:var(--ink); text-align:center; flex:1 1 auto; min-width:0;
+  }
+  .cal-grid-arrow{
+    flex:0 0 auto; width:2.75rem; height:2.75rem; border-radius:999px;
+    display:flex; align-items:center; justify-content:center;
+    font:inherit; color:var(--ink); cursor:pointer;
+    background:var(--panel); border:1px solid var(--rule);
+    -webkit-appearance:none; appearance:none;
+  }
+  .cal-grid-arrow svg{ width:1.1rem; height:1.1rem; }
+  .cal-grid-arrow:disabled{ opacity:.35; cursor:default; }
+  [data-layout="modern"] .cal-grid-arrow{
+    background:rgba(255,255,255,.55); border:1px solid rgba(255,255,255,.5);
+    will-change:backdrop-filter; backdrop-filter:blur(16px) saturate(1.5); -webkit-backdrop-filter:blur(16px) saturate(1.5);
+  }
+  [data-theme="dark"][data-layout="modern"] .cal-grid-arrow{
+    background:rgba(28,33,40,.55); border:1px solid rgba(255,255,255,.09);
+  }
+  .cal-grid-head, .cal-grid{
+    display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); gap:.3rem;
+  }
+  .cal-grid-head{ margin:0 0 .4rem; }
+  .cal-grid-dow{
+    font-size:.66rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase;
+    color:var(--soft); text-align:center;
+  }
+  .cal-cell{
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.2rem;
+    min-height:2.9rem; padding:.25rem 0; border-radius:12px;
+    font:inherit; font-size:.9rem; font-weight:700; font-variant-numeric:tabular-nums;
+    color:var(--soft); background:transparent; border:1px solid transparent;
+    text-align:center; -webkit-appearance:none; appearance:none;
+  }
+  /* Kept in the flow rather than left out, so the first of the month
+     lands under the right weekday. */
+  .cal-cell-blank{ visibility:hidden; }
+  .cal-cell-class{
+    color:var(--ink); cursor:pointer;
+    background:var(--panel); border-color:var(--rule);
+  }
+  [data-layout="modern"] .cal-cell-class{
+    background:rgba(255,255,255,.55); border:1px solid rgba(255,255,255,.5);
+  }
+  [data-theme="dark"][data-layout="modern"] .cal-cell-class{
+    background:rgba(28,33,40,.55); border:1px solid rgba(255,255,255,.09);
+  }
+  .cal-cell-dot{ width:.34rem; height:.34rem; border-radius:999px; background:var(--accent); }
+  .cal-cell-holiday{ opacity:.75; }
+  .cal-cell-holiday .cal-cell-dot{ background:var(--wrong); }
+  .cal-cell-today{ border-color:var(--accent); }
+  [data-layout="modern"] .cal-cell-today{ border:1.5px solid var(--accent); }
+  /* AFTER the modern/dark .cal-cell-class rules above, and carrying the
+     same prefixes. Written before them first time round, which meant a
+     dark theme repainted the selected day in the ordinary card colour
+     and left its number in --accent-ink on top of it: measured, a
+     near-black number on a near-black tile, so the 23rd simply vanished
+     out of the grid. */
+  .cal-cell-sel,
+  [data-layout="modern"] .cal-cell-sel,
+  [data-theme="dark"][data-layout="modern"] .cal-cell-sel{
+    background:var(--accent); border:1.5px solid var(--accent);
+    color:var(--accent-ink); font-weight:800;
+  }
+  .cal-cell-sel .cal-cell-dot,
+  [data-theme="dark"][data-layout="modern"] .cal-cell-sel .cal-cell-dot{ background:var(--accent-ink); }
+  .cal-daycard{
+    margin:1rem 0 0; padding:.9rem .95rem; border-radius:14px;
+    background:var(--panel); border:1px solid var(--rule);
+  }
+  [data-layout="modern"] .cal-daycard{
+    background:rgba(255,255,255,.55); border:1px solid rgba(255,255,255,.5);
+    will-change:backdrop-filter; backdrop-filter:blur(16px) saturate(1.5); -webkit-backdrop-filter:blur(16px) saturate(1.5);
+    box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
+  }
+  [data-theme="dark"][data-layout="modern"] .cal-daycard{
+    background:rgba(28,33,40,.55); border:1px solid rgba(255,255,255,.09);
+    box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  .cal-daycard-empty{ background:transparent; border-style:dashed; }
+  .cal-grid-legend{
+    display:flex; flex-wrap:wrap; gap:.25rem .9rem; margin:.8rem 0 0;
+    font-size:.72rem; color:var(--soft);
+  }
+  .cal-grid-legend span{ display:flex; align-items:center; gap:.35rem; }
+  .cal-legend-dot{ width:.34rem; height:.34rem; border-radius:999px; background:var(--accent); }
+  .cal-legend-dot-holiday{ background:var(--wrong); }
+  /* Phone: the dot is the whole signal, and the card below says what
+     the day is. The note is in the DOM but not shown - see the comment
+     at its construction. */
+  .cal-cell-note{ display:none; }
+  @media (min-width:40rem){
+    /* A TABLET CELL SHOWS THE DAY, NOT A DOT. Asked for directly: the
+       larger devices should carry the context for the day in the grid.
+       So the cell becomes a real calendar box - number top-left, text
+       under it, clamped to three lines so one long day cannot set the
+       height of the whole month - and the dot comes off, because the
+       text it was standing in for is now there. */
+    .cal-cell{
+      min-height:5.6rem; font-size:.95rem; gap:.15rem;
+      justify-content:flex-start; align-items:stretch;
+      padding:.4rem .4rem .35rem; text-align:left;
+    }
+    .cal-cell-num{ font-weight:800; }
+    .cal-cell .cal-cell-dot{ display:none; }
+    .cal-cell-note{
+      display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
+      overflow:hidden; font-size:.62rem; line-height:1.25; font-weight:600;
+      color:var(--soft); width:100%;
+      /* break-word, not anywhere: a clamped box clips horizontally as
+         well as vertically, so "Multiculturalism" in an 88px cell was
+         being cut mid-word at the edge rather than wrapping. break-word
+         only breaks a word that cannot fit on a line of its own, which
+         leaves every name that does fit intact - the same choice the
+         badge grid already documents. */
+      overflow-wrap:break-word; word-break:break-word;
+    }
+    .cal-cell-sel .cal-cell-note{ color:var(--accent-ink); opacity:.85; }
+    .cal-cell-holiday .cal-cell-note{ color:var(--wrong); }
+    .cal-grid-head, .cal-grid{ gap:.45rem; }
+    .cal-grid-dow{ font-size:.74rem; }
+    .cal-grid-month{ font-size:1.35rem; }
+    .cal-grid-legend{ font-size:.8rem; }
+    /* The dot legend describes a phone. On a tablet the colour of the
+       text is the signal instead, so the words follow it. */
+    .cal-grid-legend .cal-legend-dot{ display:none; }
   }
   /* The two-board leaderboard layout, per explicit request \u2014 genuinely
      side by side (not stacked), each a compact self-contained ranked
@@ -3195,7 +3333,7 @@
     border:1px solid var(--rule); background:var(--panel); color:var(--ink); font:inherit;
     /* Same 16px floor as .searchbox, and for the same reason - this one
        was .85rem (13.6px), the worst offender in the app. */
-    font-size:max(16px, 1rem);
+    font-size:max(17px, 1rem);
   }
   .vroom-chat-send{ flex:0 0 auto; padding:.55rem 1.1rem; font-size:.85rem; }
   /* Lobby layout rework, per explicit request — the share-code card
@@ -4667,6 +4805,25 @@
      merged-with-Start bar deliberately small and content-fitted, and
      that has to stay exactly as small on a tablet/laptop as on a
      phone, not grow back out alongside the plain bar. */
+  /* THE UNIT-SELECTION BAR MUST NEVER BE SMALLER THAN HOME'S, and on a
+     phone it was: measured, 296px against Home's 376 on a 17 Pro Max
+     and 369 on a 14/15/16 - 80px and 73px narrower, on the one screen
+     that has MORE in it. The tablet already grows (563 against 480);
+     only the phone shrank, because hiding the labels and tightening the
+     tab padding let the bar shrink-to-fit its own smaller contents.
+     Reported directly: "it needs to be even bigger (literally just
+     wider to fit the start button) this goes for all devices".
+     So the phone bar is given the width instead of being left to find
+     it. 100vw minus the same 1.5rem the plain bar sits inside lands it
+     at Home's own width on a 393px phone and comfortably past it on a
+     440px one, and the navrow's space-around spreads the four icons
+     into it rather than leaving them huddled. The icon-only compromise
+     stays - four labels plus a Start pill genuinely do not fit a phone,
+     which is what the note below measured - but the BAR is the same
+     object on both screens now, which is what was actually wrong. */
+  @media (max-width:39.99rem){
+    .bottomtabs.has-start-tab{ width:calc(100vw - 1.5rem); max-width:34rem; }
+  }
   @media (min-width:40rem){
     .bottomtabs:not(.has-start-tab){ padding:.55rem; gap:.3rem; }
     .bottomtabs:not(.has-start-tab) .bottomtab{ padding:.72rem 1.55rem; gap:.2rem; }
@@ -4959,7 +5116,7 @@
   @keyframes pushfade{ from{ opacity:0 } to{ opacity:1 } }
   .pushing-update-label{
     margin:0; font-family:var(--mono);
-    font-size:max(16px, 1rem); letter-spacing:.06em;
+    font-size:max(17px, 1rem); letter-spacing:.06em;
     color:var(--ink); text-align:center;
   }
   .pushing-update-track{
@@ -5079,7 +5236,7 @@
   }
   .frame-code{
     font-family:var(--mono);
-    font-size:max(16px, 1.05rem);
+    font-size:max(17px, 1.05rem);
     letter-spacing:.14em;
     text-align:center;
     color:var(--ink);
@@ -6836,8 +6993,16 @@
        trap this file documents for .opt .box, .next's box-shadow and
        .bottomtab-label. Without it the column never widened and the hero
        stayed exactly the size it was. */
-    [data-layout="modern"] .panel.home{ padding-left:.7rem; padding-right:.7rem; }
-    .panel.home .cosmic-hero-wrap{ max-width:min(25.5rem, 52vh); }
+    /* .45rem, not .7rem. The hero is width:100% inside this column, so
+       on a phone its max-width never binds - the column does. Measured
+       on a 17 Pro Max it was 378px against a 408px cap, so the only way
+       to grow the planet is to widen what contains it. */
+    [data-layout="modern"] .panel.home{ padding-left:.45rem; padding-right:.45rem; }
+    /* "the planet system on the main menu/welcome screen could be
+       slightly bigger". Both numbers raised together so neither becomes
+       the sole limit: the vh cap is what binds on a short phone and the
+       rem cap on a tall one. */
+    .panel.home .cosmic-hero-wrap{ max-width:min(27rem, 56vh); }
     .panel.home .homegreeting{ margin-top:2.1rem; }
     .panel.home .hometitle-wrap{ margin-bottom:2.7rem; }
     /* Home only, and only alongside the two auto margins on its button
@@ -6872,6 +7037,43 @@
      padding SHORTHAND ~900 lines below wins on source order otherwise. */
   @media (max-width:32rem){
     [data-layout="modern"] .panel.home.screen-home-actual{ padding-bottom:5rem; }
+  }
+  /* THE FULL ROW IS ONLY NEEDED WHERE THE BUTTON AND THE CIRCLE ACTUALLY
+     SHARE A COLUMN. Measured: the button is a fixed 224px centred, and
+     the circle is pinned to the right edge - so on a 393px phone they
+     are 1px apart horizontally and on a 440px one they are 25px apart,
+     while on a 375px SE they overlap by 8. Above 24rem there is nothing
+     underneath the button to clear, so reserving a full 5rem there was
+     buying clearance from a collision that cannot happen, and spending
+     it on the gap that was reported instead - "the start studying
+     button needs to be way closer to the bottom tab".
+     5rem -> 3.25rem drops the button 28px, which takes a 17 Pro Max
+     from 83px above the tab bar to 55 - the same figure the iPad Pro
+     11" has always had, and the layout this was asked to match.
+     Narrower phones keep the full row: there the circle genuinely is
+     under the button. check-fixes.py measures the clearance on every
+     device in the matrix, so this cannot go wrong quietly. */
+  @media (min-width:24rem) and (max-width:32rem){
+    [data-layout="modern"] .panel.home.screen-home-actual{ padding-bottom:3.25rem; }
+    /* AND THE BUTTON HAS TO EARN THE ROOM IT JUST TOOK. Dropping it into
+       the circle's band is only safe while the two do not share a
+       column, and at its natural 224px they very nearly do: measured,
+       the gap between the button's right edge and the circle's left is
+       30px on a 440px phone but SIX on a 393px one, with the two now
+       overlapping vertically. Six pixels reads as a collision even
+       though the rectangles miss, which is exactly what the 12px floor
+       in check-fixes.py is for.
+       The width is a MIN-WIDTH, not padding: .panel.home .next carries
+       min-width:14rem, so the button is 224px because that floor is
+       wider than its own text and trimming the padding moves nothing
+       at all - which is exactly what the first attempt measured.
+       12.5rem takes it to 200px and the gap to ~14px on the tightest
+       phone in this tier, with the height and therefore the tap target
+       untouched. "Start Studying" needs about 160px at this size, so
+       the button is still comfortably wider than its label. The alternative was letting the
+       393px phones keep the old 83px gap, which is the one thing this
+       was asked not to do. */
+    .panel.home.screen-home-actual .playbtn{ min-width:12.5rem; }
   }
   /* An SE has no slack to give: its content already overflows, so the
      button sits at the end of the content rather than on the panel
@@ -6977,7 +7179,16 @@
        text group moves UP by exactly this much and the button does not
        move at all, which is the half of the request that matters.
        Measured rather than chosen; see the table in CLAUDE.md. */
-    .panel.home.screen-home-actual .hometitle-wrap{ margin-bottom:1.3rem; }
+    /* BACK DOWN FROM 1.3rem, reversing the raise above - asked for
+       directly: "the wording above that button needs to be lower and
+       closer to the start studying button". The greeting's
+       margin-top:auto is still the only auto in this column, so this
+       works in both directions: every pixel taken off here goes back
+       into that auto and the text group moves DOWN by exactly that
+       much, with the button not moving at all. 1.3 -> .5rem is 13px
+       lower and 13px closer, landing the tagline about 32px above the
+       button against the ~24px the row costs on its own. */
+    .panel.home.screen-home-actual .hometitle-wrap{ margin-bottom:.5rem; }
     .panel.home.screen-home-actual .playbtn{ margin-top:0; margin-bottom:0; }
   }
   /* Short AND wide is excluded by the 60rem height floor, and that is
@@ -21925,7 +22136,25 @@ new MutationObserver(() => {
      was supposed to have fixed. Three passes cover the animation without
      ever fighting a scroll the person made themselves: each one only acts
      if the page is still pushed down. */
-  const settle = () => { if(window.scrollY > 0) window.scrollTo(0, 0); };
+  /* scrollY IS NOT THE ONLY WAY iOS LEAVES A PAGE PUSHED UP. When the
+     keyboard opens, iOS pans the VISUAL viewport rather than scrolling
+     the layout one, so window.scrollY stays 0 the whole time - which
+     means the `scrollY > 0` guard this used to carry never fired, and
+     the reset it guards never ran. That is "it gets stuck in that
+     position when it puts you to the main menu": the page really is
+     displaced, and the one thing meant to put it back was asking the
+     wrong question.
+     visualViewport.offsetTop is the displacement that actually
+     happened. scrollTo(0,0) still only moves the layout viewport, so
+     when the pan is purely visual the extra scrollTo is harmless and
+     the blur above is what lets iOS unwind it - but now the passes run
+     at all, which they did not before. */
+  const displaced = () => {
+    if(window.scrollY > 0) return true;
+    const vv = window.visualViewport;
+    return !!(vv && (vv.offsetTop > 0 || vv.pageTop > 0));
+  };
+  const settle = () => { if(displaced()) window.scrollTo(0, 0); };
   settle();
   requestAnimationFrame(settle);
   setTimeout(settle, 160);
@@ -33763,7 +33992,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-23-130";
+const APP_BUILD = "2026-09-23-131";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -38550,6 +38779,14 @@ function showCustomize(){
   toTop();
 }
 
+/* WHICH CALENDAR VIEW IS SHOWING. A module variable rather than a field
+   on `store` or `theme`: it was asked for as a default ("the list should
+   be off by default"), not as a setting to remember, and anything stored
+   on `store` would also need its own default in applyLoadedData(). It
+   survives a trip to another screen and back inside one session, and a
+   relaunch puts it back on the month grid. */
+let calendarView = "month";
+
 function showCalendar(){
   setActiveNav(null);
   countEl.textContent = "Calendar";
@@ -38572,6 +38809,94 @@ function showCalendar(){
   sub.textContent = "The course calendar \u2014 every class day, start to finish.";
   panel.appendChild(sub);
 
+  /* The same .navsegment/.iconbtn switcher the tabbed screens use, per
+     the shared-pattern convention - not a third kind of toggle. */
+  const seg = document.createElement("div");
+  /* .profiletabs as well as .navsegment, which is the pattern the other
+     tabbed screens use and the only one that actually renders: bare
+     .navsegment is the retired legacy header element and computes to
+     width:0 with overflow:hidden, so a switcher built on it alone is
+     present in the DOM, reports two buttons 61px and 43px wide, and
+     draws nothing. .profiletabs is what carries display:flex,
+     width:fit-content and the centring. */
+  seg.className = "navsegment profiletabs";
+  const monthTabBtn = document.createElement("button");
+  monthTabBtn.type = "button"; monthTabBtn.className = "iconbtn"; monthTabBtn.textContent = "Month";
+  const listTabBtn = document.createElement("button");
+  listTabBtn.type = "button"; listTabBtn.className = "iconbtn"; listTabBtn.textContent = "List";
+  seg.append(monthTabBtn, listTabBtn);
+  panel.appendChild(seg);
+
+  /* ---- the month grid ---- */
+  const monthWrap = document.createElement("div");
+  monthWrap.className = "cal-monthview";
+  panel.appendChild(monthWrap);
+
+  const gridNav = document.createElement("div");
+  gridNav.className = "cal-grid-nav";
+  const prevBtn = document.createElement("button");
+  prevBtn.type = "button"; prevBtn.className = "cal-grid-arrow";
+  prevBtn.setAttribute("aria-label", "Previous month");
+  prevBtn.innerHTML = "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M15 6l-6 6 6 6\"/></svg>";
+  const gridLabel = document.createElement("p");
+  gridLabel.className = "cal-grid-month";
+  const nextBtn = document.createElement("button");
+  nextBtn.type = "button"; nextBtn.className = "cal-grid-arrow";
+  nextBtn.setAttribute("aria-label", "Next month");
+  nextBtn.innerHTML = "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 6l6 6-6 6\"/></svg>";
+  gridNav.append(prevBtn, gridLabel, nextBtn);
+  monthWrap.appendChild(gridNav);
+
+  const gridHead = document.createElement("div");
+  gridHead.className = "cal-grid-head";
+  ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].forEach(d => {
+    const c = document.createElement("span");
+    c.className = "cal-grid-dow"; c.textContent = d;
+    gridHead.appendChild(c);
+  });
+  monthWrap.appendChild(gridHead);
+
+  const grid = document.createElement("div");
+  grid.className = "cal-grid";
+  monthWrap.appendChild(grid);
+
+  const dayCard = document.createElement("div");
+  dayCard.className = "cal-daycard";
+  monthWrap.appendChild(dayCard);
+
+  const legend = document.createElement("div");
+  legend.className = "cal-grid-legend";
+  const legClass = document.createElement("span");
+  const legClassDot = document.createElement("i");
+  legClassDot.className = "cal-legend-dot";
+  legClass.append(legClassDot, document.createTextNode("Class day"));
+  const legHol = document.createElement("span");
+  const legHolDot = document.createElement("i");
+  legHolDot.className = "cal-legend-dot cal-legend-dot-holiday";
+  legHol.append(legHolDot, document.createTextNode("No class"));
+  legend.append(legClass, legHol);
+  monthWrap.appendChild(legend);
+
+  /* LAST, and that ordering is the whole point. Above the grid it
+     pushed the day card - the thing you actually came to read - down
+     behind the bottom tab bar on a phone; below the card, the card
+     clears the bar and this is the only thing that needs scrolling to,
+     which is the right way round for a secondary control. */
+  const gridTodayRow = document.createElement("div");
+  gridTodayRow.className = "cal-action-row";
+  gridTodayRow.style.marginTop = ".9rem";
+  const gridTodayBtn = document.createElement("button");
+  gridTodayBtn.type = "button"; gridTodayBtn.className = "cal-action-btn";
+  gridTodayBtn.textContent = "Go to today";
+  gridTodayRow.appendChild(gridTodayBtn);
+  monthWrap.appendChild(gridTodayRow);
+
+
+  /* ---- the day-by-day list, unchanged, now behind the toggle ---- */
+  const listWrap = document.createElement("div");
+  listWrap.className = "cal-listview";
+  panel.appendChild(listWrap);
+
   const actionRow = document.createElement("div");
   actionRow.className = "cal-action-row";
   const expandAllBtn = document.createElement("button");
@@ -38581,7 +38906,7 @@ function showCalendar(){
   todayBtn.type = "button"; todayBtn.className = "cal-action-btn";
   todayBtn.textContent = "Go to today";
   actionRow.append(expandAllBtn, todayBtn);
-  panel.appendChild(actionRow);
+  listWrap.appendChild(actionRow);
 
   const searchWrap = document.createElement("div");
   searchWrap.className = "searchwrap";
@@ -38592,11 +38917,11 @@ function showCalendar(){
   searchInput.placeholder = "Search dates or events";
   searchInput.setAttribute("aria-label", "Search dates or events");
   searchWrap.append(searchIcon, searchInput);
-  panel.appendChild(searchWrap);
+  listWrap.appendChild(searchWrap);
 
   const list = document.createElement("div");
   list.className = "cal-list";
-  panel.appendChild(list);
+  listWrap.appendChild(list);
 
   const now = new Date();
   const todayStr = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
@@ -38734,8 +39059,133 @@ function showCalendar(){
     });
   });
 
+  /* ---- the grid's own state and rendering ---- */
+  const byDate = {};
+  CALENDAR_DATA.forEach(entry => { byDate[entry.date] = entry; });
+  let gridMonthIdx = Math.max(0, monthKeys.indexOf(todayMonthKey));
+  let selectedDate = byDate[todayStr] ? todayStr : null;
+
+  function renderDayCard(){
+    dayCard.replaceChildren();
+    const entry = selectedDate ? byDate[selectedDate] : null;
+    if(!entry){
+      dayCard.className = "cal-daycard cal-daycard-empty";
+      const p = document.createElement("p");
+      p.className = "cal-row-text";
+      p.style.color = "var(--soft)";
+      p.textContent = "Tap a day to see what is on it.";
+      dayCard.appendChild(p);
+      return;
+    }
+    dayCard.className = "cal-daycard" + (entry.holiday ? " cal-row-holiday" : "");
+    const head = document.createElement("p");
+    head.className = "cal-row-date"; head.textContent = formatDayHead(entry.date);
+    if(entry.date === todayStr){
+      const badge = document.createElement("span");
+      badge.className = "cal-today-badge"; badge.textContent = "Today";
+      head.appendChild(badge);
+    }
+    const body = document.createElement("p");
+    body.className = "cal-row-text"; body.textContent = entry.text;
+    dayCard.append(head, body);
+  }
+
+  function renderGrid(){
+    const key = monthKeys[gridMonthIdx];
+    const [y, m] = key.split("-").map(Number);
+    gridLabel.textContent = MONTH_LABELS[m - 1] + " " + y;
+    prevBtn.disabled = gridMonthIdx === 0;
+    nextBtn.disabled = gridMonthIdx === monthKeys.length - 1;
+
+    grid.replaceChildren();
+    /* new Date(y, m, 0) is the last day of month m, which is how many
+       days it has - no table, and it gets February right. */
+    const lead = new Date(y, m - 1, 1).getDay();
+    const daysInMonth = new Date(y, m, 0).getDate();
+    for(let i = 0; i < lead; i++){
+      const blank = document.createElement("span");
+      blank.className = "cal-cell cal-cell-blank";
+      blank.setAttribute("aria-hidden", "true");
+      grid.appendChild(blank);
+    }
+    for(let d = 1; d <= daysInMonth; d++){
+      const ds = key + "-" + String(d).padStart(2, "0");
+      const entry = byDate[ds];
+      const cell = document.createElement(entry ? "button" : "span");
+      let cls = "cal-cell";
+      if(entry) cls += " cal-cell-class";
+      if(entry && entry.holiday) cls += " cal-cell-holiday";
+      if(ds === todayStr) cls += " cal-cell-today";
+      if(entry && ds === selectedDate) cls += " cal-cell-sel";
+      cell.className = cls;
+      cell.dataset.date = ds;
+      const num = document.createElement("span");
+      num.className = "cal-cell-num";
+      num.textContent = String(d);
+      cell.appendChild(num);
+      if(entry){
+        /* The day's own content, in the cell. Hidden on a phone by CSS
+           rather than left out of the DOM: seven columns on a 393px
+           screen give each day about 47px, which is not a width any
+           amount of type can be read in - there the dot plus the card
+           below is the honest answer. From tablet up a column is 100px
+           and a real wall calendar shows what is on, so it does. */
+        const note = document.createElement("span");
+        note.className = "cal-cell-note";
+        note.textContent = entry.text;
+        cell.appendChild(note);
+        cell.type = "button";
+        cell.setAttribute("aria-label", formatDayHead(ds) + " \u2014 " + entry.text);
+        cell.setAttribute("aria-pressed", ds === selectedDate ? "true" : "false");
+        const dot = document.createElement("i");
+        dot.className = "cal-cell-dot";
+        cell.appendChild(dot);
+        cell.addEventListener("click", () => {
+          selectedDate = (selectedDate === ds) ? null : ds;
+          renderGrid();
+          renderDayCard();
+        });
+      }
+      grid.appendChild(cell);
+    }
+  }
+
+  prevBtn.addEventListener("click", () => {
+    if(gridMonthIdx === 0) return;
+    gridMonthIdx -= 1; renderGrid();
+  });
+  nextBtn.addEventListener("click", () => {
+    if(gridMonthIdx === monthKeys.length - 1) return;
+    gridMonthIdx += 1; renderGrid();
+  });
+  gridTodayBtn.addEventListener("click", () => {
+    const idx = monthKeys.indexOf(todayMonthKey);
+    if(idx < 0 || !byDate[todayStr]){
+      showToast("Today isn't a class day on the calendar.");
+      return;
+    }
+    gridMonthIdx = idx; selectedDate = todayStr;
+    renderGrid(); renderDayCard();
+  });
+
+  function selectCalendarView(which){
+    calendarView = which === "list" ? "list" : "month";
+    const onMonth = calendarView === "month";
+    monthTabBtn.classList.toggle("active", onMonth);
+    listTabBtn.classList.toggle("active", !onMonth);
+    monthTabBtn.setAttribute("aria-pressed", onMonth ? "true" : "false");
+    listTabBtn.setAttribute("aria-pressed", onMonth ? "false" : "true");
+    monthWrap.hidden = !onMonth;
+    listWrap.hidden = onMonth;
+  }
+  monthTabBtn.addEventListener("click", () => selectCalendarView("month"));
+  listTabBtn.addEventListener("click", () => selectCalendarView("list"));
+
   render("");
   searchInput.addEventListener("input", () => render(searchInput.value));
+  renderGrid();
+  renderDayCard();
+  selectCalendarView(calendarView);
 
   stage.replaceChildren(panel);
   toTop();

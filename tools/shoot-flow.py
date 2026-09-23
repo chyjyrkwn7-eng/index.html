@@ -5,11 +5,14 @@ Mounting an onboarding screen against a seeded account is what put a bottom
 tab bar into earlier screenshots of screens that never have one. This clicks
 through from a genuinely fresh install, exactly as a person would.
 """
-import functools, http.server, io, os, re, socket, sys, threading
+import os, functools, http.server, io, os, re, socket, sys, threading
 from playwright.sync_api import sync_playwright
 
 CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
-ROOT = "/home/user/Nova-Test"
+# Derived, never hardcoded - see the note in check-positions.py. This
+# pointed at the retired pre-97 repo, so every screenshot it produced
+# after the copy was of a frozen build rather than the live app.
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.environ.get("SHOOT_OUT", os.path.dirname(os.path.abspath(__file__)) + "/walk")
 INSET_RE = re.compile(r"env\(safe-area-inset-(top|bottom|left|right)(?:\s*,[^()]*)?\)")
 STANDALONE = """

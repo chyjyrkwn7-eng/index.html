@@ -23,7 +23,15 @@ import functools, http.server, io, os, re, socket, sys, threading
 from playwright.sync_api import sync_playwright
 
 CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
-ROOT = "/home/user/Nova-Test"
+# DERIVED, NEVER HARDCODED. This said "/home/user/Nova-Test" - the repo
+# the app was developed in BEFORE build 97 and retired at it - so from
+# build 97 onward this gate served, measured and reported on a frozen
+# copy of the app instead of the one being shipped. Every number it
+# printed was build 97's, every change since was invisible to it, and it
+# passed every time because the file it was looking at never changed.
+# A gate pointed at the wrong repository cannot fail, and a check that
+# cannot fail reads as coverage.
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 INSET_RE = re.compile(r"env\(safe-area-inset-(top|bottom|left|right)(?:\s*,[^()]*)?\)")
 CHROME_H = {"ios-phone": (110, 60), "ios-tablet": (90, 90),
             "android": (56, 56), "desktop": (130, 130)}
@@ -187,9 +195,25 @@ def main():
                   // The floor is whichever comes first, not the tab bar by
                   // assumption. On a phone that is the circle, 54px above the
                   // bar; on a tablet the circle and the label sit level with
-                  // the bar in the corners beside it, so the bar wins there
-                  // and the number is the one this file has always recorded.
-                  const floors = [tbt, fab && fab.top, vr && vr.top]
+                  // the bar in the corners beside it, so the bar wins there.
+                  //
+                  // BUT ONLY WHAT THE BUTTON ACTUALLY SHARES A COLUMN WITH.
+                  // A fixed element that is nowhere near the button
+                  // horizontally is not a floor under it - it is furniture
+                  // beside it, exactly as the circle and the version label
+                  // already are on a tablet. Counting it anyway assumed the
+                  // button can never descend past the circle's top line,
+                  // which stopped being true the moment the button was
+                  // narrowed and dropped toward the bar: measured, it clears
+                  // the circle by 25px horizontally on a 440px phone and 13
+                  // on a 393px one, and this check still called that "-10px
+                  // above the tab bar" and flagged a layout that is fine.
+                  // check-fixes.py owns the horizontal question and tests
+                  // both axes together; this one owns the vertical, so it
+                  // has to ask the vertical question about the right things.
+                  const overlapsX = r => r && !(r.right <= br_.left || r.left >= br_.right);
+                  const floors = [tbt, overlapsX(fab) ? fab.top : null,
+                                       overlapsX(vr) ? vr.top : null]
                                    .filter(v=>v!==null && v!==undefined);
                   return {above: tlb!==null?Math.round(br_.top-tlb):null,
                           below: floors.length?Math.round(Math.min.apply(null,floors)-br_.bottom):null,
@@ -203,7 +227,7 @@ def main():
                     d = abs(home["above"] - home["below"])
                     if d > 45: flags.append(f"{tag}: Start Studying off-centre by {d}px ({home['above']} above / {home['below']} below)")
                 if home["below"] is not None and home["below"] < 8:
-                    flags.append(f"{tag}: Start Studying only {home['below']}px above the tab bar")
+                    flags.append(f"{tag}: Start Studying only {home['below']}px above the nearest thing under it")
                 if wel["hintGap"] < 0: flags.append(f"{tag}: welcome hint off the bottom by {-wel['hintGap']}px")
                 if scrolls: flags.append(f"{tag}: scrolls -> {scrolls}")
                 ctx.close()

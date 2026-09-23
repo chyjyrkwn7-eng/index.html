@@ -2705,12 +2705,36 @@ arbitrary frame.
 Regenerate with `python3 tools/check-positions.py`; these are the numbers to
 check a change against, not to trust forever. Measured installed, portrait.
 
+**THE NUMBERS ABOVE WERE WRONG FOR 34 BUILDS, AND THE TOOL PASSED EVERY
+TIME.** `check-positions.py` carried `ROOT = "/home/user/Nova-Test"` -
+the repo the app was developed in before build 97 and retired at it - so
+from the copy onward it served, measured and reported a frozen build 97
+while the live app moved on without it. `shoot-flow.py` and
+`shoot-results.py` had the identical line, so every screenshot they made
+after the move was of that frozen build too. **A gate pointed at the
+wrong repository cannot fail**, which is the same trap as a check that
+measures nothing, wearing different clothes. All three derive ROOT from
+their own location now, as the other ten tools already did. If a tool
+ever reports a number that does not move when you change the thing it
+measures, check what it is actually serving before you believe it.
+
+**And the vertical gate had gone stale in the same way a label gate
+does.** Its "below" figure took the nearest fixed thing under the button
+- tab bar, daily-question circle, version label - and the circle counted
+whether or not it was anywhere near the button horizontally. That was
+safe while the button always sat above the circle, and wrong the moment
+the button was narrowed and dropped beside it: the tool called a correct
+layout "-10px above the tab bar". It only counts furniture the button
+actually shares a column with now. `check-fixes.py` owns the horizontal
+question and tests both axes together; this one owns the vertical, so it
+has to ask the vertical question about the right things.
+
 | | iPhone SE 2/3 | 13 mini | 14/15/16 | **17 Pro Max** | iPad mini | **iPad Pro 11"** | iPad Pro 12.9" | Dell Latitude | MBP 14" |
 |---|---|---|---|---|---|---|---|---|---|
 | viewport | 375×667 | 375×812 | 393×852 | **440×956** | 744×1133 | **834×1194** | 1024×1366 | 1366×638 | 1512×852 |
-| onboarding Continue, y | 527 | 672 | 713 | **816** | 993 | **1054** | 1227 | 503 | 717 |
-| …spread across the 6 screens | 54¹ | 0 | 0 | **0** | 1 | **1** | 0 | 0 | 1 |
-| Home: tagline→button / button→furniture | 50/27 | 45/18 | 45/18 | **45/18** | 81/59 | **84/61** | 92/66 | 43/60 | 31/48 |
+| onboarding Continue, y | 581 | 672 | 712 | **816** | 993 | **1054** | 1227 | 502 | 717 |
+| …spread across the 6 screens | 54¹ | 0 | 0 | **0** | 0 | **1** | 1 | 0 | 1 |
+| Home: tagline→button / button→furniture | 50/27 | 32/18 | 32/61 | **32/61** | 81/59 | **84/61** | 92/66 | 43/60 | 31/48 |
 | Welcome: hint off the bottom edge | 33 | 46 | 46 | **46** | 33 | **33** | 33 | 29 | 29 |
 | intro cards: padding in / gap between | 5/6 | 5/6 | 8/11 | **14/15** | 20/24 | **20/24** | 20/24 | 6/8 | 8/11 |
 | daily question button | 54px | 54 | 54 | **54** | 74 | **74** | 74 | 74 | 74 |
@@ -2732,6 +2756,27 @@ furniture below it rather than centred between that and the tagline — the
 daily-question circle on a phone, the tab bar on a tablet, where the circle
 and the version label sit on the bar's own centre line in the corners
 beside it.
+
+**THE TAGLINE CAME BACK DOWN IN BUILD 131, and the button moved with
+it.** Asked for directly: *"the start studying button needs to be way
+closer to the bottom tab, and the wording above that button needs to be
+lower and closer to the start studying button"*, alongside *"the
+iPad/larger tablets have such a perfect layout and the phones need to be
+just as great"*. That is the reverse of the build 94 request below, and
+the same single auto margin serves both directions - `.hometitle-wrap`
+went 1.3rem → .5rem, so the text dropped 13px and tightened to 32px
+above the button without the button moving.
+The button then moved on its own account: the 5rem row reserved for the
+daily-question circle is only needed where the two share a column, which
+above 24rem they do not, so `(min-width:24rem)` takes it to 3.25rem and
+the button falls 28px. Measured, a 17 Pro Max went from 83px above the
+tab bar to **61 - the same figure the iPad Pro 11" has**, which is the
+parity that was asked for. The button is capped at 12.5rem on those
+phones so it clears the circle by 25px on a 440px screen and 13 on a
+393px one; `.panel.home .next` carries `min-width:14rem`, so trimming
+its padding moves nothing at all and the cap is the only lever. The hero
+grew with it (`min(27rem, 56vh)` and a .45rem column gutter), because on
+a phone the hero's max-width never binds - the column does.
 
 **The tagline→button figures went UP in build 94 and the button did not
 move**, which is the property that made the change safe: reported as
