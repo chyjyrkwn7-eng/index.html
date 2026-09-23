@@ -1253,7 +1253,45 @@ Everything below follows from that.
   live, so emptying it stops the notice on every device at the next
   check with no code change and no update prompt. That is how this was
   stopped the same night it was reported, and it is the thing to reach
-  for first whenever a notice turns out to be harmful.
+  for first whenever a notice turns out to be harmful. **It was back to
+  `go-live-1` in build 130**, once re-adding stopped costing anybody
+  their account - see the next note. Restoring the id is not bumping it:
+  a device that already acknowledged `go-live-1` stays acknowledged and
+  is not prompted again.
+- **THE FIX IS THE LAUNCH URL, because it is the one thing that crosses
+  a destroyed jar.** iOS captures the **full URL, fragment included**, at
+  the moment Add to Home Screen is tapped, and launches that exact URL
+  forever after. So `safariHandoffTarget()` puts the sync code in the
+  fragment of the `x-safari-https:` hand-off, the icon made from that
+  page carries it, and the empty jar that re-adding creates signs itself
+  straight back in. It is not a cache: the URL is re-read on **every**
+  launch, so the jar can be wiped any number of times and the account
+  still comes back. That is what "you should never get logged out" asked
+  for.
+  **The fragment, never the query string.** A fragment is not sent to a
+  server and never appears in a Referer, so the code stays out of GitHub
+  Pages' logs and away from the Firebase CDN. A standalone app has no
+  address bar, and the live document's URL is stripped on adoption
+  anyway - only the icon keeps it.
+  **A URL MAY NEVER REASSIGN A DEVICE THAT ALREADY HAS A CODE.** Shared,
+  stale or mistyped, adopting over the top would take somebody off their
+  own account, so adoption is gated on `!syncCode` and on `!syncOff`.
+  And it has to run **before** the boot self-heal, which would otherwise
+  mint a fresh code first and quietly turn the same person into a second
+  account with none of their progress in it.
+  A definite `not-found` on an otherwise empty device gives the code
+  back, so a dead or retired code does not leave somebody holding one
+  and pushing an empty document up under it. Every other reason -
+  offline, Firebase blocked - keeps it, because the URL re-offers it next
+  launch and giving up on a bad connection is how somebody signs up
+  twice.
+  **The two-step notice stays regardless.** Somebody who re-adds by hand
+  never goes through the hand-off and has nothing in their URL, so the
+  code is still shown first and still has to be acknowledged.
+  `tools/check-readd.py` wipes localStorage and IndexedDB together - the
+  actual event, not an approximation - and asserts the account comes
+  back, twice over, and that a URL cannot hijack a device that already
+  has one. It fails on build 129 with "re-added app came up on WELCOME".
 - **Safari and the installed app are separate storage jars on iOS.** The
   re-add notice's `x-safari-https:` hand-off lands in a jar with no
   progress in it, showing Welcome. Signing in with the code is the way
@@ -2737,6 +2775,30 @@ missed real bugs that a thirty-second check caught.
 7. `python3 tools/check-tours.py` — every tooltip still points at
    something. Required on anything that renames a class, moves a control
    between screens, or changes a tour's copy.
+7b. `python3 tools/check-readd.py` — **does re-adding to the Home Screen
+   still keep the account?** Wipes localStorage and IndexedDB together,
+   which is what removing a Home Screen web app actually does, then
+   relaunches from the URL the icon would carry. Required on anything
+   touching the sync code, boot, the frame notice or the Safari
+   hand-off. `--against <dir>` runs it on another build; it fails on
+   129 with "re-added app came up on WELCOME - the account is lost".
+   **A relaunch in it goes via `about:blank` first**: a goto to a URL
+   differing only by its fragment is a same-document navigation, so
+   nothing reloads and the check silently measures the app that was
+   already open.
+**A `let` DECLARED AFTER ITS CALLER IS A TOP-LEVEL TIME BOMB.**
+`firebaseBecameReady()` calls `attachLiveListener()`, whose
+`liveUnsubscribe` used to be declared 500 lines further down. Function
+declarations hoist; `let` does not, so if `fbDb` were ever ready while
+the inline script was still running, that call would throw at the TOP
+LEVEL and every `const` after it would stay in its temporal dead zone -
+the whole app dead, from a line that looks fine. The only thing
+preventing it is `defer` on the two Firebase tags in `<head>`, which is
+a guarantee held somewhere else entirely and would be easy to drop by
+accident. The declaration moved above its caller. Found by a check that
+supplied Firebase synchronously, never by a device - and note that
+`check-js` passes on it, which is the same lesson as the item below.
+
 8. **Load the page and read the console before believing `check-js`.**
    These are different questions and only one of them is about syntax. A
    reference to a function that does not exist parses perfectly and then

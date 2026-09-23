@@ -21971,6 +21971,12 @@ new MutationObserver(() => {
      next screen change, which is the same guarantee they already had. */
   if(!isQuestion){
     syncNoticeVisibility();
+    /* Same self-healing reason as checkForUpdate() below: the recovery
+       pull that signs this browser tab in lands well after boot, so the
+       first chance to say "add it to your Home Screen now" is usually a
+       screen change rather than load. Every early bail in it is a cheap
+       synchronous test. */
+    maybeShowAddToHomeNotice();
     /* Self-healing: if the load-time check was spent during the splash,
        or bailed because a test was running, arriving at a new screen
        tries again. Safe to call this often - every early bail above is a
@@ -23277,6 +23283,22 @@ function onFirebaseReady(cb){
    a real budget (~20s of backoff), the window load event, and the
    script tags' own onload. Whichever wins calls the same drain, which
    is idempotent - initFirebase() no-ops once fbDb is set. */
+/* DECLARED UP HERE, NOT BESIDE attachLiveListener 500 LINES DOWN.
+   firebaseBecameReady() below calls attachLiveListener(), and a `let`
+   is in its temporal dead zone until its own line runs - so if fbDb is
+   ever ready while this inline script is still executing, that call
+   throws "Cannot access 'liveUnsubscribe' before initialization" AT THE
+   TOP LEVEL, which leaves every `const` after it unreachable and takes
+   the whole app out.
+   Today the two Firebase tags are `defer`, which guarantees fbDb is
+   null right through this script and is the only reason the hazard has
+   never fired. That is a guarantee held by a script attribute in the
+   <head>, not by anything here, and dropping `defer` would look like an
+   unrelated change. Declaring it before its caller costs nothing and
+   removes the dependency. Found by a check that supplied Firebase
+   synchronously, not on a device. */
+let liveUnsubscribe = null;
+
 let fbReadyDrained = false;
 function firebaseBecameReady(){
   if(fbReadyDrained || !fbDb) return;
@@ -23442,6 +23464,74 @@ function setSyncCode(code){
   try { window.localStorage.setItem(SYNC_CODE_KEY, code); } catch(e){}
   try { window.localStorage.removeItem(SYNC_OFF_KEY); } catch(e){}
   idbSaveCode(code);
+}
+
+/* ================= RECOVERY THROUGH THE LAUNCH URL =================
+
+   REMOVING A HOME SCREEN WEB APP DESTROYS ITS ENTIRE STORAGE JAR.
+   localStorage and the IndexedDB mirror beside it go together, so every
+   local copy of the sync code dies at the same moment - which is why the
+   boot recovery below it cannot help, and why somebody who followed the
+   re-add notice came back to Welcome with their account unreachable.
+
+   ONE THING SURVIVES: THE URL THE ICON LAUNCHES. iOS captures the full
+   URL at the moment Add to Home Screen is tapped, fragment included, and
+   launches that exact URL forever after. So the hand-off to Safari
+   carries the code in the fragment, the icon made from that page carries
+   it too, and a jar that has just been wiped signs itself straight back
+   in from its own launch URL. It is not a cache - it is re-issued on
+   every launch, so the jar can be wiped any number of times.
+
+   The fragment rather than the query string, deliberately: a fragment is
+   never sent to a server and never appears in a Referer, so the code
+   does not reach GitHub Pages' logs or the Firebase CDN. And no address
+   bar exists in a standalone app, so day to day it is not on screen
+   either.
+
+   This does NOT replace the two-step notice that shows the code first.
+   Somebody who re-adds by hand, without going through the hand-off,
+   still has nothing in their URL - so they still need to have written it
+   down, and the notice still makes them say they have. */
+const RECOVERY_PARAM = "k";
+/* The alphabet generateSyncCode() draws from, which deliberately has no
+   0/O/1/I in it. Anything else in the URL is not a code and is ignored
+   rather than adopted. */
+const SYNC_CODE_RE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}-[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$/;
+
+function readRecoveryCode(){
+  /* Both places, because a custom-scheme hand-off is not a documented
+     contract and a dropped fragment must not be a silent total loss. */
+  const sources = [
+    (location.hash || "").replace(/^#/, ""),
+    (location.search || "").replace(/^\?/, "")
+  ];
+  for(const src of sources){
+    if(!src) continue;
+    let params;
+    try{ params = new URLSearchParams(src); }catch(e){ continue; }
+    const v = (params.get(RECOVERY_PARAM) || "").trim().toUpperCase();
+    if(SYNC_CODE_RE.test(v)) return v;
+  }
+  return null;
+}
+
+/* The URL the icon stores is untouched by this - it is the live
+   document's address that gets cleaned, so nothing downstream re-reads
+   the code and a screenshot of a browser tab does not carry it. Only in
+   a standalone app: in a browser the person may be about to Add to Home
+   Screen, and stripping it there is what would break the whole
+   mechanism. */
+function stripRecoveryCodeFromUrl(){
+  if(!isStandaloneApp()) return;
+  if(!location.hash && !/[?&]k=/.test(location.search)) return;
+  try{
+    history.replaceState(null, "", location.pathname + location.search.replace(/([?&])k=[^&]*&?/, "$1").replace(/[?&]$/, ""));
+  }catch(e){}
+}
+
+function recoveryUrlFor(code){
+  return location.origin + location.pathname + location.search +
+         "#" + RECOVERY_PARAM + "=" + encodeURIComponent(code);
 }
 
 /* `disable` means a deliberate "stop syncing this device" and is the only
@@ -23713,8 +23803,6 @@ function pullFromCloud(code, onDone){
    newer" rule as a manual pull, so this device's own writes (which also
    land back through this same listener) don't cause it to re-apply and
    re-save its own data in a loop. */
-let liveUnsubscribe = null;
-
 function attachLiveListener(code){
   detachLiveListener();
   if(!fbDb || !code) return;
@@ -33675,7 +33763,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-23-129";
+const APP_BUILD = "2026-09-23-130";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -33744,7 +33832,66 @@ function syncNoticeVisibility(){
   if(bar){ positionNotice(); return; }
   if(!pendingNotice) return;
   if(pendingNotice.kind === "update") showUpdateBanner(pendingNotice.info);
+  else if(pendingNotice.kind === "addtohome") showAddToHomeNotice();
   else showFrameNotice(pendingNotice.info);
+}
+
+/* THE ONE MOMENT THE URL IS WORTH SOMETHING, so say so while it is true.
+   This fires in Safari, on the page the app just handed off to, where the
+   address carries the sync code. Adding to the Home Screen right now
+   captures that address and the new icon can never be logged out of the
+   account; wandering off to another page first loses the fragment and
+   leaves the person back on writing the code down by hand.
+
+   Browser only, and only while the code is actually in the URL - the
+   installed app has no Share button to follow these instructions with,
+   and saying this to somebody whose URL is plain would be telling them
+   to do something that does not work. */
+let addToHomeDismissed = false;
+
+function maybeShowAddToHomeNotice(){
+  if(isStandaloneApp()) return;
+  if(addToHomeDismissed) return;
+  const code = readRecoveryCode();
+  if(!code || code !== syncCode) return;
+  pendingNotice = { kind: "addtohome" };
+  syncNoticeVisibility();
+}
+
+function showAddToHomeNotice(){
+  const bar = document.createElement("div");
+  bar.className = "update-banner is-frame";
+  bar.id = "updatebanner";
+
+  const close = document.createElement("button");
+  close.className = "update-banner-close";
+  close.setAttribute("aria-label", "Not now");
+  close.textContent = "\u00d7";
+  close.addEventListener("click", () => {
+    addToHomeDismissed = true;
+    pendingNotice = null;
+    hideBanner();
+  });
+
+  const text = document.createElement("span");
+  text.className = "update-banner-text";
+  text.textContent = "You're signed in here. Now tap Share, then Add to Home Screen \u2014 " +
+    "do it from this page and the new icon remembers your account for good.";
+
+  const row = document.createElement("div");
+  row.className = "update-banner-row";
+  const done = document.createElement("button");
+  done.className = "update-banner-btn ghost";
+  done.textContent = "Got it";
+  done.addEventListener("click", () => {
+    addToHomeDismissed = true;
+    pendingNotice = null;
+    hideBanner();
+  });
+  row.appendChild(done);
+
+  bar.append(close, text, row);
+  showNoticeBar(bar);
 }
 
 /* The notice sits along the TOP of the screen now (see .update-banner),
@@ -34031,9 +34178,8 @@ function showFrameNotice(info){
   /* ---- step two: the original notice, reached only after the code ---- */
   function showRemoveStep(){
     text.textContent = info.frameNote ||
-      "Now remove the Nova icon from your Home Screen and add it back. " +
-      "Sign in with the code you just saved \u2014 your progress is in the cloud, " +
-      "not on the phone.";
+      "Tap Open in Safari, then Share \u2192 Add to Home Screen from that page. " +
+      "The new icon carries your account with it. Then delete the old one.";
     row.replaceChildren();
 
     const open = document.createElement("button");
@@ -34079,8 +34225,13 @@ function showFrameNotice(info){
     return;
   }
 
-  text.textContent = "Re-adding Nova wipes this phone's copy. Write this code down " +
-    "first \u2014 it is the only way back into your account.";
+  /* The code is still shown first, and still has to be acknowledged,
+     even though the hand-off now carries it automatically. Belt and
+     braces on purpose: somebody who re-adds by hand, or whose iOS drops
+     the fragment, has nothing else - and this is the step whose absence
+     cost a real person their account. */
+  text.textContent = "Save this code before you re-add Nova. The new icon should sign " +
+    "you straight back in, but this is your way back if anything goes wrong.";
 
   const copy = document.createElement("button");
   copy.className = "update-banner-btn";
@@ -34114,8 +34265,24 @@ function showFrameNotice(info){
    does not reliably work, so that turned a failed hand-off into a
    permanently silenced notice, i.e. the worst possible outcome. The app
    going hidden is real evidence Safari took over; nothing else is. */
+/* THE HAND-OFF CARRIES THE CODE, and that is the whole repair. Safari
+   opens on a URL whose fragment holds this account's sync code, so the
+   icon made from that page - by Share, Add to Home Screen, the very next
+   thing the person does - launches carrying it too. The fresh, empty jar
+   that re-adding creates then signs itself straight back in from its own
+   launch URL. See RECOVERY THROUGH THE LAUNCH URL. */
+/* Split out so the target can be MEASURED rather than read. Assigning
+   location.href is the one thing in this function that cannot be
+   observed from a test - the navigation either happens or silently does
+   not - so the part that matters, whether the code is on the URL, is
+   computed somewhere a check can call. */
+function safariHandoffTarget(){
+  const base = "x-safari-https://" + location.host + location.pathname + location.search;
+  return syncCode ? base + "#" + RECOVERY_PARAM + "=" + encodeURIComponent(syncCode) : base;
+}
+
 function openInSafari(bar, info){
-  const target = "x-safari-https://" + location.host + location.pathname + location.search;
+  const target = safariHandoffTarget();
   let handedOff = false;
 
   const onHide = () => {
@@ -40964,6 +41131,54 @@ else if(!store.onboardingComplete){
    given one, unless sync was turned off on purpose. "Find me" answering
    that you are not in the rankings was this: no code, so no row, and a
    message blaming the one setting that was not the problem. */
+/* A CODE IN THE LAUNCH URL IS AN ACCOUNT ASKING TO BE LET BACK IN, and
+   it has to be read BEFORE the self-heal below, which would otherwise
+   mint a brand new code and quietly turn the same person into a second
+   account with none of their progress in it.
+
+   Only when this device has no code of its own. A device that already
+   holds one is a device with an account on it, and a URL must never be
+   able to reassign that - shared, mistyped or stale, adopting over the
+   top would take somebody off their own account. syncOff is respected
+   for the same reason it holds off the self-heal: "stop syncing this
+   device" was a decision, not a fault. */
+let adoptedLaunchCode = false;
+const launchCode = readRecoveryCode();
+if(launchCode && !syncCode && !syncOff){
+  adoptedLaunchCode = true;
+  setSyncCode(launchCode);
+  onFirebaseReady(() => {
+    pullFromCloud(launchCode, (ok, why) => {
+      if(ok){
+        /* Boot has already drawn Welcome by now on a wiped device, and
+           leaving somebody there on top of restored progress is the
+           older bug this whole path exists to end: a sign-up from that
+           screen overwrites what was just recovered. */
+        applySaved(); loadTheme(); applyTheme(); updateHeaderTitle();
+        stripRecoveryCodeFromUrl();
+        attachLiveListener(syncCode);
+        if(store.onboardingComplete && stage.querySelector('[data-screen="welcome"]')){
+          showHome();
+          showToast("Signed back in \u2014 your progress was restored.");
+        }
+        return;
+      }
+      /* "not-found" on an EMPTY device means the code is genuinely dead
+         - retired, or from before a class-wide reset - so hand the
+         device back rather than leaving it holding a code for an
+         account that does not exist and pushing an empty document up
+         under it. Every other reason (offline, Firebase blocked) keeps
+         the code: the URL re-offers it on the next launch, and giving
+         up on a bad connection is how somebody signs up twice. */
+      if(why === "not-found" && !storageHadData && !store.onboardingComplete){
+        clearSyncCode(false);
+        return;
+      }
+      attachLiveListener(syncCode);
+    });
+  });
+}
+
 if(store.onboardingComplete && !syncCode && !syncOff){
   setSyncCode(generateSyncCode());
   onFirebaseReady(() => { pushToCloud(); attachLiveListener(syncCode); });
@@ -40989,7 +41204,12 @@ if(store.onboardingComplete && (store.tourRev || 0) < TOUR_REV){
   saveStore();
 }
 
-if(syncCode){
+/* `!adoptedLaunchCode` because the recovery above already owns this
+   code's first pull and its listener. Without it a recovering launch
+   fires two pulls at the same document and attaches on both paths, and
+   the dead-code revert races a listener that has already been attached
+   to a code it is about to give back. */
+if(syncCode && !adoptedLaunchCode){
   /* onFirebaseReady for the same reason: the Firebase tags are
      `defer`, so fbDb is null here on EVERY launch without exception,
      and both of these were simply returning. The retry above used to
