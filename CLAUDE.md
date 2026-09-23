@@ -80,7 +80,7 @@ disagreed, the repo won and the difference is called out.
   thing**, as opposed to still look right: the splash centred from its
   first visible frame, a thumb swipe changing the top tab, a back link
   landing somewhere that is not blank, a badge earned by every route to
-  35 and only then, and a queue of badges playing back to back on the
+  mastery and only then, and a queue of badges playing back to back on the
   main menu. Every check in it was written against a build where it
   failed; `--against old-index.html` runs it there.
 - `tools/firestore-admin.py` — `list`, `find <username>` and
@@ -456,6 +456,21 @@ off the page and assert the SHAPE (four tabs in this order, exactly one
 step not two, whatever they are called). Keep doing that: the thing
 worth asserting is almost never the string.
 
+**A FIXTURE ENCODES A DECISION JUST AS A LABEL DOES, and this trap has
+now bitten four times.** After the tab labels, the board name and the
+badge threshold, it was `check_ranks`: its seed was *"level 23 (12,400
+XP) and 4 badges reaches Veteran"*, its boundary cases called
+`rankOfStats(20, 4, 0)`, and a rankings row was built with
+`decorateAvatar(a, 34, 6, 0)` and asserted to read **"Gold"**. All three
+were true of one curve and one threshold table, and all three went red
+the moment the ladder was rescaled — seven failures, none of them a bug.
+The section is about "hold Veteran, with Vanguard next" and "a row shows
+the rank those numbers earn", so it now **boots once to read
+`TIER_UNLOCKS` and `levelProgress()` off the page, builds the seed from
+what it finds, and asserts against `RANK_DISPLAY_NAME`**. The rule is
+the same one as before, one axis over: assert the SHAPE, and let the app
+supply the numbers. If a check has to know a threshold, it should ask.
+
 **A CHECK THAT CANNOT FAIL IS WORSE THAN NO CHECK, because it reads as
 coverage.** Two of `check-vroom`'s new results-screen assertions passed
 against the broken build on their first draft. "Review your answers
@@ -468,6 +483,25 @@ past an early return, so the check now puts the bar back and pokes the
 document to force another snapshot. **Run every new check against the
 build it was written for (`--against`) and make sure it fails.** Green
 on both builds means it is measuring nothing.
+
+**A GATE THAT SAMPLES AN ANIMATION AT ONE INSTANT IS A COIN FLIP, and
+it fails the build that happened to be 40ms slower.** `check-behaviour`
+section 5 waited 1500 + 2600 + 3200 = 7300ms and then asked once
+whether the badge queue had drained. Measured, the second cutscene's
+overlay is removed at **7293ms on a phone and 7341ms on an iPad** — the
+same 2600 + 780 per badge the app has always used — so the phone passed
+and the tablet failed on a build whose only changes were a toast offset,
+a constant and a level curve. There was nothing wrong with the app, and
+nothing wrong with the previous build either; the sum simply landed
+inside the app's own total. **Poll for the condition with a stated
+budget, and report the figure it actually took.** The rewrite polls to
+6000ms against a real ~3180 and prints `ms`, so a genuine slowdown is
+visible long before it is red. That is not softening the check: a queue
+that stalls never drains at all, so it still fails outright — verified
+by pulling the recursion out of the cutscene's own cleanup and watching
+both devices go red. Same trap as the stale label, one axis over: what
+is worth asserting is the SHAPE (it drains, within a budget), never the
+arithmetic.
 
 **And a harness must not invent the bug it is checking for.** The first
 version of the answer-review scroll check reported that the page would
@@ -648,6 +682,22 @@ It clears the home indicator with *padding*, not by stopping short — so
 inset checks measure the CONTENT box, never the border box. `.floatbtn` does
 need `padding-left`/`padding-right` insets though: full-bleed puts its label
 under the notch on a phone held sideways.
+
+**A TOAST HAS TO CLEAR THE BAR *PLUS ITS OWN HEIGHT*, AND THAT NUMBER IS
+MEASURED, NOT DERIVED.** `body.has-bottomtabs .toast` sat at
+`calc(6rem + env(safe-area-inset-bottom))`, which is less than the bar's
+own footprint: measured on an iPad Pro 11" the toast's bottom edge was at
+1078 against a bar starting at 1063 — a 15px overlap — and on a 17 Pro
+Max it cleared by 5px, which is touching, not clearing. Reported as
+*"the select units to start pop up hides under the bottom tab"*. The
+obvious fix is `7.5rem`, the figure this file already uses for the bar's
+whole footprint, and it is wrong for the same reason 6rem was: the toast
+is anchored by its *bottom*, so it has its own height to get out of the
+way as well. `8rem` was tried and still overlapped the iPad by **3px**.
+`9.5rem` is what actually measures clean — 27px of gap on a 17 Pro Max,
+21px on an iPad Pro 11". **Deliberately without the safe-area inset**:
+the bar's height already contains it, and adding it again is exactly the
+double-count recorded above for the tab bar's own reservation.
 
 **Clear the home indicator by MOVING a fixed element, not by padding it.**
 `.bottomtabs` used `padding-bottom:max(.4rem, env(...))`, which grew the pill
@@ -1147,11 +1197,27 @@ Everything below follows from that.
 The three things the app measures are **XP → level**, **badges**, and
 **hundos**, and every screen that shows progress is built on those three.
 
-- **A badge is a mastered unit, and mastery is `BADGE_THRESHOLD` (35)
+- **A badge is a mastered unit, and mastery is `BADGE_THRESHOLD` (30)
   hundos in it.** Sixteen units, sixteen badges. `DRILL_STAR_THRESHOLD` is
   *written as that same constant* rather than as another literal, because
   it was a separate 40 for the same idea and a unit could read "Advanced"
   on its own card while still not being starred.
+  **It was 35 until build 116** and came down with the level curve, asked
+  for in one breath: *"take the hundo requirement for badges down to 30,
+  and ensure it all syncs up ... by the time you reach level 30 you
+  should have close to 6 badges."* Lowering it can only ADD badges to an
+  existing account, because a badge is `hundos >= BADGE_THRESHOLD`
+  computed fresh rather than a stored flag — anyone sitting on 30-34 in a
+  unit gained one the day it shipped and nobody lost one. It does not
+  ambush them with cutscenes either: `summarize()` detects a new badge by
+  diffing the list either side of its own recording call, so a badge
+  already held before the run produces no diff.
+  **NEVER TYPE THE NUMBER INTO A GATE.** `check-behaviour`'s badge
+  section drove a unit from a literal 34 to 35 and went red the day this
+  moved — at 34 the badge is already held, so crossing to 35 earns
+  nothing and the check failed the app for being right. It reads
+  `BADGE_THRESHOLD` off the page now and derives "one short, then exactly
+  enough" from it.
 - **`levelProgress()` is the one place the level curve lives** — the
   level, how far into it, how far across, and what is left. The bar, the
   number under it and the leaderboard each used to do their own
@@ -1185,6 +1251,63 @@ The three things the app measures are **XP → level**, **badges**, and
   get slightly lowered to fix this based on their current earned so
   then so be it"* — and nothing is reset: the XP total is untouched and
   the level is derived from it.
+- **THE CURVE IS FLAT AFTER THE RAMP, AND THAT IS THE ONLY SHAPE THAT
+  CAN HOLD "A MASTERY IS WORTH SEVEN LEVELS".** Two earlier attempts
+  tuned bands for feel and both left the same hole, because the hole is
+  structural: **XP is paid per correct question**, so it accrues on
+  every run, while a hundo needs a flawless full-unit run and a badge
+  needs thirty of them. Grinding always outruns mastering. Reported as
+  *"someone is already level 24"* — with no badges at all — and again
+  after the fix was designed but before it shipped.
+  *"Each unit mastery should get you maybe 7 levels. Take that into
+  account. It needs to [be] much harder to level up."*
+  **A compounding curve cannot satisfy that at two points on the
+  ladder.** If a level costs more the higher you are, the number of
+  levels a fixed lump of XP buys shrinks as you climb, so "seven levels
+  per mastery" can be true in exactly one place. `LEVEL_COST_MAX`
+  (9,000) is a ceiling on what one level costs: `LEVEL_GROWTH` is 1.40
+  but only runs for eleven levels before the cost flattens, after which
+  a fixed lump always buys the same number of levels. The steep rate is
+  safe *because* it stops — unchecked it is the same runaway this file
+  records twice.
+- **`MASTERY_BONUS` IS THE OTHER HALF, AND WITHOUT IT THE ASK IS
+  IMPOSSIBLE.** Per-question XP scales with unit size and a badge does
+  not, so on grind alone a 12-question unit's mastery is worth under
+  two levels and Penal Code's (340 questions) is worth forty. A flat
+  36,000 XP paid for the badge ITSELF — four levels at the plateau —
+  is what makes every mastery worth roughly the same. Measured on the
+  real bank at three attempts per hundo and ~95% accuracy: a typical
+  29-question unit costs ~27,800 XP of grinding, so a mastery is
+  27,800 + 36,000 = **7.1 levels**. Smallest unit 5.5, largest 9.7 —
+  the spread is real work, centred on the seven asked for.
+  **It is paid off the badge DIFF in `summarize()`**, the same diff the
+  cutscene is queued off, so the XP and the celebration can never
+  disagree. That also means dropping `BADGE_THRESHOLD` to 30 could not
+  retro-pay it: a unit already past 30 produces no diff. **Itemise it
+  on the results screen** — it is by far the largest single number that
+  screen can show, and an unexplained +36,000 reads as a bug.
+- **The cap is 100, up from 80**, asked for by name, and it is what
+  makes the correction survivable: *"to counter the early mistake of
+  people jumping high on levels right now, the new max level is level
+  100."* Thirteen typical masteries reach it, so the top of the ladder
+  is most of the course rather than something anyone grinds into.
+- **EVERY LEVEL IN THE CLASS DROPPED, and that was the point.**
+  Measured against the live build: **24 → 9, 20 → 8, 16 → 7, 10 → 6,
+  6 → 4.** Nothing is reset — the XP total is untouched and the level
+  is derived from it, as always. The only place a level can go UP is
+  above the old 80 cap, which is the new ceiling doing its job, and
+  nobody is within 600,000 XP of it. The earlier rule about checking
+  that a curve change cannot lower anybody still stands as the thing to
+  CHECK; it is no longer the thing to guarantee, because lowering was
+  explicitly requested twice.
+- **`TIER_UNLOCKS` levels sit deliberately BEHIND what the badge count
+  implies, so the badge is the gate.** Rescaled for the 100 cap to 10,
+  18, 30, 42, 55, 72, 90 against unchanged badge counts of 1, 2, 4, 6,
+  8, 11, 14. At ~7 levels a mastery, four badges is around level 37 and
+  veteran asks for 30 — so anyone earning badges clears the level
+  requirement automatically, and anyone grinding XP without mastering
+  anything is stopped by the badges. That is the whole of the complaint
+  this came from. The KEYS did not move, so nothing stored migrates.
 
 ### Ranks
 
@@ -1714,7 +1837,7 @@ child lands as a narrow third column beside the mode and the count; a
 full set of unit names needs its own row and several lines.
 
 **THE UNIT CARD MEASURES ONE THING IN EVERY MODE: the badge, and
-  hundos towards 35.** It is not mode-dependent and must not become so
+  hundos towards `BADGE_THRESHOLD`.** It is not mode-dependent and must not become so
   again. A hundo is a full-unit 100% run and `unitPerfectCount` reads
   `store.unitPerfects`, which Drill, Exam, Game and the Virtual Room
   all write to — so there has only ever been one number for the card to
@@ -1794,7 +1917,55 @@ is set in exactly two places in the whole file (`showWelcome` and
 no list of excluded screens to keep up to date, and a new screen is excluded
 by default. Verified by grep, not assumed.
 
-Two notices, both gated to the Welcome and Home screens only, never mid-test:
+**THE UPDATE IS PUSHED NOW, NOT OFFERED.** *"Force an update, next time
+people finish any test they are on it, push their update ... If they
+aren't on a test go ahead and push it for those people. I need the
+update to be pushed immediately."* So the app finds a newer build, puts
+up a full-screen `.pushing-update` ("Pushing update…", a sweeping bar,
+"Your progress is saved.") and reloads itself. No tap. A previous
+dismissal is deliberately NOT consulted on this path — it recorded an
+answer to "would you like to update", which is no longer the question.
+
+- **A FORCED RELOAD NEEDS A LOOP GUARD, and this is the whole risk of
+  the feature.** If `version.json` says one build and the served
+  `index.html` still carries the old `APP_BUILD` — Pages mid-deploy, a
+  CDN edge behind, an iOS cache that will not let go — then "reload
+  until they match" never terminates, on every phone in the class at
+  once. Each attempt is counted against the build it was for in
+  `class26e.forced.v1`, and after `FORCED_UPDATE_TRIES` (3) the app
+  stops pushing and falls back to the old banner, which is tappable and
+  cannot loop. It is in `localStorage`, not on `store`: it has to
+  survive the very reload it is counting, and it is device state rather
+  than progress.
+- **THE MID-TEST BAIL HAD TO MOVE OUT OF `checkForUpdate()`, and that
+  was a real bug, caught by testing rather than by reading.** It used to
+  return before the fetch whenever `testInProgress` was set — a harmless
+  deferral while the banner waited for a screen change, and fatal for a
+  forced push, because the check never learned a new build existed and
+  so never armed anything to fire when the test ended. Measured: held
+  mid-test, the push never came. The bail now lives in
+  `forcedUpdateBlocked()`, which `startForcedUpdate()` re-tests every
+  800ms — so the reload still cannot land on somebody's unsaved run, and
+  the moment `summarize()` clears the flag the next tick fires.
+  **Verified: 1,739ms after the test ended.**
+- **`summarize()` also calls `checkForUpdate(true)` 1.2s in**, and the
+  `true` matters: the ordinary 15-minute throttle would routinely
+  swallow the one check "right when they finish their next test" depends
+  on. The 1.2s is so the results screen paints first — finishing a run
+  and being shown a loading bar instead of the score reads as a crash.
+- **`forcedUpdateBlocked()` also waits out the splash, the generating
+  overlay, a tour and a badge cutscene.** Same rule as everything else
+  that may not sit on top of a loading screen, in reverse: the overlay
+  is `z-index:500`, above `#genprofile-overlay` at 400, because nothing
+  may sit on top of THIS either.
+- The bar is an indeterminate sweep, not a percentage, because there is
+  no percentage to report — it covers one request for one file. Under
+  `reduce-motion` the global `animation:none` would leave it frozen at
+  40% and reading as stuck, so that case gets a full static bar instead.
+
+The re-add notice, and the banner the forced push falls back to:
+
+Both are gated to the Welcome and Home screens only, never mid-test:
 
 | | Update banner | Re-add notice |
 |---|---|---|

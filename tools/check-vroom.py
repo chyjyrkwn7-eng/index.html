@@ -210,7 +210,7 @@ def main():
         ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');"
                             "localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % SEED)
 
-        def open_tab(name, avatar, points, code, badges=0):
+        def open_tab(name, avatar, points, code, badges=0, rank_key=None):
             pg = ctx.new_page()
             pg.route("**/index.html", lambda r: r.fulfill(
                 status=200, headers={"content-type": "text/html; charset=utf-8"},
@@ -222,25 +222,43 @@ def main():
               __useFake();
               store.firstName = a.name;
               store.avatarChar = a.avatar;
-              store.lifetime.points = a.points;
+              /* A RANK FIXTURE ASKS THE TABLE, IT DOES NOT TYPE NUMBERS.
+                 These used to be literal XP totals chosen to clear a
+                 tier - 14,820 for Silver, 3,100 for Iron - and they
+                 stopped clearing anything the day the ladder was
+                 rescaled, which failed the app for being right. Given a
+                 rankKey this now derives the smallest XP total that
+                 reaches that rank's level, plus exactly its badge count,
+                 so the fixture follows TIER_UNLOCKS wherever it goes. */
+              let wantBadges = a.badges;
+              if(a.rankKey){
+                const R = TIER_UNLOCKS[a.rankKey];
+                let xp = 0;
+                while(levelProgress(xp).level < R.level) xp += 25;
+                store.lifetime.points = xp;
+                wantBadges = R.badges;
+              } else {
+                store.lifetime.points = a.points;
+              }
               /* Badges as well as points, because a rank needs both and
                  the lobby shows the rank. Mastering the first N units
                  is the cheapest way to hold a given one. */
               store.unitPerfects = {};
-              topicsIn(QUESTIONS).slice(0, a.badges).forEach(u => {
+              topicsIn(QUESTIONS).slice(0, wantBadges).forEach(u => {
                 store.unitPerfects[u] = BADGE_THRESHOLD;
               });
               syncCode = a.code;
             }""", {"name": name, "avatar": avatar, "points": points, "code": code,
-                   "badges": badges})
+                   "badges": badges, "rankKey": rank_key})
             return pg
 
-        # Different ranks on purpose: Madison clears Silver (level 20,
-        # 4 badges) and Devonte only Iron (level 5, 1 badge), so a row
-        # showing the wrong emblem cannot pass by showing the same one
-        # twice.
-        host = open_tab("Madison", "ninja", 14820, "HOST-0001", 4)
-        guest = open_tab("Devonte", "ghost", 3100, "GUES-0002", 1)
+        # Different ranks on purpose - Madison holds veteran and Devonte
+        # only rookie - so a row showing the wrong emblem cannot pass by
+        # showing the same one twice. Named by TIER_UNLOCKS key rather
+        # than by an XP total, so the pair stays two different ranks
+        # however the ladder is rescaled.
+        host = open_tab("Madison", "ninja", None, "HOST-0001", rank_key="veteran")
+        guest = open_tab("Devonte", "ghost", None, "GUES-0002", rank_key="rookie")
         # Only one tab can be in front, and a background tab has its rAF
         # throttled - which showed up as the host "starting a second late"
         # when it was simply not being given frames. Two phones are both
@@ -287,10 +305,12 @@ def main():
         # The small blue level number that used to sit here is gone -
         # that used to sit here is gone - asked for, built, and then
         # asked against. The rank emblem is what stayed.
-        ranks = host.evaluate("""()=>[...document.querySelectorAll('.vroom-row')]
-          .map(r=>{const m=r.querySelector('.lb-rankmark'); return m ? m.title : null;})""")
+        ranks = host.evaluate("""()=>({
+          seen: [...document.querySelectorAll('.vroom-row')]
+            .map(r=>{const m=r.querySelector('.lb-rankmark'); return m ? m.title : null;}),
+          want: [RANK_DISPLAY_NAME.rookie, RANK_DISPLAY_NAME.veteran] })""")
         check("every row carries its person's rank",
-              sorted(r for r in ranks if r) == ["Iron", "Silver"], ranks)
+              sorted(r for r in ranks["seen"] if r) == sorted(ranks["want"]), ranks)
         check("no level number beside the character",
               host.evaluate("()=>!document.querySelector('.vroom-level')"), "none")
 

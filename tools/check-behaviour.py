@@ -19,6 +19,7 @@ Chromium has no Firestore here (the CDN is blocked in the sandbox), so fbDb
 is stubbed where a check needs it. Exits non-zero on any failure.
 """
 import functools
+import json
 import http.server
 import io
 import os
@@ -294,20 +295,48 @@ EARN_A_BADGE = """(a)=>{
 
 
 def check_badges(br):
-    print("\n4. a badge is earned by every route to 35, and only then")
+    """A badge is earned by every route to mastery, and only then.
+
+    THE THRESHOLD IS READ OFF THE PAGE, NOT TYPED HERE. This used to
+    drive a unit from a literal 34 to 35, and went red the day mastery
+    moved to 30 hundos - at 34 the badge is already held, so crossing
+    to 35 earns nothing and the check failed the app for being right.
+    Same stale-literal trap this file has already hit three times with
+    tab labels and board names. What the check is about is "one short,
+    then exactly enough", so it asks the app what enough is.
+    """
     ctx, pg = booted(br, TABLET[1], TABLET[2])
+    thr = pg.evaluate("()=>BADGE_THRESHOLD")
+    print("\n4. a badge is earned by every route to %d, and only then" % thr)
+    one_short, exact = thr - 1, thr
     cases = [
-        ("drill, one unit, 34 -> 35", {"mode": "drill", "nUnits": 1, "startAt": 34, "vroom": False}, 1, 1),
-        ("exam, two units, 34 -> 35", {"mode": "exam", "nUnits": 2, "startAt": 34, "vroom": False}, 2, 2),
+        ("drill, one unit, %d -> %d" % (one_short, exact),
+         {"mode": "drill", "nUnits": 1, "startAt": one_short, "vroom": False}, 1, 1),
+        ("exam, two units, %d -> %d" % (one_short, exact),
+         {"mode": "exam", "nUnits": 2, "startAt": one_short, "vroom": False}, 2, 2),
         ("game, one unit at 10", {"mode": "game", "nUnits": 1, "startAt": 10, "vroom": False}, 0, 0),
-        ("Virtual Room, two units, 34", {"mode": "exam", "nUnits": 2, "startAt": 34, "vroom": True}, 2, 2),
-        ("a unit already at 35", {"mode": "drill", "nUnits": 1, "startAt": 35, "vroom": False}, 0, 0),
+        ("Virtual Room, two units, %d" % one_short,
+         {"mode": "exam", "nUnits": 2, "startAt": one_short, "vroom": True}, 2, 2),
+        ("a unit already at %d" % exact,
+         {"mode": "drill", "nUnits": 1, "startAt": exact, "vroom": False}, 0, 0),
     ]
     for label, args, want_queue, want_banners in cases:
         r = pg.evaluate(EARN_A_BADGE, args)
         check(label, len(r["queue"]) == want_queue and r["banners"] == want_banners,
               "queued %s, %d banner(s)" % (r["queue"], r["banners"]))
     ctx.close()
+
+
+DRAIN_POLL = """async ()=>{
+  const t0 = performance.now();
+  while(performance.now() - t0 < 6000){
+    if(!document.getElementById('badge-cutscene') &&
+       !(store.pendingBadgeUnlocks||[]).length) break;
+    await new Promise(r=>setTimeout(r,50));
+  }
+  return { overlay:!!document.getElementById('badge-cutscene'),
+           queue:(store.pendingBadgeUnlocks||[]).length,
+           ms:Math.round(performance.now()-t0) };}"""
 
 
 # --------------------------------------------------------------------------
@@ -333,9 +362,21 @@ def check_cutscene(br):
         second = pg.evaluate("""()=>{const o=document.getElementById('badge-cutscene');
           return o ? (o.querySelector('.badge-cutscene-name')||{}).textContent : null;}""")
         check("%s the second follows it" % label, second == "TCOLE Rules", second)
-        pg.wait_for_timeout(3200)
-        after = pg.evaluate("()=>({overlay:!!document.getElementById('badge-cutscene'),"
-                            " queue:(store.pendingBadgeUnlocks||[]).length})")
+        # POLL FOR THE DRAIN, DO NOT SAMPLE AT ONE INSTANT. A fixed
+        # 3200ms wait here summed to 7300ms, and the second badge's
+        # overlay is removed at 7293ms on a phone and 7341ms on an
+        # iPad - so this went red on the tablet and green on the phone
+        # for a 40ms arithmetic coincidence, not for anything the app
+        # did. The budget is still tight enough to fail a queue that
+        # stalls or an overlay that sticks, which is the whole point;
+        # it just is not measured against the cutscene's own total.
+        # The budget is 6000ms against a real ~3200: headroom enough
+        # that a rounding difference between two devices cannot decide
+        # it, tight enough that it is still a budget. A queue that
+        # stalls never drains at all, so no bound rescues that - which
+        # is what this is actually here to catch, and ms is reported
+        # so the true figure drifting is visible rather than silent.
+        after = pg.evaluate(DRAIN_POLL)
         check("%s the queue drains and the overlay goes" % label,
               not after["overlay"] and after["queue"] == 0, after)
         ctx.close()
@@ -352,25 +393,48 @@ def check_ranks(br):
     looks identical to one that works until you measure it.
     """
     print("\n6. ranks: what you are, what you have, what is next")
-    # Level 23 (12,400 XP on the 300 @ +5% curve) and 4 badges reaches
-    # Veteran (20 / 4) and leaves Vanguard (30 / 6) as the next one.
-    seed = ('{"firstName":"Madison","avatarChar":"ninja","onboardingComplete":true,'
-            '"lastModified":1700000000000,"seenProfileTour":true,"tourRev":99,'
-            '"unitPerfects":{"Professionalism and Ethics":35,"Professional Policing":35,'
-            '"TCOLE Rules":35,"Penal Code":35},'
-            '"lifetime":{"points":12400,"correct":4980,"perfectTests":141}}')
+    # THE FIXTURE IS DERIVED FROM TIER_UNLOCKS, NOT TYPED. It used to say
+    # "level 23 (12,400 XP) and 4 badges reaches Veteran", which was true
+    # of one curve and one threshold table and went red the day either
+    # moved - the same stale-literal trap this file has now hit with tab
+    # labels, board names and the badge threshold. What the section is
+    # about is "hold Veteran, with Vanguard next", so it asks the app
+    # what Veteran costs and seeds exactly that. Boots once to read the
+    # numbers, then again with the seed built from them.
+    ctx0, pg0 = booted(br, 834, 1194)
+    spec = pg0.evaluate("""()=>{
+      const V = TIER_UNLOCKS.veteran;
+      let xp = 0;
+      while(levelProgress(xp).level < V.level) xp += 25;
+      const units = [...new Set(QUESTIONS.map(q => q.topic))].slice(0, V.badges);
+      return { xp:xp, units:units, thr:BADGE_THRESHOLD,
+               level:V.level, badges:V.badges };}""")
+    ctx0.close()
+    seed = json.dumps({
+        "firstName": "Madison", "avatarChar": "ninja", "onboardingComplete": True,
+        "lastModified": 1700000000000, "seenProfileTour": True, "tourRev": 99,
+        "unitPerfects": {u: spec["thr"] for u in spec["units"]},
+        "lifetime": {"points": spec["xp"], "correct": 4980, "perfectTests": 141},
+    })
     ctx, pg = booted(br, 834, 1194, seed=seed)
     got = pg.evaluate("""()=>({level:levelOf(store), badges:badgeCountOf(store),
                               rank:rankOf(store)})""")
     check("the seed holds the rank its numbers earn",
-          got["level"] == 23 and got["badges"] == 4 and got["rank"] == "veteran", got)
+          got["level"] >= spec["level"] and got["badges"] == spec["badges"] and
+          got["rank"] == "veteran", got)
 
     # Boundary behaviour, cheap and worth having: one short of a rank is
     # the rank below, and both halves have to be met.
-    edges = pg.evaluate("""()=>({
-      exact: rankOfStats(20, 4, 0), levelShort: rankOfStats(19, 4, 0),
-      badgeShort: rankOfStats(20, 3, 0), nothing: rankOfStats(1, 0, 0),
-      top: rankOfStats(70, 14, 0), topShort: rankOfStats(70, 13, 0)})""")
+    # Derived from the table for the same reason the seed is.
+    edges = pg.evaluate("""()=>{
+      const V = TIER_UNLOCKS.veteran, T = TIER_UNLOCKS.titan;
+      return {
+        exact: rankOfStats(V.level, V.badges, 0),
+        levelShort: rankOfStats(V.level - 1, V.badges, 0),
+        badgeShort: rankOfStats(V.level, V.badges - 1, 0),
+        nothing: rankOfStats(1, 0, 0),
+        top: rankOfStats(T.level, T.badges, 0),
+        topShort: rankOfStats(T.level, T.badges - 1, 0) };}""")
     # The third argument is the old Secret Flare count. It is passed as 0
     # everywhere now and the top rank reaches anyway, which is the whole
     # point of the check: nothing gates on it any more.
@@ -524,16 +588,23 @@ def check_ranks(br):
 
     # The rank has to show up where people are listed, or it is a tab
     # nobody else ever sees.
-    row = pg.evaluate("""()=>{const a=document.createElement('span');
+    # The numbers fed in come from the table, and so does the name
+    # expected back - (34, 6) was Gold under one threshold table and
+    # Silver under the next. What is being checked is that a row shows
+    # THE RANK THOSE NUMBERS EARN, which is a different statement from
+    # "shows Gold".
+    row = pg.evaluate("""()=>{const V=TIER_UNLOCKS.vanguard;
+      const a=document.createElement('span');
       a.className='lb-avatar'; a.appendChild(buildAvatarCharSVGSafe('ninja'));
-      decorateAvatar(a, 34, 6, 0);
+      decorateAvatar(a, V.level, V.badges, 0);
       const un=document.createElement('span'); un.className='lb-avatar';
       decorateAvatar(un, 1, 0, 0);
       return {rank:(a.querySelector('.lb-rankmark')||{}).title,
+              want:RANK_DISPLAY_NAME.vanguard,
               level:!!a.querySelector('.vroom-level'),
               unranked:!un.querySelector('.lb-rankmark'),
               unrankedExtras:un.childNodes.length};}""")
-    check("a person's row carries their rank", row["rank"] == "Gold", row)
+    check("a person's row carries their rank", row["rank"] == row["want"], row)
     # The small blue level number beside the character was asked for,
     # built, and then asked against. Two marks on one 42px character is
     # one too many, and a board that ranks on the number is already

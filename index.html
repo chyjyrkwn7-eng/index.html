@@ -4937,6 +4937,51 @@
      while the top strip under the status bar is empty on both screens.
      top: clears the notch and the status bar; positionNotice() still
      runs, but now measures the TOP furniture rather than the bottom. */
+  /* THE FORCED UPDATE'S OWN SCREEN. Not a banner: it covers everything,
+     because it is not asking and there is nothing else to do on the
+     screen for the second it is up. z-index 500 puts it above
+     #genprofile-overlay (400), which is itself above the tour overlay -
+     the loading-screen rule in reverse, and correct here for the same
+     reason: nothing may sit on top of this either.
+     The bar is a plain indeterminate sweep rather than a real
+     percentage, because there is no percentage to report - the fetch it
+     is covering is one request for one file. An honest sweep beats a
+     fake number crawling to 90 and sticking. */
+  .pushing-update{
+    position:fixed; inset:0; z-index:500;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:1rem;
+    padding-left:max(1.5rem, env(safe-area-inset-left,0px));
+    padding-right:max(1.5rem, env(safe-area-inset-right,0px));
+    background:#0A0A0A;
+    animation:pushfade .18s ease-out both;
+  }
+  @keyframes pushfade{ from{ opacity:0 } to{ opacity:1 } }
+  .pushing-update-label{
+    margin:0; font-family:var(--mono);
+    font-size:max(16px, 1rem); letter-spacing:.06em;
+    color:var(--ink); text-align:center;
+  }
+  .pushing-update-track{
+    width:min(18rem, 100%); height:6px; border-radius:999px;
+    background:color-mix(in srgb, var(--ink) 12%, transparent);
+    overflow:hidden;
+  }
+  .pushing-update-fill{
+    width:40%; height:100%; border-radius:999px;
+    background:linear-gradient(90deg, var(--theme-c1), var(--theme-c2), var(--theme-c3));
+    animation:pushsweep 1.1s ease-in-out infinite;
+  }
+  @keyframes pushsweep{
+    0%{ transform:translateX(-110%) } 100%{ transform:translateX(260%) }
+  }
+  /* Reduce motion switches the sweep off globally via the [data-reduce-motion]
+     rule, which would leave a bar sitting still at 40% and reading as
+     stuck. A full, static bar says the same thing without moving. */
+  [data-reduce-motion="true"] .pushing-update-fill{ width:100%; }
+  .pushing-update-sub{
+    margin:0; font-size:.85rem; color:var(--soft); text-align:center;
+  }
   .update-banner{
     /* Side insets as well as the top one: this is a full-width fixed
        element, and a phone held sideways puts the notch straight through
@@ -5157,7 +5202,21 @@
      it above the bar's own height plus a small gap whenever that bar
      is present fixes this for every toast everywhere, since they all
      share this one class. */
-  body.has-bottomtabs .toast{ bottom:calc(6rem + env(safe-area-inset-bottom)); }
+  /* 6rem was less than the bar's own footprint, so the toast sat
+     under it. Measured on an iPad Pro 11": toast bottom 1078 against a
+     bar starting at 1063 - a 15px overlap; on a 17 Pro Max it cleared
+     by 5px, which is touching, not clearing. Reported as "the select
+     units to start pop up hides under the bottom tab".
+     7.5rem is the figure this file already uses for the bar's whole
+     footprint, but the toast has its own height to clear as well, so
+     the number that actually measures clean is 9.5rem: 27px of gap on
+     a 17 Pro Max and 21px on an iPad Pro 11". 8rem was tried first and
+     still overlapped the iPad by 3px - measure it, do not derive it
+     from the bar alone. Deliberately WITHOUT the
+     safe-area inset: the bar's height already contains it, and adding
+     it again is the double-count this file warns about for the tab
+     bar's own reservation. */
+  body.has-bottomtabs .toast{ bottom:9.5rem; }
   /* The daily-question announcement, and the reason it is not a toast.
      A toast lands in the bottom corner, and on Home that corner is full:
      at the toast's own height it painted under the "?" button the message
@@ -24133,21 +24192,30 @@ const TIER_UNLOCKS = {
      XP total and a star count that no longer exists as an award; both
      of the things it now asks for are numbers shown on Profile, so a
      tier says something you can check against your own screen. Levels
-     come steadily and badges do not - 35 hundos each - which is what
+     come steadily and badges do not - BADGE_THRESHOLD hundos each - which is what
      gives the gaps their shape. */
-  rookie:   { level: 5,  badges: 1,  label: "Reach level 5 and 1 badge" },
-  ranger:   { level: 12, badges: 2,  label: "Reach level 12 and 2 badges" },
-  veteran:  { level: 20, badges: 4,  label: "Reach level 20 and 4 badges" },
-  vanguard: { level: 30, badges: 6,  label: "Reach level 30 and 6 badges" },
-  adept:    { level: 42, badges: 8,  label: "Reach level 42 and 8 badges" },
-  elite:    { level: 56, badges: 11, label: "Reach level 56 and 11 badges" },
+  /* RESCALED FOR THE 100 CAP, AND THE LEVELS SIT DELIBERATELY BEHIND
+     THE BADGES. With a mastery worth about seven levels, somebody on
+     four badges is around level 37 - so asking for level 30 here means
+     the BADGE is what gates the rank and the level only confirms it.
+     That is the whole complaint this came from: a classmate was level
+     24 with no badges at all, and a rank you can grind into without
+     mastering anything is not a rank. The badge counts are unchanged;
+     only the level numbers moved, and they moved to stay roughly the
+     same fraction of a ladder that is now 100 tall rather than 80. */
+  rookie:   { level: 10, badges: 1,  label: "Reach level 10 and 1 badge" },
+  ranger:   { level: 18, badges: 2,  label: "Reach level 18 and 2 badges" },
+  veteran:  { level: 30, badges: 4,  label: "Reach level 30 and 4 badges" },
+  vanguard: { level: 42, badges: 6,  label: "Reach level 42 and 6 badges" },
+  adept:    { level: 55, badges: 8,  label: "Reach level 55 and 8 badges" },
+  elite:    { level: 72, badges: 11, label: "Reach level 72 and 11 badges" },
   /* Supernova, the genuine top of the ladder, now also requires
      finding every Mystery Star \u2014 not just points and stars from
      studying, but having fully explored the app itself. Named
      "Secret Flares" for display, distinct from the Mastery Ladder's
      own "Flares" (the orbiting badges) since these are a different,
      hidden thing to find rather than a tier to climb. */
-  titan:    { level: 70, badges: 14, label: "Reach level 70 and 14 badges" }
+  titan:    { level: 90, badges: 14, label: "Reach level 90 and 14 badges" }
 };
 /* The full, ordered tier sequence — used anywhere code needs to walk
    every tier in climbing order (the ladder display, unlock checks,
@@ -24170,9 +24238,13 @@ const TIER_ORDER_FULL = ["rookie", "ranger", "veteran", "vanguard", "adept", "el
    already incremented wherever a test finishes at 100%, so that board
    is ranking the real thing from the start. */
 
-/* Each level costs 5% more XP than the last, starting at 300. Level 1
-   is the floor - nobody is level 0 - and 80 is the ceiling, per
-   explicit request.
+/* HISTORY, kept because each paragraph records a curve that was tried
+   and why it failed. What ships now is described at LEVEL_COST_MAX and
+   MASTERY_BONUS below; the ceiling is 100, not the 80 this paragraph
+   was written for.
+   Each level costs 5% more XP than the last, starting at 300. Level 1
+   is the floor - nobody is level 0 - and 80 was the ceiling, per
+   explicit request at the time.
 
    The curve is chosen so the ceiling is reachable. It was 500 XP at
    +15% a level with a cap of 99, which is a fine shape and a
@@ -24183,8 +24255,24 @@ const TIER_ORDER_FULL = ["rookie", "ranger", "veteran", "vanguard", "adept", "el
    them a genuine course-long climb. Nobody's level goes DOWN in the
    change, which is the property that made it safe to make. */
 const LEVEL_BASE_POINTS = 300;
-const LEVEL_GROWTH = 1.05;
-const LEVEL_CAP = 80;
+/* 1.40, not 1.05, AND IT STOPS CLIMBING. See the block below - the
+   growth rate only has to carry the first dozen levels up to
+   LEVEL_COST_MAX, after which every level costs the same. A rate this
+   steep would be the compounding runaway this file warns about twice
+   over if it ran all the way to the cap; it runs for eleven levels. */
+const LEVEL_GROWTH = 1.40;
+/* THE CEILING ON WHAT ONE LEVEL COSTS, and the number the whole
+   system is built on. Once a level costs a flat amount, a badge worth
+   a fixed amount of XP always buys the same number of levels - which
+   is the only way "each unit mastery should get you maybe 7 levels"
+   can be true at level 15 and still be true at level 85. With a
+   compounding curve it cannot be true twice. */
+const LEVEL_COST_MAX = 9000;
+/* 100, up from 80, asked for by name: "the new max level is level
+   100". It is also what makes the correction below survivable - every
+   level in the class drops, and a taller ladder leaves somewhere to
+   climb back up. */
+const LEVEL_CAP = 100;
 /* THE CURVE GETS STEEPER AFTER 20, AND IS UNTOUCHED BELOW IT.
    Asked for directly: "do not let leveling up be too easy ... after
    level 40 or 50 it should [take] multiple tests to even level up. It
@@ -24211,14 +24299,45 @@ const LEVEL_CAP = 80;
    accepted ("if peoples levels get slightly lowered to fix this based
    on their current earned so then so be it"). Nothing is reset: the
    XP total is untouched and the level is derived from it, as always. */
-const LEVEL_RAMP_FROM = 20;
-const LEVEL_RAMP_STEP = 0.0008;
-const LEVEL_GROWTH_MAX = 1.075;
-function levelGrowthAt(lvl){
-  if(lvl <= LEVEL_RAMP_FROM) return LEVEL_GROWTH;
-  return Math.min(LEVEL_GROWTH_MAX,
-                  LEVEL_GROWTH + (lvl - LEVEL_RAMP_FROM) * LEVEL_RAMP_STEP);
-}
+/* A MASTERY IS WORTH ABOUT SEVEN LEVELS, AND THAT IS THE WHOLE DESIGN.
+   "Each unit mastery should get you maybe 7 levels. Take that into
+   account. It needs to [be] much harder to level up."
+   The previous two attempts tuned the curve for feel and both left the
+   same hole: XP is paid PER CORRECT QUESTION, so it accrues every
+   single run, while a hundo only lands on a flawless full-unit run and
+   a badge needs thirty of them. Grinding therefore always outruns
+   mastering. Measured on the real bank (16 units, 894 questions, sizes
+   12 to 340), at three attempts per hundo and ~95% accuracy, a typical
+   29-question unit costs about 27,800 XP of grinding to master.
+   Two things fix it together, and neither works alone:
+     - A FLAT COST PER LEVEL (LEVEL_COST_MAX) once the ramp is done, so
+       a fixed lump of XP always buys the same number of levels.
+     - MASTERY_BONUS, a flat lump paid for the badge ITSELF, which is
+       what makes a small unit's badge worth the same as a big one's.
+       Without it a 12-question unit's mastery is worth under two
+       levels and Penal Code's is worth forty, because per-question XP
+       scales with unit size and a badge does not.
+   Fitted: 9,000 XP a level, a 36,000 XP mastery bonus. A typical unit's
+   mastery is then 27,800 grind + 36,000 bonus = 63,800 XP, which is
+   7.1 levels. The smallest unit is 5.5 levels, the largest 9.7 - the
+   spread is real work, and it is centred on the seven asked for.
+   The cap lands where it should: thirteen typical masteries reach level
+   100, so the top of the ladder is most of the course rather than a
+   number anyone grinds into.
+   EVERY LEVEL IN THE CLASS DROPS, which was the point - "to counter the
+   early mistake of people jumping high on levels right now". Measured
+   against the live build: 24 -> 9, 20 -> 8, 16 -> 7, 10 -> 6, 6 -> 4.
+   Nothing is reset; the XP total is untouched and the level is derived
+   from it, as always. The one place a level can go UP is above the old
+   80 cap, which is the new ceiling doing its job, and nobody in the
+   class is within 600,000 XP of it. */
+/* ONE RATE, AND A CEILING. Everything above is the history of trying
+   to fix this with bands, and the bands were the wrong tool: a
+   compounding curve makes a level cost more the higher you are, so the
+   number of levels a badge buys shrinks as you climb, and no choice of
+   rates makes "a mastery is worth about seven levels" hold anywhere but
+   one spot on the ladder. A flat cost makes it hold everywhere. */
+function levelGrowthAt(){ return LEVEL_GROWTH; }
 
 /* Where a given XP total sits: the level, how far into it, and how far
    across. One function so the bar, the number under it and the board
@@ -24229,7 +24348,8 @@ function levelProgress(points){
   const p = Math.max(0, Number(points) || 0);
   let lvl = 1, need = LEVEL_BASE_POINTS, spent = 0;
   while(lvl < LEVEL_CAP && p >= spent + need){
-    spent += need; lvl += 1; need = Math.round(need * levelGrowthAt(lvl));
+    spent += need; lvl += 1;
+    need = Math.min(LEVEL_COST_MAX, Math.round(need * levelGrowthAt(lvl)));
   }
   const atCap = lvl >= LEVEL_CAP;
   return {
@@ -24256,7 +24376,33 @@ function levelOf(st){
    calling "Advanced" all along. DRILL_STAR_THRESHOLD was a separate
    40 for the same idea, so the app held two different answers to
    "have I mastered this unit". They are one number now. */
-const BADGE_THRESHOLD = 35;
+/* 30, DOWN FROM 35, AND IT MOVES WITH THE LEVEL CURVE. Asked for
+   together: "take the hundo requirement for badges down to 30, and
+   ensure it all syncs up ... by the time you reach level 30 you should
+   have close to 6 badges."
+   Lowering it can only ADD badges to an existing account - a badge is
+   `hundos >= BADGE_THRESHOLD`, computed fresh, so anyone sitting on
+   30-34 hundos in a unit gains one the moment this ships and nobody
+   loses anything. It does not ambush them with cutscenes either:
+   summarize() detects a new badge by diffing the list either side of
+   its own recording call, so a badge that was already earned before
+   the run produces no diff and no cutscene. */
+const BADGE_THRESHOLD = 30;
+/* WHAT A BADGE IS WORTH IN XP, AND WHY IT IS A FLAT LUMP. Four levels
+   at LEVEL_COST_MAX, paid once, the moment a unit is mastered. The
+   grinding that earned it pays its own way on top - about three more
+   levels on a typical unit - which is where "maybe 7 levels" per
+   mastery comes from.
+   It is FLAT rather than scaled by unit size on purpose: per-question
+   XP already pays for size, so scaling this too would double-count it
+   and leave Identity Crimes (12 questions) worth a twenty-eighth of
+   Penal Code (340) for the same badge. A badge is a badge.
+   It is paid on the DIFF in summarize(), so it fires once per unit
+   ever, by whichever route crossed the threshold - and lowering
+   BADGE_THRESHOLD to 30 cannot retro-pay it, because a unit already
+   past 30 produces no diff. Nobody gets a windfall for a badge they
+   already held. */
+const MASTERY_BONUS = 4 * LEVEL_COST_MAX;
 function unitBadgeEarned(name){
   return (store.unitPerfects[name] || 0) >= BADGE_THRESHOLD;
 }
@@ -27980,7 +28126,7 @@ const RELEASE_NOTES = [
       ]},
       { label: "Ranks, Badges & Unlocks", items: [
         { icon: buildLadderIcon, color: "#FFD84D", title: "Seven Ranks to Climb", body: "Iron, Bronze, Silver, Gold, Sapphire, Amethyst and Supernova. Each one asks for a level and a number of badges together, not either on its own, and each has its own emblem that sits beside your name everywhere people can see you." },
-        { icon: buildStarIcon, color: "#4DD0E1", title: "A Badge for Every Unit", body: "Sixteen units, sixteen badges, each one cut to its own shape. Finish a unit at 100% thirty-five times and its badge drops into place \u2014 and until then the empty slot shows you exactly what you are working towards." },
+        { icon: buildStarIcon, color: "#4DD0E1", title: "A Badge for Every Unit", body: "Sixteen units, sixteen badges, each one cut to its own shape. Finish a unit at 100% thirty times and its badge drops into place \u2014 and until then the empty slot shows you exactly what you are working towards." },
         { icon: buildPersonIcon, color: "#4ADE80", title: "Characters Behind the Top Ranks", body: "The last four ranks each hand over a character nobody starts with \u2014 an officer, a clown, a robot and an astronaut. You can see all four from day one, locked, so you know what is up there." },
         { icon: buildSwatchClusterIcon, color: "#C583FF", title: "A Theme Colour Per Rank", body: "Every rank hands over its own colour, and picking one recolours the whole app \u2014 the sphere, the glow behind every screen, the loading screen and the accent on every control." },
         { icon: buildRocketIcon, color: "#FF6B6B", title: "The Supernova Event", body: "Reach the very top and a full-screen event plays out, leaving your Home screen's orbit permanently brighter afterward." }
@@ -32054,7 +32200,7 @@ function showSetup(){
     setTimeout(() => {
       startSimpleTour([
         { target: ".pick", align: "left", vplacement: "below",
-          text: "Tap a unit to add it to this test. The bar under each one is how close you are to its badge \u2014 35 hundos masters it, and a unit you have mastered shows its badge instead." },
+          text: "Tap a unit to add it to this test. The bar under each one is how close you are to its badge \u2014 30 hundos masters it, and a unit you have mastered shows its badge instead." },
         { target: "#bottomtab-start", align: "right", vplacement: "above",
           text: "Once you've picked your units, tap here \u2014 it opens a quick summary and lets you set the timer and other options before you begin." }
       ]);
@@ -33143,7 +33289,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-23-115";
+const APP_BUILD = "2026-09-23-117";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -33302,15 +33448,22 @@ function repositionTopNotices(){ positionNotice(); positionDailyAlert(); }
 window.addEventListener("resize", repositionTopNotices);
 window.addEventListener("orientationchange", repositionTopNotices);
 
-async function checkForUpdate(){
+async function checkForUpdate(force){
   if(document.getElementById("updatebanner")) return;
-  /* Never mid-test. Both notices are tappable by definition, and one of
-     them reloads the page - which would throw away an in-progress test
-     with no warning. It keeps until the test is over; the foreground
-     check below picks it up then. Bailing BEFORE the throttle stamp is
-     set matters, otherwise a long test would also burn the next 15
-     minutes of checks. */
-  if(typeof testInProgress !== "undefined" && testInProgress) return;
+  if(document.getElementById("pushing-update")) return;
+  /* THE MID-TEST BAIL USED TO LIVE HERE AND IT HAD TO MOVE. It returned
+     before the fetch, so a check that landed during a test never learned
+     a new build existed - and with the forced update that is no longer a
+     harmless deferral, it is the difference between "pushed the moment
+     they finish" and "not armed at all". Caught exactly that way: held
+     mid-test, the push never fired when the test ended.
+     Nothing is lost by letting it run. The forced path waits on
+     forcedUpdateBlocked(), which tests testInProgress itself, so the
+     reload still cannot land on somebody's unsaved run; and the banner
+     fallback goes through syncNoticeVisibility(), which is gated to
+     Welcome and Home by dataset.screen and so can never paint over a
+     question either. Burning the throttle mid-test no longer matters
+     because the retry loop, not the next check, is what fires. */
   /* Retry rather than give up. The load-time check fires 2.5s in, and a
      returning user's splash runs ~2.5s plus a fade - so on a cold launch
      this lands during the splash about as often as not, and the old
@@ -33335,7 +33488,11 @@ async function checkForUpdate(){
     return;
   }
   const now = Date.now();
-  if(now - lastUpdateCheck < UPDATE_CHECK_MIN_GAP_MS) return;
+  /* force skips the 15-minute gap, and exactly one caller passes it: the
+     end of a test. "Right when they finish their next test push it for
+     them" cannot be honoured by a check that may have been spent
+     fourteen minutes ago on the screen they started from. */
+  if(!force && now - lastUpdateCheck < UPDATE_CHECK_MIN_GAP_MS) return;
   lastUpdateCheck = now;
   let info;
   try{
@@ -33355,6 +33512,16 @@ async function checkForUpdate(){
      wipe the other banner off the screen mid-read anyway. The frame
      notice is not lost - it is re-evaluated on the very next check. */
   if(typeof info.build === "string" && info.build !== APP_BUILD){
+    /* PUSHED, NOT OFFERED - see startForcedUpdate above. The dismissal
+       key is deliberately not consulted on this path: it recorded an
+       answer to "would you like to update", which is no longer the
+       question. It is still honoured by the banner fallback below, which
+       is what a device that has already burned its attempts gets. */
+    if(forcedTriesFor(info.build) < FORCED_UPDATE_TRIES){
+      forcedUpdateInfo = info;
+      startForcedUpdate();
+      return;
+    }
     let dismissed = null;
     try{ dismissed = localStorage.getItem("class26e.update.dismissed"); }catch(e){}
     /* Keyed to the specific build that was dismissed, not a plain flag, so
@@ -33574,6 +33741,95 @@ function hideBanner(){
   setTimeout(() => bar.remove(), 300);
 }
 
+/* ---------- the forced update -------------------------------------------
+   "Force an update, next time people finish any test they are on it,
+   push their update ... If they aren't on a test go ahead and push it
+   for those people. I need the update to be pushed immediately."
+   So the banner stops being a request and becomes a notification: the
+   app finds a newer build, says "Pushing update", and reloads itself.
+   No tap, and a previous dismissal does not silence it - a dismissal
+   was an answer to a question that is no longer being asked.
+
+   A FORCED RELOAD NEEDS A LOOP GUARD, and this is the whole risk of
+   the feature. If version.json says one build and the served
+   index.html still carries the old APP_BUILD - Pages mid-deploy, a CDN
+   edge that has not caught up, an iOS cache that will not let go -
+   then "reload until they match" never terminates, on every phone in
+   the class at once. So each attempt is counted against the build it
+   was made for, and after FORCED_UPDATE_TRIES the app gives up on
+   pushing and falls back to the banner, which is tappable and cannot
+   loop. Counted in localStorage rather than on store: the reload is
+   the point, so it has to survive one, and it is device state rather
+   than progress. */
+const FORCED_TRIES_KEY = "class26e.forced.v1";
+const FORCED_UPDATE_TRIES = 3;
+let forcedUpdateInfo = null;
+let forcedUpdateStarted = false;
+
+function forcedTriesFor(build){
+  try{
+    const raw = JSON.parse(localStorage.getItem(FORCED_TRIES_KEY) || "null");
+    return (raw && raw.build === build) ? (raw.tries || 0) : 0;
+  }catch(e){ return 0; }
+}
+function noteForcedTry(build){
+  try{
+    localStorage.setItem(FORCED_TRIES_KEY,
+      JSON.stringify({ build: build, tries: forcedTriesFor(build) + 1 }));
+  }catch(e){}
+}
+
+/* The one thing a forced reload must never interrupt is a test in
+   progress - that is somebody's unsaved run. The rest are screens that
+   own the whole display and would be jarring to yank away mid-play;
+   none of them lasts long, and this waits rather than giving up. */
+function forcedUpdateBlocked(){
+  if(typeof testInProgress !== "undefined" && testInProgress) return true;
+  return !!(document.getElementById("splashscreen") ||
+            document.getElementById("genprofile-overlay") ||
+            document.getElementById("tour-overlay") ||
+            document.getElementById("badge-cutscene"));
+}
+
+function startForcedUpdate(){
+  if(!forcedUpdateInfo || forcedUpdateStarted) return;
+  /* Retries rather than abandoning: this is how "next time they finish
+     the test they are on" is implemented. Whoever is mid-test when the
+     update lands simply waits here, and the moment summarize() clears
+     testInProgress the next tick fires. */
+  if(forcedUpdateBlocked()){ setTimeout(startForcedUpdate, 800); return; }
+  forcedUpdateStarted = true;
+  noteForcedTry(forcedUpdateInfo.build);
+  showPushingUpdate();
+  /* Long enough that the message is read rather than flashed, short
+     enough that it is not a wait. */
+  setTimeout(applyUpdate, 1100);
+}
+
+/* The progress bar asked for by name - "have the progress bar say
+   pushing update". Deliberately not a banner and not dismissable: this
+   is the app telling somebody what it is doing, in the half-second
+   before the screen goes. */
+function showPushingUpdate(){
+  if(document.getElementById("pushing-update")) return;
+  const wrap = document.createElement("div");
+  wrap.id = "pushing-update";
+  wrap.className = "pushing-update";
+  const label = document.createElement("p");
+  label.className = "pushing-update-label";
+  label.textContent = "Pushing update\u2026";
+  const track = document.createElement("div");
+  track.className = "pushing-update-track";
+  const fill = document.createElement("div");
+  fill.className = "pushing-update-fill";
+  track.appendChild(fill);
+  const sub = document.createElement("p");
+  sub.className = "pushing-update-sub";
+  sub.textContent = "Your progress is saved.";
+  wrap.append(label, track, sub);
+  document.body.appendChild(wrap);
+}
+
 async function applyUpdate(){
   /* A plain location.reload() is not enough: it is free to serve the same
      cached copy straight back, which would look like tapping Update did
@@ -33719,6 +33975,12 @@ let lastRunPointsAfter = 0;
 
 function summarize(){
   testInProgress = false;
+  /* The end of a test is the moment the forced update was asked to land
+     on. Deferred a beat so the results screen paints first - finishing a
+     run and being shown a loading bar instead of the score reads as a
+     crash, not an update. force=true because the ordinary 15-minute
+     throttle would routinely swallow this exact check. */
+  setTimeout(() => checkForUpdate(true), 1200);
   stopTimer();
   stopQuestionTimer();
   timerlineEl.hidden = true;
@@ -33796,6 +34058,7 @@ function summarize(){
   let pointsEarned = 0;
   let perfectBonusEarned = 0;
   let multiTestBonusEarned = 0;
+  let masteryBonusEarned = 0;
   let hundosEarned = 0;
   let newlyUnlockedColors = [];
   if(runTrackable && !timedOut && total > 0){
@@ -33881,6 +34144,13 @@ function summarize(){
     badgesEarnedThisRun = badgesEarnedList().filter(u => !badgesBefore.has(u));
     if(badgesEarnedThisRun.length){
       store.pendingBadgeUnlocks = (store.pendingBadgeUnlocks || []).concat(badgesEarnedThisRun);
+      /* Paid off the same diff the cutscene is queued off, so the XP and
+         the celebration can never disagree about whether a badge was
+         earned. Awarded here rather than at the other awardXp() call
+         above because the diff is not known until every recording call
+         has run; the level block is built further down and picks it up. */
+      masteryBonusEarned = MASTERY_BONUS * badgesEarnedThisRun.length;
+      awardXp(masteryBonusEarned);
       saveStore();
     }
     TIER_ORDER.forEach(c => {
@@ -34078,11 +34348,28 @@ function summarize(){
       );
       ptsWrap.appendChild(ptsRow3);
     }
+    /* Itemised like every other component, and it has to be: this is by
+       far the largest single number the screen can show, and an
+       unexplained +36,000 reads as a bug rather than as the thing you
+       just spent thirty hundos earning. */
+    if(masteryBonusEarned > 0){
+      const ptsRow4 = document.createElement("p");
+      ptsRow4.className = "points-line";
+      ptsRow4.append(
+        Object.assign(document.createElement("span"), { className: "points-label",
+          textContent: badgesEarnedThisRun.length > 1
+            ? badgesEarnedThisRun.length + " units mastered"
+            : "Unit mastered \u2014 " + badgesEarnedThisRun[0] }),
+        Object.assign(document.createElement("span"), { className: "points-val", textContent: "+" + masteryBonusEarned })
+      );
+      ptsWrap.appendChild(ptsRow4);
+    }
     const ptsTotal = document.createElement("p");
     ptsTotal.className = "points-total";
     ptsTotal.append(
       Object.assign(document.createElement("span"), { className: "points-label", textContent: "XP earned" }),
-      Object.assign(document.createElement("span"), { className: "points-val", textContent: "+" + (pointsEarned + perfectBonusEarned + multiTestBonusEarned) })
+      Object.assign(document.createElement("span"), { className: "points-val",
+        textContent: "+" + (pointsEarned + perfectBonusEarned + multiTestBonusEarned + masteryBonusEarned) })
     );
     ptsWrap.appendChild(ptsTotal);
     panel.appendChild(ptsWrap);
@@ -34096,14 +34383,16 @@ function summarize(){
      more thing to explain. runFill() is called after the panel is on
      the stage, at the bottom of this function. */
   const levelBlock = buildResultsLevelBlock(
-    isMissedRetake ? 0 : (pointsEarned + perfectBonusEarned + multiTestBonusEarned),
+    isMissedRetake ? 0
+      : (pointsEarned + perfectBonusEarned + multiTestBonusEarned + masteryBonusEarned),
     store.lifetime.points);
   panel.appendChild(levelBlock);
   /* Stashed for the Virtual Room, which runs this whole function for
      its side effects and then replaces the screen with its own - so its
      results screen can show the same block rather than compute the
      numbers a second time and risk a second answer. */
-  lastRunXpEarned = isMissedRetake ? 0 : (pointsEarned + perfectBonusEarned + multiTestBonusEarned);
+  lastRunXpEarned = isMissedRetake ? 0
+    : (pointsEarned + perfectBonusEarned + multiTestBonusEarned + masteryBonusEarned);
   lastRunPointsAfter = store.lifetime.points;
 
   if(leveledUpTo && !theme.muteBanners){
@@ -35869,7 +36158,7 @@ function showVirtualRoomSetup(){
     setTimeout(() => {
       startSimpleTour([
         { target: ".pick", align: "left", vplacement: "below",
-          text: "Tap a unit to add it to this test. The bar under each one is how close you are to its badge \u2014 35 hundos masters it, and a unit you have mastered shows its badge instead." },
+          text: "Tap a unit to add it to this test. The bar under each one is how close you are to its badge \u2014 30 hundos masters it, and a unit you have mastered shows its badge instead." },
         { target: "#bottomtab-start", align: "right", vplacement: "above",
           text: "Once you've picked your units, tap here \u2014 it opens a quick summary and lets you set the timer and other options before you begin." }
       ]);
