@@ -2890,6 +2890,16 @@
     box-shadow:0 1px 3px rgba(0,0,0,.6);
   }
   .lb-rankmark svg{ width:100%; height:100%; display:block; overflow:visible; }
+  /* The level, along the BOTTOM of the character - the opposite edge
+     from the rank coin, so neither lands on the other. Lobby only. */
+  .vroom-levelchip{
+    position:absolute; left:50%; transform:translateX(-50%); bottom:-.3rem;
+    min-width:1.15rem; padding:0 .22rem; box-sizing:border-box;
+    font-family:var(--sans); font-size:.6rem; font-weight:800; line-height:1.15rem;
+    text-align:center; color:#fff; background:rgba(9,11,15,.92);
+    border:1px solid color-mix(in srgb, var(--accent) 65%, transparent);
+    border-radius:999px; pointer-events:none;
+  }
   .lb-name-wrap{ display:flex; flex-direction:column; min-width:0; }
   .lb-name{ font-weight:700; font-size:.95rem; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .lb-stats{ font-size:.78rem; color:var(--soft); }
@@ -10027,9 +10037,19 @@
   .friend-row-acts{ display:flex; gap:.4rem; flex-shrink:0; margin-left:auto; }
   /* 44px, like every other target in the app - these are small
      buttons, not exempt ones. */
+  /* THE PAIR HAS TO READ AS A PAIR. The modern .next treatment gives
+     every button a pill radius and a lift shadow, which is right for a
+     primary action standing alone and wrong for two small buttons side
+     by side - they floated off the row and read as broken. Flat, square
+     to the app's own 2px, equal width, and only Accept carries colour. */
   .friend-act{
     min-height:44px; padding:.4rem .85rem; font-size:.8rem; white-space:nowrap;
+    border-radius:2px; box-shadow:none; min-width:5.5rem; text-align:center;
   }
+  .friend-act.ghost{
+    background:transparent; color:var(--ink); border:1px solid var(--rule);
+  }
+  .friend-act.ghost:hover{ border-color:var(--soft); }
   .friend-mycode-wrap{ display:flex; align-items:center; gap:.6rem; }
   /* Centred, mono and narrow, the same treatment the sync code field
      already has and for the same reason: a code is a fixed-length
@@ -35909,7 +35929,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-23-139";
+const APP_BUILD = "2026-09-23-140";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -39461,6 +39481,16 @@ function showVirtualRoomLobby(){
         avatarWrap.className = "lb-avatar";
         avatarWrap.appendChild(buildAvatarCharSVGSafe(p.avatarChar || "ninja"));
         decorateAvatar(avatarWrap, p.level, p.badges, p.mystery);
+        /* IN A LOBBY ONLY: the rank emblem top-left, the level number
+           along the bottom. Asked for here specifically - the boards
+           deliberately have no level chip (a row there already prints
+           the number, and two marks on one 42px character is one too
+           many), but a lobby row does not, and this is where you size
+           up who you are about to race. */
+        const lvl = document.createElement("span");
+        lvl.className = "vroom-levelchip";
+        lvl.textContent = p.level || 1;
+        avatarWrap.appendChild(lvl);
         const nameWrap = document.createElement("span");
         nameWrap.className = "lb-name-wrap";
         const name = document.createElement("span");
