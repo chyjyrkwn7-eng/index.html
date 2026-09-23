@@ -35,7 +35,7 @@ disagreed, the repo won and the difference is called out.
   rather than mounting screens. Use it for anything Madison will look at.
 - `tools/record-cutscenes.py` — the animations, **as animations**: GIFs of
   the badge unlock, the badge queue, all seven rank cutscenes, the
-  Supernova cutscene, and a real full-unit 100% run from the last question
+  Supernova cutscene, the Void cutscene, and a real full-unit 100% run from the last question
   through to both cutscenes it triggers. A still of a cutscene is a still
   of one arbitrary frame; picking that frame by hand is how a 20-second
   cutscene gets reported as "nothing happens". See **Recording an
@@ -48,6 +48,15 @@ disagreed, the repo won and the difference is called out.
   four-person room. **That "needs run state" is also why none of them
   was in `SCREENS`, and therefore why five things were wrong on the
   Virtual Room results screen at once with every gate green.**
+- `tools/shoot-flares.py` — the two Secret Flare screens a walk cannot
+  reach (the glint hiding inside a live question, and the banner that
+  only exists for five seconds after it is tapped), plus a contact
+  sheet of all sixteen characters at tile size AND at the 34px a
+  rankings row actually uses. The Customise screen is NOT here — it is
+  reachable by clicking, so it belongs in `shoot-flow.py`, which is
+  where it now is. It also measures whether the flare banner is sitting
+  on a control, because it is the only banner in the app that lands on
+  a question rather than on an empty screen.
 - `tools/check-fixes.py` — the third question, after "is anything
   broken" (the sweep) and "did it land where I meant it to"
   (check-positions): **is this specific fix actually in effect here**,
@@ -83,6 +92,22 @@ disagreed, the repo won and the difference is called out.
   mastery and only then, and a queue of badges playing back to back on the
   main menu. Every check in it was written against a build where it
   failed; `--against old-index.html` runs it there.
+- `tools/check-unlocks.py` — **the four EARNED characters and the
+  Secret Flares that gate one of them.** Four counters (`dailyCorrectStreak`,
+  `unitHundoStreak`, `practiceTestPassed`, the flares) have to move at
+  the right moment and stop at the wrong one, and none of the other
+  gates can see any of it: a streak that silently never increments looks
+  exactly like a streak nobody has earned yet, and the first person to
+  notice would be somebody who answered ten daily questions in a row for
+  nothing. It also asserts the flare's glint overlaps **no answer
+  choice**, on the reasoning that a stray tap on a decoration is a shrug
+  while a stray tap that eats an answer is a wrong answer somebody did
+  not give. Device-independent, so it runs once. Written against build
+  132 and fails there 13 ways; `--against` proves it. It also sweeps
+  EVERY placement the glint can pick on the narrowest phone in the
+  matrix, which is how the 44px box landing on the words "Question 1"
+  across a third of its range was found — one sample on one device is
+  not a check.
 - `tools/firestore-admin.py` — `list`, `find <username>` and
   `purge --yes` against the live Firestore over the plain REST API, no SDK
   and no credentials (the rules are open). `find` is the "someone lost
@@ -1503,7 +1528,104 @@ all keyed by them, so renaming a key is a migration for a cosmetic gain.
   Virtual Room publish a `mystery` field on every document and older
   documents still carry it — a signature change here is a wire-format
   change, for nothing.
-- **The Secret Flares are gone entirely**, asked for in one line: *"the
+- **THE SECRET FLARES ARE BACK — the HUNT ONLY.** They were scrapped by
+  explicit request, then asked for again just as explicitly: *"I don't
+  like either of those ideas, let's do the secret flares"*, as the
+  unlock for the fourth earned character. The entry below this one is
+  HISTORY: do not "restore" the scrapped state on the strength of it.
+  Three separate things were scrapped together and only one came back.
+  - **The hunt came back.** `maybeStartMysteryForRun()` arms at most one
+    flare per run and never on a run shorter than `MYSTERY_MIN_RUN` (5)
+    — a one-question Daily has nowhere to hide anything. A glint appears
+    at one question position, is tapped, and the colour is recorded.
+    Nothing else in the app tells you it is coming, which is the point.
+  - **HOW HIDDEN IS MEASURED IN TESTS COMPLETED, NOT IN RUNS BETWEEN.**
+    `MYSTERY_AT` is `[80, 200, 350]`, asked for by number: *"a person
+    should see the first flare when they get to 80-90 tests taken. The
+    second one can be around 200, and make the 3rd one at about 350 or
+    so."* This replaced a two-run gap and is a better KIND of gate: a
+    gap in runs makes the hunt something that happens to everybody at
+    the same rate from the day it lands, while a lifetime count makes it
+    something that happens to people who have put the work in — which is
+    what a secret is for. An account that already has three hundred
+    tests behind it gets the first two quickly, which is right: they
+    earned them before the feature existed.
+    The count is `testsCompletedOf()`, **the same number the Stats tab
+    prints**. It was written out longhand there and is a function for
+    that reason alone — a gate on a number nobody can see is a gate
+    nobody can be told about.
+  - **The glint is a glowing ORB, not a sparkle, and it is 1.65rem.**
+    The first version was a `.82rem` four-point star and came straight
+    back off a screenshot: *"that's way too tiny, make them a bit bigger
+    so they are easy to see"*, alongside *"a pretty small tiny glowing
+    orb thing"*. `buildFlareOrb()` is one builder used in three places —
+    the glint, the banner that announces it, and the cutscene — so the
+    thing you tapped and the thing you are shown cannot drift. It
+    breathes rather than spinning: a 45° rotation is right for a
+    four-point sparkle and meaningless on a circle.
+  - **The Eclipse colour did not**, and `titan`'s requirement did not.
+    `titan` is plain "Reach level 70 and 14 badges", and
+    `rankOfStats`'s third argument stays vestigial. **Re-arming that
+    guard would change what the top rank costs for people already
+    climbing to it** — luck in front of a rank is the one thing the
+    ladder must never ask for. A character is a thing you find; a rank
+    is a thing you climb to.
+  - **Nothing was migrated, because nothing had to be.**
+    `store.mysteryColorsFound` (red/orange/yellow) and
+    `testsUntilMystery` stayed defaulted in `applyLoadedData()` through
+    the whole scrapped period, which is exactly the property that made
+    this a revival rather than a rebuild. `testsUntilMystery: null`
+    means "never counted down" and arms on the first eligible run, so
+    the feature turns up for everybody rather than waiting two runs to
+    exist.
+  - **THE GLINT LIVES IN THE QUESTION CARD'S HEADER ROW AND NOWHERE
+    NEAR THE CHOICES.** It is a 44px tap target with a ~13px mark inside
+    it (the same padding trick the Settings text links use), absolutely
+    positioned inside `.qnumrow` at a horizontal fraction picked once
+    per RUN — not per render, because `render()` runs again on every
+    wrong answer and a glint that jumped each time you missed would read
+    as a glitch. A stray tap on a decoration is a shrug; a stray tap
+    that eats an answer is a wrong answer somebody did not give, and
+    this app records those permanently. `check-unlocks.py` asserts the
+    overlap with every `.choice` is zero.
+  - **The payoff is the burst, so the node is disabled on tap and
+    removed a beat later**, not removed immediately. The banner arrives
+    from the top edge and the eye is down in the card, so the half
+    second of expanding spark is the whole feedback for finding one.
+  - **Home's three orbit dots are the permanent mark and always were.**
+    They were left in place as dead decoration when this was scrapped
+    and light up in their real colours again with nothing new added to
+    that scene. There is no new element and no Secret Flares box — the
+    box came off the Rank tab by explicit request and stays off.
+    Noticed and liked on a screenshot: *"you made the tiny circles on
+    the main menu light up and make them the 'secret glares'"*.
+  - **THE THIRD FLARE QUEUES A CUTSCENE FOR THE MAIN MENU.** An earlier
+    pass announced "Void unlocked" in a banner at the moment of the find
+    and stopped there, reasoning that a cutscene minutes later has no
+    connection left to the thing just tapped. Reported straight back:
+    *"Not sure why the 'void unlocked' thing is on the main menu, ensure
+    there is a cool cut scene involving those tiny secret glares."*
+    `playVoidCutscene()` is **made of the three orbit dots**: the same
+    three colours start at the same three positions `buildCosmicHero()`
+    puts them, come loose, fall together over 1.9s, burst, and collapse
+    into the character. That is the right shape for it because those
+    three dots going one by one from grey to lit is the ONLY thing a
+    person has seen of this feature before now.
+    `store.pendingVoidCutscene` is queued on `store` for the same reason
+    the badge queue is: there is no fixed route from a test to Home, so
+    the flag has to survive the trip and a relaunch.
+    **The convergence is a TRANSITION, not a keyframe animation**, and
+    deliberately — the global `[data-reduce-motion="true"] *{animation:none}`
+    rule strips keyframes, which would have left three orbs sitting
+    motionless in a ring for nine seconds. Transitions survive it.
+    **The flash lives inside `.void-field`, not on the overlay.** On the
+    overlay it is centred on the SCREEN while the orbs are centred on
+    the field, and the field sits above centre because the title and
+    subtitle below it take real height — so the burst came out offset
+    from the thing it was bursting out of, which on a recording read as
+    a circle with a flat bottom. Found on the recording, not by reading
+    it.
+- **The scrapping, for the record**, asked for in one line: *"the
   'mystery flares' should be scrapped."* The requirement came off
   Supernova (`titan` is now plain "Reach level 70 and 14 badges"),
   `"mystery"` came off `ACCENTS` and `ACCENT_DISPLAY_NAME`, the hidden
@@ -1675,21 +1797,176 @@ all keyed by them, so renaming a key is a migration for a cosmetic gain.
   as well. The list is what you actually get, not a fixed shape with a
   gap in it; `check-behaviour` asserts `[3,3,3,4,4,4,4]` rather than one
   number for all seven. Padding a short list is worse than a short list.
-- **Four characters sit behind the top four ranks**: Officer on Gold,
-  Clown on Sapphire, Robot on Amethyst, Astronaut on Supernova. Where
-  each one sits is not arbitrary — the Officer is on the first genuinely
-  aspirational rank because this is a police academy class and it is the
-  one character that is the thing the course is FOR, and the Astronaut is
-  last because the app is Nova, the top rank is Supernova and the emblems
-  are the life of a star. `isLockedCharacter()` and
+- **Four characters sit behind the top four ranks**: Robot on Gold,
+  Clown on Sapphire, Officer on Amethyst, Astronaut on Supernova —
+  ordered by how hard each should be, asked for in exactly that order
+  (*"the astronaut needs to be the hardest one to get, the police men
+  the second hardest, the robot the easiest, and the clown the 3rd
+  hardest"*). This note used to say Officer on Gold and was stale: the
+  Officer moved UP because this is a police academy class and it is the
+  one character that is what the course is FOR, so the closer to the
+  top the more it is worth holding. The Astronaut still ends the ladder,
+  because the app is Nova, the top rank is Supernova and the emblems are
+  the life of a star. `isLockedCharacter()` and
   `characterLockMessage()` deliberately MIRROR `isLockedAccent()` and
   `accentLockMessage()`: a locked colour and a locked character are the
   same idea, and two answers to "is this unlocked yet" is how one of them
   ends up wrong. A character with no `unlock` is free, so the original
   eight are untouched and an id from another build never locks somebody
-  out of their own avatar. Locked ones are SHOWN with a padlock — a
-  brand-new account has all four locked on the onboarding picker, which
-  is the first thing in the app that says there is more further up.
+  out of their own avatar. Locked ones are SHOWN with a padlock — on the
+  CUSTOMISE screen. The onboarding picker hides them, asked for
+  directly: *"the locked characters should not be included there"*.
+- **FOUR MORE ARE EARNED BY DOING SOMETHING, and they carry `feat`
+  rather than `unlock`.** A rank comes to you if you keep studying; a
+  feat does not, which is why these are the four with the characters
+  worth wanting. `isLockedCharacter()` answers for both kinds, so there
+  is still ONE answer to "is this unlocked yet" — the same rule that
+  keeps a locked colour and a locked character in step. Easiest to
+  hardest, the same order the rank four are listed in:
+
+  | character | `feat` | costs |
+  |---|---|---|
+  | Detective | `daily10` | 10 daily questions right in a row |
+  | The Masked One | `streak10` | a hundo in 10 DIFFERENT units in a row |
+  | Zeus | `weektop` | finish a week top of the weekly XP board |
+  | Void | `flares` | all three Secret Flares |
+
+  Two of the four were asked for by name and by pairing — *"a detective
+  for the daily question would be pretty sweet"*, and the flare one as
+  *"entirely dark black character with a flare color thing where it has
+  like tiny flares on it that glisten and it looks like it's in space"*.
+  Zeus was asked for as **a statue, not a person** (*"let's do zeus but
+  make it like a statue, not a person, that could be sick"*), and then
+  relaxed further — *"Zeus doesnt necessarily need to look like zeus, it
+  just needs to be a Greek statue character ya know"* — so the artwork
+  is free to be any classical bust. The daily-question target was
+  corrected to ten explicitly.
+  **Zeus's feat was corrected too**, and this is the kind of thing worth
+  recording because the first version was a reasoned guess that was
+  simply wrong. It was `exampass` (pass the Practice Test), chosen on
+  the argument that a leaderboard finish depends on who else happens to
+  be online while the Practice Test is entirely in your own hands. The
+  answer was *"The unlock for the greek statue is wrong too, it's
+  supposed to finished the week as the #1 on the weekly xp
+  leaderboard"*. It is the only feat in the set you cannot earn alone,
+  which is the point of it: the other three are you against the
+  material, this one is you against the class.
+  `store.practiceTestPassed` is still tracked and still defaulted even
+  though no character reads it any more — a Practice Test pass is a real
+  fact worth having recorded, and it costs four lines.
+  **`CHARACTER_FEATS` carries the check AND the sentence**, so the gate
+  and the copy shown to somebody who has not earned it cannot drift —
+  the same reason `TIER_UNLOCKS` carries its own label. The message
+  shows PROGRESS, not just the target: "0 of 10" and "7 of 10" are
+  different pieces of information and the second is the one that makes
+  somebody go and finish it.
+  **`characterLockMessage()` returns "" for anything not locked.** It
+  did not, and would happily hand back "Find all three Secret Flares
+  (3 of 3) to unlock Void" to somebody already wearing Void. Every
+  caller today asks only when `isLockedCharacter()` is true, which is
+  exactly the kind of thing that stays true until it does not.
+- **The four counters, and why each defaults to NOT-YET-EARNED.**
+  `dailyCorrectStreak`, `unitHundoStreak` (+ `unitHundoStreakUnits`) and
+  `practiceTestPassed` are new persisted fields, so they need their
+  `applyLoadedData()` defaults — and those defaults are **zero/false**,
+  which is the opposite of the `seenXTour` rule and deliberately so. A
+  tour flag defaults to already-seen because an existing account must
+  not be shown something as new; a feat defaults to zero because an
+  existing account genuinely has not done it yet — nothing was tracking
+  it to know otherwise. Nobody loses anything they held, because nobody
+  held these until this build.
+  - **"In a row" on the daily question means consecutive daily
+    questions ANSWERED, not consecutive days.** Missing a day does not
+    break it — a run of ten that a weekend away can end is a punishment
+    for having a life, and this class has plenty of those already.
+    Getting one wrong does break it, which is the part that makes it
+    worth holding.
+  - **"Ten different units" is why `unitHundoStreakUnits` is a LIST and
+    not a count.** Acing Identity Crimes — 12 questions, the smallest
+    unit in the app — ten times over is ten hundos and one unit, and
+    would have been the whole feat in about fifteen minutes. A unit
+    already in the streak is not a setback either; it simply does not
+    count again.
+  - **A partial slice neither extends the streak nor breaks it**, on
+    the same `isFullUnitRun()` rule hundos themselves already use. A
+    looser rule here would mean a ten-question slice could break a
+    streak it was never eligible to extend.
+  - **The Practice Test is the one run with a pass mark on it**, so it
+    is the one run that can be passed — `practiceTestMinutes != null`
+    is the discriminator, not the label (it launches with `runLabel`
+    null). `timedOut` is deliberately NOT excluded: running out of time
+    on a 90-minute exam and still clearing `PASS_MARK` is passing it,
+    which is what the real thing would say.
+  - **"FINISHING A WEEK #1" CANNOT BE OBSERVED DIRECTLY, and what is
+    recorded instead is stated honestly here rather than pretended
+    about.** Nothing on the device is awake at midnight on Sunday and
+    the board itself resets, so by Monday last week's standings do not
+    exist anywhere to be read. `observeWeeklyRank()` records your
+    position the last time you LOOKED during a week; `settleWeeklyWin()`
+    counts a win when the week key changes and that last-seen rank was
+    1. That is generous at the edges — first on Saturday night, did not
+    open the app on Sunday, still counts — and the alternative is a feat
+    nobody can ever earn. It is never generous in the direction that
+    matters: you have to have actually been first on the real board,
+    with the whole class's numbers in it, while you were looking.
+    `weekRankSeen` is ONE object rather than two fields, because a rank
+    is meaningless without the week it belongs to and two fields is how
+    they end up describing different weeks.
+    It is hooked in `paint()`, which runs on every snapshot and every
+    tab change, so simply having the Leaderboard open keeps it current —
+    hooking the weekly board alone would have made the feat depend on
+    which tab somebody happens to like.
+- **THE UNLOCK BANNER SHOWS THE CHARACTER.** Asked for directly: *"The
+  unlock banner when unlocking the characters should show the character
+  in the unlock banner by the way."* `showCharacterUnlockBanner()`
+  draws it from `buildAvatarCharSVGSafe`, the same builder every other
+  screen uses, never from a second copy of the artwork — the exact
+  mistake the rank-up banner made once, announcing a rank while drawing
+  the flare that rank hands over. No coin behind it: a character brings
+  its own halo now, and a disc of somebody else's colour fights it.
+  Void is the one exception and gets no banner at the moment of the
+  find: it gets the cutscene, and the banner after it.
+- **A "BEFORE" SNAPSHOT BELONGS BEFORE EVERY MUTATION IN THE FUNCTION,
+  NOT BEFORE MOST OF THEM.** `lockedCharacterSet()` is diffed either
+  side of `summarize()` to find newly-earned characters, and the first
+  version sat next to `badgesBefore` — forty lines down, and *after* the
+  daily-question block that writes `dailyCorrectStreak`. So the tenth
+  daily in a row had already unlocked the Detective by the time the set
+  was built and the diff found nothing. The tier snapshot below it
+  carries its own comment about exactly this trap; it was hit again
+  anyway. The gate catches it now.
+- **DRAWING A NEW CHARACTER: the value stack is the whole job, and
+  Zeus took four passes to prove it.** Pass 1 carved him entirely out
+  of one pale marble — face, hair, beard and shoulders from the same
+  gradient — and rendered beside the other fifteen he was a featureless
+  grey egg. Pass 2 made the hair and beard much DARKER than the face
+  and came out *worse*: the dark beard and the dark robe merged into
+  one mass that swallowed the cheeks and the thing read as a tiki mask.
+  **The wizard is the model**, because his beard reads at 34px and
+  Zeus's did not — and not because it is better drawn: it is white on
+  purple. What the twelve working characters all do is **a pale face,
+  features clearly darker than it, a strongly coloured mass below, and
+  one saturated accent**. For a marble statue that means the separation
+  between face, beard and hair comes from CUT LINES rather than from
+  three different greys (which is also what carving actually looks
+  like), the robe is the one dark thing, and the laurel is GOLD. The
+  same fix applied to the Detective, whose first pass had the hat, the
+  shadow, the skin and the coat all in one brown family: charcoal hat,
+  lit face, camel trench.
+  **Render all sixteen side by side before believing any of them** —
+  at 120px AND at 34px, which is the size a rankings row actually uses.
+  Every one of these faults was invisible in the path data and obvious
+  the moment the set was rendered together. It is a thirty-second check
+  and it is the only reason any of them got fixed.
+- **A GRID'S COLUMN COUNT FOLLOWS ITS ITEM COUNT — now three times.**
+  Sixteen characters in the Customise grid's six columns is two rows of
+  six and a ragged row of four, the exact arrangement already recorded
+  here as reading like a mistake. Sixteen divides evenly by four and by
+  eight and by nothing in between, so it is **four across on a phone
+  and eight from 40rem**. Not eight on a phone: eight columns inside a
+  375px content column is a ~41px cell, under the 44px tap-target
+  floor. Four rows of four is more scroll on a screen that already
+  scrolls, which is the cheaper of the two costs.
 - **A person's rank hangs off their character, not beside it.**
   `decorateAvatar()` is the one builder — the three rankings boards, the
   Virtual Room lobby and the Virtual Room results all call it, so a
@@ -1879,6 +2156,23 @@ all keyed by them, so renaming a key is a migration for a cosmetic gain.
   hue wheel: even steps is the obvious answer and it produces four
   greens out of sixteen, because green occupies about a sixth of the
   wheel and reads as one colour whatever the spacing says.
+- **THE DRAGON WAS THE ONE THAT DID NOT BELONG TO THE SET, and the
+  fault was mostly SIZE.** Reported as *"the worst looking one right
+  now"*. Measured against the other fifteen, its head was an 11.6x13.2
+  ellipse where every other character's is about 9x9.5 — so it filled
+  its tile edge to edge while the rest sat inside theirs, and a head
+  that big leaves no room for shoulders, so it read as a face pressed
+  against the glass. The second fault was the muzzle: a pale pink
+  ellipse laid flat on the front of the face with two round dots in it
+  is a pig's snout whatever else is around it. A dragon's snout comes
+  FORWARD and DOWN off the skull and is the same colour as the rest of
+  it, with a lit top plane, a bridge down the centre, angled nostril
+  slits and a jaw beneath.
+  Two smaller ones worth keeping: horns swept OUT as well as back, wide
+  at the base and with growth rings (nearly-parallel tapered triangles
+  read as rabbit ears), and scales along the BROW where a raised edge
+  would actually catch light rather than parked on the cheeks, where
+  they read as dirt.
 - **`UNIT_BADGE_SHAPE` is a pairing, not a lottery**, for that same
   reason: a hash into the shape table doubles some up and skips others,
   which is "they all have the same common" in another form. A unit the
@@ -2327,6 +2621,24 @@ re-evaluated on the next check.
   `RANK_COLOR`, lifted for legibility on a dark screen. Change one and
   the swatch stops predicting what tapping it does, which is exactly
   what *"align the swatches"* was about.
+- **EVERY CHARACTER CARRIES A SOFT PERMANENT HALO, drawn INTO the SVG.**
+  Asked for off Void, which had one built in from the start: *"the void
+  character looks so good because it has that soft permanent glow right
+  behind it, give all the characters that same thing but in a color that
+  matches it of course."* It is part of the DRAWING rather than a CSS
+  effect on the element, and that is the whole point — it comes along to
+  the rankings rows, the Virtual Room lobby, the race line, the bottom
+  tab bar and every screenshot, instead of only appearing on the one
+  screen somebody remembered to add a class to.
+  It reads `AVATAR_GLOW`, the same table the picker's selection glow
+  uses, so a character's halo and its selection glow cannot end up two
+  different colours — the same reason a rank's three places all derive
+  from `RANK_COLOR`. It is a **circle filled with the falloff**, never a
+  shape filled with it (the rank emblems' rule: a halo cut to the
+  silhouette reads as an outline round it rather than as light behind
+  it). Void is skipped, because its own halo is a two-colour falloff
+  built from the flare colours it wears and a generic one underneath
+  only muddies it.
 - **A SELECTED CHARACTER GLOWS IN ITS OWN COLOUR**, from `AVATAR_GLOW`
   via `avatarGlowColor()`, set as `--char-glow` on EVERY option rather
   than only the selected one — a value written in the same moment as
@@ -2500,6 +2812,25 @@ re-evaluated on the next check.
   default accent `--accent` is `var(--ink)` — which is exactly why it read as
   "a faint white glow". The dark override paints it in `--theme-c1`/`--theme-c3`
   instead, so it re-themes with every accent rather than going grey.
+- **A PLAYWRIGHT ROUTE HANDLER WITH TWO PARAMETERS IS CALLED WITH
+  `(route, request)`.** Every harness here serves a modified copy of
+  `index.html` by intercepting the request, and the obvious shorthand
+  for that — `pg.route("**/index.html", lambda r, b=body: r.fulfill(
+  ..., body=b))` — silently binds the Request object to `b`. `fulfill`
+  then raises *inside the handler*, so the route is never resolved, the
+  navigation hangs until its timeout, and the only thing in the output
+  is `Page.goto: Timeout exceeded`. Nothing points at the handler. Use
+  a named one-parameter function, or a one-parameter lambda that closes
+  over the body.
+- **A PATCH SCRIPT NAMED AFTER A STDLIB MODULE WILL RUN ITSELF.** The
+  harnesses here start `import sys; sys.path.insert(0,'.')` so they can
+  import a sibling helper out of the scratchpad, which puts every `.py`
+  in that directory ahead of the standard library. A staged patch saved
+  as `typing.py` was therefore imported — and *executed*, editing
+  `index.html` — the moment something downstream did `from typing import
+  IO`. It announced itself ("typing indicator applied") and was
+  otherwise silent. Name staged patches `patch-<thing>.py`, and never
+  `typing.py`, `json.py`, `io.py`, `types.py`, `queue.py` or `copy.py`.
 - **Fixed-position elements render oddly in Playwright `fullPage` screenshots.**
   Verify their layout with `getBoundingClientRect()`, not by eyeballing.
 - **A `max-height` cap alongside `overflow:hidden` is a CLIP, not a
@@ -2839,6 +3170,10 @@ missed real bugs that a thirty-second check caught.
 7. `python3 tools/check-tours.py` — every tooltip still points at
    something. Required on anything that renames a class, moves a control
    between screens, or changes a tour's copy.
+7a. `python3 tools/check-unlocks.py` — the earned characters and the
+   Secret Flares. Required on anything touching `summarize()`, the
+   daily question, hundos, the Practice Test, the character table or
+   the flares.
 7b. `python3 tools/check-readd.py` — **does re-adding to the Home Screen
    still keep the account?** Wipes localStorage and IndexedDB together,
    which is what removing a Home Screen web app actually does, then
@@ -2875,6 +3210,9 @@ supplied Firebase synchronously, never by a device - and note that
    grep** — `grep -n "^function name("` or nothing.
 7. `python3 tools/shoot-flow.py` — screenshots by walking the app, for
    Madison, per **Showing the work**.
+7c. `python3 tools/shoot-flares.py` — the glint, the banner and the
+   sixteen-character contact sheet. Required on anything touching a
+   character's artwork or the flares.
 8. `python3 tools/shoot-results.py <outdir>` — the three screens that
    walk cannot reach: a drill result, the Virtual Room result, and a
    crowded race line. Required on anything touching the end of a run;

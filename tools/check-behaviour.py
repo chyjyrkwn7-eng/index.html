@@ -498,18 +498,32 @@ def check_ranks(br):
     check("every rank lists what it hands over, top four include the character",
           [c["rewards"] for c in cards] == [3, 3, 3, 4, 4, 4, 4],
           [c["rewards"] for c in cards])
+    # THE SHAPE, NOT THE COUNT. This asserted `count == 12` and that
+    # every character without an `unlock` is free, and it went red the
+    # day four FEAT characters were added - which is the app being
+    # right, not wrong. Same trap this file has now watched take out
+    # four separate checks: a gate that encodes a DECISION fails the
+    # moment the decision changes.
+    # What is actually true regardless of how many there are: the top
+    # four ranks each hand over a character, a rank you have not reached
+    # keeps its locked, and a character with neither `unlock` nor `feat`
+    # is free to everybody.
     chars = pg.evaluate("""()=>({
       count: AVATAR_CHARACTERS.length,
       gated: AVATAR_CHARACTERS.filter(c=>c.unlock).map(c=>c.unlock),
       lockedGated: AVATAR_CHARACTERS.filter(c=>c.unlock).map(c=>isLockedCharacter(c.id)),
-      lockedFree: AVATAR_CHARACTERS.filter(c=>!c.unlock).map(c=>isLockedCharacter(c.id))})""")
-    check("four characters, gated on the top four ranks",
-          chars["count"] == 12 and
+      lockedFree: AVATAR_CHARACTERS.filter(c=>!c.unlock && !c.feat)
+                    .map(c=>isLockedCharacter(c.id)),
+      featLocked: AVATAR_CHARACTERS.filter(c=>c.feat).map(c=>isLockedCharacter(c.id))})""")
+    check("four characters gated on the top four ranks",
           chars["gated"] == ["vanguard", "adept", "elite", "titan"], chars)
-    # The seed holds Silver, so none of the four is reachable yet and
-    # none of the original eight is ever locked.
+    # The seed holds Silver and has done nothing towards any feat, so
+    # none of the eight earned characters is reachable and none of the
+    # free ones is ever locked.
     check("a rank you have not reached keeps its character locked",
           all(chars["lockedGated"]) and not any(chars["lockedFree"]), chars)
+    check("a feat you have not done keeps its character locked",
+          bool(chars["featLocked"]) and all(chars["featLocked"]), chars["featLocked"])
 
     # A locked rank still shows its colour. Four of the seven used to be
     # redrawn in grey, so you could not see what you were heading for.

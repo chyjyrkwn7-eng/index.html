@@ -1675,8 +1675,16 @@
   @media (max-width:32rem){
     .panel.home.onboarding-shortform-panel .searchbox{ max-width:15rem; }
   }
-  /* The customise screen still shows all twelve, locked ones included, so
-     it keeps six. */
+  /* SIX, AND IT STAYS SIX. An earlier pass moved this to four on a
+     phone and eight on a tablet, on the "column count follows item
+     count" rule - sixteen in six columns is two rows of six and a
+     ragged row of four. That was reverted on sight: "I liked how the
+     characters were displayed before... don't [change] the layout of
+     how they are displayed in profile. Just update the rows to make it
+     look nice."
+     The rule was right about the arithmetic and wrong about what
+     mattered. This grid is a thing people already know how to read,
+     and a ragged last row costs less than relearning it. */
   .avatarchar-grid.avatarchar-grid-appearance{ grid-template-columns:repeat(6, minmax(0, 1fr)); }
   /* No circular frame or background \u2014 just the character itself,
      sized generously since there's no longer a small circle
@@ -1966,7 +1974,56 @@
   .qnum-daily-block{ text-align:center; padding:0 1.5rem; margin:.5rem 0 1.2rem; }
   .qnum-daily{ font-size:2rem; font-weight:800; color:var(--ink); margin:0 0 .4rem; font-family:var(--serif); }
   .qnum-daily-sub{ font-size:.9rem; font-weight:600; color:var(--soft); margin:0; }
-  .qnumrow{ display:flex; justify-content:space-between; align-items:center; margin:0 0 .6rem; gap:.75rem; }
+  .qnumrow{ display:flex; justify-content:space-between; align-items:center; margin:0 0 .6rem; gap:.75rem; position:relative; }
+  /* THE SECRET FLARE'S GLINT. A full 44px tap target with a ~13px mark
+     inside it - the same trick the Settings text links use, a target
+     grown with padding and kept out of the layout, except that here it
+     is out of the layout because it is absolutely positioned rather
+     than because the padding is pulled back out.
+     It is INSIDE the header row and never over the choices. A stray
+     tap on a decoration is a shrug; a stray tap that eats an answer is
+     a wrong answer somebody did not give, and this app records those. */
+  .mystery-spark{
+    position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);
+    width:44px; height:44px; padding:0; border:0; background:none;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--flare-color, #F97316); cursor:pointer;
+    -webkit-tap-highlight-color:rgba(0,0,0,0);
+  }
+  .mystery-spark svg{
+    width:1.65rem; height:1.65rem; opacity:.85;
+    filter:drop-shadow(0 0 5px var(--flare-color, #F97316));
+    animation:mystery-twinkle 3.6s ease-in-out infinite;
+  }
+  /* BREATHING AND DRIFTING. The first version rotated 45 degrees, which
+     is right for a four-point sparkle and meaningless on a circle. This
+     one pulses AND wanders a few pixels: "Make the secret flare
+     animated and move a little so people want to click it" - and
+     movement is genuinely the thing peripheral vision picks up, far
+     more than brightness is.
+     It moves the SVG, never the button: the 44px tap target stays
+     exactly where it is, because a target that wanders under a finger
+     is worse than one nobody notices. The drift is well inside the
+     svg's own box, so it cannot carry the glow onto the question
+     number or the flag. */
+  @keyframes mystery-twinkle{
+    0%   { opacity:.62; transform:translate(0, 0) scale(.88); }
+    25%  { opacity:.92; transform:translate(2.5px, -2px) scale(1.04); }
+    50%  { opacity:1;   transform:translate(0, -3px) scale(1.1); }
+    75%  { opacity:.88; transform:translate(-2.5px, -1px) scale(1.02); }
+    100% { opacity:.62; transform:translate(0, 0) scale(.88); }
+  }
+  /* The payoff. It has to be unmistakable - the whole feedback for
+     finding one is this half second, since the banner arrives from the
+     top edge and the eye is down here. */
+  .mystery-spark-found svg{
+    animation:mystery-burst .55s cubic-bezier(.2,.9,.3,1) forwards;
+  }
+  @keyframes mystery-burst{
+    0%  { opacity:1; transform:scale(1); }
+    45% { opacity:1; transform:scale(2.8); }
+    100%{ opacity:0; transform:scale(4.4); }
+  }
   .qnumrow .qnum{ margin:0; }
   .flagbtn{
     display:inline-flex; align-items:center; justify-content:center;
@@ -3360,6 +3417,15 @@
   .vroom-chat-msg-name.is-me{ color:var(--accent); }
   .vroom-chat-msg-time{ font-size:.68rem; color:var(--soft); margin-left:.3rem; }
   .vroom-chat-empty{ font-size:.82rem; color:var(--soft); text-align:center; padding:.5rem 0; }
+  /* One line above the input, and it HOLDS ITS HEIGHT whether or not
+     anybody is typing. Collapsing it would move the whole message list
+     up and down every time somebody starts and stops, which on a phone
+     sheet is the list jumping under your thumb mid-read. */
+  .vroom-chat-typing{
+    font-size:.75rem; color:var(--soft); font-style:italic;
+    min-height:1.1rem; line-height:1.1rem; margin:0 .15rem .3rem;
+    text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
   .vroom-chat-row{ display:flex; gap:.5rem; }
   .vroom-chat-input{
     flex:1; min-width:0; padding:.55rem .8rem; border-radius:999px;
@@ -6459,6 +6525,24 @@
     max-width:calc(100% - 2rem); width:20rem;
   }
   .tierup-banner-show{ transform:translateX(-50%) translateY(0); }
+  /* THE FLARE BANNER DOES NOT TAKE TAPS, and it is the only one of
+     these that does not. Every other banner in the app appears on
+     Welcome, Home or a results screen, where the top of the screen is
+     empty and a full-width tappable surface costs nothing. This one
+     appears on a QUESTION: parked as high as topNoticeOffset() will
+     allow it still reaches the flag button on a 440px phone, and a
+     control under a banner is a tap that goes to the banner instead.
+     So it is transparent to the finger and relies on its own five
+     seconds - a celebration nobody can dismiss early is a far smaller
+     cost than a flag that does not flag. */
+  .flare-banner{ pointer-events:none; cursor:default; }
+  /* A character brings its own halo, so it fills the disc rather than
+     sitting on a coin of somebody else's colour - the same call the
+     badge banner already makes for the same reason. */
+  .charup-banner .charup-banner-icon{
+    background:none; box-shadow:none; width:3.1rem; height:3.1rem;
+  }
+  .charup-banner .charup-banner-icon svg{ width:100%; height:100%; }
   .tierup-banner-icon{
     width:2.8rem; height:2.8rem; border-radius:50%; flex-shrink:0;
     display:flex; align-items:center; justify-content:center; color:#fff;
@@ -6483,6 +6567,70 @@
   .tierup-banner-name{
     font-family:var(--serif); font-size:1.2rem; font-weight:800; color:#fff; margin:0;
   }
+  /* ---- the Void cutscene ---- */
+  #void-cutscene{
+    position:fixed; inset:0; z-index:500;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:radial-gradient(circle at 50% 46%, #0B0D14 0%, #05060A 55%, #000 100%);
+    opacity:0; transition:opacity .5s ease;
+    -webkit-tap-highlight-color:rgba(0,0,0,0);
+  }
+  #void-cutscene.void-visible{ opacity:1; }
+  #void-cutscene.void-exit{ opacity:0; }
+  .void-field{
+    position:relative; width:min(23rem, 84vw); aspect-ratio:1;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .void-orb{
+    position:absolute; top:50%; left:50%; z-index:1;
+    width:2.6rem; height:2.6rem;
+    transform:translate(-50%, -50%) translate(var(--ox), var(--oy));
+    /* The fall is a TRANSITION so reduce-motion keeps it - see the
+       comment on playVoidCutscene(). 1.9s and a soft ease so three
+       lights drift in rather than snapping to the middle. */
+    transition:transform 1.9s cubic-bezier(.45,0,.2,1), opacity .35s ease;
+  }
+  .void-orb svg{ width:100%; height:100%;
+    filter:drop-shadow(0 0 12px var(--flare-color)); }
+  .void-orb-fall{ transform:translate(-50%, -50%) scale(1.35); }
+  #void-cutscene.void-collapse .void-orb{ opacity:0; transform:translate(-50%, -50%) scale(.2); }
+  .void-flash{
+    position:absolute; top:50%; left:50%; width:130%; aspect-ratio:1;
+    transform:translate(-50%, -50%) scale(.2); pointer-events:none;
+    border-radius:50%; opacity:0;
+    background:radial-gradient(circle,
+      rgba(255,255,255,.95) 0%, #FACC15 14%, #F97316 30%, #EF4444 46%, rgba(239,68,68,0) 70%);
+    transition:opacity .28s ease, transform .55s cubic-bezier(.2,.9,.3,1);
+  }
+  #void-cutscene.void-collapse .void-flash{ opacity:.95; transform:translate(-50%, -50%) scale(1); }
+  #void-cutscene.void-reveal .void-flash{ opacity:0; transform:translate(-50%, -50%) scale(1.9); }
+  .void-core{
+    position:relative; width:78%; opacity:0; transform:scale(.45);
+    transition:opacity .6s ease, transform .8s cubic-bezier(.2,.9,.3,1.25);
+  }
+  .void-core{ z-index:2; }
+  .void-core svg{ width:100%; height:100%; }
+  #void-cutscene.void-reveal .void-core{ opacity:1; transform:scale(1); }
+  .void-title{
+    font-family:var(--serif); font-size:clamp(2.4rem, 12vw, 4rem); font-weight:800;
+    letter-spacing:.14em; color:#FFF; margin:.4rem 0 0;
+    opacity:0; transform:translateY(10px);
+    transition:opacity .6s ease, transform .6s ease;
+    text-shadow:0 0 26px rgba(249,115,22,.55), 0 0 60px rgba(194,59,122,.4);
+  }
+  .void-sub{
+    font-size:.92rem; color:rgba(255,255,255,.62); margin:.5rem 0 0;
+    opacity:0; transform:translateY(8px);
+    transition:opacity .6s ease .12s, transform .6s ease .12s;
+  }
+  #void-cutscene.void-named .void-title,
+  #void-cutscene.void-named .void-sub{ opacity:1; transform:translateY(0); }
+  /* .supernova-skip is retired. Every cutscene had a Skip button and
+     they are all gone: "Remove the option to skip that cutscreen, there
+     shouldn't be an option to skip cutscenes." The CSS stays because
+     nothing else uses it and deleting a rule is not worth a diff, but
+     nothing renders the class any more - check by grep before assuming
+     otherwise. */
   .supernova-skip{
     position:absolute; bottom:2.5rem; left:50%; transform:translateX(-50%);
     background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2); color:#FFF6E8;
@@ -9747,17 +9895,32 @@
      the 44px tap-target floor. */
   .avatarchar-grid-appearance{
     grid-template-columns:repeat(6, minmax(0, 1fr));
-    justify-items:center; gap:1rem .4rem;
+    justify-items:center; gap:.85rem .4rem;
+  }
+  /* The cell is the character plus its name, and the whole thing is one
+     column so the names sit on one baseline however tall the drawings
+     render. */
+  .avatarchar-cell{
+    display:flex; flex-direction:column; align-items:center; gap:.2rem;
+    width:100%; min-width:0;
+  }
+  .avatarchar-name{
+    font-size:.6rem; font-weight:600; letter-spacing:.01em;
+    color:var(--soft); text-align:center; line-height:1.15;
+    max-width:100%; overflow-wrap:break-word; cursor:pointer;
+    -webkit-tap-highlight-color:rgba(0,0,0,0);
+  }
+  .avatarchar-cell:has(.selected) .avatarchar-name{ color:var(--ink); }
+  .avatarchar-name.is-locked{ opacity:.55; }
+  @media (min-width:40rem){
+    .avatarchar-name{ font-size:.72rem; }
   }
   @media (min-width:27rem){
     .badge-grid{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
   }
   @media (min-width:40rem){
     .avatarchar-option{ max-width:4.5rem; }
-    /* Six here too, for the same reason: eight columns with twelve
-       items is a row of eight and a ragged row of four, which reads as
-       a mistake. Two rows of six reads as laid out. */
-    .avatarchar-grid-appearance{ grid-template-columns:repeat(6, minmax(0, 1fr)); gap:.6rem .5rem; }
+    .avatarchar-grid-appearance{ grid-template-columns:repeat(6, minmax(0, 1fr)); gap:.8rem .5rem; }
     /* 6rem, not the 7rem an earlier pass tried: that one came back as
        "absolutely massive". This is a third bigger than what a large
        screen was actually getting and still short of that. */
@@ -22478,6 +22641,35 @@ const AVATAR_CHARACTERS = [
   { id: "alien", kind: "alien" },
   { id: "samurai", kind: "samurai" },
   { id: "dragon", kind: "dragon" },
+  /* FOUR EARNED BY DOING SOMETHING, not by reaching a rank. The four
+     below carry `unlock` (a rank key); these carry `feat` (a thing you
+     did), and isLockedCharacter answers for both, so there is still ONE
+     answer to "is this unlocked yet" - the rule that already keeps a
+     locked colour and a locked character in step.
+
+     A rank comes to you if you keep studying. A feat does not: each of
+     these is a specific thing you have to go and do, which is why they
+     are the ones with the characters worth wanting. They are listed
+     easiest to hardest, like the rank four are:
+
+       Detective  - ten daily questions right in a row. Asked for by
+                    name and by pairing: "a detective for the daily
+                    question would be pretty sweet." It takes ten days
+                    and cannot be rushed, which is the whole point of
+                    the daily question.
+       Masked One - a hundo in ten DIFFERENT units in a row. Quiet,
+                    relentless, faceless; the character is the feat.
+       Zeus       - finish a week at the top of the weekly XP board.
+                    The only one of the four you cannot earn on your
+                    own: the other three are you against the material,
+                    this one is you against the class.
+       Void       - all three Secret Flares. The rarest thing here, and
+                    the only one you cannot work towards on purpose -
+                    you have to notice it. */
+  { id: "detective",  kind: "detective",  feat: "daily10" },
+  { id: "masked",     kind: "masked",     feat: "streak10" },
+  { id: "zeus",       kind: "zeus",       feat: "weektop" },
+  { id: "voidwalker", kind: "voidwalker", feat: "flares" },
   /* REORDERED BY HOW HARD EACH ONE SHOULD BE, asked for in that order:
      "the astronaut needs to be the hardest one to get, the police men
      the second hardest, the robot the easiest, and the clown the 3rd
@@ -22499,7 +22691,8 @@ const AVATAR_CHARACTERS = [
 const AVATAR_DISPLAY_NAME = {
   ninja: "Ninja", ghost: "Ghost", queen: "Queen", wizard: "Wizard",
   grizzly: "Bear", alien: "Alien", samurai: "Samurai", dragon: "Dragon",
-  officer: "Officer", clown: "Clown", robot: "Robot", astronaut: "Astronaut"
+  officer: "Officer", clown: "Clown", robot: "Robot", astronaut: "Astronaut",
+  detective: "Detective", zeus: "Zeus", masked: "The Masked One", voidwalker: "Void"
 };
 /* The glow a SELECTED character gives off - "give the character you have
    selected a nice glow, a glow that kinda matches the color of the
@@ -22511,7 +22704,12 @@ const AVATAR_DISPLAY_NAME = {
 const AVATAR_GLOW = {
   ninja: "#E0453F", ghost: "#E8ECF4", queen: "#8B4FC4", wizard: "#6C5BD4",
   grizzly: "#B9793C", alien: "#4FD18A", samurai: "#C0392B", dragon: "#E04A2F",
-  officer: "#3D74E8", clown: "#F05A9B", robot: "#6FD3E8", astronaut: "#F2B233"
+  officer: "#3D74E8", clown: "#F05A9B", robot: "#6FD3E8", astronaut: "#F2B233",
+  /* Read off each one's artwork like the rest: the detective's amber
+     street-light, the cold light in Zeus's cracks, the mask's own
+     lacquer, and for Void the middle of its three flare colours - the
+     body gives off no light of its own, so the glow is the flares. */
+  detective: "#D9A441", zeus: "#7FD4F5", masked: "#C6413F", voidwalker: "#F97316"
 };
 function avatarGlowColor(id){ return AVATAR_GLOW[id] || "var(--accent)"; }
 /* Same shape as isLockedAccent/accentLockMessage, deliberately: a
@@ -22519,13 +22717,69 @@ function avatarGlowColor(id){ return AVATAR_GLOW[id] || "var(--accent)"; }
    different answers to "is this unlocked yet" is how one of them ends up
    wrong. A character the table does not know is free, so an id from an
    older or newer build never locks somebody out of their own avatar. */
+/* WHAT EACH EARNED CHARACTER COSTS, in one table so the check and the
+   sentence shown to somebody who has not earned it can never drift
+   apart - the same reason TIER_UNLOCKS carries its own label. */
+const CHARACTER_FEATS = {
+  daily10:  { label: "Answer 10 daily questions correctly in a row",
+              done: () => (store.dailyCorrectStreak || 0) >= 10,
+              have: () => (store.dailyCorrectStreak || 0), need: 10 },
+  streak10: { label: "Get a hundo in 10 different units in a row",
+              done: () => (store.unitHundoStreak || 0) >= 10,
+              have: () => (store.unitHundoStreak || 0), need: 10 },
+  /* THE WEEKLY BOARD, not the Practice Test. Corrected directly: "The
+     unlock for the greek statue is wrong too, it's supposed to finished
+     the week as the #1 on the weekly xp leaderboard."
+     It is the only feat in the set you cannot earn alone, which is why
+     it sits on the statue: the other three are you against the
+     material, this one is you against the class. */
+  weektop:  { label: "Finish a week top of the weekly XP board",
+              done: () => (store.weeklyWins || 0) >= 1,
+              have: () => (store.weeklyWins || 0), need: 1 },
+  /* Reads the flares themselves rather than a flag set when the third
+     is found. One source of truth, so a person who somehow arrives at
+     three found without passing through foundMysteryFlare - a cloud
+     document from another device, most obviously - holds the character
+     just the same. */
+  flares:   { label: "Find all three Secret Flares",
+              done: () => mysteryColorsFoundCount() >= 3,
+              have: () => mysteryColorsFoundCount(), need: 3 }
+};
+
+function featAchieved(key){
+  const f = CHARACTER_FEATS[key];
+  return !!(f && f.done());
+}
+
 function isLockedCharacter(id){
   const def = AVATAR_CHARACTERS.find(c => c.id === id);
-  if(!def || !def.unlock) return false;
+  if(!def) return false;
+  /* A feat character and a rank character are both "locked until you
+     have done the thing" - one function, two kinds of thing. */
+  if(def.feat) return !featAchieved(def.feat);
+  if(!def.unlock) return false;
   return !tierColorUnlocked(def.unlock);
 }
 function characterLockMessage(id){
   const def = AVATAR_CHARACTERS.find(c => c.id === id);
+  /* A LOCK MESSAGE FOR SOMETHING THAT IS NOT LOCKED IS A TRAP, and this
+     returned one: "Find all three Secret Flares (3 of 3) to unlock
+     Void" to somebody already wearing Void. Every caller today asks
+     only when isLockedCharacter() is true, so nobody has ever seen it -
+     which is exactly the kind of thing that stays true until it does
+     not. One line, and the function is honest to whoever calls it
+     next. */
+  if(!isLockedCharacter(id)) return "";
+  if(def && def.feat){
+    const f = CHARACTER_FEATS[def.feat];
+    if(!f) return "";
+    /* The progress, not just the target. "0 of 10" and "7 of 10" are
+       different pieces of information and the second is the one that
+       makes somebody go and finish it. */
+    const suffix = f.need > 1 ? " (" + Math.min(f.have(), f.need) + " of " + f.need + ")" : "";
+    return f.label + suffix + " to unlock " +
+      (AVATAR_DISPLAY_NAME[id] || id) + ".";
+  }
   if(!def || !def.unlock) return "";
   const rule = TIER_UNLOCKS[def.unlock];
   if(!rule) return "";
@@ -22533,6 +22787,17 @@ function characterLockMessage(id){
     rule.label.replace(/^Reach /, "") + ") to unlock the " +
     (AVATAR_DISPLAY_NAME[id] || id) + ".";
 }
+
+/* ONE HEAD SIZE FOR THE WHOLE SET: 9.2 x 10 at cx 20.
+   Asked for after the dragon was reported as reading larger than the
+   rest - "make sure that all the characters head sizes are the same for
+   a clean look". They ranged 8.8-9.4 wide and 9.5-10.2 tall, which is
+   invisible one at a time and obvious in a grid, because the eye lines
+   up the tile edges and reads the difference as the drawings being
+   different scales rather than different characters.
+   Each one keeps its own cy: a head that sits a little higher or lower
+   is part of the character (the wizard's hat, the officer's cap), while
+   a head that is a different SIZE is just inconsistent. */
 
 /* Always a Node, never null - which buildAvatarCharSVG below can
    return, and which callers append straight into a row.
@@ -22567,6 +22832,61 @@ function buildAvatarCharSVG(charId){
   const defs = document.createElementNS(svgNS, "defs");
   svg.appendChild(defs);
   let headGradCount = 0;
+
+  /* A SOFT PERMANENT HALO BEHIND EVERY CHARACTER, in its own colour.
+     Asked for off Void, which had one built in from the start: "the
+     void character looks so good because it has that soft permanent
+     glow right behind it, give all the characters that same thing but
+     in a color that matches it of course."
+
+     It is part of the DRAWING, not a CSS effect on the element, and
+     that is the whole point: it comes along to the rankings rows, the
+     Virtual Room lobby, the race line, the bottom tab bar and every
+     screenshot, rather than only appearing on the one screen somebody
+     remembered to add a class to. The picker's selection glow is a
+     separate, brighter thing on top of this and stays as it is.
+
+     `AVATAR_GLOW` is read here as well as there, so a character's halo
+     and its selection glow cannot be two different colours - the same
+     reason a rank's three places all derive from RANK_COLOR.
+
+     Void is skipped: its halo is a two-colour falloff built from the
+     flare colours it wears, and a second generic one underneath only
+     muddies it. */
+  if(def.kind !== "voidwalker"){
+    const glow = AVATAR_GLOW[charId];
+    if(glow){
+      const g = document.createElementNS(svgNS, "radialGradient");
+      g.setAttribute("id", "aura-" + uid);
+      g.setAttribute("cx", "50%"); g.setAttribute("cy", "48%"); g.setAttribute("r", "58%");
+      /* FIVE STOPS, not three, and the falloff is the point. The first
+         version ran .30 / .15 / 0 over three stops, which is close to
+         linear and paints a disc with a visible edge on it. Reported
+         against Void, whose own halo has always had a real curve:
+         "The background color thing for the void character looks so
+         much better because it kind of fades as it goes out, the other
+         characters background color doesn't do that."
+         Most of the fall happens in the outer third, which is what
+         light actually does and what stops the edge being findable. */
+      [["0%", ".34"], ["30%", ".27"], ["55%", ".13"], ["78%", ".04"], ["100%", "0"]].forEach(([o, op]) => {
+        const st = document.createElementNS(svgNS, "stop");
+        st.setAttribute("offset", o);
+        st.setAttribute("stop-color", glow);
+        st.setAttribute("stop-opacity", op);
+        g.appendChild(st);
+      });
+      defs.appendChild(g);
+      /* A CIRCLE filled with the falloff, never a shape filled with it -
+         the rank emblems' own rule. A halo cut to the character's
+         silhouette reads as an outline round it rather than as light
+         behind it. */
+      const aura = document.createElementNS(svgNS, "circle");
+      aura.setAttribute("cx", "20"); aura.setAttribute("cy", "20.5");
+      aura.setAttribute("r", "15.8");
+      aura.setAttribute("fill", "url(#aura-" + uid + ")");
+      svg.appendChild(aura);
+    }
+  }
   function headGrad(light, base, dark){
     /* A counter suffix, not just the shared uid — several characters
        (king, most notably) call this more than once per character for
@@ -22680,7 +23000,7 @@ function buildAvatarCharSVG(charId){
     const robeFill = headGrad("#5B4B8A", "#3C3160", "#241C3C");
     svg.appendChild(mk("path", { d: "M6.6 40 Q7.4 32.6 14.4 30.6 L25.6 30.6 Q32.6 32.6 33.4 40 Z",
                                  fill: robeFill }));
-    svg.appendChild(mk("ellipse", { cx: 20, cy: 21.4, rx: 9.3, ry: 10, fill: skinFill }));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 21.4, rx: 9.2, ry: 10, fill: skinFill }));
     /* Beard: a wide shape from the cheeks down, cut back in at the chin
        so it tapers rather than ending in a straight edge. */
     svg.appendChild(mk("path", {
@@ -22791,6 +23111,348 @@ function buildAvatarCharSVG(charId){
     return svg;
   }
 
+  /* VOID. The rarest one, and the only character in the set that is not
+     lit from outside: its body is a window onto space and the light is
+     inside it.
+     THE FILL STAYS GENUINELY BLACK. This is the lesson .cosmic-badge-noir
+     already paid for on the Spark flare - mixing a near-black toward
+     white only makes grey, and a black shape with no halo reads as a
+     HOLE punched in the screen rather than an object. So separation
+     comes from a rim light and a soft halo, never from lightening the
+     body. Asked for in those words: "entirely dark black character with
+     a flare color thing where it has like tiny flares on it that
+     glisten and it looks like it's in space".
+     The three glints are MYSTERY_COLOR itself - the very values the
+     flares are drawn in during a test and the orbit dots are lit in on
+     Home. Not a hand-picked approximation of them: the character IS
+     the three things you found, so a change to one has to reach all
+     three places or the set stops matching. */
+  if(def.kind === "voidwalker"){
+    const halo = mk("radialGradient", { id: "halo-" + uid, cx: "50%", cy: "46%", r: "62%" });
+    [["0%", "#F97316", ".34"], ["55%", "#C23B7A", ".16"], ["100%", "#000", "0"]]
+      .forEach(([o, c, op]) => halo.appendChild(mk("stop",
+        { offset: o, "stop-color": c, "stop-opacity": op })));
+    defs.appendChild(halo);
+    /* The halo is a CIRCLE filled with the falloff, not a shape filled
+       with it - the rank emblems' own rule. */
+    svg.appendChild(mk("circle", { cx: 20, cy: 20.5, r: 15.5, fill: "url(#halo-" + uid + ")" }));
+
+    const body = mk("linearGradient", { id: "void-" + uid, x1: "0", y1: "0", x2: "0", y2: "1" });
+    [["0%", "#141A26"], ["55%", "#080B12"], ["100%", "#03050A"]]
+      .forEach(([o, c]) => body.appendChild(mk("stop", { offset: o, "stop-color": c })));
+    defs.appendChild(body);
+    const fill = "url(#void-" + uid + ")";
+
+    svg.appendChild(mk("path", { d: "M5.9 40 Q6.7 31.2 14.3 29 L25.7 29 Q33.3 31.2 34.1 40 Z", fill: fill }));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 21.4, rx: 9.2, ry: 10, fill: fill }));
+    /* A hood, so the silhouette is a shape rather than a plain head -
+       and so the starfield has an edge to stop at. */
+    svg.appendChild(mk("path", { d: "M20 10.4 Q29.4 11 30.2 21.6 Q30.5 26.4 28.4 29.4 L25.2 27.6 Q27.4 24.2 27.2 21.2 Q26.7 14.2 20 13.6 Q13.3 14.2 12.8 21.2 Q12.6 24.2 14.8 27.6 L11.6 29.4 Q9.5 26.4 9.8 21.6 Q10.6 11 20 10.4 Z",
+                                 fill: "#05070C" }));
+
+    /* The starfield, inside the face only. Faint, uneven, and never in a
+       row - three even dots read as a pattern, not as sky. */
+    [[16.4, 17.2, .34], [23.1, 16.1, .26], [18.2, 24.6, .3], [24.4, 23.2, .22],
+     [14.9, 22.4, .24], [21.3, 20.1, .2], [17.1, 20.8, .18]]
+      .forEach(([cx, cy, r]) => svg.appendChild(mk("circle",
+        { cx: cx, cy: cy, r: r, fill: "#CFE0F5", opacity: ".55" })));
+
+    /* THE THREE FLARES. Bigger than the stars, each with its own soft
+       bloom, in the three hunted colours. These are the whole point of
+       the character, so they are the brightest thing on it. */
+    [[16.0, 19.4, MYSTERY_COLOR.red], [20.4, 16.9, MYSTERY_COLOR.orange], [23.4, 21.9, MYSTERY_COLOR.yellow]]
+      .forEach(([cx, cy, col], i) => {
+        /* Indexed, never coordinate-named: an id of "fl-20.4-..." puts a
+           dot in a url() fragment, and every gradient id in this file is
+           already unique per instance for the reason the badges learned -
+           sixteen on one screen sharing one id is one definition and
+           fifteen wrong fills. */
+        const gid = "fl" + i + "-" + uid;
+        const g = mk("radialGradient", { id: gid, cx: "50%", cy: "50%", r: "50%" });
+        g.appendChild(mk("stop", { offset: "0%", "stop-color": col, "stop-opacity": ".95" }));
+        g.appendChild(mk("stop", { offset: "100%", "stop-color": col, "stop-opacity": "0" }));
+        defs.appendChild(g);
+        svg.appendChild(mk("circle", { cx: cx, cy: cy, r: 2.5, fill: "url(#" + gid + ")" }));
+        svg.appendChild(mk("circle", { cx: cx, cy: cy, r: .62, fill: "#FFF" }));
+        svg.appendChild(mk("circle", { cx: cx, cy: cy, r: .95, fill: col, opacity: ".9" }));
+      });
+
+    /* The rim. One edge only, so there is a light direction - a rim all
+       the way round reads as a sticker cut out of the background. */
+    svg.appendChild(mk("path", { d: "M12.9 14.6 Q16 11.1 20 10.7", fill: "none",
+                                 stroke: "#8FA8CC", "stroke-width": ".5",
+                                 "stroke-linecap": "round", opacity: ".5" }));
+    svg.appendChild(mk("path", { d: "M11.4 22.6 Q11.5 26 13.4 28.6", fill: "none",
+                                 stroke: "#7C93B8", "stroke-width": ".42",
+                                 "stroke-linecap": "round", opacity: ".38" }));
+    return svg;
+  }
+
+  /* ZEUS, AS A STATUE RATHER THAN A MAN - asked for in those words, and
+     it is the better idea for a reason worth keeping: it makes him the
+     only character in the set who is not flesh-toned, which separates
+     him on a rankings row more than any prop could.
+     Marble, blank carved eyes, a beard cut as ridges rather than hair,
+     and a crack across the brow with cold light coming out of it. The
+     lightning is IN the stone, not held in a hand - a thin bolt is
+     three hairlines that turn to mush at 26px, and a lit crack reads at
+     any size. */
+  if(def.kind === "zeus"){
+    /* THE VALUE STACK, which took three passes to get right and is the
+       whole of why this one works.
+
+       Pass 1 carved everything out of one pale marble: a featureless
+       grey egg. Pass 2 made the hair and beard much DARKER than the
+       face, and that was worse - the dark beard and the dark robe
+       merged into one mass that swallowed the cheeks and the thing
+       came out a tiki mask.
+
+       The wizard is the model, because his beard reads at 34px and
+       Zeus's did not: face mid, beard LIGHTER than the face, robe
+       darkest. Marble in shadow is still marble, so the separation
+       between face, beard and hair comes from CUT LINES, not from
+       three different greys - which is also what carving actually
+       looks like. One dark thing (the robe), three marbles a step
+       apart, and gold. */
+    const face  = headGrad("#F2ECDC", "#DCD4C0", "#B6AE99");
+    const beard = headGrad("#FBF8F0", "#EBE5D6", "#C6C0AF");
+    const hair  = headGrad("#E4DCC8", "#CCC4AE", "#A29A86");
+    const robe  = headGrad("#465063", "#2E3644", "#191E27");
+    const cut   = "#8A8270";
+
+    svg.appendChild(mk("path", { d: "M6.6 40 Q7.4 32.6 14.4 30.6 L25.6 30.6 Q32.6 32.6 33.4 40 Z", fill: robe }));
+    svg.appendChild(mk("path", { d: "M14.4 30.6 L20 37.2 L25.6 30.6 L23.2 29.9 L20 33.8 L16.8 29.9 Z",
+                                 fill: "#5A657A" }));
+
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 21.2, rx: 9.2, ry: 10, fill: face }));
+    svg.appendChild(mk("ellipse", { cx: 11, cy: 22, rx: 1.7, ry: 2.4, fill: face }));
+    svg.appendChild(mk("ellipse", { cx: 29, cy: 22, rx: 1.7, ry: 2.4, fill: face }));
+
+    /* The beard starts at the JAW, not at the cheekbones. The version
+       that started level with the eyes left the face a pale strip and
+       is what made it read as a mask rather than a head. */
+    svg.appendChild(mk("path", {
+      d: "M11.2 22.4 Q11.6 30.6 15.4 34.4 Q17.6 36.8 20 36.8 Q22.4 36.8 24.6 34.4 "
+       + "Q28.4 30.6 28.8 22.4 Q24.8 27.4 20 27.4 Q15.2 27.4 11.2 22.4 Z",
+      fill: beard }));
+    /* THE CHEEK LINE. Face and beard are one step apart on purpose
+       (marble in shadow is still marble), and one step apart means the
+       boundary between them has to be DRAWN or the lower half of the
+       head is one pale mass with a mouth floating in it. This single
+       stroke is what separates them; the values do not. */
+    svg.appendChild(mk("path", { d: "M11.4 22.6 Q15.4 27.6 20 27.6 Q24.6 27.6 28.6 22.6",
+                                 fill: "none", stroke: cut, "stroke-width": ".48",
+                                 "stroke-linecap": "round", opacity: ".6" }));
+    /* The cuts. Three of them, and they are what turns a pale blob into
+       something carved - the only thing in the beard that is dark. */
+    [[15.6, 29.6, 5.6], [20, 31, 5.8], [24.4, 29.6, 5.6]].forEach(([x, y, len]) =>
+      svg.appendChild(mk("path", { d: "M" + x + " " + y + " q.45 " + (len / 2) + " .05 " + len,
+                                   fill: "none", stroke: cut, "stroke-width": ".5",
+                                   "stroke-linecap": "round", opacity: ".75" })));
+    /* The moustache, over the beard rather than beside it, and in the
+       HAIR marble rather than the beard's - it is the one place the
+       lower face needs a third value or the mouth disappears. */
+    svg.appendChild(mk("path", { d: "M14.8 24.8 Q17.4 22.9 20 24.6 Q22.6 22.9 25.2 24.8 Q22.6 27.1 20 25.9 Q17.4 27.1 14.8 24.8 Z",
+                                 fill: hair }));
+    svg.appendChild(mk("path", { d: "M14.9 24.9 Q17.4 23.1 20 24.7 Q22.6 23.1 25.1 24.9",
+                                 fill: "none", stroke: cut, "stroke-width": ".38",
+                                 "stroke-linecap": "round", opacity: ".55" }));
+    svg.appendChild(mk("path", { d: "M17.4 25.9 Q20 26.7 22.6 25.9", fill: "none",
+                                 stroke: cut, "stroke-width": ".42", "stroke-linecap": "round" }));
+
+    /* CLASSICAL CURLS, as a row of discs along the hairline. A smooth
+       cap in a slightly different grey is invisible from two feet
+       away; seven overlapping circles say "carved Greek hair" at any
+       size, and they are the one silhouette cue that survives 26px. */
+    svg.appendChild(mk("path", { d: "M20 10.5 Q29.7 11.1 30.3 19.4 Q28.2 16.4 25.6 15.2 Q23.1 13.4 20 13.4 Q16.9 13.4 14.4 15.2 Q11.8 16.4 9.7 19.4 Q10.3 11.1 20 10.5 Z",
+                                 fill: hair }));
+    [[12.5, 16.4, 1.85], [14.9, 13.9, 1.95], [17.5, 12.3, 2], [20, 11.8, 2.05],
+     [22.5, 12.3, 2], [25.1, 13.9, 1.95], [27.5, 16.4, 1.85]]
+      .forEach(([cx, cy, r]) => svg.appendChild(mk("circle", { cx: cx, cy: cy, r: r, fill: hair })));
+    [[12.5, 16.4, 1.85], [14.9, 13.9, 1.95], [17.5, 12.3, 2], [20, 11.8, 2.05],
+     [22.5, 12.3, 2], [25.1, 13.9, 1.95], [27.5, 16.4, 1.85]]
+      .forEach(([cx, cy, r]) => svg.appendChild(mk("circle",
+        { cx: cx, cy: cy, r: r * .52, fill: "none", stroke: cut,
+          "stroke-width": ".4", opacity: ".55" })));
+
+    /* BLANK CARVED EYES: large, dark, empty. Every character in this
+       set that reads on a rankings row reads because its eyes are big
+       and dark, and an empty almond is also the fastest way there is
+       to say statue. */
+    svg.appendChild(mk("path", { d: "M13.6 20.6 Q16.4 17.9 19.2 20.6 Q16.4 23 13.6 20.6 Z", fill: "#4A4433" }));
+    svg.appendChild(mk("path", { d: "M26.4 20.6 Q23.6 17.9 20.8 20.6 Q23.6 23 26.4 20.6 Z", fill: "#4A4433" }));
+    /* Brows well ABOVE the eyes, not resting on them - overlapping
+       them merged the two into one heavy bar. */
+    svg.appendChild(mk("path", { d: "M13.2 17.9 Q16.4 15.9 19.4 17.7 L19 18.7 Q16.3 17.3 13.7 18.9 Z", fill: hair }));
+    svg.appendChild(mk("path", { d: "M26.8 17.9 Q23.6 15.9 20.6 17.7 L21 18.7 Q23.7 17.3 26.3 18.9 Z", fill: hair }));
+    svg.appendChild(mk("path", { d: "M20 17.9 L20 22.8", fill: "none", stroke: "#B0A892",
+                                 "stroke-width": ".62", "stroke-linecap": "round" }));
+
+    /* THE LAUREL, IN GOLD. It is the only saturated colour on the tile
+       and it is what makes this read as Zeus rather than as a bust of
+       somebody - a stone laurel on stone hair was invisible, which is
+       the same mistake the beard made in a different place. */
+    const gold = headGrad("#F8DC88", "#DCB044", "#9E7622");
+    svg.appendChild(mk("path", { d: "M10.4 17.6 Q14.2 11.9 20 11 Q25.8 11.9 29.6 17.6",
+                                 fill: "none", stroke: "#B8902F", "stroke-width": ".85",
+                                 "stroke-linecap": "round" }));
+    [[12.2, 15.6, -42], [15.3, 12.9, -24], [20, 11.8, 0], [24.7, 12.9, 24], [27.8, 15.6, 42]]
+      .forEach(([x, y, rot]) => {
+        const leaf = mk("ellipse", { cx: x, cy: y, rx: 1.7, ry: .74, fill: gold });
+        leaf.setAttribute("transform", "rotate(" + rot + " " + x + " " + y + ")");
+        svg.appendChild(leaf);
+      });
+
+    /* THE LIGHTNING IS IN THE STONE, not in a hand. A held bolt is
+       three hairlines that turn to mush at 26px; a lit crack reads at
+       any size and is the whole reason the statue beats the man.
+       Down the left side and CLEAR OF BOTH EYES - the pass that ran it
+       through one read as damage to the drawing rather than to the
+       statue. */
+    const lit = "#7FD4F5";
+    const crack = "M11.9 13.6 L11 16.6 L12.6 18.4 L10.9 21.4 L12.2 24.4 L10.6 27.2";
+    svg.appendChild(mk("path", { d: crack, fill: "none", stroke: lit,
+                                 "stroke-width": "2.6", "stroke-linecap": "round", opacity: ".16" }));
+    svg.appendChild(mk("path", { d: crack, fill: "none", stroke: lit,
+                                 "stroke-width": "1.4", "stroke-linecap": "round", opacity: ".3" }));
+    svg.appendChild(mk("path", { d: crack, fill: "none", stroke: "#E8F8FF",
+                                 "stroke-width": ".62", "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M26.4 24.6 L27.8 27.4", fill: "none", stroke: lit,
+                                 "stroke-width": ".48", "stroke-linecap": "round", opacity: ".7" }));
+    return svg;
+  }
+
+  /* THE MASKED ONE. A HARD, SCULPTED MASK, never cloth - the ninja is
+     already a cloth-wrapped face, and two characters whose whole idea is
+     "covered face" would read as siblings on a rankings row. So this is
+     a rigid lacquer mask with its own carved expression, a shape rather
+     than a wrap, worn under a deep hood. */
+  if(def.kind === "masked"){
+    const hood = headGrad("#3A3550", "#252038", "#141020");
+    const face = headGrad("#F0E9DC", "#D8CFBE", "#B0A694");
+
+    svg.appendChild(mk("path", { d: "M5.6 40 Q6.4 31.2 14.2 29 L25.8 29 Q33.6 31.2 34.4 40 Z", fill: hood }));
+    /* The hood behind the mask, so the mask sits IN something. */
+    svg.appendChild(mk("path", { d: "M20 9.9 Q30.3 10.6 31 22 Q31.2 27 28.8 30.4 L25.4 28.4 Q27.9 25 27.7 21.6 Q27.1 13.6 20 13 Q12.9 13.6 12.3 21.6 Q12.1 25 14.6 28.4 L11.2 30.4 Q8.8 27 9 22 Q9.7 10.6 20 9.9 Z",
+                                 fill: hood }));
+
+    /* The mask itself: a slight point at the chin so the silhouette is
+       not just an oval. */
+    svg.appendChild(mk("path", { d: "M20 12.6 Q27.6 13.2 28.1 20.8 Q28.5 26.4 24.6 29.6 Q22.4 31.4 20 31.9 Q17.6 31.4 15.4 29.6 Q11.5 26.4 11.9 20.8 Q12.4 13.2 20 12.6 Z",
+                                 fill: face }));
+
+    /* Carved eye slots - long, narrow, angled. Hollow, not eyes: the
+       point is that there is nobody visibly in there. */
+    /* Angled, hard-edged and genuinely HOLLOW. The first pass drew them
+       as two soft lens shapes, which at any size reads as a pair of
+       closed eyes - a sleeping face, not an empty one. They tilt DOWN
+       towards the centre, which is the whole difference between a mask
+       that is watching you and a mask that is resting. */
+    svg.appendChild(mk("path", { d: "M14.1 19.2 L19.2 20.9 L19 22.1 L14.1 21 Z", fill: "#100A1A" }));
+    svg.appendChild(mk("path", { d: "M25.9 19.2 L20.8 20.9 L21 22.1 L25.9 21 Z", fill: "#100A1A" }));
+    /* A hairline of light along each slot's lower edge - the mask has
+       thickness, and that is what makes the dark read as a hole
+       through it rather than as paint. */
+    svg.appendChild(mk("path", { d: "M14.2 21 L19 22.05", fill: "none", stroke: "#F4EEE2",
+                                 "stroke-width": ".26", opacity: ".55" }));
+    svg.appendChild(mk("path", { d: "M25.8 21 L21 22.05", fill: "none", stroke: "#F4EEE2",
+                                 "stroke-width": ".26", opacity: ".55" }));
+
+    /* One red lacquer marking down the centre - the single piece of
+       colour, and what makes it read as a mask rather than a blank. */
+    svg.appendChild(mk("path", { d: "M20 14.1 L21.1 17.6 L20 24.6 L18.9 17.6 Z", fill: "#C6413F" }));
+    /* A SEALED MOUTH, not a mouth. The first pass put a gentle upward
+       curve here and it read as a smile - which on a character whose
+       whole idea is that you cannot tell anything about it is the one
+       expression it must not have. Three short bars: a line stitched
+       shut. */
+    [[17.1, 26.5], [20, 27.1], [22.9, 26.5]].forEach(([x, y]) =>
+      svg.appendChild(mk("path", { d: "M" + x + " " + (y - .75) + " L" + x + " " + (y + .75),
+                                   fill: "none", stroke: "#C6413F", "stroke-width": ".46",
+                                   "stroke-linecap": "round", opacity: ".9" })));
+    svg.appendChild(mk("path", { d: "M16.6 26.9 Q20 27.5 23.4 26.9", fill: "none",
+                                 stroke: "#8E2E2C", "stroke-width": ".34",
+                                 "stroke-linecap": "round", opacity: ".8" }));
+
+    /* A cracked corner, so it looks worn rather than new. */
+    svg.appendChild(mk("path", { d: "M25.9 23.4 L27.4 25.1 L26.2 26.2", fill: "none",
+                                 stroke: "#A89E8B", "stroke-width": ".4",
+                                 "stroke-linecap": "round", opacity: ".8" }));
+    /* The hood's inner shadow across the top of the mask, which is what
+       seats it under the hood instead of on top of it. */
+    svg.appendChild(mk("path", { d: "M12.6 17.4 Q20 13.6 27.4 17.4 Q20 15.6 12.6 17.4 Z",
+                                 fill: "#1B1528", opacity: ".55" }));
+    return svg;
+  }
+
+  /* DETECTIVE. Noir, and the whole thing is the brim and the shadow it
+     throws - a fedora plus a lit face is a man in a hat, a fedora plus
+     a band of shadow across the eyes is a detective. Asked for by name
+     for the daily-question streak.
+
+     THREE VALUES, FAR APART. The first pass had the hat, the shadow,
+     the skin and the coat all in the same brown family, and rendered
+     beside the other fifteen it was a muddy blur at 34px - the only
+     one with no contrast in it. Charcoal hat on top, lit face in the
+     middle, camel trench below: dark, light, mid. That is the noir
+     poster and it is also just the thing that makes a small drawing
+     readable. */
+  if(def.kind === "detective"){
+    const skin = headGrad("#F6D4B0", "#E0B489", "#B88A63");
+    const felt = headGrad("#3F414C", "#2A2C35", "#16171D");
+    const coat = headGrad("#C4A173", "#9E7F58", "#6E583C");
+
+    svg.appendChild(mk("path", { d: "M5.4 40 Q6.2 31 14 28.8 L26 28.8 Q33.8 31 34.6 40 Z", fill: coat }));
+    /* Collar up, and a tie in the gap - the two details that say
+       trench coat at 26px. */
+    svg.appendChild(mk("path", { d: "M13.6 28.8 L20 35.6 L26.4 28.8 L23.6 27.9 L20 32.2 L16.4 27.9 Z",
+                                 fill: "#D9B98D" }));
+    svg.appendChild(mk("path", { d: "M12.6 29.2 Q11.4 33.4 13.8 36.6 L17 32.2 Z", fill: "#82683F" }));
+    svg.appendChild(mk("path", { d: "M27.4 29.2 Q28.6 33.4 26.2 36.6 L23 32.2 Z", fill: "#82683F" }));
+    svg.appendChild(mk("path", { d: "M20 32.6 L21.5 34.6 L20.6 39 L19.4 39 L18.5 34.6 Z", fill: "#3A3C46" }));
+
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 21.4, rx: 9.2, ry: 10, fill: skin }));
+    svg.appendChild(mk("ellipse", { cx: 11.4, cy: 22.4, rx: 1.5, ry: 2.05, fill: skin }));
+    svg.appendChild(mk("ellipse", { cx: 28.6, cy: 22.4, rx: 1.5, ry: 2.05, fill: skin }));
+
+    /* Jaw first, so the shadow below lands on top of it. A flat line
+       rather than a smile: this one is not pleased to see you. */
+    svg.appendChild(mk("path", { d: "M17.6 27.4 Q20 28.2 22.4 27.4", fill: "none",
+                                 stroke: "#9A6E4E", "stroke-width": ".55", "stroke-linecap": "round" }));
+    /* Stubble, as a soft wash along the jaw. */
+    svg.appendChild(mk("path", { d: "M12.6 24.2 Q13.8 30.6 20 31 Q26.2 30.6 27.4 24.2 Q25.4 28.2 20 28.4 Q14.6 28.2 12.6 24.2 Z",
+                                 fill: "#7A5A3E", opacity: ".26" }));
+
+    /* THE SHADOW. A hard-edged band across the eyes, not a wash over
+       the whole face - a soft gradient only makes the character look
+       dim, which is a different thing from lit from above by a street
+       lamp. */
+    svg.appendChild(mk("path", { d: "M11.4 17.6 Q20 15.6 28.6 17.6 Q28.4 22.4 20 23.2 Q11.6 22.4 11.4 17.6 Z",
+                                 fill: "#241708", opacity: ".72" }));
+    /* Two catchlights in it, which is what keeps a face in there
+       rather than a black bar. Amber, because the light is a street
+       lamp and this is the colour the whole character glows. */
+    svg.appendChild(mk("ellipse", { cx: 16.7, cy: 20.2, rx: .8, ry: .66, fill: "#F2C46A" }));
+    svg.appendChild(mk("ellipse", { cx: 23.3, cy: 20.2, rx: .8, ry: .66, fill: "#F2C46A" }));
+    svg.appendChild(mk("circle", { cx: 16.9, cy: 20.05, r: .26, fill: "#FFF3D6" }));
+    svg.appendChild(mk("circle", { cx: 23.5, cy: 20.05, r: .26, fill: "#FFF3D6" }));
+
+    /* The hat: crown, band, then a brim wide enough to justify the
+       shadow it is throwing. */
+    svg.appendChild(mk("path", { d: "M12.4 16.8 Q12.9 9.2 20 8.7 Q27.1 9.2 27.6 16.8 Z", fill: felt }));
+    svg.appendChild(mk("path", { d: "M12.9 13.6 Q20 12.1 27.1 13.6 L26.9 16 Q20 14.5 13.1 16 Z",
+                                 fill: "#101117" }));
+    svg.appendChild(mk("path", { d: "M25.4 13.2 L27 13.5 L26.9 15.4 L25.3 15 Z", fill: "#8D6F45" }));
+    /* The brim, wider than the head at both ends - a brim that stops
+       at the temples is a bowler. */
+    svg.appendChild(mk("path", { d: "M7.2 17.4 Q20 13.6 32.8 17.4 Q20 20.2 7.2 17.4 Z", fill: felt }));
+    svg.appendChild(mk("path", { d: "M7.2 17.4 Q20 15.4 32.8 17.4 Q20 18.4 7.2 17.4 Z", fill: "#4B4E5A", opacity: ".8" }));
+    /* A dent in the crown, so it is a fedora and not a bowler. */
+    svg.appendChild(mk("path", { d: "M17.2 10 Q20 11.7 22.8 10", fill: "none",
+                                 stroke: "#101117", "stroke-width": ".55", "stroke-linecap": "round" }));
+    return svg;
+  }
+
   if(def.kind === "officer"){
     /* Redrawn. The first version was a peaked cap with a face underneath
        it, and at any size it read as a HAT - the crown and brim took
@@ -22818,7 +23480,7 @@ function buildAvatarCharSVG(charId){
                                     fill: "#D9B23C" }));
 
     /* The head - the same size the rest of the set uses. */
-    svg.appendChild(mk("ellipse", { cx: 20, cy: 21.4, rx: 8.9, ry: 9.7, fill: skin }));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 21.4, rx: 9.2, ry: 10, fill: skin }));
     /* Ears, so the cap has something to sit between. */
     svg.appendChild(mk("ellipse", { cx: 11.2, cy: 22.2, rx: 1.5, ry: 2.1, fill: skin }));
     svg.appendChild(mk("ellipse", { cx: 28.8, cy: 22.2, rx: 1.5, ry: 2.1, fill: skin }));
@@ -23117,7 +23779,7 @@ function buildAvatarCharSVG(charId){
                                    "stroke-width": .9, "stroke-linecap": "round" }));
     });
     svg.appendChild(mk("circle", { cx: 20, cy: 33.4, r: 1.8, fill: "#E8B923" }));
-    svg.appendChild(mk("ellipse", { cx: 20, cy: 20.6, rx: 9.4, ry: 10.2, fill: skinFill }));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 20.6, rx: 9.2, ry: 10, fill: skinFill }));
     /* Hair: a low hairline across the brow, the sides, and the topknot. */
     svg.appendChild(mk("path", { d: "M10.8 16.6 Q20 9.6 29.2 16.6 Q20 13.4 10.8 16.6 Z",
                                  fill: hairFill }));
@@ -23146,65 +23808,99 @@ function buildAvatarCharSVG(charId){
   }
 
   if(def.kind === "dragon"){
-    /* The head was already the right shape - narrower than tall, which
-       is what keeps it a dragon rather than a round red mascot - so this
-       is depth and a body rather than a redraw. A lit brow ridge, a
-       proper muzzle with nostrils, a jaw shadow, and scales that follow
-       the head instead of sitting on the cheeks as loose diamonds. */
-    const headFill = headGrad("#F47D6B", "#D8402E", "#96251A");
-    const snoutFill = headGrad("#FFAE99", "#F26B5B", "#B8412F");
-    const bodyFill = headGrad("#B8402E", "#8A2B1E", "#5C1B12");
-    svg.appendChild(mk("path", { d: "M6.4 40 Q7.2 32 14.4 30 L25.6 30 Q32.8 32 33.6 40 Z",
-                                 fill: bodyFill }));
-    /* Horns, behind the head so they grow out of it. */
-    svg.appendChild(mk("polygon", { points: "17,15 12,16 6,8.6 9,3 15,11", fill: "#C2352A" }));
-    svg.appendChild(mk("polygon", { points: "23,15 28,16 34,8.6 31,3 25,11", fill: "#C2352A" }));
-    svg.appendChild(mk("polygon", { points: "15.4,14.2 12.6,14.8 8.4,9.4 10.2,6.2 14.2,11.6",
-                                    fill: "#E85B48" }));
-    svg.appendChild(mk("polygon", { points: "24.6,14.2 27.4,14.8 31.6,9.4 29.8,6.2 25.8,11.6",
-                                    fill: "#E85B48" }));
-    /* Back spikes. */
-    svg.appendChild(mk("polygon", { points: "16,8.2 18.4,8.2 17.2,4", fill: "#C2352A" }));
-    svg.appendChild(mk("polygon", { points: "19.5,7.2 21.9,7.2 20.7,3", fill: "#C2352A" }));
-    svg.appendChild(mk("polygon", { points: "23,8.2 25.4,8.2 24.2,4", fill: "#C2352A" }));
-    svg.appendChild(mk("ellipse", { cx: 20, cy: 19.6, rx: 11.6, ry: 13.2, fill: headFill }));
-    /* Contact shadows where the horns meet the skull. */
-    svg.appendChild(mk("path", { d: "M12.4 13.4c1.6 1 3.6 1.3 5.4.8", fill: "none",
-                                 stroke: "rgba(0,0,0,.26)", "stroke-width": 1,
-                                 "stroke-linecap": "round" }));
-    svg.appendChild(mk("path", { d: "M27.6 13.4c-1.6 1-3.6 1.3-5.4.8", fill: "none",
-                                 stroke: "rgba(0,0,0,.26)", "stroke-width": 1,
-                                 "stroke-linecap": "round" }));
-    /* The brow ridge - the whole expression. */
-    svg.appendChild(mk("path", { d: "M11.8 16.8 Q15.4 14.4 18.6 16.6", fill: "none",
-                                 stroke: "rgba(88,20,12,.42)", "stroke-width": 2,
-                                 "stroke-linecap": "round" }));
-    svg.appendChild(mk("path", { d: "M21.4 16.6 Q24.6 14.4 28.2 16.8", fill: "none",
-                                 stroke: "rgba(88,20,12,.42)", "stroke-width": 2,
-                                 "stroke-linecap": "round" }));
-    /* The muzzle. */
-    svg.appendChild(mk("ellipse", { cx: 20, cy: 25.6, rx: 7.2, ry: 5.4, fill: snoutFill }));
-    svg.appendChild(mk("ellipse", { cx: 17.7, cy: 24.2, rx: .82, ry: 1.05, fill: "#7A1C12" }));
-    svg.appendChild(mk("ellipse", { cx: 22.3, cy: 24.2, rx: .82, ry: 1.05, fill: "#7A1C12" }));
-    /* Eyes: slit pupils on a warm sclera, which is the one thing that
-       stops a dragon reading as a friendly animal. */
-    svg.appendChild(mk("ellipse", { cx: 15.2, cy: 19.4, rx: 2.5, ry: 2.1, fill: "#FFE08A" }));
-    svg.appendChild(mk("ellipse", { cx: 24.8, cy: 19.4, rx: 2.5, ry: 2.1, fill: "#FFE08A" }));
-    svg.appendChild(mk("ellipse", { cx: 15.2, cy: 19.4, rx: .72, ry: 1.75, fill: "#20120C" }));
-    svg.appendChild(mk("ellipse", { cx: 24.8, cy: 19.4, rx: .72, ry: 1.75, fill: "#20120C" }));
-    svg.appendChild(catchlight(14.3, 18.5, .48));
-    svg.appendChild(catchlight(23.9, 18.5, .48));
-    /* The mouth, with two small fangs at the corners. */
-    svg.appendChild(mk("path", { d: "M15.6 28.2 Q20 31 24.4 28.2", fill: "none",
-                                 stroke: "#7A1C12", "stroke-width": 1.1,
-                                 "stroke-linecap": "round" }));
-    svg.appendChild(mk("polygon", { points: "16.6,28.9 18,28.9 17.3,30.9", fill: "#FFFFFF" }));
-    svg.appendChild(mk("polygon", { points: "22,28.9 23.4,28.9 22.7,30.9", fill: "#FFFFFF" }));
-    /* Scales, following the skull rather than parked on the cheeks. */
-    [[11.6, 21.4], [12.6, 24.4], [28.4, 21.4], [27.4, 24.4]].forEach(([x, y]) => {
-      svg.appendChild(mk("path", { d: "M" + x + " " + y + " q1.1 -1.2 2.2 0 q-1.1 1.4 -2.2 0 z",
-                                   fill: "rgba(255,255,255,.14)" }));
+    /* THIRD VERSION, and the first two failed for the same reason in
+       two different ways: they were drawings of a MONSTER in a set of
+       drawings of CHARACTERS.
+
+       Version one was a red head twice everyone else's size with a pale
+       pink snout that read as a pig. Version two fixed the size and the
+       snout and got "that dragon looks absolutely awful" - because what
+       was left was heavy brow ridges, vertical slit pupils and bared
+       fangs, which together are a demon. Nothing else in this set is
+       menacing. The bear, the alien and the ghost are the three that
+       read best at 34px and all three are APPEALING: one big round
+       shape and two big round eyes with light in them.
+
+       So this one is built to that rule. Big round eyes with real
+       pupils and catchlights, a muzzle that is part of the head rather
+       than bolted to it, fangs small enough to be a detail rather than
+       a threat, and horns that curve rather than spike. It is still
+       plainly a dragon - horns, snout, scales, fangs - it just is not
+       glaring at you. */
+    const head  = headGrad("#F2705A", "#D0402F", "#8E2219");
+    const belly = headGrad("#FFC5A4", "#F0917A", "#C25F4A");
+    const body  = headGrad("#A8382A", "#7C271B", "#4E160F");
+    const horn  = headGrad("#FFE6C4", "#D6AA7E", "#96714A");
+
+    svg.appendChild(mk("path", { d: "M5.8 40 Q6.6 31.4 14 29.2 L26 29.2 Q33.4 31.4 34.2 40 Z",
+                                 fill: body }));
+    /* A pale chest, the way the bear has a muzzle - it breaks the
+       shoulders up and it is what warm-blooded-looking animals in this
+       style all have. */
+    svg.appendChild(mk("path", { d: "M15.4 30.4 Q20 29.4 24.6 30.4 Q25.4 35.6 20 37 Q14.6 35.6 15.4 30.4 Z",
+                                 fill: "#C25F4A", opacity: ".55" }));
+
+    /* HORNS: curved, cream, swept back over the skull. Drawn first so
+       they grow out from behind it. */
+    [[-1, 13.2], [1, 26.8]].forEach(([f, x0]) => {
+      svg.appendChild(mk("path", {
+        d: "M" + x0 + " 14.8 Q" + (x0 + f * 4.4) + " 12 " + (x0 + f * 6.6) + " 6.4 "
+         + "Q" + (x0 + f * 6.2) + " 10.4 " + (x0 + f * 1.4) + " 12 Z", fill: horn }));
     });
+    /* Ear fins, low and behind - a dragon has something either side and
+       an ellipse reads as a mammal's ear. */
+    [[-1, 11.4], [1, 28.6]].forEach(([f, x0]) => {
+      svg.appendChild(mk("path", {
+        d: "M" + x0 + " 19.6 Q" + (x0 + f * 4.2) + " 18.4 " + (x0 + f * 5.2) + " 22.4 "
+         + "Q" + (x0 + f * 2.4) + " 23.4 " + x0 + " 22.8 Z", fill: "#A8382A" }));
+    });
+    /* Three crest spines along the crown, small and rounded. */
+    [[16.8, 11.4], [20, 10.4], [23.2, 11.4]].forEach(([x, y]) =>
+      svg.appendChild(mk("path", { d: "M" + (x - 1.4) + " " + (y + 2.4) + " Q" + x + " " + y + " " + (x + 1.4) + " " + (y + 2.4) + " Z",
+                                   fill: "#B03A2B" })));
+
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 21.2, rx: 9.2, ry: 10, fill: head }));
+
+    /* THE MUZZLE, in the head's own colour and overlapping it, so it is
+       one shape with a bulge rather than a mask stuck on a face. The
+       only lighter thing is the top plane, which is a highlight and not
+       a separate part. */
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 26.2, rx: 6.4, ry: 4.6, fill: head }));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 25, rx: 5.2, ry: 2.6, fill: belly, opacity: ".45" }));
+    svg.appendChild(mk("ellipse", { cx: 17.9, cy: 24.6, rx: .72, ry: .58, fill: "#6E1D13" }));
+    svg.appendChild(mk("ellipse", { cx: 22.1, cy: 24.6, rx: .72, ry: .58, fill: "#6E1D13" }));
+    /* A wide, easy mouth with two small fangs coming UP from the lower
+       jaw. Up rather than down: hanging fangs are a predator, and a
+       little underbite is what makes a drawn dragon look pleased with
+       itself. */
+    svg.appendChild(mk("path", { d: "M16.2 27.6 Q20 30.2 23.8 27.6", fill: "none",
+                                 stroke: "#6E1D13", "stroke-width": "1",
+                                 "stroke-linecap": "round" }));
+    svg.appendChild(mk("polygon", { points: "17.5,28.8 18.7,28.8 18.1,26.9", fill: "#FFF6EA" }));
+    svg.appendChild(mk("polygon", { points: "21.3,28.8 22.5,28.8 21.9,26.9", fill: "#FFF6EA" }));
+
+    /* BIG ROUND EYES, and this is the whole difference from the version
+       that was rejected. Sclera, a real pupil, a catchlight - the same
+       three parts the bear and the samurai have. */
+    svg.appendChild(mk("ellipse", { cx: 15.8, cy: 19.4, rx: 2.9, ry: 3.1, fill: "#FFF6EA" }));
+    svg.appendChild(mk("ellipse", { cx: 24.2, cy: 19.4, rx: 2.9, ry: 3.1, fill: "#FFF6EA" }));
+    svg.appendChild(mk("ellipse", { cx: 16.1, cy: 19.7, rx: 1.75, ry: 1.95, fill: "#2A1008" }));
+    svg.appendChild(mk("ellipse", { cx: 23.9, cy: 19.7, rx: 1.75, ry: 1.95, fill: "#2A1008" }));
+    svg.appendChild(catchlight(15.4, 18.7, .62));
+    svg.appendChild(catchlight(23.2, 18.7, .62));
+    /* A soft brow above each, in the head's own dark - shape, not a
+       scowl. The ridges that made the last one glare are gone. */
+    svg.appendChild(mk("path", { d: "M12.7 15.8 Q15.8 14.4 18.9 15.9", fill: "none",
+                                 stroke: "#A8382A", "stroke-width": "1.05",
+                                 "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M27.3 15.8 Q24.2 14.4 21.1 15.9", fill: "none",
+                                 stroke: "#A8382A", "stroke-width": "1.05",
+                                 "stroke-linecap": "round" }));
+
+    /* Two scales high on the cheeks, where a raised edge catches light. */
+    [[11.9, 22.6], [28.1, 22.6]].forEach(([x, y]) =>
+      svg.appendChild(mk("path", { d: "M" + x + " " + y + " q1 -1.1 2 0 q-1 1.3 -2 0 z",
+                                   fill: "rgba(255,225,200,.24)" })));
     return svg;
   }
 
@@ -23271,6 +23967,8 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               unitPerfects: {}, unitBlackStar: {}, flagged: {},
               unitGameBeat: {}, gameFarthest: {},
               mysteryColorsFound: { red: false, orange: false, yellow: false }, testsUntilMystery: null,
+              dailyCorrectStreak: 0, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false,
+              weeklyWins: 0, weekRankSeen: null, pendingVoidCutscene: false,
               lastModified: 0, firstName: "", avatarChar: null, onboardingComplete: false,
               dailyQuestionDate: null, dailyQuestionCorrect: false,
               seenModeSelectTour: false, seenUnitSelectTour: false,
@@ -23338,6 +24036,15 @@ function applyLoadedData(got){
     store.mysteryColorsFound = { red: false, orange: false, yellow: false };
   }
   store.testsUntilMystery = typeof got.testsUntilMystery === "number" ? got.testsUntilMystery : null;
+  store.dailyCorrectStreak = typeof got.dailyCorrectStreak === "number" ? got.dailyCorrectStreak : 0;
+  store.weeklyWins = typeof got.weeklyWins === "number" ? got.weeklyWins : 0;
+  store.pendingVoidCutscene = got.pendingVoidCutscene === true;
+  store.weekRankSeen = (got.weekRankSeen && typeof got.weekRankSeen === "object"
+    && typeof got.weekRankSeen.week === "string" && typeof got.weekRankSeen.rank === "number")
+    ? { week: got.weekRankSeen.week, rank: got.weekRankSeen.rank } : null;
+  store.unitHundoStreak = typeof got.unitHundoStreak === "number" ? got.unitHundoStreak : 0;
+  store.unitHundoStreakUnits = Array.isArray(got.unitHundoStreakUnits) ? got.unitHundoStreakUnits.slice() : [];
+  store.practiceTestPassed = got.practiceTestPassed === true;
   store.lastModified = typeof got.lastModified === "number" ? got.lastModified : 0;
   store.testHistory = Array.isArray(got.testHistory) ? got.testHistory.slice(0, 20) : [];
   store.avatarChar = typeof got.avatarChar === "string" ? got.avatarChar : null;
@@ -23835,6 +24542,13 @@ function wipeLocalProgressAndSettings(){
   store.gameFarthest = {};
   store.mysteryColorsFound = { red: false, orange: false, yellow: false };
   store.testsUntilMystery = null;
+  store.dailyCorrectStreak = 0;
+  store.unitHundoStreak = 0;
+  store.unitHundoStreakUnits = [];
+  store.practiceTestPassed = false;
+  store.weeklyWins = 0;
+  store.weekRankSeen = null;
+  store.pendingVoidCutscene = false;
   store.firstName = "";
   store.avatarChar = null;
   /* This is the actual fix for the reset glitch: everything else here
@@ -25638,8 +26352,65 @@ function weekPointsOfEntry(e){
   return (e && e.week === weekKeyNow()) ? (e.weekPoints || 0) : 0;
 }
 
+/* FINISHING A WEEK AT THE TOP, and the honest account of what that can
+   mean from inside a browser.
+
+   Nothing on this device is awake when the week rolls over at midnight
+   on Sunday, and the board itself resets - by Monday last week's
+   standings do not exist anywhere to be read. So "finished the week
+   #1" cannot be observed directly; what CAN be is your position the
+   last time you looked during that week, which is what this records.
+   When the week key then changes, a last-seen rank of 1 is a win.
+
+   That is generous at the edges - somebody who was first on Saturday
+   night and did not open the app again on Sunday gets it - and the
+   alternative is a feat nobody can ever earn, which is worse. It is
+   never generous in the direction that matters: you have to have
+   actually been first on the board, with the whole class's real
+   numbers in it, at some point you were looking.
+
+   `weekRankSeen` is one object rather than two fields on purpose - the
+   rank is meaningless without the week it belongs to, and two fields
+   is how they end up describing different weeks. */
+function observeWeeklyRank(list){
+  if(!syncCode || !store.leaderboardOptIn) return;
+  const wk = weekKeyNow();
+  const ranked = (list || [])
+    .filter(e => weekPointsOfEntry(e) > 0)
+    .sort((a, b) => weekPointsOfEntry(b) - weekPointsOfEntry(a));
+  const i = ranked.findIndex(e => e.code === syncCode);
+  if(i < 0) return;
+  const seen = store.weekRankSeen;
+  if(seen && seen.week === wk && seen.rank === i + 1) return;
+  store.weekRankSeen = { week: wk, rank: i + 1 };
+  saveStore();
+}
+
+/* Called from Home, which is the screen every launch and every finished
+   test passes through. Returns true if this settled a win, so the
+   caller can announce it. */
+function settleWeeklyWin(){
+  const seen = store.weekRankSeen;
+  if(!seen || !seen.week || seen.week === weekKeyNow()) return false;
+  const won = seen.rank === 1;
+  store.weekRankSeen = null;
+  if(won) store.weeklyWins = (store.weeklyWins || 0) + 1;
+  saveStore();
+  return won;
+}
+
 function hundosOf(st){
   return (st && st.lifetime && st.lifetime.perfectTests) || 0;
+}
+
+/* TESTS COMPLETED, in one place. The Stats tab shows this number and the
+   Secret Flares are gated on it, and those two have to be the same
+   number or the hunt turns up at a count nobody can see. It was written
+   out longhand on the Stats tab and is a function now for that reason
+   alone. */
+function testsCompletedOf(st){
+  const l = (st && st.lifetime) || {};
+  return (l.drillPlays || 0) + (l.examPlays || 0) + (l.gamePlays || 0);
 }
 
 /* What each board ranks, what its rows say underneath a name, and what
@@ -28065,6 +28836,49 @@ function allFullyMastered(){
    would fail isFullUnitRun() anyway on every real unit, but a unit that
    ever had exactly one question would silently start minting mastery
    once a day. */
+/* TEN DIFFERENT UNITS IN A ROW, and every word of that is load-bearing.
+
+   "In a row" counts FULL-UNIT ATTEMPTS, not runs: a ten-question slice
+   of the Penal Code is not an attempt at the Penal Code, so it neither
+   extends the streak nor breaks it. The same rule isFullUnitRun()
+   already applies to hundos themselves, and using a second, looser one
+   here would mean a unit could break a streak it was never eligible to
+   extend.
+
+   "Different" is why this keeps the LIST rather than a count. Acing
+   Identity Crimes - the smallest unit in the app at 12 questions - ten
+   times over is ten hundos and one unit, and would have been the whole
+   feat in about fifteen minutes. A unit already in the streak is not a
+   setback either, though: it simply does not count again.
+
+   A missed full-unit attempt clears the list. Nothing else does. */
+function unitsFullyCoveredBy(runOrder){
+  const seen = [];
+  (cfg.units || []).forEach(name => {
+    const inRun = runOrder.filter(qi => (QUESTIONS[qi].topic || "").trim() === name);
+    const unitTotal = QUESTIONS.filter(q => (q.topic || "").trim() === name).length;
+    if(unitTotal > 0 && inRun.length === unitTotal) seen.push(name);
+  });
+  return seen;
+}
+
+function recordUnitHundoStreak(runOrder, missed){
+  if(runLabel === "Daily question" || cfg.source !== "all") return;
+  const units = unitsFullyCoveredBy(runOrder);
+  if(!units.length) return;
+  const missedSet = new Set(missed);
+  let list = Array.isArray(store.unitHundoStreakUnits) ? store.unitHundoStreakUnits.slice() : [];
+  units.forEach(name => {
+    const inRun = runOrder.filter(qi => (QUESTIONS[qi].topic || "").trim() === name);
+    const aced = inRun.every(qi => !missedSet.has(qi));
+    if(!aced){ list = []; return; }
+    if(list.indexOf(name) < 0) list.push(name);
+  });
+  store.unitHundoStreakUnits = list;
+  store.unitHundoStreak = list.length;
+  saveStore();
+}
+
 function recordUnitPerfectIfEligible(pct){
   if(runLabel === "Daily question") return null;
   if(cfg.source !== "all" || !isFullUnitRun() || pct !== 100) return null;
@@ -28620,20 +29434,275 @@ let mysteryColorThisRun = null;  // which of the 3 colors this run's appearance 
    run: is a mystery due at all (via the store's countdown), and if
    so, at which single question position and for which still-needed
    color \u2014 guaranteeing at most one appearance per test. */
-/* The Secret Flares are gone - "the mystery flares should be scrapped
-   and moved. That means the requirement they have, the theme, the
-   unlock." All three went together: the hunt that hid a sparkle in a
-   test, the Eclipse colour it unlocked, and the clause it put on the top
-   rank's requirement line.
-   This is left as a no-op rather than deleted at every call site,
-   because the run lifecycle calls it in one place and a function that
-   does nothing is easier to read than a missing call. store's own
-   mysteryColorsFound / testsUntilMystery fields stay defaulted in
-   applyLoadedData for the same reason they always were: an existing
-   account must not see a field appear or vanish as news. */
+/* HISTORY, kept because it says which parts must NOT come back. These
+   were scrapped once - "the mystery flares should be scrapped and
+   moved. That means the requirement they have, the theme, the unlock."
+   Three separate things went at once: the hunt, the Eclipse colour it
+   unlocked, and the clause it put on the top rank's requirement line.
+   Only the HUNT was asked back. The Eclipse colour is still gone and
+   `titan` is still plain "Reach level 70 and 14 badges" - reviving the
+   rank clause would put luck in front of a rank, which is the one thing
+   the ladder must never ask for. What the hunt hands over now is a
+   character, which is a thing you find rather than a thing you climb
+   to. */
+/* THE SECRET FLARES ARE BACK, asked for in one line after two other
+   ideas for the fourth character's unlock were turned down: "I don't
+   like either of those ideas, let's do the secret flares."
+
+   What came back is the HUNT and nothing else. The clause the old
+   version put on the top rank's requirement line is NOT re-armed -
+   `titan` stays plain "Reach level 70 and 14 badges", and the
+   `rule.mysteryStars` guard in rankOfStats stays permanently false.
+   That separation is the whole reason this is safe to revive: a rank
+   is a thing you climb to and must never depend on luck, while a
+   character is a thing you find.
+
+   Three flares, red then orange then yellow, one per run at most and
+   never two runs running. Finding all three unlocks Void. The three
+   orbit dots on Home have always been the permanent mark - they were
+   left as decoration when this was scrapped and light up in their real
+   colour again now, with nothing new added to that scene. */
+const MYSTERY_ORDER = ["red", "orange", "yellow"];
+const MYSTERY_COLOR = { red: "#EF4444", orange: "#F97316", yellow: "#FACC15" };
+const MYSTERY_NAME  = { red: "Red", orange: "Orange", yellow: "Yellow" };
+/* HOW HIDDEN, and it is measured in TESTS COMPLETED rather than in runs
+   between appearances. Asked for by number: "a person should see the
+   first flare when they get to 80-90 tests taken. The second one can be
+   around 200, and make the 3rd one at about 350 or so."
+
+   That is a different KIND of gate from the two-run gap this shipped
+   with first, and a better one. A gap in runs makes the hunt something
+   that happens to everybody at the same rate from the day it lands; a
+   lifetime count makes it something that happens to people who have put
+   the work in, which is what a secret is for. It also means an account
+   that already has three hundred tests behind it gets the first two
+   quickly - right, because they earned them before the feature existed.
+
+   The count is `testsCompletedOf()`, the same number the Stats tab
+   prints. A gate on a number nobody can see is a gate nobody can be
+   told about. */
+const MYSTERY_AT = [80, 200, 350];
+/* A one-question Daily has nowhere to hide anything, and a three
+   question re-run of missed questions is over before you look up. */
+const MYSTERY_MIN_RUN = 5;
+/* Where in the header row it sits this run, as a FRACTION OF THE FREE
+   GAP rather than a percentage of the row. A flat 24-70% of the row was
+   measured across every position it can pick, on four devices: on an
+   iPad it never collides, and on every phone the low end of the range
+   puts the 44px box on top of the words "Question 1" - 24-43% on an SE
+   1st gen, 24-35% on an SE 2nd/3rd, 24-29% on a 17 Pro Max. Nothing
+   breaks (the label is not a control) but a glint sitting on the text
+   reads as a rendering fault rather than as something hiding, which is
+   the opposite of the whole idea. So the span is measured from the real
+   gap between the question number and the flag - device-independent,
+   and it cannot go stale the way a percentage tuned on one screen
+   does. */
+let mysteryLeftFrac = .5;
+
+function nextNeededMysteryColor(){
+  const found = store.mysteryColorsFound || {};
+  return MYSTERY_ORDER.find(k => !found[k]) || null;
+}
+function mysteryAllFound(){ return mysteryColorsFoundCount() >= MYSTERY_ORDER.length; }
+
 function maybeStartMysteryForRun(){
   mysteryAppearsAtPos = -1;
   mysteryColorThisRun = null;
+  const color = nextNeededMysteryColor();
+  if(!color) return;
+  if(!order || order.length < MYSTERY_MIN_RUN) return;
+  if(testsCompletedOf(store) < MYSTERY_AT[MYSTERY_ORDER.indexOf(color)]) return;
+  mysteryColorThisRun = color;
+  mysteryAppearsAtPos = Math.floor(Math.random() * order.length);
+  /* Decided once per RUN, not per render. render() runs again on every
+     wrong answer, and a spark that jumped to a new spot each time you
+     missed would read as a glitch rather than as something hiding. */
+  mysteryLeftFrac = Math.random();
+}
+
+/* The glint itself. Deliberately in the question card's HEADER ROW and
+   nowhere near the choices: a 44px tap target floating over an answer
+   is a target that eventually steals a tap, and losing a question to a
+   decoration would be a far worse bug than the feature is worth. The
+   row is otherwise empty between the question number and the flag, so
+   there is somewhere for it to be without covering anything. */
+/* ONE ORB, THREE PLACES: the glint inside a test, the banner that
+   announces it, and the cutscene. A `tag` per call site because every
+   gradient id in this file has to be unique per instance - sixteen
+   badges sharing one id was one definition and fifteen wrong fills, and
+   a banner sitting over a live glint is exactly that situation again. */
+let flareOrbSeq = 0;
+function buildFlareOrb(color, tag, scale){
+  const svgNS = "http://www.w3.org/2000/svg";
+  const uid = (tag || "f") + (flareOrbSeq++);
+  const svg = document.createElementNS(svgNS, "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("class", "flare-orb");
+  svg.setAttribute("aria-hidden", "true");
+  const defs = document.createElementNS(svgNS, "defs");
+  svg.appendChild(defs);
+  const mk = (tagName, attrs) => {
+    const el = document.createElementNS(svgNS, tagName);
+    Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+    return el;
+  };
+  /* THE BLOOM IS A CIRCLE FILLED WITH THE FALLOFF, never a shape filled
+     with it - the rank emblems' rule, learned there and true here. */
+  const g = mk("radialGradient", { id: "orb-" + uid, cx: "50%", cy: "50%", r: "50%" });
+  [["0%", "1"], ["26%", ".8"], ["58%", ".3"], ["100%", "0"]].forEach(([o, op]) =>
+    g.appendChild(mk("stop", { offset: o, "stop-color": color, "stop-opacity": op })));
+  defs.appendChild(g);
+  const k = scale || 1;
+  svg.appendChild(mk("circle", { cx: 12, cy: 12, r: 11 * k, fill: "url(#orb-" + uid + ")" }));
+  svg.appendChild(mk("circle", { cx: 12, cy: 12, r: 4.2 * k, fill: color }));
+  /* A white core, because a coloured disc on a dark screen reads as a
+     dot and a lit one reads as a light. */
+  svg.appendChild(mk("circle", { cx: 12, cy: 12, r: 2.1 * k, fill: "#FFFFFF", opacity: ".92" }));
+  svg.appendChild(mk("circle", { cx: 10.8, cy: 10.6, r: .9 * k, fill: "#FFFFFF" }));
+  return svg;
+}
+
+function buildMysterySpark(){
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "mystery-spark";
+  btn.style.setProperty("--flare-color", MYSTERY_COLOR[mysteryColorThisRun]);
+  /* No label anyone can read, but a real one for a screen reader: the
+     thing is hidden by being small and quiet, not by being a trap. */
+  btn.setAttribute("aria-label", "A secret flare");
+  /* A GLOWING ORB, not a sparkle, and bigger than the first version.
+     Reported off a screenshot: "The little flare in the screenshot you
+     sent, that's way too tiny, make them a bit bigger so they are easy
+     to see", alongside "make them a pretty small tiny glowing orb
+     thing, if you remember how they looked before they looked pretty
+     good, they need to be a little bit easier to see though".
+     So: still small, still quiet, but a LIGHT rather than a mark - a
+     soft bloom with a bright core in it, which is a thing that catches
+     the eye at the edge of vision in a way a flat glyph does not. The
+     tap target around it is unchanged at 44px. */
+  btn.appendChild(buildFlareOrb(MYSTERY_COLOR[mysteryColorThisRun], "sp"));
+  btn.addEventListener("click", ev => {
+    ev.stopPropagation();
+    foundMysteryFlare(btn);
+  });
+  placeMysterySpark(btn);
+  return btn;
+}
+
+/* Measured after mount, because the row it has to fit inside does not
+   exist yet while it is being built. One frame, and the glint has no
+   `left` until then - which is why it starts at the row's centre in
+   CSS rather than at 0, so a device that somehow never gets the frame
+   shows it somewhere sensible instead of hard against the left edge. */
+function placeMysterySpark(btn){
+  requestAnimationFrame(() => {
+    const row = btn.closest(".qnumrow");
+    if(!row || !row.isConnected) return;
+    const rowR = row.getBoundingClientRect();
+    const w = btn.getBoundingClientRect().width || 44;
+    const num = row.querySelector(".qnum");
+    const flag = row.querySelector(".flagbtn");
+    /* The gap between the question number and the flag, in the row's own
+       coordinates. A Daily question has no .qnum in this row at all (its
+       title is a separate block outside the panel), so the fallback is
+       the row's own edge - and a Daily is too short to ever carry a
+       flare anyway. */
+    const lo = (num ? num.getBoundingClientRect().right + 6 : rowR.left) - rowR.left;
+    const hi = (flag ? flag.getBoundingClientRect().left - 6 : rowR.right) - rowR.left;
+    const span = Math.max(0, (hi - lo) - w);
+    btn.style.left = Math.round(lo + w / 2 + span * mysteryLeftFrac) + "px";
+  });
+}
+
+function foundMysteryFlare(btn){
+  if(mysteryFoundThisSession || !mysteryColorThisRun) return;
+  const color = mysteryColorThisRun;
+  mysteryFoundThisSession = true;
+  store.mysteryColorsFound = store.mysteryColorsFound || { red: false, orange: false, yellow: false };
+  store.mysteryColorsFound[color] = true;
+  const all = mysteryAllFound();
+  /* The character is a real unlock, so it is recorded on `store` the
+     same moment the third flare is - isLockedCharacter reads the
+     flares themselves rather than a separate flag, so there is only
+     ever one answer to whether Void is held, but the BANNER needs to
+     know it just happened rather than that it is true.
+
+     `store.testsUntilMystery` is no longer read by anything: the gate
+     is a lifetime test count now, not a countdown. It stays defaulted
+     in applyLoadedData all the same, per the rule that has kept it
+     alive through one scrapping already - dropping a field there is
+     how a cloud document starts losing keys on every round trip. */
+  saveStore();
+  if(btn){
+    btn.classList.add("mystery-spark-found");
+    btn.disabled = true;
+    setTimeout(() => btn.remove(), 900);
+  }
+  showFlareFoundBanner(color, all);
+  if(all){
+    /* THE THIRD ONE QUEUES A CUTSCENE FOR THE MAIN MENU rather than
+       announcing itself here. An earlier pass put "Void unlocked" in a
+       banner and left it at that, on the reasoning that a cutscene
+       minutes later has no connection left to the thing that was just
+       tapped - and that was reported straight back: "Not sure why the
+       'void unlocked' thing is on the main menu, ensure there is a cool
+       cut scene involving those tiny secret glares."
+       Queued on `store` for the same reason the badge queue is: there
+       is no fixed route from a test to Home, and the flag has to
+       survive the trip and a relaunch. */
+    store.pendingVoidCutscene = true;
+    saveStore();
+  }
+}
+
+function showFlareFoundBanner(color, all){
+  if(theme.muteBanners) return;
+  const banner = document.createElement("div");
+  banner.className = "tierup-banner flare-banner";
+  banner.style.setProperty("--tier-color", MYSTERY_COLOR[color]);
+  const icon = document.createElement("div");
+  icon.className = "tierup-banner-icon";
+  /* The same orb that was tapped, not a second drawing of one - the
+     thing you found and the thing the banner shows cannot drift. */
+  icon.appendChild(buildFlareOrb(MYSTERY_COLOR[color], "bn"));
+  const text = document.createElement("div");
+  const kicker = document.createElement("p");
+  kicker.className = "tierup-banner-kicker";
+  kicker.textContent = all ? "ALL THREE FOUND" : "SECRET FLARE";
+  const name = document.createElement("p");
+  name.className = "tierup-banner-name";
+  name.textContent = all
+    ? "Void unlocked"
+    : MYSTERY_NAME[color] + " \u2014 " + mysteryColorsFoundCount() + " of " + MYSTERY_ORDER.length;
+  text.append(kicker, name);
+  banner.append(icon, text);
+  document.body.appendChild(banner);
+  /* THIS IS THE ONLY BANNER IN THE APP THAT APPEARS MID-TEST, which is
+     why it measures its way down and the rank-up banner it shares CSS
+     with does not. A rank-up lands on the results screen, whose top is
+     empty; this one lands on a question, whose top carries the counter,
+     the Pause button and the progress meter - and at the shared CSS
+     offset it sat squarely on all three. Same `topNoticeOffset()` the
+     update notice and the daily alert already share, so there is one
+     answer to "what is along the top of this screen" rather than three.
+     Applied with transitions suppressed for a frame so it is already in
+     place when it fades in, rather than sliding down into position. */
+  const top = topNoticeOffset(banner);
+  if(top != null){
+    banner.style.transition = "none";
+    banner.style.top = Math.round(top) + "px";
+    void banner.offsetHeight;
+    banner.style.transition = "";
+  }
+  requestAnimationFrame(() => banner.classList.add("tierup-banner-show"));
+  const dismiss = () => {
+    banner.classList.remove("tierup-banner-show");
+    setTimeout(() => banner.remove(), 400);
+  };
+  /* No click-to-dismiss: .flare-banner is pointer-events:none so it
+     cannot receive one, and a listener that can never fire is worse
+     than no listener - it reads as a feature. */
+  setTimeout(dismiss, 5000);
 }
 
 /* The Practice Test is a fixed, one-tap simulation of the real exam: 250
@@ -28830,7 +29899,9 @@ const RELEASE_NOTES = [
       { label: "Ranks, Badges & Unlocks", items: [
         { icon: buildLadderIcon, color: "#FFD84D", title: "Seven Ranks to Climb", body: "Iron, Bronze, Silver, Gold, Sapphire, Amethyst and Supernova. Each one asks for a level and a number of badges together, not either on its own, and each has its own emblem that sits beside your name everywhere people can see you." },
         { icon: buildStarIcon, color: "#4DD0E1", title: "A Badge for Every Unit", body: "Sixteen units, sixteen badges, each one cut to its own shape. Finish a unit at 100% thirty-five times and its badge drops into place \u2014 and until then the empty slot shows you exactly what you are working towards." },
-        { icon: buildPersonIcon, color: "#4ADE80", title: "Characters Behind the Top Ranks", body: "The last four ranks each hand over a character nobody starts with \u2014 an officer, a clown, a robot and an astronaut. You can see all four from day one, locked, so you know what is up there." },
+        { icon: buildPersonIcon, color: "#4ADE80", title: "Characters Behind the Top Ranks", body: "The last four ranks each hand over a character nobody starts with \u2014 a robot, a clown, an officer and an astronaut. You can see all four from day one, locked, so you know what is up there." },
+        { icon: buildPersonIcon, color: "#D9A441", title: "Four More You Have to Go and Earn", body: "These four are not on the ladder \u2014 no amount of studying hands them over on its own. A detective for ten daily questions right in a row, a masked one for a hundo in ten different units in a row, a marble Zeus for passing the Practice Test, and Void for the three Secret Flares." },
+        { icon: buildStarIcon, color: "#F97316", title: "The Secret Flares", body: "Three of them \u2014 red, orange and yellow \u2014 hidden one at a time inside a test. No hint and no map: you either spot it or you finish the test and never know it was there. The three lights orbiting your Home screen are the tally, and finding all three unlocks the rarest character in the app." },
         { icon: buildSwatchClusterIcon, color: "#C583FF", title: "A Theme Colour Per Rank", body: "Every rank hands over its own colour, and picking one recolours the whole app \u2014 the sphere, the glow behind every screen, the loading screen and the accent on every control." },
         { icon: buildRocketIcon, color: "#FF6B6B", title: "The Supernova Event", body: "Reach the very top and a full-screen event plays out, leaving your Home screen's orbit permanently brighter afterward." }
       ]},
@@ -28840,7 +29911,7 @@ const RELEASE_NOTES = [
         { icon: buildTrophyIcon, color: "#4ADE80", title: "Sharing Is Yours to Choose", body: "Off by default. Nothing about you appears on the boards, and you cannot see them either, until you turn it on \u2014 and it shares your username, character, rank and those three numbers, nothing else." }
       ]},
       { label: "Profile", items: [
-        { icon: buildPersonIcon, color: "#5CA8FF", title: "A Full Cast of Characters", body: "Twelve to choose from \u2014 ninja, ghost, queen, wizard, bear, alien, samurai, dragon, and four more the top ranks hand over. Each one is drawn to read at every size, right down to the tab bar." },
+        { icon: buildPersonIcon, color: "#5CA8FF", title: "A Full Cast of Characters", body: "Sixteen \u2014 ninja, ghost, queen, wizard, bear, alien, samurai and dragon to start with, four the top ranks hand over, and four more you have to go and earn. Each one is drawn to read at every size, right down to the tab bar." },
         { icon: buildPillTabBarIcon, color: "#FFD84D", title: "Four Tabs, One Screen", body: "Profile for your name, character and colour; Stats for study time and testing history; Badges for the case; Rank for the whole climb. Swipe between them or tap." },
         { icon: buildArchiveIcon, color: "#4ADE80", title: "Every Past Test, Saved", body: "A full answer-by-answer breakdown the moment you finish, plus a running history you can revisit any time, right from Profile." },
         { icon: buildBarStatsIcon, color: "#C583FF", title: "Study Time & Testing Stats", body: "Questions answered, tests completed, time spent \u2014 tracked automatically and laid out clearly, not buried in a menu." }
@@ -30878,11 +31949,6 @@ function playTierCutscene(tierKey){
   subtitle.textContent = "A new rank, reached.";
   overlay.appendChild(subtitle);
 
-  const skipBtn = document.createElement("button");
-  skipBtn.type = "button"; skipBtn.className = "supernova-skip";
-  skipBtn.textContent = "Skip";
-  skipBtn.hidden = true;
-  overlay.appendChild(skipBtn);
 
   document.body.appendChild(overlay);
 
@@ -30903,12 +31969,107 @@ function playTierCutscene(tierKey){
   requestAnimationFrame(() => overlay.classList.add("supernova-visible"));
   setTimeout(() => stageWrap.classList.add("supernova-zoom"), 150);
   setTimeout(() => stageWrap.classList.add("supernova-spinup"), 1200);
-  setTimeout(() => skipBtn.hidden = false, 1200);
   setTimeout(() => overlay.classList.add("supernova-burst"), 4000);
   setTimeout(() => overlay.classList.add("supernova-settle"), 6500);
   setTimeout(finish, 8000);
 
-  skipBtn.addEventListener("click", finish);
+}
+
+/* THE VOID CUTSCENE - the payoff for the whole hunt, and the one
+   cutscene in the app built out of something the person collected
+   rather than something they climbed to.
+
+   The three orbiting lights on Home ARE the tally, and that is what
+   this is made of: the same three colours in the same three places,
+   which come loose, fall together, and collapse into the character.
+   Asked for that way - "ensure there is a cool cut scene involving
+   those tiny secret glares" - and it is the right shape anyway,
+   because the only thing a person has actually seen of this feature
+   before now is three dots going one by one from grey to lit.
+
+   The convergence is a TRANSITION, not a keyframe animation, and
+   deliberately: the global [data-reduce-motion="true"] *{animation:none}
+   rule strips keyframes, which would have left three orbs sitting
+   motionless in a ring for nine seconds. Transitions survive it, so
+   reduce-motion gets the same beats at the same times, just without
+   the drifting. */
+function playVoidCutscene(){
+  const overlay = document.createElement("div");
+  overlay.id = "void-cutscene";
+
+  const field = document.createElement("div");
+  field.className = "void-field";
+  /* The same three positions the Home orbit uses, scaled: the top one
+     far out, the right one level with the middle, the left one low and
+     close. Read off buildCosmicHero's own dot table rather than chosen,
+     so the thing that falls in is recognisably the thing that was
+     lighting up. */
+  const SPOTS = [[0, -104], [104, 2], [-74, 16]];
+  const orbs = MYSTERY_ORDER.map((key, i) => {
+    const orb = document.createElement("div");
+    orb.className = "void-orb";
+    orb.style.setProperty("--ox", SPOTS[i][0] + "px");
+    orb.style.setProperty("--oy", SPOTS[i][1] + "px");
+    orb.style.setProperty("--flare-color", MYSTERY_COLOR[key]);
+    orb.appendChild(buildFlareOrb(MYSTERY_COLOR[key], "vc"));
+    field.appendChild(orb);
+    return orb;
+  });
+
+  const core = document.createElement("div");
+  core.className = "void-core";
+  core.appendChild(buildAvatarCharSVGSafe("voidwalker"));
+  field.appendChild(core);
+  overlay.appendChild(field);
+
+  /* INSIDE THE FIELD, not on the overlay. On the overlay it is centred
+     on the SCREEN while the orbs are centred on the field, and the
+     field sits higher than centre because the title and the subtitle
+     below it take real height - so the burst came out offset from the
+     thing it is supposed to be bursting out of, which on a recording
+     read as a circle with a flat bottom. */
+  const flash = document.createElement("div");
+  flash.className = "void-flash";
+  field.appendChild(flash);
+
+  const title = document.createElement("p");
+  title.className = "void-title"; title.textContent = "VOID";
+  overlay.appendChild(title);
+
+  const sub = document.createElement("p");
+  sub.className = "void-sub";
+  sub.textContent = "All three Secret Flares found.";
+  overlay.appendChild(sub);
+
+
+  document.body.appendChild(overlay);
+
+  let finished = false;
+  function finish(){
+    if(finished) return;
+    finished = true;
+    overlay.classList.add("void-exit");
+    setTimeout(() => {
+      overlay.remove();
+      store.pendingVoidCutscene = false;
+      saveStore();
+      showHome();
+      /* The banner AFTER the cutscene, not instead of it - it is what
+         says where to go and do something about it, which a cutscene
+         cannot. */
+      showCharacterUnlockBanner("voidwalker");
+    }, 500);
+  }
+
+  requestAnimationFrame(() => overlay.classList.add("void-visible"));
+  /* The fall. Each one a beat after the last, so it reads as three
+     things arriving rather than one shape shrinking. */
+  orbs.forEach((orb, i) => setTimeout(() => orb.classList.add("void-orb-fall"), 1500 + i * 260));
+  setTimeout(() => overlay.classList.add("void-collapse"), 3400);
+  setTimeout(() => overlay.classList.add("void-reveal"), 3900);
+  setTimeout(() => overlay.classList.add("void-named"), 4800);
+  setTimeout(finish, 8600);
+
 }
 
 /* The banner announcing the level-up itself, shown right after
@@ -30916,6 +32077,70 @@ function playTierCutscene(tierKey){
    tier's own color, and its name, rather than a plain toast. Reuses
    the existing contextual-popup Liquid Glass styling so it matches
    everything else rather than introducing a new visual language. */
+/* THE CHARACTER IS IN THE BANNER. Asked for directly: "The unlock
+   banner when unlocking the characters should show the character in the
+   unlock banner by the way." This is the same mistake the rank-up
+   banner made once and was corrected for - it announced a rank and drew
+   the flare that rank hands over - so it is drawn here from
+   buildAvatarCharSVGSafe, the same builder every other screen uses, and
+   never from a second copy of the artwork.
+   No coin behind it, for the reason the badge banner already has none:
+   a character brings its own halo now, and a disc of somebody else's
+   colour behind it fights with that. */
+function showCharacterUnlockBanner(id){
+  if(theme.muteBanners) return;
+  const banner = document.createElement("div");
+  banner.className = "tierup-banner charup-banner";
+  banner.style.setProperty("--tier-color", avatarGlowColor(id));
+  const icon = document.createElement("div");
+  icon.className = "tierup-banner-icon charup-banner-icon";
+  icon.appendChild(buildAvatarCharSVGSafe(id));
+  const text = document.createElement("div");
+  const kicker = document.createElement("p");
+  kicker.className = "tierup-banner-kicker"; kicker.textContent = "CHARACTER UNLOCKED";
+  const name = document.createElement("p");
+  name.className = "tierup-banner-name";
+  name.textContent = AVATAR_DISPLAY_NAME[id] || id;
+  text.append(kicker, name);
+  banner.append(icon, text);
+  document.body.appendChild(banner);
+  const top = topNoticeOffset(banner);
+  if(top != null){
+    banner.style.transition = "none";
+    banner.style.top = Math.round(top) + "px";
+    void banner.offsetHeight;
+    banner.style.transition = "";
+  }
+  requestAnimationFrame(() => banner.classList.add("tierup-banner-show"));
+  const dismiss = () => {
+    banner.classList.remove("tierup-banner-show");
+    setTimeout(() => banner.remove(), 400);
+  };
+  banner.addEventListener("click", dismiss);
+  setTimeout(dismiss, 5200);
+}
+
+/* Which characters are locked right now, as a Set, so a caller can diff
+   either side of whatever it is about to do. Same shape and the same
+   reasoning as badgesEarnedList(): trusting one recorder to report an
+   unlock is how a badge ended up celebrating on some routes and not
+   others. */
+function lockedCharacterSet(){
+  return new Set(AVATAR_CHARACTERS.filter(c => isLockedCharacter(c.id)).map(c => c.id));
+}
+
+/* Void is deliberately NOT announced by a banner: it gets the cutscene
+   on the main menu instead, which is a bigger moment and was asked for
+   as one. Everything else queues a banner. */
+function announceCharacterUnlocks(before){
+  AVATAR_CHARACTERS.forEach(c => {
+    if(!before.has(c.id)) return;
+    if(isLockedCharacter(c.id)) return;
+    if(c.id === "voidwalker") return;
+    showCharacterUnlockBanner(c.id);
+  });
+}
+
 function showTierUpBanner(tierKey){
   /* Respects the mute setting \u2014 per explicit clarification, muting
      achievement banners should only suppress banners like this one,
@@ -30992,11 +32217,6 @@ function playSupernovaCutscene(){
   subtitle.textContent = "Every rank, reached.";
   overlay.appendChild(subtitle);
 
-  const skipBtn = document.createElement("button");
-  skipBtn.type = "button"; skipBtn.className = "supernova-skip";
-  skipBtn.textContent = "Skip";
-  skipBtn.hidden = true;
-  overlay.appendChild(skipBtn);
 
   document.body.appendChild(overlay);
 
@@ -31023,12 +32243,10 @@ function playSupernovaCutscene(){
   requestAnimationFrame(() => overlay.classList.add("supernova-visible"));
   setTimeout(() => stageWrap.classList.add("supernova-zoom"), 200);
   setTimeout(() => stageWrap.classList.add("supernova-spinup"), 3200);
-  setTimeout(() => skipBtn.hidden = false, 3000);
   setTimeout(() => overlay.classList.add("supernova-burst"), 9000);
   setTimeout(() => overlay.classList.add("supernova-settle"), 13500);
   setTimeout(finish, 20000);
 
-  skipBtn.addEventListener("click", finish);
 }
 
 /* A single question that's the same for everyone within one daily
@@ -31199,6 +32417,25 @@ function showHome(){
      lets this same early check simply fall through to the normal
      screen on that second call. Same pattern for any other tier's
      shorter cutscene via pendingTierCutscene. */
+  /* Settled here because Home is the one screen every launch and every
+     finished test passes through, and the week can only be observed to
+     have rolled over by something that runs on an ordinary launch. */
+  if(settleWeeklyWin()){
+    /* Named rather than diffed, because there is nothing to diff
+       against here: settleWeeklyWin() returning true IS the unlock, and
+       a fake "before" set containing one id would be the same statement
+       written so it looks like a measurement. Deferred a beat so the
+       banner lands on Home rather than on whatever is fading out. */
+    const won = AVATAR_CHARACTERS.find(c => c.feat === "weektop");
+    if(won && !isLockedCharacter(won.id)){
+      setTimeout(() => showCharacterUnlockBanner(won.id), 900);
+    }
+  }
+  if(store.pendingVoidCutscene){
+    stage.replaceChildren();
+    playVoidCutscene();
+    return;
+  }
   if(store.pendingSupernovaCutscene || store.pendingTierCutscene){
     /* Clear whatever is still mounted before handing over. A rank-up is
        reached from the results screen ("Main menu"), and both cutscenes
@@ -33348,6 +34585,9 @@ function render(){
     showToast(nowFlagged ? "Question flagged." : "Flag removed.", "flag");
   });
   numRow.appendChild(flagBtn);
+  if(pos === mysteryAppearsAtPos && mysteryColorThisRun && !mysteryFoundThisSession){
+    numRow.appendChild(buildMysterySpark());
+  }
   panel.appendChild(numRow);
 
   const qtext = document.createElement("p");
@@ -34025,7 +35265,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-23-132";
+const APP_BUILD = "2026-09-23-133";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -34882,6 +36122,17 @@ function summarize(){
 
   const elapsedMs = flushStudyTime();
 
+  /* WHICH CHARACTERS ARE LOCKED, taken at the very TOP of this function
+     and not beside the badge snapshot further down.
+     It was down there first and reported nothing: the daily-question
+     block between the two already writes `dailyCorrectStreak`, so by
+     the time the set was built the tenth daily in a row had ALREADY
+     unlocked the Detective and the diff had nothing left to find. The
+     same trap the tier snapshot below carries its own comment about,
+     hit again forty lines away. A "before" snapshot belongs before
+     every mutation in the function, not before most of them. */
+  const lockedBefore = lockedCharacterSet();
+
   drawMeter();
   hintEl.hidden = true;
 
@@ -34910,6 +36161,12 @@ function summarize(){
   if(runLabel === "Daily question"){
     store.dailyQuestionDate = todayDateStr();
     store.dailyQuestionCorrect = isPerfect;
+    /* IN A ROW means consecutive daily questions ANSWERED, not
+       consecutive days. Missing a day does not break it - a run of ten
+       that a weekend away can end is a punishment for having a life,
+       and this class has plenty of those already. Getting one wrong
+       does break it, which is the part that makes it worth holding. */
+    store.dailyCorrectStreak = isPerfect ? (store.dailyCorrectStreak || 0) + 1 : 0;
     saveStore();
   }
 
@@ -35013,6 +36270,16 @@ function summarize(){
        results screen, because the cutscene plays on the MAIN MENU and
        the results screen is not on the way there by any fixed route -
        somebody can tap Home, Profile or the tab bar from it. */
+    recordUnitHundoStreak(order, missed);
+    /* The Practice Test is the one run in the app with a pass mark on
+       it, so it is the one run that can be passed. timedOut is not
+       excluded: running out of time on a 90-minute exam and still
+       clearing 70% is passing it, which is exactly what the real thing
+       would say. */
+    if(practiceTestMinutes != null && pct >= PASS_MARK && !store.practiceTestPassed){
+      store.practiceTestPassed = true;
+      saveStore();
+    }
     badgesEarnedThisRun = badgesEarnedList().filter(u => !badgesBefore.has(u));
     if(badgesEarnedThisRun.length){
       store.pendingBadgeUnlocks = (store.pendingBadgeUnlocks || []).concat(badgesEarnedThisRun);
@@ -35037,6 +36304,11 @@ function summarize(){
      session that happens to be what finally clears titan's point
      threshold still triggers the full celebration, not just a
      session that also touched star-eligible progress. */
+  /* Every route to a character, in one place at the end. A feat
+     character and a rank character both land here, so neither can have
+     a celebration the other does not. */
+  announceCharacterUnlocks(lockedBefore);
+
   const supernovaJustUnlocked = newlyUnlockedColors.includes("titan");
   if(supernovaJustUnlocked){
     store.pendingSupernovaCutscene = true;
@@ -37574,6 +38846,16 @@ function beginVirtualRoomTest(units, timeLimit, startAt){
    same lesson the badge families already record. Object.entries preserves
    insertion order for string keys, which is join order, and it is what
    the race line already indexes by. */
+/* TYPING. Throttled because this rides keystrokes: one write per person
+   per TYPING_WRITE_MS at most, which is far less traffic than a message.
+   Nothing ever CLEARS a flag - a reader ignores anything older than
+   TYPING_STALE_MS - so somebody who closes the app mid-word stops
+   showing as typing on their own, with no cleanup write that could be
+   lost. STALE has to be comfortably larger than WRITE or a steady typist
+   flickers between writes. */
+const TYPING_WRITE_MS = 2200;
+const TYPING_STALE_MS = 5000;
+
 function vroomColorFor(key, participants){
   if(!key || !participants) return null;
   const keys = Object.keys(participants);
@@ -37659,7 +38941,10 @@ function buildVroomChatPanel(container){
   sendBtn.type = "button"; sendBtn.className = "next vroom-chat-send";
   sendBtn.textContent = "Send";
   row.append(input, sendBtn);
-  wrap.append(titleRow, list, row);
+  const typingLine = document.createElement("p");
+  typingLine.className = "vroom-chat-typing";
+  typingLine.setAttribute("aria-live", "polite");
+  wrap.append(titleRow, list, typingLine, row);
   container.appendChild(wrap);
 
   /* Unread is measured against the newest message this device has
@@ -37715,6 +39000,9 @@ function buildVroomChatPanel(container){
   let newestTs = 0;
   let lastAnnouncedId = null;
   let announcedAny = false;
+  let roomTyping = null;
+  let lastTypingWrite = 0;
+  let typingTick = null;
 
   /* Held from the last snapshot so renderMessages can colour a name
      without re-reading the document. */
@@ -37749,6 +39037,7 @@ function buildVroomChatPanel(container){
       });
     }
     if(wasAtBottom) list.scrollTop = list.scrollHeight;
+    renderTyping();
 
     /* The dot. Only somebody else's message counts - your own showing up
        as unread is the kind of thing that makes people stop trusting a
@@ -37842,10 +39131,49 @@ function buildVroomChatPanel(container){
     obs.observe(stage, { childList: true });
   }
 
+  /* Names, not a count: "Ann is typing" is worth reading and "2 people
+     are typing" is not, and in a room of four there is room for both
+     names. Anyone whose flag has gone stale is simply not in the list,
+     which is what makes the no-cleanup design work. */
+  function renderTyping(){
+    if(!typingLine) return;
+    const now = Date.now();
+    const names = [];
+    Object.keys(roomTyping || {}).forEach(k => {
+      if(k === vroomMyKey) return;
+      const ts = roomTyping[k];
+      if(typeof ts !== "number" || now - ts > TYPING_STALE_MS) return;
+      const p = roomParticipants && roomParticipants[k];
+      names.push((p && p.name) || "Someone");
+    });
+    if(!names.length){ typingLine.textContent = ""; return; }
+    if(names.length === 1) typingLine.textContent = names[0] + " is typing\u2026";
+    else if(names.length === 2) typingLine.textContent = names[0] + " and " + names[1] + " are typing\u2026";
+    else typingLine.textContent = "Several people are typing\u2026";
+  }
+
+  /* A DOTTED FIELD PATH, so this is a single-field write on the server
+     and never a read-modify-write. Two people typing at the same moment
+     would otherwise each read the map before the other's flag existed
+     and whoever wrote second would erase the first - the identical bug
+     the messages themselves already avoid with arrayUnion. */
+  function noteTyping(){
+    if(!fbDb || !vroomCode || !vroomMyKey) return;
+    const now = Date.now();
+    if(now - lastTypingWrite < TYPING_WRITE_MS) return;
+    lastTypingWrite = now;
+    try{
+      const patch = {};
+      patch["typing." + vroomMyKey] = now;
+      fbDb.collection("vrooms").doc(vroomCode).update(patch).catch(() => {});
+    }catch(e){}
+  }
+
   function send(){
     const text = input.value.trim();
     if(!text || !vroomCode || !fbDb || !vroomMyKey) return;
     input.value = "";
+    lastTypingWrite = 0;
     /* ATOMIC APPEND, not read-modify-write. This used to .get() the whole
        document, push onto the array it found and .update() the result -
        so two people typing at the same time each read the array BEFORE
@@ -37887,6 +39215,14 @@ function buildVroomChatPanel(container){
   }
   sendBtn.addEventListener("click", send);
   input.addEventListener("keydown", (e) => { if(e.key === "Enter") send(); });
+  /* `input`, not keydown: it fires for paste and for a software keyboard's
+     autocomplete, which keydown does not. */
+  input.addEventListener("input", () => { if(input.value.trim()) noteTyping(); });
+  /* Flags go stale on a clock, not on a snapshot, so without this the
+     line would keep saying somebody is typing until the next message
+     arrived. One second is finer than the eye needs and costs nothing -
+     it reads local state and touches no network. */
+  typingTick = setInterval(renderTyping, 1000);
 
   /* The actual bug behind the whole lobby screen failing to render at
      all with no connection \u2014 confirmed directly: this call threw
@@ -37916,6 +39252,7 @@ function buildVroomChatPanel(container){
         if(!docSnap.exists) return;
         const data = docSnap.data();
         roomParticipants = data.participants || null;
+        roomTyping = data.typing || null;
         const messages = data.chatMessages;
         renderMessages(messages);
         trimIfHost(messages);
@@ -37933,6 +39270,7 @@ function buildVroomChatPanel(container){
     dead = true;
     document.body.classList.remove("vroom-chat-open");
     clearTimeout(alertTimer);
+    clearInterval(typingTick);
     if(alertEl){ alertEl.remove(); alertEl = null; }
     unsubscribe();
   };
@@ -38863,7 +40201,21 @@ function showCustomize(){
       opt.classList.add("selected");
       opt.blur();
     });
-    avatarGrid.appendChild(opt);
+    /* THE NAME UNDER EACH ONE, asked for in the same breath as leaving
+       the grid alone: "you can put their names under each one though,
+       and when you click it for the locked one show what you need."
+       The cell is the button plus its name, so the name is part of the
+       tap target rather than a caption beside it - tapping the word
+       under a locked character is the most natural way to ask what it
+       costs, and it now answers. */
+    const cell = document.createElement("div");
+    cell.className = "avatarchar-cell";
+    const nameEl = document.createElement("span");
+    nameEl.className = "avatarchar-name" + (locked ? " is-locked" : "");
+    nameEl.textContent = AVATAR_DISPLAY_NAME[charDef.id] || charDef.id;
+    cell.append(opt, nameEl);
+    nameEl.addEventListener("click", () => opt.click());
+    avatarGrid.appendChild(cell);
   });
   avatarSect.appendChild(avatarGrid);
   panel.appendChild(avatarSect);
@@ -39986,7 +41338,7 @@ function showProfile(defaultTab){
   lifeGrid.className = "stat-grid";
   const answered = store.lifetime.answered;
   const correct = store.lifetime.correct;
-  const testsCompleted = store.lifetime.drillPlays + store.lifetime.examPlays + store.lifetime.gamePlays;
+  const testsCompleted = testsCompletedOf(store);
   /* "Tests at 100%" is the number this app calls HUNDOS everywhere
      else, and it has not meant "tests" since scoring went per unit - a
      run covering three units can add three. Two streaks sat side by
@@ -40284,7 +41636,14 @@ function showRankings(defaultBoard){
   function paint(){
     const board = RANKING_BOARDS.find(b => b.key === rankingsBoardKey);
     blurb.textContent = board.blurb || "";
-    renderRankingRows(rows, liveEntries(), board, { query: search.value });
+    const list = liveEntries();
+    /* Recorded whichever board is on screen, not only This Week. paint()
+       runs on every snapshot and on every tab change, so hooking it here
+       means simply having the Leaderboard open keeps your weekly
+       position up to date - where hooking the weekly board alone would
+       have made the feat depend on which tab somebody happens to like. */
+    observeWeeklyRank(list);
+    renderRankingRows(rows, list, board, { query: search.value });
   }
 
   function selectBoard(key){

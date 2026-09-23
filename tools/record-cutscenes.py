@@ -252,6 +252,25 @@ def supernova(pg, rec):
     pg.wait_for_timeout(23500)       # burst 9s, settle 13.5s, finish 20s
 
 
+def void_cutscene(pg, rec):
+    """The three Secret Flares falling together into Void.
+
+    THE REAL LENGTH MATTERS, which this file has already paid for once
+    on Supernova: the fall starts at 1.5s, the last orb lands at 2.0s,
+    the collapse is at 3.4s, the reveal at 3.9s, the name at 4.8s, and
+    it hands back to Home at 8.6s with the unlock banner after it. A 5s
+    capture of this is a recording of three dots drifting and nothing
+    else."""
+    pg.evaluate("()=>showHome()")
+    pg.wait_for_timeout(700)
+    rec.start(); pg.wait_for_timeout(400)
+    pg.evaluate("""()=>{
+        store.mysteryColorsFound = { red:true, orange:true, yellow:true };
+        store.pendingVoidCutscene = true;
+        playVoidCutscene();}""")
+    pg.wait_for_timeout(11800)   # 8.6s cutscene, then the CHARACTER UNLOCKED banner
+
+
 def test_to_badge(pg, rec):
     """The whole earn, walked rather than mounted: the last question of a
     full-unit run, the 100% card with the badge on it, Main menu, and both
@@ -289,6 +308,8 @@ SCENES = [
     ("rank-vanguard",  TABLET, rank_cutscene("vanguard"), 10,  340),
     ("supernova",      PHONE,  supernova,                 8,   GIF_W),
     ("supernova",      TABLET, supernova,                 8,   340),
+    ("void",           PHONE,  void_cutscene,             10,  GIF_W),
+    ("void",           TABLET, void_cutscene,             10,  340),
 ]
 
 

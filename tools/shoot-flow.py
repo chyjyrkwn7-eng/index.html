@@ -370,6 +370,24 @@ def main():
                         shot(page, 25 + i + 0.5, "profile-" + name + "-scrolled", bar_ok=True)
                         page.evaluate("()=>window.scrollTo(0,0)"); page.wait_for_timeout(300)
 
+                # CUSTOMISE, which is where the characters live and the
+                # only screen that shows all sixteen. Reached the way
+                # anybody reaches it - back to the Profile tab, then its
+                # own edit button - rather than by mounting
+                # showAppearance(), for the reason this whole file exists.
+                page.evaluate("""()=>{const b=[...document.querySelectorAll('.profiletabs .iconbtn')][0];
+                  if(b) b.click();}""")
+                page.wait_for_timeout(700)
+                page.evaluate("""()=>{const b=[...document.querySelectorAll('.profile-edit-btn')]
+                  .find(x=>/custom/i.test(x.textContent));
+                  if(b) b.click(); else showCustomize();}""")
+                page.wait_for_timeout(900)
+                shot(page, 28, 'customize', bar_ok=True)
+                page.evaluate("()=>window.scrollTo(0, document.documentElement.scrollHeight)")
+                page.wait_for_timeout(500)
+                shot(page, 28.5, 'customize-scrolled', bar_ok=True)
+                page.evaluate("()=>window.scrollTo(0,0)"); page.wait_for_timeout(300)
+
                 # settings, top and bottom
                 page.evaluate("()=>document.getElementById('bottomtab-settings').click()")
                 page.wait_for_timeout(900)
