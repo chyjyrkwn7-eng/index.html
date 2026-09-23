@@ -526,6 +526,60 @@ def main():
         if got["chatCorner"] is not None:
             check("the chat button is in the top right", got["chatCorner"], got["chatCorner"])
 
+        # -------------------------------------------------------------
+        # 8. MATCH SETTINGS - and the one thing worth asserting about
+        # any sheet in this app: that it is actually PAINTED.
+        # .invite-overlay is opacity:0 until a class lands in a rAF.
+        # Leaving that off builds the whole sheet - in the document,
+        # measurable, the right size, the right contents - and
+        # invisible. Every measurement of it passes. So this asserts
+        # the computed opacity a frame later, not the geometry.
+        print("\n8. match settings")
+        got = pg.evaluate("""async ()=>{
+          fbDb = { collection:()=>({ doc:()=>({ update:()=>Promise.resolve() }) }) };
+          const all = topicsIn(QUESTIONS);
+          openMatchSettingsSheet('ROOM42', {units:[all[0]], mode:'drill', timeLimit:20});
+          await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+          const ov = document.querySelector('.invite-overlay');
+          const rows = [...document.querySelectorAll('.match-unit')];
+          const save = [...document.querySelectorAll('.match-acts .friend-act')].pop();
+          const on = [...document.querySelectorAll('.match-modes .vroom-host-mode.on')];
+          const cs = on[0] ? getComputedStyle(on[0]) : null;
+          rows.forEach(r=>{ if(r.classList.contains('on')) r.click(); });
+          return {
+            painted: ov ? +getComputedStyle(ov).opacity : 0,
+            units: rows.length, allUnits: all.length,
+            mode: on.length === 1 ? on[0].textContent : null,
+            modeInk: cs ? (cs.color !== cs.backgroundColor) : false,
+            radius: save ? getComputedStyle(save).borderTopLeftRadius : null,
+            shadow: save ? getComputedStyle(save).boxShadow : null,
+            saveOffWithNoUnits: !!(save && save.disabled)
+          };}""")
+        check("the sheet is actually painted, not just built",
+              got["painted"] > 0.9, got["painted"])
+        # Read off the page, not a number typed here: a gate that names
+        # a count goes stale the day a unit is added.
+        check("every unit is offered", got["units"] == got["allUnits"],
+              {"rows": got["units"], "units": got["allUnits"]})
+        # It opens on the room's CURRENT settings rather than defaults -
+        # a settings screen that forgets what is set is a reset button.
+        check("it opens on what the room is already set to",
+              got["mode"] == "Drill", got["mode"])
+        # --accent resolves to --ink on the default accent, so a
+        # hardcoded white label was white on white: the selected mode
+        # was the one you could not read.
+        check("the selected mode is legible against its own pill",
+              got["modeInk"] is True, got["modeInk"])
+        # `[data-layout="modern"] .next` sets the pill radius at 0,2,0
+        # and the dark theme restates the shadow at 0,3,0, so a bare
+        # class rule for either is ignored in silence.
+        check("the sheet's buttons are not the floating primary pill",
+              got["radius"] == "2px" and got["shadow"] == "none",
+              {"r": got["radius"], "s": (got["shadow"] or "")[:20]})
+        # A match with no units is not a match.
+        check("no units means no way to save", got["saveOffWithNoUnits"] is True,
+              got["saveOffWithNoUnits"])
+
         ctx.close()
         br.close()
     srv.shutdown()

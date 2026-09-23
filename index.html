@@ -10044,12 +10044,31 @@
      to the app's own 2px, equal width, and only Accept carries colour. */
   .friend-act{
     min-height:44px; padding:.4rem .85rem; font-size:.8rem; white-space:nowrap;
-    border-radius:2px; box-shadow:none; min-width:5.5rem; text-align:center;
+    min-width:5.5rem; text-align:center;
   }
-  .friend-act.ghost{
+  /* THE PREFIX IS LOAD-BEARING. `[data-layout="modern"] .next` sets the
+     pill radius and the whole lift-shadow stack at specificity 0,2,0,
+     so a bare `.friend-act` rule for either is ignored in silence -
+     the same trap `.panel` padding, `.opt .box` and `.bottomtab-label`
+     already document. Measured, not assumed: the first version of this
+     fix shipped and changed nothing. */
+  [data-layout="modern"] .friend-act{
+    border-radius:2px; background-image:none;
+  }
+  /* The shadow needs BOTH attributes, because the dark theme restates
+     the whole stack at [data-theme][data-layout] - 0,3,0 - which a
+     0,2,0 rule loses to. This is the second specificity step on the
+     same button; the radius only needed one, which is exactly how a
+     half-applied fix looks right in one measurement and wrong in the
+     screenshot. */
+  [data-theme="dark"][data-layout="modern"] .friend-act,
+  [data-layout="modern"] .friend-act{ box-shadow:none; }
+  [data-theme="dark"][data-layout="modern"] .friend-act.ghost,
+  [data-layout="modern"] .friend-act.ghost{
     background:transparent; color:var(--ink); border:1px solid var(--rule);
+    box-shadow:none; background-image:none;
   }
-  .friend-act.ghost:hover{ border-color:var(--soft); }
+  [data-layout="modern"] .friend-act.ghost:hover{ border-color:var(--soft); }
   .friend-mycode-wrap{ display:flex; align-items:center; gap:.6rem; }
   /* Centred, mono and narrow, the same treatment the sync code field
      already has and for the same reason: a code is a fixed-length
@@ -10083,6 +10102,50 @@
     border-radius:999px; background:rgba(255,255,255,.07);
     border:1px solid var(--rule); color:var(--ink);
   }
+  .match-sheet .slab{ margin:.9rem 0 .4rem; }
+  .match-sheet .match-slab{ margin-top:1.1rem; }
+  /* The unit list scrolls inside the sheet rather than growing it past
+     the screen - sixteen units is taller than an SE. A pixel cap plus
+     overflow is a CLIP anywhere it is not scrollable, so this one is
+     explicitly scrollable. */
+  .match-unit-list{
+    display:flex; flex-direction:column; gap:.3rem;
+    max-height:min(38vh, 20rem); overflow-y:auto; -webkit-overflow-scrolling:touch;
+  }
+  /* On a short screen the sheet hits its own 80vh cap and then Save is
+     behind a second, nested scroll - two scrollers on one 568px
+     screen. The unit list is the only part with height to give back, so
+     it gives it back rather than the actions going under the fold. */
+  @media (max-height:42rem){
+    .match-unit-list{ max-height:24vh; }
+    .match-sheet .slab{ margin:.6rem 0 .3rem; }
+    .match-sheet .match-slab{ margin-top:.7rem; }
+    .match-acts{ margin-top:.7rem; }
+  }
+  .match-unit{
+    display:flex; align-items:center; gap:.6rem; width:100%;
+    min-height:44px; padding:.45rem .6rem; box-sizing:border-box;
+    background:transparent; border:1px solid var(--rule); border-radius:2px;
+    color:var(--ink); font-family:var(--sans); font-size:.85rem; font-weight:600;
+    text-align:left; cursor:pointer;
+  }
+  .match-unit.on{ border-color:var(--accent); }
+  .match-tick{
+    width:1.05rem; height:1.05rem; flex-shrink:0; border-radius:2px;
+    border:1px solid var(--rule); background:transparent; position:relative;
+  }
+  .match-unit.on .match-tick{ background:var(--accent); border-color:var(--accent); }
+  .match-unit.on .match-tick::after{
+    content:""; position:absolute; left:.3rem; top:.1rem;
+    width:.25rem; height:.5rem; border:solid var(--accent-ink);
+    border-width:0 2px 2px 0; transform:rotate(45deg);
+  }
+  .match-unit-name{ flex:1 1 0; min-width:0; }
+  .match-modes{ margin-bottom:.2rem; }
+  .match-acts{ display:flex; gap:.5rem; margin-top:1.1rem; }
+  .match-acts .friend-act{ flex:1 1 0; }
+  .match-acts .friend-act:disabled{ opacity:.45; cursor:default; }
+  .vroom-settings-btn{ min-height:44px; }
   .vroom-host-bar{
     display:flex; flex-wrap:wrap; align-items:center; gap:.5rem;
     margin-top:.8rem; padding-top:.7rem; border-top:1px solid var(--rule);
@@ -10094,8 +10157,13 @@
     border-radius:999px; border:1px solid var(--rule); background:none;
     color:var(--soft); cursor:pointer; -webkit-tap-highlight-color:rgba(0,0,0,0);
   }
+  /* --accent-ink, NOT #fff. On the default accent --accent resolves to
+     --ink, which is near-white, so a hardcoded white label was white
+     text on a white pill - the selected mode was the one you could not
+     read. --accent-ink is the token that exists for exactly this and
+     it follows every theme. */
   .vroom-host-mode.on{
-    background:var(--accent); border-color:transparent; color:#fff;
+    background:var(--accent); border-color:transparent; color:var(--accent-ink);
   }
   .vroom-host-mode:disabled{ opacity:.45; cursor:default; }
   .vroom-invite-btn{ min-height:44px; padding:.4rem .9rem; font-size:.8rem; margin-left:auto; }
@@ -35929,7 +35997,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-23-140";
+const APP_BUILD = "2026-09-23-141";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -39161,6 +39229,133 @@ function joinVirtualRoomLobby(code){
 
 /* Who to invite, as a sheet rather than a screen: it is a short list
    of people and it opens over the lobby you are already in. */
+/* MATCH SETTINGS: the units, then the settings, in one sheet the host
+   opens from inside the lobby. Asked for in those words. Everything it
+   writes goes onto the ROOM document, so every joiner's next snapshot
+   redraws with it and nobody has to leave and rejoin - and the start
+   sequence already reads `data.units` and `data.timeLimit` off the live
+   snapshot rather than off the copy taken at join, so changing them
+   here genuinely reaches somebody who joined ten minutes ago.
+
+   Host only, and only while the room is still waiting: changing the
+   rules underneath people mid-test is not a feature. */
+function openMatchSettingsSheet(roomCode, data){
+  const all = topicsIn(QUESTIONS);
+  const chosen = new Set((data && data.units) || []);
+  let mode = (data && data.mode) || "exam";
+  let limit = (data && data.timeLimit) || 10;
+
+  const overlay = document.createElement("div");
+  overlay.className = "invite-overlay";
+  const sheet = document.createElement("div");
+  sheet.className = "invite-sheet match-sheet";
+
+  const h = document.createElement("p");
+  h.className = "invite-sheet-title"; h.textContent = "Match settings";
+  sheet.appendChild(h);
+
+  /* ---- units ---- */
+  const uLab = document.createElement("p");
+  uLab.className = "slab"; uLab.textContent = "Units";
+  sheet.appendChild(uLab);
+  const uList = document.createElement("div");
+  uList.className = "match-unit-list";
+  const count = document.createElement("p");
+  count.className = "friend-hint";
+  const save = document.createElement("button");
+  const syncCount = () => {
+    const n = chosen.size;
+    const qs = QUESTIONS.filter(q => chosen.has(q.topic)).length;
+    count.textContent = n
+      ? n + (n === 1 ? " unit \u00b7 " : " units \u00b7 ") + qs + (qs === 1 ? " question" : " questions")
+      : "Pick at least one unit.";
+    /* A match with no units is not a match, so the way out is closed
+       rather than the error being explained after the fact. */
+    save.disabled = !n;
+  };
+  all.forEach(name => {
+    const row = document.createElement("button");
+    row.type = "button";
+    row.className = "match-unit" + (chosen.has(name) ? " on" : "");
+    const tick = document.createElement("span");
+    tick.className = "match-tick"; tick.setAttribute("aria-hidden", "true");
+    const nm = document.createElement("span");
+    nm.className = "match-unit-name"; nm.textContent = name;
+    row.append(tick, nm);
+    row.setAttribute("aria-pressed", chosen.has(name) ? "true" : "false");
+    row.addEventListener("click", () => {
+      if(chosen.has(name)) chosen.delete(name); else chosen.add(name);
+      row.classList.toggle("on", chosen.has(name));
+      row.setAttribute("aria-pressed", chosen.has(name) ? "true" : "false");
+      syncCount();
+    });
+    uList.appendChild(row);
+  });
+  sheet.append(uList, count);
+
+  /* ---- test type ---- */
+  const mLab = document.createElement("p");
+  mLab.className = "slab match-slab"; mLab.textContent = "Test type";
+  sheet.appendChild(mLab);
+  const mWrap = document.createElement("div");
+  mWrap.className = "vroom-host-modes match-modes";
+  [["exam", "Exam"], ["drill", "Drill"]].forEach(([key, label]) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "vroom-host-mode" + (mode === key ? " on" : "");
+    b.textContent = label;
+    b.addEventListener("click", () => {
+      mode = key;
+      [...mWrap.querySelectorAll(".vroom-host-mode")].forEach(x =>
+        x.classList.toggle("on", x.textContent === label));
+    });
+    mWrap.appendChild(b);
+  });
+  sheet.appendChild(mWrap);
+
+  /* ---- time limit: the SAME slider the setup screen uses, not a
+     second near-copy of it, so the touch behaviour and the step
+     lattice match. 5 to 60 in fives. ---- */
+  sheet.appendChild(plainSlider("Time limit", 5, 60, 5,
+    () => limit, v => { limit = v; }, v => v + " min", () => {}));
+
+  const acts = document.createElement("div");
+  acts.className = "match-acts";
+  const shut = () => overlay.remove();
+  const cancel = document.createElement("button");
+  cancel.type = "button"; cancel.className = "next ghost friend-act";
+  cancel.textContent = "Cancel";
+  cancel.addEventListener("click", shut);
+  save.type = "button"; save.className = "next friend-act";
+  save.textContent = "Save";
+  save.addEventListener("click", () => {
+    if(!fbDb || !roomCode || !chosen.size) return;
+    fbDb.collection("vrooms").doc(roomCode)
+      .update({ units: [...chosen], mode: mode, timeLimit: limit })
+      .then(() => { showToast("Match settings updated.", "good"); shut(); })
+      .catch(() => showToast("Couldn't save the settings \u2014 try again."));
+  });
+  acts.append(cancel, save);
+  sheet.appendChild(acts);
+  syncCount();
+
+  overlay.addEventListener("click", ev => { if(ev.target === overlay) shut(); });
+  overlay.appendChild(sheet);
+  /* On <body>, with the one-shot observer that clears it on the next
+     screen change - the same as every other overlay here, because
+     #stage animates and a transform on an ancestor re-parents a fixed
+     element's containing block. */
+  document.body.appendChild(overlay);
+  /* .invite-overlay IS opacity:0 UNTIL THIS CLASS LANDS. Leaving it off
+     builds the whole sheet, in the document, measurable, tappable in
+     principle - and invisible. Every measurement of it passes, which is
+     exactly why this has to be looked at rather than measured. The rAF
+     is what gives the transition a frame to start from. */
+  requestAnimationFrame(() => overlay.classList.add("invite-overlay-show"));
+  const obs = new MutationObserver(() => { overlay.remove(); obs.disconnect(); });
+  obs.observe(stage, { childList: true });
+}
+
 function openInviteFriendsSheet(roomCode){
   const rows = rowsByPublicId();
   const ids = friendPublicIds();
@@ -39401,26 +39596,23 @@ function showVirtualRoomLobby(){
          joiner's next snapshot redraws with the new mode; nobody has to
          leave and rejoin. Locked once the test is running, because
          changing the rules underneath people mid-test is not a feature. */
-      const modeWrap = document.createElement("div");
-      modeWrap.className = "vroom-host-modes";
-      const modeLab = document.createElement("span");
-      modeLab.className = "vroom-host-lab"; modeLab.textContent = "Mode";
-      modeWrap.appendChild(modeLab);
       const running = data.status && data.status !== "waiting";
-      [["exam", "Exam"], ["drill", "Drill"]].forEach(([key, label]) => {
-        const b = document.createElement("button");
-        b.type = "button";
-        b.className = "vroom-host-mode" + ((data.mode || "exam") === key ? " on" : "");
-        b.textContent = label;
-        b.disabled = !!running;
-        b.addEventListener("click", () => {
-          if(!fbDb || !vroomCode) return;
-          fbDb.collection("vrooms").doc(vroomCode).update({ mode: key })
-            .catch(() => showToast("Couldn't change the mode \u2014 try again."));
-        });
-        modeWrap.appendChild(b);
-      });
-      hostBar.appendChild(modeWrap);
+
+      /* ONE BUTTON, NOT A ROW OF CHIPS. Asked for in those words:
+         "there will be a button in the lobby that says match settings,
+         and then you select the units, and then you can select the
+         settings". The units are the thing that was unreachable from
+         in here at all - a host who picked the wrong ones had to close
+         the room and build another - and they do not fit in a bar
+         beside a mode toggle. So the bar holds the two actions and the
+         sheet holds the choices. */
+      const setBtn = document.createElement("button");
+      setBtn.type = "button";
+      setBtn.className = "next ghost vroom-settings-btn";
+      setBtn.textContent = "Match settings";
+      setBtn.disabled = !!running;
+      setBtn.addEventListener("click", () => openMatchSettingsSheet(vroomCode, data));
+      hostBar.appendChild(setBtn);
 
       /* INVITE FRIENDS, host only, and it goes here for the same
          reason. Each tap addresses the room code to one friend's
