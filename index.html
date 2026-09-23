@@ -3263,9 +3263,42 @@
   /* The dot. Its own colour rather than the accent, because the accent is
      whatever theme somebody picked and an unread marker has to read as an
      unread marker on all seven. */
+  /* A COUNT, so it has to be a pill rather than a dot: min-width plus a
+     999px radius keeps one digit perfectly round and lets "9+" stretch
+     into a lozenge instead of overflowing a fixed circle. */
   .vroom-chat-dot{
-    width:.55rem; height:.55rem; border-radius:999px; background:#FF5F56;
-    box-shadow:0 0 0 2px rgba(255,95,86,.28);
+    min-width:1.05rem; height:1.05rem; padding:0 .22rem; border-radius:999px;
+    background:#FF5F56; color:#fff; box-shadow:0 0 0 2px rgba(255,95,86,.28);
+    display:flex; align-items:center; justify-content:center;
+    font-size:.68rem; font-weight:800; line-height:1;
+    font-variant-numeric:tabular-nums;
+  }
+  /* "___ sent a message", pinned to the top of the screen like every
+     other banner in the app rather than dropped into the bottom corner,
+     which on this screen is full: the chat toggle, the tab bar and the
+     race line all live down there. It is tappable - the whole point is
+     to open the chat - and it names the sender in that person's own
+     colour, the one their marker carries on the race line. */
+  .vroom-chat-alert{
+    position:fixed; left:50%; transform:translateX(-50%) translateY(-8px);
+    top:calc(env(safe-area-inset-top, 0px) + .75rem);
+    z-index:330; max-width:min(26rem, calc(100vw - 2rem));
+    display:flex; align-items:center; gap:.55rem;
+    padding:.6rem .85rem; border-radius:14px;
+    background:rgba(20,25,32,.72); border:1px solid rgba(255,255,255,.12);
+    will-change:backdrop-filter;
+    backdrop-filter:blur(18px) saturate(1.5);
+    -webkit-backdrop-filter:blur(18px) saturate(1.5);
+    box-shadow:0 6px 22px rgba(0,0,0,.35);
+    color:var(--ink); font-size:.85rem; text-align:left;
+    cursor:pointer; opacity:0; pointer-events:none;
+    transition:opacity .22s ease, transform .22s ease;
+  }
+  .vroom-chat-alert.show{ opacity:1; transform:translateX(-50%) translateY(0); pointer-events:auto; }
+  .vroom-chat-alert-who{ font-weight:800; flex:0 0 auto; }
+  .vroom-chat-alert-text{
+    color:var(--soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    flex:1 1 auto; min-width:0;
   }
   @media (max-width:40rem){
     .vroom-chat-toggle{ display:inline-flex; }
@@ -33992,7 +34025,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-23-131";
+const APP_BUILD = "2026-09-23-132";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -37531,6 +37564,23 @@ function beginVirtualRoomTest(units, timeLimit, startAt){
    assigned by join order (joinedAt), not by whatever arbitrary order
    Object.entries happens to iterate in, so a given person keeps the
    same color throughout, including across a re-render. */
+/* ONE TABLE, ONE MAPPING, for every place a person needs a colour of
+   their own. The race line has assigned these by join order since it was
+   built; the chat now reads names in the same colours, so a marker on the
+   line and a name in the chat are recognisably the same person rather
+   than two unrelated colour schemes to learn.
+   Join order, not a hash of the key: a hash into an eight-entry table
+   collides in a room of five or six often enough to matter, which is the
+   same lesson the badge families already record. Object.entries preserves
+   insertion order for string keys, which is join order, and it is what
+   the race line already indexes by. */
+function vroomColorFor(key, participants){
+  if(!key || !participants) return null;
+  const keys = Object.keys(participants);
+  const i = keys.indexOf(key);
+  return i < 0 ? null : VROOM_RACE_COLORS[i % VROOM_RACE_COLORS.length];
+}
+
 const VROOM_RACE_COLORS = ["#F5804D", "#3DA9FC", "#3DD68C", "#F5C84D", "#C23B7A", "#8E7CF5", "#4DD0E1", "#F56D6D"];
 function vroomInitialsFor(name){
   const parts = (name || "?").trim().split(/\s+/);
@@ -37663,6 +37713,12 @@ function buildVroomChatPanel(container){
   wrap.addEventListener("touchend", endDrag);
   wrap.addEventListener("touchcancel", endDrag);
   let newestTs = 0;
+  let lastAnnouncedId = null;
+  let announcedAny = false;
+
+  /* Held from the last snapshot so renderMessages can colour a name
+     without re-reading the document. */
+  let roomParticipants = null;
 
   function renderMessages(messages){
     const wasAtBottom = list.scrollTop + list.clientHeight >= list.scrollHeight - 20;
@@ -37678,6 +37734,13 @@ function buildVroomChatPanel(container){
         const name = document.createElement("span");
         name.className = "vroom-chat-msg-name" + (m.key === vroomMyKey ? " is-me" : "");
         name.textContent = m.name + ": ";
+        /* Your own name stays on the accent - that is the one colour you
+           already read as "me" everywhere else in the app - and everyone
+           else takes the colour their marker has on the race line. */
+        if(m.key !== vroomMyKey){
+          const c = vroomColorFor(m.key, roomParticipants);
+          if(c) name.style.color = c;
+        }
         const time = document.createElement("span");
         time.className = "vroom-chat-msg-time";
         time.textContent = new Date(m.ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
@@ -37698,9 +37761,85 @@ function buildVroomChatPanel(container){
     if(panelVisible){
       lastSeenTs = Math.max(lastSeenTs, newestTs);
       dot.hidden = true;
+      dot.textContent = "";
     } else {
-      dot.hidden = !(newestTs > lastSeenTs);
+      /* A COUNT, NOT A MARK. "Something happened" and "four people have
+         said something" are different pieces of information, and the
+         second is the one that decides whether you open it mid-race.
+         Only other people's messages, and only ones newer than the last
+         time the panel was actually on screen - your own turning up as
+         unread is how a badge stops being believed. 9+ because a
+         two-digit number does not fit the dot and the exact figure
+         stops mattering long before then. */
+      const unseen = others.filter(m => (m.ts || 0) > lastSeenTs);
+      dot.hidden = unseen.length === 0;
+      dot.textContent = unseen.length ? (unseen.length > 9 ? "9+" : String(unseen.length)) : "";
+      /* ANNOUNCE THE NEWEST ONE, ONCE. The dot says how many; this says
+         who, which is what makes it worth interrupting a race for. Only
+         when the panel is closed, only for somebody else, and only for a
+         message this device has not already announced - a re-render from
+         any other field on the room document must not re-announce an old
+         one. */
+      const newest = unseen.length ? unseen[unseen.length - 1] : null;
+      if(newest && newest.id !== lastAnnouncedId){
+        lastAnnouncedId = newest.id;
+        if(!announcedAny){
+          /* Nothing is announced for the backlog that was already there
+             when this panel was built - only for what arrives while you
+             are looking at something else. */
+          announcedAny = true;
+        } else {
+          announceChatMessage(newest, vroomColorFor(newest.key, roomParticipants));
+        }
+      }
     }
+  }
+
+  /* ON <body>, NOT INSIDE THE SCREEN. It is position:fixed, and a
+     transform on an ancestor re-parents a fixed element's containing
+     block - the documented cause of the daily button's own old
+     positioning glitch, and #stage animates. So it goes on body and
+     clears itself on the next screen change, the same shape as
+     .daily-alert. */
+  let alertEl = null;
+  let alertTimer = null;
+  function announceChatMessage(msg, color){
+    if(!msg) return;
+    if(typeof theme === "object" && theme && theme.muteBanners) return;
+    clearTimeout(alertTimer);
+    if(alertEl) alertEl.remove();
+    const bar = document.createElement("button");
+    bar.type = "button";
+    bar.className = "vroom-chat-alert";
+    const who = document.createElement("span");
+    who.className = "vroom-chat-alert-who";
+    who.textContent = (msg.name || "Someone") + " sent a message";
+    if(color) who.style.color = color;
+    const text = document.createElement("span");
+    text.className = "vroom-chat-alert-text";
+    text.textContent = msg.text || "";
+    bar.append(who, text);
+    bar.addEventListener("click", () => {
+      clearTimeout(alertTimer);
+      bar.remove(); alertEl = null;
+      if(!sheetOpen) openSheet();
+    });
+    document.body.appendChild(bar);
+    alertEl = bar;
+    requestAnimationFrame(() => bar.classList.add("show"));
+    alertTimer = setTimeout(() => {
+      bar.classList.remove("show");
+      setTimeout(() => { if(bar === alertEl){ bar.remove(); alertEl = null; } }, 260);
+    }, 4200);
+    /* A screen change takes the chat with it, so the banner has to go
+       too - it is on body and nothing else would remove it. */
+    const obs = new MutationObserver(() => {
+      obs.disconnect();
+      clearTimeout(alertTimer);
+      if(bar.parentNode) bar.remove();
+      if(bar === alertEl) alertEl = null;
+    });
+    obs.observe(stage, { childList: true });
   }
 
   function send(){
@@ -37775,7 +37914,9 @@ function buildVroomChatPanel(container){
     unsubscribe = trackVroomHandle(
       onSnapshotResilient(fbDb.collection("vrooms").doc(vroomCode), docSnap => {
         if(!docSnap.exists) return;
-        const messages = docSnap.data().chatMessages;
+        const data = docSnap.data();
+        roomParticipants = data.participants || null;
+        const messages = data.chatMessages;
         renderMessages(messages);
         trimIfHost(messages);
       }));
@@ -37791,6 +37932,8 @@ function buildVroomChatPanel(container){
   return () => {
     dead = true;
     document.body.classList.remove("vroom-chat-open");
+    clearTimeout(alertTimer);
+    if(alertEl){ alertEl.remove(); alertEl = null; }
     unsubscribe();
   };
 }

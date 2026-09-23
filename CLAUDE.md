@@ -1129,6 +1129,25 @@ it as the document id, there is no sign-in of any kind, and anybody holding
 a code can link a device and read or overwrite that person's progress.
 Everything below follows from that.
 
+- **A FRIEND CODE IS NOT THE SYNC CODE, AND THAT IS A DECISION, NOT AN
+  IMPLEMENTATION DETAIL.** Asked and answered directly: *"The friend
+  code, this would need to be a different code then the sync code btw.
+  That'd be how it's done."* It has to be, and the reason is the first
+  line of this section: the sync code IS the account. There is no
+  password behind it, so a friend code that doubled as the sync code
+  would mean handing somebody your friend code hands them your progress,
+  your rankings row and the ability to overwrite both. A friends feature
+  whose whole point is passing a code around cannot be built on the one
+  string that must never be passed around.
+  So friends gets its own identifier, minted separately, stored
+  separately, and safe to hand out - it grants "can send you a request",
+  nothing more. Rules that follow from that and should not be quietly
+  traded away later: a friend code must never be derivable from the sync
+  code (no prefix, no hash of it - a hash is a lookup table when the
+  alphabet is 32 characters and the length is 8); losing or rotating a
+  friend code must not touch the account; and nothing keyed by friend
+  code may ever return the sync code, because the collection is
+  world-readable exactly like the others.
 - **Never put a username → code lookup in the app.** The collection is
   world-readable, so a lookup shipped in `index.html` is a lookup all ~40
   classmates can run against each other. `tools/firestore-admin.py find`
