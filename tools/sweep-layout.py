@@ -111,7 +111,7 @@ SCREENS = [
     "showProfile('badges')", "showProfile('stats')",
     "showProfile('ranks')",
     "showLeaderboard", "showSetup", "showModeSelect", "showClassSelection",
-    "showExamOptions", "showCustomize", "showCalendar", "showTestReviewList",
+    "showExamOptions", "showCustomize", "showCalendar", "showFriends", "showTestReviewList",
     # the rest
     "showInstallGuide", "showInstallPlatformPicker", "showResetWarning",
     "showWhatsNew", "showReleaseHistory",

@@ -3359,6 +3359,13 @@
     transition:opacity .22s ease, transform .22s ease;
   }
   .vroom-chat-alert.show{ opacity:1; transform:translateX(-50%) translateY(0); pointer-events:auto; }
+  /* DURING A TEST IT IS A NOTICE, NOT A CONTROL. On the lobby it is
+     tappable and opens the chat; on a question there is no chat panel
+     to open and the thing underneath it is the counter, the Pause
+     button and the progress meter, so a full-width tappable surface
+     over them is a tap those controls never get. Same call the flare
+     banner makes for the same reason. */
+  body.has-active-question .vroom-chat-alert{ pointer-events:none !important; }
   .vroom-chat-alert-who{ font-weight:800; flex:0 0 auto; }
   .vroom-chat-alert-text{
     color:var(--soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
@@ -9988,6 +9995,102 @@
   @media (min-width:40rem){
     .pick-gamedot{ width:.6rem; height:.6rem; }
     .speedkey{ font-size:.8rem; }
+  }
+  /* ---- Friends ---- */
+  .friend-sect{ margin-top:1.1rem; }
+  .friend-sect-pending .sect-label{ color:var(--accent); }
+  .friend-row{
+    display:flex; align-items:center; gap:.7rem;
+    padding:.55rem .2rem; border-bottom:1px solid var(--rule);
+  }
+  .friend-row:last-child{ border-bottom:none; }
+  .friend-row-art{ width:2.6rem; flex-shrink:0; position:relative; }
+  .friend-online-dot{
+    position:absolute; right:-1px; bottom:-1px;
+    width:.72rem; height:.72rem; border-radius:50%;
+    background:#4ADE80; border:2px solid var(--panel);
+    box-shadow:0 0 7px rgba(74,222,128,.75);
+  }
+  .friend-row-sub.is-online{ color:#4ADE80; font-weight:700; }
+  .friend-row-art svg{ width:100%; height:auto; }
+  .friend-row-text{ flex:1 1 0; min-width:0; }
+  .friend-row-name{
+    margin:0; font-weight:700; font-size:.95rem; color:var(--ink);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .friend-row-sub{ margin:.1rem 0 0; font-size:.75rem; color:var(--soft); }
+  .friend-row-acts{ display:flex; gap:.4rem; flex-shrink:0; }
+  /* 44px, like every other target in the app - these are small
+     buttons, not exempt ones. */
+  .friend-act{
+    min-height:44px; padding:.4rem .85rem; font-size:.8rem; white-space:nowrap;
+  }
+  .friend-mycode-wrap{ display:flex; align-items:center; gap:.6rem; }
+  /* Centred, mono and narrow, the same treatment the sync code field
+     already has and for the same reason: a code is a fixed-length
+     string of characters, not prose. */
+  .friend-mycode{
+    margin:0; font-family:var(--mono); font-size:1.25rem; font-weight:700;
+    letter-spacing:.14em; color:var(--ink); text-align:center;
+    background:var(--panel2, rgba(255,255,255,.05));
+    border:1px solid var(--rule); border-radius:3px;
+    padding:.55rem .4rem; min-width:8.5rem;
+  }
+  .friend-hint{ margin:.5rem 0 0; font-size:.75rem; line-height:1.4; color:var(--soft); }
+  .friend-add-row{ display:flex; gap:.5rem; align-items:stretch; }
+  .friend-add-input{
+    flex:1 1 0; min-width:0; text-align:center;
+    font-family:var(--mono); letter-spacing:.14em; text-transform:uppercase;
+  }
+  .profile-classline.has-pending{
+    box-shadow:0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent),
+               0 0 14px -3px var(--accent);
+  }
+  @media (min-width:40rem){
+    .friend-row-art{ width:3rem; }
+    .friend-row-name{ font-size:1.05rem; }
+    .friend-row-sub{ font-size:.82rem; }
+  }
+  /* ---- lobby: units, host controls, invite sheet ---- */
+  .vroom-unit-chips{ display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.55rem; }
+  .vroom-unit-chip{
+    font-size:.72rem; line-height:1.2; padding:.3rem .55rem;
+    border-radius:999px; background:rgba(255,255,255,.07);
+    border:1px solid var(--rule); color:var(--ink);
+  }
+  .vroom-host-bar{
+    display:flex; flex-wrap:wrap; align-items:center; gap:.5rem;
+    margin-top:.8rem; padding-top:.7rem; border-top:1px solid var(--rule);
+  }
+  .vroom-host-modes{ display:flex; align-items:center; gap:.35rem; }
+  .vroom-host-lab{ font-size:.72rem; color:var(--soft); margin-right:.15rem; }
+  .vroom-host-mode{
+    min-height:44px; padding:.35rem .8rem; font-size:.78rem; font-weight:700;
+    border-radius:999px; border:1px solid var(--rule); background:none;
+    color:var(--soft); cursor:pointer; -webkit-tap-highlight-color:rgba(0,0,0,0);
+  }
+  .vroom-host-mode.on{
+    background:var(--accent); border-color:transparent; color:#fff;
+  }
+  .vroom-host-mode:disabled{ opacity:.45; cursor:default; }
+  .vroom-invite-btn{ min-height:44px; padding:.4rem .9rem; font-size:.8rem; margin-left:auto; }
+  .invite-overlay{
+    position:fixed; inset:0; z-index:340; display:flex;
+    align-items:flex-end; justify-content:center;
+    background:rgba(0,0,0,.5); opacity:0; transition:opacity .2s ease;
+  }
+  .invite-overlay-show{ opacity:1; }
+  .invite-sheet{
+    width:min(30rem, 100%); max-height:80vh; overflow-y:auto;
+    background:var(--panel); border:1px solid var(--rule);
+    border-radius:16px 16px 0 0; padding:1.1rem 1rem calc(1.1rem + env(safe-area-inset-bottom, 0px));
+  }
+  .invite-sheet-title{ margin:0 0 .6rem; font-weight:800; font-size:1.05rem; color:var(--ink); }
+  .invite-close{ width:100%; min-height:44px; margin-top:.9rem; }
+  @media (min-width:40rem){
+    .invite-overlay{ align-items:center; }
+    .invite-sheet{ border-radius:16px; }
+    .vroom-unit-chip{ font-size:.8rem; }
   }
   .avatarchar-cell{
     display:flex; flex-direction:column; align-items:center; gap:.2rem;
@@ -24085,6 +24188,8 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               dailyCorrectStreak: 0, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false,
               weeklyWins: 0, weekRankSeen: null, pendingVoidCutscene: false,
               publicId: null, leaderboardKeyMigrated: false,
+              friendCode: null, friendsOut: [], friendsIn: [], friendsDeclined: [],
+              lobbyInvitesOut: {},
               lastModified: 0, firstName: "", avatarChar: null, onboardingComplete: false,
               dailyQuestionDate: null, dailyQuestionCorrect: false,
               seenModeSelectTour: false, seenUnitSelectTour: false,
@@ -24159,6 +24264,21 @@ function applyLoadedData(got){
      prevent. null means "not yet", and publicIdOf() mints it once. */
   store.publicId = typeof got.publicId === "string" && got.publicId ? got.publicId : null;
   store.leaderboardKeyMigrated = got.leaderboardKeyMigrated === true;
+  /* FRIENDS. All four ride on `store`, so they follow a person to a
+     second device with everything else.
+       friendsOut     - public ids I have sent a request to
+       friendsIn      - public ids whose request I have ACCEPTED
+       friendsDeclined- local only; hides a request I said no to
+       lobbyInvitesOut- { publicId: roomCode }, one live invite per friend
+     Defaulted per the applyLoadedData rule so an existing account does
+     not see an empty list as news and a cloud round trip cannot drop
+     the keys. */
+  store.friendCode = typeof got.friendCode === "string" && got.friendCode ? got.friendCode : null;
+  store.friendsOut = Array.isArray(got.friendsOut) ? got.friendsOut.slice(0, 200) : [];
+  store.friendsIn = Array.isArray(got.friendsIn) ? got.friendsIn.slice(0, 200) : [];
+  store.friendsDeclined = Array.isArray(got.friendsDeclined) ? got.friendsDeclined.slice(0, 200) : [];
+  store.lobbyInvitesOut = (got.lobbyInvitesOut && typeof got.lobbyInvitesOut === "object")
+    ? got.lobbyInvitesOut : {};
   store.dailyCorrectStreak = typeof got.dailyCorrectStreak === "number" ? got.dailyCorrectStreak : 0;
   store.weeklyWins = typeof got.weeklyWins === "number" ? got.weeklyWins : 0;
   store.pendingVoidCutscene = got.pendingVoidCutscene === true;
@@ -24587,6 +24707,190 @@ function generatePublicId(){
 /* Minted on demand rather than at sign-up only, for the same reason the
    sync code is: an account that predates this has none, and every one of
    them needs one the first time it publishes anything. */
+/* ================= FRIENDS =======================================
+
+   NOBODY EVER WRITES ANYBODY ELSE'S DOCUMENT. That is the whole design
+   and it is what makes real accept/decline possible under the rules
+   this project actually has.
+
+   A new `friendreqs` collection was the obvious shape and it is denied:
+   probed against the live database, `leaderboard` lists fine with no
+   credentials and `friendreqs` returns 403, so the rules are
+   per-collection and a new one cannot be written. But every person can
+   already write their OWN leaderboard row and read everyone's, which is
+   enough:
+
+     I ask     -> MY row lists their public id in `freq`
+     they see  -> their client reads the board it already loads and
+                  finds a row naming them
+     they say yes -> THEIR row lists my public id in `facc`
+     we are friends when either row has accepted the other
+
+   Nobody writes a document they do not own at any point, so a request
+   cannot be forged or deleted by the app, and no rules change is
+   needed. It also means a friend request is only visible between two
+   people who both have class sharing on, which is the honest limit of
+   doing this without a server.
+
+   THE FRIEND CODE IS NOT THE SYNC CODE and is not the public id either.
+   XXX-XXX, deliberately a different shape from the sync code's
+   XXXX-XXXX so the two can never be mistaken for one another in a
+   message, and generated independently - never a prefix, hash or
+   transform of anything secret. It is a HANDLE: it is published in the
+   row so somebody can be found by it, and holding one lets you ask to
+   be a friend and nothing else. */
+function generateFriendCode(){
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let out = "";
+  for(let i = 0; i < 6; i++){
+    if(i === 3) out += "-";
+    out += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return out;
+}
+const FRIEND_CODE_RE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{3}-[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{3}$/;
+
+function friendCodeOf(){
+  if(!store.friendCode){
+    store.friendCode = generateFriendCode();
+    saveStore();
+  }
+  return store.friendCode;
+}
+
+/* Everyone the board knows about, by public id, so every screen here
+   reads one map rather than scanning the array again. `leaderboardRows`
+   is whatever the last snapshot delivered. */
+let leaderboardRows = [];
+/* ONLINE, WITHOUT A PRESENCE SYSTEM. Every row already carries
+   `lastModified`, written on every push - so somebody whose row moved in
+   the last few minutes has the app open. That is not a heartbeat and it
+   does not claim to be: it is "active recently", which is the honest
+   thing a green dot means anyway, and it costs nothing extra on a
+   database forty people share.
+   Five minutes because a push happens on every save - answering a
+   question, finishing a run, opening the board - so anybody actually
+   using the app refreshes it well inside that, while somebody who
+   closed it drops off soon enough to be believable. */
+const ONLINE_WINDOW_MS = 5 * 60 * 1000;
+function isOnline(entry){
+  return !!(entry && entry.lastModified &&
+            (Date.now() - entry.lastModified) < ONLINE_WINDOW_MS);
+}
+
+function rowsByPublicId(){
+  const m = {};
+  (leaderboardRows || []).forEach(e => { if(e && e.pub) m[e.pub] = e; });
+  return m;
+}
+
+/* FRIENDS ARE MUTUAL AND THE TEST IS SYMMETRIC: either I accepted them
+   or they accepted me. One accept is enough - the other half is the
+   request that prompted it, and requiring both to press a button would
+   mean the person who asked has to confirm their own question. */
+function friendPublicIds(){
+  const mine = new Set(store.friendsIn || []);
+  (leaderboardRows || []).forEach(e => {
+    if(e && e.pub && Array.isArray(e.facc) && e.facc.indexOf(store.publicId) >= 0) mine.add(e.pub);
+  });
+  mine.delete(store.publicId);
+  return [...mine];
+}
+
+/* Somebody whose row asks for me, that I have neither accepted nor
+   declined. Read off THEIR row, which is the only place it can be. */
+function incomingFriendRequests(){
+  const accepted = new Set(store.friendsIn || []);
+  const declined = new Set(store.friendsDeclined || []);
+  const friends = new Set(friendPublicIds());
+  return (leaderboardRows || []).filter(e =>
+    e && e.pub && e.pub !== store.publicId &&
+    Array.isArray(e.freq) && e.freq.indexOf(store.publicId) >= 0 &&
+    !accepted.has(e.pub) && !declined.has(e.pub) && !friends.has(e.pub));
+}
+
+/* Asked, not yet answered. */
+function outgoingFriendRequests(){
+  const friends = new Set(friendPublicIds());
+  return (store.friendsOut || []).filter(id => !friends.has(id));
+}
+
+function sendFriendRequest(code){
+  const want = (code || "").trim().toUpperCase();
+  /* THE EXAMPLE HAS TO BE A CODE THAT COULD EXIST. "ABC-123" was the
+     placeholder and the error text, and it is impossible: the alphabet
+     drops I, O, 1 and 0 so a 1 can never appear in one. Somebody
+     copying the shape from the hint would have been told their own
+     example was not a friend code. */
+  if(!FRIEND_CODE_RE.test(want)) return { ok: false, why: "That is not a friend code. They look like ABC-234." };
+  if(want === friendCodeOf()) return { ok: false, why: "That is your own code." };
+  const match = (leaderboardRows || []).find(e => e && e.fcode === want);
+  /* A code that matches nobody is the ordinary case while the other
+     person has not opened the app since this shipped, so it says so
+     rather than "no such person". */
+  if(!match || !match.pub) return { ok: false, why: "No one on the class board has that code yet. They may need to open the app once." };
+  if(friendPublicIds().indexOf(match.pub) >= 0) return { ok: false, why: (match.firstName || "They") + " is already a friend." };
+  if((store.friendsOut || []).indexOf(match.pub) < 0){
+    store.friendsOut = (store.friendsOut || []).concat([match.pub]);
+    saveStore();
+  }
+  return { ok: true, name: match.firstName || "They" };
+}
+
+function acceptFriendRequest(pub){
+  if(!pub) return;
+  if((store.friendsIn || []).indexOf(pub) < 0){
+    store.friendsIn = (store.friendsIn || []).concat([pub]);
+  }
+  store.friendsDeclined = (store.friendsDeclined || []).filter(x => x !== pub);
+  saveStore();
+}
+
+function declineFriendRequest(pub){
+  if(!pub) return;
+  /* Local only. Declining is not something the other person needs told,
+     and publishing it would mean writing "no" into a document they can
+     read, which is a worse thing to build than a quiet no. */
+  if((store.friendsDeclined || []).indexOf(pub) < 0){
+    store.friendsDeclined = (store.friendsDeclined || []).concat([pub]);
+    saveStore();
+  }
+}
+
+function removeFriend(pub){
+  store.friendsIn = (store.friendsIn || []).filter(x => x !== pub);
+  store.friendsOut = (store.friendsOut || []).filter(x => x !== pub);
+  /* Their row may still accept me, which would put them straight back.
+     Declining is what holds that off, so removing is a decline too. */
+  if((store.friendsDeclined || []).indexOf(pub) < 0){
+    store.friendsDeclined = (store.friendsDeclined || []).concat([pub]);
+  }
+  delete (store.lobbyInvitesOut || {})[pub];
+  saveStore();
+}
+
+/* ---- lobby invites, on the same mechanism ---- */
+function inviteFriendToLobby(pub, roomCode){
+  if(!pub || !roomCode) return;
+  store.lobbyInvitesOut = store.lobbyInvitesOut || {};
+  store.lobbyInvitesOut[pub] = { code: roomCode, at: Date.now() };
+  saveStore();
+  pushToCloud();
+}
+
+/* An invite is only live for a while - a room that finished an hour ago
+   is not an invitation, and nothing else clears it. */
+const LOBBY_INVITE_TTL_MS = 30 * 60 * 1000;
+function incomingLobbyInvites(){
+  const friends = new Set(friendPublicIds());
+  const now = Date.now();
+  return (leaderboardRows || []).filter(e => {
+    if(!e || !e.pub || !friends.has(e.pub)) return false;
+    const inv = e.inv && e.inv[store.publicId];
+    return !!(inv && inv.code && (now - (inv.at || 0)) < LOBBY_INVITE_TTL_MS);
+  }).map(e => ({ from: e, code: e.inv[store.publicId].code }));
+}
+
 function publicIdOf(){
   if(!store.publicId){
     store.publicId = generatePublicId();
@@ -24755,6 +25059,9 @@ function wipeLocalProgressAndSettings(){
   retireLeaderboardEntry(store.publicId);
   store.publicId = null;
   store.leaderboardKeyMigrated = true;
+  store.friendCode = null;
+  store.friendsOut = []; store.friendsIn = []; store.friendsDeclined = [];
+  store.lobbyInvitesOut = {};
   store.firstName = "";
   store.avatarChar = null;
   /* This is the actual fix for the reset glitch: everything else here
@@ -24917,6 +25224,16 @@ function pushToCloud(){
            self-heals on their next update. */
         week: weekKeyNow(),
         weekPoints: weekPointsOf(store),
+        /* THE FRIENDS FIELDS, in MY OWN row and nobody else's - see
+           "FRIENDS" above. `fcode` is the handle somebody types to find
+           me; `freq` is who I have asked; `facc` is who I have said yes
+           to; `inv` is a live lobby invite addressed to a friend.
+           Short names because this document is fetched by every client
+           on every snapshot and there are forty of them. */
+        fcode: friendCodeOf(),
+        freq: (store.friendsOut || []).slice(0, 100),
+        facc: (store.friendsIn || []).slice(0, 100),
+        inv: store.lobbyInvitesOut || {},
         lastModified: Date.now()
       }).catch(() => {});
     } catch(e){}
@@ -35574,7 +35891,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-23-137";
+const APP_BUILD = "2026-09-23-138";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -38711,6 +39028,11 @@ function createVirtualRoomLobby(units, timeLimit){
     timeLimit: timeLimit || null,
     status: "waiting",
     startAt: null,
+    /* The room's own mode, so the host can change it without everyone
+       leaving and rejoining. Exam is the default because a Virtual Room
+       is a race and Drill's retries make a race meaningless - but it is
+       the host's call now, which is the point. */
+    mode: "exam",
     createdAt: Date.now(),
     participants: {
       [publicIdOf()]: { name: myName, avatarChar: store.avatarChar || "ninja", level: levelOf(store), badges: badgeCountOf(store), mystery: mysteryColorsFoundCount(), joinedAt: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false }
@@ -38797,6 +39119,78 @@ function joinVirtualRoomLobby(code){
       showVirtualRoomLobby();
     });
   }).catch(() => { showToast("Couldn't reach that lobby \u2014 try again."); });
+}
+
+/* Who to invite, as a sheet rather than a screen: it is a short list
+   of people and it opens over the lobby you are already in. */
+function openInviteFriendsSheet(roomCode){
+  const rows = rowsByPublicId();
+  const ids = friendPublicIds();
+  const people = ids.map(id => rows[id]).filter(Boolean);
+
+  const overlay = document.createElement("div");
+  overlay.className = "invite-overlay";
+  const sheet = document.createElement("div");
+  sheet.className = "invite-sheet";
+
+  const h = document.createElement("p");
+  h.className = "invite-sheet-title"; h.textContent = "Invite friends";
+  sheet.appendChild(h);
+
+  if(!people.length){
+    const none = document.createElement("p");
+    none.className = "friend-hint";
+    none.textContent = ids.length
+      ? "None of your friends are on the class board right now."
+      : "No friends yet \u2014 add someone from Profile \u203a Friends first.";
+    sheet.appendChild(none);
+  } else {
+    const list = document.createElement("div");
+    list.className = "invite-list";
+    people.forEach(e => {
+      const row = document.createElement("div");
+      row.className = "friend-row";
+      const art = document.createElement("div");
+      art.className = "friend-row-art";
+      art.appendChild(decorateAvatar(e.avatarChar || AVATAR_CHARACTERS[0].id,
+        rankOfStats(e.level || 0, e.badges || 0, e.mystery || 0)));
+      const text = document.createElement("div");
+      text.className = "friend-row-text";
+      const nm = document.createElement("p");
+      nm.className = "friend-row-name"; nm.textContent = e.firstName || "Anonymous";
+      text.appendChild(nm);
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "next friend-act";
+      const already = (store.lobbyInvitesOut || {})[e.pub];
+      const sent = !!(already && already.code === roomCode);
+      b.textContent = sent ? "Invited" : "Invite";
+      b.disabled = sent;
+      b.addEventListener("click", () => {
+        inviteFriendToLobby(e.pub, roomCode);
+        b.textContent = "Invited"; b.disabled = true;
+      });
+      row.append(art, text, b);
+      list.appendChild(row);
+    });
+    sheet.appendChild(list);
+  }
+
+  const close = document.createElement("button");
+  close.type = "button"; close.className = "next ghost invite-close";
+  close.textContent = "Done";
+  const shut = () => overlay.remove();
+  close.addEventListener("click", shut);
+  overlay.addEventListener("click", ev => { if(ev.target === overlay) shut(); });
+  sheet.appendChild(close);
+  overlay.appendChild(sheet);
+  /* On <body> rather than #stage, like every other overlay here -
+     #stage animates, and a transform on an ancestor re-parents a fixed
+     element's containing block. So it takes the one-shot observer that
+     clears it on the next screen change, the same as .daily-alert. */
+  document.body.appendChild(overlay);
+  const obs = new MutationObserver(() => { overlay.remove(); obs.disconnect(); });
+  obs.observe(stage, { childList: true });
+  requestAnimationFrame(() => overlay.classList.add("invite-overlay-show"));
 }
 
 function showVirtualRoomLobby(){
@@ -38935,6 +39329,75 @@ function showVirtualRoomLobby(){
     l2.className = "vroom-test-summary-line";
     l2.textContent = data.timeLimit ? data.timeLimit + " minute time limit" : "No time limit";
     testSummary.append(t, l1, l2);
+
+    /* THE UNITS, NAMED. "the units being taken should be displayed so
+       everyone can see which units are being taken" - and until now
+       every person who joined a three-unit room was told "3 units" and
+       had to ask which. The summary line above stays as the count,
+       because it is what fits on one line; this is the list under it,
+       and it is for everybody in the room rather than only the host. */
+    if(units.length){
+      const chips = document.createElement("div");
+      chips.className = "vroom-unit-chips";
+      units.forEach(name => {
+        const c = document.createElement("span");
+        c.className = "vroom-unit-chip";
+        c.textContent = name;
+        chips.appendChild(c);
+      });
+      testSummary.appendChild(chips);
+    }
+
+    /* THE HOST'S CONTROLS, in the same block as the thing they change.
+       Asked for there: "The button for the lobby creator can be in
+       that same section." A control that changes the mode belongs
+       beside the mode it is changing, not in a separate row further
+       down the screen. */
+    if(vroomIsHost){
+      const hostBar = document.createElement("div");
+      hostBar.className = "vroom-host-bar";
+
+      /* MODE, CHANGEABLE AT ANY TIME while the room is still waiting -
+         "the lobby creator should be able to change the mode its in at
+         anytime". It is a field write on the room document, so every
+         joiner's next snapshot redraws with the new mode; nobody has to
+         leave and rejoin. Locked once the test is running, because
+         changing the rules underneath people mid-test is not a feature. */
+      const modeWrap = document.createElement("div");
+      modeWrap.className = "vroom-host-modes";
+      const modeLab = document.createElement("span");
+      modeLab.className = "vroom-host-lab"; modeLab.textContent = "Mode";
+      modeWrap.appendChild(modeLab);
+      const running = data.status && data.status !== "waiting";
+      [["exam", "Exam"], ["drill", "Drill"]].forEach(([key, label]) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "vroom-host-mode" + ((data.mode || "exam") === key ? " on" : "");
+        b.textContent = label;
+        b.disabled = !!running;
+        b.addEventListener("click", () => {
+          if(!fbDb || !vroomCode) return;
+          fbDb.collection("vrooms").doc(vroomCode).update({ mode: key })
+            .catch(() => showToast("Couldn't change the mode \u2014 try again."));
+        });
+        modeWrap.appendChild(b);
+      });
+      hostBar.appendChild(modeWrap);
+
+      /* INVITE FRIENDS, host only, and it goes here for the same
+         reason. Each tap addresses the room code to one friend's
+         public id in MY OWN leaderboard row - see "FRIENDS" - so their
+         client can offer to join. Nobody writes anybody else's
+         document at any point. */
+      const inviteBtn = document.createElement("button");
+      inviteBtn.type = "button";
+      inviteBtn.className = "next ghost vroom-invite-btn";
+      inviteBtn.textContent = "Invite friends";
+      inviteBtn.addEventListener("click", () => openInviteFriendsSheet(vroomCode));
+      hostBar.appendChild(inviteBtn);
+
+      testSummary.appendChild(hostBar);
+    }
   }
 
   /* Kept as its own named function (rather than one inline onSnapshot
@@ -39043,7 +39506,20 @@ function showVirtualRoomLobby(){
         autostartNote.classList.add("all-ready");
         autostartNote.textContent = "Starting\u2026";
         detachVroomListener();
-        if(vroomChatUnsubscribe){ vroomChatUnsubscribe(); vroomChatUnsubscribe = null; }
+        /* THE CHAT LISTENER STAYS UP THROUGH THE TEST. It used to be
+           torn down right here, which is the entire reason nothing
+           reached you once a race began: somebody could be typing and
+           you would never know.
+           Asked for as "have the chat available during the test, it
+           will prevent if someone says something in the chat but dont
+           show the entire chat" - so what survives is the LISTENER and
+           the one-line notice it raises, not the panel. The panel was
+           built into the lobby's own DOM and goes when the stage is
+           replaced; only announceChatMessage's alert lives on <body>,
+           and that is exactly the part worth keeping.
+           It is still torn down on every path that actually leaves the
+           room - Leave lobby, Back to Home from the results, and the
+           next lobby's own rebuild. */
         beginVroomStartSequence(data.units, data.timeLimit, data.startAt);
       }
     }, { onError: () => {
@@ -39175,11 +39651,24 @@ function beginVirtualRoomTest(units, timeLimit, startAt){
 const TYPING_WRITE_MS = 2200;
 const TYPING_STALE_MS = 5000;
 
+/* A PERSON'S COLOUR IS A PROPERTY OF THAT PERSON, NOT OF THEIR
+   POSITION IN THE ROOM. This used to be
+   `Object.keys(participants).indexOf(key)` - the index of their entry
+   in the participants object - which is a number that MOVES. Firestore
+   does not promise key order across snapshots, and anyone joining or
+   leaving shifts everybody after them by one, so a colour could change
+   on any update to the room. Reported exactly that way: "peoples chat
+   colors randomly kept changing colors."
+   Hashing the key instead makes it stable for the whole life of the
+   room and the same on every device, which is the thing that actually
+   matters: two people looking at the same lobby have to see the same
+   person in the same colour, and an index cannot promise that either. */
 function vroomColorFor(key, participants){
-  if(!key || !participants) return null;
-  const keys = Object.keys(participants);
-  const i = keys.indexOf(key);
-  return i < 0 ? null : VROOM_RACE_COLORS[i % VROOM_RACE_COLORS.length];
+  if(!key) return null;
+  if(participants && !participants[key]) return null;
+  let h = 0;
+  for(let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+  return VROOM_RACE_COLORS[h % VROOM_RACE_COLORS.length];
 }
 
 const VROOM_RACE_COLORS = ["#F5804D", "#3DA9FC", "#3DD68C", "#F5C84D", "#C23B7A", "#8E7CF5", "#4DD0E1", "#F56D6D"];
@@ -39427,12 +39916,27 @@ function buildVroomChatPanel(container){
     text.className = "vroom-chat-alert-text";
     text.textContent = msg.text || "";
     bar.append(who, text);
+    /* Parked below whatever the current screen puts along its top, the
+       same measurement the update notice, the daily alert and the flare
+       banner all share. On the lobby that is nothing and it sits at the
+       CSS offset; on a question it is the counter, Pause and the meter,
+       and without this it lands squarely on all three. */
     bar.addEventListener("click", () => {
       clearTimeout(alertTimer);
       bar.remove(); alertEl = null;
       if(!sheetOpen) openSheet();
     });
     document.body.appendChild(bar);
+    /* Measured AFTER it is in the document - topNoticeOffset reads the
+       banner's own box to exclude it from what it measures against, and
+       a node that is not mounted has no box. */
+    const topOffset = topNoticeOffset(bar);
+    if(topOffset != null){
+      bar.style.transition = "none";
+      bar.style.top = Math.round(topOffset) + "px";
+      void bar.offsetHeight;
+      bar.style.transition = "";
+    }
     alertEl = bar;
     requestAnimationFrame(() => bar.classList.add("show"));
     alertTimer = setTimeout(() => {
@@ -40601,6 +41105,232 @@ function showCustomize(){
    relaunch puts it back on the month grid. */
 let calendarView = "month";
 
+/* ---------- Friends -----------------------------------------------------
+   Four things on one screen, in the order they matter: somebody waiting
+   on an answer, your own code to hand out, a box to add one, and the
+   people you already have. Requests go first because they are the only
+   part that involves somebody else waiting. */
+function showFriends(){
+  window.forceHideBottomTabs = false;
+  setActiveNav("profile");
+  countEl.textContent = "Friends";
+  updateHeaderTitle();
+
+  const panel = document.createElement("section");
+  panel.className = "panel screen-friends";
+
+  const back = document.createElement("button");
+  back.type = "button"; back.className = "back-link";
+  back.textContent = "\u2039 Profile";
+  back.addEventListener("click", () => showProfile("profile"));
+  panel.appendChild(back);
+
+  const title = document.createElement("p");
+  title.className = "cal-title"; title.textContent = "Friends";
+  panel.appendChild(title);
+
+  const rows = rowsByPublicId();
+
+  /* A person, drawn the way every other screen draws one - through
+     decorateAvatar, so a classmate looks the same here as on the board
+     and in a lobby. Two row builders for one idea is how the rankings
+     boards kept a level chip for weeks after it came off everywhere. */
+  function personRow(entry, actions){
+    const row = document.createElement("div");
+    row.className = "friend-row";
+    const art = document.createElement("div");
+    art.className = "friend-row-art";
+    art.appendChild(decorateAvatar(entry.avatarChar || AVATAR_CHARACTERS[0].id,
+      rankOfStats(entry.level || 0, entry.badges || 0, entry.mystery || 0)));
+    /* The dot goes on the AVATAR, bottom-right, opposite the rank
+       emblem's top-left coin - so a row carries at most one mark in
+       each corner and they cannot land on each other. */
+    const online = isOnline(entry);
+    if(online){
+      const dot = document.createElement("span");
+      dot.className = "friend-online-dot";
+      dot.title = "Online now";
+      art.appendChild(dot);
+    }
+    const text = document.createElement("div");
+    text.className = "friend-row-text";
+    const nm = document.createElement("p");
+    nm.className = "friend-row-name";
+    nm.textContent = entry.firstName || "Anonymous";
+    const sub = document.createElement("p");
+    sub.className = "friend-row-sub" + (online ? " is-online" : "");
+    sub.textContent = online
+      ? "Online now"
+      : "Level " + (entry.level || 0) + " \u00b7 " + (entry.hundos || 0) +
+        ((entry.hundos === 1) ? " hundo" : " hundos");
+    text.append(nm, sub);
+    row.append(art, text);
+    if(actions){
+      const acts = document.createElement("div");
+      acts.className = "friend-row-acts";
+      actions.forEach(a => acts.appendChild(a));
+      row.appendChild(acts);
+    }
+    return row;
+  }
+  function actBtn(label, cls, fn){
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "next " + cls + " friend-act";
+    b.textContent = label;
+    b.addEventListener("click", fn);
+    return b;
+  }
+
+  /* ---- waiting on you ---- */
+  const pending = incomingFriendRequests();
+  if(pending.length){
+    const sect = document.createElement("div");
+    sect.className = "sect friend-sect friend-sect-pending";
+    const h = document.createElement("p");
+    h.className = "sect-label";
+    h.textContent = pending.length === 1 ? "1 friend request" : pending.length + " friend requests";
+    sect.appendChild(h);
+    pending.forEach(e => {
+      sect.appendChild(personRow(e, [
+        actBtn("Accept", "", () => {
+          acceptFriendRequest(e.pub);
+          pushToCloud();
+          showToast((e.firstName || "They") + " is now a friend.", "good");
+          showFriends();
+        }),
+        actBtn("Decline", "ghost", () => {
+          declineFriendRequest(e.pub);
+          showFriends();
+        })
+      ]));
+    });
+    panel.appendChild(sect);
+  }
+
+  /* ---- your own code ---- */
+  const mine = document.createElement("div");
+  mine.className = "sect friend-sect";
+  const mh = document.createElement("p");
+  mh.className = "sect-label"; mh.textContent = "Your friend code";
+  const codeWrap = document.createElement("div");
+  codeWrap.className = "friend-mycode-wrap";
+  const codeEl = document.createElement("p");
+  codeEl.className = "friend-mycode";
+  codeEl.textContent = friendCodeOf();
+  const copyBtn = actBtn("Copy", "ghost", () => {
+    try {
+      navigator.clipboard.writeText(friendCodeOf());
+      showToast("Friend code copied.");
+    } catch(e){ showToast("Your code is " + friendCodeOf()); }
+  });
+  codeWrap.append(codeEl, copyBtn);
+  const mhint = document.createElement("p");
+  mhint.className = "friend-hint";
+  /* Said plainly, because a code people share needs somebody to know
+     what it does and does not do. */
+  mhint.textContent = "Give this to a classmate so they can add you. It is not your sync code and it cannot be used to sign in as you.";
+  mine.append(mh, codeWrap, mhint);
+  panel.appendChild(mine);
+
+  /* ---- add someone ---- */
+  const add = document.createElement("div");
+  add.className = "sect friend-sect";
+  const ah = document.createElement("p");
+  ah.className = "sect-label"; ah.textContent = "Add a friend";
+  const addRow = document.createElement("div");
+  addRow.className = "friend-add-row";
+  const input = document.createElement("input");
+  input.type = "text"; input.className = "searchbox friend-add-input";
+  input.placeholder = "ABC-234"; input.maxLength = 7;
+  input.autocapitalize = "characters"; input.autocomplete = "off"; input.spellcheck = false;
+  const send = actBtn("Send", "", () => {
+    const r = sendFriendRequest(input.value);
+    if(!r.ok){ showToast(r.why); return; }
+    pushToCloud();
+    showToast("Request sent to " + r.name + ".", "good");
+    showFriends();
+  });
+  input.addEventListener("keydown", ev => { if(ev.key === "Enter") send.click(); });
+  addRow.append(input, send);
+  add.append(ah, addRow);
+  panel.appendChild(add);
+
+  /* ---- the people you have ---- */
+  const list = document.createElement("div");
+  list.className = "sect friend-sect";
+  const lh = document.createElement("p");
+  lh.className = "sect-label";
+  {
+    const onlineN = friendPublicIds().map(id => rows[id]).filter(isOnline).length;
+    lh.textContent = "Your friends" + (onlineN ? "  \u00b7  " + onlineN + " online" : "");
+  }
+  list.appendChild(lh);
+  const ids = friendPublicIds();
+  const known = ids.map(id => rows[id]).filter(Boolean);
+  if(!store.leaderboardOptIn){
+    const off = document.createElement("p");
+    off.className = "friend-hint";
+    off.textContent = "Turn on class sharing in Settings to use friends \u2014 it is what puts you and your friends on the class board, which is where this reads from.";
+    list.appendChild(off);
+  } else if(!ids.length){
+    const none = document.createElement("p");
+    none.className = "friend-hint";
+    none.textContent = "Nobody yet. Send someone your code, or add theirs above.";
+    list.appendChild(none);
+  } else {
+    /* Online first, then by name. A friends list is for finding
+       somebody to play right now, and burying the two people who are
+       actually here under eight who are not is the one thing it must
+       not do. */
+    known.sort((a, b) => (isOnline(b) ? 1 : 0) - (isOnline(a) ? 1 : 0)
+      || (a.firstName || "").localeCompare(b.firstName || ""));
+    known.forEach(e => {
+      list.appendChild(personRow(e, [
+        actBtn("Remove", "ghost", () => {
+          if(!window.confirm("Remove " + (e.firstName || "this friend") + "?")) return;
+          removeFriend(e.pub);
+          pushToCloud();
+          showFriends();
+        })
+      ]));
+    });
+    /* Somebody on your list whose row has not loaded - they have not
+       opened the app since, or turned sharing off. Named rather than
+       silently dropped, so a friends list of four does not quietly
+       become three. */
+    const missing = ids.length - known.length;
+    if(missing > 0){
+      const m = document.createElement("p");
+      m.className = "friend-hint";
+      m.textContent = missing === 1
+        ? "1 friend is not on the board right now."
+        : missing + " friends are not on the board right now.";
+      list.appendChild(m);
+    }
+  }
+  panel.appendChild(list);
+
+  /* ---- asked, not yet answered ---- */
+  const out = outgoingFriendRequests().map(id => rows[id]).filter(Boolean);
+  if(out.length){
+    const os = document.createElement("div");
+    os.className = "sect friend-sect";
+    const oh = document.createElement("p");
+    oh.className = "sect-label"; oh.textContent = "Waiting on them";
+    os.appendChild(oh);
+    out.forEach(e => os.appendChild(personRow(e, [
+      actBtn("Cancel", "ghost", () => {
+        store.friendsOut = (store.friendsOut || []).filter(x => x !== e.pub);
+        saveStore(); pushToCloud(); showFriends();
+      })
+    ])));
+    panel.appendChild(os);
+  }
+
+  stage.replaceChildren(panel);
+  toTop();
+}
+
 function showCalendar(){
   setActiveNav(null);
   countEl.textContent = "Calendar";
@@ -41503,6 +42233,20 @@ function showProfile(defaultTab){
   classLine.textContent = "View class calendar";
   classLine.addEventListener("click", showCalendar);
   classBtns.appendChild(classLine);
+
+  /* FRIENDS, beside the calendar as a second destination. Both are
+     places to GO rather than facts about you, which is the rule that
+     put the calendar down here rather than inside the card above. The
+     count of people waiting on an answer rides on the label, because a
+     request nobody is told about is a request nobody answers. */
+  const friendsLine = document.createElement("button");
+  friendsLine.type = "button";
+  friendsLine.className = "next ghost profile-classcard-btn profile-classline";
+  const pendingN = incomingFriendRequests().length;
+  friendsLine.textContent = "Friends" + (pendingN ? "  \u00b7  " + pendingN + " waiting" : "");
+  if(pendingN) friendsLine.classList.add("has-pending");
+  friendsLine.addEventListener("click", showFriends);
+  classBtns.appendChild(friendsLine);
   classSect.appendChild(classBtns);
 
   /* ---------- level and badges ----------------------------------------
@@ -42054,6 +42798,9 @@ function showRankings(defaultBoard){
           next.push(e);
         });
         entries = next; loaded = true;
+        /* Shared with the Friends screen, which needs the same rows and
+           must not open a second listener on the same collection. */
+        leaderboardRows = next;
         paint();
       }, { onError: showError });
     } catch(e){ showError(); }
