@@ -160,11 +160,23 @@ with sync_playwright() as pw:
                         "localStorage.setItem('class26e.synccode','AAAA-1111');}catch(e){}" % STORE)
     pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
     pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __fake([]);}")
+    # THE ROW IS KEYED BY THE PUBLIC ID NOW, so what has to be retired
+    # is the old PUBLIC id's row, not the old sync code's - the sync
+    # code is not a document id anywhere any more, and retiring by it
+    # would delete nothing at all. This check named the sync code and
+    # went red on the build that fixed the exposure: the same
+    # stale-decision trap this repo has now watched take out five
+    # separate gates. It asserts the RELATIONSHIP instead - whatever id
+    # this device was publishing under before the swap is the one that
+    # gets deleted.
+    was = pg.evaluate("()=>(typeof publicIdOf==='function'?publicIdOf():null)")
     pg.evaluate("()=>{ __deleted.length = 0; setSyncCode('BBBB-2222'); }")
     pg.wait_for_timeout(200)
     dele = pg.evaluate("()=>__deleted.slice()")
-    check("linking to another code deletes the old row",
-          "leaderboard/AAAA-1111" in dele, str(dele))
+    check("linking to another code retires the row it was publishing under",
+          bool(was) and ("leaderboard/" + was) in dele, str(dele) + " was=" + str(was))
+    check("and does not retire it by the sync code, which keys nothing",
+          "leaderboard/AAAA-1111" not in dele, str(dele))
     check("linking does NOT delete the old progress doc",
           not any(d.startswith("progress/") for d in dele), str(dele))
     pg.evaluate("()=>{ __deleted.length = 0; retireLeaderboardEntry(syncCode); clearSyncCode(true); }")
@@ -218,6 +230,53 @@ with sync_playwright() as pw:
         check("%s -> %s" % (s["label"], "reset" if s["reset"] else "no reset"),
               got[i] == s["reset"], "fired=%s" % got[i])
     ctx.close()
+
+    # ---- 7. the sync code never reaches a collection anyone can list ----
+    # `leaderboard` and `vrooms` can both be ENUMERATED by anyone - this
+    # repo's own firestore-admin.py lists them over plain REST with no
+    # credentials, which is the access every classmate has - and the sync
+    # code IS the account. For a long time the document id on both WAS
+    # the sync code, so opening the Rankings screen handed the client
+    # every classmate's account key beside their name and avatar.
+    # This captures every write the app would make to a listable
+    # collection and asserts the secret is in none of them, in any
+    # position: not as a document id, not as a participant key, not as a
+    # field value. It fails on build 136 and every build before it.
+    print("\n7. the sync code never reaches a collection anyone can list")
+    ctx = br.new_context(viewport={"width": 834, "height": 1194})
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % STORE)
+    pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
+    pg.evaluate("()=>document.getElementById('splashscreen')?.remove()")
+    r = pg.evaluate("""()=>{
+      const wrote = [];
+      fbDb = { collection: name => ({
+          doc: id => ({
+            set: d => { wrote.push({ col:name, id:id, data:d }); return Promise.resolve(); },
+            update: d => { wrote.push({ col:name, id:id, data:d }); return Promise.resolve(); },
+            get: () => Promise.resolve({ exists:false }),
+            delete: () => Promise.resolve()
+          })
+        }) };
+      store.leaderboardOptIn = true;
+      pushToCloud();
+      /* And a Virtual Room, which keys its PARTICIPANTS by the same id
+         and lives in a collection that is just as listable. */
+      try { createVirtualRoom(['Identity Crimes']); } catch(e){}
+      const pub = store.publicId;
+      const listable = wrote.filter(w => w.col === 'leaderboard' || w.col === 'vrooms');
+      const flat = JSON.stringify(listable);
+      return { pub: pub, n: listable.length,
+               idIsSecret: listable.some(w => w.id === syncCode),
+               secretAnywhere: flat.indexOf(syncCode) >= 0,
+               allPublic: listable.length > 0 && listable.every(w => w.id === pub || w.col === 'vrooms'),
+               derived: !!(pub && (syncCode.indexOf(pub) >= 0
+                          || pub.indexOf(syncCode.replace('-','')) >= 0)) };}""")
+    check("this device publishes something to check", r["n"] > 0, str(r))
+    check("no document id is the sync code", r["idIsSecret"] is False, str(r))
+    check("the sync code is nowhere in any of it", r["secretAnywhere"] is False, str(r))
+    check("the public id is not derived from the secret", r["derived"] is False, str(r))
+    ctx.close()
+
     br.close()
 
 srv.shutdown()

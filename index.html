@@ -23298,127 +23298,109 @@ function buildAvatarCharSVG(charId){
      three hairlines that turn to mush at 26px, and a lit crack reads at
      any size. */
   if(def.kind === "zeus"){
-    /* THE VALUE STACK, which took three passes to get right and is the
-       whole of why this one works.
+    /* MORE MARBLE, LESS FACE. Asked for again - "it needs to look more
+       like a Greek statue" - and the fault was that the previous pass
+       solved a legibility problem in a way that fought the material.
+       It had big DARK almond eyes, put there because every character in
+       this set that reads at 34px reads on its eyes. But a dark eye is
+       a hole, and a statue has no holes: the single most recognisable
+       thing about Greek sculpture is the blank pupil-less stare, where
+       the eye is the SAME STONE as the cheek and exists only as a
+       shadow. Dark eyes made this a mask in stone colours.
+       So the eye is marble now, set back in a shadowed socket with a
+       heavy lid over it, and the legibility comes from the socket's
+       shadow rather than from a dark fill. Everything else pushes the
+       same way: the brow and the nose are ONE unbroken line (the Greek
+       profile, and the single most quoted thing about these heads), the
+       hair and beard are rows of drilled curls rather than masses, and
+       the whole palette is within a few levels of itself. The gold
+       laurel is the only colour on it, which is what makes it read as
+       stone rather than as a pale person. */
+    const face  = headGrad("#F4F2EC", "#E2DFD4", "#BEBAAD");
+    const shade = headGrad("#DAD6C9", "#C2BDAE", "#9B968A");
+    const deep  = "#A9A396";
+    const robe  = headGrad("#4A5264", "#333A48", "#1D222B");
 
-       Pass 1 carved everything out of one pale marble: a featureless
-       grey egg. Pass 2 made the hair and beard much DARKER than the
-       face, and that was worse - the dark beard and the dark robe
-       merged into one mass that swallowed the cheeks and the thing
-       came out a tiki mask.
-
-       The wizard is the model, because his beard reads at 34px and
-       Zeus's did not: face mid, beard LIGHTER than the face, robe
-       darkest. Marble in shadow is still marble, so the separation
-       between face, beard and hair comes from CUT LINES, not from
-       three different greys - which is also what carving actually
-       looks like. One dark thing (the robe), three marbles a step
-       apart, and gold. */
-    const face  = headGrad("#F2ECDC", "#DCD4C0", "#B6AE99");
-    const beard = headGrad("#FBF8F0", "#EBE5D6", "#C6C0AF");
-    const hair  = headGrad("#E4DCC8", "#CCC4AE", "#A29A86");
-    const robe  = headGrad("#465063", "#2E3644", "#191E27");
-    const cut   = "#8A8270";
-
-    svg.appendChild(mk("path", { d: "M6.6 40 Q7.4 32.6 14.4 30.6 L25.6 30.6 Q32.6 32.6 33.4 40 Z", fill: robe }));
-    svg.appendChild(mk("path", { d: "M14.4 30.6 L20 37.2 L25.6 30.6 L23.2 29.9 L20 33.8 L16.8 29.9 Z",
-                                 fill: "#5A657A" }));
+    svg.appendChild(mk("path", { d: "M6.2 40 Q7 31.4 14.2 29.2 L25.8 29.2 Q33 31.4 33.8 40 Z", fill: robe }));
+    svg.appendChild(mk("path", { d: "M13.8 29.4 L20 36.2 L26.2 29.4 L23.6 28.6 L20 32.8 L16.4 28.6 Z",
+                                 fill: "#5D6679" }));
 
     svg.appendChild(mk("ellipse", { cx: 20, cy: 21.2, rx: 9.2, ry: 10, fill: face }));
-    svg.appendChild(mk("ellipse", { cx: 11, cy: 22, rx: 1.7, ry: 2.4, fill: face }));
-    svg.appendChild(mk("ellipse", { cx: 29, cy: 22, rx: 1.7, ry: 2.4, fill: face }));
+    svg.appendChild(mk("ellipse", { cx: 11.2, cy: 22, rx: 1.6, ry: 2.2, fill: shade }));
+    svg.appendChild(mk("ellipse", { cx: 28.8, cy: 22, rx: 1.6, ry: 2.2, fill: shade }));
 
-    /* The beard starts at the JAW, not at the cheekbones. The version
-       that started level with the eyes left the face a pale strip and
-       is what made it read as a mask rather than a head. */
-    svg.appendChild(mk("path", {
-      d: "M11.2 22.4 Q11.6 30.6 15.4 34.4 Q17.6 36.8 20 36.8 Q22.4 36.8 24.6 34.4 "
-       + "Q28.4 30.6 28.8 22.4 Q24.8 27.4 20 27.4 Q15.2 27.4 11.2 22.4 Z",
-      fill: beard }));
-    /* THE CHEEK LINE. Face and beard are one step apart on purpose
-       (marble in shadow is still marble), and one step apart means the
-       boundary between them has to be DRAWN or the lower half of the
-       head is one pale mass with a mouth floating in it. This single
-       stroke is what separates them; the values do not. */
-    svg.appendChild(mk("path", { d: "M11.4 22.6 Q15.4 27.6 20 27.6 Q24.6 27.6 28.6 22.6",
-                                 fill: "none", stroke: cut, "stroke-width": ".48",
-                                 "stroke-linecap": "round", opacity: ".6" }));
-    /* The cuts. Three of them, and they are what turns a pale blob into
-       something carved - the only thing in the beard that is dark. */
-    [[15.6, 29.6, 5.6], [20, 31, 5.8], [24.4, 29.6, 5.6]].forEach(([x, y, len]) =>
-      svg.appendChild(mk("path", { d: "M" + x + " " + y + " q.45 " + (len / 2) + " .05 " + len,
-                                   fill: "none", stroke: cut, "stroke-width": ".5",
-                                   "stroke-linecap": "round", opacity: ".75" })));
-    /* The moustache, over the beard rather than beside it, and in the
-       HAIR marble rather than the beard's - it is the one place the
-       lower face needs a third value or the mouth disappears. */
-    svg.appendChild(mk("path", { d: "M14.8 24.8 Q17.4 22.9 20 24.6 Q22.6 22.9 25.2 24.8 Q22.6 27.1 20 25.9 Q17.4 27.1 14.8 24.8 Z",
-                                 fill: hair }));
-    svg.appendChild(mk("path", { d: "M14.9 24.9 Q17.4 23.1 20 24.7 Q22.6 23.1 25.1 24.9",
-                                 fill: "none", stroke: cut, "stroke-width": ".38",
-                                 "stroke-linecap": "round", opacity: ".55" }));
-    svg.appendChild(mk("path", { d: "M17.4 25.9 Q20 26.7 22.6 25.9", fill: "none",
-                                 stroke: cut, "stroke-width": ".42", "stroke-linecap": "round" }));
+    /* THE BEARD, as drilled curls in rows. Carved hair is a field of
+       holes catching shadow, never a silhouette with lines on it - the
+       drill is literally the tool, and rows of small discs is what it
+       leaves. A mass with three strokes on it is what the last pass
+       had, and it read as a beard drawn on stone. */
+    svg.appendChild(mk("path", { d: "M11.8 21.6 Q12.1 30.4 15.6 34.2 Q17.7 36.4 20 36.8 Q22.3 36.4 24.4 34.2 Q27.9 30.4 28.2 21.6 Q26.6 26.4 24 27.4 Q22.1 28 20 28 Q17.9 28 16 27.4 Q13.4 26.4 11.8 21.6 Z",
+                                 fill: shade }));
+    [[13.6, 24.6], [16.2, 26.4], [20, 27.2], [23.8, 26.4], [26.4, 24.6],
+     [14.8, 28.8], [17.6, 30.4], [20, 31.4], [22.4, 30.4], [25.2, 28.8],
+     [16.9, 33.2], [20, 34.4], [23.1, 33.2]].forEach(([cx, cy]) =>
+      svg.appendChild(mk("circle", { cx: cx, cy: cy, r: 1.28, fill: "none",
+                                     stroke: deep, "stroke-width": ".42", opacity: ".85" })));
+    /* The moustache, one step darker so the mouth is not lost in it. */
+    svg.appendChild(mk("path", { d: "M14.9 23.9 Q17.5 22.5 20 24.2 Q22.5 22.5 25.1 23.9 Q22.5 26.6 20 25.4 Q17.5 26.6 14.9 23.9 Z",
+                                 fill: shade }));
+    svg.appendChild(mk("path", { d: "M17.4 25.2 Q20 26.1 22.6 25.2", fill: "none",
+                                 stroke: deep, "stroke-width": ".44", "stroke-linecap": "round" }));
 
-    /* CLASSICAL CURLS, as a row of discs along the hairline. A smooth
-       cap in a slightly different grey is invisible from two feet
-       away; seven overlapping circles say "carved Greek hair" at any
-       size, and they are the one silhouette cue that survives 26px. */
-    svg.appendChild(mk("path", { d: "M20 10.5 Q29.7 11.1 30.3 19.4 Q28.2 16.4 25.6 15.2 Q23.1 13.4 20 13.4 Q16.9 13.4 14.4 15.2 Q11.8 16.4 9.7 19.4 Q10.3 11.1 20 10.5 Z",
-                                 fill: hair }));
-    [[12.5, 16.4, 1.85], [14.9, 13.9, 1.95], [17.5, 12.3, 2], [20, 11.8, 2.05],
-     [22.5, 12.3, 2], [25.1, 13.9, 1.95], [27.5, 16.4, 1.85]]
-      .forEach(([cx, cy, r]) => svg.appendChild(mk("circle", { cx: cx, cy: cy, r: r, fill: hair })));
-    [[12.5, 16.4, 1.85], [14.9, 13.9, 1.95], [17.5, 12.3, 2], [20, 11.8, 2.05],
-     [22.5, 12.3, 2], [25.1, 13.9, 1.95], [27.5, 16.4, 1.85]]
-      .forEach(([cx, cy, r]) => svg.appendChild(mk("circle",
-        { cx: cx, cy: cy, r: r * .52, fill: "none", stroke: cut,
-          "stroke-width": ".4", opacity: ".55" })));
+    /* The hair, the same drilled curls, low on the brow. */
+    svg.appendChild(mk("path", { d: "M20 10.4 Q29.6 11 30.2 19.6 Q28.2 16.6 25.6 15.4 Q23 13.6 20 13.6 Q17 13.6 14.4 15.4 Q11.8 16.6 9.8 19.6 Q10.4 11 20 10.4 Z",
+                                 fill: shade }));
+    [[12.6, 17], [15.2, 14.4], [17.8, 12.9], [20, 12.4], [22.2, 12.9], [24.8, 14.4], [27.4, 17],
+     [13.9, 19.4], [26.1, 19.4]].forEach(([cx, cy]) =>
+      svg.appendChild(mk("circle", { cx: cx, cy: cy, r: 1.5, fill: "none",
+                                     stroke: deep, "stroke-width": ".45", opacity: ".8" })));
 
-    /* BLANK CARVED EYES: large, dark, empty. Every character in this
-       set that reads on a rankings row reads because its eyes are big
-       and dark, and an empty almond is also the fastest way there is
-       to say statue. */
-    svg.appendChild(mk("path", { d: "M13.6 20.6 Q16.4 17.9 19.2 20.6 Q16.4 23 13.6 20.6 Z", fill: "#4A4433" }));
-    svg.appendChild(mk("path", { d: "M26.4 20.6 Q23.6 17.9 20.8 20.6 Q23.6 23 26.4 20.6 Z", fill: "#4A4433" }));
-    /* Brows well ABOVE the eyes, not resting on them - overlapping
-       them merged the two into one heavy bar. */
-    svg.appendChild(mk("path", { d: "M13.2 17.9 Q16.4 15.9 19.4 17.7 L19 18.7 Q16.3 17.3 13.7 18.9 Z", fill: hair }));
-    svg.appendChild(mk("path", { d: "M26.8 17.9 Q23.6 15.9 20.6 17.7 L21 18.7 Q23.7 17.3 26.3 18.9 Z", fill: hair }));
-    svg.appendChild(mk("path", { d: "M20 17.9 L20 22.8", fill: "none", stroke: "#B0A892",
-                                 "stroke-width": ".62", "stroke-linecap": "round" }));
+    /* THE EYES ARE MARBLE. A shadowed socket, a blank eyeball the same
+       stone as the face, and a heavy lid over the top of it. No pupil
+       and nothing dark - that blank stare is the whole tell, and it is
+       what a dark almond was standing in for. */
+    [[16.3, -1], [23.7, 1]].forEach(([cx, f]) => {
+      svg.appendChild(mk("ellipse", { cx: cx, cy: 20.3, rx: 2.5, ry: 2.15, fill: shade }));
+      svg.appendChild(mk("ellipse", { cx: cx, cy: 20.5, rx: 2.1, ry: 1.78, fill: face }));
+      /* The socket's own shadow, heaviest under the brow. */
+      svg.appendChild(mk("path", { d: "M" + (cx - 2.4) + " 19.7 Q" + cx + " 17.5 " + (cx + 2.4) + " 19.7 "
+                                    + "Q" + cx + " 19.2 " + (cx - 2.4) + " 19.7 Z", fill: deep, opacity: ".75" }));
+      svg.appendChild(mk("path", { d: "M" + (cx - 2.3) + " 20.2 Q" + cx + " 18.1 " + (cx + 2.3) + " 20.2",
+                                   fill: "none", stroke: deep, "stroke-width": ".5",
+                                   "stroke-linecap": "round" }));
+    });
 
-    /* THE LAUREL, IN GOLD. It is the only saturated colour on the tile
-       and it is what makes this read as Zeus rather than as a bust of
-       somebody - a stone laurel on stone hair was invisible, which is
-       the same mistake the beard made in a different place. */
+    /* THE GREEK PROFILE: brow and nose as ONE unbroken line, with no
+       dip at the bridge. It is the single most quoted thing about these
+       heads and it costs two paths. */
+    svg.appendChild(mk("path", { d: "M13.4 17.8 Q16.6 16.4 19.2 17.6 L19.4 18.5 Q16.6 17.4 13.9 18.8 Z", fill: shade }));
+    svg.appendChild(mk("path", { d: "M26.6 17.8 Q23.4 16.4 20.8 17.6 L20.6 18.5 Q23.4 17.4 26.1 18.8 Z", fill: shade }));
+    svg.appendChild(mk("path", { d: "M19.3 17.4 L19.1 22.4 Q20 23.1 20.9 22.4 L20.7 17.4",
+                                 fill: "none", stroke: deep, "stroke-width": ".5",
+                                 "stroke-linecap": "round", opacity: ".9" }));
+
+    /* The laurel, in gold - the one colour, and what names him. */
     const gold = headGrad("#F8DC88", "#DCB044", "#9E7622");
     svg.appendChild(mk("path", { d: "M10.4 17.6 Q14.2 11.9 20 11 Q25.8 11.9 29.6 17.6",
-                                 fill: "none", stroke: "#B8902F", "stroke-width": ".85",
+                                 fill: "none", stroke: "#B8902F", "stroke-width": ".82",
                                  "stroke-linecap": "round" }));
     [[12.2, 15.6, -42], [15.3, 12.9, -24], [20, 11.8, 0], [24.7, 12.9, 24], [27.8, 15.6, 42]]
       .forEach(([x, y, rot]) => {
-        const leaf = mk("ellipse", { cx: x, cy: y, rx: 1.7, ry: .74, fill: gold });
+        const leaf = mk("ellipse", { cx: x, cy: y, rx: 1.65, ry: .72, fill: gold });
         leaf.setAttribute("transform", "rotate(" + rot + " " + x + " " + y + ")");
         svg.appendChild(leaf);
       });
 
-    /* THE LIGHTNING IS IN THE STONE, not in a hand. A held bolt is
-       three hairlines that turn to mush at 26px; a lit crack reads at
-       any size and is the whole reason the statue beats the man.
-       Down the left side and CLEAR OF BOTH EYES - the pass that ran it
-       through one read as damage to the drawing rather than to the
-       statue. */
-    const lit = "#7FD4F5";
-    const crack = "M11.9 13.6 L11 16.6 L12.6 18.4 L10.9 21.4 L12.2 24.4 L10.6 27.2";
-    svg.appendChild(mk("path", { d: crack, fill: "none", stroke: lit,
-                                 "stroke-width": "2.6", "stroke-linecap": "round", opacity: ".16" }));
-    svg.appendChild(mk("path", { d: crack, fill: "none", stroke: lit,
-                                 "stroke-width": "1.4", "stroke-linecap": "round", opacity: ".3" }));
-    svg.appendChild(mk("path", { d: crack, fill: "none", stroke: "#E8F8FF",
-                                 "stroke-width": ".62", "stroke-linecap": "round" }));
-    svg.appendChild(mk("path", { d: "M26.4 24.6 L27.8 27.4", fill: "none", stroke: lit,
-                                 "stroke-width": ".48", "stroke-linecap": "round", opacity: ".7" }));
+    /* One crack, and it is now a CRACK rather than a light source. The
+       lit version was doing a lot of work when the head was struggling
+       to read as stone; with the marble carrying itself, a thin dark
+       fissure with the faintest cold light in it is enough, and it
+       keeps the palette to marble plus gold. */
+    const crack = "M11.9 14.2 L11.1 17 L12.6 18.6 L11 21.4 L12.2 24.2";
+    svg.appendChild(mk("path", { d: crack, fill: "none", stroke: "#9AA6B4",
+                                 "stroke-width": "1.5", "stroke-linecap": "round", opacity: ".16" }));
+    svg.appendChild(mk("path", { d: crack, fill: "none", stroke: "#8B8578",
+                                 "stroke-width": ".46", "stroke-linecap": "round", opacity: ".55" }));
     return svg;
   }
 
@@ -24102,6 +24084,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               mysteryColorsFound: { red: false, orange: false, yellow: false }, testsUntilMystery: null,
               dailyCorrectStreak: 0, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false,
               weeklyWins: 0, weekRankSeen: null, pendingVoidCutscene: false,
+              publicId: null, leaderboardKeyMigrated: false,
               lastModified: 0, firstName: "", avatarChar: null, onboardingComplete: false,
               dailyQuestionDate: null, dailyQuestionCorrect: false,
               seenModeSelectTour: false, seenUnitSelectTour: false,
@@ -24169,6 +24152,13 @@ function applyLoadedData(got){
     store.mysteryColorsFound = { red: false, orange: false, yellow: false };
   }
   store.testsUntilMystery = typeof got.testsUntilMystery === "number" ? got.testsUntilMystery : null;
+  /* NOT defaulted to a fresh id here. applyLoadedData runs on data that
+     arrived from the cloud, and minting one at that moment would give a
+     second device a different id from the first - two rows on the board
+     for one account, which is the exact thing the shared key exists to
+     prevent. null means "not yet", and publicIdOf() mints it once. */
+  store.publicId = typeof got.publicId === "string" && got.publicId ? got.publicId : null;
+  store.leaderboardKeyMigrated = got.leaderboardKeyMigrated === true;
   store.dailyCorrectStreak = typeof got.dailyCorrectStreak === "number" ? got.dailyCorrectStreak : 0;
   store.weeklyWins = typeof got.weeklyWins === "number" ? got.weeklyWins : 0;
   store.pendingVoidCutscene = got.pendingVoidCutscene === true;
@@ -24407,6 +24397,11 @@ function firebaseBecameReady(){
   fbReadyDrained = true;
   if(syncCode){
     attachLiveListener(syncCode);
+    /* The old sync-code-keyed row goes BEFORE the first push, so there
+       is no window where both rows are on the board at once. It is a
+       delete of a document this device is the last holder of the key
+       for - if it does not happen here it can never happen at all. */
+    migrateLeaderboardKey();
     pushToCloud();
   }
   const appearanceBtnEl = document.getElementById("appearancebtn");
@@ -24552,6 +24547,70 @@ function retireLeaderboardEntry(code){
   try { fbDb.collection("leaderboard").doc(code).delete().catch(() => {}); } catch(e){}
 }
 
+/* ================= THE PUBLIC ID =================================
+
+   THE SYNC CODE WAS THE DOCUMENT ID OF EVERY ROW ON A WORLD-READABLE,
+   ENUMERABLE COLLECTION. `leaderboard` and `vrooms` can both be listed
+   by anyone - tools/firestore-admin.py does it over plain REST with no
+   credentials, which is exactly the access every classmate has - and
+   the Rankings screen listed the whole board on open and read `doc.id`
+   off every row. So one look at the network response, by anyone who
+   thought to look, was every classmate's sync code next to their name
+   and avatar. The sync code IS the account: holding one lets you link a
+   device and read or overwrite that person's progress.
+
+   That defeated the rule written to prevent precisely it - "never put a
+   username to code lookup in the app, the collection is world-readable"
+   - and defeated it worse than the lookup would have, because a listing
+   returns everybody at once, unprompted.
+
+   THE FIX IS TO STOP PUBLISHING UNDER THE SECRET. `publicId` is minted
+   once, lives on `store` (so it syncs, and two devices on one account
+   stay one row - the property the sync code was being used for), and is
+   the document id on `leaderboard` and the participant key in `vrooms`.
+   It is random and independent: NEVER a hash, prefix or transform of
+   the sync code, because at this length a hash is a lookup table.
+
+   Holding somebody's publicId gets you what the board already shows -
+   a name, an avatar and three numbers. Holding a sync code gets you
+   their account. Those must not be the same string, and now are not.
+
+   12 characters rather than the sync code's 8: this is never typed by a
+   human, so there is no reason not to make collision impossible. */
+function generatePublicId(){
+  const chars = "abcdefghijkmnpqrstuvwxyz23456789";
+  let out = "";
+  for(let i = 0; i < 12; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
+}
+
+/* Minted on demand rather than at sign-up only, for the same reason the
+   sync code is: an account that predates this has none, and every one of
+   them needs one the first time it publishes anything. */
+function publicIdOf(){
+  if(!store.publicId){
+    store.publicId = generatePublicId();
+    saveStore();
+  }
+  return store.publicId;
+}
+
+/* The old row, keyed by the sync code, is deleted once. We still hold
+   the sync code locally, so this device can clean up after itself -
+   and it has to, or every board carries a duplicate of everybody
+   forever. The flag rides on `store` so a second device on the same
+   account does not try again.
+   A classmate still on an older copy keeps writing under their sync
+   code until their app updates, which with force:true is the next time
+   they open it. */
+function migrateLeaderboardKey(){
+  if(!fbDb || !syncCode) return;
+  if(store.leaderboardKeyMigrated) return;
+  store.leaderboardKeyMigrated = true;
+  saveStore();
+  retireLeaderboardEntry(syncCode);
+}
+
 function setSyncCode(code){
   /* Swapping codes - linking this device to another account, from
      Settings or from the sign-in screen - used to abandon the old code's
@@ -24560,9 +24619,16 @@ function setSyncCode(code){
      Retiring it here rather than at each call site is what makes every
      path that changes a code cover it, including any added later. */
   const previous = syncCode;
+  const previousPublic = store.publicId;
   syncCode = code;
   syncOff = false;
-  if(previous && previous !== code) retireLeaderboardEntry(previous);
+  /* THE ROW TO RETIRE IS THE OLD PUBLIC ID'S, not the old sync code's.
+     Linking pulls the other account's store down, which brings ITS
+     publicId with it, so this device starts publishing under that one
+     and the id it was using is left with nobody holding it. The sync
+     code is no longer a document id anywhere, so retiring by it would
+     delete nothing. */
+  if(previous && previous !== code) retireLeaderboardEntry(previousPublic);
   try { window.localStorage.setItem(SYNC_CODE_KEY, code); } catch(e){}
   try { window.localStorage.removeItem(SYNC_OFF_KEY); } catch(e){}
   idbSaveCode(code);
@@ -24682,6 +24748,13 @@ function wipeLocalProgressAndSettings(){
   store.weeklyWins = 0;
   store.weekRankSeen = null;
   store.pendingVoidCutscene = false;
+  /* A reset is a new person as far as the board is concerned, so the
+     old row is retired and the id is dropped - the next publish mints
+     a fresh one. Without this a reset would silently keep writing to
+     the row it had before. */
+  retireLeaderboardEntry(store.publicId);
+  store.publicId = null;
+  store.leaderboardKeyMigrated = true;
   store.firstName = "";
   store.avatarChar = null;
   /* This is the actual fix for the reset glitch: everything else here
@@ -24748,7 +24821,7 @@ function resetEverything(){
        with several dead test accounts still listed. Deleting the
        progress doc alone was never enough. Same best-effort, not
        awaited, so a slow connection cannot block the local reset. */
-    try { fbDb.collection("leaderboard").doc(syncCode).delete().catch(() => {}); } catch(e){}
+    try { if(store.publicId) fbDb.collection("leaderboard").doc(store.publicId).delete().catch(() => {}); } catch(e){}
   }
   detachLiveListener();
   clearSyncCode();
@@ -24770,7 +24843,7 @@ function handleRemoteReset(){
      gets here first - or that delete failed - clearing it from here too
      costs nothing and closes the gap. */
   if(fbDb && syncCode){
-    try { fbDb.collection("leaderboard").doc(syncCode).delete().catch(() => {}); } catch(e){}
+    try { if(store.publicId) fbDb.collection("leaderboard").doc(store.publicId).delete().catch(() => {}); } catch(e){}
   }
   detachLiveListener();
   clearSyncCode();
@@ -24804,7 +24877,7 @@ function pushToCloud(){
      never touches the person's own private progress doc. */
   if(fbDb && syncCode && store.leaderboardOptIn){
     try {
-      fbDb.collection("leaderboard").doc(syncCode).set({
+      fbDb.collection("leaderboard").doc(publicIdOf()).set({
         firstName: store.firstName || "Anonymous",
         avatarChar: store.avatarChar || "ninja",
         accent: theme.accent || "ink",
@@ -24851,7 +24924,7 @@ function pushToCloud(){
     /* Explicitly opted out after previously being in \u2014 removes the
        entry entirely rather than leaving a stale one visible to
        everyone else with outdated numbers attached to it. */
-    try { fbDb.collection("leaderboard").doc(syncCode).delete().catch(() => {}); } catch(e){}
+    try { if(store.publicId) fbDb.collection("leaderboard").doc(store.publicId).delete().catch(() => {}); } catch(e){}
     store.leaderboardOptInChanged = false;
   }
 }
@@ -26511,7 +26584,7 @@ function observeWeeklyRank(list){
   const ranked = (list || [])
     .filter(e => weekPointsOfEntry(e) > 0)
     .sort((a, b) => weekPointsOfEntry(b) - weekPointsOfEntry(a));
-  const i = ranked.findIndex(e => e.code === syncCode);
+  const i = ranked.findIndex(e => e.pub && e.pub === store.publicId);
   if(i < 0) return;
   const seen = store.weekRankSeen;
   if(seen && seen.week === wk && seen.rank === i + 1) return;
@@ -35501,7 +35574,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-23-136";
+const APP_BUILD = "2026-09-23-137";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -37581,7 +37654,7 @@ function showAppearance(){
            on everyone else's board with whatever numbers it had, and this
            device had just thrown away the only key that could ever delete
            it. Dead rows on the live board were exactly this. */
-        retireLeaderboardEntry(syncCode);
+        retireLeaderboardEntry(store.publicId);
         detachLiveListener();
         clearSyncCode(true);
         renderSyncBody();
@@ -38631,19 +38704,21 @@ function createVirtualRoomLobby(units, timeLimit){
   const code = generateSyncCode();
   const myName = store.firstName || "Anonymous";
   const doc = {
-    hostCode: syncCode || code,
+    /* The HOST's public id, not their sync code. This is published in
+       a listable collection and was the same exposure as the board. */
+    hostCode: publicIdOf(),
     units: units,
     timeLimit: timeLimit || null,
     status: "waiting",
     startAt: null,
     createdAt: Date.now(),
     participants: {
-      [syncCode || code]: { name: myName, avatarChar: store.avatarChar || "ninja", level: levelOf(store), badges: badgeCountOf(store), mystery: mysteryColorsFoundCount(), joinedAt: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false }
+      [publicIdOf()]: { name: myName, avatarChar: store.avatarChar || "ninja", level: levelOf(store), badges: badgeCountOf(store), mystery: mysteryColorsFoundCount(), joinedAt: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false }
     }
   };
   fbDb.collection("vrooms").doc(code).set(doc).then(() => {
     vroomCode = code; vroomIsHost = true; vroomUnits = units;
-    vroomMyKey = syncCode || code;
+    vroomMyKey = publicIdOf();
     showVirtualRoomLobby();
   }).catch(() => { showToast("Couldn't create the lobby \u2014 try again."); });
 }
@@ -38697,7 +38772,7 @@ function joinVirtualRoomLobby(code){
     if(!docSnap.exists){ showToast("No lobby found with that code."); return; }
     const data = docSnap.data();
     if(data.status !== "waiting"){ showToast("That lobby has already started or finished."); return; }
-    const myKey = syncCode || generateSyncCode();
+    const myKey = publicIdOf();
     /* The actual fix for joining the same lobby twice from two devices
        on one synced account \u2014 confirmed directly: both devices share
        the same syncCode, which is also the participant key, so a
@@ -40184,7 +40259,7 @@ function renderRankingRows(rows, entries, board, opts){
        snapshot is read. That distinction matters: a sync code is what
        signs a person in, so it must not be written into a document body
        that is then read and re-published anywhere else. */
-    const isMe = !!(syncCode && entry.code === syncCode);
+    const isMe = !!(store.publicId && entry.pub === store.publicId);
     if(isMe){ row.classList.add("lb-row-me"); row.dataset.me = "1"; }
 
     const rank = document.createElement("span");
@@ -41860,7 +41935,7 @@ function showRankings(defaultBoard){
   function liveEntries(){
     if(!syncCode) return entries;
     const mine = {
-      code: syncCode,
+      pub: publicIdOf(),
       firstName: store.firstName || "Anonymous",
       avatarChar: store.avatarChar || AVATAR_CHARACTERS[0].id,
       level: levelOf(store), badges: badgeCountOf(store), hundos: hundosOf(store),
@@ -41869,7 +41944,7 @@ function showRankings(defaultBoard){
     };
     let found = false;
     const out = entries.map(e => {
-      if(e.code !== syncCode) return e;
+      if(e.pub !== store.publicId) return e;
       found = true;
       return Object.assign({}, e, mine);
     });
@@ -41966,11 +42041,12 @@ function showRankings(defaultBoard){
     try{
       rankingsLiveUnsub = onSnapshotResilient(fbDb.collection("leaderboard"), snap => {
         const next = [];
-        /* doc.id IS the sync code. Attached here so a row can tell
-           whether it is you, and deliberately never written into the
-           document itself. */
+        /* doc.id is the PUBLIC ID, not the sync code - see "THE PUBLIC
+           ID" above. Named `pub` rather than left as `code`, because a
+           field called `code` holding something that is no longer the
+           sync code is exactly how the next person reintroduces this. */
         snap.forEach(doc => {
-          const e = Object.assign({ code: doc.id }, doc.data());
+          const e = Object.assign({ pub: doc.id }, doc.data());
           /* Expire a stale week here rather than at every read site -
              the board sorts on e[board.field], so the field itself has
              to already be the right number. */
