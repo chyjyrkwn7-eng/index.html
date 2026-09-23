@@ -23967,35 +23967,68 @@ function buildAvatarCharSVG(charId){
        a separate part. */
     svg.appendChild(mk("ellipse", { cx: 20, cy: 26.2, rx: 6.4, ry: 4.6, fill: head }));
     svg.appendChild(mk("ellipse", { cx: 20, cy: 25, rx: 5.2, ry: 2.6, fill: belly, opacity: ".45" }));
-    svg.appendChild(mk("ellipse", { cx: 17.9, cy: 24.6, rx: .72, ry: .58, fill: "#6E1D13" }));
-    svg.appendChild(mk("ellipse", { cx: 22.1, cy: 24.6, rx: .72, ry: .58, fill: "#6E1D13" }));
-    /* A wide, easy mouth with two small fangs coming UP from the lower
-       jaw. Up rather than down: hanging fangs are a predator, and a
-       little underbite is what makes a drawn dragon look pleased with
-       itself. */
-    svg.appendChild(mk("path", { d: "M16.2 27.6 Q20 30.2 23.8 27.6", fill: "none",
-                                 stroke: "#6E1D13", "stroke-width": "1",
+    /* Angled slits, not two round dots. Round dots on a bulge is a
+       snout, and a snout is a pig - this character has now been
+       reported for that once already. */
+    svg.appendChild(mk("path", { d: "M17.4 24.2 Q16.9 25.1 17.8 25.6", fill: "none",
+                                 stroke: "#5C160E", "stroke-width": ".68",
                                  "stroke-linecap": "round" }));
-    svg.appendChild(mk("polygon", { points: "17.5,28.8 18.7,28.8 18.1,26.9", fill: "#FFF6EA" }));
-    svg.appendChild(mk("polygon", { points: "21.3,28.8 22.5,28.8 21.9,26.9", fill: "#FFF6EA" }));
+    svg.appendChild(mk("path", { d: "M22.6 24.2 Q23.1 25.1 22.2 25.6", fill: "none",
+                                 stroke: "#5C160E", "stroke-width": ".68",
+                                 "stroke-linecap": "round" }));
+    /* A HARD, FLAT MOUTH with the corners pulled down, and the fangs
+       hang DOWN over it from the upper jaw. The version before this had
+       an upward curve and two little tusks poking up from the lower
+       jaw, which is a pleased-with-itself underbite - reported as
+       "goofy", and it was. */
+    svg.appendChild(mk("path", { d: "M15.8 28.1 Q20 27.2 24.2 28.1", fill: "none",
+                                 stroke: "#5C160E", "stroke-width": "1.05",
+                                 "stroke-linecap": "round" }));
+    svg.appendChild(mk("polygon", { points: "17.1,27.5 18.5,27.7 17.7,30.2", fill: "#FFF6EA" }));
+    svg.appendChild(mk("polygon", { points: "22.9,27.5 21.5,27.7 22.3,30.2", fill: "#FFF6EA" }));
 
-    /* BIG ROUND EYES, and this is the whole difference from the version
-       that was rejected. Sclera, a real pupil, a catchlight - the same
-       three parts the bear and the samurai have. */
-    svg.appendChild(mk("ellipse", { cx: 15.8, cy: 19.4, rx: 2.9, ry: 3.1, fill: "#FFF6EA" }));
-    svg.appendChild(mk("ellipse", { cx: 24.2, cy: 19.4, rx: 2.9, ry: 3.1, fill: "#FFF6EA" }));
-    svg.appendChild(mk("ellipse", { cx: 16.1, cy: 19.7, rx: 1.75, ry: 1.95, fill: "#2A1008" }));
-    svg.appendChild(mk("ellipse", { cx: 23.9, cy: 19.7, rx: 1.75, ry: 1.95, fill: "#2A1008" }));
-    svg.appendChild(catchlight(15.4, 18.7, .62));
-    svg.appendChild(catchlight(23.2, 18.7, .62));
-    /* A soft brow above each, in the head's own dark - shape, not a
-       scowl. The ridges that made the last one glare are gone. */
-    svg.appendChild(mk("path", { d: "M12.7 15.8 Q15.8 14.4 18.9 15.9", fill: "none",
-                                 stroke: "#A8382A", "stroke-width": "1.05",
-                                 "stroke-linecap": "round" }));
-    svg.appendChild(mk("path", { d: "M27.3 15.8 Q24.2 14.4 21.1 15.9", fill: "none",
-                                 stroke: "#A8382A", "stroke-width": "1.05",
-                                 "stroke-linecap": "round" }));
+    /* MEAN COMES FROM THE EYE SHAPE AND THE BROW ANGLE, not from adding
+       parts. This is the third face on this character and the two
+       before it failed at opposite ends: version two piled on heavy
+       ridges, slit pupils, a pale snout plate and scales everywhere and
+       came out a busy demon; version three answered that with big round
+       friendly eyes and came out goofy. The fault in version two was
+       never that it was menacing - it was that it was BUSY.
+       So: the same clean shapes, and the whole expression carried by
+       two things. An amber eye with a vertical slit, and a wedge of the
+       face's own colour laid over its top-inner corner so the opening
+       that is left is a narrow angry slot. That is how a drawn scowl
+       actually works - you do not draw an angry eye, you cover part of
+       a calm one. */
+    [[15.7, -1], [24.3, 1]].forEach(([cx, f]) => {
+      svg.appendChild(mk("ellipse", { cx: cx, cy: 19.8, rx: 2.85, ry: 2.6, fill: "#FFC93C" }));
+      svg.appendChild(mk("ellipse", { cx: cx, cy: 19.8, rx: .66, ry: 2.15, fill: "#1E0C06" }));
+      svg.appendChild(mk("circle", { cx: cx - f * .95, cy: 18.6, r: .46, fill: "#FFF6EA", opacity: ".85" }));
+      /* THE LID, AND THE DIRECTION OF ITS SLOPE IS THE WHOLE FACE.
+         Its lower edge sits LOW at the inner corner, by the nose, and
+         HIGH at the outer corner. That way round is a scowl; the other
+         way round - drooping at the outside - is sadness, and the first
+         attempt at this had the sign backwards and came out looking
+         tired rather than furious.
+         `f` is -1 on the left eye and +1 on the right, so `cx - f*n` is
+         always the INNER edge and `cx + f*n` always the outer. Written
+         that way precisely because mirroring by hand is how the rank
+         emblems once put every mirrored spark on the same side. */
+      const inner = cx - f * 3.4, outer = cx + f * 3.4;
+      svg.appendChild(mk("path", {
+        d: "M" + inner + " 13.8 L" + outer + " 13.8 "
+         + "L" + outer + " 17.0 L" + inner + " 20.6 Z", fill: head }));
+      svg.appendChild(mk("path", {
+        d: "M" + inner + " 20.4 L" + outer + " 16.9",
+        fill: "none", stroke: "#5C160E", "stroke-width": ".9",
+        "stroke-linecap": "round" }));
+      /* A heavy ridge riding the same angle, thickest at the inner end
+         where it meets its twin over the bridge of the nose. */
+      svg.appendChild(mk("path", {
+        d: "M" + (cx - f * 3.9) + " 19.0 L" + (cx + f * 3.7) + " 14.7 "
+         + "L" + (cx + f * 3.5) + " 16.6 L" + (cx - f * 3.7) + " 20.6 Z",
+        fill: "#8E2219" }));
+    });
 
     /* Two scales high on the cheeks, where a raised edge catches light. */
     [[11.9, 22.6], [28.1, 22.6]].forEach(([x, y]) =>
@@ -35468,7 +35501,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-23-135";
+const APP_BUILD = "2026-09-23-136";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
