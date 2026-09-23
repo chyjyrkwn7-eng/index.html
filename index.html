@@ -31554,6 +31554,43 @@ function appendUnitProgress(row, name){
   }
 }
 
+/* ONE SLIDER BUILDER, NOT TWO. This lived inside showSetup(), which is
+   why the Virtual Room's time limit was three chips instead: the builder
+   was simply out of reach from there. It takes its onChange now rather
+   than closing over showSetup's refresh, which is the only thing that
+   was holding it in. Any screen that wants a labelled range with a live
+   value readout uses this; the touch behaviour, the 44px target and the
+   step lattice all come with it, so a second copy cannot drift. */
+function plainSlider(labelText, min, max, step, get, set, formatVal, onChange){
+  const sect = document.createElement("div");
+  sect.className = "sect";
+  const lab = document.createElement("p");
+  lab.className = "slab"; lab.textContent = labelText;
+  sect.appendChild(lab);
+  const wrap = document.createElement("div");
+  wrap.className = "sliderwrap";
+  const slider = document.createElement("input");
+  slider.type = "range"; slider.min = min; slider.max = max; slider.step = step;
+  slider.value = get();
+  slider.className = "slider";
+  slider.setAttribute("aria-label", labelText);
+  const valDisplay = document.createElement("span");
+  valDisplay.className = "sliderval";
+  valDisplay.textContent = formatVal(get());
+  slider.addEventListener("input", () => {
+    set(Number(slider.value));
+    valDisplay.textContent = formatVal(Number(slider.value));
+    if(typeof onChange === "function") onChange();
+  });
+  wrap.append(slider, valDisplay);
+  sect.appendChild(wrap);
+  sect.paint = () => {
+    slider.value = get();
+    valDisplay.textContent = formatVal(get());
+  };
+  return sect;
+}
+
 function showSetup(){
   stopTimer(); stopQuestionTimer();
   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
@@ -31769,36 +31806,6 @@ function showSetup(){
   }
 
   /* A plain draggable slider — used on its own (e.g. countdown minutes). */
-  function plainSlider(labelText, min, max, step, get, set, formatVal){
-    const sect = document.createElement("div");
-    sect.className = "sect";
-    const lab = document.createElement("p");
-    lab.className = "slab"; lab.textContent = labelText;
-    sect.appendChild(lab);
-    const wrap = document.createElement("div");
-    wrap.className = "sliderwrap";
-    const slider = document.createElement("input");
-    slider.type = "range"; slider.min = min; slider.max = max; slider.step = step;
-    slider.value = get();
-    slider.className = "slider";
-    slider.setAttribute("aria-label", labelText);
-    const valDisplay = document.createElement("span");
-    valDisplay.className = "sliderval";
-    valDisplay.textContent = formatVal(get());
-    slider.addEventListener("input", () => {
-      set(Number(slider.value));
-      valDisplay.textContent = formatVal(Number(slider.value));
-      refresh();
-    });
-    wrap.append(slider, valDisplay);
-    sect.appendChild(wrap);
-    sect.paint = () => {
-      slider.value = get();
-      valDisplay.textContent = formatVal(get());
-    };
-    return sect;
-  }
-
   /* An "Everything" toggle chip plus a slider for a specific number —
      used for test length, where dragging the slider picks a specific
      count and the chip is a one-tap way to use the whole pool instead. */
@@ -32097,7 +32104,7 @@ function showSetup(){
 
   const minutesSect = plainSlider("Time limit", 5, 90, 5,
     () => cfg.timerMinutes, v => { cfg.timerMinutes = v; },
-    v => v + " min");
+    v => v + " min", refresh);
   optionsModalBody.appendChild(minutesSect);
 
   /* --- toggles --- */
@@ -33644,7 +33651,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-23-127";
+const APP_BUILD = "2026-09-23-128";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -36265,7 +36272,11 @@ function showVirtualRoomSetup(){
   const picked = new Set();
 
   const searchWrap = document.createElement("div");
-  searchWrap.className = "searchbox-wrap";
+  /* .searchwrap, not "searchbox-wrap" - the latter had no CSS rule
+     anywhere in the file, so the wrapper computed to margin:0 and the
+     field sat straight on top of the Select all pill. This is the class
+     the main unit picker uses, and it brings position:relative with it. */
+  searchWrap.className = "searchwrap";
   const searchInput = document.createElement("input");
   searchInput.type = "text"; searchInput.className = "searchbox";
   searchInput.placeholder = "Search units";
@@ -36345,8 +36356,6 @@ function showVirtualRoomSetup(){
      own Speed grid) keys its selected-state styling off .chip.on;
      "active" matches no CSS rule at all, so the selected time limit
      was rendering with no visual indication of being selected. */
-  const timeRow = document.createElement("div");
-  timeRow.className = "chips";
   let vroomTimeLimit = 10;
   /* "No limit" removed per explicit request — a synced start needs a
      synced finish line too, and an open-ended lobby is exactly the
@@ -36356,27 +36365,17 @@ function showVirtualRoomSetup(){
      countdown, the sheet summary line, beginVirtualRoomTest) is left
      in place as a harmless defensive fallback, not because it's
      reachable from this picker anymore. */
-  const timeChoices = [
-    { label: "5 min", value: 5 },
-    { label: "10 min", value: 10 },
-    { label: "15 min", value: 15 }
-  ];
-  const timeBtns = timeChoices.map(choice => {
-    const btn = document.createElement("button");
-    btn.type = "button"; btn.className = "chip" + (choice.value === vroomTimeLimit ? " on" : "");
-    btn.textContent = choice.label;
-    btn.setAttribute("aria-pressed", choice.value === vroomTimeLimit ? "true" : "false");
-    btn.addEventListener("click", () => {
-      vroomTimeLimit = choice.value;
-      timeBtns.forEach(b => { b.classList.remove("on"); b.setAttribute("aria-pressed", "false"); });
-      btn.classList.add("on");
-      btn.setAttribute("aria-pressed", "true");
-      refresh();
-    });
-    timeRow.appendChild(btn);
-    return btn;
-  });
-  timeSect.appendChild(timeRow);
+  /* A SLIDER, NOT THREE CHIPS. Five, ten and fifteen minutes was the
+     whole range, which is not enough to agree on a race length - and
+     the drill screen has had a proper slider for this since the sliders
+     were fixed. Same builder, so the touch behaviour and the step
+     lattice are the same in both places rather than two near-copies.
+     5 to 60 in steps of 5: the top of the range is a real exam length
+     and every stop is a round number. */
+  const timeSect2 = plainSlider("Time limit", 5, 60, 5,
+    () => vroomTimeLimit, v => { vroomTimeLimit = v; },
+    v => v + " min", () => refresh());
+  timeSect.appendChild(timeSect2);
   /* NOT appended to the page. It goes into the Review & Start sheet
      below instead, per explicit request. The note above used to argue
      the opposite - that a time limit is a primary, mode-defining
@@ -36894,10 +36893,17 @@ function showVirtualRoomLobby(){
         readyBtn.classList.toggle("is-ready", amReady);
       }
       readyCount.textContent = readyN + " of " + totalN + " ready";
-      const allReady = totalN > 0 && readyN === totalN;
+      /* TWO PEOPLE MINIMUM. totalN > 0 let a host sitting alone ready
+         up and start a "race" against nobody, which is not what the
+         Virtual Room is for. The note below says why it is waiting. */
+      const allReady = totalN > 1 && readyN === totalN;
       if(data.status === "waiting"){
         autostartNote.classList.toggle("all-ready", allReady);
-        autostartNote.textContent = allReady ? "Everyone's ready \u2014 starting\u2026" : "Waiting for everyone to ready up\u2026";
+        autostartNote.textContent = allReady
+          ? "Everyone's ready \u2014 starting\u2026"
+          : totalN < 2
+            ? "Waiting for someone else to join\u2026"
+            : "Waiting for everyone to ready up\u2026";
       }
       /* The actual fix for "the start test for the lobby creator was
          bugged... don't let the lobby starter hit start test" \u2014 the
