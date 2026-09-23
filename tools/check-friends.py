@@ -63,8 +63,8 @@ def check(name, ok, detail=""):
         FAILURES.append(name)
 
 
-def booted(br):
-    ctx = br.new_context(viewport={"width": 440, "height": 956})
+def booted(br, width=440, height=956):
+    ctx = br.new_context(viewport={"width": width, "height": height})
     ctx.add_init_script(
         "try{localStorage.setItem('class26e.freshstart','1');"
         "localStorage.setItem('class26e.synccode','SECR-ETXX');"
@@ -226,6 +226,80 @@ def main():
               r["hasCode"] and r["hasFreq"] and r["hasFacc"], r)
         check("every write is to MY OWN document", r["onlyMyId"] is True, r)
         check("and the sync code is still nowhere in it", r["secret"] is False, r)
+
+        # ---------------------------------------------------------------
+        # A SCREEN CHECKED ONLY WHILE IT IS EMPTY IS NOT CHECKED.
+        # Everything above drives the functions, and all of it passed on
+        # a build where showFriends() threw on its very first row:
+        # decorateAvatar() takes the ELEMENT the rank coin hangs off and
+        # it was handed a character id, which type-checks fine, draws
+        # nothing, and throws the moment there is anybody to draw. So
+        # the screen was blank for exactly the people who have friends.
+        # The sweep mounts it cold, with no rows, and saw nothing.
+        # This runs it at 320px, the width where the row squashed.
+        print("\n8. the screen itself, with people on it")
+        ctx2, pg2 = booted(br, 320, 568)
+        errs2 = []
+        pg2.on("pageerror", lambda e: errs2.append(str(e)))
+        # A throw here is the failure, not a crash of the harness -
+        # `--against` an older build has to REPORT it, not stop.
+        try:
+            r = pg2.evaluate("""()=>{
+          store.publicId = 'me0000000001';
+          store.friendsIn = ['kim000000003'];
+          store.friendsOut = ['zoe000000004','dee000000005'];
+          store.friendsDeclined = [];
+          const now = Date.now();
+          leaderboardRows = [
+            { pub:'alex000000002', firstName:'Alexandra', avatarChar:'officer',
+              level:40, badges:8, hundos:90, fcode:'ABC-234',
+              freq:['me0000000001'], facc:[], lastModified: now - 9000 },
+            { pub:'ray000000006', firstName:'Ray', avatarChar:'robot',
+              level:14, badges:3, hundos:12, fcode:'MND-234',
+              freq:['me0000000001'], facc:[], lastModified: now - 99999999 },
+            { pub:'kim000000003', firstName:'Kim', avatarChar:'astronaut',
+              level:18, badges:5, hundos:23, fcode:'LPQ-234',
+              freq:['me0000000001'], facc:[], lastModified: now - 9000 },
+            { pub:'zoe000000004', firstName:'Zoe', avatarChar:'clown',
+              level:31, badges:9, hundos:88, fcode:'HJK-234',
+              freq:[], facc:['me0000000001'], lastModified: now - 99999999 },
+            { pub:'dee000000005', firstName:'Dee', avatarChar:'grizzly',
+              level:9, badges:1, hundos:4, fcode:'TVW-234',
+              freq:[], facc:[], lastModified: now - 9000 }
+          ];
+          showFriends();
+          const rows = [...document.querySelectorAll('.friend-row')];
+          const texts = rows.map(x => x.querySelector('.friend-row-text'));
+          return {
+            rows: rows.length,
+            pending: document.querySelectorAll('.friend-sect-pending .friend-row').length,
+            drawn: rows.every(x => !!x.querySelector('.rank-avatar svg')),
+            names: rows.map(x => (x.querySelector('.friend-row-name')||{}).textContent),
+            narrowest: texts.length ? Math.round(Math.min.apply(null,
+              texts.map(t => t.getBoundingClientRect().width))) : 0,
+            dots: document.querySelectorAll('.friend-online-dot').length,
+            overflow: document.documentElement.scrollWidth - window.innerWidth
+          };}""")
+        except Exception as exc:
+            check("the screen builds at all", False, str(exc).splitlines()[0])
+            r = {"rows": 0, "pending": 0, "drawn": False, "names": [""],
+                 "narrowest": 0, "dots": 0, "overflow": 0}
+        # 2 waiting on me, 2 friends, 1 I have asked and not heard back from.
+        check("every person has a row", r["rows"] == 5, r["rows"])
+        check("the two requests are in the pending section", r["pending"] == 2, r["pending"])
+        # The bug: the row built, the character did not.
+        check("each row draws its character", r["drawn"] is True, r["names"])
+        check("and names its person", r["names"][0] == "Alexandra", r["names"])
+        # THE SQUASH: two nowrap buttons took 150px of a 280px column and
+        # left the name at 66px - "Alexandra" clipped to one letter. It
+        # never overflowed, which is why a green sweep said nothing.
+        check("the name column is not squashed by the buttons",
+              r["narrowest"] >= 110, r["narrowest"])
+        check("no sideways scroll at 320px", r["overflow"] <= 0, r["overflow"])
+        # Read off lastModified, which the row already publishes.
+        check("the green dot marks exactly who is online", r["dots"] == 3, r["dots"])
+        check("and the screen threw nothing", not errs2, errs2[:3])
+        ctx2.close()
 
         check("no uncaught JS along the way", not errs, errs[:3])
         ctx.close()

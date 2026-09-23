@@ -9999,27 +9999,32 @@
   /* ---- Friends ---- */
   .friend-sect{ margin-top:1.1rem; }
   .friend-sect-pending .sect-label{ color:var(--accent); }
+  /* THE ROW WRAPS RATHER THAN SQUASHING. Accept + Decline are nowrap
+     and flex-shrink:0, so on a 320px phone they took ~150px of a 280px
+     column and left the name at 66px - "Alex" clipped to "A" and the
+     level line broken one word per line. It did not overflow, which is
+     exactly why the sweep passed it. min-width on the text is what
+     stops the shrink; flex-wrap is what it does instead. */
   .friend-row{
-    display:flex; align-items:center; gap:.7rem;
+    display:flex; flex-wrap:wrap; align-items:center; gap:.7rem;
     padding:.55rem .2rem; border-bottom:1px solid var(--rule);
   }
   .friend-row:last-child{ border-bottom:none; }
-  .friend-row-art{ width:2.6rem; flex-shrink:0; position:relative; }
+  .friend-row-art{ width:2.6rem; height:2.6rem; flex-shrink:0; position:relative; }
   .friend-online-dot{
     position:absolute; right:-1px; bottom:-1px;
     width:.72rem; height:.72rem; border-radius:50%;
     background:#4ADE80; border:2px solid var(--panel);
     box-shadow:0 0 7px rgba(74,222,128,.75);
   }
-  .friend-row-sub.is-online{ color:#4ADE80; font-weight:700; }
-  .friend-row-art svg{ width:100%; height:auto; }
-  .friend-row-text{ flex:1 1 0; min-width:0; }
+  .friend-row-on{ color:#4ADE80; font-weight:700; }
+  .friend-row-text{ flex:1 1 7.5rem; min-width:7.5rem; }
   .friend-row-name{
     margin:0; font-weight:700; font-size:.95rem; color:var(--ink);
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
   .friend-row-sub{ margin:.1rem 0 0; font-size:.75rem; color:var(--soft); }
-  .friend-row-acts{ display:flex; gap:.4rem; flex-shrink:0; }
+  .friend-row-acts{ display:flex; gap:.4rem; flex-shrink:0; margin-left:auto; }
   /* 44px, like every other target in the app - these are small
      buttons, not exempt ones. */
   .friend-act{
@@ -10047,7 +10052,7 @@
                0 0 14px -3px var(--accent);
   }
   @media (min-width:40rem){
-    .friend-row-art{ width:3rem; }
+    .friend-row-art{ width:3rem; height:3rem; }
     .friend-row-name{ font-size:1.05rem; }
     .friend-row-sub{ font-size:.82rem; }
   }
@@ -27475,6 +27480,19 @@ function buildRankEmblemSVG(rankKey){
    though"). A rank already says roughly where somebody is, the boards
    rank on the number itself, and two marks on one 42px character is
    one too many. Don't add it back. */
+/* THE CHARACTER ARTWORK FOR A PUBLISHED ROW, and it is a function
+   because decorateAvatar() takes the ELEMENT the mark hangs off, not an
+   id - passing the id instead type-checks fine, builds nothing, and
+   throws "parameter 1 is not of type 'Node'" the moment there is
+   anybody to draw. Which is to say: never on an empty Friends screen,
+   and always on a real one. */
+function avatarSpanFor(entry){
+  const span = document.createElement("span");
+  span.className = "rank-avatar";
+  span.appendChild(buildAvatarCharSVGSafe((entry && entry.avatarChar) || AVATAR_CHARACTERS[0].id));
+  return span;
+}
+
 function decorateAvatar(avatarSpan, level, badges, mystery){
   const key = rankOfStats(level || 1, badges || 0, mystery || 0);
   /* Nothing at all below Rookie, which is correct: there is no rank to
@@ -35891,7 +35909,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-23-138";
+const APP_BUILD = "2026-09-23-139";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -39152,8 +39170,8 @@ function openInviteFriendsSheet(roomCode){
       row.className = "friend-row";
       const art = document.createElement("div");
       art.className = "friend-row-art";
-      art.appendChild(decorateAvatar(e.avatarChar || AVATAR_CHARACTERS[0].id,
-        rankOfStats(e.level || 0, e.badges || 0, e.mystery || 0)));
+      art.appendChild(avatarSpanFor(e));
+      decorateAvatar(art, e.level, e.badges, e.mystery);
       const text = document.createElement("div");
       text.className = "friend-row-text";
       const nm = document.createElement("p");
@@ -41140,8 +41158,8 @@ function showFriends(){
     row.className = "friend-row";
     const art = document.createElement("div");
     art.className = "friend-row-art";
-    art.appendChild(decorateAvatar(entry.avatarChar || AVATAR_CHARACTERS[0].id,
-      rankOfStats(entry.level || 0, entry.badges || 0, entry.mystery || 0)));
+    art.appendChild(avatarSpanFor(entry));
+    decorateAvatar(art, entry.level, entry.badges, entry.mystery);
     /* The dot goes on the AVATAR, bottom-right, opposite the rank
        emblem's top-left coin - so a row carries at most one mark in
        each corner and they cannot land on each other. */
@@ -41158,11 +41176,21 @@ function showFriends(){
     nm.className = "friend-row-name";
     nm.textContent = entry.firstName || "Anonymous";
     const sub = document.createElement("p");
-    sub.className = "friend-row-sub" + (online ? " is-online" : "");
-    sub.textContent = online
-      ? "Online now"
-      : "Level " + (entry.level || 0) + " \u00b7 " + (entry.hundos || 0) +
-        ((entry.hundos === 1) ? " hundo" : " hundos");
+    sub.className = "friend-row-sub";
+    /* THE DOT SAYS ONLINE; THE LINE STILL HAS TO SAY WHO THEY ARE.
+       Replacing the level line with "Online now" cost the one thing
+       worth reading on a request from somebody whose name you are not
+       sure about - and usernames are not unique. The word is a green
+       span in front of it instead, so both fit. */
+    if(online){
+      const on = document.createElement("span");
+      on.className = "friend-row-on";
+      on.textContent = "Online";
+      sub.append(on, document.createTextNode(" \u00b7 "));
+    }
+    sub.append(document.createTextNode(
+      "Level " + (entry.level || 0) + " \u00b7 " + (entry.hundos || 0) +
+      ((entry.hundos === 1) ? " hundo" : " hundos")));
     text.append(nm, sub);
     row.append(art, text);
     if(actions){
