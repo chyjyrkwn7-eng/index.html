@@ -3918,6 +3918,14 @@
     font-family:var(--serif); font-size:1rem; color:var(--ink); margin:0 0 .75rem;
   }
   .aboutTake:empty{ display:none; }
+  /* Inside the Start sheet now, so it reads as part of the summary
+     rather than as a serif paragraph: same soft colour as the count
+     line above it, a size down, and wrapping comfortably because a
+     full list of unit names is long. */
+  .sheet-summary-units{
+    font-family:inherit; font-size:.82rem; font-weight:500; line-height:1.45;
+    color:var(--soft); margin:.35rem 0 0;
+  }
   .modedisplay{
     font-size:.92rem; font-weight:600; color:var(--soft); margin:0 0 1.1rem;
     padding-bottom:1.1rem; border-bottom:1px solid var(--rule);
@@ -8780,12 +8788,25 @@
      same column as everything under it instead of centred on its own. */
   .unitoptions-modal-sheet .sheet-summary{
     display:flex; align-items:baseline; justify-content:space-between; gap:.8rem;
+    flex-wrap:wrap;
     text-align:left; border-bottom:none; border-radius:16px;
     padding:.8rem 1rem; margin:0 0 1.15rem;
     background:rgba(255,255,255,.055); border:1px solid rgba(255,255,255,.1);
   }
   .unitoptions-modal-sheet .sheet-summary-mode{ font-size:1.02rem; margin:0; }
   .unitoptions-modal-sheet .sheet-summary-line{ margin:0; text-align:right; white-space:nowrap; }
+  /* The unit names take a LINE OF THEIR OWN, under the mode and the
+     count. This row is a space-between flex, so appending the list as
+     a third child squeezed it into a narrow third column beside them -
+     a full set of unit names needs the whole width and several lines.
+     flex-basis:100% with the wrap above puts it on its own row, and
+     the rule between it and the row above keeps the two readable as
+     "what you picked" and "which ones". */
+  .unitoptions-modal-sheet .sheet-summary-units{
+    flex:0 0 100%; text-align:left;
+    margin:.55rem 0 0; padding-top:.55rem;
+    border-top:1px solid rgba(255,255,255,.08);
+  }
 
   .unitoptions-modal-sheet .optionsmodal-body > .sect{ margin-bottom:1.15rem; }
   .unitoptions-modal-sheet .slab{ margin-bottom:.5rem; }
@@ -30646,6 +30667,20 @@ function buildProgressRing(pct, small){
 }
 
 function showModeSelect(){
+  /* LEAVING UNIT SELECTION DROPS THE PICKS. "If I select units and then
+     hit back, if I go back into another mode or the same mode, the
+     units I selected should not be marked as selected."
+     cfg is a module-level object, so the selection survived in memory
+     for the whole session. Build 100 stopped it persisting across
+     LAUNCHES by dropping the localStorage restore, which is a
+     different thing and is why this came back.
+     Cleared HERE, on the screen you land on when you back out, rather
+     than on entry to showSetup() - because showSetup() is also how you
+     return after popping over to Profile or Settings mid-selection
+     (returnToSetupAfterTabs), and losing your picks to a tab round
+     trip would be its own bug. Backing out goes through this screen;
+     a tab round trip does not. */
+  cfg.units = [];
   stopTimer(); stopQuestionTimer();
   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
   timerlineEl.hidden = true; livesEl.hidden = true;
@@ -31698,9 +31733,18 @@ function showSetup(){
   optionsModalDone.addEventListener("click", closeOptionsModal);
 
   /* --- start --- */
+  /* NOT appended to the panel. This is the "Taking: X, Y" line, and it
+     used to sit in white under the unit cards - "it says what you are
+     taking under the unit cards in white, REMOVE FOR ALL MODES". It
+     was still there: build 100 removed a different element
+     (.unit-selection-summary) and left this one rendering.
+     It is not deleted, because the same request came back the other
+     way round - "in the start button thing, show which units you have
+     selected there so you know what you are taking". Same line, right
+     place: it lives in the Start sheet now, under the mode and the
+     count, where you look immediately before starting. */
   const aboutTake = document.createElement("p");
-  aboutTake.className = "aboutTake";
-  panel.appendChild(aboutTake);
+  aboutTake.className = "aboutTake sheet-summary-units";
 
   /* A sticky summary, per explicit request \u2014 the Start button already
      follows you down this list as a fixed pill, but nothing told you
@@ -31751,8 +31795,13 @@ function showSetup(){
       : (cfg.units.length === all.length ? "All units" : cfg.units.length + (cfg.units.length === 1 ? " unit" : " units")) +
         " \u00b7 " + n + (n === 1 ? " question" : " questions");
 
+    /* Named in full rather than counted. "3 units" above already
+       gives the count; what this adds is WHICH three, which is the
+       whole point of showing it at the moment you are about to
+       start. */
     aboutTake.textContent = cfg.units.length === 0 ? "" :
-      "Taking: " + (cfg.units.length === all.length ? "All units" : cfg.units.join(", "));
+      (cfg.units.length === all.length ? "All units" : cfg.units.join(" \u00b7 "));
+    if(aboutTake.parentNode !== sheetSummary) sheetSummary.appendChild(aboutTake);
 
     /* One answer per section, in one place. These used to be split
        across two spots in this function - the wrapper's own hidden
@@ -33005,7 +33054,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-22-112";
+const APP_BUILD = "2026-09-23-113";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

@@ -1630,7 +1630,32 @@ all keyed by them, so renaming a key is a migration for a cosmetic gain.
   running count of something nobody is working towards. A capped
   `35 / 35` says the unit is done in the same language every other
   card uses for how far along it is, and it stops counting.
-- **THE UNIT CARD MEASURES ONE THING IN EVERY MODE: the badge, and
+- **LEAVING UNIT SELECTION DROPS THE PICKS, and `cfg` is why this came
+back.** *"If I select units and then hit back, if I go back into
+another mode or the same mode, the units I selected should not be
+marked as selected."* `cfg` is a module-level object, so a selection
+survived in memory for the whole session. Build 100 stopped it
+persisting across LAUNCHES by dropping the `localStorage` restore in
+`applySaved()` — a different thing, which is why the report returned.
+`cfg.units = []` now happens at the top of **`showModeSelect()`**, not
+on entry to `showSetup()`: `showSetup()` is also how you return after
+popping over to Profile or Settings mid-selection
+(`returnToSetupAfterTabs`), and losing your picks to a tab round trip
+would be its own bug. Backing out goes through mode select; a tab round
+trip does not.
+
+**THE "Taking: X, Y" LINE LIVES IN THE START SHEET, and it is the same
+element that was supposed to come off the panel.** *"It says what you
+are taking under the unit cards in white, REMOVE FOR ALL MODES"* —
+build 100 removed `.unit-selection-summary` and left `.aboutTake`
+rendering, so it was still there. It was then asked for the other way
+round: *"in the start button thing, show which units you have selected
+there."* Same line, right place. It is appended to `.sheet-summary`
+with `flex:0 0 100%` — that row is a `space-between` flex, so a third
+child lands as a narrow third column beside the mode and the count; a
+full set of unit names needs its own row and several lines.
+
+**THE UNIT CARD MEASURES ONE THING IN EVERY MODE: the badge, and
   hundos towards 35.** It is not mode-dependent and must not become so
   again. A hundo is a full-unit 100% run and `unitPerfectCount` reads
   `store.unitPerfects`, which Drill, Exam, Game and the Virtual Room
