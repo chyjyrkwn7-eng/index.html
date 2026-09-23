@@ -138,9 +138,21 @@ SEED = """try{
    return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
  };
  var log = {}; for(var i=0;i<24;i++){ log[day(i)] = { seconds: 600 + i*37, answered: 12 + i }; }
- var hist = []; for(var j=0;j<9;j++){ hist.push({ date: day(j*2), mode: ['drill','exam','game'][j%3],
-   score: 12 + j, total: 20, pct: Math.round((12+j)/20*100), seconds: 300 + j*20,
-   units: ['Texas Penal Code'] }); }
+ // The shape recordTestPlay() actually writes, with the longest real unit
+ // names in it. The old fixture used date/seconds/score and no label, so
+ // the review row rendered "undefined" with a one-bit meta line - and the
+ // sweep passed that screen on a 320px phone while a real account's meta
+ // line ran 52px past the panel. A width-sensitive screen needs a seed
+ // whose strings are the length real ones are.
+ var histUnits = [['Identity Crimes'],
+   ['Penal Code','Code of Criminal Procedure and Bill of Rights'],
+   ['Fitness, Wellness, and Stress Management','Multiculturalism and Human Relations',
+    'Arrest, Search, and Seizure','Victims of Crime','Racial Profiling']];
+ var hist = []; for(var j=0;j<9;j++){ var hu = histUnits[j%3];
+   hist.push({ label: hu.length === 1 ? hu[0] : hu.length + ' units \u2014 Drill',
+   units: hu.slice(), mode: ['drill','exam','game'][j%3],
+   pct: 60 + j*4, elapsedMs: (900 + j*137) * 1000, playedAt: Date.now() - j*2*86400000,
+   date: day(j*2), score: 12 + j, total: 20, seconds: 300 + j*20 }); }
  localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');
  localStorage.setItem('class26e.drill.v1', JSON.stringify({name:'T',firstName:'Madison',avatarChar:'a',
    stats:{},testStats:{},studyLog:log,testHistory:hist,onboardingComplete:true,

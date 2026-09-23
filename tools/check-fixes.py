@@ -327,6 +327,59 @@ def main():
                             if adv["h"] < 44: fails.append(f"{tag}: Advanced settings {adv['h']}px tall")
 
                         # 9/10. release history has no back link; tooltip names the daily question
+                        # 11. RECENT TEST REVIEW: a row says which units it
+                        # covered, and looks tappable. The affordance used to be
+                        # a @media (hover:hover) colour, which no phone or
+                        # tablet has, and the name was entry.label - "3 units
+                        # - Drill", naming none of them. Measured rather than
+                        # read, because two separate things here are only
+                        # visible at a particular width: the chevron was
+                        # stranded on a line of its own on the ONE row long
+                        # enough to wrap (flex wraps on an item's base size,
+                        # not its shrunk size), and the meta line ran 44-52px
+                        # past the panel on a 320px phone.
+                        tr = pg.evaluate("""()=>{showTestReviewList();
+                          const rows=[...document.querySelectorAll('.testrow-clickable')];
+                          const doc=document.documentElement;
+                          return {pageOverflow:Math.round(doc.scrollWidth-doc.clientWidth),
+                            n:rows.length,
+                            rows:rows.map(r=>{
+                              const n=r.querySelector('.testname'), c=r.querySelector('.testrow-chev'),
+                                    m=r.querySelector('.testmeta'), rr=r.getBoundingClientRect();
+                              let sameLine=null;
+                              if(n&&c){ const nb=n.getBoundingClientRect(), cb=c.getBoundingClientRect();
+                                const mid=(cb.top+cb.bottom)/2;
+                                sameLine = mid > nb.top-2 && mid < nb.bottom+2; }
+                              return {name:n?n.textContent:null, chev:!!c,
+                                sameLine:sameLine,
+                                chevRight:c?Math.round(rr.right-c.getBoundingClientRect().right):null,
+                                metaBelow:(n&&m)?Math.round(m.getBoundingClientRect().top-n.getBoundingClientRect().bottom):null,
+                                overflow:Math.round(r.scrollWidth-r.clientWidth),
+                                h:Math.round(rr.height)};})};}""")
+                        if not tr["n"]:
+                            fails.append(f"{tag}: recent test review is empty - the seed has no reviewable history")
+                        if tr["pageOverflow"] > 0:
+                            fails.append(f"{tag}: recent test review scrolls the page sideways by {tr['pageOverflow']}px")
+                        for i, r in enumerate(tr["rows"]):
+                            if not r["chev"]:
+                                fails.append(f"{tag}: test review row {i} has no chevron - nothing says it opens")
+                            elif not r["sameLine"]:
+                                fails.append(f"{tag}: test review row {i} chevron is not on the name's line")
+                            elif r["chevRight"] is not None and r["chevRight"] > 2:
+                                fails.append(f"{tag}: test review row {i} chevron sits {r['chevRight']}px off the right edge")
+                            if r["overflow"] > 0:
+                                fails.append(f"{tag}: test review row {i} overflows by {r['overflow']}px")
+                            if r["metaBelow"] is not None and r["metaBelow"] < 0:
+                                fails.append(f"{tag}: test review row {i} meta line is not below the name")
+                            nm = r["name"] or ""
+                            # The seed's runs all carry units, so every row has
+                            # to name one. "undefined" is what this rendered
+                            # before, from an entry with no label at all.
+                            if not nm or "undefined" in nm:
+                                fails.append(f"{tag}: test review row {i} name is {nm!r}")
+                            elif " \u00b7 " not in nm:
+                                fails.append(f"{tag}: test review row {i} does not name its units: {nm!r}")
+
                         misc = pg.evaluate("""()=>{showReleaseHistory();
                           const back=!!document.querySelector('.panel .back-link');
                           return {back};}""")

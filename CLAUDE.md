@@ -1038,6 +1038,31 @@ the Rewards switcher let the flex items shrink below their own `nowrap` text:
 the page stopped scrolling sideways and the three labels overlapped instead.
 **Look at a screenshot, not just the numbers.**
 
+**WRAPPING IS DECIDED ON AN ITEM'S BASE SIZE, NOT ITS SHRUNK SIZE.** A
+`flex:1 1 auto` item whose content is wider than the line takes the whole
+line to itself and pushes everything after it onto the next one — `min-width:0`
+does not save it, because that only lets it shrink once it is already on a
+line. The test-review row's chevron was left stranded on a line of its own,
+on the one row long enough to wrap, and only on a phone. `flex:1 1 0` is the
+fix: a zero base always fits, so the item shares its line and then grows into
+whatever is left.
+
+**A `white-space:pre` separator makes a line unwrappable, because its spaces
+are the only break opportunities there are.** The test-review meta line is
+three `nowrap` bits with " · " between them; protecting those spaces with
+`pre` — which looks like the careful thing to do — left a 284px line inside a
+240px row on a 320px phone, exactly as wide as the single `nowrap` string it
+replaced. Only the bits get `nowrap`; the separators stay default.
+
+**A GATE'S FIXTURE DECIDES WHAT THE GATE CAN SEE, AND SHORT STRINGS SEE
+NOTHING.** `showTestReviewList` is in `SCREENS` and the SE 1st gen is in
+`DEVICES`, and the sweep still reported 70/70 clean while that screen ran
+44–52px past the panel and scrolled the page sideways on it. The seeded test
+history has no elapsed times in it, so the meta line the gate measured was
+much shorter than the one a real account produces. When a screen's width
+depends on its content, the seed has to carry content of a realistic length —
+the same lesson as the used-account seed, one level further in.
+
 **Mounting an onboarding screen is not the same as reaching one, and the
 difference moves the layout.** `showWelcome()` hides the nav buttons the
 bottom tab bar derives its visibility from; every onboarding screen is
@@ -2147,6 +2172,23 @@ re-evaluated on the next check.
 - **Shared classes are genuinely shared** (`.sect`, `.slab`, `.iconbtn`,
   `.panel`). A one-screen fix needs a screen-level ancestor scope; editing the
   bare class changes every screen, usually by accident.
+- **A recent-test row says WHICH units, and it looks tappable.** Reported
+  as not being able to tell either. `testLabelFor()` cannot answer the
+  first — it stores a single-unit run as the bare unit name with no mode
+  and a multi-unit one as "3 units — Drill", which names none of them —
+  so `recordTestPlay()` now keeps `units` on the history entry and
+  `testHistoryUnitLine()` writes the line from it. Entries written before
+  that have no `units` and fall back to their label, which is why the
+  list can show both spellings for a while; twenty entries is the cap, so
+  they age out. The naming rule is a CHARACTER BUDGET
+  (`TEST_ROW_NAME_BUDGET`, 40) rather than a count of names, because the
+  names are not a fixed length — "Penal Code" is 10 and "Code of Criminal
+  Procedure and Bill of Rights" is 44, so "the first three" is one line
+  for some runs and five on a 320px phone for others. Always at least one
+  name, and **never "+1 more"**: a count of one hides exactly one name and
+  saves nothing. The affordance was a `@media (hover:hover)` colour, which
+  no phone or tablet has, so there is a chevron and an `:active` tint now.
+
 - **The Profile tab is one card, not two.** The identity block (name,
   character) and the level block (level, badges, XP bar) were two slabs
   and are one now, with a rule between them — *"maybe the top two boxes,

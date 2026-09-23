@@ -8278,11 +8278,30 @@
     color:var(--ink);
   }
   @media (hover:hover){ .testrow-clickable:hover .testname{ color:var(--accent); } }
-  .testname{ font-family:var(--serif); font-size:1.02rem; flex:1 1 100%; }
+  .testrow-clickable:active{ background:color-mix(in srgb, var(--ink) 6%, transparent); }
+  .testrow-chev{
+    flex:0 0 auto; align-self:center;
+    font-size:1.35rem; line-height:1; color:var(--soft); opacity:1;
+  }
+  .testrow-clickable:active .testrow-chev{ color:var(--accent); opacity:1; }
+  /* The name shares its line with the chevron and the meta line wraps
+     below it, so the 100% basis moved from the name to the meta. Same
+     two lines as before; the chevron now has somewhere to sit.
+     The name's basis is 0, not auto: wrapping is decided on an item's
+     base size, so a name long enough to need two lines took the whole
+     flex line at `auto` and pushed the chevron down onto one of its
+     own - measured on a 440px phone with a five-unit run in the list. */
+  .testname{ font-family:var(--serif); font-size:1.02rem; flex:1 1 0; min-width:0; }
   .testmeta{
-    font-size:.82rem; color:var(--soft); white-space:nowrap; text-align:left;
+    flex:1 1 100%;
+    font-size:.82rem; color:var(--soft); text-align:left;
     font-family:var(--mono); font-variant-numeric:tabular-nums;
   }
+  /* Only the bits are nowrap. The separator is deliberately NOT - its
+     spaces are the line's only break opportunities, and making it
+     `pre` to protect them stops the line wrapping at all, which is a
+     meta line 284px wide in a 240px row. */
+  .testmeta-bit{ white-space:nowrap; }
 
   /* Centered per explicit request ("could be centered like everything
      else") — confirmed this was left at flex's default start-alignment,
@@ -27375,6 +27394,11 @@ function recordTestPlay(elapsedMs, pct){
 
   store.testHistory.unshift({
     label: testLabelFor(),
+    /* The units themselves, so the review list can say what was actually
+       taken rather than "3 units". Entries written before this exists
+       simply have no `units` and fall back to their label - see
+       testHistoryUnitLine(). */
+    units: (cfg.units || []).slice(),
     pct: pct,
     elapsedMs: elapsedMs,
     playedAt: Date.now(),
@@ -33651,7 +33675,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-23-128";
+const APP_BUILD = "2026-09-23-129";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -36022,6 +36046,52 @@ function formatDuration(ms){
   return h + "h " + m + "m";
 }
 
+/* Characters of unit names a review row will spell out before it starts
+   counting instead. 40 is two lines on a 320px phone and one on a
+   tablet; the name that pushes past it is still shown whole, so the
+   worst case is that budget plus one long name. */
+const TEST_ROW_NAME_BUDGET = 40;
+
+/* WHAT A RECORDED RUN ACTUALLY COVERED, in words. testLabelFor() cannot
+   answer this: a single-unit run is stored as the bare unit name with no
+   mode at all, and a multi-unit one as "3 units - Drill", which names
+   none of them. Reported as not being able to tell what tests had been
+   taken, one or several.
+   Older entries have no `units` array, so they fall back to their label
+   rather than claiming a run covered nothing. */
+function testHistoryUnitLine(entry){
+  const units = Array.isArray(entry && entry.units) ? entry.units.filter(Boolean) : [];
+  const modeName = entry && entry.mode === "exam" ? "Exam"
+    : entry && entry.mode === "game" ? "Game"
+    : entry && entry.mode === "vroom" ? "Virtual Room" : "Drill";
+  if(!units.length) return entry && entry.label ? entry.label : modeName;
+  const all = topicsIn(QUESTIONS);
+  let what;
+  if(units.length === all.length) what = "All " + units.length + " units";
+  else if(units.length === 1) what = units[0];
+  else {
+    /* Name as many as fit a budget, then count the rest. A fixed number of
+       names cannot work here because the names are not a fixed length:
+       "Penal Code" is 10 characters and "Code of Criminal Procedure and
+       Bill of Rights" is 44, so "the first three" is one line for some
+       runs and five on a 320px phone for others. Always at least one
+       name, so the row never reads as a bare count. */
+    const shown = [];
+    let used = 0;
+    for(let i = 0; i < units.length; i++){
+      const cost = units[i].length + (shown.length ? 2 : 0);
+      if(shown.length && used + cost > TEST_ROW_NAME_BUDGET) break;
+      shown.push(units[i]); used += cost;
+    }
+    /* Never "+1 more": a count of one hides exactly one name and saves
+       nothing, so the last one is always spelled out. */
+    if(units.length - shown.length === 1) shown.push(units[units.length - 1]);
+    what = shown.join(", ");
+    if(shown.length < units.length) what += " +" + (units.length - shown.length) + " more";
+  }
+  return what + " \u00b7 " + modeName;
+}
+
 /* A short "how long ago" for a timestamp — used for recent test history. */
 function formatAgo(ts){
   const diffMs = Date.now() - ts;
@@ -36108,15 +36178,40 @@ function showTestReviewList(){
       row.className = "testrow testrow-clickable";
       const name = document.createElement("span");
       name.className = "testname";
-      name.textContent = entry.label;
+      name.textContent = testHistoryUnitLine(entry);
+      /* A hover colour was the only affordance, and no phone or tablet
+         has hover - so nothing on screen said these rows opened
+         anything. A chevron is the same cue the other destination rows
+         in Profile already use. */
+      const chev = document.createElement("span");
+      chev.className = "testrow-chev";
+      chev.setAttribute("aria-hidden", "true");
+      chev.textContent = "\u203a";
       const meta = document.createElement("span");
       meta.className = "testmeta";
       const metaBits = [];
       if(entry.pct != null) metaBits.push(entry.pct + "%");
       if(entry.playedAt) metaBits.push(formatAgo(entry.playedAt));
       if(entry.elapsedMs != null) metaBits.push("completed in " + formatClock(entry.elapsedMs));
-      meta.textContent = metaBits.join(" \u00b7 ");
-      row.append(name, meta);
+      /* Each bit stays whole; the line breaks only BETWEEN them. The
+         whole meta line used to be one nowrap string, which on a 320px
+         phone ran 44-52px past the panel and scrolled the page
+         sideways - the sweep mounts this screen on that device and
+         missed it, because its seeded history has no elapsed times in
+         it and so a much shorter line. */
+      metaBits.forEach((bit, i) => {
+        if(i){
+          const sep = document.createElement("span");
+          sep.className = "testmeta-sep";
+          sep.textContent = " \u00b7 ";
+          meta.appendChild(sep);
+        }
+        const b = document.createElement("span");
+        b.className = "testmeta-bit";
+        b.textContent = bit;
+        meta.appendChild(b);
+      });
+      row.append(name, chev, meta);
       row.addEventListener("click", () => showTestHistoryDetail(entry));
       list.appendChild(row);
     });
