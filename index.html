@@ -1789,9 +1789,16 @@
      SVG filters are the one thing that has bitten this app on real iOS
      hardware. */
   .avatarchar-option{ --char-glow:var(--accent); }
+  /* 118%, not 150%, and centred on the character rather than above it.
+     At 150% the pool reached a long way past the top of the button and
+     on the first row of the grid that is the "CHARACTER" header - a
+     glow washing over a section title, reported directly. The drop
+     shadows on the drawing itself are what make the light read as
+     coming OFF the character anyway; this layer is the pool behind it
+     and does not need to be half again as wide as the cell. */
   .avatarchar-option.selected::before{
-    content:""; position:absolute; left:50%; top:42%;
-    width:150%; aspect-ratio:1; transform:translate(-50%, -50%);
+    content:""; position:absolute; left:50%; top:50%;
+    width:118%; aspect-ratio:1; transform:translate(-50%, -50%);
     border-radius:50%; pointer-events:none; z-index:0;
     background:radial-gradient(circle,
       color-mix(in srgb, var(--char-glow) 42%, transparent) 0%,
@@ -6543,6 +6550,55 @@
     background:none; box-shadow:none; width:3.1rem; height:3.1rem;
   }
   .charup-banner .charup-banner-icon svg{ width:100%; height:100%; }
+  /* The swatch, drawn the way Settings draws it: a disc of the colour
+     inside a ring, rather than the colour flooding the whole coin. */
+  .themeup-banner .themeup-banner-icon{
+    background:none; border:2px solid color-mix(in srgb, var(--tier-color) 55%, transparent);
+    box-shadow:0 0 14px 1px color-mix(in srgb, var(--tier-color) 45%, transparent);
+  }
+  .themeup-banner-dot{
+    width:1.7rem; height:1.7rem; border-radius:50%;
+    background:radial-gradient(circle at 34% 30%,
+      color-mix(in srgb, var(--tier-color) 100%, #fff 28%) 0%,
+      var(--tier-color) 58%,
+      color-mix(in srgb, var(--tier-color) 70%, #000) 100%);
+  }
+  /* THE RANK BANNER IS THE BIG ONE, and it should look like it. Asked
+     for directly: "The rank unlocks need to be a cool banner but the
+     rank banner needs to be a little bit cooler/better than the rest."
+     A rank is the only unlock that carries three other unlocks with it,
+     so it gets: a wash of its own colour across the glass, a hairline
+     of it along the top edge, and a slow sweep of light over the whole
+     thing once it has landed. Nothing structural changes - it is the
+     same pill in the same place, so it cannot collide with anything the
+     others do not. */
+  .tierup-banner:not(.badgeup-banner):not(.charup-banner):not(.themeup-banner):not(.flare-banner){
+    background:
+      linear-gradient(110deg,
+        color-mix(in srgb, var(--tier-color) 26%, transparent) 0%,
+        rgba(28,33,40,.72) 46%,
+        rgba(28,33,40,.72) 100%);
+    border-color:color-mix(in srgb, var(--tier-color) 38%, rgba(255,255,255,.12));
+    box-shadow:0 8px 28px rgba(0,0,0,.4),
+               0 0 22px -4px color-mix(in srgb, var(--tier-color) 55%, transparent),
+               inset 0 1px 0 rgba(255,255,255,.14);
+    overflow:hidden;
+  }
+  .tierup-banner:not(.badgeup-banner):not(.charup-banner):not(.themeup-banner):not(.flare-banner)::after{
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(100deg, transparent 38%,
+      rgba(255,255,255,.16) 50%, transparent 62%);
+    transform:translateX(-120%);
+  }
+  .tierup-banner-show:not(.badgeup-banner):not(.charup-banner):not(.themeup-banner):not(.flare-banner)::after{
+    animation:tierup-sweep 1.5s cubic-bezier(.3,0,.2,1) .45s 1 forwards;
+  }
+  @keyframes tierup-sweep{
+    to{ transform:translateX(120%); }
+  }
+  .tierup-banner:not(.badgeup-banner):not(.charup-banner):not(.themeup-banner):not(.flare-banner) .tierup-banner-name{
+    text-shadow:0 0 16px color-mix(in srgb, var(--tier-color) 70%, transparent);
+  }
   .tierup-banner-icon{
     width:2.8rem; height:2.8rem; border-radius:50%; flex-shrink:0;
     display:flex; align-items:center; justify-content:center; color:#fff;
@@ -9900,6 +9956,39 @@
   /* The cell is the character plus its name, and the whole thing is one
      column so the names sit on one baseline however tall the drawings
      render. */
+  /* Small, in a row, and in the difficulty's own colour when filled.
+     Hollow rather than grey when not: an unfilled ring says "there is
+     one of these to get" where a grey disc says "here is a thing that
+     is off". */
+  /* ITS OWN ROW. `.pick-stars` is a flex row holding the badge, the
+     bar and the count, so three more children simply joined the end of
+     it and sat squeezed against the "0 / 35" at the card's right edge.
+     flex-basis:100% breaks the line, which puts the difficulty row
+     under the mastery row - two different measures, two rows. */
+  .pick-gamedots{ display:flex; gap:.3rem; align-items:center; }
+  /* The card is the containing block (`.pick` is position:relative for
+     its own checkbox), so this sits in its corner without taking part
+     in the grid that lays the rest of it out. */
+  .pick-gamedots-corner{
+    position:absolute; top:.6rem; right:.7rem; z-index:2;
+  }
+  .pick-gamedot{
+    width:.52rem; height:.52rem; border-radius:50%;
+    border:1.5px solid var(--rule); background:none; flex-shrink:0;
+  }
+  .pick-gamedot.on{ border-color:transparent; }
+  .pick-gamedot.on.is-easy{     background:#4ADE80; box-shadow:0 0 5px rgba(74,222,128,.55); }
+  .pick-gamedot.on.is-average{  background:#F5C518; box-shadow:0 0 5px rgba(245,197,24,.55); }
+  .pick-gamedot.on.is-hardcore{ background:#EF4444; box-shadow:0 0 5px rgba(239,68,68,.55); }
+  .speedkey{
+    display:flex; align-items:flex-start; gap:.5rem;
+    margin:.7rem .15rem 0; font-size:.72rem; line-height:1.35; color:var(--soft);
+  }
+  .speedkey .pick-gamedots{ margin-top:.18rem; flex-shrink:0; }
+  @media (min-width:40rem){
+    .pick-gamedot{ width:.6rem; height:.6rem; }
+    .speedkey{ font-size:.8rem; }
+  }
   .avatarchar-cell{
     display:flex; flex-direction:column; align-items:center; gap:.2rem;
     width:100%; min-width:0;
@@ -22657,7 +22746,8 @@ const AVATAR_CHARACTERS = [
                     question would be pretty sweet." It takes ten days
                     and cannot be rushed, which is the whole point of
                     the daily question.
-       Masked One - a hundo in ten DIFFERENT units in a row. Quiet,
+       Masked One - Hardcore beaten on ten units. Fifteen seconds a
+                    question and one life, ten times over. Quiet,
                     relentless, faceless; the character is the feat.
        Zeus       - finish a week at the top of the weekly XP board.
                     The only one of the four you cannot earn on your
@@ -22667,7 +22757,7 @@ const AVATAR_CHARACTERS = [
                     the only one you cannot work towards on purpose -
                     you have to notice it. */
   { id: "detective",  kind: "detective",  feat: "daily10" },
-  { id: "masked",     kind: "masked",     feat: "streak10" },
+  { id: "masked",     kind: "masked",     feat: "hardcore10" },
   { id: "zeus",       kind: "zeus",       feat: "weektop" },
   { id: "voidwalker", kind: "voidwalker", feat: "flares" },
   /* REORDERED BY HOW HARD EACH ONE SHOULD BE, asked for in that order:
@@ -22724,9 +22814,19 @@ const CHARACTER_FEATS = {
   daily10:  { label: "Answer 10 daily questions correctly in a row",
               done: () => (store.dailyCorrectStreak || 0) >= 10,
               have: () => (store.dailyCorrectStreak || 0), need: 10 },
-  streak10: { label: "Get a hundo in 10 different units in a row",
-              done: () => (store.unitHundoStreak || 0) >= 10,
-              have: () => (store.unitHundoStreak || 0), need: 10 },
+  /* BEAT HARDCORE ON TEN UNITS, not a hundo streak. Changed after the
+     streak version shipped: "The 'hundo in 10 different units in a row'
+     change that to beat hardcore on 10 units."
+     It is the better feat for this character anyway - a streak is a
+     thing you can lose to one bad morning, and Hardcore is 15 seconds a
+     question with one life, which you either did or did not.
+     Nothing new is tracked for it: `store.unitGameBeat` has recorded
+     {easy, average, hardcore} per unit since Game mode shipped, and the
+     ladder inside recordGameBeatIfEligible() already refuses Hardcore
+     until Average is beaten. This just counts it. */
+  hardcore10: { label: "Beat Hardcore on 10 units",
+                done: () => hardcoreUnitsBeaten() >= 10,
+                have: () => hardcoreUnitsBeaten(), need: 10 },
   /* THE WEEKLY BOARD, not the Practice Test. Corrected directly: "The
      unlock for the greek statue is wrong too, it's supposed to finished
      the week as the #1 on the weekly xp leaderboard."
@@ -28666,6 +28766,13 @@ function gameBeat(name){
   return g || { easy: false, average: false, hardcore: false };
 }
 
+/* How many units have been beaten on Hardcore. One place, because the
+   feat's check and the sentence shown to somebody who has not earned it
+   both need it and two counts is how they end up disagreeing. */
+function hardcoreUnitsBeaten(){
+  return Object.values(store.unitGameBeat || {}).filter(g => g && g.hardcore).length;
+}
+
 function gameTrackStars(name){
   const g = gameBeat(name);
   if(g.hardcore) return 3;
@@ -32087,6 +32194,49 @@ function playVoidCutscene(){
    No coin behind it, for the reason the badge banner already has none:
    a character brings its own halo now, and a disc of somebody else's
    colour behind it fights with that. */
+/* A THEME UNLOCK SHOWS ITS COLOUR. Every other unlock banner now shows
+   the thing it hands over - the rank its emblem, the badge its badge,
+   the character its artwork - and a colour was the one announcing
+   itself in words. It reuses ACCENT_SWATCH, the same value the dot in
+   Settings uses, so the banner and the dot you go and tap cannot be
+   two different colours. */
+function showThemeUnlockBanner(tierKey){
+  if(theme.muteBanners) return;
+  const swatch = ACCENT_SWATCH[tierKey];
+  if(!swatch) return;
+  const banner = document.createElement("div");
+  banner.className = "tierup-banner themeup-banner";
+  banner.style.setProperty("--tier-color", swatch);
+  const icon = document.createElement("div");
+  icon.className = "tierup-banner-icon themeup-banner-icon";
+  const dot = document.createElement("span");
+  dot.className = "themeup-banner-dot";
+  icon.appendChild(dot);
+  const text = document.createElement("div");
+  const kicker = document.createElement("p");
+  kicker.className = "tierup-banner-kicker"; kicker.textContent = "THEME UNLOCKED";
+  const name = document.createElement("p");
+  name.className = "tierup-banner-name";
+  name.textContent = ACCENT_DISPLAY_NAME[tierKey] || tierKey;
+  text.append(kicker, name);
+  banner.append(icon, text);
+  document.body.appendChild(banner);
+  const top = topNoticeOffset(banner);
+  if(top != null){
+    banner.style.transition = "none";
+    banner.style.top = Math.round(top) + "px";
+    void banner.offsetHeight;
+    banner.style.transition = "";
+  }
+  requestAnimationFrame(() => banner.classList.add("tierup-banner-show"));
+  const dismiss = () => {
+    banner.classList.remove("tierup-banner-show");
+    setTimeout(() => banner.remove(), 400);
+  };
+  banner.addEventListener("click", dismiss);
+  setTimeout(dismiss, 5000);
+}
+
 function showCharacterUnlockBanner(id){
   if(theme.muteBanners) return;
   const banner = document.createElement("div");
@@ -33163,6 +33313,42 @@ function appendUnitProgress(row, name){
     }
     starsWrap.appendChild(barRow);
   }
+  /* THREE BUBBLES, one per difficulty, and only in Game mode.
+     Asked for because there was no way to see it: "I don't know how to
+     track which units are on what level in the game mode so figure that
+     out as well. Make it clean, maybe it needs three bubbles on the
+     unit card?"
+     The data was always there - store.unitGameBeat has recorded
+     {easy, average, hardcore} per unit since Game mode shipped - and
+     nothing on any screen had ever shown it. So this is a display for a
+     fact the app already knew, which is why it is three spans and not a
+     feature.
+     Filled left to right because the difficulties unlock in that order:
+     recordGameBeatIfEligible() refuses Average until Easy is beaten and
+     Hardcore until Average is, so three bubbles can only ever fill from
+     the left and the row reads as a progress meter rather than as three
+     independent ticks. */
+  if(cfg.mode === "game"){
+    const dots = document.createElement("span");
+    dots.className = "pick-gamedots";
+    /* TOP RIGHT of the card, not under the mastery bar. Asked as a
+       question and it is the right answer: the bottom-left row put a
+       second progress meter directly under the first one, and two
+       meters stacked read as one thing with six parts. In the corner
+       it is a STATUS MARK - out of the flow, glanceable, and clearly
+       about something other than the bar it is no longer touching. */
+    dots.classList.add("pick-gamedots-corner");
+    const beat = gameBeat(name);
+    ["easy", "average", "hardcore"].forEach(key => {
+      const d = document.createElement("span");
+      d.className = "pick-gamedot" + (beat[key] ? " on" : "") + " is-" + key;
+      d.title = GAME_SPEEDS[key].label + (beat[key] ? " beaten" : " not beaten yet");
+      dots.appendChild(d);
+    });
+    /* Appended to the CARD, not to starsWrap: the corner belongs to the
+       card and starsWrap is a row inside it. */
+    row.appendChild(dots);
+  }
 }
 
 /* ONE SLIDER BUILDER, NOT TWO. This lived inside showSetup(), which is
@@ -33583,6 +33769,23 @@ function showSetup(){
     speedGrid.appendChild(b);
   });
   speedSect.appendChild(speedGrid);
+  /* The legend. Three bubbles on a card mean nothing to somebody seeing
+     them for the first time, and this is the screen they are looking at
+     when they first see them. */
+  const speedKey = document.createElement("p");
+  speedKey.className = "speedkey";
+  const keyDots = document.createElement("span");
+  keyDots.className = "pick-gamedots";
+  ["easy", "average", "hardcore"].forEach(key => {
+    const d = document.createElement("span");
+    d.className = "pick-gamedot on is-" + key;
+    keyDots.appendChild(d);
+  });
+  speedKey.appendChild(keyDots);
+  const keyText = document.createElement("span");
+  keyText.textContent = "The three dots on each unit are Easy, Average and Hardcore \u2014 filled in once you have beaten that unit at that difficulty.";
+  speedKey.appendChild(keyText);
+  speedSect.appendChild(speedKey);
   speedSect.paint = () => {
     [...speedGrid.querySelectorAll(".speedopt")].forEach(b => {
       const key = b.dataset.value;
@@ -35265,7 +35468,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-23-133";
+const APP_BUILD = "2026-09-23-135";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -36294,6 +36497,14 @@ function summarize(){
     }
     TIER_ORDER.forEach(c => {
       if(!beforeTiers[c] && tierColorUnlocked(c)) newlyUnlockedColors.push(c);
+    });
+    /* The colour, announced as its own thing. A rank hands over three
+       separate unlocks and each one now says so in its own language -
+       the rank cutscene and banner for the rank, this for the colour,
+       and announceCharacterUnlocks() for the character. Staggered so
+       they arrive one after another rather than on top of each other. */
+    newlyUnlockedColors.forEach((c, i) => {
+      setTimeout(() => showThemeUnlockBanner(c), 1400 + i * 900);
     });
   }
   /* The single biggest achievement in the app \u2014 reaching the very

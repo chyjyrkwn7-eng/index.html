@@ -176,6 +176,31 @@ def check_daily_streak(pg):
 
 
 # --------------------------------------------------------------------------
+BEAT_HARDCORE = """(n)=>{
+  const topics = [...new Set(QUESTIONS.map(q => (q.topic||'').trim()))].filter(Boolean);
+  store.unitGameBeat = {};
+  topics.slice(0, n).forEach(t => {
+    store.unitGameBeat[t] = { easy:true, average:true, hardcore:true };
+  });
+  return { beaten: hardcoreUnitsBeaten(), locked: isLockedCharacter('masked'),
+           msg: characterLockMessage('masked') };}"""
+
+# A real Game run on Hardcore, through the app's own recorder, so the
+# ladder inside it is exercised rather than the store being hand-set.
+GAME_RUN = """(a)=>{
+  const { unitIndex, speed, aced } = a;
+  const topics = [...new Set(QUESTIONS.map(q => (q.topic||'').trim()))].filter(Boolean);
+  const t = topics[unitIndex];
+  cfg.mode='game'; cfg.source='all'; cfg.units=[t]; cfg.gameSpeed=speed;
+  order = QUESTIONS.map((q,i)=>[q,i]).filter(([q]) => (q.topic||'').trim() === t).map(([,i]) => i);
+  runTrackable=true; timedOut=false; runMode='game'; runLabel=null;
+  attempts={}; picked={}; timedOutSet={};
+  order.forEach(qi => { attempts[qi] = aced ? 1 : 2;
+    picked[qi] = optionOrder(qi).indexOf(QUESTIONS[qi].answer); });
+  summarize();
+  return Object.assign({}, gameBeat(t));}"""
+
+
 HUNDO = """(a)=>{
   const { unitIndex, ace } = a;
   const topics = [...new Set(QUESTIONS.map(q => (q.topic||'').trim()))].filter(Boolean);
@@ -203,8 +228,47 @@ SLICE_RUN = """()=>{
   return store.unitHundoStreak;}"""
 
 
+def check_hardcore(pg):
+    """Hardcore beaten on ten units, and the ladder that guards it.
+
+    The data has been there since Game mode shipped - store.unitGameBeat
+    records {easy, average, hardcore} per unit - and nothing had ever
+    read it or shown it. So what is worth asserting is that the COUNT is
+    the count, that the app's own recorder still refuses Hardcore before
+    Average, and that a unit card now says which of the three you have."""
+    print("\n3. Hardcore beaten on ten units")
+    for n in (0, 9, 10):
+        r = pg.evaluate(BEAT_HARDCORE, n)
+        want = n < 10
+        check("%d unit(s) beaten -> %s" % (n, "locked" if want else "unlocked"),
+              r["beaten"] == n and r["locked"] is want, r)
+    # THE LADDER, through the app's own recorder rather than by setting
+    # the store. Hardcore on a unit whose Average is not beaten must not
+    # count, or the feat is ten Easy runs with the difficulty swapped.
+    pg.evaluate("()=>{ store.unitGameBeat = {}; }")
+    straight = pg.evaluate(GAME_RUN, {"unitIndex": 0, "speed": "hardcore", "aced": True})
+    check("Hardcore alone does not count before Average",
+          straight.get("hardcore") is False, straight)
+    pg.evaluate(GAME_RUN, {"unitIndex": 0, "speed": "easy", "aced": True})
+    pg.evaluate(GAME_RUN, {"unitIndex": 0, "speed": "average", "aced": True})
+    climbed = pg.evaluate(GAME_RUN, {"unitIndex": 0, "speed": "hardcore", "aced": True})
+    check("Easy then Average then Hardcore does",
+          climbed.get("hardcore") is True, climbed)
+    # The three bubbles say which, on the unit card, in Game mode.
+    dots = pg.evaluate("""()=>{
+      cfg.mode='game'; showSetup();
+      const row = document.querySelector('.pick .pick-gamedots');
+      if(!row) return { found:false };
+      return { found:true, dots: row.children.length,
+               on: [...row.children].filter(d=>d.classList.contains('on')).length,
+               legend: !!document.querySelector('.speedkey') };}""")
+    check("the unit card carries three difficulty bubbles",
+          dots.get("found") and dots["dots"] == 3, dots)
+    check("and the picker explains what they mean", dots.get("legend") is True, dots)
+
+
 def check_hundo_streak(pg):
-    print("\n3. ten DIFFERENT units in a row, and every word of that")
+    print("\n3b. the hundo-streak counters still behave (kept, unread)")
     pg.evaluate("()=>{ store.unitHundoStreak = 0; store.unitHundoStreakUnits = []; }")
     a = pg.evaluate(HUNDO, {"unitIndex": 0, "ace": True})
     b = pg.evaluate(HUNDO, {"unitIndex": 1, "ace": True})
@@ -568,8 +632,7 @@ def main():
         ctx, pg = booted(br)
         errs = []
         pg.on("pageerror", lambda e: errs.append(str(e)))
-        for fn in (check_table, check_daily_streak, check_hundo_streak,
-                   check_practice, check_flares, check_glint, check_find,
+        for fn in (check_table, check_daily_streak, check_hardcore, check_flares, check_glint, check_find,
                    check_unlock_banner, check_art):
             try:
                 fn(pg)
