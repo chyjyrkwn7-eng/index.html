@@ -7796,10 +7796,26 @@
      screen, and it breathes. The global
      [data-reduce-motion="true"] *{animation:none} rule switches the
      breathing off without this having to name it. */
+  /* THE GLOW MARKS WHAT YOU HOLD, NOT WHERE YOU ARE STANDING. It was
+     on .is-here only, so six of seven cards were flat and a rank you
+     had already earned looked the same as one you had not. It is on
+     .is-held now, which every reached rank carries; the one you are
+     actually on keeps the brighter ring and the breathing on top.
+     Nothing unreached glows - including the next one up, which has the
+     dashed edge instead and should read as a target rather than a
+     possession. */
+  .rankcard.is-held{
+    box-shadow:0 0 0 1px color-mix(in srgb, var(--rank-color, var(--accent)) 70%, transparent),
+               0 0 20px -8px var(--rank-color, var(--accent));
+  }
   .rankcard.is-here{
     box-shadow:0 0 0 1.5px var(--rank-color, var(--accent)),
                0 0 26px -6px var(--rank-color, var(--accent));
   }
+  .rankcard.is-held .rankcard-art svg{
+    filter:drop-shadow(0 0 5px color-mix(in srgb, var(--rank-color, var(--accent)) 80%, transparent));
+  }
+  .rankcard.is-held .rankcard-art::before{ opacity:.8; }
   .rankcard.is-here .rankcard-art svg{
     filter:drop-shadow(0 0 6px color-mix(in srgb, var(--rank-color, var(--accent)) 100%, transparent))
            drop-shadow(0 0 26px color-mix(in srgb, var(--rank-color, var(--accent)) 70%, transparent));
@@ -24256,7 +24272,15 @@ const TIER_UNLOCKS = {
      14,400 XP and therefore level 25 anyway, so the level half of this
      rule never binds and the BADGE is the gate - which is what the
      first rank should be. Every rank above it moved. */
-  rookie:   { level: 5,  badges: 1,  label: "Reach level 5 and 1 badge" },
+  /* 21, NOT 5. Level 5 plus a badge meant the rank arrived in the same
+     breath as somebody's first badge and the moment went past unseen -
+     "earning a badge at level 5 is not the move". 21 is a real step
+     past it: one badge is level 25 on this curve, so the badge still
+     gates it, but the rank now lands as its own thing.
+     Checked against the live board before moving it: exactly one person
+     holds a badge and he is level 25, so he keeps Iron and nobody else
+     gains it. Check the same way before touching this again. */
+  rookie:   { level: 21, badges: 1,  label: "Reach level 21 and 1 badge" },
   ranger:   { level: 29, badges: 3,  label: "Reach level 29 and 3 badges" },
   veteran:  { level: 36, badges: 5,  label: "Reach level 36 and 5 badges" },
   vanguard: { level: 45, badges: 8,  label: "Reach level 45 and 8 badges" },
@@ -25203,7 +25227,7 @@ const RANKING_BOARDS = [
      clearest label the row can carry. */
   { key: "hundos", tab: "Hundos", field: "hundos",
     unit: (n) => n + (n === 1 ? " hundo" : " hundos"),
-    blurb: "Ranked by hundos \u2014 units finished at 100%, in Drill, Exam, Game or the Virtual Room alike. They count per unit, not per test, so a test covering three units is three hundos on the table." }
+    blurb: "Ranked by hundos \u2014 units finished at 100%, in Drill, Exam, Game or the Virtual Room alike. They count per unit, not per test, so a test covering three units has three hundos on the table." }
 ];
 
 
@@ -29120,8 +29144,12 @@ function buildCosmicHero(useTierIcons, forceAccent){
        after the flares, so climbing it gave you nothing to be given.
        A flare is what a rank HANDS OVER now, so it keeps Spark/Ember/
        Comet and the rank that lights it is named beside it. */
+    /* "Comet flare lights at rank Silver", not "Comet lights at
+       Silver". Both nouns have to be said out loud: a flare and a rank
+       are different things with different names, and a sentence naming
+       neither leaves the reader guessing which one Silver is. */
     badge.title = ACCENT_DISPLAY_NAME[pos.tier] + " flare \u2014 " +
-      (achieved ? "lit at " + RANK_DISPLAY_NAME[pos.tier] : "lights at " + RANK_DISPLAY_NAME[pos.tier]);
+      (achieved ? "lit at rank " : "lights at rank ") + RANK_DISPLAY_NAME[pos.tier];
     const iconSvg = document.createElementNS(svgNS, "svg");
     iconSvg.setAttribute("viewBox", "0 0 24 24");
     const path = document.createElementNS(svgNS, "path");
@@ -29149,13 +29177,13 @@ function buildCosmicHero(useTierIcons, forceAccent){
       const rankName = RANK_DISPLAY_NAME[pos.tier];
       const showFlareInfo = () => {
         if(achieved){
-          showContextualInfo(badge, flareName + " \u2014 lit when you reached " + rankName + ".");
+          showContextualInfo(badge, flareName + " flare \u2014 lit when you reached rank " + rankName + ".");
           return;
         }
         /* Levels and badges now, worded in the one place that words
            them - Titan's Secret Flares condition included. */
         const parts = tierShortfall(TIER_UNLOCKS[pos.tier]);
-        showContextualInfo(badge, flareName + " lights at " + rankName + ": " +
+        showContextualInfo(badge, flareName + " flare lights at rank " + rankName + ": " +
           (parts.length ? parts.join(", ") + " to go." : "ready to unlock."));
       };
       badge.addEventListener("click", showFlareInfo);
@@ -33518,7 +33546,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-23-124";
+const APP_BUILD = "2026-09-23-125";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -39554,7 +39582,12 @@ function buildRanksTab(){
 
   const heroArt = document.createElement("div");
   heroArt.className = "rankhero-art";
-  heroArt.appendChild(buildRankEmblemSVG(held || TIER_ORDER_FULL[0]));
+  /* NOTHING IN THE SETTING UNTIL YOU HOLD SOMETHING. It used to fall
+     back to the first rank's emblem, so an unranked person was shown
+     Iron dimmed - which reads as "you have Iron, faintly" rather than
+     "you have no rank". Empty is the honest picture, and it matches an
+     unearned badge's empty slot on the Badges tab. */
+  if(held) heroArt.appendChild(buildRankEmblemSVG(held));
   hero.appendChild(heroArt);
 
   const heroInfo = document.createElement("div");
@@ -39777,22 +39810,14 @@ function buildRanksTab(){
     /* Tappable, the same as the Home flares, and answering the same
        question in the same words - tierShortfall is the one place that
        wording lives. */
-    card.classList.add("cosmic-badge-tappable");
-    card.setAttribute("role", "button");
-    card.setAttribute("tabindex", "0");
-    const explain = () => {
-      if(reached){
-        showContextualInfo(card, RANK_DISPLAY_NAME[key] + " reached — every reward below is yours.");
-        return;
-      }
-      const parts = tierShortfall(rule);
-      showContextualInfo(card, RANK_DISPLAY_NAME[key] + ": " +
-        (parts.length ? parts.join(", ") + " needed." : "ready to reach."));
-    };
-    card.addEventListener("click", explain);
-    card.addEventListener("keydown", (e) => {
-      if(e.key === "Enter" || e.key === " "){ e.preventDefault(); explain(); }
-    });
+    /* NOT TAPPABLE. These carried role=button and tabindex=0 so a tap
+       would explain what was left to reach them - but the card already
+       says that in its requirement line and its meter, so the tap was
+       repeating what was on screen. What it cost was the scroll:
+       a focusable, role=button element the height of the viewport turns
+       every drag that starts on a card into a press, and the tab is
+       seven cards tall. Reported as the cards being clickable for no
+       reason and hard to scroll through. */
     track.appendChild(card);
   });
   tab.appendChild(track);
