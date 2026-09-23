@@ -102,16 +102,29 @@ disagreed, the repo won and the difference is called out.
   merging, not after - the gates in **Verifying** are the whole safety
   net now.
 
-**Merging to `main` is part of finishing a change, not a separate request.**
-Standing instruction from Madison, given after a whole session's work sat on
-the branch while she opened the app and found nothing had changed: once a
-change passes its checks, merge it to `main` and push, without asking. Pages
-rebuilds in well under a minute, so the test URL is then current and what she
-opens matches the screenshots she was just sent. The failure mode this exists
-to prevent is silent — a branch that is 11 commits ahead looks exactly like a
-branch that is up to date from the Home Screen. **If for any reason a change
-is NOT on `main`, say so in the same message as the screenshots**; never let
-her discover it by opening the app.
+**DO NOT MERGE TO `main` UNTIL MADISON HAS SEEN THE SCREENSHOTS AND SAID
+GO.** This supersedes the merge-on-green instruction below, and it is the
+current one. Asked for directly — *"Add a hold till I see the screenshots"*
+— once it became clear what a merge here actually does: this repo has been
+the live repo since build 97, so `main` is ~40 classmates' phones about a
+minute later, not a staging URL. The sequence is: finish the change, run
+the gates in **Verifying**, send both reference screenshots, and then
+**wait**. A green matrix is permission to ask, not permission to ship.
+
+**The superseded instruction, and why it existed**, because the failure
+mode it was written for is real and has not gone away: a whole session's
+work once sat on the branch while she opened the app and found nothing had
+changed, and a branch that is 11 commits ahead looks exactly like one that
+is up to date from the Home Screen. So the hold costs something, and the
+price of it is stated plainly every time: **whenever work is finished but
+NOT on `main`, say so in the same message as the screenshots** — name the
+build and say it is waiting on her go. Never let her discover it by
+opening the app. That sentence was load-bearing under the old instruction
+and it is load-bearing under this one, for opposite reasons.
+
+**A hold is not a reason to stop working.** Keep going down the list,
+keep committing and pushing to the branch, keep the gates green. What
+waits is the merge, and only the merge.
 
 **Single file is the deployment model, not accretion.** Even Firebase loads via
 plain `<script src=...compat.js>` rather than an ES module, precisely so no
@@ -2093,6 +2106,14 @@ deploy from here; only the copying step is history. What matters now:
 **a merge to `main` is live to the class in about a minute**, so the
 checks in **Verifying** are the only thing standing between a mistake
 and ~40 people.
+
+**And now a second thing stands there: Madison's go.** See **DO NOT MERGE
+TO `main` UNTIL MADISON HAS SEEN THE SCREENSHOTS** under **Repo and
+deployment**. She asked for it on being told what this paragraph says —
+she had been asking when the work could be "pushed from the test URL to
+the live class used URL", which is a step that stopped existing at build
+97. If a session is still describing this repo as a test repo, it is
+reading `Nova-Test`'s retired copy of this file.
 
 **Copy `index.html`, `version.json` AND the `launch/` folder. All three.**
 `index.html` and `version.json` are one comparison split across two files;
