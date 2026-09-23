@@ -363,7 +363,7 @@
     box-shadow:0 0 7px rgba(168,85,247,.5);
   }
   .dot.tier-titan{
-    background-image:linear-gradient(135deg, #FF7A6E, #E23B3B, #FF7A6E); background-size:220% 220%;
+    background-image:linear-gradient(135deg, #FFD08A, #E23B3B 26%, #6B1B6B 50%, #E23B3B 74%, #FFD08A); background-size:220% 220%;
     box-shadow:0 0 7px rgba(226,59,59,.5);
   }
   .dot.tier-grinder{
@@ -4894,7 +4894,7 @@
      .daily-question-fab - that one is relative to the centred tab bar and
      grows away from the edge as the viewport widens. */
   @media (min-width:44rem){
-    body.has-bottomtabs:not(.has-floatbtn):not(:has(.daily-question-fab)) .backtotop{
+    body.has-bottomtabs:not(:has(.floatbtn:not(.merged-into-bar))):not(:has(.daily-question-fab)) .backtotop{
       bottom:calc(.6rem + env(safe-area-inset-bottom, 0px));
       right:max(1.5rem, calc(env(safe-area-inset-right, 0px) + 1.2rem));
     }
@@ -6091,7 +6091,7 @@
      for its own short beat, longer than the filter needs to settle,
      covers the gap without slowing down or changing anything else. */
   @media (prefers-reduced-motion:no-preference){
-    .cosmic-hero-wrap{ animation:cosmic-hero-settle .22s ease-out both; }
+    .cosmic-hero-svg{ animation:cosmic-hero-settle .22s ease-out both; }
   }
   @keyframes cosmic-hero-settle{
     0%{ opacity:0; }
@@ -7109,7 +7109,7 @@
      3.7rem up from the same inset. The daily-question circle gets the same treatment on
      its own side - they are a pair and they have to read as one. */
   @media (min-width:40rem){
-    .homeversion{ bottom:calc(3.7rem + env(safe-area-inset-bottom, 0px)); }
+    .homeversion{ bottom:calc(2.95rem + env(safe-area-inset-bottom, 0px)); }
   }
   /* Underlined at full strength on a .55-opacity label, it read as a
      stray anchor dropped in the corner rather than as part of the
@@ -7242,7 +7242,7 @@
          bottom edge and is 101px tall; this circle is 4.6rem, and
          measured across the matrix 1.83rem puts the two centre lines at
          exactly 0px apart. */
-      bottom:calc(1.83rem + env(safe-area-inset-bottom, 0px));
+      bottom:calc(1.46rem + env(safe-area-inset-bottom, 0px));
       right:max(calc(50% - 21rem), 1rem);
     }
   }
@@ -7529,7 +7529,10 @@
      what it was reported as. A rank is a card here, and the cards fill
      the width: two across a phone, up to all seven in one row on a
      screen wide enough to hold them - the strip from the reference. */
-  .ranks-tab .slab.section-divider{ margin-bottom:.3rem; }
+  /* .3rem put the RANKS pill almost on top of the paragraph under it.
+     .85rem is the middle between that and the 1rem the same pill uses in
+     Settings, so the two screens read as one system. */
+  .ranks-tab .slab.section-divider{ margin-bottom:.85rem; }
   .ranks-note{ font-size:.78rem; color:var(--soft); margin:0 0 .9rem; }
 
   /* The hero. One row on anything wider than a phone, emblem beside the
@@ -7755,6 +7758,14 @@
   .rankcard-rewardhead{
     font-size:.58rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase;
     color:var(--rank-color, var(--accent)); margin:0 0 .15rem; opacity:.85;
+  }
+  /* Same treatment as REWARDS, deliberately: both are labels for the
+     list under them, and the requirement line needs one or it reads as
+     a stats readout that disagrees with the hero above it. Muted rather
+     than the rank colour, so it does not compete with REWARDS. */
+  .rankcard-reqhead{
+    font-size:.58rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--soft); margin:0 0 .1rem; opacity:.8;
   }
   .rankcard-rewards{
     list-style:none; margin:0; padding:0;
@@ -8991,11 +9002,14 @@
      [data-reduce-motion="true"] *{animation:none} switches it off
      without this having to know that rule exists. */
   @keyframes stat-shine{
-    0%{ background-position:-140% 0; }
-    55%, 100%{ background-position:240% 0; }
+    0%{ background-position:0% 0; }
+    55%, 100%{ background-position:-200% 0; }
   }
   .shine-blue, .shine-silver{
-    background-size:240% 100%;
+    /* 200%, not 240%: paired with a -200% sweep this is exactly one
+       tile, so the 45% hold sits on the start position modulo one tile
+       and the loop point becomes invisible. */
+    background-size:200% 100%;
     -webkit-background-clip:text; background-clip:text;
     color:transparent;
     animation:stat-shine 4.5s ease-in-out infinite;
@@ -9243,10 +9257,13 @@
     content:""; position:absolute; inset:0;
     background-image:linear-gradient(100deg, rgba(255,255,255,0) 34%,
       rgba(255,255,255,.5) 50%, rgba(255,255,255,0) 66%);
-    background-size:220% 100%;
+    /* 200% with a -400% sweep is exactly two tiles. The old pair
+       travelled 4.08 tiles, so every loop jumped; this keeps the sweep
+       speed within 2% of what it was and lands seamlessly. */
+    background-size:200% 100%;
     animation:xp-sheen 2.8s linear infinite;
   }
-  @keyframes xp-sheen{ from{ background-position:-120% 0; } to{ background-position:220% 0; } }
+  @keyframes xp-sheen{ from{ background-position:0% 0; } to{ background-position:-400% 0; } }
   /* The end-of-run level block. Deliberately the same track and fill
      classes the Profile bar uses (.xpbar-track/.xpbar-fill) rather than
      a second pair that could drift - only the surround is new. */
@@ -9728,19 +9745,40 @@
        both left the thing on screen in the corner - because the input
        each one trusted was not the one that was wrong. Chromium cannot
        reproduce a launch, so neither was ever really exercised. */
+    /* A BLIND Math.min IS WHAT PUT IT BACK IN THE CORNER. The two
+       documentElement reads below are guarded against a falsy zero, but
+       visualViewport was folded in with no guard at all - so one short
+       or zero reading from one API for one frame dragged the whole
+       answer down, and a zero pinned it to 0,0, which place() then wrote
+       as left:0/top:0. The isFinite lines made it worse: they turned
+       "nothing answered" into a confident 0 rather than an admission.
+       Collect only readings that are finite and positive, drop any that
+       is less than half the largest (that is the under-reporting frame,
+       not a real viewport), and say so when nothing credible survives. */
+    function smallestCredible(vals){
+      var ok = [], i, big = 0;
+      for(i = 0; i < vals.length; i++){
+        if(isFinite(vals[i]) && vals[i] > 0){ ok.push(vals[i]); if(vals[i] > big) big = vals[i]; }
+      }
+      if(!ok.length) return 0;
+      var best = big;
+      for(i = 0; i < ok.length; i++){ if(ok[i] >= big / 2 && ok[i] < best) best = ok[i]; }
+      return best;
+    }
     function viewport(){
       var de = document.documentElement;
-      var w = window.innerWidth  || Infinity;
-      var h = window.innerHeight || Infinity;
-      if(de && de.clientWidth)  w = Math.min(w, de.clientWidth);
-      if(de && de.clientHeight) h = Math.min(h, de.clientHeight);
-      if(vv){ w = Math.min(w, vv.width); h = Math.min(h, vv.height); }
-      if(!isFinite(w)) w = 0;
-      if(!isFinite(h)) h = 0;
-      return { w: w, h: h, x: vv ? vv.offsetLeft : 0, y: vv ? vv.offsetTop : 0 };
+      var w = smallestCredible([window.innerWidth,  de && de.clientWidth,  vv && vv.width]);
+      var h = smallestCredible([window.innerHeight, de && de.clientHeight, vv && vv.height]);
+      return { w: w, h: h, x: vv ? vv.offsetLeft : 0, y: vv ? vv.offsetTop : 0,
+               trusted: w > 0 && h > 0 };
     }
+    /* WRITING A BAD PIXEL VALUE IS STRICTLY WORSE THAN WRITING NONE. If
+       nothing credible answered, clear the inline styles and let the CSS
+       50%/50% hold it - which is right everywhere except the one iOS
+       oversized-box case this whole block exists for. */
     function place(){
       var v = viewport();
+      if(!v.trusted){ g.style.left = ""; g.style.top = ""; return; }
       g.style.left = Math.round(v.x + v.w / 2) + "px";
       g.style.top  = Math.round(v.y + v.h / 2) + "px";
     }
@@ -9752,6 +9790,11 @@
        shows a splash rather than a blank screen. */
     function centred(){
       var v = viewport(), r = g.getBoundingClientRect();
+      /* An untrusted viewport can never be "centred": both sides would be
+         measured against the same bad number and agree at 0,0, which is
+         precisely the corner this is supposed to catch. A group with no
+         painted size cannot be judged either. */
+      if(!v.trusted || !r.width || !r.height) return false;
       return Math.abs((r.left + r.width  / 2) - (v.x + v.w / 2)) <= 2 &&
              Math.abs((r.top  + r.height / 2) - (v.y + v.h / 2)) <= 2;
     }
@@ -33546,7 +33589,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-23-125";
+const APP_BUILD = "2026-09-23-126";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -39752,11 +39795,14 @@ function buildRanksTab(){
     const body = document.createElement("div");
     body.className = "rankcard-body";
 
+    const reqHead = document.createElement("p");
+    reqHead.className = "rankcard-reqhead";
+    reqHead.textContent = reached ? "Reached at" : "Requires";
     const req = document.createElement("p");
     req.className = "rankcard-req";
     req.textContent = "Level " + rule.level + " · " + rule.badges +
       (rule.badges === 1 ? " badge" : " badges");
-    body.appendChild(req);
+    body.append(reqHead, req);
 
     /* The meter belongs to the rank you are CLIMBING TO and nothing
        else. Every unreached rank carried one, which put a half-full bar
