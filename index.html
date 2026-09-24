@@ -8422,6 +8422,14 @@
   .resetwarning-confirm{
     margin-top:auto;
   }
+  /* "This app" is a stack of equal rows now. The gaps were whatever
+     each control happened to bring with it - a ghost pill with an
+     inline marginTop, a slab with none - so the section read as
+     buttons dropped in rather than as a list. */
+  .screen-settings .settings-buildline{ margin:.1rem 0 .7rem; }
+  .screen-settings .cal-profile-row{ margin:0 0 .55rem; }
+  .screen-settings .cal-profile-row:last-child{ margin-bottom:0; }
+  .screen-settings .cal-profile-btn{ width:100%; min-height:48px; }
   .affiliation-note{
     font-size:.68rem; color:var(--soft); opacity:.55; text-align:center; margin:1.3rem 0 0;
   }
@@ -34962,6 +34970,35 @@ function syncChatDock(){
      chat goes, the notifications do not - so the tab is what changes,
      not the dock. */
   const inRoom = inVroomNow();
+  /* ---- AND IT IS NOT UP DURING A TEST OR A LOADING SCREEN ----
+     Two reports, both right. The dock is fixed in the top-right corner
+     and so is the PAUSE button during a question, so the two landed on
+     each other - and a chat button on top of Pause is the one control
+     on that screen nobody can afford to miss. It also sat over the
+     splash and the LOADING TEST screen, which are not screens you can
+     do anything on.
+
+     The tab bar already disappears inside a test for exactly this
+     reason (forceHideBottomTabs), so this is the same rule applied to
+     the same situation rather than a new idea. Notifications keep
+     arriving as banners, which is how they reach somebody mid-test
+     anyway. Every read is TDZ-guarded: this runs on every stage
+     mutation, including ones that happen while the top-level script is
+     still executing. */
+  let busy = false;
+  try{ busy = !!testInProgress; }catch(e){}
+  if(!busy) busy = document.body.classList.contains("has-active-question");
+  if(!busy) busy = !!(document.getElementById("splashscreen")
+                      || document.getElementById("teststart-overlay")
+                      || document.getElementById("genprofile-overlay"));
+  try{ if(!busy && window.forceHideBottomTabs) busy = true; }catch(e){}
+  if(busy){
+    chatDock.hidden = true;
+    chatDockOpen = false;
+    chatDock.classList.remove("is-open");
+    document.body.classList.remove("chatdock-open");
+    return;
+  }
   /* AND THE CHAT LOBBY IS GENUINELY LEFT, not merely hidden. Asked for
      in those words: "when you leave the virtual room you'd have to
      start another chat again because it won't be there". Sitting in a
@@ -37547,6 +37584,11 @@ function showCountdown(n){
 
   stage.replaceChildren();
   document.body.appendChild(overlay);
+  /* The loading screen goes on <body>, not into #stage, so the stage
+     observer that normally recalculates what is on screen does not
+     fire for it - and the chat dock sat on top of it. Told directly,
+     both here and where it is removed. */
+  if(typeof syncChatDock === "function") syncChatDock();
   countEl.textContent = scopeLabel() + " \u2014 starting soon";
   testScopeLabelEl.textContent = countEl.textContent;
 
@@ -37560,7 +37602,11 @@ function showCountdown(n){
     if(step < totalSteps){
       countdownHandle = setTimeout(tick, 300);
     } else {
-      countdownHandle = setTimeout(() => { overlay.remove(); startRunNow(); }, 300);
+      countdownHandle = setTimeout(() => {
+        overlay.remove();
+        if(typeof syncChatDock === "function") syncChatDock();
+        startRunNow();
+      }, 300);
     }
   }
   tick();
@@ -38522,7 +38568,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-24-171";
+const APP_BUILD = "2026-09-24-172";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -40436,11 +40482,20 @@ function showAppearance(opts){
   const updLab = document.createElement("span");
   updLab.hidden = true;
   const updNow = document.createElement("p");
-  updNow.className = "friend-hint";
+  updNow.className = "friend-hint settings-buildline";
   updNow.textContent = "Build " + APP_BUILD;
+  /* ONE SHAPE FOR EVERY ROW IN THIS SECTION. Reported as looking bad
+     and being too many buttons, and looked at, the problem was not the
+     count - it was that four controls sitting together were four
+     DIFFERENT controls: a ghost pill, a full-width slab, a bare text
+     link and a red block, in that order. Check for update and Report a
+     bug do the same kind of thing (go somewhere, come back), so they
+     are the same row now, and Reset keeps its red because it is the
+     only one that destroys anything. */
+  const updRow = document.createElement("div");
+  updRow.className = "cal-profile-row";
   const updBtn = document.createElement("button");
-  updBtn.type = "button"; updBtn.className = "next ghost";
-  updBtn.style.marginTop = ".6rem"; updBtn.style.minHeight = "44px";
+  updBtn.type = "button"; updBtn.className = "cal-profile-btn";
   updBtn.textContent = "Check for update";
   updBtn.addEventListener("click", () => {
     updBtn.disabled = true; updBtn.textContent = "Checking\u2026";
@@ -40462,7 +40517,8 @@ function showAppearance(opts){
         updNow.textContent = "Build " + APP_BUILD + " \u2014 couldn\u2019t reach the server.";
       });
   });
-  updSect.append(updLab, updNow, updBtn);
+  updRow.appendChild(updBtn);
+  updSect.append(updLab, updNow, updRow);
 
   const studyDetails = document.createElement("div");
   studyDetails.className = "motion-details";
