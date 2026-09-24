@@ -359,6 +359,214 @@ def main():
         check("and nothing threw", not errs3, errs3[:3])
         ctx3.close()
 
+        # ---- 10. online means the app is open ------------------------
+        # It was derived from `lastModified`, which only moves when
+        # somebody PUSHES - so a classmate sitting on Home for ten
+        # minutes read as offline and somebody who answered four minutes
+        # ago and closed the app read as online. "Who is online" was
+        # really "who answered something recently".
+        print("\n10. online means the app is open, not that they answered recently")
+        ctx4, pg4 = booted(br)
+        errs4 = []
+        pg4.on("pageerror", lambda e: errs4.append(str(e)))
+
+        seen = pg4.evaluate("""()=>{
+          const now = Date.now();
+          return {
+            /* seenAt alone is enough - the whole point. */
+            beat: isOnline({ seenAt: now - 60000 }),
+            /* and stale seenAt is offline however recent the push. */
+            staleBeat: isOnline({ seenAt: now - 9 * 60 * 1000 }),
+            /* THE FALLBACK IS LOAD-BEARING: everybody is on an older
+               build for the first day after this ships, and without it
+               the whole class reads offline until each phone updates. */
+            oldBuild: isOnline({ lastModified: now - 60000 }),
+            oldStale: isOnline({ lastModified: now - 9 * 60 * 1000 }),
+            /* A row with neither is not online, not crashed. */
+            empty: isOnline({}), nul: isOnline(null) };}""")
+        check("a heartbeat alone makes somebody online", seen["beat"] is True, seen)
+        check("and a stale one does not", seen["staleBeat"] is False, seen)
+        check("an older build still reads online from its push",
+              seen["oldBuild"] is True and seen["oldStale"] is False, seen)
+        check("a row with neither is simply offline",
+              seen["empty"] is False and seen["nul"] is False, seen)
+
+        try:
+            # EVERY GUARD ON THE HEARTBEAT IS A FIRESTORE BILL. It is the
+            # only periodic write in the app; forty phones on a four-minute
+            # timer is ~14k writes a day against a 20k free-tier ceiling the
+            # ordinary pushes also draw on. A guard that silently stopped
+            # working would not break anything visible - it would just spend
+            # the quota - so each one is checked rather than trusted.
+            guards = pg4.evaluate("""()=>{
+              const calls = [];
+              fbDb = { collection: () => ({ doc: () => ({
+                update: (d) => { calls.push(d); return Promise.resolve(); } }) }) };
+              syncCode = "AAAA-1111"; store.publicId = "me01";
+              const hidden = (v) => Object.defineProperty(document, "visibilityState",
+                { get: () => v, configurable: true });
+
+              store.leaderboardOptIn = true; hidden("visible");
+              lastHeartbeatAt = 0; sendHeartbeat(true);
+              const beats = calls.length;
+
+              /* Not sharing: there is no row to write to. */
+              store.leaderboardOptIn = false; lastHeartbeatAt = 0; sendHeartbeat(true);
+              const optedOut = calls.length;
+
+              /* Backgrounded: not somebody you can play with, and an app
+                 left open on a desk all day is what spends the quota. */
+              store.leaderboardOptIn = true; hidden("hidden");
+              lastHeartbeatAt = 0; sendHeartbeat(true);
+              const background = calls.length;
+
+              /* Not syncing at all. */
+              hidden("visible"); syncCode = null; lastHeartbeatAt = 0; sendHeartbeat(true);
+              const noCode = calls.length;
+
+              /* And it does not fire faster than its interval when it is
+                 not forced - otherwise every screen change is a write. */
+              syncCode = "AAAA-1111"; lastHeartbeatAt = Date.now(); sendHeartbeat(false);
+              const throttled = calls.length;
+
+              hidden("visible");
+              return { beats, optedOut, background, noCode, throttled,
+                       field: Object.keys(calls[0] || {}) };}""")
+            check("a visible, sharing, synced device sends one",
+                  guards["beats"] == 1, guards)
+            check("and it writes nothing but seenAt",
+                  guards["field"] == ["seenAt"], guards["field"])
+            check("nothing is sent when class sharing is off",
+                  guards["optedOut"] == guards["beats"], guards)
+            check("nothing is sent while the app is in the background",
+                  guards["background"] == guards["beats"], guards)
+            check("nothing is sent by a device that is not syncing",
+                  guards["noCode"] == guards["beats"], guards)
+            check("and it will not fire again inside its own interval",
+                  guards["throttled"] == guards["beats"], guards)
+
+            # set() REPLACES THE DOCUMENT, so a stats push landing a second
+            # after a heartbeat would delete seenAt and drop the person
+            # offline mid-session. Pushing is activity, so it publishes one.
+            pushes = pg4.evaluate("""()=>{
+              let payload = null;
+              fbDb = { collection: () => ({ doc: () => ({
+                set: (d) => { payload = d; return { catch: () => {} }; },
+                update: () => ({ catch: () => {} }) }) }) };
+              syncCode = "AAAA-1111"; store.leaderboardOptIn = true; store.publicId = "me01";
+              store.firstName = "Madison";
+              pushToCloud();
+              return { has: !!(payload && payload.seenAt), keys: payload ? 1 : 0 };}""")
+            check("a stats push republishes seenAt rather than wiping it",
+                  pushes["has"] is True, pushes)
+        except Exception as e:
+            # --against an older build there is no heartbeat to guard,
+            # and a section that throws must report that rather than
+            # abort the run before it can.
+            check("the heartbeat exists at all", False, repr(e)[:160])
+
+
+        check("nothing threw in the heartbeat section", not errs4, errs4[:3])
+
+        # ---- 11. the dot has something to do --------------------------
+        # An online indicator that leads nowhere is a light on a
+        # dashboard. The action asserted here is the SHAPE of one -
+        # an online friend's row carries one more action than an
+        # offline friend's - rather than its label, which is the app's
+        # to change.
+        print("\n11. an online friend can be invited, an offline one cannot")
+        errs5 = []
+        pg4.on("pageerror", lambda e: errs5.append(str(e)))
+        shape = pg4.evaluate("""()=>{
+          store.publicId = "me0000000001";
+          store.friendsIn = ["alex000000002", "sam00000000003"];
+          store.friendsOut = []; store.friendsDeclined = [];
+          store.leaderboardOptIn = true;
+          store.lobbyInvitesOut = {};
+          const now = Date.now();
+          leaderboardRows = [
+            { pub:"alex000000002", firstName:"Alex", fcode:"ABC-234", level:40,
+              badges:8, hundos:90, freq:[], facc:["me0000000001"], seenAt: now - 30000 },
+            { pub:"sam00000000003", firstName:"Sam", fcode:"SAM-234", level:12,
+              badges:1, hundos:4, freq:[], facc:["me0000000001"], seenAt: now - 9*60*1000 }
+          ];
+          showFriends();
+          const rows = [...document.querySelectorAll(".friend-row")].map(r => ({
+            name: (r.querySelector(".friend-row-name") || {}).textContent,
+            dot: !!r.querySelector(".friend-online-dot"),
+            acts: r.querySelectorAll(".friend-act").length }));
+          return rows;}""")
+        byname = {r["name"]: r for r in shape}
+        check("both friends are listed", set(byname) == {"Alex", "Sam"}, shape)
+        check("the online one is first", shape and shape[0]["name"] == "Alex", shape)
+        check("only the online one carries the dot",
+              byname.get("Alex", {}).get("dot") is True
+              and byname.get("Sam", {}).get("dot") is False, shape)
+        check("and the online one has one more action than the offline one",
+              byname.get("Alex", {}).get("acts", 0)
+              == byname.get("Sam", {}).get("acts", 0) + 1, shape)
+
+        try:
+            # THE INVITE HAS TO REACH THE ROOM THAT WAS JUST MADE. The
+            # Friends screen has no room code - the sheet inside a lobby is
+            # handed one - so the failure this guards is an invite written
+            # against a code that is null, stale, or a different room's.
+            sent = pg4.evaluate("""()=>{
+              let made = null;
+              fbDb = { collection: (c) => ({ doc: (id) => ({
+                set: (d) => { if(c === "vrooms"){ made = { code: id, doc: d }; }
+                              return Promise.resolve(); },
+                update: () => Promise.resolve() }) }) };
+              inVirtualRoom = false; vroomCode = null;
+              store.lobbyInvitesOut = {};
+              const row = [...document.querySelectorAll(".friend-row")]
+                .find(r => (r.querySelector(".friend-row-name") || {}).textContent === "Alex");
+              const acts = [...row.querySelectorAll(".friend-act")];
+              /* The non-ghost one: Remove is the ghost on every row. */
+              const invite = acts.find(b => !b.classList.contains("ghost"));
+              invite.click();
+              return new Promise(res => setTimeout(() => res({
+                made: made && made.code,
+                hosted: !!(made && made.doc && made.doc.participants
+                           && made.doc.participants[store.publicId]),
+                invites: JSON.parse(JSON.stringify(store.lobbyInvitesOut || {})),
+                screen: !!document.querySelector(".screen-vroom-lobby, .vroom-lobby, .panel")
+              }), 60));}""")
+            check("a lobby is created", bool(sent["made"]), sent)
+            check("with me in it as the host", sent["hosted"] is True, sent)
+            check("and the invite is addressed to that friend",
+                  list(sent["invites"]) == ["alex000000002"], sent["invites"])
+            check("carrying the code of the room that was just made",
+                  sent["invites"].get("alex000000002", {}).get("code") == sent["made"], sent)
+
+            # ALREADY IN A ROOM: invite into THAT one. Making a second lobby
+            # here strands everybody in the first with a host who left.
+            again = pg4.evaluate("""()=>{
+              let made = 0;
+              fbDb = { collection: (c) => ({ doc: () => ({
+                set: () => { if(c === "vrooms") made++; return Promise.resolve(); },
+                update: () => Promise.resolve() }) }) };
+              inVirtualRoom = true; vroomCode = "HOST-ROOM";
+              store.lobbyInvitesOut = {};
+              inviteFriendToNewLobby("alex000000002", "Alex");
+              const r = { made: made,
+                          code: (store.lobbyInvitesOut["alex000000002"] || {}).code };
+              inVirtualRoom = false; vroomCode = null;
+              return r;}""")
+            check("being in a room does not start a second one", again["made"] == 0, again)
+            check("the invite goes to the room you are already in",
+                  again["code"] == "HOST-ROOM", again)
+
+        except Exception as e:
+            # --against an older build there is no invite action to
+            # click, and a section that throws must say so rather
+            # than abort the run before the rest of it reports.
+            check("an online friend has an invite action at all", False, repr(e)[:160])
+
+        check("nothing threw inviting a friend", not errs5, errs5[:3])
+
+        ctx4.close()
+
         check("no uncaught JS along the way", not errs, errs[:3])
         ctx.close()
         br.close()

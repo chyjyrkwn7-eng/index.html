@@ -25439,9 +25439,61 @@ let leaderboardRows = [];
    using the app refreshes it well inside that, while somebody who
    closed it drops off soon enough to be believable. */
 const ONLINE_WINDOW_MS = 5 * 60 * 1000;
+/* ONLINE HAS TO MEAN THE APP IS OPEN, and it did not. It was derived
+   from `lastModified` on the board row, which only moves when somebody
+   PUSHES - that is, when they answer questions. So a classmate sitting
+   on Home for ten minutes read as offline, and somebody who answered a
+   question four minutes ago and then closed the app read as online.
+   "Who is online" was really "who answered something recently", which
+   is not the question a friends list is for.
+
+   So a heartbeat: a tiny write saying nothing but "still here".
+
+   EVERY GUARD ON IT IS A FIRESTORE BILL. This is the only periodic
+   write in the whole app, and forty phones on a four-minute timer is
+   ~14k writes a day against a 20k free-tier ceiling that the ordinary
+   pushes also draw on. So it only runs while the tab is actually
+   VISIBLE - a backgrounded app is not somebody you can play with, and
+   an app left open on a desk all day is exactly the case that would
+   spend the quota. It also only runs for somebody who is sharing at
+   all; with leaderboardOptIn off there is no row to write to. */
+const HEARTBEAT_MS = 4 * 60 * 1000;
+let heartbeatTimer = null;
+let lastHeartbeatAt = 0;
+function sendHeartbeat(force){
+  if(!fbDb || !syncCode || !store.leaderboardOptIn || !store.publicId) return;
+  if(document.visibilityState !== "visible") return;
+  const now = Date.now();
+  if(!force && now - lastHeartbeatAt < HEARTBEAT_MS - 5000) return;
+  lastHeartbeatAt = now;
+  /* update(), not set(): a heartbeat must never be able to create a
+     half-built row, and it must not overwrite the stats beside it. On
+     a device whose row does not exist yet this rejects and is ignored -
+     the next real push writes the whole thing. */
+  try{
+    fbDb.collection("leaderboard").doc(store.publicId)
+      .update({ seenAt: now }).catch(() => {});
+  }catch(e){}
+}
+function startHeartbeat(){
+  if(heartbeatTimer) return;
+  sendHeartbeat(true);
+  heartbeatTimer = setInterval(() => sendHeartbeat(false), HEARTBEAT_MS);
+  /* Coming back to the app should say so immediately rather than up to
+     four minutes later - that gap is the whole difference between a
+     list that is useful and one that is stale. */
+  document.addEventListener("visibilitychange", () => {
+    if(document.visibilityState === "visible") sendHeartbeat(true);
+  });
+}
 function isOnline(entry){
-  return !!(entry && entry.lastModified &&
-            (Date.now() - entry.lastModified) < ONLINE_WINDOW_MS);
+  if(!entry) return false;
+  /* seenAt when it is there, lastModified when it is not. The fallback
+     is not tidiness: everybody is on an older build for the first day
+     after this ships, and without it the whole class reads as offline
+     until each phone updates. It ages out on its own as rows refresh. */
+  const at = Math.max(Number(entry.seenAt) || 0, Number(entry.lastModified) || 0);
+  return !!at && (Date.now() - at) < ONLINE_WINDOW_MS;
 }
 
 function rowsByPublicId(){
@@ -25542,6 +25594,37 @@ function inviteFriendToLobby(pub, roomCode){
   store.lobbyInvitesOut[pub] = { code: roomCode, at: Date.now() };
   saveStore();
   pushToCloud();
+}
+
+/* THE ONLINE DOT HAS TO BE GOOD FOR SOMETHING. Seeing that a classmate
+   is here and having nothing to do about it is a light on a dashboard.
+   So an online friend gets exactly one action, and it is the one the
+   dot is for: start a lobby with them already invited.
+
+   It has to make the room itself. An invite is addressed to a ROOM
+   CODE and the Friends screen has none - openInviteFriendsSheet takes
+   one because it is only ever opened from inside a lobby - so the two
+   halves are one tap here rather than "go to Virtual Room, start a
+   lobby, open Invite friends, find them again". */
+function inviteFriendToNewLobby(pub, name){
+  if(!pub) return;
+  if(!fbDb){
+    showToast("Inviting needs a live connection \u2014 check your connection and try again.");
+    return;
+  }
+  const who = name || "them";
+  /* Already in a room - invite into THAT one rather than abandoning it
+     for a new one. Not reachable from the Friends screen today (a
+     lobby hides the tab bar), but a second surface for this later
+     would hit it, and silently stranding a lobby full of people is not
+     a thing to leave to the next caller. */
+  if(inVirtualRoom && vroomCode){
+    inviteFriendToLobby(pub, vroomCode);
+    showToast("Invited " + who + " to your lobby.", "good");
+    return;
+  }
+  showToast("Starting a lobby and inviting " + who + "\u2026");
+  createVirtualRoomLobby([], 10, "race", pub);
 }
 
 /* An invite is only live for a while - a room that finished an hour ago
@@ -25900,8 +25983,15 @@ function pushToCloud(){
         freq: (store.friendsOut || []).slice(0, 100),
         facc: (store.friendsIn || []).slice(0, 100),
         inv: store.lobbyInvitesOut || {},
-        lastModified: Date.now()
+        lastModified: Date.now(),
+        /* THE HEARTBEAT HAS TO SURVIVE THIS WRITE. set() replaces the
+           whole document, so a stats push landing a second after a
+           heartbeat would delete seenAt and drop the person offline
+           mid-session. Writing it here is also correct on its own
+           terms: pushing IS activity. */
+        seenAt: Date.now()
       }).catch(() => {});
+      lastHeartbeatAt = Date.now();
     } catch(e){}
   } else if(fbDb && syncCode && store.leaderboardOptIn === false && store.leaderboardOptInChanged){
     /* Explicitly opted out after previously being in \u2014 removes the
@@ -34146,6 +34236,11 @@ function showHome(){
      invite, so Home checks what is already on the board as well as
      watching for new ones. */
   attachInviteWatcher();
+  /* Started from Home rather than at boot, because boot is also the
+     splash and a device that opens the app and closes it again should
+     not have announced itself. Idempotent, so mounting Home twenty
+     times does not stack twenty timers. */
+  startHeartbeat();
   setTimeout(() => {
     checkLobbyInvites(); checkFriendRequests(); checkSaveCodeReminder();
   }, 0);
@@ -36944,7 +37039,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-24-166";
+const APP_BUILD = "2026-09-24-167";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -40673,7 +40768,13 @@ function showVirtualRoomSetup(editRoom){
   }
 }
 
-function createVirtualRoomLobby(units, timeLimit, game){
+/* `invitePub` is the one-tap path off the Friends screen: an online
+   friend has a lobby to be invited to only once one EXISTS, so the
+   invite is sent from inside the .then() where the room's code first
+   exists rather than from the caller, which has none. Everything else
+   about the room is unchanged - it is an ordinary empty lobby and the
+   host still sets it up from Match settings. */
+function createVirtualRoomLobby(units, timeLimit, game, invitePub){
   /* The actual bug behind "wouldn't let me start a Virtual Room
      lobby" \u2014 confirmed directly: with no live connection, this call
      used to throw a SYNCHRONOUS TypeError (fbDb itself being null,
@@ -40716,6 +40817,7 @@ function createVirtualRoomLobby(units, timeLimit, game){
   fbDb.collection("vrooms").doc(code).set(doc).then(() => {
     vroomCode = code; vroomIsHost = true; vroomUnits = units;
     vroomMyKey = publicIdOf();
+    if(invitePub) inviteFriendToLobby(invitePub, code);
     showVirtualRoomLobby();
   }).catch(() => { showToast("Couldn't create the lobby \u2014 try again."); });
 }
@@ -44274,14 +44376,24 @@ function showFriends(){
     known.sort((a, b) => (isOnline(b) ? 1 : 0) - (isOnline(a) ? 1 : 0)
       || (a.firstName || "").localeCompare(b.firstName || ""));
     known.forEach(e => {
-      list.appendChild(personRow(e, [
-        actBtn("Remove", "ghost", () => {
-          if(!window.confirm("Remove " + (e.firstName || "this friend") + "?")) return;
-          removeFriend(e.pub);
-          pushToCloud();
-          showFriends();
-        })
-      ]));
+      /* INVITE IS ON AN ONLINE FRIEND ONLY, and that is the whole
+         argument for the dot. An invite is live for 30 minutes
+         (LOBBY_INVITE_TTL_MS) and lands as a banner on their Home, so
+         sending one to somebody who is not in the app is a room you
+         then sit in alone until it expires. Remove is the action on
+         everybody; Invite is the one the dot earns. */
+      const acts = [];
+      if(isOnline(e)){
+        acts.push(actBtn("Invite", "", () =>
+          inviteFriendToNewLobby(e.pub, e.firstName)));
+      }
+      acts.push(actBtn("Remove", "ghost", () => {
+        if(!window.confirm("Remove " + (e.firstName || "this friend") + "?")) return;
+        removeFriend(e.pub);
+        pushToCloud();
+        showFriends();
+      }));
+      list.appendChild(personRow(e, acts));
     });
     /* Somebody on your list whose row has not loaded - they have not
        opened the app since, or turned sharing off. Named rather than

@@ -75,6 +75,11 @@ disagreed, the repo won and the difference is called out.
   check in it was written against a build where it failed; `--against
   old-index.html` re-runs it there, which is the only thing that makes a
   green run mean anything. See **Accounts and the sync code**.
+- `tools/check-friends.py` — the friends gate, and the only one that
+  asks **is the online dot telling the truth, and does it lead
+  anywhere?** Device-independent, so it runs once. Sections 10 and 11
+  were written against build 166 and fail there; `--against` is what
+  makes a green run mean anything. See **Friends**.
 - `tools/check-tours.py` — **do the tooltips still point at things that
   exist?** `renderStep()` does `if(!el){ advance(); return; }`, so a tour
   step whose selector no longer matches anything is skipped IN SILENCE:
@@ -2550,6 +2555,57 @@ Everything in this section postdates build 94 and was undocumented until
   box — see **Conventions**.
 - **The friends screen leads with people, not admin** — also
   **Conventions**.
+- **ONLINE MEANS THE APP IS OPEN, and for a while it meant something
+  else.** `isOnline()` read `lastModified` on the board row, which only
+  moves when somebody PUSHES — that is, when they answer a question. So
+  a classmate sitting on Home for ten minutes read as offline, and
+  somebody who answered four minutes ago and then closed the app read
+  as online. "Who is online" was really "who answered something
+  recently", which is not the question a friends list is for. There is
+  a heartbeat now: `sendHeartbeat()` writes `seenAt` and nothing else,
+  every `HEARTBEAT_MS` (4 min), started from `showHome()` rather than
+  at boot. `isOnline()` takes `max(seenAt, lastModified)` against
+  `ONLINE_WINDOW_MS` (5 min), and **the `lastModified` fallback is
+  load-bearing**: everybody is on an older build for the first day
+  after a ship, and without it the whole class reads offline until each
+  phone updates.
+- **EVERY GUARD ON THE HEARTBEAT IS A FIRESTORE BILL.** It is the only
+  periodic write in the app, and forty phones on a four-minute timer is
+  ~14k writes a day against a 20k free-tier ceiling the ordinary pushes
+  also draw on. So it fires only while the tab is `visible` (an app
+  left open on a desk all day is exactly what would spend the quota),
+  only with `leaderboardOptIn` on (there is no row to write to
+  otherwise), only with a sync code, and never twice inside its own
+  interval. It uses `update()`, never `set()` — a heartbeat must not be
+  able to create a half-built row. `check-friends.py` section 10
+  measures all five, because a guard that silently stopped working
+  would break nothing visible; it would just spend the money.
+- **`pushToCloud()` republishes `seenAt`, and it has to.** `set()`
+  replaces the whole document, so a stats push landing a second after a
+  heartbeat would delete `seenAt` and drop the person offline
+  mid-session. It also resets `lastHeartbeatAt`, since pushing IS
+  activity.
+- **The dot has to be good for something.** An online indicator that
+  leads nowhere is a light on a dashboard, so an online friend's row
+  carries one extra action — Invite — and an offline friend's does not.
+  An invite is live for `LOBBY_INVITE_TTL_MS` (30 min) and lands as a
+  banner on their Home, so sending one to somebody who is not in the
+  app is a room you then sit in alone until it expires.
+  `inviteFriendToNewLobby()` **makes the room itself**: an invite is
+  addressed to a ROOM CODE and the Friends screen has none
+  (`openInviteFriendsSheet()` is handed one because it is only ever
+  opened from inside a lobby), so the invite is sent from inside
+  `createVirtualRoomLobby()`'s own `.then()`, where the code first
+  exists. Already in a room, it invites into THAT one rather than
+  abandoning a lobby full of people for a new one.
+- **Two text buttons do not fit one phone row, and the wrap is the
+  intended answer.** Measured: a 375px phone leaves ~289px inside the
+  panel, and avatar + a 7.5rem text floor + two 5.5rem buttons wants
+  ~366. `.friend-row` is `flex-wrap:wrap` with `min-width` on the text
+  for exactly this — it wraps rather than squashing, the same as
+  Accept/Decline already do. An online row is therefore two lines on a
+  phone and one on a tablet. Don't "fix" it by shrinking the text
+  floor; that is how "Alex" became "A".
 - **`decorateAvatar()` takes the ELEMENT, not a character id.** Handing
   it an id threw and took the whole screen down; `avatarSpanFor(entry)`
   is the builder that gets it right.
@@ -3803,6 +3859,13 @@ missed real bugs that a thirty-second check caught.
    differing only by its fragment is a same-document navigation, so
    nothing reloads and the check silently measures the app that was
    already open.
+7f. `python3 tools/check-friends.py` — the friends gate: the friend
+   code's shape and its separation from the sync code, whose row a
+   request is written into, the live listener not rebuilding the screen
+   under somebody's fingers, the online heartbeat and its five quota
+   guards, and the invite action on an online friend. Required on
+   anything touching friends, the board row's short fields, `isOnline`
+   or lobby invites. Takes `--against`; sections 10 and 11 fail on 166.
 7e. `python3 tools/check-vroom.py` — **two devices in one Virtual
    Room.** Required on anything touching the lobby, the chat, the start
    sequence, the results screen, Match settings or either game type.
