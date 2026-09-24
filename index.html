@@ -35993,7 +35993,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-24-145";
+const APP_BUILD = "2026-09-24-146";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -40481,20 +40481,6 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
   reveal.append(scoreLine, timeLine, totalLine, seeResultsBtn);
   panel.appendChild(reveal);
 
-  /* AND A WAY OUT, OUTSIDE THE REVEAL. This screen is where a Virtual
-     Room run actually ends - the standings are one tap further on -
-     and it offered only that one tap. playReveal() does not fire until
-     finishedN === totalN, so until the last person is in, `reveal` is
-     hidden and the whole screen is a wait note: somebody who finished
-     early had nothing at all to press. Putting the exits INSIDE the
-     reveal would have inherited exactly that, which is the trap this
-     is fixing rather than repeating - they go on the panel, visible
-     from the moment it mounts. Same builder as the standings screen,
-     so the two cannot say different things or reset different
-     fields. */
-  const finaleExits = buildVroomExitRow();
-  panel.appendChild(finaleExits.row);
-
   stage.replaceChildren(panel);
   toTop();
 
@@ -40539,56 +40525,6 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
   });
 }
 
-/* THE TWO WAYS OUT OF A VIRTUAL ROOM, as functions rather than as
-   handlers written twice. Both end screens offer them now - the finale
-   reveal you land on first had NEITHER, so somebody who finished while
-   others were still working had no way off that screen at all - and
-   two copies of "reset my round and go back" is how one of them ends
-   up not resetting something. */
-function leaveVroomForHome(){
-  detachVroomListener();
-  if(vroomChatUnsubscribe){ try{ vroomChatUnsubscribe(); }catch(e){} vroomChatUnsubscribe = null; }
-  vroomCode = null;
-  showHome();
-}
-
-/* Back to the SAME lobby - same code, same people. Clears this
-   person's own round-specific fields so the lobby shows them fresh
-   rather than still carrying last round's score; the host also puts
-   the shared status back to "waiting", or a genuine new round can
-   never be started and the lobby only looks right. */
-function returnToVroomLobby(){
-  if(!fbDb || !vroomCode || !vroomMyKey){ detachVroomListener(); showVirtualRoomLobby(); return; }
-  const resetFields = {
-    ["participants." + vroomMyKey + ".progress"]: 0,
-    ["participants." + vroomMyKey + ".finished"]: false,
-    ["participants." + vroomMyKey + ".score"]: null,
-    ["participants." + vroomMyKey + ".elapsedMs"]: null,
-    ["participants." + vroomMyKey + ".ready"]: false
-  };
-  if(vroomIsHost) resetFields.status = "waiting";
-  fbDb.collection("vrooms").doc(vroomCode).update(resetFields)
-    .then(() => { detachVroomListener(); showVirtualRoomLobby(); })
-    .catch(() => { detachVroomListener(); showVirtualRoomLobby(); });
-}
-
-/* The pair, built once. .vroom-exit-row is a two-column grid so they
-   share one track width whatever the labels say. */
-function buildVroomExitRow(){
-  const row = document.createElement("div");
-  row.className = "vroom-exit-row";
-  const lobby = document.createElement("button");
-  lobby.type = "button"; lobby.className = "next ghost vroom-exit-btn";
-  lobby.textContent = "Back to lobby";
-  lobby.addEventListener("click", returnToVroomLobby);
-  const home = document.createElement("button");
-  home.type = "button"; home.className = "next ghost vroom-exit-btn";
-  home.textContent = "Main menu";
-  home.addEventListener("click", leaveVroomForHome);
-  row.append(lobby, home);
-  return { row: row, lobby: lobby, home: home };
-}
-
 function showVirtualRoomResults(){
   setActiveNav(null);
   /* AFTER setActiveNav, which clears this flag on the way into every
@@ -40616,9 +40552,12 @@ function showVirtualRoomResults(){
      Back to Home is a plain button now rather than a back link, and
      the pair is appended last so they read as the way out rather than
      as a header. */
-  const exits = buildVroomExitRow();
-  const exitRow = exits.row;
-  const backLink = exits.home;
+  const exitRow = document.createElement("div");
+  exitRow.className = "vroom-exit-row";
+  const backLink = document.createElement("button");
+  backLink.type = "button"; backLink.className = "next ghost vroom-exit-btn";
+  backLink.textContent = "Back to Home";
+  backLink.addEventListener("click", () => { detachVroomListener(); if(vroomChatUnsubscribe) vroomChatUnsubscribe(); vroomCode = null; showHome(); });
 
   /* Returns to the SAME lobby (same code, same other participants),
      per explicit request \u2014 gated by the same everyoneDone check as
@@ -40629,7 +40568,24 @@ function showVirtualRoomResults(){
      resets the shared status back to "waiting" so a genuine new round
      can actually be started (ready-up and all), not just a lobby
      screen that looks right but is still stuck on "started". */
-  const backToLobbyBtn = exits.lobby;
+  const backToLobbyBtn = document.createElement("button");
+  backToLobbyBtn.type = "button"; backToLobbyBtn.className = "next ghost vroom-exit-btn";
+  backToLobbyBtn.textContent = "Back to lobby";
+  backToLobbyBtn.addEventListener("click", () => {
+    const resetFields = {
+      ["participants." + vroomMyKey + ".progress"]: 0,
+      ["participants." + vroomMyKey + ".finished"]: false,
+      ["participants." + vroomMyKey + ".score"]: null,
+      ["participants." + vroomMyKey + ".elapsedMs"]: null,
+      ["participants." + vroomMyKey + ".ready"]: false
+    };
+    if(vroomIsHost) resetFields.status = "waiting";
+    fbDb.collection("vrooms").doc(vroomCode).update(resetFields).then(() => {
+      detachVroomListener();
+      showVirtualRoomLobby();
+    });
+  });
+  exitRow.append(backToLobbyBtn, backLink);
 
   const title = document.createElement("h1");
   title.className = "welcomeintro-title"; title.textContent = "Results";

@@ -538,48 +538,6 @@ def main():
             check("the chat button is in the top right", got["chatCorner"], got["chatCorner"])
 
         # -------------------------------------------------------------
-        # 7b. THE FINALE SCREEN HAS A WAY OUT WHILE OTHERS ARE STILL
-        # WORKING. This is where a Virtual Room run actually ends - the
-        # standings are one tap further on - and playReveal() does not
-        # fire until the last person is in, so until then `reveal` is
-        # hidden and the whole screen was a wait note with nothing to
-        # press. The exits therefore live on the PANEL, not inside the
-        # reveal: putting them in the reveal inherits exactly the bug.
-        print("\n7b. a way out of the finale while people are still working")
-        pg.evaluate("""()=>{
-          vroomCode='ROOM42'; vroomMyKey='me1'; vroomIsHost=true;
-          const doc={participants:{
-            me1:{name:'Madison',finished:true,score:90,avatarChar:'fox',level:20,badges:5},
-            you:{name:'Ray',finished:false,score:null,avatarChar:'robot',level:14,badges:3}}};
-          fbDb={collection:()=>({doc:()=>({
-            get:()=>Promise.resolve({exists:true,data:()=>doc}),
-            update:()=>Promise.resolve(),
-            onSnapshot:(cb)=>{cb({exists:true,data:()=>doc,metadata:{fromCache:false}});return ()=>{};}})})};
-          showVirtualRoomFinaleReveal(90, 123456, 1180);}""")
-        pg.wait_for_timeout(1300)
-        fin = pg.evaluate("""()=>{
-          const btns=[...document.querySelectorAll('.vroom-exit-btn')];
-          const vis=btns.filter(b=>{const r=b.getBoundingClientRect();
-            return r.width>0 && r.height>0 && getComputedStyle(b).visibility!=='hidden';});
-          const w=[...new Set(vis.map(b=>Math.round(b.getBoundingClientRect().width)))];
-          const tabs=document.querySelector('.bottomtabs');
-          return {visible:vis.length, labels:vis.map(b=>b.textContent.trim().toLowerCase()),
-                  sameWidth:w.length<=1,
-                  revealStillHidden:(document.querySelector('.vroom-finale-reveal')||{}).hidden,
-                  tabsGone: !tabs || tabs.hidden || tabs.getBoundingClientRect().height===0};}""")
-        # The state under test: the reveal has NOT played, so anything
-        # inside it is invisible. That is the point.
-        check("the reveal has not played yet", fin["revealStillHidden"] is True,
-              fin["revealStillHidden"])
-        check("and both exits are on screen anyway", fin["visible"] == 2, fin)
-        check("one to the lobby, one out of the room",
-              any("lobby" in x for x in fin["labels"])
-              and any(("menu" in x or "home" in x) for x in fin["labels"]), fin["labels"])
-        check("matched in size, like the standings screen's pair",
-              fin["sameWidth"] is True, fin["sameWidth"])
-        check("and still no bottom tab bar", fin["tabsGone"] is True, fin["tabsGone"])
-
-        # -------------------------------------------------------------
         # 8. MATCH SETTINGS IS A SCREEN, NOT A SHEET OVER HOME.
         # Asked for in those words: a button in the lobby opens "the
         # normal unit selection screen", with the tab bar replaced by
