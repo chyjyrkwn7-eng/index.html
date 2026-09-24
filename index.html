@@ -10080,6 +10080,22 @@
     border:1px solid var(--rule); border-radius:3px;
     padding:.55rem .4rem; min-width:8.5rem;
   }
+  /* The invite banner is the daily alert's shape with two controls in
+     it, so it inherits the top placement and the entrance rather than
+     restating either. */
+  .lobby-invite{
+    display:flex; align-items:center; gap:.6rem; text-align:left;
+  }
+  .lobby-invite-text{ flex:1 1 0; min-width:0; }
+  .lobby-invite .lobby-invite-join{
+    flex-shrink:0; min-height:36px; padding:.35rem .8rem;
+    font-size:.8rem; border-radius:999px;
+  }
+  .lobby-invite-x{
+    flex-shrink:0; width:28px; height:28px; padding:0; line-height:1;
+    background:none; border:none; color:var(--soft);
+    font-size:1.2rem; cursor:pointer;
+  }
   .friend-hint{ margin:.5rem 0 0; font-size:.75rem; line-height:1.4; color:var(--soft); }
   .friend-add-row{ display:flex; gap:.5rem; align-items:stretch; }
   .friend-add-input{
@@ -33263,6 +33279,11 @@ function showHome(){
      position:fixed now stays resolved against the true viewport at
      all times. */
   panel.dataset.screen = "home";   /* see showWelcome for why this lives here */
+  /* An invite that arrived while this device was elsewhere is still an
+     invite, so Home checks what is already on the board as well as
+     watching for new ones. */
+  attachInviteWatcher();
+  setTimeout(checkLobbyInvites, 0);
   stage.replaceChildren(panel);
   stage.appendChild(dailyBtn);
   /* Appended to stage as a sibling of the panel now, not a child of
@@ -35981,7 +36002,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-24-149";
+const APP_BUILD = "2026-09-24-150";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -39253,6 +39274,109 @@ function createVirtualRoomLobby(units, timeLimit){
   }).catch(() => { showToast("Couldn't create the lobby \u2014 try again."); });
 }
 
+/* INCOMING LOBBY INVITES, ON SCREEN. incomingLobbyInvites() has been
+   correct since it was written and NOTHING EVER CALLED IT - the send
+   side wrote the invite into my own row and the read side existed, and
+   there was no surface anywhere that showed one. So an invite reached
+   the database and never reached a person. Reported exactly that way:
+   "the invite link is not showing up on the receiving person's end".
+
+   The watcher runs while Home is on screen, which is where somebody
+   waiting to be invited actually is. It needs the class board, because
+   an invite lives in the SENDER's own row - see FRIENDS - so it
+   attaches the same resilient listener the other screens use. */
+let inviteWatchUnsub = null;
+
+const INVITE_SEEN_KEY = "class26e.invite.seen";
+function inviteDismissed(code){
+  try{
+    const raw = JSON.parse(localStorage.getItem(INVITE_SEEN_KEY) || "[]");
+    return Array.isArray(raw) && raw.indexOf(code) >= 0;
+  }catch(e){ return false; }
+}
+function dismissInvite(code){
+  try{
+    const raw = JSON.parse(localStorage.getItem(INVITE_SEEN_KEY) || "[]");
+    const next = (Array.isArray(raw) ? raw : []).concat([code]).slice(-20);
+    localStorage.setItem(INVITE_SEEN_KEY, JSON.stringify(next));
+  }catch(e){}
+}
+
+/* A banner, not a toast: a toast is gone in four seconds and this is
+   something to act on. Same top placement and the same measured offset
+   every other banner here uses, so it cannot land on the screen title. */
+function showLobbyInviteBanner(from, code){
+  if(document.getElementById("lobby-invite")) return;
+  const el = document.createElement("div");
+  el.id = "lobby-invite"; el.className = "daily-alert lobby-invite";
+  const text = document.createElement("span");
+  text.className = "lobby-invite-text";
+  text.textContent = (from.firstName || "A classmate") + " invited you to a Virtual Room";
+  const join = document.createElement("button");
+  join.type = "button"; join.className = "next lobby-invite-join";
+  join.textContent = "Join";
+  join.addEventListener("click", () => {
+    dismissInvite(code);
+    el.remove();
+    joinVirtualRoomLobby(code);
+  });
+  const shut = document.createElement("button");
+  shut.type = "button"; shut.className = "lobby-invite-x";
+  shut.setAttribute("aria-label", "Dismiss");
+  shut.textContent = "\u00d7";
+  shut.addEventListener("click", () => { dismissInvite(code); el.remove(); });
+  el.append(text, join, shut);
+  /* On <body> rather than #stage, like every other fixed banner here,
+     with the one-shot observer that clears it on the next screen
+     change - #stage animates, and a transform on an ancestor
+     re-parents a fixed element's containing block. */
+  document.body.appendChild(el);
+  /* NEVER ABOVE THE CSS BASELINE, which carries the safe-area inset.
+     topNoticeOffset() answers "below whatever this screen puts along
+     its top" and can legitimately come back smaller than
+     env(safe-area-inset-top) + .75rem - measured 6px here - which on a
+     notched phone is under the clock. So it may only ever push the
+     banner DOWN from where the stylesheet already put it. */
+  const measured = (typeof topNoticeOffset === "function") ? topNoticeOffset(el) : null;
+  if(measured !== null && measured !== undefined){
+    const baseline = el.getBoundingClientRect().top;
+    if(measured > baseline) el.style.top = measured + "px";
+  }
+  const onNavigate = new MutationObserver(() => { onNavigate.disconnect(); el.remove(); });
+  onNavigate.observe(stage, { childList: true });
+  requestAnimationFrame(() => el.classList.add("show"));
+}
+
+function checkLobbyInvites(){
+  const live = incomingLobbyInvites().filter(x => !inviteDismissed(x.code));
+  if(!live.length) return;
+  showLobbyInviteBanner(live[0].from, live[0].code);
+}
+
+function attachInviteWatcher(){
+  if(!fbDb) return;
+  if(inviteWatchUnsub) return;   /* one listener, not one per Home mount */
+  try{
+    inviteWatchUnsub = onSnapshotResilient(fbDb.collection("leaderboard"), snap => {
+      const next = [];
+      snap.forEach(doc => {
+        const e = Object.assign({ pub: doc.id }, doc.data());
+        e.weekPoints = weekPointsOfEntry(e);
+        next.push(e);
+      });
+      /* An empty cached snapshot is not an empty class - only a served
+         answer may take something away. */
+      const served = !(snap.metadata && snap.metadata.fromCache);
+      if(next.length || served || !(leaderboardRows && leaderboardRows.length)){
+        leaderboardRows = next;
+      }
+      const el = stage && stage.firstElementChild;
+      const screen = el && el.dataset ? el.dataset.screen : "";
+      if(screen === "home") checkLobbyInvites();
+    });
+  }catch(e){}
+}
+
 function showVirtualRoomJoinEntry(){
   setActiveNav(null);
   countEl.textContent = "Virtual Room";
@@ -41550,6 +41674,14 @@ function showFriends(){
   input.type = "text"; input.className = "searchbox friend-add-input";
   input.placeholder = "ABC-234"; input.maxLength = 7;
   input.autocapitalize = "characters"; input.autocomplete = "off"; input.spellcheck = false;
+  /* THE DASH TYPES ITSELF, the same as the lobby code field already
+     does. A friend code is XXX-XXX and somebody typing six characters
+     without one had the whole thing rejected as "not a friend code",
+     which is a format complaint dressed up as a lookup failure. */
+  input.addEventListener("input", () => {
+    const raw = input.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+    input.value = raw.length > 3 ? raw.slice(0, 3) + "-" + raw.slice(3) : raw;
+  });
   const send = actBtn("Send", "", () => {
     const r = sendFriendRequest(input.value);
     if(!r.ok){ showToast(r.why); return; }
