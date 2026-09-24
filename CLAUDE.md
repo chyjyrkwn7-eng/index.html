@@ -2693,6 +2693,54 @@ pull the rope, so each question you get one chance."*
   side by side they took most of a phone's width and left the rope
   about a third of the screen. Capped at `34rem` from tablet up, or a
   13" iPad renders a metre of bar.
+#### The end-of-match cutscene
+
+- **A SCENE, NOT A PORTRAIT.** The first version was one big character
+  centred on black with their name under it, and it was read for
+  exactly what that is: *"it looks too much like the void character
+  unlock"*. A race ends on a **podium** of the top three and a tug ends
+  on the **whole winning side**, both of which say something a single
+  portrait cannot — who else was close, and that two people won it
+  together.
+- **On the podium, height IS the placing**, so the DOM order is second,
+  first, third: the tallest block has to be in the middle or it is not
+  a podium. They rise third → second → first, so the winner lands last
+  and the confetti goes with it. The shape follows who was actually
+  there — a room of two gets two blocks — rather than always drawing
+  three with an empty plinth.
+- **The tug scene carries the rope**, drawn with the same twist the
+  match itself used, so it is the thing they were pulling rather than a
+  generic banner. A draw has no side, so it shows everyone still in.
+- **It is skippable, and it honours the same two switches every other
+  celebration does.** `muteBanners` skips it outright; `reduceMotion`
+  keeps the reveal and drops the wind-up, rather than leaving a screen
+  that sits still for five seconds because the global
+  `[data-reduce-motion="true"] *{animation:none}` rule stripped the
+  keyframes out from under it.
+- **Every path calls `done()`** — skipped, muted, finished, or the
+  overlay torn off by a screen change. The thing after it is the
+  results screen, so a cutscene that can swallow its own callback is a
+  match that never ends.
+- **IT DROPS ITS `id` AT HANDOVER, NOT AT THE END OF THE FADE.** It
+  fades for 400ms before it is removed, and for those 400ms it was
+  still what `getElementById` returned — so a second cutscene starting
+  in that window found the dying one and believed itself already up,
+  and anything asking "is a cutscene up?" got yes after it had handed
+  over. Anything querying the live cutscene must scope to
+  `#vroom-cutscene`, not the document; a bare document query finds the
+  corpse.
+- **The hidden reveal must be OUT OF FLOW.** At `opacity:0` it still
+  reserved its own ~220px, which pushed the wind-up line and dots well
+  above the middle with nothing under them — it read as a screen that
+  had failed to load rather than a pause before a reveal.
+- **It plays at the moment the match ends, not inside
+  `showVirtualRoomResults()`.** That screen is also reached by coming
+  back from the lobby, and a cutscene that replays every time you
+  glance at the results is one nobody wants twice.
+- `check-vroom` section 11 is the gate, and it asserts SHAPE — how many
+  figures, and that the blocks run 2/1/3 — never what anybody is
+  called.
+
 #### Leaving a room
 
 - **LEAVING HAS TO ACTUALLY LEAVE, and for a long time nothing removed

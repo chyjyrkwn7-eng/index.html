@@ -1039,6 +1039,152 @@ def main():
                     except Exception:
                         pass
 
+        # ---- 11. the end-of-match cutscene --------------------------
+        # "A 5 second cutscene at the end of these virtual room matches
+        # with some anticipation to see who wins." The standings already
+        # staggered in last-place-first and its own comment called that
+        # "a beat of suspense, not a cutscene", which was the gap.
+        print("\n11. the end-of-match cutscene")
+        try:
+            cut = open_tab("Del", "cadet", 3000, "CUTA-0001", badges=1)
+            ctx.new_cdp_session(cut).send("Page.setWebLifecycleState", {"state": "active"})
+            # A SCENE, NOT A PORTRAIT. One big character centred on black
+            # is the character-unlock screen, and it was read as one -
+            # "it looks too much like the void character unlock". So a
+            # race ends on a PODIUM with the top three and a tug ends on
+            # the whole winning SIDE. Asserted as shape: how many
+            # figures, and that the blocks are ordered tallest in the
+            # middle, not by what any of them is called.
+            shape = cut.evaluate("""()=>{
+              window.__done = false;
+              theme.muteBanners = false; theme.reduceMotion = false;
+              playVroomWinnerCutscene({ kind: "podium", entries: [
+                  { name: "Rosa", avatar: "queen", sub: "96%" },
+                  { name: "Ben", avatar: "ghost", sub: "92%" },
+                  { name: "Cy", avatar: "ninja", sub: "88%" }] },
+                () => { window.__done = true; });
+              const el = document.getElementById("vroom-cutscene");
+              return { up: !!el,
+                       plinths: el.querySelectorAll('.vroom-cut-plinth').length,
+                       order: [...el.querySelectorAll('.vroom-cut-plinth')].map(p=>p.dataset.place),
+                       names: [...el.querySelectorAll('.vroom-cut-pname')].map(n=>n.textContent),
+                       art: el.querySelectorAll('.vroom-cut-figure svg').length,
+                       floor: !!el.querySelector('.vroom-cut-floor'),
+                       skip: !!el.querySelector('.vroom-cut-skip'),
+                       z: el ? +getComputedStyle(el).zIndex : 0 };}""")
+            check("it puts a full-screen cutscene up", shape.get("up") is True, shape)
+            check("a race ends on a podium of three, each with a character",
+                  shape.get("plinths") == 3 and shape.get("art") == 3, shape)
+            # Second, first, third in DOM order, so the tallest block is
+            # in the middle where a podium puts it.
+            check("with first in the middle, not first on the left",
+                  shape.get("order") == ["2", "1", "3"], shape.get("order"))
+            check("and everyone on it is named",
+                  shape.get("names") == ["Ben", "Rosa", "Cy"], shape.get("names"))
+            # Over the bottom tab bar (200) and the tour overlay (205),
+            # or it is a cutscene with a tab bar across it.
+            check("above every other layer", shape.get("z", 0) >= 400, shape.get("z"))
+
+            # THE WINNER IS NOT REVEALED IMMEDIATELY - that is the whole
+            # point of the word "anticipation". Before the wind-up ends
+            # the card is still hidden.
+            cut.wait_for_timeout(900)
+            early = cut.evaluate("()=>[...document.getElementById('vroom-cutscene').querySelectorAll('.vroom-cut-plinth')].filter(p=>p.classList.contains('is-on')).length")
+            check("the podium is held back at first", early == 0, early)
+            cut.wait_for_timeout(3400)
+            late = cut.evaluate("()=>[...document.getElementById('vroom-cutscene').querySelectorAll('.vroom-cut-plinth')].filter(p=>p.classList.contains('is-on')).length")
+            check("and all three are up before it ends", late == 3, late)
+
+            # FIVE SECONDS, and done() always fires - the thing after it
+            # is the results screen, so a cutscene that can swallow its
+            # own callback is a match that never ends.
+            cut.wait_for_function("()=>window.__done === true", timeout=8000)
+            check("it finishes and hands over", True)
+            check("and clears itself off the screen",
+                  cut.evaluate("()=>!document.getElementById('vroom-cutscene')") is True)
+
+            # SKIPPABLE. It is played with the same people over and over.
+            cut.evaluate("""()=>{ window.__done2 = false;
+              playVroomWinnerCutscene({ kind: "podium",
+                entries: [{ name: "Sam", avatar: "ninja" }] },
+                () => { window.__done2 = true; }); }""")
+            cut.wait_for_timeout(400)
+            cut.click("#vroom-cutscene")
+            cut.wait_for_timeout(300)
+            check("a tap skips it", cut.evaluate("()=>window.__done2 === true") is True)
+
+            # muteBanners skips it outright, the same switch that mutes
+            # the badge cutscene; reduceMotion keeps the reveal but not
+            # the wind-up, rather than leaving a screen that sits still
+            # for five seconds because the global animation:none rule
+            # stripped the keyframes.
+            muted = cut.evaluate("""()=>{ window.__done3 = false; theme.muteBanners = true;
+              playVroomWinnerCutscene({ kind: "podium", entries: [{ name: "Kit", avatar: "ghost" }] },
+                () => { window.__done3 = true; });
+              return { done: window.__done3, up: !!document.getElementById("vroom-cutscene") }; }""")
+            check("muteBanners skips it and still hands over",
+                  muted.get("done") is True and muted.get("up") is False, muted)
+            cut.evaluate("()=>{ theme.muteBanners = false; theme.reduceMotion = true; }")
+            cut.evaluate("""()=>{ window.__done4 = false;
+              playVroomWinnerCutscene({ kind: "podium", entries: [{ name: "Ola", avatar: "wizard" }] },
+                () => { window.__done4 = true; }); }""")
+            cut.wait_for_function("()=>window.__done4 === true", timeout=6000)
+            check("reduceMotion still reveals, just faster", True)
+            cut.evaluate("()=>{ theme.reduceMotion = false; }")
+
+            # A TEAM WIN SHOWS THE WHOLE SIDE. Two people won it together
+            # and showing one of them would be wrong - asked for in those
+            # words. The rope comes with them, so it is the thing they
+            # were actually pulling rather than a generic banner.
+            # SCOPED TO THE LIVE OVERLAY, not the document. A finished
+            # cutscene keeps its element for the 400ms it spends fading
+            # out - it only drops its ID at handover - so a bare
+            # document query finds the PREVIOUS one and reports a podium
+            # inside a team win. The id is what identifies the live one;
+            # that is the whole reason it is taken off first.
+            team = cut.evaluate("""()=>{ window.__done5 = false;
+              playVroomWinnerCutscene({ kind: "team", reveal: "Your side took it",
+                entries: [{ name: "Ana", avatar: "cadet" }, { name: "Bo", avatar: "queen" }] },
+                () => { window.__done5 = true; });
+              const el = document.getElementById('vroom-cutscene');
+              return { mates: el.querySelectorAll('.vroom-cut-mate').length,
+                       art: el.querySelectorAll('.vroom-cut-mate .vroom-cut-figure svg').length,
+                       rope: !!el.querySelector('.vroom-cut-rope'),
+                       podium: !!el.querySelector('.vroom-cut-podium') }; }""")
+            check("a team win shows every member of the side",
+                  team.get("mates") == 2 and team.get("art") == 2, team)
+            check("with the rope, and no podium", 
+                  team.get("rope") is True and team.get("podium") is False, team)
+            cut.wait_for_function("()=>window.__done5 === true", timeout=8000)
+
+            # The winner it names has to be the one the standings put
+            # first, or the cutscene crowns somebody the list then
+            # places second.
+            agree = cut.evaluate("""()=>{
+              const d = { participants: {
+                a: { name:"A", totalScore: 120 }, b: { name:"B", totalScore: 700 },
+                c: { name:"C", totalScore: 450 } } };
+              return vroomWinnerOf(d).name; }""")
+            check("the winner matches the standings' own ranking", agree == "B", agree)
+            podium3 = cut.evaluate("""()=>{
+              const d = { participants: {
+                a: { name:"A", avatarChar:"ninja", totalScore: 120 },
+                b: { name:"B", avatarChar:"ghost", totalScore: 700 },
+                c: { name:"C", avatarChar:"queen", totalScore: 450 },
+                e: { name:"E", avatarChar:"cadet", totalScore: 300 } } };
+              return vroomTopThree(d).map(p=>p.name); }""")
+            check("and the podium is the top three in order, not four",
+                  podium3 == ["B", "C", "E"], podium3)
+        except Exception as e:
+            check("the cutscene section ran at all", False, repr(e)[:200])
+        finally:
+            pg2 = locals().get("cut")
+            if pg2 is not None:
+                try:
+                    pg2.close()
+                except Exception:
+                    pass
+
         ctx.close()
         br.close()
     srv.shutdown()

@@ -6563,6 +6563,146 @@
   }
   .cosmic-sphere-glow{ fill:var(--theme-c2); opacity:.4; }
   /* ---------- Supernova cutscene ---------- */
+  /* THE END-OF-MATCH CUTSCENE. Asked for directly - "a 5 second
+     cutscene at the end of these virtual room matches with some
+     anticipation to see who wins". The standings already staggered in
+     last-place-first, and that comment called itself "a beat of
+     suspense, not a cutscene", which was accurate and was the gap.
+     Separate id from the tier cutscene rather than sharing one: both
+     can be on screen in the same session and an id has to identify one
+     thing. */
+  #vroom-cutscene{
+    position:fixed; inset:0; z-index:500; background:#05070C;
+    display:flex; align-items:center; justify-content:center; flex-direction:column;
+    gap:1.1rem; padding:2rem 1.5rem; text-align:center;
+    opacity:0; transition:opacity .45s ease; cursor:pointer;
+  }
+  #vroom-cutscene.is-in{ opacity:1; }
+  #vroom-cutscene.is-out{ opacity:0; transition:opacity .4s ease; }
+  .vroom-cut-line{
+    margin:0; font-size:1.05rem; font-weight:700; color:var(--soft);
+    letter-spacing:.06em; text-transform:uppercase;
+    opacity:0; transform:translateY(6px);
+    transition:opacity .4s ease, transform .4s ease;
+  }
+  .vroom-cut-line.is-on{ opacity:1; transform:none; }
+  /* THE DOTS STAND WHERE THE AVATAR WILL, same height, so the wind-up
+     reads as centred rather than as a line stranded above an empty
+     screen. Looked at rather than measured: the winner block is in the
+     flow the whole time (it only fades and scales), so at 600ms the
+     line and dots were pushed a long way above the middle with nothing
+     under them - a screen that looked like it had failed to load. */
+  .vroom-cut-dots{
+    display:flex; gap:.5rem; align-items:center; justify-content:center;
+    height:9rem;
+  }
+  .vroom-cut-dot{
+    width:.6rem; height:.6rem; border-radius:50%;
+    background:color-mix(in srgb, var(--ink) 35%, transparent);
+  }
+  @media (prefers-reduced-motion:no-preference){
+    .vroom-cut-dot{ animation:vroom-cut-dot 1.1s ease-in-out infinite; }
+    .vroom-cut-dot:nth-child(2){ animation-delay:.16s; }
+    .vroom-cut-dot:nth-child(3){ animation-delay:.32s; }
+  }
+  @keyframes vroom-cut-dot{
+    0%,100%{ opacity:.3; transform:translateY(0); }
+    50%{ opacity:1; transform:translateY(-5px); }
+  }
+  /* The winner. Scaled in from small rather than faded in: a fade is
+     what every other reveal in the app already does, and this one is
+     meant to land. */
+  /* A SCENE, NOT A PORTRAIT. The first version was one big character
+     centred on black with their name under it - which is exactly what
+     the character-unlock screen is, and it was read as one: "it looks
+     too much like the void character unlock". So the race ends on a
+     PODIUM and a tug ends on the winning TEAM, both of which say
+     something a single portrait cannot - who else was close, and that
+     two people won it together. */
+
+  /* ---- the race podium ---- */
+  .vroom-cut-podium{
+    display:flex; align-items:flex-end; justify-content:center;
+    gap:.5rem; width:100%; max-width:26rem;
+  }
+  .vroom-cut-plinth{
+    display:flex; flex-direction:column; align-items:center; flex:1 1 0; min-width:0;
+    opacity:0; transform:translateY(22px);
+    transition:opacity .45s ease, transform .5s cubic-bezier(.2,1.3,.4,1);
+  }
+  .vroom-cut-plinth.is-on{ opacity:1; transform:none; }
+  .vroom-cut-figure{ width:100%; display:block; margin-bottom:.4rem; }
+  .vroom-cut-figure svg{ width:100%; height:auto; display:block; }
+  .vroom-cut-pname{
+    margin:0 0 .3rem; font-size:.82rem; font-weight:800; color:var(--ink);
+    max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .vroom-cut-psub{ margin:0 0 .35rem; font-size:.7rem; color:var(--soft); }
+  /* The block itself. Height IS the placing - that is the whole reason
+     a podium reads at a glance - so the numbers are not decoration. */
+  .vroom-cut-block{
+    width:100%; border-radius:10px 10px 0 0;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-weight:800; font-size:1.3rem; color:#12161B;
+    box-shadow:inset 0 2px 0 rgba(255,255,255,.35), 0 -2px 10px rgba(0,0,0,.35);
+  }
+  .vroom-cut-plinth[data-place="1"] .vroom-cut-block{ height:6.5rem; background:linear-gradient(180deg,#FFD97A,#E0A81F); }
+  .vroom-cut-plinth[data-place="2"] .vroom-cut-block{ height:4.6rem; background:linear-gradient(180deg,#E6ECF2,#A9B6C4); }
+  .vroom-cut-plinth[data-place="3"] .vroom-cut-block{ height:3.4rem; background:linear-gradient(180deg,#E3A877,#A96A38); }
+  .vroom-cut-plinth[data-place="1"] .vroom-cut-figure{ filter:drop-shadow(0 0 22px rgba(255,214,120,.55)); }
+  /* The floor the blocks stand on, so they are not three shapes
+     floating in the dark. */
+  .vroom-cut-floor{
+    width:100%; max-width:26rem; height:3px; border-radius:2px;
+    background:linear-gradient(90deg, transparent, color-mix(in srgb, var(--ink) 45%, transparent), transparent);
+  }
+
+  /* ---- the tug team ---- */
+  .vroom-cut-team{
+    display:flex; align-items:flex-end; justify-content:center; gap:1rem;
+    opacity:0; transform:scale(.85);
+    transition:opacity .5s ease, transform .55s cubic-bezier(.2,1.4,.4,1);
+  }
+  .vroom-cut-team.is-on{ opacity:1; transform:none; }
+  .vroom-cut-mate{ display:flex; flex-direction:column; align-items:center; gap:.35rem; }
+  .vroom-cut-mate .vroom-cut-figure{ width:6.5rem; }
+  .vroom-cut-mate .vroom-cut-pname{ font-size:.9rem; }
+  /* Their end of the rope, drawn with the same twist the match itself
+     used - the thing they were pulling, not a generic banner. */
+  .vroom-cut-rope{
+    width:min(22rem, 86%); height:1.4rem; border-radius:999px; margin-top:.2rem;
+    background:
+      repeating-linear-gradient(64deg,
+        rgba(255,255,255,.20) 0 3px, rgba(255,255,255,.04) 3px 7px,
+        rgba(0,0,0,.30) 7px 10px, rgba(255,255,255,.04) 10px 14px),
+      linear-gradient(90deg, #7A6247, #8A7052, #7A6247);
+    border:1px solid rgba(0,0,0,.5);
+    box-shadow:inset 0 .22rem .35rem rgba(255,255,255,.16),
+      inset 0 -.26rem .4rem rgba(0,0,0,.45);
+    opacity:0; transition:opacity .5s ease .1s;
+  }
+  .vroom-cut-team.is-on + .vroom-cut-rope{ opacity:1; }
+
+  .vroom-cut-name{
+    margin:0; font-family:var(--serif); font-weight:800;
+    font-size:clamp(1.5rem, 7vw, 2.1rem); color:var(--ink); line-height:1.1;
+  }
+  .vroom-cut-sub{ margin:0; font-size:.95rem; color:var(--soft); }
+  .vroom-cut-skip{
+    position:absolute; bottom:calc(env(safe-area-inset-bottom, 0px) + 1.6rem);
+    left:50%; transform:translateX(-50%);
+    font-size:.78rem; color:var(--soft); opacity:.75; margin:0;
+  }
+  @media (min-width:40rem){
+    .vroom-cut-line{ font-size:1.2rem; }
+    .vroom-cut-podium, .vroom-cut-floor{ max-width:34rem; }
+    .vroom-cut-plinth[data-place="1"] .vroom-cut-block{ height:8.5rem; }
+    .vroom-cut-plinth[data-place="2"] .vroom-cut-block{ height:6rem; }
+    .vroom-cut-plinth[data-place="3"] .vroom-cut-block{ height:4.4rem; }
+    .vroom-cut-pname{ font-size:1rem; }
+    .vroom-cut-psub{ font-size:.85rem; }
+    .vroom-cut-mate .vroom-cut-figure{ width:9rem; }
+  }
   #supernova-cutscene{
     position:fixed; inset:0; z-index:500; background:#050308;
     display:flex; align-items:center; justify-content:center; flex-direction:column;
@@ -33057,6 +33197,200 @@ function awardWelcomeBonus(){
    naming the tier reached rather than a permanent-state flag. Reuses
    the exact same staged-cutscene structure and buildCosmicHero, just
    shorter and tier-aware. */
+/* ---- the end-of-match cutscene ----
+   Five seconds of "who won", between the last person finishing and the
+   standings. Asked for by name. Three rules it has to keep:
+
+   SKIPPABLE. A cutscene you cannot skip is one you resent the second
+   time, and a Virtual Room is played over and over with the same
+   people.
+
+   IT HONOURS THE SAME TWO SWITCHES EVERY OTHER CELEBRATION DOES.
+   muteBanners skips it outright; reduceMotion keeps the reveal but
+   drops the wind-up and the transitions, rather than leaving a screen
+   that sits still for five seconds because the global
+   [data-reduce-motion="true"] *{animation:none} rule stripped the
+   keyframes out from under it.
+
+   AND IT ALWAYS CALLS done(). Every path - skipped, muted, finished,
+   or the overlay being torn off by a screen change - goes through
+   finish(), because the thing after it is the results screen and a
+   cutscene that can swallow its own callback is a match that never
+   ends. */
+const VROOM_CUTSCENE_MS = 5000;
+/* The room as this device last saw it, so the winner can be read at the
+   moment the tap happens rather than being captured into a closure at
+   build time - somebody can still be finishing while this screen is up. */
+let lastFinaleData = null;
+/* SAME RANKING THE STANDINGS USE, with the same fallback for a
+   participant somehow missing totalScore. Two answers to "who won"
+   is how a cutscene ends up crowning somebody the list then puts
+   second. */
+function vroomWinnerOf(data){
+  return vroomTopThree(data)[0] || null;
+}
+/* The podium, in placing order, with at most three on it. Same ranking
+   the standings use, and the same fallback for a participant somehow
+   missing totalScore - two answers to "who won" is how a cutscene
+   crowns somebody the list then puts second. */
+function vroomTopThree(data){
+  const ps = Object.entries((data && data.participants) || {});
+  const tot = p => p.totalScore != null ? p.totalScore
+    : Math.round((p.score || 0) * 100) - Math.round((p.elapsedMs || 0) / 1000);
+  return ps
+    .sort(([, a], [, b]) => tot(b) - tot(a))
+    .slice(0, 3)
+    .map(([, p]) => ({
+      name: p.name, avatar: p.avatarChar, totalScore: p.totalScore, score: p.score,
+      sub: (p.score != null ? p.score + "%" : "")
+        + (p.totalScore != null ? " \u00b7 " + p.totalScore + " pts" : "")
+    }));
+}
+function playVroomWinnerCutscene(opts, done){
+  const o = opts || {};
+  let settled = false;
+  const finish = () => {
+    if(settled) return;
+    settled = true;
+    timers.forEach(clearTimeout);
+    const el = document.getElementById("vroom-cutscene");
+    if(el){
+      /* THE ID COMES OFF FIRST. It fades for 400ms before it is
+         removed, and for those 400ms it was still the element
+         getElementById returns - so a second cutscene starting in that
+         window found the dying one and believed itself already on
+         screen, and anything asking "is a cutscene up?" got yes after
+         this one had handed over. Dropping the id makes the handover
+         the moment it happens rather than the moment the animation
+         catches up. pointer-events with it, or a tap aimed at whatever
+         is now underneath lands on a transparent corpse. */
+      el.removeAttribute("id");
+      el.style.pointerEvents = "none";
+      el.classList.add("is-out");
+      setTimeout(() => el.remove(), 400);
+    }
+    if(typeof done === "function") done();
+  };
+  const timers = [];
+  if(theme.muteBanners){ finish(); return finish; }
+
+  const slow = !!theme.reduceMotion;
+  document.getElementById("vroom-cutscene")?.remove();
+  const overlay = document.createElement("div");
+  overlay.id = "vroom-cutscene";
+  overlay.dataset.theme = document.documentElement.dataset.theme || "dark";
+  overlay.dataset.accent = document.documentElement.dataset.accent || "default";
+
+  const line = document.createElement("p");
+  line.className = "vroom-cut-line";
+  line.textContent = o.opening || "Everyone’s in";
+
+  const dots = document.createElement("div");
+  dots.className = "vroom-cut-dots";
+  for(let i = 0; i < 3; i++){
+    const d = document.createElement("span");
+    d.className = "vroom-cut-dot";
+    dots.appendChild(d);
+  }
+
+  /* TWO SHAPES, NOT ONE. A race ends on a podium because the question
+     "who won" has a second and a third in it; a tug ends on the whole
+     winning side because two people won it together and showing one of
+     them would be wrong. entries is already in placing order. */
+  const list = (o.entries || []).filter(Boolean);
+  const isTeam = o.kind === "team";
+  let reveal;
+  if(isTeam){
+    reveal = document.createElement("div");
+    reveal.className = "vroom-cut-team";
+    list.slice(0, 4).forEach(p => {
+      const mate = document.createElement("div");
+      mate.className = "vroom-cut-mate";
+      const fig = document.createElement("span");
+      fig.className = "vroom-cut-figure";
+      fig.appendChild(buildAvatarCharSVGSafe(p.avatar || "ninja"));
+      const nm = document.createElement("p");
+      nm.className = "vroom-cut-pname"; nm.textContent = p.name || "?";
+      mate.append(fig, nm);
+      reveal.appendChild(mate);
+    });
+  } else {
+    reveal = document.createElement("div");
+    reveal.className = "vroom-cut-podium";
+    /* SECOND, FIRST, THIRD in DOM order, so the tallest block is in
+       the middle where a podium puts it. A room of two gets two blocks
+       and a room of one gets one - the shape follows who was actually
+       there rather than always drawing three. */
+    const order = list.length >= 3 ? [1, 0, 2] : (list.length === 2 ? [1, 0] : [0]);
+    order.forEach(idx => {
+      const p = list[idx];
+      if(!p) return;
+      const plinth = document.createElement("div");
+      plinth.className = "vroom-cut-plinth";
+      plinth.dataset.place = String(idx + 1);
+      const fig = document.createElement("span");
+      fig.className = "vroom-cut-figure";
+      fig.appendChild(buildAvatarCharSVGSafe(p.avatar || "ninja"));
+      const nm = document.createElement("p");
+      nm.className = "vroom-cut-pname"; nm.textContent = p.name || "?";
+      const sb = document.createElement("p");
+      sb.className = "vroom-cut-psub"; sb.textContent = p.sub || "";
+      const blk = document.createElement("div");
+      blk.className = "vroom-cut-block"; blk.textContent = String(idx + 1);
+      plinth.append(fig, nm, sb, blk);
+      reveal.appendChild(plinth);
+    });
+  }
+
+  const floor = document.createElement("div");
+  floor.className = isTeam ? "vroom-cut-rope" : "vroom-cut-floor";
+
+  const skip = document.createElement("p");
+  skip.className = "vroom-cut-skip";
+  skip.textContent = "Tap to skip";
+
+  overlay.append(line, dots, reveal, floor, skip);
+  overlay.addEventListener("click", finish);
+  document.body.appendChild(overlay);
+
+  const at = (ms, fn) => timers.push(setTimeout(fn, slow ? Math.round(ms * 0.32) : ms));
+  requestAnimationFrame(() => {
+    overlay.classList.add("is-in");
+    line.classList.add("is-on");
+  });
+  at(1500, () => { line.textContent = o.counting || "Counting it up"; });
+  at(2600, () => {
+    line.textContent = o.reveal || "The winner is…";
+    dots.remove();
+  });
+  at(3300, () => {
+    if(isTeam){
+      reveal.classList.add("is-on");
+    } else {
+      /* THIRD, THEN SECOND, THEN FIRST - the blocks come up in the
+         order a podium is announced, so the tallest one lands last and
+         the confetti goes with it. Index-based delays rather than a
+         chain of timers, so a screen change mid-reveal cannot strand
+         one block down while the others are up. */
+      const plinths = [...reveal.querySelectorAll(".vroom-cut-plinth")];
+      plinths.sort((a, b) => Number(b.dataset.place) - Number(a.dataset.place));
+      plinths.forEach((el, i) => {
+        timers.push(setTimeout(() => el.classList.add("is-on"),
+          slow ? 0 : i * 320));
+      });
+    }
+    if(!slow) setTimeout(() => celebrate(), isTeam ? 0 : 640);
+  });
+  at(VROOM_CUTSCENE_MS, finish);
+
+  /* A screen change under a fixed overlay would otherwise leave it
+     sitting over whatever came next - the same trap showTourSendoff()
+     was deleted for. */
+  const watch = new MutationObserver(() => { watch.disconnect(); finish(); });
+  watch.observe(stage, { childList: true });
+  return finish;
+}
+
 function playTierCutscene(tierKey){
   const overlay = document.createElement("div");
   overlay.id = "supernova-cutscene";
@@ -36610,7 +36944,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-24-165";
+const APP_BUILD = "2026-09-24-166";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -40880,6 +41214,9 @@ let tugLastRopePos = null;
    waiting for it would leave the screen on a locked question. So the
    advance redraws from the last snapshot this client saw. */
 let tugLastData = null;
+/* One cutscene per match. Reset in beginTugMatch, so a rematch from the
+   same lobby gets its own. */
+let tugCutscenePlayed = false;
 
 function detachTug(){
   if(tugUnsub){ try{ tugUnsub(); }catch(e){} tugUnsub = null; }
@@ -40939,6 +41276,7 @@ function beginTugMatch(data){
   tugShownPos = -1;
   tugLastRopePos = null;
   tugLastData = data;
+  tugCutscenePlayed = false;
   tugStartAt = Number(data.startAt) || Date.now();
   /* The same order on every device, from the instant they already
      share. Without it a cap or an index means a different question
@@ -40955,7 +41293,34 @@ function beginTugMatch(data){
     const d = snap.data();
     if(!d.tug) return;
     tugLastData = d;
-    if(d.tug.over){ showTugResult(d); return; }
+    if(d.tug.over){
+      /* ONCE, at the moment the rope goes over - not on every snapshot
+         after it. The listener is detached inside showTugResult, but a
+         snapshot already in flight can arrive first, and a second
+         cutscene stacking on the first is how one five-second beat
+         becomes ten. */
+      if(tugCutscenePlayed){ showTugResult(d); return; }
+      tugCutscenePlayed = true;
+      const side = d.tug.winner;
+      const members = side ? tugMembers(d, side) : [];
+      const mine = tugTeamOf(d, vroomMyKey);
+      /* THE WHOLE SIDE, not one of them. Two people won it together
+         and showing one would be wrong - "ensure there's one for the
+         teams so you'd see both characters". A draw has no side, so it
+         falls back to everybody still in the room. */
+      const shown = (side ? members : Object.keys(d.participants || {}))
+        .map(k => ({ name: (d.participants[k] || {}).name || "?",
+                     avatar: (d.participants[k] || {}).avatarChar || "ninja" }));
+      playVroomWinnerCutscene({
+        kind: "team",
+        entries: shown,
+        opening: "The rope is still",
+        counting: "Measuring the pull",
+        reveal: side ? (side === mine ? "Your side took it" : "They took it")
+                     : "Nobody moved it"
+      }, () => showTugResult(d));
+      return;
+    }
     renderTugScreen(d);
     if(syncVroomHost(d)) tugCheckOver(d);
   });
@@ -42728,7 +43093,23 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
   seeResultsBtn.type = "button"; seeResultsBtn.className = "next vroom-finale-btn";
   seeResultsBtn.textContent = "See everyone's results";
   seeResultsBtn.hidden = true;
-  seeResultsBtn.addEventListener("click", () => { detachVroomListener(); showVirtualRoomResults(); });
+  /* THE CUTSCENE SITS BETWEEN THE LAST PERSON FINISHING AND THE
+     STANDINGS. Here rather than inside showVirtualRoomResults(),
+     because that screen is also reached by coming BACK to it - from
+     the lobby, from a rebuild on a later snapshot - and a cutscene
+     that replays every time you glance at the results is a cutscene
+     nobody wants twice. This is the one moment the match actually
+     ends. */
+  seeResultsBtn.addEventListener("click", () => {
+    detachVroomListener();
+    const top = vroomTopThree(lastFinaleData);
+    if(!top.length){ showVirtualRoomResults(); return; }
+    playVroomWinnerCutscene({
+      kind: "podium",
+      entries: top,
+      reveal: top.length > 1 ? "On the podium" : "The winner is\u2026"
+    }, () => showVirtualRoomResults());
+  });
   reveal.append(scoreLine, timeLine, totalLine, seeResultsBtn);
   panel.appendChild(reveal);
 
@@ -42765,6 +43146,7 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
   vroomUnsubscribe = onSnapshotResilient(fbDb.collection("vrooms").doc(vroomCode), docSnap => {
     if(!docSnap.exists) return;
     const data = docSnap.data();
+    lastFinaleData = data;
     syncVroomHost(data);
     announceVroomLeave(data);
     const entries = Object.values(data.participants || {});
