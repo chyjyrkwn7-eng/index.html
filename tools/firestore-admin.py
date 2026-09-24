@@ -73,7 +73,45 @@ def _b64(raw):
 
 
 def _load_key():
-    """The service account JSON, or None for an anonymous run."""
+    """The service account credentials, or None for an anonymous run.
+
+    THREE WAYS IN, AND THE TWO-FIELD ONE IS THE ONE THAT ACTUALLY WORKS
+    FOR A PERSON WITH NO TERMINAL. The environment-variable box in the
+    cloud environment settings takes one NAME=value per line, and a
+    service-account JSON file is thirty pretty-printed lines starting
+    with "{" - pasting it whole comes back as `couldn't parse "{" - use
+    key=value format`, which is the box working correctly and telling
+    you nothing useful. There is no way to one-line it or base64 it
+    without a shell, and a service-account key must never go near an
+    online encoder.
+
+    But the whole file is not needed. Only two fields are, and BOTH ARE
+    ALREADY SINGLE LINES inside that file - the newlines in the private
+    key are backslash-n escapes, not real line breaks. So:
+
+        NOVA_ADMIN_EMAIL         <- the client_email value
+        NOVA_ADMIN_PRIVATE_KEY   <- the private_key value
+
+    Two copy-pastes, no editing. NOVA_ADMIN_KEY (the whole JSON) and
+    NOVA_ADMIN_KEY_FILE (a path to it) still work for anyone who does
+    have a shell.
+    """
+    email = (os.environ.get("NOVA_ADMIN_EMAIL") or "").strip()
+    priv = os.environ.get("NOVA_ADMIN_PRIVATE_KEY") or ""
+    if email and priv:
+        # Pasted through a form, the escapes usually survive as the two
+        # characters backslash and n. Either way this has to end up as
+        # real newlines before the PEM parser sees it.
+        priv = priv.strip().strip('"')
+        if "\\n" in priv and "\n" not in priv:
+            priv = priv.replace("\\n", "\n")
+        return {"client_email": email, "private_key": priv}
+    if email or priv:
+        sys.stderr.write(
+            "Only half the admin credentials are set - NOVA_ADMIN_EMAIL and "
+            "NOVA_ADMIN_PRIVATE_KEY both have to be there.\n")
+        return None
+
     blob = os.environ.get("NOVA_ADMIN_KEY")
     if not blob:
         path = os.environ.get("NOVA_ADMIN_KEY_FILE")
@@ -85,7 +123,11 @@ def _load_key():
     try:
         key = json.loads(blob)
     except ValueError:
-        sys.stderr.write("NOVA_ADMIN_KEY is set but is not valid JSON.\n")
+        sys.stderr.write(
+            "NOVA_ADMIN_KEY is set but is not valid JSON. If you pasted the "
+            "whole key file into an environment-variable box, use "
+            "NOVA_ADMIN_EMAIL and NOVA_ADMIN_PRIVATE_KEY instead - see the "
+            "note on _load_key.\n")
         return None
     if not key.get("client_email") or not key.get("private_key"):
         sys.stderr.write("NOVA_ADMIN_KEY has no client_email/private_key.\n")

@@ -5,7 +5,7 @@ assertion with it, and the signature is verified with openssl. That
 covers everything except Google accepting the token, which only a real
 key can test.
 """
-import base64, importlib.util, json, os, subprocess, tempfile, time
+import base64, importlib.util, json, os, subprocess, sys, tempfile, time
 
 spec = importlib.util.spec_from_file_location(
     "fa", os.path.join(os.path.dirname(os.path.abspath(__file__)), "firestore-admin.py"))
@@ -111,3 +111,69 @@ print("modulus parsed:", n8.bit_length(), "bits")
 print("\nALL PASS - signing, key loading and JWT shape are correct.")
 print("Untested without a real key: Google accepting the token, and the")
 print("progress listing coming back 200 instead of 403.")
+
+
+def check_two_field_env():
+    """The two-field route, which is the only one a person with no
+    terminal can actually use. The environment-variable box takes one
+    NAME=value per line, so a thirty-line JSON key file cannot go in it
+    at all - reported as `couldn't parse "{" - use key=value format`.
+    Both fields below are already single lines inside that file."""
+    import importlib.util as _il
+    spec = _il.spec_from_file_location("_fa", os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "firestore-admin.py"))
+    fa = _il.module_from_spec(spec); spec.loader.exec_module(fa)
+    saved = {k: os.environ.pop(k, None) for k in
+             ("NOVA_ADMIN_EMAIL", "NOVA_ADMIN_PRIVATE_KEY",
+              "NOVA_ADMIN_KEY", "NOVA_ADMIN_KEY_FILE")}
+    fails = []
+    try:
+        if fa._load_key() is not None:
+            fails.append("a bare environment is not anonymous")
+        # A form usually delivers the escapes as two characters.
+        os.environ["NOVA_ADMIN_EMAIL"] = "a@b.iam.gserviceaccount.com"
+        os.environ["NOVA_ADMIN_PRIVATE_KEY"] = (
+            "-----BEGIN PRIVATE KEY-----\\nAAAA\\n-----END PRIVATE KEY-----\\n")
+        k = fa._load_key()
+        if not k or k.get("client_email") != "a@b.iam.gserviceaccount.com":
+            fails.append("the two-field route did not load")
+        elif "\\n" in k["private_key"] or "\n" not in k["private_key"]:
+            fails.append("backslash-n was not turned into a real newline")
+        # THE REAL TEST IS THAT THE KEY STILL PARSES, not how many
+        # newlines survived - _load_key strips the trailing one, which
+        # is correct and which an earlier version of this check called a
+        # failure. So a genuine 2048-bit key goes through the two-field
+        # route both ways and has to come out as the same modulus the
+        # PEM itself parses to.
+        want_n, want_d = fa._rsa_from_pem(pem)
+        for label, blob in (("real newlines", pem),
+                            ("backslash-n escapes", pem.replace("\n", "\\n"))):
+            os.environ["NOVA_ADMIN_PRIVATE_KEY"] = blob
+            k2 = fa._load_key()
+            try:
+                got = fa._rsa_from_pem(k2["private_key"]) if k2 else None
+            except Exception as e:
+                got = "raised: %s" % e
+            if got != (want_n, want_d):
+                fails.append("a real key pasted with %s did not parse" % label)
+        # Half of it set is an error, not a silent anonymous run - that
+        # is exactly the case somebody lands in after one failed paste.
+        del os.environ["NOVA_ADMIN_PRIVATE_KEY"]
+        if fa._load_key() is not None:
+            fails.append("half the credentials read as a whole key")
+    finally:
+        for k2, v in saved.items():
+            os.environ.pop(k2, None)
+            if v is not None:
+                os.environ[k2] = v
+    print("\ntwo-field env (NOVA_ADMIN_EMAIL + NOVA_ADMIN_PRIVATE_KEY):")
+    for f in fails:
+        print("  FAIL", f)
+    if not fails:
+        print("  PASS both fields load, escapes and real newlines both work,"
+              "\n       and half a pair is refused rather than half-used")
+    return 1 if fails else 0
+
+
+if __name__ == "__main__":
+    sys.exit(check_two_field_env())
