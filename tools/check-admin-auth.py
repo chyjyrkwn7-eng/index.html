@@ -75,6 +75,39 @@ leftovers = [f for f in os.listdir(tempfile.gettempdir())
 print("stray .pem files left by signing:", leftovers)
 assert not leftovers
 
+# 8. THE PURE-PYTHON SIGNER MUST MATCH OPENSSL BYTE FOR BYTE.
+# It is the only path that works on an iPad (iOS forbids spawning a
+# process, so a-Shell has no openssl and cannot build a crypto
+# library). "It produced some bytes" is not a check - a wrong
+# signature fails as a 400 from Google with nothing to say why, so
+# this compares it against the reference implementation directly.
+ref = subprocess.run(["openssl", "dgst", "-sha256", "-sign", priv],
+                     input=msg, stdout=subprocess.PIPE).stdout
+pure = fa._sign_rs256_pure(msg, pem)
+print("pure-python signature == openssl:", pure == ref,
+      "(%d bytes)" % len(pure))
+assert pure == ref, "pure signer disagrees with openssl"
+
+# and it must verify as a signature in its own right
+pf = os.path.join(tmp, "pure.bin")
+open(pf, "wb").write(pure)
+v = subprocess.run(["openssl", "dgst", "-sha256", "-verify", pub,
+                    "-signature", pf],
+                   input=msg, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+print("pure signature verifies ->", v.stdout.decode().strip())
+assert "Verified OK" in v.stdout.decode()
+
+# 9. the PKCS#8 key Google actually issues, and a PKCS#1 one
+n8, d8 = fa._rsa_from_pem(pem)
+p1 = subprocess.run(["openssl", "rsa", "-in", priv, "-traditional"],
+                    stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).stdout.decode()
+if p1.strip():
+    n1, d1 = fa._rsa_from_pem(p1)
+    print("PKCS#8 and PKCS#1 parse to the same key:", (n8, d8) == (n1, d1))
+    assert (n8, d8) == (n1, d1)
+assert n8.bit_length() >= 2040, "modulus looks wrong: %d bits" % n8.bit_length()
+print("modulus parsed:", n8.bit_length(), "bits")
+
 print("\nALL PASS - signing, key loading and JWT shape are correct.")
 print("Untested without a real key: Google accepting the token, and the")
 print("progress listing coming back 200 instead of 403.")

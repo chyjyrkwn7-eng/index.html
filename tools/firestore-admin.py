@@ -24,6 +24,7 @@ Usage
 
 import json
 import base64
+import hashlib
 import os
 import subprocess
 import sys
@@ -86,8 +87,76 @@ def _load_key():
     return key
 
 
+def _der_len(buf, i):
+    """(length, index-after-the-length) for one DER length field."""
+    n = buf[i]
+    i += 1
+    if n < 0x80:
+        return n, i
+    count = n & 0x7F
+    return int.from_bytes(buf[i:i + count], "big"), i + count
+
+
+def _der_next(buf, i):
+    """(tag, body, index-after-the-element) for one DER element."""
+    tag = buf[i]
+    length, i = _der_len(buf, i + 1)
+    return tag, buf[i:i + length], i + length
+
+
+def _rsa_from_pem(pem):
+    """(modulus, private exponent) out of a PKCS#8 or PKCS#1 private key.
+
+    Pure stdlib, because the one device this has to run on cannot get a
+    crypto library. Google's service-account keys are PKCS#8
+    ("BEGIN PRIVATE KEY"), which wraps the PKCS#1 key in an OCTET
+    STRING; PKCS#1 ("BEGIN RSA PRIVATE KEY") is accepted too so a key
+    converted by hand still works.
+    """
+    body = "".join(l.strip() for l in pem.strip().splitlines()
+                   if "-----" not in l)
+    der = base64.b64decode(body)
+    _, seq, _ = _der_next(der, 0)                    # outer SEQUENCE
+    tag, first, i = _der_next(seq, 0)                # version INTEGER
+    tag, second, i = _der_next(seq, i)
+    if tag == 0x30:                                  # PKCS#8: algorithm id
+        _, wrapped, _ = _der_next(seq, i)            # OCTET STRING
+        _, seq, _ = _der_next(wrapped, 0)            # the PKCS#1 SEQUENCE
+        _, _, i = _der_next(seq, 0)                  # version
+        _, modulus, i = _der_next(seq, i)
+        _, _, i = _der_next(seq, i)                  # public exponent
+        _, private, i = _der_next(seq, i)
+    else:                                            # PKCS#1 already
+        modulus = second
+        _, _, i = _der_next(seq, i)                  # public exponent
+        _, private, i = _der_next(seq, i)
+    return (int.from_bytes(modulus, "big"), int.from_bytes(private, "big"))
+
+
+# The ASN.1 DigestInfo prefix for SHA-256, as PKCS#1 v1.5 requires.
+SHA256_DIGESTINFO = bytes.fromhex("3031300d060960864801650304020105000420")
+
+
+def _sign_rs256_pure(message, pem):
+    """RS256 with nothing but the standard library.
+
+    iOS will not let an app spawn a process, so a-Shell has no openssl
+    and cannot build a crypto library either - and an iPad is the device
+    this has to work on. Python's own pow() does the modular
+    exponentiation, so the whole of RSA signing here is padding plus one
+    builtin call. Verified byte-for-byte against openssl in
+    check-admin-auth.py, which is the only reason to trust it.
+    """
+    n, d = _rsa_from_pem(pem)
+    k = (n.bit_length() + 7) // 8
+    digest = SHA256_DIGESTINFO + hashlib.sha256(message).digest()
+    # 0x00 0x01 <0xFF padding> 0x00 <DigestInfo||hash>
+    padded = b"\x00\x01" + b"\xff" * (k - len(digest) - 3) + b"\x00" + digest
+    return pow(int.from_bytes(padded, "big"), d, n).to_bytes(k, "big")
+
+
 def _sign_rs256(message, pem):
-    """RS256 over `message`. openssl first, cryptography if it is absent."""
+    """RS256 over `message`. openssl when there is one, else pure Python."""
     try:
         with tempfile.NamedTemporaryFile("w", suffix=".pem", delete=False) as fh:
             fh.write(pem)
@@ -99,15 +168,16 @@ def _sign_rs256(message, pem):
                 input=message, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             if proc.returncode == 0 and proc.stdout:
                 return proc.stdout
-            sys.stderr.write(proc.stderr.decode("utf-8", "replace"))
         finally:
             os.unlink(keyfile)
-    except FileNotFoundError:
+    except Exception:
+        # DELIBERATELY EVERYTHING. This is a shortcut to a faster signer,
+        # never the only way to sign, and the fallback below is known to
+        # produce identical bytes. a-Shell's Python raises its own thing
+        # for a forbidden spawn, and guessing which exception that is
+        # would be the whole iPad path lost to a wrong except clause.
         pass
-    from cryptography.hazmat.primitives import hashes, serialization
-    from cryptography.hazmat.primitives.asymmetric import padding
-    loaded = serialization.load_pem_private_key(pem.encode("utf-8"), password=None)
-    return loaded.sign(message, padding.PKCS1v15(), hashes.SHA256())
+    return _sign_rs256_pure(message, pem)
 
 
 def _access_token():
