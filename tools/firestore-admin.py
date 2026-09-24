@@ -159,23 +159,37 @@ def _call(method, url, timeout=30):
         return e.code, e.read().decode("utf-8", "replace")
 
 
+def _value(val):
+    """One Firestore typed value, flattened.
+
+    MAPS AND ARRAYS HAVE TO RECURSE, and not doing so was a real bug:
+    the old version printed any non-scalar as the literal text
+    "<mapValue>", which is precisely what `lifetime` is - the points and
+    correct-answer totals that tell two accounts under the same username
+    apart. It rendered as "<mapValue>" at the exact moment it mattered.
+    """
+    if "stringValue" in val:
+        return val["stringValue"]
+    if "integerValue" in val:
+        return int(val["integerValue"])
+    if "doubleValue" in val:
+        return float(val["doubleValue"])
+    if "booleanValue" in val:
+        return val["booleanValue"]
+    if "nullValue" in val:
+        return None
+    if "timestampValue" in val:
+        return val["timestampValue"]
+    if "mapValue" in val:
+        return _plain((val["mapValue"] or {}).get("fields") or {})
+    if "arrayValue" in val:
+        return [_value(v) for v in ((val["arrayValue"] or {}).get("values") or [])]
+    return "<%s>" % ",".join(val.keys())
+
+
 def _plain(fields):
     """Firestore's typed values, flattened to something printable."""
-    out = {}
-    for key, val in (fields or {}).items():
-        if "stringValue" in val:
-            out[key] = val["stringValue"]
-        elif "integerValue" in val:
-            out[key] = int(val["integerValue"])
-        elif "doubleValue" in val:
-            out[key] = float(val["doubleValue"])
-        elif "booleanValue" in val:
-            out[key] = val["booleanValue"]
-        elif "nullValue" in val:
-            out[key] = None
-        else:
-            out[key] = "<%s>" % ",".join(val.keys())
-    return out
+    return {key: _value(val) for key, val in (fields or {}).items()}
 
 
 def docs(collection, mask=None):
@@ -260,13 +274,18 @@ def cmd_find(query):
             print("No exact match. Close ones:")
         for code, fields in hits:
             when = fields.get("lastModified")
-            stamp = ""
+            stamp = "never used"
             if isinstance(when, (int, float)) and when:
                 stamp = time.strftime("last used %Y-%m-%d",
                                       time.localtime(when / 1000.0))
-            print("  %-16s %-11s %s  %s"
+            life = fields.get("lifetime") or {}
+            if not isinstance(life, dict):
+                life = {}
+            # The two numbers somebody can actually check against what
+            # they tell you. The whole lifetime map is noise in a list.
+            print("  %-16s %-11s  %6s pts  %5s correct  %s"
                   % (fields.get("firstName", "?"), code,
-                     fields.get("lifetime", ""), stamp))
+                     life.get("points", "?"), life.get("correct", "?"), stamp))
         if len(hits) > 1:
             print("\nMore than one account under that name. Usernames are not")
             print("unique, AND a device that lost its code used to mint a new")
