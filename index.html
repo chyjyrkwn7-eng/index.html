@@ -35221,6 +35221,9 @@ function openChatInviteSheet(){
    as tourRev and class26e.daily.seen. The revision is what lets the
    next batch introduce the next thing without a second key. */
 const INTRO_KEY = "class26e.intro.seen";
+/* 20 x 900ms on top of the first 2s - comfortably past the 8-second
+   first-run splash, and it stops rather than spinning. */
+const INTRO_MAX_TRIES = 20;
 const INTRO_REV = 1;
 function introSeen(){
   try{ return (Number(localStorage.getItem(INTRO_KEY)) || 0) >= INTRO_REV; }
@@ -35359,22 +35362,41 @@ function maybeShowIntro(){
   if(introSeen()){ introPending = false; return; }
   clearTimeout(introTimer);
   introPending = true;
-  introTimer = setTimeout(() => {
-    /* Whatever happens from here, the window is over: either the card
-       opens, or it is not opening on this visit to Home and a banner
-       should not keep waiting on it. */
-    introPending = false;
-    if(introSeen()) return;
-    if(!store || !store.onboardingComplete) return;
-    if(document.getElementById("splashscreen")) return;
-    if(document.getElementById("tour-overlay")) return;
-    if(document.getElementById("genprofile-overlay")) return;
+  /* IT WAITS RATHER THAN GIVING UP, and that was the whole bug. The
+     first-run splash is EIGHT SECONDS; this fired at two, found the
+     splash still up, returned, and never re-armed - so the card did not
+     appear until something else mounted Home again. Reported exactly
+     that way: it only turned up after tapping the chat icon.
+
+     The update check already had this shape (20 retries at 1.2s while
+     the splash is up) and this did not. Same answer: a blocked attempt
+     re-arms, and only a REAL reason to stop - already seen, not
+     onboarded, no longer on Home - ends it. The budget is what stops it
+     spinning forever on a device that never settles. */
+  let tries = 0;
+  const attempt = () => {
+    if(introSeen()){ introPending = false; return; }
+    if(!store || !store.onboardingComplete){ introPending = false; return; }
     /* dataset.screen is set in exactly two places in this file, so
-       "still on Home" is structural rather than a list to maintain. */
+       "still on Home" is structural rather than a list to maintain.
+       Leaving Home ends this attempt; the next showHome() starts a
+       fresh one. */
     const screen = stage.querySelector("[data-screen]");
-    if(!screen || screen.dataset.screen !== "home") return;
+    if(!screen || screen.dataset.screen !== "home"){ introPending = false; return; }
+    /* Busy, not finished: the splash, a tour's dim, or the generating
+       overlay. Come back and look again. */
+    const busy = document.getElementById("splashscreen")
+      || document.getElementById("tour-overlay")
+      || document.getElementById("genprofile-overlay");
+    if(busy){
+      if(++tries > INTRO_MAX_TRIES){ introPending = false; return; }
+      introTimer = setTimeout(attempt, 900);
+      return;
+    }
+    introPending = false;
     showIntroPopup();
-  }, 2000);
+  };
+  introTimer = setTimeout(attempt, 2000);
 }
 
 
@@ -38500,7 +38522,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-24-170";
+const APP_BUILD = "2026-09-24-171";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
