@@ -10322,33 +10322,95 @@
   }
   .badge-cutscene-in{ opacity:1; }
   .badge-cutscene-out{ opacity:0; transition:opacity .45s ease .25s; }
+  /* THE FLASH IS THE BADGE'S OWN COLOUR. A white burst made sixteen
+     different badges arrive identically - the same mistake the rank
+     cutscenes made for months, where only the JS half was themed and
+     every tier played the same flash. --badge-col is set on the
+     overlay in JS so both halves agree. */
   .badge-cutscene-burst{
-    position:absolute; left:50%; top:50%; width:22rem; height:22rem;
+    position:absolute; left:50%; top:46%; width:24rem; height:24rem;
     transform:translate(-50%,-50%) scale(.2); opacity:0;
-    background:radial-gradient(circle, rgba(255,255,255,.55) 0%, rgba(255,255,255,.12) 32%, rgba(255,255,255,0) 66%);
+    background:radial-gradient(circle,
+      color-mix(in srgb, var(--badge-col) 70%, #fff) 0%,
+      color-mix(in srgb, var(--badge-col) 45%, transparent) 30%,
+      transparent 66%);
     pointer-events:none;
   }
-  .badge-cutscene-in .badge-cutscene-burst{ animation:badge-burst 1s ease-out .12s both; }
+  /* Fires when the badge SEATS, not when the scene opens - the flash
+     is the impact, so it has to land on it. */
+  .badge-cutscene-in .badge-cutscene-burst{ animation:badge-burst .9s ease-out .62s both; }
   @keyframes badge-burst{
     0%{ transform:translate(-50%,-50%) scale(.2); opacity:0; }
-    28%{ opacity:1; }
-    100%{ transform:translate(-50%,-50%) scale(1.35); opacity:0; }
+    18%{ opacity:1; }
+    100%{ transform:translate(-50%,-50%) scale(1.45); opacity:0; }
   }
-  .badge-cutscene-art{
+  /* A CIRCLE filled with a falloff, never a spoked shape filled with
+     one - that reads as a coloured tile behind the art rather than as
+     light coming off it. Written down for the rank emblems; the same
+     mistake is available here. */
+  .badge-cutscene-rays{
+    position:absolute; left:50%; top:46%; width:34rem; height:34rem;
+    transform:translate(-50%,-50%) scale(.6); opacity:0;
+    background:radial-gradient(circle,
+      color-mix(in srgb, var(--badge-col) 32%, transparent) 0%,
+      color-mix(in srgb, var(--badge-col) 10%, transparent) 42%,
+      transparent 70%);
+    pointer-events:none;
+  }
+  .badge-cutscene-in .badge-cutscene-rays{ animation:badge-rays 2.6s ease-out .55s both; }
+  @keyframes badge-rays{
+    0%{ transform:translate(-50%,-50%) scale(.6); opacity:0; }
+    22%{ opacity:1; }
+    100%{ transform:translate(-50%,-50%) scale(1.25); opacity:.5; }
+  }
+
+  /* The stage holds the empty slot, the badge and the seat ring on one
+     centre, so the badge lands exactly in its own recess. */
+  .badge-cutscene-stage{
+    position:relative;
     width:min(13rem, 46vw); height:min(13rem, 46vw);
-    filter:drop-shadow(0 12px 30px rgba(0,0,0,.6));
-    transform:scale(0) rotateY(-540deg);
   }
-  .badge-cutscene-art svg{ width:100%; height:100%; display:block; }
-  .badge-cutscene-in .badge-cutscene-art{ animation:badge-spin-in .95s cubic-bezier(.2,.85,.25,1.05) both; }
-  @keyframes badge-spin-in{
-    0%{ transform:scale(0) rotateY(-540deg); }
-    70%{ transform:scale(1.12) rotateY(0deg); }
-    100%{ transform:scale(1) rotateY(0deg); }
+  .badge-cutscene-slot, .badge-cutscene-art, .badge-cutscene-seat{
+    position:absolute; inset:0;
+  }
+  .badge-cutscene-slot svg, .badge-cutscene-art svg{ width:100%; height:100%; display:block; }
+  /* The empty recess is there from the first frame and fades as the
+     badge fills it - the case being completed, not an award appearing. */
+  .badge-cutscene-in .badge-cutscene-slot{ animation:badge-slot .9s ease both; }
+  @keyframes badge-slot{
+    0%{ opacity:0; transform:scale(.86); }
+    30%{ opacity:1; transform:scale(1); }
+    100%{ opacity:1; transform:scale(1); }
+  }
+  /* DOWN INTO THE SLOT, not a spin in from nowhere. It arrives from
+     above, overshoots by a hair as it seats, and settles. */
+  .badge-cutscene-art{
+    filter:drop-shadow(0 12px 30px rgba(0,0,0,.6));
+    opacity:0;
+  }
+  .badge-cutscene-in .badge-cutscene-art{ animation:badge-seat .85s cubic-bezier(.3,1.5,.4,1) .35s both; }
+  @keyframes badge-seat{
+    0%{ opacity:0; transform:translateY(-38%) scale(1.5); }
+    45%{ opacity:1; }
+    72%{ transform:translateY(2%) scale(.97); }
+    100%{ opacity:1; transform:translateY(0) scale(1); }
+  }
+  /* The seat flaring as it lands. A ring element rather than an SVG
+     filter - filters are the one feature that has bitten this app on
+     real iOS hardware. */
+  .badge-cutscene-seat{
+    border-radius:50%; opacity:0; pointer-events:none;
+    box-shadow:0 0 0 0 color-mix(in srgb, var(--badge-col) 75%, transparent);
+  }
+  .badge-cutscene-in .badge-cutscene-seat{ animation:badge-seat-ring .8s ease-out .62s both; }
+  @keyframes badge-seat-ring{
+    0%{ opacity:.9; box-shadow:0 0 0 0 color-mix(in srgb, var(--badge-col) 75%, transparent); }
+    100%{ opacity:0; box-shadow:0 0 0 3.5rem color-mix(in srgb, var(--badge-col) 0%, transparent); }
   }
   /* The flight is a TRANSITION, not a keyframe animation, deliberately:
      it has to start from wherever the entrance left the badge, and the
      offsets are measured at the moment it fires. */
+  .badge-cutscene-out .badge-cutscene-slot{ opacity:0; transition:opacity .2s ease; }
   .badge-cutscene-out .badge-cutscene-art{
     animation:none;
     transform:translate(var(--badge-flyx, 0px), var(--badge-flyy, 0px)) scale(.16) rotate(18deg);
@@ -10357,19 +10419,23 @@
   }
   .badge-cutscene-kicker{
     margin:1.3rem 0 0; font-family:var(--mono); font-size:.76rem; font-weight:800;
-    letter-spacing:.24em; color:var(--theme-c1);
+    letter-spacing:.24em; color:var(--badge-col);
   }
   .badge-cutscene-name{
     margin:.5rem 0 0; font-family:var(--serif); font-size:1.5rem; font-weight:800;
     line-height:1.2; color:#fff; max-width:18rem;
+    text-shadow:0 0 26px color-mix(in srgb, var(--badge-col) 55%, transparent);
   }
   .badge-cutscene-sub{ margin:.5rem 0 0; font-size:.84rem; color:var(--soft); }
-  .badge-cutscene-in .badge-cutscene-kicker,
-  .badge-cutscene-in .badge-cutscene-name,
-  .badge-cutscene-in .badge-cutscene-sub{ animation:badge-text-in .5s ease .75s both; }
+  /* Staggered BEHIND the seat, not fired with it. The old scene put
+     all three lines up at .75s, which is while the badge is still
+     travelling - the words arrived before the thing they are about. */
+  .badge-cutscene-in .badge-cutscene-kicker{ animation:badge-text-in .45s ease 1.15s both; }
+  .badge-cutscene-in .badge-cutscene-name{ animation:badge-text-in .45s ease 1.3s both; }
+  .badge-cutscene-in .badge-cutscene-sub{ animation:badge-text-in .45s ease 1.45s both; }
   @keyframes badge-text-in{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
   @media (min-width:40rem){
-    .badge-cutscene-art{ width:16rem; height:16rem; }
+    .badge-cutscene-stage{ width:16rem; height:16rem; }
     .badge-cutscene-name{ font-size:1.9rem; max-width:24rem; }
   }
 
@@ -33380,6 +33446,22 @@ function showHome(){
    fixed route from a test to Home: somebody can tap Home, Profile or the
    tab bar from the results screen, and the queue survives all three (and
    a relaunch). */
+/* THE HOLD HAS TO OUTLAST THE SEQUENCE. The slot lands at .9s, the
+   badge seats at 1.2s and the last line arrives at 1.9s, so the old
+   2.6s left about half a second to read a unit name before the badge
+   flew off. 4.2s gives the payoff room without becoming a wait - and
+   unlike the rank cutscenes this one can repeat back to back when
+   several badges land at once, so it must not overstay.
+
+   NAMED, because check-behaviour has to wait for this scene and had
+   the old 2.6s typed into it - so lengthening the cutscene turned the
+   gate red for a change that was deliberate. A gate should read the
+   number off the app rather than carry a copy of it, the same way the
+   label checks read their labels off the page. */
+const BADGE_CUTSCENE_MS = 4200;
+/* Entrance plus flight, for anything that needs the whole thing. */
+const BADGE_CUTSCENE_TOTAL_MS = BADGE_CUTSCENE_MS + 800;
+
 function playQueuedBadgeCutscenes(){
   const queue = store.pendingBadgeUnlocks || [];
   if(!queue.length) return;
@@ -33422,14 +33504,67 @@ function playQueuedBadgeCutscenes(){
   overlay.id = "badge-cutscene";
   overlay.className = "badge-cutscene";
 
+  /* THE UNIT'S OWN COLOUR DRIVES THE WHOLE SCENE. This is the lesson
+     the rank cutscenes cost a screen recording to learn: a cutscene's
+     colour has to reach BOTH halves of it, the JS-built artwork and
+     the CSS that lights it. Every rank cutscene played the same flash
+     for months because only one half was themed. Here the badge's own
+     family colour goes on the overlay as a custom property, so the
+     flash, the rays, the seat-ring and the title glow are all that
+     badge's colour rather than a generic white burst that made
+     sixteen different badges arrive identically. */
+  /* NOT `theme` - that is the app's settings object, and a const of
+     the same name here shadows it for the WHOLE function body, which
+     puts the theme.muteBanners and theme.reduceMotion reads ABOVE this
+     line into its temporal dead zone. The result is a ReferenceError
+     the moment a badge is earned, on a file that passes check-js
+     perfectly: exactly the trap this repo already documents about
+     taking down the rest of a script. Caught by running the cutscene,
+     not by reading it. */
+  const badgeTheme = badgeThemeFor(unit);
+  const col = (badgeTheme && badgeTheme.p) || "#9FACBA";
+  overlay.style.setProperty("--badge-col", col);
+
+  /* The rays are a CIRCLE filled with a falloff, never a burst shape
+     filled with one - a spoked shape with a soft gradient reads as a
+     coloured tile behind the art rather than light coming off it.
+     That is written down for the rank emblems and it is the same
+     mistake available here. */
+  const rays = document.createElement("div");
+  rays.className = "badge-cutscene-rays";
+  overlay.appendChild(rays);
+
   const burst = document.createElement("div");
   burst.className = "badge-cutscene-burst";
   overlay.appendChild(burst);
 
+  /* THE CASE FILLS, WHICH IS WHAT EARNING A BADGE ACTUALLY IS. The
+     old scene span a finished badge in from nowhere. The badges live
+     in cut slots on Profile and an unearned one IS its empty slot, so
+     the scene now shows the empty recess first and drops the badge
+     into it - the moment reads as the case being completed, in the
+     app's own visual language, rather than as an award graphic. */
+  const stageWrap = document.createElement("div");
+  stageWrap.className = "badge-cutscene-stage";
+
+  const slot = document.createElement("div");
+  slot.className = "badge-cutscene-slot";
+  slot.appendChild(buildUnitBadgeSVG(unit, false));
+  stageWrap.appendChild(slot);
+
   const art = document.createElement("div");
   art.className = "badge-cutscene-art";
   art.appendChild(buildUnitBadgeSVG(unit, true));
-  overlay.appendChild(art);
+  stageWrap.appendChild(art);
+
+  /* The ring is the seat flaring as the badge lands. It is a separate
+     element rather than a filter on the badge, because SVG filters are
+     the one feature that has bitten this app on real iOS hardware. */
+  const seat = document.createElement("div");
+  seat.className = "badge-cutscene-seat";
+  stageWrap.appendChild(seat);
+
+  overlay.appendChild(stageWrap);
 
   const kicker = document.createElement("p");
   kicker.className = "badge-cutscene-kicker";
@@ -33438,12 +33573,20 @@ function playQueuedBadgeCutscenes(){
 
   const name = document.createElement("p");
   name.className = "badge-cutscene-name";
-  name.textContent = unit + " badge";
+  name.textContent = unit;
   overlay.appendChild(name);
 
   const sub = document.createElement("p");
   sub.className = "badge-cutscene-sub";
-  sub.textContent = "Mastered \u2014 " + BADGE_THRESHOLD + " hundos.";
+  /* WHAT IT MEANS, AND WHERE IT PUTS YOU. "Mastered - 35 hundos"
+     restated the threshold, which is the one number somebody who just
+     crossed it already knows. The case count is the thing they cannot
+     see from here and the reason to care about the next one. */
+  const have = badgeCountOf(store);
+  const all = topicsIn(QUESTIONS).length;
+  sub.textContent = have >= all
+    ? "Every unit mastered. The case is full."
+    : have + " of " + all + " units mastered";
   overlay.appendChild(sub);
 
   document.body.appendChild(overlay);
@@ -33481,7 +33624,7 @@ function playQueuedBadgeCutscenes(){
 
   overlay.addEventListener("click", finish);
   requestAnimationFrame(() => overlay.classList.add("badge-cutscene-in"));
-  setTimeout(finish, 2600);
+  setTimeout(finish, BADGE_CUTSCENE_MS);
 }
 
 /* The reduced-motion version: the same words, no spin, no flight.
@@ -36022,7 +36165,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-24-155";
+const APP_BUILD = "2026-09-24-156";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

@@ -358,7 +358,12 @@ def check_cutscene(br):
                    queue:(store.pendingBadgeUnlocks||[]).length };}""")
         check("%s the first badge plays, on screen" % label,
               bool(first) and first["inView"] and first["queue"] == 1, first)
-        pg.wait_for_timeout(2600)
+        # READ THE LENGTH OFF THE APP. This had 2600 typed into it, so
+        # lengthening the cutscene - a deliberate change - turned the
+        # gate red. Same principle as reading labels off the page
+        # instead of quoting them: a gate must not carry its own copy
+        # of a number the app owns.
+        pg.wait_for_timeout(pg.evaluate("()=>BADGE_CUTSCENE_MS") + 150)
         second = pg.evaluate("""()=>{const o=document.getElementById('badge-cutscene');
           return o ? (o.querySelector('.badge-cutscene-name')||{}).textContent : null;}""")
         # NAMES THE UNIT, DOES NOT QUOTE THE WHOLE LINE. This asserted the

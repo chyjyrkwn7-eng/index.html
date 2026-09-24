@@ -218,7 +218,7 @@ def badge_cutscene(pg, rec):
     rec.start(); pg.wait_for_timeout(400)
     pg.evaluate("()=>{store.pendingBadgeUnlocks=['Identity Crimes'];"
                 "playQueuedBadgeCutscenes()}")
-    pg.wait_for_timeout(4800)
+    pg.wait_for_timeout(6200)
 
 
 def badge_queue(pg, rec):
@@ -229,7 +229,7 @@ def badge_queue(pg, rec):
     pg.evaluate("()=>{store.pendingBadgeUnlocks="
                 "['Identity Crimes','Victims of Crime','Verbal Communication'];"
                 "playQueuedBadgeCutscenes()}")
-    pg.wait_for_timeout(10500)
+    pg.wait_for_timeout(16500)
 
 
 def rank_cutscene(key):
