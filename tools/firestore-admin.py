@@ -122,12 +122,33 @@ def _load_key():
         return None
     try:
         key = json.loads(blob)
-    except ValueError:
+    except ValueError as e:
+        # SAY WHAT IS ACTUALLY WRONG WITH IT. "not valid JSON" sent
+        # somebody back to re-read the format instructions when the
+        # format was fine - the paste had simply dropped two characters
+        # (an opening quote and the K in "KEY"), which a drag-select
+        # across a long line does easily. None of this prints any key
+        # material; it only counts and looks for landmarks.
+        sys.stderr.write("NOVA_ADMIN_KEY is set but does not parse: %s\n" % e)
+        n = len(blob)
+        if n < 1500:
+            sys.stderr.write(
+                "  It is only %d characters. A service-account key is about "
+                "2300, so this looks cut short.\n" % n)
+        if blob.count('"') % 2:
+            sys.stderr.write(
+                "  There is an ODD number of quote marks in it, so at least "
+                "one was lost in the paste.\n")
+        if "BEGIN PRIVATE KEY" not in blob:
+            sys.stderr.write(
+                "  The text -----BEGIN PRIVATE KEY----- is not in it, so the "
+                "private key itself lost characters.\n")
+        if blob.count("{") != blob.count("}"):
+            sys.stderr.write("  The braces do not balance.\n")
         sys.stderr.write(
-            "NOVA_ADMIN_KEY is set but is not valid JSON. If you pasted the "
-            "whole key file into an environment-variable box, use "
-            "NOVA_ADMIN_EMAIL and NOVA_ADMIN_PRIVATE_KEY instead - see the "
-            "note on _load_key.\n")
+            "  Re-copy the file with Select All (Cmd+A / Ctrl+A) rather than "
+            "dragging a selection, which is what drops characters. Real line "
+            "breaks are fine - JSON ignores them.\n")
         return None
     if not key.get("client_email") or not key.get("private_key"):
         sys.stderr.write("NOVA_ADMIN_KEY has no client_email/private_key.\n")
