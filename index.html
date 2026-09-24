@@ -36008,7 +36008,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-24-153";
+const APP_BUILD = "2026-09-24-154";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -37805,6 +37805,49 @@ function showAppearance(){
      real header and one afterthought. Built up here, appended after the
      motion group below - the rows themselves are still created in their
      original order, only their destination changes. */
+  /* UPDATE NOW, FROM ANYWHERE. Both the banner and the forced update
+     are gated to Welcome and Home (and, since build 148, the results
+     screen) so they cannot paint over a test or a lobby. That is right,
+     and it has a cost nobody could see: somebody who stays inside the
+     Virtual Room testing something never returns to a screen where an
+     update is allowed to land, so fix after fix ships and their app
+     never picks any of them up - and every symptom they report is a
+     symptom of the build they are still on. This is the escape hatch:
+     it says which build is running and updates on demand, whatever
+     screen they came from. */
+  const updSect = document.createElement("div");
+  updSect.className = "sect";
+  const updLab = document.createElement("p");
+  updLab.className = "slab"; updLab.textContent = "App version";
+  const updNow = document.createElement("p");
+  updNow.className = "friend-hint";
+  updNow.textContent = "Build " + APP_BUILD;
+  const updBtn = document.createElement("button");
+  updBtn.type = "button"; updBtn.className = "next ghost";
+  updBtn.style.marginTop = ".6rem"; updBtn.style.minHeight = "44px";
+  updBtn.textContent = "Check for update";
+  updBtn.addEventListener("click", () => {
+    updBtn.disabled = true; updBtn.textContent = "Checking\u2026";
+    /* Straight past every gate - this IS somebody asking for it. */
+    fetch("version.json", { cache: "reload" })
+      .then(r => r.json())
+      .then(info => {
+        if(info && info.build && info.build !== APP_BUILD){
+          updNow.textContent = "Updating to build " + info.build + "\u2026";
+          showPushingUpdate();
+          setTimeout(applyUpdate, 900);
+        } else {
+          updBtn.disabled = false; updBtn.textContent = "Check for update";
+          updNow.textContent = "Build " + APP_BUILD + " \u2014 up to date.";
+        }
+      })
+      .catch(() => {
+        updBtn.disabled = false; updBtn.textContent = "Check for update";
+        updNow.textContent = "Build " + APP_BUILD + " \u2014 couldn\u2019t reach the server.";
+      });
+  });
+  updSect.append(updLab, updNow, updBtn);
+
   const studyDetails = document.createElement("div");
   studyDetails.className = "motion-details";
   const studyLab = document.createElement("p");
@@ -38023,6 +38066,7 @@ function showAppearance(){
 
   extraSect.appendChild(motionDetails);
   extraSect.appendChild(studyDetails);
+  extraSect.appendChild(updSect);
   panel.appendChild(extraSect);
 
   /* The leaderboard section \u2014 opting in shares only name, avatar,
