@@ -184,18 +184,49 @@ def run_class(src_dir, label):
                 if not (box["x"] > box["vw"] * 0.5 and box["y"] < box["vh"] * 0.2):
                     fails.append("the chat button is not in the top-right corner: %s" % box)
 
-            # 2. a top banner parks BELOW it rather than under it
-            off = pg.evaluate("""()=>{
-              const b = document.getElementById('chatdock-btn');
-              if(!b) return null;
-              const probe = document.createElement('div');
-              probe.className = 'daily-alert';
-              document.body.appendChild(probe);
-              const o = topNoticeOffset(probe);
-              probe.remove();
-              return {off: o, btnBottom: b.getBoundingClientRect().bottom};}""")
-            if off and (off["off"] is None or off["off"] < off["btnBottom"]):
-                fails.append("a top banner does not clear the chat button: %s" % off)
+            # 2. A BANNER STAYS AT THE TOP AND STILL MISSES THE BUTTON.
+            #    This used to assert the banner sat BELOW the button, by
+            #    listing it in NOTICE_OBSTRUCTIONS - which pushed every
+            #    banner ~66px down the screen and was reported as them
+            #    sitting too low. The decision changed: a banner belongs
+            #    at the top and avoids the corner by being narrower and
+            #    shifted, so what is asserted is the property that
+            #    matters - they do not overlap - not the mechanism.
+            #
+            #    BUILT THE WAY THE APP BUILDS ONE. The first version of
+            #    this made a bare <div class="daily-alert"> and measured
+            #    that, which has none of the centring transform a real
+            #    banner carries - so it measured a box that does not
+            #    exist anywhere, reported an overlap, and sent me
+            #    looking for a bug in the app. buildAppBanner +
+            #    placeTopBanner is the real path.
+            pg.wait_for_timeout(400)
+            off = pg.evaluate('''()=>{
+              const b = document.getElementById("chatdock-btn");
+              const dock = document.getElementById("chatdock");
+              if(!b || !dock || dock.hidden) return {noDock: true};
+              const el = buildAppBanner("probe-banner", "friend",
+                "Alex wants to be friends", "View", ()=>{}, ()=>{});
+              document.body.appendChild(el);
+              placeTopBanner(el);
+              el.classList.add("show");
+              const r = el.getBoundingClientRect();
+              const br = b.getBoundingClientRect();
+              const overlap = !(r.right <= br.left || r.left >= br.right ||
+                                r.bottom <= br.top || r.top >= br.bottom);
+              el.remove();
+              return {overlap: overlap, bannerTop: Math.round(r.top),
+                      btnBottom: Math.round(br.bottom)};}''')
+            if off.get("noDock"):
+                fails.append("the chat dock is not on screen on Home")
+            else:
+                if off["overlap"]:
+                    fails.append("a top banner runs under the chat button: %s" % off)
+                # AND IT IS STILL AT THE TOP. Clearing the button by being
+                # shoved down the screen passes the test above and fails
+                # the person trying to read it.
+                if off["bannerTop"] > off["btnBottom"]:
+                    fails.append("a top banner sits below the chat button, not beside it: %s" % off)
 
             # 3. starting a chat makes a room, and the panel binds to it
             started = pg.evaluate("""()=>{
@@ -273,13 +304,22 @@ def run_class(src_dir, label):
 
             # 5. a Virtual Room takes the chat away and leaves the dock
             vr = pg.evaluate("""()=>{
-              vroomCode = 'ROOM-1234';
+              /* THE RUN FLAG, NOT vroomCode. This used to set vroomCode
+                 and call that "in a Virtual Room" - but that variable
+                 outlives the room on any exit that is not
+                 leaveVirtualRoom(), so the app took it to mean a room
+                 was open and sat on Home saying so. inVroomNow() reads
+                 inVirtualRoom (a match is running) or the lobby's own
+                 markup; this drives the first. The behaviour asserted
+                 below has not changed - only the way the state is
+                 reached, which is the half that was wrong. */
+              inVirtualRoom = true;
               syncChatDock(); chatDockTab = 'chat'; syncChatDock();
               const note = (document.querySelector('.chatdock-note')||{}).textContent || '';
               const r = {note: note, left: chatRoomCode,
                          dockUp: !document.getElementById('chatdock').hidden,
                          chatControls: !!document.querySelector('.chatdock-chathost')};
-              vroomCode = null; syncChatDock();
+              inVirtualRoom = false; syncChatDock();
               return r;}""")
             # THE VIRTUAL ROOM'S CHAT SUPERSEDES THIS ONE, and leaving the
             # room does not hand it back: "you'd have to start another chat

@@ -3608,6 +3608,18 @@
     color:var(--ink); cursor:pointer; -webkit-tap-highlight-color:transparent;
   }
   .chatdock-btn:active{ transform:translateY(1px); }
+  /* DURING A QUESTION, PAUSE OWNS THIS CORNER. Both are fixed top-right
+     and they landed on each other. The dock drops below the counter row
+     rather than going away - the chat is supposed to be reachable
+     mid-test, which is most of the point of it. */
+  .chatdock.in-test .chatdock-btn{
+    top:calc(env(safe-area-inset-top, 0px) + 4.4rem);
+  }
+  @media (min-width:40rem){
+    .chatdock.in-test .chatdock-panel{
+      top:calc(env(safe-area-inset-top, 0px) + 4.4rem + 44px + .5rem);
+    }
+  }
   .chatdock-btn svg{ width:1.2rem; height:1.2rem; display:block; opacity:.92; }
   /* Its own colour, not the accent: an unread marker has to read as an
      unread marker on all seven themes. */
@@ -3722,7 +3734,15 @@
   .chatdock-notif-text{
     flex:1 1 8rem; min-width:8rem; margin:0; font-size:.85rem; line-height:1.35;
   }
-  .chatdock-notif-acts{ display:flex; gap:.4rem; margin-left:auto; flex-shrink:0; }
+  .chatdock-notif-acts{
+    display:flex; gap:.4rem; margin-left:auto; flex-shrink:0;
+    pointer-events:auto;
+  }
+  /* 44px, like every other target in the app. These were 36 - small
+     enough on a phone to read as not tappable, which is how they were
+     reported. */
+  .chatdock-notif-acts .chatdock-mini{ min-height:44px; padding:.45rem .9rem; }
+  .chatdock-panel, .chatdock-panel *{ pointer-events:auto; }
 
   /* ---- a phone: a sheet from the bottom ---- */
   @media (max-width:40rem){
@@ -7904,7 +7924,14 @@
        them. Lowering it further means moving one of those two first,
        which is a real change to Home's furniture rather than a number
        here. Do that before touching this again. */
-    [data-layout="modern"] .panel.home.screen-home-actual{ padding-bottom:3.25rem; }
+    /* DONE, and this is the number the version label was blocking. It
+       is off Home on a phone now (see the max-width:32rem block above),
+       so the left-hand half of the box that pinned this is gone and the
+       button takes the 16px back: a 17 Pro Max goes from 89px above the
+       tab bar to 73. What is left under it is the daily-question
+       circle, which check-fixes measures on every device in the matrix
+       - the only reason this number can move without guessing. */
+    [data-layout="modern"] .panel.home.screen-home-actual{ padding-bottom:2.25rem; }
     /* AND THE BUTTON HAS TO EARN THE ROOM IT JUST TOOK. Dropping it into
        the circle's band is only safe while the two do not share a
        column, and at its natural 224px they very nearly do: measured,
@@ -8240,6 +8267,25 @@
      screen. The underline stays - it is the only thing saying this is
      tappable, and it opens the release notes - but at 40% of the text's
      own colour it sits under the words instead of shouting. */
+  /* OFF HOME ENTIRELY ON A PHONE, asked for directly - "move it to the
+     settings only for the phone". It is what was pinning Start
+     Studying: the button is boxed in between the daily-question circle
+     on the right and this label on the left, both fixed off the bottom
+     edge, and check-fixes caught the button at 0.0px from it against a
+     12px floor. With the label gone the button takes that room back.
+
+     Nothing is lost. The build number already leads the "This app"
+     section in Settings, which is where somebody goes to answer "am I
+     on the version with the fix in it". On a tablet the corners beside
+     the centred tab pill are genuinely empty, so there it stays.
+
+     Both classes named: the element carries .homeversion AND
+     .homeversion-btn, and .homeversion-btn sets its own display-ish
+     properties further down this file - the same specificity trap
+     .friend-act and .bottomtab-label already carry notes about. */
+  @media (max-width:32rem){
+    .homeversion, .homeversion.homeversion-btn{ display:none; }
+  }
   .homeversion-btn{ background:none; border:none; padding:0; font:inherit; cursor:pointer; text-decoration:underline; text-decoration-thickness:from-font; text-decoration-color:color-mix(in srgb, currentColor 40%, transparent); text-underline-offset:2px; }
   /* The daily-question circle itself \u2014 a small offset FAB, not a
      full-width button, fixed to the viewport so its position is
@@ -10825,6 +10871,33 @@
     display:flex; align-items:center; gap:.6rem; text-align:left;
     pointer-events:auto;
     border-left:3px solid var(--banner-color, var(--accent));
+  }
+  /* THEY SIT AT THE TOP, AND THEY CLEAR THE CORNER BY BEING NARROWER.
+     The chat dock was briefly listed as something for topNoticeOffset()
+     to measure around, which pushed every banner ~66px down the screen
+     - reported as them sitting too low. A banner belongs at the top;
+     what it has to avoid is the 44px button in the right-hand corner,
+     and the honest way to do that is to stop short of it rather than to
+     duck underneath. 3.4rem is the button plus its own gutter. */
+  .daily-alert, .app-banner, .vroom-chat-alert{
+    max-width:min(26rem, calc(100vw - 2rem - 3.4rem));
+  }
+  /* TWO BANNERS, TWO CENTRING MECHANISMS, AND THEY NEED DIFFERENT
+     ANSWERS. `.daily-alert` (which `.app-banner` is) centres with
+     left/right insets and `margin:0 auto`; `.vroom-chat-alert` centres
+     with `left:50%` and a translate. A first attempt set `left` on both
+     - which for the auto-margin one is not a shift at all, it REPLACES
+     the left inset and shoves the banner bodily to the right, straight
+     under the button it was meant to avoid. Measured: it spanned
+     188..424 on a 440px phone against a button at 372.
+     So the inset one gets a bigger RIGHT inset, and the translated one
+     gets a shifted centre. Phones only - a tablet's banner and its
+     button are already 140px apart. */
+  @media (max-width:32rem){
+    .daily-alert, .app-banner{
+      right:calc(max(1rem, env(safe-area-inset-right, 0px)) + 3.4rem);
+    }
+    .vroom-chat-alert{ left:calc(50% - 1.7rem); }
   }
   .app-banner > *{ pointer-events:auto; }
   .app-banner-icon{
@@ -34949,10 +35022,20 @@ function rebuildChatTab(){
    run while the top-level script is still executing, and a `let` read
    before its declaration throws even through `typeof`. */
 function inVroomNow(){
-  let a = false, b = false;
-  try{ a = !!vroomCode; }catch(e){}
-  try{ b = !!inVirtualRoom; }catch(e){}
-  return a || b;
+  /* A STALE vroomCode IS NOT A VIRTUAL ROOM. This used to answer yes
+     whenever vroomCode was set, and that variable outlives the room on
+     any path out that is not leaveVirtualRoom() - so the chat tab sat
+     there saying "You're in a Virtual Room" on Home, with no room
+     anywhere. Reported exactly that way.
+     The test is now the SCREEN plus the run flag: a lobby is the only
+     thing that puts up a .vroom-chat-slot, and inVirtualRoom is only
+     true once a match has actually begun. Both are TDZ-guarded because
+     this runs on every stage mutation, including ones that happen while
+     the top-level script is still executing. */
+  let inRun = false;
+  try{ inRun = !!inVirtualRoom; }catch(e){}
+  if(inRun) return true;
+  return !!document.querySelector(".vroom-chat-slot, .vroom-lobby-panel");
 }
 
 /* One function decides what is on screen, so the button, the tabs and
@@ -34985,20 +35068,32 @@ function syncChatDock(){
      anyway. Every read is TDZ-guarded: this runs on every stage
      mutation, including ones that happen while the top-level script is
      still executing. */
-  let busy = false;
-  try{ busy = !!testInProgress; }catch(e){}
-  if(!busy) busy = document.body.classList.contains("has-active-question");
-  if(!busy) busy = !!(document.getElementById("splashscreen")
-                      || document.getElementById("teststart-overlay")
-                      || document.getElementById("genprofile-overlay"));
-  try{ if(!busy && window.forceHideBottomTabs) busy = true; }catch(e){}
-  if(busy){
+  /* LOADING SCREENS ONLY. The first version of this hid the dock during
+     a test as well, which is the opposite of the point - "the chat
+     button shouldn't hide when a test is up, that's the whole point of
+     it". A loading screen is different: there is nothing on it to do,
+     and the dock sat on top of it.
+
+     What made hiding it during a test look necessary was the PAUSE
+     button, which is fixed in the same corner. That is a placement
+     problem, not a reason to take the chat away: .in-test moves the
+     dock clear of it instead - see the CSS. */
+  const loading = !!(document.getElementById("splashscreen")
+                  || document.getElementById("teststart-overlay")
+                  || document.getElementById("genprofile-overlay"));
+  if(loading){
     chatDock.hidden = true;
     chatDockOpen = false;
     chatDock.classList.remove("is-open");
     document.body.classList.remove("chatdock-open");
     return;
   }
+  /* A question is up, so Pause is in the corner this button wants. */
+  let inTest = false;
+  try{ inTest = !!testInProgress; }catch(e){}
+  if(!inTest) inTest = document.body.classList.contains("has-active-question");
+  if(!inTest) inTest = !!document.querySelector("#pausebtn:not([hidden])");
+  chatDock.classList.toggle("in-test", inTest);
   /* AND THE CHAT LOBBY IS GENUINELY LEFT, not merely hidden. Asked for
      in those words: "when you leave the virtual room you'd have to
      start another chat again because it won't be there". Sitting in a
@@ -35026,6 +35121,17 @@ function syncChatDock(){
    somebody inviting you to a chat. All three already existed and all
    three only ever surfaced as a banner you could miss - a banner is a
    moment, an inbox is a place to go back to. */
+/* ANSWERED IS ANSWERED, IMMEDIATELY. Accepting a friend or joining a
+   chat changes MY OWN store, but the list is built from the class
+   board - and that board is a snapshot that arrives when it arrives, so
+   the row sat there until the next one did. Reported as notifications
+   not clearing when they are accepted or declined.
+   Device-local and deliberately not persisted: it only has to outlive
+   the snapshot, and a reset of it costs nothing. */
+const notifHandled = new Set();
+function markNotifHandled(kind, pub){ notifHandled.add(kind + ":" + pub); }
+function notifWasHandled(kind, pub){ return notifHandled.has(kind + ":" + pub); }
+
 function notificationItems(){
   const items = [];
   (incomingFriendRequests() || []).forEach(e => items.push({
@@ -35033,28 +35139,38 @@ function notificationItems(){
     text: (e.firstName || "Someone") + " wants to be friends",
     actLabel: "Accept",
     act: () => { acceptFriendRequest(e.pub); pushToCloud();
+                 markNotifHandled("friend", e.pub);
                  showToast((e.firstName || "They") + " is now a friend.", "good");
                  renderNotifications(); syncChatDockDot(); },
     dismissLabel: "Decline",
-    dismiss: () => { declineFriendRequest(e.pub); renderNotifications(); syncChatDockDot(); }
+    dismiss: () => { declineFriendRequest(e.pub); markNotifHandled("friend", e.pub);
+                     renderNotifications(); syncChatDockDot(); }
   }));
   (incomingChatInvites() || []).forEach(inv => items.push({
     kind: "chat", at: (inv.from.cinv[store.publicId] || {}).at || 0, who: inv.from,
     text: (inv.from.firstName || "Someone") + " invited you to a chat",
     actLabel: "Join",
-    act: () => { joinChatRoom(inv.code); chatDockTab = "chat"; syncChatDock(); }
+    act: () => { markNotifHandled("chat", inv.from.pub); joinChatRoom(inv.code);
+                 chatDockTab = "chat"; renderNotifications(); syncChatDock(); },
+    dismissLabel: "Ignore",
+    dismiss: () => { markNotifHandled("chat", inv.from.pub);
+                     renderNotifications(); syncChatDockDot(); }
   }));
   (incomingLobbyInvites() || []).forEach(inv => items.push({
     kind: "vroom", at: (inv.from.inv[store.publicId] || {}).at || 0, who: inv.from,
     text: (inv.from.firstName || "Someone") + " invited you to a Virtual Room",
     actLabel: "Join",
-    act: () => { closeChatDock(); dismissInvite(inv.code); joinVirtualRoomLobby(inv.code); }
+    act: () => { markNotifHandled("vroom", inv.from.pub); closeChatDock();
+                 dismissInvite(inv.code); joinVirtualRoomLobby(inv.code); },
+    dismissLabel: "Ignore",
+    dismiss: () => { markNotifHandled("vroom", inv.from.pub); dismissInvite(inv.code);
+                     renderNotifications(); syncChatDockDot(); }
   }));
   /* Newest first, and a friend request - which carries no timestamp
      anywhere in the row - sorts to the top, because it is the one that
      has been waiting longest by definition. */
   items.sort((a, b) => (b.at || 0) - (a.at || 0));
-  return items;
+  return items.filter(it => !notifWasHandled(it.kind, it.who && it.who.pub));
 }
 
 function renderNotifications(){
@@ -38568,7 +38684,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-24-172";
+const APP_BUILD = "2026-09-24-174";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -38716,10 +38832,7 @@ function showAddToHomeNotice(){
    landing on Level/Badges/Hundos. */
 const NOTICE_OBSTRUCTIONS = [".wrap > .top", ".wrap > .count", ".back-link",
                              ".panel > .navsegment", ".welcome-build",
-                             /* The chat dock is fixed in the top-right corner of
-                                every screen, and a centred banner at the same
-                                offset runs straight under it on a phone. */
-                             "#chatdock-btn"];
+                             ];
 
 /* Shared by both notices. The measured offset is applied with transitions
    suppressed, so the banner is simply already in the right place when it
