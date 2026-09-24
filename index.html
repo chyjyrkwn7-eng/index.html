@@ -10080,28 +10080,42 @@
     border:1px solid var(--rule); border-radius:3px;
     padding:.55rem .4rem; min-width:8.5rem;
   }
-  /* The invite banner is the daily alert's shape with two controls in
-     it, so it inherits the top placement and the entrance rather than
-     restating either - but NOT its pointer-events:none. That is right
-     for a passive announcement nobody taps and fatal for a banner whose
-     whole point is a Join button: the button rendered, looked
-     enabled, and could not be pressed. Reported as "you can't select
-     the join button". */
-  .lobby-invite{
+  /* An actionable banner takes the daily alert's shape, its top
+     placement and its entrance - but NOT its pointer-events:none, which
+     is right for a passive announcement nobody taps and fatal for one
+     whose whole point is a button. */
+  .app-banner{
     display:flex; align-items:center; gap:.6rem; text-align:left;
     pointer-events:auto;
+    border-left:3px solid var(--banner-color, var(--accent));
   }
-  .lobby-invite > *{ pointer-events:auto; }
-  .lobby-invite-text{ flex:1 1 0; min-width:0; }
-  .lobby-invite .lobby-invite-join{
+  .app-banner > *{ pointer-events:auto; }
+  .app-banner-icon{
+    flex-shrink:0; width:1.35rem; height:1.35rem;
+    color:var(--banner-color, var(--accent));
+  }
+  .app-banner-body{ flex:1 1 0; min-width:0; display:flex; flex-direction:column; }
+  /* The tag is the half that survives being read in a hurry, and the
+     half that works for somebody who cannot tell the two colours
+     apart. Both are load-bearing; neither is decoration. */
+  .app-banner-tag{
+    font-size:.6rem; font-weight:800; letter-spacing:.12em;
+    color:var(--banner-color, var(--accent));
+  }
+  .app-banner-text{ font-size:.88rem; line-height:1.3; }
+  .app-banner .app-banner-act{
     flex-shrink:0; min-height:36px; padding:.35rem .8rem;
     font-size:.8rem; border-radius:999px;
   }
-  .lobby-invite-x{
+  .app-banner-x{
     flex-shrink:0; width:28px; height:28px; padding:0; line-height:1;
     background:none; border:none; color:var(--soft);
     font-size:1.2rem; cursor:pointer;
   }
+  /* A tint of each kind's own colour behind the glass, so the two are
+     distinguishable before a single word is read. */
+  .app-banner-vroom{ background:color-mix(in srgb, #3DA9FC 12%, rgba(28,33,40,.55)); }
+  .app-banner-friend{ background:color-mix(in srgb, #4ADE80 12%, rgba(28,33,40,.55)); }
   .friend-hint{ margin:.5rem 0 0; font-size:.75rem; line-height:1.4; color:var(--soft); }
   .friend-add-row{ display:flex; gap:.5rem; align-items:stretch; }
   .friend-add-input{
@@ -33289,7 +33303,7 @@ function showHome(){
      invite, so Home checks what is already on the board as well as
      watching for new ones. */
   attachInviteWatcher();
-  setTimeout(checkLobbyInvites, 0);
+  setTimeout(() => { checkLobbyInvites(); checkFriendRequests(); }, 0);
   stage.replaceChildren(panel);
   stage.appendChild(dailyBtn);
   /* Appended to stage as a sibling of the panel now, not a child of
@@ -36008,7 +36022,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-24-154";
+const APP_BUILD = "2026-09-24-155";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -39352,46 +39366,77 @@ function dismissInvite(code){
   }catch(e){}
 }
 
+/* ONE BANNER BUILDER, TWO LOOKS THAT CANNOT BE CONFUSED. Asked for
+   directly: "these friend related banners and virtual room banners to
+   look different so they are easy to tell apart." They had been the
+   same object with different words in it, which at a glance on a phone
+   is the same banner twice.
+
+   kind "vroom" is the Virtual Room's own blue with a room glyph and a
+   VIRTUAL ROOM tag; kind "friend" is green with a person glyph and a
+   FRIENDS tag. The tag and the colour are both there on purpose - one
+   of them survives being read in a hurry, and the other survives being
+   read by somebody who cannot tell those colours apart. */
+const BANNER_KINDS = {
+  vroom:  { tag: "VIRTUAL ROOM", color: "#3DA9FC", glyph: "M4 10 12 4l8 6v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z" },
+  friend: { tag: "FRIENDS",      color: "#4ADE80", glyph: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8m0 2c-4 0-7 2-7 4.5V20h14v-1.5C19 16 16 14 12 14" }
+};
+
+function buildAppBanner(id, kind, message, actionLabel, onAction, onDismiss){
+  const def = BANNER_KINDS[kind] || BANNER_KINDS.vroom;
+  const el = document.createElement("div");
+  el.id = id;
+  el.className = "daily-alert app-banner app-banner-" + kind;
+  el.style.setProperty("--banner-color", def.color);
+
+  const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  icon.setAttribute("viewBox", "0 0 24 24");
+  icon.setAttribute("class", "app-banner-icon");
+  icon.setAttribute("aria-hidden", "true");
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute("d", def.glyph);
+  path.setAttribute("fill", "currentColor");
+  icon.appendChild(path);
+
+  const wrap = document.createElement("span");
+  wrap.className = "app-banner-body";
+  const tag = document.createElement("span");
+  tag.className = "app-banner-tag"; tag.textContent = def.tag;
+  const text = document.createElement("span");
+  text.className = "app-banner-text"; text.textContent = message;
+  wrap.append(tag, text);
+
+  const act = document.createElement("button");
+  act.type = "button"; act.className = "next app-banner-act";
+  act.textContent = actionLabel;
+  act.addEventListener("click", () => { el.remove(); onAction(); });
+
+  const shut = document.createElement("button");
+  shut.type = "button"; shut.className = "app-banner-x";
+  shut.setAttribute("aria-label", "Dismiss");
+  shut.textContent = "\u00d7";
+  shut.addEventListener("click", () => { el.remove(); if(onDismiss) onDismiss(); });
+
+  el.append(icon, wrap, act, shut);
+  return el;
+}
+
 /* A banner, not a toast: a toast is gone in four seconds and this is
    something to act on. Same top placement and the same measured offset
    every other banner here uses, so it cannot land on the screen title. */
 function showLobbyInviteBanner(from, code){
   if(document.getElementById("lobby-invite")) return;
-  const el = document.createElement("div");
-  el.id = "lobby-invite"; el.className = "daily-alert lobby-invite";
-  const text = document.createElement("span");
-  text.className = "lobby-invite-text";
-  text.textContent = (from.firstName || "A classmate") + " invited you to a Virtual Room";
-  const join = document.createElement("button");
-  join.type = "button"; join.className = "next lobby-invite-join";
-  join.textContent = "Join";
-  join.addEventListener("click", () => {
-    dismissInvite(code);
-    el.remove();
-    joinVirtualRoomLobby(code);
-  });
-  const shut = document.createElement("button");
-  shut.type = "button"; shut.className = "lobby-invite-x";
-  shut.setAttribute("aria-label", "Dismiss");
-  shut.textContent = "\u00d7";
-  shut.addEventListener("click", () => { dismissInvite(code); el.remove(); });
-  el.append(text, join, shut);
+  const el = buildAppBanner("lobby-invite", "vroom",
+    (from.firstName || "A classmate") + " invited you to a Virtual Room",
+    "Join",
+    () => { dismissInvite(code); joinVirtualRoomLobby(code); },
+    () => dismissInvite(code));
   /* On <body> rather than #stage, like every other fixed banner here,
      with the one-shot observer that clears it on the next screen
      change - #stage animates, and a transform on an ancestor
      re-parents a fixed element's containing block. */
   document.body.appendChild(el);
-  /* NEVER ABOVE THE CSS BASELINE, which carries the safe-area inset.
-     topNoticeOffset() answers "below whatever this screen puts along
-     its top" and can legitimately come back smaller than
-     env(safe-area-inset-top) + .75rem - measured 6px here - which on a
-     notched phone is under the clock. So it may only ever push the
-     banner DOWN from where the stylesheet already put it. */
-  const measured = (typeof topNoticeOffset === "function") ? topNoticeOffset(el) : null;
-  if(measured !== null && measured !== undefined){
-    const baseline = el.getBoundingClientRect().top;
-    if(measured > baseline) el.style.top = measured + "px";
-  }
+  placeTopBanner(el);
   const onNavigate = new MutationObserver(() => { onNavigate.disconnect(); el.remove(); });
   onNavigate.observe(stage, { childList: true });
   requestAnimationFrame(() => el.classList.add("show"));
@@ -39401,6 +39446,57 @@ function checkLobbyInvites(){
   const live = incomingLobbyInvites().filter(x => !inviteDismissed(x.code));
   if(!live.length) return;
   showLobbyInviteBanner(live[0].from, live[0].code);
+}
+
+/* SOMEBODY ASKING TO BE YOUR FRIEND NEVER ANNOUNCED ITSELF AT ALL.
+   The request landed in their row, the Friends screen showed it to
+   anybody who happened to open Friends, and nothing anywhere told you
+   to. "The friend request banner didn't show" - it had never been
+   built. Keyed on who is asking rather than on a count, so answering
+   one and being asked by somebody else still announces. */
+const FRIENDREQ_SEEN_KEY = "class26e.friendreq.seen";
+function friendReqDismissed(pub){
+  try{
+    const raw = JSON.parse(localStorage.getItem(FRIENDREQ_SEEN_KEY) || "[]");
+    return Array.isArray(raw) && raw.indexOf(pub) >= 0;
+  }catch(e){ return false; }
+}
+function dismissFriendReq(pub){
+  try{
+    const raw = JSON.parse(localStorage.getItem(FRIENDREQ_SEEN_KEY) || "[]");
+    const next = (Array.isArray(raw) ? raw : []).concat([pub]).slice(-40);
+    localStorage.setItem(FRIENDREQ_SEEN_KEY, JSON.stringify(next));
+  }catch(e){}
+}
+
+function checkFriendRequests(){
+  if(document.getElementById("friend-request")) return;
+  /* The Virtual Room banner has the floor if both are waiting - it is
+     time-sensitive and a friend request is not. */
+  if(document.getElementById("lobby-invite")) return;
+  const pending = incomingFriendRequests().filter(e => !friendReqDismissed(e.pub));
+  if(!pending.length) return;
+  const who = pending[0];
+  const more = pending.length - 1;
+  const msg = (who.firstName || "A classmate") + " wants to be friends"
+    + (more > 0 ? " (+" + more + " more)" : "");
+  const el = buildAppBanner("friend-request", "friend", msg, "View",
+    () => showFriends(),
+    () => pending.forEach(e => dismissFriendReq(e.pub)));
+  document.body.appendChild(el);
+  placeTopBanner(el);
+  const onNavigate = new MutationObserver(() => { onNavigate.disconnect(); el.remove(); });
+  onNavigate.observe(stage, { childList: true });
+  requestAnimationFrame(() => el.classList.add("show"));
+}
+
+/* Both banners place themselves the same way, and neither may sit
+   above the CSS baseline, which is what carries the safe-area inset. */
+function placeTopBanner(el){
+  const measured = (typeof topNoticeOffset === "function") ? topNoticeOffset(el) : null;
+  if(measured === null || measured === undefined) return;
+  const baseline = el.getBoundingClientRect().top;
+  if(measured > baseline) el.style.top = measured + "px";
 }
 
 function attachInviteWatcher(){
@@ -39422,7 +39518,7 @@ function attachInviteWatcher(){
       }
       const el = stage && stage.firstElementChild;
       const screen = el && el.dataset ? el.dataset.screen : "";
-      if(screen === "home") checkLobbyInvites();
+      if(screen === "home"){ checkLobbyInvites(); checkFriendRequests(); }
     });
   }catch(e){}
 }
@@ -39729,12 +39825,31 @@ function showVirtualRoomLobby(){
   readyBtn.type = "button"; readyBtn.className = "next ghost vroom-readyup-btn";
   readyBtn.textContent = "Ready up";
   let amReady = false;
+  /* THE BUTTON ANSWERS THE TAP, NOT THE ROUND TRIP. It used to flip a
+     variable, write to Firestore, and leave the label alone - the
+     label and the pressed state were only ever set when the snapshot
+     came back. So on any connection that is not instant, tapping
+     Ready up visibly did nothing, which reads as "the ready up stuff
+     isn't syncing when hit". It paints immediately and the write
+     confirms it; a failure puts it back and says so. */
+  function paintReady(){
+    readyBtn.textContent = amReady ? "Not ready" : "Ready up";
+    readyBtn.classList.toggle("is-ready", amReady);
+  }
   readyBtn.addEventListener("click", () => {
-    if(!fbDb){ showToast("Lost connection \u2014 try again in a moment."); return; }
+    if(!fbDb || !vroomCode || !vroomMyKey){
+      showToast("Lost connection \u2014 try again in a moment."); return;
+    }
     amReady = !amReady;
+    paintReady();
+    readyBtn.disabled = true;
     fbDb.collection("vrooms").doc(vroomCode).update({
       ["participants." + vroomMyKey + ".ready"]: amReady
-    }).catch(() => { amReady = !amReady; showToast("Couldn't update \u2014 try again."); });
+    }).then(() => { readyBtn.disabled = false; })
+      .catch(() => {
+        amReady = !amReady; paintReady(); readyBtn.disabled = false;
+        showToast("Couldn't update \u2014 try again.");
+      });
   });
   panel.appendChild(readyBtn);
 
@@ -39927,8 +40042,7 @@ function showVirtualRoomLobby(){
       const myData = data.participants && data.participants[vroomMyKey];
       if(myData){
         amReady = !!myData.ready;
-        readyBtn.textContent = amReady ? "Not ready" : "Ready up";
-        readyBtn.classList.toggle("is-ready", amReady);
+        paintReady();
       }
       readyCount.textContent = readyN + " of " + totalN + " ready";
       /* TWO PEOPLE MINIMUM. totalN > 0 let a host sitting alone ready
@@ -44760,7 +44874,18 @@ if(launchCode && !syncCode && !syncOff){
 
 if(store.onboardingComplete && !syncCode && !syncOff){
   setSyncCode(generateSyncCode());
-  onFirebaseReady(() => { pushToCloud(); attachLiveListener(syncCode); });
+  onFirebaseReady(() => {
+    pushToCloud(); attachLiveListener(syncCode);
+    /* THE BOARD WATCHER STARTS AT BOOT, NOT ON THE FIRST VISIT TO HOME.
+       It used to attach inside showHome(), so the first snapshot only
+       began arriving once somebody was already looking at the screen
+       the banner appears on - which is why an invite showed up "late":
+       the wait was the subscription, not the network. Attaching here
+       means the rows are usually already in hand by the time Home is
+       drawn, and the banner is there on arrival rather than a few
+       seconds after it. Still only ever DISPLAYED on Home. */
+    attachInviteWatcher();
+  });
 }
 
 /* Hold everybody at the level they already had - see
