@@ -1,5 +1,10 @@
 """Does `find` actually produce a usable answer?
 
+EVERY CODE AND NAME IN HERE IS INVENTED. Real-looking fixtures got
+pasted into a chat once and read as somebody's actual account, so they
+all say FAKE- now. They keep the real format (the sync-code alphabet
+has no 0/O/1/I) so the shape assertions stay honest.
+
 Everything here is the real code path - auth, paging, the field mask,
 the typed-value flattening, the printing - with only the HTTP call
 stubbed, returning documents shaped exactly as Firestore returns them.
@@ -36,11 +41,11 @@ def doc(name, code, points, correct, when):
 
 
 PAGE1 = {"documents": [
-    doc("sivad", "QZ4K-8MTP", 14200, 903, MS),
-    doc("Sivad", "BYHW-NPY8", 0, 0, MS + 86400000),   # the minted duplicate
-    doc("Madison", "WXYZ-7777", 5000, 300, MS),
+    doc("testuser", "FAKE-TEST", 14200, 903, MS),
+    doc("TestUser", "FAKE-DUPE", 0, 0, MS + 86400000),   # the minted duplicate
+    doc("Madison", "FAKE-MADI", 5000, 300, MS),
 ], "nextPageToken": "tok1"}
-PAGE2 = {"documents": [doc("Dave", "AAAA-1111", 77, 9, MS)]}
+PAGE2 = {"documents": [doc("Dave", "FAKE-DAVE", 77, 9, MS)]}
 
 calls = []
 
@@ -77,16 +82,16 @@ print("  mask sent as repeated params: yes")
 # ---- 4. THE ACTUAL LOOKUP: a username in, a code out
 buf = io.StringIO()
 with contextlib.redirect_stdout(buf):
-    rc = fa.cmd_find("sivad")
+    rc = fa.cmd_find("testuser")
 out = buf.getvalue()
-print("\n--- find sivad ---")
+print("\n--- find testuser ---")
 print(out.rstrip())
 print("--- rc =", rc, "---\n")
 
 assert rc == 0
-assert "QZ4K-8MTP" in out, "the real code must be printed"
+assert "FAKE-TEST" in out, "the real code must be printed"
 assert "14200" in out and "903" in out, "the numbers to identify them by"
-assert "BYHW-NPY8" in out, "the duplicate account must show too"
+assert "FAKE-DUPE" in out, "the duplicate account must show too"
 assert "<mapValue>" not in out
 assert "Dave" not in out and "Madison" not in out, "must not print everyone"
 assert "More than one account" in out, "two hits must be called out"
@@ -107,7 +112,7 @@ fa._call = lambda m, u, timeout=30: (200, json.dumps({"documents": [
                 "correct": {"integerValue": "903"}}}]}))
 buf = io.StringIO()
 with contextlib.redirect_stdout(buf):
-    fa.cmd_find("sivad")
+    fa.cmd_find("testuser")
 out = buf.getvalue()
 assert "No admin key configured" in out
 assert "public id" in out.lower()
