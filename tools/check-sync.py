@@ -257,7 +257,7 @@ with sync_playwright() as pw:
     # either one before the phone lost it. Tapped for real rather than
     # called: a button behind something unclickable measures as present
     # and does nothing.
-    print("\n4d. Settings can hand over the code and the link")
+    print("\n4d. Settings can hand over the code")
     ctx = br.new_context(viewport={"width": 440, "height": 956},
                          permissions=["clipboard-read", "clipboard-write"])
     ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.drill.v1', '%s');"
@@ -273,14 +273,31 @@ with sync_playwright() as pw:
         b.click(); pg.wait_for_timeout(350)
         got[b.text_content()] = pg.evaluate("()=>navigator.clipboard.readText()")
     check("Settings copies the code", got.get("Copy code") == "WXYZ-7777", str(got))
-    link = got.get("Copy sign-in link") or ""
-    check("Settings copies a sign-in link", link.endswith("#k=WXYZ-7777"), repr(link))
-    # and the app accepts the link it just handed out - a link the boot
-    # code would not read back is worse than none.
-    back = pg.evaluate("(u)=>{ const h = u.split('#')[1] || '';"
-                       "  const v = (new URLSearchParams(h).get('k')||'').toUpperCase();"
-                       "  return SYNC_CODE_RE.test(v) ? v : null; }", link)
-    check("and the link is one boot will read back", back == "WXYZ-7777", repr(back))
+    # ONE BUTTON, NOT TWO. Copy sign-in link came off on an explicit
+    # report - "I don't even know what that is and it will confuse
+    # people" - and this check went red for asserting it, which is the
+    # gate failing the app for being right. Asserted as SHAPE now: one
+    # copy button in the sync section, whatever it ends up called.
+    check("there is exactly one copy button, not a pair",
+          len(btns) == 1, str([b.text_content() for b in btns]))
+    filled = pg.evaluate(
+        "()=>{const b=document.querySelector('.sync-save-row .cal-profile-btn');"
+        " const r=document.querySelector('.sync-save-row');"
+        " return b && r ? Math.round(r.getBoundingClientRect().width - b.getBoundingClientRect().width) : -1;}")
+    check("and it fills the row", filled == 0, "%dpx short" % filled)
+    # The recovery URL is still LOAD-BEARING even with no button on it:
+    # the re-add notice hands off to Safari with it, and that is the one
+    # route back for a device whose whole storage jar is about to go. So
+    # it is checked where it actually lives now, not through a control
+    # that no longer exists.
+    back = pg.evaluate("""()=>{ const u = recoveryUrlFor(syncCode);
+        const h = u.split('#')[1] || '';
+        const v = (new URLSearchParams(h).get('k')||'').toUpperCase();
+        return { url: u, read: SYNC_CODE_RE.test(v) ? v : null,
+                 handoff: safariHandoffTarget() }; }""")
+    check("the recovery link still round-trips", back.get("read") == "WXYZ-7777", str(back))
+    check("and the Safari hand-off still carries the code",
+          "k=WXYZ-7777" in (back.get("handoff") or ""), back.get("handoff"))
     ctx.close()
 
     # ---- 5. swapping codes retires the old rankings row ----

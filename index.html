@@ -3458,7 +3458,25 @@
        was .85rem (13.6px), the worst offender in the app. */
     font-size:max(17px, 1rem);
   }
-  .vroom-chat-send{ flex:0 0 auto; padding:.55rem 1.1rem; font-size:.85rem; }
+  /* SEND HAD TO MATCH THE APP IT IS IN, and measured it matched
+     nothing: 36px tall beside a 45px input so it sat visibly short,
+     13.6px text beside the input's 17px, and the pale primary pill on
+     a screen where every other button - Copy code, the ghost pills,
+     the whole of Settings - is the matte black one. Reported as not
+     matching the rest of the interface, and all three were true at
+     once. It carries .ghost now for the black recipe, and these
+     numbers line it up with the field beside it.
+     The [data-layout="modern"] prefix is not optional: the bare
+     .next rule ~900 lines down is (0,2,0) and silently wins over a
+     plain class selector - the same trap .opt .box and .bottomtab-label
+     already carry notes about. */
+  [data-layout="modern"] .vroom-chat-send{
+    flex:0 0 auto; padding:.55rem 1.15rem; font-size:.88rem;
+    /* Exactly the input's height, which is .55rem of padding either
+       side of a 17px line. Also clears the 44px tap minimum, which
+       36px did not. */
+    min-height:45px;
+  }
   /* Lobby layout rework, per explicit request — the share-code card
      now carries its own one-tap Copy button instead of just being
      read off and typed elsewhere, and a live test-summary card (unit
@@ -7211,6 +7229,27 @@
      the true left edge on a wide iPad viewport, reading as an awkward,
      unanchored gap rather than a corner label. Identical result on
      phone, where the content column already runs edge-to-edge. */
+  /* THE BUILD, ON THE ONE SCREEN THAT COULD NOT SHOW IT. Home's label
+     is the VERSION (6.0), which does not move between builds, and the
+     build number itself only lives in Settings - which onboarding
+     cannot reach. So somebody sitting on Welcome after losing their
+     account had no way to tell whether an update had landed, which is
+     exactly the position this was written for.
+     TOP-left, not bottom: measured, Welcome's hint already sits 46px
+     off the bottom edge with the home indicator inside that, and 3px
+     clear on an SE. There is no room down there. Above the hero there
+     is 85px on a 17 Pro Max and 25px on an SE 1st gen, which a 0.6rem
+     line fits with room to spare. */
+  .welcome-build{
+    position:fixed; z-index:1; pointer-events:none;
+    left:max(1.25rem, calc(env(safe-area-inset-left, 0px) + 1rem));
+    top:calc(env(safe-area-inset-top, 0px) + .3rem);
+    font-size:.6rem; letter-spacing:.04em; color:var(--soft); opacity:.38;
+    /* A <p>'s default margin is 1em top and bottom, which pushed this
+       9px down and straight into the hero on both SEs - measured, a
+       4px overlap. Nothing positioned in a corner wants the default. */
+    margin:0;
+  }
   .homeversion{
     position:fixed; left:max(1.75rem, env(safe-area-inset-left)); z-index:1;
     font-size:.68rem; color:var(--soft); opacity:.55; text-align:left;
@@ -9585,6 +9624,19 @@
   .profile-classcard-btns{
     display:flex; gap:.6rem; margin-top:.95rem; flex-wrap:wrap;
   }
+  /* The Friends card borrows the class card's surface, header and
+     title wholesale - see the note at its construction. Only the two
+     status lines are its own. */
+  .profile-friendcard-line{
+    margin:0; font-size:.82rem; color:var(--soft);
+  }
+  /* Green, and the same green the Friends banner and the online dot
+     use - three places saying "online" in three different colours is
+     how a status stops being read as a status. */
+  .profile-friendcard-line.is-online{ color:#4ADE80; }
+  .profile-friendcard-pending{
+    margin:.45rem 0 0; font-size:.82rem; font-weight:700; color:#F5B54D;
+  }
   /* One button across the whole row. It was one of a pair sharing the
      width; on its own it is the card's single action and reads like one. */
   .profile-classcard-btn{
@@ -10069,6 +10121,15 @@
     box-shadow:none; background-image:none;
   }
   [data-layout="modern"] .friend-act.ghost:hover{ border-color:var(--soft); }
+  /* A rule above "Your code", so one card visibly contains two halves
+     of the same job rather than reading as a run-on. */
+  .friend-yourcode-lab{
+    margin:1.1rem 0 .5rem; padding-top:.9rem;
+    border-top:1px solid var(--rule);
+    font-size:.72rem; font-weight:800; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--soft); opacity:.75;
+  }
+  .friend-add-hint{ margin:.15rem 0 .7rem; }
   .friend-mycode-wrap{ display:flex; align-items:center; gap:.6rem; }
   /* Centred, mono and narrow, the same treatment the sync code field
      already has and for the same reason: a code is a fixed-length
@@ -10103,8 +10164,14 @@
     color:var(--banner-color, var(--accent));
   }
   .app-banner-text{ font-size:.88rem; line-height:1.3; }
+  /* 44px, NOT 36. This was 36 for Join and View long before there was
+     an account banner - a sweep of the app's buttons caught the
+     Settings controls at 40px once and this was missed, because it is
+     on a banner rather than a screen. iOS's minimum is 44 and these
+     are the most time-sensitive buttons in the app: a Virtual Room
+     invite is a button somebody is stabbing at while a lobby fills. */
   .app-banner .app-banner-act{
-    flex-shrink:0; min-height:36px; padding:.35rem .8rem;
+    flex-shrink:0; min-height:44px; padding:.35rem .9rem;
     font-size:.8rem; border-radius:999px;
   }
   .app-banner-x{
@@ -10121,6 +10188,24 @@
   .friend-add-input{
     flex:1 1 0; min-width:0; text-align:center;
     font-family:var(--mono); letter-spacing:.14em; text-transform:uppercase;
+  }
+  /* SEND HAD TO LOOK LIKE THIS APP'S BUTTONS. Reported directly - it
+     did not match the rest of the interface, and it did not: a pale
+     primary block with 2px corners sitting against a dark pill of an
+     input, on a screen where every other button is either the matte
+     black pill or an outlined one. `.friend-act` is shaped for the
+     Accept/Decline pair in a row of people, which is a different job
+     from the one button that completes a field.
+     BOTH PREFIXES, per the note on .friend-act above: the radius needs
+     0,2,0 to beat `[data-layout="modern"] .next`, and the background
+     needs 0,3,0 to beat the dark theme's restatement of the same
+     stack. The first version of that fix shipped and changed nothing. */
+  [data-layout="modern"] .friend-send{ border-radius:999px; }
+  [data-theme="dark"][data-layout="modern"] .friend-send,
+  [data-layout="modern"] .friend-send{
+    background-color:#0A0A0C; background-image:none; color:#fff; border:none;
+    box-shadow:0 1px 1px rgba(70,74,80,.7) inset, 0 -2px 2px rgba(0,0,0,.5) inset,
+      0 1px 3px rgba(0,0,0,.4), 0 4px 10px rgba(0,0,0,.4);
   }
   .profile-classline.has-pending{
     box-shadow:0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent),
@@ -24383,6 +24468,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               unitPerfects: {}, unitBlackStar: {}, flagged: {},
               unitGameBeat: {}, gameFarthest: {},
               mysteryColorsFound: { red: false, orange: false, yellow: false }, testsUntilMystery: null,
+              savedCodePrompts: 0, savedCodeSaved: false,
               dailyCorrectStreak: 0, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false,
               weeklyWins: 0, weekRankSeen: null, pendingVoidCutscene: false,
               publicId: null, leaderboardKeyMigrated: false,
@@ -24477,6 +24563,14 @@ function applyLoadedData(got){
   store.friendsDeclined = Array.isArray(got.friendsDeclined) ? got.friendsDeclined.slice(0, 200) : [];
   store.lobbyInvitesOut = (got.lobbyInvitesOut && typeof got.lobbyInvitesOut === "object")
     ? got.lobbyInvitesOut : {};
+  /* THE ONE PLACE THE "DEFAULT TO ALREADY-SEEN" RULE IS DELIBERATELY
+     INVERTED. Every other flag here defaults so an existing account is
+     not ambushed by something new; this one has to reach exactly those
+     people, because they are the ones who have had an account for
+     months with the code saved nowhere. So a document that has never
+     carried these gets 0 and false, and sees the prompt. */
+  store.savedCodePrompts = typeof got.savedCodePrompts === "number" ? got.savedCodePrompts : 0;
+  store.savedCodeSaved = got.savedCodeSaved === true;
   store.dailyCorrectStreak = typeof got.dailyCorrectStreak === "number" ? got.dailyCorrectStreak : 0;
   store.weeklyWins = typeof got.weeklyWins === "number" ? got.weeklyWins : 0;
   store.pendingVoidCutscene = got.pendingVoidCutscene === true;
@@ -25416,6 +25510,14 @@ function pushToCloud(){
            person's next push. */
         mystery: mysteryColorsFoundCount(),
         hundos: hundosOf(store),
+        /* ANSWERED, for the accuracy board. `correct` was already up
+           here; this is the other half of the fraction, and without it
+           accuracy cannot be computed from a document at all. An older
+           document lacking it reads as 0 answered, which the board
+           treats as not-yet-qualified rather than as 0% - a person
+           whose app has not updated should be absent from a board, not
+           bottom of it. Self-heals on their next push. */
+        answered: (store.lifetime && store.lifetime.answered) || 0,
         /* Both halves, because a number without its week is a number
            that cannot be expired. Anyone still on an older build
            publishes neither and reads as 0 on the weekly board, which
@@ -27136,6 +27238,10 @@ function testsCompletedOf(st){
 
 /* What each board ranks, what its rows say underneath a name, and what
    the tab is called. Adding a fourth board is adding an entry here. */
+/* Enough questions that accuracy means something, few enough to reach
+   in a couple of sittings. */
+const ACCURACY_MIN_ANSWERED = 100;
+
 const RANKING_BOARDS = [
   /* This replaced the Level board, which was asked against directly -
      "I like the badge count one, and the hundo one, not a fan of the
@@ -27164,7 +27270,40 @@ const RANKING_BOARDS = [
      clearest label the row can carry. */
   { key: "hundos", tab: "Hundos", field: "hundos",
     unit: (n) => n + (n === 1 ? " hundo" : " hundos"),
-    blurb: "Ranked by hundos \u2014 units finished at 100%, in Drill, Exam, Game or the Virtual Room alike. They count per unit, not per test, so a test covering three units has three hundos on the table." }
+    blurb: "Ranked by hundos \u2014 units finished at 100%, in Drill, Exam, Game or the Virtual Room alike. They count per unit, not per test, so a test covering three units has three hundos on the table." },
+  /* ACCURACY, and it is the only board here that is not a total.
+     The note on the Level board above is the reason this one exists:
+     badges, hundos and level are all lifetime counts, so they put
+     roughly the same people in roughly the same order and reward
+     whoever has simply done the most. This one rewards being RIGHT,
+     which for a class sitting a state exam is the number that actually
+     predicts the outcome - and it reorders the board completely,
+     because somebody careful and halfway through can beat somebody who
+     has ground out twice the questions.
+     THE FLOOR IS THE WHOLE DESIGN. Without one, three questions
+     answered correctly is 100% and tops the class forever, which is
+     not an achievement, it is an artifact. ACCURACY_MIN_ANSWERED is
+     low enough to reach in a couple of sittings and high enough that
+     it cannot be fluked. Below it somebody is ABSENT from this board
+     rather than bottom of it - the same treatment a person whose app
+     has not yet published `answered` gets, which is also why absent
+     has to mean "not yet" rather than "0%". */
+  { key: "accuracy", tab: "Accuracy", field: "accuracy",
+    value: (e) => {
+      const a = Number(e && e.answered) || 0;
+      const c = Number(e && e.correct) || 0;
+      return a > 0 ? Math.round((c / a) * 100) : 0;
+    },
+    eligible: (e) => (Number(e && e.answered) || 0) >= ACCURACY_MIN_ANSWERED,
+    emptyNote: "Nobody has answered " + ACCURACY_MIN_ANSWERED
+      + " questions yet \u2014 this board fills up as the class does.",
+    barredNote: (e) => {
+      const a = Number(e && e.answered) || 0;
+      return "You need " + ACCURACY_MIN_ANSWERED + " questions answered to appear here \u2014 you\u2019re at "
+        + a + ". Keep going and you\u2019ll show up on your own.";
+    },
+    unit: (n) => n + "% correct",
+    blurb: "Ranked by how much of what you have answered you got right, across everything you have ever taken. You need at least " + ACCURACY_MIN_ANSWERED + " questions answered to appear \u2014 otherwise three lucky answers would outrank a whole semester." }
 ];
 
 
@@ -31552,6 +31691,20 @@ function showWelcome(){
 
   wrap.appendChild(buildCosmicHero());
 
+  /* Appended to #stage rather than into the panel, for the same reason
+     versionTag is on Home: this is position:fixed, and a transform on
+     an ancestor re-parents a fixed element's containing block. As a
+     sibling it also holds no space, so Welcome's spacing - which is
+     auto margins all the way down and measured to the pixel - is
+     untouched. Guarded on APP_BUILD existing at all, because this
+     function is defined thousands of lines above the constant. */
+  if(typeof APP_BUILD === "string" && APP_BUILD){
+    const buildTag = document.createElement("p");
+    buildTag.className = "welcome-build";
+    buildTag.textContent = "Build " + APP_BUILD;
+    setTimeout(() => { if(stage.querySelector(".cosmic-welcome")) stage.appendChild(buildTag); }, 0);
+  }
+
   const title = document.createElement("p");
   title.className = "cosmic-welcome-title";
   title.textContent = "Welcome to Nova";
@@ -33415,7 +33568,9 @@ function showHome(){
      invite, so Home checks what is already on the board as well as
      watching for new ones. */
   attachInviteWatcher();
-  setTimeout(() => { checkLobbyInvites(); checkFriendRequests(); }, 0);
+  setTimeout(() => {
+    checkLobbyInvites(); checkFriendRequests(); checkSaveCodeReminder();
+  }, 0);
   stage.replaceChildren(panel);
   stage.appendChild(dailyBtn);
   /* Appended to stage as a sibling of the panel now, not a child of
@@ -36211,7 +36366,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-24-158";
+const APP_BUILD = "2026-09-24-160";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -36358,7 +36513,7 @@ function showAddToHomeNotice(){
    daily alert does now that "Find me" answers with one, and it was
    landing on Level/Badges/Hundos. */
 const NOTICE_OBSTRUCTIONS = [".wrap > .top", ".wrap > .count", ".back-link",
-                             ".panel > .navsegment"];
+                             ".panel > .navsegment", ".welcome-build"];
 
 /* Shared by both notices. The measured offset is applied with transitions
    suppressed, so the banner is simply already in the right place when it
@@ -38020,8 +38175,10 @@ function showAppearance(){
      screen they came from. */
   const updSect = document.createElement("div");
   updSect.className = "sect";
-  const updLab = document.createElement("p");
-  updLab.className = "slab"; updLab.textContent = "App version";
+  /* No label of its own any more: "This app" above it is the header,
+     and a second "App version" underneath it was a header for a header. */
+  const updLab = document.createElement("span");
+  updLab.hidden = true;
   const updNow = document.createElement("p");
   updNow.className = "friend-hint";
   updNow.textContent = "Build " + APP_BUILD;
@@ -38269,7 +38426,13 @@ function showAppearance(){
 
   extraSect.appendChild(motionDetails);
   extraSect.appendChild(studyDetails);
-  extraSect.appendChild(updSect);
+  /* updSect used to be appended here, which put a build number and an
+     update button on the end of a run of behaviour switches - reported
+     as a weird section, and it was: nothing about it belongs to "how
+     the app moves" or "studying & tests". It is down with Share this
+     app and Add to Home Screen now, which are the other two things on
+     this screen that are about the app as an app rather than about how
+     it behaves while you use it. */
   panel.appendChild(extraSect);
 
   /* The leaderboard section \u2014 opting in shares only name, avatar,
@@ -38319,7 +38482,20 @@ function showAppearance(){
      your correct answers" read as though a list of answers was being
      published, rather than a class ranking on how many questions each
      person has answered correctly. */
-  lbHint.textContent = "Ranks the class three ways \u2014 level, badges and perfect tests. Shares your username, avatar and those three numbers \u2014 nothing else. With this off, you can't see the rankings either.";
+  /* KEPT IN STEP WITH RANKING_BOARDS, not written out again. This said
+     "three ways - level, badges and perfect tests" while the boards
+     were This Week, Level and Hundos: the count was right by accident
+     and not one of the three names was. A hint that lists the boards
+     has to be built from the boards, or it goes stale the next time one
+     changes - which is the same lesson as a gate that hardcodes a
+     label. */
+  const boardNames = RANKING_BOARDS.map(b => b.tab);
+  const howMany = ["", "one way", "two ways", "three ways", "four ways", "five ways"][boardNames.length]
+    || (boardNames.length + " ways");
+  lbHint.textContent = "Ranks the class " + howMany + " \u2014 "
+    + boardNames.slice(0, -1).join(", ") + " and " + boardNames[boardNames.length - 1]
+    + ". Shares your username, avatar and the numbers those boards rank on \u2014 nothing else. "
+    + "With this off, you can't see the rankings either.";
   lbWrap.appendChild(lbHint);
   lbRow.append(lbCb, lbBox, lbWrap);
   lbSect.appendChild(lbRow);
@@ -38372,38 +38548,41 @@ function showAppearance(){
          notice hands this link over automatically at the one moment it
          knows about; this is the same link at every other moment, which
          is the one somebody needs BEFORE the phone loses anything. */
-      /* The same shape as Share this app / Add to Home Screen further
-         down this very screen, rather than a second one of its own:
-         .cal-profile-btn is already the app's pair-of-secondary-buttons
-         pill, already 44px, and already stacks full width on a phone
-         where "Copy sign-in link" has no room beside anything. */
+      /* ONE BUTTON, FULL WIDTH. There were two - Copy code and Copy
+         sign-in link - and the second came back as "I don't even know
+         what that is and it will confuse people", which is fair: a
+         "sign-in link" is a second thing to understand for something
+         the code already does, and two names for one idea is worse
+         than one name. The code is the account, it is what the sign-in
+         screen asks for, and it is what somebody can read out over the
+         phone. recoveryUrlFor() still exists for the re-add notice's
+         Safari hand-off, which builds the same URL for a device that
+         is about to lose its storage - that one is machinery, not
+         something anybody has to understand.
+         .cal-profile-btn carries flex:1, so one child fills the row
+         where two shared it. */
       const saveBar = document.createElement("div");
       saveBar.className = "cal-profile-row sync-save-row";
       const copyCode = document.createElement("button");
       copyCode.type = "button"; copyCode.className = "cal-profile-btn";
       copyCode.textContent = "Copy code";
-      const copyLink = document.createElement("button");
-      copyLink.type = "button"; copyLink.className = "cal-profile-btn";
-      copyLink.textContent = "Copy sign-in link";
-      const putOnClipboard = async (text, done) => {
+      copyCode.addEventListener("click", async () => {
         if(navigator.clipboard && navigator.clipboard.writeText){
-          try { await navigator.clipboard.writeText(text); showToast(done); return; }
+          try { await navigator.clipboard.writeText(syncCode); showToast("Code copied."); return; }
           catch(e){}
         }
         /* No clipboard, or it refused. The code is on the row above and
            selectable, which is the fallback that cannot fail - and a
            button that appears to do nothing is worse than no button. */
         showToast("Couldn\u2019t copy \u2014 tap the row above to read your code and write it down.");
-      };
-      copyCode.addEventListener("click", () => putOnClipboard(syncCode, "Code copied."));
-      copyLink.addEventListener("click", () => putOnClipboard(recoveryUrlFor(syncCode), "Sign-in link copied."));
-      saveBar.append(copyCode, copyLink);
+      });
+      saveBar.appendChild(copyCode);
       syncSect.appendChild(saveBar);
 
       const saveNote = document.createElement("p");
       saveNote.className = "info-note sync-note-plain";
-      saveNote.textContent = "Keep one of these somewhere off this phone. Opening the sign-in link "
-        + "on a device that has lost its data puts you straight back on your account.";
+      saveNote.textContent = "Keep this somewhere off this phone. If this device ever loses its "
+        + "data, the code is what puts you back on your account.";
       syncSect.appendChild(saveNote);
 
       const stopBar = document.createElement("div");
@@ -38752,13 +38931,21 @@ function showAppearance(){
      nobody needs in normal use and the only one holding destructive
      actions, so it belongs last rather than above the two ordinary
      buttons people actually came looking for. */
-  /* These three had no header while every other group on the screen has
-     one, so they read as loose buttons after the Sync section rather
-     than as a section of their own. */
+  /* These had no header while every other group on the screen has one,
+     so they read as loose buttons after the Sync section rather than as
+     a section of their own.
+     "This app", not "Miscellaneous". Miscellaneous is what a section is
+     called when nobody has worked out what is in it, and these three
+     have one thing in common that is easy to say: which build you are
+     on and how to get a newer one, how to send the app to somebody, and
+     how to put it on a Home Screen. The build line leads, because it is
+     the answer to "am I even on the version with the fix in it" - which
+     is not answerable anywhere else once you are past onboarding. */
   const miscLab = document.createElement("p");
   miscLab.className = "slab section-divider motion-summary";
-  miscLab.textContent = "Miscellaneous";
+  miscLab.textContent = "This app";
   panel.appendChild(miscLab);
+  panel.appendChild(updSect);
   panel.appendChild(shareInstallRow);
   panel.appendChild(dataSect);
 
@@ -39651,7 +39838,13 @@ function dismissInvite(code){
    read by somebody who cannot tell those colours apart. */
 const BANNER_KINDS = {
   vroom:  { tag: "VIRTUAL ROOM", color: "#3DA9FC", glyph: "M4 10 12 4l8 6v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z" },
-  friend: { tag: "FRIENDS",      color: "#4ADE80", glyph: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8m0 2c-4 0-7 2-7 4.5V20h14v-1.5C19 16 16 14 12 14" }
+  friend: { tag: "FRIENDS",      color: "#4ADE80", glyph: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8m0 2c-4 0-7 2-7 4.5V20h14v-1.5C19 16 16 14 12 14" },
+  /* Amber, and a key rather than a person or a room: this one is not
+     somebody asking you for something, it is the app telling you to
+     look after your own account. Three colours that survive being read
+     in a hurry, and three tags that survive not being able to tell
+     them apart. */
+  account: { tag: "YOUR ACCOUNT", color: "#F5B54D", glyph: "M14 6a4.5 4.5 0 1 1-4.3 5.8L8.4 13H6.6v1.9H4.5v1.9H1.6v-2.6l6.1-6.1A4.5 4.5 0 0 1 14 6m1.4 2.2a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8" }
 };
 
 function buildAppBanner(id, kind, message, actionLabel, onAction, onDismiss){
@@ -39755,6 +39948,81 @@ function checkFriendRequests(){
   const el = buildAppBanner("friend-request", "friend", msg, "View",
     () => showFriends(),
     () => pending.forEach(e => dismissFriendReq(e.pub)));
+  document.body.appendChild(el);
+  placeTopBanner(el);
+  const onNavigate = new MutationObserver(() => { onNavigate.disconnect(); el.remove(); });
+  onNavigate.observe(stage, { childList: true });
+  requestAnimationFrame(() => el.classList.add("show"));
+}
+
+/* SAVE YOUR CODE BEFORE YOU NEED IT. The sync code IS the account, it
+   lives in localStorage, and iOS evicts that on its own - so the whole
+   of "I got randomly signed out" comes down to nobody having the code
+   written down anywhere. Settings has had Copy code and Copy sign-in
+   link since build 158, but nobody goes looking for them before they
+   have a problem, which is the one moment they are no use.
+
+   So the app asks, once, on Home, where there is nothing else going on.
+
+   THE x DOES NOT COUNT AS AN ANSWER, deliberately - it is the same
+   shape as the re-add notice, where "Not now" stores nothing and the
+   prompt returns next launch, because that is the notice whose absence
+   once cost somebody their account. But it is bounded at three asks,
+   which the re-add notice does not need to be: that one ends when the
+   device acknowledges a real one-off event, and this one would
+   otherwise nag forever at somebody who has decided they do not want
+   it. Three times is enough to be heard and few enough not to be
+   noise. Copying ends it for good, on every device at once, because
+   the flag rides on `store` - the code is the same everywhere, so
+   saving it once really is saved. */
+const SAVE_CODE_MAX_PROMPTS = 3;
+
+function checkSaveCodeReminder(){
+  if(document.getElementById("save-code")) return;
+  /* Both of the others are somebody else waiting on you; this one can
+     wait a launch. Same precedence rule the friend banner already
+     follows against the Virtual Room. */
+  if(document.getElementById("lobby-invite")) return;
+  if(document.getElementById("friend-request")) return;
+  /* Nothing to save, or a device that opted out of syncing on purpose
+     and has no code by design. */
+  if(!store.onboardingComplete || !syncCode || syncOff) return;
+  if(store.savedCodeSaved) return;
+  if((store.savedCodePrompts || 0) >= SAVE_CODE_MAX_PROMPTS) return;
+
+  /* THE CODE, NOT A LINK. This asked people to save a "sign-in link"
+     until that button came off Settings for being a second thing to
+     understand - "I don't even know what that is and it will confuse
+     people". A banner still pushing the idea Settings had just dropped
+     would be the app disagreeing with itself, so both say code now. */
+  const el = buildAppBanner("save-code", "account",
+    "Save your sync code \u2014 it is the only way back if this device loses its data",
+    "Copy code",
+    () => {
+      const done = () => {
+        store.savedCodeSaved = true;
+        saveStore();
+        showToast("Code copied \u2014 keep it somewhere off this device.");
+      };
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(syncCode).then(done, () => {
+          /* The clipboard refused, so nothing was saved and this must
+             not be marked as done - it would silence the prompt having
+             achieved precisely nothing. Settings is the way through. */
+          showToast("Couldn\u2019t copy \u2014 open Settings and use Copy code there.");
+        });
+      } else {
+        showToast("Couldn\u2019t copy \u2014 open Settings and use Copy code there.");
+      }
+    },
+    /* The x is a "not now": the count still goes up, so this ends
+       after three, but nothing is marked as saved. */
+    () => {});
+  /* Counted on SHOW, not on dismiss - a banner someone scrolled past,
+     ignored, or navigated away from has still had its turn, and
+     counting only the x would let it reappear forever. */
+  store.savedCodePrompts = (store.savedCodePrompts || 0) + 1;
+  saveStore();
   document.body.appendChild(el);
   placeTopBanner(el);
   const onNavigate = new MutationObserver(() => { onNavigate.disconnect(); el.remove(); });
@@ -40940,7 +41208,7 @@ function buildVroomChatPanel(container){
   input.type = "text"; input.className = "vroom-chat-input";
   input.placeholder = "Say something\u2026"; input.maxLength = 200;
   const sendBtn = document.createElement("button");
-  sendBtn.type = "button"; sendBtn.className = "next vroom-chat-send";
+  sendBtn.type = "button"; sendBtn.className = "next ghost vroom-chat-send";
   sendBtn.textContent = "Send";
   row.append(input, sendBtn);
   const typingLine = document.createElement("p");
@@ -41917,10 +42185,22 @@ function renderLeaderboardList(list){
 function renderRankingRows(rows, entries, board, opts){
   const o = opts || {};
   const query = (o.query || "").trim().toLowerCase();
-  const val = (e) => Number(e && e[board.field]) || 0;
+  /* A board's number is usually a published field, but it does not have
+     to be - Accuracy is a fraction of two of them. `value` and
+     `eligible` keep that as DATA on the board rather than a special
+     case in here, which is the same reason `unit` and `blurb` live
+     there: three copies of this function is what the one-builder rule
+     exists to prevent. */
+  const val = (e) => board.value ? board.value(e) : (Number(e && e[board.field]) || 0);
 
   const sorted = entries.slice()
     .filter(e => e && String(e.firstName || "").trim() !== "")
+    /* Not qualified is ABSENT, never bottom. Somebody with 12 questions
+       answered has not scored 0% on the accuracy board, they have not
+       taken it yet - and so has anybody whose app is too old to publish
+       `answered` at all. Showing either at the foot of the board would
+       be the board lying about them. */
+    .filter(e => !board.eligible || board.eligible(e))
     .sort((a, b) => (val(b) - val(a)) ||
                     String(a.firstName || "").localeCompare(String(b.firstName || "")));
 
@@ -41936,7 +42216,13 @@ function renderRankingRows(rows, entries, board, opts){
   if(ranked.length === 0){
     const empty = document.createElement("p");
     empty.className = "lb-board-empty";
-    empty.textContent = "No one yet \u2014 turn on \u201cShow me in the rankings\u201d in Settings to be the first.";
+    /* The default blames the rankings setting, which is right when the
+       board is empty because nobody has opted in - and wrong on a board
+       with a qualifying bar, where the honest answer is that nobody has
+       cleared it yet. Same mistake "Find me" made when it told a device
+       with no code to turn on a setting that was already on. */
+    empty.textContent = board.emptyNote
+      || "No one yet \u2014 turn on \u201cShow me in the rankings\u201d in Settings to be the first.";
     rows.appendChild(empty);
     return;
   }
@@ -42481,11 +42767,12 @@ function showFriends(){
     panel.appendChild(sect);
   }
 
-  /* ---- your own code ---- */
-  const mine = document.createElement("div");
-  mine.className = "sect friend-sect";
-  const mh = document.createElement("p");
-  mh.className = "sect-label"; mh.textContent = "Your friend code";
+  /* ---- your own code: NOT ITS OWN SECTION ANY MORE ----
+     "Your friend code" and "Add a friend" were two cards doing one
+     job - swapping codes with somebody - so the screen opened with two
+     boxes of admin before it got anywhere near the friends you have.
+     They are one card now, below the list, and the heading says the
+     whole job rather than half of it. */
   const codeWrap = document.createElement("div");
   codeWrap.className = "friend-mycode-wrap";
   const codeEl = document.createElement("p");
@@ -42503,14 +42790,15 @@ function showFriends(){
   /* Said plainly, because a code people share needs somebody to know
      what it does and does not do. */
   mhint.textContent = "Give this to a classmate so they can add you. It is not your sync code and it cannot be used to sign in as you.";
-  mine.append(mh, codeWrap, mhint);
-  panel.appendChild(mine);
 
-  /* ---- add someone ---- */
+  /* ---- add someone, and give them yours ---- */
   const add = document.createElement("div");
   add.className = "sect friend-sect";
   const ah = document.createElement("p");
   ah.className = "sect-label"; ah.textContent = "Add a friend";
+  const ahint = document.createElement("p");
+  ahint.className = "friend-hint friend-add-hint";
+  ahint.textContent = "Type a classmate\u2019s code, or give them yours.";
   const addRow = document.createElement("div");
   addRow.className = "friend-add-row";
   const input = document.createElement("input");
@@ -42525,7 +42813,7 @@ function showFriends(){
     const raw = input.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
     input.value = raw.length > 3 ? raw.slice(0, 3) + "-" + raw.slice(3) : raw;
   });
-  const send = actBtn("Send", "", () => {
+  const send = actBtn("Send", "friend-send", () => {
     const r = sendFriendRequest(input.value);
     if(!r.ok){ showToast(r.why); return; }
     pushToCloud();
@@ -42534,8 +42822,16 @@ function showFriends(){
   });
   input.addEventListener("keydown", ev => { if(ev.key === "Enter") send.click(); });
   addRow.append(input, send);
-  add.append(ah, addRow);
-  panel.appendChild(add);
+
+  /* Your own code, under a rule, inside the same card. Below the input
+     rather than above it, because typing somebody else's is the thing
+     you came to this card to do - reading out your own is what you do
+     when they are standing next to you. */
+  const yourCodeLab = document.createElement("p");
+  yourCodeLab.className = "friend-yourcode-lab";
+  yourCodeLab.textContent = "Your code";
+
+  add.append(ah, ahint, addRow, yourCodeLab, codeWrap, mhint);
 
   /* ---- the people you have ---- */
   const list = document.createElement("div");
@@ -42590,7 +42886,13 @@ function showFriends(){
       list.appendChild(m);
     }
   }
+  /* THE LIST GOES ABOVE THE ADD CARD. It was fourth of five, under
+     your own code and the add field, so the screen led with admin and
+     buried the only part of it that is about people. Requests still
+     come first - somebody is waiting on an answer - then who you have,
+     then the machinery for getting more. */
   panel.appendChild(list);
+  panel.appendChild(add);
 
   /* ---- asked, not yet answered ---- */
   const out = outgoingFriendRequests().map(id => rows[id]).filter(Boolean);
@@ -43516,19 +43818,6 @@ function showProfile(defaultTab){
   classLine.addEventListener("click", showCalendar);
   classBtns.appendChild(classLine);
 
-  /* FRIENDS, beside the calendar as a second destination. Both are
-     places to GO rather than facts about you, which is the rule that
-     put the calendar down here rather than inside the card above. The
-     count of people waiting on an answer rides on the label, because a
-     request nobody is told about is a request nobody answers. */
-  const friendsLine = document.createElement("button");
-  friendsLine.type = "button";
-  friendsLine.className = "next ghost profile-classcard-btn profile-classline";
-  const pendingN = incomingFriendRequests().length;
-  friendsLine.textContent = "Friends" + (pendingN ? "  \u00b7  " + pendingN + " waiting" : "");
-  if(pendingN) friendsLine.classList.add("has-pending");
-  friendsLine.addEventListener("click", showFriends);
-  classBtns.appendChild(friendsLine);
   classSect.appendChild(classBtns);
 
   /* ---------- level and badges ----------------------------------------
@@ -43606,6 +43895,83 @@ function showProfile(defaultTab){
      grow. */
   identityTab.appendChild(heroSect);
   identityTab.appendChild(classSect);
+
+  /* FRIENDS IS ITS OWN CARD NOW. It was a second button inside the
+     Class 26E box, beside View class calendar - which made "who you
+     know" read as a fact about the course, and buried the one place
+     on this screen where somebody else can be waiting on you.
+     Reported as wanting to be its own thing, and it earns that: it is
+     the only card here with live state in it.
+     Built as a card rather than a button so it can SAY something
+     before you tap it - how many friends, how many are on right now,
+     how many are waiting on an answer. A row that only says "Friends"
+     is a button wearing a card's clothes. */
+  /* .profile-classcard, not a surface of its own: this sits directly
+     under the Class 26E card and the two are a pair of destinations, so
+     they share the card, the header row, the serif title and the
+     coloured figure in the corner. A second card an inch away in a
+     different shape reads as a mistake, and it did - the first pass
+     gave this one a small uppercase label beside the class card's
+     serif heading. */
+  const friendSect = document.createElement("div");
+  friendSect.className = "profile-classcard profile-friendcard";
+
+  const fHead = document.createElement("div");
+  fHead.className = "profile-classcard-head";
+  const fTitle = document.createElement("p");
+  fTitle.className = "profile-classcard-title";
+  fTitle.textContent = "Friends";
+  const friendIds = friendPublicIds();
+  const pendingN = incomingFriendRequests().length;
+  const onlineN = (leaderboardRows || [])
+    .filter(e => friendIds.indexOf(e.pub) >= 0 && isOnline(e)).length;
+  const fCount = document.createElement("span");
+  fCount.className = "profile-classcard-count";
+  /* Worded, like "178 class days left" opposite it, rather than a bare
+     numeral. A lone "1" in the corner of a card says nothing about
+     what it counts. */
+  fCount.textContent = friendIds.length
+    ? friendIds.length + (friendIds.length === 1 ? " friend" : " friends")
+    : "none yet";
+  fHead.append(fTitle, fCount);
+  friendSect.appendChild(fHead);
+
+  const fLine = document.createElement("p");
+  fLine.className = "profile-friendcard-line";
+  if(!friendIds.length){
+    fLine.textContent = "Nobody yet \u2014 swap codes with a classmate.";
+  } else if(onlineN){
+    fLine.textContent = onlineN + (onlineN === 1 ? " is online now" : " are online now");
+    fLine.classList.add("is-online");
+  } else {
+    fLine.textContent = "Nobody online right now.";
+  }
+  friendSect.appendChild(fLine);
+
+  /* The count of people waiting rides up here rather than on the
+     button's label, because a request nobody is told about is a
+     request nobody answers - and inside the old button it was a
+     middle dot and a number on a line already carrying a word. */
+  if(pendingN){
+    const fPend = document.createElement("p");
+    fPend.className = "profile-friendcard-pending";
+    fPend.textContent = pendingN === 1
+      ? "1 friend request waiting" : pendingN + " friend requests waiting";
+    friendSect.appendChild(fPend);
+  }
+
+  const fBtns = document.createElement("div");
+  fBtns.className = "profile-classcard-btns";
+  const friendsLine = document.createElement("button");
+  friendsLine.type = "button";
+  friendsLine.className = "next ghost profile-classcard-btn profile-classline";
+  friendsLine.textContent = pendingN ? "Open friends" : "Manage friends";
+  if(pendingN) friendsLine.classList.add("has-pending");
+  friendsLine.addEventListener("click", showFriends);
+  fBtns.appendChild(friendsLine);
+  friendSect.appendChild(fBtns);
+
+  identityTab.appendChild(friendSect);
 
   /* Kicked off when the Profile tab is actually SHOWN, not when it is
      built - showProfile("stats") builds this panel hidden, and a bar
@@ -43966,6 +44332,13 @@ function showRankings(defaultBoard){
       avatarChar: store.avatarChar || AVATAR_CHARACTERS[0].id,
       level: levelOf(store), badges: badgeCountOf(store), hundos: hundosOf(store),
       week: weekKeyNow(), weekPoints: weekPointsOf(store),
+      /* Both halves of accuracy, for the same reason every other number
+         here is synthesised: this row is drawn from the local store so
+         it is right the instant a test ends, rather than 2.5 seconds
+         later when the push lands. Leaving these out would have put
+         everybody else on the accuracy board and not you. */
+      correct: (store.lifetime && store.lifetime.correct) || 0,
+      answered: (store.lifetime && store.lifetime.answered) || 0,
       mystery: mysteryColorsFoundCount()
     };
     let found = false;
@@ -44020,13 +44393,26 @@ function showRankings(defaultBoard){
          row, at zero, synthesised by liveEntries() - so nothing here
          should ever say "not in the rankings yet" to someone who simply
          has not answered a question. */
+      /* A FOURTH REASON, since Accuracy: this board has a qualifying
+         bar and you are under it. Without this it fell through to
+         "still loading", which is the same class of mistake as telling
+         a device with no code to turn on a setting that was already
+         on - a true-sounding message about the wrong thing. Asked of
+         the BOARD rather than hardcoded here, so a future board with
+         its own bar cannot reintroduce the bug by forgetting. */
+      const hereBoard = RANKING_BOARDS.find(b => b.key === rankingsBoardKey);
+      const mineNow = liveEntries().find(e => e && e.pub === store.publicId);
+      const barred = hereBoard && hereBoard.eligible && mineNow
+        && !hereBoard.eligible(mineNow);
       showDailyAlert(!loaded
         ? "Still loading the rankings \u2014 try that again in a moment."
         : !store.leaderboardOptIn
           ? "You\u2019re hidden from the rankings \u2014 turn on \u201cShow me in the rankings\u201d in Settings."
           : !syncCode
             ? "This device isn\u2019t syncing, so it has no rankings entry \u2014 turn sync on in Settings."
-            : "Still loading the rankings \u2014 try that again in a moment.");
+            : barred && hereBoard.barredNote
+              ? hereBoard.barredNote(mineNow)
+              : "Still loading the rankings \u2014 try that again in a moment.");
       return;
     }
     mine.scrollIntoView({ behavior: "smooth", block: "center" });

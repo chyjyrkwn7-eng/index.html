@@ -1261,6 +1261,55 @@ Everything below follows from that.
     and wipes the thing the recovery exists to rescue.
   `check-sync.py` sections 4b and 4c drive all of this for real, and both
   fail on build 157.
+- **THE APP ASKS PEOPLE TO SAVE THEIR CODE, ONCE, AND THAT IS THE ONLY
+  FIX THAT PREVENTS ANY OF THIS.** Everything else in this section is
+  recovery after the fact; `checkSaveCodeReminder()` is the one that
+  stops somebody needing it. An amber `account` banner on Home,
+  `SAVE_CODE_MAX_PROMPTS` (3) asks, then it stops for good.
+  - **The x is not an answer, but the count still goes up.** Same shape
+    as the re-add notice, where "Not now" stores nothing and the prompt
+    returns next launch — that is the notice whose absence once cost
+    somebody their account. Bounded at three because the re-add notice
+    ends when a device acknowledges a real one-off event and this one
+    would otherwise nag forever.
+  - **Counted on SHOW, not on dismiss.** A banner scrolled past,
+    ignored, or navigated away from has had its turn; counting only the
+    x would let it come back for ever.
+  - **A refused clipboard must not mark it saved.** That would silence
+    the prompt having achieved exactly nothing, so the failure path
+    points at Settings instead.
+  - `savedCodePrompts` and `savedCodeSaved` ride on `store`, so copying
+    on one device ends it on all of them — the code is the same
+    everywhere, so saved once really is saved. They are **the one place
+    the `applyLoadedData` "default to already-seen" rule is deliberately
+    inverted**: an existing account is exactly who this has to reach.
+- **A THIRD BANNER KIND, AND THE THREE MUST STAY TELLABLE APART.**
+  `account` is amber `#F5B54D` with a key; `vroom` is blue with a room;
+  `friend` is green with a person. Colour AND tag, because one survives
+  being read in a hurry and the other survives somebody who cannot tell
+  those colours apart. Precedence when several are waiting: Virtual Room
+  first (time-sensitive), then friends, then this one — it can wait a
+  launch.
+- **`.app-banner-act` was 36px for Join and View long before any of this**,
+  under the 44px minimum, and a sweep of the app's buttons had missed it
+  because it is on a banner rather than a screen. It is 44 now. A
+  Virtual Room invite is the most time-pressured button in the app.
+- **THE BUILD NUMBER IS ON WELCOME, because that is the one screen that
+  could not show it.** Home's label is the VERSION (6.0), which does not
+  move between builds, and the build itself only lives in Settings,
+  which onboarding cannot reach — so somebody signed out and sitting on
+  Welcome had no way to tell whether an update had landed. Reported
+  exactly that way. `.welcome-build` is fixed **top**-left, appended to
+  `#stage` as a sibling (like `versionTag` on Home) so it holds no space
+  and Welcome's auto-margin spacing is untouched, and its selector is in
+  `NOTICE_OBSTRUCTIONS` so a banner parks below it.
+  **Measured before placing, and the bottom was never an option:**
+  Welcome's hint already sits 46px off the bottom edge with the home
+  indicator inside that, and 3px clear on an SE 2nd/3rd gen. Above the
+  hero there is 85px on a 17 Pro Max and 25px on an SE 1st gen. It
+  **overlapped the hero by 4px on both SEs** on the first pass, purely
+  because a `<p>` carries a default 1em margin — anything positioned in
+  a corner wants `margin:0`.
 - **Removing the app destroys the whole storage jar**, so none of the
   three above can help — localStorage and the IndexedDB mirror beside it
   go together. What is left is the launch URL (`#k=CODE`, read by
@@ -2370,6 +2419,57 @@ full set of unit names needs its own row and several lines.
 
 ---
 
+## The Leaderboard's boards
+
+`RANKING_BOARDS` is the whole definition of a board — its tab label,
+what it ranks on, how a row reads, and its blurb. Four of them now.
+
+- **A BOARD DOES NOT HAVE TO RANK ON A PUBLISHED FIELD.** Accuracy is a
+  fraction of two of them, so a board may carry `value(entry)` and
+  `eligible(entry)` instead of leaning on `field`. That keeps a derived
+  board as DATA rather than a special case inside
+  `renderRankingRows()` — the same reason `unit` and `blurb` live on
+  the board.
+- **Accuracy exists because the other three are the same board.**
+  Badges, hundos and level are all lifetime totals, so they put roughly
+  the same people in roughly the same order and reward whoever has done
+  the most. Accuracy rewards being RIGHT, which for a class sitting a
+  state exam is the number that predicts the outcome, and it reorders
+  the board completely.
+- **THE QUALIFYING FLOOR IS THE WHOLE DESIGN.** Without
+  `ACCURACY_MIN_ANSWERED`, three lucky answers is 100% and tops the
+  class forever — an artifact, not an achievement.
+- **Not qualified is ABSENT, never bottom.** Somebody with 12 questions
+  answered has not scored 0%, they have not taken the board yet; and so
+  has anybody whose app is too old to publish `answered` at all. Either
+  at the foot of the board would be the board lying about them.
+- **A new board is a new reason "Find me" can fail, and naming the
+  wrong one is how this gets reported.** There were three (not loaded /
+  hidden / not syncing); a qualifying bar is a fourth, and without it
+  the handler fell through to "still loading", which is the same class
+  of mistake as telling a device with no code to turn on a setting that
+  was already on. `barredNote(entry)` belongs to the BOARD, so a future
+  board with its own bar cannot reintroduce it by forgetting.
+- **`emptyNote` likewise**: the default empty message blames the
+  rankings setting, which is right when nobody has opted in and wrong
+  on a board nobody has cleared yet.
+- **A new ranked number needs publishing in `pushToCloud()` AND
+  synthesising in `liveEntries()`.** The first puts everyone else on the
+  board; the second puts YOU on it, drawn from the local store so your
+  row is right the instant a test ends rather than 2.5s later when the
+  push lands. Accuracy needed `answered` in both, and leaving it out of
+  `liveEntries()` would have shown the whole class except you.
+- **Settings' rankings hint is BUILT FROM `RANKING_BOARDS`, not written
+  out.** It read "three ways — level, badges and perfect tests" while
+  the boards were This Week, Level and Hundos: the count was right by
+  accident and not one of the three names was. Same lesson as a gate
+  that hardcodes a label.
+- **Four tabs fit.** Measured: one row down to 375px, wrapping to two
+  rows on a 320px SE 1st gen with no overflow — which is the device
+  already documented as scrolling several screens.
+
+---
+
 ## Shipping a change
 
 `APP_BUILD` in `index.html` and `build` in `version.json` **must be bumped
@@ -2645,6 +2745,55 @@ re-evaluated on the next check.
   and the recent test review sit BELOW the card as two destination rows:
   they are places to go, not facts about you, and inside the card they
   were the only tappable things in a block of read-only text.
+- **ONE COPY BUTTON IN SYNC, NOT TWO.** Settings offered Copy code and
+  Copy sign-in link; the second came off as "I don't even know what
+  that is and it will confuse people". A sign-in link is a second thing
+  to understand for something the code already does, and two names for
+  one idea is worse than one name. `recoveryUrlFor()` still builds that
+  URL for the re-add notice's Safari hand-off — machinery, not
+  something anybody has to read. The save-your-code banner was changed
+  in the same breath: a banner still pushing the idea Settings had just
+  dropped is the app disagreeing with itself.
+- **Settings' sections are named after what is in them.** "App version"
+  used to sit on the end of the behaviour toggles, which is how it got
+  reported as a weird section — nothing about a build number belongs to
+  "how the app moves" or "studying & tests". It is in **"This app"**
+  now, with Share this app and Add to Home Screen, and the build line
+  leads because "am I on the version with the fix in it" is not
+  answerable anywhere else once you are past onboarding.
+  "Miscellaneous" is what a section is called when nobody has worked
+  out what is in it.
+- **FRIENDS IS ITS OWN CARD ON PROFILE**, not a second button inside
+  the Class 26E box. Beside View class calendar it made "who you know"
+  read as a fact about the course and buried the one place on that
+  screen where somebody else can be waiting on you. It is a card rather
+  than a row because it can SAY something before you tap it — how many
+  friends, how many are online, how many are waiting — and a row that
+  only says "Friends" is a button wearing a card's clothes. It borrows
+  `.profile-classcard` wholesale, surface, header, serif title and the
+  coloured figure in the corner: the first pass gave it a small
+  uppercase label beside the class card's serif heading and the two
+  read as a mistake an inch apart.
+- **The friends screen leads with people, not admin.** It was requests,
+  your code, add a friend, your friends, waiting on them — so it opened
+  with two cards of code-swapping before it reached anybody. "Your
+  friend code" and "Add a friend" were one job split in two and are one
+  card now, with your own code under a rule BELOW the input: typing
+  somebody else's is what you came for, reading out your own is what
+  you do when they are standing next to you. Order is requests (someone
+  is waiting) → who you have → the machinery for getting more.
+- **Two Send buttons were wrong in the same way and both are fixed.**
+  The friends one was a pale primary block with 2px corners against a
+  dark pill of an input; the Virtual Room chat one was 36px tall beside
+  a 45px field at 13.6px text, in the pale pill, on a screen where
+  every other button is the matte black one. `.friend-act` is shaped
+  for the Accept/Decline pair in a row of people, which is a different
+  job from the one button that completes a field. **Both needed the
+  `[data-layout="modern"]` prefix and the chat one needed
+  `[data-theme="dark"][data-layout="modern"]` too** — the same
+  two-step specificity trap `.friend-act` already carries a note about,
+  where a half-applied fix looks right in one measurement and wrong in
+  the screenshot.
 - **Theming** is CSS custom properties keyed off `data-theme` and `data-accent`
   on `<html>`. Write the rule once, then override with a
   `[data-theme=...]`/`[data-accent=...]` prefixed version. Never a one-off
@@ -3246,6 +3395,19 @@ missed real bugs that a thirty-second check caught.
 7. `python3 tools/check-tours.py` — every tooltip still points at
    something. Required on anything that renames a class, moves a control
    between screens, or changes a tour's copy.
+7b. `python3 tools/check-save-code.py` — the save-your-code banner and
+   the build number on Welcome. Takes `--against`, and fails with 23
+   red on build 158.
+7c. `python3 tools/check-admin-auth.py` and
+   `tools/check-admin-lookup.py` — the Firestore admin lookup. Neither
+   needs a key: the first generates a throwaway RSA key and checks the
+   pure-Python signer is **byte-identical to openssl**, the second
+   drives `find` over Firestore-shaped documents with only the HTTP call
+   stubbed. **A harness page must echo back the build it is serving**
+   (`version.json`), or `--against` an older `index.html` trips the
+   forced update and the run dies mid-test on "execution context was
+   destroyed" — the update machinery working correctly, breaking a check
+   about something else entirely.
 7a. `python3 tools/check-unlocks.py` — the earned characters and the
    Secret Flares. Required on anything touching `summarize()`, the
    daily question, hundos, the Practice Test, the character table or
