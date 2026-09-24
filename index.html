@@ -10104,24 +10104,13 @@
   }
   .match-sheet .slab{ margin:.9rem 0 .4rem; }
   .match-sheet .match-slab{ margin-top:1.1rem; }
-  /* The unit list scrolls inside the sheet rather than growing it past
-     the screen - sixteen units is taller than an SE. A pixel cap plus
-     overflow is a CLIP anywhere it is not scrollable, so this one is
-     explicitly scrollable. */
-  .match-unit-list{
-    display:flex; flex-direction:column; gap:.3rem;
-    max-height:min(38vh, 20rem); overflow-y:auto; -webkit-overflow-scrolling:touch;
-  }
-  /* On a short screen the sheet hits its own 80vh cap and then Save is
-     behind a second, nested scroll - two scrollers on one 568px
-     screen. The unit list is the only part with height to give back, so
-     it gives it back rather than the actions going under the fold. */
-  @media (max-height:42rem){
-    .match-unit-list{ max-height:24vh; }
-    .match-sheet .slab{ margin:.6rem 0 .3rem; }
-    .match-sheet .match-slab{ margin-top:.7rem; }
-    .match-acts{ margin-top:.7rem; }
-  }
+  /* ONE SCROLLER, NOT TWO. The list used to scroll inside a sheet that
+     also scrolls, which on a phone meant Save sat behind a second,
+     nested scroll nobody would find. The sheet scrolls as one thing -
+     the way the real unit selection screen does - and the actions are
+     pinned to its floor instead, so Save is on screen at every scroll
+     position and at every height. */
+  .match-unit-list{ margin-top:.2rem; }
   .match-unit{
     display:flex; align-items:center; gap:.6rem; width:100%;
     min-height:44px; padding:.45rem .6rem; box-sizing:border-box;
@@ -10142,7 +10131,12 @@
   }
   .match-unit-name{ flex:1 1 0; min-width:0; }
   .match-modes{ margin-bottom:.2rem; }
-  .match-acts{ display:flex; gap:.5rem; margin-top:1.1rem; }
+  .match-acts{
+    display:flex; gap:.5rem; margin-top:1.1rem;
+    position:sticky; bottom:0; z-index:2;
+    padding:.7rem 0 .2rem; background:var(--panel);
+    border-top:1px solid var(--rule);
+  }
   .match-acts .friend-act{ flex:1 1 0; }
   .match-acts .friend-act:disabled{ opacity:.45; cursor:default; }
   .vroom-settings-btn{ min-height:44px; }
@@ -30367,6 +30361,25 @@ function shuffle(arr){
   return arr;
 }
 
+/* THE SAME SHUFFLE ON EVERY DEVICE IN A ROOM. A race where each client
+   shuffles independently is a race over a different question order,
+   which was survivable only because everybody still got the WHOLE
+   pool - the moment a room can be capped to N questions, independent
+   shuffles mean different people answering different questions, which
+   is not a race at all. Seeded from the room's own startAt, which every
+   client already has and which is the one number they are guaranteed to
+   agree on. A plain LCG: this needs to be reproducible, not
+   unpredictable. */
+function shuffleSeeded(arr, seed){
+  let x = (seed >>> 0) || 1;
+  for(let i = arr.length - 1; i > 0; i--){
+    x = (x * 1664525 + 1013904223) >>> 0;
+    const j = x % (i + 1);
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 /* Option order for a question in this run. Identity unless shuffle is on. */
 function optionOrder(qi){
   if(!layout[qi]){
@@ -33813,7 +33826,15 @@ function appendUnitProgress(row, name){
      the same instrument every other card has, capped - it says the
      unit is done in the same language the others say how far along
      they are, and it stops counting rather than running away. */
-  const barCount = progCurrent + " / " + BADGE_THRESHOLD;
+  /* ONCE IT IS EARNED, THE BADGE IS THE WHOLE STATUS. A full bar
+     reading 35 / 35 beside an earned badge is the same fact twice, and
+     the bar is an instrument for something you are still working
+     towards - "the progress bar when mastering a unit is still there
+     when you earn the badge. Needs to just be the badge on the unit
+     cards". The note above argued the opposite, that every card should
+     carry the same instrument; that was about a mastered card leaving
+     a HOLE where the bar sits. The badge fills that space itself. */
+  const barCount = earned ? "" : progCurrent + " / " + BADGE_THRESHOLD;
   /* Badge first at every width. The old text-first order was Game's,
      and existed only because Game's marker was a star that stayed
      invisible until earned while still reserving its width. */
@@ -33824,7 +33845,7 @@ function appendUnitProgress(row, name){
      sits beside the track rather than inside it - nothing legible
      fits inside 3px - and both go in the BADGE's row, because the
      badge is what the bar is filling towards. */
-  {
+  if(!earned){
     const barRow = document.createElement("span");
     barRow.className = "pick-barrow";
     const barTrack = document.createElement("span");
@@ -35997,7 +36018,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-23-141";
+const APP_BUILD = "2026-09-23-142";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -36626,6 +36647,20 @@ function noteForcedTry(build){
    none of them lasts long, and this waits rather than giving up. */
 function forcedUpdateBlocked(){
   if(typeof testInProgress !== "undefined" && testInProgress) return true;
+  /* AND NOT ON THE RESULTS SCREEN EITHER. summarize() clears
+     testInProgress and THEN draws the results, so the retry that fires
+     a tick later landed on the one screen somebody actually wants to
+     read - reported as "people aren't able to see test result stats
+     because the updates immediately start". Waiting for the test to
+     end was never the right condition; waiting for them to LEAVE it
+     is. dataset.screen is set by exactly two screens, Welcome and
+     Home, so this reads "back at the main menu" and every other screen
+     in the app - results, review, a lobby, Settings - blocks by
+     construction rather than by being listed. It retries, so nothing
+     is lost: the update goes the moment they hit Main menu. */
+  const el = (typeof stage !== "undefined" && stage) ? stage.firstElementChild : null;
+  const screen = el && el.dataset ? el.dataset.screen : "";
+  if(screen !== "home" && screen !== "welcome") return true;
   return !!(document.getElementById("splashscreen") ||
             document.getElementById("genprofile-overlay") ||
             document.getElementById("tour-overlay") ||
@@ -39132,6 +39167,9 @@ function createVirtualRoomLobby(units, timeLimit){
     hostCode: publicIdOf(),
     units: units,
     timeLimit: timeLimit || null,
+    /* null means "every question in the chosen units", which is what a
+       room did before there was a cap. Set from Match settings. */
+    count: null,
     status: "waiting",
     startAt: null,
     /* The room's own mode, so the host can change it without everyone
@@ -39244,6 +39282,7 @@ function openMatchSettingsSheet(roomCode, data){
   const chosen = new Set((data && data.units) || []);
   let mode = (data && data.mode) || "exam";
   let limit = (data && data.timeLimit) || 10;
+  let qCount = (data && data.count) || null;
 
   const overlay = document.createElement("div");
   overlay.className = "invite-overlay";
@@ -39254,68 +39293,122 @@ function openMatchSettingsSheet(roomCode, data){
   h.className = "invite-sheet-title"; h.textContent = "Match settings";
   sheet.appendChild(h);
 
-  /* ---- units ---- */
+  /* ---- units: THE SAME CARDS THE TEST SETUP SCREEN DRAWS ----
+     Asked for twice: "it needs to look just like the other unit
+     selection screen". So it is .picks / .pick with the real checkbox,
+     the question count and appendUnitProgress() - the one builder that
+     puts the badge and the mastery bar on a unit card - rather than a
+     third kind of unit row invented for this sheet. Two builders for
+     one idea is what this file keeps paying for. */
   const uLab = document.createElement("p");
   uLab.className = "slab"; uLab.textContent = "Units";
   sheet.appendChild(uLab);
+
+  const selAll = document.createElement("button");
+  selAll.type = "button"; selAll.className = "selall-btn"; selAll.textContent = "Select all";
+  sheet.appendChild(selAll);
+
   const uList = document.createElement("div");
-  uList.className = "match-unit-list";
+  uList.className = "picks match-unit-list";
   const count = document.createElement("p");
   count.className = "friend-hint";
   const save = document.createElement("button");
+  let setCountMax = () => {};
   const syncCount = () => {
     const n = chosen.size;
-    const qs = QUESTIONS.filter(q => chosen.has(q.topic)).length;
+    const qs = QUESTIONS.filter(q => chosen.has((q.topic || "").trim())).length;
     count.textContent = n
       ? n + (n === 1 ? " unit \u00b7 " : " units \u00b7 ") + qs + (qs === 1 ? " question" : " questions")
       : "Pick at least one unit.";
     /* A match with no units is not a match, so the way out is closed
        rather than the error being explained after the fact. */
     save.disabled = !n;
+    setCountMax(qs);
   };
   all.forEach(name => {
-    const row = document.createElement("button");
-    row.type = "button";
-    row.className = "match-unit" + (chosen.has(name) ? " on" : "");
-    const tick = document.createElement("span");
-    tick.className = "match-tick"; tick.setAttribute("aria-hidden", "true");
-    const nm = document.createElement("span");
-    nm.className = "match-unit-name"; nm.textContent = name;
-    row.append(tick, nm);
-    row.setAttribute("aria-pressed", chosen.has(name) ? "true" : "false");
-    row.addEventListener("click", () => {
-      if(chosen.has(name)) chosen.delete(name); else chosen.add(name);
-      row.classList.toggle("on", chosen.has(name));
-      row.setAttribute("aria-pressed", chosen.has(name) ? "true" : "false");
+    const row = document.createElement("label");
+    row.className = "pick";
+    const cb = document.createElement("input");
+    cb.type = "checkbox"; cb.value = name; cb.checked = chosen.has(name);
+    cb.addEventListener("change", () => {
+      if(cb.checked) chosen.add(name); else chosen.delete(name);
       syncCount();
     });
+    const box = document.createElement("span");
+    box.className = "box"; box.setAttribute("aria-hidden", "true"); box.textContent = "\u2713";
+    const label = document.createElement("span");
+    label.className = "pname"; label.textContent = name;
+    row.append(cb, box, label);
+    const qc = document.createElement("span");
+    qc.className = "pcount";
+    qc.textContent = QUESTIONS.filter(x => (x.topic || "").trim() === name).length + " questions";
+    row.appendChild(qc);
+    appendUnitProgress(row, name);
+    /* .pick STARTS AT opacity:0 BY DESIGN - it is the unit-selection
+       screen's scroll-triggered reveal - so reusing the class without
+       also revealing the cards leaves every one of them permanently
+       invisible. This file already documents that exact trap for the
+       Virtual Room's own list, and it caught this sheet too: sixteen
+       rows, in the document, correctly sized, painting nothing.
+       Revealed outright rather than with an observer, because a
+       settings sheet is opened deliberately and is its own scroll
+       container - there is no scroll-in story to tell here, and an
+       observer inside a sheet is one more thing that can silently not
+       fire. */
+    row.classList.add("pick-revealed");
     uList.appendChild(row);
+  });
+  selAll.addEventListener("click", () => {
+    const on = chosen.size < all.length;
+    [...uList.querySelectorAll('input[type="checkbox"]')].forEach(cb => {
+      cb.checked = on;
+      if(on) chosen.add(cb.value); else chosen.delete(cb.value);
+    });
+    syncCount();
   });
   sheet.append(uList, count);
 
-  /* ---- test type ---- */
-  const mLab = document.createElement("p");
-  mLab.className = "slab match-slab"; mLab.textContent = "Test type";
-  sheet.appendChild(mLab);
-  const mWrap = document.createElement("div");
-  mWrap.className = "vroom-host-modes match-modes";
-  [["exam", "Exam"], ["drill", "Drill"]].forEach(([key, label]) => {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.className = "vroom-host-mode" + (mode === key ? " on" : "");
-    b.textContent = label;
-    b.addEventListener("click", () => {
-      mode = key;
-      [...mWrap.querySelectorAll(".vroom-host-mode")].forEach(x =>
-        x.classList.toggle("on", x.textContent === label));
-    });
-    mWrap.appendChild(b);
-  });
-  sheet.appendChild(mWrap);
+  /* NO TEST-TYPE PICKER. Exam and Drill were offered as the room's
+     "mode" and are coming off until the real multiplayer modes exist -
+     "remove that for now until we set the other modes". A Virtual Room
+     is a race and Drill's retries make a race meaningless, so exam is
+     what a room is; `mode` is still written so the field keeps its
+     shape for whatever replaces it. Only list what exists. */
 
-  /* ---- time limit: the SAME slider the setup screen uses, not a
-     second near-copy of it, so the touch behaviour and the step
-     lattice match. 5 to 60 in fives. ---- */
+  /* ---- settings: the SAME sliders the drill setup screen uses, not
+     second near-copies, so the touch behaviour and the step lattice
+     match. "settings, like amount of questions, and time limit like
+     drill." ---- */
+  const sLab = document.createElement("p");
+  sLab.className = "slab match-slab"; sLab.textContent = "Settings";
+  sheet.appendChild(sLab);
+
+  /* ALL means every question in the chosen units, which is what a room
+     did before there was a cap - so the top of the range is the whole
+     pool rather than a number typed here, and it moves when the units
+     do. A cap only means anything because every client now shuffles
+     from the room's shared startAt (see shuffleSeeded): without that,
+     capping would hand different people different questions. */
+  let poolMax = QUESTIONS.filter(q => chosen.has((q.topic || "").trim())).length || 1;
+  const qSlider = plainSlider("Questions", 5, Math.max(5, poolMax), 5,
+    () => (qCount && qCount <= poolMax) ? qCount : poolMax,
+    v => { qCount = (v >= poolMax) ? null : v; },
+    v => (v >= poolMax) ? "All (" + poolMax + ")" : String(v), () => {});
+  sheet.appendChild(qSlider);
+  const qInput = qSlider.querySelector('input[type="range"]');
+  /* Unticking a unit can leave the cap above what is left to draw
+     from, so the ceiling follows the selection rather than going
+     stale. plainSlider hands back its own paint() - use it rather than
+     reaching into the markup for the readout, which is how a caller
+     and its builder drift apart. */
+  setCountMax = qs => {
+    poolMax = qs || 1;
+    if(!qInput) return;
+    qInput.max = String(Math.max(5, poolMax));
+    if(qCount && qCount > poolMax) qCount = null;
+    qSlider.paint();
+  };
+
   sheet.appendChild(plainSlider("Time limit", 5, 60, 5,
     () => limit, v => { limit = v; }, v => v + " min", () => {}));
 
@@ -39331,7 +39424,7 @@ function openMatchSettingsSheet(roomCode, data){
   save.addEventListener("click", () => {
     if(!fbDb || !roomCode || !chosen.size) return;
     fbDb.collection("vrooms").doc(roomCode)
-      .update({ units: [...chosen], mode: mode, timeLimit: limit })
+      .update({ units: [...chosen], mode: mode, timeLimit: limit, count: qCount })
       .then(() => { showToast("Match settings updated.", "good"); shut(); })
       .catch(() => showToast("Couldn't save the settings \u2014 try again."));
   });
@@ -39760,7 +39853,7 @@ function showVirtualRoomLobby(){
            It is still torn down on every path that actually leaves the
            room - Leave lobby, Back to Home from the results, and the
            next lobby's own rebuild. */
-        beginVroomStartSequence(data.units, data.timeLimit, data.startAt);
+        beginVroomStartSequence(data.units, data.timeLimit, data.startAt, data.count);
       }
     }, { onError: () => {
       if(!droppedToastShown){ droppedToastShown = true; showToast("Live updates paused \u2014 reconnecting\u2026"); }
@@ -39810,7 +39903,7 @@ const VROOM_FLOURISH_MS = 1400;
    (see showVirtualRoomLobby()) \u2014 including the host's own device,
    which goes through this exact same path rather than a special case,
    so the host experiences the identical sequence as everyone else. */
-function beginVroomStartSequence(units, timeLimit, startAt){
+function beginVroomStartSequence(units, timeLimit, startAt, count){
   const remaining = startAt - Date.now();
   /* Skip the celebratory flourish (never the loading screen or the
      countdown itself) once there plainly isn't enough of the shared
@@ -39819,9 +39912,9 @@ function beginVroomStartSequence(units, timeLimit, startAt){
      synced," not "also sit through a 1.4s flourish first and land
      even later." */
   if(remaining > VROOM_LEAD_MS + 1500){
-    showVroomReadyFlourish(() => beginVirtualRoomTest(units, timeLimit, startAt));
+    showVroomReadyFlourish(() => beginVirtualRoomTest(units, timeLimit, startAt, count));
   } else {
-    beginVirtualRoomTest(units, timeLimit, startAt);
+    beginVirtualRoomTest(units, timeLimit, startAt, count);
   }
 }
 
@@ -39844,14 +39937,17 @@ function showVroomReadyFlourish(onDone){
   setTimeout(() => { overlay.remove(); onDone(); }, VROOM_FLOURISH_MS);
 }
 
-function beginVirtualRoomTest(units, timeLimit, startAt){
+function beginVirtualRoomTest(units, timeLimit, startAt, count){
   vroomTestStarted = false;
   inVirtualRoom = true;
   vroomStartAt = startAt || null;
   cfg.mode = "exam";
   cfg.units = units;
   cfg.source = "all";
-  const pool = shuffle(poolNow());
+  /* Seeded on the shared startAt, so the cap below takes the same N
+     questions for everybody rather than a different N each. */
+  const ordered = shuffleSeeded(poolNow(), startAt || 1);
+  const pool = (count && count > 0) ? ordered.slice(0, count) : ordered;
   beginRun(pool, null, timeLimit || null);
   /* Progress pushed the instant it actually changes now too (see
      advance()'s own pushVirtualRoomProgress() call) \u2014 this interval is
@@ -41350,11 +41446,45 @@ let calendarView = "month";
    on an answer, your own code to hand out, a box to add one, and the
    people you already have. Requests go first because they are the only
    part that involves somebody else waiting. */
+/* THE FRIENDS SCREEN READS THE BOARD, AND NOTHING WAS FETCHING IT.
+   `leaderboardRows` is filled by the Rankings screen's own snapshot, so
+   Profile -> Friends without ever opening Leaderboard left it empty -
+   and an empty board means every friend code matches nobody. Reported
+   as "adding friends isn't working, entered someone else's code and
+   its not working", and it would have failed for everybody who had not
+   happened to visit the Leaderboard tab first.
+
+   This attaches the same listener the Rankings screen uses, so the
+   screen is live rather than a snapshot taken once, and re-renders when
+   the rows land. onSnapshotResilient, never a bare .onSnapshot(). */
+let friendsLiveUnsub = null;
+function attachFriendsBoardListener(){
+  if(!fbDb) return;
+  if(friendsLiveUnsub){ try{ friendsLiveUnsub(); }catch(e){} friendsLiveUnsub = null; }
+  try{
+    friendsLiveUnsub = onSnapshotResilient(fbDb.collection("leaderboard"), snap => {
+      const next = [];
+      snap.forEach(doc => {
+        const e = Object.assign({ pub: doc.id }, doc.data());
+        e.weekPoints = weekPointsOfEntry(e);
+        next.push(e);
+      });
+      leaderboardRows = next;
+      /* Only redraw while Friends is actually the screen on stage -
+         a listener that outlives its screen must not rebuild over
+         whatever replaced it. */
+      const el = stage && stage.firstElementChild;
+      if(el && el.classList && el.classList.contains("screen-friends")) showFriends();
+    });
+  }catch(e){}
+}
+
 function showFriends(){
   window.forceHideBottomTabs = false;
   setActiveNav("profile");
   countEl.textContent = "Friends";
   updateHeaderTitle();
+  if(!leaderboardRows || !leaderboardRows.length) attachFriendsBoardListener();
 
   const panel = document.createElement("section");
   panel.className = "panel screen-friends";

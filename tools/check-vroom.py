@@ -541,16 +541,21 @@ def main():
           openMatchSettingsSheet('ROOM42', {units:[all[0]], mode:'drill', timeLimit:20});
           await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
           const ov = document.querySelector('.invite-overlay');
-          const rows = [...document.querySelectorAll('.match-unit')];
+          const rows = [...document.querySelectorAll('.match-unit-list .pick')];
           const save = [...document.querySelectorAll('.match-acts .friend-act')].pop();
-          const on = [...document.querySelectorAll('.match-modes .vroom-host-mode.on')];
-          const cs = on[0] ? getComputedStyle(on[0]) : null;
-          rows.forEach(r=>{ if(r.classList.contains('on')) r.click(); });
+          /* .pick starts at opacity:0 - it is the unit screen's reveal
+             effect - so a card that is not revealed is invisible while
+             measuring perfectly. This is the check for that. */
+          const painted = rows.every(r => +getComputedStyle(r).opacity > 0.9);
+          const badges = rows.filter(r => !!r.querySelector('.pick-badge')).length;
+          const sliders = document.querySelectorAll('.match-sheet .slider').length;
+          const modes = document.querySelectorAll('.match-modes').length;
+          rows.forEach(r=>{ const cb=r.querySelector('input'); if(cb && cb.checked){ cb.checked=false; cb.dispatchEvent(new Event('change')); } });
           return {
             painted: ov ? +getComputedStyle(ov).opacity : 0,
             units: rows.length, allUnits: all.length,
-            mode: on.length === 1 ? on[0].textContent : null,
-            modeInk: cs ? (cs.color !== cs.backgroundColor) : false,
+            cardsPainted: painted, badges: badges,
+            sliders: sliders, modes: modes,
             radius: save ? getComputedStyle(save).borderTopLeftRadius : null,
             shadow: save ? getComputedStyle(save).boxShadow : null,
             saveOffWithNoUnits: !!(save && save.disabled)
@@ -561,15 +566,18 @@ def main():
         # a count goes stale the day a unit is added.
         check("every unit is offered", got["units"] == got["allUnits"],
               {"rows": got["units"], "units": got["allUnits"]})
-        # It opens on the room's CURRENT settings rather than defaults -
-        # a settings screen that forgets what is set is a reset button.
-        check("it opens on what the room is already set to",
-              got["mode"] == "Drill", got["mode"])
-        # --accent resolves to --ink on the default accent, so a
-        # hardcoded white label was white on white: the selected mode
-        # was the one you could not read.
-        check("the selected mode is legible against its own pill",
-              got["modeInk"] is True, got["modeInk"])
+        # .pick is opacity:0 until revealed. Sixteen rows, right size,
+        # right contents, painting nothing - measured fine, looked blank.
+        check("the unit cards are actually painted",
+              got["cardsPainted"] is True, got["cardsPainted"])
+        # The same cards the test setup screen draws, through the same
+        # appendUnitProgress builder - not a third kind of unit row.
+        check("they are the real unit cards, badge and all",
+              got["badges"] == got["units"], {"badges": got["badges"], "rows": got["units"]})
+        # Questions and time limit, both plainSlider like drill.
+        check("questions and time limit are both there", got["sliders"] == 2, got["sliders"])
+        # Exam/Drill is off until the real modes exist.
+        check("no test-type picker until the modes exist", got["modes"] == 0, got["modes"])
         # `[data-layout="modern"] .next` sets the pill radius at 0,2,0
         # and the dark theme restates the shadow at 0,3,0, so a bare
         # class rule for either is ignored in silence.

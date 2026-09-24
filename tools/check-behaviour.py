@@ -711,6 +711,62 @@ def _answer(pg):
       all[oo.indexOf(QUESTIONS[qi].answer)].click(); }""")
 
 
+def check_update_and_cards(br):
+    """Two decisions that are invisible until somebody hits them.
+
+    1. A FORCED UPDATE MUST NOT EAT THE RESULTS SCREEN. summarize()
+       clears testInProgress and THEN draws the results, so the retry
+       fired a tick later landed on the one screen anybody actually
+       wants to read - "people aren't able to see test result stats
+       because the updates immediately start". Waiting for the test to
+       END was never the condition; waiting for them to LEAVE it is.
+    2. AN EARNED BADGE IS THE WHOLE STATUS. A full bar reading 35 / 35
+       beside an earned badge is the same fact twice, and a bar is an
+       instrument for something you are still working towards.
+
+    Both were written against the build they failed on.
+    """
+    print("\n9. the forced update waits, and a mastered card is just its badge")
+    ctx, pg = booted(br, PHONE[1], PHONE[2], seed=USED_ACCOUNT)
+    got = pg.evaluate("""()=>{
+      const out = {};
+      /* The gate reads the screen on stage, which only Welcome and Home
+         set - so every other screen blocks by construction. */
+      out.home = forcedUpdateBlocked();
+      showAppearance();
+      out.elsewhere = forcedUpdateBlocked();
+      showHome();
+      out.backHome = forcedUpdateBlocked();
+
+      const all = topicsIn(QUESTIONS);
+      store.unitPerfects = store.unitPerfects || {};
+      store.unitPerfects[all[0]] = BADGE_THRESHOLD + 7;
+      store.unitPerfects[all[1]] = 4;
+      const mk = n => { const row = document.createElement('label');
+        row.className = 'pick'; appendUnitProgress(row, n); return row; };
+      const done = mk(all[0]), going = mk(all[1]);
+      out.badge = !!done.querySelector('.pick-badge.earned');
+      out.masteredBar = !!done.querySelector('.pick-barrow');
+      out.masteredCount = !!done.querySelector('.pick-bar-count');
+      out.goingBar = !!going.querySelector('.pick-barrow');
+      return out;}""")
+    check("a forced update may go while they are on Home",
+          got["home"] is False, got["home"])
+    # The results screen is not Home, and neither is anything else.
+    check("but never while they are anywhere else, results included",
+          got["elsewhere"] is True, got["elsewhere"])
+    check("and it goes the moment they are back on Home",
+          got["backHome"] is False, got["backHome"])
+    check("a mastered unit keeps its badge", got["badge"] is True, got["badge"])
+    check("and drops the bar and the count",
+          got["masteredBar"] is False and got["masteredCount"] is False,
+          {"bar": got["masteredBar"], "count": got["masteredCount"]})
+    # The bar is still there on a unit somebody is still working on -
+    # this is not "take the bar off unit cards".
+    check("an unmastered one still has its bar", got["goingBar"] is True, got["goingBar"])
+    ctx.close()
+
+
 def check_slide(br):
     """The next question FADES THROUGH, and nothing else moves after it.
 
@@ -820,6 +876,7 @@ def main():
             check_ranks(br)
             check_review_reach(br)
             check_slide(br)
+            check_update_and_cards(br)
         finally:
             br.close()
     SERVER.shutdown()
