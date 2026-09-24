@@ -109,12 +109,34 @@ def main(src):
               [...document.querySelectorAll('.chatdock-mini')]
                 .find(x=>x.textContent==='Invite').click();}""")
             a.wait_for_timeout(400)
+            # A CHECK THAT ASKS "IS IT IN THE DOM" CANNOT FAIL ON "YOU
+            # CANNOT SEE IT". The sheet is built at opacity:0 and faded
+            # in by a class added on the next frame; two of the three
+            # sheets never added it, so this one mounted invisible at
+            # z-index 340 - present, interactive, and reported as "the
+            # invite button doesn't work". Opacity is the only thing
+            # that differs between the two builds: hit testing does not
+            # care about it, so elementFromPoint passes either way.
+            vis = a.evaluate("""()=>{
+              const o=document.querySelector('.invite-overlay');
+              if(!o) return {no:'no sheet at all'};
+              return {op:Number(getComputedStyle(o).opacity),
+                      shown:o.classList.contains('invite-overlay-show')};}""")
+            check("the invite sheet is actually VISIBLE",
+                  not vis.get("no") and (vis.get("op") or 0) > 0.5, vis)
             inv = a.evaluate("""()=>{
               const b=[...document.querySelectorAll('.invite-sheet .friend-act')][0];
               if(!b) return {no:'nobody to invite'};
               b.click();
               return {label:b.textContent, out:JSON.parse(JSON.stringify(store.chatInvitesOut||{}))};}""")
             check("the invite sheet lists a friend", not inv.get("no"), inv)
+            # And it must not survive a screen change: it is on <body>,
+            # so nothing else would ever take it off.
+            gone = a.evaluate("""()=>{ showProfile(); return new Promise(r=>
+              setTimeout(()=>r({left:document.querySelectorAll('.invite-overlay').length}),300));}""")
+            check("and it clears itself on navigation", gone.get("left") == 0, gone)
+            a.evaluate("()=>{ showHome(); }")
+            a.wait_for_timeout(300)
             check("and inviting records it against them",
                   "bbb0000000002" in (inv.get("out") or {}), inv.get("out"))
 

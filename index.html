@@ -35282,6 +35282,29 @@ function checkChatInvites(){
    The friends list, one Invite each, on the same rows the rest of the
    app draws people with. It is a sheet rather than a screen because
    you are already inside the dock and a screen change would close it. */
+/* ---- MOUNTING A BOTTOM SHEET IS ONE FUNCTION NOW ----
+   `.invite-overlay` is built at `opacity:0` so it can fade in, which
+   means the class that reveals it is not decoration: without it the
+   sheet mounts INVISIBLE at z-index 340, fully interactive, and then
+   swallows the next tap anywhere on the screen. Two of the three
+   sheets were built by copying the markup and not the frame after it,
+   so the chat's Invite button and the leaderboard's person sheet both
+   did exactly that - reported as "the invite button doesn't work".
+   The overlay also lives on `<body>`, because it is `position:fixed`
+   and `#stage` animates, so it takes the same one-shot observer as
+   `.daily-alert` to clear itself on the next screen change. Both
+   halves belong to every sheet, so neither is a thing a caller can
+   forget again. */
+function mountSheetOverlay(overlay){
+  document.body.appendChild(overlay);
+  const obs = new MutationObserver(() => {
+    if(overlay.__unsub){ try{ overlay.__unsub(); }catch(e){} overlay.__unsub = null; }
+    overlay.remove(); obs.disconnect();
+  });
+  try{ obs.observe(stage, { childList: true }); }catch(e){}
+  requestAnimationFrame(() => overlay.classList.add("invite-overlay-show"));
+}
+
 function openChatInviteSheet(){
   if(!chatRoomCode) return;
   const overlay = document.createElement("div");
@@ -35340,13 +35363,16 @@ function openChatInviteSheet(){
   }
 
   const done = document.createElement("button");
-  done.type = "button"; done.className = "next ghost";
+  /* `.invite-close` is what makes it full width and 44px tall, the
+     same Done the friends sheet has. Without it this was a small pill
+     tucked in the bottom-left corner of a full-width sheet. */
+  done.type = "button"; done.className = "next ghost invite-close";
   done.textContent = "Done";
   done.addEventListener("click", () => overlay.remove());
   sheet.appendChild(done);
   overlay.appendChild(sheet);
   overlay.addEventListener("click", e => { if(e.target === overlay) overlay.remove(); });
-  document.body.appendChild(overlay);
+  mountSheetOverlay(overlay);
 }
 
 
@@ -35653,7 +35679,7 @@ function openPersonSheet(entry){
 
   overlay.appendChild(sheet);
   overlay.addEventListener("click", e => { if(e.target === overlay) overlay.remove(); });
-  document.body.appendChild(overlay);
+  mountSheetOverlay(overlay);
 }
 
 function showHome(){
@@ -38684,7 +38710,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-24-174";
+const APP_BUILD = "2026-09-24-175";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -43560,17 +43586,7 @@ function openInviteFriendsSheet(roomCode){
   overlay.addEventListener("click", ev => { if(ev.target === overlay) shut(); });
   sheet.appendChild(close);
   overlay.appendChild(sheet);
-  /* On <body> rather than #stage, like every other overlay here -
-     #stage animates, and a transform on an ancestor re-parents a fixed
-     element's containing block. So it takes the one-shot observer that
-     clears it on the next screen change, the same as .daily-alert. */
-  document.body.appendChild(overlay);
-  const obs = new MutationObserver(() => {
-    if(overlay.__unsub){ try{ overlay.__unsub(); }catch(e){} overlay.__unsub = null; }
-    overlay.remove(); obs.disconnect();
-  });
-  obs.observe(stage, { childList: true });
-  requestAnimationFrame(() => overlay.classList.add("invite-overlay-show"));
+  mountSheetOverlay(overlay);
 }
 
 function showVirtualRoomLobby(){

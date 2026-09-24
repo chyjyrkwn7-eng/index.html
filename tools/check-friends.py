@@ -579,16 +579,25 @@ def main():
           row.click();
           const sheet = document.querySelector(".person-sheet");
           if(!sheet) return { no: "tapping a classmate opened nothing" };
-          const act = sheet.querySelector(".person-sheet-act");
-          const label = act.textContent;
-          act.click();
-          return { label: label, out: (store.friendsOut || []).slice(),
-                   pushed: pushed,
-                   closed: !document.querySelector(".person-sheet") };}""")
+          /* THE SHEET IS BUILT AT opacity:0 AND FADED IN ON THE NEXT
+             FRAME, so asking the DOM whether it is there cannot fail on
+             "you cannot see it" - which is exactly how the chat's own
+             invite sheet shipped invisible. Wait a frame and measure. */
+          return new Promise(res => setTimeout(() => {
+            const o = document.querySelector(".invite-overlay");
+            const op = o ? Number(getComputedStyle(o).opacity) : 0;
+            const act = sheet.querySelector(".person-sheet-act");
+            const label = act.textContent;
+            act.click();
+            res({ label: label, out: (store.friendsOut || []).slice(),
+                  pushed: pushed, op: op,
+                  closed: !document.querySelector(".person-sheet") });
+          }, 350));}""")
         if sent.get("no"):
             check("tapping a classmate opens their card", False, sent["no"])
         else:
             check("tapping a classmate opens their card", True)
+            check("and the card is actually visible", (sent.get("op") or 0) > 0.5, sent.get("op"))
             check("the action offers to add them", "Add friend" in sent["label"], sent["label"])
             # ADDRESSED BY publicId. The friend-code path searches the
             # board for a typed code; there is nothing to look up here,
