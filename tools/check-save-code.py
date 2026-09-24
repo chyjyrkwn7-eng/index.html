@@ -115,9 +115,15 @@ with sync_playwright() as pw:
     # build without the banner this would otherwise die on a 30s
     # Playwright timeout and report a crash rather than a failure -
     # and --against on the old build is exactly when that happens.
+    # THE LABEL IS NOT THE ASSERTION - the action button was "Copy code"
+    # and is "Save it" now, and a check naming either would fail the app
+    # for being right. What has to hold is that ONE tap puts the real
+    # code somewhere and only then marks the prompt satisfied.
     if b.get("missing"):
-        for n in ("tapping Copy code copies the code itself",
-                  "and marks it saved", "and the banner goes"):
+        for n in ("one tap puts the code somewhere",
+                  "and marks it saved", "and the banner goes",
+                  "the share sheet is used where there is one",
+                  "a cancelled share is not a save"):
             ck(n, False, "no banner to tap")
         after = {}
     else:
@@ -125,10 +131,39 @@ with sync_playwright() as pw:
         after=pg.evaluate("""async ()=>({clip: await navigator.clipboard.readText(),
            saved: store.savedCodeSaved, gone: !document.getElementById('save-code'),
            toast: (document.querySelector('.toast')||{}).textContent||''})""")
-        ck("tapping Copy code copies the code itself",
+        ck("one tap puts the code somewhere",
            (after.get("clip") or "") == "WXYZ-7777", after.get("clip"))
         ck("and marks it saved", after.get("saved") is True, after)
         ck("and the banner goes", after.get("gone") is True, after)
+
+        # A CLIPBOARD DOES NOT SURVIVE THE NEXT COPY, which is the whole
+        # problem with "save your code" being a copy button. Where a
+        # share sheet exists the banner has to use it, and the code has
+        # to be in the shared TEXT - a title alone saves nothing.
+        # Stubbed: headless Chromium has no share sheet.
+        pg.evaluate("""()=>{ window.__shared=null; store.savedCodeSaved=false;
+          store.savedCodePrompts=0;
+          navigator.share=(d)=>{ window.__shared=d; return Promise.resolve(); };
+          showHome(); }""")
+        pg.wait_for_timeout(700)
+        if pg.query_selector("#save-code .app-banner-act"):
+            pg.click("#save-code .app-banner-act"); pg.wait_for_timeout(600)
+        sh = pg.evaluate("()=>window.__shared")
+        ck("the share sheet is used where there is one",
+           bool(sh) and "WXYZ-7777" in ((sh or {}).get("text") or ""),
+           str(sh)[:140])
+
+        # Backing out of the sheet saved nothing, so it must not silence
+        # the reminder - the same rule the refused-clipboard path has.
+        pg.evaluate("""()=>{ store.savedCodeSaved=false; store.savedCodePrompts=0;
+          navigator.share=()=>Promise.reject(Object.assign(new Error("x"),{name:"AbortError"}));
+          navigator.clipboard.writeText=()=>Promise.reject(new Error("no"));
+          showHome(); }""")
+        pg.wait_for_timeout(700)
+        if pg.query_selector("#save-code .app-banner-act"):
+            pg.click("#save-code .app-banner-act"); pg.wait_for_timeout(600)
+        ck("a cancelled share is not a save",
+           pg.evaluate("()=>!!store.savedCodeSaved") is False)
     if errs: ck("no JS errors", False, errs[:2])
     else: ck("no JS errors", True)
     ctx.close()

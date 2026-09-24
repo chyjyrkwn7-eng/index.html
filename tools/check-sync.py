@@ -272,14 +272,50 @@ with sync_playwright() as pw:
     for b in btns:
         b.click(); pg.wait_for_timeout(350)
         got[b.text_content()] = pg.evaluate("()=>navigator.clipboard.readText()")
-    check("Settings copies the code", got.get("Copy code") == "WXYZ-7777", str(got))
+    # THE LABEL IS NOT THE ASSERTION. This named "Copy code" and would
+    # have gone red the moment that button became "Save code" - a gate
+    # failing the app for being right, which this file has been caught
+    # by twice already. What matters is that the one button in the sync
+    # section puts the real code somewhere, whatever it is called.
+    # Chromium has no navigator.share, so this exercises the clipboard
+    # fallback; the share path is checked separately below.
+    check("Settings hands over the code",
+          "WXYZ-7777" in got.values(), str(got))
     # ONE BUTTON, NOT TWO. Copy sign-in link came off on an explicit
     # report - "I don't even know what that is and it will confuse
     # people" - and this check went red for asserting it, which is the
     # gate failing the app for being right. Asserted as SHAPE now: one
     # copy button in the sync section, whatever it ends up called.
-    check("there is exactly one copy button, not a pair",
+    check("there is exactly one such button, not a pair",
           len(btns) == 1, str([b.text_content() for b in btns]))
+
+    # SAVING IS NOT COPYING. A clipboard is overwritten by the next
+    # thing you copy, and this code has to outlive the phone - so where
+    # a share sheet exists the button must use it, and the code has to
+    # be IN the shared text rather than only in the title. Stubbed,
+    # because headless Chromium has no share sheet at all.
+    pg.evaluate("""()=>{ window.__shared = null;
+      navigator.share = (d) => { window.__shared = d; return Promise.resolve(); }; }""")
+    pg.evaluate("()=>{ store.savedCodeSaved = false; }")
+    btns[0].click(); pg.wait_for_timeout(500)
+    shared = pg.evaluate("()=>window.__shared")
+    check("it opens the share sheet when there is one", bool(shared), str(shared)[:120])
+    check("and the code is in what gets shared",
+          bool(shared) and "WXYZ-7777" in (shared.get("text") or ""),
+          (shared or {}).get("text"))
+    check("a real save marks the prompt satisfied",
+          pg.evaluate("()=>!!store.savedCodeSaved") is True)
+
+    # A CANCELLED SHARE IS NOT A SAVE. Backing out of the sheet must not
+    # silence the reminder - it would have achieved precisely nothing,
+    # which is the same rule the refused-clipboard path already carried.
+    pg.evaluate("""()=>{ store.savedCodeSaved = false;
+      navigator.share = () => Promise.reject(Object.assign(new Error("x"), {name:"AbortError"}));
+      navigator.clipboard.writeText = () => Promise.reject(new Error("no"));
+    }""")
+    btns[0].click(); pg.wait_for_timeout(500)
+    check("backing out of the share sheet does not count as saved",
+          pg.evaluate("()=>!!store.savedCodeSaved") is False)
     filled = pg.evaluate(
         "()=>{const b=document.querySelector('.sync-save-row .cal-profile-btn');"
         " const r=document.querySelector('.sync-save-row');"

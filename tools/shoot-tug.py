@@ -103,34 +103,55 @@ def shoot(outdir, name, w, h):
             pg.wait_for_selector(".screen-tug", timeout=25000)
 
         def answer(pg, right=True):
+            """Returns False once there is nothing left to answer. The
+            match can end UNDER you - the host writes `over` the moment
+            one side is clear - so every tap has to check the screen is
+            still there rather than assume the bank runs out first."""
+            if not pg.query_selector(".screen-tug .choices .choice"):
+                return False
             i = pg.evaluate("""(w)=>{
               const q = QUESTIONS[tugPool[tugMyPos % tugPool.length]];
               return w ? q.answer : (q.answer + 1) % q.choices.length; }""", right)
-            pg.click(".screen-tug .choices .choice:nth-child(%d)" % (i + 1))
+            try:
+                pg.click(".screen-tug .choices .choice:nth-child(%d)" % (i + 1), timeout=5000)
+            except Exception:
+                return False
             pg.wait_for_timeout(1350)
+            return True
 
         # A rope at dead centre is a rope with nothing to say, so the
-        # picture is taken with the match actually under way.
-        for _ in range(5):
+        # picture is taken with the match under way - but STAYING UNDER
+        # THE WIN GAP, or the match is over before the shutter. Seven
+        # against one is six clear, which is the whole match for a
+        # 29-question bank; three against one is a lead you can see and
+        # a match still running.
+        gap = a.evaluate("()=>tugWinGap(tugCount)")
+        for _ in range(3):
             answer(a, True)
         answer(b, True)
-        for _ in range(2):
-            answer(a, True)
         a.wait_for_timeout(700)
+        assert a.query_selector(".screen-tug"), "the match ended before the picture (gap %s)" % gap
         a.screenshot(path=os.path.join(outdir, "tug-%s-match.png" % name))
 
-        # The waiting screen: run one side out of questions.
+        # The waiting screen: run one side out of questions. It may not
+        # be reachable at all - the rope can be pulled clear first, which
+        # is the match working as designed - so this stops when the
+        # questions stop rather than insisting on a picture.
         n = a.evaluate("()=>tugCount")
-        while a.evaluate("()=>tugMyPos") < n - 1 and not a.evaluate("()=>tugMyDone"):
-            answer(a, True)
-        answer(a, True)
+        for _ in range(n + 2):
+            if a.evaluate("()=>tugMyDone") or not answer(a, True):
+                break
         a.wait_for_timeout(900)
         if a.query_selector(".screen-tug-wait"):
             a.screenshot(path=os.path.join(outdir, "tug-%s-wait.png" % name))
-        a.wait_for_selector(".screen-tug-result", timeout=30000)
+        got_wait = bool(a.query_selector(".screen-tug-wait"))
+        a.wait_for_selector(".screen-tug-result", timeout=60000)
         a.wait_for_timeout(700)
         a.screenshot(path=os.path.join(outdir, "tug-%s-result.png" % name))
-        print("  %s: match / wait / result" % name)
+        # Say what was actually taken. The waiting screen is only
+        # reachable when the bank runs out before anybody pulls clear,
+        # which is not the usual way a match ends.
+        print("  %s: match, result%s" % (name, ", wait" if got_wait else " (no wait screen - the rope was pulled clear first)"))
         ctx.close(); br.close()
     srv.shutdown()
 

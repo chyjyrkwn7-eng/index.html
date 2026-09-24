@@ -124,6 +124,18 @@ disagreed, the repo won and the difference is called out.
   a coin flip; and **the harness must echo back the build it serves**
   in `version.json`, or `--against` an older copy trips the forced
   update and reloads the page out from under the run.
+  A fourth, learned later and the cause of a run-in-three failure rate
+  that looked like everything except what it was: **every tab needs its
+  own `publicId` in the fixture.** `publicIdOf()` mints one on demand
+  and `saveStore()`s it — into `localStorage`, which every tab in one
+  context SHARES. Whichever tab minted first wrote its id to disk, a
+  tab booting after read the same id and became the same account, and
+  its join came back "this account is already in the lobby" and did
+  nothing. Two devices are two accounts; the fixture has to say so.
+  **And every section closes its own tabs**, because the fake wakes
+  every listener in the context on every write — eight live tabs was
+  enough to stop a fresh join landing inside 25 seconds, and the
+  symptom was whichever heavy section happened to run last.
 - `tools/firestore-admin.py` — `list`, `find <username>` and
   `purge --yes` against the live Firestore over the plain REST API, no
   SDK. `find` is the "someone lost their code" lookup, and it needs a
@@ -1485,6 +1497,55 @@ Everything below follows from that.
   actual event, not an approximation - and asserts the account comes
   back, twice over, and that a URL cannot hijack a device that already
   has one. It fails on build 129 with "re-added app came up on WELCOME".
+- **RECOVERING A LOST CODE IS FOUR LAYERS, AND ONLY THE LAST ONE NEEDS
+  A KEY.** Asked for in one line — *"I just want the codes to be
+  recoverable"* — after an afternoon lost to the admin key, which is
+  only the last resort:
+  1. *The device cannot lose it on its own* — the IndexedDB mirror and
+     the boot self-heal (build 158). This is the one that fixed the
+     "randomly signed out" report.
+  2. *The app asks you to save it* — `checkSaveCodeReminder()`, three
+     prompts then silence (159).
+  3. *One tap actually saves it somewhere off the phone* —
+     `saveSyncCodeVia()`. **Copy is not save**: a clipboard is
+     overwritten by the next thing you copy, and this code has to
+     outlive the phone. Share sheet first so it lands in Notes or a
+     message to yourself, clipboard only where there is no share sheet.
+     Both the banner and Settings go through it, and **neither marks
+     `savedCodeSaved` unless the code actually went somewhere** — a
+     cancelled share and a refused clipboard are both "not saved", or
+     the prompt is silenced having achieved nothing.
+  4. *Somebody looks it up* — `tools/firestore-admin.py find`, which
+     needs the service-account key. See the admin-key note below.
+  **The banner passes no anchor element to `saveSyncCodeVia`**, because
+  `buildAppBanner` removes the banner before calling the action and the
+  anchor path awaits two animation frames — which on iOS would step
+  outside the user gesture `share()` requires.
+- **THE ADMIN KEY GOES IN AS TWO FIELDS, NOT AS THE FILE.** The
+  environment-variable box takes one `NAME=value` per line; a
+  service-account JSON is ~30 lines starting with `{`, and pasting it
+  whole comes back as `couldn't parse "{" — use key=value format`. It
+  was then pasted as one line and the box **dropped characters at
+  random** — a `K` out of `BEGIN PRIVATE KEY`, and three opening quotes
+  — which is not a bad mouse drag (that loses a contiguous chunk) but
+  the field mangling a 2300-character paste. So `_load_key()` reads
+  `NOVA_ADMIN_EMAIL` and `NOVA_ADMIN_PRIVATE_KEY`, both already single
+  lines inside that file, and its JSON failure now names what is
+  damaged rather than saying "not valid JSON". **Never ask for the key
+  in chat**: it would sit in a transcript forever, it opens all ~40
+  accounts, and the container is wiped at session end so it would have
+  to be re-pasted every time anyway.
+- **A SESSION OLDER THAN THE VARIABLES WILL SWEAR THE KEY IS BROKEN,
+  AND IT IS WRONG.** Environment variables are read when a session
+  STARTS. One session spent an afternoon reporting "the key does not
+  work" — truthfully, about its own stale snapshot — while another,
+  started later, was pulling real codes out of `progress` the whole
+  time. Before contradicting a session that says the key works, check
+  whether this one can even see `NOVA_ADMIN_EMAIL`; if it cannot, it
+  has nothing to say on the question. The falsifiable test is the one
+  that must be asked for, because "the variable exists" proves nothing
+  either: **list the `progress` collection.** Anonymous gets 403
+  there, a working key gets 200.
 - **Safari and the installed app are separate storage jars on iOS.** The
   re-add notice's `x-safari-https:` hand-off lands in a jar with no
   progress in it, showing Welcome. Signing in with the code is the way
@@ -2632,6 +2693,47 @@ pull the rope, so each question you get one chance."*
   side by side they took most of a phone's width and left the rope
   about a third of the screen. Capped at `34rem` from tablet up, or a
   13" iPad renders a metre of bar.
+#### Leaving a room
+
+- **LEAVING HAS TO ACTUALLY LEAVE, and for a long time nothing removed
+  a participant from a room document at all.** "Leave lobby" detached a
+  listener and walked away; pause → Exit test did not touch the room.
+  Both gates in this app wait for EVERYONE with no timeout — the lobby
+  before it starts, the finale before it reveals — so one person walking
+  out stranded the rest for good. `leaveVirtualRoom()` is the single
+  exit every path goes through: it deletes the participant and its tug
+  rows, records `lastLeave`, and detaches the listeners FIRST so the
+  device's own delete does not come back as a snapshot and get rendered
+  against a room it has left.
+- **THE HOST IS THE EARLIEST JOINER, COMPUTED, NOT STORED.** There was
+  no `host` field on the room at all — only a local `vroomIsHost` flag
+  set when you created it — so a host who left produced a room with NO
+  host, and the two things only a host does (firing the auto-start,
+  deciding a tug match is over) never happened again. The room was
+  bricked and looked fine. `vroomHostKeyOf()` derives it from join
+  order, the same rule the tug teams already use, so the next person is
+  promoted by arithmetic with no handoff write to race against.
+  `syncVroomHost(data)` re-derives it on every snapshot. **The key
+  tie-break in the sort is load-bearing**: two people whose `joinedAt`
+  collides must not both believe they are in charge.
+- **The leave banner reads a `lastLeave` FIELD, not a diff of
+  successive snapshots.** Snapshots coalesce and arrive out of order,
+  so a banner that depends on catching the exact moment between two of
+  them is a banner that sometimes does not appear. `vroomLastLeaveSeen`
+  keeps it to once per departure and stops somebody who joined later
+  being told about a person who left before they arrived.
+- **The waiting screen's way out is Pause, and there is deliberately no
+  Back to lobby or Back to Home on it** — *"there's no button at the
+  bottom to return to lobby/return to main menu when you are waiting
+  for people to finish … you'd need to hit pause and then hit leave"*.
+  `vroomAwaitingOthers` makes Pause ask a different question there,
+  because your own run is over: your score is already banked, so the
+  copy says you only lose seeing everyone else's results rather than
+  borrowing confirmExitTest's run-losing warning.
+- **`check-vroom` section 10 is the gate**, and the assertion the old
+  build cannot satisfy is the last one: the host walks out and the
+  match still starts.
+
 - **`check-vroom` section 9 is the gate**, and the assertion that
   matters is the one lockstep cannot satisfy: one device gets through
   three questions while the other answers nothing, and the rope moves

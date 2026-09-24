@@ -120,6 +120,20 @@ FAKE_FIRESTORE = """
                   const seen = JSON.stringify(v.__arrayUnion);
                   if(!arr.some(x => JSON.stringify(x) === seen)) arr.push(v.__arrayUnion);
                   cur[leaf] = arr;
+                } else if(v && typeof v === "object" && v.__delete){
+                  /* Firestore removes the FIELD, and an empty parent is
+                     left as an empty map rather than being pruned -
+                     which matters, because the app counts the keys of
+                     `participants` to know how many people are in the
+                     room. */
+                  const parts = k.split(".");
+                  let cur = d;
+                  let ok = true;
+                  for(let i = 0; i < parts.length - 1; i++){
+                    if(typeof cur[parts[i]] !== "object" || cur[parts[i]] === null){ ok = false; break; }
+                    cur = cur[parts[i]];
+                  }
+                  if(ok) delete cur[parts[parts.length - 1]];
                 } else {
                   setDeep(d, k, v);
                 }
@@ -153,7 +167,12 @@ FAKE_FIRESTORE = """
   window.firebase = window.firebase || {};
   window.firebase.firestore = window.firebase.firestore || {};
   window.firebase.firestore.FieldValue = {
-    arrayUnion: function(v){ return { __arrayUnion: v }; }
+    arrayUnion: function(v){ return { __arrayUnion: v }; },
+    /* Leaving a room deletes the participant field. Without this the
+       sentinel would be STORED as an object and the person would still
+       be counted - the exact bug leaving was written to fix, hidden by
+       the harness rather than caught by it. */
+    delete: function(){ return { __delete: true }; }
   };
   window.__useFake = function(){ fbDb = window.__fakeDb; };
 })();
@@ -196,6 +215,28 @@ def tap(pg, selector, what):
     except Exception:
         raise AssertionError("%s never appeared (%s)" % (what, selector))
     pg.click(selector)
+
+def join_lobby(pg, code, tries=3, timeout=12000):
+    """Join a room and WAIT FOR THE LOBBY, retrying.
+
+    Joining is a write, a snapshot and a screen mount. The fake
+    Firestore wakes every listener in the context on every write, so
+    with several tabs alive any of the three can miss its window - and
+    a fixed wait then fails the whole run for a reason that has nothing
+    to do with the app. Retried rather than waited longer: a second
+    attempt lands immediately where a longer wait just fails later.
+    Every section joins through this, so the flakiness is fixed in one
+    place rather than three."""
+    for attempt in range(tries):
+        pg.evaluate("(c)=>joinVirtualRoomLobby(c)", code)
+        try:
+            pg.wait_for_selector(".vroom-readyup-btn", state="visible", timeout=timeout)
+            return
+        except Exception:
+            if attempt == tries - 1:
+                raise
+            pg.wait_for_timeout(1200)
+
 
 def check(name, ok, detail=""):
     print("  %-4s %s%s" % ("PASS" if ok else "FAIL", name,
@@ -286,6 +327,17 @@ def main():
                 store.unitPerfects[u] = BADGE_THRESHOLD;
               });
               syncCode = a.code;
+              /* A DISTINCT PUBLIC ID PER TAB, and this is not cosmetic.
+                 publicIdOf() mints one on demand and saveStore()s it -
+                 into localStorage, which every tab in this context
+                 SHARES. So whichever tab minted first wrote its id to
+                 disk, and a tab booting after that read the same id and
+                 became the same account: joining then came back "this
+                 account is already in the lobby" and the join silently
+                 did nothing. It presented as a flaky harness and it was
+                 the harness being dishonest - two devices are two
+                 accounts, so the fixture has to say so. */
+              store.publicId = "pub-" + a.code;
             }""", {"name": name, "avatar": avatar, "points": points, "code": code,
                    "badges": badges, "rankKey": rank_key})
             return pg
@@ -322,7 +374,7 @@ def main():
         code = host.evaluate("()=>vroomCode")
         check("the host lands in a lobby with a code", bool(code), code)
 
-        guest.evaluate("(c)=>joinVirtualRoomLobby(c)", code)
+        join_lobby(guest, code)
         try:
             host.wait_for_function(
                 "() => document.querySelectorAll('.vroom-row').length >= 2",
@@ -698,14 +750,9 @@ def main():
             tugA.wait_for_function("() => typeof vroomCode === 'string' && vroomCode",
                                    timeout=20000)
             tcode = tugA.evaluate("()=>vroomCode")
-            tugB.evaluate("(c)=>joinVirtualRoomLobby(c)", tcode)
-            # WAIT FOR THE LOBBY, do not sleep at it. A fixed wait here
-            # failed one run in two: joining is a write, a snapshot and a
-            # screen mount, and how long that takes depends on what else the
-            # harness is doing in the same browser.
             try:
-                for pg in (tugA, tugB):
-                    pg.wait_for_selector(".vroom-readyup-btn", state="visible", timeout=25000)
+                tugA.wait_for_selector(".vroom-readyup-btn", state="visible", timeout=25000)
+                join_lobby(tugB, tcode)
             except Exception:
                 # Say WHERE it got stuck. "the button never appeared" on
                 # its own sends the next person looking at the button.
@@ -896,6 +943,101 @@ def main():
             # build this one is EXPECTED to go red, and an exception there
             # aborts the run before it can say so.
             check("the tug section ran at all", False, repr(e)[:200])
+        finally:
+            # EVERY SECTION CLOSES ITS OWN TABS. The fake Firestore wakes
+            # every listener in the context on every write, so a tab left
+            # open goes on doing work for the rest of the run - and with
+            # eight of them alive a fresh join stopped landing inside its
+            # 25 seconds. The symptom was whichever heavy section happened
+            # to run last, which is the giveaway that it was load and not
+            # the app.
+            for done in ("tugA", "tugB"):
+                pg2 = locals().get(done)
+                if pg2 is not None:
+                    try:
+                        pg2.close()
+                    except Exception:
+                        pass
+
+        # ---- 10. somebody leaves ------------------------------------
+        # NOTHING EVER REMOVED A PARTICIPANT FROM A ROOM. "Leave lobby"
+        # detached a listener and walked away; pause -> Exit test did
+        # not touch the room at all. Both gates in this app wait for
+        # EVERYONE with no timeout - the lobby before it starts, the
+        # finale before it reveals - so one person walking out stranded
+        # the rest for good, and a host walking out bricked the room
+        # outright, because only a host fires the auto-start.
+        print("\n10. a room survives somebody walking out")
+        try:
+            for stale in (tugA, tugB):
+                try:
+                    stale.close()
+                except Exception:
+                    pass
+            lobA = open_tab("Ana", "cadet", 2000, "LOBA-0001", badges=1)
+            lobB = open_tab("Ben", "ghost", 2000, "LOBB-0002", badges=1)
+            lobC = open_tab("Cy", "queen", 2000, "LOBC-0003", badges=1)
+            for pg in (lobA, lobB, lobC):
+                ctx.new_cdp_session(pg).send("Page.setWebLifecycleState", {"state": "active"})
+
+            lobA.evaluate("()=>createVirtualRoomLobby(topicsIn(QUESTIONS).slice(0,1), 10, 'race')")
+            lobA.wait_for_function("() => typeof vroomCode === 'string' && vroomCode", timeout=20000)
+            lcode = lobA.evaluate("()=>vroomCode")
+            for pg in (lobB, lobC):
+                join_lobby(pg, lcode)
+            lobA.wait_for_function(
+                "() => document.querySelectorAll('.vroom-row').length >= 3", timeout=25000)
+            check("three people are in the lobby",
+                  lobA.evaluate("()=>document.querySelectorAll('.vroom-row').length") == 3)
+
+            # THE HOST LEAVES. Under the old code this was terminal:
+            # vroomIsHost was a local flag set when you created the room,
+            # so nobody was host afterwards and the auto-start could
+            # never fire however ready everybody was.
+            lobA.evaluate("()=>{ window.__toasts=[]; }")
+            lobB.evaluate("""()=>{ window.__toasts=[]; const o=window.showToast;
+              window.showToast=function(m){ window.__toasts.push(m); return o.apply(this,arguments); }; }""")
+            lobA.click(".back-link")
+            lobB.wait_for_function(
+                "() => document.querySelectorAll('.vroom-row').length === 2", timeout=25000)
+            left = lobB.evaluate("()=>document.querySelectorAll('.vroom-row').length")
+            check("the host's row disappears for everyone else", left == 2, left)
+            toasts = lobB.evaluate("()=>window.__toasts||[]")
+            check("and they are told who left",
+                  any("Ana" in t and "left" in t.lower() for t in toasts), toasts)
+
+            # THE ROOM STILL HAS A HOST. Derived from join order, so the
+            # earliest remaining person is host from the next snapshot -
+            # no handoff write to race against.
+            hosts = {n: pg.evaluate("()=>vroomIsHost") for n, pg in (("Ben", lobB), ("Cy", lobC))}
+            check("exactly one of the two left is now host",
+                  sum(1 for v in hosts.values() if v) == 1, hosts)
+            check("and it is the earlier joiner", hosts.get("Ben") is True, hosts)
+
+            # AND THE MATCH CAN ACTUALLY START. This is the assertion the
+            # old build cannot satisfy: two people ready, nobody host,
+            # nothing happens, forever.
+            for pg in (lobB, lobC):
+                tap(pg, ".vroom-readyup-btn", "ready-up")
+                pg.wait_for_timeout(300)
+            started = True
+            try:
+                for pg in (lobB, lobC):
+                    pg.wait_for_function(
+                        "() => typeof vroomStartAt === 'number' && vroomStartAt", timeout=25000)
+            except Exception:
+                started = False
+            check("the match still starts without the person who made it", started)
+        except Exception as e:
+            check("the leave section ran at all", False, repr(e)[:200])
+        finally:
+            for done in ("lobA", "lobB", "lobC"):
+                pg2 = locals().get(done)
+                if pg2 is not None:
+                    try:
+                        pg2.close()
+                    except Exception:
+                        pass
 
         ctx.close()
         br.close()

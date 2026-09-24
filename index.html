@@ -255,23 +255,23 @@
      The DARK --accent is the one that shows - the app is dark-only - and
      it is the rank colour lifted just far enough to sit on a dark panel
      and carry dark ink. */
-  [data-accent="rookie"]{ --accent:#6F7884; --accent-ink:#F7F8F9; --theme-c1:#DCE6F2; --theme-c2:#8B939E; --theme-c3:#3C4A6B; }
+  [data-accent="rookie"]{ --accent:#6F7884; --accent-ink:#F7F8F9; --theme-c1:#D8A25A; --theme-c2:#8B939E; --theme-c3:#3B4E7A; }
   [data-theme="dark"][data-accent="rookie"]{ --accent:#AEB7C2; --accent-ink:#14181D; }
-  [data-accent="ranger"]{ --accent:#A4602A; --accent-ink:#FFF6EE; --theme-c1:#FFD79A; --theme-c2:#C07A3E; --theme-c3:#6B2F4A; }
+  [data-accent="ranger"]{ --accent:#A4602A; --accent-ink:#FFF6EE; --theme-c1:#FFC46B; --theme-c2:#C07A3E; --theme-c3:#7A2A55; }
   [data-theme="dark"][data-accent="ranger"]{ --accent:#D99458; --accent-ink:#221208; }
-  [data-accent="veteran"]{ --accent:#7A8C9E; --accent-ink:#F7FAFD; --theme-c1:#F4F8FC; --theme-c2:#CAD3DC; --theme-c3:#44588A; }
+  [data-accent="veteran"]{ --accent:#7A8C9E; --accent-ink:#F7FAFD; --theme-c1:#CFA86A; --theme-c2:#CAD3DC; --theme-c3:#3F5C96; }
   [data-theme="dark"][data-accent="veteran"]{ --accent:#D8E1EA; --accent-ink:#141A21; }
-  [data-accent="vanguard"]{ --accent:#B08A1E; --accent-ink:#FFFAEC; --theme-c1:#FFE9AE; --theme-c2:#E5B63F; --theme-c3:#8A3B5E; }
+  [data-accent="vanguard"]{ --accent:#B08A1E; --accent-ink:#FFFAEC; --theme-c1:#FF9E5A; --theme-c2:#E5B63F; --theme-c3:#8A3B5E; }
   [data-theme="dark"][data-accent="vanguard"]{ --accent:#F0C75A; --accent-ink:#241A03; }
   /* This was a genuine, silent bug: "adept" (Giant) had no rule here
      at all, so --accent simply fell through to whatever it was
      already set to rather than the intended colour \u2014 selecting this
      colour visibly did nothing anywhere in the app. */
-  [data-accent="adept"]{ --accent:#2A55BE; --accent-ink:#F1F5FF; --theme-c1:#8FE3FF; --theme-c2:#3D74E8; --theme-c3:#5A2E9E; }
+  [data-accent="adept"]{ --accent:#2A55BE; --accent-ink:#F1F5FF; --theme-c1:#FFC46B; --theme-c2:#3D74E8; --theme-c3:#7A3FB5; }
   [data-theme="dark"][data-accent="adept"]{ --accent:#6E9CFF; --accent-ink:#081231; }
-  [data-accent="elite"]{ --accent:#7E30C9; --accent-ink:#F9F2FF; --theme-c1:#FFC2E8; --theme-c2:#A855F7; --theme-c3:#2E2C8C; }
+  [data-accent="elite"]{ --accent:#7E30C9; --accent-ink:#F9F2FF; --theme-c1:#FFB27A; --theme-c2:#A855F7; --theme-c3:#2F5BD0; }
   [data-theme="dark"][data-accent="elite"]{ --accent:#C084FC; --accent-ink:#1C0A32; }
-  [data-accent="titan"]{ --accent:#B82525; --accent-ink:#FFF2F2; --theme-c1:#FFD08A; --theme-c2:#E23B3B; --theme-c3:#6B1B6B; }
+  [data-accent="titan"]{ --accent:#B82525; --accent-ink:#FFF2F2; --theme-c1:#FFCE6B; --theme-c2:#E23B3B; --theme-c3:#7A1E8C; }
   [data-theme="dark"][data-accent="titan"]{ --accent:#FF6B5E; --accent-ink:#2A0707; }
   [data-accent="grinder"]{ --accent:#9C5B2E; --accent-ink:#FFF6EE; }
   [data-theme="dark"][data-accent="grinder"]{ --accent:#D4915C; --accent-ink:#1F1006; }
@@ -739,6 +739,18 @@
          50vw/104lvh computes to exactly what 120%/55%/50%/104% did, so
          nothing here moves; it just makes the two declarations the same
          text, which is the only way they stay the same pixels. */
+      /* 11%, AND IT IS A CEILING, NOT A PREFERENCE. This glow is
+         declared twice - here and on `html` as the fallback - and the
+         two have to stay pixel-identical or the bottom edge shows a
+         seam wherever the fixed layer fails to paint. They cannot be
+         identical on a page that SCROLLS: `html`'s copy is pinned to
+         one viewport at the top of the document, while this one is
+         fixed and follows. At 11% the difference at the bottom edge is
+         under the 8-level bar check-fixes holds; measured, 14% put an
+         SE 2nd/3rd gen 13 levels out and 19% put it 27 out - a real
+         grey bar, the same symptom this whole layer was rebuilt to
+         cure. So a theme that needs to read warmer gets there by
+         changing --theme-c1's COLOUR, not by turning this up. */
       radial-gradient(ellipse 120vw 55lvh at 50vw 104lvh, color-mix(in srgb, var(--theme-c1) 11%, transparent), transparent 70%),
       var(--paper);
   }
@@ -4145,6 +4157,45 @@
   .sync-code-row{
     display:flex; align-items:center; justify-content:space-between; width:100%;
     background:none; border:none; font:inherit; text-align:left; padding:.6rem 0; cursor:pointer;
+  }
+  /* The sync card: the code and the button that copies it, one block.
+     .cal-row brings the surface; these three rules only undo the
+     margins the pieces carry for standing on their own. */
+  .sync-card{ padding:.85rem 1rem 1rem; }
+  .sync-card .sync-code-row{ padding-top:.2rem; padding-bottom:.2rem; }
+  .sync-card .sync-save-row{ margin:0; }
+  .sync-card-rule{
+    height:1px; background:var(--rule); opacity:.6; margin:.8rem 0;
+  }
+  /* Plain, not a bordered notice. It is a line of advice under a card,
+     and an accent-striped box made it the loudest thing in the section. */
+  .sync-note-plain{
+    font-size:.78rem; line-height:1.5; color:var(--soft);
+    margin:.65rem .25rem 0; text-align:left;
+  }
+  /* A REAL BUTTON, not a red underline in the gap - but NOT the same
+     button as Copy code. In the modern layout .next.ghost and
+     .cal-profile-btn are both the matte-black pill, so a plain ghost
+     here rendered a destructive action identical to the safe one right
+     above it. Outlined and red instead: available, obviously not what
+     you came here to press, and carrying the same colour
+     .restart.danger already used so nothing about the meaning changed.
+     THE SELECTOR CARRIES BOTH PREFIXES AND BOTH CLASSES on purpose -
+     [data-theme="dark"][data-layout="modern"] .next is (0,3,0) and sits
+     a few thousand lines below this, so anything lighter loses on
+     specificity or on source order. Same trap as .opt .box and
+     .bottomtab-label. */
+  .sync-stop-bar{ margin-top:1.1rem; }
+  [data-layout="modern"] .next.ghost.sync-stop-btn,
+  [data-theme="dark"][data-layout="modern"] .next.ghost.sync-stop-btn{
+    width:100%; min-height:48px;
+    background:transparent; background-color:transparent; background-image:none;
+    box-shadow:none;
+    border:1px solid color-mix(in srgb, #E8687C 50%, transparent);
+    color:#E8687C; font-weight:700;
+  }
+  [data-layout="modern"] .next.ghost.sync-stop-btn:active{
+    background-color:color-mix(in srgb, #E8687C 14%, transparent); opacity:1;
   }
   .sync-code-value{
     font-family:var(--mono); font-size:.95rem; font-weight:800; color:var(--accent);
@@ -7589,6 +7640,27 @@
        of the free space ends up above it however it is divided; splitting
        it three ways is what keeps the sphere from sliding up to the notch
        while the buttons go down. */
+    /* WELCOME'S PLANET IS HOME'S PLANET NOW, same size and same place.
+       Asked for directly - "the welcome screen needs the planet system
+       to be in the same position it's in on the main menu". Measured
+       before this, on a 17 Pro Max it started 59px lower and rendered
+       48px smaller than Home's; every phone was the same story in
+       miniature. The three width values are copied from Home's own
+       phone rule rather than re-derived, so the two cannot drift: it is
+       the COLUMN that binds the hero, not the max-width cap, which is
+       why widening past the panel's padding is what actually grows it.
+
+       And the hero loses its auto margin. That auto was what pushed it
+       down; without it the hero sits on .wrap's own top padding, which
+       is exactly where Home's sits, and the leftover height moves to
+       the two autos below - where it buys the gap under the planet that
+       "the start welcome words and stuff are right underneath it too"
+       was pointing at. */
+    .cosmic-welcome .cosmic-hero-wrap{
+      width:calc(100% + 2.1rem); max-width:min(29rem, 52vh);
+      margin-left:-1.05rem; margin-right:-1.05rem;
+      margin-top:0;
+    }
     .cosmic-welcome{ gap:1.1rem; }
     /* A real gap under the sphere, not an auto one. A third auto margin
        here divided the free space evenly and opened a 100px hole between
@@ -7596,7 +7668,12 @@
        screen rather than as spacing. A fixed 1.6rem is spacing; it also
        comes off the pool the two autos divide, so the title lands ~19px
        lower than it did and the hero barely moves. */
-    .cosmic-welcome-title{ margin-top:1.6rem; }
+    /* The title takes the auto the hero gave up. With three autos this
+       opened a 100px hole under the sphere and read as a gap in the
+       screen - that note is still true, and it was written when the
+       HERO had one too. With two, the split is "space under the planet"
+       and "space under the text", which is the shape Home has. */
+    .cosmic-welcome-title{ margin-top:auto; }
   }
   /* The non-Max phones only. A Pro Max leaves 84px between the sub and
      the buttons; a 14/15/16 leaves 48 and a 13 mini 42, because there is
@@ -7629,6 +7706,23 @@
   @media (max-width:32rem) and (max-height:46rem){
     .cosmic-welcome{ gap:.34rem; }
     .cosmic-welcome-title{ margin-top:0; }
+  }
+  /* WELCOME IS IN HOME'S SHORT-PHONE HERO TIER TOO, now that its planet
+     is sized like Home's. Without it an SE 2nd/3rd gen grew from 291 to
+     329 and drove the hint from 33px clear of the bottom edge to 4 -
+     and that clearance is one of the numbers checked on every device.
+     Same query as Home's own tier a few hundred lines up; it has to sit
+     AFTER the phone block rather than beside Home's, because both
+     selectors weigh the same and source order is the only thing
+     deciding between them. */
+  /* NO min-height FLOOR HERE, unlike Home's copy of this tier. Home
+     needs one because the tiers below 36rem set their own hero size
+     and this selector would reach down and undo them; Welcome has no
+     such tier, so the floor only served to EXCLUDE the one device that
+     needs it most. Measured: an SE 1st gen kept the full-size planet
+     and put the hint 56px off the bottom edge. */
+  @media (max-width:32rem) and (max-height:48rem){
+    .cosmic-welcome .cosmic-hero-wrap{ max-width:min(23rem, 33vh); }
   }
   .homeversion .homeversion-long{ display:none; }
   .homeversion .homeversion-short{ display:inline; }
@@ -10358,10 +10452,21 @@
     border-radius:999px; background:rgba(255,255,255,.07);
     border:1px solid var(--rule); color:var(--ink);
   }
-  .vroom-settings-btn{ min-height:44px; }
+  /* THE HOST'S ONE CONTROL, and it owns its row. It was 177px beside a
+     124px Invite friends and read as a chip; Invite friends moved to
+     the code card, so this fills the width and is sized like a button
+     somebody is meant to press. */
+  .vroom-settings-btn{ width:100%; min-height:52px; font-size:1rem; font-weight:800; }
   .vroom-host-bar{
-    display:flex; flex-wrap:wrap; align-items:center; gap:.5rem;
+    display:flex; align-items:center; gap:.5rem;
     margin-top:.8rem; padding-top:.7rem; border-top:1px solid var(--rule);
+  }
+  /* Invite friends, in the card that is already about getting people
+     in. Full width under the code and its Copy button rather than
+     inline with them - the code is the thing to read there, and a
+     third control on that line crowds it on a 320px phone. */
+  .vroom-code-row .vroom-invite-btn{
+    width:100%; min-height:46px; margin-top:.85rem; margin-left:0; font-size:.92rem;
   }
   /* Two equal CARDS, not two pills. As pills the unselected one was a
      bare outline on the sheet's own background and was reported as
@@ -29953,6 +30058,11 @@ function stopTimer(){
    paused, whether the timer is on or off. */
 
 function pauseRun(){
+  /* The waiting screen's Pause is a leave, not a hold - see
+     vroomAwaitingOthers. Checked first because `order` is still
+     populated there and this would otherwise draw "the question and
+     timer are on hold" over a screen with no question on it. */
+  if(vroomAwaitingOthers){ confirmLeaveWhileWaiting(); return; }
   if(paused || order.length === 0) return;
   paused = true;
   pauseStartedAt = Date.now();
@@ -30116,6 +30226,47 @@ function confirmMainMenu(){
   stayBtn.focus({ preventScroll: true });
 }
 
+/* Leaving while the others are still going. Your score is already
+   banked - summarize() ran before this screen existed - so the only
+   thing you give up is seeing everyone's results, and the copy says
+   exactly that rather than borrowing the run-losing warning from
+   confirmExitTest. */
+function confirmLeaveWhileWaiting(){
+  const panel = document.createElement("section");
+  panel.className = "panel pausepanel";
+  const h = document.createElement("p");
+  h.className = "qnum"; h.textContent = "Leave the room?";
+  const p = document.createElement("p");
+  p.className = "qtext";
+  p.textContent = "Your score is already saved. You just won\u2019t see everyone else\u2019s results.";
+  const actions = document.createElement("div");
+  actions.className = "actions";
+  const stay = document.createElement("button");
+  stay.type = "button"; stay.className = "next";
+  stay.textContent = "Keep waiting";
+  stay.addEventListener("click", () => { if(lastVroomFinale) lastVroomFinale(); });
+  const go = document.createElement("button");
+  go.type = "button"; go.className = "next ghost";
+  go.textContent = "Leave";
+  go.addEventListener("click", () => {
+    vroomAwaitingOthers = false;
+    pauseBtn.hidden = true;
+    leaveVirtualRoom();
+    testInProgress = false;
+    showHome();
+  });
+  actions.append(stay, go);
+  panel.append(h, p, actions);
+  stage.replaceChildren(panel);
+  toTop();
+  stay.focus({ preventScroll: true });
+}
+/* Rebuilding the waiting screen is the only way back from that
+   confirm, and it has to be the SAME screen with the same numbers -
+   so the finale stores how to redraw itself rather than being
+   reconstructed from arguments nobody kept. */
+let lastVroomFinale = null;
+
 function confirmExitTest(){
   if(order.length === 0){ showModeSelect(); return; }
   /* Same reasoning as confirmMainMenu() above - see its comment - a
@@ -30186,6 +30337,15 @@ function confirmExitTest(){
        Home screen's own FAB button). Home is the correct landing
        spot for it specifically, same as every other daily-question
        exit path in this rework. */
+    /* LEAVING A VIRTUAL ROOM MID-TEST HAS TO TELL THE ROOM. This path
+       did not touch the room document at all, so the people still in
+       it waited on a participant who had closed the app - and the
+       finale gate waits for EVERYONE with no timeout, so they waited
+       for good. This is also the "hit pause and then leave (lose your
+       progress)" route that replaced the exit buttons on the waiting
+       screen, so it is the only way out of a race and it has to be
+       the one that cleans up. */
+    if(inVirtualRoom || vroomCode) leaveVirtualRoom();
     if(isDailyExit) showHome();
     else showModeSelect();
   });
@@ -36450,7 +36610,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-24-164";
+const APP_BUILD = "2026-09-24-165";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -38710,7 +38870,25 @@ function showAppearance(){
         codeSpan.textContent = revealed ? syncCode : "\u2022\u2022\u2022\u2022-\u2022\u2022\u2022\u2022";
       });
       row.append(label, codeSpan);
-      syncSect.appendChild(row);
+
+      /* ONE CARD FOR THE CODE, not four treatments stacked. Reported as
+         the section needing to be better organised, and looked at, it
+         was: a bare row, a full-width black slab, a bordered notice box
+         with an accent stripe down its left edge, and a red underlined
+         link - four different visual languages inside one heading, and
+         the only bordered thing on the screen was the explanatory note,
+         which is the least important of them. The code and the button
+         that copies it are one thing, so they go in one .cal-row with a
+         rule between; the note becomes plain text like every other hint
+         in the app; and stopping sync becomes a real button rather than
+         a red underline floating in the gap. */
+      const card = document.createElement("div");
+      card.className = "cal-row sync-card";
+      card.appendChild(row);
+      const cardRule = document.createElement("div");
+      cardRule.className = "sync-card-rule";
+      card.appendChild(cardRule);
+      syncSect.appendChild(card);
 
       /* THE ONE THING THAT GETS A WIPED DEVICE BACK IN, and until now it
          had no surface anywhere in the app: recoveryUrlFor() was written,
@@ -38736,32 +38914,44 @@ function showAppearance(){
          where two shared it. */
       const saveBar = document.createElement("div");
       saveBar.className = "cal-profile-row sync-save-row";
+      /* STILL ONE BUTTON - the second one here came off on an explicit
+         report ("I don't even know what that is and it will confuse
+         people") and this is not bringing it back. It is the same one
+         button doing the better thing: the share sheet first, so the
+         code lands in Notes or a message to yourself, and the clipboard
+         only when there is no share sheet. "Save", not "Copy", because
+         a clipboard is overwritten by the next thing you copy and this
+         code has to outlive the phone. */
       const copyCode = document.createElement("button");
       copyCode.type = "button"; copyCode.className = "cal-profile-btn";
-      copyCode.textContent = "Copy code";
+      copyCode.textContent = "Save code";
       copyCode.addEventListener("click", async () => {
-        if(navigator.clipboard && navigator.clipboard.writeText){
-          try { await navigator.clipboard.writeText(syncCode); showToast("Code copied."); return; }
-          catch(e){}
+        const ok = await saveSyncCodeVia(copyCode);
+        if(ok){
+          store.savedCodeSaved = true;
+          saveStore();
+          showToast(navigator.share ? "Saved \u2014 keep it somewhere off this device."
+                                    : "Code copied \u2014 paste it somewhere off this device.");
+          return;
         }
-        /* No clipboard, or it refused. The code is on the row above and
-           selectable, which is the fallback that cannot fail - and a
-           button that appears to do nothing is worse than no button. */
-        showToast("Couldn\u2019t copy \u2014 tap the row above to read your code and write it down.");
+        /* Nothing saved. The code is on the row above and selectable,
+           which is the fallback that cannot fail - and a button that
+           appears to do nothing is worse than no button. */
+        showToast("Nothing saved \u2014 tap the row above to read your code and write it down.");
       });
       saveBar.appendChild(copyCode);
-      syncSect.appendChild(saveBar);
+      card.appendChild(saveBar);
 
       const saveNote = document.createElement("p");
-      saveNote.className = "info-note sync-note-plain";
+      saveNote.className = "sync-note-plain";
       saveNote.textContent = "Keep this somewhere off this phone. If this device ever loses its "
         + "data, the code is what puts you back on your account.";
       syncSect.appendChild(saveNote);
 
       const stopBar = document.createElement("div");
-      stopBar.className = "startbar";
+      stopBar.className = "startbar sync-stop-bar";
       const stopBtn = document.createElement("button");
-      stopBtn.type = "button"; stopBtn.className = "restart danger";
+      stopBtn.type = "button"; stopBtn.className = "next ghost sync-stop-btn";
       stopBtn.textContent = "Stop syncing this device";
       stopBtn.addEventListener("click", () => {
         if(!window.confirm("Stop syncing? This device will keep its progress, but will no longer update or be updated by other devices using this code.")) return;
@@ -39448,6 +39638,96 @@ function showTestHistoryDetail(entry){
 let vroomCode = null;
 let vroomUnsubscribe = null;
 let vroomIsHost = false;
+/* THE HOST IS THE EARLIEST JOINER, COMPUTED RATHER THAN STORED - and
+   before this there was no stored host either, only a local flag set
+   when you happened to be the one who created the room. So a host who
+   walked out left a room with NO host, and both the things only a host
+   does - firing the auto-start when everyone is ready, and deciding a
+   tug match is over - simply never happened again. The room was
+   bricked, permanently, and looked fine.
+
+   Same rule the tug teams already follow: derive it from join order and
+   every device agrees without anybody having to negotiate. The next
+   person is promoted by arithmetic the moment the previous one's entry
+   disappears, with no handoff write to race against. The key tie-break
+   is not decoration: two people whose joinedAt collides must not end up
+   with two devices each believing it is in charge. */
+function vroomHostKeyOf(participants){
+  const ks = Object.keys(participants || {});
+  if(!ks.length) return null;
+  ks.sort((a, b) =>
+    (((participants[a] || {}).joinedAt || 0) - ((participants[b] || {}).joinedAt || 0))
+    || (a < b ? -1 : 1));
+  return ks[0];
+}
+function syncVroomHost(data){
+  vroomIsHost = !!vroomMyKey && vroomHostKeyOf(data && data.participants) === vroomMyKey;
+  return vroomIsHost;
+}
+
+/* LEAVING HAS TO ACTUALLY LEAVE. Nothing removed a participant from a
+   room document - "Leave lobby" detached a listener and walked away,
+   and pause -> Exit test did not touch the room at all - so everybody
+   left behind sat on "2 of 3 ready" or "Waiting for everyone to finish
+   (2 of 3)" forever. There is no timeout anywhere: the lobby waits for
+   EVERYONE before it starts and the finale waits for EVERYONE before it
+   reveals, so one person walking out was enough to strand the rest for
+   good.
+
+   The listeners go first, so my own delete does not come back as a
+   snapshot and get rendered against a room I am no longer in. */
+function leaveVirtualRoom(){
+  const code = vroomCode;
+  const myKey = vroomMyKey;
+  const myName = (store.firstName || "Someone");
+  detachVroomListener();
+  if(typeof detachTug === "function") detachTug();
+  if(vroomChatUnsubscribe){ try{ vroomChatUnsubscribe(); }catch(e){} vroomChatUnsubscribe = null; }
+  inVirtualRoom = false;
+  vroomTestStarted = false;
+  vroomAutoStartTriggered = false;
+  /* Or Pause would go on offering to leave a room this device is no
+     longer in, on whatever screen comes next. */
+  vroomAwaitingOthers = false;
+  lastVroomFinale = null;
+  window.forceHideBottomTabs = false;
+  if(code && myKey && fbDb){
+    try{
+      const gone = firebase.firestore.FieldValue.delete();
+      const patch = {};
+      patch["participants." + myKey] = gone;
+      /* Tug keeps its own per-person state beside the participants, and
+         a team or a progress row left behind would go on counting
+         towards a rope that nobody is pulling. */
+      patch["tug.progress." + myKey] = gone;
+      patch["tug.teams." + myKey] = gone;
+      /* WHO left, so the others can be told. A field rather than a diff
+         of successive snapshots: snapshots can arrive out of order or
+         coalesce, and a banner that depends on catching the exact
+         moment between two of them is a banner that sometimes does not
+         appear. */
+      patch.lastLeave = { name: myName, key: myKey, at: Date.now() };
+      fbDb.collection("vrooms").doc(code).update(patch).catch(() => {});
+    }catch(e){}
+  }
+  vroomCode = null;
+  vroomMyKey = null;
+  vroomIsHost = false;
+}
+
+/* The banner the others get. Keyed on the timestamp this device last
+   announced, so a re-render, a reconnect or a second listener cannot
+   announce the same departure twice - and so somebody who joins later
+   is not told about a person who left before they arrived. */
+let vroomLastLeaveSeen = 0;
+function announceVroomLeave(data){
+  const l = data && data.lastLeave;
+  if(!l || !l.at) return;
+  if(l.key && l.key === vroomMyKey) return;      /* my own exit */
+  if(l.at <= vroomLastLeaveSeen) return;
+  vroomLastLeaveSeen = l.at;
+  showToast((l.name || "Someone") + " left the room.");
+}
 let vroomUnits = [];
 /* This person's own key within participants — needed so the lobby
    screen can toggle "my own" ready state specifically, distinct from
@@ -40284,6 +40564,49 @@ function checkFriendRequests(){
    noise. Copying ends it for good, on every device at once, because
    the flag rides on `store` - the code is the same everywhere, so
    saving it once really is saved. */
+/* SAVING A CODE IS NOT COPYING IT. Copy puts it on a clipboard that the
+   next thing you copy overwrites, and the whole point of this code is
+   that it has to survive the phone losing the app - a clipboard does
+   not survive the next screenshot. The share sheet does: one tap and it
+   is in Notes, in a message to yourself, in an email.
+
+   Falls back to the clipboard when there is no share sheet, so the
+   button always does something, and reuses the iPad mitigation the
+   Share-this-app button already needed - iPadOS renders share() as a
+   POPOVER anchored to whatever was tapped, and an anchor near the edge
+   of a scrolling screen puts it off-screen. Centring first gives WebKit
+   room on every side; the rAF pair is because scrollIntoView is
+   asynchronous and the scroll has to have happened before the call.
+
+   Returns true ONLY if the code actually went somewhere. A cancelled
+   share and a refused clipboard both return false, because marking the
+   prompt satisfied when nothing was saved silences it having achieved
+   precisely nothing - the same rule the clipboard path already had. */
+async function saveSyncCodeVia(anchorEl){
+  if(!syncCode) return false;
+  const text = "Nova sign-in code: " + syncCode
+    + "\nKeep this. It is the only way back into your account if this phone loses the app's data.";
+  if(navigator.share){
+    try{
+      if(anchorEl && anchorEl.scrollIntoView){
+        anchorEl.scrollIntoView({ block: "center", behavior: "auto" });
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      }
+      await navigator.share({ title: "Nova sign-in code", text: text });
+      return true;
+    }catch(e){
+      /* Backed out on purpose - not a failure, and not a save either. */
+      if(e && e.name === "AbortError") return false;
+      /* Anything else falls through to the clipboard. */
+    }
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    try{ await navigator.clipboard.writeText(syncCode); return true; }
+    catch(e){}
+  }
+  return false;
+}
+
 const SAVE_CODE_MAX_PROMPTS = 3;
 
 function checkSaveCodeReminder(){
@@ -40306,23 +40629,28 @@ function checkSaveCodeReminder(){
      would be the app disagreeing with itself, so both say code now. */
   const el = buildAppBanner("save-code", "account",
     "Save your sync code \u2014 it is the only way back if this device loses its data",
-    "Copy code",
+    /* "Save it", not "Copy code" - the share sheet puts it in Notes or
+       a message to yourself, which is what "save" has to mean for
+       something whose whole job is outliving this phone. */
+    "Save it",
+    /* No anchor element: buildAppBanner removes the banner before it
+       calls this, so the button is already detached - and centring it
+       would be pointless anyway. That matters for more than tidiness:
+       the anchor path awaits two animation frames before calling
+       share(), and on iOS that would step outside the user gesture
+       share() requires. A banner has no scrolling to fight, so it takes
+       the straight path. */
     () => {
-      const done = () => {
+      saveSyncCodeVia(null).then(ok => {
+        if(!ok){
+          showToast("Nothing saved \u2014 open Settings and use Save code there.");
+          return;
+        }
         store.savedCodeSaved = true;
         saveStore();
-        showToast("Code copied \u2014 keep it somewhere off this device.");
-      };
-      if(navigator.clipboard && navigator.clipboard.writeText){
-        navigator.clipboard.writeText(syncCode).then(done, () => {
-          /* The clipboard refused, so nothing was saved and this must
-             not be marked as done - it would silence the prompt having
-             achieved precisely nothing. Settings is the way through. */
-          showToast("Couldn\u2019t copy \u2014 open Settings and use Copy code there.");
-        });
-      } else {
-        showToast("Couldn\u2019t copy \u2014 open Settings and use Copy code there.");
-      }
+        showToast(navigator.share ? "Saved \u2014 keep it somewhere off this device."
+                                  : "Code copied \u2014 paste it somewhere off this device.");
+      });
     },
     /* The x is a "not now": the count still goes up, so this ends
        after three, but nothing is marked as saved. */
@@ -40629,7 +40957,7 @@ function beginTugMatch(data){
     tugLastData = d;
     if(d.tug.over){ showTugResult(d); return; }
     renderTugScreen(d);
-    if(vroomIsHost) tugCheckOver(d);
+    if(syncVroomHost(d)) tugCheckOver(d);
   });
 }
 
@@ -40964,11 +41292,7 @@ function showTugResult(d){
   const home = document.createElement("button");
   home.type = "button"; home.className = "next ghost vroom-exit-btn";
   home.textContent = "Back to Home";
-  home.addEventListener("click", () => {
-    detachVroomListener();
-    if(vroomChatUnsubscribe){ try{ vroomChatUnsubscribe(); }catch(e){} vroomChatUnsubscribe = null; }
-    vroomCode = null; showHome();
-  });
+  home.addEventListener("click", () => { leaveVirtualRoom(); showHome(); });
   exits.append(lobby, home);
   panel.appendChild(exits);
 
@@ -41221,7 +41545,7 @@ function showVirtualRoomLobby(){
   vroomTestStarted = false;
   const panel = document.createElement("section");
   panel.className = "panel";
-  panel.appendChild(buildBackLink("Leave lobby", () => { detachVroomListener(); if(vroomChatUnsubscribe){ vroomChatUnsubscribe(); vroomChatUnsubscribe = null; } showModeSelect(); }));
+  panel.appendChild(buildBackLink("Leave lobby", () => { leaveVirtualRoom(); showModeSelect(); }));
 
   const title = document.createElement("h1");
   title.className = "welcomeintro-title"; title.textContent = "Lobby";
@@ -41267,6 +41591,24 @@ function showVirtualRoomLobby(){
     });
     codeValueRow.append(codeVal, copyBtn);
     codeBox.append(codeLabel, codeValueRow);
+
+    /* INVITE FRIENDS BELONGS HERE, not down in the host bar beside
+       Match settings - "the invite friends button could be somewhere
+       else". Both things in this card do one job: get people into the
+       room. Beside Match settings it was the odd one out, sharing a row
+       with a control that changes the RULES rather than the guest list,
+       and it made that row two buttons of two different widths.
+       Host only, same as before: an invite addresses the room code to a
+       friend's public id in MY OWN leaderboard row, so only the person
+       who owns the room can send one. */
+    if(vroomIsHost){
+      const inviteBtn = document.createElement("button");
+      inviteBtn.type = "button";
+      inviteBtn.className = "next ghost vroom-invite-btn";
+      inviteBtn.textContent = "Invite friends";
+      inviteBtn.addEventListener("click", () => openInviteFriendsSheet(vroomCode));
+      codeBox.appendChild(inviteBtn);
+    }
     panel.appendChild(codeBox);
   }
 
@@ -41407,6 +41749,12 @@ function showVirtualRoomLobby(){
          the room and build another - and they do not fit in a bar
          beside a mode toggle. So the bar holds the two actions and the
          sheet holds the choices. */
+      /* ONE BUTTON, FULL WIDTH, AND BIG. Asked for - "match settings
+         for the lobby creator could be a bigger button" - and it was
+         sharing its row with Invite friends at two different widths,
+         which is what made it read as a chip rather than as the one
+         control the host actually has over the match. Invite friends
+         moved up to the code card; this now owns the row. */
       const setBtn = document.createElement("button");
       setBtn.type = "button";
       setBtn.className = "next ghost vroom-settings-btn";
@@ -41414,18 +41762,6 @@ function showVirtualRoomLobby(){
       setBtn.disabled = !!running;
       setBtn.addEventListener("click", () => showVirtualRoomSetup(data));
       hostBar.appendChild(setBtn);
-
-      /* INVITE FRIENDS, host only, and it goes here for the same
-         reason. Each tap addresses the room code to one friend's
-         public id in MY OWN leaderboard row - see "FRIENDS" - so their
-         client can offer to join. Nobody writes anybody else's
-         document at any point. */
-      const inviteBtn = document.createElement("button");
-      inviteBtn.type = "button";
-      inviteBtn.className = "next ghost vroom-invite-btn";
-      inviteBtn.textContent = "Invite friends";
-      inviteBtn.addEventListener("click", () => openInviteFriendsSheet(vroomCode));
-      hostBar.appendChild(inviteBtn);
 
       testSummary.appendChild(hostBar);
     }
@@ -41457,6 +41793,12 @@ function showVirtualRoomLobby(){
       if(!docSnap.exists) return;
       droppedToastShown = false;
       const data = docSnap.data();
+      /* WHO IS HOST IS RE-DERIVED ON EVERY SNAPSHOT, not decided once
+         when the room was created. If the host walks out, the earliest
+         remaining joiner is host from this snapshot onward - which is
+         what makes a room survive losing the person who made it. */
+      syncVroomHost(data);
+      announceVroomLeave(data);
       const entries = Object.entries(data.participants || {});
       const readyN = entries.filter(([, p]) => p.ready).length;
       const totalN = entries.length;
@@ -41642,6 +41984,15 @@ let vroomStartAt = null;
    a chat message arriving) between the write landing and status
    actually flipping away from "waiting" in what this device sees. */
 let vroomAutoStartTriggered = false;
+/* WAITING FOR EVERYONE ELSE TO FINISH IS NOT THE SAME AS BEING IN A
+   TEST. Your own run is over, so there is no question to put on hold
+   and nothing to lose by going - but there is also, deliberately, no
+   Back to lobby or Back to Home down the bottom: "there's no button at
+   the bottom to return to lobby/return to main menu when you are
+   waiting for people to finish ... you'd need to hit pause and then hit
+   leave". So Pause is the way out, and on this one screen it asks a
+   different question. */
+let vroomAwaitingOthers = false;
 /* Fixed budget for the whole "everyone's ready" \u2192 first question
    sequence, per explicit request \u2014 a big synced 10-second reveal
    (VROOM_COUNTDOWN_MS), plus enough lead time (VROOM_LEAD_MS) for the
@@ -42348,6 +42699,13 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
   setActiveNav(null);
   window.forceHideBottomTabs = true;   /* still inside the test */
   countEl.textContent = "Virtual Room";
+  /* Pause is the only way off this screen, by design - there is no
+     Back to lobby and no Back to Home at the bottom. Stored so the
+     leave confirm can put this exact screen back if somebody changes
+     their mind. */
+  lastVroomFinale = () => showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore);
+  vroomAwaitingOthers = true;
+  pauseBtn.hidden = false;
   const panel = document.createElement("section");
   panel.className = "panel vroom-finale-panel";
 
@@ -42407,10 +42765,17 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
   vroomUnsubscribe = onSnapshotResilient(fbDb.collection("vrooms").doc(vroomCode), docSnap => {
     if(!docSnap.exists) return;
     const data = docSnap.data();
+    syncVroomHost(data);
+    announceVroomLeave(data);
     const entries = Object.values(data.participants || {});
     const totalN = entries.length;
     const finishedN = entries.filter(p => p.finished).length;
-    if(finishedN === totalN){
+    /* SOMEBODY WHO LEFT IS NOT SOMEBODY TO WAIT FOR. Their entry is
+       gone from `participants`, so totalN falls and this gate closes -
+       which is the whole point of leaving actually leaving. Before it
+       did, one person walking out held everybody else on this screen
+       for good, because there is no timeout anywhere in here. */
+    if(totalN > 0 && finishedN === totalN){
       playReveal();
     } else {
       waitNote.textContent = "Waiting for everyone to finish (" + finishedN + " of " + totalN + ")\u2026";
@@ -42419,6 +42784,10 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
 }
 
 function showVirtualRoomResults(){
+  /* The waiting is over, so Pause goes back to meaning nothing here
+     and the screen carries its own two exits again. */
+  vroomAwaitingOthers = false;
+  pauseBtn.hidden = true;
   setActiveNav(null);
   /* AFTER setActiveNav, which clears this flag on the way into every
      screen. The bar had no business here - "not sure at all why the
@@ -42450,7 +42819,7 @@ function showVirtualRoomResults(){
   const backLink = document.createElement("button");
   backLink.type = "button"; backLink.className = "next ghost vroom-exit-btn";
   backLink.textContent = "Back to Home";
-  backLink.addEventListener("click", () => { detachVroomListener(); if(vroomChatUnsubscribe) vroomChatUnsubscribe(); vroomCode = null; showHome(); });
+  backLink.addEventListener("click", () => { leaveVirtualRoom(); showHome(); });
 
   /* Returns to the SAME lobby (same code, same other participants),
      per explicit request \u2014 gated by the same everyoneDone check as
