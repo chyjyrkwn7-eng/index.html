@@ -108,6 +108,22 @@ disagreed, the repo won and the difference is called out.
   matrix, which is how the 44px box landing on the words "Question 1"
   across a third of its range was found — one sample on one device is
   not a check.
+- `tools/check-vroom.py` — **two devices, for real.** Everything else
+  in `tools/` drives one page; a Virtual Room's whole job is two devices
+  agreeing, and the things reported about it (ready-up not reaching the
+  other device, the host seeing the test first, the lobby list going
+  empty) are invisible to a one-page harness. Two tabs in ONE context,
+  so they share an origin and therefore `localStorage` and its `storage`
+  event; the fake Firestore keeps the room document there and pushes
+  snapshots on write, with `--latency` to dial up a bad connection.
+  Three rules it was taught the hard way and that must not be undone:
+  **never `element.click()` or `?.click()`** — both bypass hit-testing
+  and the second makes a missing element a silent pass, which is what
+  took this gate to a 25% false-failure rate; **wait for the lobby, do
+  not sleep at it** — every fixed `wait_for_timeout` around a join was
+  a coin flip; and **the harness must echo back the build it serves**
+  in `version.json`, or `--against` an older copy trips the forced
+  update and reloads the page out from under the run.
 - `tools/firestore-admin.py` — `list`, `find <username>` and
   `purge --yes` against the live Firestore over the plain REST API, no
   SDK. `find` is the "someone lost their code" lookup, and it needs a
@@ -2528,6 +2544,100 @@ Everything in this section postdates build 94 and was undocumented until
   `beginTugMatch()` must call `detachVroomListener()` — the race path
   does, and tug not doing so left the lobby listener live underneath
   the match.
+- **The two game buttons are CARDS, not pills, and that was a report.**
+  As outline pills the unselected one had no surface of its own and was
+  read as missing — "they don't look clickable and the one that isn't
+  selected looks like it's not there". Two equal cards now, each with
+  its own emblem (`buildVroomModeArt`) and a tick on the chosen one.
+  The tug emblem is **a row of slanted strands**, arrived at after
+  three failures: a hatched straight band inside an outline reads as a
+  striped PILL, a sagging curve with ticks reads as a beaded garland,
+  and a plain thick line reads as a cable.
+
+#### Tug of War
+
+**IT IS NOT LOCKSTEP ROUNDS ANY MORE, and the whole engine was
+replaced.** It shipped with everybody on the same question, the host
+resolving each round, and the rope moving by that round's difference.
+Asked for directly: *"it's not turn based, the teams will work through
+the questions, and whoever is getting through them faster will start to
+pull the rope, so each question you get one chance."*
+
+- **Everybody walks the same bank at their own speed.** The order is
+  still `shuffleSeeded(pool, data.startAt)` so nobody gets an easier
+  deck, but nobody waits. Each client publishes
+  `tug.progress.<myKey> = {pos, correct, done}` as a FIELD write —
+  never a whole-object set, or two people finishing in the same second
+  overwrite each other and the rope jumps backwards.
+- **The rope is `tugTeamScore(a) − tugTeamScore(b)`, and the team score
+  is an AVERAGE per person.** A total would let a team of two out-pull
+  a team of one by arithmetic rather than by play. A 2v1 room is
+  lopsided in ability, which is honest; lopsided by construction is
+  not.
+- **The question count sets the length, and there is NO time-limit
+  control for tug** — `timeSect.hidden` in the sheet's `refresh()`.
+  `tugPace(n)` divides `TUG_TARGET_MS` (7 min) by the bank to get the
+  OPENING pace, clamped to 7–35s. Ten questions open at 35s and run
+  about 5 min, 29 at 14.5s over 6 min, 80 at the floor over 9 min —
+  *"if I select 80 questions though, make it so that it does last about
+  that long"*, so eighty running LONGER than the target is the right
+  way round, not a miss. `vroomTimeLimit` keeps its value underneath,
+  so switching back to Race restores it.
+- **THE SPEED-UP IS A LATE EVENT, NOT A GRADIENT YOU ARE INSIDE FROM
+  QUESTION ONE.** A straight ramp from the first question was the first
+  draft and it is not what was asked for: *"based on the time you
+  select that's how fast the questions start out and towards the end if
+  there's no winner questions speed up."* So the opening pace HOLDS for
+  `TUG_HOLD_SHARE` (60%) of the match and only then ramps. The
+  tightening is the thing that stops a match that will not settle.
+- **`TUG_FLOOR_MS` IS 7s, AND IT IS A FLOOR THE MATCH REACHES, NOT A
+  SPEED IT RUNS AT** — *"lowest time will be 7 seconds but that's ONLY
+  if it takes that long to decide a winner."* A bank big enough that
+  7 min ÷ n falls below it simply opens there and never tightens.
+- **`TUG_MAX_MS` caps the match at 10 minutes, because the bank is not
+  capped.** "All units" is several hundred questions and at the floor
+  that is a twenty-five minute match. Past that point the questions
+  stop setting the length and the rope settles it: whoever is ahead at
+  ten minutes has won. Eighty questions come in at about nine, so the
+  ceiling never touches the case it was written around.
+- **THE CLOCK IS A FUNCTION OF ELAPSED MATCH TIME, NOT OF YOUR OWN
+  INDEX.** Basing it on how far you have got hands the leader the
+  shortest clocks and the straggler the longest, which is a rubber
+  band, not a race. `tugQuestionMs(now − startAt, count)`.
+- **One chance.** The tap locks every choice, marks it, shows the right
+  one if you were wrong, and moves on after a beat. Running out of
+  clock is a miss, not a pause.
+- **`renderTugScreen` must refuse to redraw while `tugAdvanceTimer` is
+  set.** Your own progress write echoes back as a snapshot within a
+  frame or two and `tugMyPos` has already moved, so without the guard
+  that echo rebuilds the panel instantly and the beat where you are
+  told the right answer never happens. Caught by `check-vroom`, which
+  found every choice enabled 120ms after a tap.
+- **`tugWinGap(count)` scales with the bank** — a fifth of it, floored
+  at 3 and capped at 12. The old flat 5 would be crossed inside the
+  first minute of an eighty-question match.
+- **A DRAW IS A REAL OUTCOME.** The rope used to end only by being
+  pulled clear, so there was always a side; it can now also run out of
+  questions or out of pace dead centre, and `showTugResult` says
+  "Nobody moved it" rather than telling both halves of the room they
+  lost.
+- **The rope is drawn as a rope and that took a report to get right.**
+  A repeating diagonal gradient IS the twist (a `border-radius` clips a
+  background, so there is no `overflow:hidden` and therefore nothing to
+  clip the knot), an inset highlight and shadow bend it into a
+  cylinder, and a loop at each end says somebody is holding it. The tan
+  `#7A6247` is deliberately NOT a theme token — a themed rope is a
+  coloured bar — and the team tints stay at the two ends, which is what
+  says who is pulling. Names and scores sit ABOVE it, not either side:
+  side by side they took most of a phone's width and left the rope
+  about a third of the screen. Capped at `34rem` from tablet up, or a
+  13" iPad renders a metre of bar.
+- **`check-vroom` section 9 is the gate**, and the assertion that
+  matters is the one lockstep cannot satisfy: one device gets through
+  three questions while the other answers nothing, and the rope moves
+  for it. Run it `--against` a copy carrying the old tug engine, not
+  just an old `index.html` — the lobby fix landed in the same build, so
+  an older file fails section 1 and never reaches section 9.
 - **Question order comes from `shuffleSeeded(pool, data.startAt)`**, so
   every client gets the same order from the room's own shared
   timestamp. Never shuffle locally.
@@ -3543,6 +3653,14 @@ missed real bugs that a thirty-second check caught.
    differing only by its fragment is a same-document navigation, so
    nothing reloads and the check silently measures the app that was
    already open.
+7e. `python3 tools/check-vroom.py` — **two devices in one Virtual
+   Room.** Required on anything touching the lobby, the chat, the start
+   sequence, the results screen, Match settings or either game type.
+   Section 9 is the tug gate; `--against` a copy carrying the OLD tug
+   engine, not simply an older `index.html`, since the lobby fix landed
+   in the same build and an older file fails section 1 and never
+   reaches section 9.
+
 **A `let` DECLARED AFTER ITS CALLER IS A TOP-LEVEL TIME BOMB.**
 `firebaseBecameReady()` calls `attachLiveListener()`, whose
 `liveUnsubscribe` used to be declared 500 lines further down. Function

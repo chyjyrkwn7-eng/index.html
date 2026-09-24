@@ -19,6 +19,7 @@ Usage
 -----
   python3 tools/firestore-admin.py list
   python3 tools/firestore-admin.py find <username>
+  python3 tools/firestore-admin.py bugs [N]
   python3 tools/firestore-admin.py prune [--days N] [--yes]
   python3 tools/firestore-admin.py purge --yes
 
@@ -407,6 +408,40 @@ def cmd_find(query):
     return 0
 
 
+def cmd_bugs(limit):
+    """Bug reports, newest first.
+
+    They live in `vrooms` with a `bug-` id rather than in a collection
+    of their own, because these rules only allow LISTING `leaderboard`
+    and `vrooms` - a `bugs` collection comes back PERMISSION_DENIED on a
+    list, so reports written there would be write-only and nobody would
+    ever read them. See the note in index.html where the button is
+    built. Change one line in the Firebase rules and this moves.
+    """
+    rows = [(rid, f) for rid, f in docs("vrooms")
+            if rid.startswith("bug-") or f.get("kind") == "bug"]
+    if not rows:
+        print("No bug reports.")
+        return 0
+    rows.sort(key=lambda r: -(r[1].get("at") or 0))
+    print("%d report(s), newest first:\n" % len(rows))
+    for rid, f in rows[:limit]:
+        when = f.get("at")
+        stamp = time.strftime("%Y-%m-%d %H:%M", time.localtime(when / 1000.0)) \
+            if isinstance(when, (int, float)) and when else "no date"
+        who = f.get("name") or "(no name)"
+        print("%s  %s  build %s" % (stamp, who, f.get("build") or "?"))
+        print("  %s  %s%s" % (f.get("viewport") or "?",
+                              (f.get("ua") or "")[:70],
+                              " [installed]" if f.get("standalone") else ""))
+        for line in (f.get("text") or "").splitlines() or [""]:
+            print("    " + line)
+        print("  id: %s\n" % rid)
+    if len(rows) > limit:
+        print("(%d older not shown - pass a number to see more)" % (len(rows) - limit))
+    return 0
+
+
 ORPHAN_DEFAULT_DAYS = 30
 
 # A sync code is XXXX-XXXX from an alphabet with no 0/O/1/I; a publicId
@@ -549,6 +584,11 @@ def main(argv):
             print("usage: firestore-admin.py find <username>")
             return 2
         return cmd_find(" ".join(argv[2:]))
+    if cmd == "bugs":
+        n = 20
+        for a in argv[2:]:
+            if a.isdigit(): n = int(a)
+        return cmd_bugs(n)
     if cmd == "prune":
         days = ORPHAN_DEFAULT_DAYS
         if "--days" in argv:

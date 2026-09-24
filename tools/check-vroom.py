@@ -24,6 +24,7 @@ Exits non-zero on any failure.
 """
 import argparse
 import functools
+import json
 import http.server
 import io
 import os
@@ -171,6 +172,31 @@ SEED = ('{"firstName":"Anonymous","avatarChar":"ninja","onboardingComplete":true
 FAILURES = []
 
 
+
+def tap(pg, selector, what):
+    """A REAL tap, and a loud failure if there is nothing to tap.
+
+    Two faults lived in `evaluate("()=>document.querySelector(s)?.click()")`
+    and between them they are why this file timed out about a quarter of
+    the time regardless of what was being tested.
+
+    `element.click()` bypasses pointer-events and hit testing, which is
+    the anti-pattern that let a Join button measure perfectly while being
+    unpressable for a week. And `?.` turns "the button has not rendered
+    yet" into a SILENT no-op - so nobody readied up, the auto-start never
+    fired, and the run sat waiting twenty seconds for something that was
+    never going to happen, reporting a timeout with no clue in it.
+
+    Waiting for the element first removes the race; a hit-tested click
+    tests what a finger does; and an exception here names the button
+    instead of surfacing as a mystery timeout further down.
+    """
+    try:
+        pg.wait_for_selector(selector, state="visible", timeout=15000)
+    except Exception:
+        raise AssertionError("%s never appeared (%s)" % (what, selector))
+    pg.click(selector)
+
 def check(name, ok, detail=""):
     print("  %-4s %s%s" % ("PASS" if ok else "FAIL", name,
                            ("  -> " + str(detail)) if detail else ""))
@@ -186,6 +212,15 @@ def main():
     args = ap.parse_args()
     src = args.against or os.path.join(ROOT, "index.html")
     body = INSET_RE.sub(lambda m: "0px", io.open(src, encoding="utf-8").read())
+    # THE HARNESS MUST ECHO BACK THE BUILD IT IS SERVING. version.json
+    # on disk names the CURRENT build; served alongside an --against
+    # copy it does not match its APP_BUILD, the update check fires, and
+    # with "force" set the page reloads out from under the run. That is
+    # not a finding about the old build, it is the harness breaking
+    # itself, and it cost a whole --against run before it was spotted.
+    m = re.search(r'APP_BUILD\s*=\s*"([^"]+)"', body)
+    version_json = json.dumps({"build": m.group(1) if m else "", "note": "",
+                               "frameId": "", "frameNote": "", "force": False})
 
     sock = socket.socket(); sock.bind(("127.0.0.1", 0))
     port = sock.getsockname()[1]; sock.close()
@@ -215,6 +250,9 @@ def main():
             pg.route("**/index.html", lambda r: r.fulfill(
                 status=200, headers={"content-type": "text/html; charset=utf-8"},
                 body=body))
+            pg.route("**/version.json", lambda r: r.fulfill(
+                status=200, headers={"content-type": "application/json"},
+                body=version_json))
             pg.goto(url)
             pg.wait_for_timeout(2600)
             pg.evaluate("""(a)=>{
@@ -273,12 +311,24 @@ def main():
           const units = topicsIn(QUESTIONS).slice(0, 1);
           createVirtualRoomLobby(units, null);
           return null;}""")
-        host.wait_for_timeout(900)
+        # WAIT FOR THE LOBBY, DO NOT SLEEP AT IT. These were fixed waits
+        # and the whole run failed about one time in three - not on
+        # anything the app did, but on a write, a snapshot and a screen
+        # mount taking longer than the number somebody typed. A gate
+        # that fails at random is a gate nobody believes, which makes
+        # every question about this screen unanswerable.
+        host.wait_for_function("() => typeof vroomCode === 'string' && vroomCode",
+                               timeout=20000)
         code = host.evaluate("()=>vroomCode")
         check("the host lands in a lobby with a code", bool(code), code)
 
         guest.evaluate("(c)=>joinVirtualRoomLobby(c)", code)
-        guest.wait_for_timeout(1200)
+        try:
+            host.wait_for_function(
+                "() => document.querySelectorAll('.vroom-row').length >= 2",
+                timeout=20000)
+        except Exception:
+            pass
         if os.environ.get("VROOM_DEBUG"):
             print("   guest:", guest.evaluate("""()=>({code:vroomCode, key:vroomMyKey,
               screen:(document.querySelector('#stage .panel')||{}).className,
@@ -292,7 +342,7 @@ def main():
         print("\n2. ready-up reaches the other device")
         # The guest readies up; the HOST's screen has to change without
         # anybody touching it. This is the reported bug.
-        guest.evaluate("()=>document.querySelector('.vroom-readyup-btn')?.click()")
+        tap(guest, ".vroom-readyup-btn", "the guest's ready-up button")
         host.wait_for_timeout(600)
         seen = host.evaluate("""()=>{
           const rows=[...document.querySelectorAll('.vroom-row')];
@@ -315,7 +365,7 @@ def main():
               host.evaluate("()=>!document.querySelector('.vroom-level')"), "none")
 
         print("\n4. everybody starts at the same instant")
-        host.evaluate("()=>document.querySelector('.vroom-readyup-btn')?.click()")
+        tap(host, ".vroom-readyup-btn", "the host's ready-up button")
         # Both devices install a per-frame recorder BEFORE the countdown, so
         # the moment each one uncovers its question is measured rather than
         # polled for. Polling from here cannot resolve the difference this
@@ -589,7 +639,7 @@ def main():
 
         # The options sheet: questions AND time limit, both the drill
         # sliders, and Save rather than Create lobby.
-        pg.evaluate("()=>document.getElementById('nextbtn').click()")
+        tap(pg, "#nextbtn", "the next button")
         pg.wait_for_timeout(600)
         sheet = pg.evaluate("""()=>{
           const m = document.getElementById('unitoptions-modal');
@@ -610,6 +660,242 @@ def main():
         check("it saves rather than creating a second lobby",
               sheet["begin"] == "Save settings", sheet["begin"])
         check("and says what it is", sheet["title"] == "Match settings", sheet["title"])
+
+        # ---- 9. tug of war, two devices, self-paced -----------------
+        # WRITTEN AGAINST THE BUILD IT FAILS ON. Tug shipped as lockstep
+        # rounds: everyone on the same question, the host resolving each
+        # one, nobody moving until everybody had answered. It was
+        # replaced whole - "it's not turn based, the teams will work
+        # through the questions, and whoever is getting through them
+        # faster will start to pull the rope, so each question you get
+        # one chance" - so the assertion that matters is the one the old
+        # build cannot satisfy: ONE DEVICE GETS THROUGH SEVERAL
+        # QUESTIONS WHILE THE OTHER ANSWERS NOTHING, and the rope moves
+        # for it. Under rounds that is impossible by construction.
+        try:
+            print("\n9. tug of war: one side can pull ahead on its own")
+            # THE EARLIER TABS GO FIRST. Sections 1-8 leave five live
+            # pages, each holding a listener onto the same fake Firestore
+            # in the same localStorage, and every write in this section
+            # wakes all of them. That is not two phones, it is one
+            # browser doing eight tabs' work, and it was enough to make
+            # a fresh lobby miss its 20-second window.
+            for stale in (host, guest, second):
+                try:
+                    stale.close()
+                except Exception:
+                    pass
+            tugA = open_tab("Alex", "cadet", 2000, "TUGA-0001", badges=1)
+            tugB = open_tab("Bo", "ghost", 2000, "TUGB-0002", badges=1)
+            for pg in (tugA, tugB):
+                cdp = ctx.new_cdp_session(pg)
+                cdp.send("Page.setWebLifecycleState", {"state": "active"})
+
+            tugA.evaluate("""()=>{
+              const units = topicsIn(QUESTIONS).slice(0, 1);
+              createVirtualRoomLobby(units, null, "tug");
+            }""")
+            tugA.wait_for_function("() => typeof vroomCode === 'string' && vroomCode",
+                                   timeout=20000)
+            tcode = tugA.evaluate("()=>vroomCode")
+            tugB.evaluate("(c)=>joinVirtualRoomLobby(c)", tcode)
+            # WAIT FOR THE LOBBY, do not sleep at it. A fixed wait here
+            # failed one run in two: joining is a write, a snapshot and a
+            # screen mount, and how long that takes depends on what else the
+            # harness is doing in the same browser.
+            try:
+                for pg in (tugA, tugB):
+                    pg.wait_for_selector(".vroom-readyup-btn", state="visible", timeout=25000)
+            except Exception:
+                # Say WHERE it got stuck. "the button never appeared" on
+                # its own sends the next person looking at the button.
+                for tag, pg in (("A", tugA), ("B", tugB)):
+                    print("   %s: %s" % (tag, pg.evaluate("""()=>({
+                      code: vroomCode, key: vroomMyKey, host: vroomIsHost,
+                      panel: (document.querySelector('#stage .panel')||{}).className,
+                      rows: document.querySelectorAll('.vroom-row').length })""")))
+                raise
+            check("a tug lobby takes a second device", bool(tcode), tcode)
+
+            tap(tugB, ".vroom-readyup-btn", "Bo's ready-up")
+            tugA.wait_for_timeout(400 + args.latency * 2)
+            tap(tugA, ".vroom-readyup-btn", "Alex's ready-up")
+            for pg in (tugA, tugB):
+                pg.wait_for_selector(".screen-tug", timeout=25000)
+            check("both devices land in the match",
+                  tugA.evaluate("()=>!!document.querySelector('.screen-tug')")
+                  and tugB.evaluate("()=>!!document.querySelector('.screen-tug')"))
+
+            # THE ROPE ITSELF. A knot, a centre line, and a rope with the
+            # twist on it - the twist is a repeating gradient rather than
+            # elements, so what is checked is that the background carries
+            # one, not that some strand div exists.
+            rope = tugA.evaluate("""()=>{
+              const r = document.querySelector('.screen-tug .tug-rope');
+              if(!r) return null;
+              const cs = getComputedStyle(r);
+              return { h: Math.round(r.getBoundingClientRect().height),
+                       twist: /repeating-linear-gradient/.test(cs.backgroundImage),
+                       knot: !!document.querySelector('.tug-knot'),
+                       centre: !!document.querySelector('.tug-centre') };}""")
+            check("the rope is drawn as a rope, not a hairline",
+                  bool(rope) and rope["twist"] and rope["h"] >= 24, rope)
+            check("with a knot on it and a line to pull it past",
+                  bool(rope) and rope["knot"] and rope["centre"], rope)
+
+            def tug_answer(pg, right=True):
+                """One real, hit-tested tap on a choice, then wait out the
+                settle and the advance."""
+                idx = pg.evaluate("""(want)=>{
+                  const item = QUESTIONS[tugPool[tugMyPos % tugPool.length]];
+                  const n = item.choices.length;
+                  return want ? item.answer : (item.answer + 1) % n;
+                }""", right)
+                pg.click(".screen-tug .choices .choice:nth-child(%d)" % (idx + 1))
+                pg.wait_for_timeout(1400)
+
+            before = tugA.evaluate("()=>({pos:tugMyPos, correct:tugMyCorrect})")
+            for _ in range(3):
+                tug_answer(tugA, True)
+            after = tugA.evaluate("()=>({pos:tugMyPos, correct:tugMyCorrect})")
+            stuck = tugB.evaluate("()=>({pos:tugMyPos, correct:tugMyCorrect})")
+            # THE WHOLE POINT. Three questions answered on one device while
+            # the other has not touched anything.
+            check("one device works through three questions on its own",
+                  after["pos"] == before["pos"] + 3 and after["correct"] == 3,
+                  {"before": before, "after": after})
+            check("and the other device is untouched by that",
+                  stuck["pos"] == 0, stuck)
+
+            # The rope has to have MOVED on the device that did nothing -
+            # that is the published-progress half, and it is what "whoever
+            # is getting through them faster will start to pull" means.
+            tugB.wait_for_timeout(600 + args.latency * 4)
+            pulled = tugB.evaluate("""()=>{
+              const k = document.querySelector('.tug-knot');
+              return k ? parseFloat(k.style.left) : null;}""")
+            check("the rope has moved on the device that answered nothing",
+                  pulled is not None and abs(pulled - 50) > 1, pulled)
+            mine_side = tugB.evaluate("()=>!!document.querySelector('.tug-knot.is-theirs')")
+            check("and it has moved the wrong way for them", mine_side is True)
+
+            # ONE CHANCE. The tap locks every choice; a second tap on
+            # another one must change nothing.
+            pos_before = tugA.evaluate("()=>tugMyPos")
+            idx = tugA.evaluate("""()=>{
+              const item = QUESTIONS[tugPool[tugMyPos % tugPool.length]];
+              return (item.answer + 1) % item.choices.length; }""")
+            tugA.click(".screen-tug .choices .choice:nth-child(%d)" % (idx + 1))
+            tugA.wait_for_timeout(120)
+            locked = tugA.evaluate("""()=>{
+              const cs=[...document.querySelectorAll('.screen-tug .choice')];
+              return { all: cs.length, off: cs.filter(c=>c.disabled).length,
+                       shown: cs.filter(c=>c.classList.contains('is-right')).length };}""")
+            check("one chance: the tap locks every choice",
+                  locked["all"] > 0 and locked["off"] == locked["all"], locked)
+            # A wrong answer still says what the right one was - this mode is
+            # fast, and it is worth nothing as study if it never tells you.
+            check("and a wrong answer still shows the right one",
+                  locked["shown"] >= 1, locked)
+            tugA.wait_for_timeout(1400)
+            check("a miss still moves you on",
+                  tugA.evaluate("()=>tugMyPos") == pos_before + 1,
+                  {"was": pos_before, "now": tugA.evaluate("()=>tugMyPos")})
+
+            # THE PACE. The clock is a function of elapsed match time, not
+            # of anybody's own index, and it tightens.
+            pace = tugA.evaluate("""()=>{
+              const n = tugCount;
+              const p = tugPace(n);
+              const at = f => tugQuestionMs(p.total * f, n);
+              return { n: n, start: p.start, end: p.end, total: p.total,
+                       q0: at(0), q25: at(.25), q55: at(.55), q80: at(.8), q100: at(1),
+                       mins: tugPaceMinutes(n),
+                       m10: tugPaceMinutes(10), m29: tugPaceMinutes(29), m80: tugPaceMinutes(80),
+                       mAll: tugPaceMinutes(400),
+                       floorSmall: tugQuestionMs(tugPace(29).total, 29),
+                       floorBig: tugQuestionMs(1e9, 500) };}""")
+            # THE SPEED-UP IS A LATE EVENT, NOT A GRADIENT YOU ARE INSIDE
+            # FROM QUESTION ONE - "towards the end if there's no winner
+            # questions speed up". A straight ramp from the first question
+            # was the first draft and it is not this.
+            check("the opening pace holds through the first half",
+                  pace["q0"] == pace["q25"] == pace["q55"] == pace["start"],
+                  {k: pace[k] for k in ("start", "q0", "q25", "q55")})
+            check("and it tightens towards the end",
+                  pace["q80"] < pace["q55"] and pace["q100"] == pace["end"],
+                  {k: pace[k] for k in ("q55", "q80", "q100", "end")})
+            # SEVEN SECONDS, AND ONLY AT THE END - "lowest time will be 7
+            # seconds but that's ONLY if it takes that long to decide a
+            # winner." A floor the match REACHES, not a speed it runs at.
+            check("the floor is seven seconds and nothing goes under it",
+                  pace["floorSmall"] == 7000 and pace["floorBig"] >= 7000,
+                  {"29q at the end": pace["floorSmall"], "a huge bank": pace["floorBig"]})
+            # 5-10 minutes, whatever was picked - "if I select 80 questions
+            # though, make it so that it does last about that long".
+            check("10, 29 and 80 questions all land in the 5-10 minute window",
+                  all(5 <= pace[k] <= 10 for k in ("m10", "m29", "m80")),
+                  {k: pace[k] for k in ("m10", "m29", "m80")})
+            # The bank is not capped - "All units" is several hundred
+            # questions - so past a point the rope settles it rather than
+            # the questions running out.
+            check("and a whole-bank match is still capped at ten minutes",
+                  pace["mAll"] <= 10, pace["mAll"])
+
+            # THE TIME LIMIT CONTROL IS GONE for tug, and still there for
+            # race - "when I hit tug of war, the timer option shouldn't be
+            # there". Asserted as a SHAPE (one slider vs two) rather than by
+            # naming the label, which is the trap this file has already been
+            # caught by twice.
+            tugA.evaluate("""()=>{
+              fbDb = { collection:()=>({ doc:()=>({ update:()=>Promise.resolve() }) }) };
+              vroomCode='ROOM43'; vroomIsHost=true;
+              showVirtualRoomSetup({units:[topicsIn(QUESTIONS)[0]], timeLimit:20,
+                                    count:null, game:'race', status:'waiting'});
+            }""")
+            tugA.wait_for_timeout(700)
+            tap(tugA, "#nextbtn", "the next button")
+            tugA.wait_for_timeout(500)
+            def visible_sliders(pg):
+                # The SLIDERS themselves, not their sections: plainSlider
+                # builds its own .sect inside the one it is appended to, so
+                # counting sections counts each slider twice and the numbers
+                # stop meaning what they say.
+                return pg.evaluate("""()=>[...document.querySelectorAll('#unitoptions-modal .slider')]
+                  .filter(s => s.offsetParent !== null).length""")
+            race_n = visible_sliders(tugA)
+            tugA.click(".vroom-host-mode[data-mode='tug']")
+            tugA.wait_for_timeout(350)
+            tug_n = visible_sliders(tugA)
+            tugA.click(".vroom-host-mode[data-mode='race']")
+            tugA.wait_for_timeout(350)
+            back_n = visible_sliders(tugA)
+            check("race offers a time limit, tug does not",
+                  race_n == 2 and tug_n == 1, {"race": race_n, "tug": tug_n})
+            check("and switching back restores it", back_n == 2, back_n)
+
+            # The two game cards read as a choice: both the same size, both
+            # with a surface of their own. The unselected one was reported
+            # as looking like it was not there.
+            cards = tugA.evaluate("""()=>[...document.querySelectorAll('.vroom-host-mode')].map(b=>{
+              const r=b.getBoundingClientRect(), cs=getComputedStyle(b);
+              return { w:Math.round(r.width), h:Math.round(r.height),
+                       on:b.classList.contains('on'),
+                       bg:cs.backgroundColor, art:!!b.querySelector('.vroom-host-mode-art') };})""")
+            check("both game cards are the same size and both have art",
+                  len(cards) == 2 and cards[0]["w"] == cards[1]["w"]
+                  and cards[0]["h"] == cards[1]["h"] and all(c["art"] for c in cards),
+                  cards)
+            off = [c for c in cards if not c["on"]]
+            check("and the unselected one still has a surface",
+                  bool(off) and off[0]["bg"] not in ("rgba(0, 0, 0, 0)", "transparent"),
+                  off[0]["bg"] if off else None)
+        except Exception as e:
+            # A SECTION THAT THROWS IS A SECTION THAT FAILED, and it must
+            # not take the other eight down with it. --against an older
+            # build this one is EXPECTED to go red, and an exception there
+            # aborts the run before it can say so.
+            check("the tug section ran at all", False, repr(e)[:200])
 
         ctx.close()
         br.close()

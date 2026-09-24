@@ -3483,6 +3483,19 @@
      names, question count, time limit) means someone who joins mid-
      setup can actually see what they're about to take, not just a
      bare list of names. */
+  /* Both buttons the same width and the same height, stacked and
+     centred - see the note where they are built. align-items:stretch is
+     what makes "the same size" true rather than approximately true:
+     neither is sized by its own label any more. */
+  .vroom-choice-actions{
+    display:flex; flex-direction:column; align-items:stretch; gap:.7rem;
+    width:100%; max-width:20rem; margin:1.4rem auto 0;
+  }
+  .vroom-choice-actions .next{ width:100%; min-height:48px; margin-top:0; }
+  .bug-report-box{
+    width:100%; display:block; margin:1rem 0 0; resize:vertical;
+    min-height:8rem; text-align:left; font-family:inherit; line-height:1.45;
+  }
   .vroom-code-row{ text-align:center; }
   .vroom-code-value-row{
     display:flex; align-items:center; justify-content:center; gap:.7rem; flex-wrap:wrap; margin-top:.15rem;
@@ -10251,34 +10264,71 @@
      race bar: there is nothing linear to fill. A knot that can go
      either way is a different fact from a bar that only ever goes up,
      and drawing it as a bar would have said the wrong thing. */
-  .tug-rope-wrap{
-    display:grid; grid-template-columns:auto 1fr auto; align-items:center;
-    gap:.6rem; margin:.4rem 0 1rem;
+  .tug-rope-wrap{ margin:.4rem 0 1rem; }
+  .tug-sides{
+    display:flex; align-items:baseline; justify-content:space-between;
+    gap:.8rem; margin-bottom:.5rem;
   }
   .tug-side{
-    font-size:.72rem; font-weight:800; letter-spacing:.04em;
-    max-width:5.5rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    display:flex; align-items:baseline; gap:.4rem; min-width:0;
+    font-size:.78rem; font-weight:800; letter-spacing:.03em;
   }
-  .tug-side-a{ color:#3DA9FC; text-align:right; }
-  .tug-side-b{ color:#F5804D; text-align:left; }
+  .tug-side-name{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tug-side-score{ font-family:var(--mono); font-size:.9rem; flex:none; }
+  .tug-side-a{ color:#3DA9FC; }
+  .tug-side-b{ color:#F5804D; flex-direction:row-reverse; text-align:right; }
+  /* A REAL ROPE. It was a 1.5rem pill with a flat tint either end and
+     was reported as not looking like a rope at all - "I need it to
+     really look like a rope and stuff". Three things do the work and
+     all three are needed: the repeating diagonal gradient IS the
+     twist (border-radius clips a background, so no overflow:hidden
+     and therefore nothing to clip the knot); the inset highlight and
+     shadow bend it into a cylinder rather than a printed stripe; and
+     a loop at each end says somebody is holding it. The tan is the
+     one place in the app that is deliberately not a theme token - a
+     themed rope is a coloured bar, and the team tints still colour
+     the two ends, which is what says who is pulling. */
   .tug-rope{
-    position:relative; height:1.5rem; border-radius:999px;
-    background:linear-gradient(90deg,
-      color-mix(in srgb, #3DA9FC 22%, transparent),
-      rgba(255,255,255,.06) 50%,
-      color-mix(in srgb, #F5804D 22%, transparent));
-    border:1px solid var(--rule);
+    position:relative; height:1.85rem; border-radius:999px;
+    background:
+      repeating-linear-gradient(64deg,
+        rgba(255,255,255,.20) 0 3px,
+        rgba(255,255,255,.04) 3px 7px,
+        rgba(0,0,0,.30) 7px 10px,
+        rgba(255,255,255,.04) 10px 14px),
+      linear-gradient(90deg,
+        color-mix(in srgb, #3DA9FC 30%, #7A6247),
+        #7A6247 26%, #7A6247 74%,
+        color-mix(in srgb, #F5804D 30%, #7A6247));
+    border:1px solid rgba(0,0,0,.5);
+    box-shadow:
+      inset 0 .3rem .45rem rgba(255,255,255,.16),
+      inset 0 -.34rem .5rem rgba(0,0,0,.45);
   }
+  .tug-rope::before, .tug-rope::after{
+    content:""; position:absolute; top:50%; width:.5rem; height:.5rem;
+    transform:translateY(-50%); border-radius:50%;
+    border:.2rem solid #6A5540; box-sizing:content-box;
+  }
+  .tug-rope::before{ left:-.42rem; }
+  .tug-rope::after{ right:-.42rem; }
+  /* The line on the ground, not a divider: dashed, and taller than
+     the rope, so the rope reads as crossing it. */
   .tug-centre{
-    position:absolute; left:50%; top:-.25rem; bottom:-.25rem; width:2px;
-    transform:translateX(-50%); background:var(--soft); opacity:.7;
+    position:absolute; left:50%; top:-.5rem; bottom:-.5rem; width:0;
+    transform:translateX(-50%);
+    border-left:2px dashed rgba(255,255,255,.85); opacity:.9;
+    filter:drop-shadow(0 0 2px rgba(0,0,0,.8));
   }
+  /* THE MARKER TAPE, not a ball. A circle floating on the rope read
+     as a bead; a band wrapped across it is the thing both sides are
+     trying to drag past their own line. */
   .tug-knot{
-    position:absolute; top:50%; width:1.15rem; height:1.15rem;
-    transform:translate(-50%,-50%); border-radius:50%;
-    background:var(--ink); border:2px solid var(--panel);
+    position:absolute; top:50%; width:.8rem; height:2.6rem;
+    transform:translate(-50%,-50%); border-radius:.28rem;
+    background:var(--ink); border:1px solid rgba(0,0,0,.5);
     transition:left .45s cubic-bezier(.3,.9,.3,1);
-    box-shadow:0 0 12px rgba(0,0,0,.5);
+    box-shadow:0 2px 10px rgba(0,0,0,.55), inset 0 .2rem .3rem rgba(255,255,255,.22);
   }
   .tug-knot.is-ours{ background:#4ADE80; }
   .tug-knot.is-theirs{ background:#F5804D; }
@@ -10290,6 +10340,16 @@
   .tug-clock{ font-family:var(--mono); font-weight:800; color:var(--ink); }
   .tug-clock.is-low{ color:#F5804D; }
   .tug-waiting{ text-align:center; margin-top:.9rem; }
+  /* A ROPE STAYS ROPE-SHAPED. Full-bleed on a 13" iPad it is over a
+     metre of screen at under 2rem thick, which reads as a bar again -
+     the one thing this drawing exists to stop being. Capped and
+     centred, and a little thicker to match the extra room. */
+  @media (min-width:40rem){
+    .tug-rope-wrap{ max-width:34rem; margin-left:auto; margin-right:auto; }
+    .tug-rope{ height:2.25rem; }
+    .tug-knot{ width:1rem; height:3.2rem; }
+    .tug-rope::before, .tug-rope::after{ width:.6rem; height:.6rem; }
+  }
   .screen-tug .choice.is-wrong{ border-color:#F5804D; }
   .screen-tug-result .tug-rope-wrap{ margin-top:1.6rem; }
   .vroom-unit-chips{ display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.55rem; }
@@ -10303,13 +10363,26 @@
     display:flex; flex-wrap:wrap; align-items:center; gap:.5rem;
     margin-top:.8rem; padding-top:.7rem; border-top:1px solid var(--rule);
   }
-  .vroom-host-modes{ display:flex; align-items:center; gap:.35rem; }
+  /* Two equal CARDS, not two pills. As pills the unselected one was a
+     bare outline on the sheet's own background and was reported as
+     looking like it was not there at all - which is also why neither
+     read as clickable. Each one now has its own raised surface, its
+     own emblem and a tick when it is chosen, so the pair reads as a
+     choice between two things rather than as one button and a gap. */
+  .vroom-host-modes{ display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
   .vroom-host-lab{ font-size:.72rem; color:var(--soft); margin-right:.15rem; }
   .vroom-host-mode{
-    min-height:44px; padding:.35rem .8rem; font-size:.78rem; font-weight:700;
-    border-radius:999px; border:1px solid var(--rule); background:none;
-    color:var(--soft); cursor:pointer; -webkit-tap-highlight-color:rgba(0,0,0,0);
+    position:relative; min-height:88px; padding:.8rem .5rem .7rem;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.45rem;
+    font-size:.82rem; font-weight:800; line-height:1.1;
+    border-radius:15px; border:1px solid var(--rule);
+    background:color-mix(in srgb, var(--ink) 7%, transparent);
+    color:var(--ink); cursor:pointer; -webkit-tap-highlight-color:rgba(0,0,0,0);
+    transition:background .16s ease, border-color .16s ease, transform .12s ease;
   }
+  .vroom-host-mode:active{ transform:scale(.97); }
+  .vroom-host-mode-art{ display:block; width:2.35rem; height:1.5rem; }
+  .vroom-host-mode-art *{ transition:stroke .16s ease, fill .16s ease; }
   /* --accent-ink, NOT #fff. On the default accent --accent resolves to
      --ink, which is near-white, so a hardcoded white label was white
      text on a white pill - the selected mode was the one you could not
@@ -10317,8 +10390,18 @@
      it follows every theme. */
   .vroom-host-mode.on{
     background:var(--accent); border-color:transparent; color:var(--accent-ink);
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 28%, transparent);
   }
+  .vroom-host-mode-tick{
+    position:absolute; top:.4rem; right:.45rem; width:.95rem; height:.95rem;
+    opacity:0; transition:opacity .16s ease;
+  }
+  .vroom-host-mode.on .vroom-host-mode-tick{ opacity:1; }
   .vroom-host-mode:disabled{ opacity:.45; cursor:default; }
+  @media (min-width:40rem){
+    .vroom-host-mode{ min-height:100px; font-size:.9rem; }
+    .vroom-host-mode-art{ width:2.8rem; height:1.8rem; }
+  }
   .vroom-invite-btn{ min-height:44px; padding:.4rem .9rem; font-size:.8rem; margin-left:auto; }
   .invite-overlay{
     position:fixed; inset:0; z-index:340; display:flex;
@@ -36367,7 +36450,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-24-163";
+const APP_BUILD = "2026-09-24-164";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -38123,6 +38206,95 @@ function showResetWarning(){
   toTop();
 }
 
+/* The bug report screen. Deliberately one field and one button: a form
+   that asks for steps-to-reproduce, expected and actual gets abandoned
+   on a phone, and a sentence typed in the moment beats a structured
+   report nobody writes. Everything else worth having - which build,
+   which device, how big the screen is - the app already knows and
+   attaches itself, because those are exactly the facts a reporter
+   cannot be expected to supply and that decide whether a report is
+   actionable. */
+function showBugReport(){
+  setActiveNav("settings");
+  countEl.textContent = "Report a bug";
+  updateHeaderTitle();
+
+  const panel = document.createElement("section");
+  panel.className = "panel screen-bugreport";
+  panel.appendChild(buildBackLink("\u2039 Settings", showAppearance));
+
+  const title = document.createElement("h1");
+  title.className = "cal-title"; title.textContent = "Report a bug";
+  panel.appendChild(title);
+
+  const sub = document.createElement("p");
+  sub.className = "cal-sub";
+  sub.textContent = "What went wrong? A sentence is plenty. Your build and "
+    + "device are attached automatically.";
+  panel.appendChild(sub);
+
+  const box = document.createElement("textarea");
+  box.className = "searchbox bug-report-box";
+  box.rows = 6;
+  box.placeholder = "The lobby moved around when I opened it\u2026";
+  box.maxLength = 1200;
+  panel.appendChild(box);
+
+  const bar = document.createElement("div");
+  bar.className = "cal-profile-row";
+  const send = document.createElement("button");
+  send.type = "button"; send.className = "cal-profile-btn";
+  send.textContent = "Send report";
+  bar.appendChild(send);
+  panel.appendChild(bar);
+
+  const note = document.createElement("p");
+  note.className = "info-note";
+  note.textContent = "Reports go to whoever maintains Nova. Nothing about your "
+    + "account is included \u2014 not your sync code, not your progress.";
+  panel.appendChild(note);
+
+  send.addEventListener("click", () => {
+    const text = (box.value || "").trim();
+    if(!text){ showToast("Write what went wrong first."); return; }
+    if(!fbDb){ showToast("No connection right now \u2014 try again in a moment."); return; }
+    send.disabled = true; send.textContent = "Sending\u2026";
+    /* `bug-` prefixed so nothing that enumerates rooms mistakes it for
+       a lobby, and time-ordered so the id sorts usefully on its own. */
+    const id = "bug-" + Date.now().toString(36) + "-"
+      + Math.random().toString(36).slice(2, 8);
+    let vw = 0, vh = 0;
+    try { vw = Math.round(window.innerWidth); vh = Math.round(window.innerHeight); } catch(e){}
+    try {
+      fbDb.collection("vrooms").doc(id).set({
+        kind: "bug",
+        text: text.slice(0, 1200),
+        build: (typeof APP_BUILD === "string") ? APP_BUILD : "",
+        /* The ANONYMOUS id, never the sync code - see the note in
+           Settings where this button is built. */
+        from: store.publicId || "",
+        name: store.firstName || "",
+        ua: (navigator.userAgent || "").slice(0, 200),
+        viewport: vw + "x" + vh,
+        standalone: !!(typeof isStandaloneApp === "function" && isStandaloneApp()),
+        at: Date.now()
+      }).then(() => {
+        showToast("Report sent \u2014 thank you.", "good");
+        showAppearance();
+      }).catch(() => {
+        send.disabled = false; send.textContent = "Send report";
+        showToast("Couldn\u2019t send that \u2014 check your connection and try again.");
+      });
+    } catch(e){
+      send.disabled = false; send.textContent = "Send report";
+      showToast("Couldn\u2019t send that \u2014 check your connection and try again.");
+    }
+  });
+
+  stage.replaceChildren(panel);
+  toTop();
+}
+
 function showAppearance(){
   captureSetupReturn();
   if(store.pendingSupernovaCutscene){ playSupernovaCutscene(); return; }
@@ -38947,6 +39119,34 @@ function showAppearance(){
   miscLab.textContent = "This app";
   panel.appendChild(miscLab);
   panel.appendChild(updSect);
+
+  /* REPORT A BUG, and the awkward part is where a report LANDS.
+     A `bugs` collection is the obvious home and it is unreadable:
+     these rules whitelist `leaderboard` and `vrooms` for listing and
+     refuse everything else, so a report written to `bugs` would be
+     write-only and nobody would ever see it. Measured, not assumed -
+     a list on it comes back PERMISSION_DENIED.
+     So a report is a document in `vrooms` with a `bug-` id. It is not
+     a lobby and nothing in the app reads it as one; anything that ever
+     enumerates rooms has to skip ids starting `bug-`, which is the one
+     string this decision costs. Changing the rules to open a proper
+     collection is a one-line edit in the Firebase console and this
+     moves the moment it happens.
+     WHAT IT MAY NOT CONTAIN: the sync code. That is the account, and
+     `vrooms` is world-readable. The publicId is the anonymous one that
+     already sits on every rankings row, so it identifies the reporter
+     to whoever maintains the app without exposing anything new. */
+  const bugSect = document.createElement("div");
+  bugSect.className = "sect";
+  const bugBar = document.createElement("div");
+  bugBar.className = "cal-profile-row";
+  const bugBtn = document.createElement("button");
+  bugBtn.type = "button"; bugBtn.className = "cal-profile-btn";
+  bugBtn.textContent = "Report a bug";
+  bugBtn.addEventListener("click", () => showBugReport());
+  bugBar.appendChild(bugBtn);
+  bugSect.appendChild(bugBar);
+  panel.appendChild(bugSect);
   panel.appendChild(shareInstallRow);
   panel.appendChild(dataSect);
 
@@ -39289,9 +39489,20 @@ function showVirtualRoomChoice(){
     return;
   }
 
+  /* A COLUMN, NOT TWO BUTTONS LOOSE IN A PANEL. Reported as off to
+     the left and different sizes, and both came from one cause:
+     `.next` is inline-block, so these two flowed onto the SAME LINE at
+     their own text widths, left-aligned. Measured: 176x48 beside
+     145x45, the pair starting 92px left of centre on a phone and 285px
+     left on an iPad, with Join beginning at exactly the x Start ended
+     at. A wrapper that stacks and stretches them fixes the size, the
+     alignment and the wrapping together; capped so they do not run the
+     full width of a tablet. */
+  const actions = document.createElement("div");
+  actions.className = "vroom-choice-actions";
+
   const startBtn = document.createElement("button");
   startBtn.type = "button"; startBtn.className = "next playbtn";
-  startBtn.style.marginTop = "1.2rem";
   startBtn.textContent = "Start a lobby";
   /* STRAIGHT INTO THE LOBBY. Picking units before the room existed was
      the same screen twice - "the unit selection screen should ONLY be
@@ -39300,14 +39511,14 @@ function showVirtualRoomChoice(){
      Match settings, which is the one place that choice now lives. The
      lobby will not start until it has units; see the auto-start gate. */
   startBtn.addEventListener("click", () => createVirtualRoomLobby([], 10));
-  panel.appendChild(startBtn);
+  actions.appendChild(startBtn);
 
   const joinBtn = document.createElement("button");
   joinBtn.type = "button"; joinBtn.className = "next ghost";
-  joinBtn.style.marginTop = ".7rem";
   joinBtn.textContent = "Join a lobby";
   joinBtn.addEventListener("click", showVirtualRoomJoinEntry);
-  panel.appendChild(joinBtn);
+  actions.appendChild(joinBtn);
+  panel.appendChild(actions);
 
   stage.replaceChildren(panel);
   toTop();
@@ -39325,6 +39536,87 @@ function showVirtualRoomChoice(){
    Home, Leaderboard, Ranks and Settings are not places to be from here.
    What is left is the options button and a way back to the lobby, which
    is the same shape every other mode's setup screen already has. */
+/* The two game cards' emblems. currentColor throughout, so one drawing
+   serves the unselected card (--ink) and the selected one (--accent-ink)
+   without a redraw on every toggle - and so a new theme cannot leave
+   one of them invisible.
+
+   The rope is a capsule with the twist hatched INSIDE it and a knot
+   bulging past it at the centre, because that is what makes a
+   horizontal band read as rope rather than as a pill: a wavy line on
+   its own reads as a squiggle, and hatching without the outline reads
+   as a barcode. Asked for directly - the tug mode "needs to really
+   look like a rope". The hatches stop clear of the capsule's rounded
+   ends rather than being clipped, so there is no clipPath id to
+   collide with a second copy on the same screen. */
+function buildVroomModeArt(key){
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", "0 0 38 24");
+  svg.setAttribute("class", "vroom-host-mode-art");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("fill", "none");
+  svg.setAttribute("stroke", "currentColor");
+  svg.setAttribute("stroke-width", "1.7");
+  svg.setAttribute("stroke-linecap", "round");
+  svg.setAttribute("stroke-linejoin", "round");
+  const add = (name, attrs) => {
+    const el = document.createElementNS(NS, name);
+    Object.keys(attrs).forEach(k => el.setAttribute(k, String(attrs[k])));
+    svg.appendChild(el);
+    return el;
+  };
+  if(key === "tug"){
+    /* A ROW OF SLANTED STRANDS, which is what rope actually looks
+       like close up. Three earlier drawings each failed a different
+       way: a straight band with the twist hatched inside an outline
+       read as a striped PILL, a sagging curve with ticks read as a
+       beaded garland, and a plain thick line reads as a cable. Laying
+       the strands side by side with round caps and letting them
+       overlap is the twist itself, with nothing drawn round it.
+       Asked for directly - the tug mode "needs to really look like a
+       rope". */
+    [3.4, 8, 12.6, 17.2, 21.8, 26.4, 31].forEach(x => {
+      add("path", { d: "M" + x + " 17 L" + (x + 4) + " 7", "stroke-width": 3.1 });
+    });
+    /* The two ends are what stop a length of rope reading as a
+       texture swatch: a loop at each end says somebody is holding it. */
+    add("path", { d: "M3.4 12 L1.6 12", "stroke-width": 2 });
+    add("path", { d: "M35 12 L36.6 12", "stroke-width": 2 });
+  } else {
+    /* A checkered flag. Three chevrons was the other candidate and it
+       reads as "fast", not as "race" - and the tug card is already a
+       horizontal band, so a second horizontal one beside it made the
+       pair look like the same drawing twice. */
+    add("path", { d: "M6 3.4 L6 21" });
+    add("rect", { x: 7.4, y: 4.2, width: 24, height: 11, rx: 1.4, "stroke-width": 1.5 });
+    [[7.4, 4.2], [19.4, 4.2], [13.4, 9.7], [25.4, 9.7]].forEach(([x, y]) => {
+      add("rect", { x: x, y: y, width: 6, height: 5.5, fill: "currentColor", stroke: "none" });
+    });
+  }
+  return svg;
+}
+
+function buildVroomModeTick(){
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", "0 0 16 16");
+  svg.setAttribute("class", "vroom-host-mode-tick");
+  svg.setAttribute("aria-hidden", "true");
+  const c = document.createElementNS(NS, "circle");
+  c.setAttribute("cx", "8"); c.setAttribute("cy", "8"); c.setAttribute("r", "7.2");
+  c.setAttribute("fill", "currentColor");
+  const t = document.createElementNS(NS, "path");
+  t.setAttribute("d", "M4.6 8.2 L7 10.6 L11.4 5.6");
+  t.setAttribute("fill", "none");
+  t.setAttribute("stroke", "var(--accent)");
+  t.setAttribute("stroke-width", "2");
+  t.setAttribute("stroke-linecap", "round");
+  t.setAttribute("stroke-linejoin", "round");
+  svg.append(c, t);
+  return svg;
+}
+
 function showVirtualRoomSetup(editRoom){
   /* Tested on the SHAPE of a room document rather than on truthiness,
      so that even if something hands this an event, an element or a
@@ -39563,11 +39855,15 @@ function showVirtualRoomSetup(editRoom){
     const b = document.createElement("button");
     b.type = "button";
     b.className = "vroom-host-mode" + (vroomGame === key ? " on" : "");
-    b.textContent = label;
+    b.dataset.mode = key;
+    b.append(buildVroomModeArt(key), buildVroomModeTick());
+    const cap = document.createElement("span");
+    cap.textContent = label;
+    b.appendChild(cap);
     b.addEventListener("click", () => {
       vroomGame = key;
       [...gWrap.querySelectorAll(".vroom-host-mode")].forEach(x =>
-        x.classList.toggle("on", x.textContent === label));
+        x.classList.toggle("on", x.dataset.mode === key));
       gHint.textContent = gDesc[key];
       refresh();
     });
@@ -39684,7 +39980,19 @@ function showVirtualRoomSetup(editRoom){
         " \u00b7 " + n + (n === 1 ? " question" : " questions");
     syncCountSlider(n);
     const asked = (qCount && qCount < n) ? qCount : n;
-    sheetSummaryTime.textContent = (vroomTimeLimit ? vroomTimeLimit + " min limit" : "No time limit") +
+    /* TUG HAS NO TIME LIMIT TO SET, and the control is hidden rather
+       than disabled: "when I hit tug of war, the timer option
+       shouldn't be there". Its pace comes from the question count
+       instead - tugPace() spreads `asked` questions across a match of
+       about seven minutes and tightens the clock as it goes - so a
+       minutes field here would be a second, contradictory answer to
+       the same question. `vroomTimeLimit` keeps its value underneath,
+       so switching back to Race restores what was set rather than
+       resetting it. */
+    timeSect.hidden = (vroomGame === "tug");
+    sheetSummaryTime.textContent = (vroomGame === "tug"
+      ? "About " + tugPaceMinutes(asked) + " min"
+      : (vroomTimeLimit ? vroomTimeLimit + " min limit" : "No time limit")) +
       " \u00b7 " + asked + (asked === 1 ? " question" : " questions");
 
     /* Same treatment as the ordinary unit picker: reads as unavailable,
@@ -40072,26 +40380,131 @@ function attachInviteWatcher(){
    `timeLimit` rather than anywhere near cfg.mode: a room is a room,
    and this is a rule for how its run is scored.
 
-   THE RULES, as asked for:
-   - Two teams, either end of a rope. Everyone answers the SAME
-     question at the same time.
-   - A round moves the rope by (correct on A) minus (correct on B).
-     So two right against none pulls two; one against none pulls one;
-     one against one, or two against two, does not move it at all. A
-     tie is a real outcome, not a rounding of one.
-   - Pull it TUG_WIN clear of centre and that side wins.
-   - The clock tightens every round, so a match cannot stall.
-   - Questions come from the units the room picked, in the order
-     everybody already agrees on (shuffleSeeded off the shared
-     startAt), so nobody is answering a different question.
+   THE RULES, as asked for - and they are NOT the rules this mode
+   shipped with. It ran in lockstep rounds: everybody on the same
+   question, the host resolving each round, the rope moving by the
+   difference in that one round's answers. That was replaced whole:
+   "it's not turn based, the teams will work through the questions,
+   and whoever is getting through them faster will start to pull the
+   rope, so each question you get one chance."
+   - Two teams, either end of a rope, alternating by join order.
+   - EVERYONE WALKS THE SAME BANK AT THEIR OWN SPEED. The order is
+     shared (shuffleSeeded off the room's startAt) so nobody gets an
+     easier deck, but nobody waits for anybody.
+   - ONE CHANCE PER QUESTION. The tap locks it, the right answer is
+     shown, and it moves on. Running out of clock is a miss.
+   - The rope sits at (team A's average correct) minus (team B's).
+     AVERAGE, not total, so a team of two does not out-pull a team of
+     one by arithmetic alone.
+   - Pull it tugWinGap() clear and that side wins. A match that runs
+     out of questions or out of pace is settled on the rope where it
+     stands, and dead centre is a DRAW - a real outcome, not a loss
+     for both.
+   - NO TIME LIMIT SETTING. The clock is per question, derived from
+     how many questions were picked, and it tightens as the match
+     runs - see tugPace(). "when I hit tug of war, the timer option
+     shouldn't be there."
    - No race bar. There is nothing linear to show: the rope IS the
      state of the match. */
-const TUG_WIN = 5;
-const TUG_START_MS = 22000;
-const TUG_MIN_MS = 7000;
-const TUG_STEP_MS = 1500;
-function tugRoundMs(round){
-  return Math.max(TUG_MIN_MS, TUG_START_MS - (round || 0) * TUG_STEP_MS);
+/* ---- PACE ----
+   THE QUESTION COUNT SETS THE LENGTH, not a time limit: "do it based
+   on the amount of questions I have selected, and it will get faster
+   and faster, match should last about 5-10 minutes, if I select 80
+   questions though, make it so that it does last about that long."
+
+   So the whole bank is spread across TUG_TARGET_MS and each question
+   gets its share, with the share clamped at both ends - 30s is as
+   long as a single question may hold the screen however few were
+   picked, and TUG_FLOOR_MS is the shortest a question can be and
+   still be read. Eighty questions therefore run at the floor and the
+   match comes out at about eight minutes rather than seven, which is
+   the right way round: the ask was that eighty questions still LAST
+   that long, not that they be crammed into it.
+
+   THE CLOCK IS A FUNCTION OF ELAPSED MATCH TIME, NOT OF YOUR OWN
+   POSITION. Basing it on your question index would hand the player in
+   front the shortest clocks and the player behind the longest, which
+   is a rubber band, not a race. Everyone faces the same clock at the
+   same moment, which is also what "the questions will become faster
+   and faster" describes - a property of the match. */
+const TUG_TARGET_MS = 7 * 60 * 1000;
+/* SEVEN SECONDS, AND ONLY AT THE END. Asked for in those words: "lowest
+   time will be 7 seconds but that's ONLY if it takes that long to
+   decide a winner." So this is a floor the match REACHES, not a speed
+   it runs at. */
+const TUG_FLOOR_MS = 7000;
+const TUG_CEIL_MS = 35000;
+/* The share of the match run at the opening pace before anything
+   tightens. A straight ramp from the first question was the first
+   draft and it is not what was asked for - "towards the end if there's
+   no winner questions speed up" makes the speed-up a LATE event, the
+   thing that stops a match that will not settle, rather than a
+   gradient you are inside from the opening question. */
+const TUG_HOLD_SHARE = 0.6;
+/* A HARD CEILING ON THE MATCH, because the bank is not capped. "All
+   units" is several hundred questions, and at the seven-second floor
+   that is a twenty-five minute match - well outside the five to ten
+   asked for. So past a point the questions stop setting the length and
+   the rope settles it: whoever is ahead at ten minutes has won.
+   Eighty questions come in at about nine, under this, so the ceiling
+   never touches the case it was written around. */
+const TUG_MAX_MS = 10 * 60 * 1000;
+function tugPace(count){
+  const n = Math.max(1, Number(count) || 1);
+  /* THE OPENING PACE IS THE MATCH LENGTH DIVIDED BY THE BANK - "based
+     on the time you select that's how fast the questions start out".
+     Eighty questions divide out below the floor, so they open AT the
+     floor and never tighten, and the match runs about nine minutes
+     rather than seven. That is the right way round: the ask was that
+     eighty questions still LAST that long, not that they be crammed
+     into seven minutes at four seconds each. */
+  const start = Math.min(TUG_CEIL_MS, Math.max(TUG_FLOOR_MS, Math.round(TUG_TARGET_MS / n)));
+  const end = Math.min(start, TUG_FLOOR_MS);
+  const total = Math.min(TUG_MAX_MS, Math.round(n * (TUG_HOLD_SHARE * start
+    + (1 - TUG_HOLD_SHARE) * (start + end) / 2)));
+  return { start: start, end: end, total: total, hold: TUG_HOLD_SHARE };
+}
+function tugQuestionMs(elapsedMs, count){
+  const p = tugPace(count);
+  const t = Math.min(1, Math.max(0, (elapsedMs || 0) / (p.total || 1)));
+  if(t <= p.hold) return p.start;
+  const k = (t - p.hold) / (1 - p.hold);
+  return Math.round(p.start + (p.end - p.start) * k);
+}
+function tugPaceMinutes(count){
+  return Math.max(1, Math.round(tugPace(count).total / 60000));
+}
+
+/* HOW FAR AHEAD WINS IT, scaled to the bank. A flat five was right
+   for a lockstep round, where one round moved the rope by at most the
+   size of a team; now the rope is fed by every answered question, so
+   five would be over inside the first minute of an eighty-question
+   match. A fifth of the bank, floored at three and capped at twelve,
+   keeps a short match winnable and a long one from ending early. */
+function tugWinGap(count){
+  return Math.max(3, Math.min(12, Math.round((Number(count) || 1) * 0.2)));
+}
+
+/* THE ROPE IS THE DIFFERENCE IN TEAM SCORE, AVERAGED PER PERSON.
+   "it's not turn based, the teams will work through the questions,
+   and whoever is getting through them faster will start to pull the
+   rope" - so what pulls is correct answers banked, and a team of two
+   would otherwise out-pull a team of one by arithmetic rather than by
+   play. Averaging makes a 2v1 room lopsided in ability, which is
+   honest, rather than lopsided by construction, which is not. */
+function tugTeamScore(d, side){
+  const teams = (d.tug && d.tug.teams) || {};
+  const prog = (d.tug && d.tug.progress) || {};
+  const ks = Object.keys(teams).filter(k => teams[k] === side);
+  if(!ks.length) return 0;
+  return ks.reduce((sum, k) => sum + (Number((prog[k] || {}).correct) || 0), 0) / ks.length;
+}
+function tugRopePos(d){
+  return tugTeamScore(d, "a") - tugTeamScore(d, "b");
+}
+function tugMatchCount(d){
+  const n = Number(d && d.tug && d.tug.count) || 0;
+  return n > 0 ? n : Math.max(1, (tugPool || []).length);
 }
 
 /* Alternating by JOIN ORDER, so teams are the same on every device
@@ -40116,49 +40529,63 @@ function tugMembers(data, side){
 
 let tugUnsub = null;
 let tugPool = [];
-let tugDeadlineTimer = null;
+let tugTickTimer = null;
+let tugAdvanceTimer = null;
 let tugAnswered = false;
-let tugLastRound = -1;
+/* MY OWN POSITION IN THE BANK, not the room's. This mode used to run
+   in lockstep rounds, with the host resolving each one and every
+   device drawing the same question - "it's not turn based, the teams
+   will work through the questions, and whoever is getting through them
+   faster will start to pull the rope". So each player walks the shared
+   pool at their own speed and publishes where they have got to; the
+   rope is read off everybody's published totals. */
+let tugMyPos = 0;
+let tugMyCorrect = 0;
+let tugMyDone = false;
+let tugShownPos = -1;
+let tugQuestionShownAt = 0;
+let tugQuestionMsNow = 0;
+let tugStartAt = 0;
+let tugCount = 0;
+let tugLastRopePos = null;
+/* The snapshot that carries my own write comes back a beat later, and
+   waiting for it would leave the screen on a locked question. So the
+   advance redraws from the last snapshot this client saw. */
+let tugLastData = null;
 
 function detachTug(){
   if(tugUnsub){ try{ tugUnsub(); }catch(e){} tugUnsub = null; }
-  if(tugDeadlineTimer){ clearTimeout(tugDeadlineTimer); tugDeadlineTimer = null; }
+  if(tugTickTimer){ cancelAnimationFrame(tugTickTimer); tugTickTimer = null; }
+  if(tugAdvanceTimer){ clearTimeout(tugAdvanceTimer); tugAdvanceTimer = null; }
 }
 
-/* The host is the only writer that resolves a round - one writer, the
-   same rule the auto-start already follows, so two devices cannot both
-   advance the rope on the same question. */
-function tugResolveRound(data){
+/* ONE WRITER DECIDES THE MATCH IS OVER, the same rule the auto-start
+   already follows - otherwise two devices crossing the line on the
+   same snapshot both write a winner and the second one wins by being
+   slower. Everybody DRAWS the rope from the same numbers, so what the
+   host writes is only the full stop. */
+function tugCheckOver(d){
   if(!vroomIsHost || !fbDb || !vroomCode) return;
-  const t = data.tug || {};
+  const t = d.tug || {};
   if(t.over) return;
-  const answers = t.answers || {};
   const teams = t.teams || {};
+  const prog = t.progress || {};
   const everyone = Object.keys(teams);
-  const allIn = everyone.length > 0 && everyone.every(k => answers[k] !== undefined);
-  const timeUp = Date.now() >= (t.deadline || 0);
-  if(!allIn && !timeUp) return;
-
-  let a = 0, b = 0;
-  everyone.forEach(k => {
-    if(!answers[k]) return;
-    if(teams[k] === "a") a++; else b++;
-  });
-  /* THE DIFFERENCE, NOT THE COUNT. Both right on one side pulls two;
-     one each pulls nothing. That is the whole game. */
-  const delta = a - b;
-  const pos = Math.max(-TUG_WIN, Math.min(TUG_WIN, (t.pos || 0) + delta));
-  const over = Math.abs(pos) >= TUG_WIN;
-  const round = (t.round || 0) + 1;
+  if(!everyone.length) return;
+  const count = tugMatchCount(d);
+  const pos = tugRopePos(d);
+  const gap = tugWinGap(count);
+  /* Three ways a match ends, and the last two are the reason a draw
+     has to be a real outcome rather than a rounding: one side pulls
+     clear, everybody runs out of questions, or the pace runs out. */
+  const allDone = everyone.every(k => (Number((prog[k] || {}).pos) || 0) >= count);
+  const timeUp = Date.now() >= (Number(d.startAt) || 0) + tugPace(count).total + 15000;
+  if(Math.abs(pos) < gap && !allDone && !timeUp) return;
   fbDb.collection("vrooms").doc(vroomCode).update({
-    "tug.pos": pos,
-    "tug.round": round,
-    "tug.answers": {},
-    "tug.last": { a: a, b: b, delta: delta },
-    "tug.deadline": Date.now() + tugRoundMs(round),
-    "tug.over": over,
-    "tug.winner": over ? (pos > 0 ? "a" : "b") : null,
-    status: over ? "finished" : "running"
+    "tug.over": true,
+    "tug.finalPos": pos,
+    "tug.winner": pos > 0 ? "a" : (pos < 0 ? "b" : null),
+    status: "finished"
   }).catch(() => {});
 }
 
@@ -40178,43 +40605,77 @@ function beginTugMatch(data){
   cfg.units = data.units || [];
   cfg.source = "all";
   tugAnswered = false;
-  tugLastRound = -1;
+  tugMyPos = 0;
+  tugMyCorrect = 0;
+  tugMyDone = false;
+  tugShownPos = -1;
+  tugLastRopePos = null;
+  tugLastData = data;
+  tugStartAt = Number(data.startAt) || Date.now();
   /* The same order on every device, from the instant they already
      share. Without it a cap or an index means a different question
      per person, which is not a match. */
   tugPool = shuffleSeeded(poolNow(), data.startAt || 1);
+  const asked = Number(data.count) || Number((data.tug || {}).count) || 0;
+  if(asked > 0 && asked < tugPool.length) tugPool = tugPool.slice(0, asked);
+  tugCount = tugPool.length;
 
   detachTug();
+  tugPublishProgress();
   tugUnsub = onSnapshotResilient(fbDb.collection("vrooms").doc(vroomCode), snap => {
     if(!snap.exists) return;
     const d = snap.data();
     if(!d.tug) return;
+    tugLastData = d;
     if(d.tug.over){ showTugResult(d); return; }
-    renderTugRound(d);
-    /* The host also drives the clock: if nobody answers, the round
-       still has to end, and a snapshot will not arrive to say so. */
-    if(vroomIsHost){
-      if(tugDeadlineTimer) clearTimeout(tugDeadlineTimer);
-      const left = Math.max(0, (d.tug.deadline || 0) - Date.now());
-      tugDeadlineTimer = setTimeout(() => tugResolveRound(d), left + 120);
-      tugResolveRound(d);
-    }
+    renderTugScreen(d);
+    if(vroomIsHost) tugCheckOver(d);
   });
+}
+
+/* A FIELD WRITE ON MY OWN KEY, never a whole-object set: two people
+   finishing a question in the same second would otherwise overwrite
+   each other's progress, and the rope would jump backwards. */
+function tugPublishProgress(){
+  if(!fbDb || !vroomCode || !vroomMyKey) return;
+  fbDb.collection("vrooms").doc(vroomCode).update({
+    ["tug.progress." + vroomMyKey]: {
+      pos: tugMyPos, correct: tugMyCorrect, done: tugMyDone, at: Date.now()
+    }
+  }).catch(() => {});
 }
 
 function buildTugRope(d){
   const wrap = document.createElement("div");
   wrap.className = "tug-rope-wrap";
 
-  const nameA = document.createElement("span");
-  nameA.className = "tug-side tug-side-a";
-  nameA.textContent = tugMembers(d, "a").map(k => (d.participants[k] || {}).name || "?").join(" & ");
-  const nameB = document.createElement("span");
-  nameB.className = "tug-side tug-side-b";
-  nameB.textContent = tugMembers(d, "b").map(k => (d.participants[k] || {}).name || "?").join(" & ");
+  /* NAMES ABOVE, ROPE FULL WIDTH. Side by side in one row the two
+     names took most of a phone's width and left the rope about a
+     third of the screen - and the rope IS the match. Above it they
+     can also carry each side's score, which is the other thing worth
+     reading at a glance. */
+  const sides = document.createElement("div");
+  sides.className = "tug-sides";
+  const side = (key) => {
+    const el = document.createElement("span");
+    el.className = "tug-side tug-side-" + key;
+    const nm = document.createElement("span");
+    nm.className = "tug-side-name";
+    nm.textContent = tugMembers(d, key).map(k => (d.participants[k] || {}).name || "?").join(" & ") || "\u2014";
+    const sc = document.createElement("span");
+    sc.className = "tug-side-score";
+    sc.textContent = tugScoreLabel(tugTeamScore(d, key));
+    el.append(nm, sc);
+    return el;
+  };
+  sides.append(side("a"), side("b"));
 
   const rope = document.createElement("div");
   rope.className = "tug-rope";
+  /* A REAL ROPE, not a hairline. The strands are a repeating
+     background on the rope itself rather than elements, so the twist
+     survives the knot being moved and cannot fall out of step with
+     it - and so there is nothing to rebuild on a snapshot. */
   const centre = document.createElement("span");
   centre.className = "tug-centre";
   const knot = document.createElement("span");
@@ -40222,41 +40683,57 @@ function buildTugRope(d){
   /* The knot is the state of the match, so it is positioned from the
      rope's own centre - not a percentage of a bar filling up, which is
      the thing this mode explicitly does not have. */
-  const pct = 50 + ((d.tug.pos || 0) / TUG_WIN) * 40;
-  knot.style.left = pct + "%";
+  const gap = tugWinGap(tugMatchCount(d));
+  const pos = (d.tug && typeof d.tug.finalPos === "number") ? d.tug.finalPos : tugRopePos(d);
+  knot.style.left = tugKnotPct(pos, gap) + "%";
   const mine = tugTeamOf(d, vroomMyKey);
-  knot.classList.add((d.tug.pos || 0) === 0 ? "is-even"
-    : ((d.tug.pos > 0) === (mine === "a") ? "is-ours" : "is-theirs"));
+  knot.classList.add(pos === 0 ? "is-even"
+    : ((pos > 0) === (mine === "a") ? "is-ours" : "is-theirs"));
   rope.append(centre, knot);
 
-  wrap.append(nameA, rope, nameB);
+  wrap.append(sides, rope);
   return wrap;
 }
 
-function renderTugRound(d){
-  const t = d.tug;
-  const fresh = t.round !== tugLastRound;
-  if(fresh){ tugLastRound = t.round; tugAnswered = false; }
-  /* Only rebuild on a NEW ROUND. A snapshot arrives every time anybody
-     answers, and rebuilding on each one would take the choices out
-     from under a finger mid-tap - the same mistake the Friends screen
-     made with its own listener. */
+/* A team score is an average, so it is fractional as soon as a team of
+   two is uneven - but "8.0" beside "5.0" reads like a stopwatch, not a
+   score, so a whole number prints whole. */
+function tugScoreLabel(n){
+  const v = Math.round((Number(n) || 0) * 10) / 10;
+  return (v % 1 === 0) ? String(v) : v.toFixed(1);
+}
+
+function tugKnotPct(pos, gap){
+  const clamped = Math.max(-1, Math.min(1, (Number(pos) || 0) / (gap || 1)));
+  return 50 + clamped * 40;
+}
+
+/* ---- the screen ----
+   Rebuilt only when MY question changes. A snapshot arrives every time
+   anybody in the room answers anything, and rebuilding on each one
+   would take the choices out from under a finger mid-tap - the same
+   mistake the Friends screen made with its own listener. Everything
+   that moves on somebody else's answer (the rope, the standings line)
+   is updated in place instead. */
+function renderTugScreen(d){
+  if(tugMyDone){ renderTugWaiting(d); return; }
+  /* AN ANSWERED QUESTION IS STILL ON SCREEN, showing what the answer
+     was. My own progress write echoes back as a snapshot within a
+     frame or two and tugMyPos has ALREADY moved, so without this
+     guard that echo rebuilds the panel immediately and the beat where
+     you are told the right answer never happens - the choices simply
+     flick to the next question unlocked. Caught by check-vroom, which
+     found every choice enabled 120ms after a tap. The rope keeps
+     updating through the pause; only the question is held. */
+  if(tugAdvanceTimer){ refreshTugLive(d); return; }
   const existing = document.querySelector(".screen-tug");
-  if(!fresh && existing){
-    const knot = existing.querySelector(".tug-knot");
-    if(knot) knot.style.left = (50 + ((t.pos || 0) / TUG_WIN) * 40) + "%";
-    const waiting = existing.querySelector(".tug-waiting");
-    if(waiting){
-      const inN = Object.keys(t.answers || {}).length;
-      const total = Object.keys(t.teams || {}).length;
-      waiting.textContent = inN + " of " + total + " answered";
-    }
-    return;
-  }
+  if(existing && tugShownPos === tugMyPos){ refreshTugLive(d); return; }
 
   setActiveNav(null);
   window.forceHideBottomTabs = true;
   countEl.textContent = "Tug of War";
+  tugShownPos = tugMyPos;
+  tugAnswered = false;
 
   const panel = document.createElement("section");
   panel.className = "panel screen-tug";
@@ -40266,10 +40743,10 @@ function renderTugRound(d){
   meta.className = "tug-meta";
   const clock = document.createElement("span");
   clock.className = "tug-clock";
-  meta.append(document.createTextNode("Round " + ((t.round || 0) + 1) + "  ·  "), clock);
+  meta.append(document.createTextNode("Question " + (tugMyPos + 1) + " of " + tugCount + "  ·  "), clock);
   panel.appendChild(meta);
 
-  const item = QUESTIONS[tugPool[(t.round || 0) % tugPool.length]];
+  const item = QUESTIONS[tugPool[tugMyPos % tugPool.length]];
   const q = document.createElement("p");
   q.className = "qtext"; q.textContent = item.q;
   panel.appendChild(q);
@@ -40290,42 +40767,149 @@ function renderTugRound(d){
     btn.append(bar, key, text, mark);
     btn.addEventListener("click", () => {
       if(tugAnswered) return;
-      tugAnswered = true;
-      const ok = (i === right);
-      [...list.querySelectorAll(".choice")].forEach(x => { x.disabled = true; x.classList.add("locked"); });
-      btn.classList.add(ok ? "is-right" : "is-wrong");
-      mark.textContent = ok ? "✓" : "✕";
-      if(fbDb && vroomCode && vroomMyKey){
-        fbDb.collection("vrooms").doc(vroomCode)
-          .update({ ["tug.answers." + vroomMyKey]: ok ? 1 : 0 }).catch(() => {});
-      }
+      /* ONE CHANCE. "each question you get one chance" - so the tap
+         locks every choice, shows what it was, and moves on. There is
+         no second attempt and no going back. */
+      tugSettleAnswer(i === right, btn, mark, list, right);
     });
     list.appendChild(btn);
   });
   panel.appendChild(list);
 
-  const waiting = document.createElement("p");
-  waiting.className = "tug-waiting friend-hint";
-  waiting.textContent = "0 of " + Object.keys(t.teams || {}).length + " answered";
-  panel.appendChild(waiting);
+  const live = document.createElement("p");
+  live.className = "tug-waiting friend-hint";
+  panel.appendChild(live);
 
   stage.replaceChildren(panel);
   toTop();
 
-  /* The clock is drawn from the SHARED deadline, not counted down
-     locally, so every device shows the same number however late it
-     joined the round. */
-  if(tugDeadlineTimer === null || true){
-    const tick = () => {
-      const el = document.querySelector(".screen-tug .tug-clock");
-      if(!el) return;
-      const left = Math.max(0, (t.deadline || 0) - Date.now());
-      el.textContent = (left / 1000).toFixed(1) + "s";
-      el.classList.toggle("is-low", left < 4000);
-      if(left > 0) requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
+  tugQuestionShownAt = Date.now();
+  tugQuestionMsNow = tugQuestionMs(tugQuestionShownAt - tugStartAt, tugCount);
+  refreshTugLive(d);
+  startTugClock();
+}
+
+/* ONE CHANCE, AND THE CLOCK IS THE SECOND WAY TO SPEND IT. Running out
+   of time is a miss, not a pause: the match cannot stall on one person
+   and the pace is the whole shape of the mode. */
+function tugSettleAnswer(ok, btn, mark, list, right){
+  if(tugAnswered) return;
+  tugAnswered = true;
+  if(tugTickTimer){ cancelAnimationFrame(tugTickTimer); tugTickTimer = null; }
+  const choices = [...list.querySelectorAll(".choice")];
+  choices.forEach(x => { x.disabled = true; x.classList.add("locked"); });
+  if(btn){
+    btn.classList.add(ok ? "is-right" : "is-wrong");
+    if(mark) mark.textContent = ok ? "✓" : "✕";
   }
+  /* Whether you answered or ran out, the right one is shown - a mode
+     this fast is worth nothing as study if it never says what the
+     answer was. */
+  if(!ok && choices[right]) choices[right].classList.add("is-right");
+
+  tugMyPos += 1;
+  if(ok) tugMyCorrect += 1;
+  if(tugMyPos >= tugCount) tugMyDone = true;
+  tugPublishProgress();
+
+  if(tugAdvanceTimer) clearTimeout(tugAdvanceTimer);
+  tugAdvanceTimer = setTimeout(() => {
+    tugAdvanceTimer = null;
+    if(!document.querySelector(".screen-tug")) return;
+    tugRedrawFromCache();
+  }, ok ? 650 : 1100);
+}
+
+function tugRedrawFromCache(){
+  if(!tugLastData) return;
+  if(tugLastData.tug && tugLastData.tug.over){ showTugResult(tugLastData); return; }
+  renderTugScreen(tugLastData);
+}
+
+function startTugClock(){
+  if(tugTickTimer){ cancelAnimationFrame(tugTickTimer); tugTickTimer = null; }
+  const tick = () => {
+    const el = document.querySelector(".screen-tug .tug-clock");
+    if(!el){ tugTickTimer = null; return; }
+    const left = Math.max(0, tugQuestionShownAt + tugQuestionMsNow - Date.now());
+    el.textContent = (left / 1000).toFixed(1) + "s";
+    el.classList.toggle("is-low", left < 4000);
+    if(left <= 0){
+      tugTickTimer = null;
+      const list = document.querySelector(".screen-tug .choices");
+      const item = QUESTIONS[tugPool[tugMyPos % tugPool.length]];
+      if(list && item) tugSettleAnswer(false, null, null, list, item.answer);
+      return;
+    }
+    tugTickTimer = requestAnimationFrame(tick);
+  };
+  tugTickTimer = requestAnimationFrame(tick);
+}
+
+/* Everything that moves because SOMEBODY ELSE answered. Never rebuilds
+   the panel, so it cannot land mid-tap. */
+function refreshTugLive(d){
+  const panel = document.querySelector(".screen-tug, .screen-tug-wait");
+  if(!panel) return;
+  const gap = tugWinGap(tugMatchCount(d));
+  const pos = tugRopePos(d);
+  const knot = panel.querySelector(".tug-knot");
+  if(knot){
+    knot.style.left = tugKnotPct(pos, gap) + "%";
+    knot.classList.remove("is-even", "is-ours", "is-theirs");
+    const mine = tugTeamOf(d, vroomMyKey);
+    knot.classList.add(pos === 0 ? "is-even"
+      : ((pos > 0) === (mine === "a") ? "is-ours" : "is-theirs"));
+  }
+  const a = tugTeamScore(d, "a"), b = tugTeamScore(d, "b");
+  const sa = panel.querySelector(".tug-side-a .tug-side-score");
+  const sb = panel.querySelector(".tug-side-b .tug-side-score");
+  if(sa) sa.textContent = tugScoreLabel(a);
+  if(sb) sb.textContent = tugScoreLabel(b);
+  const live = panel.querySelector(".tug-waiting");
+  if(live){
+    const mine = tugTeamOf(d, vroomMyKey);
+    const ours = mine === "a" ? a : b, theirs = mine === "a" ? b : a;
+    const lead = Math.abs(ours - theirs);
+    live.textContent = lead < 0.05
+      ? "Dead even · " + gap + " clear wins it"
+      : (ours > theirs ? "Your side is " : "They are ")
+        + (Math.round(lead * 10) / 10) + " ahead · " + gap + " clear wins it";
+  }
+  tugLastRopePos = pos;
+}
+
+/* FINISHED THE BANK AND THE ROPE IS STILL MOVING. There is nothing
+   left to answer, so the screen becomes the rope - which is the one
+   thing still changing. No exit buttons: leaving a match in progress
+   is the pause menu's job, not a link on the screen. */
+function renderTugWaiting(d){
+  const existing = document.querySelector(".screen-tug-wait");
+  if(existing){ refreshTugLive(d); return; }
+  setActiveNav(null);
+  window.forceHideBottomTabs = true;
+  countEl.textContent = "Tug of War";
+  if(tugTickTimer){ cancelAnimationFrame(tugTickTimer); tugTickTimer = null; }
+
+  const panel = document.createElement("section");
+  panel.className = "panel screen-tug-wait";
+  const title = document.createElement("h1");
+  title.className = "welcomeintro-title";
+  /* Plain, not chatty - this is a police academy class. */
+  title.textContent = "You're done";
+  panel.appendChild(title);
+  const sub = document.createElement("p");
+  sub.className = "cal-sub"; sub.style.textAlign = "center";
+  sub.textContent = "You got through all " + tugCount + " with " + tugMyCorrect
+    + " right. The rope is still moving.";
+  panel.appendChild(sub);
+  panel.appendChild(buildTugRope(d));
+  const live = document.createElement("p");
+  live.className = "tug-waiting friend-hint";
+  panel.appendChild(live);
+  stage.replaceChildren(panel);
+  toTop();
+  refreshTugLive(d);
 }
 
 function showTugResult(d){
@@ -40337,20 +40921,30 @@ function showTugResult(d){
   countEl.textContent = "Tug of War";
 
   const mine = tugTeamOf(d, vroomMyKey);
-  const won = d.tug.winner === mine;
+  const winner = d.tug.winner;
+  const drawn = !winner;
+  const won = !drawn && winner === mine;
 
   const panel = document.createElement("section");
   panel.className = "panel screen-tug-result";
 
   const title = document.createElement("h1");
   title.className = "welcomeintro-title";
-  title.textContent = won ? "Your side won" : "Your side lost";
+  /* A DRAW IS A REAL OUTCOME NOW, and it has to be said rather than
+     shown as a loss. The rope used to end only by being pulled clear,
+     so there was always a side; it can now also run out of questions
+     or out of pace with the rope dead centre, and calling that "your
+     side lost" would be a lie to both halves of the room. */
+  title.textContent = drawn ? "Nobody moved it" : (won ? "Your side won" : "Your side lost");
   panel.appendChild(title);
 
   const sub = document.createElement("p");
   sub.className = "cal-sub"; sub.style.textAlign = "center";
-  sub.textContent = tugMembers(d, d.tug.winner).map(k => (d.participants[k] || {}).name || "?").join(" & ")
-    + " pulled it over in " + (d.tug.round || 0) + " rounds.";
+  const gap = Math.abs(Number(d.tug.finalPos) || 0);
+  sub.textContent = drawn
+    ? "Dead even at the end of " + tugMatchCount(d) + " questions."
+    : tugMembers(d, winner).map(k => (d.participants[k] || {}).name || "?").join(" & ")
+      + " pulled it " + (Math.round(gap * 10) / 10) + " clear.";
   panel.appendChild(sub);
 
   panel.appendChild(buildTugRope(d));
@@ -40362,7 +40956,7 @@ function showTugResult(d){
   lobby.textContent = "Back to lobby";
   lobby.addEventListener("click", () => {
     if(!fbDb || !vroomCode){ showVirtualRoomLobby(); return; }
-    const reset = { "tug.over": false, "tug.pos": 0, "tug.round": 0, "tug.answers": {}, status: "waiting" };
+    const reset = { "tug.over": false, "tug.progress": {}, "tug.finalPos": 0, "tug.winner": null, status: "waiting" };
     if(!vroomIsHost){ showVirtualRoomLobby(); return; }
     fbDb.collection("vrooms").doc(vroomCode).update(reset)
       .then(() => showVirtualRoomLobby()).catch(() => showVirtualRoomLobby());
@@ -40604,6 +41198,19 @@ function openInviteFriendsSheet(roomCode){
 function showVirtualRoomLobby(){
   setActiveNav(null);
   countEl.textContent = "Virtual Room";
+  /* THE SIGNATURE IS LOCAL TO THIS MOUNT, and it has to be.
+     It guards a rebuild of `list` and `testSummary`, and this function
+     creates a fresh pair of those every time it runs. As a shared
+     module-level variable it was worse than useless: a listener left
+     over from a previous mount closes over the OLD list but reads and
+     writes the SAME signature, so it could record "already drawn" for
+     data the new list has never seen, and the new screen sat empty.
+     That showed up as check-vroom failing intermittently - the host
+     seeing one row where there were two - which is the signature of a
+     race rather than a logic error, and is why this is a `let` in here
+     rather than up beside vroomUnsubscribe. Each mount's listener
+     closes over its own. */
+  let shownShape = "";
   /* Both reset fresh every time this screen opens, not just once ever
      \u2014 otherwise a second lobby later in the same session (finish one
      Virtual Room test, then create or join another without a full
@@ -40850,12 +41457,36 @@ function showVirtualRoomLobby(){
       if(!docSnap.exists) return;
       droppedToastShown = false;
       const data = docSnap.data();
-      renderTestSummary(data);
       const entries = Object.entries(data.participants || {});
       const readyN = entries.filter(([, p]) => p.ready).length;
       const totalN = entries.length;
-      list.replaceChildren();
-      entries.forEach(([key, p]) => {
+
+      /* DO NOT REBUILD A SCREEN THAT HAS NOT CHANGED. Reported as the
+         lobby glitching and moving around the moment it opens, and this
+         is why: every snapshot tore down the whole list and the summary
+         and built them again. Firestore delivers several snapshots in a
+         row around a write - the cached answer, then the server's, then
+         each heartbeat from everybody else in the room - and
+         `[data-layout="modern"] .lb-row` carries
+         `backdrop-filter:blur(16px)`. Destroying and recreating blurred
+         surfaces several times a second makes the compositor
+         re-rasterise each one from scratch, which is the same class of
+         fault as the tearing already documented on the update banner's
+         button.
+         The signature covers everything the rows and the summary
+         actually draw. Anything else in this handler - the ready
+         button, the auto-start gate, the start branch - still runs on
+         every snapshot, because those are cheap and some of them are
+         what make the room start at all. */
+      const shape = entries.map(([key, p]) => [key, p.name, p.ready ? 1 : 0,
+        p.level || 0, p.badges || 0, p.avatarChar || ""].join("~")).join("|")
+        + "||" + (data.units || []).join(",") + "|" + (data.timeLimit || 0)
+        + "|" + (data.questionCount || 0) + "|" + (data.game || "");
+      if(shape !== shownShape){
+        shownShape = shape;
+        renderTestSummary(data);
+        list.replaceChildren();
+        entries.forEach(([key, p]) => {
         const row = document.createElement("div");
         row.className = "lb-row vroom-row" + (p.ready ? " is-ready" : "");
         /* The same avatar-with-a-level-badge the rankings rows carry,
@@ -40892,7 +41523,8 @@ function showVirtualRoomLobby(){
         badge.textContent = p.ready ? "Ready" : "Not ready";
         row.append(avatarWrap, nameWrap, badge);
         list.appendChild(row);
-      });
+        });
+      }
       /* Keeps this device's own button/label in sync with what's
          actually stored (e.g. after a page reload, or if this same
          person is in the lobby on two devices) rather than trusting
@@ -40945,10 +41577,15 @@ function showVirtualRoomLobby(){
            per device is the same computation on four machines and one
            disagreement away from two people on the same end. */
         if(data.game === "tug"){
+          /* `count` is baked into the room at the moment it starts,
+             not read off the pool each device happens to build: the
+             pace, the win gap and "question N of M" all derive from
+             it, and two devices disagreeing about M is two devices
+             playing two different matches. */
           patch.tug = {
-            pos: 0, round: 0, answers: {}, over: false, winner: null,
-            teams: tugTeamsFor(data.participants),
-            deadline: startAt + tugRoundMs(0)
+            progress: {}, over: false, winner: null, finalPos: 0,
+            count: Number(patch.count) || Number(data.count) || 0,
+            teams: tugTeamsFor(data.participants)
           };
         }
         fbDb.collection("vrooms").doc(vroomCode).update(patch)
