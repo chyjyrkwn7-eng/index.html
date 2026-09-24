@@ -7306,6 +7306,35 @@
        into the pool the auto margins divide lands it at 100/100.
        Every other .panel.home screen keeps the 2.7rem above. */
     .panel.home.screen-home-actual .hometitle-wrap{ margin-bottom:0; }
+    /* --- PHONE HOME, AGAIN: bigger planet, lower text, button nearer
+       the bar. All three reported together ("the iPad/tablets looked
+       good but the phone, not so much") and all three measured first,
+       because this screen has regressed twice.
+
+       THE CAP WAS NOT WHAT LIMITED THE PLANET. min(27rem, 56vh) is
+       432px on a 17 Pro Max and the hero measured 366 - the COLUMN
+       binds, not the cap, because the hero is width:100% inside a panel
+       that sits inside .wrap's own side padding. Raising the cap again
+       would have changed nothing, which is the trap the note at the top
+       of this block already records once. So the hero reclaims that
+       padding with a negative side margin rather than anybody's padding
+       being edited: .wrap's is off limits (a shorthand there wipes all
+       four env() insets) and the panel's is already down to .45rem. */
+    .panel.home.screen-home-actual .cosmic-hero-wrap{
+      width:calc(100% + 2.1rem); max-width:min(29rem, 52vh);
+      margin-left:-1.05rem; margin-right:-1.05rem;
+    }
+    /* "the words underneath the planet system need to be moved down".
+       The gap above the greeting is the only fixed one in that column -
+       everything else is an auto margin - so it is the one number that
+       moves the text without moving the button. */
+    .panel.home.screen-home-actual .homegreeting{ margin-top:3.1rem; }
+    /* "the start studying button is way way above the bottom tab".
+       Measured 61px on a 17 Pro Max against 47 on an iPad, so the phone
+       really was the looser of the two. The reserve below the panel is
+       what holds it up. NOT below 3.6rem: this reserve is also what
+       keeps the button off the daily-question circle. */
+    [data-layout="modern"] .panel.home.screen-home-actual{ padding-bottom:3.9rem; }
   }
   /* The daily-question circle and the version label are FURNITURE, and
      until now Home's button was centred as though they were not there.
@@ -36338,7 +36367,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-24-162";
+const APP_BUILD = "2026-09-24-163";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
