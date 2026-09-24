@@ -36008,7 +36008,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-24-152";
+const APP_BUILD = "2026-09-24-153";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -39488,8 +39488,18 @@ function openInviteFriendsSheet(roomCode){
   let waitingForBoard = false;
   function fill(){
     const rows = rowsByPublicId();
+    /* A FRIEND YOU KNOW ABOUT IS INVITABLE, WHETHER OR NOT THEIR BOARD
+       ROW HAPPENS TO BE LOADED. The list used to be
+       ids.map(id => rows[id]).filter(Boolean), so anybody whose row was
+       missing - not yet delivered, momentarily absent from a snapshot,
+       opted out of the board, on an older build - silently vanished from
+       it, and a list of three friends could come out empty with
+       "none of your friends are on the class board right now".
+       An invite is addressed to a PUBLIC ID and needs nothing else, so
+       the row is only ever used to put a name and a face on the row.
+       Missing row, generic name, still invitable. */
     const ids = friendPublicIds();
-    const people = ids.map(id => rows[id]).filter(Boolean);
+    const people = ids.map(id => rows[id] || { pub: id });
     body.replaceChildren();
 
     if(!people.length){
@@ -39497,8 +39507,8 @@ function openInviteFriendsSheet(roomCode){
       none.className = "friend-hint";
       none.textContent = waitingForBoard
         ? "Loading your friends\u2026"
-        : ids.length
-          ? "None of your friends are on the class board right now."
+        : store.leaderboardOptIn === false
+          ? "Turn on class sharing in Settings to use friends."
           : "No friends yet \u2014 add someone from Profile \u203a Friends first.";
       body.appendChild(none);
       return;
@@ -39515,7 +39525,8 @@ function openInviteFriendsSheet(roomCode){
       const text = document.createElement("div");
       text.className = "friend-row-text";
       const nm = document.createElement("p");
-      nm.className = "friend-row-name"; nm.textContent = e.firstName || "Anonymous";
+      nm.className = "friend-row-name";
+      nm.textContent = e.firstName || (waitingForBoard ? "Loading\u2026" : "Classmate");
       text.appendChild(nm);
       const b = document.createElement("button");
       b.type = "button"; b.className = "next friend-act";
@@ -39533,8 +39544,12 @@ function openInviteFriendsSheet(roomCode){
     body.appendChild(list);
   }
 
-  if(!leaderboardRows || !leaderboardRows.length){
-    waitingForBoard = true;
+  /* Attach when the board is empty OR when a friend is missing from it -
+     the second case is the one that showed an empty list on a board
+     that had already loaded. */
+  const missingAny = friendPublicIds().some(id => !rowsByPublicId()[id]);
+  if(!leaderboardRows || !leaderboardRows.length || missingAny){
+    waitingForBoard = !leaderboardRows || !leaderboardRows.length;
     /* Its own listener, torn down with the sheet. onSnapshotResilient,
        never a bare .onSnapshot(). */
     if(fbDb){
