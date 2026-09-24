@@ -35981,7 +35981,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-24-148";
+const APP_BUILD = "2026-09-24-149";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -41349,6 +41349,22 @@ let calendarView = "month";
    screen is live rather than a snapshot taken once, and re-renders when
    the rows land. onSnapshotResilient, never a bare .onSnapshot(). */
 let friendsLiveUnsub = null;
+let friendsShownSignature = null;
+/* WHAT THIS SCREEN ACTUALLY SHOWS, as one string. A snapshot arrives
+   every time anybody in the class pushes - which on a board of forty
+   is constantly - and rebuilding the screen on each one destroyed the
+   add-a-friend field mid-typing and blanked the lists for a frame.
+   Reported as "it's glitched and won't even let you type in a code".
+   So the redraw is gated on the displayed content having genuinely
+   changed, not on a snapshot having arrived. */
+function friendsViewSignature(){
+  const ids = xs => (xs || []).slice().sort().join(",");
+  return [ids(friendPublicIds()),
+          ids(incomingFriendRequests().map(e => e.pub)),
+          ids(outgoingFriendRequests()),
+          ids((leaderboardRows || []).filter(isOnline).map(e => e.pub))].join("|");
+}
+
 function attachFriendsBoardListener(){
   if(!fbDb) return;
   if(friendsLiveUnsub){ try{ friendsLiveUnsub(); }catch(e){} friendsLiveUnsub = null; }
@@ -41360,12 +41376,31 @@ function attachFriendsBoardListener(){
         e.weekPoints = weekPointsOfEntry(e);
         next.push(e);
       });
-      leaderboardRows = next;
+      /* AN EMPTY SNAPSHOT OVER A FULL ONE IS A CACHE ARTIFACT, NOT AN
+         EMPTY CLASS. Firestore answers from cache first and the server
+         a beat later, so taking every snapshot at face value emptied
+         the friends list and then refilled it - which is the "all the
+         stuff that page had originally was removed" half of the same
+         report. Same reasoning as handleRemoteReset's fromCache guard:
+         only a served answer may take something away. */
+      const served = !(snap.metadata && snap.metadata.fromCache);
+      if(next.length || served || !(leaderboardRows && leaderboardRows.length)){
+        leaderboardRows = next;
+      }
       /* Only redraw while Friends is actually the screen on stage -
          a listener that outlives its screen must not rebuild over
          whatever replaced it. */
       const el = stage && stage.firstElementChild;
-      if(el && el.classList && el.classList.contains("screen-friends")) showFriends();
+      if(!(el && el.classList && el.classList.contains("screen-friends"))) return;
+      /* NEVER UNDER SOMEBODY'S FINGERS. A rebuild while the code field
+         is focused or part-typed throws the input away along with what
+         they had entered. */
+      const field = document.querySelector(".friend-add-input");
+      if(field && (document.activeElement === field || field.value)) return;
+      const sig = friendsViewSignature();
+      if(sig === friendsShownSignature) return;
+      friendsShownSignature = sig;
+      showFriends();
     });
   }catch(e){}
 }
@@ -41376,6 +41411,7 @@ function showFriends(){
   countEl.textContent = "Friends";
   updateHeaderTitle();
   if(!leaderboardRows || !leaderboardRows.length) attachFriendsBoardListener();
+  friendsShownSignature = friendsViewSignature();
 
   const panel = document.createElement("section");
   panel.className = "panel screen-friends";

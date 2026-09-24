@@ -301,6 +301,64 @@ def main():
         check("and the screen threw nothing", not errs2, errs2[:3])
         ctx2.close()
 
+        # ---------------------------------------------------------------
+        # 9. THE SCREEN MUST NOT REBUILD UNDER SOMEBODY'S FINGERS.
+        # A leaderboard snapshot arrives every time anybody in the class
+        # pushes - on a board of forty, constantly - and the first
+        # version of the live listener called showFriends() on each one.
+        # That threw away the add-a-friend field mid-typing and blanked
+        # the lists for a frame: "it's glitched and won't even let you
+        # type in a code". Measured on the build it was written for: the
+        # field came back EMPTY and unfocused after 15 rebuilds.
+        print("\n9. typing a code while the class board is busy")
+        ctx3, pg3 = booted(br)
+        errs3 = []
+        pg3.on("pageerror", lambda e: errs3.append(str(e)))
+        pg3.evaluate("""()=>{
+          window.__cbs=[]; window.__renders=0;
+          const now=Date.now();
+          window.__rows=[
+            {pub:'me0000000001',firstName:'Madison',fcode:'AAA-234',freq:[],facc:[],level:20,badges:5,hundos:9,lastModified:now},
+            {pub:'ray000000006',firstName:'Ray',avatarChar:'robot',fcode:'MND-234',freq:[],facc:[],level:14,badges:3,hundos:12,lastModified:now}];
+          window.__mkSnap=(rows,cache)=>({metadata:{fromCache:!!cache},
+            forEach:f=>rows.forEach(r=>f({id:r.pub,data:()=>r}))});
+          fbDb={collection:()=>({doc:()=>({set:()=>Promise.resolve(),update:()=>Promise.resolve()}),
+            onSnapshot:(cb)=>{window.__cbs.push(cb); cb(window.__mkSnap(window.__rows,false)); return ()=>{};}})};
+          store.publicId='me0000000001'; store.friendsOut=[]; store.friendsIn=[];
+          const _sf=showFriends;
+          showFriends=function(){ window.__renders++; return _sf.apply(this,arguments); };
+          leaderboardRows=[]; showFriends();}""")
+        pg3.wait_for_timeout(400)
+        pg3.click(".friend-add-input")
+        pg3.type(".friend-add-input", "MND-2", delay=30)
+        live = pg3.evaluate("""()=>{
+          for(let i=0;i<12;i++){
+            window.__rows[1].lastModified=Date.now()+i;
+            window.__cbs.forEach(cb=>cb(window.__mkSnap(window.__rows,false)));
+          }
+          /* Firestore answers from cache first; an empty cached snapshot
+             is not an empty class. */
+          window.__cbs.forEach(cb=>cb(window.__mkSnap([],true)));
+          const f=document.querySelector('.friend-add-input');
+          return {value:f?f.value:null, focused:document.activeElement===f,
+                  renders:window.__renders, rowsKept:(leaderboardRows||[]).length};}""")
+        check("what was typed is still in the field", live["value"] == "MND-2", live)
+        check("and the field still has focus", live["focused"] is True, live["focused"])
+        check("the screen did not rebuild itself", live["renders"] == 1, live["renders"])
+        # An empty cached snapshot must not empty the board.
+        check("a cached empty snapshot does not wipe the class",
+              live["rowsKept"] == 2, live["rowsKept"])
+        pg3.type(".friend-add-input", "34", delay=30)
+        done = pg3.evaluate("""()=>{
+          const f=document.querySelector('.friend-add-input');
+          const typed=f.value;
+          [...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='Send').click();
+          return {typed, out:store.friendsOut.slice()};}""")
+        check("so the whole code can be typed and sent",
+              done["typed"] == "MND-234" and done["out"] == ["ray000000006"], done)
+        check("and nothing threw", not errs3, errs3[:3])
+        ctx3.close()
+
         check("no uncaught JS along the way", not errs, errs[:3])
         ctx.close()
         br.close()
