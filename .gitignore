@@ -12,3 +12,16 @@ tools/walk/
 # GIFs written by tools/record-cutscenes.py. Same reasoning as tools/walk/:
 # regenerated on demand, several MB each, looked at once and sent on.
 recordings/
+
+# SERVICE ACCOUNT KEYS. THIS REPO IS PUBLIC - Pages will not serve a
+# private one on a free plan - so a key committed here is full read/write
+# admin on every classmate's data, published, permanently, and still in
+# the history after it is deleted. The key belongs in the environment
+# (NOVA_ADMIN_KEY) or in a file outside the repo (NOVA_ADMIN_KEY_FILE);
+# these patterns are the net under that, not the plan.
+*service-account*.json
+*serviceaccount*.json
+*-adminsdk-*.json
+nova-admin-key.json
+admin-key.json
+*.pem

@@ -109,10 +109,13 @@ disagreed, the repo won and the difference is called out.
   across a third of its range was found — one sample on one device is
   not a check.
 - `tools/firestore-admin.py` — `list`, `find <username>` and
-  `purge --yes` against the live Firestore over the plain REST API, no SDK
-  and no credentials (the rules are open). `find` is the "someone lost
-  their code" lookup. **It is a tool and not a screen on purpose** — see
-  **Accounts and the sync code**.
+  `purge --yes` against the live Firestore over the plain REST API, no
+  SDK. `find` is the "someone lost their code" lookup, and it needs a
+  service-account key in `NOVA_ADMIN_KEY` (or `NOVA_ADMIN_KEY_FILE`) to
+  return an actual code: the rules are open for reading ONE document but
+  refuse to list `progress`, which is where the codes are. Anonymous, it
+  says so and falls back to rankings rows. **It is a tool and not a
+  screen on purpose** — see **Accounts and the sync code**.
 - GitHub Pages serves `main`. No build step, no bundler, no `npm install`.
 - Develop on `claude/repo-update-jquqz4`; merge to `main` to deploy.
 - **THIS IS THE REPO THE CLASS USES.** It is served at
@@ -1179,6 +1182,37 @@ Everything below follows from that.
   exists for the one person with the repo. Handing a code to somebody who
   asks for it is handing over their account — check their level/hundos
   against what they tell you first; usernames are not unique.
+- **THE publicId MIGRATION SILENTLY KILLED THAT LOOKUP AND LEFT IT
+  LOOKING ALIVE.** `find` printed the leaderboard document id, which WAS
+  the sync code while `leaderboard` was keyed by one. Moving the rows to
+  `publicId` — the right change, it is what stopped the code being a
+  public document id — turned the same line into a twelve-character
+  public id presented as something you can sign in with. Wrong format,
+  will not link a device, and nothing said so. **A migration that
+  changes what a document id MEANS has to be chased into every tool that
+  prints one**; there is no gate out here, so it is a read-the-callers
+  job.
+- **The codes are the document ids of `progress`, and the rules refuse to
+  LIST that collection, so there is no anonymous route to one — by
+  design.** That refusal is the whole wall between ~40 classmates and
+  each other's accounts, and nothing should be added to a listable
+  collection to work around it. The supported way back in is a
+  **service-account key**, read from `NOVA_ADMIN_KEY` (the JSON) or
+  `NOVA_ADMIN_KEY_FILE` (a path). With one, `find` lists `progress`
+  masked to `firstName`/`lifetime`/`lastModified` and covers everybody
+  retroactively, people hidden from the rankings included; without one it
+  says so and falls back to rankings rows rather than pretending.
+  **That key is full read/write admin on every classmate's data**, it is
+  never in the repo (public, for Pages), and `.gitignore` carries
+  patterns for it as a net under that rather than as the plan. The RS256
+  signing goes through the `openssl` binary with `cryptography` as a
+  fallback, deliberately: this file has always run with no pip install
+  and that is worth keeping.
+- **Two accounts under one name is now an expected result, not a
+  puzzle.** A device that lost its code minted a new one before build
+  158, which leaves the same person with an old document holding the
+  real progress and a newer, emptier one. `find` prints `lastModified`
+  and the lifetime totals for exactly that reason.
 - **An onboarded account always has a code, and boot enforces it.** It is
   issued at sign-up, but it lives in `localStorage`, which iOS can evict on
   its own — and a device that has lost it is off the rankings, cannot be
@@ -1199,6 +1233,48 @@ Everything below follows from that.
   the welcome screen"* — and it is worse than it reads, because creating an
   account from that screen overwrites the progress sitting right behind it.
   Recovery now restores the code, reconnects, and lands on Home.
+- **THE TWO MIRROR RECORDS GO MISSING SEPARATELY, and every recovery
+  path has to assume it.** They live in the same object store, but one
+  of them is every answer this person has ever given and the other is
+  nine bytes, so a device under storage pressure really can keep one and
+  lose the other. Three shapes, and until build 158 two of them were
+  holes:
+  - **localStorage gone, both mirror records intact** — the case the
+    recovery block was written for, and the one that always worked.
+  - **The progress key survived and the code did not.** This is the
+    ONLY case the "an onboarded account always has a code" self-heal
+    actually fires on, and it used to mint on the spot — which hands the
+    same person a second account: their rankings row is orphaned with
+    nobody left holding the id to retire it, every other device linked
+    under the old code is cut off, and the progress sitting right there
+    goes up under an id nobody has ever seen. Some of the dead rows on
+    the live board are this. It asks `idbLoadCode()` first now and the
+    mint is **deferred, not skipped** — the guarantee still holds, it is
+    just satisfied from the mirror first.
+  - **The mirror kept the code and lost the store.** This is the shape
+    that READS as being signed out: Welcome, no progress, nothing said,
+    while the whole account is in the cloud and the key to it is in the
+    mirror. Recovery bailed the moment the store record came back null
+    and threw the code away with it. It now pulls with that code and
+    **adopts it only once a real document has come back** — setting the
+    code first is how an empty store gets pushed up under a live account
+    and wipes the thing the recovery exists to rescue.
+  `check-sync.py` sections 4b and 4c drive all of this for real, and both
+  fail on build 157.
+- **Removing the app destroys the whole storage jar**, so none of the
+  three above can help — localStorage and the IndexedDB mirror beside it
+  go together. What is left is the launch URL (`#k=CODE`, read by
+  `readRecoveryCode()`), and until build 158 `recoveryUrlFor()` was
+  **defined, commented and never called**: the only surface it had was
+  the re-add notice's Safari hand-off, which builds the same URL inline.
+  Settings has **Copy code** and **Copy sign-in link** under the sync
+  code now, which is the version somebody needs BEFORE the phone loses
+  anything. Section 4d taps both for real and checks the link it hands
+  out is one boot will read back.
+- **A harness document has to post-date `FRESH_START_CUTOFF`** or
+  `pullFromCloud()` reports it as not-found, which is correct behaviour
+  and turns a recovery check into a check of the cutoff. Read the
+  constant off the app rather than writing a date into the gate.
 - **Abandoning a code must take its rankings row with it**, and that lives
   in `setSyncCode()` rather than at each call site, so every path that
   changes a code is covered including any added later. Linking this device

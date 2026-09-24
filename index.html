@@ -36211,7 +36211,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-24-157";
+const APP_BUILD = "2026-09-24-158";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -38362,6 +38362,49 @@ function showAppearance(){
       });
       row.append(label, codeSpan);
       syncSect.appendChild(row);
+
+      /* THE ONE THING THAT GETS A WIPED DEVICE BACK IN, and until now it
+         had no surface anywhere in the app: recoveryUrlFor() was written,
+         commented, and never called. Removing the app destroys its whole
+         storage jar - localStorage and the IndexedDB mirror beside it go
+         together - so neither of the two recoveries below the boot code
+         can help, and what is left is the code, from memory. The re-add
+         notice hands this link over automatically at the one moment it
+         knows about; this is the same link at every other moment, which
+         is the one somebody needs BEFORE the phone loses anything. */
+      /* The same shape as Share this app / Add to Home Screen further
+         down this very screen, rather than a second one of its own:
+         .cal-profile-btn is already the app's pair-of-secondary-buttons
+         pill, already 44px, and already stacks full width on a phone
+         where "Copy sign-in link" has no room beside anything. */
+      const saveBar = document.createElement("div");
+      saveBar.className = "cal-profile-row sync-save-row";
+      const copyCode = document.createElement("button");
+      copyCode.type = "button"; copyCode.className = "cal-profile-btn";
+      copyCode.textContent = "Copy code";
+      const copyLink = document.createElement("button");
+      copyLink.type = "button"; copyLink.className = "cal-profile-btn";
+      copyLink.textContent = "Copy sign-in link";
+      const putOnClipboard = async (text, done) => {
+        if(navigator.clipboard && navigator.clipboard.writeText){
+          try { await navigator.clipboard.writeText(text); showToast(done); return; }
+          catch(e){}
+        }
+        /* No clipboard, or it refused. The code is on the row above and
+           selectable, which is the fallback that cannot fail - and a
+           button that appears to do nothing is worse than no button. */
+        showToast("Couldn\u2019t copy \u2014 tap the row above to read your code and write it down.");
+      };
+      copyCode.addEventListener("click", () => putOnClipboard(syncCode, "Code copied."));
+      copyLink.addEventListener("click", () => putOnClipboard(recoveryUrlFor(syncCode), "Sign-in link copied."));
+      saveBar.append(copyCode, copyLink);
+      syncSect.appendChild(saveBar);
+
+      const saveNote = document.createElement("p");
+      saveNote.className = "info-note sync-note-plain";
+      saveNote.textContent = "Keep one of these somewhere off this phone. Opening the sign-in link "
+        + "on a device that has lost its data puts you straight back on your account.";
+      syncSect.appendChild(saveNote);
 
       const stopBar = document.createElement("div");
       stopBar.className = "startbar";
@@ -45437,19 +45480,48 @@ if(launchCode && !syncCode && !syncOff){
   });
 }
 
+/* THE MIRROR HOLDS THE CODE, SO ASK IT BEFORE MINTING A NEW ONE.
+   This used to mint on the spot, which is only right for a device that
+   has genuinely never had an account - and that is not the case it
+   fires on. An onboarded store with no code beside it is a device that
+   HAS an account and has lost the one localStorage key that held the
+   key to it, and minting there hands the same person a second account:
+   their rankings row is orphaned with nobody left holding the id to
+   retire it, every other device linked under the old code is cut off,
+   and the progress sitting right there is pushed up under an id
+   nobody has ever seen. The two records live in the same object store
+   but they are nothing like the same size - the store is every answer
+   this person has ever given, the code is nine bytes - so a device
+   under storage pressure really can keep one and lose the other.
+   idbLoadCode() resolves in a few milliseconds and cannot reject, so
+   the mint is DEFERRED rather than skipped: the "an onboarded account
+   always has a code" guarantee still holds, it is just satisfied from
+   the mirror first. Re-tested inside the callback because a launch URL
+   or Settings could have set one in the meantime. */
 if(store.onboardingComplete && !syncCode && !syncOff){
-  setSyncCode(generateSyncCode());
-  onFirebaseReady(() => {
-    pushToCloud(); attachLiveListener(syncCode);
-    /* THE BOARD WATCHER STARTS AT BOOT, NOT ON THE FIRST VISIT TO HOME.
-       It used to attach inside showHome(), so the first snapshot only
-       began arriving once somebody was already looking at the screen
-       the banner appears on - which is why an invite showed up "late":
-       the wait was the subscription, not the network. Attaching here
-       means the rows are usually already in hand by the time Home is
-       drawn, and the banner is there on arrival rather than a few
-       seconds after it. Still only ever DISPLAYED on Home. */
-    attachInviteWatcher();
+  idbLoadCode().then(mirrored => {
+    if(syncCode || syncOff) return;
+    setSyncCode(mirrored || generateSyncCode());
+    onFirebaseReady(() => {
+      /* A recovered code is pulled, never pushed. Pushing would hand the
+         cloud whatever this device happens to hold, and the whole reason
+         we are here is that this device has been losing things. */
+      if(mirrored) pullFromCloud(syncCode, () => {
+        updateHeaderTitle();
+        if(stage.querySelector(".panel.home")) showHome();
+      });
+      else pushToCloud();
+      attachLiveListener(syncCode);
+      /* THE BOARD WATCHER STARTS AT BOOT, NOT ON THE FIRST VISIT TO HOME.
+         It used to attach inside showHome(), so the first snapshot only
+         began arriving once somebody was already looking at the screen
+         the banner appears on - which is why an invite showed up "late":
+         the wait was the subscription, not the network. Attaching here
+         means the rows are usually already in hand by the time Home is
+         drawn, and the banner is there on arrival rather than a few
+         seconds after it. Still only ever DISPLAYED on Home. */
+      attachInviteWatcher();
+    });
   });
 }
 
@@ -45501,7 +45573,35 @@ if(syncCode && !adoptedLaunchCode){
    the screen if the person hasn't already started doing something. */
 if(!storageHadData){
   Promise.all([idbLoad(), idbLoadCode()]).then(([data, code]) => {
-    if(!data || !applyLoadedData(data)) return;
+    if(!data || !applyLoadedData(data)){
+      /* THE CODE ON ITS OWN IS ENOUGH, and bailing here threw it away.
+         The two mirror records are nothing like the same size - the
+         store is every answer this person has ever given, the code is
+         nine bytes - so a device under storage pressure can lose the
+         big one and keep the small one, and this is the shape that
+         reads as being signed out: Welcome, no progress, nothing said,
+         while the whole account is sitting in the cloud and the key to
+         it is in the mirror we just gave up on.
+         PULL FIRST, ADOPT SECOND. Setting the code before the document
+         is in hand is how an empty store gets pushed up under a live
+         account and wipes the thing this is trying to rescue, so the
+         code is only taken once a real document has come back for it -
+         and never on "no-connection", where the next launch will try
+         again. */
+      if(code && !syncCode && !syncOff) onFirebaseReady(() => {
+        pullFromCloud(code, (ok) => {
+          if(!ok) return;
+          setSyncCode(code);
+          applySaved(); loadTheme(); applyTheme(); updateHeaderTitle();
+          attachLiveListener(syncCode);
+          if(store.onboardingComplete && stage.querySelector('[data-screen="welcome"]')){
+            showHome();
+            showToast("Signed back in \u2014 your progress was restored.");
+          }
+        });
+      });
+      return;
+    }
     saveStore();
     applySaved();
     loadTheme();

@@ -35,11 +35,24 @@ SRC = sys.argv[sys.argv.index("--against") + 1] if "--against" in sys.argv \
 HOOK = '''
   window.__deleted = [];
   window.__entries = [];
+  window.__set = [];
+  /* A DOCUMENT THE STUB CAN ACTUALLY RETURN. Without one, every get()
+     is exists:false and no check can tell "the cloud has your account"
+     from "the cloud has never heard of you" - which is the whole
+     difference in the recovery paths below. Keyed by document id.
+     __ready() drains the onFirebaseReady queue FROM INSIDE THE SCRIPT:
+     fbDb is a top-level `let`, so it is not a window property and an
+     assignment from a page.evaluate() silently creates a second,
+     unrelated global while the app goes on seeing null. */
+  window.__cloud = {};
+  window.__ready = function(){ firebaseBecameReady(); };
   window.__fake = function(entries){
     window.__entries = entries || [];
     fbDb = { collection: function(name){ return { doc: function(id){ return {
-      set: function(){ return Promise.resolve(); },
-      get: function(){ return Promise.resolve({ exists: false }); },
+      set: function(v){ window.__set.push(name + "/" + id); return Promise.resolve(); },
+      get: function(){ const d = name === "progress" ? window.__cloud[id] : null;
+        return Promise.resolve(d ? { exists: true, data: function(){ return d; } }
+                                 : { exists: false }); },
       delete: function(){ window.__deleted.push(name + "/" + id); return Promise.resolve(); }
     }; } }; } };
     onSnapshotResilient = function(ref, onNext){
@@ -151,6 +164,123 @@ with sync_playwright() as pw:
     check("recovery restores the progress", res["points"] == 420 and res["name"] == "Madison", str(res))
     check("recovery restores the sync code", res["code"] == "WXYZ-7777"
           and res["ls"] == "WXYZ-7777", str(res))
+    ctx.close()
+
+    # ---- 4b. the store key survived but the code did NOT ----
+    # The one case the "an onboarded account always has a code" self-heal
+    # actually fires on is a device that HAS an account and has lost the
+    # key to it. Minting there is a second account: the old rankings row
+    # is orphaned with nobody holding the id to retire it, and the
+    # progress sitting right there goes up under an id nobody has seen.
+    # Both records are in the same IndexedDB object store, but the store
+    # is every answer this person has ever given and the code is nine
+    # bytes, so a device under storage pressure can keep one and lose
+    # the other. Fails on any build that mints without asking the mirror.
+    print("\n4b. the progress key survived, the sync code did not")
+    ctx = br.new_context(viewport={"width": 834, "height": 1194})
+    pg = page(ctx)
+    pg.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.drill.v1', '%s');"
+                       "localStorage.setItem('class26e.synccode','WXYZ-7777');}catch(e){}" % STORE)
+    pg.goto(URL); pg.wait_for_timeout(2600)
+    pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); saveStore();}")
+    pg.wait_for_timeout(600)
+    pg.close()
+
+    pg2 = page(ctx)   # same context: the mirror survives, the code key does not
+    pg2.add_init_script("try{localStorage.clear();localStorage.setItem('class26e.freshstart','1');"
+                        "localStorage.setItem('class26e.frame.ok','go-live-1');"
+                        "localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % STORE)
+    pg2.goto(URL); pg2.wait_for_timeout(3200)
+    pg2.evaluate("()=>document.getElementById('splashscreen')?.remove()")
+    pg2.wait_for_timeout(900)
+    res = pg2.evaluate("""()=>({code:syncCode, ls:localStorage.getItem('class26e.synccode'),
+        onboarded:!!store.onboardingComplete})""")
+    check("the mirrored code is adopted, not replaced", res["code"] == "WXYZ-7777", str(res))
+    check("and it is written back to localStorage", res["ls"] == "WXYZ-7777", str(res))
+    ctx.close()
+
+    # ---- 4c. the mirror kept the code and lost the store ----
+    # This is the shape that READS as being signed out: Welcome, no
+    # progress, nothing said, while the whole account is in the cloud
+    # and the key to it is in the mirror. Recovery used to bail the
+    # moment the store record came back null and throw the code away
+    # with it. The code is adopted only once a real document has come
+    # back for it - setting it first is how an empty store gets pushed
+    # up under a live account.
+    print("\n4c. the mirror kept the code and lost the progress")
+    ctx = br.new_context(viewport={"width": 834, "height": 1194})
+    pg = page(ctx)
+    pg.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.drill.v1', '%s');"
+                       "localStorage.setItem('class26e.synccode','WXYZ-7777');}catch(e){}" % STORE)
+    pg.goto(URL); pg.wait_for_timeout(2600)
+    pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); saveStore();}")
+    pg.wait_for_timeout(600)
+    # lose the big record, keep the nine bytes
+    pg.evaluate("""async ()=>{ const db = await idbOpen();
+        await new Promise(r=>{ const tx = db.transaction('kv','readwrite');
+          tx.objectStore('kv').delete('store'); tx.oncomplete = r; tx.onerror = r; }); }""")
+    left = pg.evaluate("async ()=>({data: await idbLoad(), code: await idbLoadCode()})")
+    check("the mirror is left holding only the code",
+          left["data"] is None and left["code"] == "WXYZ-7777", str(left))
+    pg.close()
+
+    pg2 = page(ctx)
+    pg2.add_init_script("try{localStorage.clear();localStorage.setItem('class26e.freshstart','1');"
+                        "localStorage.setItem('class26e.frame.ok','go-live-1');}catch(e){}")
+    pg2.goto(URL); pg2.wait_for_timeout(3200)
+    pg2.evaluate("()=>document.getElementById('splashscreen')?.remove()")
+    # Firebase arrives now, with the account still in the cloud. The boot
+    # code queued its work on onFirebaseReady, so draining it is what a
+    # real launch does when the SDK finally lands.
+    # THE DOCUMENT HAS TO POST-DATE FRESH_START_CUTOFF or pullFromCloud
+    # reports it as not-found - which is correct behaviour and would make
+    # this check measure the cutoff instead of the recovery. Read off the
+    # app rather than written down here, so moving the cutoff cannot
+    # quietly turn this check green for the wrong reason.
+    pg2.evaluate("""()=>{ const d = %s; d.lastModified = (FRESH_START_CUTOFF || 0) + 86400000;
+      window.__cloud['WXYZ-7777'] = d; __fake([]); __ready(); }""" % STORE)
+    pg2.wait_for_timeout(1500)
+    res = pg2.evaluate("""()=>({screen:(document.querySelector('#stage [data-screen]')||{dataset:{}}).dataset.screen||null,
+        code:syncCode, name:store.firstName, points:(store.lifetime||{}).points,
+        wrote:(window.__set||[]).join(',')})""")
+    check("the code alone gets the account back", res["code"] == "WXYZ-7777", str(res))
+    check("the progress comes down from the cloud",
+          res["points"] == 420 and res["name"] == "Madison", str(res))
+    check("and it lands on Home, not Welcome", res["screen"] == "home", str(res))
+    ctx.close()
+
+    # ---- 4d. Settings hands over a way back in ----
+    # Removing the app destroys the whole storage jar, so neither
+    # recovery above can help and what is left is the code, from memory.
+    # recoveryUrlFor() was written for exactly that and was dead code -
+    # defined, commented, never called - so there was no way to save
+    # either one before the phone lost it. Tapped for real rather than
+    # called: a button behind something unclickable measures as present
+    # and does nothing.
+    print("\n4d. Settings can hand over the code and the link")
+    ctx = br.new_context(viewport={"width": 440, "height": 956},
+                         permissions=["clipboard-read", "clipboard-write"])
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.drill.v1', '%s');"
+                        "localStorage.setItem('class26e.synccode','WXYZ-7777');}catch(e){}" % STORE)
+    pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
+    pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __fake([]);}")
+    pg.evaluate("()=>showAppearance()"); pg.wait_for_timeout(700)
+    pg.evaluate("()=>document.querySelector('.sync-code-row').scrollIntoView({block:'center',behavior:'instant'})")
+    pg.wait_for_timeout(300)
+    btns = pg.query_selector_all(".sync-save-row .cal-profile-btn")
+    got = {}
+    for b in btns:
+        b.click(); pg.wait_for_timeout(350)
+        got[b.text_content()] = pg.evaluate("()=>navigator.clipboard.readText()")
+    check("Settings copies the code", got.get("Copy code") == "WXYZ-7777", str(got))
+    link = got.get("Copy sign-in link") or ""
+    check("Settings copies a sign-in link", link.endswith("#k=WXYZ-7777"), repr(link))
+    # and the app accepts the link it just handed out - a link the boot
+    # code would not read back is worse than none.
+    back = pg.evaluate("(u)=>{ const h = u.split('#')[1] || '';"
+                       "  const v = (new URLSearchParams(h).get('k')||'').toUpperCase();"
+                       "  return SYNC_CODE_RE.test(v) ? v : null; }", link)
+    check("and the link is one boot will read back", back == "WXYZ-7777", repr(back))
     ctx.close()
 
     # ---- 5. swapping codes retires the old rankings row ----
