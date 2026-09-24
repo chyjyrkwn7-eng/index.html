@@ -527,66 +527,78 @@ def main():
             check("the chat button is in the top right", got["chatCorner"], got["chatCorner"])
 
         # -------------------------------------------------------------
-        # 8. MATCH SETTINGS - and the one thing worth asserting about
-        # any sheet in this app: that it is actually PAINTED.
-        # .invite-overlay is opacity:0 until a class lands in a rAF.
-        # Leaving that off builds the whole sheet - in the document,
-        # measurable, the right size, the right contents - and
-        # invisible. Every measurement of it passes. So this asserts
-        # the computed opacity a frame later, not the geometry.
+        # 8. MATCH SETTINGS IS A SCREEN, NOT A SHEET OVER HOME.
+        # Asked for in those words: a button in the lobby opens "the
+        # normal unit selection screen", with the tab bar replaced by
+        # the options button and a way back to the lobby. It is
+        # showVirtualRoomSetup() in edit mode rather than a second
+        # screen, because setting a room up and changing it afterwards
+        # are the same question and two builders for one idea is what
+        # this file keeps paying for.
         print("\n8. match settings")
-        got = pg.evaluate("""async ()=>{
+        pg.evaluate("""()=>{
           fbDb = { collection:()=>({ doc:()=>({ update:()=>Promise.resolve() }) }) };
+          vroomCode = 'ROOM42'; vroomIsHost = true;
           const all = topicsIn(QUESTIONS);
-          openMatchSettingsSheet('ROOM42', {units:[all[0]], mode:'drill', timeLimit:20});
-          await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
-          const ov = document.querySelector('.invite-overlay');
-          const rows = [...document.querySelectorAll('.match-unit-list .pick')];
-          const save = [...document.querySelectorAll('.match-acts .friend-act')].pop();
-          /* .pick starts at opacity:0 - it is the unit screen's reveal
-             effect - so a card that is not revealed is invisible while
-             measuring perfectly. This is the check for that. */
-          const painted = rows.every(r => +getComputedStyle(r).opacity > 0.9);
-          const badges = rows.filter(r => !!r.querySelector('.pick-badge')).length;
-          const sliders = document.querySelectorAll('.match-sheet .slider').length;
-          const modes = document.querySelectorAll('.match-modes').length;
-          rows.forEach(r=>{ const cb=r.querySelector('input'); if(cb && cb.checked){ cb.checked=false; cb.dispatchEvent(new Event('change')); } });
+          showVirtualRoomSetup({units:[all[0]], timeLimit:20, count:null, status:'waiting'});
+        }""")
+        pg.wait_for_timeout(900)
+        got = pg.evaluate("""()=>{
+          const cards = [...document.querySelectorAll('.picks .pick')];
+          const tabs = document.querySelector('.bottomtabs');
+          const back = document.querySelector('.back-link');
           return {
-            painted: ov ? +getComputedStyle(ov).opacity : 0,
-            units: rows.length, allUnits: all.length,
-            cardsPainted: painted, badges: badges,
-            sliders: sliders, modes: modes,
-            radius: save ? getComputedStyle(save).borderTopLeftRadius : null,
-            shadow: save ? getComputedStyle(save).boxShadow : null,
-            saveOffWithNoUnits: !!(save && save.disabled)
+            units: cards.length, allUnits: topicsIn(QUESTIONS).length,
+            checked: cards.filter(c => c.querySelector('input').checked).length,
+            // .pick is opacity:0 until revealed - sixteen rows, right
+            // size, right contents, painting nothing measures fine.
+            painted: cards.slice(0, 2).every(c => +getComputedStyle(c).opacity > 0.9),
+            badges: cards.filter(c => !!c.querySelector('.pick-badge')).length,
+            search: !!document.querySelector('.searchwrap input'),
+            tabsGone: !tabs || tabs.hidden || tabs.getBoundingClientRect().height === 0,
+            back: back ? back.textContent : null,
+            title: (document.querySelector('.welcomeintro-title')||{}).textContent,
+            over: document.documentElement.scrollWidth - window.innerWidth
           };}""")
-        check("the sheet is actually painted, not just built",
-              got["painted"] > 0.9, got["painted"])
-        # Read off the page, not a number typed here: a gate that names
-        # a count goes stale the day a unit is added.
         check("every unit is offered", got["units"] == got["allUnits"],
               {"rows": got["units"], "units": got["allUnits"]})
-        # .pick is opacity:0 until revealed. Sixteen rows, right size,
-        # right contents, painting nothing - measured fine, looked blank.
-        check("the unit cards are actually painted",
-              got["cardsPainted"] is True, got["cardsPainted"])
-        # The same cards the test setup screen draws, through the same
-        # appendUnitProgress builder - not a third kind of unit row.
-        check("they are the real unit cards, badge and all",
-              got["badges"] == got["units"], {"badges": got["badges"], "rows": got["units"]})
-        # Questions and time limit, both plainSlider like drill.
-        check("questions and time limit are both there", got["sliders"] == 2, got["sliders"])
-        # Exam/Drill is off until the real modes exist.
-        check("no test-type picker until the modes exist", got["modes"] == 0, got["modes"])
-        # `[data-layout="modern"] .next` sets the pill radius at 0,2,0
-        # and the dark theme restates the shadow at 0,3,0, so a bare
-        # class rule for either is ignored in silence.
-        check("the sheet's buttons are not the floating primary pill",
-              got["radius"] == "2px" and got["shadow"] == "none",
-              {"r": got["radius"], "s": (got["shadow"] or "")[:20]})
-        # A match with no units is not a match.
-        check("no units means no way to save", got["saveOffWithNoUnits"] is True,
-              got["saveOffWithNoUnits"])
+        # A settings screen that opens on defaults is a reset button.
+        check("it opens on what the room is already set to", got["checked"] == 1, got["checked"])
+        check("the unit cards are actually painted", got["painted"] is True, got["painted"])
+        check("they are the real unit cards, badge and search and all",
+              got["badges"] == got["units"] and got["search"] is True,
+              {"badges": got["badges"], "search": got["search"]})
+        # You are inside a match: Home, Leaderboard, Ranks and Settings
+        # are not places to be from here.
+        check("no bottom tab bar on it", got["tabsGone"] is True, got["tabsGone"])
+        check("and a way back to the lobby",
+              "lobby" in (got["back"] or "").lower(), got["back"])
+        check("titled as what it is", got["title"] == "Match settings", got["title"])
+        check("no sideways scroll", got["over"] <= 0, got["over"])
+
+        # The options sheet: questions AND time limit, both the drill
+        # sliders, and Save rather than Create lobby.
+        pg.evaluate("()=>document.getElementById('nextbtn').click()")
+        pg.wait_for_timeout(600)
+        sheet = pg.evaluate("""()=>{
+          const m = document.getElementById('unitoptions-modal');
+          const labs = [...document.querySelectorAll('#unitoptions-modal .slab')]
+                        .map(x => x.textContent.trim().toLowerCase());
+          return { open: !!m && !m.hidden,
+                   sliders: document.querySelectorAll('#unitoptions-modal .slider').length,
+                   labs: labs,
+                   dupes: labs.length !== new Set(labs).size,
+                   begin: (document.querySelector('.sheet-begin-btn')||{}).textContent,
+                   title: (document.querySelector('.unitoptions-modal-title')||{}).textContent };}""")
+        check("the options sheet opens", sheet["open"] is True, sheet["open"])
+        check("questions and time limit are both there", sheet["sliders"] == 2,
+              {"n": sheet["sliders"], "labels": sheet["labs"]})
+        # plainSlider draws its own heading, so a second one above it
+        # printed TIME LIMIT twice.
+        check("and neither heading is printed twice", sheet["dupes"] is False, sheet["labs"])
+        check("it saves rather than creating a second lobby",
+              sheet["begin"] == "Save settings", sheet["begin"])
+        check("and says what it is", sheet["title"] == "Match settings", sheet["title"])
 
         ctx.close()
         br.close()

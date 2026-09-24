@@ -10102,43 +10102,6 @@
     border-radius:999px; background:rgba(255,255,255,.07);
     border:1px solid var(--rule); color:var(--ink);
   }
-  .match-sheet .slab{ margin:.9rem 0 .4rem; }
-  .match-sheet .match-slab{ margin-top:1.1rem; }
-  /* ONE SCROLLER, NOT TWO. The list used to scroll inside a sheet that
-     also scrolls, which on a phone meant Save sat behind a second,
-     nested scroll nobody would find. The sheet scrolls as one thing -
-     the way the real unit selection screen does - and the actions are
-     pinned to its floor instead, so Save is on screen at every scroll
-     position and at every height. */
-  .match-unit-list{ margin-top:.2rem; }
-  .match-unit{
-    display:flex; align-items:center; gap:.6rem; width:100%;
-    min-height:44px; padding:.45rem .6rem; box-sizing:border-box;
-    background:transparent; border:1px solid var(--rule); border-radius:2px;
-    color:var(--ink); font-family:var(--sans); font-size:.85rem; font-weight:600;
-    text-align:left; cursor:pointer;
-  }
-  .match-unit.on{ border-color:var(--accent); }
-  .match-tick{
-    width:1.05rem; height:1.05rem; flex-shrink:0; border-radius:2px;
-    border:1px solid var(--rule); background:transparent; position:relative;
-  }
-  .match-unit.on .match-tick{ background:var(--accent); border-color:var(--accent); }
-  .match-unit.on .match-tick::after{
-    content:""; position:absolute; left:.3rem; top:.1rem;
-    width:.25rem; height:.5rem; border:solid var(--accent-ink);
-    border-width:0 2px 2px 0; transform:rotate(45deg);
-  }
-  .match-unit-name{ flex:1 1 0; min-width:0; }
-  .match-modes{ margin-bottom:.2rem; }
-  .match-acts{
-    display:flex; gap:.5rem; margin-top:1.1rem;
-    position:sticky; bottom:0; z-index:2;
-    padding:.7rem 0 .2rem; background:var(--panel);
-    border-top:1px solid var(--rule);
-  }
-  .match-acts .friend-act{ flex:1 1 0; }
-  .match-acts .friend-act:disabled{ opacity:.45; cursor:default; }
   .vroom-settings-btn{ min-height:44px; }
   .vroom-host-bar{
     display:flex; flex-wrap:wrap; align-items:center; gap:.5rem;
@@ -36018,7 +35981,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-23-142";
+const APP_BUILD = "2026-09-23-143";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -38813,15 +38776,33 @@ function showVirtualRoomChoice(){
   toTop();
 }
 
-function showVirtualRoomSetup(){
+/* ONE SCREEN, TWO JOBS. Setting a room up and changing it afterwards
+   are the same question - which units, how long, how many - so they are
+   the same screen rather than a screen and a sheet that drift apart.
+   `editRoom` is the live room document when this is opened from inside
+   a lobby ("a button in the lobby that says match settings, and then it
+   opens up the normal unit selection screen"); undefined when it is the
+   first step of creating one.
+
+   In edit mode the bottom tab bar is gone - you are inside a match, and
+   Home, Leaderboard, Ranks and Settings are not places to be from here.
+   What is left is the options button and a way back to the lobby, which
+   is the same shape every other mode's setup screen already has. */
+function showVirtualRoomSetup(editRoom){
+  const editing = !!editRoom;
   setActiveNav(null);
+  /* AFTER setActiveNav, which clears it on the way into every screen. */
+  window.forceHideBottomTabs = editing;
   countEl.textContent = "Virtual Room";
   const panel = document.createElement("section");
   panel.className = "panel";
-  panel.appendChild(buildBackLink("Back", showVirtualRoomChoice));
+  panel.appendChild(editing
+    ? buildBackLink("Back to lobby", () => showVirtualRoomLobby())
+    : buildBackLink("Back", showVirtualRoomChoice));
 
   const title = document.createElement("h1");
-  title.className = "welcomeintro-title"; title.textContent = "Pick the units";
+  title.className = "welcomeintro-title";
+  title.textContent = editing ? "Match settings" : "Pick the units";
   panel.appendChild(title);
 
   const unitSect = document.createElement("div");
@@ -38840,7 +38821,10 @@ function showVirtualRoomSetup(){
      track per-unit stars the way Drill/Game do \u2014 there's nothing
      genuine to show there. */
   const allUnits = topicsIn(QUESTIONS);
-  const picked = new Set();
+  /* Opens on what the room IS, not on defaults - a settings screen that
+     forgets what is set is a reset button. */
+  const picked = new Set(editing ? (editRoom.units || []) : []);
+  let qCount = editing ? (editRoom.count || null) : null;
 
   const searchWrap = document.createElement("div");
   /* .searchwrap, not "searchbox-wrap" - the latter had no CSS rule
@@ -38866,8 +38850,13 @@ function showVirtualRoomSetup(){
     const row = document.createElement("label");
     row.className = "pick";
     const cb = document.createElement("input");
-    cb.type = "checkbox"; cb.value = name;
-    cb.addEventListener("change", () => { if(cb.checked) picked.add(name); else picked.delete(name); refresh(); });
+    cb.type = "checkbox"; cb.value = name; cb.checked = picked.has(name);
+    if(cb.checked) row.classList.add("pick-checked");
+    cb.addEventListener("change", () => {
+      if(cb.checked) picked.add(name); else picked.delete(name);
+      row.classList.toggle("pick-checked", cb.checked);
+      refresh();
+    });
     const box = document.createElement("span");
     box.className = "box"; box.setAttribute("aria-hidden", "true"); box.textContent = "\u2713";
     const label = document.createElement("span");
@@ -38917,9 +38906,9 @@ function showVirtualRoomSetup(){
      made alongside units, not a secondary refinement to tuck away. */
   const timeSect = document.createElement("div");
   timeSect.className = "sect";
-  const timeLabel = document.createElement("p");
-  timeLabel.className = "slab"; timeLabel.textContent = "Time limit";
-  timeSect.appendChild(timeLabel);
+  /* NO HEADING HERE. plainSlider draws its own .slab from the label it
+     is given, so a second one above it rendered "TIME LIMIT" twice -
+     left over from when this section held chips rather than a slider. */
   /* .chips (flex-wrap), not .speedgrid (a rigid 3-column grid built for
      Game's 3 speeds) -- with 4 time choices here, a 3-column grid wraps
      the 4th button onto its own half-empty row. And "on", not "active"
@@ -38927,7 +38916,7 @@ function showVirtualRoomSetup(){
      own Speed grid) keys its selected-state styling off .chip.on;
      "active" matches no CSS rule at all, so the selected time limit
      was rendering with no visual indication of being selected. */
-  let vroomTimeLimit = 10;
+  let vroomTimeLimit = (editing && editRoom.timeLimit) || 10;
   /* "No limit" removed per explicit request — a synced start needs a
      synced finish line too, and an open-ended lobby is exactly the
      case where the live leaderboard/race view stops meaning anything
@@ -38987,6 +38976,32 @@ function showVirtualRoomSetup(){
   const sheetSummaryTime = document.createElement("p");
   sheetSummaryTime.className = "sheet-summary-line";
   sheetSummary.append(sheetSummaryMode, sheetSummaryLine, sheetSummaryTime);
+  /* HOW MANY QUESTIONS, the same plainSlider drill uses. It only
+     means anything because every client in a room now shuffles from
+     the room's shared startAt - see shuffleSeeded - so a cap takes the
+     same N questions for everybody rather than a different N each.
+     The top of the range is the whole pool of whatever is ticked, so
+     it moves with the selection instead of being a number typed here;
+     at the top it reads "All", which is what a room did before there
+     was a cap at all. */
+  let poolMax = 1;
+  const countSect = document.createElement("div");
+  countSect.className = "sect";
+  const qSlider = plainSlider("Questions", 5, 200, 5,
+    () => (qCount && qCount <= poolMax) ? qCount : Math.max(5, poolMax),
+    v => { qCount = (v >= poolMax) ? null : v; },
+    v => (v >= poolMax) ? "All (" + poolMax + ")" : String(v), () => refresh());
+  countSect.appendChild(qSlider);
+  const qInput = qSlider.querySelector('input[type="range"]');
+  function syncCountSlider(total){
+    poolMax = total || 1;
+    if(!qInput) return;
+    qInput.max = String(Math.max(5, poolMax));
+    if(qCount && qCount > poolMax) qCount = null;
+    qSlider.paint();
+  }
+
+  optionsModalBody.appendChild(countSect);
   optionsModalBody.appendChild(timeSect);
   optionsModalBody.appendChild(sheetSummary);
 
@@ -38997,11 +39012,21 @@ function showVirtualRoomSetup(){
      handler calls showVirtualRoomLobby() and replaces #stage under it. */
   const beginBtn = document.createElement("button");
   beginBtn.type = "button"; beginBtn.className = "next playbtn sheet-begin-btn";
-  beginBtn.textContent = "Create lobby";
+  beginBtn.textContent = editing ? "Save settings" : "Create lobby";
   beginBtn.addEventListener("click", () => {
     if(picked.size === 0) return;
     closeOptionsModal();
-    createVirtualRoomLobby([...picked], vroomTimeLimit);
+    if(!editing){ createVirtualRoomLobby([...picked], vroomTimeLimit); return; }
+    /* A field write on the room document, so every joiner's next
+       snapshot redraws with it and nobody leaves and rejoins. The start
+       sequence reads units/timeLimit/count off the live snapshot, not
+       the copy taken at join, so this reaches somebody who joined ten
+       minutes ago. */
+    if(!fbDb || !vroomCode){ showVirtualRoomLobby(); return; }
+    fbDb.collection("vrooms").doc(vroomCode)
+      .update({ units: [...picked], timeLimit: vroomTimeLimit, count: qCount })
+      .then(() => { showToast("Match settings updated.", "good"); showVirtualRoomLobby(); })
+      .catch(() => showToast("Couldn't save the settings \u2014 try again."));
   });
   optionsModalBody.appendChild(beginBtn);
 
@@ -39020,7 +39045,7 @@ function showVirtualRoomSetup(){
   optionsModalHead.className = "unitoptions-modal-head";
   const optionsModalTitle = document.createElement("p");
   optionsModalTitle.className = "unitoptions-modal-title";
-  optionsModalTitle.textContent = "Review & Start";
+  optionsModalTitle.textContent = editing ? "Match settings" : "Review & Start";
   const optionsModalDone = document.createElement("button");
   optionsModalDone.type = "button"; optionsModalDone.className = "next";
   optionsModalDone.style.cssText = "padding:.5rem 1.1rem; font-size:.85rem;";
@@ -39081,15 +39106,19 @@ function showVirtualRoomSetup(){
       ? "No units selected yet"
       : (picked.size === allUnits.length ? "All units" : picked.size + (picked.size === 1 ? " unit" : " units")) +
         " \u00b7 " + n + (n === 1 ? " question" : " questions");
-    sheetSummaryTime.textContent = vroomTimeLimit ? vroomTimeLimit + " min limit" : "No time limit";
+    syncCountSlider(n);
+    const asked = (qCount && qCount < n) ? qCount : n;
+    sheetSummaryTime.textContent = (vroomTimeLimit ? vroomTimeLimit + " min limit" : "No time limit") +
+      " \u00b7 " + asked + (asked === 1 ? " question" : " questions");
 
     /* Same treatment as the ordinary unit picker: reads as unavailable,
        still takes the tap, and says why rather than doing nothing. */
     const inert = picked.size === 0;
     startBtn.classList.toggle("is-inert", inert);
     startBtn.setAttribute("aria-disabled", inert ? "true" : "false");
-    startBtn.textContent = inert ? "Pick units to continue" :
-      "Set up lobby, " + n + (n === 1 ? " question" : " questions");
+    startBtn.textContent = inert ? "Pick units to continue"
+      : editing ? "Match settings"
+      : "Set up lobby, " + n + (n === 1 ? " question" : " questions");
 
     selAll.textContent = picked.size === allUnits.length ? "Clear all" : "Select all";
   }
@@ -39267,188 +39296,6 @@ function joinVirtualRoomLobby(code){
 
 /* Who to invite, as a sheet rather than a screen: it is a short list
    of people and it opens over the lobby you are already in. */
-/* MATCH SETTINGS: the units, then the settings, in one sheet the host
-   opens from inside the lobby. Asked for in those words. Everything it
-   writes goes onto the ROOM document, so every joiner's next snapshot
-   redraws with it and nobody has to leave and rejoin - and the start
-   sequence already reads `data.units` and `data.timeLimit` off the live
-   snapshot rather than off the copy taken at join, so changing them
-   here genuinely reaches somebody who joined ten minutes ago.
-
-   Host only, and only while the room is still waiting: changing the
-   rules underneath people mid-test is not a feature. */
-function openMatchSettingsSheet(roomCode, data){
-  const all = topicsIn(QUESTIONS);
-  const chosen = new Set((data && data.units) || []);
-  let mode = (data && data.mode) || "exam";
-  let limit = (data && data.timeLimit) || 10;
-  let qCount = (data && data.count) || null;
-
-  const overlay = document.createElement("div");
-  overlay.className = "invite-overlay";
-  const sheet = document.createElement("div");
-  sheet.className = "invite-sheet match-sheet";
-
-  const h = document.createElement("p");
-  h.className = "invite-sheet-title"; h.textContent = "Match settings";
-  sheet.appendChild(h);
-
-  /* ---- units: THE SAME CARDS THE TEST SETUP SCREEN DRAWS ----
-     Asked for twice: "it needs to look just like the other unit
-     selection screen". So it is .picks / .pick with the real checkbox,
-     the question count and appendUnitProgress() - the one builder that
-     puts the badge and the mastery bar on a unit card - rather than a
-     third kind of unit row invented for this sheet. Two builders for
-     one idea is what this file keeps paying for. */
-  const uLab = document.createElement("p");
-  uLab.className = "slab"; uLab.textContent = "Units";
-  sheet.appendChild(uLab);
-
-  const selAll = document.createElement("button");
-  selAll.type = "button"; selAll.className = "selall-btn"; selAll.textContent = "Select all";
-  sheet.appendChild(selAll);
-
-  const uList = document.createElement("div");
-  uList.className = "picks match-unit-list";
-  const count = document.createElement("p");
-  count.className = "friend-hint";
-  const save = document.createElement("button");
-  let setCountMax = () => {};
-  const syncCount = () => {
-    const n = chosen.size;
-    const qs = QUESTIONS.filter(q => chosen.has((q.topic || "").trim())).length;
-    count.textContent = n
-      ? n + (n === 1 ? " unit \u00b7 " : " units \u00b7 ") + qs + (qs === 1 ? " question" : " questions")
-      : "Pick at least one unit.";
-    /* A match with no units is not a match, so the way out is closed
-       rather than the error being explained after the fact. */
-    save.disabled = !n;
-    setCountMax(qs);
-  };
-  all.forEach(name => {
-    const row = document.createElement("label");
-    row.className = "pick";
-    const cb = document.createElement("input");
-    cb.type = "checkbox"; cb.value = name; cb.checked = chosen.has(name);
-    cb.addEventListener("change", () => {
-      if(cb.checked) chosen.add(name); else chosen.delete(name);
-      syncCount();
-    });
-    const box = document.createElement("span");
-    box.className = "box"; box.setAttribute("aria-hidden", "true"); box.textContent = "\u2713";
-    const label = document.createElement("span");
-    label.className = "pname"; label.textContent = name;
-    row.append(cb, box, label);
-    const qc = document.createElement("span");
-    qc.className = "pcount";
-    qc.textContent = QUESTIONS.filter(x => (x.topic || "").trim() === name).length + " questions";
-    row.appendChild(qc);
-    appendUnitProgress(row, name);
-    /* .pick STARTS AT opacity:0 BY DESIGN - it is the unit-selection
-       screen's scroll-triggered reveal - so reusing the class without
-       also revealing the cards leaves every one of them permanently
-       invisible. This file already documents that exact trap for the
-       Virtual Room's own list, and it caught this sheet too: sixteen
-       rows, in the document, correctly sized, painting nothing.
-       Revealed outright rather than with an observer, because a
-       settings sheet is opened deliberately and is its own scroll
-       container - there is no scroll-in story to tell here, and an
-       observer inside a sheet is one more thing that can silently not
-       fire. */
-    row.classList.add("pick-revealed");
-    uList.appendChild(row);
-  });
-  selAll.addEventListener("click", () => {
-    const on = chosen.size < all.length;
-    [...uList.querySelectorAll('input[type="checkbox"]')].forEach(cb => {
-      cb.checked = on;
-      if(on) chosen.add(cb.value); else chosen.delete(cb.value);
-    });
-    syncCount();
-  });
-  sheet.append(uList, count);
-
-  /* NO TEST-TYPE PICKER. Exam and Drill were offered as the room's
-     "mode" and are coming off until the real multiplayer modes exist -
-     "remove that for now until we set the other modes". A Virtual Room
-     is a race and Drill's retries make a race meaningless, so exam is
-     what a room is; `mode` is still written so the field keeps its
-     shape for whatever replaces it. Only list what exists. */
-
-  /* ---- settings: the SAME sliders the drill setup screen uses, not
-     second near-copies, so the touch behaviour and the step lattice
-     match. "settings, like amount of questions, and time limit like
-     drill." ---- */
-  const sLab = document.createElement("p");
-  sLab.className = "slab match-slab"; sLab.textContent = "Settings";
-  sheet.appendChild(sLab);
-
-  /* ALL means every question in the chosen units, which is what a room
-     did before there was a cap - so the top of the range is the whole
-     pool rather than a number typed here, and it moves when the units
-     do. A cap only means anything because every client now shuffles
-     from the room's shared startAt (see shuffleSeeded): without that,
-     capping would hand different people different questions. */
-  let poolMax = QUESTIONS.filter(q => chosen.has((q.topic || "").trim())).length || 1;
-  const qSlider = plainSlider("Questions", 5, Math.max(5, poolMax), 5,
-    () => (qCount && qCount <= poolMax) ? qCount : poolMax,
-    v => { qCount = (v >= poolMax) ? null : v; },
-    v => (v >= poolMax) ? "All (" + poolMax + ")" : String(v), () => {});
-  sheet.appendChild(qSlider);
-  const qInput = qSlider.querySelector('input[type="range"]');
-  /* Unticking a unit can leave the cap above what is left to draw
-     from, so the ceiling follows the selection rather than going
-     stale. plainSlider hands back its own paint() - use it rather than
-     reaching into the markup for the readout, which is how a caller
-     and its builder drift apart. */
-  setCountMax = qs => {
-    poolMax = qs || 1;
-    if(!qInput) return;
-    qInput.max = String(Math.max(5, poolMax));
-    if(qCount && qCount > poolMax) qCount = null;
-    qSlider.paint();
-  };
-
-  sheet.appendChild(plainSlider("Time limit", 5, 60, 5,
-    () => limit, v => { limit = v; }, v => v + " min", () => {}));
-
-  const acts = document.createElement("div");
-  acts.className = "match-acts";
-  const shut = () => overlay.remove();
-  const cancel = document.createElement("button");
-  cancel.type = "button"; cancel.className = "next ghost friend-act";
-  cancel.textContent = "Cancel";
-  cancel.addEventListener("click", shut);
-  save.type = "button"; save.className = "next friend-act";
-  save.textContent = "Save";
-  save.addEventListener("click", () => {
-    if(!fbDb || !roomCode || !chosen.size) return;
-    fbDb.collection("vrooms").doc(roomCode)
-      .update({ units: [...chosen], mode: mode, timeLimit: limit, count: qCount })
-      .then(() => { showToast("Match settings updated.", "good"); shut(); })
-      .catch(() => showToast("Couldn't save the settings \u2014 try again."));
-  });
-  acts.append(cancel, save);
-  sheet.appendChild(acts);
-  syncCount();
-
-  overlay.addEventListener("click", ev => { if(ev.target === overlay) shut(); });
-  overlay.appendChild(sheet);
-  /* On <body>, with the one-shot observer that clears it on the next
-     screen change - the same as every other overlay here, because
-     #stage animates and a transform on an ancestor re-parents a fixed
-     element's containing block. */
-  document.body.appendChild(overlay);
-  /* .invite-overlay IS opacity:0 UNTIL THIS CLASS LANDS. Leaving it off
-     builds the whole sheet, in the document, measurable, tappable in
-     principle - and invisible. Every measurement of it passes, which is
-     exactly why this has to be looked at rather than measured. The rAF
-     is what gives the transition a frame to start from. */
-  requestAnimationFrame(() => overlay.classList.add("invite-overlay-show"));
-  const obs = new MutationObserver(() => { overlay.remove(); obs.disconnect(); });
-  obs.observe(stage, { childList: true });
-}
-
 function openInviteFriendsSheet(roomCode){
   const rows = rowsByPublicId();
   const ids = friendPublicIds();
@@ -39704,7 +39551,7 @@ function showVirtualRoomLobby(){
       setBtn.className = "next ghost vroom-settings-btn";
       setBtn.textContent = "Match settings";
       setBtn.disabled = !!running;
-      setBtn.addEventListener("click", () => openMatchSettingsSheet(vroomCode, data));
+      setBtn.addEventListener("click", () => showVirtualRoomSetup(data));
       hostBar.appendChild(setBtn);
 
       /* INVITE FRIENDS, host only, and it goes here for the same
