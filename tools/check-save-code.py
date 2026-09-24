@@ -90,7 +90,7 @@ with sync_playwright() as pw:
     pg.on("pageerror",lambda e:errs.append(str(e)))
     pg.route("**/index.html", lambda r: r.fulfill(status=200,headers={"content-type":"text/html; charset=utf-8"},body=BODY))
     pg.route("**/version.json", lambda r: r.fulfill(status=200,headers={"content-type":"application/json"},body=VERSION_JSON))
-    pg.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.drill.v1','%s');localStorage.setItem('class26e.synccode','WXYZ-7777');}catch(e){}"%STORE)
+    pg.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.drill.v1','%s');localStorage.setItem('class26e.synccode','WXYZ-7777');}catch(e){}"%STORE)
     pg.goto(URL); pg.wait_for_timeout(3000)
     pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __fake();}")
     pg.wait_for_timeout(1200)
@@ -120,50 +120,53 @@ with sync_playwright() as pw:
     # for being right. What has to hold is that ONE tap puts the real
     # code somewhere and only then marks the prompt satisfied.
     if b.get("missing"):
-        for n in ("one tap puts the code somewhere",
-                  "and marks it saved", "and the banner goes",
-                  "the share sheet is used where there is one",
-                  "a cancelled share is not a save"):
+        for n in ("one tap lands on Settings",
+                  "with the Sync section in view", "and lit up",
+                  "the banner goes", "tapping it does not claim the code is saved",
+                  "and Save code there really does save it"):
             ck(n, False, "no banner to tap")
-        after = {}
     else:
-        pg.click("#save-code .app-banner-act"); pg.wait_for_timeout(600)
-        after=pg.evaluate("""async ()=>({clip: await navigator.clipboard.readText(),
-           saved: store.savedCodeSaved, gone: !document.getElementById('save-code'),
-           toast: (document.querySelector('.toast')||{}).textContent||''})""")
-        ck("one tap puts the code somewhere",
-           (after.get("clip") or "") == "WXYZ-7777", after.get("clip"))
-        ck("and marks it saved", after.get("saved") is True, after)
-        ck("and the banner goes", after.get("gone") is True, after)
+        # THE DECISION CHANGED, SO THIS CHECK CHANGED WITH IT. The banner
+        # used to fire the share sheet straight from Home and mark the
+        # code saved on the tap. Asked against: it should "directly take
+        # you to the settings, scroll down to the sync section, and flash
+        # it". So what has to hold now is that ONE tap puts somebody in
+        # front of the real control - and that tapping a banner is no
+        # longer mistaken for having saved anything.
+        pg.click("#save-code .app-banner-act"); pg.wait_for_timeout(900)
+        landed = pg.evaluate("""()=>{
+          const sect = document.getElementById('settings-sync-sect');
+          if(!sect) return { onSettings: false };
+          const r = sect.getBoundingClientRect();
+          return { onSettings: true,
+                   inView: r.top < innerHeight && r.bottom > 0,
+                   flashed: sect.classList.contains('settings-flash'),
+                   saved: !!store.savedCodeSaved,
+                   gone: !document.getElementById('save-code') };}""")
+        ck("one tap lands on Settings", landed.get("onSettings") is True, landed)
+        ck("with the Sync section in view", landed.get("inView") is True, landed)
+        ck("and lit up", landed.get("flashed") is True, landed)
+        ck("the banner goes", landed.get("gone") is True, landed)
+        # TAPPING IS NOT SAVING. Marking it saved here would silence the
+        # reminder for somebody who had done nothing but follow a link.
+        ck("tapping it does not claim the code is saved",
+           landed.get("saved") is False, landed)
 
-        # A CLIPBOARD DOES NOT SURVIVE THE NEXT COPY, which is the whole
-        # problem with "save your code" being a copy button. Where a
-        # share sheet exists the banner has to use it, and the code has
-        # to be in the shared TEXT - a title alone saves nothing.
-        # Stubbed: headless Chromium has no share sheet.
-        pg.evaluate("""()=>{ window.__shared=null; store.savedCodeSaved=false;
-          store.savedCodePrompts=0;
-          navigator.share=(d)=>{ window.__shared=d; return Promise.resolve(); };
-          showHome(); }""")
-        pg.wait_for_timeout(700)
-        if pg.query_selector("#save-code .app-banner-act"):
-            pg.click("#save-code .app-banner-act"); pg.wait_for_timeout(600)
-        sh = pg.evaluate("()=>window.__shared")
-        ck("the share sheet is used where there is one",
-           bool(sh) and "WXYZ-7777" in ((sh or {}).get("text") or ""),
-           str(sh)[:140])
-
-        # Backing out of the sheet saved nothing, so it must not silence
-        # the reminder - the same rule the refused-clipboard path has.
-        pg.evaluate("""()=>{ store.savedCodeSaved=false; store.savedCodePrompts=0;
-          navigator.share=()=>Promise.reject(Object.assign(new Error("x"),{name:"AbortError"}));
-          navigator.clipboard.writeText=()=>Promise.reject(new Error("no"));
-          showHome(); }""")
-        pg.wait_for_timeout(700)
-        if pg.query_selector("#save-code .app-banner-act"):
-            pg.click("#save-code .app-banner-act"); pg.wait_for_timeout(600)
-        ck("a cancelled share is not a save",
-           pg.evaluate("()=>!!store.savedCodeSaved") is False)
+        # And the control it lands on still does the real thing: a
+        # clipboard does not survive the next copy, so where a share
+        # sheet exists the code has to be in the shared TEXT.
+        # Stubbed - headless Chromium has no share sheet.
+        pg.evaluate("""()=>{ window.__shared = null;
+          navigator.share = (d) => { window.__shared = d; return Promise.resolve(); }; }""")
+        btn = pg.query_selector("#settings-sync-sect .cal-profile-btn")
+        if not btn:
+            ck("and Save code there really does save it", False, "no Save code button")
+        else:
+            btn.click(); pg.wait_for_timeout(700)
+            sh = pg.evaluate("()=>window.__shared")
+            ck("and Save code there really does save it",
+               bool(sh) and "WXYZ-7777" in ((sh or {}).get("text") or ""),
+               str(sh)[:140])
     if errs: ck("no JS errors", False, errs[:2])
     else: ck("no JS errors", True)
     ctx.close()
@@ -173,7 +176,7 @@ with sync_playwright() as pw:
     pg=ctx.new_page()
     pg.route("**/index.html", lambda r: r.fulfill(status=200,headers={"content-type":"text/html; charset=utf-8"},body=BODY))
     pg.route("**/version.json", lambda r: r.fulfill(status=200,headers={"content-type":"application/json"},body=VERSION_JSON))
-    pg.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.drill.v1','%s');localStorage.setItem('class26e.synccode','WXYZ-7777');}catch(e){}"%STORE)
+    pg.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.drill.v1','%s');localStorage.setItem('class26e.synccode','WXYZ-7777');}catch(e){}"%STORE)
     pg.goto(URL); pg.wait_for_timeout(3000)
     pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __fake();}")
     pg.wait_for_timeout(900)

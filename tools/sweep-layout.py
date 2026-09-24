@@ -115,7 +115,7 @@ SCREENS = [
     # the rest
     "showInstallGuide", "showInstallPlatformPicker", "showResetWarning",
     "showWhatsNew", "showReleaseHistory",
-    "showVirtualRoomChoice", "showVirtualRoomSetup", "showVirtualRoomJoinEntry",
+    "showVirtualRoomChoice", "showVirtualRoomSetup",
 ]
 
 # Reached only from Welcome, and only before the account exists.
@@ -153,7 +153,7 @@ SEED = """try{
    units: hu.slice(), mode: ['drill','exam','game'][j%3],
    pct: 60 + j*4, elapsedMs: (900 + j*137) * 1000, playedAt: Date.now() - j*2*86400000,
    date: day(j*2), score: 12 + j, total: 20, seconds: 300 + j*20 }); }
- localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');
+ localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');
  localStorage.setItem('class26e.drill.v1', JSON.stringify({name:'T',firstName:'Madison',avatarChar:'a',
    stats:{},testStats:{},studyLog:log,testHistory:hist,onboardingComplete:true,
    lifetime:{answered:840,correct:712,drillPlays:22,examPlays:9,gamePlays:6,perfectTests:3,

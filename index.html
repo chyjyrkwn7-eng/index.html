@@ -2937,6 +2937,21 @@
      height already contains the home indicator, and adding it again is
      the documented double-count that opens a second gap. */
   .rank-rows{ display:flex; flex-direction:column; padding-bottom:7.5rem; }
+  /* A row you can tap has to look like one - reported often enough
+     about other controls in this app to be worth doing first here. */
+  .rank-row.is-tappable{ cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .rank-row.is-tappable:active{ transform:translateY(1px); }
+  .person-sheet{ text-align:center; }
+  .person-sheet-art{
+    width:4.5rem; height:4.5rem; margin:0 auto .6rem; position:relative;
+  }
+  .person-sheet-name{
+    margin:0; font-family:var(--serif); font-size:1.35rem; font-weight:800; color:var(--ink);
+  }
+  .person-sheet-line{ margin:.2rem 0 1.1rem; font-size:.85rem; color:var(--soft); }
+  .person-sheet-act{ width:100%; min-height:48px; margin:0; }
+  .person-sheet-hint{ text-align:center; }
+  .person-sheet-close{ width:100%; min-height:44px; margin-top:.7rem; }
   .rank-row{
     display:flex; align-items:center; gap:.75rem; padding:.7rem .9rem; margin-bottom:.5rem;
     border-radius:14px; background:var(--panel); border:1px solid var(--rule);
@@ -2991,6 +3006,22 @@
     100% { box-shadow:0 0 0 0 rgba(0,0,0,0); }
   }
   .rank-row.rank-flash{ animation:rank-flash-anim 1.1s ease-out 2; }
+  /* The Sync section, lit for a moment when Settings is opened from
+     the save-your-code banner. A ring rather than a fill: the section
+     is a heading plus a card, and washing colour across both reads as
+     an error state. Reduce-motion strips the animation through the
+     global [data-reduce-motion="true"] * rule, which leaves the
+     section simply scrolled to - which is most of the job anyway. */
+  @keyframes settings-flash-anim{
+    0%   { box-shadow:0 0 0 0 transparent; }
+    18%  { box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 60%, transparent),
+                      0 0 22px -2px var(--accent); }
+    100% { box-shadow:0 0 0 0 transparent; }
+  }
+  .settings-flash{
+    border-radius:16px;
+    animation:settings-flash-anim 1.15s ease-out 2;
+  }
 
   /* Reads as a caption under the tabs, not as body copy: one size down
      from the rows' own names, --soft, and centred to sit under a centred
@@ -3004,7 +3035,23 @@
   /* min-width:0 so the field can actually shrink: a flex item defaults
      to min-content width, which on a search input is wide enough to
      push the button off a 320px screen. */
-  .rank-search{ flex:1; min-width:0; margin:0; }
+  .rank-search-wrap{ flex:1; min-width:0; position:relative; display:flex; }
+  .rank-search{ flex:1; min-width:0; margin:0; padding-right:2.6rem; }
+  /* Inside the field's own end, 44px of target, and only there when
+     there is something to clear. */
+  .rank-search-clear{
+    position:absolute; top:50%; right:.25rem; transform:translateY(-50%);
+    width:44px; height:44px; padding:0; display:flex;
+    align-items:center; justify-content:center;
+    background:none; border:none; cursor:pointer;
+    color:var(--soft); -webkit-tap-highlight-color:transparent;
+  }
+  .rank-search-clear[hidden]{ display:none; }
+  .rank-search-clear:hover{ color:var(--ink); }
+  .rank-search-clear svg{ width:1.15rem; height:1.15rem; display:block; }
+  /* Safari draws its own x for type=search on desktop; two of them in
+     one field is one too many. */
+  .rank-search::-webkit-search-cancel-button{ -webkit-appearance:none; appearance:none; }
   /* A real surface, not a bare .iconbtn. Beside a full-width search
      field an unfilled text label reads as a caption rather than
      something to press - and this is the one control on the screen
@@ -3439,6 +3486,281 @@
     /* The tab bar would otherwise sit on top of an open sheet. */
     body.vroom-chat-open .bottomtabs{ opacity:0; pointer-events:none; }
   }
+  /* ============ THE CHAT DOCK ============
+     A circle in the top-right of every screen, and a panel that opens
+     FROM it on a tablet and up as a sheet from the bottom on a phone -
+     asked for exactly that way. Built once on <body>, so a screen
+     change cannot take it with it and #stage's transform cannot
+     re-parent it. */
+  /* ---- the one-time introduction ----
+     A POPUP, NOT A TOOLTIP. It dims the screen because it has three
+     things to say and one of them is about who can read your messages;
+     a 40-character bubble in a corner is the wrong shape for that.
+     Above the chat dock (300/320) and the banners, below nothing. */
+  .intro-pop{
+    position:fixed; inset:0; z-index:360;
+    /* flex-start PLUS `margin:auto` ON THE CARD, never align-items:center.
+       Centring a flex child that is TALLER than its scroll container
+       pushes its top edge above the container's own top, where nothing
+       can scroll to it: measured on an SE 1st gen, the card was 751px
+       in a 568px viewport and its first line sat at y=-91. Two auto
+       margins centre it wherever there is room and simply stop at the
+       top where there is not. */
+    display:flex; align-items:flex-start; justify-content:center;
+    padding:1.25rem;
+    padding-top:calc(1.25rem + env(safe-area-inset-top, 0px));
+    padding-bottom:calc(1.25rem + env(safe-area-inset-bottom, 0px));
+    background:rgba(6,8,11,.62);
+    opacity:0; transition:opacity .24s ease;
+    overflow-y:auto;
+  }
+  .intro-pop.show{ opacity:1; }
+  .intro-card{
+    width:100%; max-width:26rem; text-align:left; margin:auto;
+    padding:1.4rem 1.3rem 1.2rem; border-radius:20px;
+    background:rgba(20,25,32,.72);
+    border:1px solid rgba(255,255,255,.14);
+    will-change:backdrop-filter;
+    backdrop-filter:blur(22px) saturate(1.6);
+    -webkit-backdrop-filter:blur(22px) saturate(1.6);
+    box-shadow:0 18px 50px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.09);
+    transform:translateY(10px) scale(.98);
+    transition:transform .26s cubic-bezier(.2,.8,.25,1);
+  }
+  .intro-pop.show .intro-card{ transform:translateY(0) scale(1); }
+  .intro-eyebrow{
+    margin:0 0 .2rem; font-size:.7rem; font-weight:800; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--accent);
+  }
+  .intro-title{
+    margin:0 0 1.1rem; font-family:var(--serif); font-size:1.5rem;
+    font-weight:800; color:var(--ink); line-height:1.15;
+  }
+  .intro-row{
+    display:flex; gap:.8rem; align-items:flex-start;
+    padding:.75rem 0; border-top:1px solid rgba(255,255,255,.09);
+  }
+  .intro-row-icon{
+    flex:0 0 auto; width:1.45rem; height:1.45rem; margin-top:.1rem;
+  }
+  .intro-row-text{ flex:1 1 auto; min-width:0; }
+  .intro-row-title{
+    margin:0 0 .18rem; font-size:.92rem; font-weight:800; color:var(--ink);
+  }
+  .intro-row-body{
+    margin:0; font-size:.83rem; line-height:1.45; color:var(--soft);
+  }
+  .intro-go{ width:100%; min-height:48px; margin-top:1.1rem; }
+  /* The real button, ringed while the card is explaining it - so "the
+     button in the top right" is something to look at rather than hunt
+     for. The ring is on the BUTTON and the dock sits above the dim, so
+     it stays lit while everything else goes dark. */
+  .chatdock-btn.is-introduced{
+    /* A HIGHLIGHT, NOT A CONTROL, for these few seconds. It sits above
+       the dim so it can be seen; tapping it would open the panel
+       UNDER the dim, which looks like the app broke. */
+    pointer-events:none;
+    z-index:370; position:fixed;
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 55%, transparent),
+      0 0 24px -2px var(--accent),
+      0 2px 10px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.1);
+  }
+  .chatdock:has(.chatdock-btn.is-introduced){ z-index:370; }
+  /* A four-inch phone cannot fit three explanations and a button, and
+     it is not expected to - it scrolls, the same call "What This
+     Actually Is" already makes. Tightening what can be tightened
+     without touching the body size keeps that scroll short: the type
+     here was chosen to be readable and buying pixels back by shrinking
+     it is the trade that has already been rejected once. */
+  @media (max-height:38rem){
+    .intro-card{ padding:1.1rem 1rem .95rem; }
+    .intro-title{ font-size:1.3rem; margin-bottom:.8rem; }
+    .intro-row{ padding:.55rem 0; }
+    .intro-go{ margin-top:.85rem; }
+  }
+  @media (min-width:40rem){
+    .intro-card{ max-width:29rem; padding:1.6rem 1.5rem 1.35rem; }
+    .intro-title{ font-size:1.7rem; }
+    .intro-row-body{ font-size:.88rem; }
+  }
+  .chatdock{ position:fixed; inset:0; z-index:300; pointer-events:none; }
+  .chatdock[hidden]{ display:none; }
+  .chatdock > *{ pointer-events:auto; }
+  /* SUBTLE, and that was the word used. The Virtual Room's own chat
+     button is accent-filled because it sits inside a lobby that is all
+     about that room; this one is over a question, the Leaderboard and
+     Home alike, so it is a hairline and a translucent fill that reads
+     as a control without competing with the screen under it. Still
+     44px, which is the app's floor and not negotiable. */
+  .chatdock-btn{
+    position:fixed;
+    top:calc(env(safe-area-inset-top, 0px) + .75rem);
+    right:max(1.5rem, calc(env(safe-area-inset-right, 0px) + 1.2rem));
+    width:44px; height:44px; padding:0; margin:0;
+    display:flex; align-items:center; justify-content:center;
+    border-radius:50%; overflow:visible;
+    background:rgba(20,25,32,.55);
+    border:1px solid rgba(255,255,255,.14);
+    will-change:backdrop-filter;
+    backdrop-filter:blur(14px) saturate(1.4);
+    -webkit-backdrop-filter:blur(14px) saturate(1.4);
+    box-shadow:0 2px 10px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.1);
+    color:var(--ink); cursor:pointer; -webkit-tap-highlight-color:transparent;
+  }
+  .chatdock-btn:active{ transform:translateY(1px); }
+  .chatdock-btn svg{ width:1.2rem; height:1.2rem; display:block; opacity:.92; }
+  /* Its own colour, not the accent: an unread marker has to read as an
+     unread marker on all seven themes. */
+  /* `display:flex` BEATS THE `[hidden]` ATTRIBUTE. The UA sheet's
+     `[hidden]{display:none}` is a weaker origin than any author rule,
+     so every one of these pills stayed on screen showing "0" however
+     carefully the JS set `.hidden = true`. `.vroom-chat-dot` has
+     carried the same bug since it was written - it was only ever
+     asserted in its VISIBLE state. */
+  .chatdock-dot[hidden], .chatdock-tabcount[hidden], .vroom-chat-dot[hidden]{
+    display:none;
+  }
+  .chatdock-dot{
+    position:absolute; top:-3px; right:-3px;
+    min-width:1.05rem; height:1.05rem; padding:0 .22rem; border-radius:999px;
+    background:#FF5F56; color:#fff; box-shadow:0 0 0 2px rgba(10,10,12,.8);
+    display:flex; align-items:center; justify-content:center;
+    font-size:.68rem; font-weight:800; line-height:1;
+    font-variant-numeric:tabular-nums;
+  }
+  .chatdock-panel{
+    position:fixed; z-index:320;
+    display:flex; flex-direction:column;
+    background:rgba(20,25,32,.62);
+    border:1px solid rgba(255,255,255,.12);
+    will-change:backdrop-filter;
+    backdrop-filter:blur(22px) saturate(1.6);
+    -webkit-backdrop-filter:blur(22px) saturate(1.6);
+    box-shadow:0 12px 40px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.08);
+    text-align:left; color:var(--ink);
+    transition:transform .26s cubic-bezier(.2,.8,.25,1), opacity .2s ease;
+  }
+  /* A TOP BANNER AND AN OPEN PANEL CANNOT BOTH HAVE THE CORNER. On a
+     tablet the panel is anchored under its own button, which is exactly
+     where a centred banner's right-hand end lands - measured, the
+     save-your-code banner came out half-covered. The banners already
+     measure their way around the BUTTON (NOTICE_OBSTRUCTIONS) and
+     cannot know about the panel, so the panel wins while it is open and
+     the banner comes straight back when it closes. Nothing is lost:
+     anything a banner is announcing is also a row in Notifications. */
+  body.chatdock-open .daily-alert,
+  body.chatdock-open .app-banner,
+  body.chatdock-open .vroom-chat-alert{
+    opacity:0 !important; pointer-events:none !important;
+  }
+  .chatdock-grip{ display:none; }
+  .chatdock-tabs{
+    display:flex; align-items:center; gap:.35rem;
+    padding:0 0 .7rem; margin:0 0 .7rem;
+    border-bottom:1px solid rgba(255,255,255,.1);
+  }
+  .chatdock-tab{
+    flex:0 1 auto; display:inline-flex; align-items:center; gap:.35rem;
+    min-height:36px; padding:.35rem .7rem; border-radius:999px;
+    background:transparent; border:1px solid transparent;
+    color:var(--soft); font:inherit; font-size:.82rem; font-weight:700;
+    cursor:pointer; -webkit-tap-highlight-color:transparent;
+  }
+  .chatdock-tab.is-on{
+    color:var(--ink);
+    background:rgba(255,255,255,.08);
+    border-color:rgba(255,255,255,.14);
+  }
+  .chatdock-tabcount{
+    min-width:1.05rem; height:1.05rem; padding:0 .22rem; border-radius:999px;
+    background:#FF5F56; color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-size:.66rem; font-weight:800; line-height:1;
+  }
+  .chatdock-close{
+    margin-left:auto; width:32px; height:32px; padding:0; line-height:1;
+    background:none; border:none; color:var(--soft);
+    font-size:1.3rem; cursor:pointer;
+  }
+  .chatdock-body{ flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }
+  .chatdock-body[hidden]{ display:none; }
+  .chatdock-note{
+    margin:.2rem 0 .8rem; font-size:.82rem; line-height:1.45; color:var(--soft);
+  }
+  .chatdock-act{ width:100%; min-height:44px; margin:0 0 .6rem; }
+  .chatdock-mini{ min-height:36px; padding:.3rem .8rem; font-size:.78rem; }
+  .chatdock-roomhead{
+    display:flex; align-items:center; gap:.45rem; flex-wrap:wrap;
+    margin:0 0 .6rem;
+  }
+  .chatdock-roomwho{
+    flex:1 1 auto; min-width:0;
+    font-size:.82rem; font-weight:700; color:var(--soft);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .chatdock-chathost{ flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }
+  /* The shared chat panel, placed inside the dock rather than floated:
+     the dock IS the surface, so the panel inside it must not bring a
+     second one of its own. Its toggle belongs to a lobby and has no job
+     here. */
+  .chatdock-chathost .vroom-chat-toggle{ display:none; }
+  .chatdock-chathost .vroom-chat{
+    position:static; margin:0; padding:0; max-height:none;
+    background:none; border:none; box-shadow:none; border-radius:0;
+    backdrop-filter:none; -webkit-backdrop-filter:none;
+    transform:none; display:flex; flex-direction:column; flex:1 1 auto; min-height:0;
+  }
+  .chatdock-chathost .vroom-chat::before{ content:none; }
+  .chatdock-chathost .vroom-chat-titlerow{ display:none; }
+  .chatdock-chathost .vroom-chat-list{ flex:1 1 auto; max-height:none; min-height:6rem; }
+  .chatdock-notiflist{ display:flex; flex-direction:column; gap:.2rem; overflow-y:auto; }
+  .chatdock-notif{
+    display:flex; align-items:center; gap:.6rem; flex-wrap:wrap;
+    padding:.6rem .1rem; border-bottom:1px solid var(--rule);
+  }
+  .chatdock-notif:last-child{ border-bottom:none; }
+  .chatdock-notif-text{
+    flex:1 1 8rem; min-width:8rem; margin:0; font-size:.85rem; line-height:1.35;
+  }
+  .chatdock-notif-acts{ display:flex; gap:.4rem; margin-left:auto; flex-shrink:0; }
+
+  /* ---- a phone: a sheet from the bottom ---- */
+  @media (max-width:40rem){
+    .chatdock-panel{
+      left:0; right:0; bottom:0; top:auto;
+      padding:.85rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
+      max-height:min(80vh, 34rem); min-height:min(62vh, 26rem);
+      border-radius:20px 20px 0 0; border-left:none; border-right:none; border-bottom:none;
+      transform:translateY(102%); touch-action:pan-y;
+    }
+    .chatdock.is-open .chatdock-panel{ transform:translateY(0); }
+    .chatdock-panel.is-dragging{ transition:none; }
+    .chatdock-grip{
+      display:block; width:2.4rem; height:.28rem; border-radius:999px;
+      background:rgba(255,255,255,.28); margin:0 auto .6rem; flex:0 0 auto;
+    }
+    /* The tab bar would otherwise paint on top of an open sheet. */
+    body.chatdock-open .bottomtabs{ opacity:0; pointer-events:none; }
+  }
+  /* ---- a tablet and up: it opens FROM the button ----
+     Asked for in those words. Anchored under the button's own corner
+     rather than centred, with a short rise and a fade so it reads as
+     coming out of the control that was tapped. */
+  @media (min-width:40rem){
+    .chatdock-panel{
+      top:calc(env(safe-area-inset-top, 0px) + .75rem + 44px + .5rem);
+      right:max(1.5rem, calc(env(safe-area-inset-right, 0px) + 1.2rem));
+      left:auto; bottom:auto;
+      width:min(24rem, calc(100vw - 3rem));
+      max-height:min(70vh, 34rem); min-height:18rem;
+      padding:.9rem 1rem 1rem; border-radius:18px;
+      transform-origin:top right;
+      transform:translateY(-8px) scale(.96); opacity:0; pointer-events:none;
+    }
+    .chatdock.is-open .chatdock-panel{
+      transform:translateY(0) scale(1); opacity:1; pointer-events:auto;
+    }
+  }
   .vroom-chat-list{
     max-height:11rem; overflow-y:auto; display:flex; flex-direction:column; gap:.5rem;
     margin-bottom:.7rem; padding-right:.2rem;
@@ -3509,18 +3831,6 @@
     min-height:8rem; text-align:left; font-family:inherit; line-height:1.45;
   }
   .vroom-code-row{ text-align:center; }
-  .vroom-code-value-row{
-    display:flex; align-items:center; justify-content:center; gap:.7rem; flex-wrap:wrap; margin-top:.15rem;
-  }
-  .vroom-code-value{
-    font-family:var(--mono); font-size:1.6rem; font-weight:800; letter-spacing:.05em; margin:0;
-  }
-  .vroom-copy-btn{
-    flex-shrink:0; font:inherit; font-size:.7rem; font-weight:800; letter-spacing:.02em;
-    text-transform:uppercase; padding:.4rem .8rem; border-radius:999px; border:1px solid var(--rule);
-    background:var(--panel); color:var(--ink); cursor:pointer;
-  }
-  .vroom-copy-btn.is-copied{ background:#3DD68C; border-color:#3DD68C; color:#0E2818; }
   .vroom-test-summary{
     text-align:center; padding:.85rem 1rem .95rem; margin:0 0 1rem; border-radius:14px;
     background:var(--panel); border:1px solid var(--rule);
@@ -4161,10 +4471,10 @@
   /* The sync card: the code and the button that copies it, one block.
      .cal-row brings the surface; these three rules only undo the
      margins the pieces carry for standing on their own. */
-  .sync-card{ padding:.85rem 1rem 1rem; }
-  .sync-card .sync-code-row{ padding-top:.2rem; padding-bottom:.2rem; }
-  .sync-card .sync-save-row{ margin:0; }
-  .sync-card-rule{
+  .sync-plain{ padding:0; background:none; border:none; box-shadow:none; }
+  .sync-plain .sync-code-row{ padding-top:.2rem; padding-bottom:.2rem; }
+  .sync-plain .sync-save-row{ margin:0; }
+  .sync-plain-rule{
     height:1px; background:var(--rule); opacity:.6; margin:.8rem 0;
   }
   /* Plain, not a bordered notice. It is a line of advice under a card,
@@ -7580,6 +7890,20 @@
      under the button. check-fixes.py measures the clearance on every
      device in the matrix, so this cannot go wrong quietly. */
   @media (min-width:24rem) and (max-width:32rem){
+    /* 3.25rem STAYS, and the attempt to go lower is worth recording.
+       Asked for a second time - still "too far from the bottom bar" - so
+       this went to 2.25rem, another 16px down. check-fixes caught it on
+       two phones: Start Studying then cleared the VERSION LABEL by
+       exactly 0.0px against the 12px floor, on a 14/15/16 and a 17 Pro
+       Max both installed.
+
+       So the 16px was not slack, it was the whole clearance. The button
+       on a phone is boxed in by two position:fixed things off the bottom
+       edge - the daily-question circle on the right and the version
+       label on the left - and it is already as low as it can go between
+       them. Lowering it further means moving one of those two first,
+       which is a real change to Home's furniture rather than a number
+       here. Do that before touching this again. */
     [data-layout="modern"] .panel.home.screen-home-actual{ padding-bottom:3.25rem; }
     /* AND THE BUTTON HAS TO EARN THE ROOM IT JUST TOOK. Dropping it into
        the circle's band is only safe while the two do not share a
@@ -7689,6 +8013,20 @@
      that screen cannot afford even those. */
   @media (max-width:32rem) and (min-height:46rem){
     .panel.home.screen-home-actual .homegreeting{ margin-top:auto; }
+    /* THE PLANET, THE SAME SIZE IT IS ON WELCOME. Reported as looking
+       too small, and measured that is exactly what it was: Welcome's
+       hero is min(29rem, 52vh) - 464px on a 17 Pro Max - and Home's was
+       min(23rem, 46vh), 368px. Two screens showing the same object at
+       two sizes, one after the other. The negative side margins come
+       with it, because that is what lets the sphere span wider than the
+       panel's own text column, and they are what Welcome already does.
+       It costs the button nothing: the greeting's margin-top:auto above
+       absorbs the extra height, and the button is positioned from the
+       panel's bottom padding rather than from the content above it. */
+    .panel.home.screen-home-actual .cosmic-hero-wrap{
+      width:calc(100% + 2.1rem); max-width:min(29rem, 52vh);
+      margin-left:-1.05rem; margin-right:-1.05rem;
+    }
     /* Both numbers measured rather than chosen. At 1.15rem/.9rem every
        phone landed on 42/32, which is a big improvement on a 17 Pro Max
        (60/54) and a step BACKWARDS on a 13 mini, which was already at
@@ -7714,7 +8052,13 @@
        much, with the button not moving at all. 1.3 -> .5rem is 13px
        lower and 13px closer, landing the tagline about 32px above the
        button against the ~24px the row costs on its own. */
-    .panel.home.screen-home-actual .hometitle-wrap{ margin-bottom:.5rem; }
+    /* .5rem -> .15rem, asked for again: "the words above it are too far
+       away". Every pixel taken off here goes back into the greeting's
+       auto, so the text group drops by exactly this much and the button
+       does not move - the same lever, in the same direction as last
+       time. There is not much left in it: the row's own base cost is
+       ~24px of tagline leading plus the button's padding. */
+    .panel.home.screen-home-actual .hometitle-wrap{ margin-bottom:.35rem; }
     .panel.home.screen-home-actual .playbtn{ margin-top:0; margin-bottom:0; }
   }
   /* Short AND wide is excluded by the 60rem height floor, and that is
@@ -10335,8 +10679,58 @@
     .speedkey{ font-size:.8rem; }
   }
   /* ---- Friends ---- */
-  .friend-sect{ margin-top:1.1rem; }
-  .friend-sect-pending .sect-label{ color:var(--accent); }
+  /* EACH SECTION IS A CARD, because three headings and a list with
+     nothing drawn around them is one long column of text - reported as
+     "the sections aren't separated". `.sect-label` has no CSS anywhere
+     in the file, so every heading on this screen was rendering as plain
+     body copy at body size: there was nothing to separate.
+
+     The surface is the app's own glass recipe rather than a new one -
+     a translucent fill, a hairline, the same 16px radius the slabs
+     use - so the screen reads as this app rather than as a settings
+     page that wandered in. */
+  .friend-sect{
+    /* SIDE PADDING IS WIDTH THE ROWS DO NOT GET. A card is the right
+       shape for these sections and it costs the list 34px of column -
+       enough, measured, to wrap "Online · Level 40 · 90 hundos" onto a
+       second line with "hundos" alone on it. .75rem buys most of it
+       back and still reads as a card. */
+    margin:0 0 1rem; padding:1rem .75rem;
+    background:rgba(255,255,255,.035);
+    border:1px solid var(--rule); border-radius:16px;
+  }
+  .friend-sect:last-child{ margin-bottom:0; }
+  /* A HEADING THAT LOOKS LIKE A HEADING. Small, heavy and lifted off
+     the body copy under it - the same treatment .slab gives Settings'
+     section titles, which is the pattern this screen should have been
+     matching all along. */
+  .friend-sect > .sect-label{
+    margin:0 0 .7rem; padding-bottom:.6rem;
+    border-bottom:1px solid var(--rule);
+    font-size:.74rem; font-weight:800; letter-spacing:.07em;
+    text-transform:uppercase; color:var(--soft);
+  }
+  /* Somebody is waiting on an answer, so that card is the one thing on
+     the screen allowed to carry the accent. */
+  .friend-sect-pending{
+    border-color:color-mix(in srgb, var(--accent) 45%, var(--rule));
+    background:color-mix(in srgb, var(--accent) 7%, rgba(255,255,255,.035));
+  }
+  .friend-sect-pending > .sect-label{ color:var(--accent); }
+  /* The rows already carry their own rules, so the card's padding is
+     all the separation they need - a border on the last row and the
+     card's own edge together read as a double line. */
+  .friend-sect .friend-row:last-child{ border-bottom:none; }
+  .friend-sect .friend-row:first-of-type{ padding-top:0; }
+  /* Inside a card the row has no side padding of its own to spare. */
+  .friend-sect .friend-row{ padding-left:0; padding-right:0; }
+  /* And Remove is a secondary action on a row, not a primary button
+     standing alone - 4.8rem still clears the 44px target in both axes
+     because the height is set separately. */
+  .friend-sect .friend-act{ min-width:4.8rem; padding-left:.6rem; padding-right:.6rem; }
+  /* A subtitle that has to wrap should break somewhere that reads as a
+     line, not leave one word stranded underneath. */
+  .friend-row-sub{ text-wrap:balance; }
   /* THE ROW WRAPS RATHER THAN SQUASHING. Accept + Decline are nowrap
      and flex-shrink:0, so on a 320px phone they took ~150px of a 280px
      column and left the name at 66px - "Alex" clipped to "A" and the
@@ -10380,31 +10774,26 @@
      the same trap `.panel` padding, `.opt .box` and `.bottomtab-label`
      already document. Measured, not assumed: the first version of this
      fix shipped and changed nothing. */
-  [data-layout="modern"] .friend-act{
-    border-radius:2px; background-image:none;
-  }
-  /* The shadow needs BOTH attributes, because the dark theme restates
-     the whole stack at [data-theme][data-layout] - 0,3,0 - which a
-     0,2,0 rule loses to. This is the second specificity step on the
-     same button; the radius only needed one, which is exactly how a
-     half-applied fix looks right in one measurement and wrong in the
-     screenshot. */
-  [data-theme="dark"][data-layout="modern"] .friend-act,
-  [data-layout="modern"] .friend-act{ box-shadow:none; }
+  /* THESE ARE THE APP'S BUTTONS NOW. They were deliberately flattened
+     to 2px corners with the shadow stripped, so that Accept and
+     Decline would read as a matched pair in a row rather than as two
+     primary actions floating off it - and reported directly: "why are
+     the buttons not like the other buttons?" They were not. Every
+     other button in this app is either the matte black pill or an
+     outlined one, and a screen that invents a third shape reads as a
+     different app. `.friend-send` was fixed for exactly this reason
+     one build earlier; this is the same treatment applied to the rest
+     of them, which is why the two now share their rules. The pair
+     still reads as a pair - black against outlined is hierarchy
+     enough, and it is the hierarchy everywhere else already uses. */
+  [data-layout="modern"] .friend-act,
+  [data-layout="modern"] .friend-send{ border-radius:999px; }
   [data-theme="dark"][data-layout="modern"] .friend-act.ghost,
   [data-layout="modern"] .friend-act.ghost{
     background:transparent; color:var(--ink); border:1px solid var(--rule);
     box-shadow:none; background-image:none;
   }
   [data-layout="modern"] .friend-act.ghost:hover{ border-color:var(--soft); }
-  /* A rule above "Your code", so one card visibly contains two halves
-     of the same job rather than reading as a run-on. */
-  .friend-yourcode-lab{
-    margin:1.1rem 0 .5rem; padding-top:.9rem;
-    border-top:1px solid var(--rule);
-    font-size:.72rem; font-weight:800; letter-spacing:.08em;
-    text-transform:uppercase; color:var(--soft); opacity:.75;
-  }
   .friend-add-hint{ margin:.15rem 0 .7rem; }
   .friend-mycode-wrap{ display:flex; align-items:center; gap:.6rem; }
   /* Centred, mono and narrow, the same treatment the sync code field
@@ -10414,8 +10803,11 @@
     margin:0; font-family:var(--mono); font-size:1.25rem; font-weight:700;
     letter-spacing:.14em; color:var(--ink); text-align:center;
     background:var(--panel2, rgba(255,255,255,.05));
-    border:1px solid var(--rule); border-radius:3px;
-    padding:.55rem .4rem; min-width:8.5rem;
+    /* The pill, so the two code fields on this screen - the one you
+       read out and the one you type into - are the same object. A 3px
+       box beside a pill input read as two different controls. */
+    border:1px solid var(--rule); border-radius:999px;
+    padding:.55rem .9rem; min-width:9rem;
   }
   /* An actionable banner takes the daily alert's shape, its top
      placement and its entrance - but NOT its pointer-events:none, which
@@ -10459,10 +10851,17 @@
      distinguishable before a single word is read. */
   .app-banner-vroom{ background:color-mix(in srgb, #3DA9FC 12%, rgba(28,33,40,.55)); }
   .app-banner-friend{ background:color-mix(in srgb, #4ADE80 12%, rgba(28,33,40,.55)); }
+  .app-banner-chat{ background:color-mix(in srgb, #8E7CF5 12%, rgba(28,33,40,.55)); }
   .friend-hint{ margin:.5rem 0 0; font-size:.75rem; line-height:1.4; color:var(--soft); }
-  .friend-add-row{ display:flex; gap:.5rem; align-items:stretch; }
+  .friend-add-row{ display:flex; gap:.5rem; align-items:stretch; flex-wrap:wrap; }
+  /* A CODE FIELD IS THE WIDTH OF A CODE. This was `flex:1 1 0`, so it
+     ate the whole panel - 690px of input on an iPad for seven
+     characters - and reported as huge. It is the same 11rem treatment
+     the sync code field already has, and for the same reason recorded
+     there: the narrow wrap is what makes the centring read as
+     deliberate rather than as text stranded in a wide box. */
   .friend-add-input{
-    flex:1 1 0; min-width:0; text-align:center;
+    flex:0 1 11rem; width:11rem; max-width:100%; text-align:center;
     font-family:var(--mono); letter-spacing:.14em; text-transform:uppercase;
   }
   /* SEND HAD TO LOOK LIKE THIS APP'S BUTTONS. Reported directly - it
@@ -10476,7 +10875,8 @@
      0,2,0 to beat `[data-layout="modern"] .next`, and the background
      needs 0,3,0 to beat the dark theme's restatement of the same
      stack. The first version of that fix shipped and changed nothing. */
-  [data-layout="modern"] .friend-send{ border-radius:999px; }
+  [data-theme="dark"][data-layout="modern"] .friend-act:not(.ghost),
+  [data-layout="modern"] .friend-act:not(.ghost),
   [data-theme="dark"][data-layout="modern"] .friend-send,
   [data-layout="modern"] .friend-send{
     background-color:#0A0A0C; background-image:none; color:#fff; border:none;
@@ -10601,12 +11001,11 @@
     display:flex; align-items:center; gap:.5rem;
     margin-top:.8rem; padding-top:.7rem; border-top:1px solid var(--rule);
   }
-  /* Invite friends, in the card that is already about getting people
-     in. Full width under the code and its Copy button rather than
-     inline with them - the code is the thing to read there, and a
-     third control on that line crowds it on a 320px phone. */
+  /* Invite friends, alone in the card that is about getting people in.
+     It shared that card with the room code and a Copy button until
+     codes were removed; it is the whole card now. */
   .vroom-code-row .vroom-invite-btn{
-    width:100%; min-height:46px; margin-top:.85rem; margin-left:0; font-size:.92rem;
+    width:100%; min-height:46px; margin-top:.6rem; margin-left:0; font-size:.92rem;
   }
   /* Two equal CARDS, not two pills. As pills the unselected one was a
      bare outline on the sheet's own background and was reported as
@@ -23182,12 +23581,66 @@ new MutationObserver(() => {
     const vv = window.visualViewport;
     return !!(vv && (vv.offsetTop > 0 || vv.pageTop > 0));
   };
-  const settle = () => { if(displaced()) window.scrollTo(0, 0); };
+  /* NOT WHILE SOMETHING IS DELIBERATELY SCROLLING SOMEWHERE ELSE.
+     This runs four times over 400ms after every screen mount, and
+     Settings opened focused on a section scrolls to it inside that
+     window - traced, the section was parked at y=756 and these calls
+     walked it back to 0. The hold is the same one toTop() honours; a
+     keyboard displacement is still unwound the moment it lifts. */
+  const settle = () => {
+    if(Date.now() < toTopHoldUntil) return;
+    if(displaced()) window.scrollTo(0, 0);
+  };
   settle();
   requestAnimationFrame(settle);
   setTimeout(settle, 160);
   setTimeout(settle, 400);
 }).observe(stage, { childList: true });
+
+/* ---- AND THE SAME UNWIND WITHOUT A SCREEN CHANGE ----
+   Everything above only runs when #stage mutates, which covers typing
+   on a screen you then LEAVE - the username field, a sync code, the
+   bug report. It does not cover typing on a screen you STAY on, and
+   the Leaderboard's search is the one field in the app like that: you
+   type, you read the rows, you tap Find me or a classmate, and the
+   page is never remounted. Reported from a device as the app zooming
+   in on the Leaderboard and not zooming back out.
+
+   That is what a left-behind keyboard pan looks like: iOS scrolls the
+   page up to keep the field above the keyboard, and when the keyboard
+   goes without anything undoing it the layout stays displaced - and
+   because most of this app's chrome is position:fixed, the whole
+   screen reads as shifted and magnified.
+
+   Ruled out first, by measurement rather than by reasoning: every text
+   field in the app computes to 17px (iOS only auto-zooms under 16),
+   and the Leaderboard has no horizontal overflow at 320, 375 or 440
+   with the longest usernames the board can hold. Neither was it.
+
+   visualViewport is the only thing that reports the pan. On a desktop
+   offsetTop is always 0, so this can never fire there - which is also
+   why it cannot be regression-tested locally, the same caveat the
+   observer above already carries. */
+if(window.visualViewport){
+  const vv = window.visualViewport;
+  const keyboardGone = () => vv.height >= window.innerHeight - 40;
+  const unwind = () => {
+    if(Date.now() < toTopHoldUntil) return;
+    /* Only once the keyboard has actually gone, and only while nothing
+       is focused - unwinding under a live field would fight iOS for the
+       scroll position it is deliberately holding. */
+    if(!keyboardGone()) return;
+    const el = document.activeElement;
+    if(el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
+    if(vv.offsetTop > 0 || vv.pageTop > window.scrollY + 1){
+      window.scrollTo(window.scrollX, window.scrollY);
+    }
+  };
+  vv.addEventListener("resize", () => { unwind(); setTimeout(unwind, 120); });
+  /* A blur is the other way the keyboard goes - tapping the background
+     rather than the keyboard's own dismiss. */
+  document.addEventListener("focusout", () => setTimeout(unwind, 120), true);
+}
 
 /* Only the setup screen's Start button and the in-question Next button
    float at the bottom of the screen — those are the two places a long
@@ -24817,6 +25270,41 @@ document.title = BANK_TITLE;
    worst case the app just runs in-memory for that session.                  */
 
 const STORE_KEY = "class26e.drill.v1";
+
+/* ---- A `let` DECLARED AFTER ITS CALLER IS A TOP-LEVEL TIME BOMB ----
+   idbSaveCode()'s memo used to sit beside idbSaveCode, about a thousand
+   lines BELOW the two places that call it. Function declarations hoist
+   and `let` does not, so any path that reached idbSaveCode while the
+   inline script was still running threw at the top level - and every
+   `const` and `let` after that point stayed in its temporal dead zone,
+   taking the whole app down from a line that looks fine.
+
+   That is not hypothetical: with Firebase available synchronously
+   rather than deferred, firebaseBecameReady() -> the live listener ->
+   recovery reaches idbSaveCode inside the top-level script, and the app
+   came up dead with "Cannot access 'mirroredCode' before
+   initialization" - an error naming a variable that has nothing to do
+   with the code that failed. In production the only thing preventing it
+   is `defer` on the two Firebase tags in <head>, which is a guarantee
+   held somewhere else entirely and would be easy to drop by accident.
+   attachLiveListener's own liveUnsubscribe already carries this note
+   and was moved for the same reason. The declaration moves; the check
+   in check-chat.py boots with Firebase synchronous so it cannot come
+   back. */
+let mirroredCode = null;
+/* SAME TRAP, SAME PATH, THREE MORE OF THEM. persistLocally() ends with
+   idbSaveCode(syncCode) and `syncCode` was declared eleven lines BELOW
+   it; saveStore() reaches scheduleCloudPush() and `cloudPushTimer` was
+   a thousand lines below that. Neither matters until something runs
+   persistLocally() or saveStore() from inside the top-level script -
+   which is exactly what the sync-code recovery path does when Firebase
+   is available synchronously rather than deferred. Fixing mirroredCode
+   alone simply let execution reach the next one, which is how these
+   were found: one at a time, each hiding the last. */
+const SYNC_CODE_KEY = "class26e.synccode";
+let syncCode = null;
+try { syncCode = window.localStorage.getItem(SYNC_CODE_KEY) || null; } catch(e){ syncCode = null; }
+let cloudPushTimer = null;
 let storageOK = false;
 let storageHadData = false;
 let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: [], studyLog: {}, theme: null,
@@ -24831,6 +25319,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               publicId: null, leaderboardKeyMigrated: false,
               friendCode: null, friendsOut: [], friendsIn: [], friendsDeclined: [],
               lobbyInvitesOut: {},
+              chatInvitesOut: {},
               lastModified: 0, firstName: "", avatarChar: null, onboardingComplete: false,
               dailyQuestionDate: null, dailyQuestionCorrect: false,
               seenModeSelectTour: false, seenUnitSelectTour: false,
@@ -24937,6 +25426,11 @@ function applyLoadedData(got){
   store.friendsDeclined = Array.isArray(got.friendsDeclined) ? got.friendsDeclined.slice(0, 200) : [];
   store.lobbyInvitesOut = (got.lobbyInvitesOut && typeof got.lobbyInvitesOut === "object")
     ? got.lobbyInvitesOut : {};
+  /* Defaulted for an existing account, per the applyLoadedData rule -
+     a field that arrives undefined must not start dropping out of the
+     document on every round trip. */
+  store.chatInvitesOut = (got.chatInvitesOut && typeof got.chatInvitesOut === "object")
+    ? got.chatInvitesOut : {};
   /* THE ONE PLACE THE "DEFAULT TO ALREADY-SEEN" RULE IS DELIBERATELY
      INVERTED. Every other flag here defaults so an existing account is
      not ambushed by something new; this one has to reach exactly those
@@ -25095,10 +25589,6 @@ function persistLocally(){
    exactly as it always was. Nothing here should ever block or break normal
    use \u2014 sync is a bonus layer on top of local storage, never a
    replacement for it. */
-
-const SYNC_CODE_KEY = "class26e.synccode";
-let syncCode = null;
-try { syncCode = window.localStorage.getItem(SYNC_CODE_KEY) || null; } catch(e){ syncCode = null; }
 
 let fbDb = null;
 function initFirebase(){
@@ -25313,7 +25803,7 @@ function generateSyncCode(){
   return out;
 }
 
-/* Set only by "Stop syncing this device". It is what separates "this
+/* Set only by a reset that turns syncing off. It is what separates "this
    device has no code because someone chose that" from "this device has
    no code and something went wrong", which the boot self-heal below
    cannot tell apart on its own - and getting it wrong either strands an
@@ -25596,37 +26086,6 @@ function inviteFriendToLobby(pub, roomCode){
   pushToCloud();
 }
 
-/* THE ONLINE DOT HAS TO BE GOOD FOR SOMETHING. Seeing that a classmate
-   is here and having nothing to do about it is a light on a dashboard.
-   So an online friend gets exactly one action, and it is the one the
-   dot is for: start a lobby with them already invited.
-
-   It has to make the room itself. An invite is addressed to a ROOM
-   CODE and the Friends screen has none - openInviteFriendsSheet takes
-   one because it is only ever opened from inside a lobby - so the two
-   halves are one tap here rather than "go to Virtual Room, start a
-   lobby, open Invite friends, find them again". */
-function inviteFriendToNewLobby(pub, name){
-  if(!pub) return;
-  if(!fbDb){
-    showToast("Inviting needs a live connection \u2014 check your connection and try again.");
-    return;
-  }
-  const who = name || "them";
-  /* Already in a room - invite into THAT one rather than abandoning it
-     for a new one. Not reachable from the Friends screen today (a
-     lobby hides the tab bar), but a second surface for this later
-     would hit it, and silently stranding a lobby full of people is not
-     a thing to leave to the next caller. */
-  if(inVirtualRoom && vroomCode){
-    inviteFriendToLobby(pub, vroomCode);
-    showToast("Invited " + who + " to your lobby.", "good");
-    return;
-  }
-  showToast("Starting a lobby and inviting " + who + "\u2026");
-  createVirtualRoomLobby([], 10, "race", pub);
-}
-
 /* An invite is only live for a while - a room that finished an hour ago
    is not an invitation, and nothing else clears it. */
 const LOBBY_INVITE_TTL_MS = 30 * 60 * 1000;
@@ -25811,6 +26270,7 @@ function wipeLocalProgressAndSettings(){
   store.friendCode = null;
   store.friendsOut = []; store.friendsIn = []; store.friendsDeclined = [];
   store.lobbyInvitesOut = {};
+  store.chatInvitesOut = {};
   store.firstName = "";
   store.avatarChar = null;
   /* This is the actual fix for the reset glitch: everything else here
@@ -25912,7 +26372,6 @@ function handleRemoteReset(){
   showToast("This account was reset from another device.");
 }
 
-let cloudPushTimer = null;
 function scheduleCloudPush(){
   if(!fbDb || !syncCode) return;
   clearTimeout(cloudPushTimer);
@@ -25983,6 +26442,10 @@ function pushToCloud(){
         freq: (store.friendsOut || []).slice(0, 100),
         facc: (store.friendsIn || []).slice(0, 100),
         inv: store.lobbyInvitesOut || {},
+        /* `cinv`, not `inv`: a chat invite and a Virtual Room invite
+           are different things and a reader must not have to guess
+           which one a code belongs to. */
+        cinv: store.chatInvitesOut || {},
         lastModified: Date.now(),
         /* THE HEARTBEAT HAS TO SURVIVE THIS WRITE. set() replaces the
            whole document, so a stats push landing a second after a
@@ -26185,7 +26648,6 @@ function idbLoad(){
    cloud copy, nothing to hand back to anyone who asked for it, and a
    brand-new account waiting on the Welcome screen to overwrite what was
    still sitting in the mirror. */
-let mirroredCode = null;
 function idbSaveCode(code){
   if(!code || code === mirroredCode) return;
   mirroredCode = code;
@@ -31172,8 +31634,20 @@ function showBankProblems(problems){
 
 /* ---------- helpers ----------------------------------------------------- */
 
+/* A SHORT WINDOW WHERE "BACK TO THE TOP" IS NOT WHAT ANYBODY WANTS.
+   Opening Settings focused on a section scrolls to it - and the stage
+   mount's own observer then calls toTop() several times over the next
+   few hundred milliseconds, each one a SMOOTH scroll to 0, so the
+   section was parked correctly and then dragged back off screen.
+   Traced, not guessed: scrollY went 0 -> 756 -> 753 -> 0 across six
+   calls. An explicit hold is honest about which of the two scrolls is
+   deliberate; an instant call (openQuestion's) still wins, because
+   that one is asking for the top on purpose. */
+let toTopHoldUntil = 0;
+function holdToTop(ms){ toTopHoldUntil = Date.now() + (ms || 600); }
 function toTop(instant){
   if(typeof window.scrollTo !== "function") return;
+  if(!instant && Date.now() < toTopHoldUntil) return;
   try{
     /* instant=true bypasses the person's own Smooth Scrolling setting for
        this one call - see openQuestion()'s own call site for why. Every
@@ -31250,6 +31724,30 @@ function poolNow(){
    now reads directly from RELEASE_NOTES[0].groups below, so there is
    only one place this content can ever be edited. */
 const RELEASE_NOTES = [
+  /* 6.9. No "what's new" screen for this one - asked for explicitly,
+     "we don't need a what's new screen though just the stuff that shows
+     up when you hit version". The one-time introduction card covers the
+     chat and friends; everything else lives here, where somebody goes
+     looking for it. */
+  {
+    version: "6.9",
+    groups: [
+      { label: "Chat & Friends", items: [
+        { icon: buildDevicesIcon, color: "#8E7CF5", title: "Chat Lobbies", body: "A button in the top right of every screen opens a chat you can keep going while you study. Start one, invite your friends, and only the people in it can see what is said \u2014 leave and you are out until somebody invites you back." },
+        { icon: buildPhoneAddIcon, color: "#4ADE80", title: "Friends", body: "Add a classmate with your friend code from Profile \u203a Friends, or tap anybody on the Leaderboard and send them a request. Friends are who you can invite to a chat or a Virtual Room." },
+        { icon: buildCloudIcon, color: "#3DA9FC", title: "Notifications", body: "The same button holds everything waiting on you \u2014 friend requests, chat invites and Virtual Room invites \u2014 with a count on it when there is something new, and a preview when somebody sends a message." },
+        { icon: buildOfflineIcon, color: "#F5B54D", title: "Who Is Online", body: "The friends list now shows who actually has the app open, rather than who answered a question recently." }
+      ]},
+      { label: "Invites replace codes", items: [
+        { icon: buildSkipForwardIcon, color: "#F5804D", title: "No More Codes To Type", body: "Joining a Virtual Room or a chat is an invite you accept, not a code you copy out of a message. The join-by-code screen and the shared room code are gone." }
+      ]},
+      { label: "Fixes & polish", items: [
+        { icon: buildScreenAwakeIcon, color: "#4DD0E1", title: "Tidier Settings", body: "The Sync section lost its box and the \u201cStop syncing this device\u201d button \u2014 a reset does the same job without stranding your rankings row. Saving your code from the reminder now takes you straight to the control and highlights it." },
+        { icon: buildSmoothCurveIcon, color: "#C583FF", title: "Home & Leaderboard", body: "Start Studying sits closer to the tab bar with the text above it tightened up, and the Leaderboard search has a clear button." },
+        { icon: buildStarIcon, color: "#FFD84D", title: "Under The Hood", body: "Four variables declared below the code that used them could have taken the whole app down at startup if Firebase ever loaded early. Found, fixed, and now checked on every build." }
+      ]}
+    ]
+  },
   {
     version: "6.0",
     groups: [
@@ -34025,6 +34523,964 @@ function showDailyQuestionLockedPopup(){
   showDailyAlert("Already done for today \u2014 resets in " + timeLeft + " (5pm daily).");
 }
 
+/* ============ THE CHAT LOBBY AND THE DOCK ============
+   Asked for as one thing: a subtle circular button in the top-right of
+   EVERY screen that opens either your notifications or a chat, with a
+   dot when there is something new; a chat lobby you start, invite
+   people to and talk in, which follows you across every screen; and
+   nothing of the chat inside a Virtual Room, whose own chat supersedes
+   it - though notifications keep working there.
+
+   DECLARED ABOVE showHome(), NOT BESIDE THE PANEL. showHome() calls
+   startChatDock(), and showHome() can run from INSIDE the top-level
+   script: with Firebase available synchronously, firebaseBecameReady()
+   reaches the live listener, which reaches boot, which reaches Home.
+   Every `const` and `let` below that point is then in its temporal
+   dead zone, so the first one touched throws at the top level and
+   takes the rest of the file with it. The file already carries a note
+   about this trap on attachLiveListener's own liveUnsubscribe; this is
+   the same trap, and these declarations are up here because of it. */
+
+/* The lobby's own binding: every accessor reads the live global rather
+   than a value captured when the panel was built, because vroomCode and
+   vroomMyKey both change under a running panel. */
+const VROOM_CHAT_CTX = {
+  code: () => vroomCode,
+  myKey: () => vroomMyKey,
+  colorFor: (key, parts) => vroomColorFor(key, parts),
+  shouldTrim: () => vroomIsHost,
+  cap: 160, keep: 100,
+  participantsOf: (data) => data.participants || null
+};
+
+/* ---- where a chat lobby lives ----
+   A `vrooms` document, because the Firestore rules allow reading and
+   writing `leaderboard` and `vrooms` and NOTHING ELSE. A collection of
+   its own would need the rules changed before a single message could
+   be sent, and would fail silently until it was. `kind:"chat"` marks
+   it, so a lobby browser can tell the two apart without guessing from
+   the absence of `units`. */
+const CHAT_ROOM_KEY = "class26e.chatroom";
+let chatRoomCode = null;
+let chatMyKey = null;
+let chatPanelCleanup = null;
+
+function loadChatRoom(){
+  try{ return localStorage.getItem(CHAT_ROOM_KEY) || null; }catch(e){ return null; }
+}
+function saveChatRoom(code){
+  /* localStorage, never `store`. Which chat you happen to be sitting in
+     is this DEVICE's business - syncing it would drag a second device
+     into a conversation nobody invited it to, the same reasoning
+     class26e.daily.seen already carries. */
+  try{
+    if(code) localStorage.setItem(CHAT_ROOM_KEY, code);
+    else localStorage.removeItem(CHAT_ROOM_KEY);
+  }catch(e){}
+}
+
+/* EVERY PERSON IN A CHAT GETS THEIR OWN COLOUR, and a hash cannot
+   promise that. vroomColorFor hashes the key into eight colours, which
+   is eight independent draws from eight slots: in a room of four it
+   lands two people on the same colour about as often as not, and "make
+   sure everyone's chat color is different" is exactly that complaint.
+   Join order is stable - joinedAt never changes once written - so
+   position in the room gives the first eight a colour each, by
+   construction rather than by luck. Past eight it wraps, which is the
+   honest answer: there are eight colours. */
+function chatColorFor(key, participants){
+  if(!key) return null;
+  if(!participants) return vroomColorFor(key, null);
+  const ks = Object.keys(participants).sort((a, b) =>
+    (((participants[a] || {}).joinedAt || 0) - ((participants[b] || {}).joinedAt || 0))
+    || (a < b ? -1 : 1));
+  const i = ks.indexOf(key);
+  if(i < 0) return vroomColorFor(key, null);
+  return VROOM_RACE_COLORS[i % VROOM_RACE_COLORS.length];
+}
+
+const CHAT_CTX = {
+  code: () => chatRoomCode,
+  myKey: () => chatMyKey,
+  colorFor: (key, parts) => chatColorFor(key, parts),
+  /* NOBODY IS HOST OF A CHAT LOBBY - it has no match to run - so "the
+     host trims" has no meaning. The author of the NEWEST message trims,
+     which is exactly one device per event and is already the device
+     that just wrote. */
+  shouldTrim: (messages) => {
+    const last = messages && messages[messages.length - 1];
+    return !!(last && chatMyKey && last.key === chatMyKey);
+  },
+  cap: 300, keep: 200,
+  participantsOf: (data) => {
+    const p = data.participants || null;
+    /* Read off the same snapshot the messages come from, so the header
+       cannot disagree with the conversation under it. */
+    const el = document.getElementById("chatdock-roomwho");
+    if(el){
+      const n = p ? Object.keys(p).length : 0;
+      el.textContent = n <= 1 ? "Just you so far" : (n + " in this chat");
+    }
+    return p;
+  },
+  /* The dock's own button is the thing carrying the dot, so the dock
+     decides what counts as read: the panel is being looked at only when
+     the dock is open AND the chat tab is the one showing. */
+  isVisible: () => chatDockOpen && chatDockTab === "chat",
+  onUnread: (n) => { chatUnseenAt = n; syncChatDockDot(); }
+};
+
+function chatSelfEntry(){
+  return { name: store.firstName || "Anonymous",
+           avatarChar: store.avatarChar || "ninja",
+           joinedAt: Date.now() };
+}
+
+/* Starting one and joining one are the same write with a different
+   document id, so they are one function. */
+function createChatRoom(){
+  if(!fbDb){ showToast("Chat needs a live connection — check your connection and try again."); return; }
+  const code = generateSyncCode();
+  const me = publicIdOf();
+  fbDb.collection("vrooms").doc(code).set({
+    kind: "chat",
+    createdAt: Date.now(),
+    chatMessages: [],
+    typing: {},
+    participants: { [me]: chatSelfEntry() }
+  }).then(() => {
+    enterChatRoom(code);
+    showToast("Chat started — invite somebody.", "good");
+  }).catch(() => showToast("Couldn't start the chat — try again."));
+}
+
+function joinChatRoom(rawCode){
+  const code = String(rawCode || "").trim().toUpperCase();
+  if(!code){ showToast("Type a chat code first."); return; }
+  if(!fbDb){ showToast("Chat needs a live connection — check your connection and try again."); return; }
+  const me = publicIdOf();
+  fbDb.collection("vrooms").doc(code).get().then(snap => {
+    if(!snap.exists){ showToast("No chat with that code."); return; }
+    /* A VIRTUAL ROOM IS NOT A CHAT. Both live in `vrooms`, so a code
+       typed in here could otherwise drop somebody into the middle of
+       somebody else's match as a participant with no progress. */
+    if((snap.data() || {}).kind !== "chat"){ showToast("That code is a Virtual Room, not a chat."); return; }
+    const patch = {};
+    patch["participants." + me] = chatSelfEntry();
+    return fbDb.collection("vrooms").doc(code).update(patch).then(() => {
+      enterChatRoom(code);
+      showToast("Joined the chat.", "good");
+    });
+  }).catch(() => showToast("Couldn't join that chat — try again."));
+}
+
+function enterChatRoom(code){
+  chatRoomCode = code;
+  chatMyKey = publicIdOf();
+  saveChatRoom(code);
+  rebuildChatTab();
+  syncChatDock();
+}
+
+/* LEAVING TAKES YOU OUT OF THE PARTICIPANTS MAP, not just off the
+   screen. The Virtual Room learned this the hard way - nothing removed
+   a participant, so one person leaving stranded everybody else waiting
+   on them forever. A chat has no gate to strand, but a roster that
+   lists people who left is a roster nobody believes. */
+function leaveChatRoom(quiet){
+  const code = chatRoomCode, me = chatMyKey;
+  chatRoomCode = null; chatMyKey = null;
+  saveChatRoom(null);
+  if(chatPanelCleanup){ try{ chatPanelCleanup(); }catch(e){} chatPanelCleanup = null; }
+  if(code && me && fbDb){
+    try{
+      const patch = {};
+      patch["participants." + me] = firebase.firestore.FieldValue.delete();
+      patch["typing." + me] = firebase.firestore.FieldValue.delete();
+      fbDb.collection("vrooms").doc(code).update(patch).catch(() => {});
+    }catch(e){}
+  }
+  rebuildChatTab();
+  syncChatDock();
+  if(!quiet) showToast("Left the chat.");
+}
+
+/* ---- invites ----
+   The same mechanism the Virtual Room's invites already use: the invite
+   lives in the SENDER's own leaderboard row, because that document is
+   already fetched by every client on every snapshot and nobody may
+   write to anybody else's row. `cinv` rather than `inv` so a chat
+   invite and a Virtual Room invite cannot be mistaken for each other. */
+function inviteFriendToChat(pub){
+  if(!pub || !chatRoomCode) return;
+  store.chatInvitesOut = store.chatInvitesOut || {};
+  store.chatInvitesOut[pub] = { code: chatRoomCode, at: Date.now() };
+  saveStore();
+  pushToCloud();
+}
+const CHAT_INVITE_TTL_MS = 30 * 60 * 1000;
+function incomingChatInvites(){
+  const friends = new Set(friendPublicIds());
+  const now = Date.now();
+  return (leaderboardRows || []).filter(e => {
+    if(!e || !e.pub || !friends.has(e.pub)) return false;
+    const inv = e.cinv && e.cinv[store.publicId];
+    return !!(inv && inv.code && (now - (inv.at || 0)) < CHAT_INVITE_TTL_MS
+              && inv.code !== chatRoomCode);
+  }).map(e => ({ from: e, code: e.cinv[store.publicId].code }));
+}
+
+/* ---- THE DOCK: one button, two things behind it ----
+   A circle in the top-right of every screen. Subtle on purpose - it is
+   on top of a question, the Leaderboard and Home alike, so it is a
+   hairline and a translucent fill rather than the accent-filled pill
+   the Virtual Room's own chat button uses inside its own lobby.
+
+   BUILT ONCE ON <body>, never per screen. A position:fixed element
+   inside #stage has its containing block re-parented by #stage's own
+   transform - the documented cause of the daily button's old
+   positioning glitch - and this one is meant to outlive every screen
+   change anyway. */
+let chatDock = null;
+let chatDockOpen = false;
+let chatDockTab = "chat";
+let chatTabBody = null;
+let notifTabBody = null;
+let chatUnseenAt = 0;
+
+function chatDockIcon(){
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("fill", "none");
+  svg.setAttribute("stroke", "currentColor");
+  svg.setAttribute("stroke-width", "2");
+  svg.setAttribute("stroke-linecap", "round");
+  svg.setAttribute("stroke-linejoin", "round");
+  svg.setAttribute("aria-hidden", "true");
+  const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  /* A speech bubble with a tail, which is the one glyph nobody has to
+     be taught. The tail is what stops a rounded rectangle reading as a
+     card. */
+  p.setAttribute("d", "M20.5 11.3a7.8 7.8 0 0 1-8.4 7.8 9.2 9.2 0 0 1-2.7-.4L4 20.7l1.5-4.3"
+    + "a7.6 7.6 0 0 1-1-4.1 7.8 7.8 0 0 1 8-7.8 7.8 7.8 0 0 1 8 7.8Z");
+  svg.appendChild(p);
+  return svg;
+}
+
+function startChatDock(){
+  if(chatDock) return;
+  if(!store || !store.onboardingComplete) return;
+
+  const host = document.createElement("div");
+  host.className = "chatdock"; host.id = "chatdock";
+
+  const btn = document.createElement("button");
+  btn.type = "button"; btn.className = "chatdock-btn"; btn.id = "chatdock-btn";
+  btn.setAttribute("aria-label", "Chat and notifications");
+  btn.appendChild(chatDockIcon());
+  const dot = document.createElement("span");
+  dot.className = "chatdock-dot"; dot.id = "chatdock-dot"; dot.hidden = true;
+  btn.appendChild(dot);
+  btn.addEventListener("click", () => toggleChatDock());
+
+  const panel = document.createElement("div");
+  panel.className = "chatdock-panel"; panel.id = "chatdock-panel";
+
+  /* The grab handle, for the phone sheet. Harmless on a tablet, where
+     the CSS hides it - one panel, two placements, no second builder. */
+  const grip = document.createElement("div");
+  grip.className = "chatdock-grip";
+
+  const tabs = document.createElement("div");
+  tabs.className = "chatdock-tabs";
+  const chatTabBtn = document.createElement("button");
+  chatTabBtn.type = "button"; chatTabBtn.className = "chatdock-tab"; chatTabBtn.dataset.tab = "chat";
+  chatTabBtn.textContent = "Chat";
+  const notifTabBtn = document.createElement("button");
+  notifTabBtn.type = "button"; notifTabBtn.className = "chatdock-tab"; notifTabBtn.dataset.tab = "notifs";
+  notifTabBtn.textContent = "Notifications";
+  const notifCount = document.createElement("span");
+  notifCount.className = "chatdock-tabcount"; notifCount.id = "chatdock-notifcount";
+  notifCount.hidden = true;
+  notifTabBtn.appendChild(notifCount);
+  const closeBtn = document.createElement("button");
+  closeBtn.type = "button"; closeBtn.className = "chatdock-close";
+  closeBtn.setAttribute("aria-label", "Close"); closeBtn.textContent = "×";
+  closeBtn.addEventListener("click", () => closeChatDock());
+  tabs.append(chatTabBtn, notifTabBtn, closeBtn);
+  [chatTabBtn, notifTabBtn].forEach(b => b.addEventListener("click", () => {
+    chatDockTab = b.dataset.tab;
+    syncChatDock();
+  }));
+
+  chatTabBody = document.createElement("div");
+  chatTabBody.className = "chatdock-body chatdock-body-chat";
+  notifTabBody = document.createElement("div");
+  notifTabBody.className = "chatdock-body chatdock-body-notifs";
+
+  panel.append(grip, tabs, chatTabBody, notifTabBody);
+  host.append(btn, panel);
+  document.body.appendChild(host);
+  chatDock = host;
+
+  /* Swipe the phone sheet down to close, from its own chrome only -
+     never from a scrollable list, or every attempt to read back through
+     the messages closes the sheet instead. */
+  let dragFrom = null, dragDy = 0;
+  panel.addEventListener("touchstart", (e) => {
+    if(!chatDockOpen) return;
+    if(e.target.closest(".vroom-chat-list, .chatdock-notiflist")) return;
+    dragFrom = e.touches[0].clientY; dragDy = 0;
+    panel.classList.add("is-dragging");
+  }, { passive: true });
+  panel.addEventListener("touchmove", (e) => {
+    if(dragFrom === null) return;
+    dragDy = Math.max(0, e.touches[0].clientY - dragFrom);
+    panel.style.transform = "translateY(" + dragDy + "px)";
+  }, { passive: true });
+  function endDrag(){
+    if(dragFrom === null) return;
+    panel.classList.remove("is-dragging");
+    panel.style.transform = "";
+    if(dragDy > 70) closeChatDock();
+    dragFrom = null; dragDy = 0;
+  }
+  panel.addEventListener("touchend", endDrag);
+  panel.addEventListener("touchcancel", endDrag);
+
+  chatRoomCode = loadChatRoom();
+  if(chatRoomCode) chatMyKey = publicIdOf();
+  rebuildChatTab();
+  syncChatDock();
+}
+
+function toggleChatDock(){ chatDockOpen ? closeChatDock() : openChatDock(); }
+function openChatDock(){
+  if(!chatDock) return;
+  chatDockOpen = true;
+  chatDock.classList.add("is-open");
+  document.body.classList.add("chatdock-open");
+  syncChatDock();
+}
+function closeChatDock(){
+  if(!chatDock) return;
+  chatDockOpen = false;
+  chatDock.classList.remove("is-open");
+  document.body.classList.remove("chatdock-open");
+  syncChatDock();
+}
+
+/* THE CHAT TAB IS REBUILT, THE PANEL INSIDE IT IS NOT REUSED. Its
+   listener is bound to one document id, so a different room is a
+   different panel - and tearing the old one down is what detaches the
+   old room's snapshot. */
+function rebuildChatTab(){
+  if(!chatTabBody) return;
+  if(chatPanelCleanup){ try{ chatPanelCleanup(); }catch(e){} chatPanelCleanup = null; }
+  chatTabBody.replaceChildren();
+
+  if(inVroomNow()){
+    /* THE VIRTUAL ROOM'S CHAT SUPERSEDES THIS ONE, said plainly rather
+       than by an empty tab. Asked for directly. */
+    const n = document.createElement("p");
+    n.className = "chatdock-note";
+    n.textContent = "You’re in a Virtual Room — its own chat is in the room. Notifications still work here.";
+    chatTabBody.appendChild(n);
+    return;
+  }
+
+  if(!chatRoomCode){
+    /* NO CODE FIELD. Asked for directly - "no more codes to join
+       lobby's chats". You start one and invite people, or somebody
+       invites you and it arrives in Notifications. joinChatRoom() is
+       still the mechanism an invite uses; nothing asks a person to
+       type one. */
+    const n = document.createElement("p");
+    n.className = "chatdock-note";
+    n.textContent = "Start a chat and invite your friends. If somebody invites you, it turns up in Notifications.";
+    const start = document.createElement("button");
+    start.type = "button"; start.className = "next chatdock-act";
+    start.textContent = "Start a chat";
+    start.addEventListener("click", createChatRoom);
+    chatTabBody.append(n, start);
+    return;
+  }
+
+  /* In a chat: who is here, the code to hand out, and the way out. */
+  const head = document.createElement("div");
+  head.className = "chatdock-roomhead";
+  /* WHO IS IN HERE, not what the code is. The code was the thing you
+     read out to get somebody in; with invites as the only way in it is
+     an identifier nobody needs, and a count is the fact you actually
+     want at a glance. */
+  const who = document.createElement("span");
+  who.className = "chatdock-roomwho"; who.id = "chatdock-roomwho";
+  who.textContent = "Chat";
+  const inviteBtn = document.createElement("button");
+  inviteBtn.type = "button"; inviteBtn.className = "next chatdock-mini";
+  inviteBtn.textContent = "Invite";
+  inviteBtn.addEventListener("click", () => openChatInviteSheet());
+  const leaveBtn = document.createElement("button");
+  leaveBtn.type = "button"; leaveBtn.className = "next ghost chatdock-mini";
+  leaveBtn.textContent = "Leave";
+  leaveBtn.addEventListener("click", () => leaveChatRoom());
+  head.append(who, inviteBtn, leaveBtn);
+  chatTabBody.appendChild(head);
+
+  const panelHost = document.createElement("div");
+  panelHost.className = "chatdock-chathost";
+  chatTabBody.appendChild(panelHost);
+  chatPanelCleanup = buildVroomChatPanel(panelHost, CHAT_CTX);
+}
+
+/* A VIRTUAL ROOM IS "the lobby onwards", not "the match onwards".
+   inVirtualRoom is only set when a match actually begins, but the chat
+   has to be gone from the moment somebody is standing in a lobby -
+   that is where its own chat already is. vroomCode is what says you
+   are in a room at all. Both reads are TDZ-guarded because this can
+   run while the top-level script is still executing, and a `let` read
+   before its declaration throws even through `typeof`. */
+function inVroomNow(){
+  let a = false, b = false;
+  try{ a = !!vroomCode; }catch(e){}
+  try{ b = !!inVirtualRoom; }catch(e){}
+  return a || b;
+}
+
+/* One function decides what is on screen, so the button, the tabs and
+   the two bodies cannot disagree about which state they are in. */
+let chatDockWasInVroom = null;
+function syncChatDock(){
+  if(!chatDock) return;
+  const show = !!(typeof store !== "undefined" && store && store.onboardingComplete);
+  chatDock.hidden = !show;
+  if(!show){
+    document.body.classList.remove("chatdock-open");
+    return;
+  }
+  /* INSIDE A VIRTUAL ROOM THE BUTTON STAYS. Asked for directly - the
+     chat goes, the notifications do not - so the tab is what changes,
+     not the dock. */
+  const inRoom = inVroomNow();
+  /* AND THE CHAT LOBBY IS GENUINELY LEFT, not merely hidden. Asked for
+     in those words: "when you leave the virtual room you'd have to
+     start another chat again because it won't be there". Sitting in a
+     room's participant map while unable to read it would leave a name
+     on a roster that nobody behind it is listening to. */
+  if(inRoom && chatRoomCode) leaveChatRoom(true);
+  if(chatDockWasInVroom !== inRoom){
+    chatDockWasInVroom = inRoom;
+    rebuildChatTab();
+    if(inRoom && chatDockTab === "chat") chatDockTab = "notifs";
+  }
+  chatDock.classList.toggle("in-vroom", inRoom);
+  chatDock.querySelectorAll(".chatdock-tab").forEach(b => {
+    b.classList.toggle("is-on", b.dataset.tab === chatDockTab);
+  });
+  if(chatTabBody) chatTabBody.hidden = chatDockTab !== "chat";
+  if(notifTabBody) notifTabBody.hidden = chatDockTab !== "notifs";
+  if(chatDockTab === "notifs") renderNotifications();
+  syncChatDockDot();
+}
+
+/* ---- THE NOTIFICATIONS TAB ----
+   Everything that is waiting on an answer, in one list: somebody
+   asking to be your friend, somebody inviting you to a Virtual Room,
+   somebody inviting you to a chat. All three already existed and all
+   three only ever surfaced as a banner you could miss - a banner is a
+   moment, an inbox is a place to go back to. */
+function notificationItems(){
+  const items = [];
+  (incomingFriendRequests() || []).forEach(e => items.push({
+    kind: "friend", at: 0, who: e,
+    text: (e.firstName || "Someone") + " wants to be friends",
+    actLabel: "Accept",
+    act: () => { acceptFriendRequest(e.pub); pushToCloud();
+                 showToast((e.firstName || "They") + " is now a friend.", "good");
+                 renderNotifications(); syncChatDockDot(); },
+    dismissLabel: "Decline",
+    dismiss: () => { declineFriendRequest(e.pub); renderNotifications(); syncChatDockDot(); }
+  }));
+  (incomingChatInvites() || []).forEach(inv => items.push({
+    kind: "chat", at: (inv.from.cinv[store.publicId] || {}).at || 0, who: inv.from,
+    text: (inv.from.firstName || "Someone") + " invited you to a chat",
+    actLabel: "Join",
+    act: () => { joinChatRoom(inv.code); chatDockTab = "chat"; syncChatDock(); }
+  }));
+  (incomingLobbyInvites() || []).forEach(inv => items.push({
+    kind: "vroom", at: (inv.from.inv[store.publicId] || {}).at || 0, who: inv.from,
+    text: (inv.from.firstName || "Someone") + " invited you to a Virtual Room",
+    actLabel: "Join",
+    act: () => { closeChatDock(); dismissInvite(inv.code); joinVirtualRoomLobby(inv.code); }
+  }));
+  /* Newest first, and a friend request - which carries no timestamp
+     anywhere in the row - sorts to the top, because it is the one that
+     has been waiting longest by definition. */
+  items.sort((a, b) => (b.at || 0) - (a.at || 0));
+  return items;
+}
+
+function renderNotifications(){
+  if(!notifTabBody) return;
+  const items = notificationItems();
+  notifTabBody.replaceChildren();
+  const countEl2 = document.getElementById("chatdock-notifcount");
+  if(countEl2){
+    countEl2.hidden = items.length === 0;
+    countEl2.textContent = items.length > 9 ? "9+" : String(items.length);
+  }
+  if(!items.length){
+    const n = document.createElement("p");
+    n.className = "chatdock-note";
+    n.textContent = "Nothing waiting on you.";
+    notifTabBody.appendChild(n);
+    return;
+  }
+  const list = document.createElement("div");
+  list.className = "chatdock-notiflist";
+  items.forEach(it => {
+    const row = document.createElement("div");
+    row.className = "chatdock-notif chatdock-notif-" + it.kind;
+    const art = document.createElement("div");
+    art.className = "friend-row-art";
+    art.appendChild(avatarSpanFor(it.who));
+    const text = document.createElement("p");
+    text.className = "chatdock-notif-text"; text.textContent = it.text;
+    const acts = document.createElement("div");
+    acts.className = "chatdock-notif-acts";
+    const go = document.createElement("button");
+    go.type = "button"; go.className = "next chatdock-mini";
+    go.textContent = it.actLabel;
+    go.addEventListener("click", it.act);
+    acts.appendChild(go);
+    if(it.dismiss){
+      const no = document.createElement("button");
+      no.type = "button"; no.className = "next ghost chatdock-mini";
+      no.textContent = it.dismissLabel || "Dismiss";
+      no.addEventListener("click", it.dismiss);
+      acts.appendChild(no);
+    }
+    row.append(art, text, acts);
+    list.appendChild(row);
+  });
+  notifTabBody.appendChild(list);
+}
+
+/* THE DOT IS THE WHOLE POINT OF A BUTTON THAT IS ALWAYS THERE. It
+   counts two separate things - unread messages in the chat you are in,
+   and anything waiting in notifications - because a person does not
+   care which of the two it is until they have opened it. */
+function syncChatDockDot(){
+  const dot = document.getElementById("chatdock-dot");
+  if(!dot) return;
+  const notifs = notificationItems().length;
+  const unread = chatUnseenAt;
+  const total = notifs + unread;
+  /* NOT "hidden while the dock is open". The dot counts messages AND
+     notifications, and having the chat tab open in front of you says
+     nothing about the friend request waiting on the other one. The
+     counts themselves go to zero as each side is actually read - the
+     panel reports its own unread through CTX.onUnread - so the dot
+     clears itself without being told to. */
+  dot.hidden = total === 0;
+  dot.textContent = total > 9 ? "9+" : String(total);
+  const n = document.getElementById("chatdock-notifcount");
+  if(n){ n.hidden = notifs === 0; n.textContent = notifs > 9 ? "9+" : String(notifs); }
+}
+
+/* A CHAT INVITE ARRIVING IS A BANNER, not only a row in a list nobody
+   has opened. It rides buildAppBanner like the friend and Virtual Room
+   ones already do, with its own kind so the three cannot be confused
+   at a glance - which was the explicit reason the other two were given
+   separate colours and tags. */
+let chatInviteSeen = 0;
+function checkChatInvites(){
+  if(!chatDock) return;
+  const invites = incomingChatInvites();
+  /* The DOT still updates while the introduction is up - it is on the
+     button, not over the screen, and a count that lags two seconds
+     behind is a count somebody stops trusting. Only the BANNER waits. */
+  syncChatDockDot();
+  if(introPending || document.getElementById("intro-pop")) return;
+  if(!invites.length) return;
+  const newest = invites[invites.length - 1];
+  const at = (newest.from.cinv[store.publicId] || {}).at || 0;
+  if(at <= chatInviteSeen) return;
+  chatInviteSeen = at;
+  if(typeof theme === "object" && theme && theme.muteBanners) return;
+  /* Never over a tour's dim and never over the splash - the same rule
+     every other banner in the app follows. */
+  if(document.getElementById("tour-overlay")) return;
+  if(document.getElementById("splashscreen")) return;
+  if(document.getElementById("chat-invite")) return;
+  const el = buildAppBanner("chat-invite", "chat",
+    (newest.from.firstName || "A classmate") + " invited you to a chat",
+    "Join",
+    () => joinChatRoom(newest.code),
+    () => {});
+  document.body.appendChild(el);
+  placeTopBanner(el);
+  const onNavigate = new MutationObserver(() => { onNavigate.disconnect(); el.remove(); });
+  onNavigate.observe(stage, { childList: true });
+  requestAnimationFrame(() => el.classList.add("show"));
+}
+
+/* ---- inviting somebody into the chat you are in ----
+   The friends list, one Invite each, on the same rows the rest of the
+   app draws people with. It is a sheet rather than a screen because
+   you are already inside the dock and a screen change would close it. */
+function openChatInviteSheet(){
+  if(!chatRoomCode) return;
+  const overlay = document.createElement("div");
+  overlay.className = "invite-overlay";
+  const sheet = document.createElement("div");
+  sheet.className = "invite-sheet";
+  const h = document.createElement("p");
+  h.className = "invite-sheet-title"; h.textContent = "Invite to this chat";
+  sheet.appendChild(h);
+  const body = document.createElement("div");
+  body.className = "invite-body";
+  sheet.appendChild(body);
+
+  const rows = rowsByPublicId();
+  /* A FRIEND YOU KNOW ABOUT IS INVITABLE WHETHER OR NOT THEIR BOARD ROW
+     IS LOADED - an invite is addressed to a public id and needs nothing
+     else. The Virtual Room's own sheet learned this: filtering on the
+     row silently emptied a list of three friends. */
+  const ids = friendPublicIds();
+  const people = ids.map(id => rows[id] || { pub: id });
+  if(!people.length){
+    const none = document.createElement("p");
+    none.className = "friend-hint";
+    none.textContent = "No friends yet \u2014 add someone from Profile \u203a Friends first.";
+    body.appendChild(none);
+  } else {
+    const list = document.createElement("div");
+    list.className = "invite-list";
+    people.forEach(e => {
+      const row = document.createElement("div");
+      row.className = "friend-row";
+      const art = document.createElement("div");
+      art.className = "friend-row-art";
+      art.appendChild(avatarSpanFor(e));
+      decorateAvatar(art, e.level, e.badges, e.mystery);
+      const text = document.createElement("div");
+      text.className = "friend-row-text";
+      const nm = document.createElement("p");
+      nm.className = "friend-row-name";
+      nm.textContent = e.firstName || "Classmate";
+      text.appendChild(nm);
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "next friend-act";
+      const already = (store.chatInvitesOut || {})[e.pub];
+      const sent = !!(already && already.code === chatRoomCode);
+      b.textContent = sent ? "Invited" : "Invite";
+      b.disabled = sent;
+      b.addEventListener("click", () => {
+        inviteFriendToChat(e.pub);
+        b.textContent = "Invited"; b.disabled = true;
+      });
+      row.append(art, text, b);
+      list.appendChild(row);
+    });
+    body.appendChild(list);
+  }
+
+  const done = document.createElement("button");
+  done.type = "button"; done.className = "next ghost";
+  done.textContent = "Done";
+  done.addEventListener("click", () => overlay.remove());
+  sheet.appendChild(done);
+  overlay.appendChild(sheet);
+  overlay.addEventListener("click", e => { if(e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+
+
+/* ---- THE ONE-TIME INTRODUCTION ----
+   Two things arrived in this batch that nobody asked for and nobody
+   will find by accident: a button in a corner that was empty
+   yesterday, and a friends list that decides who can reach you. Asked
+   for directly - introduce the chat lobbies, say what they are, say
+   that a chat is only the people in it, and mention friends as the way
+   to get classmates into a lobby or a chat.
+
+   A POPUP, NOT A TOOLTIP, and that was the explicit ask. A tour
+   tooltip is a sentence pointing at a control; this has three things
+   to say and one of them is about privacy, which nobody reads off a
+   40-character bubble. It dims the screen, so it is the only thing
+   being read, and the dock button keeps its own ring underneath so
+   "the button in the corner" is not a thing you have to go looking
+   for.
+
+   THE FLAG IS IN localStorage, NOT ON `store`, and keyed by a
+   REVISION. Which explainers this device has seen is viewing history,
+   not progress: syncing it would mean a classmate's second device
+   never gets introduced to anything. Same shape and the same reasoning
+   as tourRev and class26e.daily.seen. The revision is what lets the
+   next batch introduce the next thing without a second key. */
+const INTRO_KEY = "class26e.intro.seen";
+const INTRO_REV = 1;
+function introSeen(){
+  try{ return (Number(localStorage.getItem(INTRO_KEY)) || 0) >= INTRO_REV; }
+  catch(e){ return true; }
+}
+function markIntroSeen(){
+  try{ localStorage.setItem(INTRO_KEY, String(INTRO_REV)); }catch(e){}
+}
+
+function introRow(glyph, color, title, body){
+  const row = document.createElement("div");
+  row.className = "intro-row";
+  const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  icon.setAttribute("viewBox", "0 0 24 24");
+  icon.setAttribute("class", "intro-row-icon");
+  icon.setAttribute("aria-hidden", "true");
+  icon.style.color = color;
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute("d", glyph);
+  path.setAttribute("fill", "currentColor");
+  icon.appendChild(path);
+  const text = document.createElement("div");
+  text.className = "intro-row-text";
+  const h = document.createElement("p");
+  h.className = "intro-row-title"; h.textContent = title;
+  const p = document.createElement("p");
+  p.className = "intro-row-body"; p.textContent = body;
+  text.append(h, p);
+  row.append(icon, text);
+  return row;
+}
+
+function showIntroPopup(){
+  if(document.getElementById("intro-pop")) return;
+  const el = document.createElement("div");
+  el.className = "intro-pop"; el.id = "intro-pop";
+  const card = document.createElement("div");
+  card.className = "intro-card";
+
+  const eyebrow = document.createElement("p");
+  eyebrow.className = "intro-eyebrow"; eyebrow.textContent = "New in this update";
+  const title = document.createElement("h2");
+  title.className = "intro-title"; title.textContent = "Chat and friends";
+  card.append(eyebrow, title);
+
+  /* The chat button's own glyph, so the drawing in the card and the
+     drawing in the corner are the same object rather than two things
+     that look similar. */
+  card.appendChild(introRow(
+    "M20.5 11.3a7.8 7.8 0 0 1-8.4 7.8 9.2 9.2 0 0 1-2.7-.4L4 20.7l1.5-4.3"
+    + "a7.6 7.6 0 0 1-1-4.1 7.8 7.8 0 0 1 8-7.8 7.8 7.8 0 0 1 8 7.8Z",
+    "#8E7CF5", "The button in the top right",
+    "It is on every screen. Open it to start a chat lobby — a group "
+    + "chat you can keep going while you study — or to read anything "
+    + "waiting on you. A dot on it means there is something new."));
+
+  card.appendChild(introRow(
+    BANNER_KINDS.friend.glyph, "#4ADE80", "Friends",
+    "Add a classmate with your friend code, in Profile › Friends. "
+    + "Friends are who you can invite — to a chat lobby or to a "
+    + "Virtual Room. There are no codes to type any more; you get an "
+    + "invite and you accept it."));
+
+  card.appendChild(introRow(
+    /* A padlock: the one shape that says "closed" without a word. */
+    "M12 2a5 5 0 0 1 5 5v2h1a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h1V7a5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3v2h6V7a3 3 0 0 0-3-3",
+    "#F5B54D", "A chat is private",
+    "Only the people you invite are in it, and only they can see what "
+    + "is said. Leave a chat and you are out of it — somebody has to "
+    + "invite you back in."));
+
+  const go = document.createElement("button");
+  go.type = "button"; go.className = "next intro-go";
+  go.textContent = "Got it";
+  go.addEventListener("click", () => closeIntroPopup(el));
+  card.appendChild(go);
+
+  el.appendChild(card);
+  /* On <body>, like every other fixed overlay here - #stage animates,
+     and a transform on an ancestor re-parents a fixed element's
+     containing block. */
+  document.body.appendChild(el);
+  /* And the real button gets a ring underneath, so "the button in the
+     top right" is something you can look at rather than hunt for. */
+  const btn = document.getElementById("chatdock-btn");
+  if(btn) btn.classList.add("is-introduced");
+  requestAnimationFrame(() => el.classList.add("show"));
+
+  /* A screen change takes it with it, and counts as seen: somebody who
+     navigated away has decided they are done reading. */
+  const onNavigate = new MutationObserver(() => {
+    onNavigate.disconnect();
+    closeIntroPopup(el);
+  });
+  onNavigate.observe(stage, { childList: true });
+}
+
+function closeIntroPopup(el){
+  markIntroSeen();
+  introPending = false;
+  const btn = document.getElementById("chatdock-btn");
+  if(btn) btn.classList.remove("is-introduced");
+  /* The re-check is not optional. The card closing is not a screen
+     change, so nothing else would ever call these again and a banner
+     held for it would stay held until the next navigation - the same
+     reasoning holdNoticesAfterTour() already carries. */
+  setTimeout(() => {
+    checkLobbyInvites(); checkFriendRequests(); checkChatInvites();
+    checkSaveCodeReminder();
+  }, 500);
+  if(!el || !el.parentNode) return;
+  el.classList.remove("show");
+  setTimeout(() => { if(el.parentNode) el.remove(); }, 260);
+}
+
+/* TWO SECONDS AFTER HOME, asked for in those words - long enough that
+   the screen has settled and somebody is looking at it, short enough
+   that it is still obviously about what just loaded.
+
+   The preconditions are re-checked when the timer FIRES, not when it
+   is set, because two seconds is plenty of time for a tour, the
+   generating overlay or a whole screen change to arrive - the same
+   reasoning playQueuedBadgeCutscenes() carries. If Home is no longer
+   what is on screen, it waits for the next time it is. */
+let introTimer = null;
+/* THE BANNERS HAVE TO KNOW THIS IS COMING. The save-your-code banner
+   is posted from showHome() on a zero-delay timeout and the
+   introduction opens two seconds later, so left alone the banner went
+   up first and the card landed on top of it - "ensure that new code
+   banner pops up after the chat update stuff is over with too". This
+   flag is the window between Home mounting and the card either opening
+   or deciding not to; anything that puts something on screen checks it,
+   and closeIntroPopup() calls the checks again on the way out. */
+let introPending = false;
+function maybeShowIntro(){
+  if(introSeen()){ introPending = false; return; }
+  clearTimeout(introTimer);
+  introPending = true;
+  introTimer = setTimeout(() => {
+    /* Whatever happens from here, the window is over: either the card
+       opens, or it is not opening on this visit to Home and a banner
+       should not keep waiting on it. */
+    introPending = false;
+    if(introSeen()) return;
+    if(!store || !store.onboardingComplete) return;
+    if(document.getElementById("splashscreen")) return;
+    if(document.getElementById("tour-overlay")) return;
+    if(document.getElementById("genprofile-overlay")) return;
+    /* dataset.screen is set in exactly two places in this file, so
+       "still on Home" is structural rather than a list to maintain. */
+    const screen = stage.querySelector("[data-screen]");
+    if(!screen || screen.dataset.screen !== "home") return;
+    showIntroPopup();
+  }, 2000);
+}
+
+
+/* ---- ADDING SOMEBODY FROM THE LEADERBOARD ----
+   Asked for directly: "being able to send a friend request from the
+   leaderboard would be a cool feature too, like clicking on the user
+   and sending the request". It also closes the gap that removing join
+   codes opened - invites go to friends, so without this the only way
+   to reach a classmate is to have swapped friend codes with them
+   first, and the board is the one place everybody in the class already
+   appears.
+
+   ADDRESSED BY publicId, NOT BY A CODE LOOKUP. sendFriendRequest()
+   takes a friend code and searches the board for it, which is the
+   right shape for somebody typing one in. Here the row IS the person
+   and their public id is already in hand, so there is nothing to look
+   up - and nothing that could turn into a name-to-code lookup, which
+   this app deliberately does not have. */
+function friendStateOf(pub){
+  if(!pub) return "none";
+  if(pub === store.publicId) return "me";
+  if(friendPublicIds().indexOf(pub) >= 0) return "friends";
+  if((incomingFriendRequests() || []).some(e => e.pub === pub)) return "incoming";
+  if((store.friendsOut || []).indexOf(pub) >= 0) return "sent";
+  return "none";
+}
+
+function sendFriendRequestTo(pub){
+  if(!pub || pub === store.publicId) return false;
+  if((store.friendsOut || []).indexOf(pub) < 0){
+    store.friendsOut = (store.friendsOut || []).concat([pub]);
+    saveStore();
+  }
+  /* Published immediately rather than on the next ordinary save: the
+     request lives in MY row and does not exist for them until it is
+     up there. */
+  pushToCloud();
+  return true;
+}
+
+function openPersonSheet(entry){
+  if(!entry || !entry.pub) return;
+  const overlay = document.createElement("div");
+  overlay.className = "invite-overlay";
+  const sheet = document.createElement("div");
+  sheet.className = "invite-sheet person-sheet";
+
+  const art = document.createElement("div");
+  art.className = "person-sheet-art";
+  art.appendChild(avatarSpanFor(entry));
+  decorateAvatar(art, entry.level, entry.badges, entry.mystery);
+
+  const name = document.createElement("p");
+  name.className = "person-sheet-name";
+  name.textContent = entry.firstName || "Classmate";
+  const line = document.createElement("p");
+  line.className = "person-sheet-line";
+  line.textContent = "Level " + (entry.level || 0) + " · "
+    + (entry.badges || 0) + ((entry.badges === 1) ? " badge" : " badges");
+  sheet.append(art, name, line);
+
+  const act = document.createElement("button");
+  act.type = "button"; act.className = "next person-sheet-act";
+  const state = friendStateOf(entry.pub);
+  /* FOUR STATES, AND EACH ONE SAYS WHICH IN A WORD. A button that says
+     "Add friend" to somebody who already asked you is how a request
+     sits unanswered for a week. */
+  if(state === "friends"){
+    act.textContent = "Already friends"; act.disabled = true;
+    act.classList.add("ghost");
+  } else if(state === "sent"){
+    act.textContent = "Request sent"; act.disabled = true;
+    act.classList.add("ghost");
+  } else if(state === "incoming"){
+    act.textContent = "Accept friend request";
+    act.addEventListener("click", () => {
+      acceptFriendRequest(entry.pub); pushToCloud();
+      showToast((entry.firstName || "They") + " is now a friend.", "good");
+      overlay.remove();
+    });
+  } else {
+    act.textContent = "Add friend";
+    act.addEventListener("click", () => {
+      sendFriendRequestTo(entry.pub);
+      showToast("Request sent to " + (entry.firstName || "them") + ".", "good");
+      overlay.remove();
+    });
+  }
+  sheet.appendChild(act);
+
+  const hint = document.createElement("p");
+  hint.className = "friend-hint person-sheet-hint";
+  hint.textContent = "Friends are who you can invite to a chat or a Virtual Room.";
+  sheet.appendChild(hint);
+
+  const close = document.createElement("button");
+  close.type = "button"; close.className = "next ghost person-sheet-close";
+  close.textContent = "Close";
+  close.addEventListener("click", () => overlay.remove());
+  sheet.appendChild(close);
+
+  overlay.appendChild(sheet);
+  overlay.addEventListener("click", e => { if(e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
 function showHome(){
   /* Reaching the real Home screen by any path always means the pending
      "return to Setup" state from captureSetupReturn() is stale/no longer
@@ -34241,9 +35697,14 @@ function showHome(){
      not have announced itself. Idempotent, so mounting Home twenty
      times does not stack twenty timers. */
   startHeartbeat();
+  startChatDock();
   setTimeout(() => {
-    checkLobbyInvites(); checkFriendRequests(); checkSaveCodeReminder();
+    checkLobbyInvites(); checkFriendRequests(); checkChatInvites();
+    checkSaveCodeReminder();
   }, 0);
+  /* Two seconds after Home, once, per explicit request. It re-checks
+     its own preconditions when the timer fires - see maybeShowIntro. */
+  maybeShowIntro();
   stage.replaceChildren(panel);
   stage.appendChild(dailyBtn);
   /* Appended to stage as a sibling of the panel now, not a child of
@@ -37039,7 +38500,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-24-167";
+const APP_BUILD = "2026-09-24-170";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -37186,7 +38647,11 @@ function showAddToHomeNotice(){
    daily alert does now that "Find me" answers with one, and it was
    landing on Level/Badges/Hundos. */
 const NOTICE_OBSTRUCTIONS = [".wrap > .top", ".wrap > .count", ".back-link",
-                             ".panel > .navsegment", ".welcome-build"];
+                             ".panel > .navsegment", ".welcome-build",
+                             /* The chat dock is fixed in the top-right corner of
+                                every screen, and a centred banner at the same
+                                offset runs straight under it on a phone. */
+                             "#chatdock-btn"];
 
 /* Shared by both notices. The measured offset is applied with transitions
    suppressed, so the banner is simply already in the right place when it
@@ -38884,7 +40349,14 @@ function showBugReport(){
   toTop();
 }
 
-function showAppearance(){
+/* `opts.focus` opens Settings ALREADY LOOKING AT a section. Asked for
+   about the save-your-code banner: tapping it used to fire the share
+   sheet straight from the banner, which answers "save it" by putting
+   somebody in an iOS sheet with no idea what they are looking at.
+   Taking them to the control, scrolled to and lit up, teaches them
+   where it lives - which is the thing that matters the second time
+   they need it. */
+function showAppearance(opts){
   captureSetupReturn();
   if(store.pendingSupernovaCutscene){ playSupernovaCutscene(); return; }
   if(store.pendingTierCutscene){ playTierCutscene(store.pendingTierCutscene); return; }
@@ -39265,6 +40737,7 @@ function showAppearance(){
 
   const syncSect = document.createElement("div");
   syncSect.className = "sect";
+  syncSect.id = "settings-sync-sect";
   const syncLab = document.createElement("p");
   syncLab.className = "slab section-divider motion-summary"; syncLab.id = "settings-sync";
   syncLab.textContent = "Sync";
@@ -39311,11 +40784,17 @@ function showAppearance(){
          rule between; the note becomes plain text like every other hint
          in the app; and stopping sync becomes a real button rather than
          a red underline floating in the gap. */
+      /* NO BOX ROUND IT. Reported as the section looking worse for it:
+         every other group in Settings is a heading and its controls on
+         the panel's own surface, and this was the only one wearing a
+         card - which made it read as a widget dropped into the screen
+         rather than as part of it. The rule under the code row stays,
+         because that is what separates the code from the button. */
       const card = document.createElement("div");
-      card.className = "cal-row sync-card";
+      card.className = "sync-plain";
       card.appendChild(row);
       const cardRule = document.createElement("div");
-      cardRule.className = "sync-card-rule";
+      cardRule.className = "sync-plain-rule";
       card.appendChild(cardRule);
       syncSect.appendChild(card);
 
@@ -39377,26 +40856,16 @@ function showAppearance(){
         + "data, the code is what puts you back on your account.";
       syncSect.appendChild(saveNote);
 
-      const stopBar = document.createElement("div");
-      stopBar.className = "startbar sync-stop-bar";
-      const stopBtn = document.createElement("button");
-      stopBtn.type = "button"; stopBtn.className = "next ghost sync-stop-btn";
-      stopBtn.textContent = "Stop syncing this device";
-      stopBtn.addEventListener("click", () => {
-        if(!window.confirm("Stop syncing? This device will keep its progress, but will no longer update or be updated by other devices using this code.")) return;
-        /* The rankings entry is a separate document keyed by this same
-           code, and stopping sync was walking away from it: the row stayed
-           on everyone else's board with whatever numbers it had, and this
-           device had just thrown away the only key that could ever delete
-           it. Dead rows on the live board were exactly this. */
-        retireLeaderboardEntry(store.publicId);
-        detachLiveListener();
-        clearSyncCode(true);
-        renderSyncBody();
-        showToast("Sync turned off for this device.");
-      });
-      stopBar.appendChild(stopBtn);
-      syncSect.appendChild(stopBar);
+      /* NO "STOP SYNCING THIS DEVICE". Asked against directly - "it's
+         pointless and doesn't need to be there at all, we already have
+         the reset option". It was also the one control on the screen
+         that could quietly strand an account: it kept the progress and
+         threw away the code, so the row stayed on everyone's board with
+         nobody holding the key to it. Reset is the honest version of
+         the same intention and it is one section down.
+         clearSyncCode()/retireLeaderboardEntry() stay - reset still
+         calls them, and class26e.syncoff is still what holds boot's
+         re-issue off. Only the button is gone. */
     } else {
       const bar = document.createElement("div");
       bar.className = "startbar";
@@ -39783,8 +41252,58 @@ function showAppearance(){
   panel.appendChild(affiliationNote);
 
   stage.replaceChildren(panel);
-  toTop();
-  if(!store.seenSettingsTour){
+  /* INSTANT WHEN WE ARE ABOUT TO SCROLL SOMEWHERE ELSE. A plain toTop()
+     defers to the person's Smooth Scrolling setting, so it STARTS an
+     animation to 0 that is still running when the park() below jumps to
+     the section - and the animation finishes last, dragging the page
+     back to the top. That is the whole reason the section flashed
+     correctly while sitting 1045px below the fold. */
+  toTop(!!(opts && opts.focus));
+  /* SCROLLED TO AND LIT UP, after the screen is mounted and laid out -
+     a getBoundingClientRect on a node that is not in the document yet
+     has no box, and scrollIntoView on it does nothing. Two frames,
+     because toTop() above has just set a scroll position of its own and
+     this has to win. */
+  if(opts && opts.focus === "sync"){
+    holdToTop(700);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const sect = document.getElementById("settings-sync-sect");
+      if(!sect) return;
+      /* AN EXPLICIT SCROLL, NOT scrollIntoView. Measured: the section
+         sat at y=1045 in a 956px viewport with the document scrolled to
+         0 - scrollIntoView had run and moved nothing, because toTop()
+         and the stage mount are both still settling around it. Working
+         out the target and setting it twice - now, and again once the
+         mount has finished - is the version that lands.
+         "instant", deliberately: smooth scrolling is on by default and
+         the flash would otherwise start while the section was still
+         travelling, the same trap the answer-review check documents. */
+      /* MEASURED ONCE. Re-reading the rect on each attempt measures a
+         section that is already moving, so the second and third calls
+         chase their own scroll: traced, the third computed a target of
+         24px because by then the section was near the top of the
+         viewport. The document position does not move, so it is worked
+         out once and re-applied. */
+      const r0 = sect.getBoundingClientRect();
+      const target = Math.max(0,
+        window.scrollY + r0.top - Math.max(0, (window.innerHeight - r0.height) / 2));
+      const park = () => window.scrollTo({ top: target, behavior: "instant" });
+      park();
+      setTimeout(park, 140);
+      setTimeout(park, 360);
+      sect.classList.remove("settings-flash");
+      void sect.offsetWidth;
+      sect.classList.add("settings-flash");
+      sect.addEventListener("animationend",
+        () => sect.classList.remove("settings-flash"), { once: true });
+    }));
+  }
+  /* NOT WHEN SOMEBODY CAME HERE FOR ONE THING. Arriving from the
+     save-your-code banner and being met by a five-step tour of the
+     whole screen buries the control that was just pointed at - and the
+     tour's own scrolling fights the scroll that put it in view.
+     Unclaimed, so an ordinary visit to Settings still gets it. */
+  if(!store.seenSettingsTour && !(opts && opts.focus)){
     store.seenSettingsTour = true;
     saveStore();
     /* One step per section, pointed at that section by id. All five
@@ -40222,12 +41741,19 @@ function showVirtualRoomChoice(){
   startBtn.addEventListener("click", () => createVirtualRoomLobby([], 10));
   actions.appendChild(startBtn);
 
-  const joinBtn = document.createElement("button");
-  joinBtn.type = "button"; joinBtn.className = "next ghost";
-  joinBtn.textContent = "Join a lobby";
-  joinBtn.addEventListener("click", showVirtualRoomJoinEntry);
-  actions.appendChild(joinBtn);
+  /* NO "JOIN A LOBBY" BUTTON, BECAUSE THERE IS NO CODE TO TYPE.
+     Asked for directly: "the invite code for lobbies and chats can be
+     removed entirely, it's all through invites now". Getting into
+     somebody's room is a notification you accept, not a string you
+     copy out of a message and retype. joinVirtualRoomLobby() is still
+     the mechanism - an invite carries the room's id - it simply has no
+     surface that asks a person for one. */
   panel.appendChild(actions);
+
+  const note = document.createElement("p");
+  note.className = "cal-sub"; note.style.textAlign = "center";
+  note.textContent = "To join somebody else\u2019s lobby, they invite you \u2014 it arrives in your notifications.";
+  panel.appendChild(note);
 
   stage.replaceChildren(panel);
   toTop();
@@ -40768,13 +42294,7 @@ function showVirtualRoomSetup(editRoom){
   }
 }
 
-/* `invitePub` is the one-tap path off the Friends screen: an online
-   friend has a lobby to be invited to only once one EXISTS, so the
-   invite is sent from inside the .then() where the room's code first
-   exists rather than from the caller, which has none. Everything else
-   about the room is unchanged - it is an ordinary empty lobby and the
-   host still sets it up from Match settings. */
-function createVirtualRoomLobby(units, timeLimit, game, invitePub){
+function createVirtualRoomLobby(units, timeLimit, game){
   /* The actual bug behind "wouldn't let me start a Virtual Room
      lobby" \u2014 confirmed directly: with no live connection, this call
      used to throw a SYNCHRONOUS TypeError (fbDb itself being null,
@@ -40817,7 +42337,6 @@ function createVirtualRoomLobby(units, timeLimit, game, invitePub){
   fbDb.collection("vrooms").doc(code).set(doc).then(() => {
     vroomCode = code; vroomIsHost = true; vroomUnits = units;
     vroomMyKey = publicIdOf();
-    if(invitePub) inviteFriendToLobby(invitePub, code);
     showVirtualRoomLobby();
   }).catch(() => { showToast("Couldn't create the lobby \u2014 try again."); });
 }
@@ -40869,6 +42388,11 @@ const BANNER_KINDS = {
      look after your own account. Three colours that survive being read
      in a hurry, and three tags that survive not being able to tell
      them apart. */
+  /* A fourth colour and a fourth tag, for the same reason the other
+     three have their own: at a glance on a phone, three banners that
+     look alike are the same banner three times. Violet and a speech
+     bubble - not the friend green, not the room blue. */
+  chat: { tag: "CHAT", color: "#8E7CF5", glyph: "M20.5 11.3a7.8 7.8 0 0 1-8.4 7.8 9.2 9.2 0 0 1-2.7-.4L4 20.7l1.5-4.3a7.6 7.6 0 0 1-1-4.1 7.8 7.8 0 0 1 8-7.8 7.8 7.8 0 0 1 8 7.8Z" },
   account: { tag: "YOUR ACCOUNT", color: "#F5B54D", glyph: "M14 6a4.5 4.5 0 1 1-4.3 5.8L8.4 13H6.6v1.9H4.5v1.9H1.6v-2.6l6.1-6.1A4.5 4.5 0 0 1 14 6m1.4 2.2a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8" }
 };
 
@@ -40933,6 +42457,7 @@ function showLobbyInviteBanner(from, code){
 }
 
 function checkLobbyInvites(){
+  if(introPending || document.getElementById("intro-pop")) return;
   const live = incomingLobbyInvites().filter(x => !inviteDismissed(x.code));
   if(!live.length) return;
   showLobbyInviteBanner(live[0].from, live[0].code);
@@ -40961,6 +42486,7 @@ function dismissFriendReq(pub){
 
 function checkFriendRequests(){
   if(document.getElementById("friend-request")) return;
+  if(introPending || document.getElementById("intro-pop")) return;
   /* The Virtual Room banner has the floor if both are waiting - it is
      time-sensitive and a friend request is not. */
   if(document.getElementById("lobby-invite")) return;
@@ -41047,6 +42573,8 @@ const SAVE_CODE_MAX_PROMPTS = 3;
 
 function checkSaveCodeReminder(){
   if(document.getElementById("save-code")) return;
+  /* The introduction gets the screen to itself, and gets it FIRST. */
+  if(introPending || document.getElementById("intro-pop")) return;
   /* Both of the others are somebody else waiting on you; this one can
      wait a launch. Same precedence rule the friend banner already
      follows against the Virtual Room. */
@@ -41076,18 +42604,16 @@ function checkSaveCodeReminder(){
        share(), and on iOS that would step outside the user gesture
        share() requires. A banner has no scrolling to fight, so it takes
        the straight path. */
-    () => {
-      saveSyncCodeVia(null).then(ok => {
-        if(!ok){
-          showToast("Nothing saved \u2014 open Settings and use Save code there.");
-          return;
-        }
-        store.savedCodeSaved = true;
-        saveStore();
-        showToast(navigator.share ? "Saved \u2014 keep it somewhere off this device."
-                                  : "Code copied \u2014 paste it somewhere off this device.");
-      });
-    },
+    /* STRAIGHT TO THE CONTROL, not straight to a share sheet. Asked
+       for directly - "when you hit that it just directly takes you to
+       the settings, scrolls down to the sync section of it, and
+       flashes it". Firing share() from here answered "save it" by
+       dropping somebody into an iOS sheet with no idea what they were
+       looking at or where it came from; landing on the section, lit
+       up, is the version that teaches them where it lives for the
+       second time they need it. It also stops marking the code as
+       saved on a tap, which was never true - tapping is not saving. */
+    () => showAppearance({ focus: "sync" }),
     /* The x is a "not now": the count still goes up, so this ends
        after three, but nothing is marked as saved. */
     () => {});
@@ -41674,136 +43200,6 @@ function refreshTugLive(d){
   tugLastRopePos = pos;
 }
 
-/* FINISHED THE BANK AND THE ROPE IS STILL MOVING. There is nothing
-   left to answer, so the screen becomes the rope - which is the one
-   thing still changing. No exit buttons: leaving a match in progress
-   is the pause menu's job, not a link on the screen. */
-function renderTugWaiting(d){
-  const existing = document.querySelector(".screen-tug-wait");
-  if(existing){ refreshTugLive(d); return; }
-  setActiveNav(null);
-  window.forceHideBottomTabs = true;
-  countEl.textContent = "Tug of War";
-  if(tugTickTimer){ cancelAnimationFrame(tugTickTimer); tugTickTimer = null; }
-
-  const panel = document.createElement("section");
-  panel.className = "panel screen-tug-wait";
-  const title = document.createElement("h1");
-  title.className = "welcomeintro-title";
-  /* Plain, not chatty - this is a police academy class. */
-  title.textContent = "You're done";
-  panel.appendChild(title);
-  const sub = document.createElement("p");
-  sub.className = "cal-sub"; sub.style.textAlign = "center";
-  sub.textContent = "You got through all " + tugCount + " with " + tugMyCorrect
-    + " right. The rope is still moving.";
-  panel.appendChild(sub);
-  panel.appendChild(buildTugRope(d));
-  const live = document.createElement("p");
-  live.className = "tug-waiting friend-hint";
-  panel.appendChild(live);
-  stage.replaceChildren(panel);
-  toTop();
-  refreshTugLive(d);
-}
-
-function showTugResult(d){
-  detachTug();
-  testInProgress = false;
-  inVirtualRoom = false;
-  setActiveNav(null);
-  window.forceHideBottomTabs = true;
-  countEl.textContent = "Tug of War";
-
-  const mine = tugTeamOf(d, vroomMyKey);
-  const winner = d.tug.winner;
-  const drawn = !winner;
-  const won = !drawn && winner === mine;
-
-  const panel = document.createElement("section");
-  panel.className = "panel screen-tug-result";
-
-  const title = document.createElement("h1");
-  title.className = "welcomeintro-title";
-  /* A DRAW IS A REAL OUTCOME NOW, and it has to be said rather than
-     shown as a loss. The rope used to end only by being pulled clear,
-     so there was always a side; it can now also run out of questions
-     or out of pace with the rope dead centre, and calling that "your
-     side lost" would be a lie to both halves of the room. */
-  title.textContent = drawn ? "Nobody moved it" : (won ? "Your side won" : "Your side lost");
-  panel.appendChild(title);
-
-  const sub = document.createElement("p");
-  sub.className = "cal-sub"; sub.style.textAlign = "center";
-  const gap = Math.abs(Number(d.tug.finalPos) || 0);
-  sub.textContent = drawn
-    ? "Dead even at the end of " + tugMatchCount(d) + " questions."
-    : tugMembers(d, winner).map(k => (d.participants[k] || {}).name || "?").join(" & ")
-      + " pulled it " + (Math.round(gap * 10) / 10) + " clear.";
-  panel.appendChild(sub);
-
-  panel.appendChild(buildTugRope(d));
-
-  const exits = document.createElement("div");
-  exits.className = "vroom-exit-row";
-  const lobby = document.createElement("button");
-  lobby.type = "button"; lobby.className = "next ghost vroom-exit-btn";
-  lobby.textContent = "Back to lobby";
-  lobby.addEventListener("click", () => {
-    if(!fbDb || !vroomCode){ showVirtualRoomLobby(); return; }
-    const reset = { "tug.over": false, "tug.progress": {}, "tug.finalPos": 0, "tug.winner": null, status: "waiting" };
-    if(!vroomIsHost){ showVirtualRoomLobby(); return; }
-    fbDb.collection("vrooms").doc(vroomCode).update(reset)
-      .then(() => showVirtualRoomLobby()).catch(() => showVirtualRoomLobby());
-  });
-  const home = document.createElement("button");
-  home.type = "button"; home.className = "next ghost vroom-exit-btn";
-  home.textContent = "Back to Home";
-  home.addEventListener("click", () => { leaveVirtualRoom(); showHome(); });
-  exits.append(lobby, home);
-  panel.appendChild(exits);
-
-  stage.replaceChildren(panel);
-  toTop();
-}
-
-function showVirtualRoomJoinEntry(){
-  setActiveNav(null);
-  countEl.textContent = "Virtual Room";
-  const panel = document.createElement("section");
-  panel.className = "panel";
-  panel.appendChild(buildBackLink("Back", showVirtualRoomChoice));
-
-  const title = document.createElement("h1");
-  title.className = "welcomeintro-title"; title.textContent = "Join a Lobby";
-  panel.appendChild(title);
-
-  const input = document.createElement("input");
-  input.type = "text"; input.className = "searchbox searchbox-plain";
-  input.placeholder = "XXXX-XXXX";
-  input.autocapitalize = "characters";
-  input.maxLength = 9;
-  input.addEventListener("input", () => {
-    let raw = input.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
-    input.value = raw.length > 4 ? raw.slice(0, 4) + "-" + raw.slice(4) : raw;
-  });
-  panel.appendChild(input);
-
-  const joinBtn = document.createElement("button");
-  joinBtn.type = "button"; joinBtn.className = "next playbtn";
-  joinBtn.style.marginTop = "1rem";
-  joinBtn.textContent = "Join";
-  joinBtn.addEventListener("click", () => {
-    const code = input.value.trim().toUpperCase();
-    if(!code){ showToast("Enter the lobby code first."); return; }
-    joinVirtualRoomLobby(code);
-  });
-  panel.appendChild(joinBtn);
-
-  stage.replaceChildren(panel);
-  toTop();
-}
-
 function joinVirtualRoomLobby(code){
   /* Same class of bug as createVirtualRoomLobby's own fix \u2014 fbDb
      being null throws synchronously here too, before the .catch()
@@ -42025,39 +43421,17 @@ function showVirtualRoomLobby(){
   panel.appendChild(chatSlot);
 
   if(vroomIsHost){
+    /* THE CODE IS NOT SHOWN AND NOT COPYABLE. It was "Share this code"
+       with a one-tap Copy beside it, which is the whole join-by-code
+       flow in one card; with invites as the only way in, a code on
+       screen is a string that no longer does anything and an invitation
+       to try. The card keeps its job - get people into the room - and
+       Invite friends is now the only thing in it. */
     const codeBox = document.createElement("div");
     codeBox.className = "cal-row vroom-code-row";
     const codeLabel = document.createElement("p");
-    codeLabel.className = "cal-row-date"; codeLabel.textContent = "Share this code";
-    const codeValueRow = document.createElement("div");
-    codeValueRow.className = "vroom-code-value-row";
-    const codeVal = document.createElement("p");
-    codeVal.className = "vroom-code-value";
-    codeVal.textContent = vroomCode;
-    /* A real one-tap Copy button, per explicit "make the layouts of
-       the lobby screen even better" request \u2014 previously the code
-       just sat there to be read and retyped by hand. Falls back to a
-       toast with the code spelled out on the rare browser/context
-       that doesn't expose the Clipboard API (e.g. no secure context)
-       rather than silently doing nothing when tapped. */
-    const copyBtn = document.createElement("button");
-    copyBtn.type = "button"; copyBtn.className = "vroom-copy-btn";
-    copyBtn.textContent = "Copy";
-    copyBtn.addEventListener("click", () => {
-      const showCopied = () => {
-        copyBtn.textContent = "Copied!";
-        copyBtn.classList.add("is-copied");
-        setTimeout(() => { copyBtn.textContent = "Copy"; copyBtn.classList.remove("is-copied"); }, 1500);
-      };
-      if(navigator.clipboard && navigator.clipboard.writeText){
-        navigator.clipboard.writeText(vroomCode).then(showCopied)
-          .catch(() => showToast("Couldn't copy \u2014 the code is " + vroomCode));
-      } else {
-        showToast("Code: " + vroomCode);
-      }
-    });
-    codeValueRow.append(codeVal, copyBtn);
-    codeBox.append(codeLabel, codeValueRow);
+    codeLabel.className = "cal-row-date"; codeLabel.textContent = "Invite your friends";
+    codeBox.append(codeLabel);
 
     /* INVITE FRIENDS BELONGS HERE, not down in the host bar beside
        Match settings - "the invite friends button could be somewhere
@@ -42604,7 +43978,14 @@ let vroomRaceUnsubscribe = null;
    are kept as a plain array on the shared doc (chatMessages) rather
    than a subcollection \u2014 simpler to reason about and to mock, and
    perfectly adequate for a short-lived, small-group study lobby. */
-function buildVroomChatPanel(container){
+/* ONE CHAT, TWO PLACES. The Virtual Room's chat and the main chat
+   lobby are the same panel; what differs is only which document it is
+   bound to, who "me" is, and how a colour is chosen - so that is what
+   the context carries. A second copy of this for the chat lobby is the
+   mistake the rankings boards already made with decorateAvatar: a fix
+   lands on one of them and quietly misses the other. */
+function buildVroomChatPanel(container, ctx){
+  const CTX = ctx || VROOM_CHAT_CTX;
   /* On a phone the chat is a sheet that slides up from the bottom, opened
      by a button at the top of the lobby with a dot on it when there is
      something unread - "on the phone there would probably need to be a
@@ -42628,6 +44009,7 @@ function buildVroomChatPanel(container){
     + "<path d=\"M21 11.5a8.4 8.4 0 0 1-9 8.4 9.9 9.9 0 0 1-2.9-.4L3 21l1.6-4.6"
     + "A8.2 8.2 0 0 1 3.6 11.5 8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4Z\"/></svg>";
   const toggleLabel = document.createElement("span");
+  toggleLabel.className = "vroom-chat-toggle-label";
   toggleLabel.textContent = "Chat";
   const dot = document.createElement("span");
   dot.className = "vroom-chat-dot";
@@ -42735,6 +44117,14 @@ function buildVroomChatPanel(container){
   let roomParticipants = null;
 
   function renderMessages(messages){
+    /* THE BACKLOG IS WHATEVER THE FIRST SNAPSHOT BRINGS, and that is
+       decided by the first RENDER, not by the first render that happens
+       to arrive while nobody is looking. `announcedAny` used to be set
+       inside the not-visible branch only, so a panel that was open for
+       its first snapshot and closed before the second swallowed the
+       second one too - the first real message anybody sent you went
+       unannounced. */
+    const isFirstRender = !announcedAny;
     const wasAtBottom = list.scrollTop + list.clientHeight >= list.scrollHeight - 20;
     list.replaceChildren();
     if(!messages || messages.length === 0){
@@ -42746,13 +44136,13 @@ function buildVroomChatPanel(container){
         const msg = document.createElement("p");
         msg.className = "vroom-chat-msg";
         const name = document.createElement("span");
-        name.className = "vroom-chat-msg-name" + (m.key === vroomMyKey ? " is-me" : "");
+        name.className = "vroom-chat-msg-name" + (m.key === CTX.myKey() ? " is-me" : "");
         name.textContent = m.name + ": ";
         /* Your own name stays on the accent - that is the one colour you
            already read as "me" everywhere else in the app - and everyone
            else takes the colour their marker has on the race line. */
-        if(m.key !== vroomMyKey){
-          const c = vroomColorFor(m.key, roomParticipants);
+        if(m.key !== CTX.myKey()){
+          const c = CTX.colorFor(m.key, roomParticipants);
           if(c) name.style.color = c;
         }
         const time = document.createElement("span");
@@ -42770,13 +44160,22 @@ function buildVroomChatPanel(container){
        badge. On a tablet the panel is always on screen, so anything that
        renders is seen; the dot is only ever meaningful on the phone
        sheet, and .vroom-chat-toggle is display:none above 40rem anyway. */
-    const others = (messages || []).filter(m => m.key !== vroomMyKey);
+    const others = (messages || []).filter(m => m.key !== CTX.myKey());
     newestTs = others.length ? Math.max.apply(null, others.map(m => m.ts || 0)) : 0;
-    const panelVisible = sheetOpen || getComputedStyle(toggle).display === "none";
+    /* WHO DECIDES "YOU ARE LOOKING AT THIS" DEPENDS ON THE HOST. In a
+       lobby it is the sheet being open, or a tablet where the panel is
+       always inline. Inside the chat dock the toggle is display:none -
+       the dock has its own button - so that test answers "always
+       visible" and no message would ever count as unread. The host
+       says which it is. */
+    const panelVisible = CTX.isVisible
+      ? CTX.isVisible(sheetOpen)
+      : (sheetOpen || getComputedStyle(toggle).display === "none");
     if(panelVisible){
       lastSeenTs = Math.max(lastSeenTs, newestTs);
       dot.hidden = true;
       dot.textContent = "";
+      if(CTX.onUnread) CTX.onUnread(0);
     } else {
       /* A COUNT, NOT A MARK. "Something happened" and "four people have
          said something" are different pieces of information, and the
@@ -42789,6 +44188,7 @@ function buildVroomChatPanel(container){
       const unseen = others.filter(m => (m.ts || 0) > lastSeenTs);
       dot.hidden = unseen.length === 0;
       dot.textContent = unseen.length ? (unseen.length > 9 ? "9+" : String(unseen.length)) : "";
+      if(CTX.onUnread) CTX.onUnread(unseen.length);
       /* ANNOUNCE THE NEWEST ONE, ONCE. The dot says how many; this says
          who, which is what makes it worth interrupting a race for. Only
          when the panel is closed, only for somebody else, and only for a
@@ -42798,16 +44198,14 @@ function buildVroomChatPanel(container){
       const newest = unseen.length ? unseen[unseen.length - 1] : null;
       if(newest && newest.id !== lastAnnouncedId){
         lastAnnouncedId = newest.id;
-        if(!announcedAny){
-          /* Nothing is announced for the backlog that was already there
-             when this panel was built - only for what arrives while you
-             are looking at something else. */
-          announcedAny = true;
-        } else {
-          announceChatMessage(newest, vroomColorFor(newest.key, roomParticipants));
+        /* Nothing is announced for the backlog that was already there
+           when this panel was built - only for what arrives afterwards. */
+        if(!isFirstRender){
+          announceChatMessage(newest, CTX.colorFor(newest.key, roomParticipants));
         }
       }
     }
+    announcedAny = true;
   }
 
   /* ON <body>, NOT INSIDE THE SCREEN. It is position:fixed, and a
@@ -42821,6 +44219,15 @@ function buildVroomChatPanel(container){
   function announceChatMessage(msg, color){
     if(!msg) return;
     if(typeof theme === "object" && theme && theme.muteBanners) return;
+    /* A PANEL THAT IS NOT ON SCREEN DOES NOT GET TO INTERRUPT. The chat
+       lobby keeps listening inside a Virtual Room until it is left, and
+       a lobby-chat preview over a room that has its own chat is the
+       wrong chat announcing itself. */
+    if(container && container.hidden) return;
+    /* The same rule the update notice and the daily alert follow:
+       never over a tour's dim, never over the splash. */
+    if(document.getElementById("tour-overlay")) return;
+    if(document.getElementById("splashscreen")) return;
     clearTimeout(alertTimer);
     if(alertEl) alertEl.remove();
     const bar = document.createElement("button");
@@ -42881,7 +44288,7 @@ function buildVroomChatPanel(container){
     const now = Date.now();
     const names = [];
     Object.keys(roomTyping || {}).forEach(k => {
-      if(k === vroomMyKey) return;
+      if(k === CTX.myKey()) return;
       const ts = roomTyping[k];
       if(typeof ts !== "number" || now - ts > TYPING_STALE_MS) return;
       const p = roomParticipants && roomParticipants[k];
@@ -42899,20 +44306,20 @@ function buildVroomChatPanel(container){
      and whoever wrote second would erase the first - the identical bug
      the messages themselves already avoid with arrayUnion. */
   function noteTyping(){
-    if(!fbDb || !vroomCode || !vroomMyKey) return;
+    if(!fbDb || !CTX.code() || !CTX.myKey()) return;
     const now = Date.now();
     if(now - lastTypingWrite < TYPING_WRITE_MS) return;
     lastTypingWrite = now;
     try{
       const patch = {};
-      patch["typing." + vroomMyKey] = now;
-      fbDb.collection("vrooms").doc(vroomCode).update(patch).catch(() => {});
+      patch["typing." + CTX.myKey()] = now;
+      fbDb.collection("vrooms").doc(CTX.code()).update(patch).catch(() => {});
     }catch(e){}
   }
 
   function send(){
     const text = input.value.trim();
-    if(!text || !vroomCode || !fbDb || !vroomMyKey) return;
+    if(!text || !CTX.code() || !fbDb || !CTX.myKey()) return;
     input.value = "";
     lastTypingWrite = 0;
     /* ATOMIC APPEND, not read-modify-write. This used to .get() the whole
@@ -42926,14 +44333,14 @@ function buildVroomChatPanel(container){
        deep equality: two people sending "ok" in the same millisecond
        would otherwise collapse into one message. */
     const msg = {
-      id: (vroomMyKey + "-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8)),
-      key: vroomMyKey,
+      id: (CTX.myKey() + "-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8)),
+      key: CTX.myKey(),
       name: store.firstName || "Anonymous",
       text: text.slice(0, 200),
       ts: Date.now()
     };
     try{
-      fbDb.collection("vrooms").doc(vroomCode).update({
+      fbDb.collection("vrooms").doc(CTX.code()).update({
         chatMessages: firebase.firestore.FieldValue.arrayUnion(msg)
       }).catch(() => {});
     } catch(e){
@@ -42947,11 +44354,12 @@ function buildVroomChatPanel(container){
      The host alone trims, and only once the history is well past the cap,
      so an ordinary send never has to read the document at all. */
   function trimIfHost(messages){
-    if(!vroomIsHost || !fbDb || !vroomCode) return;
-    if(!messages || messages.length <= 160) return;
+    if(!fbDb || !CTX.code()) return;
+    if(!messages || messages.length <= CTX.cap) return;
+    if(!CTX.shouldTrim(messages)) return;
     try{
-      fbDb.collection("vrooms").doc(vroomCode)
-        .update({ chatMessages: messages.slice(-100) }).catch(() => {});
+      fbDb.collection("vrooms").doc(CTX.code())
+        .update({ chatMessages: messages.slice(-CTX.keep) }).catch(() => {});
     } catch(e){}
   }
   sendBtn.addEventListener("click", send);
@@ -42974,7 +44382,7 @@ function buildVroomChatPanel(container){
      matching the same "unavailable, do nothing" pattern already used
      by send() and startVroomRaceListener() just below \u2014 this was the
      one place in this same file that pattern was missing. */
-  if(!vroomCode) return () => {};
+  if(!CTX.code()) return () => {};
   /* A PERMANENT GIVE-UP WAS THE OTHER HALF. `if(!fbDb) return` meant a
      lobby opened before the Firebase SDK finished loading got a chat
      panel that never attached at all, ever - no retry, no re-arm, and
@@ -42987,12 +44395,12 @@ function buildVroomChatPanel(container){
   let dead = false;
   let unsubscribe = () => {};
   function attachChat(){
-    if(dead || !fbDb || !vroomCode) return;
+    if(dead || !fbDb || !CTX.code()) return;
     unsubscribe = trackVroomHandle(
-      onSnapshotResilient(fbDb.collection("vrooms").doc(vroomCode), docSnap => {
+      onSnapshotResilient(fbDb.collection("vrooms").doc(CTX.code()), docSnap => {
         if(!docSnap.exists) return;
         const data = docSnap.data();
-        roomParticipants = data.participants || null;
+        roomParticipants = CTX.participantsOf(data);
         roomTyping = data.typing || null;
         const messages = data.chatMessages;
         renderMessages(messages);
@@ -43001,7 +44409,7 @@ function buildVroomChatPanel(container){
   }
   if(fbDb) attachChat();
   else onFirebaseReady(() => {
-    if(dead || !vroomCode || !document.body.contains(container)) return;
+    if(dead || !CTX.code() || !document.body.contains(container)) return;
     attachChat();
   });
   /* The sheet is appended to the screen, not to body, so a screen change
@@ -43787,6 +45195,19 @@ function renderRankingRows(rows, entries, board, opts){
     stats.textContent = board.unit(val(entry));
     nameWrap.append(name, stats);
 
+    /* TAP A CLASSMATE, GET THE ONE THING YOU WANT FROM A BOARD: a way
+       to add them. Your own row is not tappable - there is nothing to
+       do with yourself - and it is the row already marked `isMe`, so
+       there is no second test to keep in step. */
+    if(!isMe){
+      row.classList.add("is-tappable");
+      row.setAttribute("role", "button");
+      row.tabIndex = 0;
+      row.addEventListener("click", () => openPersonSheet(entry));
+      row.addEventListener("keydown", e => {
+        if(e.key === "Enter" || e.key === " "){ e.preventDefault(); openPersonSheet(entry); }
+      });
+    }
     row.append(rank, avatarWrap, nameWrap);
     rows.appendChild(row);
   });
@@ -44233,9 +45654,11 @@ function showFriends(){
       on.textContent = "Online";
       sub.append(on, document.createTextNode(" \u00b7 "));
     }
-    sub.append(document.createTextNode(
-      "Level " + (entry.level || 0) + " \u00b7 " + (entry.hundos || 0) +
-      ((entry.hundos === 1) ? " hundo" : " hundos")));
+    /* THE LEVEL, AND NOTHING ELSE. The hundo count came off on
+       request - it is a number about how somebody studies, not about
+       who they are, and this row's whole job is telling one classmate
+       from another. The Leaderboard is where the numbers live. */
+    sub.append(document.createTextNode("Level " + (entry.level || 0)));
     text.append(nm, sub);
     row.append(art, text);
     if(actions){
@@ -44280,12 +45703,23 @@ function showFriends(){
     panel.appendChild(sect);
   }
 
-  /* ---- your own code: NOT ITS OWN SECTION ANY MORE ----
-     "Your friend code" and "Add a friend" were two cards doing one
-     job - swapping codes with somebody - so the screen opened with two
-     boxes of admin before it got anywhere near the friends you have.
-     They are one card now, below the list, and the heading says the
-     whole job rather than half of it. */
+  /* ---- YOUR OWN CODE, AT THE TOP ----
+     Asked for directly - "why is your own code not displayed at the
+     top?" It had been moved below the list on the reasoning that a
+     friends screen should lead with people rather than admin, and
+     that is wrong for the one thing you come to this screen to read
+     out loud to somebody standing next to you. It is the first thing
+     on the screen now, and it is the whole card: the code, a way to
+     copy it, and one line saying what it is for.
+
+     Adding somebody is the second card. That order is deliberate:
+     yours is a thing to GIVE, theirs is a thing to TYPE, and giving
+     is the half that happens first. */
+  const mine = document.createElement("div");
+  mine.className = "sect friend-sect friend-sect-mine";
+  const mh = document.createElement("p");
+  mh.className = "sect-label"; mh.textContent = "Your friend code";
+
   const codeWrap = document.createElement("div");
   codeWrap.className = "friend-mycode-wrap";
   const codeEl = document.createElement("p");
@@ -44300,18 +45734,23 @@ function showFriends(){
   codeWrap.append(codeEl, copyBtn);
   const mhint = document.createElement("p");
   mhint.className = "friend-hint";
-  /* Said plainly, because a code people share needs somebody to know
-     what it does and does not do. */
-  mhint.textContent = "Give this to a classmate so they can add you. It is not your sync code and it cannot be used to sign in as you.";
+  /* ONE LINE, AND NOT ABOUT THE SYNC CODE. It used to carry a sentence
+     explaining that this is not your sync code and cannot be used to
+     sign in as you - true, and reported as confusing: it answers a
+     question nobody standing here asked, using a word from a different
+     screen. Somebody reading their friend code out needs to know what
+     it is for, nothing else. */
+  mhint.textContent = "Give this to a classmate so they can add you.";
+  mine.append(mh, codeWrap, mhint);
 
-  /* ---- add someone, and give them yours ---- */
+  /* ---- add someone ---- */
   const add = document.createElement("div");
   add.className = "sect friend-sect";
   const ah = document.createElement("p");
   ah.className = "sect-label"; ah.textContent = "Add a friend";
   const ahint = document.createElement("p");
   ahint.className = "friend-hint friend-add-hint";
-  ahint.textContent = "Type a classmate\u2019s code, or give them yours.";
+  ahint.textContent = "Type a classmate\u2019s code.";
   const addRow = document.createElement("div");
   addRow.className = "friend-add-row";
   const input = document.createElement("input");
@@ -44335,16 +45774,7 @@ function showFriends(){
   });
   input.addEventListener("keydown", ev => { if(ev.key === "Enter") send.click(); });
   addRow.append(input, send);
-
-  /* Your own code, under a rule, inside the same card. Below the input
-     rather than above it, because typing somebody else's is the thing
-     you came to this card to do - reading out your own is what you do
-     when they are standing next to you. */
-  const yourCodeLab = document.createElement("p");
-  yourCodeLab.className = "friend-yourcode-lab";
-  yourCodeLab.textContent = "Your code";
-
-  add.append(ah, ahint, addRow, yourCodeLab, codeWrap, mhint);
+  add.append(ah, ahint, addRow);
 
   /* ---- the people you have ---- */
   const list = document.createElement("div");
@@ -44375,25 +45805,21 @@ function showFriends(){
        not do. */
     known.sort((a, b) => (isOnline(b) ? 1 : 0) - (isOnline(a) ? 1 : 0)
       || (a.firstName || "").localeCompare(b.firstName || ""));
+    /* NO INVITE BUTTON HERE, and it was tried. An online friend briefly
+       carried one that made a lobby and sent the invite in one tap;
+       asked against directly - "why would the invite option be there?"
+       Inviting belongs to the Virtual Room, where the lobby you are
+       inviting somebody INTO already exists. This screen is who you
+       have and how to add more. */
     known.forEach(e => {
-      /* INVITE IS ON AN ONLINE FRIEND ONLY, and that is the whole
-         argument for the dot. An invite is live for 30 minutes
-         (LOBBY_INVITE_TTL_MS) and lands as a banner on their Home, so
-         sending one to somebody who is not in the app is a room you
-         then sit in alone until it expires. Remove is the action on
-         everybody; Invite is the one the dot earns. */
-      const acts = [];
-      if(isOnline(e)){
-        acts.push(actBtn("Invite", "", () =>
-          inviteFriendToNewLobby(e.pub, e.firstName)));
-      }
-      acts.push(actBtn("Remove", "ghost", () => {
-        if(!window.confirm("Remove " + (e.firstName || "this friend") + "?")) return;
-        removeFriend(e.pub);
-        pushToCloud();
-        showFriends();
-      }));
-      list.appendChild(personRow(e, acts));
+      list.appendChild(personRow(e, [
+        actBtn("Remove", "ghost", () => {
+          if(!window.confirm("Remove " + (e.firstName || "this friend") + "?")) return;
+          removeFriend(e.pub);
+          pushToCloud();
+          showFriends();
+        })
+      ]));
     });
     /* Somebody on your list whose row has not loaded - they have not
        opened the app since, or turned sharing off. Named rather than
@@ -44409,13 +45835,12 @@ function showFriends(){
       list.appendChild(m);
     }
   }
-  /* THE LIST GOES ABOVE THE ADD CARD. It was fourth of five, under
-     your own code and the add field, so the screen led with admin and
-     buried the only part of it that is about people. Requests still
-     come first - somebody is waiting on an answer - then who you have,
-     then the machinery for getting more. */
-  panel.appendChild(list);
+  /* Your code, then how to add one, then who you have. Requests, when
+     there are any, were appended above all three - somebody is waiting
+     on an answer and that outranks everything else on the screen. */
+  panel.appendChild(mine);
   panel.appendChild(add);
+  panel.appendChild(list);
 
   /* ---- asked, not yet answered ---- */
   const out = outgoingFriendRequests().map(id => rows[id]).filter(Boolean);
@@ -45818,14 +47243,39 @@ function showRankings(defaultBoard){
      typed every time any classmate anywhere answers a question. */
   const tools = document.createElement("div");
   tools.className = "rank-tools";
+  /* THE FIELD AND ITS CLEAR BUTTON ARE ONE OBJECT, so the x sits inside
+     the field's own rounded end rather than beside it as a third
+     control in the row. type="search" has a native clear on desktop
+     Safari and NOTHING on iOS, which is where this app lives, so it is
+     drawn. */
+  const searchWrap = document.createElement("div");
+  searchWrap.className = "rank-search-wrap";
   const search = document.createElement("input");
   search.type = "search"; search.className = "searchbox rank-search";
   search.placeholder = "Search by username";
   search.setAttribute("aria-label", "Search the rankings by username");
+  const clearBtn = document.createElement("button");
+  clearBtn.type = "button"; clearBtn.className = "rank-search-clear";
+  clearBtn.setAttribute("aria-label", "Clear the search");
+  clearBtn.hidden = true;
+  clearBtn.innerHTML = "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\">"
+    + "<path d=\"M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18Z\" fill=\"currentColor\" opacity=\".22\"/>"
+    + "<path d=\"M9 9l6 6M15 9l-6 6\" stroke=\"currentColor\" stroke-width=\"2\""
+    + " stroke-linecap=\"round\" fill=\"none\"/></svg>";
+  clearBtn.addEventListener("click", () => {
+    search.value = "";
+    clearBtn.hidden = true;
+    /* Focus stays in the field: clearing a search is almost always the
+       start of a different one. */
+    search.focus();
+    paint();
+  });
+  search.addEventListener("input", () => { clearBtn.hidden = !search.value; });
+  searchWrap.append(search, clearBtn);
   const meBtn = document.createElement("button");
   meBtn.type = "button"; meBtn.className = "iconbtn rank-me-btn";
   meBtn.textContent = "Find me";
-  tools.append(search, meBtn);
+  tools.append(searchWrap, meBtn);
   panel.appendChild(tools);
 
   const rows = document.createElement("div");
@@ -46696,6 +48146,10 @@ function applyGlassRefraction(el, mapImgId){
                  && !!(typeof store !== "undefined" && store && store.onboardingComplete);
     bar.hidden = !show;
     document.body.classList.toggle("has-bottomtabs", show);
+    /* The chat dock rides the same recalculation, so the bar and the
+       dock cannot disagree about whether onboarding is finished.
+       This already runs on every stage mutation. */
+    syncChatDock();
     /* Toggled here for the same reason has-bottomtabs is: this function
        already recalculates on every stage mutation, so the class clears
        itself when the screen changes instead of relying on each screen to

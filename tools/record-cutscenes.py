@@ -162,7 +162,7 @@ def new_page(br, port, w, h, seed):
     # frame.ok: otherwise the re-add notice sits over the top of every clip.
     pg.add_init_script(
         "try{localStorage.setItem('class26e.freshstart','1');"
-        "localStorage.setItem('class26e.frame.ok','go-live-1');"
+        "localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');"
         "localStorage.setItem('class26e.daily.seen','x');"
         "localStorage.setItem('class26e.drill.v1',%s)}catch(e){}"
         % json.dumps(json.dumps(seed)))

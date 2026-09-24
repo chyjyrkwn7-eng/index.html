@@ -148,7 +148,7 @@ def main():
                     "Object.defineProperty(navigator,'standalone',{get:()=>true});")
                 ctx.add_init_script(
                     "try{localStorage.setItem('class26e.freshstart','1');"
-                    "localStorage.setItem('class26e.frame.ok','go-live-1');"
+                    "localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');"
                     "localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % SEED)
                 pg = ctx.new_page()
                 # A NAMED FUNCTION, NOT A LAMBDA WITH A DEFAULT ARG.

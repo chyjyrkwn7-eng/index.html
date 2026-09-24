@@ -68,6 +68,11 @@ def booted(br, width=440, height=956):
     ctx.add_init_script(
         "try{localStorage.setItem('class26e.freshstart','1');"
         "localStorage.setItem('class26e.synccode','SECR-ETXX');"
+        # The introduction card opens two seconds after Home on a device
+        # that has not seen it - which is every harness device. Seeded
+        # like frame.ok and tourRev, or it drops a dimmed overlay over
+        # whatever is being measured.
+        "localStorage.setItem('class26e.intro.seen','9');"
         "localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % SEED)
     pg = ctx.new_page()
     pg.route("**/index.html", lambda r: r.fulfill(
@@ -468,13 +473,14 @@ def main():
 
         check("nothing threw in the heartbeat section", not errs4, errs4[:3])
 
-        # ---- 11. the dot has something to do --------------------------
-        # An online indicator that leads nowhere is a light on a
-        # dashboard. The action asserted here is the SHAPE of one -
-        # an online friend's row carries one more action than an
-        # offline friend's - rather than its label, which is the app's
-        # to change.
-        print("\n11. an online friend can be invited, an offline one cannot")
+        # ---- 11. the list, drawn for real ------------------------------
+        # isOnline() being right is section 10; this is the screen
+        # built by the app actually SAYING so - online first, the dot
+        # on exactly those rows. It also pins the count of actions per
+        # row: an Invite button was added here and asked against
+        # directly ("why would the invite option be there?"), so every
+        # row carries the same one action, online or not.
+        print("\n11. the list says who is online, and offers no invite")
         errs5 = []
         pg4.on("pageerror", lambda e: errs5.append(str(e)))
         shape = pg4.evaluate("""()=>{
@@ -502,68 +508,123 @@ def main():
         check("only the online one carries the dot",
               byname.get("Alex", {}).get("dot") is True
               and byname.get("Sam", {}).get("dot") is False, shape)
-        check("and the online one has one more action than the offline one",
-              byname.get("Alex", {}).get("acts", 0)
-              == byname.get("Sam", {}).get("acts", 0) + 1, shape)
+        check("every row carries the same one action, online or not",
+              [r["acts"] for r in shape] == [1, 1], shape)
 
-        try:
-            # THE INVITE HAS TO REACH THE ROOM THAT WAS JUST MADE. The
-            # Friends screen has no room code - the sheet inside a lobby is
-            # handed one - so the failure this guards is an invite written
-            # against a code that is null, stale, or a different room's.
-            sent = pg4.evaluate("""()=>{
-              let made = null;
-              fbDb = { collection: (c) => ({ doc: (id) => ({
-                set: (d) => { if(c === "vrooms"){ made = { code: id, doc: d }; }
-                              return Promise.resolve(); },
-                update: () => Promise.resolve() }) }) };
-              inVirtualRoom = false; vroomCode = null;
-              store.lobbyInvitesOut = {};
-              const row = [...document.querySelectorAll(".friend-row")]
-                .find(r => (r.querySelector(".friend-row-name") || {}).textContent === "Alex");
-              const acts = [...row.querySelectorAll(".friend-act")];
-              /* The non-ghost one: Remove is the ghost on every row. */
-              const invite = acts.find(b => !b.classList.contains("ghost"));
-              invite.click();
-              return new Promise(res => setTimeout(() => res({
-                made: made && made.code,
-                hosted: !!(made && made.doc && made.doc.participants
-                           && made.doc.participants[store.publicId]),
-                invites: JSON.parse(JSON.stringify(store.lobbyInvitesOut || {})),
-                screen: !!document.querySelector(".screen-vroom-lobby, .vroom-lobby, .panel")
-              }), 60));}""")
-            check("a lobby is created", bool(sent["made"]), sent)
-            check("with me in it as the host", sent["hosted"] is True, sent)
-            check("and the invite is addressed to that friend",
-                  list(sent["invites"]) == ["alex000000002"], sent["invites"])
-            check("carrying the code of the room that was just made",
-                  sent["invites"].get("alex000000002", {}).get("code") == sent["made"], sent)
+        check("nothing threw drawing the list", not errs5, errs5[:3])
 
-            # ALREADY IN A ROOM: invite into THAT one. Making a second lobby
-            # here strands everybody in the first with a host who left.
-            again = pg4.evaluate("""()=>{
-              let made = 0;
-              fbDb = { collection: (c) => ({ doc: () => ({
-                set: () => { if(c === "vrooms") made++; return Promise.resolve(); },
-                update: () => Promise.resolve() }) }) };
-              inVirtualRoom = true; vroomCode = "HOST-ROOM";
-              store.lobbyInvitesOut = {};
-              inviteFriendToNewLobby("alex000000002", "Alex");
-              const r = { made: made,
-                          code: (store.lobbyInvitesOut["alex000000002"] || {}).code };
-              inVirtualRoom = false; vroomCode = null;
-              return r;}""")
-            check("being in a room does not start a second one", again["made"] == 0, again)
-            check("the invite goes to the room you are already in",
-                  again["code"] == "HOST-ROOM", again)
+        # ---- 12. adding somebody from the Leaderboard -------------------
+        # Asked for directly, and it is also what keeps the class
+        # reachable now that codes are gone: invites go to friends, so
+        # without a way in from the board the only route to a classmate
+        # is having already swapped friend codes with them.
+        print("\n12. a classmate can be added from the Leaderboard")
+        lb = pg4.evaluate("""()=>{
+          store.publicId = "me0000000001";
+          store.friendsIn = []; store.friendsOut = []; store.friendsDeclined = [];
+          store.leaderboardOptIn = true;
+          /* The default board is This Week, ranked on weekPoints against
+             the CURRENT week key - a row without both is filtered out
+             and the board draws nothing. Seeded from the app's own
+             weekKeyNow() rather than a literal, so this cannot go stale
+             on a Monday. */
+          const wk = weekKeyNow();
+          leaderboardRows = [
+            { pub:"me0000000001", firstName:"Madison", level:50, badges:9, correct:900, hundos:141, week:wk, weekPoints:900, freq:[], facc:[] },
+            { pub:"alex000000002", firstName:"Alex", level:40, badges:8, correct:800, hundos:90, week:wk, weekPoints:800, freq:[], facc:[] },
+            { pub:"sam00000000003", firstName:"Sam", level:12, badges:1, correct:400, hundos:4, week:wk, weekPoints:400, freq:[], facc:[] }
+          ];
+          /* THE BOARD READS ITS OWN SNAPSHOT, not the shared
+             leaderboardRows: `entries` is a local inside showRankings()
+             and is only ever filled by the listener. So the listener is
+             what has to be driven, with the shape Firestore actually
+             delivers - a forEach over {id, data()} - which is also the
+             path a real message arrives on. */
+          const docs = [
+            { id:"me0000000001", d:{ firstName:"Madison", level:50, badges:9, hundos:141, week:wk, weekPoints:900 } },
+            { id:"alex000000002", d:{ firstName:"Alex", level:40, badges:8, hundos:90, week:wk, weekPoints:800 } },
+            { id:"sam00000000003", d:{ firstName:"Sam", level:12, badges:1, hundos:4, week:wk, weekPoints:400 } }
+          ];
+          let boardCb = null;
+          const realOnSnap = onSnapshotResilient;
+          onSnapshotResilient = (ref, cb) => { boardCb = cb; return () => {}; };
+          fbDb = { collection: () => ({ doc: () => ({
+            set: () => ({ catch: () => {} }), update: () => ({ catch: () => {} }) }) }) };
+          syncCode = "AAAA-1111";
+          showRankings();
+          onSnapshotResilient = realOnSnap;
+          if(boardCb) boardCb({ forEach: (f) => docs.forEach(x => f({ id:x.id, data:()=>x.d })) });
+          const tab = [...document.querySelectorAll(".screen-rankings .iconbtn")]
+            .find(b => b.textContent === "Level");
+          if(tab) tab.click();
+          const rows = [...document.querySelectorAll(".rank-row")];
+          const mine = rows.filter(r => r.dataset.me === "1");
+          const others = rows.filter(r => r.dataset.me !== "1");
+          return { rows: rows.length,
+                   mineTappable: mine.some(r => r.classList.contains("is-tappable")),
+                   othersTappable: others.length > 0 && others.every(r => r.classList.contains("is-tappable")) };}""")
+        check("the board drew its rows", lb["rows"] >= 2, lb)
+        check("somebody else's row is tappable", lb["othersTappable"] is True, lb)
+        # NOTHING TO DO WITH YOURSELF, so your own row is not a button.
+        check("and your own row is not", lb["mineTappable"] is False, lb)
 
-        except Exception as e:
-            # --against an older build there is no invite action to
-            # click, and a section that throws must say so rather
-            # than abort the run before the rest of it reports.
-            check("an online friend has an invite action at all", False, repr(e)[:160])
+        sent = pg4.evaluate("""()=>{
+          let pushed = 0;
+          fbDb = { collection: () => ({ doc: () => ({
+            set: () => { pushed++; return { catch: () => {} }; },
+            update: () => ({ catch: () => {} }) }) }) };
+          syncCode = "AAAA-1111";
+          const row = [...document.querySelectorAll(".rank-row")]
+            .find(r => r.textContent.indexOf("Alex") >= 0 && r.dataset.me !== "1");
+          row.click();
+          const sheet = document.querySelector(".person-sheet");
+          if(!sheet) return { no: "tapping a classmate opened nothing" };
+          const act = sheet.querySelector(".person-sheet-act");
+          const label = act.textContent;
+          act.click();
+          return { label: label, out: (store.friendsOut || []).slice(),
+                   pushed: pushed,
+                   closed: !document.querySelector(".person-sheet") };}""")
+        if sent.get("no"):
+            check("tapping a classmate opens their card", False, sent["no"])
+        else:
+            check("tapping a classmate opens their card", True)
+            check("the action offers to add them", "Add friend" in sent["label"], sent["label"])
+            # ADDRESSED BY publicId. The friend-code path searches the
+            # board for a typed code; there is nothing to look up here,
+            # and nothing that could become a name-to-code lookup - which
+            # this app deliberately does not have.
+            check("the request is written against their public id",
+                  sent["out"] == ["alex000000002"], sent["out"])
+            # It lives in MY row, so it does not exist for them until it
+            # is published.
+            check("and published straight away", sent["pushed"] >= 1, sent)
+            check("the card closes once it is sent", sent["closed"] is True, sent)
 
-        check("nothing threw inviting a friend", not errs5, errs5[:3])
+        repeat = pg4.evaluate("""()=>{
+          const row = [...document.querySelectorAll(".rank-row")]
+            .find(r => r.textContent.indexOf("Alex") >= 0 && r.dataset.me !== "1");
+          row.click();
+          const act = document.querySelector(".person-sheet-act");
+          const r = { label: act.textContent, disabled: act.disabled };
+          document.querySelector(".invite-overlay").remove();
+          return r;}""")
+        # A BUTTON THAT STILL SAYS "ADD FRIEND" IS HOW SOMEBODY SENDS THE
+        # SAME REQUEST SIX TIMES AND WONDERS WHY NOTHING HAPPENS.
+        check("a second look says the request is already sent",
+              repeat["disabled"] is True and "sent" in repeat["label"].lower(), repeat)
+
+        # THE HUNDO COUNT CAME OFF THE FRIENDS LIST, on request.
+        gone = pg4.evaluate("""()=>{
+          store.friendsIn = ["alex000000002"];
+          showFriends();
+          const sub = document.querySelector(".friend-row-sub");
+          return { text: sub ? sub.textContent : null };}""")
+        check("a friend's row no longer counts their hundos",
+              bool(gone["text"]) and "hundo" not in gone["text"].lower(), gone)
+        check("but it still says who they are",
+              bool(gone["text"]) and "Level" in gone["text"], gone)
+
 
         ctx4.close()
 

@@ -81,7 +81,7 @@ with sync_playwright() as pw:
         ctx.add_init_script(FAKE_ROOM)
         ctx.add_init_script(STATUS.replace("__H__",str(top)))
         ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');"
-                            "localStorage.setItem('class26e.frame.ok','go-live-1');"
+                            "localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');"
                             "localStorage.setItem('class26e.daily.seen','x');"
                             "localStorage.setItem('class26e.drill.v1','%s');}catch(e){}"%SEED)
         pg=ctx.new_page()

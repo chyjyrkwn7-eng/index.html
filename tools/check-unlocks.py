@@ -97,7 +97,7 @@ def booted(br, w=834, h=1194):
     ctx = br.new_context(viewport={"width": w, "height": h})
     ctx.add_init_script(
         "try{localStorage.setItem('class26e.freshstart','1');"
-        "localStorage.setItem('class26e.frame.ok','go-live-1');"
+        "localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');"
         "localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % SEED)
     pg = ctx.new_page()
     pg.route("**/index.html", lambda r: r.fulfill(

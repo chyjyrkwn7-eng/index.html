@@ -95,7 +95,7 @@ with sync_playwright() as pw:
     # ---- 1. onboarded, no sync code: boot issues one ----
     print("\n1. onboarded account whose sync code went missing")
     ctx = br.new_context(viewport={"width": 834, "height": 1194})
-    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % STORE)
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % STORE)
     pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
     got = pg.evaluate("()=>({code:syncCode, ls:localStorage.getItem('class26e.synccode')})")
     check("a code is issued at boot", bool(got["code"]) and got["ls"] == got["code"], str(got))
@@ -111,7 +111,7 @@ with sync_playwright() as pw:
     # ---- 2. sync deliberately off: no code, and the message says so ----
     print("\n2. sync turned off on purpose")
     ctx = br.new_context(viewport={"width": 834, "height": 1194})
-    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.drill.v1', '%s');"
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.drill.v1', '%s');"
                         "localStorage.setItem('class26e.syncoff','1');}catch(e){}" % STORE)
     pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
     pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __fake([]);}")
@@ -128,7 +128,7 @@ with sync_playwright() as pw:
     print("\n3. hidden from the rankings")
     hidden = STORE.replace('"leaderboardOptIn":true', '"leaderboardOptIn":false')
     ctx = br.new_context(viewport={"width": 834, "height": 1194})
-    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.drill.v1', '%s');"
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.drill.v1', '%s');"
                         "localStorage.setItem('class26e.synccode','WXYZ-7777');}catch(e){}" % hidden)
     pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
     pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __fake([]);}")
@@ -142,7 +142,7 @@ with sync_playwright() as pw:
     print("\n4. localStorage lost, IndexedDB mirror intact")
     ctx = br.new_context(viewport={"width": 834, "height": 1194})
     pg = page(ctx)
-    pg.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.drill.v1', '%s');"
+    pg.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.drill.v1', '%s');"
                        "localStorage.setItem('class26e.synccode','WXYZ-7777');}catch(e){}" % STORE)
     pg.goto(URL); pg.wait_for_timeout(2600)
     pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); saveStore();}")
@@ -153,7 +153,7 @@ with sync_playwright() as pw:
     pg.close()
 
     pg2 = page(ctx)   # same context: IndexedDB survives, localStorage does not
-    pg2.add_init_script("try{localStorage.clear();localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');}catch(e){}")
+    pg2.add_init_script("try{localStorage.clear();localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');}catch(e){}")
     pg2.goto(URL); pg2.wait_for_timeout(3200)
     pg2.evaluate("()=>document.getElementById('splashscreen')?.remove()")
     pg2.wait_for_timeout(900)
@@ -179,7 +179,7 @@ with sync_playwright() as pw:
     print("\n4b. the progress key survived, the sync code did not")
     ctx = br.new_context(viewport={"width": 834, "height": 1194})
     pg = page(ctx)
-    pg.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.drill.v1', '%s');"
+    pg.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.drill.v1', '%s');"
                        "localStorage.setItem('class26e.synccode','WXYZ-7777');}catch(e){}" % STORE)
     pg.goto(URL); pg.wait_for_timeout(2600)
     pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); saveStore();}")
@@ -188,7 +188,7 @@ with sync_playwright() as pw:
 
     pg2 = page(ctx)   # same context: the mirror survives, the code key does not
     pg2.add_init_script("try{localStorage.clear();localStorage.setItem('class26e.freshstart','1');"
-                        "localStorage.setItem('class26e.frame.ok','go-live-1');"
+                        "localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');"
                         "localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % STORE)
     pg2.goto(URL); pg2.wait_for_timeout(3200)
     pg2.evaluate("()=>document.getElementById('splashscreen')?.remove()")
@@ -210,7 +210,7 @@ with sync_playwright() as pw:
     print("\n4c. the mirror kept the code and lost the progress")
     ctx = br.new_context(viewport={"width": 834, "height": 1194})
     pg = page(ctx)
-    pg.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.drill.v1', '%s');"
+    pg.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.drill.v1', '%s');"
                        "localStorage.setItem('class26e.synccode','WXYZ-7777');}catch(e){}" % STORE)
     pg.goto(URL); pg.wait_for_timeout(2600)
     pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); saveStore();}")
@@ -226,7 +226,7 @@ with sync_playwright() as pw:
 
     pg2 = page(ctx)
     pg2.add_init_script("try{localStorage.clear();localStorage.setItem('class26e.freshstart','1');"
-                        "localStorage.setItem('class26e.frame.ok','go-live-1');}catch(e){}")
+                        "localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');}catch(e){}")
     pg2.goto(URL); pg2.wait_for_timeout(3200)
     pg2.evaluate("()=>document.getElementById('splashscreen')?.remove()")
     # Firebase arrives now, with the account still in the cloud. The boot
@@ -260,7 +260,7 @@ with sync_playwright() as pw:
     print("\n4d. Settings can hand over the code")
     ctx = br.new_context(viewport={"width": 440, "height": 956},
                          permissions=["clipboard-read", "clipboard-write"])
-    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.drill.v1', '%s');"
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.drill.v1', '%s');"
                         "localStorage.setItem('class26e.synccode','WXYZ-7777');}catch(e){}" % STORE)
     pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
     pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __fake([]);}")
@@ -347,7 +347,7 @@ with sync_playwright() as pw:
     # rows with identical correct-answer counts minutes apart.
     print("\n4e. applying cloud data does not mint a second rankings row")
     ctx = br.new_context(viewport={"width": 440, "height": 956})
-    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.drill.v1', '%s');"
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.drill.v1', '%s');"
                         "localStorage.setItem('class26e.synccode','WXYZ-7777');}catch(e){}" % STORE)
     pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
     pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __fake([]);}")
@@ -401,7 +401,7 @@ with sync_playwright() as pw:
     # unique" and collapsing on a name alone would hide a real person.
     print("\n4f. duplicate rows are collapsed on the board")
     ctx = br.new_context(viewport={"width": 440, "height": 956})
-    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.drill.v1', '%s');"
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.drill.v1', '%s');"
                         "localStorage.setItem('class26e.synccode','WXYZ-7777');}catch(e){}" % STORE)
     pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
     pg.evaluate("()=>document.getElementById('splashscreen')?.remove()")
@@ -442,7 +442,7 @@ with sync_playwright() as pw:
     # ---- 5. swapping codes retires the old rankings row ----
     print("\n5. abandoning a code takes its rankings row with it")
     ctx = br.new_context(viewport={"width": 834, "height": 1194})
-    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.drill.v1', '%s');"
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.drill.v1', '%s');"
                         "localStorage.setItem('class26e.synccode','AAAA-1111');}catch(e){}" % STORE)
     pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
     pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __fake([]);}")
@@ -485,7 +485,7 @@ with sync_playwright() as pw:
     # fails on the build before this check existed: step 3 resets.
     print("\n6. only a server-confirmed deletion counts as a remote reset")
     ctx = br.new_context(viewport={"width": 834, "height": 1194})
-    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.drill.v1', '%s');"
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.drill.v1', '%s');"
                         "localStorage.setItem('class26e.synccode','NOVA-2601');}catch(e){}" % STORE)
     pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
     pg.evaluate("()=>document.getElementById('splashscreen')?.remove()")
@@ -530,7 +530,7 @@ with sync_playwright() as pw:
     # field value. It fails on build 136 and every build before it.
     print("\n7. the sync code never reaches a collection anyone can list")
     ctx = br.new_context(viewport={"width": 834, "height": 1194})
-    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % STORE)
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % STORE)
     pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
     pg.evaluate("()=>document.getElementById('splashscreen')?.remove()")
     r = pg.evaluate("""()=>{

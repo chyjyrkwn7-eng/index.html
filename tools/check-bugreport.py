@@ -51,7 +51,7 @@ with sync_playwright() as pw:
     errs=[]; pg.on("pageerror",lambda e:errs.append(str(e)))
     pg.route("**/index.html", lambda r: r.fulfill(status=200,headers={"content-type":"text/html; charset=utf-8"},body=BODY))
     pg.route("**/version.json", lambda r: r.fulfill(status=200,headers={"content-type":"application/json"},body=VERSION_JSON))
-    pg.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.drill.v1',%s);localStorage.setItem('class26e.synccode','WXYZ-7777');}catch(e){}" % json.dumps(STORE))
+    pg.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.drill.v1',%s);localStorage.setItem('class26e.synccode','WXYZ-7777');}catch(e){}" % json.dumps(STORE))
     pg.goto(URL); pg.wait_for_timeout(3200)
     pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __fake();}")
     pg.wait_for_timeout(600)

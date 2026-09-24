@@ -186,7 +186,7 @@ def new_page(br, ins, installed, seeded):
         ctx.add_init_script(
             "try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.drill.v1', %s);"
             "localStorage.setItem('class26e.synccode','MADI-0001');"
-            "localStorage.setItem('class26e.frame.ok','go-live-1');"
+            "localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');"
             "localStorage.setItem('class26e.daily.seen','x');}catch(e){}"
             % ("'" + SEED.replace("__WEEK__", week_key_now()) + "'"))
     page = ctx.new_page()

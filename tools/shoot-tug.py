@@ -67,7 +67,7 @@ def shoot(outdir, name, w, h):
         ctx.add_init_script(_cv.FAKE_FIRESTORE)
         ctx.add_init_script(
             "try{localStorage.setItem('class26e.freshstart','1');"
-            "localStorage.setItem('class26e.frame.ok','go-live-1');"
+            "localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');"
             "localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % _cv.SEED)
 
         def tab(who, avatar, code):
