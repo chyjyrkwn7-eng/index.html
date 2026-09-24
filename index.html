@@ -25510,14 +25510,6 @@ function pushToCloud(){
            person's next push. */
         mystery: mysteryColorsFoundCount(),
         hundos: hundosOf(store),
-        /* ANSWERED, for the accuracy board. `correct` was already up
-           here; this is the other half of the fraction, and without it
-           accuracy cannot be computed from a document at all. An older
-           document lacking it reads as 0 answered, which the board
-           treats as not-yet-qualified rather than as 0% - a person
-           whose app has not updated should be absent from a board, not
-           bottom of it. Self-heals on their next push. */
-        answered: (store.lifetime && store.lifetime.answered) || 0,
         /* Both halves, because a number without its week is a number
            that cannot be expired. Anyone still on an older build
            publishes neither and reads as 0 on the weekly board, which
@@ -27238,10 +27230,6 @@ function testsCompletedOf(st){
 
 /* What each board ranks, what its rows say underneath a name, and what
    the tab is called. Adding a fourth board is adding an entry here. */
-/* Enough questions that accuracy means something, few enough to reach
-   in a couple of sittings. */
-const ACCURACY_MIN_ANSWERED = 100;
-
 const RANKING_BOARDS = [
   /* This replaced the Level board, which was asked against directly -
      "I like the badge count one, and the hundo one, not a fan of the
@@ -27270,40 +27258,7 @@ const RANKING_BOARDS = [
      clearest label the row can carry. */
   { key: "hundos", tab: "Hundos", field: "hundos",
     unit: (n) => n + (n === 1 ? " hundo" : " hundos"),
-    blurb: "Ranked by hundos \u2014 units finished at 100%, in Drill, Exam, Game or the Virtual Room alike. They count per unit, not per test, so a test covering three units has three hundos on the table." },
-  /* ACCURACY, and it is the only board here that is not a total.
-     The note on the Level board above is the reason this one exists:
-     badges, hundos and level are all lifetime counts, so they put
-     roughly the same people in roughly the same order and reward
-     whoever has simply done the most. This one rewards being RIGHT,
-     which for a class sitting a state exam is the number that actually
-     predicts the outcome - and it reorders the board completely,
-     because somebody careful and halfway through can beat somebody who
-     has ground out twice the questions.
-     THE FLOOR IS THE WHOLE DESIGN. Without one, three questions
-     answered correctly is 100% and tops the class forever, which is
-     not an achievement, it is an artifact. ACCURACY_MIN_ANSWERED is
-     low enough to reach in a couple of sittings and high enough that
-     it cannot be fluked. Below it somebody is ABSENT from this board
-     rather than bottom of it - the same treatment a person whose app
-     has not yet published `answered` gets, which is also why absent
-     has to mean "not yet" rather than "0%". */
-  { key: "accuracy", tab: "Accuracy", field: "accuracy",
-    value: (e) => {
-      const a = Number(e && e.answered) || 0;
-      const c = Number(e && e.correct) || 0;
-      return a > 0 ? Math.round((c / a) * 100) : 0;
-    },
-    eligible: (e) => (Number(e && e.answered) || 0) >= ACCURACY_MIN_ANSWERED,
-    emptyNote: "Nobody has answered " + ACCURACY_MIN_ANSWERED
-      + " questions yet \u2014 this board fills up as the class does.",
-    barredNote: (e) => {
-      const a = Number(e && e.answered) || 0;
-      return "You need " + ACCURACY_MIN_ANSWERED + " questions answered to appear here \u2014 you\u2019re at "
-        + a + ". Keep going and you\u2019ll show up on your own.";
-    },
-    unit: (n) => n + "% correct",
-    blurb: "Ranked by how much of what you have answered you got right, across everything you have ever taken. You need at least " + ACCURACY_MIN_ANSWERED + " questions answered to appear \u2014 otherwise three lucky answers would outrank a whole semester." }
+    blurb: "Ranked by hundos \u2014 units finished at 100%, in Drill, Exam, Game or the Virtual Room alike. They count per unit, not per test, so a test covering three units has three hundos on the table." }
 ];
 
 
@@ -36366,7 +36321,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-24-160";
+const APP_BUILD = "2026-09-24-161";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -42185,22 +42140,10 @@ function renderLeaderboardList(list){
 function renderRankingRows(rows, entries, board, opts){
   const o = opts || {};
   const query = (o.query || "").trim().toLowerCase();
-  /* A board's number is usually a published field, but it does not have
-     to be - Accuracy is a fraction of two of them. `value` and
-     `eligible` keep that as DATA on the board rather than a special
-     case in here, which is the same reason `unit` and `blurb` live
-     there: three copies of this function is what the one-builder rule
-     exists to prevent. */
-  const val = (e) => board.value ? board.value(e) : (Number(e && e[board.field]) || 0);
+  const val = (e) => Number(e && e[board.field]) || 0;
 
   const sorted = entries.slice()
     .filter(e => e && String(e.firstName || "").trim() !== "")
-    /* Not qualified is ABSENT, never bottom. Somebody with 12 questions
-       answered has not scored 0% on the accuracy board, they have not
-       taken it yet - and so has anybody whose app is too old to publish
-       `answered` at all. Showing either at the foot of the board would
-       be the board lying about them. */
-    .filter(e => !board.eligible || board.eligible(e))
     .sort((a, b) => (val(b) - val(a)) ||
                     String(a.firstName || "").localeCompare(String(b.firstName || "")));
 
@@ -42216,13 +42159,7 @@ function renderRankingRows(rows, entries, board, opts){
   if(ranked.length === 0){
     const empty = document.createElement("p");
     empty.className = "lb-board-empty";
-    /* The default blames the rankings setting, which is right when the
-       board is empty because nobody has opted in - and wrong on a board
-       with a qualifying bar, where the honest answer is that nobody has
-       cleared it yet. Same mistake "Find me" made when it told a device
-       with no code to turn on a setting that was already on. */
-    empty.textContent = board.emptyNote
-      || "No one yet \u2014 turn on \u201cShow me in the rankings\u201d in Settings to be the first.";
+    empty.textContent = "No one yet \u2014 turn on \u201cShow me in the rankings\u201d in Settings to be the first.";
     rows.appendChild(empty);
     return;
   }
@@ -44332,13 +44269,6 @@ function showRankings(defaultBoard){
       avatarChar: store.avatarChar || AVATAR_CHARACTERS[0].id,
       level: levelOf(store), badges: badgeCountOf(store), hundos: hundosOf(store),
       week: weekKeyNow(), weekPoints: weekPointsOf(store),
-      /* Both halves of accuracy, for the same reason every other number
-         here is synthesised: this row is drawn from the local store so
-         it is right the instant a test ends, rather than 2.5 seconds
-         later when the push lands. Leaving these out would have put
-         everybody else on the accuracy board and not you. */
-      correct: (store.lifetime && store.lifetime.correct) || 0,
-      answered: (store.lifetime && store.lifetime.answered) || 0,
       mystery: mysteryColorsFoundCount()
     };
     let found = false;
@@ -44393,26 +44323,13 @@ function showRankings(defaultBoard){
          row, at zero, synthesised by liveEntries() - so nothing here
          should ever say "not in the rankings yet" to someone who simply
          has not answered a question. */
-      /* A FOURTH REASON, since Accuracy: this board has a qualifying
-         bar and you are under it. Without this it fell through to
-         "still loading", which is the same class of mistake as telling
-         a device with no code to turn on a setting that was already
-         on - a true-sounding message about the wrong thing. Asked of
-         the BOARD rather than hardcoded here, so a future board with
-         its own bar cannot reintroduce the bug by forgetting. */
-      const hereBoard = RANKING_BOARDS.find(b => b.key === rankingsBoardKey);
-      const mineNow = liveEntries().find(e => e && e.pub === store.publicId);
-      const barred = hereBoard && hereBoard.eligible && mineNow
-        && !hereBoard.eligible(mineNow);
       showDailyAlert(!loaded
         ? "Still loading the rankings \u2014 try that again in a moment."
         : !store.leaderboardOptIn
           ? "You\u2019re hidden from the rankings \u2014 turn on \u201cShow me in the rankings\u201d in Settings."
           : !syncCode
             ? "This device isn\u2019t syncing, so it has no rankings entry \u2014 turn sync on in Settings."
-            : barred && hereBoard.barredNote
-              ? hereBoard.barredNote(mineNow)
-              : "Still loading the rankings \u2014 try that again in a moment.");
+            : "Still loading the rankings \u2014 try that again in a moment.");
       return;
     }
     mine.scrollIntoView({ behavior: "smooth", block: "center" });

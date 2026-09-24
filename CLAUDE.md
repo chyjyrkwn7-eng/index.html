@@ -159,6 +159,14 @@ plain `<script src=...compat.js>` rather than an ES module, precisely so no
 bundler is needed. Introducing a build pipeline is a bigger decision than it
 looks — it changes how ~40 people's browsers load the app.
 
+**OUTSTANDING, AND NOT A DEFECT: the Firestore admin key is not set
+up.** `tools/firestore-admin.py find` cannot return a sync code without
+one — see **Accounts and the sync code**. Everything testable about it
+passes; only "does Google accept a real key" is unverified. Nobody is
+waiting on it and nothing is broken; it is the backstop for a classmate
+who loses their code with nothing saved. Madison asked to be reminded
+rather than pushed.
+
 There **is** a web app manifest, embedded as a base64 `data:` URI on a
 `<link rel="manifest">`. Grepping for `manifest.json` finds nothing and it is
 easy to conclude there is none. Decode it to edit; never hand-patch the base64.
@@ -2419,54 +2427,166 @@ full set of unit names needs its own row and several lines.
 
 ---
 
+## Friends, the Virtual Room and the banners
+
+Everything in this section postdates build 94 and was undocumented until
+161.
+
+### publicId
+
+- **A ROW IS KEYED BY `publicId`, NEVER BY THE SYNC CODE.** It used to
+  be the code, and the code IS the account — on a collection that is
+  world-readable AND listable, because that is how forty phones draw
+  the board. So every row published that way was a classmate's account
+  key sitting in public. `publicIdOf()` mints a twelve-character
+  identifier that means nothing to anybody, and `check-sync` section 7
+  asserts the code appears nowhere in `leaderboard` or `vrooms`, as a
+  document id or in any field.
+- **`migrateLeaderboardKey()` deletes the old row once**, on the
+  owner's next launch, guarded by `store.leaderboardKeyMigrated`. It is
+  the only thing that can: that device is the last holder of the key to
+  a document nobody else can ever address. Checked against the live
+  board in build 161 — 7 legacy rows were still there, all belonging to
+  people who had not yet launched a build containing it. They clear
+  themselves as those devices update; `tools/firestore-admin.py prune`
+  exists to force it and was deliberately NOT run, because the app
+  resolving it on its own costs nobody a place on the board.
+- **The retirement in `setSyncCode()` retires the OLD PUBLIC ID**, not
+  the old sync code — linking pulls the other account's store down,
+  which brings its publicId with it, so the id this device was
+  publishing under is the one left stranded. Retiring by the code would
+  delete nothing.
+
+### Friends
+
+- **A FRIEND CODE IS NOT THE SYNC CODE and must never be derivable from
+  it.** Different alphabet, different length (`XXX-XXX`), no prefix and
+  no hash of one from the other. Losing or rotating a friend code must
+  not touch the account, and nothing keyed by a friend code may ever
+  return a sync code.
+- **The friends graph rides in your OWN leaderboard row**, in short
+  fields (`fcode`, `freq`, `facc`, `inv`) because that document is
+  fetched by every client on every snapshot and there are forty of
+  them. Your row says who you have asked and who you have accepted;
+  nobody writes to anybody else's.
+- **Friends is its own card on Profile**, not a button in the Class 26E
+  box — see **Conventions**.
+- **The friends screen leads with people, not admin** — also
+  **Conventions**.
+- **`decorateAvatar()` takes the ELEMENT, not a character id.** Handing
+  it an id threw and took the whole screen down; `avatarSpanFor(entry)`
+  is the builder that gets it right.
+- **The live listener must not rebuild the screen under somebody's
+  fingers.** `friendsViewSignature()` skips a redraw when nothing
+  relevant changed, and the redraw is refused outright while
+  `.friend-add-input` is focused or part-typed. Measured on the build
+  that got this wrong: the field came back EMPTY with focus lost, 15
+  times. It also requires `metadata.fromCache === false` before letting
+  an empty snapshot replace the board — the same rule as
+  `handleRemoteReset()`, for the same reason.
+
+### The banners
+
+- **ONE BUILDER, THREE LOOKS THAT CANNOT BE CONFUSED.**
+  `buildAppBanner()` with `BANNER_KINDS`: `vroom` is blue with a room,
+  `friend` is green with a person, `account` is amber with a key. The
+  tag AND the colour, because one survives being read in a hurry and
+  the other survives somebody who cannot tell those colours apart.
+  Asked for directly after two banners read as the same banner twice.
+- **Precedence when several are waiting**: Virtual Room first (a lobby
+  is filling), then friends, then the account one (it can wait a
+  launch). Each checks for the others by id before rendering.
+- **They live on `<body>`, never inside `#stage`.** `#stage` animates,
+  and a transform on an ancestor re-parents a fixed element's
+  containing block. Each takes a one-shot `MutationObserver` on
+  `#stage` that removes it on the next screen change.
+- **`.daily-alert` carries `pointer-events:none`**, which is right for
+  a passive banner and fatal for one with buttons — `.app-banner` sets
+  it back to `auto`. The Join button measured perfectly and was
+  unpressable for a week because of it, which is also why every check
+  on these uses a real hit-tested tap: `element.click()` ignores
+  pointer-events entirely and cannot catch this.
+- **`attachInviteWatcher()` attaches at BOOT, not on the first visit to
+  Home.** It used to attach inside `showHome()`, so the first snapshot
+  only began arriving once somebody was already looking at the screen
+  the banner appears on — which is why an invite showed up "late": the
+  wait was the subscription, not the network.
+
+### The Virtual Room
+
+- **Unit selection is reachable ONLY from inside a lobby.** Match
+  settings opens `showVirtualRoomSetup(editRoom)` in edit mode — the
+  ordinary unit screen, with the bottom bar offering only that options
+  sheet and a back-to-lobby link, and `window.forceHideBottomTabs` set
+  while editing.
+- **`addEventListener` passes the EVENT as argument one.** Wiring the
+  Match settings button as `addEventListener("click",
+  showVirtualRoomSetup)` handed it a PointerEvent as `editRoom` and
+  broke creating a lobby outright. Never pass a function with optional
+  parameters by name.
+- **Two game types**: `race` (the original) and `tug` (Tug of War).
+  `beginTugMatch()` must call `detachVroomListener()` — the race path
+  does, and tug not doing so left the lobby listener live underneath
+  the match.
+- **Question order comes from `shuffleSeeded(pool, data.startAt)`**, so
+  every client gets the same order from the room's own shared
+  timestamp. Never shuffle locally.
+- **`.invite-overlay` starts at `opacity:0`** until `invite-overlay-show`
+  lands in a rAF. Every measurement of the Match settings sheet passed
+  while it was invisible; the screenshot caught it.
+- **An invite sheet built from `ids.map(id => rows[id])` must not
+  `.filter(Boolean)` silently** — a friend whose board row has not
+  loaded vanishes from the list with nothing to say so. Reported as
+  "the invite list is still empty".
+
+### The badge cutscene
+
+- **`BADGE_CUTSCENE_MS` is the app's number and the gate reads it off
+  the page.** `check-behaviour` hardcoded 2600 and went red on the
+  build that lengthened it — a gate failing the app for being right.
+- **Never name a local `theme`.** It shadows the app's settings object
+  for the whole function body and puts `theme.muteBanners` in its
+  temporal dead zone; the cutscene threw a ReferenceError on every
+  unlock. `badgeThemeFor()`'s result is `badgeTheme`.
+
+---
+
 ## The Leaderboard's boards
 
 `RANKING_BOARDS` is the whole definition of a board — its tab label,
-what it ranks on, how a row reads, and its blurb. Four of them now.
+what it ranks on, how a row reads, and its blurb. Three of them: This
+Week, Level, Hundos.
 
-- **A BOARD DOES NOT HAVE TO RANK ON A PUBLISHED FIELD.** Accuracy is a
-  fraction of two of them, so a board may carry `value(entry)` and
-  `eligible(entry)` instead of leaning on `field`. That keeps a derived
-  board as DATA rather than a special case inside
-  `renderRankingRows()` — the same reason `unit` and `blurb` live on
-  the board.
-- **Accuracy exists because the other three are the same board.**
-  Badges, hundos and level are all lifetime totals, so they put roughly
-  the same people in roughly the same order and reward whoever has done
-  the most. Accuracy rewards being RIGHT, which for a class sitting a
-  state exam is the number that predicts the outcome, and it reorders
-  the board completely.
-- **THE QUALIFYING FLOOR IS THE WHOLE DESIGN.** Without
-  `ACCURACY_MIN_ANSWERED`, three lucky answers is 100% and tops the
-  class forever — an artifact, not an achievement.
-- **Not qualified is ABSENT, never bottom.** Somebody with 12 questions
-  answered has not scored 0%, they have not taken the board yet; and so
-  has anybody whose app is too old to publish `answered` at all. Either
-  at the foot of the board would be the board lying about them.
-- **A new board is a new reason "Find me" can fail, and naming the
-  wrong one is how this gets reported.** There were three (not loaded /
-  hidden / not syncing); a qualifying bar is a fourth, and without it
-  the handler fell through to "still loading", which is the same class
-  of mistake as telling a device with no code to turn on a setting that
-  was already on. `barredNote(entry)` belongs to the BOARD, so a future
-  board with its own bar cannot reintroduce it by forgetting.
-- **`emptyNote` likewise**: the default empty message blames the
-  rankings setting, which is right when nobody has opted in and wrong
-  on a board nobody has cleared yet.
+- **A FOURTH BOARD WAS BUILT AND TAKEN BACK OUT, and the reasoning is
+  worth keeping even though the board is not.** Accuracy — lifetime
+  correct over lifetime answered, with a 100-question floor so three
+  lucky answers could not top the class — shipped in build 160 and was
+  removed in 161 on one line: *"remove the accuracy one, I don't like
+  it."* Don't rebuild it without being asked.
+  It came with machinery that also went: a board could carry
+  `value(entry)` and `eligible(entry)` for a number that is not a
+  published field, plus `emptyNote` and `barredNote(entry)` for a board
+  with a qualifying bar. All of it was removed rather than left
+  unreachable — this file already carries enough dead CSS that "check
+  the selector is reachable before assuming your edit was wrong" is a
+  documented rule.
+- **The real constraint it was trying to solve is still true**, and is
+  the note on the Level board: badges, hundos and level are all
+  LIFETIME totals, so all three put the same people in the same order
+  and none of them ever really moves. This Week is the only one a new
+  person can win. Any fourth board worth adding has to move.
 - **A new ranked number needs publishing in `pushToCloud()` AND
-  synthesising in `liveEntries()`.** The first puts everyone else on the
-  board; the second puts YOU on it, drawn from the local store so your
-  row is right the instant a test ends rather than 2.5s later when the
-  push lands. Accuracy needed `answered` in both, and leaving it out of
-  `liveEntries()` would have shown the whole class except you.
+  synthesising in `liveEntries()`.** The first puts everyone else on
+  the board; the second puts YOU on it, drawn from the local store so
+  your row is right the instant a test ends rather than 2.5s later when
+  the push lands. Leaving it out of `liveEntries()` shows the whole
+  class except you.
 - **Settings' rankings hint is BUILT FROM `RANKING_BOARDS`, not written
   out.** It read "three ways — level, badges and perfect tests" while
   the boards were This Week, Level and Hundos: the count was right by
-  accident and not one of the three names was. Same lesson as a gate
-  that hardcodes a label.
-- **Four tabs fit.** Measured: one row down to 375px, wrapping to two
-  rows on a 320px SE 1st gen with no overflow — which is the device
-  already documented as scrolling several screens.
+  accident and not one of the three names was. It now says the count
+  and the names the boards actually have, which is also why removing a
+  board needs no copy edit.
 
 ---
 

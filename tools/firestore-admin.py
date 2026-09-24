@@ -19,7 +19,12 @@ Usage
 -----
   python3 tools/firestore-admin.py list
   python3 tools/firestore-admin.py find <username>
+  python3 tools/firestore-admin.py prune [--days N] [--yes]
   python3 tools/firestore-admin.py purge --yes
+
+`prune` is the one to reach for: it removes only the rankings rows
+nobody is behind any more and leaves every live row alone. `purge`
+wipes whole collections and is the blunt instrument.
 """
 
 import json
@@ -402,6 +407,113 @@ def cmd_find(query):
     return 0
 
 
+ORPHAN_DEFAULT_DAYS = 30
+
+# A sync code is XXXX-XXXX from an alphabet with no 0/O/1/I; a publicId
+# is twelve characters of base36. Anything matching this as a document
+# id in `leaderboard` is a row from before the publicId migration.
+SYNC_CODE_SHAPE = __import__("re").compile(
+    r"^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}-[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$")
+
+
+def cmd_prune(days, confirmed):
+    """Delete ONLY the rankings rows nobody is behind any more.
+
+    An orphaned row is the leftover from the lost-code bug fixed in
+    build 158: a device that lost its sync code minted a new one, so
+    that person carried on as a new account with a new row, and their
+    old row stayed on the board with nobody holding the key to it. It
+    cannot update itself and it cannot delete itself.
+
+    WHY STALENESS IS A SOUND TEST HERE, and not a guess. Every live
+    device rewrites its own leaderboard row on launch and on every save
+    (pushToCloud), stamping lastModified. A row with somebody behind it
+    therefore cannot go quiet for long; an orphan goes quiet the moment
+    it is abandoned and never speaks again.
+
+    AND THE COST OF BEING WRONG IS ZERO, which is the property that
+    makes this safe to run rather than merely plausible. If this
+    deletes the row of somebody who simply has not opened the app in a
+    month, their next launch writes it straight back with their real
+    numbers. Nothing here touches `progress` - the account itself, all
+    of it - only the rankings row, which is the same thing
+    retireLeaderboardEntry() deletes in the app for exactly this reason.
+
+    Dry run unless --yes, because a destructive pass over live class
+    data should have to be looked at before it happens.
+    """
+    rows = docs("leaderboard")
+    now_ms = time.time() * 1000.0
+    cutoff = now_ms - (days * 86400000.0)
+    live, orphans, undated = [], [], []
+    for pub, f in rows:
+        when = f.get("lastModified")
+        stamp = when if isinstance(when, (int, float)) and when else 0
+        if SYNC_CODE_SHAPE.match(pub):
+            # A LEGACY ROW, AND THIS ONE IS NOT A HEURISTIC AT ALL.
+            # The document id IS the sync code, which is the account -
+            # and this collection is world-readable and listable,
+            # because that is how forty phones draw the board. So every
+            # one of these is a classmate's account key sitting in
+            # public. The app stopped keying rows this way when they
+            # moved to publicId and migrateLeaderboardKey() deletes the
+            # old one on the owner's next launch; these are the ones
+            # whose owner has not launched a new enough build yet.
+            # Age is irrelevant here: a fresh one is just as exposed as
+            # a stale one, so it goes regardless of --days.
+            orphans.append((pub, f, stamp))
+        elif not stamp:
+            undated.append((pub, f))
+        elif stamp < cutoff:
+            orphans.append((pub, f, stamp))
+        else:
+            live.append((pub, f))
+
+    def line(pub, f, when=None):
+        stamp = time.strftime("%Y-%m-%d", time.localtime(when / 1000.0)) if when else "no date"
+        why = " EXPOSED SYNC CODE" if SYNC_CODE_SHAPE.match(pub) else ""
+        return "  %-16s %-14s %s  level %-4s %s hundos%s" % (
+            f.get("firstName", "?"), pub, stamp,
+            f.get("level", "?"), f.get("hundos", "?"), why)
+
+    exposed = sum(1 for pub, _, _ in orphans if SYNC_CODE_SHAPE.match(pub))
+    print("%d rankings rows: %d active, %d to remove (%d of them exposing a sync code), "
+          "%d with no date." % (len(rows), len(live), len(orphans), exposed, len(undated)))
+
+    if undated:
+        # An older build published no lastModified at all. Absence of a
+        # date is not evidence of abandonment, so these are reported and
+        # never deleted - the whole test is "has this gone quiet", and a
+        # row that never spoke cannot answer it.
+        print("\nNO DATE - never touched, cannot be judged:")
+        for pub, f in undated:
+            print(line(pub, f))
+
+    if not orphans:
+        print("\nNothing to prune.")
+        return 0
+
+    print("\nWOULD DELETE (legacy sync-code rows, or quiet for %d+ days):" % days)
+    for pub, f, when in sorted(orphans, key=lambda r: r[2]):
+        print(line(pub, f, when))
+
+    if not confirmed:
+        print("\nDry run. Re-run with --yes to delete these %d rows." % len(orphans))
+        print("Anybody wrongly caught gets their row back on their next launch.")
+        return 0
+
+    gone = 0
+    for pub, f, when in orphans:
+        url = "%s/leaderboard/%s" % (BASE, urllib.parse.quote(pub, safe=""))
+        status, body = _call("DELETE", url)
+        ok = status == 200
+        gone += 1 if ok else 0
+        print("  %-16s %-14s %s" % (f.get("firstName", "?"), pub,
+                                    "deleted" if ok else "FAILED %s" % status))
+    print("\n%d of %d removed. %d active rows untouched." % (gone, len(orphans), len(live)))
+    return 0 if gone == len(orphans) else 1
+
+
 def cmd_purge(confirmed):
     if not confirmed:
         print("This deletes EVERY document in: %s" % ", ".join(COLLECTIONS))
@@ -437,6 +549,14 @@ def main(argv):
             print("usage: firestore-admin.py find <username>")
             return 2
         return cmd_find(" ".join(argv[2:]))
+    if cmd == "prune":
+        days = ORPHAN_DEFAULT_DAYS
+        if "--days" in argv:
+            try: days = int(argv[argv.index("--days") + 1])
+            except (IndexError, ValueError):
+                print("usage: firestore-admin.py prune [--days N] [--yes]")
+                return 2
+        return cmd_prune(days, "--yes" in argv)
     if cmd == "purge":
         return cmd_purge("--yes" in argv)
     print("Unknown command %r" % cmd)
