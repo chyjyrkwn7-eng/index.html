@@ -10081,6 +10081,10 @@
     padding:.55rem .4rem; min-width:8.5rem;
   }
   .friend-hint{ margin:.5rem 0 0; font-size:.75rem; line-height:1.4; color:var(--soft); }
+  /* A state line, not decoration - it is the difference between a code
+     that works and one that silently cannot. */
+  .friend-code-state{ font-weight:600; }
+  .friend-code-state.is-warn{ color:#F5A524; }
   .friend-add-row{ display:flex; gap:.5rem; align-items:stretch; }
   .friend-add-input{
     flex:1 1 0; min-width:0; text-align:center;
@@ -24878,7 +24882,15 @@ function sendFriendRequest(code){
   /* A code that matches nobody is the ordinary case while the other
      person has not opened the app since this shipped, so it says so
      rather than "no such person". */
-  if(!match || !match.pub) return { ok: false, why: "No one on the class board has that code yet. They may need to open the app once." };
+  /* THE THREE REASONS A REAL CODE FINDS NOBODY, named, because the
+     old wording ("they may need to open the app once") was one of them
+     stated as if it were the only one - and the most common is that
+     the other person has not updated to a build that publishes a
+     friend code at all. Reported as a code "showing as unavailable"
+     with no way to tell which it was. */
+  if(!match || !match.pub) return { ok: false, why: (leaderboardRows && leaderboardRows.length)
+    ? "Nothing on the class board has that code. They need to open the app on the latest update, with a connection, and have \u201cShow me on the class board\u201d on."
+    : "The class board hasn\u2019t loaded yet \u2014 give it a second and try again." };
   if(friendPublicIds().indexOf(match.pub) >= 0) return { ok: false, why: (match.firstName || "They") + " is already a friend." };
   if((store.friendsOut || []).indexOf(match.pub) < 0){
     store.friendsOut = (store.friendsOut || []).concat([match.pub]);
@@ -35981,7 +35993,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-23-143";
+const APP_BUILD = "2026-09-24-145";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -38762,7 +38774,16 @@ function showVirtualRoomChoice(){
   startBtn.type = "button"; startBtn.className = "next playbtn";
   startBtn.style.marginTop = "1.2rem";
   startBtn.textContent = "Start a lobby";
-  startBtn.addEventListener("click", showVirtualRoomSetup);
+  /* WRAPPED, NOT PASSED BY NAME. addEventListener hands the listener
+     the CLICK EVENT as its first argument, so `showVirtualRoomSetup`
+     passed bare received a PointerEvent as `editRoom` - truthy - and
+     the ordinary "create a room" path rendered as Match settings, hid
+     the tab bar, and tried to save into a room that does not exist.
+     That is the whole of "it's asking you to select units prior to
+     getting in the lobby, the lobby also broke". Same class of bug as
+     a route handler quietly receiving a second argument: never pass a
+     function with optional parameters straight to an event listener. */
+  startBtn.addEventListener("click", () => showVirtualRoomSetup());
   panel.appendChild(startBtn);
 
   const joinBtn = document.createElement("button");
@@ -38789,7 +38810,10 @@ function showVirtualRoomChoice(){
    What is left is the options button and a way back to the lobby, which
    is the same shape every other mode's setup screen already has. */
 function showVirtualRoomSetup(editRoom){
-  const editing = !!editRoom;
+  /* Tested on the SHAPE of a room document rather than on truthiness,
+     so that even if something hands this an event, an element or a
+     stray value again, it cannot be mistaken for a room. */
+  const editing = !!(editRoom && Array.isArray(editRoom.units));
   setActiveNav(null);
   /* AFTER setActiveNav, which clears it on the way into every screen. */
   window.forceHideBottomTabs = editing;
@@ -40457,6 +40481,20 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
   reveal.append(scoreLine, timeLine, totalLine, seeResultsBtn);
   panel.appendChild(reveal);
 
+  /* AND A WAY OUT, OUTSIDE THE REVEAL. This screen is where a Virtual
+     Room run actually ends - the standings are one tap further on -
+     and it offered only that one tap. playReveal() does not fire until
+     finishedN === totalN, so until the last person is in, `reveal` is
+     hidden and the whole screen is a wait note: somebody who finished
+     early had nothing at all to press. Putting the exits INSIDE the
+     reveal would have inherited exactly that, which is the trap this
+     is fixing rather than repeating - they go on the panel, visible
+     from the moment it mounts. Same builder as the standings screen,
+     so the two cannot say different things or reset different
+     fields. */
+  const finaleExits = buildVroomExitRow();
+  panel.appendChild(finaleExits.row);
+
   stage.replaceChildren(panel);
   toTop();
 
@@ -40501,6 +40539,56 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
   });
 }
 
+/* THE TWO WAYS OUT OF A VIRTUAL ROOM, as functions rather than as
+   handlers written twice. Both end screens offer them now - the finale
+   reveal you land on first had NEITHER, so somebody who finished while
+   others were still working had no way off that screen at all - and
+   two copies of "reset my round and go back" is how one of them ends
+   up not resetting something. */
+function leaveVroomForHome(){
+  detachVroomListener();
+  if(vroomChatUnsubscribe){ try{ vroomChatUnsubscribe(); }catch(e){} vroomChatUnsubscribe = null; }
+  vroomCode = null;
+  showHome();
+}
+
+/* Back to the SAME lobby - same code, same people. Clears this
+   person's own round-specific fields so the lobby shows them fresh
+   rather than still carrying last round's score; the host also puts
+   the shared status back to "waiting", or a genuine new round can
+   never be started and the lobby only looks right. */
+function returnToVroomLobby(){
+  if(!fbDb || !vroomCode || !vroomMyKey){ detachVroomListener(); showVirtualRoomLobby(); return; }
+  const resetFields = {
+    ["participants." + vroomMyKey + ".progress"]: 0,
+    ["participants." + vroomMyKey + ".finished"]: false,
+    ["participants." + vroomMyKey + ".score"]: null,
+    ["participants." + vroomMyKey + ".elapsedMs"]: null,
+    ["participants." + vroomMyKey + ".ready"]: false
+  };
+  if(vroomIsHost) resetFields.status = "waiting";
+  fbDb.collection("vrooms").doc(vroomCode).update(resetFields)
+    .then(() => { detachVroomListener(); showVirtualRoomLobby(); })
+    .catch(() => { detachVroomListener(); showVirtualRoomLobby(); });
+}
+
+/* The pair, built once. .vroom-exit-row is a two-column grid so they
+   share one track width whatever the labels say. */
+function buildVroomExitRow(){
+  const row = document.createElement("div");
+  row.className = "vroom-exit-row";
+  const lobby = document.createElement("button");
+  lobby.type = "button"; lobby.className = "next ghost vroom-exit-btn";
+  lobby.textContent = "Back to lobby";
+  lobby.addEventListener("click", returnToVroomLobby);
+  const home = document.createElement("button");
+  home.type = "button"; home.className = "next ghost vroom-exit-btn";
+  home.textContent = "Main menu";
+  home.addEventListener("click", leaveVroomForHome);
+  row.append(lobby, home);
+  return { row: row, lobby: lobby, home: home };
+}
+
 function showVirtualRoomResults(){
   setActiveNav(null);
   /* AFTER setActiveNav, which clears this flag on the way into every
@@ -40528,12 +40616,9 @@ function showVirtualRoomResults(){
      Back to Home is a plain button now rather than a back link, and
      the pair is appended last so they read as the way out rather than
      as a header. */
-  const exitRow = document.createElement("div");
-  exitRow.className = "vroom-exit-row";
-  const backLink = document.createElement("button");
-  backLink.type = "button"; backLink.className = "next ghost vroom-exit-btn";
-  backLink.textContent = "Back to Home";
-  backLink.addEventListener("click", () => { detachVroomListener(); if(vroomChatUnsubscribe) vroomChatUnsubscribe(); vroomCode = null; showHome(); });
+  const exits = buildVroomExitRow();
+  const exitRow = exits.row;
+  const backLink = exits.home;
 
   /* Returns to the SAME lobby (same code, same other participants),
      per explicit request \u2014 gated by the same everyoneDone check as
@@ -40544,24 +40629,7 @@ function showVirtualRoomResults(){
      resets the shared status back to "waiting" so a genuine new round
      can actually be started (ready-up and all), not just a lobby
      screen that looks right but is still stuck on "started". */
-  const backToLobbyBtn = document.createElement("button");
-  backToLobbyBtn.type = "button"; backToLobbyBtn.className = "next ghost vroom-exit-btn";
-  backToLobbyBtn.textContent = "Back to lobby";
-  backToLobbyBtn.addEventListener("click", () => {
-    const resetFields = {
-      ["participants." + vroomMyKey + ".progress"]: 0,
-      ["participants." + vroomMyKey + ".finished"]: false,
-      ["participants." + vroomMyKey + ".score"]: null,
-      ["participants." + vroomMyKey + ".elapsedMs"]: null,
-      ["participants." + vroomMyKey + ".ready"]: false
-    };
-    if(vroomIsHost) resetFields.status = "waiting";
-    fbDb.collection("vrooms").doc(vroomCode).update(resetFields).then(() => {
-      detachVroomListener();
-      showVirtualRoomLobby();
-    });
-  });
-  exitRow.append(backToLobbyBtn, backLink);
+  const backToLobbyBtn = exits.lobby;
 
   const title = document.createElement("h1");
   title.className = "welcomeintro-title"; title.textContent = "Results";
@@ -41456,7 +41524,27 @@ function showFriends(){
   /* Said plainly, because a code people share needs somebody to know
      what it does and does not do. */
   mhint.textContent = "Give this to a classmate so they can add you. It is not your sync code and it cannot be used to sign in as you.";
-  mine.append(mh, codeWrap, mhint);
+
+  /* AND WHETHER IT CAN ACTUALLY BE FOUND. A code is only findable once
+     THIS device has published it to the class board, and the screen was
+     printing one either way - so somebody whose row had not been
+     written yet handed out a code that answered "unavailable" on the
+     other side, with nothing anywhere to say why. The check is the
+     honest one: is my own row on the board, carrying this exact code. */
+  const myRow = rowsByPublicId()[store.publicId];
+  const published = !!(myRow && myRow.fcode === friendCodeOf());
+  const state = document.createElement("p");
+  state.className = "friend-hint friend-code-state";
+  if(store.leaderboardOptIn === false){
+    state.classList.add("is-warn");
+    state.textContent = "Nobody can find this code while \u201cShow me on the class board\u201d is off. Turn it on in Settings.";
+  } else if(!published){
+    state.classList.add("is-warn");
+    state.textContent = "Not on the class board yet \u2014 this code won\u2019t work until this device has synced once with a connection.";
+  } else {
+    state.textContent = "On the class board \u2014 classmates can add you with it.";
+  }
+  mine.append(mh, codeWrap, mhint, state);
   panel.appendChild(mine);
 
   /* ---- add someone ---- */
