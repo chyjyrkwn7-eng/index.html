@@ -36008,7 +36008,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-24-151";
+const APP_BUILD = "2026-09-24-152";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -39462,10 +39462,6 @@ function joinVirtualRoomLobby(code){
 /* Who to invite, as a sheet rather than a screen: it is a short list
    of people and it opens over the lobby you are already in. */
 function openInviteFriendsSheet(roomCode){
-  const rows = rowsByPublicId();
-  const ids = friendPublicIds();
-  const people = ids.map(id => rows[id]).filter(Boolean);
-
   const overlay = document.createElement("div");
   overlay.className = "invite-overlay";
   const sheet = document.createElement("div");
@@ -39475,14 +39471,38 @@ function openInviteFriendsSheet(roomCode){
   h.className = "invite-sheet-title"; h.textContent = "Invite friends";
   sheet.appendChild(h);
 
-  if(!people.length){
-    const none = document.createElement("p");
-    none.className = "friend-hint";
-    none.textContent = ids.length
-      ? "None of your friends are on the class board right now."
-      : "No friends yet \u2014 add someone from Profile \u203a Friends first.";
-    sheet.appendChild(none);
-  } else {
+  /* THE SHEET FETCHES THE BOARD ITSELF. It read leaderboardRows once,
+     at the moment it opened, and nothing inside a lobby had ever put
+     anything there - the Friends screen attaches a listener, Home
+     attaches one, a lobby attaches neither. So opening this from a
+     lobby showed an empty list and said "No friends yet", which was
+     not true and was the least helpful thing it could have said.
+     Reported as friends not showing up in the invite button.
+
+     It also tells the difference between "the board has not answered"
+     and "you have no friends", which the old empty state could not. */
+  const body = document.createElement("div");
+  body.className = "invite-body";
+  sheet.appendChild(body);
+
+  let waitingForBoard = false;
+  function fill(){
+    const rows = rowsByPublicId();
+    const ids = friendPublicIds();
+    const people = ids.map(id => rows[id]).filter(Boolean);
+    body.replaceChildren();
+
+    if(!people.length){
+      const none = document.createElement("p");
+      none.className = "friend-hint";
+      none.textContent = waitingForBoard
+        ? "Loading your friends\u2026"
+        : ids.length
+          ? "None of your friends are on the class board right now."
+          : "No friends yet \u2014 add someone from Profile \u203a Friends first.";
+      body.appendChild(none);
+      return;
+    }
     const list = document.createElement("div");
     list.className = "invite-list";
     people.forEach(e => {
@@ -39510,13 +39530,46 @@ function openInviteFriendsSheet(roomCode){
       row.append(art, text, b);
       list.appendChild(row);
     });
-    sheet.appendChild(list);
+    body.appendChild(list);
   }
+
+  if(!leaderboardRows || !leaderboardRows.length){
+    waitingForBoard = true;
+    /* Its own listener, torn down with the sheet. onSnapshotResilient,
+       never a bare .onSnapshot(). */
+    if(fbDb){
+      try{
+        overlay.__unsub = onSnapshotResilient(fbDb.collection("leaderboard"), snap => {
+          const next = [];
+          snap.forEach(doc => {
+            const e = Object.assign({ pub: doc.id }, doc.data());
+            e.weekPoints = weekPointsOfEntry(e);
+            next.push(e);
+          });
+          const served = !(snap.metadata && snap.metadata.fromCache);
+          if(next.length || served || !(leaderboardRows && leaderboardRows.length)){
+            leaderboardRows = next;
+          }
+          if(!document.body.contains(overlay)) return;
+          waitingForBoard = false;
+          /* Only the list is rebuilt, never the sheet, so nothing under
+             a finger is replaced. */
+          fill();
+        });
+      }catch(e){ waitingForBoard = false; }
+    } else {
+      waitingForBoard = false;
+    }
+  }
+  fill();
 
   const close = document.createElement("button");
   close.type = "button"; close.className = "next ghost invite-close";
   close.textContent = "Done";
-  const shut = () => overlay.remove();
+  const shut = () => {
+    if(overlay.__unsub){ try{ overlay.__unsub(); }catch(e){} overlay.__unsub = null; }
+    overlay.remove();
+  };
   close.addEventListener("click", shut);
   overlay.addEventListener("click", ev => { if(ev.target === overlay) shut(); });
   sheet.appendChild(close);
@@ -39526,7 +39579,10 @@ function openInviteFriendsSheet(roomCode){
      element's containing block. So it takes the one-shot observer that
      clears it on the next screen change, the same as .daily-alert. */
   document.body.appendChild(overlay);
-  const obs = new MutationObserver(() => { overlay.remove(); obs.disconnect(); });
+  const obs = new MutationObserver(() => {
+    if(overlay.__unsub){ try{ overlay.__unsub(); }catch(e){} overlay.__unsub = null; }
+    overlay.remove(); obs.disconnect();
+  });
   obs.observe(stage, { childList: true });
   requestAnimationFrame(() => overlay.classList.add("invite-overlay-show"));
 }
