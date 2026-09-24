@@ -738,6 +738,18 @@ def check_update_and_cards(br):
       showHome();
       out.backHome = forcedUpdateBlocked();
 
+      /* THE RESULTS SCREEN IS A FEW SECONDS OF GRACE, NOT A BLOCK.
+         Waiting for Home alone meant somebody who goes from one test
+         straight into another never updated at all. */
+      const panel = document.createElement('section');
+      panel.className = 'panel'; panel.dataset.screen = 'results';
+      stage.replaceChildren(panel);
+      resultsShownAt = Date.now();
+      out.justFinished = forcedUpdateBlocked();
+      resultsShownAt = Date.now() - (UPDATE_REVIEW_MS + 500);
+      out.afterReview = forcedUpdateBlocked();
+      out.window = UPDATE_REVIEW_MS;
+
       const all = topicsIn(QUESTIONS);
       store.unitPerfects = store.unitPerfects || {};
       store.unitPerfects[all[0]] = BADGE_THRESHOLD + 7;
@@ -764,6 +776,13 @@ def check_update_and_cards(br):
     # The bar is still there on a unit somebody is still working on -
     # this is not "take the bar off unit cards".
     check("an unmastered one still has its bar", got["goingBar"] is True, got["goingBar"])
+    # "give it a few seconds to review the stuff then push it"
+    check("the results screen gets its reading time first",
+          got["justFinished"] is True, got["justFinished"])
+    check("and the update goes once that window is up",
+          got["afterReview"] is False, got["afterReview"])
+    check("the window is seconds, not minutes",
+          3000 <= got["window"] <= 30000, got["window"])
     ctx.close()
 
 

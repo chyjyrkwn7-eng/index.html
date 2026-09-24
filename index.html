@@ -10081,10 +10081,6 @@
     padding:.55rem .4rem; min-width:8.5rem;
   }
   .friend-hint{ margin:.5rem 0 0; font-size:.75rem; line-height:1.4; color:var(--soft); }
-  /* A state line, not decoration - it is the difference between a code
-     that works and one that silently cannot. */
-  .friend-code-state{ font-weight:600; }
-  .friend-code-state.is-warn{ color:#F5A524; }
   .friend-add-row{ display:flex; gap:.5rem; align-items:stretch; }
   .friend-add-input{
     flex:1 1 0; min-width:0; text-align:center;
@@ -24882,15 +24878,7 @@ function sendFriendRequest(code){
   /* A code that matches nobody is the ordinary case while the other
      person has not opened the app since this shipped, so it says so
      rather than "no such person". */
-  /* THE THREE REASONS A REAL CODE FINDS NOBODY, named, because the
-     old wording ("they may need to open the app once") was one of them
-     stated as if it were the only one - and the most common is that
-     the other person has not updated to a build that publishes a
-     friend code at all. Reported as a code "showing as unavailable"
-     with no way to tell which it was. */
-  if(!match || !match.pub) return { ok: false, why: (leaderboardRows && leaderboardRows.length)
-    ? "Nothing on the class board has that code. They need to open the app on the latest update, with a connection, and have \u201cShow me on the class board\u201d on."
-    : "The class board hasn\u2019t loaded yet \u2014 give it a second and try again." };
+  if(!match || !match.pub) return { ok: false, why: "No one on the class board has that code yet. They may need to open the app once." };
   if(friendPublicIds().indexOf(match.pub) >= 0) return { ok: false, why: (match.firstName || "They") + " is already a friend." };
   if((store.friendsOut || []).indexOf(match.pub) < 0){
     store.friendsOut = (store.friendsOut || []).concat([match.pub]);
@@ -35993,7 +35981,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-24-146";
+const APP_BUILD = "2026-09-24-148";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -36620,6 +36608,12 @@ function noteForcedTry(build){
    progress - that is somebody's unsaved run. The rest are screens that
    own the whole display and would be jarring to yank away mid-play;
    none of them lasts long, and this waits rather than giving up. */
+/* How long the results screen is left alone before a forced update may
+   take it. Long enough to read the score, the XP and the level bar
+   filling; short enough that it is not a wait. */
+const UPDATE_REVIEW_MS = 10000;
+let resultsShownAt = 0;
+
 function forcedUpdateBlocked(){
   if(typeof testInProgress !== "undefined" && testInProgress) return true;
   /* AND NOT ON THE RESULTS SCREEN EITHER. summarize() clears
@@ -36635,6 +36629,10 @@ function forcedUpdateBlocked(){
      is lost: the update goes the moment they hit Main menu. */
   const el = (typeof stage !== "undefined" && stage) ? stage.firstElementChild : null;
   const screen = el && el.dataset ? el.dataset.screen : "";
+  /* The results screen counts, once it has been up long enough to
+     read - see UPDATE_REVIEW_MS. Waiting for Home alone meant somebody
+     who goes straight from a test to another test never updated. */
+  if(screen === "results") return (Date.now() - resultsShownAt) < UPDATE_REVIEW_MS;
   if(screen !== "home" && screen !== "welcome") return true;
   return !!(document.getElementById("splashscreen") ||
             document.getElementById("genprofile-overlay") ||
@@ -37568,6 +37566,22 @@ function summarize(){
   actions.appendChild(mainMenuBtn);
 
   panel.appendChild(actions);
+  /* A FEW SECONDS TO READ THE RESULTS, THEN THE UPDATE. Asked for in
+     those words: "next time they finish a test, give it a few seconds
+     to review the stuff then push it." Build 142 made a forced update
+     wait for Home, which was right about not eating the results screen
+     and wrong about how long to wait - somebody who goes from one test
+     straight into another never gets it.
+
+     dataset.screen is what forcedUpdateBlocked() reads, and it used to
+     be set by exactly two screens. There is a third value now.
+     noticeAllowedHere() tests for "home" or "welcome" specifically, so
+     "results" still fails it by construction and no banner can appear
+     here - but the invariant is "three screens set it" now, not two,
+     and anything new reading dataset.screen has to know that. The node
+     is replaced on the next mount, so it still clears itself. */
+  panel.dataset.screen = "results";
+  resultsShownAt = Date.now();
   stage.replaceChildren(panel);
   toTop();
   /* On the stage now, so the bar has a committed starting width to
@@ -38774,16 +38788,13 @@ function showVirtualRoomChoice(){
   startBtn.type = "button"; startBtn.className = "next playbtn";
   startBtn.style.marginTop = "1.2rem";
   startBtn.textContent = "Start a lobby";
-  /* WRAPPED, NOT PASSED BY NAME. addEventListener hands the listener
-     the CLICK EVENT as its first argument, so `showVirtualRoomSetup`
-     passed bare received a PointerEvent as `editRoom` - truthy - and
-     the ordinary "create a room" path rendered as Match settings, hid
-     the tab bar, and tried to save into a room that does not exist.
-     That is the whole of "it's asking you to select units prior to
-     getting in the lobby, the lobby also broke". Same class of bug as
-     a route handler quietly receiving a second argument: never pass a
-     function with optional parameters straight to an event listener. */
-  startBtn.addEventListener("click", () => showVirtualRoomSetup());
+  /* STRAIGHT INTO THE LOBBY. Picking units before the room existed was
+     the same screen twice - "the unit selection screen should ONLY be
+     available from within a lobby, quit showing it beforehand. It's
+     redundant." The room is created empty and the host sets it up from
+     Match settings, which is the one place that choice now lives. The
+     lobby will not start until it has units; see the auto-start gate. */
+  startBtn.addEventListener("click", () => createVirtualRoomLobby([], 10));
   panel.appendChild(startBtn);
 
   const joinBtn = document.createElement("button");
@@ -39678,14 +39689,23 @@ function showVirtualRoomLobby(){
       /* TWO PEOPLE MINIMUM. totalN > 0 let a host sitting alone ready
          up and start a "race" against nobody, which is not what the
          Virtual Room is for. The note below says why it is waiting. */
-      const allReady = totalN > 1 && readyN === totalN;
+      /* A ROOM WITH NO UNITS CANNOT START. It is created empty now, so
+         this is a real state rather than a theoretical one, and the
+         note says whose move it is rather than sitting on "waiting for
+         everyone to ready up" forever. */
+      const hasUnits = ((data.units || []).length > 0);
+      const allReady = totalN > 1 && readyN === totalN && hasUnits;
       if(data.status === "waiting"){
         autostartNote.classList.toggle("all-ready", allReady);
-        autostartNote.textContent = allReady
-          ? "Everyone's ready \u2014 starting\u2026"
-          : totalN < 2
-            ? "Waiting for someone else to join\u2026"
-            : "Waiting for everyone to ready up\u2026";
+        autostartNote.textContent = !hasUnits
+          ? (vroomIsHost
+              ? "Open Match settings and pick the units\u2026"
+              : "Waiting for the host to pick the units\u2026")
+          : allReady
+            ? "Everyone's ready \u2014 starting\u2026"
+            : totalN < 2
+              ? "Waiting for someone else to join\u2026"
+              : "Waiting for everyone to ready up\u2026";
       }
       /* The actual fix for "the start test for the lobby creator was
          bugged... don't let the lobby starter hit start test" \u2014 the
@@ -41480,27 +41500,7 @@ function showFriends(){
   /* Said plainly, because a code people share needs somebody to know
      what it does and does not do. */
   mhint.textContent = "Give this to a classmate so they can add you. It is not your sync code and it cannot be used to sign in as you.";
-
-  /* AND WHETHER IT CAN ACTUALLY BE FOUND. A code is only findable once
-     THIS device has published it to the class board, and the screen was
-     printing one either way - so somebody whose row had not been
-     written yet handed out a code that answered "unavailable" on the
-     other side, with nothing anywhere to say why. The check is the
-     honest one: is my own row on the board, carrying this exact code. */
-  const myRow = rowsByPublicId()[store.publicId];
-  const published = !!(myRow && myRow.fcode === friendCodeOf());
-  const state = document.createElement("p");
-  state.className = "friend-hint friend-code-state";
-  if(store.leaderboardOptIn === false){
-    state.classList.add("is-warn");
-    state.textContent = "Nobody can find this code while \u201cShow me on the class board\u201d is off. Turn it on in Settings.";
-  } else if(!published){
-    state.classList.add("is-warn");
-    state.textContent = "Not on the class board yet \u2014 this code won\u2019t work until this device has synced once with a connection.";
-  } else {
-    state.textContent = "On the class board \u2014 classmates can add you with it.";
-  }
-  mine.append(mh, codeWrap, mhint, state);
+  mine.append(mh, codeWrap, mhint);
   panel.appendChild(mine);
 
   /* ---- add someone ---- */
