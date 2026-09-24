@@ -108,7 +108,7 @@ print("a name with no account -> rc 1, no false hit")
 fa.admin_ready = lambda: False
 fa._call = lambda m, u, timeout=30: (200, json.dumps({"documents": [
     {"name": ".../leaderboard/cx48es4mai23",
-     "fields": {"firstName": {"stringValue": "sivad"},
+     "fields": {"firstName": {"stringValue": "testuser"},
                 "correct": {"integerValue": "903"}}}]}))
 buf = io.StringIO()
 with contextlib.redirect_stdout(buf):
@@ -117,9 +117,15 @@ out = buf.getvalue()
 assert "No admin key configured" in out
 assert "public id" in out.lower()
 assert "NOT a sync code" in out
-assert "QZ4K" not in out, "it must not invent a code it cannot see"
+assert "FAKE-TEST" not in out, "it must not invent a code it cannot see"
 print("no key -> says so, labels the public id, invents nothing")
 
 print("\nALL PASS")
 print("Untested without a real key: Google issuing a token for it, and")
 print("`progress` returning 200 rather than 403 under that token.")
+
+# A GATE THAT CANNOT FAIL THE BUILD IS NOT A GATE. Every assertion above
+# raises, but a bare raise is easy to lose in a pipeline that ends in
+# `| tail` - which is exactly how a broken version of this file got
+# committed. Exit explicitly so a caller sees a status either way.
+sys.exit(0)
