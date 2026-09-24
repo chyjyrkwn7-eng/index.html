@@ -300,6 +300,109 @@ with sync_playwright() as pw:
           "k=WXYZ-7777" in (back.get("handoff") or ""), back.get("handoff"))
     ctx.close()
 
+    # ---- 4e. a cloud document must not cost you your publicId ----
+    # THE DUPLICATE-ROW BUG, and it was live on the class board. The
+    # rankings row is keyed by publicId, so minting a new one means a
+    # SECOND row with the same progress in it and nobody holding the id
+    # to the first. applyLoadedData() used to null the local publicId
+    # whenever the incoming document carried none - which is every
+    # document written before publicId existed - and the next push then
+    # minted a fresh one. Two people on the live board had duplicate
+    # rows with identical correct-answer counts minutes apart.
+    print("\n4e. applying cloud data does not mint a second rankings row")
+    ctx = br.new_context(viewport={"width": 440, "height": 956})
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.drill.v1', '%s');"
+                        "localStorage.setItem('class26e.synccode','WXYZ-7777');}catch(e){}" % STORE)
+    pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
+    pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __fake([]);}")
+    pg.wait_for_timeout(400)
+    before = pg.evaluate("()=>publicIdOf()")
+    check("this device has a public id", bool(before), before)
+
+    # A document from an older build: newer than ours, and no publicId.
+    kept = pg.evaluate("""(mine)=>{
+      applyLoadedData({ firstName:"Madison", onboardingComplete:true,
+        leaderboardOptIn:true, lastModified: Date.now(),
+        lifetime:{points:999, correct:99} });
+      return { after: store.publicId, same: store.publicId === mine };
+    }""", before)
+    check("an old document without one does not wipe it",
+          kept["same"] is True, str(kept))
+    check("and no new id is minted on the next publish",
+          pg.evaluate("()=>publicIdOf()") == before, before)
+
+    # The linking case must still work: a document that HAS an id wins,
+    # because that is how this device adopts the account it linked to.
+    linked = pg.evaluate("""()=>{
+      applyLoadedData({ firstName:"Madison", onboardingComplete:true,
+        leaderboardOptIn:true, publicId:"theirpublicid", lastModified: Date.now(),
+        lifetime:{points:5, correct:5} });
+      return store.publicId; }""")
+    check("but a document that carries one still wins (linking)",
+          linked == "theirpublicid", linked)
+
+    # AND NOBODY GETS SIGNED OUT BY ANY OF IT. The publicId is the
+    # anonymous id on a rankings row; the SYNC CODE is the account, and
+    # being signed in depends on that plus onboardingComplete. Neither
+    # is touched here - but "neither is touched" is a code read, and a
+    # code read is exactly what this file exists not to rely on. So it
+    # is measured, on the same page, after both documents have landed.
+    still = pg.evaluate("""()=>({
+      code: syncCode, ls: localStorage.getItem('class26e.synccode'),
+      onboarded: !!store.onboardingComplete, name: store.firstName,
+      screen: (document.querySelector('#stage [data-screen]')||{dataset:{}}).dataset.screen || null,
+      welcome: !!document.querySelector('[data-screen="welcome"]')})""")
+    check("the sync code is untouched", still["code"] == "WXYZ-7777"
+          and still["ls"] == "WXYZ-7777", str(still))
+    check("the account is still onboarded", still["onboarded"] is True, str(still))
+    check("and nobody is dropped on Welcome", still["welcome"] is False, str(still))
+    ctx.close()
+
+    # ---- 4f. the board shows one row per person ----
+    # 4e stops NEW duplicates; the ones already published have no owner
+    # and cannot delete themselves, so the board has to collapse them.
+    # Narrow on purpose: name AND character, because "usernames are not
+    # unique" and collapsing on a name alone would hide a real person.
+    print("\n4f. duplicate rows are collapsed on the board")
+    ctx = br.new_context(viewport={"width": 440, "height": 956})
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.drill.v1', '%s');"
+                        "localStorage.setItem('class26e.synccode','WXYZ-7777');}catch(e){}" % STORE)
+    pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
+    pg.evaluate("()=>document.getElementById('splashscreen')?.remove()")
+    pg.evaluate("""()=>{ __fake([
+      /* one person, two rows, the real one richer */
+      {pub:"dup-rich", firstName:"Billy", avatarChar:"fox", level:11, hundos:5, correct:333, weekPoints:3980, lastModified:2},
+      {pub:"dup-poor", firstName:"Billy", avatarChar:"fox", level:4,  hundos:0, correct:81,  weekPoints:1030, lastModified:9},
+      /* same name, DIFFERENT character - two real people, both stay */
+      {pub:"twin-a", firstName:"Sam", avatarChar:"owl",   level:7, hundos:2, correct:150, weekPoints:400, lastModified:5},
+      {pub:"twin-b", firstName:"Sam", avatarChar:"robot", level:3, hundos:1, correct:70,  weekPoints:200, lastModified:5},
+      {pub:"solo",   firstName:"Dana", avatarChar:"ninja", level:9, hundos:3, correct:210, weekPoints:600, lastModified:5}
+    ]); }""")
+    pg.evaluate("()=>showRankings('level')"); pg.wait_for_timeout(700)
+    def names():
+        return pg.evaluate("()=>[...document.querySelectorAll('.rank-row')]"
+                           ".map(r=>(r.textContent||'').replace(/\\s+/g,' ').trim())")
+    shown = names()
+    billy = [n for n in shown if "Billy" in n]
+    check("the duplicate appears once", len(billy) == 1, str(billy))
+    # Asserted on Hundos, where the two rows differ unambiguously (5 vs
+    # 0). The level board's row text carries the week unit, so checking
+    # for "11" there was reading the wrong number off the right row.
+    pg.evaluate("()=>showRankings('hundos')"); pg.wait_for_timeout(500)
+    rich = [n for n in names() if "Billy" in n]
+    check("and it is the row with the real progress",
+          bool(rich) and "5 hundos" in rich[0], str(rich))
+    check("two people sharing a name both stay",
+          len([n for n in shown if "Sam" in n]) == 2, str(shown))
+
+    # The same row has to survive on every board, or somebody appears on
+    # one tab and vanishes on another.
+    for key in ["week", "hundos"]:
+        pg.evaluate("(k)=>showRankings(k)", key); pg.wait_for_timeout(500)
+        b = [n for n in names() if "Billy" in n]
+        check("still one Billy on the %s board" % key, len(b) == 1, str(b))
+    ctx.close()
+
     # ---- 5. swapping codes retires the old rankings row ----
     print("\n5. abandoning a code takes its rankings row with it")
     ctx = br.new_context(viewport={"width": 834, "height": 1194})

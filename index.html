@@ -24546,7 +24546,24 @@ function applyLoadedData(got){
      second device a different id from the first - two rows on the board
      for one account, which is the exact thing the shared key exists to
      prevent. null means "not yet", and publicIdOf() mints it once. */
-  store.publicId = typeof got.publicId === "string" && got.publicId ? got.publicId : null;
+  /* NEVER NULL A publicId THIS DEVICE ALREADY HAS. This used to fall
+     back to null whenever the incoming document carried no publicId -
+     which is every document written by a build older than publicId
+     itself - and nulling it makes publicIdOf() mint a fresh one on the
+     next push. The result is a SECOND rankings row with exactly the
+     same progress in it and nobody left holding the id to the first.
+     Caught on the live board: two people with duplicate rows carrying
+     identical correct-answer counts minutes apart, and three more with
+     an older richer row beside a newer poorer one.
+     Taking `got.publicId` when it exists is still right and is what
+     linking depends on - the other account's id comes down with its
+     store and this device starts publishing under that. The only case
+     that changes is the absent one: keep what we have rather than
+     throwing it away, because a duplicate row is not recoverable and a
+     missing id costs nothing to mint later. */
+  store.publicId = typeof got.publicId === "string" && got.publicId
+    ? got.publicId
+    : (store.publicId || null);
   store.leaderboardKeyMigrated = got.leaderboardKeyMigrated === true;
   /* FRIENDS. All four ride on `store`, so they follow a person to a
      second device with everything else.
@@ -36321,7 +36338,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-24-161";
+const APP_BUILD = "2026-09-24-162";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -42142,8 +42159,48 @@ function renderRankingRows(rows, entries, board, opts){
   const query = (o.query || "").trim().toLowerCase();
   const val = (e) => Number(e && e[board.field]) || 0;
 
-  const sorted = entries.slice()
-    .filter(e => e && String(e.firstName || "").trim() !== "")
+  /* ONE ROW PER PERSON, EVEN WHEN THE DATA HAS TWO.
+     A row is keyed by publicId, and until build 162 the app could throw
+     a device's publicId away and mint a new one - which left a second
+     row carrying the same progress and nobody holding the id to delete
+     the first. 162 stops new ones; the ones already on the board have
+     no owner and cannot remove themselves, so the board has to stop
+     showing them.
+
+     THE RULE IS DELIBERATELY NARROW, because "usernames are not
+     unique" is a rule elsewhere in this app and collapsing by name
+     alone would hide a real classmate behind somebody else's row. Two
+     rows are treated as one person only when the name AND the chosen
+     character match - picking the same username and the same character
+     is not something two different people do by accident.
+
+     The survivor is the one with the most lifetime correct answers, not
+     the one that ranks highest on the board being viewed: `correct` is
+     published on every row, so the same row wins on every tab. A person
+     who appeared on Hundos and vanished on Level would be a worse bug
+     than the one this fixes.
+
+     YOUR OWN ROW IS NEVER THE ONE DROPPED. It is synthesised from the
+     local store and is the only row here guaranteed to be current, so
+     it wins its group outright whatever the numbers say. */
+  const identity = (e) => String(e.firstName || "").trim().toLowerCase()
+    + "\u0000" + String(e.avatarChar || "");
+  const best = new Map();
+  entries.forEach(e => {
+    if(!e || String(e.firstName || "").trim() === "") return;
+    const key = identity(e);
+    const held = best.get(key);
+    if(!held){ best.set(key, e); return; }
+    if(held.pub === store.publicId) return;
+    if(e.pub === store.publicId ||
+       (Number(e.correct) || 0) > (Number(held.correct) || 0) ||
+       ((Number(e.correct) || 0) === (Number(held.correct) || 0) &&
+        (Number(e.lastModified) || 0) > (Number(held.lastModified) || 0))){
+      best.set(key, e);
+    }
+  });
+
+  const sorted = Array.from(best.values())
     .sort((a, b) => (val(b) - val(a)) ||
                     String(a.firstName || "").localeCompare(String(b.firstName || "")));
 
