@@ -4211,6 +4211,15 @@
     }
     .chatdock.is-open .chatdock-panel{ transform:translateY(0); }
     .chatdock-panel.is-dragging{ transition:none; }
+    /* A MOVING PANEL DOES NOT RE-BLUR THE SCREEN BEHIND IT. A 22px
+       backdrop blur is resampled on every frame the panel moves, and on
+       an iPhone that is the cost of the whole drag. While a finger has
+       it, and for the slide after, the glass is a near-opaque fill of
+       the same tone instead; it goes back to glass once it is still. */
+    .chatdock-panel.is-dragging, .chatdock-panel.is-settling{
+      backdrop-filter:none; -webkit-backdrop-filter:none;
+      background:rgba(20,25,32,.94); will-change:transform;
+    }
     /* ---- A 4.5px TALL GRAB HANDLE IS NOT A HANDLE ----
        "Changing the size of the box on the iPhone is very bad and hard
        to do." Measured, the thing you are asked to grab was 38x4.5px -
@@ -9871,6 +9880,15 @@
      give off - the emblem there is a preview of what is coming, not a
      thing they have. */
   .rankhero.is-unranked .rankhero-art{ opacity:.55; }
+  /* NOTHING HELD, NOTHING RESERVED. The setting is left empty on purpose
+     (see buildRanks), but an empty 6.6rem box still took its space: a
+     blank block above "No rank yet" on a 440 phone, and a blank column
+     beside it at 518 that pushed every line to the right - reported as
+     the Rank tab sitting off-centre on the phone. The slot goes, and the
+     card centres what is left at every width. */
+  .rankhero.is-unranked .rankhero-art{ display:none; }
+  .rankhero.is-unranked{ text-align:center; }
+  .rankhero.is-unranked .rankhero-chips{ justify-content:center; }
   .rankhero.is-unranked .rankhero-art::before{ display:none; }
   .rankhero.is-unranked .rankhero-art svg{ filter:none; }
   .rankhero-info{ flex:1 1 auto; min-width:0; width:100%; }
@@ -37950,10 +37968,27 @@ function startChatDock(){
   function storedChatHeight(){
     try{ return parseInt(localStorage.getItem(CHAT_H_KEY) || "", 10) || 0; }catch(e){ return 0; }
   }
-  function setChatHeight(px){
+  /* The stored height is written ONCE, when the finger lifts.
+     localStorage is synchronous on iOS, and writing it from every
+     touchmove put a disk write inside every frame of the drag. */
+  let pendingChatH = 0;
+  function setChatHeight(px, persist){
     const h = Math.round(Math.max(220, Math.min(px, window.innerHeight * 0.92)));
     panel.style.setProperty("--chat-h", h + "px");
-    try{ localStorage.setItem(CHAT_H_KEY, String(h)); }catch(e){}
+    pendingChatH = h;
+    if(persist !== false){ try{ localStorage.setItem(CHAT_H_KEY, String(h)); }catch(e){} }
+  }
+  function persistChatHeight(){
+    if(!pendingChatH) return;
+    try{ localStorage.setItem(CHAT_H_KEY, String(pendingChatH)); }catch(e){}
+    pendingChatH = 0;
+  }
+  /* One style write per frame, whatever the touch rate. */
+  let dragRaf = 0, dragPending = null;
+  function queueDrag(fn){
+    dragPending = fn;
+    if(dragRaf) return;
+    dragRaf = requestAnimationFrame(() => { dragRaf = 0; const f = dragPending; dragPending = null; if(f) f(); });
   }
   const savedH = storedChatHeight();
   if(savedH) panel.style.setProperty("--chat-h", savedH + "px");
@@ -37983,20 +38018,32 @@ function startChatDock(){
       dragArmed = true;
       panel.classList.add("is-dragging");
     }
+    /* THE SWIPE-DOWN LAG. This listener was passive on a panel that is
+       touch-action:pan-y, so once a drag began iOS ALSO panned the page
+       under it - two things answering one finger, and the sheet
+       stuttered between them. Once the drag is ours, it is only ours. */
+    if(e.cancelable) e.preventDefault();
     if(dy < 0){
       /* Up: taller, live. Nothing is translated, so the sheet stays
          anchored to the bottom edge while it grows. */
       dragDy = 0;
-      setChatHeight(dragH0 - dy);
+      queueDrag(() => setChatHeight(dragH0 - dy, false));
     } else {
       dragDy = dy;
-      panel.style.transform = "translateY(" + dragDy + "px)";
+      queueDrag(() => { panel.style.transform = "translateY(" + dy + "px)"; });
     }
-  }, { passive: true });
+  }, { passive: false });
   function endDrag(){
     if(dragFrom === null) return;
+    if(dragRaf){ cancelAnimationFrame(dragRaf); dragRaf = 0; const f = dragPending; dragPending = null; if(f) f(); }
+    persistChatHeight();
     const closing = dragDy > 70;
     panel.classList.remove("is-dragging");
+    /* The glass stays flat through the slide that follows as well:
+       see .is-settling. */
+    panel.classList.add("is-settling");
+    clearTimeout(endDrag._t);
+    endDrag._t = setTimeout(() => panel.classList.remove("is-settling"), 320);
     if(closing){
       /* Leave the offset in place for one frame so the close
          transition starts from where the finger let go. */
@@ -38021,10 +38068,13 @@ function startChatDock(){
   });
   sizer.addEventListener("pointermove", (e) => {
     if(sizeFrom === null) return;
-    setChatHeight(sizeH0 + (e.clientY - sizeFrom));
+    const y = e.clientY;
+    queueDrag(() => setChatHeight(sizeH0 + (y - sizeFrom), false));
   });
   function endSize(){
     if(sizeFrom === null) return;
+    if(dragRaf){ cancelAnimationFrame(dragRaf); dragRaf = 0; const f = dragPending; dragPending = null; if(f) f(); }
+    persistChatHeight();
     sizeFrom = null; panel.classList.remove("is-dragging");
   }
   sizer.addEventListener("pointerup", endSize);
@@ -42260,7 +42310,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-26-201";
+const APP_BUILD = "2026-09-26-202";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -52981,6 +53031,7 @@ function buildRanksTab(){
   const fillsToAnimate = [];
 
   /* ---- the hero: the rank you hold, and what is left of the next ---- */
+  let heroStepPct = null;
   const hero = document.createElement("div");
   hero.className = "rankhero" + (held ? "" : " is-unranked");
   hero.style.setProperty("--rank-color", RANK_COLOR[held || nextKey || "rookie"]);
@@ -53052,8 +53103,9 @@ function buildRanksTab(){
       stepParts.push(stepPart(mysteryColorsFoundCount(),
         prevRule && prevRule.mysteryStars, nextRule.mysteryStars));
     }
+    heroStepPct = stepParts.reduce((a, b) => a + b, 0) / stepParts.length;
     fillsToAnimate.push({ el: fill, prop: "width",
-      value: Math.round((stepParts.reduce((a, b) => a + b, 0) / stepParts.length) * 100) + "%" });
+      value: Math.round(heroStepPct * 100) + "%" });
 
     const note = document.createElement("p");
     note.className = "rankhero-next";
@@ -53178,7 +53230,13 @@ function buildRanksTab(){
       const meterFill = document.createElement("span");
       meterFill.className = "rankcard-meterfill";
       meter.appendChild(meterFill);
-      fillsToAnimate.push({ el: meterFill, prop: "width", value: Math.round(pct * 100) + "%" });
+      /* THE SAME STEP THE HERO MEASURES, not rankPct(). rankPct() is the
+         slower of the two requirements, so with no badges yet the Iron
+         card read empty at level 15 of 21 - "it doesn't show any of my
+         progress". The up-next card and the hero bar describe one
+         climb and now show one number. */
+      const meterPct = heroStepPct != null ? heroStepPct : pct;
+      fillsToAnimate.push({ el: meterFill, prop: "width", value: Math.round(meterPct * 100) + "%" });
       body.appendChild(meter);
       const togo = document.createElement("p");
       togo.className = "rankcard-togo";

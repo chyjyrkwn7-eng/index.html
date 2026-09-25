@@ -4942,4 +4942,42 @@ glow now stopped in two vertical lines down the sides.
   `check-trend.py` asserts all of this and **fails on build 200** on the
   newcomer case (`--against`), which is the reported bug exactly.
 
+### The Rank tab at her real width, and the chat sheet's drag (build 202)
+
+- **"The Rank tab is offset to the right on the phone" was real, and
+  build 197 measured it at the wrong width.** It was checked at 440 and
+  came back centred; her phone lays out at 518 (see build 199), where
+  the hero is a ROW, and for somebody with no rank yet the emblem slot
+  is deliberately empty — but an empty 8rem box still took its space,
+  so every line of the card sat in the right-hand two thirds. At 440 the
+  same box was a blank block above "No rank yet". An unranked hero now
+  has no art slot at all and centres its text and chips at every width.
+  **The lesson is the one 199 already paid for: a report that measures
+  fine at 440 has to be re-measured at 518 before it is called fine.**
+- **The up-next rank card's meter uses the hero's step, not
+  `rankPct()`.** `rankPct()` is the SLOWER of the two requirements, so
+  with no badges the Iron card sat at zero at level 15 of 21 — "it
+  doesn't show any of my progress". The hero already averaged the two
+  for exactly that reason; the card now reads `heroStepPct`, so the one
+  climb shows one number in both places. It was already in the rank's
+  colour with its glow; empty was the whole problem.
+- **The chat sheet's swipe-down lag had three causes, all fixed:**
+  the touchmove listener was **passive on a `pan-y` panel**, so iOS
+  panned the page under the sheet while the sheet followed the finger
+  (it now `preventDefault`s once the drag is armed); resizing **wrote
+  localStorage on every touchmove**, a synchronous write inside every
+  frame (now once, on release); and the panel **re-blurred the screen
+  behind it every frame** it moved — a 22px `backdrop-filter` on a
+  moving layer. While dragged, and for 320ms of settle after
+  (`.is-settling`), it is a near-opaque fill of the same tone and goes
+  back to glass once still. Style writes are coalesced to one per frame.
+  Driven with real touch events at 518: one storage write per drag,
+  `backdrop-filter:none` during the settle and the blur back after it,
+  and a downward drag closes the sheet.
+- **"Start a lobby lags / the screen expands" did not reproduce.**
+  Recorded frame by frame at 518 with the fake Firestore: one stage
+  mount, the ordinary 6px enter slide, no size change over 2.5s, and
+  three roster updates. Nothing focuses on mount. Left as reported
+  rather than guessed at; it needs a screen recording from the device.
+
 No committed regression suite exists yet. Worth building.
