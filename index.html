@@ -6064,8 +6064,38 @@
      size, so on a phone with larger type this bar was picking the
      tablet's rules. Every Home and Welcome phone gate in this file was
      converted for the same reason. */
+  /* ---- AND `100vw - 2.6rem` WAS THE WRONG SHAPE, NOT THE WRONG NUMBER ----
+     Reported a third time, with a photo: "the bottom tab while selecting
+     units is still very much broken, it's all the way from the left/right
+     side of the screen."
+     Home's bar is SHRINK-TO-FIT and stops growing once its content fits -
+     it caps at 376px. A viewport-derived width does not stop, so the two
+     bars drift apart as the screen widens. Measured across the matrix:
+
+        device        Home bar        this bar
+        375 phone     351 (12px in)   333 (21px in)
+        393 phone     369 (12px in)   351 (21px in)
+        440 Pro Max   376 (32px in)   398 (21px in)
+
+     So on every phone but one it was NARROWER than Home, and on the 440
+     Pro Max - the reference device, and the one it was reported from - it
+     overtakes Home and sits 11px closer to each edge. The number was
+     tuned on a device where it happened to look right.
+     The fix is to size it the way Home is sized rather than from the
+     viewport: the same shrink-to-fit, the same `100vw - 1.5rem` clamp,
+     and the same content cap, so the two bars have one footprint on every
+     phone and cannot drift again. It is an explicit `width`, not a
+     `max-width` with `width:auto`: shrink-to-fit plus `min-width:0` is a
+     bar that collapses to its own minimum instead, which measured 266px
+     on every phone - the same mistake in the other direction. `min-width:0` on the nav row is what
+     pays for the Start pill - the icons give up a few pixels each rather
+     than the bar reaching for the edges. A tablet keeps its own rule
+     untouched: "the way the iPad setup is perfect". */
   @media (max-width:639px){
-    .bottomtabs.has-start-tab{ width:calc(100vw - 2.6rem); max-width:34rem; }
+    .bottomtabs.has-start-tab{
+      width:min(23.5rem, calc(100vw - 1.5rem)); max-width:none;
+    }
+    .bottomtabs.has-start-tab .bottomtabs-navrow{ min-width:0; }
   }
   @media (min-width:40rem){
     .bottomtabs:not(.has-start-tab){ padding:.55rem; gap:.3rem; }
@@ -9018,9 +9048,34 @@
        shape the iPad has and was signed off with: 108 under the planet
        against 59 above the button. A phone now lands near the same
        ratio instead of 153 against 5. */
+    /* ---- TWO AUTOS SPLIT THE SLACK EVENLY, AND EVEN WAS THE WRONG
+       ANSWER ---- Build 196 gave the greeting `margin-top:auto` and the
+       button `margin-top:auto`, so the leftover height was halved: on a
+       17 Pro Max, 69px under the planet and 72px above the button. That
+       is the text floating in the middle of the empty half of the
+       screen, and it moved the wording 51px CLOSER to the planet than
+       195 had it (120px) - the exact opposite of what was asked, twice:
+       "the wording is too high and too close to the planet system".
+       Replacing the BUTTON's auto with a fixed gap leaves the greeting's
+       auto as the only one in the column, so it takes all the slack and
+       the text group drops to sit just above the button: measured on a
+       17 Pro Max, 69 -> 124 under the planet and 72 -> 35 above the
+       button, WITH THE BUTTON NOT MOVING - a fixed margin here comes out
+       of the auto above, which is the same arithmetic the build-94 note
+       records in the other direction.
+       Measured rather than assumed, and the first number was wrong: the
+       panel is MIN-HEIGHT driven here, so the slack is only 62px, all of
+       it in the greeting's auto - not the 141px an even split of the
+       empty half of the screen suggested. 2.2rem left the text at 82/59,
+       barely moved. .5rem spends nearly all of it downward.
+       A fixed margin does add content height on a phone with no
+       slack to pay for it, which would push the button down into the
+       daily-question circle. That is what check-fixes measures on all 63
+       combinations, and it is the gate this number is allowed by - not
+       an assumption. */
     .panel.home.screen-home-actual .cosmic-hero-wrap{ margin-bottom:min(2rem, 2.2vh); }
     .panel.home.screen-home-actual .hometitle-wrap{ margin-bottom:0; }
-    .panel.home.screen-home-actual .playbtn{ margin-top:auto; margin-bottom:0; }
+    .panel.home.screen-home-actual .playbtn{ margin-top:.5rem; margin-bottom:0; }
   }
   /* ---- AND THE NARROWEST PHONES CANNOT AFFORD THE FULL BLEED ----
      Going full-bleed made the hero WIDER, and this hero is square, so it
@@ -25197,64 +25252,27 @@ function resetStuckZoom(){
   }catch(e){ try{ meta.setAttribute("content", original); }catch(e2){} }
 }
 
-/* ---- AND THE CURE FOR A ZOOM IS NOT TO LET IT HAPPEN ----
-   resetStuckZoom() above unwinds a scale Safari is already holding, and
-   it was written because the font-size floor did not stop the zoom. It
-   is the wrong half of the problem: by the time it runs, the page has
-   already jumped under somebody's thumb mid-word, which is what
-   "it zooms in when I type, and then it gets stuck" describes.
-   Reported now for the third time, against a build where every text
-   field in the app measures 17px - so the cause is NOT the 16px rule,
-   whatever the documentation says, and no amount of font-size will fix
-   it. The one thing that reliably stops iOS zooming to a focused field
-   is maximum-scale=1 in force AT THE MOMENT OF FOCUS.
-   So the clamp goes on at focusin and comes off at focusout, rather
-   than being shipped in the tag: a page nobody can pinch-zoom is an
-   accessibility problem, and this is a study app people read on a
-   phone. Between typing and not typing, only the typing is clamped.
-   focusin/focusout rather than focus/blur because those two bubble -
-   every field in the app is built at runtime, so nothing can be bound
-   per-element, and a capture listener on one is one listener for the
-   life of the page.
-   The restore is deliberately deferred by two frames: undoing the clamp
-   in the same tick as the blur puts it back while iOS is still
-   settling the keyboard, and the zoom lands anyway. */
-const ZOOM_LOCK_SELECTOR = "input, textarea, select, [contenteditable]";
-let zoomLockDepth = 0;
-function setViewportZoomLock(on){
-  const meta = document.getElementById("viewportmeta");
-  if(!meta) return;
-  const base = "width=device-width, initial-scale=1, viewport-fit=cover";
-  try{
-    meta.setAttribute("content", on ? base + ", maximum-scale=1, user-scalable=no" : base);
-  }catch(e){}
-}
-document.addEventListener("focusin", (e) => {
-  const t = e.target;
-  if(!t || !t.closest || !t.matches) return;
-  /* A checkbox or a range slider is not text entry and never triggers
-     the zoom, so clamping for one would take pinch-zoom away for
-     nothing. */
-  if(t.tagName === "INPUT" && /^(checkbox|radio|range|button|submit|color|file)$/i.test(t.type || "")) return;
-  if(!t.matches(ZOOM_LOCK_SELECTOR)) return;
-  zoomLockDepth++;
-  setViewportZoomLock(true);
-}, true);
-document.addEventListener("focusout", (e) => {
-  const t = e.target;
-  if(!t || !t.matches) return;
-  if(!t.matches(ZOOM_LOCK_SELECTOR)) return;
-  zoomLockDepth = Math.max(0, zoomLockDepth - 1);
-  if(zoomLockDepth) return;
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    /* Moving from one field straight to the next re-focuses before this
-       runs, and lifting the clamp between them is a zoom on the second
-       one. */
-    if(zoomLockDepth) return;
-    setViewportZoomLock(false);
-    resetStuckZoom();
-  }));
-}, true);
+/* ---- THE VIEWPORT CLAMP IS GONE, BECAUSE THE CLAMP WAS THE ZOOM ----
+   What stood here swapped the viewport meta to
+   `maximum-scale=1, user-scalable=no` on focusin and swapped it back on
+   focusout, on the reasoning that the 16px floor "did not stop the
+   zoom". Reported back from the device, in one line that names the
+   mechanism exactly: *"The typing ZOOM STILL WASNT FIXED, it just zooms
+   in and zooms out now."* Two viewport rewrites around one tap ARE a
+   zoom in and a zoom out - the fix had become the symptom.
+   Measured before removing it, on every screen the harness can mount:
+   TWELVE text-entry fields, and NOT ONE under 16px. `.searchbox` - the
+   field this was last reported against - computes 17px. iOS only zooms
+   to a focused field UNDER 16px, so with the floor genuinely in place
+   there is nothing left for a clamp to prevent, and all it can still do
+   is the thing it was reported for.
+   What stays is the floor (see "16px IS A HARD FLOOR" in the CSS) and
+   `resetStuckZoom()` above, which is conditional - it does nothing
+   unless `visualViewport.scale` is actually over 1.01, so it cannot
+   introduce a scale change of its own on a page that is not zoomed.
+   If this ever comes back, the thing to measure is which FIELD was
+   focused and what it computes to, not whether a clamp was in force -
+   and never re-introduce a viewport swap that runs on every focus. */
 
 if(window.visualViewport){
   const vv = window.visualViewport;
@@ -42045,7 +42063,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-26-197";
+const APP_BUILD = "2026-09-26-198";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

@@ -4726,4 +4726,75 @@ pinch-zoom is never taken away from anybody.
   was fine stops being fine — it needs her screenshot, or the device's
   own text-size setting, to go on.
 
+### The three that were reported as not fixed, and were not (build 198)
+
+*"you literally did NOT fix the first three, they did not get fixed at
+all"* — with a photo of the unit-selection bar. All three were real, and
+each had failed for a different reason. **None of them was found by a
+gate; all three needed a measurement of the SHIPPED build on the
+reference device.**
+
+- **THE TAB BAR WAS SIZED FROM THE VIEWPORT AND HOME'S IS SIZED FROM ITS
+  CONTENT, so the two can only agree at one width.** Home's bar is
+  shrink-to-fit and stops growing at 376px. `width:calc(100vw - 2.6rem)`
+  never stops. Measured across the matrix:
+
+  | device | Home bar | start-tab bar |
+  |---|---|---|
+  | 375 phone | 351 (12px in) | 333 (21px in) |
+  | 393 phone | 369 (12px in) | 351 (21px in) |
+  | **440 Pro Max** | **376 (32px in)** | **398 (21px in)** |
+
+  So it was NARROWER than Home on every phone except the one it was
+  reported from, where it overtakes Home and sits 11px closer to each
+  edge. The number had been tuned on a device where it happened to look
+  right. It is `width:min(23.5rem, calc(100vw - 1.5rem))` now — Home's
+  own formula — so the two bars are identical on every phone and cannot
+  drift again, with `min-width:0` on the nav row paying for the Start
+  pill out of the icons rather than out of the margins. Measured after:
+  376/376 on a Pro Max, every tab still 44px, no overflow anywhere.
+  **`width:auto` with a `max-width` is not the same fix** — shrink-to-fit
+  plus `min-width:0` collapses the bar to its own minimum, 266px on every
+  phone. The explicit `width` is load-bearing.
+- **THE ZOOM FIX WAS THE ZOOM.** *"The typing ZOOM STILL WASNT FIXED, it
+  just zooms in and zooms out now."* A previous pass concluded the 16px
+  floor "did not stop the zoom" and added a clamp that swapped the
+  viewport meta to `maximum-scale=1, user-scalable=no` on focusin and
+  swapped it back on focusout. Two viewport rewrites around one tap ARE
+  a zoom in and a zoom out.
+  Measured before removing it, on every screen the harness can mount:
+  **twelve text-entry fields, not one under 16px** — `.searchbox`, the
+  field it was last reported against, computes 17px. iOS only zooms to a
+  field under 16px, so there was nothing left for a clamp to prevent and
+  the only thing it could still do was the thing it was reported for.
+  The clamp is deleted; the floor and the conditional `resetStuckZoom()`
+  (which does nothing unless `visualViewport.scale > 1.01`) stay.
+  **Never re-introduce a viewport swap that runs on every focus.** If it
+  is reported again, measure which FIELD was focused and what it
+  computes to.
+- **AND HOME MOVED THE WORDING THE WRONG WAY.** *"the wording is too high
+  and too close to the planet system"* — build 196 gave the greeting and
+  the button an auto margin each, which splits the slack evenly. On a 17
+  Pro Max that took the gap under the planet from 195's **120px to 69px**:
+  51px CLOSER to the planet, the opposite of the request, with the text
+  left floating in the middle of the empty half of the screen.
+  **The slack is 62px, not 141.** The panel is MIN-HEIGHT driven here, so
+  the empty half of the screen is not all distributable — an even split
+  of what LOOKS like the free space is not what the autos are dividing.
+  The first attempt (a 2.2rem fixed gap above the button) moved the text
+  13px and measured 82/59; `.5rem` spends nearly all of it and lands
+  110/32, with **the button not moving** — a fixed margin here comes out
+  of the auto above it, which is the same arithmetic the build-94 note
+  records in the other direction.
+- **THE PLANET CANNOT GET BIGGER ON A PHONE WITHOUT CROPPING ITS ORBIT.**
+  Asked for ("the planet system is too small") and not done, deliberately.
+  The hero is already `calc(100% + 3.5rem)` — 442px on a 440px screen, so
+  it spans the full width and the outer ring is already clipped by a
+  pixel each side. Measured, the sphere is 31% of the screen's width on a
+  phone against 21% on the iPad, so it is proportionally LARGER than the
+  tablet that was called perfect; what differs is that the iPad shows the
+  whole orbit system with air around it and the phone does not. Growing
+  it further only crops more ring. That is a look decision with a real
+  cost, so it wants asking about rather than assuming.
+
 No committed regression suite exists yet. Worth building.
