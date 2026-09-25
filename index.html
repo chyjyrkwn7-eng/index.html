@@ -33,7 +33,7 @@
      documentElement.style.colorScheme for the scheme - so neither
      changes anything after first paint. #0A0A0A matches #splashscreen's
      own background, so the handover into the splash is invisible. -->
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta id="viewportmeta" name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <!-- iOS reads this ONCE, at launch, straight out of the HTML as
      delivered - before a single line of JS has run. syncStatusBarColor()
      below keeps it correct for live theme changes and for a Safari tab,
@@ -1744,8 +1744,18 @@
      behind ranks; an empty slot would say nothing. Mirrors .swatch.locked
      exactly, because a locked colour and a locked character are the same
      idea and two different treatments would read as two systems. */
-  .avatarchar-option.locked{ opacity:.45; cursor:not-allowed; }
-  .avatarchar-option.locked .avatarchar-svg{ filter:saturate(.3); }
+  /* A LOCKED CHARACTER STILL HAS TO BE A CHARACTER. Dimming to 45% and
+     draining the colour reads fine on the bright ones and destroys the
+     dark ones: The Masked One is a near-black hood behind a pale mask,
+     so on a dark screen the hood disappeared entirely and all that was
+     left floating there was the mask. Reported exactly that way.
+     Brightness is what fixes it rather than opacity: lifting the whole
+     drawing keeps the dark shapes above the background instead of
+     letting them sink into it, so the silhouette survives. The point of
+     showing a locked character at all is that you can see what you are
+     working towards. */
+  .avatarchar-option.locked{ opacity:.62; cursor:not-allowed; }
+  .avatarchar-option.locked .avatarchar-svg{ filter:saturate(.34) brightness(1.42) contrast(.92); }
   .avatarchar-lockmark{
     position:absolute; right:2px; bottom:2px; width:1.15rem; height:1.15rem;
     border-radius:50%; background:rgba(12,16,22,.86);
@@ -1826,7 +1836,7 @@
   /* A locked one is a preview, not something you hold, so it gives off
      nothing even while it is the one being looked at. */
   .avatarchar-option.locked.selected::before{ display:none; }
-  .avatarchar-option.locked.selected svg{ filter:saturate(.3); }
+  .avatarchar-option.locked.selected svg{ filter:saturate(.34) brightness(1.42) contrast(.92); }
   /* Genuinely bigger on a tablet-width screen, not just the same
      phone-tuned 4.6rem cap sitting in the middle of much bigger grid
      cells \u2014 per explicit report that the picker "doesn't enlarge"
@@ -7939,7 +7949,12 @@
      [data-layout="modern"] on the prefix for the usual reason - the
      padding SHORTHAND ~900 lines below wins on source order otherwise. */
   @media (max-width:32rem){
-    [data-layout="modern"] .panel.home.screen-home-actual{ padding-bottom:5rem; }
+    /* Follows the circle down - see its `bottom` above. The reservation
+       exists to keep Start Studying off the circle, so the two numbers
+       are one decision and have to move together; leaving this at 5rem
+       while the circle dropped would simply waste the room the drop
+       was made to free. */
+    [data-layout="modern"] .panel.home.screen-home-actual{ padding-bottom:4.7rem; }
   }
   /* THE FULL ROW IS ONLY NEEDED WHERE THE BUTTON AND THE CIRCLE ACTUALLY
      SHARE A COLUMN. Measured: the button is a fixed 224px centred, and
@@ -8353,7 +8368,19 @@
        nothing nearby to visually relate its size to. Falls back to
        the same 1.8rem as before on a phone, where that margin doesn't
        exist. */
-    position:fixed; bottom:calc(env(safe-area-inset-bottom, 0px) + 6.6rem);
+    /* DOWN SLIGHTLY, AND NOWHERE ELSE. Asked for in those words: the
+       circle should not move except a little lower, so Start Studying
+       can come down towards the tab bar without the two meeting. 6.6 ->
+       5.9rem is ~11px on a phone: enough to buy the button its room,
+       small enough that nobody who has used the app for a month will
+       find the circle somewhere new. It still clears the home indicator
+       by the inset, which is what the calc is for.
+       6.6 -> 5.9rem was the first attempt and check-fixes caught it
+       overlapping the tab bar outright on a 16 Pro Max, in both launch
+       modes: the bar is a centred pill, so on a wide phone it reaches
+       far enough across to meet the circle's column. 6.3rem is the
+       slight drop that was actually asked for and still clears it. */
+    position:fixed; bottom:calc(env(safe-area-inset-bottom, 0px) + 6.3rem);
     right:max(1.8rem, calc(50% - 22rem + 1.8rem)); z-index:150;
     /* 2.6rem is 41.6px - under the 44px minimum tap target, on a control
        that sits alone in a corner with nothing to aim at but itself. The
@@ -10380,7 +10407,15 @@
      has to name it. */
   /* A pill: the emblem in its own circle, the rank's name beside it,
      both in the rank's colour. */
+  /* It is a button now - see where it is built - so the UA's own button
+     styling has to come off and a real target go on. Unranked still
+     reads as a statement rather than an invitation, but it still goes
+     to the Rank tab, which is exactly where somebody with no rank
+     wants to be sent. */
   .profile-ranklineup{
+    -webkit-appearance:none; appearance:none;
+    font:inherit; text-align:left; cursor:pointer;
+    min-height:44px; -webkit-tap-highlight-color:transparent;
     display:inline-flex; align-items:center; gap:.45rem;
     margin:.4rem 0 0; padding:.26rem .7rem .26rem .28rem;
     border-radius:999px;
@@ -10389,6 +10424,7 @@
     font-size:.78rem; font-weight:800; letter-spacing:.06em;
     text-transform:uppercase; color:var(--rank-color, var(--soft));
   }
+  .profile-ranklineup:active{ transform:translateY(1px); }
   .profile-rankcoin{
     width:1.55rem; height:1.55rem; flex:0 0 auto; padding:.14rem;
     box-sizing:border-box; border-radius:999px;
@@ -10700,7 +10736,15 @@
      one too big and the other too small. They are within a quarter of
      a rem of each other now, and the circle stays well clear of the
      44px tap minimum at both sizes. */
-  .avatarchar-option{ max-width:3.7rem; }
+  /* ONE SIZE, AT THE BIGGER LOOK. Asked for directly. The appearance
+     grid was held at 3.7rem to match the colour circles beside it while
+     the onboarding picker ran larger, so the same twelve characters
+     were two different sizes depending on which screen you met them on.
+     They are 4.4rem in both places now, and the swatch grows with them
+     below so the pair still read as a matched set - that pairing was
+     the reason for the smaller number, and it is preserved by moving
+     both rather than by keeping the characters small. */
+  .avatarchar-option{ max-width:4.4rem; }
   /* Those two lines belong to the Profile appearance grid, where a
      character sits beside a colour circle and the pair have to match.
      They are written as bare classes, so they also reach the ONBOARDING
@@ -10715,13 +10759,16 @@
      The phone value is deliberately the same 3.7rem it was already
      rendering at, because the phone version of this screen was signed
      off as it stands; only the large screens were reported as small. */
-  .panel.home.charselect-panel .avatarchar-option{ max-width:3.7rem; }
+  .panel.home.charselect-panel .avatarchar-option{ max-width:4.4rem; }
   /* The dot was 2.25rem against a 3.7rem character - "the theme color and
      the characters need to match closer on size, so maybe the theme color
      circles needs to be enlarged". The ring around it is what the swatch
      box is for, so the box grows with it rather than closing up. */
-  .swatch{ width:3.9rem; height:3.9rem; }
-  .swatch .dot{ width:3.1rem; height:3.1rem; }
+  /* Grown with the characters above, so the "match closer on size"
+     fix that put these two in step is not undone by the characters
+     moving on their own. */
+  .swatch{ width:4.5rem; height:4.5rem; }
+  .swatch .dot{ width:3.6rem; height:3.6rem; }
   /* Capping the tracks to the character's own size and centring them was
      the fix for "very spread out" and it overshot: "the avatar layout
      looks bad, now it looks way too smushed together". The right answer
@@ -11175,6 +11222,42 @@
     .vroom-host-mode-art{ width:2.8rem; height:1.8rem; }
   }
   .vroom-invite-btn{ min-height:44px; padding:.4rem .9rem; font-size:.8rem; margin-left:auto; }
+  /* ---- open-to-the-class switch, and the browser it feeds ---- */
+  .vroom-open-row{ display:flex; align-items:center; gap:.9rem; }
+  .vroom-open-text{ flex:1 1 auto; min-width:0; }
+  .vroom-open-text .friend-hint{ margin:.15rem 0 0; }
+  /* A REAL SWITCH, not a checkbox with a label. It is the one control
+     in a lobby that changes who can walk in, so it reads as a physical
+     thing that is on or off rather than a tickbox in a list. 44px of
+     target around a 28px pill, which is the app's floor. */
+  .vroom-open-toggle{
+    flex:0 0 auto; position:relative;
+    width:3.2rem; height:1.75rem; min-height:44px; padding:0;
+    border-radius:999px; border:1px solid var(--rule);
+    background:rgba(255,255,255,.06); cursor:pointer;
+    transition:background .18s ease, border-color .18s ease;
+    -webkit-tap-highlight-color:transparent;
+    display:flex; align-items:center;
+  }
+  .vroom-open-toggle.on{
+    background:color-mix(in srgb, var(--accent) 55%, transparent);
+    border-color:color-mix(in srgb, var(--accent) 70%, transparent);
+  }
+  .vroom-open-knob{
+    position:absolute; left:.22rem; width:1.3rem; height:1.3rem;
+    border-radius:50%; background:var(--ink);
+    box-shadow:0 1px 4px rgba(0,0,0,.45);
+    transition:transform .18s cubic-bezier(.2,.8,.25,1);
+  }
+  .vroom-open-toggle.on .vroom-open-knob{ transform:translateX(1.42rem); }
+  .rooms-list{ display:flex; flex-direction:column; }
+  .room-row .friend-row-sub{ color:var(--soft); }
+  .rooms-refresh{ width:100%; min-height:44px; margin-top:.9rem; }
+  @media (min-width:40rem){
+    .vroom-open-toggle{ width:3.6rem; height:2rem; }
+    .vroom-open-knob{ width:1.5rem; height:1.5rem; }
+    .vroom-open-toggle.on .vroom-open-knob{ transform:translateX(1.6rem); }
+  }
   .invite-overlay{
     position:fixed; inset:0; z-index:340; display:flex;
     align-items:flex-end; justify-content:center;
@@ -23749,6 +23832,43 @@ new MutationObserver(() => {
    offsetTop is always 0, so this can never fire there - which is also
    why it cannot be regression-tested locally, the same caveat the
    observer above already carries. */
+/* ---- AND THE ZOOM THAT WOULD NOT COME BACK OUT ----
+   Reported twice, the second time as unusable: "when going to type
+   something in, the app zooms in randomly and won't zoom out", and
+   then "I had to restart the app".
+
+   Ruled out by measurement rather than reasoning, twice now: every
+   text-entry field in the app computes to 17px, and iOS only
+   auto-zooms below 16 - a sweep of every input on every screen finds
+   nothing under the floor except checkboxes, which are not text entry
+   and do not trigger it.
+
+   So the cure cannot be the font size, and it has to work whatever the
+   cause. Rewriting the viewport meta's maximum-scale and putting it
+   straight back is the one thing that makes Safari reconcile a scale
+   it is holding on to; the tag is restored in the same frame, so
+   pinch-zoom is never actually taken away from anybody - which matters,
+   because a page you cannot zoom is an accessibility problem and this
+   is a study app people read on a phone.
+
+   Only when there IS a stuck scale, so on every device where none of
+   this ever happens it does nothing at all. */
+function resetStuckZoom(){
+  const vv = window.visualViewport;
+  if(!vv || !(vv.scale > 1.01)) return;
+  const meta = document.getElementById("viewportmeta");
+  if(!meta) return;
+  const original = meta.getAttribute("content");
+  try{
+    meta.setAttribute("content", original + ", maximum-scale=1");
+    /* Two frames: one for Safari to apply the clamp, one to lift it. */
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      try{ meta.setAttribute("content", original); }catch(e){}
+    }));
+    setTimeout(() => { try{ meta.setAttribute("content", original); }catch(e){} }, 400);
+  }catch(e){ try{ meta.setAttribute("content", original); }catch(e2){} }
+}
+
 if(window.visualViewport){
   const vv = window.visualViewport;
   const keyboardGone = () => vv.height >= window.innerHeight - 40;
@@ -23760,14 +23880,30 @@ if(window.visualViewport){
     if(!keyboardGone()) return;
     const el = document.activeElement;
     if(el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
+    /* THIS USED TO BE scrollTo(window.scrollX, window.scrollY), WHICH
+       IS A NO-OP: scrolling to where you already are changes nothing,
+       so the unwind this whole block exists for never actually ran. It
+       has to be a real movement for iOS to reconcile the visual
+       viewport with the layout one. One pixel down and straight back is
+       invisible and is enough. */
     if(vv.offsetTop > 0 || vv.pageTop > window.scrollY + 1){
-      window.scrollTo(window.scrollX, window.scrollY);
+      const y = window.scrollY;
+      window.scrollTo(0, y + 1);
+      window.scrollTo(0, y);
     }
+    resetStuckZoom();
   };
   vv.addEventListener("resize", () => { unwind(); setTimeout(unwind, 120); });
   /* A blur is the other way the keyboard goes - tapping the background
      rather than the keyboard's own dismiss. */
-  document.addEventListener("focusout", () => setTimeout(unwind, 120), true);
+  document.addEventListener("focusout", () => {
+    setTimeout(unwind, 120);
+    /* Leaving a field is the moment a stuck scale becomes somebody's
+       problem, so it is checked then as well as when the keyboard
+       reports itself gone - those are not always the same event. */
+    setTimeout(resetStuckZoom, 260);
+    setTimeout(resetStuckZoom, 700);
+  }, true);
 
   /* ---- AND THE HALF THE UNWIND CANNOT FIX ----
      The unwind above puts the page back AFTER the keyboard goes. While
@@ -24190,7 +24326,10 @@ const CHARACTER_FEATS = {
      It is the only feat in the set you cannot earn alone, which is why
      it sits on the statue: the other three are you against the
      material, this one is you against the class. */
-  weektop:  { label: "Finish a week top of the weekly XP board",
+  /* "Finish a week top of the weekly XP board" is missing a word and
+     reads as a typo - reported as the Zeus unlock grammar. "at the top
+     of" is what the sentence wants. */
+  weektop:  { label: "Finish a week at the top of the weekly XP board",
               done: () => (store.weeklyWins || 0) >= 1,
               have: () => (store.weeklyWins || 0), need: 1 },
   /* Reads the flares themselves rather than a flag set when the third
@@ -24655,109 +24794,100 @@ function buildAvatarCharSVG(charId){
      three hairlines that turn to mush at 26px, and a lit crack reads at
      any size. */
   if(def.kind === "zeus"){
-    /* MORE MARBLE, LESS FACE. Asked for again - "it needs to look more
-       like a Greek statue" - and the fault was that the previous pass
-       solved a legibility problem in a way that fought the material.
-       It had big DARK almond eyes, put there because every character in
-       this set that reads at 34px reads on its eyes. But a dark eye is
-       a hole, and a statue has no holes: the single most recognisable
-       thing about Greek sculpture is the blank pupil-less stare, where
-       the eye is the SAME STONE as the cheek and exists only as a
-       shadow. Dark eyes made this a mask in stone colours.
-       So the eye is marble now, set back in a shadowed socket with a
-       heavy lid over it, and the legibility comes from the socket's
-       shadow rather than from a dark fill. Everything else pushes the
-       same way: the brow and the nose are ONE unbroken line (the Greek
-       profile, and the single most quoted thing about these heads), the
-       hair and beard are rows of drilled curls rather than masses, and
-       the whole palette is within a few levels of itself. The gold
-       laurel is the only colour on it, which is what makes it read as
-       stone rather than as a pale person. */
-    const face  = headGrad("#F4F2EC", "#E2DFD4", "#BEBAAD");
-    const shade = headGrad("#DAD6C9", "#C2BDAE", "#9B968A");
-    const deep  = "#A9A396";
-    const robe  = headGrad("#4A5264", "#333A48", "#1D222B");
+    /* REDRAWN, AND THE FAULT WAS DETAIL RATHER THAN DRAWING. The
+       previous pass was a careful marble head - drilled curls in rows,
+       shadowed eye sockets, a Greek profile, a hairline crack - and
+       every one of those decisions was right about sculpture and wrong
+       about the size this is used at. An avatar renders at 34px on a
+       rankings row. Twenty-two separate 1.3px circles at that size are
+       not curls, they are noise, and the head came out as a pale blob
+       with texture on it. Reported simply as not looking good.
 
+       So: FEWER, BIGGER SHAPES, and one unmistakable tell. The beard is
+       a single mass with three scallops cut out of its bottom edge -
+       that silhouette reads as a beard at any size, where a field of
+       drilled holes reads as a beard only when you can see the holes.
+       The hair is one form with two notches. The eyes are two marks.
+
+       AND HE HOLDS A BOLT. The old drawing had nothing on it that said
+       Zeus except a laurel, and a laurel at 34px is a gold smudge over
+       the brow - it could be any classical head. The thunderbolt is the
+       one attribute nobody has to be told, so it is on the shoulder in
+       gold, large enough to survive the size, and it is what makes this
+       legible as a character rather than as a statue. */
+    const face  = headGrad("#F6F4EE", "#E4E1D6", "#C0BCAF");
+    const shade = headGrad("#DAD6C9", "#C2BDAE", "#9B968A");
+    const deep  = "#8E887B";
+    const robe  = headGrad("#4A5264", "#333A48", "#1D222B");
+    const gold  = headGrad("#FBE494", "#E0B547", "#9E7622");
+
+    /* Shoulders. */
     svg.appendChild(mk("path", { d: "M6.2 40 Q7 31.4 14.2 29.2 L25.8 29.2 Q33 31.4 33.8 40 Z", fill: robe }));
     svg.appendChild(mk("path", { d: "M13.8 29.4 L20 36.2 L26.2 29.4 L23.6 28.6 L20 32.8 L16.4 28.6 Z",
                                  fill: "#5D6679" }));
 
-    svg.appendChild(mk("ellipse", { cx: 20, cy: 21.2, rx: 9.2, ry: 10, fill: face }));
-    svg.appendChild(mk("ellipse", { cx: 11.2, cy: 22, rx: 1.6, ry: 2.2, fill: shade }));
-    svg.appendChild(mk("ellipse", { cx: 28.8, cy: 22, rx: 1.6, ry: 2.2, fill: shade }));
+    /* THE BOLT, across the left shoulder. A real zigzag with a waist -
+       the classic three-stroke bolt - rather than a lightning icon,
+       and sized so it survives 34px. */
+    svg.appendChild(mk("path", { d: "M10.9 30.4 L14.6 30.4 L12.4 34 L15.4 34 L9.4 40 L11.3 35.2 L8.6 35.2 Z",
+                                 fill: gold, stroke: "#8A6A1C", "stroke-width": ".3",
+                                 "stroke-linejoin": "round" }));
 
-    /* THE BEARD, as drilled curls in rows. Carved hair is a field of
-       holes catching shadow, never a silhouette with lines on it - the
-       drill is literally the tool, and rows of small discs is what it
-       leaves. A mass with three strokes on it is what the last pass
-       had, and it read as a beard drawn on stone. */
-    svg.appendChild(mk("path", { d: "M11.8 21.6 Q12.1 30.4 15.6 34.2 Q17.7 36.4 20 36.8 Q22.3 36.4 24.4 34.2 Q27.9 30.4 28.2 21.6 Q26.6 26.4 24 27.4 Q22.1 28 20 28 Q17.9 28 16 27.4 Q13.4 26.4 11.8 21.6 Z",
-                                 fill: shade }));
-    [[13.6, 24.6], [16.2, 26.4], [20, 27.2], [23.8, 26.4], [26.4, 24.6],
-     [14.8, 28.8], [17.6, 30.4], [20, 31.4], [22.4, 30.4], [25.2, 28.8],
-     [16.9, 33.2], [20, 34.4], [23.1, 33.2]].forEach(([cx, cy]) =>
-      svg.appendChild(mk("circle", { cx: cx, cy: cy, r: 1.28, fill: "none",
-                                     stroke: deep, "stroke-width": ".42", opacity: ".85" })));
-    /* The moustache, one step darker so the mouth is not lost in it. */
-    svg.appendChild(mk("path", { d: "M14.9 23.9 Q17.5 22.5 20 24.2 Q22.5 22.5 25.1 23.9 Q22.5 26.6 20 25.4 Q17.5 26.6 14.9 23.9 Z",
-                                 fill: shade }));
-    svg.appendChild(mk("path", { d: "M17.4 25.2 Q20 26.1 22.6 25.2", fill: "none",
-                                 stroke: deep, "stroke-width": ".44", "stroke-linecap": "round" }));
+    /* The head. */
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 21, rx: 9.2, ry: 10, fill: face }));
+    svg.appendChild(mk("ellipse", { cx: 11.2, cy: 21.8, rx: 1.5, ry: 2.1, fill: shade }));
+    svg.appendChild(mk("ellipse", { cx: 28.8, cy: 21.8, rx: 1.5, ry: 2.1, fill: shade }));
 
-    /* The hair, the same drilled curls, low on the brow. */
-    svg.appendChild(mk("path", { d: "M20 10.4 Q29.6 11 30.2 19.6 Q28.2 16.6 25.6 15.4 Q23 13.6 20 13.6 Q17 13.6 14.4 15.4 Q11.8 16.6 9.8 19.6 Q10.4 11 20 10.4 Z",
+    /* THE BEARD AS ONE MASS WITH A SCALLOPED HEM. Three lobes along the
+       bottom is the whole reading; above them it is a plain shape, which
+       is what keeps it clean small. */
+    svg.appendChild(mk("path", { d: "M11.7 21.8 Q12 28.6 14.4 32.4 Q15.9 34.9 17.2 33 Q18.6 35.6 20 35.6 Q21.4 35.6 22.8 33 Q24.1 34.9 25.6 32.4 Q28 28.6 28.3 21.8 Q26.6 26.4 24 27.5 Q22.1 28.1 20 28.1 Q17.9 28.1 16 27.5 Q13.4 26.4 11.7 21.8 Z",
                                  fill: shade }));
-    [[12.6, 17], [15.2, 14.4], [17.8, 12.9], [20, 12.4], [22.2, 12.9], [24.8, 14.4], [27.4, 17],
-     [13.9, 19.4], [26.1, 19.4]].forEach(([cx, cy]) =>
-      svg.appendChild(mk("circle", { cx: cx, cy: cy, r: 1.5, fill: "none",
-                                     stroke: deep, "stroke-width": ".45", opacity: ".8" })));
+    /* Two long strokes, not twenty-two circles: enough to say the beard
+       is carved rather than poured, and they hold at any size. */
+    svg.appendChild(mk("path", { d: "M16.6 28.4 Q17.3 32 18.3 34.2", fill: "none",
+                                 stroke: deep, "stroke-width": ".5", "stroke-linecap": "round",
+                                 opacity: ".55" }));
+    svg.appendChild(mk("path", { d: "M23.4 28.4 Q22.7 32 21.7 34.2", fill: "none",
+                                 stroke: deep, "stroke-width": ".5", "stroke-linecap": "round",
+                                 opacity: ".55" }));
 
-    /* THE EYES ARE MARBLE. A shadowed socket, a blank eyeball the same
-       stone as the face, and a heavy lid over the top of it. No pupil
-       and nothing dark - that blank stare is the whole tell, and it is
-       what a dark almond was standing in for. */
-    [[16.3, -1], [23.7, 1]].forEach(([cx, f]) => {
-      svg.appendChild(mk("ellipse", { cx: cx, cy: 20.3, rx: 2.5, ry: 2.15, fill: shade }));
-      svg.appendChild(mk("ellipse", { cx: cx, cy: 20.5, rx: 2.1, ry: 1.78, fill: face }));
-      /* The socket's own shadow, heaviest under the brow. */
-      svg.appendChild(mk("path", { d: "M" + (cx - 2.4) + " 19.7 Q" + cx + " 17.5 " + (cx + 2.4) + " 19.7 "
-                                    + "Q" + cx + " 19.2 " + (cx - 2.4) + " 19.7 Z", fill: deep, opacity: ".75" }));
-      svg.appendChild(mk("path", { d: "M" + (cx - 2.3) + " 20.2 Q" + cx + " 18.1 " + (cx + 2.3) + " 20.2",
-                                   fill: "none", stroke: deep, "stroke-width": ".5",
+    /* The moustache, one shape. */
+    svg.appendChild(mk("path", { d: "M14.9 23.8 Q17.5 22.4 20 24.1 Q22.5 22.4 25.1 23.8 Q22.5 26.5 20 25.3 Q17.5 26.5 14.9 23.8 Z",
+                                 fill: shade }));
+
+    /* The hair: one form, two notches at the temples. */
+    svg.appendChild(mk("path", { d: "M20 10.2 Q29.8 10.8 30.3 19.8 Q28.6 17.2 26.4 15.6 Q27 17.4 25.4 15.2 Q23 13.4 20 13.4 Q17 13.4 14.6 15.2 Q13 17.4 13.6 15.6 Q11.4 17.2 9.7 19.8 Q10.2 10.8 20 10.2 Z",
+                                 fill: shade }));
+
+    /* THE EYES ARE MARBLE - blank, no pupil, the stone of the cheek in
+       shadow. That blank stare is the one thing everybody knows about
+       these heads, and it survives being small because it is a shape
+       rather than a detail. */
+    [16.4, 23.6].forEach(cx => {
+      svg.appendChild(mk("ellipse", { cx: cx, cy: 20.4, rx: 2.3, ry: 1.9, fill: shade }));
+      svg.appendChild(mk("ellipse", { cx: cx, cy: 20.6, rx: 1.9, ry: 1.55, fill: face }));
+      svg.appendChild(mk("path", { d: "M" + (cx - 2.2) + " 20 Q" + cx + " 17.9 " + (cx + 2.2) + " 20",
+                                   fill: "none", stroke: deep, "stroke-width": ".62",
                                    "stroke-linecap": "round" }));
     });
 
-    /* THE GREEK PROFILE: brow and nose as ONE unbroken line, with no
-       dip at the bridge. It is the single most quoted thing about these
-       heads and it costs two paths. */
-    svg.appendChild(mk("path", { d: "M13.4 17.8 Q16.6 16.4 19.2 17.6 L19.4 18.5 Q16.6 17.4 13.9 18.8 Z", fill: shade }));
-    svg.appendChild(mk("path", { d: "M26.6 17.8 Q23.4 16.4 20.8 17.6 L20.6 18.5 Q23.4 17.4 26.1 18.8 Z", fill: shade }));
-    svg.appendChild(mk("path", { d: "M19.3 17.4 L19.1 22.4 Q20 23.1 20.9 22.4 L20.7 17.4",
-                                 fill: "none", stroke: deep, "stroke-width": ".5",
-                                 "stroke-linecap": "round", opacity: ".9" }));
+    /* The Greek profile: brow into nose as one line, no dip. */
+    svg.appendChild(mk("path", { d: "M19.3 17.6 L19.1 22.4 Q20 23.1 20.9 22.4 L20.7 17.6",
+                                 fill: "none", stroke: deep, "stroke-width": ".55",
+                                 "stroke-linecap": "round", opacity: ".85" }));
 
-    /* The laurel, in gold - the one colour, and what names him. */
-    const gold = headGrad("#F8DC88", "#DCB044", "#9E7622");
-    svg.appendChild(mk("path", { d: "M10.4 17.6 Q14.2 11.9 20 11 Q25.8 11.9 29.6 17.6",
-                                 fill: "none", stroke: "#B8902F", "stroke-width": ".82",
+    /* The laurel, in gold. Still here, still what names him - it is
+       simply no longer the only thing doing that job. */
+    svg.appendChild(mk("path", { d: "M10.6 17.4 Q14.3 11.7 20 10.8 Q25.7 11.7 29.4 17.4",
+                                 fill: "none", stroke: "#B8902F", "stroke-width": ".9",
                                  "stroke-linecap": "round" }));
-    [[12.2, 15.6, -42], [15.3, 12.9, -24], [20, 11.8, 0], [24.7, 12.9, 24], [27.8, 15.6, 42]]
+    [[12.4, 15.4, -42], [15.5, 12.7, -24], [20, 11.6, 0], [24.5, 12.7, 24], [27.6, 15.4, 42]]
       .forEach(([x, y, rot]) => {
-        const leaf = mk("ellipse", { cx: x, cy: y, rx: 1.65, ry: .72, fill: gold });
+        const leaf = mk("ellipse", { cx: x, cy: y, rx: 1.8, ry: .8, fill: gold });
         leaf.setAttribute("transform", "rotate(" + rot + " " + x + " " + y + ")");
         svg.appendChild(leaf);
       });
-
-    /* One crack, and it is now a CRACK rather than a light source. The
-       lit version was doing a lot of work when the head was struggling
-       to read as stone; with the marble carrying itself, a thin dark
-       fissure with the faintest cold light in it is enough, and it
-       keeps the palette to marble plus gold. */
-    const crack = "M11.9 14.2 L11.1 17 L12.6 18.6 L11 21.4 L12.2 24.2";
-    svg.appendChild(mk("path", { d: crack, fill: "none", stroke: "#9AA6B4",
-                                 "stroke-width": "1.5", "stroke-linecap": "round", opacity: ".16" }));
-    svg.appendChild(mk("path", { d: crack, fill: "none", stroke: "#8B8578",
-                                 "stroke-width": ".46", "stroke-linecap": "round", opacity: ".55" }));
     return svg;
   }
 
@@ -29576,6 +29706,13 @@ function modeIcon(kind){
     svg.append(p1, p2);
     svg.appendChild(mk("M2.5 20c0-3.6 2.7-6.5 6-6.5s6 2.9 6 6.5"));
     svg.appendChild(mk("M14 15c2.6 0 4.7 2.2 4.7 5"));
+  } else if(kind === "review"){
+    /* An open book. The one mode that is reading rather than
+       answering, so it should not look like any of the others - the
+       rest are targets, clocks and people. */
+    svg.appendChild(mk("M12 6.5C10.3 5.2 8.3 4.6 6 4.6c-1 0-2 .1-2.9.4v13c.9-.3 1.9-.4 2.9-.4 2.3 0 4.3.6 6 1.9"));
+    svg.appendChild(mk("M12 6.5c1.7-1.3 3.7-1.9 6-1.9 1 0 2 .1 2.9.4v13c-.9-.3-1.9-.4-2.9-.4-2.3 0-4.3.6-6 1.9"));
+    svg.appendChild(mk("M12 6.5v13"));
   } else {
     svg.appendChild(mk("M12 20s-7-4.5-9.5-9C.8 7.5 3 4 6.5 4c2 0 3.5 1.3 5.5 3.5C14 5.3 15.5 4 17.5 4 21 4 23.2 7.5 21.5 11c-2.5 4.5-9.5 9-9.5 9z"));
   }
@@ -36988,7 +37125,19 @@ function showModeSelect(){
     { value: "game", title: "Game",
       desc: "A timer on every question and a limited number of lives. Best for testing yourself under pressure." },
     { value: "vroom", title: "Virtual Room",
-      desc: "Start or join a live lobby and take the same test at the same time as everyone else. See where you placed at the end." }
+      desc: "Start or join a live lobby and take the same test at the same time as everyone else. See where you placed at the end." },
+    /* REVIEW IS A MODE, NOT A SWITCH BURIED IN THE START SHEET. It was
+       a toggle inside Advanced options, which put "just show me the
+       questions and answers" behind two taps and a section nobody
+       opens - and made the sheet's primary button change its own name,
+       which is the sort of thing that reads as a bug. It is a way of
+       using the app, so it belongs beside the others.
+       IT AWARDS NOTHING, said plainly in the description: no XP, no
+       hundos, no badge progress. Browsing answers is studying, not a
+       score, and anything else would make it the cheapest way to farm
+       a level. */
+    { value: "review", title: "Review",
+      desc: "Browse every question with its correct answer, for the units you pick. Nothing is scored \u2014 no XP, no hundos, no badge progress." }
   ];
 
   MODES.forEach(m => {
@@ -37816,17 +37965,13 @@ function showSetup(){
      off (a real drill) every time the sheet is freshly opened is the
      safer, less surprising default, and matches lastSliderSize just
      above, which resets the same way for the same reason. */
-  let reviewAllMode = false;
-  const reviewSect = document.createElement("div");
-  reviewSect.className = "sect";
-  const reviewLab = document.createElement("p");
-  reviewLab.className = "slab"; reviewLab.textContent = "Review";
-  reviewSect.appendChild(reviewLab);
-  const reviewRow = toggle("Review all questions & answers",
-    "Skip drilling and just browse every question with its correct answer for the units you picked.",
-    () => reviewAllMode, v => { reviewAllMode = v; });
-  reviewSect.appendChild(reviewRow);
-  optionsModalBody.appendChild(reviewSect);
+  /* REVIEW IS THE MODE NOW, so the sheet reads cfg.mode rather than
+     carrying a toggle of its own. Everything downstream that used to
+     ask `reviewAllMode` still asks it and still gets the right answer;
+     it is simply derived instead of typed, so the two cannot disagree
+     and the sheet has one fewer section in it - which was the other
+     half of what was asked for. */
+  const reviewAllMode = cfg.mode === "review";
 
   const moreWrap = document.createElement("div");
   moreWrap.className = "sect";
@@ -37835,7 +37980,7 @@ function showSetup(){
   moreToggle.className = "more-toggle";
   moreToggle.setAttribute("aria-expanded", "false");
   const moreToggleText = document.createElement("span");
-  moreToggleText.textContent = "Timer";
+  moreToggleText.textContent = "More options";
   const moreToggleIcon = document.createElement("span");
   moreToggleIcon.className = "more-toggle-icon";
   moreToggleIcon.setAttribute("aria-hidden", "true");
@@ -37852,17 +37997,31 @@ function showSetup(){
     moreToggle.setAttribute("aria-expanded", willOpen ? "true" : "false");
   });
   moreWrap.append(moreToggle, moreBody);
+  /* ---- AND IT IS ACTUALLY IN THE SHEET NOW ----
+     This collapsible was built and then never appended to anything, so
+     every section below sat open at the top level: Draw from, Length,
+     Timer, Time limit, four toggles and the speed slider, all expanded
+     at once above the Begin button. Reported twice as overwhelming, and
+     that is what it was - eight decisions in front of somebody who came
+     here to press Begin.
+     WHAT STAYS OUT IS WHAT CHANGES WHAT YOU STUDY: the units summary,
+     Draw from, and Length. Everything else changes how it is timed and
+     presented, which is a preference you set once and rarely revisit,
+     so it belongs behind one tap. Nothing is removed - the same
+     controls are all here, and refresh() still hides whichever the
+     current mode has no use for. */
+  optionsModalBody.appendChild(moreWrap);
 
   const timerSect = chipRow("Timer",
     [{ value: "off", label: "Off" }, { value: "up", label: "Stopwatch" },
      { value: "down", label: "Countdown" }],
     () => cfg.timer, v => { cfg.timer = v; });
-  optionsModalBody.appendChild(timerSect);
+  moreBodyInner.appendChild(timerSect);
 
   const minutesSect = plainSlider("Time limit", 5, 90, 5,
     () => cfg.timerMinutes, v => { cfg.timerMinutes = v; },
     v => v + " min", refresh);
-  optionsModalBody.appendChild(minutesSect);
+  moreBodyInner.appendChild(minutesSect);
 
   /* --- toggles --- */
   const optSect = document.createElement("div");
@@ -37914,7 +38073,7 @@ function showSetup(){
      cfg.revealCorrect survives as a defaulted, unreadable field (see
      applySaved) so an account that had it switched on does not come
      back with answers revealed and no control left to switch it off. */
-  optionsModalBody.appendChild(optSect);
+  moreBodyInner.appendChild(optSect);
   /* THE SHEET IS A FLAT, LABELLED LIST NOW, per explicit request that
      it reads confusingly in Drill. What it had was one disclosure
      called "Timer & options" holding two unrelated things - the timer
@@ -37929,7 +38088,7 @@ function showSetup(){
      hidden, so nothing has to be named vaguely enough to cover a mix.
      Speed sits here rather than on the page for the same reason the
      time limit does. */
-  optionsModalBody.appendChild(speedSect);
+  moreBodyInner.appendChild(speedSect);
 
   /* The actual "go" action for this sheet \u2014 everything Start used to
      do immediately (rememberConfig, build the pool, beginRun) now
@@ -38143,7 +38302,9 @@ function showSetup(){
     /* Same computed values as the rest of refresh(), just also shown
        here at the top of the sheet itself now. */
     const modeLabel = cfg.mode.charAt(0).toUpperCase() + cfg.mode.slice(1);
-    sheetSummaryMode.textContent = modeLabel + (reviewAllMode ? " Review" : "");
+    /* "Review Review" is what the old suffix produced once Review
+       became a mode of its own rather than a switch on top of one. */
+    sheetSummaryMode.textContent = modeLabel;
     sheetSummaryLine.textContent = cfg.units.length === 0
       ? "No units selected yet"
       : (cfg.units.length === all.length ? "All units" : cfg.units.length + (cfg.units.length === 1 ? " unit" : " units")) +
@@ -38177,15 +38338,20 @@ function showSetup(){
        Length, and this whole Timer & options toggle, recall/shuffle/
        reveal included), since none of them mean anything once you're
        just browsing every Q&A instead of running a drill. */
-    /* Review mode hides everything that is not about reading the
-       questions back; the individual sections below already answer
-       their own mode questions (speedSect for Game, timerSect for
-       everything else), so there is no longer a wrapper to hide. */
+    /* THE WRAPPER IS BACK IN THE DOM, so it needs its own answer
+       again. An empty collapsible is a dead-end control - tap it and
+       nothing appears - which is exactly what happened in Game mode
+       before, where every row inside was individually excluded. So it
+       hides when nothing inside it would show: Review has no options at
+       all, and Game's are all covered twice over by its own timer and
+       the Speed slider inside it. */
+    const nothingInMore = reviewAllMode
+      || (isGame && cfg.timer !== "down");
+    moreWrap.hidden = nothingInMore;
     timerSect.hidden = isGame || reviewAllMode;
     optSect.hidden = isGame || reviewAllMode;
     recallRow.hidden = isGame || isExam;
     shuffleRow.hidden = isGame || isExam;
-    reviewSect.hidden = isGame || isExam;
     srcSect.hidden = isGame || isExam || reviewAllMode;
     /* Live-updates "Most missed" and "Flagged" to reflect only the
        currently checked units, rather than a fixed count from when
@@ -39420,7 +39586,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-25-186";
+const APP_BUILD = "2026-09-26-187";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -42620,6 +42786,10 @@ function vroomHostKeyOf(participants){
 }
 function syncVroomHost(data){
   vroomIsHost = !!vroomMyKey && vroomHostKeyOf(data && data.participants) === vroomMyKey;
+  /* Read off the document rather than remembered locally: the host can
+     change it, and a device that inherits the room when the host walks
+     out must not carry a stale idea of whether it is listed. */
+  if(data && typeof data.open === "boolean") vroomIsOpen = data.open;
   if(vroomCode && vroomMyKey && !vroomBeatTimer) startVroomPresence();
   return vroomIsHost;
 }
@@ -42673,6 +42843,7 @@ function leaveVirtualRoom(){
   vroomCode = null;
   vroomMyKey = null;
   vroomIsHost = false;
+  vroomIsOpen = false;
 }
 
 /* The banner the others get. Keyed on the timestamp this device last
@@ -42752,6 +42923,19 @@ function showVirtualRoomChoice(){
      lobby will not start until it has units; see the auto-start gate. */
   startBtn.addEventListener("click", () => createVirtualRoomLobby([], 10));
   actions.appendChild(startBtn);
+
+  /* ---- AND THE OTHER WAY IN, WHICH IS NOT A CODE EITHER ----
+     An invite is how you get into somebody's private room. This is how
+     you find one that has been opened to the class on purpose - the
+     "anybody want to run Penal Code?" case, which invites never served
+     because it needs you to already know who is playing. Rooms are
+     private by default, so nothing appears here that its host did not
+     deliberately open. */
+  const browseBtn = document.createElement("button");
+  browseBtn.type = "button"; browseBtn.className = "next ghost";
+  browseBtn.textContent = "Browse open rooms";
+  browseBtn.addEventListener("click", showRoomBrowser);
+  actions.appendChild(browseBtn);
 
   /* NO "JOIN A LOBBY" BUTTON, BECAUSE THERE IS NO CODE TO TYPE.
      Asked for directly: "the invite code for lobbies and chats can be
@@ -43334,6 +43518,16 @@ function createVirtualRoomLobby(units, timeLimit, game){
        of War. A GAME TYPE, not a mode - everything around it is the
        same room. */
     game: game || "race",
+    /* PUBLIC OR PRIVATE, and the default is private. A room somebody
+       made to race two friends in must not appear on a list the whole
+       class can walk into; making the safe answer the default means an
+       open room is always a deliberate choice. Published on the
+       document rather than kept locally, because the browser reads it
+       off other people's rooms. */
+    open: false,
+    /* So the browser can say whose room it is without a second lookup. */
+    hostName: myName,
+    hostAvatar: store.avatarChar || "ninja",
     status: "waiting",
     startAt: null,
     /* The room's own mode, so the host can change it without everyone
@@ -43349,6 +43543,7 @@ function createVirtualRoomLobby(units, timeLimit, game){
   fbDb.collection("vrooms").doc(code).set(doc).then(() => {
     vroomCode = code; vroomIsHost = true; vroomUnits = units;
     vroomMyKey = publicIdOf();
+    vroomIsOpen = false;          /* private until the host says so */
     showVirtualRoomLobby();
   }).catch(() => { showToast("Couldn't create the lobby \u2014 try again."); });
 }
@@ -44435,6 +44630,143 @@ function openInviteFriendsSheet(roomCode){
   mountSheetOverlay(overlay);
 }
 
+/* ================= THE PUBLIC ROOM BROWSER =========================
+   Rooms have always been invite-only, which is right for two friends
+   racing and wrong for "anybody want to run Penal Code?". So a host
+   can open a room to the class, and this is where an open room can be
+   found.
+
+   ONE READ, ON DEMAND, AND NOT A LISTENER. Every device holding a live
+   subscription to the whole `vrooms` collection is exactly the design
+   that cost the project its daily read quota - see the note on the
+   mailbox. A browser is something somebody opens, looks at, and leaves,
+   so it fetches once and offers a Refresh; the cost is a few reads when
+   a person asks rather than a permanent tax on all thirty.
+
+   WHAT IS FILTERED OUT, and each for its own reason: rooms that are
+   not open (the default), rooms that are no longer waiting (a match in
+   progress is not joinable), rooms with nobody left in them (a host who
+   closed the app strands the document, and presence is what notices),
+   this device's own room, and anything that is not a race - chats and
+   bug reports live in the same collection. */
+const VROOM_BROWSER_STALE_MS = 25 * 60 * 1000;
+
+function openRoomsFrom(docs){
+  const now = Date.now();
+  const out = [];
+  docs.forEach(d => {
+    const r = d.data ? d.data() : d;
+    if(!r || r.kind === "chat" || r.kind === "bug" || r.kind === "inbox"
+       || r.kind === "presence") return;
+    if(r.open !== true) return;
+    if(r.status && r.status !== "waiting") return;
+    if((now - (r.createdAt || 0)) > VROOM_BROWSER_STALE_MS) return;
+    const here = presentParticipants(r.participants || {}) || {};
+    const n = Object.keys(here).length;
+    if(!n) return;                       /* everybody has gone home */
+    if(d.id === vroomCode) return;       /* my own room */
+    out.push({ code: d.id, room: r, count: n });
+  });
+  /* Fullest first: a room with people in it is the one worth joining,
+     and an empty-looking list of one-person rooms is what makes a
+     browser feel dead. */
+  out.sort((a, b) => b.count - a.count || (b.room.createdAt || 0) - (a.room.createdAt || 0));
+  return out;
+}
+
+function showRoomBrowser(){
+  setActiveNav(null);
+  countEl.textContent = "Open rooms";
+  updateHeaderTitle();
+
+  const panel = document.createElement("section");
+  panel.className = "panel screen-rooms";
+  panel.appendChild(buildBackLink("\u2039 Virtual Room", showModeSelect));
+
+  const title = document.createElement("h1");
+  title.className = "cal-title"; title.textContent = "Open rooms";
+  panel.appendChild(title);
+
+  const hint = document.createElement("p");
+  hint.className = "friend-hint";
+  hint.textContent = "Rooms 26E has opened to everyone. Private rooms are invite only and never show up here.";
+  panel.appendChild(hint);
+
+  const list = document.createElement("div");
+  list.className = "sect friend-sect rooms-list";
+  panel.appendChild(list);
+
+  const refresh = document.createElement("button");
+  refresh.type = "button";
+  refresh.className = "next ghost rooms-refresh";
+  refresh.textContent = "Refresh";
+  panel.appendChild(refresh);
+
+  function note(text){
+    list.replaceChildren();
+    const p = document.createElement("p");
+    p.className = "friend-hint"; p.textContent = text;
+    list.appendChild(p);
+  }
+
+  function draw(rooms){
+    list.replaceChildren();
+    if(!rooms.length){
+      note("No open rooms right now. Anybody can open theirs from inside a lobby.");
+      return;
+    }
+    rooms.forEach(entry => {
+      const r = entry.room;
+      const row = document.createElement("div");
+      row.className = "friend-row room-row";
+      const art = document.createElement("div");
+      art.className = "friend-row-art";
+      art.appendChild(avatarSpanFor({ avatarChar: r.hostAvatar || "ninja" }));
+      const text = document.createElement("div");
+      text.className = "friend-row-text";
+      const nm = document.createElement("p");
+      nm.className = "friend-row-name";
+      nm.textContent = (r.hostName || "A classmate") + "\u2019s room";
+      const sub = document.createElement("p");
+      sub.className = "friend-row-sub";
+      const units = r.units || [];
+      const unitLine = units.length === 1 ? units[0]
+        : units.length >= topicsIn(QUESTIONS).length ? "All units"
+        : units.length + " units";
+      sub.textContent = (r.game === "tug" ? "Tug of War" : "Race") + " \u00b7 "
+        + unitLine + " \u00b7 " + entry.count
+        + (entry.count === 1 ? " person" : " people");
+      text.append(nm, sub);
+      const go = document.createElement("button");
+      go.type = "button"; go.className = "next friend-act";
+      go.textContent = "Join";
+      go.addEventListener("click", () => {
+        go.disabled = true; go.textContent = "Joining\u2026";
+        joinVirtualRoomLobby(entry.code);
+      });
+      row.append(art, text, go);
+      list.appendChild(row);
+    });
+  }
+
+  function load(){
+    if(!fbDb){ note("No connection right now \u2014 try again in a moment."); return; }
+    note("Looking for open rooms\u2026");
+    try{
+      fbDb.collection("vrooms").get().then(snap => {
+        const rooms = [];
+        snap.forEach(d => rooms.push(d));
+        draw(openRoomsFrom(rooms));
+      }).catch(() => note("Couldn\u2019t load the rooms \u2014 try again."));
+    }catch(e){ note("Couldn\u2019t load the rooms \u2014 try again."); }
+  }
+  refresh.addEventListener("click", load);
+
+  stage.replaceChildren(panel);
+  toTop();
+  load();
+}
+
 function showVirtualRoomLobby(){
   setActiveNav(null);
   countEl.textContent = "Virtual Room";
@@ -44504,6 +44836,54 @@ function showVirtualRoomLobby(){
       codeBox.appendChild(inviteBtn);
     }
     panel.appendChild(codeBox);
+
+    /* ---- OPEN TO THE CLASS, OR NOT ----
+       A room defaults to PRIVATE and the host opens it deliberately.
+       That way a room made to race two friends never turns up on a
+       list the whole class can walk into by accident, and "public" is
+       always something somebody chose rather than something they
+       failed to turn off.
+       Host only, and it says what it MEANS rather than naming a
+       setting: a toggle reading "Open to the class" tells you what
+       happens, where "Public" makes you work out who that includes. */
+    if(vroomIsHost){
+      const openRow = document.createElement("div");
+      openRow.className = "cal-row vroom-open-row";
+      const openText = document.createElement("div");
+      openText.className = "vroom-open-text";
+      const openLabel = document.createElement("p");
+      openLabel.className = "cal-row-date"; openLabel.textContent = "Open to the class";
+      const openHint = document.createElement("p");
+      openHint.className = "friend-hint";
+      openHint.textContent = vroomIsOpen
+        ? "Anyone in 26E can find this room and join."
+        : "Invite only \u2014 nobody can join unless you ask them.";
+      openText.append(openLabel, openHint);
+      const sw = document.createElement("button");
+      sw.type = "button";
+      sw.className = "vroom-open-toggle" + (vroomIsOpen ? " on" : "");
+      sw.setAttribute("role", "switch");
+      sw.setAttribute("aria-checked", vroomIsOpen ? "true" : "false");
+      sw.setAttribute("aria-label", "Open this room to the class");
+      const knob = document.createElement("span");
+      knob.className = "vroom-open-knob";
+      sw.appendChild(knob);
+      sw.addEventListener("click", () => {
+        vroomIsOpen = !vroomIsOpen;
+        sw.classList.toggle("on", vroomIsOpen);
+        sw.setAttribute("aria-checked", vroomIsOpen ? "true" : "false");
+        openHint.textContent = vroomIsOpen
+          ? "Anyone in 26E can find this room and join."
+          : "Invite only \u2014 nobody can join unless you ask them.";
+        if(fbDb && vroomCode){
+          try{ fbDb.collection("vrooms").doc(vroomCode)
+                 .update({ open: vroomIsOpen }).catch(() => {}); }catch(e){}
+        }
+        showToast(vroomIsOpen ? "Room is open to the class." : "Room is invite only.");
+      });
+      openRow.append(openText, sw);
+      panel.appendChild(openRow);
+    }
   }
 
   /* The pre-test summary, per explicit request \u2014 "make sure to show
@@ -44872,6 +45252,10 @@ function showVirtualRoomLobby(){
 
 let vroomTestStarted = false;
 let inVirtualRoom = false;
+/* Whether the room this device is hosting is listed in the browser.
+   Mirrors the document's `open` field; false is the default, so a room
+   is private until its host says otherwise. */
+let vroomIsOpen = false;
 /* The one shared instant every device's synced reveal countdown
    (beginVroomSyncedReveal(), up in startRunNow()'s own section) counts
    down toward. Null outside of Virtual Room, and outside the brief
@@ -47525,7 +47909,11 @@ function showAnswerReview(units){
 /* The swipe order and the button order are the same list and have to
    stay that way - a thumb swipe that skips a tab is worse than none.
    Stats and Badges swapped places per explicit request. */
-const PROFILE_TABS = ["profile", "stats", "badges", "ranks"];
+/* STATS SITS AT THE FAR RIGHT NOW, asked for directly. PROFILE_TABS is
+   the swipe order and has to match the buttons exactly - a thumb swipe
+   that skips a tab is worse than no swipe at all - so the two lists
+   move together or neither does. */
+const PROFILE_TABS = ["profile", "badges", "ranks", "stats"];
 /* Every name this tab has ever had still lands on it, so an older link
    or a stored value goes where it means rather than silently falling
    back to Profile. */
@@ -47589,9 +47977,6 @@ function showProfile(defaultTab){
 
   const profileTabDefs = [
     { key: "profile", label: "Profile", node: identityTab, cls: "" },
-    /* .profile-stats-tab-btn is not decorative - the Profile tour
-       points at it. See the tour at the end of this function. */
-    { key: "stats",   label: "Stats",   node: statsTab,    cls: " profile-stats-tab-btn" },
     { key: "badges",  label: "Badges",  node: badgesTab,   cls: "" },
     /* "Rank", not "Ranks". The bottom bar already says Rankings and
        having both was reported as confusing - "the ranks tab within
@@ -47604,7 +47989,10 @@ function showProfile(defaultTab){
        stays "ranks" so nothing stored or linked has to move, and "ladder"
        was already an accepted
        alias for this tab. */
-    { key: "ranks",   label: "Rank",  node: ranksTab,   cls: "" }
+    { key: "ranks",   label: "Rank",  node: ranksTab,   cls: "" },
+    /* .profile-stats-tab-btn is not decorative - the Profile tour
+       points at it. See the tour at the end of this function. */
+    { key: "stats",   label: "Stats",   node: statsTab,    cls: " profile-stats-tab-btn" }
   ];
   const profileTabBtns = {};
   profileTabDefs.forEach(t => {
@@ -47755,8 +48143,16 @@ function showProfile(defaultTab){
      problem in another form. decorateAvatar is untouched and still runs
      on every board and in the Virtual Room, where the character is how
      you tell classmates apart and there is no room for a pill. */
-  const rankLine = document.createElement("p");
+  /* A BUTTON, BECAUSE IT GOES SOMEWHERE. The badges tile opens the
+     Badges tab and this did nothing, which is the sort of inconsistency
+     you only find by trying it - "Profile is cool because I hit the
+     badges thing ... ensure the rank does the same thing". A real
+     <button> rather than a <p> with a click handler, so it is reachable
+     by keyboard and announced as something you can press. */
+  const rankLine = document.createElement("button");
+  rankLine.type = "button";
   rankLine.className = "profile-ranklineup";
+  rankLine.addEventListener("click", () => selectProfileTab("ranks"));
   if(rankNow){
     rankLine.style.setProperty("--rank-color", RANK_COLOR[rankNow]);
     const coin = document.createElement("span");

@@ -81,6 +81,27 @@ CHECKS = """(() => {
     .map(e => ({ cls: (e.className || e.tagName.toLowerCase()),
                  px: Math.round(parseFloat(getComputedStyle(e).fontSize) * 10) / 10 }))
     .filter(f => f.px < 16);
+
+  /* 4b. AND A WAY BACK OUT IF IT ZOOMS ANYWAY.
+     The floor above is the prevention; this is the cure. Reported
+     twice, the second time as "I had to restart the app" - so the app
+     needs something that reconciles a scale Safari is holding on to,
+     whatever caused it. Two halves, and the check asserts both because
+     either alone is useless: the viewport meta must be addressable,
+     and the unwind must be a REAL scroll rather than the no-op it was
+     (scrollTo to the position you are already at changes nothing, so
+     the unwind this all hangs off never ran). */
+  out.hasViewportMeta = !!document.getElementById("viewportmeta");
+  out.hasZoomReset = typeof resetStuckZoom === "function";
+  out.zoomResetIsCheap = (() => {
+    /* It must do nothing at all when there is no stuck scale - it runs
+       on every focusout in the app. */
+    const meta = document.getElementById("viewportmeta");
+    if(!meta) return false;
+    const before = meta.getAttribute("content");
+    try{ resetStuckZoom(); }catch(e){ return false; }
+    return meta.getAttribute("content") === before;
+  })();
   return out;
 })()"""
 
@@ -183,6 +204,22 @@ def main():
                             fails.append(
                                 f"{tag}: text field {f['cls']} is {f['px']}px "
                                 f"- under 16px, iOS will zoom and not zoom back")
+                        # 4b. AND A WAY BACK OUT IF IT ZOOMS ANYWAY. The
+                        # floor above is prevention; this is the cure,
+                        # after "I had to restart the app". Both halves
+                        # are asserted because either alone is useless:
+                        # the meta has to be addressable, and the reset
+                        # has to be inert when nothing is stuck, since it
+                        # runs on every focusout in the app.
+                        if not c.get("hasViewportMeta"):
+                            fails.append(f"{tag}: the viewport meta has no id, "
+                                         f"so a stuck zoom cannot be reset")
+                        if not c.get("hasZoomReset"):
+                            fails.append(f"{tag}: no resetStuckZoom(), "
+                                         f"so a stuck zoom has no cure")
+                        if not c.get("zoomResetIsCheap"):
+                            fails.append(f"{tag}: resetStuckZoom() rewrites the "
+                                         f"viewport with no stuck scale")
 
                         # 9. Home's bottom furniture must not collide. The
                         # daily-question circle and the version label are both
