@@ -3991,6 +3991,18 @@ missed real bugs that a thirty-second check caught.
    phantom syntax error on prose.
 2. A targeted Playwright check of the actual change — measure or screenshot it.
    Chromium is at `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
+0. **RUN THE GATES ONE AT A TIME, and never alongside a sweep.**
+   `check-friends`' "a stats push republishes seenAt" assertion is
+   reproducibly RED while the machine is busy and green when it is idle,
+   and that is not a harness artifact: under load the app's own boot push
+   has already landed, and `pushLeaderboardRow()`'s deferral branch tests
+   the urgent signature and the elapsed time but — unlike the dedupe
+   branch directly above it — **not whether the document key changed**,
+   so a push to a NEW publicId is held for up to `ROW_SCORE_PUSH_MS`.
+   The row still arrives on the deferred timer, so it is a delay rather
+   than a loss, which is why it has never been reported. Worth fixing,
+   with a check that names the key change rather than the timing.
+
 3. `python3 tools/sweep-layout.py` — the full device matrix. Every device,
    both orientations, installed and in a browser. This is required on every
    change, not just layout ones; a JS error only thrown on one screen shows
@@ -4561,5 +4573,157 @@ pinch-zoom is never taken away from anybody.
   in `refreshTugLive()` as well as in the builder** — that is the
   function that runs when somebody else answers, so without it the rope
   would be dragged exactly once, when the screen was built.
+
+### The themes, the two Virtual Room rows, and two things that looked bad (build 197)
+
+- **A THEME'S THREE STOPS HAVE TO POINT THE SAME WAY, NOT JUST EXIST.**
+  Build 196 gave every accent all three `--theme-c1/2/3` stops, which
+  fixed *"just looks like one color"* — and it was still reported back
+  as *"the unlocked themes could still look better, they still don't
+  look as good as the default one."* Looked at properly, all seven
+  paired their own colour with the **same warm gold c1** the default
+  has: a cool rank had a gold glow fighting a blue accent, and the two
+  near-grey ranks had gold fighting nothing at all. The default works
+  because its three are NEIGHBOURS swept in one direction — gold 40°,
+  orange 20°, magenta 335° — lighter and warmer on one side, deeper and
+  towards violet on the other. So the seven are **generated from their
+  own rank colour by that same rule**: c1 is 20° away from violet, 11%
+  lighter, saturation ×1.05; c3 is 45° towards violet, 13% darker, at
+  62% of the saturation.
+  **THE RULE IS VALIDATED AGAINST THE DEFAULT rather than trusted.** Fed
+  the default's own c2 (`#F5804D`) it returns `#FBCE7F` / `#C63978`
+  against the real `#FFD37A` / `#C23B7A` — a few levels on each channel.
+  A formula that reproduces the triad everyone already likes is the only
+  reason to believe it for seven nobody has seen. Two adjustments, both
+  stated in the file rather than hidden: a nearly-grey rank (Iron,
+  Silver) has no hue to build from, so **saturation is floored at 34%**
+  or the glow comes out as three greys; and c1 is kept out of the acid
+  yellow-green band, which is where Gold's "away from violet" would
+  otherwise land and which nothing else in this app is.
+- **A LOBBY IS WHERE A CHARACTER STANDS OUT, AND A LIST IS NOT** — the
+  two halves of one request, pulling opposite ways in the same build.
+  *"Remove the glow from behind the friends list character and ensure
+  it's removed from the characters on the leaderboard"* and *"while in a
+  lobby or after a match, that's where the character will stand out — a
+  bit larger, with the glow behind them, with their rank and level
+  displayed."* A row in a list of twenty is a smear of colour down the
+  screen; a lobby is four or five people you are about to race, each
+  with a whole row. So the boards and the friends list lost their halos
+  and the two Virtual Room screens gained them, at `3.4rem` on a phone
+  and `4rem` from tablet up against the `2.6rem` list size.
+- **The glow is scoped to the character's own `svg`, never a bare
+  `svg`.** The rank coin is a sibling `<svg>` in the same box, and a
+  bare descendant selector lit somebody's rank emblem in their
+  character's colour.
+- **`.vroom-levelchip` is retired, and that is the same "two marks on
+  one avatar" call the boards already made.** The level was a chip stuck
+  on the corner opposite the rank coin. It is on a line under the name
+  now, beside the rank in the rank's own `RANK_COLOR` — the same line
+  the friends list and the invite sheet show, so a classmate reads the
+  same everywhere. The CSS rule is **deleted rather than left
+  unreachable**: nothing builds one.
+- **Both Virtual Room rows open the same person card**, which is the
+  rest of *"if you click their profile while in a lobby, or after a test
+  in the results screen, or click them on the leaderboard, that same
+  centred screen will pop up."* A participant key **is** the `publicId`,
+  which is what lets `openPersonSheet` resolve the friend state from a
+  room document. Never your own row — there is nothing to do with
+  yourself, the same rule the boards follow.
+- **So the room document publishes `hundos`, `xp` and `tests` too.** The
+  card has four progress figures and a room only carried two of them, so
+  two thirds of it would have read as zero for everyone in the lobby.
+  Written at create and at join, read with a fallback, so a room made by
+  an older build still renders.
+- **A 4.5px TALL GRAB HANDLE IS NOT A HANDLE.** *"Changing the size of
+  the box on the iPhone is very bad and hard to do."* Measured, the
+  thing you are asked to grab was **38×4.5px** — a tenth of the 44px
+  minimum this file sets for every other control, on the one control in
+  the app whose entire job is to be dragged. Same fix as the Settings
+  links in the tap-target sweep: **the target grows and the visible mark
+  does not.** The element is full width with `.95rem`/`.55rem` of
+  padding and a negative top margin so nothing below it moves, the bar
+  is drawn by `::after`, and `touch-action:none` sits on the handle so
+  the page's own scroll cannot steal the one gesture that element
+  exists for.
+- **The recent test rows are cards now, not ruled lines.** *"All those
+  tests, or boxes of how they are separated, needs to look better, it
+  looks bad."* They were four lines of serif name and mono metadata
+  stacked with nothing between them but a hairline, on a screen where
+  every other group of things — the calendar card, the friends card, the
+  badge tiles — is a surface with an edge. Each is its own recessed card
+  on the same recipe the Profile plates use, so it arrives as something
+  the screen already does rather than a fifth new look, and the press
+  state lands on the card instead of washing the full row width.
+- **196 PUT START STUDYING BACK ON THE DAILY-QUESTION CIRCLE, ON THE
+  PHONES IT NEVER MEASURED.** `check-fixes` had not been run on 196, and
+  it found the exact defect this file already records from before the row
+  was reserved: on a 13 mini installed the button was `76..300` against a
+  circle at `292..346` — an **8×9px overlap** — and a 360px Android in a
+  browser cleared it by 8px against the 12px floor. 196 lowered the
+  button onto its floor and paid for it by trimming the button to 200px
+  so the two clear each other horizontally, but that trim sat in a
+  `min-width:24rem` tier, so **every phone narrower than 384px kept a
+  224px button in the circle's band**. Three things came out of fixing
+  it:
+  - **The two remaining Home gates were still `rem`**, so a 440px phone
+    at a 21px root computes 20.95rem and falls out of the ≥24rem branch
+    entirely — back to the 224px button and the 4.7rem reservation, which
+    is precisely the "the button isn't lowered" report 196 was answering.
+    They are `384px`/`512px` now, identical at a 16px root.
+  - **A `min-width` ON ITS OWN MOVES NOTHING when the content is wider.**
+    Dropping the floor from 14rem to 10.5rem only stopped that floor
+    applying; the button is 189px because its LABEL is 145px plus 20.8px
+    of padding either side. Measured after that change alone: a 10px gap,
+    still under the floor. The padding had to come down with it (to
+    `.9rem`, ~176px), and the vertical padding is untouched so the 44px
+    tap target does not pay for it.
+  - **AND THE TWO PHONES FAILED IN DIFFERENT AXES**, which is why one
+    lever could not fix both. A 375px phone clears the circle
+    horizontally once the button is trimmed (~16px). A 360px one cannot —
+    its centre is 20px further left, so the circle sits 15px closer and
+    the trim only buys 9px. What 196 actually spent there was VERTICAL:
+    the shared full-bleed hero is square, so going full-bleed made it
+    ~21px taller, and on an overflowing panel that came straight out of
+    the gap. Measured either side: 195 had 17px (13 mini) and 27px
+    (Android); 196 had −9px and 3px. So below 368px the hero gives back
+    what the bleed gained (`max-width:min(32rem, 58vh, 94vw)`) and the
+    whole column rises — 3px to 26px. **It carries the same
+    `min-height:736px` floor as the block it refines**, or a four-class
+    selector reaches down and undoes the short-phone hero tiers, and it
+    has to sit AFTER that block because the selector is identical and
+    source order is the only thing deciding.
+- **AND THE CARD BROKE A GATE BY BEING RIGHT, the fifth time this has
+  happened.** `check-fixes` asserts the test-review chevron sits at the
+  far end of its row, and it measured against `getBoundingClientRect()`
+  — the BORDER box — which was the same thing while the row was a
+  full-bleed ruled line with no side padding. A card has padding, so
+  every row came back 15px out (13.6px of padding plus the 1px border)
+  and the check went red for the row being correct. It measures the
+  row's **content** edge now, which is what it was always trying to
+  say and which survives any padding the row carries. **Proved it can
+  still fail before believing the green**: a temporary
+  `margin-right:40px` on the chevron reports exactly 40px on every row.
+- **AND THE TWO FLAGS THAT CAME WITH IT ARE ACCEPTED, NOT MISSED.**
+  `check-positions` now reports Start Studying "off-centre" on an SE
+  2nd/3rd gen (50 above / 99 below) and a 360px Android (38 / 95). Both
+  are the button sitting well clear of the circle rather than centred
+  between the tagline and it, and both are the intended trade:
+  - The SE's is not new and is not mine — its short-phone tier trims the
+    hero so the button clears the circle, which is the collision fix from
+    build 96. It only surfaces as a flag because 196 changed what
+    `check-positions` measures the button against (the circle row, not
+    the tab bar), and 196 never ran this check.
+  - The Android's grew by the 23px the hero gave back. That is the price
+    of the fix, on the one device class it applies to: every iPhone in
+    the matrix is 375px or wider and is fixed by the button trim alone,
+    with its hero untouched.
+- **The Rank tab was reported as sitting off-centre on a phone and
+  measures centred, so nothing was changed.** Checked on an iPhone 16
+  Pro Max, a 14/15/16 and an iPad Pro 11", at a 16px root **and at 21px**
+  (the `rem`-gate trap that was the real cause of the Home screen
+  report): `heroOffCentre` came back 0–1px every time. Recorded here
+  because a guess at a layout that measures right is how a screen that
+  was fine stops being fine — it needs her screenshot, or the device's
+  own text-size setting, to go on.
 
 No committed regression suite exists yet. Worth building.

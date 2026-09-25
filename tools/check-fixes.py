@@ -389,7 +389,23 @@ def main():
                                 sameLine = mid > nb.top-2 && mid < nb.bottom+2; }
                               return {name:n?n.textContent:null, chev:!!c,
                                 sameLine:sameLine,
-                                chevRight:c?Math.round(rr.right-c.getBoundingClientRect().right):null,
+                                chevRight:c?(function(){
+                                  /* THE ROW'S OWN CONTENT EDGE, NOT ITS BORDER BOX.
+                                     This measured rr.right and passed while the row
+                                     was a full-bleed ruled line with no side padding.
+                                     Build 197 made each row a recessed CARD, and a
+                                     chevron flush with a card's border would be the
+                                     defect - so the check went red for the row being
+                                     right. What it is actually asserting is that the
+                                     chevron is pushed to the far end of the row
+                                     rather than stranded mid-line, and that holds
+                                     whatever padding the row carries. */
+                                  const cs=getComputedStyle(r);
+                                  const edge = rr.right
+                                    - (parseFloat(cs.borderRightWidth)||0)
+                                    - (parseFloat(cs.paddingRight)||0);
+                                  return Math.round(edge - c.getBoundingClientRect().right);
+                                })():null,
                                 metaBelow:(n&&m)?Math.round(m.getBoundingClientRect().top-n.getBoundingClientRect().bottom):null,
                                 overflow:Math.round(r.scrollWidth-r.clientWidth),
                                 h:Math.round(rr.height)};})};}""")
@@ -403,7 +419,7 @@ def main():
                             elif not r["sameLine"]:
                                 fails.append(f"{tag}: test review row {i} chevron is not on the name's line")
                             elif r["chevRight"] is not None and r["chevRight"] > 2:
-                                fails.append(f"{tag}: test review row {i} chevron sits {r['chevRight']}px off the right edge")
+                                fails.append(f"{tag}: test review row {i} chevron sits {r['chevRight']}px in from the row's content edge")
                             if r["overflow"] > 0:
                                 fails.append(f"{tag}: test review row {i} overflows by {r['overflow']}px")
                             if r["metaBelow"] is not None and r["metaBelow"] < 0:
