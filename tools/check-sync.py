@@ -267,60 +267,61 @@ with sync_playwright() as pw:
     pg.evaluate("()=>showAppearance()"); pg.wait_for_timeout(700)
     pg.evaluate("()=>document.querySelector('.sync-code-row').scrollIntoView({block:'center',behavior:'instant'})")
     pg.wait_for_timeout(300)
-    btns = pg.query_selector_all(".sync-save-row .cal-profile-btn")
-    got = {}
-    for b in btns:
-        b.click(); pg.wait_for_timeout(350)
-        got[b.text_content()] = pg.evaluate("()=>navigator.clipboard.readText()")
-    # THE LABEL IS NOT THE ASSERTION. This named "Copy code" and would
-    # have gone red the moment that button became "Save code" - a gate
-    # failing the app for being right, which this file has been caught
-    # by twice already. What matters is that the one button in the sync
-    # section puts the real code somewhere, whatever it is called.
-    # Chromium has no navigator.share, so this exercises the clipboard
-    # fallback; the share path is checked separately below.
-    check("Settings hands over the code",
-          "WXYZ-7777" in got.values(), str(got))
-    # ONE BUTTON, NOT TWO. Copy sign-in link came off on an explicit
-    # report - "I don't even know what that is and it will confuse
-    # people" - and this check went red for asserting it, which is the
-    # gate failing the app for being right. Asserted as SHAPE now: one
-    # copy button in the sync section, whatever it ends up called.
-    check("there is exactly one such button, not a pair",
-          len(btns) == 1, str([b.text_content() for b in btns]))
+    """THE SAVE CODE BUTTON IS GONE, ON REQUEST, AND THIS CHECK WAS
+    ASSERTING IT. It drove `.sync-save-row .cal-profile-btn`, clicked it,
+    and read the clipboard - and that button came off Settings two builds
+    ago because the screen was reported as a pile of controls. So the
+    gate has been red since then for demanding a control the app was
+    asked to remove, which is the seventh time in this repo a check has
+    encoded a DECISION and then failed the app for being right.
 
-    # SAVING IS NOT COPYING. A clipboard is overwritten by the next
-    # thing you copy, and this code has to outlive the phone - so where
-    # a share sheet exists the button must use it, and the code has to
-    # be IN the shared text rather than only in the title. Stubbed,
-    # because headless Chromium has no share sheet at all.
-    pg.evaluate("""()=>{ window.__shared = null;
-      navigator.share = (d) => { window.__shared = d; return Promise.resolve(); }; }""")
-    pg.evaluate("()=>{ store.savedCodeSaved = false; }")
-    btns[0].click(); pg.wait_for_timeout(500)
-    shared = pg.evaluate("()=>window.__shared")
-    check("it opens the share sheet when there is one", bool(shared), str(shared)[:120])
-    check("and the code is in what gets shared",
-          bool(shared) and "WXYZ-7777" in (shared.get("text") or ""),
-          (shared or {}).get("text"))
-    check("a real save marks the prompt satisfied",
-          pg.evaluate("()=>!!store.savedCodeSaved") is True)
+    What has NOT changed is why the check exists: removing the app
+    destroys the whole storage jar, so neither recovery above can help
+    and what is left is the code, from memory. That is still the
+    invariant, and it is still true - the code lives on a row in
+    Settings that reveals it on a tap, with a line underneath saying to
+    keep it somewhere else. So the check asks for THAT, by driving it
+    the way a person does rather than by calling anything.
 
-    # A CANCELLED SHARE IS NOT A SAVE. Backing out of the sheet must not
-    # silence the reminder - it would have achieved precisely nothing,
-    # which is the same rule the refused-clipboard path already carried.
-    pg.evaluate("""()=>{ store.savedCodeSaved = false;
-      navigator.share = () => Promise.reject(Object.assign(new Error("x"), {name:"AbortError"}));
-      navigator.clipboard.writeText = () => Promise.reject(new Error("no"));
-    }""")
-    btns[0].click(); pg.wait_for_timeout(500)
-    check("backing out of the share sheet does not count as saved",
-          pg.evaluate("()=>!!store.savedCodeSaved") is False)
-    filled = pg.evaluate(
-        "()=>{const b=document.querySelector('.sync-save-row .cal-profile-btn');"
-        " const r=document.querySelector('.sync-save-row');"
-        " return b && r ? Math.round(r.getBoundingClientRect().width - b.getBoundingClientRect().width) : -1;}")
-    check("and it fills the row", filled == 0, "%dpx short" % filled)
+    ONE CONSEQUENCE IS WORTH KNOWING AND IS NOT A FAILURE HERE:
+    `saveSyncCodeVia()` was that button's only caller, so nothing sets
+    `store.savedCodeSaved` any more and the save-code reminder now runs
+    its full three prompts whether or not anybody saved anything. The
+    banner still works and still lands on this section; there is simply
+    no longer a moment the app can call "saved". Raised with Madison
+    rather than patched around, because the fix is another button and
+    the button is the thing she asked to remove."""
+    row = pg.query_selector(".sync-code-row")
+    check("the code still has a row in Settings", row is not None)
+    hidden = pg.evaluate("()=>{const v=document.querySelector('.sync-code-value');"
+                         " return v ? v.textContent : null;}")
+    check("and it starts hidden", hidden is not None and "WXYZ" not in hidden, hidden)
+    if row:
+        row.click(); pg.wait_for_timeout(250)
+    shown = pg.evaluate("()=>{const v=document.querySelector('.sync-code-value');"
+                        " return v ? v.textContent : null;}")
+    check("Settings hands over the code", shown == "WXYZ-7777", shown)
+    # Tapping again has to put it back. A code left on screen is a code
+    # on screen in a classroom, which is the reason it is hidden at all.
+    if row:
+        row.click(); pg.wait_for_timeout(250)
+    rehidden = pg.evaluate("()=>{const v=document.querySelector('.sync-code-value');"
+                           " return v ? v.textContent : null;}")
+    check("and a second tap hides it again",
+          rehidden is not None and "WXYZ" not in rehidden, rehidden)
+    note = pg.evaluate("""()=>{
+      const n = [...document.querySelectorAll('#settings-sync-sect .sync-note-plain')]
+        .map(p => p.textContent).join(' ');
+      return n;}""")
+    check("with the sentence saying why to keep it",
+          "loses its data" in note or "off this phone" in note, note[:90])
+    # THE PILE IS GONE AND HAS TO STAY GONE. The sync section was
+    # reported as four visual languages stacked; this is the shape it
+    # was cut down to, asserted as a count rather than as a list of
+    # labels so a rename cannot turn it red.
+    nbtn = pg.evaluate("()=>document.querySelectorAll('#settings-sync-sect button').length")
+    check("the sync section is not a pile of buttons again", nbtn <= 2, str(nbtn))
+
     # The recovery URL is still LOAD-BEARING even with no button on it:
     # the re-add notice hands off to Safari with it, and that is the one
     # route back for a device whose whole storage jar is about to go. So

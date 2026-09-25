@@ -1,0 +1,308 @@
+#!/usr/bin/env python3
+"""The badge thresholds, the level curve, and the ranks they gate.
+
+Three things that are only correct together. A threshold band, the XP a
+level costs and a rank's requirement are all separately plausible
+numbers; what makes them right is the relationship between them, and
+nothing else in this repo can see that relationship. A sweep asks "is
+anything broken on this device", check-behaviour asks "does the app do
+the right thing" - neither can tell you that the top rank asks for 20
+badges in an app with 16 units, which is what build 189 shipped.
+
+Every check here was written against build 189 and fails there:
+
+    python3 tools/check-curve.py --against /path/to/189/index.html
+
+The two that matter most are the two that cannot be argued with:
+
+  NOBODY'S LEVEL DROPS. Evaluated for every XP total from 0 to 600,000,
+  the new curve must never return a lower level than the old one. That
+  is the whole of "do not change anyone's current level", and it is
+  checkable without touching a single live account.
+
+  THE TOP RANK IS REACHABLE. Its badge count must be one the question
+  bank can actually produce, and the level it asks for must be one the
+  badge line actually reaches.
+
+Device-independent - none of this is layout - so it runs once.
+Exits non-zero on any failure.
+"""
+import argparse
+import functools
+import http.server
+import io
+import json
+import os
+import re
+import shutil
+import socket
+import sys
+import tempfile
+import threading
+
+from playwright.sync_api import sync_playwright
+
+CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+ap = argparse.ArgumentParser()
+ap.add_argument("--against", help="run the same checks against another index.html")
+A = ap.parse_args()
+SERVE = ROOT
+if A.against:
+    other = A.against if os.path.isabs(A.against) else os.path.join(ROOT, A.against)
+    SERVE = tempfile.mkdtemp(prefix="curve-")
+    shutil.copy(other, os.path.join(SERVE, "index.html"))
+    if os.path.exists(os.path.join(ROOT, "version.json")):
+        shutil.copy(os.path.join(ROOT, "version.json"), SERVE)
+    print("against: %s" % other)
+
+_s = socket.socket(); _s.bind(("127.0.0.1", 0))
+PORT = _s.getsockname()[1]; _s.close()
+
+
+class _Quiet(http.server.SimpleHTTPRequestHandler):
+    def log_message(self, *a):
+        pass
+
+
+SERVER = http.server.ThreadingHTTPServer(
+    ("127.0.0.1", PORT), functools.partial(_Quiet, directory=SERVE))
+threading.Thread(target=SERVER.serve_forever, daemon=True).start()
+
+FAILURES = []
+
+
+def check(name, ok, detail=""):
+    print("  %-4s %s%s" % ("PASS" if ok else "FAIL", name,
+                           ("  -> " + str(detail)) if detail else ""))
+    if not ok:
+        FAILURES.append(name)
+
+
+# The curve build 189 shipped, so "no level drops" is measured against the
+# thing people are actually standing on rather than against an assumption.
+OLD_STEP, OLD_LATE = 3.1102, 1.0354
+OLD_BADGE_THRESHOLD = 35
+
+
+def main():
+    with sync_playwright() as pw:
+        br = pw.chromium.launch(executable_path=CHROME)
+        ctx = br.new_context(viewport={"width": 834, "height": 1194})
+        pg = ctx.new_page()
+        errs = []
+        pg.on("pageerror", lambda e: errs.append(str(e)))
+        pg.goto("http://127.0.0.1:%d/index.html" % PORT)
+        pg.wait_for_timeout(2600)
+        pg.evaluate("()=>{document.getElementById('splashscreen')?.remove();}")
+
+        print("\n1. a badge costs what its unit is worth")
+        r = pg.evaluate("""()=>{
+          const out = {};
+          try {
+            topicsIn(QUESTIONS).forEach(u => {
+              out[u] = { q: unitQuestionCount(u), need: badgeThresholdFor(u) };
+            });
+          } catch(e){ return { threw: String(e) }; }
+          return { units: out,
+                   unknown: (typeof badgeThresholdFor === 'function')
+                     ? badgeThresholdFor('a unit from another build') : null };}""")
+        if r.get("threw"):
+            check("badgeThresholdFor exists", False, r["threw"])
+            units = {}
+        else:
+            units = r["units"]
+            check("badgeThresholdFor exists", True)
+            check("an unknown unit falls back to 35, never to 5",
+                  r["unknown"] == 35, r["unknown"])
+        bands = [(0, 19, 35), (20, 40, 25), (41, 60, 15),
+                 (61, 100, 10), (101, 200, 7), (201, 10 ** 6, 5)]
+        wrong = []
+        for u, v in units.items():
+            want = next(h for lo, hi, h in bands if lo <= v["q"] <= hi)
+            if v["need"] != want:
+                wrong.append((u, v["q"], v["need"], want))
+        check("every unit sits in the band its size puts it in", not wrong, wrong)
+        check("sixteen units", len(units) == 16, len(units))
+        """Lowering a threshold can only ADD a badge; raising one takes a
+        badge off somebody who holds it, because a badge is computed
+        fresh from the hundo count rather than stored. So no band may be
+        above the flat 35 the live build charges."""
+        above = [(u, v["need"]) for u, v in units.items() if v["need"] > OLD_BADGE_THRESHOLD]
+        check("no band asks for more than the 35 the live build charged",
+              not above, above)
+
+        print("\n2. nobody's level drops, for any XP total")
+        drop = pg.evaluate("""([oldStep, oldLate])=>{
+          /* The old curve rebuilt from its own two constants, stepping
+             exactly the way levelProgress() does - including the
+             Math.round and the ceiling - so this compares curves rather
+             than two different ways of writing one. */
+          function oldLevel(p){
+            let lvl = 1, need = LEVEL_BASE_POINTS, spent = 0;
+            const growth = l => l <= LEVEL_FREEZE_THROUGH ? LEVEL_GROWTH
+                               : (l === LEVEL_FREEZE_THROUGH + 1 ? oldStep : oldLate);
+            const ceil = l => l <= LEVEL_FREEZE_THROUGH ? LEVEL_COST_MAX : LEVEL_COST_TOP;
+            while(lvl < LEVEL_CAP && p >= spent + need){
+              spent += need; lvl += 1;
+              need = Math.min(ceil(lvl + 1), Math.round(need * growth(lvl + 1)));
+            }
+            return lvl;
+          }
+          let worst = null, n = 0;
+          for(let p = 0; p <= 600000; p += 137){
+            const a = oldLevel(p), b = levelFromPoints(p);
+            if(b < a){ n++; if(!worst) worst = { p, was: a, now: b }; }
+          }
+          /* The frozen stretch has to be byte-identical, not merely not
+             worse - that is what "do not change anyone's current level
+             what so ever" asks for, and every account in the class is
+             inside it. */
+          let frozenDiff = null;
+          for(let p = 0; p <= 15000; p += 31){
+            if(oldLevel(p) !== levelFromPoints(p)){ frozenDiff = p; break; }
+          }
+          return { n, worst, frozenDiff, cap: LEVEL_CAP };}""", [OLD_STEP, OLD_LATE])
+        check("no XP total loses a level", drop["n"] == 0, drop["worst"])
+        check("levels 1-25 are byte-identical to the live build",
+              drop["frozenDiff"] is None, drop["frozenDiff"])
+
+        print("\n3. the badge line, and the ranks read off it")
+        line = pg.evaluate("""()=>{
+          try{
+            if(typeof badgeThresholdFor !== 'function') throw new Error('no badgeThresholdFor');
+          /* The fastest honest route: earn the cheapest badges first,
+             one flawless full-unit run per hundo. Every extra attempt
+             earns MORE XP, so this is the LOWEST level a given badge
+             count can arrive at - which is the one that matters when
+             asking whether a rank is reachable. */
+          const cost = topicsIn(QUESTIONS).map(u => {
+            const need = badgeThresholdFor(u);
+            return need * (unitQuestionCount(u) * POINTS_PER_QUESTION + PERFECT_BONUS)
+                   + MASTERY_BONUS;
+          }).sort((a, b) => a - b);
+          const cum = []; let s = 0;
+          cost.forEach(c => { s += c; cum.push(s); });
+          return { cum, levels: cum.map(levelFromPoints),
+                   tiers: TIER_ORDER_FULL.map(k => ({
+                     key: k, level: TIER_UNLOCKS[k].level,
+                     badges: TIER_UNLOCKS[k].badges,
+                     label: TIER_UNLOCKS[k].label })),
+                   units: topicsIn(QUESTIONS).length, cap: LEVEL_CAP };
+          } catch(e){ return { threw: String(e) }; }}""")
+        """A gate that THROWS on the build it was written against tells
+        you less than one that fails on it - it stops before the checks
+        that matter. Everything below degrades to a plain FAIL instead."""
+        if line.get("threw"):
+            for n in ("every badge there is lands on the cap",
+                      "no rank asks for more badges than there are units",
+                      "the badge is the gate - its level is always already there",
+                      "no rank got harder than the live build",
+                      "every rank's label says the numbers it actually checks"):
+                check(n, False, line["threw"])
+            line = None
+        else:
+            print("     badge line:", line["levels"])
+            check("every badge there is lands on the cap",
+                  line["levels"][-1] >= line["cap"], line["levels"][-1])
+            over = [t for t in line["tiers"] if t["badges"] > line["units"]]
+            check("no rank asks for more badges than there are units", not over, over)
+            unreachable = [t for t in line["tiers"]
+                           if t["badges"] <= line["units"]
+                           and line["levels"][t["badges"] - 1] < t["level"]]
+            check("the badge is the gate - its level is always already there",
+                  not unreachable,
+                  [(t["key"], t["level"], line["levels"][t["badges"] - 1]) for t in unreachable])
+            """A rank is computed fresh from level and badges, so raising
+            either number takes a rank off somebody who holds it. Iron was
+            reached by a real person the day it shipped."""
+            LIVE = {"rookie": (21, 1), "ranger": (29, 3), "veteran": (36, 5),
+                    "vanguard": (45, 8), "adept": (52, 11), "elite": (65, 15),
+                    "titan": (80, 20)}
+            raised = [(t["key"], t["level"], t["badges"], LIVE[t["key"]])
+                      for t in line["tiers"]
+                      if t["key"] in LIVE
+                      and (t["level"] > LIVE[t["key"]][0] or t["badges"] > LIVE[t["key"]][1])]
+            check("no rank got harder than the live build", not raised, raised)
+            stale = [t["key"] for t in line["tiers"]
+                     if str(t["level"]) not in t["label"] or str(t["badges"]) not in t["label"]]
+            check("every rank's label says the numbers it actually checks", not stale, stale)
+
+        print("\n4. what it costs to climb")
+        costs = pg.evaluate("""()=>{
+          const at = L => xpForLevel(L) - xpForLevel(L - 1);
+          return { l26: at(26), l50: at(50), l60: at(60), l80: at(80),
+                   toCap: xpForLevel(LEVEL_CAP) };}""")
+        print("     ", json.dumps(costs))
+        """"If you are level 60 I don't want you to have to play for a
+        week straight to earn 2 levels." Two levels at 60 against a
+        typical 250-XP perfect drill is the number to keep an eye on;
+        30 runs is a fortnight, 15 is a few evenings."""
+        check("two levels at 60 is under 30 perfect drills",
+              (costs["l60"] * 2) / 250.0 < 30, "%.1f runs" % ((costs["l60"] * 2) / 250.0))
+        check("and a level still costs more the higher you are",
+              costs["l80"] > costs["l60"] > costs["l50"] > costs["l26"], costs)
+
+        print("\n5. no screen quotes a threshold that is no longer one number")
+        quoted = pg.evaluate("""()=>{
+          const tab = buildBadgesTab();
+          const blurb = tab.querySelector('.badges-blurb');
+          const progs = [...tab.querySelectorAll('.badge-tile-prog')].map(n => n.textContent);
+          return { blurb: blurb ? blurb.textContent : null, progs };}""")
+        check("the badge case's blurb does not name a single number",
+              quoted["blurb"] and "35 hundos" not in quoted["blurb"], quoted["blurb"])
+        """Sixteen tiles on a fresh account should print sixteen
+        denominators, and they should not all be the same one."""
+        denom = set(t.split("/")[-1] for t in quoted["progs"] if "/" in t)
+        check("the tiles print more than one denominator", len(denom) > 1, sorted(denom))
+
+        print("\n6. the end-of-test rows say what a run could actually do")
+        rows = pg.evaluate("""()=>{
+          try{
+            const topics = [...new Set(QUESTIONS.map(q => (q.topic||'').trim()))].filter(Boolean);
+            const big = topics.reduce((a,b) => unitQuestionCount(b) > unitQuestionCount(a) ? b : a);
+            const small = topics.reduce((a,b) => unitQuestionCount(b) < unitQuestionCount(a) ? b : a);
+            const idx = t => QUESTIONS.map((q,i)=>[q,i])
+              .filter(([q]) => (q.topic||'').trim() === t).map(([,i]) => i);
+            const run = (units, slice) => {
+              store.unitPerfects = {}; store.pendingBadgeUnlocks = [];
+              cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = units.slice();
+              order = [].concat(...units.map(u => slice ? idx(u).slice(0, 10) : idx(u)));
+              runTrackable = true; timedOut = false; runMode = 'drill'; runLabel = null;
+              attempts = {}; picked = {}; timedOutSet = {};
+              order.forEach(qi => { attempts[qi] = 1;
+                picked[qi] = optionOrder(qi).indexOf(QUESTIONS[qi].answer); });
+              summarize();
+              return [...document.querySelectorAll('.badgeprogress-row')]
+                .map(r => (r.querySelector('.badgeprogress-line')||{}).textContent);
+            };
+            return { slice: run([big], true), full: run([small], false),
+                     two: run([small, big], false), big, small };
+          } catch(e){ return { threw: String(e) }; }}""")
+        if rows.get("threw"):
+            check("the results screen carries a row per unit", False, rows["threw"])
+        else:
+            """A three-unit run reporting on one unit was the whole
+            complaint. The count is the check; the wording is not."""
+            check("a two-unit run reports on both", len(rows["two"]) == 2, rows["two"])
+            check("a full-unit run counts towards the badge",
+                  len(rows["full"]) == 1 and "to go" in (rows["full"][0] or ""), rows["full"])
+            """A 10-question slice of a 340-question unit can never earn
+            a hundo, so a row quoting "5 to go" after one is telling
+            somebody to keep doing a thing that does not work. Caught on
+            a screenshot - every number on the screen was correct."""
+            check("a partial run says a hundo needs the whole unit",
+                  len(rows["slice"]) == 1 and "whole unit" in (rows["slice"][0] or ""),
+                  rows["slice"])
+
+        check("no uncaught JS along the way", not errs, errs[:3])
+        ctx.close(); br.close()
+    SERVER.shutdown()
+    print("\n%s  (%d failure(s))" %
+          ("ALL PASS" if not FAILURES else "FAILED: " + ", ".join(FAILURES), len(FAILURES)))
+    sys.exit(1 if FAILURES else 0)
+
+
+if __name__ == "__main__":
+    main()

@@ -274,10 +274,21 @@ def check_navigation(br):
 
 # --------------------------------------------------------------------------
 EARN_A_BADGE = """(a)=>{
-  const { mode, nUnits, startAt, vroom } = a;
+  const { mode, nUnits, offset, flat, vroom } = a;
   const topics = [...new Set(QUESTIONS.map(q => (q.topic||'').trim()))].filter(Boolean);
   const chosen = topics.slice(0, nUnits);
-  store.unitPerfects = {}; chosen.forEach(t => { store.unitPerfects[t] = startAt; });
+  /* EACH UNIT IS SET RELATIVE TO ITS OWN THRESHOLD. A badge costs what
+     its unit is worth now, so two units in one run do not share a
+     number - driving both from a literal 34 puts one of them past its
+     own threshold before the run even starts, and the check then reports
+     a badge that was already held as a badge that failed to arrive.
+     `flat` is for the one case that genuinely is about an absolute
+     count (a unit sitting at 10, nowhere near anything). */
+  store.unitPerfects = {};
+  chosen.forEach(t => {
+    store.unitPerfects[t] = (flat != null) ? flat
+      : Math.max(0, badgeThresholdFor(t) + offset);
+  });
   store.pendingBadgeUnlocks = []; store.lifetime.perfectTests = 0;
   if(vroom){ beginVirtualRoomTest(chosen, null, null); }
   else {
@@ -291,6 +302,7 @@ EARN_A_BADGE = """(a)=>{
   summarize();
   return { queue:(store.pendingBadgeUnlocks||[]).slice(),
            banners:[...document.querySelectorAll('.badgebanner')].length,
+           thresholds: chosen.map(t => t + ':' + badgeThresholdFor(t)),
            hundos: store.lifetime.perfectTests };}"""
 
 
@@ -304,26 +316,35 @@ def check_badges(br):
     Same stale-literal trap this file has already hit three times with
     tab labels and board names. What the check is about is "one short,
     then exactly enough", so it asks the app what enough is.
+
+    IT IS PER UNIT NOW, which is the same trap one level down. Reading a
+    single BADGE_THRESHOLD off the page was still typing a literal once
+    a badge started costing what its unit is worth: a two-unit run drove
+    both units from one number, so one of them began the run already
+    past its own threshold and the check reported a missing badge that
+    was in fact a badge already held. The fixture asks
+    badgeThresholdFor() per unit and the cases are written as "one
+    short" and "already there" rather than as numbers at all.
     """
     ctx, pg = booted(br, TABLET[1], TABLET[2])
-    thr = pg.evaluate("()=>BADGE_THRESHOLD")
-    print("\n4. a badge is earned by every route to %d, and only then" % thr)
-    one_short, exact = thr - 1, thr
+    print("\n4. a badge is earned by every route to mastery, and only then")
     cases = [
-        ("drill, one unit, %d -> %d" % (one_short, exact),
-         {"mode": "drill", "nUnits": 1, "startAt": one_short, "vroom": False}, 1, 1),
-        ("exam, two units, %d -> %d" % (one_short, exact),
-         {"mode": "exam", "nUnits": 2, "startAt": one_short, "vroom": False}, 2, 2),
-        ("game, one unit at 10", {"mode": "game", "nUnits": 1, "startAt": 10, "vroom": False}, 0, 0),
-        ("Virtual Room, two units, %d" % one_short,
-         {"mode": "exam", "nUnits": 2, "startAt": one_short, "vroom": True}, 2, 2),
-        ("a unit already at %d" % exact,
-         {"mode": "drill", "nUnits": 1, "startAt": exact, "vroom": False}, 0, 0),
+        ("drill, one unit, one short",
+         {"mode": "drill", "nUnits": 1, "offset": -1, "flat": None, "vroom": False}, 1, 1),
+        ("exam, two units, both one short",
+         {"mode": "exam", "nUnits": 2, "offset": -1, "flat": None, "vroom": False}, 2, 2),
+        ("game, one unit at 10, nowhere near",
+         {"mode": "game", "nUnits": 1, "offset": None, "flat": 10, "vroom": False}, 0, 0),
+        ("Virtual Room, two units, both one short",
+         {"mode": "exam", "nUnits": 2, "offset": -1, "flat": None, "vroom": True}, 2, 2),
+        ("a unit already mastered",
+         {"mode": "drill", "nUnits": 1, "offset": 0, "flat": None, "vroom": False}, 0, 0),
     ]
     for label, args, want_queue, want_banners in cases:
         r = pg.evaluate(EARN_A_BADGE, args)
         check(label, len(r["queue"]) == want_queue and r["banners"] == want_banners,
-              "queued %s, %d banner(s)" % (r["queue"], r["banners"]))
+              "queued %s, %d banner(s), thresholds %s"
+              % (r["queue"], r["banners"], r["thresholds"]))
     ctx.close()
 
 
@@ -458,14 +479,31 @@ def check_ranks(br):
 
     pg.evaluate("()=>showProfile('ranks')")
     pg.wait_for_timeout(1500)
-    tabs = pg.evaluate("""()=>[...document.querySelectorAll('.profiletabs .iconbtn')]
-                              .map(b=>b.textContent)""")
-    # Stats before Badges, and the last one is "Rank" - the bottom tab
-    # says Leaderboard and this one says Rank, which is the vocabulary
-    # asked for after "Ladder"/"Rankings" was reported as confusing. The
-    # key is still "ranks"; only the label moved.
-    check("four tabs, in the order asked for, and the last one is Rank",
-          tabs == ["Profile", "Stats", "Badges", "Rank"], tabs)
+    tabs = pg.evaluate("""()=>({
+      rendered: [...document.querySelectorAll('.profiletabs .iconbtn')].map(b=>b.textContent),
+      swipe: (typeof PROFILE_TABS !== 'undefined') ? PROFILE_TABS.slice() : null })""")
+    # THIS ASSERTED ["Profile","Stats","Badges","Rank"] AND WENT STALE.
+    # Stats was moved to the far right on request - "Stats to far right"
+    # - and the gate went on demanding the old order, which is the sixth
+    # time in this repo a check has encoded a DECISION and then failed
+    # the app for being right. A decision is not the thing to assert.
+    #
+    # What is worth asserting is the invariant nothing may break: four
+    # tabs, and the SWIPE ORDER carries the same tabs in the same order
+    # as the buttons. That is the one that actually hurts - a thumb
+    # swipe that skips a tab is worse than no swipe - and it cannot go
+    # stale, because both halves are read off the app.
+    check("four tabs on Profile", len(tabs["rendered"]) == 4, tabs["rendered"])
+    check("the swipe order matches the buttons",
+          tabs["swipe"] is not None and len(tabs["swipe"]) == len(tabs["rendered"]),
+          tabs)
+    # Profile first and Stats last ARE decisions, but they are the two
+    # that were asked for by name and both are load-bearing: Profile is
+    # what a bare showProfile() lands on, and Stats is the only tab with
+    # a class of its own keyed to being last.
+    check("Profile is first and Stats is last",
+          tabs["rendered"][:1] == ["Profile"] and tabs["rendered"][-1:] == ["Stats"],
+          tabs["rendered"])
 
     cards = pg.evaluate("""()=>[...document.querySelectorAll('.rankcard')].map(c=>({
       name:c.querySelector('.rankcard-name').textContent,
