@@ -3510,6 +3510,13 @@
      visible border, a shadow to lift it off the page, and a speech
      bubble beside the word so it reads as a control at a glance
      rather than as a label that happens to be in the corner. */
+  /* ---- RETIRED, AND KEPT ONLY AS A TOMBSTONE ----
+     Nothing builds a .vroom-chat-toggle any more: the Virtual Room's
+     chat is a named section at the foot of its lobby and the dock's
+     circle is DMs, so there is one chat button in the app. These rules
+     and .vroom-chat-close's are unreachable - editing them changes
+     nothing on any screen. Kept because the display:none !important
+     below is a net under anything that ever puts one back. */
   .vroom-chat-toggle{
     display:none; align-items:center; gap:.42rem;
     position:absolute; top:0; right:0; z-index:6;
@@ -3891,6 +3898,94 @@
     margin:.2rem 0 .8rem; font-size:.82rem; line-height:1.45; color:var(--soft);
   }
   .chatdock-act{ width:100%; min-height:44px; margin:0 0 .6rem; }
+  /* ---- THE CHAT LIST ----
+     A row per chat you are in. Two controls per row and they do
+     different things, so they are two BUTTONS rather than one button
+     with a hit-test in it: the row opens the chat, the x leaves it.
+     44px minimum on both, which is why the x is a square and not a
+     glyph with padding round it. */
+  .chatdock-chatlist{ display:flex; flex-direction:column; gap:.4rem; margin:0 0 .7rem; }
+  .chatdock-chatrow{
+    display:flex; align-items:stretch; gap:.4rem;
+  }
+  .chatdock-chatrow-open{
+    flex:1 1 auto; min-width:0; text-align:left;
+    display:flex; flex-direction:column; justify-content:center; gap:.1rem;
+    min-height:44px; padding:.5rem .8rem; border-radius:12px;
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
+    color:var(--ink); font:inherit; cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .chatdock-chatrow-open:active{ background:rgba(255,255,255,.12); }
+  .chatdock-chatrow-top{
+    display:flex; align-items:baseline; gap:.5rem; min-width:0;
+  }
+  .chatdock-chatrow-name{
+    flex:1 1 auto; min-width:0;
+    font-size:.9rem; font-weight:700;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .chatdock-chatrow-when{
+    flex:0 0 auto; font-size:.68rem; font-weight:700; color:var(--soft);
+    font-variant-numeric:tabular-nums;
+  }
+  /* The last thing said, which is what a person reads a chat list for.
+     One line, clipped - not wrapped: a row that changes height as
+     somebody types a long message is a list that moves under the
+     finger. */
+  .chatdock-chatrow-sub{
+    font-size:.74rem; font-weight:600; color:var(--soft);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .chatdock-chatrow-sub:empty{ display:none; }
+  /* A code is an identifier, so it gets the mono face; a message is
+     prose and must not. */
+  .chatdock-chatrow-sub.is-code{
+    font-family:var(--mono); letter-spacing:.06em; font-size:.7rem;
+    font-weight:700;
+  }
+  /* UNREAD IS WEIGHT AND A DOT, not a colour: the accent is whatever
+     theme somebody picked, and this has to read as unread on all seven.
+     The dot is the same red the chat's own count uses, so the two say
+     the same thing in the same colour. */
+  .chatdock-chatrow.is-unread .chatdock-chatrow-name{ color:var(--ink); font-weight:800; }
+  .chatdock-chatrow.is-unread .chatdock-chatrow-sub{ color:var(--ink); font-weight:700; }
+  .chatdock-chatrow.is-unread .chatdock-chatrow-open{
+    border-color:rgba(255,95,86,.45);
+  }
+  /* THE DOT GOES ON THE ROW, NOT ON THE NAME. The name is
+     overflow:hidden with an ellipsis, so a ::after inside it is clipped
+     away by exactly the long names most likely to need it. On the flex
+     line it is a flex item of its own, and the name shrinks to make
+     room instead. */
+  .chatdock-chatrow.is-unread .chatdock-chatrow-top::after{
+    content:""; flex:0 0 auto; align-self:center;
+    width:.42rem; height:.42rem; border-radius:50%; background:#FF5F56;
+  }
+  .chatdock-chatrow-del{
+    flex:0 0 auto; width:44px; min-height:44px; border-radius:12px;
+    background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1);
+    color:var(--soft); font:inherit; font-size:1.2rem; line-height:1;
+    cursor:pointer; -webkit-tap-highlight-color:transparent;
+  }
+  /* SECOND TAP CONFIRMS. Leaving is a write nobody can undo - the other
+     people in the chat see you go - and a bare x beside a row is the
+     easiest thing in the app to hit by accident. It says what it is
+     about to do rather than asking in a dialog, which on a panel this
+     size would cover the list it is asking about. */
+  .chatdock-chatrow-del.is-arming{
+    width:auto; padding:0 .7rem; font-size:.78rem; font-weight:800;
+    color:#FF8A80; border-color:rgba(255,138,128,.5);
+  }
+  /* The way back to the list. A row of its own above the roster, so it
+     is in the same place whatever the chat's name turns out to be. */
+  .chatdock-backrow{ margin:0 0 .5rem; }
+  .chatdock-back{
+    min-height:44px; padding:.35rem .2rem; margin:0 0 0 -.2rem;
+    background:none; border:none; color:var(--soft);
+    font:inherit; font-size:.82rem; font-weight:800; cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
   .chatdock-mini{ min-height:36px; padding:.3rem .8rem; font-size:.78rem; }
   .chatdock-roomhead{
     display:flex; align-items:center; gap:.45rem; flex-wrap:wrap;
@@ -26342,6 +26437,12 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               friendCode: null, friendsOut: [], friendsIn: [], friendsDeclined: [],
               lobbyInvitesOut: {},
               chatInvitesOut: {},
+              /* THE CHATS YOU ARE A MEMBER OF, as opposed to the one
+                 that happens to be open on this device. Synced, so the
+                 list is the same on your phone and your iPad; the open
+                 one stays in localStorage, because which conversation
+                 you are sitting in is this device's business. */
+              chats: [],
               lastModified: 0, firstName: "", avatarChar: null, onboardingComplete: false,
               dailyQuestionDate: null, dailyQuestionCorrect: false,
               seenModeSelectTour: false, seenUnitSelectTour: false,
@@ -26453,6 +26554,20 @@ function applyLoadedData(got){
      document on every round trip. */
   store.chatInvitesOut = (got.chatInvitesOut && typeof got.chatInvitesOut === "object")
     ? got.chatInvitesOut : {};
+  /* Defaulted to EMPTY for an existing account, per the rule every new
+     persisted field follows: somebody who was in a chat before this
+     shipped has no list, and an empty list is the truthful answer -
+     their open chat is still open, and opening it puts it in the list. */
+  /* THE LITERAL 30, NOT CHAT_LIST_MAX, AND THAT IS DELIBERATE. This
+     function is reached from the top level during boot, and that const
+     is declared some ten thousand lines below it - a reference here is
+     the temporal-dead-zone time bomb this file has been taken down by
+     five times, and it reports an unrelated name when it goes off.
+     `var` would be worse, not better: hoisted but undefined, and
+     slice(0, undefined) returns an EMPTY array, which would silently
+     erase somebody's chat list on load. Keep the two numbers in step. */
+  store.chats = Array.isArray(got.chats)
+    ? got.chats.filter(c => c && c.code).slice(0, 30) : [];
   /* THE ONE PLACE THE "DEFAULT TO ALREADY-SEEN" RULE IS DELIBERATELY
      INVERTED. Every other flag here defaults so an existing account is
      not ambushed by something new; this one has to reach exactly those
@@ -27547,6 +27662,7 @@ function wipeLocalProgressAndSettings(){
   store.friendsOut = []; store.friendsIn = []; store.friendsDeclined = [];
   store.lobbyInvitesOut = {};
   store.chatInvitesOut = {};
+  store.chats = [];
   store.firstName = "";
   store.avatarChar = null;
   /* This is the actual fix for the reset glitch: everything else here
@@ -27745,6 +27861,7 @@ function buildLeaderboardRow(){
            are different things and a reader must not have to guess
            which one a code belongs to. */
         cinv: store.chatInvitesOut || {},
+        chats: store.chats || [],
         lastModified: Date.now(),
         /* THE HEARTBEAT HAS TO SURVIVE THIS WRITE. set() replaces the
            whole document, so a stats push landing a second after a
@@ -36143,6 +36260,158 @@ let chatRoomCode = null;
 let chatMyKey = null;
 let chatPanelCleanup = null;
 
+/* THIRTY. A class of thirty cannot be in more than thirty conversations
+   that matter, and the list is pushed inside the progress document on
+   every save - an unbounded list of dead chats is weight on every sync
+   for the rest of the app's life. Oldest-touched falls off the end. */
+const CHAT_LIST_MAX = 30;
+/* HOW FAR YOU HAVE READ, PER CHAT, IN localStorage - never on `store`.
+   It is viewing history rather than progress, the same call
+   class26e.daily.seen already makes: synced, it would mark a chat read
+   on your iPad because you read it on your phone, and mark it unread
+   again the other way round. */
+const CHAT_SEEN_KEY = "class26e.chatseen";
+function chatSeenMap(){
+  try{ return JSON.parse(localStorage.getItem(CHAT_SEEN_KEY) || "{}") || {}; }
+  catch(e){ return {}; }
+}
+function markChatSeen(code, ts){
+  if(!code || !ts) return;
+  try{
+    const m = chatSeenMap();
+    if((m[code] || 0) >= ts) return;
+    m[code] = ts;
+    /* Bounded, because a code is never reused and this map would
+       otherwise grow for the life of the install. The list itself caps
+       at CHAT_LIST_MAX; twice that leaves room for chats left behind. */
+    const keys = Object.keys(m);
+    if(keys.length > CHAT_LIST_MAX * 2){
+      keys.sort((a, b) => (m[a] || 0) - (m[b] || 0))
+          .slice(0, keys.length - CHAT_LIST_MAX * 2)
+          .forEach(k => { delete m[k]; });
+    }
+    localStorage.setItem(CHAT_SEEN_KEY, JSON.stringify(m));
+  }catch(e){}
+}
+/* ONE READ PER ROW, ONLY WHEN THE LIST IS BEING LOOKED AT, AND
+   THROTTLED. rebuildChatTab() runs on every screen change whether the
+   dock is open or shut, so an unguarded fetch here would be thirty
+   reads per navigation per device - the surest way to spend a day's
+   quota by lunchtime. Guarded on the dock being open on this tab, and
+   on CHAT_LIST_REFRESH_MS since the last sweep. */
+const CHAT_LIST_REFRESH_MS = 20000;
+let chatListFetchAt = 0;
+let chatListLast = {};
+function refreshChatList(force){
+  if(!fbDb) return;
+  if(!chatDockOpen || chatDockTab !== "chat") return;
+  const now = Date.now();
+  if(!force && now - chatListFetchAt < CHAT_LIST_REFRESH_MS) return;
+  chatListFetchAt = now;
+  chatList().slice().forEach(entry => {
+    if(!entry || !entry.code) return;
+    fbDb.collection("vrooms").doc(entry.code).get().then(snap => {
+      if(!snap || !snap.exists) return;
+      const data = snap.data() || {};
+      const msgs = data.chatMessages || [];
+      const last = msgs.length ? msgs[msgs.length - 1] : null;
+      chatListLast[entry.code] = last
+        ? { name: last.name || "Someone", text: last.text || "",
+            ts: last.ts || 0, key: last.key || "" }
+        : null;
+      /* The name too, so a chat accepted from an invitation and never
+         opened stops reading as its own code the first time the list
+         is looked at. */
+      const nm = nameChatFrom(data.participants || null);
+      if(nm && entry.name !== nm){ entry.name = nm; saveStore(); }
+      paintChatRow(entry.code);
+    }).catch(() => {});
+  });
+}
+/* Painted in place rather than by rebuilding the tab: a rebuild tears
+   down and remakes every row, so thirty replies landing one after
+   another would rebuild the list thirty times under the finger. */
+function paintChatRow(code){
+  const row = document.querySelector('.chatdock-chatrow[data-code="' + code + '"]');
+  if(!row) return;
+  const entry = chatEntry(code) || {};
+  const last = chatListLast[code] || null;
+  const nameEl = row.querySelector(".chatdock-chatrow-name");
+  if(nameEl && entry.name) nameEl.textContent = entry.name;
+  const subEl = row.querySelector(".chatdock-chatrow-sub");
+  if(subEl){
+    if(last && last.text){
+      subEl.classList.remove("is-code");
+      subEl.textContent = last.name + ": " + last.text;
+    } else if(entry.name){
+      subEl.classList.remove("is-code");
+      subEl.textContent = last ? "" : "No messages yet";
+    }
+  }
+  const whenEl = row.querySelector(".chatdock-chatrow-when");
+  if(whenEl) whenEl.textContent = last && last.ts ? timeAgo(last.ts) : "";
+  /* UNREAD IS A COMPARISON, NOT A COUNT. Counting would mean holding
+     every message id this device has seen; the newest stamp answers the
+     only question the row asks. Your own last message never marks a
+     chat unread - it is already read by definition. */
+  const seen = chatSeenMap()[code] || 0;
+  /* BY KEY, NOT BY NAME. Two people in this class can share a first
+     name, and the one thing a row must never do is call your own
+     message somebody else's. */
+  const mine = !!(last && last.key && last.key === publicIdOf());
+  row.classList.toggle("is-unread", !!(last && last.ts > seen && !mine));
+}
+function chatList(){
+  if(!Array.isArray(store.chats)) store.chats = [];
+  return store.chats;
+}
+function chatEntry(code){
+  return chatList().find(c => c && c.code === code) || null;
+}
+/* ONE WRITE, AND ONLY IF SOMETHING CHANGED. This is called from the
+   panel's own roster render, which runs on every snapshot - saving
+   unconditionally would push the whole progress document to Firestore
+   on every message anybody sends. */
+function rememberChat(code, name){
+  if(!code) return;
+  const list = chatList();
+  const at = Date.now();
+  const had = chatEntry(code);
+  if(had){
+    if(name && had.name === name) return;
+    if(!name) return;
+    had.name = name; had.at = at;
+  } else {
+    list.unshift({ code: code, name: name || "", at: at });
+    if(list.length > CHAT_LIST_MAX) list.length = CHAT_LIST_MAX;
+  }
+  saveStore();
+}
+function forgetChat(code){
+  if(!code) return;
+  const list = chatList();
+  const i = list.findIndex(c => c && c.code === code);
+  if(i < 0) return;
+  list.splice(i, 1);
+  saveStore();
+}
+/* WHO IS IN IT, not what its code is. A chat has no name of its own and
+   nobody is going to give it one, so it is named after the people in it
+   - the same way every phone names a group thread. Yourself excluded:
+   every chat you are in has you in it, so your own name carries no
+   information and costs the width of the row. */
+function nameChatFrom(participants){
+  const me = publicIdOf();
+  const names = Object.keys(participants || {})
+    .filter(k => k !== me)
+    .sort((a, b) => (((participants[a] || {}).joinedAt || 0) - ((participants[b] || {}).joinedAt || 0)))
+    .map(k => (participants[k] || {}).name || "Someone");
+  if(!names.length) return "";
+  if(names.length === 1) return names[0];
+  if(names.length === 2) return names[0] + " & " + names[1];
+  return names[0] + ", " + names[1] + " +" + (names.length - 2);
+}
+
 function loadChatRoom(){
   try{ return localStorage.getItem(CHAT_ROOM_KEY) || null; }catch(e){ return null; }
 }
@@ -36226,6 +36495,13 @@ const CHAT_CTX = {
     liveChatParticipants = p;
     renderChatRoster(p);
     announceChatRoomChange(data, p);
+    /* THE LIST'S NAMES COME FROM HERE, which is the only place that
+       knows them: a chat you have not opened has nothing but its code,
+       and this is the moment the roster is in hand. The RAW map, not
+       the present set - a row called "Ann" must not become "Bo" because
+       Ann's phone went to sleep. rememberChat() saves only on a change,
+       so this does not write on every message. */
+    if(chatRoomCode) rememberChat(chatRoomCode, nameChatFrom(data.participants || null));
     return p;
   },
   /* The dock's own button is the thing carrying the dot, so the dock
@@ -36237,6 +36513,10 @@ const CHAT_CTX = {
      shut. Selecting the tab BEFORE opening, so the dock does not open
      on notifications and switch under the person who tapped. */
   reveal: () => { chatDockTab = "chat"; openChatDock(); },
+  /* ONE RECORD OF HOW FAR THIS CHAT HAS BEEN READ, shared by the panel
+     and the list, so a chat you have just read does not come back bold
+     the moment you close it. */
+  onSeen: (ts) => { markChatSeen(chatRoomCode, ts); },
   onUnread: (n) => { chatUnseenAt = n; syncChatDockDot(); }
 };
 
@@ -36433,9 +36713,17 @@ function joinChatRoom(rawCode){
   }).catch(() => { showToast("Couldn't join that chat — try again."); return false; });
 }
 
+/* OPEN, CLOSE AND LEAVE ARE THREE DIFFERENT THINGS, and for two builds
+   there were only two of them: the way out of a chat was Leave, which
+   deleted your participation, so "go back and look at the other one"
+   meant burning the first. */
 function enterChatRoom(code){
   chatRoomCode = code;
   chatMyKey = publicIdOf();
+  /* In the list from the moment you are in the chat, named or not - a
+     row reading its code is still a row you can get back into, and the
+     name arrives on the first snapshot. */
+  rememberChat(code, (chatEntry(code) || {}).name || "");
   /* Whatever happened in this room before this device walked in is not
      an event for it - reset so the first snapshot is a backlog rather
      than a stream of arrivals and departures. */
@@ -36451,6 +36739,22 @@ function enterChatRoom(code){
    a participant, so one person leaving stranded everybody else waiting
    on them forever. A chat has no gate to strand, but a roster that
    lists people who left is a roster nobody believes. */
+/* CLOSING WRITES NOTHING. It detaches this device's listener and puts
+   the list back up; you are still in the participants map with the
+   joinedAt you arrived with, which is what gives you your colour, so
+   re-opening costs no read and no write. */
+function closeChatRoom(){
+  /* Read up to now, whatever the last snapshot happened to carry: you
+     were looking at it. */
+  markChatSeen(chatRoomCode, Date.now());
+  clearInterval(chatBeatTimer); chatBeatTimer = null;
+  chatRoomCode = null; chatMyKey = null;
+  saveChatRoom(null);
+  if(chatPanelCleanup){ try{ chatPanelCleanup(); }catch(e){} chatPanelCleanup = null; }
+  rebuildChatTab();
+  syncChatDock();
+}
+
 function leaveChatRoom(quiet){
   const code = chatRoomCode, me = chatMyKey;
   clearInterval(chatBeatTimer); chatBeatTimer = null;
@@ -36466,9 +36770,35 @@ function leaveChatRoom(quiet){
       fbDb.collection("vrooms").doc(code).update(patch).catch(() => {});
     }catch(e){}
   }
+  /* LEAVING TAKES THE ROW WITH IT. That is the whole difference between
+     this and closing: a chat you left is not one you are a member of,
+     and leaving it in the list would offer a way back into a
+     conversation you are no longer in. */
+  forgetChat(code);
   rebuildChatTab();
   syncChatDock();
   if(!quiet) showToast("Left the chat.");
+}
+
+/* Leaving a chat you are not sitting in. The list's own delete, which
+   has to do the same writes Leave does without opening the thing first
+   - so the participants delete is written straight at the document. */
+function leaveChatByCode(code){
+  if(!code) return;
+  if(code === chatRoomCode){ leaveChatRoom(); return; }
+  const me = publicIdOf();
+  forgetChat(code);
+  if(fbDb && me){
+    try{
+      const patch = {};
+      patch["participants." + me] = firebase.firestore.FieldValue.delete();
+      patch["typing." + me] = firebase.firestore.FieldValue.delete();
+      patch.lastLeave = { name: store.firstName || "Someone", key: me, at: Date.now() };
+      fbDb.collection("vrooms").doc(code).update(patch).catch(() => {});
+    }catch(e){}
+  }
+  rebuildChatTab();
+  showToast("Left the chat.");
 }
 
 /* ---- invites ----
@@ -36825,6 +37155,73 @@ function rebuildChatTab(){
   }
 
   if(!chatRoomCode){
+    /* ---- THE LIST, WHICH IS THE DEFAULT STATE OF THIS TAB ----
+       "Multiple chats ... a list you can revisit and delete." Before
+       this there was exactly one chat and the only way out of it was
+       Leave, so going back to an older conversation meant burning the
+       one you were in. The list is what you are a MEMBER of
+       (store.chats, synced); which one is open is this device's
+       business (localStorage), and closing one just puts this list
+       back. */
+    const list = chatList();
+    if(list.length){
+      const wrap = document.createElement("div");
+      wrap.className = "chatdock-chatlist";
+      list.forEach(entry => {
+        const row = document.createElement("div");
+        row.className = "chatdock-chatrow";
+        const open = document.createElement("button");
+        open.type = "button"; open.className = "chatdock-chatrow-open";
+        const nm = document.createElement("span");
+        nm.className = "chatdock-chatrow-name";
+        nm.textContent = entry.name || "Chat";
+        const when = document.createElement("span");
+        when.className = "chatdock-chatrow-when";
+        const top = document.createElement("span");
+        top.className = "chatdock-chatrow-top";
+        top.append(nm, when);
+        open.appendChild(top);
+        /* The code is shown ONLY when there is no name yet - an invite
+           accepted and never opened has nobody's name in it, and two
+           rows both reading "Chat" would be two rows nobody can tell
+           apart. Once it has been opened the roster names it and the
+           code goes away, because "no more codes" was the request. */
+        /* One line under the name, and what it says depends on what is
+           known: the last message once the list has been refreshed, and
+           until then the code - but ONLY for a chat with no name, since
+           a named row showing a code is the code nobody needs. */
+        const sub = document.createElement("span");
+        sub.className = "chatdock-chatrow-sub" + (entry.name ? "" : " is-code");
+        sub.textContent = entry.name ? "" : entry.code;
+        open.appendChild(sub);
+        open.addEventListener("click", () => enterChatRoom(entry.code));
+        const del = document.createElement("button");
+        del.type = "button"; del.className = "chatdock-chatrow-del";
+        del.setAttribute("aria-label", "Leave this chat");
+        del.textContent = "\u00d7";
+        let arming = null;
+        del.addEventListener("click", () => {
+          if(arming){ clearTimeout(arming); arming = null; leaveChatByCode(entry.code); return; }
+          del.classList.add("is-arming");
+          del.textContent = "Leave?";
+          del.setAttribute("aria-label", "Confirm leaving this chat");
+          arming = setTimeout(() => {
+            arming = null;
+            del.classList.remove("is-arming");
+            del.textContent = "\u00d7";
+            del.setAttribute("aria-label", "Leave this chat");
+          }, 3200);
+        });
+        row.append(open, del);
+        row.dataset.code = entry.code;
+        wrap.appendChild(row);
+      });
+      chatTabBody.appendChild(wrap);
+      /* Paint whatever is already known before asking for more, so a
+         reopened dock is not blank for a round trip. */
+      chatList().forEach(e => paintChatRow(e.code));
+      refreshChatList();
+    }
     /* NO CODE FIELD. Asked for directly - "no more codes to join
        lobby's chats". You start one and invite people, or somebody
        invites you and it arrives in Notifications. joinChatRoom() is
@@ -36832,16 +37229,30 @@ function rebuildChatTab(){
        type one. */
     const n = document.createElement("p");
     n.className = "chatdock-note";
-    n.textContent = "Start a chat and invite your friends. If somebody invites you, it turns up in Notifications.";
+    n.textContent = list.length
+      ? "Start another chat, or open one above. Invitations turn up in Notifications."
+      : "Start a chat and invite your friends. If somebody invites you, it turns up in Notifications.";
     const start = document.createElement("button");
     start.type = "button"; start.className = "next chatdock-act";
-    start.textContent = "Start a chat";
+    start.textContent = list.length ? "Start another chat" : "Start a chat";
     start.addEventListener("click", createChatRoom);
     chatTabBody.append(n, start);
     return;
   }
 
-  /* In a chat: who is here, the code to hand out, and the way out. */
+  /* In a chat: the way back to the list, who is here, and the way out
+     of the chat itself - which are two different exits now and have to
+     look like it. */
+  if(chatList().length > 1 || chatEntry(chatRoomCode)){
+    const backRow = document.createElement("div");
+    backRow.className = "chatdock-backrow";
+    const back = document.createElement("button");
+    back.type = "button"; back.className = "chatdock-back";
+    back.textContent = "\u2039 All chats";
+    back.addEventListener("click", closeChatRoom);
+    backRow.appendChild(back);
+    chatTabBody.appendChild(backRow);
+  }
   const head = document.createElement("div");
   head.className = "chatdock-roomhead";
   /* WHO IS IN HERE, not what the code is. The code was the thing you
@@ -37011,6 +37422,11 @@ function syncChatDock(){
   if(chatTabBody) chatTabBody.hidden = chatDockTab !== "chat";
   if(notifTabBody) notifTabBody.hidden = chatDockTab !== "notifs";
   if(chatDockTab === "notifs") renderNotifications();
+  /* Opening the dock on the chat tab is the moment the list is looked
+     at, and syncChatDock() is what every open goes through. The
+     function is throttled and refuses when the tab is not showing, so
+     calling it from here costs nothing when it is not wanted. */
+  if(chatDockOpen && chatDockTab === "chat" && !chatRoomCode) refreshChatList();
   syncChatDockDot();
 }
 
@@ -40748,7 +41164,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-26-194";
+const APP_BUILD = "2026-09-26-195";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -47095,6 +47511,10 @@ function buildVroomChatPanel(container, ctx){
     const panelVisible = CTX.isVisible ? CTX.isVisible(list) : false;
     if(panelVisible){
       lastSeenTs = Math.max(lastSeenTs, newestTs);
+      /* The host may keep its own record of how far this chat has been
+         read - the chat list does, so its rows can say "unread" for a
+         chat with no listener on it. */
+      if(CTX.onSeen) CTX.onSeen(newestTs);
       dot.hidden = true;
       dot.textContent = "";
       if(CTX.onUnread) CTX.onUnread(0);

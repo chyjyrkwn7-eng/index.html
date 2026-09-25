@@ -4310,4 +4310,73 @@ whatever the spacing says. **The race line indexes the same table**, so
 adding to it widens the markers' palette too — which is the right
 coupling: a marker and a name are the same person.
 
+### Several chats (build 195)
+
+**TWO VARIABLES THAT SOUND THE SAME, AND THEY ARE NOT.**
+`chatRoomCode` / `CHAT_ROOM_KEY` is **which chat is OPEN on this
+device** — localStorage, per device, as it always was. `store.chats` is
+**which chats you are a MEMBER of** — synced, so your phone and your iPad
+show the same list. Everything below follows from keeping those apart.
+
+- **Open, close and leave are three different things**, and for two
+  builds there were only two of them: the way out of a chat was Leave,
+  which deleted your participation, so "go back and look at the other
+  one" meant burning the one you were in.
+- **Closing writes NOTHING.** It detaches this device's listener and puts
+  the list back. You stay in the participants map with the `joinedAt` you
+  arrived with — which is what gives you your colour — so re-opening
+  costs no read and no write.
+- **Leaving takes the row with it** (`forgetChat`), because a chat you
+  left is not one you are a member of, and a row offering a way back into
+  it is a lie. `leaveChatByCode()` does the same writes for a chat you
+  are not sitting in, straight at the document.
+- **ONE LIVE LISTENER, STILL.** A list of five chats is not five
+  listeners: opening one attaches, closing or opening another detaches.
+  That is a deliberate quota decision, not an oversight — a read is
+  charged to every listener on every write.
+- **The consequence of that, stated plainly: a message in a chat you do
+  not have open produces no banner.** What it produces is an unread row
+  the next time the list is looked at, which is what the per-row fetch
+  below is for.
+- **THE LITERAL 30 IN `applyLoadedData`, NOT `CHAT_LIST_MAX`.** That
+  function is reached from the top level during boot and the const is
+  declared some ten thousand lines below it — a reference there is the
+  TDZ time bomb this file has been taken down by five times, and it
+  reports an unrelated name when it goes off. `var` would be *worse*:
+  hoisted but undefined, and `slice(0, undefined)` returns an EMPTY
+  array, so it would quietly erase somebody's chat list on load.
+- **A chat is named after the people in it**, not by its code
+  (`nameChatFrom`), with yourself left out — every chat you are in has
+  you in it, so your own name carries no information and costs the width
+  of the row. The name is learned from the **raw** participants map on a
+  snapshot, never the present set: a row called "Ann" must not become
+  "Bo" because Ann's phone went to sleep.
+- **`rememberChat()` saves only on a change.** It is called from the
+  panel's roster render, which runs on every snapshot — saving
+  unconditionally would push the whole progress document to Firestore
+  on every message anybody sends.
+- **One `get()` per row, only when the list is being looked at, and
+  throttled** (`refreshChatList`, `CHAT_LIST_REFRESH_MS`).
+  `rebuildChatTab()` runs on every screen change whether the dock is open
+  or shut, so an unguarded fetch there is thirty reads per navigation per
+  device — the surest way to spend a day's quota by lunchtime.
+- **Rows are painted in place** (`paintChatRow`), not by rebuilding the
+  tab: a rebuild remakes every row, so thirty replies landing one after
+  another would rebuild the list thirty times under the finger.
+- **Unread is a comparison, not a count.** `class26e.chatseen` holds how
+  far you have read per chat — localStorage, never `store`, the same call
+  `class26e.daily.seen` makes: synced, it would mark a chat read on your
+  iPad because you read it on your phone. Your own last message never
+  marks a chat unread, and that is tested **by key, not by name**: two
+  people in this class can share a first name.
+- **The unread dot goes on the row's flex line, not on the name.** The
+  name is `overflow:hidden` with an ellipsis, so a `::after` inside it is
+  clipped away by exactly the long names most likely to need it.
+- **The delete arms before it fires.** One tap on the × beside a row says
+  "Leave?" and a second confirms, with a 3.2s window. Leaving is a write
+  nobody can undo — the other people see you go — and a bare × beside a
+  row is the easiest thing in the app to hit by accident. It says what it
+  is about to do rather than asking in a dialog, which on a panel this
+  size would cover the list it is asking about.
+
 No committed regression suite exists yet. Worth building.
