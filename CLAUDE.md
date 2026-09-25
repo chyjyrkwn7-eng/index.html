@@ -4980,4 +4980,66 @@ glow now stopped in two vertical lines down the sides.
   three roster updates. Nothing focuses on mount. Left as reported
   rather than guessed at; it needs a screen recording from the device.
 
+### The launch-night batch (builds 203 and 204)
+
+- **THE CHAT BUTTON WENT MISSING FROM HOME ON LAUNCH.** `syncChatDock()`
+  hides the dock while any loading screen is up and only ran on a stage
+  change, so a Home mounted under the splash came up with no button.
+  Present on build 200 too; it just needed the splash to outlast the
+  mount. A body-level observer now re-syncs when the splash, LOADING
+  TEST or GENERATING PROFILE leaves (`watchLoadingScreensLeave`).
+- **"THE CHAT SHOWS A NUMBER INSTEAD OF THE USERNAME" WAS A ROOM CODE.**
+  An unnamed chat-list row showed its code, and a joined chat was saved
+  with no name until the listener named it. `joinChatRoom()` names it
+  from the document it already read, and a row never shows a code.
+- **ANDROID "NEXT DOES NOT APPEAR ON SOME QUESTIONS" DID NOT REPRODUCE**,
+  and was not assumed fixed on that basis. Audited: all 894 questions,
+  Drill and Exam, three Android sizes, installed and in a browser - the
+  correct slot is always tappable and Next is always on screen and
+  unobstructed, including through the real tap-and-slide path on the 25
+  longest questions. What an emulator lacks is the browser's own bottom
+  toolbar (Chrome's bottom address bar, in-app browsers), which can cover
+  content at `bottom:0`; a short question never scrolls it away.
+  `.floatbtn` now sits at `bottom:var(--vv-lift)`, which
+  `liftFloatForAndroidBars()` sets from the visual viewport on Android
+  only (never iOS, never while pinch-zoomed). Verified with a faked 56px
+  toolbar: lifted exactly 56px on Android, unchanged on iPhone. **If it
+  is reported again, get the browser and the question.**
+- **THE SAVE-CODE REMINDER IS ONCE PER DEVICE.** Three showings, checked
+  on every Home, a count on `store` that a cloud pull could rewind, and
+  nothing that ever set `savedCodeSaved` - so it could only end by
+  running out. One showing, recorded in `class26e.savecode.asked`, and
+  tapping "Save it" ends it. `check-save-code` asserts all three and
+  fails on 202.
+- **WELCOME SCROLLED SIDEWAYS ON EVERY PHONE** by 6-10px - the planet's
+  SVG past the right edge, the same overflow Home was clipped for in 200.
+  Found by `check-save-code`, not by the sweep. Clipped the same way.
+- **A THEME IS THE BACKGROUND, NOT THE BUTTONS.** The seven rank blocks
+  no longer set `--accent`/`--accent-ink` (kept as `--rank-accent`), so
+  buttons, selected states, progress ticks and focus rings stay default
+  under every theme; only the glow triad changes. This supersedes "a
+  rank's theme is declared in three places that must agree" for the
+  buttons. The planet gradient reads the triad, not `--accent`, so the
+  cutscenes are unaffected.
+- **THE PLANET STOPPED ROCKING, AND IS 6% SMALLER ON PHONES.**
+  `cosmic-drift` rotated the whole drawing 2.5 degrees and back - on a
+  full-bleed planet that re-rasterises every ring each frame and reads
+  as a shake. Size is a `transform:scale(.94)` on Home's and Welcome's
+  hero wrap under 640px, so the signed-off layout box does not move.
+- **OVERALL: EACH COLUMN HAS ITS OWN COLOUR ALL THE WAY DOWN** (level
+  blue #5CA8FF, badge gold #F2C14E), header included, with wider gaps.
+- **READY UP NEEDS UNITS AND A SECOND PERSON**, and anybody ready when
+  that stops being true is written back to not-ready.
+- **ADVANCED SETTINGS centres its label**; the chevron is pinned right.
+- **CHAT:** opening the dock or its tab marks the open chat read at once
+  (`CHAT_CTX.markSeen`); dismissed notifications persist
+  (`class26e.notifhandled`, with a time, so a newer invite still shows);
+  **a message pings each other member's inbox** in its own slot
+  (`<pub>~m`, type `msgping`) so the button counts unread in chats that
+  are not open - including mid-test, since the inbox listener is always
+  on - without a listener per chat; a chat somebody started with you
+  joins your list on its first ping. "All chats" is a real button, list
+  rows show faces, and an expand button toggles tall/normal by its own
+  state (measuring failed on a tablet, where the panel is capped).
+
 No committed regression suite exists yet. Worth building.

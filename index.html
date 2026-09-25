@@ -292,24 +292,37 @@
      kept out of the acid yellow-green band, which is where Gold's
      "away from violet" would otherwise land and which nothing else in
      this app is. */
-  [data-accent="rookie"]{ --accent:#6F7884; --accent-ink:#F7F8F9; --theme-c1:#95BFCD; --theme-c2:#8B939E; --theme-c3:#6B5B8C; }
-  [data-theme="dark"][data-accent="rookie"]{ --accent:#AEB7C2; --accent-ink:#14181D; }
-  [data-accent="ranger"]{ --accent:#A4602A; --accent-ink:#FFF6EE; --theme-c1:#D1BB65; --theme-c2:#C07A3E; --theme-c3:#7C4051; }
-  [data-theme="dark"][data-accent="ranger"]{ --accent:#D99458; --accent-ink:#221208; }
-  [data-accent="veteran"]{ --accent:#7A8C9E; --accent-ink:#F7FAFD; --theme-c1:#BAD8DE; --theme-c2:#CAD3DC; --theme-c3:#AAA2C2; }
-  [data-theme="dark"][data-accent="veteran"]{ --accent:#D8E1EA; --accent-ink:#141A21; }
-  [data-accent="vanguard"]{ --accent:#B08A1E; --accent-ink:#FFFAEC; --theme-c1:#EFDE6D; --theme-c2:#E5B63F; --theme-c3:#A63C3F; }
-  [data-theme="dark"][data-accent="vanguard"]{ --accent:#F0C75A; --accent-ink:#241A03; }
+  /* ---- A THEME IS THE BACKGROUND, NOT THE BUTTONS ----
+     "When changing themes, the buttons should not be changing colors
+     along with them ... the start button on tests, things that are
+     highlighted, those things should not change from default, default
+     white and black button should not change." Every rank theme used to
+     set --accent, which is what every primary button, selected answer,
+     active tab and highlight is drawn from, so choosing Sapphire turned
+     Start blue. They now set only the glow triad (--theme-c1/2/3); the
+     rank colour is kept as --rank-accent for anything that genuinely
+     wants it, and --accent stays the default white-on-black.
+     This supersedes "a rank's theme is declared in three places that
+     must agree" - the swatch and the glow still agree; the buttons are
+     deliberately out of it now. */
+  [data-accent="rookie"]{ --rank-accent:#6F7884; --rank-accent-ink:#F7F8F9; --theme-c1:#95BFCD; --theme-c2:#8B939E; --theme-c3:#6B5B8C; }
+  [data-theme="dark"][data-accent="rookie"]{ --rank-accent:#AEB7C2; --rank-accent-ink:#14181D; }
+  [data-accent="ranger"]{ --rank-accent:#A4602A; --rank-accent-ink:#FFF6EE; --theme-c1:#D1BB65; --theme-c2:#C07A3E; --theme-c3:#7C4051; }
+  [data-theme="dark"][data-accent="ranger"]{ --rank-accent:#D99458; --rank-accent-ink:#221208; }
+  [data-accent="veteran"]{ --rank-accent:#7A8C9E; --rank-accent-ink:#F7FAFD; --theme-c1:#BAD8DE; --theme-c2:#CAD3DC; --theme-c3:#AAA2C2; }
+  [data-theme="dark"][data-accent="veteran"]{ --rank-accent:#D8E1EA; --rank-accent-ink:#141A21; }
+  [data-accent="vanguard"]{ --rank-accent:#B08A1E; --rank-accent-ink:#FFFAEC; --theme-c1:#EFDE6D; --theme-c2:#E5B63F; --theme-c3:#A63C3F; }
+  [data-theme="dark"][data-accent="vanguard"]{ --rank-accent:#F0C75A; --rank-accent-ink:#241A03; }
   /* This was a genuine, silent bug: "adept" (Giant) had no rule here
      at all, so --accent simply fell through to whatever it was
      already set to rather than the intended colour \u2014 selecting this
      colour visibly did nothing anywhere in the app. */
-  [data-accent="adept"]{ --accent:#2A55BE; --accent-ink:#F1F5FF; --theme-c1:#6CC3F1; --theme-c2:#3D74E8; --theme-c3:#693AA9; }
-  [data-theme="dark"][data-accent="adept"]{ --accent:#6E9CFF; --accent-ink:#081231; }
-  [data-accent="elite"]{ --accent:#7E30C9; --accent-ink:#F9F2FF; --theme-c1:#9D88FC; --theme-c2:#A855F7; --theme-c3:#CA40A6; }
-  [data-theme="dark"][data-accent="elite"]{ --accent:#C084FC; --accent-ink:#1C0A32; }
-  [data-accent="titan"]{ --accent:#B82525; --accent-ink:#FFF2F2; --theme-c1:#EC9569; --theme-c2:#E23B3B; --theme-c3:#A03B87; }
-  [data-theme="dark"][data-accent="titan"]{ --accent:#FF6B5E; --accent-ink:#2A0707; }
+  [data-accent="adept"]{ --rank-accent:#2A55BE; --rank-accent-ink:#F1F5FF; --theme-c1:#6CC3F1; --theme-c2:#3D74E8; --theme-c3:#693AA9; }
+  [data-theme="dark"][data-accent="adept"]{ --rank-accent:#6E9CFF; --rank-accent-ink:#081231; }
+  [data-accent="elite"]{ --rank-accent:#7E30C9; --rank-accent-ink:#F9F2FF; --theme-c1:#9D88FC; --theme-c2:#A855F7; --theme-c3:#CA40A6; }
+  [data-theme="dark"][data-accent="elite"]{ --rank-accent:#C084FC; --rank-accent-ink:#1C0A32; }
+  [data-accent="titan"]{ --rank-accent:#B82525; --rank-accent-ink:#FFF2F2; --theme-c1:#EC9569; --theme-c2:#E23B3B; --theme-c3:#A03B87; }
+  [data-theme="dark"][data-accent="titan"]{ --rank-accent:#FF6B5E; --rank-accent-ink:#2A0707; }
   [data-accent="grinder"]{ --accent:#9C5B2E; --accent-ink:#FFF6EE; }
   [data-theme="dark"][data-accent="grinder"]{ --accent:#D4915C; --accent-ink:#1F1006; }
   [data-accent="scholar"]{ --accent:#5B6B7A; --accent-ink:#F5F7F8; }
@@ -4515,6 +4528,52 @@
      button to start anymore; this just narrates the same auto-start
      process that's already happening for real underneath it. */
   .vroom-autostart-note{ font-size:.85rem; color:var(--soft); text-align:center; margin:1rem 0 0; }
+  .vroom-readyup-btn.is-waiting, .vroom-readyup-btn:disabled.is-waiting{ opacity:.4; cursor:default; }
+  /* ---- chat: the three things that were hard to see ---- */
+  .chatdock-back{
+    display:inline-flex; align-items:center; gap:.35rem;
+    min-height:40px; padding:.45rem .95rem .45rem .7rem; border-radius:999px;
+    background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2);
+    color:var(--ink); font:inherit; font-size:.9rem; font-weight:800; cursor:pointer;
+  }
+  .chatdock-back svg{ width:1rem; height:1rem; display:block; }
+  .chatdock-back:active{ background:rgba(255,255,255,.18); }
+  .chatdock-expand{
+    width:36px; height:36px; padding:0; margin-left:auto; border-radius:999px;
+    display:inline-flex; align-items:center; justify-content:center;
+    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16);
+    color:var(--ink); cursor:pointer;
+  }
+  .chatdock-expand svg{ width:1.05rem; height:1.05rem; display:block; }
+  .chatdock-expand.is-tall{ background:rgba(255,255,255,.18); }
+  .chatdock-expand + .chatdock-close{ margin-left:.35rem; }
+  .chatdock-chatrow-open{ position:relative; }
+  .chatdock-chatrow-faces{ display:flex; align-items:center; margin:0 0 .35rem; }
+  .chatdock-chatrow-faces[hidden]{ display:none; }
+  .chatdock-face{
+    width:2rem; height:2rem; border-radius:50%; overflow:hidden; flex:0 0 auto;
+    background:#1B2129; border:2px solid rgba(20,25,32,.95);
+    display:inline-flex; align-items:center; justify-content:center;
+  }
+  .chatdock-face + .chatdock-face{ margin-left:-.55rem; }
+  .chatdock-face svg{ width:100%; height:100%; display:block; }
+  .chatdock-face-more{ font-size:.7rem; font-weight:800; color:var(--ink); background:#2A323C; }
+  .chatdock-chatrow.is-unread .chatdock-chatrow-name{ color:#fff; }
+  .chatdock-chatrow.is-unread .chatdock-chatrow-open{ border-color:rgba(255,95,86,.55); }
+  /* The grip is the other half of "tell me it expands": brighter and a
+     touch wider, so it reads as a handle rather than a hairline. */
+  .chatdock-grip::after{ background:rgba(255,255,255,.55) !important; width:3.2rem !important; }
+  /* "Advanced settings button, the wording is not centered." Every other
+     button on Settings centres its label, and this one used the shared
+     .more-toggle layout - label left, chevron right - so it was the one
+     odd line in the column. The label centres; the chevron is pinned to
+     the right edge so it cannot pull the text off-centre. */
+  .more-toggle.adv-toggle{ justify-content:center; position:relative;
+    padding-left:3rem; padding-right:3rem; }
+  .more-toggle.adv-toggle > span:first-child{ text-align:center; }
+  .more-toggle.adv-toggle .more-toggle-icon{ position:absolute; right:1.4rem; top:50%;
+    margin:0; transform:translateY(-70%) rotate(45deg); }
+  .more-toggle.adv-toggle.open .more-toggle-icon{ transform:translateY(-30%) rotate(225deg); }
   .vroom-autostart-note.all-ready{ color:#3DD68C; font-weight:700; }
   .cal-profile-row{ display:flex; flex-wrap:wrap; gap:.6rem; margin:0 0 1.4rem; }
   /* Sized like a button someone is meant to press, not like a caption.
@@ -7398,6 +7457,25 @@
   .panel.home.screen-home-actual{ overflow:visible; }
   .wrap:has(> main .panel.home.screen-home-actual),
   .wrap:has(.panel.home.screen-home-actual){ overflow-x:clip; }
+  /* WELCOME HAD THE SAME OVERFLOW AND NOTHING CLIPPING IT: the
+     full-bleed planet's SVG runs 6-10px past the right edge on every
+     phone, so the page scrolled sideways under a finger. Same fix,
+     same reason for `clip` over `hidden` (one axis, no scroll box). */
+  .wrap:has(> main .cosmic-welcome),
+  .wrap:has(.cosmic-welcome){ overflow-x:clip; }
+  /* ---- A TAD SMALLER, AND NOTHING ELSE MOVES ----
+     "The planet system on the Home Screen now seems a tad too big, just
+     slightly smaller and it's perfect." Home's spacing around the
+     planet was signed off, so the box the layout measures is left
+     exactly as it is and only the drawing inside it is scaled - a
+     transform takes no layout space. Welcome gets the same, because the
+     two are meant to be the same planet ("ensure whatever size the Home
+     Screen planet system becomes, it's matching the welcome screen").
+     Phones only: the tablets were never reported. */
+  @media (max-width:639px){
+    .panel.home.screen-home-actual .cosmic-hero-wrap,
+    .cosmic-welcome .cosmic-hero-wrap{ transform:scale(.94); transform-origin:50% 50%; }
+  }
   /* On a tall tablet viewport, min-height:calc(100dvh - 9rem) above
      becomes a much bigger number than on a phone, so margin-top:auto
      was stretching this exact same gap out into a huge, obviously-
@@ -8250,9 +8328,14 @@
     from{ transform:rotate(0deg); }
     to{ transform:rotate(360deg); }
   }
-  @media (prefers-reduced-motion:no-preference){
-    .cosmic-hero-svg{ animation:cosmic-drift 10s ease-in-out infinite; }
-  }
+  /* ---- NO ROCKING ----
+     "The planet system, if you look closer, is very very slightly
+     shaking." It was this: the whole drawing rotated 2.5 degrees and
+     back every ten seconds. On a full-bleed planet a slow rotation
+     re-rasterises every ring and hairline at a slightly different angle
+     each frame, which does not read as motion - it reads as a shimmer
+     that will not sit still. The orbit dots' own two-minute spin is the
+     movement this screen was meant to have, and it stays. */
   @keyframes cosmic-drift{
     0%, 100%{ transform:rotate(0deg); }
     50%{ transform:rotate(2.5deg); }
@@ -10729,7 +10812,10 @@
      so advancing through a test (or reaching Start) never requires a
      scroll to find it */
   .floatbtn{
-    position:fixed; left:0; right:0; bottom:0; z-index:20;
+    /* --vv-lift is 0 everywhere except Android, where it is however much
+       of the bottom edge the browser's own chrome is covering - see
+       liftFloatForAndroidBars(). */
+    position:fixed; left:0; right:0; bottom:var(--vv-lift, 0px); z-index:20;
     margin:0; width:100%; border-radius:0;
     padding:1rem 1.5rem;
     padding-bottom:max(1rem, env(safe-area-inset-bottom));
@@ -13030,7 +13116,7 @@
   .rank-cols{
     margin-left:auto; flex:0 0 auto;
     display:grid; grid-template-columns:4.4rem 3rem 3.4rem;
-    align-items:center; justify-items:center; column-gap:.2rem;
+    align-items:center; justify-items:center; column-gap:.55rem;
   }
   .rank-col-num{ font-family:var(--sans); font-weight:800; font-size:1rem; color:var(--ink);
     font-variant-numeric:tabular-nums; }
@@ -13039,6 +13125,16 @@
   .rank-col-emblem svg{ width:100%; height:100%; display:block; }
   .rank-col-rankname{ font-size:.66rem; font-weight:800; letter-spacing:.02em; white-space:nowrap; }
   .rank-col-rank.is-none{ color:var(--soft); font-weight:700; }
+  /* ---- WHICH NUMBER IS WHICH, AT A GLANCE ----
+     "As you look down the rows it's hard to tell which number is for
+     what." Two columns of bare white numbers side by side only read
+     against the header, and the header is off the top of the screen by
+     the fifth row. Each column now carries its own colour all the way
+     down - the app's level blue, and badge gold - and its header wears
+     the same one, so the key is in every row. */
+  .rank-col-lvl{ color:#5CA8FF; }
+  .rank-col-bdg{ color:#F2C14E; }
+  .rank-col-head.rank-col-lvl, .rank-col-head.rank-col-bdg{ opacity:.9; }
   .rank-row.rank-row-head{
     background:none !important; border:none !important; box-shadow:none !important;
     min-height:0 !important; padding-top:0 !important; padding-bottom:.1rem !important;
@@ -13055,7 +13151,7 @@
     .rank-row.has-cols{ gap:.45rem; padding-left:.7rem; padding-right:.6rem; }
     .rank-row.has-cols .rank-place{ width:1.7rem; }
     .rank-row.has-cols .rank-avatar-wrap{ width:2.2rem; height:2.2rem; }
-    .rank-cols{ grid-template-columns:3.3rem 2.2rem 2.8rem; column-gap:.3rem; }
+    .rank-cols{ grid-template-columns:3.3rem 2.2rem 2.8rem; column-gap:.5rem; }
     .rank-col-num{ font-size:.95rem; }
     .rank-col-emblem{ width:1.3rem; height:1.3rem; }
     .rank-col-rankname{ font-size:.6rem; letter-spacing:0; }
@@ -13070,7 +13166,7 @@
     .rank-cols{ grid-template-columns:3.2rem 2.1rem 2.7rem; }
   }
   @media (min-width:40rem){
-    .rank-cols{ grid-template-columns:6.2rem 3.6rem 4.2rem; column-gap:.5rem; }
+    .rank-cols{ grid-template-columns:6.2rem 3.6rem 4.2rem; column-gap:1rem; }
     .rank-col-num{ font-size:1.15rem; }
     .rank-col-emblem{ width:1.75rem; height:1.75rem; }
     .rank-col-rankname{ font-size:.74rem; }
@@ -28225,6 +28321,22 @@ function sendToInbox(pub, payload){
   }catch(e){}
 }
 
+/* Same mailbox, a named slot. Everything else is keyed by the sender,
+   which is right for invites (the newest one from a person replaces the
+   last); a message ping must not replace an invite from that person, so
+   it gets a slot of its own. */
+function sendToInboxSlot(pub, slot, payload){
+  if(!fbDb || !pub || !slot || !payload) return;
+  try{
+    const msg = Object.assign({
+      pub: publicIdOf(), at: Date.now(),
+      firstName: store.firstName || "Someone",
+      avatarChar: store.avatarChar || "ninja"
+    }, payload);
+    inboxDocFor(pub).set({ kind: "inbox", msgs: { [slot]: msg } }, { merge: true }).catch(() => {});
+  }catch(e){}
+}
+
 /* ONE DOCUMENT, AND IT IS ALWAYS ON. This is the listener that replaces
    the class-wide one: it costs a read when something arrives for this
    person and nothing at all the rest of the time, so there is no reason
@@ -37222,6 +37334,27 @@ function markChatSeen(code, ts){
 const CHAT_LIST_REFRESH_MS = 20000;
 let chatListFetchAt = 0;
 let chatListLast = {};
+let chatListPeople = {};
+/* Up to three faces, overlapping, then "+n". Before the room has been
+   read, the people recorded on the entry stand in, drawn plain. */
+function paintChatFaces(el, code){
+  const people = chatListPeople[code]
+    || ((chatEntry(code) || {}).with || []).map(k => ({ key: k, name: "", avatarChar: "ninja" }));
+  el.replaceChildren();
+  people.slice(0, 3).forEach(p => {
+    const f = document.createElement("span");
+    f.className = "chatdock-face";
+    try{ f.appendChild(avatarSpanFor({ avatarChar: p.avatarChar || "ninja" })); }catch(e){}
+    el.appendChild(f);
+  });
+  if(people.length > 3){
+    const more = document.createElement("span");
+    more.className = "chatdock-face chatdock-face-more";
+    more.textContent = "+" + (people.length - 3);
+    el.appendChild(more);
+  }
+  el.hidden = people.length === 0;
+}
 function refreshChatList(force){
   if(!fbDb) return;
   if(!chatDockOpen || chatDockTab !== "chat") return;
@@ -37244,6 +37377,12 @@ function refreshChatList(force){
          is looked at. */
       const nm = nameChatFrom(data.participants || null);
       if(nm && entry.name !== nm){ entry.name = nm; saveStore(); }
+      try{
+        const me = publicIdOf(), parts = data.participants || {};
+        chatListPeople[entry.code] = Object.keys(parts).filter(k => k !== me)
+          .sort((a, b) => ((parts[a] || {}).joinedAt || 0) - ((parts[b] || {}).joinedAt || 0))
+          .map(k => ({ key: k, name: (parts[k] || {}).name || "", avatarChar: (parts[k] || {}).avatarChar || "ninja" }));
+      }catch(e){}
       paintChatRow(entry.code);
     }).catch(() => {});
   });
@@ -37258,6 +37397,8 @@ function paintChatRow(code){
   const last = chatListLast[code] || null;
   const nameEl = row.querySelector(".chatdock-chatrow-name");
   if(nameEl && entry.name) nameEl.textContent = entry.name;
+  const facesEl = row.querySelector(".chatdock-chatrow-faces");
+  if(facesEl) paintChatFaces(facesEl, code);
   const subEl = row.querySelector(".chatdock-chatrow-sub");
   if(subEl){
     if(last && last.text){
@@ -37279,7 +37420,9 @@ function paintChatRow(code){
      name, and the one thing a row must never do is call your own
      message somebody else's. */
   const mine = !!(last && last.key && last.key === publicIdOf());
-  row.classList.toggle("is-unread", !!(last && last.ts > seen && !mine));
+  const ping = chatPings()[code];
+  row.classList.toggle("is-unread", !!((last && last.ts > seen && !mine)
+    || (ping && (ping.at || 0) > seen)));
 }
 function chatList(){
   if(!Array.isArray(store.chats)) store.chats = [];
@@ -37450,9 +37593,68 @@ const CHAT_CTX = {
   /* ONE RECORD OF HOW FAR THIS CHAT HAS BEEN READ, shared by the panel
      and the list, so a chat you have just read does not come back bold
      the moment you close it. */
-  onSeen: (ts) => { markChatSeen(chatRoomCode, ts); },
-  onUnread: (n) => { chatUnseenAt = n; syncChatDockDot(); }
+  onSeen: (ts) => { markChatSeen(chatRoomCode, ts); syncChatDockDot(); },
+  onUnread: (n) => { chatUnseenAt = n; syncChatDockDot(); },
+  /* ---- EVERY CHAT CAN REACH THE BUTTON, NOT ONLY THE OPEN ONE ----
+     "When in a test, the chat icon doesn't update when there is a new
+     chat or chats." Only the chat you have open has a listener, so a
+     message in any other one never touched the count - and listening to
+     every chat on every device is thirty listeners a phone, which is a
+     day's quota by lunchtime. The inbox listener is already always on
+     (it is how invites arrive mid-test), so a message now drops one
+     small ping into each other member's inbox, in its OWN slot so it can
+     never overwrite an invite from the same person. One write per
+     recipient, and at most one per chat every few seconds. */
+  onSent: (msg, parts) => {
+    const code = chatRoomCode;
+    if(!code || !parts) return;
+    const now = Date.now();
+    if(now - (chatPingAt[code] || 0) < CHAT_PING_MIN_MS) return;
+    chatPingAt[code] = now;
+    const me = publicIdOf();
+    Object.keys(parts).forEach(k => {
+      if(!k || k === me) return;
+      sendToInboxSlot(k, me + "~m", { type: "msgping", code: code,
+        text: String(msg && msg.text || "").slice(0, 80) });
+    });
+  }
 };
+const CHAT_PING_MIN_MS = 4000;
+const chatPingAt = {};
+/* The pings waiting for THIS device, newest per chat. */
+function chatPings(){
+  const out = {};
+  try{
+    Object.keys(inboxMsgs || {}).forEach(k => {
+      const m = inboxMsgs[k];
+      if(!m || m.type !== "msgping" || !m.code) return;
+      if(!out[m.code] || (m.at || 0) > (out[m.code].at || 0)) out[m.code] = m;
+    });
+  }catch(e){}
+  return out;
+}
+/* Chats with something newer than this device has read - other than
+   the one open in front of you, which counts itself. A chat somebody
+   started WITH you (Message on the leaderboard) is added to your list
+   the first time it pings, because you are already in it. */
+function chatsWithUnreadPings(){
+  const pings = chatPings();
+  const seen = chatSeenMap();
+  let n = 0, added = false;
+  Object.keys(pings).forEach(code => {
+    const m = pings[code];
+    if(!chatEntry(code)){
+      const list = chatList();
+      list.unshift({ code: code, name: m.firstName || "", at: m.at || Date.now(), with: m.pub ? [m.pub] : [] });
+      if(list.length > CHAT_LIST_MAX) list.length = CHAT_LIST_MAX;
+      added = true;
+    }
+    const lookingAtIt = code === chatRoomCode && chatDockOpen && chatDockTab === "chat";
+    if(!lookingAtIt && (m.at || 0) > (seen[code] || 0) && code !== chatRoomCode) n++;
+  });
+  if(added){ try{ saveStore(); }catch(e){} }
+  return n;
+}
 
 /* ---- PRESENCE: A ROSTER HAS TO BE ABLE TO FORGET SOMEBODY ----
    Leaving writes a delete, which is correct and was already here - but
@@ -37944,10 +38146,32 @@ function startChatDock(){
   closeBtn.type = "button"; closeBtn.className = "chatdock-close";
   closeBtn.setAttribute("aria-label", "Close"); closeBtn.textContent = "×";
   closeBtn.addEventListener("click", () => closeChatDock());
-  tabs.append(chatTabBtn, notifTabBtn, closeBtn);
+  /* ---- AN EXPAND BUTTON YOU CAN TAP ----
+     "Make it easier to tell that the chat is expandable" and "selecting
+     the expand button to make it bigger hardly works". The only way to
+     resize was dragging a grip - a gesture you have to know about and
+     then land on a thin bar to do. This is a plain button: one tap goes
+     tall, the next goes back. The grip still drags for anyone who wants
+     a size in between. */
+  const expandBtn = document.createElement("button");
+  expandBtn.type = "button"; expandBtn.className = "chatdock-expand";
+  expandBtn.setAttribute("aria-label", "Make the chat bigger");
+  expandBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4H4v4M16 4h4v4M8 20H4v-4M16 20h4v-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  expandBtn.addEventListener("click", () => {
+    const tallPx = Math.round(window.innerHeight * 0.9);
+    /* Its own state, not a measurement: a tablet caps the panel well
+       under 90% of the screen, so "is it tall yet" measured false for
+       ever and the second tap never brought it back down. */
+    const goTall = !expandBtn.classList.contains("is-tall");
+    setChatHeight(goTall ? tallPx : Math.round(window.innerHeight * 0.62));
+    expandBtn.classList.toggle("is-tall", goTall);
+    expandBtn.setAttribute("aria-label", goTall ? "Make the chat smaller" : "Make the chat bigger");
+  });
+  tabs.append(chatTabBtn, notifTabBtn, expandBtn, closeBtn);
   [chatTabBtn, notifTabBtn].forEach(b => b.addEventListener("click", () => {
     chatDockTab = b.dataset.tab;
     syncChatDock();
+    markOpenChatSeen();
   }));
 
   chatTabBody = document.createElement("div");
@@ -38153,6 +38377,16 @@ function openChatDock(){
   chatDock.classList.add("is-open");
   document.body.classList.add("chatdock-open");
   syncChatDock();
+  markOpenChatSeen();
+}
+/* The chat in front of you is read the moment it is in front of you -
+   on opening the dock, and on switching to its tab. */
+function markOpenChatSeen(){
+  if(chatDockOpen && chatDockTab === "chat" && chatRoomCode
+     && typeof CHAT_CTX === "object" && CHAT_CTX.markSeen){
+    try{ CHAT_CTX.markSeen(); }catch(e){}
+  }
+  syncChatDockDot();
 }
 function closeChatDock(){
   if(!chatDock) return;
@@ -38206,6 +38440,14 @@ function rebuildChatTab(){
         row.className = "chatdock-chatrow";
         const open = document.createElement("button");
         open.type = "button"; open.className = "chatdock-chatrow-open";
+        /* WHO IS IN IT, AS FACES. "While looking at all chats, it needs
+           to be easier to see who's in the chats, make it stand out
+           more." A row was a name in bold and a grey line; the faces are
+           what the rest of the app uses to say who somebody is. */
+        const faces = document.createElement("span");
+        faces.className = "chatdock-chatrow-faces";
+        paintChatFaces(faces, entry.code);
+        open.appendChild(faces);
         const nm = document.createElement("span");
         nm.className = "chatdock-chatrow-name";
         nm.textContent = entry.name || "New chat";
@@ -38287,7 +38529,7 @@ function rebuildChatTab(){
     backRow.className = "chatdock-backrow";
     const back = document.createElement("button");
     back.type = "button"; back.className = "chatdock-back";
-    back.textContent = "\u2039 All chats";
+    back.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>All chats</span>';
     back.addEventListener("click", closeChatRoom);
     backRow.appendChild(back);
     chatTabBody.appendChild(backRow);
@@ -38397,6 +38639,45 @@ let chatDockWasInVroom = null;
     }).observe(document.body, { childList: true });
   }catch(e){}
 })();
+/* ---- NEXT WAS UNDER THE BROWSER'S OWN TOOLBAR ON ANDROID ----
+   "Some of the questions make it so the next button does not appear" -
+   reported from an Android phone, and it could not be made to happen in
+   a desktop engine: every one of the 894 questions shows Next, on
+   screen and unobstructed, at three Android sizes, in Drill and Exam,
+   through the real tap-and-slide path.
+   What an emulator does not have is the browser's own furniture. Chrome
+   on Android can put its address bar at the BOTTOM, and in-app browsers
+   (a link opened from a group chat) carry a bottom toolbar too; both
+   can sit over content pinned to bottom:0, and Next is exactly that. On
+   a long question the page scrolls, the toolbar slides away and Next
+   appears; on a short one nothing scrolls and it stays covered - which
+   is "some of the questions".
+   The visual viewport says how much of the layout viewport is actually
+   visible, so the difference at the bottom is what is covered, and the
+   floating bar is lifted by exactly that. Android only: iOS has never
+   shown this, and on iOS the keyboard would move the bar mid-typing for
+   no reason. Ignored while pinch-zoomed, when the visual viewport is
+   smaller for a reason that has nothing to do with toolbars. */
+(function liftFloatForAndroidBars(){
+  if(!/Android/i.test(navigator.userAgent || "") || !window.visualViewport) return;
+  const vv = window.visualViewport;
+  let raf = 0;
+  const apply = () => {
+    raf = 0;
+    let lift = 0;
+    if(vv.scale <= 1.01){
+      const covered = Math.round(window.innerHeight - (vv.offsetTop + vv.height));
+      if(covered > 2 && covered < window.innerHeight * 0.6) lift = covered;
+    }
+    document.documentElement.style.setProperty("--vv-lift", lift + "px");
+  };
+  const queue = () => { if(!raf) raf = requestAnimationFrame(apply); };
+  vv.addEventListener("resize", queue);
+  vv.addEventListener("scroll", queue);
+  window.addEventListener("resize", queue);
+  apply();
+})();
+
 function syncChatDock(){
   if(!chatDock) return;
   const show = !!(typeof store !== "undefined" && store && store.onboardingComplete);
@@ -38502,9 +38783,32 @@ function syncChatDock(){
    not clearing when they are accepted or declined.
    Device-local and deliberately not persisted: it only has to outlive
    the snapshot, and a reset of it costs nothing. */
-const notifHandled = new Set();
-function markNotifHandled(kind, pub){ notifHandled.add(kind + ":" + pub); }
-function notifWasHandled(kind, pub){ return notifHandled.has(kind + ":" + pub); }
+/* ---- A CLEARED NOTIFICATION STAYS CLEARED ----
+   "Once a notification is cleared, immediately update the red dot too."
+   It did update - until the next launch, because this was an in-memory
+   Set: an invite you had tapped Ignore on was still in the mailbox, the
+   Set was empty again, and the row and its red dot came straight back.
+   Kept in localStorage now, with WHEN it was handled, so a newer invite
+   from the same person is still news and an old one never is. */
+const NOTIF_HANDLED_KEY = "class26e.notifhandled";
+const notifHandled = new Map();
+try{
+  const raw = JSON.parse(localStorage.getItem(NOTIF_HANDLED_KEY) || "{}") || {};
+  const cutoff = Date.now() - 14 * 86400000;
+  Object.keys(raw).forEach(k => { if(Number(raw[k]) > cutoff) notifHandled.set(k, Number(raw[k])); });
+}catch(e){}
+function markNotifHandled(kind, pub){
+  notifHandled.set(kind + ":" + pub, Date.now());
+  try{
+    const o = {}; notifHandled.forEach((v, k) => { o[k] = v; });
+    localStorage.setItem(NOTIF_HANDLED_KEY, JSON.stringify(o));
+  }catch(e){}
+}
+function notifWasHandled(kind, pub, at){
+  const h = notifHandled.get(kind + ":" + pub);
+  if(!h) return false;
+  return !at || Number(at) <= h;
+}
 
 function notificationItems(){
   const items = [];
@@ -38571,7 +38875,7 @@ function notificationItems(){
   items.sort((a, b) => (b.at || 0) - (a.at || 0));
   return items.filter(it => {
     const pub = it.who && it.who.pub;
-    if(notifWasHandled(it.kind, pub)) return false;
+    if(notifWasHandled(it.kind, pub, it.at)) return false;
     /* "IF I AM IN A ROOM OR CHAT WITH THEM THEIR OLD INVITE SHOULD
        DISAPPEAR FROM NOTIFICATIONS IMMEDIATELY." Filtered at read time
        rather than deleted, and that is deliberate: the invite itself is
@@ -38650,7 +38954,9 @@ function syncChatDockDot(){
   const dot = document.getElementById("chatdock-dot");
   if(!dot) return;
   const notifs = notificationItems().length;
-  const unread = chatUnseenAt;
+  let pinged = 0;
+  try{ pinged = chatsWithUnreadPings(); }catch(e){}
+  const unread = chatUnseenAt + pinged;
   const total = notifs + unread;
   /* NOT "hidden while the dock is open". The dot counts messages AND
      notifications, and having the chat tab open in front of you says
@@ -42352,7 +42658,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-26-203";
+const APP_BUILD = "2026-09-26-204";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -46781,10 +47087,23 @@ async function saveSyncCodeVia(anchorEl){
   return false;
 }
 
-const SAVE_CODE_MAX_PROMPTS = 3;
+/* ---- ONCE, AND IT MEANS ONCE ----
+   "Save your sync code keeps popping up over and over again." Three
+   things let it: it was allowed three showings, and Home checks on
+   every visit, so the three came back to back; the count rode on
+   `store`, which a pull from the cloud overwrites with whatever the
+   document last held, so an older copy put the count back to zero; and
+   nothing in the app ever set savedCodeSaved, so it had no way to end
+   except running out. Now it is one showing, recorded on THIS DEVICE in
+   localStorage (which no sync can rewind) as well as on the account,
+   and tapping "Save it" counts as dealt with, because it lands on the
+   code itself in Settings. */
+const SAVE_CODE_MAX_PROMPTS = 1;
+const SAVE_CODE_ASKED_KEY = "class26e.savecode.asked";
 
 function checkSaveCodeReminder(){
   if(document.getElementById("save-code")) return;
+  try{ if(localStorage.getItem(SAVE_CODE_ASKED_KEY)) return; }catch(e){}
   /* The introduction gets the screen to itself, and gets it FIRST. */
   if(introPending || document.getElementById("intro-pop")) return;
   /* Both of the others are somebody else waiting on you; this one can
@@ -46825,13 +47144,13 @@ function checkSaveCodeReminder(){
        up, is the version that teaches them where it lives for the
        second time they need it. It also stops marking the code as
        saved on a tap, which was never true - tapping is not saving. */
-    () => showAppearance({ focus: "sync" }),
-    /* The x is a "not now": the count still goes up, so this ends
-       after three, but nothing is marked as saved. */
+    () => { store.savedCodeSaved = true; saveStore(); showAppearance({ focus: "sync" }); },
+    /* The x is a "not now" - but it is still the one showing. */
     () => {});
   /* Counted on SHOW, not on dismiss - a banner someone scrolled past,
      ignored, or navigated away from has still had its turn, and
      counting only the x would let it reappear forever. */
+  try{ localStorage.setItem(SAVE_CODE_ASKED_KEY, String(Date.now())); }catch(e){}
   store.savedCodePrompts = (store.savedCodePrompts || 0) + 1;
   saveStore();
   document.body.appendChild(el);
@@ -48046,6 +48365,12 @@ function showVirtualRoomLobby(){
   readyBtn.type = "button"; readyBtn.className = "next ghost vroom-readyup-btn";
   readyBtn.textContent = "Ready up";
   let amReady = false;
+  /* NOBODY READIES UP INTO NOTHING. "You can ready up before you have
+     people in the lobby and before you have units set." The start was
+     already gated on both, but the button was not, so you could sit
+     "ready" in an empty room with no test in it. The snapshot below
+     sets this, and the button is disabled until both are true. */
+  let lobbyCanReady = false;
   /* THE BUTTON ANSWERS THE TAP, NOT THE ROUND TRIP. It used to flip a
      variable, write to Firestore, and leave the label alone - the
      label and the pressed state were only ever set when the snapshot
@@ -48061,6 +48386,7 @@ function showVirtualRoomLobby(){
     if(!fbDb || !vroomCode || !vroomMyKey){
       showToast("Lost connection \u2014 try again in a moment."); return;
     }
+    if(!amReady && !lobbyCanReady) return;
     amReady = !amReady;
     paintReady();
     readyBtn.disabled = true;
@@ -48398,6 +48724,21 @@ function showVirtualRoomLobby(){
          everyone to ready up" forever. */
       const hasUnits = ((data.units || []).length > 0);
       const allReady = totalN > 1 && readyN === totalN && hasUnits;
+      lobbyCanReady = hasUnits && totalN > 1;
+      if(data.status === "waiting"){
+        readyBtn.disabled = !lobbyCanReady && !amReady;
+        readyBtn.classList.toggle("is-waiting", !lobbyCanReady && !amReady);
+        /* Somebody who readied up before the last other person left,
+           or before the units were cleared, is not ready for a race
+           that no longer exists - so it is written back, once. */
+        if(amReady && !lobbyCanReady && fbDb && vroomCode && vroomMyKey){
+          amReady = false; paintReady();
+          readyBtn.disabled = true; readyBtn.classList.add("is-waiting");
+          fbDb.collection("vrooms").doc(vroomCode).update({
+            ["participants." + vroomMyKey + ".ready"]: false
+          }).catch(() => {});
+        }
+      }
       if(data.status === "waiting"){
         autostartNote.classList.toggle("all-ready", allReady);
         autostartNote.textContent = !hasUnits
@@ -48782,6 +49123,21 @@ function buildVroomChatPanel(container, ctx){
      "has it just been scrolled to" for messages that landed earlier.
      In the dock the list is inside a hidden tab body, which never
      intersects, so the same code means the same thing there. */
+  /* ---- OPENING IT IS READING IT ----
+     "The notification number on the chats icon, ensure it's reset once
+     the messages are seen, immediately." The count only ever cleared on
+     the NEXT snapshot while the panel happened to be visible, so opening
+     the dock on three unread left "3" on the button until somebody else
+     spoke - and if you closed it first, the three came straight back.
+     The host can now say "this is on screen" and the panel records it
+     at once, in the same place a visible snapshot would. */
+  CTX.markSeen = () => {
+    if(dead) return;
+    lastSeenTs = Math.max(lastSeenTs, newestTs);
+    if(CTX.onSeen && newestTs) CTX.onSeen(newestTs);
+    dot.hidden = true; dot.textContent = "";
+    if(CTX.onUnread) CTX.onUnread(0);
+  };
   let seenObs = null;
   try{
     seenObs = new IntersectionObserver(entries => {
@@ -49199,6 +49555,7 @@ function buildVroomChatPanel(container, ctx){
       fbDb.collection("vrooms").doc(CTX.code()).update({
         chatMessages: firebase.firestore.FieldValue.arrayUnion(msg)
       }).catch(() => {});
+      if(CTX.onSent){ try{ CTX.onSent(msg, roomParticipants); }catch(e){} }
     } catch(e){
       /* No FieldValue (an SDK that never loaded) - the message is lost
          either way, so say so rather than failing silently. */
@@ -50366,10 +50723,10 @@ function buildOverallCols(entry){
     rc.classList.add("is-none");
   }
   const lv = document.createElement("span");
-  lv.className = "rank-col rank-col-num";
+  lv.className = "rank-col rank-col-num rank-col-lvl";
   lv.textContent = String(Number(entry.level) || 0);
   const bd = document.createElement("span");
-  bd.className = "rank-col rank-col-num";
+  bd.className = "rank-col rank-col-num rank-col-bdg";
   bd.textContent = String(Number(entry.badges) || 0);
   cols.append(rc, lv, bd);
   return cols;
@@ -50382,9 +50739,9 @@ function buildOverallHead(){
   spacer.className = "rank-head-spacer";
   const cols = document.createElement("span");
   cols.className = "rank-cols";
-  ["Rank", "Level", "Badges"].forEach(t => {
+  [["Rank", ""], ["Level", " rank-col-lvl"], ["Badges", " rank-col-bdg"]].forEach(([t, extra]) => {
     const c = document.createElement("span");
-    c.className = "rank-col rank-col-head"; c.textContent = t;
+    c.className = "rank-col rank-col-head" + extra; c.textContent = t;
     cols.appendChild(c);
   });
   head.append(spacer, cols);

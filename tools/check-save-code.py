@@ -147,31 +147,21 @@ with sync_playwright() as pw:
         ck("with the Sync section in view", landed.get("inView") is True, landed)
         ck("and lit up", landed.get("flashed") is True, landed)
         ck("the banner goes", landed.get("gone") is True, landed)
-        # TAPPING IS NOT SAVING. Marking it saved here would silence the
-        # reminder for somebody who had done nothing but follow a link.
-        ck("tapping it does not claim the code is saved",
-           landed.get("saved") is False, landed)
-
-        # And the control it lands on still does the real thing: a
-        # clipboard does not survive the next copy, so where a share
-        # sheet exists the code has to be in the shared TEXT.
-        # Stubbed - headless Chromium has no share sheet.
-        pg.evaluate("""()=>{ window.__shared = null;
-          navigator.share = (d) => { window.__shared = d; return Promise.resolve(); }; }""")
-        btn = pg.query_selector("#settings-sync-sect .cal-profile-btn")
-        if not btn:
-            ck("and Save code there really does save it", False, "no Save code button")
-        else:
-            btn.click(); pg.wait_for_timeout(700)
-            sh = pg.evaluate("()=>window.__shared")
-            ck("and Save code there really does save it",
-               bool(sh) and "WXYZ-7777" in ((sh or {}).get("text") or ""),
-               str(sh)[:140])
+        # TAPPING IT ENDS IT (build 203). This asserted the opposite -
+        # "tapping is not saving" - while the reminder was allowed three
+        # showings and something else could mark it saved. Nothing else
+        # ever did (the Save code button it relied on was taken off
+        # Settings by request), so the only way it ever ended was running
+        # out, and "it keeps popping up over and over" was the result.
+        # The tap lands on the code itself, which is as saved as the app
+        # can make anybody be.
+        ck("tapping it ends the reminder for good",
+           landed.get("saved") is True, landed)
     if errs: ck("no JS errors", False, errs[:2])
     else: ck("no JS errors", True)
     ctx.close()
 
-    print("\n3. it stops after three, and never for a device with no code")
+    print("\n3. it shows once, and never for a device with no code")
     ctx=br.new_context(viewport={"width":440,"height":956})
     pg=ctx.new_page()
     pg.route("**/index.html", lambda r: r.fulfill(status=200,headers={"content-type":"text/html; charset=utf-8"},body=BODY))
@@ -185,8 +175,17 @@ with sync_playwright() as pw:
         seen.append(pg.evaluate("()=>!!document.getElementById('save-code')"))
         pg.evaluate("()=>{document.getElementById('save-code')?.remove(); showHome();}")
         pg.wait_for_timeout(350)
-    ck("shown exactly three times then stops", seen==[True,True,True,False,False], seen)
+    ck("shown once, then never again", seen==[True,False,False,False,False], seen)
+    # A PULL FROM THE CLOUD CAN PUT AN OLDER COUNT BACK ON `store`. That
+    # is one of the ways it came back "over and over", so the device's
+    # own record has to hold even when the account's says zero.
+    back=pg.evaluate("""()=>{ store.savedCodePrompts=0; store.savedCodeSaved=false;
+       document.getElementById('save-code')?.remove(); showHome(); return true; }""")
+    pg.wait_for_timeout(400)
+    ck("and an older count from the cloud does not bring it back",
+       pg.evaluate("()=>!!document.getElementById('save-code')") is False)
     off=pg.evaluate("""()=>{ store.savedCodePrompts=0; store.savedCodeSaved=false;
+       try{ localStorage.removeItem('class26e.savecode.asked'); }catch(e){}
        syncOff=true; document.getElementById('save-code')?.remove(); showHome(); return true; }""")
     pg.wait_for_timeout(400)
     ck("never shown to a device that opted out of syncing",
