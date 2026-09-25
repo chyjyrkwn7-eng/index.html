@@ -75,8 +75,29 @@ FAKE_FIRESTORE = """
     }
     cur[parts[parts.length - 1]] = value;
   }
+  function collSnap(coll){
+    let all = {};
+    try { all = JSON.parse(localStorage.getItem(KEY(coll)) || "{}"); } catch(e){}
+    const ids = Object.keys(all);
+    return {
+      metadata: { fromCache: false },
+      size: ids.length,
+      forEach(fn){ ids.forEach(id => fn({
+        id: id, exists: true,
+        data: () => JSON.parse(JSON.stringify(all[id] || {}))
+      })); }
+    };
+  }
   function notify(coll){
     listeners.filter(l => l.coll === coll).forEach(l => {
+      /* A COLLECTION LISTENER IS A REAL THING AND THE FAKE DID NOT HAVE
+         ONE. attachInviteWatcher() subscribes to the whole `leaderboard`
+         collection, and without this its call threw into the try/catch
+         that wraps it - silently. So every check had to hand-assign
+         leaderboardRows, and the one bug that lives in that callback
+         (announcing only while the screen was "home") was invisible to
+         the harness by construction. */
+      if(l.id === null){ l.cb(collSnap(l.coll)); return; }
       const data = read(l.coll, l.id);
       l.cb({ exists: !!data, id: l.id, data: () => JSON.parse(JSON.stringify(data || {})) });
     });
@@ -90,6 +111,12 @@ FAKE_FIRESTORE = """
   window.__fakeDb = {
     collection(coll){
       return {
+        onSnapshot(cb, err){
+          const l = { coll: coll, id: null, cb: cb };
+          listeners.push(l);
+          setTimeout(() => cb(collSnap(coll)), LATENCY);
+          return () => { const i = listeners.indexOf(l); if(i >= 0) listeners.splice(i, 1); };
+        },
         doc(id){
           return {
             set(data){ return later(() => { write(coll, id, JSON.parse(JSON.stringify(data))); }); },

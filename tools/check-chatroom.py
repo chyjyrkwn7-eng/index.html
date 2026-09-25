@@ -57,7 +57,7 @@ def main(src):
                 "localStorage.setItem('class26e.intro.seen','9');}catch(e){}")
             errs = []
 
-            def tab(name, pub):
+            def tab(name, pub, late=False):
                 pg = ctx.new_page()
                 pg.on("pageerror", lambda e: errs.append(name + ": " + str(e)[:140]))
                 pg.goto(url); pg.wait_for_timeout(2600)
@@ -72,6 +72,13 @@ def main(src):
                   store.firstName = a.name;
                   store.publicId = a.pub;
                   store.tourRev = 99;
+                  /* A GATE'S FIXTURE CARRIES ITS TOUR FLAGS. Without
+                     them the Leaderboard's own tour starts inside the
+                     check and its dim refuses every banner - which
+                     fails a check that has nothing to do with tours. */
+                  ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour',
+                   'seenRewardsTour','seenSettingsTour','seenUnitOptionsTour',
+                   'seenUnitSelectTour','seenMainMenuTour'].forEach(k=>store[k]=true);
                   syncCode = 'SYNC-' + a.pub;
                   try{ localStorage.removeItem('class26e.chatroom'); }catch(e){}
                   chatRoomCode = null; chatMyKey = null;
@@ -81,6 +88,50 @@ def main(src):
 
             a = tab("Madison", "aaa0000000001")
             b = tab("Alex", "bbb0000000002")
+
+            print("\n0. the board listener attaches even though the SDK was late")
+            # BOTH FIREBASE TAGS CARRY `defer`, so fbDb is guaranteed to
+            # be null when the boot code runs - the file says so itself.
+            # attachInviteWatcher used to be `if(!fbDb) return;` with
+            # nothing trying again, so at launch it hit that return every
+            # single time and the watcher only ever appeared if Home was
+            # mounted a second time by hand. That is "the invites don't
+            # show immediately at all, they randomly show up".
+            #
+            # This boots a third tab the way a real device boots - no
+            # fbDb - and then lets the SDK arrive, with nothing calling
+            # showHome() again afterwards.
+            c = ctx.new_page()
+            c.goto(url); c.wait_for_timeout(2600)
+            cold = c.evaluate("""(a)=>{
+              document.getElementById('splashscreen')?.remove();
+              /* Deliberately NOT __useFake() yet: this is the state
+                 every real launch is in. */
+              store.onboardingComplete = true;
+              store.firstName = a.name; store.publicId = a.pub;
+              store.tourRev = 99;
+              ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour',
+               'seenRewardsTour','seenSettingsTour','seenUnitOptionsTour',
+               'seenUnitSelectTour','seenMainMenuTour'].forEach(k=>store[k]=true);
+              syncCode = 'SYNC-' + a.pub;
+              showHome();
+              return new Promise(r=>setTimeout(()=>r({
+                db: !!fbDb, watching: !!inviteWatchUnsub}), 400));}""",
+              {"name": "Cold", "pub": "ccc0000000003"})
+            check("it boots with no SDK, like a real launch",
+                  cold.get("db") is False, cold)
+            check("and nothing is watching yet", cold.get("watching") is False, cold)
+            late = c.evaluate("""()=>{
+              /* The SDK arriving, the way the real loader announces it. */
+              __useFake();
+              const pending = fbReadyCallbacks.splice(0);
+              pending.forEach(cb => { try{ cb(); }catch(e){} });
+              return new Promise(r=>setTimeout(()=>r({
+                watching: !!inviteWatchUnsub,
+                rows: (leaderboardRows||[]).length}), 800));}""")
+            check("the watcher attaches once the SDK arrives",
+                  late.get("watching") is True, late)
+            c.close()
 
             # They are friends, both ways, the way the board delivers it.
             for pg, me, them, thename in ((a, "aaa0000000001", "bbb0000000002", "Alex"),
@@ -105,6 +156,11 @@ def main(src):
             check("and she can type in it", started.get("input") is True, started)
 
             print("\n2. she invites Alex, and Alex is told")
+            # A BACKGROUND TAB DOES NOT RUN CSS TRANSITIONS, so computed
+            # opacity stays at the start value however correct the class
+            # is - the sheet's visibility can only be measured on a page
+            # that is actually being painted.
+            a.bring_to_front()
             a.evaluate("""()=>{
               [...document.querySelectorAll('.chatdock-mini')]
                 .find(x=>x.textContent==='Invite').click();}""")
@@ -130,6 +186,24 @@ def main(src):
               b.click();
               return {label:b.textContent, out:JSON.parse(JSON.stringify(store.chatInvitesOut||{}))};}""")
             check("the invite sheet lists a friend", not inv.get("no"), inv)
+            # A COOLDOWN, NOT A ONE-SHOT. The button used to stay
+            # disabled for the whole life of the chat, so somebody who
+            # missed an invite could never be asked again. Thirty
+            # seconds, and it re-enables itself.
+            cool = a.evaluate("""()=>{
+              const b=[...document.querySelectorAll('.invite-sheet .friend-act')][0];
+              const held = {label:b.textContent, off:b.disabled};
+              /* Rewind the invite past the window rather than waiting
+                 30 real seconds, then let the button's own tick run. */
+              store.chatInvitesOut[Object.keys(store.chatInvitesOut)[0]].at =
+                Date.now() - 31000;
+              return new Promise(r=>setTimeout(()=>r(Object.assign(held,
+                {after:b.textContent, stillOff:b.disabled})), 1400));}""")
+            check("inviting starts a visible countdown",
+                  cool["off"] and "s" in cool["label"] and cool["label"] != "Invited",
+                  cool)
+            check("and after 30s they can be invited again",
+                  cool["stillOff"] is False and cool["after"] == "Invite", cool)
             # And it must not survive a screen change: it is on <body>,
             # so nothing else would ever take it off.
             gone = a.evaluate("""()=>{ showProfile(); return new Promise(r=>
@@ -149,6 +223,54 @@ def main(src):
                 { pub:x.them, firstName:'Madison', facc:[x.me], freq:[], level:1, badges:0, hundos:0,
                   cinv: { [x.me]: { code:x.code, at:Date.now() } } }
               ];}""", {"me": "bbb0000000002", "them": "aaa0000000001", "code": code})
+
+            b.bring_to_front()
+            print("\n2b. and it reaches him while he is NOT on the main menu")
+            # THE BUTTON IS ON EVERY SCREEN, SO WHAT IT COUNTS HAS TO BE
+            # TOO. The board snapshot used to announce only while the
+            # current screen was "home", and did not look at chat
+            # invites at all - so one arriving on the Leaderboard, in
+            # Settings or mid-test produced nothing until the next Home
+            # mount. Reported exactly that way.
+            #
+            # Nothing here calls checkChatInvites(). The invite is
+            # written into the shared fake the way a real client writes
+            # it, and Alex's own board listener is what has to notice -
+            # which is the whole point, because that listener is where
+            # the bug was.
+            away = b.evaluate("""()=>{
+              closeChatDock();
+              document.getElementById('chat-invite')?.remove();
+              chatInviteSeen = 0;
+              showRankings();
+              return new Promise(r=>setTimeout(()=>r({
+                screen: (stage.firstElementChild && stage.firstElementChild.dataset)
+                        ? (stage.firstElementChild.dataset.screen || '') : '',
+                watching: !!inviteWatchUnsub}), 700));}""")
+            check("he is off the main menu", away.get("screen") != "home", away)
+            check("and his board listener is live", away.get("watching") is True, away)
+
+            a.evaluate("""(x)=>{
+              const rows = {
+                [x.me]: { firstName:'Madison', facc:[x.them], freq:[], level:1, badges:0,
+                          hundos:0, cinv: { [x.them]: { code:x.code, at:Date.now() } } },
+                [x.them]: { firstName:'Alex', facc:[x.me], freq:[], level:1, badges:0, hundos:0 }
+              };
+              Object.keys(rows).forEach(id =>
+                window.__fakeDb.collection('leaderboard').doc(id).set(rows[id]));}""",
+                {"me": "aaa0000000001", "them": "bbb0000000002", "code": code})
+            b.wait_for_timeout(1400)
+            fired = b.evaluate("""()=>({
+              banner: !!document.getElementById('chat-invite'),
+              rows: (leaderboardRows||[]).length,
+              dot: (document.getElementById('chatdock-dot')||{}).hidden === false,
+              count: (document.getElementById('chatdock-dot')||{}).textContent || ''})""")
+            check("his board listener delivered the invite", fired.get("rows") >= 2, fired)
+            check("the invite banner fires off the main menu too",
+                  fired.get("banner") is True, fired)
+            check("and the button carries the count there", fired.get("dot") is True, fired)
+            b.evaluate("()=>{ document.getElementById('chat-invite')?.remove(); showHome(); }")
+            b.wait_for_timeout(700)
 
             print("\n3. Alex sees it in Notifications and JOINS by tapping it")
             seen = b.evaluate("""()=>{
@@ -171,6 +293,52 @@ def main(src):
                 input: !!document.querySelector('.chatdock-chathost .vroom-chat-input')}), 700));}""")
             check("tapping Join puts him in the room", joined.get("code") == code, joined)
             check("and he can type in it", joined.get("input") is True, joined)
+
+            print("\n3b. they can SEE each other in it")
+            # "People aren't showing in the chat if they do manage to
+            # join." They had joined - the header said "2 in this chat"
+            # and named nobody, so there was nothing on screen with
+            # their name on it. A count is not a roster.
+            who = a.evaluate("""()=>new Promise(r=>setTimeout(()=>r({
+              names: [...document.querySelectorAll('.chatdock-who-name')].map(x=>x.textContent),
+              arts: document.querySelectorAll('.chatdock-who-art').length}), 900))""")
+            check("Madison's roster names the people in the chat",
+                  "Alex" in (who.get("names") or []), who)
+            check("with her own entry in it too",
+                  "You" in (who.get("names") or []), who)
+            check("and each one carries their character",
+                  who.get("arts") == len(who.get("names") or []), who)
+
+            print("\n3c. and somebody who vanishes stops being listed")
+            # A LEAVE IS THE ONE EXIT THAT WRITES ANYTHING. Closing the
+            # app, locking the phone and losing signal write nothing, so
+            # the entry sat there forever and everybody waited on a
+            # person who was gone. Presence gives it a shelf life: the
+            # stamp is rewound past the window here rather than waiting
+            # a real minute.
+            stale = a.evaluate("""(x)=>{
+              const ref = window.__fakeDb.collection('vrooms').doc(x.code);
+              return ref.get().then(sn=>{
+                const d = sn.data();
+                Object.keys(d.participants).forEach(k=>{
+                  if(k !== chatMyKey) d.participants[k].seen = Date.now() - 300000;
+                });
+                return ref.set(d);
+              }).then(()=>new Promise(r=>setTimeout(()=>r({
+                names: [...document.querySelectorAll('.chatdock-who-name')].map(x=>x.textContent),
+                text: (document.getElementById('chatdock-roomwho')||{}).textContent||''
+              }), 900)));}""", {"code": code})
+            check("a stale classmate drops off the roster",
+                  "Alex" not in (stale.get("names") or []), stale)
+            # And put him back, so section 4 still has two people in it.
+            a.evaluate("""(x)=>{
+              const ref = window.__fakeDb.collection('vrooms').doc(x.code);
+              return ref.get().then(sn=>{
+                const d = sn.data();
+                Object.keys(d.participants).forEach(k=>{ d.participants[k].seen = Date.now(); });
+                return ref.set(d);
+              });}""", {"code": code})
+            a.wait_for_timeout(700)
 
             print("\n4. they can actually talk")
             a.evaluate("""()=>{

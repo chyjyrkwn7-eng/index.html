@@ -184,6 +184,32 @@ def run_class(src_dir, label):
                 if not (box["x"] > box["vw"] * 0.5 and box["y"] < box["vh"] * 0.2):
                     fails.append("the chat button is not in the top-right corner: %s" % box)
 
+            # 1b. IT HAS TO SURVIVE THE KEYBOARD. iOS pans the visual
+            # viewport and leaves the layout one behind, so a fixed
+            # control paints above the screen while a field is focused -
+            # reported as the chat button not being on the main menu once
+            # you start typing. Chromium has no soft keyboard, so the pan
+            # itself cannot be reproduced here and a check that focused a
+            # field would pass on both builds. What IS checkable is the
+            # wiring: the token is 0 when nothing is focused, and driving
+            # it moves the button by exactly that much. Drop either half
+            # and this goes red.
+            pan = pg.evaluate("""()=>{
+              const b = document.getElementById('chatdock-btn');
+              const root = document.documentElement;
+              const rest = Number(getComputedStyle(root).getPropertyValue('--vv-shift').replace('px','')) || 0;
+              const before = b.getBoundingClientRect().top;
+              root.style.setProperty('--vv-shift', '120px');
+              const after = b.getBoundingClientRect().top;
+              root.style.setProperty('--vv-shift', '0px');
+              return {rest:rest, moved: Math.round(after - before)};}""")
+            if pan["rest"] != 0:
+                fails.append("--vv-shift is %s with nothing focused, it must be 0"
+                             % pan["rest"])
+            if abs(pan["moved"] - 120) > 1:
+                fails.append("the chat button does not follow the keyboard pan: "
+                             "120px of shift moved it %dpx" % pan["moved"])
+
             # 2. A BANNER STAYS AT THE TOP AND STILL MISSES THE BUTTON.
             #    This used to assert the banner sat BELOW the button, by
             #    listing it in NOTICE_OBSTRUCTIONS - which pushed every

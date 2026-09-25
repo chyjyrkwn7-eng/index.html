@@ -3594,7 +3594,14 @@
      44px, which is the app's floor and not negotiable. */
   .chatdock-btn{
     position:fixed;
-    top:calc(env(safe-area-inset-top, 0px) + .75rem);
+    /* --vv-shift IS THE KEYBOARD PAN, AND A FIXED ELEMENT DOES NOT SEE
+       IT. When iOS opens the keyboard it pans the VISUAL viewport and
+       leaves the layout one where it was, so everything position:fixed
+       goes on painting relative to a top edge that is now above the
+       screen - which is why the chat button disappeared off the top of
+       Home the moment you tapped into the chat. It is 0 whenever there
+       is no keyboard, so this costs nothing anywhere else. */
+    top:calc(env(safe-area-inset-top, 0px) + .75rem + var(--vv-shift, 0px));
     right:max(1.5rem, calc(env(safe-area-inset-right, 0px) + 1.2rem));
     width:44px; height:44px; padding:0; margin:0;
     display:flex; align-items:center; justify-content:center;
@@ -3613,12 +3620,19 @@
      rather than going away - the chat is supposed to be reachable
      mid-test, which is most of the point of it. */
   .chatdock.in-test .chatdock-btn{
-    top:calc(env(safe-area-inset-top, 0px) + 4.4rem);
+    top:calc(env(safe-area-inset-top, 0px) + 4.4rem + var(--vv-shift, 0px));
   }
   @media (min-width:40rem){
     .chatdock.in-test .chatdock-panel{
-      top:calc(env(safe-area-inset-top, 0px) + 4.4rem + 44px + .5rem);
+      top:calc(env(safe-area-inset-top, 0px) + 4.4rem + 52px + .5rem);
     }
+  }
+  @media (min-width:40rem){
+    /* 44px is the FLOOR, not the size. Beside an iPad's tab bar and its
+       own larger type a phone-sized circle reads as an afterthought -
+       the daily-question button was grown for exactly this reason. */
+    .chatdock-btn{ width:52px; height:52px; }
+    .chatdock-btn svg{ width:1.45rem; height:1.45rem; }
   }
   .chatdock-btn svg{ width:1.2rem; height:1.2rem; display:block; opacity:.92; }
   /* Its own colour, not the accent: an unread marker has to read as an
@@ -3708,7 +3722,27 @@
   .chatdock-roomwho{
     flex:1 1 auto; min-width:0;
     font-size:.82rem; font-weight:700; color:var(--soft);
-    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    /* A ROW OF PEOPLE, NOT A SENTENCE. It scrolls sideways rather than
+       wrapping, because the header is one line high and a second row of
+       faces would push the conversation down every time somebody
+       joined. */
+    display:flex; align-items:center; gap:.5rem;
+    overflow-x:auto; overflow-y:hidden; white-space:nowrap;
+    scrollbar-width:none;
+  }
+  .chatdock-roomwho::-webkit-scrollbar{ display:none; }
+  .chatdock-who{ display:inline-flex; align-items:center; gap:.3rem; flex:0 0 auto; }
+  .chatdock-who-art{
+    width:1.5rem; height:1.5rem; border-radius:50%;
+    display:inline-flex; align-items:center; justify-content:center;
+    background:rgba(255,255,255,.07); overflow:hidden;
+  }
+  .chatdock-who-art svg, .chatdock-who-art img{ width:100%; height:100%; display:block; }
+  .chatdock-who-name{ font-size:.78rem; font-weight:800; color:var(--ink); }
+  .chatdock-who.is-me .chatdock-who-name{ color:var(--soft); }
+  @media (min-width:40rem){
+    .chatdock-who-art{ width:1.8rem; height:1.8rem; }
+    .chatdock-who-name{ font-size:.84rem; }
   }
   .chatdock-chathost{ flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }
   /* The shared chat panel, placed inside the dock rather than floated:
@@ -3768,11 +3802,16 @@
      coming out of the control that was tapped. */
   @media (min-width:40rem){
     .chatdock-panel{
-      top:calc(env(safe-area-inset-top, 0px) + .75rem + 44px + .5rem);
+      /* Cleared by the BUTTON'S OWN SIZE, which grows below - so this
+         has to be the same number, or the panel tucks under it. */
+      top:calc(env(safe-area-inset-top, 0px) + .75rem + 52px + .5rem);
       right:max(1.5rem, calc(env(safe-area-inset-right, 0px) + 1.2rem));
       left:auto; bottom:auto;
-      width:min(24rem, calc(100vw - 3rem));
-      max-height:min(70vh, 34rem); min-height:18rem;
+      /* REPORTED AS TOO SMALL ON A LARGER DEVICE, and it was: a 24rem
+         box with an 18rem floor on an iPad Pro is a phone sheet on a
+         screen with room for a real one. */
+      width:min(30rem, calc(100vw - 3rem));
+      max-height:min(78vh, 44rem); min-height:26rem;
       padding:.9rem 1rem 1rem; border-radius:18px;
       transform-origin:top right;
       transform:translateY(-8px) scale(.96); opacity:0; pointer-events:none;
@@ -3808,6 +3847,14 @@
   .vroom-chat-input{
     flex:1; min-width:0; padding:.55rem .8rem; border-radius:999px;
     border:1px solid var(--rule); background:var(--panel); color:var(--ink); font:inherit;
+    /* THE LINES ALONG ITS EDGES ARE THE BACKDROP FILTER TEARING. This
+       is a solid-coloured child sitting inside a backdrop-filter
+       surface (the dock panel, the lobby's glass sheet), which iOS
+       re-samples through the filter every frame - the same glitch the
+       update banner's button had, reported the same way. Its own
+       compositing layer means it is rasterised once instead. */
+    transform:translateZ(0); backface-visibility:hidden;
+    -webkit-backface-visibility:hidden; isolation:isolate;
     /* Same 16px floor as .searchbox, and for the same reason - this one
        was .85rem (13.6px), the worst offender in the app. */
     font-size:max(17px, 1rem);
@@ -23721,6 +23768,39 @@ if(window.visualViewport){
   /* A blur is the other way the keyboard goes - tapping the background
      rather than the keyboard's own dismiss. */
   document.addEventListener("focusout", () => setTimeout(unwind, 120), true);
+
+  /* ---- AND THE HALF THE UNWIND CANNOT FIX ----
+     The unwind above puts the page back AFTER the keyboard goes. While
+     it is still up the displacement is real and correct - iOS is
+     holding the field above the keyboard - and every position:fixed
+     control in the app is painting relative to a layout viewport top
+     that has gone off the screen. Reported as the chat button not
+     being on the main menu once you start typing: it had not been
+     hidden, it was above the top edge.
+
+     A fixed element paints at (layout top + its own `top`), and the
+     layout top sits at window.scrollY in document coordinates while
+     the VISIBLE top sits at vv.pageTop. The difference between those
+     two is the whole correction, and it is 0 whenever there is no
+     keyboard - so this is inert on a desktop, in a browser tab, and on
+     every screen where nothing is focused. Clamped at 0 so a rubber
+     band scroll can never push a control DOWN off the screen.
+
+     Chromium has no soft keyboard and reports offsetTop 0 forever, so
+     this cannot be regression-tested locally - the same caveat the two
+     blocks above already carry. What CAN be checked, and is, is that
+     the token is 0 and the button unmoved when nothing is focused. */
+  const setShift = () => {
+    let px = 0;
+    try{ px = Math.max(0, Math.round((vv.pageTop || 0) - (window.scrollY || 0))); }
+    catch(e){ px = 0; }
+    try{ document.documentElement.style.setProperty("--vv-shift", px + "px"); }
+    catch(e){}
+  };
+  vv.addEventListener("resize", setShift);
+  vv.addEventListener("scroll", setShift);
+  window.addEventListener("scroll", setShift, { passive: true });
+  setShift();
 }
 
 /* Only the setup screen's Start button and the in-question Next button
@@ -34562,8 +34642,7 @@ function showDailyAlert(msg){
      button's own old positioning glitch). Anything on <body> has to
      clear itself on navigation or it sits over whatever comes next,
      which is exactly how showTourSendoff's overlay used to get stuck. */
-  const onNavigate = new MutationObserver(() => { onNavigate.disconnect(); el.remove(); });
-  onNavigate.observe(stage, { childList: true });
+  clearBannerOnScreenChange(el);
   requestAnimationFrame(() => el.classList.add("show"));
   setTimeout(() => {
     el.classList.remove("show");
@@ -34694,14 +34773,15 @@ const CHAT_CTX = {
   },
   cap: 300, keep: 200,
   participantsOf: (data) => {
-    const p = data.participants || null;
-    /* Read off the same snapshot the messages come from, so the header
-       cannot disagree with the conversation under it. */
-    const el = document.getElementById("chatdock-roomwho");
-    if(el){
-      const n = p ? Object.keys(p).length : 0;
-      el.textContent = n <= 1 ? "Just you so far" : (n + " in this chat");
-    }
+    /* A COUNT IS NOT A ROSTER. "2 in this chat" tells you somebody
+       arrived and nothing about who, which is how "people aren't
+       showing in the chat" reads from the other side - they HAD
+       joined, there was just nothing on screen with their name on it.
+       It is the same avatar row the rest of the app draws people with,
+       so a classmate looks the same here as on the boards. */
+    const p = presentParticipants(data.participants || null);
+    renderChatRoster(p);
+    announceChatRoomChange(data, p);
     return p;
   },
   /* The dock's own button is the thing carrying the dot, so the dock
@@ -34711,10 +34791,134 @@ const CHAT_CTX = {
   onUnread: (n) => { chatUnseenAt = n; syncChatDockDot(); }
 };
 
+/* ---- PRESENCE: A ROSTER HAS TO BE ABLE TO FORGET SOMEBODY ----
+   Leaving writes a delete, which is correct and was already here - but
+   it is the ONE exit that gets to write anything. Closing the app,
+   locking the phone, losing signal and the tab being discarded all
+   leave the participant entry exactly where it was, so the roster went
+   on listing people who were not there. Reported directly: "if I leave
+   the chat, or if I leave a virtual room, people see that, they think
+   those people are still there because that's what it shows."
+
+   So presence is a fact with a shelf life. Every device in a room
+   stamps its own entry every PRESENCE_BEAT_MS, and a reader ignores
+   anybody whose stamp is older than PRESENCE_STALE_MS. An entry with
+   NO stamp at all is treated as present - rooms and builds that
+   predate this must not have everybody vanish out of them. */
+/* THE INTERVAL IS A QUOTA DECISION, NOT A UX ONE. Every beat is a
+   write, and every write is charged again as a READ to each device
+   listening. A room document is only listened to by the people in that
+   room, so this one is cheap - but it was 20s on the first pass, which
+   is three writes a minute per person for as long as anybody sits in a
+   chat, and the project is already over its daily read quota as it
+   stands. 45s still takes somebody off the roster inside about two and
+   a half minutes, which is the thing that was actually asked for. */
+const PRESENCE_BEAT_MS = 45 * 1000;
+const PRESENCE_STALE_MS = 150 * 1000;
+function presentParticipants(participants){
+  if(!participants) return participants;
+  const now = Date.now();
+  const out = {};
+  Object.keys(participants).forEach(k => {
+    const e = participants[k] || {};
+    /* No stamp means an older client, which cannot be judged. */
+    if(typeof e.seen !== "number" || (now - e.seen) < PRESENCE_STALE_MS) out[k] = e;
+  });
+  return out;
+}
+
+/* The roster itself. Avatars in join order, your own first, with the
+   name under each - and nothing else on them: a chat header has room
+   for who is here and not for a second set of stats. */
+function renderChatRoster(participants){
+  const el = document.getElementById("chatdock-roomwho");
+  if(!el) return;
+  const keys = Object.keys(participants || {}).sort((a, b) =>
+    (((participants[a] || {}).joinedAt || 0) - ((participants[b] || {}).joinedAt || 0))
+    || (a < b ? -1 : 1));
+  el.replaceChildren();
+  if(keys.length <= 1){
+    el.textContent = "Just you so far";
+    return;
+  }
+  keys.forEach(k => {
+    const e = participants[k] || {};
+    const one = document.createElement("span");
+    one.className = "chatdock-who" + (k === chatMyKey ? " is-me" : "");
+    const art = document.createElement("span");
+    art.className = "chatdock-who-art";
+    art.appendChild(avatarSpanFor({ avatarChar: e.avatarChar || "ninja" }));
+    const nm = document.createElement("span");
+    nm.className = "chatdock-who-name";
+    nm.textContent = k === chatMyKey ? "You" : (e.name || "Someone");
+    const c = chatColorFor(k, participants);
+    if(c && k !== chatMyKey) nm.style.color = c;
+    one.append(art, nm);
+    el.appendChild(one);
+  });
+}
+
+/* ---- SOMEBODY ARRIVING IS AN EVENT, AND IT HAD NONE ----
+   Leaving a Virtual Room already writes a `lastLeave` field so the
+   others can be told; a chat had neither half. A FIELD rather than a
+   diff of successive snapshots, for the same reason the room's does:
+   snapshots coalesce and arrive out of order, so a banner that depends
+   on catching the exact moment between two of them is a banner that
+   sometimes does not appear.
+   Both are keyed on the stamp this device last announced, so a
+   re-render cannot announce the same arrival twice, and somebody who
+   joins late is never told about a person who came and went first. */
+let chatLastJoinSeen = 0, chatLastLeaveSeen = 0;
+function announceChatRoomChange(data, present){
+  const j = data && data.lastJoin;
+  if(j && j.at && j.key !== chatMyKey && j.at > chatLastJoinSeen){
+    const first = chatLastJoinSeen === 0;
+    chatLastJoinSeen = j.at;
+    /* Not for the backlog: the first snapshot after you walk in
+       carries whoever arrived before you, which is not news. */
+    if(!first) showToast((j.name || "Someone") + " joined the chat.", "good");
+  }
+  const l = data && data.lastLeave;
+  if(l && l.at && l.key !== chatMyKey && l.at > chatLastLeaveSeen){
+    const first = chatLastLeaveSeen === 0;
+    chatLastLeaveSeen = l.at;
+    if(!first) showToast((l.name || "Someone") + " left the chat.");
+  }
+}
+
 function chatSelfEntry(){
   return { name: store.firstName || "Anonymous",
            avatarChar: store.avatarChar || "ninja",
-           joinedAt: Date.now() };
+           level: levelOf(store), badges: badgeCountOf(store),
+           joinedAt: Date.now(), seen: Date.now() };
+}
+
+/* One timer, replaced rather than stacked, and it stops itself the
+   moment this device is not in a room. */
+let vroomBeatTimer = null;
+function startVroomPresence(){
+  clearInterval(vroomBeatTimer);
+  vroomBeatTimer = setInterval(() => {
+    if(!vroomCode || !vroomMyKey || !fbDb){ clearInterval(vroomBeatTimer); vroomBeatTimer = null; return; }
+    try{
+      const patch = {};
+      patch["participants." + vroomMyKey + ".seen"] = Date.now();
+      fbDb.collection("vrooms").doc(vroomCode).update(patch).catch(() => {});
+    }catch(e){}
+  }, PRESENCE_BEAT_MS);
+}
+
+let chatBeatTimer = null;
+function startChatPresence(){
+  clearInterval(chatBeatTimer);
+  chatBeatTimer = setInterval(() => {
+    if(!chatRoomCode || !chatMyKey || !fbDb){ clearInterval(chatBeatTimer); chatBeatTimer = null; return; }
+    try{
+      const patch = {};
+      patch["participants." + chatMyKey + ".seen"] = Date.now();
+      fbDb.collection("vrooms").doc(chatRoomCode).update(patch).catch(() => {});
+    }catch(e){}
+  }, PRESENCE_BEAT_MS);
 }
 
 /* Starting one and joining one are the same write with a different
@@ -34748,6 +34952,9 @@ function joinChatRoom(rawCode){
     if((snap.data() || {}).kind !== "chat"){ showToast("That code is a Virtual Room, not a chat."); return; }
     const patch = {};
     patch["participants." + me] = chatSelfEntry();
+    /* So everybody already in it is told, rather than having to notice
+       a roster growing by one. */
+    patch.lastJoin = { name: store.firstName || "Someone", key: me, at: Date.now() };
     return fbDb.collection("vrooms").doc(code).update(patch).then(() => {
       enterChatRoom(code);
       showToast("Joined the chat.", "good");
@@ -34758,7 +34965,12 @@ function joinChatRoom(rawCode){
 function enterChatRoom(code){
   chatRoomCode = code;
   chatMyKey = publicIdOf();
+  /* Whatever happened in this room before this device walked in is not
+     an event for it - reset so the first snapshot is a backlog rather
+     than a stream of arrivals and departures. */
+  chatLastJoinSeen = 0; chatLastLeaveSeen = 0;
   saveChatRoom(code);
+  startChatPresence();
   rebuildChatTab();
   syncChatDock();
 }
@@ -34770,6 +34982,7 @@ function enterChatRoom(code){
    lists people who left is a roster nobody believes. */
 function leaveChatRoom(quiet){
   const code = chatRoomCode, me = chatMyKey;
+  clearInterval(chatBeatTimer); chatBeatTimer = null;
   chatRoomCode = null; chatMyKey = null;
   saveChatRoom(null);
   if(chatPanelCleanup){ try{ chatPanelCleanup(); }catch(e){} chatPanelCleanup = null; }
@@ -34778,6 +34991,7 @@ function leaveChatRoom(quiet){
       const patch = {};
       patch["participants." + me] = firebase.firestore.FieldValue.delete();
       patch["typing." + me] = firebase.firestore.FieldValue.delete();
+      patch.lastLeave = { name: store.firstName || "Someone", key: me, at: Date.now() };
       fbDb.collection("vrooms").doc(code).update(patch).catch(() => {});
     }catch(e){}
   }
@@ -34851,6 +35065,11 @@ function chatDockIcon(){
 function startChatDock(){
   if(chatDock) return;
   if(!store || !store.onboardingComplete) return;
+  /* The dock is what SHOWS an invite, so it is also what has to be
+     listening for one. showHome() attaches this too and it is
+     idempotent; having it here as well means the board listener
+     cannot be missing on a device that has a dock. */
+  try{ attachInviteWatcher(); }catch(e){}
 
   const host = document.createElement("div");
   host.className = "chatdock"; host.id = "chatdock";
@@ -34930,10 +35149,51 @@ function startChatDock(){
   panel.addEventListener("touchcancel", endDrag);
 
   chatRoomCode = loadChatRoom();
-  if(chatRoomCode) chatMyKey = publicIdOf();
+  if(chatRoomCode){
+    chatMyKey = publicIdOf();
+    /* A relaunch is a join as far as everybody else is concerned - the
+       stamp on this device's entry is by now minutes old, so without
+       this it would sit stale and drop off the roster it is in. */
+    startChatPresence();
+    if(fbDb){
+      try{
+        const patch = {};
+        patch["participants." + chatMyKey + ".seen"] = Date.now();
+        fbDb.collection("vrooms").doc(chatRoomCode).update(patch).catch(() => {});
+      }catch(e){}
+    }
+  }
   rebuildChatTab();
   syncChatDock();
 }
+
+/* ---- THE EXIT NOTHING ELSE COVERS ----
+   Leave writes a delete; closing the app, locking the phone or the tab
+   being discarded write nothing at all, and those are the common ones.
+   `pagehide` is the event iOS actually fires for all three, so it is
+   the last chance to say so. Best effort by definition - if it does
+   not land, the presence stamp above is what eventually takes the
+   entry off everybody's roster. */
+window.addEventListener("pagehide", () => {
+  try{
+    if(chatRoomCode && chatMyKey && fbDb){
+      const patch = {};
+      patch["participants." + chatMyKey] = firebase.firestore.FieldValue.delete();
+      patch["typing." + chatMyKey] = firebase.firestore.FieldValue.delete();
+      patch.lastLeave = { name: store.firstName || "Someone", key: chatMyKey, at: Date.now() };
+      fbDb.collection("vrooms").doc(chatRoomCode).update(patch).catch(() => {});
+    }
+    if(typeof vroomCode !== "undefined" && vroomCode && vroomMyKey && fbDb){
+      const gone = firebase.firestore.FieldValue.delete();
+      const vp = {};
+      vp["participants." + vroomMyKey] = gone;
+      vp["tug.progress." + vroomMyKey] = gone;
+      vp["tug.teams." + vroomMyKey] = gone;
+      vp.lastLeave = { name: store.firstName || "Someone", key: vroomMyKey, at: Date.now() };
+      fbDb.collection("vrooms").doc(vroomCode).update(vp).catch(() => {});
+    }
+  }catch(e){}
+});
 
 function toggleChatDock(){ chatDockOpen ? closeChatDock() : openChatDock(); }
 function openChatDock(){
@@ -35038,6 +35298,38 @@ function inVroomNow(){
   return !!document.querySelector(".vroom-chat-slot, .vroom-lobby-panel");
 }
 
+/* ---- BESIDE PAUSE, NOT UNDER IT ----
+   Asked for in those words: "in the test put it to the left of the
+   pause button". The first answer to the collision dropped the dock a
+   row below the counter, which kept it reachable but put it somewhere
+   nothing else on that screen lives.
+
+   Pause is in the NORMAL FLOW of `.wrap > .top`, right-aligned, and it
+   moves with the safe-area inset, the tablet breakpoint and its own
+   -3px nudge - so there is no fixed offset that lands beside it on
+   every device. Measuring it is the only honest answer. Recomputed
+   from syncChatDock, which already runs on every screen change, and on
+   resize and rotation. Cleared completely when there is no question
+   up, so the CSS corner is what governs everywhere else. */
+function placeDockBesidePause(inTest){
+  const btn = document.getElementById("chatdock-btn");
+  if(!btn) return;
+  const pause = document.querySelector("#pausebtn:not([hidden])");
+  if(!inTest || !pause){
+    btn.style.top = ""; btn.style.right = "";
+    return;
+  }
+  const p = pause.getBoundingClientRect();
+  const b = btn.getBoundingClientRect();
+  if(!p.width || !b.width){ btn.style.top = ""; btn.style.right = ""; return; }
+  /* Centred on Pause's own line, and one gap to its left. */
+  btn.style.top = Math.max(0, Math.round(p.top + (p.height - b.height) / 2)) + "px";
+  btn.style.right = Math.round(window.innerWidth - p.left + 10) + "px";
+}
+window.addEventListener("resize", () => {
+  try{ if(typeof syncChatDock === "function") syncChatDock(); }catch(e){}
+});
+
 /* One function decides what is on screen, so the button, the tabs and
    the two bodies cannot disagree about which state they are in. */
 let chatDockWasInVroom = null;
@@ -35094,6 +35386,7 @@ function syncChatDock(){
   if(!inTest) inTest = document.body.classList.contains("has-active-question");
   if(!inTest) inTest = !!document.querySelector("#pausebtn:not([hidden])");
   chatDock.classList.toggle("in-test", inTest);
+  placeDockBesidePause(inTest);
   /* AND THE CHAT LOBBY IS GENUINELY LEFT, not merely hidden. Asked for
      in those words: "when you leave the virtual room you'd have to
      start another chat again because it won't be there". Sitting in a
@@ -35259,13 +35552,19 @@ function checkChatInvites(){
   const newest = invites[invites.length - 1];
   const at = (newest.from.cinv[store.publicId] || {}).at || 0;
   if(at <= chatInviteSeen) return;
-  chatInviteSeen = at;
   if(typeof theme === "object" && theme && theme.muteBanners) return;
   /* Never over a tour's dim and never over the splash - the same rule
      every other banner in the app follows. */
   if(document.getElementById("tour-overlay")) return;
   if(document.getElementById("splashscreen")) return;
   if(document.getElementById("chat-invite")) return;
+  /* MARKED SEEN ONLY ONCE IT IS ACTUALLY SHOWN. This sat above the
+     four refusals, so an invite that arrived while a tour was running,
+     while the splash was up, or with banners muted was recorded as
+     announced and then never announced - it was gone for good, with
+     only the notification row left to find. Every guard above is a
+     "not now", not a "never", and the next snapshot re-checks. */
+  chatInviteSeen = at;
   const el = buildAppBanner("chat-invite", "chat",
     (newest.from.firstName || "A classmate") + " invited you to a chat",
     "Join",
@@ -35273,8 +35572,7 @@ function checkChatInvites(){
     () => {});
   document.body.appendChild(el);
   placeTopBanner(el);
-  const onNavigate = new MutationObserver(() => { onNavigate.disconnect(); el.remove(); });
-  onNavigate.observe(stage, { childList: true });
+  clearBannerOnScreenChange(el);
   requestAnimationFrame(() => el.classList.add("show"));
 }
 
@@ -35297,12 +35595,61 @@ function checkChatInvites(){
    forget again. */
 function mountSheetOverlay(overlay){
   document.body.appendChild(overlay);
+  /* THE SAME "A SCREEN CHANGE IS NOT A MUTATION" RULE THE BANNERS TAKE.
+     A sheet opened over the Leaderboard would otherwise be destroyed by
+     the board redrawing its own rows a moment later. */
+  const mountedOver = stage ? stage.firstElementChild : null;
   const obs = new MutationObserver(() => {
+    if(stage && stage.firstElementChild === mountedOver) return;
     if(overlay.__unsub){ try{ overlay.__unsub(); }catch(e){} overlay.__unsub = null; }
     overlay.remove(); obs.disconnect();
   });
   try{ obs.observe(stage, { childList: true }); }catch(e){}
-  requestAnimationFrame(() => overlay.classList.add("invite-overlay-show"));
+  /* NOT ON requestAnimationFrame. A sheet whose only route to being
+     visible is a frame callback is a sheet that never appears wherever
+     frames are throttled - a backgrounded tab, a device saving power,
+     Low Power Mode. Reading offsetHeight forces the layout that gives
+     the transition something to animate FROM, so the class can go on in
+     this same tick and the fade still happens. The invisible-sheet bug
+     is not one to reintroduce through the back door. */
+  void overlay.offsetHeight;
+  overlay.classList.add("invite-overlay-show");
+}
+
+const CHAT_INVITE_COOLDOWN_MS = 30 * 1000;
+/* How long is left before this person can be invited again, 0 if now.
+   Keyed on the invite's own timestamp and on THIS room, so joining a
+   different chat never inherits another room's cooldown. */
+function chatInviteCooldownLeft(pub){
+  const already = (store.chatInvitesOut || {})[pub];
+  if(!already || already.code !== chatRoomCode) return 0;
+  return Math.max(0, CHAT_INVITE_COOLDOWN_MS - (Date.now() - (already.at || 0)));
+}
+function armInviteButton(b, pub){
+  let timer = null;
+  const paint = () => {
+    const left = chatInviteCooldownLeft(pub);
+    if(left <= 0){
+      b.textContent = "Invite"; b.disabled = false;
+      if(timer){ clearInterval(timer); timer = null; }
+      return;
+    }
+    b.disabled = true;
+    b.textContent = "Invited \u00b7 " + Math.ceil(left / 1000) + "s";
+    /* One interval per button, started only while it is counting, and
+       stopped the moment it is not - and it stops itself if the sheet
+       has gone, because a sheet is removed rather than told. */
+    if(!timer) timer = setInterval(() => {
+      if(!b.isConnected){ clearInterval(timer); timer = null; return; }
+      paint();
+    }, 1000);
+  };
+  b.addEventListener("click", () => {
+    if(chatInviteCooldownLeft(pub) > 0) return;
+    inviteFriendToChat(pub);
+    paint();
+  });
+  paint();
 }
 
 function openChatInviteSheet(){
@@ -35348,14 +35695,14 @@ function openChatInviteSheet(){
       text.appendChild(nm);
       const b = document.createElement("button");
       b.type = "button"; b.className = "next friend-act";
-      const already = (store.chatInvitesOut || {})[e.pub];
-      const sent = !!(already && already.code === chatRoomCode);
-      b.textContent = sent ? "Invited" : "Invite";
-      b.disabled = sent;
-      b.addEventListener("click", () => {
-        inviteFriendToChat(e.pub);
-        b.textContent = "Invited"; b.disabled = true;
-      });
+      /* A COOLDOWN, NOT A ONE-SHOT. This used to disable the button for
+         as long as the invite sat in `chatInvitesOut`, which is the
+         whole life of the chat - so somebody who missed the first
+         invite, or left and wanted asking back, could never be invited
+         again. Asked for directly: thirty seconds. The countdown is
+         live so the button says what it is doing rather than just
+         looking broken, and it re-enables itself with nothing to tap. */
+      armInviteButton(b, e.pub);
       row.append(art, text, b);
       list.appendChild(row);
     });
@@ -38710,7 +39057,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-24-175";
+const APP_BUILD = "2026-09-25-179";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -41827,6 +42174,7 @@ function vroomHostKeyOf(participants){
 }
 function syncVroomHost(data){
   vroomIsHost = !!vroomMyKey && vroomHostKeyOf(data && data.participants) === vroomMyKey;
+  if(vroomCode && vroomMyKey && !vroomBeatTimer) startVroomPresence();
   return vroomIsHost;
 }
 
@@ -41875,6 +42223,7 @@ function leaveVirtualRoom(){
       fbDb.collection("vrooms").doc(code).update(patch).catch(() => {});
     }catch(e){}
   }
+  clearInterval(vroomBeatTimer); vroomBeatTimer = null;
   vroomCode = null;
   vroomMyKey = null;
   vroomIsHost = false;
@@ -42548,7 +42897,7 @@ function createVirtualRoomLobby(units, timeLimit, game){
     mode: "exam",
     createdAt: Date.now(),
     participants: {
-      [publicIdOf()]: { name: myName, avatarChar: store.avatarChar || "ninja", level: levelOf(store), badges: badgeCountOf(store), mystery: mysteryColorsFoundCount(), joinedAt: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false }
+      [publicIdOf()]: { name: myName, avatarChar: store.avatarChar || "ninja", level: levelOf(store), badges: badgeCountOf(store), mystery: mysteryColorsFoundCount(), joinedAt: Date.now(), seen: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false }
     }
   };
   fbDb.collection("vrooms").doc(code).set(doc).then(() => {
@@ -42668,8 +43017,7 @@ function showLobbyInviteBanner(from, code){
      re-parents a fixed element's containing block. */
   document.body.appendChild(el);
   placeTopBanner(el);
-  const onNavigate = new MutationObserver(() => { onNavigate.disconnect(); el.remove(); });
-  onNavigate.observe(stage, { childList: true });
+  clearBannerOnScreenChange(el);
   requestAnimationFrame(() => el.classList.add("show"));
 }
 
@@ -42718,8 +43066,7 @@ function checkFriendRequests(){
     () => pending.forEach(e => dismissFriendReq(e.pub)));
   document.body.appendChild(el);
   placeTopBanner(el);
-  const onNavigate = new MutationObserver(() => { onNavigate.disconnect(); el.remove(); });
-  onNavigate.observe(stage, { childList: true });
+  clearBannerOnScreenChange(el);
   requestAnimationFrame(() => el.classList.add("show"));
 }
 
@@ -42841,13 +43188,32 @@ function checkSaveCodeReminder(){
   saveStore();
   document.body.appendChild(el);
   placeTopBanner(el);
-  const onNavigate = new MutationObserver(() => { onNavigate.disconnect(); el.remove(); });
-  onNavigate.observe(stage, { childList: true });
+  clearBannerOnScreenChange(el);
   requestAnimationFrame(() => el.classList.add("show"));
 }
 
 /* Both banners place themselves the same way, and neither may sit
    above the CSS baseline, which is what carries the safe-area inset. */
+/* A SCREEN CHANGE IS NOT "#stage MUTATED", AND THE DIFFERENCE IS WHY
+   INVITES LOOKED LIKE THEY ONLY WORKED ON HOME. Every top banner took
+   a MutationObserver on #stage and removed itself on the first
+   childList change - which is a screen change on Home, where nothing
+   else touches the stage, and is ALSO the Leaderboard redrawing its
+   own rows, the Virtual Room lobby updating, a test advancing a
+   question. So on any live screen the banner was built, painted, and
+   deleted within the same snapshot that created it.
+
+   The fix is to remember which screen it was raised over and leave
+   unless that element has actually been replaced. */
+function clearBannerOnScreenChange(el){
+  const mountedOver = stage ? stage.firstElementChild : null;
+  const obs = new MutationObserver(() => {
+    if(stage && stage.firstElementChild === mountedOver) return;
+    obs.disconnect(); el.remove();
+  });
+  try{ obs.observe(stage, { childList: true }); }catch(e){}
+}
+
 function placeTopBanner(el){
   const measured = (typeof topNoticeOffset === "function") ? topNoticeOffset(el) : null;
   if(measured === null || measured === undefined) return;
@@ -42855,9 +43221,27 @@ function placeTopBanner(el){
   if(measured > baseline) el.style.top = measured + "px";
 }
 
+/* ---- THE LISTENER THAT WAS USUALLY NEVER ATTACHED ----
+   This used to be `if(!fbDb) return;` and nothing ever tried again -
+   and the note on onFirebaseReady above already says why that is fatal:
+   BOTH FIREBASE SCRIPT TAGS CARRY `defer`, so fbDb is GUARANTEED to be
+   null when the boot code runs. showHome() at launch therefore hit that
+   return EVERY TIME, and the only way the watcher ever got attached was
+   mounting Home a second time, later, by hand.
+
+   That is exactly "the invites don't show immediately at all, they
+   randomly show up": with no watcher, an invite surfaced only when
+   something else happened to refresh leaderboardRows - opening the
+   Leaderboard, the friends board attaching its own listener, or
+   wandering back to Home after the SDK had finished loading. All of
+   which look random from the outside, because they are unrelated to
+   the invite.
+
+   Same fix the race listener already carries: wait for the SDK rather
+   than giving up on it. */
 function attachInviteWatcher(){
-  if(!fbDb) return;
   if(inviteWatchUnsub) return;   /* one listener, not one per Home mount */
+  if(!fbDb){ onFirebaseReady(attachInviteWatcher); return; }
   try{
     inviteWatchUnsub = onSnapshotResilient(fbDb.collection("leaderboard"), snap => {
       const next = [];
@@ -42872,9 +43256,21 @@ function attachInviteWatcher(){
       if(next.length || served || !(leaderboardRows && leaderboardRows.length)){
         leaderboardRows = next;
       }
-      const el = stage && stage.firstElementChild;
-      const screen = el && el.dataset ? el.dataset.screen : "";
-      if(screen === "home"){ checkLobbyInvites(); checkFriendRequests(); }
+      /* ANNOUNCE ON EVERY SCREEN, NOT ONLY HOME. This used to read
+         `if(screen === "home")`, and checkChatInvites was not in it at
+         all - so a chat invite arriving while somebody was on the
+         Leaderboard, in Settings or mid-test produced nothing: no
+         banner, no dot, no row. It only ever surfaced on the next Home
+         mount, which is exactly how it was reported ("they aren't
+         showing up, and if they do it's only on the main menu").
+         The button is on every screen, so what it counts has to be
+         too. Each banner clears itself on the next navigation through
+         its own observer, and each already refuses over a tour, the
+         splash and the introduction, so there is no screen this is
+         unsafe on. */
+      syncChatDockDot();
+      if(chatDockOpen && chatDockTab === "notifs") renderNotifications();
+      checkLobbyInvites(); checkFriendRequests(); checkChatInvites();
     });
   }catch(e){}
 }
@@ -43447,7 +43843,7 @@ function joinVirtualRoomLobby(code){
          rankings rows do. Written once at join - it cannot change
          while somebody is sitting in a lobby - and read with a
          fallback, so a room created by an older build still renders. */
-      ["participants." + myKey]: { name: store.firstName || "Anonymous", avatarChar: store.avatarChar || "ninja", level: levelOf(store), badges: badgeCountOf(store), mystery: mysteryColorsFoundCount(), joinedAt: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false }
+      ["participants." + myKey]: { name: store.firstName || "Anonymous", avatarChar: store.avatarChar || "ninja", level: levelOf(store), badges: badgeCountOf(store), mystery: mysteryColorsFoundCount(), joinedAt: Date.now(), seen: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false }
     }).then(() => {
       vroomCode = code; vroomIsHost = false; vroomUnits = data.units;
       vroomMyKey = myKey;
@@ -43847,7 +44243,15 @@ function showVirtualRoomLobby(){
          what makes a room survive losing the person who made it. */
       syncVroomHost(data);
       announceVroomLeave(data);
-      const entries = Object.entries(data.participants || {});
+      /* THE LOBBY LIST, AND ONLY THE LOBBY LIST. Somebody whose app was
+         closed or who lost signal writes no leave, so their entry sits
+         there and everybody waits on a person who is gone - reported
+         exactly that way. Presence decides what is DRAWN; it
+         deliberately does not touch who is host, the teams, or
+         anything a running match is scored on, because a stale stamp
+         in the middle of a race must never remove a real player from
+         the arithmetic. */
+      const entries = Object.entries(presentParticipants(data.participants || {}) || {});
       const readyN = entries.filter(([, p]) => p.ready).length;
       const totalN = entries.length;
 
