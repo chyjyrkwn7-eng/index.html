@@ -661,6 +661,30 @@ def main():
             levelBlock: !!lvl,
             levelGain: lvl ? (lvl.querySelector('.results-level-gain') || {}).textContent : null,
             reviewItems: list ? list.querySelectorAll('li').length : -1,
+            /* ---- ONE CHAT BUTTON IN THE APP ----
+               This asserted that the Virtual Room's own chat TOGGLE sat
+               in the top-right corner. That toggle is gone: the room's
+               chat is a named section at the foot of the lobby and the
+               round dock button means DMs, asked for directly - "I don't
+               want there to be two chat buttons ... the button is still
+               just strictly DMs."
+               So the check is the decision one level up, which is the
+               one that cannot go stale: exactly one chat BUTTON on the
+               screen, and it is the dock's. */
+            /* COUNTED BY WHAT IS ON SCREEN, not by what is in the DOM.
+               `:not([hidden])` counted three: a display:none toggle is
+               still un-hidden as far as the attribute goes, and a panel
+               is mounted per screen. A button nobody can see is not a
+               second chat button. */
+            chatButtons: [...document.querySelectorAll(
+              '.vroom-chat-toggle, .chatdock-btn')]
+              .filter(b => b.getBoundingClientRect().width > 0
+                        && getComputedStyle(b).display !== 'none'
+                        && getComputedStyle(b).visibility !== 'hidden').length,
+            roomChatNamed: (() => {
+              const t = document.querySelector('.vroom-chat-title');
+              return t ? (t.textContent || '').trim() : null;
+            })(),
             chatCorner: chat ? (R(chat).right > R(panel).right - 4) : null
           };}""")
         check("no bottom tab bar on the results screen",
@@ -690,8 +714,11 @@ def main():
         # and opened nothing, which is the bug this is written against.
         check("Review your answers opens a real list, even on a clean run",
               got["reviewItems"] > 0, got["reviewItems"])
-        if got["chatCorner"] is not None:
-            check("the chat button is in the top right", got["chatCorner"], got["chatCorner"])
+        check("there is exactly one chat button on the screen",
+              got["chatButtons"] == 1, got["chatButtons"])
+        check("and the room's own chat says which chat it is",
+              (got["roomChatNamed"] or "").lower().startswith("virtual room"),
+              got["roomChatNamed"])
 
         # -------------------------------------------------------------
         # 8. MATCH SETTINGS IS A SCREEN, NOT A SHEET OVER HOME.

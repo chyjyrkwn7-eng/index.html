@@ -598,6 +598,106 @@ def main(src):
                   "Just you" in left["who"], left)
             check("and her own chat is untouched", left["mine"] == code, left)
 
+            print("\n6. more than one chat, and a list to get back into them")
+            # ---- WRITTEN AGAINST THE BUILD WITH ONE CHAT AND ONE WAY OUT ----
+            # Before this the only exit from a chat was Leave, which
+            # deleted your participation - so "go back to the other one"
+            # meant burning the one you were in. Every assertion here is
+            # false on that build, and the evaluate is wrapped because
+            # the helpers it calls do not exist there at all: a gate that
+            # THROWS on the old build reports one failure about a
+            # ReferenceError instead of six about the feature.
+            multi = a.evaluate("""async ()=>{
+              try{
+              if(typeof chatList !== 'function') throw new Error('no chatList');
+              if(typeof closeChatRoom !== 'function') throw new Error('no closeChatRoom');
+              const out = {};
+              const first = chatRoomCode;
+              out.first = first;
+              /* A MEMBER OF IT, which is not the same as having it open. */
+              out.listed = chatList().map(c => c.code);
+              out.named = (chatList()[0] || {}).name || '';
+              /* The way back to the list, by the app's own button. */
+              const back = [...document.querySelectorAll('.chatdock-back')][0];
+              out.hasBack = !!back;
+              if(back) back.click();
+              out.openAfterBack = chatRoomCode;
+              out.rows = document.querySelectorAll('.chatdock-chatrow').length;
+              /* And back in, by the row. */
+              const row = document.querySelector('.chatdock-chatrow-open');
+              if(row) row.click();
+              out.reopened = chatRoomCode;
+              out.panelBack = !!document.querySelector('.chatdock-chathost .vroom-chat-list');
+              return out;
+              } catch(e){ return { threw: String(e) }; }}""")
+            print("     ", json.dumps(multi))
+            names6 = ("a chat you are in is a chat you are a member of",
+                      "it is named after who is in it, not by its code",
+                      "there is a way back to the list that is not Leave",
+                      "closing a chat does not leave it",
+                      "the list has a row for it",
+                      "and the row opens it again")
+            if multi.get("threw"):
+                for n in names6: check(n, False, multi["threw"])
+            else:
+                check(names6[0], multi["listed"] == [multi["first"]], multi["listed"])
+                check(names6[1], multi["named"] and multi["named"] != multi["first"], multi["named"])
+                check(names6[2], multi["hasBack"] is True)
+                check(names6[3], multi["openAfterBack"] is None and multi["rows"] == 1,
+                      [multi["openAfterBack"], multi["rows"]])
+                check(names6[4], multi["rows"] == 1, multi["rows"])
+                check(names6[5], multi["reopened"] == multi["first"] and multi["panelBack"] is True,
+                      [multi["reopened"], multi["panelBack"]])
+
+            second = a.evaluate("""async ()=>{
+              try{
+              if(typeof closeChatRoom !== 'function') throw new Error('no closeChatRoom');
+              const out = {}; const first = chatRoomCode;
+              closeChatRoom();
+              /* STARTING ANOTHER MUST NOT END THE FIRST. That is the
+                 whole request - "a list you can revisit". */
+              createChatRoom();
+              await new Promise(r => setTimeout(r, 500));
+              out.second = chatRoomCode;
+              out.both = chatList().map(c => c.code);
+              closeChatRoom();
+              out.rows = document.querySelectorAll('.chatdock-chatrow').length;
+              /* THE DELETE ARMS BEFORE IT FIRES. One tap on a x beside a
+                 row must not take somebody out of a conversation. */
+              const rows = [...document.querySelectorAll('.chatdock-chatrow')];
+              const target = rows.find(r => r.querySelector('.chatdock-chatrow-open'));
+              const del = target.querySelector('.chatdock-chatrow-del');
+              del.click();
+              out.armed = del.classList.contains('is-arming');
+              out.rowsAfterOneTap = document.querySelectorAll('.chatdock-chatrow').length;
+              const goneCode = chatList()[0].code;
+              del.click();
+              await new Promise(r => setTimeout(r, 400));
+              out.gone = goneCode;
+              out.left = chatList().map(c => c.code);
+              const snap = await fbDb.collection('vrooms').doc(goneCode).get();
+              const p = (snap.data() || {}).participants || {};
+              out.stillIn = Object.keys(p).indexOf(publicIdOf()) >= 0;
+              return out;
+              } catch(e){ return { threw: String(e) }; }}""")
+            print("     ", json.dumps(second))
+            names7 = ("starting a second chat does not end the first",
+                      "both are in the list",
+                      "one tap on the x arms it rather than leaving",
+                      "the second tap takes the row off the list",
+                      "and leaves the chat for real, not just locally")
+            if second.get("threw"):
+                for n in names7: check(n, False, second["threw"])
+            else:
+                check(names7[0], second["second"] != multi.get("first")
+                      and second["second"] is not None, second["second"])
+                check(names7[1], len(second["both"]) == 2, second["both"])
+                check(names7[2], second["armed"] is True and second["rowsAfterOneTap"] == 2,
+                      [second["armed"], second["rowsAfterOneTap"]])
+                check(names7[3], len(second["left"]) == 1
+                      and second["gone"] not in second["left"], second["left"])
+                check(names7[4], second["stillIn"] is False, second["stillIn"])
+
             real = [e for e in errs if not any(k in e.lower() for k in
                     ("firebase", "firestore", "gstatic", "failed to fetch", "net::"))]
             check("no JS errors on either device", not real, real[:2])

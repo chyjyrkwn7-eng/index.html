@@ -4219,4 +4219,95 @@ at the swipe's own coordinates (`elementFromPoint`, assert not inside
 `.chatdock`), so the next thing parked in that corner is named rather
 than inferred from three swipe failures.
 
+### One chat button (build 194)
+
+**THERE IS ONE CHAT BUTTON IN THE APP AND IT MEANS DMs.** Asked for in
+those words — *"I don't want there to be two chat buttons, unless the
+virtual room chat has like a different looking button and it's displayed
+differently? Like maybe the virtual room one isn't a button but it's
+displayed at the bottom of the lobby strictly and it says virtual room
+chat ... And the button is still just strictly DMs."* So:
+
+- The round dock button in the corner is DMs and notifications, on every
+  screen, in a Virtual Room as much as anywhere.
+- The Virtual Room's chat has **no control of its own anywhere**. It is a
+  named section at the foot of the lobby on every device — the layout a
+  tablet already had — with **"VIRTUAL ROOM CHAT"** on it, because a panel
+  labelled "Chat" under a corner button that also says chat is the exact
+  ambiguity this build is about.
+- **The phone sheet and its toggle are DELETED, not hidden.** A fixed
+  sheet nothing can open is still a fixed box that can catch a touch,
+  which is how the closed dock panel ate the tablet's tab swipe in build
+  191. It is also how this nearly shipped broken twice over: the toggle
+  left behind `display:none` made `getComputedStyle(toggle).display ===
+  "none"` — the test for "are you looking at this" — answer **always**,
+  silently ending both the unread count and the preview banner; and the
+  sheet's swipe-to-close handler was still bound, so the one path that
+  still set `sheetOpen` (the preview banner's own click) armed a drag
+  that wrote `transform:translateY()` onto a section sitting in the
+  page's flow.
+
+**MOUNTED IS NOT THE SAME AS BEING LOOKED AT.** With no sheet there is no
+open event, so `VROOM_CHAT_CTX.isVisible` **measures**: the message list's
+box against the viewport. On a phone the lobby is ~1,400px of scroll and
+the chat is the last 200 of it, so being in the document says nothing.
+`CHAT_CTX.isVisible` answers the same question for the dock — open, on the
+chat tab. **There is no fallback any more**, and a host that forgets
+defaults to *not* visible: over-announcing is a bug somebody reports in an
+hour, never announcing is one nobody can see.
+
+**SCROLLING TO IT IS READING IT.** The count is recomputed on a snapshot,
+and a snapshot only arrives when somebody writes — so scrolling down to
+the chat left "3" sitting over the three messages being read until the
+next person spoke. An `IntersectionObserver` on the list is the only thing
+that can see arrival happen. It complements `isVisible` rather than
+duplicating it: that one answers "was this seen" for a message landing
+now, the observer answers "has it just been scrolled to" for messages that
+landed earlier. In the dock the list is inside a `hidden` tab body, which
+never intersects, so the same code means the same thing there.
+
+**A COUNT NOBODY CAN SEE IS NOT A COUNT.** The unread pill used to be
+drawn inside the toggle, so deleting the toggle left it in a `display:none`
+parent — and `check-chat` went on passing, because it only ever asked
+whether the `hidden` ATTRIBUTE was off, which it dutifully was. It lives
+in the chat's own title row now, beside the name of the chat it belongs
+to, and the gate measures a real box in that row. What the gate **cannot**
+ask is whether the count is in the viewport: on a phone unread and
+on-screen are mutually exclusive by construction, which is what the
+preview banner is for.
+
+**A PREVIEW SAYS WHICH CHAT IT CAME FROM.** *"When someone sends
+something in there you still get the screen notification, but it would
+appear so people know it's the virtual room chat and not a DM."* The room's
+banner carries a blue **VIRTUAL ROOM** tag and a blue left bar;
+`CTX.alertTag` is null for DMs, so a DM preview reads exactly as it did.
+Its own colour rather than the accent, so it says Virtual Room on all seven
+themes. **Both banners are in `NOTICE_OBSTRUCTIONS` now**, because two of
+them can genuinely be up at once — two chats, two listeners, both live in a
+lobby — and two banners at the same CSS offset is one banner nobody can
+read.
+
+**A VIRTUAL ROOM NO LONGER COSTS YOU YOUR DMs**, and the gate that said
+otherwise was failing the app for being right. `syncChatDock()` used to
+force-leave the chat lobby and flip the dock onto notifications on entering
+a room, which was correct while the two chats competed for one button. It
+also could not stay: that function runs on **every screen change**, so a
+chat joined inside a room was left again on the next navigation — a join
+write and a leave write per screen. The quota cost is a second listener and
+it is **accepted rather than missed**: the room document is the expensive
+one by an order of magnitude (thirty devices writing progress per
+question), a DM between two people is a handful of writes an evening, and
+it is still one chat at a time — opening another detaches the first.
+
+**SIXTEEN CHAT COLOURS, NOT EIGHT, AND HAND-PICKED RATHER THAN SPACED.**
+*"These could be large so ensure there's multiple chat user colors."*
+Eight wrapped on the ninth person, so in a class-sized room two people
+shared a colour and the whole point of colouring a name went with it.
+Named rather than evenly spaced round the hue wheel, for the same reason
+the badge families are: even steps put four greens in sixteen slots,
+because green occupies about a sixth of the wheel and reads as one colour
+whatever the spacing says. **The race line indexes the same table**, so
+adding to it widens the markers' palette too — which is the right
+coupling: a marker and a name are the same person.
+
 No committed regression suite exists yet. Worth building.

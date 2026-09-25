@@ -3541,6 +3541,13 @@
     font-size:.68rem; font-weight:800; line-height:1;
     font-variant-numeric:tabular-nums;
   }
+  /* IT SITS IN THE TITLE ROW NOW, because the control it used to sit on
+     is gone - see "one chat button in the app" below. A count inside a
+     display:none button is a count nobody can see, and the gate that
+     covered it was only ever asking whether the hidden ATTRIBUTE was
+     off, which it dutifully was. flex:0 0 auto so a two-character "9+"
+     does not get squeezed by the title beside it. */
+  .vroom-chat-titlerow .vroom-chat-dot{ flex:0 0 auto; }
   /* "___ sent a message", pinned to the top of the screen like every
      other banner in the app rather than dropped into the bottom corner,
      which on this screen is full: the chat toggle, the tab bar and the
@@ -3570,24 +3577,49 @@
      over them is a tap those controls never get. Same call the flare
      banner makes for the same reason. */
   body.has-active-question .vroom-chat-alert{ pointer-events:none !important; }
+  /* The tag leads, because it is the thing that decides whether this is
+     worth looking at mid-race. Its own colour, not the accent: it has to
+     read as "Virtual Room" on all seven themes. */
+  .vroom-chat-alert-tag{
+    flex:0 0 auto; font-size:.58rem; font-weight:800; letter-spacing:.1em;
+    color:#3DA9FC;
+  }
+  .vroom-chat-alert-tagged{ border-left:3px solid #3DA9FC; }
   .vroom-chat-alert-who{ font-weight:800; flex:0 0 auto; }
   .vroom-chat-alert-text{
     color:var(--soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     flex:1 1 auto; min-width:0;
   }
+  /* ---- ONE CHAT BUTTON IN THE APP, AND THIS IS NOT IT ----
+     "I don't want there to be two chat buttons ... maybe the virtual
+     room one isn't a button but it's displayed at the bottom of the
+     lobby strictly and it says Virtual Room chat ... and the button is
+     still just strictly DMs."
+     So the Virtual Room's chat has no control of its own anywhere: it
+     is a section at the foot of the lobby on every device, the way it
+     already was on a tablet, and the round dock button in the corner
+     means DMs and notifications and nothing else. The toggle and the
+     phone sheet are both gone rather than hidden - a fixed sheet that
+     nothing can open is a fixed sheet that can still catch a touch,
+     which is exactly the trap the closed dock panel was caught by. */
+  .vroom-chat-toggle{ display:none !important; }
+  .vroom-chat-slot{ display:none; }
   @media (max-width:40rem){
-    .vroom-chat-toggle{ display:inline-flex; }
-    .vroom-chat-close{ display:block; }
-    /* The sheet. Fixed to the bottom edge, above the tab bar's z-index so
-       nothing paints through it, and it carries the safe-area inset so the
-       input is not under the home indicator. */
+    .vroom-chat-close{ display:none; }
+    /* NOT A SHEET ANY MORE - see "one chat button in the app" above.
+       It is a section at the foot of the lobby, so it scrolls with the
+       screen it belongs to and has no open or closed state to get
+       stuck in. `position:static` is stated rather than left to the
+       cascade, because the rule it is overriding is right here and a
+       later reader has to see that the sheet was deliberate and is
+       deliberately gone. */
     .vroom-chat{
-      position:fixed; left:0; right:0; bottom:0; z-index:320;
-      margin:0; padding:1rem 1.1rem calc(1rem + env(safe-area-inset-bottom, 0px));
-      max-height:min(78vh, 32rem);
+      position:static; z-index:auto;
+      margin:1.1rem 0 0; padding:1rem 1.1rem;
+      max-height:none;
       display:flex; flex-direction:column;
-      border-top:1px solid rgba(255,255,255,.12);
-      border-radius:20px 20px 0 0;
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:18px;
       /* Liquid Glass, not a panel. At .92 this was opaque - the blur was
          doing nothing you could see, because there was nothing showing
          through to blur. .52 with a heavier blur is the recipe every
@@ -3597,9 +3629,7 @@
       backdrop-filter:blur(22px) saturate(1.6);
       -webkit-backdrop-filter:blur(22px) saturate(1.6);
       box-shadow:0 -12px 40px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.08);
-      transform:translateY(102%);
-      transition:transform .28s cubic-bezier(.2,.8,.25,1);
-      touch-action:pan-y;
+      transform:none;
     }
     /* A solid-coloured child inside a backdrop-filter surface can tear on
        real iOS - reported on the update banner's own button. The parent
@@ -3609,17 +3639,8 @@
     .vroom-chat .vroom-chat-send{
       transform:translateZ(0); backface-visibility:hidden; isolation:isolate;
     }
-    /* The grab handle. A sheet you can swipe needs to look like one. */
-    .vroom-chat::before{
-      content:""; display:block; width:2.4rem; height:.28rem; border-radius:999px;
-      background:rgba(255,255,255,.28); margin:-.35rem auto .7rem;
-      flex:0 0 auto;
-    }
-    .vroom-chat.is-dragging{ transition:none; }
-    .vroom-chat.is-open{ transform:translateY(0); }
-    .vroom-chat .vroom-chat-list{ flex:1 1 auto; max-height:none; }
-    /* The tab bar would otherwise sit on top of an open sheet. */
-    body.vroom-chat-open .bottomtabs{ opacity:0; pointer-events:none; }
+    /* No grab handle: there is nothing to grab any more. */
+    .vroom-chat .vroom-chat-list{ max-height:14rem; }
   }
   /* ============ THE CHAT DOCK ============
      A circle in the top-right of every screen, and a panel that opens
@@ -3914,6 +3935,26 @@
   }
   .chatdock-chathost .vroom-chat::before{ content:none; }
   .chatdock-chathost .vroom-chat-titlerow{ display:none; }
+  /* ---- IT SAYS WHICH CHAT IT IS ----
+     With the dock button meaning DMs, the one at the foot of a lobby
+     has to name itself or the two are indistinguishable once somebody
+     has scrolled past the screen title. Shown on every device now - it
+     used to be hidden on a phone, where the sheet's own title row did
+     the job. */
+  .vroom-chat-titlerow{ display:flex; align-items:center; gap:.5rem; }
+  .vroom-chat-title{
+    /* font-family is stated because the base rule above sets the serif,
+       and an uppercase letter-spaced serif label reads as a different
+       app from every other section header in the file. */
+    font-family:inherit;
+    font-size:.72rem; font-weight:800; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--soft);
+  }
+  .vroom-chat-title::before{
+    content:""; display:inline-block; width:.45rem; height:.45rem;
+    border-radius:50%; background:#3DA9FC; margin-right:.4rem;
+    vertical-align:middle;
+  }
   .chatdock-chathost .vroom-chat-list{ flex:1 1 auto; max-height:none; min-height:6rem; }
   .chatdock-notiflist{ display:flex; flex-direction:column; gap:.2rem; overflow-y:auto; }
   .chatdock-notif{
@@ -36049,6 +36090,33 @@ function showDailyQuestionLockedPopup(){
    than a value captured when the panel was built, because vroomCode and
    vroomMyKey both change under a running panel. */
 const VROOM_CHAT_CTX = {
+  /* What the panel calls itself and what its preview banner is tagged
+     with. On the CTX rather than hard-coded in the builder, because the
+     dock mounts the same builder for DMs and must not announce itself
+     as a Virtual Room. */
+  label: "Virtual Room chat",
+  alertTag: "VIRTUAL ROOM",
+  /* ---- MOUNTED IS NOT THE SAME AS BEING LOOKED AT ----
+     The room's chat is a section at the foot of the lobby now rather
+     than a sheet you open, and the old test for "are you looking at
+     this" was "is the sheet open, or is its toggle hidden" - which
+     with no toggle left answers "always". That would have silently
+     ended both the unread count and the preview banner, and the
+     preview is something asked for by name: "when someone sends
+     something in there you still get the screen notification."
+     So it measures. On a phone the lobby is 1,388px of scroll and the
+     chat is the last 200 of it - being mounted says nothing about
+     whether it is on screen. A message only counts as seen when the
+     list is actually in the viewport. */
+  isVisible: (listEl) => {
+    if(!listEl || !listEl.isConnected) return false;
+    const r = listEl.getBoundingClientRect();
+    if(!r.height) return false;
+    const vh = window.innerHeight || 0;
+    /* Any real overlap counts, not full visibility: a list half on
+       screen is one somebody is reading. */
+    return r.bottom > 0 && r.top < vh;
+  },
   code: () => vroomCode,
   myKey: () => vroomMyKey,
   colorFor: (key, parts) => vroomColorFor(key, parts),
@@ -36110,6 +36178,8 @@ function chatColorFor(key, participants){
 }
 
 const CHAT_CTX = {
+  label: "Chat",
+  alertTag: null,
   code: () => chatRoomCode,
   myKey: () => chatMyKey,
   colorFor: (key, parts) => chatColorFor(key, parts),
@@ -36162,6 +36232,11 @@ const CHAT_CTX = {
      decides what counts as read: the panel is being looked at only when
      the dock is open AND the chat tab is the one showing. */
   isVisible: () => chatDockOpen && chatDockTab === "chat",
+  /* A DM preview is tappable and has to land somewhere - scrolling to
+     this panel would do nothing, since it lives inside a dock that is
+     shut. Selecting the tab BEFORE opening, so the dock does not open
+     on notifications and switch under the person who tapped. */
+  reveal: () => { chatDockTab = "chat"; openChatDock(); },
   onUnread: (n) => { chatUnseenAt = n; syncChatDockDot(); }
 };
 
@@ -36733,13 +36808,20 @@ function rebuildChatTab(){
   chatTabBody.replaceChildren();
 
   if(inVroomNow()){
-    /* THE VIRTUAL ROOM'S CHAT SUPERSEDES THIS ONE, said plainly rather
-       than by an empty tab. Asked for directly. */
+    /* ---- THE DOCK IS DMs, IN A ROOM AS MUCH AS ANYWHERE ----
+       It used to hand the whole tab over to a note saying the Virtual
+       Room's chat supersedes this one - which was right while the two
+       were the same kind of thing competing for the same button. They
+       are not any more: the room's chat is a section at the foot of the
+       lobby with its own name on it, and this button means your DMs.
+       Being in a room is no longer a reason to take them away.
+       The note stays as a LINE above them rather than instead of them,
+       because somebody who opened this looking for the room's chat
+       still needs telling where it went. */
     const n = document.createElement("p");
     n.className = "chatdock-note";
-    n.textContent = "You’re in a Virtual Room — its own chat is in the room. Notifications still work here.";
+    n.textContent = "The Virtual Room’s own chat is at the foot of the lobby. This is your DMs.";
     chatTabBody.appendChild(n);
-    return;
   }
 
   if(!chatRoomCode){
@@ -36899,16 +36981,28 @@ function syncChatDock(){
   if(!inTest) inTest = !!document.querySelector("#pausebtn:not([hidden])");
   chatDock.classList.toggle("in-test", inTest);
   placeDockBesidePause(inTest);
-  /* AND THE CHAT LOBBY IS GENUINELY LEFT, not merely hidden. Asked for
-     in those words: "when you leave the virtual room you'd have to
-     start another chat again because it won't be there". Sitting in a
-     room's participant map while unable to read it would leave a name
-     on a roster that nobody behind it is listening to. */
-  if(inRoom && chatRoomCode) leaveChatRoom(true);
+  /* ---- A VIRTUAL ROOM NO LONGER COSTS YOU YOUR DMs ----
+     This used to force-leave the chat lobby the moment you entered a
+     Virtual Room, and flip the dock onto notifications, because the
+     two chats competed for one button and the room's was the one that
+     mattered in a race. They do not compete any more - the room's chat
+     is a named section at the foot of its lobby and this button means
+     DMs, asked for directly - so being in a room is no longer a reason
+     to take them away.
+     It also could not stay: this runs on every screen change, so a
+     chat joined inside a room was left again on the next sync, which
+     is a join write and a leave write per navigation for a room you
+     had just asked to be in.
+     THE QUOTA COST IS A SECOND LISTENER, AND IT IS ACCEPTED RATHER
+     THAN MISSED. In a lobby this device now holds the room document
+     and one chat document. The room's is the expensive one by an order
+     of magnitude - thirty devices writing progress on every question -
+     and a DM between two people is a handful of writes an evening. It
+     is still ONE chat at a time: opening a different one detaches the
+     first. */
   if(chatDockWasInVroom !== inRoom){
     chatDockWasInVroom = inRoom;
     rebuildChatTab();
-    if(inRoom && chatDockTab === "chat") chatDockTab = "notifs";
   }
   chatDock.classList.toggle("in-vroom", inRoom);
   chatDock.querySelectorAll(".chatdock-tab").forEach(b => {
@@ -40654,7 +40748,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-26-193";
+const APP_BUILD = "2026-09-26-194";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -40800,8 +40894,15 @@ function showAddToHomeNotice(){
    (it is gated to Welcome and Home, neither of which has one), but the
    daily alert does now that "Find me" answers with one, and it was
    landing on Level/Badges/Hundos. */
+/* `.vroom-chat-alert` is in the list because two of them can genuinely
+   be up at once now: the Virtual Room's chat and your DMs are separate
+   chats with separate listeners, and in a lobby both are live. Two
+   banners at the same CSS offset is one banner nobody can read. Each
+   measures the other (topNoticeOffset skips the bar it is positioning),
+   so the second parks below the first. */
 const NOTICE_OBSTRUCTIONS = [".wrap > .top", ".wrap > .count", ".back-link",
                              ".panel > .navsegment", ".welcome-build",
+                             ".vroom-chat-alert",
                              ];
 
 /* Shared by both notices. The measured offset is applied with transitions
@@ -46622,7 +46723,26 @@ function vroomColorFor(key, participants){
   return VROOM_RACE_COLORS[h % VROOM_RACE_COLORS.length];
 }
 
-const VROOM_RACE_COLORS = ["#F5804D", "#3DA9FC", "#3DD68C", "#F5C84D", "#C23B7A", "#8E7CF5", "#4DD0E1", "#F56D6D"];
+/* SIXTEEN, NOT EIGHT, AND HAND-PICKED RATHER THAN SPACED.
+   "These could be large so ensure there's multiple chat user colors."
+   Eight wrapped on the ninth person, so in a class-sized chat two
+   people shared a colour and the whole point of colouring a name went
+   with it. Sixteen covers a room bigger than the class.
+   NAMED, NOT EVENLY SPACED ROUND THE HUE WHEEL - the same lesson the
+   badge families are written from: even steps put four greens in
+   sixteen slots, because green occupies about a sixth of the wheel and
+   reads as one colour whatever the spacing says. Every one of these is
+   checked for legibility on the dark panel and against its neighbours
+   in the list, which is the order two people are most likely to get.
+   The race line indexes this same table modulo its length, so adding to
+   it widens the markers' palette too - which is the right coupling: a
+   marker and a name are the same person. */
+const VROOM_RACE_COLORS = [
+  "#F5804D", "#3DA9FC", "#3DD68C", "#F5C84D",
+  "#C23B7A", "#8E7CF5", "#4DD0E1", "#F56D6D",
+  "#9BD84D", "#FF8FB1", "#57B8FF", "#E8A33D",
+  "#7ED9B8", "#B98CFF", "#FFC46B", "#5ED4E0"
+];
 function vroomInitialsFor(name){
   const parts = (name || "?").trim().split(/\s+/);
   return parts.length > 1 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : (parts[0].slice(0, 2)).toUpperCase();
@@ -46654,49 +46774,41 @@ function buildVroomChatPanel(container, ctx){
      is room for it and hiding it behind a tap would be worse.
      Both are the same panel; which one you get is CSS, so there is one
      chat to keep working rather than two. */
-  const toggle = document.createElement("button");
-  toggle.type = "button";
-  toggle.className = "vroom-chat-toggle";
-  /* A speech bubble, so the control is recognisable before the word is
-     read. Inline rather than an entry in the icon set because it is the
-     only place in the app that needs one. */
-  const toggleIcon = document.createElement("span");
-  toggleIcon.className = "vroom-chat-toggle-icon";
-  toggleIcon.setAttribute("aria-hidden", "true");
-  toggleIcon.innerHTML = "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\""
-    + " stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\">"
-    + "<path d=\"M21 11.5a8.4 8.4 0 0 1-9 8.4 9.9 9.9 0 0 1-2.9-.4L3 21l1.6-4.6"
-    + "A8.2 8.2 0 0 1 3.6 11.5 8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4Z\"/></svg>";
-  const toggleLabel = document.createElement("span");
-  toggleLabel.className = "vroom-chat-toggle-label";
-  toggleLabel.textContent = "Chat";
+  /* ---- NO TOGGLE. THE PANEL IS THE CHAT ----
+     There was a round "Chat" button in this panel's own top-right
+     corner, and it is the second chat button the whole of build 194 is
+     about removing - "I don't want there to be two chat buttons ... and
+     the button is still just strictly DMs."
+     It is DELETED rather than left behind display:none. A control
+     nothing can open is still a box that can catch a touch, which is
+     precisely how the closed dock panel ate the tablet's tab swipe in
+     build 191, and a dot drawn inside it is a dot nobody can see.
+     `.vroom-has-chat` STAYS, though nothing is positioned into the
+     corner any more: it is `position:relative` on the panel, so it is
+     the containing block every absolutely-positioned thing inside the
+     chat resolves against - the reaction picker among them. Removing it
+     would re-anchor those to the page. */
   const dot = document.createElement("span");
   dot.className = "vroom-chat-dot";
   dot.hidden = true;
-  toggle.append(toggleIcon, toggleLabel, dot);
-  /* The button goes at the TOP of the screen, which is where it was asked
-     for - so a screen that wants it there puts an empty .vroom-chat-slot
-     where it should land, and anything that does not simply gets it
-     appended as before. One panel, two placements, no second builder. */
-  /* Appended to the panel itself rather than into the flow, because it
-     is positioned into the corner. .vroom-has-chat is what gives it a
-     containing block; without it the button would escape to the nearest
-     positioned ancestor, which is the page. */
   container.classList.add("vroom-has-chat");
-  container.appendChild(toggle);
 
   const wrap = document.createElement("div");
   wrap.className = "vroom-chat";
   const titleRow = document.createElement("div");
   titleRow.className = "vroom-chat-titlerow";
   const title = document.createElement("p");
-  title.className = "vroom-chat-title"; title.textContent = "Chat";
-  const closeBtn = document.createElement("button");
-  closeBtn.type = "button";
-  closeBtn.className = "vroom-chat-close";
-  closeBtn.setAttribute("aria-label", "Close chat");
-  closeBtn.textContent = "\u00d7";
-  titleRow.append(title, closeBtn);
+  /* NAMED, because the dock button now means DMs and nothing else. A
+     panel labelled "Chat" at the foot of a lobby, under a corner button
+     that also says chat, is the ambiguity this whole change is for. */
+  title.className = "vroom-chat-title";
+  title.textContent = CTX.label || "Virtual Room chat";
+  /* The count goes HERE, beside the name of the chat it belongs to.
+     There is nothing else left on screen that could carry it: the
+     button it used to live on is gone, and the dock's own dot only
+     speaks for the dock. A close button went with the sheet - a section
+     in the flow has nothing to close. */
+  titleRow.append(title, dot);
   const list = document.createElement("div");
   list.className = "vroom-chat-list";
   const row = document.createElement("div");
@@ -46718,52 +46830,54 @@ function buildVroomChatPanel(container, ctx){
      actually had on screen, not against a count - a count cannot tell
      "three new" from "three deleted", and the array is trimmed. */
   let lastSeenTs = 0;
-  let sheetOpen = false;
-  function openSheet(){
-    sheetOpen = true;
-    wrap.classList.add("is-open");
-    document.body.classList.add("vroom-chat-open");
-    dot.hidden = true;
+  /* ---- THERE IS NO SHEET, SO THERE IS NOTHING TO OPEN OR DRAG ----
+     This was a fixed bottom sheet on a phone with a swipe-down to
+     close. All of it is deleted with the toggle, and the deletion is
+     the point rather than a tidy-up: the drag wrote an inline
+     `transform:translateY()` onto the panel, so the moment anything
+     still set the old `sheetOpen` flag - the preview banner did - a
+     finger on the title row of a section sitting in the page's own flow
+     would drag it around and "close" it into nothing.
+     What replaces it is the only gesture a section in the flow can
+     have: scroll to it. */
+  function revealChat(){
+    /* A host that owns its own container says how to get there - the
+       dock has to open itself and select its tab, which no amount of
+       scrolling would do. */
+    if(CTX.reveal){ CTX.reveal(); return; }
+    try{ wrap.scrollIntoView({ block: "center", behavior: "smooth" }); }
+    catch(e){ try{ wrap.scrollIntoView(); }catch(e2){} }
     list.scrollTop = list.scrollHeight;
-    /* Everything on screen counts as seen the moment it is on screen. */
+    /* Tapping the preview IS looking at it, so the count clears here
+       rather than waiting for the next snapshot to measure the box. */
     lastSeenTs = Math.max(lastSeenTs, newestTs);
+    dot.hidden = true; dot.textContent = "";
+    if(CTX.onUnread) CTX.onUnread(0);
   }
-  function closeSheet(){
-    sheetOpen = false;
-    wrap.classList.remove("is-open");
-    document.body.classList.remove("vroom-chat-open");
-  }
-  toggle.addEventListener("click", () => { sheetOpen ? closeSheet() : openSheet(); });
-  closeBtn.addEventListener("click", closeSheet);
 
-  /* Swipe down to close. Only from the sheet's own chrome, never from the
-     message list: a list you can scroll and a sheet you can drag share a
-     gesture, and letting the list start a drag means every attempt to
-     scroll back through the chat closes it instead. Starting the drag on
-     the handle, the title row or the input row is unambiguous. */
-  let dragFrom = null, dragDy = 0;
-  wrap.addEventListener("touchstart", (e) => {
-    if(!sheetOpen) return;
-    if(list.contains(e.target)) return;
-    dragFrom = e.touches[0].clientY; dragDy = 0;
-    wrap.classList.add("is-dragging");
-  }, { passive: true });
-  wrap.addEventListener("touchmove", (e) => {
-    if(dragFrom === null) return;
-    dragDy = Math.max(0, e.touches[0].clientY - dragFrom);
-    wrap.style.transform = "translateY(" + dragDy + "px)";
-  }, { passive: true });
-  function endDrag(){
-    if(dragFrom === null) return;
-    wrap.classList.remove("is-dragging");
-    wrap.style.transform = "";
-    /* A short flick and a long drag both close it; anything less springs
-       back, so a mis-touch on the title row does not dismiss the chat. */
-    if(dragDy > 70) closeSheet();
-    dragFrom = null; dragDy = 0;
-  }
-  wrap.addEventListener("touchend", endDrag);
-  wrap.addEventListener("touchcancel", endDrag);
+  /* ---- SCROLLING TO IT IS READING IT ----
+     The count is recomputed on a snapshot, and a snapshot only arrives
+     when somebody writes - so without this, scrolling down to the chat
+     showed "3" over the three messages you were reading, and it stayed
+     until the next person spoke. The room's chat is a section in a
+     1,400px lobby now rather than a sheet with an open event, so
+     arriving at it IS the event, and an observer is the only thing that
+     can see that happen.
+     It complements CTX.isVisible rather than duplicating it: that
+     answers "was this seen" for a message landing now, this answers
+     "has it just been scrolled to" for messages that landed earlier.
+     In the dock the list is inside a hidden tab body, which never
+     intersects, so the same code means the same thing there. */
+  let seenObs = null;
+  try{
+    seenObs = new IntersectionObserver(entries => {
+      if(!entries.some(e => e.isIntersecting)) return;
+      lastSeenTs = Math.max(lastSeenTs, newestTs);
+      dot.hidden = true; dot.textContent = "";
+      if(CTX.onUnread) CTX.onUnread(0);
+    }, { threshold: 0.12 });
+    seenObs.observe(list);
+  }catch(e){}
   let newestTs = 0;
   let lastAnnouncedId = null;
   let announcedAny = false;
@@ -46966,15 +47080,19 @@ function buildVroomChatPanel(container, ctx){
        sheet, and .vroom-chat-toggle is display:none above 40rem anyway. */
     const others = (messages || []).filter(m => m.key !== CTX.myKey());
     newestTs = others.length ? Math.max.apply(null, others.map(m => m.ts || 0)) : 0;
-    /* WHO DECIDES "YOU ARE LOOKING AT THIS" DEPENDS ON THE HOST. In a
-       lobby it is the sheet being open, or a tablet where the panel is
-       always inline. Inside the chat dock the toggle is display:none -
-       the dock has its own button - so that test answers "always
-       visible" and no message would ever count as unread. The host
-       says which it is. */
-    const panelVisible = CTX.isVisible
-      ? CTX.isVisible(sheetOpen)
-      : (sheetOpen || getComputedStyle(toggle).display === "none");
+    /* WHO DECIDES "YOU ARE LOOKING AT THIS" IS THE HOST'S TO ANSWER,
+       and there is no longer a fallback that could answer it wrongly.
+       It used to guess from the toggle's computed display, which was
+       the one test that broke the instant the toggle went away: with
+       nothing rendered it reads "display:none" and therefore "always
+       visible", which silently ends both the count and the preview
+       banner. Both hosts supply the answer now - the lobby measures
+       whether its section is in the viewport, the dock asks whether it
+       is open on the chat tab.
+       Defaulting to FALSE on a host that forgot: over-announcing is a
+       bug somebody reports in an hour, and never announcing is one
+       nobody can see. */
+    const panelVisible = CTX.isVisible ? CTX.isVisible(list) : false;
     if(panelVisible){
       lastSeenTs = Math.max(lastSeenTs, newestTs);
       dot.hidden = true;
@@ -47037,6 +47155,22 @@ function buildVroomChatPanel(container, ctx){
     const bar = document.createElement("button");
     bar.type = "button";
     bar.className = "vroom-chat-alert";
+    /* ---- A PREVIEW SAYS WHICH CHAT IT CAME FROM ----
+       "When someone sends something in there you still get the screen
+       notification, but it would appear so people know it's the Virtual
+       Room chat and not a DM."
+       Two identical banners for two different places is the same
+       ambiguity as two chat buttons, one step further on: you cannot
+       even tell after tapping, because both open something called
+       chat. The tag is on the CTX, so a DM preview carries none and
+       reads exactly as it did. */
+    if(CTX.alertTag){
+      bar.classList.add("vroom-chat-alert-tagged");
+      const tag = document.createElement("span");
+      tag.className = "vroom-chat-alert-tag";
+      tag.textContent = CTX.alertTag;
+      bar.appendChild(tag);
+    }
     const who = document.createElement("span");
     who.className = "vroom-chat-alert-who";
     who.textContent = (msg.name || "Someone") + " sent a message";
@@ -47053,7 +47187,7 @@ function buildVroomChatPanel(container, ctx){
     bar.addEventListener("click", () => {
       clearTimeout(alertTimer);
       bar.remove(); alertEl = null;
-      if(!sheetOpen) openSheet();
+      revealChat();
     });
     document.body.appendChild(bar);
     /* Measured AFTER it is in the document - topNoticeOffset reads the
@@ -47248,6 +47382,7 @@ function buildVroomChatPanel(container, ctx){
     document.removeEventListener("click", closeReactPicker);
     closeReactPicker();
     if(alertEl){ alertEl.remove(); alertEl = null; }
+    if(seenObs){ try{ seenObs.disconnect(); }catch(e){} seenObs = null; }
     unsubscribe();
   };
 }

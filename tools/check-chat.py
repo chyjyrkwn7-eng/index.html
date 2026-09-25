@@ -83,16 +83,40 @@ def run(src_dir, label):
                 pg.evaluate("([k,n,t])=>window.__push(k,n,t)", [k,n,t]); pg.wait_for_timeout(260)
             out = pg.evaluate("""()=>{
               const dot=document.querySelector('.vroom-chat-dot');
+              /* ---- A COUNT NOBODY CAN SEE IS NOT A COUNT ----
+                 This asked `dot.hidden` and nothing else, so it went on
+                 passing through the build that deleted the control the
+                 dot was drawn inside: the attribute was dutifully off
+                 and the box measured 0x0 in a display:none parent. That
+                 is the shape of check this file warns about - it read as
+                 coverage while covering nothing.
+                 What it CANNOT ask is whether the count is in the
+                 viewport, and that is not a shortcut: the count only
+                 exists while the chat has not been looked at, and on a
+                 phone the chat is the last 200px of a 1,400px lobby, so
+                 "unread" and "on screen" are mutually exclusive by
+                 construction. The banner is what carries it up there,
+                 and that is asserted separately. So: a real box, in the
+                 chat's own title row, where the panel it belongs to
+                 puts it. */
+              const dr = dot ? dot.getBoundingClientRect() : null;
+              const dotSeen = !!(dr && dr.width > 0 && dr.height > 0
+                              && getComputedStyle(dot).visibility !== 'hidden'
+                              && dot.closest('.vroom-chat-titlerow'));
               const alert=document.querySelector('.vroom-chat-alert');
               const names=[...document.querySelectorAll('.vroom-chat-msg-name')]
                 .map(n=>({t:n.textContent.trim(), c:getComputedStyle(n).color,
                           me:n.classList.contains('is-me')}));
               return {dotHidden:dot?dot.hidden:null, dotText:dot?dot.textContent:null,
+                      dotSeen:dotSeen, dotW:dr?Math.round(dr.width):0,
                       alert: alert?alert.textContent:null,
                       alertShown: alert?alert.classList.contains('show'):false,
                       names};}""")
             print(f"  [{label}] {json.dumps(out)[:300]}")
             if out["dotHidden"] is not False: fails.append("the unread badge is not showing")
+            if not out["dotSeen"]:
+                fails.append("the unread count has no box of its own in the chat's "
+                             f"title row (box {out['dotW']}px wide)")
             if out["dotText"] != "3": fails.append(f"the unread badge reads {out['dotText']!r}, not a count of 3")
             if not out["alert"]: fails.append("nothing announced who sent the message")
             elif "sent a message" not in out["alert"]: fails.append(f"the announcement reads {out['alert']!r}")
@@ -102,6 +126,25 @@ def run(src_dir, label):
             if len(others) < 3: fails.append(f"only {len(others)} messages rendered from other people")
             elif len(cols) != len(others):
                 fails.append(f"names are not each their own colour: {sorted(cols)}")
+            # ---- SCROLLING TO THE CHAT IS READING IT ----
+            # The count is computed on a snapshot, so before the
+            # observer existed it sat over the messages you were
+            # reading until somebody else spoke. Written against that
+            # build, where it stays at 3.
+            scrolled = pg.evaluate("""()=>{
+              const w = document.querySelector('.vroom-chat');
+              if(!w) return null;
+              w.scrollIntoView({block:'center'});
+              return true; }""")
+            pg.wait_for_timeout(600)
+            after = pg.evaluate("""()=>{
+              const d = document.querySelector('.vroom-chat-dot');
+              return {hidden: d ? d.hidden : null, text: d ? d.textContent : null};}""")
+            if not scrolled:
+                fails.append("there is no chat section in the lobby to scroll to")
+            elif after["hidden"] is not True:
+                fails.append("the unread count survived scrolling to the chat: %r" % after)
+
             real = [e for e in errs if not any(k in e.lower() for k in
                     ("firebase","firestore","gstatic","failed to fetch","net::"))]
             if real: fails.append(f"JS error {real[0]}")
@@ -328,7 +371,7 @@ def run_class(src_dir, label):
             if not spoke["preview"] or "sent a message" not in spoke["preview"]:
                 fails.append("no message preview when the chat is closed: %r" % spoke["preview"])
 
-            # 5. a Virtual Room takes the chat away and leaves the dock
+            # 5. a Virtual Room does NOT take your DMs away any more
             vr = pg.evaluate("""()=>{
               /* THE RUN FLAG, NOT vroomCode. This used to set vroomCode
                  and call that "in a Virtual Room" - but that variable
@@ -347,17 +390,26 @@ def run_class(src_dir, label):
                          chatControls: !!document.querySelector('.chatdock-chathost')};
               inVirtualRoom = false; syncChatDock();
               return r;}""")
-            # THE VIRTUAL ROOM'S CHAT SUPERSEDES THIS ONE, and leaving the
-            # room does not hand it back: "you'd have to start another chat
-            # again because it won't be there".
-            if vr["left"] is not None:
-                fails.append("a Virtual Room did not end the chat lobby: %r" % vr["left"])
-            if vr["chatControls"]:
-                fails.append("the chat is still usable inside a Virtual Room")
+            # ---- THIS GATE ENCODED A DECISION, AND THE DECISION CHANGED ----
+            # It asserted the opposite of all three: that entering a
+            # Virtual Room force-left your chat lobby and removed the
+            # chat controls, because the two chats competed for one
+            # button and the room's was the one that mattered in a race.
+            # They do not compete any anymore - the room's chat is a named
+            # section at the foot of its lobby and the dock is DMs - so
+            # the old assertions were failing the app for being right.
+            # Re-read rather than deleted, because the thing worth
+            # holding is still here: the dock survives a room, your DMs
+            # survive with it, and something on screen says where the
+            # room's own chat went.
+            if vr["left"] is None:
+                fails.append("a Virtual Room still ends your DM chat")
+            if not vr["chatControls"]:
+                fails.append("your DMs are not usable inside a Virtual Room")
             if not vr["dockUp"]:
                 fails.append("the whole dock went away inside a Virtual Room - notifications go with it")
             if "Virtual Room" not in (vr["note"] or ""):
-                fails.append("nothing says why the chat is gone: %r" % vr["note"])
+                fails.append("nothing says where the room's own chat is: %r" % vr["note"])
 
             # 6. nothing published anywhere carries the sync code
             leak = pg.evaluate("()=>JSON.stringify(window.__updates).indexOf('SECR') >= 0")
