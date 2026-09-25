@@ -13355,7 +13355,15 @@
             if(tc && saved && /^#[0-9a-fA-F]{6}$/.test(saved)) tc.content = saved;
           }
         }catch(e){}
-        setTimeout(function(){ splash.remove(); }, 550);
+        setTimeout(function(){
+          splash.remove();
+          /* THE CHAT BUTTON WAITS FOR THIS. syncChatDock() hides the dock
+             while any loading screen is up, and it only runs on a stage
+             change - so on a launch that mounted Home under the splash,
+             nothing ever ran it again once the splash was gone and Home
+             came up with no chat button at all. */
+          try{ if(typeof syncChatDock === "function") syncChatDock(); }catch(e){}
+        }, 550);
       }
     }
     requestAnimationFrame(tick);
@@ -37629,6 +37637,15 @@ function joinChatRoom(rawCode){
        typed in here could otherwise drop somebody into the middle of
        somebody else's match as a participant with no progress. */
     if((snap.data() || {}).kind !== "chat"){ showToast("That code is a Virtual Room, not a chat."); return false; }
+    /* NAMED FROM THE ROOM WE JUST READ. The join used to save the chat
+       with no name and wait for the listener to supply one - and until
+       it did, the list row fell back to the room's code, which is the
+       "it shows a number instead of their username" report. The
+       document is already in hand here, so the name is too. */
+    try{
+      const others = Object.keys((snap.data() || {}).participants || {}).filter(k => k !== me).sort();
+      rememberChat(code, nameChatFrom((snap.data() || {}).participants || null), others);
+    }catch(e){}
     const patch = {};
     patch["participants." + me] = chatSelfEntry();
     /* So everybody already in it is told, rather than having to notice
@@ -37775,7 +37792,7 @@ function openDirectChatWith(entry){
   openChatDock();
   const code = generateSyncCode();
   const me = publicIdOf();
-  const theirName = entry.firstName || "Classmate";
+  const theirName = entry.firstName || entry.name || "Classmate";
   const them = { name: theirName, avatarChar: entry.avatarChar || "ninja",
                  level: entry.level || 0, badges: entry.badges || 0,
                  joinedAt: Date.now(), seen: 0 };
@@ -38191,7 +38208,7 @@ function rebuildChatTab(){
         open.type = "button"; open.className = "chatdock-chatrow-open";
         const nm = document.createElement("span");
         nm.className = "chatdock-chatrow-name";
-        nm.textContent = entry.name || "Chat";
+        nm.textContent = entry.name || "New chat";
         const when = document.createElement("span");
         when.className = "chatdock-chatrow-when";
         const top = document.createElement("span");
@@ -38207,9 +38224,14 @@ function rebuildChatTab(){
            known: the last message once the list has been refreshed, and
            until then the code - but ONLY for a chat with no name, since
            a named row showing a code is the code nobody needs. */
+        /* NEVER THE CODE. A room code reads as a number, and a number
+           where a classmate's name belongs was reported as a bug - which
+           it is: nobody knows anybody by a code. An unnamed row says it
+           is still finding out, and refreshChatList() names it moments
+           later from the room itself. */
         const sub = document.createElement("span");
-        sub.className = "chatdock-chatrow-sub" + (entry.name ? "" : " is-code");
-        sub.textContent = entry.name ? "" : entry.code;
+        sub.className = "chatdock-chatrow-sub";
+        sub.textContent = entry.name ? "" : "Loading who is in it\u2026";
         open.appendChild(sub);
         open.addEventListener("click", () => enterChatRoom(entry.code));
         const del = document.createElement("button");
@@ -38355,6 +38377,26 @@ window.addEventListener("resize", () => {
 /* One function decides what is on screen, so the button, the tabs and
    the two bodies cannot disagree about which state they are in. */
 let chatDockWasInVroom = null;
+/* A LOADING SCREEN GOING AWAY IS NOT A STAGE CHANGE. syncChatDock()
+   hides the dock while the splash, LOADING TEST or GENERATING PROFILE
+   is up, and until now only a stage mutation ran it again - so any
+   screen that mounted underneath one of them came up with no chat
+   button. This watches <body> for exactly those three leaving. */
+(function watchLoadingScreensLeave(){
+  const IDS = { splashscreen: 1, "teststart-overlay": 1, "genprofile-overlay": 1 };
+  try{
+    new MutationObserver(ms => {
+      for(const m of ms){
+        for(const n of m.removedNodes){
+          if(n && n.id && IDS[n.id]){
+            try{ if(typeof syncChatDock === "function") syncChatDock(); }catch(e){}
+            return;
+          }
+        }
+      }
+    }).observe(document.body, { childList: true });
+  }catch(e){}
+})();
 function syncChatDock(){
   if(!chatDock) return;
   const show = !!(typeof store !== "undefined" && store && store.onboardingComplete);
@@ -42310,7 +42352,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-26-202";
+const APP_BUILD = "2026-09-26-203";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
