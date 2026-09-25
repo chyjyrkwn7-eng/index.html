@@ -718,7 +718,11 @@ def check_ranks(br):
               marks:rows.filter(r=>r.querySelector('.lb-rankmark')).length,
               levelChips:document.querySelectorAll('.rank-level').length,
               hasOverall: !!overall,
-              statLines: after.map(r => (r.querySelector('.rank-stat')||{}).textContent || "")};}""")
+              statLines: after.map(r => (r.querySelector('.rank-stat')||{}).textContent || ""),
+              heads: [...document.querySelectorAll('.rank-row-head .rank-col-head')].map(e => e.textContent.trim()),
+              cols: after.filter(r => !r.classList.contains('rank-row-head')).map(r => {
+                const c = r.querySelector('.rank-cols');
+                return c ? [...c.children].map(x => x.textContent.trim()) : null; })};}""")
     # ---- THIS ENCODED A DECISION, AND THE DECISION REVERSED ----
     # It asserted that every rankings row carries the rank emblem, which
     # was itself a fix: the boards had their own row markup and never
@@ -735,9 +739,17 @@ def check_ranks(br):
           and board["levelChips"] == 0, board)
     # THE RANK DID NOT SIMPLY VANISH. Overall names it, so somebody's
     # rank is still readable from the board that ranks on it.
-    check("and the Overall board still says the rank in words",
-          board["hasOverall"] and any("Level" in t for t in board["statLines"]),
-          board["statLines"][:3])
+    # AND THEN IT MOVED AGAIN, into columns (build 201): "they should be
+    # in their own columns, the rank, level, and badges". The rank is a
+    # cell now, not a phrase in a stat line, so this asserts the SHAPE -
+    # a three-label header and three filled cells on every row - rather
+    # than any one label, which is the lesson every other stale check in
+    # this file already paid for.
+    check("and the Overall board still says the rank, in its own column",
+          board["hasOverall"] and len(board["heads"]) == 3
+          and len(board["cols"]) >= 1
+          and all(c is not None and len(c) == 3 and all(c) for c in board["cols"]),
+          {"heads": board["heads"], "cols": board["cols"][:3]})
     ctx.close()
     ctx.close()
 

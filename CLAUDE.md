@@ -4479,7 +4479,7 @@ pinch-zoom is never taken away from anybody.
   — the lobby, the results screen, the person card.
 - **The person card is centred, not a drawer**, on its own near-black
   surface: rank in its own colour, level under it, then XP / badges
-  (n of 16) / hundos / tests. `xp` and `tests` are **new published
+  (n of 16) / hundos / correct (was tests; see build 201). `xp` and `tests` are **new published
   fields** on the leaderboard row — an older document reads 0 and
   self-heals on that person's next push, the same contract every field
   on that row has had.
@@ -4887,5 +4887,59 @@ glow now stopped in two vertical lines down the sides.
   peaking at ~7 levels. **Proved both ways**: `--against` build 199 it
   fails on the zoomed phone (y=73) and a 440 Pro Max (y=62); on 200 it
   passes all 44 combinations.
+
+### Settings, the person card, Message, and the Overall board (build 201)
+
+- **The side edges were already gone in 200; 201 makes the gate look
+  for them.** `check-edges.py` gains `side_edges()`, the same scan
+  turned through ninety degrees: a column near either side in which a
+  contiguous stretch of the upper screen steps the same way and is not
+  undone within `PAIR` px. It needs the same minimum PEAK as the top
+  check, because a wide smooth gradient on a laptop bands by ONE level
+  for hundreds of pixels; the real cutoff peaked at 7. `--against`
+  build 199 it finds x=20 and x=498 on the zoomed phone — the box.
+- **Settings' switches are grouped, each with a one-line hint.** The
+  hints live in one `HINTS` map inside `regroupSwitches()` in
+  `showAppearance()`, keyed by the switch's label, so a relabelled
+  switch simply loses its hint rather than getting a wrong one. The
+  first header is "Display & motion". The leaderboard switch sits in a
+  `.settings-card`; the share/install buttons are
+  `.settings-actions` (a real gap between them and the text above).
+- **THE PERSON CARD SHOWED ZEROS FOR FIGURES IT HAD NEVER BEEN SENT.**
+  `xp` and `tests` were new fields in 196, so every row published before
+  that read 0 beside a real level. Two fixes, both needed: a missing
+  figure reads "—" (`known(k)`), never 0; and **every launch republishes
+  your own row** (`flushLeaderboardRow()` right after the ordinary-launch
+  `pullFromCloud()`), so the class heals as people open the app rather
+  than only when they next finish a test. "Tests" became **Correct**,
+  which every row has always carried. The Virtual Room lobby and results
+  pass `correct` through to the card for the same reason.
+- **Message opens the chat, now.** `openDirectChatWith()` used to send
+  an invite and wait; it now creates the `kind:"chat"` vrooms document
+  with both people in `participants`, remembers it, enters it, and
+  sends the inbox invite in the background. An existing DM is found
+  first and simply opened.
+- **Overall is three columns: Rank, Level, Badges**, with a header row
+  (`buildOverallHead()`), because one line of prose per row made people
+  hard to compare. Fixed column widths are what keep every number under
+  its header; the NAME is what flexes and truncates. **At 375px the
+  first version squeezed the name to 0px and ran the columns 12px past
+  the row** — the widths that fit 518 and 834 do not fit a phone. Under
+  `29rem` the gaps, place number, avatar and columns all tighten; under
+  `24rem` (SE, mini, 360 Android) the avatar goes on this board only,
+  since the Rank column already says what its coin would. Measured at
+  320–1512: no overflow, header within 1px, rank name never clipped,
+  shortest name column 38px (SE 1st gen) and ≥78px everywhere else.
+- **A TREND ARROW IS AN ORDER CHANGE, NOT A PLACE CHANGE.** The old
+  arrow compared each person's place number with their place number
+  last time, so one newcomer joining at the top gave everybody below
+  them ▼1 — *"why would everyone be +1 if no one went down under
+  them?"* `lbTrendFor()` now compares the ORDER of the people present in
+  BOTH snapshots (`class26e.lbtrend.v2`), so the arrows always sum to
+  zero: every place gained is a place somebody lost. Joiners and leavers
+  move nobody. Every board runs it, including Overall with its own
+  `sort`; the week board skips a comparison across a week boundary.
+  `check-trend.py` asserts all of this and **fails on build 200** on the
+  newcomer case (`--against`), which is the reported bug exactly.
 
 No committed regression suite exists yet. Worth building.

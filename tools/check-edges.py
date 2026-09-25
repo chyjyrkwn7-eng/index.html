@@ -68,6 +68,35 @@ def edges(path, limit=None):
                 out.append((y, bpk * sign))
     return out
 
+def side_edges(path):
+    """The same cutoff turned through ninety degrees: a column near either
+    side of the screen in which a contiguous stretch (>= RUN of the upper
+    part of the screen) steps the same way at once, and is not undone
+    within PAIR px. A card's border is a +/- pair and is skipped."""
+    im = Image.open(path).convert("L"); W, H = im.size
+    ys = list(range(int(H * .06), int(H * .6), max(1, H // 90)))
+    out = []
+    band = max(8, int(W * .12))
+    for x in list(range(3, band)) + list(range(W - band, W - PAIR - 1)):
+        d = [im.getpixel((x, y)) - im.getpixel((x - 2, y)) for y in ys]
+        for sign in (1, -1):
+            # Peak required as well as length: a wide smooth gradient on a
+            # laptop bands by ONE level for hundreds of pixels and is not
+            # an edge; the real cutoff peaked at 7.
+            best = cur = pk = bpk = 0
+            for v in d:
+                if v * sign >= 1:
+                    cur += 1; pk = max(pk, v * sign)
+                    if cur > best: best, bpk = cur, pk
+                else:
+                    cur = pk = 0
+            if best < RUN * len(ys) or bpk < PEAK: continue
+            d2 = [im.getpixel((min(W - 1, x + PAIR), y)) - im.getpixel((x, y)) for y in ys]
+            if sum(v * sign for v in d2) < -0.5 * sum(v * sign for v in d if v * sign > 0): continue
+            if not out or abs(x - out[-1][0]) > 3:
+                out.append((x, sign))
+    return out
+
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--only"); ap.add_argument("--against"); a = ap.parse_args()
     devs = [d for d in DEVICES if not a.only or a.only.lower() in d[0].lower()]
@@ -109,6 +138,8 @@ def main():
                 VIEW_W[0] = w
                 f = "/tmp/_edge.png"; pg.screenshot(path=f); n += 1
                 if os.environ.get("EDGE_KEEP"): pg.screenshot(path=os.environ["EDGE_KEEP"] + "/" + re.sub(r"[^A-Za-z0-9]+", "_", name + "_" + call) + ".png")
+                for x, v in side_edges(f):
+                    fails.append(f"{name} {w}x{h}: {call} hard SIDE edge at x={x}")
                 for y, v in edges(f, limit):
                     fails.append(f"{name} {w}x{h}: {call} hard edge at y={y} ({v:+} levels)")
             ctx.close()

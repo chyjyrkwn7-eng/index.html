@@ -12977,6 +12977,87 @@
   .badge-quiet-note.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 
 
+
+  /* ---- SETTINGS: GROUPED SWITCHES AND ONE BUTTON RHYTHM ----
+     Each switch group is one card with hairline dividers, the way iOS
+     groups related switches, so a group reads as a set. The switch sits
+     centred on its title-and-description block rather than hanging off
+     the title line. [data-layout="modern"] on the prefix for the usual
+     reason: the modern .opt rules sit later in the file. */
+  [data-layout="modern"] .settings-card{
+    margin:.55rem 0 1.35rem; padding:.15rem 1rem;
+    border-radius:16px; border:1px solid rgba(255,255,255,.08);
+    background:rgba(255,255,255,.035);
+  }
+  [data-layout="modern"] .settings-card > label.opt{
+    margin:0; padding:.9rem 0; align-items:center;
+    border:none; background:none; box-shadow:none; border-radius:0;
+  }
+  [data-layout="modern"] .settings-card > label.opt + label.opt{
+    border-top:1px solid rgba(255,255,255,.07);
+  }
+  [data-layout="modern"] .settings-card .ohint{ margin-top:.2rem; }
+  /* Share & install measured its description at 0px from the Share
+     button, the two buttons 10px apart, and Help's two buttons 24px
+     apart - three spacings on one screen. Now one: .9rem under a
+     description, .75rem between stacked buttons, everywhere. */
+  [data-layout="modern"] .panel .sync-note-plain.settings-lead{ margin-bottom:.9rem; }
+  [data-layout="modern"] .cal-profile-row.settings-actions{ gap:.75rem; }
+  [data-layout="modern"] .sect.settings-help-first{ margin-bottom:.75rem; }
+
+  /* ---- OVERALL: THREE COLUMNS ----
+     Fixed column widths so every row's numbers sit under the header and
+     under each other; the name takes what is left and truncates. */
+  .rank-row.has-cols .rank-name-wrap{ flex:1 1 auto; min-width:0; }
+  .rank-cols{
+    margin-left:auto; flex:0 0 auto;
+    display:grid; grid-template-columns:4.4rem 3rem 3.4rem;
+    align-items:center; justify-items:center; column-gap:.2rem;
+  }
+  .rank-col-num{ font-family:var(--sans); font-weight:800; font-size:1rem; color:var(--ink);
+    font-variant-numeric:tabular-nums; }
+  .rank-col-rank{ display:flex; flex-direction:column; align-items:center; gap:.1rem; line-height:1; }
+  .rank-col-emblem{ width:1.45rem; height:1.45rem; display:block; }
+  .rank-col-emblem svg{ width:100%; height:100%; display:block; }
+  .rank-col-rankname{ font-size:.66rem; font-weight:800; letter-spacing:.02em; white-space:nowrap; }
+  .rank-col-rank.is-none{ color:var(--soft); font-weight:700; }
+  .rank-row.rank-row-head{
+    background:none !important; border:none !important; box-shadow:none !important;
+    min-height:0 !important; padding-top:0 !important; padding-bottom:.1rem !important;
+    margin-bottom:-.2rem; pointer-events:none; cursor:default;
+  }
+  .rank-row-head .rank-head-spacer{ flex:1 1 auto; }
+  .rank-col-head{ font-size:.62rem; font-weight:800; letter-spacing:.05em; text-transform:uppercase;
+    color:var(--soft); }
+  /* A phone cannot give three fixed columns their tablet widths AND keep
+     a place number, an avatar and a name beside them: at 375px the name
+     was squeezed to 0px and the columns ran 12px past the row. Narrow
+     tiers take the room out of the gaps and columns, never the name. */
+  @media (max-width:29rem){
+    .rank-row.has-cols{ gap:.45rem; padding-left:.7rem; padding-right:.6rem; }
+    .rank-row.has-cols .rank-place{ width:1.7rem; }
+    .rank-row.has-cols .rank-avatar-wrap{ width:2.2rem; height:2.2rem; }
+    .rank-cols{ grid-template-columns:3.3rem 2.2rem 2.8rem; column-gap:.3rem; }
+    .rank-col-num{ font-size:.95rem; }
+    .rank-col-emblem{ width:1.3rem; height:1.3rem; }
+    .rank-col-rankname{ font-size:.6rem; letter-spacing:0; }
+    .rank-col-head{ font-size:.54rem; letter-spacing:0; }
+  }
+  /* At SE / mini / small-Android widths the avatar goes on this board
+     only: the Rank column already shows what the avatar's coin would,
+     and the width it frees is the difference between a first name and
+     four letters of one. */
+  @media (max-width:24rem){
+    .rank-row.has-cols .rank-avatar-wrap{ display:none; }
+    .rank-cols{ grid-template-columns:3.2rem 2.1rem 2.7rem; }
+  }
+  @media (min-width:40rem){
+    .rank-cols{ grid-template-columns:6.2rem 3.6rem 4.2rem; column-gap:.5rem; }
+    .rank-col-num{ font-size:1.15rem; }
+    .rank-col-emblem{ width:1.75rem; height:1.75rem; }
+    .rank-col-rankname{ font-size:.74rem; }
+    .rank-col-head{ font-size:.72rem; }
+  }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -37651,21 +37732,46 @@ function chatWithPerson(pub){
     && c.with.length === 1 && c.with[0] === pub) || null;
 }
 function openDirectChatWith(entry){
+  /* ---- MESSAGE OPENS A CHAT WITH THAT PERSON, NOT AN EMPTY ROOM ----
+     "When you go to hit message it should open a chat with that person
+     immediately." It opened the chat panel, created an EMPTY room,
+     toasted "Chat started - invite somebody", and then sent the person
+     an invite they had to accept: you landed in a blank room that was
+     with nobody yet.
+     The room is now created with BOTH people in it. That matters beyond
+     the first screen: the room listener names every chat and records
+     who it is `with` from the RAW participant map, so a person who was
+     only invited was overwritten on the first snapshot - the chat lost
+     their name and Message could not find it again, and started a
+     second one. They are written with `seen: 0`, so the roster shows
+     them as not here yet until they open it, and they still get the
+     same inbox notification an invite sends.
+     The panel opens on the tap, before the write lands, so the tap is
+     never a pause with nothing on screen. */
   const pub = entry && entry.pub;
   if(!pub) return;
   chatDockTab = "chat";
-  openChatDock();
   const existing = chatWithPerson(pub);
-  if(existing){ enterChatRoom(existing.code); return; }
-  if(!fbDb){ showToast("Chat needs a live connection — check your connection and try again."); return; }
-  Promise.resolve(createChatRoom()).then(code => {
-    if(!code) return;
-    /* The invite is what actually reaches them - a room with one person
-       in it is not a conversation. inviteFriendToChat reads
-       chatRoomCode, which enterChatRoom has just set. */
-    inviteFriendToChat(pub);
-    showToast("Chat started — " + (entry.firstName || "they") + " has been invited.", "good");
-  });
+  if(existing){ openChatDock(); enterChatRoom(existing.code); return; }
+  if(!fbDb){ showToast("Chat needs a live connection \u2014 check your connection and try again."); return; }
+  openChatDock();
+  const code = generateSyncCode();
+  const me = publicIdOf();
+  const theirName = entry.firstName || "Classmate";
+  const them = { name: theirName, avatarChar: entry.avatarChar || "ninja",
+                 level: entry.level || 0, badges: entry.badges || 0,
+                 joinedAt: Date.now(), seen: 0 };
+  fbDb.collection("vrooms").doc(code).set({
+    kind: "chat", createdAt: Date.now(), chatMessages: [], typing: {},
+    participants: { [me]: chatSelfEntry(), [pub]: them }
+  }).then(() => {
+    rememberChat(code, theirName, [pub]);
+    enterChatRoom(code);
+    sendToInbox(pub, { type: "chat", code: code });
+    store.chatInvitesOut = store.chatInvitesOut || {};
+    store.chatInvitesOut[pub] = { code: code, at: Date.now() };
+    saveStore(); pushToCloud();
+  }).catch(() => showToast("Couldn't start the chat \u2014 try again."));
 }
 
 function inviteFriendToChat(pub){
@@ -38964,7 +39070,18 @@ function openPersonSheet(entry){
   prog.appendChild(progLab);
   const grid = document.createElement("div");
   grid.className = "person-card-grid";
-  [["XP", (Number(entry.xp) || 0).toLocaleString()],
+  /* ---- ONLY NUMBERS THE ROW ACTUALLY CARRIES ----
+     "When you go to click a profile some of the stuff is showing as 0."
+     Measured on the live board: 35 of 41 rows had no `xp` and no `tests`
+     at all - they were last written by builds from before either field
+     was published - so `|| 0` turned "not known" into a confident zero
+     beside somebody's real level. An absent figure now reads "\u2014",
+     and Tests is replaced by Correct answers, which every build back to
+     the first one publishes, so that cell is never a false zero. Rows
+     fill in on their own: every app republishes its row once on launch
+     (see republishRowOnLaunch). */
+  const known = k => entry[k] !== undefined && entry[k] !== null && entry[k] !== "";
+  [["XP", known("xp") ? Number(entry.xp).toLocaleString() : "\u2014"],
    /* The ceiling is the number of units there are, read off the
       question bank the same way badgeCountOf does rather than typed as
       16 - the bank has grown before and a hardcoded total is how a
@@ -38972,7 +39089,7 @@ function openPersonSheet(entry){
    ["Badges", (entry.badges || 0) + " / " + (function(){
       try{ return topicsIn(QUESTIONS).length; }catch(e){ return 16; } })()],
    ["Hundos", String(entry.hundos || 0)],
-   ["Tests", String(entry.tests || 0)]].forEach(([label, value]) => {
+   ["Correct", known("correct") ? Number(entry.correct).toLocaleString() : "\u2014"]].forEach(([label, value]) => {
     const cell = document.createElement("div");
     cell.className = "person-card-cell";
     const v = document.createElement("span");
@@ -42143,7 +42260,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-26-200";
+const APP_BUILD = "2026-09-26-201";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -44213,7 +44330,7 @@ function showAppearance(opts){
      it says which build is running and updates on demand, whatever
      screen they came from. */
   const updSect = document.createElement("div");
-  updSect.className = "sect";
+  updSect.className = "sect settings-help-first";
   /* No label of its own any more: "This app" above it is the header,
      and a second "App version" underneath it was a header for a header. */
   const updLab = document.createElement("span");
@@ -44480,6 +44597,59 @@ function showAppearance(opts){
   autoFlagRow.append(autoFlagCb, autoFlagBox, autoFlagWrap);
   studyDetails.appendChild(autoFlagRow);
 
+  /* ---- TWO GROUPS THAT SAY WHAT THEY ARE, IN ONE VOICE ----
+     "The descriptions for the switches for the top two sections could be
+     organized better and look cohesive." Two things were wrong. Some
+     switches were in the wrong group - keeping the screen awake is about
+     studying, and the class-days countdown is about what the app SHOWS -
+     and the descriptions were written at different times in different
+     voices, from four words to a two-line sentence.
+     So the rows are regrouped here, after they are built, rather than
+     each builder being moved: the builders stay where the file has always
+     had them and only their order and wording change. Every description
+     is now one short line saying what the switch does, in the same voice.
+     Rows are found by their own title so a switch that is not built on
+     this device (Keep screen awake needs the Wake Lock API) simply isn't
+     placed. Each group sits in one .settings-card, the way iOS groups
+     related switches, so the rows read as a set instead of floating. */
+  (function regroupSwitches(){
+    const rowByTitle = {};
+    [...motionDetails.querySelectorAll(":scope > label.opt"),
+     ...studyDetails.querySelectorAll(":scope > label.opt")].forEach(r => {
+      const t = r.querySelector(".otext");
+      const title = t && t.firstChild ? String(t.firstChild.textContent).trim() : "";
+      rowByTitle[title] = r;
+    });
+    const HINTS = {
+      "Smooth scrolling":               "Scrolls back to the top smoothly instead of jumping.",
+      "Reduce motion":                  "Turns off shimmer, pulse and other animations.",
+      "Show class days remaining":      "Shows the countdown to graduation on your profile.",
+      "Swipe to next question":         "Swipe left to move on instead of tapping Next.",
+      "Auto-advance on correct":        "Moves on by itself once you're done.",
+      "Auto-flag questions you keep missing": "Flags it for review on every fifth miss.",
+      "Mute achievement banners":       "Skips the level-up and unlock banners after a test.",
+      "Keep screen awake":              "Stops the screen locking while you study."
+    };
+    const GROUPS = [
+      [motionDetails, ["Smooth scrolling", "Reduce motion", "Show class days remaining"]],
+      [studyDetails,  ["Swipe to next question", "Auto-advance on correct",
+                       "Auto-flag questions you keep missing", "Mute achievement banners",
+                       "Keep screen awake"]]
+    ];
+    GROUPS.forEach(([host, titles]) => {
+      const card = document.createElement("div");
+      card.className = "settings-card";
+      titles.forEach(t => {
+        const r = rowByTitle[t]; if(!r) return;
+        const h = r.querySelector(".ohint"); if(h && HINTS[t]) h.textContent = HINTS[t];
+        card.appendChild(r);
+      });
+      host.appendChild(card);
+    });
+    const lab = motionDetails.querySelector(".motion-summary");
+    if(lab) lab.textContent = "Display & motion";
+  })();
+
   extraSect.appendChild(motionDetails);
   extraSect.appendChild(studyDetails);
   /* updSect used to be appended here, which put a build number and an
@@ -44554,7 +44724,12 @@ function showAppearance(opts){
     + "With this off, you can't see the rankings either.";
   lbWrap.appendChild(lbHint);
   lbRow.append(lbCb, lbBox, lbWrap);
-  lbSect.appendChild(lbRow);
+  /* In a card like the two switch groups above it, so every switch on
+     the screen is presented the same way. */
+  const lbCard = document.createElement("div");
+  lbCard.className = "settings-card";
+  lbCard.appendChild(lbRow);
+  lbSect.appendChild(lbCard);
   panel.appendChild(lbSect);
 
   const syncSect = document.createElement("div");
@@ -44848,7 +45023,7 @@ function showAppearance(opts){
      else), Report a bug stays quiet, Reset stays red. */
   installBtn.classList.add("cal-profile-btn-accent");
   const shareInstallRow = document.createElement("div");
-  shareInstallRow.className = "cal-profile-row";
+  shareInstallRow.className = "cal-profile-row settings-actions";
   shareInstallRow.append(shareBtn, installBtn);
 
   const dataSect = document.createElement("div");
@@ -46277,7 +46452,7 @@ function createVirtualRoomLobby(units, timeLimit, game){
     mode: "exam",
     createdAt: Date.now(),
     participants: {
-      [publicIdOf()]: { name: myName, avatarChar: store.avatarChar || "ninja", level: levelOf(store), badges: badgeCountOf(store), hundos: hundosOf(store), xp: (store.lifetime && store.lifetime.points) || 0, tests: Array.isArray(store.testHistory) ? store.testHistory.length : 0, mystery: mysteryColorsFoundCount(), joinedAt: Date.now(), seen: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false }
+      [publicIdOf()]: { name: myName, avatarChar: store.avatarChar || "ninja", level: levelOf(store), badges: badgeCountOf(store), hundos: hundosOf(store), xp: (store.lifetime && store.lifetime.points) || 0, tests: Array.isArray(store.testHistory) ? store.testHistory.length : 0, correct: (store.lifetime && store.lifetime.correct) || 0, mystery: mysteryColorsFoundCount(), joinedAt: Date.now(), seen: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false }
     }
   };
   fbDb.collection("vrooms").doc(code).set(doc).then(() => {
@@ -47305,7 +47480,7 @@ function joinVirtualRoomLobby(code){
          rankings rows do. Written once at join - it cannot change
          while somebody is sitting in a lobby - and read with a
          fallback, so a room created by an older build still renders. */
-      ["participants." + myKey]: { name: store.firstName || "Anonymous", avatarChar: store.avatarChar || "ninja", level: levelOf(store), badges: badgeCountOf(store), hundos: hundosOf(store), xp: (store.lifetime && store.lifetime.points) || 0, tests: Array.isArray(store.testHistory) ? store.testHistory.length : 0, mystery: mysteryColorsFoundCount(), joinedAt: Date.now(), seen: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false }
+      ["participants." + myKey]: { name: store.firstName || "Anonymous", avatarChar: store.avatarChar || "ninja", level: levelOf(store), badges: badgeCountOf(store), hundos: hundosOf(store), xp: (store.lifetime && store.lifetime.points) || 0, tests: Array.isArray(store.testHistory) ? store.testHistory.length : 0, correct: (store.lifetime && store.lifetime.correct) || 0, mystery: mysteryColorsFoundCount(), joinedAt: Date.now(), seen: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false }
     }).then(() => {
       vroomCode = code; vroomIsHost = false; vroomUnits = data.units;
       vroomMyKey = myKey;
@@ -48100,7 +48275,7 @@ function showVirtualRoomLobby(){
           const open = () => openPersonSheet({
             pub: key, firstName: p.name, avatarChar: p.avatarChar,
             level: p.level, badges: p.badges, hundos: p.hundos,
-            xp: p.xp, tests: p.tests, mystery: p.mystery
+            xp: p.xp, tests: p.tests, correct: p.correct, mystery: p.mystery
           });
           row.addEventListener("click", open);
           row.addEventListener("keydown", e => {
@@ -49613,7 +49788,7 @@ function showVirtualRoomResults(){
         const openCard = () => openPersonSheet({
           pub: key, firstName: p.name, avatarChar: p.avatarChar,
           level: p.level, badges: p.badges, hundos: p.hundos,
-          xp: p.xp, tests: p.tests, mystery: p.mystery
+          xp: p.xp, tests: p.tests, correct: p.correct, mystery: p.mystery
         });
         row.addEventListener("click", openCard);
         row.addEventListener("keydown", e => {
@@ -49828,29 +50003,62 @@ function lbTrendSave(st){
    being overwritten by the render that drew it.
    Kept per board: moving up on This Week says nothing about Hundos. */
 const LB_TREND_ROLL_MS = 4 * 60 * 60 * 1000;
-function lbTrendFor(boardKey, ranked){
+/* ---- MOVEMENT IS SOMEBODY PASSING SOMEBODY, NOT A NUMBER CHANGING ----
+   "Why would everyone be +1 if no one went down under them?" and "some
+   leaderboards don't even have it". Both were real.
+   1. The arrow was the difference between two PLACE numbers. A place
+      number changes when the board's membership changes - a row retired
+      when its code was abandoned, a duplicate merged, somebody turning
+      "Show me in the rankings" off - and every row below that moves up
+      one without anybody overtaking anybody. So a whole board lit up
+      "+1" for a departure.
+   2. The baseline was stored PER BOARD, and only for boards opened in
+      the previous four-hour window. A board you had not opened had
+      nothing to compare with, so it never had arrows.
+   Now one snapshot of everybody's NUMBERS is kept (v2, a new key, so
+   the old per-board place maps are simply never read again), and every
+   board ranks both the snapshot and the live rows with its OWN sort,
+   over ONLY the people present both times. Movement is then a real
+   change of order between two people who were both there: every "up"
+   is paid for by somebody's "down", the arrows on a board always sum to
+   zero, and "everybody +1" is impossible by construction. This Week
+   shows nothing across a week boundary - last week's order against a
+   board that has just reset to zero says nothing about anybody. */
+const LB_TREND2_KEY = "class26e.lbtrend.v2";
+function lbSnapshotOf(list){
+  const o = {};
+  list.forEach(e => {
+    if(!e || !e.pub) return;
+    o[e.pub] = { firstName: e.firstName || "", level: Number(e.level) || 0,
+                 badges: Number(e.badges) || 0, hundos: Number(e.hundos) || 0,
+                 weekPoints: Number(e.weekPoints) || 0, week: e.week || "",
+                 correct: Number(e.correct) || 0, mystery: Number(e.mystery) || 0 };
+  });
+  return o;
+}
+function lbTrendFor(board, list, compare){
   const now = Date.now();
-  const st = lbTrendLoad();
+  let st = {};
+  try{ st = JSON.parse(localStorage.getItem(LB_TREND2_KEY) || "{}") || {}; }catch(e){ st = {}; }
   const stamp = Number(st.curAt) || 0;
   if(!stamp || now - stamp >= LB_TREND_ROLL_MS){
-    st.prev = st.cur || {};
-    st.prevAt = stamp;
-    st.cur = {};
+    st.prev = st.cur || null; st.prevAt = stamp; st.prevWeek = st.curWeek || "";
     st.curAt = now;
   }
-  st.cur = st.cur || {};
-  const todayMap = {};
-  ranked.forEach(r => { if(r.entry && r.entry.pub) todayMap[r.entry.pub] = r.place; });
-  st.cur[boardKey] = todayMap;
-  lbTrendSave(st);
-
+  st.cur = lbSnapshotOf(list); st.curWeek = weekKeyNow();
+  try{ localStorage.setItem(LB_TREND2_KEY, JSON.stringify(st)); }catch(e){}
   const out = {};
-  const was = (st.prev && st.prev[boardKey]) || null;
-  if(!was) return out;
-  Object.keys(todayMap).forEach(pub => {
-    const before = was[pub];
-    if(typeof before !== "number") return;   /* nobody to compare to */
-    const moved = before - todayMap[pub];
+  const prev = st.prev;
+  if(!prev) return out;
+  if(board.key === "week" && st.prevWeek !== weekKeyNow()) return out;
+  const common = list.filter(e => e && e.pub && prev[e.pub]);
+  if(common.length < 2) return out;
+  const nowOrder = common.slice().sort(compare).map(e => e.pub);
+  const before = common.map(e => Object.assign({ pub: e.pub, avatarChar: e.avatarChar }, prev[e.pub]))
+    .sort(compare).map(e => e.pub);
+  const at = {}; before.forEach((pub, i) => { at[pub] = i; });
+  nowOrder.forEach((pub, i) => {
+    const moved = at[pub] - i;
     if(moved !== 0) out[pub] = moved;
   });
   return out;
@@ -49872,7 +50080,7 @@ function buildTrendMark(moved){
   el.append(arrow, n);
   el.setAttribute("aria-label",
     Math.abs(moved) + (Math.abs(moved) === 1 ? " place " : " places ")
-    + (moved > 0 ? "up" : "down") + " since yesterday");
+    + (moved > 0 ? "up" : "down") + " since earlier today");
   return el;
 }
 
@@ -49954,7 +50162,9 @@ function renderRankingRows(rows, entries, board, opts){
     return;
   }
 
-  const trend = lbTrendFor(board.key || board.field || "board", ranked);
+  if(board.key === "overall") rows.appendChild(buildOverallHead());
+  const trend = lbTrendFor(board, sorted, board.sort || ((a, b) => (val(b) - val(a)) ||
+                    String(a.firstName || "").localeCompare(String(b.firstName || ""))));
 
   shown.forEach(({ entry, place }) => {
     const row = document.createElement("div");
@@ -49999,7 +50209,21 @@ function renderRankingRows(rows, entries, board, opts){
     stats.className = "rank-stat lb-stats";
     /* The entry as well as the number: Overall's line is made of three
        of its fields, not of one. Every other board ignores it. */
-    stats.textContent = board.unit(val(entry), entry);
+    /* ---- OVERALL IS A TABLE, NOT A SENTENCE ----
+       "How all three of those things are ranked is bad - they should be
+       in their own columns, the rank, level and badges, so you can
+       easily see what people have." One line reading "Gold · Level 49 ·
+       15 badges" cannot be scanned down: to compare two people you had
+       to read both sentences. So Overall gets three aligned columns
+       under a header (built once, above the rows), and the line under
+       the name is left for the trend mark alone. The other boards rank
+       on one number and keep their line. */
+    let cols = null;
+    if(board.key === "overall"){
+      cols = buildOverallCols(entry);
+    } else {
+      stats.textContent = board.unit(val(entry), entry);
+    }
     nameWrap.append(name, stats);
     /* Beside the stat line rather than beside the place number: the
        place is already the biggest thing on the row and a second mark
@@ -50021,8 +50245,58 @@ function renderRankingRows(rows, entries, board, opts){
       });
     }
     row.append(rank, avatarWrap, nameWrap);
+    if(cols){ row.classList.add("has-cols"); row.appendChild(cols); }
     rows.appendChild(row);
   });
+}
+
+/* The three columns on an Overall row: the rank (its emblem over its
+   name, in the rank's own colour), the level and the badge count.
+   rankOfStats is the single definition of who holds what, so this can
+   never disagree with the Rank tab or the person card. */
+function buildOverallCols(entry){
+  const cols = document.createElement("span");
+  cols.className = "rank-cols";
+  const rk = rankOfStats(Number(entry.level) || 0, Number(entry.badges) || 0, Number(entry.mystery) || 0);
+  const rc = document.createElement("span");
+  rc.className = "rank-col rank-col-rank";
+  if(rk){
+    const em = document.createElement("span");
+    em.className = "rank-col-emblem";
+    try{ em.appendChild(buildRankEmblemSVG(rk)); }catch(e){}
+    const nm = document.createElement("span");
+    nm.className = "rank-col-rankname";
+    nm.textContent = RANK_DISPLAY_NAME[rk];
+    nm.style.color = RANK_COLOR[rk];
+    rc.append(em, nm);
+  } else {
+    rc.textContent = "\u2014";
+    rc.classList.add("is-none");
+  }
+  const lv = document.createElement("span");
+  lv.className = "rank-col rank-col-num";
+  lv.textContent = String(Number(entry.level) || 0);
+  const bd = document.createElement("span");
+  bd.className = "rank-col rank-col-num";
+  bd.textContent = String(Number(entry.badges) || 0);
+  cols.append(rc, lv, bd);
+  return cols;
+}
+function buildOverallHead(){
+  const head = document.createElement("div");
+  head.className = "rank-row rank-row-head has-cols";
+  head.setAttribute("aria-hidden", "true");
+  const spacer = document.createElement("span");
+  spacer.className = "rank-head-spacer";
+  const cols = document.createElement("span");
+  cols.className = "rank-cols";
+  ["Rank", "Level", "Badges"].forEach(t => {
+    const c = document.createElement("span");
+    c.className = "rank-col rank-col-head"; c.textContent = t;
+    cols.appendChild(c);
+  });
+  head.append(spacer, cols);
+  return head;
 }
 
 /* One board, ranked on correct answers. Previously two side-by-side
@@ -54023,6 +54297,16 @@ if(syncCode && !adoptedLaunchCode){
         updateHeaderTitle();
         if(stage.querySelector(".panel.home")) showHome();
       }
+      /* republishRowOnLaunch: AFTER the pull, so the row published is
+         built from the merged, up-to-date store and not from whatever
+         this device held before it caught up. A row last written by an
+         older build is missing every field added since - 35 of 41 live
+         rows had no xp or tests - and waiting for the person's next
+         study session to fix it means somebody who opens the app but
+         does not study stays blank on everyone else's board. One write
+         per launch, through the normal writer, so it is also the
+         launch's heartbeat. */
+      try{ if(store.leaderboardOptIn) flushLeaderboardRow(); }catch(e){}
     });
     attachLiveListener(syncCode);
   });
