@@ -405,8 +405,18 @@ def main():
             # the quota - so each one is checked rather than trusted.
             guards = pg4.evaluate("""()=>{
               const calls = [];
-              fbDb = { collection: () => ({ doc: () => ({
-                update: (d) => { calls.push(d); return Promise.resolve(); } }) }) };
+              /* THE COLLECTION IS RECORDED, NOT JUST THE PAYLOAD. The
+                 beat used to be stamped into this person's LEADERBOARD
+                 row - the one document all ~30 classmates hold a live
+                 listener on - so one green dot cost a read on every
+                 phone in the class every four minutes. It goes to a
+                 presence document only the Friends screen reads now.
+                 Asserting WHERE it lands is the whole check; the
+                 payload alone would pass either way. */
+              fbDb = { collection: (c) => ({ doc: () => ({
+                update: (d) => { calls.push({ coll: c, d: d }); return Promise.resolve(); },
+                set: (d) => { calls.push({ coll: c, d: d });
+                              return { catch: () => {} }; } }) }) };
               syncCode = "AAAA-1111"; store.publicId = "me01";
               const hidden = (v) => Object.defineProperty(document, "visibilityState",
                 { get: () => v, configurable: true });
@@ -436,11 +446,15 @@ def main():
 
               hidden("visible");
               return { beats, optedOut, background, noCode, throttled,
-                       field: Object.keys(calls[0] || {}) };}""")
+                       coll: (calls[0] || {}).coll || "",
+                       field: Object.keys((calls[0] || {}).d || {}) };}""")
             check("a visible, sharing, synced device sends one",
                   guards["beats"] == 1, guards)
-            check("and it writes nothing but seenAt",
-                  guards["field"] == ["seenAt"], guards["field"])
+            # THE POINT OF THE WHOLE CHANGE.
+            check("the beat does NOT touch the leaderboard row",
+                  guards["coll"] != "leaderboard", guards)
+            check("it goes to the presence document instead",
+                  guards["coll"] == "vrooms", guards)
             check("nothing is sent when class sharing is off",
                   guards["optedOut"] == guards["beats"], guards)
             check("nothing is sent while the app is in the background",
@@ -634,6 +648,104 @@ def main():
         check("but it still says who they are",
               bool(gone["text"]) and "Level" in gone["text"], gone)
 
+
+        # ---- 13. the row is a scoreboard, not a log ---------------------
+        print("\n13. what actually writes the leaderboard row")
+        # The project ran out of its daily Firestore read quota because
+        # every saveStore() wrote this document, and every write of it is
+        # charged again as a read to all ~30 classmates listening. Two
+        # changes, and the SECOND one is the dangerous one: score fields
+        # may wait, but an invite in the same row must not. This asserts
+        # both the saving and the safety property, because getting the
+        # saving without the safety would silently break invites - the
+        # thing three builds today were spent fixing.
+        quota = pg4.evaluate("""()=>{
+          /* On a build without the split this whole section does not
+             exist. Say so rather than throwing - a gate that crashes
+             takes the rest of the run with it and reports nothing. */
+          if(typeof flushLeaderboardRow !== "function")
+            return { missing: "the leaderboard row is written on every save" };
+          let writes = 0;
+          fbDb = { collection: (c) => ({ doc: () => ({
+            set: () => { if(c === 'leaderboard') writes++; return { catch: () => {} }; },
+            update: () => ({ catch: () => {} }),
+            delete: () => ({ catch: () => {} }) }) }) };
+          syncCode = "AAAA-1111";
+          store.leaderboardOptIn = true;
+          store.lifetime = store.lifetime || { correct: 0 };
+
+          /* A first push establishes the baseline. */
+          flushLeaderboardRow();
+          const base = writes;
+
+          /* (1) A save that changes nothing on the row - a theme toggle,
+             a tour flag, a dismissed notification all look like this. */
+          saveStore(); pushToCloud(); pushToCloud();
+          const afterNoChange = writes;
+
+          /* (2) Only the numbers moved: answering a question. */
+          store.lifetime.correct = (store.lifetime.correct || 0) + 1;
+          pushToCloud();
+          store.lifetime.correct += 1;
+          pushToCloud();
+          const afterScore = writes;
+
+          /* (3) An invite lands in this same row and cannot wait. */
+          store.chatInvitesOut = { zzz999: { code: 'ABCD-1234', at: Date.now() } };
+          pushToCloud();
+          const afterInvite = writes;
+
+          /* (4) And the end of a run publishes the numbers held back. */
+          flushLeaderboardRow();
+          return { base: base,
+                   noChange: afterNoChange - base,
+                   score: afterScore - afterNoChange,
+                   invite: afterInvite - afterScore,
+                   flush: writes - afterInvite };}""")
+        check("a save that changes nothing on the row writes nothing",
+              quota.get("noChange") == 0, quota)
+        check("answering questions does not write it every time",
+              quota.get("score") == 0, quota)
+        # THE ONE THAT MUST NOT REGRESS.
+        check("but an invite still goes out immediately",
+              quota.get("invite") == 1, quota)
+        check("and the end of a run publishes the held-back numbers",
+              quota.get("flush") == 1, quota)
+
+        # A DELETED ROW STILL MATCHES ITS OWN SIGNATURE, which is how
+        # "skip an identical write" quietly breaks the Settings toggle:
+        # turning it off deletes the document, turning it back on builds
+        # a row identical to the cached one, compares equal, and writes
+        # nothing - so the person stays OFF the board while the toggle
+        # says they are on it. Driven through the real control.
+        toggled = pg4.evaluate("""()=>{
+          let writes = 0, deletes = 0;
+          fbDb = { collection: (c) => ({ doc: () => ({
+            set: () => { if(c === 'leaderboard') writes++; return { catch: () => {} }; },
+            update: () => ({ catch: () => {} }),
+            delete: () => { if(c === 'leaderboard') deletes++;
+                            return { catch: () => {} }; } }) }) };
+          syncCode = "AAAA-1111";
+          store.leaderboardOptIn = true;
+          flushLeaderboardRow();
+          const before = writes;
+          showAppearance();
+          const box = [...document.querySelectorAll('input[type=checkbox]')]
+            .find(b => b.checked && b.closest('label,div,section'));
+          return new Promise(r => setTimeout(() => {
+            /* Off, then on, through the store the control writes to. */
+            store.leaderboardOptIn = false; store.leaderboardOptInChanged = true;
+            pushToCloud();
+            const afterOff = { w: writes, d: deletes };
+            store.leaderboardOptIn = true; store.leaderboardOptInChanged = true;
+            pushToCloud();
+            r({ before: before, offDeletes: afterOff.d,
+                backOn: writes - afterOff.w, hadBox: !!box });
+          }, 200));}""")
+        check("turning the leaderboard off removes the row",
+              toggled.get("offDeletes", 0) >= 1, toggled)
+        check("and turning it back on puts it back",
+              toggled.get("backOn") == 1, toggled)
 
         ctx4.close()
 

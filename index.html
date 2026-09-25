@@ -25432,6 +25432,47 @@ document.title = BANK_TITLE;
 
 const STORE_KEY = "class26e.drill.v1";
 
+/* ---- DECLARED AT THE TOP, AND THAT IS LOAD-BEARING ----
+   These belong beside pushLeaderboardRow a thousand lines below, and
+   that is where they started. Boot reaches the code that clears this
+   cache - through retireLeaderboardEntry and the reset paths - from
+   INSIDE the top-level script, so the read hit the temporal dead zone,
+   threw, and took the whole script down before `let inVirtualRoom` was
+   ever reached. The reported symptom is an unrelated name:
+   "inVirtualRoom is not defined", because the declaration that never
+   ran is the one the harness happens to ask about.
+
+   Moving them above retireLeaderboardEntry was not enough - something
+   earlier still gets there first - so they go at the very top, where
+   nothing can precede them. The fifth time this file has been bitten
+   by a `let` declared below its caller, and the reason check-chat
+   opens by simply asking whether the app finished booting. */
+const ROW_LAZY_FIELDS = ["correct", "level", "badges", "mystery",
+                         "hundos", "week", "weekPoints"];
+/* Long enough to collapse a whole drill into one or two writes, short
+   enough that a board somebody is watching is never stale for long. */
+const ROW_SCORE_PUSH_MS = 90 * 1000;
+let lastRowSig = null, lastRowUrgentSig = null, lastRowPushAt = 0, rowPushTimer = null;
+/* WHICH DOCUMENT THE CACHED SIGNATURE DESCRIBES. Without this, "the row
+   already says that" is answered about the wrong document the moment the
+   public id changes - linking a device, a reset, or the key migration -
+   and the first write under the new id is skipped. Comparing the id as
+   well makes that impossible rather than a thing to remember. */
+let lastRowKey = null;
+
+/* AND THE OTHER HALF: A DELETED ROW STILL MATCHES ITS OWN SIGNATURE.
+   Turning "show me on the leaderboard" off deletes the document, but the
+   cached signature describes what USED to be in it - so turning it back
+   on built an identical row, compared equal, and wrote nothing. The
+   person stayed off the board with the toggle saying they were on it,
+   until some unrelated field happened to change. Every path that removes
+   or re-keys the row clears this. */
+function forgetLeaderboardRowCache(){
+  lastRowSig = null; lastRowUrgentSig = null; lastRowKey = null;
+  clearTimeout(rowPushTimer); rowPushTimer = null;
+}
+
+
 /* ---- A `let` DECLARED AFTER ITS CALLER IS A TOP-LEVEL TIME BOMB ----
    idbSaveCode()'s memo used to sit beside idbSaveCode, about a thousand
    lines BELOW the two places that call it. Function declarations hoist
@@ -25980,6 +26021,7 @@ try { syncOff = window.localStorage.getItem(SYNC_OFF_KEY) === "1"; } catch(e){ s
    whenever a code is abandoned: if nobody owns it the row goes for good,
    and if somebody still does their next push puts it straight back. */
 function retireLeaderboardEntry(code){
+  forgetLeaderboardRowCache();
   if(!fbDb || !code) return;
   try { fbDb.collection("leaderboard").doc(code).delete().catch(() => {}); } catch(e){}
 }
@@ -26111,20 +26153,74 @@ const ONLINE_WINDOW_MS = 5 * 60 * 1000;
 const HEARTBEAT_MS = 4 * 60 * 1000;
 let heartbeatTimer = null;
 let lastHeartbeatAt = 0;
+/* ---- PRESENCE LIVES IN ITS OWN DOCUMENT ----
+   THE DOT WAS NEVER THE PROBLEM; WHERE IT WAS WRITTEN WAS. `seenAt`
+   used to be stamped into this person's LEADERBOARD ROW - the document
+   every classmate holds a live listener on - so one green dot ticking
+   over cost a Firestore read on all ~30 phones in the class, every
+   four minutes, all evening. Measured against the daily free quota
+   that was tens of thousands of reads for a mark that appears in
+   exactly three places, none of which is the leaderboard: the Friends
+   list, that list's online-first sort, and the count on the Profile
+   card.
+
+   So the beat goes to a document of its own that ONLY the screens
+   showing the dot listen to. The dot keeps its meaning exactly - the
+   app is open, beating every four minutes - and the write now reaches
+   the two or three people actually looking at a friends list instead
+   of the whole class.
+
+   One document with a field per person rather than a document each:
+   the reader wants everybody at once, and thirty documents would be
+   thirty reads every time somebody opened Friends. At 30 devices on a
+   4-minute beat this doc takes about one write every 8 seconds, which
+   is nowhere near Firestore's per-document write ceiling.
+
+   It lives in `vrooms` because that is a collection the rules already
+   allow this app to read and write - the same reason bug reports live
+   there. No rules change, and nothing about it is private: it is a
+   list of anonymous public ids and a timestamp. */
+const PRESENCE_DOC = "presence-v1";
+let presenceMap = null;
+let presenceUnsub = null;
+
 function sendHeartbeat(force){
   if(!fbDb || !syncCode || !store.leaderboardOptIn || !store.publicId) return;
   if(document.visibilityState !== "visible") return;
   const now = Date.now();
   if(!force && now - lastHeartbeatAt < HEARTBEAT_MS - 5000) return;
   lastHeartbeatAt = now;
-  /* update(), not set(): a heartbeat must never be able to create a
-     half-built row, and it must not overwrite the stats beside it. On
-     a device whose row does not exist yet this rejects and is ignored -
-     the next real push writes the whole thing. */
+  /* set(..., {merge:true}) rather than update(): update() rejects when
+     the document does not exist yet, and somebody has to be first. */
   try{
-    fbDb.collection("leaderboard").doc(store.publicId)
-      .update({ seenAt: now }).catch(() => {});
+    fbDb.collection("vrooms").doc(PRESENCE_DOC)
+      .set({ kind: "presence", p: { [store.publicId]: now } }, { merge: true })
+      .catch(() => {});
   }catch(e){}
+}
+
+/* Attached by the screens that draw the dot and by nothing else, which
+   is the whole point of the change. Idempotent, and it detaches itself
+   on the next screen change the same way the banners do. */
+function attachPresence(){
+  if(!fbDb || presenceUnsub) return;
+  try{
+    presenceUnsub = onSnapshotResilient(
+      fbDb.collection("vrooms").doc(PRESENCE_DOC), snap => {
+        const d = (snap && snap.exists) ? (snap.data() || {}) : {};
+        presenceMap = d.p || {};
+        /* Repaint whatever is showing the dot right now. */
+        try{ if(typeof refreshPresenceViews === "function") refreshPresenceViews(); }catch(e){}
+      });
+  }catch(e){ presenceUnsub = null; }
+  const obs = new MutationObserver(() => {
+    obs.disconnect();
+    detachPresence();
+  });
+  try{ obs.observe(stage, { childList: true }); }catch(e){}
+}
+function detachPresence(){
+  if(presenceUnsub){ try{ presenceUnsub(); }catch(e){} presenceUnsub = null; }
 }
 function startHeartbeat(){
   if(heartbeatTimer) return;
@@ -26139,11 +26235,16 @@ function startHeartbeat(){
 }
 function isOnline(entry){
   if(!entry) return false;
-  /* seenAt when it is there, lastModified when it is not. The fallback
-     is not tidiness: everybody is on an older build for the first day
-     after this ships, and without it the whole class reads as offline
-     until each phone updates. It ages out on its own as rows refresh. */
-  const at = Math.max(Number(entry.seenAt) || 0, Number(entry.lastModified) || 0);
+  /* THE PRESENCE DOCUMENT FIRST, THE ROW AS A FALLBACK, and the
+     fallback is not tidiness: for the first day after this ships half
+     the class is still stamping `seenAt` into their leaderboard row and
+     nothing at all into the presence document. Without the second
+     reading they would all show as offline. Both age out on their own. */
+  let at = 0;
+  if(presenceMap && entry.pub && typeof presenceMap[entry.pub] === "number"){
+    at = presenceMap[entry.pub];
+  }
+  at = Math.max(at, Number(entry.seenAt) || 0, Number(entry.lastModified) || 0);
   return !!at && (Date.now() - at) < ONLINE_WINDOW_MS;
 }
 
@@ -26172,6 +26273,10 @@ function incomingFriendRequests(){
   const accepted = new Set(store.friendsIn || []);
   const declined = new Set(store.friendsDeclined || []);
   const friends = new Set(friendPublicIds());
+  const box = inboxOfType("friendreq", 0).filter(m =>
+    m.pub && m.pub !== store.publicId &&
+    !accepted.has(m.pub) && !declined.has(m.pub) && !friends.has(m.pub));
+  if(box.length) return box;
   return (leaderboardRows || []).filter(e =>
     e && e.pub && e.pub !== store.publicId &&
     Array.isArray(e.freq) && e.freq.indexOf(store.publicId) >= 0 &&
@@ -26212,11 +26317,23 @@ function acceptFriendRequest(pub){
     store.friendsIn = (store.friendsIn || []).concat([pub]);
   }
   store.friendsDeclined = (store.friendsDeclined || []).filter(x => x !== pub);
+  /* TELL THEM, rather than making them find it by scanning the board.
+     This is also what lets friendPublicIds() be true from local state
+     alone - the requester records the accept and never has to read
+     anybody's row to know they have a friend. */
+  sendToInbox(pub, { type: "friendacc" });
+  clearInbox(pub);
   saveStore();
 }
 
+/* Declining is still local and still says nothing to them - but the
+   request has to come OUT of the mailbox or it is offered again on
+   every launch. */
+function clearFriendRequestFromInbox(pub){ clearInbox(pub); }
+
 function declineFriendRequest(pub){
   if(!pub) return;
+  clearInbox(pub);
   /* Local only. Declining is not something the other person needs told,
      and publishing it would mean writing "no" into a document they can
      read, which is a worse thing to build than a quiet no. */
@@ -26241,6 +26358,7 @@ function removeFriend(pub){
 /* ---- lobby invites, on the same mechanism ---- */
 function inviteFriendToLobby(pub, roomCode){
   if(!pub || !roomCode) return;
+  sendToInbox(pub, { type: "vroom", code: roomCode });
   store.lobbyInvitesOut = store.lobbyInvitesOut || {};
   store.lobbyInvitesOut[pub] = { code: roomCode, at: Date.now() };
   saveStore();
@@ -26250,9 +26368,134 @@ function inviteFriendToLobby(pub, roomCode){
 /* An invite is only live for a while - a room that finished an hour ago
    is not an invitation, and nothing else clears it. */
 const LOBBY_INVITE_TTL_MS = 30 * 60 * 1000;
+/* ================= THE MAILBOX =====================================
+   AN INVITE ADDRESSED TO YOU BELONGS IN A DOCUMENT THAT IS YOURS.
+
+   Until now it did not. Inviting Alex wrote the invite into MY OWN row
+   on the class leaderboard, with a note saying who it was for, and Alex
+   found out because his phone was watching all ~30 rows waiting for
+   something addressed to him to appear in one of them. It worked, and
+   it is why everything else was expensive: every phone had to watch
+   every row all the time, so one person's score ticking over cost a
+   read on all thirty, and the whole thing got worse as the class grew.
+
+   Why it was ever built that way, since it is worth knowing: the
+   leaderboard row was ALREADY being fetched by everyone for the board
+   itself, so putting the invite in it looked free. It is only free if
+   you never count reads.
+
+   Now: `vrooms/inbox-<publicId>`, one per person, and each device
+   listens to its own and nobody else's. One read when something
+   actually arrives for you, instead of thirty reads every time anybody
+   anywhere does anything.
+
+   `vrooms` because the rules already let this app read and write there
+   - the same reason bug reports and the presence document live in it.
+   No rules change.
+
+   TRANSITIONAL, AND DELIBERATELY BELT AND BRACES: every send still
+   writes the old row field as well, so a classmate who has not picked
+   up this build yet still receives invites the old way. Readers prefer
+   the inbox and fall back to the row scan, so a device that has the
+   board loaded for its own reasons still sees an invite sent by an
+   older build. Invites are a handful of writes an evening, so the
+   duplicate costs nothing measurable. The row half comes out once
+   every phone is past this build. */
+const INBOX_PREFIX = "inbox-";
+const INBOX_KEEP_MS = 60 * 60 * 1000;
+let inboxMsgs = null;
+let inboxUnsub = null;
+
+function inboxDocFor(pub){
+  return fbDb.collection("vrooms").doc(INBOX_PREFIX + pub);
+}
+
+/* One entry per SENDER, so a second invite from the same person
+   replaces their first rather than piling up - the same shape the row
+   field had, which is what keeps the readers simple. */
+function sendToInbox(pub, payload){
+  if(!fbDb || !pub || !payload) return;
+  try{
+    const me = publicIdOf();
+    const msg = Object.assign({
+      pub: me,
+      at: Date.now(),
+      firstName: store.firstName || "Someone",
+      avatarChar: store.avatarChar || "ninja",
+      level: levelOf(store),
+      badges: badgeCountOf(store),
+      mystery: mysteryColorsFoundCount()
+    }, payload);
+    inboxDocFor(pub).set({ kind: "inbox", msgs: { [me]: msg } },
+                         { merge: true }).catch(() => {});
+  }catch(e){}
+}
+
+/* ONE DOCUMENT, AND IT IS ALWAYS ON. This is the listener that replaces
+   the class-wide one: it costs a read when something arrives for this
+   person and nothing at all the rest of the time, so there is no reason
+   to detach it. Waits for the SDK rather than giving up on it - the
+   same lesson the board listener had to learn. */
+function attachInbox(){
+  if(inboxUnsub) return;
+  if(!fbDb){ onFirebaseReady(attachInbox); return; }
+  if(!store || !store.onboardingComplete) return;
+  try{
+    inboxUnsub = onSnapshotResilient(inboxDocFor(publicIdOf()), snap => {
+      const d = (snap && snap.exists) ? (snap.data() || {}) : {};
+      inboxMsgs = d.msgs || {};
+      /* A friend accepting is not a banner, it is a fact: record it so
+         friendPublicIds() is true without needing anybody's row. */
+      let learned = false;
+      Object.keys(inboxMsgs).forEach(k => {
+        const m = inboxMsgs[k];
+        if(m && m.type === "friendacc" && (store.friendsIn || []).indexOf(k) < 0){
+          store.friendsIn = (store.friendsIn || []).concat([k]);
+          learned = true;
+        }
+      });
+      if(learned) saveStore();
+      try{ syncChatDockDot(); }catch(e){}
+      try{ if(chatDockOpen && chatDockTab === "notifs") renderNotifications(); }catch(e){}
+      try{ checkLobbyInvites(); checkFriendRequests(); checkChatInvites(); }catch(e){}
+    });
+  }catch(e){ inboxUnsub = null; }
+}
+
+/* Whatever is waiting, of one kind, newest last. Shaped as the row
+   entries the callers already expect so nothing downstream changes. */
+function inboxOfType(type, ttl){
+  const now = Date.now();
+  const out = [];
+  Object.keys(inboxMsgs || {}).forEach(k => {
+    const m = inboxMsgs[k];
+    if(!m || m.type !== type) return;
+    if(ttl && (now - (m.at || 0)) >= ttl) return;
+    out.push(m);
+  });
+  out.sort((a, b) => (a.at || 0) - (b.at || 0));
+  return out;
+}
+
+/* Taking something out of your own mailbox once it is dealt with -
+   otherwise a declined request is offered again on every launch. */
+function clearInbox(pub){
+  if(!fbDb || !pub) return;
+  try{
+    if(inboxMsgs && inboxMsgs[pub]) delete inboxMsgs[pub];
+    const patch = {};
+    patch["msgs." + pub] = firebase.firestore.FieldValue.delete();
+    inboxDocFor(publicIdOf()).update(patch).catch(() => {});
+  }catch(e){}
+}
+
 function incomingLobbyInvites(){
   const friends = new Set(friendPublicIds());
   const now = Date.now();
+  const box = inboxOfType("vroom", LOBBY_INVITE_TTL_MS)
+    .filter(m => friends.has(m.pub))
+    .map(m => ({ from: m, code: m.code }));
+  if(box.length) return box;
   return (leaderboardRows || []).filter(e => {
     if(!e || !e.pub || !friends.has(e.pub)) return false;
     const inv = e.inv && e.inv[store.publicId];
@@ -26499,6 +26742,7 @@ function resetEverything(){
        progress doc alone was never enough. Same best-effort, not
        awaited, so a slow connection cannot block the local reset. */
     try { if(store.publicId) fbDb.collection("leaderboard").doc(store.publicId).delete().catch(() => {}); } catch(e){}
+    forgetLeaderboardRowCache();
   }
   detachLiveListener();
   clearSyncCode();
@@ -26521,6 +26765,7 @@ function handleRemoteReset(){
      costs nothing and closes the gap. */
   if(fbDb && syncCode){
     try { if(store.publicId) fbDb.collection("leaderboard").doc(store.publicId).delete().catch(() => {}); } catch(e){}
+    forgetLeaderboardRowCache();
   }
   detachLiveListener();
   clearSyncCode();
@@ -26539,21 +26784,42 @@ function scheduleCloudPush(){
   cloudPushTimer = setTimeout(pushToCloud, 2500);
 }
 
-function pushToCloud(){
-  if(!fbDb || !syncCode) return;
-  try {
-    fbDb.collection("progress").doc(syncCode).set(store).catch(() => {});
-  } catch(e){}
-  /* A separate, deliberately minimal collection \u2014 only what's needed
-     to render a leaderboard entry (name, avatar, points, stars), never
-     the full progress document, and only written at all when the
-     person has actually opted in. Keyed by syncCode like the main
-     progress doc, but a genuinely different document, so turning this
-     off later just means this one stops being written/read \u2014 it
-     never touches the person's own private progress doc. */
-  if(fbDb && syncCode && store.leaderboardOptIn){
-    try {
-      fbDb.collection("leaderboard").doc(publicIdOf()).set({
+/* ---- THE ROW IS A SCOREBOARD, NOT A LOG ----
+   Every saveStore() used to write this document, and every write of it
+   is charged again as a READ to all ~30 classmates listening to the
+   collection. Answering a question saves, so a class studying together
+   was writing this row several times a minute each, thirty deep - which
+   is how the project ran out of its daily Firestore read quota in an
+   afternoon. The cost is (people x writes x people), so it grows as the
+   square of the class.
+
+   Two changes, and neither is visible to anybody:
+
+   1. AN IDENTICAL WRITE IS NOT WRITTEN. A theme toggle, a tour flag, a
+      dismissed notification all reach saveStore() and none of them
+      change a single field of this row. Skipping a write whose contents
+      match the last one cannot be perceived by definition. The two
+      timestamps have to come OUT of that comparison or it never matches
+      - they change on every write, which is exactly what made this look
+      like there was nothing to skip.
+
+   2. SCORE FIELDS MAY WAIT; EVERYTHING ELSE GOES NOW. Nobody is looking
+      at the leaderboard while they are mid-drill, and your own screens
+      read local state, so the board being a minute behind is invisible.
+      An INVITE is not: a friend request, a lobby invite or a chat
+      invite lands in this same row and has to leave immediately, which
+      is why the split is by field rather than a flat throttle on the
+      whole document. `fcode`, the name and the character go now too -
+      those are things somebody just changed and expects to see.
+
+   Progress is untouched by all of this. It still writes on the ordinary
+   2.5s debounce, because that document is the backup and being a minute
+   stale there is a real cost rather than an invisible one. */
+
+
+
+function buildLeaderboardRow(){
+  return {
         firstName: store.firstName || "Anonymous",
         avatarChar: store.avatarChar || "ninja",
         accent: theme.accent || "ink",
@@ -26614,14 +26880,89 @@ function pushToCloud(){
            mid-session. Writing it here is also correct on its own
            terms: pushing IS activity. */
         seenAt: Date.now()
-      }).catch(() => {});
-      lastHeartbeatAt = Date.now();
-    } catch(e){}
+      };
+}
+
+/* The two stamps are excluded because they change on every write; with
+   them in, nothing ever compares equal and change 1 above does nothing
+   at all. */
+function rowSignature(row, urgentOnly){
+  const out = {};
+  Object.keys(row).sort().forEach(k => {
+    if(k === "lastModified" || k === "seenAt") return;
+    if(urgentOnly && ROW_LAZY_FIELDS.indexOf(k) >= 0) return;
+    out[k] = row[k];
+  });
+  try{ return JSON.stringify(out); }catch(e){ return String(Math.random()); }
+}
+
+function writeLeaderboardRow(row){
+  clearTimeout(rowPushTimer); rowPushTimer = null;
+  try{
+    fbDb.collection("leaderboard").doc(publicIdOf()).set(row).catch(() => {});
+    lastRowSig = rowSignature(row, false);
+    lastRowUrgentSig = rowSignature(row, true);
+    lastRowKey = publicIdOf();
+    lastRowPushAt = Date.now();
+    /* set() replaces the whole document and this row carries seenAt, so
+       a push IS a heartbeat - the same reasoning as before. It only
+       counts when the write actually happened. */
+    lastHeartbeatAt = lastRowPushAt;
+  }catch(e){}
+}
+
+function pushLeaderboardRow(){
+  if(!fbDb || !syncCode || !store.leaderboardOptIn) return;
+  let row;
+  try{ row = buildLeaderboardRow(); }catch(e){ return; }
+  const sig = rowSignature(row, false);
+  /* Same contents but a different document is a different write. */
+  if(sig === lastRowSig && lastRowKey === publicIdOf()) return;
+  const urgent = rowSignature(row, true);
+  const waited = Date.now() - lastRowPushAt;
+  if(urgent === lastRowUrgentSig && lastRowSig !== null && waited < ROW_SCORE_PUSH_MS){
+    /* Only the numbers moved, and they moved recently. Come back to it
+       rather than dropping it - a deferred write that never lands is a
+       score that never appears. */
+    if(!rowPushTimer){
+      rowPushTimer = setTimeout(() => {
+        rowPushTimer = null;
+        pushLeaderboardRow();
+      }, ROW_SCORE_PUSH_MS - waited + 50);
+    }
+    return;
+  }
+  writeLeaderboardRow(row);
+}
+
+/* For the moments where waiting would be noticed: the end of a run, and
+   the app going away with a write still pending. */
+function flushLeaderboardRow(){
+  if(!fbDb || !syncCode || !store.leaderboardOptIn) return;
+  clearTimeout(rowPushTimer); rowPushTimer = null;
+  try{ writeLeaderboardRow(buildLeaderboardRow()); }catch(e){}
+}
+
+function pushToCloud(){
+  if(!fbDb || !syncCode) return;
+  try {
+    fbDb.collection("progress").doc(syncCode).set(store).catch(() => {});
+  } catch(e){}
+  /* A separate, deliberately minimal collection \u2014 only what's needed
+     to render a leaderboard entry (name, avatar, points, stars), never
+     the full progress document, and only written at all when the
+     person has actually opted in. Keyed by syncCode like the main
+     progress doc, but a genuinely different document, so turning this
+     off later just means this one stops being written/read \u2014 it
+     never touches the person's own private progress doc. */
+  if(fbDb && syncCode && store.leaderboardOptIn){
+    pushLeaderboardRow();
   } else if(fbDb && syncCode && store.leaderboardOptIn === false && store.leaderboardOptInChanged){
     /* Explicitly opted out after previously being in \u2014 removes the
        entry entirely rather than leaving a stale one visible to
        everyone else with outdated numbers attached to it. */
     try { if(store.publicId) fbDb.collection("leaderboard").doc(store.publicId).delete().catch(() => {}); } catch(e){}
+    forgetLeaderboardRowCache();
     store.leaderboardOptInChanged = false;
   }
 }
@@ -35008,6 +35349,9 @@ function leaveChatRoom(quiet){
    invite and a Virtual Room invite cannot be mistaken for each other. */
 function inviteFriendToChat(pub){
   if(!pub || !chatRoomCode) return;
+  /* STRAIGHT INTO THEIR MAILBOX, which is the whole point: one write,
+     one read on their device, and nothing at all on anybody else's. */
+  sendToInbox(pub, { type: "chat", code: chatRoomCode });
   store.chatInvitesOut = store.chatInvitesOut || {};
   store.chatInvitesOut[pub] = { code: chatRoomCode, at: Date.now() };
   saveStore();
@@ -35017,6 +35361,10 @@ const CHAT_INVITE_TTL_MS = 30 * 60 * 1000;
 function incomingChatInvites(){
   const friends = new Set(friendPublicIds());
   const now = Date.now();
+  const box = inboxOfType("chat", CHAT_INVITE_TTL_MS)
+    .filter(m => friends.has(m.pub) && m.code && m.code !== chatRoomCode)
+    .map(m => ({ from: m, code: m.code }));
+  if(box.length) return box;
   return (leaderboardRows || []).filter(e => {
     if(!e || !e.pub || !friends.has(e.pub)) return false;
     const inv = e.cinv && e.cinv[store.publicId];
@@ -35066,9 +35414,10 @@ function startChatDock(){
   if(chatDock) return;
   if(!store || !store.onboardingComplete) return;
   /* The dock is what SHOWS an invite, so it is also what has to be
-     listening for one. showHome() attaches this too and it is
-     idempotent; having it here as well means the board listener
-     cannot be missing on a device that has a dock. */
+     listening for one. Both are idempotent and both wait for the SDK,
+     so having them here as well as in showHome() means neither can be
+     missing on a device that has a dock. */
+  try{ attachInbox(); }catch(e){}
   try{ attachInviteWatcher(); }catch(e){}
 
   const host = document.createElement("div");
@@ -35175,6 +35524,8 @@ function startChatDock(){
    not land, the presence stamp above is what eventually takes the
    entry off everybody's roster. */
 window.addEventListener("pagehide", () => {
+  /* A queued score that never lands is a score that never appears. */
+  try{ if(rowPushTimer) flushLeaderboardRow(); }catch(e){}
   try{
     if(chatRoomCode && chatMyKey && fbDb){
       const patch = {};
@@ -35440,7 +35791,12 @@ function notificationItems(){
                      renderNotifications(); syncChatDockDot(); }
   }));
   (incomingChatInvites() || []).forEach(inv => items.push({
-    kind: "chat", at: (inv.from.cinv[store.publicId] || {}).at || 0, who: inv.from,
+    /* A MAILBOX MESSAGE CARRIES ITS OWN TIMESTAMP; a row entry keeps it
+       inside the field addressed to me. Reading only the second shape
+       threw the moment invites moved, and took the whole notifications
+       list with it. */
+    kind: "chat", at: inv.from.at || ((inv.from.cinv || {})[store.publicId] || {}).at || 0,
+    who: inv.from,
     text: (inv.from.firstName || "Someone") + " invited you to a chat",
     actLabel: "Join",
     act: () => { markNotifHandled("chat", inv.from.pub); joinChatRoom(inv.code);
@@ -35450,7 +35806,8 @@ function notificationItems(){
                      renderNotifications(); syncChatDockDot(); }
   }));
   (incomingLobbyInvites() || []).forEach(inv => items.push({
-    kind: "vroom", at: (inv.from.inv[store.publicId] || {}).at || 0, who: inv.from,
+    kind: "vroom", at: inv.from.at || ((inv.from.inv || {})[store.publicId] || {}).at || 0,
+    who: inv.from,
     text: (inv.from.firstName || "Someone") + " invited you to a Virtual Room",
     actLabel: "Join",
     act: () => { markNotifHandled("vroom", inv.from.pub); closeChatDock();
@@ -35550,7 +35907,11 @@ function checkChatInvites(){
   if(introPending || document.getElementById("intro-pop")) return;
   if(!invites.length) return;
   const newest = invites[invites.length - 1];
-  const at = (newest.from.cinv[store.publicId] || {}).at || 0;
+  /* Same two shapes as notificationItems - a mailbox message carries
+     its own stamp, a row entry keeps it inside the field addressed to
+     me. This is the value the "announce it once" guard is keyed on, so
+     reading the wrong one silently announces nothing. */
+  const at = newest.from.at || ((newest.from.cinv || {})[store.publicId] || {}).at || 0;
   if(at <= chatInviteSeen) return;
   if(typeof theme === "object" && theme && theme.muteBanners) return;
   /* Never over a tour's dim and never over the splash - the same rule
@@ -35952,6 +36313,7 @@ function friendStateOf(pub){
 
 function sendFriendRequestTo(pub){
   if(!pub || pub === store.publicId) return false;
+  sendToInbox(pub, { type: "friendreq" });
   if((store.friendsOut || []).indexOf(pub) < 0){
     store.friendsOut = (store.friendsOut || []).concat([pub]);
     saveStore();
@@ -36239,6 +36601,7 @@ function showHome(){
   /* An invite that arrived while this device was elsewhere is still an
      invite, so Home checks what is already on the board as well as
      watching for new ones. */
+  attachInbox();
   attachInviteWatcher();
   /* Started from Home rather than at boot, because boot is also the
      splash and a device that opens the app and closes it again should
@@ -39057,7 +39420,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-25-179";
+const APP_BUILD = "2026-09-25-186";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -39704,17 +40067,52 @@ function forcedUpdateBlocked(){
      in the app - results, review, a lobby, Settings - blocks by
      construction rather than by being listed. It retries, so nothing
      is lost: the update goes the moment they hit Main menu. */
+  /* ---- BLOCK WHAT IS GENUINELY UNSAFE, NOT EVERYTHING BUT HOME ----
+     This used to allow the update on Welcome and Home and NOWHERE
+     else, which reads as cautious and behaves as broken: somebody
+     sitting in Settings, on their Profile, or on the Leaderboard never
+     updated at all until they happened to wander back to the main
+     menu. Reported from the room - "you say an update is live and they
+     don't get it".
+
+     Asked for directly: push it through immediately unless they are in
+     a test, on the results, or in a retake. So the test is now a list
+     of things worth protecting, and every other screen updates on the
+     spot. */
   const el = (typeof stage !== "undefined" && stage) ? stage.firstElementChild : null;
   const screen = el && el.dataset ? el.dataset.screen : "";
-  /* The results screen counts, once it has been up long enough to
-     read - see UPDATE_REVIEW_MS. Waiting for Home alone meant somebody
-     who goes straight from a test to another test never updated. */
+
+  /* A question is up. Never interrupt one. */
+  let inTest = false;
+  try{ inTest = !!testInProgress; }catch(e){}
+  if(inTest) return true;
+  if(document.body.classList.contains("has-active-question")) return true;
+  if(document.querySelector("#pausebtn:not([hidden])")) return true;
+
+  /* The results screen, for long enough to actually be read. */
   if(screen === "results") return (Date.now() - resultsShownAt) < UPDATE_REVIEW_MS;
-  if(screen !== "home" && screen !== "welcome") return true;
+
+  /* Reviewing answers or setting up a retake - both are the tail of a
+     test somebody is still working through. */
+  if(document.querySelector(".screen-answerreview, .screen-setup")) return true;
+
+  /* A Virtual Room: a lobby is a countdown other people are waiting
+     on, and a match is a test with company. */
+  let inRoom = false;
+  try{ inRoom = !!inVirtualRoom; }catch(e){}
+  if(inRoom) return true;
+  if(document.querySelector(".vroom-lobby-panel, .vroom-chat-slot, .screen-tug")) return true;
+
+  /* And nothing may land on top of a loading screen, a tour or a
+     cutscene, wherever they are. */
   return !!(document.getElementById("splashscreen") ||
+            document.getElementById("teststart-overlay") ||
             document.getElementById("genprofile-overlay") ||
             document.getElementById("tour-overlay") ||
-            document.getElementById("badge-cutscene"));
+            document.getElementById("badge-cutscene") ||
+            document.getElementById("vroom-cutscene") ||
+            document.getElementById("supernova-cutscene") ||
+            document.getElementById("intro-pop"));
 }
 
 function startForcedUpdate(){
@@ -39787,6 +40185,47 @@ window.addEventListener("load", () => setTimeout(checkForUpdate, 1500));
 document.addEventListener("visibilitychange", () => {
   if(!document.hidden) checkForUpdate();
 });
+
+/* ---- AND WHILE SOMEBODY IS JUST USING IT ----
+   Until now the check ran at launch, on coming back to the app, and on
+   a screen change. Somebody who opens the app and stays put - reading
+   their Profile, sitting on Home, scrolling the Leaderboard - never
+   asked again, so a build shipped while they were looking at it did
+   not arrive until they navigated or closed and reopened. That is the
+   "you say an update is live and they don't get it" everybody in the
+   room saw at once.
+
+   THIS COSTS NO FIRESTORE QUOTA. version.json is a file on GitHub
+   Pages, not a document in the database, so asking for it every minute
+   is a few hundred bytes and nothing at all against the read limit
+   that the rest of tonight has been about.
+
+   Only while the app is actually on screen: a backgrounded tab has
+   nothing to update and iOS suspends the timer anyway. */
+/* FIFTEEN SECONDS, AND NOTHING AT ALL INSIDE A TEST.
+
+   Fast, because there is nothing to spend: version.json is a static
+   file on GitHub Pages, a few hundred bytes, and it is not a Firestore
+   read - so the rate has nothing to do with the quota the rest of
+   tonight has been about. Four requests a minute per device across the
+   class is a rounding error for a CDN, and a whole 2.5-hour session
+   costs each phone something like 120KB.
+
+   And silent inside a test, because asking is pointless there: an
+   update that arrived could not be applied anyway - forcedUpdateBlocked()
+   would refuse it - so the request would be spent to learn something
+   unusable. Skipping it also keeps the radio quiet during the one
+   activity where somebody is actually concentrating.
+
+   The moment the test ends, the screen change fires its own check, so
+   nothing waits for the next tick. */
+const UPDATE_POLL_MS = 15 * 1000;
+setInterval(() => {
+  if(document.hidden) return;
+  /* Not while it could not be applied. */
+  try{ if(forcedUpdateBlocked()) return; }catch(e){}
+  checkForUpdate();
+}, UPDATE_POLL_MS);
 
 function celebrate(palette){
   if(theme.reduceMotion) return;
@@ -39903,6 +40342,13 @@ let lastRunXpEarned = 0;
 let lastRunPointsAfter = 0;
 
 function summarize(){
+  /* THE END OF A RUN IS THE MOMENT THE BOARD IS WORTH UPDATING, and the
+     only one. Everything in between is a number nobody is looking at -
+     see the note on pushLeaderboardRow. Deferred here would still land
+     within ROW_SCORE_PUSH_MS, but somebody who finishes a test and goes
+     straight to the Leaderboard should see themselves, so this one is
+     flushed rather than queued. */
+  try{ setTimeout(flushLeaderboardRow, 0); }catch(e){}
   testInProgress = false;
   /* The end of a test is the moment the forced update was asked to land
      on. Deferred a beat so the results screen paints first - finishing a
@@ -43221,59 +43667,63 @@ function placeTopBanner(el){
   if(measured > baseline) el.style.top = measured + "px";
 }
 
-/* ---- THE LISTENER THAT WAS USUALLY NEVER ATTACHED ----
-   This used to be `if(!fbDb) return;` and nothing ever tried again -
-   and the note on onFirebaseReady above already says why that is fatal:
-   BOTH FIREBASE SCRIPT TAGS CARRY `defer`, so fbDb is GUARANTEED to be
-   null when the boot code runs. showHome() at launch therefore hit that
-   return EVERY TIME, and the only way the watcher ever got attached was
-   mounting Home a second time, later, by hand.
+/* ---- THE CLASS-WIDE LISTENER IS GONE, AND THIS IS WHAT REPLACES IT ----
+   This used to hold a live subscription to the WHOLE `leaderboard`
+   collection on every device, all evening, purely so an invite hidden
+   inside somebody's row could be noticed. That is the listener that
+   made everything expensive: one person's score ticking over cost a
+   read on all ~30 phones, so the bill grew as the square of the class.
 
-   That is exactly "the invites don't show immediately at all, they
-   randomly show up": with no watcher, an invite surfaced only when
-   something else happened to refresh leaderboardRows - opening the
-   Leaderboard, the friends board attaching its own listener, or
-   wandering back to Home after the SDK had finished loading. All of
-   which look random from the outside, because they are unrelated to
-   the invite.
+   Invites arrive through the mailbox now - one document per person,
+   read only by its owner - so nothing needs the collection to be
+   watched continuously.
 
-   Same fix the race listener already carries: wait for the SDK rather
-   than giving up on it. */
-function attachInviteWatcher(){
-  if(inviteWatchUnsub) return;   /* one listener, not one per Home mount */
-  if(!fbDb){ onFirebaseReady(attachInviteWatcher); return; }
+   IT IS STILL FETCHED, ONCE IN A WHILE, AND THAT IS TRANSITIONAL. A
+   classmate who has not picked up this build yet still sends invites
+   the old way, into their own row, and a device that is no longer
+   watching the collection would never see one. So the board is pulled
+   on launch and on returning to Home, at most every BOARD_REFETCH_MS,
+   and the ordinary row-scanning fallback in incomingChatInvites() and
+   friends does the rest. A few hundred reads a session rather than
+   tens of thousands, and it can be deleted once every phone is past
+   this build.
+
+   The Leaderboard and Friends screens still attach their own listeners
+   while they are open, which is correct: somebody looking at a board
+   wants it live. */
+const BOARD_REFETCH_MS = 2 * 60 * 1000;
+let boardFetchedAt = 0;
+let boardFetchInFlight = false;
+
+function fetchBoardForInvites(force){
+  if(!fbDb){ onFirebaseReady(() => fetchBoardForInvites(true)); return; }
+  if(boardFetchInFlight) return;
+  if(!force && Date.now() - boardFetchedAt < BOARD_REFETCH_MS) return;
+  boardFetchInFlight = true;
   try{
-    inviteWatchUnsub = onSnapshotResilient(fbDb.collection("leaderboard"), snap => {
+    fbDb.collection("leaderboard").get().then(snap => {
+      boardFetchInFlight = false;
+      boardFetchedAt = Date.now();
       const next = [];
       snap.forEach(doc => {
         const e = Object.assign({ pub: doc.id }, doc.data());
         e.weekPoints = weekPointsOfEntry(e);
         next.push(e);
       });
-      /* An empty cached snapshot is not an empty class - only a served
-         answer may take something away. */
-      const served = !(snap.metadata && snap.metadata.fromCache);
-      if(next.length || served || !(leaderboardRows && leaderboardRows.length)){
+      /* An empty answer never takes the class away - the same rule the
+         listener carried. */
+      if(next.length || !(leaderboardRows && leaderboardRows.length)){
         leaderboardRows = next;
       }
-      /* ANNOUNCE ON EVERY SCREEN, NOT ONLY HOME. This used to read
-         `if(screen === "home")`, and checkChatInvites was not in it at
-         all - so a chat invite arriving while somebody was on the
-         Leaderboard, in Settings or mid-test produced nothing: no
-         banner, no dot, no row. It only ever surfaced on the next Home
-         mount, which is exactly how it was reported ("they aren't
-         showing up, and if they do it's only on the main menu").
-         The button is on every screen, so what it counts has to be
-         too. Each banner clears itself on the next navigation through
-         its own observer, and each already refuses over a tour, the
-         splash and the introduction, so there is no screen this is
-         unsafe on. */
-      syncChatDockDot();
-      if(chatDockOpen && chatDockTab === "notifs") renderNotifications();
-      checkLobbyInvites(); checkFriendRequests(); checkChatInvites();
-    });
-  }catch(e){}
+      try{ syncChatDockDot(); }catch(e){}
+      try{ if(chatDockOpen && chatDockTab === "notifs") renderNotifications(); }catch(e){}
+      try{ checkLobbyInvites(); checkFriendRequests(); checkChatInvites(); }catch(e){}
+    }).catch(() => { boardFetchInFlight = false; });
+  }catch(e){ boardFetchInFlight = false; }
 }
+
+/* Kept as the name every call site already uses. */
+function attachInviteWatcher(){ fetchBoardForInvites(false); }
 
 /* ======================= TUG OF WAR ==========================
    A Virtual Room GAME TYPE, not a new mode. Everything around it -
@@ -46203,7 +46653,27 @@ function attachFriendsBoardListener(){
   }catch(e){}
 }
 
+/* The screens drawing the dot repaint themselves when presence lands -
+   the listener attaches after the screen is already up, so the first
+   snapshot arrives a moment later and would otherwise be invisible
+   until something else caused a redraw. */
+let refreshPresenceViews = function(){};
+
 function showFriends(){
+  attachPresence();
+  /* Repaint when presence lands, because the listener attaches after
+     this screen is already drawn and its first snapshot is what puts
+     the dots on. NOT while somebody is typing: the add-a-friend field
+     lives on this screen and rebuilding it under a finger would throw
+     away what they had typed. The presence document changes every few
+     seconds with thirty people on a four-minute beat, so this guard is
+     load-bearing rather than defensive. */
+  refreshPresenceViews = () => {
+    if(!document.querySelector(".friend-sect")) return;
+    const el = document.activeElement;
+    if(el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
+    showFriends();
+  };
   window.forceHideBottomTabs = false;
   setActiveNav("profile");
   countEl.textContent = "Friends";
@@ -47062,6 +47532,10 @@ const PROFILE_TABS = ["profile", "stats", "badges", "ranks"];
 const PROFILE_TAB_ALIASES = { achievements: "ranks", ladder: "ranks", unlocks: "ranks" };
 
 function showProfile(defaultTab){
+  /* The Profile card counts how many friends are online, so it needs
+     presence too - and like Friends it detaches on the next screen. */
+  attachPresence();
+  refreshPresenceViews = function(){};
   /* Validated, not just defaulted, and that is the whole of a real bug:
      showProfile was passed STRAIGHT to addEventListener and to
      buildBackLink at three call sites, so defaultTab arrived as a

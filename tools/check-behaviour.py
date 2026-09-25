@@ -735,13 +735,41 @@ def check_update_and_cards(br):
     ctx, pg = booted(br, PHONE[1], PHONE[2], seed=USED_ACCOUNT)
     got = pg.evaluate("""()=>{
       const out = {};
-      /* The gate reads the screen on stage, which only Welcome and Home
-         set - so every other screen blocks by construction. */
+      /* THE DECISION CHANGED, SO THIS CHECK HAD TO BE RE-READ. It used
+         to assert that every screen but Welcome and Home BLOCKED the
+         update - which was the rule, and which behaved as "anybody
+         sitting in Settings or on their Profile never updates at all".
+         Asked for directly: push it through unless they are in a test,
+         on the results, or in a retake. So the shape being asserted is
+         now which states are worth protecting, not which screen is
+         Home. */
       out.home = forcedUpdateBlocked();
       showAppearance();
-      out.elsewhere = forcedUpdateBlocked();
+      out.settings = forcedUpdateBlocked();
+      showProfile();
+      out.profile = forcedUpdateBlocked();
       showHome();
       out.backHome = forcedUpdateBlocked();
+
+      /* A question in progress, however you detect it. */
+      document.body.classList.add('has-active-question');
+      out.inTest = forcedUpdateBlocked();
+      document.body.classList.remove('has-active-question');
+
+      /* Reviewing answers, and a retake being set up. */
+      const mkScreen = (cls) => { const p = document.createElement('section');
+        p.className = 'panel ' + cls; stage.replaceChildren(p); };
+      mkScreen('screen-answerreview'); out.review = forcedUpdateBlocked();
+      mkScreen('screen-setup');        out.retake = forcedUpdateBlocked();
+      mkScreen('screen-profile');
+      const spl = document.createElement('div'); spl.id = 'splashscreen';
+      document.body.appendChild(spl);
+      out.splash = forcedUpdateBlocked();
+      spl.remove();
+      /* FAST, and the number is the point: asked for "as fast as
+         possible at a rate that makes sense". A minute was too slow to
+         feel like the update was live. */
+      out.polls = (typeof UPDATE_POLL_MS === 'number') && UPDATE_POLL_MS <= 20000;
 
       /* THE RESULTS SCREEN IS A FEW SECONDS OF GRACE, NOT A BLOCK.
          Waiting for Home alone meant somebody who goes from one test
@@ -769,9 +797,16 @@ def check_update_and_cards(br):
       return out;}""")
     check("a forced update may go while they are on Home",
           got["home"] is False, got["home"])
+    check("and in Settings, rather than waiting for them to wander back",
+          got["settings"] is False, got)
+    check("and on Profile", got["profile"] is False, got)
+    check("but never over a question in progress", got["inTest"] is True, got)
+    check("nor while they are reviewing answers", got["review"] is True, got)
+    check("nor while a retake is being set up", got["retake"] is True, got)
+    check("nor on top of a loading screen", got["splash"] is True, got)
+    check("and it re-checks at least every twenty seconds",
+          got["polls"] is True, got)
     # The results screen is not Home, and neither is anything else.
-    check("but never while they are anywhere else, results included",
-          got["elsewhere"] is True, got["elsewhere"])
     check("and it goes the moment they are back on Home",
           got["backHome"] is False, got["backHome"])
     check("a mastered unit keeps its badge", got["badge"] is True, got["badge"])

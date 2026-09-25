@@ -117,9 +117,36 @@ FAKE_FIRESTORE = """
           setTimeout(() => cb(collSnap(coll)), LATENCY);
           return () => { const i = listeners.indexOf(l); if(i >= 0) listeners.splice(i, 1); };
         },
+        /* A ONE-SHOT READ OF THE WHOLE COLLECTION. The app stopped
+           holding a live subscription to the board and pulls it
+           occasionally instead, so a fake without this reports an empty
+           class and every fallback silently measures nothing. */
+        get(){ return later(() => collSnap(coll)); },
         doc(id){
           return {
-            set(data){ return later(() => { write(coll, id, JSON.parse(JSON.stringify(data))); }); },
+            set(data, opts){ return later(() => {
+              /* MERGE IS NOT A DETAIL HERE. Presence is one document
+                 with a field per person, written by thirty devices with
+                 set(..., {merge:true}) - a fake that replaces instead of
+                 merging would show exactly one person online and the
+                 check would be measuring the harness, not the app. */
+              if(opts && opts.merge){
+                const cur = read(coll, id) || {};
+                const inc = JSON.parse(JSON.stringify(data));
+                const deepMerge = (a, b) => {
+                  Object.keys(b).forEach(k => {
+                    if(b[k] && typeof b[k] === "object" && !Array.isArray(b[k])
+                       && a[k] && typeof a[k] === "object" && !Array.isArray(a[k])){
+                      deepMerge(a[k], b[k]);
+                    } else { a[k] = b[k]; }
+                  });
+                  return a;
+                };
+                write(coll, id, deepMerge(cur, inc));
+                return;
+              }
+              write(coll, id, JSON.parse(JSON.stringify(data)));
+            }); },
             get(){ return later(() => {
               const d = read(coll, id);
               return { exists: !!d, id: id, data: () => JSON.parse(JSON.stringify(d || {})) };

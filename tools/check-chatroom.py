@@ -120,16 +120,16 @@ def main(src):
               {"name": "Cold", "pub": "ccc0000000003"})
             check("it boots with no SDK, like a real launch",
                   cold.get("db") is False, cold)
-            check("and nothing is watching yet", cold.get("watching") is False, cold)
+            check("and the board has not been read yet", cold.get("watching") is False, cold)
             late = c.evaluate("""()=>{
               /* The SDK arriving, the way the real loader announces it. */
               __useFake();
               const pending = fbReadyCallbacks.splice(0);
               pending.forEach(cb => { try{ cb(); }catch(e){} });
               return new Promise(r=>setTimeout(()=>r({
-                watching: !!inviteWatchUnsub,
-                rows: (leaderboardRows||[]).length}), 800));}""")
-            check("the watcher attaches once the SDK arrives",
+                watching: (leaderboardRows||[]).length > 0,
+                rows: (leaderboardRows||[]).length}), 900));}""")
+            check("the board is fetched once the SDK arrives",
                   late.get("watching") is True, late)
             c.close()
 
@@ -246,31 +246,57 @@ def main(src):
               return new Promise(r=>setTimeout(()=>r({
                 screen: (stage.firstElementChild && stage.firstElementChild.dataset)
                         ? (stage.firstElementChild.dataset.screen || '') : '',
-                watching: !!inviteWatchUnsub}), 700));}""")
+                watching: (leaderboardRows||[]).length > 0}), 700));}""")
             check("he is off the main menu", away.get("screen") != "home", away)
-            check("and his board listener is live", away.get("watching") is True, away)
+            check("and he has board data to fall back on", away.get("watching") is True, away)
 
+            # A FRESH INVITE, SENT THROUGH THE APP'S OWN BUTTON, while
+            # Alex is sitting on the Leaderboard. Nothing here touches
+            # his board or calls a check by hand: his MAILBOX listener
+            # is the only thing that can produce this banner.
             a.evaluate("""(x)=>{
-              const rows = {
-                [x.me]: { firstName:'Madison', facc:[x.them], freq:[], level:1, badges:0,
-                          hundos:0, cinv: { [x.them]: { code:x.code, at:Date.now() } } },
-                [x.them]: { firstName:'Alex', facc:[x.me], freq:[], level:1, badges:0, hundos:0 }
-              };
-              Object.keys(rows).forEach(id =>
-                window.__fakeDb.collection('leaderboard').doc(id).set(rows[id]));}""",
-                {"me": "aaa0000000001", "them": "bbb0000000002", "code": code})
-            b.wait_for_timeout(1400)
+              store.chatInvitesOut[x.them].at = Date.now() - 60000;
+              inviteFriendToChat(x.them);}""", {"them": "bbb0000000002"})
+            b.wait_for_timeout(1500)
             fired = b.evaluate("""()=>({
               banner: !!document.getElementById('chat-invite'),
+              box: Object.keys(inboxMsgs || {}).length,
               rows: (leaderboardRows||[]).length,
               dot: (document.getElementById('chatdock-dot')||{}).hidden === false,
               count: (document.getElementById('chatdock-dot')||{}).textContent || ''})""")
-            check("his board listener delivered the invite", fired.get("rows") >= 2, fired)
+            check("it lands in his mailbox", fired.get("box", 0) >= 1, fired)
             check("the invite banner fires off the main menu too",
                   fired.get("banner") is True, fired)
             check("and the button carries the count there", fired.get("dot") is True, fired)
             b.evaluate("()=>{ document.getElementById('chat-invite')?.remove(); showHome(); }")
             b.wait_for_timeout(700)
+
+            print("\n2c. and it arrives through his own mailbox, not the board")
+            # THE POINT OF THE MAILBOX. An invite addressed to Alex now
+            # goes into vrooms/inbox-<his id>, which only his device
+            # listens to - instead of into Madison's leaderboard row,
+            # which every phone in the class had to watch. This proves
+            # delivery with the class-wide board listener DETACHED and
+            # leaderboardRows emptied: if anything still depends on the
+            # board, nothing arrives.
+            mail = b.evaluate("""(x)=>{
+              leaderboardRows = [];
+              document.getElementById('chat-invite')?.remove();
+              chatInviteSeen = 0;
+              /* He still knows who his friends are from his own store. */
+              store.friendsIn = [x.them];
+              return new Promise(r=>setTimeout(()=>r({
+                box: Object.keys(inboxMsgs || {}).length,
+                invites: incomingChatInvites().length,
+                rows: (leaderboardRows||[]).length,
+                watching: typeof inviteWatchUnsub !== "undefined" && !!inviteWatchUnsub}), 700));}""",
+                {"them": "aaa0000000001"})
+            check("no class-wide board listener is held at all",
+                  mail.get("watching") is False, mail)
+            check("and the board itself is empty", mail.get("rows") == 0, mail)
+            check("his mailbox still has the invite in it", mail.get("box", 0) >= 1, mail)
+            check("and the app still sees it as an invite",
+                  mail.get("invites", 0) >= 1, mail)
 
             print("\n3. Alex sees it in Notifications and JOINS by tapping it")
             seen = b.evaluate("""()=>{
