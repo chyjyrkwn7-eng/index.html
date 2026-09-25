@@ -72,6 +72,12 @@ DEVICES = [
     ("iPhone 13 mini",          375,  812, "ios-phone",  (50, 0, 34, 0), (0, 50, 21, 50)),
     ("iPhone 14 / 15 / 16",     393,  852, "ios-phone",  (59, 0, 34, 0), (0, 59, 21, 59)),
     ("iPhone 16 Pro Max",       440,  956, "ios-phone",  (62, 0, 34, 0), (0, 62, 21, 62)),
+    # THE REFERENCE PHONE AS IT IS ACTUALLY SET UP. Page zoom at ~85% lays
+    # a 440pt screen out 518 CSS px wide, which was past every 512px phone
+    # gate in the app - so eleven rounds of phone fixes never reached the
+    # one phone they were for, and this matrix, which only knew 440, could
+    # not see it. Insets scale with the zoom like everything else.
+    ("iPhone 17 Pro Max @85% zoom", 518, 1125, "ios-phone", (73, 0, 40, 0), (0, 73, 25, 73)),
     ("iPad mini (6th gen)",     744, 1133, "ios-tablet", (24, 0, 20, 0), (24, 0, 20, 0)),
     ("iPad mini (home button)", 768, 1024, "ios-tablet", (20, 0, 0, 0),  (20, 0, 0, 0)),
     ("iPad 10.2\"",             810, 1080, "ios-tablet", (24, 0, 20, 0), (24, 0, 20, 0)),

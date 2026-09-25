@@ -4797,4 +4797,54 @@ reference device.**
   it further only crops more ring. That is a look decision with a real
   cost, so it wants asking about rather than assuming.
 
+### THE REFERENCE PHONE IS NOT 440px WIDE (build 199)
+
+**Read this before touching any phone layout.** Eleven rounds of
+phone fixes — Home's planet, its wording, its button, the unit-selection
+bar, the typing zoom — were each measured correct at 440×956 and each
+reported back as *"not even changed"*. They were not changed, on her
+phone. A screenshot from the device finally showed why: the planet
+small with its whole orbit visible, `v6.9` in the corner (phones hide
+it), a 224px Start button (phones use 200). **That is not the phone
+layout at all.**
+
+Measured off her screenshot against elements whose CSS size is known —
+the "?" circle, the button, the tab bar, the version label — the device
+lays the app out **~518 CSS px wide and ~1125 tall**. A 440pt screen at
+518 CSS px is a **page zoom of about 85%** (Safari's aA menu / Page
+Zoom), which a Home Screen app inherits. Rendered at 518×1125, the
+harness reproduced her screenshot to within a few pixels: the circle's
+top at 936 on both.
+
+Every phone gate in the file stopped at `max-width:512px` (or `32rem`,
+the same thing at a 16px root). 518 is past all of them, so her phone
+got the base styles with none of the phone refinements, and every fix
+was applied to a layout it never uses.
+
+- **The phone boundary is now `max-width:639px`** — everything below the
+  tablet breakpoint (`min-width:40rem` = 640) is a phone. 19 gates moved
+  (9 × `512px`, 10 × `32rem`). Nothing in the matrix sits between 513
+  and 639 in portrait except the zoomed phone; the landscape phones that
+  do are excluded by the height floors most of these rules carry.
+- **The typing zoom had the same cause.** At 85% a 17px field is drawn at
+  ~14.5px on the glass, and iOS zooms to anything under 16px ON THE
+  GLASS. The CSS floor was right in CSS pixels and wrong where it
+  counts — which is why "every field measures 17px" and "it still
+  zooms" were both true. `syncFieldFloor()` measures the zoom (short
+  side of the layout viewport over short side of the screen, so rotation
+  is not mistaken for zoom), and on a zoomed touch device sets
+  `html.page-zoomed` and `--field-floor` so every text field lands at
+  ~17px on the glass: 20px CSS at 85%, 21px at 80%. At 100%, in
+  landscape and on a laptop the class is never set and nothing changes.
+- **`iPhone 17 Pro Max @85% zoom` (518×1125) is in `DEVICES` now**, so
+  the sweep, check-fixes and check-positions all run it. **A matrix that
+  only contains the device's nominal size cannot see the device as its
+  owner has it set up**, and that gap cost more rounds than every other
+  bug in this file put together.
+- **The lesson is not "check 518".** It is that a report of "not
+  changed" is DATA: when a fix measures right and is reported as absent,
+  the device is not running the layout you measured. Ask for, or
+  reconstruct from a screenshot, the CSS viewport the device is actually
+  using — before writing a single rule.
+
 No committed regression suite exists yet. Worth building.

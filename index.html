@@ -5,7 +5,18 @@
 <!-- Deliberately the first three things in the document after charset.
      Explanation below them, so nothing delays them. -->
 <meta name="color-scheme" id="colorscheme" content="dark">
-<style>:root{--splash-bg:#0A0A0A;}html{background:var(--splash-bg);color-scheme:dark;}</style>
+<style>:root{--splash-bg:#0A0A0A;}html{background:var(--splash-bg);color-scheme:dark;}
+  /* The on-glass floor. Only ever set on a page-zoomed touch device -
+     see syncFieldFloor(). !important because it must beat every
+     per-field size in this file, each of which is right in CSS pixels
+     and wrong on a zoomed phone. */
+  html.page-zoomed input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=button]):not([type=submit]):not([type=color]):not([type=file]),
+  html.page-zoomed textarea,
+  html.page-zoomed select,
+  html.page-zoomed [contenteditable="true"]{
+    font-size:var(--field-floor, 19px) !important;
+  }
+</style>
 <!-- Two separate mechanisms, both aimed at the same symptom: a brief
      white flash on launch, reported as landing right before the splash
      appears.
@@ -1722,7 +1733,7 @@
      reported as wider than it needs to be on a phone - "a good size for
      the larger devices but could be a smidge shortened for the phones".
      A ceiling only below 32rem, so nothing on a tablet moves. */
-  @media (max-width:32rem){
+  @media (max-width:639px){
     .panel.home.onboarding-shortform-panel .searchbox{ max-width:15rem; }
   }
   /* SIX, AND IT STAYS SIX. An earlier pass moved this to four on a
@@ -4554,7 +4565,7 @@
   /* Stacked on a phone. Side by side there is ~170px each, which is not
      enough for "Add to Home Screen" at a readable size without wrapping;
      full width each is both legible and a bigger target. */
-  @media (max-width:32rem){
+  @media (max-width:639px){
     .cal-profile-row{ flex-direction:column; }
     .cal-profile-btn{ width:100%; }
   }
@@ -4619,7 +4630,7 @@
      Spreading it into the gaps fills the screen and gives the cards room
      to read as separate things, rather than pooling it at the bottom.
      Phone only; the tablet has a taller panel and different proportions. */
-  @media (max-width:32rem){
+  @media (max-width:639px){
     .welcomeintro-row{ margin-bottom:.95rem; padding-top:.85rem; padding-bottom:.85rem; }
   }
   /* Tablet sizing. Four phone-sized cards in an 834px column left the
@@ -4710,7 +4721,7 @@
      these descriptions were too small to read, and winning 20px back by
      undoing that is a bad trade. Narrow AND short, so a laptop window
      (wide, and already fitting with room) is not caught by it. */
-  @media (max-width:32rem) and (max-height:52rem){
+  @media (max-width:639px) and (max-height:52rem){
     .welcomeintro-row{ margin-bottom:.35rem; padding:.3rem .65rem; }
     .welcomeintro-title{ font-size:1.15rem; margin-bottom:.25rem; }
     /* Width, not just height. Every pixel of column this screen gets back
@@ -4740,7 +4751,7 @@
      which is what was asked for.
      The min-height guard keeps it off an SE 1st gen: that one already
      overflows this screen by 186px, and 45px more scroll helps nobody. */
-  @media (max-width:32rem) and (max-height:52rem) and (min-height:40rem){
+  @media (max-width:639px) and (max-height:52rem) and (min-height:40rem){
     .welcomeintro-panel .welcomeintro-row:last-of-type{ margin-bottom:2.8rem; }
   }
   /* The two shortest laptop windows were the last ones riding high - a
@@ -5851,7 +5862,7 @@
      file already records, where the Rewards switcher stopped scrolling
      sideways and overlapped its own labels instead. The icons keep
      their size; the air between them pays. */
-  @media (max-width:512px){
+  @media (max-width:639px){
     .bottomtabs.has-start-tab .bottomtabs-navrow{ gap:.28rem; }
     .bottomtabs.has-start-tab .bottomtabs-navrow .bottomtab{ padding:.76rem .5rem; }
     /* The gaps are only half of it - the WIDTH is set explicitly a few
@@ -6605,7 +6616,7 @@
      short username field run very nearly edge to edge and dominate a screen
      that is otherwise a title and one line - reported as "very huge".
      Phone-only so the iPad keeps exactly what was asked for there. */
-  @media (max-width:32rem){
+  @media (max-width:639px){
     .onboarding-input-wrap{ max-width:17rem; }
   }
   .synccode-status.show{ opacity:1; }
@@ -6991,7 +7002,7 @@
   .hint{ margin-top:1.5rem; font-size:.85rem; color:var(--soft); }
   .hint[hidden]{ display:none; }
 
-  @media (max-width:32rem){
+  @media (max-width:639px){
     .qtext{ font-size:1.15rem; }
     .panel{ padding:1.25rem 1rem; }
     /* Longhands, NOT the padding shorthand. This was
@@ -8658,7 +8669,7 @@
      tab bar on an SE (375x667) by 27px, and worse in a browser tab. 46rem
      is 736px: comfortably under an iPhone 13 mini at 812, comfortably
      over an SE at 667. */
-  @media (max-width:512px) and (min-height:736px){
+  @media (max-width:639px) and (min-height:736px){
     /* [data-layout="modern"] on the padding rule, because
        [data-layout="modern"] .panel{padding:1.5rem 1.25rem} sits ~900 lines
        further down at equal specificity and wins on source order - the same
@@ -8758,7 +8769,7 @@
      and the pair sits in them, clear of the button by 118px.
      [data-layout="modern"] on the prefix for the usual reason - the
      padding SHORTHAND ~900 lines below wins on source order otherwise. */
-  @media (max-width:512px){
+  @media (max-width:639px){
     /* Follows the circle down - see its `bottom` above. The reservation
        exists to keep Start Studying off the circle, so the two numbers
        are one decision and have to move together; leaving this at 5rem
@@ -8781,7 +8792,7 @@
      Narrower phones keep the full row: there the circle genuinely is
      under the button. check-fixes.py measures the clearance on every
      device in the matrix, so this cannot go wrong quietly. */
-  @media (min-width:384px) and (max-width:512px){
+  @media (min-width:384px) and (max-width:639px){
     /* 3.25rem STAYS, and the attempt to go lower is worth recording.
        Asked for a second time - still "too far from the bottom bar" - so
        this went to 2.25rem, another 16px down. check-fixes caught it on
@@ -8814,7 +8825,10 @@
        pinned to the right edge, 50px clear of it on a Pro Max and 18 on
        a 375px phone. check-fixes measures exactly that gap, on every
        device, both orientations, installed and in a browser. */
-    [data-layout="modern"] .panel.home.screen-home-actual{ padding-bottom:1.35rem; }
+    /* Scaled by --zc for the same reason as the button's own gap: the
+       button->tab bar distance was signed off at 25pt from a 100%
+       screenshot, and a page zoom of 85% drew it at 16. */
+    [data-layout="modern"] .panel.home.screen-home-actual{ padding-bottom:calc(1.35rem + (var(--zc, 1) - 1) * 59px); }
     /* AND THE BUTTON HAS TO EARN THE ROOM IT JUST TOOK. Dropping it into
        the circle's band is only safe while the two do not share a
        column, and at its natural 224px they very nearly do: measured,
@@ -8894,7 +8908,7 @@
      in a BROWSER TAB (393x742 once Safari's chrome is gone) and a Pixel
      at 760, and stops short of a 13 mini installed at 812, which has the
      room and must keep its full-size hero. */
-  @media (max-width:512px) and (min-height:576px) and (max-height:768px){
+  @media (max-width:639px) and (min-height:576px) and (max-height:768px){
     /* 33vh, not 34: growing the tab bar cost every panel 8px of height,
        and an SE 2nd/3rd gen is the one device with none to give - its
        Home went from 19px of scroll to 27. This hands the 8px back. */
@@ -8957,7 +8971,7 @@
      SE at 667px has no leftover height to move, so an auto margin there
      distributes nothing and the fixed gaps would be the only change - and
      that screen cannot afford even those. */
-  @media (max-width:512px) and (min-height:736px){
+  @media (max-width:639px) and (min-height:736px){
     .panel.home.screen-home-actual .homegreeting{ margin-top:auto; }
     /* THE PLANET, THE SAME SIZE IT IS ON WELCOME. Reported as looking
        too small, and measured that is exactly what it was: Welcome's
@@ -9075,7 +9089,15 @@
        an assumption. */
     .panel.home.screen-home-actual .cosmic-hero-wrap{ margin-bottom:min(2rem, 2.2vh); }
     .panel.home.screen-home-actual .hometitle-wrap{ margin-bottom:0; }
-    .panel.home.screen-home-actual .playbtn{ margin-top:.5rem; margin-bottom:0; }
+    /* Scaled by --zc (see syncFieldFloor) so the tagline->button gap is
+       the signed-off 32pt ON THE GLASS at any page zoom: at 100% this is
+       exactly .5rem, at 85% it grows by ~6px to make up for the ~5pt the
+       zoom takes away. 34px per unit of --zc would reproduce the 100%
+       gap exactly; it is 100px because the zoomed phone was then asked
+       for "the wording above the button slightly moved up" - ~42pt on the
+       glass at 85% instead of 32. At 100% the term is zero, so the
+       signed-off 440 layout does not move. */
+    .panel.home.screen-home-actual .playbtn{ margin-top:calc(.5rem + (var(--zc, 1) - 1) * 100px); margin-bottom:0; }
   }
   /* ---- AND THE NARROWEST PHONES CANNOT AFFORD THE FULL BLEED ----
      Going full-bleed made the hero WIDER, and this hero is square, so it
@@ -9151,7 +9173,7 @@
      rides along. */
   .cosmic-welcome .cosmic-hero-wrap,
   .cosmic-welcome-actions{ margin-top:auto; }
-  @media (max-width:32rem){
+  @media (max-width:639px){
     /* Three auto margins rather than justify-content, per explicit
        follow-up: "everything underneath the planet system could be
        lowered", with the hint line "pretty close to the bottom of the
@@ -9222,7 +9244,7 @@
      bottom: over 46rem so an SE, where this screen is already full, is
      left alone, and under 56rem so the Pro Max at 59.75rem keeps exactly
      the spacing that was signed off. */
-  @media (max-width:512px) and (min-height:736px) and (max-height:896px){
+  @media (max-width:639px) and (min-height:736px) and (max-height:896px){
     /* 2.6rem, not 3: at 3rem a 13 mini picked up 5px of overflow and its
        hint closed to 56px off the bottom edge. This keeps the gap under
        the sphere at 68px against a Pro Max's 51 - the block does sit
@@ -9240,7 +9262,7 @@
      height query: a laptop in a browser window is also short, and this
      screen is comfortable there (measured 86-129px of clearance under
      the hint) because it has the width to lay out in. */
-  @media (max-width:512px) and (max-height:736px){
+  @media (max-width:639px) and (max-height:736px){
     .cosmic-welcome{ gap:.34rem; }
     .cosmic-welcome-title{ margin-top:0; }
   }
@@ -9258,7 +9280,7 @@
      such tier, so the floor only served to EXCLUDE the one device that
      needs it most. Measured: an SE 1st gen kept the full-size planet
      and put the hint 56px off the bottom edge. */
-  @media (max-width:512px) and (max-height:768px){
+  @media (max-width:639px) and (max-height:768px){
     .cosmic-welcome .cosmic-hero-wrap{ max-width:min(23rem, 33vh); }
   }
   .homeversion .homeversion-long{ display:none; }
@@ -9309,7 +9331,7 @@
      .homeversion-btn, and .homeversion-btn sets its own display-ish
      properties further down this file - the same specificity trap
      .friend-act and .bottomtab-label already carry notes about. */
-  @media (max-width:32rem){
+  @media (max-width:639px){
     .homeversion, .homeversion.homeversion-btn{ display:none; }
   }
   .homeversion-btn{ background:none; border:none; padding:0; font:inherit; cursor:pointer; text-decoration:underline; text-decoration-thickness:from-font; text-decoration-color:color-mix(in srgb, currentColor 40%, transparent); text-underline-offset:2px; }
@@ -12257,7 +12279,7 @@
      So the inset one gets a bigger RIGHT inset, and the translated one
      gets a shifted centre. Phones only - a tablet's banner and its
      button are already 140px apart. */
-  @media (max-width:32rem){
+  @media (max-width:639px){
     .daily-alert, .app-banner{
       right:calc(max(1rem, env(safe-area-inset-right, 0px)) + 3.4rem);
     }
@@ -25251,6 +25273,45 @@ function resetStuckZoom(){
     setTimeout(() => { try{ meta.setAttribute("content", original); }catch(e){} }, 400);
   }catch(e){ try{ meta.setAttribute("content", original); }catch(e2){} }
 }
+
+/* ---- AND THE FLOOR HAS TO BE 16px ON THE SCREEN, NOT IN THE CSS ----
+   The zoom-on-typing was reported yet again against a build where every
+   field computes 17px, and the reason was finally visible in a
+   screenshot from the reference device: it lays the app out ~518px wide,
+   not 440. That is a page-zoom setting (Safari's aA menu / Page Zoom)
+   of about 85%, and at 85% a 17px field is drawn at ~14.5px on the
+   glass - under the 16px iOS zooms to. The CSS floor was right in CSS
+   pixels and wrong where it counts.
+   So the zoom is measured: the short side of the layout viewport
+   against the short side of the screen (the SHORT sides, so turning a
+   phone sideways is not mistaken for zoom). Above 1, the page is zoomed
+   out by that much, and every text field is raised by the same factor
+   so it lands at 16px or more on the glass. Touch devices only - a
+   desktop browser zoom does not zoom to a focused field - and nothing
+   at all changes on a device at 100%, because the class is never set. */
+(function(){
+  function syncFieldFloor(){
+    try{
+      const root = document.documentElement;
+      const coarse = window.matchMedia && window.matchMedia("(pointer:coarse)").matches;
+      const sInner = Math.min(window.innerWidth, window.innerHeight);
+      const sScreen = Math.min(screen.width, screen.height);
+      let r = (coarse && sScreen) ? sInner / sScreen : 1;
+      if(r > 1.6) r = 1.6;
+      /* --zc: how much bigger a CSS pixel has to be to look the same size
+         on the glass as it would at 100%. Home's two gaps that were
+         signed off from a 100% screenshot are multiplied by it, so they
+         land identically on a zoomed phone. 1 everywhere else. */
+      root.style.setProperty("--zc", (r > 1.02 ? r : 1).toFixed(3));
+      if(!(r > 1.02)){ root.classList.remove("page-zoomed"); return; }
+      root.style.setProperty("--field-floor", Math.ceil(16.5 * r) + "px");
+      root.classList.add("page-zoomed");
+    }catch(e){}
+  }
+  syncFieldFloor();
+  window.addEventListener("resize", syncFieldFloor);
+  window.addEventListener("orientationchange", () => setTimeout(syncFieldFloor, 300));
+})();
 
 /* ---- THE VIEWPORT CLAMP IS GONE, BECAUSE THE CLAMP WAS THE ZOOM ----
    What stood here swapped the viewport meta to
@@ -42063,7 +42124,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-26-198";
+const APP_BUILD = "2026-09-26-199";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
