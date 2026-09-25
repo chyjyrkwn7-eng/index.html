@@ -3054,16 +3054,42 @@ is set in exactly two places in the whole file (`showWelcome` and
 no list of excluded screens to keep up to date, and a new screen is excluded
 by default. Verified by grep, not assumed.
 
-**THE UPDATE IS A TAP, AND THE PUSH IS OPT-IN PER RELEASE.** Pushing it
-without asking was built, shipped and asked against the same night:
-*"I want them to have the interactive to select the update button, it's
-more fun that way ... I'll tell you when I need an update pushed
-through."* So the banner is the normal path and the forced push is
-gated on `force: true` in **version.json** — a sidecar file, so turning
-it on for one release is a one-line change that needs no code to reach
-anybody first. Everything below describes that push, which still
-exists and still works; it just does not fire unless the release asks
-for it.
+**THE PUSH IS THE DEFAULT, AND THE BANNER IS THE ESCAPE HATCH (build
+192).** *"Let's just keep it so that it forces updates on everyone, no
+more update banner, unless it's the safari one."* So a newer build is
+pushed without asking, and the update banner is gone from the everyday
+path.
+
+**"The safari one" is a different thing and is untouched**: that is the
+RE-ADD notice — `frameId`, `maybeShowFrameNotice()` and the
+`x-safari-https:` hand-off — which asks somebody to re-add the app to
+their Home Screen after an icon, name or status-bar change. It has
+nothing to do with builds. Don't confuse the two when reading a report
+about "the banner".
+
+**THE FLAG IS INVERTED, NOT DELETED.** `force` in **version.json** now
+defaults to true and only an explicit `"force": false` asks for the
+banner back. Keeping it readable is the entire point of it being a
+sidecar: putting the banner back for one release is a one-line change
+that needs no code to reach anybody first. `check-behaviour` section 9
+drives all four cases — no flag, `true`, `false`, and same build —
+through `checkForUpdate()` itself rather than reading the constant.
+
+**THE BANNER CODE STAYS, AND IT IS NOT DEAD.** It is reached two ways:
+an explicit `"force": false`, and — the one that matters — once the
+forced push has failed `FORCED_UPDATE_TRIES` (3) times on that exact
+build. Without that fallback a device that cannot complete a reload is
+stranded on an old build with nothing on screen to say so and no way to
+be told, until some later build happens to work. **Nobody should ever
+see it.** If somebody reports the update banner, that is the signal
+that their device has failed three forced reloads — not a cosmetic
+complaint.
+
+**This supersedes the note it replaced**, kept for the reasoning: the
+push was opt-in per release because pushing without asking was built,
+shipped and asked against the same night — *"I want them to have the
+interactive to select the update button, it's more fun that way ...
+I'll tell you when I need an update pushed through."*
 
 **The original note, kept because the mechanics still apply:** *"Force an update, next time
 people finish any test they are on it, push their update ... If they

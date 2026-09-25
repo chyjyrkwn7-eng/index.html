@@ -881,6 +881,55 @@ def check_update_and_cards(br):
           got["afterReview"] is False, got["afterReview"])
     check("the window is seconds, not minutes",
           3000 <= got["window"] <= 30000, got["window"])
+
+    """WHICH PATH A NEW BUILD TAKES, AND IT IS NOT THE BANNER ANY MORE.
+    *"Let's just keep it so that it forces updates on everyone, no more
+    update banner, unless it's the safari one."* So a version.json with
+    no `force` field at all must still push, and only an explicit
+    `"force": false` may ask for the banner back - the flag is inverted
+    rather than deleted, so turning the banner on for one release stays
+    a one-line change in a sidecar file.
+    Driven through the real decision rather than by reading the
+    constant: the check hands checkForUpdate() a version.json and looks
+    at which of the two things the app then does."""
+    paths = pg.evaluate("""async ()=>{
+      const out = {};
+      const run = async (body) => {
+        forcedUpdateInfo = null; forcedUpdateStarted = false; pendingNotice = null;
+        document.querySelectorAll('.update-banner, #pushing-update').forEach(n => n.remove());
+        try{ localStorage.removeItem('class26e.forced.v1'); }catch(e){}
+        try{ localStorage.removeItem('class26e.update.dismissed'); }catch(e){}
+        const real = window.fetch;
+        window.fetch = () => Promise.resolve({ ok:true, json: () => Promise.resolve(body) });
+        lastUpdateCheck = 0;
+        await checkForUpdate(true);
+        window.fetch = real;
+        await new Promise(r => setTimeout(r, 60));
+        return { pushed: !!(forcedUpdateStarted || document.getElementById('pushing-update')),
+                 banner: !!(pendingNotice && pendingNotice.kind === 'update') };
+      };
+      showHome();
+      const newBuild = APP_BUILD + '-next';
+      out.noFlag   = await run({ build:newBuild });
+      out.flagTrue = await run({ build:newBuild, force:true });
+      out.flagFalse= await run({ build:newBuild, force:false });
+      out.sameBuild= await run({ build:APP_BUILD });
+      return out;}""")
+    check("a new build with no force field is pushed anyway",
+          paths["noFlag"]["pushed"] is True and paths["noFlag"]["banner"] is False,
+          paths["noFlag"])
+    check("and so is an explicit force:true",
+          paths["flagTrue"]["pushed"] is True, paths["flagTrue"])
+    """The escape hatch, and the one path that reaches the banner on
+    purpose. It is also what a device falls back to once the forced
+    push has failed its three tries, which is the reason the banner
+    code is still here at all."""
+    check("only force:false asks for the banner back",
+          paths["flagFalse"]["pushed"] is False and paths["flagFalse"]["banner"] is True,
+          paths["flagFalse"])
+    check("and the same build does neither",
+          paths["sameBuild"]["pushed"] is False and paths["sameBuild"]["banner"] is False,
+          paths["sameBuild"])
     ctx.close()
 
 

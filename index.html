@@ -40503,7 +40503,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-26-191";
+const APP_BUILD = "2026-09-26-192";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -40786,23 +40786,41 @@ async function checkForUpdate(force){
      wipe the other banner off the screen mid-read anyway. The frame
      notice is not lost - it is re-evaluated on the very next check. */
   if(typeof info.build === "string" && info.build !== APP_BUILD){
-    /* OFF BY DEFAULT, AND THAT IS THE POINT. Pushing the update without
-       asking was built, shipped, and asked against the same night: "I
-       want them to have the interactive to select the update button,
-       it's more fun that way ... I'll tell you when I need an update
-       pushed through." So the banner is the normal path and the forced
-       push is opt-in PER RELEASE, from version.json's `force` flag -
-       which is a sidecar file, so turning it on for one build is a
+    /* ---- FORCED IS THE DEFAULT NOW, AND THE BANNER IS THE FALLBACK ----
+       It was the other way round: the banner was the everyday path and
+       `force` was opt-in per release, because pushing without asking was
+       built, shipped and asked against the same night ("I want them to
+       have the interactive to select the update button, it's more fun
+       that way"). That is superseded - *"let's just keep it so that it
+       forces updates on everyone, no more update banner, unless it's
+       the safari one."*
+       So the flag is INVERTED rather than deleted: `force` defaults to
+       true and only an explicit `"force": false` in version.json asks
+       for the banner back. Keeping the flag readable is the point of it
+       being a sidecar - turning the banner back on for one release is a
        one-line change and needs no code to reach anybody.
+       "The safari one" is the RE-ADD notice (`frameId` /
+       `maybeShowFrameNotice` / the `x-safari-https:` hand-off), which is
+       a different thing entirely and is untouched.
        The dismissal key is deliberately not consulted on the forced
        path: it recorded an answer to "would you like to update", which
-       is not the question being asked when force is set. It is still
-       honoured by the banner below, which is the everyday path. */
-    if(info.force === true && forcedTriesFor(info.build) < FORCED_UPDATE_TRIES){
+       is not the question being asked when the update is being pushed.
+       It is still honoured by the banner below. */
+    if(info.force !== false && forcedTriesFor(info.build) < FORCED_UPDATE_TRIES){
       forcedUpdateInfo = info;
       startForcedUpdate();
       return;
     }
+    /* ---- REACHED ONLY TWO WAYS, AND NEITHER IS THE NORMAL ONE ----
+       Either this release asked for the banner with `"force": false`,
+       or the forced push has already failed FORCED_UPDATE_TRIES times
+       on this exact build. The second is the reason this code stays
+       rather than being deleted along with the old default: without it,
+       a device that cannot complete a reload is stranded on an old
+       build with nothing on screen to say so and no way to be told,
+       until some later build happens to work. A banner it can tap is a
+       worse day than a silent push and a much better one than being
+       quietly left behind. Nobody should ever see it. */
     let dismissed = null;
     try{ dismissed = localStorage.getItem("class26e.update.dismissed"); }catch(e){}
     /* Keyed to the specific build that was dismissed, not a plain flag, so
@@ -41200,9 +41218,9 @@ function forcedUpdateBlocked(){
 
 function startForcedUpdate(){
   if(!forcedUpdateInfo || forcedUpdateStarted) return;
-  /* Belt and braces with the caller's check: nothing may push itself
-     onto a device unless that specific release asked to be pushed. */
-  if(forcedUpdateInfo.force !== true) return;
+  /* Belt and braces with the caller's check, and it moves with it: a
+     release may opt OUT of being pushed, and nothing else may. */
+  if(forcedUpdateInfo.force === false) return;
   /* Retries rather than abandoning: this is how "next time they finish
      the test they are on" is implemented. Whoever is mid-test when the
      update lands simply waits here, and the moment summarize() clears
