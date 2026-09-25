@@ -472,6 +472,120 @@ def main(src):
                   not undo.get("noMine") and len(after["chips"]) == 1 and gone == 0,
                   {"before": after["chips"], "after": gone, "found": not undo.get("noMine")})
 
+            print("\n4d. notifications say what is true")
+            """WRAPPED, SO THE BUILD THAT LACKS THESE FAILS RATHER THAN
+            THROWS. A gate that dies on the build it was written against
+            never reaches the checks that matter - it just reports one
+            stack trace where there should be six red lines."""
+            notif = a.evaluate("""()=>{
+              try{
+              if(typeof timeAgo !== 'function') throw new Error('no timeAgo');
+              if(typeof withMeInChat !== 'function') throw new Error('no withMeInChat');
+              const out = {};
+              /* ---- an age on every row that has a timestamp ---- */
+              out.ago = {
+                now:   timeAgo(Date.now() - 5000),
+                mins:  timeAgo(Date.now() - 12 * 60000),
+                hours: timeAgo(Date.now() - 3 * 3600000),
+                days:  timeAgo(Date.now() - 4 * 86400000),
+                none:  timeAgo(0)
+              };
+              /* ---- already in this chat with me ---- */
+              const them = 'them-01';
+              out.withBefore = withMeInChat(them);
+              liveChatParticipants = {};
+              liveChatParticipants[chatMyKey] = { name:'Madison' };
+              liveChatParticipants[them] = { name:'Alex' };
+              out.withAfter = withMeInChat(them);
+              out.notMe = withMeInChat(chatMyKey);
+              /* ---- their stale invite drops out of the list ---- */
+              const stamp = Date.now() - 9 * 60000;
+              /* SHAPED THE WAY sendToInbox() WRITES IT, including `pub`:
+                 incomingChatInvites() filters on m.pub, so a fixture
+                 without it lists nothing and every check below passes
+                 against zero. A first draft did exactly that. */
+              inboxMsgs = { [them]: { pub: them, type:'chat', code:'ZZZZ-9999',
+                                      at: stamp, firstName:'Alex', avatarChar:'ninja' } };
+              /* AN INVITE IS ONLY LISTED IF IT IS FROM A FRIEND -
+                 incomingChatInvites() filters on friendPublicIds(), so a
+                 fixture that skips this lists nothing and the "it
+                 disappeared" check below passes against zero. Caught by
+                 the listedWhenApart guard rather than by reading the
+                 code, which is the point of having it. */
+              store.friendsIn = [them];
+              leaderboardRows = [{ pub: them, firstName:'Alex', avatarChar:'ninja',
+                                   level:9, badges:1, seenAt: Date.now() }];
+              liveChatParticipants = null;   /* not with me yet */
+              const before = notificationItems().filter(i => i.kind === 'chat');
+              out.listedWhenApart = before.length;
+              out.listedAt = before.length ? before[0].at : 0;
+              liveChatParticipants = {};
+              liveChatParticipants[chatMyKey] = { name:'Madison' };
+              liveChatParticipants[them] = { name:'Alex' };
+              out.listedWhenTogether =
+                notificationItems().filter(i => i.kind === 'chat').length;
+              return out;
+              } catch(e){ return { threw: String(e) }; }}""")
+            print("     ", json.dumps(notif))
+            if notif.get("threw"):
+                for n in ("an age reads in minutes, hours and days",
+                          "somebody in the chat with me is recognised as such",
+                          "and I am never 'with' myself",
+                          "their invite is listed while we are apart",
+                          "and carries the time it arrived",
+                          "and drops out the moment we are in the chat together"):
+                    check(n, False, notif["threw"])
+                notif = None
+            if notif:
+                check("an age reads in minutes, hours and days",
+                      notif["ago"]["now"] == "just now" and notif["ago"]["mins"] == "12m ago"
+                      and notif["ago"]["hours"] == "3h ago" and notif["ago"]["days"] == "4d ago"
+                      and notif["ago"]["none"] == "", notif["ago"])
+                check("somebody in the chat with me is recognised as such",
+                      notif["withBefore"] is False and notif["withAfter"] is True,
+                      [notif["withBefore"], notif["withAfter"]])
+                check("and I am never 'with' myself", notif["notMe"] is False)
+                """The row has to be there to begin with, or 'it disappeared'
+                is a check that cannot fail - which this file has already
+                been caught by once."""
+                check("their invite is listed while we are apart",
+                      notif["listedWhenApart"] == 1, notif["listedWhenApart"])
+                check("and carries the time it arrived", notif["listedAt"] > 0, notif["listedAt"])
+                check("and drops out the moment we are in the chat together",
+                      notif["listedWhenTogether"] == 0, notif["listedWhenTogether"])
+
+            print("\n4e. a join that fails keeps its invitation")
+            failed = a.evaluate("""async ()=>{
+              /* A code that is not there at all: joinChatRoom must say
+                 so AND report it, rather than leaving the caller to
+                 assume it worked. */
+              const bad = await Promise.resolve(joinChatRoom('QQQQ-0000'));
+              /* And a Virtual Room code handed to the chat joiner. */
+              const wrongKind = await Promise.resolve(joinChatRoom(''));
+              return { bad, wrongKind };}""")
+            check("joining a chat that is not there resolves false",
+                  failed["bad"] is False, failed)
+            check("and so does joining nothing at all",
+                  failed["wrongKind"] is False, failed)
+            inv = a.evaluate("""()=>{
+              try{
+              if(typeof withMeInChat !== 'function') throw new Error('no withMeInChat');
+              const them = 'them-02';
+              liveChatParticipants = {};
+              liveChatParticipants[chatMyKey] = { name:'Madison' };
+              liveChatParticipants[them] = { name:'Alex' };
+              let said = null;
+              const realToast = window.showToast;
+              window.showToast = (m) => { said = m; };
+              store.chatInvitesOut = {};
+              inviteFriendToChat(them);
+              window.showToast = realToast;
+              return { said, sent: !!(store.chatInvitesOut || {})[them] };
+              } catch(e){ return { threw: String(e) }; }}""")
+            check("inviting somebody already in the chat is refused",
+                  not inv.get("threw") and inv.get("sent") is False
+                  and "already" in (inv.get("said") or "").lower(), inv)
+
             print("\n5. leaving takes him out of it")
             b.evaluate("""()=>{
               [...document.querySelectorAll('.chatdock-mini')]

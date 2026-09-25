@@ -2994,6 +2994,32 @@
   .lb-rankmark svg{ width:100%; height:100%; display:block; overflow:visible; }
   /* The level, along the BOTTOM of the character - the opposite edge
      from the rank coin, so neither lands on the other. Lobby only. */
+  /* ---- THE LOBBY'S OWN ROOM BLOCK ----
+     The roster and its count in one card, so "who is here" reads as one
+     thing rather than a bare list with a stray line under a button. */
+  .vroom-roster{
+    margin:0 0 .9rem; padding:.85rem .9rem; border-radius:16px;
+    background:rgba(0,0,0,.2); border:1px solid rgba(255,255,255,.08);
+  }
+  .vroom-roster-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    gap:.6rem; margin:0 0 .5rem;
+  }
+  .vroom-roster-title{
+    margin:0; font-size:.72rem; font-weight:800; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--soft);
+  }
+  /* In the header now rather than under the button, so it never wraps
+     onto its own line and never lands under the tab bar. */
+  .vroom-roster-head .vroom-readycount{ margin:0; font-size:.78rem; }
+  .vroom-roster-list{ margin:0; }
+  .vroom-roster-list .vroom-row:last-child{ border-bottom:none; }
+  .vroom-setup-head{ margin-top:1.4rem; }
+  @media (min-width:40rem){
+    .vroom-roster{ padding:1.1rem 1.15rem; }
+    .vroom-roster-title{ font-size:.82rem; }
+    .vroom-roster-head .vroom-readycount{ font-size:.88rem; }
+  }
   .vroom-levelchip{
     position:absolute; left:50%; transform:translateX(-50%); bottom:-.3rem;
     min-width:1.15rem; padding:0 .22rem; box-sizing:border-box;
@@ -3897,6 +3923,14 @@
   .chatdock-notif:last-child{ border-bottom:none; }
   .chatdock-notif-text{
     flex:1 1 8rem; min-width:8rem; margin:0; font-size:.85rem; line-height:1.35;
+  }
+  /* WHEN IT ARRIVED, on the same line as what it says rather than as a
+     third column: a notification row already carries an avatar, a
+     sentence and two buttons, and a 320px phone has no spare width. */
+  .chatdock-notif-when{
+    display:block; margin-top:.15rem;
+    font-size:.7rem; font-weight:700; color:var(--soft);
+    font-variant-numeric:tabular-nums;
   }
   .chatdock-notif-acts{
     display:flex; gap:.4rem; margin-left:auto; flex-shrink:0;
@@ -27100,9 +27134,61 @@ function removeFriend(pub){
   saveStore();
 }
 
+/* ---- ALREADY WITH ME ------------------------------------------------
+   "If I'm in a chat lobby or virtual room with someone I shouldn't be
+   able to invite them, and if I am in a room or chat with them their
+   old invite should disappear from notifications immediately."
+
+   Both halves come off the same question, so they come off the same
+   pair of functions: one asks whether a given publicId is in the room
+   or the chat I am in RIGHT NOW. Read from the live participant maps
+   rather than from anything stored, because "with me" is a fact about
+   this moment - somebody who left two minutes ago is invitable again.
+   Stale entries are excluded the same way the rosters exclude them
+   (presentParticipants), so a person whose phone died is not treated
+   as present forever. */
+/* `var`, not `let`: this file has been taken down five times by a
+   top-level `let` declared below its first caller, and these two are
+   read from functions that run early. Hoisted as undefined, which the
+   guards below cope with. */
+var liveVroomParticipants = null;
+var liveChatParticipants = null;
+function withMeInVroom(pub){
+  if(!pub || !vroomCode) return false;
+  const p = presentParticipants(liveVroomParticipants) || {};
+  return Object.prototype.hasOwnProperty.call(p, pub) && pub !== vroomMyKey;
+}
+function withMeInChat(pub){
+  if(!pub || !chatRoomCode) return false;
+  const p = liveChatParticipants || {};
+  return Object.prototype.hasOwnProperty.call(p, pub) && pub !== chatMyKey;
+}
+function withMeAnywhere(pub){ return withMeInVroom(pub) || withMeInChat(pub); }
+
+/* "How many minutes ago or hours ago whatever." Minutes up to an hour,
+   hours up to a day, then days - the granularity people actually read
+   at. "Just now" rather than "0m ago", because zero of something is not
+   how anybody says it. */
+function timeAgo(ts){
+  if(!ts) return "";
+  const secs = Math.max(0, Math.round((Date.now() - ts) / 1000));
+  if(secs < 45) return "just now";
+  const mins = Math.round(secs / 60);
+  if(mins < 60) return mins + "m ago";
+  const hrs = Math.round(mins / 60);
+  if(hrs < 24) return hrs + "h ago";
+  return Math.round(hrs / 24) + "d ago";
+}
+
 /* ---- lobby invites, on the same mechanism ---- */
 function inviteFriendToLobby(pub, roomCode){
   if(!pub || !roomCode) return;
+  /* Refused rather than sent and ignored: an invite to somebody sitting
+     in the room with you is a notification they cannot act on. */
+  if(withMeInVroom(pub)){
+    showToast("They are already in this room.");
+    return;
+  }
   sendToInbox(pub, { type: "vroom", code: roomCode });
   store.lobbyInvitesOut = store.lobbyInvitesOut || {};
   store.lobbyInvitesOut[pub] = { code: roomCode, at: Date.now() };
@@ -35968,7 +36054,13 @@ const VROOM_CHAT_CTX = {
   colorFor: (key, parts) => vroomColorFor(key, parts),
   shouldTrim: () => vroomIsHost,
   cap: 160, keep: 100,
-  participantsOf: (data) => data.participants || null
+  /* CACHED HERE because this is the one place every snapshot for the
+     room passes through, and "is this person with me right now" has to
+     be answerable from outside the panel - see withMeInVroom(). */
+  participantsOf: (data) => {
+    liveVroomParticipants = data.participants || null;
+    return liveVroomParticipants;
+  }
 };
 
 /* ---- where a chat lobby lives ----
@@ -36056,6 +36148,12 @@ const CHAT_CTX = {
        It is the same avatar row the rest of the app draws people with,
        so a classmate looks the same here as on the boards. */
     const p = presentParticipants(data.participants || null);
+    /* Same reason as the Virtual Room's, one function up: withMeInChat()
+       has to be answerable from the invite sheet and the notifications
+       list, neither of which can see this panel's own state. The PRESENT
+       set, not the raw map - somebody whose phone died is invitable
+       again, which is the same rule the roster itself draws by. */
+    liveChatParticipants = p;
     renderChatRoster(p);
     announceChatRoomChange(data, p);
     return p;
@@ -36231,17 +36329,22 @@ function createChatRoom(){
   }).catch(() => showToast("Couldn't start the chat — try again."));
 }
 
+/* RESOLVES TRUE ONLY IF SOMEBODY IS ACTUALLY IN. Every refusal already
+   said why in a toast; what it did not do was tell its CALLER, so the
+   notifications list cleared an invitation on the tap rather than on the
+   join and took the only route back into that chat with it. Returns a
+   promise now; the toasts are unchanged. */
 function joinChatRoom(rawCode){
   const code = String(rawCode || "").trim().toUpperCase();
-  if(!code){ showToast("Type a chat code first."); return; }
-  if(!fbDb){ showToast("Chat needs a live connection — check your connection and try again."); return; }
+  if(!code){ showToast("Type a chat code first."); return Promise.resolve(false); }
+  if(!fbDb){ showToast("Chat needs a live connection — check your connection and try again."); return Promise.resolve(false); }
   const me = publicIdOf();
-  fbDb.collection("vrooms").doc(code).get().then(snap => {
-    if(!snap.exists){ showToast("No chat with that code."); return; }
+  return fbDb.collection("vrooms").doc(code).get().then(snap => {
+    if(!snap.exists){ showToast("No chat with that code."); return false; }
     /* A VIRTUAL ROOM IS NOT A CHAT. Both live in `vrooms`, so a code
        typed in here could otherwise drop somebody into the middle of
        somebody else's match as a participant with no progress. */
-    if((snap.data() || {}).kind !== "chat"){ showToast("That code is a Virtual Room, not a chat."); return; }
+    if((snap.data() || {}).kind !== "chat"){ showToast("That code is a Virtual Room, not a chat."); return false; }
     const patch = {};
     patch["participants." + me] = chatSelfEntry();
     /* So everybody already in it is told, rather than having to notice
@@ -36250,8 +36353,9 @@ function joinChatRoom(rawCode){
     return fbDb.collection("vrooms").doc(code).update(patch).then(() => {
       enterChatRoom(code);
       showToast("Joined the chat.", "good");
+      return true;
     });
-  }).catch(() => showToast("Couldn't join that chat — try again."));
+  }).catch(() => { showToast("Couldn't join that chat — try again."); return false; });
 }
 
 function enterChatRoom(code){
@@ -36300,6 +36404,10 @@ function leaveChatRoom(quiet){
    invite and a Virtual Room invite cannot be mistaken for each other. */
 function inviteFriendToChat(pub){
   if(!pub || !chatRoomCode) return;
+  if(withMeInChat(pub)){
+    showToast("They are already in this chat.");
+    return;
+  }
   /* STRAIGHT INTO THEIR MAILBOX, which is the whole point: one write,
      one read on their device, and nothing at all on anybody else's. */
   sendToInbox(pub, { type: "chat", code: chatRoomCode });
@@ -36852,8 +36960,20 @@ function notificationItems(){
     who: inv.from,
     text: (inv.from.firstName || "Someone") + " invited you to a chat",
     actLabel: "Join",
-    act: () => { markNotifHandled("chat", inv.from.pub); joinChatRoom(inv.code);
-                 chatDockTab = "chat"; renderNotifications(); syncChatDock(); },
+    /* ---- A FAILED JOIN KEEPS ITS ROW ----
+       "If you try to join it should tell you it failed if it couldn't."
+       This used to mark the invite handled and switch to the chat tab
+       on the TAP, before knowing whether the join had worked - so a
+       chat that had been deleted, or a lost connection, took the
+       invitation away with it and left you looking at the chat tab with
+       nothing in it. joinChatRoom() reports its own failures as toasts
+       and now resolves false as well, so the row only clears when
+       somebody is actually in. */
+    act: () => { Promise.resolve(joinChatRoom(inv.code)).then(ok => {
+                   if(!ok){ renderNotifications(); return; }
+                   markNotifHandled("chat", inv.from.pub);
+                   chatDockTab = "chat"; renderNotifications(); syncChatDock();
+                 }); },
     dismissLabel: "Ignore",
     dismiss: () => { markNotifHandled("chat", inv.from.pub);
                      renderNotifications(); syncChatDockDot(); }
@@ -36863,8 +36983,15 @@ function notificationItems(){
     who: inv.from,
     text: (inv.from.firstName || "Someone") + " invited you to a Virtual Room",
     actLabel: "Join",
-    act: () => { markNotifHandled("vroom", inv.from.pub); closeChatDock();
-                 dismissInvite(inv.code); joinVirtualRoomLobby(inv.code); },
+    /* Same rule as the chat invite above, and the stakes are higher: a
+       lobby that has already started refuses the join, and dismissing
+       the invite first meant the only route back into that room was
+       gone along with the row. */
+    act: () => { Promise.resolve(joinVirtualRoomLobby(inv.code)).then(ok => {
+                   if(!ok){ renderNotifications(); return; }
+                   markNotifHandled("vroom", inv.from.pub);
+                   closeChatDock(); dismissInvite(inv.code);
+                 }); },
     dismissLabel: "Ignore",
     dismiss: () => { markNotifHandled("vroom", inv.from.pub); dismissInvite(inv.code);
                      renderNotifications(); syncChatDockDot(); }
@@ -36873,7 +37000,20 @@ function notificationItems(){
      anywhere in the row - sorts to the top, because it is the one that
      has been waiting longest by definition. */
   items.sort((a, b) => (b.at || 0) - (a.at || 0));
-  return items.filter(it => !notifWasHandled(it.kind, it.who && it.who.pub));
+  return items.filter(it => {
+    const pub = it.who && it.who.pub;
+    if(notifWasHandled(it.kind, pub)) return false;
+    /* "IF I AM IN A ROOM OR CHAT WITH THEM THEIR OLD INVITE SHOULD
+       DISAPPEAR FROM NOTIFICATIONS IMMEDIATELY." Filtered at read time
+       rather than deleted, and that is deliberate: the invite itself is
+       still sitting in the mailbox with its own TTL, and being in a
+       chat with somebody does not mean their VIRTUAL ROOM invite is
+       spent. So each kind is tested against the thing it invites you
+       to, not against "are we together anywhere". */
+    if(it.kind === "chat" && withMeInChat(pub)) return false;
+    if(it.kind === "vroom" && withMeInVroom(pub)) return false;
+    return true;
+  });
 }
 
 function renderNotifications(){
@@ -36902,6 +37042,17 @@ function renderNotifications(){
     art.appendChild(avatarSpanFor(it.who));
     const text = document.createElement("p");
     text.className = "chatdock-notif-text"; text.textContent = it.text;
+    /* WHEN IT GOT HERE, asked for by name. A friend request carries no
+       timestamp anywhere in the row it is read from, so it gets nothing
+       rather than a fabricated one - it already sorts to the top as the
+       thing that has been waiting longest. */
+    if(it.at){
+      const when = document.createElement("span");
+      when.className = "chatdock-notif-when";
+      when.textContent = timeAgo(it.at);
+      when.title = new Date(it.at).toLocaleString();
+      text.appendChild(when);
+    }
     const acts = document.createElement("div");
     acts.className = "chatdock-notif-acts";
     const go = document.createElement("button");
@@ -40503,7 +40654,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-26-192";
+const APP_BUILD = "2026-09-26-193";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -45479,12 +45630,16 @@ function joinVirtualRoomLobby(code){
      below ever gets a chance to run. */
   if(!fbDb){
     showToast("Couldn't reach that lobby \u2014 check your connection and try again.");
-    return;
+    return Promise.resolve(false);
   }
-  fbDb.collection("vrooms").doc(code).get().then(docSnap => {
-    if(!docSnap.exists){ showToast("No lobby found with that code."); return; }
+  /* RESOLVES TRUE ONLY IF THIS DEVICE IS ACTUALLY IN THE LOBBY. Same
+     reason as joinChatRoom's: a lobby that has already started refuses
+     the join, and the notifications list was dismissing the invite on
+     the tap - so the one route back into that room went with it. */
+  return fbDb.collection("vrooms").doc(code).get().then(docSnap => {
+    if(!docSnap.exists){ showToast("No lobby found with that code."); return false; }
     const data = docSnap.data();
-    if(data.status !== "waiting"){ showToast("That lobby has already started or finished."); return; }
+    if(data.status !== "waiting"){ showToast("That lobby has already started or finished."); return false; }
     const myKey = publicIdOf();
     /* The actual fix for joining the same lobby twice from two devices
        on one synced account \u2014 confirmed directly: both devices share
@@ -45495,9 +45650,9 @@ function joinVirtualRoomLobby(code){
        rather than after. */
     if(data.participants && data.participants[myKey]){
       showToast("This account is already in the lobby.");
-      return;
+      return false;
     }
-    fbDb.collection("vrooms").doc(code).update({
+    return fbDb.collection("vrooms").doc(code).update({
       /* level rides along with the participant, per explicit request:
          the lobby should say who you are up against the way the
          rankings rows do. Written once at join - it cannot change
@@ -45508,8 +45663,9 @@ function joinVirtualRoomLobby(code){
       vroomCode = code; vroomIsHost = false; vroomUnits = data.units;
       vroomMyKey = myKey;
       showVirtualRoomLobby();
+      return true;
     });
-  }).catch(() => { showToast("Couldn't reach that lobby \u2014 try again."); });
+  }).catch(() => { showToast("Couldn't reach that lobby \u2014 try again."); return false; });
 }
 
 /* Who to invite, as a sheet rather than a screen: it is a short list
@@ -45820,6 +45976,12 @@ function showVirtualRoomLobby(){
   chatSlot.className = "vroom-chat-slot";
   panel.appendChild(chatSlot);
 
+  /* Held rather than appended, so the two host cards can be built where
+     their own logic lives and placed where the layout wants them - see
+     "Room setup" at the foot of this function. Null for a joiner, who
+     has neither. */
+  let lobbyInviteCard = null, lobbyOpenCard = null;
+
   if(vroomIsHost){
     /* THE CODE IS NOT SHOWN AND NOT COPYABLE. It was "Share this code"
        with a one-tap Copy beside it, which is the whole join-by-code
@@ -45850,7 +46012,7 @@ function showVirtualRoomLobby(){
       inviteBtn.addEventListener("click", () => openInviteFriendsSheet(vroomCode));
       codeBox.appendChild(inviteBtn);
     }
-    panel.appendChild(codeBox);
+    lobbyInviteCard = codeBox;
 
     /* ---- OPEN TO THE CLASS, OR NOT ----
        A room defaults to PRIVATE and the host opens it deliberately.
@@ -45897,7 +46059,7 @@ function showVirtualRoomLobby(){
         showToast(vroomIsOpen ? "Room is open to the class." : "Room is invite only.");
       });
       openRow.append(openText, sw);
-      panel.appendChild(openRow);
+      lobbyOpenCard = openRow;
     }
   }
 
@@ -45907,11 +46069,38 @@ function showVirtualRoomLobby(){
      the same snapshot as everything else on this screen. */
   const testSummary = document.createElement("div");
   testSummary.className = "vroom-test-summary";
-  panel.appendChild(testSummary);
 
   const list = document.createElement("div");
-  list.className = "cal-list";
-  panel.appendChild(list);
+  list.className = "cal-list vroom-roster-list";
+
+  /* ---- THE ROOM FIRST, THE ADMIN SECOND ----
+     "The virtual room lobby could have a better visual layout that just
+     feels better, it doesn't look that great at the moment."
+     Looked at on a 440x956 phone, the order was the problem rather than
+     the styling: Invite, Open to the class, Match settings, THEN who is
+     here, THEN Ready up. Every card above the fold was a thing you set
+     once, and the two things the screen actually exists for - who is in
+     the room and whether you have readied - were below it, at 596px and
+     826px. You sit in a lobby watching the roster; you configure it
+     once.
+     So the roster and the ready control are one block at the top now,
+     with the settings and the invites below them. Nothing is removed
+     and nothing changes what it does - this is the append order and a
+     header, which is the cheapest change that fixes what was reported. */
+  const roster = document.createElement("div");
+  roster.className = "vroom-roster";
+  const rosterHead = document.createElement("div");
+  rosterHead.className = "vroom-roster-head";
+  const rosterTitle = document.createElement("p");
+  rosterTitle.className = "vroom-roster-title"; rosterTitle.textContent = "In this room";
+  /* THE COUNT MOVES UP HERE, out of a lone line under the button. It is
+     the answer to "are we going yet", so it belongs beside the list it
+     is counting rather than three elements away from it. */
+  const readyCount = document.createElement("p");
+  readyCount.className = "vroom-readycount";
+  rosterHead.append(rosterTitle, readyCount);
+  roster.append(rosterHead, list);
+  panel.appendChild(roster);
 
   /* The actual "ready up" mechanic, per explicit request \u2014 everyone
      in the lobby, host included, toggles their own ready state here;
@@ -45950,10 +46139,6 @@ function showVirtualRoomLobby(){
   });
   panel.appendChild(readyBtn);
 
-  const readyCount = document.createElement("p");
-  readyCount.className = "vroom-readycount";
-  panel.appendChild(readyCount);
-
   /* Replaces the old host-only "Start for everyone" button entirely,
      per explicit request \u2014 "don't let the lobby starter hit start
      test, that would happen automatically when everyone reads up."
@@ -45967,6 +46152,20 @@ function showVirtualRoomLobby(){
   autostartNote.className = "vroom-autostart-note";
   autostartNote.textContent = "Waiting for everyone to ready up\u2026";
   panel.appendChild(autostartNote);
+
+  /* The set-once half of the screen, moved under the room itself and
+     given a header so it reads as a group rather than as three more
+     cards in the same stack. `setupCards` is filled from the nodes
+     built above - they are appended HERE rather than where they are
+     created, so the code that builds each one stays where its own
+     logic is. */
+  const setupHead = document.createElement("p");
+  setupHead.className = "slab section-divider vroom-setup-head";
+  setupHead.textContent = "Room setup";
+  panel.appendChild(setupHead);
+  panel.appendChild(testSummary);
+  if(lobbyInviteCard) panel.appendChild(lobbyInviteCard);
+  if(lobbyOpenCard) panel.appendChild(lobbyOpenCard);
 
   if(vroomChatUnsubscribe) vroomChatUnsubscribe();
   vroomChatUnsubscribe = buildVroomChatPanel(panel);
@@ -47251,6 +47450,16 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
   reveal.append(scoreLine, timeLine, totalLine, seeResultsBtn);
   panel.appendChild(reveal);
 
+  /* SOMETHING TO DO WHILE WAITING. This screen was one line - "Waiting
+     for everyone to finish (2 of 4)" - and on a four-person room with
+     one slow reader that is a minute of staring at it. The same review
+     the results screen carries goes here, collapsed, so the wait is
+     spent on your own test rather than on a counter.
+     BELOW the reveal, not above: the score is the thing this screen
+     exists to announce, and the review is what you do afterwards. */
+  const waitReview = buildRunReviewBlock();
+  if(waitReview) panel.appendChild(waitReview);
+
   stage.replaceChildren(panel);
   toTop();
 
@@ -47301,6 +47510,85 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
       waitNote.textContent = "Waiting for everyone to finish (" + finishedN + " of " + totalN + ")\u2026";
     }
   });
+}
+
+/* ---- ONE REVIEW BLOCK, AND TWO SCREENS NEED IT ----
+   A genuine review of this person's own answers, recomputed from the
+   global order/picked state the just-finished run left behind (a
+   Virtual Room always runs as exam mode underneath). No retake button
+   anywhere near it, per the request that put it here: "results will
+   have a review but no option to retake".
+
+   IT IS A FUNCTION BECAUSE THE WAITING SCREEN NEEDS IT TOO. Asked for
+   directly - "looking at your results of your test should be on the
+   same screen as the leaderboard of the virtual room results so it's
+   all in one, you can look at it while you wait for others." The review
+   was already on the results screen; what was missing is that the
+   screen you sit on WHILE waiting had nothing on it at all but
+   "Waiting for everyone to finish (2 of 4)". So both screens build it
+   from here rather than one of them growing a second copy - two
+   builders for one idea is how a fix misses the screen it matters most
+   on, which this file has already recorded twice.
+
+   Returns null when there is no run behind it, so a screen reached by
+   coming BACK to it (from the lobby, from a later snapshot) does not
+   grow an empty control. */
+function buildRunReviewBlock(){
+  if(!order || !order.length) return null;
+  const wrap = document.createElement("div");
+  wrap.className = "run-review-block";
+  const missedHere = order.filter(qi => optionOrder(qi)[picked[qi]] !== QUESTIONS[qi].answer);
+  const reviewToggle = document.createElement("button");
+  reviewToggle.type = "button"; reviewToggle.className = "cal-profile-btn";
+  reviewToggle.style.cssText = "width:100%; margin-top:1.2rem;";
+  reviewToggle.textContent = missedHere.length > 0
+    ? "Review your answers (" + missedHere.length + " missed)"
+    : "Review your answers \u2014 all correct";
+  reviewToggle.setAttribute("aria-expanded", "false");
+  const reviewList = document.createElement("div");
+  reviewList.hidden = true;
+  reviewList.style.marginTop = ".8rem";
+  /* A PERFECT RUN USED TO OPEN AN EMPTY DIV. The list was built only
+     when something was missed, so "Review your answers - all correct"
+     was a button that expanded nothing at all: tap it and the screen
+     appears broken, which is exactly how it was reported. A run with
+     nothing missed still has questions worth reading back, so it lists
+     every question with its answer instead, and the heading above says
+     which of the two you are looking at. */
+  const reviewSource = missedHere.length > 0 ? missedHere : order.slice();
+  const reviewHead = document.createElement("p");
+  reviewHead.className = "info-note";
+  reviewHead.style.cssText = "margin:.8rem 0 .2rem; text-align:center;";
+  reviewHead.textContent = missedHere.length > 0
+    ? "The ones you missed."
+    : "Nothing missed \u2014 here is the whole run.";
+  reviewList.appendChild(reviewHead);
+  const ul = document.createElement("ul");
+  ul.className = "review";
+  reviewSource.forEach(qi => {
+    const item = QUESTIONS[qi];
+    const li = document.createElement("li");
+    const box = document.createElement("div");
+    const q = document.createElement("div");
+    q.className = "rq"; writeText(q, item.q);
+    const a = document.createElement("div");
+    a.className = "ra";
+    const yours = picked[qi] !== undefined ? "You answered: " + item.choices[optionOrder(qi)[picked[qi]]] + ". " : "";
+    a.textContent = yours + "Correct answer: " + item.choices[item.answer] + (item.ref ? "  " + item.ref : "");
+    box.append(q, a);
+    li.appendChild(box);
+    ul.appendChild(li);
+  });
+  reviewList.appendChild(ul);
+  reviewToggle.addEventListener("click", () => {
+    /* openCollapsible is for a region with a height animation on it;
+       this one has none, so a plain toggle is right - and a pixel cap
+       here would be the Answer Review clipping bug all over again. */
+    reviewList.hidden = !reviewList.hidden;
+    reviewToggle.setAttribute("aria-expanded", reviewList.hidden ? "false" : "true");
+  });
+  wrap.append(reviewToggle, reviewList);
+  return wrap;
 }
 
 function showVirtualRoomResults(){
@@ -47572,50 +47860,8 @@ function showVirtualRoomResults(){
      (Virtual Room always runs as exam mode under the hood), the exact
      same missed-question logic the normal exam results screen uses \u2014
      just no retake button anywhere near it, per that same request. */
-  const missedHere = order.filter(qi => optionOrder(qi)[picked[qi]] !== QUESTIONS[qi].answer);
-  const reviewToggle = document.createElement("button");
-  reviewToggle.type = "button"; reviewToggle.className = "cal-profile-btn";
-  reviewToggle.style.cssText = "width:100%; margin-top:1.2rem;";
-  reviewToggle.textContent = missedHere.length > 0
-    ? "Review your answers (" + missedHere.length + " missed)"
-    : "Review your answers \u2014 all correct";
-  const reviewList = document.createElement("div");
-  reviewList.hidden = true;
-  reviewList.style.marginTop = ".8rem";
-  /* A PERFECT RUN USED TO OPEN AN EMPTY DIV. The list was built only
-     when something was missed, so "Review your answers - all correct"
-     was a button that expanded nothing at all: tap it and the screen
-     appears broken, which is exactly how it was reported. A run with
-     nothing missed still has questions worth reading back, so it lists
-     every question with its answer instead, and the heading above says
-     which of the two you are looking at. */
-  const reviewSource = missedHere.length > 0 ? missedHere : order.slice();
-  const reviewHead = document.createElement("p");
-  reviewHead.className = "info-note";
-  reviewHead.style.cssText = "margin:.8rem 0 .2rem; text-align:center;";
-  reviewHead.textContent = missedHere.length > 0
-    ? "The ones you missed."
-    : "Nothing missed \u2014 here is the whole run.";
-  reviewList.appendChild(reviewHead);
-  const ul = document.createElement("ul");
-  ul.className = "review";
-  reviewSource.forEach(qi => {
-    const item = QUESTIONS[qi];
-    const li = document.createElement("li");
-    const box = document.createElement("div");
-    const q = document.createElement("div");
-    q.className = "rq"; writeText(q, item.q);
-    const a = document.createElement("div");
-    a.className = "ra";
-    const yours = picked[qi] !== undefined ? "You answered: " + item.choices[optionOrder(qi)[picked[qi]]] + ". " : "";
-    a.textContent = yours + "Correct answer: " + item.choices[item.answer] + (item.ref ? "  " + item.ref : "");
-    box.append(q, a);
-    li.appendChild(box);
-    ul.appendChild(li);
-  });
-  reviewList.appendChild(ul);
-  reviewToggle.addEventListener("click", () => { reviewList.hidden = !reviewList.hidden; });
-  panel.append(reviewToggle, reviewList);
+  const reviewBlock = buildRunReviewBlock();
+  if(reviewBlock) panel.appendChild(reviewBlock);
 
   /* The way out goes last, under everything it is the way out OF. */
   panel.appendChild(exitRow);
