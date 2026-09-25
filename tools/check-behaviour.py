@@ -710,12 +710,34 @@ def check_ranks(br):
     pg.wait_for_timeout(1200)
     board = pg.evaluate("""()=>{
       const rows = [...document.querySelectorAll('.rank-row')];
+      const overall = [...document.querySelectorAll('.navsegment .iconbtn')]
+        .find(b => /overall/i.test(b.textContent));
+      if(overall) overall.click();
+      const after = [...document.querySelectorAll('.rank-row')];
       return {rows:rows.length,
               marks:rows.filter(r=>r.querySelector('.lb-rankmark')).length,
-              levelChips:document.querySelectorAll('.rank-level').length};}""")
-    check("a rankings row carries the rank emblem and no level chip",
-          board["rows"] >= 1 and board["marks"] == board["rows"]
+              levelChips:document.querySelectorAll('.rank-level').length,
+              hasOverall: !!overall,
+              statLines: after.map(r => (r.querySelector('.rank-stat')||{}).textContent || "")};}""")
+    # ---- THIS ENCODED A DECISION, AND THE DECISION REVERSED ----
+    # It asserted that every rankings row carries the rank emblem, which
+    # was itself a fix: the boards had their own row markup and never
+    # called decorateAvatar, so the emblem never arrived there. Asked
+    # against now - "remove the rank icon that's showing on the
+    # character while looking at character in the leaderboard" - so the
+    # emblem is off these rows and stays on the lobby and the results
+    # screen, where a character is drawn big enough to carry it.
+    # What is worth holding is the half that was never about the emblem:
+    # a row carries NO level chip, and the rank is still on the row -
+    # in words, on the Overall board, which is where it now lives.
+    check("a rankings row carries neither a level chip nor a rank coin",
+          board["rows"] >= 1 and board["marks"] == 0
           and board["levelChips"] == 0, board)
+    # THE RANK DID NOT SIMPLY VANISH. Overall names it, so somebody's
+    # rank is still readable from the board that ranks on it.
+    check("and the Overall board still says the rank in words",
+          board["hasOverall"] and any("Level" in t for t in board["statLines"]),
+          board["statLines"][:3])
     ctx.close()
     ctx.close()
 

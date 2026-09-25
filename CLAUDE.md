@@ -4379,4 +4379,187 @@ show the same list. Everything below follows from keeping those apart.
   is about to do rather than asking in a dialog, which on a panel this
   size would cover the list it is asking about.
 
+### The phone batch (build 196)
+
+**A HEIGHT GATE WRITTEN IN `rem` MOVES WITH THE READER'S TEXT SIZE.**
+This is the finding behind three reports that had each been "fixed"
+several times: Home's planet too small, its wording too close to the
+planet, its button too far from the tab bar. Every phone tier on Home
+and Welcome was gated `(max-width:32rem) and (min-height:46rem)` — 736px
+of height *at a 16px root*. Simulated at a larger root font, which iOS
+hands out through its own text-size settings, the tier flips off on a
+956px phone and the layout falls through to the base rules, which is
+exactly the screen that kept being reported. **Those gates are in px
+now** (`512px`, `736px`, `576px`, `768px`, and the tab bar's own
+`639px`): a device's size decides which layout it gets, and nobody's
+accessibility setting can change that. Convert any new one the same way.
+
+**THE PLANET IS FULL-BLEED ON A PHONE, AND HOME AND WELCOME SHARE ONE
+SET OF NUMBERS.** The cap was never what limited it — `min(29rem,52vh)`
+is 464px on a 17 Pro Max and the sphere measured 419, because the hero
+is `width:100%` inside a column inside `.wrap`'s padding. 3.5rem of
+negative side margin is exactly what that column gives away, so the
+planet now spans the screen edge to edge on every phone. There is
+nothing left to take: wider than the phone is wider than the phone.
+
+**THE SLACK IN HOME'S COLUMN IS SPLIT, NOT STACKED.** The greeting's
+`margin-top:auto` was the only auto in the column, so every leftover
+pixel went above the text and the text group came to rest on the button:
+measured, **153px of empty screen under the planet and 5px between the
+tagline and Start Studying**. An auto on the button as well divides it,
+and the hero's fixed bottom margin biases the division towards the top —
+which is the shape the iPad has and was signed off with (108 under the
+planet, 59 above the button). A phone now lands at 105/50 instead of
+153/5.
+
+**THE UNIT-SELECTION BAR WAS GIVEN AN EXPLICIT WIDTH, AND THAT IS WHY
+TIGHTENING ITS GAPS DID NOTHING.** `(max-width:39.99rem)` set
+`width:calc(100vw - 1.5rem)` — 12px of margin per side against Home's
+own 32 — so the two bars either side of a tap looked like different
+objects. It is `calc(100vw - 2.6rem)` now, 398px inside a 440px phone
+against Home's 376: still the wider of the two, which is the
+relationship asked for both times, without touching the edges. The
+navrow inside is `flex:1 1 auto`, so **the ceiling is what sets this
+bar's width** — gaps and padding cannot shrink it.
+
+**THE iOS ZOOM IS NOT A FONT-SIZE PROBLEM ANY MORE, WHATEVER THE
+DOCUMENTATION SAYS.** Every text field in the app measures 17px and it
+still zooms, reported three times. `resetStuckZoom()` unwinds a scale
+Safari is already holding, which is the wrong half: by then the page has
+jumped mid-word. The clamp now goes on **at focus** — `maximum-scale=1`
+on `focusin`, off two frames after `focusout`, through `focusin`/
+`focusout` on `document` because every field in this app is built at
+runtime. Between typing and not typing, only the typing is clamped, so
+pinch-zoom is never taken away from anybody.
+
+### The Overall board and the person card (build 196)
+
+- **THE TIER ALWAYS WINS.** Overall ranks by rank tier first, then by
+  progress towards the next rank: level ÷ next rank's level and badges ÷
+  next rank's badges, averaged, **uncapped** — "if someone exceeds the
+  requirement they should continue receiving credit". A Gold at 49/15
+  therefore sits above a Gold at 54/7, which is the worked example that
+  was sent. The percentage is a sorting value and is deliberately not
+  printed: a number that goes past 100 needs a paragraph.
+- `overallProgressOf(level, badges)` takes the numbers rather than a
+  store, like `rankOfStats` beside it, because the board asks it about
+  other people from a published document.
+- **A board may bring its own `sort`.** Two of the three rank on a single
+  published field; Overall cannot be expressed as one.
+- **The board is seeded from `leaderboardRows` at mount**, so it paints
+  in the frame the tab opens instead of showing "Loading the rankings…"
+  while waiting for a round trip it did not need.
+- **An empty snapshot never takes the board away.** Firestore delivers
+  the cached answer first and a cache that has not been told about the
+  collection answers with nothing — which emptied `entries` and left
+  `liveEntries()` to synthesise the only row it can, yours. That is
+  "sometimes I only see myself until I hit another tab and come back".
+  Every other reader in the file already carried this guard.
+- **The trend rolls on a clock, not a calendar day.** It shipped
+  comparing against midnight's board, so a new install had nothing to
+  compare with until tomorrow and, after that, most of an evening's
+  movement had already been folded into "yesterday". `LB_TREND_ROLL_MS`
+  is 4 hours.
+- **No rank emblem on a rankings row, and no glow on a list avatar.**
+  Both were added deliberately and both are now off, by request: the
+  rank is on the row in words, and a halo per row reads as a smear
+  rather than as people. The emblem stays where a character is drawn big
+  — the lobby, the results screen, the person card.
+- **The person card is centred, not a drawer**, on its own near-black
+  surface: rank in its own colour, level under it, then XP / badges
+  (n of 16) / hundos / tests. `xp` and `tests` are **new published
+  fields** on the leaderboard row — an older document reads 0 and
+  self-heals on that person's next push, the same contract every field
+  on that row has had.
+- **"Already friends" was the one state with nothing to do.** It is
+  **Message** now, and `openDirectChatWith()` finds the DM you already
+  have with somebody — a chat whose only other member is them, which is
+  what `store.chats[].with` is for — or starts one and invites them.
+
+### Smaller things that were each reported (build 196)
+
+- **Keep screen awake moved to Motion & interaction**, and its hint
+  stopped describing one moment ("doesn't dim out mid-question") as
+  though the setting were about tests.
+- **"Share Nova" → "Share & install"**: the section holds two buttons
+  and only one of them shares anything.
+- **Add to Home Screen carries the accent**; Share and Report a bug stay
+  quiet, Reset stays red. Tinted rather than filled, so it cannot
+  out-shout the one control on that screen that should be able to stop
+  you.
+- **The XP bar's quarter ticks came off.** They were asked for once and
+  are now read as damage — "obviously bugged". A decoration that reads
+  as a defect is worse than no decoration.
+- **The friends count and the days-remaining count were riding
+  `--theme-c3`**, which lands red on the default theme. Red in this app
+  means Reset and a wrong answer. They are the online green and the
+  pending amber now, fixed rather than themed, because the meaning is
+  fixed.
+- **The two Profile plates are `align-items:stretch`.** They carry
+  numbers at different type sizes, so sizing each to its own content
+  made one visibly shorter than the other.
+- **The calendar key gained its amber test-day dot.** The grid drew three
+  marks and the key explained two.
+- **Exam picks its own length again.** It was folded in beside Game,
+  which genuinely has none — and Exam's own card promises "pick your own
+  units and length".
+- **Game's difficulty was inside a collapsible that Game hid.** The
+  Speed slider is the difficulty and it lives in "More options", which
+  was hidden for Game on the reasoning that every row inside was
+  excluded for Game — every row except the one that only exists for it.
+  Both that check and the stray "Options" label now ask **whether
+  anything inside would show**, from the sections themselves, rather
+  than naming the modes that happened to be true when they were written.
+- **Leaving a test lands on Home**, not on mode selection — one answer
+  rather than two, since the daily question already did this.
+- **The Review mode icon is green.** It was the one mode icon with no
+  colour; green because it is the only mode that scores nothing and
+  green is already this app's colour for a right answer.
+- **The orbit dots answer a tap.** They are what is left of the Secret
+  Flares, and three silent dots among seven marks that all say something
+  read as broken rather than as scenery.
+- **The contextual popup is placed against its real height.** It flipped
+  above the target whenever a guessed 90px height plus a 90px floor said
+  it would not fit, which on a phone is most of the screen.
+
+### The Virtual Room (build 196)
+
+- **Each choice carries its own description, above its own button.** One
+  paragraph at the top covering both and another underneath covering
+  neither is what "badly spaced out" was pointing at.
+- **Open rooms says what the list is** ("Anyone in 26E can join these")
+  and a row says it as a sentence — "2 people waiting · Race on 4 units"
+  — rather than three tags joined by dots.
+- **The lobby's chat is not a box.** Build 194 gave it a border when it
+  stopped being a sheet, which made it a card at the foot of a screen
+  made of cards.
+- **Invite friends sits under the roster**, which is the list it makes
+  longer.
+- **The summary names the game with its icon** — a rope for Tug of War, a
+  flag for Race — because "Virtual Room" is the one thing everybody in
+  the room already knows.
+- **The Virtual Room's unit screen gets the floating glass pill**, the
+  same object the main menu's bar is, carrying one button.
+- **THE QUESTIONS SLIDER'S TOP IS THE TOP OF THE POOL.** It was built
+  with a placeholder max of 200 before any units were picked, and a range
+  input snaps to a step lattice measured from `min` — so with 5-question
+  steps and a pool of 187 the highest reachable stop was 185 and the
+  thumb stopped short with empty track past it. Same lattice fix the
+  Length slider already carried.
+- **Tug of war is longer and scales with the bank.** It scaled per
+  question against a fixed seven-minute target, so more questions meant a
+  faster clock rather than a longer match, and every real match flattened
+  out at the ten-minute cap. Target 10 minutes, cap 20, floor 9s.
+  `check-vroom`'s three pacing assertions encoded the old decision and
+  were re-read: a floor nothing goes under, a short match that stays
+  short, **longer means longer**, and a ceiling.
+- **The rope is pulled, not read.** It was drawn beautifully and held
+  perfectly still while a marker slid along it, which is a progress bar
+  with a texture on it. The whole rope now shifts towards whoever leads
+  (damped to a third of the knot's travel), the leading end tightens, and
+  a line under it says who leads and by how much. **The shift is applied
+  in `refreshTugLive()` as well as in the builder** — that is the
+  function that runs when somebody else answers, so without it the rope
+  would be dragged exactly once, when the screen was built.
+
 No committed regression suite exists yet. Worth building.

@@ -953,22 +953,35 @@ def main():
             check("and it tightens towards the end",
                   pace["q80"] < pace["q55"] and pace["q100"] == pace["end"],
                   {k: pace[k] for k in ("q55", "q80", "q100", "end")})
-            # SEVEN SECONDS, AND ONLY AT THE END - "lowest time will be 7
-            # seconds but that's ONLY if it takes that long to decide a
-            # winner." A floor the match REACHES, not a speed it runs at.
-            check("the floor is seven seconds and nothing goes under it",
-                  pace["floorSmall"] == 7000 and pace["floorBig"] >= 7000,
+            # ---- THESE THREE ENCODED A PACING DECISION, AND IT CHANGED ----
+            # They asserted a 7-second floor, a 5-10 minute window and a
+            # ten-minute cap, which is what was asked for when tug of war
+            # was built. Asked for again since: "increase the amount of
+            # time - the amount of time for tug of war should change
+            # depending on how many questions." The old numbers did the
+            # opposite at the top end: every match flattened out at the
+            # ten-minute cap, so picking 40 questions or 200 made no
+            # difference to how long it ran.
+            # Re-read rather than deleted, because the SHAPE is still what
+            # matters and is still checkable: a floor that nothing goes
+            # under, a length that rises with the bank, and a ceiling.
+            check("the floor is nine seconds and nothing goes under it",
+                  pace["floorSmall"] == 9000 and pace["floorBig"] >= 9000,
                   {"29q at the end": pace["floorSmall"], "a huge bank": pace["floorBig"]})
-            # 5-10 minutes, whatever was picked - "if I select 80 questions
-            # though, make it so that it does last about that long".
-            check("10, 29 and 80 questions all land in the 5-10 minute window",
-                  all(5 <= pace[k] <= 10 for k in ("m10", "m29", "m80")),
+            # A SHORT MATCH IS STILL SHORT. Ten questions must not become a
+            # twenty-minute sitting because the target went up.
+            check("ten questions is still a short match",
+                  3 <= pace["m10"] <= 12, pace["m10"])
+            # AND LONGER MEANS LONGER, which is the whole of the request.
+            check("more questions means a longer match, not a faster one",
+                  pace["m29"] >= pace["m10"] and pace["m80"] >= pace["m29"]
+                  and pace["m80"] > pace["m10"],
                   {k: pace[k] for k in ("m10", "m29", "m80")})
             # The bank is not capped - "All units" is several hundred
             # questions - so past a point the rope settles it rather than
-            # the questions running out.
-            check("and a whole-bank match is still capped at ten minutes",
-                  pace["mAll"] <= 10, pace["mAll"])
+            # the questions running out. The ceiling moved with the target.
+            check("and a whole-bank match is still capped, at twenty minutes",
+                  pace["mAll"] <= 20, pace["mAll"])
 
             # THE TIME LIMIT CONTROL IS GONE for tug, and still there for
             # race - "when I hit tug of war, the timer option shouldn't be

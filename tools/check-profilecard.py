@@ -88,7 +88,16 @@ with sync_playwright() as pw:
         ck("two plates, equal width", r["plates"]==2 and abs(r["plateRects"][0][0]-r["plateRects"][1][0])<=1, r["plateRects"])
         ck("plates >=44px tall", bool(r["plateRects"]) and min(h for _,h in r["plateRects"])>=44, r["plateRects"])
         ck("bar filled to target", r["fillW"] not in (None,"0%"), (r["fillW"],r["fillTarget"]))
-        ck("ticks at quarters", r["ticks"] and r["ticks"].startswith("25%"), r["ticks"])
+        # ---- THIS ENCODED A DECISION, AND IT REVERSED ----
+        # The three quarter marks across the XP track were asked for,
+        # and are now read as damage: "the xp bar has lines through it,
+        # obviously bugged". A decoration that reads as a defect is
+        # worse than no decoration, so they came off - and this asked
+        # for them by their exact background-size, which is the tightest
+        # possible coupling to a look.
+        # What is still worth holding is that the bar is ONE length
+        # against ONE track, which is what the ticks were interrupting.
+        ck("no ticks across the XP track", r["ticks"] in (None, "auto", "0px"), r["ticks"])
         ck("percentage shown", r["pct"] and r["pct"].endswith("%"), r["pct"])
         ck("no horizontal page scroll (profile)", r["scrollX"]<=0, r["scrollX"])
         # ---- Friends ----
@@ -139,8 +148,21 @@ with sync_playwright() as pw:
         ck("both boxes centred", f["wrapJustify"]=="center" and f["rowJustify"]=="center", (f["wrapJustify"],f["rowJustify"]))
         ck("input padding symmetric", f["inpPadL"]==f["inpPadR"], (f["inpPadL"],f["inpPadR"]))
         ck("input >=16px", bool(f["inpFont"]) and float(f["inpFont"].replace("px",""))>=16, f["inpFont"])
-        ck("friend row glows in its own colour", bool(f["artGlow"]) and f["artGlow"][0] and (f["artGlow"][1] or "").strip()=="#E04A2F", f["artGlow"])
-        ck("friend row glow pool drawn", f["artBefore"] not in (None,"auto","0px"), f["artBefore"])
+        # ---- AND SO DID THIS PAIR ----
+        # The per-character halo on a friends row was built from the
+        # picker's own AVATAR_GLOW table so a classmate's light was the
+        # one they chose. Asked against now: "remove the glow from
+        # behind the friends list character, and ensure it's removed
+        # from the characters on the leaderboard." In a list of rows it
+        # reads as a smear rather than as people.
+        # It stays where a character is drawn big and alone - the
+        # Profile hero above, which this same file still checks, and the
+        # person card. So the assertion flips rather than disappearing:
+        # the hero glows, a row does not.
+        ck("no glow behind a friends-list character",
+           not (f["artGlow"] and f["artGlow"][0]), f["artGlow"])
+        ck("and no glow pool drawn on a row",
+           f["artBefore"] in (None, "auto", "0px"), f["artBefore"])
         ck("level in the xp bar's blue", f["lvlColor"]=="rgb(111, 194, 255)", (f["lvlColor"],f["lvlText"]))
         ck("Copy is the standard button", f["copyClass"] and "friend-send" in f["copyClass"] and "ghost" not in f["copyClass"], f["copyClass"])
         ck("Copy is 44px", (f["copyH"] or 0)>=44, f["copyH"])

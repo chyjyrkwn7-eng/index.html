@@ -1523,7 +1523,19 @@
      don't need this entrance anyway (they're anchored to the screen
      edge, not scrolling content), so they're excluded outright rather
      than worked around. */
-  #stage > *:not(.floatbtn):not(:has(.floatbtn)){ animation:screen-fade-in .3s ease-out; }
+  /* ---- AND .vroom-setup-bar IS THE SAME KIND OF THING ----
+     The exclusion above is written in terms of .floatbtn, which is how
+     every one of these bars used to be built. The Virtual Room's unit
+     screen now carries a centred glass pill instead - .vroom-setup-bar,
+     holding a .vroom-setup-go rather than a .floatbtn - and the moment
+     it stopped matching :has(.floatbtn) it started getting this
+     animation, whose `to{transform:translateY(0)}` overwrote the
+     translateX(-50%) that centres it. The bar drew from the middle of
+     the screen to 19px past its right edge, on every phone in the
+     matrix, which is what the sweep caught.
+     Excluded by name for the same reason as the others: a bar anchored
+     to the screen edge has no use for an entrance that moves it. */
+  #stage > *:not(.floatbtn):not(:has(.floatbtn)):not(.vroom-setup-bar){ animation:screen-fade-in .3s ease-out; }
   /* PROMOTING THE QUESTION PANEL'S LAYER UP FRONT WAS TRIED AND
      REJECTED, with numbers, so nobody spends the afternoon on it
      again. The idea was sound: advanceWithSlide() sets will-change at
@@ -2887,6 +2899,9 @@
   .cal-grid-legend span{ display:flex; align-items:center; gap:.35rem; }
   .cal-legend-dot{ width:.34rem; height:.34rem; border-radius:999px; background:var(--accent); }
   .cal-legend-dot-holiday{ background:var(--wrong); }
+  /* The same amber as .cal-cell-dot-test, which is the mark it
+     explains. */
+  .cal-legend-dot-test{ background:#F5B54D; }
   /* Phone: the dot is the whole signal, and the card below says what
      the day is. The note is in the DOM but not shown - see the comment
      at its construction. */
@@ -4036,6 +4051,21 @@
      has scrolled past the screen title. Shown on every device now - it
      used to be hidden on a phone, where the sheet's own title row did
      the job. */
+  /* ---- THE LOBBY'S CHAT IS NOT A BOX ----
+     "The bottom chat shouldn't be with a box for one - it should just
+     be there to scroll through."
+     Build 194 gave it a border and a radius when it stopped being a
+     sheet, which turned it into a card sitting at the foot of a screen
+     made of cards. It is the last thing on the lobby and it runs to
+     the bottom of it; a rule above it is enough to say where it
+     starts. The dock keeps its own surface, because there the panel IS
+     a floating object. */
+  .panel .vroom-chat:not(.chatdock-chathost .vroom-chat){
+    background:none; border:none; border-radius:0;
+    box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none;
+    border-top:1px solid var(--rule);
+    padding-left:0; padding-right:0;
+  }
   .vroom-chat-titlerow{ display:flex; align-items:center; gap:.5rem; }
   .vroom-chat-title{
     /* font-family is stated because the base rule above sets the serif,
@@ -4296,13 +4326,63 @@
      what makes "the same size" true rather than approximately true:
      neither is sized by its own label any more. */
   .vroom-choice-actions{
-    display:flex; flex-direction:column; align-items:stretch; gap:.7rem;
-    width:100%; max-width:20rem; margin:1.4rem auto 0;
+    /* 1.6rem between the two choices against .6rem inside each one, so
+       a description reads as belonging to the button under it rather
+       than floating between two. */
+    display:flex; flex-direction:column; align-items:stretch; gap:1.6rem;
+    width:100%; max-width:20rem; margin:1.6rem auto 0;
+  }
+  .vroom-choice{ display:flex; flex-direction:column; gap:.6rem; }
+  .vroom-choice-what{
+    margin:0; font-size:.82rem; line-height:1.45; color:var(--soft);
+    text-align:center;
+  }
+  /* Centred on a tablet too - asked for by name. The column is already
+     margin:auto, so what was missing was room: 20rem of buttons in the
+     middle of an 834px panel reads as a phone layout left in place,
+     and the descriptions need the width more than the buttons do. */
+  @media (min-width:40rem){
+    .vroom-choice-actions{ max-width:26rem; }
+    .vroom-choice-what{ font-size:.9rem; }
   }
   .vroom-choice-actions .next{ width:100%; min-height:48px; margin-top:0; }
   .bug-report-box{
     width:100%; display:block; margin:1rem 0 0; resize:vertical;
     min-height:8rem; text-align:left; font-family:inherit; line-height:1.45;
+  }
+  /* ---- THE VIRTUAL ROOM'S UNIT SCREEN: A FLOATING GLASS PILL ----
+     The same object the main menu's tab bar is - centred, lifted off
+     the bottom edge, one glass surface - carrying one button instead
+     of four tabs. Lifted rather than padded, for the reason
+     .bottomtabs records: padding grows the pill downward and leaves
+     the label sitting high in it. */
+  .startbar.vroom-setup-bar{
+    position:fixed; left:50%; transform:translateX(-50%);
+    bottom:calc(.6rem + env(safe-area-inset-bottom, 0px));
+    z-index:200; width:auto; max-width:calc(100vw - 2.6rem);
+    margin:0; padding:.4rem;
+    display:flex; justify-content:center;
+    background:var(--panel); border:1px solid var(--rule);
+    border-radius:999px; box-shadow:0 4px 18px rgba(18,26,32,.18);
+    will-change:backdrop-filter;
+    backdrop-filter:blur(22px) saturate(1.6);
+    -webkit-backdrop-filter:blur(22px) saturate(1.6);
+  }
+  [data-theme="dark"] .startbar.vroom-setup-bar{
+    background:rgba(24,28,35,.62);
+    border-color:rgba(255,255,255,.12);
+    box-shadow:0 8px 28px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.07);
+  }
+  .vroom-setup-go{
+    width:auto; min-width:14rem; margin:0; border-radius:999px;
+    min-height:48px; padding:.7rem 1.6rem;
+    /* Its own compositing layer: a solid-coloured child inside a
+       backdrop-filter surface tears on real iOS, which is the same
+       glitch the update banner's button had. */
+    transform:translateZ(0); backface-visibility:hidden; isolation:isolate;
+  }
+  @media (min-width:40rem){
+    .vroom-setup-go{ min-width:18rem; font-size:1.02rem; }
   }
   .vroom-code-row{ text-align:center; }
   .vroom-test-summary{
@@ -4319,6 +4399,14 @@
     box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.06);
   }
   .vroom-test-summary-title{ font-family:var(--serif); font-size:1rem; font-weight:800; color:var(--ink); margin:0 0 .3rem; }
+  /* The game's name with its mark beside it, centred like the rest of
+     the card. The icon takes the title's own colour so it cannot drift
+     from it on a theme change. */
+  .vroom-summary-game{
+    display:flex; align-items:center; justify-content:center; gap:.45rem;
+  }
+  .vroom-summary-icon{ width:1.1rem; height:1.1rem; display:block; flex:none; }
+  .vroom-summary-icon svg{ width:100%; height:100%; display:block; }
   .vroom-test-summary-line{ font-size:.82rem; color:var(--soft); margin:0; line-height:1.5; }
   /* One unified status line for everyone, replacing the old host-only
      "Start for everyone" button — per explicit request, nobody hits a
@@ -4358,6 +4446,26 @@
   .cal-profile-btn.cal-profile-btn-quiet:active{
     background:color-mix(in srgb, var(--ink) 7%, transparent);
   }
+  /* ---- AND ONE THAT LEANS FORWARD ----
+     The counterpart to the quiet variant above, for the single action
+     down here that is worth pressing rather than merely available.
+     Tinted, not filled: a solid accent slab beside the matte black
+     ones would out-shout Reset, which is the one thing on this screen
+     that should be able to stop you. The accent is the app's own, so
+     it re-themes with everything else rather than being a colour
+     chosen here. */
+  .cal-profile-btn.cal-profile-btn-accent{
+    background:color-mix(in srgb, var(--accent) 18%, transparent);
+    border:1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+    color:var(--ink); font-weight:750;
+  }
+  .cal-profile-btn.cal-profile-btn-accent:active{
+    background:color-mix(in srgb, var(--accent) 28%, transparent);
+  }
+  /* A line that introduces the controls under it needs air between the
+     two, or it reads as part of them. .sync-note-plain has no bottom
+     margin because most of its uses are the last thing in a block. */
+  .settings-lead{ margin-bottom:.9rem; }
   [data-theme="dark"] .cal-profile-btn.cal-profile-btn-quiet{
     border-color:rgba(255,255,255,.16);
   }
@@ -5643,6 +5751,31 @@
      the two bars come out the same height on the same device. */
   .bottomtabs.has-start-tab .bottomtabs-navrow .bottomtab-icon{ width:1.75rem; height:1.75rem; }
   .bottomtabs.has-start-tab .bottomtabs-navrow{ gap:.6rem; }
+  /* ---- ON A PHONE THIS BAR WAS RUNNING EDGE TO EDGE ----
+     Reported with a screenshot: "the bottom tab while selecting units is
+     still very much broken, it's all the way from the left/right side of
+     the screen". Measured, it was: 416px inside a 440px phone, because
+     the content wanted more than the bar's own ceiling
+     (max-width:calc(100vw - 1.5rem)) and simply took all of it. Home's
+     bar on the same phone is 376 and reads as a pill; this one read as a
+     dock.
+     The iPad is the layout that was signed off - "the same size but
+     slightly wider with the start button there" - and there the bar is
+     563 inside 834, nowhere near its ceiling. So the fix is to take the
+     phone off the ceiling too, by giving the compact row back the space
+     it is spending on gaps: shrink-to-fit then lands it a little wider
+     than Home's bar, which is exactly the relationship asked for.
+     NOT by letting the items squash - that is the other failure this
+     file already records, where the Rewards switcher stopped scrolling
+     sideways and overlapped its own labels instead. The icons keep
+     their size; the air between them pays. */
+  @media (max-width:512px){
+    .bottomtabs.has-start-tab .bottomtabs-navrow{ gap:.28rem; }
+    .bottomtabs.has-start-tab .bottomtabs-navrow .bottomtab{ padding:.76rem .5rem; }
+    /* The gaps are only half of it - the WIDTH is set explicitly a few
+       hundred lines below, which is what actually made this bar run
+       edge to edge. See the note there. */
+  }
   /* Superseded: navrow no longer paints its own nested glass pill in
      the compact (has-start-tab) state -- see the base
      .bottomtabs.has-start-tab .bottomtabs-navrow rule above. These
@@ -5833,8 +5966,24 @@
      stays - four labels plus a Start pill genuinely do not fit a phone,
      which is what the note below measured - but the BAR is the same
      object on both screens now, which is what was actually wrong. */
-  @media (max-width:39.99rem){
-    .bottomtabs.has-start-tab{ width:calc(100vw - 1.5rem); max-width:34rem; }
+  /* ---- AND THEN IT WAS TOO WIDE ----
+     calc(100vw - 1.5rem) is 12px of margin per side on a 440px phone,
+     which is what "it's all the way from the left/right side of the
+     screen" was reporting, with a screenshot. The paragraph above is
+     the request that put it there - "it needs to be even bigger" - and
+     this is the correction to it, not a mistake being undone: the
+     reference is now the iPad, where the bar is 563 inside 834 and
+     reads as a pill with the Start segment on the end.
+     2.6rem per side lands it at 398 on a Pro Max against Home's own
+     376 on the same phone: still the wider of the two, which is the
+     relationship that was asked for both times, but no longer touching
+     the edges. max-width:34rem still caps it on a wide phone.
+     In px, not rem: a rem-gated breakpoint moves with the reader's text
+     size, so on a phone with larger type this bar was picking the
+     tablet's rules. Every Home and Welcome phone gate in this file was
+     converted for the same reason. */
+  @media (max-width:639px){
+    .bottomtabs.has-start-tab{ width:calc(100vw - 2.6rem); max-width:34rem; }
   }
   @media (min-width:40rem){
     .bottomtabs:not(.has-start-tab){ padding:.55rem; gap:.3rem; }
@@ -8397,7 +8546,7 @@
      tab bar on an SE (375x667) by 27px, and worse in a browser tab. 46rem
      is 736px: comfortably under an iPhone 13 mini at 812, comfortably
      over an SE at 667. */
-  @media (max-width:32rem) and (min-height:46rem){
+  @media (max-width:512px) and (min-height:736px){
     /* [data-layout="modern"] on the padding rule, because
        [data-layout="modern"] .panel{padding:1.5rem 1.25rem} sits ~900 lines
        further down at equal specificity and wins on source order - the same
@@ -8439,8 +8588,20 @@
        being edited: .wrap's is off limits (a shorthand there wipes all
        four env() insets) and the panel's is already down to .45rem. */
     .panel.home.screen-home-actual .cosmic-hero-wrap{
-      width:calc(100% + 2.1rem); max-width:min(29rem, 52vh);
-      margin-left:-1.05rem; margin-right:-1.05rem;
+      /* FULL BLEED ON A PHONE. Reported for the tenth time as "still
+         smaller than it should be", and the cap was never what limited
+         it: min(29rem,52vh) is 464px on a 17 Pro Max and the sphere
+         measured 419, because the hero is width:100% inside a column
+         that sits inside .wrap's padding. 3.5rem of negative side
+         margin is exactly what that column gives away, so the planet
+         now spans the screen edge to edge - 440px on a Pro Max, 393 on
+         a 14/15/16, 375 on a 13 mini. There is nothing left to take:
+         anything wider is wider than the phone.
+         The three values are ONE set shared by Home and Welcome, which
+         is the only way "matching the welcome screen size" stays true
+         after the next change to either. */
+      width:calc(100% + 3.5rem); max-width:min(32rem, 58vh);
+      margin-left:-1.75rem; margin-right:-1.75rem;
     }
     /* "the words underneath the planet system need to be moved down".
        The gap above the greeting is the only fixed one in that column -
@@ -8452,7 +8613,17 @@
        really was the looser of the two. The reserve below the panel is
        what holds it up. NOT below 3.6rem: this reserve is also what
        keeps the button off the daily-question circle. */
-    [data-layout="modern"] .panel.home.screen-home-actual{ padding-bottom:3.9rem; }
+    /* 3.9 -> 3.1rem: "the start studying button needs to be lowered so
+       that it's closer to the bottom tab". This reserve is the only
+       thing holding it up, and it was 39px clear of the bar on a Pro
+       Max against the iPad's 55 - but the iPad's button is bigger and
+       its bar taller, so the phone read as the looser of the two.
+       It stays well above the floor the note below warns about: the
+       daily-question circle is a corner control and this button is a
+       centred 200px pill, so what this reserve actually buys on a phone
+       is the row they share, not a collision - and check-fixes measures
+       that row on every device in the matrix. */
+    [data-layout="modern"] .panel.home.screen-home-actual{ padding-bottom:3.1rem; }
   }
   /* The daily-question circle and the version label are FURNITURE, and
      until now Home's button was centred as though they were not there.
@@ -8520,7 +8691,18 @@
        tab bar to 73. What is left under it is the daily-question
        circle, which check-fixes measures on every device in the matrix
        - the only reason this number can move without guessing. */
-    [data-layout="modern"] .panel.home.screen-home-actual{ padding-bottom:2.25rem; }
+    /* 2.25 -> 1.35rem, asked for again: "the start studying button needs
+       to be lowered so that it's closer to the bottom tab". It was 39px
+       clear on a 17 Pro Max; this puts it at ~25.
+       The note above says the version label was what blocked the last
+       attempt, and that is still the only thing that ever did - it is off
+       Home on a phone now. What remains under the button is the
+       daily-question circle, and the clearance that matters there is
+       HORIZONTAL: the button is a centred 200px pill and the circle is
+       pinned to the right edge, 50px clear of it on a Pro Max and 18 on
+       a 375px phone. check-fixes measures exactly that gap, on every
+       device, both orientations, installed and in a browser. */
+    [data-layout="modern"] .panel.home.screen-home-actual{ padding-bottom:1.35rem; }
     /* AND THE BUTTON HAS TO EARN THE ROOM IT JUST TOOK. Dropping it into
        the circle's band is only safe while the two do not share a
        column, and at its natural 224px they very nearly do: measured,
@@ -8564,7 +8746,7 @@
      in a BROWSER TAB (393x742 once Safari's chrome is gone) and a Pixel
      at 760, and stops short of a 13 mini installed at 812, which has the
      room and must keep its full-size hero. */
-  @media (max-width:32rem) and (min-height:36rem) and (max-height:48rem){
+  @media (max-width:512px) and (min-height:576px) and (max-height:768px){
     /* 33vh, not 34: growing the tab bar cost every panel 8px of height,
        and an SE 2nd/3rd gen is the one device with none to give - its
        Home went from 19px of scroll to 27. This hands the 8px back. */
@@ -8627,7 +8809,7 @@
      SE at 667px has no leftover height to move, so an auto margin there
      distributes nothing and the fixed gaps would be the only change - and
      that screen cannot afford even those. */
-  @media (max-width:32rem) and (min-height:46rem){
+  @media (max-width:512px) and (min-height:736px){
     .panel.home.screen-home-actual .homegreeting{ margin-top:auto; }
     /* THE PLANET, THE SAME SIZE IT IS ON WELCOME. Reported as looking
        too small, and measured that is exactly what it was: Welcome's
@@ -8640,8 +8822,20 @@
        absorbs the extra height, and the button is positioned from the
        panel's bottom padding rather than from the content above it. */
     .panel.home.screen-home-actual .cosmic-hero-wrap{
-      width:calc(100% + 2.1rem); max-width:min(29rem, 52vh);
-      margin-left:-1.05rem; margin-right:-1.05rem;
+      /* FULL BLEED ON A PHONE. Reported for the tenth time as "still
+         smaller than it should be", and the cap was never what limited
+         it: min(29rem,52vh) is 464px on a 17 Pro Max and the sphere
+         measured 419, because the hero is width:100% inside a column
+         that sits inside .wrap's padding. 3.5rem of negative side
+         margin is exactly what that column gives away, so the planet
+         now spans the screen edge to edge - 440px on a Pro Max, 393 on
+         a 14/15/16, 375 on a 13 mini. There is nothing left to take:
+         anything wider is wider than the phone.
+         The three values are ONE set shared by Home and Welcome, which
+         is the only way "matching the welcome screen size" stays true
+         after the next change to either. */
+      width:calc(100% + 3.5rem); max-width:min(32rem, 58vh);
+      margin-left:-1.75rem; margin-right:-1.75rem;
     }
     /* Both numbers measured rather than chosen. At 1.15rem/.9rem every
        phone landed on 42/32, which is a big improvement on a 17 Pro Max
@@ -8674,8 +8868,23 @@
        does not move - the same lever, in the same direction as last
        time. There is not much left in it: the row's own base cost is
        ~24px of tagline leading plus the button's padding. */
-    .panel.home.screen-home-actual .hometitle-wrap{ margin-bottom:.35rem; }
-    .panel.home.screen-home-actual .playbtn{ margin-top:0; margin-bottom:0; }
+    /* ---- THE SLACK IS SPLIT, NOT STACKED ABOVE THE TEXT ----
+       The greeting's margin-top:auto was the ONLY auto in this column,
+       so every leftover pixel went above the text and the text group
+       ended up resting on the button: measured on a 17 Pro Max, 153px
+       of empty screen under the planet and FIVE between the tagline
+       and Start Studying. That is the arrangement behind both halves
+       of "the wording is too high and too close to the planet system"
+       - it is pinned to the bottom of its own free space, and all the
+       space is in one place.
+       An auto on the button as well divides it, and the hero's fixed
+       bottom margin biases the division towards the top, which is the
+       shape the iPad has and was signed off with: 108 under the planet
+       against 59 above the button. A phone now lands near the same
+       ratio instead of 153 against 5. */
+    .panel.home.screen-home-actual .cosmic-hero-wrap{ margin-bottom:min(2rem, 2.2vh); }
+    .panel.home.screen-home-actual .hometitle-wrap{ margin-bottom:0; }
+    .panel.home.screen-home-actual .playbtn{ margin-top:auto; margin-bottom:0; }
   }
   /* Short AND wide is excluded by the 60rem height floor, and that is
      not optional either: a laptop browser window has none of the slack
@@ -8757,8 +8966,20 @@
        "the start welcome words and stuff are right underneath it too"
        was pointing at. */
     .cosmic-welcome .cosmic-hero-wrap{
-      width:calc(100% + 2.1rem); max-width:min(29rem, 52vh);
-      margin-left:-1.05rem; margin-right:-1.05rem;
+      /* FULL BLEED ON A PHONE. Reported for the tenth time as "still
+         smaller than it should be", and the cap was never what limited
+         it: min(29rem,52vh) is 464px on a 17 Pro Max and the sphere
+         measured 419, because the hero is width:100% inside a column
+         that sits inside .wrap's padding. 3.5rem of negative side
+         margin is exactly what that column gives away, so the planet
+         now spans the screen edge to edge - 440px on a Pro Max, 393 on
+         a 14/15/16, 375 on a 13 mini. There is nothing left to take:
+         anything wider is wider than the phone.
+         The three values are ONE set shared by Home and Welcome, which
+         is the only way "matching the welcome screen size" stays true
+         after the next change to either. */
+      width:calc(100% + 3.5rem); max-width:min(32rem, 58vh);
+      margin-left:-1.75rem; margin-right:-1.75rem;
       margin-top:0;
     }
     .cosmic-welcome{ gap:1.1rem; }
@@ -8785,7 +9006,7 @@
      bottom: over 46rem so an SE, where this screen is already full, is
      left alone, and under 56rem so the Pro Max at 59.75rem keeps exactly
      the spacing that was signed off. */
-  @media (max-width:32rem) and (min-height:46rem) and (max-height:56rem){
+  @media (max-width:512px) and (min-height:736px) and (max-height:896px){
     /* 2.6rem, not 3: at 3rem a 13 mini picked up 5px of overflow and its
        hint closed to 56px off the bottom edge. This keeps the gap under
        the sphere at 68px against a Pro Max's 51 - the block does sit
@@ -8803,7 +9024,7 @@
      height query: a laptop in a browser window is also short, and this
      screen is comfortable there (measured 86-129px of clearance under
      the hint) because it has the width to lay out in. */
-  @media (max-width:32rem) and (max-height:46rem){
+  @media (max-width:512px) and (max-height:736px){
     .cosmic-welcome{ gap:.34rem; }
     .cosmic-welcome-title{ margin-top:0; }
   }
@@ -8821,7 +9042,7 @@
      such tier, so the floor only served to EXCLUDE the one device that
      needs it most. Measured: an SE 1st gen kept the full-size planet
      and put the hint 56px off the bottom edge. */
-  @media (max-width:32rem) and (max-height:48rem){
+  @media (max-width:512px) and (max-height:768px){
     .cosmic-welcome .cosmic-hero-wrap{ max-width:min(23rem, 33vh); }
   }
   .homeversion .homeversion-long{ display:none; }
@@ -9258,6 +9479,18 @@
      filled blobs. */
   .modeicon-vroom .modeiconpath{ stroke:#4A9FE8; }
   .modeicon-vroom circle.modeiconpath{ fill:#4A9FE8; }
+  /* ---- REVIEW HAD NO COLOUR AT ALL ----
+     Every other mode's icon takes one - two from the theme triad, one
+     from the Virtual Room's own blue - and Review inherited the plain
+     stroke, so on a row of five cards it was the one drawn in grey.
+     Reported as missing its colour, with green suggested, and green is
+     right for a reason beyond taste: it is the only mode that scores
+     nothing, and green is the colour this app already uses for a
+     correct answer. A book full of right answers is exactly what it
+     is. Fixed rather than a theme stop, like the Virtual Room's blue
+     beside it: the meaning does not change with the accent. */
+  .modeicon-review .modeiconpath{ stroke:#4ADE80; }
+  .modecard.locked .modeicon-review .modeiconpath{ stroke:var(--soft); }
   .modecard.locked .modeicon-drill .modeiconpath,
   .modecard.locked .modeicon-exam .modeiconpath{ stroke:var(--soft); }
   .modecard.locked .modeicon-game .modeiconpath{ fill:var(--soft); }
@@ -9344,6 +9577,14 @@
   .rankhero.is-unranked{
     background:rgba(255,255,255,.045); border-color:var(--rule); box-shadow:none;
   }
+  /* THE BAR IS ALREADY IN THE RANK'S OWN COLOUR, with its glow - see
+     .rankhero-fill further down, which takes --rank-color and a
+     box-shadow in the same colour. A second copy was written here
+     before checking, and measured against a seeded account it looked
+     flat for a different reason entirely: that account is below Iron,
+     so there is no rank colour to take and the fallback accent is what
+     paints. Left as a note rather than a duplicate rule - two rules
+     for one fill is how the two stop agreeing. */
   .rankhero-art{ width:6.6rem; height:6.6rem; flex:0 0 auto; position:relative; }
   /* THE BIGGEST EMBLEM ON THE SCREEN, and it had no glow at all - every
      glow rule was written against .rankcard, which is the list below.
@@ -10911,6 +11152,20 @@
     font-size:.76rem; font-weight:800; letter-spacing:.03em;
     color:var(--theme-c3); font-variant-numeric:tabular-nums;
   }
+  /* ---- NEITHER OF THESE TWO IS A WARNING ----
+     Both counts rode the theme's third stop, which on the default
+     theme lands in the red end - reported twice over, "not a fan of
+     the red colour where it says how many friends you have" and "how
+     many days are remaining shouldn't be red".
+     Red in this app means one thing (Reset, a wrong answer), and a
+     count of your friends is not that. They take the two colours the
+     app already uses for good news and for a heads-up, which are the
+     same two the cards beside them use: the online green and the
+     pending amber. Fixed colours rather than theme stops, because the
+     meaning is fixed - a friend count must not turn red because
+     somebody picked Amethyst. */
+  .profile-friendcard .profile-classcard-count{ color:#4ADE80; }
+  .profile-classcard:not(.profile-friendcard) .profile-classcard-count{ color:#F5B54D; }
   /* Label in a fixed column, body beside it, so Today and Next line up
      down the left edge whatever length their text runs to. */
   .profile-classday{
@@ -11079,7 +11334,12 @@
      its word beside the number and the badges had theirs below - so the
      row could never look like a pair however it was aligned. */
   .profile-level-row{
-    display:flex; align-items:flex-start; justify-content:space-between;
+    /* STRETCH, not flex-start: the two plates hold numbers at different
+       type sizes, so sizing each to its own content made one visibly
+       shorter than the other - "the level box and badge box are
+       different sizes here as well". They are halves of one row and
+       should read as one object cut in two. */
+    display:flex; align-items:stretch; justify-content:space-between;
     gap:1rem; margin-bottom:.9rem;
   }
   .profile-level-row > *{ min-width:0; }
@@ -11108,7 +11368,10 @@
     cursor:pointer; font:inherit; text-align:right;
     -webkit-tap-highlight-color:transparent;
   }
-  .profile-badgestat-value{ font-size:1.5rem; font-weight:900; line-height:1; }
+  /* Closer to the level's own 2.4rem than the old 1.5: two plates of
+     the same size carrying numbers of visibly different sizes is the
+     same mismatch one level down. */
+  .profile-badgestat-value{ font-size:2rem; font-weight:900; line-height:1; }
   .profile-badgestat-word{
     font-size:.7rem; font-weight:700; letter-spacing:.06em; color:var(--soft);
   }
@@ -11249,17 +11512,13 @@
     border:1px solid rgba(255,255,255,.1);
     box-shadow:inset 0 2px 7px rgba(0,0,0,.5), 0 0 0 4px rgba(58,140,255,.06);
   }
-  .profile-xpbar::before{
-    content:""; position:absolute; inset:0; z-index:2; pointer-events:none;
-    background-image:linear-gradient(90deg,
-      rgba(255,255,255,.14) 0 1px, transparent 1px 100%);
-    background-size:25% 100%;
-    /* The 0% edge is the track's own left border and the 100% edge is
-       its right, so both are drawn twice; shifting the tiling one pixel
-       left drops the leading one and `border-box` keeps the other
-       outside. Three ticks, at 25/50/75, which is what was wanted. */
-    background-position:-1px 0;
-  }
+  /* ---- THE TICKS CAME OFF ----
+     They were three deliberate quarter marks across the track, asked
+     for once - and reported now as "the xp bar has lines through it,
+     obviously bugged". A decoration that reads as damage is worse than
+     no decoration: the bar's job is to show one length against one
+     track, and nothing else on this screen is divided into quarters.
+     Deleted rather than faded, because a fainter line is the same line. */
   @media (min-width:40rem){ .profile-xpbar{ height:1.35rem; } }
   .profile-xp-line{
     margin:.6rem 0 0; font-size:.82rem; font-weight:600; color:var(--soft);
@@ -11904,6 +12163,36 @@
     transform:translateY(-50%); border-radius:50%;
     border:.2rem solid #6A5540; box-sizing:content-box;
   }
+  /* The shift is animated so the rope is seen MOVING rather than
+     found in a new place on the next snapshot - the movement is the
+     whole point. Slow enough to read, short enough not to lag behind
+     a fast exchange. */
+  .tug-rope{ transition:transform .45s cubic-bezier(.3,.9,.3,1), filter .45s ease; }
+  [data-reduce-motion="true"] .tug-rope{ transition:none; }
+  /* The leading end tightens and lifts; the other slackens. Done with
+     a brightness gradient over the rope's own texture rather than a
+     second element, so nothing can fall out of step with the knot. */
+  .tug-rope.leads-a{
+    box-shadow:
+      inset 0 .3rem .45rem rgba(255,255,255,.22),
+      inset 0 -.34rem .5rem rgba(0,0,0,.5),
+      inset .9rem 0 1.4rem -.6rem rgba(61,169,252,.55);
+  }
+  .tug-rope.leads-b{
+    box-shadow:
+      inset 0 .3rem .45rem rgba(255,255,255,.22),
+      inset 0 -.34rem .5rem rgba(0,0,0,.5),
+      inset -.9rem 0 1.4rem -.6rem rgba(245,128,77,.55);
+  }
+  /* Says who is ahead, in words, because a shifted rope says there is
+     a lead and not whose. */
+  .tug-state{
+    margin:.55rem 0 0; text-align:center;
+    font-size:.78rem; font-weight:800; letter-spacing:.02em;
+    color:var(--soft);
+  }
+  .tug-state.is-ours{ color:#4ADE80; }
+  .tug-state.is-theirs{ color:#F0766B; }
   .tug-rope::before{ left:-.42rem; }
   .tug-rope::after{ right:-.42rem; }
   /* The line on the ground, not a divider: dashed, and taller than
@@ -12055,6 +12344,76 @@
     border-radius:16px 16px 0 0; padding:1.1rem 1rem calc(1.1rem + env(safe-area-inset-bottom, 0px));
   }
   .invite-sheet-title{ margin:0 0 .6rem; font-weight:800; font-size:1.05rem; color:var(--ink); }
+  /* ================= THE PERSON CARD =================
+     "It could be a popup and not something that comes up from the
+     bottom ... not the entire screen, just centred. Large with good
+     information ... you could probably make this screen have a black
+     background or something, that would be sick."
+     So it takes itself out of the sheet's bottom-drawer geometry on
+     every width rather than only above 40rem: centred, rounded on all
+     four corners, and on a surface darker than the app it sits over so
+     it reads as a card lifted off the screen rather than a panel of it.
+     Not pure #000: a true black has no edge against the app's own dark
+     background, and the whole point is that this floats. */
+  .invite-overlay:has(.person-card){ align-items:center; }
+  .invite-sheet.person-card{
+    width:min(22rem, calc(100vw - 2.5rem));
+    border-radius:22px;
+    padding:1.4rem 1.25rem 1.15rem;
+    background:linear-gradient(180deg, #14171C 0%, #0B0D11 100%);
+    border:1px solid rgba(255,255,255,.14);
+    box-shadow:0 24px 60px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.07);
+    /* The bottom inset belongs to a drawer sitting on the home
+       indicator. This one is in the middle of the screen. */
+    padding-bottom:1.15rem;
+  }
+  /* A light theme still gets a dark card: it is a spotlight on one
+     person, and the emblem, the rank colour and the character are all
+     drawn for a dark ground. */
+  .person-card .person-sheet-name{ color:#F3F5F7; }
+  .person-card-art{ margin-bottom:.5rem; }
+  .person-card-rank{
+    margin:.15rem 0 0; font-size:1.35rem; font-weight:900;
+    letter-spacing:.04em; text-transform:uppercase;
+    /* The rank's own colour is set inline per person; the glow comes
+       off it so it lights rather than just prints. */
+    filter:drop-shadow(0 0 14px color-mix(in srgb, var(--rank-color, #fff) 45%, transparent));
+  }
+  .person-card-level{
+    margin:.15rem 0 0; font-size:.95rem; font-weight:700; color:#AEB7C2;
+  }
+  .person-card-progress{
+    margin-top:1.1rem; padding-top:.9rem;
+    border-top:1px solid rgba(255,255,255,.1);
+  }
+  .person-card-proglabel{
+    margin:0 0 .6rem; font-size:.68rem; font-weight:800;
+    letter-spacing:.12em; text-transform:uppercase; color:#8A93A0;
+  }
+  /* Two by two, not four across: at a card this width four columns give
+     each number about 60px, and a five-figure XP total does not fit in
+     it - the one thing on this card somebody is actually comparing. */
+  .person-card-grid{
+    display:grid; grid-template-columns:repeat(2, minmax(0, 1fr));
+    gap:.55rem;
+  }
+  .person-card-cell{
+    display:flex; flex-direction:column; align-items:center; gap:.1rem;
+    padding:.55rem .35rem; border-radius:14px;
+    background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.07);
+  }
+  .person-card-cell-value{
+    font-size:1.15rem; font-weight:800; color:#F3F5F7;
+    font-variant-numeric:tabular-nums; line-height:1.1;
+  }
+  .person-card-cell-label{
+    font-size:.64rem; font-weight:700; letter-spacing:.08em;
+    text-transform:uppercase; color:#8A93A0;
+  }
+  .person-card .person-sheet-act{ margin-top:1.05rem; width:100%; }
+  .person-card .person-sheet-hint{ color:#7F8794; }
+  .person-card .person-sheet-close{ width:100%; }
   .invite-close{ width:100%; min-height:44px; margin-top:.9rem; }
   @media (min-width:40rem){
     .invite-overlay{ align-items:center; }
@@ -24654,6 +25013,65 @@ function resetStuckZoom(){
   }catch(e){ try{ meta.setAttribute("content", original); }catch(e2){} }
 }
 
+/* ---- AND THE CURE FOR A ZOOM IS NOT TO LET IT HAPPEN ----
+   resetStuckZoom() above unwinds a scale Safari is already holding, and
+   it was written because the font-size floor did not stop the zoom. It
+   is the wrong half of the problem: by the time it runs, the page has
+   already jumped under somebody's thumb mid-word, which is what
+   "it zooms in when I type, and then it gets stuck" describes.
+   Reported now for the third time, against a build where every text
+   field in the app measures 17px - so the cause is NOT the 16px rule,
+   whatever the documentation says, and no amount of font-size will fix
+   it. The one thing that reliably stops iOS zooming to a focused field
+   is maximum-scale=1 in force AT THE MOMENT OF FOCUS.
+   So the clamp goes on at focusin and comes off at focusout, rather
+   than being shipped in the tag: a page nobody can pinch-zoom is an
+   accessibility problem, and this is a study app people read on a
+   phone. Between typing and not typing, only the typing is clamped.
+   focusin/focusout rather than focus/blur because those two bubble -
+   every field in the app is built at runtime, so nothing can be bound
+   per-element, and a capture listener on one is one listener for the
+   life of the page.
+   The restore is deliberately deferred by two frames: undoing the clamp
+   in the same tick as the blur puts it back while iOS is still
+   settling the keyboard, and the zoom lands anyway. */
+const ZOOM_LOCK_SELECTOR = "input, textarea, select, [contenteditable]";
+let zoomLockDepth = 0;
+function setViewportZoomLock(on){
+  const meta = document.getElementById("viewportmeta");
+  if(!meta) return;
+  const base = "width=device-width, initial-scale=1, viewport-fit=cover";
+  try{
+    meta.setAttribute("content", on ? base + ", maximum-scale=1, user-scalable=no" : base);
+  }catch(e){}
+}
+document.addEventListener("focusin", (e) => {
+  const t = e.target;
+  if(!t || !t.closest || !t.matches) return;
+  /* A checkbox or a range slider is not text entry and never triggers
+     the zoom, so clamping for one would take pinch-zoom away for
+     nothing. */
+  if(t.tagName === "INPUT" && /^(checkbox|radio|range|button|submit|color|file)$/i.test(t.type || "")) return;
+  if(!t.matches(ZOOM_LOCK_SELECTOR)) return;
+  zoomLockDepth++;
+  setViewportZoomLock(true);
+}, true);
+document.addEventListener("focusout", (e) => {
+  const t = e.target;
+  if(!t || !t.matches) return;
+  if(!t.matches(ZOOM_LOCK_SELECTOR)) return;
+  zoomLockDepth = Math.max(0, zoomLockDepth - 1);
+  if(zoomLockDepth) return;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    /* Moving from one field straight to the next re-focuses before this
+       runs, and lifting the clamp between them is a zoom on the second
+       one. */
+    if(zoomLockDepth) return;
+    setViewportZoomLock(false);
+    resetStuckZoom();
+  }));
+}, true);
+
 if(window.visualViewport){
   const vv = window.visualViewport;
   const keyboardGone = () => vv.height >= window.innerHeight - 40;
@@ -27841,6 +28259,18 @@ function buildLeaderboardRow(){
            person's next push. */
         mystery: mysteryColorsFoundCount(),
         hundos: hundosOf(store),
+        /* ---- TWO MORE NUMBERS, FOR THE PROFILE CARD ----
+           The card that opens when you tap a classmate shows their XP
+           and how many tests they have taken, and neither was on the
+           wire - the row carried what the three boards rank and nothing
+           else. Published here rather than fetched on demand: a lookup
+           per tap would be a read per tap per person, and this document
+           is already fetched by every client.
+           An older document has neither and reads as 0, which self-heals
+           on that person's next push - the same contract every field
+           added to this row has had. NOTHING HERE IS THE SYNC CODE. */
+        xp: (store.lifetime && store.lifetime.points) || 0,
+        tests: Array.isArray(store.testHistory) ? store.testHistory.length : 0,
         /* Both halves, because a number without its week is a number
            that cannot be expired. Anyone still on an older build
            publishes neither and reads as 0 on the weekly board, which
@@ -29756,6 +30186,51 @@ function testsCompletedOf(st){
 
 /* What each board ranks, what its rows say underneath a name, and what
    the tab is called. Adding a fourth board is adding an entry here. */
+/* ---- HOW FAR THROUGH YOUR RANK YOU ARE ----
+   Takes the numbers rather than a store, like rankOfStats above it and
+   for the same reason: the board asks this about OTHER people, from a
+   published document that has no store behind it. */
+function overallProgressOf(level, badges){
+  const lv = Number(level) || 0, bd = Number(badges) || 0;
+  const held = rankOfStats(lv, bd, 0);
+  const idx = held ? TIER_ORDER_FULL.indexOf(held) : -1;
+  /* The rank being climbed TO. Below the first rank that is Iron; at
+     the top there is nothing above Supernova, so it keeps measuring
+     against Supernova's own requirement and progress simply carries on
+     past 100 - which is the right answer for the one person up there:
+     their lead keeps growing rather than freezing at a tie. */
+  const nextKey = TIER_ORDER_FULL[idx + 1] || TIER_ORDER_FULL[TIER_ORDER_FULL.length - 1];
+  const rule = TIER_UNLOCKS[nextKey] || {};
+  const needLv = Number(rule.level) || 0, needBd = Number(rule.badges) || 0;
+  /* A requirement of zero would divide by zero; treat it as met. */
+  const lvPct = needLv ? (lv / needLv) * 100 : 100;
+  const bdPct = needBd ? (bd / needBd) * 100 : 100;
+  return { tier: idx, key: held, progress: (lvPct + bdPct) / 2, level: lv, badges: bd };
+}
+/* The comparator, in the order that was specified: tier, progress,
+   level, badges - and then the name, so the list is stable rather than
+   re-shuffling two tied people on every snapshot. */
+function overallCompare(a, b){
+  const A = overallProgressOf(a.level, a.badges), B = overallProgressOf(b.level, b.badges);
+  return (B.tier - A.tier)
+      || (B.progress - A.progress)
+      || ((Number(b.level) || 0) - (Number(a.level) || 0))
+      || ((Number(b.badges) || 0) - (Number(a.badges) || 0))
+      || String(a.firstName || "").localeCompare(String(b.firstName || ""));
+}
+/* What the row says: the three things the sort is made of, in words.
+   Unranked is left unnamed rather than called "Unranked" - somebody
+   below Iron has no rank to show, and a placeholder would say
+   otherwise. It is the same call decorateAvatar makes. */
+function overallRowLine(e){
+  const p = overallProgressOf(e && e.level, e && e.badges);
+  const bits = [];
+  if(p.key) bits.push(RANK_DISPLAY_NAME[p.key]);
+  bits.push("Level " + p.level);
+  bits.push(p.badges + (p.badges === 1 ? " badge" : " badges"));
+  return bits.join(" \u00b7 ");
+}
+
 const RANKING_BOARDS = [
   /* This replaced the Level board, which was asked against directly -
      "I like the badge count one, and the hundo one, not a fan of the
@@ -29775,9 +30250,34 @@ const RANKING_BOARDS = [
      Profile, where they are a case of things you own rather than a
      column to be beaten on, and the badge count is already what half
      of the level number is made of. */
-  { key: "level", tab: "Level", field: "level",
-    unit: (n) => "Level " + n,
-    blurb: "Ranked by level, which is every point of XP you have ever earned rolled into one number \u2014 drills, exams, games, the Virtual Room and the daily question all count towards it." },
+  /* ---- OVERALL RANK, WHICH IS NOT A NUMBER YOU CAN PRINT ----
+     The Level board went because level on its own says one thing about
+     a person; this says three, in the order they actually matter.
+     "The rank would be worth the most, but if two people are the same
+     rank it would come down to level and badges."
+
+     THE TIER ALWAYS WINS. A Bronze above a Silver is not a close call
+     to be settled by arithmetic - it is the whole point of a ladder,
+     and no amount of progress inside a tier may ever jump it.
+     Inside a tier, progress towards the NEXT rank decides, as the
+     average of how far along each of its two requirements you are:
+
+       level progress  = level  / next rank's level  x 100
+       badge progress  = badges / next rank's badges x 100
+       overall         = (the two, averaged)
+
+     UNCAPPED, on purpose and by instruction - "if someone exceeds the
+     level or badge requirement they should continue receiving credit
+     for being above it". Someone at level 54 against a requirement of
+     45 is at 120%, and that is what puts them above a classmate who
+     stopped at 45 and has the same badges.
+     The percentage is a SORTING VALUE and is deliberately not printed:
+     a number that goes past 100 needs a paragraph to explain, and the
+     row already says the three things it is made of. */
+  { key: "overall", tab: "Overall", field: "level",
+    sort: overallCompare,
+    unit: (n, e) => overallRowLine(e),
+    blurb: "Ranked by rank first \u2014 a higher rank always sits above a lower one, whatever the numbers. People on the same rank are ordered by how far they have got towards the next one, counting level and badges together." },
   /* "hundos", not "perfect tests". A run can cover several units at
      once, and "perfect test" reads as though every unit in it has to be
      clean - reported directly as confusing. The board's own name is the
@@ -32570,7 +33070,8 @@ function confirmLeaveWhileWaiting(){
 let lastVroomFinale = null;
 
 function confirmExitTest(){
-  if(order.length === 0){ showModeSelect(); return; }
+  /* Home, for the same reason as the confirmed exit below. */
+  if(order.length === 0){ showHome(); return; }
   /* Same reasoning as confirmMainMenu() above - see its comment - a
      daily question has no multi-question progress to warn about
      losing, so this skips straight to Home instead of asking at all. */
@@ -32648,8 +33149,17 @@ function confirmExitTest(){
        screen, so it is the only way out of a race and it has to be
        the one that cleans up. */
     if(inVirtualRoom || vroomCode) leaveVirtualRoom();
-    if(isDailyExit) showHome();
-    else showModeSelect();
+    /* ---- LEAVING A TEST LANDS ON THE MAIN MENU ----
+       "Ensure that when you exit a test, it takes you straight back to
+       the main menu - it takes you to the mode selection screen in some
+       modes and stuff."
+       It went to mode selection, on the reasoning that you had just
+       come from there and might want another run. In practice leaving
+       a test is leaving, and mode selection is a screen you have to
+       leave again - with a back link, to Home. The daily question
+       already landed on Home; now everything does, so there is one
+       answer rather than two. */
+    showHome();
   });
   actions.append(stayBtn, leaveBtn);
   panel.append(h, p, actions);
@@ -34073,6 +34583,27 @@ function buildCosmicHero(useTierIcons, forceAccent){
     const found = !!(typeof store !== "undefined" && store.mysteryColorsFound && store.mysteryColorsFound[colorKey]);
     dot.setAttribute("class", "cosmic-orbit-dot" + (found ? " cosmic-orbit-dot-found" : ""));
     if(found){ dot.setAttribute("fill", mysteryColors[colorKey]); dot.style.color = mysteryColors[colorKey]; }
+    /* ---- AND THESE ANSWER A TAP TOO ----
+       "When you click the secret flares on the Home Screen, ensure it
+       says something there too, like the other bubbles."
+       These three dots are what is left of the Secret Flares, which
+       were scrapped - they are decoration now, and the seven marks
+       around them all say something when tapped, so three that stay
+       silent read as broken rather than as scenery.
+       It says what they are rather than inventing a feature for them.
+       Home only, like the flares themselves: useTierIcons is true
+       nowhere else. */
+    if(useTierIcons){
+      dot.setAttribute("class", dot.getAttribute("class") + " cosmic-badge-tappable");
+      dot.setAttribute("role", "button");
+      dot.setAttribute("tabindex", "0");
+      const sayDot = () => showContextualInfo(dot,
+        "Just a star. The seven marks around the planet are the flares \u2014 each one lights when you reach its rank.");
+      dot.addEventListener("click", sayDot);
+      dot.addEventListener("keydown", (e) => {
+        if(e.key === "Enter" || e.key === " "){ e.preventDefault(); sayDot(); }
+      });
+    }
     dotsGroup.appendChild(dot);
   });
   svg.appendChild(dotsGroup);
@@ -36372,17 +36903,26 @@ function chatEntry(code){
    panel's own roster render, which runs on every snapshot - saving
    unconditionally would push the whole progress document to Firestore
    on every message anybody sends. */
-function rememberChat(code, name){
+function rememberChat(code, name, withPubs){
   if(!code) return;
   const list = chatList();
   const at = Date.now();
   const had = chatEntry(code);
+  const sameWith = (a, b) => Array.isArray(a) && Array.isArray(b)
+    && a.length === b.length && a.every((v, i) => v === b[i]);
   if(had){
+    /* WHO IT IS WITH, so "message this person" can find the chat you
+       already have with them instead of starting a second one. Only
+       the other people, sorted, so the list is comparable. */
+    if(withPubs && !sameWith(had.with, withPubs)){
+      had.with = withPubs; had.at = at; saveStore();
+    }
     if(name && had.name === name) return;
     if(!name) return;
     had.name = name; had.at = at;
   } else {
-    list.unshift({ code: code, name: name || "", at: at });
+    list.unshift({ code: code, name: name || "", at: at,
+                   with: withPubs || [] });
     if(list.length > CHAT_LIST_MAX) list.length = CHAT_LIST_MAX;
   }
   saveStore();
@@ -36501,7 +37041,12 @@ const CHAT_CTX = {
        the present set - a row called "Ann" must not become "Bo" because
        Ann's phone went to sleep. rememberChat() saves only on a change,
        so this does not write on every message. */
-    if(chatRoomCode) rememberChat(chatRoomCode, nameChatFrom(data.participants || null));
+    if(chatRoomCode){
+      const me = publicIdOf();
+      const others = Object.keys(data.participants || {})
+        .filter(k => k !== me).sort();
+      rememberChat(chatRoomCode, nameChatFrom(data.participants || null), others);
+    }
     return p;
   },
   /* The dock's own button is the thing carrying the dot, so the dock
@@ -36672,7 +37217,9 @@ function createChatRoom(){
   if(!fbDb){ showToast("Chat needs a live connection — check your connection and try again."); return; }
   const code = generateSyncCode();
   const me = publicIdOf();
-  fbDb.collection("vrooms").doc(code).set({
+  /* RETURNED, so "message this person" can invite them the moment the
+     room exists. Every existing call site ignores it. */
+  return fbDb.collection("vrooms").doc(code).set({
     kind: "chat",
     createdAt: Date.now(),
     chatMessages: [],
@@ -36681,7 +37228,8 @@ function createChatRoom(){
   }).then(() => {
     enterChatRoom(code);
     showToast("Chat started — invite somebody.", "good");
-  }).catch(() => showToast("Couldn't start the chat — try again."));
+    return code;
+  }).catch(() => { showToast("Couldn't start the chat — try again."); return null; });
 }
 
 /* RESOLVES TRUE ONLY IF SOMEBODY IS ACTUALLY IN. Every refusal already
@@ -36807,6 +37355,37 @@ function leaveChatByCode(code){
    already fetched by every client on every snapshot and nobody may
    write to anybody else's row. `cinv` rather than `inv` so a chat
    invite and a Virtual Room invite cannot be mistaken for each other. */
+/* ---- MESSAGE THIS PERSON ----
+   The card's action when you are already friends. It opens the chat you
+   have with them if there is one, and starts one and invites them if
+   there is not - which is the whole of "open the direct chat you have
+   with person or start one if it hasn't been initiated yet".
+   A DM is a chat whose only other member is them. A group chat has more
+   and is left alone, so messaging somebody never drops you into a room
+   with four other people in it. */
+function chatWithPerson(pub){
+  if(!pub) return null;
+  return chatList().find(c => c && Array.isArray(c.with)
+    && c.with.length === 1 && c.with[0] === pub) || null;
+}
+function openDirectChatWith(entry){
+  const pub = entry && entry.pub;
+  if(!pub) return;
+  chatDockTab = "chat";
+  openChatDock();
+  const existing = chatWithPerson(pub);
+  if(existing){ enterChatRoom(existing.code); return; }
+  if(!fbDb){ showToast("Chat needs a live connection — check your connection and try again."); return; }
+  Promise.resolve(createChatRoom()).then(code => {
+    if(!code) return;
+    /* The invite is what actually reaches them - a room with one person
+       in it is not a conversation. inviteFriendToChat reads
+       chatRoomCode, which enterChatRoom has just set. */
+    inviteFriendToChat(pub);
+    showToast("Chat started — " + (entry.firstName || "they") + " has been invited.", "good");
+  });
+}
+
 function inviteFriendToChat(pub){
   if(!pub || !chatRoomCode) return;
   if(withMeInChat(pub)){
@@ -38046,19 +38625,83 @@ function openPersonSheet(entry){
   const sheet = document.createElement("div");
   sheet.className = "invite-sheet person-sheet";
 
+  /* ---- A CARD, NOT A DRAWER ----
+     "This needs to show more, it could be a popup and not something
+     that comes up from the bottom ... let's make it so the pop up isn't
+     the entire screen just like centered. Large with good information."
+     So: centred, its own dark surface, and the three things worth
+     knowing about a classmate in the order they matter - who they are,
+     what rank they hold, and what they have done. It is the same card
+     from the Leaderboard, a lobby and the end of a match, because a
+     person is the same person wherever you tapped them. */
+  sheet.classList.add("person-card");
+
   const art = document.createElement("div");
-  art.className = "person-sheet-art";
+  art.className = "person-sheet-art person-card-art";
   art.appendChild(avatarSpanFor(entry));
+  /* Big and alone here, so this is exactly where the character's own
+     light belongs - the opposite call from the list rows, which lost
+     it for being a smear. */
+  art.classList.add("has-glow");
+  art.style.setProperty("--char-glow",
+    avatarGlowColor((entry && entry.avatarChar) || AVATAR_CHARACTERS[0].id));
   decorateAvatar(art, entry.level, entry.badges, entry.mystery);
 
   const name = document.createElement("p");
   name.className = "person-sheet-name";
   name.textContent = entry.firstName || "Classmate";
-  const line = document.createElement("p");
-  line.className = "person-sheet-line";
-  line.textContent = "Level " + (entry.level || 0) + " · "
-    + (entry.badges || 0) + ((entry.badges === 1) ? " badge" : " badges");
-  sheet.append(art, name, line);
+  sheet.append(art, name);
+
+  /* THE RANK IS THE HEADLINE, IN ITS OWN COLOUR, with the level under
+     it - asked for in that order. Somebody below Iron gets the level
+     alone rather than the word "Unranked". */
+  const rk = rankOfStats(entry.level || 0, entry.badges || 0, entry.mystery || 0);
+  if(rk){
+    const rankEl = document.createElement("p");
+    rankEl.className = "person-card-rank";
+    rankEl.textContent = RANK_DISPLAY_NAME[rk];
+    rankEl.style.color = RANK_COLOR[rk];
+    rankEl.style.setProperty("--rank-color", RANK_COLOR[rk]);
+    sheet.appendChild(rankEl);
+  }
+  const lvlEl = document.createElement("p");
+  lvlEl.className = "person-card-level";
+  lvlEl.textContent = "Level " + (entry.level || 0);
+  sheet.appendChild(lvlEl);
+
+  /* ---- PROGRESS ----
+     Four numbers, each one a thing you can go and do something about.
+     Badges reads "3 / 16" rather than "3": a count with no ceiling
+     says nothing about how far along somebody is, and sixteen is the
+     whole set. */
+  const prog = document.createElement("div");
+  prog.className = "person-card-progress";
+  const progLab = document.createElement("p");
+  progLab.className = "person-card-proglabel";
+  progLab.textContent = "Progress";
+  prog.appendChild(progLab);
+  const grid = document.createElement("div");
+  grid.className = "person-card-grid";
+  [["XP", (Number(entry.xp) || 0).toLocaleString()],
+   /* The ceiling is the number of units there are, read off the
+      question bank the same way badgeCountOf does rather than typed as
+      16 - the bank has grown before and a hardcoded total is how a
+      card starts lying about somebody's progress. */
+   ["Badges", (entry.badges || 0) + " / " + (function(){
+      try{ return topicsIn(QUESTIONS).length; }catch(e){ return 16; } })()],
+   ["Hundos", String(entry.hundos || 0)],
+   ["Tests", String(entry.tests || 0)]].forEach(([label, value]) => {
+    const cell = document.createElement("div");
+    cell.className = "person-card-cell";
+    const v = document.createElement("span");
+    v.className = "person-card-cell-value"; v.textContent = value;
+    const l = document.createElement("span");
+    l.className = "person-card-cell-label"; l.textContent = label;
+    cell.append(v, l);
+    grid.appendChild(cell);
+  });
+  prog.appendChild(grid);
+  sheet.appendChild(prog);
 
   const act = document.createElement("button");
   act.type = "button"; act.className = "next person-sheet-act";
@@ -38067,8 +38710,17 @@ function openPersonSheet(entry){
      "Add friend" to somebody who already asked you is how a request
      sits unanswered for a week. */
   if(state === "friends"){
-    act.textContent = "Already friends"; act.disabled = true;
-    act.classList.add("ghost");
+    /* ---- ALREADY FRIENDS IS NOT AN OUTCOME, IT IS A STARTING POINT ----
+       "If you are already friends then it will just say message or
+       something and it will open the direct chat you have with the
+       person, or start one if it hasn't been initiated yet."
+       A disabled button saying "Already friends" was the one state on
+       this card with nothing to do. */
+    act.textContent = "Message";
+    act.addEventListener("click", () => {
+      overlay.remove();
+      openDirectChatWith(entry);
+    });
   } else if(state === "sent"){
     act.textContent = "Request sent"; act.disabled = true;
     act.classList.add("ghost");
@@ -39923,13 +40575,38 @@ function showSetup(){
        hides when nothing inside it would show: Review has no options at
        all, and Game's are all covered twice over by its own timer and
        the Speed slider inside it. */
-    const nothingInMore = reviewAllMode
-      || (isGame && cfg.timer !== "down");
-    moreWrap.hidden = nothingInMore;
+    /* ---- AND GAME'S DIFFICULTY LIVES IN HERE ----
+       "On the phone when I go to the mode Game, the menu when hitting
+       start doesn't show any of the settings, it doesn't allow me to
+       select which difficulty."
+       Measured against the code rather than the device: the Speed
+       slider - which IS the difficulty - sits inside this collapsible,
+       and this condition hid the whole collapsible in Game mode on the
+       reasoning that every row inside it was excluded for Game. Every
+       row except the one that only exists for Game.
+       So it asks whether anything inside would show, from the sections
+       themselves, instead of listing modes: an empty collapsible is
+       still a dead-end control, and this is still the check for one -
+       it is simply now asking the sections rather than remembering
+       them. */
     timerSect.hidden = isGame || reviewAllMode;
-    optSect.hidden = isGame || reviewAllMode;
     recallRow.hidden = isGame || isExam;
     shuffleRow.hidden = isGame || isExam;
+    /* ---- A LABEL WITH NOTHING UNDER IT ----
+       "The word Options is underneath the timer stuff for some random
+       reason." It is this section's own header, and both rows it
+       heads - Shuffle and Recall - are hidden in Exam, so what was
+       left was the word on its own under the timer.
+       Asked the right question now: hide the section when every row
+       inside it is hidden, rather than naming the two modes that
+       happened to be true when it was written. A row added later is
+       covered without anybody having to remember this line. */
+    optSect.hidden = reviewAllMode || (recallRow.hidden && shuffleRow.hidden);
+    /* AFTER the four it asks about, because it asks them rather than
+       re-deriving their conditions - reading them before they are set
+       is how this kind of check answers last render's question. */
+    moreWrap.hidden = speedSect.hidden && minutesSect.hidden
+      && timerSect.hidden && optSect.hidden;
     srcSect.hidden = isGame || isExam || reviewAllMode;
     /* Live-updates "Most missed" and "Flagged" to reflect only the
        currently checked units, rather than a fixed count from when
@@ -39941,7 +40618,14 @@ function showSetup(){
        there's anything to draw from) still tracks the live count. */
     srcSect.relabel("recent", "Most missed", unitRecentCount === 0);
     srcSect.relabel("flagged", "Flagged", unitFlaggedCount === 0);
-    sizeSect.hidden = isGame || isExam || reviewAllMode;
+    /* ---- EXAM CHOOSES ITS OWN LENGTH ----
+       "In the mode exam it doesn't let you select how many questions."
+       It did not, and its own card two screens earlier promises the
+       opposite: "Pick your own units and length." Exam was folded in
+       here beside Game, and Game genuinely has no length to pick - it
+       runs until the lives are gone. An exam is a fixed-length paper,
+       which is the whole point of sitting one. */
+    sizeSect.hidden = isGame || reviewAllMode;
     /* The sheet's own primary button relabels to match what it will
        actually do while Review is on — the same swap its click handler
        above already makes, just reflected in the button's text too so
@@ -41070,9 +41754,22 @@ function showContextualInfo(targetEl, message){
   const targetCenterX = rect.left + rect.width / 2;
   const targetCenterY = rect.top + rect.height / 2;
   const margin = 12;
-  const estimatedHeight = 90;
-  const wouldOverflowBelow = rect.bottom + 14 + estimatedHeight > window.innerHeight - 90;
-  const above = wouldOverflowBelow;
+  /* ---- UNDER THE THING YOU TAPPED ----
+     "The placement of that pop up is bad, it needs to be under the one
+     you clicked."
+     It flipped above the target whenever it thought it would not fit
+     below, and it thought that far too often: the height was a guessed
+     90px and the floor was another 90px up from the bottom of the
+     screen, so a tile anywhere in the lower third of a phone got its
+     answer ABOVE it - over the tile, or over the one before it.
+     Measured instead. The popup is already in the document, so its
+     real height is there to read, and the only reserve that belongs at
+     the bottom is the tab bar's own footprint. Above is still the
+     fallback, because off the bottom of the screen is worse than
+     above - it is just no longer the usual case. */
+  const realHeight = popup.getBoundingClientRect().height || 90;
+  const barReserve = document.querySelector(".bottomtabs:not([hidden])") ? 84 : 12;
+  const above = rect.bottom + 14 + realHeight > window.innerHeight - barReserve;
   if(above){
     popup.style.top = "auto";
     popup.style.bottom = (window.innerHeight - rect.top + 14) + "px";
@@ -41164,7 +41861,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-26-195";
+const APP_BUILD = "2026-09-26-196";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -43365,10 +44062,17 @@ function showAppearance(opts){
     awakeWrap.appendChild(document.createTextNode("Keep screen awake"));
     const awakeHint = document.createElement("span");
     awakeHint.className = "ohint";
-    awakeHint.textContent = "Stops your screen from locking while this tab is open, so it doesn't dim out mid-question.";
+    /* Reworded: it used to say "so it doesn't dim out mid-question",
+       which describes one moment out of the whole app and reads as a
+       setting about tests. It is about the screen, wherever you are. */
+    awakeHint.textContent = "Stops your screen locking while Nova is open.";
     awakeWrap.appendChild(awakeHint);
     awakeRow.append(awakeCb, awakeBox, awakeWrap);
-    studyDetails.appendChild(awakeRow);
+    /* MOTION & INTERACTION, not Studying & tests. Asked for directly.
+       It is a property of the device while the app is open, the same
+       kind of thing as smooth scrolling and swipe to advance - not
+       something that happens to a test. */
+    motionDetails.appendChild(awakeRow);
   }
 
   const swipeRow = document.createElement("label");
@@ -43851,7 +44555,16 @@ function showAppearance(opts){
   /* Quiet, because these two are offers rather than actions on your
      account - see the note where the sections are assembled. */
   shareBtn.classList.add("cal-profile-btn-quiet");
-  installBtn.classList.add("cal-profile-btn-quiet");
+  /* ---- THE ONE BUTTON DOWN HERE THAT SHOULD BE INVITING ----
+     "Change the colour of the buttons in a way that makes sense,
+     specifically for the ones that need it, the others can stay
+     black." Add to Home Screen is the single action on this screen
+     that makes the app better for the person pressing it - it is how
+     Nova stops being a browser tab - and as a grey outline beside
+     Share it read as the lesser of two afterthoughts. It carries the
+     app's own accent now. Share stays quiet (it acts on somebody
+     else), Report a bug stays quiet, Reset stays red. */
+  installBtn.classList.add("cal-profile-btn-accent");
   const shareInstallRow = document.createElement("div");
   shareInstallRow.className = "cal-profile-row";
   shareInstallRow.append(shareBtn, installBtn);
@@ -44044,10 +44757,18 @@ function showAppearance(opts){
      kept for the things that change something. */
   const shareLab = document.createElement("p");
   shareLab.className = "slab section-divider motion-summary";
-  shareLab.textContent = "Share Nova";
+  /* NOT "Share Nova": the section holds two buttons and only one of
+     them shares anything - the other puts the app on your own Home
+     Screen, which is the opposite direction. A header has to cover
+     what is under it. */
+  shareLab.textContent = "Share & install";
   panel.appendChild(shareLab);
   const shareHint = document.createElement("p");
-  shareHint.className = "sync-note-plain";
+  /* settings-lead, not the bare note class: .sync-note-plain has
+     margin-bottom:0, so this line sat directly on the buttons it
+     introduces - reported as "the spacing of those buttons, the
+     description above it is bad too, it's too too tight". */
+  shareHint.className = "sync-note-plain settings-lead";
   shareHint.textContent = "Send it to a classmate, or put it on your own Home Screen so it opens like an app.";
   panel.appendChild(shareHint);
   panel.appendChild(shareInstallRow);
@@ -44595,6 +45316,21 @@ function showVirtualRoomChoice(){
   const actions = document.createElement("div");
   actions.className = "vroom-choice-actions";
 
+  /* ---- A DESCRIPTION BELONGS ABOVE THE BUTTON IT DESCRIBES ----
+     "Those buttons and descriptions are badly spaced out. Fix that -
+     the descriptions are on top of the buttons."
+     They were: one paragraph at the top of the screen covering both,
+     and a second under them covering neither, so the two buttons
+     themselves said nothing about how they differ. Each carries its
+     own line now, directly above it, in one block per choice - which
+     is also what fixes the spacing, because the gap between the two
+     choices is now bigger than the gap inside each one. */
+  const startChoice = document.createElement("div");
+  startChoice.className = "vroom-choice";
+  const startWhat = document.createElement("p");
+  startWhat.className = "vroom-choice-what";
+  startWhat.textContent = "Pick the units, invite whoever you want, and everyone starts together.";
+  startChoice.appendChild(startWhat);
   const startBtn = document.createElement("button");
   startBtn.type = "button"; startBtn.className = "next playbtn";
   startBtn.textContent = "Start a lobby";
@@ -44605,7 +45341,8 @@ function showVirtualRoomChoice(){
      Match settings, which is the one place that choice now lives. The
      lobby will not start until it has units; see the auto-start gate. */
   startBtn.addEventListener("click", () => createVirtualRoomLobby([], 10));
-  actions.appendChild(startBtn);
+  startChoice.appendChild(startBtn);
+  actions.appendChild(startChoice);
 
   /* ---- AND THE OTHER WAY IN, WHICH IS NOT A CODE EITHER ----
      An invite is how you get into somebody's private room. This is how
@@ -44614,11 +45351,18 @@ function showVirtualRoomChoice(){
      because it needs you to already know who is playing. Rooms are
      private by default, so nothing appears here that its host did not
      deliberately open. */
+  const browseChoice = document.createElement("div");
+  browseChoice.className = "vroom-choice";
+  const browseWhat = document.createElement("p");
+  browseWhat.className = "vroom-choice-what";
+  browseWhat.textContent = "Rooms classmates have opened to 26E. Join one and wait with them for the start.";
+  browseChoice.appendChild(browseWhat);
   const browseBtn = document.createElement("button");
   browseBtn.type = "button"; browseBtn.className = "next ghost";
   browseBtn.textContent = "Browse open rooms";
   browseBtn.addEventListener("click", showRoomBrowser);
-  actions.appendChild(browseBtn);
+  browseChoice.appendChild(browseBtn);
+  actions.appendChild(browseChoice);
 
   /* NO "JOIN A LOBBY" BUTTON, BECAUSE THERE IS NO CODE TO TYPE.
      Asked for directly: "the invite code for lobbies and chats can be
@@ -44905,10 +45649,21 @@ function showVirtualRoomSetup(editRoom){
   /* The Virtual Room has its own copy of that floating pill and it
      goes for the same reason - "REMOVE FOR ALL MODES". */
 
+  /* ---- ONE FLOATING PILL, NOT A FULL-WIDTH SLAB ----
+     "The Match settings button while selecting your units needs to be
+     like the main menu bottom tab - that Liquid Glass floating tab,
+     same look, maybe just a single large button that says Match
+     settings."
+     .floatbtn is the edge-to-edge bar pinned to the bottom of the
+     screen; the main menu's bar is a centred glass pill lifted off the
+     bottom edge. This screen takes the second one, with a class of its
+     own rather than by borrowing .bottomtabs - a tab bar is a row of
+     destinations and this is one button, so sharing the markup would
+     mean sharing rules that only make sense for four tabs. */
   const bar = document.createElement("div");
-  bar.className = "startbar";
+  bar.className = "startbar vroom-setup-bar";
   const startBtn = document.createElement("button");
-  startBtn.type = "button"; startBtn.className = "next floatbtn playbtn"; startBtn.id = "nextbtn";
+  startBtn.type = "button"; startBtn.className = "next playbtn vroom-setup-go"; startBtn.id = "nextbtn";
   bar.appendChild(startBtn);
 
   const optionsModalBody = document.createElement("div");
@@ -44943,9 +45698,29 @@ function showVirtualRoomSetup(editRoom){
   function syncCountSlider(total){
     poolMax = total || 1;
     if(!qInput) return;
-    qInput.max = String(Math.max(5, poolMax));
+    /* ---- THE TOP OF THE TRACK HAS TO BE THE TOP OF THE POOL ----
+       "The slide bar is in the middle when it should be to the right
+       if it's maxed - if the slide bar is all the way to the right
+       that has to mean you selected all the questions."
+       Two things put it in the middle. The slider is built with a
+       placeholder max of 200 before any units are picked, so until
+       this runs the thumb is positioned against a range that has
+       nothing to do with the room; and a range input snaps to a step
+       lattice measured from `min`, so with 5-question steps and a pool
+       of 187 the highest reachable stop is 185 and the thumb stopped
+       short of the end with 2 questions' worth of empty track past it.
+       The same lattice fix the Length slider already carries: the max
+       IS the top stop, and the top stop MEANS all of them. */
+    const step = 5, min = 5;
+    const top = Math.max(min, min + Math.floor((Math.max(min, poolMax) - min) / step) * step);
+    qInput.max = String(top);
     if(qCount && qCount > poolMax) qCount = null;
     qSlider.paint();
+    /* paint() sets value from get(), which returns poolMax when the
+       room is on "All" - and a value above max is clamped by the
+       browser to max, which is the right edge. Stated rather than
+       relied on. */
+    if(!qCount) qInput.value = qInput.max;
   }
 
   /* ---- game type ----
@@ -45658,12 +46433,23 @@ function attachInviteWatcher(){ fetchBoardForInvites(false); }
    is a rubber band, not a race. Everyone faces the same clock at the
    same moment, which is also what "the questions will become faster
    and faster" describes - a property of the match. */
-const TUG_TARGET_MS = 7 * 60 * 1000;
+/* ---- LONGER, AND IT GROWS WITH THE BANK ----
+   "Increase the amount of time. The amount of time for tug of war
+   should change depending on how many questions."
+   It already scaled per QUESTION - every question got a slice of a
+   fixed seven-minute target, so a bigger bank meant a faster clock
+   rather than a longer match, and both ends were being squeezed at
+   once. The target is ten minutes now and TUG_MAX_MS - the ceiling
+   that was actually deciding the length of any real match - goes to
+   twenty, so the total rises with the question count instead of
+   flattening out at ten. A 40-question tug runs about 11 minutes
+   against the old 7; a 100-question one about 17 against 10. */
+const TUG_TARGET_MS = 10 * 60 * 1000;
 /* SEVEN SECONDS, AND ONLY AT THE END. Asked for in those words: "lowest
    time will be 7 seconds but that's ONLY if it takes that long to
    decide a winner." So this is a floor the match REACHES, not a speed
    it runs at. */
-const TUG_FLOOR_MS = 7000;
+const TUG_FLOOR_MS = 9000;
 const TUG_CEIL_MS = 35000;
 /* The share of the match run at the opening pace before anything
    tightens. A straight ramp from the first question was the first
@@ -45679,7 +46465,7 @@ const TUG_HOLD_SHARE = 0.6;
    the rope settles it: whoever is ahead at ten minutes has won.
    Eighty questions come in at about nine, under this, so the ceiling
    never touches the case it was written around. */
-const TUG_MAX_MS = 10 * 60 * 1000;
+const TUG_MAX_MS = 20 * 60 * 1000;
 function tugPace(count){
   const n = Math.max(1, Number(count) || 1);
   /* THE OPENING PACE IS THE MATCH LENGTH DIVIDED BY THE BANK - "based
@@ -45947,13 +46733,48 @@ function buildTugRope(d){
      the thing this mode explicitly does not have. */
   const gap = tugWinGap(tugMatchCount(d));
   const pos = (d.tug && typeof d.tug.finalPos === "number") ? d.tug.finalPos : tugRopePos(d);
-  knot.style.left = tugKnotPct(pos, gap) + "%";
+  const pct = tugKnotPct(pos, gap);
+  knot.style.left = pct + "%";
   const mine = tugTeamOf(d, vroomMyKey);
   knot.classList.add(pos === 0 ? "is-even"
     : ((pos > 0) === (mine === "a") ? "is-ours" : "is-theirs"));
   rope.append(centre, knot);
 
-  wrap.append(sides, rope);
+  /* ---- IT HAS TO LOOK LIKE IT IS BEING PULLED ----
+     "The thing at the top of tug of war while playing doesn't look
+     good at all - you can't even tell what's happening, it doesn't
+     look like a rope that's pulling in either direction."
+     The rope was drawn beautifully and then held perfectly still:
+     only a marker slid along it, which reads as a progress bar with a
+     texture on it. Three things say "pulled" instead, and none of
+     them is another number:
+       - THE WHOLE ROPE SHIFTS towards whoever is ahead. That is what
+         a tug of war looks like, and it is the one cue that works
+         without reading anything. Damped to a third of the knot's own
+         travel so the ends stay on screen.
+       - THE LEADING END TIGHTENS: the winning side's half brightens
+         and the losing end slackens, through a class on the rope.
+       - AND IT SAYS WHO, IN WORDS, under the rope - "Ann & Bo lead by
+         2" - because at a glance a shifted rope tells you there IS a
+         lead and not whose. */
+  const lead = pos === 0 ? null : (pos > 0 ? "a" : "b");
+  rope.style.transform = "translateX(" + ((pct - 50) / 3).toFixed(2) + "%)";
+  rope.classList.add(lead === null ? "is-level" : ("leads-" + lead));
+
+  const state = document.createElement("p");
+  state.className = "tug-state";
+  if(lead === null){
+    state.textContent = "Level \u2014 nobody is pulling ahead";
+  } else {
+    const names = tugMembers(d, lead).map(k => (d.participants[k] || {}).name || "?").join(" & ");
+    const by = Math.abs(Math.round(pos * 10) / 10);
+    const ours = (lead === mine);
+    state.classList.add(ours ? "is-ours" : "is-theirs");
+    state.textContent = (ours ? "You lead" : (names || "They") + " lead")
+      + " by " + tugScoreLabel(by) + " \u00b7 " + tugScoreLabel(gap) + " wins it";
+  }
+
+  wrap.append(sides, rope, state);
   return wrap;
 }
 
@@ -46116,12 +46937,39 @@ function refreshTugLive(d){
   const gap = tugWinGap(tugMatchCount(d));
   const pos = tugRopePos(d);
   const knot = panel.querySelector(".tug-knot");
+  const mineSide = tugTeamOf(d, vroomMyKey);
+  const pct = tugKnotPct(pos, gap);
   if(knot){
-    knot.style.left = tugKnotPct(pos, gap) + "%";
+    knot.style.left = pct + "%";
     knot.classList.remove("is-even", "is-ours", "is-theirs");
-    const mine = tugTeamOf(d, vroomMyKey);
     knot.classList.add(pos === 0 ? "is-even"
-      : ((pos > 0) === (mine === "a") ? "is-ours" : "is-theirs"));
+      : ((pos > 0) === (mineSide === "a") ? "is-ours" : "is-theirs"));
+  }
+  /* THE ROPE MOVES HERE TOO, and this is the half that matters: this
+     is the function that runs when somebody else answers, so if the
+     shift only happened in buildTugRope the rope would be dragged
+     exactly once, when the screen was built, and then sit still for
+     the rest of the match - which is the bug it was added to fix. */
+  const ropeEl = panel.querySelector(".tug-rope");
+  if(ropeEl){
+    ropeEl.style.transform = "translateX(" + ((pct - 50) / 3).toFixed(2) + "%)";
+    ropeEl.classList.remove("is-level", "leads-a", "leads-b");
+    ropeEl.classList.add(pos === 0 ? "is-level" : (pos > 0 ? "leads-a" : "leads-b"));
+  }
+  const stateEl = panel.querySelector(".tug-state");
+  if(stateEl){
+    stateEl.classList.remove("is-ours", "is-theirs");
+    if(pos === 0){
+      stateEl.textContent = "Level \u2014 nobody is pulling ahead";
+    } else {
+      const leadSide = pos > 0 ? "a" : "b";
+      const names = tugMembers(d, leadSide)
+        .map(k => (d.participants[k] || {}).name || "?").join(" & ");
+      const ours = leadSide === mineSide;
+      stateEl.classList.add(ours ? "is-ours" : "is-theirs");
+      stateEl.textContent = (ours ? "You lead" : (names || "They") + " lead")
+        + " by " + tugScoreLabel(Math.abs(pos)) + " \u00b7 " + tugScoreLabel(gap) + " wins it";
+    }
   }
   const a = tugTeamScore(d, "a"), b = tugTeamScore(d, "b");
   const sa = panel.querySelector(".tug-side-a .tug-side-score");
@@ -46377,7 +47225,14 @@ function showRoomBrowser(){
 
   const hint = document.createElement("p");
   hint.className = "friend-hint";
-  hint.textContent = "Rooms 26E has opened to everyone. Private rooms are invite only and never show up here.";
+  /* ---- IT HAS TO SAY WHAT THE LIST IS ----
+     "The top description is bad and doesn't even make sense." It read
+     "Rooms 26E has opened to everyone", which parses as the class
+     having done something rather than as a list of rooms you can walk
+     into, and the second half explained a rule about rooms that are
+     NOT on the screen. What somebody needs here is what tapping Join
+     does. */
+  hint.textContent = "Anyone in 26E can join these. Tap Join and you are in the lobby with them, waiting for the host to start.";
   panel.appendChild(hint);
 
   const list = document.createElement("div");
@@ -46400,7 +47255,7 @@ function showRoomBrowser(){
   function draw(rooms){
     list.replaceChildren();
     if(!rooms.length){
-      note("No open rooms right now. Anybody can open theirs from inside a lobby.");
+      note("No open rooms right now. Start a lobby of your own and switch on \u201cOpen to the class\u201d, and it shows up here for everyone.");
       return;
     }
     rooms.forEach(entry => {
@@ -46421,9 +47276,15 @@ function showRoomBrowser(){
       const unitLine = units.length === 1 ? units[0]
         : units.length >= topicsIn(QUESTIONS).length ? "All units"
         : units.length + " units";
-      sub.textContent = (r.game === "tug" ? "Tug of War" : "Race") + " \u00b7 "
-        + unitLine + " \u00b7 " + entry.count
-        + (entry.count === 1 ? " person" : " people");
+      /* ---- AND SO DOES THE ROW ----
+         "The description inside the box is confusing too." It was
+         three things joined by dots - "Race - 4 units - 2 people" -
+         which reads as a list of tags rather than as a sentence about
+         a room. Said plainly instead, in the order somebody decides
+         on: how many are in it, what they are doing, and on what. */
+      sub.textContent = entry.count + (entry.count === 1 ? " person waiting" : " people waiting")
+        + " \u00b7 " + (r.game === "tug" ? "Tug of War" : "Race")
+        + " on " + unitLine.toLowerCase();
       text.append(nm, sub);
       const go = document.createElement("button");
       go.type = "button"; go.className = "next friend-act";
@@ -46618,6 +47479,14 @@ function showVirtualRoomLobby(){
   rosterHead.append(rosterTitle, readyCount);
   roster.append(rosterHead, list);
   panel.appendChild(roster);
+  /* ---- INVITE BELONGS WITH THE PEOPLE ----
+     "The invite your friends should be near where the people are."
+     It was the first card under "Room setup", three elements below the
+     roster, which is the right place for something you configure and
+     the wrong place for the button that makes the list longer. Moved
+     here, directly under the list it adds to. Host only, as before -
+     an invite is addressed from the room owner's own leaderboard row. */
+  if(lobbyInviteCard) panel.appendChild(lobbyInviteCard);
 
   /* The actual "ready up" mechanic, per explicit request \u2014 everyone
      in the lobby, host included, toggles their own ready state here;
@@ -46681,7 +47550,6 @@ function showVirtualRoomLobby(){
   setupHead.textContent = "Room setup";
   panel.appendChild(setupHead);
   panel.appendChild(testSummary);
-  if(lobbyInviteCard) panel.appendChild(lobbyInviteCard);
   if(lobbyOpenCard) panel.appendChild(lobbyOpenCard);
 
   if(vroomChatUnsubscribe) vroomChatUnsubscribe();
@@ -46701,8 +47569,33 @@ function showVirtualRoomLobby(){
       : units.length === allUnitsCount ? "All units"
       : units.length + " units";
     testSummary.replaceChildren();
+    /* ---- IT SAYS WHICH GAME, WITH THE ICON ----
+       "The match settings that other people see - make sure it
+       mentions the mode that was selected with the icon, race or tug
+       of war."
+       It said "Virtual Room", which everybody in the room already
+       knows, and the one thing that changes what the next ten minutes
+       are - a race against everyone, or two teams on a rope - was
+       nowhere on the card a joiner reads before readying up. */
+    const isTug = (data.game === "tug");
     const t = document.createElement("p");
-    t.className = "vroom-test-summary-title"; t.textContent = "Virtual Room";
+    t.className = "vroom-test-summary-title vroom-summary-game";
+    const gIcon = document.createElement("span");
+    gIcon.className = "vroom-summary-icon";
+    gIcon.setAttribute("aria-hidden", "true");
+    gIcon.innerHTML = isTug
+      /* A rope with a knot in the middle - the same object the match
+         itself draws, at 18px. */
+      ? "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\""
+        + " stroke-width=\"2\" stroke-linecap=\"round\">"
+        + "<path d=\"M2 12h20\"/><path d=\"M12 8.2v7.6\" stroke-width=\"3\"/></svg>"
+      /* A flag, for a race. */
+      : "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\""
+        + " stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\">"
+        + "<path d=\"M6 21V4\"/><path d=\"M6 4.5h11l-2.2 3.5L17 11.5H6z\"/></svg>";
+    const gName = document.createElement("span");
+    gName.textContent = isTug ? "Tug of War" : "Race";
+    t.append(gIcon, gName);
     const l1 = document.createElement("p");
     l1.className = "vroom-test-summary-line";
     l1.textContent = unitsLine + " \u00b7 " + n + (n === 1 ? " question" : " questions");
@@ -48545,20 +49438,30 @@ function lbTrendLoad(){
 function lbTrendSave(st){
   try{ localStorage.setItem(LB_TREND_KEY, JSON.stringify(st)); }catch(e){}
 }
-/* Called once per render with the whole ranked board. Returns a lookup
-   of publicId -> places moved since yesterday (positive is up). */
+/* ---- IT ROLLS OVER ON A CLOCK, NOT ON A CALENDAR DAY ----
+   Reported as never having shipped: "the rankings adjustment feature
+   also did not get implemented". It shipped; it was simply invisible.
+   The baseline rolled at MIDNIGHT, so a brand-new install had nothing
+   to compare against until the next day, and after that the comparison
+   was against a board up to 24 hours old - which on a class of thirty
+   people studying between 5:30 and 8pm means most evenings' movement
+   had already been folded into "yesterday" before anybody looked.
+   A rolling baseline instead: the stored board becomes the thing to
+   compare against once it is LB_TREND_ROLL_MS old, so the first
+   comparison is available a few hours after the first visit rather
+   than tomorrow, and a mark stays up long enough to be seen instead of
+   being overwritten by the render that drew it.
+   Kept per board: moving up on This Week says nothing about Hundos. */
+const LB_TREND_ROLL_MS = 4 * 60 * 60 * 1000;
 function lbTrendFor(boardKey, ranked){
-  const today = lbTodayKey();
+  const now = Date.now();
   const st = lbTrendLoad();
-  if(st.curDay !== today){
-    /* Roll over: what was "today" becomes the thing to compare against.
-       Only one previous day is kept - a week of history would be a
-       nicer feature and is not what was asked for, and every extra day
-       is another thing to keep correct. */
+  const stamp = Number(st.curAt) || 0;
+  if(!stamp || now - stamp >= LB_TREND_ROLL_MS){
     st.prev = st.cur || {};
-    st.prevDay = st.curDay || "";
+    st.prevAt = stamp;
     st.cur = {};
-    st.curDay = today;
+    st.curAt = now;
   }
   st.cur = st.cur || {};
   const todayMap = {};
@@ -48644,9 +49547,13 @@ function renderRankingRows(rows, entries, board, opts){
     }
   });
 
+  /* A BOARD MAY BRING ITS OWN ORDER. Two of the three rank on a single
+     published number and sort themselves; Overall ranks on a rank tier
+     first and a derived percentage second, which no `field` can
+     express. The default is unchanged, so nothing here had to move. */
   const sorted = Array.from(best.values())
-    .sort((a, b) => (val(b) - val(a)) ||
-                    String(a.firstName || "").localeCompare(String(b.firstName || "")));
+    .sort(board.sort || ((a, b) => (val(b) - val(a)) ||
+                    String(a.firstName || "").localeCompare(String(b.firstName || ""))));
 
   /* Rank is computed over the WHOLE board and then filtered, never the
      other way round: searching for a name must tell you that person's
@@ -48696,13 +49603,17 @@ function renderRankingRows(rows, entries, board, opts){
     avatar.className = "rank-avatar";
     avatar.appendChild(buildAvatarCharSVGSafe(entry.avatarChar));
     avatarWrap.appendChild(avatar);
-    /* The rank hangs off the corner, through the one builder every list
-       of people uses. These three boards had their OWN level chip here
-       and never called it - so when the level number was taken off
-       everywhere, it stayed on the screen it is most visible on, and
-       the rank emblem never arrived there at all. Two row builders for
-       one idea is how that happens; there is one now. */
-    decorateAvatar(avatarWrap, entry.level, entry.badges, entry.mystery);
+    /* ---- NO EMBLEM ON THE CHARACTER HERE ----
+       "Let's also remove the rank icon that's showing on the character
+       while looking at character in the leaderboard." The emblem was
+       added to these rows deliberately, in the build that found the
+       boards had their own row markup and never called decorateAvatar;
+       this is that decision being reversed for this screen, not the
+       bug coming back. The rank is still ON the row - it is the first
+       thing the Overall line says, in words - and the coin on a 42px
+       character was competing with the character.
+       It stays in decorateAvatar for the lobby and the results screen,
+       where a person is drawn big and the mark has room. */
 
     const nameWrap = document.createElement("div");
     nameWrap.className = "rank-name-wrap";
@@ -48711,7 +49622,9 @@ function renderRankingRows(rows, entries, board, opts){
     name.textContent = entry.firstName || "Anonymous";
     const stats = document.createElement("span");
     stats.className = "rank-stat lb-stats";
-    stats.textContent = board.unit(val(entry));
+    /* The entry as well as the number: Overall's line is made of three
+       of its fields, not of one. Every other board ignores it. */
+    stats.textContent = board.unit(val(entry), entry);
     nameWrap.append(name, stats);
     /* Beside the stat line rather than beside the place number: the
        place is already the biggest thing on the row and a second mark
@@ -49170,15 +50083,17 @@ function showFriends(){
     art.className = "friend-row-art";
     art.appendChild(avatarSpanFor(entry));
     decorateAvatar(art, entry.level, entry.badges, entry.mystery);
-    /* THE CHARACTER GIVES OFF ITS OWN LIGHT, from the same AVATAR_GLOW
-       table the picker reads, so a classmate's halo here is the one
-       they picked rather than a generic accent wash. Written as a
-       custom property on the row rather than a colour on a rule,
-       because the colour is per person and the two layers that use it
-       are both CSS. */
-    art.classList.add("has-glow");
-    art.style.setProperty("--char-glow",
-      avatarGlowColor((entry && entry.avatarChar) || AVATAR_CHARACTERS[0].id));
+    /* ---- NO GLOW IN A LIST ----
+       "Remove the glow from behind the friends list character and
+       ensure it's removed from the characters on the leaderboard."
+       The halo was added here from the picker's own AVATAR_GLOW table
+       so a classmate's light was the one they chose; in a list of
+       rows it reads as a smear rather than as people, and it is
+       competing with the one thing these rows exist to say - who
+       somebody is and where they are.
+       It stays where a character is drawn BIG and alone: the Profile
+       hero, the picker, and the lobby. See .friend-row-art.has-glow,
+       which nothing adds any more on this screen. */
     /* The dot goes on the AVATAR, bottom-right, opposite the rank
        emblem's top-left coin - so a row carries at most one mark in
        each corner and they cannot land on each other. */
@@ -49207,10 +50122,24 @@ function showFriends(){
       on.textContent = "Online";
       sub.append(on, document.createTextNode(" \u00b7 "));
     }
-    /* THE LEVEL, AND NOTHING ELSE. The hundo count came off on
-       request - it is a number about how somebody studies, not about
-       who they are, and this row's whole job is telling one classmate
-       from another. The Leaderboard is where the numbers live. */
+    /* ---- RANK, IN ITS OWN COLOUR, THEN LEVEL ----
+       "You will see their rank under their username in their rank
+       colour, and their level." The same line is what the invite lists
+       show, because they call this same builder - which is the whole
+       reason it exists.
+       Somebody below Iron gets no rank word rather than "Unranked":
+       there is no rank to name and a placeholder would say otherwise.
+       The colour comes from RANK_COLOR, the one table the emblems, the
+       cards and the themes all read, so a rank is the same colour
+       everywhere it is mentioned. */
+    const rk = rankOfStats(entry.level || 0, entry.badges || 0, entry.mystery || 0);
+    if(rk){
+      const rankEl = document.createElement("span");
+      rankEl.className = "friend-row-rank";
+      rankEl.textContent = RANK_DISPLAY_NAME[rk];
+      rankEl.style.color = RANK_COLOR[rk];
+      sub.append(rankEl, document.createTextNode(" \u00b7 "));
+    }
     const lvl = document.createElement("span");
     lvl.className = "friend-row-lvl";
     lvl.textContent = "Level " + (entry.level || 0);
@@ -49509,11 +50438,20 @@ function showCalendar(){
   const legClassDot = document.createElement("i");
   legClassDot.className = "cal-legend-dot";
   legClass.append(legClassDot, document.createTextNode("Class day"));
+  /* ---- THE KEY HAS TO SAY WHAT EVERY DOT ON THE GRID MEANS ----
+     The amber test-day dot shipped without its entry here, so the grid
+     had three marks and the key explained two - reported exactly that
+     way. Same dot, same colour, built from the same class the cells
+     use, so the two cannot drift apart. */
+  const legTest = document.createElement("span");
+  const legTestDot = document.createElement("i");
+  legTestDot.className = "cal-legend-dot cal-legend-dot-test";
+  legTest.append(legTestDot, document.createTextNode("Test day"));
   const legHol = document.createElement("span");
   const legHolDot = document.createElement("i");
   legHolDot.className = "cal-legend-dot cal-legend-dot-holiday";
   legHol.append(legHolDot, document.createTextNode("No class"));
-  legend.append(legClass, legHol);
+  legend.append(legClass, legTest, legHol);
   monthWrap.appendChild(legend);
 
   /* LAST, and that ordering is the whole point. Above the grid it
@@ -50188,6 +51126,7 @@ function showProfile(defaultTab){
        in a hidden panel is a bar nobody sees move. */
     if(which === "profile") runXpBarFill();
     if(which === "badges" && badgesTab.runFill) badgesTab.runFill();
+    if(which === "ranks" && ranksTab.runFill) ranksTab.runFill();
     toTop();
   }
   /* Swipeable, per explicit request, using the same helper the Rankings
@@ -50768,6 +51707,9 @@ function showProfile(defaultTab){
   toTop();
   if(initialTab === "profile") runXpBarFill();
   if(initialTab === "badges" && badgesTab.runFill) badgesTab.runFill();
+  /* And when Rank is the tab you land on - tapping the rank tile on the
+     Profile card comes straight here. */
+  if(initialTab === "ranks" && ranksTab.runFill) ranksTab.runFill();
   if(!store.seenProfileTour){
     store.seenProfileTour = true;
     saveStore();
@@ -50930,7 +51872,10 @@ function showRankings(defaultBoard){
      before the board was replaced lands on the first board rather than
      throwing - the same courtesy the Profile tabs already extend to
      every name that tab has ever had. */
-  if(rankingsBoardKey === "level") rankingsBoardKey = "week";
+  /* "level" was this board's key before it became Overall, so a stored
+     preference or a link from an older build lands on the board that
+     replaced it rather than on a different one. */
+  if(rankingsBoardKey === "level") rankingsBoardKey = "overall";
   if(!RANKING_BOARDS.some(b => b.key === rankingsBoardKey)) rankingsBoardKey = "week";
 
   const panel = document.createElement("section");
@@ -51003,8 +51948,18 @@ function showRankings(defaultBoard){
   rows.className = "rank-rows";
   panel.appendChild(rows);
 
-  let entries = [];
-  let loaded = false;
+  /* ---- THE BOARD IS ALREADY IN MEMORY, SO SHOW IT ----
+     "I can see that it loads when I hit the button to open it up, they
+     should be there immediately already if possible."
+     They can be: `leaderboardRows` is the same collection, kept up to
+     date by the invite fetch every couple of minutes and by the Friends
+     screen, and this screen was starting from an empty array and a
+     "Loading the rankings..." line every single time - waiting for a
+     round trip to tell it what it already knew. Seeded here, the rows
+     are on screen in the frame the tab opens and the snapshot below
+     simply replaces them when it lands. */
+  let entries = (leaderboardRows && leaderboardRows.length) ? leaderboardRows.slice() : [];
+  let loaded = entries.length > 0;
 
   /* Your own row is rendered from LIVE LOCAL STATE, never from the
      document you last published. saveStore() debounces its cloud push by
@@ -51106,18 +52061,30 @@ function showRankings(defaultBoard){
 
   blurb.textContent = (RANKING_BOARDS.find(b => b.key === rankingsBoardKey) || {}).blurb || "";
 
-  const loading = document.createElement("p");
-  loading.className = "lb-board-empty";
-  loading.textContent = "Loading the rankings\u2026";
-  rows.appendChild(loading);
+  /* Only when there is genuinely nothing to show. With the cache seeded
+     above, the usual case paints real rows immediately. */
+  if(loaded){
+    paint();
+  } else {
+    const loading = document.createElement("p");
+    loading.className = "lb-board-empty";
+    loading.textContent = "Loading the rankings\u2026";
+    rows.appendChild(loading);
+  }
 
   if(rankingsLiveUnsub){ try{ rankingsLiveUnsub(); }catch(e){} rankingsLiveUnsub = null; }
   if(!fbDb){
-    rows.replaceChildren();
-    const p = document.createElement("p");
-    p.className = "info-note";
-    p.textContent = "The leaderboard needs a connection \u2014 it\u2019ll appear once you\u2019re back online.";
-    rows.appendChild(p);
+    /* Only when there is nothing to show. With the cache seeded above,
+       going offline leaves the last board you saw on screen instead of
+       replacing people with a notice - which is both more useful and
+       closer to true: those were the standings a moment ago. */
+    if(!loaded){
+      rows.replaceChildren();
+      const p = document.createElement("p");
+      p.className = "info-note";
+      p.textContent = "The leaderboard needs a connection \u2014 it\u2019ll appear once you\u2019re back online.";
+      rows.appendChild(p);
+    }
   } else {
     /* Live, with no refresh button, which was the explicit ask.
        onSnapshotResilient rather than a bare .onSnapshot() - a direct
@@ -51139,10 +52106,25 @@ function showRankings(defaultBoard){
           e.weekPoints = weekPointsOfEntry(e);
           next.push(e);
         });
-        entries = next; loaded = true;
-        /* Shared with the Friends screen, which needs the same rows and
-           must not open a second listener on the same collection. */
-        leaderboardRows = next;
+        /* ---- AN EMPTY ANSWER NEVER TAKES THE BOARD AWAY ----
+           "Sometimes when I go to hit leaderboard I only see myself
+           until I refresh or hit another tab and come back", and this
+           is it: Firestore delivers the CACHED snapshot first and the
+           server's a beat later, and a cache that has not been told
+           about this collection yet answers with nothing. Assigning it
+           straight through emptied the board, leaving liveEntries() to
+           synthesise the one row it can - your own.
+           Every other reader in this file already carries this guard
+           (fetchBoardForInvites, the friends listener); this one, the
+           screen where it is most visible, did not. */
+        if(next.length || !entries.length){
+          entries = next;
+          /* Shared with the Friends screen, which needs the same rows
+             and must not open a second listener on the same
+             collection. */
+          leaderboardRows = next;
+        }
+        loaded = true;
         paint();
       }, { onError: showError });
     } catch(e){ showError(); }
@@ -51181,7 +52163,7 @@ function showRankings(defaultBoard){
     saveStore();
     startSimpleTour([
       { target: ".screen-rankings .navsegment", align: "left", vplacement: "below",
-        text: "Three boards, three different things. Level is everything you have done; Badges is units you have mastered; Hundos is units you have finished at 100%." },
+        text: "Three boards, three different things. This Week is XP earned since Monday; Overall is your rank, with level and badges deciding who is ahead inside it; Hundos is units you have finished at 100%." },
       { target: ".rank-search", align: "left", vplacement: "below",
         text: "Search for anyone in 26E by username." },
       { target: ".rank-me-btn", align: "right", vplacement: "below",
@@ -51236,7 +52218,10 @@ function buildBadgesTab(){
      would be wrong for twelve of the sixteen units and would send
      somebody to Penal Code expecting thirty-five flawless runs of 340
      questions. Each tile carries its own number instead. */
-  blurb.textContent = "Every unit has a badge, and no two look alike. Earn one by mastering its unit — " +
+  /* "No two look alike" came off: it is a claim about the drawing
+     rather than anything you can act on, and it is the first thing on
+     a screen whose job is to say what a badge costs. */
+  blurb.textContent = "Every unit has a badge. Earn one by mastering its unit — " +
     "a bigger unit needs fewer hundos than a small one. Tap one you have not earned to see what it takes.";
   head.appendChild(blurb);
   tab.appendChild(head);
@@ -51279,9 +52264,13 @@ function buildBadgesTab(){
     tile.addEventListener("click", () => {
       showContextualInfo(tile, has
         ? "The " + unit + " badge \u2014 earned for mastering the unit."
+        /* THE REASONING CAME OFF. It used to finish "...N questions in
+           this unit, so it takes M", which explains the thresholds
+           table to somebody who only asked what this badge needs -
+           reported as a weird description. The number it takes is
+           already in the sentence. */
         : "Master " + unit + " to earn this badge — " + done + " of " +
-          need + " hundos so far. " + unitQuestionCount(unit) +
-          " questions in this unit, so it takes " + need + ".");
+          need + " hundos so far.");
     });
     grid.appendChild(tile);
   });
@@ -51603,12 +52592,28 @@ function buildRanksTab(){
      needs them - which the top rank's own card says, because its
      requirement line lists them like any other requirement. */
 
-  requestAnimationFrame(() => {
-    fillsToAnimate.forEach(({ el, prop, value }) => {
-      if(prop === "width") el.style.width = value;
-      else el.style.setProperty(prop, value);
-    });
-  });
+  /* ---- IT FILLS WHEN YOU ARRIVE, NOT WHEN IT IS BUILT ----
+     "The progress stuff on the Iron rank card - it doesn't show any of
+     my progress, the progress bar is empty and not showing."
+     Profile builds all four of its tabs up front while a different one
+     is showing, so this ran its fill inside a panel with
+     display:none - no box, no transition, and on the frame the tab is
+     finally shown the width has already been written, so the bar
+     either appears full with no movement or, where a rule resets it,
+     appears empty. The rule this file already records for the XP bar
+     and the badge case, missed by this one tab: anything that fills on
+     a Profile tab has to fire when the tab is SHOWN.
+     Kept as a rAF INSIDE runFill for the same reason the others do: a
+     width set in the same tick as the element is shown has nothing to
+     transition from. */
+  tab.runFill = () => {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      fillsToAnimate.forEach(({ el, prop, value }) => {
+        if(prop === "width") el.style.width = value;
+        else el.style.setProperty(prop, value);
+      });
+    }));
+  };
 
   return tab;
 }
