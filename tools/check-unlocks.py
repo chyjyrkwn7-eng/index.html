@@ -624,6 +624,128 @@ def check_art(pg):
     check("an unknown id still returns a node", r["safe"] is True)
 
 
+def check_locked_art(br):
+    """A LOCKED CHARACTER IS STILL A CHARACTER, and this is a PIXEL check.
+
+    The locked treatment used to be `saturate .34 / brightness 1.42 /
+    contrast .92`, and `brightness()` is a multiply: it lifts a mid tone
+    and leaves a near black near black. The Masked One's hood is #141020,
+    so on a near black tile it disappeared and what was left was the pale
+    lacquer mask floating with no head under it - reported as "all you
+    can see is the mask while it's locked". Void had the same problem
+    waiting in it.
+
+    Nothing in the DOM can see this: the element is there, the filter
+    string is there, and the only thing that is wrong is a number of
+    levels on a screen. So this samples the rendered tile - the hood band
+    on the left, the mask in the middle, and a corner of the tile for the
+    background - and asserts two things: the hood separates from the tile
+    it sits on, and the mask does not out-shout it. Both were false at
+    build 188."""
+    print("\n9. a locked character is still a character")
+    """ITS OWN CONTEXT, and that is not tidiness. Every other check in
+    this file drives the app somewhere - check_unlock_banner finishes a
+    daily question, and the timer that screen leaves behind re-rendered
+    the stage ~600ms after Customize had mounted. Measured on the shared
+    page, this check screenshotted the app's own wordmark and reported
+    the hood as missing: a harness inventing the bug it was looking
+    for."""
+    ctx, pg = booted(br)
+    try:
+        _locked_art_body(pg)
+    finally:
+        ctx.close()
+
+
+def _locked_art_body(pg):
+    from PIL import Image                                 # noqa: PLC0415
+    import tempfile                                       # noqa: PLC0415
+    pg.evaluate("()=>{ showCustomize(); }")
+    pg.wait_for_timeout(900)
+    opts = pg.query_selector_all(".avatarchar-option")
+    """The name is a SIBLING of the option, not inside it, so inner_text
+    on the tile is the empty string - read the label off the tile itself.
+    Found by a first draft that failed with sixteen empty strings."""
+    names = [(o.evaluate("e => e.dataset.char || e.dataset.id || e.getAttribute('aria-label') || ''")
+              or "").strip().lower() for o in opts]
+    idx = next((i for i, n in enumerate(names) if "mask" in n), None)
+    check("the Masked One is on the picker", idx is not None, names[:16])
+    if idx is None:
+        return
+    locked = opts[idx].evaluate("e => e.classList.contains('locked')")
+    check("and it is locked for this fixture", locked)
+    """A PAGE CLIP, NOT AN ELEMENT SCREENSHOT, and the bands are computed
+    from the drawing's own box rather than taken as fractions of the tile.
+    Two earlier drafts got this wrong in opposite directions: fractions of
+    the TILE put the mask band on empty padding at 834x1194 and on the
+    mask at 440x956, because the padding is a different share of the tile
+    at every size; and an element screenshot of the svg detached itself
+    the moment an earlier check had re-rendered the screen. A clip
+    rectangle read in the same evaluate as the rects can do neither."""
+    box = pg.evaluate("""(i)=>{
+      const o = document.querySelectorAll('.avatarchar-option')[i];
+      const a = o && (o.querySelector('.avatarchar-svg') || o.querySelector('svg'));
+      if(!a) return null;
+      a.scrollIntoView({block:'center'});
+      const r = a.getBoundingClientRect();
+      /* PAGE COORDINATES, NOT VIEWPORT ONES. Playwright's clip is
+         relative to the document; getBoundingClientRect is relative to
+         the viewport. A first draft left the scroll offset out and
+         clipped a patch of empty background 500px above the picker,
+         which measured a flat 10 everywhere and read as "the hood is
+         not there" - the exact bug this check is for, invented by the
+         harness. */
+      return { x:r.left + window.scrollX, y:r.top + window.scrollY,
+               width:r.width, height:r.height };}""", idx)
+    check("the character is drawn in its tile", bool(box) and box["width"] > 8, box)
+    if not box or box["width"] <= 8:
+        return
+    path = os.path.join(tempfile.mkdtemp(prefix="locked-"), "masked.png")
+    """An ELEMENT screenshot, re-queried in this moment rather than held
+    from earlier: a page-level clip built from getBoundingClientRect came
+    back a flat background colour here however the scroll offset was
+    added, and an element handle taken before the picker rendered
+    detaches. Re-querying and letting Playwright do the clipping is the
+    one version of this that measures the drawing."""
+    art = pg.query_selector_all(".avatarchar-option")[idx].query_selector(".avatarchar-svg")
+    art.screenshot(path=path)
+    im = Image.open(path).convert("RGB")
+    w, h = im.size
+    px = list(im.getdata())
+    lum = [0.299 * r + 0.587 * g + 0.114 * b for r, g, b in px]
+
+    def band(y0, y1, x0, x1):
+        vals = [lum[y * w + x]
+                for y in range(int(h * y0), max(int(h * y0) + 1, int(h * y1)))
+                for x in range(int(w * x0), max(int(w * x0) + 1, int(w * x1)))]
+        return sum(vals) / len(vals)
+
+    """THE SHOULDERS ARE THE MEASUREMENT. The viewBox is `3 3 34 34`, so
+    the hood's shoulder band fills the bottom tenth of the drawing edge to
+    edge, the mask sits in the middle, and the top-left corner is empty on
+    every character in the set. The shoulders are also the part that
+    actually disappeared, which is what makes them the right band rather
+    than the hood's sides: measured at build 188 they came out BELOW the
+    tile they sat on (-3 levels on a tablet, +7 on a phone) - a body that
+    is not there - against +45 and +55 now."""
+    hood = band(.90, 1.0, .15, .75)
+    mask = band(.40, .70, .40, .60)
+    bg = band(.00, .18, .00, .18)
+    """Levels, not ratios, for the first one: the question is whether
+    there is a body under the mask at all. 30 sits well clear of both
+    sides - 188 measures -3, this build measures +44."""
+    check("the hood separates from the tile", hood - bg >= 30,
+          "hood %.0f  tile %.0f  (+%.0f)" % (hood, bg, hood - bg))
+    """The mask may be the brightest thing on the character - it is a
+    pale lacquer mask - but past about 3x the hood's own separation it
+    stops reading as a face on a head and becomes an object floating on
+    its own. 188 measures 105x, because the hood it is being compared
+    against is not there at all; this build measures 2.17x."""
+    check("and the mask does not out-shout it",
+          (mask - bg) <= 3.0 * (hood - bg),
+          "mask +%.0f vs hood +%.0f  (%.2fx)" % (mask - bg, hood - bg, (mask - bg) / max(1.0, hood - bg)))
+
+
 # --------------------------------------------------------------------------
 def main():
     print("checking %s" % SRC)
@@ -640,10 +762,11 @@ def main():
                 check(fn.__name__, False, "threw: %s" % exc)
         check("no uncaught JS along the way", not errs, errs[:3])
         ctx.close()
-        try:
-            check_glint_everywhere(br)
-        except Exception as exc:                          # noqa: BLE001
-            check("check_glint_everywhere", False, "threw: %s" % exc)
+        for fn in (check_glint_everywhere, check_locked_art):
+            try:
+                fn(br)
+            except Exception as exc:                      # noqa: BLE001
+                check(fn.__name__, False, "threw: %s" % exc)
         br.close()
     SERVER.shutdown()
     print("\n%s  (%d failure(s))" %

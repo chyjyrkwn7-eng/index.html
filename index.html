@@ -1755,7 +1755,23 @@
      showing a locked character at all is that you can see what you are
      working towards. */
   .avatarchar-option.locked{ opacity:.62; cursor:not-allowed; }
-  .avatarchar-option.locked .avatarchar-svg{ filter:saturate(.34) brightness(1.42) contrast(.92); }
+  /* ---- A LOCKED CHARACTER IS STILL A CHARACTER ----
+     This was `saturate(.34) brightness(1.42) contrast(.92)`, and
+     `brightness()` is a MULTIPLY: it lifts a mid tone and leaves a near
+     black near black. The Masked One's hood is #141020, so at 1.42 it
+     came out around #1D172E - indistinguishable from the card behind it -
+     and what was left on screen was the pale lacquer mask with no head
+     under it. Reported exactly that way: "all you can see is the mask
+     while it's locked".
+     `contrast(<1)` is the tool, because it pulls BOTH ends towards mid
+     grey rather than scaling from black: the hood lifts to a visible
+     grey and the mask comes down to meet it, so the silhouette reads
+     while the whole thing still says "not yours yet". Measured on the
+     rendered pixels rather than reasoned about - see
+     tools/check-unlocks.py.
+     It is the shared locked treatment on purpose: Void is nearly as dark
+     as the hood and had the same problem waiting in it. */
+  .avatarchar-option.locked .avatarchar-svg{ filter:saturate(.3) contrast(.4) brightness(1.34); }
   .avatarchar-lockmark{
     position:absolute; right:2px; bottom:2px; width:1.15rem; height:1.15rem;
     border-radius:50%; background:rgba(12,16,22,.86);
@@ -1836,7 +1852,7 @@
   /* A locked one is a preview, not something you hold, so it gives off
      nothing even while it is the one being looked at. */
   .avatarchar-option.locked.selected::before{ display:none; }
-  .avatarchar-option.locked.selected svg{ filter:saturate(.34) brightness(1.42) contrast(.92); }
+  .avatarchar-option.locked.selected svg{ filter:saturate(.3) contrast(.4) brightness(1.34); }
   /* Genuinely bigger on a tablet-width screen, not just the same
      phone-tuned 4.6rem cap sitting in the middle of much bigger grid
      cells \u2014 per explicit report that the picker "doesn't enlarge"
@@ -2705,6 +2721,34 @@
   .cal-row-holiday .cal-row-date{ color:var(--wrong); }
   .cal-row-today{ border-color:var(--accent); }
   [data-layout="modern"] .cal-row-today{ border:1.5px solid var(--accent); }
+  /* ---- THE SAME TWO MARKS, IN THE LIST VIEW ----
+     The month grid says "test day" with a second dot and "last day of
+     class" with a double ring, because a 2.4rem cell has room for a dot
+     and nothing else. A list row has a whole line of its own, so it
+     gets the thing a cell cannot have: the word. A chip beside the date
+     is the same information said the way this view says everything else
+     (Today is already a chip there), and it means neither view is the
+     only place a test day is visible - which is the actual request:
+     "in the month view AND the list view". */
+  .cal-row-chip{
+    font-size:.62rem; font-weight:800; letter-spacing:.06em;
+    padding:.14rem .44rem; border-radius:999px; flex-shrink:0;
+  }
+  .cal-row-chip-test{ color:#2A1C05; background:#F5B54D; }
+  .cal-row-chip-last{
+    color:var(--accent-ink); background:var(--accent);
+  }
+  /* The ring is the grid's own, restated for a row so the last day
+     reads as the end of something in both views. Subtle on purpose. */
+  .cal-row-last{
+    box-shadow:0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent),
+               0 0 0 3.5px color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+  [data-theme="dark"][data-layout="modern"] .cal-row-last{
+    box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.06),
+               0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent),
+               0 0 0 3.5px color-mix(in srgb, var(--accent) 22%, transparent);
+  }
   .cal-today-badge{
     font-size:.66rem; font-weight:800; letter-spacing:.04em; color:var(--accent-ink);
     background:var(--accent); padding:.15rem .5rem; border-radius:999px;
@@ -2767,11 +2811,47 @@
   [data-theme="dark"][data-layout="modern"] .cal-cell-class{
     background:rgba(28,33,40,.55); border:1px solid rgba(255,255,255,.09);
   }
+  .cal-cell-dots{ display:flex; align-items:center; justify-content:center; gap:.18rem; }
   .cal-cell-dot{ width:.34rem; height:.34rem; border-radius:999px; background:var(--accent); }
+  /* A TEST DAY'S SECOND DOT, and it is amber on purpose: the accent
+     already means "class day" here, and the only other colour in use on
+     this grid is --wrong for a holiday. Amber is the one that reads as
+     "pay attention" without reading as "cancelled". */
+  .cal-cell-dot-test{ background:#F5B54D; }
+  .cal-cell-test .cal-cell-num{ font-weight:800; }
   .cal-cell-holiday{ opacity:.75; }
   .cal-cell-holiday .cal-cell-dot{ background:var(--wrong); }
   .cal-cell-today{ border-color:var(--accent); }
   [data-layout="modern"] .cal-cell-today{ border:1.5px solid var(--accent); }
+  /* ---- THE LAST DAY OF CLASS ----
+     Asked for: make it stand out, but subtly. So it is not a colour and
+     not a badge - it is a hairline double ring in the accent, which is
+     the one treatment on this grid that says "this is the end of
+     something" without competing with today's own ring or a test day's
+     dot. A cell can be all three at once and all three still read. */
+  .cal-cell-last{
+    box-shadow:0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent),
+               0 0 0 3.5px color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+  .cal-cell-last .cal-cell-num{ font-weight:800; }
+  /* ---- "Go to today" has landed on this one ----
+     A ring that expands and fades, twice, and then it is over. Not a
+     permanent mark: today already has its own border, and this is only
+     answering "where did it put me". */
+  @keyframes calLanded{
+    0%   { box-shadow:0 0 0 0 color-mix(in srgb, var(--accent) 65%, transparent); }
+    70%  { box-shadow:0 0 0 .55rem color-mix(in srgb, var(--accent) 0%, transparent); }
+    100% { box-shadow:0 0 0 0 color-mix(in srgb, var(--accent) 0%, transparent); }
+  }
+  .cal-cell-landed{
+    animation:calLanded .7s ease-out 2;
+    border-color:var(--accent) !important;
+  }
+  /* The global reduce-motion rule switches the animation off; the ring
+     it leaves behind is still the answer to "which one is today". */
+  [data-reduce-motion="true"] .cal-cell-landed{
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 40%, transparent);
+  }
   /* AFTER the modern/dark .cal-cell-class rules above, and carrying the
      same prefixes. Written before them first time round, which meant a
      dark theme repainted the selected day in the ordinary card colour
@@ -10386,9 +10466,18 @@
     font-family:var(--serif); font-size:1.12rem; font-weight:800; margin:0;
     color:var(--ink);
   }
+  /* TWO DIFFERENT FACTS, TWO DIFFERENT COLOURS. This and "today" below
+     were both --theme-c1, so the days-remaining count and whatever is
+     on today were the same yellow - reported directly, and they are
+     not the same kind of information: one is a countdown to the end of
+     the course, the other is what is happening now.
+     Today keeps the warm stop, because "now" is the thing the card
+     exists to answer. The count moves to the cool one, which is
+     already in every theme's triad, so it re-themes with the rest of
+     the app rather than being a colour picked here. */
   .profile-classcard-count{
     font-size:.76rem; font-weight:800; letter-spacing:.03em;
-    color:var(--theme-c1); font-variant-numeric:tabular-nums;
+    color:var(--theme-c3); font-variant-numeric:tabular-nums;
   }
   /* Label in a fixed column, body beside it, so Today and Next line up
      down the left edge whatever length their text runs to. */
@@ -10487,6 +10576,42 @@
      avatar is against the card's own rounded corner and the coin was
      being clipped by it. */
   .profile-hero-avatar .lb-rankmark{ width:2rem; height:2rem; left:-.15rem; top:-.15rem; }
+  /* ---- THE CHARACTER GIVES OFF LIGHT ON THIS CARD TOO ----
+     "The glow behind the character could be better, maybe some more
+     glow, make sure it fades out though." There was none here at all -
+     only the picker and the Customize screen lit a character - so this
+     is the same two-layer treatment, sized for the biggest character in
+     the app and with a LONGER tail than the picker's.
+     THE FADE IS THE WHOLE REQUEST, and it is the stop list that does
+     it: four stops rather than three, with the last real colour at 3%
+     around 62% of the radius, so the light thins out over most of its
+     width instead of ending. A three-stop pool at this size has a
+     visible edge - that edge is what "make sure it fades out" is
+     pointing at, and it is why this cannot just be the picker's rule
+     with a bigger number in it.
+     ::before so it cannot affect the card's layout, and a drop-shadow
+     on the drawing itself so the light comes OFF the character. Never
+     an SVG filter - those are the one thing that has bitten this app on
+     real iOS hardware. */
+  .profile-hero-avatar.has-glow::before{
+    content:""; position:absolute; left:50%; top:50%;
+    width:176%; aspect-ratio:1; transform:translate(-50%, -50%);
+    border-radius:50%; pointer-events:none; z-index:0;
+    background:radial-gradient(circle,
+      color-mix(in srgb, var(--char-glow, var(--accent)) 46%, transparent) 0%,
+      color-mix(in srgb, var(--char-glow, var(--accent)) 22%, transparent) 26%,
+      color-mix(in srgb, var(--char-glow, var(--accent)) 8%, transparent) 44%,
+      color-mix(in srgb, var(--char-glow, var(--accent)) 3%, transparent) 62%,
+      transparent 82%);
+  }
+  .profile-hero-avatar.has-glow > svg{
+    position:relative; z-index:1;
+    filter:drop-shadow(0 0 7px color-mix(in srgb, var(--char-glow, var(--accent)) 82%, transparent))
+           drop-shadow(0 0 22px color-mix(in srgb, var(--char-glow, var(--accent)) 46%, transparent))
+           drop-shadow(0 0 44px color-mix(in srgb, var(--char-glow, var(--accent)) 20%, transparent));
+  }
+  /* The coin stays on top of the pool. */
+  .profile-hero-avatar.has-glow .lb-rankmark{ z-index:2; }
   @media (min-width:40rem){
     .profile-ranklineup{ font-size:.88rem; }
     .profile-rankcoin{ width:1.95rem; height:1.95rem; }
@@ -10555,6 +10680,51 @@
   .profile-badgestat-word{
     font-size:.7rem; font-weight:700; letter-spacing:.06em; color:var(--soft);
   }
+  /* ---- THE TWO STATS AS PLATES ----
+     "I feel like the level bar, level number, and badge count there
+     could look better." They were two numbers floating in the card's own
+     space with a gap between them, which is why the row read as loose:
+     nothing said the level and the badge count were the same KIND of
+     thing. Each is a recessed plate now - darker than the card, hairline
+     border, inner top light - so the row is two objects of equal weight,
+     and the badge count being a button stops looking like stray text
+     that happens to be tappable.
+     Equal halves rather than space-between, because two plates of
+     different widths is the same looseness in another form. The tablet
+     rules above only change type sizes, so this needs no second copy. */
+  .profile-statplate{
+    flex:1 1 0; min-width:0; display:flex; flex-direction:column;
+    align-items:flex-start; gap:.1rem; text-align:left;
+    padding:.6rem .8rem; margin:0; border-radius:13px;
+    background:rgba(0,0,0,.22);
+    border:1px solid rgba(255,255,255,.08);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.07), inset 0 -3px 8px rgba(0,0,0,.28);
+  }
+  /* The level plate keeps its number and word on one baseline; the badge
+     plate stacks them, because "4/16" and "badges earned" side by side
+     wraps on a 320px phone. Both are left-aligned now - the badge half
+     used to be right-aligned to meet the card's far edge, which inside a
+     plate of its own just looks like text pushed away from its label. */
+  .profile-level-num.profile-statplate{ flex-direction:row; align-items:baseline; gap:.45rem; }
+  .profile-badgestat.profile-statplate{
+    align-items:flex-start; text-align:left; cursor:pointer;
+    -webkit-tap-highlight-color:transparent; font:inherit;
+  }
+  .profile-badgestat.profile-statplate:active{ background:rgba(0,0,0,.3); }
+  /* THE NUMBERS ARE LIT, and it has to be a filter rather than a
+     text-shadow: both values are gradient text (background-clip:text
+     with a transparent colour), and a text-shadow on transparent glyphs
+     paints a coloured slab in front of the gradient instead of behind
+     it. drop-shadow on the element respects the alpha. */
+  .profile-level-value{
+    filter:drop-shadow(0 0 10px rgba(58,140,255,.45));
+    font-variant-numeric:tabular-nums;
+  }
+  .profile-badgestat-value{
+    filter:drop-shadow(0 0 9px rgba(198,209,221,.32));
+    font-variant-numeric:tabular-nums;
+  }
+  .profile-level-row .profile-statplate + .profile-statplate{ margin-left:0; }
 
   /* The bar. It is supposed to look like a game loading in, so it
      fills from empty on arrival and carries a travelling sheen rather
@@ -10632,10 +10802,42 @@
     .results-level-num, .results-level-gain{ font-size:1.05rem; }
     .results-level-line{ font-size:.86rem; }
   }
+  /* ---- THE PROFILE CARD'S OWN BAR ----
+     Taller than the shared track, seated in the card the way the plates
+     are, and with quarter ticks so a glance answers "roughly how far"
+     without reading the line underneath. The ticks are a repeating
+     gradient on the TRACK, never on the fill: on the fill they would
+     travel with it and stop meaning anything.
+     The glow is the fill's own blue leaking out of the track, which is
+     what makes it read as a lit tube seated in the card rather than a
+     blue shape drawn on top of it. */
+  .profile-xpbar{
+    height:1.15rem;
+    background:rgba(0,0,0,.3);
+    border:1px solid rgba(255,255,255,.1);
+    box-shadow:inset 0 2px 7px rgba(0,0,0,.5), 0 0 0 4px rgba(58,140,255,.06);
+  }
+  .profile-xpbar::before{
+    content:""; position:absolute; inset:0; z-index:2; pointer-events:none;
+    background-image:linear-gradient(90deg,
+      rgba(255,255,255,.14) 0 1px, transparent 1px 100%);
+    background-size:25% 100%;
+    /* The 0% edge is the track's own left border and the 100% edge is
+       its right, so both are drawn twice; shifting the tiling one pixel
+       left drops the leading one and `border-box` keeps the other
+       outside. Three ticks, at 25/50/75, which is what was wanted. */
+    background-position:-1px 0;
+  }
+  @media (min-width:40rem){ .profile-xpbar{ height:1.35rem; } }
   .profile-xp-line{
     margin:.6rem 0 0; font-size:.82rem; font-weight:600; color:var(--soft);
     font-variant-numeric:tabular-nums;
   }
+  /* The level's own percentage, on the same line and hard right, so the
+     line reads "where you are" on the left and "how far" on the right
+     instead of being one long sentence. */
+  .profile-xp-line{ display:flex; justify-content:space-between; gap:.6rem; }
+  .profile-xp-pct{ color:var(--ink); font-weight:800; flex-shrink:0; }
 
   /* ---------- the badge case ---------------------------------------- */
   .badges-head{
@@ -10933,6 +11135,38 @@
   }
   .friend-row:last-child{ border-bottom:none; }
   .friend-row-art{ width:2.6rem; height:2.6rem; flex-shrink:0; position:relative; }
+  /* THE CHARACTER GIVES OFF ITS OWN LIGHT HERE TOO, and it is the
+     picker's two layers rather than a new effect: a pool of light
+     behind the artwork on ::before (so it cannot affect a row's
+     height) and a drop-shadow on the drawing itself, which is what
+     makes the light come OFF the character instead of sitting behind a
+     square. --char-glow is set per row in JS from AVATAR_GLOW.
+     PULLED IN from the picker's numbers on purpose: a row's avatar is
+     2.6rem against a picker cell's 3.7, and at the picker's 118%/16px
+     radii two adjacent rows' halos met across the .55rem row padding
+     and the list read as a smear rather than as people.
+     SCOPED TO `> .rank-avatar > svg`, never a bare `svg`: the rank coin
+     decorateAvatar() appends is a sibling svg inside the same box, and
+     lighting it in the character's colour would have every rank glowing
+     the wrong colour. */
+  .friend-row-art.has-glow::before{
+    content:""; position:absolute; left:50%; top:50%;
+    width:132%; aspect-ratio:1; transform:translate(-50%, -50%);
+    border-radius:50%; pointer-events:none; z-index:0;
+    background:radial-gradient(circle,
+      color-mix(in srgb, var(--char-glow, var(--accent)) 34%, transparent) 0%,
+      color-mix(in srgb, var(--char-glow, var(--accent)) 13%, transparent) 42%,
+      transparent 72%);
+  }
+  .friend-row-art.has-glow > .rank-avatar{ position:relative; z-index:1; }
+  .friend-row-art.has-glow > .rank-avatar > svg{
+    filter:drop-shadow(0 0 4px color-mix(in srgb, var(--char-glow, var(--accent)) 76%, transparent))
+           drop-shadow(0 0 10px color-mix(in srgb, var(--char-glow, var(--accent)) 36%, transparent));
+  }
+  /* The coin and the dot stay on top of the pool - they are the two
+     marks a row carries and neither may end up behind the light. */
+  .friend-row-art.has-glow > .lb-rankmark,
+  .friend-row-art.has-glow > .friend-online-dot{ z-index:2; }
   .friend-online-dot{
     position:absolute; right:-1px; bottom:-1px;
     width:.72rem; height:.72rem; border-radius:50%;
@@ -10946,6 +11180,13 @@
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
   .friend-row-sub{ margin:.1rem 0 0; font-size:.75rem; color:var(--soft); }
+  /* THE LEVEL IN THE XP BAR'S BLUE, and deliberately not animated:
+     asked for as "coloured blue like the xp bar blue but not animated
+     or something". #6FC2FF is the bar's own upper-middle stop, which is
+     the one that still reads as that blue against a dark row - the
+     bar's mid #2E87F0 is too dark to be legible at .75rem on this
+     surface. */
+  .friend-row-lvl{ color:#6FC2FF; font-weight:700; }
   .friend-row-acts{ display:flex; gap:.4rem; flex-shrink:0; margin-left:auto; }
   /* 44px, like every other target in the app - these are small
      buttons, not exempt ones. */
@@ -10985,14 +11226,27 @@
   }
   [data-layout="modern"] .friend-act.ghost:hover{ border-color:var(--soft); }
   .friend-add-hint{ margin:.15rem 0 .7rem; }
-  .friend-mycode-wrap{ display:flex; align-items:center; gap:.6rem; }
+  /* CENTRED IN THE CARD, both of them. Reported together - "both of
+     these boxes (your code and enter a code) that stuff should be
+     centred in the boxes they are in" - and they were left-aligned,
+     which on a 690px-wide iPad card left a 9rem pill and a Copy button
+     huddled against one edge with most of the card empty beside them. */
+  .friend-mycode-wrap{ display:flex; align-items:center; justify-content:center; gap:.6rem; }
   /* Centred, mono and narrow, the same treatment the sync code field
      already has and for the same reason: a code is a fixed-length
      string of characters, not prose. */
   .friend-mycode{
     margin:0; font-family:var(--mono); font-size:1.25rem; font-weight:700;
     letter-spacing:.14em; color:var(--ink); text-align:center;
-    background:var(--panel2, rgba(255,255,255,.05));
+    /* DARKER THAN THE CARD IT SITS ON, not lighter. This was
+       `var(--panel2, rgba(255,255,255,.05))` - a 5% white wash on a
+       panel that is itself a pale wash, so the pill and the card were
+       within a couple of levels of each other and the code read as
+       floating text. Reported as needing "a darker background so it is
+       easier to read/see". A recess is darker than its surround; that
+       is the whole of why this works. */
+    background:rgba(0,0,0,.34);
+    box-shadow:inset 0 2px 6px rgba(0,0,0,.4);
     /* The pill, so the two code fields on this screen - the one you
        read out and the one you type into - are the same object. A 3px
        box beside a pill input read as two different controls. */
@@ -11070,7 +11324,7 @@
   .app-banner-friend{ background:color-mix(in srgb, #4ADE80 12%, rgba(28,33,40,.55)); }
   .app-banner-chat{ background:color-mix(in srgb, #8E7CF5 12%, rgba(28,33,40,.55)); }
   .friend-hint{ margin:.5rem 0 0; font-size:.75rem; line-height:1.4; color:var(--soft); }
-  .friend-add-row{ display:flex; gap:.5rem; align-items:stretch; flex-wrap:wrap; }
+  .friend-add-row{ display:flex; justify-content:center; gap:.5rem; align-items:stretch; flex-wrap:wrap; }
   /* A CODE FIELD IS THE WIDTH OF A CODE. This was `flex:1 1 0`, so it
      ate the whole panel - 690px of input on an iPad for seven
      characters - and reported as huge. It is the same 11rem treatment
@@ -11079,6 +11333,19 @@
      deliberate rather than as text stranded in a wide box. */
   .friend-add-input{
     flex:0 1 11rem; width:11rem; max-width:100%; text-align:center;
+    /* SYMMETRIC PADDING, AND THAT IS THE WHOLE OF THE OFFSET BUG.
+       `.searchbox` pads `.7rem .9rem .7rem 2.5rem` - the 2.5rem is the
+       gutter for the magnifying icon inside the real unit-search field,
+       and this field has no icon. With `text-align:center` an asymmetric
+       box centres on the CONTENT box, so both the placeholder and the
+       typed code sat (2.5 - .9) / 2 = .8rem (12.8px) right of the
+       middle: reported exactly, as "the previewed text is offset to the
+       right for some reason". `.searchbox-plain` exists for this and
+       every other iconless field already carries it; the padding is
+       restated here as well so the fix cannot be lost if the class list
+       is edited. Not a tracking or a centring bug - do not chase it
+       with text-indent. */
+    padding-left:.9rem; padding-right:.9rem;
     font-family:var(--mono); letter-spacing:.14em; text-transform:uppercase;
   }
   /* SEND HAD TO LOOK LIKE THIS APP'S BUTTONS. Reported directly - it
@@ -27472,6 +27739,13 @@ const GAME_SPEEDS = {
    class day (blank/no-class days were never included in the first
    place); "holiday" entries are explicitly marked so the days-
    remaining count can exclude them without needing to guess. */
+/* Written into the schedule text as "TEST #n" on every one of them,
+   so that is what this reads. A flag on the entry would be cleaner and
+   is worse in practice: the schedule is hand-maintained and a second
+   field is one more thing to forget on a new line. */
+function isTestDay(entry){
+  return !!(entry && !entry.holiday && /TEST\s*#/i.test(entry.text || ""));
+}
 const CALENDAR_DATA = [
   { date: "2026-08-24", text: "Class 26E Begins • Orientation (2) • Fitness & Wellness (2.5)" },
   { date: "2026-08-25", text: "Fitness & Wellness (4.5)" },
@@ -39628,7 +39902,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-26-188";
+const APP_BUILD = "2026-09-26-189";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -47251,6 +47525,15 @@ function showFriends(){
     art.className = "friend-row-art";
     art.appendChild(avatarSpanFor(entry));
     decorateAvatar(art, entry.level, entry.badges, entry.mystery);
+    /* THE CHARACTER GIVES OFF ITS OWN LIGHT, from the same AVATAR_GLOW
+       table the picker reads, so a classmate's halo here is the one
+       they picked rather than a generic accent wash. Written as a
+       custom property on the row rather than a colour on a rule,
+       because the colour is per person and the two layers that use it
+       are both CSS. */
+    art.classList.add("has-glow");
+    art.style.setProperty("--char-glow",
+      avatarGlowColor((entry && entry.avatarChar) || AVATAR_CHARACTERS[0].id));
     /* The dot goes on the AVATAR, bottom-right, opposite the rank
        emblem's top-left coin - so a row carries at most one mark in
        each corner and they cannot land on each other. */
@@ -47283,7 +47566,10 @@ function showFriends(){
        request - it is a number about how somebody studies, not about
        who they are, and this row's whole job is telling one classmate
        from another. The Leaderboard is where the numbers live. */
-    sub.append(document.createTextNode("Level " + (entry.level || 0)));
+    const lvl = document.createElement("span");
+    lvl.className = "friend-row-lvl";
+    lvl.textContent = "Level " + (entry.level || 0);
+    sub.appendChild(lvl);
     text.append(nm, sub);
     row.append(art, text);
     if(actions){
@@ -47350,7 +47636,14 @@ function showFriends(){
   const codeEl = document.createElement("p");
   codeEl.className = "friend-mycode";
   codeEl.textContent = friendCodeOf();
-  const copyBtn = actBtn("Copy", "ghost", () => {
+  /* THE STANDARD BUTTON, not the outlined one. Reported directly - "the
+     copy button for your own code needs to be back like the other
+     buttons as well" - and `ghost` is the outlined treatment built for
+     the Decline half of an Accept/Decline pair, which is the wrong
+     shape for the one thing you press on this card. `friend-send` is
+     the matte black pill Send already uses, so the two fields on this
+     screen now carry the same button. */
+  const copyBtn = actBtn("Copy", "friend-send", () => {
     try {
       navigator.clipboard.writeText(friendCodeOf());
       showToast("Friend code copied.");
@@ -47379,7 +47672,7 @@ function showFriends(){
   const addRow = document.createElement("div");
   addRow.className = "friend-add-row";
   const input = document.createElement("input");
-  input.type = "text"; input.className = "searchbox friend-add-input";
+  input.type = "text"; input.className = "searchbox searchbox-plain friend-add-input";
   input.placeholder = "ABC-234"; input.maxLength = 7;
   input.autocapitalize = "characters"; input.autocomplete = "off"; input.spellcheck = false;
   /* THE DASH TYPES ITSELF, the same as the lobby code field already
@@ -47704,7 +47997,10 @@ function showCalendar(){
       body.className = "cal-month-body" + (isOpen ? " cal-month-body-open is-settled" : "");
       entries.forEach(entry => {
         const row = document.createElement("div");
-        row.className = "cal-row" + (entry.holiday ? " cal-row-holiday" : "") + (entry.date === todayStr ? " cal-row-today" : "");
+        row.className = "cal-row" + (entry.holiday ? " cal-row-holiday" : "")
+          + (entry.date === todayStr ? " cal-row-today" : "")
+          + (isTestDay(entry) ? " cal-row-test" : "")
+          + (entry.date === lastClassDay ? " cal-row-last" : "");
         row.dataset.date = entry.date;
         const dateEl = document.createElement("p");
         dateEl.className = "cal-row-date"; dateEl.textContent = formatDayHead(entry.date);
@@ -47715,6 +48011,20 @@ function showCalendar(){
           const badge = document.createElement("span");
           badge.className = "cal-today-badge"; badge.textContent = "Today";
           dateEl.appendChild(badge);
+        }
+        /* Order matters: Today first, then what the day IS. A row can
+           carry all three and on a 320px phone .cal-row-date wraps
+           rather than clipping, which is why the chips are flex-shrink:0
+           and short words. */
+        if(isTestDay(entry)){
+          const chip = document.createElement("span");
+          chip.className = "cal-row-chip cal-row-chip-test"; chip.textContent = "TEST";
+          dateEl.appendChild(chip);
+        }
+        if(entry.date === lastClassDay){
+          const chip = document.createElement("span");
+          chip.className = "cal-row-chip cal-row-chip-last"; chip.textContent = "LAST DAY";
+          dateEl.appendChild(chip);
         }
         body.appendChild(row);
       });
@@ -47763,6 +48073,16 @@ function showCalendar(){
   /* ---- the grid's own state and rendering ---- */
   const byDate = {};
   CALENDAR_DATA.forEach(entry => { byDate[entry.date] = entry; });
+  /* The last day anybody is in class - graduation is the day before the
+     grades entry that closes the list, so this is the last entry that
+     is not a holiday. Derived rather than typed, so extending the
+     schedule moves it without anybody remembering to. */
+  const lastClassDay = (() => {
+    for(let i = CALENDAR_DATA.length - 1; i >= 0; i--){
+      if(!CALENDAR_DATA[i].holiday) return CALENDAR_DATA[i].date;
+    }
+    return null;
+  })();
   let gridMonthIdx = Math.max(0, monthKeys.indexOf(todayMonthKey));
   let selectedDate = byDate[todayStr] ? todayStr : null;
 
@@ -47816,7 +48136,16 @@ function showCalendar(){
       let cls = "cal-cell";
       if(entry) cls += " cal-cell-class";
       if(entry && entry.holiday) cls += " cal-cell-holiday";
+      /* A TEST DAY IS THE ONE THING ON THIS CALENDAR ANYBODY PLANS
+         AROUND, and it had no mark of its own - it read as an ordinary
+         class day with a longer line of text nobody can see on a phone.
+         Detected from the schedule text rather than a flag, because the
+         schedule is a hand-maintained list and a second field would be
+         one more thing to remember on every new entry; "TEST #" is how
+         every one of them is written. */
+      if(entry && isTestDay(entry)) cls += " cal-cell-test";
       if(ds === todayStr) cls += " cal-cell-today";
+      if(ds === lastClassDay) cls += " cal-cell-last";
       if(entry && ds === selectedDate) cls += " cal-cell-sel";
       cell.className = cls;
       cell.dataset.date = ds;
@@ -47838,9 +48167,22 @@ function showCalendar(){
         cell.type = "button";
         cell.setAttribute("aria-label", formatDayHead(ds) + " \u2014 " + entry.text);
         cell.setAttribute("aria-pressed", ds === selectedDate ? "true" : "false");
+        /* A SECOND DOT ON A TEST DAY, asked for directly - two marks
+           rather than a different colour on the one, so a test day
+           still reads as a class day AND as something more. On a phone
+           the dots are the whole content of a cell, so this is the only
+           place the difference can live. */
+        const dots = document.createElement("span");
+        dots.className = "cal-cell-dots";
         const dot = document.createElement("i");
         dot.className = "cal-cell-dot";
-        cell.appendChild(dot);
+        dots.appendChild(dot);
+        if(isTestDay(entry)){
+          const testDot = document.createElement("i");
+          testDot.className = "cal-cell-dot cal-cell-dot-test";
+          dots.appendChild(testDot);
+        }
+        cell.appendChild(dots);
         cell.addEventListener("click", () => {
           selectedDate = (selectedDate === ds) ? null : ds;
           renderGrid();
@@ -47867,6 +48209,26 @@ function showCalendar(){
     }
     gridMonthIdx = idx; selectedDate = todayStr;
     renderGrid(); renderDayCard();
+    /* LAND ON IT AND SAY SO. Jumping the grid to the right month is
+       only half of "go to today" - the cell itself is one of thirty
+       and selection alone is easy to miss, especially on a phone where
+       the month you were looking at and the month you land on look
+       much the same. One pulse with a ring, then it settles back into
+       being an ordinary selected day.
+       Applied after renderGrid(), because that call has just replaced
+       every cell in the grid - the node this class goes on has to be
+       the one that now exists. */
+    requestAnimationFrame(() => {
+      const cell = grid.querySelector('[data-date="' + todayStr + '"]');
+      if(!cell) return;
+      cell.classList.remove("cal-cell-landed");
+      /* Restart the animation rather than relying on the class having
+         been absent: tapping Go to today twice in a row is the obvious
+         thing to do and would otherwise do nothing the second time. */
+      void cell.offsetWidth;
+      cell.classList.add("cal-cell-landed");
+      setTimeout(() => cell.classList.remove("cal-cell-landed"), 1400);
+    });
   });
 
   function selectCalendarView(which){
@@ -48202,8 +48564,12 @@ function showProfile(defaultTab){
   heroTop.className = "profile-hero-top";
 
   const heroAvatar = document.createElement("div");
-  heroAvatar.className = "profile-hero-avatar";
+  heroAvatar.className = "profile-hero-avatar has-glow";
   if(!store.avatarChar){ store.avatarChar = AVATAR_CHARACTERS[0].id; saveStore(); }
+  /* The character's OWN colour, from the same AVATAR_GLOW table the
+     picker reads, so the light on this card is the light that was
+     previewed when it was chosen. */
+  heroAvatar.style.setProperty("--char-glow", avatarGlowColor(store.avatarChar));
   heroAvatar.appendChild(buildAvatarCharSVGSafe(store.avatarChar));
 
   const heroId = document.createElement("div");
@@ -48424,7 +48790,7 @@ function showProfile(defaultTab){
   const levelRow = document.createElement("div");
   levelRow.className = "profile-level-row";
   const levelNum = document.createElement("div");
-  levelNum.className = "profile-level-num";
+  levelNum.className = "profile-level-num profile-statplate";
   const levelNumValue = document.createElement("span");
   levelNumValue.className = "profile-level-value shine-blue";
   levelNumValue.textContent = String(prog.level);
@@ -48435,7 +48801,7 @@ function showProfile(defaultTab){
 
   const badgeStat = document.createElement("button");
   badgeStat.type = "button";
-  badgeStat.className = "profile-badgestat";
+  badgeStat.className = "profile-badgestat profile-statplate";
   const badgeStatValue = document.createElement("span");
   badgeStatValue.className = "profile-badgestat-value shine-silver";
   badgeStatValue.textContent = badgeCount + "/" + totalUnitsForBadges;
@@ -48452,7 +48818,7 @@ function showProfile(defaultTab){
   levelSect.appendChild(levelRow);
 
   const xpTrack = document.createElement("div");
-  xpTrack.className = "xpbar-track";
+  xpTrack.className = "xpbar-track profile-xpbar";
   const xpFill = document.createElement("div");
   xpFill.className = "xpbar-fill";
   xpFill.style.width = "0%";
@@ -48462,10 +48828,21 @@ function showProfile(defaultTab){
 
   const xpLine = document.createElement("p");
   xpLine.className = "profile-xp-line";
-  xpLine.textContent = prog.atCap
-    ? prog.total.toLocaleString() + " XP · level " + LEVEL_CAP + ", the cap"
-    : prog.total.toLocaleString() + " XP · " + prog.toNext.toLocaleString() +
+  /* Two halves rather than one sentence: what you have on the left, how
+     far through this level on the right. At the cap there is no
+     percentage to give, so the right half carries the word instead of a
+     100% that would read as "one more to go". */
+  const xpLineMain = document.createElement("span");
+  xpLineMain.textContent = prog.atCap
+    ? prog.total.toLocaleString() + " XP"
+    : prog.total.toLocaleString() + " XP \u00b7 " + prog.toNext.toLocaleString() +
       " to level " + (prog.level + 1);
+  const xpLinePct = document.createElement("span");
+  xpLinePct.className = "profile-xp-pct";
+  xpLinePct.textContent = prog.atCap
+    ? "Level " + LEVEL_CAP + ", the cap"
+    : Math.floor(prog.fraction * 100) + "%";
+  xpLine.append(xpLineMain, xpLinePct);
   levelSect.appendChild(xpLine);
   /* One card, not two. "Maybe the top two boxes, the one with the level
      and the other with the name, could be joined instead of appearing as
