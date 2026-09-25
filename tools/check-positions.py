@@ -154,10 +154,35 @@ def main():
                 tops, scrolls = [], []
                 for fn in ONBOARDING:
                     run(page, fn)
-                    m = page.evaluate("""()=>{const b=document.querySelector('.next.playbtn');
-                      const r=b.getBoundingClientRect();
-                      return {top:Math.round(r.top), bottom:Math.round(r.bottom),
-                              sh:document.documentElement.scrollHeight, vh:innerHeight};}""")
+                    # ---- MEASURE WHEN IT HAS STOPPED MOVING, NOT AFTER A
+                    # FIXED WAIT. A flat 230ms read this 3-4px off on
+                    # whichever devices happened to be slow that run: the
+                    # same build, swept twice, flagged an iPad Pro 12.9",
+                    # an iPad Pro 13" and two laptops at 4px one time and
+                    # only one laptop at 3px the next. Four false alarms
+                    # about the single most load-bearing row in the table
+                    # is how a real regression there gets waved through as
+                    # "that one again".
+                    # So it reads until two consecutive frames agree, and
+                    # gives up after a bounded number rather than looping
+                    # on a screen that genuinely never settles.
+                    m = page.evaluate("""async ()=>{
+                      const read = () => {
+                        const b = document.querySelector('.next.playbtn');
+                        const r = b.getBoundingClientRect();
+                        return {top:Math.round(r.top), bottom:Math.round(r.bottom),
+                                sh:document.documentElement.scrollHeight, vh:innerHeight};
+                      };
+                      const frame = () => new Promise(r =>
+                        requestAnimationFrame(() => requestAnimationFrame(r)));
+                      let prev = read();
+                      for(let i = 0; i < 20; i++){
+                        await frame();
+                        const now = read();
+                        if(now.top === prev.top && now.sh === prev.sh) return now;
+                        prev = now;
+                      }
+                      return prev;}""")
                     tops.append(m["top"])
                     if m["sh"] > m["vh"] + 1: scrolls.append((fn, m["sh"] - m["vh"]))
                 spread = max(tops) - min(tops)
