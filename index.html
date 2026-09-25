@@ -2984,6 +2984,25 @@
   .rank-name-wrap{ display:flex; flex-direction:column; min-width:0; flex:1; }
   .rank-name{ font-weight:700; font-size:.95rem; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .rank-stat{ font-size:.78rem; color:var(--soft); }
+  /* ---- the daily trend ----
+     SUBTLE WAS THE WORD, so this is a footnote and not a badge: no
+     pill, no background, just an arrow and a number a size down from
+     the stat it follows. Red and green are the only two colours in the
+     app that are allowed to mean good and bad, and they are used here
+     for exactly that - but muted, because a bright green triangle
+     beside every name turns a leaderboard into a stock ticker. */
+  .rank-trend{
+    display:inline-flex; align-items:center; gap:.12rem;
+    margin-left:.45rem; font-size:.72rem; font-weight:800;
+    letter-spacing:.01em; vertical-align:baseline;
+  }
+  .rank-trend-arrow{ font-size:.58rem; line-height:1; }
+  .rank-trend.is-up{ color:#4ADE80; }
+  .rank-trend.is-down{ color:#F0766B; }
+  /* On a light theme the same two read too pale against white, so they
+     step down rather than being left to the dark-theme values. */
+  [data-theme="light"] .rank-trend.is-up{ color:#1F7A4D; }
+  [data-theme="light"] .rank-trend.is-down{ color:#A02642; }
   /* The podium, and deliberately not animated - asked for explicitly.
      What makes it read as a medal instead of a coloured border is the
      tinted surface plus a heavier ring, so the whole row changes
@@ -3940,6 +3959,29 @@
     color:var(--ink); background:var(--panel); border:1px solid var(--rule);
     border-radius:999px; padding:.8rem 1rem; cursor:pointer; text-align:center;
     min-height:2.75rem;
+  }
+  /* ---- THE QUIET VARIANT ----
+     Asked for: not every button down here should be the matte black
+     slab. Share, Add to Home Screen and Report a bug are offers - they
+     hand the app to somebody or send a message - where Reset and the
+     sync controls act on your own account. Giving all of them the same
+     weight is what made the column read as a pile of identical bars
+     with nothing to scan by.
+     So these are outlined rather than filled: the same size, the same
+     44px target, the same radius, but they sit back instead of forward.
+     A colour would have been the obvious move and is wrong here - the
+     accent is the app's "this is yours" signal and a Share button is
+     not that. Absence of fill is the quieter answer. */
+  .cal-profile-btn.cal-profile-btn-quiet{
+    background:transparent;
+    border:1px solid color-mix(in srgb, var(--rule) 85%, transparent);
+    color:var(--soft); font-weight:650;
+  }
+  .cal-profile-btn.cal-profile-btn-quiet:active{
+    background:color-mix(in srgb, var(--ink) 7%, transparent);
+  }
+  [data-theme="dark"] .cal-profile-btn.cal-profile-btn-quiet{
+    border-color:rgba(255,255,255,.16);
   }
   /* Stacked on a phone. Side by side there is ~170px each, which is not
      enough for "Add to Home Screen" at a readable size without wrapping;
@@ -39586,7 +39628,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-26-187";
+const APP_BUILD = "2026-09-26-188";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -41996,35 +42038,17 @@ function showAppearance(opts){
          something anybody has to understand.
          .cal-profile-btn carries flex:1, so one child fills the row
          where two shared it. */
-      const saveBar = document.createElement("div");
-      saveBar.className = "cal-profile-row sync-save-row";
-      /* STILL ONE BUTTON - the second one here came off on an explicit
-         report ("I don't even know what that is and it will confuse
-         people") and this is not bringing it back. It is the same one
-         button doing the better thing: the share sheet first, so the
-         code lands in Notes or a message to yourself, and the clipboard
-         only when there is no share sheet. "Save", not "Copy", because
-         a clipboard is overwritten by the next thing you copy and this
-         code has to outlive the phone. */
-      const copyCode = document.createElement("button");
-      copyCode.type = "button"; copyCode.className = "cal-profile-btn";
-      copyCode.textContent = "Save code";
-      copyCode.addEventListener("click", async () => {
-        const ok = await saveSyncCodeVia(copyCode);
-        if(ok){
-          store.savedCodeSaved = true;
-          saveStore();
-          showToast(navigator.share ? "Saved \u2014 keep it somewhere off this device."
-                                    : "Code copied \u2014 paste it somewhere off this device.");
-          return;
-        }
-        /* Nothing saved. The code is on the row above and selectable,
-           which is the fallback that cannot fail - and a button that
-           appears to do nothing is worse than no button. */
-        showToast("Nothing saved \u2014 tap the row above to read your code and write it down.");
-      });
-      saveBar.appendChild(copyCode);
-      card.appendChild(saveBar);
+      /* ---- NO SAVE CODE BUTTON, AND THE SENTENCE STAYS ----
+         Asked for directly: the button goes, the description does not.
+         It is not a loss: the code itself is on the row directly above
+         and that row is already tappable and selectable, so reading it
+         out or copying it by hand still works exactly as it did. What
+         has gone is a second, differently-worded way to do the same
+         thing sitting under a card that was already three controls
+         deep - which is the pile this screen was reported for.
+         The save-code REMINDER banner is untouched: that one arrives
+         once, unprompted, at the moment somebody has a code and no copy
+         of it, which is the moment the button was never there for. */
 
       const saveNote = document.createElement("p");
       saveNote.className = "sync-note-plain";
@@ -42206,6 +42230,10 @@ function showAppearance(opts){
   installBtn.textContent = "Add to Home Screen";
   installBtn.addEventListener("click", handleInstallTap);
 
+  /* Quiet, because these two are offers rather than actions on your
+     account - see the note where the sections are assembled. */
+  shareBtn.classList.add("cal-profile-btn-quiet");
+  installBtn.classList.add("cal-profile-btn-quiet");
   const shareInstallRow = document.createElement("div");
   shareInstallRow.className = "cal-profile-row";
   shareInstallRow.append(shareBtn, installBtn);
@@ -42378,10 +42406,38 @@ function showAppearance(opts){
      how to put it on a Home Screen. The build line leads, because it is
      the answer to "am I even on the version with the fix in it" - which
      is not answerable anywhere else once you are past onboarding. */
-  const miscLab = document.createElement("p");
-  miscLab.className = "slab section-divider motion-summary";
-  miscLab.textContent = "This app";
-  panel.appendChild(miscLab);
+  /* ---- "THIS APP" WAS ONE HEADING OVER A PILE OF BUTTONS ----
+     Check for update, Report a bug, Share, Add to Home Screen and the
+     Advanced dropdown all sat in a single stack under one label, every
+     one of them the same full-width matte black. Reported as awful and
+     overwhelming, and the count is the reason: five identical slabs in
+     a column give you nothing to scan by, so you have to read every
+     label to find the one you want.
+
+     THREE HEADINGS, GROUPED BY WHAT THEY ARE FOR - passing the app on,
+     getting help with it, and the things you should think twice about.
+     Each group is two rows at most, which is what makes the column
+     scannable instead of a wall.
+
+     AND THEY ARE NOT ALL BLACK NOW. Asked for directly. Share and Add
+     to Home Screen are quiet outline buttons: they are offers, not
+     actions on your account, and giving them the same weight as Reset
+     was the other half of why this read as a pile. The matte black is
+     kept for the things that change something. */
+  const shareLab = document.createElement("p");
+  shareLab.className = "slab section-divider motion-summary";
+  shareLab.textContent = "Share Nova";
+  panel.appendChild(shareLab);
+  const shareHint = document.createElement("p");
+  shareHint.className = "sync-note-plain";
+  shareHint.textContent = "Send it to a classmate, or put it on your own Home Screen so it opens like an app.";
+  panel.appendChild(shareHint);
+  panel.appendChild(shareInstallRow);
+
+  const helpLab = document.createElement("p");
+  helpLab.className = "slab section-divider motion-summary";
+  helpLab.textContent = "Help";
+  panel.appendChild(helpLab);
   panel.appendChild(updSect);
 
   /* REPORT A BUG, and the awkward part is where a report LANDS.
@@ -42407,11 +42463,20 @@ function showAppearance(opts){
   const bugBtn = document.createElement("button");
   bugBtn.type = "button"; bugBtn.className = "cal-profile-btn";
   bugBtn.textContent = "Report a bug";
+  bugBtn.classList.add("cal-profile-btn-quiet");
   bugBtn.addEventListener("click", () => showBugReport());
   bugBar.appendChild(bugBtn);
   bugSect.appendChild(bugBar);
   panel.appendChild(bugSect);
-  panel.appendChild(shareInstallRow);
+
+  /* Advanced is its own heading because everything under it is a
+     one-way door - it is the only group on this screen that can lose
+     somebody their progress, and it should not share a label with
+     "Share Nova". */
+  const advLab = document.createElement("p");
+  advLab.className = "slab section-divider motion-summary";
+  advLab.textContent = "Advanced";
+  panel.appendChild(advLab);
   panel.appendChild(dataSect);
 
   /* No Done button. This screen is a bottom-tab destination, and the
@@ -46526,6 +46591,94 @@ function renderLeaderboardList(list){
    climb has to show them the bottom rung they are standing on. Entries
    with no name at all are still dropped - those are genuinely broken
    documents, not people. */
+/* ================= WHICH WAY YOU ARE GOING =========================
+   A board tells you where you are and nothing about whether that is
+   better or worse than it was. Asked for: a subtle daily trend - how
+   many places somebody has moved since yesterday, with a red or green
+   arrow.
+
+   ENTIRELY LOCAL, AND THAT IS NOT A COMPROMISE. Placements are derived
+   from the board this device already has on screen, so working out
+   yesterday's needs no extra read and no extra document - which
+   matters, because a "trend" stored per person in Firestore would be
+   thirty more writes a day fanning out to thirty listeners, and that
+   arithmetic is what cost the quota in the first place. Two days of
+   placements in localStorage costs nothing and is exactly as accurate.
+
+   YESTERDAY, NOT "LAST TIME YOU LOOKED". The comparison is against the
+   last reading taken on a PREVIOUS DAY, so the arrow means the same
+   thing whether you open the app twice an hour or once a week. Today's
+   reading is overwritten on every render, so it is always the most
+   recent picture of today - and a person who never opened the app
+   yesterday simply gets no arrow rather than a wrong one. */
+const LB_TREND_KEY = "class26e.lbtrend.v1";
+function lbTodayKey(){
+  const d = new Date();
+  return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+}
+function lbTrendLoad(){
+  try{
+    const raw = JSON.parse(localStorage.getItem(LB_TREND_KEY) || "{}");
+    if(raw && typeof raw === "object") return raw;
+  }catch(e){}
+  return {};
+}
+function lbTrendSave(st){
+  try{ localStorage.setItem(LB_TREND_KEY, JSON.stringify(st)); }catch(e){}
+}
+/* Called once per render with the whole ranked board. Returns a lookup
+   of publicId -> places moved since yesterday (positive is up). */
+function lbTrendFor(boardKey, ranked){
+  const today = lbTodayKey();
+  const st = lbTrendLoad();
+  if(st.curDay !== today){
+    /* Roll over: what was "today" becomes the thing to compare against.
+       Only one previous day is kept - a week of history would be a
+       nicer feature and is not what was asked for, and every extra day
+       is another thing to keep correct. */
+    st.prev = st.cur || {};
+    st.prevDay = st.curDay || "";
+    st.cur = {};
+    st.curDay = today;
+  }
+  st.cur = st.cur || {};
+  const todayMap = {};
+  ranked.forEach(r => { if(r.entry && r.entry.pub) todayMap[r.entry.pub] = r.place; });
+  st.cur[boardKey] = todayMap;
+  lbTrendSave(st);
+
+  const out = {};
+  const was = (st.prev && st.prev[boardKey]) || null;
+  if(!was) return out;
+  Object.keys(todayMap).forEach(pub => {
+    const before = was[pub];
+    if(typeof before !== "number") return;   /* nobody to compare to */
+    const moved = before - todayMap[pub];
+    if(moved !== 0) out[pub] = moved;
+  });
+  return out;
+}
+
+/* The mark itself. Deliberately small and deliberately not a badge:
+   this is a footnote on a row, not a second score. An arrow and a
+   number, nothing else - "+3" with no arrow reads as points. */
+function buildTrendMark(moved){
+  const el = document.createElement("span");
+  el.className = "rank-trend " + (moved > 0 ? "is-up" : "is-down");
+  const arrow = document.createElement("span");
+  arrow.className = "rank-trend-arrow";
+  arrow.setAttribute("aria-hidden", "true");
+  arrow.textContent = moved > 0 ? "\u25B2" : "\u25BC";
+  const n = document.createElement("span");
+  n.className = "rank-trend-n";
+  n.textContent = String(Math.abs(moved));
+  el.append(arrow, n);
+  el.setAttribute("aria-label",
+    Math.abs(moved) + (Math.abs(moved) === 1 ? " place " : " places ")
+    + (moved > 0 ? "up" : "down") + " since yesterday");
+  return el;
+}
+
 function renderRankingRows(rows, entries, board, opts){
   const o = opts || {};
   const query = (o.query || "").trim().toLowerCase();
@@ -46600,6 +46753,8 @@ function renderRankingRows(rows, entries, board, opts){
     return;
   }
 
+  const trend = lbTrendFor(board.key || board.field || "board", ranked);
+
   shown.forEach(({ entry, place }) => {
     const row = document.createElement("div");
     row.className = "rank-row" + (place <= 3 ? " lb-place-" + place + " rank-podium-" + place : "");
@@ -46639,6 +46794,11 @@ function renderRankingRows(rows, entries, board, opts){
     stats.className = "rank-stat lb-stats";
     stats.textContent = board.unit(val(entry));
     nameWrap.append(name, stats);
+    /* Beside the stat line rather than beside the place number: the
+       place is already the biggest thing on the row and a second mark
+       against it reads as two numbers arguing. */
+    const moved = trend[entry.pub];
+    if(typeof moved === "number" && moved !== 0) stats.appendChild(buildTrendMark(moved));
 
     /* TAP A CLASSMATE, GET THE ONE THING YOU WANT FROM A BOARD: a way
        to add them. Your own row is not tappable - there is nothing to
