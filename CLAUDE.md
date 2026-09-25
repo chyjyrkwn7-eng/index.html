@@ -4847,4 +4847,45 @@ was applied to a layout it never uses.
   reconstruct from a screenshot, the CSS viewport the device is actually
   using — before writing a single rule.
 
+### The glow was clipped into a box (build 200)
+
+*"The top of the screenshot doesn't blend (the background and stuff),
+it's hard cutoff."* `.panel.home` is `overflow:hidden` — there so the
+full-bleed planet cannot scroll the page sideways — and Home's panel
+starts just under the status bar, while the planet's glow
+(`.homeglow-hero`) reaches ~200px above it. So the glow was cut in a
+straight line across the screen at the panel's top: measured, a uniform
++6-level step at y=69 on the reference phone with flat background above.
+Clipping x at the panel instead of hiding both axes removed the top edge
+and exposed the next one: the panel sits ~20px in from the glass, so the
+glow now stopped in two vertical lines down the sides.
+
+- **Home's panel clips nothing** (`overflow:visible`) and the sideways
+  clip moved to `.wrap:has(.panel.home.screen-home-actual)`, which spans
+  the viewport. The glow now fades out at the screen edges, and there is
+  still no horizontal scroll on any device.
+- **`clip`, never `hidden`, for a single axis.** `overflow-x:hidden`
+  forces `overflow-y` to `auto` and quietly turns the element into a
+  scroll container; `clip` does not.
+- **How it was found is the reusable part**: sample the mean brightness
+  of each row across the middle of a screenshot and flag any step over
+  ~1.5 levels. A clipped glow is a uniform step at a box edge; a ring or
+  a line of text is a +/- pair. The same scan on columns finds the side
+  edges. Welcome was checked the same way and was never clipped — it is
+  not built as a `.panel`.
+- **`tools/check-edges.py` is that scan, as a gate**, over Home and
+  Welcome on every device in `DEVICES`. It took three drafts to be worth
+  anything, and each failure is a rule: the first flagged every card
+  border in the app (only the planet screens carry a glow); the second
+  passed the live build because the old build saw a newer
+  `version.json` and was showing "Pushing update…" instead of Home, so
+  it now pins `version.json` to the build under test and FAILS any
+  screen that did not render a planet; the third flagged the planet's
+  own halo, so it scans only the band ABOVE the hero, which is where
+  the background meets the status bar. Calibrated on the real edge — one
+  row in which a contiguous half of the width steps the same way,
+  peaking at ~7 levels. **Proved both ways**: `--against` build 199 it
+  fails on the zoomed phone (y=73) and a 440 Pro Max (y=62); on 200 it
+  passes all 44 combinations.
+
 No committed regression suite exists yet. Worth building.

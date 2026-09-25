@@ -7370,6 +7370,25 @@
      bottom-anchored button they share with each other; this class is on
      Home's panel and nothing else (see showHome). */
   .panel.home.screen-home-actual .playbtn{ margin-bottom:auto; }
+  /* ---- THE GLOW WAS BEING GUILLOTINED AT THE PANEL'S TOP EDGE ----
+     "the top of the screenshot doesn't blend (the background and stuff),
+     it's hard cutoff." .panel.home is overflow:hidden, which is what stops
+     the full-bleed planet scrolling the page sideways - and it also clips
+     the planet's own glow, which reaches ~200px ABOVE the panel into the
+     status-bar area. Measured on the reference phone: a straight +6 level
+     step across the whole screen at exactly the panel's top (y=69), with
+     flat background above it. Only the SIDEWAYS clip was ever wanted, so
+     Home clips x and lets y through. `clip`, not `hidden`: hidden on one
+     axis forces the other to auto and makes the panel a scroll container;
+     clip does not. */
+  /* And the SIDES: clipping x at the panel still cut the glow at the
+     panel's left and right edges, ~20px in from the glass on a phone -
+     the same hard edge turned through ninety degrees. The sideways clip
+     belongs at the screen edge, so it moves to .wrap, which spans the
+     viewport; the panel itself clips nothing. */
+  .panel.home.screen-home-actual{ overflow:visible; }
+  .wrap:has(> main .panel.home.screen-home-actual),
+  .wrap:has(.panel.home.screen-home-actual){ overflow-x:clip; }
   /* On a tall tablet viewport, min-height:calc(100dvh - 9rem) above
      becomes a much bigger number than on a phone, so margin-top:auto
      was stretching this exact same gap out into a huge, obviously-
@@ -42124,7 +42143,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-26-199";
+const APP_BUILD = "2026-09-26-200";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
