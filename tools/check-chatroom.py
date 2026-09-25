@@ -393,6 +393,85 @@ def main(src):
             check("with the two of them in different colours",
                   back["distinct"] is True, back["colours"])
 
+            print("\n4b. long text wraps; it never scrolls sideways")
+            a.evaluate("""()=>{
+              const i=document.querySelector('.chatdock-chathost .vroom-chat-input');
+              /* No spaces at all - a pasted code or a link, which is the
+                 case that actually broke: a run with no break
+                 opportunity sets the width of the whole list unless the
+                 item is told it may break anywhere. */
+              i.value='WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW';
+              document.querySelector('.chatdock-chathost .vroom-chat-send').click();}""")
+            a.wait_for_timeout(700)
+            wrapM = a.evaluate("""()=>{
+              const l=document.querySelector('.chatdock-chathost .vroom-chat-list');
+              const over = [...l.querySelectorAll('.vroom-chat-msg')]
+                .map(n=>Math.round(n.getBoundingClientRect().width - l.clientWidth));
+              return { sideways: l.scrollWidth - l.clientWidth,
+                       widest: over.length ? Math.max.apply(null, over) : 0,
+                       lines: l.scrollHeight };}""")
+            check("the list does not scroll sideways", wrapM["sideways"] <= 0, wrapM)
+            check("and no message is wider than the list", wrapM["widest"] <= 0, wrapM)
+
+            print("\n4c. five reactions, and a reaction bumps its message")
+            react = a.evaluate("""()=>{
+              const l=document.querySelector('.chatdock-chathost .vroom-chat-list');
+              const wraps=[...l.querySelectorAll('.vroom-chat-msgwrap')];
+              if(!wraps.length) return { none:true };
+              /* The FIRST message, so the bump has somewhere to move it
+                 to - reacting to the last one proves nothing. */
+              const first = wraps[0];
+              const textBefore = first.textContent;
+              first.click();
+              const pick = l.querySelector('.vroom-chat-picker');
+              const glyphs = pick ? [...pick.querySelectorAll('.vroom-chat-pick')]
+                .map(b=>b.getAttribute('aria-label')) : null;
+              const tall = pick ? [...pick.querySelectorAll('.vroom-chat-pick')]
+                .map(b=>Math.round(b.getBoundingClientRect().height)) : [];
+              if(pick) pick.querySelectorAll('.vroom-chat-pick')[1].click();
+              return { glyphs, tall, textBefore,
+                       stillOpen: !!l.querySelector('.vroom-chat-picker') };}""")
+            check("tapping a message offers five reactions",
+                  react.get("glyphs") and len(react["glyphs"]) == 5, react.get("glyphs"))
+            check("each one is a 44px target",
+                  react.get("tall") and min(react["tall"]) >= 44, react.get("tall"))
+            check("and the picker closes once you pick",
+                  react.get("stillOpen") is False)
+            a.wait_for_timeout(800); b.wait_for_timeout(800)
+            after = b.evaluate("""(before)=>{
+              const l=document.querySelector('.chatdock-chathost .vroom-chat-list');
+              const wraps=[...l.querySelectorAll('.vroom-chat-msgwrap')];
+              const chips=[...l.querySelectorAll('.vroom-chat-react')].map(c=>c.textContent);
+              return { last: wraps.length ? wraps[wraps.length-1].textContent : '',
+                       first: wraps.length ? wraps[0].textContent : '',
+                       chips, n: wraps.length };}""", react.get("textBefore"))
+            check("the other person sees the reaction", len(after["chips"]) == 1, after["chips"])
+            """The bump is the whole ask - "it bumps the message to the
+            bottom, Snapchat style" - so what matters is that the
+            message that WAS first is now last, on the other device."""
+            check("and the message it was left on has moved to the bottom",
+                  "are you studying tonight" in (after["last"] or ""), after["last"][:60])
+            undo = a.evaluate("""()=>{
+              const l=document.querySelector('.chatdock-chathost .vroom-chat-list');
+              const wraps=[...l.querySelectorAll('.vroom-chat-msgwrap')];
+              const mine = wraps.filter(w=>w.querySelector('.vroom-chat-react.is-mine'))[0];
+              if(!mine) return { noMine:true };
+              mine.click();
+              const pick = l.querySelector('.vroom-chat-picker');
+              if(pick) pick.querySelectorAll('.vroom-chat-pick')[1].click();
+              return { ok:true };}""")
+            a.wait_for_timeout(800)
+            gone = a.evaluate("""()=>document.querySelectorAll(
+              '.chatdock-chathost .vroom-chat-react').length""")
+            """A CHECK THAT CANNOT FAIL IS WORSE THAN NO CHECK. `gone ==
+            0` passed against the build with no reactions at all, where
+            there was nothing to take back - so it has to assert the
+            TRANSITION: one chip before, none after, and a reaction
+            actually found to undo."""
+            check("your own reaction is yours to take back",
+                  not undo.get("noMine") and len(after["chips"]) == 1 and gone == 0,
+                  {"before": after["chips"], "after": gone, "found": not undo.get("noMine")})
+
             print("\n5. leaving takes him out of it")
             b.evaluate("""()=>{
               [...document.querySelectorAll('.chatdock-mini')]

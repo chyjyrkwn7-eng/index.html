@@ -3788,7 +3788,28 @@
   body.chatdock-open .vroom-chat-alert{
     opacity:0 !important; pointer-events:none !important;
   }
+  /* ---- THE GRIP IS ALSO THE SIZE CONTROL ----
+     "A resizable chat box." On a phone the sheet already had a grip for
+     swipe-to-close, so dragging it the other way is the gesture nobody
+     has to be taught; on a tablet the panel has no grip at all, so it
+     gets one along its bottom edge. Both write --chat-h and both
+     remember it, because a size you have to set every time is not a
+     setting. */
   .chatdock-grip{ display:none; }
+  .chatdock-sizer{
+    display:none; position:absolute; left:0; right:0; bottom:0; height:16px;
+    cursor:ns-resize; touch-action:none;
+  }
+  .chatdock-sizer::after{
+    content:""; position:absolute; left:50%; bottom:5px; transform:translateX(-50%);
+    width:2.4rem; height:.28rem; border-radius:999px;
+    background:rgba(255,255,255,.22);
+  }
+  /* Only while the panel is open. The pointer-events fix above is what
+     actually makes a closed panel inert; this is the second lock on the
+     one control that calls preventDefault, because a box that is not
+     generated cannot be hit however the cascade is edited later. */
+  @media (min-width:40rem){ .chatdock.is-open .chatdock-sizer{ display:block; } }
   .chatdock-tabs{
     display:flex; align-items:center; gap:.35rem;
     padding:0 0 .7rem; margin:0 0 .7rem;
@@ -3885,14 +3906,34 @@
      enough on a phone to read as not tappable, which is how they were
      reported. */
   .chatdock-notif-acts .chatdock-mini{ min-height:44px; padding:.45rem .9rem; }
-  .chatdock-panel, .chatdock-panel *{ pointer-events:auto; }
+  /* ---- THE PANEL, NOT EVERY DESCENDANT OF IT ----
+     This was `.chatdock-panel, .chatdock-panel *`, and the `*` half is
+     what made a CLOSED panel still catch touches. `pointer-events` is
+     inherited, so the panel being `auto` already makes its children
+     `auto` and the panel being `none` already makes them `none` - the
+     descendant selector added nothing when open and broke the closed
+     state, because `auto` on a descendant overrides `none` on an
+     ancestor.
+     On a tablet the closed panel is a real, laid-out, invisible box
+     under the chat button, and it grew when the panel became resizable:
+     measured on an iPad Pro it reached y=616, and the tab swipe runs
+     across y=537. Rankings and Profile both went "This Week -> This
+     Week -> This Week" - the swipe was landing on the dead panel.
+     The sweep cannot see this; nothing is out of place. check-behaviour
+     caught it, which is the whole difference between "does it look
+     right" and "does it DO the right thing". */
+  .chatdock-panel{ pointer-events:auto; }
 
   /* ---- a phone: a sheet from the bottom ---- */
   @media (max-width:40rem){
     .chatdock-panel{
       left:0; right:0; bottom:0; top:auto;
       padding:.85rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
-      max-height:min(80vh, 34rem); min-height:min(62vh, 26rem);
+      /* The stored height, clamped both ways. 92vh is the ceiling
+         because a sheet taller than that has nothing left of the screen
+         behind it to tap to dismiss. */
+      height:clamp(min(62vh, 26rem), var(--chat-h, 70vh), 92vh);
+      max-height:92vh; min-height:min(62vh, 26rem);
       border-radius:20px 20px 0 0; border-left:none; border-right:none; border-bottom:none;
       transform:translateY(102%); touch-action:pan-y;
     }
@@ -3919,8 +3960,13 @@
       /* REPORTED AS TOO SMALL ON A LARGER DEVICE, and it was: a 24rem
          box with an 18rem floor on an iPad Pro is a phone sheet on a
          screen with room for a real one. */
-      width:min(30rem, calc(100vw - 3rem));
-      max-height:min(78vh, 44rem); min-height:26rem;
+      width:min(34rem, calc(100vw - 3rem));
+      /* --chat-h is written by the resize grip and remembered per
+         device; the min()/max() pair is what stops a stored value from
+         a rotated or larger screen leaving the panel off the bottom. */
+      max-height:min(84vh, 52rem);
+      height:min(var(--chat-h, 34rem), 84vh);
+      min-height:26rem;
       padding:.9rem 1rem 1rem; border-radius:18px;
       transform-origin:top right;
       transform:translateY(-8px) scale(.96); opacity:0; pointer-events:none;
@@ -3932,17 +3978,99 @@
   .vroom-chat-list{
     max-height:11rem; overflow-y:auto; display:flex; flex-direction:column; gap:.5rem;
     margin-bottom:.7rem; padding-right:.2rem;
+    /* SIDEWAYS IS NEVER THE ANSWER IN A CHAT. Reported directly - long
+       text scrolled the list horizontally instead of wrapping. A flex
+       column's items do not shrink below their content's minimum width
+       unless they are told to, and an unbroken run of characters (a URL,
+       a pasted code, somebody holding a key down) has no break
+       opportunity at all, so the item grew and took the list with it.
+       min-width:0 on the item plus overflow-wrap:anywhere on the text is
+       the pair that fixes it; overflow-x:hidden here is the net, so no
+       future child can reintroduce it. */
+    overflow-x:hidden;
   }
+  .vroom-chat-list > *{ min-width:0; max-width:100%; }
   /* text-align:left explicitly. The chat is embedded in whatever screen
      is hosting it, and two of those centre their text - so the messages
      inherited it and came out ragged down the middle, which reads as a
      bug rather than as a style. */
   .vroom-chat, .vroom-chat-list{ text-align:left; }
-  .vroom-chat-msg{ font-size:.85rem; line-height:1.4; text-align:left; }
+  .vroom-chat-msg{
+    font-size:.85rem; line-height:1.4; text-align:left;
+    /* `anywhere` rather than `break-word`, and here that IS right: a
+       badge label is a real word that should stay whole, but a chat
+       carries pasted links and sync codes that have no break
+       opportunity in them at all and would otherwise set the width of
+       the whole list. */
+    overflow-wrap:anywhere; word-break:break-word;
+    min-width:0; max-width:100%;
+  }
+  /* GENUINELY BIGGER ON A TABLET, not the same panel further away.
+     Reported as the chat being small on larger devices; the panel got
+     wider once already and the TEXT never moved with it. */
+  @media (min-width:40rem){
+    .vroom-chat-msg{ font-size:.95rem; line-height:1.45; }
+    .vroom-chat-msg-time{ font-size:.74rem; }
+    .vroom-chat-empty{ font-size:.9rem; }
+  }
   .vroom-chat-msg-name{ font-weight:700; }
   .vroom-chat-msg-name.is-me{ color:var(--accent); }
   .vroom-chat-msg-time{ font-size:.68rem; color:var(--soft); margin-left:.3rem; }
   .vroom-chat-empty{ font-size:.82rem; color:var(--soft); text-align:center; padding:.5rem 0; }
+  /* ---- REACTIONS ---------------------------------------------------
+     Five, named: heart, thumbs up, thumbs down, laughing, question.
+     A message becomes a button so the whole line is the target - at
+     .85rem a tap-the-text-exactly affordance is not one - and the
+     picker opens against that line rather than as a screen-centred
+     sheet, which is what makes it read as belonging to the message.
+     THE PICKER IS ABSOLUTE INSIDE THE LIST, not fixed: the list
+     scrolls, and a fixed popover would sit still while the message it
+     belongs to slid away underneath it. */
+  .vroom-chat-list{ position:relative; }
+  .vroom-chat-msgwrap{
+    display:block; width:100%; min-width:0; text-align:left;
+    background:none; border:none; padding:0; margin:0; font:inherit; color:inherit;
+    -webkit-tap-highlight-color:transparent; cursor:pointer;
+    border-radius:10px;
+  }
+  .vroom-chat-msgwrap.is-picking{ background:rgba(255,255,255,.06); }
+  /* THE BUMP IS THE POINT, so it has to be visible. A message that
+     moves to the bottom with no announcement reads as the list having
+     jumped; one that arrives lit reads as somebody having reacted. */
+  .vroom-chat-msgwrap.is-bumped{ animation:chat-bump .9s ease-out 1; }
+  @keyframes chat-bump{
+    0%{ background:color-mix(in srgb, var(--accent) 26%, transparent); }
+    100%{ background:transparent; }
+  }
+  .vroom-chat-reacts{
+    display:flex; flex-wrap:wrap; gap:.25rem; margin:.2rem 0 0;
+  }
+  .vroom-chat-react{
+    display:inline-flex; align-items:center; gap:.18rem;
+    padding:.08rem .34rem; border-radius:999px;
+    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12);
+    font-size:.72rem; line-height:1.35; color:var(--ink);
+    font-variant-numeric:tabular-nums;
+  }
+  .vroom-chat-react.is-mine{
+    background:color-mix(in srgb, var(--accent) 22%, transparent);
+    border-color:color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+  .vroom-chat-picker{
+    position:absolute; z-index:6; display:flex; gap:.1rem;
+    padding:.2rem .25rem; border-radius:999px;
+    background:rgba(24,29,36,.94); border:1px solid rgba(255,255,255,.14);
+    box-shadow:0 6px 20px rgba(0,0,0,.45);
+  }
+  .vroom-chat-picker[hidden]{ display:none; }
+  /* 44px, like every other target in the app - a row of five emoji is
+     exactly the place a 30px button gets mis-tapped. */
+  .vroom-chat-pick{
+    min-width:44px; min-height:44px; padding:0; font-size:1.15rem; line-height:1;
+    background:none; border:none; cursor:pointer; border-radius:999px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .vroom-chat-pick:active{ background:rgba(255,255,255,.12); }
   /* One line above the input, and it HOLDS ITS HEIGHT whether or not
      anybody is typing. Collapsing it would move the whole message list
      up and down every time somebody starts and stops, which on a phone
@@ -35902,6 +36030,24 @@ const CHAT_CTX = {
     return !!(last && chatMyKey && last.key === chatMyKey);
   },
   cap: 300, keep: 200,
+  /* ---- THE HISTORY RESETS DAILY; THE CHAT DOES NOT ----
+     Asked for in those words. The room, its code and everybody in it
+     survive - only the backlog goes, so a chat somebody started last
+     week is still the same chat and still in their list, it just does
+     not open on a wall of Tuesday.
+     Done as part of the SAME trim the cap already does, which is one
+     write by one device (the author of the newest message), rather than
+     as a sweep anybody could start - thirty devices each deciding to
+     clear the same document at 00:00 is thirty writes for one result,
+     and this project is already tight on its quota.
+     Nothing is deleted while it is the only thing there: a room whose
+     every message is old keeps the last few, so opening it shows a
+     chat rather than an empty box with no explanation. */
+  staleBefore: () => {
+    const t = new Date();
+    return new Date(t.getFullYear(), t.getMonth(), t.getDate()).getTime();
+  },
+  keepStale: 3,
   participantsOf: (data) => {
     /* A COUNT IS NOT A ROSTER. "2 in this chat" tells you somebody
        arrived and nothing about who, which is how "people aren't
@@ -36014,6 +36160,22 @@ function announceChatRoomChange(data, present){
     chatLastLeaveSeen = l.at;
     if(!first) showToast((l.name || "Someone") + " left the chat.");
   }
+}
+
+/* Days apart by CALENDAR DAY, not by elapsed hours: a message sent at
+   11pm is "yesterday" at 1am, and 23:59 to 00:01 is one day, not zero. */
+function chatDaysAgo(ts){
+  const a = new Date(ts), b = new Date();
+  const da = new Date(a.getFullYear(), a.getMonth(), a.getDate());
+  const db = new Date(b.getFullYear(), b.getMonth(), b.getDate());
+  return Math.round((db - da) / 86400000);
+}
+function chatMsgAge(ts){
+  if(!ts) return "";
+  const d = chatDaysAgo(ts);
+  if(d <= 0) return new Date(ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  if(d === 1) return "yesterday";
+  return d + "d ago";
 }
 
 function chatSelfEntry(){
@@ -36146,6 +36308,24 @@ function inviteFriendToChat(pub){
   saveStore();
   pushToCloud();
 }
+/* FIVE, AND THEY ARE THE FIVE THAT WERE ASKED FOR: heart, thumbs up,
+   thumbs down, laughing, question. Keyed by a short ascii id rather
+   than by the emoji itself, because the stored key ends up in a
+   Firestore document and an emoji is a multi-byte string that a future
+   font or platform can render differently - the id is what the data is
+   about, the glyph is how it is drawn. */
+const CHAT_REACTIONS = [
+  { id: "love",  glyph: "\u2764\uFE0F", label: "Love" },
+  { id: "up",    glyph: "\uD83D\uDC4D", label: "Thumbs up" },
+  { id: "down",  glyph: "\uD83D\uDC4E", label: "Thumbs down" },
+  { id: "haha",  glyph: "\uD83D\uDE02", label: "Laughing" },
+  { id: "what",  glyph: "\u2753", label: "Question" }
+];
+function chatReactionGlyph(id){
+  const r = CHAT_REACTIONS.filter(x => x.id === id)[0];
+  return r ? r.glyph : "";
+}
+
 const CHAT_INVITE_TTL_MS = 30 * 60 * 1000;
 function incomingChatInvites(){
   const friends = new Set(friendPublicIds());
@@ -36228,6 +36408,10 @@ function startChatDock(){
      the CSS hides it - one panel, two placements, no second builder. */
   const grip = document.createElement("div");
   grip.className = "chatdock-grip";
+  /* The tablet's own size control. Hidden on a phone by CSS, where the
+     grip above does the same job from the other edge. */
+  const sizer = document.createElement("div");
+  sizer.className = "chatdock-sizer";
 
   const tabs = document.createElement("div");
   tabs.className = "chatdock-tabs";
@@ -36256,35 +36440,115 @@ function startChatDock(){
   notifTabBody = document.createElement("div");
   notifTabBody.className = "chatdock-body chatdock-body-notifs";
 
-  panel.append(grip, tabs, chatTabBody, notifTabBody);
+  panel.append(grip, tabs, chatTabBody, notifTabBody, sizer);
   host.append(btn, panel);
   document.body.appendChild(host);
   chatDock = host;
 
-  /* Swipe the phone sheet down to close, from its own chrome only -
-     never from a scrollable list, or every attempt to read back through
-     the messages closes the sheet instead. */
-  let dragFrom = null, dragDy = 0;
+  /* ---- THE SHEET GESTURE, AND WHY THE OLD ONE GLITCHED ----
+     It excluded the two scrollable LISTS and nothing else, so a touch
+     that landed on a tab button, the close ×, the roster (which scrolls
+     sideways) or the text input still armed a vertical drag. Any small
+     movement then translated the whole sheet under the finger - which
+     is the jump reported on a phone - and because it claimed the
+     gesture on touchstart rather than on movement, a plain tap on a tab
+     twitched the panel before doing its job.
+     Three changes, each fixing one of those:
+       - the drag starts only on the sheet's own dead chrome: the grip,
+         or the padding around it. Every control and every scroller is
+         excluded by asking whether the target IS one, rather than by
+         listing the two that were known about.
+       - nothing moves until the finger has travelled DRAG_SLOP, so a
+         tap is a tap.
+       - closing hands the transition the offset it is already at
+         instead of snapping the inline transform off first, which is
+         what made the close look like two separate movements.
+     Dragging UP resizes instead of doing nothing: the sheet grows, the
+     height is remembered, and that is the "resizable chat box". */
+  const DRAG_SLOP = 6;
+  const CHAT_H_KEY = "class26e.chatheight";
+  function storedChatHeight(){
+    try{ return parseInt(localStorage.getItem(CHAT_H_KEY) || "", 10) || 0; }catch(e){ return 0; }
+  }
+  function setChatHeight(px){
+    const h = Math.round(Math.max(220, Math.min(px, window.innerHeight * 0.92)));
+    panel.style.setProperty("--chat-h", h + "px");
+    try{ localStorage.setItem(CHAT_H_KEY, String(h)); }catch(e){}
+  }
+  const savedH = storedChatHeight();
+  if(savedH) panel.style.setProperty("--chat-h", savedH + "px");
+
+  let dragFrom = null, dragDy = 0, dragArmed = false, dragH0 = 0;
+  function dragChrome(t){
+    /* The grip, or the panel itself - never a control and never a
+       scroller. `closest` on the panel is the last resort: anything
+       inside a child that is not the grip is somebody else's. */
+    if(!t) return false;
+    if(t.closest(".chatdock-grip")) return true;
+    if(t.closest("button, a, input, textarea, select, label, .vroom-chat-list, " +
+                 ".chatdock-notiflist, .chatdock-roomwho, .chatdock-sizer")) return false;
+    return true;
+  }
   panel.addEventListener("touchstart", (e) => {
     if(!chatDockOpen) return;
-    if(e.target.closest(".vroom-chat-list, .chatdock-notiflist")) return;
-    dragFrom = e.touches[0].clientY; dragDy = 0;
-    panel.classList.add("is-dragging");
+    if(!dragChrome(e.target)) return;
+    dragFrom = e.touches[0].clientY; dragDy = 0; dragArmed = false;
+    dragH0 = panel.getBoundingClientRect().height;
   }, { passive: true });
   panel.addEventListener("touchmove", (e) => {
     if(dragFrom === null) return;
-    dragDy = Math.max(0, e.touches[0].clientY - dragFrom);
-    panel.style.transform = "translateY(" + dragDy + "px)";
+    const dy = e.touches[0].clientY - dragFrom;
+    if(!dragArmed){
+      if(Math.abs(dy) < DRAG_SLOP) return;
+      dragArmed = true;
+      panel.classList.add("is-dragging");
+    }
+    if(dy < 0){
+      /* Up: taller, live. Nothing is translated, so the sheet stays
+         anchored to the bottom edge while it grows. */
+      dragDy = 0;
+      setChatHeight(dragH0 - dy);
+    } else {
+      dragDy = dy;
+      panel.style.transform = "translateY(" + dragDy + "px)";
+    }
   }, { passive: true });
   function endDrag(){
     if(dragFrom === null) return;
+    const closing = dragDy > 70;
     panel.classList.remove("is-dragging");
-    panel.style.transform = "";
-    if(dragDy > 70) closeChatDock();
-    dragFrom = null; dragDy = 0;
+    if(closing){
+      /* Leave the offset in place for one frame so the close
+         transition starts from where the finger let go. */
+      closeChatDock();
+      requestAnimationFrame(() => { panel.style.transform = ""; });
+    } else {
+      panel.style.transform = "";
+    }
+    dragFrom = null; dragDy = 0; dragArmed = false;
   }
   panel.addEventListener("touchend", endDrag);
   panel.addEventListener("touchcancel", endDrag);
+
+  /* The tablet's bottom-edge handle. Pointer events rather than touch,
+     because this one is dragged with a trackpad as often as a finger. */
+  let sizeFrom = null, sizeH0 = 0;
+  sizer.addEventListener("pointerdown", (e) => {
+    sizeFrom = e.clientY; sizeH0 = panel.getBoundingClientRect().height;
+    panel.classList.add("is-dragging");
+    try{ sizer.setPointerCapture(e.pointerId); }catch(err){}
+    e.preventDefault();
+  });
+  sizer.addEventListener("pointermove", (e) => {
+    if(sizeFrom === null) return;
+    setChatHeight(sizeH0 + (e.clientY - sizeFrom));
+  });
+  function endSize(){
+    if(sizeFrom === null) return;
+    sizeFrom = null; panel.classList.remove("is-dragging");
+  }
+  sizer.addEventListener("pointerup", endSize);
+  sizer.addEventListener("pointercancel", endSize);
 
   chatRoomCode = loadChatRoom();
   if(chatRoomCode){
@@ -40239,7 +40503,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-26-190";
+const APP_BUILD = "2026-09-26-191";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -46293,6 +46557,94 @@ function buildVroomChatPanel(container, ctx){
   /* Held from the last snapshot so renderMessages can colour a name
      without re-reading the document. */
   let roomParticipants = null;
+  /* Reactions are the one thing here that genuinely needs the whole
+     array: toggling one rewrites a message in place, which arrayUnion
+     cannot express. Held from the last snapshot rather than fetched, so
+     a reaction still costs one write and no read. */
+  let lastMessages = [];
+  let lastBumpSeen = 0;
+  let bumpedByMe = 0;
+  let pickerEl = null;
+
+  function chatReactionTitle(id, who, parts){
+    const names = (who || []).map(k => {
+      if(k === CTX.myKey()) return "You";
+      const e = (parts || {})[k];
+      return (e && e.name) || "Someone";
+    });
+    const r = CHAT_REACTIONS.filter(x => x.id === id)[0];
+    return (r ? r.label : id) + " \u2014 " + names.join(", ");
+  }
+
+  function closeReactPicker(){
+    if(pickerEl){ pickerEl.remove(); pickerEl = null; }
+    list.querySelectorAll(".vroom-chat-msgwrap.is-picking")
+        .forEach(n => n.classList.remove("is-picking"));
+  }
+  /* Anywhere else closes it, which is the behaviour every popover in
+     this app has. TAKEN OFF IN THE CLEANUP below, because this panel is
+     rebuilt every time the dock's tab changes - a listener left behind
+     per rebuild is a handler pointing at a dead list, and thirty of
+     them by the end of an evening. */
+  document.addEventListener("click", closeReactPicker);
+
+  function openReactPicker(anchor, m){
+    const already = pickerEl && pickerEl.dataset.for === m.id;
+    closeReactPicker();
+    if(already) return;
+    anchor.classList.add("is-picking");
+    const pick = document.createElement("div");
+    pick.className = "vroom-chat-picker";
+    pick.dataset.for = m.id;
+    CHAT_REACTIONS.forEach(r => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "vroom-chat-pick";
+      b.textContent = r.glyph;
+      b.setAttribute("aria-label", r.label);
+      b.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        toggleReaction(m, r.id);
+        closeReactPicker();
+      });
+      pick.appendChild(b);
+    });
+    list.appendChild(pick);
+    /* Above the message where there is room, below it where there is
+       not - measured against the LIST's own box, since that is what
+       this is positioned inside and what scrolls. A picker that opens
+       off the top of a short list is one nobody can reach. */
+    const a = anchor.getBoundingClientRect();
+    const l = list.getBoundingClientRect();
+    const h = pick.getBoundingClientRect().height || 52;
+    const above = a.top - l.top + list.scrollTop - h - 4;
+    pick.style.top = Math.max(0, above < 0 ? (a.bottom - l.top + list.scrollTop + 4) : above) + "px";
+    pick.style.left = Math.max(0, Math.min(
+      a.left - l.left, list.clientWidth - (pick.getBoundingClientRect().width || 0))) + "px";
+    pickerEl = pick;
+  }
+
+  function toggleReaction(m, id){
+    if(!fbDb || !CTX.code() || !CTX.myKey()) return;
+    const me = CTX.myKey();
+    const next = (lastMessages || []).map(x => {
+      if(x.id !== m.id) return x;
+      const r = Object.assign({}, x.r || {});
+      const who = (r[id] || []).slice();
+      const at = who.indexOf(me);
+      if(at >= 0) who.splice(at, 1); else who.push(me);
+      if(who.length) r[id] = who; else delete r[id];
+      /* ADDING a reaction bumps; taking one off does not. Otherwise
+         somebody changing their mind drags an old message to the
+         bottom of everybody's chat for a second time. */
+      const out = Object.assign({}, x, { r: r });
+      if(at < 0){ out.bump = Date.now(); bumpedByMe = out.bump; }
+      return out;
+    });
+    try{
+      fbDb.collection("vrooms").doc(CTX.code())
+        .update({ chatMessages: next }).catch(() => {});
+    }catch(e){}
+  }
 
   function renderMessages(messages){
     /* THE BACKLOG IS WHATEVER THE FIRST SNAPSHOT BRINGS, and that is
@@ -46310,7 +46662,27 @@ function buildVroomChatPanel(container, ctx){
       empty.className = "vroom-chat-empty"; empty.textContent = "No messages yet \u2014 say hi.";
       list.appendChild(empty);
     } else {
-      messages.forEach(m => {
+      /* ---- A REACTION BUMPS ITS MESSAGE TO THE BOTTOM ----
+         Asked for by name - Snapchat's behaviour. Done by SORTING on a
+         `bump` stamp rather than by reordering the stored array, for
+         two reasons: `ts` stays what it always was, so the age label
+         still says "yesterday" for a message from yesterday somebody
+         has just reacted to; and trimIfHost decides who trims from the
+         array's own last element, which a reorder would hand to
+         whoever reacted rather than to whoever wrote. */
+      const ordered = messages.slice().sort(
+        (a, b) => ((a.bump || a.ts || 0) - (b.bump || b.ts || 0)));
+      ordered.forEach(m => {
+        const wrap = document.createElement("button");
+        wrap.type = "button";
+        wrap.className = "vroom-chat-msgwrap";
+        /* Only a bump that arrived SINCE this panel last drew, and not
+           on the first render: opening a chat that already has reacted
+           messages in it must not light every one of them. Your own is
+           excluded too - you know you just tapped it. */
+        if(!isFirstRender && m.bump && m.bump > lastBumpSeen && m.bump !== bumpedByMe){
+          wrap.classList.add("is-bumped");
+        }
         const msg = document.createElement("p");
         msg.className = "vroom-chat-msg";
         const name = document.createElement("span");
@@ -46325,11 +46697,48 @@ function buildVroomChatPanel(container, ctx){
         }
         const time = document.createElement("span");
         time.className = "vroom-chat-msg-time";
-        time.textContent = new Date(m.ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+        /* A CLOCK TIME IS ONLY USEFUL TODAY. "9:41" on a message from
+           Tuesday reads as nine minutes ago at a glance, which is the
+           one thing it is not. Anything from an earlier day says how
+           many days back it was and keeps the clock time in its title
+           for anybody who wants it. */
+        time.textContent = chatMsgAge(m.ts);
+        time.title = new Date(m.ts).toLocaleString();
         msg.append(name, document.createTextNode(m.text), time);
-        list.appendChild(msg);
+        wrap.appendChild(msg);
+        /* The tally under the message, one chip per reaction anybody has
+           left, with a count once more than one person has left it and
+           your own marked. A chip with no count is one person, which is
+           the common case and does not need a "1" on it. */
+        const r = m.r || {};
+        const used = Object.keys(r).filter(k => (r[k] || []).length);
+        if(used.length){
+          const row = document.createElement("span");
+          row.className = "vroom-chat-reacts";
+          used.forEach(k => {
+            const who = r[k] || [];
+            const chip = document.createElement("span");
+            chip.className = "vroom-chat-react" +
+              (who.indexOf(CTX.myKey()) >= 0 ? " is-mine" : "");
+            chip.textContent = chatReactionGlyph(k) + (who.length > 1 ? " " + who.length : "");
+            chip.title = chatReactionTitle(k, who, roomParticipants);
+            row.appendChild(chip);
+          });
+          wrap.appendChild(row);
+        }
+        wrap.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          openReactPicker(wrap, m);
+        });
+        list.appendChild(wrap);
       });
     }
+    /* A re-render replaces every node, so a picker left open is a
+       picker pointing at an element that no longer exists. */
+    closeReactPicker();
+    lastBumpSeen = Math.max(lastBumpSeen,
+      Math.max.apply(null, [0].concat((messages || []).map(m => m.bump || 0))));
+    lastMessages = messages || [];
     if(wasAtBottom) list.scrollTop = list.scrollHeight;
     renderTyping();
 
@@ -46533,11 +46942,32 @@ function buildVroomChatPanel(container, ctx){
      so an ordinary send never has to read the document at all. */
   function trimIfHost(messages){
     if(!fbDb || !CTX.code()) return;
-    if(!messages || messages.length <= CTX.cap) return;
+    if(!messages || !messages.length) return;
     if(!CTX.shouldTrim(messages)) return;
+    let next = null;
+    /* ---- TWO REASONS TO TRIM, ONE WRITE ----
+       The cap keeps a busy room from growing without limit; the daily
+       line keeps a chat from opening on a wall of yesterday. They are
+       computed together and written once, because each of them on its
+       own would be a second write of the same field by the same device
+       in the same moment - and a write here is charged again as a read
+       to everybody listening. */
+    if(messages.length > CTX.cap) next = messages.slice(-CTX.keep);
+    if(CTX.staleBefore){
+      const cut = CTX.staleBefore();
+      const base = next || messages;
+      const fresh = base.filter(m => (m.ts || 0) >= cut);
+      /* Never leave it empty. A room whose whole history is old would
+         otherwise open as a blank box with nothing to say why, so the
+         last few stay until today's first message pushes them out. */
+      if(fresh.length !== base.length){
+        next = fresh.length ? fresh : base.slice(-(CTX.keepStale || 3));
+      }
+    }
+    if(!next || next.length === (messages || []).length) return;
     try{
       fbDb.collection("vrooms").doc(CTX.code())
-        .update({ chatMessages: messages.slice(-CTX.keep) }).catch(() => {});
+        .update({ chatMessages: next }).catch(() => {});
     } catch(e){}
   }
   sendBtn.addEventListener("click", send);
@@ -46598,6 +47028,8 @@ function buildVroomChatPanel(container, ctx){
     document.body.classList.remove("vroom-chat-open");
     clearTimeout(alertTimer);
     clearInterval(typingTick);
+    document.removeEventListener("click", closeReactPicker);
+    closeReactPicker();
     if(alertEl){ alertEl.remove(); alertEl = null; }
     unsubscribe();
   };

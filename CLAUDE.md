@@ -1516,10 +1516,26 @@ Everything below follows from that.
      overwritten by the next thing you copy, and this code has to
      outlive the phone. Share sheet first so it lands in Notes or a
      message to yourself, clipboard only where there is no share sheet.
-     Both the banner and Settings go through it, and **neither marks
-     `savedCodeSaved` unless the code actually went somewhere** — a
-     cancelled share and a refused clipboard are both "not saved", or
-     the prompt is silenced having achieved nothing.
+     It marked `savedCodeSaved` only if the code actually went
+     somewhere — a cancelled share and a refused clipboard were both
+     "not saved", or the prompt is silenced having achieved nothing.
+     **THIS STEP NO LONGER HAPPENS, AND THAT IS WORTH KNOWING RATHER
+     THAN DISCOVERING.** The Save code button came off Settings on
+     request (the screen was reported as a pile of controls) and it was
+     `saveSyncCodeVia()`'s only caller. The banner's "Save it" now
+     lands on the sync section instead — also on request, *"it just
+     directly takes you to the settings, scrolls down to the sync
+     section, and flashes it"* — which is a better teach and marks
+     nothing. So **nothing sets `savedCodeSaved` any more**: the
+     reminder runs all three of its prompts whether or not anybody
+     saved anything, and then stops. `saveSyncCodeVia()` is currently
+     uncalled. The fix is another button, which is the thing that was
+     asked to be removed, so this is raised rather than patched around.
+     **`check-sync` 4d was still driving that button and had been red
+     for two builds before anyone looked.** It drives the code row the
+     way a person does now: the row exists, it starts hidden, a tap
+     reveals the real code and a second tap hides it again, and the
+     sentence saying why to keep it is there.
   4. *Somebody looks it up* — `tools/firestore-admin.py find`, which
      needs the service-account key. See the admin-key note below.
   **The banner passes no anchor element to `saveSyncCodeVia`**, because
@@ -1563,8 +1579,38 @@ Everything below follows from that.
 The three things the app measures are **XP → level**, **badges**, and
 **hundos**, and every screen that shows progress is built on those three.
 
-- **A badge is a mastered unit, and mastery is `BADGE_THRESHOLD` (35)
-  hundos in it.** Sixteen units, sixteen badges. `DRILL_STAR_THRESHOLD` is
+- **A BADGE COSTS WHAT ITS UNIT IS WORTH (build 190), and there is no
+  single threshold any more.** *"Some units are huge and some aren't."*
+  `BADGE_THRESHOLD_BANDS`, verbatim as asked: under 20 questions stays
+  at 35 hundos, 20-40 is 25, 40-60 is 15, 60-100 is 10, over 100 is 7,
+  over 200 is 5. `badgeThresholdFor(unit)` is the only way to ask, and
+  `unitQuestionCount()` behind it is built lazily off `QUESTIONS`.
+  The reason is arithmetic: a hundo is a WHOLE unit with no misses, so
+  its cost already scales with the unit, and multiplying by a constant
+  35 scaled it twice — Identity Crimes (12 questions) asked for 420
+  perfect answers and Penal Code (340) for 11,900. Measured across the
+  real bank the bands turn sixteen wildly different units into sixteen
+  roughly equal jobs: every badge but Penal Code's now costs 10,000 to
+  13,750 XP of work, against 7,700 to 119,000 before. All sixteen come
+  to 367 hundos and 194,950 XP, against 560 and 408,900.
+  **A band may go DOWN freely and never up without checking the board.**
+  A badge is `hundos >= threshold` computed fresh, so lowering one can
+  only add badges and cannot ambush anybody with a cutscene or a
+  `MASTERY_BONUS` windfall (`summarize()` diffs either side of its own
+  recording calls). Raising one takes a badge off whoever is sitting
+  between the two numbers.
+  **`badgeThresholdFor` falls back to 35, never to 5**, for a unit the
+  bank does not know — an id from another build must not hand somebody a
+  badge for nothing.
+  **NOTHING MAY PRINT ONE NUMBER ANY MORE.** The badge case's blurb said
+  "35 hundos in that unit", which is wrong for twelve of the sixteen and
+  would send somebody to Penal Code expecting thirty-five flawless runs
+  of 340 questions. Each tile carries its own figure; `check-curve.py`
+  asserts the tiles print more than one denominator.
+  `BADGE_THRESHOLD` (35) survives as the small-unit band and as what
+  `DRILL_STAR_THRESHOLD` is written from.
+- The note this replaced, kept for the reasoning: mastery was
+  `BADGE_THRESHOLD` (35) hundos, flat. Sixteen units, sixteen badges. `DRILL_STAR_THRESHOLD` is
   *written as that same constant* rather than as another literal, because
   it was a separate 40 for the same idea and a unit could read "Advanced"
   on its own card while still not being starred.
@@ -1580,12 +1626,19 @@ The three things the app measures are **XP → level**, **badges**, and
   ambush them with cutscenes either: `summarize()` detects a new badge by
   diffing the list either side of its own recording call, so a badge
   already held before the run produces no diff.
-  **NEVER TYPE THE NUMBER INTO A GATE.** `check-behaviour`'s badge
-  section drove a unit from a literal 34 to 35 and went red the day this
-  moved — at 34 the badge is already held, so crossing to 35 earns
-  nothing and the check failed the app for being right. It reads
-  `BADGE_THRESHOLD` off the page now and derives "one short, then exactly
-  enough" from it.
+  **NEVER TYPE THE NUMBER INTO A GATE — AND "READ IT OFF THE PAGE" WAS
+  STILL TYPING ONE.** `check-behaviour`'s badge section drove a unit
+  from a literal 34 to 35 and went red the day mastery moved; it was
+  changed to read `BADGE_THRESHOLD` off the page, which held until a
+  badge started costing what its unit is worth. A two-unit run then
+  drove BOTH units from that one number, so one of them began the run
+  already past its own threshold and the gate reported a badge that was
+  already held as a badge that had failed to arrive. It asks
+  `badgeThresholdFor()` per unit now and the cases are written as "one
+  short" and "already there" rather than as numbers at all. Third time
+  this same section has gone stale; the lesson is that a gate must ask
+  the app the same question the app asks itself, at the same
+  granularity.
 - **`levelProgress()` is the one place the level curve lives** — the
   level, how far into it, how far across, and what is left. The bar, the
   number under it and the leaderboard each used to do their own
@@ -1638,11 +1691,29 @@ The three things the app measures are **XP → level**, **badges**, and
   higher old level and tops up again, walking someone to the cap.
 - **THE CLIMB STARTS AT 26, AND THE TWO NUMBERS ARE SOLVED, NOT
   CHOSEN.** *"A lot more xp needed to level up starting at level 25
-  going into 26."* `LEVEL_STEP_UP` (3.1102) makes level 26 cost 2,864
-  against level 25's 921; `LEVEL_LATE_GROWTH` (1.0354) compounds from
-  there to 18,751 at the cap. Both come out of solving two anchors at
-  once: **a second badge lands on level 30, and twenty badges land on
-  level 80** (480,850 XP of badges against 480,810 to the cap).
+  going into 26."*
+  **RE-SOLVED IN BUILD 190 against the per-unit badge thresholds**,
+  which moved the thing the old pair was fitted to: all sixteen badges
+  cost 194,950 XP now where the flat threshold cost 408,900. Left alone,
+  the curve would have put a player holding every badge in the app at
+  level 60. `LEVEL_STEP_UP` is **2.0** (level 26 costs 1,842 against
+  level 25's 921) and `LEVEL_LATE_GROWTH` is **1.0199**, compounding to
+  5,332 at the cap — solved against the same anchor as before, that
+  **all the badges there are lands exactly on the cap**.
+  What it costs to climb, in correct answers at 10 XP each: level 26 is
+  184, level 50 is 295, level 60 is 360, level 80 is 533. Two levels at
+  60 went from 74.8 perfect drills to 28.8 — *"if you are level 60 I
+  don't want you to have to play for a week straight to earn 2
+  levels."*
+  **NOBODY'S LEVEL CAN DROP, AND THAT IS PROVABLE RATHER THAN HOPED.**
+  Levels 1-25 are byte-identical and every level above 25 is CHEAPER
+  than the build before it, so no XP total can lose a level in either
+  direction. `check-curve.py` section 2 asserts exactly that for every
+  XP total from 0 to 600,000 against the old curve rebuilt from its own
+  two constants — no live account is touched to establish it.
+  The numbers this replaced: `LEVEL_STEP_UP` 3.1102 and
+  `LEVEL_LATE_GROWTH` 1.0354, fitted so a second badge landed on level
+  30 and twenty badges on level 80.
 - **THE ATTEMPT RATE IS MEASURED, NOT GUESSED — GETTING IT WRONG COST
   TWO FITS.** Assuming "about two tests per hundo" priced a badge at
   nearly double what one costs, and the ladder came out so expensive
@@ -1678,14 +1749,32 @@ The three things the app measures are **XP → level**, **badges**, and
   It costs the ladder nothing: a badge is 35 hundos, about 14,400 XP,
   which is level 25 anyway, so the level half of that rule never binds
   and the badge is what grants it. The rest are read off the measured
-  badge line (1 → 21, 3 → 31, 5 → 38, 8 → 47, 11 → 54, 15 → 67, 20 → 80
-  taking the smallest units first): **Bronze 29/3, Silver 36/5, Gold
-  45/8, Sapphire 52/11, Amethyst 65/15, Supernova 80/20.**
+  badge line.
+  **THE TOP RANK WAS UNREACHABLE BY ANYONE, AND NOT ON PURPOSE.**
+  Supernova asked for 20 badges in an app with 16 units. The note here
+  used to say that was deliberate, held for units that do not exist yet;
+  that is a rank nobody in the class can ever hold, on a ladder whose
+  whole job is to be climbed. Build 190 re-spread the counts over the
+  units there actually are: **1, 3, 5, 7, 9, 12, 14** — the same
+  growing-gap shape, ending two badges short of every badge there is, so
+  the last rank is a climb rather than a completionist's receipt.
+  **NO LEVEL THRESHOLD MAY GO UP.** A rank is computed fresh from level
+  and badges, so raising either number takes a rank off whoever holds
+  it — Iron was reached by a real person the day it shipped. Every level
+  is the smaller of what the live build asked and what the new badge
+  line measures: **Iron 21/1, Bronze 29/3, Silver 36/5, Gold 45/7,
+  Sapphire 52/9, Amethyst 65/12, Supernova 71/14.**
+  The measured badge line under the new curve, smallest units first, is
+  1 → 21, 3 → 33, 5 → 42, 7 → 50, 9 → 58, 12 → 67, 14 → 73, 16 → 80, so
+  the BADGE is the gate at every rank and the level is always already
+  there: at 3 badges you are 33 against the 29 asked, at 14 you are 73
+  against 71. `check-curve.py` asserts that relationship, that no rank
+  asks for more badges than there are units, and that no threshold is
+  harder than the live build's.
   **Check the board before changing a threshold.** Every rank needs at
   least one badge and only one person in the class has one, so a
   `firestore-admin.py list` answers "can anybody lose a rank" in thirty
-  seconds. Supernova's 20 badges is unreachable today on purpose — there
-  are 16 units — because it is what the extra units are for.
+  seconds.
 - **The cap is 80.** It went to 100 for one build and came straight back
   out; 100 is held for when the extra units land alongside a rank above
   Supernova. Raising it means re-solving the two anchors, not nudging
@@ -3131,17 +3220,23 @@ re-evaluated on the next check.
 - **Tabbed screens (Leaderboard, Profile)** share one pattern: a
   `.navsegment`/`.iconbtn` pill switcher, `hidden`-attribute panels, and a
   `selectXTab(which)` toggler. Match it rather than inventing a new shape.
-  Profile's four tabs are **Profile, Stats, Badges, Rank**, driven off
-  one `profileTabDefs` list rather than four hand-written copies of the
-  same four lines. `PROFILE_TABS` is the swipe order and has to carry
+  Profile's four tabs are **Profile, Badges, Rank, Stats** — Stats was
+  moved to the far right on request — driven off one `profileTabDefs`
+  list rather than four hand-written copies of the same four lines. `PROFILE_TABS` is the swipe order and has to carry
   the same order as the buttons — a thumb swipe that skips a tab is
   worse than no swipe. `"achievements"`, `"ladder"` and `"unlocks"` are all
   still accepted as tab names, so every name this tab has ever had lands
   on it rather than falling back to Profile.
-  **`check-behaviour` asserts those four labels**, and it went red on
-  the build that renamed them — a gate that encodes a decision has to be
-  re-read whenever the decision changes, or it fails the app for being
-  right.
+  **`check-behaviour` USED TO ASSERT THOSE FOUR LABELS IN ORDER, AND IT
+  WENT STALE TWICE** — once when they were renamed and again when Stats
+  moved to the far right, both of which were asked for. The second time
+  it sat red for two builds before anyone looked. A gate that encodes a
+  DECISION has to be re-read whenever the decision changes, or it fails
+  the app for being right; better, it should not encode one. It asserts
+  the INVARIANT now: four tabs, the swipe order matching the buttons,
+  Profile first and Stats last — the two positions that are load-bearing
+  (a bare `showProfile()` lands on Profile, and Stats carries a class
+  keyed to being last).
   It was five for a while, and five labels only ever fitted a 375px phone
   by being tightened for five specifically (`:has(.iconbtn:nth-child(5))`)
   and allowed to step just outside the panel's side padding below 26rem;
@@ -3149,6 +3244,61 @@ re-evaluated on the next check.
   295. Those rules are still there, guarded by that `:has()`, and they
   match nothing at four — which is the point: they are a safety net keyed
   on the tab count, not leftovers from a retired feature.
+- **`.searchbox` CARRIES A 2.5rem LEFT GUTTER FOR A MAGNIFIER MOST
+  FIELDS DO NOT HAVE, AND `text-align:center` CENTRES ON THE CONTENT
+  BOX.** So a centred, iconless field sits (2.5 − .9) / 2 = **.8rem
+  (12.8px) right of the middle** — reported on Friends as *"the
+  previewed text is offset to the right for some reason"*. It is
+  padding, not centring and not tracking: **do not chase it with
+  `text-indent`.** `.searchbox-plain` exists for exactly this and every
+  other iconless field already carried it; the one that did not was the
+  friend-code input. Check the class list before believing a centring
+  bug.
+- **A LOCKED CHARACTER IS STILL A CHARACTER, AND `brightness()` IS A
+  MULTIPLY.** The locked treatment was `saturate(.34) brightness(1.42)
+  contrast(.92)`, which lifts a mid tone and leaves a near black near
+  black. The Masked One's hood is `#141020`, so on a near-black tile it
+  stayed at the tile's own level and what was left on screen was the
+  pale lacquer mask with no head under it — *"all you can see is the
+  mask while it's locked"*. Void had the same problem waiting in it.
+  `contrast(<1)` is the tool, because it pulls BOTH ends towards mid
+  grey rather than scaling from black. Measured on the rendered pixels
+  rather than reasoned about: the hood went from **3 levels BELOW the
+  tile to 44 above**, and the mask from 105× the hood's separation to
+  2.17×. `check-unlocks` section 9 asserts both, by clipping the
+  drawing's own box and sampling the shoulder band — nothing in the DOM
+  can see this.
+- **A STAT SAYS WHAT IT COUNTS, AND THE SENTENCE IS WRITTEN OFF THE
+  CODE.** Every `.stat-card` is a button and opens ONE panel below both
+  grids (`STAT_MEANINGS`) — a panel rather than expanding the card,
+  because expanding a card reflows the grid and every other number on
+  the screen jumps under the finger that just tapped. The sentences are
+  read off what produces each number, not composed from the label,
+  which is how help text ends up describing something the app stopped
+  doing: the three durations are `store.studyLog`, written by
+  `addStudyTime()` from time INSIDE a run, so a screen left open on Home
+  is not study time; "Study sessions" is the sum of `testStats[].plays`,
+  which is finished tests rather than sittings; and the answer streak
+  deliberately ignores the daily question (`recordResult`), so a wrong
+  daily cannot end one. **Keep them accurate** — a help text that has
+  drifted is worse than none, because it is believed.
+  `check-statsbadges.py` asserts every card opens a non-empty panel, so
+  a label added later with no entry is caught rather than opening a
+  blank box.
+- **A GRADIENT NUMBER IS LIT WITH `filter`, NEVER `text-shadow`.** The
+  level and badge values are `background-clip:text` with a transparent
+  colour; a text-shadow on transparent glyphs paints a coloured slab in
+  FRONT of the gradient instead of behind it. `drop-shadow` on the
+  element respects the alpha.
+- **THE BADGE CASE'S SLOT SHADE HAS TO REACH ZERO BEFORE ITS BOX ENDS.**
+  It was one `radial-gradient(ellipse at 50% 42%, … 74%)` with no
+  explicit size, so the ellipse was sized farthest-corner and its last
+  stop landed a long way past the top edge — the shade was still at a
+  quarter strength where the box stopped, and stopping is what a hard
+  edge is. Reported as *"the shadow around the unearned badge slots is
+  not fully there at the top of each one, it's hard cut off"*. Both
+  layers carry an explicit size chosen so the last stop lands ON the
+  boundary. Measured: 4.6 levels of one-row step down to 1.1.
 - **Anything that fills or animates on a Profile tab has to fire when the
   tab is SHOWN, not when it is built.** `showProfile("stats")` builds
   every panel while another one is visible, so an XP bar that animated on
@@ -3844,6 +3994,33 @@ missed real bugs that a thirty-second check caught.
    forced update and the run dies mid-test on "execution context was
    destroyed" — the update machinery working correctly, breaking a check
    about something else entirely.
+7g. `python3 tools/check-curve.py` — **the badge thresholds, the level
+   curve, and the ranks they gate, which are only correct together.**
+   Each of those is a separately plausible number on its own; what
+   makes them right is the relationship, and nothing else in the repo
+   can see it. It asserts that every unit sits in the band its size
+   puts it in, that no band asks for more than the flat 35 the live
+   build charged, that **no XP total from 0 to 600,000 loses a level**
+   against the previous curve, that levels 1-25 are byte-identical,
+   that all the badges there are lands on the cap, that no rank asks
+   for more badges than there are units, and that the end-of-test rows
+   say what a run could actually do. Required on anything touching
+   `BADGE_THRESHOLD_BANDS`, the curve constants, `TIER_UNLOCKS`,
+   `MASTERY_BONUS` or the question bank's sizes. Fails with 11 red on
+   build 189.
+7h. `python3 tools/check-statsbadges.py` — the tappable stats, the badge
+   case's slot shade and the daily-question announcement. The slot
+   check is **pixel-measured**, because "the shadow is hard cut off at
+   the top" is not visible in the DOM at all — the element is there,
+   the gradient string is there, and the only thing wrong is how many
+   levels of shade are left at the boundary. Fails with 13 red on 189.
+   **The window matters as much as the measurement**: a first draft
+   sampled 10px either side of the art box and reported a 4.9-level
+   step on a build whose shade is smooth — the step was the tile
+   ABOVE.
+7i. `python3 tools/check-profilecard.py` — the Profile card, the Friends
+   screen and the calendar's list view, on three devices. Fails with 17
+   red on build 188.
 7a. `python3 tools/check-unlocks.py` — the earned characters and the
    Secret Flares. Required on anything touching `summarize()`, the
    daily question, hundos, the Practice Test, the character table or
@@ -3920,5 +4097,100 @@ The Firebase CDN is blocked in the sandbox, so the splash never self-clears;
 remove `#splashscreen` manually, *except* when testing the update check, where
 the splash race is the thing under test. Those two console errors are expected
 and unrelated to any change.
+
+## The chat (build 191)
+
+- **A MESSAGE WRAPS; IT NEVER SCROLLS SIDEWAYS.** Reported directly. A
+  flex column's items do not shrink below their content's minimum width
+  unless told to, and an unbroken run of characters — a pasted link, a
+  sync code, somebody holding a key down — has no break opportunity at
+  all, so the item grew and took the list with it. Measured on build
+  190: **481px of horizontal scroll** from one 64-character word. The
+  fix is three things together — `min-width:0` on the item,
+  `overflow-wrap:anywhere` on the text, and `overflow-x:hidden` on the
+  list as the net so no future child can bring it back. `anywhere`
+  rather than `break-word` IS right here, unlike on a badge label: a
+  chat carries strings that have no word boundaries in them.
+- **The panel is resizable and remembers it** (`--chat-h`,
+  `class26e.chatheight`). On a phone the grip drags up to grow and down
+  to close, which is the gesture nobody has to be taught; on a tablet
+  there is a handle along the bottom edge. Both clamp against the
+  viewport, because a stored height from a rotated or larger screen
+  would otherwise leave the panel off the bottom.
+- **THE SHEET GESTURE CLAIMS THE TOUCH ONLY ON MOVEMENT.** The old one
+  excluded the two scrollable lists and nothing else, so a touch on a
+  tab, the close ×, the sideways-scrolling roster or the text input
+  still armed a vertical drag — and it armed on touchstart, so a plain
+  tap twitched the panel before doing its job. It now starts only on the
+  sheet's own dead chrome (asking whether the target IS a control,
+  rather than listing the two that were known about), waits for
+  `DRAG_SLOP` before anything moves, and on a close-by-drag leaves the
+  offset in place for one frame so the transition continues from where
+  the finger let go instead of snapping back first.
+- **A MESSAGE'S AGE IS IN DAYS ONCE IT IS NOT TODAY.** "9:41" on a
+  message from Tuesday reads as nine minutes ago at a glance, which is
+  the one thing it is not. `chatMsgAge()` gives the clock time today,
+  "yesterday", then "Nd ago", with the full timestamp in the title.
+  `chatDaysAgo()` counts CALENDAR days, not elapsed hours: 23:59 to
+  00:01 is one day, not zero.
+- **THE HISTORY RESETS DAILY; THE CHAT DOES NOT.** Asked for in those
+  words. The room, its code and everybody in it survive — only the
+  backlog goes. Done inside the SAME trim the cap already does
+  (`staleBefore`/`keepStale`), which is one write by one device, rather
+  than as a sweep anybody could start: thirty devices each deciding to
+  clear the same document at midnight is thirty writes for one result,
+  and a write here is charged again as a read to everyone listening.
+  **Never leave it empty** — a room whose whole history is old keeps its
+  last few, or it opens as a blank box with nothing to say why.
+- **FIVE REACTIONS, AND A REACTION BUMPS ITS MESSAGE TO THE BOTTOM.**
+  `CHAT_REACTIONS`: heart, thumbs up, thumbs down, laughing, question.
+  Keyed by a short ascii id rather than by the emoji, because the key
+  ends up in a Firestore document and a glyph is a multi-byte string a
+  future platform can render differently — the id is what the data is
+  about.
+  **The bump is a `bump` STAMP SORTED ON, not a reorder of the stored
+  array.** Two reasons: `ts` stays what it always was, so the age label
+  still says "yesterday" for an old message somebody has just reacted
+  to; and `trimIfHost` decides who trims from the array's own last
+  element, which a reorder would hand to whoever reacted rather than to
+  whoever wrote. **Adding a reaction bumps; taking one off does not**,
+  or somebody changing their mind drags an old message to the bottom of
+  everybody's chat a second time.
+  Reactions are the one thing in the chat that genuinely needs the whole
+  array — toggling one rewrites a message in place, which `arrayUnion`
+  cannot express — so the last snapshot is held rather than re-fetched,
+  and a reaction costs one write and no read.
+  **THAT MAKES A REACTION LAST-WRITE-WINS, WHICH SENDING DELIBERATELY IS
+  NOT.** `send()` was rewritten to `arrayUnion` precisely because a
+  read-modify-write let two people typing at once erase each other, and
+  this path reintroduces that shape for reactions alone. Two people
+  reacting inside the same round trip means one of the two reactions is
+  lost. Accepted rather than missed: the messages themselves are still
+  safe (nothing here appends), Firestore has no update-one-element-of-an-
+  array primitive, and a lost reaction costs a tap where a lost message
+  costs the conversation. **If reactions ever get busy enough for this
+  to show, the answer is a separate `reactions` map keyed by message id
+  — not a transaction**, which would cost a read per reaction on a
+  project that is already tight on its quota.
+  **The picker is absolute inside the list, not fixed**: the list
+  scrolls, and a fixed popover would sit still while the message it
+  belongs to slid away underneath it.
+
+**A CLOSED PANEL IS A REAL BOX, AND `pointer-events` IS INHERITED.**
+`.chatdock-panel, .chatdock-panel *{ pointer-events:auto }` looked like
+belt and braces and was the opposite: the panel being `auto` already
+makes its children `auto` and the panel being `none` already makes them
+`none`, so the `*` half added nothing when open and broke the closed
+state — `auto` on a descendant overrides `none` on an ancestor. On a
+tablet the closed panel is a laid-out, invisible box under the chat
+button, and the moment it grew (build 191 made it resizable) it reached
+y=616 on an iPad Pro while the top-tab swipe runs across y=537. Rankings
+and Profile both went "This Week → This Week → This Week".
+**The sweep cannot see this. Nothing is out of place.** `check-behaviour`
+caught it, which is the whole difference between "does it look right"
+and "does it DO the right thing" — and it now asks the question directly
+at the swipe's own coordinates (`elementFromPoint`, assert not inside
+`.chatdock`), so the next thing parked in that corner is named rather
+than inferred from three swipe failures.
 
 No committed regression suite exists yet. Worth building.

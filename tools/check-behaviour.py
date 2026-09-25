@@ -240,6 +240,26 @@ def check_swipe(br):
         check("%s a second visit still steps exactly one tab" % label,
               len(tabs) > 1 and once == tabs[1], "%s of %s" % (once, tabs))
         check("%s leaving detaches the swipe" % label, still_home)
+        """AND NOTHING INVISIBLE IS SITTING ON THE SWIPE LINE.
+        The three checks above went red on a build where the chat dock's
+        closed panel had grown taller than the swipe: it is a real,
+        laid-out box, and `.chatdock-panel *{ pointer-events:auto }`
+        kept its children hit-testable while the panel itself was
+        pointer-events:none. The swipe checks catch that, but only ever
+        after the fact and only for the two screens they drive - this
+        asks the question directly, at the exact coordinates they use,
+        so the next thing parked in that corner is caught by name."""
+        pg.evaluate("()=>showRankings('week')"); pg.wait_for_timeout(300)
+        at = pg.evaluate("""([x, y])=>{
+          const el = document.elementFromPoint(x, y);
+          if(!el) return { none:true };
+          const dock = el.closest(".chatdock");
+          return { tag: el.tagName, cls: String(el.className || "").slice(0, 60),
+                   inDock: !!dock,
+                   dockOpen: !!(document.getElementById("chatdock")||{classList:{contains:()=>false}})
+                     .classList.contains("is-open") };}""", [w * 0.75, h * 0.45])
+        check("%s nothing invisible sits on the swipe line" % label,
+              not at.get("inDock"), at)
         ctx.close()
 
 
