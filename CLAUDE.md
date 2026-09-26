@@ -5072,4 +5072,31 @@ glow now stopped in two vertical lines down the sides.
   is the "something to work towards till about early December" asked
   for. Re-measure with `levelProgress()` before touching it.
 
+### The results screen stays, the countdown cannot stall, a test ignores the theme (build 207)
+
+- **FINISHING A RACE KEEPS THE NORMAL RESULTS SCREEN.** `summarize()`
+  builds it; `finishVirtualRoomTest()` then called
+  `showVirtualRoomFinaleReveal()`, which REPLACED it with a screen of
+  its own ("the result screen comes up and then disappears right after,
+  then another screen shows up"). When the stage holds the results
+  screen (`dataset.screen === "results"`), the finale is now a section
+  ON it (`.vroom-finale-inline`, under the score): the wait, your total,
+  and "See everyone's results". Only a finale reached another way (put
+  back after the leave confirm) still builds its own screen.
+  `check-vroom` section 7 asserts it and fails on 206.
+- **BOTH START COUNTDOWNS ARE CLOCK-BASED.** LOADING TEST was nine
+  chained 300ms timeouts, so any stall pushed every later step back by
+  its own length; the Virtual Room's "Starting in 3" ran on
+  `requestAnimationFrame`, which iOS stops handing out while the page is
+  scrolled or dragged - which typing in chat does. Both are an interval
+  reading elapsed time now. Measured with a forced 1.5s main-thread
+  stall: 206 took 4.2s to the first question, 207 takes 3.0s either way.
+- **A TEST LOOKS THE SAME UNDER EVERY THEME.** The LOADING TEST bar,
+  label and wordmark, the Virtual Room score lines, the results XP total
+  and the mode icons read `--theme-c1/2/3` - the glow triad a rank theme
+  sets - so they changed colour with the theme. They read the default's
+  stops (`#FFD37A #F5804D #C23B7A`) now. Found by diffing every
+  element's computed colours across three themes on a live question and
+  a results screen: zero differences remain on either.
+
 No committed regression suite exists yet. Worth building.

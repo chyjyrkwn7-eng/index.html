@@ -620,6 +620,18 @@ def main():
               summarize();
             }""")
         host.wait_for_timeout(600)
+        # THE NORMAL RESULTS SCREEN STAYS (build 207). Finishing used to
+        # show it and then replace it outright with the finale's own
+        # screen - "the result screen comes up and then disappears right
+        # after". What must hold now is that the screen summarize() built
+        # is still the one up, carrying the Virtual Room part on it.
+        stays = host.evaluate("""()=>{
+          const top = document.getElementById('stage').firstElementChild;
+          return { screen: top && top.dataset ? top.dataset.screen : null,
+                   inline: !!(top && top.querySelector('.vroom-finale-inline')),
+                   level: !!(top && top.querySelector('.results-level, .xp-block, .level-block, [class*=level]')) };}""")
+        check("finishing keeps the normal results screen up", stays.get("screen") == "results", stays)
+        check("with the Virtual Room part on it, not instead of it", stays.get("inline") is True, stays)
         # Both are finished as far as the room document is concerned, so
         # the results screen can be asked for directly - what is under
         # test is the screen, not the route to it.

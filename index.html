@@ -4560,6 +4560,25 @@
   .chatdock-face-more{ font-size:.7rem; font-weight:800; color:var(--ink); background:#2A323C; }
   .chatdock-chatrow.is-unread .chatdock-chatrow-name{ color:#fff; }
   .chatdock-chatrow.is-unread .chatdock-chatrow-open{ border-color:rgba(255,95,86,.55); }
+  /* ---- A TEST LOOKS THE SAME UNDER EVERY THEME ----
+     "The change of theme should not change anything on a test except the
+     background, the progress bar should not change color." The LOADING
+     TEST bar, its label and the wordmark above it were painted straight
+     from --theme-c1/2/3 - the glow triad every rank theme now sets - so a
+     Sapphire theme loaded every test on a blue bar. Everything in the
+     test flow that read the triad reads the DEFAULT's stops instead; the
+     theme keeps the background, which is the one place it was asked to
+     show. Found by diffing every element's colours across three themes
+     on a live question and a results screen, not by reading CSS. */
+  #teststart-fill{ background-image:linear-gradient(90deg, #FFD37A, #F5804D, #C23B7A) !important; }
+  #teststart-wordmark{ background-image:linear-gradient(90deg, #FFD37A, #F5804D, #C23B7A) !important; }
+  #teststart-label{ color:#FFD37A !important; }
+  .vroom-mine-delta, .vroom-mine-total, .points-progress-total{ color:#FFD37A !important; }
+  .vroom-finale-inline{
+    margin:1rem 0 .4rem; padding:1rem 1.1rem; border-radius:1rem; text-align:center;
+    background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12);
+  }
+  .vroom-finale-inline .vroom-finale-line{ margin:.2rem 0; }
   .chat-mute-btn{
     width:36px; height:36px; flex:0 0 auto; padding:0; border-radius:999px;
     display:inline-flex; align-items:center; justify-content:center;
@@ -9828,9 +9847,12 @@
      instead of arbitrary blue/green/red \u2014 Drill at the gold starting
      point, Exam at the orange midpoint, Game at the deepest magenta,
      fitting its higher-pressure, timed feel. */
-  .modeicon-drill .modeiconpath{ stroke:var(--theme-c1); }
-  .modeicon-exam .modeiconpath{ stroke:var(--theme-c2); }
-  .modeicon-game .modeiconpath{ fill:var(--theme-c3); stroke:none; }
+  /* The DEFAULT's three stops, fixed - not var(--theme-c1/2/3), which
+     every rank theme now overrides for its glow. "The change of theme
+     should not change anything on a test except the background." */
+  .modeicon-drill .modeiconpath{ stroke:#FFD37A; }
+  .modeicon-exam .modeiconpath{ stroke:#F5804D; }
+  .modeicon-game .modeiconpath{ fill:#C23B7A; stroke:none; }
   /* Virtual Room was the one mode icon left with no color at all,
      defaulting to plain grey/outline while every other mode has its
      own distinct color \u2014 a cool blue here. Element-specific selectors
@@ -41735,24 +41757,33 @@ function showCountdown(n){
   countEl.textContent = scopeLabel() + " \u2014 starting soon";
   testScopeLabelEl.textContent = countEl.textContent;
 
-  const totalSteps = 9;
-  let step = 0;
-
+  /* ---- MEASURED AGAINST THE CLOCK, NOT COUNTED IN STEPS ----
+     "Typing in chat while the test is loading made the countdown
+     freeze." This was nine chained 300ms timeouts: each step only
+     scheduled the next when it ran, so anything that held the page up
+     for a moment - iOS scrolling a focused field clear of the keyboard,
+     a burst of chat snapshots - pushed every remaining step back, and
+     the bar sat still for as long as the typing went on. It is one
+     interval now that reads how long it has ACTUALLY been, so a late
+     tick catches up instead of queueing behind the one before it; the
+     total is 3 seconds whatever the phone is doing. */
+  const TOTAL_MS = 300 * 10;
+  const startedAt = Date.now();
+  let done = false;
   function tick(){
-    step++;
-    const frac = Math.min(1, step / totalSteps);
+    if(done) return;
+    const frac = Math.min(1, (Date.now() - startedAt) / (TOTAL_MS - 300));
     barFill.style.width = (frac * 100) + "%";
-    if(step < totalSteps){
-      countdownHandle = setTimeout(tick, 300);
-    } else {
-      countdownHandle = setTimeout(() => {
-        overlay.remove();
-        if(typeof syncChatDock === "function") syncChatDock();
-        startRunNow();
-      }, 300);
+    if(Date.now() - startedAt >= TOTAL_MS){
+      done = true;
+      clearInterval(countdownHandle);
+      overlay.remove();
+      if(typeof syncChatDock === "function") syncChatDock();
+      startRunNow();
     }
   }
   tick();
+  countdownHandle = setInterval(tick, 100);
 }
 
 function startRunNow(){
@@ -41816,7 +41847,7 @@ function beginVroomSyncedReveal(){
   document.body.appendChild(overlay);
 
   const finish = () => {
-    if(vroomRevealHandle){ cancelAnimationFrame(vroomRevealHandle); vroomRevealHandle = null; }
+    if(vroomRevealHandle){ clearInterval(vroomRevealHandle); vroomRevealHandle = null; }
     overlay.remove();
     pauseBtn.hidden = false;
     raceBarEl.hidden = !inVirtualRoom;
@@ -41843,9 +41874,15 @@ function beginVroomSyncedReveal(){
         num.classList.add("vroom-reveal-pulse");
       }
     }
-    vroomRevealHandle = requestAnimationFrame(tick);
   }
+  /* An interval, not requestAnimationFrame: iOS stops handing out
+     animation frames while the page is being scrolled or dragged - which
+     is exactly what typing in the chat does - so "Starting in 3" sat
+     frozen under a finger. Timers keep running, and the number is read
+     off the shared start time either way. */
+  if(vroomRevealHandle) clearInterval(vroomRevealHandle);
   tick();
+  if(document.getElementById("vroom-reveal-overlay")) vroomRevealHandle = setInterval(tick, 100);
 }
 
 function openQuestion(instant){
@@ -42724,7 +42761,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-26-206";
+const APP_BUILD = "2026-09-26-207";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -49957,11 +49994,30 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
      spent on your own test rather than on a counter.
      BELOW the reveal, not above: the score is the thing this screen
      exists to announce, and the review is what you do afterwards. */
-  const waitReview = buildRunReviewBlock();
-  if(waitReview) panel.appendChild(waitReview);
-
-  stage.replaceChildren(panel);
-  toTop();
+  /* ---- THE RESULTS SCREEN STAYS ----
+     "At the end of the race match in the virtual room, the result screen
+     comes up and then disappears right after, then another screen shows
+     up and says show results ... the end results screen still needs to
+     be there like normal." It did exactly that: summarize() built the
+     normal results screen - score, XP, the level bar, the review - and
+     the moment the finish was written this replaced it with a screen of
+     its own. Now, when the results screen is what is up, this becomes a
+     section ON it: the wait, your total and "See everyone's results"
+     sit under the score, and nothing you were reading goes away.
+     Only a finale reached some other way (put back after the leave
+     confirm, say) still builds a screen of its own. */
+  const host = stage.firstElementChild;
+  const onResults = !!(host && host.dataset && host.dataset.screen === "results");
+  if(onResults){
+    panel.className = "vroom-finale-inline";
+    waitNote.style.marginTop = "1rem";
+    host.insertBefore(panel, host.children[1] || null);
+  } else {
+    const waitReview = buildRunReviewBlock();
+    if(waitReview) panel.appendChild(waitReview);
+    stage.replaceChildren(panel);
+    toTop();
+  }
 
   let played = false;
   function playReveal(){
