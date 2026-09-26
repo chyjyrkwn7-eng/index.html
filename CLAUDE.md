@@ -4017,6 +4017,9 @@ missed real bugs that a thirty-second check caught.
 6. `python3 tools/check-positions.py` — did what you positioned land where
    you meant it to, on all 21 devices. A green sweep does not answer this;
    see **Every device, every way in**.
+   `python3 tools/check-results.py` — the end of a run: the rewards reveal,
+   the review screen, Pause on both. Required on anything touching
+   `summarize()` or the results screens.
 7. `python3 tools/check-tours.py` — every tooltip still points at
    something. Required on anything that renames a class, moves a control
    between screens, or changes a tour's copy.
@@ -5291,3 +5294,64 @@ Children (54) and the Constitution (77), 5 for Arrest, Search and Seizure
   unlock line stays as a plain `.game-unlock-note`.
 
 No committed regression suite exists yet. Worth building.
+
+### The end of a run is two screens (build 212)
+
+Asked for in one long message: *"split the test result screens up ... the
+first screen should be about xp, levels, badges, (tokens because that will
+be introduced later) it will also show your grade, it will show banners for
+any of the stuff you unlocked ... There will be a continue button that says
+'continue to review' IF you didn't make a one hundred."* `summarize()` still
+scores and records the run exactly as before; everything it used to BUILD is
+now `showRunRewards(run, hooks)` and `showRunReview(run, hooks)`, handed one
+`runResult` object plus the two things only `summarize()` can make (the
+run's own button row, `buildFinalActions`, and the first-results tour).
+
+- **Rewards, in order**: the run header (mode chip in the mode picker's own
+  colour, the unit or unit chips, time and question count as pills), the XP
+  card (lines drop one at a time, a beat, the total counts up, then the
+  level bar fills with a charge glow and a pop), then badge progress / the
+  Game difficulty box / a personal best land top to bottom, then the grade
+  **last** with a slam, a panel shake and the confetti if it earned one.
+  Then each unlock (badge, rank, theme, character, Game difficulty) comes
+  through as a centre-screen banner **one at a time** (`playUnlockSpotlight`,
+  2.8s or a tap), then an "Unlocked" card lands, then the button.
+- **The button**: something missed → "Continue to review", only after
+  everything above has landed. Nothing missed → the run's own buttons (New
+  run / Main menu, or a lone primary Main menu) on the rewards screen
+  itself, since there is nothing to review. Virtual Room → no button; the
+  finale (wait, total, See everyone's results, and the review toggle) drops
+  into `.rs-endslot`, which stays hidden until the reveal is done.
+- **Review**: only the missed questions, each a card with your answer
+  (exam / Virtual Room) or the number of tries (drill), the correct answer,
+  and the reference, then Retake / Main menu. `dataset.screen` is
+  `runreview` and it carries `.screen-runreview`, which
+  `forcedUpdateBlocked()` treats like Answer Review.
+- **The reveal is a `makeRevealSequence()` timeline, and it can be held.**
+  Pause stays up on both screens ("leave the pause screen on all the
+  screens"); `pauseRun()` sends it to `pauseResults()` when an `.rs-screen`
+  is up, which stashes the screen node, pauses the timeline and any banner,
+  and Resume puts back the SAME node. Cards settle from `.rs-in` to
+  `.rs-in-now` on `animationend` so re-attaching does not replay them.
+- **A tap on the rewards screen skips** to the next banner (or the end).
+  Reduce motion (`theme.reduceMotion` or the OS setting) builds every card
+  already landed and plays no banners - the global
+  `[data-reduce-motion] *{animation:none}` would otherwise leave cards stuck
+  at opacity 0.
+- **XP is blue everywhere**, the level bar's blue (`#7CC8FF` text), so the
+  number and the bar it fills read as one thing; `.results-level-gain`
+  took the same colour for the daily question and the Virtual Room.
+- **The old top-banner route for colours and characters now runs only for
+  the daily question**, which has no results screen; every other run
+  announces them in the sequence. Void is still left out of both (it has
+  its own cutscene).
+- **The forced update waits for the reveal**: `screen === "results"` is
+  checked ahead of the Pause test (Pause is up there now), blocks while
+  `resultsSeq` is running, and `resultsShownAt` is reset when it finishes.
+- **Tokens slot into the XP card** as a second total under the XP one,
+  landing in the same beat - there is a comment at the spot.
+- `tools/check-results.py` is the gate: order of landing (measured with a
+  MutationObserver on the landing classes, not read from the source), no
+  review on the rewards screen, the button after everything, banners never
+  two at once and the buttons after the last, Pause/Resume giving back the
+  same node, reduce motion. It fails 21 of its 26 checks against build 211.
