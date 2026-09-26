@@ -80,9 +80,14 @@ def check(name, ok, detail=""):
         FAILURES.append(name)
 
 
-# The curve build 189 shipped, so "no level drops" is measured against the
-# thing people are actually standing on rather than against an assumption.
-OLD_STEP, OLD_LATE = 3.1102, 1.0354
+# The curve the class is standing on (builds 206-209: a 2.0 step into
+# 26, then +1.99% a level), so "no level drops" is measured against what
+# people actually hold rather than an assumption. It was build 189's
+# 3.1102 / 1.0354 until build 210 steepened the curve past 45.
+OLD_STEP, OLD_LATE = 2.0, 1.0199
+# Build 210: the highest level anyone held when the steep curve shipped
+# was 43, so no level at or below this one may move.
+UNCHANGED_THROUGH = 45
 OLD_BADGE_THRESHOLD = 35
 
 
@@ -134,7 +139,7 @@ def main():
               not above, above)
 
         print("\n2. nobody's level drops, for any XP total")
-        drop = pg.evaluate("""([oldStep, oldLate])=>{
+        drop = pg.evaluate("""([oldStep, oldLate, unchangedThrough])=>{
           /* The old curve rebuilt from its own two constants, stepping
              exactly the way levelProgress() does - including the
              Math.round and the ceiling - so this compares curves rather
@@ -150,10 +155,17 @@ def main():
             }
             return lvl;
           }
+          /* EVERY TOTAL THAT PUTS SOMEBODY AT OR BELOW 45 on the curve
+             the class is on reads the same level on this one. Above 45
+             it is dearer by design (build 210) - nobody held more than
+             43 when it shipped - so the sweep stops where the old curve
+             reaches 46. */
           let worst = null, n = 0;
           for(let p = 0; p <= 600000; p += 137){
-            const a = oldLevel(p), b = levelFromPoints(p);
-            if(b < a){ n++; if(!worst) worst = { p, was: a, now: b }; }
+            const a = oldLevel(p);
+            if(a > unchangedThrough) break;
+            const b = levelFromPoints(p);
+            if(b !== a){ n++; if(!worst) worst = { p, was: a, now: b }; }
           }
           /* The frozen stretch has to be byte-identical, not merely not
              worse - that is what "do not change anyone's current level
@@ -163,8 +175,8 @@ def main():
           for(let p = 0; p <= 15000; p += 31){
             if(oldLevel(p) !== levelFromPoints(p)){ frozenDiff = p; break; }
           }
-          return { n, worst, frozenDiff, cap: LEVEL_CAP };}""", [OLD_STEP, OLD_LATE])
-        check("no XP total loses a level", drop["n"] == 0, drop["worst"])
+          return { n, worst, frozenDiff, cap: LEVEL_CAP };}""", [OLD_STEP, OLD_LATE, UNCHANGED_THROUGH])
+        check("no level at or below 45 moves by a single point", drop["n"] == 0, drop["worst"])
         check("levels 1-25 are byte-identical to the live build",
               drop["frozenDiff"] is None, drop["frozenDiff"])
 
@@ -195,25 +207,37 @@ def main():
         you less than one that fails on it - it stops before the checks
         that matter. Everything below degrades to a plain FAIL instead."""
         if line.get("threw"):
-            for n in ("every badge there is lands on the cap",
+            for n in ("the badge line only ever climbs",
                       "no rank asks for more badges than there are units",
-                      "the badge is the gate - its level is always already there",
+                      "up to Gold the badge is the gate - its level is already there",
+                      "every rank's level is inside the cap",
                       "no rank got harder than the live build",
                       "every rank's label says the numbers it actually checks"):
                 check(n, False, line["threw"])
             line = None
         else:
             print("     badge line:", line["levels"])
-            check("every badge there is lands on the cap",
-                  line["levels"][-1] >= line["cap"], line["levels"][-1])
+            # BUILD 210 REVERSED "EVERY BADGE LANDS ON THE CAP". Levels past
+            # 45 now cost more than the badges alone pay for - asked for
+            # because people held high levels with few badges - so the
+            # badge line tops out well below 80. What still has to hold is
+            # the shape: more badges is never a lower level.
+            check("the badge line only ever climbs",
+                  all(b >= a for a, b in zip(line["levels"], line["levels"][1:])),
+                  line["levels"])
             over = [t for t in line["tiers"] if t["badges"] > line["units"]]
             check("no rank asks for more badges than there are units", not over, over)
+            # The badge is still the gate for every rank up to Gold (level
+            # 45, where the steep curve starts). Above it the level asks
+            # for more than the badges pay, by design since build 210.
             unreachable = [t for t in line["tiers"]
-                           if t["badges"] <= line["units"]
+                           if t["badges"] <= line["units"] and t["level"] <= UNCHANGED_THROUGH
                            and line["levels"][t["badges"] - 1] < t["level"]]
-            check("the badge is the gate - its level is always already there",
+            check("up to Gold the badge is the gate - its level is already there",
                   not unreachable,
                   [(t["key"], t["level"], line["levels"][t["badges"] - 1]) for t in unreachable])
+            beyond = [t for t in line["tiers"] if t["level"] > line["cap"]]
+            check("every rank's level is inside the cap", not beyond, beyond)
             """A rank is computed fresh from level and badges, so raising
             either number takes a rank off somebody who holds it. Iron was
             reached by a real person the day it shipped."""
@@ -232,15 +256,28 @@ def main():
         print("\n4. what it costs to climb")
         costs = pg.evaluate("""()=>{
           const at = L => xpForLevel(L) - xpForLevel(L - 1);
-          return { l26: at(26), l50: at(50), l60: at(60), l80: at(80),
-                   toCap: xpForLevel(LEVEL_CAP) };}""")
+          let minRatioPast45 = Infinity;
+          for(let L = 47; L <= LEVEL_CAP; L++) minRatioPast45 = Math.min(minRatioPast45, at(L) / at(L - 1));
+          return { l26: at(26), l50: at(50), l60: at(60), l61: at(61), l80: at(80),
+                   toCap: xpForLevel(LEVEL_CAP), minRatioPast45 };}""")
         print("     ", json.dumps(costs))
         """"If you are level 60 I don't want you to have to play for a
         week straight to earn 2 levels." Two levels at 60 against a
         typical 250-XP perfect drill is the number to keep an eye on;
         30 runs is a fortnight, 15 is a few evenings."""
-        check("two levels at 60 is under 30 perfect drills",
-              (costs["l60"] * 2) / 250.0 < 30, "%.1f runs" % ((costs["l60"] * 2) / 250.0))
+        # "If you are level 60 I don't want you to have to play for a week
+        # straight to earn 2 levels" - re-measured in DAYS at the pace the
+        # class actually earns, not in 250-XP drills. The steep curve of
+        # build 210 made two levels at 60 about 76 small drills, which
+        # reads alarming and is about three and a half days for somebody
+        # earning 6,000 XP a day (the middle of the top five at launch).
+        two60 = costs["l60"] + costs["l61"]
+        check("two levels at 60 is under a week at 6,000 XP a day",
+              two60 / 6000.0 < 7, "%.1f days" % (two60 / 6000.0))
+        # AND THE STEEPENING ITSELF, which is the decision build 210 made:
+        # every level past 45 at least 8% dearer than the one before.
+        check("past 45 every level is at least 8% dearer than the last",
+              costs["minRatioPast45"] >= 1.08, round(costs["minRatioPast45"], 4))
         check("and a level still costs more the higher you are",
               costs["l80"] > costs["l60"] > costs["l50"] > costs["l26"], costs)
 

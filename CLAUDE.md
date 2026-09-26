@@ -5192,4 +5192,38 @@ scenario". What found things, in order of how much each found:
   through every badge, so the signed-off look wins until a device
   says otherwise.
 
+### Levels past 45 compound at 9% (build 210)
+
+"A lot of people are already in 30s or 40s with few badges ... at level
+45 we need up the xp needed from then on to be exponentially greater
+level by level at a higher rate."
+
+- **Read the live board before touching the curve** (`firestore-admin.py`
+  plus the `xp`/`level`/`badges` fields; names never leave the terminal).
+  Four and a half days after the Sep 22 fresh start the top five were at
+  levels 43/39/33/32/32 with 3/3/1/0/0 badges, earning 6,000-11,300 XP a
+  day. At that pace the old +1.99% tail had 45 -> 80 done inside a
+  fortnight.
+- **`LEVEL_STEEP_FROM = 45`, `LEVEL_STEEP_GROWTH = 1.09`**: every level
+  from 46 costs 9% more than the one before. 46 is 2,918 (was 2,730), 60 is
+  ~9,750, 80 is ~54,700, and the cap is 687,537 XP (was 194,229). Levels
+  1-45 are byte-identical, and nobody held more than 43, so no level
+  dropped. `check-curve` asserts both, and asserts the 8%+ steepening,
+  which fails on 209.
+- **This deliberately ends "all sixteen badges land on the cap".** The
+  badge line (badge work alone, cheapest first) is now
+  `21 28 33 38 42 46 49 52 54 56 57 59 60 61 62 64`: the badge is still the
+  gate up to Gold (45), but Amethyst (65, 12 badges) and Supernova (71,
+  14) now ask for grinding past what their badges pay. That is the
+  complaint being answered. `check-curve`'s badge-line checks were
+  rewritten to say so rather than deleted.
+- **"Two levels at 60 must not take a week" is re-measured in days**:
+  about 3.4 days at 6,000 XP a day. In 250-XP drills it reads as ~78, which
+  sounds alarming and is not how anyone in this class plays.
+- **`preserveLegacyLevel()` is retired to a flag-setter.** It topped any
+  account whose `levelPreserved` flag was still unset up to a pre-reset
+  flat +5% curve, which is cheaper than the real one above 26. After the
+  fresh start there was nothing left for it to protect, and past 45 it
+  would have handed out tens of thousands of XP.
+
 No committed regression suite exists yet. Worth building.

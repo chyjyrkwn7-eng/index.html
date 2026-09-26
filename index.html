@@ -29930,8 +29930,32 @@ const LEVEL_CAP = 80;
    number of levels a badge buys shrinks as you climb, and no choice of
    rates makes "a mastery is worth about seven levels" hold anywhere but
    one spot on the ladder. A flat cost makes it hold everywhere. */
+/* ---- PAST 45 THE CURVE STEEPENS, AND KEEPS STEEPENING ----
+   "A lot of people are already in 30s or 40s with few badges ... at
+   level 45 we need up the xp needed from then on to be exponentially
+   greater level by level at a higher rate."
+   Measured on the live board before changing it: the top five were at
+   43, 39, 33, 32 and 32 with 3, 3, 1, 0 and 0 badges, 4.7 days after
+   the Sep 22 fresh start - 6,000 to 11,300 XP a day. At that pace the
+   ~2% late growth had the whole climb from 45 to 80 (136k XP) done in
+   under a fortnight, against an ask to pace the levels to early
+   December.
+   9% a level from 46, compounding: level 46 costs 2,918 (was 2,730),
+   level 60 ~9,700, level 80 ~54,700, and the cap goes from 194,229 XP
+   to ~687,500. The heaviest player at launch-week pace reaches 80
+   around Nov 21; the 6,000-a-day group reaches Supernova's level 71 in
+   about seven weeks and does not reach 80 inside the course.
+   NOBODY LOSES A LEVEL: every level up to and including 45 costs
+   exactly what it did, and nobody in the class was above 43.
+   THIS ENDS "ALL SIXTEEN BADGES LAND ON THE CAP", on purpose. Past 45
+   a level now costs more than the badges alone pay for, so the top
+   three ranks ask for grinding as well as mastery - which is the
+   complaint being answered (high levels, few badges). */
+const LEVEL_STEEP_FROM = 45;
+const LEVEL_STEEP_GROWTH = 1.09;
 function levelGrowthAt(lvl){
   if(lvl <= LEVEL_FREEZE_THROUGH) return LEVEL_GROWTH;
+  if(lvl > LEVEL_STEEP_FROM) return LEVEL_STEEP_GROWTH;
   /* The one-off step into the first level past the freeze. A multiplier
      on the level before it rather than a flat cost, so it cannot drift
      out of step if the frozen curve is ever re-based. */
@@ -30016,16 +30040,20 @@ function xpForLevel(target){
   }
   return spent;
 }
+/* RETIRED WITH THE STEEP CURVE, and it had to be. Every account's XP
+   has been earned since the Sep 22 fresh start, on the current curve,
+   so there is no pre-reset level left to protect - and the "legacy"
+   curve it compares against is a flat +5% that is CHEAPER than the
+   current one everywhere above 26. Any account whose flag was still
+   unset (an onboarding session that earns a lot before its first
+   relaunch) was being handed free XP up to that cheaper curve's
+   level, and past 45 the gap is tens of thousands. It now only sets
+   the flag. legacyLevelOf() is kept for the record and for tools. */
 function preserveLegacyLevel(){
   if(store.levelPreserved) return 0;
   store.levelPreserved = true;
-  const pts = (store.lifetime && store.lifetime.points) || 0;
-  const want = legacyLevelOf(pts);
-  let owed = 0;
-  if(levelFromPoints(pts) < want) owed = Math.max(0, xpForLevel(want) - pts);
-  if(owed) awardXp(owed);
   saveStore();
-  return owed;
+  return 0;
 }
 function levelOf(st){
   return levelFromPoints(st && st.lifetime ? st.lifetime.points : 0);
@@ -42813,7 +42841,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-26-209";
+const APP_BUILD = "2026-09-26-210";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
