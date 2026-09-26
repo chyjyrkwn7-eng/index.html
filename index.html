@@ -13243,6 +13243,356 @@
     .rank-col-rankname{ font-size:.74rem; }
     .rank-col-head{ font-size:.72rem; }
   }
+
+  /* ---- THE END OF A RUN, BUILD 212: REWARDS, THEN REVIEW ----
+     One surface for every card on both screens (the same glass, radius
+     and padding), one label style for every card's heading, and one
+     colour per idea: blue is XP everywhere, green/red/gold is the grade,
+     the mode chip carries the mode's own colour from the mode picker.
+     "Everything on the result screen needs to be a little cohesive."
+     Late in the file on purpose: several older results rules win on
+     source order otherwise. See showRunRewards(). */
+  .rs-screen{
+    --xp:#7CC8FF; --xp-deep:#2E87F0; --xp-glow:rgba(58,140,255,.55);
+    --rs-card:rgba(24,29,37,.62); --rs-line:rgba(255,255,255,.09);
+  }
+  .wrap:has(#stage > .rs-screen) .test-scopelabel{
+    display:block; flex:1 1 0%; min-width:0; margin:0;
+    font-size:1.12rem; font-weight:800; color:var(--ink); letter-spacing:.005em;
+    text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  /* The top bar is sticky so Pause stays in reach over a long question.
+     On the results screens it would float its title over the cards. */
+  .wrap:has(#stage > .rs-screen) .top{ position:relative; top:auto; }
+  .rs-card{
+    position:relative; margin:0 0 .85rem; padding:1rem 1.1rem 1.05rem; border-radius:18px;
+    background:var(--rs-card); border:1px solid var(--rs-line);
+    will-change:backdrop-filter; backdrop-filter:blur(16px) saturate(1.4); -webkit-backdrop-filter:blur(16px) saturate(1.4);
+    box-shadow:0 10px 30px -14px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  .rs-kicker{
+    margin:0 0 .65rem; font-size:.68rem; font-weight:800; letter-spacing:.14em;
+    text-transform:uppercase; color:rgba(255,255,255,.52);
+  }
+
+  /* Landing. Every card waits invisible until the reveal puts it down;
+     .rs-in-now is where it rests, and is what the reduced-motion and
+     skipped paths go straight to. */
+  .rs-land{ opacity:0; transform:translateY(-18px) scale(1.04); }
+  .rs-land.rs-in-now{ opacity:1; transform:none; }
+  .rs-land.rs-in{ animation:rs-bang .46s cubic-bezier(.2,1.25,.35,1) both; }
+  .rs-card.rs-land.rs-in{ animation:rs-bang .46s cubic-bezier(.2,1.25,.35,1) both, rs-impact .8s ease-out both; }
+  @keyframes rs-bang{
+    0%{ opacity:0; transform:translateY(-26px) scale(1.07); filter:blur(3px); }
+    55%{ opacity:1; transform:translateY(3px) scale(.985); filter:blur(0); }
+    78%{ transform:translateY(-1px) scale(1.004); }
+    100%{ opacity:1; transform:none; filter:none; }
+  }
+  @keyframes rs-impact{
+    0%{ border-color:rgba(255,255,255,.55);
+        box-shadow:0 0 0 1px rgba(255,255,255,.22), 0 0 36px rgba(255,255,255,.14), 0 10px 30px -14px rgba(0,0,0,.6); }
+    100%{ border-color:var(--rs-line);
+        box-shadow:0 10px 30px -14px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.06); }
+  }
+  .rs-xpline.rs-land{ transform:translateY(-12px); }
+  .rs-xpline.rs-land.rs-in{ animation:rs-drop .34s cubic-bezier(.2,1.3,.4,1) both; }
+  @keyframes rs-drop{
+    0%{ opacity:0; transform:translateY(-14px); }
+    70%{ opacity:1; transform:translateY(2px); }
+    100%{ opacity:1; transform:none; }
+  }
+  .rs-shake{ animation:rs-shake .38s ease-out; }
+  @keyframes rs-shake{
+    0%, 100%{ transform:none; }
+    20%{ transform:translate(-3px, 2px); }
+    40%{ transform:translate(3px, -2px); }
+    60%{ transform:translate(-2px, 1px); }
+    80%{ transform:translate(1px, -1px); }
+  }
+
+  /* What the run was. */
+  .rs-head{ margin:0 0 1.1rem; }
+  .rs-chiprow{ display:flex; flex-wrap:wrap; gap:.4rem; margin:0 0 .6rem; }
+  .rs-mode{
+    --mode-c:#B8C2CF;
+    display:inline-flex; align-items:center; gap:.4rem;
+    padding:.3rem .72rem .3rem .55rem; border-radius:999px;
+    font-size:.7rem; font-weight:800; letter-spacing:.11em; text-transform:uppercase;
+    color:var(--mode-c);
+    background:color-mix(in srgb, var(--mode-c) 13%, transparent);
+    border:1px solid color-mix(in srgb, var(--mode-c) 30%, transparent);
+  }
+  .rs-mode .modeicon{ width:1rem; height:1rem; }
+  .rs-mode-drill{ --mode-c:#FFD37A; }
+  .rs-mode-exam{ --mode-c:#F7925F; }
+  .rs-mode-game{ --mode-c:#EE6FA8; }
+  .rs-mode-vroom{ --mode-c:#7CC0F4; }
+  .rs-mode-src{ padding-left:.72rem; }
+  .rs-units{
+    margin:0; font-family:var(--serif); font-size:1.7rem; line-height:1.15;
+    font-weight:700; color:var(--ink); letter-spacing:-.01em;
+  }
+  .rs-unitlist{ display:flex; flex-wrap:wrap; gap:.35rem; margin:.6rem 0 0; }
+  .rs-unitchip{
+    font-size:.74rem; font-weight:600; color:rgba(255,255,255,.8);
+    padding:.24rem .58rem; border-radius:8px;
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08);
+  }
+  .rs-meta{ display:flex; flex-wrap:wrap; gap:.45rem; margin:.75rem 0 0; }
+  .rs-metapill{
+    display:inline-flex; align-items:center; gap:.38rem;
+    padding:.32rem .7rem; border-radius:999px;
+    font-size:.84rem; font-weight:700; color:rgba(255,255,255,.82);
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
+    font-variant-numeric:tabular-nums;
+  }
+  .rs-time{ font-family:var(--mono); }
+  .rs-time svg{ width:.95rem; height:.95rem; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; }
+
+  /* XP. */
+  .rs-screen .rs-xp{
+    border-color:rgba(124,200,255,.2);
+    background:linear-gradient(180deg, rgba(46,135,240,.13), var(--rs-card) 60%);
+  }
+  .rs-xpline{
+    display:flex; justify-content:space-between; gap:1rem; margin:0 0 .5rem;
+    font-size:.92rem; color:rgba(255,255,255,.74); font-variant-numeric:tabular-nums;
+  }
+  .rs-xpline-val{ font-weight:800; color:var(--xp); white-space:nowrap; }
+  .rs-xpline-none{ color:var(--soft); }
+  .rs-xptotal{
+    display:flex; align-items:baseline; justify-content:space-between; gap:1rem;
+    margin:.8rem 0 .95rem; padding-top:.8rem; border-top:1px solid rgba(255,255,255,.08);
+  }
+  .rs-xptotal-label{ font-size:.95rem; font-weight:800; color:var(--ink); }
+  .rs-xptotal-num{
+    font-family:var(--mono); font-size:2.1rem; font-weight:800; line-height:1;
+    color:var(--xp); text-shadow:0 0 18px var(--xp-glow); letter-spacing:-.02em;
+    font-variant-numeric:tabular-nums;
+  }
+  .rs-xptotal-unit{ margin-left:.35rem; font-size:.9rem; font-weight:800; color:var(--xp); opacity:.8; }
+  .rs-screen .rs-xp .results-level.rs-levelblock{
+    margin:0; padding:0; background:none; border:0; box-shadow:none;
+    backdrop-filter:none; -webkit-backdrop-filter:none; will-change:auto;
+  }
+  .rs-xp .results-level-gain{ display:none; }
+  .rs-xp .results-level-head{ margin:0 0 .5rem; }
+  .rs-xp .results-level-line{ text-align:left; margin-top:.5rem; }
+  .rs-xp .results-level-track{ transition:box-shadow .3s ease; }
+  .rs-xp.is-charging .results-level-track{ animation:rs-charge .5s ease-in-out infinite alternate; }
+  @keyframes rs-charge{
+    from{ box-shadow:inset 0 2px 6px rgba(0,0,0,.45), 0 0 0 1px rgba(124,200,255,.3), 0 0 10px rgba(58,140,255,.3); }
+    to{ box-shadow:inset 0 2px 6px rgba(0,0,0,.45), 0 0 0 1px rgba(124,200,255,.65), 0 0 26px rgba(58,140,255,.75); }
+  }
+  .rs-xp.is-charged .results-level-track{ animation:rs-trackpop .65s ease-out; }
+  @keyframes rs-trackpop{
+    0%{ transform:scaleY(1); box-shadow:inset 0 2px 6px rgba(0,0,0,.45), 0 0 0 0 rgba(124,200,255,.9); }
+    30%{ transform:scaleY(1.3); box-shadow:inset 0 2px 6px rgba(0,0,0,.45), 0 0 0 5px rgba(124,200,255,.22), 0 0 32px rgba(58,140,255,.85); }
+    100%{ transform:scaleY(1); box-shadow:inset 0 2px 6px rgba(0,0,0,.45), 0 0 0 12px rgba(124,200,255,0); }
+  }
+  .rs-xp .results-level.is-levelup .results-level-num{ color:var(--xp); }
+  .rs-xp .results-level.is-levelup .results-level-num::after{
+    content:"Level up"; display:inline-block; vertical-align:.12em; margin-left:.55rem;
+    padding:.18rem .5rem; border-radius:6px; font-size:.62rem; letter-spacing:.12em;
+    color:#fff; background:var(--xp-deep); box-shadow:0 0 14px var(--xp-glow);
+    animation:rs-pop .5s cubic-bezier(.2,1.5,.4,1) both;
+  }
+  @keyframes rs-pop{ 0%{ opacity:0; transform:scale(.3); } 100%{ opacity:1; transform:none; } }
+
+  /* Badge progress, Game difficulty, personal best. */
+  .rs-screen .rs-badges.badgeprogress-wrap{
+    display:flex; flex-direction:column; gap:.6rem;
+    margin:0 0 .85rem; padding:1rem 1.1rem 1.05rem; border-radius:18px;
+    background:var(--rs-card); border:1px solid var(--rs-line);
+  }
+  .rs-badges .rs-kicker{ margin-bottom:.1rem; }
+  .rs-badges .badgeprogress-fill{ transition:width 1s cubic-bezier(.2,.8,.25,1); }
+  .rs-screen .game-beat-box{ margin:0 0 .85rem; border-radius:18px; padding:1rem 1.1rem; }
+  .rs-pb-time{
+    margin:0; font-family:var(--mono); font-size:1.6rem; font-weight:800; line-height:1;
+    color:#FFD37A; text-shadow:0 0 16px rgba(255,211,122,.35); font-variant-numeric:tabular-nums;
+  }
+
+  /* The grade, last and loudest. */
+  .rs-screen .rs-grade{ padding:1.15rem 1.2rem 1.2rem; margin-bottom:.85rem; }
+  .rs-grade.rs-land.rs-in{
+    animation:rs-slam .62s cubic-bezier(.16,1.3,.3,1) both, rs-impact 1s ease-out both;
+  }
+  @keyframes rs-slam{
+    0%{ opacity:0; transform:scale(1.45); filter:blur(6px); }
+    45%{ opacity:1; transform:scale(.965); filter:blur(0); }
+    70%{ transform:scale(1.012); }
+    100%{ opacity:1; transform:none; filter:none; }
+  }
+  .rs-grade-row{ display:flex; align-items:center; gap:1.1rem; }
+  .rs-screen .rs-pct.pct{ font-size:4.2rem; line-height:.95; flex-shrink:0; }
+  .rs-screen .rs-pct.pct.retake-badge{ font-size:3.4rem; }
+  .rs-grade-side{ min-width:0; }
+  .rs-grade-frac{
+    margin:0; font-size:1.4rem; font-weight:800; color:var(--ink);
+    font-variant-numeric:tabular-nums; line-height:1.1;
+  }
+  .rs-screen .rs-grade-sub.slabel{ margin:.2rem 0 0; font-size:.86rem; }
+  .rs-stamps{ display:flex; flex-wrap:wrap; gap:.4rem; margin:.95rem 0 0; }
+  .rs-stamp{
+    padding:.28rem .62rem; border-radius:999px; border:1px solid rgba(255,255,255,.14);
+    font-size:.68rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase;
+    color:rgba(255,255,255,.75); background:rgba(255,255,255,.05);
+  }
+  .rs-stamp.is-perfect{ color:#E6C34A; border-color:rgba(230,195,74,.45); background:rgba(230,195,74,.12); }
+  .rs-stamp.is-made{ color:var(--right); border-color:color-mix(in srgb, var(--right) 45%, transparent); background:color-mix(in srgb, var(--right) 12%, transparent); }
+  .rs-stamp.is-short{ color:var(--wrong); border-color:color-mix(in srgb, var(--wrong) 45%, transparent); background:color-mix(in srgb, var(--wrong) 12%, transparent); }
+  .rs-screen .rs-byunit{ margin:1rem 0 0; padding-top:.95rem; border-top:1px solid rgba(255,255,255,.08); }
+  .rs-byunit .unit-breakdown-row:last-child{ margin-bottom:0; }
+
+  /* What it unlocked, left on the page after the banners. */
+  .rs-screen .rs-unlocked .rs-unlock{
+    display:flex; align-items:center; gap:.85rem; margin:0; padding:.6rem 0 0;
+    background:none; border:0; border-radius:0; box-shadow:none; color:var(--ink);
+    backdrop-filter:none; -webkit-backdrop-filter:none; will-change:auto; animation:none;
+  }
+  .rs-screen .rs-unlocked .rs-unlock + .rs-unlock{ margin-top:.6rem; border-top:1px solid rgba(255,255,255,.06); }
+  .rs-unlocked .rs-kicker + .rs-unlock{ padding-top:0; }
+  .rs-unlock-art{
+    width:2.7rem; height:2.7rem; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    filter:drop-shadow(0 0 8px color-mix(in srgb, var(--spot-color) 45%, transparent));
+  }
+  .rs-unlock-art svg{ width:100%; height:100%; display:block; }
+  .rs-unlock-text{ min-width:0; }
+  .rs-unlocked .unlockbanner-kicker{ color:var(--spot-color); opacity:1; font-size:.62rem; letter-spacing:.13em; text-transform:uppercase; }
+  .rs-unlocked .unlockbanner-name{ font-size:1.02rem; color:var(--ink); }
+  .rs-themedot{
+    display:block; width:1.7rem; height:1.7rem; border-radius:50%;
+    background:radial-gradient(circle at 34% 30%,
+      color-mix(in srgb, var(--spot-color) 100%, #fff 28%) 0%,
+      var(--spot-color) 58%,
+      color-mix(in srgb, var(--spot-color) 70%, #000) 100%);
+    box-shadow:0 0 0 2px color-mix(in srgb, var(--spot-color) 45%, transparent);
+  }
+  .rs-diffmark{ font-size:1.1rem; font-weight:800; color:var(--spot-color); letter-spacing:-.08em; }
+
+  /* The way on. It waits for the reveal to finish; the Virtual Room's
+     own ending goes in the same place and waits the same way. */
+  .rs-actions{ margin-top:1.25rem; }
+  .rs-actions .rs-continue{ flex:1 1 auto; width:100%; }
+  .rs-rewards:not(.rs-done) .rs-endslot > :not(.rs-actions){ visibility:hidden; }
+
+  /* The Virtual Room's ending, where every other run has its button:
+     the same card as everything above it. */
+  .rs-endslot .vroom-finale-inline{
+    margin:1.1rem 0 0; padding:1.1rem 1.1rem 1.2rem; border-radius:18px; text-align:center;
+    background:var(--rs-card); border:1px solid var(--rs-line);
+    box-shadow:0 10px 30px -14px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  .rs-endslot .vroom-finale-inline .info-note{ margin-top:0 !important; }
+  /* XP is blue wherever it is printed, not only on this screen - the
+     daily question and the Virtual Room standings share the level block. */
+  .results-level-gain{ color:#7CC8FF; }
+
+  /* One unlock at a time, centre screen. */
+  .rs-spot{
+    position:fixed; inset:0; z-index:320; display:flex; align-items:center; justify-content:center;
+    padding:calc(env(safe-area-inset-top, 0px) + 1.5rem) 1.25rem calc(env(safe-area-inset-bottom, 0px) + 1.5rem);
+    background:rgba(6,8,12,0); transition:background .3s ease; cursor:pointer;
+  }
+  .rs-spot.is-up{ background:rgba(6,8,12,.64); }
+  .rs-spot.is-held{ display:none; }
+  .rs-spot-card{
+    position:relative; width:min(22rem, 100%); overflow:hidden;
+    padding:1.7rem 1.4rem 1.2rem; border-radius:24px; text-align:center;
+    background:
+      radial-gradient(120% 75% at 50% 0%, color-mix(in srgb, var(--spot-color) 30%, transparent), transparent 62%),
+      rgba(20,25,33,.9);
+    border:1px solid color-mix(in srgb, var(--spot-color) 42%, rgba(255,255,255,.12));
+    box-shadow:0 24px 60px rgba(0,0,0,.55),
+               0 0 44px -8px color-mix(in srgb, var(--spot-color) 60%, transparent),
+               inset 0 1px 0 rgba(255,255,255,.12);
+    opacity:0;
+  }
+  .rs-spot.is-up .rs-spot-card{ animation:rs-spot-in .55s cubic-bezier(.16,1.3,.3,1) both; }
+  .rs-spot.is-leaving .rs-spot-card{ opacity:1; animation:rs-spot-out .3s ease-in both; }
+  @keyframes rs-spot-in{
+    0%{ opacity:0; transform:scale(1.4); filter:blur(8px); }
+    55%{ opacity:1; transform:scale(.97); filter:blur(0); }
+    100%{ opacity:1; transform:none; filter:none; }
+  }
+  @keyframes rs-spot-out{
+    from{ opacity:1; transform:none; }
+    to{ opacity:0; transform:translateY(-26px) scale(.96); }
+  }
+  .rs-spot-card::after{
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(100deg, transparent 36%, rgba(255,255,255,.18) 50%, transparent 64%);
+    transform:translateX(-120%);
+  }
+  .rs-spot.is-up .rs-spot-card::after{ animation:tierup-sweep 1.3s cubic-bezier(.3,0,.2,1) .35s 1 forwards; }
+  .rs-spot-art{
+    width:6.6rem; height:6.6rem; margin:0 auto .95rem;
+    display:flex; align-items:center; justify-content:center;
+    filter:drop-shadow(0 0 20px color-mix(in srgb, var(--spot-color) 55%, transparent));
+  }
+  .rs-spot.is-up .rs-spot-art{ animation:rs-artpop .7s cubic-bezier(.2,1.5,.4,1) .12s both; }
+  @keyframes rs-artpop{ 0%{ opacity:0; transform:scale(.2) rotate(-12deg); } 100%{ opacity:1; transform:none; } }
+  .rs-spot-art svg{ width:100%; height:100%; display:block; }
+  .rs-spot-art .rs-themedot{ width:4.6rem; height:4.6rem; box-shadow:0 0 0 3px color-mix(in srgb, var(--spot-color) 45%, transparent); }
+  .rs-spot-art .rs-diffmark{ font-size:2.6rem; }
+  .rs-spot-kicker{
+    margin:0; font-size:.72rem; font-weight:800; letter-spacing:.18em;
+    text-transform:uppercase; color:var(--spot-color);
+  }
+  .rs-spot-name{
+    margin:.35rem 0 0; font-family:var(--serif); font-size:1.75rem; line-height:1.15;
+    font-weight:700; color:#fff; overflow-wrap:break-word;
+  }
+  .rs-spot-sub{ margin:.45rem 0 0; font-size:.9rem; color:rgba(255,255,255,.72); }
+  .rs-spot-foot{
+    margin:1.15rem 0 0; font-size:.66rem; font-weight:800; letter-spacing:.1em;
+    text-transform:uppercase; color:rgba(255,255,255,.4);
+  }
+
+  /* The review. */
+  .rs-review .rs-head{ margin-bottom:1.2rem; }
+  .rs-review-summary{ margin:.65rem 0 0; font-size:.95rem; font-weight:700; color:rgba(255,255,255,.72); }
+  .rs-qlist{ list-style:none; margin:0 0 1.25rem; padding:0; display:flex; flex-direction:column; gap:.8rem; }
+  .rs-q{
+    padding:1rem 1.1rem 1.05rem; border-radius:18px;
+    background:var(--rs-card); border:1px solid var(--rs-line);
+    box-shadow:0 10px 30px -14px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  .rs-q-top{ display:flex; align-items:center; justify-content:space-between; gap:.75rem; margin:0 0 .65rem; }
+  .rs-q-num{
+    width:1.75rem; height:1.75rem; border-radius:50%; flex-shrink:0;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:.78rem; font-weight:800; color:#fff; font-variant-numeric:tabular-nums;
+    background:rgba(232,104,124,.18); border:1px solid rgba(232,104,124,.45);
+  }
+  .rs-q-tag{ font-size:.66rem; font-weight:800; letter-spacing:.11em; text-transform:uppercase; color:#E8687C; }
+  .rs-q-text{ font-family:var(--serif); font-size:1.08rem; line-height:1.45; color:var(--ink); }
+  .rs-q-answers{ margin:.85rem 0 0; display:flex; flex-direction:column; gap:.45rem; }
+  .rs-q-answers p{ margin:0; padding:.55rem .75rem; border-radius:12px; font-size:.92rem; line-height:1.4; color:var(--ink); }
+  .rs-q-answers p span{
+    display:block; margin:0 0 .12rem; font-size:.62rem; font-weight:800;
+    letter-spacing:.12em; text-transform:uppercase;
+  }
+  .rs-q-yours{ background:rgba(232,104,124,.09); border:1px solid rgba(232,104,124,.24); }
+  .rs-q-yours span{ color:#E8687C; }
+  .rs-q-right{ background:rgba(92,214,146,.09); border:1px solid rgba(92,214,146,.26); }
+  .rs-q-right span{ color:#5CD692; }
+  .rs-q-ref{ margin:.65rem 0 0; font-size:.76rem; color:var(--soft); }
+
+  @media (min-width:40rem){
+    .rs-card, .rs-screen .rs-badges.badgeprogress-wrap, .rs-q{ padding:1.2rem 1.35rem 1.25rem; border-radius:20px; }
+    .rs-units{ font-size:2.05rem; }
+    .rs-screen .rs-pct.pct{ font-size:5rem; }
+    .rs-grade-frac{ font-size:1.6rem; }
+    .rs-xptotal-num{ font-size:2.5rem; }
+    .rs-xpline{ font-size:1rem; }
+    .rs-kicker{ font-size:.72rem; }
+    .rs-spot-card{ width:min(26rem, 100%); padding:2.1rem 1.8rem 1.4rem; }
+    .rs-spot-art{ width:8rem; height:8rem; }
+    .rs-spot-name{ font-size:2.1rem; }
+    .rs-q-text{ font-size:1.15rem; }
+  }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -33538,6 +33888,9 @@ function pauseRun(){
      populated there and this would otherwise draw "the question and
      timer are on hold" over a screen with no question on it. */
   if(vroomAwaitingOthers){ confirmLeaveWhileWaiting(); return; }
+  /* Pause stays up on the results screens (build 212); there it holds
+     the reveal rather than a question. */
+  if(resultsScreenUp()){ pauseResults(); return; }
   if(paused || order.length === 0) return;
   paused = true;
   pauseStartedAt = Date.now();
@@ -42928,7 +43281,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-26-211";
+const APP_BUILD = "2026-09-26-212";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -43620,14 +43973,20 @@ function forcedUpdateBlocked(){
   try{ inTest = !!testInProgress; }catch(e){}
   if(inTest) return true;
   if(document.body.classList.contains("has-active-question")) return true;
-  if(document.querySelector("#pausebtn:not([hidden])")) return true;
 
-  /* The results screen, for long enough to actually be read. */
-  if(screen === "results") return (Date.now() - resultsShownAt) < UPDATE_REVIEW_MS;
+  /* The results screen, for long enough to actually be read - counted
+     from the moment the reveal finished, and never while it is still
+     playing. Checked ahead of Pause, which stays up on this screen
+     since build 212 and would otherwise hold an update here for good. */
+  if(screen === "results"){
+    if(typeof resultsSeq !== "undefined" && resultsSeq) return true;
+    return (Date.now() - resultsShownAt) < UPDATE_REVIEW_MS;
+  }
+  if(document.querySelector("#pausebtn:not([hidden])")) return true;
 
   /* Reviewing answers or setting up a retake - both are the tail of a
      test somebody is still working through. */
-  if(document.querySelector(".screen-answerreview, .screen-setup")) return true;
+  if(document.querySelector(".screen-answerreview, .screen-runreview, .screen-setup")) return true;
 
   /* A Virtual Room: a lobby is a countdown other people are waiting
      on, and a match is a test with company. */
@@ -43835,6 +44194,14 @@ function buildResultsLevelBlock(earned, pointsAfter){
   /* Kicked off by the caller once the block is actually on screen, for
      the same reason the Profile bar is: a width set in the same tick as
      the element is created has nothing to transition from. */
+  /* Straight to where the run ended, with no movement - the skipped and
+     reduced-motion paths of the results reveal. */
+  wrap.setFinal = function(){
+    fill.style.transition = "none";
+    fill.style.width = (after.atCap ? 100 : Math.round(after.fraction * 1000) / 10) + "%";
+    lvl.textContent = "Level " + after.level;
+    if(after.level !== before.level && !before.atCap) wrap.classList.add("is-levelup");
+  };
   wrap.runFill = function(){
     requestAnimationFrame(() => requestAnimationFrame(() => {
       const target = after.atCap ? 100 : Math.round(after.fraction * 1000) / 10;
@@ -43849,6 +44216,7 @@ function buildResultsLevelBlock(earned, pointsAfter){
         const prev = fill.style.transition;
         fill.style.transition = "none";
         fill.style.width = "0%";
+        void fill.offsetWidth;
         /* One committed frame at zero before the transition goes back
            on, or the browser coalesces the two writes and the bar
            simply jumps. */
@@ -43873,6 +44241,821 @@ function buildResultsLevelBlock(earned, pointsAfter){
    which summarize() builds the side effects for and then replaces. */
 let lastRunXpEarned = 0;
 let lastRunPointsAfter = 0;
+
+/* ---- THE END OF A RUN IS TWO SCREENS (build 212) ----------------------
+   Asked for in one message: "split the test result screens up, when you
+   finish a test the first screen should be about xp, levels, badges ...
+   it will also show your grade, it will show banners for any of the
+   stuff you unlocked ... There will be a continue button that says
+   'continue to review' IF you didn't make a one hundred."
+
+   So a finished run is:
+   1. THE REWARDS SCREEN. What the run was (mode, units, time), then the
+      XP dropping in line by line, a beat, the total and the level bar
+      filling with some weight behind it, then everything else landing
+      top to bottom - badge progress, a Game difficulty beaten, a
+      personal best - and the grade last, with the celebration if it
+      earned one. Anything unlocked then comes through one banner at a
+      time, centre screen, and only after the last one does the button
+      arrive. "Like Call of Duty has it."
+   2. THE REVIEW SCREEN, only when something was missed. The questions,
+      what the right answers were, and Retake / Main menu under them.
+      None of that is on the first screen any more.
+
+   A PERFECT RUN HAS NOTHING TO REVIEW, so its first screen ends in the
+   run's own buttons (New run / Main menu) rather than a Continue that
+   leads to an empty list.
+
+   THE REVEAL IS A SEQUENCE THAT CAN BE HELD. Pause stays up on both
+   screens - "leave the pause screen on all the screens" - and the
+   Continue button is not there until the banners are done, so Pause is
+   the one way off this screen mid-reveal; it has to freeze the reveal
+   and give it back exactly where it was, not replay it. A tap on the
+   screen skips to the banners, because the fifth test of an evening
+   should not have to sit through the whole show again.
+
+   REDUCE MOTION GETS EVERYTHING AT ONCE. The global
+   [data-reduce-motion] rule strips animations, and a card waiting on an
+   animation to fade it in would sit invisible forever - so that path
+   builds every card already landed and plays no banners. */
+let resultsSeq = null;
+let resultsPausedNode = null;
+let resultsPausedScroll = 0;
+
+function resultsMotionOff(){
+  if(theme.reduceMotion) return true;
+  try{ return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); }
+  catch(e){ return false; }
+}
+
+/* A timeline of steps, each after its own delay. A step flagged `wait`
+   holds the timeline until it calls its release - that is a banner,
+   which ends when it has been read or tapped. pause()/resume() carry
+   the time left over rather than restarting the step; skip() runs every
+   step up to the next banner at once. */
+function makeRevealSequence(alive){
+  const steps = [];
+  let i = 0, timer = null, due = 0, left = 0;
+  let paused = false, fast = false, finished = false, holder = null;
+  const seq = {
+    add(delay, fn, wait){ steps.push({ delay: delay, fn: fn, wait: !!wait }); return seq; },
+    start(){ advance(); return seq; },
+    isRunning(){ return !finished; },
+    pause(){
+      if(paused || finished) return;
+      paused = true;
+      if(timer){ clearTimeout(timer); timer = null; left = Math.max(0, due - Date.now()); }
+      if(holder && holder.pause) holder.pause();
+    },
+    resume(){
+      if(!paused) return;
+      paused = false;
+      if(holder){ if(holder.resume) holder.resume(); }
+      else if(!finished) wait(left);
+    },
+    skip(){
+      if(finished || paused) return;
+      if(holder){ if(holder.skip) holder.skip(); return; }
+      fast = true;
+      if(timer){ clearTimeout(timer); timer = null; fire(); }
+    },
+    stop(){
+      finished = true;
+      if(timer){ clearTimeout(timer); timer = null; }
+      const h = holder; holder = null;
+      if(h && h.stop) h.stop();
+    }
+  };
+  function wait(ms){
+    due = Date.now() + ms;
+    timer = setTimeout(() => { timer = null; fire(); }, ms);
+  }
+  function advance(){
+    if(finished) return;
+    if(i >= steps.length){ finished = true; return; }
+    const s = steps[i];
+    if(s.wait) fast = false;
+    if(fast){ fire(); return; }
+    wait(s.delay);
+  }
+  function fire(){
+    if(finished || paused) return;
+    if(alive && !alive()){ seq.stop(); return; }
+    const s = steps[i++];
+    if(s.wait){
+      const h = { released: false };
+      holder = h;
+      const ret = s.fn(false, () => {
+        if(h.released) return;
+        h.released = true;
+        if(holder === h) holder = null;
+        if(!finished) advance();
+      });
+      if(ret && !h.released) Object.assign(h, ret);
+      return;
+    }
+    try{ s.fn(fast); }catch(e){ console.error(e); }
+    advance();
+  }
+  return seq;
+}
+
+function endResultsReveal(){
+  if(resultsSeq){ resultsSeq.stop(); resultsSeq = null; }
+  resultsPausedNode = null;
+  document.querySelectorAll(".rs-spot").forEach(n => n.remove());
+}
+
+/* Puts a card on the screen. `instant` is the skipped / reduced-motion
+   path; otherwise it bangs in and, once it has, becomes a plain landed
+   card so that taking the screen off the stage for Pause and putting it
+   back does not replay it. */
+function rsLand(el, instant){
+  if(!el) return;
+  if(instant){ el.classList.remove("rs-in"); el.classList.add("rs-in-now"); return; }
+  el.classList.add("rs-in");
+  const settle = e => {
+    if(e.target !== el) return;
+    el.removeEventListener("animationend", settle);
+    el.classList.remove("rs-in");
+    el.classList.add("rs-in-now");
+  };
+  el.addEventListener("animationend", settle);
+  /* The camera follows: a card landing below the fold on a phone is a
+     bang nobody saw. Only ever scrolls DOWN, and only as far as the card. */
+  requestAnimationFrame(() => {
+    const r = el.getBoundingClientRect();
+    const floor = window.innerHeight - 24;
+    if(r.bottom > floor){
+      window.scrollBy({ top: Math.min(r.bottom - floor, r.top - 90), behavior: "smooth" });
+    }
+  });
+}
+
+/* What the run was, in words: the mode chip and the units. Shared by
+   both screens so the review cannot disagree with the rewards about
+   what was just sat. */
+function rsModeLabel(run){
+  if(run.vroom) return "Virtual Room";
+  if(run.retake) return "Missed questions retake";
+  if(run.practice) return "Practice test";
+  if(run.mode === "game") return "Game · " + ((GAME_SPEEDS[run.gameSpeed] || {}).label || "Game");
+  if(run.mode === "exam") return "Exam";
+  return "Drill";
+}
+function rsModeIconKind(run){
+  if(run.vroom) return "vroom";
+  if(run.mode === "game") return "game";
+  if(run.mode === "exam" || run.practice) return "exam";
+  return "drill";
+}
+function buildRunHead(run, withTime){
+  const head = document.createElement("div");
+  head.className = "rs-head";
+  const chipRow = document.createElement("div");
+  chipRow.className = "rs-chiprow";
+  const mode = document.createElement("span");
+  mode.className = "rs-mode rs-mode-" + rsModeIconKind(run);
+  try{ mode.appendChild(modeIcon(rsModeIconKind(run))); }catch(e){}
+  mode.appendChild(document.createTextNode(rsModeLabel(run)));
+  chipRow.appendChild(mode);
+  if(run.source === "recent" || run.source === "flagged"){
+    const src = document.createElement("span");
+    src.className = "rs-mode rs-mode-src";
+    src.textContent = run.source === "recent" ? "Most missed" : "Flagged";
+    chipRow.appendChild(src);
+  }
+  head.appendChild(chipRow);
+
+  const units = run.unitsSat;
+  const title = document.createElement("h2");
+  title.className = "rs-units";
+  const allCount = topicsIn(QUESTIONS).length;
+  /* The practice test draws at random from the whole bank, so which
+     units it happened to land on is not something anybody chose. */
+  if(run.practice && !run.retake) title.textContent = "All " + allCount + " units, at random";
+  else if(units.length === 1) title.textContent = units[0];
+  else if(units.length >= allCount) title.textContent = "All " + allCount + " units";
+  else title.textContent = units.length + " units";
+  head.appendChild(title);
+  /* A multi-unit run names every unit it covered - "it needs to still be
+     clear which units you took" - as a wrap of small chips, not a comma
+     list that runs to four lines on a phone. */
+  if(units.length > 1 && units.length < allCount && !(run.practice && !run.retake)){
+    const list = document.createElement("div");
+    list.className = "rs-unitlist";
+    units.forEach(u => {
+      const c = document.createElement("span");
+      c.className = "rs-unitchip"; c.textContent = u;
+      list.appendChild(c);
+    });
+    head.appendChild(list);
+  }
+  if(withTime){
+    const meta = document.createElement("div");
+    meta.className = "rs-meta";
+    const time = document.createElement("span");
+    time.className = "rs-metapill rs-time";
+    time.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9.5 2.5h5"/></svg>';
+    time.appendChild(document.createTextNode(formatClock(run.elapsedMs)));
+    time.setAttribute("aria-label", "Time taken " + formatClock(run.elapsedMs));
+    const qs = document.createElement("span");
+    qs.className = "rs-metapill";
+    qs.textContent = run.total + (run.total === 1 ? " question" : " questions");
+    meta.append(time, qs);
+    head.appendChild(meta);
+  }
+  return head;
+}
+
+/* One unlock, as the thing it hands over: art, a kicker saying what kind
+   of thing it is, and its name. The same object feeds the centre-screen
+   banner and the row it leaves behind in "Unlocked", so the two cannot
+   describe it differently. */
+function rsUnlockItems(run){
+  const items = [];
+  run.badges.forEach(u => {
+    const retro = run.retroBadges.indexOf(u) >= 0;
+    items.push({ kind: "badge", kicker: "Badge earned", name: u + " badge",
+      sub: retro ? "Earned under the new badge requirements"
+                 : "+" + MASTERY_BONUS.toLocaleString() + " XP mastery bonus",
+      color: "#D8E2EC", art: () => buildUnitBadgeSVG(u, true) });
+  });
+  const tiers = run.colors.slice().sort((a, b) => TIER_ORDER_FULL.indexOf(a) - TIER_ORDER_FULL.indexOf(b));
+  tiers.forEach(c => {
+    items.push({ kind: "rank", kicker: "Rank up", name: RANK_DISPLAY_NAME[c] || c,
+      sub: c === "titan" ? "The top of the ladder" : "A new rank beside your name",
+      color: RANK_COLOR[c] || ACCENT_SWATCH[c], art: () => buildRankEmblemSVG(c) });
+  });
+  tiers.forEach(c => {
+    if(!ACCENT_SWATCH[c]) return;
+    items.push({ kind: "theme", kicker: "Theme unlocked", name: ACCENT_DISPLAY_NAME[c] || c,
+      sub: "Pick it in Settings", color: ACCENT_SWATCH[c], art: () => {
+        const d = document.createElement("span");
+        d.className = "rs-themedot"; d.style.setProperty("--spot-color", ACCENT_SWATCH[c]);
+        return d; } });
+  });
+  run.characters.forEach(id => {
+    items.push({ kind: "character", kicker: "Character unlocked", name: AVATAR_DISPLAY_NAME[id] || id,
+      sub: "Yours to pick in Customize", color: avatarGlowColor(id),
+      art: () => buildAvatarCharSVGSafe(id) });
+  });
+  if(run.justBeatSpeed){
+    const next = { easy: "average", average: "hardcore" }[run.justBeatSpeed];
+    if(next){
+      const s = GAME_SPEEDS[next];
+      items.push({ kind: "difficulty", kicker: "Difficulty unlocked", name: s.label + " difficulty",
+        sub: s.seconds + " seconds a question, " + s.lives + (s.lives === 1 ? " life" : " lives"),
+        color: next === "average" ? "#FFB25C" : "#E8687C", art: () => {
+          const d = document.createElement("span");
+          d.className = "rs-diffmark"; d.textContent = next === "average" ? "▲▲" : "▲▲▲";
+          return d; } });
+    }
+  }
+  return items;
+}
+
+/* The centre-screen banner. Holds for a few seconds, or until tapped,
+   then leaves and releases the timeline for the next one. */
+function playUnlockSpotlight(item, n, of, release){
+  const spot = document.createElement("div");
+  spot.className = "rs-spot rs-spot-" + item.kind;
+  spot.style.setProperty("--spot-color", item.color || "#6FC2FF");
+  spot.setAttribute("role", "status");
+  const card = document.createElement("div");
+  card.className = "rs-spot-card";
+  const art = document.createElement("div");
+  art.className = "rs-spot-art";
+  try{ art.appendChild(item.art()); }catch(e){}
+  const kicker = document.createElement("p");
+  kicker.className = "rs-spot-kicker"; kicker.textContent = item.kicker;
+  const name = document.createElement("p");
+  name.className = "rs-spot-name"; name.textContent = item.name;
+  const sub = document.createElement("p");
+  sub.className = "rs-spot-sub"; sub.textContent = item.sub || "";
+  const foot = document.createElement("p");
+  foot.className = "rs-spot-foot";
+  foot.textContent = (of > 1 ? n + " of " + of + " · " : "") + "Tap to continue";
+  card.append(art, kicker, name, sub, foot);
+  spot.appendChild(card);
+  document.body.appendChild(spot);
+  requestAnimationFrame(() => requestAnimationFrame(() => spot.classList.add("is-up")));
+
+  const HOLD = 2800;
+  let timer = null, due = 0, left = HOLD, gone = false;
+  const arm = ms => { due = Date.now() + ms; timer = setTimeout(leave, ms); };
+  function leave(){
+    if(gone) return;
+    gone = true;
+    if(timer){ clearTimeout(timer); timer = null; }
+    spot.classList.remove("is-up");
+    spot.classList.add("is-leaving");
+    setTimeout(() => { spot.remove(); release(); }, 320);
+  }
+  spot.addEventListener("click", leave);
+  arm(HOLD);
+  return {
+    pause(){ if(timer){ clearTimeout(timer); timer = null; left = Math.max(600, due - Date.now()); } spot.classList.add("is-held"); },
+    resume(){ spot.classList.remove("is-held"); if(!gone && !timer) arm(left); },
+    skip(){ leave(); },
+    stop(){ gone = true; if(timer) clearTimeout(timer); spot.remove(); }
+  };
+}
+
+function showRunRewards(run, hooks){
+  endResultsReveal();
+  const quiet = resultsMotionOff();
+  meterEl.hidden = true;
+  countEl.textContent = "";
+  testScopeLabelEl.textContent = "Test results";
+  pauseBtn.hidden = false;
+  /* The old top nav trio shares the row with Pause; summarize() shows it
+     for the screens that follow, and here it would sit under Pause. */
+  appearanceBtn.hidden = true; homeBtn.hidden = true; profileBtn.hidden = true;
+
+  const panel = document.createElement("section");
+  panel.className = "panel rs-screen rs-rewards";
+  panel.dataset.screen = "results";
+
+  const head = buildRunHead(run, true);
+  head.classList.add("rs-land");
+  panel.appendChild(head);
+
+  /* ---- XP ----
+     Blue, the same blue as the level bar, the Profile bar and the XP that
+     flies to the Profile tab: XP is one colour everywhere in the app, so
+     the number and the bar it fills read as one thing. */
+  const xp = document.createElement("div");
+  xp.className = "rs-card rs-xp rs-land";
+  const xpTop = document.createElement("div");
+  xpTop.className = "rs-cardtop";
+  const xpKick = document.createElement("p");
+  xpKick.className = "rs-kicker"; xpKick.textContent = "XP earned";
+  xpTop.appendChild(xpKick);
+  xp.appendChild(xpTop);
+  const lineEls = run.xpLines.map(l => {
+    const row = document.createElement("p");
+    row.className = "rs-xpline rs-land";
+    const a = document.createElement("span"); a.className = "rs-xpline-label"; a.textContent = l.label;
+    const b = document.createElement("span"); b.className = "rs-xpline-val"; b.textContent = "+" + l.value.toLocaleString();
+    row.append(a, b);
+    xp.appendChild(row);
+    return row;
+  });
+  if(!run.xpLines.length){
+    const none = document.createElement("p");
+    none.className = "rs-xpline rs-xpline-none rs-land";
+    none.textContent = run.retake ? "A retake is practice — it doesn't earn XP."
+      : (run.source === "recent" || run.source === "flagged") ? "Most missed and flagged runs are practice — no XP."
+      : run.timedOut && run.total === 0 ? "Time ran out before any questions were answered."
+      : "No XP this run.";
+    xp.appendChild(none);
+    lineEls.push(none);
+  }
+  const totalRow = document.createElement("div");
+  totalRow.className = "rs-xptotal rs-land";
+  const totalLabel = document.createElement("span");
+  totalLabel.className = "rs-xptotal-label"; totalLabel.textContent = "Total";
+  const totalNum = document.createElement("span");
+  totalNum.className = "rs-xptotal-num";
+  totalNum.textContent = "+0";
+  const totalUnit = document.createElement("span");
+  totalUnit.className = "rs-xptotal-unit"; totalUnit.textContent = "XP";
+  const totalVal = document.createElement("span");
+  totalVal.className = "rs-xptotal-val";
+  totalVal.append(totalNum, totalUnit);
+  totalRow.append(totalLabel, totalVal);
+  /* A run that earned nothing says so in words above; a "+0" under it
+     would only say it again, louder. */
+  if(run.xpTotal > 0) xp.appendChild(totalRow);
+  const levelBlock = buildResultsLevelBlock(run.xpTotal, run.pointsAfter);
+  levelBlock.classList.add("rs-levelblock", "rs-land");
+  xp.appendChild(levelBlock);
+  /* Tokens come later ("tokens because that will be introduced later").
+     They are a second currency earned by the same run, so they belong in
+     this card as their own total under the XP one, landing in the same
+     beat - not as another box further down. */
+  panel.appendChild(xp);
+
+  /* ---- EVERYTHING ELSE THE RUN MOVED ---- */
+  const boxes = [];
+  if(run.progUnits.length){
+    const card = document.createElement("div");
+    card.className = "rs-card rs-badges badgeprogress-wrap rs-land";
+    const k = document.createElement("p");
+    k.className = "rs-kicker"; k.textContent = run.progUnits.length > 1 ? "Badge progress" : "Badge progress";
+    card.appendChild(k);
+    run.progUnits.forEach(u => {
+      const need = badgeThresholdFor(u);
+      const have = Math.min(need, unitPerfectCount(u));
+      const row = document.createElement("div");
+      row.className = "badgeprogress-row" + (have >= need ? " is-done" : "");
+      const art = document.createElement("span");
+      art.className = "badgeprogress-art";
+      art.appendChild(buildUnitBadgeSVG(u, have >= need));
+      const body = document.createElement("div");
+      body.className = "badgeprogress-body";
+      const nm = document.createElement("p");
+      nm.className = "badgeprogress-name"; nm.textContent = u + " badge";
+      const track = document.createElement("div");
+      track.className = "badgeprogress-track";
+      const fill = document.createElement("div");
+      fill.className = "badgeprogress-fill";
+      const was = Math.min(need, run.perfectsBefore[u] || 0);
+      fill.style.width = Math.round((was / need) * 100) + "%";
+      fill.dataset.to = Math.round((have / need) * 100) + "%";
+      track.appendChild(fill);
+      const line = document.createElement("p");
+      line.className = "badgeprogress-line";
+      line.textContent = have >= need
+        ? "Badge earned"
+        : "+1 hundo · " + have + " of " + need + " · " + (need - have) + " to go";
+      body.append(nm, track, line);
+      row.append(art, body);
+      card.appendChild(row);
+    });
+    boxes.push(card);
+  }
+  if(run.justBeatSpeed){
+    const speedLabel = GAME_SPEEDS[run.justBeatSpeed].label;
+    const nextSpeed = { easy: "average", average: "hardcore" }[run.justBeatSpeed];
+    const unlockText = nextSpeed
+      ? GAME_SPEEDS[nextSpeed].label + " difficulty is now unlocked — "
+        + GAME_SPEEDS[nextSpeed].seconds + " seconds a question, "
+        + GAME_SPEEDS[nextSpeed].lives + (GAME_SPEEDS[nextSpeed].lives === 1 ? " life." : " lives.")
+      : "Every difficulty beaten on " + run.units[0] + ".";
+    const bs = document.createElement("div");
+    bs.className = "levelup game-beat-box rs-land lvl-game-" + run.justBeatSpeed;
+    const h = document.createElement("p");
+    h.className = "game-beat-head";
+    if(run.justBeatSpeed === "hardcore"){
+      const shimmer = document.createElement("span");
+      shimmer.className = "shimmer-game-hardcore";
+      shimmer.textContent = speedLabel + " difficulty cleared (Game)";
+      h.appendChild(shimmer);
+    } else {
+      h.appendChild(document.createTextNode(speedLabel + " difficulty cleared (Game)"));
+    }
+    h.appendChild(document.createTextNode(" — " + run.units[0] + "!"));
+    const sub = document.createElement("p");
+    sub.className = "game-beat-sub game-unlock-note";
+    sub.textContent = unlockText;
+    bs.append(h, sub);
+    boxes.push(bs);
+  }
+  if(run.newBest){
+    const pb = document.createElement("div");
+    pb.className = "rs-card rs-pb rs-land";
+    const k = document.createElement("p");
+    k.className = "rs-kicker"; k.textContent = "New personal best";
+    const t = document.createElement("p");
+    t.className = "rs-pb-time"; t.textContent = formatClock(run.elapsedMs);
+    pb.append(k, t);
+    boxes.push(pb);
+  }
+  boxes.forEach(b => panel.appendChild(b));
+
+  /* ---- THE GRADE, LAST ---- */
+  const grade = document.createElement("div");
+  grade.className = "rs-card rs-grade rs-land score";
+  const gk = document.createElement("p");
+  gk.className = "rs-kicker"; gk.textContent = run.retake ? "This pass" : "Grade";
+  grade.appendChild(gk);
+  const gRow = document.createElement("div");
+  gRow.className = "rs-grade-row";
+  const pctEl = document.createElement("span");
+  pctEl.className = "rs-pct pct " + (run.retake ? "retake-badge" : run.isPerfect ? "perfect" : run.pct >= PASS_MARK ? "made" : "short");
+  pctEl.textContent = run.pct + "%";
+  const gSide = document.createElement("div");
+  gSide.className = "rs-grade-side";
+  const frac = document.createElement("p");
+  frac.className = "rs-grade-frac";
+  frac.textContent = run.good + " of " + run.total;
+  const fracSub = document.createElement("p");
+  fracSub.className = "rs-grade-sub slabel";
+  fracSub.textContent = run.total === 0 ? "Time ran out before you answered any questions."
+    : run.retake ? "Practice only — your test grade doesn't change."
+    : (run.mode === "exam" || run.vroom) ? "correct"
+    : "right on the first try";
+  gSide.append(frac, fracSub);
+  gRow.append(pctEl, gSide);
+  grade.appendChild(gRow);
+  const stamps = document.createElement("div");
+  stamps.className = "rs-stamps";
+  const stamp = (text, cls) => {
+    const s = document.createElement("span");
+    s.className = "rs-stamp " + cls; s.textContent = text;
+    stamps.appendChild(s);
+  };
+  if(run.timedOut) stamp("Time's up", "is-short");
+  if(run.practice && !run.retake) stamp(run.pct >= PASS_MARK ? "Passed" : "Below the " + PASS_MARK + "% pass mark",
+    run.pct >= PASS_MARK ? "is-made" : "is-short");
+  if(run.hundosEarned > 0) stamp(run.hundosEarned > 1 ? run.hundosEarned + " hundos" : "Hundo", "is-perfect");
+  else if(run.isPerfect && !run.retake) stamp("Perfect", "is-perfect");
+  if(run.missed.length && !run.vroom) stamp(run.missed.length + " to review", "is-review");
+  if(stamps.children.length) grade.appendChild(stamps);
+  /* The per-unit split of a multi-unit run is part of the grade, so it
+     lands with it rather than as a box of its own. */
+  if(!run.retake){
+    const byUnit = {};
+    run.order.forEach(qi => {
+      const t = (QUESTIONS[qi].topic || "Other").trim();
+      if(!byUnit[t]) byUnit[t] = { total: 0, wrong: 0 };
+      byUnit[t].total++;
+      if(run.missed.indexOf(qi) >= 0) byUnit[t].wrong++;
+    });
+    const names = Object.keys(byUnit);
+    if(names.length > 1){
+      const wrap = document.createElement("div");
+      wrap.className = "unit-breakdown rs-byunit";
+      names.forEach(nm => {
+        const st = byUnit[nm];
+        const right = st.total - st.wrong;
+        const up = st.total ? Math.round(right / st.total * 100) : 0;
+        const row = document.createElement("div");
+        row.className = "unit-breakdown-row";
+        const top = document.createElement("div");
+        top.className = "unit-breakdown-top";
+        const a = document.createElement("span"); a.className = "unit-breakdown-name"; a.textContent = nm;
+        const b = document.createElement("span"); b.className = "unit-breakdown-score"; b.textContent = right + "/" + st.total;
+        top.append(a, b);
+        const track = document.createElement("div"); track.className = "unit-breakdown-track";
+        const fill = document.createElement("div");
+        fill.className = "unit-breakdown-fill" + (up === 100 ? " full" : up < 60 ? " low" : "");
+        fill.style.width = up + "%";
+        track.appendChild(fill);
+        row.append(top, track);
+        wrap.appendChild(row);
+      });
+      grade.appendChild(wrap);
+    }
+  }
+  panel.appendChild(grade);
+
+  /* ---- WHAT IT UNLOCKED, LEFT ON THE PAGE ---- */
+  const unlockItems = rsUnlockItems(run);
+  const listItems = unlockItems.filter(it => it.kind !== "difficulty");
+  let unlocked = null;
+  if(listItems.length){
+    unlocked = document.createElement("div");
+    unlocked.className = "rs-card rs-unlocked rs-land";
+    const k = document.createElement("p");
+    k.className = "rs-kicker"; k.textContent = "Unlocked";
+    unlocked.appendChild(k);
+    listItems.forEach(it => {
+      const row = document.createElement("div");
+      row.className = "rs-unlock unlockbanner" + (it.kind === "badge" ? " badgebanner" : "") + " rs-unlock-" + it.kind;
+      row.style.setProperty("--spot-color", it.color || "#6FC2FF");
+      const art = document.createElement("span");
+      art.className = "rs-unlock-art";
+      try{ art.appendChild(it.art()); }catch(e){}
+      const text = document.createElement("span");
+      text.className = "rs-unlock-text";
+      const a = document.createElement("span"); a.className = "unlockbanner-kicker"; a.textContent = it.kicker;
+      const b = document.createElement("span"); b.className = "unlockbanner-name"; b.textContent = it.name;
+      text.append(a, b);
+      row.append(art, text);
+      unlocked.appendChild(row);
+    });
+    panel.appendChild(unlocked);
+  }
+
+  /* ---- THE WAY ON ---- */
+  const slot = document.createElement("div");
+  slot.className = "rs-endslot";
+  panel.appendChild(slot);
+  let actions = null;
+  if(run.vroom){
+    /* The Virtual Room has its own ending - the wait for everybody, your
+       total and "See everyone's results" - which finishVirtualRoomTest()
+       drops into this slot. Pause is the way off, as it always was. */
+  } else if(run.missed.length){
+    actions = document.createElement("div");
+    actions.className = "actions rs-actions rs-land";
+    const cont = document.createElement("button");
+    cont.type = "button"; cont.className = "next rs-continue"; cont.id = "nextbtn";
+    cont.textContent = "Continue to review";
+    cont.addEventListener("click", () => { endResultsReveal(); showRunReview(run, hooks); });
+    actions.appendChild(cont);
+  } else {
+    actions = hooks.finalActions();
+    actions.classList.add("rs-actions", "rs-land");
+  }
+  if(actions) slot.appendChild(actions);
+
+  resultsShownAt = Date.now();
+  stage.replaceChildren(panel);
+  toTop(true);
+
+  const finish = () => {
+    panel.classList.add("rs-done");
+    /* The window for a forced update starts when there is something to
+       read, not while it is still arriving. */
+    resultsShownAt = Date.now();
+    if(actions){
+      const first = actions.querySelector("button");
+      if(first) first.focus({ preventScroll: true });
+      if(!run.missed.length) hooks.tour();
+    }
+    if(hooks.onDone) hooks.onDone(slot);
+  };
+
+  const fillBadgeBars = () => {
+    panel.querySelectorAll(".rs-badges .badgeprogress-fill[data-to]").forEach(f => { f.style.width = f.dataset.to; });
+  };
+  const countUp = instant => {
+    const target = run.xpTotal;
+    if(instant || target <= 0){ totalNum.textContent = "+" + target.toLocaleString(); return; }
+    const t0 = Date.now(), dur = 750;
+    const iv = setInterval(() => {
+      const t = Math.min(1, (Date.now() - t0) / dur);
+      const eased = 1 - Math.pow(1 - t, 3);
+      totalNum.textContent = "+" + Math.round(target * eased).toLocaleString();
+      if(t >= 1){ clearInterval(iv); totalNum.textContent = "+" + target.toLocaleString(); }
+    }, 30);
+  };
+  const celebrateGrade = () => {
+    if(run.isPerfect || run.justBeatSpeed){
+      const palette = run.justBeatSpeed === "hardcore" ? LEVEL_CONFETTI.black
+        : run.justBeatSpeed === "average" ? LEVEL_CONFETTI.intermediate
+        : run.justBeatSpeed === "easy" ? LEVEL_CONFETTI.beginner
+        : run.leveledUpTo ? LEVEL_CONFETTI[run.leveledUpTo] : null;
+      celebrate(palette);
+    }
+  };
+
+  if(quiet){
+    [head, xp, ...lineEls, totalRow, levelBlock, ...boxes, grade, unlocked, actions].forEach(el => rsLand(el, true));
+    countUp(true);
+    if(levelBlock.setFinal) levelBlock.setFinal();
+    fillBadgeBars();
+    xp.classList.add("is-charged");
+    finish();
+    return;
+  }
+
+  const alive = () => panel.isConnected || resultsPausedNode === panel;
+  const seq = makeRevealSequence(alive);
+  resultsSeq = seq;
+  seq.add(120, instant => rsLand(head, instant));
+  seq.add(260, instant => rsLand(xp, instant));
+  lineEls.forEach(l => seq.add(340, instant => rsLand(l, instant)));
+  /* "then a second pause and it will show all the xp stuff" */
+  seq.add(750, instant => { rsLand(totalRow, instant); countUp(instant); });
+  seq.add(650, instant => {
+    rsLand(levelBlock, true);
+    xp.classList.add("is-charging");
+    if(instant){ if(levelBlock.setFinal) levelBlock.setFinal(); }
+    else if(levelBlock.runFill) levelBlock.runFill();
+  });
+  seq.add(1250, () => { xp.classList.remove("is-charging"); xp.classList.add("is-charged"); });
+  boxes.forEach(b => seq.add(420, instant => { rsLand(b, instant); if(b.classList.contains("rs-badges")) setTimeout(fillBadgeBars, instant ? 0 : 260); }));
+  seq.add(boxes.length ? 520 : 380, instant => {
+    rsLand(grade, instant);
+    if(!instant){
+      panel.classList.add("rs-shake");
+      setTimeout(() => panel.classList.remove("rs-shake"), 420);
+    }
+    setTimeout(celebrateGrade, instant ? 0 : 180);
+  });
+  if(!theme.muteBanners){
+    unlockItems.forEach((it, n) => {
+      seq.add(n === 0 ? 900 : 200, (instant, release) => playUnlockSpotlight(it, n + 1, unlockItems.length, release), true);
+    });
+  }
+  if(unlocked) seq.add(unlockItems.length && !theme.muteBanners ? 250 : 480, instant => rsLand(unlocked, instant));
+  if(actions) seq.add(unlocked ? 420 : 620, instant => rsLand(actions, instant));
+  seq.add(0, () => { resultsSeq = null; finish(); });
+
+  /* A tap anywhere on the screen skips ahead to the banners (or, past
+     them, to the end). Not on the buttons - those do what they say. */
+  panel.addEventListener("click", e => {
+    if(e.target.closest("button")) return;
+    if(resultsSeq === seq) seq.skip();
+  });
+  seq.start();
+}
+
+/* The second screen: only what was missed, and what to do about it. */
+function showRunReview(run, hooks){
+  endResultsReveal();
+  meterEl.hidden = true;
+  countEl.textContent = "";
+  testScopeLabelEl.textContent = "Test review";
+  pauseBtn.hidden = false;
+  appearanceBtn.hidden = true; homeBtn.hidden = true; profileBtn.hidden = true;
+
+  const panel = document.createElement("section");
+  panel.className = "panel rs-screen rs-review screen-runreview";
+  panel.dataset.screen = "runreview";
+
+  const head = buildRunHead(run, false);
+  const summary = document.createElement("p");
+  summary.className = "rs-review-summary";
+  summary.textContent = run.missed.length + (run.missed.length === 1 ? " question" : " questions") +
+    " to go over · " + run.pct + "%";
+  head.appendChild(summary);
+  panel.appendChild(head);
+
+  const list = document.createElement("ol");
+  list.className = "rs-qlist";
+  const sorted = run.missed.slice();
+  if(run.mode === "drill") sorted.sort((a, b) => (run.attempts[b] || 0) - (run.attempts[a] || 0));
+  sorted.forEach((qi, n) => {
+    const item = QUESTIONS[qi];
+    const li = document.createElement("li");
+    li.className = "rs-q";
+    const top = document.createElement("div");
+    top.className = "rs-q-top";
+    const num = document.createElement("span");
+    num.className = "rs-q-num"; num.textContent = String(n + 1);
+    const tag = document.createElement("span");
+    tag.className = "rs-q-tag";
+    tag.textContent = run.timedOutSet[qi] ? "Ran out of time"
+      : (run.mode === "exam" || run.vroom) ? "Missed"
+      : (run.attempts[qi] || 2) + " tries";
+    top.append(num, tag);
+    const q = document.createElement("div");
+    q.className = "rs-q-text rq";
+    writeText(q, item.q);
+    const ans = document.createElement("div");
+    ans.className = "rs-q-answers ra";
+    if((run.mode === "exam" || run.vroom) && run.picked[qi] !== undefined){
+      const yours = document.createElement("p");
+      yours.className = "rs-q-yours";
+      yours.innerHTML = "<span>Your answer</span>";
+      yours.appendChild(document.createTextNode(item.choices[optionOrder(qi)[run.picked[qi]]]));
+      ans.appendChild(yours);
+    }
+    const right = document.createElement("p");
+    right.className = "rs-q-right";
+    right.innerHTML = "<span>Correct answer</span>";
+    right.appendChild(document.createTextNode(item.choices[item.answer]));
+    ans.appendChild(right);
+    li.append(top, q, ans);
+    if(item.ref){
+      const ref = document.createElement("p");
+      ref.className = "rs-q-ref"; ref.textContent = item.ref;
+      li.appendChild(ref);
+    }
+    list.appendChild(li);
+  });
+  panel.appendChild(list);
+
+  const actions = hooks.finalActions();
+  panel.appendChild(actions);
+  stage.replaceChildren(panel);
+  toTop(true);
+  const first = actions.querySelector("button");
+  if(first) first.focus({ preventScroll: true });
+  hooks.tour();
+}
+
+/* Pause on either results screen. The screen itself is kept, not
+   rebuilt, so Resume puts back exactly what was there - half-way
+   through the reveal included - and the timeline carries on from the
+   same moment. */
+function pauseResults(){
+  const node = stage.firstElementChild;
+  if(!node) return;
+  resultsPausedNode = node;
+  resultsPausedScroll = window.scrollY || 0;
+  if(resultsSeq) resultsSeq.pause();
+  pauseBtn.hidden = true;
+  const panel = document.createElement("section");
+  panel.className = "panel pausepanel";
+  const h = document.createElement("p");
+  h.className = "qnum"; h.textContent = "Paused";
+  const p = document.createElement("p");
+  p.className = "qtext"; p.textContent = "Your results are saved. Pick up where you left off, or head back.";
+  const actions = document.createElement("div");
+  actions.className = "actions";
+  const resumeBtn = document.createElement("button");
+  resumeBtn.type = "button"; resumeBtn.className = "next"; resumeBtn.id = "resumebtn";
+  resumeBtn.textContent = "Resume";
+  resumeBtn.addEventListener("click", () => {
+    const back = resultsPausedNode;
+    resultsPausedNode = null;
+    if(!back) return;
+    stage.replaceChildren(back);
+    pauseBtn.hidden = false;
+    window.scrollTo({ top: resultsPausedScroll, behavior: "instant" });
+    if(resultsSeq) resultsSeq.resume();
+  });
+  const menuBtn = document.createElement("button");
+  menuBtn.type = "button"; menuBtn.className = "next ghost";
+  menuBtn.textContent = "Main menu";
+  menuBtn.addEventListener("click", () => { endResultsReveal(); showHome(); });
+  actions.append(resumeBtn, menuBtn);
+  panel.append(h, p, actions);
+  stage.replaceChildren(panel);
+  toTop();
+  resumeBtn.focus({ preventScroll: true });
+}
+function resultsScreenUp(){
+  const el = stage.firstElementChild;
+  return !!(el && el.classList && el.classList.contains("rs-screen"));
+}
 
 function summarize(){
   /* THE END OF A RUN IS THE MOMENT THE BOARD IS WORTH UPDATING, and the
@@ -44134,9 +45317,9 @@ function summarize(){
        the rank cutscene and banner for the rank, this for the colour,
        and announceCharacterUnlocks() for the character. Staggered so
        they arrive one after another rather than on top of each other. */
-    newlyUnlockedColors.forEach((c, i) => {
-      setTimeout(() => showThemeUnlockBanner(c), 1400 + i * 900);
-    });
+    /* Announced by the results screen now, one banner at a time with
+       everything else the run unlocked - see showRunRewards(). The daily
+       question, which has no results screen, still gets the top banner. */
   }
   /* The single biggest achievement in the app \u2014 reaching the very
      top of the Mastery Ladder \u2014 gets a genuine moment instead of
@@ -44150,7 +45333,11 @@ function summarize(){
      character and a rank character both land here, so neither can have
      a celebration the other does not. */
   retroHideBadges = null;   /* belt and braces - cleared above already */
-  announceCharacterUnlocks(lockedBefore);
+  /* Void is left out here for the reason announceCharacterUnlocks()
+     gives: it has a cutscene of its own on the main menu. */
+  const newCharacters = AVATAR_CHARACTERS
+    .filter(c => lockedBefore.has(c.id) && !isLockedCharacter(c.id) && c.id !== "voidwalker")
+    .map(c => c.id);
 
   const supernovaJustUnlocked = newlyUnlockedColors.includes("titan");
   if(supernovaJustUnlocked){
@@ -44191,6 +45378,10 @@ function summarize(){
      second screen just to say the same thing a locked-in answer
      already shows on its own. */
   if(runLabel === "Daily question"){
+    announceCharacterUnlocks(lockedBefore);
+    newlyUnlockedColors.forEach((c, i) => {
+      setTimeout(() => showThemeUnlockBanner(c), 1400 + i * 900);
+    });
     render();
     const existingPanel = stage.querySelector(".panel");
     if(existingPanel){
@@ -44225,572 +45416,168 @@ function summarize(){
     return;
   }
 
-  const panel = document.createElement("section");
-  panel.className = "panel";
-
-  const score = document.createElement("div");
-  score.className = "score";
-  if(isMissedRetake){
-    const badge = document.createElement("span");
-    badge.className = "pct retake-badge";
-    badge.textContent = "\u2713";
-    const label = document.createElement("span");
-    label.className = "slabel";
-    label.textContent = "Review complete \u2014 " + good + " of " + total +
-      " correct on this pass. This doesn't change your test grade, just practice.";
-    score.append(badge, label);
-  } else {
-    const num = document.createElement("span");
-    num.className = "pct " + (isPerfect ? "perfect" : pct >= PASS_MARK ? "made" : "short");
-    num.textContent = pct + "%";
-    const label = document.createElement("span");
-    label.className = "slabel";
-    label.textContent = total === 0
-      ? "Time ran out before you answered any questions."
-      : (timedOut ? "Time ran out. " : "") +
-        (runMode === "exam"
-          ? "Correct: " + good + " of " + total + "."
-          : "Answered correctly on the first attempt: " + good + " of " + total +
-            (runLabel ? ", on the retry" : "") + ".");
-    const timeLine = document.createElement("span");
-    timeLine.className = "timetaken";
-    timeLine.textContent = "Time: " + formatClock(elapsedMs);
-    score.append(num, label, timeLine);
-  }
-  panel.appendChild(score);
-
-  // Per-unit breakdown — only meaningful (and only shown) when the run
-  // actually spans more than one unit; a single-unit run's breakdown
-  // is just the overall score already shown above.
-  if(!isMissedRetake){
-    const unitBreakdown = {};
-    order.forEach(qi => {
-      const topic = (QUESTIONS[qi].topic || "Other").trim();
-      if(!unitBreakdown[topic]) unitBreakdown[topic] = { total: 0, wrong: 0 };
-      unitBreakdown[topic].total++;
-      if(missed.includes(qi)) unitBreakdown[topic].wrong++;
-    });
-    const unitNames = Object.keys(unitBreakdown);
-    if(unitNames.length > 1){
-      const breakdownWrap = document.createElement("div");
-      breakdownWrap.className = "unit-breakdown";
-      const breakdownHead = document.createElement("p");
-      breakdownHead.className = "slab";
-      breakdownHead.textContent = "By unit";
-      breakdownWrap.appendChild(breakdownHead);
-      unitNames.forEach(name => {
-        const stat = unitBreakdown[name];
-        const right = stat.total - stat.wrong;
-        const unitPct = stat.total > 0 ? Math.round((right / stat.total) * 100) : 0;
-        const row = document.createElement("div");
-        row.className = "unit-breakdown-row";
-        const rowTop = document.createElement("div");
-        rowTop.className = "unit-breakdown-top";
-        const rowName = document.createElement("span");
-        rowName.className = "unit-breakdown-name"; rowName.textContent = name;
-        const rowScore = document.createElement("span");
-        rowScore.className = "unit-breakdown-score"; rowScore.textContent = right + "/" + stat.total;
-        rowTop.append(rowName, rowScore);
-        const track = document.createElement("div");
-        track.className = "unit-breakdown-track";
-        const fill = document.createElement("div");
-        fill.className = "unit-breakdown-fill" + (unitPct === 100 ? " full" : unitPct < 60 ? " low" : "");
-        fill.style.width = unitPct + "%";
-        track.appendChild(fill);
-        row.append(rowTop, track);
-        breakdownWrap.appendChild(row);
-      });
-      panel.appendChild(breakdownWrap);
-    }
-  }
-
-  if(pointsEarned > 0 && !isMissedRetake){
-    const ptsWrap = document.createElement("div");
-    ptsWrap.className = "points-breakdown";
-    const ptsRow1 = document.createElement("p");
-    ptsRow1.className = "points-line";
-    ptsRow1.innerHTML = "";
-    ptsRow1.append(
-      Object.assign(document.createElement("span"), { className: "points-label", textContent: good + " correct \u00d7 " + POINTS_PER_QUESTION + " pts" }),
-      Object.assign(document.createElement("span"), { className: "points-val", textContent: "+" + pointsEarned })
-    );
-    ptsWrap.appendChild(ptsRow1);
-    if(perfectBonusEarned > 0){
-      const ptsRow2 = document.createElement("p");
-      ptsRow2.className = "points-line";
-      ptsRow2.append(
-        Object.assign(document.createElement("span"), { className: "points-label",
-          textContent: hundosEarned > 1 ? hundosEarned + " hundo bonuses" : "Hundo bonus" }),
-        Object.assign(document.createElement("span"), { className: "points-val", textContent: "+" + perfectBonusEarned })
-      );
-      ptsWrap.appendChild(ptsRow2);
-    }
-    if(multiTestBonusEarned > 0){
-      const ptsRow3 = document.createElement("p");
-      ptsRow3.className = "points-line";
-      ptsRow3.append(
-        Object.assign(document.createElement("span"), { className: "points-label",
-          textContent: cfg.units.length + " units \u00d7 " + MULTI_TEST_BONUS + " multi-test bonus" }),
-        Object.assign(document.createElement("span"), { className: "points-val", textContent: "+" + multiTestBonusEarned })
-      );
-      ptsWrap.appendChild(ptsRow3);
-    }
-    if(masteryBonusEarned > 0){
-      const ptsRow4 = document.createElement("p");
-      ptsRow4.className = "points-line";
-      ptsRow4.append(
-        Object.assign(document.createElement("span"), { className: "points-label",
-          textContent: (() => {
-            const paid = badgesEarnedThisRun.filter(u => retroBadges.indexOf(u) < 0);
-            return paid.length > 1 ? paid.length + " units mastered" : paid[0] + " badge";
-          })() }),
-        Object.assign(document.createElement("span"), { className: "points-val",
-          textContent: "+" + masteryBonusEarned })
-      );
-      ptsWrap.appendChild(ptsRow4);
-    }
-    const ptsTotal = document.createElement("p");
-    ptsTotal.className = "points-total";
-    ptsTotal.append(
-      Object.assign(document.createElement("span"), { className: "points-label", textContent: "XP earned" }),
-      Object.assign(document.createElement("span"), { className: "points-val",
-        textContent: "+" + (pointsEarned + perfectBonusEarned + multiTestBonusEarned
-                            + masteryBonusEarned) })
-    );
-    ptsWrap.appendChild(ptsTotal);
-    panel.appendChild(ptsWrap);
-  }
-
-  /* The bar, under the itemised XP, on EVERY mode - drill, exam, game,
-     the daily question and the Virtual Room alike. It is built even for
-     a run that earned nothing (a retake of missed questions, a wrong
-     daily question), because "where am I" is worth seeing either way and
-     a block that appears on some results screens and not others is one
-     more thing to explain. runFill() is called after the panel is on
-     the stage, at the bottom of this function. */
-  const levelBlock = buildResultsLevelBlock(
-    isMissedRetake ? 0
-      : (pointsEarned + perfectBonusEarned + multiTestBonusEarned + masteryBonusEarned),
-    store.lifetime.points);
-  panel.appendChild(levelBlock);
-  /* Stashed for the Virtual Room, which runs this whole function for
-     its side effects and then replaces the screen with its own - so its
-     results screen can show the same block rather than compute the
-     numbers a second time and risk a second answer. */
-  lastRunXpEarned = isMissedRetake ? 0
+  /* ---- TWO SCREENS FROM HERE ----
+     Everything above is the run being scored and recorded; everything
+     below is how it is SHOWN, which is showRunRewards() and, when
+     something was missed, showRunReview() - see the note above them.
+     This function hands over the numbers and the two things only it can
+     build: the run's own buttons and the first-results tour. */
+  const xpTotal = isMissedRetake ? 0
     : (pointsEarned + perfectBonusEarned + multiTestBonusEarned + masteryBonusEarned);
+  /* Stashed for the Virtual Room results screen, which shows the same
+     level block rather than computing the numbers a second time. */
+  lastRunXpEarned = xpTotal;
   lastRunPointsAfter = store.lifetime.points;
 
-  if(leveledUpTo && !theme.muteBanners){
-    const lu = document.createElement("p");
-    lu.className = "levelup lvl-" + leveledUpTo;
-    const starsWrap = document.createElement("span");
-    starsWrap.className = "levelup-stars";
-    for(let s = 0; s < LEVEL_STARS[leveledUpTo]; s++){
-      const st = document.createElement("span");
-      st.className = "levelup-star";
-      st.style.animationDelay = (s * 0.15) + "s";
-      st.textContent = "\u2605";
-      starsWrap.appendChild(st);
-    }
-    lu.appendChild(starsWrap);
-    lu.appendChild(document.createTextNode(" " + LEVEL_NAME[leveledUpTo] + " unlocked \u2014 " + cfg.units[0] + "!"));
-    panel.appendChild(lu);
-  }
-
-  /* ONE BOX FOR ONE THING: what you beat and what it opened.
-     "It would need to say 'average difficulty' or whichever difficulty
-     was unlocked. The one that says you beat the easy one would need to
-     say easy difficulty ... put both of those things in that nice green
-     box, because it's regarding the same thing." The unlock line was a
-     separate grey note under the banner. The box keeps its colour per
-     difficulty beaten (Easy green, Average amber, Hardcore red).
-     Under the mute setting the celebration goes but the unlock does not:
-     what you can now pick is information, so it stays as a plain note. */
-  if(justBeatSpeed){
-    const speedLabel = GAME_SPEEDS[justBeatSpeed].label;
-    const nextSpeed = { easy: "average", average: "hardcore" }[justBeatSpeed];
-    const unlockText = nextSpeed
-      ? GAME_SPEEDS[nextSpeed].label + " difficulty is now unlocked \u2014 "
-        + GAME_SPEEDS[nextSpeed].seconds + " seconds a question, "
-        + GAME_SPEEDS[nextSpeed].lives + (GAME_SPEEDS[nextSpeed].lives === 1 ? " life." : " lives.")
-      : "Every difficulty beaten on " + cfg.units[0] + ".";
-    if(!theme.muteBanners){
-      const bs = document.createElement("div");
-      bs.className = "levelup game-beat-box lvl-game-" + justBeatSpeed;
-      const head = document.createElement("p");
-      head.className = "game-beat-head";
-      if(justBeatSpeed === "hardcore"){
-        const shimmer = document.createElement("span");
-        shimmer.className = "shimmer-game-hardcore";
-        shimmer.textContent = speedLabel + " difficulty cleared (Game)";
-        head.appendChild(shimmer);
-      } else {
-        head.appendChild(document.createTextNode(speedLabel + " difficulty cleared (Game)"));
-      }
-      head.appendChild(document.createTextNode(" \u2014 " + cfg.units[0] + "!"));
-      const sub = document.createElement("p");
-      sub.className = "game-beat-sub game-unlock-note";
-      sub.textContent = unlockText;
-      bs.append(head, sub);
-      panel.appendChild(bs);
-    } else {
-      const un = document.createElement("p");
-      un.className = "info-note game-unlock-note";
-      un.textContent = unlockText;
-      panel.appendChild(un);
-    }
-  }
-
-  if(newBest){
-    const pb = document.createElement("p");
-    pb.className = "pbbanner";
-    pb.textContent = "New personal best: " + formatClock(elapsedMs);
-    panel.appendChild(pb);
-  }
-
-
-  /* ---- WHERE EVERY UNIT IN THIS RUN NOW STANDS -------------------------
-     This was one line, about one unit, and only on a 100% single-unit
-     run: "X more perfect runs on <unit> until the Drill star". Three
-     things were wrong with that. It named the Drill star, which is the
-     badge under an older name. It said nothing at all after a run that
-     was not flawless - which is most runs, and exactly when somebody
-     wants to know how far off they are. And a three-unit run reported
-     on one of the three.
-     So it is a row per unit that this run could have counted towards,
-     in the order they were sat, each with where it now stands. A unit
-     mastered by this very run says so; the rest say what is left.
-     A SLICE IS NOT A UNIT, AND THE LINE HAS TO SAY SO. The first
-     version of this leaned on `cfg.source === "all"` to keep partial
-     runs out, which it does not do at all - that only means "from the
-     real bank", so a 10-question drill on Penal Code came through and
-     reported "0 of 5 hundos - 5 to go" after a run that could never
-     have earned one. A hundo needs the unit IN FULL
-     (recordUnitPerfectIfEligible / isFullUnitRun), so the row for a
-     unit this run only sampled says that instead of quoting a count
-     the run had no way to move. Looked at on a screenshot, not
-     measured - every number on the screen was correct. */
-  if(runTrackable && !timedOut && cfg.source === "all" && (cfg.units || []).length){
-    /* ONLY THE UNITS THIS RUN EARNED A HUNDO IN. "The badge rows will
-       only be for the badge progress for the hits you took from that
-       test." A row for every unit sat - including ones the run missed a
-       question in, or only sampled - read as progress that had not
-       happened. A unit whose count did not move gets no row at all. */
-    const progUnits = cfg.units.filter(u => unitQuestionCount(u) > 0
-      && unitPerfectCount(u) > (perfectsBefore[u] || 0));
-    if(progUnits.length){
-      const progWrap = document.createElement("div");
-      progWrap.className = "badgeprogress-wrap";
-      progUnits.forEach(u => {
-        const need = badgeThresholdFor(u);
-        const have = Math.min(need, unitPerfectCount(u));
-        const row = document.createElement("div");
-        row.className = "badgeprogress-row" + (have >= need ? " is-done" : "");
-        const art = document.createElement("span");
-        art.className = "badgeprogress-art";
-        art.appendChild(buildUnitBadgeSVG(u, have >= need));
-        const body = document.createElement("div");
-        body.className = "badgeprogress-body";
-        const nm = document.createElement("p");
-        /* "Identity Crimes badge", not "Identity Crimes" - "the badge
-           progress needs to state unit title and then badge". The row
-           is progress towards a badge, and the bare unit name read as
-           a unit score. */
-        nm.className = "badgeprogress-name"; nm.textContent = u + " badge";
-        const track = document.createElement("div");
-        track.className = "badgeprogress-track";
-        const fill = document.createElement("div");
-        fill.className = "badgeprogress-fill";
-        fill.style.width = Math.round((have / need) * 100) + "%";
-        track.appendChild(fill);
-        /* Did THIS run cover the unit end to end? Counted off the run's
-           own question list against the unit's size, which is the same
-           question isFullUnitRun() asks and does not depend on how the
-           run was configured. */
-        const inRun = (order || []).filter(qi => {
-          const q = QUESTIONS[qi];
-          return q && (q.topic || "").trim() === u;
-        }).length;
-        const full = inRun >= unitQuestionCount(u);
-        const line = document.createElement("p");
-        line.className = "badgeprogress-line";
-        line.textContent = have >= need
-          ? "Badge earned"
-          : full
-            ? have + " of " + need + " hundos \u00b7 " + (need - have) + " to go"
-            : have + " of " + need + " hundos \u00b7 a hundo needs the whole unit";
-        body.append(nm, track, line);
-        row.append(art, body);
-        progWrap.appendChild(row);
-      });
-      panel.appendChild(progWrap);
-    }
-  }
-
-  if(newlyUnlockedColors.length && !theme.muteBanners){
-    newlyUnlockedColors.forEach(c => {
-      const banner = document.createElement("div");
-      banner.className = "unlockbanner";
-      const dot = document.createElement("span");
-      /* The special swirling treatment (previously "legend", the old
-         separate 100%-complete color) now marks reaching the actual
-         top of the Mastery Ladder \u2014 titan/Supernova \u2014 since that's
-         the genuine top tier now, not a separate achievement beside
-         the ladder. */
-      dot.className = "unlockbanner-dot" + (c === "titan" ? " legend-dot" : "");
-      if(c !== "titan") dot.style.background = ACCENT_SWATCH[c];
-      const text = document.createElement("span");
-      text.innerHTML = "";
-      const line1 = document.createElement("span");
-      line1.className = "unlockbanner-kicker"; line1.textContent = "COLOR UNLOCKED";
-      const line2 = document.createElement("span");
-      line2.className = "unlockbanner-name"; line2.textContent = "\"" + ACCENT_DISPLAY_NAME[c] + "\"";
-      text.append(line1, line2);
-      banner.append(dot, text);
-      panel.appendChild(banner);
-    });
-  }
-
-  /* A badge is the biggest thing a single run can earn, so it gets its
-     own banner above the per-unit one rather than a clause tacked onto
-     it. The real badge art, not a glyph: the point is to see the thing
-     you just won, and the cutscene on the main menu shows the same
-     artwork so the two read as one event. */
-  if(badgesEarnedThisRun.length && !theme.muteBanners){
-    badgesEarnedThisRun.forEach(unit => {
-      const banner = document.createElement("div");
-      banner.className = "unlockbanner badgebanner";
-      const art = document.createElement("span");
-      art.className = "badgebanner-art";
-      art.appendChild(buildUnitBadgeSVG(unit, true));
-      const text = document.createElement("span");
-      const line1 = document.createElement("span");
-      line1.className = "unlockbanner-kicker";
-      line1.textContent = "BADGE EARNED";
-      const line2 = document.createElement("span");
-      line2.className = "unlockbanner-name";
-      line2.textContent = unit + " badge";
-      text.append(line1, line2);
-      banner.append(art, text);
-      panel.appendChild(banner);
-    });
-  }
-
-  /* A combined multi-unit run rarely lands at 100% overall just because
-     one unit had a slip \u2014 but a unit inside it that genuinely was
-     aced deserves its own recognition instead of vanishing into a
-     score that wasn't perfect. Shown regardless of whether it also
-     happened to earn that unit's Drill star this run. */
-  if(multiUnitStarsEarned.perfected.length && !theme.muteBanners){
-    const banner = document.createElement("div");
-    banner.className = "unlockbanner";
-    const dot = document.createElement("span");
-    dot.className = "unlockbanner-dot";
-    dot.textContent = "\u2605";
-    const text = document.createElement("span");
-    const line1 = document.createElement("span");
-    line1.className = "unlockbanner-kicker";
-    line1.textContent = multiUnitStarsEarned.perfected.length === 1 ? "100% ON A UNIT" : "100% ON MULTIPLE UNITS";
-    const line2 = document.createElement("span");
-    line2.className = "unlockbanner-name";
-    /* No longer tacks "Drill star earned on X" onto the end: that is
-       the badge, and the badge has its own banner above this one. */
-    line2.textContent = multiUnitStarsEarned.perfected.join(", ");
-    text.append(line1, line2);
-    banner.append(dot, text);
-    panel.appendChild(banner);
-  }
-
-  if(isPerfect || justBeatSpeed){
-    const palette = justBeatSpeed === "hardcore" ? LEVEL_CONFETTI.black
-      : justBeatSpeed === "average" ? LEVEL_CONFETTI.intermediate
-      : justBeatSpeed === "easy" ? LEVEL_CONFETTI.beginner
-      : leveledUpTo ? LEVEL_CONFETTI[leveledUpTo] : null;
-    celebrate(palette);
-  }
-
+  const xpLines = [];
   if(!isMissedRetake){
-    /* One card, like the XP breakdown and the level bar above it.
-       This block used to sit bare on the panel underneath two carded
-       ones, which is most of why the screen read as a pile rather
-       than a set. */
-    const reviewCard = document.createElement("div");
-    reviewCard.className = "results-review";
-    const head = document.createElement("p");
-    head.className = "qnum";
-    head.textContent = missed.length ? "Review these" : "Nothing to review";
-    reviewCard.appendChild(head);
-
-    if(missed.length){
-      const ul = document.createElement("ul");
-      ul.className = "review";
-      const sorted = missed.slice();
-      if(runMode === "drill") sorted.sort((a, b) => attempts[b] - attempts[a]);
-      sorted.forEach(qi => {
-        const item = QUESTIONS[qi];
-        const li = document.createElement("li");
-        const box = document.createElement("div");
-
-        const q = document.createElement("div");
-        q.className = "rq";
-        writeText(q, item.q);
-
-        const a = document.createElement("div");
-        a.className = "ra";
-        const yours = runMode === "exam" && picked[qi] !== undefined
-          ? "You answered: " + item.choices[optionOrder(qi)[picked[qi]]] + ". "
-          : attempts[qi] + " attempts. ";
-        a.textContent = yours + "Correct answer: " + item.choices[item.answer] +
-          (item.ref ? "  " + item.ref : "");
-
-        box.append(q, a);
-        li.appendChild(box);
-        ul.appendChild(li);
-      });
-      reviewCard.appendChild(ul);
-    } else {
-      const p = document.createElement("p");
-      p.className = "qtext";
-      p.textContent = runMode === "exam"
-        ? "You got every question right."
-        : "You cleared every question on the first try.";
-      reviewCard.appendChild(p);
+    if(pointsEarned > 0) xpLines.push({ label: good + " correct \u00d7 " + POINTS_PER_QUESTION, value: pointsEarned });
+    if(perfectBonusEarned > 0) xpLines.push({ label: hundosEarned > 1 ? hundosEarned + " hundo bonuses" : "Hundo bonus", value: perfectBonusEarned });
+    if(multiTestBonusEarned > 0) xpLines.push({ label: "Multi-unit bonus", value: multiTestBonusEarned });
+    if(masteryBonusEarned > 0){
+      const paid = badgesEarnedThisRun.filter(u => retroBadges.indexOf(u) < 0);
+      xpLines.push({ label: paid.length > 1 ? paid.length + " badges earned" : paid[0] + " badge", value: masteryBonusEarned });
     }
-    panel.appendChild(reviewCard);
   }
+  /* Only the units THIS run earned a hundo in - "the badge rows will
+     only be for the badge progress for the hits you took from that
+     test". A unit whose count did not move gets no row. */
+  const progUnits = (runTrackable && !timedOut && cfg.source === "all")
+    ? (cfg.units || []).filter(u => unitQuestionCount(u) > 0 && unitPerfectCount(u) > (perfectsBefore[u] || 0))
+    : [];
+  /* The units the run actually covered, in the order they were chosen -
+     which for a retake of missed questions is only the ones it drew from. */
+  const topicsHere = new Set(order.map(qi => (QUESTIONS[qi].topic || "").trim()));
+  const unitsSat = (cfg.units || []).filter(u => topicsHere.has(u));
+  topicsHere.forEach(t => { if(t && unitsSat.indexOf(t) < 0) unitsSat.push(t); });
 
-  const actions = document.createElement("div");
-  /* actions-results: both buttons share the row equally. They are a
-     pair of equals here - neither is the obvious next step - and two
-     pills of different widths sitting side by side was the last thing
-     on this screen that did not line up with anything else. */
-  actions.className = "actions actions-results";
+  const buildFinalActions = () => {
+    const actions = document.createElement("div");
+    /* actions-results: both buttons share the row equally. They are a
+       pair of equals here - neither is the obvious next step - and two
+       pills of different widths sitting side by side was the last thing
+       on this screen that did not line up with anything else. */
+    actions.className = "actions actions-results";
 
-  /* Trimmed down to at most two buttons per scenario, picked for what's
-     actually most useful right then, instead of offering every possible
-     path at once:
-     - Missed something in Drill? "Retake missed" is the one action that
-       actually helps \u2014 re-running the whole thing or reconfiguring isn't
-       needed on top of it.
-     - Otherwise, a perfect run points toward trying something new; a
-       non-perfect run (or Exam, which never offers a same-test replay)
-       points toward another attempt or a fresh setup.
-     "Main menu" always stays as the one, single way out. */
-  /* Retakes now get the same "still have some missed?" logic as a
-     normal drill run, per explicit request \u2014 previously this always
-     showed a single "New run" button regardless of score, with no way
-     to keep drilling down on what's still wrong. Getting everything
-     right on THIS retake pass is what unlocks the third option,
-     re-running the original full test from scratch; short of that,
-     the two options are retaking what's still missed, or leaving. */
-  const hasMissedRetakeOption = runMode === "drill" && missed.length > 0;
-  /* Both fixes for this exact scenario, per explicit request: the
-     bottom tab bar hidden (it was carrying over visible from the
-     unit-selection screen before this test started, with nothing in
-     summarize() ever explicitly hiding it again), and both action
-     buttons given equal width instead of each sizing to its own text
-     length \\u2014 which is exactly why "Retake missed questions (5)" and
-     "Main menu" read as such mismatched sizes before. */
-  if(hasMissedRetakeOption){
-    /* The bottom-tab-bar fix that used to live here is now set
-       unconditionally at the very top of this function instead
-       (every results outcome needs it, not just this one). */
-    actions.classList.add("actions-equal-width");
-  }
-  /* When this run is what just lit the final flare on the Mastery
-     Ladder, none of the normal follow-up actions make sense to offer
-     alongside it \u2014 the only real next step is heading to Home, where
-     the actual celebration (the cutscene) is what's waiting, not
-     another test to jump straight into. */
-  if(supernovaJustUnlocked){
-    // no additional action buttons \u2014 only "Go Home" below
-  } else if(runMode === "game"){
-    /* No review, no retake, no re-run \u2014 per explicit request, Game
-       mode's results screen offers only the one path out (Main menu,
-       added unconditionally further below). Checked ahead of every
-       other condition in this chain so nothing else in here (isPerfect,
-       the final catch-all "Re-run this test") ever has a chance to add
-       a second button for a Game run. */
-  } else if(hasMissedRetakeOption){
-    const retakeBtn = document.createElement("button");
-    retakeBtn.type = "button"; retakeBtn.className = "next"; retakeBtn.id = "nextbtn";
-    retakeBtn.textContent = "Retake missed questions (" + missed.length + ")";
-    retakeBtn.addEventListener("click", () => {
-      beginRun(shuffle(missed.slice()), "Missed questions", null, true);
-    });
-    actions.appendChild(retakeBtn);
-  } else if(isMissedRetake){
-    /* No button here anymore \u2014 per explicit request, "Re-run this
-       test" is removed entirely, everywhere it appeared (this was the
-       100%-on-retake case specifically). Falls through to just "Main
-       menu" below, same as every other now-empty branch in this
-       chain. */
-  } else if(runMode === "exam"){
-    const newRunBtn = document.createElement("button");
-    newRunBtn.type = "button"; newRunBtn.className = "next"; newRunBtn.id = "nextbtn";
-    newRunBtn.textContent = "New run";
-    newRunBtn.addEventListener("click", showSetup);
-    actions.appendChild(newRunBtn);
-  } else if(isPerfect){
-    const newRunBtn = document.createElement("button");
-    newRunBtn.type = "button"; newRunBtn.className = "next"; newRunBtn.id = "nextbtn";
-    newRunBtn.textContent = "New run";
-    newRunBtn.addEventListener("click", showSetup);
-    actions.appendChild(newRunBtn);
-  } else {
-    /* "Re-run this test" removed entirely here too, per explicit
-       request \u2014 seemed problematic and confusing rather than useful.
-       This was the last remaining catch-all instance of it. */
-  }
+    /* Trimmed down to at most two buttons per scenario, picked for what's
+       actually most useful right then, instead of offering every possible
+       path at once:
+       - Missed something in Drill? "Retake missed" is the one action that
+         actually helps \u2014 re-running the whole thing or reconfiguring isn't
+         needed on top of it.
+       - Otherwise, a perfect run points toward trying something new; a
+         non-perfect run (or Exam, which never offers a same-test replay)
+         points toward another attempt or a fresh setup.
+       "Main menu" always stays as the one, single way out. */
+    /* Retakes now get the same "still have some missed?" logic as a
+       normal drill run, per explicit request \u2014 previously this always
+       showed a single "New run" button regardless of score, with no way
+       to keep drilling down on what's still wrong. Getting everything
+       right on THIS retake pass is what unlocks the third option,
+       re-running the original full test from scratch; short of that,
+       the two options are retaking what's still missed, or leaving. */
+    const hasMissedRetakeOption = runMode === "drill" && missed.length > 0;
+    /* Both fixes for this exact scenario, per explicit request: the
+       bottom tab bar hidden (it was carrying over visible from the
+       unit-selection screen before this test started, with nothing in
+       summarize() ever explicitly hiding it again), and both action
+       buttons given equal width instead of each sizing to its own text
+       length \\u2014 which is exactly why "Retake missed questions (5)" and
+       "Main menu" read as such mismatched sizes before. */
+    if(hasMissedRetakeOption){
+      /* The bottom-tab-bar fix that used to live here is now set
+         unconditionally at the very top of this function instead
+         (every results outcome needs it, not just this one). */
+      actions.classList.add("actions-equal-width");
+    }
+    /* When this run is what just lit the final flare on the Mastery
+       Ladder, none of the normal follow-up actions make sense to offer
+       alongside it \u2014 the only real next step is heading to Home, where
+       the actual celebration (the cutscene) is what's waiting, not
+       another test to jump straight into. */
+    if(supernovaJustUnlocked){
+      // no additional action buttons \u2014 only "Go Home" below
+    } else if(runMode === "game"){
+      /* No review, no retake, no re-run \u2014 per explicit request, Game
+         mode's results screen offers only the one path out (Main menu,
+         added unconditionally further below). Checked ahead of every
+         other condition in this chain so nothing else in here (isPerfect,
+         the final catch-all "Re-run this test") ever has a chance to add
+         a second button for a Game run. */
+    } else if(hasMissedRetakeOption){
+      const retakeBtn = document.createElement("button");
+      retakeBtn.type = "button"; retakeBtn.className = "next"; retakeBtn.id = "nextbtn";
+      retakeBtn.textContent = "Retake missed questions (" + missed.length + ")";
+      retakeBtn.addEventListener("click", () => {
+        beginRun(shuffle(missed.slice()), "Missed questions", null, true);
+      });
+      actions.appendChild(retakeBtn);
+    } else if(isMissedRetake){
+      /* No button here anymore \u2014 per explicit request, "Re-run this
+         test" is removed entirely, everywhere it appeared (this was the
+         100%-on-retake case specifically). Falls through to just "Main
+         menu" below, same as every other now-empty branch in this
+         chain. */
+    } else if(runMode === "exam"){
+      const newRunBtn = document.createElement("button");
+      newRunBtn.type = "button"; newRunBtn.className = "next"; newRunBtn.id = "nextbtn";
+      newRunBtn.textContent = "New run";
+      newRunBtn.addEventListener("click", showSetup);
+      actions.appendChild(newRunBtn);
+    } else if(isPerfect){
+      const newRunBtn = document.createElement("button");
+      newRunBtn.type = "button"; newRunBtn.className = "next"; newRunBtn.id = "nextbtn";
+      newRunBtn.textContent = "New run";
+      newRunBtn.addEventListener("click", showSetup);
+      actions.appendChild(newRunBtn);
+    } else {
+      /* "Re-run this test" removed entirely here too, per explicit
+         request \u2014 seemed problematic and confusing rather than useful.
+         This was the last remaining catch-all instance of it. */
+    }
 
-  const mainMenuBtn = document.createElement("button");
-  mainMenuBtn.type = "button";
-  /* The primary, unmistakable style here specifically when it's the
-     one and only option on screen \u2014 "ghost" (secondary styling) made
-     sense when this sat beside a real primary action, but standing
-     alone after the biggest achievement in the app, it should look
-     like the main thing to do, not an afterthought. */
-  mainMenuBtn.className = supernovaJustUnlocked ? "next" : "next ghost";
-  mainMenuBtn.textContent = supernovaJustUnlocked ? "Go Home" : "Main menu";
-  mainMenuBtn.addEventListener("click", showHome);
-  actions.appendChild(mainMenuBtn);
+    const mainMenuBtn = document.createElement("button");
+    mainMenuBtn.type = "button";
+    /* The primary, unmistakable style here specifically when it's the
+       one and only option on screen \u2014 "ghost" (secondary styling) made
+       sense when this sat beside a real primary action, but standing
+       alone after the biggest achievement in the app, it should look
+       like the main thing to do, not an afterthought. */
+    mainMenuBtn.className = supernovaJustUnlocked ? "next" : "next ghost";
+    mainMenuBtn.textContent = supernovaJustUnlocked ? "Go Home" : "Main menu";
+    mainMenuBtn.addEventListener("click", showHome);
+    actions.appendChild(mainMenuBtn);
+    /* Alone, it is the thing to do - a Game run, a clean retake. */
+    if(actions.children.length === 1) mainMenuBtn.className = "next";
+    return actions;
+  };
 
-  panel.appendChild(actions);
-  /* A FEW SECONDS TO READ THE RESULTS, THEN THE UPDATE. Asked for in
-     those words: "next time they finish a test, give it a few seconds
-     to review the stuff then push it." Build 142 made a forced update
-     wait for Home, which was right about not eating the results screen
-     and wrong about how long to wait - somebody who goes from one test
-     straight into another never gets it.
+  const resultsTour = () => {
+    if(!store.seenFirstResultsTour){
+      store.seenFirstResultsTour = true;
+      saveStore();
+      startSimpleTour([
+        { target: ".actions", align: "left", vplacement: "above",
+          text: "Try again, retake just what you missed, or head back \u2014 your result is saved either way." }
+      ]);
+    }
+  };
 
-     dataset.screen is what forcedUpdateBlocked() reads, and it used to
-     be set by exactly two screens. There is a third value now.
-     noticeAllowedHere() tests for "home" or "welcome" specifically, so
-     "results" still fails it by construction and no banner can appear
-     here - but the invariant is "three screens set it" now, not two,
-     and anything new reading dataset.screen has to know that. The node
-     is replaced on the next mount, so it still clears itself. */
-  panel.dataset.screen = "results";
-  resultsShownAt = Date.now();
-  stage.replaceChildren(panel);
-  toTop();
-  /* On the stage now, so the bar has a committed starting width to
-     transition away from. */
-  if(levelBlock.runFill) levelBlock.runFill();
-  actions.firstChild.focus({ preventScroll: true });
-  const totalEarned = pointsEarned + perfectBonusEarned + multiTestBonusEarned;
-  if(totalEarned > 0){
-    showPointsFlyEffect("+" + totalEarned + " XP!");
-  }
-  if(!store.seenFirstResultsTour){
-    store.seenFirstResultsTour = true;
-    saveStore();
-    startSimpleTour([
-      { target: ".actions", align: "left", vplacement: "above",
-        text: "Try again, retake just what you missed, or head back \u2014 your result is saved either way." }
-    ]);
-  }
+  const runResult = {
+    total, good, pct, missed, isPerfect, elapsedMs, timedOut,
+    order: order.slice(), attempts: Object.assign({}, attempts), picked: Object.assign({}, picked),
+    timedOutSet: Object.assign({}, timedOutSet),
+    mode: runMode, retake: isMissedRetake, practice: practiceTestMinutes != null,
+    vroom: !!inVirtualRoom, source: cfg.source, gameSpeed: cfg.gameSpeed,
+    units: (cfg.units || []).slice(), unitsSat,
+    xpLines, xpTotal, pointsAfter: store.lifetime.points,
+    hundosEarned, leveledUpTo, justBeatSpeed, newBest,
+    progUnits, perfectsBefore,
+    badges: badgesEarnedThisRun.slice(), retroBadges: retroBadges.slice(),
+    colors: newlyUnlockedColors.slice(), characters: newCharacters,
+    supernova: supernovaJustUnlocked
+  };
+  showRunRewards(runResult, { finalActions: buildFinalActions, tour: resultsTour });
   /* Virtual Room completion \u2014 fires after every normal side effect
      above (points, tier detection, the usual summary panel) has
      already happened, then overrides the display with the shared
@@ -50390,7 +51177,14 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
   if(onResults){
     panel.className = "vroom-finale-inline";
     waitNote.style.marginTop = "1rem";
-    host.insertBefore(panel, host.children[1] || null);
+    /* At the foot of the rewards screen since build 212, where the
+       Continue button would be on any other run - and with the review
+       under it, which on every other run is a screen of its own. */
+    const waitReview = buildRunReviewBlock();
+    if(waitReview) panel.appendChild(waitReview);
+    const slot = host.querySelector(".rs-endslot");
+    if(slot) slot.appendChild(panel);
+    else host.insertBefore(panel, host.children[1] || null);
   } else {
     const waitReview = buildRunReviewBlock();
     if(waitReview) panel.appendChild(waitReview);
