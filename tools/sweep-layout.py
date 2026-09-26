@@ -143,7 +143,7 @@ SEED = """try{
    var t = new Date(today); t.setDate(t.getDate() - d);
    return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
  };
- var log = {}; for(var i=0;i<24;i++){ log[day(i)] = { seconds: 600 + i*37, answered: 12 + i }; }
+ var log = {}; for(var i=0;i<24;i++){ log[day(i)] = (600 + i*37) * 1000; }
  // The shape recordTestPlay() actually writes, with the longest real unit
  // names in it. The old fixture used date/seconds/score and no label, so
  // the review row rendered "undefined" with a one-bit meta line - and the

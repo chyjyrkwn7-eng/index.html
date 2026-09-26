@@ -10413,8 +10413,13 @@
      actually take effect regardless of which class the icon itself
      happened to arrive with. */
   .whatsnew-icon svg{ color:inherit !important; }
+  /* ABOVE THE TAB BAR (200) AND THE CHAT DOCK (300), not at 80. At 80
+     both painted over the dim and stayed tappable through it, so a tab
+     tapped behind this card changed screens and left the card stuck on
+     top of the next one. mountSheetOverlay() clears it on a screen
+     change as well, for anything that navigates without a tap. */
   .installguide-overlay{
-    position:fixed; inset:0; z-index:80; background:rgba(18,22,27,.55);
+    position:fixed; inset:0; z-index:350; background:rgba(18,22,27,.55);
     display:flex; align-items:center; justify-content:center; padding:1.5rem;
     animation:installguide-scrim-in .25s ease-out;
   }
@@ -11524,6 +11529,19 @@
   .profile-hero-meta{ margin-top:.45rem; display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
   .profile-hero-meta:empty{ display:none; }
   .profile-edit-btn{ padding:.4rem .85rem; font-size:.78rem; flex-shrink:0; }
+  /* SMALL TO LOOK AT, 44px TO HIT. These are deliberately compact -
+     a chip beside a name, an (i) beside a heading, the x on the chat
+     box, a row of version headings - and every one of them measured
+     26-32px tall, under the 44px floor this app holds its tap targets
+     to. An invisible ::after grows the target without moving a pixel
+     of the layout, which is the rule's own advice for a control that
+     has to stay small. */
+  .profile-edit-btn, .chatdock-close, .infoicon, .releasehistory-version-btn{ position:relative; }
+  .profile-edit-btn::after, .chatdock-close::after, .infoicon::after,
+  .releasehistory-version-btn::after{
+    content:""; position:absolute; left:50%; top:50%;
+    width:max(100%, 44px); height:max(100%, 44px); transform:translate(-50%,-50%);
+  }
   /* The card is the whole top of this tab now that the character grid
      and the colour swatches have moved to their own screen - "by
      removing the theme and character stuff underneath that profile box,
@@ -31876,9 +31894,17 @@ function buildInfoIcon(text){
       closeBubble();
     }
   });
-  document.addEventListener("click", (e) => {
+  /* ONE DOCUMENT LISTENER PER ICON, AND IT HAS TO LET GO. Settings
+     alone builds four of these on every visit, and nothing ever took
+     the listener off - measured, the document had gained a click
+     handler per icon per visit, all of them running on every tap for
+     the rest of the session. Once the icon has left the page the
+     listener removes itself on the next click. */
+  const onDocClick = (e) => {
+    if(!wrap.isConnected){ document.removeEventListener("click", onDocClick); closeBubble(); return; }
     if(!wrap.contains(e.target) && !bubble.contains(e.target)) closeBubble();
-  });
+  };
+  document.addEventListener("click", onDocClick);
   wrap.appendChild(btn);
   wrap._bubble = bubble;
   return wrap;
@@ -32485,7 +32511,7 @@ function showInstallPlatformPicker(){
 
   overlay.appendChild(card);
   overlay.addEventListener("click", (e) => { if(e.target === overlay) overlay.remove(); });
-  document.body.appendChild(overlay);
+  mountSheetOverlay(overlay);
 }
 
 function showInstallGuide(platform){
@@ -32508,7 +32534,7 @@ function showInstallGuide(platform){
 
   overlay.appendChild(card);
   overlay.addEventListener("click", (e) => { if(e.target === overlay) overlay.remove(); });
-  document.body.appendChild(overlay);
+  mountSheetOverlay(overlay);
 }
 
 function buildPauseIcon(){
@@ -32850,7 +32876,7 @@ function buildPillTabBarIcon(){
 function addStudyTime(ms){
   if(!(ms > 0)) return;
   const key = dayKey(new Date());
-  store.studyLog[key] = (store.studyLog[key] || 0) + ms;
+  store.studyLog[key] = (Number(store.studyLog[key]) || 0) + ms;
   saveStore();
 }
 
@@ -37209,11 +37235,17 @@ function showDailyAlert(msg, opts){
      button's own old positioning glitch). Anything on <body> has to
      clear itself on navigation or it sits over whatever comes next,
      which is exactly how showTourSendoff's overlay used to get stuck. */
-  clearBannerOnScreenChange(el);
+  /* The observer is kept, not thrown away. The timeout below used to
+     call `onNavigate.disconnect()` - a name that only exists inside
+     showIntroPopup - so every one of these banners threw a
+     ReferenceError on its way out, never reached el.remove(), and sat
+     invisible on <body> with its observer still attached until the
+     next screen change. */
+  const onNavigate = clearBannerOnScreenChange(el);
   requestAnimationFrame(() => el.classList.add("show"));
   setTimeout(() => {
     el.classList.remove("show");
-    setTimeout(() => { onNavigate.disconnect(); el.remove(); }, 300);
+    setTimeout(() => { if(onNavigate) onNavigate.disconnect(); el.remove(); }, 300);
   }, 4200);
 }
 
@@ -42766,7 +42798,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-26-208";
+const APP_BUILD = "2026-09-26-209";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -45894,7 +45926,9 @@ function studyTotals(){
   const todayKey = dayKey(now);
   let dayMs = 0, weekMs = 0, monthMs = 0, totalMs = 0;
   Object.keys(store.studyLog).forEach(key => {
-    const ms = store.studyLog[key] || 0;
+    /* A number or nothing. Anything else - a hand-edited or foreign
+       document - would turn every total on the Stats tab into NaN. */
+    const ms = Number(store.studyLog[key]) || 0;
     totalMs += ms;
     if(key === todayKey) dayMs += ms;
     const parts = key.split("-").map(Number);
@@ -47326,6 +47360,9 @@ function clearBannerOnScreenChange(el){
     obs.disconnect(); el.remove();
   });
   try{ obs.observe(stage, { childList: true }); }catch(e){}
+  /* Handed back so a banner that times out on its own can stop
+     watching - see showDailyAlert. */
+  return obs;
 }
 
 function placeTopBanner(el){
@@ -47590,7 +47627,7 @@ let tugCutscenePlayed = false;
 
 function detachTug(){
   if(tugUnsub){ try{ tugUnsub(); }catch(e){} tugUnsub = null; }
-  if(tugTickTimer){ cancelAnimationFrame(tugTickTimer); tugTickTimer = null; }
+  if(tugTickTimer){ clearInterval(tugTickTimer); tugTickTimer = null; }
   if(tugAdvanceTimer){ clearTimeout(tugAdvanceTimer); tugAdvanceTimer = null; }
 }
 
@@ -47893,7 +47930,7 @@ function renderTugScreen(d){
 function tugSettleAnswer(ok, btn, mark, list, right){
   if(tugAnswered) return;
   tugAnswered = true;
-  if(tugTickTimer){ cancelAnimationFrame(tugTickTimer); tugTickTimer = null; }
+  if(tugTickTimer){ clearInterval(tugTickTimer); tugTickTimer = null; }
   const choices = [...list.querySelectorAll(".choice")];
   choices.forEach(x => { x.disabled = true; x.classList.add("locked"); });
   if(btn){
@@ -47924,24 +47961,30 @@ function tugRedrawFromCache(){
   renderTugScreen(tugLastData);
 }
 
+/* A CLOCK, NOT A FRAME LOOP - the same change build 207 made to the
+   countdowns. iOS stops requestAnimationFrame while a finger is
+   scrolling or the keyboard is up, so a question timer driven by it
+   froze while somebody typed in the match chat and then ran out late.
+   The time left was always computed from Date.now(), so only the
+   ticking changes; ten a second is plenty for a tenths display. */
 function startTugClock(){
-  if(tugTickTimer){ cancelAnimationFrame(tugTickTimer); tugTickTimer = null; }
+  if(tugTickTimer){ clearInterval(tugTickTimer); tugTickTimer = null; }
+  const stop = () => { if(tugTickTimer){ clearInterval(tugTickTimer); tugTickTimer = null; } };
   const tick = () => {
     const el = document.querySelector(".screen-tug .tug-clock");
-    if(!el){ tugTickTimer = null; return; }
+    if(!el){ stop(); return; }
     const left = Math.max(0, tugQuestionShownAt + tugQuestionMsNow - Date.now());
     el.textContent = (left / 1000).toFixed(1) + "s";
     el.classList.toggle("is-low", left < 4000);
     if(left <= 0){
-      tugTickTimer = null;
+      stop();
       const list = document.querySelector(".screen-tug .choices");
       const item = QUESTIONS[tugPool[tugMyPos % tugPool.length]];
       if(list && item) tugSettleAnswer(false, null, null, list, item.answer);
-      return;
     }
-    tugTickTimer = requestAnimationFrame(tick);
   };
-  tugTickTimer = requestAnimationFrame(tick);
+  tugTickTimer = setInterval(tick, 100);
+  tick();
 }
 
 /* Everything that moves because SOMEBODY ELSE answered. Never rebuilds
@@ -48002,6 +48045,105 @@ function refreshTugLive(d){
         + (Math.round(lead * 10) / 10) + " ahead · " + gap + " clear wins it";
   }
   tugLastRopePos = pos;
+}
+
+/* RESTORED IN THE AUDIT AFTER BUILD 208. Build 170 deleted the
+   join-by-code screen that used to follow these two, and the deletion
+   ran from the top of this comment instead of the top of that function
+   - so from 170 on, finishing your questions in Tug of War and the end
+   of every Tug of War match threw a ReferenceError. `check-js` cannot
+   see a missing function; a no-undef lint pass can, and found it. */
+/* FINISHED THE BANK AND THE ROPE IS STILL MOVING. There is nothing
+   left to answer, so the screen becomes the rope - which is the one
+   thing still changing. No exit buttons: leaving a match in progress
+   is the pause menu's job, not a link on the screen. */
+function renderTugWaiting(d){
+  const existing = document.querySelector(".screen-tug-wait");
+  if(existing){ refreshTugLive(d); return; }
+  setActiveNav(null);
+  window.forceHideBottomTabs = true;
+  countEl.textContent = "Tug of War";
+  if(tugTickTimer){ clearInterval(tugTickTimer); tugTickTimer = null; }
+
+  const panel = document.createElement("section");
+  panel.className = "panel screen-tug-wait";
+  const title = document.createElement("h1");
+  title.className = "welcomeintro-title";
+  /* Plain, not chatty - this is a police academy class. */
+  title.textContent = "You're done";
+  panel.appendChild(title);
+  const sub = document.createElement("p");
+  sub.className = "cal-sub"; sub.style.textAlign = "center";
+  sub.textContent = "You got through all " + tugCount + " with " + tugMyCorrect
+    + " right. The rope is still moving.";
+  panel.appendChild(sub);
+  panel.appendChild(buildTugRope(d));
+  const live = document.createElement("p");
+  live.className = "tug-waiting friend-hint";
+  panel.appendChild(live);
+  stage.replaceChildren(panel);
+  toTop();
+  refreshTugLive(d);
+}
+
+function showTugResult(d){
+  detachTug();
+  testInProgress = false;
+  inVirtualRoom = false;
+  setActiveNav(null);
+  window.forceHideBottomTabs = true;
+  countEl.textContent = "Tug of War";
+
+  const mine = tugTeamOf(d, vroomMyKey);
+  const winner = d.tug.winner;
+  const drawn = !winner;
+  const won = !drawn && winner === mine;
+
+  const panel = document.createElement("section");
+  panel.className = "panel screen-tug-result";
+
+  const title = document.createElement("h1");
+  title.className = "welcomeintro-title";
+  /* A DRAW IS A REAL OUTCOME NOW, and it has to be said rather than
+     shown as a loss. The rope used to end only by being pulled clear,
+     so there was always a side; it can now also run out of questions
+     or out of pace with the rope dead centre, and calling that "your
+     side lost" would be a lie to both halves of the room. */
+  title.textContent = drawn ? "Nobody moved it" : (won ? "Your side won" : "Your side lost");
+  panel.appendChild(title);
+
+  const sub = document.createElement("p");
+  sub.className = "cal-sub"; sub.style.textAlign = "center";
+  const gap = Math.abs(Number(d.tug.finalPos) || 0);
+  sub.textContent = drawn
+    ? "Dead even at the end of " + tugMatchCount(d) + " questions."
+    : tugMembers(d, winner).map(k => (d.participants[k] || {}).name || "?").join(" & ")
+      + " pulled it " + (Math.round(gap * 10) / 10) + " clear.";
+  panel.appendChild(sub);
+
+  panel.appendChild(buildTugRope(d));
+
+  const exits = document.createElement("div");
+  exits.className = "vroom-exit-row";
+  const lobby = document.createElement("button");
+  lobby.type = "button"; lobby.className = "next ghost vroom-exit-btn";
+  lobby.textContent = "Back to lobby";
+  lobby.addEventListener("click", () => {
+    if(!fbDb || !vroomCode){ showVirtualRoomLobby(); return; }
+    const reset = { "tug.over": false, "tug.progress": {}, "tug.finalPos": 0, "tug.winner": null, status: "waiting" };
+    if(!vroomIsHost){ showVirtualRoomLobby(); return; }
+    fbDb.collection("vrooms").doc(vroomCode).update(reset)
+      .then(() => showVirtualRoomLobby()).catch(() => showVirtualRoomLobby());
+  });
+  const home = document.createElement("button");
+  home.type = "button"; home.className = "next ghost vroom-exit-btn";
+  home.textContent = "Back to Home";
+  home.addEventListener("click", () => { leaveVirtualRoom(); showHome(); });
+  exits.append(lobby, home);
+  panel.appendChild(exits);
+
+  stage.replaceChildren(panel);
+  toTop();
 }
 
 function joinVirtualRoomLobby(code){
@@ -53292,7 +53434,14 @@ function showRankings(defaultBoard){
      one moment your own numbers are most likely to have changed, and a
      snapshot only arrives when the CLOUD changes - which, for your own
      row, is exactly what this screen no longer waits for. */
-  document.addEventListener("visibilitychange", () => { if(!document.hidden) paint(); });
+  /* Lets go once this board has left the page. It used to stay
+     attached for good, so every visit to Rankings added another one
+     and coming back to the app repainted every board ever opened. */
+  const onVisible = () => {
+    if(!rows.isConnected){ document.removeEventListener("visibilitychange", onVisible); return; }
+    if(!document.hidden) paint();
+  };
+  document.addEventListener("visibilitychange", onVisible);
 
   /* Scrolls your own row into view and flashes it. The flash is a
      class removed on animationend rather than a timer, so pressing

@@ -69,7 +69,7 @@ SEED = """try{
    var t = new Date(today); t.setDate(t.getDate() - d);
    return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
  };
- var log = {}; for(var i=0;i<24;i++){ log[day(i)] = { seconds: 600 + i*37, answered: 12 + i }; }
+ var log = {}; for(var i=0;i<24;i++){ log[day(i)] = (600 + i*37) * 1000; }
  var hist = []; for(var j=0;j<9;j++){ hist.push({ date: day(j*2), mode: ['drill','exam','game'][j%3],
    score: 12 + j, total: 20, pct: Math.round((12+j)/20*100), seconds: 300 + j*20,
    units: ['Texas Penal Code'] }); }

@@ -995,6 +995,53 @@ def main():
             check("and a whole-bank match is still capped, at twenty minutes",
                   pace["mAll"] <= 20, pace["mAll"])
 
+            # ---- THE END OF A MATCH. Nothing here looked past the rope
+            # moving, and the two screens after it had both been deleted
+            # by accident in build 170 - finishing your questions and the
+            # end of every match threw a ReferenceError and left the
+            # screen where it was. Played to the end, on both devices.
+            tug_errs = []
+            for tag, pg in (("A", tugA), ("B", tugB)):
+                pg.on("pageerror", lambda e, t=tag: tug_errs.append(t + ": " + str(e)))
+            for _ in range(80):
+                if tugA.evaluate("()=>tugMyDone || !document.querySelector('.screen-tug .choices .choice:not([disabled])')"):
+                    if tugA.evaluate("()=>tugMyDone"):
+                        break
+                    tugA.wait_for_timeout(300)
+                    continue
+                tug_answer(tugA, True)
+            tugA.wait_for_timeout(600)
+            wait = tugA.evaluate("""()=>({ done: tugMyDone,
+              wait: !!document.querySelector('.screen-tug-wait'),
+              rope: !!document.querySelector('.screen-tug-wait .tug-rope'),
+              over: !!(tugLastData && tugLastData.tug && tugLastData.tug.over) })""")
+            check("finishing your questions shows the rope, not a frozen question",
+                  wait["wait"] or wait["over"], wait)
+            for _ in range(80):
+                if tugB.evaluate("()=>tugMyDone || !document.querySelector('.screen-tug')"):
+                    break
+                if tugB.evaluate("()=>!!document.querySelector('.screen-tug .choices .choice:not([disabled])')"):
+                    tug_answer(tugB, False)
+                else:
+                    tugB.wait_for_timeout(300)
+            for pg in (tugA, tugB):
+                try:
+                    pg.wait_for_selector(".screen-tug-result", timeout=20000)
+                except Exception:
+                    pass
+            ends = [pg.evaluate("""()=>({ result: !!document.querySelector('.screen-tug-result'),
+              title: (document.querySelector('.screen-tug-result h1')||{}).textContent || null,
+              exits: [...document.querySelectorAll('.screen-tug-result .vroom-exit-btn')].map(b=>b.textContent) })""")
+                    for pg in (tugA, tugB)]
+            check("the match ends on a result screen on both devices",
+                  all(e["result"] for e in ends), ends)
+            check("the side that answered everything right won it",
+                  ends[0]["title"] == "Your side won" and ends[1]["title"] == "Your side lost",
+                  [e["title"] for e in ends])
+            check("with a way back to the lobby and a way home",
+                  all(len(e["exits"]) == 2 for e in ends), [e["exits"] for e in ends])
+            check("and nothing threw on the way there", not tug_errs, tug_errs[:3])
+
             # THE TIME LIMIT CONTROL IS GONE for tug, and still there for
             # race - "when I hit tug of war, the timer option shouldn't be
             # there". Asserted as a SHAPE (one slider vs two) rather than by
