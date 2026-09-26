@@ -29930,41 +29930,30 @@ const LEVEL_CAP = 80;
    number of levels a badge buys shrinks as you climb, and no choice of
    rates makes "a mastery is worth about seven levels" hold anywhere but
    one spot on the ladder. A flat cost makes it hold everywhere. */
-/* ---- PAST 45 THE CURVE STEEPENS, AND KEEPS STEEPENING ----
+/* ---- PAST 45 EVERY LEVEL IS 6% DEARER THAN THE LAST ----
    "A lot of people are already in 30s or 40s with few badges ... at
    level 45 we need up the xp needed from then on to be exponentially
    greater level by level at a higher rate."
    Measured on the live board before changing it: the top five were at
    43, 39, 33, 32 and 32 with 3, 3, 1, 0 and 0 badges, 4.7 days after
-   the Sep 22 fresh start - 6,000 to 11,300 XP a day. At that pace the
-   ~2% late growth had the whole climb from 45 to 80 (136k XP) done in
-   under a fortnight, against an ask to pace the levels to early
-   December.
-   9% a level from 46 to 60, compounding: level 46 costs 2,918 (was
-   2,730) and level 60 9,751. Past 60 it eases to 4.82% (see
-   LEVEL_EASE_GROWTH below), so level 80 costs 24,997 and the cap is
-   475,304 XP in all (was 194,229).
+   the Sep 22 fresh start - 6,000 to 11,300 XP a day - and the old
+   +1.99% tail had 45 -> 80 done inside a fortnight at that pace.
+   THE RATE WAS SETTLED BY LOOKING AT THE LIST, three times: 9% all the
+   way asked 54,655 for level 80 ("not even realistic"); 9% then 4.82%
+   past 60 put 80 at 25,000 but the total at 475,304 ("a little high
+   still ... total xp needed could be about 375,000"). One steady rate
+   fitted to that total is 6.01%: level 46 costs 2,838 (was 2,730),
+   level 60 6,425, level 80 20,644, and the cap is 374,976 XP in all
+   (was 194,229).
    NOBODY LOSES A LEVEL: every level up to and including 45 costs
    exactly what it did, and nobody in the class was above 43.
-   THIS ENDS "ALL SIXTEEN BADGES LAND ON THE CAP", on purpose. Past 45
-   a level now costs more than the badges alone pay for, so the top
-   three ranks ask for grinding as well as mastery - which is the
+   THIS ENDS "ALL SIXTEEN BADGES LAND ON THE CAP", on purpose - the top
+   ranks now ask for study past what their badges pay, which is the
    complaint being answered (high levels, few badges). */
 const LEVEL_STEEP_FROM = 45;
-const LEVEL_STEEP_GROWTH = 1.09;
-/* ---- ...AND EASES OFF AGAIN PAST 60 ----
-   Seen as a list, 9% all the way up asked 54,655 for level 80 and
-   687,537 in all: "nearly 60000 xp for the max level is not even
-   realistic ... level 80 could be 25k xp so re work 60-80". 46-60 are
-   kept exactly as 9% made them (level 60 is 9,751); from 61 each level
-   is 4.82% dearer than the last, a rate fitted so level 80 costs 24,997.
-   Still dearer every single level, and a cheaper tail can only raise
-   anybody's level, never lower it. */
-const LEVEL_EASE_FROM = 60;
-const LEVEL_EASE_GROWTH = 1.0482;
+const LEVEL_STEEP_GROWTH = 1.0601;
 function levelGrowthAt(lvl){
   if(lvl <= LEVEL_FREEZE_THROUGH) return LEVEL_GROWTH;
-  if(lvl > LEVEL_EASE_FROM) return LEVEL_EASE_GROWTH;
   if(lvl > LEVEL_STEEP_FROM) return LEVEL_STEEP_GROWTH;
   /* The one-off step into the first level past the freeze. A multiplier
      on the level before it rather than a flat cost, so it cannot drift
