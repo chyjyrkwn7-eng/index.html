@@ -6904,6 +6904,14 @@
     text-shadow:0 0 6px rgba(184,134,11,.3), 0 0 10px rgba(107,63,160,.25);
   }
   .levelup.lvl-game-easy{ color:#16964F; background:rgba(22,150,79,.08); text-shadow:0 0 6px rgba(22,150,79,.3); }
+  /* The Game win box carries two lines: what was cleared, and what it
+     unlocked, smaller and without the glow so the pair reads as heading
+     and detail. */
+  .game-beat-box .game-beat-head{ margin:0; }
+  .game-beat-box .game-beat-sub{
+    margin:.4rem 0 0; font-size:.82rem; font-weight:700; letter-spacing:0;
+    text-shadow:none; opacity:.92;
+  }
   .levelup.lvl-game-average{ color:#D9781A; background:rgba(217,120,26,.08); text-shadow:0 0 6px rgba(217,120,26,.3); }
   .levelup.lvl-game-hardcore{ color:#B0293D; background:rgba(176,41,61,.08); text-shadow:0 0 6px rgba(176,41,61,.35); }
   [data-theme="dark"] .levelup.lvl-beginner{ color:#5CA8FF; background:rgba(92,168,255,.14); text-shadow:0 0 8px rgba(92,168,255,.45); }
@@ -44390,39 +44398,48 @@ function summarize(){
     panel.appendChild(lu);
   }
 
-  if(justBeatSpeed && !theme.muteBanners){
-    const speedLabel = { easy: "Easy", average: "Average", hardcore: "Hardcore" }[justBeatSpeed];
-    const bs = document.createElement("p");
-    bs.className = "levelup lvl-game-" + justBeatSpeed;
-    if(justBeatSpeed === "hardcore"){
-      const shimmer = document.createElement("span");
-      shimmer.className = "shimmer-game-hardcore";
-      shimmer.textContent = speedLabel + " cleared (Game)";
-      bs.appendChild(shimmer);
-    } else {
-      bs.appendChild(document.createTextNode(speedLabel + " cleared (Game)"));
-    }
-    bs.appendChild(document.createTextNode(" \u2014 " + cfg.units[0] + "!"));
-    panel.appendChild(bs);
-  }
-  /* WHAT THE WIN OPENED, IN WORDS. "If you beat easy on a game mode,
-     there needs to be something in the results saying the unit
-     unlocked the next difficulty." The banner above only said Easy was
-     cleared, and the lock itself lives on the start sheet two screens
-     away. Outside the mute on purpose: this is information about what
-     you can now pick, not a celebration. */
+  /* ONE BOX FOR ONE THING: what you beat and what it opened.
+     "It would need to say 'average difficulty' or whichever difficulty
+     was unlocked. The one that says you beat the easy one would need to
+     say easy difficulty ... put both of those things in that nice green
+     box, because it's regarding the same thing." The unlock line was a
+     separate grey note under the banner. The box keeps its colour per
+     difficulty beaten (Easy green, Average amber, Hardcore red).
+     Under the mute setting the celebration goes but the unlock does not:
+     what you can now pick is information, so it stays as a plain note. */
   if(justBeatSpeed){
+    const speedLabel = GAME_SPEEDS[justBeatSpeed].label;
     const nextSpeed = { easy: "average", average: "hardcore" }[justBeatSpeed];
-    const un = document.createElement("p");
-    un.className = "info-note game-unlock-note";
-    if(nextSpeed){
-      const sp = GAME_SPEEDS[nextSpeed];
-      un.textContent = sp.label + " is now unlocked for " + cfg.units[0] + " \u2014 " + sp.seconds
-        + " seconds a question, " + sp.lives + (sp.lives === 1 ? " life." : " lives.");
+    const unlockText = nextSpeed
+      ? GAME_SPEEDS[nextSpeed].label + " difficulty is now unlocked \u2014 "
+        + GAME_SPEEDS[nextSpeed].seconds + " seconds a question, "
+        + GAME_SPEEDS[nextSpeed].lives + (GAME_SPEEDS[nextSpeed].lives === 1 ? " life." : " lives.")
+      : "Every difficulty beaten on " + cfg.units[0] + ".";
+    if(!theme.muteBanners){
+      const bs = document.createElement("div");
+      bs.className = "levelup game-beat-box lvl-game-" + justBeatSpeed;
+      const head = document.createElement("p");
+      head.className = "game-beat-head";
+      if(justBeatSpeed === "hardcore"){
+        const shimmer = document.createElement("span");
+        shimmer.className = "shimmer-game-hardcore";
+        shimmer.textContent = speedLabel + " difficulty cleared (Game)";
+        head.appendChild(shimmer);
+      } else {
+        head.appendChild(document.createTextNode(speedLabel + " difficulty cleared (Game)"));
+      }
+      head.appendChild(document.createTextNode(" \u2014 " + cfg.units[0] + "!"));
+      const sub = document.createElement("p");
+      sub.className = "game-beat-sub game-unlock-note";
+      sub.textContent = unlockText;
+      bs.append(head, sub);
+      panel.appendChild(bs);
     } else {
-      un.textContent = "Every difficulty beaten on " + cfg.units[0] + ".";
+      const un = document.createElement("p");
+      un.className = "info-note game-unlock-note";
+      un.textContent = unlockText;
+      panel.appendChild(un);
     }
-    panel.appendChild(un);
   }
 
   if(newBest){

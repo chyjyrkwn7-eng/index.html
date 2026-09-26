@@ -5282,9 +5282,12 @@ Children (54) and the Constitution (77), 5 for Arrest, Search and Seizure
   `store.unitPerfects` beside `badgesBefore` and a unit whose count did
   not move gets no row: a slice, a run with a miss, or a timed-out run
   shows none. `check-curve` section 6 asserts both empty cases.
-- **A Game win says what it unlocked** (`.game-unlock-note`): "Average is
-  now unlocked for Identity Crimes - 30 seconds a question, 2 lives", or
-  "Every difficulty beaten on ..." after Hardcore. Outside the
-  mute-banners setting on purpose; it is information, not celebration.
+- **A Game win is one box, in the difficulty's colour, with two lines**
+  (`.game-beat-box`): "Easy difficulty cleared (Game) - Identity Crimes!"
+  and under it "Average difficulty is now unlocked - 30 seconds a
+  question, 2 lives" (or "Every difficulty beaten on ..." after Hardcore).
+  Asked for as "average difficulty" wording, both "in that nice green
+  box, because it's regarding the same thing". With banners muted, the
+  unlock line stays as a plain `.game-unlock-note`.
 
 No committed regression suite exists yet. Worth building.
