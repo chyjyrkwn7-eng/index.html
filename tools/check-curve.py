@@ -267,10 +267,11 @@ def main():
         print("\n4. what it costs to climb")
         costs = pg.evaluate("""()=>{
           const at = L => xpForLevel(L) - xpForLevel(L - 1);
-          let minRatioPast45 = Infinity;
-          for(let L = 47; L <= LEVEL_CAP; L++) minRatioPast45 = Math.min(minRatioPast45, at(L) / at(L - 1));
+          let minRatio46to60 = Infinity, minRatio61to80 = Infinity;
+          for(let L = 47; L <= 60; L++) minRatio46to60 = Math.min(minRatio46to60, at(L) / at(L - 1));
+          for(let L = 61; L <= LEVEL_CAP; L++) minRatio61to80 = Math.min(minRatio61to80, at(L) / at(L - 1));
           return { l26: at(26), l50: at(50), l60: at(60), l61: at(61), l80: at(80),
-                   toCap: xpForLevel(LEVEL_CAP), minRatioPast45 };}""")
+                   toCap: xpForLevel(LEVEL_CAP), minRatio46to60, minRatio61to80 };}""")
         print("     ", json.dumps(costs))
         """"If you are level 60 I don't want you to have to play for a
         week straight to earn 2 levels." Two levels at 60 against a
@@ -286,9 +287,15 @@ def main():
         check("two levels at 60 is under a week at 6,000 XP a day",
               two60 / 6000.0 < 7, "%.1f days" % (two60 / 6000.0))
         # AND THE STEEPENING ITSELF, which is the decision build 210 made:
-        # every level past 45 at least 8% dearer than the one before.
-        check("past 45 every level is at least 8% dearer than the last",
-              costs["minRatioPast45"] >= 1.08, round(costs["minRatioPast45"], 4))
+        # every level from 46 to 60 at least 8% dearer than the one before,
+        # then easing - "level 80 could be 25k xp so re work 60-80" - so
+        # the last level costs about 25,000 and every level still costs
+        # more than the one below it.
+        check("46-60: every level is at least 8% dearer than the last",
+              costs["minRatio46to60"] >= 1.08, round(costs["minRatio46to60"], 4))
+        check("61-80: still dearer every level, and level 80 is about 25,000",
+              costs["minRatio61to80"] > 1.0 and abs(costs["l80"] - 25000) <= 500,
+              {"minRatio": round(costs["minRatio61to80"], 4), "l80": costs["l80"]})
         check("and a level still costs more the higher you are",
               costs["l80"] > costs["l60"] > costs["l50"] > costs["l26"], costs)
 

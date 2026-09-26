@@ -29940,11 +29940,10 @@ const LEVEL_CAP = 80;
    ~2% late growth had the whole climb from 45 to 80 (136k XP) done in
    under a fortnight, against an ask to pace the levels to early
    December.
-   9% a level from 46, compounding: level 46 costs 2,918 (was 2,730),
-   level 60 ~9,700, level 80 ~54,700, and the cap goes from 194,229 XP
-   to ~687,500. The heaviest player at launch-week pace reaches 80
-   around Nov 21; the 6,000-a-day group reaches Supernova's level 71 in
-   about seven weeks and does not reach 80 inside the course.
+   9% a level from 46 to 60, compounding: level 46 costs 2,918 (was
+   2,730) and level 60 9,751. Past 60 it eases to 4.82% (see
+   LEVEL_EASE_GROWTH below), so level 80 costs 24,997 and the cap is
+   475,304 XP in all (was 194,229).
    NOBODY LOSES A LEVEL: every level up to and including 45 costs
    exactly what it did, and nobody in the class was above 43.
    THIS ENDS "ALL SIXTEEN BADGES LAND ON THE CAP", on purpose. Past 45
@@ -29953,8 +29952,19 @@ const LEVEL_CAP = 80;
    complaint being answered (high levels, few badges). */
 const LEVEL_STEEP_FROM = 45;
 const LEVEL_STEEP_GROWTH = 1.09;
+/* ---- ...AND EASES OFF AGAIN PAST 60 ----
+   Seen as a list, 9% all the way up asked 54,655 for level 80 and
+   687,537 in all: "nearly 60000 xp for the max level is not even
+   realistic ... level 80 could be 25k xp so re work 60-80". 46-60 are
+   kept exactly as 9% made them (level 60 is 9,751); from 61 each level
+   is 4.82% dearer than the last, a rate fitted so level 80 costs 24,997.
+   Still dearer every single level, and a cheaper tail can only raise
+   anybody's level, never lower it. */
+const LEVEL_EASE_FROM = 60;
+const LEVEL_EASE_GROWTH = 1.0482;
 function levelGrowthAt(lvl){
   if(lvl <= LEVEL_FREEZE_THROUGH) return LEVEL_GROWTH;
+  if(lvl > LEVEL_EASE_FROM) return LEVEL_EASE_GROWTH;
   if(lvl > LEVEL_STEEP_FROM) return LEVEL_STEEP_GROWTH;
   /* The one-off step into the first level past the freeze. A multiplier
      on the level before it rather than a flat cost, so it cannot drift

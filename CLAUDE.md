@@ -5205,11 +5205,16 @@ level by level at a higher rate."
   day. At that pace the old +1.99% tail had 45 -> 80 done inside a
   fortnight.
 - **`LEVEL_STEEP_FROM = 45`, `LEVEL_STEEP_GROWTH = 1.09`**: every level
-  from 46 costs 9% more than the one before. 46 is 2,918 (was 2,730), 60 is
-  ~9,750, 80 is ~54,700, and the cap is 687,537 XP (was 194,229). Levels
-  1-45 are byte-identical, and nobody held more than 43, so no level
-  dropped. `check-curve` asserts both, and asserts the 8%+ steepening,
-  which fails on 209.
+  from 46 to 60 costs 9% more than the one before. 46 is 2,918 (was
+  2,730) and 60 is 9,751. Levels 1-45 are byte-identical, and nobody held
+  more than 43, so no level dropped. `check-curve` asserts both, and
+  asserts the 8%+ steepening, which fails on 209.
+- **`LEVEL_EASE_FROM = 60`, `LEVEL_EASE_GROWTH = 1.0482`**: 9% all the
+  way to 80 asked 54,655 for the last level, which Madison called "not
+  even realistic ... level 80 could be 25k xp so re work 60-80". The rate
+  is fitted so level 80 costs 24,997; the cap is 475,304 XP in all.
+  `check-curve` asserts 61-80 still rises every level and ends within 500
+  of 25,000.
 - **This deliberately ends "all sixteen badges land on the cap".** The
   badge line (badge work alone, cheapest first) is now
   `21 28 33 38 42 46 49 52 54 56 57 59 60 61 62 64`: the badge is still the
