@@ -27615,6 +27615,12 @@ function applyLoadedData(got){
      A new account has no XP, so it tops up nothing. */
   store.levelPreserved = typeof got.levelPreserved === "boolean"
     ? got.levelPreserved : false;
+  /* Defaults to 0 for an existing account, like levelPreserved and for
+     the same reason: grantRetroBadgesOnce() is SUPPOSED to run once for
+     people who are already here. */
+  store.badgeBandsVersion = typeof got.badgeBandsVersion === "number" ? got.badgeBandsVersion : 0;
+  store.retroBadgePending = Array.isArray(got.retroBadgePending)
+    ? got.retroBadgePending.filter(u => typeof u === "string") : [];
   /* The weekly board's two fields. weekPoints defaults to 0 and weekKey
      to THIS week rather than to null: an existing account has a lifetime
      total but no record of when any of it was earned, and crediting all
@@ -30192,7 +30198,50 @@ const MASTERY_BONUS = 2500;
    BADGE_THRESHOLD to 30 cannot retro-pay it, because a unit already
    past 30 produces no diff. Nobody gets a windfall for a badge they
    already held. */
+/* ---- BADGES THE NEW BANDS HANDED OUT, CELEBRATED ON THE NEXT TEST ----
+   "Because of the badge count change, some people may rank up, I want
+   people to see the rank up animation ... if the badge hundo
+   requirements gives them the badge, no matter the next test they take,
+   the badge unlock sequence would initiate for that badge, and the rank
+   thing would initiate if applicable."
+   grantRetroBadgesOnce() lists, once, the units somebody holds under the
+   build-210 bands but did not under 209's. summarize() then HIDES those
+   units while it takes its "before" snapshots (badges, ranks, rank
+   characters), so the next finished test sees them arrive and plays
+   exactly what an earned badge plays - the end-of-test banner, the
+   cutscene on Home, the rank cutscene and unlock banners if the count
+   crosses a rank. No MASTERY_BONUS for them: the no-back-pay rule for
+   badges already held still stands; only the celebration is owed.
+   `var`, per the note on UNIT_SIZE_CACHE: read by functions that can run
+   before this line. */
+var retroHideBadges = null;
+const LEGACY_BADGE_BANDS_209 = [
+  { max: 19, hundos: 35 }, { max: 40, hundos: 25 }, { max: 60, hundos: 15 },
+  { max: 100, hundos: 10 }, { max: 200, hundos: 7 }, { max: Infinity, hundos: 5 }
+];
+function legacyBadgeThreshold209(name){
+  const n = unitQuestionCount(name);
+  if(!n) return BADGE_THRESHOLD;
+  for(let i = 0; i < LEGACY_BADGE_BANDS_209.length; i++){
+    if(n <= LEGACY_BADGE_BANDS_209[i].max) return LEGACY_BADGE_BANDS_209[i].hundos;
+  }
+  return BADGE_THRESHOLD;
+}
+/* One shot per account: the flag syncs on `store`, so a second device
+   does not list the same badges again. Runs at boot for accounts that
+   existed before build 211; a brand-new account is marked current at
+   sign-up, so a badge it earns under the new bands is never mistaken for
+   a handed-out one. */
+function grantRetroBadgesOnce(){
+  if(store.badgeBandsVersion >= 2) return;
+  const perf = store.unitPerfects || {};
+  store.retroBadgePending = topicsIn(QUESTIONS).filter(u =>
+    (perf[u] || 0) >= badgeThresholdFor(u) && (perf[u] || 0) < legacyBadgeThreshold209(u));
+  store.badgeBandsVersion = 2;
+  saveStore();
+}
 function unitBadgeEarned(name){
+  if(retroHideBadges && retroHideBadges.has(name)) return false;
   return (store.unitPerfects[name] || 0) >= badgeThresholdFor(name);
 }
 function badgesEarnedList(){
@@ -30200,8 +30249,10 @@ function badgesEarnedList(){
 }
 function badgeCountOf(st){
   const perf = (st && st.unitPerfects) || {};
+  const hide = (st === store && retroHideBadges) ? retroHideBadges : null;
   try {
-    return topicsIn(QUESTIONS).filter(u => (perf[u] || 0) >= badgeThresholdFor(u)).length;
+    return topicsIn(QUESTIONS).filter(u => (perf[u] || 0) >= badgeThresholdFor(u)
+      && !(hide && hide.has(u))).length;
   } catch(e){ return 0; }
 }
 
@@ -40004,6 +40055,9 @@ function showHome(){
        onboarding on tourRev 0 and be re-armed on its NEXT launch, which
        is the one person who should never be shown these twice. */
     store.tourRev = TOUR_REV;
+    /* Current on badge bands by definition too: every badge this
+       account ever gets is earned under them and celebrated at the time. */
+    store.badgeBandsVersion = 2;
     saveStore();
     setTimeout(() => {
       /* Guards against the case where the person has already tapped
@@ -43865,6 +43919,13 @@ function summarize(){
      same trap the tier snapshot below carries its own comment about,
      hit again forty lines away. A "before" snapshot belongs before
      every mutation in the function, not before most of them. */
+  /* Badges the new bands handed out, shown as not-yet-held for the
+     "before" snapshots only - see grantRetroBadgesOnce(). Only on a run
+     that reaches those snapshots, or a character unlocked by the hidden
+     badges would be announced by a run that then celebrates nothing. */
+  const retroBadges = (runTrackable && !timedOut && order.length > 0)
+    ? (store.retroBadgePending || []).filter(u => unitBadgeEarned(u)) : [];
+  retroHideBadges = retroBadges.length ? new Set(retroBadges) : null;
   const lockedBefore = lockedCharacterSet();
 
   drawMeter();
@@ -43942,6 +44003,8 @@ function summarize(){
     const TIER_ORDER = TIER_ORDER_FULL;
     const beforeTiers = {};
     TIER_ORDER.forEach(c => { beforeTiers[c] = tierColorUnlocked(c); });
+    /* Every "before" is taken: from here on the handed-out badges count. */
+    retroHideBadges = null;
     /* Per-unit perfects are resolved HERE, before points, because a hundo
        and a perfect bonus are both per unit now. Take three units, get
        100% on two of them, and that is two hundos and two bonuses - the
@@ -44037,6 +44100,11 @@ function summarize(){
       saveStore();
     }
     badgesEarnedThisRun = badgesEarnedList().filter(u => !badgesBefore.has(u));
+    if(retroBadges.length){
+      /* Celebrated now, so never again. */
+      store.retroBadgePending = [];
+      saveStore();
+    }
     if(badgesEarnedThisRun.length){
       store.pendingBadgeUnlocks = (store.pendingBadgeUnlocks || []).concat(badgesEarnedThisRun);
       /* Paid off the same diff the cutscene is queued off, so the XP and
@@ -44044,8 +44112,10 @@ function summarize(){
          earned. Awarded here rather than at the other awardXp() above
          because the diff is not known until every recording call has
          run; the level block is built further down and picks it up. */
-      masteryBonusEarned = MASTERY_BONUS * badgesEarnedThisRun.length;
-      awardXp(masteryBonusEarned);
+      /* Paid for badges this run EARNED, not for ones the new bands
+         handed out - those get the celebration and nothing else. */
+      masteryBonusEarned = MASTERY_BONUS * badgesEarnedThisRun.filter(u => retroBadges.indexOf(u) < 0).length;
+      if(masteryBonusEarned) awardXp(masteryBonusEarned);
       saveStore();
     }
     TIER_ORDER.forEach(c => {
@@ -44071,6 +44141,7 @@ function summarize(){
   /* Every route to a character, in one place at the end. A feat
      character and a rank character both land here, so neither can have
      a celebration the other does not. */
+  retroHideBadges = null;   /* belt and braces - cleared above already */
   announceCharacterUnlocks(lockedBefore);
 
   const supernovaJustUnlocked = newlyUnlockedColors.includes("titan");
@@ -44261,9 +44332,10 @@ function summarize(){
       ptsRow4.className = "points-line";
       ptsRow4.append(
         Object.assign(document.createElement("span"), { className: "points-label",
-          textContent: badgesEarnedThisRun.length > 1
-            ? badgesEarnedThisRun.length + " units mastered"
-            : badgesEarnedThisRun[0] + " badge" }),
+          textContent: (() => {
+            const paid = badgesEarnedThisRun.filter(u => retroBadges.indexOf(u) < 0);
+            return paid.length > 1 ? paid.length + " units mastered" : paid[0] + " badge";
+          })() }),
         Object.assign(document.createElement("span"), { className: "points-val",
           textContent: "+" + masteryBonusEarned })
       );
@@ -55163,6 +55235,11 @@ if(store.onboardingComplete && !syncCode && !syncOff){
    preserveLegacyLevel(). Silent: it is not an award, it is the curve
    change declining to cost somebody something they earned. */
 if(store.onboardingComplete) preserveLegacyLevel();
+/* Existing accounts only. A fresh device has nothing to hand out, and
+   writing a store before the account exists would get in the way of the
+   recovery path that restores one. New accounts are marked current at
+   sign-up instead. */
+if(store.onboardingComplete) grantRetroBadgesOnce();
 
 
 /* The tooltips that changed, shown once to the people who already saw

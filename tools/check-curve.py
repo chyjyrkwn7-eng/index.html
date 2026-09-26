@@ -365,6 +365,55 @@ def main():
             check("a partial run shows no badge row", len(rows["slice"]) == 0, rows["slice"])
             check("a whole unit with a miss shows no badge row", rows["missed"] == 0, rows["missed"])
 
+        print("\n7. badges the new bands handed out celebrate on the next test")
+        retro = pg.evaluate("""()=>{
+          try{
+            if(typeof grantRetroBadgesOnce !== 'function') throw new Error('no grantRetroBadgesOnce');
+            const idx = t => QUESTIONS.map((q,i)=>[q,i]).filter(([q]) => (q.topic||'').trim() === t).map(([,i]) => i);
+            const finish = (unit, n) => {
+              cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = [unit];
+              order = idx(unit).slice(0, n);
+              runTrackable = true; timedOut = false; runMode = 'drill'; runLabel = null;
+              attempts = {}; picked = {}; timedOutSet = {};
+              order.forEach(qi => { attempts[qi] = 1; picked[qi] = optionOrder(qi).indexOf(QUESTIONS[qi].answer); });
+              summarize();
+            };
+            /* An account as it arrives from build 209: three units that only
+               clear the new bands, and a level that already holds Bronze's. */
+            store.unitPerfects = {'Identity Crimes': 25, 'Penal Code': 4, 'TCOLE Rules': 21};
+            store.lifetime.points = xpForLevel(30) + 50;
+            store.pendingBadgeUnlocks = []; store.pendingTierCutscene = null; store.pendingSupernovaCutscene = false;
+            store.badgeBandsVersion = 0; store.retroBadgePending = [];
+            grantRetroBadgesOnce();
+            const listed = store.retroBadgePending.slice();
+            const xp0 = store.lifetime.points;
+            finish('Victims of Crime', 5);           // any test at all, even a slice
+            const first = { queued: store.pendingBadgeUnlocks.slice(), tier: store.pendingTierCutscene,
+                            left: store.retroBadgePending.slice(), xp: store.lifetime.points - xp0 };
+            store.pendingBadgeUnlocks = []; store.pendingTierCutscene = null;
+            grantRetroBadgesOnce();                   // a relaunch must not list them again
+            finish('Victims of Crime', 5);
+            const second = { queued: store.pendingBadgeUnlocks.slice(), tier: store.pendingTierCutscene };
+            /* A brand-new account is current at sign-up: nothing handed out. */
+            store.badgeBandsVersion = 2; store.retroBadgePending = [];
+            store.unitPerfects = {'Identity Crimes': 20};
+            grantRetroBadgesOnce();
+            return { listed, first, second, fresh: store.retroBadgePending.slice() };
+          } catch(e){ return { threw: String(e) }; }}""")
+        if retro.get("threw"):
+            check("handed-out badges are listed once, on launch", False, retro["threw"])
+        else:
+            check("handed-out badges are listed once, on launch",
+                  sorted(retro["listed"]) == ['Identity Crimes', 'Penal Code', 'TCOLE Rules'], retro["listed"])
+            check("the next test celebrates each of them",
+                  sorted(retro["first"]["queued"]) == sorted(retro["listed"]), retro["first"])
+            check("and plays the rank-up they cause", retro["first"]["tier"] == "ranger", retro["first"]["tier"])
+            check("with no mastery bonus for them - the slice pays only its answers",
+                  retro["first"]["xp"] == 50, retro["first"]["xp"])
+            check("and never again", not retro["second"]["queued"] and not retro["second"]["tier"]
+                  and not retro["first"]["left"], retro["second"])
+            check("a new account has nothing handed out", retro["fresh"] == [], retro["fresh"])
+
         check("no uncaught JS along the way", not errs, errs[:3])
         ctx.close(); br.close()
     SERVER.shutdown()

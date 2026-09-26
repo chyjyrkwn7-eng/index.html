@@ -5237,15 +5237,22 @@ Madison's bands, verbatim: 25 questions or fewer 20 hundos, 26-50 15,
 Children (54) and the Constitution (77), 5 for Arrest, Search and Seizure
 (120) and 3 for Penal Code (340). Every unit is at or below what it was.
 
-- **Somebody who already qualifies gets the badge silently, and that is
-  structural rather than a special case.** A badge is `hundos >= threshold`
-  computed fresh; the cutscene queue, the MASTERY_BONUS and the rank,
-  colour and character unlocks are all diffed inside `summarize()` either
-  side of that run's own recording calls. A badge (or a rank) that exists
-  before the run starts produces no diff. Verified on a seeded account that
-  only cleared the new bands: 3 badges and Bronze on load, no cutscene, no
-  banner, nothing queued, no XP. A real perfect run that earned a fourth
-  then celebrated exactly that one and paid 2,730 XP (130 + 100 + 2,500).
+- **A badge the new bands hand out is celebrated on the NEXT TEST, not
+  silently.** First built silent; reversed within the hour: "some people
+  may rank up, I want people to see the rank up animation ... no matter
+  the next test they take, the badge unlock sequence would initiate for
+  that badge, and the rank thing would initiate if applicable."
+  `grantRetroBadgesOnce()` (boot, onboarded accounts, once -
+  `badgeBandsVersion`) lists the units held under the 210 bands but not
+  209's (`LEGACY_BADGE_BANDS_209`) in `store.retroBadgePending`. The next
+  finished trackable run hides them (`retroHideBadges`, honoured by
+  `unitBadgeEarned` and `badgeCountOf(store)`) while `summarize()` takes
+  its before-snapshots - characters, badges, ranks - so the ordinary diffs
+  see them arrive: the end-of-test banner, the Home cutscene, the rank
+  cutscene, colour and character banners. No MASTERY_BONUS for them.
+  Cleared after that run. A new sign-up is marked current
+  (`badgeBandsVersion = 2`) so a badge it earns is never replayed.
+  `check-curve` section 7 covers the lot, and fails on the commit before.
 - **`check-curve` re-encodes the bands and adds "no unit needs more
   hundos than it did on build 209"**. "The badge is the gate" is retired to
   a printed report: cheaper badges plus dearer levels past 45 mean a rank
