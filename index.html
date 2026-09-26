@@ -30119,13 +30119,24 @@ const BADGE_THRESHOLD = 35;
 
    RAISING a band CAN take a badge away, for the same reason. Check the
    published badge counts on the board before ever moving one up. */
+/* ---- BUILD 210: LOWER, AND FIVE BANDS ----
+   Madison's, verbatim: "Anything 25 questions or less, needs 20 hundos
+   for the badge. Anything between 26-50 questions needs 15 ... 51-100
+   needs 10 ... 101-200 needs 5 ... over 200 questions needs 3."
+   Every band is at or below the one it replaces for every unit size, so
+   this can only ADD badges - and by the rule above, a badge somebody
+   already qualifies for arrives with no cutscene, no banner and no
+   MASTERY_BONUS: "if any user already has any of this for any of the
+   units, skip that animation for them and banner, and just make it so
+   it's reflected like they got it." Rank, colour and character unlocks
+   are diffed the same way inside summarize(), so a rank crossed by
+   these badges is silent too. */
 const BADGE_THRESHOLD_BANDS = [
-  { max: 19,       hundos: 35 },
-  { max: 40,       hundos: 25 },
-  { max: 60,       hundos: 15 },
+  { max: 25,       hundos: 20 },
+  { max: 50,       hundos: 15 },
   { max: 100,      hundos: 10 },
-  { max: 200,      hundos: 7  },
-  { max: Infinity, hundos: 5  }
+  { max: 200,      hundos: 5  },
+  { max: Infinity, hundos: 3  }
 ];
 /* `var`, not `let`, and that is deliberate. This file has now been taken
    down five separate times by a top-level `let` declared below its first

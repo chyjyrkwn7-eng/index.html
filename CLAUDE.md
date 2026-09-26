@@ -5226,4 +5226,27 @@ level by level at a higher rate."
   fresh start there was nothing left for it to protect, and past 45 it
   would have handed out tens of thousands of XP.
 
+### Badges need fewer hundos (build 210)
+
+Madison's bands, verbatim: 25 questions or fewer 20 hundos, 26-50 15,
+51-100 10, 101-200 5, over 200 3. Per unit that is 20 for the six units of
+12-22 questions, 15 for the six of 28-46, 10 for Missing and Exploited
+Children (54) and the Constitution (77), 5 for Arrest, Search and Seizure
+(120) and 3 for Penal Code (340). Every unit is at or below what it was.
+
+- **Somebody who already qualifies gets the badge silently, and that is
+  structural rather than a special case.** A badge is `hundos >= threshold`
+  computed fresh; the cutscene queue, the MASTERY_BONUS and the rank,
+  colour and character unlocks are all diffed inside `summarize()` either
+  side of that run's own recording calls. A badge (or a rank) that exists
+  before the run starts produces no diff. Verified on a seeded account that
+  only cleared the new bands: 3 badges and Bronze on load, no cutscene, no
+  banner, nothing queued, no XP. A real perfect run that earned a fourth
+  then celebrated exactly that one and paid 2,730 XP (130 + 100 + 2,500).
+- **`check-curve` re-encodes the bands and adds "no unit needs more
+  hundos than it did on build 209"**. "The badge is the gate" is retired to
+  a printed report: cheaper badges plus dearer levels past 45 mean a rank
+  now asks for both, and badge work alone reaches level 16 for Iron's 21,
+  43 for Gold's 45, 54 for Amethyst's 65 and 57 for Supernova's 71.
+
 No committed regression suite exists yet. Worth building.

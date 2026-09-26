@@ -121,8 +121,10 @@ def main():
             check("badgeThresholdFor exists", True)
             check("an unknown unit falls back to 35, never to 5",
                   r["unknown"] == 35, r["unknown"])
-        bands = [(0, 19, 35), (20, 40, 25), (41, 60, 15),
-                 (61, 100, 10), (101, 200, 7), (201, 10 ** 6, 5)]
+        # Madison's bands as of build 210, verbatim: 25 or fewer questions
+        # 20 hundos, 26-50 15, 51-100 10, 101-200 5, over 200 3.
+        bands = [(0, 25, 20), (26, 50, 15), (51, 100, 10),
+                 (101, 200, 5), (201, 10 ** 6, 3)]
         wrong = []
         for u, v in units.items():
             want = next(h for lo, hi, h in bands if lo <= v["q"] <= hi)
@@ -137,6 +139,14 @@ def main():
         above = [(u, v["need"]) for u, v in units.items() if v["need"] > OLD_BADGE_THRESHOLD]
         check("no band asks for more than the 35 the live build charged",
               not above, above)
+        # AND NO UNIT GOT DEARER THAN BUILD 209 CHARGED IT - the same rule,
+        # unit by unit, against the bands that were live before 210.
+        old_bands = [(0, 19, 35), (20, 40, 25), (41, 60, 15),
+                     (61, 100, 10), (101, 200, 7), (201, 10 ** 6, 5)]
+        raised = [(u, v["q"], v["need"], next(h for lo, hi, h in old_bands if lo <= v["q"] <= hi))
+                  for u, v in units.items()
+                  if v["need"] > next(h for lo, hi, h in old_bands if lo <= v["q"] <= hi)]
+        check("no unit needs more hundos than it did on build 209", not raised, raised)
 
         print("\n2. nobody's level drops, for any XP total")
         drop = pg.evaluate("""([oldStep, oldLate, unchangedThrough])=>{
@@ -209,7 +219,6 @@ def main():
         if line.get("threw"):
             for n in ("the badge line only ever climbs",
                       "no rank asks for more badges than there are units",
-                      "up to Gold the badge is the gate - its level is already there",
                       "every rank's level is inside the cap",
                       "no rank got harder than the live build",
                       "every rank's label says the numbers it actually checks"):
@@ -227,15 +236,17 @@ def main():
                   line["levels"])
             over = [t for t in line["tiers"] if t["badges"] > line["units"]]
             check("no rank asks for more badges than there are units", not over, over)
-            # The badge is still the gate for every rank up to Gold (level
-            # 45, where the steep curve starts). Above it the level asks
-            # for more than the badges pay, by design since build 210.
-            unreachable = [t for t in line["tiers"]
-                           if t["badges"] <= line["units"] and t["level"] <= UNCHANGED_THROUGH
-                           and line["levels"][t["badges"] - 1] < t["level"]]
-            check("up to Gold the badge is the gate - its level is already there",
-                  not unreachable,
-                  [(t["key"], t["level"], line["levels"][t["badges"] - 1]) for t in unreachable])
+            # "THE BADGE IS THE GATE" IS RETIRED (build 210). It asserted
+            # that earning a rank's badges always already paid for its
+            # level. Build 210 made badges cheaper and levels past 45
+            # dearer - both asked for, to even out "high levels, few
+            # badges" - so a rank now asks for both and neither brings the
+            # other. Printed so the gap is visible whenever the curve, the
+            # bands or the ranks move, rather than asserted one way.
+            for t in line["tiers"]:
+                if t["badges"] <= line["units"]:
+                    print("     %-8s level %2d / %2d badges  -> badges alone reach level %2d"
+                          % (t["key"], t["level"], t["badges"], line["levels"][t["badges"] - 1]))
             beyond = [t for t in line["tiers"] if t["level"] > line["cap"]]
             check("every rank's level is inside the cap", not beyond, beyond)
             """A rank is computed fresh from level and badges, so raising
