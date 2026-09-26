@@ -5263,8 +5263,12 @@ Children (54) and the Constitution (77), 5 for Arrest, Search and Seizure
   for Exam and the Begin handler only ever trimmed a Drill, so a
   10-question exam quietly ran the whole unit, and the sheet's own count
   said so too. Only Game ignores Length.
-- **Results badge rows say "<Unit> badge"**, asked for by name. The bare
-  unit name read like a unit score.
+- **Results badge rows say "<Unit> badge", and appear only for a unit
+  this run earned a hundo in** ("the badge rows will only be for the badge
+  progress for the hits you took from that test"). `summarize()` snapshots
+  `store.unitPerfects` beside `badgesBefore` and a unit whose count did
+  not move gets no row: a slice, a run with a miss, or a timed-out run
+  shows none. `check-curve` section 6 asserts both empty cases.
 - **A Game win says what it unlocked** (`.game-unlock-note`): "Average is
   now unlocked for Identity Crimes - 30 seconds a question, 2 lives", or
   "Every difficulty beaten on ..." after Hardcore. Outside the

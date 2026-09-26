@@ -329,8 +329,21 @@ def main():
               return [...document.querySelectorAll('.badgeprogress-row')]
                 .map(r => (r.querySelector('.badgeprogress-line')||{}).textContent);
             };
+            /* A whole unit sat, with one question missed: no hundo, so
+               since build 211 no row either. */
+            const missed = (() => {
+              store.unitPerfects = {}; store.pendingBadgeUnlocks = [];
+              cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = [small];
+              order = idx(small);
+              runTrackable = true; timedOut = false; runMode = 'drill'; runLabel = null;
+              attempts = {}; picked = {}; timedOutSet = {};
+              order.forEach((qi, k) => { attempts[qi] = k === 0 ? 2 : 1;
+                picked[qi] = optionOrder(qi).indexOf(QUESTIONS[qi].answer); });
+              summarize();
+              return [...document.querySelectorAll('.badgeprogress-row')].length;
+            })();
             return { slice: run([big], true), full: run([small], false),
-                     two: run([small, big], false), big, small };
+                     two: run([small, big], false), missed, big, small };
           } catch(e){ return { threw: String(e) }; }}""")
         if rows.get("threw"):
             check("the results screen carries a row per unit", False, rows["threw"])
@@ -344,9 +357,13 @@ def main():
             a hundo, so a row quoting "5 to go" after one is telling
             somebody to keep doing a thing that does not work. Caught on
             a screenshot - every number on the screen was correct."""
-            check("a partial run says a hundo needs the whole unit",
-                  len(rows["slice"]) == 1 and "whole unit" in (rows["slice"][0] or ""),
-                  rows["slice"])
+            # BUILD 211: rows only where this run earned a hundo - "the
+            # badge rows will only be for the badge progress for the hits
+            # you took from that test". A slice and a run with a miss both
+            # show none; the start sheet says beforehand that a slice
+            # cannot earn one.
+            check("a partial run shows no badge row", len(rows["slice"]) == 0, rows["slice"])
+            check("a whole unit with a miss shows no badge row", rows["missed"] == 0, rows["missed"])
 
         check("no uncaught JS along the way", not errs, errs[:3])
         ctx.close(); br.close()

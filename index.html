@@ -43923,6 +43923,10 @@ function summarize(){
      a badge that only celebrates on some of them is worse than one that
      never celebrates at all. */
   const badgesBefore = new Set(badgesEarnedList());
+  /* Each unit's hundo count before this run's recording calls, so the
+     results screen can show badge progress only where THIS run moved it
+     - see the badge rows further down. */
+  const perfectsBefore = Object.assign({}, store.unitPerfects || {});
   let badgesEarnedThisRun = [];
   let justBeatSpeed = null;
   let newFarthest = false;
@@ -44387,7 +44391,13 @@ function summarize(){
      the run had no way to move. Looked at on a screenshot, not
      measured - every number on the screen was correct. */
   if(runTrackable && !timedOut && cfg.source === "all" && (cfg.units || []).length){
-    const progUnits = cfg.units.filter(u => unitQuestionCount(u) > 0);
+    /* ONLY THE UNITS THIS RUN EARNED A HUNDO IN. "The badge rows will
+       only be for the badge progress for the hits you took from that
+       test." A row for every unit sat - including ones the run missed a
+       question in, or only sampled - read as progress that had not
+       happened. A unit whose count did not move gets no row at all. */
+    const progUnits = cfg.units.filter(u => unitQuestionCount(u) > 0
+      && unitPerfectCount(u) > (perfectsBefore[u] || 0));
     if(progUnits.length){
       const progWrap = document.createElement("div");
       progWrap.className = "badgeprogress-wrap";
