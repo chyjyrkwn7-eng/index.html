@@ -41150,6 +41150,16 @@ function showSetup(){
     () => cfg.size === 0, () => { cfg.size = 0; }, () => { cfg.size = lastSliderSize; },
     v => v + (v === 1 ? " question" : " questions"));
   optionsModalBody.appendChild(sizeSect);
+  /* SAID BEFORE THE RUN, NOT AFTER IT. "When editing the amount of
+     questions on a unit, there needs to be warning or notice that it
+     wont count towards a hundo." A hundo is a whole unit with nothing
+     missed (isFullUnitRun), so anything that leaves questions out -
+     a shorter Length, or drawing from Most missed / Flagged - can
+     never earn one, and the results screen only said so afterwards. */
+  const hundoNote = document.createElement("p");
+  hundoNote.className = "info-note hundo-note";
+  hundoNote.hidden = true;
+  optionsModalBody.appendChild(hundoNote);
 
   /* Review mode, per explicit request — promoted out of a button that
      used to live buried two levels deep inside the collapsed "Timer &
@@ -41325,7 +41335,11 @@ function showSetup(){
     const isGameStart = cfg.mode === "game" || cfg.mode === "exam";
     const rawPool = isGameStart ? QUESTIONS.map((q, i) => i).filter(inUnits) : poolNow();
     const pool = shuffle(rawPool);
-    beginRun(isGameStart ? pool : (cfg.size > 0 ? pool.slice(0, cfg.size) : pool), null);
+    /* EXAM HONOURS LENGTH. The slider is on the sheet for Exam ("Pick
+       your own units and length") but this line only ever trimmed a
+       Drill, so a shortened exam quietly ran every question. Game is the
+       one mode with no length - it runs until the lives are gone. */
+    beginRun(cfg.mode === "game" ? pool : (cfg.size > 0 ? pool.slice(0, cfg.size) : pool), null);
   });
   optionsModalBody.appendChild(beginBtn);
 
@@ -41502,7 +41516,7 @@ function showSetup(){
        whatever cfg.size/cfg.source would otherwise narrow it down to
        (both are hidden and moot while reviewing). */
     const pool = (isGame || isExam || reviewAllMode) ? QUESTIONS.map((q, i) => i).filter(inUnits) : poolNow();
-    const n = (isGame || isExam || reviewAllMode) ? pool.length : (cfg.size > 0 ? Math.min(cfg.size, pool.length) : pool.length);
+    const n = (isGame || reviewAllMode) ? pool.length : (cfg.size > 0 ? Math.min(cfg.size, pool.length) : pool.length);
 
     /* Same computed values as the rest of refresh(), just also shown
        here at the top of the sheet itself now. */
@@ -41601,6 +41615,15 @@ function showSetup(){
        runs until the lives are gone. An exam is a fixed-length paper,
        which is the whole point of sitting one. */
     sizeSect.hidden = isGame || reviewAllMode;
+    const wholeUnits = QUESTIONS.filter(q => cfg.units.indexOf((q.topic || "").trim()) >= 0).length;
+    const partial = !isGame && !reviewAllMode && cfg.units.length > 0 && wholeUnits > 0
+      && (n < wholeUnits || (!isExam && cfg.source !== "all"));
+    hundoNote.hidden = !partial;
+    hundoNote.textContent = partial
+      ? (cfg.units.length === 1
+          ? "This won't count toward a hundo. A hundo needs every question in the unit, so pick Everything to earn one."
+          : "This won't count toward any hundos. A hundo needs every question in a unit, so pick Everything to earn them.")
+      : "";
     /* The sheet's own primary button relabels to match what it will
        actually do while Review is on — the same swap its click handler
        above already makes, just reflected in the button's text too so
@@ -42851,7 +42874,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-26-210";
+const APP_BUILD = "2026-09-26-211";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -44314,6 +44337,25 @@ function summarize(){
     bs.appendChild(document.createTextNode(" \u2014 " + cfg.units[0] + "!"));
     panel.appendChild(bs);
   }
+  /* WHAT THE WIN OPENED, IN WORDS. "If you beat easy on a game mode,
+     there needs to be something in the results saying the unit
+     unlocked the next difficulty." The banner above only said Easy was
+     cleared, and the lock itself lives on the start sheet two screens
+     away. Outside the mute on purpose: this is information about what
+     you can now pick, not a celebration. */
+  if(justBeatSpeed){
+    const nextSpeed = { easy: "average", average: "hardcore" }[justBeatSpeed];
+    const un = document.createElement("p");
+    un.className = "info-note game-unlock-note";
+    if(nextSpeed){
+      const sp = GAME_SPEEDS[nextSpeed];
+      un.textContent = sp.label + " is now unlocked for " + cfg.units[0] + " \u2014 " + sp.seconds
+        + " seconds a question, " + sp.lives + (sp.lives === 1 ? " life." : " lives.");
+    } else {
+      un.textContent = "Every difficulty beaten on " + cfg.units[0] + ".";
+    }
+    panel.appendChild(un);
+  }
 
   if(newBest){
     const pb = document.createElement("p");
@@ -44360,7 +44402,11 @@ function summarize(){
         const body = document.createElement("div");
         body.className = "badgeprogress-body";
         const nm = document.createElement("p");
-        nm.className = "badgeprogress-name"; nm.textContent = u;
+        /* "Identity Crimes badge", not "Identity Crimes" - "the badge
+           progress needs to state unit title and then badge". The row
+           is progress towards a badge, and the bare unit name read as
+           a unit score. */
+        nm.className = "badgeprogress-name"; nm.textContent = u + " badge";
         const track = document.createElement("div");
         track.className = "badgeprogress-track";
         const fill = document.createElement("div");

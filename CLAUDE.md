@@ -5252,4 +5252,22 @@ Children (54) and the Constitution (77), 5 for Arrest, Search and Seizure
   now asks for both, and badge work alone reaches level 16 for Iron's 21,
   43 for Gold's 45, 54 for Amethyst's 65 and 57 for Supernova's 71.
 
+### Saying what a run can and cannot earn (build 211)
+
+- **The start sheet warns before a run that cannot earn a hundo**
+  (`.hundo-note`, under Length): a shorter Length, or Most missed /
+  Flagged in Drill. The rule is the same `isFullUnitRun()` the results
+  screen already applied afterwards; now it is said while it can still be
+  changed. Hidden in Game (no length) and Review (nothing is scored).
+- **Exam honours Length now, and never did.** The slider was on the sheet
+  for Exam and the Begin handler only ever trimmed a Drill, so a
+  10-question exam quietly ran the whole unit, and the sheet's own count
+  said so too. Only Game ignores Length.
+- **Results badge rows say "<Unit> badge"**, asked for by name. The bare
+  unit name read like a unit score.
+- **A Game win says what it unlocked** (`.game-unlock-note`): "Average is
+  now unlocked for Identity Crimes - 30 seconds a question, 2 lives", or
+  "Every difficulty beaten on ..." after Hardcore. Outside the
+  mute-banners setting on purpose; it is information, not celebration.
+
 No committed regression suite exists yet. Worth building.
