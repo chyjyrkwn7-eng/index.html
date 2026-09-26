@@ -4574,10 +4574,10 @@
   #teststart-wordmark{ background-image:linear-gradient(90deg, #FFD37A, #F5804D, #C23B7A) !important; }
   #teststart-label{ color:#FFD37A !important; }
   .vroom-mine-delta, .vroom-mine-total, .points-progress-total{ color:#FFD37A !important; }
-  .vroom-finale-inline{
-    margin:1rem 0 .4rem; padding:1rem 1.1rem; border-radius:1rem; text-align:center;
-    background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12);
-  }
+  /* No box of its own: the waiting note already is one, and a card
+     inside a card read as a mistake. */
+  .vroom-finale-inline{ margin:.9rem 0 .4rem; text-align:center; }
+  .vroom-finale-inline .info-note{ margin-top:0 !important; }
   .vroom-finale-inline .vroom-finale-line{ margin:.2rem 0; }
   .chat-mute-btn{
     width:36px; height:36px; flex:0 0 auto; padding:0; border-radius:999px;
