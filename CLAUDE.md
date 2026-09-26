@@ -5054,4 +5054,22 @@ glow now stopped in two vertical lines down the sides.
 - **Device-local** (`class26e.chatmuted`), like the read marks - whether
   something may interrupt you is about this screen, not the account.
 
+### Short tests stopped paying like whole units (build 206)
+
+- **A HUNDO NEEDS THE WHOLE UNIT IN `summarize()` TOO.** Badge progress
+  already did (`recordUnitPerfectIfEligible` -> `isFullUnitRun`), but
+  the `hundosEarned` fallback counted ANY 100% run, so five questions
+  aced was a hundo on the Hundos board plus `PERFECT_BONUS`, repeatable
+  at will. Measured on real runs, 205 -> 206: 5 of Identity Crimes at
+  100% paid 150 XP and a hundo, now 50 XP and none; 5 questions across
+  three units paid 180 and a hundo, now 50 and none; the whole
+  12-question unit is unchanged at 220 and a hundo.
+- **The multi-unit bonus counts units taken WHOLE**, not units ticked.
+- **XP stays 10 per correct answer**, which is already "by amount of
+  questions". The curve was NOT changed: level 80 is 194,250 XP, about
+  15,500 correct answers - ~220 questions every day to reach it by early
+  December, and an hour a day lands around level 45-60 by then, which
+  is the "something to work towards till about early December" asked
+  for. Re-measure with `levelProgress()` before touching it.
+
 No committed regression suite exists yet. Worth building.

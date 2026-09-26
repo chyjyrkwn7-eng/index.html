@@ -42724,7 +42724,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-26-205";
+const APP_BUILD = "2026-09-26-206";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -43811,9 +43811,18 @@ function summarize(){
        count: a single-unit run, or a multi-unit one that is not eligible
        for per-unit scoring (a partial slice of a unit is not a unit).
        A run that was 100% overall is still one hundo in that case. */
+    /* ---- A HUNDO IS A WHOLE UNIT, EVERYWHERE ----
+       "Badge progress can only count if you are taking a unit in its
+       entirety. If I select the amount of questions and only select 5
+       questions, it won't count." The badge side already held that
+       (recordUnitPerfectIfEligible needs isFullUnitRun), but this
+       fallback did not: ANY run that finished at 100% counted as one
+       hundo here - so five questions aced was a hundo on the Hundos
+       board and a PERFECT_BONUS of XP, repeatable as fast as you could
+       tap. It now needs the same whole unit the badge does. */
     hundosEarned = multiUnitStarsEarned.perfected.length > 0
       ? multiUnitStarsEarned.perfected.length
-      : ((pct === 100 && runLabel !== "Daily question") ? 1 : 0);
+      : ((pct === 100 && runLabel !== "Daily question" && isFullUnitRun()) ? 1 : 0);
     /* A flat 100 points for a correct daily question, per explicit
        request \u2014 not the normal good*POINTS_PER_QUESTION formula (which
        would only give 10 for a single question), a deliberately
@@ -43827,9 +43836,18 @@ function summarize(){
        it is a reward for taking more on rather than a second perfect
        bonus. The daily question is excluded the same way everything else
        here is. */
+    /* ONLY WHOLE UNITS COUNT TOWARDS THE MULTI-UNIT BONUS. Counted off
+       cfg.units, it paid for units CHOSEN - so ticking eight units and
+       taking five questions paid seven bonuses for five questions. Now
+       it is the units the run actually covered in full, less one. */
+    const wholeUnitsInRun = (cfg.units || []).filter(name => {
+      const inRun = order.filter(qi => (QUESTIONS[qi].topic || "").trim() === name).length;
+      const total = QUESTIONS.filter(q => (q.topic || "").trim() === name).length;
+      return inRun > 0 && inRun === total;
+    }).length;
     multiTestBonusEarned = (runLabel === "Daily question")
       ? 0
-      : Math.max(0, (cfg.units.length - 1)) * MULTI_TEST_BONUS;
+      : Math.max(0, wholeUnitsInRun - 1) * MULTI_TEST_BONUS;
     awardXp(pointsEarned + perfectBonusEarned + multiTestBonusEarned);
     if(runMode === "drill") store.lifetime.drillPlays += 1;
     else if(runMode === "exam") store.lifetime.examPlays += 1;
