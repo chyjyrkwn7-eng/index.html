@@ -918,6 +918,20 @@ def main():
                   pulled is not None and abs(pulled - 50) > 1, pulled)
             mine_side = tugB.evaluate("()=>!!document.querySelector('.tug-knot.is-theirs')")
             check("and it has moved the wrong way for them", mine_side is True)
+            # AND TOWARDS THE SIDE THAT IS PULLING. Alex's side got three
+            # right, so the knot belongs on Alex's side of the line -
+            # side a is drawn on the left, side b on the right. For a
+            # while every lead was drawn backwards and the check above
+            # could not tell, because it only asked for a colour.
+            toward = tugB.evaluate("""()=>{
+              const side = tugTeamOf(tugLastData, (Object.keys(tugLastData.participants||{})
+                .find(k => (tugLastData.participants[k]||{}).name === 'Alex')));
+              const k = document.querySelector('.tug-knot');
+              return { side: side, left: k ? parseFloat(k.style.left) : null };}""")
+            check("and it has moved towards the side that is pulling",
+                  toward["left"] is not None and
+                  ((toward["side"] == "a" and toward["left"] < 50) or
+                   (toward["side"] == "b" and toward["left"] > 50)), toward)
 
             # ONE CHANCE. The tap locks every choice; a second tap on
             # another one must change nothing.

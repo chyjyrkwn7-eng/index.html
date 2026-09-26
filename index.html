@@ -12556,7 +12556,11 @@
      race bar: there is nothing linear to fill. A knot that can go
      either way is a different fact from a bar that only ever goes up,
      and drawing it as a bar would have said the wrong thing. */
-  .tug-rope-wrap{ margin:.4rem 0 1rem; }
+  /* CLIPPED SIDEWAYS. The rope is shifted towards whoever leads by a
+     translate of up to a sixth of its own width, and on a phone that
+     carried its far end, knot and all, off the right edge of the
+     screen. overflow-x:clip keeps the vertical overhang of the knot. */
+  .tug-rope-wrap{ margin:.4rem 0 1rem; overflow-x:clip; }
   .tug-sides{
     display:flex; align-items:baseline; justify-content:space-between;
     gap:.8rem; margin-bottom:.5rem;
@@ -12674,6 +12678,10 @@
   }
   .screen-tug .choice.is-wrong{ border-color:#F5804D; }
   .screen-tug-result .tug-rope-wrap{ margin-top:1.6rem; }
+  /* "You lead by 4.6 - 3 wins it" is a live caption. Once the match
+     is over the heading and the line under it already say who won and
+     by how much, and a present-tense lead reads as a match still on. */
+  .screen-tug-result .tug-state{ display:none; }
   .vroom-unit-chips{ display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.55rem; }
   .vroom-unit-chip{
     font-size:.72rem; line-height:1.2; padding:.3rem .55rem;
@@ -47802,15 +47810,18 @@ function buildTugRope(d){
      them is another number:
        - THE WHOLE ROPE SHIFTS towards whoever is ahead. That is what
          a tug of war looks like, and it is the one cue that works
-         without reading anything. Damped to a third of the knot's own
-         travel so the ends stay on screen.
+         without reading anything. Damped to a quarter of the knot's
+         own travel, and the knot's travel held to 32% either way, so
+         at a full lead the knot sits 40% off centre and still on
+         screen. At a third of a 40% travel it ended up past the end of
+         the visible rope and was drawn off the edge of a phone.
        - THE LEADING END TIGHTENS: the winning side's half brightens
          and the losing end slackens, through a class on the rope.
        - AND IT SAYS WHO, IN WORDS, under the rope - "Ann & Bo lead by
          2" - because at a glance a shifted rope tells you there IS a
          lead and not whose. */
   const lead = pos === 0 ? null : (pos > 0 ? "a" : "b");
-  rope.style.transform = "translateX(" + ((pct - 50) / 3).toFixed(2) + "%)";
+  rope.style.transform = "translateX(" + ((pct - 50) / 4).toFixed(2) + "%)";
   rope.classList.add(lead === null ? "is-level" : ("leads-" + lead));
 
   const state = document.createElement("p");
@@ -47838,9 +47849,15 @@ function tugScoreLabel(n){
   return (v % 1 === 0) ? String(v) : v.toFixed(1);
 }
 
+/* TOWARDS THE SIDE THAT IS PULLING. Side a is drawn on the left and
+   a positive position means side a leads, so the knot goes LEFT of
+   centre - it is the thing each side drags past its own line. This
+   was `50 + clamped * 40` from build 164 until the audit, which drew
+   every lead backwards: the rope and the knot slid towards the losing
+   side. The rope's own shift is derived from this, so it follows. */
 function tugKnotPct(pos, gap){
   const clamped = Math.max(-1, Math.min(1, (Number(pos) || 0) / (gap || 1)));
-  return 50 + clamped * 40;
+  return 50 - clamped * 32;
 }
 
 /* ---- the screen ----
@@ -48010,7 +48027,7 @@ function refreshTugLive(d){
      the rest of the match - which is the bug it was added to fix. */
   const ropeEl = panel.querySelector(".tug-rope");
   if(ropeEl){
-    ropeEl.style.transform = "translateX(" + ((pct - 50) / 3).toFixed(2) + "%)";
+    ropeEl.style.transform = "translateX(" + ((pct - 50) / 4).toFixed(2) + "%)";
     ropeEl.classList.remove("is-level", "leads-a", "leads-b");
     ropeEl.classList.add(pos === 0 ? "is-level" : (pos > 0 ? "leads-a" : "leads-b"));
   }
@@ -48035,14 +48052,18 @@ function refreshTugLive(d){
   if(sa) sa.textContent = tugScoreLabel(a);
   if(sb) sb.textContent = tugScoreLabel(b);
   const live = panel.querySelector(".tug-waiting");
+  /* WHO IT IS WAITING ON, not the lead again. This line used to spell
+     out the same lead the caption under the rope already gives - "You
+     lead by 5 - 3 wins it" over "Your side is 5 ahead - 3 clear wins
+     it" - so the one thing somebody who has finished actually wants to
+     know was missing: how long this is going to take. */
   if(live){
-    const mine = tugTeamOf(d, vroomMyKey);
-    const ours = mine === "a" ? a : b, theirs = mine === "a" ? b : a;
-    const lead = Math.abs(ours - theirs);
-    live.textContent = lead < 0.05
-      ? "Dead even · " + gap + " clear wins it"
-      : (ours > theirs ? "Your side is " : "They are ")
-        + (Math.round(lead * 10) / 10) + " ahead · " + gap + " clear wins it";
+    const count = tugMatchCount(d);
+    const prog = (d.tug && d.tug.progress) || {};
+    const still = Object.keys((d.tug && d.tug.teams) || {})
+      .filter(k => k !== vroomMyKey && (Number((prog[k] || {}).pos) || 0) < count).length;
+    live.textContent = still === 0 ? "Everyone has finished"
+      : (still === 1 ? "1 person is still answering" : still + " people are still answering");
   }
   tugLastRopePos = pos;
 }
