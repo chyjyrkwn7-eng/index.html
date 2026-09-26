@@ -40999,27 +40999,19 @@ function showSetup(){
       const dynMax = Math.max(min, getMax());
       slider.max = topStopFor(dynMax);
       if(!every){
-        if(get() > dynMax){
-          /* Rounded down to the nearest reachable step, not dynMax itself
-             — dynMax is the real pool size and can land off the step
-             lattice (e.g. 12 with a step of 5 from a min of 5), and a
-             plain script assignment of an off-step number to a range
-             input's value gets silently re-snapped by the browser's own
-             sanitizing (down to 10 in that example) rather than rejected.
-             Left alone, that meant the label above (formatVal(get()),
-             driven by the un-re-snapped JS value) could go on saying
-             "12 questions" while the slider's own thumb quietly rendered
-             wherever 10 sits — correct underlying data, but a real visual
-             mismatch between the number shown and where the handle
-             actually landed. Flooring here keeps this programmatic
-             clamp path consistent with what assigning a value to the
-             element can actually make it show; it's unrelated to (and
-             doesn't affect) a real drag all the way to the end of the
-             track, which browsers special-case to register as the exact
-             max regardless of step. */
-          set(Math.max(min, min + Math.floor((dynMax - min) / step) * step));
-        }
-        slider.value = get();
+        /* THE RIGHT-HAND END ALWAYS MEANS EVERY QUESTION. "The warning
+           shouldn't be there if the custom amount of questions is set to
+           max." It was, because the end of the track is the top step
+           stop, and on a 12-question unit with 5-question steps that stop
+           is 10: tapping Custom (which starts at 10) or anything that
+           clamped the size left the thumb hard right, the label saying
+           10, and the hundo warning up - a run that could never earn one
+           while looking maxed. So any size at or past the top stop IS the
+           whole pool, the same thing a drag to the end already meant
+           (effectiveFrom), and the thumb sits on the top stop to show it. */
+        const top = topStopFor(dynMax);
+        if(get() >= top && get() !== dynMax) set(dynMax);
+        slider.value = Math.min(get(), top);
       }
       valDisplay.textContent = formatVal(get());
     };

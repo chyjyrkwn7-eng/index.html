@@ -5259,6 +5259,12 @@ Children (54) and the Constitution (77), 5 for Arrest, Search and Seizure
   Flagged in Drill. The rule is the same `isFullUnitRun()` the results
   screen already applied afterwards; now it is said while it can still be
   changed. Hidden in Game (no length) and Review (nothing is scored).
+- **The right-hand end of Length always means every question.** On a
+  12-question unit the 5-step track's last stop is 10, so tapping Custom
+  (which starts at 10) left the thumb hard right, the label on 10 and the
+  warning up - "the warning shouldn't be there if the custom amount of
+  questions is set to max". `paint()` now treats any size at or past the
+  top stop as the whole pool, which a drag to the end already did.
 - **Exam honours Length now, and never did.** The slider was on the sheet
   for Exam and the Begin handler only ever trimmed a Drill, so a
   10-question exam quietly ran the whole unit, and the sheet's own count
