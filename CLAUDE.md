@@ -3600,15 +3600,16 @@ re-evaluated on the next check.
   the interaction — judged not worth the regression risk on the most-used
   screen for a nicety, and explicitly declined. Don't quietly retry it; a
   visual shake is the feedback that cannot fail.
-- **"Flares" ≠ badges, and "Secret Flares" are gone.** Flares are the
+- **"Flares" ≠ badges, and "Secret Flares" are a hunt, not a rank requirement.** Flares are the
   orbiting marks on Home, one per rank — the thing a rank hands over.
   Badges are the sixteen unit awards on Profile. The two are separate
   and the words are not interchangeable in copy. Secret Flares were a
   third thing, a hidden three-colour hunt gating the top rank; they were
   scrapped outright. `store.mysteryColorsFound`, `testsUntilMystery` and
   the `mysteryStars` guard survive as defaulted, unread remnants — see
-  **Ranks**. The version-history copy in `index.html` still advertises
-  them, and is deferred rather than correct.
+  **Ranks**. They then came back as a HUNT ONLY, unlocking Void (see
+  "THE SECRET FLARES ARE BACK" under **Ranks**), so the version-history
+  copy describing the hunt is correct again - re-checked in build 208.
 - **A solid-coloured child inside a `backdrop-filter` surface can tear on
   iOS** — reported as glitched lines running through the update banner's
   button. The parent needs `will-change:backdrop-filter` (`.toast` has always
@@ -5098,5 +5099,26 @@ glow now stopped in two vertical lines down the sides.
   stops (`#FFD37A #F5804D #C23B7A`) now. Found by diffing every
   element's computed colours across three themes on a live question and
   a results screen: zero differences remain on either.
+
+### The last loose ends before the shop (build 208)
+
+- **"START A LOBBY LAGS" WAS THE ROUND TRIP, WITH NOTHING ON SCREEN.**
+  Recorded again at a realistic 800ms latency (the first recording used
+  120ms, which is why it looked instant): nothing at all changed for the
+  whole write, then the lobby arrived at once. The button now answers on
+  the tap - "Starting a lobby...", disabled so two taps cannot make two
+  rooms - and comes back if the create fails (`createVirtualRoomLobby`
+  returns its promise, resolving false on failure). **Re-record any
+  network-bound "lag" report at a real latency before calling it
+  unreproducible.**
+- **Join on the open-rooms list comes back after a refused join**
+  instead of sitting on "Joining..." for good.
+- **`pushLeaderboardRow()` never defers a write to a NEW document.**
+  The deferral compared only the row's contents, so a changed public id
+  with the same numbers waited up to `ROW_SCORE_PUSH_MS` - the
+  `check-friends` seenAt flake under load. It now also requires
+  `lastRowKey === publicIdOf()`.
+- The "Secret Flares are gone" note was stale; they are a hunt again,
+  unlocking Void, and the version-history copy is correct.
 
 No committed regression suite exists yet. Worth building.

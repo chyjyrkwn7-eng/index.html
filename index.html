@@ -4576,6 +4576,7 @@
   .vroom-mine-delta, .vroom-mine-total, .points-progress-total{ color:#FFD37A !important; }
   /* No box of its own: the waiting note already is one, and a card
      inside a card read as a mistake. */
+  .vroom-choice .next.is-busy{ opacity:.75; cursor:progress; }
   .vroom-finale-inline{ margin:.9rem 0 .4rem; text-align:center; }
   .vroom-finale-inline .info-note{ margin-top:0 !important; }
   .vroom-finale-inline .vroom-finale-line{ margin:.2rem 0; }
@@ -28876,7 +28877,11 @@ function pushLeaderboardRow(){
   if(sig === lastRowSig && lastRowKey === publicIdOf()) return;
   const urgent = rowSignature(row, true);
   const waited = Date.now() - lastRowPushAt;
-  if(urgent === lastRowUrgentSig && lastRowSig !== null && waited < ROW_SCORE_PUSH_MS){
+  /* Deferral is for the SAME document with only its numbers moving. A
+     changed public id is a different document - the row somebody's
+     friends are about to look for - so it never waits. */
+  if(urgent === lastRowUrgentSig && lastRowSig !== null && waited < ROW_SCORE_PUSH_MS
+     && lastRowKey === publicIdOf()){
     /* Only the numbers moved, and they moved recently. Come back to it
        rather than dropping it - a deferred write that never lands is a
        score that never appears. */
@@ -42761,7 +42766,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-26-207";
+const APP_BUILD = "2026-09-26-208";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -46316,7 +46321,27 @@ function showVirtualRoomChoice(){
      redundant." The room is created empty and the host sets it up from
      Match settings, which is the one place that choice now lives. The
      lobby will not start until it has units; see the auto-start gate. */
-  startBtn.addEventListener("click", () => createVirtualRoomLobby([], 10));
+  /* ---- THE TAP ANSWERS AT ONCE ----
+     "When I hit start a lobby, the screen lags, like the screen expands
+     or glitches." Measured with a realistic 800ms round trip: nothing
+     at all happened between the tap and the lobby appearing, because
+     the room has to exist before the lobby can listen to it. So the
+     button says what it is doing the moment it is touched, and cannot
+     be tapped twice into two rooms; if the create fails it comes back. */
+  startBtn.addEventListener("click", () => {
+    if(startBtn.disabled) return;
+    startBtn.disabled = true;
+    startBtn.classList.add("is-busy");
+    startBtn.textContent = "Starting a lobby\u2026";
+    const restore = () => {
+      if(!startBtn.isConnected) return;
+      startBtn.disabled = false;
+      startBtn.classList.remove("is-busy");
+      startBtn.textContent = "Start a lobby";
+    };
+    Promise.resolve(createVirtualRoomLobby([], 10)).then(ok => { if(ok === false) restore(); })
+      .catch(restore);
+  });
   startChoice.appendChild(startBtn);
   actions.appendChild(startChoice);
 
@@ -46935,7 +46960,7 @@ function createVirtualRoomLobby(units, timeLimit, game){
      ever see. This guard is what actually surfaces it now. */
   if(!fbDb){
     showToast("Couldn't create the lobby \u2014 check your connection and try again.");
-    return;
+    return false;
   }
   const code = generateSyncCode();
   const myName = store.firstName || "Anonymous";
@@ -46974,12 +46999,13 @@ function createVirtualRoomLobby(units, timeLimit, game){
       [publicIdOf()]: { name: myName, avatarChar: store.avatarChar || "ninja", level: levelOf(store), badges: badgeCountOf(store), hundos: hundosOf(store), xp: (store.lifetime && store.lifetime.points) || 0, tests: Array.isArray(store.testHistory) ? store.testHistory.length : 0, correct: (store.lifetime && store.lifetime.correct) || 0, mystery: mysteryColorsFoundCount(), joinedAt: Date.now(), seen: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false }
     }
   };
-  fbDb.collection("vrooms").doc(code).set(doc).then(() => {
+  return fbDb.collection("vrooms").doc(code).set(doc).then(() => {
     vroomCode = code; vroomIsHost = true; vroomUnits = units;
     vroomMyKey = publicIdOf();
     vroomIsOpen = false;          /* private until the host says so */
     showVirtualRoomLobby();
-  }).catch(() => { showToast("Couldn't create the lobby \u2014 try again."); });
+    return true;
+  }).catch(() => { showToast("Couldn't create the lobby \u2014 try again."); return false; });
 }
 
 /* INCOMING LOBBY INVITES, ON SCREEN. incomingLobbyInvites() has been
@@ -48280,7 +48306,12 @@ function showRoomBrowser(){
       go.textContent = "Join";
       go.addEventListener("click", () => {
         go.disabled = true; go.textContent = "Joining\u2026";
-        joinVirtualRoomLobby(entry.code);
+        /* A refused join (the room started, or filled) says why in a
+           toast; the button comes back rather than sitting on
+           "Joining..." for good. */
+        Promise.resolve(joinVirtualRoomLobby(entry.code)).then(ok => {
+          if(ok === false && go.isConnected){ go.disabled = false; go.textContent = "Join"; }
+        }).catch(() => { if(go.isConnected){ go.disabled = false; go.textContent = "Join"; } });
       });
       row.append(art, text, go);
       list.appendChild(row);
