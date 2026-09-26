@@ -5042,4 +5042,16 @@ glow now stopped in two vertical lines down the sides.
   rows show faces, and an expand button toggles tall/normal by its own
   state (measuring failed on a tablet, where the panel is capped).
 
+### Muting a chat (build 205)
+
+- **A muted chat loses its pop-up and nothing else.** Asked for exactly
+  that narrowly: "it just mutes the banner of the chat preview, that's
+  all." The message still arrives, still counts on the chat button and
+  still bolds its row. One check in `announceChatMessage()` via
+  `CTX.isMuted`, so DMs and the Virtual Room chat share it. The bell is
+  in the open chat's header in the dock and in the Virtual Room chat's
+  own title; a muted row in the list is tagged MUTED.
+- **Device-local** (`class26e.chatmuted`), like the read marks - whether
+  something may interrupt you is about this screen, not the account.
+
 No committed regression suite exists yet. Worth building.

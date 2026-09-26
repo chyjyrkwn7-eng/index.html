@@ -4560,6 +4560,20 @@
   .chatdock-face-more{ font-size:.7rem; font-weight:800; color:var(--ink); background:#2A323C; }
   .chatdock-chatrow.is-unread .chatdock-chatrow-name{ color:#fff; }
   .chatdock-chatrow.is-unread .chatdock-chatrow-open{ border-color:rgba(255,95,86,.55); }
+  .chat-mute-btn{
+    width:36px; height:36px; flex:0 0 auto; padding:0; border-radius:999px;
+    display:inline-flex; align-items:center; justify-content:center;
+    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16);
+    color:var(--ink); cursor:pointer;
+  }
+  .chat-mute-btn svg{ width:1.05rem; height:1.05rem; display:block; }
+  .chat-mute-btn.is-muted{ color:#FF8A80; border-color:rgba(255,138,128,.45); background:rgba(255,95,86,.12); }
+  .vroom-chat-titlerow .chat-mute-btn{ margin:0 0 .6rem auto; }
+  .chatdock-chatrow.is-muted .chatdock-chatrow-name::after{
+    content:"muted"; margin-left:.45rem; padding:.05rem .4rem; border-radius:999px;
+    font-size:.62rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase;
+    color:#FF8A80; background:rgba(255,95,86,.12); vertical-align:middle;
+  }
   /* The grip is the other half of "tell me it expands": brighter and a
      touch wider, so it reads as a handle rather than a hairline. */
   .chatdock-grip::after{ background:rgba(255,255,255,.55) !important; width:3.2rem !important; }
@@ -37238,7 +37252,57 @@ function showDailyQuestionLockedPopup(){
 /* The lobby's own binding: every accessor reads the live global rather
    than a value captured when the panel was built, because vroomCode and
    vroomMyKey both change under a running panel. */
+/* ---- MUTING A CHAT MUTES ITS PREVIEW BANNER, AND THAT IS ALL ----
+   "Add a mute chat function for any of the chats you are in, so you
+   don't get the notification popping up on your screen ... it just
+   mutes the banner of the chat preview, that's all." So a muted chat
+   still counts on the chat button, still goes bold in the list and
+   still delivers every message; the one thing it stops is the
+   "X sent a message" pop-up. Device-local on purpose, like the read
+   marks: whether something may interrupt you is about this screen. */
+const CHAT_MUTED_KEY = "class26e.chatmuted";
+function chatMutedMap(){
+  try{ return JSON.parse(localStorage.getItem(CHAT_MUTED_KEY) || "{}") || {}; }
+  catch(e){ return {}; }
+}
+function isChatMuted(code){ return !!(code && chatMutedMap()[code]); }
+function setChatMuted(code, on){
+  if(!code) return;
+  try{
+    const m = chatMutedMap();
+    if(on) m[code] = Date.now(); else delete m[code];
+    localStorage.setItem(CHAT_MUTED_KEY, JSON.stringify(m));
+  }catch(e){}
+}
+const BELL_PATH = "M6 16V11a6 6 0 0 1 12 0v5l1.6 2H4.4L6 16zM10 20.5a2 2 0 0 0 4 0";
+function buildChatMuteBtn(getCode){
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "chat-mute-btn";
+  function paint(){
+    const on = isChatMuted(getCode());
+    b.classList.toggle("is-muted", on);
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+    b.setAttribute("aria-label", on ? "Unmute this chat" : "Mute this chat");
+    b.title = on ? "Muted - no pop-ups" : "Mute pop-ups";
+    b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + BELL_PATH +
+      '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+      (on ? '<path d="M4 4l16 16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>' : '') + '</svg>';
+  }
+  b.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const code = getCode(); if(!code) return;
+    const on = !isChatMuted(code);
+    setChatMuted(code, on);
+    paint();
+    showToast(on ? "Chat muted \u2014 no more message pop-ups from it." : "Chat unmuted.");
+    try{ paintChatRow(code); }catch(err){}
+  });
+  paint();
+  return b;
+}
+
 const VROOM_CHAT_CTX = {
+  isMuted: () => isChatMuted(typeof vroomCode !== "undefined" ? vroomCode : null),
   /* What the panel calls itself and what its preview banner is tagged
      with. On the CTX rather than hard-coded in the builder, because the
      dock mounts the same builder for DMs and must not announce itself
@@ -37397,6 +37461,7 @@ function paintChatRow(code){
   const last = chatListLast[code] || null;
   const nameEl = row.querySelector(".chatdock-chatrow-name");
   if(nameEl && entry.name) nameEl.textContent = entry.name;
+  row.classList.toggle("is-muted", isChatMuted(code));
   const facesEl = row.querySelector(".chatdock-chatrow-faces");
   if(facesEl) paintChatFaces(facesEl, code);
   const subEl = row.querySelector(".chatdock-chatrow-sub");
@@ -37521,6 +37586,7 @@ function chatColorFor(key, participants){
 const CHAT_CTX = {
   label: "Chat",
   alertTag: null,
+  isMuted: () => isChatMuted(chatRoomCode),
   code: () => chatRoomCode,
   myKey: () => chatMyKey,
   colorFor: (key, parts) => chatColorFor(key, parts),
@@ -38551,7 +38617,7 @@ function rebuildChatTab(){
   leaveBtn.type = "button"; leaveBtn.className = "next ghost chatdock-mini";
   leaveBtn.textContent = "Leave";
   leaveBtn.addEventListener("click", () => leaveChatRoom());
-  head.append(who, inviteBtn, leaveBtn);
+  head.append(who, buildChatMuteBtn(() => chatRoomCode), inviteBtn, leaveBtn);
   chatTabBody.appendChild(head);
 
   const panelHost = document.createElement("div");
@@ -42658,7 +42724,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-26-204";
+const APP_BUILD = "2026-09-26-205";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -49064,6 +49130,9 @@ function buildVroomChatPanel(container, ctx){
      speaks for the dock. A close button went with the sheet - a section
      in the flow has nothing to close. */
   titleRow.append(title, dot);
+  /* The Virtual Room chat can be muted from its own title; the dock
+     hides this row and carries its own button in the room header. */
+  if(CTX === VROOM_CHAT_CTX) titleRow.appendChild(buildChatMuteBtn(() => CTX.code()));
   const list = document.createElement("div");
   list.className = "vroom-chat-list";
   const row = document.createElement("div");
@@ -49415,6 +49484,9 @@ function buildVroomChatPanel(container, ctx){
   function announceChatMessage(msg, color){
     if(!msg) return;
     if(typeof theme === "object" && theme && theme.muteBanners) return;
+    /* This chat, muted: the message still arrives and still counts, it
+       just does not pop up. */
+    if(CTX.isMuted && CTX.isMuted()) return;
     /* A PANEL THAT IS NOT ON SCREEN DOES NOT GET TO INTERRUPT. The chat
        lobby keeps listening inside a Virtual Room until it is left, and
        a lobby-chat preview over a room that has its own chat is the
