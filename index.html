@@ -38863,8 +38863,15 @@ function syncChatDock(){
   try{ inTest = !!testInProgress; }catch(e){}
   if(!inTest) inTest = document.body.classList.contains("has-active-question");
   if(!inTest) inTest = !!document.querySelector("#pausebtn:not([hidden])");
-  chatDock.classList.toggle("in-test", inTest);
-  placeDockBesidePause(inTest);
+  /* ONLY MAKE ROOM FOR PAUSE WHEN PAUSE IS THERE. A Tug of War match
+     and an answered Daily Question are "in a test" with no Pause on
+     screen, and the in-test slot is lower down - so the button landed
+     on the Tug of War team names, covering one side's name and score,
+     and beside the Daily Question heading. With no Pause it keeps the
+     top corner every other screen gives it. */
+  const pauseUp = !!document.querySelector("#pausebtn:not([hidden])");
+  chatDock.classList.toggle("in-test", inTest && pauseUp);
+  placeDockBesidePause(inTest && pauseUp);
   /* ---- A VIRTUAL ROOM NO LONGER COSTS YOU YOUR DMs ----
      This used to force-leave the chat lobby the moment you entered a
      Virtual Room, and flip the dock onto notifications, because the
@@ -48057,7 +48064,10 @@ function refreshTugLive(d){
      lead by 5 - 3 wins it" over "Your side is 5 ahead - 3 clear wins
      it" - so the one thing somebody who has finished actually wants to
      know was missing: how long this is going to take. */
-  if(live){
+  /* Mid-match the question itself is what matters; "1 person is
+     still answering" is for somebody who has finished. */
+  if(live) live.hidden = !panel.classList.contains("screen-tug-wait");
+  if(live && !live.hidden){
     const count = tugMatchCount(d);
     const prog = (d.tug && d.tug.progress) || {};
     const still = Object.keys((d.tug && d.tug.teams) || {})

@@ -5121,4 +5121,75 @@ glow now stopped in two vertical lines down the sides.
 - The "Secret Flares are gone" note was stale; they are a hunt again,
   unlocking Void, and the version-history copy is correct.
 
+### The full-app audit (build 209)
+
+Asked for as "go through every screen, setting, transition, chat, every
+single type of sequence ... every theme, character, every possible
+scenario". What found things, in order of how much each found:
+
+- **A `no-undef` lint pass found the worst of it, and nothing else in
+  the toolchain could have.** `check-js` is syntax only; a call to a
+  function that does not exist parses fine and throws when reached.
+  Three did:
+  - **`renderTugWaiting` and `showTugResult` had been deleted in build
+    170** along with the join-by-code screen after them - the cut
+    started at the wrong comment. From 170 to 208, finishing your
+    questions in Tug of War and the end of EVERY match threw. Restored
+    from `e5703c3^`. `check-vroom` section 9 only went as far as the
+    rope moving, so it now plays the match to the end on both devices
+    and asserts both result screens, and it fails on build 208.
+  - **`showDailyAlert` called `onNavigate.disconnect()`**, a name that
+    only exists inside `showIntroPopup`, so every "Already done for
+    today" banner threw on its way out and stayed on `<body>`.
+    `clearBannerOnScreenChange()` returns its observer now.
+
+  How to run it (eslint is not in the repo, deliberately - no npm):
+  extract the inline scripts as `check-js` does, concatenate them into
+  one file (they share one global scope), `npm i eslint@9 globals` in a
+  scratch folder, and lint with `no-undef` and browser globals plus
+  `firebase`. Zero errors is the bar; re-run it after any large delete.
+- **TUG OF WAR DREW EVERY LEAD BACKWARDS.** Side a is on the left and a
+  positive position means side a leads, but `tugKnotPct` returned
+  `50 + clamped*40`, so the knot and the whole rope slid towards the
+  side that was losing. Nobody could have noticed on a single device.
+  It is `50 - clamped*32` now, the rope's shift is a quarter of that
+  rather than a third (at a third the knot ended past the visible end
+  of the rope at a full lead), and `.tug-rope-wrap` is
+  `overflow-x:clip` because the shifted rope ran off a phone's edge.
+  `check-vroom` asserts the direction, not just the colour.
+- **A listener per render is a leak even when it is harmless-looking.**
+  Measured with CDP `DOMDebugger.getEventListeners` across 60 screen
+  changes: every info icon added a document `click` handler for good
+  (four per visit to Settings) and every Rankings visit added a
+  `visibilitychange` handler that repainted a board no longer on screen.
+  Both remove themselves once their element has left the page. Window
+  listeners, intervals, body children and heap were flat.
+- **The Tug of War question clock was a `requestAnimationFrame` loop**,
+  the same thing build 207 took out of the countdowns because iOS stops
+  it while typing. `setInterval` at 100ms now.
+- **The Add to Home Screen guide was `z-index:80`**, under the tab bar
+  (200) and the chat dock (300), so both stayed tappable through its
+  dim and a tab tapped behind it left the card over the next screen.
+  350 now, and mounted with `mountSheetOverlay()` so a screen change
+  clears it.
+- **Compact controls got 44px hit areas** without moving a pixel: an
+  invisible centred `::after` on `.profile-edit-btn`, `.infoicon`,
+  `.chatdock-close` and `.releasehistory-version-btn`, which measured
+  26-32px.
+- **Harness finds that were NOT app bugs, so nobody chases them
+  again:** "NaNh NaNm" on Stats was the sweep/positions seed writing
+  `studyLog` entries as `{seconds, answered}` objects where the app
+  writes milliseconds (fixed in both seeds, and `studyTotals` now
+  reads `Number(x) || 0`); the Virtual Room "Pick the units" button
+  under the tab bar is only reachable from a lobby, where the bar is
+  hidden; `#profilebtn` measuring 20px on screen sits in a row at
+  opacity 0.
+- **Looked at and deliberately left:** Settings takes ~140ms to first
+  paint here against 20-60ms elsewhere - sixteen `backdrop-filter`
+  surfaces in software rendering, which a phone's GPU does not pay the
+  same way. Home's seven floating flare badges each carry a backdrop
+  blur over an animated planet; without it the orbit lines show
+  through every badge, so the signed-off look wins until a device
+  says otherwise.
+
 No committed regression suite exists yet. Worth building.
