@@ -1425,6 +1425,48 @@ def main():
                 except Exception:
                     pass
 
+        # ---- 12. everybody on the line, whatever they are wearing ----
+        # Written against build 215, where it fails. The race line built
+        # each marker with buildAvatarCharSVG(), which returns null for an
+        # avatar id this build does not know - an older build's character,
+        # a renamed one - and appendChild(null) threw inside the loop, so
+        # everybody after that person was simply missing from the line.
+        # Found recording a four-person room for Madison. And the "Everyone's
+        # ready!" beat drew the lobby's tab bar over itself.
+        print("\n12. the race line draws everyone, and the ready beat is clean")
+        try:
+            rl = open_tab("Rae", "ninja", 3000, "RACE-0001", badges=1)
+            ctx.new_cdp_session(rl).send("Page.setWebLifecycleState", {"state": "active"})
+            rl.evaluate("""()=>{ const parts={
+                me:{name:'Rae',avatarChar:'ninja',joinedAt:1,ready:true,finished:false,progress:0},
+                a:{name:'A',avatarChar:'cadet-from-an-older-build',joinedAt:2,ready:true,finished:false,progress:30},
+                b:{name:'B',avatarChar:'ghost',joinedAt:3,ready:true,finished:false,progress:50},
+                c:{name:'C',avatarChar:'queen',joinedAt:4,ready:true,finished:false,progress:70} };
+              return fbDb.collection('vrooms').doc('RACELINE').set({host:'me',status:'started',game:'race',
+                units:['Identity Crimes'],startAt:Date.now()-2000,chatMessages:[],participants:parts}); }""")
+            rl.wait_for_timeout(300)
+            rl.evaluate("""()=>{ window.__errs=[]; window.addEventListener('error',e=>__errs.push(String(e.message)));
+              vroomCode='RACELINE'; vroomMyKey='me'; vroomIsHost=true;
+              beginVirtualRoomTest(['Identity Crimes'], null, null, 0); }""")
+            rl.wait_for_selector(".choice", timeout=25000)
+            rl.wait_for_timeout(1500 + args.latency * 4)
+            line = rl.evaluate("""()=>({markers: document.querySelectorAll('.vroom-race-marker').length,
+                                       errs: window.__errs})""")
+            check("all four people are on the race line, one of them in a character this build does not know",
+                  line["markers"] == 4 and not line["errs"], line)
+            rl.evaluate("()=>{ inVirtualRoom=false; testInProgress=false; stopVroomRaceListener(); showHome(); }")
+            rl.wait_for_timeout(600)
+            beat = rl.evaluate("""()=>{ const bar=document.querySelector('.bottomtabs');
+              const before = !!bar && !bar.hidden;
+              showVroomReadyFlourish(()=>{});
+              return new Promise(r=>setTimeout(()=>r({before: before,
+                during: !!bar && !bar.hidden && getComputedStyle(bar).display!=='none',
+                overlay: !!document.getElementById('vroom-flourish-overlay')}), 400)); }""")
+            check("the tab bar is not drawn over \"Everyone's ready!\"",
+                  beat["before"] and beat["overlay"] and not beat["during"], beat)
+        except Exception as e:
+            check("the race-line section ran at all", False, repr(e)[:200])
+
         ctx.close()
         br.close()
     srv.shutdown()

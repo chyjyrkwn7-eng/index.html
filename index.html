@@ -44126,7 +44126,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-27-215";
+const APP_BUILD = "2026-09-27-216";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -51703,6 +51703,11 @@ function showVroomReadyFlourish(onDone){
   sub.id = "vroom-flourish-sub";
   sub.textContent = "Starting now\u2026";
   overlay.append(check, title, sub);
+  /* The lobby had the tab bar up, and replacing the stage re-derives it
+     from the flag - so without this the bar sat on top of "Everyone's
+     ready!" for its whole beat. Set BEFORE the replace, which is the
+     mutation that makes syncVisibility() look. */
+  window.forceHideBottomTabs = true;
   stage.replaceChildren();
   document.body.appendChild(overlay);
   setTimeout(() => { overlay.remove(); onDone(); }, VROOM_FLOURISH_MS);
@@ -52553,7 +52558,12 @@ function startVroomRaceListener(){
       marker.title = p.name + " \u2014 " + pct + "%";
       const avatar = document.createElement("span");
       avatar.className = "vroom-race-marker-avatar";
-      avatar.appendChild(buildAvatarCharSVG(p.avatarChar || "ninja"));
+      /* SAFE, like every other row built from somebody else's document:
+         an avatar id this build does not know (an older build's
+         character, a renamed one) came back null and threw here, which
+         stopped the loop and left everybody after that person off the
+         line. Found recording a four-person room. */
+      avatar.appendChild(buildAvatarCharSVGSafe(p.avatarChar || "ninja"));
       const initials = document.createElement("span");
       initials.className = "vroom-race-marker-initials";
       initials.textContent = "You";
