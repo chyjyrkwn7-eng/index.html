@@ -5355,3 +5355,96 @@ run's own button row, `buildFinalActions`, and the first-results tour).
   review on the rewards screen, the button after everything, banners never
   two at once and the buttons after the last, Pause/Resume giving back the
   same node, reduce motion. It fails 21 of its 26 checks against build 211.
+
+### The results screen, second pass, and a lot more XP (build 213)
+
+One long message of changes on top of build 212's two screens.
+
+**XP is now computed in one place, `computeRunXp(r)`**, from plain numbers,
+returning the lines the XP card prints. summarize() awards its total, the
+Virtual Room publishes its lines, check-results asks it directly. The lines:
+- right answers × 10; hundo bonus (×N);
+- **answer streaks inside a test** - tiers 10, 25, 50, 75, 100, 150, 250,
+  350, then every 50 (`runStreakTiersUpTo`), each run of right answers
+  scoring every tier it reached, printed "10 right in a row ×2" when two runs
+  reached it (`×N` always means THAT line counted N times, never the whole);
+- **speed** off the average time a question, 75 under 5s down to 5 past two
+  minutes in steps of 5 (`SPEED_TIERS`), scaled by accuracy and, under ten
+  questions, by length - its sub-line carries the total time and the average;
+- **new best time / new best score per whole unit**, 50 each (×N). Kept on
+  `store.unitBestMs` / `store.unitBestPct` (defaulted in applyLoadedData).
+  The first time a unit is sat sets the mark and pays nothing; a best score
+  with no mark is seeded from test history (`unitBestPctOf`). A best time
+  needs the unit answered without a miss. Per-unit time comes from
+  `qTimeMs`, started in openQuestion and shifted by cancelPauseTiming;
+- Game: difficulty beaten (50/100/200) and lives left (10/25/50 each), only
+  for a game actually beaten;
+- a badge, now **1,000** (`MASTERY_BONUS`);
+- **multi-unit ×1.05 per whole unit past the first**, capped ×1.5, last,
+  over everything above it except a badge. The flat per-unit bonus is gone.
+- **A retake earns right answers × 10 and nothing else**, gets no streak
+  banners, and opens with no loading screen.
+
+**Curve: ~450,000 to level 80** (`LEVEL_STEEP_GROWTH` 1.0695, was 1.0601).
+Only levels past 45 moved; the top account was level 43 (52,940 XP), so
+nobody's level dropped.
+
+**Streak banners during a test** (`showRunStreakBanner`) only in Drill and
+Game, which already show right/wrong - in an Exam, Practice test or Virtual
+Room a "10 in a row" would give answers away, so there they are counted at
+the end only. Low on the screen, clear of the chat banner at the top, gone in
+under two seconds, warming in colour as the tier climbs.
+
+**Results screen**: no Pause (the chat button takes the corner back); no
+time/question pills (time is in the XP card now); the mode chip is filled in
+the mode's own colour and a retake keeps its test's chip; a multi-unit run
+lists every unit; every card is tinted (XP blue, grade green/red/gold, badges
+silver, unlocks violet, a lost game ember); no HUNDO stamp; per-unit bars on
+single-unit tests too; the Game box is quieter. The level-up bar filled twice
+because transitionend and the fallback timer both ran `wrapOver` - guarded.
+
+**Unlocks land one at a time**: the card lands, then each unlock is a centre
+banner and then its row. The Game difficulty banner is three lights (green,
+amber, red) with the new one blinking, and it names the unit.
+
+**Badge case cutscene on the results** (`playBadgeCaseScene`), straight
+after the badge box lands: a case unlatches and opens on the whole
+collection, the new badge spins in and flies to its slot, every badge
+glistens. Not queued for Home any more.
+
+**Secret flares**: the second at a random level 45-47 and the third at 65-67,
+drawn once per account (`store.flareLevels`, `mysteryLevelGate`); the first
+is still 80 tests. A flare keeps coming back every test until tapped. Bigger,
+with a halo. No mid-test banner: a found flare is the last unlock on the
+results, followed by a small scene (`playFlareFoundScene`) or, for the third,
+the Void cutscene - both hand back to the results.
+
+**Banners from a test belong to its results screen**: the rank cutscene on
+Home no longer adds a banner after it, and colour/character top banners are
+only fired for the daily question.
+
+**Game over is a results screen**: `gameOver()` cuts the run to the questions
+reached and calls summarize(); a "Game over" card replaces the grade, the
+question that took the last life counts as missed (`gameLostQi`), and no
+hundo, best or Game bonus is paid.
+
+**Re-run is back** on every mode but the Virtual Room, and always re-runs the
+whole test (from a retake: "Re-run the full test"). The review shows the
+answer you gave in every mode - Drill's is the FIRST pick (`firstPick`) - and
+no percentage.
+
+**Daily question**: no level bar, no Pause, a full-width exit. Any run's XP
+flies to the Profile tab in blue when you next land on Home (`pendingXpFly`).
+
+**Virtual Room (race)**: scored in XP (badge bonus excluded), tie to the
+quicker; each participant publishes `xp` and `xpLines`. The results screen
+is the ordinary one with "Waiting on other players 3/4" at the top and the
+answer review at the foot (no retake). Ten seconds after everyone is in AND
+your own results have landed, `playVroomRaceCutscene` runs: a ship's window
+on moving stars, every player's bar counting XP category by category, then
+rows slide into order and 1st/2nd/3rd glow gold/silver/bronze, then Return to
+lobby / Main menu. Tug of War is untouched.
+
+Also: Pause wears the chat button's glass; Stats drops "Current answer
+streak" and calls the other "All-time best answer streak"; Customize groups
+characters as Starters / Rank rewards / Earned by doing.

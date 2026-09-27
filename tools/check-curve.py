@@ -289,10 +289,13 @@ def main():
         # settled by looking at the list: every level past 45 at least 6%
         # dearer than the one below it, and the whole climb to the cap
         # about 375,000 XP - "total xp needed could be about 375,000".
-        check("past 45 every level is at least 6% dearer than the last",
-              costs["minRatioPast45"] >= 1.059, round(costs["minRatioPast45"], 4))  # 6%, less whole-XP rounding
-        check("the whole climb to 80 is about 375,000 XP",
-              abs(costs["toCap"] - 375000) <= 3750, costs["toCap"])
+        # BUILD 213 raised both, because the run now pays for speed,
+        # streaks, personal bests and a multi-unit multiplier as well:
+        # "Let's make the total xp like 450 now?" Growth past 45 is 6.95%.
+        check("past 45 every level is at least 6.9% dearer than the last",
+              costs["minRatioPast45"] >= 1.069, round(costs["minRatioPast45"], 4))  # 6.95%, less whole-XP rounding
+        check("the whole climb to 80 is about 450,000 XP",
+              abs(costs["toCap"] - 450000) <= 4500, costs["toCap"])
         check("and a level still costs more the higher you are",
               costs["l80"] > costs["l60"] > costs["l50"] > costs["l26"], costs)
 
