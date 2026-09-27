@@ -129,7 +129,9 @@ def main():
                    labels: cards.map(c => (c.querySelector('.stat-lab')||{}).textContent),
                    why: !!document.querySelector('.stat-why') };}""")
         check("every stat card is a real button", r["tags"] == ["BUTTON"], r["tags"])
-        check("ten of them", r["n"] == 10, r["n"])
+        # nine since build 213: "Current answer streak" came off - "remove the
+        # current best answer streak" - and the other now says all-time.
+        check("nine of them", r["n"] == 9, r["n"])
         check("there is an explanation panel", r["why"] is True)
         if r["why"]:
             first = pg.evaluate("""()=>{

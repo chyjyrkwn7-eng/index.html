@@ -360,15 +360,28 @@ def check_flares(pg):
     same = pg.evaluate(SET_TESTS, 137)
     check("the gate counts what the Stats tab counts", same == 137, same)
 
-    for i, key in enumerate(["red", "orange", "yellow"]):
+    # BUILD 213: the first is still a test count, the second and third are
+    # LEVELS, drawn once per account - 45-47 and 65-67 - "random per user".
+    pg.evaluate("""()=>{ store.mysteryColorsFound = { red:false, orange:false, yellow:false }; }""")
+    pg.evaluate(SET_TESTS, at[0] - 1); short = pg.evaluate(ARM)
+    pg.evaluate(SET_TESTS, at[0]); due = pg.evaluate(ARM)
+    check("red: nothing at %d tests, armed at %d" % (at[0] - 1, at[0]),
+          short["at"] == -1 and due["at"] >= 0 and due["color"] == "red", [short["at"], due["at"], due["color"]])
+    drawn = pg.evaluate("""()=>{ store.flareLevels = {}; return [mysteryLevelGate('orange'), mysteryLevelGate('yellow'),
+      mysteryLevelGate('orange')]; }""")
+    check("the second flare's level is drawn from 45-47, the third's from 65-67, and kept",
+          45 <= drawn[0] <= 47 and 65 <= drawn[1] <= 67 and drawn[2] == drawn[0], drawn)
+    for i, key in ((1, "orange"), (2, "yellow")):
+        lv = drawn[i - 1]
         pg.evaluate("""(k)=>{ const f = { red:false, orange:false, yellow:false };
           ['red','orange','yellow'].slice(0, k).forEach(c => f[c] = true);
           store.mysteryColorsFound = f; }""", i)
-        pg.evaluate(SET_TESTS, at[i] - 1)
+        pg.evaluate(SET_TESTS, 9999)
+        pg.evaluate("(l)=>{ store.lifetime.points = xpForLevel(l) - 1; }", lv)
         short = pg.evaluate(ARM)
-        pg.evaluate(SET_TESTS, at[i])
+        pg.evaluate("(l)=>{ store.lifetime.points = xpForLevel(l); }", lv)
         due = pg.evaluate(ARM)
-        check("%s: nothing at %d, armed at %d" % (key, at[i] - 1, at[i]),
+        check("%s: nothing just short of level %d, armed at it" % (key, lv),
               short["at"] == -1 and due["at"] >= 0 and due["color"] == key,
               [short["at"], due["at"], due["color"]])
 
@@ -433,6 +446,7 @@ GLINT = """()=>{
   const pool = QUESTIONS.map((q,i)=>[q,i]).filter(([q]) => (q.topic||'').trim() === t).map(([,i]) => i);
   store.mysteryColorsFound = { red:false, orange:false, yellow:false };
   store.lifetime.drillPlays = 9999;
+  store.lifetime.points = Math.max(store.lifetime.points || 0, xpForLevel(70));
   beginRun(pool, null, null);
   mysteryAppearsAtPos = 0; pos = 0;
   render();
@@ -488,6 +502,7 @@ FIND = """()=>{
            found: Object.assign({}, store.mysteryColorsFound),
            count: mysteryColorsFoundCount(),
            banners: document.querySelectorAll('.flare-banner').length,
+           carried: typeof mysteryFoundThisSession !== 'undefined' && mysteryFoundThisSession === true,
            voidLocked: isLockedCharacter('voidwalker') };}"""
 
 REARM = """()=>{
@@ -496,6 +511,7 @@ REARM = """()=>{
   cfg.mode='drill'; cfg.source='all'; cfg.units=[t];
   const pool = QUESTIONS.map((q,i)=>[q,i]).filter(([q]) => (q.topic||'').trim() === t).map(([,i]) => i);
   store.lifetime.drillPlays = 9999;
+  store.lifetime.points = Math.max(store.lifetime.points || 0, xpForLevel(70));
   beginRun(pool, null, null);
   mysteryAppearsAtPos = 0; pos = 0;
   render();
@@ -509,7 +525,10 @@ def check_find(pg):
     check("tapping it records the colour", first.get("ok") and first["count"] == 1, first)
     order_seen.append(first["found"])
     check("one is not enough for Void", first["voidLocked"] is True)
-    check("and it says so on screen", first["banners"] == 1, first["banners"])
+    # BUILD 213: no banner mid-test - the find is carried to the results
+    # screen, where it is the last unlock and plays its own scene.
+    check("and it is carried to the results, not bannered mid-test",
+          first.get("carried") is True and first["banners"] == 0, first)
     # A found flare must not be findable twice, or the whole hunt is one
     # run long. IT IS DISABLED THE INSTANT IT IS TAPPED and removed a
     # beat later, and the order matters: reading the DOM straight after

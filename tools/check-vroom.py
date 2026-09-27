@@ -628,7 +628,10 @@ def main():
         stays = host.evaluate("""()=>{
           const top = document.getElementById('stage').firstElementChild;
           return { screen: top && top.dataset ? top.dataset.screen : null,
-                   inline: !!(top && top.querySelector('.vroom-finale-inline')),
+                   /* Build 213: the room's part is the live "waiting on other
+                      players" card at the TOP of the results, not a section
+                      in the middle of them. */
+                   inline: !!(top && top.querySelector('.vroom-waitcard')),
                    level: !!(top && top.querySelector('.results-level, .xp-block, .level-block, [class*=level]')) };}""")
         check("finishing keeps the normal results screen up", stays.get("screen") == "results", stays)
         check("with the Virtual Room part on it, not instead of it", stays.get("inline") is True, stays)
