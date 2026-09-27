@@ -13453,6 +13453,10 @@
   }
   .rs-screen .rs-unlocked .rs-unlock + .rs-unlock{ margin-top:.6rem; border-top:1px solid rgba(255,255,255,.06); }
   .rs-unlocked .rs-kicker + .rs-unlock{ padding-top:0; }
+  /* The rows land one at a time now, so the animation:none above (which
+     is there to stop .unlockbanner's own slide-in) must not reach a row
+     that is landing - it left them at opacity 0 for good. */
+  .rs-screen .rs-unlocked .rs-unlock.rs-land.rs-in{ animation:rs-bang .46s cubic-bezier(.2,1.25,.35,1) both; }
   .rs-unlock-art{
     width:2.7rem; height:2.7rem; flex-shrink:0; display:flex; align-items:center; justify-content:center;
     filter:drop-shadow(0 0 8px color-mix(in srgb, var(--spot-color) 45%, transparent));
@@ -13592,6 +13596,180 @@
     .rs-spot-art{ width:8rem; height:8rem; }
     .rs-spot-name{ font-size:2.1rem; }
     .rs-q-text{ font-size:1.15rem; }
+  }
+
+  /* ---- BUILD 213: THE RESULTS SCREEN, SECOND PASS ---- */
+  /* The chip IS the mode's colour from the mode picker - Drill gold,
+     Exam orange, Game magenta, Virtual Room blue - filled, so it reads
+     as that mode's badge rather than a label in its colour. */
+  .rs-mode-drill{ --mode-c:#FFD37A; }
+  .rs-mode-exam{ --mode-c:#F5804D; }
+  .rs-mode-game{ --mode-c:#E0559A; }
+  .rs-mode-vroom{ --mode-c:#4A9FE8; }
+  .rs-mode{
+    background:color-mix(in srgb, var(--mode-c) 22%, rgba(20,24,30,.6));
+    border-color:color-mix(in srgb, var(--mode-c) 55%, transparent);
+    color:color-mix(in srgb, var(--mode-c) 70%, #fff);
+    box-shadow:0 0 14px -4px color-mix(in srgb, var(--mode-c) 60%, transparent);
+  }
+  .rs-mode .modeiconpath{ stroke:currentColor; }
+  .rs-mode-game .modeiconpath{ fill:currentColor; stroke:none; }
+  /* Every unit sat, one to a line. */
+  .rs-unitlist{
+    list-style:none; margin:.6rem 0 0; padding:0;
+    display:flex; flex-direction:column; gap:.3rem;
+  }
+  .rs-unitlist li{
+    position:relative; padding-left:1rem;
+    font-size:.92rem; font-weight:600; color:rgba(255,255,255,.82); line-height:1.35;
+  }
+  .rs-unitlist li::before{
+    content:""; position:absolute; left:.1rem; top:.52em; width:.38rem; height:.38rem; border-radius:50%;
+    background:var(--mode-c, #FFD37A); opacity:.8;
+  }
+  .rs-head:has(.rs-mode-drill) .rs-unitlist li::before{ background:#FFD37A; }
+  .rs-head:has(.rs-mode-exam) .rs-unitlist li::before{ background:#F5804D; }
+  .rs-head:has(.rs-mode-game) .rs-unitlist li::before{ background:#E0559A; }
+  .rs-head:has(.rs-mode-vroom) .rs-unitlist li::before{ background:#4A9FE8; }
+
+  /* XP lines that carry detail under them - the time, the bests. */
+  .rs-xpline{ align-items:flex-start; }
+  .rs-xpline-label{ display:flex; flex-direction:column; min-width:0; }
+  .rs-xpline-sub{ font-size:.76rem; color:var(--soft); margin-top:.12rem; line-height:1.3; }
+  .rs-xpline.is-multi{ margin-top:.55rem; padding-top:.55rem; border-top:1px dashed rgba(124,200,255,.22); }
+  .rs-xpline.is-multi .rs-xpline-name{ font-weight:800; color:var(--xp); }
+
+  /* EVERY CARD CARRIES A TINT, each one its own idea's colour, on the
+     same recipe as the XP card's blue: a wash from the top edge and a
+     border in the colour. Grade green / red / gold, badges silver,
+     unlocks violet, a lost game ember. */
+  .rs-screen .rs-card.rs-grade.is-pass{
+    border-color:rgba(92,214,146,.26);
+    background:linear-gradient(180deg, rgba(46,170,106,.16), var(--rs-card) 62%);
+  }
+  .rs-screen .rs-card.rs-grade.is-fail{
+    border-color:rgba(232,104,124,.28);
+    background:linear-gradient(180deg, rgba(200,60,84,.16), var(--rs-card) 62%);
+  }
+  .rs-screen .rs-card.rs-grade.is-perfect{
+    border-color:rgba(230,195,74,.32);
+    background:linear-gradient(180deg, rgba(230,180,40,.18), var(--rs-card) 62%);
+  }
+  .rs-screen .rs-card.rs-grade.is-over{
+    border-color:rgba(255,140,90,.28);
+    background:linear-gradient(180deg, rgba(220,90,50,.16), var(--rs-card) 62%);
+  }
+  .rs-screen .rs-badges.badgeprogress-wrap{
+    border-color:rgba(216,226,236,.22);
+    background:linear-gradient(180deg, rgba(200,214,228,.12), var(--rs-card) 62%);
+  }
+  .rs-screen .rs-card.rs-unlocked{
+    border-color:rgba(176,140,255,.26);
+    background:linear-gradient(180deg, rgba(150,110,240,.15), var(--rs-card) 62%);
+  }
+  .rs-over-title{ margin:0; font-family:var(--serif); font-size:2rem; font-weight:700; line-height:1.1; color:#FFB08A; }
+  /* The Game box, quieter than it was: the colour is in the border and
+     a faint wash, not a flood. */
+  .rs-screen .rs-card.rs-gamebeat{
+    border-color:color-mix(in srgb, var(--gb) 32%, transparent);
+    background:linear-gradient(180deg, color-mix(in srgb, var(--gb) 12%, transparent), var(--rs-card) 62%);
+  }
+  .rs-gamebeat-head{ margin:0; font-size:.98rem; font-weight:800; color:color-mix(in srgb, var(--gb) 75%, #fff); }
+  .rs-gamebeat-sub{ margin:.35rem 0 0; font-size:.84rem; color:var(--soft); }
+  .rs-byunit .unit-breakdown-fill{ transition:width .9s cubic-bezier(.2,.8,.25,1); }
+
+  /* The three difficulty lights. */
+  .rs-difflights{ display:flex; gap:.9rem; align-items:flex-end; justify-content:center; }
+  .rs-difflight{
+    position:relative; width:2.4rem; height:2.4rem; border-radius:50%;
+    background:rgba(255,255,255,.06); border:2px solid color-mix(in srgb, var(--dl) 35%, transparent);
+  }
+  .rs-difflight.is-on, .rs-difflight.is-new{
+    background:radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--dl) 60%, #fff), var(--dl) 60%);
+    border-color:var(--dl);
+    box-shadow:0 0 16px color-mix(in srgb, var(--dl) 70%, transparent);
+  }
+  .rs-spot .rs-difflight.is-new{ animation:rs-diffblink .42s steps(1) 4, rs-diffglow 1.6s ease-out 1.7s both; }
+  @keyframes rs-diffblink{ 0%{ opacity:1; } 50%{ opacity:.12; } }
+  @keyframes rs-diffglow{ 0%{ box-shadow:0 0 0 0 color-mix(in srgb, var(--dl) 80%, transparent); } 100%{ box-shadow:0 0 22px 4px color-mix(in srgb, var(--dl) 55%, transparent); } }
+  .rs-difflight-label{
+    position:absolute; left:50%; top:calc(100% + .35rem); transform:translateX(-50%);
+    font-size:.6rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase;
+    color:rgba(255,255,255,.55); white-space:nowrap;
+  }
+  .rs-difflight.is-new .rs-difflight-label{ color:var(--dl); }
+  .rs-spot-art .rs-difflights{ transform:scale(1.25); margin-bottom:.6rem; }
+  .rs-unlock-art .rs-difflights{ gap:.25rem; }
+  .rs-unlock-art .rs-difflight{ width:.7rem; height:.7rem; border-width:1px; }
+  .rs-unlock-art .rs-difflight-label{ display:none; }
+
+  /* The run's buttons: Retake across the top when there is one, Re-run
+     and Main menu side by side under it. */
+  .actions.rs-final{ flex-wrap:wrap; }
+  .actions.rs-final .rs-wide{ flex:1 1 100%; }
+
+  /* ---- ANSWER STREAKS, DURING A TEST ----
+     Low on the screen and clear of the chat banner at the top; it never
+     takes a tap, and it is gone in under two seconds. It gets louder as
+     the streak climbs: the colour warms from blue through gold to red,
+     and from 50 up it carries a ring. */
+  .streak-pop{
+    position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom, 0px) + 7.5rem); z-index:250;
+    transform:translateX(-50%); pointer-events:none;
+    display:flex; align-items:baseline; gap:.45rem;
+    padding:.5rem 1rem; border-radius:999px;
+    background:rgba(20,25,32,.72); border:1px solid color-mix(in srgb, var(--sk) 45%, transparent);
+    will-change:backdrop-filter; backdrop-filter:blur(14px) saturate(1.4); -webkit-backdrop-filter:blur(14px) saturate(1.4);
+    box-shadow:0 6px 20px rgba(0,0,0,.35), 0 0 18px -4px color-mix(in srgb, var(--sk) 60%, transparent);
+    animation:streak-pop 1.9s ease-out both;
+    --sk:#7CC8FF;
+  }
+  .streak-lv2{ --sk:#6FE3C8; } .streak-lv3{ --sk:#9BE36F; } .streak-lv4{ --sk:#FFD37A; }
+  .streak-lv5{ --sk:#FFB25C; } .streak-lv6{ --sk:#FF8A5C; } .streak-lv7{ --sk:#FF5C7A; } .streak-lv8{ --sk:#D98BFF; }
+  .streak-pop-num{ font-family:var(--mono); font-size:1.3rem; font-weight:800; color:var(--sk); text-shadow:0 0 12px color-mix(in srgb, var(--sk) 60%, transparent); }
+  .streak-pop-text{ font-size:.72rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.75); }
+  .streak-lv3::after, .streak-lv4::after, .streak-lv5::after, .streak-lv6::after, .streak-lv7::after, .streak-lv8::after{
+    content:""; position:absolute; inset:-3px; border-radius:inherit; pointer-events:none;
+    border:2px solid var(--sk); animation:streak-ring 1s ease-out .1s both;
+  }
+  @keyframes streak-pop{
+    0%{ opacity:0; transform:translateX(-50%) translateY(14px) scale(.9); }
+    14%{ opacity:1; transform:translateX(-50%) translateY(0) scale(1.04); }
+    22%{ transform:translateX(-50%) scale(1); }
+    78%{ opacity:1; }
+    100%{ opacity:0; transform:translateX(-50%) translateY(-8px); }
+  }
+  @keyframes streak-ring{ 0%{ opacity:.9; transform:scale(1); } 100%{ opacity:0; transform:scale(1.35, 1.8); } }
+
+  /* ---- PAUSE WEARS THE CHAT BUTTON'S GLASS ---- "The pause button, it
+     needs to match the look of the chat button." Same fill, hairline,
+     blur and shadow; it keeps its pill shape because it carries a word. */
+  [data-layout="modern"] .top #pausebtn:not([hidden]),
+  [data-theme="dark"][data-layout="modern"] .top #pausebtn:not([hidden]){
+    background:rgba(20,25,32,.55); color:var(--ink);
+    border:1px solid rgba(255,255,255,.14); border-radius:999px;
+    will-change:backdrop-filter; backdrop-filter:blur(14px) saturate(1.4); -webkit-backdrop-filter:blur(14px) saturate(1.4);
+    box-shadow:0 2px 10px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.1);
+  }
+
+  /* Customize: the characters grouped by how they are earned. */
+  .avatarchar-group-title{
+    margin:1.1rem 0 .55rem; font-size:.74rem; font-weight:800; letter-spacing:.12em;
+    text-transform:uppercase; color:rgba(255,255,255,.62);
+    display:flex; align-items:baseline; gap:.5rem; flex-wrap:wrap;
+  }
+  .avatarchar-group-note{ font-size:.74rem; font-weight:500; letter-spacing:0; text-transform:none; color:var(--soft); }
+  .avatarchar-group-title:first-of-type{ margin-top:.4rem; }
+
+  /* The daily question's way out is a full-width bar, not a pill. */
+  .settings-done-bar:has(.dailyq-exit-wide){ display:block; }
+  .next.dailyq-exit-wide{ display:block; width:100%; max-width:none; }
+
+  /* ---- XP IS BLUE WHEREVER IT FLIES ---- */
+  #welcomebonus-banner, [data-theme="dark"] #welcomebonus-banner{
+    background:rgba(20,28,42,.7); color:#7CC8FF;
+    border:1px solid rgba(124,200,255,.3);
+    box-shadow:0 8px 24px rgba(0,0,0,.3), 0 0 18px rgba(58,140,255,.3), inset 0 1px 0 rgba(255,255,255,.08);
   }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
@@ -30315,7 +30493,7 @@ const LEVEL_CAP = 80;
    ranks now ask for study past what their badges pay, which is the
    complaint being answered (high levels, few badges). */
 const LEVEL_STEEP_FROM = 45;
-const LEVEL_STEEP_GROWTH = 1.0601;
+const LEVEL_STEEP_GROWTH = 1.0695;   /* build 213: ~450,000 in all to level 80 (was 1.0601, ~375,000) */
 function levelGrowthAt(lvl){
   if(lvl <= LEVEL_FREEZE_THROUGH) return LEVEL_GROWTH;
   if(lvl > LEVEL_STEEP_FROM) return LEVEL_STEEP_GROWTH;
@@ -30541,7 +30719,7 @@ function badgeThresholdFor(name){
    nobody's total is adjusted for badges earned before this existed -
    the XP they already have is treated as having included it. That is
    also what keeps this from moving a single existing level. */
-const MASTERY_BONUS = 2500;
+const MASTERY_BONUS = 1000;   /* build 213: "Badge xp earned needs to be lowered to 1000 xp" */
 /* WHAT A BADGE IS WORTH IN XP, AND WHY IT IS A FLAT LUMP. Four levels
    at LEVEL_COST_MAX, paid once, the moment a unit is mastered. The
    grinding that earned it pays its own way on top - about three more
@@ -34203,6 +34381,7 @@ function cancelPauseTiming(){
   if(runStartTime != null) runStartTime += pausedMs;
   if(timerDeadline != null) timerDeadline += pausedMs;
   if(questionDeadline != null) questionDeadline += pausedMs;
+  if(qClockQi != null) qClockAt += pausedMs;
   paused = false;
   pauseStartedAt = null;
 }
@@ -34286,71 +34465,32 @@ function questionTimeUp(){
   timedOutSet[qi] = true;
   lastWrong = true;
   recordResult(qi, true);
+  runStreakLive(false);
   livesLeft -= 1;
   if(livesLeft <= 0){ gameOver(); return; }
   if(pos === order.length - 1) summarize();
   else { pos += 1; openQuestion(); }
 }
 
-/* Restarts the current game-mode test from question 1 after lives run out,
-   reusing the same question pool and length as the attempt that just ended. */
+/* OUT OF LIVES IS AN END OF RUN, NOT A DEAD END. It used to be a screen
+   of its own with no XP, no results and nothing to show for the questions
+   answered - "playing game mode and losing still needs a result screen,
+   you just don't get the game mode bonus if you don't beat it". So the
+   run is cut to the questions actually reached and handed to summarize()
+   like any other: XP for the right answers, streaks and speed, a
+   "Game over" card where the grade would be, and no hundo, no personal
+   best and no difficulty or lives bonus - none of which a lost game has
+   earned. */
+let gameLostAt = 0;
+let gameFullLength = 0;
+let gameLostQi = null;   /* the question that took the last life - a miss */
 function gameOver(){
-  stopTimer();
   stopQuestionTimer();
-  flushStudyTime();
-  hintEl.hidden = true;
-  timerlineEl.hidden = true;
-  livesEl.hidden = true;
-  restartEl.hidden = true;
-  appearanceBtn.hidden = false;
-  homeBtn.hidden = false;
-  profileBtn.hidden = false;
-  pauseBtn.hidden = true;
-  paused = false;
-
-  const panel = document.createElement("section");
-  panel.className = "panel";
-
-  const num = document.createElement("p");
-  num.className = "qnum";
-  num.textContent = "Out of lives";
-  panel.appendChild(num);
-
-  const qtext = document.createElement("p");
-  qtext.className = "qtext";
-  qtext.textContent = "You made it to question " + (pos + 1) + " of " + order.length + ".";
-  panel.appendChild(qtext);
-
-  if(runTrackable && cfg.source === "all" && isFullUnitRun()){
-    const gotFarther = recordGameFarthest(cfg.units[0], cfg.gameSpeed, pos + 1);
-    if(gotFarther){
-      const fb = document.createElement("p");
-      fb.className = "pbbanner";
-      fb.textContent = "Farthest yet on " + GAME_SPEEDS[cfg.gameSpeed].label + ": " +
-        (pos + 1) + " of " + order.length + " questions.";
-      panel.appendChild(fb);
-    }
-  }
-
-  const actions = document.createElement("div");
-  actions.className = "actions";
-
-  /* No "Re-run this test" or "New run" here \u2014 per explicit request,
-     Game mode's results screen (out-of-lives ending included) offers
-     only the one path out. */
-  const mainMenuBtn = document.createElement("button");
-  mainMenuBtn.type = "button"; mainMenuBtn.className = "next"; mainMenuBtn.id = "nextbtn";
-  mainMenuBtn.textContent = "Main menu";
-  mainMenuBtn.addEventListener("click", showHome);
-  actions.appendChild(mainMenuBtn);
-
-  panel.appendChild(actions);
-  countEl.textContent = scopeLabel() + " \u2014 game over";
-  testScopeLabelEl.textContent = countEl.textContent;
-  meterEl.hidden = true;
-
-  stage.replaceChildren(panel);
-  toTop();
+  gameLostQi = order[pos];
+  gameLostAt = pos + 1;
+  gameFullLength = order.length;
+  order = order.slice(0, pos + 1);
+  summarize();
 }
 
 /* ---------- run state --------------------------------------------------- */
@@ -34366,6 +34506,7 @@ let testInProgress = false;
 let pos = 0;
 let attempts = {};   // question index -> attempts this run
 let picked = {};     // question index -> chosen option (exam mode)
+let firstPick = {};  // question index -> first option tapped (drill, game)
 let layout = {};     // question index -> option order used this run
 let lastWrong = false;  // the previous pick on this question was wrong
 let cleared = false;
@@ -40371,6 +40512,13 @@ function showHome(){
   maybeShowIntro();
   stage.replaceChildren(panel);
   stage.appendChild(dailyBtn);
+  /* The XP a run just earned flies into the Profile tab when you land
+     back here - the results screen has no tab bar to fly to. Once. */
+  if(pendingXpFly > 0){
+    const n = pendingXpFly;
+    pendingXpFly = 0;
+    setTimeout(() => showPointsFlyEffect("+" + n.toLocaleString() + " XP"), 450);
+  }
   /* Appended to stage as a sibling of the panel now, not a child of
      it — this is the actual fix for the version tag and the Start
      Studying button competing for the same cramped space: panel.home
@@ -42185,11 +42333,15 @@ function beginRun(indexes, label, practiceMinutes, missedRetake){
   }
   practiceTestMinutes = practiceMinutes || null;
   isMissedRetake = !!missedRetake;
+  gameLostAt = 0; gameFullLength = 0; gameLostQi = null;
+  qTimeMs = {}; qClockQi = null; runLiveStreak = 0;
+  pendingXpFly = 0;
   mysteryFoundThisSession = false;
   maybeStartMysteryForRun();
   pos = 0;
   attempts = {};
   picked = {};
+  firstPick = {};
   layout = {};
   timedOutSet = {};
   runLabel = label || null;
@@ -42220,7 +42372,8 @@ function beginRun(indexes, label, practiceMinutes, missedRetake){
   appearanceBtn.hidden = true;
   homeBtn.hidden = true;
   profileBtn.hidden = true;
-  pauseBtn.hidden = false;
+  /* No Pause on the daily question: one question, no clock. */
+  pauseBtn.hidden = (runLabel === "Daily question");
   updateLives();
 
   runStartTime = null; // the clock has not started yet
@@ -42229,7 +42382,9 @@ function beginRun(indexes, label, practiceMinutes, missedRetake){
      TEST" countdown/splash never fit here to begin with. startRunNow()
      is exactly what that countdown calls once it finishes anyway, so
      this is the same landing point, just immediate. */
-  if(runLabel === "Daily question"){ startRunNow(); }
+  /* A retake opens straight onto its first question - "do not give that
+     the loading screen thing, just open it straight up". */
+  if(runLabel === "Daily question" || isMissedRetake){ startRunNow(); }
   else { showCountdown(3); }
 }
 
@@ -42322,7 +42477,7 @@ function startRunNow(){
      request, since it's always exactly one question, the little
      "question X of Y" tick row has nothing meaningful to show. */
   meterEl.hidden = (runLabel === "Daily question");
-  pauseBtn.hidden = false;
+  pauseBtn.hidden = (runLabel === "Daily question");
   /* The live race bar, visible only during an actual Virtual Room run
      \u2014 per explicit request, replacing the earlier tap-to-view Progress
      popup with an always-visible, always-updating strip instead. */
@@ -42406,6 +42561,7 @@ function beginVroomSyncedReveal(){
 }
 
 function openQuestion(instant){
+  qClockStart(order[pos]);
   lastWrong = false;
   cleared = false;
   dailyQuestionLocked = false;
@@ -42807,11 +42963,15 @@ function choose(slot){
 
   if(cleared || paused || dailyQuestionLocked) return;
   attempts[qi] = (attempts[qi] || 0) + 1;
+  /* What was picked FIRST, so the review can show the answer you gave
+     and not only the one you finally landed on. */
+  if(attempts[qi] === 1) firstPick[qi] = slot;
 
   if(slot === correctSlot(qi)){
     cleared = true;
     if(runMode === "game") stopQuestionTimer();
     recordResult(qi, attempts[qi] > 1 || hinted);
+    runStreakLive(!(attempts[qi] > 1 || hinted));
     /* Daily question never advances to a next question or a separate
        results screen \u2014 per explicit, revised request ("no review
        screen... quick, in-and-out experience"), it stays right here
@@ -42832,6 +42992,7 @@ function choose(slot){
     // the answer can never be reached by elimination. Each attempt is a fresh
     // commitment from the full set of options.
     lastWrong = true;
+    if(attempts[qi] === 1) runStreakLive(false);
     if(runMode === "game"){
       livesLeft -= 1;
       if(livesLeft <= 0){ stopQuestionTimer(); gameOver(); return; }
@@ -44210,7 +44371,14 @@ function buildResultsLevelBlock(earned, pointsAfter){
         return;
       }
       fill.style.width = "100%";
+      /* ONCE. The fallback timer below and transitionend both call this,
+         and without the guard the one that lost the race fired later
+         anyway and filled the bar a second time - "the level up bar
+         when leveling up loads a second time when the second box hits". */
+      let wrapped = false;
       const wrapOver = () => {
+        if(wrapped) return;
+        wrapped = true;
         lvl.textContent = "Level " + after.level;
         wrap.classList.add("is-levelup");
         const prev = fill.style.transition;
@@ -44241,6 +44409,205 @@ function buildResultsLevelBlock(earned, pointsAfter){
    which summarize() builds the side effects for and then replaces. */
 let lastRunXpEarned = 0;
 let lastRunPointsAfter = 0;
+let lastRunXpLines = [];
+
+/* ---- WHAT A RUN EARNS, LINE BY LINE (build 213) ----------------------
+   "With all this new type of xp earning stuff..." - asked for in one
+   message: a speed bonus off the average time a question, a personal
+   best time and a personal best score per unit, answer streaks inside a
+   test, a multiplier for sitting several units at once, and a Game
+   difficulty bonus plus a bonus for the lives left over.
+
+   ONE FUNCTION DECIDES ALL OF IT, from the numbers alone, and returns the
+   lines the results screen prints. summarize() awards the total it
+   returns; the Virtual Room publishes the same lines so everybody's
+   screen counts the same XP; check-results asks this function directly.
+   Three places doing their own arithmetic is how the XP box and the
+   level bar once disagreed.
+
+   "Like any other x2 or x3, that only means that multiplier for that
+   xp, not the entire xp multiplied" - so ×2 on a streak or a personal
+   best means that line counted twice. The multi-unit multiplier is the
+   one genuine multiplier, and it is the last line, over everything above
+   it except a badge. */
+
+/* Answer streaks, "10, 25, 50, 75, 100, 150, 250, 350, and so on in
+   increments of 50". The listed ones, then every 50 past 350. */
+const RUN_STREAK_TIERS = [10, 25, 50, 75, 100, 150, 250, 350];
+function runStreakTiersUpTo(n){
+  const out = RUN_STREAK_TIERS.filter(t => t <= n);
+  for(let t = 400; t <= n; t += 50) out.push(t);
+  return out;
+}
+/* What each one is worth - "the higher the answer streak type, the more
+   the xp". Its own number up to 100, then the steps widen so a 350 is a
+   real reward without a long run of Drill outpaying a whole unit. */
+function runStreakTierXp(t){
+  const fixed = { 10: 10, 25: 25, 50: 50, 75: 75, 100: 100, 150: 125, 250: 175, 350: 225 };
+  if(fixed[t]) return fixed[t];
+  return 225 + ((t - 350) / 50) * 25;
+}
+/* Every run of right answers in a row, and the tiers each one reached.
+   A run of 30 reaches 10 and 25; a miss starts over. */
+function runStreakTiersFor(okList){
+  const counts = {};
+  let run = 0;
+  const close = () => { runStreakTiersUpTo(run).forEach(t => { counts[t] = (counts[t] || 0) + 1; }); run = 0; };
+  okList.forEach(ok => { if(ok) run++; else close(); });
+  close();
+  return counts;
+}
+
+/* Speed, off the AVERAGE time a question - "the lower the average time
+   the higher the xp", "increments of 5", about 75 under five seconds and
+   5 past two minutes. Scaled by accuracy so tapping through at random is
+   not the fast way to earn it, and by length below ten questions so a
+   five-question slice is not worth what a whole unit is. */
+const SPEED_TIERS = [[5, 75], [8, 65], [12, 55], [18, 45], [25, 35], [35, 30],
+                     [45, 25], [60, 20], [90, 15], [120, 10]];
+function speedTierXp(avgSec){
+  for(const [lim, xp] of SPEED_TIERS) if(avgSec < lim) return xp;
+  return 5;
+}
+function roundTo5(n){ return Math.round(n / 5) * 5; }
+
+const PB_TIME_BONUS = 50;
+const PB_SCORE_BONUS = 50;
+/* Game mode is harder, so it pays more - "the harder the difficulty, the
+   more the extra xp" - and only for a game actually beaten. */
+const GAME_BEAT_BONUS = { easy: 50, average: 100, hardcore: 200 };
+const GAME_LIFE_BONUS = { easy: 10, average: 25, hardcore: 50 };
+/* +5% for each whole unit past the first, to ×1.5. Four units is ×1.15 -
+   "nothing too crazy ... noticeable though". */
+function multiUnitMultiplier(wholeUnits){
+  if(wholeUnits < 2) return 1;
+  return Math.min(1.5, 1 + 0.05 * (wholeUnits - 1));
+}
+
+/* `r` is plain numbers so this can be asked about any run:
+   good, answered, elapsedMs, okList (first-try right, in the order
+   answered), retake, daily, hundos, wholeUnits, timePRs / scorePRs
+   ([{unit, text}]), game ({speed, beaten, livesLeft}) and badgesPaid
+   ([unit]). */
+function computeRunXp(r){
+  const lines = [];
+  const add = (key, label, value, extra) => {
+    if(value > 0) lines.push(Object.assign({ key: key, label: label, value: value }, extra || {}));
+  };
+  if(r.daily){
+    add("daily", "Daily question", r.good > 0 ? 100 : 0);
+    return { lines: lines, total: lines.reduce((s, l) => s + l.value, 0) };
+  }
+  add("correct", r.good + " correct × " + POINTS_PER_QUESTION, r.good * POINTS_PER_QUESTION);
+  /* A retake is "literally gonna be just purely retake": the answers it
+     got right, and nothing else of any kind. */
+  if(r.retake) return { lines: lines, total: lines.reduce((s, l) => s + l.value, 0) };
+
+  if(r.hundos > 0) add("hundo", r.hundos > 1 ? "Hundo bonus ×" + r.hundos : "Hundo bonus", r.hundos * PERFECT_BONUS);
+
+  const tiers = runStreakTiersFor(r.okList || []);
+  Object.keys(tiers).map(Number).sort((a, b) => a - b).forEach(t => {
+    const n = tiers[t];
+    add("streak" + t, t + " right in a row" + (n > 1 ? " ×" + n : ""), runStreakTierXp(t) * n,
+        { streak: t, times: n });
+  });
+
+  if(r.answered > 0 && r.elapsedMs > 0){
+    const avgSec = r.elapsedMs / 1000 / r.answered;
+    const scaled = speedTierXp(avgSec) * Math.min(1, r.answered / 10) * (r.good / r.answered);
+    const v = r.good > 0 ? Math.max(5, roundTo5(scaled)) : 0;
+    add("speed", "Speed bonus", v, { sub: formatClock(r.elapsedMs) + " total · " +
+      (avgSec < 10 ? avgSec.toFixed(1) : Math.round(avgSec)) + "s a question" });
+  }
+
+  (r.timePRs || []).length && add("pbtime", "New best time" + (r.timePRs.length > 1 ? " ×" + r.timePRs.length : ""),
+    PB_TIME_BONUS * r.timePRs.length, { sub: r.timePRs.map(p => p.text).join(" · ") });
+  (r.scorePRs || []).length && add("pbscore", "New best score" + (r.scorePRs.length > 1 ? " ×" + r.scorePRs.length : ""),
+    PB_SCORE_BONUS * r.scorePRs.length, { sub: r.scorePRs.map(p => p.text).join(" · ") });
+
+  if(r.game && r.game.beaten){
+    const sp = r.game.speed, label = (GAME_SPEEDS[sp] || {}).label || sp;
+    add("gamebeat", label + " difficulty beaten", GAME_BEAT_BONUS[sp] || 0);
+    add("gamelives", r.game.livesLeft + (r.game.livesLeft === 1 ? " life" : " lives") + " left × " +
+        (GAME_LIFE_BONUS[sp] || 0), (GAME_LIFE_BONUS[sp] || 0) * r.game.livesLeft);
+  }
+
+  const beforeMult = lines.reduce((s, l) => s + l.value, 0);
+  (r.badgesPaid || []).forEach(u => add("badge", u + " badge", MASTERY_BONUS, { badge: true }));
+  const m = multiUnitMultiplier(r.wholeUnits || 0);
+  if(m > 1){
+    add("multi", "Multi-unit ×" + m.toFixed(2).replace(/0$/, ""), roundTo5(beforeMult * (m - 1)),
+        { sub: r.wholeUnits + " whole units" });
+  }
+  return { lines: lines, total: lines.reduce((s, l) => s + l.value, 0) };
+}
+
+/* ---- PERSONAL BESTS, PER UNIT ----
+   A unit's best score and best time, kept on `store` (defaulted in
+   applyLoadedData). Only a WHOLE unit counts - a ten-question slice of a
+   unit is not a time on that unit. The first time a unit is sat sets the
+   mark and pays nothing: a record needs something to beat. A best score
+   with no mark yet is seeded from the test history, so nobody's next run
+   is a "record" just because the feature is new. A best time only comes
+   from a unit answered without a miss - a fast run full of wrong answers
+   is not the thing a best time should reward. */
+function unitBestPctOf(u){
+  store.unitBestPct = store.unitBestPct || {};
+  if(typeof store.unitBestPct[u] !== "number"){
+    const seen = (store.testHistory || [])
+      .filter(h => Array.isArray(h.units) && h.units.length === 1 && h.units[0] === u && typeof h.pct === "number")
+      .map(h => h.pct);
+    if(seen.length) store.unitBestPct[u] = Math.max.apply(null, seen);
+  }
+  return store.unitBestPct[u];
+}
+
+/* Time on each question, so a multi-unit run can say how long each unit
+   took. Started when a question opens, stopped when the run ends or is
+   paused; cancelPauseTiming() shifts it along with the run clock. */
+let qTimeMs = {};
+let pendingXpFly = 0;
+let qClockQi = null, qClockAt = 0;
+function qClockStart(qi){
+  qClockStop();
+  qClockQi = qi; qClockAt = Date.now();
+}
+function qClockStop(){
+  if(qClockQi == null) return;
+  qTimeMs[qClockQi] = (qTimeMs[qClockQi] || 0) + Math.max(0, Date.now() - qClockAt);
+  qClockQi = null;
+}
+
+/* ---- ANSWER STREAK BANNERS, DURING THE TEST ----
+   Only in the modes that already tell you right or wrong as you go -
+   Drill and Game. An Exam gives nothing away until the end, and a
+   banner at 10 in a row would be the test telling you ten answers were
+   right. There the streaks are counted at the end all the same.
+   Not on a retake and not on the daily question: "you get nothing cool
+   out of it". Subtle, low on the screen and out of the way of the chat
+   banner at the top, and gone in under two seconds. */
+let runLiveStreak = 0;
+function runStreakLive(ok){
+  if(isMissedRetake || runLabel === "Daily question" || !(runMode === "drill" || runMode === "game")) return;
+  if(!ok){ runLiveStreak = 0; return; }
+  runLiveStreak++;
+  if(runStreakTiersUpTo(runLiveStreak).slice(-1)[0] === runLiveStreak) showRunStreakBanner(runLiveStreak);
+}
+function showRunStreakBanner(n){
+  if(theme.muteBanners) return;
+  document.querySelectorAll(".streak-pop").forEach(e => e.remove());
+  const idx = runStreakTiersUpTo(n).length;          // 1 for 10, 2 for 25 ...
+  const el = document.createElement("div");
+  el.className = "streak-pop streak-lv" + Math.min(idx, 8);
+  el.setAttribute("aria-live", "polite");
+  const num = document.createElement("span");
+  num.className = "streak-pop-num"; num.textContent = n;
+  const txt = document.createElement("span");
+  txt.className = "streak-pop-text"; txt.textContent = "in a row";
+  el.append(num, txt);
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1900);
+}
 
 /* ---- THE END OF A RUN IS TWO SCREENS (build 212) ----------------------
    Asked for in one message: "split the test result screens up, when you
@@ -44397,7 +44764,6 @@ function rsLand(el, instant){
    what was just sat. */
 function rsModeLabel(run){
   if(run.vroom) return "Virtual Room";
-  if(run.retake) return "Missed questions retake";
   if(run.practice) return "Practice test";
   if(run.mode === "game") return "Game · " + ((GAME_SPEEDS[run.gameSpeed] || {}).label || "Game");
   if(run.mode === "exam") return "Exam";
@@ -44409,7 +44775,13 @@ function rsModeIconKind(run){
   if(run.mode === "exam" || run.practice) return "exam";
   return "drill";
 }
-function buildRunHead(run, withTime){
+/* What was sat. The mode chip is the mode's own colour from the mode
+   picker, and a retake keeps the chip of the test it came from - "should
+   not change for the retake stuff". Every unit a multi-unit run covered
+   is named, as a list rather than a count: "ensure the result screen at
+   the top will show the title of all the units if you took more than
+   one, make it a nice organized way". */
+function buildRunHead(run){
   const head = document.createElement("div");
   head.className = "rs-head";
   const chipRow = document.createElement("div");
@@ -44428,55 +44800,34 @@ function buildRunHead(run, withTime){
   head.appendChild(chipRow);
 
   const units = run.unitsSat;
+  const allCount = topicsIn(QUESTIONS).length;
   const title = document.createElement("h2");
   title.className = "rs-units";
-  const allCount = topicsIn(QUESTIONS).length;
-  /* The practice test draws at random from the whole bank, so which
-     units it happened to land on is not something anybody chose. */
-  if(run.practice && !run.retake) title.textContent = "All " + allCount + " units, at random";
+  if(run.practice) title.textContent = "All " + allCount + " units, at random";
   else if(units.length === 1) title.textContent = units[0];
   else if(units.length >= allCount) title.textContent = "All " + allCount + " units";
   else title.textContent = units.length + " units";
   head.appendChild(title);
-  /* A multi-unit run names every unit it covered - "it needs to still be
-     clear which units you took" - as a wrap of small chips, not a comma
-     list that runs to four lines on a phone. */
-  if(units.length > 1 && units.length < allCount && !(run.practice && !run.retake)){
-    const list = document.createElement("div");
+  if(units.length > 1 && units.length < allCount && !run.practice){
+    const list = document.createElement("ol");
     list.className = "rs-unitlist";
     units.forEach(u => {
-      const c = document.createElement("span");
-      c.className = "rs-unitchip"; c.textContent = u;
-      list.appendChild(c);
+      const li = document.createElement("li");
+      li.textContent = u;
+      list.appendChild(li);
     });
     head.appendChild(list);
-  }
-  if(withTime){
-    const meta = document.createElement("div");
-    meta.className = "rs-meta";
-    const time = document.createElement("span");
-    time.className = "rs-metapill rs-time";
-    time.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9.5 2.5h5"/></svg>';
-    time.appendChild(document.createTextNode(formatClock(run.elapsedMs)));
-    time.setAttribute("aria-label", "Time taken " + formatClock(run.elapsedMs));
-    const qs = document.createElement("span");
-    qs.className = "rs-metapill";
-    qs.textContent = run.total + (run.total === 1 ? " question" : " questions");
-    meta.append(time, qs);
-    head.appendChild(meta);
   }
   return head;
 }
 
-/* One unlock, as the thing it hands over: art, a kicker saying what kind
-   of thing it is, and its name. The same object feeds the centre-screen
-   banner and the row it leaves behind in "Unlocked", so the two cannot
-   describe it differently. */
+/* One unlock, as the thing it hands over. The same object feeds the
+   centre-screen banner and the row it leaves in "Unlocked". */
 function rsUnlockItems(run){
   const items = [];
   run.badges.forEach(u => {
     const retro = run.retroBadges.indexOf(u) >= 0;
-    items.push({ kind: "badge", kicker: "Badge earned", name: u + " badge",
+    items.push({ kind: "badge", unit: u, kicker: "Badge earned", name: u + " badge",
       sub: retro ? "Earned under the new badge requirements"
                  : "+" + MASTERY_BONUS.toLocaleString() + " XP mastery bonus",
       color: "#D8E2EC", art: () => buildUnitBadgeSVG(u, true) });
@@ -44503,16 +44854,46 @@ function rsUnlockItems(run){
   if(run.justBeatSpeed){
     const next = { easy: "average", average: "hardcore" }[run.justBeatSpeed];
     if(next){
-      const s = GAME_SPEEDS[next];
-      items.push({ kind: "difficulty", kicker: "Difficulty unlocked", name: s.label + " difficulty",
-        sub: s.seconds + " seconds a question, " + s.lives + (s.lives === 1 ? " life" : " lives"),
-        color: next === "average" ? "#FFB25C" : "#E8687C", art: () => {
-          const d = document.createElement("span");
-          d.className = "rs-diffmark"; d.textContent = next === "average" ? "▲▲" : "▲▲▲";
-          return d; } });
+      const sp = GAME_SPEEDS[next];
+      items.push({ kind: "difficulty", speed: next, kicker: "Difficulty unlocked",
+        name: sp.label + " difficulty",
+        sub: run.units[0] + " · " + sp.seconds + " seconds a question, " + sp.lives + (sp.lives === 1 ? " life" : " lives"),
+        color: GAME_DIFF_COLOR[next], art: () => buildDifficultyLights(next) });
     }
   }
+  /* A secret flare found this run is the LAST unlock, always: when it is
+     the third one, its cutscene plays straight after it lands. */
+  if(run.flare){
+    items.push({ kind: "flare", flare: run.flare, kicker: run.flareAll ? "All three secret flares" : "Secret flare found",
+      name: run.flareAll ? (AVATAR_DISPLAY_NAME.voidwalker || "Void") + " unlocked"
+                         : MYSTERY_NAME[run.flare] + " — " + run.flareCount + " of " + MYSTERY_ORDER.length,
+      sub: run.flareAll ? "Every flare in the sky is yours" : "Keep an eye out for the next one",
+      color: MYSTERY_COLOR[run.flare], art: () => buildFlareOrb(MYSTERY_COLOR[run.flare], "ul") });
+  }
   return items;
+}
+
+/* The three Game difficulties as three lights, green / amber / red, the
+   same three colours the Game boxes use. The one just unlocked blinks a
+   few times and then stays lit, and the ones above it are dark - "the
+   one you unlocked would blink a few times ... signifying you unlocked
+   it". */
+const GAME_DIFF_COLOR = { easy: "#5CD692", average: "#FFB25C", hardcore: "#E8687C" };
+function buildDifficultyLights(unlocked){
+  const wrap = document.createElement("span");
+  wrap.className = "rs-difflights";
+  const order = ["easy", "average", "hardcore"];
+  const upto = order.indexOf(unlocked);
+  order.forEach((k, i) => {
+    const d = document.createElement("span");
+    d.className = "rs-difflight" + (i < upto ? " is-on" : i === upto ? " is-new" : "");
+    d.style.setProperty("--dl", GAME_DIFF_COLOR[k]);
+    const lab = document.createElement("span");
+    lab.className = "rs-difflight-label"; lab.textContent = GAME_SPEEDS[k].label;
+    d.appendChild(lab);
+    wrap.appendChild(d);
+  });
+  return wrap;
 }
 
 /* The centre-screen banner. Holds for a few seconds, or until tapped,
@@ -44540,10 +44921,8 @@ function playUnlockSpotlight(item, n, of, release){
   spot.appendChild(card);
   document.body.appendChild(spot);
   requestAnimationFrame(() => requestAnimationFrame(() => spot.classList.add("is-up")));
-
-  const HOLD = 2800;
-  let timer = null, due = 0, left = HOLD, gone = false;
-  const arm = ms => { due = Date.now() + ms; timer = setTimeout(leave, ms); };
+  const HOLD = item.kind === "difficulty" ? 3400 : 2800;
+  let timer = null, gone = false;
   function leave(){
     if(gone) return;
     gone = true;
@@ -44553,10 +44932,8 @@ function playUnlockSpotlight(item, n, of, release){
     setTimeout(() => { spot.remove(); release(); }, 320);
   }
   spot.addEventListener("click", leave);
-  arm(HOLD);
+  timer = setTimeout(leave, HOLD);
   return {
-    pause(){ if(timer){ clearTimeout(timer); timer = null; left = Math.max(600, due - Date.now()); } spot.classList.add("is-held"); },
-    resume(){ spot.classList.remove("is-held"); if(!gone && !timer) arm(left); },
     skip(){ leave(); },
     stop(){ gone = true; if(timer) clearTimeout(timer); spot.remove(); }
   };
@@ -44567,36 +44944,39 @@ function showRunRewards(run, hooks){
   const quiet = resultsMotionOff();
   meterEl.hidden = true;
   countEl.textContent = "";
-  testScopeLabelEl.textContent = "Test results";
-  pauseBtn.hidden = false;
-  /* The old top nav trio shares the row with Pause; summarize() shows it
-     for the screens that follow, and here it would sit under Pause. */
+  testScopeLabelEl.textContent = run.gameLost ? "Game over" : "Test results";
+  /* NO PAUSE ON THE RESULTS - "Reverting back, the PAUSE button will
+     not be shown on the result screen" - and with it gone the chat
+     button takes the corner back, because the dock only steps aside
+     while Pause is up. */
+  pauseBtn.hidden = true;
   appearanceBtn.hidden = true; homeBtn.hidden = true; profileBtn.hidden = true;
+  if(typeof syncChatDock === "function") syncChatDock();
 
   const panel = document.createElement("section");
   panel.className = "panel rs-screen rs-rewards";
   panel.dataset.screen = "results";
 
-  const head = buildRunHead(run, true);
+  const head = buildRunHead(run);
   head.classList.add("rs-land");
   panel.appendChild(head);
 
-  /* ---- XP ----
-     Blue, the same blue as the level bar, the Profile bar and the XP that
-     flies to the Profile tab: XP is one colour everywhere in the app, so
-     the number and the bar it fills read as one thing. */
+  /* ---- XP ---- */
   const xp = document.createElement("div");
   xp.className = "rs-card rs-xp rs-land";
-  const xpTop = document.createElement("div");
-  xpTop.className = "rs-cardtop";
   const xpKick = document.createElement("p");
   xpKick.className = "rs-kicker"; xpKick.textContent = "XP earned";
-  xpTop.appendChild(xpKick);
-  xp.appendChild(xpTop);
+  xp.appendChild(xpKick);
   const lineEls = run.xpLines.map(l => {
-    const row = document.createElement("p");
-    row.className = "rs-xpline rs-land";
-    const a = document.createElement("span"); a.className = "rs-xpline-label"; a.textContent = l.label;
+    const row = document.createElement("div");
+    row.className = "rs-xpline rs-land" + (l.key === "multi" ? " is-multi" : "") + (l.badge ? " is-badge" : "");
+    const a = document.createElement("span"); a.className = "rs-xpline-label";
+    const lab = document.createElement("span"); lab.className = "rs-xpline-name"; lab.textContent = l.label;
+    a.appendChild(lab);
+    if(l.sub){
+      const sub = document.createElement("span"); sub.className = "rs-xpline-sub"; sub.textContent = l.sub;
+      a.appendChild(sub);
+    }
     const b = document.createElement("span"); b.className = "rs-xpline-val"; b.textContent = "+" + l.value.toLocaleString();
     row.append(a, b);
     xp.appendChild(row);
@@ -44605,8 +44985,7 @@ function showRunRewards(run, hooks){
   if(!run.xpLines.length){
     const none = document.createElement("p");
     none.className = "rs-xpline rs-xpline-none rs-land";
-    none.textContent = run.retake ? "A retake is practice — it doesn't earn XP."
-      : (run.source === "recent" || run.source === "flagged") ? "Most missed and flagged runs are practice — no XP."
+    none.textContent = (run.source === "recent" || run.source === "flagged") ? "Most missed and flagged runs are practice — no XP."
       : run.timedOut && run.total === 0 ? "Time ran out before any questions were answered."
       : "No XP this run.";
     xp.appendChild(none);
@@ -44617,33 +44996,27 @@ function showRunRewards(run, hooks){
   const totalLabel = document.createElement("span");
   totalLabel.className = "rs-xptotal-label"; totalLabel.textContent = "Total";
   const totalNum = document.createElement("span");
-  totalNum.className = "rs-xptotal-num";
-  totalNum.textContent = "+0";
+  totalNum.className = "rs-xptotal-num"; totalNum.textContent = "+0";
   const totalUnit = document.createElement("span");
   totalUnit.className = "rs-xptotal-unit"; totalUnit.textContent = "XP";
   const totalVal = document.createElement("span");
   totalVal.className = "rs-xptotal-val";
   totalVal.append(totalNum, totalUnit);
   totalRow.append(totalLabel, totalVal);
-  /* A run that earned nothing says so in words above; a "+0" under it
-     would only say it again, louder. */
   if(run.xpTotal > 0) xp.appendChild(totalRow);
   const levelBlock = buildResultsLevelBlock(run.xpTotal, run.pointsAfter);
   levelBlock.classList.add("rs-levelblock", "rs-land");
   xp.appendChild(levelBlock);
-  /* Tokens come later ("tokens because that will be introduced later").
-     They are a second currency earned by the same run, so they belong in
-     this card as their own total under the XP one, landing in the same
-     beat - not as another box further down. */
   panel.appendChild(xp);
 
   /* ---- EVERYTHING ELSE THE RUN MOVED ---- */
   const boxes = [];
+  let badgeBox = null;
   if(run.progUnits.length){
     const card = document.createElement("div");
     card.className = "rs-card rs-badges badgeprogress-wrap rs-land";
     const k = document.createElement("p");
-    k.className = "rs-kicker"; k.textContent = run.progUnits.length > 1 ? "Badge progress" : "Badge progress";
+    k.className = "rs-kicker"; k.textContent = "Badge progress";
     card.appendChild(k);
     run.progUnits.forEach(u => {
       const need = badgeThresholdFor(u);
@@ -44675,100 +45048,103 @@ function showRunRewards(run, hooks){
       card.appendChild(row);
     });
     boxes.push(card);
+    badgeBox = card;
   }
   if(run.justBeatSpeed){
     const speedLabel = GAME_SPEEDS[run.justBeatSpeed].label;
     const nextSpeed = { easy: "average", average: "hardcore" }[run.justBeatSpeed];
-    const unlockText = nextSpeed
-      ? GAME_SPEEDS[nextSpeed].label + " difficulty is now unlocked — "
-        + GAME_SPEEDS[nextSpeed].seconds + " seconds a question, "
-        + GAME_SPEEDS[nextSpeed].lives + (GAME_SPEEDS[nextSpeed].lives === 1 ? " life." : " lives.")
-      : "Every difficulty beaten on " + run.units[0] + ".";
     const bs = document.createElement("div");
-    bs.className = "levelup game-beat-box rs-land lvl-game-" + run.justBeatSpeed;
-    const h = document.createElement("p");
-    h.className = "game-beat-head";
-    if(run.justBeatSpeed === "hardcore"){
-      const shimmer = document.createElement("span");
-      shimmer.className = "shimmer-game-hardcore";
-      shimmer.textContent = speedLabel + " difficulty cleared (Game)";
-      h.appendChild(shimmer);
-    } else {
-      h.appendChild(document.createTextNode(speedLabel + " difficulty cleared (Game)"));
-    }
-    h.appendChild(document.createTextNode(" — " + run.units[0] + "!"));
-    const sub = document.createElement("p");
-    sub.className = "game-beat-sub game-unlock-note";
-    sub.textContent = unlockText;
-    bs.append(h, sub);
-    boxes.push(bs);
-  }
-  if(run.newBest){
-    const pb = document.createElement("div");
-    pb.className = "rs-card rs-pb rs-land";
+    bs.className = "rs-card rs-gamebeat rs-land";
+    bs.style.setProperty("--gb", GAME_DIFF_COLOR[run.justBeatSpeed]);
     const k = document.createElement("p");
-    k.className = "rs-kicker"; k.textContent = "New personal best";
-    const t = document.createElement("p");
-    t.className = "rs-pb-time"; t.textContent = formatClock(run.elapsedMs);
-    pb.append(k, t);
-    boxes.push(pb);
+    k.className = "rs-kicker"; k.textContent = "Game";
+    const h = document.createElement("p");
+    h.className = "rs-gamebeat-head game-beat-head";
+    h.textContent = speedLabel + " difficulty cleared — " + run.units[0];
+    const sub = document.createElement("p");
+    sub.className = "rs-gamebeat-sub game-unlock-note";
+    sub.textContent = nextSpeed
+      ? GAME_SPEEDS[nextSpeed].label + " difficulty is now unlocked — " + GAME_SPEEDS[nextSpeed].seconds +
+        " seconds a question, " + GAME_SPEEDS[nextSpeed].lives + (GAME_SPEEDS[nextSpeed].lives === 1 ? " life." : " lives.")
+      : "Every difficulty beaten on " + run.units[0] + ".";
+    bs.append(k, h, sub);
+    boxes.push(bs);
   }
   boxes.forEach(b => panel.appendChild(b));
 
-  /* ---- THE GRADE, LAST ---- */
+  /* ---- THE GRADE, LAST ---- or, for a lost game, the game over card.
+     Tinted by how it went: green for a pass, red for short of it, gold
+     for a 100. The "9 of 12" stays white: the big number already
+     carries the colour, and a second coloured figure beside it made the
+     card read louder without saying anything more. */
   const grade = document.createElement("div");
-  grade.className = "rs-card rs-grade rs-land score";
-  const gk = document.createElement("p");
-  gk.className = "rs-kicker"; gk.textContent = run.retake ? "This pass" : "Grade";
-  grade.appendChild(gk);
-  const gRow = document.createElement("div");
-  gRow.className = "rs-grade-row";
-  const pctEl = document.createElement("span");
-  pctEl.className = "rs-pct pct " + (run.retake ? "retake-badge" : run.isPerfect ? "perfect" : run.pct >= PASS_MARK ? "made" : "short");
-  pctEl.textContent = run.pct + "%";
-  const gSide = document.createElement("div");
-  gSide.className = "rs-grade-side";
-  const frac = document.createElement("p");
-  frac.className = "rs-grade-frac";
-  frac.textContent = run.good + " of " + run.total;
-  const fracSub = document.createElement("p");
-  fracSub.className = "rs-grade-sub slabel";
-  fracSub.textContent = run.total === 0 ? "Time ran out before you answered any questions."
-    : run.retake ? "Practice only — your test grade doesn't change."
-    : (run.mode === "exam" || run.vroom) ? "correct"
-    : "right on the first try";
-  gSide.append(frac, fracSub);
-  gRow.append(pctEl, gSide);
-  grade.appendChild(gRow);
-  const stamps = document.createElement("div");
-  stamps.className = "rs-stamps";
-  const stamp = (text, cls) => {
-    const s = document.createElement("span");
-    s.className = "rs-stamp " + cls; s.textContent = text;
-    stamps.appendChild(s);
-  };
-  if(run.timedOut) stamp("Time's up", "is-short");
-  if(run.practice && !run.retake) stamp(run.pct >= PASS_MARK ? "Passed" : "Below the " + PASS_MARK + "% pass mark",
-    run.pct >= PASS_MARK ? "is-made" : "is-short");
-  if(run.hundosEarned > 0) stamp(run.hundosEarned > 1 ? run.hundosEarned + " hundos" : "Hundo", "is-perfect");
-  else if(run.isPerfect && !run.retake) stamp("Perfect", "is-perfect");
-  if(run.missed.length && !run.vroom) stamp(run.missed.length + " to review", "is-review");
-  if(stamps.children.length) grade.appendChild(stamps);
-  /* The per-unit split of a multi-unit run is part of the grade, so it
-     lands with it rather than as a box of its own. */
-  if(!run.retake){
-    const byUnit = {};
-    run.order.forEach(qi => {
-      const t = (QUESTIONS[qi].topic || "Other").trim();
-      if(!byUnit[t]) byUnit[t] = { total: 0, wrong: 0 };
-      byUnit[t].total++;
-      if(run.missed.indexOf(qi) >= 0) byUnit[t].wrong++;
-    });
-    const names = Object.keys(byUnit);
-    if(names.length > 1){
+  const gradeTone = run.gameLost ? "is-over" : run.isPerfect ? "is-perfect" : run.pct >= PASS_MARK ? "is-pass" : "is-fail";
+  grade.className = "rs-card rs-grade rs-land score " + gradeTone;
+  if(run.gameLost){
+    const gk = document.createElement("p");
+    gk.className = "rs-kicker"; gk.textContent = "Game over";
+    const big = document.createElement("p");
+    big.className = "rs-over-title"; big.textContent = "You ran out of lives";
+    const sub = document.createElement("p");
+    sub.className = "rs-grade-sub slabel";
+    sub.textContent = "You made it to question " + run.gameLost + " of " + run.gameFull +
+      " · " + run.good + " right. Beat the whole unit to earn the difficulty bonus.";
+    grade.append(gk, big, sub);
+    if(run.newFarthest){
+      const st = document.createElement("div"); st.className = "rs-stamps";
+      const s1 = document.createElement("span"); s1.className = "rs-stamp is-made";
+      s1.textContent = "Farthest yet on " + ((GAME_SPEEDS[run.gameSpeed] || {}).label || "");
+      st.appendChild(s1); grade.appendChild(st);
+    }
+  } else {
+    const gk = document.createElement("p");
+    gk.className = "rs-kicker"; gk.textContent = run.retake ? "This pass" : "Grade";
+    grade.appendChild(gk);
+    const gRow = document.createElement("div");
+    gRow.className = "rs-grade-row";
+    const pctEl = document.createElement("span");
+    pctEl.className = "rs-pct pct " + (run.isPerfect ? "perfect" : run.pct >= PASS_MARK ? "made" : "short");
+    pctEl.textContent = run.pct + "%";
+    const gSide = document.createElement("div");
+    gSide.className = "rs-grade-side";
+    const frac = document.createElement("p");
+    frac.className = "rs-grade-frac";
+    frac.textContent = run.good + " of " + run.total;
+    const fracSub = document.createElement("p");
+    fracSub.className = "rs-grade-sub slabel";
+    fracSub.textContent = run.total === 0 ? "Time ran out before you answered any questions."
+      : run.retake ? "Retake — your test grade doesn't change."
+      : (run.mode === "exam" || run.vroom) ? "correct"
+      : "right on the first try";
+    gSide.append(frac, fracSub);
+    gRow.append(pctEl, gSide);
+    grade.appendChild(gRow);
+    const stamps = document.createElement("div");
+    stamps.className = "rs-stamps";
+    const stamp = (text, cls) => {
+      const s2 = document.createElement("span");
+      s2.className = "rs-stamp " + cls; s2.textContent = text;
+      stamps.appendChild(s2);
+    };
+    if(run.timedOut) stamp("Time's up", "is-short");
+    if(run.practice && !run.retake) stamp(run.pct >= PASS_MARK ? "Passed" : "Below the " + PASS_MARK + "% pass mark",
+      run.pct >= PASS_MARK ? "is-made" : "is-short");
+    if(run.missed.length && !run.vroom) stamp(run.missed.length + " to review", "is-review");
+    if(stamps.children.length) grade.appendChild(stamps);
+    /* A bar per unit, on a single-unit test too - "I'm a huge fan of how
+       you have it showing results for each unit ... do include it on
+       tests with just a single unit". */
+    if(run.total > 0){
+      const byUnit = {};
+      run.order.forEach(qi => {
+        const t = (QUESTIONS[qi].topic || "Other").trim();
+        if(!byUnit[t]) byUnit[t] = { total: 0, wrong: 0 };
+        byUnit[t].total++;
+        if(run.missed.indexOf(qi) >= 0) byUnit[t].wrong++;
+      });
       const wrap = document.createElement("div");
       wrap.className = "unit-breakdown rs-byunit";
-      names.forEach(nm => {
+      Object.keys(byUnit).forEach(nm => {
         const st = byUnit[nm];
         const right = st.total - st.wrong;
         const up = st.total ? Math.round(right / st.total * 100) : 0;
@@ -44782,7 +45158,8 @@ function showRunRewards(run, hooks){
         const track = document.createElement("div"); track.className = "unit-breakdown-track";
         const fill = document.createElement("div");
         fill.className = "unit-breakdown-fill" + (up === 100 ? " full" : up < 60 ? " low" : "");
-        fill.style.width = up + "%";
+        fill.style.width = "0%";
+        fill.dataset.to = up + "%";
         track.appendChild(fill);
         row.append(top, track);
         wrap.appendChild(row);
@@ -44792,19 +45169,21 @@ function showRunRewards(run, hooks){
   }
   panel.appendChild(grade);
 
-  /* ---- WHAT IT UNLOCKED, LEFT ON THE PAGE ---- */
+  /* ---- WHAT IT UNLOCKED ----
+     The card lands, and then each unlock comes through centre screen
+     and drops into it, one at a time - never all at once up front. */
   const unlockItems = rsUnlockItems(run);
-  const listItems = unlockItems.filter(it => it.kind !== "difficulty");
   let unlocked = null;
-  if(listItems.length){
+  const unlockRows = [];
+  if(unlockItems.length){
     unlocked = document.createElement("div");
     unlocked.className = "rs-card rs-unlocked rs-land";
     const k = document.createElement("p");
     k.className = "rs-kicker"; k.textContent = "Unlocked";
     unlocked.appendChild(k);
-    listItems.forEach(it => {
+    unlockItems.forEach(it => {
       const row = document.createElement("div");
-      row.className = "rs-unlock unlockbanner" + (it.kind === "badge" ? " badgebanner" : "") + " rs-unlock-" + it.kind;
+      row.className = "rs-unlock unlockbanner rs-land" + (it.kind === "badge" ? " badgebanner" : "") + " rs-unlock-" + it.kind;
       row.style.setProperty("--spot-color", it.color || "#6FC2FF");
       const art = document.createElement("span");
       art.className = "rs-unlock-art";
@@ -44816,6 +45195,7 @@ function showRunRewards(run, hooks){
       text.append(a, b);
       row.append(art, text);
       unlocked.appendChild(row);
+      unlockRows.push(row);
     });
     panel.appendChild(unlocked);
   }
@@ -44826,9 +45206,8 @@ function showRunRewards(run, hooks){
   panel.appendChild(slot);
   let actions = null;
   if(run.vroom){
-    /* The Virtual Room has its own ending - the wait for everybody, your
-       total and "See everyone's results" - which finishVirtualRoomTest()
-       drops into this slot. Pause is the way off, as it always was. */
+    /* The Virtual Room ends in its own standings - see
+       finishVirtualRoomTest(), which drops into this slot. */
   } else if(run.missed.length){
     actions = document.createElement("div");
     actions.className = "actions rs-actions rs-land";
@@ -44849,8 +45228,6 @@ function showRunRewards(run, hooks){
 
   const finish = () => {
     panel.classList.add("rs-done");
-    /* The window for a forced update starts when there is something to
-       read, not while it is still arriving. */
     resultsShownAt = Date.now();
     if(actions){
       const first = actions.querySelector("button");
@@ -44859,22 +45236,19 @@ function showRunRewards(run, hooks){
     }
     if(hooks.onDone) hooks.onDone(slot);
   };
-
-  const fillBadgeBars = () => {
-    panel.querySelectorAll(".rs-badges .badgeprogress-fill[data-to]").forEach(f => { f.style.width = f.dataset.to; });
-  };
+  const fillBars = sel => panel.querySelectorAll(sel).forEach(f => { f.style.width = f.dataset.to; });
   const countUp = instant => {
     const target = run.xpTotal;
     if(instant || target <= 0){ totalNum.textContent = "+" + target.toLocaleString(); return; }
     const t0 = Date.now(), dur = 750;
     const iv = setInterval(() => {
       const t = Math.min(1, (Date.now() - t0) / dur);
-      const eased = 1 - Math.pow(1 - t, 3);
-      totalNum.textContent = "+" + Math.round(target * eased).toLocaleString();
+      totalNum.textContent = "+" + Math.round(target * (1 - Math.pow(1 - t, 3))).toLocaleString();
       if(t >= 1){ clearInterval(iv); totalNum.textContent = "+" + target.toLocaleString(); }
     }, 30);
   };
   const celebrateGrade = () => {
+    if(run.gameLost) return;
     if(run.isPerfect || run.justBeatSpeed){
       const palette = run.justBeatSpeed === "hardcore" ? LEVEL_CONFETTI.black
         : run.justBeatSpeed === "average" ? LEVEL_CONFETTI.intermediate
@@ -44885,22 +45259,22 @@ function showRunRewards(run, hooks){
   };
 
   if(quiet){
-    [head, xp, ...lineEls, totalRow, levelBlock, ...boxes, grade, unlocked, actions].forEach(el => rsLand(el, true));
+    [head, xp, ...lineEls, totalRow, levelBlock, ...boxes, grade, unlocked, ...unlockRows, actions].forEach(el => rsLand(el, true));
     countUp(true);
     if(levelBlock.setFinal) levelBlock.setFinal();
-    fillBadgeBars();
+    fillBars(".rs-badges .badgeprogress-fill[data-to]");
+    fillBars(".rs-byunit .unit-breakdown-fill[data-to]");
     xp.classList.add("is-charged");
     finish();
     return;
   }
 
-  const alive = () => panel.isConnected || resultsPausedNode === panel;
+  const alive = () => panel.isConnected;
   const seq = makeRevealSequence(alive);
   resultsSeq = seq;
   seq.add(120, instant => rsLand(head, instant));
   seq.add(260, instant => rsLand(xp, instant));
   lineEls.forEach(l => seq.add(340, instant => rsLand(l, instant)));
-  /* "then a second pause and it will show all the xp stuff" */
   seq.add(750, instant => { rsLand(totalRow, instant); countUp(instant); });
   seq.add(650, instant => {
     rsLand(levelBlock, true);
@@ -44909,26 +45283,44 @@ function showRunRewards(run, hooks){
     else if(levelBlock.runFill) levelBlock.runFill();
   });
   seq.add(1250, () => { xp.classList.remove("is-charging"); xp.classList.add("is-charged"); });
-  boxes.forEach(b => seq.add(420, instant => { rsLand(b, instant); if(b.classList.contains("rs-badges")) setTimeout(fillBadgeBars, instant ? 0 : 260); }));
+  boxes.forEach(b => {
+    seq.add(420, instant => {
+      rsLand(b, instant);
+      if(b === badgeBox) setTimeout(() => fillBars(".rs-badges .badgeprogress-fill[data-to]"), instant ? 0 : 260);
+    });
+    /* A badge earned plays its case cutscene the moment its box lands -
+       "the badge cutscene would come in on the result screen right
+       after the badge box hits the screen". */
+    if(b === badgeBox && run.badges.length && typeof playBadgeCaseScene === "function"){
+      seq.add(700, (instant, release) => playBadgeCaseScene(run.badges.slice(), release), true);
+    }
+  });
   seq.add(boxes.length ? 520 : 380, instant => {
     rsLand(grade, instant);
     if(!instant){
       panel.classList.add("rs-shake");
       setTimeout(() => panel.classList.remove("rs-shake"), 420);
     }
+    setTimeout(() => fillBars(".rs-byunit .unit-breakdown-fill[data-to]"), instant ? 0 : 350);
     setTimeout(celebrateGrade, instant ? 0 : 180);
   });
-  if(!theme.muteBanners){
+  if(unlocked){
+    seq.add(900, instant => rsLand(unlocked, instant));
     unlockItems.forEach((it, n) => {
-      seq.add(n === 0 ? 900 : 200, (instant, release) => playUnlockSpotlight(it, n + 1, unlockItems.length, release), true);
+      if(!theme.muteBanners){
+        seq.add(n === 0 ? 350 : 200, (instant, release) => playUnlockSpotlight(it, n + 1, unlockItems.length, release), true);
+      }
+      seq.add(theme.muteBanners ? 380 : 120, instant => rsLand(unlockRows[n], instant));
+      /* A flare's own cutscene after its row: the small one for the
+         first two, the Void one for the third. */
+      if(it.kind === "flare" && typeof playFlareFoundScene === "function"){
+        seq.add(500, (instant, release) => playFlareFoundScene(it.flare, run.flareAll, release), true);
+      }
     });
   }
-  if(unlocked) seq.add(unlockItems.length && !theme.muteBanners ? 250 : 480, instant => rsLand(unlocked, instant));
-  if(actions) seq.add(unlocked ? 420 : 620, instant => rsLand(actions, instant));
+  if(actions) seq.add(unlocked ? 450 : 620, instant => rsLand(actions, instant));
   seq.add(0, () => { resultsSeq = null; finish(); });
 
-  /* A tap anywhere on the screen skips ahead to the banners (or, past
-     them, to the end). Not on the buttons - those do what they say. */
   panel.addEventListener("click", e => {
     if(e.target.closest("button")) return;
     if(resultsSeq === seq) seq.skip();
@@ -44936,24 +45328,28 @@ function showRunRewards(run, hooks){
   seq.start();
 }
 
-/* The second screen: only what was missed, and what to do about it. */
+/* The second screen: only what was missed, and what to do about it.
+   Your answer beside the right one for every mode - Drill included,
+   where it is the FIRST thing you picked - and no percentage: "the top
+   says how many questions to go over which is great but then it says
+   75% which is random". */
 function showRunReview(run, hooks){
   endResultsReveal();
   meterEl.hidden = true;
   countEl.textContent = "";
   testScopeLabelEl.textContent = "Test review";
-  pauseBtn.hidden = false;
+  pauseBtn.hidden = true;
   appearanceBtn.hidden = true; homeBtn.hidden = true; profileBtn.hidden = true;
+  if(typeof syncChatDock === "function") syncChatDock();
 
   const panel = document.createElement("section");
   panel.className = "panel rs-screen rs-review screen-runreview";
   panel.dataset.screen = "runreview";
 
-  const head = buildRunHead(run, false);
+  const head = buildRunHead(run);
   const summary = document.createElement("p");
   summary.className = "rs-review-summary";
-  summary.textContent = run.missed.length + (run.missed.length === 1 ? " question" : " questions") +
-    " to go over · " + run.pct + "%";
+  summary.textContent = run.missed.length + (run.missed.length === 1 ? " question" : " questions") + " to go over";
   head.appendChild(summary);
   panel.appendChild(head);
 
@@ -44971,7 +45367,8 @@ function showRunReview(run, hooks){
     num.className = "rs-q-num"; num.textContent = String(n + 1);
     const tag = document.createElement("span");
     tag.className = "rs-q-tag";
-    tag.textContent = run.timedOutSet[qi] ? "Ran out of time"
+    tag.textContent = (run.gameLost && qi === run.order[run.order.length - 1] && !run.timedOutSet[qi]) ? "Lost your last life"
+      : run.timedOutSet[qi] ? "Ran out of time"
       : (run.mode === "exam" || run.vroom) ? "Missed"
       : (run.attempts[qi] || 2) + " tries";
     top.append(num, tag);
@@ -44980,17 +45377,24 @@ function showRunReview(run, hooks){
     writeText(q, item.q);
     const ans = document.createElement("div");
     ans.className = "rs-q-answers ra";
-    if((run.mode === "exam" || run.vroom) && run.picked[qi] !== undefined){
+    const pickSlot = (run.mode === "exam" || run.vroom) ? run.picked[qi] : run.firstPick[qi];
+    if(pickSlot !== undefined && pickSlot !== null){
       const yours = document.createElement("p");
       yours.className = "rs-q-yours";
-      yours.innerHTML = "<span>Your answer</span>";
-      yours.appendChild(document.createTextNode(item.choices[optionOrder(qi)[run.picked[qi]]]));
+      const lab = document.createElement("span"); lab.textContent = "Your answer";
+      yours.append(lab, document.createTextNode(item.choices[optionOrder(qi)[pickSlot]]));
+      ans.appendChild(yours);
+    } else if(run.timedOutSet[qi]){
+      const yours = document.createElement("p");
+      yours.className = "rs-q-yours";
+      const lab = document.createElement("span"); lab.textContent = "Your answer";
+      yours.append(lab, document.createTextNode("No answer before the clock ran out"));
       ans.appendChild(yours);
     }
     const right = document.createElement("p");
     right.className = "rs-q-right";
-    right.innerHTML = "<span>Correct answer</span>";
-    right.appendChild(document.createTextNode(item.choices[item.answer]));
+    const rl = document.createElement("span"); rl.textContent = "Correct answer";
+    right.append(rl, document.createTextNode(item.choices[item.answer]));
     ans.appendChild(right);
     li.append(top, q, ans);
     if(item.ref){
@@ -45011,47 +45415,10 @@ function showRunReview(run, hooks){
   hooks.tour();
 }
 
-/* Pause on either results screen. The screen itself is kept, not
-   rebuilt, so Resume puts back exactly what was there - half-way
-   through the reveal included - and the timeline carries on from the
-   same moment. */
-function pauseResults(){
-  const node = stage.firstElementChild;
-  if(!node) return;
-  resultsPausedNode = node;
-  resultsPausedScroll = window.scrollY || 0;
-  if(resultsSeq) resultsSeq.pause();
-  pauseBtn.hidden = true;
-  const panel = document.createElement("section");
-  panel.className = "panel pausepanel";
-  const h = document.createElement("p");
-  h.className = "qnum"; h.textContent = "Paused";
-  const p = document.createElement("p");
-  p.className = "qtext"; p.textContent = "Your results are saved. Pick up where you left off, or head back.";
-  const actions = document.createElement("div");
-  actions.className = "actions";
-  const resumeBtn = document.createElement("button");
-  resumeBtn.type = "button"; resumeBtn.className = "next"; resumeBtn.id = "resumebtn";
-  resumeBtn.textContent = "Resume";
-  resumeBtn.addEventListener("click", () => {
-    const back = resultsPausedNode;
-    resultsPausedNode = null;
-    if(!back) return;
-    stage.replaceChildren(back);
-    pauseBtn.hidden = false;
-    window.scrollTo({ top: resultsPausedScroll, behavior: "instant" });
-    if(resultsSeq) resultsSeq.resume();
-  });
-  const menuBtn = document.createElement("button");
-  menuBtn.type = "button"; menuBtn.className = "next ghost";
-  menuBtn.textContent = "Main menu";
-  menuBtn.addEventListener("click", () => { endResultsReveal(); showHome(); });
-  actions.append(resumeBtn, menuBtn);
-  panel.append(h, p, actions);
-  stage.replaceChildren(panel);
-  toTop();
-  resumeBtn.focus({ preventScroll: true });
-}
+/* Kept for anything still holding a reference to it: the results
+   screens no longer show Pause (build 213), so nothing reaches this. */
+function pauseResults(){}
+
 function resultsScreenUp(){
   const el = stage.firstElementChild;
   return !!(el && el.classList && el.classList.contains("rs-screen"));
@@ -45065,6 +45432,7 @@ function summarize(){
      straight to the Leaderboard should see themselves, so this one is
      flushed rather than queued. */
   try{ setTimeout(flushLeaderboardRow, 0); }catch(e){}
+  qClockStop();
   testInProgress = false;
   /* The end of a test is the moment the forced update was asked to land
      on. Deferred a beat so the results screen paints first - finishing a
@@ -45135,7 +45503,7 @@ function summarize(){
     ? (dailyQuestionLocked ? order.slice() : [])
     : runMode === "exam"
     ? order.filter(qi => optionOrder(qi)[picked[qi]] !== QUESTIONS[qi].answer)
-    : order.filter(qi => attempts[qi] > 1 || timedOutSet[qi]);
+    : order.filter(qi => attempts[qi] > 1 || timedOutSet[qi] || (gameLostAt && qi === gameLostQi));
   const good = total - missed.length;
   const pct = total === 0 ? 0 : Math.round((good / total) * 100);
   const isPerfect = total > 0 && pct === 100 && !timedOut;
@@ -45176,8 +45544,10 @@ function summarize(){
   let newFarthest = false;
   let pointsEarned = 0;
   let perfectBonusEarned = 0;
-  let multiTestBonusEarned = 0;
+  let multiTestBonusEarned = 0;   /* retired in build 213; always 0 */
   let masteryBonusEarned = 0;
+  let runWholeUnits = 0;
+  let runXp = null;
   let hundosEarned = 0;
   let newlyUnlockedColors = [];
   if(runTrackable && !timedOut && total > 0){
@@ -45245,10 +45615,10 @@ function summarize(){
       const total = QUESTIONS.filter(q => (q.topic || "").trim() === name).length;
       return inRun > 0 && inRun === total;
     }).length;
-    multiTestBonusEarned = (runLabel === "Daily question")
-      ? 0
-      : Math.max(0, wholeUnitsInRun - 1) * MULTI_TEST_BONUS;
-    awardXp(pointsEarned + perfectBonusEarned + multiTestBonusEarned);
+    /* The flat per-unit bonus is gone: a multi-unit run now carries a
+       multiplier as the last line of its XP - see computeRunXp(). */
+    runWholeUnits = (runLabel === "Daily question") ? 0 : wholeUnitsInRun;
+    if(runLabel === "Daily question") awardXp(pointsEarned);
     if(runMode === "drill") store.lifetime.drillPlays += 1;
     else if(runMode === "exam") store.lifetime.examPlays += 1;
     else if(runMode === "game") store.lifetime.gamePlays += 1;
@@ -45260,7 +45630,9 @@ function summarize(){
        ? button". */
     store.lifetime.perfectTests += hundosEarned;
     saveStore();
-    newBest = recordTestPlay(elapsedMs, pct);
+    /* A game that ran out of lives is not a test played - it has no
+       grade to put in the history. */
+    if(!gameLostAt) newBest = recordTestPlay(elapsedMs, pct);
     /* Every points-earning run can newly cross a Mastery Ladder tier
        now, not just full-unit runs \u2014 a tier needs both stars and
        points together, so a session that only adds points (without
@@ -45268,6 +45640,9 @@ function summarize(){
        that pushes an already-star-sufficient tier over its point
        threshold too. Checked around the whole points block rather
        than only inside the star-tracking branch below. */
+    if(gameLostAt && cfg.source === "all" && isSingleUnitRun() && gameFullLength === unitQuestionCount(cfg.units[0])){
+      newFarthest = recordGameFarthest(cfg.units[0], cfg.gameSpeed, gameLostAt);
+    }
     if(cfg.source === "all"){
       leveledUpTo = recordUnitPerfectIfEligible(pct);
       if(runMode === "game" && isFullUnitRun()){
@@ -45305,8 +45680,42 @@ function summarize(){
          run; the level block is built further down and picks it up. */
       /* Paid for badges this run EARNED, not for ones the new bands
          handed out - those get the celebration and nothing else. */
-      masteryBonusEarned = MASTERY_BONUS * badgesEarnedThisRun.filter(u => retroBadges.indexOf(u) < 0).length;
-      if(masteryBonusEarned) awardXp(masteryBonusEarned);
+      saveStore();
+    }
+    /* ---- EVERYTHING THIS RUN EARNED, IN ONE AWARD ----
+       Personal bests first, per whole unit, against the marks as they
+       stood BEFORE this run. */
+    if(runLabel !== "Daily question"){
+      const timePRs = [], scorePRs = [];
+      const missedSetPB = new Set(missed);
+      store.unitBestMs = store.unitBestMs || {};
+      (cfg.units || []).forEach(u => {
+        const inUnit = order.filter(qi => (QUESTIONS[qi].topic || "").trim() === u);
+        if(!inUnit.length || inUnit.length !== unitQuestionCount(u)) return;
+        const right = inUnit.filter(qi => !missedSetPB.has(qi)).length;
+        const upct = Math.round(right / inUnit.length * 100);
+        const prevPct = unitBestPctOf(u);
+        if(typeof prevPct === "number" && upct > prevPct) scorePRs.push({ unit: u, text: u + " " + upct + "% (was " + prevPct + "%)" });
+        if(typeof prevPct !== "number" || upct > prevPct) store.unitBestPct[u] = upct;
+        if(upct === 100){
+          const logged = inUnit.reduce((sum, qi) => sum + (qTimeMs[qi] || 0), 0);
+          const t = logged > 0 ? logged : Math.round(elapsedMs * inUnit.length / Math.max(1, order.length));
+          const prevMs = store.unitBestMs[u];
+          if(typeof prevMs === "number" && t < prevMs) timePRs.push({ unit: u, text: u + " " + formatClock(t) + " (was " + formatClock(prevMs) + ")" });
+          if(typeof prevMs !== "number" || t < prevMs) store.unitBestMs[u] = t;
+        }
+      });
+      const missedSetXp = new Set(missed);
+      runXp = computeRunXp({
+        good: good, answered: total, elapsedMs: elapsedMs,
+        okList: order.map(qi => !missedSetXp.has(qi)),
+        hundos: hundosEarned, wholeUnits: runWholeUnits,
+        timePRs: timePRs, scorePRs: scorePRs,
+        game: runMode === "game" ? { speed: cfg.gameSpeed, beaten: !gameLostAt, livesLeft: Math.max(0, livesLeft) } : null,
+        badgesPaid: badgesEarnedThisRun.filter(u => retroBadges.indexOf(u) < 0)
+      });
+      masteryBonusEarned = runXp.lines.filter(l => l.badge).reduce((s2, l) => s2 + l.value, 0);
+      awardXp(runXp.total);
       saveStore();
     }
     TIER_ORDER.forEach(c => {
@@ -45320,6 +45729,13 @@ function summarize(){
     /* Announced by the results screen now, one banner at a time with
        everything else the run unlocked - see showRunRewards(). The daily
        question, which has no results screen, still gets the top banner. */
+  } else if(isMissedRetake && !timedOut && total > 0){
+    /* A retake earns the answers it got right and nothing else - "you
+       get nothing cool out of it, but you will get xp for the questions
+       you get right through the retake(s)". */
+    runXp = computeRunXp({ retake: true, good: good });
+    awardXp(runXp.total);
+    saveStore();
   }
   /* The single biggest achievement in the app \u2014 reaching the very
      top of the Mastery Ladder \u2014 gets a genuine moment instead of
@@ -45393,15 +45809,13 @@ function summarize(){
          without it. Appended in place instead of building a second
          screen, which keeps both requests true at once.
          Same builder, so it cannot drift from the others. */
-      const dailyLevel = buildResultsLevelBlock(
-        pointsEarned + perfectBonusEarned + multiTestBonusEarned,
-        store.lifetime.points);
-      existingPanel.appendChild(dailyLevel);
-      if(dailyLevel.runFill) dailyLevel.runFill();
+      /* Build 213: no level bar here after all - "it doesn't need the xp
+         thing at the bottom, it will just say if you got it wrong or
+         correct". The XP flies to Profile once you are back on Home. */
       const exitBar = document.createElement("div");
       exitBar.className = "startbar settings-done-bar";
       const exitBtn = document.createElement("button");
-      exitBtn.type = "button"; exitBtn.className = "next playbtn"; exitBtn.id = "dailyq-exitbtn";
+      exitBtn.type = "button"; exitBtn.className = "next playbtn dailyq-exit-wide"; exitBtn.id = "dailyq-exitbtn";
       exitBtn.textContent = "Exit to main menu";
       exitBtn.addEventListener("click", showHome);
       exitBar.appendChild(exitBtn);
@@ -45409,10 +45823,7 @@ function summarize(){
       toTop();
       exitBtn.focus({ preventScroll: true });
     }
-    const totalEarned = pointsEarned + perfectBonusEarned + multiTestBonusEarned;
-    if(totalEarned > 0){
-      showPointsFlyEffect("+" + totalEarned + " XP!");
-    }
+    pendingXpFly = pointsEarned;
     return;
   }
 
@@ -45422,23 +45833,15 @@ function summarize(){
      something was missed, showRunReview() - see the note above them.
      This function hands over the numbers and the two things only it can
      build: the run's own buttons and the first-results tour. */
-  const xpTotal = isMissedRetake ? 0
-    : (pointsEarned + perfectBonusEarned + multiTestBonusEarned + masteryBonusEarned);
-  /* Stashed for the Virtual Room results screen, which shows the same
-     level block rather than computing the numbers a second time. */
+  const xpTotal = runXp ? runXp.total : 0;
+  const xpLines = runXp ? runXp.lines : [];
+  /* Stashed for the Virtual Room: its standings count this run's XP
+     without the badge bonus - "obviously not the badge unlock bonus". */
   lastRunXpEarned = xpTotal;
   lastRunPointsAfter = store.lifetime.points;
+  lastRunXpLines = xpLines.filter(l => !l.badge);
+  pendingXpFly = xpTotal;
 
-  const xpLines = [];
-  if(!isMissedRetake){
-    if(pointsEarned > 0) xpLines.push({ label: good + " correct \u00d7 " + POINTS_PER_QUESTION, value: pointsEarned });
-    if(perfectBonusEarned > 0) xpLines.push({ label: hundosEarned > 1 ? hundosEarned + " hundo bonuses" : "Hundo bonus", value: perfectBonusEarned });
-    if(multiTestBonusEarned > 0) xpLines.push({ label: "Multi-unit bonus", value: multiTestBonusEarned });
-    if(masteryBonusEarned > 0){
-      const paid = badgesEarnedThisRun.filter(u => retroBadges.indexOf(u) < 0);
-      xpLines.push({ label: paid.length > 1 ? paid.length + " badges earned" : paid[0] + " badge", value: masteryBonusEarned });
-    }
-  }
   /* Only the units THIS run earned a hundo in - "the badge rows will
      only be for the badge progress for the hits you took from that
      test". A unit whose count did not move gets no row. */
@@ -45451,107 +45854,41 @@ function summarize(){
   const unitsSat = (cfg.units || []).filter(u => topicsHere.has(u));
   topicsHere.forEach(t => { if(t && unitsSat.indexOf(t) < 0) unitsSat.push(t); });
 
+  /* THE RUN'S OWN BUTTONS, at the foot of the review (or of the rewards
+     screen when nothing was missed). Re-run is back on every mode but the
+     Virtual Room - "the re run button needs to be a thing again" - and it
+     always re-runs the TEST, so from a retake it goes back to the whole
+     test rather than the handful of questions just retaken. */
+  const rerunMinutes = practiceTestMinutes;
   const buildFinalActions = () => {
     const actions = document.createElement("div");
-    /* actions-results: both buttons share the row equally. They are a
-       pair of equals here - neither is the obvious next step - and two
-       pills of different widths sitting side by side was the last thing
-       on this screen that did not line up with anything else. */
-    actions.className = "actions actions-results";
-
-    /* Trimmed down to at most two buttons per scenario, picked for what's
-       actually most useful right then, instead of offering every possible
-       path at once:
-       - Missed something in Drill? "Retake missed" is the one action that
-         actually helps \u2014 re-running the whole thing or reconfiguring isn't
-         needed on top of it.
-       - Otherwise, a perfect run points toward trying something new; a
-         non-perfect run (or Exam, which never offers a same-test replay)
-         points toward another attempt or a fresh setup.
-       "Main menu" always stays as the one, single way out. */
-    /* Retakes now get the same "still have some missed?" logic as a
-       normal drill run, per explicit request \u2014 previously this always
-       showed a single "New run" button regardless of score, with no way
-       to keep drilling down on what's still wrong. Getting everything
-       right on THIS retake pass is what unlocks the third option,
-       re-running the original full test from scratch; short of that,
-       the two options are retaking what's still missed, or leaving. */
-    const hasMissedRetakeOption = runMode === "drill" && missed.length > 0;
-    /* Both fixes for this exact scenario, per explicit request: the
-       bottom tab bar hidden (it was carrying over visible from the
-       unit-selection screen before this test started, with nothing in
-       summarize() ever explicitly hiding it again), and both action
-       buttons given equal width instead of each sizing to its own text
-       length \\u2014 which is exactly why "Retake missed questions (5)" and
-       "Main menu" read as such mismatched sizes before. */
-    if(hasMissedRetakeOption){
-      /* The bottom-tab-bar fix that used to live here is now set
-         unconditionally at the very top of this function instead
-         (every results outcome needs it, not just this one). */
-      actions.classList.add("actions-equal-width");
-    }
-    /* When this run is what just lit the final flare on the Mastery
-       Ladder, none of the normal follow-up actions make sense to offer
-       alongside it \u2014 the only real next step is heading to Home, where
-       the actual celebration (the cutscene) is what's waiting, not
-       another test to jump straight into. */
-    if(supernovaJustUnlocked){
-      // no additional action buttons \u2014 only "Go Home" below
-    } else if(runMode === "game"){
-      /* No review, no retake, no re-run \u2014 per explicit request, Game
-         mode's results screen offers only the one path out (Main menu,
-         added unconditionally further below). Checked ahead of every
-         other condition in this chain so nothing else in here (isPerfect,
-         the final catch-all "Re-run this test") ever has a chance to add
-         a second button for a Game run. */
-    } else if(hasMissedRetakeOption){
-      const retakeBtn = document.createElement("button");
-      retakeBtn.type = "button"; retakeBtn.className = "next"; retakeBtn.id = "nextbtn";
-      retakeBtn.textContent = "Retake missed questions (" + missed.length + ")";
-      retakeBtn.addEventListener("click", () => {
+    actions.className = "actions actions-results rs-final";
+    const mk = (label, cls, fn, id) => {
+      const btn = document.createElement("button");
+      btn.type = "button"; btn.className = cls; if(id) btn.id = id;
+      btn.textContent = label;
+      btn.addEventListener("click", () => { endResultsReveal(); fn(); });
+      return btn;
+    };
+    const stillMissed = missed.length > 0 && runMode === "drill";
+    if(stillMissed){
+      const retake = mk("Retake missed questions (" + missed.length + ")", "next rs-wide", () => {
         beginRun(shuffle(missed.slice()), "Missed questions", null, true);
-      });
-      actions.appendChild(retakeBtn);
-    } else if(isMissedRetake){
-      /* No button here anymore \u2014 per explicit request, "Re-run this
-         test" is removed entirely, everywhere it appeared (this was the
-         100%-on-retake case specifically). Falls through to just "Main
-         menu" below, same as every other now-empty branch in this
-         chain. */
-    } else if(runMode === "exam"){
-      const newRunBtn = document.createElement("button");
-      newRunBtn.type = "button"; newRunBtn.className = "next"; newRunBtn.id = "nextbtn";
-      newRunBtn.textContent = "New run";
-      newRunBtn.addEventListener("click", showSetup);
-      actions.appendChild(newRunBtn);
-    } else if(isPerfect){
-      const newRunBtn = document.createElement("button");
-      newRunBtn.type = "button"; newRunBtn.className = "next"; newRunBtn.id = "nextbtn";
-      newRunBtn.textContent = "New run";
-      newRunBtn.addEventListener("click", showSetup);
-      actions.appendChild(newRunBtn);
-    } else {
-      /* "Re-run this test" removed entirely here too, per explicit
-         request \u2014 seemed problematic and confusing rather than useful.
-         This was the last remaining catch-all instance of it. */
+      }, "nextbtn");
+      actions.appendChild(retake);
     }
-
-    const mainMenuBtn = document.createElement("button");
-    mainMenuBtn.type = "button";
-    /* The primary, unmistakable style here specifically when it's the
-       one and only option on screen \u2014 "ghost" (secondary styling) made
-       sense when this sat beside a real primary action, but standing
-       alone after the biggest achievement in the app, it should look
-       like the main thing to do, not an afterthought. */
-    mainMenuBtn.className = supernovaJustUnlocked ? "next" : "next ghost";
-    mainMenuBtn.textContent = supernovaJustUnlocked ? "Go Home" : "Main menu";
-    mainMenuBtn.addEventListener("click", showHome);
-    actions.appendChild(mainMenuBtn);
-    /* Alone, it is the thing to do - a Game run, a clean retake. */
-    if(actions.children.length === 1) mainMenuBtn.className = "next";
+    const rerun = mk(isMissedRetake ? "Re-run the full test" : "Re-run", stillMissed ? "next ghost" : "next", () => {
+      if(rerunMinutes != null){
+        cfg.mode = "exam";
+        beginRun(shuffle(QUESTIONS.map((q, i) => i)).slice(0, PRACTICE_TEST_SIZE), null, PRACTICE_TEST_MINUTES);
+      } else {
+        beginRun(shuffle(originalTestPool.slice()), originalTestLabel, null);
+      }
+    }, stillMissed ? null : "nextbtn");
+    const home = mk(supernovaJustUnlocked ? "Go Home" : "Main menu", "next ghost", showHome);
+    actions.append(rerun, home);
     return actions;
   };
-
   const resultsTour = () => {
     if(!store.seenFirstResultsTour){
       store.seenFirstResultsTour = true;
@@ -45566,12 +45903,16 @@ function summarize(){
   const runResult = {
     total, good, pct, missed, isPerfect, elapsedMs, timedOut,
     order: order.slice(), attempts: Object.assign({}, attempts), picked: Object.assign({}, picked),
+    firstPick: Object.assign({}, firstPick),
+    flare: mysteryFoundThisSession ? mysteryColorThisRun : null,
+    flareAll: mysteryFoundThisSession && mysteryAllFound(), flareCount: mysteryColorsFoundCount(),
     timedOutSet: Object.assign({}, timedOutSet),
     mode: runMode, retake: isMissedRetake, practice: practiceTestMinutes != null,
     vroom: !!inVirtualRoom, source: cfg.source, gameSpeed: cfg.gameSpeed,
     units: (cfg.units || []).slice(), unitsSat,
     xpLines, xpTotal, pointsAfter: store.lifetime.points,
     hundosEarned, leveledUpTo, justBeatSpeed, newBest,
+    gameLost: gameLostAt, gameFull: gameFullLength, livesLeft: Math.max(0, livesLeft), newFarthest,
     progUnits, perfectsBefore,
     badges: badgesEarnedThisRun.slice(), retroBadges: retroBadges.slice(),
     colors: newlyUnlockedColors.slice(), characters: newCharacters,
@@ -52266,6 +52607,32 @@ function showCustomize(){
      character here rather than leaving the grid with nothing selected. */
   if(!store.avatarChar){ store.avatarChar = AVATAR_CHARACTERS[0].id; saveStore(); }
 
+  /* GROUPED BY HOW YOU GET THEM - "Character unlocks need to be organized
+     by how they are unlocked in the profile customization thing". The
+     eight you start with, the four the ranks hand over (in rank order),
+     and the four you earn by doing something. Each group is its own grid
+     under its own heading, so the rule for a locked one is readable
+     before anyone taps it. */
+  const charGroups = [
+    { title: "Starters", note: "Yours from day one", ids: AVATAR_CHARACTERS.filter(c => !c.unlock && !c.feat).map(c => c.id) },
+    { title: "Rank rewards", note: "Handed over as you climb the ranks",
+      ids: AVATAR_CHARACTERS.filter(c => c.unlock).sort((a, b) => TIER_ORDER_FULL.indexOf(a.unlock) - TIER_ORDER_FULL.indexOf(b.unlock)).map(c => c.id) },
+    { title: "Earned by doing", note: "Each one is a thing you have to go and do", ids: AVATAR_CHARACTERS.filter(c => c.feat).map(c => c.id) }
+  ];
+  const charGrids = [];
+  charGroups.forEach(g => {
+    if(!g.ids.length) return;
+    const h = document.createElement("p");
+    h.className = "avatarchar-group-title";
+    h.textContent = g.title;
+    const n = document.createElement("span");
+    n.className = "avatarchar-group-note"; n.textContent = g.note;
+    h.appendChild(n);
+    const grid = document.createElement("div");
+    grid.className = "avatarchar-grid avatarchar-grid-appearance";
+    charGrids.push({ head: h, grid: grid, ids: g.ids });
+  });
+
   AVATAR_CHARACTERS.forEach(charDef => {
     const opt = document.createElement("button");
     opt.type = "button";
@@ -52288,7 +52655,7 @@ function showCustomize(){
       store.avatarChar = charDef.id;
       saveStore();
       updateHeaderTitle();
-      avatarGrid.querySelectorAll(".avatarchar-option").forEach(b => b.classList.remove("selected"));
+      avatarSect.querySelectorAll(".avatarchar-option").forEach(b => b.classList.remove("selected"));
       opt.classList.add("selected");
       opt.blur();
     });
@@ -52306,9 +52673,11 @@ function showCustomize(){
     nameEl.textContent = AVATAR_DISPLAY_NAME[charDef.id] || charDef.id;
     cell.append(opt, nameEl);
     nameEl.addEventListener("click", () => opt.click());
-    avatarGrid.appendChild(cell);
+    const home = charGrids.find(g => g.ids.indexOf(charDef.id) >= 0);
+    (home ? home.grid : avatarGrid).appendChild(cell);
   });
-  avatarSect.appendChild(avatarGrid);
+  charGrids.forEach(g => avatarSect.append(g.head, g.grid));
+  if(avatarGrid.children.length) avatarSect.appendChild(avatarGrid);
   panel.appendChild(avatarSect);
 
   const accentSect = document.createElement("div");
@@ -53983,8 +54352,7 @@ function showProfile(defaultTab){
     "Correct answers": "How many of those you got right first time. There is no second chance on a question, so this never counts a retry.",
     "Tests finished": "Drills, exams and Game runs you played to the end. The daily question is not a test.",
     "Hundos": "Units you have finished with every question right. A run covering three units can earn three, and the daily question earns none.",
-    "Best answer streak": "The longest run of correct answers you have ever had, across tests. The daily question never counts either way.",
-    "Current answer streak": "How many correct answers you are on right now. One wrong answer in a test sets it back to zero; the daily question leaves it alone."
+    "All-time best answer streak": "Your longest run of correct answers ever. It carries over from test to test, so a streak can start in one test and keep going in the next. The daily question never counts either way."
   };
   const statWhyBox = document.createElement("p");
   statWhyBox.className = "stat-why"; statWhyBox.hidden = true;
@@ -54085,8 +54453,7 @@ function showProfile(defaultTab){
    ["Correct answers", String(correct), null],
    ["Tests finished", String(testsCompleted), null],
    ["Hundos", String(store.lifetime.perfectTests), null],
-   ["Best answer streak", String(store.lifetime.longestStreak), null],
-   ["Current answer streak", String(store.lifetime.currentStreak || 0), null]].forEach(([label, val]) => {
+   ["All-time best answer streak", String(store.lifetime.longestStreak), null]].forEach(([label, val]) => {
     lifeGrid.appendChild(makeStatCard(label, val));
   });
   testingStatsSect.appendChild(lifeGrid);
