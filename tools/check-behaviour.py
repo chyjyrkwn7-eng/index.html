@@ -360,9 +360,13 @@ def check_badges(br):
         ("a unit already mastered",
          {"mode": "drill", "nUnits": 1, "offset": 0, "flat": None, "vroom": False}, 0, 0),
     ]
+    # BUILD 213: a badge is celebrated ON THE RESULTS SCREEN - its row in
+    # "Unlocked" and the badge-case cutscene - and no longer queued for a
+    # cutscene on Home. So the queue must stay empty and the banner count
+    # carries the "earned by every route, and only then" question alone.
     for label, args, want_queue, want_banners in cases:
         r = pg.evaluate(EARN_A_BADGE, args)
-        check(label, len(r["queue"]) == want_queue and r["banners"] == want_banners,
+        check(label, len(r["queue"]) == 0 and r["banners"] == want_banners,
               "queued %s, %d banner(s), thresholds %s"
               % (r["queue"], r["banners"], r["thresholds"]))
     ctx.close()
