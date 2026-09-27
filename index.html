@@ -13936,7 +13936,9 @@
   .rs-screen .rs-card.vroom-waitcard{
     border-color:rgba(74,159,232,.32);
     background:linear-gradient(180deg, rgba(74,159,232,.16), var(--rs-card) 70%);
-    padding:.85rem 1rem .9rem; margin-bottom:1rem;
+    /* margin-top clears the chat button, which sits over the top-right
+       corner of the first card on a phone. */
+    padding:.85rem 1rem .9rem; margin-top:.9rem; margin-bottom:1rem;
   }
   .vroom-wait-line{ margin:0; display:flex; align-items:center; gap:.55rem; font-size:.9rem; font-weight:700; color:var(--ink); }
   .vroom-wait-text{ flex:1 1 auto; min-width:0; }
