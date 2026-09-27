@@ -13771,6 +13771,165 @@
     border:1px solid rgba(124,200,255,.3);
     box-shadow:0 8px 24px rgba(0,0,0,.3), 0 0 18px rgba(58,140,255,.3), inset 0 1px 0 rgba(255,255,255,.08);
   }
+
+  /* ---- THE BADGE CASE ---- */
+  .bc-scene{
+    position:fixed; inset:0; z-index:420; overflow:hidden; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1.4rem;
+    padding:calc(env(safe-area-inset-top, 0px) + 1rem) 1rem calc(env(safe-area-inset-bottom, 0px) + 1rem);
+    background:rgba(5,7,11,0); transition:background .45s ease, opacity .45s ease;
+  }
+  .bc-scene.bc-in{ background:rgba(5,7,11,.9); }
+  .bc-scene.bc-out{ opacity:0; }
+  .bc-glow{
+    position:absolute; left:50%; top:46%; width:150vmax; height:150vmax; transform:translate(-50%,-50%);
+    background:radial-gradient(circle, color-mix(in srgb, var(--badge-col) 26%, transparent) 0%, transparent 38%);
+    opacity:0; transition:opacity 1s ease .9s; pointer-events:none;
+  }
+  .bc-in .bc-glow{ opacity:1; }
+  .bc-case{
+    position:relative; width:min(92vw, 27rem); perspective:1100px;
+    transform:translateY(40px) scale(.92); opacity:0;
+    transition:transform .6s cubic-bezier(.2,1.2,.3,1) .1s, opacity .4s ease .1s;
+  }
+  .bc-in .bc-case{ transform:none; opacity:1; }
+  .bc-handle{
+    width:32%; height:1.1rem; margin:0 auto -.1rem; border-radius:.7rem .7rem 0 0;
+    border:.3rem solid #454C57; border-bottom:0; box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
+  }
+  .bc-body{
+    position:relative; border-radius:16px; padding:.9rem;
+    background:linear-gradient(180deg, #2A3039, #1A1E25);
+    border:1px solid rgba(255,255,255,.1);
+    box-shadow:0 30px 60px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.1), inset 0 0 0 3px #3A414C;
+  }
+  .bc-lining{
+    display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:.55rem;
+    padding:.8rem; border-radius:10px;
+    background:radial-gradient(120% 90% at 50% 0%, #22324A, #111925 70%);
+    box-shadow:inset 0 3px 12px rgba(0,0,0,.7), inset 0 0 0 1px rgba(255,255,255,.05);
+  }
+  .bc-slot{ aspect-ratio:1; display:flex; align-items:center; justify-content:center; opacity:.55; position:relative; overflow:hidden; border-radius:12px; }
+  .bc-slot svg{ width:92%; height:92%; display:block; }
+  .bc-slot.is-held{ opacity:1; filter:drop-shadow(0 0 6px rgba(255,255,255,.12)); }
+  .bc-slot.is-new{ animation:bc-seat .7s ease-out both; }
+  @keyframes bc-seat{
+    0%{ filter:drop-shadow(0 0 0 var(--badge-col)) brightness(1.8); transform:scale(1.15); }
+    100%{ filter:drop-shadow(0 0 10px color-mix(in srgb, var(--badge-col) 70%, transparent)); transform:none; }
+  }
+  .bc-slot.is-held::after{
+    content:""; position:absolute; inset:-20%; pointer-events:none;
+    background:linear-gradient(115deg, transparent 38%, rgba(255,255,255,.55) 50%, transparent 62%);
+    transform:translateX(-130%);
+  }
+  .bc-glisten .bc-slot.is-held::after{ animation:bc-glint 1.1s cubic-bezier(.3,0,.2,1) both; }
+  .bc-glisten .bc-slot.is-held:nth-child(4n+2)::after{ animation-delay:.08s; }
+  .bc-glisten .bc-slot.is-held:nth-child(4n+3)::after{ animation-delay:.16s; }
+  .bc-glisten .bc-slot.is-held:nth-child(4n)::after{ animation-delay:.24s; }
+  @keyframes bc-glint{ to{ transform:translateX(130%); } }
+  .bc-lid{
+    position:absolute; left:0; right:0; bottom:0; height:calc(100% - 1rem); z-index:2;
+    border-radius:16px; transform-origin:50% 0; backface-visibility:hidden;
+    background:linear-gradient(180deg, #353C47 0%, #22272F 100%);
+    border:1px solid rgba(255,255,255,.12);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.14), inset 0 0 0 3px #454C57, 0 20px 40px rgba(0,0,0,.5);
+    display:flex; align-items:center; justify-content:center;
+    transition:transform .85s cubic-bezier(.5,0,.2,1), opacity .5s ease .45s;
+  }
+  .bc-open .bc-lid{ transform:rotateX(-104deg); opacity:0; }
+  .bc-plate{
+    padding:.45rem .9rem; border-radius:6px; font-size:.68rem; font-weight:800; letter-spacing:.18em;
+    color:#D8E2EC; background:linear-gradient(180deg, #9FACBA, #6F7C8A);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.5), 0 2px 6px rgba(0,0,0,.4); text-shadow:0 1px 0 rgba(0,0,0,.35);
+  }
+  .bc-latch{
+    position:absolute; top:.7rem; width:1.6rem; height:.8rem; border-radius:3px;
+    background:linear-gradient(180deg, #C8D2DC, #7E8B99); box-shadow:0 1px 3px rgba(0,0,0,.5);
+    transition:transform .25s ease;
+  }
+  .bc-latch-l{ left:18%; } .bc-latch-r{ right:18%; }
+  .bc-unlatch .bc-latch{ transform:translateY(-.35rem) rotate(-12deg); }
+  .bc-flyer{
+    position:absolute; left:50%; top:26%; width:min(38vw, 10rem); aspect-ratio:1; z-index:3;
+    transform:translate(-50%,-50%) scale(0) rotate(-200deg); opacity:0; pointer-events:none;
+    filter:drop-shadow(0 0 24px color-mix(in srgb, var(--badge-col) 80%, transparent));
+  }
+  .bc-flyer svg{ width:100%; height:100%; display:block; }
+  .bc-flyer.bc-show{ animation:bc-arrive .9s cubic-bezier(.2,1.3,.3,1) both; }
+  @keyframes bc-arrive{
+    0%{ opacity:0; transform:translate(-50%,-50%) scale(0) rotate(-200deg); }
+    70%{ opacity:1; transform:translate(-50%,-50%) scale(1.12) rotate(12deg); }
+    100%{ opacity:1; transform:translate(-50%,-50%) scale(1) rotate(0); }
+  }
+  .bc-flyer.bc-fly{
+    animation:none; opacity:1;
+    transition:transform .7s cubic-bezier(.55,0,.2,1);
+    transform:translate(calc(-50% + var(--fx)), calc(-50% + var(--fy))) scale(var(--fs, .3)) rotate(360deg);
+  }
+  .bc-flyer.bc-landed{ opacity:0; transition:none; }
+  .bc-words{ text-align:center; opacity:0; transform:translateY(8px); transition:opacity .4s ease, transform .4s ease; min-height:4.6rem; }
+  .bc-words.bc-words-in{ opacity:1; transform:none; }
+  .bc-kicker{ margin:0; font-size:.72rem; font-weight:800; letter-spacing:.2em; color:color-mix(in srgb, var(--badge-col) 60%, #fff); }
+  .bc-name{ margin:.3rem 0 0; font-family:var(--serif); font-size:1.7rem; font-weight:700; color:#fff; }
+  .bc-sub{ margin:.3rem 0 0; font-size:.88rem; color:rgba(255,255,255,.7); }
+  @media (min-width:40rem){ .bc-case{ width:min(80vw, 32rem); } .bc-name{ font-size:2.1rem; } }
+
+  /* ---- A SECRET FLARE, FOUND ---- */
+  .fl-scene{
+    position:fixed; inset:0; z-index:420; cursor:pointer; overflow:hidden;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:rgba(5,6,12,0); transition:background .45s ease, opacity .45s ease;
+  }
+  .fl-scene.fl-in{ background:rgba(5,6,12,.92); }
+  .fl-scene.fl-out{ opacity:0; }
+  .fl-field{ position:relative; width:300px; height:300px; opacity:0; transform:scale(.9); transition:opacity .6s ease, transform .9s cubic-bezier(.2,1,.3,1); }
+  .fl-in .fl-field{ opacity:1; transform:none; }
+  .fl-planet{ position:absolute; left:50%; top:50%; width:150px; height:150px; transform:translate(-50%,-50%); opacity:.9; }
+  .fl-sphere{
+    width:100%; height:100%; border-radius:50%;
+    background:radial-gradient(circle at 34% 30%, color-mix(in srgb, var(--theme-c1, #FFD37A) 70%, #fff) 0%,
+      var(--theme-c2, #F5804D) 38%, var(--theme-c3, #C23B7A) 72%, #1a0f22 100%);
+    box-shadow:0 0 60px color-mix(in srgb, var(--theme-c2, #F5804D) 45%, transparent), inset -18px -22px 40px rgba(0,0,0,.45);
+    animation:fl-breathe 4s ease-in-out infinite;
+  }
+  @keyframes fl-breathe{ 50%{ transform:scale(1.04); } }
+  .fl-spot, .fl-comet{
+    position:absolute; left:50%; top:50%; width:44px; height:44px;
+    transform:translate(calc(-50% + var(--ox)), calc(-50% + var(--oy)));
+  }
+  .fl-spot svg, .fl-comet svg{ width:100%; height:100%; display:block; }
+  .fl-spot{ opacity:.18; filter:grayscale(1); transition:opacity .5s ease, filter .5s ease, transform .5s ease; }
+  .fl-spot.is-lit{ opacity:1; filter:drop-shadow(0 0 10px var(--flare-color)); }
+  .fl-spot.is-new{ animation:fl-flare 1.2s ease-out both; }
+  @keyframes fl-flare{
+    0%{ transform:translate(calc(-50% + var(--ox)), calc(-50% + var(--oy))) scale(2.2); }
+    100%{ transform:translate(calc(-50% + var(--ox)), calc(-50% + var(--oy))) scale(1); }
+  }
+  .fl-comet{
+    transform:translate(-50%, 260px) scale(1.6); opacity:0;
+    filter:drop-shadow(0 0 14px var(--flare-color));
+    transition:transform 1.1s cubic-bezier(.4,0,.2,1), opacity .3s ease;
+  }
+  .fl-in .fl-comet{ opacity:1; }
+  .fl-comet.fl-comet-go{ transform:translate(calc(-50% + var(--ox)), calc(-50% + var(--oy))) scale(1); }
+  .fl-named .fl-comet{ opacity:0; }
+  .fl-kicker, .fl-name, .fl-sub{ margin:0; text-align:center; opacity:0; transform:translateY(8px); transition:opacity .4s ease, transform .4s ease; }
+  .fl-named .fl-kicker, .fl-named .fl-name, .fl-named .fl-sub{ opacity:1; transform:none; }
+  .fl-kicker{ margin-top:1.2rem; font-size:.72rem; font-weight:800; letter-spacing:.2em; color:var(--flare-color); }
+  .fl-name{ margin-top:.3rem; font-family:var(--serif); font-size:1.9rem; font-weight:700; color:#fff; }
+  .fl-sub{ margin-top:.3rem; font-size:.9rem; color:rgba(255,255,255,.7); }
+
+  /* ---- THE FLARE ITSELF, BIGGER AND LOUDER ----
+     "Make them a little bigger, can't risk someone missing it." Still in
+     the header row and still a 44px target; the orb inside is larger,
+     brighter, and breathes with a halo. */
+  .mystery-spark svg{ width:2.15rem; height:2.15rem; opacity:1; filter:drop-shadow(0 0 9px var(--flare-color, #F97316)); }
+  .mystery-spark::before{
+    content:""; position:absolute; inset:2px; border-radius:50%; pointer-events:none;
+    border:2px solid var(--flare-color, #F97316); opacity:0;
+    animation:mystery-halo 2.4s ease-out infinite;
+  }
+  @keyframes mystery-halo{ 0%{ opacity:.7; transform:scale(.5); } 100%{ opacity:0; transform:scale(1.5); } }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -27930,7 +28089,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               lifetime: { answered: 0, correct: 0, drillPlays: 0, examPlays: 0, gamePlays: 0,
                           perfectTests: 0, currentStreak: 0, longestStreak: 0, points: 0 },
               unitPerfects: {}, unitBlackStar: {}, flagged: {},
-              unitGameBeat: {}, gameFarthest: {},
+              unitGameBeat: {}, gameFarthest: {}, unitBestPct: {}, unitBestMs: {}, flareLevels: {},
               mysteryColorsFound: { red: false, orange: false, yellow: false }, testsUntilMystery: null,
               savedCodePrompts: 0, savedCodeSaved: false,
               dailyCorrectStreak: 0, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false,
@@ -28092,6 +28251,12 @@ function applyLoadedData(got){
   store.avatarChar = typeof got.avatarChar === "string" ? got.avatarChar : null;
   store.firstName = typeof got.firstName === "string" ? got.firstName.slice(0, 30) : "";
   store.unitGameBeat  = got.unitGameBeat  && typeof got.unitGameBeat  === "object" ? got.unitGameBeat  : {};
+  /* Build 213: personal bests per unit, and each account's own flare
+     levels. Empty for an existing account - see unitBestPctOf() for how
+     a best score is seeded from history rather than paid out as new. */
+  store.unitBestPct = got.unitBestPct && typeof got.unitBestPct === "object" ? got.unitBestPct : {};
+  store.unitBestMs  = got.unitBestMs  && typeof got.unitBestMs  === "object" ? got.unitBestMs  : {};
+  store.flareLevels = got.flareLevels && typeof got.flareLevels === "object" ? got.flareLevels : {};
   store.gameFarthest  = got.gameFarthest  && typeof got.gameFarthest  === "object" ? got.gameFarthest  : {};
   /* Explicit flag rather than inferring "already set up" from having a
      sync code \u2014 a sync code alone gets created the moment someone
@@ -29165,6 +29330,7 @@ function wipeLocalProgressAndSettings(){
   store.unitBlackStar = {};
   store.flagged = {};
   store.unitGameBeat = {};
+  store.unitBestPct = {}; store.unitBestMs = {}; store.flareLevels = {};
   store.gameFarthest = {};
   store.mysteryColorsFound = { red: false, orange: false, yellow: false };
   store.testsUntilMystery = null;
@@ -34602,6 +34768,29 @@ const MYSTERY_MIN_RUN = 5;
    does. */
 let mysteryLeftFrac = .5;
 
+/* THE SECOND AND THIRD ARE LEVELS NOW, AND PERSONAL. Asked for after two
+   people had already found the first: "let's make the second one so
+   people would find it on level 45 46 or 47, random per user. The 3rd
+   one is random per user as well and will be level 65 66 or 67." The
+   level is drawn once per account and kept on `store`, so it does not
+   move between launches. The first is unchanged (80 tests).
+   A flare not tapped keeps coming back every test until it is, and the
+   next one is only looked for once this one is found - so somebody who
+   reached 45 without the first gets the second on the test after they
+   finally tap the first. That falls out of looking only for the next
+   colour still needed. */
+function mysteryLevelGate(color){
+  store.flareLevels = store.flareLevels || {};
+  if(typeof store.flareLevels[color] !== "number"){
+    store.flareLevels[color] = (color === "orange" ? 45 : 65) + Math.floor(Math.random() * 3);
+    saveStore();
+  }
+  return store.flareLevels[color];
+}
+function mysteryGateMet(color){
+  if(color === "red") return testsCompletedOf(store) >= MYSTERY_AT[0];
+  return levelOf(store) >= mysteryLevelGate(color);
+}
 function nextNeededMysteryColor(){
   const found = store.mysteryColorsFound || {};
   return MYSTERY_ORDER.find(k => !found[k]) || null;
@@ -34614,7 +34803,7 @@ function maybeStartMysteryForRun(){
   const color = nextNeededMysteryColor();
   if(!color) return;
   if(!order || order.length < MYSTERY_MIN_RUN) return;
-  if(testsCompletedOf(store) < MYSTERY_AT[MYSTERY_ORDER.indexOf(color)]) return;
+  if(!mysteryGateMet(color)) return;
   mysteryColorThisRun = color;
   mysteryAppearsAtPos = Math.floor(Math.random() * order.length);
   /* Decided once per RUN, not per render. render() runs again on every
@@ -34741,7 +34930,9 @@ function foundMysteryFlare(btn){
     btn.disabled = true;
     setTimeout(() => btn.remove(), 900);
   }
-  showFlareFoundBanner(color, all);
+  /* No banner mid-test any more: the flare is announced with the rest
+     of the run's unlocks on the results screen, with its own scene. The
+     burst on the orb itself is the answer to the tap. */
   if(all){
     /* THE THIRD ONE QUEUES A CUTSCENE FOR THE MAIN MENU rather than
        announcing itself here. An earlier pass put "Void unlocked" in a
@@ -37348,8 +37539,10 @@ function playTierCutscene(tierKey){
       overlay.remove();
       store.pendingTierCutscene = null;
       saveStore();
+      /* No banner after it any more: the rank was announced on the
+         results screen that led here - "if the banner was unlocked via
+         test, it will show on test, if not, then home". */
       showHome();
-      showTierUpBanner(tierKey);
     }, 500);
   }
 
@@ -37380,7 +37573,7 @@ function playTierCutscene(tierKey){
    motionless in a ring for nine seconds. Transitions survive it, so
    reduce-motion gets the same beats at the same times, just without
    the drifting. */
-function playVoidCutscene(){
+function playVoidCutscene(onDone){
   const overlay = document.createElement("div");
   overlay.id = "void-cutscene";
 
@@ -37440,6 +37633,9 @@ function playVoidCutscene(){
       overlay.remove();
       store.pendingVoidCutscene = false;
       saveStore();
+      /* From the results screen it hands straight back there - the
+         Void unlock is already in its "Unlocked" card. */
+      if(onDone){ onDone(); return; }
       showHome();
       /* The banner AFTER the cutscene, not instead of it - it is what
          says where to go and do something about it, which a cutscene
@@ -37661,7 +37857,6 @@ function playSupernovaCutscene(){
       store.supernovaAchieved = true;
       saveStore();
       showHome();
-      showTierUpBanner("titan");
     }, 500);
   }
 
@@ -44411,6 +44606,210 @@ let lastRunXpEarned = 0;
 let lastRunPointsAfter = 0;
 let lastRunXpLines = [];
 
+/* ---- THE BADGE CASE CUTSCENE (build 213) ----------------------------
+   "The badge cutscene would come in on the result screen right after the
+   badge box hits the screen ... the cut scene could be you opening a
+   brief case, of all the badges, and the badge would like shoot to that
+   badge slot in a cool way. Whichever badges you already have would show
+   up in the scene too in the spots ... it glistens (all the badges there
+   that you have would all glisten when that effect happens)".
+
+   So: a case rises and unlatches, the lid swings up on the whole
+   collection seated in its lining, the new badge spins in above it and
+   flies down into its own empty slot, the slot flares, and every badge
+   in the case catches the light together. More than one badge in a run
+   flies in one after another while the case stays open.
+
+   Plays on the results screen as a held step of the reveal, so nothing
+   below it lands until it has finished. A tap skips it. Muting banners
+   or reducing motion skips it outright - the global reduce-motion rule
+   would leave a case sitting shut behind a dim. */
+function playBadgeCaseScene(units, done){
+  if(!units || !units.length || theme.muteBanners || resultsMotionOff()){ done(); return null; }
+  const all = topicsIn(QUESTIONS);
+  const newSet = new Set(units);
+  const col = ((badgeThemeFor(units[0]) || {}).p) || "#9FACBA";
+
+  const overlay = document.createElement("div");
+  overlay.className = "bc-scene";
+  overlay.style.setProperty("--badge-col", col);
+
+  const glow = document.createElement("div");
+  glow.className = "bc-glow";
+  overlay.appendChild(glow);
+
+  const kase = document.createElement("div");
+  kase.className = "bc-case";
+  const handle = document.createElement("div");
+  handle.className = "bc-handle";
+  const body = document.createElement("div");
+  body.className = "bc-body";
+  const lining = document.createElement("div");
+  lining.className = "bc-lining";
+  const slots = {};
+  all.forEach(u => {
+    const s = document.createElement("div");
+    s.className = "bc-slot" + (unitBadgeEarned(u) && !newSet.has(u) ? " is-held" : "");
+    s.appendChild(buildUnitBadgeSVG(u, unitBadgeEarned(u) && !newSet.has(u)));
+    lining.appendChild(s);
+    slots[u] = s;
+  });
+  body.appendChild(lining);
+  const lid = document.createElement("div");
+  lid.className = "bc-lid";
+  const plate = document.createElement("div");
+  plate.className = "bc-plate"; plate.textContent = "NOVA · CLASS 26E";
+  lid.appendChild(plate);
+  ["l", "r"].forEach(side => {
+    const latch = document.createElement("span");
+    latch.className = "bc-latch bc-latch-" + side;
+    lid.appendChild(latch);
+  });
+  kase.append(handle, body, lid);
+  overlay.appendChild(kase);
+
+  const flyer = document.createElement("div");
+  flyer.className = "bc-flyer";
+  overlay.appendChild(flyer);
+
+  const kicker = document.createElement("p");
+  kicker.className = "bc-kicker"; kicker.textContent = "BADGE EARNED";
+  const name = document.createElement("p");
+  name.className = "bc-name";
+  const sub = document.createElement("p");
+  sub.className = "bc-sub";
+  const words = document.createElement("div");
+  words.className = "bc-words";
+  words.append(kicker, name, sub);
+  overlay.appendChild(words);
+
+  document.body.appendChild(overlay);
+
+  const timers = [];
+  const at = (ms, fn) => timers.push(setTimeout(fn, ms));
+  let finished = false;
+  function finish(){
+    if(finished) return;
+    finished = true;
+    timers.forEach(clearTimeout);
+    overlay.classList.add("bc-out");
+    setTimeout(() => { overlay.remove(); done(); }, 450);
+  }
+  overlay.addEventListener("click", finish);
+
+  requestAnimationFrame(() => overlay.classList.add("bc-in"));
+  at(700, () => kase.classList.add("bc-unlatch"));
+  at(1050, () => kase.classList.add("bc-open"));
+
+  let t = 1900;
+  units.forEach((u, i) => {
+    at(t, () => {
+      flyer.replaceChildren(buildUnitBadgeSVG(u, true));
+      flyer.style.setProperty("--badge-col", ((badgeThemeFor(u) || {}).p) || col);
+      flyer.classList.remove("bc-fly", "bc-landed");
+      flyer.style.removeProperty("--fx"); flyer.style.removeProperty("--fy");
+      void flyer.offsetWidth;
+      flyer.classList.add("bc-show");
+      name.textContent = u + " badge";
+      const have = badgeCountOf(store) - (units.length - 1 - i);
+      sub.textContent = have >= all.length ? "Every unit mastered. The case is full."
+        : have + " of " + all.length + " in the case";
+      words.classList.add("bc-words-in");
+    });
+    at(t + 1200, () => {
+      const s = slots[u].getBoundingClientRect();
+      const f = flyer.getBoundingClientRect();
+      flyer.style.setProperty("--fx", Math.round((s.left + s.width / 2) - (f.left + f.width / 2)) + "px");
+      flyer.style.setProperty("--fy", Math.round((s.top + s.height / 2) - (f.top + f.height / 2)) + "px");
+      flyer.style.setProperty("--fs", (s.width / Math.max(1, f.width)).toFixed(3));
+      flyer.classList.add("bc-fly");
+    });
+    at(t + 1900, () => {
+      slots[u].replaceChildren(buildUnitBadgeSVG(u, true));
+      slots[u].classList.add("is-held", "is-new");
+      flyer.classList.remove("bc-show");
+      flyer.classList.add("bc-landed");
+      kase.classList.remove("bc-glisten"); void kase.offsetWidth;
+      kase.classList.add("bc-glisten");
+    });
+    t += 2500;
+  });
+  at(t + 900, finish);
+  return { skip: finish, stop(){ finished = true; timers.forEach(clearTimeout); overlay.remove(); } };
+}
+
+/* ---- A SECRET FLARE, FOUND ----
+   The small scene for the first two: Home's sky, the three flare spots,
+   the ones already found lit, and the new one streaking in to take its
+   place. The third one plays the Void cutscene instead - the payoff for
+   the whole hunt - and both hand straight back to the results screen:
+   "shows in unlocks, goes to main menu to do it, comes back to result
+   screen and continues off". */
+function playFlareFoundScene(color, all, done){
+  if(all){
+    if(theme.muteBanners || resultsMotionOff()){ store.pendingVoidCutscene = false; saveStore(); done(); return null; }
+    playVoidCutscene(() => done());
+    return null;
+  }
+  if(theme.muteBanners || resultsMotionOff()){ done(); return null; }
+  const overlay = document.createElement("div");
+  overlay.className = "fl-scene";
+  overlay.style.setProperty("--flare-color", MYSTERY_COLOR[color]);
+  const field = document.createElement("div");
+  field.className = "fl-field";
+  const planet = document.createElement("div");
+  planet.className = "fl-planet";
+  /* A plain lit sphere, not the Home hero: at this size the hero's own
+     orbit of rank flares crowds the three spots this scene is about. */
+  const sphere = document.createElement("div");
+  sphere.className = "fl-sphere";
+  planet.appendChild(sphere);
+  field.appendChild(planet);
+  const SPOTS = [[0, -118], [118, 4], [-86, 22]];
+  const found = store.mysteryColorsFound || {};
+  let target = null;
+  MYSTERY_ORDER.forEach((k, i) => {
+    const spot = document.createElement("div");
+    spot.className = "fl-spot" + (found[k] && k !== color ? " is-lit" : "");
+    spot.style.setProperty("--ox", SPOTS[i][0] + "px");
+    spot.style.setProperty("--oy", SPOTS[i][1] + "px");
+    spot.style.setProperty("--flare-color", MYSTERY_COLOR[k]);
+    spot.appendChild(buildFlareOrb(MYSTERY_COLOR[k], "fs"));
+    field.appendChild(spot);
+    if(k === color) target = spot;
+  });
+  const comet = document.createElement("div");
+  comet.className = "fl-comet";
+  comet.appendChild(buildFlareOrb(MYSTERY_COLOR[color], "fc"));
+  comet.style.setProperty("--ox", SPOTS[MYSTERY_ORDER.indexOf(color)][0] + "px");
+  comet.style.setProperty("--oy", SPOTS[MYSTERY_ORDER.indexOf(color)][1] + "px");
+  field.appendChild(comet);
+  overlay.appendChild(field);
+  const kicker = document.createElement("p");
+  kicker.className = "fl-kicker"; kicker.textContent = "SECRET FLARE FOUND";
+  const nm = document.createElement("p");
+  nm.className = "fl-name"; nm.textContent = MYSTERY_NAME[color];
+  const sub = document.createElement("p");
+  sub.className = "fl-sub"; sub.textContent = mysteryColorsFoundCount() + " of " + MYSTERY_ORDER.length + " in the sky";
+  overlay.append(kicker, nm, sub);
+  document.body.appendChild(overlay);
+  const timers = [];
+  let finished = false;
+  function finish(){
+    if(finished) return;
+    finished = true;
+    timers.forEach(clearTimeout);
+    overlay.classList.add("fl-out");
+    setTimeout(() => { overlay.remove(); done(); }, 450);
+  }
+  overlay.addEventListener("click", finish);
+  requestAnimationFrame(() => overlay.classList.add("fl-in"));
+  timers.push(setTimeout(() => comet.classList.add("fl-comet-go"), 900));
+  timers.push(setTimeout(() => { if(target) target.classList.add("is-lit", "is-new"); overlay.classList.add("fl-named"); }, 2000));
+  timers.push(setTimeout(finish, 4600));
+  return { skip: finish, stop(){ finished = true; timers.forEach(clearTimeout); overlay.remove(); } };
+}
+
 /* ---- WHAT A RUN EARNS, LINE BY LINE (build 213) ----------------------
    "With all this new type of xp earning stuff..." - asked for in one
    message: a speed bonus off the average time a question, a personal
@@ -45672,7 +46071,8 @@ function summarize(){
       saveStore();
     }
     if(badgesEarnedThisRun.length){
-      store.pendingBadgeUnlocks = (store.pendingBadgeUnlocks || []).concat(badgesEarnedThisRun);
+      /* Not queued for Home any more: the badge case plays on the results
+         screen the moment the badge box lands (playBadgeCaseScene). */
       /* Paid off the same diff the cutscene is queued off, so the XP and
          the celebration can never disagree about whether a badge was
          earned. Awarded here rather than at the other awardXp() above
