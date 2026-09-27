@@ -13462,6 +13462,12 @@
     filter:drop-shadow(0 0 8px color-mix(in srgb, var(--spot-color) 45%, transparent));
   }
   .rs-unlock-art svg{ width:100%; height:100%; display:block; }
+  /* The rank emblem is drawn with room for its own glow around it, so at
+     the row's size it came out half the size of the badge beside it -
+     "the rank up icon in unlocks looks too small". */
+  .rs-unlock-rank .rs-unlock-art svg{ transform:scale(1.6); }
+  .rs-unlock-text{ display:flex; flex-direction:column; }
+  .rs-unlock-detail{ margin-top:.1rem; font-size:.78rem; color:var(--soft); line-height:1.3; }
   .rs-unlock-text{ min-width:0; }
   .rs-unlocked .unlockbanner-kicker{ color:var(--spot-color); opacity:1; font-size:.62rem; letter-spacing:.13em; text-transform:uppercase; }
   .rs-unlocked .unlockbanner-name{ font-size:1.02rem; color:var(--ink); }
@@ -13554,6 +13560,101 @@
     text-transform:uppercase; color:rgba(255,255,255,.4);
   }
 
+  /* ---- RANK UP: THE OLD RANK TURNS INTO THE NEW ONE ----
+     0-.95s the old emblem charges (glow swells, a tremor); .95-1.35s it
+     spins down into white light; 1.25s flash and two shockwaves; 1.3s on
+     the new emblem forms out of the light, overshoots and settles, rays
+     turning behind it and sparks thrown out. The words land after. */
+  .rs-spot.is-rankup .rs-spot-card{
+    width:min(24rem, 100%);
+    background:
+      radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--spot-color) 38%, transparent), transparent 64%),
+      radial-gradient(90% 60% at 50% 110%, color-mix(in srgb, var(--spot-color) 18%, transparent), transparent 70%),
+      rgba(16,20,28,.94);
+    border-color:color-mix(in srgb, var(--spot-color) 60%, rgba(255,255,255,.14));
+  }
+  .rs-spot-art.rs-morph{ position:relative; width:9rem; height:9rem; margin-bottom:1.1rem; filter:none; }
+  .rs-spot.is-up .rs-spot-art.rs-morph{ animation:none; }
+  .rs-morph > span{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+  .rs-morph svg{ width:100%; height:100%; display:block; }
+  /* The emblem is drawn with room for its glow; at this size that room
+     read as a small emblem in a big space. */
+  .rs-morph-from svg, .rs-morph-to svg{ transform:scale(1.5); }
+  .rs-morph-from{ filter:drop-shadow(0 0 12px color-mix(in srgb, var(--from-color, #9FACBA) 60%, transparent)); }
+  .rs-morph-from.is-none::before{
+    content:""; width:52%; height:52%; border-radius:50%;
+    border:2px dashed rgba(255,255,255,.35); box-shadow:0 0 18px rgba(255,255,255,.12) inset;
+  }
+  .rs-spot.is-up .rs-morph-from{ animation:rs-morph-charge .95s ease-in both, rs-morph-burn .42s cubic-bezier(.6,0,.9,.4) .95s both; }
+  @keyframes rs-morph-charge{
+    0%{ opacity:0; transform:scale(.7); }
+    25%{ opacity:1; transform:scale(1); }
+    60%{ transform:scale(1.02) translateX(-1px); }
+    70%{ transform:scale(1.03) translateX(1.5px); }
+    80%{ transform:scale(1.04) translateX(-1.5px); }
+    90%{ transform:scale(1.05) translateX(1px); }
+    100%{ opacity:1; transform:scale(1.06); }
+  }
+  @keyframes rs-morph-burn{
+    0%{ opacity:1; transform:scale(1.06) rotate(0); filter:brightness(1) blur(0); }
+    100%{ opacity:0; transform:scale(.18) rotate(200deg); filter:brightness(4) blur(3px); }
+  }
+  .rs-morph-flash{
+    border-radius:50%; opacity:0;
+    background:radial-gradient(circle, #fff 0 18%, color-mix(in srgb, var(--spot-color) 70%, #fff) 34%, transparent 66%);
+  }
+  .rs-spot.is-up .rs-morph-flash{ animation:rs-morph-flash .7s ease-out 1.22s both; }
+  @keyframes rs-morph-flash{ 0%{ opacity:0; transform:scale(.2); } 25%{ opacity:1; transform:scale(1.25); } 100%{ opacity:0; transform:scale(1.9); } }
+  .rs-morph-ring{
+    border-radius:50%; opacity:0; inset:18% !important;
+    border:3px solid color-mix(in srgb, var(--spot-color) 80%, #fff);
+    box-shadow:0 0 22px color-mix(in srgb, var(--spot-color) 70%, transparent);
+  }
+  .rs-spot.is-up .rs-morph-ring{ animation:rs-morph-ring .9s cubic-bezier(.1,.7,.3,1) 1.25s both; }
+  .rs-spot.is-up .rs-morph-ring.is-late{ animation-delay:1.45s; border-width:2px; }
+  @keyframes rs-morph-ring{ 0%{ opacity:1; transform:scale(.3); } 100%{ opacity:0; transform:scale(2.6); } }
+  .rs-morph-rays{
+    inset:-38% !important; opacity:0; border-radius:50%;
+    background:repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--spot-color) 42%, transparent) 0deg 7deg, transparent 7deg 30deg);
+    -webkit-mask:radial-gradient(circle, #000 18%, transparent 68%); mask:radial-gradient(circle, #000 18%, transparent 68%);
+  }
+  .rs-spot.is-up .rs-morph-rays{ animation:rs-morph-rays-in .6s ease-out 1.3s both, rs-morph-spin 14s linear 1.3s infinite; }
+  @keyframes rs-morph-rays-in{ from{ opacity:0; } to{ opacity:.85; } }
+  @keyframes rs-morph-spin{ to{ rotate:360deg; } }
+  .rs-morph-to{ opacity:0; filter:drop-shadow(0 0 22px color-mix(in srgb, var(--spot-color) 75%, transparent)); }
+  .rs-spot.is-up .rs-morph-to{ animation:rs-morph-form .75s cubic-bezier(.2,1.6,.35,1) 1.3s both, rs-morph-glow 2.4s ease-in-out 2.1s infinite; }
+  @keyframes rs-morph-form{
+    0%{ opacity:0; transform:scale(.15) rotate(-160deg); filter:brightness(4) blur(3px) drop-shadow(0 0 22px var(--spot-color)); }
+    60%{ opacity:1; transform:scale(1.14) rotate(8deg); filter:brightness(1.4) blur(0) drop-shadow(0 0 30px var(--spot-color)); }
+    100%{ opacity:1; transform:none; filter:brightness(1) drop-shadow(0 0 22px color-mix(in srgb, var(--spot-color) 75%, transparent)); }
+  }
+  @keyframes rs-morph-glow{ 50%{ transform:scale(1.035); } }
+  .rs-morph-sparks i{
+    position:absolute; left:50%; top:50%; width:.4rem; height:.4rem; margin:-.2rem; border-radius:50%;
+    background:#fff; box-shadow:0 0 10px 2px var(--spot-color); opacity:0;
+  }
+  .rs-spot.is-up .rs-morph-sparks i{ animation:rs-morph-spark .9s cubic-bezier(.1,.8,.3,1) 1.28s both; }
+  @keyframes rs-morph-spark{
+    0%{ opacity:1; transform:rotate(var(--a)) translateY(0) scale(1.2); }
+    100%{ opacity:0; transform:rotate(var(--a)) translateY(calc(-1 * var(--d))) scale(.3); }
+  }
+  .rs-spot.is-rankup .rs-spot-kicker,
+  .rs-spot.is-rankup .rs-spot-name,
+  .rs-spot.is-rankup .rs-spot-was,
+  .rs-spot.is-rankup .rs-spot-sub{ opacity:0; }
+  .rs-spot.is-rankup.is-up .rs-spot-kicker{ animation:rs-morph-word .45s ease-out 1.55s both; }
+  .rs-spot.is-rankup.is-up .rs-spot-name{ animation:rs-morph-name .6s cubic-bezier(.2,1.4,.4,1) 1.7s both; font-size:2.1rem; }
+  .rs-spot.is-rankup.is-up .rs-spot-was{ animation:rs-morph-word .45s ease-out 1.95s both; }
+  .rs-spot.is-rankup.is-up .rs-spot-sub{ animation:rs-morph-word .45s ease-out 2.1s both; }
+  @keyframes rs-morph-word{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:none; } }
+  @keyframes rs-morph-name{ from{ opacity:0; transform:scale(1.5); letter-spacing:.2em; } to{ opacity:1; transform:none; letter-spacing:normal; } }
+  .rs-spot.is-rankup .rs-spot-name{ color:color-mix(in srgb, var(--spot-color) 30%, #fff); text-shadow:0 0 22px color-mix(in srgb, var(--spot-color) 55%, transparent); }
+  .rs-spot-was{
+    margin:.4rem 0 0; font-size:.78rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase;
+    color:rgba(255,255,255,.55); white-space:pre;
+  }
+  @media (min-width:40rem){ .rs-spot-art.rs-morph{ width:10.5rem; height:10.5rem; } }
+
   /* The review. */
   .rs-review .rs-head{ margin-bottom:1.2rem; }
   .rs-review-summary{ margin:.65rem 0 0; font-size:.95rem; font-weight:700; color:rgba(255,255,255,.72); }
@@ -13582,6 +13683,53 @@
   .rs-q-yours span{ color:#E8687C; }
   .rs-q-right{ background:rgba(92,214,146,.09); border:1px solid rgba(92,214,146,.26); }
   .rs-q-right span{ color:#5CD692; }
+  /* The Virtual Room's "Entire test" tab lists the ones you got too. */
+  .rs-q-tag.is-right{ color:#5CD692; }
+  .rs-q-yours.is-right{ background:rgba(92,214,146,.09); border-color:rgba(92,214,146,.26); }
+  .rs-q-yours.is-right span{ color:#5CD692; }
+  .rs-roomreview{ margin-top:1.1rem; }
+  .rs-roomreview-kicker{ margin:0 0 .55rem; }
+  .rs-tabs{
+    display:flex; gap:.3rem; padding:.3rem; margin:0 0 .9rem; border-radius:999px;
+    background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.09);
+  }
+  .rs-tab{
+    flex:1 1 0; min-width:0; min-height:44px; display:flex; align-items:center; justify-content:center; gap:.45rem;
+    padding:.45rem .7rem; border:0; border-radius:999px; background:none; cursor:pointer;
+    font:inherit; font-size:.86rem; font-weight:800; color:rgba(255,255,255,.62);
+    transition:background .2s ease, color .2s ease;
+  }
+  .rs-tab.is-on{ background:rgba(74,159,232,.22); color:#fff; box-shadow:inset 0 0 0 1px rgba(124,200,255,.35); }
+  .rs-tab-count{
+    min-width:1.45rem; padding:.05rem .4rem; border-radius:999px; font-size:.72rem; line-height:1.3;
+    background:rgba(255,255,255,.1); color:inherit; font-variant-numeric:tabular-nums;
+  }
+  .rs-tab-empty{ margin:.4rem 0 1rem; text-align:center; font-size:.92rem; color:var(--soft); }
+
+  /* "Preparing leaderboard", pinned to the bottom of the screen. */
+  .vroom-prep{
+    position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom, 0px) + 1.1rem); z-index:300;
+    display:flex; align-items:center; gap:.65rem; overflow:hidden;
+    padding:.8rem 1.2rem; border-radius:999px; pointer-events:none;
+    background:rgba(16,22,34,.9); border:1px solid rgba(124,200,255,.35);
+    box-shadow:0 14px 34px rgba(0,0,0,.5), 0 0 28px -6px rgba(74,159,232,.6);
+    will-change:backdrop-filter; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    opacity:0; transform:translate(-50%, 16px); transition:opacity .35s ease, transform .45s cubic-bezier(.2,1.3,.4,1);
+  }
+  .vroom-prep.is-in{ opacity:1; transform:translate(-50%, 0); }
+  .vroom-prep-text{ font-size:.92rem; font-weight:800; letter-spacing:.02em; color:#fff; white-space:nowrap; }
+  .vroom-prep-spin{
+    width:1.05rem; height:1.05rem; border-radius:50%; flex-shrink:0;
+    border:2px solid rgba(124,200,255,.25); border-top-color:#7CC8FF;
+    animation:vroom-prep-spin .8s linear infinite;
+  }
+  @keyframes vroom-prep-spin{ to{ transform:rotate(360deg); } }
+  .vroom-prep-bar{
+    position:absolute; left:0; right:0; bottom:0; height:2px;
+    background:linear-gradient(90deg, transparent, #7CC8FF, transparent); background-size:40% 100%; background-repeat:no-repeat;
+    animation:vroom-prep-bar 1.4s ease-in-out infinite;
+  }
+  @keyframes vroom-prep-bar{ from{ background-position:-40% 0; } to{ background-position:140% 0; } }
   .rs-q-ref{ margin:.65rem 0 0; font-size:.76rem; color:var(--soft); }
 
   @media (min-width:40rem){
@@ -13623,14 +13771,11 @@
     position:relative; padding-left:1rem;
     font-size:.92rem; font-weight:600; color:rgba(255,255,255,.82); line-height:1.35;
   }
+  /* White dots - "let's change those yellow dots to white". */
   .rs-unitlist li::before{
     content:""; position:absolute; left:.1rem; top:.52em; width:.38rem; height:.38rem; border-radius:50%;
-    background:var(--mode-c, #FFD37A); opacity:.8;
+    background:#fff; opacity:.85;
   }
-  .rs-head:has(.rs-mode-drill) .rs-unitlist li::before{ background:#FFD37A; }
-  .rs-head:has(.rs-mode-exam) .rs-unitlist li::before{ background:#F5804D; }
-  .rs-head:has(.rs-mode-game) .rs-unitlist li::before{ background:#E0559A; }
-  .rs-head:has(.rs-mode-vroom) .rs-unitlist li::before{ background:#4A9FE8; }
 
   /* XP lines that carry detail under them - the time, the bests. */
   .rs-xpline{ align-items:flex-start; }
@@ -13651,18 +13796,49 @@
     border-color:rgba(232,104,124,.28);
     background:linear-gradient(180deg, rgba(200,60,84,.16), var(--rs-card) 62%);
   }
+  /* The hundo box on the XP card's own recipe - the XP card's wash is
+     .13 at the top edge and fades by 60%, and its border is .2 - so gold
+     at the same weight rather than louder: "the gold looks like the tint
+     is too much". */
   .rs-screen .rs-card.rs-grade.is-perfect{
-    border-color:rgba(230,195,74,.32);
-    background:linear-gradient(180deg, rgba(230,180,40,.18), var(--rs-card) 62%);
+    border-color:rgba(242,211,138,.2);
+    background:linear-gradient(180deg, rgba(226,178,60,.12), var(--rs-card) 60%);
+  }
+  /* The 100% in the XP total's manner: a lighter tone of the colour with
+     a soft glow, not a saturated gold with a hard one. */
+  .rs-screen .rs-grade.is-perfect .rs-pct.pct.perfect{
+    color:#F6D58E; text-shadow:0 0 18px rgba(246,213,142,.32); animation:none;
+  }
+  /* Its bars gold, and gold wherever a unit was aced. */
+  .rs-byunit .unit-breakdown-fill.is-gold{ background:linear-gradient(90deg, #D9A93A, #F6D58E); box-shadow:0 0 10px rgba(246,213,142,.3); }
+  /* A retake: no score, only whether anything is left. */
+  .rs-screen .rs-card.rs-grade.rs-retake-note{ padding:1rem 1.2rem 1.05rem; }
+  .rs-retake-line{ margin:0; font-size:1.05rem; font-weight:800; color:var(--ink); }
+  .rs-screen .rs-card.rs-grade.is-retake-clear{
+    border-color:rgba(92,214,146,.24);
+    background:linear-gradient(180deg, rgba(46,170,106,.13), var(--rs-card) 60%);
+  }
+  .rs-screen .rs-card.rs-grade.is-retake-left{
+    border-color:rgba(255,178,92,.24);
+    background:linear-gradient(180deg, rgba(230,150,60,.12), var(--rs-card) 60%);
   }
   .rs-screen .rs-card.rs-grade.is-over{
     border-color:rgba(255,140,90,.28);
     background:linear-gradient(180deg, rgba(220,90,50,.16), var(--rs-card) 62%);
   }
+  /* Badge progress: a steel tint every box shares while it fills, and
+     the badge's own colour on the box of one just earned. The same weight
+     as the XP card. */
   .rs-screen .rs-badges.badgeprogress-wrap{
-    border-color:rgba(216,226,236,.22);
-    background:linear-gradient(180deg, rgba(200,214,228,.12), var(--rs-card) 62%);
+    border-color:rgba(160,190,225,.24);
+    background:linear-gradient(180deg, rgba(120,160,210,.15), var(--rs-card) 60%);
   }
+  .rs-screen .rs-badges.badgeprogress-wrap.is-earned{
+    border-color:color-mix(in srgb, var(--bt) 42%, transparent);
+    background:linear-gradient(180deg, color-mix(in srgb, var(--bt) 20%, transparent), var(--rs-card) 60%);
+  }
+  .rs-badges.is-earned .rs-kicker{ color:color-mix(in srgb, var(--bt) 55%, #fff); }
+  .rs-badges.is-earned .badgeprogress-fill{ background:linear-gradient(90deg, color-mix(in srgb, var(--bt) 70%, #000), color-mix(in srgb, var(--bt) 60%, #fff)); }
   .rs-screen .rs-card.rs-unlocked{
     border-color:rgba(176,140,255,.26);
     background:linear-gradient(180deg, rgba(150,110,240,.15), var(--rs-card) 62%);
@@ -34061,16 +34237,30 @@ function speedUnlockedForUnits(units, speed){
   return units.length > 0 && units.every(u => speedUnlockedForUnit(u, speed));
 }
 
+/* A beaten game, per unit. A MULTI-unit game counts for every unit it
+   covered in full - "if multiple then it would list multiple" - so it
+   returns the speed and the units it newly beat it on, or null. The
+   caller only asks for a game that was actually won. */
+let lastGameBeatUnits = [];
 function recordGameBeatIfEligible(){
-  if(cfg.source !== "all" || !isFullUnitRun() || cfg.mode !== "game") return null;
-  const name = cfg.units[0];
+  lastGameBeatUnits = [];
+  if(cfg.source !== "all" || cfg.mode !== "game") return null;
   const speed = cfg.gameSpeed;
-  const g = gameBeat(name);
-  if(g[speed]) return null;
-  if(speed === "average" && !g.easy) return null;
-  if(speed === "hardcore" && !g.average) return null;
-  store.unitGameBeat[name] = { easy: g.easy || speed === "easy", average: g.average || speed === "average",
-                                hardcore: g.hardcore || speed === "hardcore" };
+  const whole = (cfg.units || []).filter(name => {
+    const inRun = order.filter(qi => (QUESTIONS[qi].topic || "").trim() === name).length;
+    return inRun > 0 && inRun === unitQuestionCount(name);
+  });
+  if(!whole.length || whole.length !== (cfg.units || []).length) return null;
+  whole.forEach(name => {
+    const g = gameBeat(name);
+    if(g[speed]) return;
+    if(speed === "average" && !g.easy) return;
+    if(speed === "hardcore" && !g.average) return;
+    store.unitGameBeat[name] = { easy: g.easy || speed === "easy", average: g.average || speed === "average",
+                                  hardcore: g.hardcore || speed === "hardcore" };
+    lastGameBeatUnits.push(name);
+  });
+  if(!lastGameBeatUnits.length) return null;
   saveStore();
   return speed;
 }
@@ -43752,7 +43942,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-27-213";
+const APP_BUILD = "2026-09-27-214";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -44720,6 +44910,8 @@ function buildResultsLevelBlock(earned, pointsAfter){
 let lastRunXpEarned = 0;
 let lastRunPointsAfter = 0;
 let lastRunXpLines = [];
+let lastRunRoomXp = null;   /* the run as the Virtual Room scores it: no bests, no badge */
+let lastRunResult = null;   /* the last run's numbers, for the Virtual Room's own review */
 
 /* ---- THE BADGE CASE CUTSCENE (build 213) ----------------------------
    "The badge cutscene would come in on the result screen right after the
@@ -45026,8 +45218,10 @@ function computeRunXp(r){
   const tiers = runStreakTiersFor(r.okList || []);
   Object.keys(tiers).map(Number).sort((a, b) => a - b).forEach(t => {
     const n = tiers[t];
-    add("streak" + t, t + " right in a row" + (n > 1 ? " ×" + n : ""), runStreakTierXp(t) * n,
-        { streak: t, times: n });
+    /* "Streak bonus · 10", so the line says what KIND of bonus it is -
+       "needs to just say streak bonus 10 or something". */
+    add("streak" + t, "Streak bonus · " + t + (n > 1 ? " ×" + n : ""), runStreakTierXp(t) * n,
+        { streak: t, times: n, sub: t + " right in a row" + (n > 1 ? ", " + n + " times" : "") });
   });
 
   if(r.answered > 0 && r.elapsedMs > 0){
@@ -45321,12 +45515,13 @@ function buildRunHead(run){
   const allCount = topicsIn(QUESTIONS).length;
   const title = document.createElement("h2");
   title.className = "rs-units";
+  /* "1 unit" with the unit under it, the same as "2 units" - "let's make
+     it so you also see that even for 1 unit tests". */
   if(run.practice) title.textContent = "All " + allCount + " units, at random";
-  else if(units.length === 1) title.textContent = units[0];
   else if(units.length >= allCount) title.textContent = "All " + allCount + " units";
-  else title.textContent = units.length + " units";
+  else title.textContent = units.length + (units.length === 1 ? " unit" : " units");
   head.appendChild(title);
-  if(units.length > 1 && units.length < allCount && !run.practice){
+  if(units.length >= 1 && units.length < allCount && !run.practice){
     const list = document.createElement("ol");
     list.className = "rs-unitlist";
     units.forEach(u => {
@@ -45351,8 +45546,13 @@ function rsUnlockItems(run){
       color: "#D8E2EC", art: () => buildUnitBadgeSVG(u, true) });
   });
   const tiers = run.colors.slice().sort((a, b) => TIER_ORDER_FULL.indexOf(a) - TIER_ORDER_FULL.indexOf(b));
+  /* The rank carries the rank it replaces, so its banner can turn one
+     into the other. Two ranks in one run chain: the second morphs from
+     the first. Nothing before Iron, so Iron grows out of nothing. */
   tiers.forEach(c => {
-    items.push({ kind: "rank", kicker: "Rank up", name: RANK_DISPLAY_NAME[c] || c,
+    const at = TIER_ORDER_FULL.indexOf(c);
+    const from = at > 0 ? TIER_ORDER_FULL[at - 1] : null;
+    items.push({ kind: "rank", rank: c, from: from, kicker: "Rank up", name: RANK_DISPLAY_NAME[c] || c,
       sub: c === "titan" ? "The top of the ladder" : "A new rank beside your name",
       color: RANK_COLOR[c] || ACCENT_SWATCH[c], art: () => buildRankEmblemSVG(c) });
   });
@@ -45369,14 +45569,24 @@ function rsUnlockItems(run){
       sub: "Yours to pick in Customize", color: avatarGlowColor(id),
       art: () => buildAvatarCharSVGSafe(id) });
   });
+  /* WHICH UNIT UNLOCKED IT, named - every one of them on a multi-unit
+     game. Beating Hardcore unlocks nothing further, so it is its own
+     line: the game beaten for that unit. */
   if(run.justBeatSpeed){
     const next = { easy: "average", average: "hardcore" }[run.justBeatSpeed];
+    const us = (run.justBeatUnits && run.justBeatUnits.length) ? run.justBeatUnits : run.units.slice(0, 1);
+    const onUnits = "On " + us.join(", ");
     if(next){
       const sp = GAME_SPEEDS[next];
       items.push({ kind: "difficulty", speed: next, kicker: "Difficulty unlocked",
-        name: sp.label + " difficulty",
-        sub: run.units[0] + " · " + sp.seconds + " seconds a question, " + sp.lives + (sp.lives === 1 ? " life" : " lives"),
+        name: sp.label + " difficulty", units: us, detail: onUnits,
+        sub: onUnits + " · " + sp.seconds + " seconds a question, " + sp.lives + (sp.lives === 1 ? " life" : " lives"),
         color: GAME_DIFF_COLOR[next], art: () => buildDifficultyLights(next) });
+    } else {
+      items.push({ kind: "difficulty", speed: "hardcore", kicker: "Game beaten",
+        name: "Hardcore cleared", units: us, detail: onUnits,
+        sub: onUnits + " · every difficulty beaten",
+        color: GAME_DIFF_COLOR.hardcore, art: () => buildDifficultyLights("hardcore") });
     }
   }
   /* A secret flare found this run is the LAST unlock, always: when it is
@@ -45425,7 +45635,38 @@ function playUnlockSpotlight(item, n, of, release){
   card.className = "rs-spot-card";
   const art = document.createElement("div");
   art.className = "rs-spot-art";
-  try{ art.appendChild(item.art()); }catch(e){}
+  if(item.kind === "rank"){
+    /* THE COOLEST BANNER OF THEM ALL - "maybe make the pop up kinda do a
+       thing where the old rank icon morphs or something into the new
+       one". The rank you held charges up, burns down to light, a flash
+       and a shockwave go off, and the new emblem forms out of the light
+       with rays turning behind it. The words wait for it. Iron has no
+       rank before it, so it forms out of an empty, unranked ring. */
+    art.classList.add("rs-morph");
+    const from = document.createElement("span");
+    from.className = "rs-morph-from";
+    if(item.from){ try{ from.appendChild(buildRankEmblemSVG(item.from)); }catch(e){} }
+    else { from.classList.add("is-none"); }
+    if(item.from) from.style.setProperty("--from-color", RANK_COLOR[item.from] || "#9FACBA");
+    const rays = document.createElement("span"); rays.className = "rs-morph-rays";
+    const ring = document.createElement("span"); ring.className = "rs-morph-ring";
+    const ring2 = document.createElement("span"); ring2.className = "rs-morph-ring is-late";
+    const flash = document.createElement("span"); flash.className = "rs-morph-flash";
+    const to = document.createElement("span");
+    to.className = "rs-morph-to";
+    try{ to.appendChild(item.art()); }catch(e){}
+    const sparks = document.createElement("span"); sparks.className = "rs-morph-sparks";
+    for(let i = 0; i < 10; i++){
+      const sp = document.createElement("i");
+      sp.style.setProperty("--a", (i * 36 + (i % 2 ? 12 : 0)) + "deg");
+      sp.style.setProperty("--d", (i % 3 === 0 ? 5.6 : i % 3 === 1 ? 4.6 : 5.1) + "rem");
+      sparks.appendChild(sp);
+    }
+    art.append(rays, from, ring, ring2, flash, sparks, to);
+    spot.classList.add("is-rankup");
+  } else {
+    try{ art.appendChild(item.art()); }catch(e){}
+  }
   const kicker = document.createElement("p");
   kicker.className = "rs-spot-kicker"; kicker.textContent = item.kicker;
   const name = document.createElement("p");
@@ -45435,11 +45676,18 @@ function playUnlockSpotlight(item, n, of, release){
   const foot = document.createElement("p");
   foot.className = "rs-spot-foot";
   foot.textContent = (of > 1 ? n + " of " + of + " · " : "") + "Tap to continue";
-  card.append(art, kicker, name, sub, foot);
+  if(item.kind === "rank" && item.from){
+    const was = document.createElement("p");
+    was.className = "rs-spot-was";
+    was.textContent = (RANK_DISPLAY_NAME[item.from] || item.from) + "  \u2192  " + (RANK_DISPLAY_NAME[item.rank] || item.name);
+    card.append(art, kicker, name, was, sub, foot);
+  } else {
+    card.append(art, kicker, name, sub, foot);
+  }
   spot.appendChild(card);
   document.body.appendChild(spot);
   requestAnimationFrame(() => requestAnimationFrame(() => spot.classList.add("is-up")));
-  const HOLD = item.kind === "difficulty" ? 3400 : 2800;
+  const HOLD = item.kind === "rank" ? 5200 : item.kind === "difficulty" ? 3400 : 2800;
   let timer = null, gone = false;
   function leave(){
     if(gone) return;
@@ -45457,9 +45705,12 @@ function playUnlockSpotlight(item, n, of, release){
   };
 }
 
-function showRunRewards(run, hooks){
+function showRunRewards(run, hooks, opts){
   endResultsReveal();
-  const quiet = resultsMotionOff();
+  /* Coming BACK from the review is the finished screen, drawn at once:
+     no boxes landing again, and above all no badge case, spotlight or
+     flare scene playing a second time. */
+  const quiet = resultsMotionOff() || !!(opts && opts.instant);
   meterEl.hidden = true;
   countEl.textContent = "";
   testScopeLabelEl.textContent = run.gameLost ? "Game over" : "Test results";
@@ -45530,64 +45781,57 @@ function showRunRewards(run, hooks){
   /* ---- EVERYTHING ELSE THE RUN MOVED ---- */
   const boxes = [];
   let badgeBox = null;
-  if(run.progUnits.length){
+  /* ONE BOX PER UNIT, each carrying a tint: the same quiet steel for
+     every one still filling up, and the badge's own colour on the box of
+     a badge just earned - "if you are seeing multiple badge progress
+     boxes, they would look the same unless you earned one, would match
+     the badge color in tint". */
+  const badgeBoxes = [];
+  run.progUnits.forEach(u => {
+    const need = badgeThresholdFor(u);
+    const have = Math.min(need, unitPerfectCount(u));
+    const earned = have >= need;
     const card = document.createElement("div");
-    card.className = "rs-card rs-badges badgeprogress-wrap rs-land";
+    card.className = "rs-card rs-badges badgeprogress-wrap rs-land" + (earned ? " is-earned" : "");
+    if(earned){
+      const th = badgeThemeFor(u) || {};
+      card.style.setProperty("--bt", th.p || "#9FACBA");
+    }
     const k = document.createElement("p");
-    k.className = "rs-kicker"; k.textContent = "Badge progress";
+    k.className = "rs-kicker"; k.textContent = earned ? "Badge earned" : "Badge progress";
     card.appendChild(k);
-    run.progUnits.forEach(u => {
-      const need = badgeThresholdFor(u);
-      const have = Math.min(need, unitPerfectCount(u));
-      const row = document.createElement("div");
-      row.className = "badgeprogress-row" + (have >= need ? " is-done" : "");
-      const art = document.createElement("span");
-      art.className = "badgeprogress-art";
-      art.appendChild(buildUnitBadgeSVG(u, have >= need));
-      const body = document.createElement("div");
-      body.className = "badgeprogress-body";
-      const nm = document.createElement("p");
-      nm.className = "badgeprogress-name"; nm.textContent = u + " badge";
-      const track = document.createElement("div");
-      track.className = "badgeprogress-track";
-      const fill = document.createElement("div");
-      fill.className = "badgeprogress-fill";
-      const was = Math.min(need, run.perfectsBefore[u] || 0);
-      fill.style.width = Math.round((was / need) * 100) + "%";
-      fill.dataset.to = Math.round((have / need) * 100) + "%";
-      track.appendChild(fill);
-      const line = document.createElement("p");
-      line.className = "badgeprogress-line";
-      line.textContent = have >= need
-        ? "Badge earned"
-        : "+1 hundo · " + have + " of " + need + " · " + (need - have) + " to go";
-      body.append(nm, track, line);
-      row.append(art, body);
-      card.appendChild(row);
-    });
+    const row = document.createElement("div");
+    row.className = "badgeprogress-row" + (earned ? " is-done" : "");
+    const art = document.createElement("span");
+    art.className = "badgeprogress-art";
+    art.appendChild(buildUnitBadgeSVG(u, earned));
+    const body = document.createElement("div");
+    body.className = "badgeprogress-body";
+    const nm = document.createElement("p");
+    nm.className = "badgeprogress-name"; nm.textContent = u + " badge";
+    const track = document.createElement("div");
+    track.className = "badgeprogress-track";
+    const fill = document.createElement("div");
+    fill.className = "badgeprogress-fill";
+    const was = Math.min(need, run.perfectsBefore[u] || 0);
+    fill.style.width = Math.round((was / need) * 100) + "%";
+    fill.dataset.to = Math.round((have / need) * 100) + "%";
+    track.appendChild(fill);
+    const line = document.createElement("p");
+    line.className = "badgeprogress-line";
+    line.textContent = earned
+      ? have + " of " + need + " hundos · badge earned"
+      : "+1 hundo · " + have + " of " + need + " · " + (need - have) + " to go";
+    body.append(nm, track, line);
+    row.append(art, body);
+    card.appendChild(row);
     boxes.push(card);
-    badgeBox = card;
-  }
-  if(run.justBeatSpeed){
-    const speedLabel = GAME_SPEEDS[run.justBeatSpeed].label;
-    const nextSpeed = { easy: "average", average: "hardcore" }[run.justBeatSpeed];
-    const bs = document.createElement("div");
-    bs.className = "rs-card rs-gamebeat rs-land";
-    bs.style.setProperty("--gb", GAME_DIFF_COLOR[run.justBeatSpeed]);
-    const k = document.createElement("p");
-    k.className = "rs-kicker"; k.textContent = "Game";
-    const h = document.createElement("p");
-    h.className = "rs-gamebeat-head game-beat-head";
-    h.textContent = speedLabel + " difficulty cleared — " + run.units[0];
-    const sub = document.createElement("p");
-    sub.className = "rs-gamebeat-sub game-unlock-note";
-    sub.textContent = nextSpeed
-      ? GAME_SPEEDS[nextSpeed].label + " difficulty is now unlocked — " + GAME_SPEEDS[nextSpeed].seconds +
-        " seconds a question, " + GAME_SPEEDS[nextSpeed].lives + (GAME_SPEEDS[nextSpeed].lives === 1 ? " life." : " lives.")
-      : "Every difficulty beaten on " + run.units[0] + ".";
-    bs.append(k, h, sub);
-    boxes.push(bs);
-  }
+    badgeBoxes.push(card);
+  });
+  if(badgeBoxes.length) badgeBox = badgeBoxes[badgeBoxes.length - 1];
+  /* No Game box: the difficulty it unlocked says all of it, in Unlocked,
+     with the unit(s) that unlocked it - "we can remove the green box
+     that's talk about that completely". */
   boxes.forEach(b => panel.appendChild(b));
 
   /* ---- THE GRADE, LAST ---- or, for a lost game, the game over card.
@@ -45596,17 +45840,39 @@ function showRunRewards(run, hooks){
      carries the colour, and a second coloured figure beside it made the
      card read louder without saying anything more. */
   const grade = document.createElement("div");
-  const gradeTone = run.gameLost ? "is-over" : run.isPerfect ? "is-perfect" : run.pct >= PASS_MARK ? "is-pass" : "is-fail";
+  const gradeTone = run.retake ? (run.missed.length ? "is-retake-left" : "is-retake-clear")
+    : run.gameLost ? "is-over" : run.isPerfect ? "is-perfect" : run.pct >= PASS_MARK ? "is-pass" : "is-fail";
   grade.className = "rs-card rs-grade rs-land score " + gradeTone;
-  if(run.gameLost){
+  if(run.retake){
+    /* A RETAKE HAS NO SCORE - "you shouldn't get a new score, it shouldn't
+       show a score, just the xp and stuff". What it does have is whether
+       anything is still left to go over, so that is all this card says. */
+    grade.classList.add("rs-retake-note");
+    const gk = document.createElement("p");
+    gk.className = "rs-kicker"; gk.textContent = "Retake";
+    const t = document.createElement("p");
+    t.className = "rs-retake-line";
+    t.textContent = run.missed.length
+      ? run.missed.length + (run.missed.length === 1 ? " question" : " questions") + " still to go over"
+      : "Every question you missed, answered right";
+    grade.append(gk, t);
+  } else if(run.gameLost){
     const gk = document.createElement("p");
     gk.className = "rs-kicker"; gk.textContent = "Game over";
     const big = document.createElement("p");
     big.className = "rs-over-title"; big.textContent = "You ran out of lives";
     const sub = document.createElement("p");
     sub.className = "rs-grade-sub slabel";
-    sub.textContent = "You made it to question " + run.gameLost + " of " + run.gameFull +
-      " · " + run.good + " right. Beat the whole unit to earn the difficulty bonus.";
+    /* What it takes, in the difficulty's own words - "beat the unit (or
+       units) on ___ to unlock ___", and on the hardest, beating the game
+       for it. */
+    const sp = run.gameSpeed;
+    const spLabel = (GAME_SPEEDS[sp] || {}).label || sp;
+    const nextSp = { easy: "average", average: "hardcore" }[sp];
+    const what = run.units.length === 1 ? run.units[0] : "all " + run.units.length + " units";
+    sub.textContent = "You made it to question " + run.gameLost + " of " + run.gameFull + " · " + run.good + " right. " +
+      (nextSp ? "Beat " + what + " on " + spLabel + " to unlock " + GAME_SPEEDS[nextSp].label + "."
+              : "Beat " + what + " on " + spLabel + " to beat the game" + (run.units.length === 1 ? " for this unit." : " for these units."));
     grade.append(gk, big, sub);
     if(run.newFarthest){
       const st = document.createElement("div"); st.className = "rs-stamps";
@@ -45674,8 +45940,11 @@ function showRunRewards(run, hooks){
         const b = document.createElement("span"); b.className = "unit-breakdown-score"; b.textContent = right + "/" + st.total;
         top.append(a, b);
         const track = document.createElement("div"); track.className = "unit-breakdown-track";
+        /* A unit's bar is its OWN verdict: gold at 100, green at a pass,
+           red short of one - "if you don't pass the test, the bar needs to
+           be red too". */
         const fill = document.createElement("div");
-        fill.className = "unit-breakdown-fill" + (up === 100 ? " full" : up < 60 ? " low" : "");
+        fill.className = "unit-breakdown-fill" + (up === 100 ? " full is-gold" : up < PASS_MARK ? " low" : "");
         fill.style.width = "0%";
         fill.dataset.to = up + "%";
         track.appendChild(fill);
@@ -45711,6 +45980,10 @@ function showRunRewards(run, hooks){
       const a = document.createElement("span"); a.className = "unlockbanner-kicker"; a.textContent = it.kicker;
       const b = document.createElement("span"); b.className = "unlockbanner-name"; b.textContent = it.name;
       text.append(a, b);
+      if(it.detail){
+        const d = document.createElement("span"); d.className = "rs-unlock-detail"; d.textContent = it.detail;
+        text.appendChild(d);
+      }
       row.append(art, text);
       unlocked.appendChild(row);
       unlockRows.push(row);
@@ -45723,19 +45996,20 @@ function showRunRewards(run, hooks){
   slot.className = "rs-endslot";
   panel.appendChild(slot);
   let actions = null;
+  /* ALL THE WAY-ON BUTTONS LIVE HERE, on the results, and land LAST -
+     after every box, cutscene, spotlight and flare scene: "At the end of
+     the test, on the result screen, that's where the re run and main
+     button need to be ... ensure all those buttons do not populate till
+     all the cut scenes and everything have already gone through."
+     Continue to review across the top when something was missed, Re-run
+     and Main menu under it. The review itself carries neither - it goes
+     back to here, or on to a retake whose results come back to here, so
+     missing some again is a cycle rather than a dead end. */
   if(run.vroom){
     /* The Virtual Room ends in its own standings - see
        finishVirtualRoomTest(), which drops into this slot. */
-  } else if(run.missed.length){
-    actions = document.createElement("div");
-    actions.className = "actions rs-actions rs-land";
-    const cont = document.createElement("button");
-    cont.type = "button"; cont.className = "next rs-continue"; cont.id = "nextbtn";
-    cont.textContent = "Continue to review";
-    cont.addEventListener("click", () => { endResultsReveal(); showRunReview(run, hooks); });
-    actions.appendChild(cont);
   } else {
-    actions = hooks.finalActions();
+    actions = hooks.finalActions({ where: "results", toReview: () => showRunReview(run, hooks) });
     actions.classList.add("rs-actions", "rs-land");
   }
   if(actions) slot.appendChild(actions);
@@ -45750,7 +46024,7 @@ function showRunRewards(run, hooks){
     if(actions){
       const first = actions.querySelector("button");
       if(first) first.focus({ preventScroll: true });
-      if(!run.missed.length) hooks.tour();
+      hooks.tour();
     }
     if(hooks.onDone) hooks.onDone(slot);
   };
@@ -45766,7 +46040,7 @@ function showRunRewards(run, hooks){
     }, 30);
   };
   const celebrateGrade = () => {
-    if(run.gameLost) return;
+    if(run.gameLost || run.retake) return;   /* a retake gets nothing cool */
     if(run.isPerfect || run.justBeatSpeed){
       const palette = run.justBeatSpeed === "hardcore" ? LEVEL_CONFETTI.black
         : run.justBeatSpeed === "average" ? LEVEL_CONFETTI.intermediate
@@ -45804,7 +46078,7 @@ function showRunRewards(run, hooks){
   boxes.forEach(b => {
     seq.add(420, instant => {
       rsLand(b, instant);
-      if(b === badgeBox) setTimeout(() => fillBars(".rs-badges .badgeprogress-fill[data-to]"), instant ? 0 : 260);
+      if(badgeBoxes.indexOf(b) >= 0) setTimeout(() => b.querySelectorAll(".badgeprogress-fill[data-to]").forEach(f => { f.style.width = f.dataset.to; }), instant ? 0 : 260);
     });
     /* A badge earned plays its case cutscene the moment its box lands -
        "the badge cutscene would come in on the result screen right
@@ -45846,6 +46120,64 @@ function showRunRewards(run, hooks){
   seq.start();
 }
 
+/* One question on a review: your answer beside the right one. `gotIt`
+   is the Virtual Room's "Entire test" tab, where the ones you got are
+   listed too - your answer in green, and no separate correct line. */
+function buildReviewQuestion(run, qi, n, gotIt){
+  const item = QUESTIONS[qi];
+  const li = document.createElement("li");
+  li.className = "rs-q";
+  const top = document.createElement("div");
+  top.className = "rs-q-top";
+  const num = document.createElement("span");
+  num.className = "rs-q-num"; num.textContent = String(n + 1);
+  const tag = document.createElement("span");
+  tag.className = "rs-q-tag" + (gotIt ? " is-right" : "");
+  tag.textContent = gotIt ? "Right" : (run.gameLost && qi === run.order[run.order.length - 1] && !run.timedOutSet[qi]) ? "Lost your last life"
+    : run.timedOutSet[qi] ? "Ran out of time"
+    : (run.mode === "exam" || run.vroom) ? "Missed"
+    : (run.attempts[qi] || 2) + " tries";
+  top.append(num, tag);
+  const q = document.createElement("div");
+  q.className = "rs-q-text rq";
+  writeText(q, item.q);
+  const ans = document.createElement("div");
+  ans.className = "rs-q-answers ra";
+  const pickSlot = (run.mode === "exam" || run.vroom) ? run.picked[qi] : run.firstPick[qi];
+  if(pickSlot !== undefined && pickSlot !== null){
+    const yours = document.createElement("p");
+    yours.className = "rs-q-yours";
+    const lab = document.createElement("span"); lab.textContent = "Your answer";
+    yours.append(lab, document.createTextNode(item.choices[optionOrder(qi)[pickSlot]]));
+    ans.appendChild(yours);
+  } else if(run.timedOutSet[qi]){
+    const yours = document.createElement("p");
+    yours.className = "rs-q-yours";
+    const lab = document.createElement("span"); lab.textContent = "Your answer";
+    yours.append(lab, document.createTextNode("No answer before the clock ran out"));
+    ans.appendChild(yours);
+  }
+  const right = document.createElement("p");
+  right.className = "rs-q-right";
+  const rl = document.createElement("span"); rl.textContent = "Correct answer";
+  right.append(rl, document.createTextNode(item.choices[item.answer]));
+  ans.appendChild(right);
+  li.append(top, q, ans);
+  if(item.ref){
+    const ref = document.createElement("p");
+    ref.className = "rs-q-ref"; ref.textContent = item.ref;
+    li.appendChild(ref);
+  }
+  if(gotIt){
+    li.classList.add("is-right");
+    const y = li.querySelector(".rs-q-yours");
+    if(y) y.classList.add("is-right");
+    const r = li.querySelector(".rs-q-right");
+    if(r) r.remove();
+  }
+  return li;
+}
+
 /* The second screen: only what was missed, and what to do about it.
    Your answer beside the right one for every mode - Drill included,
    where it is the FIRST thing you picked - and no percentage: "the top
@@ -45875,62 +46207,15 @@ function showRunReview(run, hooks){
   list.className = "rs-qlist";
   const sorted = run.missed.slice();
   if(run.mode === "drill") sorted.sort((a, b) => (run.attempts[b] || 0) - (run.attempts[a] || 0));
-  sorted.forEach((qi, n) => {
-    const item = QUESTIONS[qi];
-    const li = document.createElement("li");
-    li.className = "rs-q";
-    const top = document.createElement("div");
-    top.className = "rs-q-top";
-    const num = document.createElement("span");
-    num.className = "rs-q-num"; num.textContent = String(n + 1);
-    const tag = document.createElement("span");
-    tag.className = "rs-q-tag";
-    tag.textContent = (run.gameLost && qi === run.order[run.order.length - 1] && !run.timedOutSet[qi]) ? "Lost your last life"
-      : run.timedOutSet[qi] ? "Ran out of time"
-      : (run.mode === "exam" || run.vroom) ? "Missed"
-      : (run.attempts[qi] || 2) + " tries";
-    top.append(num, tag);
-    const q = document.createElement("div");
-    q.className = "rs-q-text rq";
-    writeText(q, item.q);
-    const ans = document.createElement("div");
-    ans.className = "rs-q-answers ra";
-    const pickSlot = (run.mode === "exam" || run.vroom) ? run.picked[qi] : run.firstPick[qi];
-    if(pickSlot !== undefined && pickSlot !== null){
-      const yours = document.createElement("p");
-      yours.className = "rs-q-yours";
-      const lab = document.createElement("span"); lab.textContent = "Your answer";
-      yours.append(lab, document.createTextNode(item.choices[optionOrder(qi)[pickSlot]]));
-      ans.appendChild(yours);
-    } else if(run.timedOutSet[qi]){
-      const yours = document.createElement("p");
-      yours.className = "rs-q-yours";
-      const lab = document.createElement("span"); lab.textContent = "Your answer";
-      yours.append(lab, document.createTextNode("No answer before the clock ran out"));
-      ans.appendChild(yours);
-    }
-    const right = document.createElement("p");
-    right.className = "rs-q-right";
-    const rl = document.createElement("span"); rl.textContent = "Correct answer";
-    right.append(rl, document.createTextNode(item.choices[item.answer]));
-    ans.appendChild(right);
-    li.append(top, q, ans);
-    if(item.ref){
-      const ref = document.createElement("p");
-      ref.className = "rs-q-ref"; ref.textContent = item.ref;
-      li.appendChild(ref);
-    }
-    list.appendChild(li);
-  });
+  sorted.forEach((qi, n) => list.appendChild(buildReviewQuestion(run, qi, n)));
   panel.appendChild(list);
 
-  const actions = hooks.finalActions();
+  const actions = hooks.finalActions({ where: "review", toResults: () => showRunRewards(run, hooks, { instant: true }) });
   panel.appendChild(actions);
   stage.replaceChildren(panel);
   toTop(true);
   const first = actions.querySelector("button");
   if(first) first.focus({ preventScroll: true });
-  hooks.tour();
 }
 
 /* Kept for anything still holding a reference to it: the results
@@ -46057,6 +46342,11 @@ function summarize(){
      results screen can show badge progress only where THIS run moved it
      - see the badge rows further down. */
   const perfectsBefore = Object.assign({}, store.unitPerfects || {});
+  /* The best-score marks, seeded from the history BEFORE this run is
+     written into it. Seeded lazily further down, the history already held
+     this run, so a first 100% after the feature arrived was compared with
+     itself and never counted as a new best. */
+  if(runLabel !== "Daily question") (cfg.units || []).forEach(u => unitBestPctOf(u));
   let badgesEarnedThisRun = [];
   let justBeatSpeed = null;
   let newFarthest = false;
@@ -46163,9 +46453,11 @@ function summarize(){
     }
     if(cfg.source === "all"){
       leveledUpTo = recordUnitPerfectIfEligible(pct);
-      if(runMode === "game" && isFullUnitRun()){
+      /* Won only: a lost multi-unit game can have covered one unit in
+         full before the last life went, and that is not beating it. */
+      if(runMode === "game" && !gameLostAt){
         justBeatSpeed = recordGameBeatIfEligible();
-        newFarthest = recordGameFarthest(cfg.units[0], cfg.gameSpeed, total);
+        if(isFullUnitRun()) newFarthest = recordGameFarthest(cfg.units[0], cfg.gameSpeed, total);
       }
     }
     /* After every recording call above, so the diff sees whatever any
@@ -46225,14 +46517,21 @@ function summarize(){
         }
       });
       const missedSetXp = new Set(missed);
-      runXp = computeRunXp({
+      const xpArgs = {
         good: good, answered: total, elapsedMs: elapsedMs,
         okList: order.map(qi => !missedSetXp.has(qi)),
         hundos: hundosEarned, wholeUnits: runWholeUnits,
         timePRs: timePRs, scorePRs: scorePRs,
         game: runMode === "game" ? { speed: cfg.gameSpeed, beaten: !gameLostAt, livesLeft: Math.max(0, livesLeft) } : null,
         badgesPaid: badgesEarnedThisRun.filter(u => retroBadges.indexOf(u) < 0)
-      });
+      };
+      runXp = computeRunXp(xpArgs);
+      /* A ROOM IS SCORED ON THE RACE, NOT ON YOUR HISTORY: no personal
+         bests and no badge - "personal best shouldn't be something that
+         counts as your multiplayer score, that would only be on your xp
+         box". Worked out again rather than subtracted, so the multi-unit
+         line is taken over the right base too. */
+      lastRunRoomXp = computeRunXp(Object.assign({}, xpArgs, { timePRs: [], scorePRs: [], badgesPaid: [] }));
       masteryBonusEarned = runXp.lines.filter(l => l.badge).reduce((s2, l) => s2 + l.value, 0);
       awardXp(runXp.total);
       saveStore();
@@ -46359,6 +46658,7 @@ function summarize(){
   lastRunXpEarned = xpTotal;
   lastRunPointsAfter = store.lifetime.points;
   lastRunXpLines = xpLines.filter(l => !l.badge);
+  if(!runXp || isMissedRetake) lastRunRoomXp = null;
   pendingXpFly = xpTotal;
 
   /* Only the units THIS run earned a hundo in - "the badge rows will
@@ -46379,7 +46679,8 @@ function summarize(){
      always re-runs the TEST, so from a retake it goes back to the whole
      test rather than the handful of questions just retaken. */
   const rerunMinutes = practiceTestMinutes;
-  const buildFinalActions = () => {
+  const buildFinalActions = (where) => {
+    where = where || { where: "results" };
     const actions = document.createElement("div");
     actions.className = "actions actions-results rs-final";
     const mk = (label, cls, fn, id) => {
@@ -46389,12 +46690,23 @@ function summarize(){
       btn.addEventListener("click", () => { endResultsReveal(); fn(); });
       return btn;
     };
-    const stillMissed = missed.length > 0 && runMode === "drill";
+    /* THE REVIEW: only what to do about the misses - retake them (Drill),
+       or go back to the results. No Re-run and no Main menu here. */
+    if(where.where === "review"){
+      const canRetake = missed.length > 0 && runMode === "drill";
+      if(canRetake){
+        actions.appendChild(mk("Retake missed questions (" + missed.length + ")", "next rs-wide", () => {
+          beginRun(shuffle(missed.slice()), "Missed questions", null, true);
+        }, "nextbtn"));
+      }
+      actions.appendChild(mk("Back to results", canRetake ? "next ghost rs-wide rs-back" : "next rs-wide rs-back",
+        where.toResults, canRetake ? null : "nextbtn"));
+      return actions;
+    }
+    /* THE RESULTS: Continue to review first when anything was missed. */
+    const stillMissed = missed.length > 0;
     if(stillMissed){
-      const retake = mk("Retake missed questions (" + missed.length + ")", "next rs-wide", () => {
-        beginRun(shuffle(missed.slice()), "Missed questions", null, true);
-      }, "nextbtn");
-      actions.appendChild(retake);
+      actions.appendChild(mk("Continue to review (" + missed.length + " missed)", "next rs-wide rs-continue", where.toReview, "nextbtn"));
     }
     const rerun = mk(isMissedRetake ? "Re-run the full test" : "Re-run", stillMissed ? "next ghost" : "next", () => {
       if(rerunMinutes != null){
@@ -46414,7 +46726,7 @@ function summarize(){
       saveStore();
       startSimpleTour([
         { target: ".actions", align: "left", vplacement: "above",
-          text: "Try again, retake just what you missed, or head back \u2014 your result is saved either way." }
+          text: "Go over what you missed, run the test again, or head back \u2014 your result is saved either way." }
       ]);
     }
   };
@@ -46430,13 +46742,14 @@ function summarize(){
     vroom: !!inVirtualRoom, source: cfg.source, gameSpeed: cfg.gameSpeed,
     units: (cfg.units || []).slice(), unitsSat,
     xpLines, xpTotal, pointsAfter: store.lifetime.points,
-    hundosEarned, leveledUpTo, justBeatSpeed, newBest,
+    hundosEarned, leveledUpTo, justBeatSpeed, justBeatUnits: justBeatSpeed ? lastGameBeatUnits.slice() : [], newBest,
     gameLost: gameLostAt, gameFull: gameFullLength, livesLeft: Math.max(0, livesLeft), newFarthest,
     progUnits, perfectsBefore,
     badges: badgesEarnedThisRun.slice(), retroBadges: retroBadges.slice(),
     colors: newlyUnlockedColors.slice(), characters: newCharacters,
     supernova: supernovaJustUnlocked
   };
+  lastRunResult = runResult;
   showRunRewards(runResult, { finalActions: buildFinalActions, tour: resultsTour });
   /* Virtual Room completion \u2014 fires after every normal side effect
      above (points, tier detection, the usual summary panel) has
@@ -51937,11 +52250,13 @@ function finishVirtualRoomTest(pct, elapsedMs){
      XP category by category. A tie goes to whoever was quicker.
      totalScore is still written, as that same XP, because older screens
      and the lobby browser rank by it. */
-  const xp = Math.max(0, lastRunXpEarned || 0);
-  const lines = (lastRunXpLines || []).map(l => ({ key: String(l.key || ""), label: String(l.label || ""), value: Number(l.value) || 0 }));
+  const room = lastRunRoomXp || { lines: [], total: 0 };
+  const xp = Math.max(0, room.total || 0);
+  const lines = (room.lines || []).map(l => ({ key: String(l.key || ""), label: String(l.label || ""), value: Number(l.value) || 0 }));
   const xpNoBadge = lines.reduce((s, l) => s + l.value, 0);
   fbDb.collection("vrooms").doc(vroomCode).update({
     ["participants." + myKey + ".finished"]: true,
+    ["participants." + myKey + ".revealDone"]: false,
     ["participants." + myKey + ".score"]: pct,
     ["participants." + myKey + ".elapsedMs"]: elapsedMs,
     ["participants." + myKey + ".xp"]: xpNoBadge || xp,
@@ -52009,7 +52324,12 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
   leave.addEventListener("click", () => { vroomStashedResults = stage.firstElementChild; confirmLeaveWhileWaiting(); });
   wait.append(wLine, wBar, leave);
 
-  const review = buildRunReviewBlock();
+  /* THE REVIEW IS RIGHT THERE, no button to open it - "the virtual room
+     doesn't need the review button, the missed questions need to be
+     displayed beneath there and you can just see them while you wait".
+     Two tabs so the people who finished first have something to read:
+     the ones you missed (the default) and the whole test. */
+  const review = lastRunResult ? buildRoomReviewTabs(lastRunResult) : buildRunReviewBlock();
   if(onResults){
     host.insertBefore(wait, host.firstChild);
     const slot = host.querySelector(".rs-endslot");
@@ -52025,16 +52345,42 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
     toTop();
   }
 
-  let allInAt = 0, rolled = false;
+  /* ---- WHEN THE LEADERBOARD ROLLS ----
+     "When everyone is done give a banner ... after about 5 seconds that
+     says preparing leaderboard ... then 5-10 seconds later start the
+     leaderboard cut scenes. ... if the last people to finish has banners
+     or cut scenes, the loading leaderboard thing is longer for everyone
+     else so it ensures those people got to still cycle through
+     everything." Each player says when their OWN results have finished
+     landing (revealDone, cutscenes and all), and the roll waits for the
+     last of them plus a few seconds to read. Every time is measured on
+     this device from when it SAW the change, so no two clocks are
+     compared. A player who never reports - gone quiet, an old build - is
+     waited for up to VROOM_REVEAL_WAIT_MS and no longer. */
+  let allInAt = 0, allRevealedAt = 0, rolled = false, iSaidDone = false, prep = null;
+  const clearPrep = () => { if(prep){ prep.remove(); prep = null; } };
   const tick = setInterval(() => {
-    if(!wait.isConnected && !(vroomStashedResults && vroomStashedResults.contains(wait))){ clearInterval(tick); return; }
+    if(!wait.isConnected && !(vroomStashedResults && vroomStashedResults.contains(wait))){
+      clearInterval(tick); clearPrep(); return;
+    }
     const mine = !onResults || host.classList.contains("rs-done");
-    if(allInAt && mine && !rolled && Date.now() - Math.max(allInAt, host.__doneAt || 0) >= 10000){
+    if(mine && !iSaidDone && vroomCode && vroomMyKey && fbDb){
+      iSaidDone = true;
+      fbDb.collection("vrooms").doc(vroomCode).update({ ["participants." + vroomMyKey + ".revealDone"]: true }).catch(() => {});
+    }
+    if(!allInAt) return;
+    const now = Date.now();
+    if(!prep && now - allInAt >= VROOM_PREP_AFTER_MS){
+      prep = showVroomPrepBanner();
+    }
+    const revealedAt = allRevealedAt || (now - allInAt >= VROOM_REVEAL_WAIT_MS ? now : 0);
+    if(!rolled && mine && revealedAt &&
+       now >= Math.max(allInAt + VROOM_ROLL_AFTER_MS, revealedAt + VROOM_READ_AFTER_REVEAL_MS)){
       rolled = true;
       clearInterval(tick);
+      clearPrep();
       startVroomRaceCutscene();
     }
-    if(mine && !host.__doneAt) host.__doneAt = Date.now();
   }, 250);
 
   detachVroomListener();
@@ -52054,8 +52400,87 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
       wait.classList.add("is-all-in");
       wText.textContent = "Everyone's done — results coming up";
       leave.hidden = true;
+      if(!allRevealedAt && entries.every(p => p.revealDone === true)) allRevealedAt = Date.now();
     }
   });
+}
+
+/* The timings above, named. */
+const VROOM_PREP_AFTER_MS = 5000;              /* everyone in -> "Preparing leaderboard" */
+const VROOM_ROLL_AFTER_MS = 12000;             /* everyone in -> the cutscene, at the soonest */
+const VROOM_READ_AFTER_REVEAL_MS = 8000;       /* the last reveal done -> the cutscene */
+const VROOM_REVEAL_WAIT_MS = 45000;            /* the longest anyone's reveal is waited for */
+
+/* A pill pinned to the bottom of the screen, so it is seen from wherever
+   you have scrolled to - "you'd be to see it from where you are on the
+   screen". */
+function showVroomPrepBanner(){
+  document.getElementById("vroom-prep")?.remove();
+  const el = document.createElement("div");
+  el.id = "vroom-prep";
+  el.className = "vroom-prep";
+  el.setAttribute("role", "status");
+  const spin = document.createElement("span"); spin.className = "vroom-prep-spin";
+  const t = document.createElement("span"); t.className = "vroom-prep-text"; t.textContent = "Preparing leaderboard";
+  const bar = document.createElement("span"); bar.className = "vroom-prep-bar";
+  el.append(spin, t, bar);
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add("is-in"));
+  return el;
+}
+
+/* The Virtual Room's review, in two tabs: the questions you missed (the
+   default) and the entire test, every question with how you did. */
+function buildRoomReviewTabs(run){
+  const wrap = document.createElement("div");
+  wrap.className = "rs-roomreview";
+  const k = document.createElement("p");
+  k.className = "rs-kicker rs-roomreview-kicker"; k.textContent = "Your answers";
+  const tabs = document.createElement("div");
+  tabs.className = "rs-tabs"; tabs.setAttribute("role", "tablist");
+  const missedSet = new Set(run.missed);
+  const panes = {};
+  const defs = [
+    { key: "missed", label: "Missed questions", count: run.missed.length, list: run.missed.slice() },
+    { key: "all", label: "Entire test", count: run.order.length, list: run.order.slice() }
+  ];
+  const btns = {};
+  defs.forEach(d => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "rs-tab"; b.setAttribute("role", "tab");
+    b.dataset.tab = d.key;
+    const l = document.createElement("span"); l.textContent = d.label;
+    const c = document.createElement("span"); c.className = "rs-tab-count"; c.textContent = d.count;
+    b.append(l, c);
+    btns[d.key] = b;
+    tabs.appendChild(b);
+    const pane = document.createElement("div");
+    pane.className = "rs-tabpane"; pane.dataset.tab = d.key;
+    if(!d.list.length){
+      const none = document.createElement("p");
+      none.className = "rs-tab-empty";
+      none.textContent = d.key === "missed" ? "Nothing missed \u2014 every answer right." : "No questions in this run.";
+      pane.appendChild(none);
+    } else {
+      const ol = document.createElement("ol");
+      ol.className = "rs-qlist";
+      d.list.forEach((qi, n) => ol.appendChild(buildReviewQuestion(run, qi, n, d.key === "all" && !missedSet.has(qi))));
+      pane.appendChild(ol);
+    }
+    panes[d.key] = pane;
+  });
+  const select = key => {
+    Object.keys(btns).forEach(k2 => {
+      const on = k2 === key;
+      btns[k2].classList.toggle("is-on", on);
+      btns[k2].setAttribute("aria-selected", on ? "true" : "false");
+      panes[k2].hidden = !on;
+    });
+  };
+  Object.keys(btns).forEach(k2 => btns[k2].addEventListener("click", () => select(k2)));
+  wrap.append(k, tabs, panes.missed, panes.all);
+  select("missed");
+  return wrap;
 }
 
 function vroomReturnToLobby(){
@@ -52066,6 +52491,7 @@ function vroomReturnToLobby(){
     ["participants." + vroomMyKey + ".elapsedMs"]: null,
     ["participants." + vroomMyKey + ".xp"]: null,
     ["participants." + vroomMyKey + ".xpLines"]: null,
+    ["participants." + vroomMyKey + ".revealDone"]: false,
     ["participants." + vroomMyKey + ".ready"]: false
   };
   if(vroomIsHost) resetFields.status = "waiting";
@@ -52090,10 +52516,11 @@ const VROOM_XP_STEPS = [
   { key: "hundo",   label: "Hundo bonus",     match: k => k === "hundo" },
   { key: "streak",  label: "Answer streaks",  match: k => /^streak/.test(k) },
   { key: "speed",   label: "Speed",           match: k => k === "speed" },
-  { key: "best",    label: "Personal bests",  match: k => k === "pbtime" || k === "pbscore" },
+  /* No personal bests: they are yours, not the race's (build 214). */
   { key: "multi",   label: "Multi-unit",      match: k => k === "multi" }
 ];
 function startVroomRaceCutscene(){
+  document.getElementById("vroom-prep")?.remove();
   detachVroomListener();
   const data = lastFinaleData || {};
   const ranked = vroomRankedEntries(data);
@@ -52187,7 +52614,10 @@ function playVroomRaceCutscene(ranked){
      where nobody aced a unit does not sit through an empty "Hundo". Any
      XP an older client reported without lines lands in one last step. */
   const steps = VROOM_XP_STEPS.filter(s => rows.some(x => catOf(x.r, s) > 0));
-  const counted = x => steps.reduce((t, s) => t + catOf(x.r, s), 0);
+  /* The "Everything else" step is what the others did not count, so it
+     is left out of the count - it has no match of its own, and asking it
+     for one threw the moment anybody had XP outside the named steps. */
+  const counted = x => steps.reduce((t, s) => s.rest ? t : t + catOf(x.r, s), 0);
   if(rows.some(x => x.r.xp - counted(x) > 0)) steps.push({ key: "rest", label: "Everything else", rest: true });
 
   const quiet = resultsMotionOff();
@@ -52387,6 +52817,7 @@ function showVirtualRoomResults(){
       ["participants." + vroomMyKey + ".finished"]: false,
       ["participants." + vroomMyKey + ".score"]: null,
       ["participants." + vroomMyKey + ".elapsedMs"]: null,
+      ["participants." + vroomMyKey + ".revealDone"]: false,
       ["participants." + vroomMyKey + ".ready"]: false
     };
     if(vroomIsHost) resetFields.status = "waiting";
@@ -53287,7 +53718,7 @@ function showCustomize(){
     { title: "Starters", note: "Yours from day one", ids: AVATAR_CHARACTERS.filter(c => !c.unlock && !c.feat).map(c => c.id) },
     { title: "Rank rewards", note: "Handed over as you climb the ranks",
       ids: AVATAR_CHARACTERS.filter(c => c.unlock).sort((a, b) => TIER_ORDER_FULL.indexOf(a.unlock) - TIER_ORDER_FULL.indexOf(b.unlock)).map(c => c.id) },
-    { title: "Earned by doing", note: "Each one is a thing you have to go and do", ids: AVATAR_CHARACTERS.filter(c => c.feat).map(c => c.id) }
+    { title: "Challenge rewards", note: "Each one is unlocked by a challenge", ids: AVATAR_CHARACTERS.filter(c => c.feat).map(c => c.id) }
   ];
   const charGrids = [];
   charGroups.forEach(g => {
