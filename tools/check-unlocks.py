@@ -553,25 +553,36 @@ def check_find(pg):
     check("three found", final["count"] == 3, order_seen[1:])
     check("Void is unlocked, and nothing else is", final["voidLocked"] is False)
     check("its lock message is empty once held", final["msg"] == "", final["msg"])
-    # THE CUTSCENE IS QUEUED ON `store`, not played here. There is no
-    # fixed route from a test to Home, so the flag has to survive the
-    # trip and a relaunch - the same reason the badge queue lives there.
-    check("the main-menu cutscene is queued", final["queued"] is True)
-    # HOME HANDS OVER TO THE CUTSCENE while it is queued - checking the
-    # orbit dots without clearing it measures the cutscene overlay and
-    # reports Home as broken, which is what the first version of this
-    # did. Both halves are worth asserting: that Home yields, and that
-    # once it has, the dots are lit.
-    played = pg.evaluate("""()=>{ showHome();
-      return { overlay: !!document.getElementById('void-cutscene'),
-               orbs: document.querySelectorAll('#void-cutscene .void-orb').length,
-               character: !!document.querySelector('#void-cutscene .void-core svg') }; }""")
-    check("Home plays the cutscene while it is queued", played["overlay"] is True, played)
-    check("it is built out of the three flares and the character",
-          played["orbs"] == 3 and played["character"] is True, played)
+    # BUILD 215: NOTHING IS QUEUED FOR HOME. "when unlocking the void
+    # character there isn't a cutscene for the character, it's just a
+    # bigger cooler cutscene for finding the flares and void is in the
+    # cutscene, and then the next unlock thing would be the void banner."
+    # The results screen plays it, straight after the flare lands.
+    check("nothing is queued for the main menu", final["queued"] is False, final)
+    home = pg.evaluate("""()=>{ showHome();
+      return { voidScene: !!document.getElementById('void-cutscene'),
+               home: (document.getElementById('stage').firstElementChild||{dataset:{}}).dataset.screen }; }""")
+    check("so Home is just Home", home["voidScene"] is False and home["home"] == "home", home)
+    scene = pg.evaluate("""()=>{ window.__ffDone = false;
+      const h = playFlareFoundScene(MYSTERY_ORDER[2], true, () => { window.__ffDone = true; });
+      const r = { scene: !!document.querySelector('.ff-scene'),
+                  flares: document.querySelectorAll('.ff-scene .ff-spot').length,
+                  voidDrawn: !!document.querySelector('.ff-scene .ff-void svg'),
+                  oldCutscene: !!document.getElementById('void-cutscene') };
+      if(h && h.stop) h.stop();
+      return r; }""")
+    check("the third flare plays its own bigger scene", scene["scene"] is True and scene["oldCutscene"] is False, scene)
+    check("built from the three flares, with Void in it",
+          scene["flares"] == 3 and scene["voidDrawn"] is True, scene)
+    items = pg.evaluate("""()=>rsUnlockItems({ badges: [], retroBadges: [], colors: [], characters: [],
+        justBeatSpeed: null, units: [], flare: MYSTERY_ORDER[2], flareAll: true, flareCount: 3 })
+        .map(i => i.kind + ':' + (i.character || i.flare || ''))""")
+    check("and the Void banner is the next unlock after the flare",
+          items[-2:] == ["flare:" + items[-2].split(":")[1], "character:voidwalker"] and items[-2].startswith("flare:"), items)
     # Home's orbit dots are the permanent mark, and they were left as
     # dead decoration when this feature was scrapped.
     lit = pg.evaluate("""()=>{
+      document.querySelectorAll('.ff-scene').forEach(e => e.remove());
       document.getElementById('void-cutscene')?.remove();
       store.pendingVoidCutscene = false;
       showHome();
@@ -681,6 +692,16 @@ def _locked_art_body(pg):
     import tempfile                                       # noqa: PLC0415
     pg.evaluate("()=>{ showCustomize(); }")
     pg.wait_for_timeout(900)
+    # WAIT FOR THE SCREEN TO FINISH ARRIVING, not for a fixed 900ms. The
+    # capture below reads pixels, and a busy machine could still be
+    # fading Customize in at 900ms - measured, the hood came out at 60
+    # instead of 77 against the same tile, failing half the runs of an
+    # unchanged build. Every running animation settled, then the shot.
+    pg.evaluate("""()=>Promise.race([
+      Promise.all(document.getAnimations().filter(a => a.effect && a.playState === 'running'
+        && isFinite(a.effect.getComputedTiming().endTime)).map(a => a.finished.catch(() => {}))),
+      new Promise(r => setTimeout(r, 4000)) ])""")
+    pg.wait_for_timeout(100)
     opts = pg.query_selector_all(".avatarchar-option")
     """The name is a SIBLING of the option, not inside it, so inner_text
     on the tile is the empty string - read the label off the tile itself.
@@ -727,6 +748,13 @@ def _locked_art_body(pg):
     detaches. Re-querying and letting Playwright do the clipping is the
     one version of this that measures the drawing."""
     art = pg.query_selector_all(".avatarchar-option")[idx].query_selector(".avatarchar-svg")
+    # SCROLLED THERE INSTANTLY FIRST. Playwright scrolls an element into
+    # view itself, and with the app's smooth scrolling on it captured while
+    # the page was still gliding: the shot came out shifted up by a third
+    # of the tile, label and all, so the bands below sampled the wrong
+    # rows - hood 60 instead of 77 on an unchanged build, half the runs.
+    art.evaluate("e => e.scrollIntoView({ block: 'center', behavior: 'instant' })")
+    pg.wait_for_timeout(150)
     art.screenshot(path=path)
     im = Image.open(path).convert("RGB")
     w, h = im.size

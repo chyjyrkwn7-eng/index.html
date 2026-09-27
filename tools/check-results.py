@@ -193,8 +193,12 @@ with sync_playwright() as pw:
     lines2 = [l["t"] for l in pg.evaluate("()=>__lands.slice()") if l["kind"] == "line"]
     ck("the XP lines drop in one at a time (correct answers, hundo, badge)",
        len(lines2) >= 3 and all(b - a > 150 for a, b in zip(lines2, lines2[1:])), lines2)
-    ck("the badge came through as a banner", st["seen"] > 0, st)
-    ck("never two banners at once", st["max"] == 1, st)
+    # BUILD 215: a badge's moment is its case, at the unlock - "move that
+    # cutscene to when it hits the unlock thing" - and no banner besides.
+    ck("the badge came through as its case, not a banner", st["caseSeen"] and st["seen"] == 0, st)
+    ck("never two banners at once", st["max"] <= 1, st)
+    ck("and no progress box for the badge it earned",
+       pg.evaluate("()=>document.querySelectorAll('#stage .rs-badges').length") == 0)
     ck("the buttons waited for the last banner", not st["during"], st)
     ck("a perfect run has nothing to review, so no Continue", done and not st["cont"] and len(st["btns"]) >= 1, st)
     ck("what it unlocked is left on the page", st["unlocked"] >= 1, st)
@@ -279,6 +283,37 @@ with sync_playwright() as pw:
     ck("a new best score is in YOUR XP", "pbscore" in rm2["mine"], rm2)
     ck("and not in the Virtual Room's score, nor a badge",
        "pbscore" not in rm2["room"] and "pbtime" not in rm2["room"] and "badge" not in rm2["room"], rm2)
+
+    print("6. build 215: the Constitution unit")
+    cu = pg.evaluate("""()=>{ const U = 'US and Texas Constitution and Rights';
+      const idx = QUESTIONS.map((q,i)=>i).filter(i=>QUESTIONS[i].topic===U);
+      const bySrc = n => idx.find(i=>QUESTIONS[i].src===n);
+      const q61 = bySrc(61), q11 = bySrc(11), q37 = bySrc(37);
+      const links = idx.filter(i=>/https?:/.test((QUESTIONS[i].ref||'') + QUESTIONS[i].q + QUESTIONS[i].choices.join(' '))).length;
+      const orders = [];
+      for(let k = 0; k < 8; k++){ layout = {}; runMode = 'exam'; cfg.shuffle = true;
+        orders.push(optionOrder(q11).join('') + '/' + optionOrder(q37).join('')); }
+      /* Drill: the note once answered. */
+      cfg.mode='drill'; cfg.units=[U]; cfg.source='all'; cfg.shuffle=true; runMode='drill';
+      beginRun([q61], null);
+      return { q61, links, orders }; }""")
+    ck("no links left in the unit", cu["links"] == 0, cu["links"])
+    ck("Q11 and Q37 keep their order, even shuffled in an Exam", set(cu["orders"]) == {"0123/0123"}, cu["orders"])
+    pg.wait_for_selector(".qpanel .choice", timeout=20000)
+    pre = pg.evaluate("()=>!!document.querySelector('.bank-note')")
+    pg.evaluate("()=>{const r=correctSlot(order[pos]); [...document.querySelectorAll('.qpanel .choice')].find(c=>+c.dataset.index===r).click();}")
+    pg.wait_for_timeout(400)
+    note = pg.evaluate("()=>(document.querySelector('.qpanel .bank-note')||{}).textContent || ''")
+    ck("Q61's red note is not there before answering", pre is False)
+    ck("and says the real answer once answered in Drill",
+       "excessive bail" in note and "study bank" in note, note[:120])
+    rv = pg.evaluate("""([q])=>{ const run = { mode:'exam', vroom:false, gameLost:0, order:[q], missed:[q], attempts:{}, firstPick:{},
+        picked: { [q]: 1 }, timedOutSet:{} };
+      layout = {}; runMode='exam'; cfg.shuffle=false;
+      const li = buildReviewQuestion(run, q, 0);
+      return (li.querySelector('.bank-note')||{}).textContent || ''; }""", [cu["q61"]])
+    ck("and in an Exam it is in the review at the end", "excessive bail" in rv, rv[:80])
+    pg.evaluate("()=>{ testInProgress=false; try{ showHome(); }catch(e){} }")
 
     ck("no page errors", not errors, errors[:3])
     br.close()

@@ -5534,6 +5534,42 @@ lobby / Main menu. Tug of War is untouched.
   having the guest tab withhold its report.
 - Customize: "Earned by doing" is now **"Challenge rewards"**.
 
+### Build 215
+
+- **A badge's moment is its case, at the unlock.** The earned badge has no
+  progress box (units still filling keep theirs) and no spotlight; its
+  unlock plays `playBadgeCaseScene` for every badge the run earned, then
+  the rows land. The case pops up from a speck (`bc-pop`, paced per
+  keyframe - one steep curve had it at 70% size inside 50ms, which read
+  as appearing).
+- **Lag free, measured.** Frame times under a rAF loop during the scene,
+  on the results screen: the case alone was clean, and every dropped frame
+  was the grade's CONFETTI still falling underneath it. So
+  `clearCelebrationsForScene()` runs when a cutscene or spotlight starts,
+  and once the dim is opaque `body.bc-covering` hides `#stage` behind it.
+  No filter is animated anywhere in the case - glows are gradients that
+  change opacity. Measured after: no frame over 34ms in three runs.
+- **The third flare is its own bigger scene** (`playFinalFlareScene`): the
+  last flare streaks in, all three whirl round the planet, fall in, the
+  planet implodes, flash and shockwaves, and Void comes up out of the dark
+  in a three-colour ring. It does not announce a character; the next
+  unlock item is Void's banner and row. `pendingVoidCutscene` is never set
+  now - nothing plays on Home.
+- **The Constitution unit** (from the updated 9-15-26 study document):
+  Q11 and Q37 carry `fixedOrder` (their choices refer to each other, so
+  `optionOrder` never shuffles them); Q61 carries `bankNoteAnswer: 1` -
+  the bank's key (0) is still what the test counts, and `buildBankNote()`
+  puts a red note wherever the answer is shown: Drill/Game/daily once
+  answered, every review (so an Exam shows it at the end), the Answer
+  Review list, and Tug of War (held 3.5s so it can be read). The links
+  in eleven `ref` fields are gone. **`ref` is not part of `KEYS`** (only
+  `q` and `choices` are), which is what made removing them safe for
+  everyone's history; a link inside `q` would need stripping at display.
+- Harness: check-unlocks' locked-art pixel check scrolls the tile into
+  view instantly before its element screenshot - with smooth scrolling on
+  it captured mid-glide, shifted by a third of a tile, and failed half
+  the runs of an unchanged build.
+
 Also: Pause wears the chat button's glass; Stats drops "Current answer
 streak" and calls the other "All-time best answer streak"; Customize groups
 characters as Starters / Rank rewards / Earned by doing.
