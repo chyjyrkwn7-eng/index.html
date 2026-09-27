@@ -632,9 +632,15 @@ def main():
                       players" card at the TOP of the results, not a section
                       in the middle of them. */
                    inline: !!(top && top.querySelector('.vroom-waitcard')),
-                   level: !!(top && top.querySelector('.results-level, .xp-block, .level-block, [class*=level]')) };}""")
+                   level: !!(top && top.querySelector('.results-level, .xp-block, .level-block, [class*=level]')),
+                   /* Build 213: the race line is down on the results
+                      screen too - the waiting card replaced it, and left
+                      up it sat under the chat button. */
+                   race: (() => { const r = document.getElementById('vroomracebar');
+                                  return !r || r.hidden; })() };}""")
         check("finishing keeps the normal results screen up", stays.get("screen") == "results", stays)
         check("with the Virtual Room part on it, not instead of it", stays.get("inline") is True, stays)
+        check("and the race line is down on it", stays.get("race") is True, stays)
         # Both are finished as far as the room document is concerned, so
         # the results screen can be asked for directly - what is under
         # test is the screen, not the route to it.

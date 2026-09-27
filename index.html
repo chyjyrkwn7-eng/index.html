@@ -51974,6 +51974,14 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
   lastVroomFinale = () => showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore);
   vroomAwaitingOthers = true;
   pauseBtn.hidden = true;
+  /* The race line comes down the moment YOUR results are up. The card
+     at the top of them ("Waiting on other players to finish", n of N
+     and a bar) is what says where everyone else is now, and the line
+     left up here sat under the chat button with its markers piled at
+     the finish. check-vroom asserts this on this path, not only on the
+     older standings screen. */
+  raceBarEl.hidden = true;
+  stopVroomRaceListener();
 
   let host = stage.firstElementChild;
   const onResults = !!(host && host.dataset && host.dataset.screen === "results");
