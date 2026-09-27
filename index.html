@@ -13683,6 +13683,20 @@
   .rs-q-yours span{ color:#E8687C; }
   .rs-q-right{ background:rgba(92,214,146,.09); border:1px solid rgba(92,214,146,.26); }
   .rs-q-right span{ color:#5CD692; }
+  /* The study bank's key is wrong: a red note, wherever the answer shows. */
+  .bank-note{
+    display:flex; align-items:flex-start; gap:.65rem; margin:.9rem 0 0; padding:.8rem .95rem;
+    border-radius:14px; background:rgba(200,50,70,.14); border:1px solid rgba(240,110,130,.45);
+    box-shadow:0 0 18px -6px rgba(232,80,100,.55);
+    animation:bank-note-in .35s cubic-bezier(.2,1.2,.4,1) both;
+  }
+  @keyframes bank-note-in{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:none; } }
+  .bank-note-icon{
+    flex-shrink:0; width:1.35rem; height:1.35rem; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    background:#E8687C; color:#1a0a0e; font-size:.85rem; font-weight:900; line-height:1; margin-top:.05rem;
+  }
+  .bank-note-text{ margin:0; font-size:.88rem; line-height:1.42; color:#FFD3DA; }
+  .bank-note-text strong{ color:#fff; font-weight:800; }
   /* The Virtual Room's "Entire test" tab lists the ones you got too. */
   .rs-q-tag.is-right{ color:#5CD692; }
   .rs-q-yours.is-right{ background:rgba(92,214,146,.09); border-color:rgba(92,214,146,.26); }
@@ -13954,22 +13968,35 @@
     position:fixed; inset:0; z-index:420; overflow:hidden; cursor:pointer;
     display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1.4rem;
     padding:calc(env(safe-area-inset-top, 0px) + 1rem) 1rem calc(env(safe-area-inset-bottom, 0px) + 1rem);
-    background:rgba(5,7,11,0); transition:background .45s ease, opacity .45s ease;
+    background:rgba(5,7,11,0); transition:background .26s ease, opacity .45s ease;
   }
-  .bc-scene.bc-in{ background:rgba(5,7,11,.9); }
+  .bc-scene.bc-in{ background:rgba(5,7,11,.92); }
   .bc-scene.bc-out{ opacity:0; }
+  body.bc-covering #stage{ visibility:hidden; }
   .bc-glow{
     position:absolute; left:50%; top:46%; width:150vmax; height:150vmax; transform:translate(-50%,-50%);
     background:radial-gradient(circle, color-mix(in srgb, var(--badge-col) 26%, transparent) 0%, transparent 38%);
     opacity:0; transition:opacity 1s ease .9s; pointer-events:none;
   }
   .bc-in .bc-glow{ opacity:1; }
+  /* The case starts as a speck and pops up to size with an overshoot -
+     "make it so the brief case kind of gets really small and then pops
+     up because right now the brief case just appears out of no where". */
   .bc-case{
     position:relative; width:min(92vw, 27rem); perspective:1100px;
-    transform:translateY(40px) scale(.92); opacity:0;
-    transition:transform .6s cubic-bezier(.2,1.2,.3,1) .1s, opacity .4s ease .1s;
+    transform:scale(.04) rotate(-10deg); opacity:0;
   }
-  .bc-in .bc-case{ transform:none; opacity:1; }
+  /* Paced per keyframe, so the speck is SEEN growing: a steep curve over
+     the whole thing had it at 70% size inside 50ms, which reads as the
+     case appearing rather than popping up. */
+  .bc-in .bc-case{ animation:bc-pop 1.05s linear .05s both; }
+  @keyframes bc-pop{
+    0%{ opacity:0; transform:scale(.04) rotate(-12deg); animation-timing-function:ease-in; }
+    10%{ opacity:1; transform:scale(.07) rotate(-11deg); animation-timing-function:cubic-bezier(.3,0,.2,1); }
+    58%{ transform:scale(1.08) rotate(2deg); animation-timing-function:ease-in-out; }
+    78%{ transform:scale(.97) rotate(-.5deg); animation-timing-function:ease-in-out; }
+    100%{ opacity:1; transform:none; }
+  }
   .bc-handle{
     width:32%; height:1.1rem; margin:0 auto -.1rem; border-radius:.7rem .7rem 0 0;
     border:.3rem solid #454C57; border-bottom:0; box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
@@ -13986,18 +14013,27 @@
     background:radial-gradient(120% 90% at 50% 0%, #22324A, #111925 70%);
     box-shadow:inset 0 3px 12px rgba(0,0,0,.7), inset 0 0 0 1px rgba(255,255,255,.05);
   }
+  /* NOTHING HERE ANIMATES A FILTER. A drop-shadow on sixteen slots, a
+     filter-based "seat" and a drop-shadow on the flying badge were the
+     lag: a filter on something that moves is repainted every frame. The
+     glows are now plain gradients behind the badge that only change
+     opacity, and every movement is a transform - both run on the GPU. */
+  .bc-lining{ contain:layout paint; }
   .bc-slot{ aspect-ratio:1; display:flex; align-items:center; justify-content:center; opacity:.55; position:relative; overflow:hidden; border-radius:12px; }
-  .bc-slot svg{ width:92%; height:92%; display:block; }
-  .bc-slot.is-held{ opacity:1; filter:drop-shadow(0 0 6px rgba(255,255,255,.12)); }
-  .bc-slot.is-new{ animation:bc-seat .7s ease-out both; }
-  @keyframes bc-seat{
-    0%{ filter:drop-shadow(0 0 0 var(--badge-col)) brightness(1.8); transform:scale(1.15); }
-    100%{ filter:drop-shadow(0 0 10px color-mix(in srgb, var(--badge-col) 70%, transparent)); transform:none; }
+  .bc-slot svg{ position:relative; z-index:1; width:92%; height:92%; display:block; }
+  .bc-slot.is-held{ opacity:1; }
+  .bc-slot::before{
+    content:""; position:absolute; inset:0; border-radius:50%; pointer-events:none; opacity:0;
+    background:radial-gradient(circle, color-mix(in srgb, var(--badge-col) 55%, transparent) 0%, transparent 62%);
   }
+  .bc-slot.is-new::before{ animation:bc-seat-glow 1.1s ease-out both; }
+  .bc-slot.is-new svg{ animation:bc-seat .6s cubic-bezier(.2,1.5,.4,1) both; }
+  @keyframes bc-seat{ 0%{ transform:scale(1.35); } 100%{ transform:none; } }
+  @keyframes bc-seat-glow{ 0%{ opacity:1; transform:scale(1.5); } 100%{ opacity:.55; transform:none; } }
   .bc-slot.is-held::after{
-    content:""; position:absolute; inset:-20%; pointer-events:none;
+    content:""; position:absolute; inset:-20%; pointer-events:none; z-index:2;
     background:linear-gradient(115deg, transparent 38%, rgba(255,255,255,.55) 50%, transparent 62%);
-    transform:translateX(-130%);
+    transform:translateX(-130%); will-change:transform;
   }
   .bc-glisten .bc-slot.is-held::after{ animation:bc-glint 1.1s cubic-bezier(.3,0,.2,1) both; }
   .bc-glisten .bc-slot.is-held:nth-child(4n+2)::after{ animation-delay:.08s; }
@@ -14006,7 +14042,7 @@
   @keyframes bc-glint{ to{ transform:translateX(130%); } }
   .bc-lid{
     position:absolute; left:0; right:0; bottom:0; height:calc(100% - 1rem); z-index:2;
-    border-radius:16px; transform-origin:50% 0; backface-visibility:hidden;
+    border-radius:16px; transform-origin:50% 0; backface-visibility:hidden; will-change:transform, opacity;
     background:linear-gradient(180deg, #353C47 0%, #22272F 100%);
     border:1px solid rgba(255,255,255,.12);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.14), inset 0 0 0 3px #454C57, 0 20px 40px rgba(0,0,0,.5);
@@ -14029,9 +14065,13 @@
   .bc-flyer{
     position:absolute; left:50%; top:26%; width:min(38vw, 10rem); aspect-ratio:1; z-index:3;
     transform:translate(-50%,-50%) scale(0) rotate(-200deg); opacity:0; pointer-events:none;
-    filter:drop-shadow(0 0 24px color-mix(in srgb, var(--badge-col) 80%, transparent));
+    will-change:transform, opacity;
   }
-  .bc-flyer svg{ width:100%; height:100%; display:block; }
+  .bc-flyer::before{
+    content:""; position:absolute; inset:-35%; border-radius:50%; pointer-events:none;
+    background:radial-gradient(circle, color-mix(in srgb, var(--badge-col) 60%, transparent) 0%, transparent 60%);
+  }
+  .bc-flyer svg{ position:relative; width:100%; height:100%; display:block; }
   .bc-flyer.bc-show{ animation:bc-arrive .9s cubic-bezier(.2,1.3,.3,1) both; }
   @keyframes bc-arrive{
     0%{ opacity:0; transform:translate(-50%,-50%) scale(0) rotate(-200deg); }
@@ -14095,6 +14135,103 @@
   .fl-kicker{ margin-top:1.2rem; font-size:.72rem; font-weight:800; letter-spacing:.2em; color:var(--flare-color); }
   .fl-name{ margin-top:.3rem; font-family:var(--serif); font-size:1.9rem; font-weight:700; color:#fff; }
   .fl-sub{ margin-top:.3rem; font-size:.9rem; color:rgba(255,255,255,.7); }
+
+  /* ---- THE THIRD FLARE ---- */
+  .ff-scene{
+    position:fixed; inset:0; z-index:420; overflow:hidden; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1.4rem;
+    background:rgba(3,4,9,0); transition:background .26s ease, opacity .5s ease;
+  }
+  .ff-scene.ff-in{ background:rgba(3,4,9,.96); }
+  .ff-scene.ff-out{ opacity:0; }
+  .ff-stars{ position:absolute; inset:0; pointer-events:none; opacity:0; transition:opacity 1s ease .2s, transform 3.5s cubic-bezier(.3,0,.2,1); }
+  .ff-in .ff-stars{ opacity:1; }
+  .ff-emerge .ff-stars{ transform:scale(1.25); }
+  .ff-stars span{
+    position:absolute; width:2px; height:2px; border-radius:50%; background:#fff; opacity:.8;
+    transform:scale(var(--z)); animation:vrc-twinkle 3.2s ease-in-out infinite;
+  }
+  .ff-field{ position:relative; width:320px; height:320px; opacity:0; transform:scale(.6); transition:opacity .5s ease, transform .9s cubic-bezier(.2,1.3,.3,1); }
+  .ff-in .ff-field{ opacity:1; transform:none; }
+  .ff-planet{ position:absolute; left:50%; top:50%; width:150px; height:150px; margin:-75px 0 0 -75px;
+    transition:transform .55s cubic-bezier(.6,0,.9,.4), opacity .4s ease .35s; }
+  .ff-dark{ position:absolute; inset:0; border-radius:50%; background:radial-gradient(circle, #000 55%, #05030a 100%); opacity:0; transition:opacity .45s ease; }
+  .ff-converge .ff-planet{ transform:scale(1.12); }
+  .ff-collapse .ff-planet{ transform:scale(.12); opacity:0; }
+  .ff-collapse .ff-dark{ opacity:1; }
+  .ff-orbit{ position:absolute; inset:0; }
+  .ff-whirl .ff-orbit{ animation:ff-whirl 1.6s cubic-bezier(.5,0,.6,1) both; }
+  @keyframes ff-whirl{ from{ transform:rotate(0); } to{ transform:rotate(540deg); } }
+  .ff-spot{
+    position:absolute; left:50%; top:50%; width:46px; height:46px; margin:-23px 0 0 -23px;
+    transform:translate(var(--ox), var(--oy)); opacity:.2;
+    transition:opacity .5s ease, transform .75s cubic-bezier(.6,0,.4,1);
+  }
+  .ff-spot svg{ position:relative; width:100%; height:100%; display:block; }
+  .ff-spot-glow{
+    position:absolute; inset:-60%; border-radius:50%; opacity:0; transition:opacity .5s ease;
+    background:radial-gradient(circle, color-mix(in srgb, var(--flare-color) 70%, transparent) 0%, transparent 60%);
+  }
+  .ff-spot.is-lit{ opacity:1; }
+  .ff-spot.is-lit .ff-spot-glow{ opacity:.8; }
+  .ff-spot.is-new{ animation:ff-spot-flare 1s ease-out both; }
+  @keyframes ff-spot-flare{ 0%{ transform:translate(var(--ox), var(--oy)) scale(2.4); } 100%{ transform:translate(var(--ox), var(--oy)) scale(1); } }
+  .ff-whirl .ff-spot .ff-spot-glow{ opacity:1; }
+  .ff-converge .ff-spot{ transform:translate(0, 0) scale(.3); opacity:0; transition:transform .7s cubic-bezier(.6,0,.9,.5), opacity .3s ease .45s; }
+  .ff-comet{
+    position:absolute; left:50%; top:50%; width:46px; height:46px; margin:-23px 0 0 -23px;
+    transform:translate(0, 300px) scale(1.7); opacity:0;
+    transition:transform 1s cubic-bezier(.4,0,.2,1), opacity .3s ease;
+  }
+  .ff-comet svg{ width:100%; height:100%; display:block; }
+  .ff-comet::before{
+    content:""; position:absolute; left:50%; top:50%; width:22px; height:120px; margin-left:-11px; border-radius:11px;
+    background:linear-gradient(180deg, color-mix(in srgb, var(--flare-color) 80%, transparent), transparent);
+  }
+  .ff-in .ff-comet{ opacity:1; }
+  .ff-comet.ff-comet-go{ transform:translate(var(--ox), var(--oy)) scale(1); }
+  .ff-comet.ff-comet-done{ opacity:0; transition:opacity .2s ease; }
+  .ff-flash{
+    position:absolute; left:50%; top:50%; width:240px; height:240px; margin:-120px 0 0 -120px; border-radius:50%; opacity:0;
+    background:radial-gradient(circle, #fff 0 10%, color-mix(in srgb, var(--fc0) 60%, #fff) 26%, color-mix(in srgb, var(--fc1) 50%, transparent) 44%, transparent 68%);
+  }
+  .ff-burst .ff-flash{ animation:ff-flash .9s ease-out both; }
+  @keyframes ff-flash{ 0%{ opacity:0; transform:scale(.2); } 20%{ opacity:1; transform:scale(1.2); } 100%{ opacity:0; transform:scale(2.4); } }
+  .ff-shock{
+    position:absolute; left:50%; top:50%; width:120px; height:120px; margin:-60px 0 0 -60px; border-radius:50%; opacity:0;
+    border:3px solid color-mix(in srgb, var(--fc2) 70%, #fff); box-shadow:0 0 24px color-mix(in srgb, var(--fc2) 60%, transparent);
+  }
+  .ff-burst .ff-shock{ animation:ff-shock 1.1s cubic-bezier(.1,.7,.3,1) both; }
+  .ff-burst .ff-shock.is-late{ animation-delay:.22s; border-color:color-mix(in srgb, var(--fc0) 70%, #fff); }
+  @keyframes ff-shock{ 0%{ opacity:1; transform:scale(.2); } 100%{ opacity:0; transform:scale(4.2); } }
+  .ff-void{
+    position:absolute; left:50%; top:50%; width:190px; height:190px; margin:-95px 0 0 -95px;
+    opacity:0; transform:scale(.25);
+    transition:opacity .8s ease, transform 1.3s cubic-bezier(.2,1.35,.3,1);
+  }
+  .ff-emerge .ff-void{ opacity:1; transform:none; }
+  .ff-rim{
+    position:absolute; inset:-14%; border-radius:50%;
+    background:conic-gradient(from 0deg, var(--fc0), var(--fc1), var(--fc2), var(--fc0));
+    -webkit-mask:radial-gradient(circle, transparent 54%, #000 56%, #000 62%, transparent 70%);
+    mask:radial-gradient(circle, transparent 54%, #000 56%, #000 62%, transparent 70%);
+    opacity:.9;
+  }
+  .ff-emerge .ff-rim{ animation:ff-rim 6s linear infinite; }
+  @keyframes ff-rim{ to{ transform:rotate(360deg); } }
+  .ff-void::after{
+    content:""; position:absolute; inset:-30%; border-radius:50%; z-index:-1;
+    background:radial-gradient(circle, color-mix(in srgb, var(--fc1) 30%, transparent) 0%, transparent 62%);
+  }
+  .ff-fig{ position:absolute; inset:8%; }
+  .ff-fig svg{ width:100%; height:100%; display:block; }
+  .ff-words{ min-height:6rem; text-align:center; opacity:0; transform:translateY(10px); transition:opacity .35s ease, transform .35s ease; padding:0 1.2rem; }
+  .ff-words.is-in{ opacity:1; transform:none; }
+  .ff-kicker{ margin:0; font-size:.74rem; font-weight:800; letter-spacing:.22em; color:var(--flare-color); }
+  .ff-emerge .ff-kicker{ background:linear-gradient(90deg, var(--fc0), var(--fc1), var(--fc2)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .ff-name{ margin:.35rem 0 0; font-family:var(--serif); font-size:1.9rem; font-weight:700; color:#fff; line-height:1.15; }
+  .ff-sub{ margin:.35rem 0 0; font-size:.9rem; color:rgba(255,255,255,.7); }
+  @media (min-width:40rem){ .ff-field{ transform:scale(.6); } .ff-in .ff-field{ transform:scale(1.25); } .ff-name{ font-size:2.3rem; } }
 
   /* ---- THE FLARE ITSELF, BIGGER AND LOUDER ----
      "Make them a little bigger, can't risk someone missing it." Still in
@@ -16672,13 +16809,16 @@ const QUESTIONS = [
       "Both A and B",
       "Neither A nor B",
     ],
+    /* "All of the above"-style choices: shown in the study bank's order in
+       every mode, never shuffled (build 215). */
+    fixedOrder: true,
     answer: 2
   },
   {
     topic: "US and Texas Constitution and Rights",
     src: 12,
     q: "The ultimate evaluation of a law for constitutionality is done by ________.",
-    ref: "(Googled [https://www.law.cornell.edu/wex/rational_basis_test](https://www.law.cornell.edu/wex/rational_basis_test)) (Section 7.5, US & TX Constitution)",
+    ref: "(Googled) (Section 7.5, US & TX Constitution)",
     choices: [
       "The executive branch of government",
       "The judicial branch of government",
@@ -16691,7 +16831,7 @@ const QUESTIONS = [
     topic: "US and Texas Constitution and Rights",
     src: 13,
     q: "The “3 Cs” or components of the criminal justice system are:",
-    ref: "(Googled answer [https://openoregon.pressbooks.pub/ccj230/chapter/1-7-the-three-cs-cops-courts-and-corrections/](https://openoregon.pressbooks.pub/ccj230/chapter/1-7-the-three-cs-cops-courts-and-corrections/) and Quizlet kaylahill01) (US & TX Constitution, 7.2)",
+    ref: "(Googled answer and Quizlet kaylahill01) (US & TX Constitution, 7.2)",
     choices: [
       "Cops, Courts, Corrections",
       "Criminals, Cops, Corrections",
@@ -16756,7 +16896,7 @@ const QUESTIONS = [
     topic: "US and Texas Constitution and Rights",
     src: 18,
     q: "Number of Articles in the US Constitution?",
-    ref: "(Googled answer, [https://www.google.com/search?q=Number+of+Articles+in+the+US+Constitution%3F&rlz=1C1GCEB_enUS871US871&oq=Number+of+Articles+in+the+US+Constitution%3F+&aqs=chrome..69i57j33i160l2j33i22i29i30l3.705j0j15&sourceid=chrome&ie=UTF-8](https://www.google.com/search?q=Number+of+Articles+in+the+US+Constitution%3F&rlz=1C1GCEB_enUS871US871&oq=Number+of+Articles+in+the+US+Constitution%3F+&aqs=chrome..69i57j33i160l2j33i22i29i30l3.705j0j15&sourceid=chrome&ie=UTF-8) )",
+    ref: "(Googled answer)",
     choices: [
       "Seven",
       "Fourteen",
@@ -16769,7 +16909,7 @@ const QUESTIONS = [
     topic: "US and Texas Constitution and Rights",
     src: 19,
     q: "What is the number of Articles in the US Constitution?",
-    ref: "(Googled answer: [https://www.google.com/search?q=What+are+the+number+of+Articles+in+the+US+Constitution%3F&rlz=1C1GCEB_enUS871US871&oq=What+are+the+number+of+Articles+in+the+US+Constitution%3F&aqs=chrome..69i57j33i160l3j33i22i29i30l2.1512j0j15&sourceid=chrome&ie=UTF-8](https://www.google.com/search?q=What+are+the+number+of+Articles+in+the+US+Constitution%3F&rlz=1C1GCEB_enUS871US871&oq=What+are+the+number+of+Articles+in+the+US+Constitution%3F&aqs=chrome..69i57j33i160l3j33i22i29i30l2.1512j0j15&sourceid=chrome&ie=UTF-8))",
+    ref: "(Googled answer)",
     choices: [
       "5",
       "12",
@@ -16821,7 +16961,7 @@ const QUESTIONS = [
     topic: "US and Texas Constitution and Rights",
     src: 23,
     q: "The writ that is filed that seeks release from unlawful detention is called",
-    ref: "(US & TX Constitution, 7.1 or CCP Art. 11.17 Googled answer: [https://statutes.capitol.texas.gov/DocViewer.aspx?DocKey=CR%2fCR.11&Phrases=habeas%7ccorpus&HighlightType=1&ExactPhrase=False&QueryText=habeas+corpus](https://statutes.capitol.texas.gov/DocViewer.aspx?DocKey=CR%2fCR.11&Phrases=habeas%7ccorpus&HighlightType=1&ExactPhrase=False&QueryText=habeas+corpus) )",
+    ref: "(US & TX Constitution, 7.1 or CCP Art. 11.17 Googled answer)",
     choices: [
       "writ of",
       "writ of habeas corpus",
@@ -17009,6 +17149,9 @@ const QUESTIONS = [
       "Equal Protection",
       "A & C are correct",
     ],
+    /* "All of the above"-style choices: shown in the study bank's order in
+       every mode, never shuffled (build 215). */
+    fixedOrder: true,
     answer: 3
   },
   {
@@ -17119,7 +17262,7 @@ const QUESTIONS = [
     topic: "US and Texas Constitution and Rights",
     src: 46,
     q: "On September 25, 1789, Congress proposed the first _____ Amendments to the new United States Constitution as the Bill of Rights.",
-    ref: "(Googled Answer, [https://teachingamericanhistory.org/blog/september-25-1789-congress-proposes-a-bill-of-rights/](https://teachingamericanhistory.org/blog/september-25-1789-congress-proposes-a-bill-of-rights/)).",
+    ref: "(Googled Answer).",
     choices: [
       "Six",
       "Eight",
@@ -17184,7 +17327,7 @@ const QUESTIONS = [
     topic: "US and Texas Constitution and Rights",
     src: 51,
     q: "The amendment to the U.S. Constitution that provides that all the rights and liberties of the Bill of Rights will be accorded to citizens of the states and that states must abide by *the first ten amendments* is the __________________________.",
-    ref: "(US & TX Constitution, Section 7.1, Google) [https://www.google.com/search?q=amendment+that+states+should+abide+by+the+first+10+amendments+is&rlz=1C1GCEB_enUS871US871&oq=amendment+that+states+should+abide+by+the+first+10+amendments+is&aqs=chrome..69i57.36818j0j15&sourceid=chrome&ie=UTF-8](https://www.google.com/search?q=amendment+that+states+should+abide+by+the+first+10+amendments+is&rlz=1C1GCEB_enUS871US871&oq=amendment+that+states+should+abide+by+the+first+10+amendments+is&aqs=chrome..69i57.36818j0j15&sourceid=chrome&ie=UTF-8) )",
+    ref: "(US & TX Constitution, Section 7.1, Google))",
     choices: [
       "7th Amendment",
       "9th Amendment",
@@ -17249,7 +17392,7 @@ const QUESTIONS = [
     topic: "US and Texas Constitution and Rights",
     src: 56,
     q: "Exceptions to the Protections under the Bill of Rights are usually established by",
-    ref: "(Googled answer [https://www.aclu.org/other/bill-rights-brief-history](https://www.aclu.org/other/bill-rights-brief-history) under Cases or Controversies) (TX & US Constitution, Section 7.5)",
+    ref: "(Googled answer under Cases or Controversies) (TX & US Constitution, Section 7.5)",
     choices: [
       "Supreme Court decision",
       "Legislative decisions",
@@ -17262,7 +17405,7 @@ const QUESTIONS = [
     topic: "US and Texas Constitution and Rights",
     src: 57,
     q: "What does a writ of habeas corpus do?",
-    ref: "(Googled answer: [https://www.google.com/search?q=What+does+a+writ+of+habeas+corpus+do%3F&rlz=1C1GCEB_enUS871US871&oq=What+does+a+writ+of+habeas+corpus+do%3F+&aqs=chrome..69i57j0i512j0i22i30l5j0i15i22i30j0i22i30l2.1385j0j15&sourceid=chrome&ie=UTF-8](https://www.google.com/search?q=What+does+a+writ+of+habeas+corpus+do%3F&rlz=1C1GCEB_enUS871US871&oq=What+does+a+writ+of+habeas+corpus+do%3F+&aqs=chrome..69i57j0i512j0i22i30l5j0i15i22i30j0i22i30l2.1385j0j15&sourceid=chrome&ie=UTF-8)) (inserted)",
+    ref: "(Googled answer) (inserted)",
     choices: [
       "commands the taking into custody of a named person",
       "orders the sheriff to release a person from confinement",
@@ -17319,6 +17462,11 @@ const QUESTIONS = [
       "the right to indictment by a grand jury before trial",
       "the right to be free from self-incrimination",
     ],
+    /* THE STUDY BANK'S KEY IS WRONG HERE. The 8th Amendment is about
+       excessive bail - choice 1 - but the test counts choice 0, as the
+       bank does. The answer stays the bank's; bankNoteAnswer names the
+       real one, and a red note says so wherever the answer is shown. */
+    bankNoteAnswer: 1,
     answer: 0
   },
   {
@@ -17416,7 +17564,7 @@ const QUESTIONS = [
     topic: "US and Texas Constitution and Rights",
     src: 69,
     q: "The First Continental Congress was formed in",
-    ref: "(Googled answer [https://www.mountvernon.org/library/digitalhistory/digital-encyclopedia/article/first-continental-congress/](https://www.mountvernon.org/library/digitalhistory/digital-encyclopedia/article/first-continental-congress/))",
+    ref: "(Googled answer)",
     choices: [
       "1774",
       "1784",
@@ -17598,7 +17746,7 @@ const QUESTIONS = [
     topic: "US and Texas Constitution and Rights",
     src: 83,
     q: "______________ amendment deals with reasonable force.",
-    ref: "(US & TX Constitution, Section 7.1) ([https://www.google.com/search?q=______________+amendment+deals+with+reasonable+force.&rlz=1C1GCEA_enUS1060US1060&oq=______________+amendment+deals+with+reasonable+force.&aqs=chrome..69i57j33i671j33i271l3.998462093j1j15&sourceid=chrome&ie=UTF-8](https://www.google.com/search?q=______________+amendment+deals+with+reasonable+force.&rlz=1C1GCEA_enUS1060US1060&oq=______________+amendment+deals+with+reasonable+force.&aqs=chrome..69i57j33i671j33i271l3.998462093j1j15&sourceid=chrome&ie=UTF-8)",
+    ref: "(US & TX Constitution, Section 7.1)",
     choices: [
       "First",
       "Fourth",
@@ -35249,7 +35397,10 @@ function foundMysteryFlare(btn){
        Queued on `store` for the same reason the badge queue is: there
        is no fixed route from a test to Home, and the flag has to
        survive the trip and a relaunch. */
-    store.pendingVoidCutscene = true;
+    /* Build 215: the results screen plays the final flare scene, with
+       Void in it, and the Void banner after it - nothing is queued for
+       Home any more. The flag stays false. */
+    store.pendingVoidCutscene = false;
     saveStore();
   }
 }
@@ -35353,7 +35504,9 @@ function shuffleSeeded(arr, seed){
 function optionOrder(qi){
   if(!layout[qi]){
     const ids = QUESTIONS[qi].choices.map((c, k) => k);
-    layout[qi] = (runMode === "game" || runMode === "exam" || cfg.shuffle) ? shuffle(ids) : ids;
+    /* fixedOrder: choices that point at each other ("Both A and B", "A & C
+       are correct") keep the study bank's order in every mode. */
+    layout[qi] = (!QUESTIONS[qi].fixedOrder && (runMode === "game" || runMode === "exam" || cfg.shuffle)) ? shuffle(ids) : ids;
   }
   return layout[qi];
 }
@@ -43149,6 +43302,33 @@ function drawMeter(){
   meterNowIndex = pos;
 }
 
+/* ---- WHERE THE STUDY BANK'S KEY IS WRONG ----
+   A question can carry bankNoteAnswer: the choice that is actually right
+   when the bank's own key (item.answer) is not. The test still counts the
+   bank's answer - that is what the real test will expect - but everywhere
+   the answer is shown, a red note says what the real answer is: "put a
+   pop up that's in red or something at the bottom that says the correct
+   answer is actually this but the study bank has [choice] as the right
+   answer". In Drill, Game and the daily question that is once the answer
+   is shown; in an Exam, Practice test or Virtual Room it is in the review
+   at the end, where a wrong answer is seen. */
+function buildBankNote(item){
+  if(!item || typeof item.bankNoteAnswer !== "number" || !item.choices || !item.choices[item.bankNoteAnswer]) return null;
+  const note = document.createElement("div");
+  note.className = "bank-note";
+  note.setAttribute("role", "note");
+  const icon = document.createElement("span");
+  icon.className = "bank-note-icon"; icon.textContent = "!";
+  const body = document.createElement("p");
+  body.className = "bank-note-text";
+  const a = document.createElement("strong");
+  a.textContent = "The correct answer is actually \u201c" + item.choices[item.bankNoteAnswer] + ".\u201d";
+  body.append(a, document.createTextNode(" The study bank has \u201c" + item.choices[item.answer] +
+    "\u201d as the right answer, so that is the one this test counts."));
+  note.append(icon, body);
+  return note;
+}
+
 function render(){
   const qi = order[pos];
   const item = QUESTIONS[qi];
@@ -43343,6 +43523,10 @@ function render(){
   });
 
   panel.appendChild(list);
+  if(runMode !== "exam" && (cleared || dailyQuestionLocked)){
+    const bn = buildBankNote(item);
+    if(bn) panel.appendChild(bn);
+  }
 
   /* recall mode: options stay hidden until asked for */
   if(!revealed){
@@ -43942,7 +44126,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-27-214";
+const APP_BUILD = "2026-09-27-215";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -44999,16 +45183,28 @@ function playBadgeCaseScene(units, done){
     if(finished) return;
     finished = true;
     timers.forEach(clearTimeout);
+    document.body.classList.remove("bc-covering");
     overlay.classList.add("bc-out");
     setTimeout(() => { overlay.remove(); done(); }, 450);
   }
   overlay.addEventListener("click", finish);
+  /* LAG FREE means nothing else drawing underneath it. Confetti from the
+     grade was still falling behind the case (36 animated pieces for up to
+     three seconds) - measured, that was every dropped frame - so it goes;
+     and once the dim is fully up the results page behind is hidden, so it
+     is not composited every frame for nothing. Both come back untouched. */
+  clearCelebrationsForScene();
+  at(320, () => document.body.classList.add("bc-covering"));
 
-  requestAnimationFrame(() => overlay.classList.add("bc-in"));
-  at(700, () => kase.classList.add("bc-unlatch"));
-  at(1050, () => kase.classList.add("bc-open"));
+  /* Two frames before anything moves: the sixteen badges are built and
+     laid out first, so the pop-in never starts on a frame still doing
+     that work. */
+  void overlay.offsetWidth;
+  requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add("bc-in")));
+  at(1200, () => kase.classList.add("bc-unlatch"));
+  at(1550, () => kase.classList.add("bc-open"));
 
-  let t = 1900;
+  let t = 2400;
   units.forEach((u, i) => {
     at(t, () => {
       flyer.replaceChildren(buildUnitBadgeSVG(u, true));
@@ -45042,7 +45238,130 @@ function playBadgeCaseScene(units, done){
     t += 2500;
   });
   at(t + 900, finish);
-  return { skip: finish, stop(){ finished = true; timers.forEach(clearTimeout); overlay.remove(); } };
+  return { skip: finish, stop(){ finished = true; timers.forEach(clearTimeout); document.body.classList.remove("bc-covering"); overlay.remove(); } };
+}
+
+/* ---- THE THIRD FLARE ----
+   "when unlocking the void character there isn't a cutscene for the
+   character, it's just a bigger cooler cutscene for finding the flares
+   and void is in the cutscene, and then the next unlock thing would be
+   the void banner." So this is the flare scene, grown: the last flare
+   streaks in, all three light and whirl round the planet, fall into it,
+   the planet implodes to black - flash, shockwaves - and Void comes up
+   out of the dark ringed in the three colours. It says nothing about a
+   character being unlocked; the Void banner right after it does. Every
+   moving part is a transform or an opacity. */
+function playFinalFlareScene(color, done){
+  clearCelebrationsForScene();
+  const overlay = document.createElement("div");
+  overlay.className = "ff-scene";
+  overlay.style.setProperty("--flare-color", MYSTERY_COLOR[color]);
+  MYSTERY_ORDER.forEach((k, i) => overlay.style.setProperty("--fc" + i, MYSTERY_COLOR[k]));
+  const stars = document.createElement("div");
+  stars.className = "ff-stars";
+  for(let i = 0; i < 60; i++){
+    const st = document.createElement("span");
+    st.style.left = (Math.random() * 100) + "%";
+    st.style.top = (Math.random() * 100) + "%";
+    st.style.animationDelay = (Math.random() * 3) + "s";
+    st.style.setProperty("--z", (0.5 + Math.random()).toFixed(2));
+    stars.appendChild(st);
+  }
+  overlay.appendChild(stars);
+
+  const field = document.createElement("div");
+  field.className = "ff-field";
+  const planet = document.createElement("div");
+  planet.className = "ff-planet";
+  const sphere = document.createElement("div");
+  sphere.className = "fl-sphere";
+  const dark = document.createElement("div");
+  dark.className = "ff-dark";
+  planet.append(sphere, dark);
+  const orbit = document.createElement("div");
+  orbit.className = "ff-orbit";
+  const SPOTS = [[0, -118], [104, 58], [-104, 58]];
+  const spots = MYSTERY_ORDER.map((k, i) => {
+    const sp = document.createElement("div");
+    sp.className = "ff-spot" + (k === color ? "" : " is-lit");
+    sp.style.setProperty("--ox", SPOTS[i][0] + "px");
+    sp.style.setProperty("--oy", SPOTS[i][1] + "px");
+    sp.style.setProperty("--flare-color", MYSTERY_COLOR[k]);
+    const glow = document.createElement("span"); glow.className = "ff-spot-glow";
+    sp.append(glow, buildFlareOrb(MYSTERY_COLOR[k], "ff" + i));
+    orbit.appendChild(sp);
+    return sp;
+  });
+  const at = MYSTERY_ORDER.indexOf(color);
+  const comet = document.createElement("div");
+  comet.className = "ff-comet";
+  comet.style.setProperty("--ox", SPOTS[at][0] + "px");
+  comet.style.setProperty("--oy", SPOTS[at][1] + "px");
+  comet.appendChild(buildFlareOrb(MYSTERY_COLOR[color], "ffc"));
+  const flash = document.createElement("div"); flash.className = "ff-flash";
+  const shock1 = document.createElement("div"); shock1.className = "ff-shock";
+  const shock2 = document.createElement("div"); shock2.className = "ff-shock is-late";
+  const voidWrap = document.createElement("div");
+  voidWrap.className = "ff-void";
+  const rim = document.createElement("div"); rim.className = "ff-rim";
+  const fig = document.createElement("div"); fig.className = "ff-fig";
+  try{ fig.appendChild(buildAvatarCharSVGSafe("voidwalker")); }catch(e){}
+  voidWrap.append(rim, fig);
+  field.append(planet, orbit, comet, flash, shock1, shock2, voidWrap);
+  overlay.appendChild(field);
+
+  const words = document.createElement("div");
+  words.className = "ff-words";
+  const kicker = document.createElement("p"); kicker.className = "ff-kicker";
+  const name = document.createElement("p"); name.className = "ff-name";
+  const sub = document.createElement("p"); sub.className = "ff-sub";
+  words.append(kicker, name, sub);
+  overlay.appendChild(words);
+  const say = (k, n, t) => {
+    words.classList.remove("is-in");
+    setTimeout(() => { kicker.textContent = k; name.textContent = n; sub.textContent = t; words.classList.add("is-in"); }, 220);
+  };
+
+  document.body.appendChild(overlay);
+  const timers = [];
+  const later = (ms, fn) => timers.push(setTimeout(fn, ms));
+  let finished = false;
+  function finish(){
+    if(finished) return;
+    finished = true;
+    timers.forEach(clearTimeout);
+    document.body.classList.remove("bc-covering");
+    overlay.classList.add("ff-out");
+    setTimeout(() => { overlay.remove(); done(); }, 500);
+  }
+  overlay.addEventListener("click", finish);
+
+  void overlay.offsetWidth;
+  requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add("ff-in")));
+  later(320, () => document.body.classList.add("bc-covering"));
+  later(700, () => comet.classList.add("ff-comet-go"));
+  later(1750, () => {
+    spots[at].classList.add("is-lit", "is-new");
+    comet.classList.add("ff-comet-done");
+    say("SECRET FLARE FOUND", MYSTERY_NAME[color] + " \u2014 3 of 3", "Every flare in the sky is lit.");
+  });
+  later(3300, () => { overlay.classList.add("ff-whirl"); words.classList.remove("is-in"); });
+  later(4700, () => overlay.classList.add("ff-converge"));
+  later(5400, () => overlay.classList.add("ff-collapse"));
+  later(5950, () => overlay.classList.add("ff-burst"));
+  later(6300, () => {
+    overlay.classList.add("ff-emerge");
+    say("ALL THREE SECRET FLARES", "Something came out of the dark", "");
+  });
+  later(10200, finish);
+  return { skip: finish, stop(){ finished = true; timers.forEach(clearTimeout); document.body.classList.remove("bc-covering"); overlay.remove(); } };
+}
+
+/* Confetti still falling from the grade, removed before a cutscene or a
+   banner goes up over it - the dim hides it anyway, and 36 animated
+   pieces underneath are what dropped frames. */
+function clearCelebrationsForScene(){
+  document.querySelectorAll(".confetti-layer").forEach(l => l.remove());
 }
 
 /* ---- A SECRET FLARE, FOUND ----
@@ -45054,9 +45373,10 @@ function playBadgeCaseScene(units, done){
    screen and continues off". */
 function playFlareFoundScene(color, all, done){
   if(all){
-    if(theme.muteBanners || resultsMotionOff()){ store.pendingVoidCutscene = false; saveStore(); done(); return null; }
-    playVoidCutscene(() => done());
-    return null;
+    store.pendingVoidCutscene = false;
+    saveStore();
+    if(theme.muteBanners || resultsMotionOff()){ done(); return null; }
+    return playFinalFlareScene(color, done);
   }
   if(theme.muteBanners || resultsMotionOff()){ done(); return null; }
   const overlay = document.createElement("div");
@@ -45592,11 +45912,18 @@ function rsUnlockItems(run){
   /* A secret flare found this run is the LAST unlock, always: when it is
      the third one, its cutscene plays straight after it lands. */
   if(run.flare){
-    items.push({ kind: "flare", flare: run.flare, kicker: run.flareAll ? "All three secret flares" : "Secret flare found",
-      name: run.flareAll ? (AVATAR_DISPLAY_NAME.voidwalker || "Void") + " unlocked"
-                         : MYSTERY_NAME[run.flare] + " — " + run.flareCount + " of " + MYSTERY_ORDER.length,
-      sub: run.flareAll ? "Every flare in the sky is yours" : "Keep an eye out for the next one",
+    items.push({ kind: "flare", flare: run.flare, kicker: "Secret flare found",
+      name: MYSTERY_NAME[run.flare] + " — " + run.flareCount + " of " + MYSTERY_ORDER.length,
+      sub: run.flareAll ? "The last one in the sky" : "Keep an eye out for the next one",
       color: MYSTERY_COLOR[run.flare], art: () => buildFlareOrb(MYSTERY_COLOR[run.flare], "ul") });
+    /* The third one: its cutscene plays after the flare lands, and Void
+       is the next unlock - a banner of its own, like any character. */
+    if(run.flareAll){
+      items.push({ kind: "character", character: "voidwalker", kicker: "Character unlocked",
+        name: AVATAR_DISPLAY_NAME.voidwalker || "Void",
+        sub: "Yours to pick in Customize", color: avatarGlowColor("voidwalker"),
+        art: () => buildAvatarCharSVGSafe("voidwalker") });
+    }
   }
   return items;
 }
@@ -45627,6 +45954,7 @@ function buildDifficultyLights(unlocked){
 /* The centre-screen banner. Holds for a few seconds, or until tapped,
    then leaves and releases the timeline for the next one. */
 function playUnlockSpotlight(item, n, of, release){
+  clearCelebrationsForScene();
   const spot = document.createElement("div");
   spot.className = "rs-spot rs-spot-" + item.kind;
   spot.style.setProperty("--spot-color", item.color || "#6FC2FF");
@@ -45787,7 +46115,10 @@ function showRunRewards(run, hooks, opts){
      boxes, they would look the same unless you earned one, would match
      the badge color in tint". */
   const badgeBoxes = [];
-  run.progUnits.forEach(u => {
+  /* A badge EARNED this run gets no progress box: the unlock says it, and
+     the case plays there - "when you earn a badge it's kind of redundant,
+     so you can remove the first box". Units still filling keep theirs. */
+  run.progUnits.filter(u => run.badges.indexOf(u) < 0).forEach(u => {
     const need = badgeThresholdFor(u);
     const have = Math.min(need, unitPerfectCount(u));
     const earned = have >= need;
@@ -46080,12 +46411,6 @@ function showRunRewards(run, hooks, opts){
       rsLand(b, instant);
       if(badgeBoxes.indexOf(b) >= 0) setTimeout(() => b.querySelectorAll(".badgeprogress-fill[data-to]").forEach(f => { f.style.width = f.dataset.to; }), instant ? 0 : 260);
     });
-    /* A badge earned plays its case cutscene the moment its box lands -
-       "the badge cutscene would come in on the result screen right
-       after the badge box hits the screen". */
-    if(b === badgeBox && run.badges.length && typeof playBadgeCaseScene === "function"){
-      seq.add(700, (instant, release) => playBadgeCaseScene(run.badges.slice(), release), true);
-    }
   });
   seq.add(boxes.length ? 520 : 380, instant => {
     rsLand(grade, instant);
@@ -46098,8 +46423,18 @@ function showRunRewards(run, hooks, opts){
   });
   if(unlocked){
     seq.add(900, instant => rsLand(unlocked, instant));
+    let caseDone = false;
     unlockItems.forEach((it, n) => {
-      if(!theme.muteBanners){
+      /* A BADGE'S MOMENT IS THE CASE, at its unlock - "move that cutscene
+         to when it hits the unlock thing". It stands in for the badge's
+         banner, and plays once for every badge the run earned, each one
+         flying to its slot in turn. */
+      if(it.kind === "badge" && typeof playBadgeCaseScene === "function"){
+        if(!caseDone){
+          caseDone = true;
+          seq.add(n === 0 ? 350 : 200, (instant, release) => playBadgeCaseScene(run.badges.slice(), release), true);
+        }
+      } else if(!theme.muteBanners){
         seq.add(n === 0 ? 350 : 200, (instant, release) => playUnlockSpotlight(it, n + 1, unlockItems.length, release), true);
       }
       seq.add(theme.muteBanners ? 380 : 120, instant => rsLand(unlockRows[n], instant));
@@ -46163,6 +46498,8 @@ function buildReviewQuestion(run, qi, n, gotIt){
   right.append(rl, document.createTextNode(item.choices[item.answer]));
   ans.appendChild(right);
   li.append(top, q, ans);
+  const bankNote = buildBankNote(item);
+  if(bankNote) li.appendChild(bankNote);
   if(item.ref){
     const ref = document.createElement("p");
     ref.className = "rs-q-ref"; ref.textContent = item.ref;
@@ -50100,6 +50437,9 @@ function tugSettleAnswer(ok, btn, mark, list, right){
      this fast is worth nothing as study if it never says what the
      answer was. */
   if(!ok && choices[right]) choices[right].classList.add("is-right");
+  const tugItem = QUESTIONS[tugPool[tugMyPos % tugPool.length]];
+  const tugNote = buildBankNote(tugItem);
+  if(tugNote) list.after(tugNote);
 
   tugMyPos += 1;
   if(ok) tugMyCorrect += 1;
@@ -50111,7 +50451,7 @@ function tugSettleAnswer(ok, btn, mark, list, right){
     tugAdvanceTimer = null;
     if(!document.querySelector(".screen-tug")) return;
     tugRedrawFromCache();
-  }, ok ? 650 : 1100);
+  }, tugNote ? 3500 : ok ? 650 : 1100);   /* long enough to read the note */
 }
 
 function tugRedrawFromCache(){
@@ -52746,6 +53086,8 @@ function buildRunReviewBlock(){
     const yours = picked[qi] !== undefined ? "You answered: " + item.choices[optionOrder(qi)[picked[qi]]] + ". " : "";
     a.textContent = yours + "Correct answer: " + item.choices[item.answer] + (item.ref ? "  " + item.ref : "");
     box.append(q, a);
+    const bn = buildBankNote(item);
+    if(bn) box.appendChild(bn);
     li.appendChild(box);
     ul.appendChild(li);
   });
@@ -54857,6 +55199,8 @@ function showAnswerReview(units){
           choicesList.appendChild(opt);
         });
         qWrap.appendChild(choicesList);
+        const bn = buildBankNote(item);
+        if(bn) qWrap.appendChild(bn);
         body.appendChild(qWrap);
       });
 
