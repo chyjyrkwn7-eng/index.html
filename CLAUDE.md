@@ -5363,36 +5363,44 @@ One long message of changes on top of build 212's two screens.
 **XP is now computed in one place, `computeRunXp(r)`**, from plain numbers,
 returning the lines the XP card prints. summarize() awards its total, the
 Virtual Room publishes its lines, check-results asks it directly. The lines:
-- right answers × 10; hundo bonus (×N);
+- right answers × 10; hundo bonus (×N). (Every number below was raised
+  once before shipping - "I want the new xp to be noticeable amount of
+  gains" - and these are the raised ones.)
 - **answer streaks inside a test** - tiers 10, 25, 50, 75, 100, 150, 250,
-  350, then every 50 (`runStreakTiersUpTo`), each run of right answers
+  350, then every 50 (`runStreakTiersUpTo`), worth 25/50/100/150/200/275/
+  400/525 and +50 per 50 after (`runStreakTierXp`), each run of right answers
   scoring every tier it reached, printed "10 right in a row ×2" when two runs
   reached it (`×N` always means THAT line counted N times, never the whole);
-- **speed** off the average time a question, 75 under 5s down to 5 past two
-  minutes in steps of 5 (`SPEED_TIERS`), scaled by accuracy and, under ten
+- **speed** off the average time a question, 150 under 5s down to 10 past two
+  minutes in steps of 10 (`SPEED_TIERS`), scaled by accuracy and, under ten
   questions, by length - its sub-line carries the total time and the average;
-- **new best time / new best score per whole unit**, 50 each (×N). Kept on
+- **new best time / new best score per whole unit**, 100 each (×N). Kept on
   `store.unitBestMs` / `store.unitBestPct` (defaulted in applyLoadedData).
   The first time a unit is sat sets the mark and pays nothing; a best score
   with no mark is seeded from test history (`unitBestPctOf`). A best time
   needs the unit answered without a miss. Per-unit time comes from
   `qTimeMs`, started in openQuestion and shifted by cancelPauseTiming;
-- Game: difficulty beaten (50/100/200) and lives left (10/25/50 each), only
+- Game: difficulty beaten (100/200/400) and lives left (25/50/100 each), only
   for a game actually beaten;
 - a badge, now **1,000** (`MASTERY_BONUS`);
-- **multi-unit ×1.05 per whole unit past the first**, capped ×1.5, last,
+- **multi-unit ×1.1 per whole unit past the first** (four units ×1.3),
+  capped ×2, last,
   over everything above it except a badge. The flat per-unit bonus is gone.
 - **A retake earns right answers × 10 and nothing else**, gets no streak
   banners, and opens with no loading screen.
 
-**Curve: ~450,000 to level 80** (`LEVEL_STEEP_GROWTH` 1.0695, was 1.0601).
+**Curve: ~600,000 to level 80** (`LEVEL_STEEP_GROWTH` 1.0835, was 1.0601;
+level 80 alone costs ~44,000). Raised past the ~450,000 first asked for,
+because the new XP roughly doubles what a run pays - "if you need to adjust
+levels past level 45 to be more ... then do it".
 Only levels past 45 moved; the top account was level 43 (52,940 XP), so
 nobody's level dropped.
 
 **Streak banners during a test** (`showRunStreakBanner`) only in Drill and
 Game, which already show right/wrong - in an Exam, Practice test or Virtual
 Room a "10 in a row" would give answers away, so there they are counted at
-the end only. Low on the screen, clear of the chat banner at the top, gone in
+the end only. At the top, just under the header and below where the chat
+banner drops in (moved there on request), gone in
 under two seconds, warming in colour as the tier climbs.
 
 **Results screen**: no Pause (the chat button takes the corner back); no

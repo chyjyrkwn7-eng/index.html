@@ -394,12 +394,16 @@ def main():
             const listed = store.retroBadgePending.slice();
             const xp0 = store.lifetime.points;
             finish('Victims of Crime', 5);           // any test at all, even a slice
-            const first = { queued: store.pendingBadgeUnlocks.slice(), tier: store.pendingTierCutscene,
+            /* Build 213: the celebration is on the RESULTS SCREEN now, as a
+               badge row in its "Unlocked" card, not a queue for Home. */
+            const shown = () => [...document.querySelectorAll('#stage .rs-unlock-badge .unlockbanner-name')]
+              .map(e => e.textContent.replace(/ badge$/, ''));
+            const first = { queued: shown(), tier: store.pendingTierCutscene,
                             left: store.retroBadgePending.slice(), xp: store.lifetime.points - xp0 };
             store.pendingBadgeUnlocks = []; store.pendingTierCutscene = null;
             grantRetroBadgesOnce();                   // a relaunch must not list them again
             finish('Victims of Crime', 5);
-            const second = { queued: store.pendingBadgeUnlocks.slice(), tier: store.pendingTierCutscene };
+            const second = { queued: shown(), tier: store.pendingTierCutscene };
             /* A brand-new account is current at sign-up: nothing handed out. */
             store.badgeBandsVersion = 2; store.retroBadgePending = [];
             store.unitPerfects = {'Identity Crimes': 20};
@@ -414,8 +418,10 @@ def main():
             check("the next test celebrates each of them",
                   sorted(retro["first"]["queued"]) == sorted(retro["listed"]), retro["first"])
             check("and plays the rank-up they cause", retro["first"]["tier"] == "ranger", retro["first"]["tier"])
-            check("with no mastery bonus for them - the slice pays only its answers",
-                  retro["first"]["xp"] == 50, retro["first"]["xp"])
+            # 50 for its answers plus build 213's speed bonus - and never
+            # the 1,000 a badge pays when a run earns one.
+            check("with no mastery bonus for them - the slice pays only its answers and speed",
+                  50 <= retro["first"]["xp"] < 1000, retro["first"]["xp"])
             check("and never again", not retro["second"]["queued"] and not retro["second"]["tier"]
                   and not retro["first"]["left"], retro["second"])
             check("a new account has nothing handed out", retro["fresh"] == [], retro["fresh"])
