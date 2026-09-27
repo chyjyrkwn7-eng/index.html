@@ -315,6 +315,29 @@ with sync_playwright() as pw:
     ck("and in an Exam it is in the review at the end", "excessive bail" in rv, rv[:80])
     pg.evaluate("()=>{ testInProgress=false; try{ showHome(); }catch(e){} }")
 
+    print("7. build 216: found recording every cutscene")
+    # Both written against build 215, where both fail.
+    # The difficulty lights' labels hang centred under each light, so the
+    # gap between lights is all the room two labels get: at .9rem
+    # "AVERAGE" and "HARDCORE" overlapped by 10px on the Hardcore unlock.
+    gaps = pg.evaluate("""()=>{ const spot=document.createElement('div'); spot.className='rs-spot';
+      const art=document.createElement('div'); art.className='rs-spot-art';
+      art.appendChild(buildDifficultyLights('hardcore')); spot.appendChild(art); document.body.appendChild(spot);
+      const ls=[...art.querySelectorAll('.rs-difflight-label')].map(l=>l.getBoundingClientRect());
+      const g = ls.slice(1).map((r,i)=>Math.round(r.left-ls[i].right)); spot.remove(); return g; }""")
+    ck("the difficulty labels do not run into each other", len(gaps) == 2 and min(gaps) >= 6, gaps)
+    # A streak pill from the last question lives on <body> and rode on
+    # over "Test results" when the run ended on a streak.
+    pg.evaluate("()=>{ theme.muteBanners=false; showRunStreakBanner(25); }")
+    pill_before = pg.evaluate("()=>!!document.querySelector('.streak-pop')")
+    # Read at once: the pill times itself out after 1.9s, so a check that
+    # waited for the results to finish landing could not fail.
+    pill_after = pg.evaluate("([u])=>{ __run(u,0,'drill'); return !!document.querySelector('.streak-pop'); }", [UNIT])
+    wait_done(pg)
+    ck("a streak pill does not ride over the results", pill_before and not pill_after,
+       {"before": pill_before, "after": pill_after})
+    pg.evaluate("()=>{ testInProgress=false; try{ showHome(); }catch(e){} }")
+
     ck("no page errors", not errors, errors[:3])
     br.close()
 srv.shutdown()

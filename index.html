@@ -13869,7 +13869,11 @@
   .rs-byunit .unit-breakdown-fill{ transition:width .9s cubic-bezier(.2,.8,.25,1); }
 
   /* The three difficulty lights. */
-  .rs-difflights{ display:flex; gap:.9rem; align-items:flex-end; justify-content:center; }
+  /* 2rem, not .9: the labels hang centred under 2.4rem lights, so the
+     gap is all the room two labels get. At .9rem "AVERAGE" and "HARDCORE"
+     overlapped by 10px and read as one word on the Hardcore unlock;
+     1.4rem only brought them to touching. 2rem leaves a clear gap. */
+  .rs-difflights{ display:flex; gap:2rem; align-items:flex-end; justify-content:center; }
   .rs-difflight{
     position:relative; width:2.4rem; height:2.4rem; border-radius:50%;
     background:rgba(255,255,255,.06); border:2px solid color-mix(in srgb, var(--dl) 35%, transparent);
@@ -46035,6 +46039,11 @@ function playUnlockSpotlight(item, n, of, release){
 
 function showRunRewards(run, hooks, opts){
   endResultsReveal();
+  /* A streak pill from the LAST question lives on <body> for its own
+     1.9s and used to ride on over the top of "Test results" when the
+     run ended on a streak (25 in a row sat over the header). The XP
+     box says it now, so it goes when the results arrive. */
+  document.querySelectorAll(".streak-pop").forEach(e => e.remove());
   /* Coming BACK from the review is the finished screen, drawn at once:
      no boxes landing again, and above all no badge case, spotlight or
      flare scene playing a second time. */
