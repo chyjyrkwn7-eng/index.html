@@ -203,13 +203,13 @@ with sync_playwright() as pw:
         ck("computeRunXp exists", False)
     else:
         g = lambda rows, key: [r for r in rows if r[0] == key]
-        ck("speed under 5s a question is 75", g(xr["fast"], "speed") and g(xr["fast"], "speed")[0][2] == 75, xr["fast"])
-        ck("speed past two minutes a question is 5", g(xr["slow"], "speed") and g(xr["slow"], "speed")[0][2] == 5, xr["slow"])
+        ck("speed under 5s a question is 150", g(xr["fast"], "speed") and g(xr["fast"], "speed")[0][2] == 150, xr["fast"])
+        ck("speed past two minutes a question is 10", g(xr["slow"], "speed") and g(xr["slow"], "speed")[0][2] == 10, xr["slow"])
         ck("every speed bonus is a multiple of 5", all(r[2] % 5 == 0 for rows in (xr["fast"], xr["slow"]) for r in g(rows, "speed")))
         st10 = g(xr["streaks"], "streak10"); st25 = g(xr["streaks"], "streak25")
         ck("two runs past 10 count as 10 in a row x2, and 25 once", st10 and "\u00d72" in st10[0][1] and st25 and "\u00d7" not in st25[0][1], xr["streaks"])
-        ck("a multi-unit run ends on its multiplier, x1.15 for four units",
-           xr["multi"]["key"] == "multi" and "1.15" in xr["multi"]["label"], xr["multi"])
+        ck("a multi-unit run ends on its multiplier, x1.3 for four units",
+           xr["multi"]["key"] == "multi" and "1.3" in xr["multi"]["label"], xr["multi"])
         ck("a retake earns its right answers and nothing else", [r[0] for r in xr["retake"]] == ["correct"] and xr["retake"][0][2] == 30, xr["retake"])
         ck("a Game won pays its difficulty and its lives", g(xr["gameWon"], "gamebeat") and g(xr["gameWon"], "gamelives"), xr["gameWon"])
         ck("a Game lost pays neither", not g(xr["gameLost"], "gamebeat") and not g(xr["gameLost"], "gamelives"), xr["gameLost"])

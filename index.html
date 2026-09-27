@@ -13709,12 +13709,13 @@
   .actions.rs-final .rs-wide{ flex:1 1 100%; }
 
   /* ---- ANSWER STREAKS, DURING A TEST ----
-     Low on the screen and clear of the chat banner at the top; it never
+     At the TOP, asked for directly, just under the top bar - below where
+     the chat banner drops in, so the two never sit on each other; it never
      takes a tap, and it is gone in under two seconds. It gets louder as
      the streak climbs: the colour warms from blue through gold to red,
      and from 50 up it carries a ring. */
   .streak-pop{
-    position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom, 0px) + 7.5rem); z-index:250;
+    position:fixed; left:50%; top:calc(env(safe-area-inset-top, 0px) + 4.6rem); z-index:250;
     transform:translateX(-50%); pointer-events:none;
     display:flex; align-items:baseline; gap:.45rem;
     padding:.5rem 1rem; border-radius:999px;
@@ -13733,7 +13734,7 @@
     border:2px solid var(--sk); animation:streak-ring 1s ease-out .1s both;
   }
   @keyframes streak-pop{
-    0%{ opacity:0; transform:translateX(-50%) translateY(14px) scale(.9); }
+    0%{ opacity:0; transform:translateX(-50%) translateY(-14px) scale(.9); }
     14%{ opacity:1; transform:translateX(-50%) translateY(0) scale(1.04); }
     22%{ transform:translateX(-50%) scale(1); }
     78%{ opacity:1; }
@@ -30759,7 +30760,7 @@ const LEVEL_CAP = 80;
    ranks now ask for study past what their badges pay, which is the
    complaint being answered (high levels, few badges). */
 const LEVEL_STEEP_FROM = 45;
-const LEVEL_STEEP_GROWTH = 1.0695;   /* build 213: ~450,000 in all to level 80 (was 1.0601, ~375,000) */
+const LEVEL_STEEP_GROWTH = 1.0835;   /* build 213: ~600,000 in all to level 80 (was 1.0601, ~375,000) - the new XP types pay a lot more */
 function levelGrowthAt(lvl){
   if(lvl <= LEVEL_FREEZE_THROUGH) return LEVEL_GROWTH;
   if(lvl > LEVEL_STEEP_FROM) return LEVEL_STEEP_GROWTH;
@@ -44947,9 +44948,9 @@ function runStreakTiersUpTo(n){
    the xp". Its own number up to 100, then the steps widen so a 350 is a
    real reward without a long run of Drill outpaying a whole unit. */
 function runStreakTierXp(t){
-  const fixed = { 10: 10, 25: 25, 50: 50, 75: 75, 100: 100, 150: 125, 250: 175, 350: 225 };
+  const fixed = { 10: 25, 25: 50, 50: 100, 75: 150, 100: 200, 150: 275, 250: 400, 350: 525 };
   if(fixed[t]) return fixed[t];
-  return 225 + ((t - 350) / 50) * 25;
+  return 525 + ((t - 350) / 50) * 50;
 }
 /* Every run of right answers in a row, and the tiers each one reached.
    A run of 30 reaches 10 and 25; a miss starts over. */
@@ -44967,25 +44968,29 @@ function runStreakTiersFor(okList){
    5 past two minutes. Scaled by accuracy so tapping through at random is
    not the fast way to earn it, and by length below ten questions so a
    five-question slice is not worth what a whole unit is. */
-const SPEED_TIERS = [[5, 75], [8, 65], [12, 55], [18, 45], [25, 35], [35, 30],
-                     [45, 25], [60, 20], [90, 15], [120, 10]];
+/* DOUBLED before it shipped: "I want the new xp to be noticeable amount
+   of gains". 150 under five seconds a question, 10 past two minutes. */
+const SPEED_TIERS = [[5, 150], [8, 130], [12, 110], [18, 90], [25, 70], [35, 60],
+                     [45, 50], [60, 40], [90, 30], [120, 20]];
 function speedTierXp(avgSec){
   for(const [lim, xp] of SPEED_TIERS) if(avgSec < lim) return xp;
-  return 5;
+  return 10;
 }
 function roundTo5(n){ return Math.round(n / 5) * 5; }
 
-const PB_TIME_BONUS = 50;
-const PB_SCORE_BONUS = 50;
+const PB_TIME_BONUS = 100;
+const PB_SCORE_BONUS = 100;
 /* Game mode is harder, so it pays more - "the harder the difficulty, the
    more the extra xp" - and only for a game actually beaten. */
-const GAME_BEAT_BONUS = { easy: 50, average: 100, hardcore: 200 };
-const GAME_LIFE_BONUS = { easy: 10, average: 25, hardcore: 50 };
+const GAME_BEAT_BONUS = { easy: 100, average: 200, hardcore: 400 };
+const GAME_LIFE_BONUS = { easy: 25, average: 50, hardcore: 100 };
 /* +5% for each whole unit past the first, to ×1.5. Four units is ×1.15 -
    "nothing too crazy ... noticeable though". */
 function multiUnitMultiplier(wholeUnits){
+  /* +10% for each whole unit past the first, to ×2 - raised from +5% when
+     the first numbers came back too quiet: "noticeable amount of gains". */
   if(wholeUnits < 2) return 1;
-  return Math.min(1.5, 1 + 0.05 * (wholeUnits - 1));
+  return Math.min(2, 1 + 0.1 * (wholeUnits - 1));
 }
 
 /* `r` is plain numbers so this can be asked about any run:
@@ -45040,7 +45045,7 @@ function computeRunXp(r){
   (r.badgesPaid || []).forEach(u => add("badge", u + " badge", MASTERY_BONUS, { badge: true }));
   const m = multiUnitMultiplier(r.wholeUnits || 0);
   if(m > 1){
-    add("multi", "Multi-unit ×" + m.toFixed(2).replace(/0$/, ""), roundTo5(beforeMult * (m - 1)),
+    add("multi", "Multi-unit ×" + (Math.round(m * 100) / 100), roundTo5(beforeMult * (m - 1)),
         { sub: r.wholeUnits + " whole units" });
   }
   return { lines: lines, total: lines.reduce((s, l) => s + l.value, 0) };
@@ -45088,7 +45093,7 @@ function qClockStop(){
    banner at 10 in a row would be the test telling you ten answers were
    right. There the streaks are counted at the end all the same.
    Not on a retake and not on the daily question: "you get nothing cool
-   out of it". Subtle, low on the screen and out of the way of the chat
+   out of it". Subtle, at the top under the header and below the chat
    banner at the top, and gone in under two seconds. */
 let runLiveStreak = 0;
 function runStreakLive(ok){
