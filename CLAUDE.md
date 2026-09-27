@@ -5573,3 +5573,37 @@ lobby / Main menu. Tug of War is untouched.
 Also: Pause wears the chat button's glass; Stats drops "Current answer
 streak" and calls the other "All-time best answer streak"; Customize groups
 characters as Starters / Rank rewards / Earned by doing.
+
+### Build 216 - found by recording every cutscene
+
+Madison asked for every results screen and every cutscene from every
+mode, as video, on both reference devices. Recording them all turned up
+four real faults that every gate had passed:
+
+- **The race line dropped everybody after an unknown avatar.** It built
+  markers with `buildAvatarCharSVG()`, which returns null for an id this
+  build does not know, and `appendChild(null)` threw inside the loop - so
+  one classmate on an older build's character took everyone after them
+  off the line. Same bug class as the leaderboard rows (see the comment
+  on `buildAvatarCharSVGSafe`); the race line was the one builder left.
+  check-vroom section 12.
+- **"Everyone's ready!" drew the lobby's tab bar over itself.**
+  `showVroomReadyFlourish` now sets `forceHideBottomTabs` before it
+  replaces the stage. check-vroom section 12.
+- **"AVERAGE" and "HARDCORE" ran together** under the difficulty lights on
+  the Hardcore unlock (10px overlap). The labels hang centred under each
+  light, so the gap between lights is all the room they get: 2rem, not
+  .9. check-results section 7 measures the gap.
+- **A streak pill from the last question rode over "Test results"** for
+  the rest of its 1.9s. `showRunRewards` clears `.streak-pop`. The check
+  reads it synchronously, because a check that waited for the results to
+  land would pass on the broken build too.
+
+**How the recording was done, so it can be done again:** one fresh page
+per scenario, state set through the app's own functions, a CDP
+screencast for the video, and stills pulled from the video at moments a
+MutationObserver stamped (a watched overlay appearing), not at guessed
+times. Two recorders at once is the limit on this box: four dropped the
+screencast to ~14fps, which reads as the app lagging. Virtual Room
+scenarios use scripted opponents writing to the fake Firestore, which is
+how a room of eight was recorded with one browser.
