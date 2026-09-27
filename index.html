@@ -13956,7 +13956,14 @@
   .vrc{
     position:fixed; inset:0; z-index:430; overflow:hidden;
     display:flex; flex-direction:column; align-items:center;
-    padding:calc(env(safe-area-inset-top, 0px) + 1.2rem) 1rem calc(env(safe-area-inset-bottom, 0px) + 1.2rem);
+    /* Everything sits INSIDE the ship's window, not across its frame: the
+       window is inset 5% of the height and 3% of the width (.vrc-window),
+       so the padding clears that plus its 9px rim. Vertical percentages
+       would resolve against the WIDTH, hence lvh; the safe-area term wins
+       only where a notch or home indicator reaches further in. */
+    padding:max(calc(5lvh + 1.4rem), calc(env(safe-area-inset-top, 0px) + 1.2rem))
+            calc(3% + 1.05rem)
+            max(calc(5lvh + 1.2rem), calc(env(safe-area-inset-bottom, 0px) + 1.2rem));
     background:radial-gradient(120% 80% at 50% 0%, #1B2140 0%, #0A0C18 55%, #04050A 100%);
     opacity:0; transition:opacity .6s ease;
   }
@@ -13982,7 +13989,7 @@
   @keyframes vrc-twinkle{ 50%{ opacity:.25; } }
   @keyframes vrc-drift{ from{ translate:0 0; } to{ translate:-60px 0; } }
   .vrc-head, .vrc-board, .vrc-exits{ position:relative; z-index:1; width:min(100%, 34rem); }
-  .vrc-head{ text-align:center; margin:4.5vh 0 1.2rem; }
+  .vrc-head{ text-align:center; margin:1.5vh 0 1.2rem; }
   .vrc-kicker{ margin:0; font-size:.74rem; font-weight:800; letter-spacing:.24em; color:#7CC0F4; }
   .vrc-step{ margin:.35rem 0 0; font-family:var(--serif); font-size:1.6rem; font-weight:700; color:#fff; min-height:2rem; }
   .vrc-step.is-new{ animation:vrc-step .5s cubic-bezier(.2,1.3,.3,1) both; }
