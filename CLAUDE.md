@@ -5452,6 +5452,30 @@ your own results have landed, `playVroomRaceCutscene` runs: a ship's window
 on moving stars, every player's bar counting XP category by category, then
 rows slide into order and 1st/2nd/3rd glow gold/silver/bronze, then Return to
 lobby / Main menu. Tug of War is untouched.
+- **The race line comes down when your results go up**, in
+  `showVirtualRoomFinaleReveal`, and its listener stops. The waiting card
+  says where everyone is now; left up, the line sat under the chat button
+  with every marker piled at the finish. check-vroom section 7 asserts it
+  on THIS path - the older assertion only covered the standings screen,
+  which the build-213 flow no longer reaches, so it was green while the
+  line was on screen for every player.
+- **The cutscene's contents sit INSIDE the ship's window**: `.vrc` padding
+  clears `.vrc-window`'s 5%/3% inset (in `lvh`, since a vertical
+  percentage resolves against the width). With 1rem of padding the rows
+  and buttons ran across the window frame on a phone.
+- **check-vroom's fake Firestore can LOSE a write when both tabs write at
+  once.** The fake room is `localStorage` shared by the two tabs, and
+  Chromium syncs that between renderers asynchronously, so two updates in
+  the same instant can each read the room and the later one writes back a
+  copy without the earlier one in it. Seen as the host's record reverting
+  to its join-time values (`finished:false`, `xp` = lifetime points) and
+  the "all in" checks going red two runs in three. Real Firestore applies
+  field-path updates on the server and cannot do this, so the fixture now
+  finishes the two tabs one after the other and waits for each finish to
+  land. The same mechanism is behind the occasional "both messages
+  survive a simultaneous send" failure under load - that check is
+  simultaneous on purpose, so it was left alone; if it goes red, re-run it
+  on an idle machine before suspecting the chat code.
 
 Also: Pause wears the chat button's glass; Stats drops "Current answer
 streak" and calls the other "All-time best answer streak"; Customize groups

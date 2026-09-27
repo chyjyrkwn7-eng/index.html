@@ -619,6 +619,20 @@ def main():
                  finale, which hands over to the results screen. */
               summarize();
             }""")
+            # ONE AFTER THE OTHER, and waited on. The fake room lives in
+            # localStorage shared by both tabs, and Chromium syncs that
+            # between renderers asynchronously - so two finishes in the
+            # same instant can each read the room, and the later write
+            # puts back a copy without the earlier one's finish in it.
+            # Measured: the host's record reverted to its join-time
+            # values (finished:false, xp = lifetime points) and every
+            # "is the room all in" check after it went red. Real
+            # Firestore applies field-path updates on the server and has
+            # no such race, so this is the harness, not the app; waiting
+            # for each finish to land is what a real room gets for free.
+            pg.wait_for_function("""()=>fbDb.collection('vrooms').doc(vroomCode).get()
+              .then(d => !!(((d.data() || {}).participants || {})[vroomMyKey] || {}).finished)""",
+              timeout=8000)
         host.wait_for_timeout(600)
         # THE NORMAL RESULTS SCREEN STAYS (build 207). Finishing used to
         # show it and then replace it outright with the finale's own
