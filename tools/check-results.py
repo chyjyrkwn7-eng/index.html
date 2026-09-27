@@ -18,8 +18,11 @@ button. What is held here is the SHAPE of that, not its words:
      questions and the Retake / Main menu pair.
   4. Unlock banners come one at a time, and the buttons wait for the
      last of them.
-  5. Pause stays up on both screens, holds the reveal, and Resume puts
-     back the SAME screen and lets it finish.
+  5. (build 213) No Pause on either results screen; the review shows the
+     answer you gave; the XP lines come from computeRunXp() and follow its
+     rules (speed in steps of 5, streak tiers with xN, multi-unit last,
+     retake = right answers only, Game bonuses only for a game beaten);
+     a lost game still gets a results screen; Re-run is back.
   6. Reduce motion gets everything at once and no banners.
 
 Drives summarize() directly with a real unit's questions, the way
@@ -62,7 +65,8 @@ SETUP = """()=>{
       : el.classList.contains('rs-unlocked')?'unlocked' : el.classList.contains('rs-head')?'head'
       : el.classList.contains('rs-xp')?'xp' : el.classList.contains('results-level')?'level' : 'box';
     __lands.push({kind, t:el.__landed}); })).observe(document.body,{subtree:true,attributes:true,attributeFilter:['class']});
-  window.__spots=0; window.__maxSpots=0; window.__actionsDuringSpot=false;
+  window.__spots=0; window.__maxSpots=0; window.__actionsDuringSpot=false; window.__caseSeen=false;
+  setInterval(()=>{ if(document.querySelector('.bc-scene')) __caseSeen=true; }, 80);
   setInterval(()=>{ const n=document.querySelectorAll('.rs-spot').length; __maxSpots=Math.max(__maxSpots,n);
     if(n){ __spots++; const a=document.querySelector('.rs-actions');
       if(a && getComputedStyle(a).opacity > .5) __actionsDuringSpot=true; } }, 60);
@@ -72,8 +76,10 @@ SETUP = """()=>{
     order=QUESTIONS.map((q,i)=>i).filter(i=>(QUESTIONS[i].topic||'').trim()===unit);
     runTrackable=true; timedOut=false; runMode=mode; runLabel=null; isMissedRetake=false;
     practiceTestMinutes=null; inVirtualRoom=false; attempts={}; picked={}; timedOutSet={};
+    try{ firstPick = {}; }catch(e){}
     order.forEach((qi,k)=>{ const oo=optionOrder(qi), right=oo.indexOf(QUESTIONS[qi].answer);
-      attempts[qi]=k<missN?2:1; picked[qi]=k<missN?(right+1)%oo.length:right; });
+      attempts[qi]=k<missN?2:1; picked[qi]=k<missN?(right+1)%oo.length:right;
+      try{ if(k<missN) firstPick[qi]=(right+1)%oo.length; }catch(e){} });
     runStartTime=Date.now()-42000; testInProgress=true; pos=order.length-1;
     summarize();
   };
@@ -124,7 +130,7 @@ with sync_playwright() as pw:
        first["title"] == "Test results" and first["meterHidden"], first)
     ck("no missed questions on the rewards screen", first["review"] == 0, first)
     ck("and no Retake on it either", not first["retake"], first)
-    ck("Pause stays up on the results", first["pause"], first)
+    ck("no Pause on the results - the chat button has the corner", not first["pause"], first)
     ck("the button is not there while the reveal is still playing",
        not pg.evaluate(VISIBLE, "#stage .rs-actions, #stage .actions"))
     done = wait_done(pg)
@@ -147,20 +153,24 @@ with sync_playwright() as pw:
     rev = pg.evaluate("""()=>({
       title: (document.getElementById('testscopelabel')||{}).textContent,
       qs: document.querySelectorAll('#stage .rs-q').length,
+      yours: document.querySelectorAll('#stage .rs-q .rs-q-yours').length,
+      pctInHead: /%/.test((document.querySelector('#stage .rs-review-summary')||{}).textContent||''),
       btns: [...document.querySelectorAll('#stage .actions button')].map(b=>b.textContent),
       pause: !document.getElementById('pausebtn').hidden })""")
     ck("Continue opens the review, with exactly the missed questions",
        rev["qs"] == 3 and rev["title"] == "Test review", rev)
-    ck("and Retake / Main menu under them",
-       len(rev["btns"]) == 2 and "Retake" in rev["btns"][0] and rev["btns"][1] == "Main menu", rev)
-    ck("Pause is up on the review too", rev["pause"], rev)
+    ck("each one shows the answer you gave, Drill included", rev["yours"] == 3, rev)
+    ck("and the count at the top carries no stray percentage", not rev["pctInHead"], rev)
+    ck("then Retake, Re-run and Main menu",
+       len(rev["btns"]) == 3 and "Retake" in rev["btns"][0] and rev["btns"][1] == "Re-run" and rev["btns"][2] == "Main menu", rev)
+    ck("no Pause on the review either", not rev["pause"], rev)
 
     print("2. a perfect run that earns a badge: banners one at a time")
     pg.evaluate("""([u])=>{ store.unitPerfects={}; store.unitPerfects[u]=badgeThresholdFor(u)-1;
       store.pendingBadgeUnlocks=[]; __maxSpots=0; __spots=0; __actionsDuringSpot=false; saveStore(); }""", [UNIT])
     pg.evaluate("([u])=>__run(u,0,'drill')", [UNIT])
     done = wait_done(pg, 60000)
-    st = pg.evaluate("()=>({max:__maxSpots, seen:__spots, during:__actionsDuringSpot,"
+    st = pg.evaluate("()=>({max:__maxSpots, seen:__spots, during:__actionsDuringSpot, caseSeen:!!window.__caseSeen,"
                      " cont: !!document.querySelector('#stage .rs-continue'),"
                      " btns:[...document.querySelectorAll('#stage .actions button')].map(b=>b.textContent),"
                      " unlocked: document.querySelectorAll('#stage .rs-unlocked .rs-unlock').length})")
@@ -172,22 +182,53 @@ with sync_playwright() as pw:
     ck("the buttons waited for the last banner", not st["during"], st)
     ck("a perfect run has nothing to review, so no Continue", done and not st["cont"] and len(st["btns"]) >= 1, st)
     ck("what it unlocked is left on the page", st["unlocked"] >= 1, st)
+    ck("the badge case cutscene played on the results", st["caseSeen"], st)
+    ck("and Re-run is back beside Main menu", "Re-run" in st["btns"] and "Main menu" in st["btns"], st)
 
-    print("3. Pause holds the reveal and Resume gives the same screen back")
-    pg.evaluate("([u])=>__run(u,3,'drill')", [UNIT]); pg.wait_for_timeout(700)
-    pg.evaluate("()=>{ window.__node=document.getElementById('stage').firstElementChild; document.getElementById('pausebtn').click(); }")
-    pg.wait_for_timeout(300)
-    paused = pg.evaluate("()=>({pausePanel: !!document.querySelector('#stage .pausepanel'),"
-                         " landed: window.__node ? window.__node.querySelectorAll('.rs-in, .rs-in-now').length : -1})")
-    pg.wait_for_timeout(2500)
-    held = pg.evaluate("()=>window.__node ? window.__node.querySelectorAll('.rs-in, .rs-in-now').length : -1")
-    ck("Pause shows the pause screen over the results", paused["pausePanel"], paused)
-    ck("and nothing lands while it is up", held == paused["landed"] and held > 0, (paused, held))
-    pg.evaluate("()=>{ const b=document.getElementById('resumebtn'); b && b.click(); }")
-    pg.wait_for_timeout(200)
-    same = pg.evaluate("()=>document.getElementById('stage').firstElementChild === window.__node")
-    ck("Resume puts back the very same screen", same)
-    ck("and the reveal carries on to the end", wait_done(pg))
+    print("3. the XP rules, asked of computeRunXp() directly")
+    xr = pg.evaluate("""()=>{ if(typeof computeRunXp !== 'function') return null;
+      const L = r => computeRunXp(r).lines.map(l => [l.key, l.label, l.value]);
+      const ok = n => Array(n).fill(true);
+      return {
+        fast: L({good:12, answered:12, elapsedMs:12*3000, okList:ok(12), hundos:1, wholeUnits:1}),
+        slow: L({good:12, answered:12, elapsedMs:12*150000, okList:ok(12), hundos:0, wholeUnits:1}),
+        streaks: L({good:37, answered:38, elapsedMs:38*20000, okList:ok(12).concat([false], ok(25)), hundos:0, wholeUnits:1}),
+        multi: computeRunXp({good:40, answered:40, elapsedMs:40*20000, okList:ok(40), hundos:4, wholeUnits:4}).lines.slice(-1)[0],
+        retake: L({retake:true, good:3, answered:3, elapsedMs:5000, okList:ok(3)}),
+        gameWon: L({good:12, answered:12, elapsedMs:60000, okList:ok(12), hundos:1, wholeUnits:1, game:{speed:'average', beaten:true, livesLeft:2}}),
+        gameLost: L({good:2, answered:3, elapsedMs:30000, okList:[true,true,false], hundos:0, wholeUnits:0, game:{speed:'average', beaten:false, livesLeft:0}}),
+        badge: MASTERY_BONUS
+      }; }""")
+    if not xr:
+        ck("computeRunXp exists", False)
+    else:
+        g = lambda rows, key: [r for r in rows if r[0] == key]
+        ck("speed under 5s a question is 75", g(xr["fast"], "speed") and g(xr["fast"], "speed")[0][2] == 75, xr["fast"])
+        ck("speed past two minutes a question is 5", g(xr["slow"], "speed") and g(xr["slow"], "speed")[0][2] == 5, xr["slow"])
+        ck("every speed bonus is a multiple of 5", all(r[2] % 5 == 0 for rows in (xr["fast"], xr["slow"]) for r in g(rows, "speed")))
+        st10 = g(xr["streaks"], "streak10"); st25 = g(xr["streaks"], "streak25")
+        ck("two runs past 10 count as 10 in a row x2, and 25 once", st10 and "\u00d72" in st10[0][1] and st25 and "\u00d7" not in st25[0][1], xr["streaks"])
+        ck("a multi-unit run ends on its multiplier, x1.15 for four units",
+           xr["multi"]["key"] == "multi" and "1.15" in xr["multi"]["label"], xr["multi"])
+        ck("a retake earns its right answers and nothing else", [r[0] for r in xr["retake"]] == ["correct"] and xr["retake"][0][2] == 30, xr["retake"])
+        ck("a Game won pays its difficulty and its lives", g(xr["gameWon"], "gamebeat") and g(xr["gameWon"], "gamelives"), xr["gameWon"])
+        ck("a Game lost pays neither", not g(xr["gameLost"], "gamebeat") and not g(xr["gameLost"], "gamelives"), xr["gameLost"])
+        ck("a badge is worth 1,000", xr["badge"] == 1000, xr["badge"])
+    print("   a lost game still gets a results screen")
+    lost = pg.evaluate("""([u])=>{ if(typeof gameOver !== 'function') return null;
+      cfg.mode='game'; cfg.gameSpeed='easy'; cfg.source='all'; cfg.units=[u];
+      order=QUESTIONS.map((q,i)=>i).filter(i=>(QUESTIONS[i].topic||'').trim()===u);
+      runTrackable=true; timedOut=false; runMode='game'; runLabel=null; isMissedRetake=false; practiceTestMinutes=null; inVirtualRoom=false;
+      attempts={}; picked={}; timedOutSet={}; try{ gameLostAt=0; }catch(e){}
+      order.slice(0,3).forEach((qi,k)=>{ attempts[qi]= k<2 ? 2 : 1; });
+      pos=2; livesLeft=0; runStartTime=Date.now()-30000; testInProgress=true;
+      gameOver();
+      return { title:(document.getElementById('testscopelabel')||{}).textContent,
+               over: !!document.querySelector('#stage .rs-grade.is-over'),
+               xp: !!document.querySelector('#stage .rs-xp') }; }""", [UNIT])
+    ck("out of lives lands on a results screen with XP and a Game over card",
+       bool(lost) and lost["over"] and lost["xp"] and lost["title"] == "Game over", lost)
+    wait_done(pg)
 
     print("4. reduce motion: everything at once, no banners")
     pg.evaluate("""([u])=>{ theme.reduceMotion=true; applyTheme && applyTheme();
