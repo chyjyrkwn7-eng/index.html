@@ -5477,6 +5477,63 @@ lobby / Main menu. Tug of War is untouched.
   simultaneous on purpose, so it was left alone; if it goes red, re-run it
   on an idle machine before suspecting the chat code.
 
+### The results screen, third pass (build 214)
+
+- **Every way-on button is on the RESULTS, and lands last** - after every
+  box, the badge case, each unlock spotlight and a flare scene: "Continue
+  to review (N missed)" across the top when anything was missed, Re-run and
+  Main menu under it. The REVIEW carries only "Retake missed questions"
+  (Drill) and "Back to results" - no Re-run, no Main menu - so missing some
+  again is a cycle (results -> review -> retake -> results). Back to results
+  redraws the finished screen at once (`showRunRewards(run, hooks,
+  {instant:true})`): nothing lands again and no cutscene replays.
+  `buildFinalActions({where:"results"|"review", ...})` builds both.
+- **A retake shows no score.** Its card says only what is left ("2
+  questions still to go over" / "every question you missed, answered
+  right"), its XP is right answers only, and it throws no confetti.
+- **Header:** "1 unit" with the unit listed under it, like "2 units";
+  the list's dots are white.
+- **"Streak bonus · 10"**, with "10 right in a row" under it.
+- **Badge progress is one box per unit.** Every box still filling shares a
+  steel tint; the box of a badge just earned takes that badge's own colour
+  (`--bt` from `badgeThemeFor(u).p`), bar included.
+- **The hundo box is on the XP card's recipe** (wash .12, border .2) and
+  its 100% is a lighter gold with a soft glow, like the XP total. Unit bars
+  are each unit's own verdict: gold at 100, green at a pass, red short of
+  `PASS_MARK` - a failed single-unit test has a red bar now.
+- **No Game box.** The difficulty unlock in Unlocked names the unit(s)
+  that unlocked it, and beating Hardcore is its own row. A MULTI-unit game
+  won covers every unit it ran in full (`recordGameBeatIfEligible` returns
+  the speed and fills `lastGameBeatUnits`); a lost game never counts, even
+  for a unit it happened to finish. Game over reads "Beat X on Easy to
+  unlock Average" (on Hardcore, "to beat the game").
+- **Rank up is the biggest banner**: the rank you held charges, burns down
+  to light, flash and shockwaves, and the new emblem forms out of it with
+  rays behind; the words land after (`.rs-morph`, `item.from`). The rank
+  icon in the Unlocked row is scaled up to match the others - the emblem is
+  drawn with room for its glow and read half-size.
+- **Personal-best marks are seeded BEFORE the run is recorded.** Seeded
+  lazily from the history, the history already held this run, so a first
+  100% after the feature was compared with itself and never counted.
+- **The Virtual Room score leaves out personal bests** (and badges):
+  `lastRunRoomXp` is `computeRunXp` again with no PRs, so the multi-unit
+  line is taken over the right base. The cutscene has no "Personal bests"
+  step; its "Everything else" step is excluded from its own count (asking
+  it for a match threw).
+- **Virtual Room end:** no Review button - the review is on the screen in
+  two tabs, Missed questions (default) and Entire test. Each player
+  publishes `revealDone` when their own results have finished landing,
+  cutscenes included. "Preparing leaderboard" (a pill pinned to the
+  bottom, visible from anywhere) goes up `VROOM_PREP_AFTER_MS` after
+  everyone is in; the cutscene rolls at the later of
+  `VROOM_ROLL_AFTER_MS` after everyone is in and
+  `VROOM_READ_AFTER_REVEAL_MS` after the last reveal, so somebody still
+  watching a badge case holds everyone. A player who never reports is
+  waited for `VROOM_REVEAL_WAIT_MS` at most. All times are this device's
+  own observations - no two clocks are compared. check-vroom holds it by
+  having the guest tab withhold its report.
+- Customize: "Earned by doing" is now **"Challenge rewards"**.
+
 Also: Pause wears the chat button's glass; Stats drops "Current answer
 streak" and calls the other "All-time best answer streak"; Customize groups
 characters as Starters / Rank rewards / Earned by doing.

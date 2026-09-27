@@ -70,11 +70,12 @@ SETUP = """()=>{
   setInterval(()=>{ const n=document.querySelectorAll('.rs-spot').length; __maxSpots=Math.max(__maxSpots,n);
     if(n){ __spots++; const a=document.querySelector('.rs-actions');
       if(a && getComputedStyle(a).opacity > .5) __actionsDuringSpot=true; } }, 60);
-  window.__run=(unit, missN, mode)=>{
+  window.__run=(unit, missN, mode, retake)=>{
     __lands.length=0;
     cfg.mode=mode; cfg.source='all'; cfg.units=[unit]; cfg.size=0;
     order=QUESTIONS.map((q,i)=>i).filter(i=>(QUESTIONS[i].topic||'').trim()===unit);
-    runTrackable=true; timedOut=false; runMode=mode; runLabel=null; isMissedRetake=false;
+    if(retake) order=order.slice(0,3);
+    runTrackable=!retake; timedOut=false; runMode=mode; runLabel=retake?'Missed questions':null; isMissedRetake=!!retake;
     practiceTestMinutes=null; inVirtualRoom=false; attempts={}; picked={}; timedOutSet={};
     try{ firstPick = {}; }catch(e){}
     order.forEach((qi,k)=>{ const oo=optionOrder(qi), right=oo.indexOf(QUESTIONS[qi].answer);
@@ -147,7 +148,13 @@ with sync_playwright() as pw:
     ck("and the button after the grade",
        bool(t("actions")) and bool(t("grade")) and t("actions")[0] > t("grade")[0], kinds)
     cont = pg.evaluate("()=>{const b=document.querySelector('#stage .rs-continue'); return b? b.textContent: null}")
-    ck("a missed run ends in Continue to review", cont == "Continue to review", cont)
+    ck("a missed run ends in Continue to review, with the count", cont == "Continue to review (3 missed)", cont)
+    # BUILD 214: Re-run and Main menu are on the RESULTS, not the review -
+    # "At the end of the test, on the result screen, that's where the re
+    # run and main button need to be".
+    res_btns = pg.evaluate("()=>[...document.querySelectorAll('#stage .actions button')].map(b=>b.textContent)")
+    ck("and Re-run and Main menu beside it, on the results",
+       res_btns == ["Continue to review (3 missed)", "Re-run", "Main menu"], res_btns)
     pg.evaluate("()=>document.querySelector('#stage .rs-continue') && document.querySelector('#stage .rs-continue').click()")
     pg.wait_for_timeout(400)
     rev = pg.evaluate("""()=>({
@@ -161,8 +168,17 @@ with sync_playwright() as pw:
        rev["qs"] == 3 and rev["title"] == "Test review", rev)
     ck("each one shows the answer you gave, Drill included", rev["yours"] == 3, rev)
     ck("and the count at the top carries no stray percentage", not rev["pctInHead"], rev)
-    ck("then Retake, Re-run and Main menu",
-       len(rev["btns"]) == 3 and "Retake" in rev["btns"][0] and rev["btns"][1] == "Re-run" and rev["btns"][2] == "Main menu", rev)
+    ck("the review offers the retake and the way back, and nothing else",
+       rev["btns"] == ["Retake missed questions (3)", "Back to results"], rev)
+    ck("so no Re-run and no Main menu while reviewing",
+       not any(b in ("Re-run", "Main menu") for b in rev["btns"]), rev)
+    pg.evaluate("()=>[...document.querySelectorAll('#stage .actions button')].find(b=>/Back to results/.test(b.textContent)).click()")
+    pg.wait_for_timeout(300)
+    back = pg.evaluate("()=>({ done: !!document.querySelector('.rs-rewards.rs-done'),"
+      " spots: document.querySelectorAll('.rs-spot, .bc-scene, .fl-scene').length,"
+      " btns: [...document.querySelectorAll('#stage .actions button')].map(b=>b.textContent) })")
+    ck("Back to results is the finished screen at once, nothing replayed",
+       back["done"] and back["spots"] == 0 and back["btns"] == res_btns, back)
     ck("no Pause on the review either", not rev["pause"], rev)
 
     print("2. a perfect run that earns a badge: banners one at a time")
@@ -241,6 +257,28 @@ with sync_playwright() as pw:
     pg.wait_for_timeout(1500)
     ck("and no banner plays", pg.evaluate("()=>__maxSpots") == 0)
     pg.evaluate("()=>{ theme.reduceMotion=false; applyTheme && applyTheme(); }")
+
+    print("5. build 214: the header, the labels, a retake, the room's score")
+    pg.evaluate("([u])=>__run(u,2,'drill')", [UNIT]); wait_done(pg)
+    hd = pg.evaluate("()=>({ title:(document.querySelector('#stage .rs-units')||{}).textContent,"
+                     " items:[...document.querySelectorAll('#stage .rs-unitlist li')].map(l=>l.textContent) })")
+    ck("a one-unit test says 1 unit and lists it", hd["title"] == "1 unit" and hd["items"] == [UNIT], hd)
+    lab = pg.evaluate("()=>computeRunXp({good:12, answered:12, elapsedMs:60000, okList:Array(12).fill(true), hundos:0, wholeUnits:1})"
+                      ".lines.filter(l=>/^streak/.test(l.key)).map(l=>l.label)")
+    ck("a streak line says what kind of bonus it is", lab == ["Streak bonus \u00b7 10"], lab)
+    pg.evaluate("([u])=>__run(u,1,'drill',true)", [UNIT]); wait_done(pg)
+    rt = pg.evaluate("()=>({ pct: !!document.querySelector('#stage .rs-pct'),"
+      " note: (document.querySelector('#stage .rs-retake-line')||{}).textContent,"
+      " xp: [...document.querySelectorAll('#stage .rs-xpline-name')].map(e=>e.textContent) })")
+    ck("a retake shows no score", not rt["pct"] and bool(rt["note"]), rt)
+    ck("and earns its right answers only", len(rt["xp"]) == 1 and "correct" in rt["xp"][0], rt)
+    pg.evaluate("([u])=>{ store.unitBestPct = store.unitBestPct || {}; store.unitBestPct[u] = 50; saveStore(); }", [UNIT])
+    pg.evaluate("([u])=>__run(u,0,'drill')", [UNIT]); wait_done(pg, 60000)
+    rm2 = pg.evaluate("()=>({ mine: (lastRunResult.xpLines||[]).map(l=>l.key),"
+                      " room: ((lastRunRoomXp||{}).lines||[]).map(l=>l.key) })")
+    ck("a new best score is in YOUR XP", "pbscore" in rm2["mine"], rm2)
+    ck("and not in the Virtual Room's score, nor a badge",
+       "pbscore" not in rm2["room"] and "pbtime" not in rm2["room"] and "badge" not in rm2["room"], rm2)
 
     ck("no page errors", not errors, errors[:3])
     br.close()

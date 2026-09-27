@@ -22,7 +22,7 @@ pointed at the fake.
 
 Exits non-zero on any failure.
 """
-import argparse
+import time, argparse
 import functools
 import json
 import http.server
@@ -603,6 +603,17 @@ def main():
         # Driven here rather than mounted: both tabs finish for real, so
         # the screen is reached the way a person reaches it.
         print("\n7. the results screen, reached by finishing")
+        # The guest will hold back its "my results have finished landing"
+        # report until told to, so the host's wait on the LAST reveal can
+        # be seen (build 214).
+        guest.evaluate("""()=>{ window.__holdReveal = true;
+          const oc = fbDb.collection.bind(fbDb);
+          fbDb.collection = name => { const c = oc(name); const od = c.doc.bind(c);
+            c.doc = id => { const d = od(id); const ou = d.update.bind(d);
+              d.update = f => (window.__holdReveal && f && Object.keys(f).some(k => /\\.revealDone$/.test(k) && f[k] === true))
+                ? Promise.resolve() : ou(f);
+              return d; };
+            return c; }; }""")
         for pg in (host, guest):
             pg.evaluate("""()=>{
               /* EVERY ANSWER RIGHT, on purpose. The bug in "Review your
@@ -655,6 +666,45 @@ def main():
         check("finishing keeps the normal results screen up", stays.get("screen") == "results", stays)
         check("with the Virtual Room part on it, not instead of it", stays.get("inline") is True, stays)
         check("and the race line is down on it", stays.get("race") is True, stays)
+
+        # ---- BUILD 214: the wait, and what fills it ----
+        # "the virtual room doesn't need the review button, the missed
+        # questions need to be displayed beneath there ... that review
+        # section at the bottom needs to be a tab". Then "preparing
+        # leaderboard" about five seconds after everyone is in, and the
+        # cutscene held until the LAST player's results have finished
+        # landing.
+        rv = host.evaluate("""()=>{ const top = document.getElementById('stage').firstElementChild;
+          return { tabs: [...top.querySelectorAll('.rs-roomreview .rs-tab')].map(b=>b.dataset.tab),
+                   on: (top.querySelector('.rs-roomreview .rs-tab.is-on')||{dataset:{}}).dataset.tab,
+                   reviewBtn: [...top.querySelectorAll('button')].some(b=>/Review your answers/.test(b.textContent)) }; }""")
+        check("the review is on the screen in two tabs, missed first",
+              rv["tabs"] == ["missed", "all"] and rv["on"] == "missed", rv)
+        check("with no Review button to open it", not rv["reviewBtn"], rv)
+        t_in = None
+        for _ in range(100):
+            if host.evaluate("()=>!!document.querySelector('.vroom-waitcard.is-all-in')"):
+                t_in = time.time(); break
+            host.wait_for_timeout(200)
+        check("everyone in is seen", t_in is not None)
+        if t_in:
+            host.wait_for_timeout(max(0, int((t_in + 6.5 - time.time()) * 1000)))
+            check("'Preparing leaderboard' is up five seconds after",
+                  host.evaluate("()=>!!document.getElementById('vroom-prep')"))
+            host.wait_for_timeout(max(0, int((t_in + 14.5 - time.time()) * 1000)))
+            held = host.evaluate("()=>!document.getElementById('vroom-race-cut') && !!document.getElementById('vroom-prep')")
+            check("the cutscene waits while a player's results are still landing", held, held)
+            guest.evaluate("""()=>{ window.__holdReveal = false;
+              fbDb.collection('vrooms').doc(vroomCode).update({ ['participants.' + vroomMyKey + '.revealDone']: true }); }""")
+            rolled = False
+            for _ in range(80):
+                if host.evaluate("()=>!!document.getElementById('vroom-race-cut')"):
+                    rolled = True; break
+                host.wait_for_timeout(250)
+            check("and rolls once they are done", rolled)
+            check("taking the banner down with it", not host.evaluate("()=>!!document.getElementById('vroom-prep')"))
+        for pg in (host, guest):
+            pg.evaluate("()=>{ document.getElementById('vroom-race-cut')?.remove(); document.getElementById('vroom-prep')?.remove(); }")
         # Both are finished as far as the room document is concerned, so
         # the results screen can be asked for directly - what is under
         # test is the screen, not the route to it.
