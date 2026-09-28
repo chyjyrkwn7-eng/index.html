@@ -32379,7 +32379,10 @@ function onSnapshotResilient(ref, onNext, opts){
     if(!live) return;
     try {
       unsub = ref.onSnapshot(
-        (snap) => { attempt = 0; onNext(snap); },
+        /* Not after the handle has been called: an SDK or a fake that
+           delivers one last snapshot after unsubscribe would otherwise
+           repaint a screen that asked to stop listening. */
+        (snap) => { if(!live) return; attempt = 0; onNext(snap); },
         () => {
           if(!live) return;
           if(unsub){ try { unsub(); } catch(e){} unsub = null; }
@@ -32654,12 +32657,25 @@ function attachPresence(){
         try{ if(typeof refreshPresenceViews === "function") refreshPresenceViews(); }catch(e){}
       });
   }catch(e){ presenceUnsub = null; }
-  const obs = new MutationObserver(() => {
-    obs.disconnect();
+  /* DETACH WHEN THE DOTS ARE GONE, NOT ON THE NEXT MUTATION (build 239).
+     Both callers attach BEFORE they mount, so "detach on the next screen
+     change" fired on the caller's own mount and presence was unsubscribed
+     before its first snapshot arrived - the online dots never came from
+     the presence document at all, only from each row's seenAt. And every
+     presence repaint of Friends is itself a mount, so even a listener
+     that survived would have died on the first dot it drew. One
+     observer, and it asks the only question that matters: is a screen
+     that shows presence still up? */
+  if(presenceObs) return;
+  presenceObs = new MutationObserver(() => {
+    if(stage.querySelector(PRESENCE_SCREENS)) return;
+    presenceObs.disconnect(); presenceObs = null;
     detachPresence();
   });
-  try{ obs.observe(stage, { childList: true }); }catch(e){}
+  try{ presenceObs.observe(stage, { childList: true }); }catch(e){ presenceObs = null; }
 }
+let presenceObs = null;
+const PRESENCE_SCREENS = ".screen-friends, .screen-profile";
 function detachPresence(){
   if(presenceUnsub){ try{ presenceUnsub(); }catch(e){} presenceUnsub = null; }
 }
@@ -44372,13 +44388,22 @@ function chatColorFor(key, participants){
   return VROOM_RACE_COLORS[i % VROOM_RACE_COLORS.length];
 }
 
+/* COLOURS BY MEMBERSHIP, NOT BY WHO IS AWAKE (build 239). The colour is
+   a position in join order, so it has to be taken from the same list
+   every time. Taken from the PRESENT set, anybody whose phone had gone to
+   sleep dropped out of it and fell back to a hashed colour - which could
+   be the colour of somebody still here (Alex away and Kim present, both
+   green). All members is stable; the present set is not. */
+function chatColorBasis(parts){
+  return (chatAllMembers && Object.keys(chatAllMembers).length) ? chatAllMembers : parts;
+}
 const CHAT_CTX = {
   label: "Chat",
   alertTag: null,
   isMuted: () => isChatMuted(chatRoomCode),
   code: () => chatRoomCode,
   myKey: () => chatMyKey,
-  colorFor: (key, parts) => chatColorFor(key, parts),
+  colorFor: (key, parts) => chatColorFor(key, chatColorBasis(parts)),
   /* NOBODY IS HOST OF A CHAT LOBBY - it has no match to run - so "the
      host trims" has no meaning. The author of the NEWEST message trims,
      which is exactly one device per event and is already the device
@@ -44656,7 +44681,10 @@ function renderChatRoster(participants){
     (((participants[a] || {}).joinedAt || 0) - ((participants[b] || {}).joinedAt || 0))
     || (a < b ? -1 : 1));
   el.replaceChildren();
-  if(keys.length <= 1){
+  /* Only when the one person here IS you. It used to say this for any
+     single person, so a chat where Alex was here and your own stamp was
+     stale read "Just you so far" with Alex sitting in it. */
+  if(!keys.length || (keys.length === 1 && keys[0] === chatMyKey)){
     el.textContent = "Just you so far";
     return;
   }
@@ -44670,7 +44698,7 @@ function renderChatRoster(participants){
     const nm = document.createElement("span");
     nm.className = "chatdock-who-name";
     nm.textContent = k === chatMyKey ? "You" : (e.name || "Someone");
-    const c = chatColorFor(k, participants);
+    const c = chatColorFor(k, chatColorBasis(participants));
     if(c && k !== chatMyKey) nm.style.color = c;
     one.append(art, nm);
     el.appendChild(one);
@@ -44746,6 +44774,17 @@ function startVroomPresence(){
 let chatBeatTimer = null;
 function startChatPresence(){
   clearInterval(chatBeatTimer);
+  /* STAMPED NOW, NOT 45 SECONDS FROM NOW (build 239). Re-opening a chat
+     you last had open a while ago left your `seen` stale until the first
+     beat, so you showed as Away - to yourself and to everybody else -
+     for up to a beat after walking in. */
+  if(chatRoomCode && chatMyKey && fbDb){
+    try{
+      const now = {};
+      now["participants." + chatMyKey + ".seen"] = Date.now();
+      fbDb.collection("vrooms").doc(chatRoomCode).update(now).catch(() => {});
+    }catch(e){}
+  }
   chatBeatTimer = setInterval(() => {
     if(!chatRoomCode || !chatMyKey || !fbDb){ clearInterval(chatBeatTimer); chatBeatTimer = null; return; }
     try{
@@ -45808,6 +45847,7 @@ function notificationItems(){
        nothing in it. joinChatRoom() reports its own failures as toasts
        and now resolves false as well, so the row only clears when
        somebody is actually in. */
+    code: inv.code,
     act: () => { Promise.resolve(joinChatRoom(inv.code)).then(ok => {
                    if(!ok){ renderNotifications(); return; }
                    markNotifHandled("chat", inv.from.pub);
@@ -45820,6 +45860,7 @@ function notificationItems(){
   (incomingLobbyInvites() || []).forEach(inv => items.push({
     kind: "vroom", at: inv.from.at || ((inv.from.inv || {})[store.publicId] || {}).at || 0,
     who: inv.from,
+    code: inv.code,
     text: (inv.from.firstName || "Someone") + " invited you to a Virtual Room",
     actLabel: "Join",
     /* Same rule as the chat invite above, and the stakes are higher: a
@@ -46110,7 +46151,13 @@ function openChatInviteSheet(){
          again. Asked for directly: thirty seconds. The countdown is
          live so the button says what it is doing rather than just
          looking broken, and it re-enables itself with nothing to tap. */
-      armInviteButton(b, e.pub);
+      /* ALREADY IN IT (build 239): no live Invite button that can only
+         answer with a toast. */
+      if(chatAllMembers && Object.prototype.hasOwnProperty.call(chatAllMembers, e.pub)){
+        b.textContent = "In chat"; b.disabled = true;
+      } else {
+        armInviteButton(b, e.pub);
+      }
       row.append(art, text, b);
       list.appendChild(row);
     });
@@ -50423,7 +50470,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-28-238";
+const APP_BUILD = "2026-09-28-239";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -58634,8 +58681,11 @@ function openInviteFriendsSheet(roomCode){
       b.type = "button"; b.className = "next friend-act";
       const already = (store.lobbyInvitesOut || {})[e.pub];
       const sent = !!(already && already.code === roomCode);
-      b.textContent = sent ? "Invited" : "Invite";
-      b.disabled = sent;
+      /* Already in this room (build 239) - there is nothing to invite. */
+      const here = roomCode === vroomCode && liveVroomParticipants &&
+        Object.prototype.hasOwnProperty.call(presentParticipants(liveVroomParticipants) || {}, e.pub);
+      b.textContent = here ? "In room" : sent ? "Invited" : "Invite";
+      b.disabled = sent || here;
       b.addEventListener("click", () => {
         inviteFriendToLobby(e.pub, roomCode);
         b.textContent = "Invited"; b.disabled = true;
@@ -62653,6 +62703,12 @@ function showFriends(){
     const el = document.activeElement;
     if(el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
     if(document.querySelector(".invite-overlay .person-card")) return;
+    /* ONLY WHEN SOMETHING ON SCREEN CHANGED (build 239). Presence now
+       stays attached for the life of this screen, and the presence
+       document moves every few seconds with the class online - most of
+       those moves are somebody who was already green staying green.
+       The same signature the board listener already gates on. */
+    if(friendsViewSignature() === friendsShownSignature) return;
     showFriends();
   };
   window.forceHideBottomTabs = false;

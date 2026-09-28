@@ -6540,3 +6540,44 @@ Section 22 of check-behaviour is this build's gate and fails on 236.
   fades in still fails.
 
 Section 23 of check-behaviour is the best-time gate and fails on 237.
+
+### Build 239 - presence that stays on; chat invites and rosters that tell the truth
+
+Found by an agent photographing the chat screens and reading the code
+behind what it saw. Each one is a real device behaviour, not a harness
+artifact, and section 24 of check-behaviour fails on 238 for every one:
+- **Presence was unsubscribed before its first snapshot, every time.**
+  `showFriends()` and `showProfile()` call `attachPresence()` BEFORE
+  they mount, and `attachPresence()` detached "on the next change to
+  `#stage`" - which was the caller's own mount. So the online dots never
+  came from the presence document at all, only from each row's
+  `seenAt`. Now one observer (`presenceObs`) detaches only when no screen
+  in `PRESENCE_SCREENS` (`.screen-friends, .screen-profile`) is left on
+  the stage. Friends' repaint (`refreshPresenceViews`) is gated on
+  `friendsViewSignature()`, because presence now really does move every
+  few seconds and most moves change nothing on screen.
+- `onSnapshotResilient` no longer calls `onNext` after its handle has
+  been called. The fake Firestore delivered one last snapshot after an
+  unsubscribe, which turned the bug above into a rebuild loop in the
+  harness; a defensive check costs nothing.
+- **Opening a chat stamps you present at once**, not a 45s beat later -
+  re-opening one you had left for a while showed you as Away, to
+  yourself and everybody else.
+- **"Just you so far" only when the one person present IS you.** It said
+  it for any single person, including when that person was somebody else.
+- Tried and reverted: making an invite disappear only for the room it
+  invites you to. Madison's rule is "if I am in a room or chat with them
+  their old invite should disappear" - with anyone - and check-chatroom
+  holds it. Being in chat A with Bo does therefore hide Bo's invite to
+  chat B; that edge case was put to her rather than decided here. The
+  invite items do carry `code` now, harmlessly, should she want it.
+- **Names are coloured by membership, not by who is awake**
+  (`chatColorBasis`). Taken from the present set, somebody whose phone
+  slept fell back to a hashed colour that could match somebody present.
+- **Nobody already in the chat or the room is offered Invite** - the
+  button reads "In chat" / "In room", disabled.
+
+Not changed, noted for later: with four people the chat header wraps
+(Invite/Leave onto their own row on a phone, Leave alone on an iPad),
+and the iPad panel's default height leaves ~290px of list, so a poll can
+need the resize handle.

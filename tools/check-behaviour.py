@@ -2168,6 +2168,62 @@ def check_b238(br):
     ctx.close()
 
 
+def check_b239(br):
+    """Build 239: presence and chat. Written against build 238, where
+    Friends dropped its own presence listener on its own mount, a chat
+    with only somebody else present said "Just you so far", and people
+    already in a chat were offered a live Invite button."""
+    print("\n24. build 239: presence and chat")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{
+      const wait = ms => new Promise(r => setTimeout(r, ms));
+      const out = {};
+      /* A minimal Firestore that counts presence subscriptions. */
+      let subs = 0, unsubs = 0;
+      const doc = () => ({ onSnapshot(n){ subs++; return () => { unsubs++; }; },
+        update(){ return Promise.resolve(); }, set(){ return Promise.resolve(); },
+        get(){ return Promise.resolve({ exists:false, data:()=>({}) }); } });
+      fbDb = { collection: () => ({ doc, onSnapshot(){ return () => {}; },
+        get(){ return Promise.resolve({ forEach(){}, size:0, metadata:{} }); } }) };
+      detachPresence();
+      showFriends(); await wait(300);
+      out.afterFriends = !!presenceUnsub;
+      showProfile('profile'); await wait(300);
+      out.afterProfile = !!presenceUnsub;
+      showHome(); await wait(300);
+      out.afterHome = !!presenceUnsub;
+
+      /* The roster says "just you" only when the one person is you. */
+      const box = document.createElement('div'); box.id = 'chatdock-roomwho'; document.body.appendChild(box);
+      chatMyKey = 'ME-1';
+      renderChatRoster({ 'AL-1': { name: 'Alex', joinedAt: 1 } });
+      out.otherOnly = box.textContent;
+      renderChatRoster({ 'ME-1': { name: 'Me', joinedAt: 1 } });
+      out.meOnly = box.textContent;
+      box.remove();
+
+      chatRoomCode = 'ROOM-A';
+
+      /* Somebody already in the chat is not offered Invite. */
+      chatAllMembers = { 'ME-1': {}, 'BO-1': {} };
+      friendPublicIds = () => ['BO-1'];
+      openChatInviteSheet(); await wait(200);
+      const b = document.querySelector('.invite-sheet .friend-act');
+      out.memberButton = b ? { text: b.textContent, disabled: b.disabled } : null;
+      document.querySelector('.invite-overlay')?.remove();
+      chatRoomCode = null;
+      return out; }""")
+    check("Friends keeps its presence listener after it mounts", r.get("afterFriends") is True, r)
+    check("and Profile keeps it too", r.get("afterProfile") is True, r)
+    check("and leaving for Home lets it go", r.get("afterHome") is False, r)
+    check("a chat with only somebody else in it does not say 'Just you'",
+          "Just you" not in str(r.get("otherOnly")) and "Just you" in str(r.get("meOnly")), r)
+    check("a member already in the chat is not offered Invite",
+          isinstance(r.get("memberButton"), dict) and r["memberButton"]["disabled"]
+          and "In chat" in r["memberButton"]["text"], r)
+    ctx.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=CHROME)
@@ -2195,6 +2251,7 @@ def main():
             check_b236(br)
             check_b237(br)
             check_b238(br)
+            check_b239(br)
         finally:
             br.close()
     SERVER.shutdown()
