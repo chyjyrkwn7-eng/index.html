@@ -528,9 +528,9 @@ def check_ranks(br):
           tabs["swipe"] == ["ranks", "badges"], tabs)
     check("the Ranks tab in the bar is lit on its own screen", tabs["tabLit"], tabs)
 
-    # THE ROAD MAP. Stops are drawn top-down (Supernova at the summit),
-    # so they are reversed here to read in climbing order.
-    cards = pg.evaluate("""()=>[...document.querySelectorAll('.rankmap-stop')].reverse().map(c=>({
+    # THE ROAD MAP. Build 232 turned it over: Iron at the top, Supernova
+    # at the bottom, so the DOM order IS the climbing order now.
+    cards = pg.evaluate("""()=>[...document.querySelectorAll('.rankmap-stop')].map(c=>({
       name:c.querySelector('.rankmap-name').textContent,
       state:(c.className.match(/is-(reached|here|next|locked)/g)||[]).join(' '),
       chip:c.querySelector('.rankmap-state').textContent,
@@ -552,9 +552,10 @@ def check_ranks(br):
     check("only the rank you are climbing to carries a meter",
           [c["meter"] for c in cards] == [False, False, False, True, False, False, False],
           [c["meter"] for c in cards])
-    # Theme and flare on every rank; the top four hand over a character too.
+    # Theme and flare on every rank; the top four hand over a character
+    # too, and Supernova its own banner (build 232).
     check("every rank lists what it hands over, top four include the character",
-          [c["rewards"] for c in cards] == [2, 2, 2, 3, 3, 3, 3] and
+          [c["rewards"] for c in cards] == [2, 2, 2, 3, 3, 3, 4] and
           [c["charGift"] for c in cards] == [False] * 3 + [True] * 4,
           [c["rewards"] for c in cards])
     # THE SHAPE, NOT THE COUNT. This asserted `count == 12` and that
@@ -1514,6 +1515,171 @@ def check_b231(br):
     ctx.close()
 
 
+def check_b232(br):
+    """Build 232: Madison's list of twenty-two. Written against build 231,
+    where each of these fails or throws."""
+    print("\n17. build 232: characters, banners, the Rank tab turned over, glass bubbles, the badge case, Pause")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""()=>{
+      const out = {};
+      const T = (k, f) => { try{ out[k] = f(); }catch(e){ out[k] = 'THREW ' + e.message; } };
+      // Characters
+      T('order', () => AVATAR_CHARACTERS.filter(c => c.feat).map(c => c.id));
+      T('masked', () => { const d = AVATAR_CHARACTERS.find(c => c.id === 'masked');
+        return { retired: !!(d && d.retired), locked: isLockedCharacter('masked') }; });
+      T('poseidon', () => {
+        store.weeklyTop3 = 2; store.pendingCharUnlocks = [];
+        store.weekRankSeen = { week: '1999-W01', rank: 3 };
+        settleWeeklyWin();
+        return { top3: store.weeklyTop3, queued: store.pendingCharUnlocks.slice(), locked: isLockedCharacter('poseidon') }; });
+      T('spartan', () => {
+        store.vrWins = 9; store.vrCounted = []; store.pendingCharUnlocks = [];
+        recordVroomOutcome('ROOMX', ['me', 'bo'], 'me');
+        return { wins: store.vrWins, queued: store.pendingCharUnlocks.slice(), locked: isLockedCharacter('spartan') }; });
+      T('rankMsg', () => characterLockMessage('officer'));
+      T('flareMsgs', () => { store.mysteryColorsFound = { red:false, orange:false, yellow:false, violet:false, white:false };
+        return [characterLockMessage('umbra'), characterLockMessage('singularity')]; });
+      // Banners
+      T('banners', () => BANNERS.map(b => [b.id, b.name]));
+      // A seventeenth unit, for the length of one read: the number has to
+      // follow it, which a written-in "16" cannot.
+      T('starfall', () => { const b = bannerDef('badges16');
+        QUESTIONS.push(Object.assign({}, QUESTIONS[0], { topic: 'A Unit Added Later' }));
+        try{ return { label: b.label, need: b.need, units: topicsIn(QUESTIONS).length }; }
+        finally{ QUESTIONS.pop(); } });
+      T('hardcore', () => { store.unitGameBeat = {}; topicsIn(QUESTIONS).slice(0, 10).forEach(t => store.unitGameBeat[t] = { easy:true, average:true, hardcore:true });
+        return bannerEarned('hardcore10'); });
+      // Planets: highlight and rim are two different colours
+      T('planets', () => {
+        const hue = h => { const n = parseInt(h.slice(1), 16), r = (n >> 16) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
+          const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn; if(!d) return 0;
+          let x = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; return (x * 60 + 360) % 360; };
+        const gap = (a, b) => { const d = Math.abs(a - b) % 360; return Math.min(d, 360 - d); };
+        const res = {};
+        ['ranger','veteran','adept','titan'].forEach(a => {
+          document.documentElement.dataset.accent = a;
+          const cs = getComputedStyle(document.documentElement);
+          res[a] = Math.round(gap(hue(cs.getPropertyValue('--theme-c1').trim()), hue(cs.getPropertyValue('--theme-c3').trim())));
+        });
+        document.documentElement.dataset.accent = theme.accent || 'ink';
+        return res; });
+      // The leaderboard is published the moment the app is put away
+      T('publish', () => {
+        let flushed = 0; const real = flushLeaderboardRow;
+        flushLeaderboardRow = () => { flushed++; };
+        const vs = Object.getOwnPropertyDescriptor(Document.prototype, 'visibilityState');
+        Object.defineProperty(document, 'visibilityState', { configurable:true, get: () => 'hidden' });
+        const had = { db: fbDb, code: syncCode, opt: store.leaderboardOptIn };
+        fbDb = fbDb || {}; syncCode = syncCode || 'TEST-CODE'; store.leaderboardOptIn = true;
+        document.dispatchEvent(new Event('visibilitychange'));
+        delete document.visibilityState;
+        fbDb = had.db; syncCode = had.code; store.leaderboardOptIn = had.opt;
+        flushLeaderboardRow = real;
+        return flushed; });
+      return out; }""")
+    check("the challenge row: Detective, the two gods, the two fighters, then the three flares together",
+          r["order"] == ["detective", "zeus", "poseidon", "champion", "spartan", "voidwalker", "umbra", "singularity"], r["order"])
+    check("the Masked One is retired and never locked for whoever wears it",
+          isinstance(r["masked"], dict) and r["masked"]["retired"] and r["masked"]["locked"] is False, r["masked"])
+    check("a third week on the weekly podium hands over Poseidon",
+          isinstance(r["poseidon"], dict) and r["poseidon"]["top3"] == 3 and "poseidon" in r["poseidon"]["queued"]
+          and r["poseidon"]["locked"] is False, r["poseidon"])
+    check("a tenth Virtual Room win hands over the Spartan",
+          isinstance(r["spartan"], dict) and r["spartan"]["wins"] == 10 and "spartan" in r["spartan"]["queued"]
+          and r["spartan"]["locked"] is False, r["spartan"])
+    check("a rank character says only which rank unlocks it",
+          isinstance(r["rankMsg"], str) and r["rankMsg"].startswith("Unlocks at ") and "rank" in r["rankMsg"]
+          and "Level" not in r["rankMsg"] and "badge" not in r["rankMsg"], r["rankMsg"])
+    check("Umbra and Singularity keep their requirement hidden until the one before is unlocked",
+          isinstance(r["flareMsgs"], list) and "Unlock Void" in r["flareMsgs"][0] and "Unlock Umbra" in r["flareMsgs"][1]
+          and "Find" not in "".join(r["flareMsgs"]), r["flareMsgs"])
+    names = dict(r["banners"]) if isinstance(r["banners"], list) else {}
+    check("Northern Lights is the 100-test banner and Sakura the 250",
+          names.get("tests100") == "Northern Lights" and names.get("tests250") == "Sakura", names)
+    check("Thunderhead, Sky Temple and the Supernova banner exist",
+          names.get("hardcore10") == "Thunderhead" and names.get("hundos250") == "Sky Temple"
+          and names.get("titan_rank") == "Supernova", names)
+    check("Hardcore on ten units hands over the Thunderhead banner", r["hardcore"] is True, r["hardcore"])
+    sf = r["starfall"] if isinstance(r["starfall"], dict) else {}
+    check("Starfall's count is the units that exist, not a written-in sixteen",
+          sf.get("need") == sf.get("units") and ("all %s badges" % sf.get("units")) in str(sf.get("label")), sf)
+    check("the four circled themes put a second colour on the planet",
+          isinstance(r["planets"], dict) and all(v >= 35 for v in r["planets"].values()), r["planets"])
+    check("putting the app away publishes your leaderboard row there and then", r["publish"] == 1, r["publish"])
+
+    # Screens
+    s = pg.evaluate("""()=>{
+      const out = {};
+      const T = (k, f) => { try{ out[k] = f(); }catch(e){ out[k] = 'THREW ' + e.message; } };
+      showProfile('ranks');
+      T('ladder', () => [...document.querySelectorAll('.rankmap-stop .rankmap-name')].map(n => n.textContent));
+      T('novaBanner', () => { const st = [...document.querySelectorAll('.rankmap-stop')].pop();
+        return !!(st && st.querySelector('.rankmap-gift.is-banner .bnr')); });
+      T('centred', () => [...document.querySelectorAll('.rankmap-node')].map(n => {
+        const svg = n.querySelector('svg.rank-emblem-svg'); const a = n.getBoundingClientRect(), b = svg.getBoundingClientRect();
+        return { vb: svg.getAttribute('viewBox'), dx: Math.round(Math.abs((a.left + a.width / 2) - (b.left + b.width / 2))),
+                 over: Math.round(Math.max(0, b.width - a.width)) }; }));
+      T('hero', () => ({ gauges: document.querySelectorAll('.rankhero .rankhero-gauge').length,
+                         bar: !!document.querySelector('.rankhero-fill, .rankhero-track'),
+                         chips: !!document.querySelector('.rankhero-chip') }));
+      showProfile('badges');
+      T('case', () => { const bg = getComputedStyle(document.querySelector('.badges-tab .badge-grid')).backgroundImage;
+        const cols = [...bg.matchAll(/rgb\\((\\d+), (\\d+), (\\d+)\\)/g)].map(m => [+m[1], +m[2], +m[3]]);
+        return cols.map(c => c[2] - c[0]); });
+      cfg.mode = 'drill'; const u = topicsIn(QUESTIONS)[0]; store.unitPerfects[u] = 999; showSetup();
+      T('chip', () => !!document.querySelector('.screen-setup .rs-mode.rs-mode-drill'));
+      T('glow', () => { const b = document.querySelector('.pick-badge.earned');
+        return b ? [b.style.getPropertyValue('--badge-glow').trim().toUpperCase(), String(badgeThemeFor(u).p).toUpperCase()] : null; });
+      showPracticeTestConfirm();
+      T('brief', () => ({ stats: document.querySelectorAll('.pt-stats .pt-stat').length, rules: document.querySelectorAll('.pt-rules .pt-rule').length,
+                          record: !!document.querySelector('.pt-record') }));
+      showAppearance();
+      T('sync', () => { const l = document.querySelector('.sync-code-row .sync-code-label'); return l ? getComputedStyle(l).color : null; });
+      return out; }""")
+    check("the ladder reads Iron first and Supernova last, the way you scroll",
+          isinstance(s["ladder"], list) and s["ladder"][:1] == ["Iron"] and s["ladder"][-1:] == ["Supernova"], s["ladder"])
+    check("Supernova's stop shows its banner among what it hands over", s["novaBanner"] is True, s["novaBanner"])
+    cen = s["centred"] if isinstance(s["centred"], list) else []
+    check("every road-map icon is centred in its circle and cut to fit it",
+          len(cen) == 7 and all(c["vb"] != "0 0 128 128" and c["dx"] <= 1 and c["over"] == 0 for c in cen), cen)
+    check("the hero shows level and badges as two gauges, not a copy of the Profile card",
+          isinstance(s["hero"], dict) and s["hero"]["gauges"] == 2 and not s["hero"]["bar"] and not s["hero"]["chips"], s["hero"])
+    check("the badge case lining is not blue", isinstance(s["case"], list) and s["case"] and max(s["case"]) <= 12, s["case"])
+    check("unit selection wears the results screen's mode chip", s["chip"] is True, s["chip"])
+    check("an earned badge on a unit card glows in its own colour",
+          isinstance(s["glow"], list) and s["glow"][0] == s["glow"][1], s["glow"])
+    check("the Practice Test screen is a briefing: three numbers, four rules, your record",
+          isinstance(s["brief"], dict) and s["brief"]["stats"] == 3 and s["brief"]["rules"] == 4 and s["brief"]["record"], s["brief"])
+    check("the words 'Sync code' in Settings are blue", s["sync"] == "rgb(111, 194, 255)", s["sync"])
+
+    # Home: a rank not reached is Liquid Glass, not a dark disc
+    h = pg.evaluate("""()=>{ showHome(); const b = document.querySelector('.cosmic-icon-badge.cosmic-badge-rank:not(.cosmic-badge-lit):not(.cosmic-badge-noir)');
+      if(!b) return null; const cs = getComputedStyle(b);
+      return { bg: cs.backgroundColor, blur: cs.backdropFilter || cs.webkitBackdropFilter }; }""")
+    glass = False
+    if isinstance(h, dict):
+        import re as _re
+        m = _re.match(r"rgba\((\d+), (\d+), (\d+), ([\d.]+)\)", h["bg"] or "")
+        glass = bool(m) and int(m.group(1)) >= 200 and float(m.group(4)) <= .2 and "blur" in (h["blur"] or "")
+    check("an orbit bubble for a rank not reached is Liquid Glass again", glass, h)
+    ctx.close()
+
+    # Pause holds still when the page scrolls, level with the chat button.
+    ctx, pg = booted(br, 390, 664, seed=USED_ACCOUNT)
+    p = pg.evaluate("""async ()=>{
+      const U = topicsIn(QUESTIONS)[0]; const ix = QUESTIONS.map((q,i)=>i).filter(i=>(QUESTIONS[i].topic||'').trim()===U);
+      cfg.mode='drill'; cfg.units=[U]; cfg.source='all'; runMode='drill'; beginRun(ix, null);
+      for(let i = 0; i < 80 && !document.querySelector('.qpanel .choice'); i++) await new Promise(r => setTimeout(r, 150));
+      await new Promise(r => setTimeout(r, 900));
+      const d = document.createElement('div'); d.style.height = '1500px'; document.querySelector('.qpanel').appendChild(d);
+      const at = () => Math.round(document.querySelector('#pausebtn').getBoundingClientRect().top);
+      const a = at(); window.scrollTo({ top: 400, behavior: 'instant' }); await new Promise(r => setTimeout(r, 300));
+      return { rest: a, scrolled: at(), sy: Math.round(scrollY) }; }""")
+    check("Pause stays where it is when a question scrolls, like the chat button",
+          p["sy"] > 0 and p["rest"] == p["scrolled"], p)
+    ctx.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=CHROME)
@@ -1534,6 +1700,7 @@ def main():
             check_b229(br)
             check_b230(br)
             check_b231(br)
+            check_b232(br)
         finally:
             br.close()
     SERVER.shutdown()

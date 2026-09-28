@@ -324,10 +324,22 @@
        Sapphire  cyan / blue / indigo
        Amethyst  lavender / purple / pink
        Supernova coral / red / crimson-rose     (red all the way through)
-     A new theme has to find a family that is not on this list. */
+     A new theme has to find a family that is not on this list.
+     BUILD 232: "some of them look like solid colors without a second
+     color to the planet though" - Bronze, Gold, Sapphire and Supernova
+     circled. Neighbouring hues were too close to read as two colours on
+     the planet, whose body is mostly c3 (the sphere's gradient puts c3
+     at the rim and the marbling mixes c2 into it). Each of the four got
+     a c3 far enough round the wheel to show as a SECOND colour, chosen
+     from renders of candidates side by side, with c2 - the rank's own
+     colour - left alone so the swatch still predicts the theme:
+       Bronze    pale gold / bronze / deep verdigris
+       Gold      lemon / gold / vermilion         (a sun, not a coin)
+       Sapphire  aqua / blue / violet
+       Supernova yellow-hot / red / deep crimson  (a white-yellow core) */
   [data-accent="rookie"]{ --rank-accent:#6F7884; --rank-accent-ink:#F7F8F9; --theme-c1:#E4F1FA; --theme-c2:#8FA3B8; --theme-c3:#8A86B0; }
   [data-theme="dark"][data-accent="rookie"]{ --rank-accent:#AEB7C2; --rank-accent-ink:#14181D; }
-  [data-accent="ranger"]{ --rank-accent:#A4602A; --rank-accent-ink:#FFF6EE; --theme-c1:#FFC79A; --theme-c2:#CD7F32; --theme-c3:#3F9C6E; }
+  [data-accent="ranger"]{ --rank-accent:#A4602A; --rank-accent-ink:#FFF6EE; --theme-c1:#FFD9A0; --theme-c2:#CD7F32; --theme-c3:#1E7F5C; }
   [data-theme="dark"][data-accent="ranger"]{ --rank-accent:#D99458; --rank-accent-ink:#221208; }
   /* Build 219: SILVER moved off Iron's grey - "the silver icon looks cool,
      but the color looks too much like iron" - to a bright, cool, pearly
@@ -337,7 +349,7 @@
   /* Build 225: veteran is GOLD and vanguard is PLATINUM (teal) - see
      RANK_DISPLAY_NAME. Each keeps the three-colour triad: a warm c1, the
      rank itself as c2, a cooler c3. */
-  [data-accent="veteran"]{ --rank-accent:#B7860F; --rank-accent-ink:#FFFBEF; --theme-c1:#FFF6A0; --theme-c2:#FFC61A; --theme-c3:#D98300; }
+  [data-accent="veteran"]{ --rank-accent:#B7860F; --rank-accent-ink:#FFFBEF; --theme-c1:#FFF3A6; --theme-c2:#FFC61A; --theme-c3:#D9481C; }
   [data-theme="dark"][data-accent="veteran"]{ --rank-accent:#FFCF4D; --rank-accent-ink:#241A02; }
   [data-accent="vanguard"]{ --rank-accent:#11857A; --rank-accent-ink:#F0FFFD; --theme-c1:#CFFFD6; --theme-c2:#2EC4B6; --theme-c3:#1E86C4; }
   [data-theme="dark"][data-accent="vanguard"]{ --rank-accent:#5EEAD4; --rank-accent-ink:#032520; }
@@ -345,11 +357,11 @@
      at all, so --accent simply fell through to whatever it was
      already set to rather than the intended colour \u2014 selecting this
      colour visibly did nothing anywhere in the app. */
-  [data-accent="adept"]{ --rank-accent:#2A55BE; --rank-accent-ink:#F1F5FF; --theme-c1:#7FEFFF; --theme-c2:#2F6BFF; --theme-c3:#3A2BC0; }
+  [data-accent="adept"]{ --rank-accent:#2A55BE; --rank-accent-ink:#F1F5FF; --theme-c1:#7DFFE8; --theme-c2:#2F6BFF; --theme-c3:#6A1FD8; }
   [data-theme="dark"][data-accent="adept"]{ --rank-accent:#6E9CFF; --rank-accent-ink:#081231; }
   [data-accent="elite"]{ --rank-accent:#7E30C9; --rank-accent-ink:#F9F2FF; --theme-c1:#C9B8FF; --theme-c2:#A855F7; --theme-c3:#FF4FA3; }
   [data-theme="dark"][data-accent="elite"]{ --rank-accent:#C084FC; --rank-accent-ink:#1C0A32; }
-  [data-accent="titan"]{ --rank-accent:#B82525; --rank-accent-ink:#FFF2F2; --theme-c1:#FFB199; --theme-c2:#FF1F1F; --theme-c3:#A0003C; }
+  [data-accent="titan"]{ --rank-accent:#B82525; --rank-accent-ink:#FFF2F2; --theme-c1:#FFE66B; --theme-c2:#FF1F1F; --theme-c3:#8E0028; }
   [data-theme="dark"][data-accent="titan"]{ --rank-accent:#FF3B30; --rank-accent-ink:#2A0707; }
   [data-accent="grinder"]{ --accent:#9C5B2E; --accent-ink:#FFF6EE; }
   [data-theme="dark"][data-accent="grinder"]{ --accent:#D4915C; --accent-ink:#1F1006; }
@@ -5471,10 +5483,17 @@
   [data-layout="modern"] .next.ghost.sync-stop-btn:active{
     background-color:color-mix(in srgb, #E8687C 14%, transparent); opacity:1;
   }
+  /* BLUE, WHATEVER THE THEME. It was var(--accent), which is blue
+     only on the themes whose accent happens to be blue - on the
+     default it is --ink (white) and on Supernova it is red - so the
+     words went from blue to white without anyone touching them.
+     Asked for back: "the 'sync code' words in settings should still
+     be blue". The label and the code are the same fixed blue. */
   .sync-code-value{
-    font-family:var(--mono); font-size:.95rem; font-weight:800; color:var(--accent);
+    font-family:var(--mono); font-size:.95rem; font-weight:800; color:#6FC2FF;
     white-space:nowrap; flex-shrink:0; margin-left:.8rem;
   }
+  .sync-code-row .sync-code-label{ color:#6FC2FF; font-weight:700; }
   .sync-enter-wrap{ margin:.6rem 0; }
   .opt[hidden]{ display:none; }
   .opt.locked{ opacity:.55; }
@@ -8738,8 +8757,29 @@
      Not reached = the same emblem, dim and colourless. The filter is on
      a small static element and never animates. */
   .cosmic-icon-badge.cosmic-badge-rank{ width:2.9rem; height:2.9rem; }
-  .cosmic-icon-badge.cosmic-badge-rank svg.cosmic-rank-emblem{ width:118%; height:118%; flex:none; overflow:visible; }
-  .cosmic-icon-badge.cosmic-badge-rank:not(.cosmic-badge-lit) svg.cosmic-rank-emblem{ filter:grayscale(1) brightness(.8); opacity:.5; }
+  .cosmic-icon-badge.cosmic-badge-rank svg.cosmic-rank-emblem{ width:100%; height:100%; flex:none; overflow:hidden; border-radius:50%; clip-path:circle(50% at 50% 50%); }
+  .cosmic-icon-badge.cosmic-badge-rank:not(.cosmic-badge-lit) svg.cosmic-rank-emblem{ filter:grayscale(1) brightness(1.05); opacity:.62; }
+  /* ---- A RANK NOT YET REACHED IS LIQUID GLASS AGAIN (build 232) ----
+     "The bubbles on the main menu, the ones that aren't unlocked look
+     bad, I liked the old look of the Liquid Glass bubbles." Build 230
+     swapped them for a dark fill to take the backdrop blur off seven
+     moving elements, and a dark disc over a dark screen reads as a hole
+     rather than as glass. The look is back - the pale translucent body,
+     the light caught along the top, the bright rim - with the rank's
+     emblem inside it, ghosted. The blur is back too but SMALL (6px on a
+     46px circle), and only on these: the lit bubbles are opaque and
+     never needed one. check-behaviour's Home raster budget (section 15)
+     is what says this is affordable, not this comment. */
+  .cosmic-icon-badge.cosmic-badge-rank:not(.cosmic-badge-lit):not(.cosmic-badge-noir){
+    background:rgba(255,255,255,.09);
+    background-image:
+      radial-gradient(120% 70% at 50% 0%, rgba(255,255,255,.30), rgba(255,255,255,0) 62%),
+      linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,0) 55%, rgba(255,255,255,.06));
+    border:1px solid rgba(255,255,255,.24);
+    -webkit-backdrop-filter:blur(6px) saturate(1.4); backdrop-filter:blur(6px) saturate(1.4);
+    box-shadow:0 1px 1px rgba(255,255,255,.28) inset, 0 -1px 2px rgba(255,255,255,.08) inset,
+      0 4px 10px rgba(0,0,0,.22);
+  }
   /* Lit: a dark glass bubble with the rank's colour in its rim and halo,
      so the emblem is what you see - the old solid fill drowned it. */
   .cosmic-icon-badge.cosmic-badge-rank.cosmic-badge-lit,
@@ -10168,6 +10208,45 @@
   }
 
   .panel.modeselect{ position:relative; overflow:hidden; text-align:center; padding-top:2rem; }
+  /* The Practice Test briefing (build 232). */
+  .practice-brief .setup-modechip{ margin-top:.4rem; }
+  .practice-brief .homegreet{ margin-top:.55rem; }
+  .pt-sub{ margin:.25rem 0 1.1rem; font-size:.86rem; color:var(--soft); }
+  .pt-stats{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:.55rem; margin:0 0 1rem; }
+  .pt-stat{
+    display:flex; flex-direction:column; align-items:center; gap:.15rem; padding:.8rem .3rem .7rem;
+    border-radius:1rem; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.09);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+  }
+  .pt-stat-val{ font-size:1.55rem; font-weight:800; line-height:1.05; color:#FFC4A6; font-variant-numeric:tabular-nums; }
+  .pt-stat-lab{ font-size:.62rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--soft); }
+  .pt-rules{
+    list-style:none; margin:0 0 1rem; padding:.35rem .9rem; text-align:left;
+    border-radius:1.05rem; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
+  }
+  .pt-rule{ display:flex; gap:.75rem; align-items:flex-start; padding:.65rem 0; }
+  .pt-rule + .pt-rule{ border-top:1px solid rgba(255,255,255,.07); }
+  .pt-rule-ico{
+    flex:none; width:2rem; height:2rem; border-radius:.65rem; display:grid; place-items:center;
+    background:color-mix(in srgb, #F5804D 16%, transparent); border:1px solid color-mix(in srgb, #F5804D 34%, transparent);
+  }
+  .pt-rule-ico svg{ width:1.1rem; height:1.1rem; fill:none; stroke:#FFB38E; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .pt-rule-txt{ display:flex; flex-direction:column; gap:.1rem; min-width:0; }
+  .pt-rule-txt strong{ font-size:.9rem; color:var(--ink); }
+  .pt-rule-txt span{ font-size:.8rem; line-height:1.4; color:var(--soft); }
+  .pt-record{
+    display:flex; flex-direction:column; align-items:center; gap:.15rem; margin:0 0 1rem; padding:.75rem .9rem;
+    border-radius:1rem; border:1px dashed rgba(255,255,255,.14);
+  }
+  .pt-record.is-passed{ border-style:solid; border-color:color-mix(in srgb, #7BE0A6 40%, transparent); background:color-mix(in srgb, #7BE0A6 7%, transparent); }
+  .pt-record-lab{ font-size:.62rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--soft); }
+  .pt-record-val{ font-size:.95rem; font-weight:700; color:var(--ink); }
+  .pt-record.is-passed .pt-record-val{ color:#9BEBC0; }
+  .pt-record-tip{ font-size:.74rem; color:var(--soft); margin-top:.1rem; }
+  @media (min-width:40rem){
+    .practice-brief .pt-stats, .practice-brief .pt-rules, .practice-brief .pt-record{ max-width:34rem; margin-left:auto; margin-right:auto; width:100%; }
+    .pt-stat-val{ font-size:1.9rem; }
+  }
   .panel.modeselect .modecards{ position:relative; z-index:1; }
   .homegreet{ font-family:var(--serif); font-size:1.4rem; font-weight:700; color:var(--ink); margin:0; }
   .modecards{ display:flex; flex-direction:column; gap:1rem; margin-top:1.5rem; }
@@ -10347,50 +10426,37 @@
      numbers; stacked and centred below that, because a 110px emblem and
      a progress bar do not share a 340px line. */
   .rankhero{
-    display:flex; flex-direction:column; align-items:center; gap:.9rem;
-    /* Top padding raised from 1.15rem to give the emblem's own pool of
-       light somewhere to land inside the card. */
-    padding:1.55rem 1.1rem 1.05rem; margin:0 0 1.4rem;
-    /* THE GLOW WAS ESCAPING THE BOX - reported directly. The emblem's
-       ::before pool is inset:-40% of a 6.6rem art (so ~1.8x the art,
-       against 18px of padding above it) and the svg carries a 30px
-       drop-shadow on top of that, and nothing clipped either. Both are
-       tightened below so the light mostly fits, and this is the net
-       under them: a card with a radius clips to that radius, so the
-       glow can never reach past the edge again whatever a later change
-       does to its radius. */
-    overflow:hidden;
-    border-radius:1.3rem; text-align:center;
+    display:flex; flex-direction:column; gap:1rem;
+    padding:1.2rem 1.15rem 1.1rem; margin:0 0 1.4rem;
+    /* THE GLOW WAS ESCAPING THE BOX - reported directly. A card with a
+       radius clips to that radius, so the emblem's light can never reach
+       past the edge whatever a later change does to it. */
+    overflow:hidden; position:relative;
+    border-radius:1.3rem;
+    /* Build 232: a different object from the Profile card, on purpose.
+       That one is a flat glass slab; this is a dark plate lit from the
+       emblem's corner in the rank's colour, with a second light in the
+       NEXT rank's colour coming in from the opposite corner - where you
+       are and where you are going, on one card. */
     background:
-      radial-gradient(120% 140% at 50% -20%,
-        color-mix(in srgb, var(--rank-color, var(--accent)) 26%, transparent), transparent 70%),
-      rgba(255,255,255,.045);
-    border:1px solid color-mix(in srgb, var(--rank-color, var(--accent)) 38%, transparent);
-    box-shadow:0 10px 30px -18px var(--rank-color, var(--accent));
-    will-change:backdrop-filter;
-    backdrop-filter:blur(8px) saturate(1.8) brightness(1.05); -webkit-backdrop-filter:blur(8px) saturate(1.8) brightness(1.05);
+      radial-gradient(90% 120% at 0% 0%, color-mix(in srgb, var(--rank-color, var(--accent)) 30%, transparent), transparent 62%),
+      radial-gradient(80% 110% at 100% 100%, color-mix(in srgb, var(--next-color, var(--rank-color, var(--accent))) 18%, transparent), transparent 60%),
+      linear-gradient(160deg, #161B23, #0C0F14);
+    border:1px solid color-mix(in srgb, var(--rank-color, var(--accent)) 42%, rgba(255,255,255,.06));
+    box-shadow:0 14px 34px -20px var(--rank-color, var(--accent)), inset 0 1px 0 rgba(255,255,255,.07);
   }
   .rankhero.is-unranked{
-    background:rgba(255,255,255,.045); border-color:var(--rule); box-shadow:none;
+    background:
+      radial-gradient(80% 110% at 100% 100%, color-mix(in srgb, var(--next-color, #8B939E) 16%, transparent), transparent 60%),
+      linear-gradient(160deg, #161B23, #0C0F14);
+    border-color:var(--rule); box-shadow:none;
   }
-  /* THE BAR IS ALREADY IN THE RANK'S OWN COLOUR, with its glow - see
-     .rankhero-fill further down, which takes --rank-color and a
-     box-shadow in the same colour. A second copy was written here
-     before checking, and measured against a seeded account it looked
-     flat for a different reason entirely: that account is below Iron,
-     so there is no rank colour to take and the fallback accent is what
-     paints. Left as a note rather than a duplicate rule - two rules
-     for one fill is how the two stop agreeing. */
-  .rankhero-art{ width:6.6rem; height:6.6rem; flex:0 0 auto; position:relative; }
-  /* THE BIGGEST EMBLEM ON THE SCREEN, and it had no glow at all - every
-     glow rule was written against .rankcard, which is the list below.
-     The hero is the one that says "this is you", so it gets the
-     strongest version of the same treatment the cards use: a pool of
-     light behind it, two drop-shadows at different radii rather than
-     one, and a slow breath. `--rank-color` is set on .rankhero itself,
-     so all of this inherits without a second lookup.
-     The global [data-reduce-motion="true"] *{animation:none} rule
-     switches the breath off without this having to name it. */
+  .rankhero-top{ display:flex; align-items:center; gap:1rem; min-width:0; }
+  .rankhero-art{ width:5.6rem; height:5.6rem; flex:0 0 auto; position:relative; }
+  /* THE BIGGEST EMBLEM ON THE SCREEN: a pool of light behind it, two
+     drop-shadows at different radii, and a slow breath. The global
+     [data-reduce-motion="true"] *{animation:none} rule switches the
+     breath off without this having to name it. */
   .rankhero-art::before{
     content:""; position:absolute; inset:-20%; border-radius:50%;
     pointer-events:none;
@@ -10406,67 +10472,72 @@
     filter:drop-shadow(0 0 6px color-mix(in srgb, var(--rank-color, var(--accent)) 95%, transparent))
            drop-shadow(0 0 17px color-mix(in srgb, var(--rank-color, var(--accent)) 62%, transparent));
   }
-  /* Somebody below the first rank holds nothing, so there is no light to
-     give off - the emblem there is a preview of what is coming, not a
-     thing they have. */
-  .rankhero.is-unranked .rankhero-art{ opacity:.55; }
-  /* NOTHING HELD, NOTHING RESERVED. The setting is left empty on purpose
-     (see buildRanks), but an empty 6.6rem box still took its space: a
-     blank block above "No rank yet" on a 440 phone, and a blank column
-     beside it at 518 that pushed every line to the right - reported as
-     the Rank tab sitting off-centre on the phone. The slot goes, and the
-     card centres what is left at every width. */
+  /* NOTHING HELD, NOTHING RESERVED: an empty slot once pushed the whole
+     card off-centre on a phone. */
   .rankhero.is-unranked .rankhero-art{ display:none; }
-  .rankhero.is-unranked{ text-align:center; }
-  .rankhero.is-unranked .rankhero-chips{ justify-content:center; }
-  .rankhero.is-unranked .rankhero-art::before{ display:none; }
-  .rankhero.is-unranked .rankhero-art svg{ filter:none; }
-  .rankhero-info{ flex:1 1 auto; min-width:0; width:100%; }
+  .rankhero-info{ flex:1 1 auto; min-width:0; }
   .rankhero-kicker{
     font-size:.68rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase;
-    color:var(--soft); margin:0 0 .15rem;
+    color:var(--soft); margin:0 0 .1rem;
   }
   .rankhero-name{
-    font-family:var(--serif); font-size:1.9rem; font-weight:700; margin:0 0 .7rem;
-    color:var(--rank-color, var(--ink)); line-height:1.1;
+    font-family:var(--serif); font-size:2rem; font-weight:700; margin:0;
+    color:color-mix(in srgb, var(--rank-color, var(--ink)) 70%, #fff); line-height:1.08;
+    text-shadow:0 0 18px color-mix(in srgb, var(--rank-color, var(--accent)) 45%, transparent);
   }
-  .rankhero.is-unranked .rankhero-name{ color:var(--soft); font-size:1.4rem; }
-  .rankhero-barwrap{ margin:0 0 .5rem; }
-  .rankhero-track{
-    height:.55rem; border-radius:999px; background:rgba(255,255,255,.1); overflow:hidden;
+  .rankhero.is-unranked .rankhero-name{ color:var(--ink); text-shadow:none; font-size:1.6rem; }
+  .rankhero-nextrank{
+    display:inline-flex; align-items:center; gap:.4rem; margin:.5rem 0 0;
+    padding:.22rem .6rem .22rem .5rem; border-radius:999px;
+    background:rgba(255,255,255,.06); border:1px solid color-mix(in srgb, var(--next-color, #fff) 35%, rgba(255,255,255,.08));
+    font-size:.74rem; font-weight:700; color:rgba(255,255,255,.85);
   }
-  .rankhero-fill{
-    display:block; height:100%; width:0; border-radius:999px;
-    background:linear-gradient(90deg,
-      color-mix(in srgb, var(--rank-color, var(--accent)) 55%, #FFFFFF),
-      var(--rank-color, var(--accent)));
-    box-shadow:0 0 10px -2px var(--rank-color, var(--accent));
-    transition:width 1.1s cubic-bezier(.22,.9,.32,1);
+  .rankhero-nextlab{ font-size:.6rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--soft); }
+  .rankhero-nextemb{ width:1.2rem; height:1.2rem; display:grid; place-items:center; }
+  .rankhero-nextemb svg{ width:100%; height:100%; border-radius:50%; clip-path:circle(50% at 50% 50%); }
+  .rankhero-nextname{ color:color-mix(in srgb, var(--next-color, #fff) 65%, #fff); }
+  /* The two requirements, as two rings. */
+  .rankhero-gauges{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:.6rem; }
+  .rankhero-gauge{
+    display:flex; align-items:center; gap:.7rem; min-width:0;
+    padding:.6rem .7rem; border-radius:1rem;
+    background:rgba(0,0,0,.28); border:1px solid rgba(255,255,255,.07);
+    --ring:#6FC2FF;
   }
-  .rankhero-ends{
-    display:flex; justify-content:space-between; gap:.6rem;
-    font-size:.68rem; font-weight:700; color:var(--soft); margin-top:.3rem;
+  .rankhero-gauge.is-badges{ --ring:#E3C77A; }
+  .rankhero-ringface{ position:relative; width:3.9rem; height:3.9rem; flex:none; }
+  .rankhero-ring{ width:100%; height:100%; display:block; transform:rotate(-90deg); }
+  .rankhero-ringtrack{ fill:none; stroke:rgba(255,255,255,.09); stroke-width:6; }
+  .rankhero-ringarc{
+    fill:none; stroke:var(--ring); stroke-width:6; stroke-linecap:round;
+    stroke-dasharray:100; stroke-dashoffset:100;
+    filter:drop-shadow(0 0 4px color-mix(in srgb, var(--ring) 70%, transparent));
+    transition:stroke-dashoffset 1.2s cubic-bezier(.22,.9,.32,1) .15s;
   }
-  .rankhero-next{ font-size:.8rem; font-weight:600; color:var(--ink); margin:.5rem 0 0; }
-  .rankhero-chips{ display:flex; gap:.6rem; margin:.85rem 0 0; justify-content:center; }
-  .rankhero-chip{
-    flex:1 1 0; min-width:0; padding:.5rem .4rem; border-radius:.85rem;
-    background:rgba(255,255,255,.05); border:1px solid var(--rule); text-align:center;
+  .rankhero-ringval{
+    position:absolute; inset:0; display:grid; place-items:center;
+    font-size:1.3rem; font-weight:800; color:#fff; font-variant-numeric:tabular-nums;
   }
-  .rankhero-chip-val{ display:block; font-size:1.25rem; font-weight:800; line-height:1.1; }
-  .rankhero-chip-lab{
-    display:block; font-size:.64rem; font-weight:700; letter-spacing:.08em;
-    text-transform:uppercase; color:var(--soft); margin-top:.1rem;
+  .rankhero-gaugetxt{ display:flex; flex-direction:column; min-width:0; }
+  .rankhero-gaugelab{
+    font-size:.64rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase;
+    color:color-mix(in srgb, var(--ring) 70%, #fff);
   }
-  @media (min-width:30rem){
-    .rankhero{ flex-direction:row; text-align:left; gap:1.3rem; padding:1.3rem 1.4rem; }
-    .rankhero-art{ width:8rem; height:8rem; }
-    .rankhero-chips{ justify-content:flex-start; }
-    .rankhero-chip{ flex:0 0 auto; min-width:5.2rem; }
+  .rankhero-gaugetarget{ font-size:.86rem; font-weight:700; color:rgba(255,255,255,.85); margin-top:.1rem; white-space:nowrap; }
+  .rankhero-gauge.is-met .rankhero-gaugetarget{ color:#7BE0A6; }
+  .rankhero.is-top .rankhero-gaugetarget{ display:none; }
+  .rankhero-next{ font-size:.8rem; font-weight:600; color:var(--soft); margin:0; text-align:center; }
+  @media (max-width:24rem){
+    .rankhero-gauge{ flex-direction:column; text-align:center; gap:.35rem; }
+    .rankhero-gaugetxt{ align-items:center; }
   }
   @media (min-width:40rem){
-    .rankhero-art{ width:9.5rem; height:9.5rem; }
-    .rankhero-name{ font-size:2.4rem; }
+    .rankhero{ padding:1.4rem 1.5rem 1.3rem; }
+    .rankhero-art{ width:7.5rem; height:7.5rem; }
+    .rankhero-name{ font-size:2.5rem; }
+    .rankhero-ringface{ width:4.6rem; height:4.6rem; }
+    .rankhero-ringval{ font-size:1.5rem; }
+    .rankhero-gaugetarget{ font-size:.95rem; }
   }
 
   /* Flex and not grid, for one reason: SEVEN is prime. A grid leaves
@@ -10487,8 +10558,8 @@
     margin:0; font-size:.66rem; font-weight:800; letter-spacing:.24em; text-transform:uppercase;
     color:var(--soft); padding-left:.55rem;
   }
-  .rankmap-summit{ margin-bottom:.8rem; color:color-mix(in srgb, #E23B3B 55%, #fff); }
-  .rankmap-foot{ margin-top:.2rem; }
+  .rankmap-summit{ margin-top:.2rem; color:color-mix(in srgb, #E23B3B 55%, #fff); }
+  .rankmap-foot{ margin-bottom:.8rem; }
   .rankmap-stop{
     --node:4.4rem; --gap:1.25rem;
     position:relative; display:grid; grid-template-columns:var(--node) minmax(0,1fr); gap:.85rem;
@@ -10501,7 +10572,7 @@
     z-index:0; overflow:hidden;
   }
   .rankmap-roadfill{
-    position:absolute; inset:0; transform-origin:50% 100%; transform:scaleY(var(--lit, 0));
+    position:absolute; inset:0; transform-origin:50% 0%; transform:scaleY(var(--lit, 0));
     background:linear-gradient(to top, color-mix(in srgb, var(--rank-color) 60%, #fff), var(--rank-color));
     box-shadow:0 0 10px color-mix(in srgb, var(--rank-color) 70%, transparent);
     transition:transform 1.4s cubic-bezier(.2,.8,.2,1) .2s;
@@ -10509,11 +10580,14 @@
   .rankmap-node{
     position:relative; z-index:1; width:var(--node); height:var(--node); border-radius:50%;
     display:grid; place-items:center;
+    /* The emblem is cut to fit (fitRankEmblem) and clipped to a circle
+       itself, rather than the node clipping - the "you" marker and the
+       ping both sit deliberately outside the node's edge. */
     background:radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--rank-color) 26%, #10141A), #0A0C10 75%);
     border:2px solid color-mix(in srgb, var(--rank-color) 70%, #fff);
     box-shadow:0 0 18px color-mix(in srgb, var(--rank-color) 45%, transparent), inset 0 0 12px color-mix(in srgb, var(--rank-color) 25%, transparent);
   }
-  .rankmap-node > svg.rank-emblem-svg{ width:118%; height:118%; overflow:visible; filter:drop-shadow(0 0 8px color-mix(in srgb, var(--rank-color) 60%, transparent)); }
+  .rankmap-node > svg.rank-emblem-svg{ width:100%; height:100%; overflow:hidden; border-radius:50%; clip-path:circle(50% at 50% 50%); filter:drop-shadow(0 0 6px color-mix(in srgb, var(--rank-color) 55%, transparent)); }
   .rankmap-stop.is-locked .rankmap-node{ background:#0C0F14; border-color:rgba(255,255,255,.14); box-shadow:none; }
   .rankmap-stop.is-locked .rankmap-node > svg{ filter:grayscale(1) brightness(.7); opacity:.45; }
   .rankmap-stop.is-next .rankmap-node{ border-style:dashed; }
@@ -10560,6 +10634,16 @@
   .rankmap-dot{ width:.85rem; height:.85rem; border-radius:50%; box-shadow:0 0 6px currentColor; }
   .rankmap-giftav{ width:1.2rem; height:1.2rem; display:grid; place-items:center; }
   .rankmap-giftav svg{ width:100%; height:100%; }
+  .rankmap-giftav svg.is-fitted{ border-radius:50%; clip-path:circle(50% at 50% 50%); }
+  /* The Supernova banner among Supernova's rewards: the picture itself,
+     as a strip, since "Supernova banner" on its own describes nothing. */
+  .rankmap-gift.is-banner{ padding:.22rem .6rem .22rem .22rem; }
+  .rankmap-giftbanner{
+    width:3.4rem; height:1.25rem; border-radius:999px; overflow:hidden; flex:none; position:relative;
+    box-shadow:0 0 0 1px rgba(255,255,255,.18), 0 0 10px -2px #FF3B30;
+  }
+  .rankmap-giftbanner .bnr{ position:absolute; inset:0; }
+  .rankmap-giftbanner .bnr svg{ width:100%; height:100%; display:block; }
   .rankmap-stop.is-locked .rankmap-gift{ opacity:.7; }
   @media (min-width:46rem){
     .rankmap-stop{ --node:5.4rem; --gap:1.6rem; grid-template-columns:minmax(0,1fr) var(--node) minmax(0,1fr); gap:1.1rem; }
@@ -10843,7 +10927,7 @@
     .rankcard:hover{ border-color:color-mix(in srgb, var(--rank-color, var(--accent)) 70%, transparent); }
   }
   @media (prefers-reduced-motion:reduce){
-    .rankhero-fill, .rankcard-meterfill{ transition:none; }
+    .rankhero-ringarc, .rankcard-meterfill{ transition:none; }
     .rankhero:not(.is-unranked) .rankhero-art{ animation:none; }
   }
   /* .unlocks-list is a two-column grid from 40rem up, which is right
@@ -11623,6 +11707,28 @@
     top:.6rem; padding:0; border-radius:0;
     position:sticky; overflow:visible; min-height:0;
   }
+  /* ---- PAUSE STAYS WHERE IT STARTED (build 232) ----
+     "When in a test or the result screen, the chat button scrolls with
+     you which is great but the pause button needs to do the same." It
+     did follow you - .top is sticky - but it stuck at .6rem from the
+     very top of the layout viewport, which on a notched phone is under
+     the clock: measured on a 17 Pro Max, Pause sat at y=70 at rest and
+     jumped to y=7 the moment the page scrolled, while the chat button
+     beside it (position:fixed) stayed at 66. Sticking at the safe-area
+     line (or the page's own top padding, where there is no notch) is
+     where .top already sits at rest, so it does not move at all when
+     you scroll - the same as the chat button. */
+  /* The value is .wrap's own top padding at each width (it is .wrap's
+     first child), so these three have to follow .wrap's three. */
+  @media (max-width:39.99rem){
+    [data-layout="modern"] .top{ top:max(1.5rem, env(safe-area-inset-top, 0px)); }
+  }
+  @media (max-width:32rem){
+    [data-layout="modern"] .top{ top:max(1.25rem, env(safe-area-inset-top, 0px)); }
+  }
+  @media (max-width:39.99rem) and (max-height:480px) and (orientation:landscape){
+    [data-layout="modern"] .top{ top:max(.75rem, env(safe-area-inset-top, 0px)); }
+  }
   [data-theme="dark"][data-layout="modern"] .top{
     background:none; box-shadow:none;
   }
@@ -12069,6 +12175,35 @@
   @keyframes bn-lantern{ 0%{ transform:translate(0,14px); opacity:0; } 12%{ opacity:1; } 50%{ transform:translate(6px,-8px); } 88%{ opacity:1; } 100%{ transform:translate(0,-30px); opacity:0; } }
   .bnr .bn-bob{ animation:bn-bob 5s ease-in-out infinite; }
   @keyframes bn-bob{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(3px); } }
+  /* Thunderhead, Sky Temple and Supernova. Transform and opacity only,
+     like the rest; every loop either ends where it starts or is
+     invisible at the reset. */
+  /* A strike: two quick pulses, a short afterglow, then dark for the
+     rest of the cycle. The bolt and its sky flash share a duration and
+     a delay so they land on the same frame. A bolt has no opacity of
+     its own, so with motion reduced it simply stays drawn; a flash
+     carries opacity="0", so with motion reduced it never goes off. */
+  .bnr .bn-bolt{ animation:bn-strike 4.4s linear infinite; }
+  @keyframes bn-strike{ 0%{ opacity:0; } 1.5%{ opacity:1; } 3.5%{ opacity:.2; } 5.5%{ opacity:1; } 16%{ opacity:.8; } 24%,100%{ opacity:0; } }
+  .bnr .bn-flash{ animation:bn-flash 4.4s linear infinite; }
+  @keyframes bn-flash{ 0%{ opacity:0; } 1.5%{ opacity:1; } 3.5%{ opacity:.15; } 5.5%{ opacity:.9; } 13%,100%{ opacity:0; } }
+  /* A light that breathes: god-rays, the lighthouse beam. */
+  .bnr .bn-beam{ animation:bn-beam 7s ease-in-out infinite; }
+  @keyframes bn-beam{ 0%,100%{ opacity:.55; } 50%{ opacity:1; } }
+  /* Falling water: the streaks are spaced 14px apart and slide exactly
+     14px, so the end of one cycle is the start of the next. */
+  .bnr .bn-pour{ animation:bn-pour .8s linear infinite; }
+  @keyframes bn-pour{ from{ transform:translateY(-14px); } to{ transform:translateY(0); } }
+  /* A shock ring racing outward and thinning out; invisible at both
+     ends of the cycle. It is drawn at its mid-flight size and the
+     keyframes shrink it to start, so with motion reduced it rests as a
+     ring round the blast rather than a dot on it. */
+  .bnr .bn-shock{ transform-box:fill-box; transform-origin:center; animation:bn-shock 4.8s cubic-bezier(.22,.61,.36,1) infinite; }
+  @keyframes bn-shock{ 0%{ transform:scale(.06); opacity:0; } 8%{ opacity:1; } 65%{ opacity:.55; } 100%{ transform:scale(1.7); opacity:0; } }
+  /* Debris flung outward along its own spoke (the spoke's angle is on
+     the parent group, so one keyframe serves every direction). */
+  .bnr .bn-fly{ animation:bn-fly 4s cubic-bezier(.12,.68,.4,1) infinite; }
+  @keyframes bn-fly{ 0%{ transform:translateX(0); opacity:0; } 6%{ opacity:1; } 70%{ opacity:.7; } 100%{ transform:translateX(230px); opacity:0; } }
   .bnr .bn-spray{ animation:bn-twinkle 2.6s ease-in-out infinite; }
 
   /* On the Profile cover the banner replaces the theme wash; the cover's
@@ -12722,14 +12857,23 @@
      blue velvet lining with a nap to it, a brass name plate, and a sheet
      of glass over the whole thing catching the light. All static paint:
      nothing here animates. */
+  /* BLACK VELVET, NOT BLUE (build 232). "I like the badge case thing at
+     the top but I don't really like the blue of the badge case, doesn't
+     look that good. Maybe it could be darker." The blue was fighting the
+     badges: sixteen enamel colours on a saturated blue ground, and every
+     blue and violet badge sank into it. A jeweller's case is black
+     velvet for exactly this reason - it has no colour of its own, so
+     every piece on it reads as itself. The frame, the glass and the
+     brass plate are unchanged; only the lining went dark and neutral,
+     with the same nap and the same light falling from the top. */
   .badges-tab .badge-grid{
     position:relative; isolation:isolate; margin-top:.4rem;
     padding-top:2.6rem;
     background:
-      radial-gradient(120% 70% at 50% 0%, rgba(120,150,255,.16), rgba(120,150,255,0) 60%),
-      radial-gradient(130% 110% at 50% 120%, rgba(0,0,0,.55), rgba(0,0,0,0) 60%),
-      repeating-linear-gradient(135deg, rgba(255,255,255,.018) 0 2px, rgba(0,0,0,.02) 2px 4px),
-      linear-gradient(180deg, #16254A 0%, #0F1A36 55%, #0A1226 100%);
+      radial-gradient(120% 70% at 50% 0%, rgba(255,244,225,.075), rgba(255,244,225,0) 60%),
+      radial-gradient(130% 110% at 50% 120%, rgba(0,0,0,.6), rgba(0,0,0,0) 60%),
+      repeating-linear-gradient(135deg, rgba(255,255,255,.014) 0 2px, rgba(0,0,0,.03) 2px 4px),
+      linear-gradient(180deg, #1A1B1F 0%, #121316 55%, #0A0B0D 100%);
     border:1px solid rgba(255,255,255,.14);
     box-shadow:
       0 0 0 5px #252C37, 0 0 0 6px rgba(255,255,255,.14), 0 0 0 7px rgba(0,0,0,.6),
@@ -12752,10 +12896,10 @@
   }
   /* An earned badge sits in a pool of light on the velvet. */
   .badges-tab .badge-tile.is-earned .badge-tile-art{
-    background:radial-gradient(circle at 50% 62%, rgba(170,195,255,.22), rgba(170,195,255,0) 62%);
+    background:radial-gradient(circle at 50% 62%, rgba(255,240,215,.16), rgba(255,240,215,0) 62%);
   }
-  .badges-tab .badge-tile-name{ color:rgba(226,234,255,.9); }
-  .badges-tab .badge-tile.is-locked .badge-tile-name{ color:rgba(190,205,240,.55); }
+  .badges-tab .badge-tile-name{ color:rgba(236,237,241,.9); }
+  .badges-tab .badge-tile.is-locked .badge-tile-name{ color:rgba(205,208,215,.5); }
   .badge-tile{
     display:flex; flex-direction:column; align-items:center; gap:.45rem; min-width:0;
     justify-content:flex-start;
@@ -13816,13 +13960,13 @@
   .pick-badge.earned::before{
     content:""; position:absolute; inset:-28%; border-radius:50%; pointer-events:none;
     background:radial-gradient(circle,
-      color-mix(in srgb, var(--theme-c1) 38%, transparent) 0%,
-      color-mix(in srgb, var(--theme-c2) 16%, transparent) 42%,
+      color-mix(in srgb, var(--badge-glow, var(--theme-c1)) 48%, transparent) 0%,
+      color-mix(in srgb, var(--badge-glow, var(--theme-c2)) 20%, transparent) 42%,
       transparent 70%);
   }
   .pick-badge.earned svg{
     filter:drop-shadow(0 2px 5px rgba(0,0,0,.55))
-           drop-shadow(0 0 5px color-mix(in srgb, var(--theme-c1) 45%, transparent));
+           drop-shadow(0 0 6px color-mix(in srgb, var(--badge-glow, var(--theme-c1)) 60%, transparent));
   }
   .pick-badge:not(.earned) svg{ opacity:.78; }
   /* .pick is a GRID with explicit placement, not a column - appended
@@ -14713,6 +14857,9 @@
   }
   .rs-mode .modeiconpath{ stroke:currentColor; }
   .rs-mode-game .modeiconpath{ fill:currentColor; stroke:none; }
+  .setup-modechip{ display:flex; justify-content:center; margin:.2rem 0 .1rem; }
+  .setup-modechip .rs-mode{ font-size:.74rem; padding:.36rem .85rem .36rem .6rem; }
+  .setup-modechip .rs-mode .modeicon{ width:1.05rem; height:1.05rem; }
   /* Every unit sat, one to a line. */
   .rs-unitlist{
     list-style:none; margin:.6rem 0 0; padding:0;
@@ -28205,10 +28352,33 @@ const AVATAR_CHARACTERS = [
        Void       - all three Secret Flares. The rarest thing here, and
                     the only one you cannot work towards on purpose -
                     you have to notice it. */
+  /* BUILD 232: ONE ORDER FOR THE CHALLENGE ROW, AND IT IS THE LIST
+     BELOW. "The challenge rewards in characters kinda organize them
+     better, like the flare characters need to all be next to each
+     other." The Customize grid lays characters out in this array's
+     order, and the Champion had been appended after Void, splitting the
+     three flare characters. Now: the daily one, the two gods for the
+     weekly board (Zeus for a win, Poseidon for the podium three times,
+     side by side as asked), the two Virtual Room fighters (Champion for
+     5 wins, Spartan for 10), then the three flares together.
+
+     THE MASKED ONE IS RETIRED, NOT DELETED. "The character that has
+     the unlock requirement for beating the game mode on the advanced
+     difficulty, that needs to be the banner, so all 3 of those
+     challenges are banners." Hardcore on 10 units hands over the
+     Thunderhead banner now. `retired` takes it out of every picker and
+     every unlock path, but the drawing stays and it is never locked, so
+     anybody already wearing it keeps it - and still sees it in
+     Customize, since that is the one place they could change it. */
   { id: "detective",  kind: "detective",  feat: "daily10" },
-  { id: "masked",     kind: "masked",     feat: "hardcore10" },
   { id: "zeus",       kind: "zeus",       feat: "weektop" },
+  { id: "poseidon",   kind: "poseidon",   feat: "weektop3x3" },
+  { id: "champion",   kind: "champion",   feat: "vrwins5" },
+  { id: "spartan",    kind: "spartan",    feat: "vrwins10" },
   { id: "voidwalker", kind: "voidwalker", feat: "flares" },
+  { id: "umbra",       kind: "umbra",       feat: "flare4" },
+  { id: "singularity", kind: "singularity", feat: "flare5" },
+  { id: "masked",     kind: "masked",     retired: true },
   /* BUILD 220: a challenge and Void's two flares. Easiest to hardest,
      like the four above. (The Fox and the Viking, for 10 units on Easy
      and on Average, were cut in build 225 and those two challenges hand
@@ -28217,9 +28387,6 @@ const AVATAR_CHARACTERS = [
                      you win off other people.
        Umbra       - the fourth flare, Void's first.
        Singularity - the fifth, and the last thing in the hunt. */
-  { id: "champion",    kind: "champion",    feat: "vrwins5" },
-  { id: "umbra",       kind: "umbra",       feat: "flare4" },
-  { id: "singularity", kind: "singularity", feat: "flare5" },
   /* REORDERED BY HOW HARD EACH ONE SHOULD BE, asked for in that order:
      "the astronaut needs to be the hardest one to get, the police men
      the second hardest, the robot the easiest, and the clown the 3rd
@@ -28243,7 +28410,8 @@ const AVATAR_DISPLAY_NAME = {
   grizzly: "Bear", alien: "Alien", samurai: "Samurai", dragon: "Dragon",
   officer: "Officer", clown: "Clown", robot: "Robot", astronaut: "Astronaut",
   detective: "Detective", zeus: "Zeus", masked: "The Masked One", voidwalker: "Void",
-  champion: "Champion", umbra: "Umbra", singularity: "Singularity"
+  champion: "Champion", umbra: "Umbra", singularity: "Singularity",
+  poseidon: "Poseidon", spartan: "Spartan"
 };
 /* The glow a SELECTED character gives off - "give the character you have
    selected a nice glow, a glow that kinda matches the color of the
@@ -28261,7 +28429,8 @@ const AVATAR_GLOW = {
      lacquer, and for Void the middle of its three flare colours - the
      body gives off no light of its own, so the glow is the flares. */
   detective: "#D9A441", zeus: "#7FD4F5", masked: "#C6413F", voidwalker: "#F97316",
-  champion: "#FF4D6D", umbra: "#8B5CF6", singularity: "#9BE8FF"
+  champion: "#FF4D6D", umbra: "#8B5CF6", singularity: "#9BE8FF",
+  poseidon: "#3FE0D0", spartan: "#E0612F"
 };
 function avatarGlowColor(id){ return AVATAR_GLOW[id] || "var(--accent)"; }
 /* Same shape as isLockedAccent/accentLockMessage, deliberately: a
@@ -28301,6 +28470,14 @@ const CHARACTER_FEATS = {
   weektop:  { label: "Finish a week at the top of the weekly XP board",
               done: () => (store.weeklyWins || 0) >= 1,
               have: () => (store.weeklyWins || 0), need: 1 },
+  /* Build 232, Zeus's sibling: "placing top 3 in the weekly leaderboard
+     3 times ... next to Zeus, make it a similar kinda thing to Zeus,
+     maybe make Poseidon?" Counted by settleWeeklyWin() off the same
+     observed weekly rank Zeus is, and seeded from weeklyWins, since a
+     week won is a week on the podium. */
+  weektop3x3: { label: "Finish in the top 3 of the weekly XP board 3 times",
+                done: () => (store.weeklyTop3 || 0) >= 3,
+                have: () => (store.weeklyTop3 || 0), need: 3 },
   /* Reads the flares themselves rather than a flag set when the third
      is found. One source of truth, so a person who somehow arrives at
      three found without passing through foundMysteryFlare - a cloud
@@ -28317,6 +28494,12 @@ const CHARACTER_FEATS = {
   vrwins5:   { label: "Place first in a Virtual Room 5 times",
                done: () => (store.vrWins || 0) >= 5,
                have: () => (store.vrWins || 0), need: 5 },
+  /* Build 232: "Ensure there's a character for finishing first in 10
+     virtual room matches". The same counter the Champion reads, so wins
+     from before this shipped count. */
+  vrwins10:  { label: "Place first in a Virtual Room 10 times",
+               done: () => (store.vrWins || 0) >= 10,
+               have: () => (store.vrWins || 0), need: 10 },
   flare4:    { label: "Find Umbra, the first of Void's flares",
                done: () => !!(store.mysteryColorsFound || {}).violet,
                have: () => ((store.mysteryColorsFound || {}).violet ? 1 : 0), need: 1 },
@@ -28336,7 +28519,7 @@ function featAchieved(key){
 
 function isLockedCharacter(id){
   const def = AVATAR_CHARACTERS.find(c => c.id === id);
-  if(!def) return false;
+  if(!def || def.retired) return false;
   /* A feat character and a rank character are both "locked until you
      have done the thing" - one function, two kinds of thing. */
   if(def.feat) return !featAchieved(def.feat);
@@ -28354,6 +28537,12 @@ function characterLockMessage(id){
      next. */
   if(!isLockedCharacter(id)) return "";
   if(def && def.feat){
+    /* VOID'S TWO FLARES STAY SECRET UNTIL THE ONE BEFORE IS FOUND.
+       "Ensure that singularity and umbra requirements can't be seen till
+       you unlock the one before it." The hunt is the point of them, and
+       naming the next flare before you have the last one gives it away. */
+    if(def.feat === "flare4" && isLockedCharacter("voidwalker")) return "Unlock Void to see how to unlock Umbra.";
+    if(def.feat === "flare5" && isLockedCharacter("umbra")) return "Unlock Umbra to see how to unlock Singularity.";
     const f = CHARACTER_FEATS[def.feat];
     if(!f) return "";
     /* The progress, not just the target. "0 of 10" and "7 of 10" are
@@ -28364,11 +28553,12 @@ function characterLockMessage(id){
       (AVATAR_DISPLAY_NAME[id] || id) + ".";
   }
   if(!def || !def.unlock) return "";
-  const rule = TIER_UNLOCKS[def.unlock];
-  if(!rule) return "";
-  return "Reach " + RANK_DISPLAY_NAME[def.unlock] + " (" +
-    rule.label.replace(/^Reach /, "") + ") to unlock the " +
-    (AVATAR_DISPLAY_NAME[id] || id) + ".";
+  /* THE RANK, NOT ITS ARITHMETIC. "The characters that are unlocked at
+     ranks, just make those descriptions say you unlock them at those
+     ranks, don't mention the level/badge requirement for them." What a
+     rank costs is the Rank tab's job; here it is enough to say which. */
+  if(!RANK_DISPLAY_NAME[def.unlock]) return "";
+  return "Unlocks at " + RANK_DISPLAY_NAME[def.unlock] + " rank.";
 }
 
 /* ONE HEAD SIZE FOR THE WHOLE SET: 9.2 x 10 at cx 20.
@@ -28414,7 +28604,7 @@ function buildAvatarCharSVGSafe(charId){
    same size on every one. Re-measure (rasterise, first row with alpha
    over 200) after redrawing anybody, rather than guessing. */
 const AVATAR_ART_SCALE = {
-  dragon: 1.09, detective: 1.16, masked: 1.21, zeus: 1.05,
+  dragon: 1.09, detective: 1.16, masked: 1.21, zeus: 1.05, poseidon: 1.05,
   voidwalker: 1.23, officer: 1.06, astronaut: 1.10, grizzly: 1.06
 };
 
@@ -28824,6 +29014,250 @@ function drawAvatarCharSVG(charId){
      The gold laurel and the bolt carved into the plinth are the only
      colour on him, and the bolt is lit in his own glow colour: it is
      what says Zeus rather than "some Greek". */
+  /* POSEIDON IS ZEUS'S BROTHER, SO HE IS THE SAME OBJECT: a marble bust on
+     a socle, one material for everything, blank eyes under a carved brow.
+     The silhouette of the bust, the socle and the head are Zeus's own
+     numbers, so the two sit side by side as a pair. What changes is what
+     says "the sea" at 34px:
+       - SEA MARBLE. A pale aqua stone rather than warm white - the whole
+         statue changes colour, never just a robe.
+       - HAIR AND BEARD THAT FLOW. Zeus's are compact scalloped masses;
+         these run long, down over the shoulders and to the chest, with
+         the carved grooves drawn as S-curves so they read as water.
+       - A GILT THREE-POINTED CROWN instead of the laurel, its tines cut
+         like a trident's.
+       - A TRIDENT cut into the socle, lit sea-cyan from inside the way
+         Zeus's bolt is lit ice-blue, and a running-wave border carved
+         along the edge of the drapery. */
+  if(def.kind === "poseidon"){
+    const marble = headGrad("#F1FBF8", "#C3E5DD", "#83B1A9");
+    const stone2 = headGrad("#DCF1EB", "#A6D0C6", "#6B9990");
+    const recess = "#5A8A82";
+    const line   = "#4C7A73";
+    const gold   = headGrad("#FFEDA8", "#E3B54A", "#9A7020");
+
+    /* The socle, Zeus's to the tenth of a unit. */
+    svg.appendChild(mk("path", { d: "M11.6 33.1 Q11.6 32 12.8 32 L27.2 32 Q28.4 32 28.4 33.1 L28.4 33.6 L11.6 33.6 Z", fill: marble }));
+    svg.appendChild(mk("path", { d: "M13.2 33.6 L26.8 33.6 L27.4 38 L12.6 38 Z", fill: stone2 }));
+    svg.appendChild(mk("path", { d: "M11.8 33.62 L28.2 33.62", fill: "none", stroke: line,
+                                 "stroke-width": ".35", opacity: ".7" }));
+    /* The trident, cut into the block and lit from inside: a soft cyan
+       bed under it, then the shaft and three barbed tines as one shape. */
+    svg.appendChild(mk("path", { d: "M20 34.1 L20 37.9 M18.2 34.4 L18.2 35.3 Q18.2 36.1 20 36.1 Q21.8 36.1 21.8 35.3 L21.8 34.4",
+                                 fill: "none", stroke: "#5FF0E6", "stroke-width": "1.15",
+                                 "stroke-linecap": "round", "stroke-linejoin": "round", opacity: ".35" }));
+    svg.appendChild(mk("path", { d: "M20 34.25 L20 37.9 M18.2 34.55 L18.2 35.3 Q18.2 36.1 20 36.1 Q21.8 36.1 21.8 35.3 L21.8 34.55",
+                                 fill: "none", stroke: "#C8FFF9", "stroke-width": ".5",
+                                 "stroke-linecap": "round", "stroke-linejoin": "round" }));
+    [18.2, 20, 21.8].forEach(x =>
+      svg.appendChild(mk("path", { d: "M" + (x - .5) + " 34.75 L" + x + " 33.95 L" + (x + .5) + " 34.75 Z",
+                                   fill: "#C8FFF9", stroke: "#1FC4C4", "stroke-width": ".16",
+                                   "stroke-linejoin": "round" })));
+
+    /* THE BUST: the same shoulders and the same curved cut as Zeus. */
+    svg.appendChild(mk("path", { d: "M7 29.6 Q7.2 25 12.8 23.4 L27.2 23.4 Q32.8 25 33 29.6 Q27.6 31.6 20 31.1 Q12.4 31.6 7 29.6 Z",
+                                 fill: marble }));
+    /* The drapery over the left shoulder, as Zeus wears it... */
+    svg.appendChild(mk("path", { d: "M7 29.6 Q7.2 25 12.8 23.4 L16.8 23.6 Q19.6 27.6 25.4 30.9 Q20 31.4 14.4 31.2 Q10.2 30.9 7 29.6 Z",
+                                 fill: stone2 }));
+    [["M13.4 24.2 Q16.6 27.6 21.8 31", ".36"]].forEach(([d, w]) =>
+      svg.appendChild(mk("path", { d: d, fill: "none", stroke: line, "stroke-width": w,
+                                   "stroke-linecap": "round", opacity: ".55" })));
+    /* ...with a running-wave border carved along its hem: a row of small
+       breaking crests, generated along the edge so every one is the
+       same size. */
+    (function(){
+      /* A constant-amplitude sine along the hem, offset square to it,
+         so it reads as a carved border rather than a scribble. */
+      const x0 = 9.4, y0 = 27.9, x1 = 22.4, y1 = 30.5, n = 5, amp = .5;
+      const len = Math.hypot(x1 - x0, y1 - y0), nx = -(y1 - y0) / len, ny = (x1 - x0) / len;
+      const at = (t, o) => [x0 + (x1 - x0) * t + nx * o, y0 + (y1 - y0) * t + ny * o];
+      const f = v => v.toFixed(2);
+      let p = at(0, 0), d = "M" + f(p[0]) + " " + f(p[1]);
+      for(let i = 0; i < n * 2; i++){
+        const sgn = i % 2 ? 1 : -1, t0 = i / (n * 2), t1 = (i + 1) / (n * 2);
+        const c1 = at(t0 + (t1 - t0) * .36, sgn * amp * 1.33), c2 = at(t0 + (t1 - t0) * .64, sgn * amp * 1.33), e = at(t1, 0);
+        d += " C" + f(c1[0]) + " " + f(c1[1]) + " " + f(c2[0]) + " " + f(c2[1]) + " " + f(e[0]) + " " + f(e[1]);
+      }
+      svg.appendChild(mk("path", { d: d, fill: "none", stroke: line, "stroke-width": ".4",
+                                   "stroke-linecap": "round", opacity: ".7" }));
+    })();
+    svg.appendChild(mk("path", { d: "M7 29.6 Q12.4 31.6 20 31.1 Q27.6 31.6 33 29.6", fill: "none",
+                                 stroke: recess, "stroke-width": ".5", opacity: ".75" }));
+
+    /* The neck. */
+    svg.appendChild(mk("path", { d: "M16.2 20 L23.8 20 L24.4 24.6 L15.6 24.6 Z", fill: stone2 }));
+
+    /* THE LONG HAIR, behind the head: it falls past the ears and lies
+       on the shoulders in three waves a side. */
+    svg.appendChild(mk("path", { d: "M20 6.2 Q13.4 6 12.2 10.2 Q10.3 12.6 11.5 15 Q9.9 17.5 11.1 20 Q9.6 22.6 11.2 24.9 Q11.6 27 14 26.8 Q13.2 24.6 14.4 22.8 L14.4 16 L25.6 16 L25.6 22.8 Q26.8 24.6 26 26.8 Q28.4 27 28.8 24.9 Q30.4 22.6 28.9 20 Q30.1 17.5 28.5 15 Q29.7 12.6 27.8 10.2 Q26.6 6 20 6.2 Z",
+                                 fill: stone2 }));
+    [["M12.9 11.4 Q13.9 13.4 12.6 15.4 Q11.7 17.4 12.8 19.6 Q13.6 21.6 12.4 24"],
+     ["M27.1 11.4 Q26.1 13.4 27.4 15.4 Q28.3 17.4 27.2 19.6 Q26.4 21.6 27.6 24"]]
+      .forEach(([d]) => svg.appendChild(mk("path", { d: d, fill: "none", stroke: line, "stroke-width": ".42",
+                                                      "stroke-linecap": "round", opacity: ".65" })));
+    /* Shadow where the hair lies on the shoulder, so it sits ON it. */
+    svg.appendChild(mk("path", { d: "M11.2 24.9 Q11.6 27 14 26.8 M28.8 24.9 Q28.4 27 26 26.8", fill: "none",
+                                 stroke: recess, "stroke-width": ".45", "stroke-linecap": "round", opacity: ".6" }));
+
+    /* The head. */
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 14.6, rx: 6.4, ry: 7.4, fill: marble }));
+
+    /* The hair over the brow: Zeus's scalloped mass, which the crown
+       sits in. */
+    svg.appendChild(mk("path", { d: "M12.6 15.2 Q11.2 13.2 12.4 11.6 Q11.8 9 14.2 8.2 Q15 5.8 17.6 6.1 Q19.6 4.2 22.2 5.9 Q24.9 5.6 25.8 8.1 Q28.3 8.9 27.6 11.6 Q28.8 13.2 27.4 15.2 Q26.8 13 25.4 12.6 Q24.8 11.2 23.2 11.5 Q22 10.4 20 10.9 Q18 10.4 16.8 11.5 Q15.2 11.2 14.6 12.6 Q13.2 13 12.6 15.2 Z",
+                                 fill: stone2 }));
+
+    /* THE BEARD: longer than his brother's and parted into flowing
+       locks, each hem curling outward like the lip of a wave. */
+    svg.appendChild(mk("path", { d: "M13.4 15.6 Q12.8 20 14 23 Q13 25.6 14.6 27.6 Q15.9 28.8 16.9 27.7 Q17.3 30 19.2 29.7 Q20 30.8 20.8 29.7 Q22.7 30 23.1 27.7 Q24.1 28.8 25.4 27.6 Q27 25.6 26 23 Q27.2 20 26.6 15.6 Q25.6 19 23.6 19.8 Q21.8 19 20 19.6 Q18.2 19 16.4 19.8 Q14.4 19 13.4 15.6 Z",
+                                 fill: stone2 }));
+    [["M15.3 20.4 Q14.3 22.6 15.5 24.4 Q16.5 26 15.6 27.5"], ["M17.8 20.6 Q16.9 23 18.1 25 Q18.9 26.8 18.3 28.6"],
+     ["M22.2 20.6 Q23.1 23 21.9 25 Q21.1 26.8 21.7 28.6"], ["M24.7 20.4 Q25.7 22.6 24.5 24.4 Q23.5 26 24.4 27.5"]]
+      .forEach(([d]) => svg.appendChild(mk("path", { d: d, fill: "none", stroke: line, "stroke-width": ".42",
+                                                      "stroke-linecap": "round", opacity: ".62" })));
+    /* The beard's shadow on the chest. */
+    svg.appendChild(mk("path", { d: "M14.6 27.6 Q20 32 25.4 27.6", fill: "none", stroke: recess,
+                                 "stroke-width": ".6", "stroke-linecap": "round", opacity: ".4" }));
+    /* The moustache, sweeping down into the beard. */
+    svg.appendChild(mk("path", { d: "M15.6 19.8 Q17.8 17.6 20 18.8 Q22.2 17.6 24.4 19.8 Q22 20.5 20 19.9 Q18 20.5 15.6 19.8 Z",
+                                 fill: stone2, stroke: line, "stroke-width": ".25" }));
+
+    /* The brow, the blank eyes, and the Greek nose - Zeus's own. */
+    svg.appendChild(mk("path", { d: "M14.6 12.9 Q17.2 11.8 19.6 13 L20.4 13 Q22.8 11.8 25.4 12.9", fill: "none",
+                                 stroke: recess, "stroke-width": ".75", "stroke-linecap": "round" }));
+    [17.3, 22.7].forEach(cx => {
+      svg.appendChild(mk("path", { d: "M" + (cx - 1.9) + " 14.3 Q" + cx + " 13.2 " + (cx + 1.9) + " 14.3 Q" + cx + " 15.5 " + (cx - 1.9) + " 14.3 Z",
+                                   fill: "#EEF9F6", stroke: recess, "stroke-width": ".35" }));
+      svg.appendChild(mk("path", { d: "M" + (cx - 1.9) + " 14.2 Q" + cx + " 13 " + (cx + 1.9) + " 14.2", fill: "none",
+                                   stroke: line, "stroke-width": ".45", "stroke-linecap": "round" }));
+    });
+    svg.appendChild(mk("path", { d: "M20.4 13.2 L21 17.2 Q20.2 17.8 19.2 17.3", fill: "none",
+                                 stroke: recess, "stroke-width": ".45", "stroke-linecap": "round",
+                                 "stroke-linejoin": "round" }));
+
+    /* THE CROWN, gilt: a band sitting in the hair and three tines rising
+       off it, the middle one tallest - a trident worn as a crown. Each
+       tine is a concave-sided point, so the tips are sharp. */
+    svg.appendChild(mk("path", { d: "M14.6 10.9 Q15.4 9.2 15.1 7.1 Q16.3 8.8 17.2 10.1 Z M18.7 9.8 Q19.7 7.8 20 4.9 Q20.3 7.8 21.3 9.8 Z M25.4 10.9 Q24.6 9.2 24.9 7.1 Q23.7 8.8 22.8 10.1 Z",
+                                 fill: gold, stroke: "#8C6418", "stroke-width": ".22", "stroke-linejoin": "round" }));
+    svg.appendChild(mk("path", { d: "M13.1 11.8 Q20 8.7 26.9 11.8 L26.6 13.2 Q20 10.3 13.4 13.2 Z",
+                                 fill: gold, stroke: "#8C6418", "stroke-width": ".24", "stroke-linejoin": "round" }));
+    /* A sea-glass stone at the centre of the band, the crown's one cool
+       note and the same cyan as the trident. */
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 10.95, rx: .78, ry: .62, fill: "#5FF0E6", stroke: "#0E8A8A", "stroke-width": ".2" }));
+    svg.appendChild(mk("path", { d: "M14.2 12.1 Q20 9.5 25.8 12.1", fill: "none", stroke: "#FFF3C4",
+                                 "stroke-width": ".28", "stroke-linecap": "round", opacity: ".8" }));
+
+    /* The same cool highlights as Zeus: the lit side of the face and the
+       far shoulder. */
+    svg.appendChild(mk("path", { d: "M14.6 13.6 Q14.2 16.6 15 18.4", fill: "none", stroke: "#FFFFFF",
+                                 "stroke-width": ".6", "stroke-linecap": "round", opacity: ".55" }));
+    svg.appendChild(mk("path", { d: "M27.4 24.2 Q30.6 25.2 31.8 27.6", fill: "none", stroke: "#FFFFFF",
+                                 "stroke-width": ".55", "stroke-linecap": "round", opacity: ".5" }));
+    return svg;
+  }
+
+  /* THE SPARTAN - first place in a Virtual Room ten times, the harder
+     sibling of the Champion. The Champion is a knight who has won a
+     tournament: a closed, flat-faced barrel helm, polished steel, a
+     crown. The Spartan is somebody who wins wars, and has to read as the
+     fiercer of the two at a glance, so nothing about him is the
+     Champion's shape:
+       - A BRONZE CORINTHIAN HELMET, not a barrel: a rounded dome that
+         flares out at the nape, cheek guards sweeping forward to the
+         chin, and the T-shaped face opening - two angled eye holes
+         meeting a long slot, split by a nose guard. That T is the most
+         recognisable piece of armour there is.
+       - EYES ANGLED DOWN TOWARDS THE NOSE, the scowl the Dragon and Umbra
+         already use, with a faint ember glint in the dark.
+       - A TALL RED HORSEHAIR CREST standing straight up and fanning out,
+         where the Champion's plume sweeps off to one side.
+       - A red cloak over a bronze muscle cuirass. */
+  if(def.kind === "spartan"){
+    const bronze = headGrad("#FFE7A6", "#CC8C3A", "#693811");
+    const bronzeDk = headGrad("#E9B268", "#9C5F22", "#46230A");
+    const cloak = headGrad("#F0584A", "#B3231B", "#5A0A08");
+    const crest = headGrad("#FF7A5E", "#D0261C", "#6A0A07");
+    const hole = "#150905";
+
+    /* THE CREST, behind the helmet: a fan of horsehair on a raised
+       holder, widest at the top and cut square the way a trimmed crest
+       is. */
+    svg.appendChild(mk("path", { d: "M17.4 9.4 Q15 7 13.2 5.2 Q16.2 3.5 20 3.4 Q23.8 3.5 26.8 5.2 Q25 7 22.6 9.4 Z", fill: crest }));
+    [["M18.4 9 Q16.4 6.8 14.9 5"], ["M19.3 9 Q18.3 6.4 17.6 4"], ["M20.7 9 Q21.7 6.4 22.4 4"], ["M21.6 9 Q23.6 6.8 25.1 5"]]
+      .forEach(([d]) => svg.appendChild(mk("path", { d: d, fill: "none", stroke: "#7A0C08", "stroke-width": ".32",
+                                                      "stroke-linecap": "round", opacity: ".7" })));
+    svg.appendChild(mk("path", { d: "M14 4.9 Q16.8 3.75 20 3.6", fill: "none", stroke: "#FFB3A0",
+                                 "stroke-width": ".4", "stroke-linecap": "round", opacity: ".8" }));
+
+    /* The cloak, over both shoulders. */
+    svg.appendChild(mk("path", { d: "M5.6 40 Q6.2 30.6 13.4 28.4 L26.6 28.4 Q33.8 30.6 34.4 40 Z", fill: cloak }));
+    [["M8.6 40 Q9 34.4 11.6 31"], ["M31.4 40 Q31 34.4 28.4 31"], ["M6.8 36.4 Q8.4 32.6 10.8 30.6"]]
+      .forEach(([d]) => svg.appendChild(mk("path", { d: d, fill: "none", stroke: "#4A0806", "stroke-width": ".5",
+                                                      "stroke-linecap": "round", opacity: ".55" })));
+    /* The cuirass: a bronze chest cast as a muscled torso. */
+    svg.appendChild(mk("path", { d: "M13.2 28.6 Q20 30.6 26.8 28.6 L25.8 40 L14.2 40 Z", fill: bronze }));
+    svg.appendChild(mk("path", { d: "M15.2 33.2 Q17.6 35 19.7 33.4 M24.8 33.2 Q22.4 35 20.3 33.4 M20 33.6 L20 40 M17 37.4 Q18.6 38.2 19.7 37.6 M23 37.4 Q21.4 38.2 20.3 37.6",
+                                 fill: "none", stroke: "#7A4516", "stroke-width": ".42", "stroke-linecap": "round", opacity: ".75" }));
+    svg.appendChild(mk("path", { d: "M13.6 29.4 Q20 31.4 26.4 29.4", fill: "none", stroke: "#FFE7A6",
+                                 "stroke-width": ".45", "stroke-linecap": "round", opacity: ".75" }));
+    /* Round bronze clasps pinning the cloak. */
+    [13.4, 26.6].forEach(x => {
+      svg.appendChild(mk("circle", { cx: x, cy: 29.6, r: 1.25, fill: bronze, stroke: "#5A2E0C", "stroke-width": ".25" }));
+      svg.appendChild(mk("circle", { cx: x - .35, cy: 29.25, r: .38, fill: "#FFF1C8", opacity: ".85" }));
+    });
+
+    /* The shadow of the neck under the helmet. */
+    svg.appendChild(mk("path", { d: "M16 26 L24 26 L23.4 30.4 L16.6 30.4 Z", fill: "#2A1206" }));
+
+    /* THE HELMET: a dome, flaring out at the nape, the cheek guards
+       coming forward to points at the chin. */
+    svg.appendChild(mk("path", { d: "M20 7.8 Q28.8 8 29.4 15.6 L29.5 21.2 Q29.7 24.8 31.4 27.3 Q27.6 28.7 24.6 27.8 Q23.2 30 21.6 30.5 L18.4 30.5 Q16.8 30 15.4 27.8 Q12.4 28.7 8.6 27.3 Q10.3 24.8 10.5 21.2 L10.6 15.6 Q11.2 8 20 7.8 Z",
+                                 fill: bronze }));
+    /* The side away from the light, and the flare at the back of the
+       neck, in the dark bronze. */
+    svg.appendChild(mk("path", { d: "M24.4 8.6 Q29 10.4 29.4 15.6 L29.5 21.2 Q29.7 24.8 31.4 27.3 Q27.6 28.7 24.6 27.8 Q27.4 25 27.6 20.4 L27.6 15 Q27.4 10.8 24.4 8.6 Z",
+                                 fill: bronzeDk, opacity: ".8" }));
+    svg.appendChild(mk("path", { d: "M8.6 27.3 Q10.3 24.8 10.5 21.2 L11.6 22 Q11.4 25.4 12.6 27.9 Q10.6 28 8.6 27.3 Z", fill: bronzeDk, opacity: ".55" }));
+    /* The crest holder, where the horsehair is seated on the dome. */
+    svg.appendChild(mk("path", { d: "M17.6 9.6 Q20 8.6 22.4 9.6 L22.1 8.3 Q20 7.4 17.9 8.3 Z", fill: bronzeDk }));
+
+    /* THE FACE OPENING: two eye holes angled down towards the nose,
+       running into one long slot, with the nose guard left standing
+       between them. One path, so it reads as one cut. */
+    const face = "M12.2 15.3 Q16 14.7 19.1 16.9 L19.1 22 Q20 23 20.9 22 L20.9 16.9 Q24 14.7 27.8 15.3 Q26.6 18.7 22.4 20.4 L21.5 23.4 L21.9 30.6 L18.1 30.6 L18.5 23.4 L17.6 20.4 Q13.4 18.7 12.2 15.3 Z";
+    /* A raised rim all round the cut, lit on the top edges - the metal
+       has thickness, which is what makes the dark read as a hole. */
+    svg.appendChild(mk("path", { d: face, fill: "none", stroke: "#FFE3A0", "stroke-width": ".95",
+                                 "stroke-linejoin": "round", opacity: ".55" }));
+    svg.appendChild(mk("path", { d: face, fill: hole, stroke: "#6A3810", "stroke-width": ".3", "stroke-linejoin": "round" }));
+    /* The eyes in the dark: a faint ember glint in each, not a face. */
+    [[16.3, 17.35], [23.7, 17.35]].forEach(([x, y]) => {
+      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 1.5, ry: .55, fill: "#FF7A3A", opacity: ".32" }));
+      svg.appendChild(mk("circle", { cx: x, cy: y, r: .38, fill: "#FFD9A0", opacity: ".9" }));
+    });
+
+    /* The brow ridges, embossed over each eye and meeting over the nose
+       guard in a hard V - the scowl is in the metal. */
+    svg.appendChild(mk("path", { d: "M11.6 14.3 Q15.8 13.2 20 16 Q24.2 13.2 28.4 14.3", fill: "none",
+                                 stroke: "#5A2E0C", "stroke-width": ".55", "stroke-linecap": "round",
+                                 "stroke-linejoin": "round", opacity: ".8" }));
+    svg.appendChild(mk("path", { d: "M11.8 13.6 Q15.8 12.5 19.4 14.9", fill: "none",
+                                 stroke: "#FFF1C8", "stroke-width": ".4", "stroke-linecap": "round", opacity: ".7" }));
+
+    /* Strong highlights, because bronze is a polished metal: a hot
+       streak down the lit side of the dome, a catch-light on it, and a
+       line down the lit cheek guard. */
+    svg.appendChild(mk("path", { d: "M13 13.2 Q13.6 10 17.2 8.8", fill: "none", stroke: "#FFFFFF",
+                                 "stroke-width": ".85", "stroke-linecap": "round", opacity: ".72" }));
+    svg.appendChild(mk("circle", { cx: 15.4, cy: 10.2, r: .55, fill: "#FFFFFF", opacity: ".9" }));
+    svg.appendChild(mk("path", { d: "M11.8 19.4 Q11.8 23.6 13.4 26.6", fill: "none", stroke: "#FFF1C8",
+                                 "stroke-width": ".6", "stroke-linecap": "round", opacity: ".6" }));
+    svg.appendChild(mk("path", { d: "M8.9 27.2 Q12 28.4 15.2 27.8", fill: "none", stroke: "#FFE3A0",
+                                 "stroke-width": ".4", "stroke-linecap": "round", opacity: ".5" }));
+    return svg;
+  }
   if(def.kind === "zeus"){
     const marble = headGrad("#FBF9F4", "#E6E2D8", "#B9B3A4");
     const stone2 = headGrad("#E9E5DB", "#D0CABC", "#A29B8B");
@@ -29809,9 +30243,9 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               testsUntilMystery: null, flareNextTestAt: 0,
               savedCodePrompts: 0, savedCodeSaved: false,
               dailyCorrectStreak: 0, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false,
-              weeklyWins: 0, weekRankSeen: null, pendingVoidCutscene: false,
+              weeklyWins: 0, weeklyTop3: 0, weekRankSeen: null, pendingVoidCutscene: false,
               vrMatches: 0, vrWins: 0, vrCounted: [], vrRetroDone: false,
-              fullTestsSeeded: false, practiceExamPerfect: false, banner: "",
+              fullTestsSeeded: false, practiceExamPerfect: false, banner: "", starfallKept: false,
               publicId: null, leaderboardKeyMigrated: false,
               friendCode: null, friendsOut: [], friendsIn: [], friendsDeclined: [],
               lobbyInvitesOut: {},
@@ -29966,6 +30400,10 @@ function applyLoadedData(got){
   store.savedCodeSaved = got.savedCodeSaved === true;
   store.dailyCorrectStreak = typeof got.dailyCorrectStreak === "number" ? got.dailyCorrectStreak : 0;
   store.weeklyWins = typeof got.weeklyWins === "number" ? got.weeklyWins : 0;
+  /* Build 232, Poseidon's counter. Never below the wins: a week won was
+     a week on the podium, so an account with a Zeus already carries at
+     least that many podium finishes. */
+  store.weeklyTop3 = Math.max(typeof got.weeklyTop3 === "number" ? got.weeklyTop3 : 0, store.weeklyWins);
   /* Build 220. The counters default to zero and the two "done" flags to
      false, so every existing account is seeded once from what it has
      already done (seedBannerCounters, seedVroomHistory) rather than
@@ -29976,6 +30414,7 @@ function applyLoadedData(got){
   store.vrRetroDone = got.vrRetroDone === true;
   store.fullTestsSeeded = got.fullTestsSeeded === true;
   store.practiceExamPerfect = got.practiceExamPerfect === true;
+  store.starfallKept = got.starfallKept === true;
   store.banner = typeof got.banner === "string" ? got.banner : "";
   store.pendingVoidCutscene = got.pendingVoidCutscene === true;
   store.weekRankSeen = (got.weekRankSeen && typeof got.weekRankSeen === "object"
@@ -31093,9 +31532,9 @@ function wipeLocalProgressAndSettings(){
   store.unitHundoStreak = 0;
   store.unitHundoStreakUnits = [];
   store.practiceTestPassed = false;
-  store.weeklyWins = 0;
+  store.weeklyWins = 0; store.weeklyTop3 = 0;
   store.vrMatches = 0; store.vrWins = 0; store.vrCounted = []; store.vrRetroDone = true;
-  store.fullTestsSeeded = true; store.practiceExamPerfect = false; store.banner = "";
+  store.fullTestsSeeded = true; store.practiceExamPerfect = false; store.banner = ""; store.starfallKept = false;
   store.weekRankSeen = null;
   store.pendingVoidCutscene = false;
   /* A reset is a new person as far as the board is concerned, so the
@@ -31368,6 +31807,26 @@ function writeLeaderboardRow(row){
     lastHeartbeatAt = lastRowPushAt;
   }catch(e){}
 }
+
+/* ---- PUBLISH NOW (build 232) ----
+   "Some people would play and the leaderboard wouldn't update for a long
+   time." Two holes, both on the way OUT of the app. A score change waits
+   ROW_SCORE_PUSH_MS (90s) so a drill is one write, and the progress
+   document waits 2.5s after the last save; both are timers, and iOS
+   suspends timers the moment the app is backgrounded. The only flush was
+   on `pagehide`, which iOS does not fire for switching apps or locking
+   the phone - so somebody who finished a test and left inside 90 seconds
+   was not on the board until they next opened the app, often the next
+   day. Now: whatever is queued goes the moment the page is hidden, and
+   the end of every kind of run publishes rather than queues. */
+function publishNow(){
+  if(!fbDb || !syncCode) return;
+  try{ if(cloudPushTimer){ clearTimeout(cloudPushTimer); cloudPushTimer = null; pushToCloud(); } }catch(e){}
+  try{ if(store.leaderboardOptIn) flushLeaderboardRow(); }catch(e){}
+}
+document.addEventListener("visibilitychange", () => {
+  if(document.visibilityState === "hidden") publishNow();
+});
 
 function pushLeaderboardRow(){
   if(!fbDb || !syncCode || !store.leaderboardOptIn) return;
@@ -33374,6 +33833,15 @@ function settleWeeklyWin(){
   const won = seen.rank === 1;
   store.weekRankSeen = null;
   if(won) store.weeklyWins = (store.weeklyWins || 0) + 1;
+  if(seen.rank >= 1 && seen.rank <= 3){
+    const before = store.weeklyTop3 || 0;
+    store.weeklyTop3 = before + 1;
+    /* Announced like the Champion: queued for the next results screen,
+       which is where every other character is handed over. */
+    if(before < 3 && store.weeklyTop3 >= 3){
+      store.pendingCharUnlocks = (store.pendingCharUnlocks || []).filter(x => x !== "poseidon").concat(["poseidon"]);
+    }
+  }
   saveStore();
   return won;
 }
@@ -33413,7 +33881,13 @@ const BANNERS = [
      so units beaten before this shipped already count. */
   { id: "easy10", name: "Lanterns",
     label: "Beat 10 units on Easy in Game mode", have: () => gameUnitsBeatenOn("easy"), need: 10 },
-  { id: "tests100", name: "Sakura",
+  /* BUILD 232: SAKURA AND NORTHERN LIGHTS SWAPPED. "The sakura one is
+     cooler so that one needs to be finish 250 tests, and the northern
+     lights one can be the 100 one." The ids stay with the REQUIREMENT
+     and the art moved between them (BANNER_ART.tests100 draws the
+     aurora now), so what somebody has already earned is untouched: the
+     100-test banner is still theirs, it just looks different. */
+  { id: "tests100", name: "Northern Lights",
     label: "Finish 100 full tests", have: () => fullTestsOf(), need: 100 },
   { id: "average10", name: "Great Wave",
     label: "Beat 10 units on Average in Game mode", have: () => gameUnitsBeatenOn("average"), need: 10 },
@@ -33421,16 +33895,47 @@ const BANNERS = [
     label: "Play 50 Virtual Room matches", have: () => (store.vrMatches || 0), need: 50 },
   { id: "hundos100", name: "Summit",
     label: "Earn 100 hundos", have: () => hundosOf(store), need: 100 },
-  { id: "tests250", name: "Northern Lights",
+  /* Build 232: the third Game banner. Hardcore on ten units handed over
+     the Masked One until "that needs to be the banner, so all 3 of
+     those challenges are banners". Lanterns, Great Wave, Thunderhead -
+     calm to storm, easiest to hardest. Counts the same unitGameBeat the
+     character did, so nobody who had it loses the feat. */
+  { id: "hardcore10", name: "Thunderhead",
+    label: "Beat 10 units on Hardcore in Game mode", have: () => hardcoreUnitsBeaten(), need: 10 },
+  { id: "tests250", name: "Sakura",
     label: "Finish 250 full tests", have: () => fullTestsOf(), need: 250 },
+  /* "ALL 16" WITHOUT PROMISING SIXTEEN FOREVER. "You can't really say
+     'all 16 badges' for the banner because we will be adding additional
+     units. However I think saying 'all 16 badges' sounds cool." Both:
+     the number is read off the units that exist, so it says "all 16"
+     today and "all 18" the day two more land. And once earned it is
+     KEPT (store.starfallKept) - a banner that vanishes because a new
+     unit shipped would punish the one person who finished everything. */
   { id: "badges16", name: "Starfall",
-    label: "Earn all 16 badges", have: () => badgeCountOf(store), need: 16 },
+    get label(){ return "Earn all " + topicsIn(QUESTIONS).length + " badges"; },
+    have: () => {
+      const n = badgeCountOf(store), all = topicsIn(QUESTIONS).length;
+      if(n >= all && all > 0 && !store.starfallKept) store.starfallKept = true;
+      return store.starfallKept ? Math.max(n, all) : n;
+    },
+    get need(){ return topicsIn(QUESTIONS).length; } },
+  /* Build 232: "we need one for 250 hundos that's cooler than the 100
+     one." Summit is a peak at sunset; this is the temple above it. */
+  { id: "hundos250", name: "Sky Temple",
+    label: "Earn 250 hundos", have: () => hundosOf(store), need: 250 },
   { id: "tests500", name: "Koi Pond",
     label: "Finish 500 full tests", have: () => fullTestsOf(), need: 500 },
   { id: "level80", name: "Earthrise",
     label: "Reach level " + LEVEL_CAP, have: () => levelOf(store), need: LEVEL_CAP },
   { id: "exam100", name: "Phoenix",
-    label: "Score 100% on the Practice Exam", have: () => (store.practiceExamPerfect ? 1 : 0), need: 1 }
+    label: "Score 100% on the Practice Exam", have: () => (store.practiceExamPerfect ? 1 : 0), need: 1 },
+  /* Build 232, the top rank's own banner. "The supernova rank needs
+     something even cooler as unlock, so let's add a supernova banner as
+     well, make it super sick, themed to the rank." Listed last because
+     it is the last thing on the ladder, and the Rank tab's Supernova
+     card names it among what the rank hands over (rankRewardItems). */
+  { id: "titan_rank", name: "Supernova", rank: "titan",
+    label: "Reach Supernova rank", have: () => (tierColorUnlocked("titan") ? 1 : 0), need: 1 }
 ];
 function bannerDef(id){ return BANNERS.find(b => b.id === id) || null; }
 function bannerEarned(id){
@@ -33481,7 +33986,7 @@ function bnStars(rnd, n, yMax, cls){
 const BANNER_ART = {
   /* SAKURA - a cherry tree in full bloom at dusk, petals coming down
      past a big pale moon, and a torii on the far hill. */
-  tests100(u){
+  tests250(u){
     const rnd = bnRand(1001);
     let bloom = "", fall = "";
     const clusters = [[282, 58, 34], [248, 36, 26], [318, 34, 30], [360, 60, 30], [400, 44, 28], [440, 58, 26], [468, 92, 24],
@@ -33529,7 +34034,7 @@ const BANNER_ART = {
 
   /* NORTHERN LIGHTS - curtains of aurora swaying over snowy peaks and a
      line of pines. */
-  tests250(u){
+  tests100(u){
     const rnd = bnRand(2502);
     let pines = "";
     for(let x = -6; x < 490; x += 9 + rnd() * 8){
@@ -33840,6 +34345,396 @@ const BANNER_ART = {
       '<path d="M240 180 C280 150 330 148 360 160 C390 150 430 146 490 160 L490 180Z" fill="#1B3A6B"/>' +
       '<path d="M250 176 C290 156 330 154 360 164" fill="none" stroke="#F7F1E3" stroke-width="2" opacity=".8"/>' +
       '<g fill="#FFFFFF" opacity=".85">' + spray + '</g>';
+  },
+
+  /* THUNDERHEAD - Hardcore beaten on ten units, the top of the three
+     Game banners (Lanterns, then Great Wave, then this). The calm lake
+     and the wave were weather you could look at; this is weather you
+     are inside: a supercell towering over a black sea, its underside
+     hanging in pouches, rain driving across the whole frame and the
+     lightning coming down in the middle of it. A lighthouse on the
+     cliff gives it scale, the one warm light in a cold picture.
+
+     THE BOLTS FLASH, and the sky flashes with them: each bolt and its
+     own flash share a duration and a delay, so the frame lights up on
+     the strike and not a beat off it. A third bolt, far off in the
+     cloud, never goes out - a picture of a thunderstorm caught between
+     strikes still has to read as a thunderstorm. */
+  hardcore10(u){
+    const rnd = bnRand(1030);
+    /* A jagged bolt: a straight line from top to bottom, knocked
+       sideways a random amount at every joint, with forks thrown off
+       some of them. */
+    const bolt = (x0, y0, x1, y1, n, jit, forks) => {
+      let main = "M" + bnF(x0) + " " + bnF(y0), fk = "";
+      for(let i = 1; i <= n; i++){
+        const t = i / n, x = x0 + (x1 - x0) * t + (i < n ? (rnd() - 0.5) * 2 * jit : 0), y = y0 + (y1 - y0) * t;
+        main += " L" + bnF(x) + " " + bnF(y);
+        if(i < n - 1 && forks && rnd() < forks){
+          const dir = rnd() < 0.5 ? -1 : 1;
+          let fx = x, fy = y, f = "M" + bnF(x) + " " + bnF(y);
+          const steps = 2 + Math.floor(rnd() * 2);
+          for(let k = 0; k < steps; k++){
+            fx += dir * (4 + rnd() * 7); fy += 4 + rnd() * 6;
+            f += " L" + bnF(fx) + " " + bnF(fy);
+          }
+          fk += f + " ";
+        }
+      }
+      return [main, fk];
+    };
+    const drawBolt = (b, w, cls, style) =>
+      '<g' + (cls ? ' class="' + cls + '"' : '') + (style ? ' style="' + style + '"' : '') + ' fill="none" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="' + b[0] + '" stroke="#7FA8FF" stroke-width="' + bnF(w * 6) + '" opacity=".16"/>' +
+      '<path d="' + b[0] + '" stroke="#9CBBFF" stroke-width="' + bnF(w * 3) + '" opacity=".3"/>' +
+      '<path d="' + b[1] + '" stroke="#9CBBFF" stroke-width="' + bnF(w * 2.4) + '" opacity=".22"/>' +
+      '<path d="' + b[1] + '" stroke="#E4ECFF" stroke-width="' + bnF(w * 0.8) + '" opacity=".9"/>' +
+      '<path d="' + b[0] + '" stroke="#DDE7FF" stroke-width="' + bnF(w * 1.7) + '"/>' +
+      '<path d="' + b[0] + '" stroke="#FFFFFF" stroke-width="' + bnF(w * 0.8) + '"/></g>';
+    const b1 = bolt(238, 60, 252, 146, 12, 8, 0.6);
+    const b2 = bolt(364, 60, 380, 140, 8, 6, 0.4);
+    const b3 = bolt(112, 40, 100, 118, 8, 5, 0.35);
+
+    /* THE CLOUD. Billows are circles, but never shaded one at a time -
+       each one shaded on its own is a pile of balls. Every layer shares
+       ONE gradient in user space, lit at the top and near-black at the
+       base, and each billow is drawn over a lighter copy of itself
+       nudged up and left, top to bottom, so each one leaves a crescent
+       of light along its upper edge: the cauliflower edge of a real
+       cumulonimbus. The tower climbs out of the frame in the middle,
+       over the strike; the shelf either side is lower, which is what
+       makes the middle read as towering. */
+    const layer = (x0, x1, step, top, r0, r1, rim, rimOp, body) => {
+      const pts = [];
+      for(let x = x0; x <= x1; x += step * (0.7 + rnd() * 0.6)){
+        const r = r0 + rnd() * (r1 - r0);
+        pts.push([x, top(x) + r * (0.85 + rnd() * 0.4), r]);
+        /* A second, lower billow under most of them, so the face of the
+           cloud has texture and not just an edge. */
+        if(rnd() < 0.75){ const r2 = r * (0.7 + rnd() * 0.3); pts.push([x + (rnd() - 0.5) * step, top(x) + r + r2 * (0.9 + rnd() * 0.8), r2]); }
+      }
+      pts.sort((p, q) => p[1] - q[1]);
+      let out = "";
+      pts.forEach(([x, y, r]) => {
+        out += '<circle cx="' + bnF(x - 1.2) + '" cy="' + bnF(y - 2.4) + '" r="' + bnF(r) + '" fill="' + rim + '" opacity="' + rimOp + '"/>' +
+               '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(r) + '" fill="url(#' + u + body + ')"/>';
+      });
+      let floor = "M" + x0 + " 72";
+      for(let x = x0; x <= x1; x += 10) floor += " L" + x + " " + bnF(top(x) + r1);
+      return '<path d="' + floor + ' L' + x1 + ' 72Z" fill="url(#' + u + body + ')"/>' + out;
+    };
+    const towerTop = x => 34 - 76 * Math.exp(-Math.pow((x - 240) / 58, 2));
+    const tower = layer(130, 350, 14, towerTop, 13, 22, "#B4BFF2", ".55", "ct");
+    /* Billows inside the face of the tower too, or it is a smooth dome
+       with a lumpy edge. Sampled until they sit wholly inside it. */
+    const inner = [];
+    for(let tries = 0; inner.length < 16 && tries < 400; tries++){
+      const x = 170 + rnd() * 140, y = -10 + rnd() * 50, r = 10 + rnd() * 10;
+      if(y - r > towerTop(x) + 6 && y - r > towerTop(x - r) + 2 && y - r > towerTop(x + r) + 2) inner.push([x, y, r]);
+    }
+    inner.sort((p, q) => p[1] - q[1]);
+    const towerFace = inner.map(([x, y, r]) =>
+      '<circle cx="' + bnF(x - 1.2) + '" cy="' + bnF(y - 2.4) + '" r="' + bnF(r) + '" fill="#9AA6E2" opacity=".42"/>' +
+      '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(r) + '" fill="url(#' + u + 'ct)"/>').join("");
+    const shelf = layer(-20, 500, 22, x => 36 + 6 * Math.sin(x / 31) + 3 * Math.sin(x / 13), 11, 18, "#8390CF", ".45", "cs");
+    const roll = layer(-20, 500, 20, x => 50 + 3 * Math.sin(x / 17), 8, 12, "#5A67A6", ".45", "cf");
+    let pouches = "";
+    for(let i = 0; i < 20; i++){
+      const x = -4 + i * 25 + rnd() * 8, y = 68 + rnd() * 6, r = 9 + rnd() * 6;
+      pouches += '<ellipse cx="' + bnF(x) + '" cy="' + bnF(y + 1.8) + '" rx="' + bnF(r) + '" ry="' + bnF(r * 0.72) + '" fill="#46528C" opacity=".5"/>' +
+                 '<ellipse cx="' + bnF(x) + '" cy="' + bnF(y) + '" rx="' + bnF(r) + '" ry="' + bnF(r * 0.72) + '" fill="#0B0E1C"/>';
+    }
+    const ug = (id, stops, y1, y2) => '<linearGradient id="' + u + id + '" gradientUnits="userSpaceOnUse" x1="0" y1="' + y1 + '" x2="0" y2="' + y2 + '">' +
+      stops.map(t => '<stop offset="' + t[0] + '" stop-color="' + t[1] + '"/>').join("") + '</linearGradient>';
+    let rain = "", rain2 = "";
+    for(let i = 0; i < 120; i++){
+      const x = -20 + rnd() * 540, y = -20 + rnd() * 220, l = 10 + rnd() * 10;
+      const ln = '<line x1="' + bnF(x) + '" y1="' + bnF(y) + '" x2="' + bnF(x - l * 0.32) + '" y2="' + bnF(y + l) + '"/>';
+      if(i % 3) rain += ln; else rain2 += ln;
+    }
+    let crests = "";
+    for(let i = 0; i < 30; i++){
+      const x = rnd() * 480, y = 142 + rnd() * 36, w = 10 + rnd() * 22 * (0.6 + (y - 142) / 40);
+      crests += '<path d="M' + bnF(x) + ' ' + bnF(y) + ' q' + bnF(w * 0.5) + ' -' + bnF(2 + w * 0.08) + ' ' + bnF(w) + ' 0"/>';
+    }
+    return '<defs>' +
+      bnLin(u + "sky", [[0, "#03050B"], [0.38, "#0E1528"], [0.6, "#232D56"], [0.77, "#35416F"]]) +
+      bnRad(u + "inner", [[0, "#8E9DFF", 0.55], [0.5, "#4A57A8", 0.2], [1, "#1A2340", 0]]) +
+      ug("ct", [[0, "#56619A"], [0.45, "#2C3460"], [1, "#12162C"]], -40, 70) +
+      ug("cs", [[0, "#3D477A"], [0.5, "#1D2342"], [1, "#0E1226"]], 24, 72) +
+      ug("cf", [[0, "#262D52"], [1, "#0B0E1C"]], 48, 74) +
+      bnRad(u + "core", [[0, "#DCE6FF", 0.8], [0.35, "#8E9DFF", 0.35], [1, "#4A57A8", 0]]) +
+      bnLin(u + "sea", [[0, "#141C33"], [0.3, "#0A1020"], [1, "#03060C"]]) +
+      bnRad(u + "hit", [[0, "#E4EEFF", 0.9], [0.3, "#9CBBFF", 0.4], [1, "#6E8FFF", 0]]) +
+      bnRad(u + "lamp", [[0, "#FFF1C4", 0.95], [0.3, "#FFC857", 0.5], [1, "#FF9A3C", 0]]) +
+      bnLin(u + "beam", [[0, "#FFE7A8", 0.5], [1, "#FFE7A8", 0]], 0, 0, 1, 0) +
+      '</defs>' +
+      '<rect width="480" height="180" fill="url(#' + u + 'sky)"/>' +
+      bnStars(rnd, 26, 40, true) +
+      /* The storm lit from inside, behind everything. */
+      '<ellipse cx="250" cy="44" rx="190" ry="60" fill="url(#' + u + 'inner)" class="bn-flash" style="animation-duration:3.6s;animation-delay:-3.2s" opacity=".6"/>' +
+      /* The far bolt, the one that stays lit, behind the cloud. */
+      '<g opacity=".55">' + drawBolt(b3, 1.2) + '</g>' +
+      tower + towerFace + shelf + roll + pouches +
+      /* The strike's own light inside the cloud where it leaves it. */
+      '<ellipse cx="240" cy="40" rx="80" ry="46" fill="url(#' + u + 'core)" class="bn-flash" style="animation-duration:3.6s;animation-delay:-3.2s" opacity=".3"/>' +
+      '<ellipse cx="372" cy="44" rx="60" ry="34" fill="url(#' + u + 'core)" class="bn-flash" style="animation-duration:5.2s;animation-delay:-1.4s" opacity="0"/>' +
+      /* The sea, and the horizon line picked out by the flash. */
+      '<rect y="138" width="480" height="42" fill="url(#' + u + 'sea)"/>' +
+      '<path d="M0 138 L480 138" stroke="#7F95D6" stroke-width=".8" opacity=".45"/>' +
+      '<g class="bn-bob" fill="none" stroke="#8EA4E0" stroke-width="1.1" stroke-linecap="round" opacity=".4">' + crests + '</g>' +
+      /* The cliff and the lighthouse, off to the left. */
+      '<path d="M-10 180 L-10 104 L14 100 L30 108 L46 104 L62 116 L74 132 L90 146 L106 180Z" fill="#070A12"/>' +
+      '<path d="M14 100 L30 108 L46 104 L62 116" fill="none" stroke="#3E4C80" stroke-width="1" opacity=".6"/>' +
+      '<path d="M40 104 L28 104 L30 78 L38 78Z" fill="#D9DEE8"/><path d="M29.3 88 L38.7 88 L38.5 92 L29.5 92Z" fill="#C6413F"/>' +
+      '<path d="M28.6 97 L39.4 97 L39.6 101 L28.4 101Z" fill="#C6413F"/>' +
+      '<rect x="29" y="72" width="10" height="7" fill="#1A1F2E"/><path d="M28 72 L34 66 L40 72Z" fill="#12151F"/>' +
+      '<path d="M37 75.5 L140 60 L140 92Z" fill="url(#' + u + 'beam)" class="bn-beam"/>' +
+      '<circle cx="34" cy="75.5" r="16" fill="url(#' + u + 'lamp)" class="bn-glint"/>' +
+      '<rect x="31" y="73.5" width="6" height="4" fill="#FFE7A8"/>' +
+      /* The strikes. The main bolt hits the water in the middle of the
+         frame, where every slice of the banner keeps it. */
+      '<circle cx="254" cy="146" r="46" fill="url(#' + u + 'hit)" class="bn-flash" style="animation-duration:3.6s;animation-delay:-3.2s" opacity="0"/>' +
+      drawBolt(b1, 1.9, "bn-bolt", "animation-duration:3.6s;animation-delay:-3.2s") +
+      drawBolt(b2, 1.1, "bn-bolt", "animation-duration:5.2s;animation-delay:-1.4s") +
+      '<g class="bn-rain" stroke="#A9BDF0" stroke-width=".7" opacity=".35">' + rain + '</g>' +
+      '<g class="bn-rain" style="animation-duration:.5s" stroke="#C9D6FF" stroke-width="1" opacity=".3">' + rain2 + '</g>' +
+      /* The whole sky whitening on a strike. */
+      '<rect width="480" height="180" fill="#C9D8FF" fill-opacity=".16" class="bn-flash" style="animation-duration:3.6s;animation-delay:-3.2s" opacity="0"/>' +
+      '<rect width="480" height="180" fill="#C9D8FF" fill-opacity=".12" class="bn-flash" style="animation-duration:5.2s;animation-delay:-1.4s" opacity="0"/>';
+  },
+
+  /* SKY TEMPLE - 250 hundos, two and a half times Summit, and it has to
+     look it. Summit is a mountain you climbed; this is where you end up
+     above the clouds: an island hanging in the air with a gold-domed
+     temple on it, the sun coming through behind it in rays, two
+     waterfalls pouring off its edges and vanishing into a sea of cloud,
+     and smaller islands drifting in the haze.
+
+     The water falls: a column of streaks inside each fall slides down
+     by exactly its own spacing and repeats, so the loop has no seam.
+     The cloud sea is built the way Thunderhead's storm is - one shared
+     gradient per bank, each billow over a lighter copy of itself - so
+     its tops catch the sun rather than being flat white discs. */
+  hundos250(u){
+    const rnd = bnRand(2500);
+    const ug = (id, stops, y1, y2) => '<linearGradient id="' + u + id + '" gradientUnits="userSpaceOnUse" x1="0" y1="' + y1 + '" x2="0" y2="' + y2 + '">' +
+      stops.map(t => '<stop offset="' + t[0] + '" stop-color="' + t[1] + '"' + (t[2] != null ? ' stop-opacity="' + t[2] + '"' : '') + '/>').join("") + '</linearGradient>';
+    let rays = "";
+    for(let i = 0; i < 16; i++){
+      const a = i * 22.5 + 6 + (rnd() - 0.5) * 8, w = 4 + (i % 3) * 3.5, len = 250 + rnd() * 60;
+      rays += '<path class="bn-beam" style="animation-delay:-' + bnF(rnd() * 7) + 's;animation-duration:' + bnF(5 + rnd() * 4) + 's" d="M0 0 L' + bnF(len) + ' ' + bnF(-w) + ' L' + bnF(len) + ' ' + bnF(w) + 'Z" fill="url(#' + u + 'ray)" transform="translate(240 50) rotate(' + bnF(a) + ')"/>';
+    }
+    /* A bank of cloud: billows along a line, sorted top to bottom, each
+       over a lit copy of itself. */
+    const bank = (y0, dy, r0, dr, step, rim, rimOp, g) => {
+      const pts = [];
+      for(let x = -30; x < 510; x += step * (0.7 + rnd() * 0.6)){
+        const r = r0 + rnd() * dr;
+        pts.push([x, y0 + rnd() * dy, r]);
+      }
+      pts.sort((p, q) => p[1] - q[1]);
+      return '<rect x="-30" y="' + bnF(y0 + dy) + '" width="540" height="' + bnF(200 - y0) + '" fill="url(#' + u + g + ')"/>' +
+        pts.map(([x, y, r]) => '<circle cx="' + bnF(x - 1.5) + '" cy="' + bnF(y - 2.2) + '" r="' + bnF(r) + '" fill="' + rim + '" opacity="' + rimOp + '"/>' +
+          '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(r) + '" fill="url(#' + u + g + ')"/>').join("");
+    };
+    const far = bank(138, 6, 7, 6, 13, "#FFF1DE", ".9", "cf");
+    const mid = bank(160, 6, 10, 7, 18, "#FFF6EA", ".95", "cm");
+    const near = bank(174, 5, 13, 9, 24, "#FFFFFF", "1", "cn");
+    /* A waterfall: a sheet widening as it drops, the streaks inside it
+       clipped to the sheet. */
+    const fall = (id, x, y0, y1, w) => {
+      let streaks = "";
+      for(let yy = y0 - 16; yy < y1 + 16; yy += 14){
+        for(let k = 0; k < 3; k++){
+          const sx = x - w * 0.5 + (k + 0.5) * (w / 3) + (rnd() - 0.5) * 1.6;
+          streaks += '<line x1="' + bnF(sx) + '" y1="' + bnF(yy + rnd() * 5) + '" x2="' + bnF(sx) + '" y2="' + bnF(yy + 7 + rnd() * 4) + '"/>';
+        }
+      }
+      const sheet = 'M' + bnF(x - w / 2) + ' ' + y0 + ' L' + bnF(x + w / 2) + ' ' + y0 + ' L' + bnF(x + w * 0.9) + ' ' + y1 + ' L' + bnF(x - w * 0.9) + ' ' + y1 + 'Z';
+      return '<clipPath id="' + u + id + '"><path d="' + sheet + '"/></clipPath>' +
+        '<path d="' + sheet + '" fill="url(#' + u + 'wf)"/>' +
+        '<g clip-path="url(#' + u + id + ')"><g class="bn-pour" stroke="#FFFFFF" stroke-width="1.1" stroke-linecap="round" opacity=".8">' + streaks + '</g></g>' +
+        '<path d="M' + bnF(x - w / 2 - 1) + ' ' + y0 + ' L' + bnF(x + w / 2 + 1) + ' ' + y0 + '" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round"/>';
+    };
+    /* Gold glints: four-point stars with unequal arms, the way the rest
+       of the app draws a sparkle. */
+    const spark = (x, y, s, d) => '<path class="bn-glint" style="animation-delay:-' + bnF(d) + 's" d="M' + x + ' ' + bnF(y - s) + ' Q' + bnF(x + s * 0.12) + ' ' + bnF(y - s * 0.12) + ' ' + bnF(x + s * 0.7) + ' ' + y +
+      ' Q' + bnF(x + s * 0.12) + ' ' + bnF(y + s * 0.12) + ' ' + x + ' ' + bnF(y + s * 0.8) + ' Q' + bnF(x - s * 0.12) + ' ' + bnF(y + s * 0.12) + ' ' + bnF(x - s * 0.7) + ' ' + y +
+      ' Q' + bnF(x - s * 0.12) + ' ' + bnF(y - s * 0.12) + ' ' + x + ' ' + bnF(y - s) + 'Z" fill="#FFF6D6"/>';
+    let cols = "";
+    for(let i = 0; i < 7; i++){
+      const x = 211 + i * 9.6;
+      cols += '<rect x="' + bnF(x) + '" y="76" width="5" height="21" fill="url(#' + u + 'col)"/>' +
+        '<rect x="' + bnF(x - 0.8) + '" y="74.6" width="6.6" height="1.8" fill="#F3E6C8"/>';
+    }
+    let roots = "";
+    for(let i = 0; i < 12; i++){
+      const x = 192 + rnd() * 104, y = 114 + rnd() * 20, l = 8 + rnd() * 18;
+      roots += '<path d="M' + bnF(x) + ' ' + bnF(y) + ' q' + bnF((rnd() - 0.5) * 6) + ' ' + bnF(l * 0.5) + ' ' + bnF((rnd() - 0.5) * 4) + ' ' + bnF(l) + '"/>';
+    }
+    /* The smaller islands: a rock with a lit face, a green top and a
+       single tree, so each is a place rather than a shape. */
+    const islet = (x, y, s, d) =>
+      '<g class="bn-bob" style="animation-delay:-' + d + 's;animation-duration:' + bnF(5 + d) + 's"><g transform="translate(' + x + ' ' + y + ') scale(' + s + ')">' +
+      '<path d="M-20 0 Q0 -4 20 0 L13 6 L7 17 L1 30 L-4 17 L-12 7Z" fill="url(#' + u + 'rk2)"/>' +
+      '<path d="M-20 0 L-12 7 L-4 17 L1 30 L-1 14 L-8 5Z" fill="#C9A287" opacity=".5"/>' +
+      '<path d="M-21 0.6 Q0 -6 21 0.6 Q0 -1.6 -21 0.6Z" fill="#7FCB8C"/>' +
+      '<path d="M7 -2 L7 -8" stroke="#4A3A3A" stroke-width="1.2"/><circle cx="7" cy="-10" r="4.2" fill="#4FA56A"/><circle cx="5.6" cy="-11.2" r="2" fill="#8FDB9A"/>' +
+      '</g></g>';
+    return '<defs>' +
+      bnLin(u + "sky", [[0, "#0E1C4E"], [0.3, "#2D4F9E"], [0.56, "#86A9DA"], [0.74, "#F6CF9A"], [1, "#FFE6BE"]]) +
+      bnRad(u + "sun", [[0, "#FFFFFF"], [0.12, "#FFF6D6", 0.95], [0.4, "#FFD98A", 0.45], [1, "#FFB35A", 0]]) +
+      bnLin(u + "ray", [[0, "#FFF3CF", 0.5], [0.5, "#FFF3CF", 0.13], [1, "#FFF3CF", 0]], 0, 0, 1, 0) +
+      ug("rk", [[0, "#A7806A"], [0.3, "#6E4F58"], [0.75, "#3A2B42"], [1, "#2A2036"]], 104, 176) +
+      bnLin(u + "rk2", [[0, "#8C7A8E"], [1, "#4E4462", 0.9]]) +
+      bnLin(u + "grass", [[0, "#A6E896"], [1, "#3E8E5A"]]) +
+      bnLin(u + "col", [[0, "#FFFFFF"], [0.45, "#F4ECDD"], [1, "#B9A98E"]], 0, 0, 1, 0) +
+      bnLin(u + "gold", [[0, "#FFF4C2"], [0.35, "#FFD45C"], [0.75, "#D99A1E"], [1, "#8A5A0C"]], 0, 0, 1, 1) +
+      bnLin(u + "wf", [[0, "#F2FAFF", 0.95], [0.7, "#BFE3FF", 0.75], [1, "#FFFFFF", 0.2]]) +
+      ug("cf", [[0, "#F6DCC6"], [1, "#D2B6CC"]], 128, 150) +
+      ug("cm", [[0, "#FCE6D2"], [1, "#DCC2D8"]], 150, 182) +
+      ug("cn", [[0, "#FFF4EA"], [1, "#EAD6E2"]], 162, 192) +
+      bnRad(u + "haze", [[0, "#FFF4DC", 0.85], [1, "#FFF4DC", 0]]) +
+      '</defs>' +
+      '<rect width="480" height="180" fill="url(#' + u + 'sky)"/>' +
+      bnStars(rnd, 16, 34, true) +
+      rays +
+      '<circle cx="240" cy="50" r="120" fill="url(#' + u + 'sun)"/>' +
+      /* Far islands in the haze, left and right. */
+      '<g opacity=".6">' + islet(80, 66, 0.9, 1.3) + islet(404, 52, 0.7, 2.6) + '</g>' +
+      '<g class="bn-drift" style="animation-duration:22s">' + far + '</g>' +
+      /* The sun's light lying on the cloud sea under the island. */
+      '<ellipse cx="240" cy="136" rx="170" ry="16" fill="url(#' + u + 'haze)"/>' +
+      islet(126, 112, 0.6, 3.4) + islet(356, 100, 0.5, 0.6) +
+      /* THE ISLAND, bobbing as one piece with everything on it. */
+      '<g class="bn-bob" style="animation-duration:6s">' +
+      '<g fill="none" stroke="#3B2B3A" stroke-width="1" opacity=".55">' + roots + '</g>' +
+      '<path d="M170 104 Q240 94 312 104 L304 114 L292 124 L280 138 L266 152 L254 168 L246 178 L238 162 L224 146 L208 132 L194 120 L180 112Z" fill="url(#' + u + 'rk)"/>' +
+      /* The lit face, on the sun's side of each ledge. */
+      '<path d="M170 104 L180 112 L194 120 L208 132 L224 146 L238 162 L246 178 L242 150 L230 134 L214 120 L198 110 L184 106Z" fill="#D2A884" opacity=".45"/>' +
+      '<path d="M182 111 Q240 118 300 115 M200 127 Q240 134 286 131 M218 142 Q242 148 272 146 M232 157 Q246 161 262 159" fill="none" stroke="#2E2238" stroke-width="1" opacity=".3"/>' +
+      fall("wa", 184, 108, 166, 6.5) + fall("wb", 298, 108, 162, 7.5) +
+      '<path d="M168 104.5 Q240 91 314 104.5 Q306 108.5 294 107.4 Q240 101 186 107.4 Q174 108.5 168 104.5Z" fill="url(#' + u + 'grass)"/>' +
+      '<path d="M178 102 Q240 92 304 102" fill="none" stroke="#D8FFC8" stroke-width="1" opacity=".6"/>' +
+      /* The temple: steps, colonnade, entablature, drum, a gold dome and
+         the spire that catches the sun. */
+      '<path d="M200 104 L280 104 L278 101 L202 101Z M204 101 L276 101 L274 98.4 L206 98.4Z M207 98.4 L273 98.4 L272 96.6 L208 96.6Z" fill="#E9DDC4"/>' +
+      '<path d="M200 104 L280 104 L278 101 L202 101Z" fill="#CDBB9C"/>' +
+      '<rect x="206" y="75" width="68" height="22" fill="#6E5A63" opacity=".55"/>' +
+      cols +
+      '<rect x="204" y="69" width="72" height="6" fill="#F7EEDC"/><rect x="204" y="69" width="72" height="1.6" fill="url(#' + u + 'gold)"/>' +
+      '<rect x="204" y="73.6" width="72" height="1.4" fill="#C9B793"/>' +
+      '<rect x="214" y="63" width="52" height="6" fill="#EFE3CA"/>' +
+      '<path d="M214 63 Q214 34 240 32 Q266 34 266 63Z" fill="url(#' + u + 'gold)"/>' +
+      '<path d="M219 60 Q220 40 236 35" fill="none" stroke="#FFF9E0" stroke-width="2.2" stroke-linecap="round" opacity=".75"/>' +
+      '<path d="M226 63 Q226 44 240 36 M254 63 Q254 44 240 36" fill="none" stroke="#9A6A12" stroke-width=".9" opacity=".45"/>' +
+      '<rect x="236.5" y="26" width="7" height="7" rx="1" fill="#F7EEDC"/><path d="M236 26.4 Q240 21 244 26.4Z" fill="url(#' + u + 'gold)"/>' +
+      '<path d="M240 22 L240 12" stroke="#E8B63A" stroke-width="1.2"/>' +
+      spark(240, 12, 7, 0) + spark(226, 44, 4, 1.7) + spark(262, 70, 3.4, 3.1) + spark(206, 70, 3, 2.3) +
+      '</g>' +
+      '<g class="bn-drift" style="animation-duration:18s;animation-delay:-5s">' + mid + '</g>' +
+      /* Spray where the falls go into the cloud. */
+      '<g class="bn-pulse" style="animation-duration:3s" fill="#FFFFFF" opacity=".85">' +
+      '<ellipse cx="184" cy="163" rx="12" ry="5"/><ellipse cx="298" cy="161" rx="13" ry="5"/></g>' +
+      '<g class="bn-drift" style="animation-duration:14s;animation-delay:-2s">' + near + '</g>' +
+      /* Two birds, for scale. */
+      '<path d="M318 44 q4 -3 7 0 q3 -3 7 0 M334 34 q3 -2.2 5.4 0 q2.4 -2.2 5.4 0" fill="none" stroke="#2A2F55" stroke-width="1.2" stroke-linecap="round" opacity=".6"/>';
+  },
+
+  /* SUPERNOVA - the top rank, and the best banner in the set on purpose.
+     The rank's emblem is a star going off; this is that moment, in the
+     rank's own red: a white-hot core, shock rings racing out of it one
+     after another, rays and lens streaks, debris flung out in every
+     direction, and the gas it has already thrown off lit crimson and
+     magenta against black space.
+
+     Every moving part loops cleanly: the rings and the debris are
+     invisible at both ends of their cycle, the rays turn a full circle,
+     and the core only breathes. */
+  titan_rank(u){
+    const rnd = bnRand(9999);
+    const C = [240, 90];
+    /* Rays at uneven angles and uneven lengths. Evenly spaced spokes
+       inside a ring is a wheel - the thing the rank emblems learned to
+       avoid - so no two neighbours here match. */
+    let rays = "";
+    for(let i = 0; i < 30; i++){
+      const a = i * 12 + (rnd() - 0.5) * 9, len = 60 + rnd() * rnd() * 190 + (i % 5 === 0 ? 60 : 0), w = 0.7 + rnd() * 1.9;
+      rays += '<path d="M0 ' + bnF(-w) + ' L' + bnF(len) + ' 0 L0 ' + bnF(w) + 'Z" fill="url(#' + u + 'ray)" opacity="' + bnF(0.35 + rnd() * 0.6) + '" transform="translate(240 90) rotate(' + bnF(a) + ')"/>';
+    }
+    /* The remnant: the shell of gas already thrown off, as a ring of
+       soft clumps round a slightly squashed loop - gas, never a line. */
+    let shellGas = "";
+    for(let i = 0; i < 70; i++){
+      const a = (i / 70) * Math.PI * 2 + (rnd() - 0.5) * 0.08, k = 0.8 + rnd() * 0.45, r = 6 + rnd() * 13;
+      shellGas += '<circle cx="' + bnF(C[0] + Math.cos(a) * 98 * k) + '" cy="' + bnF(C[1] + Math.sin(a) * 72 * k) + '" r="' + bnF(r) + '" fill="url(#' + u + (i % 3 ? 'g1' : 'g2') + ')" opacity="' + bnF(0.25 + rnd() * 0.4) + '"/>';
+    }
+    let fil = "";
+    for(let i = 0; i < 28; i++){
+      const a = rnd() * Math.PI * 2, r0 = 58 + rnd() * 30, r1 = r0 + 10 + rnd() * 26, bend = (rnd() - 0.5) * 0.25;
+      fil += '<path d="M' + bnF(C[0] + Math.cos(a) * r0) + ' ' + bnF(C[1] + Math.sin(a) * r0 * 0.78) + ' Q' +
+        bnF(C[0] + Math.cos(a + bend) * (r0 + r1) / 2) + ' ' + bnF(C[1] + Math.sin(a + bend) * (r0 + r1) / 2 * 0.78) + ' ' +
+        bnF(C[0] + Math.cos(a) * r1) + ' ' + bnF(C[1] + Math.sin(a) * r1 * 0.78) + '" stroke="' + (rnd() < 0.5 ? "#FF6A3D" : "#FF3B6E") + '" stroke-width="' + bnF(0.6 + rnd() * 1.4) + '" opacity="' + bnF(0.3 + rnd() * 0.4) + '"/>';
+    }
+    /* Debris: each streak sits on its own spoke and the animation only
+       slides it outward along it, so one keyframe serves every angle. */
+    let debris = "";
+    for(let i = 0; i < 40; i++){
+      const a = rnd() * 360, r0 = 12 + rnd() * 20, l = 4 + rnd() * 9;
+      const col = ["#FFFFFF", "#FFD27A", "#FF8A3D", "#FF3B30"][Math.floor(rnd() * 4)];
+      debris += '<g transform="rotate(' + bnF(a) + ' 240 90)"><line class="bn-fly" style="animation-delay:-' + bnF(rnd() * 4) + 's;animation-duration:' + bnF(2.8 + rnd() * 2.4) + 's" x1="' + bnF(240 + r0) + '" y1="90" x2="' + bnF(240 + r0 + l) + '" y2="90" stroke="' + col + '" stroke-width="' + bnF(0.8 + rnd() * 1.2) + '" stroke-linecap="round"/></g>';
+    }
+    let dust = "";
+    for(let i = 0; i < 46; i++){
+      const a = rnd() * Math.PI * 2, r = 40 + rnd() * 200;
+      dust += '<circle cx="' + bnF(C[0] + Math.cos(a) * r) + '" cy="' + bnF(C[1] + Math.sin(a) * r * 0.62) + '" r="' + bnF(0.5 + rnd() * 1.3) + '" fill="' + (rnd() < 0.5 ? "#FFB08A" : "#FF5A5A") + '" opacity="' + bnF(0.4 + rnd() * 0.5) + '"' +
+        (rnd() < 0.4 ? ' class="bn-twinkle" style="animation-delay:-' + bnF(rnd() * 3) + 's"' : '') + '/>';
+    }
+    /* The rings lie in a plane tilted towards us, so the blast has a
+       direction and reads as a shock front rather than a target - and
+       each at its own tilt, because three concentric ovals round a
+       bright point is an eye. */
+    const ring = (delay, dur, tilt, ry) => '<g transform="rotate(' + tilt + ' 240 90)"><ellipse class="bn-shock" style="animation-delay:-' + delay + 's;animation-duration:' + dur + 's" cx="240" cy="90" rx="92" ry="' + (ry * 2) + '" fill="url(#' + u + 'ring)"/></g>';
+    return '<defs>' +
+      bnRad(u + "sp", [[0, "#2A0710"], [0.45, "#10030A"], [1, "#020104"]], "50%", "50%", "70%") +
+      bnRad(u + "n1", [[0, "#E23B3B", 0.75], [0.5, "#A0122E", 0.35], [1, "#5A0A22", 0]]) +
+      bnRad(u + "n2", [[0, "#D6246E", 0.65], [0.6, "#7A0F4A", 0.25], [1, "#3A0630", 0]]) +
+      bnRad(u + "g1", [[0, "#FF5A3A", 0.8], [0.5, "#E23B3B", 0.35], [1, "#E23B3B", 0]]) +
+      bnRad(u + "g2", [[0, "#FF4F9A", 0.7], [0.5, "#C2185B", 0.3], [1, "#C2185B", 0]]) +
+      bnRad(u + "n3", [[0, "#FF7A3A", 0.4], [0.6, "#C2301E", 0.15], [1, "#6A0A0A", 0]]) +
+      bnRad(u + "n4", [[0, "#6A2A9A", 0.4], [1, "#2A0A3A", 0]]) +
+      bnRad(u + "ring", [[0, "#FF3B30", 0], [0.72, "#FF3B30", 0], [0.84, "#FF3B30", 0.3], [0.92, "#FF8A5A", 0.8], [0.95, "#FFE2C4", 0.95], [0.975, "#FF3B30", 0.6], [1, "#E23B3B", 0]]) +
+      bnRad(u + "glow", [[0, "#FFFFFF"], [0.08, "#FFF4E0"], [0.2, "#FFC27A", 0.9], [0.4, "#FF5A36", 0.55], [0.7, "#E23B3B", 0.18], [1, "#E23B3B", 0]]) +
+      bnRad(u + "core", [[0, "#FFFFFF"], [0.5, "#FFFFFF"], [0.75, "#FFF0DC", 0.85], [1, "#FFD2A8", 0]]) +
+      bnLin(u + "ray", [[0, "#FFFFFF", 0.95], [0.25, "#FFB08A", 0.55], [1, "#E23B3B", 0]], 0, 0, 1, 0) +
+      bnLin(u + "hs", [[0, "#FF3B30", 0], [0.5, "#FFFFFF"], [1, "#FF3B30", 0]], 0, 0, 1, 0) +
+      bnLin(u + "vs", [[0, "#FF3B30", 0], [0.5, "#FFFFFF"], [1, "#FF3B30", 0]], 0, 0, 0, 1) +
+      '</defs>' +
+      '<rect width="480" height="180" fill="url(#' + u + 'sp)"/>' +
+      bnStars(rnd, 130, 180, true) +
+      /* The nebula it has already thrown off. */
+      '<g class="bn-drift" style="animation-duration:24s">' +
+      '<ellipse cx="150" cy="70" rx="150" ry="70" fill="url(#' + u + 'n2)" transform="rotate(-16 150 70)"/>' +
+      '<ellipse cx="350" cy="118" rx="160" ry="66" fill="url(#' + u + 'n1)" transform="rotate(12 350 118)"/>' +
+      '<ellipse cx="70" cy="150" rx="110" ry="50" fill="url(#' + u + 'n4)"/>' +
+      '<ellipse cx="420" cy="30" rx="110" ry="46" fill="url(#' + u + 'n4)"/>' +
+      '</g>' +
+      '<ellipse cx="240" cy="90" rx="190" ry="90" fill="url(#' + u + 'n3)"/>' +
+      '<g fill="none" stroke-linecap="round">' + fil + '</g>' +
+      shellGas +
+      dust +
+      /* The shock rings, one after another. */
+      ring(0, 4.8, -16, 32) + ring(1.6, 4.8, 12, 38) + ring(3.2, 4.8, -40, 30) +
+      '<g class="bn-swim" style="animation-duration:120s">' + rays + '</g>' +
+      '<circle cx="240" cy="90" r="96" fill="url(#' + u + 'glow)" class="bn-pulse" style="animation-duration:3.2s"/>' +
+      debris +
+      /* Lens streaks, never the same length both ways. */
+      '<ellipse cx="240" cy="90" rx="236" ry="1.6" fill="url(#' + u + 'hs)" opacity=".85"/>' +
+      '<ellipse cx="240" cy="90" rx="1.3" ry="74" fill="url(#' + u + 'vs)" opacity=".7"/>' +
+      '<path d="M240 58 Q242 88 272 90 Q242 92 240 118 Q238 92 212 90 Q238 88 240 58Z" fill="#FFFFFF" opacity=".95" class="bn-pulse" style="animation-duration:3.2s"/>' +
+      '<circle cx="240" cy="90" r="15" fill="url(#' + u + 'core)"/>' +
+      '<circle cx="240" cy="90" r="5" fill="#FFFFFF"/>';
   }
 };
 function buildBannerArt(id){
@@ -33913,6 +34808,10 @@ function recordVroomOutcome(code, sortedKeys, myKey){
          line so it is not a surprise later. */
       store.pendingCharUnlocks = (store.pendingCharUnlocks || []).filter(x => x !== "champion").concat(["champion"]);
       try{ showToast("Five wins - the Champion is yours."); }catch(e){}
+    }
+    if(before < 10 && store.vrWins >= 10){
+      store.pendingCharUnlocks = (store.pendingCharUnlocks || []).filter(x => x !== "spartan").concat(["spartan"]);
+      try{ showToast("Ten wins - the Spartan is yours."); }catch(e){}
     }
   }
   saveStore();
@@ -34251,6 +35150,33 @@ const RANK_COLOR = {
      - a sparkle sits in the GAP between two arms, never on an arm's
        axis, where it is just that arm made longer. */
 let rankEmblemSeq = 0;
+/* ---- AN EMBLEM THAT HAS TO SIT INSIDE A CIRCLE (build 232) ----
+   "The rank road map circles in the middle, a lot of icons aren't
+   centered and some of the icons have the stuff coming out of it." Both
+   true, and both measured: the emblems are drawn in a 128 frame but not
+   centred in it - Gold's crescent and Sapphire's comet sit 7-9 units
+   right of centre - and they are different sizes, from Iron's small
+   moon to Supernova's burst, which fills the whole frame and was then
+   drawn at 118% with overflow visible. So wherever an emblem goes into
+   a circle, its viewBox is re-cut round its OWN ink: centred on what
+   is actually drawn and scaled so every one sits at the same size, and
+   the circle clips. The numbers are the rendered bounds of each emblem
+   (dark background, anything brighter than 30/255), not guesses.
+   [centre x, centre y, drawn size]. */
+const RANK_EMBLEM_FIT = {
+  rookie: [63, 63, 58], ranger: [64, 64, 92], veteran: [70, 63, 76], vanguard: [63, 64, 82],
+  adept: [72, 63, 88], elite: [63, 64, 118], titan: [63, 66, 124]
+};
+function fitRankEmblem(svg, key){
+  const f = RANK_EMBLEM_FIT[key];
+  if(!f || !svg) return svg;
+  /* The drawing takes 72% of the circle; Iron's moon is held to a
+     floor so the smallest emblem does not become the biggest. */
+  const side = Math.max(f[2] / 0.72, 100);
+  svg.setAttribute("viewBox", (f[0] - side / 2).toFixed(1) + " " + (f[1] - side / 2).toFixed(1) + " " + side.toFixed(1) + " " + side.toFixed(1));
+  svg.classList.add("is-fitted");
+  return svg;
+}
 /* One rank's emblem, as a real SVG element. Always drawn in the rank's
    OWN colour - a locked rank is dimmed by the card around it, not
    redrawn in grey. Seven grey emblems tell you nothing about where you
@@ -38715,7 +39641,9 @@ function buildCosmicHero(useTierIcons, forceAccent){
        desaturated preview of the same emblem. Home only - Welcome keeps
        its own generic set. */
     if(useTierIcons){
-      const em = buildRankEmblemSVG(pos.tier);
+      /* Fitted and clipped like the road map's (build 232): centred on
+         its own drawing, and nothing reaching past the bubble. */
+      const em = fitRankEmblem(buildRankEmblemSVG(pos.tier), pos.tier);
       em.classList.add("cosmic-rank-emblem");
       badge.classList.add("cosmic-badge-rank");
       badge.style.setProperty("--rank-color", RANK_COLOR[pos.tier]);
@@ -39178,6 +40106,7 @@ function showWelcomeCharacterPrompt(){
   let selectedChar = null;
 
   AVATAR_CHARACTERS.forEach(charDef => {
+    if(charDef.retired) return;
     const opt = document.createElement("button");
     opt.type = "button";
     /* SIGN-UP SHOWS ONLY WHAT CAN BE CHOSEN. This used to draw the
@@ -44169,23 +45098,98 @@ function showPracticeTestConfirm(){
 
   panel.appendChild(buildBackLink("Back", showExamOptions));
 
+  /* ---- A BRIEFING, NOT A SENTENCE (build 232) ----
+     "When you select practice test, the description box could be a bit
+     better because the screens feel a bit empty." It was one grey line
+     under a title on an otherwise empty screen. Everything it said is
+     still here, laid out the way an exam briefing is: the three numbers
+     that define the test, the rules in the order they matter, and where
+     you stand - so the screen tells you what you are walking into and
+     how you did last time before you tap Start. */
+  panel.classList.add("practice-brief");
+  const chipRow = document.createElement("div");
+  chipRow.className = "setup-modechip";
+  const chip = document.createElement("span");
+  chip.className = "rs-mode rs-mode-exam";
+  try{ chip.appendChild(modeIcon("exam")); }catch(e){}
+  const chipText = document.createElement("span");
+  chipText.textContent = "Practice test";
+  chip.appendChild(chipText);
+  chipRow.appendChild(chip);
+  panel.appendChild(chipRow);
+
   const head = document.createElement("p");
   head.className = "homegreet";
   head.textContent = "Practice Test";
   panel.appendChild(head);
+  const sub = document.createElement("p");
+  sub.className = "pt-sub";
+  sub.textContent = "Built to feel like the real exam.";
+  panel.appendChild(sub);
 
-  /* Static text under the title instead of a tap-to-reveal info icon
-     -- the same change already made to the main Setup screen's own
-     mode note, for the same reason: content worth knowing before
-     tapping Start shouldn't be gated behind a button that's easy to
-     miss entirely. */
-  const note = document.createElement("p");
-  note.className = "info-note";
-  note.style.cssText = "margin:.6rem 0 1rem;";
-  note.textContent = PRACTICE_TEST_SIZE + " random questions across all " + topicsIn(QUESTIONS).length +
-    " units, " + PRACTICE_TEST_MINUTES + " minutes on the clock. No feedback until the end, no retries \u2014 " +
-    "built to feel like the real exam.";
-  panel.appendChild(note);
+  const unitCount = topicsIn(QUESTIONS).length;
+  const stats = document.createElement("div");
+  stats.className = "pt-stats";
+  [[String(PRACTICE_TEST_SIZE), "Questions"], [String(PRACTICE_TEST_MINUTES), "Minutes"], [PASS_MARK + "%", "To pass"]].forEach(([v, l]) => {
+    const t = document.createElement("div");
+    t.className = "pt-stat";
+    const vv = document.createElement("span"); vv.className = "pt-stat-val"; vv.textContent = v;
+    const ll = document.createElement("span"); ll.className = "pt-stat-lab"; ll.textContent = l;
+    t.append(vv, ll);
+    stats.appendChild(t);
+  });
+  panel.appendChild(stats);
+
+  const NS = "http://www.w3.org/2000/svg";
+  const ico = (d) => {
+    const sv = document.createElementNS(NS, "svg");
+    sv.setAttribute("viewBox", "0 0 24 24"); sv.setAttribute("aria-hidden", "true");
+    const pa = document.createElementNS(NS, "path"); pa.setAttribute("d", d);
+    sv.appendChild(pa); return sv;
+  };
+  const rules = document.createElement("ul");
+  rules.className = "pt-rules";
+  [["M4 7h11l-3-3M20 17H9l3 3M4 17h3M17 7h3", "Every unit, shuffled",
+     "Questions are drawn at random from all " + unitCount + " units."],
+   ["M3 12s3.5-6 9-6c2 0 3.7.8 5 1.8M21 12s-3.5 6-9 6c-2 0-3.7-.8-5-1.8M4 20L20 4", "No feedback until the end",
+     "You find out what you got right when you finish, not as you go."],
+   ["M12 7v5l3 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z", "Against the clock",
+     "When the " + PRACTICE_TEST_MINUTES + " minutes run out, the test is marked as it stands."],
+   ["M5 12l4 4L19 6", "One answer each",
+     "No retries and no second chances \u2014 like the real thing."]].forEach(([d, t, b]) => {
+    const li = document.createElement("li");
+    li.className = "pt-rule";
+    const i = document.createElement("span"); i.className = "pt-rule-ico"; i.appendChild(ico(d));
+    const tx = document.createElement("span"); tx.className = "pt-rule-txt";
+    const tt = document.createElement("strong"); tt.textContent = t;
+    const bb = document.createElement("span"); bb.textContent = b;
+    tx.append(tt, bb);
+    li.append(i, tx);
+    rules.appendChild(li);
+  });
+  panel.appendChild(rules);
+
+  /* Where you stand. The last score is the "All units" Exam record,
+     which is what a Practice Test writes to (testKeyFor). */
+  const rec = document.createElement("div");
+  rec.className = "pt-record";
+  const last = (store.testStats || {})["ALL|exam"];
+  const recLab = document.createElement("span"); recLab.className = "pt-record-lab"; recLab.textContent = "Your record";
+  const recVal = document.createElement("span"); recVal.className = "pt-record-val";
+  if(store.practiceExamPerfect){ recVal.textContent = "100% \u2014 Phoenix banner earned"; rec.classList.add("is-passed"); }
+  else if(store.practiceTestPassed){
+    recVal.textContent = "Passed" + (last && typeof last.lastPct === "number" ? " \u00b7 last score " + last.lastPct + "%" : "");
+    rec.classList.add("is-passed");
+  }
+  else if(last && typeof last.lastPct === "number") recVal.textContent = "Last score " + last.lastPct + "% \u00b7 not passed yet";
+  else recVal.textContent = "Not taken yet";
+  rec.append(recLab, recVal);
+  if(!store.practiceExamPerfect){
+    const tip = document.createElement("span"); tip.className = "pt-record-tip";
+    tip.textContent = "Score 100% to earn the Phoenix banner.";
+    rec.appendChild(tip);
+  }
+  panel.appendChild(rec);
 
   const startBtn = document.createElement("button");
   startBtn.type = "button"; startBtn.className = "next floatbtn playbtn"; startBtn.id = "nextbtn";
@@ -44221,6 +45225,11 @@ function appendUnitProgress(row, name){
   const earned = unitDrillStarEarned(name);
   const badgeMark = document.createElement("span");
   badgeMark.className = "pick-badge" + (earned ? " earned" : "");
+  /* The glow is the BADGE'S colour (build 232): "let's make sure the
+     glow off that badge matches the color of the badge." It was the
+     theme's triad, so every earned badge on the screen gave off the same
+     gold light whatever it was made of. */
+  try{ badgeMark.style.setProperty("--badge-glow", badgeThemeFor(name).p); }catch(e){}
   badgeMark.appendChild(buildUnitBadgeSVG(name, earned));
   badgeMark.title = earned ? name + " badge earned" : name + " badge not yet earned";
   /* Blank, and kept only because the grid reserves a cell for it - the
@@ -44376,14 +45385,23 @@ function showSetup(){
 
   panel.appendChild(buildBackLink("Back", showModeSelect));
 
-  const modeRow2 = document.createElement("p");
-  modeRow2.className = "modedisplay-top";
+  /* THE RESULTS SCREEN'S MODE CHIP, not a grey pill of its own (build
+     232). "Where it says the mode you are in on the unit selection
+     screen, make that the same look like the test result screen has."
+     The same element and the same classes (.rs-mode, .rs-mode-X), so
+     the mode reads identically at the start of a run and at the end of
+     it, and a change to one is a change to both. */
+  const modeRow2 = document.createElement("div");
+  modeRow2.className = "setup-modechip";
   const modeNames = { drill: "Drill", exam: "Exam", game: "Game" };
-  const modeIconEl = modeIcon(cfg.mode);
-  modeIconEl.classList.add("modedisplay-icon");
+  const modeKind = ["drill", "exam", "game"].indexOf(cfg.mode) >= 0 ? cfg.mode : "drill";
+  const modeChip = document.createElement("span");
+  modeChip.className = "rs-mode rs-mode-" + modeKind;
+  try{ modeChip.appendChild(modeIcon(modeKind)); }catch(e){}
   const modeText = document.createElement("span");
-  modeText.textContent = "Mode: " + (modeNames[cfg.mode] || cfg.mode);
-  modeRow2.append(modeIconEl, modeText);
+  modeText.textContent = modeNames[cfg.mode] || cfg.mode;
+  modeChip.appendChild(modeText);
+  modeRow2.appendChild(modeChip);
   panel.appendChild(modeRow2);
 
   /* This used to be tucked behind a tap-to-reveal info icon next to
@@ -46607,7 +47625,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-28-231";
+const APP_BUILD = "2026-09-28-232";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -49312,6 +50330,10 @@ function summarize(){
      straight to the Leaderboard should see themselves, so this one is
      flushed rather than queued. */
   try{ setTimeout(flushLeaderboardRow, 0); }catch(e){}
+  /* And again once the run's XP, hundos and week points have all been
+     booked (some of it lands after this function returns) - the flush
+     above can go out carrying the numbers from BEFORE the run. */
+  try{ setTimeout(publishNow, 1500); }catch(e){}
   qClockStop();
   testInProgress = false;
   /* The end of a test is the moment the forced update was asked to land
@@ -50609,7 +51631,9 @@ function showAppearance(opts){
       row.type = "button"; row.className = "opt sync-code-row";
       const label = document.createElement("span");
       label.className = "otext";
-      label.appendChild(document.createTextNode("Sync code"));
+      const labelWord = document.createElement("span");
+      labelWord.className = "sync-code-label"; labelWord.textContent = "Sync code";
+      label.appendChild(labelWord);
       const hint = document.createElement("span");
       hint.className = "ohint"; hint.textContent = "Tap to reveal \u2014 enter this on another device to link it.";
       label.appendChild(hint);
@@ -53550,6 +54574,7 @@ function showTugResult(d){
   if(tugPaidFor !== paidKey){
     tugPaidFor = paidKey;
     if(myXp > 0){ awardXp(myXp); saveStore(); }
+    try{ setTimeout(publishNow, 800); }catch(e){}
   }
   const xpCard = document.createElement("div");
   xpCard.className = "tug-xp" + (won ? " is-won" : drawn ? " is-draw" : " is-lost");
@@ -54406,6 +55431,7 @@ function showBattleResult(d){
   if(battlePaidFor !== paidKey){
     battlePaidFor = paidKey;
     if(myXp > 0) awardXp(myXp);
+    try{ setTimeout(publishNow, 800); }catch(e){}
     const others = Object.keys(battleTeams(d)).filter(k => k !== vroomMyKey);
     try{ recordVroomOutcome(vroomCode, won ? [vroomMyKey].concat(others) : others.concat([vroomMyKey]), vroomMyKey); }catch(e){}
     saveStore();
@@ -57767,21 +58793,41 @@ function lbSnapshotOf(list){
   });
   return o;
 }
+/* ---- A DAY OF HISTORY, NOT ONE BASELINE (build 232) ----
+   "The trending arrows on the leaderboard randomly disappear and come
+   back." They did, on a four-hour clock: when the baseline rolled it
+   became the snapshot taken on the previous render - seconds old - so
+   every arrow on every board vanished at once and only came back as
+   people moved again. Now the device keeps one snapshot an hour for the
+   last 36 hours, and the comparison is against the newest one that is
+   at least 20 hours old - "since about this time yesterday", which is
+   what the arrow's own label says. The baseline slides an hour at a
+   time, so an arrow only changes when somebody actually overtakes
+   somebody. A new install compares against its oldest snapshot once
+   that is an hour old, rather than showing nothing until tomorrow. */
+const LB_TREND3_KEY = "class26e.lbtrend.v3";
+const LB_TREND_SNAP_MS = 60 * 60 * 1000;
+const LB_TREND_KEEP_MS = 36 * 60 * 60 * 1000;
+const LB_TREND_AGE_MS = 20 * 60 * 60 * 1000;
 function lbTrendFor(board, list, compare){
   const now = Date.now();
   let st = {};
-  try{ st = JSON.parse(localStorage.getItem(LB_TREND2_KEY) || "{}") || {}; }catch(e){ st = {}; }
-  const stamp = Number(st.curAt) || 0;
-  if(!stamp || now - stamp >= LB_TREND_ROLL_MS){
-    st.prev = st.cur || null; st.prevAt = stamp; st.prevWeek = st.curWeek || "";
-    st.curAt = now;
+  try{ st = JSON.parse(localStorage.getItem(LB_TREND3_KEY) || "{}") || {}; }catch(e){ st = {}; }
+  let snaps = Array.isArray(st.snaps) ? st.snaps.filter(x => x && x.at && now - x.at <= LB_TREND_KEEP_MS) : [];
+  const newest = snaps.length ? snaps[snaps.length - 1] : null;
+  if(!newest || now - newest.at >= LB_TREND_SNAP_MS){
+    snaps.push({ at: now, week: weekKeyNow(), data: lbSnapshotOf(list) });
   }
-  st.cur = lbSnapshotOf(list); st.curWeek = weekKeyNow();
-  try{ localStorage.setItem(LB_TREND2_KEY, JSON.stringify(st)); }catch(e){}
+  try{ localStorage.setItem(LB_TREND3_KEY, JSON.stringify({ snaps: snaps })); }catch(e){}
   const out = {};
-  const prev = st.prev;
-  if(!prev) return out;
-  if(board.key === "week" && st.prevWeek !== weekKeyNow()) return out;
+  let base = null;
+  for(let i = snaps.length - 1; i >= 0; i--){
+    if(now - snaps[i].at >= LB_TREND_AGE_MS){ base = snaps[i]; break; }
+  }
+  if(!base && snaps.length && now - snaps[0].at >= LB_TREND_SNAP_MS) base = snaps[0];
+  if(!base) return out;
+  const prev = base.data || {};
+  if(board.key === "week" && base.week !== weekKeyNow()) return out;
   const common = list.filter(e => e && e.pub && prev[e.pub]);
   if(common.length < 2) return out;
   const nowOrder = common.slice().sort(compare).map(e => e.pub);
@@ -57811,7 +58857,7 @@ function buildTrendMark(moved){
   el.append(arrow, n);
   el.setAttribute("aria-label",
     Math.abs(moved) + (Math.abs(moved) === 1 ? " place " : " places ")
-    + (moved > 0 ? "up" : "down") + " since earlier today");
+    + (moved > 0 ? "up" : "down") + " since yesterday");
   return el;
 }
 
@@ -58272,10 +59318,11 @@ function showCustomize(){
      under its own heading, so the rule for a locked one is readable
      before anyone taps it. */
   const charGroups = [
-    { title: "Starters", note: "Yours from day one", ids: AVATAR_CHARACTERS.filter(c => !c.unlock && !c.feat).map(c => c.id) },
+    { title: "Starters", note: "Yours from day one", ids: AVATAR_CHARACTERS.filter(c => !c.unlock && !c.feat && !c.retired).map(c => c.id) },
     { title: "Rank rewards", note: "Handed over as you climb the ranks",
       ids: AVATAR_CHARACTERS.filter(c => c.unlock).sort((a, b) => TIER_ORDER_FULL.indexOf(a.unlock) - TIER_ORDER_FULL.indexOf(b.unlock)).map(c => c.id) },
-    { title: "Challenge rewards", note: "Each one is unlocked by a challenge", ids: AVATAR_CHARACTERS.filter(c => c.feat).map(c => c.id) }
+    { title: "Challenge rewards", note: "Each one is unlocked by a challenge",
+      ids: AVATAR_CHARACTERS.filter(c => c.feat || (c.retired && store.avatarChar === c.id)).map(c => c.id) }
   ];
   const charGrids = [];
   charGroups.forEach(g => {
@@ -58292,6 +59339,7 @@ function showCustomize(){
   });
 
   AVATAR_CHARACTERS.forEach(charDef => {
+    if(charDef.retired && store.avatarChar !== charDef.id) return;
     const opt = document.createElement("button");
     opt.type = "button";
     const locked = isLockedCharacter(charDef.id);
@@ -60948,20 +61996,34 @@ function buildRanksTab(){
   const fillsToAnimate = [];
 
   /* ---- the hero: the rank you hold, and what is left of the next ---- */
+  /* ---- REBUILT IN BUILD 232: TWO GAUGES, NOT A BAR AND TWO CHIPS ----
+     "The current rank card at the top, feel like your current badges and
+     level could be shown better, looks too much like your profile card,
+     make that better/different." It was the Profile card's grammar - a
+     name, a bar, two number chips - so the two screens read as one card
+     shown twice. A rank is two requirements met together, so it is now
+     drawn as exactly that: a ring for level and a ring for badges, each
+     filling towards what the NEXT rank asks for, with your number in the
+     middle and the target under it. The Profile card keeps the XP bar;
+     nothing on this card is a bar any more.
+     Each ring is measured from the rank you hold to the next one, the
+     same rule the old step bar used - arriving at a rank does not show
+     a ring already two thirds full. */
   let heroStepPct = null;
   const hero = document.createElement("div");
-  hero.className = "rankhero" + (held ? "" : " is-unranked");
+  hero.className = "rankhero" + (held ? "" : " is-unranked") + (nextKey ? "" : " is-top");
   hero.style.setProperty("--rank-color", RANK_COLOR[held || nextKey || "rookie"]);
+  if(nextKey) hero.style.setProperty("--next-color", RANK_COLOR[nextKey]);
 
+  const heroTop = document.createElement("div");
+  heroTop.className = "rankhero-top";
   const heroArt = document.createElement("div");
   heroArt.className = "rankhero-art";
-  /* NOTHING IN THE SETTING UNTIL YOU HOLD SOMETHING. It used to fall
-     back to the first rank's emblem, so an unranked person was shown
-     Iron dimmed - which reads as "you have Iron, faintly" rather than
-     "you have no rank". Empty is the honest picture, and it matches an
-     unearned badge's empty slot on the Badges tab. */
-  if(held) heroArt.appendChild(buildRankEmblemSVG(held));
-  hero.appendChild(heroArt);
+  /* NOTHING IN THE SETTING UNTIL YOU HOLD SOMETHING - an unranked
+     person was once shown Iron dimmed, which reads as "you have Iron,
+     faintly". */
+  if(held) heroArt.appendChild(fitRankEmblem(buildRankEmblemSVG(held), held));
+  heroTop.appendChild(heroArt);
 
   const heroInfo = document.createElement("div");
   heroInfo.className = "rankhero-info";
@@ -60972,91 +62034,89 @@ function buildRanksTab(){
   heroName.className = "rankhero-name";
   heroName.textContent = held ? RANK_DISPLAY_NAME[held] : "No rank yet";
   heroInfo.append(kicker, heroName);
-
-  /* The bar measures the climb from the rank you hold to the next one,
-     not that next rank's own progress from zero - standing at Veteran
-     with a bar five per cent along reads as losing ground. */
   if(nextKey){
-    const barWrap = document.createElement("div");
-    barWrap.className = "rankhero-barwrap";
-    const track = document.createElement("div");
-    track.className = "rankhero-track";
-    const fill = document.createElement("div");
-    fill.className = "rankhero-fill";
-    track.appendChild(fill);
-    const ends = document.createElement("div");
-    ends.className = "rankhero-ends";
-    const fromLab = document.createElement("span");
-    fromLab.textContent = held ? RANK_DISPLAY_NAME[held] : "Start";
-    const toLab = document.createElement("span");
-    toLab.textContent = RANK_DISPLAY_NAME[nextKey];
-    ends.append(fromLab, toLab);
-    barWrap.append(track, ends);
-    heroInfo.appendChild(barWrap);
+    const nextLine = document.createElement("p");
+    nextLine.className = "rankhero-nextrank";
+    const nl = document.createElement("span");
+    nl.className = "rankhero-nextlab"; nl.textContent = "Next";
+    const ne = document.createElement("span");
+    ne.className = "rankhero-nextemb";
+    try{ ne.appendChild(fitRankEmblem(buildRankEmblemSVG(nextKey), nextKey)); }catch(e){}
+    const nn = document.createElement("span");
+    nn.className = "rankhero-nextname"; nn.textContent = RANK_DISPLAY_NAME[nextKey];
+    nextLine.append(nl, ne, nn);
+    heroInfo.appendChild(nextLine);
+  }
+  heroTop.appendChild(heroInfo);
+  hero.appendChild(heroTop);
 
-    /* The step you are ON, not the next rank's progress from zero.
-       rankPct() measures from nothing, so arriving at Veteran showed
-       the bar already two thirds along to Vanguard - which reads as
-       having climbed a rank and lost ground.
-       Each requirement is normalised against the rank BELOW it, and
-       the two are averaged rather than reduced to the slower one. The
-       slower one is the right answer to "what is gating me" and the
-       card meters use it; on a bar between two ranks it sits at zero
-       for the whole first half of every step, because badges arrive
-       one at a time and a step needs two of them. The sentence under
-       the bar still tells the truth about both. */
-    const prevRule = held ? TIER_UNLOCKS[held] : null;
-    const nextRule = TIER_UNLOCKS[nextKey];
-    const stepPart = (now, from, to) => {
-      const room = (to || 0) - (from || 0);
-      if(room <= 0) return 1;
-      return Math.min(1, Math.max(0, (now - (from || 0)) / room));
-    };
-    const stepParts = [
-      stepPart(levelNow, prevRule && prevRule.level, nextRule.level),
-      stepPart(badgesNow, prevRule && prevRule.badges, nextRule.badges)
-    ];
-    if(typeof nextRule.mysteryStars === "number"){
-      stepParts.push(stepPart(mysteryColorsFoundCount(),
-        prevRule && prevRule.mysteryStars, nextRule.mysteryStars));
-    }
-    heroStepPct = stepParts.reduce((a, b) => a + b, 0) / stepParts.length;
-    fillsToAnimate.push({ el: fill, prop: "width",
-      value: Math.round(heroStepPct * 100) + "%" });
+  const prevRule = held ? TIER_UNLOCKS[held] : null;
+  const nextRule = nextKey ? TIER_UNLOCKS[nextKey] : null;
+  const stepPart = (now, from, to) => {
+    const room = (to || 0) - (from || 0);
+    if(room <= 0) return 1;
+    return Math.min(1, Math.max(0, (now - (from || 0)) / room));
+  };
+  const gauges = document.createElement("div");
+  gauges.className = "rankhero-gauges";
+  const NS = "http://www.w3.org/2000/svg";
+  const gauge = (cls, label, now, target, part) => {
+    const g = document.createElement("div");
+    g.className = "rankhero-gauge " + cls + (part >= 1 ? " is-met" : "");
+    const ring = document.createElementNS(NS, "svg");
+    ring.setAttribute("viewBox", "0 0 64 64");
+    ring.setAttribute("class", "rankhero-ring");
+    ring.setAttribute("aria-hidden", "true");
+    const trackC = document.createElementNS(NS, "circle");
+    trackC.setAttribute("cx", "32"); trackC.setAttribute("cy", "32"); trackC.setAttribute("r", "27");
+    trackC.setAttribute("class", "rankhero-ringtrack");
+    const arc = document.createElementNS(NS, "circle");
+    arc.setAttribute("cx", "32"); arc.setAttribute("cy", "32"); arc.setAttribute("r", "27");
+    arc.setAttribute("class", "rankhero-ringarc");
+    arc.setAttribute("pathLength", "100");
+    ring.append(trackC, arc);
+    fillsToAnimate.push({ el: arc, prop: "strokeDashoffset", value: String(Math.round((1 - part) * 1000) / 10) });
+    const mid = document.createElement("span");
+    mid.className = "rankhero-ringval";
+    mid.textContent = String(now);
+    const face = document.createElement("div");
+    face.className = "rankhero-ringface";
+    face.append(ring, mid);
+    const txt = document.createElement("div");
+    txt.className = "rankhero-gaugetxt";
+    const l = document.createElement("span");
+    l.className = "rankhero-gaugelab"; l.textContent = label;
+    const t = document.createElement("span");
+    t.className = "rankhero-gaugetarget";
+    t.textContent = target == null ? "" : (part >= 1 ? "Done" : now + " of " + target);
+    txt.append(l, t);
+    g.append(face, txt);
+    g.setAttribute("aria-label", label + " " + now + (target == null ? "" : " of " + target));
+    return g;
+  };
+  if(nextRule){
+    const lp = stepPart(levelNow, prevRule && prevRule.level, nextRule.level);
+    const bp = stepPart(badgesNow, prevRule && prevRule.badges, nextRule.badges);
+    heroStepPct = (lp + bp) / 2;
+    gauges.append(gauge("is-level", "Level", levelNow, nextRule.level, lp),
+                  gauge("is-badges", "Badges", badgesNow, nextRule.badges, bp));
+  } else {
+    gauges.append(gauge("is-level", "Level", levelNow, null, 1),
+                  gauge("is-badges", "Badges", badgesNow, null, 1));
+  }
+  hero.appendChild(gauges);
 
-    const note = document.createElement("p");
-    note.className = "rankhero-next";
+  const note = document.createElement("p");
+  note.className = "rankhero-next";
+  if(nextKey){
     const parts = tierShortfall(TIER_UNLOCKS[nextKey]).map(t => t.replace(" more ", " "));
     note.textContent = parts.length
       ? parts.join(" and ") + " to go until " + RANK_DISPLAY_NAME[nextKey] + "."
       : "Ready to reach " + RANK_DISPLAY_NAME[nextKey] + ".";
-    heroInfo.appendChild(note);
   } else {
-    const note = document.createElement("p");
-    note.className = "rankhero-next";
     note.textContent = "Every rank reached. Nothing above this one.";
-    heroInfo.appendChild(note);
   }
-
-  /* The two numbers every rank is measured in, beside the bar rather
-     than on a tab of their own. Both are here because a rank needs
-     both, and seeing one without the other is what made the old
-     ladder's requirements read as arbitrary. */
-  const chips = document.createElement("div");
-  chips.className = "rankhero-chips";
-  [["Level", String(levelNow), "shine-blue"],
-   ["Badges", badgesNow + "/" + totalUnits, "shine-silver"]].forEach(([lab, val, cls]) => {
-    const chip = document.createElement("div");
-    chip.className = "rankhero-chip";
-    const v = document.createElement("span");
-    v.className = "rankhero-chip-val " + cls; v.textContent = val;
-    const l = document.createElement("span");
-    l.className = "rankhero-chip-lab"; l.textContent = lab;
-    chip.append(v, l);
-    chips.appendChild(chip);
-  });
-  heroInfo.appendChild(chips);
-  hero.appendChild(heroInfo);
+  hero.appendChild(note);
   tab.appendChild(hero);
 
   /* ---- the track: every rank, what it costs, what it gives ---- */
@@ -61075,17 +62135,25 @@ function buildRanksTab(){
   tab.appendChild(mapHead);
   const mapNote = document.createElement("p");
   mapNote.className = "ranks-note";
-  mapNote.textContent = "Start at the bottom, finish at the top. Every rank takes a level and a number of badges together \u2014 levels come from everything you do; badges come from mastering a unit.";
+  mapNote.textContent = "Start at the top and work your way down. Every rank takes a level and a number of badges together \u2014 levels come from everything you do; badges come from mastering a unit.";
   tab.appendChild(mapNote);
 
+  /* ---- IRON AT THE TOP, SUPERNOVA AT THE BOTTOM (build 232) ----
+     "The rank ladder is cool, but shouldn't the lower ranks be at the top
+     and higher ones at the bottom? I think it's backwards right now, so
+     as you scroll down you see the higher ranks." A screen is read top
+     down, so the climb runs the way you scroll: where you start is the
+     first thing you see and Supernova is what you scroll towards. The
+     road between two stops now belongs to the stop BELOW it (the rank
+     you are heading for) and fills downwards from the one above. */
   const map = document.createElement("div");
   map.className = "rankmap";
-  const summit = document.createElement("p");
-  summit.className = "rankmap-summit";
-  summit.textContent = "Summit";
-  map.appendChild(summit);
+  const startLab = document.createElement("p");
+  startLab.className = "rankmap-foot";
+  startLab.textContent = held ? "Start" : "You start here";
+  map.appendChild(startLab);
 
-  const topDown = TIER_ORDER_FULL.slice().reverse();
+  const topDown = TIER_ORDER_FULL.slice();
   topDown.forEach((key, i) => {
     const idx = TIER_ORDER_FULL.indexOf(key);
     const rule = TIER_UNLOCKS[key];
@@ -61097,9 +62165,9 @@ function buildRanksTab(){
       (reached ? " is-reached" : "") + (isHere ? " is-here" : "") + (isNext ? " is-next" : "") +
       (!reached && !isNext ? " is-locked" : "");
     stop.style.setProperty("--rank-color", RANK_COLOR[key]);
-    /* The stretch of road from this stop down to the one below it: lit
-       when this stop is reached, lit part way when it is the one you are
-       climbing to. */
+    /* The stretch of road from this stop down to the one below it,
+       which is the NEXT rank up: lit when that rank is reached, lit part
+       way when it is the one you are climbing to. */
     const road = document.createElement("span");
     road.className = "rankmap-road";
     road.setAttribute("aria-hidden", "true");
@@ -61107,14 +62175,16 @@ function buildRanksTab(){
     roadFill.className = "rankmap-roadfill";
     road.appendChild(roadFill);
     if(i < topDown.length - 1){
-      const lit = reached ? 1 : isNext ? (heroStepPct != null ? heroStepPct : rankPct(key)) : 0;
+      const below = topDown[i + 1];
+      const lit = rankPct(below) >= 1 ? 1 : below === nextKey ? (heroStepPct != null ? heroStepPct : rankPct(below)) : 0;
+      road.style.setProperty("--rank-color", RANK_COLOR[below]);
       fillsToAnimate.push({ el: roadFill, prop: "--lit", value: String(Math.round(lit * 1000) / 1000) });
       stop.appendChild(road);
     }
 
     const node = document.createElement("div");
     node.className = "rankmap-node";
-    node.appendChild(buildRankEmblemSVG(key));
+    node.appendChild(fitRankEmblem(buildRankEmblemSVG(key), key));
     if(isHere){
       const you = document.createElement("span");
       you.className = "rankmap-you";
@@ -61171,7 +62241,7 @@ function buildRanksTab(){
        where it goes and not what it was. */
     const fl = document.createElement("span");
     fl.className = "rankmap-giftav";
-    try{ fl.appendChild(buildRankEmblemSVG(key)); }catch(e){}
+    try{ fl.appendChild(fitRankEmblem(buildRankEmblemSVG(key), key)); }catch(e){}
     gift("is-flare", fl, (RANK_DISPLAY_NAME[key] || key) + " flare");
     const charForRank = AVATAR_CHARACTERS.find(c => c.unlock === key);
     if(charForRank){
@@ -61180,14 +62250,23 @@ function buildRanksTab(){
       try{ av.appendChild(buildAvatarCharSVGSafe(charForRank.id)); }catch(e){}
       gift("is-char", av, AVATAR_DISPLAY_NAME[charForRank.id] || charForRank.id);
     }
+    /* A rank's own banner - only Supernova has one (build 232). Shown
+       as the banner itself, cropped to a strip, because a banner is a
+       picture and its name alone says nothing. */
+    BANNERS.filter(b => b.rank === key).forEach(b => {
+      const strip = document.createElement("span");
+      strip.className = "rankmap-giftbanner";
+      try{ strip.appendChild(buildBannerArt(b.id)); }catch(e){}
+      gift("is-banner", strip, b.name + " banner");
+    });
     card.appendChild(gifts);
     stop.appendChild(card);
     map.appendChild(stop);
   });
-  const foot = document.createElement("p");
-  foot.className = "rankmap-foot";
-  foot.textContent = held ? "Start" : "You start here";
-  map.appendChild(foot);
+  const summit = document.createElement("p");
+  summit.className = "rankmap-summit";
+  summit.textContent = "Summit";
+  map.appendChild(summit);
   tab.appendChild(map);
 
   /* The Secret Flares box used to sit here and is gone per explicit
@@ -61219,7 +62298,8 @@ function buildRanksTab(){
     requestAnimationFrame(() => requestAnimationFrame(() => {
       fillsToAnimate.forEach(({ el, prop, value }) => {
         if(prop === "width") el.style.width = value;
-        else el.style.setProperty(prop, value);
+        else if(prop.indexOf("--") === 0) el.style.setProperty(prop, value);
+        else el.style[prop] = value;
       });
     }));
   };

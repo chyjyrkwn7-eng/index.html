@@ -34,11 +34,16 @@ with sync_playwright() as pw:
       const mk=(pub,name,wp)=>({pub,firstName:name,avatarChar:'ninja',weekPoints:wp,week:weekKeyNow(),
                                 level:5,badges:1,hundos:1,correct:wp});
       const board=RANKING_BOARDS.find(b=>b.key==='week');
-      const KEY = (typeof LB_TREND2_KEY !== 'undefined') ? LB_TREND2_KEY : LB_TREND_KEY;
+      const KEY = (typeof LB_TREND3_KEY !== 'undefined') ? LB_TREND3_KEY
+                : (typeof LB_TREND2_KEY !== 'undefined') ? LB_TREND2_KEY : LB_TREND_KEY;
       /* Age whatever is stored so the next render treats it as the
-         earlier snapshot, under either the old (curDay) or new (curAt) scheme. */
-      const age=()=>{ const st=JSON.parse(localStorage.getItem(KEY)||'{}'); st.curDay='1999-1-1'; st.curAt=1;
-                      localStorage.setItem(KEY, JSON.stringify(st)); };
+         earlier snapshot, under every scheme this has had: curDay (v1),
+         curAt (v2) and an hourly history of snaps (v3, build 232). */
+      const shift=ms=>{ const st=JSON.parse(localStorage.getItem(KEY)||'{}');
+                        if(Array.isArray(st.snaps)) st.snaps.forEach(x=>{ x.at-=ms; });
+                        else { st.curDay='1999-1-1'; st.curAt=1; }
+                        localStorage.setItem(KEY, JSON.stringify(st)); };
+      const age=()=>shift(21*3600*1000);
       const read=rows=>[...rows.querySelectorAll('.rank-row')].filter(r=>r.querySelector('.rank-name')).map(r=>{
         const t=r.querySelector('.rank-trend'); const n=t?Number((t.querySelector('.rank-trend-n')||t).textContent.replace(/\D/g,''))||0:0;
         return {name:r.querySelector('.rank-name').textContent, t:t?t.textContent:'',
@@ -54,6 +59,12 @@ with sync_playwright() as pw:
       const marks=read(rows);
       renderRankingRows(rows,[mk('c','Cy',99),mk('a','Ann',90),mk('b','Bo',80)],board,{});
       const stable=read(rows).map(x=>x.t);
+      /* Build 232: "the trending arrows randomly disappear and come
+         back". Time passes and nobody moves: the arrows must still be
+         there after the baseline has had every chance to roll. */
+      shift(5*3600*1000);
+      renderRankingRows(rows,[mk('c','Cy',99),mk('a','Ann',90),mk('b','Bo',80)],board,{});
+      const afterHours=read(rows).map(x=>x.t);
       /* Scenario 2: nobody moved relative to anybody, but a newcomer
          joined at the top. Nobody went down under anyone, so nobody
          may be told they did - this is the "why is everyone +1" report. */
@@ -82,7 +93,7 @@ with sync_playwright() as pw:
         renderRankingRows(rr,B,b,{});
         perBoard[b.key]=rr.querySelectorAll('.rank-trend').length;
       });
-      return {noArrowsDay1, marks, stable, joiner, leaver, perBoard};}""")
+      return {noArrowsDay1, marks, stable, afterHours, joiner, leaver, perBoard};}""")
     print("\n  leaderboard placement trend")
     ck("no arrows on the very first look", r["noArrowsDay1"]==0, r["noArrowsDay1"])
     m = {x["name"]: x for x in r["marks"]}
@@ -93,6 +104,8 @@ with sync_playwright() as pw:
        sum(x["signed"] for x in r["marks"])==0, [x["signed"] for x in r["marks"]])
     ck("re-rendering inside the same window does not change the arrows",
        r["stable"]==[x["t"] for x in r["marks"]], r["stable"])
+    ck("arrows do not vanish hours later when nobody has moved (build 232)",
+       r["afterHours"]==[x["t"] for x in r["marks"]] and any(r["afterHours"]), r["afterHours"])
     ck("a newcomer joining above everybody puts an arrow on nobody",
        all(not x["t"] for x in r["joiner"]), [(x["name"],x["t"]) for x in r["joiner"]])
     ck("somebody leaving from below puts an arrow on nobody",

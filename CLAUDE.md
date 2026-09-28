@@ -6109,3 +6109,93 @@ now spans neighbouring hues inside its family (table above the rookie
 rule). check-behaviour section 16 holds every theme to a spread of at
 least 12 degrees across its three stops - the 230 set fails it on Iron,
 Gold and Platinum.
+
+### Build 232 - Madison's list of twenty-two
+
+**The leaderboard is published when the app is put away, not 90 seconds
+later.** "Some people would play and the leaderboard wouldn't update for
+a long time." A score change waited out `ROW_SCORE_PUSH_MS` (90s) and the
+save debounce (2.5s) - both `setTimeout`s, and iOS suspends timers the
+moment an installed app goes to the background, while `pagehide` does not
+fire on an app switch at all. So somebody who finished a test and closed
+the app took their row with them until they next opened it.
+`publishNow()` flushes both on `visibilitychange` to hidden and a beat
+after every run's end (summarize, Tug, Battle).
+
+**Trend arrows compare against yesterday, from an hourly history.** They
+vanished and came back because the baseline was the previous render's
+snapshot, which rolled forward every four hours: somebody who had not
+moved lost their arrow as soon as the baseline caught up with them.
+`class26e.lbtrend.v3` keeps a snapshot an hour for 36 hours and compares
+against the newest one at least 20 hours old (the oldest, if there is
+none yet); the week board refuses a baseline from another week.
+`check-trend.py` has the ageing check and fails against 231.
+
+**Characters.** Poseidon (top 3 on the weekly board three times,
+`store.weeklyTop3`, counted in `settleWeeklyWin()` and seeded to at least
+`weeklyWins`) sits beside Zeus; the Spartan (10 Virtual Room wins) beside
+the Champion. The challenge row is one order - Detective, Zeus, Poseidon,
+Champion, Spartan, then Void, Umbra and Singularity together. **The Masked
+One is retired, not deleted**: `retired:true` takes it off both pickers and
+every unlock path, but it is never locked and still shows in Customize to
+whoever wears it. Rank characters say "Unlocks at X rank." and nothing
+about levels; Umbra and Singularity say "Unlock Void/Umbra to see how"
+until the one before is held.
+
+**Banners.** Hardcore on ten units is the Thunderhead banner (all three
+Game challenges are banners now). Northern Lights and Sakura swapped
+requirements by swapping ART between the ids - the ids are the
+requirement, so nobody lost one they had earned. Sky Temple for 250
+hundos, and a Supernova banner (`titan_rank`, `rank:"titan"`) that the
+Rank tab's Supernova stop shows among its rewards. Starfall reads "Earn
+all N badges" from the units that exist, and `store.starfallKept` holds it
+once earned, so a new unit cannot take it away. The art was drawn by a
+sub-agent against the existing BANNER_ART helpers; `bn-pour` is in
+check-loops' KNOWN list (streaks 14px apart sliding exactly 14px).
+
+**The Rank tab is turned over**: Iron at the top, Supernova at the bottom,
+the way you scroll. The road between two stops belongs to the stop BELOW
+(the rank you are heading for) and fills downward. **Every emblem in a
+circle is fitted**: `fitRankEmblem()` re-cuts the viewBox round the
+emblem's own drawn bounds (`RANK_EMBLEM_FIT`, measured from renders, not
+guessed) and the svg clips to a circle - Gold and Sapphire sat 7-9 units
+right of centre and Supernova filled its whole frame at 118%. Used on the
+road map, its reward chips, the hero, and Home's orbit bubbles.
+
+**The rank hero is two gauges**, a ring for level and a ring for badges,
+each filling towards the next rank from the one you hold, on a dark plate
+lit in the current and next ranks' colours. No bar and no chips: it read
+as the Profile card twice.
+
+**Home's orbit bubbles for ranks not reached are Liquid Glass again** -
+the pale translucent body, top light and bright rim, with a 6px blur.
+The lit ones are unchanged.
+
+**The badge case is black velvet**, not blue: every blue and violet badge
+sank into the blue.
+
+**Unit selection**: an earned badge glows in its own colour
+(`--badge-glow` from `badgeThemeFor`), the mode reads as the results
+screen's `.rs-mode` chip, and the Practice Test screen is a briefing -
+three numbers, four rules, your record.
+
+**Pause stays put while a question scrolls.** `.top` is sticky and stuck
+at .6rem - under the clock on a notched phone, 63px above where it sat at
+rest, while the chat button beside it is fixed. It now sticks at exactly
+`.wrap`'s top padding at each phone width, so it never moves.
+
+**"Sync code" is blue** (`#6FC2FF`), fixed - it was `var(--accent)`,
+which is white on the default theme.
+
+**Four themes got a real second colour on the planet** - Bronze, Gold,
+Sapphire, Supernova, circled as looking solid. The planet body is mostly
+c3, so c3 moved round the wheel (verdigris, vermilion, violet, and a
+yellow-hot c1 on Supernova), chosen from side-by-side renders; c2, the
+rank's colour, is untouched. Section 17 holds c1-to-c3 to 35 degrees on
+the four.
+
+**The default banner "Theme" is your theme's own colours** - asked and
+confirmed.
+
+check-behaviour section 17 is this build's gate; every check in it fails
+on 231.

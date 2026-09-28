@@ -37,6 +37,8 @@ KNOWN = {
     "bn-rain": "0.7s streaks over a random field; the reset lands on more rain",
     "bn-ripple": "a ring that fades to nothing as it spreads",
     "bn-rise": "an ember fades in low and out high",
+    # Build 232: Sky Temple's waterfalls.
+    "bn-pour": "streaks 14px apart sliding exactly 14px",
 }
 s = open(SRC, encoding="utf-8").read()
 kf = {}

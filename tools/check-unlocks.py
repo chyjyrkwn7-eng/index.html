@@ -139,8 +139,12 @@ def check_table(pg):
     # AT LEAST the original four: build 220 added five more (Fox, Viking,
     # Champion, Umbra, Singularity), and a count here went red for the app
     # being right. The original four are asserted by key instead.
-    check("the four original challenges are still there, and the rank four are untouched",
-          r["n"] >= 4 and all(k in r["keys"] for k in ("daily10", "hardcore10", "weektop", "flares"))
+    # hardcore10 is a BANNER now (build 232: "all 3 of those challenges
+    # are banners") and the Masked One is retired, so it is asserted in
+    # check_hardcore against the banner rather than here.
+    check("the original challenges are still there, and the rank four are untouched",
+          r["n"] >= 3 and all(k in r["keys"] for k in ("daily10", "weektop", "flares"))
+          and "hardcore10" not in r["keys"]
           and r["rankFour"] == 4, "%d feat, %d rank" % (r["n"], r["rankFour"]))
     check("every feat key is in CHARACTER_FEATS", r["known"], r["keys"])
     check("all four locked on a fresh account", r["allLocked"])
@@ -186,7 +190,8 @@ BEAT_HARDCORE = """(n)=>{
   topics.slice(0, n).forEach(t => {
     store.unitGameBeat[t] = { easy:true, average:true, hardcore:true };
   });
-  return { beaten: hardcoreUnitsBeaten(), locked: isLockedCharacter('masked'),
+  return { beaten: hardcoreUnitsBeaten(), locked: !bannerEarned('hardcore10'),
+           masked: isLockedCharacter('masked'),
            msg: characterLockMessage('masked') };}"""
 
 # A real Game run on Hardcore, through the app's own recorder, so the
@@ -240,12 +245,16 @@ def check_hardcore(pg):
     read it or shown it. So what is worth asserting is that the COUNT is
     the count, that the app's own recorder still refuses Hardcore before
     Average, and that a unit card now says which of the three you have."""
-    print("\n3. Hardcore beaten on ten units")
+    print("\n3. Hardcore beaten on ten units hands over the Thunderhead banner")
     for n in (0, 9, 10):
         r = pg.evaluate(BEAT_HARDCORE, n)
         want = n < 10
-        check("%d unit(s) beaten -> %s" % (n, "locked" if want else "unlocked"),
+        check("%d unit(s) beaten -> banner %s" % (n, "locked" if want else "earned"),
               r["beaten"] == n and r["locked"] is want, r)
+        # RETIRED, NOT TAKEN AWAY: the Masked One is never locked, so a
+        # person already wearing it keeps it whatever their count.
+        check("  and the retired Masked One is never locked (%d)" % n,
+              r["masked"] is False and r["msg"] == "", r)
     # THE LADDER, through the app's own recorder rather than by setting
     # the store. Hardcore on a unit whose Average is not beaten must not
     # count, or the feat is ten Easy runs with the difficulty swapped.
@@ -716,7 +725,13 @@ def check_locked_art(br):
 def _locked_art_body(pg):
     from PIL import Image                                 # noqa: PLC0415
     import tempfile                                       # noqa: PLC0415
-    pg.evaluate("()=>{ showCustomize(); }")
+    # THE MASKED ONE IS RETIRED (build 232) and only shows in Customize
+    # for somebody wearing it, and never locked. It is still the darkest
+    # drawing in the set, which is what this check is about, so it is
+    # put on the picker by wearing it and given the locked treatment by
+    # hand: what is under test is the CSS filter on `.locked`, not who
+    # the character is locked for.
+    pg.evaluate("()=>{ store.avatarChar = 'masked'; showCustomize(); }")
     pg.wait_for_timeout(900)
     # WAIT FOR THE SCREEN TO FINISH ARRIVING, not for a fixed 900ms. The
     # capture below reads pixels, and a busy machine could still be
@@ -735,11 +750,12 @@ def _locked_art_body(pg):
     names = [(o.evaluate("e => e.dataset.char || e.dataset.id || e.getAttribute('aria-label') || ''")
               or "").strip().lower() for o in opts]
     idx = next((i for i, n in enumerate(names) if "mask" in n), None)
-    check("the Masked One is on the picker", idx is not None, names[:16])
+    check("the Masked One is on the picker for its wearer", idx is not None, names[:24])
     if idx is None:
         return
-    locked = opts[idx].evaluate("e => e.classList.contains('locked')")
-    check("and it is locked for this fixture", locked)
+    locked = opts[idx].evaluate("e => { e.classList.remove('selected'); e.classList.add('locked'); return e.classList.contains('locked'); }")
+    pg.wait_for_timeout(400)
+    check("and it takes the locked treatment", locked)
     """A PAGE CLIP, NOT AN ELEMENT SCREENSHOT, and the bands are computed
     from the drawing's own box rather than taken as fractions of the tile.
     Two earlier drafts got this wrong in opposite directions: fractions of
