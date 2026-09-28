@@ -2124,6 +2124,31 @@ def check_b236(br):
     ctx.close()
 
 
+def check_b237(br):
+    """Build 237: the rank on the Profile card is a plate - the emblem, the
+    rank's name large, and a bar to the next rank with its percentage.
+    Written against build 236, where it was a small pill."""
+    print("\n22. build 237: the Profile rank plate")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{
+      const wait = ms => new Promise(r => setTimeout(r, ms));
+      const u = topicsIn(QUESTIONS); u.slice(2, 8).forEach(n => store.unitPerfects[n] = 999); levelOf = () => 40;
+      showProfile('profile'); await wait(2000);
+      const p = document.querySelector('.profile-rankplate');
+      if(!p) return null;
+      const fill = p.querySelector('.profile-rankplate-fill');
+      return { word: (p.querySelector('.profile-rankword') || {}).textContent,
+               next: (p.querySelector('.profile-rankplate-next') || {}).textContent,
+               fill: fill ? Math.round(fill.getBoundingClientRect().width) : -1,
+               w: Math.round(p.getBoundingClientRect().width),
+               coin: Math.round((p.querySelector('.profile-rankcoin') || { getBoundingClientRect: () => ({ width: 0 }) }).getBoundingClientRect().width),
+               button: p.tagName }; }""")
+    check("the rank is a plate across the card, not a pill", isinstance(r, dict) and r.get("w", 0) > 300 and r.get("coin", 0) >= 50 and r.get("button") == "BUTTON", r)
+    check("it names the rank and how far to the next one", isinstance(r, dict) and r.get("word") == "Gold"
+          and "Platinum" in str(r.get("next")) and "%" in str(r.get("next")) and r.get("fill", 0) > 0, r)
+    ctx.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=CHROME)
@@ -2149,6 +2174,7 @@ def main():
             check_b235(br)
             check_b235b(br)
             check_b236(br)
+            check_b237(br)
         finally:
             br.close()
     SERVER.shutdown()

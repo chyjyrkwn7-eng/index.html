@@ -6483,3 +6483,23 @@ row was left as it was.
   will also come back if either device is used again.
 
 Section 21 of check-behaviour is this build's gate and fails on 235.
+
+### Build 237 - the Profile rank plate
+
+"The way the rank shows up in profile ... looks a little lame." The rank
+was a pill the size of a tag, smaller than the Customize button beside
+it. It is a plate the width of the card now (`.profile-rankplate`, still
+the `.profile-ranklineup` button to the Rank tab):
+- the emblem at 3.4rem (4rem on a tablet) in a lit ring;
+- "RANK" and the rank's name large, in the rank's colour;
+- a bar to the next rank, blending this rank's colour into the next's,
+  with "Platinum · 47%";
+- the emblem huge and faint behind it as a watermark, and one sheen
+  across it on arrival.
+
+The percentage comes from `rankStepProgress()`, measured the way the
+Rank tab's hero measures it: each of level and badges as a share of the
+step between the two ranks, averaged. Unranked shows a dashed plate
+aimed at Iron; Supernova says "The top of the ladder" with a full bar.
+
+Section 22 of check-behaviour is this build's gate and fails on 236.

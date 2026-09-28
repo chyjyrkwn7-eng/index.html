@@ -13213,6 +13213,71 @@
     text-transform:uppercase; color:var(--rank-color, var(--soft));
   }
   .profile-ranklineup:active{ transform:translateY(1px); }
+  /* ---- THE RANK PLATE (build 237) ---- */
+  .profile-ranklineup.profile-rankplate{
+    position:relative; overflow:hidden; isolation:isolate;
+    display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:.85rem;
+    width:100%; max-width:24rem; margin:.7rem auto 0; padding:.75rem .9rem .8rem .8rem;
+    border-radius:18px; text-align:left; text-transform:none; letter-spacing:0; font-weight:400; color:var(--ink);
+    background:
+      linear-gradient(115deg, color-mix(in srgb, var(--rank-color) 30%, transparent) 0%, color-mix(in srgb, var(--rank-color) 8%, transparent) 55%, transparent 100%),
+      rgba(10,13,18,.55);
+    border:1px solid color-mix(in srgb, var(--rank-color) 55%, rgba(255,255,255,.1));
+    box-shadow:0 10px 28px -12px color-mix(in srgb, var(--rank-color) 70%, transparent), inset 0 1px 0 rgba(255,255,255,.12);
+  }
+  .profile-hero.has-cover .profile-ranklineup.profile-rankplate{ margin-top:.8rem; }
+  .profile-rankplate::after{
+    content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
+    background:linear-gradient(100deg, transparent 38%, rgba(255,255,255,.16) 50%, transparent 62%);
+    transform:translateX(-120%); animation:profile-rankplate-sheen 1.4s cubic-bezier(.3,0,.2,1) .6s 1 forwards;
+  }
+  @keyframes profile-rankplate-sheen{ to{ transform:translateX(120%); } }
+  .profile-rankplate-wm{
+    position:absolute; z-index:0; right:-1.6rem; top:50%; width:8.5rem; height:8.5rem; transform:translateY(-50%) rotate(-12deg);
+    opacity:.13; pointer-events:none;
+  }
+  .profile-rankplate-wm svg{ width:100%; height:100%; display:block; }
+  .profile-rankplate .profile-rankcoin{
+    position:relative; z-index:1; width:3.4rem; height:3.4rem; padding:.3rem; border-radius:50%; box-sizing:border-box;
+    background:radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--rank-color) 30%, #10141A), #07090D 75%);
+    border:2px solid color-mix(in srgb, var(--rank-color) 75%, #fff);
+    box-shadow:0 0 18px color-mix(in srgb, var(--rank-color) 55%, transparent), inset 0 0 10px color-mix(in srgb, var(--rank-color) 30%, transparent);
+  }
+  .profile-rankplate .profile-rankcoin svg{ width:100%; height:100%; display:block; overflow:visible; }
+  .profile-rankplate-text{ position:relative; z-index:1; display:flex; flex-direction:column; min-width:0; }
+  .profile-rankplate-kicker{ font-size:.62rem; font-weight:800; letter-spacing:.2em; text-transform:uppercase;
+    color:color-mix(in srgb, var(--rank-color) 55%, #fff); opacity:.85; }
+  .profile-rankplate .profile-rankword{
+    font-family:var(--serif); font-size:1.55rem; font-weight:700; line-height:1.1; white-space:nowrap;
+    background:linear-gradient(180deg, #fff 0%, color-mix(in srgb, var(--rank-color) 70%, #fff) 55%, var(--rank-color) 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    filter:drop-shadow(0 0 10px color-mix(in srgb, var(--rank-color) 45%, transparent));
+  }
+  .profile-rankplate-meter{ display:flex; align-items:center; gap:.55rem; margin-top:.35rem; }
+  .profile-rankplate-bar{ position:relative; flex:1; min-width:3rem; height:6px; border-radius:999px; overflow:hidden; background:rgba(255,255,255,.1); }
+  .profile-rankplate-fill{
+    position:absolute; left:0; top:0; bottom:0; width:0; border-radius:inherit;
+    background:linear-gradient(90deg, var(--rank-color), var(--next-color, var(--rank-color)));
+    box-shadow:0 0 8px color-mix(in srgb, var(--next-color, var(--rank-color)) 70%, transparent);
+    transition:width 1.2s cubic-bezier(.2,.8,.2,1) .35s;
+  }
+  .profile-rankplate-next{ flex-shrink:0; font-size:.72rem; font-weight:700; color:rgba(255,255,255,.72); white-space:nowrap; }
+  .profile-rankplate-chev{ position:relative; z-index:1; font-size:1.6rem; line-height:1; color:rgba(255,255,255,.45); }
+  .profile-ranklineup.profile-rankplate.is-unranked{
+    display:grid; padding:.75rem .9rem .8rem .8rem; margin-top:.7rem;
+    border:1px dashed rgba(255,255,255,.22); color:var(--ink); background:rgba(10,13,18,.45);
+  }
+  .profile-hero.has-cover .profile-ranklineup.profile-rankplate.is-unranked{ text-align:left; }
+  .profile-rankplate.is-unranked .profile-rankcoin{ border-style:dashed; box-shadow:none; }
+  .profile-rankplate.is-unranked .profile-rankcoin svg{ filter:grayscale(1) brightness(.8); opacity:.5; }
+  .profile-rankplate.is-unranked .profile-rankword{ font-size:1.3rem; }
+  @media (min-width:40rem){
+    .profile-ranklineup.profile-rankplate{ max-width:26rem; padding:.9rem 1.1rem .95rem .95rem; }
+    .profile-rankplate .profile-rankcoin{ width:4rem; height:4rem; }
+    .profile-rankplate .profile-rankword{ font-size:1.8rem; }
+  }
+  [data-reduce-motion="true"] .profile-rankplate::after{ animation:none; }
+
   .profile-rankcoin{
     width:1.55rem; height:1.55rem; flex:0 0 auto; padding:.14rem;
     box-sizing:border-box; border-radius:999px;
@@ -37025,6 +37090,25 @@ function tierProgressNow(){
   return { level: levelOf(store), badges: badgeCountOf(store) };
 }
 /* What is still missing for a tier, already worded. Empty means ready. */
+/* How far from the rank you hold to the next one, the same way the Rank
+   tab's hero measures it: each of level and badges as a share of the
+   step between the two ranks' requirements, averaged. */
+function rankStepProgress(){
+  const held = rankOf(store);
+  const idx = held ? TIER_ORDER_FULL.indexOf(held) : -1;
+  const next = TIER_ORDER_FULL[idx + 1] || null;
+  if(!next) return { held, next: null, pct: 1 };
+  const now = tierProgressNow();
+  const prevRule = held ? TIER_UNLOCKS[held] : null, nextRule = TIER_UNLOCKS[next] || {};
+  const part = (v, from, to) => {
+    const a = Number(from) || 0, b = Number(to) || 0;
+    if(b <= a) return 1;
+    return Math.max(0, Math.min(1, (v - a) / (b - a)));
+  };
+  const pct = (part(now.level, prevRule && prevRule.level, nextRule.level) +
+               part(now.badges, prevRule && prevRule.badges, nextRule.badges)) / 2;
+  return { held, next, pct };
+}
 function tierShortfall(rule){
   if(!rule) return [];
   const now = tierProgressNow();
@@ -50336,7 +50420,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-28-236";
+const APP_BUILD = "2026-09-28-237";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -63842,24 +63926,67 @@ function showProfile(defaultTab){
      badges thing ... ensure the rank does the same thing". A real
      <button> rather than a <p> with a click handler, so it is reachable
      by keyboard and announced as something you can press. */
+  /* ---- THE RANK PLATE (build 237) ----
+     "The way the rank shows up in profile on that box could be better,
+     looks a little lame." It was a pill the size of a tag - the one
+     thing on this card that says where you stand, drawn smaller than
+     the Customize button beside it. It is a plate now, the width of the
+     card: the emblem big and lit in the rank's colour, the rank's name
+     large in that colour, and under it the one thing a rank makes you
+     want to know next - how far to the next one, as a bar in the NEXT
+     rank's colour. The emblem sits huge and faint behind it all as a
+     watermark, the way the rank cards on the Rank tab do. Still a
+     button to the Rank tab. */
   const rankLine = document.createElement("button");
   rankLine.type = "button";
-  rankLine.className = "profile-ranklineup";
+  rankLine.className = "profile-ranklineup profile-rankplate" + (rankNow ? "" : " is-unranked");
   rankLine.addEventListener("click", () => showRanksScreen("ranks"));
-  if(rankNow){
-    rankLine.style.setProperty("--rank-color", RANK_COLOR[rankNow]);
+  {
+    const step = rankStepProgress();
+    const shownKey = rankNow || step.next;
+    rankLine.style.setProperty("--rank-color", rankNow ? RANK_COLOR[rankNow] : "#8A94A3");
+    if(step.next) rankLine.style.setProperty("--next-color", RANK_COLOR[step.next]);
+    const wm = document.createElement("span");
+    wm.className = "profile-rankplate-wm"; wm.setAttribute("aria-hidden", "true");
+    try{ if(shownKey) wm.appendChild(buildRankEmblemSVG(shownKey)); }catch(e){}
     const coin = document.createElement("span");
     coin.className = "profile-rankcoin";
-    coin.appendChild(buildRankEmblemSVG(rankNow));
+    try{ if(shownKey) coin.appendChild(buildRankEmblemSVG(shownKey)); }catch(e){}
+    const txt = document.createElement("span");
+    txt.className = "profile-rankplate-text";
+    const kick = document.createElement("span");
+    kick.className = "profile-rankplate-kicker";
+    kick.textContent = rankNow ? "Rank" : "No rank yet";
     const word = document.createElement("span");
     word.className = "profile-rankword";
-    word.textContent = RANK_DISPLAY_NAME[rankNow] + " rank";
-    rankLine.append(coin, word);
-  } else {
-    /* No rank yet is a real state; it gets words rather than a greyed
-       placeholder pretending to be one. */
-    rankLine.classList.add("is-unranked");
-    rankLine.textContent = "No rank yet";
+    word.textContent = rankNow ? RANK_DISPLAY_NAME[rankNow] : "Unranked";
+    txt.append(kick, word);
+    const meter = document.createElement("span");
+    meter.className = "profile-rankplate-meter";
+    const bar = document.createElement("span");
+    bar.className = "profile-rankplate-bar";
+    const fill = document.createElement("span");
+    fill.className = "profile-rankplate-fill";
+    bar.appendChild(fill);
+    const lab = document.createElement("span");
+    lab.className = "profile-rankplate-next";
+    if(step.next){
+      lab.textContent = RANK_DISPLAY_NAME[step.next] + " \u00b7 " + Math.floor(step.pct * 100) + "%";
+      /* Set a frame after mounting so it fills in front of you. */
+      requestAnimationFrame(() => requestAnimationFrame(() => { fill.style.width = Math.round(step.pct * 1000) / 10 + "%"; }));
+    } else {
+      rankLine.classList.add("is-top");
+      lab.textContent = "The top of the ladder";
+      requestAnimationFrame(() => requestAnimationFrame(() => { fill.style.width = "100%"; }));
+    }
+    meter.append(bar, lab);
+    txt.appendChild(meter);
+    const chev = document.createElement("span");
+    chev.className = "profile-rankplate-chev"; chev.setAttribute("aria-hidden", "true");
+    chev.textContent = "\u203a";
+    rankLine.append(wm, coin, txt, chev);
+    rankLine.setAttribute("aria-label", (rankNow ? RANK_DISPLAY_NAME[rankNow] + " rank" : "No rank yet") +
+      (step.next ? ", " + Math.floor(step.pct * 100) + "% of the way to " + RANK_DISPLAY_NAME[step.next] : ", the top rank") + ". Open the Rank tab.");
   }
 
   /* THE COVER. A strip across the top of the card, the character
