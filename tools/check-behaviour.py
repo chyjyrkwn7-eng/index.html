@@ -1526,7 +1526,10 @@ def check_b232(br):
       // Characters
       T('order', () => AVATAR_CHARACTERS.filter(c => c.feat).map(c => c.id));
       T('masked', () => { const d = AVATAR_CHARACTERS.find(c => c.id === 'masked');
-        return { retired: !!(d && d.retired), locked: isLockedCharacter('masked') }; });
+        store.unitGameBeat = {}; store.retakenQuestions = 99;
+        const before = isLockedCharacter('masked'), msg = characterLockMessage('masked');
+        store.retakenQuestions = 100;
+        return { feat: d && d.feat, before, msg, after: isLockedCharacter('masked') }; });
       T('poseidon', () => {
         store.weeklyTop3 = 2; store.pendingCharUnlocks = [];
         store.weekRankSeen = { week: '1999-W01', rank: 3 };
@@ -1539,6 +1542,21 @@ def check_b232(br):
       T('rankMsg', () => characterLockMessage('officer'));
       T('flareMsgs', () => { store.mysteryColorsFound = { red:false, orange:false, yellow:false, violet:false, white:false };
         return [characterLockMessage('umbra'), characterLockMessage('singularity')]; });
+      // A real retake run through summarize() counts every question in it
+      T('retakeRun', () => {
+        const U = topicsIn(QUESTIONS)[0];
+        const ix = QUESTIONS.map((q,i)=>i).filter(i => (QUESTIONS[i].topic||'').trim() === U).slice(0, 5);
+        store.retakenQuestions = 7;
+        cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = [U];
+        // As the Retake button leaves it: beginRun(missed, "Missed questions", null, true)
+        // labels the run, and a labelled run is not a trackable one.
+        order = ix; runTrackable = false; timedOut = false; runMode = 'drill'; runLabel = 'Missed questions';
+        attempts = {}; picked = {}; timedOutSet = {};
+        ix.forEach(qi => { attempts[qi] = 1; picked[qi] = optionOrder(qi).indexOf(QUESTIONS[qi].answer); });
+        isMissedRetake = true;
+        try{ summarize(); } finally { isMissedRetake = false; }
+        document.querySelectorAll('.rs-spot').forEach(e => e.remove());
+        return store.retakenQuestions; });
       // Banners
       T('banners', () => BANNERS.map(b => [b.id, b.name]));
       // A seventeenth unit, for the length of one read: the number has to
@@ -1577,10 +1595,12 @@ def check_b232(br):
         flushLeaderboardRow = real;
         return flushed; });
       return out; }""")
-    check("the challenge row: Detective, the two gods, the two fighters, then the three flares together",
-          r["order"] == ["detective", "zeus", "poseidon", "champion", "spartan", "voidwalker", "umbra", "singularity"], r["order"])
-    check("the Masked One is retired and never locked for whoever wears it",
-          isinstance(r["masked"], dict) and r["masked"]["retired"] and r["masked"]["locked"] is False, r["masked"])
+    check("the challenge row: Detective, the Masked One, the two gods, the two fighters, then the three flares",
+          r["order"] == ["detective", "masked", "zeus", "poseidon", "champion", "spartan", "voidwalker", "umbra", "singularity"], r["order"])
+    # Build 233: the Masked One is back, for retaking missed questions.
+    check("the Masked One unlocks at 100 retaken questions and says how far along you are",
+          isinstance(r["masked"], dict) and r["masked"]["feat"] == "retake100" and r["masked"]["before"] is True
+          and "99 of 100" in r["masked"]["msg"] and r["masked"]["after"] is False, r["masked"])
     check("a third week on the weekly podium hands over Poseidon",
           isinstance(r["poseidon"], dict) and r["poseidon"]["top3"] == 3 and "poseidon" in r["poseidon"]["queued"]
           and r["poseidon"]["locked"] is False, r["poseidon"])
@@ -1593,6 +1613,8 @@ def check_b232(br):
     check("Umbra and Singularity keep their requirement hidden until the one before is unlocked",
           isinstance(r["flareMsgs"], list) and "Unlock Void" in r["flareMsgs"][0] and "Unlock Umbra" in r["flareMsgs"][1]
           and "Find" not in "".join(r["flareMsgs"]), r["flareMsgs"])
+    check("a finished retake of five missed questions counts five towards the Masked One",
+          r["retakeRun"] == 12, r["retakeRun"])
     names = dict(r["banners"]) if isinstance(r["banners"], list) else {}
     check("Northern Lights is the 100-test banner and Sakura the 250",
           names.get("tests100") == "Northern Lights" and names.get("tests250") == "Sakura", names)
@@ -1633,6 +1655,9 @@ def check_b232(br):
       showPracticeTestConfirm();
       T('brief', () => ({ stats: document.querySelectorAll('.pt-stats .pt-stat').length, rules: document.querySelectorAll('.pt-rules .pt-rule').length,
                           record: !!document.querySelector('.pt-record') }));
+      showCustomize();
+      T('fade', () => { const svg = document.querySelector('.avatarchar-option .avatarchar-svg');
+        const cs = svg && getComputedStyle(svg); return cs ? (cs.maskImage || cs.webkitMaskImage || '') : null; });
       showAppearance();
       T('sync', () => { const l = document.querySelector('.sync-code-row .sync-code-label'); return l ? getComputedStyle(l).color : null; });
       return out; }""")
@@ -1650,6 +1675,8 @@ def check_b232(br):
           isinstance(s["glow"], list) and s["glow"][0] == s["glow"][1], s["glow"])
     check("the Practice Test screen is a briefing: three numbers, four rules, your record",
           isinstance(s["brief"], dict) and s["brief"]["stats"] == 3 and s["brief"]["rules"] == 4 and s["brief"]["record"], s["brief"])
+    check("a character's shoulders fade out rather than stopping at a hard line (build 233)",
+          isinstance(s["fade"], str) and "linear-gradient" in s["fade"] and "transparent" in s["fade"].replace("rgba(0, 0, 0, 0)", "transparent"), s["fade"])
     check("the words 'Sync code' in Settings are blue", s["sync"] == "rgb(111, 194, 255)", s["sync"])
 
     # Home: a rank not reached is Liquid Glass, not a dark disc

@@ -251,10 +251,10 @@ def check_hardcore(pg):
         want = n < 10
         check("%d unit(s) beaten -> banner %s" % (n, "locked" if want else "earned"),
               r["beaten"] == n and r["locked"] is want, r)
-        # RETIRED, NOT TAKEN AWAY: the Masked One is never locked, so a
-        # person already wearing it keeps it whatever their count.
-        check("  and the retired Masked One is never locked (%d)" % n,
-              r["masked"] is False and r["msg"] == "", r)
+        # The Masked One is a retake challenge now (build 233), but ten
+        # Hardcore units was its old rule, and whoever met it keeps it.
+        check("  and ten Hardcore units still unlock the Masked One (%d)" % n,
+              r["masked"] is want and (want == (r["msg"] != "")), r)
     # THE LADDER, through the app's own recorder rather than by setting
     # the store. Hardcore on a unit whose Average is not beaten must not
     # count, or the feat is ten Easy runs with the difficulty swapped.
@@ -725,13 +725,11 @@ def check_locked_art(br):
 def _locked_art_body(pg):
     from PIL import Image                                 # noqa: PLC0415
     import tempfile                                       # noqa: PLC0415
-    # THE MASKED ONE IS RETIRED (build 232) and only shows in Customize
-    # for somebody wearing it, and never locked. It is still the darkest
-    # drawing in the set, which is what this check is about, so it is
-    # put on the picker by wearing it and given the locked treatment by
-    # hand: what is under test is the CSS filter on `.locked`, not who
-    # the character is locked for.
-    pg.evaluate("()=>{ store.avatarChar = 'masked'; showCustomize(); }")
+    # The Masked One is the darkest drawing in the set, which is what
+    # this check is about. The locked class is also applied by hand
+    # below, so what is under test is the CSS filter on `.locked`
+    # whatever the fixture has unlocked.
+    pg.evaluate("()=>{ store.retakenQuestions = 0; store.unitGameBeat = {}; showCustomize(); }")
     pg.wait_for_timeout(900)
     # WAIT FOR THE SCREEN TO FINISH ARRIVING, not for a fixed 900ms. The
     # capture below reads pixels, and a busy machine could still be
@@ -750,7 +748,7 @@ def _locked_art_body(pg):
     names = [(o.evaluate("e => e.dataset.char || e.dataset.id || e.getAttribute('aria-label') || ''")
               or "").strip().lower() for o in opts]
     idx = next((i for i, n in enumerate(names) if "mask" in n), None)
-    check("the Masked One is on the picker for its wearer", idx is not None, names[:24])
+    check("the Masked One is on the picker", idx is not None, names[:24])
     if idx is None:
         return
     locked = opts[idx].evaluate("e => { e.classList.remove('selected'); e.classList.add('locked'); return e.classList.contains('locked'); }")
@@ -817,7 +815,12 @@ def _locked_art_body(pg):
     than the hood's sides: measured at build 188 they came out BELOW the
     tile they sat on (-3 levels on a tablet, +7 on a phone) - a body that
     is not there - against +45 and +55 now."""
-    hood = band(.90, 1.0, .15, .75)
+    # Build 233 fades the bottom fifth of every free-standing character
+    # to nothing (the shoulders no longer stop at a hard line), so the
+    # bottom tenth is transparent by design now. The band moved up to
+    # the last rows the fade leaves fully drawn, on the hood BESIDE the
+    # mask (x .12-.32) so the pale mask cannot lift the reading.
+    hood = band(.62, .70, .12, .32)
     mask = band(.40, .70, .40, .60)
     bg = band(.00, .18, .00, .18)
     """Levels, not ratios, for the first one: the question is whether

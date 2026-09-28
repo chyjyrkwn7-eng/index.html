@@ -1998,6 +1998,24 @@
            drop-shadow(0 0 calc(16px * var(--char-glow-k)) color-mix(in srgb, var(--char-glow) calc(45% * var(--char-glow-k)), transparent));
   }
   .avatarchar-option.selected:not(.locked) .avatarchar-svg{ --char-glow-k:1; }
+  /* ---- THE SHOULDERS FADE OUT, THEY DO NOT STOP (build 233) ----
+     "Ensure the characters where it shows underneath their shoulders
+     isn't such a hard cutoff ... where the bottom stops could be
+     smoother." Every character is a bust that runs off the bottom of its
+     frame, and in a round avatar the circle's edge makes that look
+     intended - but standing free, in Customize, at sign-up and on the
+     unlock card, it read as a ruler-straight cut through the chest. A
+     mask fades the last fifth of the drawing to nothing, so the figure
+     dissolves into the page instead. On the unlock card the glow is
+     drawn from the faded drawing, so it fades with it, and a soft pool
+     of the character's colour sits under it where the cut used to be.
+     A mask, not a gradient painted over the art: the tile behind is
+     not one flat colour, so nothing painted could match it. */
+  .avatarchar-option .avatarchar-svg,
+  .rs-spot-art.is-character svg{
+    -webkit-mask-image:linear-gradient(to bottom, #000 0%, #000 70%, rgba(0,0,0,.45) 86%, transparent 100%);
+            mask-image:linear-gradient(to bottom, #000 0%, #000 70%, rgba(0,0,0,.45) 86%, transparent 100%);
+  }
   /* A locked one is a preview, not something you hold, so it gives off
      nothing even while it is the one being looked at. */
   .avatarchar-option.locked::before{ display:none; }
@@ -14623,6 +14641,12 @@
   }
   .rs-spot.is-up .rs-spot-art{ animation:rs-artpop .8s cubic-bezier(.2,1.5,.4,1) .85s both; }
   .rs-spot-art.is-banner{ width:auto; height:auto; filter:none; }
+  .rs-spot-art.is-character{ position:relative; }
+  .rs-spot-art.is-character::after{
+    content:""; position:absolute; left:8%; right:8%; bottom:-8%; height:26%; pointer-events:none; z-index:-1;
+    border-radius:50%;
+    background:radial-gradient(closest-side, color-mix(in srgb, var(--spot-color) 42%, transparent), transparent);
+  }
   @keyframes rs-artpop{ 0%{ opacity:0; transform:scale(.2) rotate(-12deg); } 100%{ opacity:1; transform:none; } }
   .rs-spot-art svg{ width:100%; height:100%; display:block; }
   .rs-spot-art .rs-themedot{ width:4.6rem; height:4.6rem; box-shadow:0 0 0 3px color-mix(in srgb, var(--spot-color) 45%, transparent); }
@@ -28362,15 +28386,18 @@ const AVATAR_CHARACTERS = [
      side by side as asked), the two Virtual Room fighters (Champion for
      5 wins, Spartan for 10), then the three flares together.
 
-     THE MASKED ONE IS RETIRED, NOT DELETED. "The character that has
-     the unlock requirement for beating the game mode on the advanced
-     difficulty, that needs to be the banner, so all 3 of those
-     challenges are banners." Hardcore on 10 units hands over the
-     Thunderhead banner now. `retired` takes it out of every picker and
-     every unlock path, but the drawing stays and it is never locked, so
-     anybody already wearing it keeps it - and still sees it in
-     Customize, since that is the one place they could change it. */
+     BUILD 233: THE MASKED ONE IS BACK, FOR RETAKES. Build 232 moved
+     Hardcore-on-ten-units to the Thunderhead banner and retired the
+     character with it; then "the masked one is super cool ... make it a
+     character you get by retaking a certain amount of questions, would
+     maybe people not want to quit tests and want to retake the misses."
+     So it is earned by answering missed questions again through "Retake
+     missed questions" (store.retakenQuestions). Anybody who beat
+     Hardcore on ten units earned it under the old rule and keeps it -
+     see the retake100 feat. It sits second, after the Detective: both
+     are about coming back to the material rather than beating anyone. */
   { id: "detective",  kind: "detective",  feat: "daily10" },
+  { id: "masked",     kind: "masked",     feat: "retake100" },
   { id: "zeus",       kind: "zeus",       feat: "weektop" },
   { id: "poseidon",   kind: "poseidon",   feat: "weektop3x3" },
   { id: "champion",   kind: "champion",   feat: "vrwins5" },
@@ -28378,7 +28405,6 @@ const AVATAR_CHARACTERS = [
   { id: "voidwalker", kind: "voidwalker", feat: "flares" },
   { id: "umbra",       kind: "umbra",       feat: "flare4" },
   { id: "singularity", kind: "singularity", feat: "flare5" },
-  { id: "masked",     kind: "masked",     retired: true },
   /* BUILD 220: a challenge and Void's two flares. Easiest to hardest,
      like the four above. (The Fox and the Viking, for 10 units on Easy
      and on Average, were cut in build 225 and those two challenges hand
@@ -28467,6 +28493,15 @@ const CHARACTER_FEATS = {
   /* "Finish a week top of the weekly XP board" is missing a word and
      reads as a typo - reported as the Zeus unlock grammar. "at the top
      of" is what the sentence wants. */
+  /* Build 233. Every question answered through "Retake missed
+     questions" counts once, however it goes - the point is coming back
+     to what you got wrong instead of quitting. Nothing recorded retakes
+     before this build, so the count starts at zero for everybody; the
+     Hardcore clause is the old rule for this character, kept so nobody
+     who earned it then loses it now. */
+  retake100: { label: "Retake 100 missed questions",
+               done: () => (store.retakenQuestions || 0) >= 100 || hardcoreUnitsBeaten() >= 10,
+               have: () => (store.retakenQuestions || 0), need: 100 },
   weektop:  { label: "Finish a week at the top of the weekly XP board",
               done: () => (store.weeklyWins || 0) >= 1,
               have: () => (store.weeklyWins || 0), need: 1 },
@@ -30243,7 +30278,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               testsUntilMystery: null, flareNextTestAt: 0,
               savedCodePrompts: 0, savedCodeSaved: false,
               dailyCorrectStreak: 0, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false,
-              weeklyWins: 0, weeklyTop3: 0, weekRankSeen: null, pendingVoidCutscene: false,
+              weeklyWins: 0, weeklyTop3: 0, retakenQuestions: 0, weekRankSeen: null, pendingVoidCutscene: false,
               vrMatches: 0, vrWins: 0, vrCounted: [], vrRetroDone: false,
               fullTestsSeeded: false, practiceExamPerfect: false, banner: "", starfallKept: false,
               publicId: null, leaderboardKeyMigrated: false,
@@ -30404,6 +30439,7 @@ function applyLoadedData(got){
      a week on the podium, so an account with a Zeus already carries at
      least that many podium finishes. */
   store.weeklyTop3 = Math.max(typeof got.weeklyTop3 === "number" ? got.weeklyTop3 : 0, store.weeklyWins);
+  store.retakenQuestions = typeof got.retakenQuestions === "number" ? got.retakenQuestions : 0;
   /* Build 220. The counters default to zero and the two "done" flags to
      false, so every existing account is seeded once from what it has
      already done (seedBannerCounters, seedVroomHistory) rather than
@@ -31532,7 +31568,7 @@ function wipeLocalProgressAndSettings(){
   store.unitHundoStreak = 0;
   store.unitHundoStreakUnits = [];
   store.practiceTestPassed = false;
-  store.weeklyWins = 0; store.weeklyTop3 = 0;
+  store.weeklyWins = 0; store.weeklyTop3 = 0; store.retakenQuestions = 0;
   store.vrMatches = 0; store.vrWins = 0; store.vrCounted = []; store.vrRetroDone = true;
   store.fullTestsSeeded = true; store.practiceExamPerfect = false; store.banner = ""; store.starfallKept = false;
   store.weekRankSeen = null;
@@ -47625,7 +47661,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-28-232";
+const APP_BUILD = "2026-09-28-233";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -49648,7 +49684,8 @@ function playUnlockSpotlight(item, n, of, release){
   const card = document.createElement("div");
   card.className = "rs-spot-card";
   const art = document.createElement("div");
-  art.className = "rs-spot-art" + (item.kind === "banner" ? " is-banner" : "");
+  art.className = "rs-spot-art" + (item.kind === "banner" ? " is-banner" : "") +
+    (item.kind === "character" ? " is-character" : "");
   if(item.kind === "rank"){
     /* THE COOLEST BANNER OF THEM ALL - "maybe make the pop up kinda do a
        thing where the old rank icon morphs or something into the new
@@ -50668,6 +50705,10 @@ function summarize(){
        you get right through the retake(s)". */
     runXp = computeRunXp({ retake: true, good: good });
     awardXp(runXp.total);
+    /* The Masked One's count (build 233): every question in a finished
+       retake. The unlock is caught by the lockedBefore diff below like
+       any other character. */
+    store.retakenQuestions = (store.retakenQuestions || 0) + total;
     saveStore();
   }
   /* The single biggest achievement in the app \u2014 reaching the very

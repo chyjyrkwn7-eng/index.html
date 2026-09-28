@@ -6135,10 +6135,9 @@ none yet); the week board refuses a baseline from another week.
 `store.weeklyTop3`, counted in `settleWeeklyWin()` and seeded to at least
 `weeklyWins`) sits beside Zeus; the Spartan (10 Virtual Room wins) beside
 the Champion. The challenge row is one order - Detective, Zeus, Poseidon,
-Champion, Spartan, then Void, Umbra and Singularity together. **The Masked
-One is retired, not deleted**: `retired:true` takes it off both pickers and
-every unlock path, but it is never locked and still shows in Customize to
-whoever wears it. Rank characters say "Unlocks at X rank." and nothing
+Champion, Spartan, then Void, Umbra and Singularity together. The Masked
+One was retired here and brought back in 233 as a retake challenge - see
+Build 233. Rank characters say "Unlocks at X rank." and nothing
 about levels; Umbra and Singularity say "Unlock Void/Umbra to see how"
 until the one before is held.
 
@@ -6199,3 +6198,35 @@ confirmed.
 
 check-behaviour section 17 is this build's gate; every check in it fails
 on 231.
+
+### Build 233 - the Masked One is back; shoulders fade out
+
+**The Masked One is a retake challenge** (`retake100`: 100 questions
+answered through "Retake missed questions", counted in the retake branch
+of `summarize()` into `store.retakenQuestions`). Asked for so people
+"want to retake the misses" rather than quitting. Build 232's
+`retired` flag is no longer on any character; the code that honours it
+stays, harmless, for the next one. **Nothing recorded retakes before this
+build, so the count starts at zero for everyone** - the one new unlock
+that cannot be counted from history. The old rule (Hardcore on ten
+units) still unlocks it, so nobody who earned it then loses it.
+
+**Where each new unlock's history comes from**, for the next time this is
+asked ("ensure people's progress is still shown"): Spartan counts
+`vrWins`, seeded from every finished room in Firestore; Thunderhead counts
+`unitGameBeat`; Sky Temple hundos; Starfall badges; Northern Lights and
+Sakura `lifetime.fullTests`, seeded once from questions answered; the
+Supernova banner reads the rank. Poseidon's `weeklyTop3` is seeded from
+`weeklyWins` only - a podium finish that was not a win was never
+recorded, so those count from now.
+
+**Free-standing characters fade out at the shoulders.** "Where the bottom
+stops could be smoother." A mask on `.avatarchar-option .avatarchar-svg`
+and on the unlock card's character fades the bottom fifth to nothing;
+round avatars keep their circle, which already made the cut read as
+intended. The unlock card also gets a soft pool of the character's colour
+where the cut was.
+
+**Reading everyone's progress documents for a report was refused by the
+session's permission check** (personal data), even with the admin key
+set. It needs Madison's explicit go-ahead before it is attempted again.
