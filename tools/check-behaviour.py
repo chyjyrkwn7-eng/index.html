@@ -567,12 +567,12 @@ def check_ranks(br):
     check("only the rank you are climbing to carries a meter",
           [c["meter"] for c in cards] == [False, False, False, True, False, False, False],
           [c["meter"] for c in cards])
-    # Theme and flare on every rank; the top four hand over a character
-    # too. Supernova's banner is its own wide preview since build 234,
-    # not a chip, so it is not counted here (section 18 has it).
+    # Theme and flare on every rank; Gold and up hand over a character
+    # too, and the top three a banner (a chip again since build 236).
     # Build 235: Gold hands over the Pharaoh, so it is the top FIVE now.
     check("every rank lists what it hands over, top five include the character",
-          [c["rewards"] for c in cards] == [2, 2, 3, 3, 3, 3, 3] and
+          # Build 236: the top three's banners are chips again, so they count.
+          [c["rewards"] for c in cards] == [2, 2, 3, 3, 4, 4, 4] and
           [c["charGift"] for c in cards] == [False] * 2 + [True] * 5,
           [c["rewards"] for c in cards])
     # THE SHAPE, NOT THE COUNT. This asserted `count == 12` and that
@@ -1753,8 +1753,10 @@ def check_b234(br):
         return { reached: f(st[0].querySelector('.rankmap-dot')), next: f(st[3].querySelector('.rankmap-dot')),
                  lockedChar: f(st[4].querySelector('.rankmap-gift.is-char .rankmap-giftav svg')) }; });
       await T('novaPrev', () => { const st = [...document.querySelectorAll('.rankmap-stop')].pop();
-        const b = st && st.querySelector('.rankmap-bannerprev .bnr');
-        return b ? { h: Math.round(b.getBoundingClientRect().height), filter: getComputedStyle(b).filter } : null; });
+        const b = st && st.querySelector('.rankmap-gift.is-banner .bnr');
+        const chip = b && b.closest('.rankmap-gift'), other = st && st.querySelector('.rankmap-gift.is-theme');
+        return b ? { h: Math.round(chip.getBoundingClientRect().height), other: Math.round(other.getBoundingClientRect().height),
+                     filter: getComputedStyle(b).filter } : null; });
       await T('nodeSize', () => { const n = document.querySelector('.rankmap-node'); const sv = n.querySelector('svg');
         return Math.round(sv.getBoundingClientRect().width) - Math.round(n.getBoundingClientRect().width); });
       // A rank-up the map has not shown yet: Gold, last seen Bronze.
@@ -1809,8 +1811,10 @@ def check_b234(br):
     check("a reward you have not reached is grey on the road map, and one you have is in colour",
           "grayscale" not in str(g.get("reached")) and "grayscale" in str(g.get("next")) and "grayscale" in str(g.get("lockedChar")), g)
     np_ = r["novaPrev"] if isinstance(r["novaPrev"], dict) else {}
-    check("Supernova's stop shows its banner as a wide preview, in black and white until it is yours",
-          np_.get("h", 0) >= 60 and "grayscale" in str(np_.get("filter")), r["novaPrev"])
+    # Build 236: a chip the size of the other rewards, not a wide preview -
+    # "I didn't mean to make that extremely large".
+    check("Supernova's stop shows its banner as a reward chip like the others, in black and white until it is yours",
+          np_.get("h", 99) <= np_.get("other", 0) + 2 and "grayscale" in str(np_.get("filter")), r["novaPrev"])
     check("the road-map emblems are their old size again (drawn past the ring, not shrunk into it)",
           isinstance(r["nodeSize"], int) and r["nodeSize"] > 4, r["nodeSize"])
     check("a rank reached since the map last looked starts locked and is earned on screen",
@@ -2025,6 +2029,101 @@ def check_b235b(br):
     ctx.close()
 
 
+def check_b236(br):
+    """Build 236: rank banners as reward chips; the road blending rank to
+    rank with a light at your progress; black shades; carved panels under
+    the socle symbols; the unit list's search, flag and resets; Virtual
+    Room podiums only from four people, and its stats. Written against
+    build 235, where each of these fails."""
+    print("\n21. build 236: road map chips and light, art, unit list tools, Virtual Room podium")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{
+      const out = {};
+      const T = async (k, f) => { try{ out[k] = await f(); }catch(e){ out[k] = 'THREW ' + e.message; } };
+      const wait = ms => new Promise(r => setTimeout(r, ms));
+      const u = topicsIn(QUESTIONS); u.slice(2, 8).forEach(n => store.unitPerfects[n] = 999); levelOf = () => 40;
+      store.rankMapSeen = 2; showProfile('ranks'); await wait(2200);
+      await T('chips', () => ({ prev: document.querySelectorAll('.rankmap-bannerprev').length,
+                                chips: document.querySelectorAll('.rankmap-gift.is-banner').length }));
+      await T('road', () => { const rs = [...document.querySelectorAll('.rankmap-road')];
+        return { blended: rs.length > 0 && rs.every(x => !!x.style.getPropertyValue('--from-color')),
+                 tip: document.querySelectorAll('.rankmap-roadtip').length }; });
+      await T('shades', () => { const sv = buildAvatarCharSVGSafe('officer');
+        const g = [...sv.querySelectorAll('linearGradient')].find(x => /-lens$/.test(x.id)); if(!g) return null;
+        const c = g.querySelector('stop:nth-child(2)').getAttribute('stop-color');
+        const n = parseInt(c.slice(1), 16); return ((n >> 16) + (n >> 8 & 255) + (n & 255)) / 3; });
+      await T('panels', () => ['zeus', 'poseidon'].map(k => [...buildAvatarCharSVGSafe(k).querySelectorAll('rect')]
+        .some(x => /^#(13263A|0C2E30)$/i.test(x.getAttribute('fill') || ''))));
+      // The unit list.
+      const unit = u[0], now = Date.now();
+      let k = 0;
+      QUESTIONS.forEach((q, i) => { if((q.topic || '').trim() === unit){ k++; store.stats[KEYS[i]] = { n: 3, m: 3, r: [now - 1000, now - 2000] }; if(k <= 3) store.flagged[KEYS[i]] = true; } });
+      cfg.mode = 'drill'; cfg.units = []; showSetup(); await wait(600);
+      const row = [...document.querySelectorAll('.pick')].find(r => (r.querySelector('input') || {}).value === unit);
+      if(row) row.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 50, clientY: 50, button: 0 }));
+      await wait(600); if(row) row.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 50, clientY: 50 })); await wait(700);
+      await T('copy', () => ({ doors: [...document.querySelectorAll('.unitdetail-doorsub')].map(e => e.textContent),
+        hundoSub: [...document.querySelectorAll('.unitdetail-stat')].filter(c => /Hundos/.test(c.textContent)).map(c => c.querySelector('.unitdetail-statsub').textContent)[0] }));
+      document.querySelector('.unitdetail-door.is-flagged')?.click(); await wait(700);
+      await T('list', () => { const d = document.querySelector('.unitdetail');
+        const bar = d.querySelector('.unitdetail-head .pick-stars');
+        return { listing: d.classList.contains('is-listing'), barHidden: !bar || getComputedStyle(bar).display === 'none',
+                 search: !!d.querySelector('.unitdetail-search input'), testFlag: !!d.querySelector('.unitdetail-q .flagbtn .flagbanner'),
+                 qs: d.querySelectorAll('.unitdetail-q').length }; });
+      await T('search', async () => { const i = document.querySelector('.unitdetail-search input');
+        i.value = 'zzzzqqq'; i.dispatchEvent(new Event('input')); await wait(100);
+        const none = document.querySelectorAll('.unitdetail-q').length;
+        document.querySelector('.unitdetail-searchclear')?.click(); await wait(100);
+        return { none, back: document.querySelectorAll('.unitdetail-q').length }; });
+      await T('reset', async () => { document.querySelector('.unitdetail-resetbtn')?.click(); await wait(100);
+        const warned = !document.querySelector('.unitdetail-confirm').hidden;
+        const before = flaggedIndexes().length;
+        document.querySelector('.unitdetail-confirmyes')?.click(); await wait(200);
+        return { warned, before, after: flaggedIndexes().filter(i => (QUESTIONS[i].topic || '').trim() === unit).length }; });
+      document.querySelector('.unitdetail-back')?.click(); await wait(500);
+      document.querySelector('.unitdetail-door.is-recent')?.click(); await wait(700);
+      await T('clearMissed', async () => { const before = recentMissedIndexes().filter(i => (QUESTIONS[i].topic || '').trim() === unit).length;
+        document.querySelector('.unitdetail-resetbtn')?.click(); await wait(100);
+        document.querySelector('.unitdetail-confirmyes')?.click(); await wait(200);
+        return { before, after: recentMissedIndexes().filter(i => (QUESTIONS[i].topic || '').trim() === unit).length }; });
+      document.querySelector('.unitdetail-scrim')?.click(); await wait(600);
+      // The Virtual Room podium.
+      await T('vr', () => {
+        store.vrTop3 = 0; store.vrTop3Rooms = []; store.vrCounted = [];
+        recordVroomOutcome('R3', ['a', 'me', 'b'], 'me');
+        const small = store.vrTop3;
+        recordVroomOutcome('R4', ['a', 'b', 'me', 'c'], 'me');
+        recordVroomOutcome('R4', ['a', 'b', 'me', 'c'], 'me');
+        return { places: [vroomPlaces(2), vroomPlaces(3), vroomPlaces(4), vroomPlaces(8)], small, big: store.vrTop3 }; });
+      showProfile('stats'); await wait(700);
+      await T('stats', () => [...document.querySelectorAll('.profile-stats-tab .stat-lab')].map(e => e.textContent));
+      return out; }""")
+    c = r["chips"] if isinstance(r["chips"], dict) else {}
+    check("the rank banners are reward chips, not wide previews", c.get("prev") == 0 and c.get("chips") == 3, r["chips"])
+    rd = r["road"] if isinstance(r["road"], dict) else {}
+    check("the road blends from rank to rank, with a light where you are", rd.get("blended") is True and rd.get("tip") == 1, r["road"])
+    check("the Officer's shades are black", isinstance(r["shades"], (int, float)) and r["shades"] < 70, r["shades"])
+    check("Zeus and Poseidon's symbols sit on a dark carved panel", r["panels"] == [True, True], r["panels"])
+    cp = r["copy"] if isinstance(r["copy"], dict) else {}
+    check("the doors say what they open, and Hundos says nothing about the badge",
+          cp.get("doors") == ["Tap to see flagged questions", "Tap to see most missed"] and cp.get("hundoSub") == "", r["copy"])
+    l = r["list"] if isinstance(r["list"], dict) else {}
+    check("the list drops the badge bar, has a search, and the in-test flag",
+          l.get("listing") and l.get("barHidden") and l.get("search") and l.get("testFlag") and l.get("qs") == 3, r["list"])
+    check("search filters and Clear brings everything back", r["search"] == {"none": 0, "back": 3}, r["search"])
+    rs = r["reset"] if isinstance(r["reset"], dict) else {}
+    check("unflagging the unit asks first, then does it", rs.get("warned") and rs.get("before", 0) >= 3 and rs.get("after") == 0, r["reset"])
+    cm = r["clearMissed"] if isinstance(r["clearMissed"], dict) else {}
+    check("clearing a unit's most missed empties it", cm.get("before", 0) > 0 and cm.get("after") == 0, r["clearMissed"])
+    v = r["vr"] if isinstance(r["vr"], dict) else {}
+    check("a podium only from four people; top three counts once, and never in a room of three",
+          v.get("places") == [1, 1, 3, 3] and v.get("small") == 0 and v.get("big") == 1, r["vr"])
+    st = r["stats"] if isinstance(r["stats"], list) else []
+    check("Stats has a Virtual Room section with first places and top threes",
+          "First-place finishes" in st and "Top-3 finishes" in st, st)
+    ctx.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=CHROME)
@@ -2049,6 +2148,7 @@ def main():
             check_b234(br)
             check_b235(br)
             check_b235b(br)
+            check_b236(br)
         finally:
             br.close()
     SERVER.shutdown()

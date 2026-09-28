@@ -1305,7 +1305,10 @@ def main():
               playVroomWinnerCutscene({ kind: "podium", entries: [
                   { name: "Rosa", avatar: "queen", sub: "96%" },
                   { name: "Ben", avatar: "ghost", sub: "92%" },
-                  { name: "Cy", avatar: "ninja", sub: "88%" }] },
+                  { name: "Cy", avatar: "ninja", sub: "88%" },
+                  /* Four people: a podium needs a room of four since
+                     build 236 (VROOM_PODIUM_MIN). */
+                  { name: "Dee", avatar: "alien", sub: "80%" }] },
                 () => { window.__done = true; });
               const el = document.getElementById("vroom-cutscene");
               return { up: !!el,
@@ -1343,6 +1346,17 @@ def main():
             # is the results screen, so a cutscene that can swallow its
             # own callback is a match that never ends.
             cut.wait_for_function("()=>window.__done === true", timeout=8000)
+            # Under four people there is no podium - "if the lobby is less
+            # than 4 people ... just who finished first" (build 236).
+            small = cut.evaluate("""()=>{
+              playVroomWinnerCutscene({ kind: "podium", entries: [
+                  { name: "Rosa", avatar: "queen", sub: "96%" },
+                  { name: "Ben", avatar: "ghost", sub: "92%" },
+                  { name: "Cy", avatar: "ninja", sub: "88%" }] }, () => {});
+              const el = document.getElementById("vroom-cutscene");
+              const r = [...el.querySelectorAll('.vroom-cut-plinth')].map(p => p.dataset.place);
+              el.remove(); return r; }""")
+            check("a room of three has a winner and no podium", small == ["1"], small)
             check("it finishes and hands over", True)
             check("and clears itself off the screen",
                   cut.evaluate("()=>!document.getElementById('vroom-cutscene')") is True)

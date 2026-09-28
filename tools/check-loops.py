@@ -24,6 +24,7 @@ KNOWN = {
     "mystery-halo": "fades to nothing at the end, restarts from small",
     "pushsweep": "a sweep from off one edge to off the other",
     "rankmap-here": "a ping that fades to nothing",
+    "rankmap-tip-ping": "a ping off the road's progress light that fades to nothing",
     "stat-shine": "shifted by exactly one period of a 200% background",
     "swatch-sheen": "a sweep from off one edge to off the other",
     "vrc-drift": "stars drifting, respawned off-screen",

@@ -10611,10 +10611,25 @@
   }
   .rankmap-roadfill{
     position:absolute; inset:0; transform-origin:50% 0%; transform:scaleY(var(--lit, 0));
-    background:linear-gradient(to top, color-mix(in srgb, var(--rank-color) 60%, #fff), var(--rank-color));
+    /* From the rank above to the rank below (build 236). */
+    background:linear-gradient(to bottom, var(--from-color, var(--rank-color)), var(--rank-color));
     box-shadow:0 0 10px color-mix(in srgb, var(--rank-color) 70%, transparent);
     transition:transform 1.4s cubic-bezier(.2,.8,.2,1) .2s;
   }
+  /* The light at the end of the fill, on the stretch you are climbing. */
+  .rankmap-roadtip{
+    position:absolute; z-index:1; left:calc(var(--node) / 2); width:14px; height:14px; margin:-7px 0 0 -7px; border-radius:50%;
+    top:calc(var(--node) / 2 + var(--tip, 0) * 100%);
+    background:radial-gradient(circle, #fff 0 30%, var(--rank-color) 62%);
+    box-shadow:0 0 10px 2px color-mix(in srgb, var(--rank-color) 80%, transparent), 0 0 22px 6px color-mix(in srgb, var(--rank-color) 40%, transparent);
+    transition:top 1.4s cubic-bezier(.2,.8,.2,1) .2s;
+  }
+  .rankmap-roadtip::after{
+    content:""; position:absolute; inset:-5px; border-radius:50%; border:2px solid var(--rank-color); opacity:0;
+    animation:rankmap-tip-ping 2.2s ease-out 1.8s infinite;
+  }
+  @keyframes rankmap-tip-ping{ 0%{ opacity:0; transform:scale(.6); } 15%{ opacity:.85; } 100%{ opacity:0; transform:scale(2.2); } }
+  [data-reduce-motion="true"] .rankmap-roadtip::after{ animation:none; }
   .rankmap-node{
     position:relative; z-index:1; width:var(--node); height:var(--node); border-radius:50%;
     display:grid; place-items:center;
@@ -10692,12 +10707,18 @@
   .rankmap-stop.is-celebrate-pending .rankmap-dot{ filter:grayscale(1); opacity:.28; box-shadow:none; }
   .rankmap-stop:not(.is-reached) .rankmap-giftav svg,
   .rankmap-stop.is-celebrate-pending .rankmap-giftav svg{ filter:grayscale(1) brightness(.9); opacity:.55; }
-  .rankmap-stop:not(.is-reached) .rankmap-bannerprev .bnr,
-  .rankmap-stop.is-celebrate-pending .rankmap-bannerprev .bnr{ filter:grayscale(1) brightness(.75); }
-  .rankmap-dot, .rankmap-giftav svg, .rankmap-bannerprev .bnr{ transition:filter .7s ease, opacity .7s ease; }
+  .rankmap-stop:not(.is-reached) .rankmap-giftbanner .bnr,
+  .rankmap-stop.is-celebrate-pending .rankmap-giftbanner .bnr{ filter:grayscale(1) brightness(.75); }
+  .rankmap-dot, .rankmap-giftav svg, .rankmap-giftbanner .bnr{ transition:filter .7s ease, opacity .7s ease; }
   .rankmap-stop.is-celebrating .rankmap-gift:nth-child(2) .rankmap-giftav svg{ transition-delay:.18s; }
   .rankmap-stop.is-celebrating .rankmap-gift:nth-child(3) .rankmap-giftav svg{ transition-delay:.36s; }
-  .rankmap-stop.is-celebrating .rankmap-bannerprev .bnr{ transition-delay:.5s; }
+  .rankmap-stop.is-celebrating .rankmap-giftbanner .bnr{ transition-delay:.5s; }
+  /* The banner chip: a strip of the banner where the others have a dot. */
+  .rankmap-giftbanner{ position:relative; width:2.1rem; height:.95rem; border-radius:4px; overflow:hidden; flex-shrink:0;
+    box-shadow:0 0 0 1px rgba(255,255,255,.18); }
+  .rankmap-giftbanner .bnr{ position:absolute; inset:0; }
+  .rankmap-giftbanner .bnr svg{ width:100%; height:100%; display:block; }
+  .rankmap-gift.is-banner{ padding-left:.3rem; }
   /* The big Supernova banner preview. */
   .rankmap-bannerprev{
     position:relative; margin-top:.65rem; height:5.4rem; border-radius:12px; overflow:hidden;
@@ -10757,6 +10778,7 @@
   @media (min-width:24rem){
     .rankmap-stop{ --node:3.9rem; --gap:2.4rem; grid-template-columns:minmax(0,1fr) var(--node) minmax(0,1fr); gap:.55rem; }
     .rankmap-road{ left:calc(50% - 2px); }
+    .rankmap-roadtip{ left:50%; }
     .rankmap-node{ grid-column:2; grid-row:1; }
     .rankmap-stop.is-left .rankmap-card{ grid-column:1; grid-row:1; text-align:right; }
     .rankmap-stop.is-left .rankmap-head{ flex-direction:row-reverse; }
@@ -10771,7 +10793,6 @@
     .rankmap-name{ font-size:1.12rem; }
     .rankmap-req{ font-size:.74rem; }
     .rankmap-gift{ font-size:.64rem; }
-    .rankmap-bannerprev{ height:4.2rem; }
   }
   @media (min-width:46rem){
     .rankmap-stop{ --node:5.4rem; --gap:3.6rem; gap:1.1rem; }
@@ -10780,7 +10801,6 @@
     .rankmap-name{ font-size:1.45rem; }
     .rankmap-req{ font-size:.8rem; }
     .rankmap-gift{ font-size:.68rem; }
-    .rankmap-bannerprev{ height:6.4rem; }
   }
   .ranktrack{
     display:flex; flex-wrap:wrap; justify-content:center;
@@ -12551,8 +12571,6 @@
   .unitdetail-doorcount{ grid-area:c; font-family:var(--mono); font-weight:800; font-size:1rem; }
   .unitdetail-doorsub{ grid-area:s; font-size:.7rem; color:var(--soft); }
   .unitdetail-hint{ margin:.9rem 0 0; text-align:center; font-size:.68rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:rgba(255,255,255,.38); }
-  .unitdetail-listbar{ position:sticky; top:0; z-index:2; display:flex; align-items:center; gap:.6rem; padding:.2rem 0 .5rem;
-    background:linear-gradient(180deg, rgba(26,31,39,1) 70%, rgba(26,31,39,0)); }
   .unitdetail-back{ min-height:44px; padding:0 .8rem; border-radius:999px; font-weight:800; font-size:.85rem; color:var(--ink);
     background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); cursor:pointer; }
   .unitdetail-listtitle{ margin:0; font-weight:800; font-size:1rem; color:var(--ink); }
@@ -12563,9 +12581,54 @@
   .unitdetail-q .choices .choice{ padding-top:.45rem; padding-bottom:.45rem; }
   .unitdetail-qtop{ display:flex; align-items:center; justify-content:space-between; gap:.5rem; }
   .unitdetail-missed{ font-size:.7rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#FFB39A; }
-  .unitdetail-flag{ margin-left:auto; min-height:36px; padding:0 .7rem; border-radius:999px; font-size:.74rem; font-weight:800; cursor:pointer;
-    color:rgba(255,255,255,.8); background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); }
-  .unitdetail-flag.on{ color:#0B0D10; background:#FFD34D; border-color:transparent; }
+
+  /* ---- The list inside the unit card (build 236) ---- */
+  .unitdetail-head .pick-stars{ transition:opacity .25s ease; }
+  .unitdetail.is-listing .unitdetail-head .pick-stars,
+  .unitdetail.is-listing .unitdetail-head .pick-gamedots{ display:none; }
+  .unitdetail.is-listing .unitdetail-head .pcount{ margin-bottom:.2rem; }
+  .unitdetail-listbar{
+    position:sticky; top:0; z-index:2; margin:0 -1.1rem; padding:.3rem 1.1rem .9rem;
+    background:linear-gradient(180deg, rgba(27,32,41,.98) 0%, rgba(27,32,41,.96) 78%, rgba(27,32,41,0) 100%);
+  }
+  .unitdetail-listbarrow{ display:flex; align-items:center; gap:.6rem; }
+  .unitdetail-search{ position:relative; margin-top:.55rem; }
+  .unitdetail-search input{
+    width:100%; box-sizing:border-box; min-height:44px; padding:.5rem 4.2rem .5rem .9rem; border-radius:999px;
+    font-size:max(16px, 1rem); color:var(--ink); background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14);
+  }
+  .unitdetail-search input::-webkit-search-cancel-button{ display:none; }
+  .unitdetail-searchclear{
+    position:absolute; right:.3rem; top:50%; transform:translateY(-50%); min-height:36px; padding:0 .75rem; border-radius:999px;
+    font-size:.78rem; font-weight:800; color:var(--ink); background:rgba(255,255,255,.1); border:0; cursor:pointer;
+  }
+  .unitdetail-searchclear[hidden]{ display:none; }
+  .unitdetail-empty{ margin:.6rem 0; font-size:.85rem; color:var(--soft); text-align:center; }
+  /* The flag, the in-test one made louder. */
+  .unitdetail-q .flagbtn.unitdetail-flag{
+    width:auto; height:auto; min-height:40px; gap:.35rem; padding:0 .8rem 0 .55rem; border-radius:999px; margin-left:auto;
+    background:rgba(255,255,255,.06); box-shadow:0 0 0 1px rgba(224,182,70,.45) inset; color:var(--ink);
+  }
+  .unitdetail-q .flagbtn.unitdetail-flag .flagicon{ width:1.45rem; height:1.45rem; }
+  .unitdetail-q .flagbtn.unitdetail-flag.on{
+    background:linear-gradient(180deg, rgba(245,197,24,.28), rgba(245,197,24,.14)); box-shadow:0 0 0 1.5px #F5C518 inset, 0 0 14px rgba(245,197,24,.28);
+  }
+  .unitdetail-flagword{ font-size:.8rem; font-weight:800; letter-spacing:.02em; }
+  .unitdetail-q .flagbtn.unitdetail-flag.on .unitdetail-flagword{ color:#FFD84D; }
+  .unitdetail-reset{ margin:.4rem 0 .6rem; text-align:center; }
+  .unitdetail-reset[hidden]{ display:none; }
+  .unitdetail-resetbtn{
+    min-height:44px; padding:0 1rem; border-radius:999px; font-size:.82rem; font-weight:800; cursor:pointer;
+    color:#FF9A9A; background:rgba(255,80,80,.08); border:1px solid rgba(255,90,90,.35);
+  }
+  .unitdetail-resetbtn[hidden]{ display:none; }
+  .unitdetail-confirm{ padding:.8rem; border-radius:14px; text-align:left; background:rgba(255,80,80,.08); border:1px solid rgba(255,90,90,.4); }
+  .unitdetail-confirm[hidden]{ display:none; }
+  .unitdetail-confirm p{ margin:0 0 .7rem; font-size:.84rem; line-height:1.45; color:rgba(255,255,255,.88); }
+  .unitdetail-confirmrow{ display:flex; gap:.5rem; justify-content:flex-end; }
+  .unitdetail-confirmno, .unitdetail-confirmyes{ min-height:44px; padding:0 1rem; border-radius:999px; font-weight:800; font-size:.84rem; cursor:pointer; border:0; }
+  .unitdetail-confirmno{ color:var(--ink); background:rgba(255,255,255,.1); }
+  .unitdetail-confirmyes{ color:#fff; background:#D6453D; }
   [data-reduce-motion="true"] .unitdetail, [data-reduce-motion="true"] .unitdetail-main,
   [data-reduce-motion="true"] .unitdetail-list, [data-reduce-motion="true"] .unitdetail-scrim{ transition-duration:.01s; }
   /* ---- THE QUESTION BANK (build 235) ---- */
@@ -15286,17 +15349,6 @@
   .friend-row-art{ --zzz-size:.95rem; }
   .friend-row-art .char-zzz{ right:-.7em; top:-.5em; }
 
-  .rs-grade.has-char{ position:relative; }
-  .rs-grade.has-char .rs-grade-row, .rs-grade.has-char > .rs-kicker{ padding-right:4.6rem; }
-  .rs-grade-char{
-    position:absolute; right:.9rem; top:.8rem; width:4.4rem; height:4.4rem; pointer-events:none;
-    filter:drop-shadow(0 6px 14px rgba(0,0,0,.45));
-  }
-  .rs-grade-char svg{ width:100%; height:100%; display:block; overflow:visible; }
-  @media (min-width:40rem){
-    .rs-grade-char{ width:5.4rem; height:5.4rem; right:1.1rem; }
-    .rs-grade.has-char .rs-grade-row, .rs-grade.has-char > .rs-kicker{ padding-right:5.8rem; }
-  }
 
   /* ---- RANK REWARD (build 235) ----
      The challenge strip's sibling: the rank's colour, chevron ends, in
@@ -30000,17 +30052,21 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("path", { d: "M13.2 33.6 L26.8 33.6 L27.4 38 L12.6 38 Z", fill: stone2 }));
     svg.appendChild(mk("path", { d: "M11.8 33.62 L28.2 33.62", fill: "none", stroke: line,
                                  "stroke-width": ".35", opacity: ".7" }));
+    /* The same dark carved panel as Zeus's, in deep sea green (build 236). */
+    svg.appendChild(mk("rect", { x: "16.9", y: "32.5", width: "6.2", height: "4.4", rx: ".9",
+                                 fill: "#0C2E30", stroke: "#061819", "stroke-width": ".25" }));
+    svg.appendChild(mk("ellipse", { cx: "20", cy: "34.7", rx: "2.3", ry: "1.7", fill: "#1FC4C4", opacity: ".35" }));
     /* The trident, cut into the block and lit from inside: a soft cyan
        bed under it, then the shaft and three barbed tines as one shape. */
     open("cx-fx cx-fx-trident");
-    svg.appendChild(mk("path", { d: "M20 34.1 L20 37.9 M18.2 34.4 L18.2 35.3 Q18.2 36.1 20 36.1 Q21.8 36.1 21.8 35.3 L21.8 34.4",
+    svg.appendChild(mk("path", { d: "M 20 32.9 L 20 36.7 M 18.2 33.2 L 18.2 34.1 Q 18.2 34.9 20 34.9 Q 21.8 34.9 21.8 34.1 L 21.8 33.2",
                                  fill: "none", stroke: "#5FF0E6", "stroke-width": "1.15",
                                  "stroke-linecap": "round", "stroke-linejoin": "round", opacity: ".35" }));
-    svg.appendChild(mk("path", { d: "M20 34.25 L20 37.9 M18.2 34.55 L18.2 35.3 Q18.2 36.1 20 36.1 Q21.8 36.1 21.8 35.3 L21.8 34.55",
+    svg.appendChild(mk("path", { d: "M 20 33.05 L 20 36.7 M 18.2 33.35 L 18.2 34.1 Q 18.2 34.9 20 34.9 Q 21.8 34.9 21.8 34.1 L 21.8 33.35",
                                  fill: "none", stroke: "#C8FFF9", "stroke-width": ".5",
                                  "stroke-linecap": "round", "stroke-linejoin": "round" }));
     [18.2, 20, 21.8].forEach(x =>
-      svg.appendChild(mk("path", { d: "M" + (x - .5) + " 34.75 L" + x + " 33.95 L" + (x + .5) + " 34.75 Z",
+      svg.appendChild(mk("path", { d: "M" + (x - .5) + " 33.55 L" + x + " 32.75 L" + (x + .5) + " 33.55 Z",
                                    fill: "#C8FFF9", stroke: "#1FC4C4", "stroke-width": ".16",
                                    "stroke-linejoin": "round" })));
     close();
@@ -30256,10 +30312,18 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("path", { d: "M13.2 33.6 L26.8 33.6 L27.4 38 L12.6 38 Z", fill: stone2 }));
     svg.appendChild(mk("path", { d: "M11.8 33.62 L28.2 33.62", fill: "none", stroke: line,
                                  "stroke-width": ".35", opacity: ".7" }));
+    /* A DARK PANEL CARVED INTO THE BLOCK behind the bolt (build 236):
+       "the symbols are hard to see? I really like the size of them so
+       maybe bring them up somehow". A light bolt on light stone had
+       nothing to stand against; the recess gives it a dark ground and
+       the bolt a cold glow, at the same size. */
+    svg.appendChild(mk("rect", { x: "16.9", y: "32.7", width: "6.2", height: "4.2", rx: ".9",
+                                 fill: "#13263A", stroke: "#0A1522", "stroke-width": ".25" }));
+    svg.appendChild(mk("ellipse", { cx: "20.1", cy: "34.8", rx: "2.3", ry: "1.7", fill: "#4FB6DD", opacity: ".35" }));
     /* The bolt, cut into the block and lit from inside. */
     open("cx-fx cx-fx-bolt");
-    svg.appendChild(mk("path", { d: "M20.9 34.1 L18.7 36.2 L20.1 36.2 L19.1 38 L21.6 35.5 L20.2 35.5 L21.4 34.1 Z",
-                                 fill: "#BDEBFA", stroke: "#4FB6DD", "stroke-width": ".22",
+    svg.appendChild(mk("path", { d: "M 20.9 32.9 L 18.7 35 L 20.1 35 L 19.1 36.8 L 21.6 34.3 L 20.2 34.3 L 21.4 32.9 Z",
+                                 fill: "#F2FCFF", stroke: "#7FD4F5", "stroke-width": ".3",
                                  "stroke-linejoin": "round" }));
     close();
 
@@ -30546,7 +30610,11 @@ function drawAvatarCharSVG(charId){
     const gold = headGrad("#FFF4C2", "#EBC04A", "#9C7216");
     const lensId = uid + "-lens";
     const lg = mk("linearGradient", { id: lensId, x1: "0", y1: "0", x2: ".25", y2: "1" });
-    [["0%", "#D8F3FF"], ["30%", "#62B2F0"], ["52%", "#1E4C92"], ["60%", "#F2B25A"], ["78%", "#C4552E"], ["100%", "#3A1826"]]
+    /* BLACK LENSES (build 236): "I don't like the sunglasses on the
+       officer make them black sunglasses". The mirrored sky-and-sunset
+       lens is gone; a near-black glass with a faint lift at the top so
+       the lens still reads as glass rather than a hole. */
+    [["0%", "#4A5059"], ["22%", "#23272E"], ["60%", "#0E1014"], ["100%", "#050607"]]
       .forEach(([o, c]) => lg.appendChild(mk("stop", { offset: o, "stop-color": c })));
     defs.appendChild(lg);
 
@@ -30633,15 +30701,15 @@ function drawAvatarCharSVG(charId){
     /* THE AVIATORS. Teardrop lenses that are widest low and to the
        outside, a thin silver frame and a double bridge. */
     open("cx-fx cx-fx-shades");
-    svg.appendChild(mk("path", { d: "M11.8 21.1 L10.3 21.6 M28.2 21.1 L29.7 21.6", fill: "none", stroke: "#CFD6DF", "stroke-width": ".42", "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M11.8 21.1 L10.3 21.6 M28.2 21.1 L29.7 21.6", fill: "none", stroke: "#1A1D22", "stroke-width": ".5", "stroke-linecap": "round" }));
     const lensL = "M11.5 21 Q15.4 20.1 19.1 21 Q19.4 24.7 16.4 25.4 Q12.3 25.7 11.5 21 Z";
     const lensR = "M28.5 21 Q24.6 20.1 20.9 21 Q20.6 24.7 23.6 25.4 Q27.7 25.7 28.5 21 Z";
-    [lensL, lensR].forEach(d => svg.appendChild(mk("path", { d, fill: "url(#" + lensId + ")", stroke: "#DDE3EA", "stroke-width": ".4" })));
+    [lensL, lensR].forEach(d => svg.appendChild(mk("path", { d, fill: "url(#" + lensId + ")", stroke: "#111317", "stroke-width": ".5" })));
     svg.appendChild(mk("path", { d: "M19.1 21.3 Q20 20.7 20.9 21.3 M17.6 20.55 Q20 20 22.4 20.55", fill: "none",
-                                 stroke: "#DDE3EA", "stroke-width": ".34", "stroke-linecap": "round" }));
-    /* The mirror's own highlight, one hard streak per lens. */
+                                 stroke: "#111317", "stroke-width": ".42", "stroke-linecap": "round" }));
+    /* A gloss streak per lens - softer now the lens is black glass. */
     svg.appendChild(mk("path", { d: "M12.7 21.9 L15.2 21.3 M24.7 21.3 L26.2 21.7", fill: "none", stroke: "#FFFFFF",
-                                 "stroke-width": ".55", "stroke-linecap": "round", opacity: ".9" }));
+                                 "stroke-width": ".5", "stroke-linecap": "round", opacity: ".55" }));
     svg.appendChild(mk("path", { d: "M13.3 23.9 L17.3 21.9", fill: "none", stroke: "#FFFFFF",
                                  "stroke-width": ".32", "stroke-linecap": "round", opacity: ".45" }));
     sheen([lensL, lensR], "cx-fx-lenssheen", 11.5, 28.5, 20.1, 25.7);
@@ -31730,7 +31798,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               savedCodePrompts: 0, savedCodeSaved: false,
               dailyCorrectStreak: 0, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false,
               weeklyWins: 0, weeklyTop3: 0, retakenQuestions: 0, rankMapSeen: null, unlocksShown: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
-              vrMatches: 0, vrWins: 0, vrCounted: [], vrRetroDone: false,
+              vrMatches: 0, vrWins: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
               fullTestsSeeded: false, practiceExamPerfect: false, banner: "", starfallKept: false,
               publicId: null, leaderboardKeyMigrated: false,
               friendCode: null, friendsOut: [], friendsIn: [], friendsDeclined: [],
@@ -31914,6 +31982,11 @@ function applyLoadedData(got){
   store.vrWins = typeof got.vrWins === "number" ? got.vrWins : 0;
   store.vrCounted = Array.isArray(got.vrCounted) ? got.vrCounted.filter(x => typeof x === "string") : [];
   store.vrRetroDone = got.vrRetroDone === true;
+  /* Build 236: top-three finishes. Backfilled once from the rooms still
+     in Firestore (seedVroomTop3), so a veteran of big rooms is not at 0. */
+  store.vrTop3 = typeof got.vrTop3 === "number" ? got.vrTop3 : 0;
+  store.vrTop3Rooms = Array.isArray(got.vrTop3Rooms) ? got.vrTop3Rooms.filter(x => typeof x === "string").slice(-300) : [];
+  store.vrTop3RetroDone = got.vrTop3RetroDone === true;
   store.fullTestsSeeded = got.fullTestsSeeded === true;
   store.practiceExamPerfect = got.practiceExamPerfect === true;
   store.starfallKept = got.starfallKept === true;
@@ -32188,7 +32261,7 @@ function firebaseBecameReady(){
   pending.forEach(cb => { try { cb(); } catch(e){} });
   /* Once per account: count the Virtual Room matches and wins from
      before they were tracked. Late, so it never competes with boot. */
-  setTimeout(() => { try{ seedVroomHistory(); }catch(e){} }, 6000);
+  setTimeout(() => { try{ seedVroomHistory(); }catch(e){} try{ seedVroomTop3(); }catch(e){} }, 6000);
 }
 function tryFirebaseNow(){
   if(fbDb){ firebaseBecameReady(); return true; }
@@ -33038,6 +33111,7 @@ function wipeLocalProgressAndSettings(){
   store.unlocksShown = { chars: [], banners: [] };
   store.unitRuns = {};
   store.vrMatches = 0; store.vrWins = 0; store.vrCounted = []; store.vrRetroDone = true;
+  store.vrTop3 = 0; store.vrTop3Rooms = []; store.vrTop3RetroDone = true;
   store.fullTestsSeeded = true; store.practiceExamPerfect = false; store.banner = ""; store.starfallKept = false;
   store.weekRankSeen = null;
   store.pendingVoidCutscene = false;
@@ -36726,6 +36800,16 @@ function vroomTotalScore(p){
   return p.totalScore != null ? p.totalScore
     : Math.round((p.score || 0) * 100) - Math.round((p.elapsedMs || 0) / 1000);
 }
+/* A PODIUM NEEDS FOUR PEOPLE (build 236): "a top 3 finish would not
+   count if there aren't at least 4 people in the lobby ... or else you
+   could farm that stat. If the lobby is less than 4 people, there
+   shouldn't even be a top three leaderboard, just who finished first."
+   In a room of three, third is last - a top-three finish there is just
+   turning up. So under four there is a winner and nobody else is placed,
+   on the results, in the cutscene and in the stats. */
+const VROOM_PODIUM_MIN = 4;
+function vroomPlaces(n){ return n >= VROOM_PODIUM_MIN ? 3 : 1; }
+
 function recordVroomOutcome(code, sortedKeys, myKey){
   if(!code || !myKey || sortedKeys.indexOf(myKey) < 0) return;
   store.vrCounted = Array.isArray(store.vrCounted) ? store.vrCounted : [];
@@ -36733,6 +36817,15 @@ function recordVroomOutcome(code, sortedKeys, myKey){
   store.vrCounted.push(code);
   if(store.vrCounted.length > 300) store.vrCounted = store.vrCounted.slice(-300);
   store.vrMatches = (store.vrMatches || 0) + 1;
+  /* Top three, in a room big enough for a podium - see VROOM_PODIUM_MIN.
+     Rooms are remembered so the one-off backfill cannot count one twice. */
+  const myPlace = sortedKeys.indexOf(myKey);
+  store.vrTop3Rooms = Array.isArray(store.vrTop3Rooms) ? store.vrTop3Rooms : [];
+  if(sortedKeys.length >= VROOM_PODIUM_MIN && myPlace >= 0 && myPlace < 3 && store.vrTop3Rooms.indexOf(code) < 0){
+    store.vrTop3 = (store.vrTop3 || 0) + 1;
+    store.vrTop3Rooms.push(code);
+    if(store.vrTop3Rooms.length > 300) store.vrTop3Rooms = store.vrTop3Rooms.slice(-300);
+  }
   /* A win needs somebody to have beaten. */
   if(sortedKeys.length >= 2 && sortedKeys[0] === myKey){
     const before = store.vrWins || 0;
@@ -36782,6 +36875,35 @@ function seedVroomHistory(){
     store.vrMatches = (store.vrMatches || 0) + matches;
     store.vrWins = (store.vrWins || 0) + wins;
     store.vrRetroDone = true;
+    saveStore();
+  }).catch(() => {});
+}
+
+/* ONCE PER ACCOUNT, like seedVroomHistory: top-three finishes in every
+   finished individual race still in Firestore with four or more people.
+   Separate from the older backfill because that one has already run
+   for everybody and marked itself done. */
+function seedVroomTop3(){
+  if(store.vrTop3RetroDone || !fbDb || !store.onboardingComplete) return;
+  const me = publicIdOf();
+  fbDb.collection("vrooms").get().then(snap => {
+    const seen = new Set(Array.isArray(store.vrTop3Rooms) ? store.vrTop3Rooms : []);
+    let add = 0;
+    snap.forEach(doc => {
+      if(seen.has(doc.id)) return;
+      const d = doc.data() || {};
+      if(d.tug || d.game === "tug" || d.game === "battle") return;
+      const parts = d.participants || {};
+      const keys = Object.keys(parts);
+      if(keys.indexOf(me) < 0 || keys.length < VROOM_PODIUM_MIN) return;
+      const done = d.status === "finished" || keys.every(k => parts[k] && parts[k].finished);
+      if(!done) return;
+      const order = keys.slice().sort((a, b) => vroomTotalScore(parts[b]) - vroomTotalScore(parts[a]));
+      if(order.indexOf(me) < 3){ add++; seen.add(doc.id); }
+    });
+    store.vrTop3 = (store.vrTop3 || 0) + add;
+    store.vrTop3Rooms = Array.from(seen).slice(-300);
+    store.vrTop3RetroDone = true;
     saveStore();
   }).catch(() => {});
 }
@@ -43005,7 +43127,8 @@ function playVroomWinnerCutscene(opts, done){
        the middle where a podium puts it. A room of two gets two blocks
        and a room of one gets one - the shape follows who was actually
        there rather than always drawing three. */
-    const order = list.length >= 3 ? [1, 0, 2] : (list.length === 2 ? [1, 0] : [0]);
+    /* Under four people there is no podium, just the winner's block. */
+    const order = list.length >= VROOM_PODIUM_MIN ? [1, 0, 2] : [0];
     order.forEach(idx => {
       const p = list[idx];
       if(!p) return;
@@ -47428,7 +47551,9 @@ function unitDetailStats(name, mode){
     add("Best score", typeof bestPct === "number" ? bestPct + "%" : "—", "whole unit");
   }
   const h = unitPerfectCount(name), need = badgeThresholdFor(name);
-  add("Hundos", String(h), unitDrillStarEarned(name) ? "badge earned" : Math.max(0, need - h) + " to the badge");
+  /* Just the count - "the little hundo box does not need to mention
+     how close it is to the badge". The bar in the card's head says that. */
+  add("Hundos", String(h), "");
   return stats;
 }
 
@@ -47491,8 +47616,8 @@ function openUnitDetail(row, name, mode){
   const flaggedN = flaggedIndexes().filter(inUnit).length;
   const missedN = recentMissedIndexes().filter(inUnit).length;
   doors.append(
-    door("flagged", "Flagged", flaggedN, flaggedN ? "tap to see and unflag" : "none yet"),
-    door("recent", "Most missed", missedN, "of " + mostMissedCapFor(name) + " at most"));
+    door("flagged", "Flagged", flaggedN, flaggedN ? "Tap to see flagged questions" : "None flagged yet"),
+    door("recent", "Most missed", missedN, missedN ? "Tap to see most missed" : "Nothing missed lately"));
   main.appendChild(doors);
   const hint = document.createElement("p");
   hint.className = "unitdetail-hint";
@@ -47507,28 +47632,147 @@ function openUnitDetail(row, name, mode){
      so it can be flagged or unflagged right here. An unflagged one stays
      in the list, dimmed, until you go back - so a mis-tap is one tap to
      undo rather than a question gone from under your finger. */
+  /* The door counts and words, recomputed - they move when something is
+     unflagged or a unit's misses are cleared. Most missed is re-derived
+     every time, so when one question leaves the list the next-worst in
+     the unit takes its place (recentMissedIndexes ranks and caps live). */
+  function refreshDoors(){
+    const fN = flaggedIndexes().filter(inUnit).length;
+    const mN = recentMissedIndexes().filter(inUnit).length;
+    [["flagged", fN, "Tap to see flagged questions", "None flagged yet"],
+     ["recent", mN, "Tap to see most missed", "Nothing missed lately"]].forEach(([k, n, yes, no]) => {
+      const d = doors.querySelector(".is-" + k);
+      if(!d) return;
+      d.querySelector(".unitdetail-doorcount").textContent = String(n);
+      d.classList.toggle("is-empty", !n);
+      d.querySelector(".unitdetail-doorsub").textContent = n ? yes : no;
+    });
+  }
+  /* The in-test flag, larger and with its word beside it. */
+  function buildFlagToggle(qi, onChange){
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "flagbtn unitdetail-flag";
+    const ns = "http://www.w3.org/2000/svg";
+    const sv = document.createElementNS(ns, "svg");
+    sv.setAttribute("viewBox", "0 0 24 24"); sv.setAttribute("class", "flagicon");
+    const g = document.createElementNS(ns, "g"); g.setAttribute("transform", "translate(0, 1.5)");
+    const pole = document.createElementNS(ns, "path"); pole.setAttribute("class", "flagpole"); pole.setAttribute("d", "M5 3v18");
+    const ban = document.createElementNS(ns, "path"); ban.setAttribute("class", "flagbanner");
+    ban.setAttribute("d", "M5 4c2-1.6 4-1.6 6 0s4 1.6 6 0v7.5c-2 1.6-4 1.6-6 0s-4-1.6-6 0z");
+    g.append(pole, ban); sv.appendChild(g);
+    const w = document.createElement("span"); w.className = "unitdetail-flagword";
+    b.append(sv, w);
+    const paint = () => {
+      const on = isFlagged(qi);
+      b.classList.toggle("on", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+      b.setAttribute("aria-label", on ? "Unflag this question" : "Flag this question");
+      w.textContent = on ? "Flagged" : "Flag";
+    };
+    b.addEventListener("click", () => { toggleFlag(qi); paint(); if(onChange) onChange(); });
+    paint();
+    return b;
+  }
   function showList(kind){
+    card.classList.add("is-listing");
     const pane = document.createElement("div");
     pane.className = "unitdetail-list";
     const bar = document.createElement("div");
     bar.className = "unitdetail-listbar";
+    const barRow = document.createElement("div");
+    barRow.className = "unitdetail-listbarrow";
     const back = document.createElement("button");
     back.type = "button"; back.className = "unitdetail-back";
     back.textContent = "‹ Back";
     const tt = document.createElement("p");
     tt.className = "unitdetail-listtitle";
     tt.textContent = kind === "flagged" ? "Flagged" : "Most missed";
-    bar.append(back, tt);
+    barRow.append(back, tt);
+    /* A search, with a clear - "a little search bar to search the
+       flagged and most missed and a clear search". */
+    const sw = document.createElement("div");
+    sw.className = "unitdetail-search";
+    const si = document.createElement("input");
+    si.type = "search"; si.placeholder = kind === "flagged" ? "Search flagged" : "Search most missed";
+    si.setAttribute("aria-label", si.placeholder);
+    const sx = document.createElement("button");
+    sx.type = "button"; sx.className = "unitdetail-searchclear"; sx.textContent = "Clear"; sx.hidden = true;
+    sw.append(si, sx);
+    bar.append(barRow, sw);
     pane.appendChild(bar);
     const note = document.createElement("p");
     note.className = "unitdetail-listnote";
     note.textContent = kind === "flagged"
       ? "Questions you marked to come back to. Unflag one here once you have it down."
-      : "The ones you have missed most in the last 30 days - up to " + mostMissedCapFor(name) + " for this unit.";
+      : "The ones you have missed most in the last 30 days - up to " + mostMissedCapFor(name) +
+        " for this unit. When one leaves the list, the next-most-missed takes its place.";
     pane.appendChild(note);
-    const ids = (kind === "flagged" ? flaggedIndexes() : recentMissedIndexes()).filter(inUnit);
+    const listEl = document.createElement("div");
+    listEl.className = "unitdetail-qs";
+    pane.appendChild(listEl);
+    const empty = document.createElement("p");
+    empty.className = "unitdetail-empty"; empty.hidden = true;
+    pane.appendChild(empty);
+
+    /* RESET FOR THIS UNIT, behind a warning - "a reset flag for unit ...
+       would give a warning before you commit to it, and same for most
+       missed to clear it for that unit". Clearing most missed forgets
+       this unit's misses from the last 30 days (the counts that rank the
+       list); answer history and hundos are untouched. */
+    const resetWrap = document.createElement("div");
+    resetWrap.className = "unitdetail-reset";
+    const resetBtn = document.createElement("button");
+    resetBtn.type = "button"; resetBtn.className = "unitdetail-resetbtn";
+    resetBtn.textContent = kind === "flagged" ? "Unflag every question in this unit" : "Clear most missed for this unit";
+    const confirmBox = document.createElement("div");
+    confirmBox.className = "unitdetail-confirm"; confirmBox.hidden = true;
+    const cText = document.createElement("p");
+    const cRow = document.createElement("div"); cRow.className = "unitdetail-confirmrow";
+    const cNo = document.createElement("button"); cNo.type = "button"; cNo.className = "unitdetail-confirmno"; cNo.textContent = "Cancel";
+    const cYes = document.createElement("button"); cYes.type = "button"; cYes.className = "unitdetail-confirmyes";
+    cYes.textContent = kind === "flagged" ? "Unflag all" : "Clear it";
+    cRow.append(cNo, cYes);
+    confirmBox.append(cText, cRow);
+    resetWrap.append(resetBtn, confirmBox);
+    pane.appendChild(resetWrap);
+    resetBtn.addEventListener("click", () => {
+      const n = (kind === "flagged" ? flaggedIndexes() : recentMissedIndexes()).filter(inUnit).length;
+      cText.textContent = kind === "flagged"
+        ? (n === 1 ? "Unflag the one flagged question in " : "Unflag all " + n + " flagged questions in ") + name + "? This can't be undone."
+        : "Clear " + name + "'s most missed? Its misses from the last 30 days are forgotten, so this list starts again from your next miss. Your hundos and answer history stay. This can't be undone.";
+      confirmBox.hidden = false; resetBtn.hidden = true;
+    });
+    cNo.addEventListener("click", () => { confirmBox.hidden = true; resetBtn.hidden = false; });
+    cYes.addEventListener("click", () => {
+      QUESTIONS.forEach((q, i) => {
+        if(!inUnit(i)) return;
+        if(kind === "flagged"){ if(isFlagged(i)) delete store.flagged[KEYS[i]]; }
+        else { const st = store.stats[KEYS[i]]; if(st && st.r && st.r.length) store.stats[KEYS[i]] = Object.assign({}, st, { r: [] }); }
+      });
+      saveStore();
+      confirmBox.hidden = true; resetBtn.hidden = false;
+      showToast(kind === "flagged" ? "Unflagged every question in " + name + "." : "Most missed cleared for " + name + ".");
+      render();
+      refreshDoors();
+    });
+
     const now = Date.now();
-    ids.forEach(i => {
+    /* Built from the live lists each time, so Most missed refills with
+       the next-worst question when one drops off. */
+    function render(){
+      const q = si.value.trim().toLowerCase();
+      sx.hidden = !q;
+      const ids = (kind === "flagged" ? flaggedIndexes() : recentMissedIndexes()).filter(inUnit);
+      const shown = ids.filter(i => !q || QUESTIONS[i].q.toLowerCase().includes(q) ||
+        QUESTIONS[i].choices.some(c => c.toLowerCase().includes(q)));
+      listEl.replaceChildren();
+      shown.forEach(i => listEl.appendChild(questionCard(i)));
+      empty.hidden = shown.length > 0;
+      empty.textContent = ids.length ? "Nothing matches “" + si.value.trim() + "”."
+        : kind === "flagged" ? "Nothing flagged in this unit." : "Nothing missed lately in this unit.";
+      resetWrap.hidden = ids.length === 0;
+    }
+    function questionCard(i){
       const item = QUESTIONS[i];
       const q = document.createElement("div");
       q.className = "review-question unitdetail-q";
@@ -47541,18 +47785,9 @@ function openUnitDetail(row, name, mode){
         m.textContent = "Missed " + times + (times === 1 ? " time" : " times");
         top.appendChild(m);
       }
-      const fl = document.createElement("button");
-      fl.type = "button"; fl.className = "unitdetail-flag";
-      const paintFlag = () => {
-        const on = isFlagged(i);
-        fl.classList.toggle("on", on);
-        fl.textContent = on ? "⚑ Flagged · Unflag" : "⚐ Flag";
-        fl.setAttribute("aria-pressed", on ? "true" : "false");
-        if(kind === "flagged") q.classList.toggle("is-unflagged", !on);
-      };
-      fl.addEventListener("click", () => { toggleFlag(i); paintFlag(); });
-      paintFlag();
-      top.appendChild(fl);
+      /* An unflagged one stays, dimmed, until Back - a mis-tap is one tap
+         to undo rather than a question gone from under your finger. */
+      top.appendChild(buildFlagToggle(i, () => { if(kind === "flagged") q.classList.toggle("is-unflagged", !isFlagged(i)); }));
       q.appendChild(top);
       const qt = document.createElement("p");
       qt.className = "qtext review-question-text"; qt.textContent = item.q;
@@ -47571,17 +47806,16 @@ function openUnitDetail(row, name, mode){
         ch.appendChild(opt);
       });
       q.appendChild(ch);
-      pane.appendChild(q);
-    });
+      return q;
+    }
+    si.addEventListener("input", render);
+    sx.addEventListener("click", () => { si.value = ""; render(); si.focus(); });
+    render();
     back.addEventListener("click", () => {
       pane.classList.remove("is-in");
       main.classList.remove("is-away");
-      /* Counts may have moved (something unflagged). */
-      const fN = flaggedIndexes().filter(inUnit).length;
-      const fd = doors.querySelector(".is-flagged");
-      if(fd){ fd.querySelector(".unitdetail-doorcount").textContent = String(fN);
-              fd.classList.toggle("is-empty", !fN);
-              fd.querySelector(".unitdetail-doorsub").textContent = fN ? "tap to see and unflag" : "none yet"; }
+      card.classList.remove("is-listing");
+      refreshDoors();
       setTimeout(() => { pane.remove(); fitHeight(); }, 320);
     });
     views.appendChild(pane);
@@ -50102,7 +50336,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-28-235";
+const APP_BUILD = "2026-09-28-236";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -51034,6 +51268,7 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
     meAvatar = document.createElement("span");
     meAvatar.className = "results-level-avatar";
     try{ meAvatar.appendChild(buildAvatarCharSVGSafe(store.avatarChar || AVATAR_CHARACTERS[0].id)); }catch(e){}
+    meAvatar.classList.add("char-live");
     me.appendChild(meAvatar);
     const txt = document.createElement("span");
     txt.className = "results-level-metext";
@@ -52560,24 +52795,20 @@ function showRunRewards(run, hooks, opts){
   const gradeTone = run.retake ? (run.missed.length ? "is-retake-left" : "is-retake-clear")
     : run.gameLost ? "is-over" : run.isPerfect ? "is-perfect" : run.pct >= PASS_MARK ? "is-pass" : "is-fail";
   grade.className = "rs-card rs-grade rs-land score " + gradeTone;
-  /* YOUR CHARACTER REACTS TO THE GRADE (build 235) - "maybe have the
-     characters have a reaction based on the grade? 100, 90, pass, fail".
-     It sits in the card's top corner and reacts the moment the card
-     lands, not when it is built: the reveal is staged, and a reaction
-     played while the card is still invisible is one nobody saw. */
+  /* YOUR CHARACTER REACTS TO THE GRADE (build 235), on the XP box's own
+     character - "don't put the character on the grade card, it's perfect
+     being just on the xp box" (build 236). It reacts when the grade card
+     LANDS, not when it is built: the reveal is staged, and a reaction
+     played while the grade is still hidden is one nobody saw. */
   if(!run.retake && (run.total > 0 || run.gameLost)){
-    const gc = document.createElement("div");
-    gc.className = "rs-grade-char char-live";
-    gc.dataset.react = gradeReaction(run);
-    try{ gc.appendChild(buildAvatarCharSVGSafe(store.avatarChar || AVATAR_CHARACTERS[0].id)); }catch(e){}
-    grade.classList.add("has-char");
-    grade.appendChild(gc);
     const react = () => {
-      if(gc.classList.contains("char-react-" + gc.dataset.react)) return;
-      gc.classList.remove("char-live");
-      gc.classList.add("char-react-" + gc.dataset.react);
+      const av = xp.querySelector(".results-level-avatar");
+      if(!av || av.dataset.reacted) return;
+      av.dataset.reacted = "1";
+      av.classList.remove("char-live");
+      av.classList.add("char-react-" + gradeReaction(run));
     };
-    if(opts && opts.instant) react();
+    if(opts && opts.instant) setTimeout(react, 0);
     else {
       const mo = new MutationObserver(() => {
         if(grade.classList.contains("rs-in") || grade.classList.contains("rs-in-now")){
@@ -60901,12 +61132,16 @@ function playVroomRaceCutscene(ranked){
         }));
       }
     });
+    /* A podium from four people up; under that, one winner. */
+    const placed = vroomPlaces(sorted.length);
     sorted.forEach((x, i) => {
-      if(i < 3){
+      if(i < placed){
         setTimeout(() => {
           x.row.classList.add("place-" + (i + 1));
-          x.place.textContent = ["1st", "2nd", "3rd"][i];
-        }, quiet ? 0 : 900 + (2 - i) * 550);
+          x.place.textContent = placed === 1 ? "Winner" : ["1st", "2nd", "3rd"][i];
+          /* The winner does their thing (build 235). */
+          if(i === 0){ const f = x.row.querySelector(".vrc-fig"); if(f) f.classList.add("char-react-win"); }
+        }, quiet ? 0 : 900 + (placed - 1 - i) * 550);
       }
     });
     if(!quiet) setTimeout(() => { if(sorted[0] && sorted[0].r.key === me) celebrate(["#FFD37A", "#F5C542", "#FFF1B8"]); }, 2700);
@@ -61219,7 +61454,9 @@ function showVirtualRoomResults(){
       }
       const rank = document.createElement("span");
       rank.className = "lb-rank";
-      if(allIn){ renderRankMarker(rank, i + 1); }
+      /* Under four people only the winner is placed (VROOM_PODIUM_MIN). */
+      if(allIn && i < vroomPlaces(entries.length)){ renderRankMarker(rank, i + 1); }
+      else if(allIn){ rank.classList.add("is-unplaced"); rank.textContent = "\u00b7"; }
       else { rank.classList.add("is-pending"); rank.textContent = p.finished ? "\u2713" : "\u00b7"; }
       /* THE SAME TREATMENT AS THE LOBBY, because it is the same moment
          at the other end: "while in a lobby or after a match in the
@@ -63939,6 +64176,9 @@ function showProfile(defaultTab){
     "Correct answers": "How many of those you got right first time. There is no second chance on a question, so this never counts a retry.",
     "Tests finished": "Drills, exams and Game runs you played to the end. The daily question is not a test.",
     "Hundos": "Units you have finished with every question right. A run covering three units can earn three, and the daily question earns none.",
+    "Matches played": "Virtual Room matches you finished - races, Tug of War and Battle.",
+    "First-place finishes": "Races you won outright, and team matches your side won. It needs at least one other person in the room.",
+    "Top-3 finishes": "Races where you finished first, second or third - in a room of four or more. With fewer than four there is no podium, so only a win counts, as a first place.",
     "All-time best answer streak": "Your longest run of correct answers ever. It carries over from test to test, so a streak can start in one test and keep going in the next. The daily question never counts either way."
   };
   const statWhyBox = document.createElement("p");
@@ -64045,6 +64285,23 @@ function showProfile(defaultTab){
   });
   testingStatsSect.appendChild(lifeGrid);
   statsTab.appendChild(testingStatsSect);
+
+  /* ---- VIRTUAL ROOM (build 236) ----
+     "Add a section for virtual room ... like top 3 finishes, and first
+     place finishes." Top three counts only in a room of four or more -
+     see VROOM_PODIUM_MIN - which the card's explanation says. */
+  const vrSect = document.createElement("div");
+  vrSect.className = "points-progress-sect"; vrSect.style.marginTop = "1rem";
+  const vrHead = document.createElement("p");
+  vrHead.className = "slab"; vrHead.textContent = "Virtual Room";
+  vrSect.appendChild(vrHead);
+  const vrGrid = document.createElement("div");
+  vrGrid.className = "stat-grid";
+  [["Matches played", String(store.vrMatches || 0)],
+   ["First-place finishes", String(store.vrWins || 0)],
+   ["Top-3 finishes", String(store.vrTop3 || 0)]].forEach(([label, val]) => vrGrid.appendChild(makeStatCard(label, val)));
+  vrSect.appendChild(vrGrid);
+  statsTab.appendChild(vrSect);
   /* Below both grids, so one panel serves ten cards - see makeStatCard.
      Below rather than between them because a panel in the middle pushes
      the second grid down every time it opens, and a number moving out
@@ -64902,6 +65159,21 @@ function buildRanksTab(){
       const below = topDown[i + 1];
       const lit = rankPct(below) >= 1 ? 1 : below === nextKey ? (heroStepPct != null ? heroStepPct : rankPct(below)) : 0;
       road.style.setProperty("--rank-color", RANK_COLOR[below]);
+      /* FROM THIS RANK'S COLOUR TO THE NEXT ONE'S (build 236): "ensure
+         the color on that progress line kinda blends from the previous
+         color to the next". */
+      road.style.setProperty("--from-color", RANK_COLOR[key]);
+      /* AND A LIGHT AT THE END OF THE FILL on the stretch you are on - "it'd
+         be cool if that line got closer and closer as you progress to the
+         next rank". It rides down the road with your progress. */
+      if(lit > 0 && lit < 1 && celebrateKeys.indexOf(below) < 0){
+        const tip = document.createElement("span");
+        tip.className = "rankmap-roadtip";
+        tip.setAttribute("aria-hidden", "true");
+        tip.style.setProperty("--rank-color", RANK_COLOR[below]);
+        stop.appendChild(tip);
+        fillsToAnimate.push({ el: tip, prop: "--tip", value: String(Math.round(lit * 1000) / 1000) });
+      }
       /* The stretch into a rank about to be celebrated waits for its
          moment, dark, instead of filling with everything else. */
       if(celebrateKeys.indexOf(below) >= 0) roadFill.dataset.celebrateFor = below;
@@ -64988,14 +65260,16 @@ function buildRanksTab(){
        wide preview across the card now, cut the way a Profile cover is,
        and - like every other reward here - in black and white until the
        rank is yours. */
+    /* THE RANK'S BANNER AS ONE MORE REWARD CHIP (build 236): "I didn't
+       mean to make that extremely large ... make it the same size as the
+       other stuff listed." Build 234 gave it a wide preview across the
+       card; it is a chip now, with a small strip of the banner where the
+       other chips have their dot or icon, and it greys out with them. */
     BANNERS.filter(b => b.rank === key).forEach(b => {
-      const prev = document.createElement("div");
-      prev.className = "rankmap-bannerprev";
-      try{ prev.appendChild(buildBannerArt(b.id)); }catch(e){}
-      const cap = document.createElement("span");
-      cap.className = "rankmap-bannercap"; cap.textContent = b.name + " banner";
-      prev.appendChild(cap);
-      card.appendChild(prev);
+      const thumb = document.createElement("span");
+      thumb.className = "rankmap-giftbanner";
+      try{ thumb.appendChild(buildBannerArt(b.id)); }catch(e){}
+      gift("is-banner", thumb, b.name + " banner");
     });
     if(pending){
       const burst = document.createElement("span");

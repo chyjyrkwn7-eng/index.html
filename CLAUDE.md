@@ -6414,3 +6414,72 @@ list. Robot and Astronaut still scan and twinkle with no class: that was
 already so, and it is left alone.
 
 Section 20 of check-behaviour covers this list and fails on 234.
+
+### Build 236 - road map chips and light; unit list tools; Virtual Room podiums
+
+**The road map.**
+- **The rank banners are reward chips again**, the same size as the
+  theme, flare and character chips: a small strip of the banner stands
+  where the others have a dot or icon (`.rankmap-giftbanner`). Build
+  234's wide preview was read as far bigger than asked for.
+- **The road blends** from the rank above to the rank below
+  (`--from-color` to `--rank-color`).
+- **The stretch you are on** carries a light at the end of the fill
+  (`.rankmap-roadtip`, `top` driven by `--tip`), so it visibly creeps
+  towards the next rank. Its ping fades to nothing at both ends and is
+  listed in check-loops.
+
+**Art.**
+- The Officer's aviators are black glass with a black frame.
+- Zeus's bolt and Poseidon's trident sit on a dark carved panel in the
+  socle, a unit higher than before. At their old height the tile
+  clipped them, and light stone behind a light symbol hid it.
+
+**The unit details list.**
+- The doors read "Tap to see flagged questions" / "Tap to see most
+  missed", and Hundos no longer mentions the badge.
+- In the list the card drops the badge bar (`.is-listing`).
+- The sticky header runs edge to edge and fades out, instead of the old
+  inset block with hard sides.
+- A search with a Clear button filters the list.
+- Each question carries the in-test flag, made louder, with its word.
+- Unflag every question in the unit / Clear most missed for the unit,
+  each behind an inline warning. Clearing most missed empties `r` (the
+  30-day miss stamps) for the unit's questions and leaves `n`/`m`,
+  hundos and history alone.
+- Most missed is recomputed on every render, so a question leaving the
+  list is replaced by the next-worst.
+
+**The Virtual Room podium needs four people** (`VROOM_PODIUM_MIN`,
+`vroomPlaces(n)`). With fewer:
+- The results rank only the winner and give everyone else a dot.
+- The race cutscene labels "Winner" instead of 1st / 2nd / 3rd.
+- The podium cutscene draws one block.
+
+**Top-three finishes** (`store.vrTop3`) count only in a room of four or
+more. They are remembered per room in `vrTop3Rooms`, so a rebuilt
+results screen cannot count one twice. `seedVroomTop3()` backfills once
+from Firestore (`vrTop3RetroDone`). It is separate from
+`seedVroomHistory`, which everyone has already run.
+
+**Profile → Stats** has a Virtual Room section: Matches played,
+First-place finishes and Top-3 finishes, each with its explanation.
+
+**The results character** reacts on the XP box's own avatar
+(`.results-level-avatar`, live until the grade lands). The one on the
+grade card from build 235 is gone: "it's perfect being just on the xp
+box".
+
+**Data, outside the app (Madison's request).** Four rankings rows were
+named Alfred Lake. The rows for the level-5 account and the two level-1
+accounts were deleted from `leaderboard`. The level-20 "- ALFRED LAKE -"
+row was left as it was.
+- The level-5 account's progress is untouched. Its row comes back the
+  next time that device syncs, which is the point: it shows he is
+  running two accounts.
+- The two level-1 accounts' `progress` documents were NOT deleted. The
+  permission classifier refused to read progress documents as PII,
+  and that needs Madison's say-so. Until they are gone, those two rows
+  will also come back if either device is used again.
+
+Section 21 of check-behaviour is this build's gate and fails on 235.
