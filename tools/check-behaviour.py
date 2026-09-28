@@ -1200,6 +1200,84 @@ def check_b220(br):
     ctx.close()
 
 
+def check_b221(br):
+    """Builds 221-222: the Virtual Room countdown, race line, leaderboard,
+    Tug of War, and the chat. Written against build 220, where each fails."""
+    print("\n12. builds 221-222: the room's countdown and leaderboard, Tug, the chat")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""()=>{
+      const out = {};
+      // The countdown: opaque, and the number never fades out.
+      showVroomCountdown(Date.now() + 4000, () => {});
+      const ov = document.getElementById('vroom-reveal-overlay');
+      out.bg = getComputedStyle(ov).backgroundColor;
+      out.ring = !!document.getElementById('vroom-reveal-ring');
+      const kf = [...document.styleSheets].flatMap(sh => { try{ return [...sh.cssRules]; }catch(e){ return []; } })
+        .filter(r => r.type === CSSRule.KEYFRAMES_RULE && r.name === 'vroom-reveal-pulse')[0];
+      out.fades = kf ? /opacity/.test(kf.cssText) : null;
+      ov.remove();
+      // Any ordinary screen takes the race line down.
+      raceBarEl.hidden = false; showHome();
+      out.raceAfterHome = raceBarEl.hidden;
+      // Correct answers and speed are counted last.
+      out.stepsTail = VROOM_XP_STEPS.slice(-2).map(x => x.key);
+      return out; }""")
+    check("the room's countdown is opaque, with a ring, and its number never fades",
+          r["bg"] in ("rgb(10, 10, 10)",) and r["ring"] and r["fades"] is False, r)
+    check("the race line is gone from Home", r["raceAfterHome"] is True, r)
+    check("speed and correct answers are counted last", r["stepsTail"] == ["speed", "correct"], r)
+
+    lb = pg.evaluate("""()=>{
+      vroomMyKey = 'me';
+      const L = (c, s) => [{key:'correct', value:c}, {key:'speed', value:s}];
+      const mk = (k, a, j, lines) => ({ key:k, p:{ name:k, avatarChar:a, joinedAt:j, xpLines:lines }, xp: lines.reduce((t, l) => t + l.value, 0) });
+      const r = [mk('me','ninja',1,L(50,10)), mk('bo','robot',2,L(40,90))].sort((a, b) => b.xp - a.xp);
+      playVroomRaceCutscene(r);
+      const rows = [...document.querySelectorAll('#vroom-race-cut .vrc-row')];
+      const out = { colours: rows.map(x => x.style.getPropertyValue('--pl')), dropping: rows.every(x => x.classList.contains('is-dropping')) };
+      out.chatAbove = (()=>{ document.body.classList.add('x'); const d = document.querySelector('.chatdock');
+        return d ? Number(getComputedStyle(d).zIndex) : null; })();
+      document.getElementById('vroom-race-cut').remove();
+      return out; }""")
+    check("each player's bar is in their own colour, and the rows drop in",
+          len(set(lb["colours"])) == 2 and all(lb["colours"]) and lb["dropping"], lb)
+    check("the chat is above the leaderboard", lb["chatAbove"] is None or lb["chatAbove"] > 430, lb)
+
+    c = pg.evaluate("""()=>{
+      const out = {};
+      startChatDock && startChatDock();
+      out.inbox = [...document.querySelectorAll('.chatdock-tab')].map(b => b.textContent.replace(/[0-9+]/g, '').trim());
+      // The panel: emoji and plus beside the field, and polls vote once each.
+      const host = document.createElement('div'); document.body.appendChild(host);
+      let written = null;
+      const fake = { code: () => 'X', myKey: () => 'me', colorFor: () => null, isVisible: () => true, cap: 999, keep: 999,
+                     shouldTrim: () => false, label: 'Test' };
+      const realDb = fbDb;
+      fbDb = { collection: () => ({ doc: () => ({ update: (p) => { written = p; return Promise.resolve(); }, set: () => Promise.resolve(),
+               get: () => Promise.resolve({ exists:false }) }) }) };
+      const clean = buildVroomChatPanel(host, fake);
+      out.tools = [!!host.querySelector('.vroom-chat-emojibtn'), !!host.querySelector('.vroom-chat-plusbtn')];
+      host.querySelector('.vroom-chat-emojibtn').click();
+      out.emoji = [...host.querySelectorAll('.vroom-chat-emoji')].map(b => b.textContent);
+      fbDb = realDb;
+      if(typeof clean === 'function') clean();
+      host.remove();
+      return out; }""")
+    check("the second tab is called Inbox", "Inbox" in c["inbox"], c["inbox"])
+    check("the chat has an emoji tray and a photo/poll button", all(c["tools"]) and len(c["emoji"]) >= 30, c["tools"])
+    check("the emoji tray has the one that was asked for", "\U0001F595" in c["emoji"], len(c["emoji"]))
+
+    t = pg.evaluate("""()=>{
+      // Tug: odd rooms wait; the pot goes to the winners.
+      const src = String(showVirtualRoomLobby);
+      return { oddGate: /oddTug/.test(src), perRight: TUG_XP_PER_RIGHT,
+               countdown: /showVroomCountdown\\(tugStartAt/.test(String(beginTugMatch)),
+               board: /Team leaderboard in/.test(String(showTugResult)) }; }""")
+    check("Tug waits for even teams, counts down, pays the winners and shows a team board",
+          t["oddGate"] and t["countdown"] and t["board"] and t["perRight"] > 0, t)
+    ctx.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=CHROME)
@@ -1215,6 +1293,7 @@ def main():
             check_update_and_cards(br)
             check_b218(br)
             check_b220(br)
+            check_b221(br)
         finally:
             br.close()
     SERVER.shutdown()

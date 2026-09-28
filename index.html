@@ -1257,8 +1257,10 @@
   /* The big synced reveal itself — question and answer choices are
      already rendered underneath this (see beginVroomSyncedReveal()),
      so removing this overlay at zero is instant, no further loading. */
+  /* OPAQUE. At .97 the first question showed through as a ghost for the
+     whole count - part of what read as the screen "flashing". */
   #vroom-reveal-overlay{
-    position:fixed; inset:0; z-index:120; background:rgba(10,10,10,.97);
+    position:fixed; inset:0; z-index:120; background:#0A0A0A;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     gap:.4rem;
   }
@@ -1277,13 +1279,28 @@
     background:linear-gradient(90deg, var(--theme-c1), var(--theme-c2), var(--theme-c3));
     -webkit-background-clip:text; background-clip:text; color:transparent;
   }
+  /* A TICK, NOT A FLASH. Each number used to arrive from opacity 0 at
+     1.5x - once a second for up to fifteen seconds, which is a strobe:
+     reported as "the Virtual Room countdown is flashing". The number
+     now changes in place with a small settle and never goes dark, and
+     the passing of time is carried by a ring draining round it. */
   @media (prefers-reduced-motion:no-preference){
-    #vroom-reveal-num.vroom-reveal-pulse{ animation:vroom-reveal-pulse .5s cubic-bezier(.2,.9,.3,1); }
+    #vroom-reveal-num.vroom-reveal-pulse{ animation:vroom-reveal-pulse .45s cubic-bezier(.2,.9,.3,1); }
   }
   @keyframes vroom-reveal-pulse{
-    0%{ transform:scale(1.5); opacity:0; }
-    60%{ transform:scale(.94); opacity:1; }
+    0%{ transform:scale(1.12); }
     100%{ transform:scale(1); }
+  }
+  #vroom-reveal-ring{
+    position:relative; width:11rem; height:11rem; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+  }
+  #vroom-reveal-ring::before{
+    content:""; position:absolute; inset:0; border-radius:50%;
+    background:conic-gradient(var(--theme-c2) calc(var(--left, 1) * 360deg), rgba(255,255,255,.08) 0);
+    -webkit-mask:radial-gradient(circle, transparent 64%, #000 65.5%);
+            mask:radial-gradient(circle, transparent 64%, #000 65.5%);
+    transition:--left .1s linear;
   }
 
   #tour-overlay{
@@ -3979,6 +3996,11 @@
      anything a banner is announcing is also a row in Notifications. */
   body.chatdock-open .daily-alert,
   body.chatdock-open .app-banner,
+  /* A toast said while the chat is open (muting it, most obviously) was
+     drawn at z-index 70 under a sheet at 300 - "Chat muted" appeared
+     where nobody could see it. With the sheet up, toasts go above it and
+     to the top, clear of the input at the bottom. */
+  body.chatdock-open .toast{ z-index:390; top:calc(env(safe-area-inset-top, 0px) + .75rem); bottom:auto; }
   body.chatdock-open .vroom-chat-alert{
     opacity:0 !important; pointer-events:none !important;
   }
@@ -4436,6 +4458,59 @@
     text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
   .vroom-chat-row{ display:flex; gap:.5rem; }
+  .chatdock-chatrow-kind{ flex:0 0 auto; font-size:.62rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase;
+    padding:.12rem .45rem; border-radius:999px; color:#9CCBFF; background:rgba(111,180,255,.12); border:1px solid rgba(111,180,255,.3); }
+  .chatdock-chatrow-kind.is-group{ color:#C9B6FF; background:rgba(160,120,255,.12); border-color:rgba(160,120,255,.35); }
+  .chatdock-roomwho{ cursor:pointer; }
+  .chat-member{ display:flex; align-items:center; gap:.6rem; padding:.45rem 0; border-top:1px solid rgba(255,255,255,.06); }
+  .chat-member-art{ width:2.3rem; height:2.3rem; flex:0 0 auto; }
+  .chat-member-name{ flex:1 1 auto; min-width:0; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .chat-member-state{ font-size:.72rem; color:var(--soft); }
+  .chat-member-state.is-here{ color:#4ADE80; }
+  /* Build 222: the two tool buttons, the tray, photos and polls. */
+  .vroom-chat-tool{
+    -webkit-appearance:none; appearance:none; flex:0 0 auto; width:2.6rem; min-height:44px; border-radius:12px;
+    border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.06); color:#fff;
+    font-size:1.15rem; line-height:1; cursor:pointer; -webkit-tap-highlight-color:transparent;
+  }
+  .vroom-chat-plusbtn{ font-size:1.4rem; font-weight:700; }
+  .vroom-chat{ position:relative; }
+  .vroom-chat-tray{
+    position:absolute; left:0; right:0; bottom:3.6rem; z-index:5;
+    display:grid; grid-template-columns:repeat(8, minmax(0, 1fr)); gap:.2rem; padding:.5rem;
+    border-radius:16px; background:rgba(20,24,32,.96); border:1px solid rgba(255,255,255,.12);
+    box-shadow:0 10px 30px rgba(0,0,0,.5); max-height:12rem; overflow:auto;
+  }
+  .vroom-chat-tray.is-menu{ grid-template-columns:1fr; right:auto; min-width:10rem; }
+  .vroom-chat-emoji{ -webkit-appearance:none; appearance:none; border:none; background:none; font-size:1.35rem; min-height:40px; border-radius:10px; cursor:pointer; }
+  .vroom-chat-emoji:active{ background:rgba(255,255,255,.1); }
+  .vroom-chat-menuitem{ -webkit-appearance:none; appearance:none; border:none; background:none; color:#fff; text-align:left;
+    font:inherit; font-weight:700; padding:.7rem .8rem; min-height:44px; border-radius:10px; cursor:pointer; }
+  .vroom-chat-menuitem:active{ background:rgba(255,255,255,.08); }
+  .vroom-chat-photo{ display:block; margin:.3rem 0 .1rem; max-width:min(15rem, 100%); border-radius:12px; overflow:hidden;
+    background:rgba(255,255,255,.06); min-height:6rem; cursor:zoom-in; }
+  .vroom-chat-photo img{ display:block; width:100%; height:auto; }
+  .vroom-chat-photo.is-missing::after{ content:"Photo no longer available"; display:block; padding:1rem; font-size:.75rem; color:var(--soft); }
+  .chat-photo-view{ position:fixed; inset:0; z-index:460; background:rgba(0,0,0,.92); display:flex; align-items:center; justify-content:center; padding:1rem; cursor:zoom-out; }
+  .chat-photo-view img{ max-width:100%; max-height:100%; border-radius:10px; }
+  .vroom-chat-poll{ margin:.35rem 0 .1rem; padding:.6rem; border-radius:14px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); text-align:left; }
+  .vroom-chat-poll-q{ margin:0 0 .45rem; font-weight:800; font-size:.9rem; color:#fff; }
+  .vroom-chat-poll-opt{ position:relative; display:flex; align-items:center; justify-content:space-between; gap:.5rem;
+    padding:.55rem .65rem; margin:.3rem 0; border-radius:10px; min-height:40px; overflow:hidden; cursor:pointer;
+    border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.03); }
+  .vroom-chat-poll-opt::before{ content:""; position:absolute; inset:0 auto 0 0; width:var(--share, 0%);
+    background:color-mix(in srgb, var(--theme-c2, #7CC8FF) 28%, transparent); transition:width .5s ease; }
+  .vroom-chat-poll-opt.is-mine{ border-color:color-mix(in srgb, var(--theme-c2, #7CC8FF) 70%, transparent); }
+  .vroom-chat-poll-lab, .vroom-chat-poll-n{ position:relative; font-size:.85rem; font-weight:700; color:#fff; }
+  .vroom-chat-poll-n{ font-family:var(--mono); }
+  .vroom-chat-poll-foot{ margin:.3rem 0 0; font-size:.7rem; color:var(--soft); }
+  .chat-poll-sheet .invite-sheet{ display:flex; flex-direction:column; gap:.55rem; }
+  /* Opened FROM the chat, so above it (the dock is 300, 370 while its
+     button is being introduced). */
+  .invite-overlay.chat-poll-sheet, .invite-overlay.chat-members{ z-index:400; }
+  .chat-poll-opts{ display:flex; flex-direction:column; gap:.45rem; }
+  .chat-poll-acts{ display:flex; gap:.6rem; margin-top:.3rem; }
+  .chat-poll-acts .next{ flex:1 1 0; }
   .vroom-chat-input{
     flex:1; min-width:0; padding:.55rem .8rem; border-radius:999px;
     border:1px solid var(--rule); background:var(--panel); color:var(--ink); font:inherit;
@@ -15194,6 +15269,47 @@
   .vrc-row[class*="place-"] .vrc-fill{ background:linear-gradient(90deg, color-mix(in srgb, var(--pc) 70%, #000), var(--pc)); box-shadow:0 0 14px color-mix(in srgb, var(--pc) 70%, transparent); }
   .vrc-row[class*="place-"] .vrc-num{ color:var(--pc); }
   .vrc-row[class*="place-"] .vrc-fig{ filter:drop-shadow(0 0 10px var(--pc)); }
+  /* Player colours, the drop-in, and chat above the whole thing. */
+  .vrc-row:not([class*="place-"]) .vrc-fill{
+    background:linear-gradient(90deg, color-mix(in srgb, var(--pl, #2E87F0) 55%, #0A0C18), var(--pl, #7CC8FF));
+    box-shadow:0 0 12px color-mix(in srgb, var(--pl, #3A8CFF) 55%, transparent);
+  }
+  .vrc-row:not([class*="place-"]) .vrc-num{ color:color-mix(in srgb, var(--pl, #7CC8FF) 70%, #fff); }
+  .vrc-row:not([class*="place-"]) .vrc-gain{ color:color-mix(in srgb, var(--pl, #9FE0FF) 60%, #fff); }
+  .vrc-row.is-dropping{ animation:vrc-drop .7s cubic-bezier(.2,1.25,.35,1) var(--drop, .3s) both; }
+  @keyframes vrc-drop{ 0%{ opacity:0; translate:0 -46px; } 100%{ opacity:1; translate:0 0; } }
+  /* "Chat must work during the leaderboard" - the dock sat at 300 under
+     the cutscene's 430. */
+  body:has(#vroom-race-cut) .chatdock{ z-index:440; }
+  /* Tug: the pause between questions, the pot, the team board. */
+  .tug-pause{ height:4px; border-radius:999px; background:rgba(255,255,255,.08); overflow:hidden; margin:.8rem auto 0; width:min(100%, 18rem); }
+  .tug-pause > span{ display:block; height:100%; width:100%; background:var(--theme-c2, #7CC8FF);
+    transform-origin:left; animation:tug-pause var(--pause, 1500ms) linear both; }
+  @keyframes tug-pause{ from{ transform:scaleX(1); } to{ transform:scaleX(0); } }
+  .tug-xp{ margin:1.1rem auto 0; text-align:center; padding:.9rem 1rem; border-radius:16px; width:100%; box-sizing:border-box;
+    background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); }
+  .tug-xp.is-won{ border-color:rgba(255,211,122,.55); box-shadow:0 0 26px -6px rgba(255,200,80,.6); }
+  .tug-xp-num{ margin:0; font-family:var(--mono); font-size:1.6rem; font-weight:800; color:#fff; }
+  .tug-xp.is-won .tug-xp-num{ color:#FFD37A; }
+  .tug-xp.is-lost .tug-xp-num{ color:var(--soft); }
+  .tug-xp-why{ margin:.25rem 0 0; font-size:.8rem; color:var(--soft); }
+  .tug-board{ margin:1.1rem 0 0; width:100%; }
+  .tug-board-head{ margin:0 0 .6rem; text-align:center; font-size:.74rem; font-weight:800; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--soft); font-variant-numeric:tabular-nums; }
+  .tug-board-cols{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:.7rem; transition:opacity .4s ease; }
+  .tug-board.is-pending .tug-board-cols{ opacity:0; }
+  .tug-board-col{ padding:.7rem .7rem .5rem; border-radius:16px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); min-width:0; }
+  .tug-board-col.is-winner{ border-color:rgba(255,211,122,.5); background:rgba(255,211,122,.06); }
+  .tug-board-side{ margin:0 0 .45rem; font-size:.72rem; font-weight:800; color:#fff; }
+  .tug-board-row{ display:flex; align-items:center; gap:.45rem; padding:.3rem 0; min-width:0; }
+  .tug-board.is-in .tug-board-row{ animation:vrc-drop .6s cubic-bezier(.2,1.25,.35,1) calc(var(--i, 0) * .15s) both; }
+  .tug-board-av{ width:2rem; height:2rem; flex:0 0 auto; }
+  .tug-board-av svg{ width:100%; height:100%; display:block; }
+  .tug-board-name{ flex:1 1 auto; min-width:0; font-size:.82rem; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tug-board-row.is-me .tug-board-name{ color:#9CCBFF; }
+  .tug-board-n{ font-family:var(--mono); font-weight:800; font-size:.9rem; }
+
+  .vroom-prep.is-counting .vroom-prep-spin{ display:none; }
   .vrc-exits{ display:flex; gap:.6rem; margin-top:0; padding-top:1rem; opacity:0; transform:translateY(10px); transition:opacity .5s ease, transform .5s ease; pointer-events:none; }
   .vrc.is-done .vrc-exits{ opacity:1; transform:none; pointer-events:auto; }
   .vrc-exits .next{ flex:1 1 0; min-width:0; }
@@ -27877,6 +27993,13 @@ function setActiveNav(name){
      Settings), so it's the natural place to make sure a results
      screen's own forced hide never lingers past that one screen. */
   window.forceHideBottomTabs = false;
+  /* THE RACE LINE BELONGS TO A RACE. "The race shows up on the main menu
+     when it's finished" - it is position:fixed on <body>, so no screen
+     change ever removed it, and only the room's own screens knew to
+     hide it. Every ordinary screen comes through here, so this is the
+     one place that guarantees it is gone off all of them. */
+  if(typeof raceBarEl !== "undefined" && raceBarEl) raceBarEl.hidden = true;
+  if(typeof stopVroomRaceListener === "function") stopVroomRaceListener();
   /* Same idea, for the leaderboard's live Firestore listener \u2014 found
      while verifying "live updates work well": renderLeaderboardList()
      only ever detaches its OWN previous listener before attaching a
@@ -30731,6 +30854,7 @@ function attachInbox(){
       });
       if(learned) saveStore();
       try{ syncChatDockDot(); }catch(e){}
+      try{ previewNewPings(); }catch(e){}
       try{ if(chatDockOpen && chatDockTab === "notifs") renderNotifications(); }catch(e){}
       try{ checkLobbyInvites(); checkFriendRequests(); checkChatInvites(); }catch(e){}
     });
@@ -37088,7 +37212,7 @@ const RELEASE_NOTES = [
       { label: "Chat & Friends", items: [
         { icon: buildDevicesIcon, color: "#8E7CF5", title: "Chat Lobbies", body: "A button in the top right of every screen opens a chat you can keep going while you study. Start one, invite your friends, and only the people in it can see what is said \u2014 leave and you are out until somebody invites you back." },
         { icon: buildPhoneAddIcon, color: "#4ADE80", title: "Friends", body: "Add a classmate with your friend code from Profile \u203a Friends, or tap anybody on the Leaderboard and send them a request. Friends are who you can invite to a chat or a Virtual Room." },
-        { icon: buildCloudIcon, color: "#3DA9FC", title: "Notifications", body: "The same button holds everything waiting on you \u2014 friend requests, chat invites and Virtual Room invites \u2014 with a count on it when there is something new, and a preview when somebody sends a message." },
+        { icon: buildCloudIcon, color: "#3DA9FC", title: "Inbox", body: "The same button holds everything waiting on you \u2014 friend requests, chat invites and Virtual Room invites \u2014 with a count on it when there is something new, and a preview when somebody sends a message." },
         { icon: buildOfflineIcon, color: "#F5B54D", title: "Who Is Online", body: "The friends list now shows who actually has the app open, rather than who answered a question recently." }
       ]},
       { label: "Invites replace codes", items: [
@@ -40505,6 +40629,7 @@ const CHAT_CTX = {
        set, not the raw map - somebody whose phone died is invitable
        again, which is the same rule the roster itself draws by. */
     liveChatParticipants = p;
+    chatAllMembers = data.participants || {};
     renderChatRoster(p);
     announceChatRoomChange(data, p);
     /* THE LIST'S NAMES COME FROM HERE, which is the only place that
@@ -40561,6 +40686,50 @@ const CHAT_CTX = {
 };
 const CHAT_PING_MIN_MS = 4000;
 const chatPingAt = {};
+/* ---- A MESSAGE IN ANOTHER CHAT GETS A PREVIEW, AND THE PREVIEW OPENS IT ----
+   "Tapping the preview should open the message." Only the chat you have
+   open ever showed one, and tapping it opened the dock on whatever was
+   there. A ping from any other chat now pops the same banner, and a tap
+   opens the dock ON THAT CHAT. The first snapshot only records what is
+   already there - launching the app must not replay yesterday's pings. */
+let pingPreviewSeen = null;
+function previewNewPings(){
+  const pings = chatPings();
+  if(pingPreviewSeen === null){
+    pingPreviewSeen = {};
+    Object.keys(pings).forEach(c => pingPreviewSeen[c] = pings[c].at || 0);
+    return;
+  }
+  Object.keys(pings).forEach(code => {
+    const m = pings[code];
+    if((m.at || 0) <= (pingPreviewSeen[code] || 0)) return;
+    pingPreviewSeen[code] = m.at || Date.now();
+    const lookingAtIt = code === chatRoomCode && chatDockOpen && chatDockTab === "chat";
+    if(lookingAtIt || isChatMuted(code) || theme.muteBanners) return;
+    showChatPreview(m.firstName || "Someone", m.text || "sent a message", () => {
+      chatDockTab = "chat";
+      openChatDock();
+      try{ enterChatRoom(code); }catch(e){}
+    });
+  });
+}
+function showChatPreview(who, text, onTap){
+  document.querySelectorAll(".vroom-chat-alert.is-ping").forEach(e => e.remove());
+  const bar = document.createElement("div");
+  bar.className = "vroom-chat-alert is-ping";
+  bar.setAttribute("role", "button");
+  const w = document.createElement("span"); w.className = "vroom-chat-alert-who"; w.textContent = who;
+  const t = document.createElement("span"); t.className = "vroom-chat-alert-text"; t.textContent = text;
+  bar.append(w, t);
+  document.body.appendChild(bar);
+  const off = topNoticeOffset(bar);
+  if(off != null) bar.style.top = Math.round(off) + "px";
+  let gone = false;
+  const drop = () => { if(gone) return; gone = true; bar.classList.remove("show"); setTimeout(() => bar.remove(), 260); };
+  bar.addEventListener("click", () => { drop(); onTap(); });
+  requestAnimationFrame(() => bar.classList.add("show"));
+  setTimeout(drop, 4600);
+}
 /* The pings waiting for THIS device, newest per chat. */
 function chatPings(){
   const out = {};
@@ -40635,6 +40804,60 @@ function presentParticipants(participants){
 /* The roster itself. Avatars in join order, your own first, with the
    name under each - and nothing else on them: a chat header has room
    for who is here and not for a second set of stats. */
+/* EVERYBODY IN THE CHAT, here right now or not - the roster in the
+   header only shows who is present. */
+let chatAllMembers = {};
+/* ---- MEMBERS ----
+   "Show who is in the chat." Tapping the header opens the whole list:
+   everybody who is a member, who of them is here now, and a way to
+   message any of them on their own. */
+function openChatMembers(){
+  const members = chatAllMembers || {};
+  const here = liveChatParticipants || {};
+  const keys = Object.keys(members).sort((a, b) =>
+    (a === chatMyKey ? -1 : b === chatMyKey ? 1 : 0) ||
+    ((members[a] || {}).joinedAt || 0) - ((members[b] || {}).joinedAt || 0));
+  const ov = document.createElement("div");
+  ov.className = "invite-overlay chat-members";
+  const sh = document.createElement("div");
+  sh.className = "invite-sheet";
+  const h = document.createElement("p");
+  h.className = "invite-sheet-title";
+  h.textContent = (keys.length === 2 ? "Direct message" : "Group chat") + " \u00b7 " + keys.length + (keys.length === 1 ? " member" : " members");
+  sh.appendChild(h);
+  keys.forEach(k => {
+    const e = members[k] || {};
+    const row = document.createElement("div");
+    row.className = "chat-member";
+    const art = document.createElement("span");
+    art.className = "chat-member-art";
+    art.appendChild(avatarSpanFor({ avatarChar: e.avatarChar || "ninja" }));
+    const nm = document.createElement("span");
+    nm.className = "chat-member-name";
+    nm.textContent = k === chatMyKey ? (e.name || "You") + " (you)" : (e.name || "Classmate");
+    const st = document.createElement("span");
+    st.className = "chat-member-state" + (here[k] ? " is-here" : "");
+    st.textContent = here[k] ? "Here now" : "Away";
+    row.append(art, nm, st);
+    if(k !== chatMyKey){
+      const dm = document.createElement("button");
+      dm.type = "button"; dm.className = "next ghost chatdock-mini";
+      dm.textContent = "Message";
+      dm.addEventListener("click", () => { ov.remove(); openDirectChatWith({ pub: k, firstName: e.name, avatarChar: e.avatarChar }); });
+      if(keys.length > 2) row.appendChild(dm);
+    }
+    sh.appendChild(row);
+  });
+  const close = document.createElement("button");
+  close.type = "button"; close.className = "next ghost"; close.textContent = "Close";
+  close.style.marginTop = ".6rem";
+  close.addEventListener("click", () => ov.remove());
+  sh.appendChild(close);
+  ov.addEventListener("click", (ev) => { if(ev.target === ov) ov.remove(); });
+  ov.appendChild(sh);
+  document.body.appendChild(ov);
+  requestAnimationFrame(() => ov.classList.add("invite-overlay-show"));
+}
 function renderChatRoster(participants){
   const el = document.getElementById("chatdock-roomwho");
   if(!el) return;
@@ -41051,7 +41274,7 @@ function startChatDock(){
 
   const btn = document.createElement("button");
   btn.type = "button"; btn.className = "chatdock-btn"; btn.id = "chatdock-btn";
-  btn.setAttribute("aria-label", "Chat and notifications");
+  btn.setAttribute("aria-label", "Chat and inbox");
   btn.appendChild(chatDockIcon());
   const dot = document.createElement("span");
   dot.className = "chatdock-dot"; dot.id = "chatdock-dot"; dot.hidden = true;
@@ -41077,7 +41300,9 @@ function startChatDock(){
   chatTabBtn.textContent = "Chat";
   const notifTabBtn = document.createElement("button");
   notifTabBtn.type = "button"; notifTabBtn.className = "chatdock-tab"; notifTabBtn.dataset.tab = "notifs";
-  notifTabBtn.textContent = "Notifications";
+  /* "Inbox", not "Notifications" - asked for by name. It holds things
+     waiting on you to answer, which is what an inbox is. */
+  notifTabBtn.textContent = "Inbox";
   const notifCount = document.createElement("span");
   notifCount.className = "chatdock-tabcount"; notifCount.id = "chatdock-notifcount";
   notifCount.hidden = true;
@@ -41123,6 +41348,17 @@ function startChatDock(){
   host.append(btn, panel);
   document.body.appendChild(host);
   chatDock = host;
+  /* TAP OUTSIDE AND IT CLOSES. Captured on pointerdown so it wins before
+     the tap lands on whatever is underneath, and ignored for the things
+     the chat itself opens on top of the page (the invite sheet, a photo,
+     a preview, a toast), which are part of using it. */
+  document.addEventListener("pointerdown", (e) => {
+    if(!chatDockOpen) return;
+    const t = e.target;
+    if(!t || host.contains(t)) return;
+    if(t.closest && t.closest(".invite-overlay, .vroom-chat-alert, .toast, #tour-overlay, .person-overlay, .chat-photo-view, .chat-poll-sheet")) return;
+    closeChatDock();
+  }, true);
 
   /* ---- THE SHEET GESTURE, AND WHY THE OLD ONE GLITCHED ----
      It excluded the two scrollable LISTS and nothing else, so a touch
@@ -41395,7 +41631,13 @@ function rebuildChatTab(){
         when.className = "chatdock-chatrow-when";
         const top = document.createElement("span");
         top.className = "chatdock-chatrow-top";
-        top.append(nm, when);
+        /* DIRECT OR GROUP, said in a word - "you can't tell a DM from a
+           group chat". `with` is everybody else in it. */
+        const kind = document.createElement("span");
+        const others = (entry.with || []).length;
+        kind.className = "chatdock-chatrow-kind" + (others > 1 ? " is-group" : "");
+        kind.textContent = others > 1 ? "Group \u00b7 " + (others + 1) : "Direct";
+        top.append(nm, kind, when);
         open.appendChild(top);
         /* The code is shown ONLY when there is no name yet - an invite
            accepted and never opened has nobody's name in it, and two
@@ -41451,8 +41693,8 @@ function rebuildChatTab(){
     const n = document.createElement("p");
     n.className = "chatdock-note";
     n.textContent = list.length
-      ? "Start another chat, or open one above. Invitations turn up in Notifications."
-      : "Start a chat and invite your friends. If somebody invites you, it turns up in Notifications.";
+      ? "Start another chat, or open one above. Invitations turn up in your Inbox."
+      : "Start a chat and invite your friends. If somebody invites you, it turns up in your Inbox.";
     const start = document.createElement("button");
     start.type = "button"; start.className = "next chatdock-act";
     start.textContent = list.length ? "Start another chat" : "Start a chat";
@@ -41483,6 +41725,9 @@ function rebuildChatTab(){
   const who = document.createElement("span");
   who.className = "chatdock-roomwho"; who.id = "chatdock-roomwho";
   who.textContent = "Chat";
+  who.setAttribute("role", "button"); who.tabIndex = 0;
+  who.title = "See who is in this chat";
+  who.addEventListener("click", openChatMembers);
   const inviteBtn = document.createElement("button");
   inviteBtn.type = "button"; inviteBtn.className = "next chatdock-mini";
   inviteBtn.textContent = "Invite";
@@ -44619,7 +44864,10 @@ function beginRun(indexes, label, practiceMinutes, missedRetake){
      this is the same landing point, just immediate. */
   /* A retake opens straight onto its first question - "do not give that
      the loading screen thing, just open it straight up". */
-  if(runLabel === "Daily question" || isMissedRetake){ startRunNow(); }
+  /* A Virtual Room goes straight to its shared "Starting in" count:
+     it was LOADING TEST for three seconds and then a second countdown
+     from eleven, two waiting screens back to back for one wait. */
+  if(runLabel === "Daily question" || isMissedRetake || (inVirtualRoom && vroomStartAt)){ startRunNow(); }
   else { showCountdown(3); }
 }
 
@@ -44753,7 +45001,11 @@ function beginVroomSyncedReveal(){
   const num = document.createElement("p");
   num.id = "vroom-reveal-num";
   num.setAttribute("aria-live", "polite");
-  overlay.append(label, num);
+  const ring = document.createElement("div");
+  ring.id = "vroom-reveal-ring";
+  ring.appendChild(num);
+  overlay.append(label, ring);
+  const countFrom = Math.max(1000, vroomStartAt - Date.now());
   document.body.appendChild(overlay);
 
   const finish = () => {
@@ -44771,6 +45023,7 @@ function beginVroomSyncedReveal(){
     const remaining = vroomStartAt - Date.now();
     if(remaining <= 0){ finish(); return; }
     const secs = Math.max(1, Math.ceil(remaining / 1000));
+    ring.style.setProperty("--left", Math.max(0, Math.min(1, remaining / countFrom)).toFixed(3));
     if(secs !== lastShown){
       lastShown = secs;
       num.textContent = String(secs);
@@ -45708,7 +45961,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-28-220";
+const APP_BUILD = "2026-09-28-222";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -52022,6 +52275,48 @@ let tugLastData = null;
 /* One cutscene per match. Reset in beginTugMatch, so a rematch from the
    same lobby gets its own. */
 let tugCutscenePlayed = false;
+/* True while the shared "Starting in" count is up. */
+let tugCountingDown = false;
+/* The match (by its start instant) whose XP has been paid, so a result
+   screen drawn twice pays once. */
+let tugPaidFor = 0;
+/* What a right answer is worth in the pot - the same as a right answer
+   anywhere else in the app. */
+const TUG_XP_PER_RIGHT = 10;
+/* THE SHARED COUNTDOWN, as its own piece. The race builds the same
+   overlay inside beginVroomSyncedReveal (which also opens the first
+   question under it); Tug needs only the count. */
+function showVroomCountdown(startAt, onDone){
+  document.getElementById("vroom-reveal-overlay")?.remove();
+  const overlay = document.createElement("div");
+  overlay.id = "vroom-reveal-overlay";
+  const label = document.createElement("p");
+  label.id = "vroom-reveal-label"; label.textContent = "Starting in";
+  const num = document.createElement("p");
+  num.id = "vroom-reveal-num"; num.setAttribute("aria-live", "polite");
+  const ring = document.createElement("div");
+  ring.id = "vroom-reveal-ring"; ring.appendChild(num);
+  overlay.append(label, ring);
+  document.body.appendChild(overlay);
+  const countFrom = Math.max(1000, startAt - Date.now());
+  let last = null, h = null;
+  const tick = () => {
+    const remaining = startAt - Date.now();
+    if(remaining <= 0 || !overlay.isConnected){
+      clearInterval(h); overlay.remove();
+      if(remaining <= 0) onDone();
+      return;
+    }
+    ring.style.setProperty("--left", Math.max(0, Math.min(1, remaining / countFrom)).toFixed(3));
+    const secs = Math.max(1, Math.ceil(remaining / 1000));
+    if(secs !== last){
+      last = secs; num.textContent = String(secs);
+      if(!theme.reduceMotion){ num.classList.remove("vroom-reveal-pulse"); void num.offsetWidth; num.classList.add("vroom-reveal-pulse"); }
+    }
+  };
+  tick();
+  h = setInterval(tick, 100);
+}
 
 function detachTug(){
   if(tugUnsub){ try{ tugUnsub(); }catch(e){} tugUnsub = null; }
@@ -52049,7 +52344,9 @@ function tugCheckOver(d){
      has to be a real outcome rather than a rounding: one side pulls
      clear, everybody runs out of questions, or the pace runs out. */
   const allDone = everyone.every(k => (Number((prog[k] || {}).pos) || 0) >= count);
-  const timeUp = Date.now() >= (Number(d.startAt) || 0) + tugPace(count).total + 15000;
+  /* Plus the pause after every question (build 221), so a match that is
+     still being played is never called on time. */
+  const timeUp = Date.now() >= (Number(d.startAt) || 0) + tugPace(count).total + count * 2200 + 15000;
   if(Math.abs(pos) < gap && !allDone && !timeUp) return;
   fbDb.collection("vrooms").doc(vroomCode).update({
     "tug.over": true,
@@ -52093,11 +52390,22 @@ function beginTugMatch(data){
 
   detachTug();
   tugPublishProgress();
+  /* THE SAME "STARTING IN" COUNT A RACE HAS. Tug dropped straight onto
+     the first question the moment the host's write landed - a different
+     instant on every phone, and its question clock runs from the shared
+     start, so whoever saw it late had already lost seconds. Nothing is
+     drawn until the count ends. */
+  tugCountingDown = Date.now() < tugStartAt;
+  if(tugCountingDown){
+    stage.replaceChildren();
+    showVroomCountdown(tugStartAt, () => { tugCountingDown = false; tugRedrawFromCache(); });
+  }
   tugUnsub = onSnapshotResilient(fbDb.collection("vrooms").doc(vroomCode), snap => {
     if(!snap.exists) return;
     const d = snap.data();
     if(!d.tug) return;
     tugLastData = d;
+    if(tugCountingDown && !d.tug.over) return;
     if(d.tug.over){
       /* ONCE, at the moment the rope goes over - not on every snapshot
          after it. The listener is detached inside showTugResult, but a
@@ -52358,11 +52666,21 @@ function tugSettleAnswer(ok, btn, mark, list, right){
   tugPublishProgress();
 
   if(tugAdvanceTimer) clearTimeout(tugAdvanceTimer);
+  /* A REAL PAUSE BETWEEN QUESTIONS. The next one used to land 0.65s
+     after a right answer, before you had seen whether the rope moved
+     for it. A bar under the answers runs the pause down so it reads as
+     a beat, not a stall. */
+  const pauseMs = tugNote ? 3500 : ok ? 1500 : 2200;
+  const pauseBar = document.createElement("div");
+  pauseBar.className = "tug-pause";
+  pauseBar.style.setProperty("--pause", pauseMs + "ms");
+  pauseBar.appendChild(document.createElement("span"));
+  (tugNote || list).after(pauseBar);
   tugAdvanceTimer = setTimeout(() => {
     tugAdvanceTimer = null;
     if(!document.querySelector(".screen-tug")) return;
     tugRedrawFromCache();
-  }, tugNote ? 3500 : ok ? 650 : 1100);   /* long enough to read the note */
+  }, pauseMs);
 }
 
 function tugRedrawFromCache(){
@@ -52539,6 +52857,89 @@ function showTugResult(d){
   panel.appendChild(sub);
 
   panel.appendChild(buildTugRope(d));
+  /* ---- WINNER TAKES ALL ----
+     Every right answer in the room goes into one pot, TUG_XP_PER_RIGHT
+     each, and the winning side splits all of it - the losers' answers
+     included. The losing side takes nothing; a draw hands everybody
+     back their own. Paid once per match (tugPaidFor), however many
+     times this screen is drawn. */
+  const prog = (d.tug && d.tug.progress) || {};
+  const teams = (d.tug && d.tug.teams) || {};
+  const rightOf = k => Number((prog[k] || {}).correct) || 0;
+  const pot = Object.keys(teams).reduce((t, k) => t + rightOf(k), 0) * TUG_XP_PER_RIGHT;
+  const winners = drawn ? [] : tugMembers(d, winner);
+  const myXp = drawn ? rightOf(vroomMyKey) * TUG_XP_PER_RIGHT
+    : won ? Math.round(pot / Math.max(1, winners.length)) : 0;
+  const paidKey = Number(d.startAt) || 1;
+  if(tugPaidFor !== paidKey){
+    tugPaidFor = paidKey;
+    if(myXp > 0){ awardXp(myXp); saveStore(); }
+  }
+  const xpCard = document.createElement("div");
+  xpCard.className = "tug-xp" + (won ? " is-won" : drawn ? " is-draw" : " is-lost");
+  const xpNum = document.createElement("p");
+  xpNum.className = "tug-xp-num"; xpNum.textContent = "+" + myXp.toLocaleString() + " XP";
+  const xpWhy = document.createElement("p");
+  xpWhy.className = "tug-xp-why";
+  xpWhy.textContent = drawn ? "A draw — everyone keeps their own answers"
+    : won ? "Winner takes all — your side split the whole pot of " + pot.toLocaleString()
+          : "Winner takes all — the other side took the pot";
+  xpCard.append(xpNum, xpWhy);
+  panel.appendChild(xpCard);
+  /* ---- THE TEAM LEADERBOARD, TEN SECONDS LATER ----
+     Long enough to take in who won before the numbers arrive. Each side
+     in its own column, everybody's right answers, the side's total, and
+     a star on the one who pulled hardest. */
+  const board = document.createElement("div");
+  board.className = "tug-board is-pending";
+  const boardHead = document.createElement("p");
+  boardHead.className = "tug-board-head";
+  board.appendChild(boardHead);
+  const cols = document.createElement("div");
+  cols.className = "tug-board-cols";
+  const all = Object.keys(teams);
+  const mvp = all.slice().sort((a, b) => rightOf(b) - rightOf(a))[0];
+  ["a", "b"].forEach(side => {
+    const col = document.createElement("div");
+    col.className = "tug-board-col" + (side === winner ? " is-winner" : "") + (side === mine ? " is-mine" : "");
+    const members = tugMembers(d, side).sort((a, b) => rightOf(b) - rightOf(a));
+    const h = document.createElement("p");
+    h.className = "tug-board-side";
+    h.textContent = (side === mine ? "Your side" : "Their side") + " · " +
+      members.reduce((t, k) => t + rightOf(k), 0) + " right";
+    col.appendChild(h);
+    members.forEach((k, i) => {
+      const pp = (d.participants || {})[k] || {};
+      const row = document.createElement("div");
+      row.className = "tug-board-row" + (k === vroomMyKey ? " is-me" : "");
+      row.style.setProperty("--i", i);
+      const av = document.createElement("span");
+      av.className = "tug-board-av";
+      av.appendChild(buildAvatarCharSVGSafe(pp.avatarChar || "ninja"));
+      const nm = document.createElement("span");
+      nm.className = "tug-board-name";
+      nm.textContent = (pp.name || "?") + (k === mvp && rightOf(k) > 0 ? "  ★" : "");
+      const n = document.createElement("span");
+      n.className = "tug-board-n"; n.textContent = rightOf(k);
+      row.append(av, nm, n);
+      col.appendChild(row);
+    });
+    cols.appendChild(col);
+  });
+  board.appendChild(cols);
+  panel.appendChild(board);
+  let leftS = 10;
+  boardHead.textContent = "Team leaderboard in " + leftS;
+  const boardTimer = setInterval(() => {
+    if(!board.isConnected){ clearInterval(boardTimer); return; }
+    leftS -= 1;
+    if(leftS <= 0){
+      clearInterval(boardTimer);
+      boardHead.textContent = "Team leaderboard";
+      board.classList.remove("is-pending");
+      board.classList.add("is-in");
+    } else boardHead.textContent = "Team leaderboard in " + leftS;
+  }, 1000);
 
   const exits = document.createElement("div");
   exits.className = "vroom-exit-row";
@@ -53441,7 +53842,12 @@ function showVirtualRoomLobby(){
          note says whose move it is rather than sitting on "waiting for
          everyone to ready up" forever. */
       const hasUnits = ((data.units || []).length > 0);
-      const allReady = totalN > 1 && readyN === totalN && hasUnits;
+      /* EVEN TEAMS FOR TUG OF WAR. A room of three was 2v1, "lopsided but
+         honest" - and asked against: the rope is a team game and it
+         starts with the same number on each end. Everybody can still
+         ready up; it just waits for one more, or one fewer. */
+      const oddTug = data.game === "tug" && totalN % 2 === 1;
+      const allReady = totalN > 1 && readyN === totalN && hasUnits && !oddTug;
       lobbyCanReady = hasUnits && totalN > 1;
       if(data.status === "waiting"){
         readyBtn.disabled = !lobbyCanReady && !amReady;
@@ -53465,6 +53871,8 @@ function showVirtualRoomLobby(){
               : "Waiting for the host to pick the units\u2026")
           : allReady
             ? "Everyone's ready \u2014 starting\u2026"
+            : oddTug && totalN > 1
+              ? "Tug of War needs even teams \u2014 waiting for one more player"
             : totalN < 2
               ? "Waiting for someone else to join\u2026"
               : "Waiting for everyone to ready up\u2026";
@@ -53741,6 +54149,47 @@ let vroomRaceUnsubscribe = null;
    the context carries. A second copy of this for the chat lobby is the
    mistake the rankings boards already made with decorateAvatar: a fix
    lands on one of them and quietly misses the other. */
+/* The emoji tray. The reactions are a short curated row; this is the
+   keyboard's worth people actually reach for, including the one that
+   was asked for by name. */
+const CHAT_EMOJI = ["\u{1F602}","\u{1F923}","\u{1F62D}","\u{1F60D}","\u{1F970}","\u{1F60E}","\u{1F914}","\u{1F644}",
+  "\u{1F62C}","\u{1F633}","\u{1F971}","\u{1F634}","\u{1F929}","\u{1F624}","\u{1F621}","\u{1F480}",
+  "\u{1F44D}","\u{1F44E}","\u{1F44F}","\u{1F64C}","\u{1F64F}","\u{1F4AA}","\u{1F595}","\u{1F91D}",
+  "\u{1F525}","\u{1F4AF}","\u{2728}","\u{1F389}","\u{1F3C6}","\u{1F947}","\u{1F4DA}","\u{1F46E}",
+  "\u{1F6A8}","\u{2615}","\u{1F355}","\u{2764}\u{FE0F}","\u{1F494}","\u{1F440}","\u{1F92F}","\u{1FAE1}"];
+const chatImageCache = {};
+function loadChatImage(id){
+  if(!id) return Promise.resolve(null);
+  if(chatImageCache[id]) return Promise.resolve(chatImageCache[id]);
+  if(!fbDb) return Promise.resolve(null);
+  return fbDb.collection("vrooms").doc(id).get().then(snap => {
+    const d = snap && snap.exists ? (snap.data() || {}) : {};
+    if(d.data) chatImageCache[id] = d.data;
+    return d.data || null;
+  }).catch(() => null);
+}
+function shrinkChatPhoto(file){
+  return new Promise(resolve => {
+    const r = new FileReader();
+    r.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const k = Math.min(1, 900 / Math.max(img.width, img.height));
+        const cv = document.createElement("canvas");
+        cv.width = Math.max(1, Math.round(img.width * k));
+        cv.height = Math.max(1, Math.round(img.height * k));
+        cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+        let q = .78, out = cv.toDataURL("image/jpeg", q);
+        while(out.length > 350000 && q > .35){ q -= .1; out = cv.toDataURL("image/jpeg", q); }
+        resolve(out);
+      };
+      img.onerror = () => resolve(null);
+      img.src = r.result;
+    };
+    r.onerror = () => resolve(null);
+    r.readAsDataURL(file);
+  });
+}
 function buildVroomChatPanel(container, ctx){
   const CTX = ctx || VROOM_CHAT_CTX;
   /* On a phone the chat is a sheet that slides up from the bottom, opened
@@ -53800,7 +54249,20 @@ function buildVroomChatPanel(container, ctx){
   const sendBtn = document.createElement("button");
   sendBtn.type = "button"; sendBtn.className = "next ghost vroom-chat-send";
   sendBtn.textContent = "Send";
-  row.append(input, sendBtn);
+  /* ---- EMOJI, PHOTOS AND POLLS (build 222) ----
+     Two small buttons beside the field: a face opens an emoji tray that
+     types into the field, and a plus offers a photo or a poll. Neither
+     sends anything on its own - the photo goes once it is picked, the
+     poll once it is written. */
+  const emojiBtn = document.createElement("button");
+  emojiBtn.type = "button"; emojiBtn.className = "vroom-chat-tool vroom-chat-emojibtn";
+  emojiBtn.setAttribute("aria-label", "Emoji"); emojiBtn.textContent = "\u{1F642}";
+  const plusBtn = document.createElement("button");
+  plusBtn.type = "button"; plusBtn.className = "vroom-chat-tool vroom-chat-plusbtn";
+  plusBtn.setAttribute("aria-label", "Photo or poll"); plusBtn.textContent = "+";
+  const fileIn = document.createElement("input");
+  fileIn.type = "file"; fileIn.accept = "image/*"; fileIn.hidden = true;
+  row.append(plusBtn, emojiBtn, input, sendBtn, fileIn);
   const typingLine = document.createElement("p");
   typingLine.className = "vroom-chat-typing";
   typingLine.setAttribute("aria-live", "polite");
@@ -53894,11 +54356,7 @@ function buildVroomChatPanel(container, ctx){
   let pickerEl = null;
 
   function chatReactionTitle(id, who, parts){
-    const names = (who || []).map(k => {
-      if(k === CTX.myKey()) return "You";
-      const e = (parts || {})[k];
-      return (e && e.name) || "Someone";
-    });
+    const names = (who || []).map(k => chatNameFor(k));
     const r = CHAT_REACTIONS.filter(x => x.id === id)[0];
     return (r ? r.label : id) + " \u2014 " + names.join(", ");
   }
@@ -54031,8 +54489,14 @@ function buildVroomChatPanel(container, ctx){
            for anybody who wants it. */
         time.textContent = chatMsgAge(m.ts);
         time.title = new Date(m.ts).toLocaleString();
-        msg.append(name, document.createTextNode(m.text), time);
-        wrap.appendChild(msg);
+        if(m.type === "img" || m.type === "poll"){
+          msg.append(name, time);
+          wrap.appendChild(msg);
+          wrap.appendChild(m.type === "img" ? buildPhoto(m) : buildPoll(m));
+        } else {
+          msg.append(name, document.createTextNode(m.text), time);
+          wrap.appendChild(msg);
+        }
         /* The tally under the message, one chip per reaction anybody has
            left, with a count once more than one person has left it and
            your own marked. A chip with no count is one person, which is
@@ -54232,8 +54696,7 @@ function buildVroomChatPanel(container, ctx){
       if(k === CTX.myKey()) return;
       const ts = roomTyping[k];
       if(typeof ts !== "number" || now - ts > TYPING_STALE_MS) return;
-      const p = roomParticipants && roomParticipants[k];
-      names.push((p && p.name) || "Someone");
+      names.push(chatNameFor(k));
     });
     if(!names.length){ typingLine.textContent = ""; return; }
     if(names.length === 1) typingLine.textContent = names[0] + " is typing\u2026";
@@ -54295,6 +54758,195 @@ function buildVroomChatPanel(container, ctx){
      every send, which is exactly what forced the read-modify-write above.
      The host alone trims, and only once the history is well past the cap,
      so an ordinary send never has to read the document at all. */
+  /* ONE WAY IN FOR EVERY KIND OF MESSAGE. A photo and a poll are the
+     same record as a line of text with a `type` and their own fields, so
+     they share the id, the arrayUnion append, the ping and the trim. */
+  function sendKind(extra, previewText){
+    if(!CTX.code() || !fbDb || !CTX.myKey()) return;
+    const msg = Object.assign({
+      id: (CTX.myKey() + "-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8)),
+      key: CTX.myKey(),
+      name: store.firstName || "Anonymous",
+      text: String(previewText || "").slice(0, 200),
+      ts: Date.now()
+    }, extra);
+    try{
+      fbDb.collection("vrooms").doc(CTX.code()).update({
+        chatMessages: firebase.firestore.FieldValue.arrayUnion(msg)
+      }).catch(() => {});
+      if(CTX.onSent){ try{ CTX.onSent(msg, roomParticipants); }catch(e){} }
+    }catch(e){ showToast("Message not sent \u2014 no connection."); }
+  }
+  let trayEl = null;
+  function closeTray(){ if(trayEl){ trayEl.remove(); trayEl = null; } }
+  document.addEventListener("click", closeTray);
+  emojiBtn.addEventListener("click", (ev) => {
+    ev.stopPropagation();
+    if(trayEl && trayEl.dataset.kind === "emoji"){ closeTray(); return; }
+    closeTray();
+    const tray = document.createElement("div");
+    tray.className = "vroom-chat-tray"; tray.dataset.kind = "emoji";
+    CHAT_EMOJI.forEach(e => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "vroom-chat-emoji"; b.textContent = e;
+      b.addEventListener("click", (e2) => {
+        e2.stopPropagation();
+        const at = input.selectionStart != null ? input.selectionStart : input.value.length;
+        input.value = (input.value.slice(0, at) + e + input.value.slice(at)).slice(0, 200);
+        input.focus({ preventScroll: true });
+        try{ input.setSelectionRange(at + e.length, at + e.length); }catch(err){}
+      });
+      tray.appendChild(b);
+    });
+    tray.addEventListener("click", e2 => e2.stopPropagation());
+    wrap.appendChild(tray);
+    trayEl = tray;
+  });
+  plusBtn.addEventListener("click", (ev) => {
+    ev.stopPropagation();
+    if(trayEl && trayEl.dataset.kind === "plus"){ closeTray(); return; }
+    closeTray();
+    const tray = document.createElement("div");
+    tray.className = "vroom-chat-tray is-menu"; tray.dataset.kind = "plus";
+    const photo = document.createElement("button");
+    photo.type = "button"; photo.className = "vroom-chat-menuitem"; photo.textContent = "\u{1F4F7}  Photo";
+    photo.addEventListener("click", (e2) => { e2.stopPropagation(); closeTray(); fileIn.click(); });
+    const poll = document.createElement("button");
+    poll.type = "button"; poll.className = "vroom-chat-menuitem"; poll.textContent = "\u{1F4CA}  Poll";
+    poll.addEventListener("click", (e2) => { e2.stopPropagation(); closeTray(); openPollSheet(); });
+    tray.append(photo, poll);
+    tray.addEventListener("click", e2 => e2.stopPropagation());
+    wrap.appendChild(tray);
+    trayEl = tray;
+  });
+  /* A PHOTO is shrunk on the phone to at most 900px and a JPEG under
+     ~350KB, stored in a document of its own (the room document holds
+     every message and has a 1MB ceiling), and the message carries only
+     its id. Each device fetches it once and keeps it. */
+  fileIn.addEventListener("change", () => {
+    const f = fileIn.files && fileIn.files[0];
+    fileIn.value = "";
+    if(!f) return;
+    shrinkChatPhoto(f).then(dataUrl => {
+      if(!dataUrl){ showToast("That photo couldn't be read."); return; }
+      const id = "img-" + CTX.myKey().slice(0, 6) + "-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      chatImageCache[id] = dataUrl;
+      fbDb.collection("vrooms").doc(id).set({ kind: "chatimg", data: dataUrl, by: CTX.myKey(), at: Date.now() })
+        .then(() => sendKind({ type: "img", img: id }, "\u{1F4F7} Photo"))
+        .catch(() => showToast("Photo not sent \u2014 no connection."));
+    });
+  });
+  function openPollSheet(){
+    const ov = document.createElement("div");
+    ov.className = "invite-overlay chat-poll-sheet";
+    const sh = document.createElement("div");
+    sh.className = "invite-sheet";
+    const h = document.createElement("p"); h.className = "invite-sheet-title"; h.textContent = "New poll";
+    const q = document.createElement("input");
+    q.type = "text"; q.className = "searchbox searchbox-plain"; q.placeholder = "Ask something"; q.maxLength = 120;
+    const opts = [];
+    const optWrap = document.createElement("div"); optWrap.className = "chat-poll-opts";
+    for(let i = 0; i < 4; i++){
+      const o = document.createElement("input");
+      o.type = "text"; o.className = "searchbox searchbox-plain"; o.maxLength = 60;
+      o.placeholder = "Option " + (i + 1) + (i >= 2 ? " (optional)" : "");
+      opts.push(o); optWrap.appendChild(o);
+    }
+    const acts = document.createElement("div"); acts.className = "chat-poll-acts";
+    const post = document.createElement("button"); post.type = "button"; post.className = "next"; post.textContent = "Post poll";
+    const cancel = document.createElement("button"); cancel.type = "button"; cancel.className = "next ghost"; cancel.textContent = "Cancel";
+    const close = () => ov.remove();
+    cancel.addEventListener("click", close);
+    ov.addEventListener("click", (e) => { if(e.target === ov) close(); });
+    post.addEventListener("click", () => {
+      const question = q.value.trim();
+      const choices = opts.map(o => o.value.trim()).filter(Boolean);
+      if(!question || choices.length < 2){ showToast("A question and at least two options."); return; }
+      sendKind({ type: "poll", q: question, opts: choices, votes: {} }, "\u{1F4CA} Poll: " + question);
+      close();
+    });
+    acts.append(post, cancel);
+    sh.append(h, q, optWrap, acts);
+    ov.appendChild(sh);
+    document.body.appendChild(ov);
+    requestAnimationFrame(() => ov.classList.add("invite-overlay-show"));
+    setTimeout(() => q.focus({ preventScroll: true }), 50);
+  }
+  /* One vote each, changeable: tapping another option moves it, tapping
+     your own takes it back. Written the same way a reaction is - the
+     message rewritten in place in the array from the last snapshot. */
+  function votePoll(m, idx){
+    if(!fbDb || !CTX.code() || !CTX.myKey()) return;
+    const me = CTX.myKey();
+    const next = (lastMessages || []).map(x => {
+      if(x.id !== m.id) return x;
+      const votes = {};
+      const had = ((x.votes || {})[idx] || []).indexOf(me) >= 0;
+      Object.keys(x.votes || {}).forEach(k => { votes[k] = (x.votes[k] || []).filter(v => v !== me); });
+      if(!had) votes[idx] = (votes[idx] || []).concat([me]);
+      Object.keys(votes).forEach(k => { if(!votes[k].length) delete votes[k]; });
+      return Object.assign({}, x, { votes: votes });
+    });
+    try{ fbDb.collection("vrooms").doc(CTX.code()).update({ chatMessages: next }).catch(() => {}); }catch(e){}
+  }
+  function buildPoll(m){
+    const box = document.createElement("div");
+    box.className = "vroom-chat-poll";
+    const q = document.createElement("p"); q.className = "vroom-chat-poll-q"; q.textContent = m.q || "";
+    box.appendChild(q);
+    const votes = m.votes || {};
+    const total = Object.keys(votes).reduce((t, k) => t + (votes[k] || []).length, 0);
+    (m.opts || []).forEach((o, i) => {
+      const who = votes[i] || [];
+      const opt = document.createElement("div");
+      opt.className = "vroom-chat-poll-opt" + (who.indexOf(CTX.myKey()) >= 0 ? " is-mine" : "");
+      opt.setAttribute("role", "button"); opt.tabIndex = 0;
+      opt.style.setProperty("--share", (total ? Math.round(who.length / total * 100) : 0) + "%");
+      const lab = document.createElement("span"); lab.className = "vroom-chat-poll-lab"; lab.textContent = o;
+      const n = document.createElement("span"); n.className = "vroom-chat-poll-n"; n.textContent = who.length;
+      opt.append(lab, n);
+      opt.title = who.map(k => chatNameFor(k)).join(", ");
+      opt.addEventListener("click", (ev) => { ev.stopPropagation(); votePoll(m, i); });
+      box.appendChild(opt);
+    });
+    const foot = document.createElement("p"); foot.className = "vroom-chat-poll-foot";
+    foot.textContent = total + (total === 1 ? " vote" : " votes") + " \u00b7 tap to vote";
+    box.appendChild(foot);
+    return box;
+  }
+  function buildPhoto(m){
+    const fig = document.createElement("span");
+    fig.className = "vroom-chat-photo";
+    const img = document.createElement("img");
+    img.alt = "Photo from " + (m.name || "someone");
+    fig.appendChild(img);
+    loadChatImage(m.img).then(src => { if(src) img.src = src; else fig.classList.add("is-missing"); });
+    fig.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      if(!img.src) return;
+      const v = document.createElement("div");
+      v.className = "chat-photo-view";
+      const big = document.createElement("img"); big.src = img.src; big.alt = img.alt;
+      v.appendChild(big);
+      v.addEventListener("click", () => v.remove());
+      document.body.appendChild(v);
+    });
+    return fig;
+  }
+  /* "SOMEONE" ONLY WHEN THERE IS TRULY NO NAME. Reactions, votes and the
+     typing line looked a key up in the room's PRESENT participants, and
+     presence drops anybody quiet for two and a half minutes - so a
+     classmate who reacted and put their phone down turned into
+     "Someone". Their own messages, and the class board, still know. */
+  function chatNameFor(k){
+    if(k === CTX.myKey()) return "You";
+    const p = roomParticipants && roomParticipants[k];
+    if(p && p.name) return p.name;
+    const said = (lastMessages || []).filter(m => m.key === k && m.name).pop();
+    if(said) return said.name;
+    try{ const r = rowsByPublicId()[k]; if(r && r.firstName) return r.firstName; }catch(e){}
+    return "Someone";
+  }
   function trimIfHost(messages){
     if(!fbDb || !CTX.code()) return;
     if(!messages || !messages.length) return;
@@ -54384,6 +55036,7 @@ function buildVroomChatPanel(container, ctx){
     clearTimeout(alertTimer);
     clearInterval(typingTick);
     document.removeEventListener("click", closeReactPicker);
+    document.removeEventListener("click", closeTray);
     closeReactPicker();
     if(alertEl){ alertEl.remove(); alertEl = null; }
     if(seenObs){ try{ seenObs.disconnect(); }catch(e){} seenObs = null; }
@@ -54599,7 +55252,11 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
      the ones you missed (the default) and the whole test. */
   const review = lastRunResult ? buildRoomReviewTabs(lastRunResult) : buildRunReviewBlock();
   if(onResults){
-    host.insertBefore(wait, host.firstChild);
+    /* ABOVE THE XP BOX, not at the very top: the grade stays the first
+       thing on the screen and the wait sits where the eye goes next. */
+    const xpBox = host.querySelector(".results-level");
+    if(xpBox && xpBox.parentNode) xpBox.parentNode.insertBefore(wait, xpBox);
+    else host.insertBefore(wait, host.firstChild);
     const slot = host.querySelector(".rs-endslot");
     if(review && slot) slot.appendChild(review);
   } else {
@@ -54642,6 +55299,21 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
       prep = showVroomPrepBanner();
     }
     const revealedAt = allRevealedAt || (now - allInAt >= VROOM_REVEAL_WAIT_MS ? now : 0);
+    /* THREE SECONDS' WARNING before the leaderboard - it used to cut in
+       while somebody was mid-scroll through their answers. The banner
+       that has said "Preparing leaderboard" turns into a count for the
+       last three seconds. */
+    const rollAt = revealedAt ? Math.max(allInAt + VROOM_ROLL_AFTER_MS, revealedAt + VROOM_READ_AFTER_REVEAL_MS) : 0;
+    if(rollAt && mine && !rolled && rollAt - now <= 3000){
+      if(!prep) prep = showVroomPrepBanner();
+      const left = Math.max(1, Math.ceil((rollAt - now) / 1000));
+      const tx = prep.querySelector(".vroom-prep-text");
+      if(tx && tx.dataset.left !== String(left)){
+        tx.dataset.left = String(left);
+        tx.textContent = "Leaderboard in " + left;
+        prep.classList.add("is-counting");
+      }
+    }
     if(!rolled && mine && revealedAt &&
        now >= Math.max(allInAt + VROOM_ROLL_AFTER_MS, revealedAt + VROOM_READ_AFTER_REVEAL_MS)){
       rolled = true;
@@ -54779,13 +55451,18 @@ function vroomReturnToLobby(){
    draw out all the xp counting stuff for about 10-20 seconds ... Make
    the background them in a spaceship". After it, Return to lobby and
    Main menu, on the same scene. */
+/* ORDER IS DRAMA. "Correct answers and speed should be last" - they are
+   the two biggest numbers on every run, so counting them first settled
+   the race in the opening step and left four steps of small change.
+   The bonuses go first, where they can shuffle the board, and the two
+   that decide it come at the end. A step nobody scored is skipped. */
 const VROOM_XP_STEPS = [
-  { key: "correct", label: "Correct answers", match: k => k === "correct" },
   { key: "hundo",   label: "Hundo bonus",     match: k => k === "hundo" },
   { key: "streak",  label: "Answer streaks",  match: k => /^streak/.test(k) },
-  { key: "speed",   label: "Speed",           match: k => k === "speed" },
   /* No personal bests: they are yours, not the race's (build 214). */
-  { key: "multi",   label: "Multi-unit",      match: k => k === "multi" }
+  { key: "multi",   label: "Multi-unit",      match: k => k === "multi" },
+  { key: "speed",   label: "Speed",           match: k => k === "speed" },
+  { key: "correct", label: "Correct answers", match: k => k === "correct" }
 ];
 function startVroomRaceCutscene(){
   document.getElementById("vroom-prep")?.remove();
@@ -54835,6 +55512,10 @@ function playVroomRaceCutscene(ranked){
   const rows = ranked.slice().sort((a, b) => (a.p.joinedAt || 0) - (b.p.joinedAt || 0)).map(r => {
     const row = document.createElement("div");
     row.className = "vrc-row" + (r.key === me ? " is-me" : "");
+    /* Each player's bar in their OWN colour - the colour their character
+       glows in everywhere else - so you can follow a person down the
+       board as it reshuffles rather than reading names every step. */
+    row.style.setProperty("--pl", avatarGlowColor(r.p.avatarChar || "ninja"));
     const fig = document.createElement("span");
     fig.className = "vrc-fig";
     fig.appendChild(buildAvatarCharSVGSafe(r.p.avatarChar || "ninja"));
@@ -54861,6 +55542,33 @@ function playVroomRaceCutscene(ranked){
     return { r: r, row: row, fill: fill, num: num, gain: gain, place: place, shown: 0 };
   });
   overlay.appendChild(board);
+  /* They DROP IN, one after another, rather than being there. */
+  rows.forEach((x, i) => { x.row.style.setProperty("--drop", (0.35 + i * 0.16).toFixed(2) + "s"); x.row.classList.add("is-dropping"); });
+  /* And the class comes off once it has played: re-appending a row to
+     reshuffle it restarts any animation on it, so a row still carrying
+     the drop-in vanished and fell in again at every step. */
+  setTimeout(() => rows.forEach(x => x.row.classList.remove("is-dropping")), (0.35 + rows.length * 0.16 + 0.8) * 1000);
+  /* RESHUFFLE: after each step the board re-sorts by what has been
+     counted so far, every row gliding to its new place (a FLIP: measure,
+     reorder, offset back to where it was, let it go). The standings
+     change hands during the count instead of all at once at the end. */
+  const reshuffle = (key) => {
+    const before = new Map(rows.map(x => [x, x.row.getBoundingClientRect().top]));
+    const order = rows.slice().sort((a, b) => key(b) - key(a) || (a.r.p.joinedAt || 0) - (b.r.p.joinedAt || 0));
+    order.forEach(x => board.appendChild(x.row));
+    if(resultsMotionOff()) return order;
+    order.forEach(x => {
+      const dy = before.get(x) - x.row.getBoundingClientRect().top;
+      if(!dy) return;
+      x.row.style.transition = "none";
+      x.row.style.transform = "translateY(" + dy + "px)";
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        x.row.style.transition = "";
+        x.row.style.transform = "";
+      }));
+    });
+    return order;
+  };
 
   const exits = document.createElement("div");
   exits.className = "vrc-exits";
@@ -54902,7 +55610,7 @@ function playVroomRaceCutscene(ranked){
     }, 30);
     x.fill.style.width = Math.round(target / maxXp * 100) + "%";
   };
-  let t = quiet ? 0 : 1600;
+  let t = quiet ? 0 : 1600 + rows.length * 160;
   steps.forEach(s => {
     at(t, () => {
       step.textContent = s.label;
@@ -54914,6 +55622,8 @@ function playVroomRaceCutscene(ranked){
         if(add > 0) x.gain.classList.add("is-on");
         countTo(x, x.shown + add, quiet ? 0 : STEP_MS * .6);
       });
+      /* Once this step's numbers have landed, the board re-sorts. */
+      setTimeout(() => reshuffle(x => x.shown), quiet ? 0 : STEP_MS * .65);
     });
     t += STEP_MS;
   });

@@ -5773,3 +5773,49 @@ answered over the average unit length, capped at runs played, because
 nothing before this told a full run from a shortened one.
 
 Gate: check-behaviour section 11.
+
+### Builds 221-222 - the room's countdown and leaderboard, Tug of War, the chat
+
+**The room's countdown was a strobe.** Each second's number arrived
+from opacity 0 at 1.5x, for up to fifteen seconds, over a .97 backdrop
+the first question ghosted through - after a separate LOADING TEST
+screen. Now: one count (a room skips LOADING TEST), an opaque backdrop,
+the number settles in place, and a ring drains round it.
+`showVroomCountdown(startAt, done)` is the count on its own (Tug uses it).
+
+**The race line is hidden by `setActiveNav()`**, which every ordinary
+screen passes through - it is `position:fixed` on `<body>`, so nothing
+else ever removed it ("the race shows on the main menu").
+
+**The leaderboard cutscene**: rows drop in, each player's bar is their
+character's glow colour, the board re-sorts (a FLIP) after every step,
+and the steps run bonuses first and **speed and correct answers last**,
+because those two decide it. A row's drop-in class comes off once it has
+played - re-appending a row to reshuffle it restarts any animation on it,
+and the rows vanished mid-count. The waiting card sits above the XP box;
+"Preparing leaderboard" becomes "Leaderboard in 3, 2, 1"; the chat dock
+goes above the cutscene.
+
+**Tug of War**: even teams or it waits; the shared countdown; a visible
+pause between questions (the match clock allows for it); **winner takes
+all** - every right answer in the room into one pot, split by the winning
+side, nothing for the losers, your own back on a draw; and a team
+leaderboard ten seconds after the result.
+
+**Chat**: the second tab is **Inbox**; tap outside closes the dock;
+toasts go above an open dock (they were under it, so "Chat muted" was
+never seen); a message in another chat gets a preview that opens THAT
+chat; list rows say Direct or Group; the header opens a members list;
+an emoji tray (with the one asked for by name) and a + for a **photo**
+(shrunk on the phone to <=900px / ~350KB, stored in its own `vrooms`
+document because the room document holds every message and has a 1MB
+ceiling) or a **poll** (one vote each, rewritten in place like a
+reaction). `chatNameFor()` means "Someone" only when nothing anywhere
+knows the name - presence drops quiet people after 150s, so looking
+names up in the present set alone was what produced it.
+
+**A sheet built on `.invite-overlay` needs `invite-overlay-show`** added
+after it is mounted - the overlay starts at opacity 0. Both new sheets
+shipped invisible for one pass without it.
+
+Gate: check-behaviour section 12.
