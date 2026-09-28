@@ -336,10 +336,18 @@
        Bronze    pale gold / bronze / deep verdigris
        Gold      lemon / gold / vermilion         (a sun, not a coin)
        Sapphire  aqua / blue / violet
-       Supernova yellow-hot / red / deep crimson  (a white-yellow core) */
+       Supernova yellow-hot / red / deep crimson  (a white-yellow core)
+     BUILD 234, two more: "the greenish one ... green and gold, it kinda
+     looks like diarrhea" (Bronze) and "the purple on the pink doesn't go
+     together" (Amethyst). Bronze's rim is a deep petrol blue now - the
+     complement of bronze, darker than Platinum's cerulean so the two do
+     not meet - and Amethyst's is a deep plum under a warm gold core, so
+     it is purple and gold rather than violet and pink, and nothing like
+     Sapphire's aqua-and-violet. Default, Iron and Sapphire were named as
+     liked and are untouched. */
   [data-accent="rookie"]{ --rank-accent:#6F7884; --rank-accent-ink:#F7F8F9; --theme-c1:#E4F1FA; --theme-c2:#8FA3B8; --theme-c3:#8A86B0; }
   [data-theme="dark"][data-accent="rookie"]{ --rank-accent:#AEB7C2; --rank-accent-ink:#14181D; }
-  [data-accent="ranger"]{ --rank-accent:#A4602A; --rank-accent-ink:#FFF6EE; --theme-c1:#FFD9A0; --theme-c2:#CD7F32; --theme-c3:#1E7F5C; }
+  [data-accent="ranger"]{ --rank-accent:#A4602A; --rank-accent-ink:#FFF6EE; --theme-c1:#FFE3B0; --theme-c2:#CD7F32; --theme-c3:#164C6E; }
   [data-theme="dark"][data-accent="ranger"]{ --rank-accent:#D99458; --rank-accent-ink:#221208; }
   /* Build 219: SILVER moved off Iron's grey - "the silver icon looks cool,
      but the color looks too much like iron" - to a bright, cool, pearly
@@ -359,7 +367,7 @@
      colour visibly did nothing anywhere in the app. */
   [data-accent="adept"]{ --rank-accent:#2A55BE; --rank-accent-ink:#F1F5FF; --theme-c1:#7DFFE8; --theme-c2:#2F6BFF; --theme-c3:#6A1FD8; }
   [data-theme="dark"][data-accent="adept"]{ --rank-accent:#6E9CFF; --rank-accent-ink:#081231; }
-  [data-accent="elite"]{ --rank-accent:#7E30C9; --rank-accent-ink:#F9F2FF; --theme-c1:#C9B8FF; --theme-c2:#A855F7; --theme-c3:#FF4FA3; }
+  [data-accent="elite"]{ --rank-accent:#7E30C9; --rank-accent-ink:#F9F2FF; --theme-c1:#FFE3A3; --theme-c2:#A855F7; --theme-c3:#3A1573; }
   [data-theme="dark"][data-accent="elite"]{ --rank-accent:#C084FC; --rank-accent-ink:#1C0A32; }
   [data-accent="titan"]{ --rank-accent:#B82525; --rank-accent-ink:#FFF2F2; --theme-c1:#FFE66B; --theme-c2:#FF1F1F; --theme-c3:#8E0028; }
   [data-theme="dark"][data-accent="titan"]{ --rank-accent:#FF3B30; --rank-accent-ink:#2A0707; }
@@ -5103,27 +5111,38 @@
     touch-action:none; -webkit-appearance:none; appearance:none;
     background:transparent; cursor:pointer;
   }
+  /* BUILD 234: A FILLED TRACK AND A REAL KNOB. "The slider button thing
+     could have a better look as well, look more legit." The track is
+     filled up to the thumb (--fill, kept by paintSliderFill()) in the
+     same blue as the XP bar, and the thumb is a white knob with a soft
+     shadow and a hairline ring - the iOS slider, which is what a phone
+     user already reads as "drag this". */
   .slider::-webkit-slider-runnable-track{
-    height:.5rem; border-radius:999px;
-    background:color-mix(in srgb, var(--ink) 16%, transparent);
+    height:.45rem; border-radius:999px;
+    background:linear-gradient(90deg, #7CCBFF 0%, #3D8BFF var(--fill, 0%), rgba(255,255,255,.13) var(--fill, 0%));
+    box-shadow:inset 0 1px 2px rgba(0,0,0,.35);
   }
   .slider::-moz-range-track{
-    height:.5rem; border-radius:999px;
-    background:color-mix(in srgb, var(--ink) 16%, transparent);
+    height:.45rem; border-radius:999px;
+    background:linear-gradient(90deg, #7CCBFF 0%, #3D8BFF var(--fill, 0%), rgba(255,255,255,.13) var(--fill, 0%));
   }
   .slider::-webkit-slider-thumb{
     -webkit-appearance:none; appearance:none;
-    width:1.75rem; height:1.75rem; border-radius:999px;
-    background:var(--accent); border:2px solid rgba(255,255,255,.85);
-    box-shadow:0 2px 8px rgba(0,0,0,.35);
-    margin-top:-.625rem;
+    width:1.65rem; height:1.65rem; border-radius:999px;
+    background:radial-gradient(circle at 50% 35%, #FFFFFF, #E4E9F0);
+    border:none;
+    box-shadow:0 0 0 1px rgba(0,0,0,.08), 0 3px 8px rgba(0,0,0,.4), 0 0 0 5px rgba(61,139,255,.0);
+    margin-top:-.6rem;
+    transition:box-shadow .15s ease, transform .15s ease;
   }
   .slider::-moz-range-thumb{
-    width:1.75rem; height:1.75rem; border-radius:999px;
-    background:var(--accent); border:2px solid rgba(255,255,255,.85);
-    box-shadow:0 2px 8px rgba(0,0,0,.35);
+    width:1.65rem; height:1.65rem; border-radius:999px; border:none;
+    background:radial-gradient(circle at 50% 35%, #FFFFFF, #E4E9F0);
+    box-shadow:0 0 0 1px rgba(0,0,0,.08), 0 3px 8px rgba(0,0,0,.4);
   }
-  .slider:active::-webkit-slider-thumb{ transform:scale(1.12); }
+  .slider:active::-webkit-slider-thumb{ box-shadow:0 0 0 1px rgba(0,0,0,.08), 0 3px 8px rgba(0,0,0,.4), 0 0 0 7px rgba(61,139,255,.28); }
+  .slider:disabled{ opacity:.55; cursor:default; }
+  .slider:active::-webkit-slider-thumb{ transform:scale(1.08); }
   .sliderval{
     font-family:var(--mono); font-size:.92rem; font-weight:700; color:var(--ink);
     min-width:5.5rem; text-align:right; font-variant-numeric:tabular-nums;
@@ -6488,7 +6507,8 @@
      full-width button where a stray outline would be just as visible. */
   .bottomtab-start:focus{ outline:none; }
   .bottomtab-start:focus-visible{ outline:2px solid var(--accent-ink); outline-offset:-4px; }
-  .bottomtab-start:disabled{
+  .bottomtab-start:disabled,
+  .bottomtab-start.is-inert{
     opacity:1; cursor:default;
     background-image:none; background-color:rgba(128,128,128,.14);
     color:var(--soft); box-shadow:none;
@@ -10605,7 +10625,12 @@
     border:2px solid color-mix(in srgb, var(--rank-color) 70%, #fff);
     box-shadow:0 0 18px color-mix(in srgb, var(--rank-color) 45%, transparent), inset 0 0 12px color-mix(in srgb, var(--rank-color) 25%, transparent);
   }
-  .rankmap-node > svg.rank-emblem-svg{ width:100%; height:100%; overflow:hidden; border-radius:50%; clip-path:circle(50% at 50% 50%); filter:drop-shadow(0 0 6px color-mix(in srgb, var(--rank-color) 55%, transparent)); }
+  /* BACK TO THE BUILD-231 LOOK (build 234): "the old road map looked so
+     good, all you needed to do was flip it". Build 232 had shrunk every
+     emblem into its ring and clipped it; the emblems are their old size
+     and glow again, and only the centring (fitRankEmblem's keepScale)
+     stays from that pass. */
+  .rankmap-node > svg.rank-emblem-svg{ width:118%; height:118%; overflow:visible; filter:drop-shadow(0 0 8px color-mix(in srgb, var(--rank-color) 60%, transparent)); }
   .rankmap-stop.is-locked .rankmap-node{ background:#0C0F14; border-color:rgba(255,255,255,.14); box-shadow:none; }
   .rankmap-stop.is-locked .rankmap-node > svg{ filter:grayscale(1) brightness(.7); opacity:.45; }
   .rankmap-stop.is-next .rankmap-node{ border-style:dashed; }
@@ -10653,16 +10678,72 @@
   .rankmap-giftav{ width:1.2rem; height:1.2rem; display:grid; place-items:center; }
   .rankmap-giftav svg{ width:100%; height:100%; }
   .rankmap-giftav svg.is-fitted{ border-radius:50%; clip-path:circle(50% at 50% 50%); }
-  /* The Supernova banner among Supernova's rewards: the picture itself,
-     as a strip, since "Supernova banner" on its own describes nothing. */
-  .rankmap-gift.is-banner{ padding:.22rem .6rem .22rem .22rem; }
-  .rankmap-giftbanner{
-    width:3.4rem; height:1.25rem; border-radius:999px; overflow:hidden; flex:none; position:relative;
-    box-shadow:0 0 0 1px rgba(255,255,255,.18), 0 0 10px -2px #FF3B30;
-  }
-  .rankmap-giftbanner .bnr{ position:absolute; inset:0; }
-  .rankmap-giftbanner .bnr svg{ width:100%; height:100%; display:block; }
   .rankmap-stop.is-locked .rankmap-gift{ opacity:.7; }
+  /* ---- NOTHING IS IN COLOUR UNTIL IT IS YOURS (build 234) ----
+     "In the rank road map, don't put color on the stuff that's not
+     unlocked, so like the characters, themes and stuff, make look like
+     the profile customization where the theme you can barely see and the
+     characters are greyed out." The same treatment Customize gives a
+     locked swatch and a locked character: the theme dot a faint grey
+     disc, the flare and the character in grey, the banner in black and
+     white. They take their colour the moment the rank is reached - and
+     in front of you, the first time you look (is-celebrate-pending). */
+  .rankmap-stop:not(.is-reached) .rankmap-dot,
+  .rankmap-stop.is-celebrate-pending .rankmap-dot{ filter:grayscale(1); opacity:.28; box-shadow:none; }
+  .rankmap-stop:not(.is-reached) .rankmap-giftav svg,
+  .rankmap-stop.is-celebrate-pending .rankmap-giftav svg{ filter:grayscale(1) brightness(.9); opacity:.55; }
+  .rankmap-stop:not(.is-reached) .rankmap-bannerprev .bnr,
+  .rankmap-stop.is-celebrate-pending .rankmap-bannerprev .bnr{ filter:grayscale(1) brightness(.75); }
+  .rankmap-dot, .rankmap-giftav svg, .rankmap-bannerprev .bnr{ transition:filter .7s ease, opacity .7s ease; }
+  .rankmap-stop.is-celebrating .rankmap-gift:nth-child(2) .rankmap-giftav svg{ transition-delay:.18s; }
+  .rankmap-stop.is-celebrating .rankmap-gift:nth-child(3) .rankmap-giftav svg{ transition-delay:.36s; }
+  .rankmap-stop.is-celebrating .rankmap-bannerprev .bnr{ transition-delay:.5s; }
+  /* The big Supernova banner preview. */
+  .rankmap-bannerprev{
+    position:relative; margin-top:.65rem; height:5.4rem; border-radius:12px; overflow:hidden;
+    box-shadow:0 0 0 1px rgba(255,255,255,.1), 0 8px 20px -10px rgba(0,0,0,.6);
+  }
+  .rankmap-bannerprev .bnr{ position:absolute; inset:0; }
+  .rankmap-bannerprev .bnr svg{ width:100%; height:100%; display:block; }
+  .rankmap-bannercap{
+    position:absolute; left:0; right:0; bottom:0; padding:.9rem .7rem .4rem;
+    font-size:.68rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:#fff;
+    background:linear-gradient(to top, rgba(0,0,0,.65), transparent);
+  }
+  @media (min-width:46rem){ .rankmap-bannerprev{ height:6.4rem; } }
+  /* Waiting to be celebrated: drawn exactly like a locked stop. */
+  .rankmap-stop.is-celebrate-pending .rankmap-node{ background:#0C0F14; border-color:rgba(255,255,255,.14); box-shadow:none; border-style:solid; }
+  .rankmap-stop.is-celebrate-pending .rankmap-node > svg{ filter:grayscale(1) brightness(.7); opacity:.45; }
+  .rankmap-stop.is-celebrate-pending .rankmap-card{ background:rgba(20,24,30,.55); border-color:rgba(255,255,255,.07); box-shadow:none; }
+  .rankmap-stop.is-celebrate-pending .rankmap-name{ color:rgba(255,255,255,.62); }
+  .rankmap-stop.is-celebrate-pending .rankmap-state{ color:rgba(255,255,255,.7); background:rgba(255,255,255,.07); }
+  .rankmap-stop.is-celebrate-pending .rankmap-you{ opacity:0; transform:scale(.4); }
+  .rankmap-stop.is-celebrate-pending .rankmap-node::after{ display:none; }
+  .rankmap-node, .rankmap-node > svg, .rankmap-card, .rankmap-name, .rankmap-you{
+    transition:background .6s ease, border-color .6s ease, box-shadow .6s ease, filter .6s ease, opacity .6s ease, color .6s ease, transform .5s cubic-bezier(.2,1.6,.4,1);
+  }
+  /* The moment: the stop pops, a ring of its colour goes off, the card
+     flares, and a ribbon says what just happened. */
+  .rankmap-burst{
+    position:absolute; inset:-6px; border-radius:50%; pointer-events:none; opacity:0;
+    border:3px solid color-mix(in srgb, var(--rank-color) 80%, #fff);
+    box-shadow:0 0 24px color-mix(in srgb, var(--rank-color) 80%, transparent);
+  }
+  .rankmap-stop.is-celebrating .rankmap-burst{ animation:rankmap-burst 1.2s cubic-bezier(.15,.7,.3,1) both; }
+  @keyframes rankmap-burst{ 0%{ transform:scale(.8); opacity:1; } 100%{ transform:scale(2.3); opacity:0; } }
+  .rankmap-stop.is-celebrating .rankmap-node{ animation:rankmap-pop .7s cubic-bezier(.2,1.6,.4,1) both; }
+  @keyframes rankmap-pop{ 0%{ transform:scale(.85); } 55%{ transform:scale(1.18); } 100%{ transform:scale(1); } }
+  .rankmap-stop.is-celebrating .rankmap-card{ box-shadow:0 0 34px -4px color-mix(in srgb, var(--rank-color) 85%, transparent); }
+  .rankmap-card{ position:relative; }
+  .rankmap-ribbon{
+    position:absolute; top:-.7rem; left:50%; transform:translateX(-50%) scale(.6); opacity:0;
+    padding:.25rem .7rem; border-radius:999px; white-space:nowrap; pointer-events:none;
+    font-size:.62rem; font-weight:900; letter-spacing:.16em; text-transform:uppercase;
+    color:#0B0D10; background:color-mix(in srgb, var(--rank-color) 75%, #fff);
+    box-shadow:0 4px 16px -4px var(--rank-color);
+  }
+  .rankmap-stop.is-celebrating .rankmap-ribbon{ animation:rankmap-ribbon 1.7s ease both; }
+  @keyframes rankmap-ribbon{ 0%{ opacity:0; transform:translateX(-50%) scale(.6); } 18%{ opacity:1; transform:translateX(-50%) scale(1.06); } 28%,80%{ opacity:1; transform:translateX(-50%) scale(1); } 100%{ opacity:0; transform:translateX(-50%) scale(1); } }
   @media (min-width:46rem){
     .rankmap-stop{ --node:5.4rem; --gap:1.6rem; grid-template-columns:minmax(0,1fr) var(--node) minmax(0,1fr); gap:1.1rem; }
     .rankmap-road{ left:calc(50% - 2px); }
@@ -12101,6 +12182,52 @@
     background:rgba(255,255,255,.055); border:1px solid rgba(255,255,255,.1);
   }
   .unitoptions-modal-sheet .sheet-begin-btn{ margin-top:1.1rem; }
+  /* ---- BUILD 234: THE START SHEET, SIMPLER ---- */
+  .unitoptions-modal-sheet .sect-headrow{ display:flex; align-items:baseline; justify-content:space-between; gap:.6rem; }
+  .unitoptions-modal-sheet .sect-headrow .slab{ margin-bottom:0; }
+  .unitoptions-modal-sheet .sect-headval{ min-width:0; font-size:.86rem; color:rgba(255,255,255,.9); }
+  .unitoptions-modal-sheet .sect-caption{ margin:.45rem .15rem 0; font-size:.76rem; line-height:1.4; color:var(--soft); }
+  .unitoptions-modal-sheet .sect-caption:empty{ display:none; }
+  .unitoptions-modal-sheet .howmany-sect .sliderwrap{ margin-top:.2rem; gap:.7rem; }
+  .slider-allbtn{
+    flex:none; min-width:3.4rem; min-height:2.2rem; padding:.3rem .8rem; border-radius:999px;
+    font:inherit; font-size:.8rem; font-weight:800; letter-spacing:.02em; cursor:pointer;
+    color:rgba(255,255,255,.75); background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.16);
+    -webkit-tap-highlight-color:transparent; transition:background .2s ease, color .2s ease, border-color .2s ease;
+  }
+  .slider-allbtn.on{ color:#0B1220; background:#E9F1FF; border-color:#E9F1FF; }
+  /* A warning, and a quiet one: "the warning could be in red but a
+     subtle red at that". */
+  .unitoptions-modal-sheet .hundo-note{
+    margin:-.55rem 0 1.1rem; padding:.5rem .75rem; border-radius:.75rem;
+    font-size:.76rem; line-height:1.4; color:#FF9A9A;
+    background:rgba(255,80,80,.07); border:1px solid rgba(255,90,90,.2);
+  }
+  .unitoptions-modal-sheet .hundo-note[hidden]{ display:none; }
+  /* The two options, side by side as tiles. */
+  .opt-tiles{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:.55rem; }
+  .opt-tiles .opt.opt-tile[hidden]{ display:none; }
+  .opt-tiles:has(.opt-tile[hidden]) { grid-template-columns:1fr; }
+  .opt.opt-tile{
+    display:grid; grid-template-columns:minmax(0, 1fr) auto; grid-template-areas:"text box";
+    align-items:start; gap:.5rem; padding:.7rem .75rem; border-radius:.95rem;
+    background:rgba(255,255,255,.055); border:1px solid rgba(255,255,255,.1);
+  }
+  .opt.opt-tile .box{ grid-area:box; }
+  .opt.opt-tile .otext{ grid-area:text; font-size:.86rem; font-weight:700; line-height:1.25; }
+  .opt.opt-tile .ohint{ font-size:.72rem; font-weight:500; line-height:1.35; margin-top:.2rem; }
+  .opt.opt-tile:has(input:checked){ border-color:rgba(52,199,89,.4); background:rgba(52,199,89,.06); }
+  /* The timer card inside its disclosure. */
+  .unitoptions-modal-sheet .timer-sect{ margin:.7rem 0 0; }
+  .unitoptions-modal-sheet .timer-sect .opt{ padding:.35rem 0; }
+  .unitoptions-modal-sheet .timer-sect .minutes-sect{ margin:.1rem 0 .5rem 3.3rem; }
+  .unitoptions-modal-sheet .timer-sect .minutes-sect .slab{ display:none; }
+  .unitoptions-modal-sheet .timer-sect .minutes-sect .sliderwrap{ margin-top:0; }
+  .unitoptions-modal-sheet .timer-sect .minutes-sect .sliderval{ min-width:4rem; }
+  .more-toggle-state{
+    margin-left:auto; margin-right:.9rem; font-size:.8rem; font-weight:700; letter-spacing:0;
+    text-transform:none; color:var(--soft);
+  }
   /* On a tablet the sheet spans the whole 834px and a single column of
      full-width controls stretched across it reads thin and unconsidered.
      The surface still reaches both edges - it is a bottom sheet - but
@@ -30278,7 +30405,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               testsUntilMystery: null, flareNextTestAt: 0,
               savedCodePrompts: 0, savedCodeSaved: false,
               dailyCorrectStreak: 0, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false,
-              weeklyWins: 0, weeklyTop3: 0, retakenQuestions: 0, weekRankSeen: null, pendingVoidCutscene: false,
+              weeklyWins: 0, weeklyTop3: 0, retakenQuestions: 0, rankMapSeen: null, weekRankSeen: null, pendingVoidCutscene: false,
               vrMatches: 0, vrWins: 0, vrCounted: [], vrRetroDone: false,
               fullTestsSeeded: false, practiceExamPerfect: false, banner: "", starfallKept: false,
               publicId: null, leaderboardKeyMigrated: false,
@@ -30440,6 +30567,9 @@ function applyLoadedData(got){
      least that many podium finishes. */
   store.weeklyTop3 = Math.max(typeof got.weeklyTop3 === "number" ? got.weeklyTop3 : 0, store.weeklyWins);
   store.retakenQuestions = typeof got.retakenQuestions === "number" ? got.retakenQuestions : 0;
+  /* Null until the Rank tab first sees it, which sets it to the rank
+     held then without a show - see buildRanksTab. */
+  store.rankMapSeen = typeof got.rankMapSeen === "number" ? got.rankMapSeen : null;
   /* Build 220. The counters default to zero and the two "done" flags to
      false, so every existing account is seeded once from what it has
      already done (seedBannerCounters, seedVroomHistory) rather than
@@ -31568,7 +31698,7 @@ function wipeLocalProgressAndSettings(){
   store.unitHundoStreak = 0;
   store.unitHundoStreakUnits = [];
   store.practiceTestPassed = false;
-  store.weeklyWins = 0; store.weeklyTop3 = 0; store.retakenQuestions = 0;
+  store.weeklyWins = 0; store.weeklyTop3 = 0; store.retakenQuestions = 0; store.rankMapSeen = -1;
   store.vrMatches = 0; store.vrWins = 0; store.vrCounted = []; store.vrRetroDone = true;
   store.fullTestsSeeded = true; store.practiceExamPerfect = false; store.banner = ""; store.starfallKept = false;
   store.weekRankSeen = null;
@@ -35203,9 +35333,17 @@ const RANK_EMBLEM_FIT = {
   rookie: [63, 63, 58], ranger: [64, 64, 92], veteran: [70, 63, 76], vanguard: [63, 64, 82],
   adept: [72, 63, 88], elite: [63, 64, 118], titan: [63, 66, 124]
 };
-function fitRankEmblem(svg, key){
+function fitRankEmblem(svg, key, keepScale){
   const f = RANK_EMBLEM_FIT[key];
   if(!f || !svg) return svg;
+  /* keepScale: centred on the drawing, but drawn at its own size and
+     not clipped - the road map's look (build 234, "the old road map
+     looked so good"): the big emblems with their glow and sparks, just
+     sitting in the middle of the circle rather than off to one side. */
+  if(keepScale){
+    svg.setAttribute("viewBox", (f[0] - 64).toFixed(1) + " " + (f[1] - 64).toFixed(1) + " 128 128");
+    return svg;
+  }
   /* The drawing takes 72% of the circle; Iron's moon is held to a
      floor so the smallest emblem does not become the biggest. */
   const side = Math.max(f[2] / 0.72, 100);
@@ -45212,7 +45350,10 @@ function showPracticeTestConfirm(){
   const last = (store.testStats || {})["ALL|exam"];
   const recLab = document.createElement("span"); recLab.className = "pt-record-lab"; recLab.textContent = "Your record";
   const recVal = document.createElement("span"); recVal.className = "pt-record-val";
-  if(store.practiceExamPerfect){ recVal.textContent = "100% \u2014 Phoenix banner earned"; rec.classList.add("is-passed"); }
+  /* No mention of the Phoenix banner here (build 234: "the practice
+     test screen mentioned the phoenix banner, don't do that"). The
+     record is the point of the box; the banner is Customize's business. */
+  if(store.practiceExamPerfect){ recVal.textContent = "100% \u2014 a perfect score"; rec.classList.add("is-passed"); }
   else if(store.practiceTestPassed){
     recVal.textContent = "Passed" + (last && typeof last.lastPct === "number" ? " \u00b7 last score " + last.lastPct + "%" : "");
     rec.classList.add("is-passed");
@@ -45220,11 +45361,6 @@ function showPracticeTestConfirm(){
   else if(last && typeof last.lastPct === "number") recVal.textContent = "Last score " + last.lastPct + "% \u00b7 not passed yet";
   else recVal.textContent = "Not taken yet";
   rec.append(recLab, recVal);
-  if(!store.practiceExamPerfect){
-    const tip = document.createElement("span"); tip.className = "pt-record-tip";
-    tip.textContent = "Score 100% to earn the Phoenix banner.";
-    rec.appendChild(tip);
-  }
   panel.appendChild(rec);
 
   const startBtn = document.createElement("button");
@@ -45372,6 +45508,22 @@ function appendUnitProgress(row, name){
    was holding it in. Any screen that wants a labelled range with a live
    value readout uses this; the touch behaviour, the 44px target and the
    step lattice all come with it, so a second copy cannot drift. */
+/* THE FILLED PART OF A SLIDER (build 234). "The slider button thing
+   could have a better look as well, look more legit." WebKit's range
+   track has no fill of its own, so the track paints a two-stop gradient
+   and this keeps --fill at the thumb's position. Every slider in the app
+   is built by plainSlider() or sliderWithEverything(), and both call it,
+   so the look is the same everywhere including the Virtual Room sheet. */
+function syncStartInert(inert){
+  const tab = document.getElementById("bottomtab-start");
+  if(tab) tab.classList.toggle("is-inert", !!inert);
+}
+function paintSliderFill(slider){
+  if(!slider) return;
+  const mn = Number(slider.min) || 0, mx = Number(slider.max) || 0, v = Number(slider.value) || 0;
+  const pct = mx > mn ? Math.max(0, Math.min(1, (v - mn) / (mx - mn))) * 100 : 100;
+  slider.style.setProperty("--fill", pct.toFixed(2) + "%");
+}
 function plainSlider(labelText, min, max, step, get, set, formatVal, onChange){
   const sect = document.createElement("div");
   sect.className = "sect";
@@ -45391,12 +45543,15 @@ function plainSlider(labelText, min, max, step, get, set, formatVal, onChange){
   slider.addEventListener("input", () => {
     set(Number(slider.value));
     valDisplay.textContent = formatVal(Number(slider.value));
+    paintSliderFill(slider);
     if(typeof onChange === "function") onChange();
   });
+  paintSliderFill(slider);
   wrap.append(slider, valDisplay);
   sect.appendChild(wrap);
   sect.paint = () => {
     slider.value = get();
+    paintSliderFill(slider);
     valDisplay.textContent = formatVal(get());
   };
   return sect;
@@ -45639,107 +45794,70 @@ function showSetup(){
      even when max isn't a multiple of step, so a selection that
      totals, say, 47 questions gets a slider whose highest reachable
      value is genuinely 47, not 45 or 50. */
+  /* ---- HOW MANY: ONE SLIDER AND AN "ALL" PILL (build 234) ----
+     "The length section could be better, we could remove the buttons,
+     and only have the draggable thing, with a small button on the right
+     maybe that says select all and then the toggle thing could move all
+     the way to right." It was two chips - Everything / Custom - and a
+     slider that only existed after tapping Custom, so the same question
+     was asked twice. Now the slider is always there and its right-hand
+     end IS everything: drag to the end, or tap All, and the thumb sits
+     hard right. The count reads "12 of 29" or "All 29" beside the
+     heading, so the relationship to the pool above is spelled out.
+     The track ends on the step lattice and its top stop means the whole
+     pool, which is what makes the far right exactly "all" rather than
+     "all but four" on a pool that is not a multiple of five. */
   function sliderWithEverything(labelText, everythingLabel, customLabel, min, getMax, step, get, set, isEverything, setEverything, setCustom, formatVal){
     const sect = document.createElement("div");
-    sect.className = "sect";
+    sect.className = "sect howmany-sect";
+    const head = document.createElement("div");
+    head.className = "sect-headrow";
     const lab = document.createElement("p");
     lab.className = "slab"; lab.textContent = labelText;
-    sect.appendChild(lab);
-
-    const chipsRow = document.createElement("div");
-    chipsRow.className = "chips";
-    const everyChip = document.createElement("button");
-    everyChip.type = "button"; everyChip.className = "chip";
-    everyChip.textContent = everythingLabel;
-    everyChip.addEventListener("click", () => { setEverything(); paint(); refresh(); });
-    const customChip = document.createElement("button");
-    customChip.type = "button"; customChip.className = "chip";
-    customChip.textContent = customLabel;
-    customChip.addEventListener("click", () => { setCustom(); paint(); refresh(); });
-    chipsRow.append(everyChip, customChip);
-    sect.appendChild(chipsRow);
+    const valDisplay = document.createElement("span");
+    valDisplay.className = "sliderval sect-headval";
+    head.append(lab, valDisplay);
+    sect.appendChild(head);
 
     const wrap = document.createElement("div");
     wrap.className = "sliderwrap";
     const slider = document.createElement("input");
-    /* THE TRACK ENDS ON THE STEP LATTICE, which is what removes the
-       dead space at the right-hand end. A range input snaps to steps
-       measured from `min`, so with 894 questions, min 5 and step 5 the
-       highest reachable stop is 890 - but `max` was set to 894, so the
-       last 4 questions' worth of TRACK existed with nothing on it and
-       the thumb stopped short of the end. Reported as "if I scroll all
-       the way to the right it should be max questions ... there
-       shouldn't be available space there, it needs to matchup
-       perfectly."
-       Setting max to the top lattice stop instead means the thumb
-       reaches the true right edge, and effectiveFrom() below turns
-       that stop into the real maximum. */
     slider.type = "range"; slider.min = min; slider.step = step;
-    slider.max = topStopFor(getMax());
-    slider.value = get();
     slider.className = "slider";
-    slider.setAttribute("aria-label", labelText + " (specific number)");
-    const valDisplay = document.createElement("span");
-    valDisplay.className = "sliderval";
-    valDisplay.textContent = formatVal(get());
-    /* THE TOP OF THE TRACK MEANS ALL OF THEM. A range input snaps to
-       its step lattice measured from `min`, and the pool almost never
-       lands on it: with 894 questions, min 5 and step 5 the highest
-       reachable stop is 890, so dragging the whole way right asked for
-       890 of 894 and quietly left four behind. Reported as the length
-       bar not working - "if you move it all the way to the right that
-       would be all the questions".
-       So the last stop is special-cased to the real maximum rather
-       than to the lattice value under it. Every other position is
-       unchanged, and this cannot overshoot: topStop is by construction
-       the largest lattice value that is still <= dynMax. */
+    slider.setAttribute("aria-label", labelText);
+    const allBtn = document.createElement("button");
+    allBtn.type = "button"; allBtn.className = "slider-allbtn";
+    allBtn.textContent = everythingLabel;
+    allBtn.addEventListener("click", () => { setEverything(); paint(); refresh(); });
     function topStopFor(rawMax){
       const dynMax = Math.max(min, rawMax);
       return Math.max(min, min + Math.floor((dynMax - min) / step) * step);
     }
-    function effectiveFrom(raw){
-      const dynMax = Math.max(min, getMax());
-      return raw >= topStopFor(dynMax) ? dynMax : raw;
-    }
+    slider.max = topStopFor(getMax());
     slider.addEventListener("input", () => {
-      const v = effectiveFrom(Number(slider.value));
-      set(v);
-      valDisplay.textContent = formatVal(v);
-      paint(); refresh();
+      const raw = Number(slider.value);
+      if(raw >= topStopFor(getMax())) setEverything();
+      else { set(raw); if(isEverything()) setCustom(); }
+      sect.paint(); refresh();
     });
-    wrap.append(slider, valDisplay);
+    wrap.append(slider, allBtn);
     sect.appendChild(wrap);
 
     sect.paint = () => {
+      const pool = getMax();
+      const top = topStopFor(pool);
+      slider.max = top;
+      /* A pool no bigger than one step (three flagged questions) has no
+         length to choose: it is all of them, and the slider says so by
+         sitting full and not moving. */
+      slider.disabled = pool <= min;
+      if(!isEverything() && get() >= pool) setEverything();
       const every = isEverything();
-      everyChip.classList.toggle("on", every);
-      everyChip.setAttribute("aria-pressed", every ? "true" : "false");
-      customChip.classList.toggle("on", !every);
-      customChip.setAttribute("aria-pressed", !every ? "true" : "false");
-      wrap.hidden = every;
-      /* Recomputed every paint (unit checkboxes and Draw-from both
-         call refresh()+paint() on change), then the stored value is
-         clamped down to fit — without this, unchecking a unit after
-         picking a custom size larger than the new, smaller pool left
-         cfg.size silently requesting more questions than exist. */
-      const dynMax = Math.max(min, getMax());
-      slider.max = topStopFor(dynMax);
-      if(!every){
-        /* THE RIGHT-HAND END ALWAYS MEANS EVERY QUESTION. "The warning
-           shouldn't be there if the custom amount of questions is set to
-           max." It was, because the end of the track is the top step
-           stop, and on a 12-question unit with 5-question steps that stop
-           is 10: tapping Custom (which starts at 10) or anything that
-           clamped the size left the thumb hard right, the label saying
-           10, and the hundo warning up - a run that could never earn one
-           while looking maxed. So any size at or past the top stop IS the
-           whole pool, the same thing a drag to the end already meant
-           (effectiveFrom), and the thumb sits on the top stop to show it. */
-        const top = topStopFor(dynMax);
-        if(get() >= top && get() !== dynMax) set(dynMax);
-        slider.value = Math.min(get(), top);
-      }
-      valDisplay.textContent = formatVal(get());
+      slider.value = every ? top : Math.min(get(), top);
+      paintSliderFill(slider);
+      allBtn.classList.toggle("on", every);
+      allBtn.setAttribute("aria-pressed", every ? "true" : "false");
+      valDisplay.textContent = every ? "All " + pool : get() + " of " + pool;
     };
     return sect;
   }
@@ -45841,14 +45959,22 @@ function showSetup(){
      cleanly and can be sized the same (see .drawfrom-sect .chip
      below). The counts still fully drive each chip's enabled/disabled
      state via `disabled`, just no longer shown in the text itself. */
-  const srcSect = chipRow("Draw from",
-    [{ value: "all", label: "All questions" },
+  /* "QUESTIONS", NOT "DRAW FROM: ALL QUESTIONS" (build 234). "It gets
+     a little confusing because it says draw from all questions but then
+     you can adjust the amount underneath it." Two sections both seemed
+     to be about how many. They are not: this one is WHICH questions -
+     the pool - and How many below takes a number of them. The labels
+     say that now, and a line under the choice says what the pool is
+     and how big, so How many's "12 of 29" has something to refer to. */
+  const srcSect = chipRow("Questions",
+    [{ value: "all", label: "All" },
      { value: "recent", label: "Most missed", disabled: recentCount === 0 },
      { value: "flagged", label: "Flagged", disabled: flaggedCount === 0 }],
     () => cfg.source, v => { cfg.source = v; });
   srcSect.classList.add("drawfrom-sect");
-  srcSect.querySelector(".slab").appendChild(buildInfoIcon(
-    "\"Most missed\" pulls from questions you've gotten wrong recently. \"Flagged\" pulls only from questions you've flagged during a run."));
+  const srcCaption = document.createElement("p");
+  srcCaption.className = "sect-caption";
+  srcSect.appendChild(srcCaption);
   const optionsModalBody = document.createElement("div");
   optionsModalBody.className = "optionsmodal-body";
   /* The actual pre-test summary, per explicit request \u2014 mode, which
@@ -45869,8 +45995,8 @@ function showSetup(){
   optionsModalBody.appendChild(srcSect);
 
   let lastSliderSize = cfg.size > 0 ? cfg.size : 10;
-  const sizeSect = sliderWithEverything("Length", "Everything", "Custom", 5,
-    () => Math.max(5, poolNow().length), 5,
+  const sizeSect = sliderWithEverything("How many", "All", "Custom", 5,
+    () => poolNow().length, 5,
     () => lastSliderSize, v => { lastSliderSize = v; cfg.size = v; },
     () => cfg.size === 0, () => { cfg.size = 0; }, () => { cfg.size = lastSliderSize; },
     v => v + (v === 1 ? " question" : " questions"));
@@ -45882,7 +46008,7 @@ function showSetup(){
      a shorter Length, or drawing from Most missed / Flagged - can
      never earn one, and the results screen only said so afterwards. */
   const hundoNote = document.createElement("p");
-  hundoNote.className = "info-note hundo-note";
+  hundoNote.className = "hundo-note";
   hundoNote.hidden = true;
   optionsModalBody.appendChild(hundoNote);
 
@@ -45920,11 +46046,15 @@ function showSetup(){
   moreToggle.className = "more-toggle";
   moreToggle.setAttribute("aria-expanded", "false");
   const moreToggleText = document.createElement("span");
-  moreToggleText.textContent = "More options";
+  /* The disclosure holds the timer and nothing else now, so it is
+     called that, and says what is set without being opened. */
+  moreToggleText.textContent = "Timer";
+  const moreToggleState = document.createElement("span");
+  moreToggleState.className = "more-toggle-state";
   const moreToggleIcon = document.createElement("span");
   moreToggleIcon.className = "more-toggle-icon";
   moreToggleIcon.setAttribute("aria-hidden", "true");
-  moreToggle.append(moreToggleText, moreToggleIcon);
+  moreToggle.append(moreToggleText, moreToggleState, moreToggleIcon);
   const moreBody = document.createElement("div");
   moreBody.className = "more-body";
   const moreBodyInner = document.createElement("div");
@@ -45953,16 +46083,37 @@ function showSetup(){
      current mode has no use for. */
   optionsModalBody.appendChild(moreWrap);
 
-  const timerSect = chipRow("Timer",
-    [{ value: "off", label: "Off" }, { value: "up", label: "Stopwatch" },
-     { value: "down", label: "Countdown" }],
-    () => cfg.timer, v => { cfg.timer = v; });
+  /* ---- THE TIMER IS TWO SWITCHES (build 234) ----
+     "I feel like the timer options are kinda confusing." Off /
+     Stopwatch / Countdown asked you to know what a stopwatch and a
+     countdown would each do to a run. Two plain questions instead: do
+     you want a time limit (and how long), and if not, do you want to see
+     how long you take. Same three states underneath (cfg.timer off / up
+     / down), so nothing saved changes meaning. The stopwatch switch
+     goes away while a limit is on, because a limit already shows a
+     clock. */
+  const timerSect = document.createElement("div");
+  timerSect.className = "sect timer-sect";
+  const limitRow = toggle("Time limit",
+    "The run ends when the clock hits zero.",
+    () => cfg.timer === "down", v => { cfg.timer = v ? "down" : "off"; });
+  const watchRow = toggle("Stopwatch",
+    "See how long you are taking. No limit.",
+    () => cfg.timer === "up", v => { cfg.timer = v ? "up" : "off"; });
+  timerSect.append(limitRow);
+  timerSect.paint = () => {
+    const l = limitRow.querySelector("input"), w = watchRow.querySelector("input");
+    if(l) l.checked = cfg.timer === "down";
+    if(w) w.checked = cfg.timer === "up";
+    watchRow.hidden = cfg.timer === "down";
+  };
   moreBodyInner.appendChild(timerSect);
-
-  const minutesSect = plainSlider("Time limit", 5, 90, 5,
+  const minutesSect = plainSlider("Minutes", 5, 90, 5,
     () => cfg.timerMinutes, v => { cfg.timerMinutes = v; },
     v => v + " min", refresh);
-  moreBodyInner.appendChild(minutesSect);
+  minutesSect.classList.add("minutes-sect");
+  timerSect.appendChild(minutesSect);
+  timerSect.appendChild(watchRow);
 
   /* --- toggles --- */
   const optSect = document.createElement("div");
@@ -45998,14 +46149,23 @@ function showSetup(){
     return row;
   }
 
-  const shuffleRow = toggle("Shuffle answer positions",
-    "Options move around, so you cannot pass by remembering that it is C.",
+  /* SIDE BY SIDE, AND OUT ON THE SHEET (build 234). "These options are
+     kinda hidden? Maybe they could be side by side to save that space."
+     They lived at the bottom of More options under the timer. Two short
+     tiles in one row now, under How many, where they are seen on the
+     way to Begin rather than dug out. */
+  optSect.classList.add("opt-tiles-sect");
+  const optTiles = document.createElement("div");
+  optTiles.className = "opt-tiles";
+  const shuffleRow = toggle("Shuffle answers",
+    "A, B, C and D move each time.",
     () => cfg.shuffle, v => { cfg.shuffle = v; });
-  optSect.appendChild(shuffleRow);
-  const recallRow = toggle("Hide answer choices",
-    "Read the question and answer it in your head first, then reveal.",
+  const recallRow = toggle("Hide answers",
+    "Answer in your head, then reveal.",
     () => cfg.recall, v => { cfg.recall = v; });
-  optSect.appendChild(recallRow);
+  shuffleRow.classList.add("opt-tile"); recallRow.classList.add("opt-tile");
+  optTiles.append(shuffleRow, recallRow);
+  optSect.appendChild(optTiles);
   /* "Show all correct answers" is GONE, per explicit request - "we
      don't need it anymore because of the review button". It highlighted
      the right answer before you picked, which the Review mode on this
@@ -46014,7 +46174,7 @@ function showSetup(){
      cfg.revealCorrect survives as a defaulted, unreadable field (see
      applySaved) so an account that had it switched on does not come
      back with answers revealed and no control left to switch it off. */
-  moreBodyInner.appendChild(optSect);
+  optionsModalBody.insertBefore(optSect, moreWrap);
   /* THE SHEET IS A FLAT, LABELLED LIST NOW, per explicit request that
      it reads confusingly in Drill. What it had was one disclosure
      called "Timer & options" holding two unrelated things - the timer
@@ -46324,8 +46484,9 @@ function showSetup(){
     /* AFTER the four it asks about, because it asks them rather than
        re-deriving their conditions - reading them before they are set
        is how this kind of check answers last render's question. */
-    moreWrap.hidden = minutesSect.hidden
-      && timerSect.hidden && optSect.hidden;
+    moreWrap.hidden = timerSect.hidden;
+    moreToggleState.textContent = cfg.timer === "down" ? cfg.timerMinutes + " min limit"
+      : cfg.timer === "up" ? "Stopwatch" : "Off";
     /* Review draws from the same three sources a Drill does - "in the
        review mode, include the options to review flagged and most missed
        questions". */
@@ -46340,6 +46501,11 @@ function showSetup(){
        there's anything to draw from) still tracks the live count. */
     srcSect.relabel("recent", "Most missed", unitRecentCount === 0);
     srcSect.relabel("flagged", "Flagged", unitFlaggedCount === 0);
+    const poolN = poolNow().length;
+    srcCaption.textContent = cfg.units.length === 0 ? "" :
+      cfg.source === "recent" ? "The ones you have missed most lately \u2014 " + poolN + " in these units."
+      : cfg.source === "flagged" ? "Only the ones you have flagged \u2014 " + poolN + " in these units."
+      : "Every question in these units \u2014 " + poolN + " in all.";
     /* ---- EXAM CHOOSES ITS OWN LENGTH ----
        "In the mode exam it doesn't let you select how many questions."
        It did not, and its own card two screens earlier promises the
@@ -46354,8 +46520,8 @@ function showSetup(){
     hundoNote.hidden = !partial;
     hundoNote.textContent = partial
       ? (cfg.units.length === 1
-          ? "This won't count toward a hundo. A hundo needs every question in the unit, so pick Everything to earn one."
-          : "This won't count toward any hundos. A hundo needs every question in a unit, so pick Everything to earn them.")
+          ? "Not the whole unit, so this run won't count toward a hundo."
+          : "Not every question, so this run won't count toward any hundos.")
       : "";
     /* The sheet's own primary button relabels to match what it will
        actually do while Review is on — the same swap its click handler
@@ -46374,6 +46540,7 @@ function showSetup(){
        now lands and the handler says why. */
     const inert = cfg.units.length === 0 || pool.length === 0;
     startBtn.classList.toggle("is-inert", inert);
+    syncStartInert(inert);
     startBtn.setAttribute("aria-disabled", inert ? "true" : "false");
     startBtn.dataset.inertReason = cfg.units.length === 0
       ? "Select units to start."
@@ -46400,7 +46567,9 @@ function showSetup(){
       bits.push("Nothing in the units you ticked has been missed in the last 30 days.");
     else if(cfg.source === "recent")
       bits.push("Ranked by how often you have missed each one in the last 30 days.");
-    if(cfg.timer === "down")
+    /* Not in Game: its clock is the per-question one, and the time
+       limit switch is not even on its sheet. */
+    if(cfg.timer === "down" && !isGame && !reviewAllMode)
       bits.push("When the clock runs out, the run ends early and scores whatever you finished.");
     if(!storageOK)
       bits.push("This browser is not letting the page save anything, so your history will not carry over to next time. Download the file and open it in a normal browser tab.");
@@ -47661,7 +47830,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-28-233";
+const APP_BUILD = "2026-09-28-234";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -53307,6 +53476,7 @@ function showVirtualRoomSetup(editRoom){
        still takes the tap, and says why rather than doing nothing. */
     const inert = picked.size === 0;
     startBtn.classList.toggle("is-inert", inert);
+    syncStartInert(inert);
     startBtn.setAttribute("aria-disabled", inert ? "true" : "false");
     startBtn.textContent = inert ? "Pick units to continue"
       : editing ? "Match settings"
@@ -62194,6 +62364,22 @@ function buildRanksTab(){
   startLab.textContent = held ? "Start" : "You start here";
   map.appendChild(startLab);
 
+  /* ---- THE FIRST LOOK AFTER A RANK-UP (build 234) ----
+     "When you open that tab for the first time after unlocking, give it
+     a cool effect to the road ... a small cutscene on the screen where
+     it shows the next rank unlocked on the road map." store.rankMapSeen
+     is the last rank this map has shown as reached. Anything held past
+     it is drawn still-locked and then earned in front of you when the
+     tab is shown (runRankMapCelebration): the map scrolls to it, the
+     road runs into it, the stop lights and its rewards take their
+     colour. Unset for an account that has never opened this build, and
+     then set to what they hold now with no show - otherwise everybody
+     would be walked through every rank they already had. */
+  if(typeof store.rankMapSeen !== "number"){ store.rankMapSeen = heldIndex; saveStore(); }
+  const celebrateKeys = heldIndex > store.rankMapSeen
+    ? TIER_ORDER_FULL.slice(Math.max(0, store.rankMapSeen + 1), heldIndex + 1) : [];
+  const celebrateStops = [];
+
   const topDown = TIER_ORDER_FULL.slice();
   topDown.forEach((key, i) => {
     const idx = TIER_ORDER_FULL.indexOf(key);
@@ -62201,10 +62387,11 @@ function buildRanksTab(){
     const reached = rankPct(key) >= 1;
     const isHere = key === held;
     const isNext = key === nextKey;
+    const pending = celebrateKeys.indexOf(key) >= 0;
     const stop = document.createElement("article");
     stop.className = "rankmap-stop " + (idx % 2 === 0 ? "is-left" : "is-right") +
       (reached ? " is-reached" : "") + (isHere ? " is-here" : "") + (isNext ? " is-next" : "") +
-      (!reached && !isNext ? " is-locked" : "");
+      (!reached && !isNext ? " is-locked" : "") + (pending ? " is-celebrate-pending" : "");
     stop.style.setProperty("--rank-color", RANK_COLOR[key]);
     /* The stretch of road from this stop down to the one below it,
        which is the NEXT rank up: lit when that rank is reached, lit part
@@ -62219,13 +62406,16 @@ function buildRanksTab(){
       const below = topDown[i + 1];
       const lit = rankPct(below) >= 1 ? 1 : below === nextKey ? (heroStepPct != null ? heroStepPct : rankPct(below)) : 0;
       road.style.setProperty("--rank-color", RANK_COLOR[below]);
-      fillsToAnimate.push({ el: roadFill, prop: "--lit", value: String(Math.round(lit * 1000) / 1000) });
+      /* The stretch into a rank about to be celebrated waits for its
+         moment, dark, instead of filling with everything else. */
+      if(celebrateKeys.indexOf(below) >= 0) roadFill.dataset.celebrateFor = below;
+      else fillsToAnimate.push({ el: roadFill, prop: "--lit", value: String(Math.round(lit * 1000) / 1000) });
       stop.appendChild(road);
     }
 
     const node = document.createElement("div");
     node.className = "rankmap-node";
-    node.appendChild(fitRankEmblem(buildRankEmblemSVG(key), key));
+    node.appendChild(fitRankEmblem(buildRankEmblemSVG(key), key, true));
     if(isHere){
       const you = document.createElement("span");
       you.className = "rankmap-you";
@@ -62243,6 +62433,7 @@ function buildRanksTab(){
     const state = document.createElement("span");
     state.className = "rankmap-state";
     state.textContent = isHere ? "You are here" : reached ? "Reached" : isNext ? "Up next" : "Locked";
+    if(pending){ state.dataset.after = state.textContent; state.textContent = "Locked"; }
     head.append(name, state);
     card.appendChild(head);
     const req = document.createElement("p");
@@ -62294,13 +62485,31 @@ function buildRanksTab(){
     /* A rank's own banner - only Supernova has one (build 232). Shown
        as the banner itself, cropped to a strip, because a banner is a
        picture and its name alone says nothing. */
-    BANNERS.filter(b => b.rank === key).forEach(b => {
-      const strip = document.createElement("span");
-      strip.className = "rankmap-giftbanner";
-      try{ strip.appendChild(buildBannerArt(b.id)); }catch(e){}
-      gift("is-banner", strip, b.name + " banner");
-    });
     card.appendChild(gifts);
+    /* THE SUPERNOVA BANNER, SHOWN AS A BANNER (build 234). "On the
+       supernova rank, the banner one needs to show the supernova banner
+       the best you can." A chip-sized strip of it said nothing; it is a
+       wide preview across the card now, cut the way a Profile cover is,
+       and - like every other reward here - in black and white until the
+       rank is yours. */
+    BANNERS.filter(b => b.rank === key).forEach(b => {
+      const prev = document.createElement("div");
+      prev.className = "rankmap-bannerprev";
+      try{ prev.appendChild(buildBannerArt(b.id)); }catch(e){}
+      const cap = document.createElement("span");
+      cap.className = "rankmap-bannercap"; cap.textContent = b.name + " banner";
+      prev.appendChild(cap);
+      card.appendChild(prev);
+    });
+    if(pending){
+      const burst = document.createElement("span");
+      burst.className = "rankmap-burst"; burst.setAttribute("aria-hidden", "true");
+      node.appendChild(burst);
+      const ribbon = document.createElement("span");
+      ribbon.className = "rankmap-ribbon"; ribbon.textContent = "Rank reached";
+      card.appendChild(ribbon);
+      celebrateStops.push({ key: key, stop: stop, state: state });
+    }
     stop.appendChild(card);
     map.appendChild(stop);
   });
@@ -62335,8 +62544,40 @@ function buildRanksTab(){
      Kept as a rAF INSIDE runFill for the same reason the others do: a
      width set in the same tick as the element is shown has nothing to
      transition from. */
+  /* The show itself. Runs once, from runFill (the tab being SHOWN, not
+     built - Profile builds its tabs behind one another). Marked seen
+     before it starts, so leaving half-way through does not replay it. */
+  let celebrated = false;
+  function runRankMapCelebration(){
+    if(celebrated || !celebrateStops.length) return;
+    celebrated = true;
+    store.rankMapSeen = heldIndex; saveStore();
+    const finish = c => {
+      const rf = map.querySelector('.rankmap-roadfill[data-celebrate-for="' + c.key + '"]');
+      if(rf) rf.style.setProperty("--lit", "1");
+      c.stop.classList.remove("is-celebrate-pending");
+      if(c.state.dataset.after) c.state.textContent = c.state.dataset.after;
+    };
+    if(theme.reduceMotion){ celebrateStops.forEach(finish); return; }
+    const wait = ms => new Promise(r => setTimeout(r, ms));
+    (async () => {
+      await wait(500);
+      for(const c of celebrateStops){
+        if(!c.stop.isConnected) return;
+        try{ c.stop.scrollIntoView({ block: "center", behavior: "smooth" }); }catch(e){}
+        await wait(750);
+        const rf = map.querySelector('.rankmap-roadfill[data-celebrate-for="' + c.key + '"]');
+        if(rf){ rf.style.setProperty("--lit", "1"); await wait(1100); }
+        c.stop.classList.add("is-celebrating");
+        finish(c);
+        await wait(1700);
+        c.stop.classList.remove("is-celebrating");
+      }
+    })();
+  }
   tab.runFill = () => {
     requestAnimationFrame(() => requestAnimationFrame(() => {
+      runRankMapCelebration();
       fillsToAnimate.forEach(({ el, prop, value }) => {
         if(prop === "width") el.style.width = value;
         else if(prop.indexOf("--") === 0) el.style.setProperty(prop, value);
@@ -62876,6 +63117,15 @@ function applyGlassRefraction(el, mapImgId){
       startTab.title = floatBtn.textContent;
       startTab.setAttribute("aria-label", floatBtn.textContent);
       startTab.disabled = floatBtn.disabled;
+      /* NOT WHITE UNTIL THERE IS SOMETHING TO START (build 234). "The
+         start button is white before you have units selected, should not
+         be white till you select at least a single unit so you know it's
+         clickable." The float button went grey (.is-inert) but this copy
+         of it only ever mirrored `disabled`, which the float button
+         deliberately never sets - a disabled button swallows the tap that
+         now says "Select units to start". Mirrored here, and live: the
+         unit screens call syncStartInert() on every change. */
+      startTab.classList.toggle("is-inert", floatBtn.classList.contains("is-inert"));
       startTab.onclick = () => floatBtn.click();
       bar.classList.add("has-start-tab");
       /* The actual fix for the badly-misaligned slider on this screen

@@ -6230,3 +6230,55 @@ where the cut was.
 **Reading everyone's progress documents for a report was refused by the
 session's permission check** (personal data), even with the admin key
 set. It needs Madison's explicit go-ahead before it is attempted again.
+
+### Build 234 - the road map as it was; the start sheet made simple
+
+**The road map is build 231's, flipped.** "The old road map looked so
+good, all you needed to do was flip it." Build 232 had also shrunk every
+emblem into its ring and clipped it; they are their old size and glow
+again (`.rankmap-node > svg` at 118%, overflow visible), and only the
+centring stays (`fitRankEmblem(svg, key, true)` recentres the viewBox on
+the drawing without rescaling). Home's bubbles and the reward chips keep
+the fitted, clipped cut.
+
+**Nothing on the map is in colour until it is yours.** A stop that is not
+reached (the Up next one included) shows its theme dot as a faint grey
+disc, its flare and character in grey, and the Supernova banner in black
+and white - Customize's locked treatment. Supernova's banner is a wide
+preview across its card (`.rankmap-bannerprev`), not a chip.
+
+**The first look after a rank-up is shown, not just drawn.**
+`store.rankMapSeen` is the last rank the map has shown as reached. Ranks
+held past it are drawn still-locked; when the tab is SHOWN (runFill) the
+map scrolls to each, the road runs into it, the node pops with a ring,
+a "Rank reached" ribbon flies, and the rewards take their colour. It is
+marked seen before it starts. `null` (never opened on this build) is
+set quietly to the rank held, so nobody is walked through ranks they
+already had; a reset sets -1.
+
+**The start sheet** (Drill, Exam, Game, Review share it):
+- Questions (was "Draw from: All questions"): the pool, with a line
+  saying what it is and how big.
+- How many (was Length: Everything / Custom): one slider, always
+  showing, an All pill on its right; the far right IS all. The hundo
+  warning is a quiet red line under it.
+- Shuffle answers / Hide answers: two tiles side by side, on the sheet.
+- Timer: the one disclosure left, labelled with what is set. Inside,
+  two switches (Time limit + minutes, Stopwatch) instead of Off /
+  Stopwatch / Countdown. cfg.timer keeps its three values.
+- Every slider in the app has a filled track (`--fill`, kept by
+  `paintSliderFill()`) and a white knob.
+
+**Start is not white until a unit is picked.** The float button went grey
+(`.is-inert`) but the tab-bar copy of it only mirrored `disabled`, which
+is never set (a disabled button swallows the tap that explains itself).
+`syncStartInert()` mirrors the state from both unit screens, live.
+
+**Themes:** Bronze's rim is deep petrol (was green, "looks like
+diarrhea"), Amethyst's is deep plum under a gold core (was pink). The
+Practice Test screen no longer mentions the Phoenix banner.
+
+**check-behaviour now serves the page's own build as version.json.**
+Under --against the older page saw the repo's newer build, and with
+"force" set it reloaded itself mid-check. Section 18 is this build's gate
+and fails on 233.

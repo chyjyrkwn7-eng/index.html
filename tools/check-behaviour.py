@@ -123,10 +123,25 @@ def check(name, ok, detail=""):
         FAILURES.append(name)
 
 
+_BUILD_M = re.search(r'const APP_BUILD = "([^"]+)"', BODY)
+SERVED_BUILD = _BUILD_M.group(1) if _BUILD_M else ""
+
+
 def open_page(ctx):
     pg = ctx.new_page()
     pg.route("**/index.html", lambda r: r.fulfill(
         status=200, headers={"content-type": "text/html; charset=utf-8"}, body=BODY))
+    # THE PAGE'S OWN BUILD, WHATEVER THE REPO'S version.json SAYS. Under
+    # --against the page is an older build than the repo, so the update
+    # check found a newer version.json, and with "force" set it reloaded
+    # the page in the middle of a check - which is how build 234's
+    # section 18 died with "execution context destroyed" against 233
+    # instead of failing. No check reads version.json off the server
+    # (the update checks hand checkForUpdate() one directly), so this
+    # changes nothing on the current build.
+    pg.route("**/version.json*", lambda r: r.fulfill(
+        status=200, headers={"content-type": "application/json"},
+        body='{"build":"%s","frameId":"","note":""}' % SERVED_BUILD))
     return pg
 
 
@@ -553,9 +568,10 @@ def check_ranks(br):
           [c["meter"] for c in cards] == [False, False, False, True, False, False, False],
           [c["meter"] for c in cards])
     # Theme and flare on every rank; the top four hand over a character
-    # too, and Supernova its own banner (build 232).
+    # too. Supernova's banner is its own wide preview since build 234,
+    # not a chip, so it is not counted here (section 18 has it).
     check("every rank lists what it hands over, top four include the character",
-          [c["rewards"] for c in cards] == [2, 2, 2, 3, 3, 3, 4] and
+          [c["rewards"] for c in cards] == [2, 2, 2, 3, 3, 3, 3] and
           [c["charGift"] for c in cards] == [False] * 3 + [True] * 4,
           [c["rewards"] for c in cards])
     # THE SHAPE, NOT THE COUNT. This asserted `count == 12` and that
@@ -1636,7 +1652,7 @@ def check_b232(br):
       showProfile('ranks');
       T('ladder', () => [...document.querySelectorAll('.rankmap-stop .rankmap-name')].map(n => n.textContent));
       T('novaBanner', () => { const st = [...document.querySelectorAll('.rankmap-stop')].pop();
-        return !!(st && st.querySelector('.rankmap-gift.is-banner .bnr')); });
+        return !!(st && st.querySelector('.rankmap-bannerprev .bnr, .rankmap-gift.is-banner .bnr')); });
       T('centred', () => [...document.querySelectorAll('.rankmap-node')].map(n => {
         const svg = n.querySelector('svg.rank-emblem-svg'); const a = n.getBoundingClientRect(), b = svg.getBoundingClientRect();
         return { vb: svg.getAttribute('viewBox'), dx: Math.round(Math.abs((a.left + a.width / 2) - (b.left + b.width / 2))),
@@ -1665,8 +1681,11 @@ def check_b232(br):
           isinstance(s["ladder"], list) and s["ladder"][:1] == ["Iron"] and s["ladder"][-1:] == ["Supernova"], s["ladder"])
     check("Supernova's stop shows its banner among what it hands over", s["novaBanner"] is True, s["novaBanner"])
     cen = s["centred"] if isinstance(s["centred"], list) else []
-    check("every road-map icon is centred in its circle and cut to fit it",
-          len(cen) == 7 and all(c["vb"] != "0 0 128 128" and c["dx"] <= 1 and c["over"] == 0 for c in cen), cen)
+    # Centred on its own drawing. Build 232 also shrank and clipped them;
+    # build 234 put the old size back ("the old road map looked so good"),
+    # so only the centring is held to here.
+    check("every road-map icon is centred in its circle",
+          len(cen) == 7 and all(c["vb"] != "0 0 128 128" and c["dx"] <= 1 for c in cen), cen)
     check("the hero shows level and badges as two gauges, not a copy of the Profile card",
           isinstance(s["hero"], dict) and s["hero"]["gauges"] == 2 and not s["hero"]["bar"] and not s["hero"]["chips"], s["hero"])
     check("the badge case lining is not blue", isinstance(s["case"], list) and s["case"] and max(s["case"]) <= 12, s["case"])
@@ -1707,6 +1726,110 @@ def check_b232(br):
     ctx.close()
 
 
+def check_b234(br):
+    """Build 234: the road map as it was, flipped; nothing in colour until
+    it is yours; the first look after a rank-up; the start sheet made
+    simple; Start dim until there is something to start. Written against
+    build 233, where each of these fails."""
+    print("\n18. build 234: road map, grey rewards, rank-up on the map, the start sheet, Start's colour")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{
+      const out = {};
+      const T = async (k, f) => { try{ out[k] = await f(); }catch(e){ out[k] = 'THREW ' + e.message; } };
+      const wait = ms => new Promise(r => setTimeout(r, ms));
+      const u = topicsIn(QUESTIONS); u.slice(0, 6).forEach(n => store.unitPerfects[n] = 999); levelOf = () => 40;
+      // Gold held; the map has already shown Gold, so no show.
+      store.rankMapSeen = 2;
+      showProfile('ranks'); await wait(900);
+      await T('grey', () => { const st = [...document.querySelectorAll('.rankmap-stop')];
+        const f = (el) => el ? getComputedStyle(el).filter : null;
+        return { reached: f(st[0].querySelector('.rankmap-dot')), next: f(st[3].querySelector('.rankmap-dot')),
+                 lockedChar: f(st[4].querySelector('.rankmap-gift.is-char .rankmap-giftav svg')) }; });
+      await T('novaPrev', () => { const st = [...document.querySelectorAll('.rankmap-stop')].pop();
+        const b = st && st.querySelector('.rankmap-bannerprev .bnr');
+        return b ? { h: Math.round(b.getBoundingClientRect().height), filter: getComputedStyle(b).filter } : null; });
+      await T('nodeSize', () => { const n = document.querySelector('.rankmap-node'); const sv = n.querySelector('svg');
+        return Math.round(sv.getBoundingClientRect().width) - Math.round(n.getBoundingClientRect().width); });
+      // A rank-up the map has not shown yet: Gold, last seen Bronze.
+      store.rankMapSeen = 1; saveStore();
+      showProfile('ranks'); await wait(300);
+      await T('pendingAtFirst', () => { const g = [...document.querySelectorAll('.rankmap-stop')][2];
+        return g.classList.contains('is-celebrate-pending'); });
+      await wait(5200);
+      await T('afterShow', () => ({ pending: document.querySelectorAll('.is-celebrate-pending').length, seen: store.rankMapSeen }));
+      // Never opened on this build: set quietly, no show.
+      store.rankMapSeen = null; showProfile('ranks'); await wait(300);
+      await T('firstEver', () => ({ pending: document.querySelectorAll('.is-celebrate-pending').length, seen: store.rankMapSeen }));
+      // Unit selection: Start is not white until a unit is picked.
+      cfg.mode = 'drill'; showSetup(); await wait(600);
+      await T('startNone', () => document.getElementById('bottomtab-start').classList.contains('is-inert'));
+      const c = document.querySelector('.pick input'); c.checked = true; c.dispatchEvent(new Event('change', { bubbles:true })); await wait(200);
+      await T('startOne', () => document.getElementById('bottomtab-start').classList.contains('is-inert'));
+      // The start sheet.
+      document.getElementById('nextbtn').click(); await wait(500);
+      await T('sheet', () => {
+        const sh = document.querySelector('.unitoptions-modal-sheet');
+        const hm = sh.querySelector('.howmany-sect');
+        const sl = hm && hm.querySelector('.slider');
+        const res = { chips: hm ? hm.querySelectorAll('.chip').length : -1, all: !!(hm && hm.querySelector('.slider-allbtn')),
+                      caption: (sh.querySelector('.drawfrom-sect .sect-caption') || {}).textContent || '' };
+        cfg.size = 0; if(sl){ sl.value = sl.min; sl.dispatchEvent(new Event('input', { bubbles:true })); }
+        res.dragged = cfg.size; res.warn = !sh.querySelector('.hundo-note').hidden;
+        if(sl){ sl.value = sl.max; sl.dispatchEvent(new Event('input', { bubbles:true })); }
+        res.atEnd = cfg.size; res.warnAtEnd = !sh.querySelector('.hundo-note').hidden;
+        const sw = sh.querySelectorAll('.timer-sect .opt input[type=checkbox]');
+        res.timerSwitches = sw.length;
+        if(sw[0]){ sw[0].checked = true; sw[0].dispatchEvent(new Event('change', { bubbles:true })); }
+        res.timerAfter = cfg.timer;
+        const tiles = [...sh.querySelectorAll('.opt-tile')].map(t => Math.round(t.getBoundingClientRect().top));
+        res.tilesSideBySide = tiles.length === 2 && tiles[0] === tiles[1];
+        cfg.timer = 'off';
+        return res; });
+      document.querySelector('.unitoptions-modal-scrim').click();
+      showPracticeTestConfirm(); await wait(300);
+      await T('phoenix', () => /Phoenix/i.test(document.getElementById('stage').textContent));
+      // Themes: Bronze's second colour is not green, Amethyst's not pink.
+      await T('themes', () => {
+        const hue = h => { const n = parseInt(h.slice(1), 16), r = (n >> 16) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
+          const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn; if(!d) return 0;
+          let x = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; return (x * 60 + 360) % 360; };
+        const c3 = a => { document.documentElement.dataset.accent = a; const v = getComputedStyle(document.documentElement).getPropertyValue('--theme-c3').trim(); return Math.round(hue(v)); };
+        const res = { bronze: c3('ranger'), amethyst: c3('elite') };
+        document.documentElement.dataset.accent = theme.accent || 'ink';
+        return res; });
+      return out; }""")
+    g = r["grey"] if isinstance(r["grey"], dict) else {}
+    check("a reward you have not reached is grey on the road map, and one you have is in colour",
+          "grayscale" not in str(g.get("reached")) and "grayscale" in str(g.get("next")) and "grayscale" in str(g.get("lockedChar")), g)
+    np_ = r["novaPrev"] if isinstance(r["novaPrev"], dict) else {}
+    check("Supernova's stop shows its banner as a wide preview, in black and white until it is yours",
+          np_.get("h", 0) >= 70 and "grayscale" in str(np_.get("filter")), r["novaPrev"])
+    check("the road-map emblems are their old size again (drawn past the ring, not shrunk into it)",
+          isinstance(r["nodeSize"], int) and r["nodeSize"] > 4, r["nodeSize"])
+    check("a rank reached since the map last looked starts locked and is earned on screen",
+          r["pendingAtFirst"] is True and isinstance(r["afterShow"], dict) and r["afterShow"]["pending"] == 0
+          and r["afterShow"]["seen"] == 2, [r["pendingAtFirst"], r["afterShow"]])
+    check("an account that never opened this build is not walked through ranks it already had",
+          isinstance(r["firstEver"], dict) and r["firstEver"]["pending"] == 0 and r["firstEver"]["seen"] == 2, r["firstEver"])
+    check("Start is not white until a unit is picked, and turns white the moment one is",
+          r["startNone"] is True and r["startOne"] is False, [r["startNone"], r["startOne"]])
+    sh = r["sheet"] if isinstance(r["sheet"], dict) else {}
+    check("How many is one slider with an All button, no Everything/Custom chips",
+          sh.get("chips") == 0 and sh.get("all") is True, sh)
+    check("dragging below the end picks a number and warns; the far right is every question and does not",
+          isinstance(sh.get("dragged"), int) and sh.get("dragged", 0) > 0 and sh.get("warn") is True
+          and sh.get("atEnd") == 0 and sh.get("warnAtEnd") is False, sh)
+    check("the Questions choice says what the pool is and how big", "in" in sh.get("caption", "") and any(ch.isdigit() for ch in sh.get("caption", "")), sh.get("caption"))
+    check("the timer is two switches, and the first one sets a time limit",
+          sh.get("timerSwitches") == 2 and sh.get("timerAfter") == "down", sh)
+    check("the two answer options sit side by side", sh.get("tilesSideBySide") is True, sh)
+    check("the Practice Test screen does not mention the Phoenix banner", r["phoenix"] is False, r["phoenix"])
+    th = r["themes"] if isinstance(r["themes"], dict) else {}
+    check("Bronze's second colour is not green and Amethyst's is not pink",
+          not (90 <= th.get("bronze", 120) <= 170) and not (290 <= th.get("amethyst", 330) <= 350), th)
+    ctx.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=CHROME)
@@ -1728,6 +1851,7 @@ def main():
             check_b230(br)
             check_b231(br)
             check_b232(br)
+            check_b234(br)
         finally:
             br.close()
     SERVER.shutdown()
