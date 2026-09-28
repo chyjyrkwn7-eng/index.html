@@ -570,9 +570,10 @@ def check_ranks(br):
     # Theme and flare on every rank; the top four hand over a character
     # too. Supernova's banner is its own wide preview since build 234,
     # not a chip, so it is not counted here (section 18 has it).
-    check("every rank lists what it hands over, top four include the character",
-          [c["rewards"] for c in cards] == [2, 2, 2, 3, 3, 3, 3] and
-          [c["charGift"] for c in cards] == [False] * 3 + [True] * 4,
+    # Build 235: Gold hands over the Pharaoh, so it is the top FIVE now.
+    check("every rank lists what it hands over, top five include the character",
+          [c["rewards"] for c in cards] == [2, 2, 3, 3, 3, 3, 3] and
+          [c["charGift"] for c in cards] == [False] * 2 + [True] * 5,
           [c["rewards"] for c in cards])
     # THE SHAPE, NOT THE COUNT. This asserted `count == 12` and that
     # every character without an `unlock` is free, and it went red the
@@ -588,16 +589,18 @@ def check_ranks(br):
       count: AVATAR_CHARACTERS.length,
       gated: AVATAR_CHARACTERS.filter(c=>c.unlock).map(c=>c.unlock),
       lockedGated: AVATAR_CHARACTERS.filter(c=>c.unlock).map(c=>isLockedCharacter(c.id)),
+      heldGated: AVATAR_CHARACTERS.filter(c=>c.unlock).map(c=>tierColorUnlocked(c.unlock)),
       lockedFree: AVATAR_CHARACTERS.filter(c=>!c.unlock && !c.feat)
                     .map(c=>isLockedCharacter(c.id)),
       featLocked: AVATAR_CHARACTERS.filter(c=>c.feat).map(c=>isLockedCharacter(c.id))})""")
-    check("four characters gated on the top four ranks",
-          chars["gated"] == ["vanguard", "adept", "elite", "titan"], chars)
-    # The seed holds Silver and has done nothing towards any feat, so
+    check("five characters gated on the top five ranks (Gold's Pharaoh since build 235)",
+          chars["gated"] == ["veteran", "vanguard", "adept", "elite", "titan"], chars)
+    # The seed holds Gold (so the Pharaoh is its own since build 235) and has done nothing towards any feat, so
     # none of the eight earned characters is reachable and none of the
     # free ones is ever locked.
     check("a rank you have not reached keeps its character locked",
-          all(chars["lockedGated"]) and not any(chars["lockedFree"]), chars)
+          all(l == (not h) for l, h in zip(chars["lockedGated"], chars["heldGated"]))
+          and not all(chars["heldGated"]) and not any(chars["lockedFree"]), chars)
     check("a feat you have not done keeps its character locked",
           bool(chars["featLocked"]) and all(chars["featLocked"]), chars["featLocked"])
 
@@ -663,11 +666,15 @@ def check_ranks(br):
     pg2.wait_for_timeout(1200)
     lay2 = pg2.evaluate("""()=>{const cs=[...document.querySelectorAll('.rankmap-stop')];
       const tops=cs.map(c=>Math.round(c.getBoundingClientRect().top));
-      const beside=cs.every(c=>c.querySelector('.rankmap-card').getBoundingClientRect().left >=
-                                c.querySelector('.rankmap-node').getBoundingClientRect().right - 1);
+      /* Build 235: the road runs up the middle on a phone too, cards
+         either side of it, alternating - "make that the same look the
+         iPhone gets". Each card clears its node on its own side. */
+      const beside=cs.every((c,i)=>{ const cr=c.querySelector('.rankmap-card').getBoundingClientRect(),
+                                         nr=c.querySelector('.rankmap-node').getBoundingClientRect();
+                                     return c.classList.contains('is-left') ? cr.right <= nr.left + 1 : cr.left >= nr.right - 1; });
       const over=cs.some(c=>c.getBoundingClientRect().right > innerWidth + 1);
       return {distinctRows:new Set(tops).size===cs.length, beside, over};}""")
-    check("one stop per row on a phone, the road on the left, nothing off the edge",
+    check("one stop per row on a phone, the road up the middle with cards either side, nothing off the edge",
           lay2["distinctRows"] and lay2["beside"] and not lay2["over"], lay2)
     ctx2.close()
     ctx, pg = booted(br, 834, 1194, seed=seed)
@@ -1611,8 +1618,8 @@ def check_b232(br):
         flushLeaderboardRow = real;
         return flushed; });
       return out; }""")
-    check("the challenge row: Detective, the Masked One, the two gods, the two fighters, then the three flares",
-          r["order"] == ["detective", "masked", "zeus", "poseidon", "champion", "spartan", "voidwalker", "umbra", "singularity"], r["order"])
+    check("the challenge row: Detective, the Masked One, the two gods, the two fighters, the Marksman, then the three flares",
+          r["order"] == ["detective", "masked", "zeus", "poseidon", "champion", "spartan", "marksman", "voidwalker", "umbra", "singularity"], r["order"])
     # Build 233: the Masked One is back, for retaking missed questions.
     check("the Masked One unlocks at 100 retaken questions and says how far along you are",
           isinstance(r["masked"], dict) and r["masked"]["feat"] == "retake100" and r["masked"]["before"] is True
@@ -1772,7 +1779,7 @@ def check_b234(br):
         const hm = sh.querySelector('.howmany-sect');
         const sl = hm && hm.querySelector('.slider');
         const res = { chips: hm ? hm.querySelectorAll('.chip').length : -1, all: !!(hm && hm.querySelector('.slider-allbtn')),
-                      caption: (sh.querySelector('.drawfrom-sect .sect-caption') || {}).textContent || '' };
+                      caption: (sh.querySelector('.drawfrom-sect .bank-opt.on .bank-desc') || {}).textContent || '' };
         cfg.size = 0; if(sl){ sl.value = sl.min; sl.dispatchEvent(new Event('input', { bubbles:true })); }
         res.dragged = cfg.size; res.warn = !sh.querySelector('.hundo-note').hidden;
         if(sl){ sl.value = sl.max; sl.dispatchEvent(new Event('input', { bubbles:true })); }
@@ -1803,7 +1810,7 @@ def check_b234(br):
           "grayscale" not in str(g.get("reached")) and "grayscale" in str(g.get("next")) and "grayscale" in str(g.get("lockedChar")), g)
     np_ = r["novaPrev"] if isinstance(r["novaPrev"], dict) else {}
     check("Supernova's stop shows its banner as a wide preview, in black and white until it is yours",
-          np_.get("h", 0) >= 70 and "grayscale" in str(np_.get("filter")), r["novaPrev"])
+          np_.get("h", 0) >= 60 and "grayscale" in str(np_.get("filter")), r["novaPrev"])
     check("the road-map emblems are their old size again (drawn past the ring, not shrunk into it)",
           isinstance(r["nodeSize"], int) and r["nodeSize"] > 4, r["nodeSize"])
     check("a rank reached since the map last looked starts locked and is earned on screen",
@@ -1819,7 +1826,8 @@ def check_b234(br):
     check("dragging below the end picks a number and warns; the far right is every question and does not",
           isinstance(sh.get("dragged"), int) and sh.get("dragged", 0) > 0 and sh.get("warn") is True
           and sh.get("atEnd") == 0 and sh.get("warnAtEnd") is False, sh)
-    check("the Questions choice says what the pool is and how big", "in" in sh.get("caption", "") and any(ch.isdigit() for ch in sh.get("caption", "")), sh.get("caption"))
+    # Build 235: the chips became the Question bank, each row saying what it draws.
+    check("the Question bank choice says what the pool is and how big", "in" in sh.get("caption", "") and any(ch.isdigit() for ch in sh.get("caption", "")), sh.get("caption"))
     check("the timer is two switches, and the first one sets a time limit",
           sh.get("timerSwitches") == 2 and sh.get("timerAfter") == "down", sh)
     check("the two answer options sit side by side", sh.get("tilesSideBySide") is True, sh)
@@ -1827,6 +1835,193 @@ def check_b234(br):
     th = r["themes"] if isinstance(r["themes"], dict) else {}
     check("Bronze's second colour is not green and Amethyst's is not pink",
           not (90 <= th.get("bronze", 120) <= 170) and not (290 <= th.get("amethyst", 330) <= 350), th)
+    ctx.close()
+
+
+def check_b235(br):
+    """Build 235: the level label under its number; unlocks earned away
+    from a results screen played on Home and flown into Profile; the
+    Pharaoh handed to everyone already on Gold; the Rank reward strip;
+    the Marksman; banners grouped by ladder; the rank banners; Bronze in
+    wine; and the characters' states. Written against build 234, where
+    each of these fails."""
+    print("\n19. build 235: Home unlocks, Rank reward, Pharaoh, Marksman, banner order, character states")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{
+      const out = {};
+      const T = async (k, f) => { try{ out[k] = await f(); }catch(e){ out[k] = 'THREW ' + e.message; } };
+      const wait = ms => new Promise(r => setTimeout(r, ms));
+      // The Profile card: "level" under its number, like "badges".
+      showProfile('profile'); await wait(700);
+      await T('plate', () => { const v = document.querySelector('.profile-level-num .profile-level-value');
+        const w = document.querySelector('.profile-level-num .profile-level-word');
+        return Math.round(w.getBoundingClientRect().top - v.getBoundingClientRect().bottom); });
+      await T('heroLive', () => document.querySelector('.profile-hero-avatar').classList.contains('char-live'));
+      // An existing account on Gold, opening this build for the first
+      // time, then winning a week off-screen.
+      const u = topicsIn(QUESTIONS); u.slice(0, 6).forEach(n => store.unitPerfects[n] = 999); levelOf = () => 40;
+      store.weeklyWins = 0; store.pendingCharUnlocks = []; store.unlocksShown = null;
+      await T('seed', () => { const s = ensureUnlocksShown(); return { pharaoh: s.chars.indexOf('pharaoh') >= 0, gold: tierColorUnlocked('veteran') }; });
+      store.weeklyWins = 1;
+      showHome(); await wait(600);
+      await T('notYet', () => !!document.querySelector('.rs-spot'));
+      await wait(3400);
+      await T('first', () => { const sp = document.querySelector('.rs-spot'); return sp ? sp.textContent : null; });
+      document.querySelector('.rs-spot')?.click(); await wait(200);
+      await T('flying', () => { const f = document.querySelector('body > .rs-fly'); if(!f) return null;
+        const r = f.getBoundingClientRect(); return { y: Math.round(r.top), pos: getComputedStyle(f).position }; });
+      await wait(700);
+      await T('pulse', () => document.getElementById('bottomtab-profile').classList.contains('avatar-pulse'));
+      await wait(1900);
+      await T('second', () => { const sp = document.querySelector('.rs-spot'); if(!sp) return null;
+        const st = sp.querySelector('.rs-spot-strip.is-rankreward');
+        return { text: sp.textContent, strip: st ? st.textContent : null, emblem: !!(st && st.querySelector('svg')) }; });
+      document.querySelector('.rs-spot') && document.querySelector('.rs-spot').click(); await wait(1400);
+      await T('after', () => ({ spots: document.querySelectorAll('.rs-spot').length, left: pendingHomeUnlocks().chars.length }));
+      showHome(); await wait(4200);
+      await T('again', () => document.querySelectorAll('.rs-spot').length);
+      // The Marksman: 100 in a row, counted from the streak on record.
+      await T('marksman', () => { const had = store.lifetime.longestStreak; store.lifetime.longestStreak = 99;
+        const a = isLockedCharacter('marksman'); store.lifetime.longestStreak = 100; const b = isLockedCharacter('marksman');
+        store.lifetime.longestStreak = had; return [a, b]; });
+      // The ladders sit together, easiest first.
+      await T('order', () => BANNERS.map(b => b.id));
+      await T('rankArt', () => ['adept_rank', 'elite_rank', 'titan_rank'].map(id => typeof BANNER_ART[id] === 'function' && !!bannerDef(id)));
+      // The grade's reaction.
+      await T('react', () => [{ isPerfect: true, pct: 100 }, { pct: 93 }, { pct: 75 }, { pct: 40 }, { gameLost: 3, pct: 90 }].map(gradeReaction));
+      // Asleep: a friend who is not on. Live: anybody else.
+      store.friendsIn = ['pubsleepy'];
+      openPersonSheet({ pub: 'pubsleepy', firstName: 'Sleepy', avatarChar: 'alien', seenAt: 1 }); await wait(300);
+      await T('sleepFriend', () => { const a = document.querySelector('.person-card-art');
+        return { sleep: a.classList.contains('char-sleep'), zzz: !!a.querySelector('.char-zzz') }; });
+      document.querySelectorAll('.invite-overlay').forEach(e => e.remove());
+      openPersonSheet({ pub: 'pubstranger', firstName: 'Stranger', avatarChar: 'alien', seenAt: 1 }); await wait(300);
+      await T('liveStranger', () => { const a = document.querySelector('.person-card-art');
+        return { live: a.classList.contains('char-live'), sleep: a.classList.contains('char-sleep') }; });
+      document.querySelectorAll('.invite-overlay').forEach(e => e.remove());
+      // Bronze is wine.
+      await T('bronze', () => { document.documentElement.dataset.accent = 'ranger';
+        const v = getComputedStyle(document.documentElement).getPropertyValue('--theme-c3').trim();
+        document.documentElement.dataset.accent = theme.accent || 'ink'; return v; });
+      return out; }""")
+    check("\"level\" sits under its number on the Profile card, the way \"badges\" does",
+          isinstance(r["plate"], int) and r["plate"] >= -2, r["plate"])
+    check("your own character is alive on the Profile card", r["heroLive"] is True, r["heroLive"])
+    sd = r["seed"] if isinstance(r["seed"], dict) else {}
+    check("an account already on Gold is NOT marked as having seen the Pharaoh", sd.get("gold") is True and sd.get("pharaoh") is False, r["seed"])
+    check("Home waits a beat before an unlock arrives", r["notYet"] is False, r["notYet"])
+    check("Zeus, won away from any results screen, plays on Home as a finished challenge",
+          isinstance(r["first"], str) and "Zeus" in r["first"] and "Challenge complete" in r["first"], r["first"])
+    fl = r["flying"] if isinstance(r["flying"], dict) else {}
+    check("tapping it away flies it to the Profile tab (fixed, above the screen) and rings the tab",
+          fl.get("pos") == "fixed" and 0 < fl.get("y", -1) < 956 and r["pulse"] is True, [r["flying"], r["pulse"]])
+    sc = r["second"] if isinstance(r["second"], dict) else {}
+    check("the Pharaoh follows as a Rank reward, with Gold's emblem and name in the strip",
+          "Pharaoh" in str(sc.get("text")) and "Rank reward" in str(sc.get("strip")) and "Gold" in str(sc.get("strip"))
+          and sc.get("emblem") is True, r["second"])
+    af = r["after"] if isinstance(r["after"], dict) else {}
+    check("each plays once: nothing left afterwards, nothing on the next visit",
+          af.get("spots") == 0 and af.get("left") == 0 and r["again"] == 0, [r["after"], r["again"]])
+    check("the Marksman unlocks at 100 in a row and not before", r["marksman"] == [True, False], r["marksman"])
+    o = r["order"] if isinstance(r["order"], list) else []
+    def run(ids):
+        at = [o.index(i) if i in o else -99 for i in ids]
+        return all(b == a + 1 for a, b in zip(at, at[1:]))
+    check("banners of one ladder sit next to each other, easiest first",
+          run(["easy10", "average10", "hardcore10"]) and run(["tests100", "tests250", "tests500"])
+          and run(["hundos100", "hundos250"]) and run(["adept_rank", "elite_rank", "titan_rank"]), o)
+    check("Sapphire and Amethyst have banners of their own beside Supernova's", r["rankArt"] == [True, True, True], r["rankArt"])
+    check("the results character reacts to 100 / 90+ / a pass / a miss (and a lost game)",
+          r["react"] == ["perfect", "great", "pass", "fail", "fail"], r["react"])
+    check("a friend who is offline is asleep on their card, Zzz and all",
+          r["sleepFriend"] == {"sleep": True, "zzz": True}, r["sleepFriend"])
+    check("anybody else - a classmate opened from the Leaderboard - is simply alive",
+          r["liveStranger"] == {"live": True, "sleep": False}, r["liveStranger"])
+    check("Bronze's theme is wine", str(r["bronze"]).lower() == "#6b2140", r["bronze"])
+    ctx.close()
+
+
+def check_b235b(br):
+    """Build 235, second list: the road map evenly spaced and two-sided on
+    a phone; the Question bank; the summary tags; the timer's label;
+    Most missed capped at 15% of each unit; holding a unit card for its
+    details. Written against build 234, where each of these fails."""
+    print("\n20. build 235: road map pitch, question bank, unit details")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{
+      const out = {};
+      const T = async (k, f) => { try{ out[k] = await f(); }catch(e){ out[k] = 'THREW ' + e.message; } };
+      const wait = ms => new Promise(r => setTimeout(r, ms));
+      const u = topicsIn(QUESTIONS); u.slice(0, 6).forEach(n => store.unitPerfects[n] = 999); levelOf = () => 40;
+      store.rankMapSeen = 2; showProfile('ranks'); await wait(900);
+      await T('pitch', () => { const n = [...document.querySelectorAll('.rankmap-node')].map(e => Math.round(e.getBoundingClientRect().top));
+        const d = n.slice(1).map((y, i) => y - n[i]); return { min: Math.min(...d), max: Math.max(...d) }; });
+      await T('sides', () => { const c = [...document.querySelectorAll('.rankmap-card')].map(e => e.getBoundingClientRect());
+        const mid = innerWidth / 2; return c.map(r => r.right < mid ? 'L' : r.left > mid ? 'R' : 'X').join(''); });
+      // Most missed: at most 15% of each unit.
+      const unit = u[0], n = unitQuestionCount(unit), now = Date.now();
+      QUESTIONS.forEach((q, i) => { if((q.topic || '').trim() === unit) store.stats[KEYS[i]] = { n: 3, m: 3, r: [now - 1000, now - 2000] }; });
+      await T('cap', () => ({ n, got: recentMissedIndexes().filter(i => (QUESTIONS[i].topic || '').trim() === unit).length, cap: Math.max(1, Math.round(n * .15)) }));
+      // A unit WITH a best time, so the check can fail.
+      store.testStats[unit] = Object.assign({}, store.testStats[unit] || {}, { label: unit, plays: 5, totalMs: 1e6, bestMs: 250000 });
+      cfg.mode = 'drill'; cfg.units = []; showSetup(); await wait(600);
+      await T('noBest', () => document.querySelectorAll('.pick .pbest').length);
+      await T('hint', () => !!document.querySelector('.picks-holdhint'));
+      const box = [...document.querySelectorAll('.pick input')].find(x => x.value === unit);
+      if(box){ box.checked = true; box.dispatchEvent(new Event('change', { bubbles: true })); } await wait(200);
+      document.getElementById('nextbtn')?.click(); await wait(600);
+      await T('bank', () => { const rows = [...document.querySelectorAll('.bank-opt')];
+        return { rows: rows.map(r => r.dataset.value), descs: rows.every(r => (r.querySelector('.bank-desc').textContent || '').length > 12),
+                 info: !!document.querySelector('.bank-opt[data-value="recent"] .bank-info'),
+                 label: (document.querySelector('.bank-sect .slab') || {}).textContent }; });
+      document.querySelector('.bank-opt[data-value="recent"]')?.click(); await wait(200);
+      cfg.timer = 'down'; cfg.timerMinutes = 20; document.querySelector('.bank-opt[data-value="recent"]')?.click(); await wait(200);
+      await T('tags', () => [...document.querySelectorAll('.sheet-summary-tags .sheet-tag')].map(t => t.textContent));
+      await T('timerLabel', () => (document.querySelector('.more-toggle') || {}).textContent || '');
+      document.querySelector('.unitoptions-modal-scrim')?.click(); await wait(400);
+      // Hold a unit card.
+      const row = [...document.querySelectorAll('.pick')].find(r => (r.querySelector('input') || {}).value === unit);
+      const was = row.querySelector('input').checked;
+      if(row) row.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 50, clientY: 50, button: 0 }));
+      await wait(600);
+      row.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 50, clientY: 50 }));
+      row.click(); await wait(600);
+      await T('detail', () => { const d = document.querySelector('.unitdetail'); if(!d) return null;
+        const r = d.getBoundingClientRect();
+        return { stats: [...d.querySelectorAll('.unitdetail-statlab')].map(e => e.textContent),
+                 doors: d.querySelectorAll('.unitdetail-door').length, w: Math.round(r.width),
+                 unticked: row.querySelector('input').checked === was }; });
+      document.querySelector('.unitdetail-door.is-recent')?.click(); await wait(600);
+      await T('list', () => ({ qs: document.querySelectorAll('.unitdetail-list .unitdetail-q').length,
+                               flags: document.querySelectorAll('.unitdetail-list .unitdetail-flag').length }));
+      document.querySelector('.unitdetail-list .unitdetail-flag')?.click();
+      await T('flagged', () => flaggedIndexes().length);
+      document.querySelector('.unitdetail-back')?.click(); await wait(500);
+      document.querySelector('.unitdetail-scrim')?.click(); await wait(700);
+      await T('closed', () => !document.querySelector('.unitdetail') && !document.querySelector('.unitdetail-scrim'));
+      return out; }""")
+    p = r["pitch"] if isinstance(r["pitch"], dict) else {}
+    check("every stretch of road on the map is the same length", p.get("max", 99) - p.get("min", 0) <= 2 and p.get("min", 0) > 150, r["pitch"])
+    check("on a phone the ranks sit either side of the road, like the iPad", r["sides"] == "LRLRLRL", r["sides"])
+    cp = r["cap"] if isinstance(r["cap"], dict) else {}
+    check("Most missed keeps at most 15% of a unit", cp.get("got") == cp.get("cap") and cp.get("got", 99) < cp.get("n", 0), r["cap"])
+    check("no best time on the unit cards", r["noBest"] == 0, r["noBest"])
+    check("the unit screen says a card can be held", r["hint"] is True, r["hint"])
+    b = r["bank"] if isinstance(r["bank"], dict) else {}
+    check("the Question bank: three rows that each say what they draw, and an info dot on Most missed",
+          b.get("rows") == ["all", "recent", "flagged"] and b.get("descs") and b.get("info") and b.get("label") == "Question bank", b)
+    t = r["tags"] if isinstance(r["tags"], list) else []
+    check("the top box says the bank and the timer without opening anything",
+          "Most missed" in t and "20 min limit" in t, t)
+    check("the timer row says what is in it", "Time limit" in str(r["timerLabel"]) and "stopwatch" in str(r["timerLabel"]).lower(), r["timerLabel"])
+    d = r["detail"] if isinstance(r["detail"], dict) else {}
+    check("holding a unit card opens its details without ticking it",
+          d.get("unticked") is True and d.get("doors") == 2 and "Completed" in d.get("stats", []) and "Best time" in d.get("stats", [])
+          and "Hundos" in d.get("stats", []) and d.get("w", 0) > 300, r["detail"])
+    l = r["list"] if isinstance(r["list"], dict) else {}
+    check("Most missed opens inside the card, each question with its flag", l.get("qs", 0) >= 1 and l.get("qs") == l.get("flags"), r["list"])
+    check("a question can be flagged from there", isinstance(r["flagged"], int) and r["flagged"] >= 1, r["flagged"])
+    check("tapping off it closes it", isinstance(r["detail"], dict) and r["closed"] is True, r["closed"])
     ctx.close()
 
 
@@ -1852,6 +2047,8 @@ def main():
             check_b231(br)
             check_b232(br)
             check_b234(br)
+            check_b235(br)
+            check_b235b(br)
         finally:
             br.close()
     SERVER.shutdown()

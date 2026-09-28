@@ -37,6 +37,18 @@ KNOWN = {
     "bn-rain": "0.7s streaks over a random field; the reset lands on more rain",
     "bn-ripple": "a ring that fades to nothing as it spreads",
     "bn-rise": "an ember fades in low and out high",
+    # Build 235: the sleeping character's Zzz.
+    "char-zzz": "a letter fades in beside the head and out as it drifts up",
+    # Build 235: the characters' own motion (all invisible at both ends, or a whole turn).
+    "cx-burst": "sparkles that fade to nothing at both ends",
+    "cx-fire": "a breath of fire, invisible at both ends",
+    "cx-lockon": "the Marksman's reticle turns a quarter - it has four-fold symmetry",
+    "cx-sheen": "a sweep of light, invisible at both ends",
+    "cx-sheen-idle": "a sweep of light, invisible at both ends",
+    "cx-slash": "a blade glint, invisible at both ends",
+    "cx-smoke": "a wisp of smoke, invisible at both ends",
+    "cx-spin": "a full turn",
+    "cx-spin-back": "a full turn the other way",
     # Build 232: Sky Temple's waterfalls.
     "bn-pour": "streaks 14px apart sliding exactly 14px",
 }

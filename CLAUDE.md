@@ -6282,3 +6282,135 @@ Practice Test screen no longer mentions the Phoenix banner.
 Under --against the older page saw the repo's newer build, and with
 "force" set it reloaded itself mid-check. Section 18 is this build's gate
 and fails on 233.
+
+### Build 235 - unlocks on Home; Rank reward; the Pharaoh; characters alive
+
+**Unlocks earned away from a results screen play on Home**, a beat
+(`HOME_UNLOCK_DELAY_MS`, 2.2s) after it settles: Zeus when the week rolls
+over, the Champion/Spartan after a Virtual Room, anything a rank hands
+over on the daily question, and anything new a rank you already hold now
+hands over. It is a DIFF, not a queue: `store.unlocksShown` records what
+has been SHOWN (characters and banners), `pendingHomeUnlocks()` is what is
+held and not in it. `playUnlockSpotlight()` marks each item as it
+appears, wherever it appears, so the results screen and Home can never
+announce one thing twice. Tapping a Home unlock flies the art itself
+(moved to `<body>`, not cloned, so its gradient ids keep resolving) into
+the Profile tab, which rings with `avatar-pulse`.
+- `unlocksShown` is `null` until `ensureUnlocksShown()` seeds it from
+  what is already held, so an existing account is not paraded through
+  weeks-old unlocks. `UNLOCKS_NEW_IN_235` (Pharaoh, Marksman, the two
+  new rank banners) and anything in `pendingCharUnlocks` are left out of
+  the seed on purpose: that is how everyone already on Gold is handed
+  the Pharaoh on their next launch. A reset sets it to empty lists.
+- The flare characters (Void, Umbra, Singularity) are never in it; each
+  has its own scene.
+- It waits for anything that owns the screen (`homeUnlockBlocked()`),
+  including queued badge cutscenes, which go first. Muted banners mark
+  them shown without playing, like the badge queue.
+- `body > .rs-spot-art.rs-fly` needs the `body >`: the later
+  `.rs-spot-art.is-character{position:relative}` otherwise wins and drops
+  the flying art into the page flow, 1,100px below the screen.
+
+**Rank reward** is the challenge strip's sibling: a character, theme or
+banner a RANK hands over carries `rankReward` (the tier key), and the
+card gets a chevron strip in the rank's colour, in from the right, with
+the rank's emblem and name. `characterUnlockItem()` / `bannerUnlockItem()`
+are the one builder per kind, shared by the results screen and Home.
+
+**Banner pop-ups unroll** (`.is-bannerup`): a bright line opens to full
+height and a sheen crosses it. The hard ones (`BANNER_EPIC`) land with a
+jolt and a flash of their own light.
+
+**Gold hands over the Pharaoh**, so five ranks now give a character
+(`[2,2,3,3,3,3,3]` rewards on the road map). **The Marksman** is the new
+challenge: 100 in a row without a miss (`streak100`), counted off
+`lifetime.longestStreak`, which is retroactive.
+
+**Banners are ordered by ladder** - the three Game ones, the three test
+counts, the two hundo counts, then the singles, then the three rank
+banners (Sapphire, Amethyst, Supernova). Customize reads that order.
+
+**Characters come alive through CSS on an ANCESTOR class, never by
+default** (`setCharState()`): `char-live` (idle - Profile card, the
+person card, unlock pop-ups), `char-sleep` (a friend who is offline: on
+their card, the friends list and both invite sheets, with a `.char-zzz`
+the app adds), `char-react-perfect/great/pass/fail` (your character in
+the corner of the results grade card, added when the card LANDS - a
+MutationObserver on `rs-in` - because a reaction played while the card is
+still invisible is one nobody saw) and `char-react-win` (the Virtual Room
+winner, as their block rises). Only friends can be asleep: presence is a
+friend's thing, so anyone opened from the Leaderboard is simply live.
+Leaderboard rows stay static. The Zzz letters use negative delays so a
+list that re-renders every few seconds still shows letters in flight.
+
+**Profile card:** "level" stacks under its number, like "badges".
+**Bronze** is wine (`#6B2140` under the bronze).
+
+Section 19 of check-behaviour is this build's gate and fails on 234.
+
+**The road map (same build, second list).** Every stop now has the same
+pitch: the stops sit in `.rankmap-stops`, a grid with
+`grid-auto-rows:1fr`, so each row is as tall as the tallest card and
+every stretch of road is the same length. Reached cards are short and
+the top three carry a banner, which is what made the passed part of the
+road look bunched. From 24rem up (every phone but an SE 1st gen) the
+road runs up the middle with the cards alternating either side, as the
+iPad already did, and the gap between stops is longer (`--gap` 2.4rem on
+a phone, 3.6rem from 46rem) for more of a climb as you scroll.
+
+**The start sheet's Question bank.** The three chips (All / Most missed
+/ Flagged) are three rows now: an icon, what each draws, and how many
+that is in the units picked. An empty one says why and how to fill it,
+and tapping it explains instead of selecting. Most missed carries an
+info dot. `srcSect` keeps its name and `.drawfrom-sect` its class, and
+`cfg.source` keeps its values. A bank that empties when a unit is
+unticked falls back to every question.
+- The top box carries **tags** for every choice that shapes the run:
+  the bank, the length, the Game difficulty, the timer, shuffle and
+  hidden answers. Nobody has to open the timer to see what it is set to.
+- The timer disclosure is labelled "Time limit & stopwatch".
+- The Shuffle and Hide answers descriptions say what they do.
+- `sliderWithEverything`: a pool with no second stop on the 5-step
+  lattice (7 most missed) used to show the knob at the far left beside
+  "All 7". It sits full and disabled now.
+
+**Most missed is capped per unit:** at most 15% of a unit's questions
+(`mostMissedCapFor()`, rounded, never under one), most misses first,
+with the latest miss breaking a tie. The flat cap of 50 is gone.
+`unitQuestionCount()` already existed further down the file. A second
+definition was added and then removed: a function declared twice
+silently takes the later one.
+
+**Hold a unit card for its details** (`attachUnitHold` /
+`openUnitDetail`), on the test setup grid and the Virtual Room unit list.
+- **The hold:** 420ms with under 8px of movement (more than that is a
+  scroll); a right-click also opens it. The click that ends a hold is
+  swallowed, so the card is not ticked.
+- **The card:** it grows from its own place (left, top, width and height
+  transitioned, so text reflows rather than stretches) into a centred
+  card with the same head as the grid card (`appendUnitProgress`).
+- **The stats:**
+  - Completed (any mode, `store.unitRuns`) and Hundos in every mode.
+  - Drill adds best time (`testStats[unit].bestMs`, a 100% whole-unit
+    drill) and best score.
+  - Exam adds best score and the fastest 100% in any mode.
+  - Game adds the hardest difficulty beaten and best score.
+- **Flagged and Most missed:** two buttons that open a review-style list
+  inside the card, with Back. Each question can be flagged or unflagged
+  there. An unflagged one stays in the list, dimmed, until Back.
+- **Closing:** tap anywhere off the card and it shrinks back to its place.
+- **`store.unitRuns`:** null until `unitRunsMap()` seeds it from
+  `testStats` (a unit's own plays plus every combined test it was in).
+  It then counts in `recordTestPlay()`. A reset sets `{}`.
+- The "Best: 4:12" line is gone from the unit cards.
+
+**Merged art.** The two rank banners and the hard-banner events came from
+one agent, and the Pharaoh, Marksman, the Officer redraw and every
+character's `cx-*` parts and states from another. Both were cut against
+build 234 and applied with `patch`, cleanly. The character states'
+loops that end somewhere other than where they start are all invisible
+at both ends or a whole turn, and are listed in check-loops' KNOWN
+list. Robot and Astronaut still scan and twinkle with no class: that was
+already so, and it is left alone.
+
+Section 20 of check-behaviour covers this list and fails on 234.

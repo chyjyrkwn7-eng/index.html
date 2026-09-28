@@ -142,10 +142,11 @@ def check_table(pg):
     # hardcore10 is a BANNER now (build 232: "all 3 of those challenges
     # are banners") and the Masked One is retired, so it is asserted in
     # check_hardcore against the banner rather than here.
-    check("the original challenges are still there, and the rank four are untouched",
+    # Five rank characters since build 235 (Gold's Pharaoh).
+    check("the original challenges are still there, and the rank five are there",
           r["n"] >= 3 and all(k in r["keys"] for k in ("daily10", "weektop", "flares"))
           and "hardcore10" not in r["keys"]
-          and r["rankFour"] == 4, "%d feat, %d rank" % (r["n"], r["rankFour"]))
+          and r["rankFour"] == 5, "%d feat, %d rank" % (r["n"], r["rankFour"]))
     check("every feat key is in CHARACTER_FEATS", r["known"], r["keys"])
     check("all four locked on a fresh account", r["allLocked"])
     check("each has a display name and its own glow", r["named"] and r["glowed"])
