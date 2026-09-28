@@ -2149,6 +2149,25 @@ def check_b237(br):
     ctx.close()
 
 
+def check_b238(br):
+    """Build 238: the unit details' best time says it comes from a hundo,
+    so people know how to set one. Written against build 237, where it
+    read "100% drill, whole unit" and "Fastest 100%"."""
+    print("\n23. build 238: best time says hundo")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""()=>{ const u = topicsIn(QUESTIONS)[0];
+      const find = (m, l) => (unitDetailStats(u, m).find(x => x.label === l) || {});
+      store.testStats[u] = store.testStats[u] || {}; delete store.testStats[u].bestMs;
+      const unset = find('drill', 'Best time').sub;
+      store.testStats[u].bestMs = 95000; const set = find('drill', 'Best time').sub;
+      const exam = unitDetailStats(u, 'exam').map(x => x.label + ' ' + x.sub).join(' | ');
+      return { unset, set, exam }; }""")
+    check("Drill's best time says a hundo sets it, set or not", isinstance(r, dict)
+          and "hundo" in str(r.get("unset")) and "hundo" in str(r.get("set")), r)
+    check("Exam's fastest time is called a hundo too", isinstance(r, dict) and "Fastest hundo" in str(r.get("exam")), r)
+    ctx.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=CHROME)
@@ -2175,6 +2194,7 @@ def main():
             check_b235b(br)
             check_b236(br)
             check_b237(br)
+            check_b238(br)
         finally:
             br.close()
     SERVER.shutdown()

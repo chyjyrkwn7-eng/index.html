@@ -109,6 +109,22 @@ FAKE_FIRESTORE = """
   function later(fn){ return new Promise(res => setTimeout(() => res(fn()), LATENCY)); }
 
   window.__fakeDb = {
+    /* TRANSACTIONS (build 238). The chat's reactions, votes and trim
+       write through runTransaction so they build on the server's list
+       rather than this tab's last snapshot. The fake runs the body
+       against a real read and applies its writes afterwards - enough
+       for the ORDER to be the real one: the read happens when the
+       transaction runs, not when the button was pressed. */
+    runTransaction(fn){
+      const ops = [];
+      const tx = {
+        get: ref => ref.get(),
+        update(ref, f){ ops.push(() => ref.update(f)); return tx; },
+        set(ref, d, o){ ops.push(() => ref.set(d, o)); return tx; }
+      };
+      return Promise.resolve().then(() => fn(tx))
+        .then(r => Promise.all(ops.map(f => f())).then(() => r));
+    },
     collection(coll){
       return {
         onSnapshot(cb, err){
@@ -558,6 +574,30 @@ def main():
         check("and both reach the other device",
               ("from the host" in seen_on_guest) and ("from the guest" in seen_on_guest),
               seen_on_guest)
+
+        # ---- 5b. a reaction at the moment somebody sends -------------
+        # A send is an atomic append; a reaction rewrites the whole list.
+        # Built from this tab's last snapshot, that rewrite erased any
+        # message sent in between (build 237). Made deterministic in one
+        # tab: another person's message goes into the room in the same
+        # tick as the tap, so this tab's copy cannot have seen it yet.
+        print("\n5b. a reaction while somebody sends")
+        host.evaluate("""()=>{
+          const wrap=[...document.querySelectorAll('#chatprobe .vroom-chat-msgwrap')]
+            .find(w=>w.textContent.indexOf('from the host')>=0);
+          wrap.click();
+          const pick=document.querySelector('#chatprobe .vroom-chat-pick');
+          fbDb.collection('vrooms').doc(vroomCode).update({ chatMessages:
+            firebase.firestore.FieldValue.arrayUnion({ id:'race-1', key:'KKKK-4444',
+              name:'Kim', text:'sent during a reaction', ts:Date.now() }) });
+          pick.click(); }""")
+        host.wait_for_timeout(1200 + args.latency * 4)
+        raced = host.evaluate("""()=>({
+          texts: [...document.querySelectorAll('#chatprobe .vroom-chat-msg')].map(e=>e.textContent).join(' | '),
+          reacts: document.querySelectorAll('#chatprobe .vroom-chat-react').length })""")
+        check("a message sent during a reaction survives it",
+              "sent during a reaction" in raced["texts"], raced["texts"])
+        check("and the reaction lands too", raced["reacts"] >= 1, raced)
 
         # ---- 6. two lobbies at once ----------------------------------
         # Each lobby is its own document keyed by its join code, so they

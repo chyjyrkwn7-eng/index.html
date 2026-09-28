@@ -597,16 +597,23 @@ def main():
              FRAME, so asking the DOM whether it is there cannot fail on
              "you cannot see it" - which is exactly how the chat's own
              invite sheet shipped invisible. Wait a frame and measure. */
-          return new Promise(res => setTimeout(() => {
-            const o = document.querySelector(".invite-overlay");
-            const op = o ? Number(getComputedStyle(o).opacity) : 0;
+          /* POLL, don't sample once. A single read 350ms in measured
+             the fade half-way through on a loaded machine and reported
+             a visible card as invisible. The question is whether it
+             ARRIVES, so give it up to two seconds to get there - a
+             sheet that never fades in still fails. */
+          const opNow = () => { const o = document.querySelector(".invite-overlay");
+            return o ? Number(getComputedStyle(o).opacity) : 0; };
+          return new Promise(res => { const t0 = Date.now(); const tick = () => {
+            if(opNow() < 0.95 && Date.now() - t0 < 2000){ setTimeout(tick, 50); return; }
+            const op = opNow();
             const act = sheet.querySelector(".person-sheet-act");
             const label = act.textContent;
             act.click();
             res({ label: label, out: (store.friendsOut || []).slice(),
                   pushed: pushed, op: op,
                   closed: !document.querySelector(".person-sheet") });
-          }, 350));}""")
+          }; setTimeout(tick, 50); });}""")
         if sent.get("no"):
             check("tapping a classmate opens their card", False, sent["no"])
         else:

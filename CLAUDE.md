@@ -6477,10 +6477,13 @@ row was left as it was.
 - The level-5 account's progress is untouched. Its row comes back the
   next time that device syncs, which is the point: it shows he is
   running two accounts.
-- The two level-1 accounts' `progress` documents were NOT deleted. The
-  permission classifier refused to read progress documents as PII,
-  and that needs Madison's say-so. Until they are gone, those two rows
-  will also come back if either device is used again.
+- The two level-1 accounts' `progress` documents were deleted later the
+  same day, once Madison said so explicitly ("Yes, delete the two level
+  1 Alfred lake accounts"); they were found with a masked read (name
+  and publicId only). Those two accounts are gone for good.
+- The level-5 row DID come back: that device synced at 19:29 UTC on
+  28 September. Hidden again as asked ("if he uses it again it'd go
+  back to leaderboard so I'd know he's using it"), progress untouched.
 
 Section 21 of check-behaviour is this build's gate and fails on 235.
 
@@ -6503,3 +6506,37 @@ step between the two ranks, averaged. Unranked shows a dashed plate
 aimed at Iron; Supernova says "The top of the ladder" with a full bar.
 
 Section 22 of check-behaviour is this build's gate and fails on 236.
+
+### Build 238 - best time says hundo; a chat message cannot be erased
+
+- **Unit details say how a best time is made.** "Ensure best time in the
+  unit details mentions it's the best with a hundo ... so people know
+  that's the way to get the best time." Drill's Best time box reads
+  "your fastest hundo in Drill", or "get a hundo in Drill to set one"
+  before there is one; Exam's box is "Fastest hundo". Nothing about how
+  a time is set changed - only a hundo in Drill ever set it.
+- **Reactions, poll votes and the host's trim go through a
+  transaction.** A send has been an atomic `arrayUnion` for a long time
+  and cannot lose anybody's message. These three cannot be an append -
+  they change a message in place or drop old ones - so they wrote the
+  WHOLE `chatMessages` array back, built from this device's last
+  snapshot. Anything sent between that snapshot and the write was
+  erased, on the real server too: somebody tapping a reaction while
+  somebody else sent wiped the new message off every screen.
+  `rewriteChat(transform)` reads the list the server has now inside
+  `fbDb.runTransaction`, and Firestore retries it if anything lands in
+  between. A transform returns null for "nothing to change". The plain
+  update is only a fallback for an SDK without transactions.
+  Found because check-vroom's two-senders test came up one message short
+  on a heavily loaded machine; that test itself was the fake's own
+  cross-tab race, but reading the code behind it found this.
+- The fake Firestore in check-vroom has `runTransaction` now (check-
+  chatroom lifts it), and **section 5b** puts another person's message
+  into the room in the same tick as a reaction tap - deterministic in one
+  tab. It fails on 237 (the message is gone) and passes on 238.
+- check-friends' "the card is actually visible" POLLS for the fade-in
+  (up to 2s) instead of sampling once at 350ms, which read a visible
+  card as invisible when the machine was loaded. A sheet that never
+  fades in still fails.
+
+Section 23 of check-behaviour is the best-time gate and fails on 237.

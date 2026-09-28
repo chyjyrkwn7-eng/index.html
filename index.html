@@ -47625,12 +47625,15 @@ function unitDetailStats(name, mode){
   } else if(mode === "drill"){
     const ts = store.testStats[name];
     const best = ts && typeof ts.bestMs === "number" ? ts.bestMs : null;
-    add("Best time", best != null ? formatClock(best) : "—", best != null ? "100% drill, whole unit" : "a 100% drill of the whole unit sets it");
+    /* Build 238: say HOW a best time is made - "mentions it's the best
+       with a hundo ... so people know that's the way to get the best
+       time". Only a hundo in Drill sets it (recordTestStats). */
+    add("Best time", best != null ? formatClock(best) : "—", best != null ? "your fastest hundo in Drill" : "get a hundo in Drill to set one");
     add("Best score", typeof bestPct === "number" ? bestPct + "%" : "—", "whole unit");
   } else if(mode === "exam"){
     add("Best score", typeof bestPct === "number" ? bestPct + "%" : "—", "whole unit");
     const fast = (store.unitBestMs || {})[name];
-    add("Fastest 100%", typeof fast === "number" ? formatClock(fast) : "—", "any mode");
+    add("Fastest hundo", typeof fast === "number" ? formatClock(fast) : "—", typeof fast === "number" ? "your quickest, any mode" : "get a hundo to set one");
   } else {
     add("Best score", typeof bestPct === "number" ? bestPct + "%" : "—", "whole unit");
   }
@@ -50420,7 +50423,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-28-237";
+const APP_BUILD = "2026-09-28-238";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -59977,10 +59980,41 @@ function buildVroomChatPanel(container, ctx){
     pickerEl = pick;
   }
 
+  /* ---- WHOLE-LIST WRITES GO THROUGH A TRANSACTION (build 238) ----
+     A send is an atomic arrayUnion and cannot lose anybody's message.
+     A reaction, a poll vote and the host's trim cannot be an append -
+     they change a message in place, or drop old ones - so they write the
+     WHOLE array back. Built from this device's last snapshot, that write
+     erased any message sent in the gap between the snapshot and the
+     write: somebody reacting at the moment somebody else sent wiped the
+     new message off every screen. Found by check-vroom's two-senders
+     test coming up one message short. A transaction reads the list the
+     server has NOW, builds from that, and is retried by Firestore if
+     anything lands in between, so nothing can be written over. The
+     transform returns null for "nothing to change", which writes
+     nothing. The plain update is only a fallback for an SDK without
+     transactions. */
+  function rewriteChat(transform){
+    if(!fbDb || !CTX.code()) return;
+    try{
+      const ref = fbDb.collection("vrooms").doc(CTX.code());
+      if(typeof fbDb.runTransaction === "function"){
+        fbDb.runTransaction(tx => tx.get(ref).then(snap => {
+          if(!snap.exists) return;
+          const next = transform((snap.data() || {}).chatMessages || []);
+          if(next) tx.update(ref, { chatMessages: next });
+        })).catch(() => {});
+        return;
+      }
+      const next = transform(lastMessages || []);
+      if(next) ref.update({ chatMessages: next }).catch(() => {});
+    }catch(e){}
+  }
+
   function toggleReaction(m, id){
     if(!fbDb || !CTX.code() || !CTX.myKey()) return;
     const me = CTX.myKey();
-    const next = (lastMessages || []).map(x => {
+    rewriteChat(list => !list.some(x => x.id === m.id) ? null : list.map(x => {
       if(x.id !== m.id) return x;
       const r = Object.assign({}, x.r || {});
       const who = (r[id] || []).slice();
@@ -59993,11 +60027,7 @@ function buildVroomChatPanel(container, ctx){
       const out = Object.assign({}, x, { r: r });
       if(at < 0){ out.bump = Date.now(); bumpedByMe = out.bump; }
       return out;
-    });
-    try{
-      fbDb.collection("vrooms").doc(CTX.code())
-        .update({ chatMessages: next }).catch(() => {});
-    }catch(e){}
+    }));
   }
 
   function renderMessages(messages){
@@ -60447,7 +60477,7 @@ function buildVroomChatPanel(container, ctx){
   function votePoll(m, idx){
     if(!fbDb || !CTX.code() || !CTX.myKey()) return;
     const me = CTX.myKey();
-    const next = (lastMessages || []).map(x => {
+    rewriteChat(list => !list.some(x => x.id === m.id) ? null : list.map(x => {
       if(x.id !== m.id) return x;
       const votes = {};
       const had = ((x.votes || {})[idx] || []).indexOf(me) >= 0;
@@ -60455,8 +60485,7 @@ function buildVroomChatPanel(container, ctx){
       if(!had) votes[idx] = (votes[idx] || []).concat([me]);
       Object.keys(votes).forEach(k => { if(!votes[k].length) delete votes[k]; });
       return Object.assign({}, x, { votes: votes });
-    });
-    try{ fbDb.collection("vrooms").doc(CTX.code()).update({ chatMessages: next }).catch(() => {}); }catch(e){}
+    }));
   }
   function buildPoll(m){
     const box = document.createElement("div");
@@ -60520,6 +60549,10 @@ function buildVroomChatPanel(container, ctx){
     if(!fbDb || !CTX.code()) return;
     if(!messages || !messages.length) return;
     if(!CTX.shouldTrim(messages)) return;
+    rewriteChat(trimmedChat);
+  }
+  function trimmedChat(messages){
+    if(!messages || !messages.length) return null;
     let next = null;
     /* ---- TWO REASONS TO TRIM, ONE WRITE ----
        The cap keeps a busy room from growing without limit; the daily
@@ -60540,11 +60573,8 @@ function buildVroomChatPanel(container, ctx){
         next = fresh.length ? fresh : base.slice(-(CTX.keepStale || 3));
       }
     }
-    if(!next || next.length === (messages || []).length) return;
-    try{
-      fbDb.collection("vrooms").doc(CTX.code())
-        .update({ chatMessages: next }).catch(() => {});
-    } catch(e){}
+    if(!next || next.length === messages.length) return null;
+    return next;
   }
   sendBtn.addEventListener("click", send);
   input.addEventListener("keydown", (e) => { if(e.key === "Enter") send(); });
