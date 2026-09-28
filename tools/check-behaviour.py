@@ -130,10 +130,10 @@ def open_page(ctx):
     return pg
 
 
-def booted(br, w, h, seed=None, init=None, touch=False):
+def booted(br, w, h, seed=None, init=None, touch=False, dpr=1):
     """A context on Home with the splash gone and Firestore stubbed."""
     ctx = br.new_context(viewport={"width": w, "height": h},
-                         has_touch=touch, is_mobile=touch)
+                         has_touch=touch, is_mobile=touch, device_scale_factor=dpr)
     if init:
         ctx.add_init_script(init)
     if seed:
@@ -540,7 +540,7 @@ def check_ranks(br):
       charGift:!!c.querySelector('.rankmap-gift.is-char')}))""")
     check("seven ranks, named as ranks and not as flares",
           [c["name"] for c in cards] ==
-          ["Iron", "Bronze", "Silver", "Emerald", "Sapphire", "Amethyst", "Supernova"],
+          ["Iron", "Bronze", "Gold", "Platinum", "Sapphire", "Amethyst", "Supernova"],
           [c["name"] for c in cards])
     check("every stop says which of the states it is in",
           [c["chip"] for c in cards] ==
@@ -1138,7 +1138,7 @@ def check_b220(br):
           r["hold"] in (3, 4) and not r["orangeNow"], r)
 
     c = pg.evaluate("""()=>{
-      const ids = ['fox','viking','champion','umbra','singularity'];
+      const ids = ['champion','umbra','singularity'];
       const out = { drawn: ids.map(id => !!buildAvatarCharSVG(id)),
                     locked: ids.map(id => isLockedCharacter(id)) };
       // Game beats already on the account count straight away.
@@ -1146,8 +1146,10 @@ def check_b220(br):
       const keep = store.unitGameBeat;
       store.unitGameBeat = {};
       units.forEach(u => store.unitGameBeat[u] = { easy:true, average:false, hardcore:false });
-      out.foxAfter = isLockedCharacter('fox');
-      out.vikingAfter = isLockedCharacter('viking');
+      // Build 225: the two Game challenges hand over banners, not characters.
+      out.foxAfter = !bannerEarned('easy10');
+      out.vikingAfter = !bannerEarned('average10');
+      out.noFox = !AVATAR_CHARACTERS.some(c => c.id === 'fox' || c.id === 'viking');
       store.unitGameBeat = keep;
       // Wins: once per room, only first place, and the fifth queues the Champion.
       store.vrMatches = 0; store.vrWins = 4; store.vrCounted = []; store.pendingCharUnlocks = [];
@@ -1158,10 +1160,10 @@ def check_b220(br):
       out.vr = [store.vrMatches, store.vrWins, (store.pendingCharUnlocks||[]).slice()];
       out.champ = isLockedCharacter('champion');
       return out; }""")
-    check("the five new characters draw and start locked",
+    check("the new characters draw and start locked",
           all(c["drawn"]) and all(c["locked"]), c)
-    check("Game beats already on the account unlock the Fox, not the Viking",
-          not c["foxAfter"] and c["vikingAfter"], c)
+    check("Game beats already on the account earn the Easy banner, not the Average one - and there is no Fox or Viking",
+          not c["foxAfter"] and c["vikingAfter"] and c["noFox"], c)
     check("a room counts once, a win needs a rival, and the fifth hands over the Champion",
           c["vr"][0] == 3 and c["vr"][1] == 5 and c["vr"][2] == ["champion"] and not c["champ"], c["vr"])
 
@@ -1173,7 +1175,7 @@ def check_b220(br):
       store.lifetime.fullTests = 120; store.practiceExamPerfect = true; store.banner = 'exam100';
       out.earned = BANNERS.filter(x => bannerEarned(x.id)).map(x => x.id);
       showCustomize();
-      out.opts = document.querySelectorAll('.banner-opt').length;
+      out.opts = document.querySelectorAll('.banner-opt').length; out.nBanners = BANNERS.length;
       out.selected = (document.querySelector('.banner-opt.selected')||{}).dataset;
       out.selected = out.selected ? out.selected.banner : null;
       const locked = document.querySelector('.banner-opt.locked');
@@ -1191,7 +1193,7 @@ def check_b220(br):
     check("banners earned off the counters", "tests100" in b["earned"] and "exam100" in b["earned"]
           and "tests250" not in b["earned"], b["earned"])
     check("Customize lists every banner plus Theme, and says what a locked one needs",
-          b["opts"] == 9 and b["selected"] == "exam100" and "/" in b["lockedSays"], b)
+          b["opts"] == b["nBanners"] + 1 and b["selected"] == "exam100" and "/" in b["lockedSays"], b)
     check("picking one wears it, and it is across the top of Profile",
           b["wear"] == "tests100" and b["cover"] and "bnr-tests100" in b["cover"], b)
     check("a banner and a Void flare's character are announced on the results",
@@ -1278,6 +1280,188 @@ def check_b221(br):
     ctx.close()
 
 
+def check_b223(br):
+    """Build 223: Battle, in teams. Written against build 222, where none of it exists."""
+    print("\n13. build 223: Battle - two teams, one health bar each, powers, alerts")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""()=>{
+      const out = {};
+      const parts = { me:{name:'Me',avatarChar:'ninja',joinedAt:1}, bo:{name:'Bo',avatarChar:'robot',joinedAt:2},
+                      cy:{name:'Cy',avatarChar:'fox',joinedAt:3}, dee:{name:'Dee',avatarChar:'queen',joinedAt:4} };
+      const teams = tugTeamsFor(parts);
+      out.teams = teams;
+      const mk = (log) => ({ startAt: 1000, participants: parts, battle: { teams: teams, log: log, progress:{} } });
+      const E = (id, at, from, kind, x) => Object.assign({ id, at, from, kind }, x || {});
+      // A hit from either member of a side comes off the OTHER side's one bar.
+      let r = battleReplay(mk([E('a',1,'me','hit',{dmg:5}), E('b',2,'cy','hit',{dmg:5}), E('c',3,'bo','hit',{dmg:5})]));
+      out.hp = r.hp; out.max = r.max;
+      // Order-independent: the same log in any array order is the same fight.
+      const log = [E('a',1,'bo','hit',{dmg:5}), E('b',2,'me','shield'), E('c',3,'dee','hit',{dmg:5}), E('d',4,'bo','double'),
+                   E('e',5,'bo','hit',{dmg:5}), E('f',6,'cy','heal'), E('g',7,'cy','hit',{dmg:5})];
+      out.orderFree = JSON.stringify(battleReplay(mk(log)).hp) === JSON.stringify(battleReplay(mk(log.slice().reverse())).hp);
+      out.events = battleReplay(mk(log)).events.map(e => e.kind);
+      // A side at zero is down, and nothing after it counts.
+      const ko = [];
+      for(let i = 0; i < 40; i++) ko.push(E('k' + i, 10 + i, i % 2 ? 'me' : 'cy', 'hit', {dmg:7}));
+      ko.push(E('z', 999, 'bo', 'hit', {dmg:5}));
+      r = battleReplay(mk(ko));
+      out.downed = r.downed; out.afterDown = r.hp[teams.me];
+      // At least fifty questions, the same order on every device.
+      cfg.units = ['Identity Crimes']; cfg.source = 'all';
+      const p1 = battleBuildPool({ startAt: 5, battle: {} }), p2 = battleBuildPool({ startAt: 5, battle: {} });
+      out.pool = [p1.length, JSON.stringify(p1) === JSON.stringify(p2), poolNow().length];
+      out.picker = /\\["battle", "Battle"\\]/.test(String(showVirtualRoomSetup));
+      out.art = buildVroomModeArt('battle').querySelectorAll('path').length;
+      // Even teams: the lobby holds an odd room for Battle as it does for Tug.
+      out.oddGate = /data\\.game === "battle"\\) && totalN % 2 === 1/.test(String(showVirtualRoomLobby));
+      return out; }""")
+    t = r["teams"]
+    check("teams alternate by join order, two a side", sorted(t.values()) == ["a", "a", "b", "b"] and t["me"] != t["bo"], t)
+    check("one health bar per side, sized for the side",
+          set(r["max"].values()) == {200} and r["hp"][t["bo"]] == 190 and r["hp"][t["me"]] == 195, r)
+    check("the bars are the same whatever order the log arrives in", r["orderFree"], r["events"])
+    check("a shield blocks a hit, a double doubles one, a heal heals",
+          "blocked" in r["events"] and "double" in r["events"] and "heal" in r["events"], r["events"])
+    check("a side at zero is down, and a hit after that does nothing",
+          r["downed"] == t["bo"] and r["afterDown"] == 200, r)
+    check("a small unit cycles to at least fifty questions, in one shared order",
+          r["pool"][0] >= 50 and r["pool"][1] and r["pool"][2] < 50, r["pool"])
+    check("Match settings offers Battle, drawn as crossed swords", r["picker"] and r["art"] == 6, r)
+    check("an odd room waits for one more before a Battle starts", r["oddGate"], r["oddGate"])
+
+    u = pg.evaluate("""()=>{
+      const out = {};
+      vroomCode = null; vroomMyKey = 'me'; vroomIsHost = false;
+      const parts = { me:{name:'Me',avatarChar:'ninja',joinedAt:1}, bo:{name:'Bo',avatarChar:'robot',joinedAt:2},
+                      cy:{name:'Cy',avatarChar:'fox',joinedAt:3}, dee:{name:'Dee',avatarChar:'queen',joinedAt:4} };
+      cfg.units = ['Identity Crimes']; cfg.source = 'all';
+      const d = { startAt: Date.now() - 1000, participants: parts, battle: { teams: tugTeamsFor(parts), log: [], progress:{}, count: 0 } };
+      battlePool = battleBuildPool(d); battleCount = battlePool.length; battlePos = 0; battleShownPos = -1;
+      battleHeld = null; battleSeen = null; battleLastData = d; battleFrozenUntil = 0; battleFlippedUntil = 0;
+      battleAbsorbLog(d);
+      renderBattleScreen(d);
+      out.bars = [...document.querySelectorAll('.screen-battle .battle-side')].map(x => x.querySelector('.battle-side-title').textContent);
+      out.faces = [...document.querySelectorAll('.screen-battle .battle-side')].map(x => x.querySelectorAll('.battle-av').length);
+      out.choices = document.querySelectorAll('.screen-battle .choice').length;
+      out.hint = (document.querySelector('.battle-power-hint') || {}).textContent || '';
+      // Bo freezes me, Dee flips me: both land, and each is announced by name.
+      const now = Date.now();
+      d.battle.log = [{ id:'f1', at: now, from:'bo', kind:'freeze', to:'me' }, { id:'f2', at: now, from:'dee', kind:'flip', to:'me' }];
+      battleAbsorbLog(d);
+      const panel = document.querySelector('.screen-battle');
+      out.frozen = panel.classList.contains('is-frozen') && !document.querySelector('.battle-ice').hidden;
+      out.flipped = panel.classList.contains('is-flipped') && getComputedStyle(document.querySelector('.battle-flip')).transform !== 'none';
+      out.iceUpright = getComputedStyle(document.querySelector('.battle-arena')).transform === 'none';
+      out.alerts = [document.querySelector('.battle-alert') ? document.querySelector('.battle-alert').textContent : ''].concat(battleAlertQueue.map(a => a.text));
+      document.querySelector('.screen-battle .choice').click();
+      out.frozenTap = battlePos;
+      battleHeld = 'shield'; battlePaintPower(d);
+      out.power = (document.querySelector('.battle-power-btn') || {}).textContent || '';
+      detachBattle(); detachBattleEffects();
+      // The end: my side won; XP for right answers plus the win.
+      d.battle.over = true; d.battle.winner = d.battle.teams.me;
+      d.battle.progress = { me:{pos:20,correct:14}, bo:{pos:22,correct:18}, cy:{pos:15,correct:9}, dee:{pos:12,correct:6} };
+      showBattleResult(d);
+      out.xp = (document.querySelector('.screen-battle-result .tug-xp-num') || {}).textContent || '';
+      out.title = (document.querySelector('.screen-battle-result h1') || {}).textContent || '';
+      out.cols = document.querySelectorAll('.screen-battle-result .tug-board-col').length;
+      return out; }""")
+    check("the match screen has two bars, yours first, each with its members",
+          u["bars"] == ["Your side", "Their side"] and u["faces"] == [2, 2] and u["choices"] >= 2
+          and "question 10" in u["hint"], u)
+    check("a freeze locks the answers and a flip turns the question over, with the ice still upright",
+          u["frozen"] and u["flipped"] and u["iceUpright"] and u["frozenTap"] == 0, u)
+    check("each is announced naming who did it",
+          any("Bo froze you" in a for a in u["alerts"]) and any("Dee turned your screen upside down" in a for a in u["alerts"]), u["alerts"])
+    check("a held power is a button that says what it does", "Use Shield" in u["power"], u["power"])
+    check("the result names the winning side and pays for right answers plus the win",
+          u["title"] == "Your side won" and u["xp"] == "+290 XP" and u["cols"] == 2, u)
+    ctx.close()
+
+
+def check_b229(br):
+    """Build 229: last week's top three, and shuffles that do not repeat."""
+    print("\n14. build 229: last week's podium, answer positions, question order")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""()=>{
+      const out = { shuffleOn: cfg.shuffle };
+      runMode = 'drill';
+      const qi = QUESTIONS.findIndex(q => !q.fixedOrder && q.choices.length === 4);
+      let prev = null, repeats = 0, bank = 0; const seen = new Set();
+      for(let i = 0; i < 30; i++){
+        layout = {}; const o = optionOrder(qi); const sl = o.indexOf(QUESTIONS[qi].answer);
+        if(sl === prev) repeats++; if(o.every((v, k) => v === k)) bank++; prev = sl; seen.add(sl);
+      }
+      out.repeats = repeats; out.bank = bank; out.slotsUsed = seen.size;
+      localStorage.removeItem('class26e.recentq');
+      const unit = QUESTIONS.map((q, i) => i).filter(i => QUESTIONS[i].topic === 'Identity Crimes');
+      let last = null, overlap = 0;
+      for(let i = 0; i < 8; i++){
+        const ord = freshOrder(unit); rememberOpeners(ord);
+        const first = ord.slice(0, 4);
+        if(last) overlap += first.filter(x => last.includes(x)).length;
+        last = first;
+      }
+      out.overlap = overlap;
+      const lw = lastWeekKey(), wk = weekKeyNow();
+      const E = (pub, n, x) => Object.assign({ pub, firstName: n, avatarChar: 'ninja' }, x);
+      const rows = [E('a', 'Bo', { week: wk, weekPoints: 900, prevWeek: lw, prevWeekPoints: 4200 }),
+                    E('b', 'Cy', { week: lw, weekPoints: 5100 }),
+                    E('c', 'Dee', { week: wk, weekPoints: 300, prevWeek: lw, prevWeekPoints: 2600 }),
+                    E('d', 'Eli', { week: wk, weekPoints: 1200 })];
+      rows.forEach(e => { e.rawWeekPoints = e.weekPoints; e.weekPoints = weekPointsOfEntry(e); });
+      out.top = lastWeekTop3(rows).map(t => t.name);
+      const host = document.createElement('div'); document.body.appendChild(host);
+      renderRankingRows(host, rows, RANKING_BOARDS.find(b => b.key === 'week'), {});
+      out.podium = host.querySelectorAll('.lw-podium .lw-podium-spot').length;
+      host.remove();
+      return out; }""")
+    check("answer positions are shuffled by default", r["shuffleOn"] is True, r)
+    check("the right answer never lands where it was last time, or in the book's order",
+          r["repeats"] == 0 and r["bank"] == 0 and r["slotsUsed"] == 4, r)
+    check("consecutive runs of a small unit open with different questions", r["overlap"] == 0, r)
+    check("last week's top three come from last week's numbers, not this week's",
+          r["top"] == ["Cy", "Bo", "Dee"] and r["podium"] == 3, r)
+    ctx.close()
+
+
+def check_b230(br):
+    """Build 230: Home without the lag, and loading bars that do not lurch.
+    Written against build 229, where both fail."""
+    print("\n15. build 230: Home's raster cost, the loading bar on the compositor")
+    # The splash, before booted() removes it: its bar must be a compositor
+    # animation, not a width a busy main thread has to keep setting.
+    ctx = br.new_context(viewport={"width": 440, "height": 956})
+    ctx.add_init_script("try{localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % USED_ACCOUNT)
+    pg = open_page(ctx); pg.goto(URL); pg.wait_for_timeout(400)
+    bar = pg.evaluate("""()=>{ const f = document.getElementById('splash-fill'); if(!f) return null;
+      return { anims: f.getAnimations().map(a => a.animationName), w: f.style.width || '' }; }""")
+    check("the splash bar fills by a CSS animation, not a width set every frame",
+          bool(bar) and "loadbar-fill" in bar["anims"] and not bar["w"], bar)
+    ctx.close()
+    # Home: 3s of raster work under a 4x throttle, at the phone's own 3x.
+    # Here 229 measures ~690ms and 230 ~250ms; on the capture harness at
+    # her 518px view it was ~5.9s against ~0.4s. The ceiling is loose on
+    # purpose (raster time grows with machine load) and catches the
+    # full-blown case; the scale check below is the one that pins the
+    # cause, and it fails on 229.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, dpr=3, touch=True)
+    pg.evaluate("()=>showHome()"); pg.wait_for_timeout(1500)
+    cdp = pg.context.new_cdp_session(pg); cdp.send("Emulation.setCPUThrottlingRate", {"rate": 4})
+    br.start_tracing(page=pg, categories=["devtools.timeline", "disabled-by-default-devtools.timeline"])
+    pg.wait_for_timeout(3000)
+    data = json.loads(br.stop_tracing())
+    ev = data["traceEvents"] if isinstance(data, dict) else data
+    raster = sum(e.get("dur", 0) for e in ev if e.get("name") == "RasterTask") / 1000
+    check("Home's animations are not re-rasterised every frame (raster ms in 3s)", raster < 1500, round(raster))
+    scaled = pg.evaluate("""()=>document.getAnimations().filter(a => {
+        const t = a.effect && a.effect.target; if(!t || !t.closest || !t.closest('.cosmic-hero-wrap')) return false;
+        const r = t.getBoundingClientRect(); if(r.width * r.height < 250000) return false;
+        return a.effect.getKeyframes().some(k => /scale/.test(k.transform || '')); }).map(a => a.animationName)""")
+    check("nothing large on Home animates by scale", scaled == [], scaled)
+    ctx.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=CHROME)
@@ -1294,6 +1478,9 @@ def main():
             check_b218(br)
             check_b220(br)
             check_b221(br)
+            check_b223(br)
+            check_b229(br)
+            check_b230(br)
         finally:
             br.close()
     SERVER.shutdown()

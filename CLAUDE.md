@@ -1801,8 +1801,9 @@ older note here said a rank the same colour as its reward has nothing
 left to be — that reasoning is superseded, and the stale version of it
 survives as a comment above `RANK_COLOR`.
 
-**THE RANK NAME IS ITS COLOUR: Iron, Bronze, Silver, Gold, Sapphire,
-Amethyst — and Supernova, the one exception, below.** That is the thing
+**THE RANK NAME IS ITS COLOUR: Iron, Bronze, Gold, Platinum, Sapphire,
+Amethyst — and Supernova, the one exception, below** (build 225; see
+that section for why Silver and Emerald went). That is the thing
 the reference does that makes it read at a glance, and it took two
 passes to see it. The role words — rookie, ranger, veteran, vanguard,
 adept, elite, titan — carry no colour, so seven coloured cards were
@@ -5043,8 +5044,9 @@ glow now stopped in two vertical lines down the sides.
   are not open - including mid-test, since the inbox listener is always
   on - without a listener per chat; a chat somebody started with you
   joins your list on its first ping. "All chats" is a real button, list
-  rows show faces, and an expand button toggles tall/normal by its own
-  state (measuring failed on a tablet, where the panel is capped).
+  rows show faces. The expand button that toggled tall/normal was
+  REMOVED in build 224 on request ("stick to the drag to expand
+  function"); the grip is the only resize.
 
 ### Muting a chat (build 205)
 
@@ -5819,3 +5821,260 @@ after it is mounted - the overlay starts at opacity 0. Both new sheets
 shipped invisible for one pass without it.
 
 Gate: check-behaviour section 12.
+
+### Build 223 - Battle (two teams)
+
+A third Virtual Room game beside Race and Tug of War. It shipped first as
+everyone-for-themselves with a bar per person and was corrected the same
+day: *"The battle virtual room mode will be teams. Can't be played in odd
+numbers ... there would just be a single health bar for each side."* So:
+two sides made the way Tug makes them (`tugTeamsFor`, by join order), the
+lobby holds an odd room exactly as it does for Tug (the `oddTug` gate now
+covers both), and **one health bar per side**, `BATTLE_HP` (100) per
+member so a 3v3 lasts about as long as a 1v1.
+
+**Nobody ever writes a health number.** The room carries `battle.log`, an
+append-only list (`arrayUnion`) of what happened - a hit, a shield, a
+freeze - each with a unique id, and every device derives both bars by
+replaying it sorted by `at` then `id` (`battleReplay()`). Two hits in the
+same second cannot overwrite each other, the log gives the same fight in
+any arrival order (check-behaviour asserts it), and a device that
+reconnects draws exactly what everybody else draws. Once a side is at
+zero nothing after it counts.
+
+- Every right answer by anybody on a side comes off the other side's bar:
+  5, or 7 on your own streak of three. A shield (per side) blocks the
+  next hit on your side, a double (per player) doubles your next hit, a
+  heal is +15 to your side capped at its maximum.
+- **At least fifty questions**: the unit pool is shuffled from the shared
+  `startAt` and reshuffled per lap until there are 50 (`BATTLE_MIN_Q`), so
+  a twelve-question unit still has enough to fight with. 20s a question,
+  a flat 2s pause after each (the Tug pause bar).
+- **Powers from question 10**: every third right answer after it hands
+  over one at random (freeze, flip, shield, heal, double); one held at a
+  time, a button above the question. Freeze and flip go to the other
+  side's best player so far (most right answers). A freeze puts ice over
+  the answers for 5s with the clock still running; a flip turns
+  `.battle-flip` (question and answers) over for 8s - the ice sits
+  OUTSIDE it, so "Frozen" stays upright during a flip.
+- **Alerts name who did it** ("Bo froze you", "Cy healed their side").
+  Hits are not announced - there are dozens and the bars say it. On the
+  first snapshot everything already in the log is marked seen silently,
+  so rejoining does not replay a match as banners.
+- The host ends it: a side at zero, everybody out of questions, or the
+  pace's clock runs out - then more health left wins, equal is a draw.
+  The winner cutscene is the team one (the whole winning side), then the
+  result: both bars, XP (10 a right answer + 150 for everybody on the
+  winning side) and a two-column board of damage dealt with a star on
+  the top hitter. A team win counts toward the Champion like a first
+  place (`recordVroomOutcome` with you first).
+
+**A cutscene ends itself on ANY change to `#stage`, so nothing may draw
+under it.** Snapshots are always in flight when a match ends, and the
+first version drew the result on the next one and cut the winner
+cutscene off after a frame - Tug had the same guard missing. Both now
+skip drawing the result while `#vroom-cutscene` exists; the cutscene hands
+over itself.
+
+Gate: check-behaviour section 13.
+
+### Build 224 - clearer glass, no chat expand button
+
+**The shop and tokens are deferred.** The message that specified them
+opened with "Ignore the shop for now, we will get to that later, didn't
+mean to include the shop stuff" - the spec below that line is for later,
+not for now. Nothing about tokens is in the app.
+
+**Glass was fogged because it was blurred too hard.** "The glass doesn't
+seem very glass like, it still seems a little like fogged glass." Every
+shared recipe came down: `blur(16px) saturate(1.5)` (73 uses) is
+`blur(9px) saturate(1.9) brightness(1.06)`, the heavier sheets roughly
+halved, and the tab bar's plain-blur base - which is what iOS actually
+renders, since Safari ignores the `url(#glassRefraction)` layer - went
+from 40px to 16px. The common dark card fill (`rgba(28,33,40,.55)`, 34
+uses) is thinner and lit from above (a white-to-dark vertical wash over
+`rgba(26,31,38,.4)`), and its rim is a real specular line on top plus a
+shadowed lower lip. **Chromium's headless compositor does not render
+backdrop blur faithfully**, so a screenshot here shows the fill and rim
+change and not the blur - judge the blur on a device.
+
+**Every infinite animation was checked for a seam** (first and last
+keyframe compared): the ones that differ are periodic - a rotation, a
+tile shifted by whole periods - or fade to nothing at both ends. `tools/check-loops.py`
+does that check and fails on a new loop with a seam unless it is added
+to its `KNOWN` list with a reason.
+
+### Build 225 - Gold and Platinum, banners as scenes, no Fox or Viking
+
+**The ladder is Iron, Bronze, Gold, Platinum, Sapphire, Amethyst,
+Supernova** - four metals rising in value, two stones, one star. This
+supersedes every earlier list in this file (the ones naming Silver or
+Emerald). Emerald was "not the theme of the other ranks"; Silver "matched
+iron". Keys are unchanged: `veteran` displays Gold and keeps the
+crescent-and-star emblem that was liked, recoloured gold (`#E9B43A`);
+`vanguard` displays Platinum, teal (`#2EC4B6`) as most ranked games have
+it so it can never read as Iron, with a new emblem - a binary star, two
+lit stars on a broken tilted orbit (never a closed ring: that reads as a
+wheel). All three places a rank colour lives (`RANK_COLOR`,
+`ACCENT_SWATCH`, the `[data-accent]` triad) were changed together.
+
+**The road map names what a rank hands over.** "Flare on Home" said
+where and not what; the chip is now "<Rank> flare" with that emblem in
+it.
+
+**The Fox and the Viking are gone; those two challenges give banners.**
+"Pretty lame for challenge rewards, make it banner." Neither was ever on
+`main`, so no stored avatar points at them. `easy10` (Lanterns) and
+`average10` (Great Wave) count `store.unitGameBeat` like everything else,
+so past Game wins count.
+
+**Banners are illustrated SVG scenes** (`BANNER_ART`, one function per
+id, drawn in 480x180 and sliced to fit): Lanterns, Sakura, Great Wave,
+Neon City, Summit, Northern Lights, Starfall, Koi Pond, Earthrise,
+Phoenix, easiest to hardest. The CSS-pattern set before them was called
+"random wallpapers you found online" - a pattern is what a wallpaper is,
+so each is now a subject you can name, layered back to front, with one
+or two things moving (`.bn-*` classes; transform/opacity only; the global
+reduce-motion rule stops them). No SVG filters; glows are radial
+gradients. Randomness is seeded (`bnRand`) so a banner is identical on
+every device. Every gradient id carries a per-instance prefix
+(`bannerSeq`) - a lobby can show eight of the same banner at once.
+**Keep the subject inside the middle band (about y 40-140)**: the same
+art is shown as a Customize tile, a Profile cover and a thin lobby row,
+and the Phoenix's wings ran off the top of all of them at full size.
+
+### Build 226 - Battle bars side by side, a Ranks icon that reads
+
+**Battle's two health bars sit side by side across a "VS"**, yours on the
+left in green and theirs on the right in orange, mirrored so it drains
+towards the middle like a fighting game - "the health bars are on top of
+each other, make them side by side". The number on each is the health
+alone; the bar already says how full it is, and "188 / 200" does not fit
+half a 320px phone. Measured with no sideways scroll at 320px, 518px and
+834px.
+
+**The Ranks tab icon is rank chevrons on a shield.** The hexagon with a
+star in it was asked about ("not sure what icon it is"); chevrons are what
+a rank looks like, and more so for a police academy class. The icons live
+in `iconPaths` in `setupBottomTabs()`.
+
+### Build 227 - banners as nameplates (REVERTED in 230)
+
+Build 227 rebuilt the banners as Rocket League style nameplates (the name
+written on a thin plate: Police Tape, Siren, Glazed and so on), from a
+page of references Madison sent as "some banner ideas I like". **It was
+undone before it shipped.** Shown a screenshot of the build 225/226
+banners - the scene tiles in Customize and the banner as the Profile
+cover - she said: *"I was really liking how these banners working and
+stuff for the profile this looks great. Don't change what you did
+here."* The 225 note on banners-as-scenes stands; the banner code is
+byte-identical to 226 again (reverted by reverse-applying the 226->227
+diff, gates included).
+
+The lesson is about reading a reference: "some ideas I like" sent after
+approving a design is a mood board, not a request to replace it. Ask
+before throwing out something that was signed off.
+
+### Build 228 - the Detective's run is a Home banner, not in the daily box
+
+The daily question's result box ("Correct" / "Not this time") says how
+you did today and nothing else. The Detective's progress - N of 10 in a
+row, or back to 0 - is set aside in `pendingDailyProgress` and shown on
+Home as a top banner with the Detective's face, 1.5s after landing (after
+the XP has flown to Profile), once, and only if you are still on Home.
+`showDailyAlert(msg, { tag, character })` is the passive progress shape:
+the announcement's face-and-tag layout without the tap. Muted banners
+skip it.
+
+### Build 229 - last week's top three; shuffles that do not repeat
+
+**Last week's top three sit on the This Week board** as a small podium
+(second, first, third; gold, silver, bronze). Nothing used to keep last
+week: `awardXp` zeroed the week on rollover and the row re-published this
+week's key. Now `rollWeek()` is the one rollover (awardXp and
+`buildLeaderboardRow` both call it) and it keeps `prevWeekKey` /
+`prevWeekPoints` on `store` (defaulted in `applyLoadedData`), published
+as `prevWeek` / `prevWeekPoints`. `lastWeekPointsOfEntry()` reads either
+a row that has not rolled yet (`week` is last week's) or one that has
+(`prevWeek`). **The snapshot handlers zero `weekPoints` for any row not
+from this week, so they now keep the published figure in
+`rawWeekPoints` first** - without it everybody who had not played yet
+this week vanished from last week's podium. A device also caches the top
+three it saw each week (`class26e.weektop.v1`) as a second source for
+rows that rolled over on an older build.
+
+**Shuffling.** "I always see them in the same spot." Three causes, three
+fixes:
+- Answer positions were only shuffled in Exam and Game - Drill kept the
+  bank's order unless a switch in the start sheet was on, and it was off
+  by default. It is on by default now, and turned on once for everybody
+  (`class26e.shuffleon`); the switch still works.
+- A fair shuffle still puts the right answer back in the same slot a
+  quarter of the time. `optionOrder()` remembers the slot per question
+  (`class26e.lastslot`) and redraws a shuffle that repeats it or comes
+  out in the bank's order.
+- Question order was random, which means the same few could open runs
+  again and again. `freshOrder()` puts never-opened-with questions first
+  and the ones opened with longest ago next; `beginRun` records each
+  run's openers (`class26e.recentq`). It is ordered by AGE, not yes/no -
+  on a 12-question unit everything is "recent" within three runs.
+  `shuffle()` now draws from `crypto.getRandomValues`.
+Virtual Room order is untouched: it is `shuffleSeeded` and must be the
+same on every device.
+
+Gate: check-behaviour section 14 (fails on 228).
+
+### Build 230 - Home without the lag; theme colours; the iPhone button
+
+**Home's lag was one animation.** Measured with a trace at 4x CPU
+throttle (raster time per 4s): ~5.9s with everything on, ~0.34s with
+the hero's animations off, and turning them off one at a time put all
+of it on `.homeglow.homeglow-hero` - a halo nearly twice the hero's size
+breathing by `scale()`. **A scale animation is re-rasterised at every
+new scale; opacity never is.** It breathes by opacity now (.24-.36) and
+Home runs 60fps with a 16.8ms p95 frame where it was 55fps / 33ms.
+Find the next one the same way: disable animations by selector and read
+`RasterTask`, rather than guessing from what looks expensive - the
+backdrop blur and the SVG filters looked guilty and were not.
+
+**The hero is four layers now** (`buildCosmicHero`): the two warped glows
+in `.cosmic-hero-glowbox` (which does the breathing, by opacity), the
+sphere in `.cosmic-hero-main` (the only one in the flow - it sets the
+size), the pulse ring and core in `.cosmic-hero-animlayer`, and the orbit
+dots in `.cosmic-hero-orbitlayer`, which rotates as a whole svg element.
+All share the viewBox `0 -12 360 342`, so a coordinate means the same
+in each. Anything animated INSIDE an svg repaints that svg, filters
+included - that is why nothing moving sits with the turbulence filters.
+The id-suffixing pass runs over the wrap, not one svg, for that reason.
+The orbit badges also lost their backdrop blur for a darker fill.
+
+**Loading bars run on the compositor.** The splash and Generating
+Profile bars were a width set from requestAnimationFrame, which lurches
+exactly when the main thread is busiest. They are `scaleX` CSS
+animations now (`loadbar-fill`), set inline with `!important` so the
+reduce-motion rule cannot leave a loading bar empty. Verified from
+screencast frames through a 2s main-thread block: the old bar froze,
+the new one keeps filling.
+
+**Theme colours.** The mode icons on unit selection had hard-coded
+colours that Iron's accent overrode; fixed at the `.modedisplay-top`
+rules. The triads (`--theme-c1/c2/c3`, which draw the planet, the
+background glow and every unit card's progress bar) went through two
+passes. The first gave every theme a warm end and a cool end like the
+default, and Bronze and Gold came out as the default - "These look too
+much like the default ... you should be able to have a theme on and tell
+which one it is." Now each theme owns one hue family nobody else uses
+(the table is in the comment above the rookie rule): steel for Iron,
+copper and verdigris green for Bronze, yellow for Gold, teal for
+Platinum, blue with no violet for Sapphire, orchid to pink for
+Amethyst, red all the way through for Supernova (its swatch went
+#FF6B5E -> #FF3B30 with it). The default keeps the only sunset. Glow
+strengths did not change. A new theme needs a family not on that list.
+
+**iPhone Home** (`(max-width:639px) and (min-height:736px) and
+(min-width:430px)`): Start Studying bigger (62x216 at her 518px zoomed
+view, was 57x200), 12px more gap above it, and 10px higher, text rising
+with it. 430px floor because a 393px phone's button nearly shares a
+column with the daily-question circle.
+
+**Banners are back to the 226 scene tiles** - see the build 227 note.

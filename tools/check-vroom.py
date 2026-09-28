@@ -815,6 +815,10 @@ def main():
         # are the same question and two builders for one idea is what
         # this file keeps paying for.
         print("\n8. match settings")
+        # Section 7's results screen rolls its leaderboard on its own
+        # clock; on a loaded machine it can still be up here. It belongs
+        # to section 7 and is not what this section mounts.
+        pg.evaluate("()=>{ document.getElementById('vroom-race-cut')?.remove(); document.getElementById('vroom-prep')?.remove(); }")
         pg.evaluate("""()=>{
           fbDb = { collection:()=>({ doc:()=>({ update:()=>Promise.resolve() }) }) };
           vroomCode = 'ROOM42'; vroomIsHost = true;
@@ -1161,7 +1165,7 @@ def main():
                   race_n == 2 and tug_n == 1, {"race": race_n, "tug": tug_n})
             check("and switching back restores it", back_n == 2, back_n)
 
-            # The two game cards read as a choice: both the same size, both
+            # The game cards read as a choice: all the same size, all
             # with a surface of their own. The unselected one was reported
             # as looking like it was not there.
             cards = tugA.evaluate("""()=>[...document.querySelectorAll('.vroom-host-mode')].map(b=>{
@@ -1169,9 +1173,9 @@ def main():
               return { w:Math.round(r.width), h:Math.round(r.height),
                        on:b.classList.contains('on'),
                        bg:cs.backgroundColor, art:!!b.querySelector('.vroom-host-mode-art') };})""")
-            check("both game cards are the same size and both have art",
-                  len(cards) == 2 and cards[0]["w"] == cards[1]["w"]
-                  and cards[0]["h"] == cards[1]["h"] and all(c["art"] for c in cards),
+            check("every game card is the same size and has art",
+                  len(cards) >= 2 and len({c["w"] for c in cards}) == 1
+                  and len({c["h"] for c in cards}) == 1 and all(c["art"] for c in cards),
                   cards)
             off = [c for c in cards if not c["on"]]
             check("and the unselected one still has a surface",
