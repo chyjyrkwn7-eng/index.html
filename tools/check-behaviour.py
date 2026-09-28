@@ -501,69 +501,61 @@ def check_ranks(br):
           edges["badgeShort"] == "ranger" and edges["nothing"] is None and
           edges["top"] == "titan" and edges["topShort"] == "elite", edges)
 
+    # RANK AND BADGES ARE THEIR OWN BOTTOM TAB NOW (build 219) - "a new
+    # bottom tab for rank/badges with Rank default". Profile keeps two
+    # tabs. The invariant is the same one this used to hold for four:
+    # the swipe order carries the same tabs as the buttons, on both
+    # screens, so a thumb swipe never skips one.
+    pg.evaluate("()=>showProfile()")
+    pg.wait_for_timeout(1200)
+    ptabs = pg.evaluate("""()=>({
+      rendered: [...document.querySelectorAll('.profiletabs .iconbtn')].map(b=>b.textContent),
+      swipe: PROFILE_TABS.slice(), bottom: !!document.querySelector('#bottomtab-ranks')})""")
+    check("Profile is two tabs, Profile first, and swipes in the same order",
+          len(ptabs["rendered"]) == 2 and ptabs["rendered"][:1] == ["Profile"] and
+          len(ptabs["swipe"]) == 2, ptabs)
+    check("the tab bar carries a Ranks tab", ptabs["bottom"], ptabs)
     pg.evaluate("()=>showProfile('ranks')")
     pg.wait_for_timeout(1500)
     tabs = pg.evaluate("""()=>({
+      screen: !!document.querySelector('.screen-ranks'),
       rendered: [...document.querySelectorAll('.profiletabs .iconbtn')].map(b=>b.textContent),
-      swipe: (typeof PROFILE_TABS !== 'undefined') ? PROFILE_TABS.slice() : null })""")
-    # THIS ASSERTED ["Profile","Stats","Badges","Rank"] AND WENT STALE.
-    # Stats was moved to the far right on request - "Stats to far right"
-    # - and the gate went on demanding the old order, which is the sixth
-    # time in this repo a check has encoded a DECISION and then failed
-    # the app for being right. A decision is not the thing to assert.
-    #
-    # What is worth asserting is the invariant nothing may break: four
-    # tabs, and the SWIPE ORDER carries the same tabs in the same order
-    # as the buttons. That is the one that actually hurts - a thumb
-    # swipe that skips a tab is worse than no swipe - and it cannot go
-    # stale, because both halves are read off the app.
-    check("four tabs on Profile", len(tabs["rendered"]) == 4, tabs["rendered"])
-    check("the swipe order matches the buttons",
-          tabs["swipe"] is not None and len(tabs["swipe"]) == len(tabs["rendered"]),
-          tabs)
-    # Profile first and Stats last ARE decisions, but they are the two
-    # that were asked for by name and both are load-bearing: Profile is
-    # what a bare showProfile() lands on, and Stats is the only tab with
-    # a class of its own keyed to being last.
-    check("Profile is first and Stats is last",
-          tabs["rendered"][:1] == ["Profile"] and tabs["rendered"][-1:] == ["Stats"],
-          tabs["rendered"])
+      active: (document.querySelector('.profiletabs .iconbtn.active')||{}).textContent,
+      swipe: RANKS_TABS.slice(),
+      tabLit: document.querySelector('#bottomtab-ranks').classList.contains('active')})""")
+    check("an old link to Profile's rank tab lands on the Ranks screen, Rank showing",
+          tabs["screen"] and len(tabs["rendered"]) == 2 and tabs["active"] == tabs["rendered"][0] and
+          tabs["swipe"] == ["ranks", "badges"], tabs)
+    check("the Ranks tab in the bar is lit on its own screen", tabs["tabLit"], tabs)
 
-    cards = pg.evaluate("""()=>[...document.querySelectorAll('.rankcard')].map(c=>({
-      name:c.querySelector('.rankcard-name').textContent,
-      state:c.className.match(/is-\\w+/g).join(' '),
-      chip:c.querySelector('.rankcard-state').textContent,
-      meter:!!c.querySelector('.rankcard-meter'),
-      rewards:c.querySelectorAll('.rankcard-rewards li').length}))""")
+    # THE ROAD MAP. Stops are drawn top-down (Supernova at the summit),
+    # so they are reversed here to read in climbing order.
+    cards = pg.evaluate("""()=>[...document.querySelectorAll('.rankmap-stop')].reverse().map(c=>({
+      name:c.querySelector('.rankmap-name').textContent,
+      state:(c.className.match(/is-(reached|here|next|locked)/g)||[]).join(' '),
+      chip:c.querySelector('.rankmap-state').textContent,
+      meter:!!c.querySelector('.rankmap-meter'),
+      you:!!c.querySelector('.rankmap-you'),
+      rewards:c.querySelectorAll('.rankmap-gift').length,
+      charGift:!!c.querySelector('.rankmap-gift.is-char')}))""")
     check("seven ranks, named as ranks and not as flares",
           [c["name"] for c in cards] ==
-          ["Iron", "Bronze", "Silver", "Gold", "Sapphire", "Amethyst", "Supernova"],
+          ["Iron", "Bronze", "Silver", "Emerald", "Sapphire", "Amethyst", "Supernova"],
           [c["name"] for c in cards])
-    # The states are the whole point of the rewrite: "what you are, what
-    # you have, and what is to come" has to read without decoding a
-    # colour, so each card says it in a word.
-    check("every card says which of the three states it is in",
+    check("every stop says which of the states it is in",
           [c["chip"] for c in cards] ==
           ["Reached", "Reached", "You are here", "Up next", "Locked", "Locked", "Locked"],
           [c["chip"] for c in cards])
-    check("the rank you hold is the one marked is-here",
-          [i for i, c in enumerate(cards) if "is-here" in c["state"]] == [2],
-          [c["state"] for c in cards])
-    # A reached rank is not a progress bar. It was, for one build, and
-    # that was the thing explicitly asked against.
-    # ONLY the next one up. Every unreached rank carried a meter, which
-    # put a half-full bar on Supernova while you were working on Gold -
-    # progress towards something you are not working towards.
+    check("your character stands on the rank you hold, and only there",
+          [i for i, c in enumerate(cards) if c["you"]] == [2] and "here" in cards[2]["state"],
+          cards)
     check("only the rank you are climbing to carries a meter",
           [c["meter"] for c in cards] == [False, False, False, True, False, False, False],
           [c["meter"] for c in cards])
-    # Three rewards on the bottom three, FOUR on the top four - those
-    # each hand over a character as well (Officer, Clown, Robot,
-    # Astronaut). The list is exactly what you get rather than a fixed
-    # shape with a gap in it, so this asserts the shape per rank rather
-    # than one number across all seven.
+    # Theme and flare on every rank; the top four hand over a character too.
     check("every rank lists what it hands over, top four include the character",
-          [c["rewards"] for c in cards] == [3, 3, 3, 4, 4, 4, 4],
+          [c["rewards"] for c in cards] == [2, 2, 2, 3, 3, 3, 3] and
+          [c["charGift"] for c in cards] == [False] * 3 + [True] * 4,
           [c["rewards"] for c in cards])
     # THE SHAPE, NOT THE COUNT. This asserted `count == 12` and that
     # every character without an `unlock` is free, and it went red the
@@ -594,28 +586,20 @@ def check_ranks(br):
 
     # A locked rank still shows its colour. Four of the seven used to be
     # redrawn in grey, so you could not see what you were heading for.
-    hues = pg.evaluate("""()=>[...document.querySelectorAll('.rankcard')].map(c=>
+    hues = pg.evaluate("""()=>[...document.querySelectorAll('.rankmap-stop')].map(c=>
       c.style.getPropertyValue('--rank-color').trim())""")
     check("every rank carries its own colour, reached or not",
           len(set(hues)) == 7 and all(h.startswith("#") for h in hues), hues)
 
-    # ONE ROW PER RANK ON EVERY DEVICE. The upright four-across card is
-    # gone: seven of them wrapped four-then-three on a tablet, so the
-    # climb read left-to-right and then left-to-right again. The phone
-    # arrangement was already the simple one and was already liked, so a
-    # wide screen gets the same thing with more room - which means the
-    # emblem stays BESIDE the name at every width, and a rank's card
-    # spans the track whatever the screen is.
-    lay = pg.evaluate("""()=>{const cs=[...document.querySelectorAll('.rankcard')];
-      const t=document.querySelector('.ranktrack').getBoundingClientRect();
-      const c=cs[0];
-      const r=s=>c.querySelector(s).getBoundingClientRect();
-      return {beside: r('.rankcard-head').left >= r('.rankcard-art').right - 1,
-              perRow:cs.filter(x=>Math.abs(x.getBoundingClientRect().top -
-                                           c.getBoundingClientRect().top) < 2).length,
-              full:Math.round(c.getBoundingClientRect().width) >= Math.round(t.width) - 2};}""")
-    check("one full-width row per rank on a tablet too",
-          lay["beside"] and lay["perRow"] == 1 and lay["full"], lay)
+    # ONE STOP PER ROW, and on a tablet the cards alternate sides of the
+    # road - which is what makes it a road rather than a list.
+    lay = pg.evaluate("""()=>{const cs=[...document.querySelectorAll('.rankmap-stop')];
+      const tops=cs.map(c=>Math.round(c.getBoundingClientRect().top));
+      const side=c=>{const n=c.querySelector('.rankmap-node').getBoundingClientRect(),
+        k=c.querySelector('.rankmap-card').getBoundingClientRect(); return k.left>=n.right-1?'R':'L';};
+      return {distinctRows:new Set(tops).size===cs.length, sides:cs.map(side).join('')};}""")
+    check("one stop per row, cards alternating sides of the road on a tablet",
+          lay["distinctRows"] and "LR" in lay["sides"] and "RL" in lay["sides"], lay)
 
     # SEVEN DIFFERENT MARKS, not one mark at seven sizes - and not the
     # chevron set that replaced it either ("I'm not a fan of the iron
@@ -647,7 +631,7 @@ def check_ranks(br):
     gone = pg.evaluate("""()=>({
       box: !!document.querySelector('.ranks-tab .unlock-row'),
       anyMention: /Secret Flare/i.test(document.querySelector('.ranks-tab').textContent),
-      topReq: [...document.querySelectorAll('.rankcard-req')].pop().textContent,
+      topReq: document.querySelector('.rankmap-req').textContent,
       eclipse: ACCENTS.indexOf('mystery') !== -1
     })""")
     check("no unlock box and nothing on the tab mentions a Secret Flare",
@@ -660,16 +644,14 @@ def check_ranks(br):
     ctx2, pg2 = booted(br, 393, 852, seed=seed)
     pg2.evaluate("()=>showProfile('ranks')")
     pg2.wait_for_timeout(1200)
-    lay2 = pg2.evaluate("""()=>{const cs=[...document.querySelectorAll('.rankcard')];
-      const t=document.querySelector('.ranktrack').getBoundingClientRect();
-      const c=cs[0];
-      const r=s=>c.querySelector(s).getBoundingClientRect();
-      return {beside: r('.rankcard-head').left >= r('.rankcard-art').right - 1,
-              perRow:cs.filter(x=>Math.abs(x.getBoundingClientRect().top -
-                                           c.getBoundingClientRect().top) < 2).length,
-              full:Math.round(c.getBoundingClientRect().width) >= Math.round(t.width) - 2};}""")
-    check("one full-width row per rank on a phone, name beside the emblem",
-          lay2["beside"] and lay2["perRow"] == 1 and lay2["full"], lay2)
+    lay2 = pg2.evaluate("""()=>{const cs=[...document.querySelectorAll('.rankmap-stop')];
+      const tops=cs.map(c=>Math.round(c.getBoundingClientRect().top));
+      const beside=cs.every(c=>c.querySelector('.rankmap-card').getBoundingClientRect().left >=
+                                c.querySelector('.rankmap-node').getBoundingClientRect().right - 1);
+      const over=cs.some(c=>c.getBoundingClientRect().right > innerWidth + 1);
+      return {distinctRows:new Set(tops).size===cs.length, beside, over};}""")
+    check("one stop per row on a phone, the road on the left, nothing off the edge",
+          lay2["distinctRows"] and lay2["beside"] and not lay2["over"], lay2)
     ctx2.close()
     ctx, pg = booted(br, 834, 1194, seed=seed)
     pg.evaluate("()=>showProfile('ranks')")

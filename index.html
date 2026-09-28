@@ -309,10 +309,15 @@
   [data-theme="dark"][data-accent="rookie"]{ --rank-accent:#AEB7C2; --rank-accent-ink:#14181D; }
   [data-accent="ranger"]{ --rank-accent:#A4602A; --rank-accent-ink:#FFF6EE; --theme-c1:#D1BB65; --theme-c2:#C07A3E; --theme-c3:#7C4051; }
   [data-theme="dark"][data-accent="ranger"]{ --rank-accent:#D99458; --rank-accent-ink:#221208; }
-  [data-accent="veteran"]{ --rank-accent:#7A8C9E; --rank-accent-ink:#F7FAFD; --theme-c1:#BAD8DE; --theme-c2:#CAD3DC; --theme-c3:#AAA2C2; }
-  [data-theme="dark"][data-accent="veteran"]{ --rank-accent:#D8E1EA; --rank-accent-ink:#141A21; }
-  [data-accent="vanguard"]{ --rank-accent:#B08A1E; --rank-accent-ink:#FFFAEC; --theme-c1:#EFDE6D; --theme-c2:#E5B63F; --theme-c3:#A63C3F; }
-  [data-theme="dark"][data-accent="vanguard"]{ --rank-accent:#F0C75A; --rank-accent-ink:#241A03; }
+  /* Build 219: SILVER moved off Iron's grey - "the silver icon looks cool,
+     but the color looks too much like iron" - to a bright, cool, pearly
+     silver with blue in it; and the Gold rank became EMERALD - "maybe gold
+     could be emerald instead?" - so the four coloured ranks run green,
+     blue, purple, red. The key stays vanguard. */
+  [data-accent="veteran"]{ --rank-accent:#5C7FA6; --rank-accent-ink:#F7FAFD; --theme-c1:#C9E6F7; --theme-c2:#DCE8F7; --theme-c3:#9FB0E0; }
+  [data-theme="dark"][data-accent="veteran"]{ --rank-accent:#E4EEFA; --rank-accent-ink:#141A21; }
+  [data-accent="vanguard"]{ --rank-accent:#12925E; --rank-accent-ink:#F0FFF7; --theme-c1:#A6F0C6; --theme-c2:#2ED18A; --theme-c3:#0E7F6E; }
+  [data-theme="dark"][data-accent="vanguard"]{ --rank-accent:#3BE39B; --rank-accent-ink:#04200F; }
   /* This was a genuine, silent bug: "adept" (Giant) had no rule here
      at all, so --accent simply fell through to whatever it was
      already set to rather than the intended colour \u2014 selecting this
@@ -393,12 +398,12 @@
     box-shadow:0 0 7px rgba(192,122,62,.5);
   }
   .dot.tier-veteran{
-    background-image:linear-gradient(135deg, #F4F8FC, #CAD3DC 26%, #44588A 50%, #CAD3DC 74%, #F4F8FC); background-size:220% 220%;
-    box-shadow:0 0 7px rgba(202,211,220,.5);
+    background-image:linear-gradient(135deg, #FFFFFF, #DCE8F7 26%, #6F8CC0 50%, #DCE8F7 74%, #FFFFFF); background-size:220% 220%;
+    box-shadow:0 0 8px rgba(200,222,250,.7);
   }
   .dot.tier-vanguard{
-    background-image:linear-gradient(135deg, #FFE9AE, #E5B63F 26%, #8A3B5E 50%, #E5B63F 74%, #FFE9AE); background-size:220% 220%;
-    box-shadow:0 0 7px rgba(229,182,63,.5);
+    background-image:linear-gradient(135deg, #C8FFE2, #2ED18A 26%, #0B5E52 50%, #2ED18A 74%, #C8FFE2); background-size:220% 220%;
+    box-shadow:0 0 7px rgba(46,209,138,.55);
   }
   /* Was simply absent, while every other tier from rookie to titan had
      one. The swatch builder relies on CSS to supply a tier-* dot's colour
@@ -1896,7 +1901,16 @@
      shadows on the drawing itself are what make the light read as
      coming OFF the character anyway; this layer is the pool behind it
      and does not need to be half again as wide as the cell. */
-  .avatarchar-option.selected::before{
+  /* THE POOL IS ALWAYS THERE AND FADES, rather than being created by
+     .selected. Reported: "the glowing background doesn't seem to fade in
+     the character selection thing." A pseudo-element that only exists
+     while selected has nothing to transition FROM - it simply appears -
+     so every option carries it at opacity 0 and selecting one fades it
+     up. The drop-shadows on the drawing get the same treatment: the
+     unselected value is the same two shadows at zero size and zero
+     colour, so the browser interpolates function by function instead of
+     snapping from `none`. */
+  .avatarchar-option::before{
     content:""; position:absolute; left:50%; top:50%;
     width:118%; aspect-ratio:1; transform:translate(-50%, -50%);
     border-radius:50%; pointer-events:none; z-index:0;
@@ -1904,16 +1918,29 @@
       color-mix(in srgb, var(--char-glow) 42%, transparent) 0%,
       color-mix(in srgb, var(--char-glow) 17%, transparent) 38%,
       transparent 68%);
+    opacity:0; transition:opacity .5s ease;
   }
-  .avatarchar-option.selected .avatarchar-svg,
-  .avatarchar-option.selected svg{
+  .avatarchar-option.selected::before{ opacity:1; }
+  /* The drop-shadows fade through a REGISTERED number, not by
+     transitioning `filter` itself: interpolating from a transparent
+     shadow to a color-mix() one passes through near-black on the way
+     (measured: rgba(1,0,0,.6) at 250ms), so the character briefly grew
+     a dark outline before it lit. --char-glow-k runs 0 -> 1 and the
+     shadows' size and strength are both scaled by it, so every frame is
+     the right colour at a smaller size. Without @property support it
+     simply snaps, which is what it did before. */
+  @property --char-glow-k{ syntax:"<number>"; inherits:true; initial-value:0; }
+  .avatarchar-option:not(.locked) .avatarchar-svg{
     position:relative; z-index:1;
-    filter:drop-shadow(0 0 5px color-mix(in srgb, var(--char-glow) 85%, transparent))
-           drop-shadow(0 0 16px color-mix(in srgb, var(--char-glow) 45%, transparent));
+    --char-glow-k:0;
+    transition:--char-glow-k .5s ease;
+    filter:drop-shadow(0 0 calc(5px * var(--char-glow-k)) color-mix(in srgb, var(--char-glow) calc(85% * var(--char-glow-k)), transparent))
+           drop-shadow(0 0 calc(16px * var(--char-glow-k)) color-mix(in srgb, var(--char-glow) calc(45% * var(--char-glow-k)), transparent));
   }
+  .avatarchar-option.selected:not(.locked) .avatarchar-svg{ --char-glow-k:1; }
   /* A locked one is a preview, not something you hold, so it gives off
      nothing even while it is the one being looked at. */
-  .avatarchar-option.locked.selected::before{ display:none; }
+  .avatarchar-option.locked::before{ display:none; }
   .avatarchar-option.locked.selected svg{ filter:saturate(.3) contrast(.4) brightness(1.34); }
   /* Genuinely bigger on a tablet-width screen, not just the same
      phone-tuned 4.6rem cap sitting in the middle of much bigger grid
@@ -6248,6 +6275,21 @@
     .bottomtabs:not(.has-start-tab) .bottomtab-icon-avatar{ width:2.2rem; height:2.2rem; }
     .bottomtabs:not(.has-start-tab) .bottomtab-label{ font-size:.84rem; }
   }
+  /* FIVE TABS SINCE BUILD 219 (Ranks joined the bar), and at the four-tab
+     padding the pill measured 578px - wide enough that the daily-question
+     circle and the version label, which sit in the open margin beside
+     it, ended up inside it on every sideways phone and on the iPad.
+     1.1rem a side brings it to ~506px; below 56rem wide (a 640-896px
+     window: phones on their side, Split View) it goes tighter again,
+     because there the circle is pinned to the screen edge rather than to
+     the bar and the bar has to leave it room: the bar may be no wider
+     than the viewport minus ~204px. check-fixes measures both. */
+  @media (min-width:40rem){
+    .bottomtabs:not(.has-start-tab) .bottomtab{ padding-left:1.1rem; padding-right:1.1rem; }
+  }
+  @media (min-width:40rem) and (max-width:56rem){
+    .bottomtabs:not(.has-start-tab) .bottomtab{ padding-left:.55rem; padding-right:.55rem; }
+  }
   /* The compact, icon-only bar above is a PHONE compromise, and the
      :not(.has-start-tab) that used to run through every rule up there
      applied it everywhere. Reported directly: on an iPad the unit
@@ -8534,6 +8576,22 @@
       0 2px 6px rgba(18,26,32,.12);
   }
   .cosmic-icon-badge svg{ width:1.2rem; height:1.2rem; }
+  /* A rank's emblem in the bubble: bigger than the old line glyph, since
+     it is a drawing rather than a stroke, and it stays inside the bubble.
+     Not reached = the same emblem, dim and colourless. The filter is on
+     a small static element and never animates. */
+  .cosmic-icon-badge.cosmic-badge-rank{ width:2.9rem; height:2.9rem; }
+  .cosmic-icon-badge.cosmic-badge-rank svg.cosmic-rank-emblem{ width:118%; height:118%; flex:none; overflow:visible; }
+  .cosmic-icon-badge.cosmic-badge-rank:not(.cosmic-badge-lit) svg.cosmic-rank-emblem{ filter:grayscale(1) brightness(.8); opacity:.5; }
+  /* Lit: a dark glass bubble with the rank's colour in its rim and halo,
+     so the emblem is what you see - the old solid fill drowned it. */
+  .cosmic-icon-badge.cosmic-badge-rank.cosmic-badge-lit,
+  .cosmic-icon-badge.cosmic-badge-rank.cosmic-badge-noir{
+    background:radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--rank-color) 30%, #0E1116), #0A0C10 78%);
+    border:1.5px solid color-mix(in srgb, var(--rank-color) 75%, #fff);
+    box-shadow:0 0 14px 2px color-mix(in srgb, var(--rank-color) 60%, transparent),
+      inset 0 0 8px 0 color-mix(in srgb, var(--rank-color) 30%, transparent);
+  }
   /* Only Home's badges get this (Welcome's stay purely decorative,
      untouched) \u2014 a genuine tap target, not just a hover cue, since
      this needs to work on touch devices first. */
@@ -9387,9 +9445,18 @@
        arithmetic as the build-94 and build-196 notes. +.75rem is 12px.
        The button grows by its own padding and type, not its min-width,
        so it stays clear of the daily-question circle beside it. */
-    .panel.home.screen-home-actual .playbtn{
-      margin-top:calc(1.25rem + (var(--zc, 1) - 1) * 100px);
-      font-size:1.08rem; padding-top:1.08rem; padding-bottom:1.08rem;
+    /* The bigger button, and the text raised above it, only where there
+       is room for them. On a 360px
+       Android phone in a browser the extra height left Start Studying
+       7px off the "?" circle, under the 12px floor check-fixes holds
+       Home to - the circle sits beside the button's lower corner, so a
+       taller button walks straight at it. Every phone from 400px wide
+       (the 14/15/16 and up, which is what this was asked on) keeps it. */
+    @media (min-width:400px){
+      .panel.home.screen-home-actual .playbtn{
+        margin-top:calc(1.25rem + (var(--zc, 1) - 1) * 100px);
+        font-size:1.08rem; padding-top:1.08rem; padding-bottom:1.08rem;
+      }
     }
   }
   /* ---- AND THE NARROWEST PHONES CANNOT AFFORD THE FULL BLEED ----
@@ -9766,7 +9833,9 @@
          measured across the matrix 1.83rem puts the two centre lines at
          exactly 0px apart. */
       bottom:calc(1.46rem + env(safe-area-inset-bottom, 0px));
-      right:max(calc(50% - 21rem), 1rem);
+      /* 22rem since the fifth tab: the bar's right edge is ~50% + 15.8rem
+         and this circle is 4.6rem, so its left edge lands ~1.6rem clear. */
+      right:max(calc(50% - 22rem), 1rem);
     }
   }
   @media (hover:hover){ .homeversion-btn:hover{ opacity:.85; } }
@@ -10231,6 +10300,100 @@
      order. min-width:0 on the card stays - it does the job minmax(0,1fr)
      does in a grid, and without it a rank name sets the floor, which is
      the trap .pick and the badge grid already document. */
+  /* ---- THE RANK ROAD MAP (build 219) ----
+     Phone: the road runs down the left, stops beside it. Wide: the road
+     runs down the middle and the stops alternate. Every stretch of road
+     belongs to the stop above it and fills from the bottom by --lit. */
+  .rankmap{ position:relative; margin:.4rem 0 1.4rem; }
+  .rankmap-summit, .rankmap-foot{
+    margin:0; font-size:.66rem; font-weight:800; letter-spacing:.24em; text-transform:uppercase;
+    color:var(--soft); padding-left:.55rem;
+  }
+  .rankmap-summit{ margin-bottom:.8rem; color:color-mix(in srgb, #E23B3B 55%, #fff); }
+  .rankmap-foot{ margin-top:.2rem; }
+  .rankmap-stop{
+    --node:4.4rem; --gap:1.25rem;
+    position:relative; display:grid; grid-template-columns:var(--node) minmax(0,1fr); gap:.85rem;
+    align-items:start; padding-bottom:var(--gap);
+  }
+  .rankmap-road{
+    position:absolute; left:calc(var(--node) / 2 - 2px); width:4px; border-radius:2px;
+    top:calc(var(--node) / 2); bottom:calc(-1 * var(--node) / 2 + 0px);
+    background:repeating-linear-gradient(to bottom, rgba(255,255,255,.16) 0 7px, transparent 7px 13px);
+    z-index:0; overflow:hidden;
+  }
+  .rankmap-roadfill{
+    position:absolute; inset:0; transform-origin:50% 100%; transform:scaleY(var(--lit, 0));
+    background:linear-gradient(to top, color-mix(in srgb, var(--rank-color) 60%, #fff), var(--rank-color));
+    box-shadow:0 0 10px color-mix(in srgb, var(--rank-color) 70%, transparent);
+    transition:transform 1.4s cubic-bezier(.2,.8,.2,1) .2s;
+  }
+  .rankmap-node{
+    position:relative; z-index:1; width:var(--node); height:var(--node); border-radius:50%;
+    display:grid; place-items:center;
+    background:radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--rank-color) 26%, #10141A), #0A0C10 75%);
+    border:2px solid color-mix(in srgb, var(--rank-color) 70%, #fff);
+    box-shadow:0 0 18px color-mix(in srgb, var(--rank-color) 45%, transparent), inset 0 0 12px color-mix(in srgb, var(--rank-color) 25%, transparent);
+  }
+  .rankmap-node > svg.rank-emblem-svg{ width:118%; height:118%; overflow:visible; filter:drop-shadow(0 0 8px color-mix(in srgb, var(--rank-color) 60%, transparent)); }
+  .rankmap-stop.is-locked .rankmap-node{ background:#0C0F14; border-color:rgba(255,255,255,.14); box-shadow:none; }
+  .rankmap-stop.is-locked .rankmap-node > svg{ filter:grayscale(1) brightness(.7); opacity:.45; }
+  .rankmap-stop.is-next .rankmap-node{ border-style:dashed; }
+  .rankmap-stop.is-here .rankmap-node{ box-shadow:0 0 0 4px color-mix(in srgb, var(--rank-color) 22%, transparent), 0 0 30px color-mix(in srgb, var(--rank-color) 65%, transparent); }
+  .rankmap-stop.is-here .rankmap-node::after{
+    content:""; position:absolute; inset:-8px; border-radius:50%; pointer-events:none;
+    border:2px solid color-mix(in srgb, var(--rank-color) 70%, transparent);
+    animation:rankmap-here 2.6s ease-out infinite;
+  }
+  @keyframes rankmap-here{ 0%{ transform:scale(.9); opacity:.9; } 100%{ transform:scale(1.35); opacity:0; } }
+  [data-reduce-motion="true"] .rankmap-stop.is-here .rankmap-node::after{ animation:none; opacity:.5; }
+  .rankmap-you{
+    position:absolute; right:-.45rem; bottom:-.35rem; width:1.9rem; height:1.9rem; border-radius:50%;
+    display:grid; place-items:center; background:#0B0E13; border:2px solid #fff;
+    box-shadow:0 2px 8px rgba(0,0,0,.5);
+  }
+  .rankmap-you svg{ width:1.55rem; height:1.55rem; }
+  .rankmap-card{
+    padding:.75rem .9rem .8rem; border-radius:16px;
+    background:linear-gradient(135deg, color-mix(in srgb, var(--rank-color) 14%, rgba(22,27,34,.7)), rgba(18,22,28,.7));
+    border:1px solid color-mix(in srgb, var(--rank-color) 30%, rgba(255,255,255,.08));
+  }
+  .rankmap-stop.is-locked .rankmap-card{ background:rgba(20,24,30,.55); border-color:rgba(255,255,255,.07); }
+  .rankmap-stop.is-here .rankmap-card{ border-color:color-mix(in srgb, var(--rank-color) 70%, #fff); box-shadow:0 0 22px -6px color-mix(in srgb, var(--rank-color) 70%, transparent); }
+  .rankmap-head{ display:flex; align-items:center; justify-content:space-between; gap:.5rem; }
+  .rankmap-name{ margin:0; font-family:var(--serif); font-size:1.25rem; font-weight:700; color:color-mix(in srgb, var(--rank-color) 55%, #fff); }
+  .rankmap-stop.is-locked .rankmap-name{ color:rgba(255,255,255,.62); }
+  .rankmap-state{
+    flex:none; font-size:.6rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase;
+    padding:.2rem .5rem; border-radius:999px; color:rgba(255,255,255,.7); background:rgba(255,255,255,.07);
+  }
+  .rankmap-stop.is-here .rankmap-state{ color:#0B0D10; background:color-mix(in srgb, var(--rank-color) 80%, #fff); }
+  .rankmap-stop.is-next .rankmap-state{ color:color-mix(in srgb, var(--rank-color) 70%, #fff); background:color-mix(in srgb, var(--rank-color) 18%, transparent); }
+  .rankmap-req{ margin:.25rem 0 0; font-size:.8rem; font-weight:700; color:rgba(255,255,255,.72); }
+  .rankmap-meter{ margin-top:.55rem; }
+  .rankmap-togo{ margin:.35rem 0 0; font-size:.74rem; color:var(--soft); }
+  .rankmap-gifts{ display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.6rem; }
+  .rankmap-gift{
+    display:inline-flex; align-items:center; gap:.35rem; padding:.22rem .55rem .22rem .3rem; border-radius:999px;
+    font-size:.68rem; font-weight:700; color:rgba(255,255,255,.8); background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.08);
+  }
+  .rankmap-gift.is-flare{ padding-left:.55rem; }
+  .rankmap-dot{ width:.85rem; height:.85rem; border-radius:50%; box-shadow:0 0 6px currentColor; }
+  .rankmap-giftav{ width:1.2rem; height:1.2rem; display:grid; place-items:center; }
+  .rankmap-giftav svg{ width:100%; height:100%; }
+  .rankmap-stop.is-locked .rankmap-gift{ opacity:.7; }
+  @media (min-width:46rem){
+    .rankmap-stop{ --node:5.4rem; --gap:1.6rem; grid-template-columns:minmax(0,1fr) var(--node) minmax(0,1fr); gap:1.1rem; }
+    .rankmap-road{ left:calc(50% - 2px); }
+    .rankmap-node{ grid-column:2; grid-row:1; }
+    .rankmap-stop.is-left .rankmap-card{ grid-column:1; grid-row:1; text-align:right; }
+    .rankmap-stop.is-left .rankmap-head{ flex-direction:row-reverse; }
+    .rankmap-stop.is-left .rankmap-gifts{ justify-content:flex-end; }
+    .rankmap-stop.is-right .rankmap-card{ grid-column:3; grid-row:1; }
+    .rankmap-summit, .rankmap-foot{ text-align:center; padding-left:0; }
+    .rankmap-name{ font-size:1.45rem; }
+  }
   .ranktrack{
     display:flex; flex-wrap:wrap; justify-content:center;
     --rank-gap:.6rem; gap:var(--rank-gap); margin:0 0 1.6rem;
@@ -11724,6 +11887,74 @@
     .profile-hero .profile-hero-avatar{ width:7.8rem; height:7.8rem; }
     .profile-hero .profile-name-display{ font-size:2.05rem; }
   }
+  /* ---- THE COVER LAYOUT (build 219) ----
+     A strip across the top in the theme's own colours, the character on
+     a round plate standing over its lower edge, and the name, rank and
+     Customize centred under it. The strip pulls out through the card's
+     padding with negative margins so it runs edge to edge and takes the
+     card's top corners. */
+  .profile-hero.has-cover{ padding-top:0; overflow:hidden; position:relative; }
+  .profile-cover{
+    position:relative; height:6.4rem; margin:0 -1.45rem;
+    background:
+      radial-gradient(90% 150% at 12% 0%, color-mix(in srgb, var(--theme-c1) 46%, transparent), transparent 62%),
+      radial-gradient(80% 140% at 88% 8%, color-mix(in srgb, var(--theme-c3) 50%, transparent), transparent 64%),
+      radial-gradient(70% 120% at 50% 110%, color-mix(in srgb, var(--theme-c2) 34%, transparent), transparent 70%),
+      linear-gradient(160deg, #1B2130, #10131A);
+  }
+  /* The stars: a handful of fixed dots, not noise - two tile sizes that
+     never line up, so it does not read as a pattern. */
+  .profile-cover::before{
+    content:""; position:absolute; inset:0; pointer-events:none; opacity:.75;
+    background-image:
+      radial-gradient(1.2px 1.2px at 12% 30%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 34% 70%, #fff 50%, transparent 51%),
+      radial-gradient(1.4px 1.4px at 58% 22%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 76% 58%, #fff 50%, transparent 51%),
+      radial-gradient(1.1px 1.1px at 90% 26%, #fff 50%, transparent 51%),
+      radial-gradient(.9px .9px at 24% 12%, rgba(255,255,255,.8) 50%, transparent 51%),
+      radial-gradient(.9px .9px at 66% 84%, rgba(255,255,255,.7) 50%, transparent 51%);
+    background-size:180px 100%, 180px 100%, 180px 100%, 180px 100%, 180px 100%, 110px 100%, 110px 100%;
+  }
+  /* Fades into the card at the bottom, so the strip ends in light
+     rather than on a line. A MASK rather than a gradient painted over
+     it: the card is translucent glass, so no solid colour matches what
+     is behind it and a painted fade left a visible edge. */
+  .profile-cover{
+    -webkit-mask-image:linear-gradient(180deg, #000 45%, transparent 100%);
+            mask-image:linear-gradient(180deg, #000 45%, transparent 100%);
+  }
+  .profile-cover-mark{
+    position:absolute; right:-1.2rem; top:-1.6rem; width:8.5rem; height:8.5rem;
+    opacity:.2; transform:rotate(-12deg); pointer-events:none;
+  }
+  .profile-cover-mark svg{ width:100%; height:100%; display:block; overflow:visible; }
+  .profile-hero.has-cover .profile-hero-top{
+    flex-direction:column; align-items:center; text-align:center; gap:.55rem;
+    margin-top:-3.3rem; position:relative; z-index:1;
+  }
+  .profile-hero.has-cover .profile-hero-id{ display:flex; flex-direction:column; align-items:center; width:100%; }
+  .profile-hero.has-cover .namedisplay-row{ justify-content:center !important; flex-wrap:wrap; }
+  /* The plate: the character on a dark disc with a thin ring in its own
+     colour, and a ring of the card's colour outside that so the disc
+     reads as sitting ON the strip rather than cut into it. The drawing
+     is clipped to the disc, which is what turns a bust into a portrait. */
+  .profile-hero.has-cover .profile-hero-avatar{
+    border-radius:50%;
+    background:radial-gradient(circle at 50% 38%,
+      color-mix(in srgb, var(--char-glow, var(--accent)) 20%, #1C212B), #11141B 72%);
+    box-shadow:0 0 0 4px #191D26,
+      0 0 0 5.5px color-mix(in srgb, var(--char-glow, var(--accent)) 55%, transparent),
+      0 14px 30px rgba(0,0,0,.45);
+  }
+  .profile-hero.has-cover .profile-hero-avatar > svg{ clip-path:circle(50% at 50% 50%); }
+  .profile-hero.has-cover .profile-ranklineup{ margin-top:.55rem; }
+  .profile-hero.has-cover .profile-ranklineup.is-unranked{ text-align:center; }
+  @media (min-width:40rem){
+    .profile-cover{ height:8.2rem; margin:0 -2rem; }
+    .profile-cover-mark{ width:11rem; height:11rem; right:-1rem; top:-2rem; }
+    .profile-hero.has-cover .profile-hero-top{ margin-top:-4.2rem; }
+  }
   /* The class box, below the identity card. Its own surface, because it
      is about the course rather than about you - the same reasoning that
      keeps the two boxes on this tab distinct rather than one long slab. */
@@ -11772,9 +12003,14 @@
      TODAY's line directly under it, so the count read as part of today's
      schedule. A quiet pill in the card's own neutral instead: it is a
      fact about the course, not something that needs doing. */
+  /* Blue now, the level bar's blue: asked about a third time ("class
+     26e remaining days colour"). Blue is the one colour in this app that
+     means "information" and nothing else - not today (gold), not good
+     news (green), not a warning (red) - and a quiet grey pill beside a
+     serif title read as disabled. */
   .profile-classcard:not(.profile-friendcard) .profile-classcard-count{
-    color:rgba(232,238,246,.86); padding:.24rem .6rem; border-radius:999px;
-    background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1);
+    color:#9CCBFF; padding:.24rem .6rem; border-radius:999px;
+    background:rgba(111,180,255,.12); border:1px solid rgba(111,180,255,.32);
   }
   /* Label in a fixed column, body beside it, so Today and Next line up
      down the left edge whatever length their text runs to. */
@@ -12196,6 +12432,47 @@
                inset 0 0 40px rgba(0,0,0,.35),
                inset 0 -34px 54px -30px rgba(0,0,0,.65);
   }
+  /* ---- THE CASE ITSELF (build 219) ----
+     "The badges screen could still look a little bit better, maybe it's
+     the color of the case it's in?" It was: a grey-black tray reads as a
+     panel. Now it is a display case - a brushed gunmetal frame, a deep
+     blue velvet lining with a nap to it, a brass name plate, and a sheet
+     of glass over the whole thing catching the light. All static paint:
+     nothing here animates. */
+  .badges-tab .badge-grid{
+    position:relative; isolation:isolate; margin-top:.4rem;
+    padding-top:2.6rem;
+    background:
+      radial-gradient(120% 70% at 50% 0%, rgba(120,150,255,.16), rgba(120,150,255,0) 60%),
+      radial-gradient(130% 110% at 50% 120%, rgba(0,0,0,.55), rgba(0,0,0,0) 60%),
+      repeating-linear-gradient(135deg, rgba(255,255,255,.018) 0 2px, rgba(0,0,0,.02) 2px 4px),
+      linear-gradient(180deg, #16254A 0%, #0F1A36 55%, #0A1226 100%);
+    border:1px solid rgba(255,255,255,.14);
+    box-shadow:
+      0 0 0 5px #252C37, 0 0 0 6px rgba(255,255,255,.14), 0 0 0 7px rgba(0,0,0,.6),
+      0 18px 40px rgba(0,0,0,.55),
+      inset 0 2px 0 rgba(255,255,255,.08), inset 0 0 50px rgba(0,0,0,.45);
+  }
+  .badges-tab .badge-grid::before{
+    /* The glass. */
+    content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:2;
+    background:linear-gradient(118deg, rgba(255,255,255,0) 30%, rgba(255,255,255,.07) 38%, rgba(255,255,255,0) 46%,
+                               rgba(255,255,255,0) 62%, rgba(255,255,255,.04) 66%, rgba(255,255,255,0) 70%);
+  }
+  .badges-tab .badge-grid::after{
+    /* The name plate. */
+    content:"BADGE CASE \00B7  CLASS 26E"; position:absolute; top:.75rem; left:50%; transform:translateX(-50%);
+    padding:.28rem .8rem; border-radius:5px; white-space:nowrap; z-index:1;
+    font-size:.58rem; font-weight:800; letter-spacing:.2em; color:#3A2A08;
+    background:linear-gradient(180deg, #F6DE93, #C99A3B 55%, #A87C27);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.6), 0 2px 6px rgba(0,0,0,.5);
+  }
+  /* An earned badge sits in a pool of light on the velvet. */
+  .badges-tab .badge-tile.is-earned .badge-tile-art{
+    background:radial-gradient(circle at 50% 62%, rgba(170,195,255,.22), rgba(170,195,255,0) 62%);
+  }
+  .badges-tab .badge-tile-name{ color:rgba(226,234,255,.9); }
+  .badges-tab .badge-tile.is-locked .badge-tile-name{ color:rgba(190,205,240,.55); }
   .badge-tile{
     display:flex; flex-direction:column; align-items:center; gap:.45rem; min-width:0;
     justify-content:flex-start;
@@ -15103,6 +15380,10 @@
       <button type="button" class="bottomtab" id="bottomtab-profile" data-dest="profile">
         <span class="bottomtab-icon"></span>
         <span class="bottomtab-label">Profile</span>
+      </button>
+      <button type="button" class="bottomtab" id="bottomtab-ranks" data-dest="ranks">
+        <span class="bottomtab-icon"></span>
+        <span class="bottomtab-label">Ranks</span>
       </button>
       <button type="button" class="bottomtab" id="bottomtab-rewards" data-dest="rewards">
         <span class="bottomtab-icon"></span>
@@ -27594,7 +27875,42 @@ function buildAvatarCharSVGSafe(charId){
   return buildAvatarCharSVG(charId) || buildAvatarCharSVG(AVATAR_CHARACTERS[0].id);
 }
 
+/* EVERY CHARACTER FILLS ITS TILE TO THE SAME HEIGHT.
+   Reported: "the characters from ninja to alien are just bigger than the
+   rest, go ahead and make the others that large too then." Measured by
+   rasterising each one at 200px and finding the first opaque row: the
+   starters reach the top of the tile (row 0-10), while Detective,
+   Masked, Zeus and Void started 34-44 rows down - a fifth of the tile
+   empty above their heads. The drawings share one bounding box, which is
+   why comparing boxes said they were all the same size.
+
+   Each factor takes that character's top edge to ~row 8, scaled about
+   the BOTTOM CENTRE (20, 37) so the shoulders stay on the tile floor and
+   only the head grows upwards. The soft halo is left out of the scale:
+   it is light behind the character, not part of it, and has to stay the
+   same size on every one. Re-measure (rasterise, first row with alpha
+   over 200) after redrawing anybody, rather than guessing. */
+const AVATAR_ART_SCALE = {
+  dragon: 1.09, detective: 1.16, masked: 1.21, zeus: 1.05,
+  voidwalker: 1.23, officer: 1.06, astronaut: 1.10, grizzly: 1.06
+};
+
 function buildAvatarCharSVG(charId){
+  const svg = drawAvatarCharSVG(charId);
+  const k = AVATAR_ART_SCALE[charId];
+  if(!svg || !k) return svg;
+  const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  g.setAttribute("transform", "translate(20 37) scale(" + k + ") translate(-20 -37)");
+  Array.from(svg.childNodes).forEach(n => {
+    if(n.nodeName === "defs") return;
+    if(n.nodeName === "circle" && /url\(#(aura|halo)-/.test(n.getAttribute("fill") || "")) return;
+    g.appendChild(n);
+  });
+  svg.appendChild(g);
+  return svg;
+}
+
+function drawAvatarCharSVG(charId){
   const svgNS = "http://www.w3.org/2000/svg";
   const def = AVATAR_CHARACTERS.find(c => c.id === charId);
   if(!def) return null;
@@ -27967,110 +28283,123 @@ function buildAvatarCharSVG(charId){
     return svg;
   }
 
-  /* ZEUS, AS A STATUE RATHER THAN A MAN - asked for in those words, and
-     it is the better idea for a reason worth keeping: it makes him the
-     only character in the set who is not flesh-toned, which separates
-     him on a rankings row more than any prop could.
-     Marble, blank carved eyes, a beard cut as ridges rather than hair,
-     and a crack across the brow with cold light coming out of it. The
-     lightning is IN the stone, not held in a hand - a thin bolt is
-     three hairlines that turn to mush at 26px, and a lit crack reads at
-     any size. */
+  /* ZEUS IS A MARBLE BUST ON A PLINTH. Asked for twice in those words -
+     "just make Zeus look like a statue, needs to look better" - and the
+     two drawings before this one were a marble-coloured MAN: a face with
+     a robe and shoulders, which is a person who happens to be pale. What
+     makes something read as a statue at 34px is not the colour, it is
+     the three things only a statue has:
+       - ONE MATERIAL for everything. Hair, beard, skin and drapery are
+         all the same stone; the old dark-blue robe alone said "person".
+       - THE TRUNCATION. A bust ends in a curved cut across the chest and
+         sits on a socle. That silhouette is the whole idea, and nobody
+         has ever seen a person shaped like it.
+       - BLANK EYES under a heavy carved brow.
+     The hair and beard are single masses with scalloped edges, never
+     fields of little curls - a lesson from the version before, where
+     twenty-two 1.3px circles came out as noise at rankings-row size.
+     The gold laurel and the bolt carved into the plinth are the only
+     colour on him, and the bolt is lit in his own glow colour: it is
+     what says Zeus rather than "some Greek". */
   if(def.kind === "zeus"){
-    /* REDRAWN, AND THE FAULT WAS DETAIL RATHER THAN DRAWING. The
-       previous pass was a careful marble head - drilled curls in rows,
-       shadowed eye sockets, a Greek profile, a hairline crack - and
-       every one of those decisions was right about sculpture and wrong
-       about the size this is used at. An avatar renders at 34px on a
-       rankings row. Twenty-two separate 1.3px circles at that size are
-       not curls, they are noise, and the head came out as a pale blob
-       with texture on it. Reported simply as not looking good.
+    const marble = headGrad("#FBF9F4", "#E6E2D8", "#B9B3A4");
+    const stone2 = headGrad("#E9E5DB", "#D0CABC", "#A29B8B");
+    const recess = "#978F7F";
+    const line   = "#8A8272";
+    const gold   = headGrad("#FBE494", "#E0B547", "#9E7622");
 
-       So: FEWER, BIGGER SHAPES, and one unmistakable tell. The beard is
-       a single mass with three scallops cut out of its bottom edge -
-       that silhouette reads as a beard at any size, where a field of
-       drilled holes reads as a beard only when you can see the holes.
-       The hair is one form with two notches. The eyes are two marks.
-
-       AND HE HOLDS A BOLT. The old drawing had nothing on it that said
-       Zeus except a laurel, and a laurel at 34px is a gold smudge over
-       the brow - it could be any classical head. The thunderbolt is the
-       one attribute nobody has to be told, so it is on the shoulder in
-       gold, large enough to survive the size, and it is what makes this
-       legible as a character rather than as a statue. */
-    const face  = headGrad("#F6F4EE", "#E4E1D6", "#C0BCAF");
-    const shade = headGrad("#DAD6C9", "#C2BDAE", "#9B968A");
-    const deep  = "#8E887B";
-    const robe  = headGrad("#4A5264", "#333A48", "#1D222B");
-    const gold  = headGrad("#FBE494", "#E0B547", "#9E7622");
-
-    /* Shoulders. */
-    svg.appendChild(mk("path", { d: "M6.2 40 Q7 31.4 14.2 29.2 L25.8 29.2 Q33 31.4 33.8 40 Z", fill: robe }));
-    svg.appendChild(mk("path", { d: "M13.8 29.4 L20 36.2 L26.2 29.4 L23.6 28.6 L20 32.8 L16.4 28.6 Z",
-                                 fill: "#5D6679" }));
-
-    /* THE BOLT, across the left shoulder. A real zigzag with a waist -
-       the classic three-stroke bolt - rather than a lightning icon,
-       and sized so it survives 34px. */
-    svg.appendChild(mk("path", { d: "M10.9 30.4 L14.6 30.4 L12.4 34 L15.4 34 L9.4 40 L11.3 35.2 L8.6 35.2 Z",
-                                 fill: gold, stroke: "#8A6A1C", "stroke-width": ".3",
+    /* The socle: a moulded cap and a block, both stone. */
+    svg.appendChild(mk("path", { d: "M11.6 33.1 Q11.6 32 12.8 32 L27.2 32 Q28.4 32 28.4 33.1 L28.4 33.6 L11.6 33.6 Z", fill: marble }));
+    svg.appendChild(mk("path", { d: "M13.2 33.6 L26.8 33.6 L27.4 38 L12.6 38 Z", fill: stone2 }));
+    svg.appendChild(mk("path", { d: "M11.8 33.62 L28.2 33.62", fill: "none", stroke: line,
+                                 "stroke-width": ".35", opacity: ".7" }));
+    /* The bolt, cut into the block and lit from inside. */
+    svg.appendChild(mk("path", { d: "M20.9 34.1 L18.7 36.2 L20.1 36.2 L19.1 38 L21.6 35.5 L20.2 35.5 L21.4 34.1 Z",
+                                 fill: "#BDEBFA", stroke: "#4FB6DD", "stroke-width": ".22",
                                  "stroke-linejoin": "round" }));
 
+    /* THE BUST: shoulders, and the curved cut across the chest that no
+       living thing has. */
+    svg.appendChild(mk("path", { d: "M7 29.6 Q7.2 25 12.8 23.4 L27.2 23.4 Q32.8 25 33 29.6 Q27.6 31.6 20 31.1 Q12.4 31.6 7 29.6 Z",
+                                 fill: marble }));
+    /* The drapery, over the left shoulder and across the chest, in the
+       same stone with its folds carved as three soft grooves. */
+    svg.appendChild(mk("path", { d: "M7 29.6 Q7.2 25 12.8 23.4 L16.8 23.6 Q19.6 27.6 25.4 30.9 Q20 31.4 14.4 31.2 Q10.2 30.9 7 29.6 Z",
+                                 fill: stone2 }));
+    [["M10.4 25.2 Q13.6 28 18.4 30.9", ".42"], ["M13.4 24.2 Q16.6 27.6 21.8 31", ".36"],
+     ["M8.6 27.4 Q11.2 29.4 14.4 31", ".36"]].forEach(([d, w]) =>
+      svg.appendChild(mk("path", { d: d, fill: "none", stroke: line, "stroke-width": w,
+                                   "stroke-linecap": "round", opacity: ".6" })));
+    /* The lower edge of the cut catches shadow - it is what makes the
+       truncation read as carved rather than as a border. */
+    svg.appendChild(mk("path", { d: "M7 29.6 Q12.4 31.6 20 31.1 Q27.6 31.6 33 29.6", fill: "none",
+                                 stroke: recess, "stroke-width": ".5", opacity: ".75" }));
+
+    /* The neck, mostly hidden by the beard. */
+    svg.appendChild(mk("path", { d: "M16.2 20 L23.8 20 L24.4 24.6 L15.6 24.6 Z", fill: stone2 }));
+
+    /* The beard's shadow on the chest, so the two stones separate. */
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 25.4, rx: 6, ry: 1.5, fill: recess, opacity: ".35" }));
+
     /* The head. */
-    svg.appendChild(mk("ellipse", { cx: 20, cy: 21, rx: 9.2, ry: 10, fill: face }));
-    svg.appendChild(mk("ellipse", { cx: 11.2, cy: 21.8, rx: 1.5, ry: 2.1, fill: shade }));
-    svg.appendChild(mk("ellipse", { cx: 28.8, cy: 21.8, rx: 1.5, ry: 2.1, fill: shade }));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 14.6, rx: 6.4, ry: 7.4, fill: marble }));
+    svg.appendChild(mk("ellipse", { cx: 13.7, cy: 15.4, rx: 1.1, ry: 1.7, fill: stone2 }));
+    svg.appendChild(mk("ellipse", { cx: 26.3, cy: 15.4, rx: 1.1, ry: 1.7, fill: stone2 }));
 
-    /* THE BEARD AS ONE MASS WITH A SCALLOPED HEM. Three lobes along the
-       bottom is the whole reading; above them it is a plain shape, which
-       is what keeps it clean small. */
-    svg.appendChild(mk("path", { d: "M11.7 21.8 Q12 28.6 14.4 32.4 Q15.9 34.9 17.2 33 Q18.6 35.6 20 35.6 Q21.4 35.6 22.8 33 Q24.1 34.9 25.6 32.4 Q28 28.6 28.3 21.8 Q26.6 26.4 24 27.5 Q22.1 28.1 20 28.1 Q17.9 28.1 16 27.5 Q13.4 26.4 11.7 21.8 Z",
-                                 fill: shade }));
-    /* Two long strokes, not twenty-two circles: enough to say the beard
-       is carved rather than poured, and they hold at any size. */
-    svg.appendChild(mk("path", { d: "M16.6 28.4 Q17.3 32 18.3 34.2", fill: "none",
-                                 stroke: deep, "stroke-width": ".5", "stroke-linecap": "round",
-                                 opacity: ".55" }));
-    svg.appendChild(mk("path", { d: "M23.4 28.4 Q22.7 32 21.7 34.2", fill: "none",
-                                 stroke: deep, "stroke-width": ".5", "stroke-linecap": "round",
-                                 opacity: ".55" }));
+    /* THE HAIR: one mass, scalloped round its outside, with a scalloped
+       fringe low on the brow - the carved-curl look as a silhouette. */
+    svg.appendChild(mk("path", { d: "M12.6 15.2 Q11.2 13.2 12.4 11.6 Q11.8 9 14.2 8.2 Q15 5.8 17.6 6.1 Q19.6 4.2 22.2 5.9 Q24.9 5.6 25.8 8.1 Q28.3 8.9 27.6 11.6 Q28.8 13.2 27.4 15.2 Q26.8 13 25.4 12.6 Q24.8 11.2 23.2 11.5 Q22 10.4 20 10.9 Q18 10.4 16.8 11.5 Q15.2 11.2 14.6 12.6 Q13.2 13 12.6 15.2 Z",
+                                 fill: stone2 }));
+    [["M14.2 8.2 Q15.4 9.4 15.1 11.2"], ["M17.6 6.1 Q18.6 7.8 18.2 10.2"], ["M22.2 5.9 Q21.4 7.8 21.8 10.2"],
+     ["M25.8 8.1 Q24.6 9.4 24.9 11.2"], ["M12.4 11.6 Q13.6 12.2 13.6 13.6"], ["M27.6 11.6 Q26.4 12.2 26.4 13.6"]]
+      .forEach(([d]) => svg.appendChild(mk("path", { d: d, fill: "none", stroke: line,
+                                                      "stroke-width": ".45", "stroke-linecap": "round",
+                                                      opacity: ".7" })));
 
-    /* The moustache, one shape. */
-    svg.appendChild(mk("path", { d: "M14.9 23.8 Q17.5 22.4 20 24.1 Q22.5 22.4 25.1 23.8 Q22.5 26.5 20 25.3 Q17.5 26.5 14.9 23.8 Z",
-                                 fill: shade }));
+    /* THE BEARD: a full mass from the cheekbones down over the neck,
+       with a four-lobed hem and two carved waves down each side. */
+    svg.appendChild(mk("path", { d: "M13.4 15.6 Q13.2 20.8 14.4 23.2 Q14.6 25.6 16.4 25.2 Q17.4 27 19 26.2 Q20 27.4 21 26.2 Q22.6 27 23.6 25.2 Q25.4 25.6 25.6 23.2 Q26.8 20.8 26.6 15.6 Q25.6 19 23.6 19.8 Q21.8 19 20 19.6 Q18.2 19 16.4 19.8 Q14.4 19 13.4 15.6 Z",
+                                 fill: stone2 }));
+    [["M15.4 20.4 Q15.2 22.6 16.4 25"], ["M17.9 20.6 Q17.8 23.2 19 26"], ["M22.1 20.6 Q22.2 23.2 21 26"],
+     ["M24.6 20.4 Q24.8 22.6 23.6 25"]].forEach(([d]) =>
+      svg.appendChild(mk("path", { d: d, fill: "none", stroke: line, "stroke-width": ".45",
+                                   "stroke-linecap": "round", opacity: ".6" })));
+    /* The moustache, one carved shape sweeping into the beard. */
+    svg.appendChild(mk("path", { d: "M15.8 19.4 Q18 17.6 20 18.8 Q22 17.6 24.2 19.4 Q22 20.4 20 19.8 Q18 20.4 15.8 19.4 Z",
+                                 fill: stone2, stroke: line, "stroke-width": ".25" }));
 
-    /* The hair: one form, two notches at the temples. */
-    svg.appendChild(mk("path", { d: "M20 10.2 Q29.8 10.8 30.3 19.8 Q28.6 17.2 26.4 15.6 Q27 17.4 25.4 15.2 Q23 13.4 20 13.4 Q17 13.4 14.6 15.2 Q13 17.4 13.6 15.6 Q11.4 17.2 9.7 19.8 Q10.2 10.8 20 10.2 Z",
-                                 fill: shade }));
-
-    /* THE EYES ARE MARBLE - blank, no pupil, the stone of the cheek in
-       shadow. That blank stare is the one thing everybody knows about
-       these heads, and it survives being small because it is a shape
-       rather than a detail. */
-    [16.4, 23.6].forEach(cx => {
-      svg.appendChild(mk("ellipse", { cx: cx, cy: 20.4, rx: 2.3, ry: 1.9, fill: shade }));
-      svg.appendChild(mk("ellipse", { cx: cx, cy: 20.6, rx: 1.9, ry: 1.55, fill: face }));
-      svg.appendChild(mk("path", { d: "M" + (cx - 2.2) + " 20 Q" + cx + " 17.9 " + (cx + 2.2) + " 20",
-                                   fill: "none", stroke: deep, "stroke-width": ".62",
-                                   "stroke-linecap": "round" }));
+    /* The brow, heavy and continuous, and the blank eyes in its shadow. */
+    svg.appendChild(mk("path", { d: "M14.6 12.9 Q17.2 11.8 19.6 13 L20.4 13 Q22.8 11.8 25.4 12.9", fill: "none",
+                                 stroke: recess, "stroke-width": ".75", "stroke-linecap": "round" }));
+    [17.3, 22.7].forEach(cx => {
+      svg.appendChild(mk("path", { d: "M" + (cx - 1.9) + " 14.3 Q" + cx + " 13.2 " + (cx + 1.9) + " 14.3 Q" + cx + " 15.5 " + (cx - 1.9) + " 14.3 Z",
+                                   fill: "#F4F1EA", stroke: recess, "stroke-width": ".35" }));
+      svg.appendChild(mk("path", { d: "M" + (cx - 1.9) + " 14.2 Q" + cx + " 13 " + (cx + 1.9) + " 14.2", fill: "none",
+                                   stroke: line, "stroke-width": ".45", "stroke-linecap": "round" }));
     });
+    /* The Greek nose: brow straight into the bridge, shadowed on the
+       right, the side away from the light. */
+    svg.appendChild(mk("path", { d: "M20.4 13.2 L21 17.2 Q20.2 17.8 19.2 17.3", fill: "none",
+                                 stroke: recess, "stroke-width": ".45", "stroke-linecap": "round",
+                                 "stroke-linejoin": "round" }));
 
-    /* The Greek profile: brow into nose as one line, no dip. */
-    svg.appendChild(mk("path", { d: "M19.3 17.6 L19.1 22.4 Q20 23.1 20.9 22.4 L20.7 17.6",
-                                 fill: "none", stroke: deep, "stroke-width": ".55",
-                                 "stroke-linecap": "round", opacity: ".85" }));
-
-    /* The laurel, in gold. Still here, still what names him - it is
-       simply no longer the only thing doing that job. */
-    svg.appendChild(mk("path", { d: "M10.6 17.4 Q14.3 11.7 20 10.8 Q25.7 11.7 29.4 17.4",
-                                 fill: "none", stroke: "#B8902F", "stroke-width": ".9",
-                                 "stroke-linecap": "round" }));
-    [[12.4, 15.4, -42], [15.5, 12.7, -24], [20, 11.6, 0], [24.5, 12.7, 24], [27.6, 15.4, 42]]
+    /* The laurel, gilt: a band across the hair with five leaves each
+       side, the one colour on the stone. */
+    svg.appendChild(mk("path", { d: "M12.8 12.6 Q16 9.6 20 9.4 Q24 9.6 27.2 12.6", fill: "none",
+                                 stroke: "#A8822A", "stroke-width": ".55", "stroke-linecap": "round" }));
+    [[13.4, 11.6, -48], [15.1, 10.3, -32], [17, 9.5, -16], [23, 9.5, 16], [24.9, 10.3, 32], [26.6, 11.6, 48]]
       .forEach(([x, y, rot]) => {
-        const leaf = mk("ellipse", { cx: x, cy: y, rx: 1.8, ry: .8, fill: gold });
+        const leaf = mk("ellipse", { cx: x, cy: y - .25, rx: 1.35, ry: .62, fill: gold });
         leaf.setAttribute("transform", "rotate(" + rot + " " + x + " " + y + ")");
         svg.appendChild(leaf);
       });
+
+    /* One cool highlight down the lit side of the face and the shoulder,
+       and marble has a sheen rather than a flat bounce. */
+    svg.appendChild(mk("path", { d: "M14.6 13.6 Q14.2 16.6 15 18.4", fill: "none", stroke: "#FFFFFF",
+                                 "stroke-width": ".6", "stroke-linecap": "round", opacity: ".55" }));
+    svg.appendChild(mk("path", { d: "M27.4 24.2 Q30.6 25.2 31.8 27.6", fill: "none", stroke: "#FFFFFF",
+                                 "stroke-width": ".55", "stroke-linecap": "round", opacity: ".5" }));
     return svg;
   }
 
@@ -32449,7 +32778,7 @@ function tierColorUnlocked(name){
    swatch always previews the colour the rank that grants it is drawn in. */
 const ACCENT_SWATCH = {
   ink:"#5C6E78", teal:"#0A7A8C", indigo:"#4438A8",
-  rookie:"#AEB7C2", ranger:"#D99458", veteran:"#D8E1EA", vanguard:"#F0C75A",
+  rookie:"#AEB7C2", ranger:"#D99458", veteran:"#E4EEFA", vanguard:"#3BE39B",
   adept:"#6E9CFF", elite:"#C084FC", titan:"#FF6B5E"
 };
 /* THE FLARES ON HOME HAVE THEIR OWN COLOURS, and they have to, because
@@ -32472,8 +32801,13 @@ function flareColorOf(tier){ return FLARE_SWATCH[tier] || ACCENT_SWATCH[tier]; }
    of the same phenomenon) as the genuine top of the ladder, not a
    separate "100% complete" achievement bolted on beside it. */
 const ACCENT_DISPLAY_NAME = {
-  rookie: "Spark", ranger: "Ember", veteran: "Comet", vanguard: "Star",
-  adept: "Giant", elite: "Nova", titan: "Supernova"
+  /* THE THEME IS NAMED AFTER ITS RANK - "ensure the theme colors are
+     renamed to match the rank name as well so it makes sense" - and so is
+     the flare, now that the orbit shows the rank's own emblem. The
+     separate Spark/Ember/Comet... names were a second vocabulary for the
+     same seven things. */
+  rookie: "Iron", ranger: "Bronze", veteran: "Silver", vanguard: "Emerald",
+  adept: "Sapphire", elite: "Amethyst", titan: "Supernova"
 };
 /* One matching symbol per Mastery Ladder tier, escalating in the same
    spirit as the names themselves \u2014 a small plain sparkle at the
@@ -32541,7 +32875,7 @@ function buildTierIconSVG(tierKey){
    all keyed by - renaming them would be a migration for a cosmetic
    gain. */
 const RANK_DISPLAY_NAME = {
-  rookie: "Iron", ranger: "Bronze", veteran: "Silver", vanguard: "Gold",
+  rookie: "Iron", ranger: "Bronze", veteran: "Silver", vanguard: "Emerald",
   /* "Supernova", not a seventh colour name. The other six say their own
      colour, which is what makes them readable at a glance - but the top
      rank was explicitly asked for by name: "the very last one needs to
@@ -32562,7 +32896,7 @@ const RANK_DISPLAY_NAME = {
    #8B939E is the app's own default grey for the same reason - you start
    the ladder already wearing the theme you have. */
 const RANK_COLOR = {
-  rookie: "#8B939E", ranger: "#C07A3E", veteran: "#CAD3DC", vanguard: "#E5B63F",
+  rookie: "#7C838D", ranger: "#C07A3E", veteran: "#DCE8F7", vanguard: "#2ED18A",
   adept: "#3D74E8", elite: "#A855F7", titan: "#E23B3B"
 };
 /* SEVEN DIFFERENT MARKS, not one mark at seven sizes.
@@ -32767,28 +33101,33 @@ function buildRankEmblemSVG(rankKey){
     add(burst(C + 26, C + 6, 4, 13, 0.12, UP), { fill: badgeShade(base, 0.55) });
     add(burst(C + 26, C + 6, 4, 5, 0.1, UP), { fill: "#FFFFFF", opacity: ".9" });
   } else if(rankKey === "vanguard"){
-    /* GOLD. A sun: a body that finally makes its own light. The corona
-       tongues alternate long and short and every one has concave sides,
-       so the outline reads as flame rather than as teeth on a gear. */
-    halo(52);
-    for(let i = 0; i < 16; i++){
-      const a = UP + i * 2 * Math.PI / 16;
-      const len = (i % 2 === 0) ? 48 : 36;
-      const w = (i % 2 === 0) ? 0.085 : 0.06;
-      const x0 = C + Math.cos(a - w) * 25, y0 = C + Math.sin(a - w) * 25;
-      const x1 = C + Math.cos(a) * len,    y1 = C + Math.sin(a) * len;
-      const x2 = C + Math.cos(a + w) * 25, y2 = C + Math.sin(a + w) * 25;
-      const cx0 = C + Math.cos(a - w * 0.5) * (25 + (len - 25) * 0.45);
-      const cy0 = C + Math.sin(a - w * 0.5) * (25 + (len - 25) * 0.45);
-      const cx2 = C + Math.cos(a + w * 0.5) * (25 + (len - 25) * 0.45);
-      const cy2 = C + Math.sin(a + w * 0.5) * (25 + (len - 25) * 0.45);
-      add("M" + x0 + " " + y0 + "Q" + cx0 + " " + cy0 + " " + x1 + " " + y1 +
-          "Q" + cx2 + " " + cy2 + " " + x2 + " " + y2 + "Z",
-          { fill: badgeShade(base, i % 2 === 0 ? 0.2 : -0.05) });
+    /* EMERALD. A cut stone, table and facets - "maybe gold could be
+       emerald instead? Just don't know what that icon could be". The
+       emerald cut is a tall octagon, which no other emblem in the set is,
+       so it reads at 26px. Every facet is a flat shape of its own shade
+       (lit from the top-left), never a line: the zero-width-box trap
+       noted on the badges applies here too. */
+    halo(50);
+    const x0 = 37, x1 = 91, y0 = 27, y1 = 101, ch = 13, I = 11;
+    const O = [[x0 + ch, y0], [x1 - ch, y0], [x1, y0 + ch], [x1, y1 - ch],
+               [x1 - ch, y1], [x0 + ch, y1], [x0, y1 - ch], [x0, y0 + ch]];
+    const T = [[x0 + ch + I * 0.45, y0 + I], [x1 - ch - I * 0.45, y0 + I], [x1 - I, y0 + ch + I * 0.45],
+               [x1 - I, y1 - ch - I * 0.45], [x1 - ch - I * 0.45, y1 - I], [x0 + ch + I * 0.45, y1 - I],
+               [x0 + I, y1 - ch - I * 0.45], [x0 + I, y0 + ch + I * 0.45]];
+    const poly = pts => "M" + pts.map(q => q[0].toFixed(1) + " " + q[1].toFixed(1)).join("L") + "Z";
+    const shades = [0.55, 0.32, -0.12, -0.34, -0.5, -0.3, 0.08, 0.4];
+    for(let i = 0; i < 8; i++){
+      add(poly([O[i], O[(i + 1) % 8], T[(i + 1) % 8], T[i]]), { fill: badgeShade(base, shades[i]) });
     }
-    add(disc(C, C, 26), { fill: body, stroke: dark, "stroke-width": ".9" });
-    add(disc(C - 7, C - 8, 11), { fill: "#FFFFFF", opacity: ".35" });
-    add(disc(C - 8, C - 9, 5), { fill: "#FFFFFF", opacity: ".85" });
+    add(poly(T), { fill: body });
+    /* The step inside the table that makes it an emerald cut rather than
+       a flat octagon. */
+    const T2 = T.map(q => [C + (q[0] - C) * 0.62, C + (q[1] - C) * 0.62]);
+    add(poly(T2), { fill: badgeShade(base, 0.22), opacity: ".55" });
+    add(poly(O), { fill: "none", stroke: dark, "stroke-width": "1.2", "stroke-linejoin": "round" });
+    add(poly([[T[7][0] + 1, T[7][1] + 2], [T[0][0] + 2, T[0][1] + 1], [T[0][0] + 12, T[0][1] + 1], [T[7][0] + 1, T[7][1] + 16]]),
+        { fill: "#FFFFFF", opacity: ".38" });
+    add(burst(x1 - 3, y0 + 5, 4, 13, 0.12, UP), { fill: "#FFFFFF", opacity: ".95" });
   } else if(rankKey === "adept"){
     /* SAPPHIRE. A comet - the first one that is going somewhere. This is
        the only emblem in the set that is not symmetric, deliberately:
@@ -36052,7 +36391,7 @@ const RELEASE_NOTES = [
         { icon: buildPhoneAddIcon, color: "#4ADE80", title: "Add Nova to Your Home Screen", body: "A short, real walkthrough for getting the app onto your home screen like any other app, with steps specific to your device." }
       ]},
       { label: "Ranks, Badges & Unlocks", items: [
-        { icon: buildLadderIcon, color: "#FFD84D", title: "Seven Ranks to Climb", body: "Iron, Bronze, Silver, Gold, Sapphire, Amethyst and Supernova. Each one asks for a level and a number of badges together, not either on its own, and each has its own emblem that sits beside your name everywhere people can see you." },
+        { icon: buildLadderIcon, color: "#FFD84D", title: "Seven Ranks to Climb", body: "Iron, Bronze, Silver, Emerald, Sapphire, Amethyst and Supernova. Each one asks for a level and a number of badges together, not either on its own, and each has its own emblem that sits beside your name everywhere people can see you." },
         { icon: buildStarIcon, color: "#4DD0E1", title: "A Badge for Every Unit", body: "Sixteen units, sixteen badges, each one cut to its own shape. Finish a unit at 100% thirty-five times and its badge drops into place \u2014 and until then the empty slot shows you exactly what you are working towards." },
         { icon: buildPersonIcon, color: "#4ADE80", title: "Characters Behind the Top Ranks", body: "The last four ranks each hand over a character nobody starts with \u2014 a robot, a clown, an officer and an astronaut. You can see all four from day one, locked, so you know what is up there." },
         { icon: buildPersonIcon, color: "#D9A441", title: "Four More You Have to Go and Earn", body: "These four are not on the ladder \u2014 no amount of studying hands them over on its own. A detective for ten daily questions right in a row, a masked one for a hundo in ten different units in a row, a marble Zeus for passing the Practice Test, and Void for the three Secret Flares." },
@@ -36884,8 +37223,20 @@ function buildCosmicHero(useTierIcons, forceAccent){
        Silver". Both nouns have to be said out loud: a flare and a rank
        are different things with different names, and a sentence naming
        neither leaves the reader guessing which one Silver is. */
-    badge.title = ACCENT_DISPLAY_NAME[pos.tier] + " flare \u2014 " +
-      (achieved ? "lit at rank " : "lights at rank ") + RANK_DISPLAY_NAME[pos.tier];
+    badge.title = RANK_DISPLAY_NAME[pos.tier] + " rank \u2014 " + (achieved ? "reached" : "not reached yet");
+    /* THE RANK'S OWN EMBLEM IN THE BUBBLE - "would it make more sense for
+       the rank icons to be in the bubbles? I feel like it would be less
+       confusing and actually tie it together to the rank." A rank you
+       hold is in full colour; one you have not reached is a dim,
+       desaturated preview of the same emblem. Home only - Welcome keeps
+       its own generic set. */
+    if(useTierIcons){
+      const em = buildRankEmblemSVG(pos.tier);
+      em.classList.add("cosmic-rank-emblem");
+      badge.classList.add("cosmic-badge-rank");
+      badge.style.setProperty("--rank-color", RANK_COLOR[pos.tier]);
+      badge.appendChild(em);
+    }
     const iconSvg = document.createElementNS(svgNS, "svg");
     iconSvg.setAttribute("viewBox", "0 0 24 24");
     const path = document.createElementNS(svgNS, "path");
@@ -36899,7 +37250,7 @@ function buildCosmicHero(useTierIcons, forceAccent){
     path.setAttribute("fill", "none"); path.setAttribute("stroke", "currentColor");
     path.setAttribute("stroke-width", "1.6"); path.setAttribute("stroke-linecap", "round"); path.setAttribute("stroke-linejoin", "round");
     iconSvg.appendChild(path);
-    badge.appendChild(iconSvg);
+    if(!useTierIcons) badge.appendChild(iconSvg);
     /* Interactive on Home specifically (useTierIcons is only ever
        true there) \u2014 tapping a "flare" that isn't lit yet tells you
        exactly what's left to reach it, using the same live numbers
@@ -36911,16 +37262,16 @@ function buildCosmicHero(useTierIcons, forceAccent){
       badge.setAttribute("tabindex", "0");
       const flareName = ACCENT_DISPLAY_NAME[pos.tier];
       const rankName = RANK_DISPLAY_NAME[pos.tier];
+      /* Worded as the rank, since the bubble IS the rank now - "ensure
+         the flare descriptions are updated". */
       const showFlareInfo = () => {
         if(achieved){
-          showContextualInfo(badge, flareName + " flare \u2014 lit when you reached rank " + rankName + ".");
+          showContextualInfo(badge, rankName + " rank \u2014 reached. Its flare is lit and its " + flareName + " theme is yours.");
           return;
         }
-        /* Levels and badges now, worded in the one place that words
-           them - Titan's Secret Flares condition included. */
         const parts = tierShortfall(TIER_UNLOCKS[pos.tier]);
-        showContextualInfo(badge, flareName + " flare lights at rank " + rankName + ": " +
-          (parts.length ? parts.join(", ") + " to go." : "ready to unlock."));
+        showContextualInfo(badge, rankName + " rank \u2014 " +
+          (parts.length ? parts.join(", ") + " to go. Reaching it lights this flare." : "ready to reach."));
       };
       badge.addEventListener("click", showFlareInfo);
       badge.addEventListener("keydown", (e) => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); showFlareInfo(); } });
@@ -38001,7 +38352,9 @@ function startMainMenuTour(){
     { target: "#bottomtab-rewards", align: "left", vplacement: "above",
       text: "Leaderboard is the class boards \u2014 this week, badges and hundos, updating live. Search for anyone, or tap Find me." },
     { target: "#bottomtab-profile", align: "left", vplacement: "above",
-      text: "Profile has your name, avatar and colours, your stats, and now your achievements and unlocks too." },
+      text: "Profile has your name, avatar and colours, and your stats." },
+    { target: "#bottomtab-ranks", align: "left", vplacement: "above",
+      text: "Ranks is the climb — every rank and what it unlocks, and your badge case." },
     { target: "#bottomtab-settings", align: "right", vplacement: "above",
       text: isIOSDevice() && !isStandaloneApp()
         ? "Settings is where the rest of the options live \u2014 including a guide for adding this app to your Home Screen, any time."
@@ -44616,7 +44969,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-28-218";
+const APP_BUILD = "2026-09-28-219";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -55992,11 +56345,76 @@ function showAnswerReview(units, source){
    the swipe order and has to match the buttons exactly - a thumb swipe
    that skips a tab is worse than no swipe at all - so the two lists
    move together or neither does. */
-const PROFILE_TABS = ["profile", "badges", "ranks", "stats"];
+/* Profile is you and your numbers now; the rank and the badges moved to
+   their own bottom tab - "the rank/badges stuff is hidden in profile and
+   needs to be more accessible ... add another bottom tab which would hold
+   both of these, with rank being the first one". */
+const PROFILE_TABS = ["profile", "stats"];
+const RANKS_TABS = ["ranks", "badges"];
 /* Every name this tab has ever had still lands on it, so an older link
    or a stored value goes where it means rather than silently falling
    back to Profile. */
 const PROFILE_TAB_ALIASES = { achievements: "ranks", ladder: "ranks", unlocks: "ranks" };
+
+/* ---- THE RANKS TAB (build 219) ----
+   Rank first, Badges second, a bottom tab of its own: "I'm starting to
+   think we should just add another bottom tab which would hold both of
+   these, with rank being the first one (default one) and the badges one
+   being the other tab ... it would make the game more achievement
+   based". The same .navsegment / hidden-panel / swipe shape as Profile
+   and the Leaderboard, and the same two builders Profile used, so
+   nothing about either tab changed by moving. */
+function showRanksScreen(defaultTab){
+  const initialTab = RANKS_TABS.indexOf(defaultTab) !== -1 ? defaultTab : "ranks";
+  if(store.pendingSupernovaCutscene){ playSupernovaCutscene(); return; }
+  if(store.pendingTierCutscene){ playTierCutscene(store.pendingTierCutscene); return; }
+  captureSetupReturn();
+  stopTimer();
+  flushStudyTime();
+  meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
+  timerlineEl.hidden = true; livesEl.hidden = true;
+  setActiveNav("ranks");
+  countEl.textContent = "Ranks";
+
+  const panel = document.createElement("section");
+  panel.className = "panel screen-ranks screen-profile-like";
+  const seg = document.createElement("div");
+  seg.className = "navsegment profiletabs rankstabs";
+  const ranksTab = buildRanksTab();
+  const badgesTab = buildBadgesTab();
+  const defs = [
+    { key: "ranks",  label: "Rank",   node: ranksTab },
+    { key: "badges", label: "Badges", node: badgesTab }
+  ];
+  const btns = {};
+  defs.forEach(t => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "iconbtn" + (initialTab === t.key ? " active" : "");
+    b.textContent = t.label;
+    b.addEventListener("click", () => select(t.key));
+    btns[t.key] = b;
+    seg.appendChild(b);
+    t.node.hidden = initialTab !== t.key;
+  });
+  panel.appendChild(seg);
+  panel.append(...defs.map(t => t.node));
+  let current = initialTab;
+  function select(which){
+    current = which;
+    defs.forEach(t => { t.node.hidden = t.key !== which; btns[t.key].classList.toggle("active", t.key === which); });
+    if(which === "badges" && badgesTab.runFill) badgesTab.runFill();
+    if(which === "ranks" && ranksTab.runFill) ranksTab.runFill();
+    toTop();
+  }
+  attachTabSwipe(panel, RANKS_TABS, () => current, select);
+  stage.replaceChildren(panel);
+  toTop(true);
+  requestAnimationFrame(() => {
+    if(current === "badges" && badgesTab.runFill) badgesTab.runFill();
+    if(current === "ranks" && ranksTab.runFill) ranksTab.runFill();
+  });
+}
 
 function showProfile(defaultTab){
   /* The Profile card counts how many friends are online, so it needs
@@ -56014,6 +56432,9 @@ function showProfile(defaultTab){
      checking the value rather than its truthiness is what closes it,
      wherever the call comes from. */
   const asked = PROFILE_TAB_ALIASES[defaultTab] || defaultTab;
+  /* Anything that still asks Profile for the rank or the badges goes to
+     where they live now. */
+  if(asked === "ranks" || asked === "badges") return showRanksScreen(asked);
   const initialTab = PROFILE_TABS.indexOf(asked) !== -1 ? asked : "profile";
   captureSetupReturn();
   /* Same interception as showHome — reaching a new tier redirects
@@ -56046,17 +56467,13 @@ function showProfile(defaultTab){
   profileTabSeg.className = "navsegment profiletabs";
 
   const identityTab = document.createElement("div");
-  const badgesTab = buildBadgesTab();
   const statsTab = document.createElement("div");
   statsTab.className = "profile-stats-tab";
   /* Built once, here, rather than inside the selector: the track
      animates its fills on build, and rebuilding it on every tab change
      would replay that animation each time someone swiped past. */
-  const ranksTab = buildRanksTab();
-
   const profileTabDefs = [
     { key: "profile", label: "Profile", node: identityTab, cls: "" },
-    { key: "badges",  label: "Badges",  node: badgesTab,   cls: "" },
     /* "Rank", not "Ranks". The bottom bar already says Rankings and
        having both was reported as confusing - "the ranks tab within
        profile should be renamed because the main bottom tab already has
@@ -56068,7 +56485,6 @@ function showProfile(defaultTab){
        stays "ranks" so nothing stored or linked has to move, and "ladder"
        was already an accepted
        alias for this tab. */
-    { key: "ranks",   label: "Rank",  node: ranksTab,   cls: "" },
     /* .profile-stats-tab-btn is not decorative - the Profile tour
        points at it. See the tour at the end of this function. */
     { key: "stats",   label: "Stats",   node: statsTab,    cls: " profile-stats-tab-btn" }
@@ -56099,8 +56515,6 @@ function showProfile(defaultTab){
        be built while another tab is showing, and a bar that animated
        in a hidden panel is a bar nobody sees move. */
     if(which === "profile") runXpBarFill();
-    if(which === "badges" && badgesTab.runFill) badgesTab.runFill();
-    if(which === "ranks" && ranksTab.runFill) ranksTab.runFill();
     toTop();
   }
   /* Swipeable, per explicit request, using the same helper the Rankings
@@ -56236,7 +56650,7 @@ function showProfile(defaultTab){
   const rankLine = document.createElement("button");
   rankLine.type = "button";
   rankLine.className = "profile-ranklineup";
-  rankLine.addEventListener("click", () => selectProfileTab("ranks"));
+  rankLine.addEventListener("click", () => showRanksScreen("ranks"));
   if(rankNow){
     rankLine.style.setProperty("--rank-color", RANK_COLOR[rankNow]);
     const coin = document.createElement("span");
@@ -56253,6 +56667,27 @@ function showProfile(defaultTab){
     rankLine.textContent = "No rank yet";
   }
 
+  /* THE COVER. A strip across the top of the card, the character
+     standing over its lower edge, and everything under it centred -
+     the shape every profile people already know uses, and the larger
+     visual step this screen was asked for. The strip is the THEME's
+     own three colours over a starfield, so it re-themes with the app,
+     with the rank's emblem as a watermark in the corner: who you are
+     (the character), what you are (the rank) and what you picked (the
+     colours) in one glance. It is also the one place a banner goes -
+     `data-banner` on the cover is what a chosen banner sets. */
+  heroSect.classList.add("has-cover");
+  const cover = document.createElement("div");
+  cover.className = "profile-cover";
+  cover.setAttribute("aria-hidden", "true");
+  if(rankNow){
+    const wm = document.createElement("span");
+    wm.className = "profile-cover-mark";
+    wm.style.setProperty("--rank-color", RANK_COLOR[rankNow]);
+    wm.appendChild(buildRankEmblemSVG(rankNow));
+    cover.appendChild(wm);
+  }
+  heroSect.appendChild(cover);
   heroId.append(nameDisplayRow, rankLine, nameInput, nameSaveBtn);
   heroTop.append(heroAvatar, heroId);
   heroSect.appendChild(heroTop);
@@ -56367,7 +56802,7 @@ function showProfile(defaultTab){
   badgeStatWord.className = "profile-badgestat-word";
   badgeStatWord.textContent = badgeCount === 1 ? "badge earned" : "badges earned";
   badgeStat.append(badgeStatValue, badgeStatWord);
-  badgeStat.addEventListener("click", () => selectProfileTab("badges"));
+  badgeStat.addEventListener("click", () => showRanksScreen("badges"));
 
   /* Two stats, not three. The hundo count came off by request - it is a
      leaderboard number rather than a fact about who you are, and it is
@@ -56678,10 +57113,6 @@ function showProfile(defaultTab){
   stage.replaceChildren(panel);
   toTop();
   if(initialTab === "profile") runXpBarFill();
-  if(initialTab === "badges" && badgesTab.runFill) badgesTab.runFill();
-  /* And when Rank is the tab you land on - tapping the rank tile on the
-     Profile card comes straight here. */
-  if(initialTab === "ranks" && ranksTab.runFill) ranksTab.runFill();
   if(!store.seenProfileTour){
     store.seenProfileTour = true;
     saveStore();
@@ -56727,22 +57158,9 @@ function showProfile(defaultTab){
          is all zeros, which breaks the tour's connector-line positioning
          outright. */
       { target: ".profile-stats-tab-btn", align: "left", vplacement: "below",
-        text: "Tap Stats to see your study time, testing stats, and test review \u2014 all in one place." },
-      /* Points at the tab BUTTON for the same reason the Stats step
-         does: the panel itself is hidden on arrival, and a hidden
-         element measures as all zeros, which breaks the tour's
-         connector line outright. */
-      /* Badges had no step at all: sixteen of them, a case that shows
-         the shape of everything you have not earned yet, and nothing
-         anywhere saying what the tab is. nth-child(3) is Badges and (4)
-         is Ladder - see profileTabDefs, which is the one list both the
-         buttons and these two steps are counted against. */
-      { target: ".profiletabs .iconbtn:nth-child(3)", align: "right", vplacement: "below",
-        text: "Badges is your case \u2014 one for every unit, sixteen in all. Master a unit and its badge drops into its slot; the empty ones show you the shape of what is still to come." },
-      /* "Rank", not "Ranks". The tab was renamed because the bottom
-         bar already says Rankings, and this line was left behind. */
-      { target: ".profiletabs .iconbtn:nth-child(4)", align: "right", vplacement: "below",
-        text: "Ladder is the whole climb \u2014 seven ranks, what each one costs, and what it hands you when you get there." }
+        text: "Tap Stats to see your study time, testing stats, and test review \u2014 all in one place." }
+      /* Badges and the rank climb moved to their own Ranks tab in the
+         bottom bar in build 219, and the main menu tour points at it. */
 
     ]);
   }
@@ -57423,150 +57841,130 @@ function buildRanksTab(){
   tab.appendChild(hero);
 
   /* ---- the track: every rank, what it costs, what it gives ---- */
-  const trackHead = document.createElement("p");
-  trackHead.className = "slab section-divider motion-summary";
-  trackHead.textContent = "Ranks";
-  tab.appendChild(trackHead);
-  const trackNote = document.createElement("p");
-  trackNote.className = "ranks-note";
-  trackNote.textContent = "Every rank takes a level and a number of badges together — not either one alone. Levels come from everything you do; badges come from mastering a unit.";
-  tab.appendChild(trackNote);
+  /* ---- THE ROAD MAP (build 219) ----
+     "Could we possibly make it look more like a road map? ... it's just
+     boxes stacked on top of each other with no real 'this is the order of
+     the rank system, the ones at the top are hard to obtain'." So it is a
+     climb: Supernova at the summit, Iron at the foot, one road between
+     them lit as far as you have come, the rank you are working towards lit
+     part way, and you standing on it. On a phone the road runs down the
+     left edge with the stops beside it; on a wide screen it runs down the
+     middle and the stops alternate sides, like a trail map. */
+  const mapHead = document.createElement("p");
+  mapHead.className = "slab section-divider motion-summary";
+  mapHead.textContent = "The climb";
+  tab.appendChild(mapHead);
+  const mapNote = document.createElement("p");
+  mapNote.className = "ranks-note";
+  mapNote.textContent = "Start at the bottom, finish at the top. Every rank takes a level and a number of badges together \u2014 levels come from everything you do; badges come from mastering a unit.";
+  tab.appendChild(mapNote);
 
-  const track = document.createElement("div");
-  track.className = "ranktrack";
+  const map = document.createElement("div");
+  map.className = "rankmap";
+  const summit = document.createElement("p");
+  summit.className = "rankmap-summit";
+  summit.textContent = "Summit";
+  map.appendChild(summit);
 
-  TIER_ORDER_FULL.forEach((key) => {
+  const topDown = TIER_ORDER_FULL.slice().reverse();
+  topDown.forEach((key, i) => {
+    const idx = TIER_ORDER_FULL.indexOf(key);
     const rule = TIER_UNLOCKS[key];
-    const pct = rankPct(key);
-    const reached = pct >= 1;
+    const reached = rankPct(key) >= 1;
     const isHere = key === held;
     const isNext = key === nextKey;
-    const card = document.createElement("article");
-    card.className = "rankcard" + (reached ? " is-held" : isNext ? " is-next" : " is-locked") +
-      (isHere ? " is-here" : "");
-    card.style.setProperty("--rank-color", RANK_COLOR[key]);
+    const stop = document.createElement("article");
+    stop.className = "rankmap-stop " + (idx % 2 === 0 ? "is-left" : "is-right") +
+      (reached ? " is-reached" : "") + (isHere ? " is-here" : "") + (isNext ? " is-next" : "") +
+      (!reached && !isNext ? " is-locked" : "");
+    stop.style.setProperty("--rank-color", RANK_COLOR[key]);
+    /* The stretch of road from this stop down to the one below it: lit
+       when this stop is reached, lit part way when it is the one you are
+       climbing to. */
+    const road = document.createElement("span");
+    road.className = "rankmap-road";
+    road.setAttribute("aria-hidden", "true");
+    const roadFill = document.createElement("span");
+    roadFill.className = "rankmap-roadfill";
+    road.appendChild(roadFill);
+    if(i < topDown.length - 1){
+      const lit = reached ? 1 : isNext ? (heroStepPct != null ? heroStepPct : rankPct(key)) : 0;
+      fillsToAnimate.push({ el: roadFill, prop: "--lit", value: String(Math.round(lit * 1000) / 1000) });
+      stop.appendChild(road);
+    }
 
-    /* The card's own backdrop: its emblem again, enormous and almost
-       invisible, behind everything. The reference gives every tier card
-       a watermark of its own mark, and it is most of why seven cards in
-       a row read as seven PLACES rather than seven list items. Reusing
-       the builder rather than drawing a second thing means the two can
-       never disagree. */
-    const bg = document.createElement("div");
-    bg.className = "rankcard-bg";
-    bg.setAttribute("aria-hidden", "true");
-    bg.appendChild(buildRankEmblemSVG(key));
-    card.appendChild(bg);
+    const node = document.createElement("div");
+    node.className = "rankmap-node";
+    node.appendChild(buildRankEmblemSVG(key));
+    if(isHere){
+      const you = document.createElement("span");
+      you.className = "rankmap-you";
+      try{ you.appendChild(buildAvatarCharSVGSafe(store.avatarChar || AVATAR_CHARACTERS[0].id)); }catch(e){}
+      node.appendChild(you);
+    }
+    stop.appendChild(node);
 
-    /* Name and state in a header strip, the way the reference does it:
-       above the emblem on a wide screen, beside it on a phone. Both come
-       out of the same markup - only the grid areas move. */
+    const card = document.createElement("div");
+    card.className = "rankmap-card";
     const head = document.createElement("div");
-    head.className = "rankcard-head";
+    head.className = "rankmap-head";
     const name = document.createElement("p");
-    name.className = "rankcard-name";
-    name.textContent = RANK_DISPLAY_NAME[key];
-    /* One chip says which of the four states this is, in words. The
-       colour and the dimming say it too, but only to somebody who has
-       already worked out the code. */
+    name.className = "rankmap-name"; name.textContent = RANK_DISPLAY_NAME[key];
     const state = document.createElement("span");
-    state.className = "rankcard-state";
-    state.textContent = isHere ? "You are here" : reached ? "Reached"
-                      : isNext ? "Up next" : "Locked";
+    state.className = "rankmap-state";
+    state.textContent = isHere ? "You are here" : reached ? "Reached" : isNext ? "Up next" : "Locked";
     head.append(name, state);
     card.appendChild(head);
-
-    /* One emblem, lit or not. It used to be two stacked copies with the
-       lit one clipped from the bottom so a rank part-way earned was
-       part-way lit; that was asked for and then explicitly asked
-       against. A rank is something you have or do not, and a waterline
-       across it says neither. */
-    const art = document.createElement("div");
-    art.className = "rankcard-art";
-    art.appendChild(buildRankEmblemSVG(key));
-    card.appendChild(art);
-
-    const body = document.createElement("div");
-    body.className = "rankcard-body";
-
-    const reqHead = document.createElement("p");
-    reqHead.className = "rankcard-reqhead";
-    reqHead.textContent = reached ? "Reached at" : "Requires";
     const req = document.createElement("p");
-    req.className = "rankcard-req";
-    req.textContent = "Level " + rule.level + " · " + rule.badges +
-      (rule.badges === 1 ? " badge" : " badges");
-    body.append(reqHead, req);
-
-    /* The meter belongs to the rank you are CLIMBING TO and nothing
-       else. Every unreached rank carried one, which put a half-full bar
-       on Supernova while you were working on Bronze - progress towards
-       something you are not working towards, which is the thing that
-       was asked against. A locked rank says what it costs and stops
-       there. */
+    req.className = "rankmap-req";
+    req.textContent = "Level " + rule.level + " \u00b7 " + rule.badges + (rule.badges === 1 ? " badge" : " badges");
+    card.appendChild(req);
     if(isNext){
       const meter = document.createElement("div");
-      meter.className = "rankcard-meter";
+      meter.className = "rankcard-meter rankmap-meter";
       const meterFill = document.createElement("span");
       meterFill.className = "rankcard-meterfill";
       meter.appendChild(meterFill);
-      /* THE SAME STEP THE HERO MEASURES, not rankPct(). rankPct() is the
-         slower of the two requirements, so with no badges yet the Iron
-         card read empty at level 15 of 21 - "it doesn't show any of my
-         progress". The up-next card and the hero bar describe one
-         climb and now show one number. */
-      const meterPct = heroStepPct != null ? heroStepPct : pct;
-      fillsToAnimate.push({ el: meterFill, prop: "width", value: Math.round(meterPct * 100) + "%" });
-      body.appendChild(meter);
+      fillsToAnimate.push({ el: meterFill, prop: "width", value: Math.round((heroStepPct != null ? heroStepPct : rankPct(key)) * 100) + "%" });
+      card.appendChild(meter);
       const togo = document.createElement("p");
-      togo.className = "rankcard-togo";
+      togo.className = "rankmap-togo";
       const parts = tierShortfall(rule).map(t => t.replace(" more ", " "));
       togo.textContent = parts.length ? parts.join(", ") + " to go" : "Ready to reach";
-      body.appendChild(togo);
+      card.appendChild(togo);
     }
-
-    const rewardHead = document.createElement("p");
-    rewardHead.className = "rankcard-rewardhead";
-    rewardHead.textContent = "Rewards";
-    body.appendChild(rewardHead);
-    const rewards = document.createElement("ul");
-    rewards.className = "rankcard-rewards";
-    /* Only things the app actually hands over. The reference lists four
-       per tier and it would have been easy to pad to four here; a
-       reward that does not exist is worse than a short list. Which is
-       also why the fourth line appears on the top four ranks ONLY: a
-       character genuinely is a fourth reward there now, and genuinely
-       is not one lower down, so the list is still exactly what you get
-       rather than a fixed shape with a gap in it. */
+    /* What it hands over, as small things you can recognise rather than
+       a list of words: the theme's colour, the flare, the character. */
+    const gifts = document.createElement("div");
+    gifts.className = "rankmap-gifts";
+    const gift = (cls, art, label) => {
+      const g = document.createElement("span");
+      g.className = "rankmap-gift " + cls;
+      if(art) g.appendChild(art);
+      const t = document.createElement("span"); t.textContent = label;
+      g.appendChild(t);
+      gifts.appendChild(g);
+    };
+    const dot = document.createElement("span");
+    dot.className = "rankmap-dot"; dot.style.background = ACCENT_SWATCH[key];
+    gift("is-theme", dot, (ACCENT_DISPLAY_NAME[key] || key) + " theme");
+    gift("is-flare", null, "Flare on Home");
     const charForRank = AVATAR_CHARACTERS.find(c => c.unlock === key);
-    [ACCENT_DISPLAY_NAME[key] + " flare on Home",
-     ACCENT_DISPLAY_NAME[key] + " theme colour",
-     RANK_DISPLAY_NAME[key] + " emblem by your name"]
-      .concat(charForRank
-        ? [(AVATAR_DISPLAY_NAME[charForRank.id] || charForRank.id) + " character"]
-        : [])
-      .forEach(text => {
-      const li = document.createElement("li");
-      li.textContent = text;
-      rewards.appendChild(li);
-    });
-    body.appendChild(rewards);
-    card.appendChild(body);
-
-    /* Tappable, the same as the Home flares, and answering the same
-       question in the same words - tierShortfall is the one place that
-       wording lives. */
-    /* NOT TAPPABLE. These carried role=button and tabindex=0 so a tap
-       would explain what was left to reach them - but the card already
-       says that in its requirement line and its meter, so the tap was
-       repeating what was on screen. What it cost was the scroll:
-       a focusable, role=button element the height of the viewport turns
-       every drag that starts on a card into a press, and the tab is
-       seven cards tall. Reported as the cards being clickable for no
-       reason and hard to scroll through. */
-    track.appendChild(card);
+    if(charForRank){
+      const av = document.createElement("span");
+      av.className = "rankmap-giftav";
+      try{ av.appendChild(buildAvatarCharSVGSafe(charForRank.id)); }catch(e){}
+      gift("is-char", av, AVATAR_DISPLAY_NAME[charForRank.id] || charForRank.id);
+    }
+    card.appendChild(gifts);
+    stop.appendChild(card);
+    map.appendChild(stop);
   });
-  tab.appendChild(track);
+  const foot = document.createElement("p");
+  foot.className = "rankmap-foot";
+  foot.textContent = held ? "Start" : "You start here";
+  map.appendChild(foot);
+  tab.appendChild(map);
 
   /* The Secret Flares box used to sit here and is gone per explicit
      request - "you can remove the eclipse color information from the
@@ -57785,6 +58183,7 @@ function applyGlassRefraction(el, mapImgId){
     home: "M4 11l8-7 8 7M6 9.5V20h12V9.5",
     rewards: "M7 4h10v5a5 5 0 01-10 0zM7 5H4a3 3 0 003 5.5M17 5h3a3 3 0 01-3 5.5M12 14v3M8.5 20.5h7l-.8-3H9.3z",
     profile: "M12 12a4 4 0 100-8 4 4 0 000 8zM5 20c0-3.9 3.1-7 7-7s7 3.1 7 7",
+    ranks: "M12 2.8l7.4 4.3v8.6L12 20l-7.4-4.3V7.1zM12 7.6l1.3 2.7 3 .4-2.2 2.1.5 3L12 14.4l-2.6 1.4.5-3-2.2-2.1 3-.4z",
     settings: "M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM19 12a7 7 0 00-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 00-2-1.2L14 3h-4l-.5 2.6a7 7 0 00-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 005 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 002 1.2L10 21h4l.5-2.6a7 7 0 002-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"
   };
   bar.querySelectorAll(".bottomtab").forEach(tab => {
@@ -57921,6 +58320,8 @@ function applyGlassRefraction(el, mapImgId){
     const onRewards = !!document.querySelector(".screen-rankings, .screen-rewards");
     const onSettings = !!document.querySelector(".screen-settings");
     const onHome = !!document.querySelector(".homeversion-btn");
+    const onRanks = !!document.querySelector(".screen-ranks");
+    bar.querySelector("#bottomtab-ranks").classList.toggle("active", onRanks);
     bar.querySelector("#bottomtab-profile").classList.toggle("active", onProfile);
     bar.querySelector("#bottomtab-rewards").classList.toggle("active", onRewards);
     bar.querySelector("#bottomtab-settings").classList.toggle("active", onSettings);
@@ -57953,6 +58354,7 @@ function applyGlassRefraction(el, mapImgId){
   let tabDragMoved = false;
   let tabDragPointerId = null;
   const tabDests = { "bottomtab-home": () => confirmMainMenu(), "bottomtab-rewards": () => showRankings(),
+    "bottomtab-ranks": () => showRanksScreen(),
     "bottomtab-profile": () => showProfile(), "bottomtab-settings": () => showAppearance() };
   function tabAtPoint(clientX){
     const tabs = [...navrow.querySelectorAll(".bottomtab")];

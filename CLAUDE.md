@@ -5688,3 +5688,43 @@ the mode chip sits under "Test results", flush with it.
 Gates: check-results section 8 and check-behaviour section 10, both
 failing on 216. check-unlocks 7b now asserts the challenge card names
 the challenge.
+
+### Build 219 - Ranks tab, the road map, Emerald, the Profile cover
+
+**Rank and Badges are their own bottom tab now** (`#bottomtab-ranks`,
+`showRanksScreen()`, `RANKS_TABS = ["ranks","badges"]`), and Profile is
+two tabs (`PROFILE_TABS = ["profile","stats"]`). `showProfile('ranks')`
+and `showProfile('badges')` redirect, so every old link still lands.
+The rank tab is a **road map**: stops drawn top-down with the summit
+first, the road lit up to where you are, your character standing on the
+rank you hold, and each stop listing exactly what it hands over (theme,
+flare, and a character on the top four).
+
+**Gold is Emerald** (`vanguard`, `#2ED18A`); Silver was lifted to a
+cold blue-white so it no longer reads as Iron. The key is unchanged.
+Home's orbit marks are the rank emblems themselves.
+
+**Five tabs made the tablet/landscape bar ~100px wider**, which put
+the daily-question circle inside it on every sideways phone and on the
+iPad. The tab padding is 1.1rem a side from 40rem and .55rem between
+40 and 56rem, and the circle sits at `50% - 22rem`. Rule of thumb from
+the measurement: **between 40 and 56rem the bar may be no wider than
+the viewport minus ~204px**. check-fixes is the gate.
+
+**Characters fill their tiles to the same height** (`AVATAR_ART_SCALE`,
+applied in `buildAvatarCharSVG` around the bottom centre, halo left out).
+Measured by rasterising: first row with alpha over 200. **Zeus is a
+marble bust on a plinth** - one material, the curved truncation, blank
+eyes; a person who is pale was never going to read as a statue. **The
+selection glow fades**: the pool is always there at opacity 0, and the
+drop-shadows run through a registered `--char-glow-k` because
+transitioning `filter` from a transparent shadow passes through black.
+
+**The Profile card has a cover** in the theme's three colours with the
+rank emblem as a watermark; the character stands over its edge on a
+round plate. `data-banner` on `.profile-cover` is where banners go.
+
+Gates: check-behaviour section 6 rewritten for the road map and the two
+screens; check-statsbadges' slot-shade window now skips the case frame,
+the tile above's text, and a stale scroll (it measured the earned tile
+last, so the locked one's numbers described a page that had moved).

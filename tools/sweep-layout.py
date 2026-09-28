@@ -111,11 +111,12 @@ SCREENS = [
     "showWelcomeCharacterPrompt", "showWelcomeCodeEntry", "showWelcomeCodeReveal",
     # the everyday screens
     "showHome", "showAppearance", "showProfile", "showRankings",
-    # Profile is five tabs and only the one it opens on is laid out by
-    # a bare showProfile(). The Badges case in particular is a sixteen
-    # tile grid the sweep would otherwise never look at.
-    "showProfile('badges')", "showProfile('stats')",
-    "showProfile('ranks')",
+    # Profile is two tabs and Ranks is two more (its own bottom tab from
+    # build 219), and only the tab a screen opens on is laid out by a
+    # bare call. The Badges case in particular is a sixteen tile grid the
+    # sweep would otherwise never look at.
+    "showProfile('stats')",
+    "showRanksScreen", "showRanksScreen('badges')",
     "showLeaderboard", "showSetup", "showModeSelect", "showClassSelection",
     "showExamOptions", "showCustomize", "showCalendar", "showFriends", "showTestReviewList",
     # the rest

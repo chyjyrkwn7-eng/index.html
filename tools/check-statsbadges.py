@@ -186,15 +186,40 @@ def main():
         pg.wait_for_timeout(800)
         tiles = pg.evaluate("""()=>{
           const t = [...document.querySelectorAll('.badge-tile')];
-          const locked = t.find(x => x.classList.contains('is-locked'));
+          /* NOT THE FIRST ROW. The case has had a frame since build
+             219, and a first-row slot sits close enough under it that
+             the strip below starts on the frame's own edge - a 94-level
+             step that is the case, not the slot. Any locked slot below
+             the first row measures the slot alone. */
+          const lockedAll = t.filter(x => x.classList.contains('is-locked'));
+          const top0 = t.length ? t[0].getBoundingClientRect().top : 0;
+          const locked = lockedAll.find(x => x.getBoundingClientRect().top > top0 + 10) || lockedAll[0];
           const earned = t.find(x => x.classList.contains('is-earned'));
+          /* `y` is where the DRAWING starts, not the art box: a slot's
+             outline can rise above its box (the peaked ones do, by ~9px),
+             and a window keyed to the box then measures the slot's own
+             lip as though it were the shade stopping. */
           const box = el => { if(!el) return null;
             const a = el.querySelector('.badge-tile-art');
-            a.scrollIntoView({block:'center'});
+            /* instant: smooth scrolling is on by default, and a rect
+               read while it is still travelling is a rect of nothing. */
+            a.scrollIntoView({block:'center', behavior:'instant'});
             const r = a.getBoundingClientRect();
-            return { x:r.left, y:r.top, width:r.width, height:r.height }; };
+            const drawn = [...a.querySelectorAll('svg path, svg circle, svg ellipse')]
+              .map(p => p.getBoundingClientRect()).filter(q => q.width && q.height);
+            const top = drawn.length ? Math.min(r.top, ...drawn.map(q => q.top)) : r.top;
+            /* And the window must not reach up into the tile above's own
+               name and count, which is text, and text is a step. */
+            const above = [...document.querySelectorAll('.badge-tile-name, .badge-tile-prog')]
+              .map(q => q.getBoundingClientRect())
+              .filter(q => q.bottom <= top && q.right > r.left && q.left < r.right)
+              .reduce((m, q) => Math.max(m, q.bottom), -1e9);
+            return { x:r.left, y:top, width:r.width, height:r.height, above }; };
+          /* earnedBox FIRST: box() scrolls, and the locked slot is the
+             one screenshotted afterwards, so it has to be the last one
+             scrolled to or its numbers describe a page that has moved. */
           return { n: t.length,
-                   lockedBox: box(locked), earnedBox: box(earned),
+                   earnedBox: box(earned), lockedBox: box(locked),
                    glow: earned ? (earned.querySelector('.badge-tile-art')
                                    .style.getPropertyValue('--badge-glow') || '') : null };}""")
         check("sixteen tiles", tiles["n"] == 16, tiles["n"])
@@ -215,8 +240,9 @@ def main():
             own box, so the window runs from a quarter of a tile above
             the art box down to just inside it, in a column narrow
             enough to stay clear of the badge artwork's own drawn lip."""
-            clip = {"x": b["x"] + b["width"] * 0.35, "y": b["y"] - b["height"] * 0.25,
-                    "width": max(8, b["width"] * 0.30), "height": b["height"] * 0.30}
+            y0 = max(b["y"] - b["height"] * 0.25, b["above"] + 3)
+            clip = {"x": b["x"] + b["width"] * 0.35, "y": y0,
+                    "width": max(8, b["width"] * 0.30), "height": max(6, b["y"] - 2 - y0)}
             path = os.path.join(tempfile.mkdtemp(prefix="slot-"), "top.png")
             pg.screenshot(path=path, clip=clip)
             im = Image.open(path).convert("RGB")
