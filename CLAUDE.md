@@ -5607,3 +5607,84 @@ times. Two recorders at once is the limit on this box: four dropped the
 screencast to ~14fps, which reads as the app lagging. Virtual Room
 scenarios use scripted opponents writing to the fake Firestore, which is
 how a room of eight was recorded with one browser.
+
+### Builds 217-218 - the long list, first two batches
+
+One message from Madison carried roughly sixty items. They are being
+done in batches, a build each; these two cover the results screen and
+the small fixes across Home, Settings and the boards.
+
+**The rank-up is a cutscene on the results screen now, not a banner and
+not a trip to Home.** `playTierCutscene(tier, { from, onDone })` and
+`playSupernovaCutscene({ from, onDone })` take an inline mode: they add
+a "You ranked up" kicker and a "Silver -> Gold" line (so it reads as YOU
+ranking up), clear their own pending flag, and at the end hand to
+`rankHomePreview()`, which SETS the new theme (`theme.accent = tier`),
+draws the main menu without its buttons in that theme with the new
+flare lighting, and fades back to the results. Drawn inside the
+cutscene's own overlay over a copy of the app background - the results
+panel is never unmounted, because the reveal sequence checks
+`panel.isConnected` and would stop half way through the unlocks. With
+no `opts` both functions behave exactly as before (Home still plays a
+pending one after a muted or reduce-motion run).
+
+- **The rank beside your name on the results changes when the scene
+  hands back, not before**: the level block carries your avatar and rank
+  (`buildResultsLevelBlock(..., { me, rankBefore })`, `setRank()`).
+- **The unlock order is the story**: rank, what the rank handed over
+  (theme, character), badges, the game-mode unlock, the flare. A flare's
+  scene plays BEFORE its banner.
+- **Pacing**: 1.7s before the Unlocked card, ~1.1s between scenes, and
+  each banner dims first, arrives out of a point of light, then its
+  words - about a second and a half before it is readable, and it holds
+  4.4-6.2s. Every banner names what it took (`item.need`); a challenge
+  character gets the "Challenge complete" strip (`.rs-spot.is-challenge`).
+- **The badge case is ~4s longer**: floats up (1.9s), latches go one at a
+  time, the lid cracks with light spilling out, then lifts over 1.9s.
+  **The glisten lives inside each badge's SVG, clipped to its outline**
+  (`.badge-shine-band` in `buildUnitBadgeSVG`) - it was a `::after` on
+  the square slot and swept the whole square.
+- **The cutscene stage is 52vw, not 70vw**, because it is scaled 1.65x:
+  70vw x 1.65 = 115vw cut the right-hand flare off every phone.
+- `celebrate()` is a nova (flash, rings, stardust from the element it is
+  given), not confetti. Same signature.
+- Drill is **red** (`#FF5A60` icon, `#FF6B70` chip) everywhere; gold read
+  as the hundo tint. The streak pill is **green**. The badge progress box
+  is **brushed silver** and says `+1 hundo · N more to go`.
+- **Long test bonus**: +100 XP per whole 50 questions answered, stacking,
+  scaled by accuracy, before the multiplier. The daily question pays
+  `DAILY_XP` = 200.
+- **Zeus is announced on the next results screen**, not on Home
+  (`store.pendingCharUnlocks`, defaulted empty). The daily question's
+  Detective gets the centre-screen challenge card (`showChallengeUnlock`).
+
+**Home lagged because two SVG filters were animated with SMIL.** Each
+frame re-ran a turbulence + displacement chain on the CPU. Measured at
+4x CPU throttle: 43fps with a 50ms worst frame; off, 60fps and 17ms.
+`COSMIC_SMIL = false`; the life now comes from `.cosmic-plasma` (two
+light pools drifting over the sphere, transform-only) and a breathing
+`.homeglow-hero`. **Never animate an SVG filter's input again** - move
+something composited instead.
+
+**A new screen starts at the top.** With Smooth scrolling on, every
+screen mount's `toTop()` was a smooth scroll from wherever the LAST
+screen was left, played over the new one ("the new tab starts at the
+bottom and then moves to the top"). `toTop()` jumps when the stage was
+swapped in the last 400ms, and a stage swap within 400ms of a `toTop()`
+lands any scroll still travelling. check-behaviour section 10.
+
+Smaller ones: the daily question ends in a verdict card at the bottom
+(Correct / Not this time, the XP, "come back tomorrow ..."); Settings
+puts the sync code back in a card and its button pairs side by side;
+`.more-body` opens on a softer curve with its contents fading in and its
+clip feathered while it moves; Find me is the search field's glass at
+its height; the person card has no rank coin and says "Correct answers";
+Class 26E's days-left is a neutral pill; the Game difficulty is first on
+the sheet rather than in the options dropdown, with a toast that names
+the units not yet at that level; Review draws from Flagged and Most
+missed too; the per-difficulty "farthest" is no longer shown anywhere;
+the mode chip sits under "Test results", flush with it.
+
+Gates: check-results section 8 and check-behaviour section 10, both
+failing on 216. check-unlocks 7b now asserts the challenge card names
+the challenge.

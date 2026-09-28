@@ -1068,6 +1068,59 @@ def check_slide(br):
         ctx.close()
 
 
+def check_b218(br):
+    """Build 218: what Madison re-asked for off Home, Settings and the boards.
+
+    Every check here was written against build 216, where it fails."""
+    print("\n10. build 218: tabs start at the top, Settings, the boards, Home's motion")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    # "If I'm at the bottom of the settings tab and move to another tab,
+    # the new tab starts at the bottom and then moves to the top."
+    pg.evaluate("()=>{ theme.smoothScroll = true; try{ applyTheme(); }catch(e){} showAppearance(); }")
+    pg.wait_for_timeout(700)
+    pg.evaluate("()=>window.scrollTo({top: 99999, behavior: 'instant'})")
+    pg.wait_for_timeout(300)
+    ys = pg.evaluate("""()=>new Promise(res=>{ const ys=[]; document.getElementById('bottomtab-profile').click();
+      let n=0; (function f(){ ys.push(Math.round(scrollY)); if(++n<8) requestAnimationFrame(f); else res(ys); })(); })""")
+    check("a tab switched to from the bottom of another starts at the top", ys[2] == 0, ys)
+    # Settings: two buttons to a row, and the sync code in a card.
+    pg.evaluate("()=>{ showAppearance(); }")
+    pg.wait_for_timeout(500)
+    rows = pg.evaluate("""()=>{ const top=t=>{ const b=[...document.querySelectorAll('button')].find(x=>x.textContent.trim()===t); return b?Math.round(b.getBoundingClientRect().top):null; };
+      return { upd: top('Check for update'), bug: top('Report a bug'), share: top('Share this app'), install: top('Add to Home Screen') }; }""")
+    check("Help's two buttons sit side by side", rows["upd"] is not None and rows["upd"] == rows["bug"], rows)
+    check("so do Share and Add to Home Screen", rows["share"] is not None and rows["share"] == rows["install"], rows)
+    # Find me wears the search field's glass, at its height.
+    pg.evaluate("()=>{ showRankings(); }")
+    pg.wait_for_timeout(600)
+    fm = pg.evaluate("""()=>{ const a=document.querySelector('.rank-search'), b=document.querySelector('.rank-me-btn');
+      if(!a||!b) return null; const ca=getComputedStyle(a), cb=getComputedStyle(b);
+      return { h:[Math.round(a.getBoundingClientRect().height), Math.round(b.getBoundingClientRect().height)],
+               bg:[ca.backgroundColor, cb.backgroundColor], blur:cb.backdropFilter }; }""")
+    check("Find me matches the search field beside it",
+          bool(fm) and fm["h"][0] == fm["h"][1] and fm["bg"][0] == fm["bg"][1] and "blur" in (fm["blur"] or ""), fm)
+    # The person card: no rank coin on the character, and "Correct answers".
+    pc = pg.evaluate("""()=>{ openPersonSheet({ pub:'bo-pub', firstName:'Bo', level:40, badges:6, hundos:40, xp:50000, correct:900, avatarChar:'robot' });
+      const card=document.querySelector('.person-card'); if(!card) return null;
+      const r={ coin: !!card.querySelector('.person-card-art .lb-rankmark'),
+                labels: [...card.querySelectorAll('.person-card-cell-label')].map(e=>e.textContent) };
+      document.querySelectorAll('.invite-overlay').forEach(e=>e.remove());
+      return r; }""")
+    check("no rank coin above a classmate's character", bool(pc) and not pc["coin"], pc)
+    check("the last box says Correct answers", bool(pc) and "Correct answers" in pc["labels"], pc)
+    # The Game difficulty is on the sheet, not in a dropdown; Review has sources.
+    sh = pg.evaluate("""()=>{ cfg.mode='game'; cfg.units=[topicsIn(QUESTIONS)[0]]; showSetup();
+      const g=document.querySelector('.speedgrid'); const inDrop=!!(g && g.closest('.more-body'));
+      cfg.mode='review'; showSetup(); const d=document.querySelector('.drawfrom-sect');
+      return { speed: !!g, inDropdown: inDrop, reviewSources: !!(d && !d.hidden) }; }""")
+    check("the Game difficulty is not hidden in the options dropdown", sh["speed"] and not sh["inDropdown"], sh)
+    check("Review can draw from flagged and most missed", sh["reviewSources"], sh)
+    # Home: nothing animates an SVG filter every frame.
+    an = pg.evaluate("()=>{ showHome(); return document.querySelectorAll('.cosmic-hero-svg animate').length; }")
+    check("Home's hero animates no SVG filter", an == 0, an)
+    ctx.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=CHROME)
@@ -1081,6 +1134,7 @@ def main():
             check_review_reach(br)
             check_slide(br)
             check_update_and_cards(br)
+            check_b218(br)
         finally:
             br.close()
     SERVER.shutdown()

@@ -602,12 +602,21 @@ BANNER_RUN = """()=>{
   attempts = {}; picked = {}; timedOutSet = {}; attempts[qi] = 1;
   dailyQuestionLocked = false; store.dailyQuestionDate = null;
   summarize();
-  const b = document.querySelector('.charup-banner');
-  return { streak: store.dailyCorrectStreak,
-           locked: isLockedCharacter('detective'),
-           banner: !!b,
-           drawsCharacter: !!(b && b.querySelector('.avatarchar-svg')),
-           says: b ? b.textContent : '' };}"""
+  /* Build 218: a CHALLENGE character is announced with the centre-screen
+     challenge card, a beat after the answer lands, and it names the
+     challenge - "make the banner cooler, and ensure that the banner says
+     what the challenge was". */
+  return new Promise(res => setTimeout(() => {
+    const b = document.querySelector('.rs-spot.is-challenge');
+    const need = b && b.querySelector('.rs-spot-need-text');
+    res({ streak: store.dailyCorrectStreak,
+          locked: isLockedCharacter('detective'),
+          banner: !!b,
+          drawsCharacter: !!(b && b.querySelector('.avatarchar-svg')),
+          challenge: need ? need.textContent : '',
+          feat: CHARACTER_FEATS.daily10.label,
+          says: b ? b.textContent : '' });
+  }, 1800));}"""
 
 
 def check_unlock_banner(pg):
@@ -621,8 +630,10 @@ def check_unlock_banner(pg):
     r = pg.evaluate(BANNER_RUN)
     check("the tenth daily in a row unlocks the Detective",
           r["streak"] == 10 and r["locked"] is False, r["streak"])
-    check("a banner appears at the end of that run", r["banner"] is True)
+    check("a challenge card appears at the end of that run", r["banner"] is True)
     check("and the character is drawn in it", r["drawsCharacter"] is True, r["says"][:60])
+    check("and it says what the challenge was", r["challenge"] == r["feat"] and bool(r["feat"]),
+          [r["challenge"], r["feat"]])
 
 
 def check_art(pg):

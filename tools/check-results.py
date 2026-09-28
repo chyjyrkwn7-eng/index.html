@@ -338,6 +338,55 @@ with sync_playwright() as pw:
        {"before": pill_before, "after": pill_after})
     pg.evaluate("()=>{ testInProgress=false; try{ showHome(); }catch(e){} }")
 
+    print("8. builds 217-218: the results screen, re-asked")
+    # Every one of these fails on build 216.
+    # Drill is red, app-wide - "red would be a better colour for drill".
+    drill = pg.evaluate("""()=>{ const s=document.createElement('span'); s.className='rs-mode rs-mode-drill';
+      document.body.appendChild(s); const c=getComputedStyle(s).color; s.remove(); return c; }""")
+    nums = [float(x) for x in re.findall(r"[\d.]+", drill)[:3]]
+    rgb = [n * 255 if drill.startswith("color(") else n for n in nums]
+    # Gold (build 216) is ~255,211,122 even through the chip's mix.
+    ck("the Drill chip is red", rgb[0] > 200 and rgb[1] < 175 and rgb[2] < 175, drill)
+    # The streak pill is green, not the XP blue.
+    sk = pg.evaluate("""()=>{ showRunStreakBanner(10); const e=document.querySelector('.streak-pop');
+      const c=e?getComputedStyle(e.querySelector('.streak-pop-num')).color:''; document.querySelectorAll('.streak-pop').forEach(x=>x.remove()); return c; }""")
+    rgb = [int(x) for x in re.findall(r"\d+", sk)[:3]] if sk else [0, 0, 0]
+    ck("the streak pill is green", rgb[1] > rgb[0] + 40 and rgb[1] > rgb[2] + 20, sk)
+    # XP: the long-test bonus stacks every 50, and the daily question pays 200.
+    xp = pg.evaluate("""()=>{ const f=(n,g)=>computeRunXp({good:g, answered:n, elapsedMs:n*20000, okList:[]});
+      const k=r=>(r.lines.find(l=>l.key==='long')||{}).value||0;
+      return { a49:k(f(49,49)), a50:k(f(50,50)), a120:k(f(120,120)), half:k(f(100,50)),
+               daily:computeRunXp({daily:true, good:1}).total }; }""")
+    ck("a long test pays +100 for every 50 questions, stacking", xp["a49"] == 0 and xp["a50"] == 100 and xp["a120"] == 200, xp)
+    ck("scaled by accuracy", xp["half"] == 100, xp)
+    ck("the daily question is worth 200 XP", xp["daily"] == 200, xp)
+    # The rank comes first, then what it handed over, then the badges.
+    order = pg.evaluate("""()=>rsUnlockItems({ colors:['vanguard'], badges:['Identity Crimes'], retroBadges:[],
+      characters:['robot'], justBeatSpeed:null, units:[], flare:null }).map(i=>i.kind)""")
+    ck("unlocks run rank, theme, character, then badge", order[:4] == ["rank", "theme", "character", "badge"], order)
+    # A run that missed one: the badge line, the avatar, the chip.
+    pg.evaluate("([u])=>{ store.unitPerfects = store.unitPerfects || {}; store.unitPerfects[u] = 3; __run(u,0,'drill'); }", [UNIT])
+    wait_done(pg)
+    got = pg.evaluate("""()=>{ const lb=document.getElementById('testscopelabel').getBoundingClientRect();
+      const m=document.querySelector('.rs-mode').getBoundingClientRect();
+      const line=document.querySelector('.rs-badges .badgeprogress-line');
+      return { dx:Math.round(m.left-lb.left), gap:Math.round(m.top-lb.bottom),
+               line: line?line.textContent:null,
+               avatar: !!document.querySelector('.results-level-avatar svg'),
+               rank: !!document.querySelector('.results-level-rank') }; }""")
+    ck("the mode chip lines up under Test results", abs(got["dx"]) <= 2 and 0 <= got["gap"] <= 14, got)
+    ck("your avatar and rank ride on the level bar", got["avatar"] and got["rank"], got)
+    ck("the badge line says what is left, not 'N of M'", bool(got["line"]) and " of " not in got["line"] and "more to go" in got["line"], got["line"])
+    # A nova, not confetti.
+    cel = pg.evaluate("()=>{ celebrate(); const r={ confetti:document.querySelectorAll('.confetti-piece').length, dust:document.querySelectorAll('.stardust-p').length }; document.querySelectorAll('.confetti-layer').forEach(l=>l.remove()); return r; }")
+    ck("the celebration is stardust, not confetti", cel["confetti"] == 0 and cel["dust"] > 10, cel)
+    # A character banner names the challenge that earned it.
+    need = pg.evaluate("""()=>{ let t=''; playUnlockSpotlight({kind:'character', character:'zeus', feat:true, kicker:'Challenge complete',
+      name:'Zeus', sub:'', need:(typeof characterChallenge==='function'?characterChallenge('zeus'):''), color:'#7FD4F5', art:()=>buildAvatarCharSVGSafe('zeus')},1,1,()=>{});
+      const n=document.querySelector('.rs-spot-need-text'); t=n?n.textContent:''; document.querySelectorAll('.rs-spot').forEach(x=>x.remove()); return t; }""")
+    ck("a character unlock says what it took", bool(need) and "week" in need.lower(), need)
+    pg.evaluate("()=>{ testInProgress=false; try{ showHome(); }catch(e){} }")
+
     ck("no page errors", not errors, errors[:3])
     br.close()
 srv.shutdown()
