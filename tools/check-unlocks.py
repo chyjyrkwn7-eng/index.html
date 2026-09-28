@@ -136,8 +136,12 @@ def check_table(pg):
         glowed: feats.every(c => avatarGlowColor(c.id) !== 'var(--accent)'),
         rankFour: AVATAR_CHARACTERS.filter(c => c.unlock).length
       };}""")
-    check("four of them, and the rank four are untouched",
-          r["n"] == 4 and r["rankFour"] == 4, "%d feat, %d rank" % (r["n"], r["rankFour"]))
+    # AT LEAST the original four: build 220 added five more (Fox, Viking,
+    # Champion, Umbra, Singularity), and a count here went red for the app
+    # being right. The original four are asserted by key instead.
+    check("the four original challenges are still there, and the rank four are untouched",
+          r["n"] >= 4 and all(k in r["keys"] for k in ("daily10", "hardcore10", "weektop", "flares"))
+          and r["rankFour"] == 4, "%d feat, %d rank" % (r["n"], r["rankFour"]))
     check("every feat key is in CHARACTER_FEATS", r["known"], r["keys"])
     check("all four locked on a fresh account", r["allLocked"])
     check("each has a display name and its own glow", r["named"] and r["glowed"])
@@ -360,22 +364,28 @@ def check_flares(pg):
     same = pg.evaluate(SET_TESTS, 137)
     check("the gate counts what the Stats tab counts", same == 137, same)
 
-    # BUILD 213: the first is still a test count, the second and third are
-    # LEVELS, drawn once per account - 45-47 and 65-67 - "random per user".
-    pg.evaluate("""()=>{ store.mysteryColorsFound = { red:false, orange:false, yellow:false }; }""")
-    pg.evaluate(SET_TESTS, at[0] - 1); short = pg.evaluate(ARM)
-    pg.evaluate(SET_TESTS, at[0]); due = pg.evaluate(ARM)
-    check("red: nothing at %d tests, armed at %d" % (at[0] - 1, at[0]),
+    # BUILD 220: EVERY flare is a level, drawn once per account from its
+    # window. The windows are read off the page (FLARE_WINDOWS) for the
+    # same reason the old thresholds were: they are decisions.
+    win = pg.evaluate("()=>FLARE_WINDOWS")
+    pg.evaluate("""()=>{ store.mysteryColorsFound = { red:false, orange:false, yellow:false, violet:false, white:false };
+      store.flareNextTestAt = 0; store.flareLevels = {}; }""")
+    pg.evaluate(SET_TESTS, 9999)
+    red_lv = pg.evaluate("()=>mysteryLevelGate('red')")
+    pg.evaluate("(l)=>{ store.lifetime.points = xpForLevel(l) - 1; }", red_lv); short = pg.evaluate(ARM)
+    pg.evaluate("(l)=>{ store.lifetime.points = xpForLevel(l); }", red_lv); due = pg.evaluate(ARM)
+    check("red: nothing just short of level %d, armed at it" % red_lv,
           short["at"] == -1 and due["at"] >= 0 and due["color"] == "red", [short["at"], due["at"], due["color"]])
     drawn = pg.evaluate("""()=>{ store.flareLevels = {}; return [mysteryLevelGate('orange'), mysteryLevelGate('yellow'),
       mysteryLevelGate('orange')]; }""")
-    check("the second flare's level is drawn from 45-47, the third's from 65-67, and kept",
-          45 <= drawn[0] <= 47 and 65 <= drawn[1] <= 67 and drawn[2] == drawn[0], drawn)
+    check("each flare's level is drawn from its own window, and kept",
+          win["orange"][0] <= drawn[0] <= win["orange"][1] and win["yellow"][0] <= drawn[1] <= win["yellow"][1]
+          and drawn[2] == drawn[0], [drawn, win])
     for i, key in ((1, "orange"), (2, "yellow")):
         lv = drawn[i - 1]
-        pg.evaluate("""(k)=>{ const f = { red:false, orange:false, yellow:false };
+        pg.evaluate("""(k)=>{ const f = { red:false, orange:false, yellow:false, violet:false, white:false };
           ['red','orange','yellow'].slice(0, k).forEach(c => f[c] = true);
-          store.mysteryColorsFound = f; }""", i)
+          store.mysteryColorsFound = f; store.flareNextTestAt = 0; }""", i)
         pg.evaluate(SET_TESTS, 9999)
         pg.evaluate("(l)=>{ store.lifetime.points = xpForLevel(l) - 1; }", lv)
         short = pg.evaluate(ARM)
@@ -511,6 +521,9 @@ REARM = """()=>{
   cfg.mode='drill'; cfg.source='all'; cfg.units=[t];
   const pool = QUESTIONS.map((q,i)=>[q,i]).filter(([q]) => (q.topic||'').trim() === t).map(([,i]) => i);
   store.lifetime.drillPlays = 9999;
+  /* Build 220's catch-up holds the next flare a few tests after a find
+     when it is already owed - this check is about finding, not pacing. */
+  store.flareNextTestAt = 0;
   store.lifetime.points = Math.max(store.lifetime.points || 0, xpForLevel(70));
   beginRun(pool, null, null);
   mysteryAppearsAtPos = 0; pos = 0;
@@ -659,7 +672,9 @@ def check_art(pg):
       return { n: AVATAR_CHARACTERS.length, empty,
                dupes: Object.values(sigs).filter(v => v.length > 1),
                safe: !!buildAvatarCharSVGSafe('a-character-from-another-build') };}""")
-    check("sixteen of them", r["n"] == 16, r["n"])
+    # Not a count: sixteen became twenty-one in build 220 and will move
+    # again. Every one drawn, none a copy of another, is the shape.
+    check("every character draws (at least the sixteen there were)", r["n"] >= 16 and not r["empty"], r["n"])
     check("every one draws something", not r["empty"], r["empty"])
     check("no two share a shape signature", not r["dupes"], r["dupes"])
     check("an unknown id still returns a node", r["safe"] is True)

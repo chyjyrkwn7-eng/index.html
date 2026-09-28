@@ -1103,6 +1103,103 @@ def check_b218(br):
     ctx.close()
 
 
+def check_b220(br):
+    """Build 220: five flares, five characters, banners, all counted from
+    what people had already done. Written against build 219, where every
+    one of these fails (none of the names exists)."""
+    print("\n11. build 220: flares on levels, the new characters, banners")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""()=>{
+      const out = {};
+      out.order = MYSTERY_ORDER.slice();
+      // The windows: red at 35, orange 40-41, yellow before 46, violet by 60.
+      store.flareLevels = { orange: 45, yellow: 66 };   // the old schedule's draws
+      out.gates = ['red','orange','yellow','violet','white'].map(k => mysteryLevelGate(k));
+      // Void's flares are not looked for until Void is held.
+      store.mysteryColorsFound = { red:false, orange:false, yellow:false, violet:false, white:false };
+      store.flareNextTestAt = 0;
+      const lv = levelOf; levelOf = () => 75;
+      out.violetBeforeVoid = mysteryGateMet('violet');
+      out.redAt75 = mysteryGateMet('red');
+      // Catch-up: owed the next one already, so it is held back 3-4 tests.
+      const t0 = testsCompletedOf(store);
+      store.mysteryColorsFound.red = true; armFlareCatchup();
+      out.hold = store.flareNextTestAt - t0;
+      out.orangeNow = mysteryGateMet('orange');
+      levelOf = lv;
+      return out; }""")
+    check("five flares, the last two Void's",
+          r["order"] == ["red", "orange", "yellow", "violet", "white"], r["order"])
+    g = r["gates"]
+    check("each flare's level sits in its window, old draws redrawn",
+          g[0] == 35 and g[1] in (40, 41) and 42 <= g[2] <= 45 and 55 <= g[3] <= 59 and 68 <= g[4] <= 72, g)
+    check("Void's flares wait for Void", not r["violetBeforeVoid"] and r["redAt75"], r)
+    check("somebody behind gets the next one three or four tests later, not the next test",
+          r["hold"] in (3, 4) and not r["orangeNow"], r)
+
+    c = pg.evaluate("""()=>{
+      const ids = ['fox','viking','champion','umbra','singularity'];
+      const out = { drawn: ids.map(id => !!buildAvatarCharSVG(id)),
+                    locked: ids.map(id => isLockedCharacter(id)) };
+      // Game beats already on the account count straight away.
+      const units = topicsIn(QUESTIONS).slice(0, 10);
+      const keep = store.unitGameBeat;
+      store.unitGameBeat = {};
+      units.forEach(u => store.unitGameBeat[u] = { easy:true, average:false, hardcore:false });
+      out.foxAfter = isLockedCharacter('fox');
+      out.vikingAfter = isLockedCharacter('viking');
+      store.unitGameBeat = keep;
+      // Wins: once per room, only first place, and the fifth queues the Champion.
+      store.vrMatches = 0; store.vrWins = 4; store.vrCounted = []; store.pendingCharUnlocks = [];
+      recordVroomOutcome('ROOM-1', ['me','bo'], 'me');
+      recordVroomOutcome('ROOM-1', ['me','bo'], 'me');
+      recordVroomOutcome('ROOM-2', ['bo','me'], 'me');
+      recordVroomOutcome('ROOM-3', ['me'], 'me');
+      out.vr = [store.vrMatches, store.vrWins, (store.pendingCharUnlocks||[]).slice()];
+      out.champ = isLockedCharacter('champion');
+      return out; }""")
+    check("the five new characters draw and start locked",
+          all(c["drawn"]) and all(c["locked"]), c)
+    check("Game beats already on the account unlock the Fox, not the Viking",
+          not c["foxAfter"] and c["vikingAfter"], c)
+    check("a room counts once, a win needs a rival, and the fifth hands over the Champion",
+          c["vr"][0] == 3 and c["vr"][1] == 5 and c["vr"][2] == ["champion"] and not c["champ"], c["vr"])
+
+    b = pg.evaluate("""()=>{
+      const out = {};
+      store.fullTestsSeeded = false; store.lifetime.fullTests = 0;
+      seedBannerCounters();
+      out.seeded = fullTestsOf(); out.plays = testsCompletedOf(store);
+      store.lifetime.fullTests = 120; store.practiceExamPerfect = true; store.banner = 'exam100';
+      out.earned = BANNERS.filter(x => bannerEarned(x.id)).map(x => x.id);
+      showCustomize();
+      out.opts = document.querySelectorAll('.banner-opt').length;
+      out.selected = (document.querySelector('.banner-opt.selected')||{}).dataset;
+      out.selected = out.selected ? out.selected.banner : null;
+      const locked = document.querySelector('.banner-opt.locked');
+      out.lockedSays = locked ? locked.querySelector('.banner-opt-need').textContent : '';
+      document.querySelector('.banner-opt[data-banner="tests100"]').click();
+      out.wear = store.banner;
+      showProfile();
+      out.cover = (document.querySelector('.profile-cover.has-banner .bnr')||{}).className || null;
+      // A room row carries whoever's banner is in the document.
+      const items = rsUnlockItems({ colors:[], characters:[], banners:['vr50'], badges:[], flare:'violet' });
+      out.items = items.map(i => i.kind + ':' + (i.banner || i.character || i.flare || ''));
+      return out; }""")
+    check("full tests are seeded from the work already done, never above the runs played",
+          b["seeded"] > 0 and b["seeded"] <= b["plays"], b)
+    check("banners earned off the counters", "tests100" in b["earned"] and "exam100" in b["earned"]
+          and "tests250" not in b["earned"], b["earned"])
+    check("Customize lists every banner plus Theme, and says what a locked one needs",
+          b["opts"] == 9 and b["selected"] == "exam100" and "/" in b["lockedSays"], b)
+    check("picking one wears it, and it is across the top of Profile",
+          b["wear"] == "tests100" and b["cover"] and "bnr-tests100" in b["cover"], b)
+    check("a banner and a Void flare's character are announced on the results",
+          "banner:vr50" in b["items"] and "flare:violet" in b["items"] and "character:umbra" in b["items"],
+          b["items"])
+    ctx.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=CHROME)
@@ -1117,6 +1214,7 @@ def main():
             check_slide(br)
             check_update_and_cards(br)
             check_b218(br)
+            check_b220(br)
         finally:
             br.close()
     SERVER.shutdown()

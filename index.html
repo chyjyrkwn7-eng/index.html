@@ -11843,6 +11843,246 @@
       #C6D1DD 62%, #7C8794 100%);
   }
 
+  /* ---- BANNERS (build 220) ----
+     Eight wallpapers, all CSS. `.bnr` fills whatever it is put in and
+     takes that thing's corners; its children (.b1-.b3) are the layers.
+     Everything that moves is a transform, an opacity or a background
+     position, and reduce-motion stops all of it through the global
+     rule. */
+  .bnr{ position:absolute; inset:0; overflow:hidden; border-radius:inherit; pointer-events:none; isolation:isolate; }
+  .bnr > i{ position:absolute; display:block; }
+
+  /* HUNDRED CLUB - a synthwave sunset: a banded sun going down behind a
+     grid that runs away to the horizon. */
+  .bnr-tests100{ background:linear-gradient(180deg, #12062A 0%, #3A0F5E 34%, #9C2C7E 52%, #FF7A59 61%, #12062A 61.5%); }
+  .bnr-tests100 .b1{
+    left:50%; top:6%; height:86%; aspect-ratio:1; transform:translateX(-50%); border-radius:50%;
+    background:linear-gradient(180deg, #FFE98A 0%, #FFA24C 45%, #FF4F9A 75%);
+    -webkit-mask-image:linear-gradient(180deg, #000 0 46%, transparent 46% 50%, #000 50% 57%, transparent 57% 61%, #000 61% 66%, transparent 66%);
+            mask-image:linear-gradient(180deg, #000 0 46%, transparent 46% 50%, #000 50% 57%, transparent 57% 61%, #000 61% 66%, transparent 66%);
+    box-shadow:0 0 40px rgba(255,120,120,.35);
+  }
+  .bnr-tests100 .b2{
+    left:-60%; right:-60%; top:61%; height:120%;
+    background:
+      repeating-linear-gradient(90deg, rgba(255,92,205,.75) 0 1.5px, transparent 1.5px 30px),
+      repeating-linear-gradient(180deg, rgba(255,92,205,.75) 0 1.5px, transparent 1.5px 16px),
+      linear-gradient(180deg, #230A40, #0B0318);
+    transform-origin:50% 0; transform:perspective(90px) rotateX(58deg);
+    animation:bnr-grid 3.2s linear infinite;
+  }
+  @keyframes bnr-grid{ from{ background-position:0 0, 0 0, 0 0; } to{ background-position:0 0, 0 16px, 0 0; } }
+
+  /* AURORA - curtains of green and violet light over a dark ridge. */
+  .bnr-tests250{ background:linear-gradient(180deg, #030A18 0%, #0A2034 70%, #0D2C38 100%); }
+  .bnr-tests250 .b1{
+    inset:-30% -15% 10%;
+    background:
+      radial-gradient(38% 55% at 28% 45%, rgba(70,255,170,.6), transparent 70%),
+      radial-gradient(30% 50% at 55% 35%, rgba(90,210,255,.45), transparent 70%),
+      radial-gradient(32% 45% at 78% 50%, rgba(175,120,255,.5), transparent 70%);
+    filter:blur(8px);
+    animation:bnr-aurora 9s ease-in-out infinite alternate;
+  }
+  @keyframes bnr-aurora{ from{ transform:translateX(-6%) skewX(-8deg); } to{ transform:translateX(6%) skewX(8deg); } }
+  .bnr-tests250 .b2{
+    inset:0; opacity:.8;
+    background-image:
+      radial-gradient(1px 1px at 12% 18%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 38% 10%, #fff 50%, transparent 51%),
+      radial-gradient(1.2px 1.2px at 64% 22%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 86% 12%, #fff 50%, transparent 51%);
+  }
+  .bnr-tests250 .b3{
+    left:0; right:0; bottom:0; height:38%; background:#020610;
+    clip-path:polygon(0 70%, 12% 35%, 22% 60%, 36% 18%, 50% 55%, 62% 30%, 76% 62%, 88% 28%, 100% 50%, 100% 100%, 0 100%);
+  }
+
+  /* MOLTEN GOLD - poured metal with a light running across it. */
+  .bnr-tests500{
+    background:
+      radial-gradient(90% 140% at 18% 10%, #FFF4B8 0%, #F6C945 20%, #C08A12 42%, #6A4208 70%, #2E1C04 100%);
+  }
+  .bnr-tests500 .b1{
+    inset:0; mix-blend-mode:overlay; opacity:.7;
+    background:
+      repeating-radial-gradient(ellipse at 72% 140%, rgba(255,245,200,.55) 0 7px, rgba(90,50,0,.45) 7px 15px, rgba(255,225,140,.3) 15px 22px);
+  }
+  .bnr-tests500 .b2{
+    top:-20%; bottom:-20%; width:40%; left:-50%; mix-blend-mode:overlay;
+    background:linear-gradient(90deg, rgba(255,250,220,0), rgba(255,250,220,.9), rgba(255,250,220,0));
+    animation:bnr-sheen 4.5s ease-in-out infinite;
+  }
+  @keyframes bnr-sheen{ 0%{ transform:translateX(0); } 55%,100%{ transform:translateX(420%); } }
+
+  /* FLAWLESS - holographic foil. The whole spectrum sliding under a
+     diamond pattern, a hard sheen crossing it, and sparks. The one
+     banner that is loud on purpose: it is the one for a perfect exam. */
+  .bnr-exam100{
+    background:
+      radial-gradient(120% 140% at 50% 50%, transparent 40%, rgba(20,8,40,.55) 100%),
+      linear-gradient(115deg, #FF4FB8, #8A5CFF 16%, #2BD4FF 32%, #34F5A6 48%, #FFE55C 62%, #FF7A45 76%, #FF4FB8 90%, #8A5CFF 100%);
+    background-size:100% 100%, 300% 100%;
+    animation:bnr-holo 7s linear infinite;
+  }
+  /* The word itself, etched into the foil - the one banner with words
+     on it, because it is the one for a perfect exam. */
+  .bnr-exam100::after{
+    content:"FLAWLESS"; position:absolute; left:5%; top:12%;
+    font:900 clamp(1rem, 5.5cqw, 2.4rem)/1 var(--mono, monospace); letter-spacing:.18em;
+    color:rgba(255,255,255,.18); -webkit-text-stroke:1px rgba(255,255,255,.55);
+    mix-blend-mode:overlay;
+  }
+  .bnr-exam100{ container-type:inline-size; }
+  @keyframes bnr-holo{ from{ background-position:0 0, 0% 0; } to{ background-position:0 0, 300% 0; } }
+  .bnr-exam100 .b1{
+    inset:0; mix-blend-mode:soft-light;
+    background:
+      repeating-linear-gradient(60deg, rgba(255,255,255,0) 0 12px, rgba(255,255,255,.55) 12px 13px),
+      repeating-linear-gradient(-60deg, rgba(40,20,90,0) 0 12px, rgba(40,20,90,.45) 12px 13px);
+  }
+  .bnr-exam100 .b2{
+    top:-30%; bottom:-30%; width:28%; left:-40%;
+    background:linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.95), rgba(255,255,255,0));
+    animation:bnr-sheen 3.6s ease-in-out infinite;
+  }
+  .bnr-exam100 .b3{
+    inset:0;
+    background-image:
+      radial-gradient(2px 2px at 14% 30%, #fff 50%, transparent 51%),
+      radial-gradient(2.5px 2.5px at 42% 70%, #fff 50%, transparent 51%),
+      radial-gradient(2px 2px at 70% 24%, #fff 50%, transparent 51%),
+      radial-gradient(1.6px 1.6px at 88% 64%, #fff 50%, transparent 51%);
+    animation:bnr-twinkle 1.8s ease-in-out infinite alternate;
+  }
+  @keyframes bnr-twinkle{ from{ opacity:.25; } to{ opacity:1; } }
+
+  /* ARENA - a neon stadium at night: two beams crossing over a lit
+     floor. */
+  .bnr-vr50{ background:radial-gradient(120% 90% at 50% 120%, #2A0B4A 0%, #0B0717 60%, #05040B 100%); }
+  .bnr-vr50 .b1{
+    inset:0; opacity:.5;
+    background:
+      repeating-linear-gradient(60deg, rgba(0,229,255,.28) 0 1px, transparent 1px 22px),
+      repeating-linear-gradient(-60deg, rgba(0,229,255,.28) 0 1px, transparent 1px 22px);
+    -webkit-mask-image:linear-gradient(180deg, transparent 20%, #000 100%);
+            mask-image:linear-gradient(180deg, transparent 20%, #000 100%);
+  }
+  .bnr-vr50 .b2, .bnr-vr50 .b3{
+    bottom:-10%; width:24%; height:170%; left:18%;
+    transform-origin:50% 100%; filter:blur(2px);
+    background:linear-gradient(0deg, rgba(255,46,151,.85), rgba(255,46,151,0));
+    clip-path:polygon(45% 100%, 55% 100%, 100% 0, 0 0);
+    animation:bnr-beam 5s ease-in-out infinite alternate;
+  }
+  .bnr-vr50 .b3{
+    left:58%; background:linear-gradient(0deg, rgba(0,229,255,.85), rgba(0,229,255,0));
+    animation-delay:-2.5s;
+  }
+  @keyframes bnr-beam{ from{ transform:rotate(-18deg); } to{ transform:rotate(18deg); } }
+
+  /* CHECKMATE - a marble board running away into the dark, lit gold. */
+  .bnr-hundos100{ background:linear-gradient(180deg, #050506 0%, #15130F 40%, #2A2418 100%); }
+  .bnr-hundos100 .b1{
+    left:-70%; right:-70%; top:34%; height:140%;
+    background:
+      conic-gradient(#1A1C22 0 25%, #E9E2D0 0 50%, #1A1C22 0 75%, #E9E2D0 0) 0 0 / 34px 34px;
+    transform-origin:50% 0; transform:perspective(110px) rotateX(55deg);
+    -webkit-mask-image:linear-gradient(180deg, transparent, #000 40%);
+            mask-image:linear-gradient(180deg, transparent, #000 40%);
+  }
+  .bnr-hundos100 .b2{
+    inset:0; background:radial-gradient(60% 80% at 50% 20%, rgba(255,200,90,.35), transparent 70%);
+  }
+
+  /* FULL CASE - the badge case's own velvet, studded, with a gold rule. */
+  .bnr-badges16{
+    background:
+      radial-gradient(circle at 50% 50%, rgba(255,214,110,.9) 0 1.6px, transparent 2.2px) 0 0 / 22px 22px,
+      linear-gradient(135deg, #1B2A55, #0E1733 60%, #0A1026);
+  }
+  .bnr-badges16 .b1{ inset:6px; border:1.5px solid rgba(233,185,73,.8); border-radius:inherit; box-shadow:inset 0 0 18px rgba(0,0,0,.5); }
+  .bnr-badges16 .b2{
+    inset:0; background:repeating-linear-gradient(45deg, rgba(255,255,255,.03) 0 2px, transparent 2px 5px);
+  }
+
+  /* STRATOSPHERE - the curve of the Earth from above, with the sun
+     coming over its edge. For reaching the level cap. */
+  .bnr-level80{ background:linear-gradient(180deg, #000208 0%, #050B22 55%, #0B1A40 100%); }
+  .bnr-level80 .b1{
+    left:-30%; right:-30%; top:58%; height:260%; border-radius:50%;
+    background:radial-gradient(circle at 50% 20%, #3D9BFF 0%, #1453B0 30%, #0A2A66 60%);
+    box-shadow:0 -4px 14px rgba(120,200,255,.9), 0 -14px 40px rgba(80,160,255,.45);
+  }
+  .bnr-level80 .b2{
+    left:62%; top:48%; width:18%; height:30%;
+    background:radial-gradient(closest-side, #FFFFFF, rgba(255,240,200,.6) 40%, transparent);
+  }
+  .bnr-level80 .b3{
+    inset:0; opacity:.85;
+    background-image:
+      radial-gradient(1px 1px at 10% 20%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 30% 36%, #fff 50%, transparent 51%),
+      radial-gradient(1.2px 1.2px at 52% 14%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 80% 26%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 92% 40%, #fff 50%, transparent 51%);
+  }
+
+  /* On the Profile cover the banner replaces the theme wash; the cover's
+     own fade and the rank watermark stay on top of it. */
+  .profile-cover.has-banner{ background:#10131A; }
+  .profile-cover.has-banner::before{ display:none; }
+  .profile-cover > .bnr{ z-index:0; }
+  .profile-cover > .profile-cover-mark{ z-index:1; }
+
+  /* Behind a lobby row: dimmed, with a scrim from the left so the name
+     and the rank line stay readable over the loudest of them. */
+  .vroom-row.has-banner{ position:relative; overflow:hidden; }
+  .vroom-row.has-banner > .bnr{ z-index:0; opacity:.62; }
+  .vroom-row.has-banner::after{
+    content:""; position:absolute; inset:0; z-index:0; pointer-events:none; border-radius:inherit;
+    background:linear-gradient(90deg, rgba(10,12,18,.82) 0%, rgba(10,12,18,.55) 45%, rgba(10,12,18,.15) 100%);
+  }
+  .vroom-row.has-banner > :not(.bnr){ position:relative; z-index:1; }
+
+  /* The picker in Customize. */
+  .banner-grid{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:.7rem; margin:.4rem 0 .2rem; }
+  @media (min-width:40rem){ .banner-grid{ grid-template-columns:repeat(3, minmax(0, 1fr)); gap:.9rem; } }
+  .banner-opt{
+    -webkit-appearance:none; appearance:none; font:inherit; color:inherit; text-align:left;
+    position:relative; padding:0; border:none; background:none; cursor:pointer;
+    display:flex; flex-direction:column; gap:.35rem; min-width:0; -webkit-tap-highlight-color:transparent;
+  }
+  .banner-opt-art{
+    position:relative; display:block; width:100%; aspect-ratio:16 / 6; border-radius:12px; overflow:hidden;
+    background:#10131A; border:1px solid rgba(255,255,255,.1);
+    transition:box-shadow .3s ease, transform .2s ease;
+  }
+  .banner-opt.is-none .banner-opt-art{
+    background:
+      radial-gradient(90% 150% at 12% 0%, color-mix(in srgb, var(--theme-c1) 46%, transparent), transparent 62%),
+      radial-gradient(80% 140% at 88% 8%, color-mix(in srgb, var(--theme-c3) 50%, transparent), transparent 64%),
+      linear-gradient(160deg, #1B2130, #10131A);
+  }
+  .banner-opt.selected .banner-opt-art{
+    box-shadow:0 0 0 2px #fff, 0 0 18px rgba(255,255,255,.28);
+  }
+  .banner-opt:active .banner-opt-art{ transform:scale(.98); }
+  .banner-opt.locked .banner-opt-art > .bnr{ filter:grayscale(.85) brightness(.45); }
+  .banner-opt-lock{
+    position:absolute; right:.45rem; top:.45rem; width:1.5rem; height:1.5rem; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(8,10,14,.8); z-index:2;
+  }
+  .banner-opt-lock svg{ width:.8rem; height:.8rem; }
+  .banner-opt-name{ font-size:.8rem; font-weight:800; letter-spacing:.02em; }
+  .banner-opt-need{ font-size:.7rem; color:var(--soft); line-height:1.3; }
+  .banner-opt.locked .banner-opt-name{ color:var(--soft); }
+
+  /* The unlock card on the results screen shows the banner itself. */
+  .rs-spot-banner{ position:relative; width:min(16rem, 70vw); aspect-ratio:16 / 6; border-radius:14px; overflow:hidden;
+    box-shadow:0 10px 40px rgba(0,0,0,.5); }
+
   .profile-hero, .profile-level{
     border-radius:18px; padding:1rem 1.05rem; margin-bottom:.9rem;
     background:rgba(255,255,255,.055); border:1px solid rgba(255,255,255,.1);
@@ -14062,6 +14302,7 @@
     filter:drop-shadow(0 0 20px color-mix(in srgb, var(--spot-color) 55%, transparent));
   }
   .rs-spot.is-up .rs-spot-art{ animation:rs-artpop .8s cubic-bezier(.2,1.5,.4,1) .85s both; }
+  .rs-spot-art.is-banner{ width:auto; height:auto; filter:none; }
   @keyframes rs-artpop{ 0%{ opacity:0; transform:scale(.2) rotate(-12deg); } 100%{ opacity:1; transform:none; } }
   .rs-spot-art svg{ width:100%; height:100%; display:block; }
   .rs-spot-art .rs-themedot{ width:4.6rem; height:4.6rem; box-shadow:0 0 0 3px color-mix(in srgb, var(--spot-color) 45%, transparent); }
@@ -14784,27 +15025,51 @@
   .ff-burst .ff-shock{ animation:ff-shock 1.1s cubic-bezier(.1,.7,.3,1) both; }
   .ff-burst .ff-shock.is-late{ animation-delay:.22s; border-color:color-mix(in srgb, var(--fc0) 70%, #fff); }
   @keyframes ff-shock{ 0%{ opacity:1; transform:scale(.2); } 100%{ opacity:0; transform:scale(4.2); } }
+  /* ---- WHAT COMES OUT OF THE DARK (rebuilt in build 220) ----
+     "Void looks goofy in the cutscene." It was a 190px avatar inside a
+     hard coloured ring - a coin, or a sticker, dropped on the middle of
+     a scene that had just imploded a planet. Now it is BIG, it RISES
+     rather than popping, the ring is a soft corona of its own flares
+     turning behind it rather than an outline round it, its shoulders
+     dissolve into the dark instead of ending on a flat edge, and the
+     flares that made it keep circling it once it is up. */
   .ff-void{
-    position:absolute; left:50%; top:50%; width:190px; height:190px; margin:-95px 0 0 -95px;
-    opacity:0; transform:scale(.25);
-    transition:opacity .8s ease, transform 1.3s cubic-bezier(.2,1.35,.3,1);
+    position:absolute; left:50%; top:50%; width:min(64vw, 300px); aspect-ratio:1;
+    transform:translate(-50%, -38%) scale(.55); opacity:0;
+    transition:opacity 1.4s ease, transform 2.4s cubic-bezier(.16,1,.3,1);
   }
-  .ff-emerge .ff-void{ opacity:1; transform:none; }
+  .ff-emerge .ff-void{ opacity:1; transform:translate(-50%, -50%); }
   .ff-rim{
-    position:absolute; inset:-14%; border-radius:50%;
-    background:conic-gradient(from 0deg, var(--fc0), var(--fc1), var(--fc2), var(--fc0));
-    -webkit-mask:radial-gradient(circle, transparent 54%, #000 56%, #000 62%, transparent 70%);
-    mask:radial-gradient(circle, transparent 54%, #000 56%, #000 62%, transparent 70%);
-    opacity:.9;
+    position:absolute; inset:-18%; border-radius:50%;
+    background:conic-gradient(from 0deg, var(--fc0), var(--fc1), var(--fc2), var(--fc3, var(--fc0)), var(--fc4, var(--fc1)), var(--fc0));
+    -webkit-mask:radial-gradient(circle, transparent 26%, #000 44%, rgba(0,0,0,.5) 58%, transparent 72%);
+            mask:radial-gradient(circle, transparent 26%, #000 44%, rgba(0,0,0,.5) 58%, transparent 72%);
+    filter:blur(14px); opacity:.75;
   }
-  .ff-emerge .ff-rim{ animation:ff-rim 6s linear infinite; }
+  .ff-emerge .ff-rim{ animation:ff-rim 9s linear infinite; }
   @keyframes ff-rim{ to{ transform:rotate(360deg); } }
   .ff-void::after{
-    content:""; position:absolute; inset:-30%; border-radius:50%; z-index:-1;
-    background:radial-gradient(circle, color-mix(in srgb, var(--fc1) 30%, transparent) 0%, transparent 62%);
+    content:""; position:absolute; inset:-40%; border-radius:50%; z-index:-1;
+    background:radial-gradient(circle, rgba(0,0,0,.9) 0%, rgba(0,0,0,.55) 30%, transparent 60%);
   }
-  .ff-fig{ position:absolute; inset:8%; }
+  /* The mask goes on the DRAWING, the glow on its box: masking the box
+     cut the glow off in a straight line along its top. */
+  .ff-fig{
+    position:absolute; inset:6%;
+    filter:drop-shadow(0 0 18px color-mix(in srgb, var(--flare-color) 45%, transparent));
+  }
+  .ff-fig svg{
+    -webkit-mask-image:linear-gradient(180deg, #000 62%, transparent 96%);
+            mask-image:linear-gradient(180deg, #000 62%, transparent 96%);
+  }
+  .ff-emerge .ff-fig{ animation:ff-breathe 4s ease-in-out 2.4s infinite; }
+  @keyframes ff-breathe{ 0%,100%{ transform:translateY(0) scale(1); } 50%{ transform:translateY(-4px) scale(1.015); } }
   .ff-fig svg{ width:100%; height:100%; display:block; }
+  /* The flares, circling what they made. */
+  .ff-orbiters{ position:absolute; inset:-8%; opacity:0; transition:opacity 1.2s ease 1.4s; }
+  .ff-emerge .ff-orbiters{ opacity:1; animation:ff-rim 7s linear infinite; }
+  .ff-orbiter{ position:absolute; left:50%; top:50%; width:26px; height:26px; margin:-13px 0 0 -13px; }
+  .ff-orbiter svg{ width:100%; height:100%; display:block; overflow:visible; }
   .ff-words{ min-height:6rem; text-align:center; opacity:0; transform:translateY(10px); transition:opacity .35s ease, transform .35s ease; padding:0 1.2rem; }
   .ff-words.is-in{ opacity:1; transform:none; }
   .ff-kicker{ margin:0; font-size:.74rem; font-weight:800; letter-spacing:.22em; color:var(--flare-color); }
@@ -27717,6 +27982,19 @@ const AVATAR_CHARACTERS = [
   { id: "masked",     kind: "masked",     feat: "hardcore10" },
   { id: "zeus",       kind: "zeus",       feat: "weektop" },
   { id: "voidwalker", kind: "voidwalker", feat: "flares" },
+  /* BUILD 220: three more challenges and Void's two flares. Easiest to
+     hardest, like the four above:
+       Fox         - beat 10 units on Easy in Game mode.
+       Viking      - beat 10 units on Average.
+       Champion    - first place in a Virtual Room five times. The one
+                     you win off other people.
+       Umbra       - the fourth flare, Void's first.
+       Singularity - the fifth, and the last thing in the hunt. */
+  { id: "fox",         kind: "fox",         feat: "easy10" },
+  { id: "viking",      kind: "viking",      feat: "average10" },
+  { id: "champion",    kind: "champion",    feat: "vrwins5" },
+  { id: "umbra",       kind: "umbra",       feat: "flare4" },
+  { id: "singularity", kind: "singularity", feat: "flare5" },
   /* REORDERED BY HOW HARD EACH ONE SHOULD BE, asked for in that order:
      "the astronaut needs to be the hardest one to get, the police men
      the second hardest, the robot the easiest, and the clown the 3rd
@@ -27739,7 +28017,8 @@ const AVATAR_DISPLAY_NAME = {
   ninja: "Ninja", ghost: "Ghost", queen: "Queen", wizard: "Wizard",
   grizzly: "Bear", alien: "Alien", samurai: "Samurai", dragon: "Dragon",
   officer: "Officer", clown: "Clown", robot: "Robot", astronaut: "Astronaut",
-  detective: "Detective", zeus: "Zeus", masked: "The Masked One", voidwalker: "Void"
+  detective: "Detective", zeus: "Zeus", masked: "The Masked One", voidwalker: "Void",
+  fox: "Fox", viking: "Viking", champion: "Champion", umbra: "Umbra", singularity: "Singularity"
 };
 /* The glow a SELECTED character gives off - "give the character you have
    selected a nice glow, a glow that kinda matches the color of the
@@ -27756,7 +28035,8 @@ const AVATAR_GLOW = {
      street-light, the cold light in Zeus's cracks, the mask's own
      lacquer, and for Void the middle of its three flare colours - the
      body gives off no light of its own, so the glow is the flares. */
-  detective: "#D9A441", zeus: "#7FD4F5", masked: "#C6413F", voidwalker: "#F97316"
+  detective: "#D9A441", zeus: "#7FD4F5", masked: "#C6413F", voidwalker: "#F97316",
+  fox: "#F59A3C", viking: "#8FB3D9", champion: "#FF4D6D", umbra: "#8B5CF6", singularity: "#9BE8FF"
 };
 function avatarGlowColor(id){ return AVATAR_GLOW[id] || "var(--accent)"; }
 /* Same shape as isLockedAccent/accentLockMessage, deliberately: a
@@ -27802,9 +28082,33 @@ const CHARACTER_FEATS = {
      document from another device, most obviously - holds the character
      just the same. */
   flares:   { label: "Find all three Secret Flares",
-              done: () => mysteryColorsFoundCount() >= 3,
-              have: () => mysteryColorsFoundCount(), need: 3 }
+              done: () => voidFlaresAllFound(),
+              have: () => VOID_FLARES.filter(k => (store.mysteryColorsFound || {})[k]).length, need: 3 },
+  /* Build 220. The Game ones count the same `store.unitGameBeat` the
+     Masked One does, so everything beaten before this shipped already
+     counts. The Virtual Room one counts `store.vrWins`, which a one-off
+     scan of the finished rooms still in Firestore seeds for anybody who
+     won before it was tracked (see seedVroomHistory). */
+  easy10:    { label: "Beat 10 units on Easy in Game mode",
+               done: () => gameUnitsBeatenOn("easy") >= 10,
+               have: () => gameUnitsBeatenOn("easy"), need: 10 },
+  average10: { label: "Beat 10 units on Average in Game mode",
+               done: () => gameUnitsBeatenOn("average") >= 10,
+               have: () => gameUnitsBeatenOn("average"), need: 10 },
+  vrwins5:   { label: "Place first in a Virtual Room 5 times",
+               done: () => (store.vrWins || 0) >= 5,
+               have: () => (store.vrWins || 0), need: 5 },
+  flare4:    { label: "Find Umbra, the first of Void's flares",
+               done: () => !!(store.mysteryColorsFound || {}).violet,
+               have: () => ((store.mysteryColorsFound || {}).violet ? 1 : 0), need: 1 },
+  flare5:    { label: "Find Event Horizon, the last flare",
+               done: () => !!(store.mysteryColorsFound || {}).white,
+               have: () => ((store.mysteryColorsFound || {}).white ? 1 : 0), need: 1 }
 };
+function gameUnitsBeatenOn(speed){
+  const b = store.unitGameBeat || {};
+  return Object.keys(b).filter(u => b[u] && b[u][speed]).length;
+}
 
 function featAchieved(key){
   const f = CHARACTER_FEATS[key];
@@ -29018,6 +29322,201 @@ function drawAvatarCharSVG(charId){
     return svg;
   }
 
+  /* ---- FIVE MORE, BUILD 220 ----
+     Three challenge characters and the two Void flares hand over. Same
+     recipe as the rest of the set: a face that fills the circle, one or
+     two big props that say who it is at 34px, and shoulders. */
+
+  /* THE FOX - ten units beaten on Easy. The friendliest of the new
+     five, because it is the first one anybody will get: a face made of
+     two big shapes (the orange mask and the white cheeks) and two tall
+     ears, which is all a fox needs to be a fox at any size. */
+  if(def.kind === "fox"){
+    const fur = headGrad("#FFB25E", "#F07A2A", "#B84E14");
+    const cream = headGrad("#FFFFFF", "#F4EDE4", "#D8CFC2");
+    svg.appendChild(mk("path", { d: "M6.2 40 Q7 31.6 14.2 29.4 L25.8 29.4 Q33 31.6 33.8 40 Z", fill: fur }));
+    svg.appendChild(mk("path", { d: "M14.6 29.6 Q20 37.4 25.4 29.6 Q23 34.6 20 35.6 Q17 34.6 14.6 29.6 Z", fill: cream }));
+    /* The ears: tall, with a dark tip and a lighter inside. */
+    [[-1, 11.2], [1, 28.8]].forEach(([f, x]) => {
+      svg.appendChild(mk("path", { d: "M" + (x - f * 4.2) + " 15.4 L" + (x + f * .6) + " 3.4 L" + (x + f * 3.6) + " 14.2 Z", fill: fur }));
+      svg.appendChild(mk("path", { d: "M" + (x - f * 2.6) + " 14.4 L" + (x + f * .4) + " 6.6 L" + (x + f * 2.4) + " 13.8 Z", fill: "#FFD9BE" }));
+      svg.appendChild(mk("path", { d: "M" + (x - f * .6) + " 6.8 L" + (x + f * .6) + " 3.4 L" + (x + f * 1.8) + " 7.4 Z", fill: "#3A2418" }));
+    });
+    /* The head: wide at the cheeks, down to a point at the snout. */
+    svg.appendChild(mk("path", { d: "M20 9.6 Q29.8 9.8 30.6 19.4 Q31.2 23.4 27.4 25.4 Q23.4 27.8 20 31.4 Q16.6 27.8 12.6 25.4 Q8.8 23.4 9.4 19.4 Q10.2 9.8 20 9.6 Z", fill: fur }));
+    /* The white cheeks and muzzle, one shape. */
+    svg.appendChild(mk("path", { d: "M9.6 20.6 Q13.6 21.2 16.6 23.4 Q18.4 21.8 20 21.8 Q21.6 21.8 23.4 23.4 Q26.4 21.2 30.4 20.6 Q30 24 26.8 25.8 Q23.2 27.8 20 31.4 Q16.8 27.8 13.2 25.8 Q10 24 9.6 20.6 Z", fill: cream }));
+    svg.appendChild(mk("path", { d: "M18.3 26.2 Q20 25.2 21.7 26.2 Q21.2 27.8 20 28.2 Q18.8 27.8 18.3 26.2 Z", fill: "#241712" }));
+    svg.appendChild(mk("path", { d: "M20 28.2 L20 29.4", stroke: "#241712", "stroke-width": ".5", "stroke-linecap": "round" }));
+    [[15.4, -1], [24.6, 1]].forEach(([cx, f]) => {
+      svg.appendChild(mk("path", { d: "M" + (cx - 2) + " 18.6 Q" + cx + " 16.6 " + (cx + 2) + " 18.6 Q" + cx + " 20.4 " + (cx - 2) + " 18.6 Z", fill: "#2A1A12" }));
+      svg.appendChild(catchlight(cx - .6 * f - .2, 18, .5));
+    });
+    return svg;
+  }
+
+  /* THE VIKING - ten units beaten on Average. The horned helmet and the
+     braided beard are the whole reading; the rest is kept plain so they
+     stay the loudest things on him. */
+  if(def.kind === "viking"){
+    const skin = headGrad("#F6D2B0", "#E3AE86", "#B98160");
+    const steel = headGrad("#D7E1EA", "#98A6B4", "#5C6875");
+    const beard = headGrad("#F2A65A", "#D0702C", "#8E4418");
+    const horn = headGrad("#FFF6E4", "#E9D8B6", "#B6A07A");
+    svg.appendChild(mk("path", { d: "M5.8 40 Q6.6 31.2 14 29 L26 29 Q33.4 31.2 34.2 40 Z", fill: "#5A3D2A" }));
+    /* The fur on the shoulders, as a scalloped collar. */
+    [8.6, 12.4, 16.6, 20, 23.4, 27.6, 31.4].forEach((x, i) =>
+      svg.appendChild(mk("circle", { cx: x, cy: 30.4 + (i % 2 ? .6 : 0), r: 2.6, fill: i % 2 ? "#8A6A4E" : "#A0805F" })));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 20.4, rx: 8.8, ry: 9.6, fill: skin }));
+    /* The horns first, so the helmet sits over their roots. */
+    [-1, 1].forEach(f => {
+      svg.appendChild(mk("path", { d: "M" + (20 + f * 7.2) + " 12.4 Q" + (20 + f * 13.4) + " 11.8 " + (20 + f * 14.2) + " 3.8 Q" + (20 + f * 10.8) + " 9 " + (20 + f * 6.6) + " 9.4 Z",
+                                   fill: horn, stroke: "#8C7552", "stroke-width": ".3" }));
+      svg.appendChild(mk("path", { d: "M" + (20 + f * 12.4) + " 8.6 Q" + (20 + f * 11) + " 9.9 " + (20 + f * 9.2) + " 10.4", fill: "none", stroke: "#B39C74", "stroke-width": ".45" }));
+    });
+    svg.appendChild(mk("path", { d: "M10.6 15.4 Q10.6 5.6 20 5.6 Q29.4 5.6 29.4 15.4 Z", fill: steel }));
+    svg.appendChild(mk("rect", { x: 10.1, y: 14.4, width: 19.8, height: 2.4, rx: .6, fill: "#6E7B88" }));
+    [12.4, 16.2, 20, 23.8, 27.6].forEach(x => svg.appendChild(mk("circle", { cx: x, cy: 15.6, r: .5, fill: "#D9E2EA" })));
+    svg.appendChild(mk("path", { d: "M20 5.8 L20 14.4", stroke: "#6E7B88", "stroke-width": ".9" }));
+    /* The nose guard. */
+    svg.appendChild(mk("path", { d: "M18.9 16.6 L21.1 16.6 L20.7 22.2 L19.3 22.2 Z", fill: steel }));
+    [16.2, 23.8].forEach(cx => {
+      svg.appendChild(mk("circle", { cx: cx, cy: 19.8, r: 1.35, fill: "#1E2430" }));
+      svg.appendChild(catchlight(cx - .45, 19.35, .42));
+    });
+    /* THE BEARD, BRAIDED: a full mass, and two braids hanging from it
+       with bands, because braids are what separate a Viking from any
+       other bearded man in a helmet. */
+    svg.appendChild(mk("path", { d: "M11.4 20 Q11.6 27.4 15.6 29.8 Q18 31 20 30.6 Q22 31 24.4 29.8 Q28.4 27.4 28.6 20 Q26.6 24.4 23.8 24.6 Q22 23.6 20 23.8 Q18 23.6 16.2 24.6 Q13.4 24.4 11.4 20 Z", fill: beard }));
+    svg.appendChild(mk("path", { d: "M16.6 24.2 Q20 22.4 23.4 24.2 Q20 25.6 16.6 24.2 Z", fill: "#B45E22" }));
+    [17, 23].forEach(x => {
+      svg.appendChild(mk("path", { d: "M" + (x - 1.3) + " 29.6 L" + (x + 1.3) + " 29.6 L" + (x + .9) + " 36.4 Q" + x + " 37.4 " + (x - .9) + " 36.4 Z", fill: beard }));
+      [31.4, 34].forEach(y => svg.appendChild(mk("rect", { x: x - 1.35, y: y, width: 2.7, height: .9, rx: .3, fill: "#C9D3DC" })));
+    });
+    return svg;
+  }
+
+  /* THE CHAMPION - first place in a Virtual Room five times. Asked for
+     as "a cool character", and it is the only one of the new five you
+     earn by beating other people, so it is a knight: a closed great helm
+     with a crown worked into it and a crimson plume, the look of
+     whoever has just won the tournament. The visor slit carries a faint
+     light, so there is somebody in there. */
+  if(def.kind === "champion"){
+    const plate = headGrad("#F4F7FA", "#B7C2CE", "#6D7A88");
+    const plateDark = headGrad("#C9D2DC", "#8995A3", "#4E5967");
+    const crimson = headGrad("#FF6B7F", "#D72B45", "#8C1227");
+    const gold = headGrad("#FFE8A0", "#E9B949", "#9C7420");
+    /* The plume, behind everything. */
+    svg.appendChild(mk("path", { d: "M20 6.6 Q24.8 1.4 31.6 3.4 Q27.4 4.6 29.4 8.6 Q25.6 6.8 23.4 10.4 Q22.2 7.8 20 8.6 Z", fill: crimson }));
+    svg.appendChild(mk("path", { d: "M21.4 6.4 Q25.8 3.2 30.2 4", fill: "none", stroke: "#FF9AAA", "stroke-width": ".45", "stroke-linecap": "round", opacity: ".8" }));
+    /* Pauldrons and a crimson tabard with a gold edge. */
+    svg.appendChild(mk("path", { d: "M5.8 40 Q6.4 31 13.6 28.8 L26.4 28.8 Q33.6 31 34.2 40 Z", fill: plateDark }));
+    svg.appendChild(mk("path", { d: "M14.6 29 L25.4 29 L24.2 40 L15.8 40 Z", fill: crimson }));
+    svg.appendChild(mk("path", { d: "M14.6 29 L15.8 40 M25.4 29 L24.2 40", stroke: "#E9B949", "stroke-width": ".6" }));
+    svg.appendChild(mk("path", { d: "M20 31.6 L21.4 33.8 L20 36 L18.6 33.8 Z", fill: gold }));
+    [[9.6, 31.8], [30.4, 31.8]].forEach(([x, y]) =>
+      svg.appendChild(mk("path", { d: "M" + (x - 3.6) + " " + (y + 2.2) + " Q" + x + " " + (y - 3.4) + " " + (x + 3.6) + " " + (y + 2.2) + " Z", fill: plate })));
+    /* THE HELM: a tall rounded barrel, flat-faced. */
+    svg.appendChild(mk("path", { d: "M11 13.2 Q11 6.4 20 6.2 Q29 6.4 29 13.2 L29 25.6 Q29 29.2 25.4 29.6 L14.6 29.6 Q11 29.2 11 25.6 Z", fill: plate }));
+    /* The ridge down the middle, and the shadow on the side away from
+       the light, which is what makes it a solid thing. */
+    svg.appendChild(mk("path", { d: "M20 6.4 L20 29.4", stroke: "#8995A3", "stroke-width": ".7" }));
+    svg.appendChild(mk("path", { d: "M25.6 7.4 Q29 9.4 29 13.2 L29 25.6 Q29 29.2 25.4 29.6 L24.6 29.6 Q27.2 27 27.2 22 L27.2 13 Q27.2 9.6 25.6 7.4 Z", fill: "#5E6A78", opacity: ".45" }));
+    /* The crown band. */
+    svg.appendChild(mk("path", { d: "M11 12.8 L13.4 9.2 L15.6 12 L18 8.4 L20 11.4 L22 8.4 L24.4 12 L26.6 9.2 L29 12.8 L29 14.6 L11 14.6 Z", fill: gold, stroke: "#8C6A18", "stroke-width": ".3", "stroke-linejoin": "round" }));
+    svg.appendChild(mk("circle", { cx: 20, cy: 12.6, r: .8, fill: "#D72B45" }));
+    /* The visor slit: a dark band with the light in it. */
+    svg.appendChild(mk("rect", { x: 12.2, y: 17.2, width: 15.6, height: 2.6, rx: 1.3, fill: "#12161E" }));
+    [16.2, 23.8].forEach(cx => {
+      svg.appendChild(mk("ellipse", { cx: cx, cy: 18.5, rx: 1.6, ry: .6, fill: "#FFD27A", opacity: ".9" }));
+    });
+    /* Breathing holes, in two short columns. */
+    [[23.6, 22.4], [23.6, 24.4], [25.4, 23.4], [16.4, 22.4], [16.4, 24.4], [14.6, 23.4]].forEach(([x, y]) =>
+      svg.appendChild(mk("circle", { cx: x, cy: y, r: .45, fill: "#2C3440" })));
+    /* One sharp highlight down the lit side. */
+    svg.appendChild(mk("path", { d: "M13.4 15.4 L13.4 26", stroke: "#FFFFFF", "stroke-width": ".7", "stroke-linecap": "round", opacity: ".6" }));
+    return svg;
+  }
+
+  /* UMBRA - the fourth flare. Void's kin, and deliberately not Void
+     again: Void is a dark head with the three flares in its face; Umbra
+     is a hood with nothing in it but two ultraviolet eyes, a violet rim
+     of light all down one side, and a crescent burning on the brow -
+     the full shadow of an eclipse, which is what its name means. */
+  if(def.kind === "umbra"){
+    const cloak = headGrad("#3A2A5E", "#1E1636", "#0C0916");
+    svg.appendChild(mk("path", { d: "M5.4 40 Q6 30.4 13.8 28.2 L26.2 28.2 Q34 30.4 34.6 40 Z", fill: cloak }));
+    /* The hood: a tall point, wide at the shoulders. */
+    svg.appendChild(mk("path", { d: "M20 3.8 Q27.4 8.6 29.6 18.6 Q30.8 25.6 27.6 31.2 L12.4 31.2 Q9.2 25.6 10.4 18.6 Q12.6 8.6 20 3.8 Z", fill: cloak }));
+    /* The dark inside, where a face should be. */
+    svg.appendChild(mk("path", { d: "M20 10.8 Q26.4 13.4 26.6 21.4 Q26.6 26.6 20 28.6 Q13.4 26.6 13.4 21.4 Q13.6 13.4 20 10.8 Z", fill: "#050409" }));
+    /* The rim light, one side only. */
+    svg.appendChild(mk("path", { d: "M20.4 4.4 Q27.2 9 29.2 18.6 Q30.2 24.8 27.4 30.6", fill: "none", stroke: "#A78BFA", "stroke-width": ".7", "stroke-linecap": "round", opacity: ".85" }));
+    svg.appendChild(mk("path", { d: "M20.2 11.4 Q26 14 26.2 21.2", fill: "none", stroke: "#7C3AED", "stroke-width": ".5", opacity: ".7" }));
+    /* The eyes: two narrow slants, a soft bloom behind each. */
+    /* Angled down towards the nose - the scowl, the same rule the Dragon
+       learned: that way round is menace, the other way is sadness. */
+    [[-1, 16.8], [1, 23.2]].forEach(([f, cx]) => {
+      const inner = cx - f * 2.3, outer = cx + f * 2.3;
+      svg.appendChild(mk("ellipse", { cx: cx, cy: 20.3, rx: 2.9, ry: 1.3, fill: "#8B5CF6", opacity: ".5" }));
+      svg.appendChild(mk("path", { d: "M" + outer + " 19.5 Q" + cx + " 19.6 " + inner + " 21 Q" + cx + " 21.1 " + outer + " 19.5 Z",
+                                   fill: "#EDE4FF" }));
+    });
+    /* The crescent on the brow, cut the way the Silver emblem cuts
+       its moon: a disc minus a disc, one path. */
+    svg.appendChild(mk("path", { d: "M21.3 13.9 A2.1 2.1 0 1 1 21.3 16.9 A1.6 1.6 0 1 0 21.3 13.9 Z", fill: "#C4B5FD" }));
+    /* Wisps coming off the hem, so the cloak dissolves rather than
+       ends. */
+    [[9, 36.2, 1.2], [13.4, 38.2, .9], [28.2, 36.8, 1.1], [31.6, 34.2, .8], [24.4, 38.6, .7]].forEach(([x, y, r]) =>
+      svg.appendChild(mk("circle", { cx: x, cy: y, r: r, fill: "#8B5CF6", opacity: ".55" })));
+    return svg;
+  }
+
+  /* SINGULARITY - the fifth flare, and asked for as "the coolest
+     character". Its head IS a black hole: a perfectly black disc, a thin
+     white-hot photon ring round it, and a tilted accretion disc that
+     passes BEHIND the head across the top and IN FRONT across the
+     bottom - two passes, the way the Bronze emblem draws its ring, so it
+     reads as a disc going round something rather than a line across it.
+     Nothing on it is a face, and that is the point: at the end of the
+     hunt, the thing you find is not somebody. */
+  if(def.kind === "singularity"){
+    const cloak = headGrad("#1C2A44", "#0F1726", "#06090F");
+    const diskId = "disk-" + uid;
+    const dg = mk("linearGradient", { id: diskId, x1: "0", y1: "0", x2: "1", y2: "0" });
+    [["0%", "#FF8A3D"], ["30%", "#FFE2A8"], ["50%", "#FFFFFF"], ["70%", "#BDF2FF"], ["100%", "#3FC5F0"]].forEach(([o, c]) =>
+      dg.appendChild(mk("stop", { offset: o, "stop-color": c })));
+    defs.appendChild(dg);
+    svg.appendChild(mk("path", { d: "M5.6 40 Q6.4 31 14 28.8 L26 28.8 Q33.6 31 34.4 40 Z", fill: cloak }));
+    /* Stars caught in the cloak. */
+    [[10, 35.4], [14.6, 32.6], [27.2, 33.4], [30.4, 37.2], [22.4, 37.8], [17.2, 38.4]].forEach(([x, y], i) =>
+      svg.appendChild(mk("circle", { cx: x, cy: y, r: i % 2 ? .35 : .5, fill: "#DDF6FF", opacity: ".85" })));
+    svg.appendChild(mk("path", { d: "M14 28.8 Q20 31.8 26 28.8", fill: "none", stroke: "#7FDBFF", "stroke-width": ".5", opacity: ".7" }));
+    const cx = 20, cy = 18.4, tilt = -14;
+    /* The far half of the disc, behind the head. */
+    const far = mk("path", { d: "M" + (cx - 15) + " " + cy + " A15 3.6 0 0 1 " + (cx + 15) + " " + cy,
+                             fill: "none", stroke: "url(#" + diskId + ")", "stroke-width": "2.1", "stroke-linecap": "round", opacity: ".75" });
+    far.setAttribute("transform", "rotate(" + tilt + " " + cx + " " + cy + ")");
+    svg.appendChild(far);
+    /* The lensed glow above and below the head - light from the far
+       side of the disc bent over the top of the hole. */
+    svg.appendChild(mk("circle", { cx: cx, cy: cy, r: 10.2, fill: "none", stroke: "#FFE7C2", "stroke-width": ".9", opacity: ".35" }));
+    /* The hole, and its photon ring. */
+    svg.appendChild(mk("circle", { cx: cx, cy: cy, r: 8.6, fill: "#000000" }));
+    svg.appendChild(mk("circle", { cx: cx, cy: cy, r: 8.9, fill: "none", stroke: "#FFFFFF", "stroke-width": ".55", opacity: ".95" }));
+    /* The near half, in front. */
+    const near = mk("path", { d: "M" + (cx - 15) + " " + cy + " A15 3.6 0 0 0 " + (cx + 15) + " " + cy,
+                              fill: "none", stroke: "url(#" + diskId + ")", "stroke-width": "2.4", "stroke-linecap": "round" });
+    near.setAttribute("transform", "rotate(" + tilt + " " + cx + " " + cy + ")");
+    svg.appendChild(near);
+    /* A hot spot riding the disc, and a glint on the ring. */
+    svg.appendChild(mk("circle", { cx: 8.6, cy: 22.6, r: .9, fill: "#FFFFFF" }));
+    svg.appendChild(mk("circle", { cx: 14.4, cy: 11.4, r: .5, fill: "#FFFFFF", opacity: ".9" }));
+    return svg;
+  }
+
+
   return null;
 }
 
@@ -29156,10 +29655,13 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
                           perfectTests: 0, currentStreak: 0, longestStreak: 0, points: 0 },
               unitPerfects: {}, unitBlackStar: {}, flagged: {},
               unitGameBeat: {}, gameFarthest: {}, unitBestPct: {}, unitBestMs: {}, flareLevels: {},
-              mysteryColorsFound: { red: false, orange: false, yellow: false }, testsUntilMystery: null,
+              mysteryColorsFound: { red: false, orange: false, yellow: false, violet: false, white: false },
+              testsUntilMystery: null, flareNextTestAt: 0,
               savedCodePrompts: 0, savedCodeSaved: false,
               dailyCorrectStreak: 0, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false,
               weeklyWins: 0, weekRankSeen: null, pendingVoidCutscene: false,
+              vrMatches: 0, vrWins: 0, vrCounted: [], vrRetroDone: false,
+              fullTestsSeeded: false, practiceExamPerfect: false, banner: "",
               publicId: null, leaderboardKeyMigrated: false,
               friendCode: null, friendsOut: [], friendsIn: [], friendsDeclined: [],
               lobbyInvitesOut: {},
@@ -29216,7 +29718,7 @@ function applyLoadedData(got){
                             drillPlays: got.lifetime.drillPlays || 0, examPlays: got.lifetime.examPlays || 0,
                             gamePlays: got.lifetime.gamePlays || 0, perfectTests: got.lifetime.perfectTests || 0,
                             currentStreak: got.lifetime.currentStreak || 0, longestStreak: got.lifetime.longestStreak || 0,
-                            points: got.lifetime.points || 0 }
+                            points: got.lifetime.points || 0, fullTests: got.lifetime.fullTests || 0 }
                         : { answered: 0, correct: 0, drillPlays: 0, examPlays: 0, gamePlays: 0,
                             perfectTests: 0, currentStreak: 0, longestStreak: 0, points: 0 };
   store.unitPerfects  = got.unitPerfects  && typeof got.unitPerfects  === "object" ? got.unitPerfects  : {};
@@ -29226,17 +29728,25 @@ function applyLoadedData(got){
      the new three-color collection \u2014 anyone who'd already unlocked it
      under the old system keeps full access rather than being asked to
      re-earn it under the new rules. */
+  /* violet and white are the fourth and fifth flares (build 220), and
+     default to not found - nobody has seen either yet. */
   if(got.mysteryColorsFound && typeof got.mysteryColorsFound === "object"){
     store.mysteryColorsFound = {
       red: got.mysteryColorsFound.red === true,
       orange: got.mysteryColorsFound.orange === true,
-      yellow: got.mysteryColorsFound.yellow === true
+      yellow: got.mysteryColorsFound.yellow === true,
+      violet: got.mysteryColorsFound.violet === true,
+      white: got.mysteryColorsFound.white === true
     };
   } else if(got.mysteryFound === true){
-    store.mysteryColorsFound = { red: true, orange: true, yellow: true };
+    store.mysteryColorsFound = { red: true, orange: true, yellow: true, violet: false, white: false };
   } else {
-    store.mysteryColorsFound = { red: false, orange: false, yellow: false };
+    store.mysteryColorsFound = { red: false, orange: false, yellow: false, violet: false, white: false };
   }
+  /* The catch-up gate for flares owed to somebody already past their
+     level: the lifetime test count before which the next one may not
+     appear. 0 = no hold. */
+  store.flareNextTestAt = typeof got.flareNextTestAt === "number" ? got.flareNextTestAt : 0;
   store.testsUntilMystery = typeof got.testsUntilMystery === "number" ? got.testsUntilMystery : null;
   /* NOT defaulted to a fresh id here. applyLoadedData runs on data that
      arrived from the cloud, and minting one at that moment would give a
@@ -29306,6 +29816,17 @@ function applyLoadedData(got){
   store.savedCodeSaved = got.savedCodeSaved === true;
   store.dailyCorrectStreak = typeof got.dailyCorrectStreak === "number" ? got.dailyCorrectStreak : 0;
   store.weeklyWins = typeof got.weeklyWins === "number" ? got.weeklyWins : 0;
+  /* Build 220. The counters default to zero and the two "done" flags to
+     false, so every existing account is seeded once from what it has
+     already done (seedBannerCounters, seedVroomHistory) rather than
+     starting from nothing. */
+  store.vrMatches = typeof got.vrMatches === "number" ? got.vrMatches : 0;
+  store.vrWins = typeof got.vrWins === "number" ? got.vrWins : 0;
+  store.vrCounted = Array.isArray(got.vrCounted) ? got.vrCounted.filter(x => typeof x === "string") : [];
+  store.vrRetroDone = got.vrRetroDone === true;
+  store.fullTestsSeeded = got.fullTestsSeeded === true;
+  store.practiceExamPerfect = got.practiceExamPerfect === true;
+  store.banner = typeof got.banner === "string" ? got.banner : "";
   store.pendingVoidCutscene = got.pendingVoidCutscene === true;
   store.weekRankSeen = (got.weekRankSeen && typeof got.weekRankSeen === "object"
     && typeof got.weekRankSeen.week === "string" && typeof got.weekRankSeen.rank === "number")
@@ -29569,6 +30090,9 @@ function firebaseBecameReady(){
   if(appearanceBtnEl && appearanceBtnEl.getAttribute("aria-current") === "page") showAppearance();
   const pending = fbReadyCallbacks.splice(0);
   pending.forEach(cb => { try { cb(); } catch(e){} });
+  /* Once per account: count the Virtual Room matches and wins from
+     before they were tracked. Late, so it never competes with boot. */
+  setTimeout(() => { try{ seedVroomHistory(); }catch(e){} }, 6000);
 }
 function tryFirebaseNow(){
   if(fbDb){ firebaseBecameReady(); return true; }
@@ -30414,6 +30938,8 @@ function wipeLocalProgressAndSettings(){
   store.unitHundoStreakUnits = [];
   store.practiceTestPassed = false;
   store.weeklyWins = 0;
+  store.vrMatches = 0; store.vrWins = 0; store.vrCounted = []; store.vrRetroDone = true;
+  store.fullTestsSeeded = true; store.practiceExamPerfect = false; store.banner = "";
   store.weekRankSeen = null;
   store.pendingVoidCutscene = false;
   /* A reset is a new person as far as the board is concerned, so the
@@ -32629,6 +33155,160 @@ function hundosOf(st){
    number or the hunt turns up at a count nobody can see. It was written
    out longhand on the Stats tab and is a function now for that reason
    alone. */
+/* ---- BANNERS (build 220) ----
+   A wallpaper behind you: across the top of your Profile card and
+   behind your row in a Virtual Room lobby. Asked for as "random, cool
+   wallpapers, not necessarily space themed", earned by doing things -
+   100, 250 and 500 full tests, a perfect Practice Exam ("super sick"),
+   50 Virtual Room matches, "and stuff like that".
+
+   Every one is drawn in CSS - layered gradients, a mask or two, and at
+   most three child layers - so it is crisp at any size, costs nothing
+   to ship, and animates on the compositor where it animates at all.
+   `buildBannerArt(id)` is the one builder: the Profile cover, the
+   lobby rows, the picker in Customize and the unlock card all call it,
+   so a banner looks the same wherever it turns up.
+
+   COUNTED FROM WHAT IS ALREADY THERE. "Ensure there's new characters
+   and banners and stuff track for what people have already done ... not
+   at 0." Every `have()` below reads something that existed before this
+   build, or a counter seeded from it once: see seedBannerCounters() and
+   seedVroomHistory(). */
+const BANNERS = [
+  { id: "tests100", name: "Hundred Club", layers: 2,
+    label: "Finish 100 full tests", have: () => fullTestsOf(), need: 100 },
+  { id: "tests250", name: "Aurora", layers: 3,
+    label: "Finish 250 full tests", have: () => fullTestsOf(), need: 250 },
+  { id: "tests500", name: "Molten Gold", layers: 2,
+    label: "Finish 500 full tests", have: () => fullTestsOf(), need: 500 },
+  { id: "exam100", name: "Flawless", layers: 3,
+    label: "Score 100% on the Practice Exam", have: () => (store.practiceExamPerfect ? 1 : 0), need: 1 },
+  { id: "vr50", name: "Arena", layers: 3,
+    label: "Play 50 Virtual Room matches", have: () => (store.vrMatches || 0), need: 50 },
+  { id: "hundos100", name: "Checkmate", layers: 2,
+    label: "Earn 100 hundos", have: () => hundosOf(store), need: 100 },
+  { id: "badges16", name: "Full Case", layers: 2,
+    label: "Earn all 16 badges", have: () => badgeCountOf(store), need: 16 },
+  { id: "level80", name: "Stratosphere", layers: 3,
+    label: "Reach level " + LEVEL_CAP, have: () => levelOf(store), need: LEVEL_CAP }
+];
+function bannerDef(id){ return BANNERS.find(b => b.id === id) || null; }
+function bannerEarned(id){
+  const b = bannerDef(id);
+  return !!(b && b.have() >= b.need);
+}
+function earnedBannerSet(){ return new Set(BANNERS.filter(b => bannerEarned(b.id)).map(b => b.id)); }
+function buildBannerArt(id){
+  const el = document.createElement("div");
+  el.className = "bnr bnr-" + id;
+  el.setAttribute("aria-hidden", "true");
+  const def = bannerDef(id);
+  for(let i = 1; i <= (def ? def.layers : 0); i++){
+    const l = document.createElement("i");
+    l.className = "b" + i;
+    el.appendChild(l);
+  }
+  return el;
+}
+/* The banner somebody is wearing, if it is one they still hold - a
+   stored id from another build, or one no longer earned, shows nothing
+   rather than something they cannot have. */
+function wornBanner(){
+  const id = store.banner || "";
+  return id && bannerEarned(id) ? id : "";
+}
+
+/* FULL TESTS, NOT RUNS. "Complete 100/250/500 tests (full tests only, not
+   shortened)." A run counts when every unit in it was taken in full; a
+   lost game does not. Before this build nothing told a full run from a
+   shortened one, so the counter is SEEDED once from the questions
+   answered - total answered over the average unit's length, never more
+   than the runs actually played - which gives full credit for the work
+   done without counting a five-question run as a test. */
+function fullTestsOf(){ return (store.lifetime && store.lifetime.fullTests) || 0; }
+function seedBannerCounters(){
+  if(store.fullTestsSeeded) return;
+  const units = topicsIn(QUESTIONS).length || 1;
+  const avg = QUESTIONS.length / units;
+  const answered = (store.lifetime && store.lifetime.answered) || 0;
+  const est = Math.min(testsCompletedOf(store), Math.floor(answered / avg));
+  store.lifetime.fullTests = Math.max(fullTestsOf(), est);
+  /* A perfect Practice Exam before this was tracked: the history keeps
+     the last twenty runs, and a 100% "All units" exam among them is one. */
+  if(!store.practiceExamPerfect){
+    const hit = (store.testHistory || []).some(e => e && e.mode === "exam" && e.pct === 100 &&
+      /^All units/.test(e.label || ""));
+    const st = (store.testStats || {})["ALL|exam"];
+    if(hit || (st && st.lastPct === 100)) store.practiceExamPerfect = true;
+  }
+  store.fullTestsSeeded = true;
+  saveStore();
+}
+
+/* ---- THE VIRTUAL ROOM, COUNTED ----
+   Matches played (the Arena banner) and first places (the Champion).
+   One record per room code, so a results screen rebuilt or re-entered
+   never counts the same match twice. */
+function vroomTotalScore(p){
+  return p.totalScore != null ? p.totalScore
+    : Math.round((p.score || 0) * 100) - Math.round((p.elapsedMs || 0) / 1000);
+}
+function recordVroomOutcome(code, sortedKeys, myKey){
+  if(!code || !myKey || sortedKeys.indexOf(myKey) < 0) return;
+  store.vrCounted = Array.isArray(store.vrCounted) ? store.vrCounted : [];
+  if(store.vrCounted.indexOf(code) >= 0) return;
+  store.vrCounted.push(code);
+  if(store.vrCounted.length > 300) store.vrCounted = store.vrCounted.slice(-300);
+  store.vrMatches = (store.vrMatches || 0) + 1;
+  /* A win needs somebody to have beaten. */
+  if(sortedKeys.length >= 2 && sortedKeys[0] === myKey){
+    const before = store.vrWins || 0;
+    store.vrWins = before + 1;
+    if(before < 5 && store.vrWins >= 5){
+      /* Announced on the next results screen with everything else - the
+         room's own screen has no unlock sequence - and said now in one
+         line so it is not a surprise later. */
+      store.pendingCharUnlocks = (store.pendingCharUnlocks || []).filter(x => x !== "champion").concat(["champion"]);
+      try{ showToast("Five wins - the Champion is yours."); }catch(e){}
+    }
+  }
+  saveStore();
+}
+/* ONCE PER ACCOUNT: every finished room still in Firestore that this
+   account raced in. Rooms are never deleted, so this is the whole
+   history back to the first match - which is what lets the Champion and
+   the Arena banner count wins and matches from before either existed.
+   Individual races only for first places; a team room counts as a
+   match. */
+function seedVroomHistory(){
+  if(store.vrRetroDone || !fbDb || !store.onboardingComplete) return;
+  const me = publicIdOf();
+  fbDb.collection("vrooms").get().then(snap => {
+    let matches = 0, wins = 0;
+    const counted = new Set(Array.isArray(store.vrCounted) ? store.vrCounted : []);
+    snap.forEach(doc => {
+      if(counted.has(doc.id)) return;
+      const d = doc.data() || {};
+      const parts = d.participants || {};
+      const keys = Object.keys(parts);
+      if(keys.indexOf(me) < 0 || keys.length < 1) return;
+      const done = d.status === "finished" || keys.every(k => parts[k] && parts[k].finished);
+      if(!done) return;
+      matches++;
+      counted.add(doc.id);
+      if(!d.tug && keys.length >= 2){
+        const order = keys.slice().sort((a, b) => vroomTotalScore(parts[b]) - vroomTotalScore(parts[a]));
+        if(order[0] === me) wins++;
+      }
+    });
+    store.vrCounted = Array.from(counted).slice(-300);
+    store.vrMatches = (store.vrMatches || 0) + matches;
+    store.vrWins = (store.vrWins || 0) + wins;
+    store.vrRetroDone = true;
+    saveStore();
+  }).catch(() => {});
+}
+
 function testsCompletedOf(st){
   const l = (st && st.lifetime) || {};
   return (l.drillPlays || 0) + (l.examPlays || 0) + (l.gamePlays || 0);
@@ -35813,6 +36493,7 @@ let runMode = "drill";
 let runTrackable = false;  // true only for a fresh, full run started from setup
 let isMissedRetake = false;  // true only for a run started via "Retake missed questions"
 let mysteryFoundThisSession = false;  // set true if the hidden button was clicked this run
+let flareCompletedVoidThisSession = false;  // the find this run was the third, the one that makes Void
 let mysteryAppearsAtPos = -1;  // which question index (if any) shows it this run; decided once per run, not per-question
 let mysteryColorThisRun = null;  // which of the 3 colors this run's appearance would complete
 /* Occurrence is per-test, not per-question \u2014 the old 12%-per-question
@@ -35851,9 +36532,22 @@ let mysteryColorThisRun = null;  // which of the 3 colors this run's appearance 
    orbit dots on Home have always been the permanent mark - they were
    left as decoration when this was scrapped and light up in their real
    colour again now, with nothing new added to that scene. */
-const MYSTERY_ORDER = ["red", "orange", "yellow"];
-const MYSTERY_COLOR = { red: "#EF4444", orange: "#F97316", yellow: "#FACC15" };
-const MYSTERY_NAME  = { red: "Red", orange: "Orange", yellow: "Yellow" };
+/* FIVE FLARES SINCE BUILD 220. The first three are the hunt that ends in
+   Void; the fourth and fifth are VOID'S OWN - "a 4th flare by level 60
+   plus a new character, a 5th flare plus the coolest character", both
+   Void-themed, with cooler names than a colour. So they are named for
+   what lives past the dark: Umbra (the full shadow, ultraviolet) and
+   Event Horizon (the white-hot edge of a black hole). Each hands over a
+   character: Umbra and Singularity.
+   VOID_FLARES is the first three and is what Void, the Home orbit's
+   first three dots and the third-flare scene are all built from; the
+   last two only exist for somebody who already holds Void. */
+const MYSTERY_ORDER = ["red", "orange", "yellow", "violet", "white"];
+const VOID_FLARES = ["red", "orange", "yellow"];
+const MYSTERY_COLOR = { red: "#EF4444", orange: "#F97316", yellow: "#FACC15", violet: "#8B5CF6", white: "#E6F7FF" };
+const MYSTERY_NAME  = { red: "Red", orange: "Orange", yellow: "Yellow", violet: "Umbra", white: "Event Horizon" };
+/* The character each Void flare hands over. */
+const FLARE_CHARACTER = { violet: "umbra", white: "singularity" };
 /* HOW HIDDEN, and it is measured in TESTS COMPLETED rather than in runs
    between appearances. Asked for by number: "a person should see the
    first flare when they get to 80-90 tests taken. The second one can be
@@ -35870,6 +36564,8 @@ const MYSTERY_NAME  = { red: "Red", orange: "Orange", yellow: "Yellow" };
    The count is `testsCompletedOf()`, the same number the Stats tab
    prints. A gate on a number nobody can see is a gate nobody can be
    told about. */
+/* No longer read: every flare is gated on a level since build 220 (see
+   FLARE_WINDOWS). Kept so the history above still has its number. */
 const MYSTERY_AT = [80, 200, 350];
 /* A one-question Daily has nowhere to hide anything, and a three
    question re-run of missed questions is over before you look up. */
@@ -35888,34 +36584,62 @@ const MYSTERY_MIN_RUN = 5;
    does. */
 let mysteryLeftFrac = .5;
 
-/* THE SECOND AND THIRD ARE LEVELS NOW, AND PERSONAL. Asked for after two
-   people had already found the first: "let's make the second one so
-   people would find it on level 45 46 or 47, random per user. The 3rd
-   one is random per user as well and will be level 65 66 or 67." The
-   level is drawn once per account and kept on `store`, so it does not
-   move between launches. The first is unchanged (80 tests).
-   A flare not tapped keeps coming back every test until it is, and the
-   next one is only looked for once this one is found - so somebody who
-   reached 45 without the first gets the second on the test after they
-   finally tap the first. That falls out of looking only for the next
-   colour still needed. */
+/* EVERY FLARE IS A LEVEL NOW, AND PERSONAL (build 220). Asked for as a
+   schedule: "Flare 1 at level 35, flare 2 at 40-41, flare 3 random
+   before 46", then "a 4th flare by level 60" and a 5th after it. The
+   first is the same level for everybody; the rest are drawn once per
+   account from their window and kept on `store`, so a flare does not
+   move between launches.
+   The drawn levels from the last schedule (45-47 and 65-67) are outside
+   every new window, so they are simply redrawn - `inWindow` is what
+   decides, not whether a number is present.
+
+   CATCH-UP. Somebody already past a flare's level when this ships is
+   owed it, and giving them all five on five tests running would turn a
+   secret into a queue. So the first comes on their next test, and each
+   one found while the NEXT one is already owed holds it back three or
+   four tests - about ten tests for three, which is what was asked for.
+   Nobody who has one is given it again: the hunt only ever looks for
+   the next colour still missing. */
+const FLARE_WINDOWS = {
+  red: [35, 35], orange: [40, 41], yellow: [42, 45], violet: [55, 59], white: [68, 72]
+};
 function mysteryLevelGate(color){
   store.flareLevels = store.flareLevels || {};
-  if(typeof store.flareLevels[color] !== "number"){
-    store.flareLevels[color] = (color === "orange" ? 45 : 65) + Math.floor(Math.random() * 3);
+  const w = FLARE_WINDOWS[color];
+  const cur = store.flareLevels[color];
+  const inWindow = typeof cur === "number" && cur >= w[0] && cur <= w[1];
+  if(!inWindow){
+    store.flareLevels[color] = w[0] + Math.floor(Math.random() * (w[1] - w[0] + 1));
     saveStore();
   }
   return store.flareLevels[color];
 }
 function mysteryGateMet(color){
-  if(color === "red") return testsCompletedOf(store) >= MYSTERY_AT[0];
-  return levelOf(store) >= mysteryLevelGate(color);
+  if(levelOf(store) < mysteryLevelGate(color)) return false;
+  /* The Void flares only exist for somebody holding Void. */
+  if(VOID_FLARES.indexOf(color) < 0 && !voidFlaresAllFound()) return false;
+  return testsCompletedOf(store) >= (store.flareNextTestAt || 0);
 }
 function nextNeededMysteryColor(){
   const found = store.mysteryColorsFound || {};
   return MYSTERY_ORDER.find(k => !found[k]) || null;
 }
-function mysteryAllFound(){ return mysteryColorsFoundCount() >= MYSTERY_ORDER.length; }
+/* Called when a flare is found: if the one after it is already owed,
+   hold it back a few tests rather than handing it over on the next. */
+function armFlareCatchup(){
+  const next = nextNeededMysteryColor();
+  if(!next) return;
+  if(levelOf(store) >= mysteryLevelGate(next)){
+    store.flareNextTestAt = testsCompletedOf(store) + 3 + Math.floor(Math.random() * 2);
+  }
+}
+function voidFlaresAllFound(){
+  const f = store.mysteryColorsFound || {};
+  return VOID_FLARES.every(k => f[k]);
+}
+/* "All found" in the sense the Void hunt has always meant: the three. */
+function mysteryAllFound(){ return voidFlaresAllFound(); }
 
 function maybeStartMysteryForRun(){
   mysteryAppearsAtPos = -1;
@@ -36030,9 +36754,15 @@ function foundMysteryFlare(btn){
   if(mysteryFoundThisSession || !mysteryColorThisRun) return;
   const color = mysteryColorThisRun;
   mysteryFoundThisSession = true;
-  store.mysteryColorsFound = store.mysteryColorsFound || { red: false, orange: false, yellow: false };
+  store.mysteryColorsFound = store.mysteryColorsFound || { red: false, orange: false, yellow: false, violet: false, white: false };
+  const hadVoid = voidFlaresAllFound();
   store.mysteryColorsFound[color] = true;
-  const all = mysteryAllFound();
+  /* `all` is the moment the Void hunt completes - the third flare - and
+     nothing after it; the fourth and fifth announce their own
+     characters. */
+  const all = !hadVoid && voidFlaresAllFound();
+  flareCompletedVoidThisSession = all;
+  armFlareCatchup();
   /* The character is a real unlock, so it is recorded on `store` the
      same moment the third flare is - isLockedCharacter reads the
      flares themselves rather than a separate flag, so there is only
@@ -37077,8 +37807,11 @@ function buildCosmicHero(useTierIcons, forceAccent){
      a real mystery-star tracker (red, orange, yellow, matching the
      actual hidden stars) that lights up in its real color once found,
      instead of a separate new element cluttering the scene. */
-  const mysteryColors = { red: "#EF4444", orange: "#F97316", yellow: "#FACC15" };
-  const mysteryOrder = ["red", "orange", "yellow"];
+  const mysteryColors = MYSTERY_COLOR;
+  /* The fourth and fifth dots are Void's flares and only exist for
+     somebody holding Void - before that there is nothing to hint at. */
+  const holdsVoid = typeof store !== "undefined" && voidFlaresAllFound();
+  const mysteryOrder = holdsVoid ? MYSTERY_ORDER.slice() : VOID_FLARES.slice();
   /* A slow, continuous rotation of the whole group (not each dot
      independently) keeps their relative spacing intact while making
      them genuinely orbit the ring, the way a real satellite would \u2014
@@ -37087,9 +37820,10 @@ function buildCosmicHero(useTierIcons, forceAccent){
      in the app. */
   const dotsGroup = document.createElementNS(svgNS, "g");
   dotsGroup.setAttribute("class", "cosmic-orbit-dots-group");
-  [[180, 150 - 152], [180 + 152, 150], [180 - 108, 150 + 20]].forEach(([cx, cy], i) => {
+  [[180, 150 - 152], [180 + 152, 150], [180 - 108, 150 + 20], [180 + 104, 150 - 111], [180 - 139, 150 + 62]]
+    .slice(0, mysteryOrder.length).forEach(([cx, cy], i) => {
     const dot = document.createElementNS(svgNS, "circle");
-    dot.setAttribute("cx", cx); dot.setAttribute("cy", cy); dot.setAttribute("r", 4.5);
+    dot.setAttribute("cx", cx); dot.setAttribute("cy", cy); dot.setAttribute("r", i >= 3 ? 5.2 : 4.5);
     const colorKey = mysteryOrder[i];
     const found = !!(typeof store !== "undefined" && store.mysteryColorsFound && store.mysteryColorsFound[colorKey]);
     dot.setAttribute("class", "cosmic-orbit-dot" + (found ? " cosmic-orbit-dot-found" : ""));
@@ -37108,8 +37842,12 @@ function buildCosmicHero(useTierIcons, forceAccent){
       dot.setAttribute("class", dot.getAttribute("class") + " cosmic-badge-tappable");
       dot.setAttribute("role", "button");
       dot.setAttribute("tabindex", "0");
-      const sayDot = () => showContextualInfo(dot,
-        "Just a star. The seven marks around the planet are the flares \u2014 each one lights when you reach its rank.");
+      /* The dots are the Secret Flares again (build 213 brought the
+         hunt back) - "Just a star" was left over from when they were
+         scrapped. A found one names itself; a missing one only hints. */
+      const sayDot = () => showContextualInfo(dot, found
+        ? (i >= 3 ? MYSTERY_NAME[colorKey] + " \u2014 a Void flare, found." : "A secret flare \u2014 found.")
+        : (i >= 3 ? "There appears to be a missing Void flare." : "There appears to be a missing flare."));
       dot.addEventListener("click", sayDot);
       dot.addEventListener("keydown", (e) => {
         if(e.key === "Enter" || e.key === " "){ e.preventDefault(); sayDot(); }
@@ -38842,7 +39580,7 @@ function playVoidCutscene(onDone){
      so the thing that falls in is recognisably the thing that was
      lighting up. */
   const SPOTS = [[0, -104], [104, 2], [-74, 16]];
-  const orbs = MYSTERY_ORDER.map((key, i) => {
+  const orbs = VOID_FLARES.map((key, i) => {
     const orb = document.createElement("div");
     orb.className = "void-orb";
     orb.style.setProperty("--ox", SPOTS[i][0] + "px");
@@ -43833,6 +44571,7 @@ function beginRun(indexes, label, practiceMinutes, missedRetake){
   qTimeMs = {}; qClockQi = null; runLiveStreak = 0;
   pendingXpFly = 0;
   mysteryFoundThisSession = false;
+  flareCompletedVoidThisSession = false;
   maybeStartMysteryForRun();
   pos = 0;
   attempts = {};
@@ -44969,7 +45708,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-28-219";
+const APP_BUILD = "2026-09-28-220";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -46164,12 +46903,24 @@ function playBadgeCaseScene(units, done){
    out of the dark ringed in the three colours. It says nothing about a
    character being unlocked; the Void banner right after it does. Every
    moving part is a transform or an opacity. */
-function playFinalFlareScene(color, done){
+function playFinalFlareScene(color, done, opts){
+  opts = opts || {};
+  /* THE SAME SCENE, GROWN, FOR THE FOURTH AND FIFTH (opts.voidFlare).
+     Void's flares circle Void rather than the planet: the three it was
+     born from are already lit, the new one streaks in, they all fall
+     into the dark together, and the character this flare hands over
+     comes up out of it. The set on screen is every flare found so far
+     plus this one, which is what makes the fifth scene visibly bigger
+     than the fourth. */
+  const set = opts.voidFlare
+    ? MYSTERY_ORDER.filter(k => k === color || (store.mysteryColorsFound || {})[k])
+    : VOID_FLARES.slice();
+  const emergeChar = opts.voidFlare ? FLARE_CHARACTER[color] : "voidwalker";
   clearCelebrationsForScene();
   const overlay = document.createElement("div");
-  overlay.className = "ff-scene";
+  overlay.className = "ff-scene" + (opts.voidFlare ? " is-voidflare" : "") + (color === "white" ? " is-last" : "");
   overlay.style.setProperty("--flare-color", MYSTERY_COLOR[color]);
-  MYSTERY_ORDER.forEach((k, i) => overlay.style.setProperty("--fc" + i, MYSTERY_COLOR[k]));
+  set.forEach((k, i) => overlay.style.setProperty("--fc" + i, MYSTERY_COLOR[k]));
   const stars = document.createElement("div");
   stars.className = "ff-stars";
   for(let i = 0; i < 60; i++){
@@ -46193,8 +46944,13 @@ function playFinalFlareScene(color, done){
   planet.append(sphere, dark);
   const orbit = document.createElement("div");
   orbit.className = "ff-orbit";
-  const SPOTS = [[0, -118], [104, 58], [-104, 58]];
-  const spots = MYSTERY_ORDER.map((k, i) => {
+  /* Spread evenly round the centre, starting straight up - three is the
+     triangle the scene was drawn for, four and five the same idea. */
+  const SPOTS = set.map((k, i) => {
+    const a = -Math.PI / 2 + i * 2 * Math.PI / set.length;
+    return [Math.round(Math.cos(a) * 118), Math.round(Math.sin(a) * 118)];
+  });
+  const spots = set.map((k, i) => {
     const sp = document.createElement("div");
     sp.className = "ff-spot" + (k === color ? "" : " is-lit");
     sp.style.setProperty("--ox", SPOTS[i][0] + "px");
@@ -46205,7 +46961,7 @@ function playFinalFlareScene(color, done){
     orbit.appendChild(sp);
     return sp;
   });
-  const at = MYSTERY_ORDER.indexOf(color);
+  const at = set.indexOf(color);
   const comet = document.createElement("div");
   comet.className = "ff-comet";
   comet.style.setProperty("--ox", SPOTS[at][0] + "px");
@@ -46218,8 +46974,17 @@ function playFinalFlareScene(color, done){
   voidWrap.className = "ff-void";
   const rim = document.createElement("div"); rim.className = "ff-rim";
   const fig = document.createElement("div"); fig.className = "ff-fig";
-  try{ fig.appendChild(buildAvatarCharSVGSafe("voidwalker")); }catch(e){}
-  voidWrap.append(rim, fig);
+  try{ fig.appendChild(buildAvatarCharSVGSafe(emergeChar)); }catch(e){}
+  const orbiters = document.createElement("div"); orbiters.className = "ff-orbiters";
+  set.forEach((k, i) => {
+    const o = document.createElement("span"); o.className = "ff-orbiter";
+    const a = i * 2 * Math.PI / set.length - Math.PI / 2;
+    o.style.transform = "translate(" + Math.round(Math.cos(a) * 46) + "cqw, " + Math.round(Math.sin(a) * 46) + "cqw)";
+    o.appendChild(buildFlareOrb(MYSTERY_COLOR[k], "fo" + i));
+    orbiters.appendChild(o);
+  });
+  orbiters.style.containerType = "inline-size";
+  voidWrap.append(rim, orbiters, fig);
   field.append(planet, orbit, comet, flash, shock1, shock2, voidWrap);
   overlay.appendChild(field);
 
@@ -46256,7 +47021,12 @@ function playFinalFlareScene(color, done){
   later(1750, () => {
     spots[at].classList.add("is-lit", "is-new");
     comet.classList.add("ff-comet-done");
-    say("SECRET FLARE FOUND", MYSTERY_NAME[color] + " \u2014 3 of 3", "Every flare in the sky is lit.");
+    if(opts.voidFlare){
+      say("VOID FLARE FOUND", MYSTERY_NAME[color],
+          color === "white" ? "The last light in the dark." : "Void remembers this colour.");
+    } else {
+      say("SECRET FLARE FOUND", MYSTERY_NAME[color] + " \u2014 3 of 3", "Every flare in the sky is lit.");
+    }
   });
   later(3300, () => { overlay.classList.add("ff-whirl"); words.classList.remove("is-in"); });
   later(4700, () => overlay.classList.add("ff-converge"));
@@ -46264,9 +47034,24 @@ function playFinalFlareScene(color, done){
   later(5950, () => overlay.classList.add("ff-burst"));
   later(6300, () => {
     overlay.classList.add("ff-emerge");
-    say("ALL THREE SECRET FLARES", "Something came out of the dark", "");
+    if(opts.voidFlare){
+      say(color === "white" ? "BOTH VOID FLARES" : "A VOID FLARE",
+          (AVATAR_DISPLAY_NAME[emergeChar] || emergeChar) + " came out of the dark", "");
+    } else {
+      say("ALL THREE SECRET FLARES", "Something came out of the dark", "");
+    }
   });
-  later(10200, finish);
+  /* "The void cutscene needs to say there's more to reveal." The last
+     line, a beat after Void has fully arrived - and only on the third
+     flare: after the fifth there is nothing left to hint at. */
+  if(!opts.voidFlare){
+    later(8300, () => say("ALL THREE SECRET FLARES", "Something came out of the dark",
+                          "Two more flares are still out there."));
+  } else if(color === "violet"){
+    later(8300, () => say("A VOID FLARE", (AVATAR_DISPLAY_NAME[emergeChar] || emergeChar) + " came out of the dark",
+                          "One more is still out there."));
+  }
+  later(opts.voidFlare && color === "white" ? 11200 : 10800, finish);
   return { skip: finish, stop(){ finished = true; timers.forEach(clearTimeout); document.body.classList.remove("bc-covering"); overlay.remove(); } };
 }
 
@@ -46285,6 +47070,10 @@ function clearCelebrationsForScene(){
    "shows in unlocks, goes to main menu to do it, comes back to result
    screen and continues off". */
 function playFlareFoundScene(color, all, done){
+  if(FLARE_CHARACTER[color]){
+    if(theme.muteBanners || resultsMotionOff()){ done(); return null; }
+    return playFinalFlareScene(color, done, { voidFlare: true });
+  }
   if(all){
     store.pendingVoidCutscene = false;
     saveStore();
@@ -46308,7 +47097,7 @@ function playFlareFoundScene(color, all, done){
   const SPOTS = [[0, -118], [118, 4], [-86, 22]];
   const found = store.mysteryColorsFound || {};
   let target = null;
-  MYSTERY_ORDER.forEach((k, i) => {
+  VOID_FLARES.forEach((k, i) => {
     const spot = document.createElement("div");
     spot.className = "fl-spot" + (found[k] && k !== color ? " is-lit" : "");
     spot.style.setProperty("--ox", SPOTS[i][0] + "px");
@@ -46321,8 +47110,8 @@ function playFlareFoundScene(color, all, done){
   const comet = document.createElement("div");
   comet.className = "fl-comet";
   comet.appendChild(buildFlareOrb(MYSTERY_COLOR[color], "fc"));
-  comet.style.setProperty("--ox", SPOTS[MYSTERY_ORDER.indexOf(color)][0] + "px");
-  comet.style.setProperty("--oy", SPOTS[MYSTERY_ORDER.indexOf(color)][1] + "px");
+  comet.style.setProperty("--ox", SPOTS[VOID_FLARES.indexOf(color)][0] + "px");
+  comet.style.setProperty("--oy", SPOTS[VOID_FLARES.indexOf(color)][1] + "px");
   field.appendChild(comet);
   overlay.appendChild(field);
   const kicker = document.createElement("p");
@@ -46330,7 +47119,7 @@ function playFlareFoundScene(color, all, done){
   const nm = document.createElement("p");
   nm.className = "fl-name"; nm.textContent = MYSTERY_NAME[color];
   const sub = document.createElement("p");
-  sub.className = "fl-sub"; sub.textContent = mysteryColorsFoundCount() + " of " + MYSTERY_ORDER.length + " in the sky";
+  sub.className = "fl-sub"; sub.textContent = VOID_FLARES.filter(k => found[k]).length + " of " + VOID_FLARES.length + " in the sky";
   overlay.append(kicker, nm, sub);
   document.body.appendChild(overlay);
   const timers = [];
@@ -46832,6 +47621,15 @@ function rsUnlockItems(run){
       sub: "Yours to pick in Customize", need: characterChallenge(id), color: avatarGlowColor(id),
       art: () => buildAvatarCharSVGSafe(id) });
   });
+  /* Banners, right after the characters: both are things you wear. */
+  (run.banners || []).forEach(id => {
+    const def = bannerDef(id);
+    if(!def) return;
+    items.push({ kind: "banner", banner: id, kicker: "Banner unlocked", name: def.name,
+      sub: "Wear it in Customize", need: def.label, color: "#E9EEF6",
+      art: () => { const w = document.createElement("div"); w.className = "rs-spot-banner";
+                   w.appendChild(buildBannerArt(id)); return w; } });
+  });
   run.badges.forEach(u => {
     const retro = run.retroBadges.indexOf(u) >= 0;
     items.push({ kind: "badge", unit: u, kicker: "Badge earned", name: u + " badge",
@@ -46867,9 +47665,23 @@ function rsUnlockItems(run){
   /* A secret flare found this run is the LAST unlock, always. Its scene
      plays FIRST and its banner after - "the cutscenes need to come
      before the pop up". */
-  if(run.flare){
+  if(run.flare && FLARE_CHARACTER[run.flare]){
+    /* A VOID FLARE - the fourth or fifth. Its own words, and the
+       character it hands over straight after it. */
+    const isLast = run.flare === "white";
+    const ch = FLARE_CHARACTER[run.flare];
+    items.push({ kind: "flare", flare: run.flare, kicker: "Void flare found",
+      name: MYSTERY_NAME[run.flare],
+      sub: isLast ? "The last light in the dark" : "One more is still out there",
+      color: MYSTERY_COLOR[run.flare], art: () => buildFlareOrb(MYSTERY_COLOR[run.flare], "ul") });
+    items.push({ kind: "character", character: ch, feat: true, kicker: "Challenge complete",
+      name: AVATAR_DISPLAY_NAME[ch] || ch,
+      sub: "Yours to pick in Customize", need: characterChallenge(ch), color: avatarGlowColor(ch),
+      art: () => buildAvatarCharSVGSafe(ch) });
+  } else if(run.flare){
+    const nth = VOID_FLARES.filter(k => (store.mysteryColorsFound || {})[k]).length;
     items.push({ kind: "flare", flare: run.flare, kicker: "Secret flare found",
-      name: MYSTERY_NAME[run.flare] + " — " + run.flareCount + " of " + MYSTERY_ORDER.length,
+      name: MYSTERY_NAME[run.flare] + " — " + nth + " of " + VOID_FLARES.length,
       sub: run.flareAll ? "The last one in the sky" : "Keep an eye out for the next one",
       color: MYSTERY_COLOR[run.flare], art: () => buildFlareOrb(MYSTERY_COLOR[run.flare], "ul") });
     if(run.flareAll){
@@ -46916,7 +47728,7 @@ function playUnlockSpotlight(item, n, of, release){
   const card = document.createElement("div");
   card.className = "rs-spot-card";
   const art = document.createElement("div");
-  art.className = "rs-spot-art";
+  art.className = "rs-spot-art" + (item.kind === "banner" ? " is-banner" : "");
   if(item.kind === "rank"){
     /* THE COOLEST BANNER OF THEM ALL - "maybe make the pop up kinda do a
        thing where the old rank icon morphs or something into the new
@@ -47652,6 +48464,12 @@ function summarize(){
     ? (store.retroBadgePending || []).filter(u => unitBadgeEarned(u)) : [];
   retroHideBadges = retroBadges.length ? new Set(retroBadges) : null;
   const lockedBefore = lockedCharacterSet();
+  /* Banners are diffed the same way characters are: whatever this run
+     tipped over is announced, whatever was already held is not. Seeded
+     first, so the first run after this build does not announce a
+     banner somebody earned months ago. */
+  try{ seedBannerCounters(); }catch(e){}
+  const bannersBefore = earnedBannerSet();
 
   drawMeter();
   hintEl.hidden = true;
@@ -47793,6 +48611,12 @@ function summarize(){
     if(runMode === "drill") store.lifetime.drillPlays += 1;
     else if(runMode === "exam") store.lifetime.examPlays += 1;
     else if(runMode === "game") store.lifetime.gamePlays += 1;
+    /* A FULL test: every unit in it taken whole, and a game only if it
+       was won - "full tests only, not shortened". */
+    if(runLabel !== "Daily question" && (cfg.units || []).length &&
+       wholeUnitsInRun === cfg.units.length && !gameLostAt){
+      store.lifetime.fullTests = (store.lifetime.fullTests || 0) + 1;
+    }
     /* One per PERFECTED UNIT, not one per perfect run - see hundosEarned
        above. The daily question is excluded there, and it has to be: it
        is a single question, so answering it correctly is a 100% run and
@@ -47836,6 +48660,10 @@ function summarize(){
        would say. */
     if(practiceTestMinutes != null && pct >= PASS_MARK && !store.practiceTestPassed){
       store.practiceTestPassed = true;
+      saveStore();
+    }
+    if(practiceTestMinutes != null && pct === 100 && !timedOut && !store.practiceExamPerfect){
+      store.practiceExamPerfect = true;
       saveStore();
     }
     badgesEarnedThisRun = badgesEarnedList().filter(u => !badgesBefore.has(u));
@@ -47932,9 +48760,13 @@ function summarize(){
   retroHideBadges = null;   /* belt and braces - cleared above already */
   /* Void is left out here for the reason announceCharacterUnlocks()
      gives: it has a cutscene of its own on the main menu. */
+  /* Void, Umbra and Singularity each arrive inside their own flare
+     scene, so they are not announced a second time here. */
   const newCharacters = AVATAR_CHARACTERS
-    .filter(c => lockedBefore.has(c.id) && !isLockedCharacter(c.id) && c.id !== "voidwalker")
+    .filter(c => lockedBefore.has(c.id) && !isLockedCharacter(c.id) &&
+                 ["voidwalker", "umbra", "singularity"].indexOf(c.id) < 0)
     .map(c => c.id);
+  const newBanners = BANNERS.filter(b => !bannersBefore.has(b.id) && bannerEarned(b.id)).map(b => b.id);
   /* And any earned off the results screen since the last one. Not on the
      daily question, which announces its own. */
   if(runLabel !== "Daily question" && (store.pendingCharUnlocks || []).length){
@@ -48138,7 +48970,7 @@ function summarize(){
     order: order.slice(), attempts: Object.assign({}, attempts), picked: Object.assign({}, picked),
     firstPick: Object.assign({}, firstPick),
     flare: mysteryFoundThisSession ? mysteryColorThisRun : null,
-    flareAll: mysteryFoundThisSession && mysteryAllFound(), flareCount: mysteryColorsFoundCount(),
+    flareAll: mysteryFoundThisSession && flareCompletedVoidThisSession, flareCount: mysteryColorsFoundCount(),
     timedOutSet: Object.assign({}, timedOutSet),
     mode: runMode, retake: isMissedRetake, practice: practiceTestMinutes != null,
     vroom: !!inVirtualRoom, source: cfg.source, gameSpeed: cfg.gameSpeed,
@@ -48148,7 +48980,7 @@ function summarize(){
     gameLost: gameLostAt, gameFull: gameFullLength, livesLeft: Math.max(0, livesLeft), newFarthest,
     progUnits, perfectsBefore,
     badges: badgesEarnedThisRun.slice(), retroBadges: retroBadges.slice(),
-    colors: newlyUnlockedColors.slice(), characters: newCharacters,
+    colors: newlyUnlockedColors.slice(), characters: newCharacters, banners: newBanners,
     supernova: supernovaJustUnlocked
   };
   lastRunResult = runResult;
@@ -50596,7 +51428,7 @@ function createVirtualRoomLobby(units, timeLimit, game){
     mode: "exam",
     createdAt: Date.now(),
     participants: {
-      [publicIdOf()]: { name: myName, avatarChar: store.avatarChar || "ninja", level: levelOf(store), badges: badgeCountOf(store), hundos: hundosOf(store), xp: (store.lifetime && store.lifetime.points) || 0, tests: Array.isArray(store.testHistory) ? store.testHistory.length : 0, correct: (store.lifetime && store.lifetime.correct) || 0, mystery: mysteryColorsFoundCount(), joinedAt: Date.now(), seen: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false }
+      [publicIdOf()]: { name: myName, avatarChar: store.avatarChar || "ninja", level: levelOf(store), badges: badgeCountOf(store), hundos: hundosOf(store), xp: (store.lifetime && store.lifetime.points) || 0, tests: Array.isArray(store.testHistory) ? store.testHistory.length : 0, correct: (store.lifetime && store.lifetime.correct) || 0, mystery: mysteryColorsFoundCount(), banner: wornBanner(), joinedAt: Date.now(), seen: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false }
     }
   };
   return fbDb.collection("vrooms").doc(code).set(doc).then(() => {
@@ -51765,7 +52597,7 @@ function joinVirtualRoomLobby(code){
          rankings rows do. Written once at join - it cannot change
          while somebody is sitting in a lobby - and read with a
          fallback, so a room created by an older build still renders. */
-      ["participants." + myKey]: { name: store.firstName || "Anonymous", avatarChar: store.avatarChar || "ninja", level: levelOf(store), badges: badgeCountOf(store), hundos: hundosOf(store), xp: (store.lifetime && store.lifetime.points) || 0, tests: Array.isArray(store.testHistory) ? store.testHistory.length : 0, correct: (store.lifetime && store.lifetime.correct) || 0, mystery: mysteryColorsFoundCount(), joinedAt: Date.now(), seen: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false }
+      ["participants." + myKey]: { name: store.firstName || "Anonymous", avatarChar: store.avatarChar || "ninja", level: levelOf(store), badges: badgeCountOf(store), hundos: hundosOf(store), xp: (store.lifetime && store.lifetime.points) || 0, tests: Array.isArray(store.testHistory) ? store.testHistory.length : 0, correct: (store.lifetime && store.lifetime.correct) || 0, mystery: mysteryColorsFoundCount(), banner: wornBanner(), joinedAt: Date.now(), seen: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false }
     }).then(() => {
       vroomCode = code; vroomIsHost = false; vroomUnits = data.units;
       vroomMyKey = myKey;
@@ -52491,6 +53323,13 @@ function showVirtualRoomLobby(){
         entries.forEach(([key, p]) => {
         const row = document.createElement("div");
         row.className = "lb-row vroom-row" + (p.ready ? " is-ready" : "");
+        /* THEIR BANNER, behind their row - "shown in the lobby person
+           box". Read off the room document, so an id this build does not
+           know simply draws nothing. */
+        if(p.banner && bannerDef(p.banner)){
+          row.classList.add("has-banner");
+          row.appendChild(buildBannerArt(p.banner));
+        }
         /* The same avatar-with-a-level-badge the rankings rows carry,
            per explicit request - "a small blue number". buildAvatarChar
            SVGSafe, not the bare builder: that one returns null for an id
@@ -54394,6 +55233,12 @@ function showVirtualRoomResults(){
        every snapshot after it. */
     const alreadyRevealed = revealed;
     if(allIn) revealed = true;
+    /* The match counts once, at the reveal: matches for the Arena
+       banner, first places for the Champion. Keyed by room code inside,
+       so a rebuilt screen does not count it again. */
+    if(allIn && !alreadyRevealed){
+      try{ recordVroomOutcome(vroomCode, entries.map(([k]) => k), vroomMyKey); }catch(e){}
+    }
     if(alreadyRevealed && allIn) return;
 
     list.replaceChildren();
@@ -55211,6 +56056,67 @@ function showCustomize(){
   charGrids.forEach(g => avatarSect.append(g.head, g.grid));
   if(avatarGrid.children.length) avatarSect.appendChild(avatarGrid);
   panel.appendChild(avatarSect);
+
+  /* ---- BANNERS ----
+     Every one shown, earned or not, the way the characters are: a
+     locked one is dimmed with a padlock and says what it takes and how
+     far along you are, so the list is also the list of things to go
+     and do. "Theme" is the default cover, in the app's own colours. */
+  try{ seedBannerCounters(); }catch(e){}
+  const bannerSect = document.createElement("div");
+  bannerSect.className = "sect";
+  const bannerLab = document.createElement("p");
+  bannerLab.className = "slab motion-summary"; bannerLab.textContent = "Banner";
+  bannerSect.appendChild(bannerLab);
+  const bannerNote = document.createElement("p");
+  bannerNote.className = "avatarchar-group-title";
+  bannerNote.textContent = "";
+  const bnNote = document.createElement("span");
+  bnNote.className = "avatarchar-group-note";
+  bnNote.textContent = "Across the top of your profile, and behind your name in a Virtual Room";
+  bannerNote.appendChild(bnNote);
+  bannerSect.appendChild(bannerNote);
+  const bannerGrid = document.createElement("div");
+  bannerGrid.className = "banner-grid";
+  const current = wornBanner();
+  const bannerOpt = (id, name, needText, locked) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "banner-opt" + (id ? "" : " is-none") + (locked ? " locked" : "") +
+      (current === id ? " selected" : "");
+    b.dataset.banner = id;
+    const art = document.createElement("span");
+    art.className = "banner-opt-art";
+    if(id) art.appendChild(buildBannerArt(id));
+    if(locked){
+      const lk = document.createElement("span");
+      lk.className = "banner-opt-lock";
+      lk.appendChild(buildLockIcon());
+      art.appendChild(lk);
+    }
+    const nm = document.createElement("span");
+    nm.className = "banner-opt-name"; nm.textContent = name;
+    const nd = document.createElement("span");
+    nd.className = "banner-opt-need"; nd.textContent = needText;
+    b.append(art, nm, nd);
+    b.addEventListener("click", () => {
+      if(locked){ showToast(needText); return; }
+      store.banner = id;
+      saveStore();
+      bannerGrid.querySelectorAll(".banner-opt").forEach(x => x.classList.toggle("selected", x === b));
+    });
+    bannerGrid.appendChild(b);
+  };
+  bannerOpt("", "Theme", "Your theme's own colours", false);
+  BANNERS.forEach(def => {
+    const have = Math.min(def.have(), def.need);
+    const earned = bannerEarned(def.id);
+    bannerOpt(def.id, def.name,
+      earned ? def.label : def.label + " \u00b7 " + have.toLocaleString() + "/" + def.need.toLocaleString(),
+      !earned);
+  });
+  bannerSect.appendChild(bannerGrid);
+  panel.appendChild(bannerSect);
 
   const accentSect = document.createElement("div");
   accentSect.className = "sect";
@@ -56680,6 +57586,12 @@ function showProfile(defaultTab){
   const cover = document.createElement("div");
   cover.className = "profile-cover";
   cover.setAttribute("aria-hidden", "true");
+  const worn = wornBanner();
+  if(worn){
+    cover.classList.add("has-banner");
+    cover.dataset.banner = worn;
+    cover.appendChild(buildBannerArt(worn));
+  }
   if(rankNow){
     const wm = document.createElement("span");
     wm.className = "profile-cover-mark";

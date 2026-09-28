@@ -5728,3 +5728,48 @@ Gates: check-behaviour section 6 rewritten for the road map and the two
 screens; check-statsbadges' slot-shade window now skips the case frame,
 the tile above's text, and a stale scroll (it measured the earned tile
 last, so the locked one's numbers described a page that had moved).
+
+### Build 220 - five flares, five characters, banners
+
+**Every flare is a level now** (`FLARE_WINDOWS`): red at 35, orange
+40-41, yellow 42-45, then Void's two - **Umbra** (violet, 55-59) and
+**Event Horizon** (white, 68-72) - which only exist for somebody who
+holds Void. Levels are drawn once per account into `store.flareLevels`;
+a stored draw outside its window (the old 45-47 / 65-67) is redrawn.
+**Catch-up**: finding a flare while the next is already owed sets
+`store.flareNextTestAt` three or four tests on, so somebody far past
+the levels gets them over ~ten tests, not five in a row. `VOID_FLARES`
+is the first three: Void, the third-flare scene and the first three
+orbit dots are built from it; `mysteryAllFound()` means those three.
+`flareCompletedVoidThisSession` is what makes a find "the one that made
+Void" - `mysteryAllFound()` is true for every find after it too.
+
+**The flare scene is one function for both hunts**:
+`playFinalFlareScene(color, done, { voidFlare })` lays out every found
+flare round the centre and raises the character the flare hands over.
+The reveal was rebuilt because Void read as a sticker in a ring: big,
+rising, a blurred corona behind it, shoulders masked into the dark (the
+mask is on the SVG, not the box, or it clips the glow flat), and the
+flares circling it.
+
+**Five characters**: Fox (10 units on Easy), Viking (10 on Average),
+Champion (first place in a Virtual Room five times), Umbra and
+Singularity (the Void flares). The Game two read `store.unitGameBeat`,
+so past beats count. **Virtual Room matches and wins are recorded at the
+reveal** (`recordVroomOutcome`, once per room code, a win needs a
+rival) and **seeded once from Firestore** (`seedVroomHistory`: rooms are
+never deleted, so every finished room this account raced in is still
+there).
+
+**Banners** (`BANNERS`, `buildBannerArt`, all CSS): Hundred Club,
+Aurora, Molten Gold (100/250/500 FULL tests), Flawless (100% on the
+Practice Exam), Arena (50 room matches), Checkmate (100 hundos), Full
+Case (16 badges), Stratosphere (level cap). Worn across the Profile
+cover and behind your row in a lobby (`banner` on the participant
+document); picked in Customize; announced on the results like a
+character. **A full test** is a run where every unit was taken whole
+and a game was won; `lifetime.fullTests` was seeded once from questions
+answered over the average unit length, capped at runs played, because
+nothing before this told a full run from a shortened one.
+
+Gate: check-behaviour section 11.
