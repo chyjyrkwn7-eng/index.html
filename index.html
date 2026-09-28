@@ -311,20 +311,21 @@
      default: "These look too much like the default ... ensure none of
      the themes look similar, you should be able to have a theme on and
      tell which one it is." And "Supernova redness to be more red".
-     So each theme owns a family the others do not touch, with light ->
-     rank colour -> deep inside it (the bar and the sphere still read as
-     three steps):
-       default   gold / orange / magenta   (the only sunset)
-       Iron      steel white / steel / steel blue   (the only neutral)
-       Bronze    copper / bronze / verdigris green  (the only green)
-       Gold      cream / gold / deep gold   (the only yellow)
-       Platinum  mint / teal / deep teal
-       Sapphire  ice / blue / deep blue   (no violet - that was Iron's
-                 overlap with it)
-       Amethyst  orchid / purple / pink
-       Supernova coral / red / crimson   (red all the way through)
+     So each theme owns a family the others do not touch. And then:
+     "just ensure that the planet system and background and progress bar
+     ... still has multiple tones like the default has" - so inside its
+     family every triad spans NEIGHBOURING hues, not one hue lighter and
+     darker; the bar, the sphere and the glow each show three colours:
+       default   gold / orange / magenta        (the only sunset)
+       Iron      ice / steel / lilac-slate      (the only muted one)
+       Bronze    copper / bronze / verdigris    (the only green)
+       Gold      lemon / gold / amber           (the only yellow)
+       Platinum  mint / teal / cerulean
+       Sapphire  cyan / blue / indigo
+       Amethyst  lavender / purple / pink
+       Supernova coral / red / crimson-rose     (red all the way through)
      A new theme has to find a family that is not on this list. */
-  [data-accent="rookie"]{ --rank-accent:#6F7884; --rank-accent-ink:#F7F8F9; --theme-c1:#EEF3F8; --theme-c2:#9AA7B6; --theme-c3:#56708F; }
+  [data-accent="rookie"]{ --rank-accent:#6F7884; --rank-accent-ink:#F7F8F9; --theme-c1:#E4F1FA; --theme-c2:#8FA3B8; --theme-c3:#8A86B0; }
   [data-theme="dark"][data-accent="rookie"]{ --rank-accent:#AEB7C2; --rank-accent-ink:#14181D; }
   [data-accent="ranger"]{ --rank-accent:#A4602A; --rank-accent-ink:#FFF6EE; --theme-c1:#FFC79A; --theme-c2:#CD7F32; --theme-c3:#3F9C6E; }
   [data-theme="dark"][data-accent="ranger"]{ --rank-accent:#D99458; --rank-accent-ink:#221208; }
@@ -336,19 +337,19 @@
   /* Build 225: veteran is GOLD and vanguard is PLATINUM (teal) - see
      RANK_DISPLAY_NAME. Each keeps the three-colour triad: a warm c1, the
      rank itself as c2, a cooler c3. */
-  [data-accent="veteran"]{ --rank-accent:#B7860F; --rank-accent-ink:#FFFBEF; --theme-c1:#FFF7C2; --theme-c2:#FFD21F; --theme-c3:#D9A400; }
+  [data-accent="veteran"]{ --rank-accent:#B7860F; --rank-accent-ink:#FFFBEF; --theme-c1:#FFF6A0; --theme-c2:#FFC61A; --theme-c3:#D98300; }
   [data-theme="dark"][data-accent="veteran"]{ --rank-accent:#FFCF4D; --rank-accent-ink:#241A02; }
-  [data-accent="vanguard"]{ --rank-accent:#11857A; --rank-accent-ink:#F0FFFD; --theme-c1:#E6FFFA; --theme-c2:#2EC4B6; --theme-c3:#15877E; }
+  [data-accent="vanguard"]{ --rank-accent:#11857A; --rank-accent-ink:#F0FFFD; --theme-c1:#CFFFD6; --theme-c2:#2EC4B6; --theme-c3:#1E86C4; }
   [data-theme="dark"][data-accent="vanguard"]{ --rank-accent:#5EEAD4; --rank-accent-ink:#032520; }
   /* This was a genuine, silent bug: "adept" (Giant) had no rule here
      at all, so --accent simply fell through to whatever it was
      already set to rather than the intended colour \u2014 selecting this
      colour visibly did nothing anywhere in the app. */
-  [data-accent="adept"]{ --rank-accent:#2A55BE; --rank-accent-ink:#F1F5FF; --theme-c1:#8FE6FF; --theme-c2:#2F6BFF; --theme-c3:#1A3FB8; }
+  [data-accent="adept"]{ --rank-accent:#2A55BE; --rank-accent-ink:#F1F5FF; --theme-c1:#7FEFFF; --theme-c2:#2F6BFF; --theme-c3:#3A2BC0; }
   [data-theme="dark"][data-accent="adept"]{ --rank-accent:#6E9CFF; --rank-accent-ink:#081231; }
-  [data-accent="elite"]{ --rank-accent:#7E30C9; --rank-accent-ink:#F9F2FF; --theme-c1:#F0B8FF; --theme-c2:#A855F7; --theme-c3:#FF4FA3; }
+  [data-accent="elite"]{ --rank-accent:#7E30C9; --rank-accent-ink:#F9F2FF; --theme-c1:#C9B8FF; --theme-c2:#A855F7; --theme-c3:#FF4FA3; }
   [data-theme="dark"][data-accent="elite"]{ --rank-accent:#C084FC; --rank-accent-ink:#1C0A32; }
-  [data-accent="titan"]{ --rank-accent:#B82525; --rank-accent-ink:#FFF2F2; --theme-c1:#FF7A6B; --theme-c2:#FF1F1F; --theme-c3:#A3001B; }
+  [data-accent="titan"]{ --rank-accent:#B82525; --rank-accent-ink:#FFF2F2; --theme-c1:#FFB199; --theme-c2:#FF1F1F; --theme-c3:#A0003C; }
   [data-theme="dark"][data-accent="titan"]{ --rank-accent:#FF3B30; --rank-accent-ink:#2A0707; }
   [data-accent="grinder"]{ --accent:#9C5B2E; --accent-ink:#FFF6EE; }
   [data-theme="dark"][data-accent="grinder"]{ --accent:#D4915C; --accent-ink:#1F1006; }
@@ -13664,6 +13665,23 @@
      person, and the emblem, the rank colour and the character are all
      drawn for a dark ground. */
   .person-card .person-sheet-name{ color:#F3F5F7; }
+  /* Their banner as the card's top strip (build 231), cut to the same
+     shape as the Profile cover: edge to edge through the card's padding,
+     fading into the card, with the character sitting on it. */
+  .invite-sheet.person-card.has-cover{ padding-top:0; overflow:hidden; }
+  .person-card-cover{
+    position:relative; height:6.2rem; margin:0 -1.25rem;
+    -webkit-mask-image:linear-gradient(180deg, #000 45%, transparent 100%);
+            mask-image:linear-gradient(180deg, #000 45%, transparent 100%);
+  }
+  .person-card.has-cover .person-card-art{
+    margin-top:-2.9rem; z-index:1; border-radius:50%;
+    background:radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--char-glow, #fff) 20%, #1C212B), #11141B 72%);
+    box-shadow:0 0 0 4px #12151A, 0 0 0 5.5px color-mix(in srgb, var(--char-glow, #fff) 55%, transparent), 0 12px 26px rgba(0,0,0,.45);
+  }
+  .person-card.has-cover .person-card-art > .rank-avatar{ border-radius:50%; overflow:hidden; }
+  .friend-row.is-tappable{ cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .friend-row.is-tappable:active{ opacity:.85; }
   .person-card-art{ margin-bottom:.5rem; }
   .person-card-rank{
     margin:.15rem 0 0; font-size:1.35rem; font-weight:900;
@@ -31290,6 +31308,11 @@ function buildLeaderboardRow(){
            self-heals on their next update. */
         week: weekKeyNow(),
         weekPoints: weekPointsOf(store),
+        /* The banner you wear, so the card that opens when somebody taps
+           you on the Leaderboard or the Friends list shows it the way your
+           own Profile does (build 231). An id another build does not know
+           draws nothing there. */
+        banner: wornBanner(),
         /* Last week's, so the board can show last week's top three. */
         prevWeek: store.prevWeekKey || "",
         prevWeekPoints: store.prevWeekPoints || 0,
@@ -43211,6 +43234,20 @@ function openPersonSheet(entry){
      person is the same person wherever you tapped them. */
   sheet.classList.add("person-card");
 
+  /* ---- THEIR BANNER ACROSS THE TOP (build 231) ----
+     "Banners on profile looks good. Ensure you can see that ... when
+     someone hits your profile from leaderboard." The same strip as the
+     Profile cover, and the character sits on it the same way. Read off
+     the row - the Leaderboard row, the room document or the friend's
+     row - so an id this build does not know simply draws nothing. */
+  if(entry.banner && typeof bannerDef === "function" && bannerDef(entry.banner)){
+    const cover = document.createElement("div");
+    cover.className = "person-card-cover";
+    cover.appendChild(buildBannerArt(entry.banner));
+    sheet.classList.add("has-cover");
+    sheet.appendChild(cover);
+  }
+
   const art = document.createElement("div");
   art.className = "person-sheet-art person-card-art";
   art.appendChild(avatarSpanFor(entry));
@@ -46570,7 +46607,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-28-230";
+const APP_BUILD = "2026-09-28-231";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -55200,7 +55237,7 @@ function showVirtualRoomLobby(){
          every snapshot, because those are cheap and some of them are
          what make the room start at all. */
       const shape = entries.map(([key, p]) => [key, p.name, p.ready ? 1 : 0,
-        p.level || 0, p.badges || 0, p.avatarChar || ""].join("~")).join("|")
+        p.level || 0, p.badges || 0, p.avatarChar || "", p.banner || ""].join("~")).join("|")
         + "||" + (data.units || []).join(",") + "|" + (data.timeLimit || 0)
         + "|" + (data.questionCount || 0) + "|" + (data.game || "");
       if(shape !== shownShape){
@@ -55298,7 +55335,8 @@ function showVirtualRoomLobby(){
           const open = () => openPersonSheet({
             pub: key, firstName: p.name, avatarChar: p.avatarChar,
             level: p.level, badges: p.badges, hundos: p.hundos,
-            xp: p.xp, tests: p.tests, correct: p.correct, mystery: p.mystery
+            xp: p.xp, tests: p.tests, correct: p.correct, mystery: p.mystery,
+            banner: p.banner
           });
           row.addEventListener("click", open);
           row.addEventListener("keydown", e => {
@@ -57480,7 +57518,8 @@ function showVirtualRoomResults(){
         const openCard = () => openPersonSheet({
           pub: key, firstName: p.name, avatarChar: p.avatarChar,
           level: p.level, badges: p.badges, hundos: p.hundos,
-          xp: p.xp, tests: p.tests, correct: p.correct, mystery: p.mystery
+          xp: p.xp, tests: p.tests, correct: p.correct, mystery: p.mystery,
+          banner: p.banner
         });
         row.addEventListener("click", openCard);
         row.addEventListener("keydown", e => {
@@ -58487,6 +58526,12 @@ function attachFriendsBoardListener(){
          they had entered. */
       const field = document.querySelector(".friend-add-input");
       if(field && (document.activeElement === field || field.value)) return;
+      /* NOR UNDER AN OPEN CARD (build 231). Tapping a friend opens their
+         card over this screen, and a rebuild is a screen change that
+         takes the card with it - it closed itself within a second. The
+         signature is left unrecorded, so the next snapshot after the
+         card closes does the rebuild this one skipped. */
+      if(document.querySelector(".invite-overlay .person-card")) return;
       const sig = friendsViewSignature();
       if(sig === friendsShownSignature) return;
       friendsShownSignature = sig;
@@ -58514,6 +58559,7 @@ function showFriends(){
     if(!document.querySelector(".friend-sect")) return;
     const el = document.activeElement;
     if(el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
+    if(document.querySelector(".invite-overlay .person-card")) return;
     showFriends();
   };
   window.forceHideBottomTabs = false;
@@ -58548,7 +58594,11 @@ function showFriends(){
     const art = document.createElement("div");
     art.className = "friend-row-art";
     art.appendChild(avatarSpanFor(entry));
-    decorateAvatar(art, entry.level, entry.badges, entry.mystery);
+    /* NO RANK EMBLEM ON THE CHARACTER HERE (build 231) - "on the friend
+       list as well remove the rank icon next to their character". The
+       rank is already the coloured word on the line under the name, and
+       the online dot keeps its corner. The lobby is the one list that
+       still carries the coin. */
     /* ---- NO GLOW IN A LIST ----
        "Remove the glow from behind the friends list character and
        ensure it's removed from the characters on the leaderboard."
@@ -58612,6 +58662,21 @@ function showFriends(){
     sub.appendChild(lvl);
     text.append(nm, sub);
     row.append(art, text);
+    /* ---- TAP A FRIEND, GET THEIR CARD (build 231) ----
+       The same card as the Leaderboard and a lobby: "ensure that your
+       friend list of people you can click it there too". The buttons on
+       the row keep their own jobs - a tap on Accept is not a tap on the
+       person. */
+    if(entry && entry.pub){
+      row.classList.add("is-tappable");
+      row.setAttribute("role", "button");
+      row.tabIndex = 0;
+      const openCard = () => openPersonSheet(entry);
+      row.addEventListener("click", e => { if(!e.target.closest("button")) openCard(); });
+      row.addEventListener("keydown", e => {
+        if((e.key === "Enter" || e.key === " ") && e.target === row){ e.preventDefault(); openCard(); }
+      });
+    }
     if(actions){
       const acts = document.createElement("div");
       acts.className = "friend-row-acts";

@@ -1462,6 +1462,58 @@ def check_b230(br):
     ctx.close()
 
 
+def check_b231(br):
+    """Build 231: banners on the person card, tappable friends, no rank coin
+    on the Friends list, and every theme three tones. Written against build
+    230, where each fails."""
+    print("\n16. build 231: the card shows their banner; friends open it; themes stay three-tone")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""()=>{
+      const out = {};
+      bannerEarned = () => true; store.banner = 'tests100';
+      out.rowBanner = buildLeaderboardRow().banner;
+      openPersonSheet({ pub:'bo', firstName:'Bo', avatarChar:'robot', level:40, badges:6, banner:'average10' });
+      const card = document.querySelector('.person-card');
+      out.cover = !!(card && card.classList.contains('has-cover') && card.querySelector('.person-card-cover .bnr'));
+      document.querySelectorAll('.invite-overlay').forEach(e => e.remove());
+      leaderboardRows = [{ pub:'f1', firstName:'Alex', avatarChar:'dragon', level:40, badges:6, hundos:3, banner:'easy10',
+                           seenAt:Date.now(), lastModified:Date.now() }];
+      store.friendsOut = ['f1']; store.friendsIn = ['f1'];
+      showFriends();
+      const row = [...document.querySelectorAll('.friend-row')].find(x => /Alex/.test(x.textContent));
+      out.coin = !!(row && row.querySelector('.lb-rankmark'));
+      out.tappable = !!(row && row.classList.contains('is-tappable'));
+      if(row) row.click();
+      out.friendCard = (document.querySelector('.person-card .person-sheet-name') || {}).textContent || null;
+      out.friendCover = !!document.querySelector('.person-card.has-cover');
+      // a presence repaint must not take the card away
+      try{ refreshPresenceViews(); }catch(e){}
+      out.survives = !!document.querySelector('.person-card');
+      document.querySelectorAll('.invite-overlay').forEach(e => e.remove());
+      // three tones: the three stops of every theme are three different hues
+      const hue = h => { const n = parseInt(h.slice(1), 16), r = (n >> 16) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
+        const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn; if(!d) return null;
+        let x = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; return (x * 60 + 360) % 360; };
+      const gap = (a, b) => { const d = Math.abs(a - b) % 360; return Math.min(d, 360 - d); };
+      out.flat = [];
+      ['rookie','ranger','veteran','vanguard','adept','elite','titan'].forEach(a => {
+        document.documentElement.dataset.accent = a;
+        const cs = getComputedStyle(document.documentElement);
+        const hs = ['--theme-c1','--theme-c2','--theme-c3'].map(k => hue(cs.getPropertyValue(k).trim()));
+        const spread = Math.max(gap(hs[0], hs[1]), gap(hs[1], hs[2]), gap(hs[0], hs[2]));
+        if(!(spread >= 12)) out.flat.push([a, Math.round(spread)]);
+      });
+      return out; }""")
+    check("your worn banner is published on your leaderboard row", r["rowBanner"] == "tests100", r)
+    check("a classmate's card shows their banner across the top", r["cover"], r)
+    check("no rank coin on a friend's character", r["coin"] is False, r)
+    check("tapping a friend opens their card, banner and all",
+          r["tappable"] and r["friendCard"] == "Alex" and r["friendCover"], r)
+    check("the Friends screen repainting does not close an open card", r["survives"], r)
+    check("every theme spans more than one hue", r["flat"] == [], r["flat"])
+    ctx.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=CHROME)
@@ -1481,6 +1533,7 @@ def main():
             check_b223(br)
             check_b229(br)
             check_b230(br)
+            check_b231(br)
         finally:
             br.close()
     SERVER.shutdown()

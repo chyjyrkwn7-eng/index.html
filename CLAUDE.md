@@ -6078,3 +6078,34 @@ with it. 430px floor because a 393px phone's button nearly shares a
 column with the daily-question circle.
 
 **Banners are back to the 226 scene tiles** - see the build 227 note.
+
+### Build 231 - banners on the person card; friends open it; three-tone themes
+
+**The person card shows the banner you wear**, across its top in the same
+cut as the Profile cover (`.person-card-cover`, the character on a disc
+over it). It needed the banner ON THE WIRE: `buildLeaderboardRow()`
+publishes `banner: wornBanner()` now (the room document already did),
+and the lobby and results rows pass `p.banner` into `openPersonSheet`.
+A change of banner is an urgent push like any other field.
+
+**The Friends list opens the same card** - tap the row, and the Accept /
+Decline / Remove buttons keep their own jobs (a click whose target is a
+button is not a tap on the person). And the rank coin came off the
+friend's character: "on the friend list as well remove the rank icon
+next to their character". The rank is the coloured word under the name;
+the lobby is the one list that still carries the coin.
+
+**Neither Friends auto-redraw may run under an open card.** The screen
+rebuilds itself on every presence and board snapshot, and a rebuild is
+a screen change, which `mountSheetOverlay` answers by closing the sheet -
+so a friend's card closed itself within a second. Both paths now return
+early while `.invite-overlay .person-card` exists; the board path leaves
+its signature unrecorded so the next snapshot does the skipped rebuild.
+
+**Themes: one family each, three tones each.** "Ensure the planet system
+and background and progress bar ... still has multiple tones like the
+default has." Build 230's families were one hue lighter and darker; each
+now spans neighbouring hues inside its family (table above the rookie
+rule). check-behaviour section 16 holds every theme to a spread of at
+least 12 degrees across its three stops - the 230 set fails it on Iron,
+Gold and Platinum.
