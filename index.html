@@ -14327,6 +14327,26 @@
   .bnr .bn-mote{ animation:bn-mote 10s ease-in-out infinite; }
   @keyframes bn-mote{ 0%,100%{ transform:translate(0,0); opacity:0; } 30%{ opacity:.9; } 50%{ transform:translate(8px,-10px); } 70%{ opacity:.7; } }
   .bnr .bn-tick{ animation:bn-orbit 60s steps(60) infinite; }
+  /* MIDNIGHT OIL, TURNED UP (build 258). "The midnight oil banner can be
+     animated." It was - a flame swaying a few percent, faint steam, a
+     second hand - and measured it moved about a fifteenth as much as the
+     Amethyst banner: animated on paper, still to the eye. The flame
+     now really gutters, the lamplight on the wall rises and falls with
+     it, the steam is visible, a page turns over and a star shoots across
+     the window. Scoped to this banner, since the classes are shared. */
+  .bnr-study50 .bn-flame{ animation:bn-flame258 1.5s ease-in-out infinite; }
+  @keyframes bn-flame258{ 0%,100%{ transform:scale(1,1) skewX(0deg); } 18%{ transform:scale(.86,1.16) skewX(-7deg); }
+    37%{ transform:scale(1.08,.88) skewX(4deg); } 58%{ transform:scale(.9,1.12) skewX(-3deg); } 79%{ transform:scale(1.05,.93) skewX(5deg); } }
+  .bnr-study50 .bn-glow{ animation:bn-glow258 1.5s ease-in-out infinite; }
+  @keyframes bn-glow258{ 0%,100%{ opacity:1; } 18%{ opacity:.5; } 37%{ opacity:.95; } 58%{ opacity:.6; } 79%{ opacity:.88; } }
+  .bnr-study50 .bn-steam{ stroke-width:2.8; animation:bn-steam258 3.4s ease-out infinite; }
+  @keyframes bn-steam258{ 0%{ transform:translateY(6px); opacity:0; } 25%{ opacity:.8; } 100%{ transform:translateY(-22px); opacity:0; } }
+  .bnr-study50 .bn-mote{ animation-duration:6s !important; }
+  .bnr-study50 .bn-pageturn{ transform-box:view-box; transform-origin:291px 140px; animation:bn-pageturn 6s ease-in-out infinite; }
+  @keyframes bn-pageturn{ 0%,52%{ transform:scaleX(1) skewY(0deg); opacity:0; } 54%{ opacity:1; }
+    66%{ transform:scaleX(.05) skewY(-8deg); opacity:1; } 80%{ transform:scaleX(-1) skewY(0deg); opacity:1; } 84%,100%{ transform:scaleX(-1); opacity:0; } }
+  .bnr-study50 .bn-shoot{ animation:bn-shoot 5s ease-out infinite; }
+  @keyframes bn-shoot{ 0%,62%{ transform:translate(0,0); opacity:0; } 64%{ opacity:1; } 76%{ transform:translate(-92px,26px); opacity:0; } 100%{ opacity:0; } }
   .bnr .bn-shower{ animation:bn-shower 8s linear infinite; }
   @keyframes bn-shower{ 0%,100%{ transform:translateX(0); opacity:0; } 1%{ transform:translateX(-4px); opacity:1; } 8%{ opacity:.9; } 12%{ transform:translateX(-230px); opacity:0; } }
   /* Koi Pond: a koi's tail breaking the surface. */
@@ -15087,18 +15107,74 @@
   .badge-strip-cell.is-earned svg{ filter:drop-shadow(0 0 5px color-mix(in srgb, var(--badge-glow, #fff) 55%, transparent)); }
   .badges-head .badges-count-num{ color:var(--ink); }
   .badges-head-strip{ margin-top:.2rem; }
-  /* ---- earned badges on the Profile card (build 243) ----
-     No meter: a count, and the badges you actually hold as a small
-     overlapping stack, like cards fanned in a hand. */
-  .profile-badgesect-head{ align-items:center; margin:0; }
-  .profile-badgestack{ display:flex; align-items:center; margin-left:auto; padding-left:.4rem; }
-  .profile-badgestack + .profile-badgesect-chev{ margin-left:.35rem; }
-  .profile-badgestack-token{ width:2.1rem; height:2.1rem; display:block; flex:none; position:relative;
-    z-index:calc(20 - var(--i)); }
-  .profile-badgestack-token + .profile-badgestack-token{ margin-left:-.7rem; }
-  .profile-badgestack-token svg{ width:100%; height:100%; display:block; overflow:visible;
-    filter:drop-shadow(0 2px 3px rgba(0,0,0,.55)); }
-  .profile-badgestack-more{ margin-left:.35rem; font-size:.74rem; font-weight:800; color:var(--soft); }
+  /* ---- the badges row (build 258): no icons, built like the level row ----
+     The fanned stack of earned badges came off on request. The row is now
+     the level row's twin - a plate with the number, and beside it how
+     many hundos to the next badge and in which unit. */
+  .profile-badgesect-head{ align-items:center; margin:0 0 .55rem; }
+  .profile-badgesect-body{ display:flex; align-items:center; gap:.85rem; }
+  .profile-badgeplate{
+    flex:0 0 auto; min-width:5.2rem; display:flex; flex-direction:column; align-items:flex-start; gap:.1rem;
+    padding:.6rem .8rem; border-radius:13px; background:rgba(0,0,0,.22);
+    border:1px solid rgba(255,255,255,.08);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.07), inset 0 -3px 8px rgba(0,0,0,.28);
+  }
+  .profile-badge-closest{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  /* ---- ONE ACCENT FOR THE PROFILE CARD (build 258) ----
+     "A lot of colors fighting here." --card-accent is the rank you hold,
+     set on .profile-hero; the level number, the badge count, the XP bar,
+     the ring round the character and the default cover all read it.
+     The lighter and darker steps are mixed from it here rather than
+     stored, so one value re-colours the whole card. */
+  .profile-hero{ --card-accent:#A9B7C6; }
+  .profile-hero .shine-accent{
+    background-size:200% 100%;
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    animation:stat-shine 4.5s ease-in-out infinite;
+    background-image:linear-gradient(100deg,
+      color-mix(in srgb, var(--card-accent) 85%, #000) 0%,
+      color-mix(in srgb, var(--card-accent) 70%, #fff) 32%,
+      color-mix(in srgb, var(--card-accent) 18%, #fff) 46%,
+      color-mix(in srgb, var(--card-accent) 70%, #fff) 60%,
+      color-mix(in srgb, var(--card-accent) 85%, #000) 100%);
+  }
+  .profile-hero .profile-level-value.shine-accent{
+    filter:drop-shadow(0 0 10px color-mix(in srgb, var(--card-accent) 45%, transparent));
+  }
+  .profile-hero .profile-xpbar{
+    box-shadow:inset 0 2px 7px rgba(0,0,0,.5), 0 0 0 4px color-mix(in srgb, var(--card-accent) 7%, transparent);
+  }
+  .profile-hero .profile-xpbar .xpbar-fill{
+    background:linear-gradient(180deg,
+      color-mix(in srgb, var(--card-accent) 30%, #fff) 0%,
+      color-mix(in srgb, var(--card-accent) 75%, #fff) 26%,
+      var(--card-accent) 60%,
+      color-mix(in srgb, var(--card-accent) 70%, #000) 88%,
+      color-mix(in srgb, var(--card-accent) 58%, #000) 100%);
+    box-shadow:0 0 16px color-mix(in srgb, var(--card-accent) 55%, transparent),
+               0 0 34px color-mix(in srgb, var(--card-accent) 20%, transparent),
+               inset 0 1px 0 rgba(255,255,255,.7),
+               inset 0 -2px 4px rgba(0,0,0,.4);
+  }
+  /* The ring round the character is the card's colour; the pool of light
+     behind it stays the character's own, which is the one thing it glows. */
+  .profile-hero.has-cover .profile-hero-avatar{
+    background:radial-gradient(circle at 50% 38%,
+      color-mix(in srgb, var(--card-accent) 16%, #1C212B), #11141B 72%);
+    box-shadow:0 0 0 4px #191D26,
+      0 0 0 5.5px color-mix(in srgb, var(--card-accent) 60%, transparent),
+      0 14px 30px rgba(0,0,0,.45);
+  }
+  /* The default cover (no banner chosen) is the card's colour too, not
+     the theme's three - that purple-and-pink strip was the fourth hue. */
+  .profile-hero .profile-cover:not(.has-banner){
+    background:
+      radial-gradient(90% 150% at 12% 0%, color-mix(in srgb, var(--card-accent) 42%, transparent), transparent 62%),
+      radial-gradient(80% 140% at 88% 8%, color-mix(in srgb, var(--card-accent) 30%, transparent), transparent 64%),
+      radial-gradient(70% 120% at 50% 110%, color-mix(in srgb, var(--card-accent) 22%, transparent), transparent 70%),
+      linear-gradient(160deg, #1B2130, #10131A);
+  }
   /* ---- the count on the Badges tab (build 243) ----
      "All I wanted was a better way to show it than the 0/16" - so a medal
      with the number struck into it, not a bar. Silver until the set is
@@ -16417,7 +16493,12 @@
     box-shadow:0 0 0 2px rgba(255,255,255,.22), 0 0 30px rgba(255,255,255,.12); }
   .unlock-card-artwrap{ position:relative; width:max-content; max-width:100%; margin:0 auto .9rem; }
   .unlock-card-artwrap > .unlock-card-art{ margin-bottom:0; }
-  .unlock-card-banner .unlock-card-artwrap{ width:auto; margin:-1.2rem -1.25rem .9rem; }
+  /* max-width:none (build 258). The wrapper's own max-width:100% capped
+     the banner at the card's CONTENT width, so the negative margins that
+     pull it out to the card's edges only moved it left: it sat 20px past
+     the left edge and 40px short of the right, with the card showing
+     through - "not centered, it's offset and broken outside the popup". */
+  .unlock-card-banner .unlock-card-artwrap{ width:auto; max-width:none; margin:-1.2rem -1.25rem .9rem; }
   .unlock-card-banner .unlock-card-artwrap > .unlock-card-art{ margin:0; }
   .unlock-card-lock{ position:absolute; right:-.15rem; bottom:-.15rem; width:2rem; height:2rem; border-radius:50%;
     display:grid; place-items:center; background:#0E1116; border:1.5px solid rgba(255,255,255,.28); color:#E6EAF0; z-index:2;
@@ -31143,11 +31224,13 @@ const AVATAR_CHARACTERS = [
        Clown      - first in a Virtual Room 5 times (was the Champion's:
                     "the champion character, just change that to the
                     clown")
-       Pirate     - first in a Virtual Room 10 times (was the Spartan's,
+       Valkyrie   - top 3 in a Virtual Room of 4+, 10 times (first 10
+                    times until build 258; was the Spartan's,
                     build 244: "I don't like the spartan, change that
                     to something else")
        Marksman   - 150 right in a row (100 until build 246)
-       Astronaut  - a hundo in 7 different units in one day (was Blitz's)
+       Astronaut  - a hundo in 5 different units in one day (7 until
+                    build 258; was Blitz's)
        Hacker     - 25 hours of studying in total (20 until build 246;
                     was the Scholar's, and the K-9's before that, build
                     244: "I hate the k9 character")
@@ -31349,9 +31432,12 @@ const CHARACTER_FEATS = {
      at the moment a unit comes out at 100%, so it is the same "whole
      unit" every hundo already needs. Tracked from this build: nothing
      before it kept the day each unit was aced. */
-  hundo7day: { label: "Get a hundo in 7 different units in one day",
-               done: () => hundoDayCount() >= 7,
-               have: () => hundoDayCount(), need: 7 },
+  /* 5 SINCE BUILD 258 (was 7): "the get 7 different hundos is a lot
+     too, can we make it 5?" Lowering it takes nothing from anybody. The
+     key stays `hundo7day`. */
+  hundo7day: { label: "Get a hundo in 5 different units in one day",
+               done: () => hundoDayCount() >= 5,
+               have: () => hundoDayCount(), need: 5 },
   /* Build 243, the K-9's; the Scholar's since 244. Time put in, which nothing else in the app
      rewards - every other challenge counts a result. Read straight off
      the study log the calendar already keeps, so every minute studied
@@ -31369,9 +31455,18 @@ const CHARACTER_FEATS = {
                done: () => studyDaysTotal() >= 30,
                have: () => Math.min(studyDaysTotal(), 30), need: 30 },
   /* (shades - the SWAT item - was removed with SWAT in build 245) */
-  vrwins10:  { label: "Place first in a Virtual Room 10 times",
-               done: () => (store.vrWins || 0) >= 10,
-               have: () => (store.vrWins || 0), need: 10 },
+  /* TOP THREE, NOT FIRST (build 258). "Place first in a virtual room 10
+     times is a lot. Can we change that challenge?" Ten wins against a
+     class that has been studying the same material is a long wait, and
+     the Clown already rewards winning. It is now ten podium finishes -
+     store.vrTop3, the counter the Virtual Room stats already keep, which
+     counts rooms of four or more (VROOM_PODIUM_MIN: under four nobody
+     but the winner is placed). Anybody who already had ten wins keeps
+     the Valkyrie: the old rule still counts, so nothing is taken back.
+     The key stays `vrwins10` - it is only a name. */
+  vrwins10:  { label: "Finish top 3 in a Virtual Room of 4 or more, 10 times",
+               done: () => (store.vrTop3 || 0) >= 10 || (store.vrWins || 0) >= 10,
+               have: () => Math.max(store.vrTop3 || 0, (store.vrWins || 0) >= 10 ? 10 : 0), need: 10 },
   flare4:    { label: "Find Umbra, the first of Void's flares",
                done: () => !!(store.mysteryColorsFound || {}).violet,
                have: () => ((store.mysteryColorsFound || {}).violet ? 1 : 0), need: 1 },
@@ -32127,8 +32222,27 @@ function drawAvatarCharSVG(charId){
     defs.appendChild(body);
     const fill = "url(#void-" + uid + ")";
 
+    /* THE BODY IS THE HOOD'S CLOAK (build 258). "The head doesn't
+       connect to the body and the body doesn't match the head." It was a
+       narrow slate-blue bust starting at y=29, lighter than the black
+       hood above it, with a gap either side where the hood's tips ended
+       and the halo showed through - a head set down on a different
+       object. The cloak now flows out of the hood's tips into the
+       shoulders, in the hood's own black, and reaches up BEHIND the head
+       so a nod or a sway never opens a gap. A few stars in it too, since
+       the whole figure is a window onto space, not just the face. */
+    const cloak = mk("linearGradient", { id: "cloak-" + uid, x1: "0", y1: "24", x2: "0", y2: "40", gradientUnits: "userSpaceOnUse" });
+    [["0%", "#06080E"], ["100%", "#03050A"]]
+      .forEach(([o, c]) => cloak.appendChild(mk("stop", { offset: o, "stop-color": c })));
+    defs.appendChild(cloak);
     open("cx-body");
-    svg.appendChild(mk("path", { d: "M5.9 40 Q6.7 31.2 14.3 29 L25.7 29 Q33.3 31.2 34.1 40 Z", fill: fill }));
+    svg.appendChild(mk("path", { d: "M4.6 40 Q5 31.4 10.6 28.9 Q12.6 23.6 20 23.6 Q27.4 23.6 29.4 28.9 Q35 31.4 35.4 40 Z",
+                                 fill: "url(#cloak-" + uid + ")" }));
+    [[10.2, 35.2, .26], [14.6, 37.6, .2], [26.8, 34.4, .24], [30.4, 37.8, .18], [22.4, 38.2, .16]]
+      .forEach(([cx, cy, r]) => svg.appendChild(mk("circle", { cx: cx, cy: cy, r: r, fill: "#CFE0F5", opacity: ".45" })));
+    /* The same one-sided rim as the hood, carried down the shoulder. */
+    svg.appendChild(mk("path", { d: "M5.4 38.6 Q6 31.8 10.8 29.4", fill: "none", stroke: "#7C93B8",
+                                 "stroke-width": ".42", "stroke-linecap": "round", opacity: ".36" }));
     close();
     open("cx-head");
     svg.appendChild(mk("ellipse", { cx: 20, cy: 21.4, rx: 9.2, ry: 10, fill: fill }));
@@ -39483,6 +39597,8 @@ const BANNER_ART = {
       '<circle cx="398" cy="44" r="26" fill="url(#' + u + 'mglow)"/>' +
       '<circle cx="398" cy="44" r="11" fill="url(#' + u + 'moon)"/>' +
       '<circle cx="393" cy="41" r="2" fill="#E8D29A" opacity=".6"/><circle cx="402" cy="48" r="1.5" fill="#E8D29A" opacity=".5"/>' +
+      /* A shooting star across the window now and then (build 258). */
+      '<path class="bn-shoot" d="M420 26 L444 20" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="round" opacity="0"/>' +
       '<g fill="#0B0F24">' + city + '</g>' + wins +
       '<path d="M371 18 V112 M312 64 H430" stroke="#120C14" stroke-width="4"/>' +
       '<rect x="302" y="112" width="138" height="7" fill="#3A2418"/>' +
@@ -39522,6 +39638,10 @@ const BANNER_ART = {
       '<path d="M228 136 Q258 128 290 132 L292 148 Q260 144 230 152Z" fill="url(#' + u + 'page)"/>' +
       '<path d="M290 132 Q322 126 352 134 L350 150 Q320 142 292 148Z" fill="url(#' + u + 'page2)"/>' +
       '<path d="M236 139 Q260 133 284 136 M236 143 Q260 137 284 140 M236 147 Q258 141 282 144 M298 136 Q322 131 344 137 M298 140 Q322 135 344 141 M298 144 Q320 139 340 144" stroke="#8A6A4A" stroke-width=".7" fill="none" opacity=".6"/>' +
+      /* A page turning over (build 258), every few seconds - the one
+         thing in the room that says somebody is still reading. */
+      '<g class="bn-pageturn"><path d="M290 132 Q322 126 352 134 L350 150 Q320 142 292 148Z" fill="url(#' + u + 'page2)"/>' +
+      '<path d="M298 136 Q322 131 344 137 M298 140 Q322 135 344 141" stroke="#8A6A4A" stroke-width=".7" fill="none" opacity=".5"/></g>' +
       '<path d="M360 154 L412 140" stroke="#1A1A1A" stroke-width="2.6" stroke-linecap="round"/><path d="M408 141 L414 139.4" stroke="#E0B25A" stroke-width="2.6" stroke-linecap="round"/>' +
       /* The mug, and its steam. */
       '<path d="M420 132 L424 164 Q425 168 432 168 L448 168 Q455 168 456 164 L460 132Z" fill="url(#' + u + 'mug)"/>' +
@@ -40571,6 +40691,11 @@ function recordVroomOutcome(code, sortedKeys, myKey){
     store.vrTop3 = (store.vrTop3 || 0) + 1;
     store.vrTop3Rooms.push(code);
     if(store.vrTop3Rooms.length > 300) store.vrTop3Rooms = store.vrTop3Rooms.slice(-300);
+    /* The Valkyrie since build 258: ten podium finishes. */
+    if(store.vrTop3 === 10 && (store.vrWins || 0) < 10){
+      store.pendingCharUnlocks = (store.pendingCharUnlocks || []).filter(x => x !== "valkyrie").concat(["valkyrie"]);
+      try{ showToast("Ten top-three finishes - the Valkyrie is yours."); }catch(e){}
+    }
   }
   /* A win needs somebody to have beaten. */
   if(sortedKeys.length >= 2 && sortedKeys[0] === myKey){
@@ -40584,7 +40709,7 @@ function recordVroomOutcome(code, sortedKeys, myKey){
       store.pendingCharUnlocks = (store.pendingCharUnlocks || []).filter(x => x !== "clown").concat(["clown"]);
       try{ showToast("Five wins - the Clown is yours."); }catch(e){}
     }
-    if(before < 10 && store.vrWins >= 10){
+    if(before < 10 && store.vrWins >= 10 && (store.vrTop3 || 0) < 10){
       /* The Valkyrie since build 244 (it was the Spartan, now retired). */
       store.pendingCharUnlocks = (store.pendingCharUnlocks || []).filter(x => x !== "valkyrie").concat(["valkyrie"]);
       try{ showToast("Ten wins - the Valkyrie is yours."); }catch(e){}
@@ -40773,24 +40898,41 @@ function tierProgressNow(){
   return { level: levelOf(store), badges: badgeCountOf(store) };
 }
 /* What is still missing for a tier, already worded. Empty means ready. */
-/* How far from the rank you hold to the next one, the same way the Rank
-   tab's hero measures it: each of level and badges as a share of the
-   step between the two ranks' requirements, averaged. */
+/* HOW FAR TO THE NEXT RANK, EXACTLY (build 258). "It says I'm 50
+   percent done but that's not even accurate, that percentage needs to
+   be precise." It measured each half as a share of the STEP between
+   two ranks, whole numbers only - so somebody past Silver's level with
+   Bronze's one badge read 50% flat, whatever else they had done, and it
+   sat on 50% until the next badge landed. It is now what the Rank tab's
+   rings say, now over target, and each half counts what is part-way
+   done: the level includes the XP into the current one, and the badges
+   include the closest unit's hundos towards its badge. Averaged, and
+   shown to one decimal, so a test you just took moves it. */
 function rankStepProgress(){
   const held = rankOf(store);
   const idx = held ? TIER_ORDER_FULL.indexOf(held) : -1;
   const next = TIER_ORDER_FULL[idx + 1] || null;
   if(!next) return { held, next: null, pct: 1 };
-  const now = tierProgressNow();
-  const prevRule = held ? TIER_UNLOCKS[held] : null, nextRule = TIER_UNLOCKS[next] || {};
-  const part = (v, from, to) => {
-    const a = Number(from) || 0, b = Number(to) || 0;
-    if(b <= a) return 1;
-    return Math.max(0, Math.min(1, (v - a) / (b - a)));
-  };
-  const pct = (part(now.level, prevRule && prevRule.level, nextRule.level) +
-               part(now.badges, prevRule && prevRule.badges, nextRule.badges)) / 2;
-  return { held, next, pct };
+  const nextRule = TIER_UNLOCKS[next] || {};
+  const lvl = levelOf(store);
+  let lvlExact = lvl;
+  try{ const lp = levelProgress(store.lifetime ? store.lifetime.points : 0); if(lp.level === lvl && !lp.atCap) lvlExact = lvl + lp.fraction; }catch(e){}
+  const badges = badgeCountOf(store);
+  let closest = 0;
+  try{
+    const perf = store.unitPerfects || {};
+    topicsIn(QUESTIONS).forEach(u => { if(unitBadgeEarned(u)) return;
+      closest = Math.max(closest, Math.min(.999, (perf[u] || 0) / badgeThresholdFor(u))); });
+  }catch(e){}
+  const part = (v, target) => { const t = Number(target) || 0; return t > 0 ? Math.max(0, Math.min(1, v / t)) : 1; };
+  const lvlPart = lvl >= (nextRule.level || 0) ? 1 : part(lvlExact, nextRule.level);
+  const bdgPart = badges >= (nextRule.badges || 0) ? 1 : part(badges + closest, nextRule.badges);
+  return { held, next, pct: (lvlPart + bdgPart) / 2 };
+}
+/* The percentage as it is shown: one decimal, and never 100% until it is. */
+function rankStepPctLabel(pct){
+  const v = Math.floor(pct * 1000) / 10;
+  return (v >= 100 && pct < 1 ? 99.9 : v).toFixed(1).replace(/\.0$/, "") + "%";
 }
 function tierShortfall(rule){
   if(!rule) return [];
@@ -55863,7 +56005,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-30-257";
+const APP_BUILD = "2026-09-30-258";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -70205,6 +70347,20 @@ function showProfile(defaultTab){
      and opens the same calendar. */
   const heroSect = document.createElement("div");
   heroSect.className = "profile-hero";
+  /* ONE COLOUR FOR THE CARD (build 258). "There's a lot of colors
+     fighting here ... a purple banner background thing, a green
+     character, the bronze rank thing, the blue level." Four sources, four
+     hues. The card now takes ONE accent - the rank you hold, which is
+     already the plate's colour and the thing this card is about - and the
+     level number, the XP bar, the badge count, the ring round the
+     character and the default cover strip are all drawn in it. The
+     character keeps its own colours (it is a drawing, not a surface), and
+     a banner you chose keeps its own, because you chose it. Unranked, the
+     accent is the rank you are heading to. */
+  {
+    const accentKey = rankOf(store) || TIER_ORDER_FULL[0];
+    heroSect.style.setProperty("--card-accent", RANK_COLOR[accentKey] || "#A9B7C6");
+  }
 
   const heroTop = document.createElement("div");
   heroTop.className = "profile-hero-top";
@@ -70372,7 +70528,7 @@ function showProfile(defaultTab){
     const lab = document.createElement("span");
     lab.className = "profile-rankplate-next";
     if(step.next){
-      lab.textContent = RANK_DISPLAY_NAME[step.next] + " \u00b7 " + Math.floor(step.pct * 100) + "%";
+      lab.textContent = RANK_DISPLAY_NAME[step.next] + " \u00b7 " + rankStepPctLabel(step.pct);
       /* Set a frame after mounting so it fills in front of you. */
       requestAnimationFrame(() => requestAnimationFrame(() => { fill.style.width = Math.round(step.pct * 1000) / 10 + "%"; }));
     } else {
@@ -70387,7 +70543,7 @@ function showProfile(defaultTab){
     chev.textContent = "\u203a";
     rankLine.append(wm, coin, txt, chev);
     rankLine.setAttribute("aria-label", (rankNow ? RANK_DISPLAY_NAME[rankNow] + " rank" : "No rank yet") +
-      (step.next ? ", " + Math.floor(step.pct * 100) + "% of the way to " + RANK_DISPLAY_NAME[step.next] : ", the top rank") + ". Open the Rank tab.");
+      (step.next ? ", " + rankStepPctLabel(step.pct) + " of the way to " + RANK_DISPLAY_NAME[step.next] : ", the top rank") + ". Open the Rank tab.");
   }
 
   /* THE COVER. A strip across the top of the card, the character
@@ -70522,7 +70678,7 @@ function showProfile(defaultTab){
   const levelNum = document.createElement("div");
   levelNum.className = "profile-level-num profile-statplate";
   const levelNumValue = document.createElement("span");
-  levelNumValue.className = "profile-level-value shine-blue";
+  levelNumValue.className = "profile-level-value shine-accent";
   levelNumValue.textContent = String(prog.level);
   const levelNumWord = document.createElement("span");
   levelNumWord.className = "profile-level-word";
@@ -70572,37 +70728,60 @@ function showProfile(defaultTab){
   const badgeKick = document.createElement("span");
   badgeKick.className = "profile-badgesect-kicker";
   badgeKick.textContent = "Badges";
-  const badgeCountEl = document.createElement("span");
-  badgeCountEl.className = "profile-badgesect-count";
-  const bcNum = document.createElement("b");
-  bcNum.textContent = String(badgeCount);
-  badgeCountEl.append(bcNum, document.createTextNode(" of " + totalUnitsForBadges + " earned"));
   const badgeChev = document.createElement("span");
   badgeChev.className = "profile-badgesect-chev"; badgeChev.setAttribute("aria-hidden", "true");
   badgeChev.textContent = "\u203a";
-  badgeHead.append(badgeKick, badgeCountEl, badgeChev);
-  const earnedUnits = topicsIn(QUESTIONS).filter(unitBadgeEarned);
-  if(earnedUnits.length){
-    const stack = document.createElement("span");
-    stack.className = "profile-badgestack";
-    stack.setAttribute("aria-hidden", "true");
-    const SHOW = 7;
-    earnedUnits.slice(0, SHOW).forEach((u, i) => {
-      const t = document.createElement("span");
-      t.className = "profile-badgestack-token";
-      t.style.setProperty("--i", i);
-      try{ t.appendChild(buildUnitBadgeSVG(u, true)); }catch(e){}
-      stack.appendChild(t);
-    });
-    if(earnedUnits.length > SHOW){
-      const more = document.createElement("span");
-      more.className = "profile-badgestack-more";
-      more.textContent = "+" + (earnedUnits.length - SHOW);
-      stack.appendChild(more);
+  badgeHead.append(badgeKick, badgeChev);
+  /* NO BADGE ICONS HERE (build 258). "The badge thing underneath level
+     I don't like, I don't want to see my badge icons there at all." The
+     earned badges fanned out beside the count came off; the Badges tab,
+     one tap away, is where the set is looked at. In their place the row
+     is built like the level row above it - the number on a plate, and
+     beside it the one thing a badge count makes you want to know next:
+     how many hundos to the next badge, and in which unit. */
+  const badgeBody = document.createElement("span");
+  badgeBody.className = "profile-level-row profile-badgesect-body";
+  const badgePlate = document.createElement("span");
+  badgePlate.className = "profile-badgeplate";
+  const badgePlateNum = document.createElement("span");
+  badgePlateNum.className = "profile-level-value profile-badge-value shine-accent";
+  badgePlateNum.textContent = String(badgeCount);
+  const badgePlateWord = document.createElement("span");
+  badgePlateWord.className = "profile-level-word";
+  badgePlateWord.textContent = "of " + totalUnitsForBadges;
+  badgePlate.append(badgePlateNum, badgePlateWord);
+  const badgeSide = document.createElement("span");
+  badgeSide.className = "profile-level-side";
+  const badgeSideTop = document.createElement("span");
+  badgeSideTop.className = "profile-level-sidetop";
+  const badgeSideSub = document.createElement("span");
+  badgeSideSub.className = "profile-level-sidesub profile-badge-closest";
+  {
+    let best = null;
+    try{
+      const perf = store.unitPerfects || {};
+      topicsIn(QUESTIONS).forEach(u => {
+        if(unitBadgeEarned(u)) return;
+        const need = badgeThresholdFor(u), have = Math.min(need, perf[u] || 0);
+        if(!best || have / need > best.have / best.need) best = { u, have, need };
+      });
+    }catch(e){}
+    if(!best){
+      badgeSideTop.textContent = "Every badge earned";
+      badgeSideSub.textContent = "The whole set is yours";
+    } else if(!best.have){
+      badgeSideTop.textContent = "No hundos towards the next badge yet";
+      badgeSideSub.textContent = "Ace a whole unit to start one";
+    } else {
+      const left = best.need - best.have;
+      badgeSideTop.textContent = left + (left === 1 ? " hundo" : " hundos") + " to the next badge";
+      badgeSideSub.textContent = best.u + " \u00b7 " + best.have + "/" + best.need;
     }
-    badgeHead.insertBefore(stack, badgeChev);
   }
-  badgeStat.appendChild(badgeHead);
+  badgeSide.append(badgeSideTop, badgeSideSub);
+  badgeBody.append(badgePlate, badgeSide);
+  badgeStat.append(badgeHead, badgeBody);
+  badgeStat.setAttribute("aria-label", "Badges, " + badgeCount + " of " + totalUnitsForBadges + " earned. " + badgeSideTop.textContent + ". Open the Badges tab.");
   badgeStat.addEventListener("click", () => showRanksScreen("badges"));
   /* One card, not two. "Maybe the top two boxes, the one with the level
      and the other with the name, could be joined instead of appearing as
@@ -71647,11 +71826,6 @@ function buildRanksTab(){
 
   const prevRule = held ? TIER_UNLOCKS[held] : null;
   const nextRule = nextKey ? TIER_UNLOCKS[nextKey] : null;
-  const stepPart = (now, from, to) => {
-    const room = (to || 0) - (from || 0);
-    if(room <= 0) return 1;
-    return Math.min(1, Math.max(0, (now - (from || 0)) / room));
-  };
   const gauges = document.createElement("div");
   gauges.className = "rankhero-gauges";
   const NS = "http://www.w3.org/2000/svg";
@@ -71706,9 +71880,9 @@ function buildRanksTab(){
   }
   hero.appendChild(gaugeHead);
   if(nextRule){
-    const lp = stepPart(levelNow, prevRule && prevRule.level, nextRule.level);
-    const bp = stepPart(badgesNow, prevRule && prevRule.badges, nextRule.badges);
-    heroStepPct = (lp + bp) / 2;
+    /* The same exact measure as the Profile plate (build 258), so the
+       two screens never give two different answers. */
+    heroStepPct = rankStepProgress().pct;
     /* THE RING SAYS THE SAME THING AS THE NUMBER UNDER IT (build 257).
        "It says I have 1 but the progress circle does not reflect that."
        The rings used the step from the rank you hold to the next one, so

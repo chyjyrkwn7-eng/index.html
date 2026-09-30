@@ -7813,3 +7813,54 @@ because "succeeded ... with fuzz" is the only warning there is.
   (it resets only on a miss; the daily question does not touch it) and
   study time is the calendar's log. If the bar is meant to be "150 in
   one test", that is a rule change, not a bug fix - ask.
+
+### Build 258
+
+- **The rank percentage is exact.** "It says I'm 50 percent done but
+  that's not even accurate, that percentage needs to be precise."
+  `rankStepProgress()` measured each half as a share of the STEP between
+  two ranks in whole numbers, so anybody past Silver's level with Bronze's
+  one badge read 50% flat until the next badge landed. It is now
+  now-over-target (the rings' measure since 257), with what is part-way
+  done counted: the level includes the XP into it, the badges include the
+  closest unit's hundos towards its badge. Shown to one decimal by
+  `rankStepPctLabel()`. The Profile plate, the Rank tab's road-map meter
+  (`heroStepPct` now reads it) and the rank reward pop-ups all use the
+  one function, so they cannot give different answers.
+- **No badge icons on the Profile card.** "I don't want to see my badge
+  icons there at all." The fanned stack is gone. The Badges row is the
+  level row's twin: a plate with the count, and beside it how many hundos
+  to the next badge and in which unit (`TCOLE Rules · 11/20`).
+- **One accent on the Profile card: the rank you hold.** "A purple
+  banner background, a green character, the bronze rank thing, the blue
+  level" were four hues. `--card-accent` on `.profile-hero` is
+  `RANK_COLOR[rank]` (the first rank's while unranked) and the level
+  number (`.shine-accent`), the XP bar, the ring round the character and
+  the DEFAULT cover all read it. A banner you chose keeps its own
+  colours, and the character's own glow pool stays its own - it is a
+  drawing, not a surface. The blue `.xpbar-fill` is untouched everywhere
+  else (results screens etc.); the override is scoped to `.profile-hero`.
+- **Midnight Oil moves.** It was in `BANNER_ANIMATED` all along and
+  measured ~4 against ~50 for the Amethyst banner - animated on paper,
+  still to the eye. Its flame gutters, the lamplight breathes with it, the
+  steam is visible, a page turns and a star shoots across the window.
+  All scoped to `.bnr-study50` under their own keyframe names
+  (`bn-flame258` etc.), because `bn-flame`/`bn-steam` are shared.
+- **The banner pop-up spans the card.** `.unlock-card-artwrap` had
+  `max-width:100%`, which capped the banner at the card's CONTENT width,
+  so the negative margins meant to pull it to the card's edges only moved
+  it left - 20px past the left edge and 40px short of the right. The
+  banner rule now sets `max-width:none`.
+- **Void's cloak joins its hood.** The body was a narrow slate bust
+  starting at y=29, lighter than the black hood, with the halo showing
+  between the hood's tips and the shoulders. It is a cloak flowing out of
+  the hood's tips in the hood's own black, reaching up BEHIND the head so
+  a nod never opens a gap, with a few stars and the same one-sided rim.
+- **Two challenges eased.** The Valkyrie (`vrwins10`) is ten top-three
+  finishes in rooms of four or more (`store.vrTop3`, the counter the
+  Virtual Room stats already keep) instead of ten wins; ten old wins
+  still hold it, so nothing is taken back. The Astronaut (`hundo7day`)
+  is five hundos in a day, not seven. Keys unchanged.
+- check-behaviour 47 covers all seven and fails on build 257 in each.
+  check-studyflow 13's "How Most missed works" dot check now asserts the
+  dot is GONE (it came off in 254).

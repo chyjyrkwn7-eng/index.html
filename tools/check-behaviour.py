@@ -2445,8 +2445,10 @@ def check_b241(br):
     check("a lit orbit bubble is glass with a lens", isinstance(r, dict) and "blur" in str(r.get("litBlur"))
           and r.get("lens") not in (None, "none", "normal"), r)
     check("no rank coin is hung on any character", isinstance(r, dict) and r.get("coin") == 0, r)
-    check("Profile: one level plate, and badges are their own section of every unit",
-          isinstance(r, dict) and r.get("plates") == 1 and r.get("badgeCells") == 0 and r.get("badgeEarned") == 6, r)
+    # REVERSED IN 258: "I don't want to see my badge icons there at all."
+    # The section stays; the earned badges drawn in it do not.
+    check("Profile: one level plate, and badges are their own section, with no badge icons in it",
+          isinstance(r, dict) and r.get("plates") == 1 and r.get("badgeCells") == 0 and r.get("badgeEarned") == 0, r)
     def hexrgb(h):
         h = h.lstrip("#"); return "rgb(%d, %d, %d)" % (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16))
     check("the rank bar is the rank's own colour, not a blend into the next",
@@ -2661,8 +2663,9 @@ def check_b242(br):
     # REVERSED IN 243: "the profile box, still not a fan of the badge
     # thing. There doesn't need to be a progress bar like that." A count
     # and the badges you hold, and no meter.
-    check("Profile shows the count and the six badges held, with no meter and not the whole set",
-          p.get("strip") == 0 and p.get("segs") == 0 and p.get("stack") == 6, p)
+    # AND AGAIN IN 258: no badge icons on the card at all.
+    check("Profile shows the count with no meter, no set and no badge icons",
+          p.get("strip") == 0 and p.get("segs") == 0 and p.get("stack") == 0, p)
     rb = r.get("rankBox") or {}
     # REVERSED IN 243: "the profile box got worse somehow ... it was so
     # good before" - back to the 241 plate: one bar and "Gold · 35%".
@@ -4343,6 +4346,95 @@ def check_b250(br):
     ctx.close()
 
 
+def check_b258(br):
+    """Build 258, Madison's profile-card list. (1) "It says I'm 50 percent
+    done but that's not even accurate, that percentage needs to be
+    precise": past Silver's level with Bronze's one badge read 50% flat
+    and stayed there. It is now now-over-target with the XP into the
+    level and the closest unit's hundos counted, to one decimal. (2) No
+    badge icons on the card. (3) One accent - the rank's - for the level,
+    the XP bar and the ring, not the blue level and the theme's purple.
+    (4) Midnight Oil visibly moves. (5) A banner's pop-up art spans the
+    card instead of sitting 20px left of it. (6) Void's cloak joins its
+    hood. (7) The Valkyrie is ten top-three finishes, the Astronaut five
+    hundos in a day. Written against build 257, where each one fails."""
+    print("\n47. build 258: the profile card, Midnight Oil, the banner pop-up, Void, two challenges")
+    from PIL import Image, ImageChops, ImageStat
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, dpr=2)
+    r = pg.evaluate("""async ()=>{ const out = {}; const wait = ms => new Promise(r => setTimeout(r, ms));
+      try{
+      let p = 0; while(levelProgress(p).level < 30) p += 500; store.lifetime.points = p + 900;
+      const us = topicsIn(QUESTIONS); us.forEach(u => store.unitPerfects[u] = 0);
+      store.unitPerfects[us[0]] = badgeThresholdFor(us[0]); store.unitPerfects[us[3]] = 11;
+      store.rankMapSeen = 99; store.rankMapFx244 = true;
+      showProfile('profile'); await wait(1400);
+      const thr = badgeThresholdFor(us[3]);
+      out.expect = (1 + (1 + 11 / thr) / 3) / 2;
+      out.rank = rankOf(store); out.level = levelOf(store);
+      out.label = (document.querySelector('.profile-rankplate-next') || {}).textContent || '';
+      const sect = document.querySelector('.profile-badgesect');
+      out.badgeSvgs = sect ? sect.querySelectorAll('svg').length : -1;
+      out.badgeText = sect ? sect.textContent : '';
+      const fill = document.querySelector('.profile-hero .profile-xpbar .xpbar-fill');
+      out.fillBg = fill ? getComputedStyle(fill).backgroundImage : '';
+      const lv = document.querySelector('.profile-hero .profile-level-value');
+      out.levelBg = lv ? getComputedStyle(lv).backgroundImage : '';
+      const av = document.querySelector('.profile-hero-avatar');
+      out.ring = av ? getComputedStyle(av).boxShadow : '';
+      const hex = RANK_COLOR[out.rank]; const n = parseInt(hex.slice(1), 16);
+      out.rankRgb = 'rgb(' + (n >> 16) + ', ' + ((n >> 8) & 255) + ', ' + (n & 255) + ')';
+      /* 5. the banner pop-up */
+      showCustomize(); await wait(500);
+      showUnlockDetail(bannerDetail('study50')); await wait(700);
+      const sh = document.querySelector('.unlock-card'), art = document.querySelector('.unlock-card-art');
+      const a = sh.getBoundingClientRect(), b = art.getBoundingClientRect();
+      out.popup = [Math.round(b.left - a.left), Math.round(a.right - b.right)];
+      document.querySelector('.invite-overlay').remove();
+      /* 6. Void */
+      const v = buildAvatarCharSVG('voidwalker'); document.body.appendChild(v);
+      const body = v.querySelector('.cx-body path'), head = v.querySelector('.cx-head ellipse');
+      const bb = body.getBBox(), hb = head.getBBox();
+      out.void = { bodyTop: bb.y, headBottom: hb.y + hb.height, bodyW: bb.width };
+      v.remove();
+      /* 7. the two challenges */
+      const f = CHARACTER_FEATS;
+      store.vrWins = 0; store.vrTop3 = 9; const nine = f.vrwins10.done();
+      store.vrTop3 = 10; const ten = f.vrwins10.done();
+      store.vrTop3 = 0; store.vrWins = 10; const oldWins = f.vrwins10.done();
+      out.valk = [nine, ten, oldWins];
+      out.astro = f.hundo7day.need;
+      } catch(e){ out.threw = String(e); }
+      return out; }""")
+    import re as _re
+    m = _re.search(r"([0-9]+(?:\.[0-9])?)%", r.get("label", ""))
+    got = float(m.group(1)) if m else -1
+    check("the rank percentage is exact, to one decimal, not the step-based 50%",
+          m is not None and abs(got - int(r["expect"] * 1000) / 10) < 0.11 and got != 50, r)
+    check("no badge icons on the Profile card, and it says how far to the next badge",
+          r.get("badgeSvgs") == 0 and "hundo" in r.get("badgeText", ""), r)
+    check("one accent: the level number, the XP bar and the ring are the rank's colour, not blue",
+          r.get("rankRgb") in r.get("fillBg", "") and "46, 135, 240" not in r.get("fillBg", "")
+          and "63, 127, 208" not in r.get("levelBg", "") and r.get("levelBg", "") not in ("", "none"), r)
+    check("the banner's art spans the pop-up, edge to edge", all(abs(x) <= 2 for x in r.get("popup", [99, 99])), r.get("popup"))
+    vd = r.get("void") or {}
+    check("Void's cloak reaches up behind its head, wider than the old bust",
+          vd.get("bodyTop", 99) < vd.get("headBottom", 0) - 4 and vd.get("bodyW", 0) > 28, vd)
+    check("the Valkyrie is ten top-three finishes, and ten old wins still keep it", r.get("valk") == [False, True, True], r.get("valk"))
+    check("the Astronaut is five hundos in a day", r.get("astro") == 5, r.get("astro"))
+    # 4. Midnight Oil, measured the way section 45 measures the ladder
+    pg.evaluate("""()=>{ document.querySelectorAll('.invite-overlay').forEach(x => x.remove());
+      const w = document.createElement('div'); w.id = 'bn258';
+      w.style.cssText = 'position:fixed;left:20px;top:200px;width:400px;height:150px;z-index:99999;overflow:hidden';
+      const b = buildBannerArt('study50'); b.style.cssText = 'position:absolute;inset:0'; w.appendChild(b); document.body.appendChild(w); }""")
+    pg.wait_for_timeout(700)
+    el = pg.locator("#bn258"); fr = []
+    for _ in range(8):
+        fr.append(Image.open(io.BytesIO(el.screenshot())).convert("RGB")); pg.wait_for_timeout(350)
+    mv = round(max(sum(ImageStat.Stat(ImageChops.difference(fr[0], f)).mean) for f in fr[1:]), 1)
+    check("Midnight Oil visibly moves (it measured about 3.6-4; now 8-12)", mv >= 6, mv)
+    ctx.close()
+
+
 B245_POLISH = ["modes", "daily_schedule", "slogan", "bugreport", "daily_announce", "start_pill", "daily_header"]
 
 
@@ -4404,6 +4496,7 @@ def main():
             check_b246(br)
             check_b248_weekly(br)
             check_b250(br)
+            check_b258(br)
         finally:
             br.close()
     SERVER.shutdown()

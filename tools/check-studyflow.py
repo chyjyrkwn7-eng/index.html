@@ -289,7 +289,10 @@ with sync_playwright() as pw:
                     " return {w:r.width, h:r.height, drawn:r.width-(clear?2*bw:0), close21:reach(b,21), info:bi?reach(bi,21):null}; }")
     ck("the close button answers 21px from its centre in every direction", c["close21"] and c["w"] >= 43.5 and c["h"] >= 43.5, c)
     ck("and still draws the same 2.1rem (33.6px) circle", abs(c["drawn"] - 33.6) < 1.5, c)
-    ck("the 'How Most missed works' dot answers 21px from its centre too", c["info"] is True, c)
+    # DECISION CHANGED (build 254): the "How Most missed works" dot came
+    # off with the long caption ("the description for most missed is way
+    # too much"), so what is checked now is that it has not come back.
+    ck("the 'How Most missed works' dot is gone, with the long caption", c["info"] is None, c)
     ctx.close()
 
     ck("no page errors", not errors, errors[:3])
