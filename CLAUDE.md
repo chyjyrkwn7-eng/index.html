@@ -7864,3 +7864,22 @@ because "succeeded ... with fuzz" is the only warning there is.
 - check-behaviour 47 covers all seven and fails on build 257 in each.
   check-studyflow 13's "How Most missed works" dot check now asserts the
   dot is GONE (it came off in 254).
+
+### Build 259
+
+- **A new challenge character: the Knight.** "We also need to add another
+  character to unlock." Unlocked by `hardcore5` - beat 5 units on
+  Hardcore in Game mode - counted off `store.unitGameBeat` through
+  `hardcoreUnitsBeaten()`, like the Hardcore banner at 10, so every unit
+  already beaten counts and anybody who already qualifies is handed it on
+  Home (they are not in `store.unlocksShown.chars`, which is what
+  `pendingHomeUnlocks()` diffs against). Game mode had a banner and no
+  character; this is the step before the banner.
+- The drawing is a closed steel great-helm with a gold cross, a visor
+  slit with ember light for eyes (so, like the Hacker, it reads at 26px
+  as one shape with a light in it), a crimson plume, and a blue surcoat
+  with a gold shield. Glow `#E0404F`, the plume. `AVATAR_ART_SCALE` 1.06.
+  Moving parts: `cx-fx-plume` sways from its socket (`cx-plume`), and
+  `cx-fx-helmsheen` is a glint across the helm; both run faster on a win.
+- check-behaviour 47 asserts it: `hardcore5`, locked at 4 units and held
+  at 5, and every moving part present.

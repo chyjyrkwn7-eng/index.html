@@ -13605,6 +13605,17 @@
   .avatarchar-svg .cx-k-valkyrie{ --cx-blink:6.4s; --cx-blink-at:-3.9s; }
   .avatarchar-svg .cx-k-hacker{ --cx-blink:5.5s; --cx-blink-at:-.7s; }
   .avatarchar-svg .cx-k-timekeeper{ --cx-blink:7.3s; --cx-blink-at:-5.2s; }
+  /* Knight (build 258): the plume sways from its socket on the crown,
+     at the left of its box; a glint crosses the helm now and then. */
+  .avatarchar-svg .cx-k-knight{ --cx-blink:6.9s; --cx-blink-at:-2.4s; }
+  .avatarchar-svg .cx-fx-plume{ transform-origin:2% 45%; }
+  @media (prefers-reduced-motion:no-preference){
+    .char-live .avatarchar-svg .cx-fx-plume{ animation:cx-plume 3.2s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-helmsheen{ animation:cx-sheen-idle 5.2s ease-in-out -2.2s infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-plume{ animation:cx-plume .4s ease-in-out infinite alternate; }
+    .char-react-win .avatarchar-svg .cx-fx-helmsheen{ animation:cx-sheen 1.4s ease-in-out .3s infinite; }
+  }
+  @keyframes cx-plume{ from{ rotate:-4deg; } to{ rotate:5deg; } }
   /* Each wing flexes from its root, where it meets the helm. */
   .avatarchar-svg .cx-fx-wing-l{ transform-origin:96% 72%; }
   .avatarchar-svg .cx-fx-wing-r{ transform-origin:4% 72%; }
@@ -31235,7 +31246,9 @@ const AVATAR_CHARACTERS = [
                     was the Scholar's, and the K-9's before that, build
                     244: "I hate the k9 character")
        Wolf       - studied on 30 different days (new in 244: "add
-                    another character in the challenge rewards") */
+                    another character in the challenge rewards")
+       Knight     - 5 units beaten on Hardcore in Game mode (new in 258:
+                    "we also need to add another character to unlock") */
   { id: "detective",  kind: "detective",  feat: "daily10" },
   { id: "masked",     kind: "masked",     feat: "retake100" },
   { id: "zeus",       kind: "zeus",       feat: "weektop" },
@@ -31246,6 +31259,7 @@ const AVATAR_CHARACTERS = [
   { id: "astronaut",  kind: "astronaut",  feat: "hundo7day" },
   { id: "hacker",     kind: "hacker",     feat: "study20h" },
   { id: "timekeeper", kind: "timekeeper", feat: "days30" },
+  { id: "knight",     kind: "knight",     feat: "hardcore5" },
   /* ---- SECRETS ----
      Things you FIND rather than work towards. Build 244 took the Officer
      out completely ("we will remove the officer character completely")
@@ -31300,7 +31314,7 @@ const AVATAR_CHARACTERS = [
 const AVATAR_GRID_NAME = { masked: "Masked One" };
 const AVATAR_DISPLAY_NAME = {
   lunar: "Lunar", solar: "Solar", tempest: "Tempest", frost: "Frost", oracle: "Oracle", inferno: "Inferno",
-  swat: "SWAT", valkyrie: "Valkyrie", hacker: "Hacker", timekeeper: "Timekeeper",
+  swat: "SWAT", valkyrie: "Valkyrie", hacker: "Hacker", timekeeper: "Timekeeper", knight: "Knight",
   pirate: "Pirate", scholar: "Scholar", wolf: "Wolf",
   paladin: "Paladin", sentinel: "Sentinel", k9: "K-9",
   ninja: "Ninja", ghost: "Ghost", queen: "Queen", wizard: "Wizard",
@@ -31324,7 +31338,7 @@ const AVATAR_GLOW = {
   k9: "#D9A05A",
   ninja: "#E0453F", ghost: "#E8ECF4", queen: "#8B4FC4", wizard: "#6C5BD4",
   grizzly: "#B9793C", alien: "#4FD18A", samurai: "#C0392B", dragon: "#E04A2F",
-  officer: "#3D74E8", clown: "#F05A9B", swat: "#3D74E8", valkyrie: "#8CC8FF", hacker: "#3DFFB0", timekeeper: "#8A86FF", robot: "#6FD3E8", astronaut: "#F2B233",
+  officer: "#3D74E8", clown: "#F05A9B", swat: "#3D74E8", valkyrie: "#8CC8FF", hacker: "#3DFFB0", timekeeper: "#8A86FF", knight: "#E0404F", robot: "#6FD3E8", astronaut: "#F2B233",
   /* Read off each one's artwork like the rest: the detective's amber
      street-light, the cold light in Zeus's cracks, the mask's own
      lacquer, and for Void the middle of its three flare colours - the
@@ -31367,6 +31381,12 @@ const CHARACTER_FEATS = {
      {easy, average, hardcore} per unit since Game mode shipped, and the
      ladder inside recordGameBeatIfEligible() already refuses Hardcore
      until Average is beaten. This just counts it. */
+  /* Build 258, the Knight: half of the Hardcore banner, so Game mode has
+     a character on the way to it. Counted off store.unitGameBeat like
+     the banner, so every unit already beaten on Hardcore counts. */
+  hardcore5:  { label: "Beat 5 units on Hardcore in Game mode",
+                done: () => hardcoreUnitsBeaten() >= 5,
+                have: () => Math.min(hardcoreUnitsBeaten(), 5), need: 5 },
   hardcore10: { label: "Beat Hardcore on 10 units",
                 done: () => hardcoreUnitsBeaten() >= 10,
                 have: () => hardcoreUnitsBeaten(), need: 10 },
@@ -31632,7 +31652,7 @@ function buildAvatarCharSVGSafe(charId){
 const AVATAR_ART_SCALE = {
   dragon: 1.09, detective: 1.16, masked: 1.21, zeus: 1.05, poseidon: 1.05,
   voidwalker: 1.23, officer: 1.06, astronaut: 1.10,
-  marksman: 1.06, pharaoh: 1.03
+  marksman: 1.06, pharaoh: 1.03, knight: 1.06
 };
 
 /* The two retired starters are drawn as the Wizard wherever they still
@@ -33070,6 +33090,79 @@ function drawAvatarCharSVG(charId){
     });
     close();
     sheen(wingPaths.concat([helm]), "cx-fx-wingsheen", 3.4, 36.6, 3, 16, "#FFFFFF");
+    return done();
+  }
+  /* ================= KNIGHT (build 258) =================
+     Five units beaten on Hardcore in Game mode - "we also need to add
+     another character to unlock". Game mode had a banner (Hardcore on
+     ten units) and no character, and a knight is what beating the
+     hardest setting looks like. THE HELM IS THE FACE: a closed steel
+     great-helm with a gold cross down the front and a visor slit, and
+     behind the slit two points of ember light for eyes - so, like the
+     Hacker, the whole character reads at 26px as one shape with a light
+     in it. A crimson plume sweeps back off the crown; a blue surcoat
+     with a gold shield on the chest. Signature: the plume sways from its
+     socket, and a glint crosses the helm. */
+  if(def.kind === "knight"){
+    const steel = headGrad("#FFFFFF", "#AEBBCB", "#39465A");
+    const steelDk = headGrad("#C4CFDC", "#6D7C92", "#222C3C");
+    const gold = headGrad("#FFF4C8", "#E6B64A", "#7A5210");
+    const plume = headGrad("#FF9AA2", "#D8303F", "#5E0B18");
+    const coat = headGrad("#5C7FD8", "#23408E", "#0A1638");
+    const ember = "#FF7A3D";
+    const mirD = d => d.replace(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g, (m, x, y) => (+(40 - x).toFixed(2)) + " " + y);
+    open("cx-body");
+    svg.appendChild(mk("path", { d: "M5.4 40 Q6 31 12.6 28.6 L27.4 28.6 Q34 31 34.6 40 Z", fill: coat }));
+    /* Pauldrons: two steel lames on each shoulder. */
+    ["M5.8 37.4 Q6 32.4 10.6 30.6 L12.4 32.4 Q9.2 34 8.8 37.8 Z", "M7 33.6 Q8 29.6 13.4 28.6 L15.6 29.8 Q11 30.8 9.6 34.4 Z"].forEach((d, i) => {
+      [d, mirD(d)].forEach(dd => svg.appendChild(mk("path", { d: dd, fill: i ? steel : steelDk, stroke: "#1E2838", "stroke-width": ".25", "stroke-linejoin": "round" })));
+    });
+    /* The mail at the throat, then the surcoat's gold hem round the neck. */
+    svg.appendChild(mk("path", { d: "M13.2 30.6 Q13.8 28.2 20 28.2 Q26.2 28.2 26.8 30.6 Q20 32.2 13.2 30.6 Z", fill: steelDk }));
+    for(let x = 14.2; x < 26; x += 1.2) svg.appendChild(mk("circle", { cx: x.toFixed(2), cy: 29.9, r: .38, fill: "none", stroke: "#C4CFDC", "stroke-width": ".2", opacity: ".7" }));
+    svg.appendChild(mk("path", { d: "M13.2 30.6 Q20 32.2 26.8 30.6", fill: "none", stroke: "#E6B64A", "stroke-width": ".5" }));
+    /* The shield on the chest: gold, with a crimson cross. */
+    const shield = "M17 32.4 L23 32.4 L23 35.2 Q23 37.8 20 39 Q17 37.8 17 35.2 Z";
+    svg.appendChild(mk("path", { d: shield, fill: gold, stroke: "#6A4508", "stroke-width": ".3", "stroke-linejoin": "round" }));
+    svg.appendChild(mk("path", { d: "M19.35 33 L20.65 33 L20.65 34.6 L22.3 34.6 L22.3 35.8 L20.65 35.8 L20.65 38.3 L19.35 38.3 L19.35 35.8 L17.7 35.8 L17.7 34.6 L19.35 34.6 Z", fill: "#C42336" }));
+    close();
+    open("cx-head");
+    /* The plume, behind the helm: a crest sweeping up and back from a
+       gold socket on the crown, in three scalloped tiers of feather. */
+    const plumeD = "M20.2 9.0 Q21.4 3.2 27.8 3.4 Q33.8 4.2 35.2 11.2 Q33 9.2 30.8 9.5 Q33 11.4 32.8 15.4 Q30.4 12.2 27.8 12.0 Q28.6 14.0 27.6 16.2 Q25.6 12.0 21.8 11.2 Z";
+    open("cx-fx cx-fx-plume");
+    svg.appendChild(mk("path", { d: plumeD, fill: plume, stroke: "#4A0812", "stroke-width": ".3", "stroke-linejoin": "round" }));
+    ["M21.6 8.6 Q25 5.0 30.6 6.0", "M22.4 10.0 Q26.6 8.0 31.6 10.2", "M22.6 11.0 Q25.8 10.4 28.6 13.0"].forEach(d =>
+      svg.appendChild(mk("path", { d, fill: "none", stroke: "#FFC2C8", "stroke-width": ".35", "stroke-linecap": "round", opacity: ".7" })));
+    close();
+    /* The great-helm: straight sides, a rounded crown, and a gently
+       flared foot. */
+    const helm = "M12.2 27 L12 14.8 Q12 7.2 20 6.8 Q28 7.2 28 14.8 L27.8 27 Q24 28.8 20 28.8 Q16 28.8 12.2 27 Z";
+    svg.appendChild(mk("path", { d: helm, fill: steel, stroke: "#1E2838", "stroke-width": ".35" }));
+    svg.appendChild(mk("path", { d: "M14.4 9.6 Q13.2 11.8 13.2 15", fill: "none", stroke: "#FFFFFF", "stroke-width": ".55", "stroke-linecap": "round", opacity: ".8" }));
+    svg.appendChild(mk("rect", { x: 18.6, y: 5.8, width: 2.8, height: 1.6, rx: .4, fill: gold, stroke: "#6A4508", "stroke-width": ".2" }));
+    /* A gold brow band and a gold strip down the face: the cross. */
+    svg.appendChild(mk("path", { d: "M12 14 Q20 12.6 28 14 L28 15.2 Q20 13.8 12 15.2 Z", fill: gold, stroke: "#6A4508", "stroke-width": ".15" }));
+    svg.appendChild(mk("path", { d: "M19.25 19 L20.75 19 L20.75 28.7 L19.25 28.7 Z", fill: gold, stroke: "#6A4508", "stroke-width": ".15" }));
+    /* The visor slit, one each side of the nasal bar. */
+    ["M13.2 16.6 L18.9 16.4 L18.9 18.1 L13.4 18.3 Z", mirD("M13.2 16.6 L18.9 16.4 L18.9 18.1 L13.4 18.3 Z")].forEach(d =>
+      svg.appendChild(mk("path", { d, fill: "#06080D", stroke: "#1E2838", "stroke-width": ".2" })));
+    /* Breaths: two small grilles of holes low on the helm. */
+    [[15.2, 1], [24.8, -1]].forEach(([x0]) => {
+      for(let r = 0; r < 3; r++) for(let c = 0; c < 2; c++)
+        svg.appendChild(mk("circle", { cx: (x0 + (c - .5) * 1.5).toFixed(2), cy: (21.4 + r * 1.5).toFixed(2), r: .34, fill: "#141A26" }));
+    });
+    /* The eyes: ember light behind the slit. */
+    open("cx-eyes");
+    [[16.2, 17.35], [23.8, 17.35]].forEach(([x, y]) => {
+      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 2.3, ry: 1.25, fill: ember, opacity: ".55" }));
+      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 1.5, ry: .62, fill: "#FFB36B" }));
+      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: .95, ry: .34, fill: "#FFF6EA" }));
+    });
+    close();
+    closedEyes([[16.2, 17.4, .9], [23.8, 17.4, .9]], "#5A2A18", .4);
+    close();
+    sheen([helm], "cx-fx-helmsheen", 11, 29, 6, 29, "#FFFFFF");
     return done();
   }
   /* ================= HACKER =================
@@ -56005,7 +56098,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-30-258";
+const APP_BUILD = "2026-09-30-259";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

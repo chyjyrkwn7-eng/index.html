@@ -2840,7 +2840,7 @@ def check_b243(br):
     # up, the Scholar/Wolf/Pirate challenges and SWAT as its own secret.
     check("a new character on each rank from the second up, in rank order",
           r.get("ranks") == [None, "lunar", "solar", "tempest", "frost", "oracle", "inferno"], r.get("ranks"))
-    check("the Clown is five wins, the Astronaut seven hundos, the Hacker time studied, the Timekeeper days studied, the Valkyrie ten wins, and SWAT is retired (build 245)",
+    check("the Clown is five wins, the Astronaut hundos in a day, the Hacker time studied, the Timekeeper days studied, the Valkyrie the Virtual Room, and SWAT is retired (build 245)",
           r.get("feats") == {"clown": "vrwins5", "astronaut": "hundo7day", "hacker": "study20h", "timekeeper": "days30",
                              "valkyrie": "vrwins10", "swatRetired": True}, r.get("feats"))
     check("every retired character is drawn as what replaced it",
@@ -4403,6 +4403,18 @@ def check_b258(br):
       store.vrTop3 = 0; store.vrWins = 10; const oldWins = f.vrwins10.done();
       out.valk = [nine, ten, oldWins];
       out.astro = f.hundo7day.need;
+      /* 8. the Knight: a new challenge character, five units on Hardcore */
+      const kn = AVATAR_CHARACTERS.find(c => c.id === 'knight');
+      const realGB = store.unitGameBeat; store.unitGameBeat = {};
+      us.slice(0, 4).forEach(u => store.unitGameBeat[u] = { easy: true, average: true, hardcore: true });
+      const four = isLockedCharacter('knight');
+      store.unitGameBeat[us[4]] = { easy: true, average: true, hardcore: true };
+      const five = isLockedCharacter('knight');
+      store.unitGameBeat = realGB;
+      const ks = buildAvatarCharSVG('knight');
+      out.knight = { feat: kn && kn.feat, name: AVATAR_DISPLAY_NAME.knight, lockedAt4: four, lockedAt5: five,
+        parts: ['cx-body', 'cx-head', 'cx-eyes', 'cx-eyes-closed', 'cx-fx-plume'].every(c => !!ks.querySelector('.' + c)),
+        glow: avatarGlowColor('knight') };
       } catch(e){ out.threw = String(e); }
       return out; }""")
     import re as _re
@@ -4421,6 +4433,10 @@ def check_b258(br):
           vd.get("bodyTop", 99) < vd.get("headBottom", 0) - 4 and vd.get("bodyW", 0) > 28, vd)
     check("the Valkyrie is ten top-three finishes, and ten old wins still keep it", r.get("valk") == [False, True, True], r.get("valk"))
     check("the Astronaut is five hundos in a day", r.get("astro") == 5, r.get("astro"))
+    kn = r.get("knight") or {}
+    check("a new challenge character: the Knight, five units on Hardcore, drawn with every moving part",
+          kn.get("feat") == "hardcore5" and kn.get("name") == "Knight" and kn.get("lockedAt4") is True
+          and kn.get("lockedAt5") is False and kn.get("parts") is True and kn.get("glow") == "#E0404F", kn)
     # 4. Midnight Oil, measured the way section 45 measures the ladder
     pg.evaluate("""()=>{ document.querySelectorAll('.invite-overlay').forEach(x => x.remove());
       const w = document.createElement('div'); w.id = 'bn258';
