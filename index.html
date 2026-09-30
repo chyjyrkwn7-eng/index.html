@@ -11492,7 +11492,7 @@
     .rank-emblem-svg .rk-d3{ animation-delay:-2.2s; }
     /* Everywhere else - the leaderboard column, the watermarks, the
        little ones in reward chips - an emblem holds still. */
-    .rank-emblem-svg:not(:is(.cosmic-badge-rank, .rankmap-node, .profile-rankcoin, .rankhero-art, .rankhero-nextemb, .rankmap-giftav, .rs-morph-to, .tierup-banner-icon, .rk-live) .rank-emblem-svg) .rk-a{ animation:none; }
+    .rank-emblem-svg:not(:is(.cosmic-badge-rank, .rankmap-node, .profile-rankcoin, .rankhero-art, .rankhero-nextemb, .rs-morph-to, .tierup-banner-icon, .rk-live) .rank-emblem-svg) .rk-a{ animation:none; }
   }
   @keyframes rk-breathe{ from{ opacity:.72; transform:scale(.93); } to{ opacity:1; transform:scale(1.05); } }
   @keyframes rk-twinkle{ from{ transform:scale(.7); opacity:.6; } to{ transform:scale(1.15); opacity:1; } }
@@ -11510,6 +11510,47 @@
   @keyframes rk-orbit-front{ 0%{transform:translate(0px,0px);opacity:1} 4.17%{transform:translate(-10.6px,.7px);opacity:1} 8.33%{transform:translate(-19px,.1px);opacity:1} 12.5%{transform:translate(-24.7px,-1.8px);opacity:1} 16.67%{transform:translate(-27.4px,-4.8px);opacity:1} 20.83%{transform:translate(-26.7px,-8.7px);opacity:0} 62.5%{transform:translate(66.1px,-35.3px);opacity:0} 25%{transform:translate(-22.9px,-13.3px)} 29.17%{transform:translate(-16px,-18.3px)} 33.33%{transform:translate(-6.7px,-23.3px)} 37.5%{transform:translate(4.5px,-28px)} 41.67%{transform:translate(16.8px,-32px)} 45.83%{transform:translate(29.4px,-35.1px)} 50%{transform:translate(41.4px,-37.1px)} 54.17%{transform:translate(51.9px,-37.8px)} 58.33%{transform:translate(60.4px,-37.2px)} 66.67%{transform:translate(68.8px,-32.3px);opacity:1} 70.83%{transform:translate(68.1px,-28.4px)} 75%{transform:translate(64.2px,-23.8px)} 79.17%{transform:translate(57.4px,-18.8px)} 83.33%{transform:translate(48.1px,-13.8px)} 87.5%{transform:translate(36.9px,-9.1px)} 91.67%{transform:translate(24.5px,-5.1px)} 95.83%{transform:translate(12px,-2px)} 100%{transform:translate(0px,0px);opacity:1} }
   @keyframes rk-shock{ from{ transform:scale(.9); opacity:1; } to{ transform:scale(1.1); opacity:.45; } }
   [data-reduce-motion="true"] .rank-emblem-svg .rk-a{ animation:none !important; }
+  /* the reward chips' tiny flares hold still again (build 253): at 26px the
+     motion cannot be seen, and it was 10-20 animations a chip */
+  .rankmap-giftav .rank-emblem-svg .rk-a{ animation:none !important; }
+  /* off screen, nothing moves (build 252 - see watchRankEmblemOnScreen) */
+  .rank-emblem-svg.rk-idle .rk-a{ animation:none !important; }
+  .bnr.rk-idle, .bnr.rk-idle *{ animation:none !important; }
+  /* BRONZE, SILVER, PLATINUM AND AMETHYST MOVE ENOUGH TO SEE (build 252).
+     "The animation for some of the ranks is barely noticeable, bronze,
+     silver, platinum, and amethyst you can't tell it's animated." Their
+     motion was the set's gentle breathe and a 22-second turn - fine on a
+     big road-map node, invisible in a 40px bubble. Each gets bigger,
+     faster versions of what it already does, in the same layers, so this
+     costs no extra animation at all. */
+  @keyframes rk-breathe-big{ from{ opacity:.5; transform:scale(.82); } to{ opacity:1; transform:scale(1.12); } }
+  @keyframes rk-drift-big{ from{ transform:translate(-5px, 3px); } to{ transform:translate(5px, -3px); } }
+  @keyframes rk-pulse-big{ from{ transform:scale(.76); opacity:.7; } to{ transform:scale(1.2); opacity:1; } }
+  @keyframes rk-twinkle-big{ from{ transform:scale(.45); opacity:.35; } to{ transform:scale(1.3); opacity:1; } }
+  @keyframes rk-swing-big{ from{ transform:rotate(-18deg); } to{ transform:rotate(18deg); } }
+  @keyframes rk-glow-big{ from{ opacity:.2; } to{ opacity:1; } }
+  @media (prefers-reduced-motion:no-preference){
+    .rank-emblem-svg.rk-k-rookie .rk-breathe,
+    .rank-emblem-svg.rk-k-ranger .rk-breathe,
+    .rank-emblem-svg.rk-k-vanguard .rk-breathe,
+    .rank-emblem-svg.rk-k-elite .rk-breathe{ animation-name:rk-breathe-big; animation-duration:2.8s; }
+    .rank-emblem-svg.rk-k-rookie .rk-drift{ animation-name:rk-drift-big; animation-duration:3.2s; }
+    .rank-emblem-svg.rk-k-rookie .rk-pulse,
+    .rank-emblem-svg.rk-k-ranger .rk-pulse{ animation-name:rk-pulse-big; animation-duration:1.9s; }
+    .rank-emblem-svg.rk-k-rookie .rk-twinkle,
+    .rank-emblem-svg.rk-k-ranger .rk-twinkle,
+    .rank-emblem-svg.rk-k-vanguard .rk-twinkle,
+    .rank-emblem-svg.rk-k-elite .rk-twinkle{ animation-name:rk-twinkle-big; animation-duration:1.7s; }
+    .rank-emblem-svg.rk-k-ranger .rk-spin.rk-quick{ animation-duration:6s; }
+    .rank-emblem-svg.rk-k-vanguard .rk-swing.rk-quick{ animation-name:rk-swing-big; animation-duration:3s; }
+    .rank-emblem-svg.rk-k-vanguard .rk-glow,
+    .rank-emblem-svg.rk-k-vanguard .rk-shimmer,
+    .rank-emblem-svg.rk-k-elite .rk-glow{ animation-name:rk-glow-big; animation-duration:1.6s; }
+    .rank-emblem-svg.rk-k-elite .rk-spin.rk-quick{ animation-duration:5s; }
+    .rank-emblem-svg.rk-k-elite .rk-turn.rk-quick{ animation-duration:10s; }
+    .rank-emblem-svg.rk-k-elite .rk-turn.rk-back.rk-quick{ animation-duration:13s; }
+    .rank-emblem-svg.rk-k-elite .rk-flare{ animation-duration:1.5s; }
+  }
   .rankmap-stop.is-locked .rankmap-node{ background:#0C0F14; border-color:rgba(255,255,255,.14); box-shadow:none; }
   .rankmap-stop.is-locked .rankmap-node > svg{ filter:grayscale(1) brightness(.7); opacity:.45; }
   .rankmap-stop.is-next .rankmap-node{ border-style:dashed; }
@@ -40418,6 +40459,10 @@ function buildBannerArt(id){
     const u = "bn" + (++bannerSeq) + "-";
     el.innerHTML = '<svg viewBox="0 0 480 180" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">' + draw(u) + '</svg>';
   }
+  /* A banner moves only while it is on screen (build 253): the three rank
+     banners alone were 271 running animations on the Ranks tab, most of
+     them scrolled out of sight - see watchRankEmblemOnScreen. */
+  if(el.className.indexOf("is-still") < 0) watchRankEmblemOnScreen(el);
   return el;
 }
 function buildThemeBannerArt(accent){
@@ -41009,7 +41054,7 @@ function buildRankEmblemSVG(rankKey){
   const NS = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(NS, "svg");
   svg.setAttribute("viewBox", "0 0 128 128");
-  svg.setAttribute("class", "rank-emblem-svg");
+  svg.setAttribute("class", "rank-emblem-svg rk-k-" + rankKey);
   svg.setAttribute("aria-hidden", "true");
   const base = RANK_COLOR[rankKey] || "#8B939E";
   const uid = "rk" + (++rankEmblemSeq);
@@ -41594,8 +41639,11 @@ function buildRankEmblemSVG(rankKey){
         const x1 = C + dir * ax[0] * 63, y1 = C + dir * ax[1] * 63, x0 = C + dir * ax[0] * 10, y0 = C + dir * ax[1] * 10;
         add(lens(x0, y0, x1, y1, 7.5), { fill: uLinear(x0, y0, x1, y1, [[0, ICE, 0.75], [0.6, LIGHT, 0.35], [1, base, 0]]) });
         add(lens(x0, y0, x1, y1, 2.6), { fill: uLinear(x0, y0, x1, y1, [[0, "#FFFFFF", 1], [0.7, ICE, 0.6], [1, ICE, 0]]) });
-        [0.45, 0.7].forEach(f => add(disc(C + dir * ax[0] * 63 * f, C + dir * ax[1] * 63 * f, 2.2), { fill: "#FFFFFF", opacity: ".75" }));
       });
+      /* the knots in both jets as ONE path (build 252): four dots were
+         four elements for no gain, and the set's top rank has to stay
+         the most elaborate drawing in it */
+      add([1, -1].map(dir => [0.45, 0.7].map(f => disc(C + dir * ax[0] * 63 * f, C + dir * ax[1] * 63 * f, 2.2)).join("")).join(""), { fill: "#FFFFFF", opacity: ".75" });
     });
     const diskG = uRadial(C, C, 58, [[0, HOT, 0], [0.31, HOT, 0], [0.35, "#FFFFFF", 1], [0.46, HOT, 0.95], [0.64, ICE, 0.75], [0.84, LIGHT, 0.4], [1, base, 0]]);
     /* the far half of the disc, behind the shadow */
@@ -41636,6 +41684,11 @@ function buildRankEmblemSVG(rankKey){
     inLayer("rk-breathe rk-fast", C, C, 0, () => { halo(74); halo(52); });
     /* the crown the top three share, as debris rings thrown past the shell (build 250) */
     topCrown(3);
+    /* two more sparks thrown clear of the blast (build 252), static:
+       Supernova stays the busiest drawing in the set without a single
+       extra moving layer */
+    [[C - 44, C - 36, 5.5], [C + 47, C + 30, 4.5]].forEach(([x, y, r]) =>
+      add(burst(x, y, 4, r, 0.16, UP + 0.3), { fill: "#FFFFFF", opacity: ".85" }));
     /* Flares first, so everything else sits on top of them. Four
        different lengths - a star this violent does not throw symmetric
        light. */
@@ -41704,8 +41757,34 @@ function buildRankEmblemSVG(rankKey){
     inLayer("rk-twinkle" + ["", " rk-d2", " rk-d3"][i % 3], x, y, 0, () =>
       add(burst(x, y, 4, sz * (0.85 + 0.3 * PR.k), 0.13, UP), { fill: badgeShade(base, 0.68), opacity: ".92" }));
   });
+  watchRankEmblemOnScreen(svg);
   return svg;
 }
+/* ONLY WHAT IS ON SCREEN MOVES (build 252). "Stuff is disappearing on
+   every screen randomly." Counted: the Ranks tab was running 446
+   animations at once across 557 compositing layers (403 on 249, before
+   the new set), and Home 107 across 156. iOS drops paint when it runs
+   out of graphics memory, which reads exactly as things vanishing. Every
+   emblem now starts still (.rk-idle) and moves only while it is on, or
+   about to come onto, the screen; one scrolled away stops again. Nothing
+   is lost to the eye - you cannot see an emblem move that you cannot
+   see. Detached ones are swept out of the observer so it never grows. */
+var _rkSeen = new Set();
+var _rkIO = typeof IntersectionObserver === "function" ? new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    const t = e.target;
+    if(!t.isConnected){ _rkIO.unobserve(t); _rkSeen.delete(t); return; }
+    t.classList.toggle("rk-idle", !e.isIntersecting);
+  });
+}, { rootMargin: "60px" }) : null;
+function watchRankEmblemOnScreen(svg){
+  /* var, not const, above: this can be reached before those lines have
+     run, and a const there would be a ReferenceError that kills the app */
+  if(!_rkIO || !_rkSeen) return;
+  svg.classList.add("rk-idle");
+  _rkIO.observe(svg); _rkSeen.add(svg);
+}
+setInterval(() => { _rkSeen.forEach(t => { if(!t.isConnected){ try { _rkIO && _rkIO.unobserve(t); } catch(e){} _rkSeen.delete(t); } }); }, 15000);
 
 /* A person's character with their rank on it. Every list that shows
    somebody - the three rankings boards, the Virtual Room lobby, the
@@ -55746,7 +55825,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-30-252";
+const APP_BUILD = "2026-09-30-253";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

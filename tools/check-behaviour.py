@@ -4242,7 +4242,10 @@ def check_b250(br):
     check("every rank on the road map visibly moves - none is still beside its neighbours",
           len(moved) == 7 and min(moved) >= 4.5, moved)
     chips = pg.evaluate("""()=>[...document.querySelectorAll('.rankmap-giftav svg.rank-emblem-svg')].map(s => s.getAnimations({ subtree: true }).length)""")
-    check("and so does each rank's flare in its rewards", len(chips) >= 7 and all(n > 0 for n in chips), chips)
+    # Build 253: the reward chips' flares hold still again - 26px of
+    # motion nobody can see, at 10-20 animations a chip, on a screen that
+    # was running out of graphics memory on a phone.
+    check("the tiny flares in the reward chips hold still", len(chips) >= 7 and all(n == 0 for n in chips), chips)
     d = pg.evaluate("""()=>{ const out = {};
       const g = buildRankEmblemSVG('veteran');
       out.orbit = !!g.querySelector('.rk-orbit') && !!g.querySelector('.rk-orbit-front');
@@ -4285,6 +4288,16 @@ def check_b250(br):
           hero["back"]["hero"] and hero["back"]["ems"] == 7, hero)
     check("and a rank drawing that fails cannot take the planet down with it",
           hero["broken"]["hero"] and not hero["broken"]["threw"], hero)
+    # Build 253: "stuff is disappearing on every screen randomly." The
+    # Ranks tab was running 446 animations over 557 layers (271 of them in
+    # three banners, mostly scrolled out of sight) - more than a phone's
+    # graphics memory holds. Only what is on screen moves now.
+    load = pg.evaluate("""async ()=>{ showRanksScreen(); await new Promise(r => setTimeout(r, 1500));
+      const ranks = document.getAnimations().length;
+      showHome(); await new Promise(r => setTimeout(r, 1200));
+      return { ranks, home: document.getAnimations().length }; }""")
+    check("the Ranks tab runs a budget of animations, not hundreds (only what is on screen moves)",
+          load["ranks"] <= 120 and load["home"] <= 160, load)
     ctx.close()
 
 

@@ -7712,3 +7712,35 @@ because "succeeded ... with fuzz" is the only warning there is.
   `buildRankEmblemSVG` cannot remove the hero (249 fails it).
 - The lag notes under Build 250 describe code that is no longer there;
   the profiling numbers are still right about where the time goes.
+
+### Build 253
+
+- **"Stuff is disappearing on every screen randomly" was graphics
+  memory, and the rank set is what pushed it over.** Counted with
+  `document.getAnimations()` and the CDP layer tree at 440x956: the
+  Ranks tab ran **446 animations over 557 layers** (249: 403 layers),
+  and 271 of those animations were the three rank banners in the road
+  map's reward chips, almost all scrolled out of sight. iOS drops paint
+  when it runs out of graphics memory, which reads as things vanishing
+  at random - and is also the likeliest explanation of 251's "the
+  planet isn't there", which never reproduced as a JS error.
+  Now **only what is on screen moves**: every rank emblem and every
+  animated banner starts `.rk-idle` and an IntersectionObserver
+  (`watchRankEmblemOnScreen`, 60px margin) lets it move only while it
+  is on, or about to come onto, the screen. Ranks: 446 → 21 animations,
+  557 → 44 layers. The reward chips' tiny flares hold still again (26px
+  of motion nobody could see, 10-20 animations a chip). check-behaviour
+  49 holds Ranks to ≤120 and Home to ≤160 running animations.
+- **`_rkIO` and `_rkSeen` are `var`, on purpose.** An emblem can be built
+  before those lines run; a `const` there would be a temporal-dead-zone
+  ReferenceError that kills the whole script.
+- **Bronze, Silver, Platinum and Amethyst move enough to see** ("you
+  can't tell it's animated"): the svg carries `rk-k-<key>` and those four
+  get bigger, faster versions of the motion they already had
+  (`rk-breathe-big`, `rk-pulse-big`, `rk-twinkle-big`, `rk-swing-big`,
+  `rk-glow-big`, quicker spins) - same layers, no extra animations.
+  Road-map frame difference: Bronze 6.8 → 17.6, Silver 5.9 → 12.2,
+  Platinum 7.3 → 18.6, Amethyst 4.7 → 11.2.
+- Section 26's "top rank is the busiest mark" had gone red (Amethyst 37
+  paths vs Supernova 33): Amethyst's four jet knots are one path now and
+  Supernova has two more static sparks. No new moving layers either way.
