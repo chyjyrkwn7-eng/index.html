@@ -1970,9 +1970,9 @@ def check_b235(br):
       await T('after', () => ({ spots: document.querySelectorAll('.rs-spot').length, left: pendingHomeUnlocks().chars.length }));
       showHome(); await wait(4200);
       await T('again', () => document.querySelectorAll('.rs-spot').length);
-      // The Marksman: 150 in a row (100 until build 246), counted from the streak on record.
-      await T('marksman', () => { const had = store.lifetime.longestStreak; store.lifetime.longestStreak = 149;
-        const a = isLockedCharacter('marksman'); store.lifetime.longestStreak = 150; const b = isLockedCharacter('marksman');
+      // The Marksman: its bar in a row (100 until 246, 150 until 259, 200 now), counted from the streak on record.
+      await T('marksman', () => { const had = store.lifetime.longestStreak, N = CHARACTER_FEATS.streak100.need; store.lifetime.longestStreak = N - 1;
+        const a = isLockedCharacter('marksman'); store.lifetime.longestStreak = N; const b = isLockedCharacter('marksman');
         store.lifetime.longestStreak = had; return [a, b]; });
       // The ladders sit together, easiest first.
       await T('order', () => BANNERS.map(b => b.id));
@@ -2014,7 +2014,7 @@ def check_b235(br):
     af = r["after"] if isinstance(r["after"], dict) else {}
     check("each plays once: nothing left afterwards, nothing on the next visit",
           af.get("spots") == 0 and af.get("left") == 0 and r["again"] == 0, [r["after"], r["again"]])
-    check("the Marksman unlocks at 150 in a row and not before", r["marksman"] == [True, False], r["marksman"])
+    check("the Marksman unlocks at its bar in a row and not before", r["marksman"] == [True, False], r["marksman"])
     o = r["order"] if isinstance(r["order"], list) else []
     def run(ids):
         at = [o.index(i) if i in o else -99 for i in ids]
@@ -4099,16 +4099,17 @@ def check_b246(br):
           g["masked"] and not g["drawingGlow"] and g["buttonGlow"], g)
     r = pg.evaluate("""()=>{ const H = 3600000, out = {}; store.legacyChars = [];
       const set = (st, h) => { store.lifetime.longestStreak = st; store.studyLog = { '2026-09-01': h * H }; };
-      set(149, 24.9); out.under = [isLockedCharacter('marksman'), isLockedCharacter('hacker')];
-      set(150, 25); out.at = [isLockedCharacter('marksman'), isLockedCharacter('hacker')];
+      const N = CHARACTER_FEATS.streak100.need;
+      set(N - 1, 24.9); out.under = [isLockedCharacter('marksman'), isLockedCharacter('hacker')];
+      set(N, 25); out.at = [isLockedCharacter('marksman'), isLockedCharacter('hacker')];
       const d = JSON.parse(JSON.stringify(store)); d.avatarChar = 'hacker'; d.studyLog = { '2026-09-01': 22 * H };
       d.lifetime.longestStreak = 120; d.pendingCharUnlocks = ['marksman', 'clown'];
       applyLoadedData(d); out.revoked = [store.avatarChar, store.pendingCharUnlocks.slice()];
-      const e = JSON.parse(JSON.stringify(store)); e.avatarChar = 'marksman'; e.lifetime.longestStreak = 160;
+      const e = JSON.parse(JSON.stringify(store)); e.avatarChar = 'marksman'; e.lifetime.longestStreak = N + 10;
       e.studyLog = { '2026-09-01': 30 * H }; e.pendingCharUnlocks = ['hacker'];
       applyLoadedData(e); out.kept = [store.avatarChar, store.pendingCharUnlocks.slice()];
       return out; }""")
-    check("the Marksman needs 150 in a row and the Hacker 25 hours", r["under"] == [True, True] and r["at"] == [False, False], r)
+    check("the Marksman needs its bar in a row and the Hacker 25 hours", r["under"] == [True, True] and r["at"] == [False, False], r)
     check("under the new bar, the character comes off whoever is wearing it and its announcement is dropped",
           r["revoked"][0] not in ("hacker", "marksman") and r["revoked"][1] == ["clown"], r["revoked"])
     check("at or over it, nothing is taken", r["kept"] == ["marksman", ["hacker"]], r["kept"])
@@ -4379,6 +4380,9 @@ def check_b258(br):
       out.fillBg = fill ? getComputedStyle(fill).backgroundImage : '';
       const lv = document.querySelector('.profile-hero .profile-level-value');
       out.levelBg = lv ? getComputedStyle(lv).backgroundImage : '';
+      out.coverMark = document.querySelectorAll('.profile-cover .profile-cover-mark').length;
+      const cov = document.querySelector('.profile-cover:not(.has-banner)');
+      out.coverHasTheme = !!cov && /color-mix|rgb/.test(getComputedStyle(cov).backgroundImage) && !cov.style.getPropertyValue('--card-accent');
       const av = document.querySelector('.profile-hero-avatar');
       out.ring = av ? getComputedStyle(av).boxShadow : '';
       const hex = RANK_COLOR[out.rank]; const n = parseInt(hex.slice(1), 16);
@@ -4403,6 +4407,18 @@ def check_b258(br):
       store.vrTop3 = 0; store.vrWins = 10; const oldWins = f.vrwins10.done();
       out.valk = [nine, ten, oldWins];
       out.astro = f.hundo7day.need;
+      out.marks = f.streak100.need;
+      /* 9. hold something you already have: the same card, marked held */
+      store.avatarChar = 'ghost'; showCustomize(); await wait(700);
+      const nj = [...document.querySelectorAll('.screen-customize .avatarchar-option')].find(b => b.title === 'Ninja');
+      nj.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 5, clientY: 5, pointerId: 1 }));
+      await wait(650);
+      const held = document.querySelector('.unlock-card.is-unlocked');
+      nj.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1 })); nj.click();
+      out.hold = { card: !!held, tick: !!(held && held.querySelector('.unlock-card-lock.is-held')),
+        text: held ? held.innerText : '', stillGhost: store.avatarChar === 'ghost' };
+      document.querySelectorAll('.invite-overlay').forEach(x => x.remove());
+      nj.click(); out.hold.tapPicks = store.avatarChar === 'ninja';
       /* 8. the Knight: a new challenge character, five units on Hardcore */
       const kn = AVATAR_CHARACTERS.find(c => c.id === 'knight');
       const realGB = store.unitGameBeat; store.unitGameBeat = {};
@@ -4424,15 +4440,23 @@ def check_b258(br):
           m is not None and abs(got - int(r["expect"] * 1000) / 10) < 0.11 and got != 50, r)
     check("no badge icons on the Profile card, and it says how far to the next badge",
           r.get("badgeSvgs") == 0 and "hundo" in r.get("badgeText", ""), r)
-    check("one accent: the level number, the XP bar and the ring are the rank's colour, not blue",
-          r.get("rankRgb") in r.get("fillBg", "") and "46, 135, 240" not in r.get("fillBg", "")
-          and "63, 127, 208" not in r.get("levelBg", "") and r.get("levelBg", "") not in ("", "none"), r)
+    # REVERSED IN 259: "No no no, the profile change is bad there. I don't
+    # like the bronze all the way through." The level is blue again and
+    # the default cover is the theme, with no rank on it.
+    check("the level and XP bar are blue again, and the cover carries no rank",
+          "46, 135, 240" in r.get("fillBg", "") and "63, 127, 208" in r.get("levelBg", "")
+          and r.get("coverMark") == 0 and r.get("coverHasTheme") is True, r)
     check("the banner's art spans the pop-up, edge to edge", all(abs(x) <= 2 for x in r.get("popup", [99, 99])), r.get("popup"))
     vd = r.get("void") or {}
     check("Void's cloak reaches up behind its head, wider than the old bust",
           vd.get("bodyTop", 99) < vd.get("headBottom", 0) - 4 and vd.get("bodyW", 0) > 28, vd)
     check("the Valkyrie is ten top-three finishes, and ten old wins still keep it", r.get("valk") == [False, True, True], r.get("valk"))
     check("the Astronaut is five hundos in a day", r.get("astro") == 5, r.get("astro"))
+    check("the Marksman is 200 in a row", r.get("marks") == 200, r.get("marks"))
+    h = r.get("hold") or {}
+    check("holding something you have opens its card, held: a tick, 'Unlocked', and it is not picked by the hold",
+          h.get("card") and h.get("tick") and "Unlocked" in h.get("text", "") and "day one" in h.get("text", "")
+          and h.get("stillGhost") and h.get("tapPicks"), h)
     kn = r.get("knight") or {}
     check("a new challenge character: the Knight, five units on Hardcore, drawn with every moving part",
           kn.get("feat") == "hardcore5" and kn.get("name") == "Knight" and kn.get("lockedAt4") is True

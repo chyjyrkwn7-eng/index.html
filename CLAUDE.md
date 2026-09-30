@@ -7883,3 +7883,31 @@ because "succeeded ... with fuzz" is the only warning there is.
   `cx-fx-helmsheen` is a glint across the helm; both run faster on a win.
 - check-behaviour 47 asserts it: `hardcore5`, locked at 4 units and held
   at 5, and every moving part present.
+
+### Build 260
+
+- **The Profile card's one-accent colour is reverted.** "No no no, the
+  profile change is bad there. I don't like the bronze all the way
+  through." The level number and XP bar are blue again, the character's
+  ring is its own colour, and `--card-accent` is gone. What stays from
+  258: no badge icons on the card, the badges row's "N hundos to the next
+  badge", and the exact rank percentage.
+- **The default cover is the theme, with no rank on it.** "Maybe just
+  default to the theme you have set if you don't have a banner set." The
+  strip was already the theme's three colours, but the rank's emblem was
+  watermarked across it (`.profile-cover-mark`); that is no longer
+  built. A worn banner still replaces the strip.
+- **The Marksman is 200 in a row** (`streak100.need`), across any tests -
+  which it always was: `recordResult()` carries
+  `lifetime.currentStreak` between tests and only a miss (never the
+  daily question) resets it. The label now says so. Anybody under 200
+  loses it through the same live check and `revokeRaisedCharacters()`.
+  The gates read the number off `CHARACTER_FEATS.streak100.need` now
+  instead of writing it down.
+- **Press and hold anything you already have in Customize** - a
+  character, a banner, a theme - and it opens the same card a locked one
+  opens on a tap, marked held: a green tick where the padlock goes, a
+  full green bar and "Unlocked". `attachHoldDetail()` uses the unit
+  cards' hold rules (420ms, 8px, the ending click swallowed), so a hold
+  never also picks the thing and a tap still does. Starters say "Yours
+  from day one."; the Customize subtitle mentions the hold.

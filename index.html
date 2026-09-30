@@ -15132,60 +15132,9 @@
   }
   .profile-badge-closest{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
-  /* ---- ONE ACCENT FOR THE PROFILE CARD (build 258) ----
-     "A lot of colors fighting here." --card-accent is the rank you hold,
-     set on .profile-hero; the level number, the badge count, the XP bar,
-     the ring round the character and the default cover all read it.
-     The lighter and darker steps are mixed from it here rather than
-     stored, so one value re-colours the whole card. */
-  .profile-hero{ --card-accent:#A9B7C6; }
-  .profile-hero .shine-accent{
-    background-size:200% 100%;
-    -webkit-background-clip:text; background-clip:text; color:transparent;
-    animation:stat-shine 4.5s ease-in-out infinite;
-    background-image:linear-gradient(100deg,
-      color-mix(in srgb, var(--card-accent) 85%, #000) 0%,
-      color-mix(in srgb, var(--card-accent) 70%, #fff) 32%,
-      color-mix(in srgb, var(--card-accent) 18%, #fff) 46%,
-      color-mix(in srgb, var(--card-accent) 70%, #fff) 60%,
-      color-mix(in srgb, var(--card-accent) 85%, #000) 100%);
-  }
-  .profile-hero .profile-level-value.shine-accent{
-    filter:drop-shadow(0 0 10px color-mix(in srgb, var(--card-accent) 45%, transparent));
-  }
-  .profile-hero .profile-xpbar{
-    box-shadow:inset 0 2px 7px rgba(0,0,0,.5), 0 0 0 4px color-mix(in srgb, var(--card-accent) 7%, transparent);
-  }
-  .profile-hero .profile-xpbar .xpbar-fill{
-    background:linear-gradient(180deg,
-      color-mix(in srgb, var(--card-accent) 30%, #fff) 0%,
-      color-mix(in srgb, var(--card-accent) 75%, #fff) 26%,
-      var(--card-accent) 60%,
-      color-mix(in srgb, var(--card-accent) 70%, #000) 88%,
-      color-mix(in srgb, var(--card-accent) 58%, #000) 100%);
-    box-shadow:0 0 16px color-mix(in srgb, var(--card-accent) 55%, transparent),
-               0 0 34px color-mix(in srgb, var(--card-accent) 20%, transparent),
-               inset 0 1px 0 rgba(255,255,255,.7),
-               inset 0 -2px 4px rgba(0,0,0,.4);
-  }
-  /* The ring round the character is the card's colour; the pool of light
-     behind it stays the character's own, which is the one thing it glows. */
-  .profile-hero.has-cover .profile-hero-avatar{
-    background:radial-gradient(circle at 50% 38%,
-      color-mix(in srgb, var(--card-accent) 16%, #1C212B), #11141B 72%);
-    box-shadow:0 0 0 4px #191D26,
-      0 0 0 5.5px color-mix(in srgb, var(--card-accent) 60%, transparent),
-      0 14px 30px rgba(0,0,0,.45);
-  }
-  /* The default cover (no banner chosen) is the card's colour too, not
-     the theme's three - that purple-and-pink strip was the fourth hue. */
-  .profile-hero .profile-cover:not(.has-banner){
-    background:
-      radial-gradient(90% 150% at 12% 0%, color-mix(in srgb, var(--card-accent) 42%, transparent), transparent 62%),
-      radial-gradient(80% 140% at 88% 8%, color-mix(in srgb, var(--card-accent) 30%, transparent), transparent 64%),
-      radial-gradient(70% 120% at 50% 110%, color-mix(in srgb, var(--card-accent) 22%, transparent), transparent 70%),
-      linear-gradient(160deg, #1B2130, #10131A);
-  }
+  /* The badge count on its plate is plain white (build 259): the level
+     keeps the card's one lit number. */
+  .profile-hero .profile-badge-value{ color:var(--ink); filter:none; }
   /* ---- the count on the Badges tab (build 243) ----
      "All I wanted was a better way to show it than the 0/16" - so a medal
      with the number struck into it, not a bar. Silver until the set is
@@ -16516,6 +16465,12 @@
     box-shadow:0 0 0 3px rgba(14,17,22,.9), 0 4px 10px rgba(0,0,0,.5); }
   .unlock-card-banner .unlock-card-lock{ right:1rem; bottom:auto; top:.8rem; }
   .unlock-card-lock svg{ width:.9rem; height:.9rem; }
+  /* Held (build 259): a tick in green where the padlock goes, a green bar. */
+  .unlock-card-lock.is-held{ color:#7CF0A8; border-color:rgba(124,240,168,.55); }
+  .unlock-card.is-unlocked .unlock-card-fill{ background:linear-gradient(90deg, #2FBF71, #7CF0A8); box-shadow:0 0 10px rgba(47,191,113,.5); }
+  .unlock-card-count.is-done{ color:#7CF0A8; }
+  /* A hold must not start text selection or the iOS callout. */
+  .screen-customize :is(.avatarchar-option, .banner-opt, .swatch){ -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; }
   .unlock-card-kicker{ margin:0; font-size:.62rem; font-weight:800; letter-spacing:.18em; text-transform:uppercase; color:rgba(255,255,255,.55); }
   .unlock-card-name{ margin:.2rem 0 .5rem; font-family:var(--serif); font-size:1.55rem; font-weight:700; color:#F3F5F7; line-height:1.15; }
   .unlock-card-desc{ margin:0 auto .85rem; max-width:18rem; font-size:.92rem; line-height:1.4; color:rgba(243,245,247,.86); }
@@ -31239,7 +31194,8 @@ const AVATAR_CHARACTERS = [
                     times until build 258; was the Spartan's,
                     build 244: "I don't like the spartan, change that
                     to something else")
-       Marksman   - 150 right in a row (100 until build 246)
+       Marksman   - 200 right in a row, across tests (100 until build
+                    246, 150 until 259)
        Astronaut  - a hundo in 5 different units in one day (7 until
                     build 258; was Blitz's)
        Hacker     - 25 hours of studying in total (20 until build 246;
@@ -31445,9 +31401,14 @@ const CHARACTER_FEATS = {
      out live from the streak on record, raising the number takes the
      character back from anybody under it by itself;
      revokeRaisedCharacters() takes it off whoever is wearing it. */
-  streak100: { label: "Answer 150 questions in a row without a miss",
-               done: () => ((store.lifetime && store.lifetime.longestStreak) || 0) >= 150,
-               have: () => ((store.lifetime && store.lifetime.longestStreak) || 0), need: 150 },
+  /* 200 SINCE BUILD 259 (was 150): "Make the correct answer streak 200,
+     it doesn't need to be a single test either." It never was one test:
+     recordResult() carries lifetime.currentStreak from test to test and
+     only a miss resets it - the label now says so. Same take-back as
+     before, by the same live check. */
+  streak100: { label: "Answer 200 questions in a row without a miss, across any tests",
+               done: () => ((store.lifetime && store.lifetime.longestStreak) || 0) >= 200,
+               have: () => ((store.lifetime && store.lifetime.longestStreak) || 0), need: 200 },
   /* Build 241, Eclipse. Counted from the whole-unit loop in summarize()
      at the moment a unit comes out at 100%, so it is the same "whole
      unit" every hundo already needs. Tracked from this build: nothing
@@ -56098,7 +56059,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-30-259";
+const APP_BUILD = "2026-09-30-260";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -68719,6 +68680,12 @@ function characterDetail(id){
   const kind = def && def.secret ? "Secret" : def && def.unlock ? "Rank reward" : def && def.feat ? "Challenge reward" : "Starter";
   const o = { kind: "character", id: id, kicker: kind, name: AVATAR_DISPLAY_NAME[id] || id };
   if(!def) return o;
+  /* Held through a press-and-hold (build 259): a starter says so, and a
+     character kept from an earlier build says that. */
+  if(!def.unlock && !def.feat){
+    o.desc = def.legacy || def.retired ? "Yours from an earlier version of the app." : "Yours from day one.";
+    return o;
+  }
   if(def.unlock) return Object.assign(o, rankDetail(def.unlock));
   if(def.secretHint && !def.secretHint.shown()){ o.desc = def.secretHint.text; o.hideArt = true; return o; }
   if(def.feat){
@@ -68779,7 +68746,16 @@ function showUnlockDetail(o){
   artWrap.className = "unlock-card-artwrap";
   const lock = document.createElement("span");
   lock.className = "unlock-card-lock"; lock.setAttribute("aria-hidden", "true");
-  lock.appendChild(buildLockIcon());
+  /* HELD, NOT LOCKED (build 259): pressing and holding something you
+     already have opens this same card, with a tick where the padlock
+     goes and a full bar - "what the requirement was". */
+  if(o.unlocked){
+    sheet.classList.add("is-unlocked");
+    lock.classList.add("is-held");
+    lock.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.4 8.4 L6.6 11.4 L12.6 4.8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  } else {
+    lock.appendChild(buildLockIcon());
+  }
   artWrap.append(art, lock);
   sheet.appendChild(artWrap);
   const kick = document.createElement("p");
@@ -68792,7 +68768,7 @@ function showUnlockDetail(o){
     d.className = "unlock-card-desc"; d.textContent = o.desc;
     sheet.appendChild(d);
   }
-  const frac = typeof o.frac === "number" ? o.frac
+  const frac = o.unlocked ? 1 : typeof o.frac === "number" ? o.frac
     : (typeof o.have === "number" && o.need ? o.have / o.need : null);
   if(frac !== null){
     const bar = document.createElement("div");
@@ -68806,7 +68782,12 @@ function showUnlockDetail(o){
     }));
     /* A count under the bar only where it is worth reading: never for a
        one-off ("0/1"), never for a rank step (the note says the rank). */
-    if(typeof o.have === "number" && o.need > 1){
+    if(o.unlocked){
+      const c = document.createElement("p");
+      c.className = "unlock-card-count is-done";
+      c.textContent = "Unlocked";
+      sheet.appendChild(c);
+    } else if(typeof o.have === "number" && o.need > 1){
       const c = document.createElement("p");
       c.className = "unlock-card-count";
       c.textContent = o.have.toLocaleString() + " of " + o.need.toLocaleString();
@@ -68828,6 +68809,34 @@ function showUnlockDetail(o){
   mountSheetOverlay(overlay);
 }
 
+/* PRESS AND HOLD TO SEE WHAT IT TOOK (build 259). "Characters and banners
+   and themes you do have unlocked, even if it's unlocked, make it so that
+   if hold it down, you can see what the requirement was or something with
+   the same look as the others." A tap on something you hold still picks
+   it; a hold opens the same card a locked one opens on a tap, marked as
+   held. The rules are the unit cards' (attachUnitHold): 420ms without
+   moving more than 8px, and the click that ends a hold is swallowed so it
+   does not also pick the thing. */
+function attachHoldDetail(el, detail){
+  let timer = null, sx = 0, sy = 0, fired = false;
+  const open = () => { const o = detail(); if(o){ o.unlocked = true; showUnlockDetail(o); } };
+  const cancel = () => { if(timer){ clearTimeout(timer); timer = null; } el.classList.remove("is-pressing"); };
+  el.addEventListener("pointerdown", e => {
+    if(e.button && e.button !== 0) return;
+    fired = false; sx = e.clientX; sy = e.clientY; cancel();
+    el.classList.add("is-pressing");
+    timer = setTimeout(() => { timer = null; fired = true; el.classList.remove("is-pressing"); open(); }, UNIT_HOLD_MS);
+  });
+  el.addEventListener("pointermove", e => {
+    if(timer && (Math.abs(e.clientX - sx) > 8 || Math.abs(e.clientY - sy) > 8)) cancel();
+  });
+  ["pointerup", "pointercancel", "pointerleave"].forEach(t => el.addEventListener(t, cancel));
+  el.addEventListener("click", e => {
+    if(fired){ e.preventDefault(); e.stopImmediatePropagation(); fired = false; }
+  }, true);
+  el.addEventListener("contextmenu", e => { e.preventDefault(); if(!fired){ cancel(); open(); } });
+}
+
 function showCustomize(){
   setActiveNav(null);
   countEl.textContent = "Customize";
@@ -68841,7 +68850,7 @@ function showCustomize(){
   panel.appendChild(title);
   const sub = document.createElement("p");
   sub.className = "cal-sub";
-  sub.textContent = "Your name, your character and the colour the app runs in.";
+  sub.textContent = "Your name, your character and the colour the app runs in. Press and hold anything to see how it's earned.";
   panel.appendChild(sub);
 
   /* ---- name, with Change beside it ---- */
@@ -68972,6 +68981,7 @@ function showCustomize(){
       lockMark.appendChild(buildLockIcon());
       opt.appendChild(lockMark);
     }
+    if(!locked) attachHoldDetail(opt, () => characterDetail(charDef.id));
     opt.addEventListener("click", () => {
       if(locked){ showUnlockDetail(characterDetail(charDef.id)); return; }
       store.avatarChar = charDef.id;
@@ -69053,6 +69063,8 @@ function showCustomize(){
       nd.className = "banner-opt-need"; nd.textContent = need;
       b.appendChild(nd);
     }
+    if(!locked) attachHoldDetail(b, () => id ? bannerDetail(id)
+      : { kind: "banner", id: "", kicker: "Banner", name: "Default", desc: "Yours from day one. It takes the colours of whichever theme you run." });
     b.addEventListener("click", () => {
       if(locked){ showUnlockDetail(bannerDetail(id)); return; }
       store.banner = id;
@@ -69104,6 +69116,9 @@ function showCustomize(){
       lockMark.appendChild(buildLockIcon());
       b.appendChild(lockMark);
     }
+    if(!locked) attachHoldDetail(b, () => name === "ink"
+      ? { kind: "theme", id: "ink", kicker: "Theme", name: "Default theme", desc: "Yours from day one." }
+      : themeDetail(name));
     b.addEventListener("click", () => {
       if(locked){
         showUnlockDetail(themeDetail(name));
@@ -70440,20 +70455,6 @@ function showProfile(defaultTab){
      and opens the same calendar. */
   const heroSect = document.createElement("div");
   heroSect.className = "profile-hero";
-  /* ONE COLOUR FOR THE CARD (build 258). "There's a lot of colors
-     fighting here ... a purple banner background thing, a green
-     character, the bronze rank thing, the blue level." Four sources, four
-     hues. The card now takes ONE accent - the rank you hold, which is
-     already the plate's colour and the thing this card is about - and the
-     level number, the XP bar, the badge count, the ring round the
-     character and the default cover strip are all drawn in it. The
-     character keeps its own colours (it is a drawing, not a surface), and
-     a banner you chose keeps its own, because you chose it. Unranked, the
-     accent is the rank you are heading to. */
-  {
-    const accentKey = rankOf(store) || TIER_ORDER_FULL[0];
-    heroSect.style.setProperty("--card-accent", RANK_COLOR[accentKey] || "#A9B7C6");
-  }
 
   const heroTop = document.createElement("div");
   heroTop.className = "profile-hero-top";
@@ -70658,13 +70659,11 @@ function showProfile(defaultTab){
     cover.dataset.banner = worn;
     cover.appendChild(buildBannerArt(worn));
   }
-  if(rankNow){
-    const wm = document.createElement("span");
-    wm.className = "profile-cover-mark";
-    wm.style.setProperty("--rank-color", RANK_COLOR[rankNow]);
-    wm.appendChild(buildRankEmblemSVG(rankNow));
-    cover.appendChild(wm);
-  }
+  /* NO RANK ON THE COVER (build 259). "Maybe making the default banner
+     just something not to do with the rank? Maybe just default to the
+     theme you have set if you don't have a banner set." The strip is the
+     theme (or the banner you wear) and nothing else; the rank already has
+     its plate directly under the name. */
   heroSect.appendChild(cover);
   heroId.append(nameDisplayRow, rankLine, nameInput, nameSaveBtn);
   heroTop.append(heroAvatar, heroId);
@@ -70771,7 +70770,7 @@ function showProfile(defaultTab){
   const levelNum = document.createElement("div");
   levelNum.className = "profile-level-num profile-statplate";
   const levelNumValue = document.createElement("span");
-  levelNumValue.className = "profile-level-value shine-accent";
+  levelNumValue.className = "profile-level-value shine-blue";
   levelNumValue.textContent = String(prog.level);
   const levelNumWord = document.createElement("span");
   levelNumWord.className = "profile-level-word";
@@ -70837,7 +70836,7 @@ function showProfile(defaultTab){
   const badgePlate = document.createElement("span");
   badgePlate.className = "profile-badgeplate";
   const badgePlateNum = document.createElement("span");
-  badgePlateNum.className = "profile-level-value profile-badge-value shine-accent";
+  badgePlateNum.className = "profile-level-value profile-badge-value";
   badgePlateNum.textContent = String(badgeCount);
   const badgePlateWord = document.createElement("span");
   badgePlateWord.className = "profile-level-word";
