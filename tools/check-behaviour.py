@@ -1678,8 +1678,15 @@ def check_b232(br):
     # Build 244: the Valkyrie took the Spartan's ten wins, the Hacker the
     # K-9's twenty hours, the Timekeeper is new, and SWAT is its own secret.
     # Build 245: SWAT removed entirely - not in the row at all.
-    check("the challenge row: Detective, the Masked One, the two gods, the Clown, the Valkyrie, the Marksman, the Astronaut, the Hacker, the Timekeeper, then the secrets",
-          r["order"] == ["detective", "masked", "zeus", "poseidon", "clown", "valkyrie", "marksman", "astronaut", "hacker", "timekeeper", "voidwalker", "umbra", "singularity"], r["order"])
+    # Build 262: the Night Owl joined the end of the row. Asserted as the
+    # SHAPE now - the known ones in their order, anything new after them,
+    # the secrets last - because a list written out in full failed the
+    # build for adding a character, which is the one thing this row is for.
+    known = ["detective", "masked", "zeus", "poseidon", "clown", "valkyrie", "marksman", "astronaut", "hacker", "timekeeper"]
+    secrets = ["voidwalker", "umbra", "singularity"]
+    o = r["order"]
+    check("the challenge row: the known challenge characters in order, anything newer after them (the Night Owl), then the secrets",
+          o[:len(known)] == known and o[-len(secrets):] == secrets and "nightowl" in o and "knight" not in o, o)
     # Build 233: the Masked One is back, for retaking missed questions.
     check("the Masked One unlocks at 100 retaken questions and says how far along you are",
           isinstance(r["masked"], dict) and r["masked"]["feat"] == "retake100" and r["masked"]["before"] is True
