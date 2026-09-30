@@ -13625,6 +13625,40 @@
   @keyframes cx-ronin-scarf{ from{ rotate:-5deg; scale:1 1; } to{ rotate:7deg; scale:1.06 .9; } }
   @keyframes cx-ronin-eye{ 0%, 100%{ opacity:.55; } 50%{ opacity:.95; } }
   @keyframes cx-ronin-neon{ from{ transform:translateX(-1.2px); opacity:.7; } to{ transform:translateX(1.2px); opacity:1; } }
+  /* THE FIVE REDRAWN IN 265 - the Masked One, Viper (the Valkyrie's
+     id), the Hacker, the Clown and Anubis (Poseidon's id). Every class
+     and keyframe here is new and unique to its character. */
+  .avatarchar-svg .cx-k-viper{ --cx-blink:7.2s; --cx-blink-at:-1.4s; }
+  .avatarchar-svg .cx-k-anubis{ --cx-blink:6.2s; --cx-blink-at:-4.4s; }
+  .avatarchar-svg .cx-fx-vphood{ transform-origin:50% 92%; }
+  .avatarchar-svg .cx-fx-cl2hat{ transform-origin:50% 100%; }
+  @media (prefers-reduced-motion:no-preference){
+    .char-live .avatarchar-svg .cx-fx-mk2crack{ animation:cx-mk2-pulse 2.2s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-mk2glow{ animation:cx-mk2-pulse 2.2s ease-in-out -1.1s infinite; }
+    .char-live .avatarchar-svg .cx-fx-vphood{ animation:cx-vp-flare 3.6s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-vpeye{ animation:cx-vp-glint 2.8s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-hk2split{ animation:cx-hk2-jitter 3.2s steps(1) infinite; }
+    .char-live .avatarchar-svg .cx-fx-hk2scan{ animation:cx-hk2-scan 2.4s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-hk2slice{ animation:cx-hk2-slice 4.6s steps(1) infinite; }
+    .char-live .avatarchar-svg .cx-fx-hk2trace{ animation:cx-mk2-pulse 3s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-cl2hat{ animation:cx-cl2-sway 3.4s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-cl2bells{ animation:cx-mk2-pulse 1.8s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-anbeye{ animation:cx-vp-glint 3.2s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-anbsheen{ animation:cx-sheen-idle 6s ease-in-out -2s infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-mk2crack{ animation:cx-mk2-pulse .5s ease-in-out infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-vphood{ animation:cx-vp-flare .45s ease-in-out infinite alternate; }
+    .char-react-win .avatarchar-svg .cx-fx-hk2split{ animation:cx-hk2-jitter .6s steps(1) infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-hk2slice{ animation:cx-hk2-slice .9s steps(1) infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-cl2hat{ animation:cx-cl2-sway .4s ease-in-out infinite alternate; }
+    .char-react-win .avatarchar-svg .cx-fx-anbsheen{ animation:cx-sheen 1.3s ease-in-out .3s infinite; }
+  }
+  @keyframes cx-mk2-pulse{ 0%, 100%{ opacity:.6; } 50%{ opacity:1; } }
+  @keyframes cx-vp-flare{ from{ scale:1 1; } to{ scale:1.05 1.02; } }
+  @keyframes cx-vp-glint{ 0%, 100%{ opacity:.45; } 50%{ opacity:.9; } }
+  @keyframes cx-hk2-jitter{ 0%, 100%{ transform:none; } 62%{ transform:translateX(.6px); } 66%{ transform:translateX(-.5px); } 70%{ transform:none; } }
+  @keyframes cx-hk2-scan{ 0%{ transform:translateX(0); opacity:0; } 8%{ opacity:1; } 86%{ opacity:1; } 94%{ transform:translateX(17px); opacity:0; } 100%{ transform:translateX(0); opacity:0; } }
+  @keyframes cx-hk2-slice{ 0%, 100%{ opacity:0; transform:none; } 72%{ opacity:1; transform:translateX(1.2px); } 75%{ opacity:1; transform:translateX(-1px); } 78%{ opacity:0; transform:none; } }
+  @keyframes cx-cl2-sway{ from{ rotate:-3deg; } to{ rotate:3deg; } }
   /* Each wing flexes from its root, where it meets the helm. */
   .avatarchar-svg .cx-fx-wing-l{ transform-origin:96% 72%; }
   .avatarchar-svg .cx-fx-wing-r{ transform-origin:4% 72%; }
@@ -31220,9 +31254,9 @@ const AVATAR_CHARACTERS = [
   { id: "detective",  kind: "detective",  feat: "daily10" },
   { id: "masked",     kind: "masked",     feat: "retake100" },
   { id: "zeus",       kind: "zeus",       feat: "weektop" },
-  { id: "poseidon",   kind: "poseidon",   feat: "weektop3x3" },
+  { id: "poseidon",   kind: "anubis",     feat: "weektop3x3" },
   { id: "clown",      kind: "clown",      feat: "vrwins5" },
-  { id: "valkyrie",   kind: "valkyrie",   feat: "vrwins10" },
+  { id: "valkyrie",   kind: "viper",      feat: "vrwins10" },
   { id: "marksman",   kind: "marksman",   feat: "streak100" },
   { id: "astronaut",  kind: "astronaut",  feat: "hundo7day" },
   { id: "hacker",     kind: "hacker",     feat: "study20h" },
@@ -31282,7 +31316,7 @@ const AVATAR_CHARACTERS = [
 const AVATAR_GRID_NAME = { masked: "Masked One" };
 const AVATAR_DISPLAY_NAME = {
   lunar: "Lunar", solar: "Solar", tempest: "Tempest", frost: "Frost", oracle: "Oracle", inferno: "Inferno",
-  swat: "SWAT", valkyrie: "Valkyrie", hacker: "Hacker", timekeeper: "Timekeeper", ronin: "Ronin", nightowl: "Night Owl", knight: "Knight",
+  swat: "SWAT", valkyrie: "Viper", hacker: "Hacker", timekeeper: "Timekeeper", ronin: "Ronin", nightowl: "Night Owl", knight: "Knight",
   pirate: "Pirate", scholar: "Scholar", wolf: "Wolf",
   paladin: "Paladin", sentinel: "Sentinel", k9: "K-9",
   ninja: "Ninja", ghost: "Ghost", queen: "Queen", wizard: "Wizard",
@@ -31290,7 +31324,7 @@ const AVATAR_DISPLAY_NAME = {
   officer: "Officer", clown: "Clown", robot: "Robot", astronaut: "Astronaut",
   detective: "Detective", zeus: "Zeus", masked: "The Masked One", voidwalker: "Void",
   champion: "Champion", umbra: "Umbra", singularity: "Singularity",
-  poseidon: "Poseidon", spartan: "Spartan", pharaoh: "Pharaoh", marksman: "Marksman",
+  poseidon: "Anubis", spartan: "Spartan", pharaoh: "Pharaoh", marksman: "Marksman",
   blitz: "Blitz"
 };
 /* The glow a SELECTED character gives off - "give the character you have
@@ -31306,7 +31340,7 @@ const AVATAR_GLOW = {
   k9: "#D9A05A",
   ninja: "#E0453F", ghost: "#E8ECF4", queen: "#8B4FC4", wizard: "#6C5BD4",
   grizzly: "#B9793C", alien: "#4FD18A", samurai: "#C0392B", dragon: "#E04A2F",
-  officer: "#3D74E8", clown: "#F05A9B", swat: "#3D74E8", valkyrie: "#8CC8FF", hacker: "#3DFFB0", timekeeper: "#8A86FF", ronin: "#FF2E88", robot: "#6FD3E8", astronaut: "#F2B233",
+  officer: "#3D74E8", clown: "#9B5CFF", swat: "#3D74E8", valkyrie: "#B6FF2E", hacker: "#3DFFB0", timekeeper: "#8A86FF", ronin: "#FF2E88", robot: "#6FD3E8", astronaut: "#F2B233",
   /* Read off each one's artwork like the rest: the detective's amber
      street-light, the cold light in Zeus's cracks, the mask's own
      lacquer, and for Void the middle of its three flare colours - the
@@ -31633,7 +31667,7 @@ function buildAvatarCharSVGSafe(charId){
    same size on every one. Re-measure (rasterise, first row with alpha
    over 200) after redrawing anybody, rather than guessing. */
 const AVATAR_ART_SCALE = {
-  dragon: 1.09, detective: 1.16, masked: 1.21, zeus: 1.05, poseidon: 1.05,
+  dragon: 1.09, detective: 1.16, masked: 1.08, zeus: 1.05,
   voidwalker: 1.23, officer: 1.06, astronaut: 1.10,
   marksman: 1.06, pharaoh: 1.03
 };
@@ -32326,161 +32360,61 @@ function drawAvatarCharSVG(charId){
      The gold laurel and the bolt carved into the plinth are the only
      colour on him, and the bolt is lit in his own glow colour: it is
      what says Zeus rather than "some Greek". */
-  /* POSEIDON IS ZEUS'S BROTHER, SO HE IS THE SAME OBJECT: a marble bust on
-     a socle, one material for everything, blank eyes under a carved brow.
-     The silhouette of the bust, the socle and the head are Zeus's own
-     numbers, so the two sit side by side as a pair. What changes is what
-     says "the sea" at 34px:
-       - SEA MARBLE. A pale aqua stone rather than warm white - the whole
-         statue changes colour, never just a robe.
-       - HAIR AND BEARD THAT FLOW. Zeus's are compact scalloped masses;
-         these run long, down over the shoulders and to the chest, with
-         the carved grooves drawn as S-curves so they read as water.
-       - A GILT THREE-POINTED CROWN instead of the laurel, its tines cut
-         like a trident's.
-       - A TRIDENT cut into the socle, lit sea-cyan from inside the way
-         Zeus's bolt is lit ice-blue, and a running-wave border carved
-         along the edge of the drapery. */
-  if(def.kind === "poseidon"){
-    const marble = headGrad("#F1FBF8", "#C3E5DD", "#83B1A9");
-    const stone2 = headGrad("#DCF1EB", "#A6D0C6", "#6B9990");
-    const recess = "#5A8A82";
-    const line   = "#4C7A73";
-    const gold   = headGrad("#FFEDA8", "#E3B54A", "#9A7020");
-
+  /* ================= ANUBIS (build 265) =================
+     Three weeks in the weekly top three - Poseidon's challenge and
+     Poseidon's id, so everybody who earned it keeps it: "Poseidon needs
+     to be something else, not another Greek god. Make that something
+     unique as well." The jackal-headed guardian. TALL EARS are the
+     silhouette, nothing else in the set has them; a black head with a
+     long muzzle seen from the front, turquoise eyes lit and lined in
+     gold, a gold-and-lapis striped headdress framing it, and a broad
+     jewelled collar. The eyes are the light and a gleam crosses the
+     headdress. Parts are cx-fx-anb* / cx-anb-*: unique. */
+  if(def.kind === "anubis"){
+    const turq = "#3FF5E0";
+    const black = headGrad("#4A4A56", "#18181E", "#040406");
+    const gold = headGrad("#FFF2B8", "#E0B040", "#7A5410");
+    const lapis = headGrad("#4A6FE0", "#1F3A9E", "#0A1640");
     open("cx-body");
-    /* The socle, Zeus's to the tenth of a unit. */
-    svg.appendChild(mk("path", { d: "M11.6 33.1 Q11.6 32 12.8 32 L27.2 32 Q28.4 32 28.4 33.1 L28.4 33.6 L11.6 33.6 Z", fill: marble }));
-    svg.appendChild(mk("path", { d: "M13.2 33.6 L26.8 33.6 L27.4 38 L12.6 38 Z", fill: stone2 }));
-    svg.appendChild(mk("path", { d: "M11.8 33.62 L28.2 33.62", fill: "none", stroke: line,
-                                 "stroke-width": ".35", opacity: ".7" }));
-    /* The same dark carved panel as Zeus's, in deep sea green (build 236). */
-    svg.appendChild(mk("rect", { x: "16.9", y: "32.5", width: "6.2", height: "4.4", rx: ".9",
-                                 fill: "#0C2E30", stroke: "#061819", "stroke-width": ".25" }));
-    svg.appendChild(mk("ellipse", { cx: "20", cy: "34.7", rx: "2.3", ry: "1.7", fill: "#1FC4C4", opacity: ".35" }));
-    /* The trident, cut into the block and lit from inside: a soft cyan
-       bed under it, then the shaft and three barbed tines as one shape. */
-    open("cx-fx cx-fx-trident");
-    svg.appendChild(mk("path", { d: "M 20 32.9 L 20 36.7 M 18.2 33.2 L 18.2 34.1 Q 18.2 34.9 20 34.9 Q 21.8 34.9 21.8 34.1 L 21.8 33.2",
-                                 fill: "none", stroke: "#5FF0E6", "stroke-width": "1.15",
-                                 "stroke-linecap": "round", "stroke-linejoin": "round", opacity: ".35" }));
-    svg.appendChild(mk("path", { d: "M 20 33.05 L 20 36.7 M 18.2 33.35 L 18.2 34.1 Q 18.2 34.9 20 34.9 Q 21.8 34.9 21.8 34.1 L 21.8 33.35",
-                                 fill: "none", stroke: "#C8FFF9", "stroke-width": ".5",
-                                 "stroke-linecap": "round", "stroke-linejoin": "round" }));
-    [18.2, 20, 21.8].forEach(x =>
-      svg.appendChild(mk("path", { d: "M" + (x - .5) + " 33.55 L" + x + " 32.75 L" + (x + .5) + " 33.55 Z",
-                                   fill: "#C8FFF9", stroke: "#1FC4C4", "stroke-width": ".16",
-                                   "stroke-linejoin": "round" })));
-    close();
-
-    /* THE BUST: the same shoulders and the same curved cut as Zeus. */
-    svg.appendChild(mk("path", { d: "M7 29.6 Q7.2 25 12.8 23.4 L27.2 23.4 Q32.8 25 33 29.6 Q27.6 31.6 20 31.1 Q12.4 31.6 7 29.6 Z",
-                                 fill: marble }));
-    /* The drapery over the left shoulder, as Zeus wears it... */
-    svg.appendChild(mk("path", { d: "M7 29.6 Q7.2 25 12.8 23.4 L16.8 23.6 Q19.6 27.6 25.4 30.9 Q20 31.4 14.4 31.2 Q10.2 30.9 7 29.6 Z",
-                                 fill: stone2 }));
-    [["M13.4 24.2 Q16.6 27.6 21.8 31", ".36"]].forEach(([d, w]) =>
-      svg.appendChild(mk("path", { d: d, fill: "none", stroke: line, "stroke-width": w,
-                                   "stroke-linecap": "round", opacity: ".55" })));
-    /* ...with a running-wave border carved along its hem: a row of small
-       breaking crests, generated along the edge so every one is the
-       same size. */
-    (function(){
-      /* A constant-amplitude sine along the hem, offset square to it,
-         so it reads as a carved border rather than a scribble. */
-      const x0 = 9.4, y0 = 27.9, x1 = 22.4, y1 = 30.5, n = 5, amp = .5;
-      const len = Math.hypot(x1 - x0, y1 - y0), nx = -(y1 - y0) / len, ny = (x1 - x0) / len;
-      const at = (t, o) => [x0 + (x1 - x0) * t + nx * o, y0 + (y1 - y0) * t + ny * o];
-      const f = v => v.toFixed(2);
-      let p = at(0, 0), d = "M" + f(p[0]) + " " + f(p[1]);
-      for(let i = 0; i < n * 2; i++){
-        const sgn = i % 2 ? 1 : -1, t0 = i / (n * 2), t1 = (i + 1) / (n * 2);
-        const c1 = at(t0 + (t1 - t0) * .36, sgn * amp * 1.33), c2 = at(t0 + (t1 - t0) * .64, sgn * amp * 1.33), e = at(t1, 0);
-        d += " C" + f(c1[0]) + " " + f(c1[1]) + " " + f(c2[0]) + " " + f(c2[1]) + " " + f(e[0]) + " " + f(e[1]);
-      }
-      svg.appendChild(mk("path", { d: d, fill: "none", stroke: line, "stroke-width": ".4",
-                                   "stroke-linecap": "round", opacity: ".7" }));
-    })();
-    svg.appendChild(mk("path", { d: "M7 29.6 Q12.4 31.6 20 31.1 Q27.6 31.6 33 29.6", fill: "none",
-                                 stroke: recess, "stroke-width": ".5", opacity: ".75" }));
-
-    close();
-    open("cx-head");
-    /* The neck. */
-    svg.appendChild(mk("path", { d: "M16.2 20 L23.8 20 L24.4 24.6 L15.6 24.6 Z", fill: stone2 }));
-
-    /* THE LONG HAIR, behind the head: it falls past the ears and lies
-       on the shoulders in three waves a side. */
-    svg.appendChild(mk("path", { d: "M20 6.2 Q13.4 6 12.2 10.2 Q10.3 12.6 11.5 15 Q9.9 17.5 11.1 20 Q9.6 22.6 11.2 24.9 Q11.6 27 14 26.8 Q13.2 24.6 14.4 22.8 L14.4 16 L25.6 16 L25.6 22.8 Q26.8 24.6 26 26.8 Q28.4 27 28.8 24.9 Q30.4 22.6 28.9 20 Q30.1 17.5 28.5 15 Q29.7 12.6 27.8 10.2 Q26.6 6 20 6.2 Z",
-                                 fill: stone2 }));
-    [["M12.9 11.4 Q13.9 13.4 12.6 15.4 Q11.7 17.4 12.8 19.6 Q13.6 21.6 12.4 24"],
-     ["M27.1 11.4 Q26.1 13.4 27.4 15.4 Q28.3 17.4 27.2 19.6 Q26.4 21.6 27.6 24"]]
-      .forEach(([d]) => svg.appendChild(mk("path", { d: d, fill: "none", stroke: line, "stroke-width": ".42",
-                                                      "stroke-linecap": "round", opacity: ".65" })));
-    /* Shadow where the hair lies on the shoulder, so it sits ON it. */
-    svg.appendChild(mk("path", { d: "M11.2 24.9 Q11.6 27 14 26.8 M28.8 24.9 Q28.4 27 26 26.8", fill: "none",
-                                 stroke: recess, "stroke-width": ".45", "stroke-linecap": "round", opacity: ".6" }));
-
-    /* The head. */
-    svg.appendChild(mk("ellipse", { cx: 20, cy: 14.6, rx: 6.4, ry: 7.4, fill: marble }));
-
-    /* The hair over the brow: Zeus's scalloped mass, which the crown
-       sits in. */
-    svg.appendChild(mk("path", { d: "M12.6 15.2 Q11.2 13.2 12.4 11.6 Q11.8 9 14.2 8.2 Q15 5.8 17.6 6.1 Q19.6 4.2 22.2 5.9 Q24.9 5.6 25.8 8.1 Q28.3 8.9 27.6 11.6 Q28.8 13.2 27.4 15.2 Q26.8 13 25.4 12.6 Q24.8 11.2 23.2 11.5 Q22 10.4 20 10.9 Q18 10.4 16.8 11.5 Q15.2 11.2 14.6 12.6 Q13.2 13 12.6 15.2 Z",
-                                 fill: stone2 }));
-
-    /* THE BEARD: longer than his brother's and parted into flowing
-       locks, each hem curling outward like the lip of a wave. */
-    svg.appendChild(mk("path", { d: "M13.4 15.6 Q12.8 20 14 23 Q13 25.6 14.6 27.6 Q15.9 28.8 16.9 27.7 Q17.3 30 19.2 29.7 Q20 30.8 20.8 29.7 Q22.7 30 23.1 27.7 Q24.1 28.8 25.4 27.6 Q27 25.6 26 23 Q27.2 20 26.6 15.6 Q25.6 19 23.6 19.8 Q21.8 19 20 19.6 Q18.2 19 16.4 19.8 Q14.4 19 13.4 15.6 Z",
-                                 fill: stone2 }));
-    [["M15.3 20.4 Q14.3 22.6 15.5 24.4 Q16.5 26 15.6 27.5"], ["M17.8 20.6 Q16.9 23 18.1 25 Q18.9 26.8 18.3 28.6"],
-     ["M22.2 20.6 Q23.1 23 21.9 25 Q21.1 26.8 21.7 28.6"], ["M24.7 20.4 Q25.7 22.6 24.5 24.4 Q23.5 26 24.4 27.5"]]
-      .forEach(([d]) => svg.appendChild(mk("path", { d: d, fill: "none", stroke: line, "stroke-width": ".42",
-                                                      "stroke-linecap": "round", opacity: ".62" })));
-    /* The beard's shadow on the chest. */
-    svg.appendChild(mk("path", { d: "M14.6 27.6 Q20 32 25.4 27.6", fill: "none", stroke: recess,
-                                 "stroke-width": ".6", "stroke-linecap": "round", opacity: ".4" }));
-    /* The moustache, sweeping down into the beard. */
-    svg.appendChild(mk("path", { d: "M15.6 19.8 Q17.8 17.6 20 18.8 Q22.2 17.6 24.4 19.8 Q22 20.5 20 19.9 Q18 20.5 15.6 19.8 Z",
-                                 fill: stone2, stroke: line, "stroke-width": ".25" }));
-
-    /* The brow, the blank eyes, and the Greek nose - Zeus's own. */
-    svg.appendChild(mk("path", { d: "M14.6 12.9 Q17.2 11.8 19.6 13 L20.4 13 Q22.8 11.8 25.4 12.9", fill: "none",
-                                 stroke: recess, "stroke-width": ".75", "stroke-linecap": "round" }));
-    open("cx-eyes");
-    [17.3, 22.7].forEach(cx => {
-      svg.appendChild(mk("path", { d: "M" + (cx - 1.9) + " 14.3 Q" + cx + " 13.2 " + (cx + 1.9) + " 14.3 Q" + cx + " 15.5 " + (cx - 1.9) + " 14.3 Z",
-                                   fill: "#EEF9F6", stroke: recess, "stroke-width": ".35" }));
-      svg.appendChild(mk("path", { d: "M" + (cx - 1.9) + " 14.2 Q" + cx + " 13 " + (cx + 1.9) + " 14.2", fill: "none",
-                                   stroke: line, "stroke-width": ".45", "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M4.8 40 Q5.4 31 11.6 28.6 L28.4 28.6 Q34.6 31 35.2 40 Z", fill: black }));
+    /* the broad collar: bands of lapis, gold and turquoise */
+    [[0, lapis], [1.7, gold], [3.2, "#1FB8A8"], [4.5, gold]].forEach(([o, f]) => {
+      svg.appendChild(mk("path", { d: "M" + (8.6 - o * .5) + " " + (29.6 + o) + " Q20 " + (36 + o * 1.2) + " " + (31.4 + o * .5) + " " + (29.6 + o) + " L" + (31.8 + o * .5) + " " + (31.2 + o) + " Q20 " + (37.8 + o * 1.2) + " " + (8.2 - o * .5) + " " + (31.2 + o) + " Z", fill: f }));
     });
     close();
-    closedEyes([[17.3, 14.2, 1.8], [22.7, 14.2, 1.8]], line, .45);
-    svg.appendChild(mk("path", { d: "M20.4 13.2 L21 17.2 Q20.2 17.8 19.2 17.3", fill: "none",
-                                 stroke: recess, "stroke-width": ".45", "stroke-linecap": "round",
-                                 "stroke-linejoin": "round" }));
-
-    /* THE CROWN, gilt: a band sitting in the hair and three tines rising
-       off it, the middle one tallest - a trident worn as a crown. Each
-       tine is a concave-sided point, so the tips are sharp. */
-    svg.appendChild(mk("path", { d: "M14.6 10.9 Q15.4 9.2 15.1 7.1 Q16.3 8.8 17.2 10.1 Z M18.7 9.8 Q19.7 7.8 20 4.9 Q20.3 7.8 21.3 9.8 Z M25.4 10.9 Q24.6 9.2 24.9 7.1 Q23.7 8.8 22.8 10.1 Z",
-                                 fill: gold, stroke: "#8C6418", "stroke-width": ".22", "stroke-linejoin": "round" }));
-    svg.appendChild(mk("path", { d: "M13.1 11.8 Q20 8.7 26.9 11.8 L26.6 13.2 Q20 10.3 13.4 13.2 Z",
-                                 fill: gold, stroke: "#8C6418", "stroke-width": ".24", "stroke-linejoin": "round" }));
-    /* A sea-glass stone at the centre of the band, the crown's one cool
-       note and the same cyan as the trident. */
-    open("cx-fx cx-fx-gem");
-    svg.appendChild(mk("ellipse", { cx: 20, cy: 10.95, rx: .78, ry: .62, fill: "#5FF0E6", stroke: "#0E8A8A", "stroke-width": ".2" }));
+    open("cx-head");
+    /* the headdress: striped lappets framing the head, down to the collar */
+    const nemes = "M9.6 31 Q8.4 21 10.8 14.6 L14.6 12.4 L25.4 12.4 L29.2 14.6 Q31.6 21 30.4 31 L26.2 31 L25.8 19.6 L14.2 19.6 L13.8 31 Z";
+    svg.appendChild(mk("path", { d: nemes, fill: gold, stroke: "#4A3208", "stroke-width": ".3" }));
+    const ncp = uid + "-anbn";
+    const cp = mk("clipPath", { id: ncp }); cp.appendChild(mk("path", { d: nemes })); defs.appendChild(cp);
+    const st = mk("g", { "clip-path": "url(#" + ncp + ")" });
+    for(let y = 13.4; y < 31; y += 2.2) st.appendChild(mk("rect", { x: 8, y: y.toFixed(2), width: 24, height: 1.1, fill: lapis }));
+    svg.appendChild(st);
+    /* the ears: tall, black, lined in gold */
+    [["M13 15.4 L11.2 2.2 L17.6 11.4 Z", "M13.3 13.6 L12.4 4.8 L16.4 11.2 Z"], ["M27 15.4 L28.8 2.2 L22.4 11.4 Z", "M26.7 13.6 L27.6 4.8 L23.6 11.2 Z"]].forEach(([o, i]) => {
+      svg.appendChild(mk("path", { d: o, fill: black, stroke: "#E0B040", "stroke-width": ".35", "stroke-linejoin": "round" }));
+      svg.appendChild(mk("path", { d: i, fill: "#2A1A12" }));
+    });
+    /* the head and the long muzzle, from the front */
+    svg.appendChild(mk("path", { d: "M13.2 14.4 Q14 10.4 20 10.2 Q26 10.4 26.8 14.4 Q27.4 18.2 25 21.2 L22.2 28 Q20 29.8 17.8 28 L15 21.2 Q12.6 18.2 13.2 14.4 Z", fill: black, stroke: "#020203", "stroke-width": ".3" }));
+    svg.appendChild(mk("path", { d: "M13.8 12.8 Q20 10.8 26.2 12.8", fill: "none", stroke: "#E0B040", "stroke-width": ".55" }));
+    svg.appendChild(mk("path", { d: "M18.8 20.6 L19.6 26.8 M21.2 20.6 L20.4 26.8", stroke: "#5A5A66", "stroke-width": ".3", opacity: ".7" }));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 27.6, rx: 1.3, ry: .8, fill: "#020203" }));
+    svg.appendChild(mk("ellipse", { cx: 19.7, cy: 27.3, rx: .4, ry: .2, fill: "#9A9AA8" }));
+    /* the eyes: lit turquoise, lined in gold kohl that sweeps out */
+    open("cx-eyes");
+    [[16.4, 16.6, -1], [23.6, 16.6, 1]].forEach(([x, y, s]) => {
+      const d = "M" + (x - 1.9) + " " + (y + .2) + " Q" + x + " " + (y - 1.2) + " " + (x + 1.9) + " " + (y + .2) + " Q" + x + " " + (y + 1) + " " + (x - 1.9) + " " + (y + .2) + " Z";
+      svg.appendChild(mk("path", { d, fill: turq, opacity: ".5", stroke: turq, "stroke-width": "1.1", "stroke-linejoin": "round", class: "cx-fx-anbeye" }));
+      svg.appendChild(mk("path", { d, fill: "#D8FFF8" }));
+      svg.appendChild(mk("circle", { cx: x, cy: y, r: .5, fill: "#062A26" }));
+      svg.appendChild(mk("path", { d: "M" + (x + s * 1.9) + " " + (y + .2) + " L" + (x + s * 3.2) + " " + (y + .9), stroke: "#E0B040", "stroke-width": ".45", "stroke-linecap": "round" }));
+    });
     close();
-    svg.appendChild(mk("path", { d: "M14.2 12.1 Q20 9.5 25.8 12.1", fill: "none", stroke: "#FFF3C4",
-                                 "stroke-width": ".28", "stroke-linecap": "round", opacity: ".8" }));
-
-    /* The same cool highlights as Zeus: the lit side of the face and the
-       far shoulder. */
-    svg.appendChild(mk("path", { d: "M14.6 13.6 Q14.2 16.6 15 18.4", fill: "none", stroke: "#FFFFFF",
-                                 "stroke-width": ".6", "stroke-linecap": "round", opacity: ".55" }));
-    svg.appendChild(mk("path", { d: "M27.4 24.2 Q30.6 25.2 31.8 27.6", fill: "none", stroke: "#FFFFFF",
-                                 "stroke-width": ".55", "stroke-linecap": "round", opacity: ".5" }));
+    closedEyes([[16.4, 16.8, 1.6], [23.6, 16.8, 1.6]], "#E0B040", .4);
+    close();
+    sheen([nemes], "cx-fx-anbsheen", 8, 32, 12, 31, "#FFF6D0");
     return done();
   }
 
@@ -32961,126 +32895,66 @@ function drawAvatarCharSVG(charId){
     close();
     return done();
   }
-  /* ================= VALKYRIE =================
-     Ten Virtual Room wins. A Norse shield-maiden, and the WINGS ARE THE
-     SILHOUETTE: a silver helm with a great swept wing on each side, a
-     nasal guard, gold trim, two braids falling in front of a scale
-     gorget, and eyes of ice-blue light. The wings give off a cold light
-     of their own. Signature: a glint of light runs across the steel of
-     the wings and helm, and the wings flex from the root. */
-  if(def.kind === "valkyrie"){
-    const skin = headGrad("#FFF7F2", "#E9CDBF", "#8E6E78");
-    const hair = headGrad("#FFF6D8", "#EBCB84", "#8E6628");
-    const steel = headGrad("#FFFFFF", "#C6D6E8", "#4E6788");
-    const steelDk = headGrad("#B9CCE2", "#6F87A8", "#26344C");
-    const gold = headGrad("#FFF4C8", "#E6B64A", "#7A5210");
-    const cloak = headGrad("#4A6690", "#1E2E4E", "#070D1C");
-    const ice = "#8FD8FF";
-    const M = pts => pts.map(([x, y]) => [+(40 - x).toFixed(2), y]);
-    const pathOf = (cmds) => cmds.map(c => c[0] + c.slice(1).map(p => p.join(" ")).join(" ")).join(" ");
+  /* ================= VIPER (build 265) =================
+     Ten top-three finishes in a Virtual Room - the Valkyrie's challenge,
+     and the Valkyrie's id, so everybody who earned it keeps it: "could
+     Valkyrie be something different than that and cooler". A cobra-
+     hooded assassin. The HOOD IS THE SILHOUETTE, flared wide either side
+     of the head the way a cobra's is when it rises, scaled, with a lime
+     edge of light; inside it a dark face mask with two fangs at its
+     edge, and SNAKE EYES - lit irises with vertical slit pupils, the one
+     thing nobody else in the set has. The hood breathes and the eyes
+     glint. Parts are cx-fx-vp* / cx-vp-*: unique. */
+  if(def.kind === "viper"){
+    const lime = "#B6FF2E";
+    const hoodG = headGrad("#3E5230", "#1A2413", "#060905");
+    const hoodIn = headGrad("#20291A", "#0E130B", "#030402");
+    const leather = headGrad("#3A4034", "#1A1E17", "#070806");
+    const maskG = headGrad("#2C3328", "#12160F", "#040503");
     open("cx-body");
-    svg.appendChild(mk("path", { d: "M5.6 40 Q6.2 31 13.2 28.8 L26.8 28.8 Q33.8 31 34.4 40 Z", fill: cloak }));
-    /* Pauldrons: two overlapping steel lames on each shoulder, the
-       upper one rimmed in gold. */
-    const mirD0 = d => d.replace(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g, (m, x, y) => (+(40 - x).toFixed(2)) + " " + y);
-    ["M5.8 37.4 Q6 32.4 10.6 30.6 L12.4 32.4 Q9.2 34 8.8 37.8 Z", "M7 33.6 Q8 29.6 13.4 28.6 L15.6 29.8 Q11 30.8 9.6 34.4 Z"].forEach((d, i) => {
-      [d, mirD0(d)].forEach(dd => svg.appendChild(mk("path", { d: dd, fill: i ? steel : steelDk, stroke: i ? "#E6B64A" : "#1E2C48", "stroke-width": i ? ".35" : ".25", "stroke-linejoin": "round" })));
-    });
-    /* The scale gorget: overlapping rows of steel scales round the throat. */
-    const gorget = "M11.6 33.6 Q12.6 29.6 15.4 28.6 L24.6 28.6 Q27.4 29.6 28.4 33.6 Q20 31.4 11.6 33.6 Z";
-    svg.appendChild(mk("path", { d: gorget, fill: steelDk }));
-    const gcp = uid + "-gorget";
-    const cp = mk("clipPath", { id: gcp }); cp.appendChild(mk("path", { d: gorget })); defs.appendChild(cp);
-    const sc = mk("g", { "clip-path": "url(#" + gcp + ")" });
-    for(let r = 0; r < 4; r++){
-      const y = 28.6 + r * 1.3, off = r % 2 ? .8 : 0;
-      for(let x = 11 + off; x < 29.5; x += 1.6){
-        sc.appendChild(mk("path", { d: "M" + x.toFixed(2) + " " + y.toFixed(2) + " Q" + (x + .8).toFixed(2) + " " + (y + 2.1).toFixed(2) + " " + (x + 1.6).toFixed(2) + " " + y.toFixed(2),
-          fill: steel, stroke: "#2C3C58", "stroke-width": ".22" }));
+    svg.appendChild(mk("path", { d: "M4.8 40 Q5.4 31 11.6 28.4 Q13 22.8 20 22.6 Q27 22.8 28.4 28.4 Q34.6 31 35.2 40 Z", fill: leather }));
+    svg.appendChild(mk("path", { d: "M15.2 28.6 L20 35.2 L24.8 28.6", fill: "none", stroke: lime, "stroke-width": ".4", opacity: ".7" }));
+    /* A strap across the chest, with a fang-shaped blade on it. */
+    svg.appendChild(mk("path", { d: "M9.6 31 L29.6 39.6 L28.8 40.8 L8.8 32.4 Z", fill: "#0B0D09", opacity: ".9" }));
+    svg.appendChild(mk("path", { d: "M22.6 35.4 L24.4 38.6 L23.4 38.8 Z", fill: "#DCE8C4", stroke: "#4A5A34", "stroke-width": ".15" }));
+    close();
+    open("cx-head");
+    /* THE HOOD: flared, with scale rows and a lime rim. */
+    const hood = "M20 5.4 Q26.8 6 29.6 10.2 Q36 15.4 35.4 21.4 Q34.6 26.6 30.4 29 L26.4 27.2 Q28.8 22 27.6 17 Q25.6 11.6 20 11.2 Q14.4 11.6 12.4 17 Q11.2 22 13.6 27.2 L9.6 29 Q5.4 26.6 4.6 21.4 Q4 15.4 10.4 10.2 Q13.2 6 20 5.4 Z";
+    open("cx-fx cx-fx-vphood");
+    svg.appendChild(mk("path", { d: hood, fill: hoodG, stroke: "#020301", "stroke-width": ".35", "stroke-linejoin": "round" }));
+    const hcp = uid + "-vphood";
+    const cp = mk("clipPath", { id: hcp }); cp.appendChild(mk("path", { d: hood })); defs.appendChild(cp);
+    const sc = mk("g", { "clip-path": "url(#" + hcp + ")", opacity: ".5" });
+    for(let r = 0; r < 12; r++){
+      const y = 6 + r * 1.9, off = r % 2 ? 1 : 0;
+      for(let x = 4 + off; x < 36; x += 2){
+        sc.appendChild(mk("path", { d: "M" + x + " " + y.toFixed(2) + " Q" + (x + 1) + " " + (y + 1.5).toFixed(2) + " " + (x + 2) + " " + y.toFixed(2), fill: "none", stroke: "#5E7A3E", "stroke-width": ".22" }));
       }
     }
     svg.appendChild(sc);
-    svg.appendChild(mk("path", { d: "M11.6 33.6 Q20 31.4 28.4 33.6", fill: "none", stroke: "#E6B64A", "stroke-width": ".45" }));
-    open("cx-fx cx-fx-gem");
-    svg.appendChild(mk("circle", { cx: 20, cy: 31.4, r: 2.2, fill: ice, opacity: ".35" }));
-    svg.appendChild(mk("circle", { cx: 20, cy: 31.4, r: 1.3, fill: gold, stroke: "#7A5210", "stroke-width": ".2" }));
-    svg.appendChild(mk("path", { d: "M20 30.5 L20.75 31.4 L20 32.3 L19.25 31.4 Z", fill: "#DFF6FF", stroke: "#3E8FD8", "stroke-width": ".2" }));
+    svg.appendChild(mk("path", { d: "M9.6 29 Q5.4 26.6 4.6 21.4 Q4 15.4 10.4 10.2 Q13.2 6 20 5.4 Q26.8 6 29.6 10.2 Q36 15.4 35.4 21.4 Q34.6 26.6 30.4 29", fill: "none", stroke: lime, "stroke-width": ".55", "stroke-linecap": "round", opacity: ".9" }));
+    /* the hood's gold diamond marks either side */
+    [[7.6, 19.6], [32.4, 19.6]].forEach(([x, y]) => svg.appendChild(mk("path", { d: "M" + x + " " + (y - 1.6) + " L" + (x + 1) + " " + y + " L" + x + " " + (y + 1.6) + " L" + (x - 1) + " " + y + " Z", fill: "#E6C24A", opacity: ".85" })));
     close();
-    close();
-    open("cx-head");
-    /* Hair behind, loose, under the helm. */
-    svg.appendChild(mk("path", { d: "M12 14.6 Q10.6 21.6 11.6 27.6 L15 26.6 L14 19 Z M28 14.6 Q29.4 21.6 28.4 27.6 L25 26.6 L26 19 Z", fill: hair }));
-    svg.appendChild(mk("path", { d: "M12.6 15.2 Q12.6 9.6 20 9.4 Q27.4 9.6 27.4 15.2 L27 21.4 Q26 26.4 20 27.6 Q14 26.4 13 21.4 Z", fill: skin }));
-    /* THE WINGS: four primary feathers fanned up and out from the side
-       of the helm, a rounded shoulder of coverts over their roots, and
-       a gold leading edge. Each wing has its own light, bright at the
-       root and cooling to steel-blue at the tips. The right is the left
-       mirrored. */
-    const featherGrad = (cx) => {
-      const id = uid + "-fth" + (headGradCount++);
-      const g = mk("radialGradient", { id, gradientUnits: "userSpaceOnUse", cx, cy: 12.6, r: 10.4 });
-      [["0%", "#FFFFFF"], ["45%", "#D6E4F2"], ["100%", "#6F8FBA"]].forEach(([o, c]) => g.appendChild(mk("stop", { offset: o, "stop-color": c })));
-      defs.appendChild(g);
-      return "url(#" + id + ")";
-    };
-    /* One silhouette per wing: the leading edge sweeps up to the tip,
-       and the trailing edge is scalloped where the primaries end. Over
-       the roots, a smaller scalloped tier of coverts in brighter steel;
-       a groove runs from the root into every notch. */
-    const primaries = "M13.2 11.4 Q11.4 5.2 6.4 3.5 Q7.2 5 7.6 5.7 Q5.6 5.4 4.3 6.4 Q5.9 7.9 7.2 8.6 Q5.2 8.8 3.8 9.9 Q5.7 11 7.4 11.4 Q5.6 12.2 4.6 13.2 Q7.4 13.9 9.2 14 Q8.2 14.8 7.8 15.6 Q10.6 16.2 12.8 15.2 Z";
-    const coverts = "M13.3 11.6 Q11.8 7.8 8.8 6.9 Q9.5 9.2 10.3 10 Q8.6 10.3 8 11.5 Q9.6 12.5 10.7 12.6 Q9.9 13.5 9.9 14.4 Q11.6 15.1 12.9 14.6 Z";
-    const grooves = ["M12.4 11.2 Q9.4 6.8 7.6 5.7", "M12.2 12.2 Q9.2 9.4 7.2 8.6", "M12.2 13.2 Q9.6 11.8 7.4 11.4", "M12.4 14.2 Q10.8 13.8 9.2 14"];
-    const mirD = d => d.replace(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g, (m, x, y) => (+(40 - x).toFixed(2)) + " " + y);
-    const wingPaths = [];
-    open("cx-fx cx-fx-wings", { transform: "translate(0 .7)" });
-    [1, -1].forEach(side => {
-      const D = d => side > 0 ? d : mirD(d);
-      open("cx-fx cx-fx-wing-" + (side > 0 ? "l" : "r"));
-      /* the cold light off the wing, a wide soft stroke under it */
-      svg.appendChild(mk("path", { d: D(primaries), fill: ice, opacity: ".3", stroke: ice, "stroke-width": "2.2", "stroke-linejoin": "round" }));
-      svg.appendChild(mk("path", { d: D(primaries), fill: featherGrad(side > 0 ? 12.6 : 27.4), stroke: "#34507C", "stroke-width": ".32", "stroke-linejoin": "round" }));
-      grooves.forEach(d => svg.appendChild(mk("path", { d: D(d), fill: "none", stroke: "#3E5A84", "stroke-width": ".3", "stroke-linecap": "round", opacity: ".8" })));
-      svg.appendChild(mk("path", { d: D(coverts), fill: steel, stroke: "#2E4468", "stroke-width": ".25", "stroke-linejoin": "round" }));
-      svg.appendChild(mk("path", { d: D("M13.2 11.4 Q11.4 5.2 6.4 3.5"), fill: "none", stroke: "#F3CF76", "stroke-width": ".55", "stroke-linecap": "round" }));
-      wingPaths.push(D(primaries));
-      close();
-    });
-    close();
-    /* The helm: a steel dome with a gold ridge, a gold brow band with
-       rivets, and a nasal guard down between the eyes. */
-    const helm = "M12.4 15.4 Q11.8 7.6 20 6.8 Q28.2 7.6 27.6 15.4 Q24.2 13.2 20 13.6 Q15.8 13.2 12.4 15.4 Z";
-    svg.appendChild(mk("path", { d: helm, fill: steel, stroke: "#22324E", "stroke-width": ".3" }));
-    svg.appendChild(mk("path", { d: "M20 6.9 L20 13", stroke: "#E6B64A", "stroke-width": ".7" }));
-    svg.appendChild(mk("path", { d: "M15.4 8.6 Q14.2 10.4 14 12.8", fill: "none", stroke: "#FFFFFF", "stroke-width": ".5", "stroke-linecap": "round", opacity: ".75" }));
-    svg.appendChild(mk("path", { d: "M12.4 14.5 Q15.8 12.1 20 12.5 Q24.2 12.1 27.6 14.5 L27.6 15.6 Q24.2 13.3 20 13.7 Q15.8 13.3 12.4 15.6 Z", fill: gold, stroke: "#7A5210", "stroke-width": ".15" }));
-    [[14.3, 14], [17.1, 13.1], [22.9, 13.1], [25.7, 14]].forEach(([x, y]) => svg.appendChild(mk("circle", { cx: x, cy: y, r: .28, fill: "#FFF4C8" })));
-    svg.appendChild(mk("path", { d: "M19.1 13.4 L20.9 13.4 L20.6 19.8 L20 20.5 L19.4 19.8 Z", fill: steel, stroke: "#22324E", "stroke-width": ".25", "stroke-linejoin": "round" }));
+    svg.appendChild(mk("path", { d: "M12.6 17 Q14.4 11.8 20 11.4 Q25.6 11.8 27.4 17 Q28.4 22.4 26 27.2 L14 27.2 Q11.6 22.4 12.6 17 Z", fill: hoodIn }));
+    /* The face in shadow, and the mask over its lower half with fangs. */
+    svg.appendChild(mk("path", { d: "M14 15.6 Q20 12.8 26 15.6 Q27 22.6 20 26.4 Q13 22.6 14 15.6 Z", fill: "#15120E" }));
+    svg.appendChild(mk("path", { d: "M13.8 19.8 Q20 18.2 26.2 19.8 Q25.6 24 20 27 Q14.4 24 13.8 19.8 Z", fill: maskG, stroke: "#020301", "stroke-width": ".25" }));
+    svg.appendChild(mk("path", { d: "M14.2 20.4 Q20 19 25.8 20.4", fill: "none", stroke: lime, "stroke-width": ".3", opacity: ".6" }));
+    [[18.2, 1], [21.8, -1]].forEach(([x]) => svg.appendChild(mk("path", { d: "M" + (x - .7) + " 22.6 L" + x + " 25 L" + (x + .7) + " 22.6 Z", fill: "#F2F6E8", stroke: "#6A7A54", "stroke-width": ".15" })));
+    svg.appendChild(mk("circle", { cx: 20, cy: 14.8, r: .75, fill: "#3DDC84", stroke: "#E6C24A", "stroke-width": ".25" }));
+    /* SNAKE EYES: a lit iris and a vertical slit pupil. */
     open("cx-eyes");
-    ["M15 18.3 Q16.6 17.2 18.4 18 Q16.9 19.2 15 18.3 Z", "M25 18.3 Q23.4 17.2 21.6 18 Q23.1 19.2 25 18.3 Z"].forEach(d => {
-      svg.appendChild(mk("path", { d, fill: ice, opacity: ".5", stroke: ice, "stroke-width": ".9", "stroke-linejoin": "round" }));
-      svg.appendChild(mk("path", { d, fill: "#F4FCFF" }));
+    [[16.7, 17.6, -1], [23.3, 17.6, 1]].forEach(([x, y, s]) => {
+      const d = "M" + (x - 2.2 * -s) + " " + (y + .3) + " Q" + x + " " + (y - 1.4) + " " + (x + 2.2 * -s) + " " + (y - .3) + " Q" + x + " " + (y + 1.4) + " " + (x - 2.2 * -s) + " " + (y + .3) + " Z";
+      svg.appendChild(mk("path", { d, fill: lime, opacity: ".5", stroke: lime, "stroke-width": "1", "stroke-linejoin": "round", class: "cx-fx-vpeye" }));
+      svg.appendChild(mk("path", { d, fill: "#E8FF9A" }));
+      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: .34, ry: 1.05, fill: "#0A0D06" }));
     });
     close();
-    closedEyes([[16.7, 18.3, 1.2], [23.3, 18.3, 1.2]], "#6A5048", .35);
-    svg.appendChild(mk("path", { d: "M14.8 16.5 Q16.6 16.4 18.3 17.1 M25.2 16.5 Q23.4 16.4 21.7 17.1", fill: "none", stroke: "#A67A38", "stroke-width": ".45", "stroke-linecap": "round" }));
-    open("cx-mouth");
-    svg.appendChild(mk("path", { d: "M18.5 24.2 Q20 24.4 21.5 24.2", fill: "none", stroke: "#9A6058", "stroke-width": ".45", "stroke-linecap": "round" }));
+    closedEyes([[16.7, 17.8, 1.8], [23.3, 17.8, 1.8]], lime, .4);
     close();
-    /* Two braids falling forward over the gorget, each bound with a
-       gold ring. */
-    [[13.2, 1], [26.8, -1]].forEach(([x0, s]) => {
-      for(let i = 0; i < 9; i++){
-        const y = 17.2 + i * 1.35, x = x0 - s * (Math.min(i, 5) * .12);
-        const leaf = mk("ellipse", { cx: x.toFixed(2), cy: y.toFixed(2), rx: 1.05, ry: .66, fill: hair, stroke: "#8E6628", "stroke-width": ".18" });
-        leaf.setAttribute("transform", "rotate(" + ((i % 2 ? 28 : -28)) + " " + x.toFixed(2) + " " + y.toFixed(2) + ")");
-        svg.appendChild(leaf);
-      }
-      const xb = x0 - s * .6;
-      svg.appendChild(mk("rect", { x: (xb - .8).toFixed(2), y: 28.8, width: 1.6, height: .8, rx: .3, fill: gold, stroke: "#7A5210", "stroke-width": ".15" }));
-      svg.appendChild(mk("path", { d: "M" + (xb - .6).toFixed(2) + " 29.6 L" + xb.toFixed(2) + " 31.6 L" + (xb + .6).toFixed(2) + " 29.6 Z", fill: hair }));
-    });
-    close();
-    sheen(wingPaths.concat([helm]), "cx-fx-wingsheen", 3.4, 36.6, 3, 16, "#FFFFFF");
     return done();
   }
   /* ================= RONIN (build 263) =================
@@ -33160,98 +33034,70 @@ function drawAvatarCharSVG(charId){
     sheen([kasa], "cx-fx-roninsheen", 5, 35, 3, 17, "#FFF2DA");
     return done();
   }
-  /* ================= HACKER =================
-     Twenty hours of study. A figure in a hoodie with the hood up and the
-     face almost all shadow, lit from inside by a wraparound visor full of
-     code in electric green, with the eyes showing through it as two
-     points of light. The only other light is the visor's own, falling on
-     the cheeks and chin, and a faint grid behind. Rounded hood with a
-     rolled edge and drawstrings: a person in a hoodie, not a cowl.
-     Signature: the code scrolls up the visor. */
+  /* ================= HACKER, REDRAWN (build 265) =================
+     "Could hacker look a little cooler?" The hood and the visor stay -
+     they are the character - but the figure now GLITCHES: two copies of
+     its silhouette, one red and one cyan, sit a hair either side of it
+     the way a broken signal splits its colours, and every few seconds a
+     slice of the image jumps sideways. The visor is one sleek neon band
+     with a scan line running across it and two pixel eyes in it, and
+     circuit traces glow along the hoodie. Parts are cx-fx-hk2* /
+     cx-hk2-*: unique names. */
   if(def.kind === "hacker"){
-    const green = "#3DFFB0", cyan = "#4FE8FF";
-    const cloth = headGrad("#5A6478", "#2A313E", "#0A0D13");
-    const rim = headGrad("#5C6578", "#2E3440", "#0E1117");
-    /* the grid: a dot matrix behind the head, falling off from the middle */
-    open("cx-fx cx-fx-grid");
-    for(let gx = 4.4; gx < 36; gx += 1.6){
-      for(let gy = 3.6; gy < 30; gy += 1.6){
-        const dd = Math.hypot(gx - 20, (gy - 15) * 1.1);
-        if(dd > 15.4 || dd < 9) continue;
-        const op = .8 * Math.pow(1 - (dd - 9) / 6.4, 1.3) * (dd < 10.4 ? (dd - 9) / 1.4 : 1);
-        svg.appendChild(mk("circle", { cx: gx.toFixed(2), cy: gy.toFixed(2), r: .2, fill: green, opacity: op.toFixed(2) }));
-      }
-    }
+    const green = "#3DFFB0", cyan = "#2EE6FF";
+    const cloth = headGrad("#3C4452", "#1B2029", "#07090D");
+    const hoodD = "M20 6.4 Q30.4 7 31.4 18.6 Q31.8 25.4 28.6 29.6 L25 27.6 Q27.6 23.8 27.4 19.2 Q26.8 11.4 20 11 Q13.2 11.4 12.6 19.2 Q12.4 23.8 15 27.6 L11.4 29.6 Q8.2 25.4 8.6 18.6 Q9.6 7 20 6.4 Z";
+    const bodyD = "M5 40 Q5.6 31 11.8 28.6 Q13.2 23 20 22.8 Q26.8 23 28.2 28.6 Q34.4 31 35 40 Z";
+    /* the chromatic split behind the figure */
+    open("cx-fx cx-fx-hk2split");
+    [["#FF2E4E", -.9], [cyan, .9]].forEach(([c, dx]) => {
+      const g = mk("g", { transform: "translate(" + dx + " 0)", opacity: ".45" });
+      g.appendChild(mk("path", { d: bodyD, fill: c }));
+      g.appendChild(mk("path", { d: hoodD, fill: c }));
+      svg.appendChild(g);
+    });
     close();
     open("cx-body");
-    svg.appendChild(mk("path", { d: "M5.4 40 Q6 31 12.6 28.6 L27.4 28.6 Q34 31 34.6 40 Z", fill: cloth }));
-    /* the drawstrings, with lit tips */
-    svg.appendChild(mk("path", { d: "M17.6 28.6 Q17.2 30.4 17.6 31.8 M22.4 28.6 Q22.8 30.4 22.4 31.8", fill: "none", stroke: "#AEB7C6", "stroke-width": ".42", "stroke-linecap": "round" }));
-    open("cx-fx cx-fx-aglets");
-    [[17.6, 31.8], [22.4, 31.8]].forEach(([x, y]) => {
-      svg.appendChild(mk("circle", { cx: x, cy: y + .5, r: .9, fill: green, opacity: ".35" }));
-      svg.appendChild(mk("rect", { x: x - .28, y: y - .1, width: .56, height: 1.2, rx: .25, fill: "#DFFFF2" }));
-    });
+    svg.appendChild(mk("path", { d: bodyD, fill: cloth }));
+    /* circuit traces */
+    open("cx-fx cx-fx-hk2trace");
+    ["M9 36 L12 33 L15.6 33 L17.4 31.2", "M31 36 L28 33 L24.4 33 L22.6 31.2", "M20 40 L20 35.6 L18.4 34"].forEach(d =>
+      svg.appendChild(mk("path", { d, fill: "none", stroke: green, "stroke-width": ".4", "stroke-linecap": "round", "stroke-linejoin": "round", opacity: ".85" })));
+    [[17.4, 31.2], [22.6, 31.2], [18.4, 34], [9, 36], [31, 36]].forEach(([x, y]) => svg.appendChild(mk("circle", { cx: x, cy: y, r: .45, fill: green })));
     close();
+    /* drawstrings with lit tips */
+    svg.appendChild(mk("path", { d: "M17.6 27.6 L17 32.4 M22.4 27.6 L23 32.4", stroke: "#9AA3B4", "stroke-width": ".4", "stroke-linecap": "round" }));
+    svg.appendChild(mk("circle", { cx: 17, cy: 32.6, r: .5, fill: cyan }));
+    svg.appendChild(mk("circle", { cx: 23, cy: 32.6, r: .5, fill: cyan }));
     close();
     open("cx-head");
-    /* The hood: rounded, with a seam down the crown. */
-    svg.appendChild(mk("path", { d: "M20 5 Q32 5.4 32.2 18.8 Q32.4 25.8 28.8 30 L11.2 30 Q7.6 25.8 7.8 18.8 Q8 5.4 20 5 Z", fill: cloth }));
-    svg.appendChild(mk("path", { d: "M20 5.2 Q20.4 7.6 20 10", fill: "none", stroke: "#07090D", "stroke-width": ".35", "stroke-linecap": "round", opacity: ".8" }));
-    svg.appendChild(mk("path", { d: "M12.8 8.4 Q9.8 11.4 9.6 16.8", fill: "none", stroke: "#8E98AC", "stroke-width": ".45", "stroke-linecap": "round", opacity: ".45" }));
-    const opening = "M20 10.6 Q27.2 11 27.6 19 Q27.8 25 24.4 28.4 Q22.4 29.8 20 29.8 Q17.6 29.8 15.6 28.4 Q12.2 25 12.4 19 Q12.8 11 20 10.6 Z";
-    /* the rolled edge round the opening */
-    svg.appendChild(mk("path", { d: opening, fill: "none", stroke: rim, "stroke-width": "2.2" }));
-    svg.appendChild(mk("path", { d: opening, fill: "#05070A" }));
-    /* The face in the dark, lit only by the visor. */
-    const litId = uid + "-lit";
-    const lg = mk("radialGradient", { id: litId, gradientUnits: "userSpaceOnUse", cx: 20, cy: 19.4, r: 7.4 });
-    [["0%", "#3E8C74"], ["45%", "#1E4A3E"], ["100%", "#06090A"]].forEach(([o, c]) => lg.appendChild(mk("stop", { offset: o, "stop-color": c })));
-    defs.appendChild(lg);
-    svg.appendChild(mk("path", { d: "M14.4 17 Q14.4 12.8 20 12.6 Q25.6 12.8 25.6 17 L25.3 21.8 Q24.4 26 20 27 Q15.6 26 14.7 21.8 Z", fill: "url(#" + litId + ")" }));
-    /* the shadow the hood throws across the brow */
-    svg.appendChild(mk("path", { d: "M13.2 16.4 Q20 11.2 26.8 16.4 Q20 13.8 13.2 16.4 Z", fill: "#05070A", opacity: ".9" }));
-    svg.appendChild(mk("path", { d: "M20.5 21.2 Q21.1 22.7 20 23.1", fill: "none", stroke: "#0A1512", "stroke-width": ".42", "stroke-linecap": "round", opacity: ".75" }));
-    open("cx-mouth");
-    svg.appendChild(mk("path", { d: "M18.4 24.6 Q20.2 25 21.8 24.2", fill: "none", stroke: "#081210", "stroke-width": ".48", "stroke-linecap": "round" }));
-    close();
-    /* THE VISOR: a wraparound band of dark glass that glows at its rim,
-       with code scrolling up inside it. */
-    const visor = "M13.2 16.9 Q20 15.3 26.8 16.9 L26.4 20.2 Q20 21.5 13.6 20.2 Z";
-    svg.appendChild(mk("path", { d: visor, fill: green, opacity: ".32", stroke: green, "stroke-width": "1.7", "stroke-linejoin": "round" }));
-    svg.appendChild(mk("path", { d: visor, fill: "#03140F", stroke: cyan, "stroke-width": ".3", "stroke-linejoin": "round" }));
-    const vcp = uid + "-visor";
-    const vc = mk("clipPath", { id: vcp }); vc.appendChild(mk("path", { d: visor })); defs.appendChild(vc);
-    const vg = mk("g", { "clip-path": "url(#" + vcp + ")" });
-    svg.appendChild(vg);
-    /* Six rows of code, laid down twice over and then some, so a scroll
-       of exactly six rows lands on the same picture it started from. */
-    const rows = [[.9, 1.6, .6, 2.2], [2.4, .7, 1.4], [.6, .6, 3, .9], [1.8, 2, .8], [3.2, 1, 1.2], [.8, 1.4, 2.4, .6]];
-    const codeG = mk("g", { class: "cx-fx cx-fx-code" });
-    codeG.appendChild(mk("rect", { x: 13, y: 13.6, width: .01, height: 12.6, fill: "none" }));
-    for(let i = -2; i < 14; i++){
-      const row = rows[((i % 6) + 6) % 6], y = 16.3 + i * .72;
-      let x = 13.9 + (((i % 6) + 6) % 6 === 2 ? 1.2 : 0);
-      row.forEach((w, j) => {
-        const hot = (((i % 6) + 6) % 6 === 4 && j === 0);
-        codeG.appendChild(mk("rect", { x: x.toFixed(2), y: y.toFixed(2), width: w, height: .34, rx: .12,
-          fill: hot ? "#E8FFF6" : (j % 3 === 2 ? cyan : green), opacity: hot ? "1" : ".78" }));
-        x += w + .55;
-      });
-    }
-    vg.appendChild(codeG);
-    /* the eyes, two points of light through the glass */
+    svg.appendChild(mk("path", { d: hoodD, fill: cloth, stroke: "#040507", "stroke-width": ".3" }));
+    svg.appendChild(mk("path", { d: "M11.4 29.6 Q8.2 25.4 8.6 18.6 Q9.6 7 20 6.4", fill: "none", stroke: cyan, "stroke-width": ".35", opacity: ".55" }));
+    svg.appendChild(mk("path", { d: "M12.8 15.2 Q20 10.8 27.2 15.2 Q28 23.2 20 27.2 Q12 23.2 12.8 15.2 Z", fill: "#05070A" }));
+    /* the visor: one neon band */
+    const visor = "M12.6 16.8 Q20 14.8 27.4 16.8 L27 20.6 Q20 18.8 13 20.6 Z";
+    const vg = mk("linearGradient", { id: uid + "-hk2v", x1: "0", y1: "0", x2: "1", y2: "0" });
+    [["0%", green], ["100%", cyan]].forEach(([o, c]) => vg.appendChild(mk("stop", { offset: o, "stop-color": c })));
+    defs.appendChild(vg);
+    svg.appendChild(mk("path", { d: visor, fill: "url(#" + uid + "-hk2v)", opacity: ".95" }));
+    svg.appendChild(mk("path", { d: visor, fill: "none", stroke: cyan, "stroke-width": "1.2", opacity: ".3" }));
+    /* scan line through the visor */
+    const vcp = uid + "-hk2vc";
+    const cpv = mk("clipPath", { id: vcp }); cpv.appendChild(mk("path", { d: visor })); defs.appendChild(cpv);
+    const scan = mk("g", { "clip-path": "url(#" + vcp + ")" });
+    scan.appendChild(mk("rect", { x: 11, y: 14.6, width: 1.4, height: 7, fill: "#FFFFFF", opacity: ".75", class: "cx-fx-hk2scan" }));
+    for(let y = 16.2; y < 21; y += .7) scan.appendChild(mk("rect", { x: 12, y: y.toFixed(2), width: 16, height: .18, fill: "#04120C", opacity: ".35" }));
+    svg.appendChild(scan);
     open("cx-eyes");
-    [[17, 18.4], [23, 18.4]].forEach(([x, y]) => {
-      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 1.5, ry: .9, fill: green, opacity: ".5" }));
-      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: .9, ry: .42, fill: "#F0FFF8" }));
-    });
+    [[16.4, 17.9], [22.4, 17.9]].forEach(([x, y]) => svg.appendChild(mk("rect", { x, y, width: 1.2, height: 1.2, fill: "#F2FFF8" })));
     close();
-    closedEyes([[17, 18.4, 1], [23, 18.4, 1]], green, .35);
-    /* the glass: a reflection along the top edge */
-    svg.appendChild(mk("path", { d: "M14.4 17.2 Q18.6 16.2 23.4 16.5", fill: "none", stroke: "#FFFFFF", "stroke-width": ".32", "stroke-linecap": "round", opacity: ".5" }));
+    closedEyes([[17, 18.6, 1.1], [23, 18.6, 1.1]], "#04120C", .5);
     close();
-    sheen([visor], "cx-fx-visorsweep", 13.2, 26.8, 15.3, 21.5, "#BFFFE6");
+    /* glitch slices that jump now and then */
+    openHidden("cx-fx cx-fx-hk2slice");
+    svg.appendChild(mk("rect", { x: 9, y: 17.4, width: 22, height: 1.1, fill: cyan, opacity: ".7" }));
+    svg.appendChild(mk("rect", { x: 7, y: 31.2, width: 14, height: .8, fill: "#FF2E4E", opacity: ".7" }));
+    close();
     return done();
   }
   /* ================= TIMEKEEPER =================
@@ -33493,85 +33339,66 @@ function drawAvatarCharSVG(charId){
     return done();
   }
 
-  /* THE MASKED ONE. A HARD, SCULPTED MASK, never cloth - the ninja is
-     already a cloth-wrapped face, and two characters whose whole idea is
-     "covered face" would read as siblings on a rankings row. So this is
-     a rigid lacquer mask with its own carved expression, a shape rather
-     than a wrap, worn under a deep hood. */
+  /* THE MASKED ONE, REDRAWN (build 265). "Ronin makes me think some of
+     the others could be even cooler.. could the masked one, be a little
+     cooler". The Ronin's lesson applied: one strong silhouette and a
+     light of its own on a dark figure. A cracked porcelain mask with a
+     crimson light burning out through the crack and the eye slots, a
+     wild black mane round it, and a high collar lined in red. The mask
+     is still a HARD mask with no expression and a sealed mouth - what
+     made this character itself - only now something is lit behind it.
+     New parts are cx-fx-mk2* / cx-mk2-*: unique names, checked. */
   if(def.kind === "masked"){
-    const hood = headGrad("#3A3550", "#252038", "#141020");
-    const face = headGrad("#F0E9DC", "#D8CFBE", "#B0A694");
-
+    const red = "#FF2A3A", redSoft = "#FF8A94";
+    const coat = headGrad("#5E5870", "#332E40", "#121016");
+    const mane = headGrad("#7A7294", "#453D5E", "#1B1726");
+    const porcelain = headGrad("#FFFFFF", "#E6E1D9", "#9A9387");
     open("cx-body");
-    svg.appendChild(mk("path", { d: "M5.6 40 Q6.4 31.2 14.2 29 L25.8 29 Q33.6 31.2 34.4 40 Z", fill: hood }));
+    svg.appendChild(mk("path", { d: "M4.8 40 Q5.4 31 11.6 28.4 Q13 22.8 20 22.6 Q27 22.8 28.4 28.4 Q34.6 31 35.2 40 Z", fill: coat }));
+    /* The high collar, two stiff flaps lined in red. */
+    [["M10.6 30 L12.8 22.2 L17.6 27.4 L15.6 32 Z", "M12.9 23.4 L16.6 27.4"], ["M29.4 30 L27.2 22.2 L22.4 27.4 L24.4 32 Z", "M27.1 23.4 L23.4 27.4"]].forEach(([d, lining]) => {
+      svg.appendChild(mk("path", { d, fill: coat, stroke: "#050407", "stroke-width": ".3", "stroke-linejoin": "round" }));
+      svg.appendChild(mk("path", { d: lining, stroke: red, "stroke-width": ".45", "stroke-linecap": "round", opacity: ".85" }));
+    });
+    svg.appendChild(mk("path", { d: "M17.4 33 L20 38.6 L22.6 33", fill: "none", stroke: red, "stroke-width": ".35", opacity: ".6" }));
     close();
     open("cx-head");
-    /* The hood behind the mask, so the mask sits IN something. */
-    svg.appendChild(mk("path", { d: "M20 9.9 Q30.3 10.6 31 22 Q31.2 27 28.8 30.4 L25.4 28.4 Q27.9 25 27.7 21.6 Q27.1 13.6 20 13 Q12.9 13.6 12.3 21.6 Q12.1 25 14.6 28.4 L11.2 30.4 Q8.8 27 9 22 Q9.7 10.6 20 9.9 Z",
-                                 fill: hood }));
-
-    /* The mask itself: a slight point at the chin so the silhouette is
-       not just an oval. */
-    svg.appendChild(mk("path", { d: "M20 12.6 Q27.6 13.2 28.1 20.8 Q28.5 26.4 24.6 29.6 Q22.4 31.4 20 31.9 Q17.6 31.4 15.4 29.6 Q11.5 26.4 11.9 20.8 Q12.4 13.2 20 12.6 Z",
-                                 fill: face }));
-
-    /* Carved eye slots - long, narrow, angled. Hollow, not eyes: the
-       point is that there is nobody visibly in there. */
-    /* Angled, hard-edged and genuinely HOLLOW. The first pass drew them
-       as two soft lens shapes, which at any size reads as a pair of
-       closed eyes - a sleeping face, not an empty one. They tilt DOWN
-       towards the centre, which is the whole difference between a mask
-       that is watching you and a mask that is resting. */
+    /* The mane: spikes all round the mask, the ones at the top longest. */
+    svg.appendChild(mk("path", { d: "M9.4 23.4 L7 18.4 L10 18.6 L8.6 12.8 L12 14.2 L12.2 8.2 L15.6 11 L17.6 5.2 L20 9.2 L22.4 5.2 L24.4 11 L27.8 8.2 L28 14.2 L31.4 12.8 L30 18.6 L33 18.4 L30.6 23.4 Q29.6 28.4 20 29.4 Q10.4 28.4 9.4 23.4 Z", fill: mane, stroke: "#020203", "stroke-width": ".3", "stroke-linejoin": "round" }));
+    [["M17.6 5.6 L16.4 9.4", ""], ["M12.3 8.6 L12.9 12", ""], ["M27.7 8.6 L27.1 12", ""]].forEach(([d]) =>
+      svg.appendChild(mk("path", { d, stroke: red, "stroke-width": ".35", "stroke-linecap": "round", opacity: ".55" })));
+    /* The mask. */
+    const mask = "M20 11.4 Q27.4 12 27.9 19.6 Q28.2 25.4 24.2 28.6 Q22.2 30.2 20 30.6 Q17.8 30.2 15.8 28.6 Q11.8 25.4 12.1 19.6 Q12.6 12 20 11.4 Z";
+    svg.appendChild(mk("path", { d: mask, fill: porcelain, stroke: "#6E685E", "stroke-width": ".3" }));
+    svg.appendChild(mk("path", { d: "M14.6 14.6 Q16.6 12.6 19.4 12.4", fill: "none", stroke: "#FFFFFF", "stroke-width": ".6", "stroke-linecap": "round", opacity: ".9" }));
+    /* Painted tear-lines under the left slot. */
+    svg.appendChild(mk("path", { d: "M15.4 22.4 L15.1 25.2 M16.6 22.6 L16.4 24.6", stroke: "#15121B", "stroke-width": ".4", "stroke-linecap": "round" }));
+    /* The crack, lit from inside: a wide soft glow under a sharp line. */
+    const crack = "M25 12.4 L23.4 15.4 L25 17.4 L22.8 19.8 L23.8 22.4 L21.9 25.4 L22.6 28.6";
+    open("cx-fx cx-fx-mk2crack");
+    svg.appendChild(mk("path", { d: crack, fill: "none", stroke: red, "stroke-width": "1.6", "stroke-linejoin": "round", "stroke-linecap": "round", opacity: ".32" }));
+    svg.appendChild(mk("path", { d: crack + " M23.4 15.4 L21.8 14.6 M23.8 22.4 L25.4 23.2", fill: "none", stroke: red, "stroke-width": ".55", "stroke-linejoin": "round", "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: crack, fill: "none", stroke: "#FFD6DA", "stroke-width": ".2", "stroke-linejoin": "round" }));
+    close();
+    /* The eye slots: hollow, angled down to the centre, and burning. */
     open("cx-eyes");
-    svg.appendChild(mk("path", { d: "M14.1 19.2 L19.2 20.9 L19 22.1 L14.1 21 Z", fill: "#100A1A" }));
-    svg.appendChild(mk("path", { d: "M25.9 19.2 L20.8 20.9 L21 22.1 L25.9 21 Z", fill: "#100A1A" }));
-    /* A hairline of light along each slot's lower edge - the mask has
-       thickness, and that is what makes the dark read as a hole
-       through it rather than as paint. */
-    svg.appendChild(mk("path", { d: "M14.2 21 L19 22.05", fill: "none", stroke: "#F4EEE2",
-                                 "stroke-width": ".26", opacity: ".55" }));
-    svg.appendChild(mk("path", { d: "M25.8 21 L21 22.05", fill: "none", stroke: "#F4EEE2",
-                                 "stroke-width": ".26", opacity: ".55" }));
+    ["M14.1 18.6 L19.2 20.3 L19 21.5 L14.1 20.4 Z", "M25.9 18.6 L20.8 20.3 L21 21.5 L25.9 20.4 Z"].forEach(d => {
+      svg.appendChild(mk("path", { d, fill: red, opacity: ".45", stroke: red, "stroke-width": "1.3", "stroke-linejoin": "round", class: "cx-fx-mk2glow" }));
+      svg.appendChild(mk("path", { d, fill: "#1A0508" }));
+    });
+    svg.appendChild(mk("path", { d: "M15 19.6 L18.4 20.6 M25 19.6 L21.6 20.6", stroke: red, "stroke-width": ".55", "stroke-linecap": "round" }));
     close();
-    /* Asleep, the slots are two carved lines: the mask shut. */
     openHidden("cx-eyes-closed");
-    svg.appendChild(mk("path", { d: "M14.3 20.3 Q16.8 21.9 19.1 21.4 M25.7 20.3 Q23.2 21.9 20.9 21.4", fill: "none",
-                                 stroke: "#100A1A", "stroke-width": ".5", "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M14.3 19.8 Q16.8 21.3 19.1 20.8 M25.7 19.8 Q23.2 21.3 20.9 20.8", fill: "none", stroke: "#1A0508", "stroke-width": ".5", "stroke-linecap": "round" }));
     close();
-    /* A win lights the slots from inside. */
     openHidden("cx-fx cx-fx-slotglow");
-    svg.appendChild(mk("path", { d: "M14.1 19.2 L19.2 20.9 L19 22.1 L14.1 21 Z M25.9 19.2 L20.8 20.9 L21 22.1 L25.9 21 Z", fill: "#FF5A4A" }));
-    svg.appendChild(mk("path", { d: "M15.2 20.1 L18.4 21.1 M24.8 20.1 L21.6 21.1", stroke: "#FFE0C8", "stroke-width": ".45", "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M14.1 18.6 L19.2 20.3 L19 21.5 L14.1 20.4 Z M25.9 18.6 L20.8 20.3 L21 21.5 L25.9 20.4 Z", fill: "#FFB3BA" }));
     close();
-
-    /* One red lacquer marking down the centre - the single piece of
-       colour, and what makes it read as a mask rather than a blank. */
-    open("cx-fx cx-fx-mark");
-    svg.appendChild(mk("path", { d: "M20 14.1 L21.1 17.6 L20 24.6 L18.9 17.6 Z", fill: "#C6413F" }));
-    close();
-    /* A SEALED MOUTH, not a mouth. The first pass put a gentle upward
-       curve here and it read as a smile - which on a character whose
-       whole idea is that you cannot tell anything about it is the one
-       expression it must not have. Three short bars: a line stitched
-       shut. */
+    /* The sealed mouth: one hard line. */
     open("cx-mouth");
-    [[17.1, 26.5], [20, 27.1], [22.9, 26.5]].forEach(([x, y]) =>
-      svg.appendChild(mk("path", { d: "M" + x + " " + (y - .75) + " L" + x + " " + (y + .75),
-                                   fill: "none", stroke: "#C6413F", "stroke-width": ".46",
-                                   "stroke-linecap": "round", opacity: ".9" })));
-    svg.appendChild(mk("path", { d: "M16.6 26.9 Q20 27.5 23.4 26.9", fill: "none",
-                                 stroke: "#8E2E2C", "stroke-width": ".34",
-                                 "stroke-linecap": "round", opacity: ".8" }));
+    svg.appendChild(mk("path", { d: "M17.4 26.2 Q20 26.9 22.6 26.2", fill: "none", stroke: "#15121B", "stroke-width": ".45", "stroke-linecap": "round" }));
     close();
-
-    /* A cracked corner, so it looks worn rather than new. */
-    svg.appendChild(mk("path", { d: "M25.9 23.4 L27.4 25.1 L26.2 26.2", fill: "none",
-                                 stroke: "#A89E8B", "stroke-width": ".4",
-                                 "stroke-linecap": "round", opacity: ".8" }));
-    /* The hood's inner shadow across the top of the mask, which is what
-       seats it under the hood instead of on top of it. */
-    svg.appendChild(mk("path", { d: "M12.6 17.4 Q20 13.6 27.4 17.4 Q20 15.6 12.6 17.4 Z",
-                                 fill: "#1B1528", opacity: ".55" }));
+    close();
     return done();
   }
 
@@ -33758,60 +33585,73 @@ function drawAvatarCharSVG(charId){
     close();
     return done();
   }
+  /* ================= CLOWN, REDRAWN (build 265) =================
+     "I like clown but looks boring compared to the rest and needs a
+     cooler look." So a harlequin jester with an edge, still a clown at
+     a glance - the red nose stays, the painted face stays - but in the
+     set's own language: a two-tone jester's hat whose three points end
+     in glowing bells, white greasepaint with black diamonds through the
+     eyes and a painted grin, a ruff, and a diamond-pattern tunic. The
+     bells are the light. Parts are cx-fx-cl2* / cx-cl2-*: unique. */
   if(def.kind === "clown"){
-    /* Asked for by name. The three things that make a clown read
-       instantly are the red nose, the hair bursting out either side and
-       the painted mouth - so those are big and everything else is left
-       out. The hair is two stacked circles per side rather than a fluffy
-       outline, because a fluffy outline turns to a smudge at 42px. */
-    const skin = headGrad("#FFF0E2", "#F7DCC6", "#D8B79C");
-    const hair = headGrad("#FF8A5C", "#E8552F", "#A8321A");
-    /* Shoulders, like the rest of the set. These three were drawn before
-       the body became part of the recipe and read as heads floating with
-       nothing under them once the other nine had one. A ruff for the
-       clown, because a plain collar on a clown is a wasted opportunity. */
-    const ruff = headGrad("#8FE3FF", "#4FB9DC", "#2C7E9C");
+    const violet = "#9B5CFF", bell = "#E8FF5A";
+    const paint = headGrad("#FFFFFF", "#ECE8F2", "#A9A2B8");
+    const hatA = headGrad("#8A5CFF", "#4B2A9E", "#1A0E3A");
+    const hatB = headGrad("#3A3444", "#16121E", "#050408");
+    const tunicA = headGrad("#6E48D8", "#3A2482", "#140A30");
     open("cx-body");
-    svg.appendChild(mk("path", { d: "M6.4 40 Q7.2 32.4 14.4 30.4 L25.6 30.4 Q32.8 32.4 33.6 40 Z",
-                                 fill: "#3C4450" }));
-    [9.4, 14.2, 20, 25.8, 30.6].forEach((x, i) => {
-      svg.appendChild(mk("circle", { cx: x, cy: 30.6 + (i % 2 ? 1 : 0), r: 3.1, fill: ruff }));
-    });
+    svg.appendChild(mk("path", { d: "M5 40 Q5.6 31 11.8 28.6 Q13.2 23 20 22.8 Q26.8 23 28.2 28.6 Q34.4 31 35 40 Z", fill: hatB }));
+    const tcp = uid + "-cl2t";
+    const cp = mk("clipPath", { id: tcp }); cp.appendChild(mk("path", { d: "M5 40 Q5.6 31 11.8 28.6 Q13.2 23 20 22.8 Q26.8 23 28.2 28.6 Q34.4 31 35 40 Z" })); defs.appendChild(cp);
+    const dia = mk("g", { "clip-path": "url(#" + tcp + ")" });
+    for(let r = 0; r < 4; r++) for(let c = -1; c < 8; c++){
+      if((r + c) % 2) continue;
+      const x = 4 + c * 4.6 + (r % 2 ? 2.3 : 0), y = 29 + r * 3.4;
+      dia.appendChild(mk("path", { d: "M" + x + " " + y + " L" + (x + 2.3) + " " + (y + 1.7) + " L" + x + " " + (y + 3.4) + " L" + (x - 2.3) + " " + (y + 1.7) + " Z", fill: tunicA }));
+    }
+    svg.appendChild(dia);
+    /* the ruff: points alternating violet and black */
+    for(let i = 0; i < 9; i++){
+      const x = 10.4 + i * 2.4, y = 27.8 + Math.abs(i - 4) * .35;
+      svg.appendChild(mk("path", { d: "M" + (x - 1.4) + " " + (y - .6) + " L" + x + " " + (y + 2.4) + " L" + (x + 1.4) + " " + (y - .6) + " Z", fill: i % 2 ? "#1A1420" : violet, stroke: "#0A080E", "stroke-width": ".15" }));
+    }
     close();
     open("cx-head");
-    [8.6, 31.4].forEach((x, i) => {
-      const s = i ? -1 : 1;
-      svg.appendChild(mk("circle", { cx: x, cy: 19.5, r: 4.3, fill: hair }));
-      svg.appendChild(mk("circle", { cx: x + s * 1.6, cy: 14.6, r: 3.3, fill: hair }));
-      svg.appendChild(mk("circle", { cx: x + s * 0.4, cy: 24.6, r: 3.1, fill: hair }));
-    });
-    svg.appendChild(mk("ellipse", { cx: 20, cy: 21, rx: 9.2, ry: 10, fill: skin }));
-    /* The hat: a small cone tipped off-centre, which is what stops this
-       reading as a generic round face with red hair. */
-    open("cx-fx cx-fx-hat");
-    svg.appendChild(mk("polygon", { points: "16.8,11.6 24.6,4.2 26.2,12.4", fill: "#3FA9C4" }));
-    open("cx-fx cx-fx-pom");
-    svg.appendChild(mk("circle", { cx: 24.9, cy: 3.8, r: 1.5, fill: "#FFD84D" }));
-    close();
-    close();
+    /* the face */
+    svg.appendChild(mk("path", { d: "M20 12.4 Q27.2 12.8 27.6 20 Q27.8 25.6 20 28.4 Q12.2 25.6 12.4 20 Q12.8 12.8 20 12.4 Z", fill: paint, stroke: "#6A6278", "stroke-width": ".25" }));
+    /* black diamonds through the eyes */
+    [16.4, 23.6].forEach(x => svg.appendChild(mk("path", { d: "M" + x + " 15.4 L" + (x + 1.5) + " 19.2 L" + x + " 23 L" + (x - 1.5) + " 19.2 Z", fill: "#15111C" })));
     open("cx-eyes");
-    svg.appendChild(mk("circle", { cx: 16.4, cy: 19.4, r: 1.5, fill: "#22262C" }));
-    svg.appendChild(mk("circle", { cx: 23.6, cy: 19.4, r: 1.5, fill: "#22262C" }));
-    svg.appendChild(catchlight(15.9, 18.9, .45));
-    svg.appendChild(catchlight(23.1, 18.9, .45));
+    [16.4, 23.6].forEach(x => {
+      svg.appendChild(mk("circle", { cx: x, cy: 19.2, r: .95, fill: "#F4F0FF" }));
+      svg.appendChild(mk("circle", { cx: x, cy: 19.3, r: .45, fill: violet }));
+    });
     close();
-    closedEyes([[16.4, 19.4, 1.5], [23.6, 19.4, 1.5]], "#22262C", .6);
-    /* The painted diamonds over and under one eye - the single detail
-       that says "greasepaint" rather than "person with red hair". */
-    svg.appendChild(mk("polygon", { points: "16.4,15.4 17.4,17.2 16.4,19 15.4,17.2", fill: "#3FA9C4" }));
-    svg.appendChild(mk("polygon", { points: "16.4,19.8 17.4,21.6 16.4,23.4 15.4,21.6", fill: "#3FA9C4" }));
+    closedEyes([[16.4, 19.4, 1.1], [23.6, 19.4, 1.1]], "#F4F0FF", .4);
+    /* the grin: painted wide, sharp at the corners */
     open("cx-mouth");
-    svg.appendChild(mk("path", { d: "M14.8 25 Q20 31.4 25.2 25", fill: "#B02A3A",
-                                 stroke: "#7A1626", "stroke-width": .5, "stroke-linejoin": "round" }));
+    svg.appendChild(mk("path", { d: "M14.2 23 Q15.6 22.8 16.4 23.8 Q20 26.4 23.6 23.8 Q24.4 22.8 25.8 23 Q24.4 24.4 23.8 25.2 Q20 28.2 16.2 25.2 Q15.6 24.4 14.2 23 Z", fill: "#7A0E2A", stroke: "#15111C", "stroke-width": ".25", "stroke-linejoin": "round" }));
+    svg.appendChild(mk("path", { d: "M16.8 24.4 Q20 26.2 23.2 24.4", fill: "none", stroke: "#F4F0FF", "stroke-width": ".3", opacity: ".8" }));
     close();
     open("cx-fx cx-fx-nose");
-    svg.appendChild(mk("circle", { cx: 20, cy: 22.6, r: 2.7, fill: "#E23B3B" }));
-    svg.appendChild(catchlight(19.1, 21.7, .8));
+    svg.appendChild(mk("circle", { cx: 20, cy: 21.6, r: 1.5, fill: "#E23B3B" }));
+    svg.appendChild(catchlight(19.5, 21.1, .45));
+    close();
+    /* THE HAT: three points, two-tone, each ending in a lit bell. */
+    open("cx-fx cx-fx-cl2hat");
+    svg.appendChild(mk("path", { d: "M11.6 15 Q9.2 10 5 11.6 Q8 12.6 9.4 16.4 Z", fill: hatA, stroke: "#0A080E", "stroke-width": ".25" }));
+    svg.appendChild(mk("path", { d: "M28.4 15 Q30.8 10 35 11.6 Q32 12.6 30.6 16.4 Z", fill: hatB, stroke: "#0A080E", "stroke-width": ".25" }));
+    svg.appendChild(mk("path", { d: "M14 13.4 Q16 4.6 22.4 3.6 Q19.4 7.2 20.6 12.8 Z", fill: hatB, stroke: "#0A080E", "stroke-width": ".25" }));
+    svg.appendChild(mk("path", { d: "M20.6 12.8 Q19.4 7.2 22.4 3.6 Q25.2 7.8 26 13.4 Z", fill: hatA, stroke: "#0A080E", "stroke-width": ".25" }));
+    svg.appendChild(mk("path", { d: "M11.2 16.4 Q20 11.2 28.8 16.4 L28.4 14.6 Q20 9.6 11.6 14.6 Z", fill: "#15111C", stroke: violet, "stroke-width": ".3" }));
+    close();
+    open("cx-fx cx-fx-cl2bells");
+    [[5, 11.6], [35, 11.6], [22.4, 3.6]].forEach(([x, y]) => {
+      svg.appendChild(mk("circle", { cx: x, cy: y, r: 1.9, fill: bell, opacity: ".35" }));
+      svg.appendChild(mk("circle", { cx: x, cy: y, r: 1, fill: bell }));
+      svg.appendChild(mk("circle", { cx: x - .3, cy: y - .3, r: .3, fill: "#FFFFFF" }));
+    });
+    close();
     close();
     return done();
   }
@@ -56097,7 +55937,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-30-264";
+const APP_BUILD = "2026-09-30-265";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

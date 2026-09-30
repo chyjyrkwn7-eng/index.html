@@ -7992,3 +7992,34 @@ because "succeeded ... with fuzz" is the only warning there is.
   any multi-unit run with it and one more mid-size unit gets there.
 - The Ronin design is a keeper - asked for by name. Do not touch it
   without being asked.
+
+### Build 265
+
+Five characters redrawn on request ("Ronin makes me think some of the
+others could be even cooler"). The Ronin and Zeus were named as liked and
+are untouched.
+
+- **The Masked One is a cracked porcelain mask** - a red crack that
+  pulses (`cx-fx-mk2crack`), a glow behind the eye holes, a spiky mane and
+  a high collar. Its mane and coat are deliberately lighter than the
+  first draft: `check-unlocks`' locked-art test failed on the darker ones,
+  which vanished into the locked tile.
+- **The Valkyrie is now the Viper** - a cobra hood that flares, slit
+  eyes, fangs and an emerald gem. **The id is still `valkyrie`**, because
+  an id is a storage key (the unlock, anyone holding it, and the retired
+  Spartan/Pirate that map into it); only `kind` and the display name
+  changed. Same feat, top-3 ×10.
+- **Poseidon is now Anubis** ("not another Greek god") - nemes stripes,
+  tall ears, turquoise eyes, a gold collar. Same story: the id stays
+  `poseidon`, the kind is `anubis`. Its old art scale came off; the new
+  drawing fills the frame on its own.
+- **The Hacker** has a chromatic-split visor with a scan line, circuit
+  traces and glitch slices. The jitter uses `steps()` on purpose; the
+  scan's loop ends where it starts (`check-loops` caught the first seam).
+- **The Clown is a harlequin** - two-point belled hat, diamond tunic,
+  ruff, grin. Glow is violet now.
+- Every new part is prefixed per character (`mk2`, `vp`, `hk2`, `cl2`,
+  `anb`), after the Knight's plume clashed with the champion's.
+- Gates: `check_b236` now checks only Zeus for a carved panel and asserts
+  Poseidon's id draws `cx-k-anubis`; `check_b243` expects `viper` where
+  it used to expect `valkyrie`. The decision changed, not the check.

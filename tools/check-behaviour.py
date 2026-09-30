@@ -2183,8 +2183,11 @@ def check_b236(br):
          character that inherited its rank, the Oracle. */
       await T('shades', () => { const sv = buildAvatarCharSVGSafe('officer');
         return ((sv.querySelector('.cx-fig') || {}).getAttribute ? sv.querySelector('.cx-fig').getAttribute('class') : '') || ''; });
-      await T('panels', () => ['zeus', 'poseidon'].map(k => [...buildAvatarCharSVGSafe(k).querySelectorAll('rect')]
-        .some(x => /^#(13263A|0C2E30)$/i.test(x.getAttribute('fill') || ''))));
+      /* build 265: Poseidon's id now draws the Anubis, which has no carved
+         panel - only Zeus keeps one, and the id is asserted to draw Anubis. */
+      await T('panels', () => ['zeus'].map(k => [...buildAvatarCharSVGSafe(k).querySelectorAll('rect')]
+        .some(x => /^#(13263A|0C2E30)$/i.test(x.getAttribute('fill') || ''))).concat(
+        /cx-k-anubis/.test((buildAvatarCharSVGSafe('poseidon').querySelector('.cx-fig') || {getAttribute(){return ''}}).getAttribute('class') || '')));
       // The unit list.
       const unit = u[0], now = Date.now();
       let k = 0;
@@ -2234,7 +2237,7 @@ def check_b236(br):
     rd = r["road"] if isinstance(r["road"], dict) else {}
     check("the road blends from rank to rank, with a light where you are", rd.get("blended") is True and rd.get("tip") == 1, r["road"])
     check("the Officer is gone: an old Officer is drawn as the Oracle (build 244)", "cx-k-oracle" in str(r["shades"]), r["shades"])
-    check("Zeus and Poseidon's symbols sit on a dark carved panel", r["panels"] == [True, True], r["panels"])
+    check("Zeus's symbol sits on a dark carved panel, and Poseidon's id draws the Anubis", r["panels"] == [True, True], r["panels"])
     cp = r["copy"] if isinstance(r["copy"], dict) else {}
     check("the doors say what they open, and Hundos says nothing about the badge",
           cp.get("doors") == ["Tap to see flagged questions", "Tap to see most missed"]
@@ -2853,8 +2856,9 @@ def check_b243(br):
           r.get("feats") == {"clown": "vrwins5", "astronaut": "hundo7day", "hacker": "study20h", "timekeeper": "days30",
                              "valkyrie": "vrwins10", "swatRetired": True}, r.get("feats"))
     check("every retired character is drawn as what replaced it",
-          r.get("retiredTo") == ["ninja", "clown", "astronaut", "solar", "oracle", "valkyrie", "hacker", "solar", "tempest", "valkyrie", "hacker", "timekeeper", "ninja"], r.get("retiredTo"))
-    check("the new ones are named", r.get("names") == ["Lunar", "Solar", "Tempest", "Frost", "Oracle", "Inferno", "Hacker", "Timekeeper", "Valkyrie"], r.get("names"))
+          r.get("retiredTo") == ["ninja", "clown", "astronaut", "solar", "oracle", "viper", "hacker", "solar", "tempest", "viper", "hacker", "timekeeper", "ninja"], r.get("retiredTo"))
+    # build 265: the Viper took the Valkyrie's id (and the characters retired into it).
+    check("the new ones are named", r.get("names") == ["Lunar", "Solar", "Tempest", "Frost", "Oracle", "Inferno", "Hacker", "Timekeeper", "Viper"], r.get("names"))
     check("whoever held the Clown under the old ranks keeps it, and nobody at all has the Robot (build 244) - an old Robot is drawn as the Ninja",
           r.get("kept") == ["clown"] and r.get("robotHeld") is False and r.get("robotNew") is True, r)
     check("Customize groups the characters, secrets on their own, and no Robot for somebody who never held it",
