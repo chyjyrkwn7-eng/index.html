@@ -7765,3 +7765,10 @@ because "succeeded ... with fuzz" is the only warning there is.
   blue button** ("not a fan of the question bank blue buttons"); the
   top box's bank pill lost its blue fill with it. The slider keeps the
   blue.
+
+### Build 255
+
+- **No avatar on the road map.** "Your avatar being on the current rank
+  road map, remove that." The rank you hold still says You are here and
+  its ring still pulses; `.rankmap-you` is no longer built (its CSS is
+  left, harmless). check-behaviour 26 asserts no stop carries it.

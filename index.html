@@ -55839,7 +55839,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-30-254";
+const APP_BUILD = "2026-09-30-255";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -71859,12 +71859,9 @@ function buildRanksTab(){
     const node = document.createElement("div");
     node.className = "rankmap-node";
     node.appendChild(fitRankEmblem(buildRankEmblemSVG(key), key, true));
-    if(isHere){
-      const you = document.createElement("span");
-      you.className = "rankmap-you";
-      try{ you.appendChild(buildAvatarCharSVGSafe(store.avatarChar || AVATAR_CHARACTERS[0].id)); }catch(e){}
-      node.appendChild(you);
-    }
+    /* No avatar on the rank you hold (build 255): "your avatar being on
+       the current rank road map, remove that." The stop still says You
+       are here, and its ring still pulses. */
     stop.appendChild(node);
 
     const card = document.createElement("div");

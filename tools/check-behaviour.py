@@ -562,8 +562,10 @@ def check_ranks(br):
           [c["chip"] for c in cards] ==
           ["Reached", "Reached", "You are here", "Up next", "Locked", "Locked", "Locked"],
           [c["chip"] for c in cards])
-    check("your character stands on the rank you hold, and only there",
-          [i for i, c in enumerate(cards) if c["you"]] == [2] and "here" in cards[2]["state"],
+    # Build 255: no avatar on the road map at all ("your avatar being on
+    # the current rank road map, remove that"); the stop still says here.
+    check("no avatar stands on the road map; the rank you hold still says so",
+          [i for i, c in enumerate(cards) if c["you"]] == [] and "here" in cards[2]["state"],
           cards)
     check("only the rank you are climbing to carries a meter",
           [c["meter"] for c in cards] == [False, False, False, True, False, False, False],
