@@ -7979,3 +7979,16 @@ because "succeeded ... with fuzz" is the only warning there is.
   she likes has in common - the Hacker, the Timekeeper, the Valkyrie,
   Void - is a strong single silhouette and a light of its own on a dark
   figure. Start there next time.
+
+### Build 264
+
+- **The Ronin is 450 questions** ("Ronin is sick, I love it. Make it 450
+  questions though not 400"). `RONIN_TEST_SIZE` beside `PASS_MARK`; the
+  label reads from it. It reads a NEW flag, `store.bigTest450Passed`,
+  because the old `bigTestPassed` was set by any 400-449 pass while the
+  bar was 400 and would hand those people the Ronin under a rule that no
+  longer says so. The old field stays defaulted and unread. 450 is
+  reachable: the bank is 894 questions and Penal Code alone is 340, so
+  any multi-unit run with it and one more mid-size unit gets there.
+- The Ronin design is a keeper - asked for by name. Do not touch it
+  without being asked.

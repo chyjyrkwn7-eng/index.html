@@ -18912,6 +18912,8 @@ const BANK_TITLE = "Nova \u2014 Class 26E Study";
    PASS_MARK only decides whether that number is green or red. It is a display
    threshold, not something taken from the study material. */
 const PASS_MARK = 70;
+/* The Ronin's challenge: one run at least this long, passed (build 264). */
+const RONIN_TEST_SIZE = 450;
 const POINTS_PER_QUESTION = 10;
 const PERFECT_BONUS = 100;
 /* Paid once per EXTRA unit in a run: two units is +15, three is +30, and
@@ -31213,7 +31215,7 @@ const AVATAR_CHARACTERS = [
                     244: "I hate the k9 character")
        Wolf       - studied on 30 different days (new in 244: "add
                     another character in the challenge rewards")
-       Ronin      - pass a test of 400+ questions (263; the Knight in 259
+       Ronin      - pass a test of 450+ questions (263, 400 until 264; the Knight in 259
                     and the Night Owl in 262 came and went before it) */
   { id: "detective",  kind: "detective",  feat: "daily10" },
   { id: "masked",     kind: "masked",     feat: "retake100" },
@@ -31354,9 +31356,15 @@ const CHARACTER_FEATS = {
      pass, so a run that times out or a game that is lost never counts.
      Nothing kept question counts per run before this build, so it is
      tracked from here on. */
-  bigtest400: { label: "Pass a test of 400 or more questions (" + PASS_MARK + "% or better)",
-                done: () => store.bigTestPassed === true,
-                have: () => (store.bigTestPassed === true ? 1 : 0), need: 1 },
+  /* 450 SINCE BUILD 264 (was 400): "make it 450 questions though not
+     400." A NEW flag, bigTest450Passed, rather than the old one with a new
+     number: bigTestPassed was set by any 400-449 run passed while the bar
+     was 400, and reading it would hand those people the Ronin under a
+     rule that no longer says so. The old field stays defaulted and
+     unread. The key stays `bigtest400` - it is only a name. */
+  bigtest400: { label: "Pass a test of " + RONIN_TEST_SIZE + " or more questions (" + PASS_MARK + "% or better)",
+                done: () => store.bigTest450Passed === true,
+                have: () => (store.bigTest450Passed === true ? 1 : 0), need: 1 },
   hardcore10: { label: "Beat Hardcore on 10 units",
                 done: () => hardcoreUnitsBeaten() >= 10,
                 have: () => hardcoreUnitsBeaten(), need: 10 },
@@ -34945,7 +34953,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               mysteryColorsFound: { red: false, orange: false, yellow: false, violet: false, white: false },
               testsUntilMystery: null, flareNextTestAt: 0,
               savedCodePrompts: 0, savedCodeSaved: false,
-              dailyCorrectStreak: 0, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false,
+              dailyCorrectStreak: 0, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false,
               weeklyWins: 0, weeklyTop3: 0, retakenQuestions: 0, hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, unlocksShown: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
               vrMatches: 0, vrWins: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
               fullTestsSeeded: false, practiceExamPerfect: false, banner: "", starfallKept: false,
@@ -35156,6 +35164,7 @@ function applyLoadedData(got){
   store.unitHundoStreakUnits = Array.isArray(got.unitHundoStreakUnits) ? got.unitHundoStreakUnits.slice() : [];
   store.practiceTestPassed = got.practiceTestPassed === true;
   store.bigTestPassed = got.bigTestPassed === true;
+  store.bigTest450Passed = got.bigTest450Passed === true;
   store.lastModified = typeof got.lastModified === "number" ? got.lastModified : 0;
   store.testHistory = Array.isArray(got.testHistory) ? got.testHistory.slice(0, 20) : [];
   store.avatarChar = typeof got.avatarChar === "string" ? got.avatarChar : null;
@@ -36502,6 +36511,7 @@ function wipeLocalProgressAndSettings(){
   store.unitHundoStreakUnits = [];
   store.practiceTestPassed = false;
   store.bigTestPassed = false;
+  store.bigTest450Passed = false;
   store.weeklyWins = 0; store.weeklyTop3 = 0; store.retakenQuestions = 0; store.hundoDay = null; store.hundoDayBest = 0; store.shadesFound = false; store.shadesAt = null; store.legacyChars = []; store.rankMapSeen = -1; store.rankMapFx244 = false; store.rankMapProg = null;
   store.unlocksShown = { chars: [], banners: [] };
   store.unitRuns = {};
@@ -56087,7 +56097,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-30-263";
+const APP_BUILD = "2026-09-30-264";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -59394,9 +59404,9 @@ function summarize(){
        only, and ten answered at 90% is not passing a 250-question test.
        (Scoring a timeout over the whole test, blanks as wrong, is the
        way to allow it, if that is ever wanted.) */
-    /* The Night Owl (build 262): 400 questions or more in one run, passed. */
-    if(order.length >= 400 && pct >= PASS_MARK && cfg.mode !== "game" && !store.bigTestPassed){
-      store.bigTestPassed = true;
+    /* The Ronin (build 264): RONIN_TEST_SIZE questions or more in one run, passed. */
+    if(order.length >= RONIN_TEST_SIZE && pct >= PASS_MARK && cfg.mode !== "game" && !store.bigTest450Passed){
+      store.bigTest450Passed = true;
       saveStore();
     }
     if(practiceTestMinutes != null && pct >= PASS_MARK && !store.practiceTestPassed){

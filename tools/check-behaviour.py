@@ -4432,13 +4432,15 @@ def check_b258(br):
       /* 8. the Ronin (263; the Knight and the Night Owl were both asked
          against): pass a test of 400 or more questions */
       const ow = AVATAR_CHARACTERS.find(c => c.id === 'ronin');
-      const wasBig = store.bigTestPassed; store.bigTestPassed = false;
+      const wasBig = store.bigTest450Passed, wasOld = store.bigTestPassed; store.bigTest450Passed = false;
+      /* a pass under the old 400 rule does not hand it over (build 264) */
+      store.bigTestPassed = true; const oldRuleLocked = isLockedCharacter('ronin');
       const owlLocked = isLockedCharacter('ronin');
-      store.bigTestPassed = true; const owlHeld = !isLockedCharacter('ronin');
-      store.bigTestPassed = wasBig;
+      store.bigTest450Passed = true; const owlHeld = !isLockedCharacter('ronin');
+      store.bigTest450Passed = wasBig; store.bigTestPassed = wasOld;
       const os = buildAvatarCharSVG('ronin');
       out.owl = { feat: ow && ow.feat, name: AVATAR_DISPLAY_NAME.ronin, locked: owlLocked, held: owlHeld,
-        label: CHARACTER_FEATS.bigtest400.label,
+        label: CHARACTER_FEATS.bigtest400.label, size: RONIN_TEST_SIZE, oldRuleLocked,
         parts: ['cx-body', 'cx-head', 'cx-eyes', 'cx-eyes-closed', 'cx-fx-roninscarf'].every(c => !!os.querySelector('.' + c)),
         knightGone: !AVATAR_CHARACTERS.some(c => c.id === 'knight' || c.id === 'nightowl'), knightDrawsAs: RETIRED_CHARACTER_TO.knight, owlDrawsAs: RETIRED_CHARACTER_TO.nightowl };
       /* 10. leaving for an update lets go of the page first */
@@ -4477,9 +4479,9 @@ def check_b258(br):
           h.get("card") and h.get("tick") and "Unlocked" in h.get("text", "") and "day one" in h.get("text", "")
           and h.get("stillGhost") and h.get("tapPicks"), h)
     ow = r.get("owl") or {}
-    check("the Knight and the Night Owl are gone; the Ronin is the challenge character for passing a 400-question test",
+    check("the Knight and the Night Owl are gone; the Ronin is passing a 450-question test, and an old 400 pass does not count",
           ow.get("feat") == "bigtest400" and ow.get("name") == "Ronin" and ow.get("owlDrawsAs") == "ninja" and ow.get("locked") is True and ow.get("held") is True
-          and "400" in ow.get("label", "") and ow.get("parts") is True and ow.get("knightGone") is True and ow.get("knightDrawsAs") == "ninja", ow)
+          and "450" in ow.get("label", "") and ow.get("size") == 450 and ow.get("oldRuleLocked") is True and ow.get("parts") is True and ow.get("knightGone") is True and ow.get("knightDrawsAs") == "ninja", ow)
     rl = r.get("release") or {}
     check("before an update reloads, only the Pushing update bar is left and nothing else is animating",
           rl.get("shown") == ["pushing-update"] and rl.get("stage") == 0 and rl.get("running") == 0, rl)
