@@ -2094,14 +2094,22 @@
      the right colour at a smaller size. Without @property support it
      simply snaps, which is what it did before. */
   @property --char-glow-k{ syntax:"<number>"; inherits:true; initial-value:0; }
-  .avatarchar-option:not(.locked) .avatarchar-svg{
-    position:relative; z-index:1;
+  /* ON THE BUTTON, NOT THE DRAWING (build 246). The drawing carries the
+     shoulders-fade mask (below), and CSS applies an element's filter
+     BEFORE its mask - so a drop-shadow on the svg was cut by the mask's
+     rectangle and every selected character sat in a glowing SQUARE,
+     reported from a device: "Clicking characters gives a square effect,
+     should just be the glow". On the button, the shadow is drawn from
+     the already-faded drawing, so it follows the character's outline
+     and fades out at the shoulders with it. */
+  .avatarchar-option:not(.locked) .avatarchar-svg{ position:relative; z-index:1; }
+  .avatarchar-option:not(.locked){
     --char-glow-k:0;
-    transition:--char-glow-k .5s ease;
+    transition:transform .15s ease, --char-glow-k .5s ease;
     filter:drop-shadow(0 0 calc(5px * var(--char-glow-k)) color-mix(in srgb, var(--char-glow) calc(85% * var(--char-glow-k)), transparent))
            drop-shadow(0 0 calc(16px * var(--char-glow-k)) color-mix(in srgb, var(--char-glow) calc(45% * var(--char-glow-k)), transparent));
   }
-  .avatarchar-option.selected:not(.locked) .avatarchar-svg{ --char-glow-k:1; }
+  .avatarchar-option.selected:not(.locked){ --char-glow-k:1; }
   /* ---- THE SHOULDERS FADE OUT, THEY DO NOT STOP (build 233) ----
      "Ensure the characters where it shows underneath their shoulders
      isn't such a hard cutoff ... where the bottom stops could be
@@ -14078,6 +14086,17 @@
   @keyframes bn-knot{ 0%,100%{ transform:translateX(0); opacity:0; } 3%{ transform:translateX(8px); opacity:1; } 30%{ opacity:.75; } 44%{ transform:translateX(340px); opacity:0; } }
   /* Amethyst: the disc turns, against its arms. */
   .bnr .bn-spin{ animation:bn-orbit 110s linear infinite reverse; }
+  /* BUILD 246: the rank banners' turn has to be SEEN. At 110s a galaxy
+     moves a third of a degree between two glances, and a ring nebula,
+     which looks the same at every angle, not at all - reported as "all
+     3 of the rank banners don't animate". 30s turns the galaxy's arms
+     visibly; the ring also breathes on its own 5s (bn-breathe, about
+     the nebula's centre - the markup's origin), since turning alone can
+     never show on a ring. Every loop starts and ends on one frame. */
+  .bnr-adept_rank .bn-spin{ animation-duration:30s; }
+  .bnr-elite_rank .bn-spin{ animation-duration:30s; }
+  .bnr .bn-breathe{ animation:bn-breathe 5s ease-in-out infinite; }
+  @keyframes bn-breathe{ 0%,100%{ transform:scale(1); opacity:1; } 50%{ transform:scale(1.1); opacity:.82; } }
   /* Thunderhead's big strike, every other one: the same shape as
      bn-strike and bn-flash at twice the cycle, so on a 7.2s cycle each
      step lands on the same millisecond as the 3.6s bolt beside it. */
@@ -30941,9 +30960,10 @@ const AVATAR_CHARACTERS = [
        Pirate     - first in a Virtual Room 10 times (was the Spartan's,
                     build 244: "I don't like the spartan, change that
                     to something else")
-       Marksman   - 100 right in a row
+       Marksman   - 150 right in a row (100 until build 246)
        Astronaut  - a hundo in 7 different units in one day (was Blitz's)
-       Scholar    - 20 hours of studying in total (was the K-9's, build
+       Hacker     - 25 hours of studying in total (20 until build 246;
+                    was the Scholar's, and the K-9's before that, build
                     244: "I hate the k9 character")
        Wolf       - studied on 30 different days (new in 244: "add
                     another character in the challenge rewards") */
@@ -31129,9 +31149,16 @@ const CHARACTER_FEATS = {
   /* Build 232: "Ensure there's a character for finishing first in 10
      virtual room matches". The same counter the Champion reads, so wins
      from before this shipped count. */
-  streak100: { label: "Answer 100 questions in a row without a miss",
-               done: () => ((store.lifetime && store.lifetime.longestStreak) || 0) >= 100,
-               have: () => ((store.lifetime && store.lifetime.longestStreak) || 0), need: 100 },
+  /* 150 SINCE BUILD 246 (was 100): "Increase the marksman answer streak
+     from 100 to 150 ... If anyone has unlocked them take it back if they
+     don't meet these." The key stays `streak100` - it is only a name,
+     and nothing stored is keyed by it - and because the lock is worked
+     out live from the streak on record, raising the number takes the
+     character back from anybody under it by itself;
+     revokeRaisedCharacters() takes it off whoever is wearing it. */
+  streak100: { label: "Answer 150 questions in a row without a miss",
+               done: () => ((store.lifetime && store.lifetime.longestStreak) || 0) >= 150,
+               have: () => ((store.lifetime && store.lifetime.longestStreak) || 0), need: 150 },
   /* Build 241, Eclipse. Counted from the whole-unit loop in summarize()
      at the moment a unit comes out at 100%, so it is the same "whole
      unit" every hundo already needs. Tracked from this build: nothing
@@ -31143,9 +31170,11 @@ const CHARACTER_FEATS = {
      rewards - every other challenge counts a result. Read straight off
      the study log the calendar already keeps, so every minute studied
      since the log began counts. */
-  study20h:  { label: "Study for 20 hours in total",
-               done: () => studyHoursTotal() >= 20,
-               have: () => Math.floor(studyHoursTotal()), need: 20 },
+  /* 25 hours since build 246 (was 20), with the same take-back as the
+     Marksman above. The key stays `study20h`. */
+  study20h:  { label: "Study for 25 hours in total",
+               done: () => studyHoursTotal() >= 25,
+               have: () => Math.floor(studyHoursTotal()), need: 25 },
   /* Build 244, the Wolf: turning up. A day counts once it has any study
      time on the log the calendar already keeps, so every day since the
      log began counts - and it is the one challenge a steady week-in,
@@ -31211,6 +31240,36 @@ function isLockedCharacter(id){
   if(def.feat) return !featAchieved(def.feat);
   if(!def.unlock) return false;
   return !tierColorUnlocked(def.unlock);
+}
+/* ---- A RAISED BAR TAKES THE CHARACTER BACK (build 246) ----
+   "Increase the marksman answer streak from 100 to 150. Increase the
+   study hours on the hacker to 25. If anyone has unlocked them take it
+   back if they don't meet these." The lock itself needs nothing - it is
+   worked out live from the streak and the study log, so the new numbers
+   lock it again for anybody under them. What is left is somebody still
+   WEARING one: they go back to the first free character, and an unlock
+   still queued to be announced is dropped, so nobody is congratulated
+   on a character they no longer have. Named, not every feat: a feat
+   read from data that arrives later (a weekly win, a Virtual Room scan)
+   could read as locked for a moment on boot, and must never cost
+   anybody their character. Returns whether anything changed; the next
+   save carries the new character to the rankings. */
+const RAISED_BAR_CHARACTERS = ["marksman", "hacker"];
+function revokeRaisedCharacters(){
+  let changed = false;
+  RAISED_BAR_CHARACTERS.forEach(id => {
+    if(!isLockedCharacter(id)) return;
+    if(store.avatarChar === id){
+      const free = AVATAR_CHARACTERS.find(c => !c.retired && !c.legacy && !c.feat && !c.unlock);
+      store.avatarChar = free ? free.id : null;
+      changed = true;
+    }
+    if(Array.isArray(store.pendingCharUnlocks) && store.pendingCharUnlocks.indexOf(id) >= 0){
+      store.pendingCharUnlocks = store.pendingCharUnlocks.filter(x => x !== id);
+      changed = true;
+    }
+  });
+  return changed;
 }
 function characterLockMessage(id){
   const def = AVATAR_CHARACTERS.find(c => c.id === id);
@@ -34849,6 +34908,8 @@ function applyLoadedData(got){
   store.shadesFound = got.shadesFound === true;
   store.shadesAt = typeof got.shadesAt === "number" ? got.shadesAt : null;
   store.legacyChars = Array.isArray(got.legacyChars) ? got.legacyChars.filter(x => typeof x === "string" && x !== "robot") : legacyCharsFromRanks();
+  /* After everything the locks read (the streak, the study log) is in. */
+  try{ revokeRaisedCharacters(); }catch(e){}
   return true;
 }
 /* WHAT SOMEBODY HELD UNDER THE PRE-243 RULES and would otherwise lose.
@@ -38487,7 +38548,33 @@ function rememberWeekTop(list){
     localStorage.setItem(WEEK_TOP_KEY, JSON.stringify(c));
   }catch(e){}
 }
+/* A WEEK WHOSE NUMBERS CANNOT BE READ, recorded by hand (build 246).
+   "Last weeks top 3 in the weekly xp board is inaccurate!!! It should be
+   sauce, he won the Zeus character and everything." It was, and the
+   numbers cannot fix it: the week of 21 September is when most of the
+   class updated onto the XP rebuild, which re-awarded everybody's whole
+   history through awardXp() - so every row updated that week carries its
+   ALL-TIME XP as that week's (Cap, OdinSavior, Napoleon, Z: weekPoints
+   === xp to the point), while anybody who has studied since rolled over
+   on a build that threw last week's total away (Sauce among them). The
+   one record that survived is the winner's own: Sauce's device watched
+   him finish first and recorded the win - it is how he has Zeus - and
+   Madison confirmed it, and named second and third. A week listed here
+   shows exactly these, in this order, and no points, because the true
+   totals are gone. From 5
+   October it no longer matches lastWeekKey() and the board reads the
+   published prevWeek fields, which build 245 onward keeps properly. */
+/* Sauce, then OdinSavior, then Napoleon - the second and third given by
+   Madison, who saw the board that week. */
+const WEEK_RESULTS_KNOWN = { "2026-09-21": ["ew7hyxpg5j2y", "kdxnp7smgcre", "mbw5qdhcw2pf"] };
 function lastWeekTop3(list){
+  const known = WEEK_RESULTS_KNOWN[lastWeekKey()];
+  if(known){
+    return known.map(pub => {
+      const e = (list || []).find(x => x && x.pub === pub);
+      return e ? { pub: pub, name: e.firstName || "?", avatar: e.avatarChar || "ninja", pts: null } : null;
+    }).filter(Boolean);
+  }
   const byKey = new Map();
   const put = (pub, name, avatar, pts) => {
     if(!(pts > 0)) return;
@@ -38619,7 +38706,13 @@ const BANNER_EPIC = ["hardcore10", "tests500", "hundos250", "study50", "correct5
 /* BUILD 244: Undercover is gone ("the shades banner is terrible, remove
    it"), and the two new one-offs - Midnight Oil at 50 hours studied and
    Star Trails at 5,000 right answers - are hard ones, so they move. */
-const BANNER_ANIMATED = ["average10", "hardcore10", "tests250", "tests500", "hundos250", "elite_rank", "titan_rank",
+/* BUILD 246: ALL THREE RANK BANNERS MOVE. "All 3 of the rank banners
+   don't animate. Ensure all 3 of them are animated." Sapphire was the
+   still first rung of its ladder under the build 243 rule; a rank is
+   not a ladder of chores, and the rank banners are the one set asked
+   for as a set. See also the .bnr-*_rank rules by bn-spin: the motion
+   they had was a 110s turn, which is too slow to see at all. */
+const BANNER_ANIMATED = ["average10", "hardcore10", "tests250", "tests500", "hundos250", "adept_rank", "elite_rank", "titan_rank",
                          "study50", "correct5000", "badges16", "level80", "exam100"];
 const BANNERS = [
   /* ORDERED BY WHAT YOU DO, THEN HOW FAR (build 235). "Ensure the order
@@ -40104,8 +40197,8 @@ const BANNER_ART = {
       '<ellipse cx="' + CX + '" cy="' + CY + '" rx="250" ry="120" fill="url(#' + u + 'halo)"/>' +
       '<g transform="' + tilt + '">' +
       halo +
-      '<circle r="120" fill="url(#' + u + 'ann)"/>' +
-      '<g class="bn-spin">' + shell + knots + '</g>' +
+      '<circle r="120" fill="url(#' + u + 'ann)" class="bn-breathe"/>' +
+      '<g class="bn-spin"><g class="bn-breathe">' + shell + knots + '</g></g>' +
       /* the inner shell, at its own tilt */
       '<ellipse rx="48" ry="30" fill="url(#' + u + 'inner)" transform="rotate(58)"/>' +
       '<circle class="bn-blast" style="' + ev + '" r="150" fill="url(#' + u + 'wave)" opacity="0"/>' +
@@ -48042,15 +48135,31 @@ function playDailyRecharge(btn, then){
   btn.classList.remove("is-charging");
   void btn.offsetWidth;
   btn.classList.add("is-charging");
+  /* THE ORB LEAVES WHEN THE RING HAS CLOSED, NOT WHEN A TIMER SAYS IT
+     SHOULD HAVE (build 246). The ring is a CSS animation, and it starts
+     when the button is first painted - which on a busy device (Home's own
+     entrance, a slow phone) is a few hundred ms after this runs. Timed
+     from here, the orb left a ring still two-thirds closed; the gate
+     caught it at 2.2s against a ring closing at 2.6s. So the launch
+     hangs off the second half's animationend, with the old schedule
+     kept only as a late fallback, and the ring is tidied away after the
+     burst it actually played rather than on the clock. */
   const goesOff = DAILY_CHARGE.delay + DAILY_CHARGE.fill;
-  setTimeout(() => {
+  let launched = false;
+  const tidy = () => { btn.classList.remove("is-charging"); ring.remove(); };
+  const launch = () => {
+    if(launched) return;
+    launched = true;
+    setTimeout(tidy, Math.max(0, DAILY_CHARGE.burst + 400 - DAILY_CHARGE.launch));
     if(!document.body.contains(btn)) return;
     then();
-  }, goesOff + DAILY_CHARGE.launch);
-  setTimeout(() => {
-    btn.classList.remove("is-charging");
-    ring.remove();
-  }, goesOff + DAILY_CHARGE.burst + 400);
+  };
+  const lastArc = ring.querySelector(".dq-charge-l .dq-charge-arc");
+  if(lastArc) lastArc.addEventListener("animationend", e => {
+    if(e.animationName === "dq-sweep") setTimeout(launch, DAILY_CHARGE.launch);
+  });
+  setTimeout(launch, goesOff + DAILY_CHARGE.launch + 1500);
+  setTimeout(() => { if(!launched) tidy(); }, goesOff + DAILY_CHARGE.launch + 3000);
 }
 /* Opens `el` (already built and on <body>) out of `from`, the "?"
    button. Returns false when it cannot - no geometry, or no Web
@@ -55333,7 +55442,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-30-245";
+const APP_BUILD = "2026-09-30-246";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -67565,7 +67674,7 @@ function buildLastWeekPodium(top){
     const nm = document.createElement("span");
     nm.className = "lw-podium-name"; nm.textContent = t.name;
     const pts = document.createElement("span");
-    pts.className = "lw-podium-pts"; pts.textContent = t.pts.toLocaleString() + " XP";
+    pts.className = "lw-podium-pts"; pts.textContent = t.pts == null ? (i === 0 ? "Winner" : "") : t.pts.toLocaleString() + " XP";
     const block = document.createElement("span");
     block.className = "lw-podium-block"; block.textContent = String(i + 1);
     col.append(av, nm, pts, block);
@@ -67944,8 +68053,12 @@ function characterDetail(id){
   if(def.feat){
     const locked = characterLockMessage(id);
     /* Void's two flares name the one before them rather than themselves -
-       the hunt is the point. */
-    if(/^Unlock /.test(locked)){ o.desc = locked; o.hideArt = true; return o; }
+       the hunt is the point. The HOW stays hidden; the character does
+       not (build 246): drawn as a black cut-out, Umbra and Singularity
+       were the only two characters in the app you could tap and not
+       see - reported as "the umbra and singularity characters don't
+       show up when you click them". */
+    if(/^Unlock /.test(locked)){ o.desc = locked; return o; }
     const f = CHARACTER_FEATS[def.feat];
     if(f){ o.desc = f.label + "."; o.have = Math.min(f.have(), f.need); o.need = f.need; }
   }
@@ -68258,9 +68371,15 @@ function showCustomize(){
     const nm = document.createElement("span");
     nm.className = "banner-opt-name"; nm.textContent = name;
     b.append(art, nm);
-    if(!id){
+    /* WHAT IT TAKES, UNDER EVERY BANNER (build 246): "The requirement
+       needed for banners need to be under each banner." It was only in
+       the pop-up behind a tap, so the grid was forty names with no way
+       to see at a glance which ones you were close to. Earned ones keep
+       it too - it is what the banner says about you. */
+    const need = id ? needText : "Matches your theme";
+    if(need){
       const nd = document.createElement("span");
-      nd.className = "banner-opt-need"; nd.textContent = "Matches your theme";
+      nd.className = "banner-opt-need"; nd.textContent = need;
       b.appendChild(nd);
     }
     b.addEventListener("click", () => {
@@ -68277,7 +68396,7 @@ function showCustomize(){
   bannerOpt("", "Default", "", false);
   BANNERS.forEach(def => {
     if(def.secret && !bannerEarned(def.id)) return;
-    bannerOpt(def.id, def.name, "", !bannerEarned(def.id));
+    bannerOpt(def.id, def.name, def.label, !bannerEarned(def.id));
   });
   bannerSect.appendChild(bannerGrid);
   /* The banners go on AFTER the theme colours (build 242): eight colours
@@ -71809,6 +71928,13 @@ function applyGlassRefraction(el, mapImgId){
         confirmMainMenu();
       }
       else if(dest === "rewards") showRankings();
+      /* A TAP ON RANKS WENT NOWHERE (fixed in build 246). The tab was
+         added with a destination only in tabDests, which the drag-to-
+         switch path uses, and none here - so dragging onto it worked and
+         tapping it, which is what everybody does, did nothing at all.
+         Reported: "CLICKING the rank button on the bottom does not work,
+         nothing happens". check-behaviour 43 taps every tab. */
+      else if(dest === "ranks") showRanksScreen();
       else if(dest === "profile") showProfile();
       else if(dest === "settings") showAppearance();
     });

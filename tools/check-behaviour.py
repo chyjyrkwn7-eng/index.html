@@ -1235,11 +1235,12 @@ def check_b220(br):
           b["seeded"] > 0 and b["seeded"] <= b["plays"], b)
     check("banners earned off the counters", "tests100" in b["earned"] and "exam100" in b["earned"]
           and "tests250" not in b["earned"], b["earned"])
-    # Build 243 moved a locked banner's requirement off the tile and onto a
-    # tap ("only show when tapped on"), and hides a secret one until found.
+    # Build 243 moved a locked banner's requirement onto a tap; build 246
+    # puts it back under every tile as well ("The requirement needed for
+    # banners need to be under each banner") - the tap still says more.
     check("Customize lists every banner but unfound secrets, plus Default, and a tap says what a locked one needs",
           b["opts"] == b["nListed"] + 1 and b["selected"] == "exam100"
-          and b["lockedTileNeed"] is False and len(b["lockedSays"]) > 10, b)
+          and b["lockedTileNeed"] is True and len(b["lockedSays"]) > 10, b)
     check("picking one wears it, and it is across the top of Profile",
           b["wear"] == "tests100" and b["cover"] and "bnr-tests100" in b["cover"], b)
     check("a banner and a Void flare's character are announced on the results",
@@ -1463,10 +1464,21 @@ def check_b229(br):
                     E('c', 'Dee', { week: wk, weekPoints: 300, prevWeek: lw, prevWeekPoints: 2600 }),
                     E('d', 'Eli', { week: wk, weekPoints: 1200 })];
       rows.forEach(e => { e.rawWeekPoints = e.weekPoints; e.weekPoints = weekPointsOfEntry(e); });
+      // The numbers path, with any hand-recorded week set aside (build 246
+      // pins the week of 21 Sep, which is "last week" until 5 Oct).
+      const pinned = Object.assign({}, WEEK_RESULTS_KNOWN);
+      Object.keys(WEEK_RESULTS_KNOWN).forEach(k => delete WEEK_RESULTS_KNOWN[k]);
       out.top = lastWeekTop3(rows).map(t => t.name);
       const host = document.createElement('div'); document.body.appendChild(host);
       renderRankingRows(host, rows, RANKING_BOARDS.find(b => b.key === 'week'), {});
       out.podium = host.querySelectorAll('.lw-podium .lw-podium-spot').length;
+      // A recorded week wins over the numbers, and says Winner, not a total.
+      WEEK_RESULTS_KNOWN[lw] = ['d'];
+      out.pinned = lastWeekTop3(rows).map(t => [t.name, t.pts]);
+      renderRankingRows(host, rows, RANKING_BOARDS.find(b => b.key === 'week'), {});
+      out.pinnedPts = [...host.querySelectorAll('.lw-podium .lw-podium-pts')].map(x => x.textContent);
+      Object.keys(WEEK_RESULTS_KNOWN).forEach(k => delete WEEK_RESULTS_KNOWN[k]); Object.assign(WEEK_RESULTS_KNOWN, pinned);
+      out.sauce = WEEK_RESULTS_KNOWN['2026-09-21'];
       host.remove();
       return out; }""")
     check("answer positions are shuffled by default", r["shuffleOn"] is True, r)
@@ -1475,6 +1487,8 @@ def check_b229(br):
     check("consecutive runs of a small unit open with different questions", r["overlap"] == 0, r)
     check("last week's top three come from last week's numbers, not this week's",
           r["top"] == ["Cy", "Bo", "Dee"] and r["podium"] == 3, r)
+    check("a hand-recorded week (Sauce, OdinSavior, Napoleon; 21 Sep) replaces numbers that cannot be trusted, and shows no made-up total",
+          r["pinned"] == [["Eli", None]] and r["pinnedPts"] == ["Winner"] and r["sauce"] == ["ew7hyxpg5j2y", "kdxnp7smgcre", "mbw5qdhcw2pf"], r)
     ctx.close()
 
 
@@ -1927,9 +1941,9 @@ def check_b235(br):
       await T('after', () => ({ spots: document.querySelectorAll('.rs-spot').length, left: pendingHomeUnlocks().chars.length }));
       showHome(); await wait(4200);
       await T('again', () => document.querySelectorAll('.rs-spot').length);
-      // The Marksman: 100 in a row, counted from the streak on record.
-      await T('marksman', () => { const had = store.lifetime.longestStreak; store.lifetime.longestStreak = 99;
-        const a = isLockedCharacter('marksman'); store.lifetime.longestStreak = 100; const b = isLockedCharacter('marksman');
+      // The Marksman: 150 in a row (100 until build 246), counted from the streak on record.
+      await T('marksman', () => { const had = store.lifetime.longestStreak; store.lifetime.longestStreak = 149;
+        const a = isLockedCharacter('marksman'); store.lifetime.longestStreak = 150; const b = isLockedCharacter('marksman');
         store.lifetime.longestStreak = had; return [a, b]; });
       // The ladders sit together, easiest first.
       await T('order', () => BANNERS.map(b => b.id));
@@ -1971,7 +1985,7 @@ def check_b235(br):
     af = r["after"] if isinstance(r["after"], dict) else {}
     check("each plays once: nothing left afterwards, nothing on the next visit",
           af.get("spots") == 0 and af.get("left") == 0 and r["again"] == 0, [r["after"], r["again"]])
-    check("the Marksman unlocks at 100 in a row and not before", r["marksman"] == [True, False], r["marksman"])
+    check("the Marksman unlocks at 150 in a row and not before", r["marksman"] == [True, False], r["marksman"])
     o = r["order"] if isinstance(r["order"], list) else []
     def run(ids):
         at = [o.index(i) if i in o else -99 for i in ids]
@@ -2770,8 +2784,10 @@ def check_b243(br):
           r.get("groups") == ["Starters", "Rank rewards", "Challenge rewards", "Secrets"] and r.get("robotShown") is False, r.get("groups"))
     check("five across on a phone, and every name on one line",
           r.get("cols") == 5 and r.get("twoLine") == [], [r.get("cols"), r.get("twoLine")])
-    check("banner tiles say nothing but the default's line, and the secret one is not listed until found",
-          r.get("tileNeeds") == ["Matches your theme"] and r.get("defaultTile") == "Default" and r.get("shadesTile") is False, r)
+    # Build 246: every tile carries its requirement (was the default's line only).
+    check("every banner tile says what it takes, and the secret one is not listed until found",
+          (r.get("tileNeeds") or [None])[0] == "Matches your theme" and len(r.get("tileNeeds") or []) > 10
+          and r.get("defaultTile") == "Default" and r.get("shadesTile") is False, r)
     check("the Default circle is the default theme and the Gold circle is gold",
           # Build 244 made Gold yellower: #F5C21B, not #E9B43A.
           "255, 211, 122" in (r.get("defaultDot") or "") and "245, 194, 27" in (r.get("goldDot") or ""), [r.get("defaultDot"), r.get("goldDot")])
@@ -2790,8 +2806,11 @@ def check_b243(br):
     check("a saved SWAT loads as the Ninja, and there is no Undercover banner",
           r.get("swatLoadsAs") == "ninja" and r.get("bannerAfter") is True, [r.get("swatLoadsAs"), r.get("bannerAfter")])
     lad = r.get("ladders") or {}
-    check("the first banner of every ladder is still and every one above it moves",
-          lad.get("first") == [True] * 4 and lad.get("rest") == [False] * 7, lad)
+    # Build 246: the rank ladder is the exception - all three rank banners
+    # move ("All 3 of the rank banners ... Ensure all 3 of them are
+    # animated"), so its first rung, Sapphire (the 4th entry), moves too.
+    check("the first banner of every ladder is still, bar the rank banners, and every one above it moves",
+          lad.get("first") == [True, True, True, False] and lad.get("rest") == [False] * 7, lad)
     check("the all-badges banner is the sixteen badges", r.get("hallBadges") == 16, r.get("hallBadges"))
     check("the redone and new banners are named", r.get("bannerNames") == ["Hall of Fame", "Ascension", "Midnight Oil", "Star Trails"], r.get("bannerNames"))
     check("Star Trails at 5,000 right answers and Midnight Oil at 50 hours studied (build 244)",
@@ -3967,6 +3986,73 @@ def check_b245_daily_header(br):
     ctx.close()
 
 
+def check_b246(br):
+    """Build 246. (1) A selected character glows round it, not in a square:
+    the drawing carries the shoulders-fade mask, and CSS applies an
+    element's filter before its mask, so a drop-shadow on the drawing was
+    cut to the mask's rectangle. The glow has to be on the button. Checked
+    as the rule itself: pixel tests at the box edge could not separate
+    the square from the steep edge of a round glow.
+    (2) The Marksman is 150 in a row and the Hacker 25 hours; anybody under
+    the new bar who is wearing one goes back to a free character, and a
+    queued announcement of one is dropped. Written against build 245,
+    where the corners light up and the old numbers still unlock."""
+    print("\n42-43. build 246: the character glow, the raised bars, the Ranks tab, Umbra/Singularity, rank banners, banner requirements")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    g = pg.evaluate("""async ()=>{ store.legacyChars = AVATAR_CHARACTERS.map(c => c.id); store.avatarChar = 'zeus';
+      showCustomize(); await new Promise(r => setTimeout(r, 1500));
+      const o = document.querySelector('.avatarchar-option.selected'); const svg = o && o.querySelector('.avatarchar-svg');
+      const cs = svg ? getComputedStyle(svg) : null;
+      return { masked: !!cs && ((cs.maskImage || cs.webkitMaskImage || 'none') !== 'none'),
+               drawingGlow: !!cs && /drop-shadow/.test(cs.filter),
+               buttonGlow: !!o && /drop-shadow/.test(getComputedStyle(o).filter) }; }""")
+    # The cause, checked directly: CSS applies an element's filter before
+    # its mask, so a glow on the masked drawing is cut to the mask's
+    # rectangle. Pixel tests at the box edge could not tell the two apart
+    # reliably (the round glow is steep there too); this can.
+    check("a selected character's glow is not on the masked drawing (which cuts it square), but on its button",
+          g["masked"] and not g["drawingGlow"] and g["buttonGlow"], g)
+    r = pg.evaluate("""()=>{ const H = 3600000, out = {}; store.legacyChars = [];
+      const set = (st, h) => { store.lifetime.longestStreak = st; store.studyLog = { '2026-09-01': h * H }; };
+      set(149, 24.9); out.under = [isLockedCharacter('marksman'), isLockedCharacter('hacker')];
+      set(150, 25); out.at = [isLockedCharacter('marksman'), isLockedCharacter('hacker')];
+      const d = JSON.parse(JSON.stringify(store)); d.avatarChar = 'hacker'; d.studyLog = { '2026-09-01': 22 * H };
+      d.lifetime.longestStreak = 120; d.pendingCharUnlocks = ['marksman', 'clown'];
+      applyLoadedData(d); out.revoked = [store.avatarChar, store.pendingCharUnlocks.slice()];
+      const e = JSON.parse(JSON.stringify(store)); e.avatarChar = 'marksman'; e.lifetime.longestStreak = 160;
+      e.studyLog = { '2026-09-01': 30 * H }; e.pendingCharUnlocks = ['hacker'];
+      applyLoadedData(e); out.kept = [store.avatarChar, store.pendingCharUnlocks.slice()];
+      return out; }""")
+    check("the Marksman needs 150 in a row and the Hacker 25 hours", r["under"] == [True, True] and r["at"] == [False, False], r)
+    check("under the new bar, the character comes off whoever is wearing it and its announcement is dropped",
+          r["revoked"][0] not in ("hacker", "marksman") and r["revoked"][1] == ["clown"], r["revoked"])
+    check("at or over it, nothing is taken", r["kept"] == ["marksman", ["hacker"]], r["kept"])
+    # 43. Madison's list after 245, on a real Home.
+    t = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      store.legacyChars = []; store.avatarChar = 'ninja';
+      for(const id of ['bottomtab-ranks', 'bottomtab-rewards', 'bottomtab-profile', 'bottomtab-settings']){
+        showHome(); await wait(600);
+        const before = document.querySelector('#stage > *');
+        document.getElementById(id).click(); await wait(700);
+        const now = document.querySelector('#stage > *');
+        out[id] = !!now && now !== before && !now.classList.contains('screen-home-actual');
+      }
+      out.ranksScreen = (showHome(), await wait(500), document.getElementById('bottomtab-ranks').click(), await wait(700),
+                         !!document.querySelector('.screen-ranks'));
+      out.hiddenArt = ['umbra', 'singularity'].map(id => !!characterDetail(id).hideArt);
+      out.animated = ['adept_rank', 'elite_rank', 'titan_rank'].map(id => !buildBannerArt(id).classList.contains('is-still'));
+      showCustomize(); await wait(900);
+      out.needs = BANNERS.filter(b => !b.secret).map(b => { const o = document.querySelector('.banner-opt[data-banner="' + b.id + '"] .banner-opt-need');
+        return !!o && o.textContent === b.label; });
+      return out; }""")
+    check("every tab on the bar opens its screen when TAPPED, Ranks included",
+          all(t[k] for k in ("bottomtab-ranks", "bottomtab-rewards", "bottomtab-profile", "bottomtab-settings")) and t["ranksScreen"], t)
+    check("Umbra and Singularity are drawn in their pop-ups, not blacked out", t["hiddenArt"] == [False, False], t["hiddenArt"])
+    check("all three rank banners animate", t["animated"] == [True, True, True], t["animated"])
+    check("every banner in Customize says what it takes, under it", len(t["needs"]) > 10 and all(t["needs"]), t["needs"])
+    ctx.close()
+
+
 B245_POLISH = ["modes", "daily_schedule", "slogan", "bugreport", "daily_announce", "start_pill", "daily_header"]
 
 
@@ -4025,6 +4111,7 @@ def main():
             check_audit_a(br)
             for name in B245_POLISH:
                 globals()["check_b245_" + name](br)
+            check_b246(br)
         finally:
             br.close()
     SERVER.shutdown()

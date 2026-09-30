@@ -7421,3 +7421,65 @@ gate simply had less in it and still read ALL PASS. Before merging a
 tools diff, read its `-` lines: every one should be something that
 agent meant to remove. And run `patch` without filtering its output,
 because "succeeded ... with fuzz" is the only warning there is.
+
+### Build 246
+
+- **A GLOW AND A MASK ON THE SAME ELEMENT MAKE A SQUARE.** CSS applies an
+  element's `filter` BEFORE its `mask`, so the selected character's
+  drop-shadow on `.avatarchar-svg` - which carries the shoulders-fade
+  mask - was cut to the mask's rectangle: every selected character sat
+  in a glowing square, reported from a device as "clicking characters
+  gives a square effect, should just be the glow". The drop-shadow is on
+  `.avatarchar-option` now, so it is drawn from the already-faded
+  drawing and follows the figure. **Anything that glows AND fades has to
+  put the two on different elements**, glow on the outside one.
+  check-behaviour 42 asserts the rule itself; pixel tests at the box
+  edge could not tell the square from the steep edge of a round glow.
+- **The Marksman is 150 in a row (was 100) and the Hacker 25 hours
+  (was 20)**, with "if anyone has unlocked them take it back if they
+  don't meet these." The locks are computed live, so the numbers alone
+  re-lock them; `revokeRaisedCharacters()` (end of `applyLoadedData`)
+  takes the character off anybody still WEARING it and drops a queued
+  announcement of it. It is limited to `RAISED_BAR_CHARACTERS` on
+  purpose: a feat read from data that arrives later (a weekly win, a
+  Virtual Room scan) could read as locked for a moment at boot and must
+  never cost anybody their character. The feat KEYS stay `streak100` /
+  `study20h` - they are names, and nothing stored is keyed by them.
+  Measured on the live data when it shipped: the Marksman went back from
+  five people (best streaks 108-136) and the Hacker from one (23.4h);
+  none of them was wearing it.
+- **THE RANKS TAB NEVER OPENED ON A TAP.** It was added with a
+  destination in `tabDests` only - the drag-to-switch path - and none in
+  the tab's click handler, so dragging onto it worked and tapping it,
+  which is what everybody does, did nothing. It shipped like that and no
+  gate tapped the tabs. **A new tab needs its line in BOTH places**;
+  check-behaviour 43 taps every one.
+- **Umbra and Singularity are drawn in their pop-ups.** `characterDetail`
+  blacked them out (`hideArt`) along with hiding how to earn them; the
+  how stays hidden, the character does not.
+- **All three rank banners move, and visibly.** Sapphire joined
+  `BANNER_ANIMATED`, and the rank banners' turn went from 110s to 30s -
+  at 110s a galaxy barely moves between two glances and a ring nebula,
+  which looks the same at every angle, not at all. Amethyst's ring and
+  shell also breathe (`bn-breathe`, 5s). **Motion that cannot be seen is
+  not animation**; measure frames a second apart, as banim.py did.
+- **Every banner in Customize shows its requirement under it** (the
+  `label` from `BANNERS`), earned or not.
+- **Last week's top 3 for the week of 21 September is recorded by hand
+  in `WEEK_RESULTS_KNOWN`**: Sauce, OdinSavior, Napoleon (second and
+  third named by Madison), "Winner" on the first and no totals. That week's numbers are unrecoverable - most of the class
+  updated onto the XP rebuild during it, which re-awarded everybody's
+  whole history through `awardXp()`, so those rows carry their all-time
+  XP as that week's (`weekPoints === xp`), and anyone who studied since
+  rolled over on a build that threw last week away. Sauce's own device
+  recorded his win (it is how he has Zeus) and Madison confirmed it. The
+  entry stops applying on 5 October, when `lastWeekKey()` moves on and
+  the published `prevWeek` fields (kept properly from build 245) take
+  over. **A one-off recompute must never go through the weekly counter.**
+- **The daily orb launches off the ring's `animationend`, not a timer.**
+  The ring is CSS and starts when the button first paints, which on a
+  busy device is a few hundred ms after `playDailyRecharge()` runs, so a
+  timer counted from the call sent the orb off a ring still closing
+  (check-behaviour 39 caught it at 2.2s against a 2.6s close, on the
+  reference devices, twice). **A JS step that follows a CSS animation
+  waits for the animation**, with the clock kept only as a fallback.
