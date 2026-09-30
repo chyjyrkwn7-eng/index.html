@@ -66,12 +66,12 @@ with sync_playwright() as pw:
     # writes through the same stub, so a stale __wrote from that is not
     # evidence the report screen wrote anything.
     pg.evaluate("()=>{ window.__wrote = null; }")
-    pg.click(".screen-bugreport .cal-profile-btn"); pg.wait_for_timeout(400)
+    pg.click(".screen-bugreport .bugreport-send"); pg.wait_for_timeout(400)
     ck("an empty report is refused", pg.evaluate("()=>window.__wrote")is None)
     pg.fill(".bug-report-box", "The lobby jumps around when I open it.")
     pg.wait_for_timeout(200)
     if OUT: pg.screenshot(path=os.path.join(OUT,"bugreport.png"))
-    pg.click(".screen-bugreport .cal-profile-btn"); pg.wait_for_timeout(900)
+    pg.click(".screen-bugreport .bugreport-send"); pg.wait_for_timeout(900)
     w=pg.evaluate("()=>window.__wrote")
     ck("it writes somewhere listable", bool(w) and w["coll"]=="vrooms", w and w["coll"])
     ck("with a bug- id", bool(w) and w["id"].startswith("bug-"), w and w["id"])
@@ -82,7 +82,11 @@ with sync_playwright() as pw:
     ck("identified by the ANONYMOUS id", d.get("from")=="me01", d.get("from"))
     blob=json.dumps(d)
     ck("THE SYNC CODE IS NOWHERE IN IT", "WXYZ-7777" not in blob and "synccode" not in blob)
-    ck("and it returns to Settings", pg.evaluate("()=>!!document.querySelector('.screen-bugreport')") is False)
+    # Build 245: a sent report says so on the screen itself, with a way
+    # back, rather than as a toast on the next one.
+    ck("and it says it was sent", pg.evaluate("()=>/Report sent/.test((document.querySelector('.bugreport-sent')||{}).textContent||'')"))
+    pg.click(".bugreport-done"); pg.wait_for_timeout(500)
+    ck("and Back to Settings returns to Settings", pg.evaluate("()=>!!document.querySelector('.screen-bugreport')") is False)
     ck("no JS errors", not errs, errs[:1])
     ctx.close(); br.close()
 print("\n%s (%d failure(s))"%("ALL PASS" if not fails else "FAILED: "+", ".join(fails),len(fails)))

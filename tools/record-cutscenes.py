@@ -61,7 +61,7 @@ GIF_W = 300
 # which is what makes a real, full-unit, 100% run recordable at all.
 SEED = {
     "onboardingComplete": True, "firstName": "Madison", "avatarChar": "ninja",
-    "tourRev": 99,
+    "tourRev": 99, "rankMapFx244": True,
     "lifetime": {"points": 41000, "answered": 2100, "correct": 1980,
                  "drillPlays": 60, "examPlays": 12, "gamePlays": 8,
                  "perfectTests": 64, "longestStreak": 44, "currentStreak": 12},

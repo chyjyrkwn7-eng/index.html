@@ -50,7 +50,7 @@ def ck(name, cond, detail=""):
 
 SETUP = """()=>{
   document.getElementById('splashscreen')?.remove(); try{ __useFake(); }catch(e){}
-  store.onboardingComplete=true; store.firstName='Madison'; store.tourRev=99;
+  store.onboardingComplete=true; store.firstName='Madison'; store.tourRev=99; store.rankMapFx244=true;
   store.retroBadgePending=[]; store.badgeBandsVersion=2;
   ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour','seenRewardsTour','seenSettingsTour',
    'seenUnitOptionsTour','seenUnitSelectTour','seenMainMenuTour'].forEach(k=>store[k]=true);

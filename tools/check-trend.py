@@ -25,7 +25,7 @@ with sync_playwright() as pw:
         pg.route("**/index.html",lambda r,q=None:r.fulfill(status=200,content_type="text/html",body=_html))
     pg.goto("http://127.0.0.1:%d/index.html"%port); pg.wait_for_timeout(2500)
     pg.evaluate("""()=>{document.getElementById('splashscreen')?.remove(); __useFake();
-      store.onboardingComplete=true; store.firstName='Madison'; store.publicId='me01'; store.tourRev=99;
+      store.onboardingComplete=true; store.firstName='Madison'; store.publicId='me01'; store.tourRev=99; store.rankMapFx244=true;
       ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour','seenRewardsTour','seenSettingsTour',
        'seenUnitOptionsTour','seenUnitSelectTour','seenMainMenuTour'].forEach(k=>store[k]=true);
       syncCode='AAAA-1111'; store.leaderboardOptIn=true; showHome();}""")

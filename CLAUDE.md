@@ -2788,8 +2788,10 @@ pull the rope, so each question you get one chance."*
   about 5 min, 29 at 14.5s over 6 min, 80 at the floor over 9 min —
   *"if I select 80 questions though, make it so that it does last about
   that long"*, so eighty running LONGER than the target is the right
-  way round, not a miss. `vroomTimeLimit` keeps its value underneath,
-  so switching back to Race restores it.
+  way round, not a miss. (Race has no time-limit control either since
+  build 245 - it is a fixed 45s per question, see **Build 245** - so
+  the control is gone from Match settings for every mode, and an old
+  room document's `timeLimit` is simply not read.)
 - **THE SPEED-UP IS A LATE EVENT, NOT A GRADIENT YOU ARE INSIDE FROM
   QUESTION ONE.** A straight ramp from the first question was the first
   draft and it is not what was asked for: *"based on the time you
@@ -3508,9 +3510,10 @@ re-evaluated on the next check.
   field in `saveTheme()`. Miss any one and it silently stops persisting.
 - **The daily question button has three states and a live timer.**
   `is-ready` is a quiet ring that runs whenever the question is unanswered;
-  `is-fresh` is a brighter, deliberately finite light-up (five cycles, ~6s)
-  plus a toast, shown when the period has rolled over since this device last
-  saw Home; `is-done` greys it out. The button is `3.4rem` on a phone and
+  a new period (rolled over since this device last saw Home) plays the
+  RECHARGE instead - see **Build 245 - the polish list**; the old
+  `is-fresh` five-pulse light-up and its CSS are unused since then;
+  `is-done` greys it out. The button is `3.4rem` on a phone and
   `4.6rem` from tablet up — it was 41.6px once, under the 44px minimum,
   and the tablet size exists because a control sized for a phone reads as
   an afterthought beside an iPad's tab bar.
@@ -6581,3 +6584,840 @@ Not changed, noted for later: with four people the chat header wraps
 (Invite/Leave onto their own row on a phone, Leave alone on an iPad),
 and the iPad panel's default height leaves ~290px of list, so a poll can
 need the resize handle.
+
+### Build 240 - Friends and Group chats; a pinned Pause; the reveal
+
+**The chat is two things now, on two tabs, plus the Inbox.** Madison:
+"There's a tab for your friends, these are permanent but the chat history
+deletes after a day. You can't add people to this section unless you
+friend someone ... you can't invite people to them or leave the chat. And
+then the other section will be group chats ... the people in the
+groupchat can invite people as well."
+- **A friend chat is one `vrooms` document per pair of friends**, id
+  `friendChatCode(pub)` = `DM-` + the two public ids sorted, upper-cased,
+  so both sides find it without an invitation. `kind:"dm"` keeps
+  `joinChatRoom()` (which accepts `kind:"chat"` only) from letting anyone
+  in by code. `openFriendChat(pub)` creates it or adds your own entry in
+  a transaction and never writes the friend's entry (that would reset
+  how recently they were here).
+- **Friend chat history is 24h** (`FRIEND_CHAT_HISTORY_MS`): CHAT_CTX's
+  `staleBefore`, `keepStale` (a getter: 0 for a friend chat, 3 for a
+  group) and `shouldTrim` all branch on `isFriendChatCode(chatRoomCode)`.
+  In a friend chat anybody opening it trims, because nobody may be
+  writing to it to do the author's trim; the transaction makes that
+  safe. `trimmedChat` honours a `keepStale` of 0.
+- **The Friends tab is every friend, always** (`renderFriendChatList`),
+  no start and no delete. A friend chat header has the friend, online or
+  away, and the mute bell - no Invite, no Leave.
+- **The Groups tab is what the one list used to be** (`groupChatList`,
+  `renderGroupChatList`), minus friend chats and minus any old two-person
+  room with a current friend (hidden, not deleted). A group header is
+  "N members · M here now", mute, Invite, Leave, then EVERY member with
+  the away ones dimmed - a member whose phone slept used to vanish.
+- `chatDockTab` is `"friends" | "groups" | "notifs"`; `isChatTab()` and
+  `chatTabFor(code)` replace every old `=== "chat"`. `enterChatRoom` sets
+  the tab from the code; switching to the other chat tab closes the open
+  room (closing writes nothing). `openChatDock` rebuilds the list when no
+  room is open, because friends change while the dock is shut.
+- **Counts are chats, not messages** (`chatUnreadByTab`): each chat tab
+  counts its unread chats, the Inbox counts its items, and the button is
+  the sum - "the chat button shows correct amount of chats/notifications".
+  check-chat's "the dot reads 3" became "1" (three messages, one chat).
+- **Pings go to every member**, not only the present ones, and a friend
+  chat always pings the friend - otherwise a first message never reached
+  somebody who had not opened it.
+- **Invites (Madison's new rule):** an invite drops out only when it is
+  for the chat or room you are already in (`it.code === chatRoomCode` or
+  already in your list; `it.code === vroomCode`). One from somebody you
+  are chatting with, for a DIFFERENT chat, stays. This supersedes the
+  build-221 wording "if I am in a room or chat with them their old invite
+  should disappear", which still holds for the room it was for.
+  check-chatroom asserts both halves.
+- **Dead invites say so:** a missing chat is "That chat doesn't exist any
+  more"; a missing lobby "doesn't exist any more"; a started one "is no
+  longer available". `lastJoinGone` lets the Inbox row clear itself.
+- **Becoming friends is a moment** (`celebrateNewFriend`): both people,
+  a heart, "Say hi" into the friend chat. Fired by `acceptFriendRequest`
+  and, on the other side, by a `friendacc` landing in the inbox (only if
+  new and under three days old). Once per friend (`class26e.friendmoment`
+  in localStorage), and it waits out a question, a tour or the splash.
+- **The room's chat on the results and the leaderboard:** a Room chat
+  pill (`#roomchat-fab`, measured beside the dock button by
+  `placeRoomChatFab`) with the room's unread count (VROOM_CHAT_CTX
+  `onUnread`), above the race cutscene (z 445). It LIFTS the one live
+  `.vroom-chat` into a sheet and puts it back - a second panel would be a
+  second listener and doubled preview banners.
+
+**Pause is position:fixed on a phone too**, 44px tall, `top` at the
+safe-area line + .35rem. Sticky worked in Chromium, but a sticky control
+in an iOS momentum scroll lags a frame and so does its hit area, and it
+was 36px. `.top` keeps a 44px min-height so the question does not jump.
+
+**Show answer choices** is a centred `.recall-reveal` block: one line
+("Answer it in your head first, then check the choices") and a
+full-width button. The status line is hidden while the choices are, and
+the button is no longer focused programmatically (that drew a focus ring
+on every question; Enter still reveals).
+
+Section 25 of check-behaviour covers all of it and fails on 239.
+
+### Build 240, second round - Madison's review list before shipping
+
+"It's not a go for midnight. I need to review this stuff first." Nothing
+from build 240 is committed until she has. These landed in the same
+build number, uncommitted:
+
+- **Unit details are one layout for every mode** (`unitDetailStats`):
+  always four squares, Completed / two for the mode / Hundos, with the
+  mode named in a chip in the header - "some of the screens aren't in the
+  same order ... I can't tell which screenshot it is". Game: "Level
+  unlocked" and "Farthest on <level>" (`gameFarthestFor`, X / N), and a
+  time ONLY once Hardcore is beaten ("Hardcore best time",
+  `store.gameHardcoreMs`, recorded on a Hardcore win in summarize's
+  whole-unit loop). Exam: "Best exam" and "Exam average"
+  (`store.unitExam`, seeded once from `testHistory` by `unitExamOf`).
+  **The seed has to happen BEFORE `recordTestPlay` adds this run to the
+  history**, or a first exam is counted twice; summarize seeds each unit
+  first for exactly that reason. Review and Virtual Room: Best score and
+  Accuracy. check-behaviour 26; section 23's Exam assertion changed with
+  the decision.
+- **Leave asks first** (`confirmLeaveChat`), for the group header's
+  Leave and the list's x alike, in a card INSIDE `#chatdock` so closing
+  the dock takes it. **Its z-index has to beat the dock's panel (320)
+  and button (370), its siblings** - at 40 it was drawn under the panel
+  and a real tap never reached it, while every `.click()` in the gates
+  passed. Never `window.confirm()`.
+- **One accept answers every invite to that chat.** Being in the chat
+  already hid the others, but only while it stayed on your list - leave
+  it and three invites came back. The Inbox's Join and the banner's Join
+  both mark every invite with that code handled. check-chatroom 8 writes
+  the invites into the real mailbox: **a fixture written straight into
+  `inboxMsgs` is wiped by the inbox listener's next snapshot**, and the
+  first draft passed on 239 for exactly that reason.
+- **Photos keep their shape** - "proportionate ... like iMessage". The
+  size travels with the message (`w`,`h` from `shrinkChatPhoto`), the
+  bubble is drawn at that aspect before the image arrives, capped at
+  ~two thirds of the chat's width and 15rem of height, 18px corners, no
+  frame. Old photos take their size on load.
+- **Typing is one row per person**, stacked, with dots, never "Several
+  people are typing". Accuracy: the flag comes down in the same write as
+  the message and when the box is emptied; a flag older than that
+  person's last message is ignored; and a flag is aged from when THIS
+  device saw it change, not by the sender's clock (two phones seconds
+  apart made people vanish or linger). The typing box is `flex:0 0 auto`
+  or its column squeezes the second row onto the input. check-chatroom 4a.
+- **Fifteen emoji**, three rows of five, the middle finger kept (it was
+  asked for by name in build 222).
+- **The Room chat button was unreachable in a real game.** It was mounted
+  by `showVirtualRoomResults()`, which nothing calls any more - a race
+  ends in `showVirtualRoomFinaleReveal()` and the cutscene. The finale
+  now builds the room's chat panel out of sight (`.roomchat-host`,
+  `hidden`) so its listener counts, and mounts the button. The gates
+  had only ever mounted that screen by hand, which is why they were
+  green; check-vroom 7 now asserts it on a real finish. Found by the
+  screenshot pass, not by a gate.
+  Also: "seen" needs half the list or 80px on screen, not one pixel (an
+  iPad's results put 11px of it in view and marked everything read);
+  nothing under the leaderboard cutscene counts as seen; the read mark
+  survives the panel being rebuilt (`vroomChatSeen`, VROOM_CHAT_CTX
+  `onSeen`/`initialSeen`); opening the sheet calls the panel's own
+  `markSeen` (zeroing only the button left the panel's mark behind, so
+  the next message brought every read one back); and over the cutscene
+  on a phone the pill is an icon, because the label sat on "RACE
+  RESULTS".
+- **What each friend is doing** - "if someone is in a drill mode test or
+  virtual room match or virtual room lobby or at the main menu, you would
+  see that on the invite list, and friends list in profile ... easy to
+  see but subtle". One code per person in the SAME presence document as
+  the online dot (`a` beside `p`), so nothing new is listened to.
+  `currentActivity()` reads the app's own state (menu, drill, exam,
+  game, review, daily, lobby via `.screen-vroom-lobby`, match, results);
+  `shareActivity()` runs on screen changes but WRITES only when the code
+  changes, at most once every 8s, only while visible and opted in. Shown
+  only for somebody online. Every label is a `.friend-activity` span
+  carrying its `data-activity-pub`, so a presence snapshot repaints them
+  in place (`paintActivityLabels`) without rebuilding a list under a
+  finger. On Profile > Friends, the dock's Friends tab (chip), a friend
+  chat's header, and both invite sheets. Presence stays attached while
+  the dock or an invite sheet is open. check-behaviour 27.
+
+### Build 241 - Madison's list after reviewing 240
+
+Also uncommitted until she has reviewed it. `check-behaviour` 28 and 29
+are the gates; both were run against 239/240 and fail there.
+
+- **The Home flare bubbles are glass again.** A lit rank bubble is the
+  rank's colour as a tint behind a `backdrop-filter`, with a lens
+  highlight on `::after`; an unreached one is the same glass with the
+  emblem greyed (`grayscale + brightness`), not a dark coin.
+- **No rank coin on any character, anywhere** - "the ranking with the
+  words is enough". `decorateAvatar()` still exists and still takes its
+  arguments (every board calls it) but hangs nothing on the avatar.
+  check-behaviour 3 and check-vroom 3 assert the ABSENCE.
+- **Profile card**: the rank bar is ONE colour, the rank you hold - the
+  blend into the next rank lives on the road map only. Badges left the
+  level section and are their own row (`.profile-badgesect`, sixteen
+  mini tokens from `buildBadgeStrip()`, the same strip heads the Badges
+  tab where the silver shine used to be).
+- **A banner pop-up in the top-left corner was a CLASS COLLISION.**
+  `playUnlockSpotlight` names its card `rs-spot-<kind>`, and a banner's
+  kind is `banner` - so the art wrapper's own class `rs-spot-banner`
+  also matched the positioning rule for the whole card. The art is
+  `rs-spot-bannerart` now. Any new art class inside a spotlight must not
+  be `rs-spot-<a kind name>`.
+- **Characters never visibly loop.** Every live character breathes and
+  sways as PENDULUMS (`alternate`, eased both ends) on lengths that are
+  not multiples of each other, offset by each one's blink phase. The
+  flare characters layer a second motion through the separate `rotate`
+  and `scale` properties so it never restarts the first.
+  `check-loops.py` skips `alternate` loops because they cannot jump.
+- **A hundo gets the character's own win move** on the results XP box
+  (`char-react-perfect` + `char-react-win`); 90+ a hop and a nod, a pass
+  a nod, a fail a slump.
+- **Secret flare order on the results**: the flare's pop-in first, then
+  a 1.8s beat, then the flare scene, then the character card.
+- **The rank-up cutscene (`playRankUpScene`) starts from what you HAVE**:
+  your current theme's sphere, the new rank's flare unlit; zoom in,
+  spin (longer now), flash, and only behind the flash does the scene swap
+  to the new rank's colour and light its flare. The flash itself carries
+  the new rank's accent. It ends dark - the words fade, the system
+  settles with every flare round it - never on a Home screen showing
+  through. Found secret flares are drawn in both halves. It starts 3s
+  after the results' unlock box lands, from further out (`.is-arrive`).
+- **Theme swatches carry their names** (`.swatch-name`, "Default" for
+  ink, the rank name for the rest).
+- **Only the hardest banners animate** (`BANNER_ANIMATED`); every other
+  banner is `is-still`. Level 80 is one of the animated ones.
+- **ECLIPSE**, the new challenge character: a new moon in front of a sun
+  whose corona is the seven rank colours (read from `RANK_COLOR`, never
+  copied), a diamond-ring glint on the rim, calm eyes. Challenge:
+  **a hundo in 7 different units in one day** (`hundo7day`), one unit per
+  flare. `noteHundoDay()` is called from summarize's WHOLE-UNIT loop at
+  100%, so it is the same "whole unit" every hundo needs; it keeps
+  today's distinct units (`store.hundoDay`) and the best day
+  (`store.hundoDayBest`), both defaulted in `applyLoadedData` and reset.
+  Tracked from 241 - nothing before kept the day a unit was aced. The
+  corona SWINGS (`cx-live-corona`, ±7deg) rather than spinning: the
+  tongues pointing into the chest are drawn short, and a full turn would
+  carry the long ones over the collar.
+- **TUG OF WAR, rebuilt around the rope**:
+  - **Pull, not a count.** A right answer pulls `TUG_PULL_BASE` (.5)
+    plus up to `TUG_PULL_SPEED` (1) for the share of the clock left
+    after the read-in; a wrong TAP pulls back `TUG_PULL_MISS` (-.25);
+    running out of time is 0. Published as `pull` beside `correct`;
+    `tugPullOf()` falls back to `correct` for a device on an older build.
+    XP still pays on `correct`.
+  - **Can't spam**: the choices arrive locked for `TUG_ARM_MS` (1.2s) with
+    a bar filling over them, and a wrong tap holds you 3s.
+  - **Your side is ALWAYS the left end, green**, whichever team letter
+    you have (`tugView()`), so the rope reads the same way on every
+    phone. The side scores are gone; the field shows the two teams'
+    characters holding the ends, a dashed centre, a win line each side
+    where a winning pull puts the flag, and a rope 140% of the field
+    that slides as one piece. The side ahead leans back by how far ahead
+    (`--lean`). `tugKnotPct` travel is 27% so the lines clear the
+    figures. check-vroom 9's direction check now asks for "your end".
+  - **The pull cutscene** (`playTugPullCutscene`, ~3.7s, on the shared
+    `#vroom-cutscene` layer): strain, haul - the flag goes over the
+    winner's line, the losers are dragged forward, the winners do their
+    win move - then one line, then the result, then the team board.
+    Tap skips, muteBanners hands over at once, reduceMotion shows the
+    end state.
+
+### Build 242 - Madison's list after 241
+
+Uncommitted until reviewed, like 240 and 241. `check-behaviour` 30 is the
+gate; all fifteen of its checks fail on 241.
+
+- **What friends are doing is one colour.** The per-activity tints came
+  off `.friend-activity-line`; the words say what it is.
+- **"Add a friend" is the same box as "Your friend code"**: same recess,
+  pill, 1.25rem mono, 11rem x 3.125rem. Both prefixes on the input rule,
+  or the dark theme's `.searchbox` fill wins.
+- **Badges, how many rather than which.** Profile and the head of the
+  Badges tab carry `buildBadgeMeter()` - sixteen segments, earned first,
+  each in its badge's enamel - and `badgeNextLine()` (the closest unearned
+  badge by share of its threshold). The set itself is the case below it.
+  `buildBadgeStrip` is no longer used on either.
+- **Badges look like struck pins**: polished metal (hard highlight, dark
+  mid-band, second catch), flat enamel with ONE lacquer gloss, no hatch
+  on either - the grain read as printed stripes - and a two-layer shadow
+  cast into the slot, clipped to it.
+- **A case, not a tray**: `.badge-case` is a stitched shell with a lid
+  (`.badge-case-lid`, the brass plate moved onto it) and two clasps
+  (`.badge-case-front`). Its padding is trimmed under 40rem so no unit
+  name breaks mid-word at three across (measured at 320-834).
+- **The rank box**: rank name with the NEXT rank as a chip on the same
+  line (its emblem, name and %), a full-width 8px bar under both, and a
+  `tierShortfall` line ("1 more badge to Platinum").
+- **Unlock pop-ups**: a banner's card is the shared 22rem, not 24, with a
+  14.5rem picture; a challenge banner carries the "Challenge complete"
+  strip (`feat: !def.rank`), a rank banner the "Rank reward" one.
+  **With Reduce motion on, every pop-up used to be invisible** - the card
+  starts at opacity 0 and only its animation raised it. The rank strip
+  also stayed parked off to the side. Both have reduce-motion rules now,
+  and a probe that diffed every screen's opacity with Reduce motion on
+  and off found nothing else of the kind.
+- **Characters fade out at the bottom everywhere**: the mask is on
+  `.avatarchar-svg` itself, so every circle, row, podium and card gets it.
+- **Queen and Dragon are retired** (`retired: true`, kept in the table);
+  `RETIRED_CHARACTER_TO` draws them as the Wizard anywhere they still turn
+  up (old builds' rows), and `applyLoadedData` swaps the stored value.
+  Sign-up shows ONLY the six starters (no `unlock`, no `feat`), three
+  across in two even rows.
+- **The starters got their props**: the Ninja's katana hilt over the
+  shoulder and a steel plate on the band; the Ghost's cold aura, rim and
+  a will-o'-wisp; the Wizard's staff and crystal and a starred robe; the
+  Bear's ranger hat and neckerchief (its `AVATAR_ART_SCALE` came off - the
+  hat reaches the top); the Alien's lit antennae and suit badge; the
+  Samurai's kabuto with the gold horns, and his sword came off (behind
+  the head it read as a sword through the helmet).
+- **Eclipse became Blitz** (id `blitz`, same `hundo7day` challenge): a
+  racer - white helmet, stripe, a sunset in the visor, speed lines.
+  "Matches the flare characters too much" because of the black body; a
+  challenge character must not look like one of the hunt's.
+- **Singularity** gained the lensed disc (the far side's image bent over
+  the top of the hole and under it), a warm bloom, and matter spiralling
+  down the cloak (`cx-fx-infall`).
+- **Customize**: theme colours before banners, and on their own tiles
+  (the banner's surface) with circles half as big again. Character names
+  never break mid-word; below 25rem they are set smaller instead.
+- **Virtual Room "Pick the units" has no tab bar** (it only hid when
+  editing), and **Home's unlock queue waits while the chat dock is
+  open** - both from the whole-app screenshot pass.
+- **ACCOUNT MOVES** (`checkAccountMove` / `followAccountMove`, and
+  `tools/firestore-admin.py move`): for one person who lost their sign-in
+  and made duplicates. The note lives at `progress/<old code>__moved`
+  `{ to }`, readable only by whoever holds the old code - NOT on the
+  progress document (pushToCloud replaces it whole) and never anywhere
+  listable (it carries a code). The app checks it whenever the live
+  listener attaches, takes the target account whole (cloud wins),
+  setSyncCode retires the duplicate's rankings row, and marks the note
+  done. `move --finish --yes` deletes old progress documents ONLY for
+  notes marked done: deleting one a device still listens to reads as a
+  server-confirmed remote reset and wipes that device.
+  Written on 2026-09-29 for Capitaan and Cap Cam -> Cap (same ghost
+  character, both created the day before, near-empty). They take effect
+  once 242 is live; then run `move --finish` to clear the duplicates.
+  **Its `ACCOUNT_MOVE_SUFFIX` / `accountMoveChecked` are declared at the
+  top of the script, beside `ROW_LAZY_FIELDS`, and have to stay there.**
+  First written next to `checkAccountMove`, below `attachLiveListener`,
+  which boot calls from inside the top-level script: the read hit the
+  temporal dead zone and took the whole app down on load, wherever
+  Firebase loads synchronously (i.e. on real devices). Every other gate
+  was green; only check-chat's "did it finish booting" caught it. The
+  sixth `let` below its caller in this file.
+
+### Build 243 - Madison's list after 242
+
+Several 242 decisions were reversed here, on review. The notes below say
+which; section 30 of check-behaviour was rewritten to the 243 decision
+where it had encoded the 242 one, and section 31 is new.
+
+**Sections 11, 17, 18, 19 and 29 encoded the 243 decisions' predecessors
+as well** (Blitz, the Pharaoh, the Champion, the badge meter, the road-map
+emblem "drawn past the ring", the banner tile's printed requirement), and a
+crash in section 11 was hiding the other eight failures behind it. All of
+them now ask the 243 question, and each was run `--against` 242 to make
+sure it fails there. One of them found a real gap:
+**`UNLOCKS_NEW_IN_235` carries the build 243 rank characters and the K-9**,
+or an account seeding its shown-list for the first time would mark the
+Paladin as already seen and nobody on Gold would ever be handed it.
+
+- **CHARACTERS, RESTRUCTURED.** Five starters (Ninja, Ghost, Wizard,
+  Bear, Alien) - the Samurai went the way of the Queen and the Dragon.
+  **Rank rewards start over**, one per rank from Gold, each in its rank's
+  colour and each busier than the one below: Paladin (gold great helm,
+  plume, sheen), Sentinel (platinum android, a scan across the visor),
+  Frost (ice king, sapphire crown, snow), Oracle (amethysts orbiting
+  her, third eye), Inferno (crowned in fire, lava in the cracks).
+  **Challenge rewards are the "random" characters**: Detective, Masked
+  One, Zeus, Poseidon, **Clown** (5 Virtual Room wins - the Champion's
+  old challenge), Spartan (10 wins, redrawn with a spear and a shield),
+  Marksman, **Astronaut** (7 hundos in a day - Blitz's old challenge;
+  Madison picked this over a new Blitz design) and the new **K-9**
+  (`study20h`, 20 hours studied, read straight off `store.studyLog` - the
+  one thing no other challenge counts). **Secrets** is its own Customize
+  group: SWAT, Void, Umbra, Singularity.
+- **RETIRED, AND WHAT THEY BECOME.** `RETIRED_CHARACTER_TO` maps samurai →
+  ninja, champion → clown, blitz → astronaut, pharaoh → paladin (queen
+  and dragon → wizard from 242), both when drawing somebody else's row
+  and when loading your own store.
+- **KEPT FROM BEFORE: `store.legacyChars`.** Robot, Clown, Officer and
+  Astronaut used to come with Platinum, Sapphire, Amethyst and Supernova.
+  `legacyCharsFromRanks()` computes, once, for an account that has never
+  had the field, which of those it held under the old rules (and adds
+  whatever it is wearing); `isLockedCharacter` lets those through. The
+  Robot is `legacy: true` - nobody new can earn it and it only shows in
+  Customize (a "Kept" group) for somebody who holds it. It is computed at
+  the END of `applyLoadedData`, because it reads the ranks.
+- **THE SWAT AND THE SUNGLASSES.** The Officer keeps its id (so anybody
+  wearing it keeps it) and is redrawn as a SWAT officer whose face you
+  can barely see; it is `feat: "shades", secret: true`. Each account is
+  given a lifetime test number within its next 40 (`store.shadesAt`,
+  picked on the first run of this build), and from that run on EVERY
+  run long enough to hide a flare hides a pair of aviators in the
+  question header - never on the flare's question - until tapped
+  (`store.shadesFound`). **Tapping mid-run happens before summarize()
+  takes its before-snapshots**, so the diff never sees it: summarize
+  pushes the SWAT and the Undercover banner by name when
+  `shadesFoundThisRun`, the way the flares are announced. The flares
+  already persisted this way (a due flare is offered every run until
+  found) - Madison asked for both to.
+- **CUSTOMIZE: TAP FOR DETAILS.** Tiles carry a name and nothing else
+  (bar Default's "Matches your theme"). A locked character, banner or
+  theme opens `showUnlockDetail()`: the thing large, what it is, what it
+  takes, and a progress bar - a count under it only where there is a
+  count worth reading, never "0/1". A rank reward or theme names the
+  rank it needs and the rank you hold. Unlocked tiles are still one tap
+  to use. Five across on a phone so no name wraps; `AVATAR_GRID_NAME`
+  gives "Masked One" for the grid. Madison asked whether Customize should
+  be tabs - it stays one page (she likes it), with the groups as headings.
+- **THE THEME CIRCLES.** `.dot.tier-veteran` was white into steel blue, a
+  leftover from a silver tier, so "Gold" previewed lavender - it is the
+  Gold rank's gold now. Default was a flat grey (`ACCENT_SWATCH.ink`) for
+  a gold/coral/magenta theme; it is `.dot.theme-default`, the triad.
+- **THE DEFAULT BANNER IS THE THEME, FOR EVERYBODY.** No banner used to
+  draw nothing on a lobby row or a person card. `buildWornBannerArt(id,
+  accent)` falls back to `buildThemeBannerArt(accent)`, a `.bnr-theme`
+  carrying THAT person's `data-accent`, so their triad resolves on your
+  device; `[data-accent="ink"]` now declares the default triad for this.
+  Virtual Room participants publish `accent`, as leaderboard rows did.
+- **PROFILE AND BADGES, REVERSED FROM 242.** The rank plate is the 241
+  one again ("the profile box got worse ... it was so good before").
+  The badge meter is gone from both places: the Profile card shows the
+  count and a small stack of the badges you hold; the Badges tab heads
+  with a medal with the number struck in it (gold when complete).
+- **FRIEND CODES, REVERSED FROM 242.** The field is the app's ordinary
+  glass text field running the width of the card; your code is large
+  monospaced text beside Copy, in no box.
+- **BANNER LADDERS: FIRST STILL, MIDDLE MOVES, LAST MOVES MOST.**
+  `BANNER_ANIMATED` now = the middle and top rung of every ladder (Great
+  Wave, Thunderhead; Sakura, Koi Pond; Sky Temple; Amethyst, Supernova)
+  plus the hard one-offs and the secret. Redrawn: Great Wave (night,
+  moon, spray), Northern Lights (static, lake mirror, cabin), Koi Pond
+  (light shafts, petals, a third koi), **Hall of Fame** (was Starfall:
+  the sixteen real badge shapes in their enamels under spotlights, a
+  sweep of light clipped to them), **Ascension** (was Earthrise: a gold
+  gate on the last peak, turning runes, rising motes), and the secret
+  **Undercover** (`shades`, `secret: true`, hidden in Customize until
+  held). New keyframes: bn-beam, bn-sweep, bn-rune.
+- **SMALLER.** Road map emblems are clipped to the inside of their ring
+  (`clip-path:circle(46.5%)`) - "popping out". The Home flare bubbles
+  screen-blend the rank emblem into the glass so its dark sky drops out,
+  plus an inner rim of light.
+
+### Build 244 - Madison's list after 243
+
+Several 243 decisions were reversed on review; the notes say which. The
+art came from four parallel drafts merged in; what is recorded here is
+what shipped, not every draft.
+
+- **THE LADDER IS BRONZE, SILVER, GOLD NOW.** "The bronze rank should be
+  the first rank." Asked, she chose Bronze -> Silver -> Gold over Bronze
+  -> Iron. The KEYS did not move (rookie is Bronze, ranger is Silver,
+  veteran is Gold) - only RANK_DISPLAY_NAME / ACCENT_DISPLAY_NAME,
+  RANK_COLOR, ACCENT_SWATCH, the theme triads and the `.dot.tier-*`
+  swatches. Anybody who was Iron is Bronze today, with a bronze theme.
+  Everything in this file above that says "Iron" first describes the
+  ladder before 244.
+- **GOLD IS YELLOW.** "Could be a little more yellow ... as good as the
+  platinum." RANK_COLOR.veteran is #F5C21B (hue 46, was 42), swatch
+  #FFD43B. Gold keeps its vermilion planet rim: an amber rim made the
+  planet one colour, which the build-232 "second colour on the planet"
+  check exists to stop.
+- **NEW EMBLEMS FOR THE FIRST THREE, AND EVERY EMBLEM MOVES.** "The icon
+  for bronze is confusing because it's a planet", and then, of a flame,
+  a crescent moon and a sun of curved tongues: **"the first three ranks
+  icons still aren't good."** What was wrong with that set was that it
+  was three FLAT symbols in front of four LIT objects: Platinum through
+  Supernova are each a glowing core in a halo with flares, broken
+  orbits and sparkles in the gaps, and the first three had none of
+  that vocabulary. They are built from the same parts now, and the
+  life of a star runs from the start: Bronze a copper NEBULA with a
+  newborn spark in it, Silver a PROTOSTAR (polar jets on a tilted
+  accretion disc), Gold a SUN with a corona and a small planet on a
+  broken orbit, then Platinum's binary, Sapphire's comet, Amethyst's
+  galaxy, Supernova. Two things learned on the way: the nebula's first
+  draw was four overlapping lobes with visible rims and read as a bunch
+  of orange balls - a cloud needs its lobes nearly coincident with long
+  falloff so no circular edge shows anywhere; and three tendrils curling
+  the same way turned it into Amethyst's spiral galaxy, so they run in
+  unrelated directions. Silver's disc swirl is drawn as a circle and
+  then squashed, so it turns like a disc rather than a wheel. Gold's
+  planet does NOT travel its orbit: the only way to do that bypasses
+  the Reduce motion switch. Each emblem is split into layers moved by
+  transform/opacity only (`inLayer()`, `rk-*` keyframes) - on Home, the
+  road map, the Profile coin, the Rank hero and the rank-up moments;
+  still on the leaderboard and in chips. Reduce motion (app or OS)
+  stops all of it. Supernova is still the busiest mark (27 paths
+  against 18-19), which check-behaviour asserts.
+- **CENTRED BY WEIGHT, NOT BY BOX.** "The icons in the bubbles aren't
+  centred." They were already box-centred to half a pixel; what read as
+  off-centre was visual weight. RANK_EMBLEM_FIT uses the ink's
+  brightness-weighted centre for all seven (Silver's cy sits at 61 because
+  its long upper jet pulls the box up).
+  check-behaviour section 32 holds Home's bubbles within 1.5px.
+- **CHARACTERS.** Officer, K-9, Spartan, Paladin, Sentinel and the Robot
+  are retired; RETIRED_CHARACTER_TO sends each to whatever inherited its
+  rank or challenge, so nobody lands on a character they do not hold.
+  **The Robot is gone for everybody** ("nobody can have the robot") -
+  checked against the live rankings first: nobody wore it and nobody had
+  reached Platinum. Rank characters start at Silver now, six of them,
+  all crowned elemental sovereigns: Lunar, Solar, Tempest, Frost,
+  Oracle, and a crimson Inferno. **The Clown's 244 redraw was reverted
+  on sight** ("revert the clown immediately") - the drawing is 243's. A
+  Wolf, an owl Scholar and a Pirate were drawn for the challenges and
+  refused outright ("I hate the wolf scholar and pirate"); they are
+  retired ids, and the challenges went to the Valkyrie (10 Virtual Room
+  wins), the Hacker (20 hours) and the Timekeeper (30 days studied,
+  `days30`, counted off the study log). What she likes is the sovereign
+  set, Zeus and Poseidon, the Detective: premium and a little epic, not
+  cartoon mascots or animals - brief any new character against that.
+- **THE SWAT ITEM.** The sunglasses and the Undercover banner are gone;
+  a SWAT shield is hidden in one of everybody's next 50 tests
+  (SWAT_HUNT_WINDOW; the store keeps its 243 field names) and hands over
+  the SWAT character, found mid-run and announced by name like a flare.
+- **BANNERS.** Undercover removed. Hall of Fame is the sixteen real
+  badge shapes orbiting a crowned medal in perspective (drawn twice,
+  behind and in front, so nothing needs depth sorting). Ascension is a
+  stair of light out of the clouds (a summit read as Summit). Two new:
+  Midnight Oil (50 hours studied) and Star Trails (5,000 right answers).
+  Both are in UNLOCKS_NEW_IN_235 so an account seeding its shown-list is
+  still told about them.
+- **THE RANK TAB SHOWS THE CLIMB.** First open after any progress: it
+  scrolls to the road and runs the fill from where it was last seen
+  (store.rankMapProg) to now; each rank reached since (rankMapSeen) pops
+  back to back - two rings, a flash, ten sparks - and the climb runs
+  after them. `store.rankMapFx244` gives EVERY existing account the full
+  walk once (all held ranks re-shown), on purpose. **Gate fixtures carry
+  `rankMapFx244:true`** alongside tourRev, or the show runs inside the
+  gate and reads every held rank as "Locked". **The show waits for a
+  clear screen**: the recording of it caught a Home-queue unlock pop-up
+  sitting over the map while the first ranks popped unseen underneath,
+  so runRankMapCelebration now holds while any .rs-spot, flight,
+  cutscene, tour or loading overlay is up.
+- **SMALLER.** All five secret-flare dots sit on Home's large ring from
+  the start. The streak pop sits INSIDE the top bar's gap (placeStreakPop
+  measures the counter and Chat/Pause) instead of under it, where it
+  covered the question; compact on a 320px phone. Every loading screen
+  (splash - as a fade-in layer, so its first frame stays #0A0A0A -
+  GENERATING PROFILE, LOADING TEST) wears the theme's colours and glow;
+  LOADING TEST was forced to default and no longer is. The Badges
+  medal is smooth gradients (the conic one aliased), the case is black
+  leather and velvet. The unlock pop-up's lock hangs off a wrapper
+  outside the clipped art.
+
+### Build 245
+
+- **THE CREST LADDER WAS TRIED AND REVERTED ON SIGHT - THE EMBLEMS ARE
+  244'S.** Madison sent Rocket League's competitive ladder and asked for
+  the icons to "feel like it's leveling up". A full set was drawn to it:
+  every rank a bevelled metal crest in its own colour (Bronze a plain
+  round medallion, Silver a hexagon, Gold a triangular crest, Platinum a
+  star, Sapphire a cut gem with fins, Amethyst winged, Supernova big
+  wings and a crown) with the celestial motif set into each, escalating
+  in size and detail. Her answer was **"revert that immediately. Revert
+  the icons to the others."** The crests were reverted to 244's set first; what shipped is below. Lessons worth
+  keeping: a reference image is a statement about a FEELING (escalation)
+  rather than a style to copy - literal metal crests replaced the
+  celestial objects she already liked; and a redesign of something she
+  has named as liked ("I like the platinum, amethyst and sapphire")
+  should keep those pieces untouched and be shown as a proposal first.
+- **THEN THE LADDER WAS RE-DEALT, NOT REDRAWN - AND THIS IS WHAT SHIPPED.**
+  "How we rearrange and change those icons per rank so it does have a
+  more progressive look? ... easy to tell which one is greater than the
+  one before" - so the 244 drawings stayed and were MEASURED (light and
+  ink at 44px bubble size): the old order was nearly upside down there
+  (Bronze's nebula carried the most ink, Gold outshone Platinum and
+  Sapphire, the Sapphire comet was the dimmest mark in the set). Four
+  mockup rounds with her, each a picture before any code, settled on:
+  Bronze a softer nebula (no ball at the bottom - "I see bronze as a
+  ball and then I see a ball in the later stages so it's not clicking"),
+  Silver the protostar, Gold a fuller comet, Platinum the binary with
+  bodies lit from inside AND the crisp flare ("combine the new and old
+  platinum"), Sapphire the galaxy in blue, Amethyst a layered RING
+  NEBULA (new), Supernova the burst. Each rank draws in its own
+  RANK_COLOR; the colours themselves did not change.
+  - **Supernova is the plain burst.** A restrained "max rank touch"
+    (counter-turning corona, second shockwave, breathing glint) was built
+    on request and reverted on sight: "way too much going on ... not the
+    route I was thinking". Don't decorate it again unasked.
+  - **A smidge of black (`RANK_CONTRAST`, 1).** "Maybe these rank icons
+    need a smidge of black in them ... add some contrast" - every emblem
+    was light-on-glow and read soft. The darks are each rank's own colour
+    taken most of the way down (never grey, never an outline): dust
+    lanes, shadowed limbs, a darker hole in the ring nebula, darker
+    crimson between Supernova's points, and `sepRing`, a thin soft dark
+    band just outside a bright body, over its glow. It is a RING, not a
+    disc: a filled disc greyed Supernova's see-through core. She chose
+    the subtle strength over 2.6x ("I wanted more black ... Maybe +?");
+    the constant is the only difference, so moving it is one line.
+  - **Sapphire's galaxy was reshaped to sit between its neighbours**:
+    a star-like core with a crisp four-point flare (Platinum's family),
+    luminous arms with star specks and a dust lane, a gentle tilt, and a
+    round glow envelope so it shares their footprint. The first tilt
+    squashed it into an S-line.
+  - **Presentation climbs one step a rank** (`RANK_PRESENT`): drawn size
+    about the drawing's own optical centre, glow, sparkles 1,2,3,4,5,6,8
+    (`RANK_SPARKLE_SPOTS`), broken arc pairs from Platinum up.
+    `fitRankEmblem` uses one fixed window (`RANK_FIT_SIDE`) so a bubble
+    or coin KEEPS that climb instead of normalising every emblem to the
+    same share of its circle - that normalising is what flattened 244.
+  - **check-behaviour section 34 asserts light and ink at bubble size
+    rise strictly Bronze -> Supernova** (8.5 ... 27.4 light, 16.3 ... 49.2
+    ink when written) and fails on 244. Redrawing or recolouring any rank
+    has to keep that order.
+  - **The rank banners follow the emblems** ("ensure the banners match
+    yes"): Sapphire's (`adept_rank`) went from a comet to a blue spiral
+    galaxy and Amethyst's (`elite_rank`) from a galaxy to a violet ring
+    nebula - only those two `BANNER_ART` entries, no new classes. A rank
+    banner that draws a DIFFERENT rank's object is the thing to check
+    for whenever the emblem ladder is re-dealt again.
+  - Mockups were rendered from the live builder with page-only patches,
+    which is what made each round quick and each pick exactly buildable.
+- **TEMPEST IS A STORM, FROST IS ICE - AND TEMPEST IS PLATINUM.** "The
+  tempest and frost characters look too similar": the same near-white
+  face in near-white straight hair under a fan of white points, lit the
+  same cold way, identical in greyscale. The first fix (slate skin under
+  a big thundercloud, gold bolt) separated them by DARKNESS and came back
+  as "way too big and it doesn't look platinum enough" - the cloud mass
+  filled the circle and dwarfed the other five, and the gold was
+  Solar's. What shipped: the same head size and edge margin as Lunar,
+  Solar, Frost and Oracle; every colour from the Platinum teal (hair
+  pale teal-white to #34C3B3, platinum-white skin, deep teal robe, teal
+  eyes, a white-to-#5EEAD4 bolt, no gold anywhere); and the storm
+  carried by SHAPE - one lightning bolt rising from two small crown
+  clouds (not Frost's symmetric spike fan), hair blown to one side,
+  forked side lightning, cloud shoulder pads. Frost is unchanged. A rank
+  character's palette comes from its rank's colour, and a character's
+  footprint matches the set - those were the two things the first pass
+  broke.
+- **THE TAB BAR MUST NOT SHOW THE STRUCTURE BEHIND IT.** "The bottom tab
+  in the unit section screen, there's a visible line in the middle of
+  it." The unit grid's dark centre gutter and the card tops came
+  through a 16px blur over a 55% fill as a line down the middle of the
+  bar (and a horizontal one), measured at ~12 levels of contrast; Home
+  never showed it because nothing sits under the bar there. 30px of
+  blur over an 84% fill takes it to 1-3 levels. What survives sits
+  along the bar's top edge: a backdrop blur extends whatever crosses
+  the element's boundary, so a stronger blur alone never fully clears
+  a line that crosses the edge - the fill has to do the rest.
+- **SWAT IS GONE ENTIRELY.** "Remove the swat one entirely as well." The
+  character is `retired: true` (kept drawable, like the Robot, so an old
+  published document still renders), `RETIRED_CHARACTER_TO.swat` is the
+  Ninja, the `shades` feat is deleted, `maybeStartShadesForRun()` returns
+  before placing anything, and the results screen no longer announces
+  it. `store.shadesFound` / `shadesAt` stay defaulted and unread, per the
+  applyLoadedData rule. check-behaviour asserts the removal (never
+  placed even when an account's turn has come; a saved SWAT loads as the
+  Ninja) rather than the hunt. The loading line "Calling the SWAT team"
+  is unrelated copy and stays.
+- **PENAL CODE HAS TWO VERSIONS, AND IT ASKS EVERY TIME.** "Our next test
+  is only over slides 0-85 of the penal code ... A lot of people have
+  asked that I only put the questions that will be on test." Selecting
+  the Penal Code card opens a pop-up with two choices: "Penal Code"
+  (every Penal Code question) and "Penal Code — Slides 0–85" (only the
+  questions from slides 0–85 of the instructor's PowerPoint, 56 of them,
+  listed in `PENAL_TEST_SRCS` / `UNIT_TEST_VERSIONS` with the deck
+  cited). Decisions, each asked for:
+  - **It asks every time and remembers nothing**: "make it ask each
+    time. If people want to do it again they'd hit re run." The choice
+    lives on the run's `cfg`, never on `store`; Re-run repeats it.
+  - **The card advertises it, the choice stays off it.** First "nothing
+    else would change"; then, once she had seen it, "ensure the unit box
+    mentions it has the 0-85 version or something so people know and
+    want to click it" - so the Penal Code card (and the Virtual Room
+    host's copy of it) carries a small blue "Slides 0–85 version now included" pill
+    in the space the name cell already reserves, and never shows which
+    version was picked. The pill is `pointer-events:none`: it overlaps
+    the name's cell, and as a hit target it swallowed taps meant for
+    the name (the gate's own tap timed out on it). A tap on it is a tap
+    on the card, and section 33 checks exactly that. The start sheet names the chosen version,
+    because its counts and hundo note would otherwise be wrong.
+  - **"Doesn't count toward hundos." in subtle red** under the slides
+    choice in the pop-up - the start sheet note's own #FF9A9A at weight
+    400, no box - asked for as "have it mention it in a subtle red".
+  - **A shortened run is never a best score.** Checked with real perfect
+    runs, a slides run earned no hundo/badge/unlock but DID become the
+    unit's best score (unit details), because a unit with no whole run
+    took its best from any single-unit run - true of short-Length runs
+    before this too. Such runs are now written to test history with
+    `part: true` and skipped there (a history entry field, not `store`,
+    so no default needed; old entries can't be told apart).
+  - **Never the words "test version"** in the UI, and the range is her
+    "0–85" (the deck's questions sit on slides 2–79, so 0–85 and 1–87
+    select the same 56). check-behaviour asserts the SHAPE of the two
+    labels, not the strings.
+  - **No notes on Q33 or Q218**, although the deck marks them with
+    contradictory answers - "I'll let you know later if I need that."
+    Do not add a bankNoteAnswer to either without her asking.
+  - The slides version is a shortened run, so the existing hundo rules
+    already keep it off the badge: XP yes, hundo no. Select all takes
+    the whole unit without asking; dismissing the pop-up selects
+    nothing; deselecting never asks.
+  - **The Virtual Room carries the version on the room** (`versions`),
+    set by the host, so every player gets the same questions. A client
+    older than 245 ignores the field and would get the whole unit.
+  - The pop-up keeps a slide range on one line (a 320px phone broke it
+    at the dash).
+
+#### Build 245 - the Virtual Room
+
+- **RACE IS 45 SECONDS A QUESTION, AND THERE IS NO TIME OPTION.** Asked
+  for as *"lets not add time options, just make it where each question
+  has a 45 second timer, if you don't click in time it's wrong 'you'd
+  get a thing where it shows the right answer but counts it as wrong
+  for you' and then goes to the next one."* A pill beside "Question N"
+  plus a draining bar, in the theme triad, red for the last 10s. It is
+  a DEADLINE (`deadline - Date.now()`), not an interval count, so a
+  locked phone or a background tab comes back to the right number;
+  Pause shifts it exactly as Game mode's clock does. On timeout with
+  nothing picked the question is counted wrong (`timedOutSet`, so the
+  review says "Ran out of time"), the right answer is revealed for
+  2.6s, and it advances through `advance()` - so the race-line push
+  happens exactly as for an answer. **An answer PICKED but not yet
+  confirmed with Next when the clock runs out stands**, no reveal: "if
+  you don't click in time" was read as not choosing. One line to flip
+  if Madison wants that counted wrong too.
+- **The race's time limit used to leak into Practice Test credit**: it
+  went to `beginRun` as `practiceMinutes`, so a race at 70% set
+  `practiceTestPassed`. Gone with the limit.
+- **The race line is a smidge wider and bigger**, as asked: 339 -> 365px
+  on a 440 phone, markers 1.45 -> 1.6rem, stack step 1.7rem so it still
+  beats the marker's diameter. From 40rem it starts BELOW the pinned
+  Pause and chat buttons, which sat on its finish end on an iPad. Its
+  marker colours come from `vroomColorFor()`, the chat's own, so one
+  person is one colour on one screen.
+- **Countdowns follow the theme**: "Starting in", its ring (all three
+  triad colours), the backdrop glow, "Everyone's ready!"'s tick (was a
+  fixed green) and "Starting now".
+- **"Can't leave back to main menu after a game with multiple
+  participants concludes"** - a classmate's bug report, reproduced: the
+  race leaderboard scene is `position:fixed; overflow:hidden` and grows
+  a row per player, so from ~5 players on a 1440x791 window (and a
+  320x568 phone) Return to lobby / Main menu were drawn off the bottom
+  with nothing able to scroll to them, the tab bar forced off and Pause
+  down. The board scrolls inside the scene now; Leave room stays up
+  between "everyone finished" and the leaderboard; leaving there no
+  longer lets the finale roll over Home later; and the leaderboard
+  rolls anyway once everyone is in if this device's own results never
+  report. **A screen with the tab bar forced off must have its own exit
+  on screen at every size** - that is the rule this broke.
+- **Ready is spent when a match starts** (each device clears its own).
+  It used to survive the match, so a Tug/Battle host pressing Back to
+  lobby started a rematch instantly and anybody who got back before the
+  host was dropped into a race alone.
+- **The host names `racers`** (present and ready) at start: teams are
+  built from them and the finale counts them, and a racer with no
+  heartbeat for `PRESENCE_STALE_MS` counts as finished and ranks last.
+  A closed app used to hold everyone on "3/4" forever. Rooms from older
+  hosts, with no `racers`, fall back to everybody.
+- **Tug of War and Battle have a way out mid-match**: Pause opens a
+  "Leave the match?" card (the match itself cannot pause - the rope and
+  health are shared).
+- `avatarGlowColor()` maps through `RETIRED_CHARACTER_TO`, like the
+  drawing does - a retired character drawn as the Ninja was glowing in
+  its old colour.
+- check-vroom 13-19 are the gates for all of this (`--only-246` runs
+  just those), each written against the build it failed on.
+
+#### Build 245 - the polish list
+
+- **THE DAILY BANNER COMES OUT OF THE BUTTON.** *"Make the banner
+  actually come from the daily question thing so you can tell and make
+  the daily question do a better 'pulse/recharge' effect ... 2-3
+  seconds, and then the banner/toast thing follows."* On a new period
+  the "?" dims, a theme-coloured ring fills round it (1.6s), bursts,
+  and a small glass "?" arcs up to land on the banner's own "?" icon,
+  from which the banner unrolls - fully out ~3s after Home appears. One
+  table, `DAILY_CHARGE`, drives both the JS and the CSS (as custom
+  properties), so the two cannot drift. Transform and opacity only, no
+  SVG filter, nothing loops. The button stays tappable the whole way
+  through. The live banner stays 8s (was 4.2s, reported as disappearing
+  too soon); plain one-line messages keep 4.2s. Reduce motion: the
+  banner simply appears.
+- **The banner is centred on the screen, which means it clears the chat
+  button EQUALLY on both sides** - it was 27px left of centre once the
+  chat button arrived in the top-right corner. Only a 320px phone drops
+  it below the chat button's row.
+- **The daily question's own header keeps a chat-button-wide right
+  gutter** whenever the button holds that corner.
+- **Modes read Drill, Exam, Review, Game, Virtual Room**, asked for as
+  Review "3rd one listed, under exam". The mode-select tour finds cards
+  by `data-mode`, not by position - positional selectors are what a
+  reorder silently breaks (see check-tours).
+- **The unit screen's Start is a horizontal pill** with a play icon,
+  the same size lit and unlit; lit, it wears the primary buttons' 3D
+  recipe (top highlight, bright inset top edge, dark inset lip,
+  three-layer shadow). The bar stays Home's height. Review's reads
+  "Start review, N questions".
+- **`DAILY_SCHEDULE` decides the daily question's pool by period key**
+  (the date whose 5pm starts the period): US and Texas Constitution up
+  to 2026-10-04, Penal Code (the whole unit) 10-05 to 10-11, then the
+  first eight units in bank order - "up until and including penal
+  code". In the mixed phase the UNIT is drawn first, each of the eight
+  once every eight days, so the Penal Code's 340 questions do not take
+  ~60% of days. Nothing repeats within a pool until it is used up. Still
+  one question for the whole class per period.
+- **"THE STUDY GAME" sits under the NOVA wordmark and takes no height**:
+  the title block lifts by exactly its height, so Start Studying moves
+  0px on every device (check-positions identical). Hidden on short
+  screens (laptop windows, phones sideways), where the lift would put
+  the greeting on the sphere.
+- **Report a bug was a search field.** It reused the unit search's
+  style - a stadium pill with a gutter for an icon that is not there.
+  It is a real text box now (17px, no iOS zoom, grows as you type,
+  N/1200), the primary Send button, inline errors, a 15s timeout, and a
+  retry that reuses the same `bug-` id so it cannot duplicate. The copy
+  says it goes to whoever maintains Nova with first name, version and
+  device attached - the sync-code sentence came off, by request. The
+  written document is unchanged, so `firestore-admin.py bugs` reads it
+  as before.
+- check-behaviour 35-41 are the gates for all of this
+  (`ONLY_B245=name,...` runs a subset).
+
+
+#### Build 245 - the bug run
+
+- **A run that ends on its time limit earns XP for what was answered**
+  (same rules as a finished run, over the answered questions only) and
+  nothing else: no hundo, badge, personal best or test-history entry.
+  A timed-out Practice Test is never recorded as passed - `pct` there
+  is over the answered questions, so ten at 90% would "pass" 250.
+  Virtual Room runs keep their own scoring.
+- **A challenge character's pop-up says "Challenge complete" once and
+  "Character unlocked" as its kicker** - it said the same thing twice.
+- **A wrong daily answer marks the pick** (`.choice.is-wrong-pick`, a
+  new class so Tug and Battle's own `.is-wrong` stay untouched).
+- **The start sheet's close x is a 44px target that still draws at
+  33.6px** - a transparent border with the background clipped inside
+  it, pulled back with a negative margin so nothing moves.
+- **Left alone**: "Continue to review (N missed)" wraps to two lines on
+  a 320px phone; it cannot fit one without a shorter label.
+- check-studyflow 10-13 are the gates.
+- **Home's rank bubbles scale with the planet on short screens**: the
+  hero is a size container and a bubble is `max(1.75rem, min(2.9rem,
+  10.7cqw))` - 10.7% is exactly 2.9rem on the 17 Pro Max's 415px hero,
+  so the Pro Max and everything larger are untouched, and an SE 1st
+  gen's four overlapping bubbles (one spilling onto the greeting) sit
+  apart. The orbit dots take a ~44px tap through a transparent stroke.
+- **"New in this update" is for existing accounts only**:
+  `markIntroSeen()` runs when sign-up completes and when Sync This
+  Device succeeds, so the card never follows onboarding.
+- **The back-to-top arrow hides over a control** within 260px of a
+  page's end, rather than padding every screen (which would make every
+  screen that fits exactly start to scroll).
+- **A group chat's Invite/Leave are small buttons under 26rem** - the
+  touch `.next` rule was outranking `.chatdock-mini` and drawing them
+  full size, which ate a third of an SE's chat.
+
+**A gate diff from an agent is a diff of the file the agent STARTED
+from, and it has to be checked like one.** The Virtual Room agent's
+`tools.diff` was taken against a newer copy of check-behaviour than it
+began with, so as well as its one real change it silently reverted two
+other agents' sections and the Penal Code check fix - applied, the
+gate simply had less in it and still read ALL PASS. Before merging a
+tools diff, read its `-` lines: every one should be something that
+agent meant to remove. And run `patch` without filtering its output,
+because "succeeded ... with fuzz" is the only warning there is.

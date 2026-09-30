@@ -40,7 +40,7 @@ DEVICES = [
 ]
 
 SEED = ('{"firstName":"Madison","avatarChar":"ninja","onboardingComplete":true,'
-        '"tourRev":99,"leaderboardOptIn":true,'
+        '"tourRev":99,"rankMapFx244":true,"leaderboardOptIn":true,'
         '"lifetime":{"points":14820,"answered":5400,"correct":4980,"drillPlays":64,'
         '"examPlays":22,"gamePlays":9,"perfectTests":141,"currentStreak":23,'
         '"longestStreak":57}}')

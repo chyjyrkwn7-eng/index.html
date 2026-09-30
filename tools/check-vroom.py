@@ -255,7 +255,7 @@ FAKE_FIRESTORE = """
 # devices have two codes; the harness has to arrange that itself.
 SEED = ('{"firstName":"Anonymous","avatarChar":"ninja","onboardingComplete":true,'
         '"leaderboardOptIn":true,"lastModified":1700000000000,'
-        '"tourRev":99,"seenProfileTour":true,"seenModeSelectTour":true,"seenUnitSelectTour":true,'
+        '"tourRev":99,"rankMapFx244":true,"seenProfileTour":true,"seenModeSelectTour":true,"seenUnitSelectTour":true,'
         '"lifetime":{"points":1000,"answered":400,"correct":380,"perfectTests":9}}')
 
 FAILURES = []
@@ -315,11 +315,459 @@ def check(name, ok, detail=""):
         FAILURES.append(name)
 
 
+def sections_246(ctx, open_tab, args):
+    """Build 246: the race's 45-second questions, the wider race line, the
+    countdown in the theme's colours, coming back to the lobby after a
+    match, and a way out of a Tug of War or a Battle. Every check here was
+    run against the build before it (--against) and fails there."""
+    def active(pg):
+        ctx.new_cdp_session(pg).send("Page.setWebLifecycleState", {"state": "active"})
+
+    # ---- 13. every race question has 45 seconds ------------------------
+    # "For the race lets not add time options, just make it where each
+    # question has a 45 second timer, if you don't click in time it's
+    # wrong - you'd get a thing where it shows the right answer but counts
+    # it as wrong for you - and then goes to the next one."
+    # A room document from an older build still carries timeLimit:10, and
+    # it must neither break the run nor come back as an overall limit.
+    print("\n13. a race gives every question 45 seconds")
+    try:
+        rq = open_tab("Rae", "ninja", 3000, "R45A-0001", badges=1)
+        active(rq)
+        rq.evaluate("""()=>{ const parts={
+            me:{name:'Rae',avatarChar:'ninja',joinedAt:1,ready:true,finished:false,progress:0,seen:Date.now()},
+            a:{name:'A',avatarChar:'ghost',joinedAt:2,ready:true,finished:false,progress:10,seen:Date.now()} };
+          return fbDb.collection('vrooms').doc('RACE45').set({status:'starting',game:'race',timeLimit:10,
+            units:['Identity Crimes'],startAt:Date.now()-2000,chatMessages:[],participants:parts}); }""")
+        rq.wait_for_timeout(300)
+        rq.evaluate("""()=>{ store.practiceTestPassed=false; store.practiceExamPerfect=false; saveStore();
+          vroomCode='RACE45'; vroomMyKey='me'; vroomIsHost=true; theme.autoAdvance=false;
+          beginVirtualRoomTest(['Identity Crimes'], 10, null, 0); }""")
+        rq.wait_for_selector(".qpanel .choice", timeout=25000)
+        rq.wait_for_timeout(400)
+        first = rq.evaluate("""()=>{ const c=document.querySelector('.qpanel .race-qclock');
+          return { clock: c ? c.textContent.trim() : null, overall: (typeof practiceTestMinutes!=='undefined') ? practiceTestMinutes : 'n/a',
+                   timerline: !document.getElementById('timerline').hidden }; }""")
+        check("a race question shows its own clock, starting at 45 seconds",
+              bool(first["clock"]) and first["clock"].rstrip("s") in ("45", "44"), first)
+        check("and the room's old ten-minute limit is not read", first["overall"] is None and not first["timerline"], first)
+
+        # A CLOCK, NOT A COUNT: the number is read off a deadline, so it
+        # is whatever is left, however the ticks were throttled.
+        rq.evaluate("()=>{ raceQuestionDeadline = Date.now() + 20400; }")
+        rq.wait_for_timeout(450)
+        mid = rq.evaluate("()=>document.querySelector('.qpanel .race-qclock').textContent.trim()")
+        check("the clock reads the time left off a deadline", mid.rstrip("s") in ("20", "21"), mid)
+
+        # Pause holds it.
+        rq.evaluate("()=>{ raceQuestionDeadline = Date.now() + 10000; pauseRun(); }")
+        rq.wait_for_timeout(1600)
+        rq.evaluate("()=>resumeRun()")
+        rq.wait_for_timeout(300)
+        held = rq.evaluate("()=>Math.round((raceQuestionDeadline - Date.now())/100)/10")
+        check("pausing holds the question's clock", 9.2 <= held <= 10.1, held)
+
+        # RUNNING OUT: what a phone coming back from the lock screen sees -
+        # the deadline has already gone.
+        before = rq.evaluate("()=>({pos:pos, qi:order[pos]})")
+        rq.evaluate("()=>{ raceQuestionDeadline = Date.now() - 5; }")
+        rq.wait_for_timeout(350)
+        rev = rq.evaluate("""()=>{ const cs=[...document.querySelectorAll('.qpanel .choice')];
+          const st=document.querySelector('.qpanel .status'); const nb=document.getElementById('nextbtn');
+          const right = cs.filter(c=>c.classList.contains('is-right'));
+          return { pos:pos, all:cs.length, off:cs.filter(c=>c.disabled).length, right:right.length,
+                   rightIsAnswer: right.length===1 && +right[0].dataset.index===correctSlot(order[pos]),
+                   bad: !!st && st.classList.contains('bad'), status: st ? st.textContent : '',
+                   next: !!nb && !nb.hidden }; }""")
+        check("out of time: the right answer is shown and every choice is locked",
+              rev["pos"] == before["pos"] and rev["right"] == 1 and rev["rightIsAnswer"]
+              and rev["off"] == rev["all"] and rev["bad"] and not rev["next"], rev)
+        rq.evaluate("()=>{ const c=[...document.querySelectorAll('.qpanel .choice')][0]; c && c.click(); choose(0); }")
+        check("and nothing can be picked over it",
+              rq.evaluate("(qi)=>picked[qi]===undefined", before["qi"]))
+        rq.wait_for_timeout(3300)
+        after = rq.evaluate("""(qi)=>({pos:pos, timedOut: !!timedOutSet[qi]})""", before["qi"])
+        check("then it moves on by itself, counted as a miss",
+              after["pos"] == before["pos"] + 1 and after["timedOut"], {"before": before, "after": after})
+        rq.wait_for_timeout(400)
+        prog = rq.evaluate("""()=>fbDb.collection('vrooms').doc('RACE45').get().then(d=>((d.data().participants||{}).me||{}).progress)""")
+        check("and the race line hears about it like any answer", (prog or 0) > 0, prog)
+
+        # A pause during the reveal holds the reveal.
+        b2 = rq.evaluate("()=>pos")
+        rq.evaluate("()=>{ raceQuestionDeadline = Date.now() - 5; }")
+        rq.wait_for_timeout(300)
+        rq.evaluate("()=>pauseRun()")
+        rq.wait_for_timeout(3400)
+        held_pos = rq.evaluate("()=>pos")
+        rq.evaluate("()=>resumeRun()")
+        rq.wait_for_timeout(3300)
+        check("a pause in the middle of the reveal holds it, and it carries on after",
+              held_pos == b2 and rq.evaluate("()=>pos") == b2 + 1,
+              {"was": b2, "while paused": held_pos, "after": rq.evaluate("()=>pos")})
+
+        # An answer picked but not confirmed stands: you did click in time.
+        b3 = rq.evaluate("()=>({pos:pos, qi:order[pos]})")
+        rq.evaluate("()=>{ const r=correctSlot(order[pos]); choose(r); raceQuestionDeadline = Date.now() - 5; }")
+        rq.wait_for_timeout(700)
+        kept = rq.evaluate("(qi)=>({pos:pos, timedOut: !!timedOutSet[qi], picked: picked[qi]!==undefined})", b3["qi"])
+        check("an answer picked before the clock ran out stands, with no reveal",
+              kept["pos"] == b3["pos"] + 1 and not kept["timedOut"] and kept["picked"], kept)
+
+        # Reduce motion, and the LAST question: it still reveals, then ends the run.
+        rq.evaluate("()=>{ theme.reduceMotion=true; pos = order.length - 1; openQuestion(); }")
+        rq.wait_for_timeout(300)
+        lastqi = rq.evaluate("()=>order[pos]")
+        rq.evaluate("()=>{ raceQuestionDeadline = Date.now() - 5; }")
+        rq.wait_for_timeout(300)
+        rev_last = rq.evaluate("()=>document.querySelectorAll('.qpanel .choice.is-right').length")
+        rq.wait_for_timeout(3600)
+        end = rq.evaluate("""(qi)=>({results: !!document.querySelector('[data-screen=results]'), done: !testInProgress,
+            missed: (lastRunResult && lastRunResult.missed || []).indexOf(qi) >= 0,
+            practice: !!store.practiceTestPassed || !!store.practiceExamPerfect})""", lastqi)
+        check("the last question reveals too, then the run ends on the results with it missed",
+              rev_last == 1 and end["results"] and end["done"] and end["missed"], {"reveal": rev_last, **end})
+        check("and a race never marks the Practice Test passed", not end["practice"], end)
+        rq.evaluate("()=>{ theme.reduceMotion=false; }")
+        rq.close()
+    except Exception as e:
+        check("the 45-second section ran at all", False, repr(e)[:240])
+
+    # ---- 14. the race line, a smidge wider ----------------------------
+    # "The race stuff at the top of race. If you are able to make that a
+    # smidge wider so it'd be bigger that would be great." Measured on the
+    # reference phone and on a 320px one, with a crowd of eight.
+    print("\n14. the race line is wider, and still fits")
+    try:
+        rw = open_tab("Rae", "ninja", 3000, "RWID-0001", badges=1)
+        active(rw)
+        rw.evaluate("""()=>{ const parts={ me:{name:'Rae',avatarChar:'ninja',joinedAt:1,ready:true,finished:false,progress:0} };
+            [['a',8],['b',8],['c',10],['d',55],['e',58],['f',92],['g',100]].forEach(([k,p],i)=>parts[k]={name:k,avatarChar:'ghost',joinedAt:2+i,ready:true,finished:p===100,progress:p});
+            return fbDb.collection('vrooms').doc('RWIDE').set({status:'starting',game:'race',units:['Identity Crimes'],startAt:Date.now()-2000,chatMessages:[],participants:parts}); }""")
+        rw.wait_for_timeout(300)
+        rw.evaluate("()=>{ vroomCode='RWIDE'; vroomMyKey='me'; vroomIsHost=true; beginVirtualRoomTest(['Identity Crimes'], null, null, 0); }")
+        rw.wait_for_selector(".qpanel .choice", timeout=25000)
+        rw.wait_for_timeout(1500)
+        MEAS = """()=>{ const t=document.querySelector('#vroomracebar .vroom-racetrack').getBoundingClientRect();
+            const ms=[...document.querySelectorAll('#vroomracebar .vroom-race-marker')].map(m=>m.getBoundingClientRect());
+            const pb=document.getElementById('pausebtn').getBoundingClientRect();
+            const flag=document.querySelector('#vroomracebar .vroom-racetrack-finish').getBoundingClientRect();
+            let touch=0; for(let i=0;i<ms.length;i++) for(let j=i+1;j<ms.length;j++){ const a=ms[i],b=ms[j];
+              const dx=(a.left+a.width/2)-(b.left+b.width/2), dy=(a.top+a.height/2)-(b.top+b.height/2);
+              if(Math.abs(dx) < 2 && Math.hypot(dx,dy) < a.width - 1) touch++; }
+            return { vw:innerWidth, track:Math.round(t.width), share:+(t.width/innerWidth).toFixed(3), marker:Math.round(ms[0].width), n:ms.length,
+              minLeft:Math.round(Math.min(...ms.map(m=>m.left))), maxRight:Math.round(Math.max(flag.right, ...ms.map(m=>m.right))),
+              top:Math.round(t.top), pauseBottom:Math.round(pb.bottom), stackedTouch:touch,
+              hscroll: document.documentElement.scrollWidth - innerWidth }; }"""
+        m440 = rw.evaluate(MEAS)
+        check("the track takes more of the phone's width than it did (339px of 440)",
+              m440["track"] >= 355, m440)
+        check("and the markers are bigger with it", m440["marker"] >= 25, m440)
+        check("markers stacked on one spot still do not overlap", m440["stackedTouch"] == 0, m440)
+        check("it sits clear under Pause and chat", m440["top"] >= m440["pauseBottom"], m440)
+        # A TABLET PINS PAUSE AND CHAT IN THE CORNER, at a tablet's size -
+        # and the track used to start right under the counter row, so on
+        # an iPad both buttons sat on the finish flag and on whoever was
+        # at 90-100%. Found looking at the race line on the reference
+        # iPad for this change.
+        rw.set_viewport_size({"width": 834, "height": 1194})
+        rw.wait_for_timeout(700)
+        clash = rw.evaluate("""()=>{ const t=document.querySelector('#vroomracebar .vroom-racetrack').getBoundingClientRect();
+            const hits=[...document.querySelectorAll('#pausebtn:not([hidden]), .chatdock-btn, #roomchat-fab')].filter(b=>b.getClientRects().length).map(b=>{
+              const r=b.getBoundingClientRect(); const ix=Math.min(r.right,t.right)-Math.max(r.left,t.left), iy=Math.min(r.bottom,t.bottom)-Math.max(r.top,t.top);
+              return [b.id||b.className.split(' ')[0], Math.round(ix), Math.round(iy)]; }).filter(x=>x[1]>0&&x[2]>0);
+            return {hits:hits, trackTop:Math.round(t.top)}; }""")
+        check("on an iPad the track sits clear of the pinned Pause and chat buttons", not clash["hits"], clash)
+        rw.set_viewport_size({"width": 320, "height": 568})
+        rw.wait_for_timeout(700)
+        m320 = rw.evaluate(MEAS)
+        check("on a 320px phone it still fits: nothing off either edge, no sideways scroll",
+              m320["minLeft"] >= 0 and m320["maxRight"] <= m320["vw"] and m320["hscroll"] <= 0, m320)
+        rw.close()
+    except Exception as e:
+        check("the race-line section ran at all (246)", False, repr(e)[:240])
+
+    # ---- 15. the countdown in the theme's colours ----------------------
+    # "Ensure the count down numbers and start are updated for other
+    # themes." The number already took the theme's gradient; the screen
+    # around it was the default's - flat black, a grey label, a
+    # one-colour ring and a fixed green tick.
+    print("\n15. the countdown and 'Everyone's ready!' wear the theme")
+    try:
+        cd = open_tab("Rae", "ninja", 3000, "CDWN-0001", badges=1)
+        active(cd)
+        seen = {}
+        for acc in ("ink", "adept", "titan"):
+            seen[acc] = cd.evaluate("""(a)=>{ theme.accent=a; applyTheme(); stage.replaceChildren();
+              const rd=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+              const probe=document.createElement('i'); document.body.appendChild(probe);
+              const rgb=v=>{ probe.style.color=v; return getComputedStyle(probe).color; };
+              const c1=rgb(rd('--theme-c1')), c2=rgb(rd('--theme-c2'));
+              showVroomCountdown(Date.now()+5000, ()=>{});
+              const ov=document.getElementById('vroom-reveal-overlay');
+              const out={ c1:c1, c2:c2,
+                bg: getComputedStyle(ov).backgroundImage,
+                label: getComputedStyle(document.getElementById('vroom-reveal-label')).color,
+                ring: getComputedStyle(document.getElementById('vroom-reveal-ring'),'::before').backgroundImage };
+              ov.remove();
+              showVroomReadyFlourish(()=>{});
+              const fl=document.getElementById('vroom-flourish-overlay');
+              const ck=getComputedStyle(document.getElementById('vroom-flourish-check'));
+              out.flbg=getComputedStyle(fl).backgroundImage; out.check=ck.backgroundImage + ' ' + ck.backgroundColor + ' / ' + ck.color;
+              fl.remove(); probe.remove(); return out; }""", acc)
+        glow = all("radial-gradient" in v["bg"] and "radial-gradient" in v["flbg"] for v in seen.values())
+        check("the count and the ready beat sit on the theme's glow, not flat black", glow,
+              {k: v["bg"][:60] for k, v in seen.items()})
+        check("'Starting in' is in the theme's colour", all(v["label"] == v["c1"] for v in seen.values()),
+              {k: (v["label"], v["c1"]) for k, v in seen.items()})
+        check("the ring runs through the theme's own colours",
+              all(v["c1"].replace(" ", "") in v["ring"].replace(" ", "") for v in seen.values()),
+              {k: v["ring"][:80] for k, v in seen.items()})
+        check("and the tick is the theme's, not a fixed green",
+              all("61, 214, 140" not in v["check"] for v in seen.values()) and seen["ink"]["check"] != seen["adept"]["check"],
+              {k: v["check"][:90] for k, v in seen.items()})
+        cd.evaluate("()=>{ theme.accent='ink'; applyTheme(); }")
+        cd.close()
+    except Exception as e:
+        check("the countdown section ran at all", False, repr(e)[:240])
+
+    # ---- 16. coming back to the lobby after a race -----------------------
+    # Reported as the Virtual Room misbehaving on a re-run, and it did:
+    # the room stays on "starting" through a race, so whoever got back to
+    # the lobby before the host was dropped into a new race on their own;
+    # everybody's ready flag survived the match, so one ready-up started
+    # the next race with people still on their results; and somebody who
+    # had closed the app between rounds (still on the room document) held
+    # the finale on "2/3" for good.
+    print("\n16. back to the lobby after a race, and a second race")
+    try:
+        ha = open_tab("Hana", "ninja", 3000, "REHA-0001", badges=1)
+        gb = open_tab("Gus", "ghost", 3000, "REGB-0002", badges=1)
+        for pg in (ha, gb):
+            active(pg)
+        ha.evaluate("()=>createVirtualRoomLobby(['Identity Crimes'], null, 'race')")
+        ha.wait_for_function("() => typeof vroomCode === 'string' && vroomCode", timeout=20000)
+        rcode = ha.evaluate("()=>vroomCode")
+        join_lobby(gb, rcode)
+        ha.wait_for_function("() => document.querySelectorAll('.vroom-row').length >= 2", timeout=25000)
+        # Somebody who sat in this room and closed the app: on the
+        # document, gone from presence, never coming back.
+        ha.evaluate("""()=>fbDb.collection('vrooms').doc(vroomCode).update({'participants.zed':
+            {name:'Zed',avatarChar:'alien',joinedAt:Date.now(),seen:Date.now()-10*60*1000,ready:false,finished:false,progress:0}})""")
+        ha.wait_for_timeout(600)
+        # Each device's own ready writes, recorded as it sends them. Read
+        # back off the shared fake instead, two tabs writing in the same
+        # instant lose one write to each other (section 7 says why) - the
+        # harness, not the app, so the app is asked what it SENT.
+        for pg in (ha, gb):
+            pg.evaluate("""()=>{ window.__readyWrites=[]; const oc=fbDb.collection.bind(fbDb);
+              fbDb.collection = name => { const c=oc(name); const od=c.doc.bind(c);
+                c.doc = id => { const d=od(id); const ou=d.update.bind(d);
+                  d.update = f => { Object.keys(f||{}).forEach(k=>{ if(/\\.ready$/.test(k)) window.__readyWrites.push([k, f[k], vroomTestStarted]); }); return ou(f); };
+                  return d; };
+                return c; }; }""")
+        for pg in (ha, gb):
+            tap(pg, ".vroom-readyup-btn", "ready-up")
+            pg.wait_for_timeout(300)
+        for pg in (ha, gb):
+            pg.wait_for_function("() => typeof vroomStartAt === 'number' && vroomStartAt && !!document.querySelector('.qpanel .choice')", timeout=40000)
+        ha.wait_for_timeout(800)
+        doc = ha.evaluate("()=>fbDb.collection('vrooms').doc(vroomCode).get().then(d=>d.data())")
+        parts = doc.get("participants", {})
+        spent = {n: pg.evaluate("()=>{ const w=(window.__readyWrites||[]).filter(x=>x[0]==='participants.'+vroomMyKey+'.ready'); return w.length ? w[w.length-1] : null; }")
+                 for n, pg in (("host", ha), ("guest", gb))}
+        check("starting a match uses up everybody's ready",
+              all(v and v[1] is False and v[2] is True for v in spent.values()), spent)
+        check("and the match names who is in it - not the classmate who closed the app",
+              sorted(doc.get("racers") or []) == sorted(k for k in parts if k != "zed"), doc.get("racers"))
+        first_start = ha.evaluate("()=>vroomStartAt")
+        for pg in (ha, gb):
+            pg.evaluate("""()=>{ theme.muteBanners=true; order.forEach(qi=>{ picked[qi]=optionOrder(qi).indexOf(QUESTIONS[qi].answer); });
+              stopQuestionTimer(); summarize(); }""")
+            pg.wait_for_function("""()=>fbDb.collection('vrooms').doc(vroomCode).get()
+              .then(d => !!(((d.data() || {}).participants || {})[vroomMyKey] || {}).finished)""", timeout=10000)
+        ha.wait_for_timeout(1500)
+        wc = ha.evaluate("()=>(document.querySelector('.vroom-wait-count')||{}).textContent")
+        check("the finale counts the people racing, so it is not waiting on somebody who left",
+              wc == "2/2", wc)
+        # The guest comes back first.
+        gb.evaluate("()=>{ document.getElementById('vroom-race-cut')?.remove(); vroomReturnToLobby(); }")
+        gb.wait_for_timeout(3500)
+        gstate = gb.evaluate("""()=>({question: !!document.querySelector('.qpanel .choice'), lobby: !!document.querySelector('.screen-vroom-lobby'),
+            startAt: vroomStartAt, readyOff: !!(document.querySelector('.vroom-readyup-btn')||{}).disabled})""")
+        check("whoever gets back before the host is not dropped into a race on their own",
+              gstate["lobby"] and not gstate["question"] and gstate["startAt"] == first_start, gstate)
+        ha.evaluate("()=>{ document.getElementById('vroom-race-cut')?.remove(); vroomReturnToLobby(); }")
+        ha.wait_for_timeout(3500)
+        st = ha.evaluate("()=>fbDb.collection('vrooms').doc(vroomCode).get().then(d=>d.data().status)")
+        idle = {n: pg.evaluate("()=>({q: !!document.querySelector('.qpanel .choice'), s: vroomStartAt})") for n, pg in (("host", ha), ("guest", gb))}
+        check("the host coming back opens the lobby, and nothing starts until people ready up",
+              st == "waiting" and not idle["host"]["q"] and not idle["guest"]["q"], {"status": st, **idle})
+        for pg in (ha, gb):
+            tap(pg, ".vroom-readyup-btn", "ready-up, second race")
+            pg.wait_for_timeout(300)
+        ok = True
+        try:
+            for pg in (ha, gb):
+                pg.wait_for_function("(s) => vroomStartAt && vroomStartAt !== s && !!document.querySelector('.qpanel .choice')", arg=first_start, timeout=40000)
+        except Exception:
+            ok = False
+        check("and a second race starts for both once both are ready", ok)
+        for pg in (ha, gb):
+            try:
+                pg.evaluate("()=>{ stopQuestionTimer(); leaveVirtualRoom(); }")
+            except Exception:
+                pass
+            pg.close()
+    except Exception as e:
+        check("the back-to-the-lobby section ran at all", False, repr(e)[:240])
+
+    # ---- 17. a way out of a Tug of War or a Battle -----------------------
+    # Neither showed Pause, neither has a back link, and the tab bar is
+    # forced off for both - so there was no way to leave one mid-match
+    # short of closing the app.
+    print("\n17. a Tug of War or a Battle can be left mid-match")
+    try:
+        tl = open_tab("Tam", "ninja", 3000, "TLEV-0001", badges=1)
+        active(tl)
+        for game in ("tug", "battle"):
+            tl.evaluate("""(game)=>{ const parts={me:{name:'Tam',avatarChar:'ninja',joinedAt:1,ready:true,seen:Date.now()},
+                 b:{name:'Bo',avatarChar:'robot',joinedAt:2,ready:true,seen:Date.now()}};
+               const d={status:'starting', game:game, units:['Identity Crimes'], startAt:Date.now()-1000, chatMessages:[], participants:parts, racers:['me','b']};
+               const teams={me:'a', b:'b'};
+               if(game==='tug') d.tug={progress:{}, over:false, winner:null, finalPos:0, count:0, teams};
+               else d.battle={log:[], progress:{}, over:false, winner:null, count:0, teams};
+               return fbDb.collection('vrooms').doc('LEAVE'+game).set(d).then(()=>{ vroomCode='LEAVE'+game; vroomMyKey='me'; showVirtualRoomLobby(); }); }""", game)
+            tl.wait_for_selector(".screen-%s .choice" % game, timeout=20000)
+            tl.wait_for_timeout(500)
+            vis = tl.evaluate("()=>{ const b=document.getElementById('pausebtn'); return !b.hidden && b.getBoundingClientRect().height >= 40; }")
+            check("%s: Pause is on screen during the match" % game, vis)
+            tl.click("#pausebtn")
+            tl.wait_for_timeout(400)
+            sheet = tl.evaluate("()=>!!document.querySelector('.vroom-leave-confirm')")
+            tl.evaluate("()=>{ [...document.querySelectorAll('.vroom-leave-confirm button')].find(b=>/keep/i.test(b.textContent)).click(); }")
+            tl.wait_for_timeout(400)
+            stayed = tl.evaluate("(g)=>!document.querySelector('.vroom-leave-confirm') && !!document.querySelector('.screen-'+g)", game)
+            check("%s: it asks first, and Keep playing leaves the match as it was" % game, sheet and stayed, {"asked": sheet, "stayed": stayed})
+            tl.click("#pausebtn")
+            tl.wait_for_timeout(400)
+            tl.evaluate("()=>{ [...document.querySelectorAll('.vroom-leave-confirm button')].find(b=>/^leave$/i.test(b.textContent.trim())).click(); }")
+            tl.wait_for_timeout(900)
+            gone = tl.evaluate("""(g)=>fbDb.collection('vrooms').doc('LEAVE'+g).get().then(d=>({left: !((d.data().participants||{}).me),
+                home: !!document.querySelector('[data-screen=home]'), code: vroomCode}))""", game)
+            check("%s: Leave takes you out of the room and home" % game, gone["left"] and gone["home"] and not gone["code"], gone)
+        tl.close()
+    except Exception as e:
+        check("the leave-a-team-match section ran at all", False, repr(e)[:240])
+
+
+    # ---- 18. there is always a way back to the main menu -----------------
+    # A classmate's report, from a desktop: "Can't leave back to main menu
+    # after a game with multiple participants concludes." Two ways it was
+    # true. Once everybody had finished, the waiting card's Leave room
+    # went away and nothing replaced it until the leaderboard rolled -
+    # at least twelve seconds, up to a minute - with no Pause, no tab bar
+    # and no link on the screen. And the leaderboard scene is a fixed
+    # layer that cannot scroll, so with a full room on a small phone its
+    # Main menu button was drawn below the bottom of the screen.
+    print("\n18. there is always a way back to the main menu after a race")
+    try:
+        lv = open_tab("Liv", "ninja", 3000, "LEAV-0001", badges=1)
+        active(lv)
+        lv.evaluate("""()=>{ const parts={me:{name:'Liv',avatarChar:'ninja',joinedAt:1,ready:true,finished:false,progress:0,seen:Date.now()}};
+            ['a','b','c','d','e','f','g'].forEach((k,i)=>parts[k]={name:'P'+k,avatarChar:['ghost','alien','tempest','robot'][i%4],joinedAt:2+i,ready:true,seen:Date.now(),
+              finished:true,progress:100,score:90,elapsedMs:200000+i,xp:150+i,totalScore:150+i,revealDone:true,
+              xpLines:[{key:'correct',label:'11 correct',value:110},{key:'speed',label:'Speed',value:40+i}]});
+            /* And one who closed the app mid-race: unfinished, no
+               heartbeat for ten minutes, still carrying the lifetime XP
+               it joined with. It must not hold the room up, and it must
+               not top the board with that number either. */
+            parts.gone={name:'Gone',avatarChar:'alien',joinedAt:20,ready:true,seen:Date.now()-10*60*1000,finished:false,progress:40,xp:98765};
+            return fbDb.collection('vrooms').doc('LEAVEALL').set({status:'starting',game:'race',units:['Identity Crimes'],startAt:Date.now()-2000,chatMessages:[],participants:parts}); }""")
+        lv.wait_for_timeout(300)
+        lv.evaluate("""()=>{ vroomCode='LEAVEALL'; vroomMyKey='me'; vroomIsHost=true; beginVirtualRoomTest(['Identity Crimes'], null, null, 0); }""")
+        lv.wait_for_selector(".qpanel .choice", timeout=25000)
+        lv.evaluate("""()=>{ order.forEach(qi=>{ picked[qi]=optionOrder(qi).indexOf(QUESTIONS[qi].answer); }); stopQuestionTimer(); summarize(); }""")
+        try:
+            lv.wait_for_function("()=>document.querySelector('.vroom-waitcard.is-all-in')", timeout=15000)
+            allin = True
+        except Exception:
+            allin = False
+        lv.wait_for_timeout(500)
+        way = lv.evaluate("""()=>{ const b=document.querySelector('.vroom-wait-leave'); if(!b || b.hidden || !b.getClientRects().length) return {shown:false};
+            b.scrollIntoView({block:'center', behavior:'instant'}); const r=b.getBoundingClientRect();
+            const top=document.elementFromPoint(r.left+r.width/2, r.top+r.height/2); return {shown:true, hit: top===b || b.contains(top)}; }""")
+        check("a racer who closed the app mid-race does not hold the room up", allin,
+              lv.evaluate("()=>(document.querySelector('.vroom-wait-count')||{}).textContent"))
+        top = lv.evaluate("()=>vroomRankedEntries(lastFinaleData||{}).map(e=>e.key)")
+        check("and is ranked on what they finished (nothing), not on the XP they joined with",
+              bool(top) and top[0] != "gone" and top[-1] == "gone", top)
+        check("with everybody finished and the leaderboard still to come, Leave room is still there", way.get("shown") and way.get("hit"), way)
+        if way.get("shown"):
+            lv.click(".vroom-wait-leave")
+            lv.wait_for_timeout(400)
+            lv.evaluate("()=>[...document.querySelectorAll('#stage button')].find(b=>b.textContent.trim()==='Leave').click()")
+            lv.wait_for_timeout(14000)
+            after = lv.evaluate("()=>({home: !!document.querySelector('[data-screen=home]'), code: vroomCode, cut: !!document.getElementById('vroom-race-cut'), prep: !!document.getElementById('vroom-prep')})")
+            check("and leaving there lands on Home, with no leaderboard rolling over it afterwards",
+                  after["home"] and not after["code"] and not after["cut"] and not after["prep"], after)
+        # The leaderboard scene, a room of eight, on a 320x568 phone.
+        lv.set_viewport_size({"width": 320, "height": 568})
+        lv.evaluate("""()=>{ const parts={me:{name:'Liv',avatarChar:'ninja',joinedAt:1,finished:true,xp:140,elapsedMs:1,xpLines:[]}};
+            ['a','b','c','d','e','f','g'].forEach((k,i)=>parts[k]={name:'P'+k,avatarChar:'ghost',joinedAt:2+i,finished:true,xp:150+i,elapsedMs:2,xpLines:[]});
+            vroomMyKey='me'; theme.reduceMotion=true; playVroomRaceCutscene(vroomRankedEntries({participants:parts})); }""")
+        lv.wait_for_function("()=>document.querySelector('#vroom-race-cut.is-done')", timeout=20000)
+        lv.wait_for_timeout(800)
+        mm = lv.evaluate("""()=>{ const b=[...document.querySelectorAll('#vroom-race-cut .vrc-exits button')].find(x=>/main menu/i.test(x.textContent));
+            const r=b.getBoundingClientRect(); const cx=r.left+r.width/2, cy=r.top+r.height/2;
+            const top=(cy>0&&cy<innerHeight)?document.elementFromPoint(cx,cy):null;
+            return {y:Math.round(r.top), bottom:Math.round(r.bottom), vh:innerHeight, hit: !!top && (top===b||b.contains(top))}; }""")
+        check("in a room of eight on a 320px phone, the scene's Main menu is on screen and tappable",
+              mm["hit"] and mm["bottom"] <= mm["vh"], mm)
+        lv.click("#vroom-race-cut .vrc-exits button.ghost")
+        lv.wait_for_timeout(900)
+        check("and it goes home", lv.evaluate("()=>!!document.querySelector('[data-screen=home]') && !document.getElementById('vroom-race-cut')"))
+        lv.evaluate("()=>{ theme.reduceMotion=false; }")
+        lv.close()
+    except Exception as e:
+        check("the way-back section ran at all", False, repr(e)[:240])
+
+    # ---- 19. retired characters show up as what they became ------------
+    # "Make sure the Virtual Room cutscenes/end screens show the current
+    # characters" - the SWAT (245) and the Robot (244) are retired and
+    # drawn as the Ninja. The drawing already went through
+    # RETIRED_CHARACTER_TO; the glow each row is tinted with did not, so a
+    # Ninja stood in the Robot's light on the leaderboard scene.
+    print("\n19. a retired character is the Ninja everywhere in a room, glow and all")
+    try:
+        rc = open_tab("Rae", "ninja", 3000, "RETC-0001", badges=1)
+        active(rc)
+        got = rc.evaluate("""()=>{ vroomMyKey='me';
+            const mk=(k,a,j,x)=>({key:k, p:{name:k, avatarChar:a, joinedAt:j, xpLines:[]}, xp:x});
+            playVroomRaceCutscene([mk('me','ghost',1,300), mk('r','robot',2,200), mk('s','swat',3,100)]);
+            const rows=[...document.querySelectorAll('#vroom-race-cut .vrc-row')];
+            /* Every drawing numbers its own gradient ids, so compare with
+               the ids taken out. */
+            const norm = h => h.replace(/(id="|#)[A-Za-z0-9_-]+/g, '');
+            const ninjaSvg = norm(buildAvatarCharSVGSafe('ninja').outerHTML);
+            const out = rows.map(x=>({pl: x.style.getPropertyValue('--pl'), ninja: norm(x.querySelector('.vrc-fig svg').outerHTML) === ninjaSvg}));
+            document.getElementById('vroom-race-cut').remove();
+            return { rows: out, ninjaGlow: AVATAR_GLOW.ninja }; }""")
+        retired = got["rows"][1:]
+        check("the Robot and the SWAT are drawn as the Ninja on the leaderboard scene", all(r["ninja"] for r in retired), got)
+        check("and glow as the Ninja too", all(r["pl"] == got["ninjaGlow"] for r in retired), got)
+        rc.close()
+    except Exception as e:
+        check("the retired-characters section ran at all", False, repr(e)[:240])
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--against", help="run against a different index.html")
     ap.add_argument("--latency", type=int, default=60,
                     help="simulated one-way write latency, ms")
+    ap.add_argument("--only-246", action="store_true",
+                    help="run only the build-246 sections (13-19)")
     args = ap.parse_args()
     src = args.against or os.path.join(ROOT, "index.html")
     body = INSET_RE.sub(lambda m: "0px", io.open(src, encoding="utf-8").read())
@@ -412,6 +860,13 @@ def main():
                    "badges": badges, "rankKey": rank_key})
             return pg
 
+        if args.only_246:
+            sections_246(ctx, open_tab, args)
+            ctx.close(); br.close(); srv.shutdown()
+            print("\n%s  (%d failure(s))"
+                  % ("ALL PASS" if not FAILURES else "FAILED: " + ", ".join(FAILURES), len(FAILURES)))
+            return 1 if FAILURES else 0
+
         # Different ranks on purpose - Madison holds veteran and Devonte
         # only rookie - so a row showing the wrong emblem cannot pass by
         # showing the same one twice. Named by TIER_UNLOCKS key rather
@@ -479,10 +934,14 @@ def main():
         # asked against. The rank emblem is what stayed.
         ranks = host.evaluate("""()=>({
           seen: [...document.querySelectorAll('.vroom-row')]
-            .map(r=>{const m=r.querySelector('.lb-rankmark'); return m ? m.title : null;}),
+            .map(r=>{const m=r.querySelector('.vroom-row-rank'); return m ? m.textContent : null;}),
+          coins: document.querySelectorAll('.vroom-row .lb-rankmark').length,
           want: [RANK_DISPLAY_NAME.rookie, RANK_DISPLAY_NAME.veteran] })""")
+        # In words under the name, never as a coin on the character
+        # (build 241: "the ranking with the words is enough").
         check("every row carries its person's rank",
               sorted(r for r in ranks["seen"] if r) == sorted(ranks["want"]), ranks)
+        check("and no rank coin on anyone's character", ranks.get("coins") == 0, ranks)
         check("no level number beside the character",
               host.evaluate("()=>!document.querySelector('.vroom-level')"), "none")
 
@@ -721,6 +1180,34 @@ def main():
         check("the review is on the screen in two tabs, missed first",
               rv["tabs"] == ["missed", "all"] and rv["on"] == "missed", rv)
         check("with no Review button to open it", not rv["reviewBtn"], rv)
+        # ---- BUILD 240: the room's chat on the screen a real race ends on ----
+        # The Room chat button was only ever mounted by
+        # showVirtualRoomResults(), which a real race no longer reaches, so
+        # it never appeared outside a harness that mounted that screen by
+        # hand. This is the real finish. Written against build 240's first
+        # draft, where every one of these was false.
+        # Read what is there first - earlier messages this harness never
+        # scrolled to are honestly unread - so the count below is the one
+        # message that arrives while the sheet is closed.
+        host.evaluate("""()=>{ document.getElementById('roomchat-fab')?.click(); closeRoomChatSheet(); }""")
+        host.wait_for_timeout(300)
+        guest.evaluate("""()=>fbDb.collection('vrooms').doc(vroomCode).update({ chatMessages:
+          firebase.firestore.FieldValue.arrayUnion({ id: 'g-' + Date.now(), key: vroomMyKey, name: 'Guest',
+                                                     text: 'gg everyone', ts: Date.now() }) })""")
+        host.wait_for_timeout(1200 + args.latency * 2)
+        rc = host.evaluate("""()=>{ const fab = document.getElementById('roomchat-fab');
+          const c = fab && fab.querySelector('.roomchat-fab-count');
+          const out = { fab: !!fab, count: c && !c.hidden ? c.textContent : '' };
+          if(fab){ fab.click(); }
+          const sheet = document.getElementById('roomchat-sheet');
+          out.lifted = !!(sheet && sheet.querySelector('.vroom-chat'));
+          out.text = sheet ? (sheet.querySelector('.vroom-chat-list') || {}).textContent || '' : '';
+          closeRoomChatSheet();
+          return out; }""")
+        check("the Room chat button is up on the results a real race ends on", rc.get("fab") is True, rc)
+        check("and counts a message that arrived while it was closed", rc.get("count") == "1", rc)
+        check("and opens the room's chat with that message in it",
+              rc.get("lifted") is True and "gg everyone" in rc.get("text", ""), rc)
         t_in = None
         for _ in range(100):
             if host.evaluate("()=>!!document.querySelector('.vroom-waitcard.is-all-in')"):
@@ -899,8 +1386,10 @@ def main():
         check("titled as what it is", got["title"] == "Match settings", got["title"])
         check("no sideways scroll", got["over"] <= 0, got["over"])
 
-        # The options sheet: questions AND time limit, both the drill
-        # sliders, and Save rather than Create lobby.
+        # The options sheet: the questions slider and NO time limit
+        # (build 246 - "for the race lets not add time options"; every
+        # question has its own 45 seconds), and Save rather than Create
+        # lobby. This asserted both sliders until the decision changed.
         tap(pg, "#nextbtn", "the next button")
         pg.wait_for_timeout(600)
         sheet = pg.evaluate("""()=>{
@@ -914,7 +1403,8 @@ def main():
                    begin: (document.querySelector('.sheet-begin-btn')||{}).textContent,
                    title: (document.querySelector('.unitoptions-modal-title')||{}).textContent };}""")
         check("the options sheet opens", sheet["open"] is True, sheet["open"])
-        check("questions and time limit are both there", sheet["sliders"] == 2,
+        check("the questions slider is there, and no time limit",
+              sheet["sliders"] == 1 and not any("time" in l for l in sheet["labs"]),
               {"n": sheet["sliders"], "labels": sheet["labs"]})
         # plainSlider draws its own heading, so a second one above it
         # printed TIME LIMIT twice.
@@ -1028,27 +1518,33 @@ def main():
             # that is the published-progress half, and it is what "whoever
             # is getting through them faster will start to pull" means.
             tugB.wait_for_timeout(600 + args.latency * 4)
-            pulled = tugB.evaluate("""()=>{
+            pulled_d = tugB.evaluate("""()=>{
               const k = document.querySelector('.tug-knot');
-              return k ? parseFloat(k.style.left) : null;}""")
+              return { left: k ? parseFloat(k.style.left) : null,
+                       progress: tugLastData && tugLastData.tug && tugLastData.tug.progress,
+                       screen: !!document.querySelector('.screen-tug') };}""")
+            pulled = pulled_d["left"]
             check("the rope has moved on the device that answered nothing",
-                  pulled is not None and abs(pulled - 50) > 1, pulled)
+                  pulled is not None and abs(pulled - 50) > 1, pulled_d)
             mine_side = tugB.evaluate("()=>!!document.querySelector('.tug-knot.is-theirs')")
             check("and it has moved the wrong way for them", mine_side is True)
             # AND TOWARDS THE SIDE THAT IS PULLING. Alex's side got three
-            # right, so the knot belongs on Alex's side of the line -
-            # side a is drawn on the left, side b on the right. For a
-            # while every lead was drawn backwards and the check above
-            # could not tell, because it only asked for a colour.
+            # right, so the knot belongs on Alex's end. Since build 241
+            # every device draws ITS OWN side on the left ("you should be
+            # able to just look only at the rope to see how well your
+            # side is doing"), so on Bo's phone Alex's end is the right.
+            # For a while every lead was drawn backwards and the check
+            # above could not tell, because it only asked for a colour.
             toward = tugB.evaluate("""()=>{
               const side = tugTeamOf(tugLastData, (Object.keys(tugLastData.participants||{})
                 .find(k => (tugLastData.participants[k]||{}).name === 'Alex')));
               const k = document.querySelector('.tug-knot');
-              return { side: side, left: k ? parseFloat(k.style.left) : null };}""")
-            check("and it has moved towards the side that is pulling",
+              return { side: side, mine: tugTeamOf(tugLastData, vroomMyKey),
+                       left: k ? parseFloat(k.style.left) : null };}""")
+            check("and it has moved towards the side that is pulling, drawn from this device's end",
                   toward["left"] is not None and
-                  ((toward["side"] == "a" and toward["left"] < 50) or
-                   (toward["side"] == "b" and toward["left"] > 50)), toward)
+                  ((toward["side"] == toward["mine"] and toward["left"] < 50) or
+                   (toward["side"] != toward["mine"] and toward["left"] > 50)), toward)
 
             # ONE CHANCE. The tap locks every choice; a second tap on
             # another one must change nothing.
@@ -1173,11 +1669,13 @@ def main():
                   all(len(e["exits"]) == 2 for e in ends), [e["exits"] for e in ends])
             check("and nothing threw on the way there", not tug_errs, tug_errs[:3])
 
-            # THE TIME LIMIT CONTROL IS GONE for tug, and still there for
-            # race - "when I hit tug of war, the timer option shouldn't be
-            # there". Asserted as a SHAPE (one slider vs two) rather than by
-            # naming the label, which is the trap this file has already been
-            # caught by twice.
+            # NO GAME HAS A TIME LIMIT CONTROL NOW. It went from tug first
+            # ("when I hit tug of war, the timer option shouldn't be there")
+            # and from the race in build 246 ("for the race lets not add
+            # time options, just make it where each question has a 45
+            # second timer"). This asserted race 2 / tug 1 until then - a
+            # gate that encodes a decision is re-read when the decision
+            # changes. Still a SHAPE (how many sliders), never a label.
             tugA.evaluate("""()=>{
               fbDb = { collection:()=>({ doc:()=>({ update:()=>Promise.resolve() }) }) };
               vroomCode='ROOM43'; vroomIsHost=true;
@@ -1201,9 +1699,9 @@ def main():
             tugA.click(".vroom-host-mode[data-mode='race']")
             tugA.wait_for_timeout(350)
             back_n = visible_sliders(tugA)
-            check("race offers a time limit, tug does not",
-                  race_n == 2 and tug_n == 1, {"race": race_n, "tug": tug_n})
-            check("and switching back restores it", back_n == 2, back_n)
+            check("no game offers a time limit: race and tug both have just the questions slider",
+                  race_n == 1 and tug_n == 1, {"race": race_n, "tug": tug_n})
+            check("and switching back to race does not bring one back", back_n == 1, back_n)
 
             # The game cards read as a choice: all the same size, all
             # with a surface of their own. The unselected one was reported
@@ -1524,6 +2022,8 @@ def main():
                   beat["before"] and beat["overlay"] and not beat["during"], beat)
         except Exception as e:
             check("the race-line section ran at all", False, repr(e)[:200])
+
+        sections_246(ctx, open_tab, args)
 
         ctx.close()
         br.close()

@@ -33,7 +33,7 @@ SRC = (sys.argv[sys.argv.index("--against") + 1] if "--against" in sys.argv
        else os.path.join(ROOT, "index.html"))
 
 SEED = ('{"firstName":"Madison","avatarChar":"ninja","onboardingComplete":true,'
-        '"tourRev":99,"leaderboardOptIn":true,"publicId":"me0000000001",'
+        '"tourRev":99,"rankMapFx244":true,"leaderboardOptIn":true,"publicId":"me0000000001",'
         '"lifetime":{"points":14820,"answered":5400,"correct":4980,"drillPlays":64,'
         '"examPlays":22,"gamePlays":9,"perfectTests":141,"currentStreak":23,'
         '"longestStreak":57}}')

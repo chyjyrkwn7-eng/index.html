@@ -85,7 +85,7 @@ SEED = """()=>{
   document.getElementById('splashscreen')?.remove();
   try{ __useFake(); }catch(e){}
   store.onboardingComplete = true; store.firstName = 'Madison';
-  store.publicId = 'me01'; store.tourRev = 99; store.avatarChar = 'wizard';
+  store.publicId = 'me01'; store.tourRev = 99; store.rankMapFx244 = true; store.avatarChar = 'wizard';
   store.lifetime = { points: 42000, answered: 5400, correct: 4980, drillPlays: 64,
                      examPlays: 22, gamePlays: 9, perfectTests: 141,
                      currentStreak: 23, longestStreak: 57 };
@@ -260,13 +260,19 @@ def main():
         print("\n3. the daily question announcement")
         pg.evaluate("()=>showHome()")
         pg.wait_for_timeout(400)
-        d = pg.evaluate("""()=>{
+        d = pg.evaluate("""async ()=>{
           let tapped = false;
           const btn = document.querySelector('.daily-question-fab');
           if(!btn) return { noButton: true };
           const realClick = btn.click.bind(btn);
           btn.click = () => { tapped = true; };
           announceDailyReset(btn);
+          /* Build 245: the button recharges first and the banner comes
+             out of it ~2.5s later, so wait for it rather than reading
+             the page in the same tick. */
+          for(let i = 0; i < 60 && !document.getElementById('dailyalert'); i++)
+            await new Promise(r => setTimeout(r, 100));
+          await new Promise(r => setTimeout(r, 700));
           const el = document.getElementById('dailyalert');
           if(!el) return { noBanner: true };
           const cs = getComputedStyle(el);

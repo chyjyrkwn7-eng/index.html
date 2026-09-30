@@ -40,7 +40,7 @@ def serve(path):
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     return srv, "http://127.0.0.1:%d/index.html" % port
 
-SEED = json.dumps({"onboardingComplete": True, "tourRev": 99, "seenSettingsTour": True,
+SEED = json.dumps({"onboardingComplete": True, "tourRev": 99, "rankMapFx244": True, "seenSettingsTour": True,
                    "avatarChar": "ninja", "points": 9000, "leaderboardOptIn": True})
 
 def main(src):
@@ -146,9 +146,12 @@ def main(src):
             print("\n1. Madison starts a chat from the dock")
             started = a.evaluate("""()=>{
               document.getElementById('chatdock-btn').click();
+              /* Build 240: group chats have their own tab. */
+              const gt=document.querySelector('.chatdock-tab[data-tab="groups"]');
+              if(gt) gt.click();
               const s=[...document.querySelectorAll('.chatdock-act')]
-                .find(x=>x.textContent==='Start a chat');
-              if(!s) return {no:'no Start a chat button'};
+                .find(x=>/^Start a group chat$/.test(x.textContent));
+              if(!s) return {no:'no Start a group chat button'};
               s.click();
               return new Promise(r=>setTimeout(()=>r({code:chatRoomCode,
                 input:!!document.querySelector('.chatdock-chathost .vroom-chat-input')}),400));}""")
@@ -352,10 +355,20 @@ def main(src):
                 return ref.set(d);
               }).then(()=>new Promise(r=>setTimeout(()=>r({
                 names: [...document.querySelectorAll('.chatdock-who-name')].map(x=>x.textContent),
+                away: [...document.querySelectorAll('.chatdock-who.is-away .chatdock-who-name')].map(x=>x.textContent),
+                count: (document.getElementById('chatdock-roomcount')||{}).textContent||'',
                 text: (document.getElementById('chatdock-roomwho')||{}).textContent||''
               }), 900)));}""", {"code": code})
-            check("a stale classmate drops off the roster",
-                  "Alex" not in (stale.get("names") or []), stale)
+            # ---- THIS ENCODED A DECISION, AND IT CHANGED (build 240) ----
+            # "Ensure it will be easy to always tell who's currently in the
+            # group chat." A member whose phone slept used to vanish from
+            # the roster, so a group of four read as a group of one. They
+            # are still a member: shown, dimmed as away, and counted apart
+            # from the people here now. Leaving (section 5) still removes.
+            check("a stale classmate is shown as away, not dropped",
+                  "Alex" in (stale.get("away") or []), stale)
+            check("and the header says how many are here now",
+                  "1 here now" in (stale.get("count") or ""), stale)
             # And put him back, so section 4 still has two people in it.
             a.evaluate("""(x)=>{
               const ref = window.__fakeDb.collection('vrooms').doc(x.code);
@@ -392,6 +405,51 @@ def main(src):
             check("and Madison receives his reply", "yep, unit nine" in back["text"], back["text"][:70])
             check("with the two of them in different colours",
                   back["distinct"] is True, back["colours"])
+
+            print("\n4a. who is typing: one row each, and accurate")
+            # ---- BUILD 240, Madison: "The 'someone is typing' thing ensure
+            # it works well and it's accurate, if multiple people are typing
+            # at once just stack them so you can see both." Written against
+            # build 239, which said "Alex and Sam are typing", kept saying it
+            # after the message landed, and trusted the sender's clock.
+            rows = lambda pg: pg.evaluate("""()=>[...document.querySelectorAll('.chatdock-chathost .vroom-chat-typer')].map(r=>r.textContent)""")
+            b.evaluate("""()=>{ const i=document.querySelector('.chatdock-chathost .vroom-chat-input');
+              i.value='hold on'; i.dispatchEvent(new Event('input', {bubbles:true})); }""")
+            # A third person, typing, whose phone clock is a minute behind:
+            # their stamp is old by this device's clock, but it is CHANGING.
+            a.evaluate("""async (c)=>{ const ref = fbDb.collection('vrooms').doc(c);
+              await ref.update({ 'typing.ccc0000000003': Date.now() - 60000 });
+              await new Promise(r => setTimeout(r, 500));
+              await ref.update({ 'typing.ccc0000000003': Date.now() - 59500 }); }""", code)
+            # Wait on the page, not a timer: under load Alex's keystroke can
+            # take longer than a fixed 1.3s to reach this device, and a
+            # fixed wait then reads one row and fails a build that is fine.
+            # A genuinely missing row still fails once the 5s are up.
+            a.wait_for_timeout(1300)
+            for _ in range(25):
+                if len(rows(a)) >= 2: break
+                a.wait_for_timeout(150)
+            both = rows(a)
+            check("two people typing at once are two rows, not one sentence",
+                  len(both) == 2 and all("is typing" in r for r in both), both)
+            check("a skewed clock does not hide somebody who is typing",
+                  any("Alex" not in r for r in both) and len(both) == 2, both)
+            b.evaluate("""()=>{ document.querySelector('.chatdock-chathost .vroom-chat-send').click(); }""")
+            a.wait_for_timeout(700)
+            after = rows(a)
+            check("Alex's row goes the moment his message lands",
+                  not any("Alex" in r for r in after), after)
+            b.evaluate("""()=>{ const i=document.querySelector('.chatdock-chathost .vroom-chat-input');
+              i.value='x'; i.dispatchEvent(new Event('input', {bubbles:true})); }""")
+            a.wait_for_timeout(900)
+            typed = rows(a)
+            b.evaluate("""()=>{ const i=document.querySelector('.chatdock-chathost .vroom-chat-input');
+              i.value=''; i.dispatchEvent(new Event('input', {bubbles:true})); }""")
+            a.wait_for_timeout(900)
+            cleared = rows(a)
+            check("and when he empties the box instead of sending",
+                  any("Alex" in r for r in typed) and not any("Alex" in r for r in cleared), [typed, cleared])
+            a.evaluate("""(c)=>fbDb.collection('vrooms').doc(c).update({ 'typing.ccc0000000003': firebase.firestore.FieldValue.delete() })""", code)
 
             print("\n4b. long text wraps; it never scrolls sideways")
             a.evaluate("""()=>{
@@ -522,7 +580,15 @@ def main(src):
               liveChatParticipants = {};
               liveChatParticipants[chatMyKey] = { name:'Madison' };
               liveChatParticipants[them] = { name:'Alex' };
+              /* Build 240, Madison: "if I'm in a group chat with a
+                 person, they invite me to another, the notification will
+                 be there". So an invite to a DIFFERENT chat stays... */
               out.listedWhenTogether =
+                notificationItems().filter(i => i.kind === 'chat').length;
+              /* ...and one for the chat you are already in goes. */
+              inboxMsgs = { [them]: { pub: them, type:'chat', code: chatRoomCode,
+                                      at: stamp, firstName:'Alex', avatarChar:'ninja' } };
+              out.listedForThisChat =
                 notificationItems().filter(i => i.kind === 'chat').length;
               return out;
               } catch(e){ return { threw: String(e) }; }}""")
@@ -533,7 +599,8 @@ def main(src):
                           "and I am never 'with' myself",
                           "their invite is listed while we are apart",
                           "and carries the time it arrived",
-                          "and drops out the moment we are in the chat together"):
+                          "an invite to a DIFFERENT chat stays while we are in one together",
+                          "and drops out the moment we are in the chat it is for"):
                     check(n, False, notif["threw"])
                 notif = None
             if notif:
@@ -551,8 +618,10 @@ def main(src):
                 check("their invite is listed while we are apart",
                       notif["listedWhenApart"] == 1, notif["listedWhenApart"])
                 check("and carries the time it arrived", notif["listedAt"] > 0, notif["listedAt"])
-                check("and drops out the moment we are in the chat together",
-                      notif["listedWhenTogether"] == 0, notif["listedWhenTogether"])
+                check("an invite to a DIFFERENT chat stays while we are in one together",
+                      notif["listedWhenTogether"] == 1, notif["listedWhenTogether"])
+                check("and drops out the moment we are in the chat it is for",
+                      notif.get("listedForThisChat") == 0, notif.get("listedForThisChat"))
 
             print("\n4e. a join that fails keeps its invitation")
             failed = a.evaluate("""async ()=>{
@@ -587,9 +656,22 @@ def main(src):
                   and "already" in (inv.get("said") or "").lower(), inv)
 
             print("\n5. leaving takes him out of it")
-            b.evaluate("""()=>{
-              [...document.querySelectorAll('.chatdock-mini')]
-                .find(x=>x.textContent==='Leave').click();}""")
+            # Build 240: Leave asks first. Tapping it must only ask, Stay
+            # must keep him in, and only the card's own Leave leaves.
+            asked = b.evaluate("""async ()=>{
+              const leave = () => [...document.querySelectorAll('.chatdock-mini')].find(x=>x.textContent==='Leave');
+              leave().click();
+              const card = document.querySelector('.chatdock-confirm');
+              const out = { asked: !!card, title: card ? card.querySelector('.chatdock-confirm-title').textContent : '',
+                            stillIn: !!chatRoomCode };
+              document.querySelector('.chatdock-confirm-stay')?.click();
+              await new Promise(r => setTimeout(r, 200));
+              out.stayKept = !!chatRoomCode && !document.querySelector('.chatdock-confirm');
+              leave().click();
+              document.querySelector('.chatdock-confirm-leave')?.click();
+              return out; }""")
+            check("Leave asks before it leaves", asked.get("asked") is True and asked.get("stillIn") is True, asked)
+            check("and Stay keeps him in the chat", asked.get("stayKept") is True, asked)
             a.wait_for_timeout(1000)
             left = a.evaluate("""()=>{
               const w=document.getElementById('chatdock-roomwho');
@@ -668,10 +750,10 @@ def main(src):
               const target = rows.find(r => r.querySelector('.chatdock-chatrow-open'));
               const del = target.querySelector('.chatdock-chatrow-del');
               del.click();
-              out.armed = del.classList.contains('is-arming');
+              out.armed = !!document.querySelector('.chatdock-confirm');
               out.rowsAfterOneTap = document.querySelectorAll('.chatdock-chatrow').length;
-              const goneCode = chatList()[0].code;
-              del.click();
+              const goneCode = target.dataset.code;
+              document.querySelector('.chatdock-confirm-leave')?.click();
               await new Promise(r => setTimeout(r, 400));
               out.gone = goneCode;
               out.left = chatList().map(c => c.code);
@@ -683,8 +765,8 @@ def main(src):
             print("     ", json.dumps(second))
             names7 = ("starting a second chat does not end the first",
                       "both are in the list",
-                      "one tap on the x arms it rather than leaving",
-                      "the second tap takes the row off the list",
+                      "one tap on the x asks rather than leaving",
+                      "confirming takes the row off the list",
                       "and leaves the chat for real, not just locally")
             if second.get("threw"):
                 for n in names7: check(n, False, second["threw"])
@@ -697,6 +779,48 @@ def main(src):
                 check(names7[3], len(second["left"]) == 1
                       and second["gone"] not in second["left"], second["left"])
                 check(names7[4], second["stillIn"] is False, second["stillIn"])
+
+            print("\n8. four invites to one chat, one accept answers them all")
+            # ---- BUILD 240, Madison: "ensure the notification disappear
+            # if like 4 people invite me to the same chat and I accept one
+            # of them". Being in the chat hid the other three, but only
+            # while it stayed on the list: leave it and all three came
+            # back. Written against build 239, where they do.
+            four = a.evaluate("""async ()=>{ try{
+              const wait = ms => new Promise(r => setTimeout(r, ms));
+              if(chatRoomCode) closeChatRoom();
+              createChatRoom(); await wait(500);
+              const C = chatRoomCode;
+              leaveChatRoom(true); await wait(200);
+              const pubs = ['P4A','P4B','P4C','P4D'];
+              store.friendsIn = pubs.slice();
+              leaderboardRows = pubs.map((p, i) => ({ pub: p, firstName: 'F' + i, avatarChar: 'ninja', level: 3, seenAt: Date.now() }));
+              /* INTO THE REAL MAILBOX, not into inboxMsgs. The inbox
+                 listener replaces that variable on every snapshot, so a
+                 fixture written straight into it is wiped by the join's
+                 own writes - and "they came back" then passes on every
+                 build, which is how the first draft of this passed on
+                 the build it was written against. */
+              const msgs = {};
+              pubs.forEach((p, i) => { msgs[p] = { pub: p, type: 'chat', code: C, at: Date.now() - 1000 * (i + 1),
+                                                   firstName: 'F' + i, avatarChar: 'ninja' }; });
+              attachInbox();
+              await inboxDocFor(publicIdOf()).set({ kind: 'inbox', msgs });
+              await wait(600);
+              const listed = () => notificationItems().filter(i => i.kind === 'chat').length;
+              const out = { before: listed() };
+              const item = notificationItems().find(i => i.kind === 'chat');
+              item.act(); await wait(700);
+              out.joined = chatRoomCode === C;
+              out.afterAccept = listed();
+              leaveChatRoom(true); await wait(200);
+              out.afterLeaving = listed();
+              return out; } catch(e){ return { threw: String(e) }; }}""")
+            print("     ", json.dumps(four))
+            check("four invites to one chat are all listed", four.get("before") == 4, four)
+            check("accepting one joins the chat", four.get("joined") is True, four)
+            check("and the other three go with it", four.get("afterAccept") == 0, four)
+            check("and stay gone after leaving that chat later", four.get("afterLeaving") == 0, four)
 
             real = [e for e in errs if not any(k in e.lower() for k in
                     ("firebase", "firestore", "gstatic", "failed to fetch", "net::"))]

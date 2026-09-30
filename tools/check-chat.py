@@ -301,9 +301,13 @@ def run_class(src_dir, label):
             started = pg.evaluate("""()=>{
               window.__updates.length = 0;
               document.getElementById('chatdock-btn').click();
+              /* Build 240: group chats live on their own tab; the dock
+                 opens on Friends. */
+              const gt = document.querySelector('.chatdock-tab[data-tab="groups"]');
+              if(gt) gt.click();
               const start = [...document.querySelectorAll('.chatdock-act')]
-                .find(b => b.textContent === 'Start a chat');
-              if(!start) return {no: 'no Start a chat button'};
+                .find(b => /^Start a group chat$/.test(b.textContent));
+              if(!start) return {no: 'no Start a group chat button'};
               start.click();
               return new Promise(r => setTimeout(() => r({
                 code: chatRoomCode,
@@ -359,8 +363,13 @@ def run_class(src_dir, label):
                       preview: alert ? alert.textContent : null};}""")
             if spoke["dotHidden"] is not False or spoke["dotDisplay"] == "none":
                 fails.append("the unread dot is not showing: %s" % spoke)
-            if spoke["dotText"] != "3":
-                fails.append("the dot reads %r, not a count of 3" % spoke["dotText"])
+            # ---- THE COUNT IS CHATS, NOT MESSAGES (build 240) ----
+            # "Ensure the chat button shows correct amount of
+            # chats/notifications." Three messages in one chat is one chat
+            # waiting; it read "3" until this build. Re-read rather than
+            # deleted, as every decision-encoding check here has been.
+            if spoke["dotText"] != "1":
+                fails.append("the dot reads %r, not one unread chat" % spoke["dotText"])
             # ASKED FOR BY NAME - "make sure everyone's chat color is
             # different". A hash into eight colours collides; this is the
             # property, not the mechanism.
@@ -383,7 +392,7 @@ def run_class(src_dir, label):
                  below has not changed - only the way the state is
                  reached, which is the half that was wrong. */
               inVirtualRoom = true;
-              syncChatDock(); chatDockTab = 'chat'; syncChatDock();
+              syncChatDock(); chatDockTab = 'groups'; syncChatDock();
               const note = (document.querySelector('.chatdock-note')||{}).textContent || '';
               const r = {note: note, left: chatRoomCode,
                          dockUp: !document.getElementById('chatdock').hidden,

@@ -19,6 +19,10 @@ KNOWN = {
     "bnr-holo": "shifted by whole periods of a 300% background",
     "bnr-sheen": "a sweep from off one edge to off the other",
     "cosmic-orbit-spin": "a full turn",
+    "bn-beam": "a spotlight on a pendulum - played alternate, so it swings back instead of jumping",
+    "bn-sweep": "a band of light from off one edge to off the other, invisible at both ends",
+    "cx-embers": "an ember that rises and fades to nothing at both ends",
+    "cx-infall": "shifted by exactly two periods of a .2 1.3 dash (1.5 each)",
     "cosmic-pulse-out": "fades to nothing at both ends",
     "daily-ready": "fades to nothing at both ends",
     "mystery-halo": "fades to nothing at the end, restarts from small",
@@ -38,6 +42,10 @@ KNOWN = {
     "bn-rain": "0.7s streaks over a random field; the reset lands on more rain",
     "bn-ripple": "a ring that fades to nothing as it spreads",
     "bn-rise": "an ember fades in low and out high",
+    # Build 244 characters.
+    "cx-cinder": "Inferno's cinder: invisible at both ends of the rise",
+    "cx-code": "Hacker's visor code: shifted by exactly six rows (6 x .72)",
+    "cx-sand": "Timekeeper's sand: shifted by exactly one grain pitch (.5)",
     # Build 235: the sleeping character's Zzz.
     "char-zzz": "a letter fades in beside the head and out as it drifts up",
     # Build 235: the characters' own motion (all invisible at both ends, or a whole turn).
@@ -52,6 +60,9 @@ KNOWN = {
     "cx-spin-back": "a full turn the other way",
     # Build 232: Sky Temple's waterfalls.
     "bn-pour": "streaks 14px apart sliding exactly 14px",
+    # Build 244: the new and redrawn banners.
+    "bn-depth": "Hall of Fame's depth - 0% and 100% are the same scale; the 0% frame also carries its easing",
+    "bn-steam": "Midnight Oil's steam, a wisp that fades to nothing at both ends",
 }
 s = open(SRC, encoding="utf-8").read()
 kf = {}

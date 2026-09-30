@@ -61,7 +61,7 @@ FIRESTORE_STUB = """
 # without it the one-time tour re-arm fires inside the gate and puts a
 # tooltip over whatever is being measured.
 SEED = ('{"firstName":"Madison","avatarChar":"ninja","onboardingComplete":true,'
-        '"tourRev":99,"leaderboardOptIn":true,'
+        '"tourRev":99,"rankMapFx244":true,"leaderboardOptIn":true,'
         '"lifetime":{"points":14820,"answered":5400,"correct":4980,"drillPlays":64,'
         '"examPlays":22,"gamePlays":9,"perfectTests":141,"currentStreak":23,'
         '"longestStreak":57}}')
@@ -143,10 +143,11 @@ def check_table(pg):
     # are banners") and the Masked One is retired, so it is asserted in
     # check_hardcore against the banner rather than here.
     # Five rank characters since build 235 (Gold's Pharaoh).
-    check("the original challenges are still there, and the rank five are there",
+    # Six since build 244: Silver's Lunar joined, one per rank from Silver up.
+    check("the original challenges are still there, and the six rank characters are there",
           r["n"] >= 3 and all(k in r["keys"] for k in ("daily10", "weektop", "flares"))
           and "hardcore10" not in r["keys"]
-          and r["rankFour"] == 5, "%d feat, %d rank" % (r["n"], r["rankFour"]))
+          and r["rankFour"] == 6, "%d feat, %d rank" % (r["n"], r["rankFour"]))
     check("every feat key is in CHARACTER_FEATS", r["known"], r["keys"])
     check("all four locked on a fresh account", r["allLocked"])
     check("each has a display name and its own glow", r["named"] and r["glowed"])
@@ -677,7 +678,9 @@ def check_art(pg):
         const sig = [...(svg ? svg.querySelectorAll('path,circle,ellipse,polygon') : [])]
           .map(n => n.tagName + (n.getAttribute('d')||'') +
                     (n.getAttribute('cx')||'') + (n.getAttribute('points')||'')).join('|');
-        (sigs[sig] = sigs[sig] || []).push(c.id);
+        /* a retired character (queen, dragon - build 242) draws as the
+           one its holders were moved to, on purpose */
+        if(!c.retired) (sigs[sig] = sigs[sig] || []).push(c.id);
       });
       return { n: AVATAR_CHARACTERS.length, empty,
                dupes: Object.values(sigs).filter(v => v.length > 1),

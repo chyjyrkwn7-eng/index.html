@@ -85,7 +85,7 @@ SCENARIOS = [
 
 SEED = {
     "onboardingComplete": True, "firstName": "Madison", "avatarChar": "ninja",
-    "points": 12400, "tourRev": 99,
+    "points": 12400, "tourRev": 99, "rankMapFx244": True,
     "lifetime": {"points": 12400, "answered": 2100, "correct": 1840, "drillPlays": 40,
                  "examPlays": 9, "gamePlays": 6, "perfectTests": 51,
                  "longestStreak": 44, "currentStreak": 12},

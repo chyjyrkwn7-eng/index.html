@@ -39,7 +39,7 @@ def ck(n,c,d=""):
     print(" ","PASS" if c else "FAIL",n,("-> "+str(d)) if d else "")
     if not c: ok=False
 SEED="""()=>{document.getElementById('splashscreen')?.remove(); __useFake();
-  store.onboardingComplete=true; store.firstName='Madison'; store.publicId='me01'; store.tourRev=99;
+  store.onboardingComplete=true; store.firstName='Madison'; store.publicId='me01'; store.tourRev=99; store.rankMapFx244=true;
   store.avatarChar='wizard'; store.lifetime={points:4200}; store.points=4200;
   ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour','seenRewardsTour','seenSettingsTour',
    'seenUnitOptionsTour','seenUnitSelectTour','seenMainMenuTour','seenFriendsTour','seenCalendarTour'].forEach(k=>store[k]=true);
@@ -62,16 +62,20 @@ with sync_playwright() as pw:
           const cs=av?getComputedStyle(av,'::before'):null;
           const svg=av?av.querySelector('svg'):null;
           const plates=[...document.querySelectorAll('.profile-statplate')];
+          const bsect=document.querySelector('.profile-badgesect');
+          const bcells=bsect?bsect.querySelectorAll('.badge-meter-seg').length:0;
+          const btokens=bsect?bsect.querySelectorAll('.badge-strip-cell, svg.badge-art').length:0;
           const tr=document.querySelector('.profile-xpbar');
           const fill=tr?tr.querySelector('.xpbar-fill'):null;
           const pct=document.querySelector('.profile-xp-pct');
           const panel=document.querySelector('.panel');
           return {
+            btokens,
             hasGlow: av?av.classList.contains('has-glow'):null,
             charGlow: av?av.style.getPropertyValue('--char-glow'):null,
             beforeW: cs?cs.width:null,
             svgFilter: svg?getComputedStyle(svg).filter.slice(0,40):null,
-            plates: plates.length,
+            plates: plates.length, bcells, bsect: !!bsect,
             plateRects: plates.map(p=>{const b=p.getBoundingClientRect();return [Math.round(b.width),Math.round(b.height)];}),
             plateBg: plates[0]?getComputedStyle(plates[0]).backgroundColor:null,
             trackH: tr?Math.round(tr.getBoundingClientRect().height):null,
@@ -85,7 +89,19 @@ with sync_playwright() as pw:
         ck("glow on hero + colour set", bool(r["hasGlow"]) and (r["charGlow"] or "").strip()=="#6C5BD4", r["charGlow"])
         ck("glow pool drawn", r["beforeW"] not in (None,"auto","0px"), r["beforeW"])
         ck("drop-shadow on the character", r["svgFilter"] and "drop-shadow" in r["svgFilter"])
-        ck("two plates, equal width", r["plates"]==2 and abs(r["plateRects"][0][0]-r["plateRects"][1][0])<=1, r["plateRects"])
+        # ---- A DECISION THAT CHANGED (build 241) ----
+        # The level and the badge count were two equal plates on one row.
+        # "It being in the level section is kinda strange, it should be its
+        # own section" - so the level keeps one plate and the badges are a
+        # section of their own, one token per unit.
+        # ---- AND IT CHANGED AGAIN (build 242), AND AGAIN (243) ----
+        # 242 made the section a sixteen-segment meter; 243 took the meter
+        # off ("still not a fan of the badge thing. There doesn't need to
+        # be a progress bar like that"): a count, and the badges you hold
+        # as a small stack - none here, the seed has none.
+        ck("one level plate; badges are their own section, with no meter and no full set",
+           r["plates"]==1 and r["bsect"] and r["bcells"]==0 and r["btokens"]==0,
+           (r["plates"], r["bcells"], r["btokens"]))
         ck("plates >=44px tall", bool(r["plateRects"]) and min(h for _,h in r["plateRects"])>=44, r["plateRects"])
         ck("bar filled to target", r["fillW"] not in (None,"0%"), (r["fillW"],r["fillTarget"]))
         # ---- THIS ENCODED A DECISION, AND IT REVERSED ----
@@ -142,10 +158,16 @@ with sync_playwright() as pw:
             scrollX: document.documentElement.scrollWidth - document.documentElement.clientWidth
           };}""")
         print("   friends:", json.dumps(f))
-        ck("code pill darker than the card", f["pillBg"]=="rgba(0, 0, 0, 0.34)", f["pillBg"])
+        # REVERSED IN 243: "the one for copy just needs to be better, maybe
+        # because it's in the weird similar bubble thing and shouldn't be" -
+        # your code is plain text now, in no pill.
+        ck("your code is plain text, in no pill", f["pillBg"] in ("rgba(0, 0, 0, 0)", "transparent"), f["pillBg"])
         ck("code group centred in its card", f["wrapCentredInCard"] is not None and abs(f["wrapCentredInCard"])<=1, f["wrapCentredInCard"])
         ck("add-a-code group centred in its card", f["rowCentredInCard"] is not None and abs(f["rowCentredInCard"])<=1, f["rowCentredInCard"])
-        ck("both boxes centred", f["wrapJustify"]=="center" and f["rowJustify"]=="center", (f["wrapJustify"],f["rowJustify"]))
+        # 243: the code sits at the left of its row with Copy at the right,
+        # and the field stretches across the card - the app's ordinary text
+        # box, not a code-width pill.
+        ck("code and Copy spread across the row; the field stretches", f["wrapJustify"]=="space-between" and f["rowJustify"] in ("stretch","normal"), (f["wrapJustify"],f["rowJustify"]))
         ck("input padding symmetric", f["inpPadL"]==f["inpPadR"], (f["inpPadL"],f["inpPadR"]))
         ck("input >=16px", bool(f["inpFont"]) and float(f["inpFont"].replace("px",""))>=16, f["inpFont"])
         # ---- AND SO DID THIS PAIR ----

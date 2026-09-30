@@ -120,7 +120,7 @@ FAKE_FIREBASE = """
 SEED = ('{"firstName":"Madison","avatarChar":"ninja","onboardingComplete":true,'
         '"weekKey":"__WEEK__","weekPoints":640,'
         '"leaderboardOptIn":true,"lastModified":1700000000000,'
-        '"tourRev":99,"seenProfileTour":true,"seenModeSelectTour":true,"seenUnitSelectTour":true,'
+        '"tourRev":99,"rankMapFx244":true,"seenProfileTour":true,"seenModeSelectTour":true,"seenUnitSelectTour":true,'
         '"seenMainMenuTour":true,"seenRankingsTour":true,"seenAppearanceTour":true,'
         '"unitPerfects":{"Professionalism and Ethics":35,"Professional Policing":35,'
         '"TCOLE Rules":35,"Penal Code":35,"Racial Profiling":22,"Victims of Crime":14,'

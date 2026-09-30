@@ -22,6 +22,8 @@ Usage
   python3 tools/firestore-admin.py bugs [N]
   python3 tools/firestore-admin.py prune [--days N] [--yes]
   python3 tools/firestore-admin.py purge --yes
+  python3 tools/firestore-admin.py move <from-public-id> <to-public-id> [--yes]
+  python3 tools/firestore-admin.py move --finish [--yes]
 
 `prune` is the one to reach for: it removes only the rankings rows
 nobody is behind any more and leaves every live row alone. `purge`
@@ -635,6 +637,106 @@ def cmd_purge(confirmed):
     return 0
 
 
+def _doc_url(coll, doc_id):
+    return "%s/%s/%s" % (BASE, coll, urllib.parse.quote(doc_id, safe=""))
+
+
+def _write_fields(coll, doc_id, fields, mask=None):
+    """PATCH typed fields into one document (creating it if needed)."""
+    typed = {}
+    for k, v in fields.items():
+        if isinstance(v, bool):
+            typed[k] = {"booleanValue": v}
+        elif isinstance(v, int):
+            typed[k] = {"integerValue": str(v)}
+        else:
+            typed[k] = {"stringValue": str(v)}
+    qs = ""
+    if mask:
+        qs = "?" + urllib.parse.urlencode({"updateMask.fieldPaths": list(mask)}, doseq=True)
+    body = json.dumps({"fields": typed}).encode("utf-8")
+    req = urllib.request.Request(_doc_url(coll, doc_id) + qs, data=body, method="PATCH")
+    req.add_header("Content-Type", "application/json")
+    token = _access_token()
+    if token:
+        req.add_header("Authorization", "Bearer " + token)
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return r.status
+    except urllib.error.HTTPError as e:
+        return e.code
+
+
+def cmd_move(argv):
+    """MOVE A DEVICE ONTO ANOTHER ACCOUNT (build 242).
+
+    For one person who made duplicate accounts after losing their
+    sign-in: every device on the duplicate is moved onto the real one the
+    next time it opens the app, without anybody typing a code. Leaves a
+    note at progress/<old code>__moved -> { to: <code> }, which the app
+    (checkAccountMove) follows and then marks done; setSyncCode retires
+    the duplicate's rankings row on the way.
+
+    Takes PUBLIC IDS, never names and never codes: names are not unique,
+    and codes are never printed by this tool. Nothing is deleted here -
+    `--finish` does that, and only for notes the device has marked done,
+    because deleting a progress document a device is still listening to
+    reads to that device as a reset and wipes it.
+    """
+    if not admin_ready():
+        print("move needs the admin key: the codes are the progress document ids.")
+        return 2
+    rows = docs("progress", mask=["firstName", "publicId", "to", "done"])
+    by_pub = {}
+    notes = {}
+    for code, f in rows:
+        if code.endswith("__moved"):
+            notes[code[:-len("__moved")]] = f
+        elif f.get("publicId"):
+            by_pub.setdefault(f["publicId"], []).append((code, f))
+    confirmed = "--yes" in argv
+    if "--finish" in argv:
+        pending = 0
+        for old, note in notes.items():
+            name = next((f.get("firstName") for c, f in rows if c == old), "?")
+            if not note.get("done"):
+                pending += 1
+                print("  %-16s not followed yet - left alone" % name)
+                continue
+            print("  %-16s followed; %s" % (name, "deleting the old account" if confirmed else "would delete the old account"))
+            if confirmed:
+                _call("DELETE", _doc_url("progress", old))
+                _call("DELETE", _doc_url("progress", old + "__moved"))
+        if not confirmed:
+            print("\nRe-run with --yes to delete the followed ones.")
+        return 0
+    args = [a for a in argv if not a.startswith("--")]
+    if len(args) != 2:
+        print("usage: firestore-admin.py move <from-public-id> <to-public-id> [--yes]")
+        return 2
+    src, dst = args
+    if len(by_pub.get(dst, [])) != 1:
+        print("The account to move onto must be exactly one progress document; found %d." % len(by_pub.get(dst, [])))
+        return 1
+    dst_code, dst_f = by_pub[dst][0]
+    olds = by_pub.get(src, [])
+    if not olds:
+        print("No progress document carries public id %s." % src)
+        return 1
+    for old_code, f in olds:
+        print("  %-16s -> %-16s %s" % (f.get("firstName", "?"), dst_f.get("firstName", "?"),
+                                        "note written" if confirmed else "would write the note"))
+        if confirmed:
+            st = _write_fields("progress", old_code + "__moved",
+                               {"to": dst_code, "at": int(time.time() * 1000)})
+            if st != 200:
+                print("    failed: HTTP %s" % st)
+                return 1
+    if not confirmed:
+        print("\nRe-run with --yes to write it.")
+    return 0
+
+
 def main(argv):
     if len(argv) < 2:
         print(__doc__)
@@ -662,6 +764,8 @@ def main(argv):
         return cmd_prune(days, "--yes" in argv)
     if cmd == "purge":
         return cmd_purge("--yes" in argv)
+    if cmd == "move":
+        return cmd_move(argv[2:])
     print("Unknown command %r" % cmd)
     return 2
 
