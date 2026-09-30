@@ -7557,3 +7557,138 @@ because "succeeded ... with fuzz" is the only warning there is.
   nothing needs opening to be read. The bank's line under the switch only
   shows for Most missed and Flagged; "All questions" needs no sentence.
   Measured: the sheet's content went from 862px to 458px on a Pro Max.
+
+### Build 250
+
+- **The rank set is one story, and the final three are their own tier.**
+  Asked for across three messages: "the gold icon doesn't fit well
+  between the ones to its left and right, same for sapphire into
+  amethyst ... The colors are great", then "the final 3 should really be
+  the coolest looking ones, the 3rd to last is where it gets a big jump",
+  then "Supernova ... it looks like it evolves from the amethyst one".
+  Bottom to top: a spark in a cloud (Bronze), a young star in its disc
+  (Silver, which now breathes), **a sun with a world going round it
+  (Gold)**, two stars (Platinum), **a spiral galaxy (Sapphire)**, **a
+  black hole with jets (Amethyst)**, **the Supernova with a jagged black
+  heart**. Colours are unchanged, as asked. Every star in the set is
+  `glowStar()` (lit from inside, thin dark separation band, the
+  four-point flare), which is the family resemblance.
+- **The final three share a crown, `topCrown(level)`**: a streak plus a
+  ring of motes for Sapphire, more for Amethyst, and extra mote rings
+  with no streak for Supernova. It is what makes the jump at Sapphire
+  read as a jump, and it grows rather than restarts.
+- **Supernova's dark centre is a JAGGED star, never a disc.** A round
+  black centre under a white flare was tried first and read as
+  Amethyst's black hole grown up, which is exactly what was reported. The
+  dark heart is an 8-point `burst()` in pure `#000000`, turning, with a
+  white-hot core pulsing over it. check-behaviour 49 asserts every black
+  path on it has far more commands than a circle. The banner follows.
+- **Amethyst's black hole: the disc is flattened (`.19` on the emblem,
+  `ry 22` on the banner)** because at anything rounder the near side of
+  the disc covered the lower half of the shadow and there was no hole
+  left to see. The shadow is `#030208`, not black, so it stays violet
+  next to Supernova's true black.
+- **Gold's orbit is a dotted path, not a ring**: a solid ellipse round a
+  round body reads as a ringed planet, which is what Bronze was rejected
+  for in 243. The world passes in front of the sun and behind it — two
+  copies on the same keyframes (`rk-orbit` / `rk-orbit-front`), the
+  front one faded out on the far half.
+- **"Some are animated, some aren't" was measured, not read.** Every
+  road-map emblem HAD animated layers; on screen Silver moved ~2 and Gold
+  ~4 against 7–11 for the rest, because their motion was on their
+  faintest lines or on a twelve-fold corona turning onto itself. check-
+  behaviour 48 measures what is SEEN (frame difference over 2.4s) and
+  requires >= 4.5 for all seven; 247 fails it. The flares in the reward
+  chips and the hero's next-rank chip animate too (added to the
+  allow-list selector above `@keyframes rk-*`).
+- **Banners follow their emblems**: Sapphire's is the galaxy scene
+  (`BANNER_ART.galaxy`, in its own blue — `galaxy` is a key in
+  `BANNER_ART` that is not a banner; nothing enumerates that table, and
+  nothing may start to without skipping it); Amethyst's is a new black-
+  hole scene; Supernova's gains the same jagged black heart.
+  `BN_AMETHYST_OF_SAPPHIRE` and the cluster scene are gone.
+- `RANK_EMBLEM_FIT` was re-measured for Sapphire and Amethyst and
+  `RANK_PRESENT` re-tuned (T 104 / 114); section 34's climb still passes
+  on both light and ink at bubble size.
+- **The start sheet, again (same build).** Three reports on 249: "the
+  top says all questions and all 48? That doesn't even make sense" (the
+  live 248 tag row, gone since 249, plus the switch's own "48" under All
+  questions sitting beside "All 48" under How many — All questions has
+  no count now; only Most missed and Flagged, which can be small or
+  empty, carry one); "the description for most missed is way too much"
+  (one short line, "Your most missed from the last 30 days.", and the
+  "i" with its paragraph about caps is gone — nobody needs that rule
+  before pressing Begin); and "that stuff blends together, the whole
+  menu kinda does". Measured, it did: the sheet was 56% opaque so the
+  unit screen's hint text showed through under the handle, and the top
+  box, the bank switch and the More options bar were all the same 5.5%
+  white. The sheet is solid `#11141A` now and every control group is a
+  raised card with its label inside it. A second round the same day:
+  Shuffle and Hide answers came back OUT of the fold into their own
+  "Options" card ("that drop down just needs to be the timer stuff"),
+  so the fold is called **Timer** and says only the timer's state;
+  the blue tint on the top box went (it is now the same card a step
+  lighter), the near-black well behind the bank switch went, and there
+  is **one blue** for everything that is on — the selected bank choice
+  is a filled `#5AB4FF → #3D8BFF` pill, the same gradient as the
+  slider's fill and the thumb's halo. The All button is raised like
+  Begin. The Timer bar has no surface of its own; it is its card's
+  header row, and it opens inside that card.
+- **A switch that is on sits as far right as an off one sits left.**
+  The knob was `left:2px` with a `1.1rem` travel in a `2.6rem` track:
+  2px of gap off, 4.4px on. `left:3.2px` (the same as its top) makes
+  the gap 3.2px both ways with the travel unchanged. That is the global
+  `.opt .box::after`, so every switch in the app moved with it.
+- **The settings came back to the top box, done properly.** "Still needs
+  to say the settings of the test from that menu, in the top like
+  before just make it better than it was." One word per setting with a
+  small blue stroke icon (bank, shuffle/in order, answers hidden, timer,
+  game speed), on its own row under the unit names — and **no count
+  among them**: "All questions" next to "All 48" was the nonsense, and
+  the line above already says how many. Most missed / Flagged fill the
+  bank pill with the same one blue.
+- **The short Penal Code version warns in its own pop-up and nowhere
+  else.** "Put the warning that it won't be a hundo only at the pop up
+  for which version. Still keep the warning for every unit the same way
+  except this custom version." The sheet's `.hundo-note` now fires only
+  for `partial` (How many below the max, or a bank other than All); the
+  pool is the short version's own questions, so picking that version
+  alone never trips it. check-behaviour 33 asserts the pop-up's short
+  choice says hundo and the sheet says nothing, alone and in a mix.
+- check-behaviour 26b/35b assert the shape: no count on All questions,
+  a Most missed caption of at most 45 characters with no info dot,
+  Shuffle and Hide answers outside the fold, the fold holding only the
+  timer and called Timer.
+- **The Timer card goes green when a timer is on** ("I need this to go
+  green when you change it") — the same green as the switch inside it,
+  and the timer's pill in the top box with it. `.sect.is-set`, toggled
+  in `refresh()` beside the state text. check-behaviour 35b.
+- **Gold's four-point flare has to clear its corona.** "Why do I feel
+  like the gold symbol is missing that star thing ... how platinum has?"
+  It was there: a 34-unit pale-gold flare inside a 42-unit pale-gold
+  corona, so its tips read as one more tongue. A white flare of its own
+  now reaches to 49, crisp against the dark; the climb (section 34)
+  still passes (Gold light 12.4 → 14.2, under Platinum's 15.8).
+- **Lag going to Home: stop redrawing what has not changed.** "The
+  screen has some lag when in the unit selection screen and hit home."
+  Profiled at 4x CPU throttle (`/tmp`-style: CDP `Profiler` round a
+  scripted tap), the tap was a ~200ms task; the JS part of it was
+  147ms, and most of that was work repeated identically on every
+  visit: `updateHeaderTitle()` and `syncBottomTabAvatar()` each
+  rebuilding the same character, and Home's seven rank emblems built
+  from scratch. Now: the header and the Profile tab skip the rebuild
+  when `dataset.char` already matches; Home's emblems come from
+  `homeRankEmblem()`, which reuses the previous node once the old Home
+  has let go of it (`!isConnected`); and **every character is drawn
+  once per session and stamped after that** — `_avatarMarkup` keeps the
+  first build's markup split on its gradient-id suffix and each later
+  call parses it with a fresh suffix. Checked pixel-for-pixel against a
+  fresh draw for every character (the only differences were the same
+  ones two fresh draws show at those positions). The characters are
+  also warmed in idle slots from 6s after launch, so the first visit to
+  Ranks or the leaderboard gets stamped copies too. JS on the Home tap
+  147 → 35ms; Ranks' second visit 704 → 462ms. check-behaviour 49
+  counts redraws on a return to Home (0 and 0; 249 does 7 and 2).
+  **Not fixed, and worth knowing:** Ranks' steady state is ~80ms a frame
+  at 4x (style + layout + paint every frame from its animations) and was
+  the same on 249 — a separate job.

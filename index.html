@@ -6029,7 +6029,7 @@
        2px this had: that left 2px of gap above the knob but 4.4px
        below it, a real, measurable 2.4px asymmetry, not just a
        perception issue. */
-    content:""; position:absolute; top:3.2px; left:2px;
+    content:""; position:absolute; top:3.2px; left:3.2px;
     width:1.1rem; height:1.1rem; border-radius:50%; background:#fff;
     box-shadow:0 1px 3px rgba(0,0,0,.25);
     transition:transform .2s cubic-bezier(.34,1.56,.64,1);
@@ -11442,6 +11442,14 @@
      the sun's corona turns against itself and its flare flickers,
      the binary swings, the comet streams, the galaxy turns, and in the
      Supernova everything moves at once.
+     BUILD 248: "some of them are animated some aren't". They all were,
+     on paper - and on the road map Silver and Gold barely moved, because
+     their motion was on their faintest lines or on a twelve-fold corona
+     turning onto itself. Motion is measured as it is SEEN now
+     (check-behaviour 45): Silver's whole disc breathes, Gold's world
+     orbits and its corona swells, Platinum's pair rocks faster, and the
+     flares in each rank's reward chips (.rankmap-giftav) and the Rank
+     hero's next-rank chip animate too.
      Only where an emblem is a thing you LOOK AT - Home's orbit, the road
      map, the Profile plate, the Rank hero, the rank-up spotlight and
      banner. The leaderboard's column of them and the faint watermarks
@@ -11472,11 +11480,19 @@
     .rank-emblem-svg .rk-spin{ animation-name:rk-turn; animation-duration:40s; animation-timing-function:linear; animation-direction:normal; }
     .rank-emblem-svg .rk-flare{ animation-name:rk-flare; animation-duration:2.2s; }
     .rank-emblem-svg .rk-shock{ animation-name:rk-shock; animation-duration:2.8s; }
+    .rank-emblem-svg .rk-turn.rk-quick{ animation-duration:26s; }
+    .rank-emblem-svg .rk-turn.rk-back.rk-quick{ animation-duration:34s; }
+    .rank-emblem-svg .rk-spin.rk-quick{ animation-duration:22s; }
+    .rank-emblem-svg .rk-swing.rk-quick{ animation-duration:5s; }
+    /* Gold's world going round its sun (build 250): the same path twice,
+       the front copy only showing on the near half of the orbit */
+    .rank-emblem-svg .rk-orbit{ animation-name:rk-orbit; animation-duration:9s; animation-timing-function:linear; animation-direction:normal; }
+    .rank-emblem-svg .rk-orbit-front{ animation-name:rk-orbit-front; animation-duration:9s; animation-timing-function:linear; animation-direction:normal; }
     .rank-emblem-svg .rk-d2{ animation-delay:-1.1s; }
     .rank-emblem-svg .rk-d3{ animation-delay:-2.2s; }
     /* Everywhere else - the leaderboard column, the watermarks, the
        little ones in reward chips - an emblem holds still. */
-    .rank-emblem-svg:not(:is(.cosmic-badge-rank, .rankmap-node, .profile-rankcoin, .rankhero-art, .rs-morph-to, .tierup-banner-icon, .rk-live) .rank-emblem-svg) .rk-a{ animation:none; }
+    .rank-emblem-svg:not(:is(.cosmic-badge-rank, .rankmap-node, .profile-rankcoin, .rankhero-art, .rankhero-nextemb, .rankmap-giftav, .rs-morph-to, .tierup-banner-icon, .rk-live) .rank-emblem-svg) .rk-a{ animation:none; }
   }
   @keyframes rk-breathe{ from{ opacity:.72; transform:scale(.93); } to{ opacity:1; transform:scale(1.05); } }
   @keyframes rk-twinkle{ from{ transform:scale(.7); opacity:.6; } to{ transform:scale(1.15); opacity:1; } }
@@ -11488,6 +11504,10 @@
   @keyframes rk-drift{ from{ transform:translate(-1.6px, 1.2px); } to{ transform:translate(1.6px, -1.2px); } }
   @keyframes rk-tail{ from{ transform:scale(.92); opacity:.82; } to{ transform:scale(1.05); opacity:1; } }
   @keyframes rk-flare{ from{ transform:scale(.86, .9); opacity:.6; } to{ transform:scale(1.1, 1.06); opacity:1; } }
+  /* 24 points round Gold's orbit (rx 50, ry 14, tilted -16deg, from its rest
+     point at 120deg), as offsets from where the world is drawn */
+  @keyframes rk-orbit{ 0%{transform:translate(0px,0px)} 4.17%{transform:translate(-10.6px,.7px)} 8.33%{transform:translate(-19px,.1px)} 12.5%{transform:translate(-24.7px,-1.8px)} 16.67%{transform:translate(-27.4px,-4.8px)} 20.83%{transform:translate(-26.7px,-8.7px)} 25%{transform:translate(-22.9px,-13.3px)} 29.17%{transform:translate(-16px,-18.3px)} 33.33%{transform:translate(-6.7px,-23.3px)} 37.5%{transform:translate(4.5px,-28px)} 41.67%{transform:translate(16.8px,-32px)} 45.83%{transform:translate(29.4px,-35.1px)} 50%{transform:translate(41.4px,-37.1px)} 54.17%{transform:translate(51.9px,-37.8px)} 58.33%{transform:translate(60.4px,-37.2px)} 62.5%{transform:translate(66.1px,-35.3px)} 66.67%{transform:translate(68.8px,-32.3px)} 70.83%{transform:translate(68.1px,-28.4px)} 75%{transform:translate(64.2px,-23.8px)} 79.17%{transform:translate(57.4px,-18.8px)} 83.33%{transform:translate(48.1px,-13.8px)} 87.5%{transform:translate(36.9px,-9.1px)} 91.67%{transform:translate(24.5px,-5.1px)} 95.83%{transform:translate(12px,-2px)} 100%{transform:translate(0px,0px)} }
+  @keyframes rk-orbit-front{ 0%{transform:translate(0px,0px);opacity:1} 4.17%{transform:translate(-10.6px,.7px);opacity:1} 8.33%{transform:translate(-19px,.1px);opacity:1} 12.5%{transform:translate(-24.7px,-1.8px);opacity:1} 16.67%{transform:translate(-27.4px,-4.8px);opacity:1} 20.83%{transform:translate(-26.7px,-8.7px);opacity:0} 62.5%{transform:translate(66.1px,-35.3px);opacity:0} 25%{transform:translate(-22.9px,-13.3px)} 29.17%{transform:translate(-16px,-18.3px)} 33.33%{transform:translate(-6.7px,-23.3px)} 37.5%{transform:translate(4.5px,-28px)} 41.67%{transform:translate(16.8px,-32px)} 45.83%{transform:translate(29.4px,-35.1px)} 50%{transform:translate(41.4px,-37.1px)} 54.17%{transform:translate(51.9px,-37.8px)} 58.33%{transform:translate(60.4px,-37.2px)} 66.67%{transform:translate(68.8px,-32.3px);opacity:1} 70.83%{transform:translate(68.1px,-28.4px)} 75%{transform:translate(64.2px,-23.8px)} 79.17%{transform:translate(57.4px,-18.8px)} 83.33%{transform:translate(48.1px,-13.8px)} 87.5%{transform:translate(36.9px,-9.1px)} 91.67%{transform:translate(24.5px,-5.1px)} 95.83%{transform:translate(12px,-2px)} 100%{transform:translate(0px,0px);opacity:1} }
   @keyframes rk-shock{ from{ transform:scale(.9); opacity:1; } to{ transform:scale(1.1); opacity:.45; } }
   [data-reduce-motion="true"] .rank-emblem-svg .rk-a{ animation:none !important; }
   .rankmap-stop.is-locked .rankmap-node{ background:#0C0F14; border-color:rgba(255,255,255,.14); box-shadow:none; }
@@ -13874,6 +13894,17 @@
   /* The top box's tags. */
   .sheet-summary-tags{ display:flex; flex-wrap:wrap; gap:.3rem; margin-top:.55rem; }
   .sheet-summary-tags:empty{ display:none; }
+  /* build 250: the settings row is a full-width line of its own under
+     the unit names, each setting a word with a small blue icon */
+  .unitoptions-modal-sheet .sheet-summary-tags{ flex:0 0 100%; gap:.35rem; margin-top:.65rem; }
+  .unitoptions-modal-sheet .sheet-tag{
+    display:inline-flex; align-items:center; gap:.32rem;
+    padding:.26rem .62rem .26rem .5rem; font-size:.72rem; font-weight:700; letter-spacing:.01em;
+    color:rgba(255,255,255,.9); background:rgba(0,0,0,.18); border:1px solid rgba(255,255,255,.09);
+  }
+  .unitoptions-modal-sheet .sheet-tag svg{ width:.85rem; height:.85rem; flex:none; color:#6FBEFF; }
+  .unitoptions-modal-sheet .sheet-tag.is-bank{ color:#fff; background:linear-gradient(180deg, #5AB4FF, #3D8BFF); border-color:transparent; }
+  .unitoptions-modal-sheet .sheet-tag.is-bank svg{ color:#fff; }
   .sheet-tag{ padding:.2rem .55rem; border-radius:999px; font-size:.7rem; font-weight:700;
     color:rgba(255,255,255,.82); background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.08); }
   .sheet-tag.is-bank{ color:#0B0D10; background:#FFD7C9; border-color:transparent; }
@@ -13902,6 +13933,115 @@
     margin-left:auto; margin-right:.9rem; font-size:.8rem; font-weight:700; letter-spacing:0;
     text-transform:none; color:var(--soft);
   }
+  /* ---- BUILD 250: EVERY PART OF THE SHEET IS ITS OWN THING ----
+     "The top of the start menu options, that stuff blends together, the
+     whole menu kinda does." Measured, it did: the sheet was 56% opaque,
+     so the unit screen's own hint text showed through under the handle,
+     and every surface on it was the same 5.5% white. The sheet is solid
+     now and each control group is a card with its label inside it.
+     Then, on the first pass of that: the blue tint on the top box and the
+     near-black track behind the bank switch were both "not the best
+     look", the slider's blue did not match the selected choice's, the
+     Timer bar was a different colour from the cards, the All button was
+     flat beside a 3D Begin, and a switch that was on stopped short of
+     its right edge. So: ONE BLUE (#5AB4FF to #3D8BFF, the slider's own
+     fill) for everything that is "on" - the selected bank, the slider,
+     the thumb's halo - neutral raised cards for everything else, the top
+     box the same card a step lighter, and the All button raised like
+     Begin. */
+  [data-layout="modern"] .unitoptions-modal-sheet{
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02) 40%, rgba(255,255,255,0)),
+      linear-gradient(#11141A, #11141A);
+  }
+  .unitoptions-modal-sheet .optionsmodal-body > .sect{
+    padding:.8rem .9rem .9rem; border-radius:16px; margin-bottom:.75rem;
+    background:linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.05));
+    border:1px solid rgba(255,255,255,.11);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.07), 0 2px 8px rgba(0,0,0,.22);
+  }
+  .unitoptions-modal-sheet .optionsmodal-body > .sect .slab{ color:rgba(255,255,255,.7); }
+  /* the summary: the same card, a step lighter and bigger type - it is
+     what you are about to start, not a control */
+  .unitoptions-modal-sheet .sheet-summary{
+    background:linear-gradient(180deg, rgba(255,255,255,.13), rgba(255,255,255,.075));
+    border-color:rgba(255,255,255,.16);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 2px 10px rgba(0,0,0,.25);
+    margin-bottom:.75rem;
+  }
+  .unitoptions-modal-sheet .sheet-summary-mode{ font-size:1.2rem; font-weight:800; color:#fff; }
+  .unitoptions-modal-sheet .sheet-summary-line{ color:#fff; font-weight:700; }
+  .unitoptions-modal-sheet .sheet-summary-units{ color:rgba(255,255,255,.66); border-top-color:rgba(255,255,255,.1); }
+  /* the bank switch: no dark well, and the choice that is on is the blue */
+  .unitoptions-modal-sheet .optionsmodal-body > .sect .bank-opts{
+    background:rgba(255,255,255,.045); border-color:rgba(255,255,255,.08);
+  }
+  .unitoptions-modal-sheet .bank-opt.on,
+  .unitoptions-modal-sheet .bank-opt[data-value="recent"].on,
+  .unitoptions-modal-sheet .bank-opt[data-value="flagged"].on{
+    background:linear-gradient(180deg, #5AB4FF, #3D8BFF); border-color:transparent;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.35), 0 2px 0 #2A64C0, 0 4px 10px rgba(61,139,255,.3);
+  }
+  .unitoptions-modal-sheet .bank-opt.on .bank-name,
+  .unitoptions-modal-sheet .bank-opt.on .bank-count{ color:#fff; }
+  /* the slider: the same blue, and a thumb with some body to it */
+  .unitoptions-modal-sheet .slider::-webkit-slider-runnable-track{
+    background:linear-gradient(90deg, #5AB4FF 0%, #3D8BFF var(--fill, 0%), rgba(255,255,255,.12) var(--fill, 0%));
+  }
+  .unitoptions-modal-sheet .slider::-moz-range-track{
+    background:linear-gradient(90deg, #5AB4FF 0%, #3D8BFF var(--fill, 0%), rgba(255,255,255,.12) var(--fill, 0%));
+  }
+  .unitoptions-modal-sheet .slider::-webkit-slider-thumb{
+    width:1.75rem; height:1.75rem; margin-top:-.65rem;
+    background:radial-gradient(circle at 50% 30%, #FFFFFF 0%, #F2F5FA 55%, #D9E0EA 100%);
+    box-shadow:0 0 0 4px rgba(90,180,255,.28), 0 2px 0 rgba(0,0,0,.18), 0 4px 10px rgba(0,0,0,.45);
+  }
+  .unitoptions-modal-sheet .slider::-moz-range-thumb{
+    background:radial-gradient(circle at 50% 30%, #FFFFFF 0%, #F2F5FA 55%, #D9E0EA 100%);
+    box-shadow:0 0 0 4px rgba(90,180,255,.28), 0 2px 0 rgba(0,0,0,.18), 0 4px 10px rgba(0,0,0,.45);
+  }
+  .unitoptions-modal-sheet .slider:active::-webkit-slider-thumb{
+    box-shadow:0 0 0 7px rgba(90,180,255,.34), 0 2px 0 rgba(0,0,0,.18), 0 4px 10px rgba(0,0,0,.45);
+  }
+  /* All: raised, like Begin */
+  .unitoptions-modal-sheet .slider-allbtn{
+    color:#fff; background:linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,.09));
+    border:1px solid rgba(255,255,255,.18);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.25), 0 3px 0 rgba(0,0,0,.45), 0 5px 10px rgba(0,0,0,.3);
+    transform:translateY(-1px); transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .unitoptions-modal-sheet .slider-allbtn.on{
+    color:#0B1220; background:linear-gradient(180deg, #FFFFFF, #DCE3EC); border-color:transparent;
+    box-shadow:inset 0 1px 0 #fff, 0 3px 0 #8E9AAB, 0 5px 12px rgba(0,0,0,.35);
+  }
+  .unitoptions-modal-sheet .slider-allbtn:active{
+    transform:translateY(2px); box-shadow:inset 0 1px 0 rgba(255,255,255,.25), 0 0 0 rgba(0,0,0,.45), 0 2px 4px rgba(0,0,0,.3);
+  }
+  /* the Timer card: the same card as the rest, the bar its header row,
+     and what it opens inside it */
+  .unitoptions-modal-sheet .optionsmodal-body > .sect:has(> .more-toggle){ padding:0; }
+  [data-layout="modern"] .unitoptions-modal-sheet .optionsmodal-body > .sect > .more-toggle,
+  [data-theme="dark"][data-layout="modern"] .unitoptions-modal-sheet .optionsmodal-body > .sect > .more-toggle{
+    background:transparent !important; border:0 !important; box-shadow:none !important; border-radius:16px;
+    -webkit-backdrop-filter:none; backdrop-filter:none;
+  }
+  .unitoptions-modal-sheet .optionsmodal-body > .sect > .more-body.open{ margin-top:0; }
+  .unitoptions-modal-sheet .optionsmodal-body > .sect > .more-body > .more-body-inner{ padding:0 .9rem; }
+  .unitoptions-modal-sheet .optionsmodal-body > .sect > .more-body.open > .more-body-inner{
+    padding:.2rem .9rem .8rem; border-top:1px solid rgba(255,255,255,.1);
+  }
+  .unitoptions-modal-sheet .optionsmodal-body > .sect .timer-sect{ margin-top:0; }
+  /* a timer that is on: the card goes green, like the switch inside it */
+  .unitoptions-modal-sheet .optionsmodal-body > .sect.is-set{
+    background:linear-gradient(180deg, rgba(52,199,89,.16), rgba(52,199,89,.07));
+    border-color:rgba(52,199,89,.55);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.07), 0 0 0 1px rgba(52,199,89,.12), 0 2px 10px rgba(52,199,89,.14);
+    transition:background .25s ease, border-color .25s ease, box-shadow .25s ease;
+  }
+  .unitoptions-modal-sheet .optionsmodal-body > .sect.is-set .more-toggle-state{ color:#4ADE80; }
+  .unitoptions-modal-sheet .sheet-tag.is-set{ color:#fff; background:rgba(52,199,89,.22); border-color:rgba(52,199,89,.55); }
+  .unitoptions-modal-sheet .sheet-tag.is-set svg{ color:#4ADE80; }
+  .unitoptions-modal-sheet .opt-tiles-sect .opt-rows .opt{ padding:.3rem 0; }
   /* On a tablet the sheet spans the whole 834px and a single column of
      full-width controls stretched across it reads thin and unconsidered.
      The surface still reaches both edges - it is a bottom sheet - but
@@ -14085,7 +14225,6 @@
      the nebula's centre - the markup's origin), since turning alone can
      never show on a ring. Every loop starts and ends on one frame. */
   .bnr-adept_rank .bn-spin{ animation-duration:30s; }
-  .bnr-elite_rank .bn-spin{ animation-duration:30s; }
   .bnr .bn-breathe{ animation:bn-breathe 5s ease-in-out infinite; }
   @keyframes bn-breathe{ 0%,100%{ transform:scale(1); opacity:1; } 50%{ transform:scale(1.1); opacity:.82; } }
   /* Thunderhead's big strike, every other one: the same shape as
@@ -31361,8 +31500,50 @@ const RETIRED_CHARACTER_TO = { queen: "wizard", dragon: "wizard",
   pirate: "valkyrie", scholar: "hacker", wolf: "timekeeper",
   /* build 245: SWAT removed entirely, nobody keeps it. */
   swat: "ninja" };
+/* EACH CHARACTER IS DRAWN ONCE PER SESSION, THEN STAMPED (build 250).
+   Characters are built node by node, and a screen like Ranks or the
+   leaderboard asks for a dozen of them - profiled at 4x CPU throttle,
+   111ms of the 316ms tap on Ranks was this function. The drawing is a
+   pure function of the id apart from its gradient-id suffix, so the
+   first build is kept as markup split on that suffix, and every later
+   one is the same markup with a fresh suffix, parsed natively. Same
+   pixels (checked character by character), unique ids as before. */
+const _avatarMarkup = {};
 function buildAvatarCharSVG(charId){
   charId = RETIRED_CHARACTER_TO[charId] || charId;
+  const hit = _avatarMarkup[charId];
+  if(hit){
+    const tpl = document.createElement("template");
+    tpl.innerHTML = hit.join(charId + "-" + Math.random().toString(36).slice(2, 9));
+    const fresh = tpl.content.firstElementChild;
+    if(fresh) return document.adoptNode(fresh);
+  }
+  const svg = buildAvatarCharSVGFresh(charId);
+  if(svg && svg.__uid){
+    try { _avatarMarkup[charId] = svg.outerHTML.split(svg.__uid); } catch(e){}
+  }
+  return svg;
+}
+/* ...and drawn ahead of time, in idle moments after launch, so the FIRST
+   visit to Ranks or the leaderboard gets the stamped copies too rather
+   than paying for every character at the moment of the tap. One per idle
+   slot; nothing here runs while anything else wants the thread. */
+(function warmAvatarMarkup(){
+  const idle = window.requestIdleCallback
+    ? f => window.requestIdleCallback(f, { timeout: 4000 })
+    : f => setTimeout(() => f({ timeRemaining: () => 8 }), 250);
+  let queue = null;
+  const step = dl => {
+    if(!queue) queue = (typeof AVATAR_CHARACTERS !== "undefined" ? AVATAR_CHARACTERS : []).map(c => c.id);
+    while(queue.length && dl.timeRemaining() > 4){
+      const id = queue.shift();
+      if(!_avatarMarkup[RETIRED_CHARACTER_TO[id] || id]){ try { buildAvatarCharSVG(id); } catch(e){} }
+    }
+    if(queue.length) idle(step);
+  };
+  setTimeout(() => idle(step), 6000);
+})();
+function buildAvatarCharSVGFresh(charId){
   const svg = drawAvatarCharSVG(charId);
   const k = AVATAR_ART_SCALE[charId];
   if(!svg || !k) return svg;
@@ -31391,6 +31572,7 @@ function drawAvatarCharSVG(charId){
     return el;
   };
   const uid = charId + "-" + Math.random().toString(36).slice(2, 9);
+  svg.__uid = uid;
   const defs = document.createElementNS(svgNS, "defs");
   svg.appendChild(defs);
   let headGradCount = 0;
@@ -34412,10 +34594,20 @@ function drawAvatarCharSVG(charId){
 
 function updateHeaderTitle(){
   titleEl.textContent = "Nova";
+  /* Called on every screen change; the character only needs redrawing
+     when it is a different one (build 250 - it was two full character
+     builds per navigation, ~50ms of the lag going to Home at 4x). */
+  if(store.avatarChar && avatarEl.dataset.char === store.avatarChar && avatarEl.firstElementChild){
+    avatarEl.hidden = false;
+    syncBottomTabAvatar();
+    return;
+  }
+  delete avatarEl.dataset.char;
   if(store.avatarChar){
     const svg = buildAvatarCharSVG(store.avatarChar);
     if(svg){
       avatarEl.replaceChildren(svg);
+      avatarEl.dataset.char = store.avatarChar;
       avatarEl.classList.add("has-char");
     } else {
       avatarEl.textContent = getInitials(store.firstName);
@@ -34437,9 +34629,11 @@ function syncBottomTabAvatar(){
   const tabIcon = document.querySelector("#bottomtab-profile .bottomtab-icon");
   if(!tabIcon) return;
   tabIcon.classList.add("bottomtab-icon-avatar");
+  if(store.avatarChar && tabIcon.dataset.char === store.avatarChar && tabIcon.firstElementChild) return;
+  delete tabIcon.dataset.char;
   if(store.avatarChar){
     const svg = buildAvatarCharSVG(store.avatarChar);
-    if(svg){ tabIcon.replaceChildren(svg); return; }
+    if(svg){ tabIcon.replaceChildren(svg); tabIcon.dataset.char = store.avatarChar; return; }
   }
   tabIcon.textContent = getInitials(store.firstName) || "";
 }
@@ -40057,8 +40251,11 @@ const BANNER_ART = {
       /* Lens streaks, never the same length both ways. */
       '<ellipse cx="240" cy="90" rx="236" ry="1.6" fill="url(#' + u + 'hs)" opacity=".85"/>' +
       '<ellipse cx="240" cy="90" rx="1.3" ry="74" fill="url(#' + u + 'vs)" opacity=".7"/>' +
+      /* the dark heart, as on the emblem (build 250): a jagged black star
+         inside the blast - the shadow between the shock and the core */
+      '<path d="M253.0 61.1 L250.6 80.2 L271.4 78.0 L255.0 90.0 L271.4 102.0 L250.6 99.8 L253.0 118.9 L240.0 103.8 L227.0 118.9 L229.4 99.8 L208.6 102.0 L225.0 90.0 L208.6 78.0 L229.4 80.2 L227.0 61.1 L240.0 76.2Z" fill="#000000" stroke="#FF7A5A" stroke-width="1.2" stroke-linejoin="round" opacity=".95"/>' +
       '<path d="M240 58 Q242 88 272 90 Q242 92 240 118 Q238 92 212 90 Q238 88 240 58Z" fill="#FFFFFF" opacity=".95" class="bn-pulse" style="animation-duration:3.2s"/>' +
-      '<circle cx="240" cy="90" r="15" fill="url(#' + u + 'core)"/>' +
+      '<circle cx="240" cy="90" r="12" fill="url(#' + u + 'core)"/>' +
       '<circle cx="240" cy="90" r="5" fill="#FFFFFF"/>' +
       '<rect width="480" height="180" fill="#FF4A2A" fill-opacity=".22" class="bn-spike" style="' + ev + '" opacity="0"/>' +
       '<ellipse class="bn-blast" style="animation-duration:6.4s;animation-delay:-5.25s" cx="240" cy="90" rx="250" ry="150" fill="url(#' + u + 'ring)" opacity="0"/>' +
@@ -40069,19 +40266,100 @@ const BANNER_ART = {
       '</g>';
   },
 
-  /* SAPPHIRE - the rank before Amethyst, whose emblem is a GALAXY (since
-     build 245; this banner was a comet until the emblems were re-dealt -
-     "ensure the banners match"). The first of the three space banners,
-     and the first rung of its ladder, so it is the scene, still: a
-     spiral galaxy seen at a tilt in deep sapphire space - a blue-white
-     star-bright core with the crisp four-point flare the emblem has, two
-     luminous blue arms winding out of it strung with aqua star-forming
-     knots and picked out by dark dust lanes, other galaxies far off.
-
-     The disc is built face-on and tilted by its parent group, so the arms
-     can turn in their own plane wherever banners move (a full rotation of
-     the face-on disc, seamless by definition). */
+  /* SAPPHIRE - the first of the final three, whose emblem is a spiral
+     GALAXY (build 250). The galaxy scene below is Sapphire's own, in its
+     own blue. */
   adept_rank(u){
+    return BANNER_ART.galaxy(u);
+  },
+
+  /* AMETHYST - the rank after Sapphire's galaxy, whose emblem is the
+     BLACK HOLE at a galaxy's heart, feeding (build 250). The scene: deep
+     violet space; a blazing disc of gas seen nearly edge-on, its near
+     side crossing in front of the shadow and its far side bent up over
+     the top by the hole's gravity; a thin ring of light hugging the
+     shadow; and two jets fired straight out of the poles. The disc's
+     knots glint, the jets pulse, and every few seconds the whole thing
+     flares and the frame jolts - the same beat as its two siblings. */
+  elite_rank(u){
+    const rnd = bnRand(8181);
+    const CX = 240, CY = 92, TILT = -8;
+    let gas = "";
+    for(let i = 0; i < 40; i++){
+      const side = i % 2, x = side ? 390 + rnd() * 100 : -10 + rnd() * 110, y = side ? 100 + rnd() * 90 : -5 + rnd() * 90, r = 8 + rnd() * 16;
+      gas += '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(r) + '" fill="url(#' + u + (i % 3 ? 'g1' : 'g2') + ')" opacity="' + bnF(0.2 + rnd() * 0.35) + '"/>';
+    }
+    /* knots of hot gas strung round the disc */
+    let knots = "";
+    for(let i = 0; i < 34; i++){
+      const a = rnd() * Math.PI * 2, rr = 70 + rnd() * 130;
+      const x = CX + Math.cos(a) * rr, y = CY + Math.sin(a) * rr * 0.17;
+      knots += '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(0.9 + rnd() * 1.6) + '" fill="' + (rnd() < 0.5 ? "#FFE6FA" : "#F2E6FF") + '" opacity="' + bnF(0.5 + rnd() * 0.5) + '"' +
+        (rnd() < 0.5 ? ' class="bn-twinkle" style="animation-delay:-' + bnF(rnd() * 4) + 's"' : '') + '/>';
+    }
+    const spark = (x, y, h, v) => 'M' + x + ' ' + bnF(y - v) + ' Q' + bnF(x + h * 0.06) + ' ' + bnF(y - v * 0.06) + ' ' + bnF(x + h) + ' ' + y +
+      ' Q' + bnF(x + h * 0.06) + ' ' + bnF(y + v * 0.06) + ' ' + x + ' ' + bnF(y + v) + ' Q' + bnF(x - h * 0.06) + ' ' + bnF(y + v * 0.06) + ' ' + bnF(x - h) + ' ' + y +
+      ' Q' + bnF(x - h * 0.06) + ' ' + bnF(y - v * 0.06) + ' ' + x + ' ' + bnF(y - v) + 'Z';
+    const ev = 'animation-duration:7.2s;animation-delay:-5.6s';
+    const tilt = 'rotate(' + TILT + ' ' + CX + ' ' + CY + ')';
+    const disc = '<ellipse cx="' + CX + '" cy="' + CY + '" rx="215" ry="22" fill="url(#' + u + 'disc)"/>';
+    const jet = (dir) => '<g transform="rotate(' + (TILT - 4) + ' ' + CX + ' ' + CY + ')">' +
+      '<ellipse cx="' + CX + '" cy="' + (CY + dir * 100) + '" rx="9" ry="100" fill="url(#' + u + (dir < 0 ? 'jetU' : 'jetD') + ')" class="bn-pulse" style="animation-duration:2.6s"/>' +
+      '<ellipse cx="' + CX + '" cy="' + (CY + dir * 90) + '" rx="2.6" ry="90" fill="url(#' + u + (dir < 0 ? 'coreU' : 'coreD') + ')"/></g>';
+    return '<defs>' +
+      bnRad(u + "sp", [[0, "#1F0A3C"], [0.5, "#0C0420"], [1, "#030108"]], "50%", "50%", "72%") +
+      bnRad(u + "n1", [[0, "#7A2BC8", 0.5], [0.6, "#3A1573", 0.22], [1, "#1A0830", 0]]) +
+      bnRad(u + "n2", [[0, "#D24BD8", 0.34], [0.6, "#7A1F8A", 0.12], [1, "#3A0A40", 0]]) +
+      bnRad(u + "g1", [[0, "#A855F7", 0.7], [0.5, "#7A2BC8", 0.28], [1, "#7A2BC8", 0]]) +
+      bnRad(u + "g2", [[0, "#E060C8", 0.6], [0.5, "#9A2A8A", 0.25], [1, "#9A2A8A", 0]]) +
+      bnRad(u + "halo", [[0, "#C98BFF", 0.55], [0.4, "#7A2BC8", 0.25], [1, "#3A1573", 0]]) +
+      bnRad(u + "disc", [[0, "#FFE6FA", 0], [0.2, "#FFE6FA", 0], [0.23, "#FFFFFF", 1], [0.32, "#FFD9F7", 0.95], [0.55, "#D4A8FF", 0.7], [0.8, "#A855F7", 0.35], [1, "#6A2BC8", 0]]) +
+      bnRad(u + "ring", [[0.86, "#FFFFFF", 0], [0.92, "#FFFFFF", 1], [0.97, "#E0C4FF", 0.6], [1, "#A855F7", 0]]) +
+      bnRad(u + "glow", [[0, "#FFFFFF", 0.9], [0.3, "#F6ECFF", 0.6], [0.7, "#A855F7", 0.15], [1, "#A855F7", 0]]) +
+      bnRad(u + "flare", [[0, "#FFFFFF"], [0.15, "#F6ECFF", 0.9], [0.4, "#D4A8FF", 0.4], [0.7, "#A855F7", 0.14], [1, "#A855F7", 0]]) +
+      bnRad(u + "wave", [[0, "#E0C4FF", 0], [0.72, "#E0C4FF", 0], [0.85, "#D4A8FF", 0.35], [0.94, "#FBF4FF", 0.85], [1, "#A855F7", 0]]) +
+      bnLin(u + "jetU", [[0, "#A855F7", 0], [0.5, "#D4A8FF", 0.55], [1, "#FBF4FF", 0.9]], 0, 0, 0, 1) +
+      bnLin(u + "jetD", [[0, "#FBF4FF", 0.9], [0.5, "#D4A8FF", 0.55], [1, "#A855F7", 0]], 0, 0, 0, 1) +
+      bnLin(u + "coreU", [[0, "#FFFFFF", 0], [1, "#FFFFFF", 1]], 0, 0, 0, 1) +
+      bnLin(u + "coreD", [[0, "#FFFFFF", 1], [1, "#FFFFFF", 0]], 0, 0, 0, 1) +
+      bnLin(u + "hs", [[0, "#A855F7", 0], [0.5, "#FBF4FF"], [1, "#A855F7", 0]], 0, 0, 1, 0) +
+      '<clipPath id="' + u + 'front"><rect x="-20" y="' + (CY + 1) + '" width="520" height="120" transform="' + tilt + '"/></clipPath>' +
+      '</defs>' +
+      '<g class="bn-jolt" style="' + ev + '">' +
+      '<rect x="-10" y="-10" width="500" height="200" fill="url(#' + u + 'sp)"/>' +
+      bnStars(rnd, 130, 180, true) +
+      '<g class="bn-drift" style="animation-duration:28s">' +
+      '<ellipse cx="70" cy="36" rx="140" ry="54" fill="url(#' + u + 'n2)" transform="rotate(-10 70 36)"/>' +
+      '<ellipse cx="420" cy="150" rx="160" ry="58" fill="url(#' + u + 'n1)" transform="rotate(8 420 150)"/>' +
+      '<ellipse cx="50" cy="160" rx="110" ry="42" fill="url(#' + u + 'n1)"/>' +
+      '</g>' + gas +
+      '<ellipse cx="' + CX + '" cy="' + CY + '" rx="250" ry="120" fill="url(#' + u + 'halo)"/>' +
+      jet(-1) + jet(1) +
+      /* the far half of the disc, behind the shadow */
+      '<g transform="' + tilt + '" class="bn-breathe">' + disc + '</g>' + knots +
+      /* the far side, bent up over the top by the hole */
+      '<path d="M' + (CX - 50) + ' ' + (CY + 2) + ' A50 50 0 0 1 ' + (CX + 50) + ' ' + (CY + 2) + '" fill="none" stroke="#D4A8FF" stroke-width="12" opacity=".45" transform="' + tilt + '"/>' +
+      '<path d="M' + (CX - 46) + ' ' + (CY + 2) + ' A46 46 0 0 1 ' + (CX + 46) + ' ' + (CY + 2) + '" fill="none" stroke="#FFE6FA" stroke-width="4" opacity=".9" transform="' + tilt + '"/>' +
+      '<circle cx="' + CX + '" cy="' + CY + '" r="44" fill="url(#' + u + 'ring)"/>' +
+      '<circle cx="' + CX + '" cy="' + CY + '" r="38.5" fill="#030208"/>' +
+      /* the near half, across the front of the shadow */
+      '<g clip-path="url(#' + u + 'front)"><g transform="' + tilt + '" class="bn-breathe">' + disc + '</g></g>' +
+      '<ellipse cx="' + CX + '" cy="' + CY + '" rx="228" ry="1.3" fill="url(#' + u + 'hs)" opacity=".55" transform="' + tilt + '"/>' +
+      '<circle class="bn-blast" style="' + ev + '" cx="' + CX + '" cy="' + CY + '" r="150" fill="url(#' + u + 'wave)" opacity="0"/>' +
+      '<circle class="bn-spike" style="' + ev + '" cx="' + CX + '" cy="' + CY + '" r="90" fill="url(#' + u + 'flare)" opacity="0"/>' +
+      '<path class="bn-glint" style="animation-delay:-.8s" d="' + spark(92, 132, 5, 3.4) + '" fill="#FFD6F4"/>' +
+      '<path class="bn-glint" style="animation-delay:-2.9s" d="' + spark(404, 48, 4.6, 3.1) + '" fill="#E6C8FF"/>' +
+      '<path class="bn-glint" style="animation-delay:-1.9s" d="' + spark(334, 164, 3.6, 2.4) + '" fill="#FFD6F4"/>' +
+      '</g>';
+  },
+
+  /* THE GALAXY SCENE - Sapphire's banner (see adept_rank). A spiral galaxy seen at a tilt in deep
+     space - a star-bright core with the crisp four-point flare the emblem
+     has, two luminous arms winding out of it strung with star-forming
+     knots and picked out by dark dust lanes, other galaxies far off. The
+     disc is built face-on and tilted by its parent group, so the arms
+     turn in their own plane (a full rotation, seamless by definition). */
+  galaxy(u){
     const rnd = bnRand(4242);
     const CX = 240, CY = 90;
     const tilt = 'translate(' + CX + ' ' + CY + ') rotate(-10) scale(1 .46)';
@@ -40188,103 +40466,6 @@ const BANNER_ART = {
       '</g>';
   },
 
-  /* AMETHYST - the rank between Sapphire and Supernova, whose emblem is a
-     RING NEBULA (since build 245; this banner was a galaxy until the
-     emblems were re-dealt). The middle rung of the space ladder, so it
-     moves: a star near its end blowing off its shells, in amethyst - a
-     faint magenta outer halo from an earlier puff, the main shell thick
-     and knotted and brighter on one limb, a smaller pale inner shell at
-     another tilt, a dark hole, and in the middle the white-hot dwarf with
-     its sparkle and lens streaks. All of it GAS: soft clumps and soft
-     annuli, never a drawn rim, nothing radial - a ring of gas, not a
-     wheel.
-
-     The shells are built face-on and tilted by their parent group; the
-     main shell's clumps turn in their own plane (a full rotation,
-     seamless), and every few seconds the dwarf flares and a new shell is
-     thrown off, and the frame jolts. */
-  elite_rank(u){
-    const rnd = bnRand(8181);
-    const CX = 240, CY = 90;
-    const tilt = 'translate(' + CX + ' ' + CY + ') rotate(-14) scale(1 .74)';
-    /* the main shell: soft clumps round the ring, brighter on one limb */
-    let shell = "", halo = "", knots = "";
-    for(let i = 0; i < 96; i++){
-      const a = i / 96 * Math.PI * 2 + (rnd() - 0.5) * 0.05, rr = 84 + (rnd() - 0.5) * 16;
-      const lit = 0.5 + 0.5 * Math.cos(a - 2.6);
-      shell += '<circle cx="' + bnF(Math.cos(a) * rr) + '" cy="' + bnF(Math.sin(a) * rr) + '" r="' + bnF(9 + rnd() * 9) + '" fill="url(#' + u + (lit > 0.55 ? 's1' : 's2') + ')" opacity="' + bnF(0.3 + lit * 0.45 + rnd() * 0.15) + '"/>';
-      if(rnd() < 0.34){
-        knots += '<circle cx="' + bnF(Math.cos(a) * (rr + (rnd() - 0.5) * 10)) + '" cy="' + bnF(Math.sin(a) * (rr + (rnd() - 0.5) * 10)) + '" r="' + bnF(1 + rnd() * 1.8) + '" fill="' + (rnd() < 0.55 ? "#FFD6F4" : "#F2E6FF") + '" opacity="' + bnF(0.55 + rnd() * 0.45) + '"' +
-          (rnd() < 0.4 ? ' class="bn-twinkle" style="animation-delay:-' + bnF(rnd() * 4) + 's"' : '') + '/>';
-      }
-    }
-    /* the faint outer halo: an earlier shell, patchier and redder */
-    for(let i = 0; i < 44; i++){
-      const a = rnd() * Math.PI * 2, rr = 128 + (rnd() - 0.5) * 22;
-      halo += '<circle cx="' + bnF(Math.cos(a) * rr) + '" cy="' + bnF(Math.sin(a) * rr) + '" r="' + bnF(12 + rnd() * 14) + '" fill="url(#' + u + 'h1)" opacity="' + bnF(0.16 + rnd() * 0.26) + '"/>';
-    }
-    let gas = "";
-    for(let i = 0; i < 40; i++){
-      const side = i % 2, x = side ? 390 + rnd() * 100 : -10 + rnd() * 110, y = side ? 100 + rnd() * 90 : -5 + rnd() * 90, r = 8 + rnd() * 16;
-      gas += '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(r) + '" fill="url(#' + u + (i % 3 ? 'g1' : 'g2') + ')" opacity="' + bnF(0.2 + rnd() * 0.35) + '"/>';
-    }
-    const spark = (x, y, h, v) => 'M' + x + ' ' + bnF(y - v) + ' Q' + bnF(x + h * 0.06) + ' ' + bnF(y - v * 0.06) + ' ' + bnF(x + h) + ' ' + y +
-      ' Q' + bnF(x + h * 0.06) + ' ' + bnF(y + v * 0.06) + ' ' + x + ' ' + bnF(y + v) + ' Q' + bnF(x - h * 0.06) + ' ' + bnF(y + v * 0.06) + ' ' + bnF(x - h) + ' ' + y +
-      ' Q' + bnF(x - h * 0.06) + ' ' + bnF(y - v * 0.06) + ' ' + x + ' ' + bnF(y - v) + 'Z';
-    const ev = 'animation-duration:7.2s;animation-delay:-5.6s';
-    return '<defs>' +
-      bnRad(u + "sp", [[0, "#1F0A3C"], [0.5, "#0C0420"], [1, "#030108"]], "50%", "50%", "72%") +
-      bnRad(u + "n1", [[0, "#7A2BC8", 0.5], [0.6, "#3A1573", 0.22], [1, "#1A0830", 0]]) +
-      bnRad(u + "n2", [[0, "#D24BD8", 0.34], [0.6, "#7A1F8A", 0.12], [1, "#3A0A40", 0]]) +
-      bnRad(u + "n3", [[0, "#4B4BE0", 0.26], [1, "#1A1A60", 0]]) +
-      bnRad(u + "g1", [[0, "#A855F7", 0.7], [0.5, "#7A2BC8", 0.28], [1, "#7A2BC8", 0]]) +
-      bnRad(u + "g2", [[0, "#E060C8", 0.6], [0.5, "#9A2A8A", 0.25], [1, "#9A2A8A", 0]]) +
-      bnRad(u + "s1", [[0, "#F6ECFF", 0.9], [0.4, "#D4A8FF", 0.55], [1, "#A855F7", 0]]) +
-      bnRad(u + "s2", [[0, "#C98BFF", 0.75], [0.5, "#8B3FE0", 0.32], [1, "#6A2BC8", 0]]) +
-      bnRad(u + "h1", [[0, "#E060C8", 0.6], [0.5, "#9A2A8A", 0.22], [1, "#6A1F7A", 0]]) +
-      /* the shell's body as one soft annulus, dark in the middle */
-      bnRad(u + "ann", [[0, "#0A0418", 0.7], [0.5, "#1A0833", 0.55], [0.66, "#8B3FE0", 0.4], [0.8, "#E6CCFF", 0.55], [0.9, "#A855F7", 0.3], [1, "#6A2BC8", 0]]) +
-      bnRad(u + "inner", [[0, "#E6DDFF", 0], [0.62, "#E6DDFF", 0.1], [0.8, "#F2ECFF", 0.7], [0.9, "#C9B4FF", 0.35], [1, "#A855F7", 0]]) +
-      bnRad(u + "halo", [[0, "#A855F7", 0.34], [0.5, "#5A22A8", 0.14], [1, "#3A1573", 0]]) +
-      bnRad(u + "glow", [[0, "#FFFFFF"], [0.12, "#FBF4FF", 0.95], [0.3, "#E0C4FF", 0.55], [0.62, "#A855F7", 0.2], [1, "#A855F7", 0]]) +
-      bnRad(u + "core", [[0, "#FFFFFF"], [0.5, "#FFFFFF"], [0.75, "#F6ECFF", 0.85], [1, "#E0C4FF", 0]]) +
-      bnRad(u + "flare", [[0, "#FFFFFF"], [0.15, "#F6ECFF", 0.9], [0.4, "#D4A8FF", 0.4], [0.7, "#A855F7", 0.14], [1, "#A855F7", 0]]) +
-      bnRad(u + "wave", [[0, "#E0C4FF", 0], [0.72, "#E0C4FF", 0], [0.85, "#D4A8FF", 0.35], [0.94, "#FBF4FF", 0.85], [1, "#A855F7", 0]]) +
-      bnLin(u + "hs", [[0, "#A855F7", 0], [0.5, "#FBF4FF"], [1, "#A855F7", 0]], 0, 0, 1, 0) +
-      bnLin(u + "vs", [[0, "#A855F7", 0], [0.5, "#FBF4FF"], [1, "#A855F7", 0]], 0, 0, 0, 1) +
-      '</defs>' +
-      '<g class="bn-jolt" style="' + ev + '">' +
-      '<rect x="-10" y="-10" width="500" height="200" fill="url(#' + u + 'sp)"/>' +
-      bnStars(rnd, 130, 180, true) +
-      '<g class="bn-drift" style="animation-duration:28s">' +
-      '<ellipse cx="70" cy="36" rx="140" ry="54" fill="url(#' + u + 'n2)" transform="rotate(-10 70 36)"/>' +
-      '<ellipse cx="420" cy="150" rx="160" ry="58" fill="url(#' + u + 'n1)" transform="rotate(8 420 150)"/>' +
-      '<ellipse cx="430" cy="26" rx="120" ry="42" fill="url(#' + u + 'n3)"/>' +
-      '<ellipse cx="50" cy="160" rx="110" ry="42" fill="url(#' + u + 'n1)"/>' +
-      '</g>' + gas +
-      '<ellipse cx="' + CX + '" cy="' + CY + '" rx="250" ry="120" fill="url(#' + u + 'halo)"/>' +
-      '<g transform="' + tilt + '">' +
-      halo +
-      '<circle r="120" fill="url(#' + u + 'ann)" class="bn-breathe"/>' +
-      '<g class="bn-spin"><g class="bn-breathe">' + shell + knots + '</g></g>' +
-      /* the inner shell, at its own tilt */
-      '<ellipse rx="48" ry="30" fill="url(#' + u + 'inner)" transform="rotate(58)"/>' +
-      '<circle class="bn-blast" style="' + ev + '" r="150" fill="url(#' + u + 'wave)" opacity="0"/>' +
-      '</g>' +
-      /* the white dwarf */
-      '<circle cx="' + CX + '" cy="' + CY + '" r="34" fill="url(#' + u + 'glow)" class="bn-pulse" style="animation-duration:4.4s"/>' +
-      '<ellipse cx="' + CX + '" cy="' + CY + '" rx="210" ry="1.3" fill="url(#' + u + 'hs)" opacity=".6"/>' +
-      '<ellipse cx="' + CX + '" cy="' + CY + '" rx="1" ry="44" fill="url(#' + u + 'vs)" opacity=".45"/>' +
-      '<path d="' + spark(CX, CY, 24, 16) + '" fill="#FBF4FF" opacity=".95" class="bn-pulse" style="animation-duration:4.4s"/>' +
-      '<circle cx="' + CX + '" cy="' + CY + '" r="7" fill="url(#' + u + 'core)"/>' +
-      '<circle cx="' + CX + '" cy="' + CY + '" r="2.6" fill="#FFFFFF"/>' +
-      '<circle class="bn-spike" style="' + ev + '" cx="' + CX + '" cy="' + CY + '" r="80" fill="url(#' + u + 'flare)" opacity="0"/>' +
-      '<path class="bn-spike" style="' + ev + '" d="' + spark(CX, CY, 64, 40) + '" fill="#FBF4FF" opacity="0"/>' +
-      '<path class="bn-glint" style="animation-delay:-.8s" d="' + spark(92, 132, 5, 3.4) + '" fill="#FFD6F4"/>' +
-      '<path class="bn-glint" style="animation-delay:-2.9s" d="' + spark(404, 48, 4.6, 3.1) + '" fill="#E6C8FF"/>' +
-      '<path class="bn-glint" style="animation-delay:-1.9s" d="' + spark(334, 164, 3.6, 2.4) + '" fill="#FFD6F4"/>' +
-      '</g>';
-  }
 };
 function buildBannerArt(id){
   const el = document.createElement("div");
@@ -40824,10 +41005,10 @@ let rankEmblemSeq = 0;
 const RANK_PRESENT = {
   rookie:   { k: 0.76, T: 74.88,  at: [64.6, 63.7, 82],    halo: [0.80, 0.24], sparkles: 1, opacity: ".82" },
   ranger:   { k: 0.80, T: 98.69,  at: [64.2, 61, 92],      halo: [0.86, 0.29], sparkles: 2 },
-  veteran:  { k: 0.84, T: 90.52,  at: [69, 63.5, 92],      halo: [0.92, 0.34], sparkles: 3 },
+  veteran:  { k: 0.84, T: 96,     at: [64, 64, 104],      halo: [0.92, 0.34], sparkles: 3 },
   vanguard: { k: 0.88, T: 95.88,  at: [64, 64.5, 84],      halo: [0.98, 0.40], sparkles: 4, arcs: [[1.06, 22, 0.4, 1.4]] },
-  adept:    { k: 0.92, T: 126, at: [64, 64, 121],     halo: [1.04, 0.46], sparkles: 5, arcs: [[1.06, 38, 0.5, 1.6]] },
-  elite:    { k: 0.96, T: 103.68, at: [63.79, 63.91, 117.75], halo: [1.10, 0.66], sparkles: 6, arcs: [[1.04, 54, 0.55, 1.8], [0.93, 24, 0.4, 1.2]] },
+  adept:    { k: 0.92, T: 104,    at: [64, 64, 104],    halo: [1.04, 0.46], sparkles: 5, arcs: [[1.06, 38, 0.5, 1.6]] },
+  elite:    { k: 0.96, T: 114,    at: [64, 64, 108], halo: [1.10, 0.66], sparkles: 6, arcs: [[1.04, 54, 0.55, 1.8], [0.93, 24, 0.4, 1.2]] },
   titan:    { k: 1.00, T: 120,    at: [64, 65, 127],       halo: [1.18, 0.74], sparkles: 8 }
 };
 /* [deg, radius x, size] - taken in order, so each rank adds the next */
@@ -40840,10 +41021,10 @@ const RANK_SPARKLE_SPOTS = [[-40, 1.0, 4.4], [140, 0.98, 3.8], [-132, 0.94, 3.4]
 const RANK_EMBLEM_FIT = {
   rookie: [64.4, 64.9, 72.8],
   ranger: [64, 60.9, 99.3],
-  veteran: [64.5, 64.1, 99],
+  veteran: [64.1, 62.8, 89.8],
   vanguard: [63.9, 64.1, 102.8],
-  adept: [63.9, 59, 123.3],
-  elite: [63.9, 63.9, 117.8],
+  adept: [63.9, 63.5, 118.3],
+  elite: [63.9, 63.9, 127.8],
   titan: [63.9, 63.9, 120.3]
 };
 /* One window for every rank in a bubble or a coin, so a higher rank's
@@ -41099,7 +41280,17 @@ function buildRankEmblemSVG(rankKey){
      little larger, a stronger glow, one more sparkle, and from Platinum a
      broken shockwave that grows towards Supernova's. The drawing goes
      into `art`, scaled about its own optical centre to its rank's size;
-     the glow, the arcs and the sparkles are the rank's, round it. */
+     the glow, the arcs and the sparkles are the rank's, round it.
+     ONE STORY (build 250): "the gold icon doesn't fit well between the
+     ones to its left and right, same for sapphire into amethyst ... You
+     may need to rework them all." Weight was not the problem any more;
+     KIND was. Gold's comet was the one mark with no star in it, and the
+     galaxy and the ring nebula did not follow from Platinum's pair. Now
+     each rank is the next step of one thing, all built on one star
+     (glowStar): a spark in a cloud, a young star in its disc, a sun with
+     a world going round it, two stars, a cluster of stars, a galaxy of
+     them, and the star that outshines a galaxy. Silver's disc becomes
+     Gold's orbit; Gold's world becomes Platinum's second star. */
   let gseq = 0;
   function uGrad(tag, attrs, stops){
     const g = document.createElementNS(NS, tag), id = uid + "u" + (++gseq);
@@ -41125,6 +41316,68 @@ function buildRankEmblemSVG(rankKey){
   function sepRing(x, y, r, w, a, col){
     const c = col || shade, R2 = r + w;
     add(disc(x, y, R2), { fill: uRadial(x, y, R2, [[0, c, 0], [r * 0.82 / R2, c, 0], [r / R2, c, dk(a)], [1, c, 0]]) });
+  }
+  /* A STAR, the one every emblem shares (build 250): lit from INSIDE -
+     white heart, its colour, fading into its own halo - with a thin dark
+     band parting it from that halo, and the crisp four-point flare that
+     is the whole set's family mark. Platinum's two stars were the first
+     drawn this way; the sun, the cluster and the galaxy's core are the
+     same star at other sizes, which is what makes seven different
+     objects read as one ladder. */
+  let gsBody = null, gsHalo = null;
+  function glowStar(x, y, r, flare, cls, rot){
+    if(!gsBody){
+      gsHalo = ramp(uid + "gh", [[0, "#FFFFFF", 0.7], [0.32, badgeShade(base, 0.5), 0.55], [0.62, base, 0.2], [1, base, 0]], "50%", "50%", "50%");
+      gsBody = ramp(uid + "gb", [[0, "#FFFFFF", 1], [0.3, badgeShade(base, 0.86), 1], [0.62, badgeShade(base, 0.45), 1], [0.88, base, 0.95], [1, badgeShade(base, -0.18 * DK), 0.85]], "50%", "50%", "50%");
+    }
+    add(disc(x, y, r * 1.8), { fill: gsHalo });
+    sepRing(x, y, r, Math.max(2.4, r * 0.3), 0.24);
+    add(disc(x, y, r), { fill: gsBody });
+    inLayer(cls || "rk-twinkle rk-soft", x, y, 0, () => {
+      add(burst(x, y, 4, flare, 0.07, UP + (rot || 0)), { fill: badgeShade(base, 0.8), opacity: ".92" });
+      add(burst(x, y, 4, flare * 0.38, 0.14, UP + (rot || 0)), { fill: "#FFFFFF", opacity: ".95" });
+    });
+  }
+  /* THE FINAL THREE'S CROWN (build 250). The lower four are one or two
+     stars each; the top three are the reward for the climb, and they
+     share something the others never have, growing by rank: a lens
+     streak through the middle (never equal both ways - equal is a plus
+     sign), and a ring of motes turning round the outside - one ring on
+     Sapphire, two turning against each other on Amethyst. The Supernova
+     already carries its own streaks and blast shell. */
+  function topCrown(level){
+    const LT = badgeShade(base, 0.6);
+    if(level < 3) inLayer("rk-flare", C, C, 0, () => {
+      add(streak(62, 1.8, false), { fill: LT, opacity: ".55" });
+      add(streak(34, 0.9, false), { fill: "#FFFFFF", opacity: ".7" });
+      if(level >= 2){
+        add(streak(46, 1.5, true), { fill: LT, opacity: ".45" });
+        add(streak(24, 0.8, true), { fill: "#FFFFFF", opacity: ".6" });
+      }
+    });
+    const ring = (r, n, cls, off, size) => inLayer(cls, C, C, r + 2, () => {
+      let d = "";
+      for(let i = 0; i < n; i++){
+        const a = off + i * 2 * Math.PI / n, rr = size * (i % 3 === 0 ? 1.4 : 1), x = C + Math.cos(a) * r, y = C + Math.sin(a) * r;
+        d += "M" + (x - rr).toFixed(2) + " " + y.toFixed(2) + "a" + rr + " " + rr + " 0 1 0 " + (2 * rr) + " 0a" + rr + " " + rr + " 0 1 0 " + (-2 * rr) + " 0Z";
+      }
+      add(d, { fill: LT, opacity: ".8" });
+    });
+    ring(57, 14, "rk-turn rk-quick", 0.1, 1.1);
+    if(level >= 2) ring(61, 18, "rk-turn rk-back rk-quick", 0.3, 0.9);
+    if(level >= 3) ring(52, 10, "rk-turn rk-slow", 0.5, 1.3);
+  }
+  /* one spiral arm: its centre line winds out from the core over `turn`
+     radians to radius `reach`; `w` is its width at the core */
+  function spiralArm(a0, w0, off, turn, reach){
+    const out = [], inn = [], lane = [];
+    for(let i = 0; i <= 30; i++){
+      const t = i / 30, th = a0 + t * turn, r = 7 + reach * t, w = w0 * Math.pow(1 - t, 0.75) + 0.5;
+      const pt = rr => [C + Math.cos(th) * rr, C + Math.sin(th) * rr];
+      out.push(pt(r + w / 2 + off)); inn.push(pt(Math.max(1, r - w / 2 + off))); lane.push(pt(Math.max(1, r - w / 2 - 1.2)));
+    }
+    const fmt = p => p[0].toFixed(2) + " " + p[1].toFixed(2);
+    return { ribbon: "M" + out.map(fmt).join("L") + "L" + inn.reverse().map(fmt).join("L") + "Z", lane: "M" + lane.slice(3, 24).map(fmt).join("L") };
   }
   const T = PR.T, [dcx, dcy, dsize] = PR.at;
   /* the rank's glow, behind everything */
@@ -41218,9 +41471,12 @@ function buildRankEmblemSVG(rankKey){
     });
     const back = group({ transform: flat });
     const prev = into; into = back;
-    add(disc(C, C, 50), { fill: discG });
+    /* build 250: the disc breathes, front and back halves together - it
+       was the biggest thing in Silver and the only thing that did not
+       move, which is why Silver read as still beside its neighbours */
+    inLayer("rk-breathe", C, C, 0, () => add(disc(C, C, 50), { fill: discG }));
     add(disc(C, C, 50), { fill: uRadial(C, C, 50, [[0, shade, 0], [0.3, shade, 0], [0.4, shade, dk(0.32)], [0.52, shade, 0], [1, shade, 0]]) });
-    inLayer("rk-spin", C, C, 50, () => {
+    inLayer("rk-spin rk-quick", C, C, 50, () => {
       add(arc(33, 200, 320), { fill: "none", stroke: badgeShade(base, 0.75), "stroke-width": "3", opacity: ".7", "stroke-linecap": "round" });
       add(arc(41, 20, 130), { fill: "none", stroke: badgeShade(base, 0.6), "stroke-width": "2.4", opacity: ".55", "stroke-linecap": "round" });
       add(arc(25, 60, 150), { fill: "none", stroke: "#FFFFFF", "stroke-width": "2", opacity: ".45", "stroke-linecap": "round" });
@@ -41229,61 +41485,75 @@ function buildRankEmblemSVG(rankKey){
     inLayer("rk-pulse", C, C, 0, () => add(disc(C, C, 22), { fill: glow }));
     sepRing(C, C, 14, 5, 0.24);
     /* the star's flare runs along the jets, so the two are one axis */
-    starAt(C, C, 14, 28, null, 0, T * Math.PI / 180);
+    starAt(C, C, 14, 28, "rk-twinkle", 0, T * Math.PI / 180);
     /* the near half of the disc, over the foot of the star */
     const front = group({ transform: flat });
     const fg = document.createElementNS(NS, "g");
     fg.setAttribute("clip-path", clipTo(uid + "-fr", "M" + (C - 50) + " " + (C + 2) + "H" + (C + 50) + "V" + (C + 50) + "H" + (C - 50) + "Z"));
     front.appendChild(fg);
-    addTo(fg, disc(C, C, 50), { fill: discG, opacity: ".6" });
+    const prevF = into; into = fg;
+    inLayer("rk-breathe", C, C, 0, () => add(disc(C, C, 50), { fill: discG, opacity: ".6" }));
+    into = prevF;
   } else if(rankKey === "veteran"){
-    /* GOLD (build 245): the COMET, moved down from Sapphire and given
-       weight for it - a coma of light round the head and a second (ion)
-       strand in its tail, behind the drawing. Lightest of the balls, so
-       it is the first; everything above it is more. */
-    const ionG = uLinear(48, 70, 124, 40, [[0, "#FFFFFF", 0.9], [0.4, badgeShade(base, 0.5), 0.6], [1, base, 0]]);
-    add("M48 70Q88 70 118 60Q90 76 50 80Z", { fill: ionG, opacity: ".55" });
-    add("M46 64Q84 50 124 42Q92 56 50 77Z", { fill: ionG });
-    add(disc(48, 70, 32), { fill: uRadial(48, 70, 32, [[0, "#FFFFFF", 0.85], [0.3, badgeShade(base, 0.55), 0.55], [1, base, 0]]) });
-
-    /* The comet itself - the first mark that is going somewhere. The only
-       emblem in the set that is not symmetric, deliberately:
-       direction is the whole idea of a comet, and a symmetric one is
-       just a star with fuzz on it. */
+    /* GOLD (build 250): THE SUN, and a world going round it. "The gold
+       icon doesn't fit well between the ones to its left and right" - it
+       was the comet, an opaque yellow ball with a tail: the one emblem in
+       the set with no star in it, lit like a marble, pointing off to one
+       side. The six round it are all LIGHT round a star with the same
+       four-point flare, and that shared star is what makes them a set.
+       So Gold is the star grown up: Silver's young star has burnt off its
+       disc and shines on its own, a corona of tongues turning against
+       each other round it (long and short alternating, tips drawn in - a
+       light, never a cog), and what was left of the disc is a world on a
+       broken orbit - which is what Platinum's companion star is on next.
+       The world ORBITS: it passes in front of the sun and behind it (two
+       copies - the back one always under the sun, the front one only
+       showing on the near half; see rk-orbit). At rest, and wherever the
+       emblem is still, it sits on the near side, lower left. */
+    const LIGHT = badgeShade(base, 0.45), ICE = badgeShade(base, 0.82);
+    const RX = 50, RY = 14, PHI = -16 * Math.PI / 180, T0 = 120 * Math.PI / 180;
+    const onOrbit = t => [C + RX * Math.cos(t) * Math.cos(PHI) - RY * Math.sin(t) * Math.sin(PHI),
+                          C + RX * Math.cos(t) * Math.sin(PHI) + RY * Math.sin(t) * Math.cos(PHI)];
+    const orbitArc = (t0, t1) => { let d = "";
+      for(let i = 0; i <= 30; i++){ const [x, y] = onOrbit(t0 + (t1 - t0) * i / 30); d += (i ? "L" : "M") + x.toFixed(2) + " " + y.toFixed(2); }
+      return d; };
+    const [wx, wy] = onOrbit(T0);
+    const world = () => {
+      add(disc(wx, wy, 9), { fill: uRadial(wx, wy, 9, [[0, LIGHT, 0.5], [1, base, 0]]) });
+      add(disc(wx, wy, 5.2), { fill: uRadial(wx + 1.6, wy - 1.8, 6.4, [[0, "#FFF8E2"], [0.45, badgeShade(base, 0.3)], [1, badgeShade(base, -0.55)]]), stroke: dark, "stroke-width": ".7" });
+    };
     inLayer("rk-breathe", C, C, 0, () => halo(50));
-    /* Alive (build 244): the whole comet drifts along its line, the tail
-       streams - longer, shorter - off the head, the head burns brighter
-       and dimmer, and the dust behind it glints. */
-    const comet = inLayer("rk-drift", C, C, 0, () => {});
-    into = comet;
-    /* The tail, swept back from the head and tapering to nothing. Two
-       curves meeting at the far point, so it narrows the way a tail does
-       rather than ending in a straight cut. */
-    /* One tail, twice: a wide soft one and a narrower brighter one inside
-       it, both tapering to a point. The first version drew two separate
-       tails at different angles and they read as two blue shards rather
-       than as one thing streaming off a head. */
-    const tail = inLayer("rk-tail", C - 16, C + 6, 86, () => {});
-    into = tail;
-    [[30, 0.28, ".4"], [19, 0.5, ".75"]].forEach(([w, tint, op]) => {
-      add("M" + (C - 16) + " " + (C + 6 - w / 2) +
-          "C" + (C + 10) + " " + (C - w * 0.9) + " " + (C + 34) + " " + (C - 18) + " " + (C + 56) + " " + (C - 34) +
-          "C" + (C + 30) + " " + (C - 4) + " " + (C + 8) + " " + (C + 12) + " " + (C - 16) + " " + (C + 6 + w / 2) + "Z",
-          { fill: badgeShade(base, tint), opacity: op });
+    /* the corona: long tongues and short ones, turning against each other
+       and swelling and falling back together (twelve tongues turning alone
+       look still - each step lands on the one before) */
+    const corona = inLayer("rk-pulse", C, C, 46, () => {});
+    const prevC = into; into = corona;
+    inLayer("rk-turn rk-quick", C, C, 46, () =>
+      add(burst(C, C, 12, 42, 0.36, UP), { fill: uRadial(C, C, 42, [[0, ICE, 0.95], [0.45, LIGHT, 0.5], [1, base, 0]]) }));
+    inLayer("rk-turn rk-back rk-quick", C, C, 46, () =>
+      add(burst(C, C, 12, 32, 0.5, UP + Math.PI / 12), { fill: uRadial(C, C, 32, [[0, "#FFFFFF", 0.9], [0.55, ICE, 0.55], [1, LIGHT, 0]]) }));
+    into = prevC;
+    /* the far half of the orbit, and the world when it is behind the sun */
+    add(orbitArc(Math.PI * 1.06, Math.PI * 1.94), { fill: "none", stroke: LIGHT, "stroke-width": "1.1", "stroke-linecap": "round", "stroke-dasharray": "1.5 4", opacity: ".45" });
+    inLayer("rk-orbit", wx, wy, 0, world);
+    /* the sun: lit from inside, the family's four-point flare through it */
+    inLayer("rk-pulse", C, C, 0, () => add(disc(C, C, 27), { fill: glow }));
+    glowStar(C, C, 19, 34, "rk-twinkle");
+    /* THE FLARE HAS TO CLEAR THE CORONA (build 250). "Why do I feel like
+       the gold symbol is missing that star thing on the circle how
+       platinum has? Could be there just much smaller?" It was there, and
+       it was the smaller one: a 34-unit flare in pale gold inside a
+       42-unit corona of pale gold, so its tips sat among the tongues and
+       read as one more of them. Platinum's reads because nothing is
+       behind it. So Gold's gets a white four-point flare of its own that
+       reaches past the corona, crisp against the dark. */
+    inLayer("rk-twinkle", C, C, 0, () => {
+      add(burst(C, C, 4, 49, 0.04, UP), { fill: "#FFFFFF", opacity: ".78" });
+      add(burst(C, C, 4, 26, 0.08, UP), { fill: "#FFFFFF", opacity: ".9" });
     });
-    into = comet;
-    sepRing(C - 16, C + 6, 19, 6, 0.22);
-    add(disc(C - 16, C + 6, 19), { fill: body, stroke: dark, "stroke-width": ".9" });
-    const limb = group({ "clip-path": clipTo(uid + "-limb", disc(C - 16, C + 6, 19)) });
-    addTo(limb, disc(C - 8, C + 14, 22), { fill: uRadial(C - 8, C + 14, 22, [[0, shade, dk(0.42)], [0.6, shade, dk(0.24)], [1, shade, 0]]) });
-    inLayer("rk-glow", C - 16, C + 6, 0, () => {
-      add(disc(C - 21, C + 1, 8), { fill: "#FFFFFF", opacity: ".4" });
-      add(disc(C - 22, C, 4), { fill: "#FFFFFF", opacity: ".92" });
-    });
-    into = art;
-    /* a hotter head */
-    add(disc(44, 65, 7), { fill: "#FFFFFF", opacity: ".55" });
-    add(disc(43, 64, 3.4), { fill: "#FFFFFF" });
+    /* the near half, over the foot of the sun, and the world in front */
+    add(orbitArc(Math.PI * 0.06, Math.PI * 0.94), { fill: "none", stroke: ICE, "stroke-width": "1.3", "stroke-linecap": "round", "stroke-dasharray": "1.5 4", opacity: ".7" });
+    inLayer("rk-orbit-front", wx, wy, 0, world);
   } else if(rankKey === "vanguard"){
     /* PLATINUM. Two stars bound to each other - a binary - on one broken
        orbit (never a closed ring: a ring with light round it reads as a
@@ -41294,7 +41564,7 @@ function buildRankEmblemSVG(rankKey){
        sized so their tips just clear the body - at half the span they sat
        inside the white core and read as a star printed on a ball. */
     inLayer("rk-breathe", C, C, 0, () => halo(50));
-    const swing = inLayer("rk-swing", C, C, 52, () => {});
+    const swing = inLayer("rk-swing rk-quick", C, C, 52, () => {});
     into = swing;
     const orbit = inLayer("rk-shimmer", C, C, 0, () => {});
     const orbitTilt = group({ transform: "rotate(-24 " + C + " " + C + ")" });
@@ -41312,106 +41582,104 @@ function buildRankEmblemSVG(rankKey){
     sepRing(C + 24, C - 17, 10.5, 4, 0.24);
     add(disc(C + 24, C - 17, 10.5), { fill: starBody });
     [[C - 12, C + 7, 25, 9, 0, ""], [C + 24, C - 17, 14, 5, Math.PI / 4, " rk-d2"]].forEach(([x, y, r, r2, rot, d]) =>
-      inLayer("rk-twinkle rk-soft" + d, x, y, 0, () => {
+      inLayer("rk-twinkle" + d, x, y, 0, () => {
         add(burst(x, y, 4, r, 0.07, UP + rot), { fill: badgeShade(base, 0.8), opacity: ".92" });
         add(burst(x, y, 4, r2, 0.14, UP + rot), { fill: "#FFFFFF", opacity: ".95" });
       }));
     into = art;
   } else if(rankKey === "adept"){
-    /* SAPPHIRE (build 246): the GALAXY, redrawn to belong where it sits.
-       "The sapphire one looks good but also doesn't seem to naturally fit
-       between the ones to the left and right of it." Its neighbours are
-       round, lit, star-like marks - Platinum's glowing pair with crisp
-       flares, Amethyst's glowing shell - and it was a flat, wide swirl of
-       ribbons. So: a core that GLOWS like a star, with the crisp
-       four-point flare Platinum's family has; arms that are luminous and
-       strung with stars rather than flat ribbons, fading as they leave the
-       core, with a thin dust lane on their inner edge; the whole disc
-       tilted, so it has depth; and a soft ROUND glow envelope, so its
-       silhouette sits in the same round footprint as its neighbours. */
+    /* SAPPHIRE (build 250): A SPIRAL GALAXY - the first of the final
+       three, and where the ladder jumps. "The final 3 should really be
+       the coolest looking ones, the 3rd to last is where it gets a big
+       jump in cool design." Everything below Sapphire is one or two
+       stars; this is a whole galaxy of them: two bright arms and two
+       faint ones wound round a blazing core, strung with star-forming
+       knots and cut by dust lanes, tilted so it has depth and TURNING in
+       its own plane. The top three share a crown the lower four do not
+       have - a lens streak through the core and a ring of motes turning
+       round the outside - and each adds to it. */
     const LIGHT = badgeShade(base, 0.45), ICE = badgeShade(base, 0.82);
-    const tilt = "rotate(-16 " + C + " " + C + ") translate(" + C + " " + C + ") scale(1 .84) translate(" + (-C) + " " + (-C) + ")";
-    inLayer("rk-breathe", C, C, 0, () => add(disc(C, C, 50), { fill: uRadial(C, C, 50, [[0, LIGHT, 0.6], [0.45, base, 0.34], [1, base, 0]]) }));
+    const tilt = "rotate(-22 " + C + " " + C + ") translate(" + C + " " + C + ") scale(1 .72) translate(" + (-C) + " " + (-C) + ")";
+    inLayer("rk-breathe", C, C, 0, () => add(disc(C, C, 58), { fill: uRadial(C, C, 58, [[0, ICE, 0.6], [0.4, LIGHT, 0.38], [1, base, 0]]) }));
+    topCrown(1);
     const plane = group({ transform: tilt });
     const prevP = into; into = plane;
-    add(disc(C, C, 46), { fill: uRadial(C, C, 46, [[0, ICE, 0.55], [0.5, LIGHT, 0.3], [1, base, 0]]) });
-    inLayer("rk-spin", C, C, 48, () => {
-      const armFill = uRadial(C, C, 50, [[0, "#FFFFFF", 1], [0.35, ICE, 0.95], [0.7, LIGHT, 0.85], [1, LIGHT, 0.45]]);
-      const armBody = uRadial(C, C, 50, [[0, ICE, 0.7], [0.6, LIGHT, 0.45], [1, base, 0.1]]);
-      let specks = "";
-      [1, -1].forEach(side => {
-        const f = (x, y) => (C + side * x).toFixed(2) + " " + (C + side * y).toFixed(2);
-        /* the arm: a wide soft body and a bright ribbon inside it, both
-           lit from the core and fading as they leave it */
-        add("M" + f(4, -12) + "C" + f(32, -32) + " " + f(56, -12) + " " + f(46, 22) +
-            "C" + f(50, -2) + " " + f(32, -18) + " " + f(3, 3) + "Z", { fill: armBody });
-        add("M" + f(6, -10) + "C" + f(34, -26) + " " + f(52, -8) + " " + f(44, 20) +
-            "C" + f(48, -4) + " " + f(32, -16) + " " + f(4, -3) + "Z", { fill: armFill });
-        /* its dust lane, on the inner edge */
-        add("M" + f(7, -1) + "C" + f(26, -12) + " " + f(40, -6) + " " + f(42, 8), { fill: "none", stroke: shade,
-            "stroke-width": "1.8", "stroke-linecap": "round", opacity: String(dk(0.34)) });
-        /* stars strung along it */
-        [[18, -16, 1.4], [28, -17, 1.1], [37, -13, 1.5], [44, -4, 1.1], [32, -11, 0.9]].forEach(([x, y, r]) => {
-          const cx = C + side * x, cy = C + side * y;
-          specks += "M" + (cx - r).toFixed(2) + " " + cy.toFixed(2) + "a" + r + " " + r + " 0 1 0 " + (2 * r) + " 0a" + r + " " + r + " 0 1 0 " + (-2 * r) + " 0Z";
+    add(disc(C, C, 52), { fill: uRadial(C, C, 52, [[0, ICE, 0.55], [0.55, LIGHT, 0.26], [1, base, 0]]) });
+    inLayer("rk-spin rk-quick", C, C, 54, () => {
+      const armBody = uRadial(C, C, 54, [[0, ICE, 0.85], [0.55, LIGHT, 0.55], [1, base, 0.14]]);
+      const armFill = uRadial(C, C, 54, [[0, "#FFFFFF", 1], [0.35, ICE, 0.95], [0.7, LIGHT, 0.8], [1, LIGHT, 0.35]]);
+      /* the faint arms between the bright ones, so the disc is not two ribbons on black */
+      [Math.PI / 2, Math.PI * 1.5].forEach(a0 => add(spiralArm(a0, 9, 0, 3.4, 44).ribbon, { fill: armBody, opacity: ".55" }));
+      let specks = "", knots = "";
+      [0, Math.PI].forEach(a0 => {
+        const a = spiralArm(a0, 18, 0, 3.9, 44);
+        add(a.ribbon, { fill: armBody });
+        add(spiralArm(a0, 7, 0.8, 3.9, 44).ribbon, { fill: armFill });
+        add(a.lane, { fill: "none", stroke: shade, "stroke-width": "1.7", "stroke-linecap": "round", opacity: String(dk(0.4)) });
+        [[0.28, 1.4], [0.42, 1.1], [0.55, 1.6], [0.66, 1.1], [0.78, 1.4], [0.9, 1]].forEach(([t, r], j) => {
+          const th = a0 + t * 3.9, rr = 7 + 44 * t + 1.6, cx = C + Math.cos(th) * rr, cy = C + Math.sin(th) * rr;
+          const blob = "M" + (cx - r).toFixed(2) + " " + cy.toFixed(2) + "a" + r + " " + r + " 0 1 0 " + (2 * r) + " 0a" + r + " " + r + " 0 1 0 " + (-2 * r) + " 0Z";
+          if(j % 2) knots += blob; else specks += blob;
         });
       });
-      add(specks, { fill: "#FFFFFF", opacity: ".8" });
+      add(specks, { fill: "#FFFFFF", opacity: ".9" });
+      add(knots, { fill: "#9FF3FF", opacity: ".85" });
     });
     into = prevP;
-    /* the core: a star's glow, separated from the disc by a thin dark band */
-    sepRing(C, C, 11, 6, 0.26);
-    inLayer("rk-pulse", C, C, 0, () => add(disc(C, C, 17), { fill: uRadial(C, C, 17, [[0, "#FFFFFF", 1], [0.35, ICE, 0.9], [0.7, LIGHT, 0.5], [1, base, 0]]) }));
-    add(disc(C, C, 6.5), { fill: "#FFFFFF" });
-    inLayer("rk-twinkle rk-soft", C, C, 0, () => {
-      add(burst(C, C, 4, 19, 0.07, UP), { fill: badgeShade(base, 0.8), opacity: ".92" });
-      add(burst(C, C, 4, 8.5, 0.14, UP), { fill: "#FFFFFF", opacity: ".95" });
-    });
+    /* the bulge, then the core's star */
+    add(ellipse(C, C, 17, 11), { fill: uRadial(C, C, 17, [[0, "#FFFFFF", 1], [0.4, ICE, 0.85], [1, LIGHT, 0]]), transform: "rotate(-22 " + C + " " + C + ")" });
+    inLayer("rk-pulse", C, C, 0, () => add(disc(C, C, 22), { fill: uRadial(C, C, 22, [[0, "#FFFFFF", 0.9], [0.4, ICE, 0.6], [1, base, 0]]) }));
+    glowStar(C, C, 8, 28, "rk-twinkle");
   } else if(rankKey === "elite"){
-    /* AMETHYST (build 245): a RING NEBULA - a star near its end blowing
-       off its shells. Layered the way the real ones are: a faint outer
-       shell from an earlier puff, the main shell (thick, brighter on one
-       limb, knotted), and a smaller bright inner shell turned the other
-       way, round a tiny white-hot dwarf. It is GAS: soft annuli made by
-       radial ramps, no drawn rim, nothing radial - so it reads as a
-       glowing cloud-ring, never as a wheel. It sits above the galaxy as
-       the grandest thing short of the Supernova itself. */
-    const DEEP = badgeShade(base, -0.55), LIGHT = badgeShade(base, 0.42), ICE = badgeShade(base, 0.8), MID = base;
-    const RX = 42, RY = 33, ROT = -20, r0 = ROT * Math.PI / 180;
-    const squash = (rot, rx, ry) => "rotate(" + rot + " 64 64) translate(64 64) scale(1 " + (ry / rx) + ") translate(-64 -64)";
-    const arcE = (rx, ry, rot, t0, t1) => {
-      let d = ""; const c = Math.cos(rot), s = Math.sin(rot);
-      for(let i = 0; i <= 36; i++){ const t = t0 + (t1 - t0) * i / 36, x = rx * Math.cos(t), y = ry * Math.sin(t);
-        d += (i ? "L" : "M") + (C + x * c - y * s).toFixed(2) + " " + (C + x * s + y * c).toFixed(2); }
-      return d;
-    };
-    const gas = (x, y, r, a) => add(disc(x, y, r), { fill: uRadial(x, y, r, [[0, ICE, a], [0.4, LIGHT, a * 0.45], [1, MID, 0]]) });
-    inLayer("rk-breathe", C, C, 0, () => add(disc(C, C, 56), { fill: uRadial(C, C, 56, [[0, LIGHT, 0.3], [0.55, MID, 0.2], [1, DEEP, 0]]) }));
-    inLayer("rk-breathe rk-d3", C, C, 0, () => add(disc(C, C, RX + 20), { fill: uRadial(C, C, RX + 20, [[0, MID, 0], [0.72, MID, 0], [0.84, LIGHT, 0.4], [0.92, MID, 0.25], [1, DEEP, 0]]), transform: squash(ROT + 16, RX + 4, RY + 7) }));
-    inLayer("rk-glow", C, C, 0, () => add(disc(C, C, RX + 12), { fill: uRadial(C, C, RX + 12, [[0, MID, 0.22], [0.5, MID, 0.4], [0.66, LIGHT, 0.78], [0.8, ICE, 0.8], [0.9, LIGHT, 0.45], [1, DEEP, 0]]), transform: squash(ROT, RX, RY) }));
-    inLayer("rk-shimmer rk-d2", C, C, 0, () => {
-      /* the bright limb and its short echo, one path */
-      add(arcE(RX - 1, RY - 1, r0, 2.0, 4.0) + arcE(RX - 1, RY - 1, r0, 5.2, 6.2), { fill: "none", stroke: ICE, "stroke-width": "4.4", "stroke-linecap": "round", opacity: ".48" });
+    /* AMETHYST (build 250): A QUASAR - the black hole at a galaxy's heart,
+       feeding. A shadow that gives off nothing, ringed by a thin line of
+       light where it bends round the edge; a blazing disc of gas turning
+       round it, its far side lensed up over the top (which is what makes
+       it a black hole and not a ringed planet); and two jets fired out of
+       the poles, straight through the frame. After Sapphire's galaxy it
+       is the thing at the middle of one, and before the Supernova it is
+       the one object that outshines a galaxy. The crown grows: a streak
+       both ways and two rings of motes turning against each other. */
+    const LIGHT = badgeShade(base, 0.45), ICE = badgeShade(base, 0.82), HOT = "#FFD9F7";
+    const TILT = -14, tr = TILT * Math.PI / 180;
+    const flat = "rotate(" + TILT + " " + C + " " + C + ") translate(" + C + " " + C + ") scale(1 .19) translate(" + (-C) + " " + (-C) + ")";
+    inLayer("rk-breathe", C, C, 0, () => add(disc(C, C, 60), { fill: uRadial(C, C, 60, [[0, ICE, 0.55], [0.35, LIGHT, 0.42], [1, base, 0]]) }));
+    topCrown(2);
+    /* the jets, along the spin axis */
+    const ax = [Math.sin(tr) * -1, -Math.cos(tr)];
+    inLayer("rk-flare", C, C, 0, () => {
+      [1, -1].forEach(dir => {
+        const x1 = C + dir * ax[0] * 63, y1 = C + dir * ax[1] * 63, x0 = C + dir * ax[0] * 10, y0 = C + dir * ax[1] * 10;
+        add(lens(x0, y0, x1, y1, 7.5), { fill: uLinear(x0, y0, x1, y1, [[0, ICE, 0.75], [0.6, LIGHT, 0.35], [1, base, 0]]) });
+        add(lens(x0, y0, x1, y1, 2.6), { fill: uLinear(x0, y0, x1, y1, [[0, "#FFFFFF", 1], [0.7, ICE, 0.6], [1, ICE, 0]]) });
+        [0.45, 0.7].forEach(f => add(disc(C + dir * ax[0] * 63 * f, C + dir * ax[1] * 63 * f, 2.2), { fill: "#FFFFFF", opacity: ".75" }));
+      });
     });
-    /* the hole inside the shell, darker - the shell reads as a ring of
-       gas round emptiness, and the dwarf shines out of it */
-    add(disc(C, C, RX + 12), { fill: uRadial(C, C, RX + 12, [[0, shade, dk(0.36)], [0.42, shade, dk(0.28)], [0.6, shade, 0], [1, shade, 0]]), transform: squash(ROT, RX, RY) });
-    /* the inner shell, turned the other way */
-    inLayer("rk-glow rk-d3", C, C, 0, () => add(disc(C, C, 20), { fill: uRadial(C, C, 20, [[0, MID, 0.2], [0.6, LIGHT, 0.55], [0.8, ICE, 0.9], [1, LIGHT, 0]]), transform: squash(ROT + 62, 20, 12) }));
-    /* knots of gas in the shell, glinting in two groups */
-    const knotLayers = [inLayer("rk-shimmer", C, C, 0, () => {}), inLayer("rk-shimmer rk-d2", C, C, 0, () => {})];
-    [[0.4, 3.4, ""], [1.5, 2.8, " rk-d3"], [2.7, 3.8, " rk-d2"], [3.6, 3.0, ""], [4.4, 3.0, " rk-d2"], [5.5, 2.6, " rk-d3"]].forEach(([t, r, d]) => {
-      const c = Math.cos(r0), sn = Math.sin(r0), x0 = (RX + 1) * Math.cos(t), y0 = (RY + 1) * Math.sin(t);
-      const x = C + x0 * c - y0 * sn, y = C + x0 * sn + y0 * c;
-      const prevK = into; into = knotLayers[d ? 1 : 0]; gas(x, y, r * 2.4, 0.75); into = prevK;
+    const diskG = uRadial(C, C, 58, [[0, HOT, 0], [0.31, HOT, 0], [0.35, "#FFFFFF", 1], [0.46, HOT, 0.95], [0.64, ICE, 0.75], [0.84, LIGHT, 0.4], [1, base, 0]]);
+    /* the far half of the disc, behind the shadow */
+    const back = group({ transform: flat }); const pv = into; into = back;
+    add(disc(C, C, 58), { fill: diskG });
+    inLayer("rk-spin rk-quick", C, C, 58, () => {
+      add(arc(34, 190, 320), { fill: "none", stroke: "#FFFFFF", "stroke-width": "3", opacity: ".7", "stroke-linecap": "round" });
+      add(arc(44, 20, 160), { fill: "none", stroke: HOT, "stroke-width": "2.6", opacity: ".6", "stroke-linecap": "round" });
+      add(arc(51, 230, 330), { fill: "none", stroke: ICE, "stroke-width": "2", opacity: ".5", "stroke-linecap": "round" });
     });
-    /* the white dwarf */
-    inLayer("rk-pulse", C, C, 0, () => gas(C, C, 12, 1));
-    add(disc(C, C, 3.8), { fill: "#FFFFFF" });
-    inLayer("rk-twinkle rk-soft", C, C, 0, () => {
-      add(burst(C, C, 4, 12, 0.1, UP), { fill: ICE, opacity: ".9" });
-      add(lens(C - 20, C, C + 20, C, 0.9), { fill: "#FFFFFF", opacity: ".55" });
+    into = pv;
+    /* the far side of the disc, bent up over the top of the shadow by its gravity */
+    inLayer("rk-glow", C, C, 0, () => {
+      const lensArc = (r, w, col, op) => add("M" + (C - r) + " " + (C + 1) + "A" + r + " " + r + " 0 0 1 " + (C + r) + " " + (C + 1),
+        { fill: "none", stroke: col, "stroke-width": String(w), opacity: op, "stroke-linecap": "round", transform: "rotate(" + TILT + " " + C + " " + C + ")" });
+      lensArc(24, 8, ICE, ".5"); lensArc(22, 3.2, HOT, ".85"); lensArc(21, 1.2, "#FFFFFF", ".95");
     });
+    /* the photon ring and the shadow */
+    add(disc(C, C, 19), { fill: uRadial(C, C, 19, [[0.78, "#FFFFFF", 0], [0.86, "#FFFFFF", 0.95], [0.93, ICE, 0.6], [1, base, 0]]) });
+    add(disc(C, C, 16.2), { fill: "#030208" });
+    /* the near half of the disc, across the front of the shadow */
+    const front = group({ transform: flat });
+    const fg = document.createElementNS(NS, "g");
+    fg.setAttribute("clip-path", clipTo(uid + "-qf", "M" + (C - 64) + " " + (C + 1) + "H" + (C + 64) + "V" + (C + 64) + "H" + (C - 64) + "Z"));
+    front.appendChild(fg);
+    addTo(fg, disc(C, C, 58), { fill: diskG });
   } else {
     /* SUPERNOVA. The last one, and it is the app going off.
        Everything here is about a star that has stopped being a star: a
@@ -41424,6 +41692,8 @@ function buildRankEmblemSVG(rankKey){
        and the white core beats. Everything below moves; that is the
        escalation. */
     inLayer("rk-breathe rk-fast", C, C, 0, () => { halo(74); halo(52); });
+    /* the crown the top three share, as debris rings thrown past the shell (build 250) */
+    topCrown(3);
     /* Flares first, so everything else sits on top of them. Four
        different lengths - a star this violent does not throw symmetric
        light. */
@@ -41462,14 +41732,26 @@ function buildRankEmblemSVG(rankKey){
       add(burst(C, C, 8, 30, 0.24, UP + Math.PI / 8), { fill: badgeShade(base, 0.55), opacity: ".8" });
       add(burst(C, C, 8, 22, 0.26, UP), { fill: badgeShade(base, 0.8), opacity: ".9" });
     });
-    /* The core is WHITE, not the rank's colour. That is the one thing
-       that says this star is hotter than the six below it - every other
-       emblem's brightest point is its own hue. */
-    sepRing(C, C, 11, 6, 0.26);
-    inLayer("rk-twinkle rk-soft rk-d3", C, C, 0, () => add(burst(C, C, 4, 17, 0.08, UP), { fill: "#FFFFFF", opacity: ".55" }));
+    /* THE BLACK IS IN THE BLAST (build 250). "Some black in the middle"
+       first came out as a black disc ringed with light - which is
+       Amethyst's black hole again, and read as Supernova evolving out of
+       it ("it looks like it evolves from the amethyst one"). So the
+       dark is the SHAPE of the explosion instead: a jagged black star
+       inside the red burst - the shadow between the shock front and the
+       core - with its points between the burst's, and a white-hot core
+       blazing in the middle of it. Nothing round, nothing like a hole. */
+    inLayer("rk-turn rk-back rk-quick", C, C, 30, () => {
+      add(burst(C, C, 8, 27, 0.38, UP + Math.PI / 8), { fill: "#000000", stroke: badgeShade(base, 0.2), "stroke-width": "1.1", "stroke-linejoin": "round" });
+      add(burst(C, C, 8, 20, 0.42, UP), { fill: uRadial(C, C, 20, [[0, "#1A0304", 1], [1, "#000000", 1]]) });
+    });
+    /* the white-hot core, and its flare across the dark */
     inLayer("rk-pulse rk-fast", C, C, 0, () => {
-      add(circle(11), { fill: "#FFFFFF", opacity: ".35" });
-      add(circle(7), { fill: "#FFFFFF" });
+      add(disc(C, C, 13), { fill: uRadial(C, C, 13, [[0, "#FFFFFF", 1], [0.45, "#FFFFFF", 1], [0.7, "#FFD6CC", 0.8], [1, base, 0]]) });
+    });
+    add(disc(C, C, 5.5), { fill: "#FFFFFF" });
+    inLayer("rk-twinkle rk-d3", C, C, 0, () => {
+      add(burst(C, C, 4, 30, 0.06, UP + Math.PI / 4), { fill: "#FFFFFF", opacity: ".7" });
+      add(lens(C - 36, C, C + 36, C, 1.4), { fill: "#FFFFFF", opacity: ".95" });
     });
   }
   into = svg;
@@ -45419,6 +45701,23 @@ function accentToGradientStops(forceAccent){
 }
 
 const COSMIC_SMIL = false;
+/* HOME'S SEVEN EMBLEMS ARE BUILT ONCE, NOT ON EVERY VISIT (build 250).
+   "The screen has some lag when in the unit selection screen and hit
+   home." Profiled at 4x CPU throttle, the tap on Home was a 209ms task
+   before the first frame of the transition, and the seven emblems were
+   ~47ms of it, rebuilt identically every time. An SVG node can only be
+   in one place, so the cached one is reused only when the old Home has
+   let go of it; while it is still on screen (a transition's outgoing
+   copy) a fresh one is built, exactly as before. */
+const _homeEmblemCache = {};
+function homeRankEmblem(tier){
+  const c = _homeEmblemCache[tier];
+  if(c && !c.isConnected) return c;
+  const em = fitRankEmblem(buildRankEmblemSVG(tier), tier);
+  em.classList.add("cosmic-rank-emblem");
+  _homeEmblemCache[tier] = em;
+  return em;
+}
 function buildCosmicHero(useTierIcons, forceAccent){
   const svgNS = "http://www.w3.org/2000/svg";
   const wrap = document.createElement("div");
@@ -45964,8 +46263,7 @@ function buildCosmicHero(useTierIcons, forceAccent){
     if(useTierIcons){
       /* Fitted and clipped like the road map's (build 232): centred on
          its own drawing, and nothing reaching past the bubble. */
-      const em = fitRankEmblem(buildRankEmblemSVG(pos.tier), pos.tier);
-      em.classList.add("cosmic-rank-emblem");
+      const em = homeRankEmblem(pos.tier);
       badge.classList.add("cosmic-badge-rank");
       badge.style.setProperty("--rank-color", RANK_COLOR[pos.tier]);
       badge.appendChild(em);
@@ -53425,21 +53723,7 @@ function showSetup(){
   });
   const bankCaption = document.createElement("p");
   bankCaption.className = "bank-caption";
-  const bankInfo = document.createElement("button");
-  bankInfo.type = "button"; bankInfo.className = "bank-info";
-  bankInfo.setAttribute("aria-label", "How Most missed works");
-  bankInfo.setAttribute("aria-expanded", "false");
-  bankInfo.textContent = "i";
-  const bankInfoBody = document.createElement("p");
-  bankInfoBody.className = "bank-infobody";
-  bankInfoBody.hidden = true;
-  bankInfo.addEventListener("click", e => {
-    e.stopPropagation();
-    bankInfoBody.hidden = !bankInfoBody.hidden;
-    bankInfo.setAttribute("aria-expanded", bankInfoBody.hidden ? "false" : "true");
-  });
-  srcSect.append(bankCaption, bankInfoBody);
-  bankRows.recent.infoBody = bankInfoBody;
+  srcSect.append(bankCaption);
   srcSect.paint = () => {
     Object.keys(bankRows).forEach(v => {
       const on = cfg.source === v;
@@ -53450,8 +53734,6 @@ function showSetup(){
     bankCaption.replaceChildren(cur.desc);
     /* "All questions" needs no sentence - the switch says it. */
     bankCaption.hidden = cfg.source !== "recent" && cfg.source !== "flagged";
-    if(cfg.source === "recent") bankCaption.appendChild(bankInfo);
-    else { bankInfoBody.hidden = true; bankInfo.setAttribute("aria-expanded", "false"); }
   };
   /* Counts and words for the units picked right now. */
   srcSect.update = (counts) => {
@@ -53462,22 +53744,23 @@ function showSetup(){
     const whose = oneShort ? UNIT_TEST_VERSIONS[cfg.units[0]].short : units === 1 ? "this unit" : "these units";
     const set = (v, n, text) => {
       const b = bankRows[v];
-      b.count.textContent = units ? String(n) : "";
+      /* "All questions / 48" read as nonsense beside "All 48" under
+         How many (build 250): the whole set needs no number, only the
+         two that can be small or empty do. */
+      b.count.textContent = units && v !== "all" ? String(n) : "";
       b.desc.textContent = text;
       const empty = v !== "all" && n === 0;
       b.row.classList.toggle("is-empty", empty);
       b.row.setAttribute("aria-disabled", empty ? "true" : "false");
     };
     set("all", counts.all, units ? "Every question in " + whose + ", mixed up." : "Every question in the units you pick.");
-    set("recent", counts.recent, counts.recent ? "The " + counts.recent + " you have missed most in the last 30 days." : "Nothing missed lately.");
-    set("flagged", counts.flagged, counts.flagged ? "The " + counts.flagged + " you flagged to come back to." : "None flagged yet.");
-    const caps = cfg.units.map(u => mostMissedCapFor(u));
-    const capTotal = caps.reduce((a, b) => a + b, 0);
-    bankRows.recent.infoBody.textContent =
-      "Every question you miss is remembered for 30 days. Most missed takes the ones you have missed the most in that time, " +
-      "up to 15% of each unit: a 20-question unit gives at most 3, a 40-question unit at most 6." +
-      (units ? " For " + whose + " that is at most " + capTotal + "." : "") +
-      " It updates after every test, and a question drops off 30 days after you last missed it.";
+    /* ONE SHORT LINE (build 250): "the description for most missed is
+       way too much." The count is already on the switch, and the rule
+       behind it (30 days, a cap per unit) is not something anybody
+       needs before pressing Begin, so the "i" and its paragraph are
+       gone too. */
+    set("recent", counts.recent, "Your most missed from the last 30 days.");
+    set("flagged", counts.flagged, "Questions you flagged.");
     srcSect.paint();
   };
   const optionsModalBody = document.createElement("div");
@@ -53561,7 +53844,7 @@ function showSetup(){
      look simple anymore." Shuffle, Hide answers and the timer are
      preferences you set once, so they fold away under one row that
      says what they are set to without being opened. */
-  moreToggleText.textContent = "More options";
+  moreToggleText.textContent = "Timer";
   const moreToggleState = document.createElement("span");
   moreToggleState.className = "more-toggle-state";
   const moreToggleIcon = document.createElement("span");
@@ -53689,8 +53972,10 @@ function showSetup(){
      cfg.revealCorrect survives as a defaulted, unreadable field (see
      applySaved) so an account that had it switched on does not come
      back with answers revealed and no control left to switch it off. */
-  optLab.hidden = true;
-  moreBodyInner.insertBefore(optSect, moreBodyInner.firstChild);
+  /* OUT OF THE FOLD AGAIN (build 250): "the shuffle answers and hide
+     answers should not be in that drop down. That drop down just needs
+     to be the timer stuff." Their own card, above the timer's. */
+  optionsModalBody.insertBefore(optSect, moreWrap);
   /* THE SHEET IS A FLAT, LABELLED LIST NOW, per explicit request that
      it reads confusingly in Drill. What it had was one disclosure
      called "Timer & options" holding two unrelated things - the timer
@@ -54010,14 +54295,13 @@ function showSetup(){
     /* AFTER the four it asks about, because it asks them rather than
        re-deriving their conditions - reading them before they are set
        is how this kind of check answers last render's question. */
-    moreWrap.hidden = timerSect.hidden && optSect.hidden;
-    {
-      const bits = [];
-      if(!optSect.hidden && !shuffleRow.hidden) bits.push(cfg.shuffle ? "Shuffled" : "In order");
-      if(!optSect.hidden && !recallRow.hidden && cfg.recall) bits.push("Answers hidden");
-      if(!timerSect.hidden) bits.push(cfg.timer === "down" ? cfg.timerMinutes + " min limit" : cfg.timer === "up" ? "Stopwatch" : "No timer");
-      moreToggleState.textContent = bits.join(" \u00b7 ");
-    }
+    /* The fold holds the timer and nothing else (build 250). */
+    moreWrap.hidden = timerSect.hidden;
+    moreToggleState.textContent = cfg.timer === "down" ? cfg.timerMinutes + " min limit" : cfg.timer === "up" ? "Stopwatch" : "Off";
+    /* "I need this to go green when you change it" (build 250): a timer
+       that is on turns its card green, the same green as the switch
+       that turned it on, so it reads as set without being opened. */
+    moreWrap.classList.toggle("is-set", cfg.timer === "down" || cfg.timer === "up");
     /* Review draws from the same three sources a Drill does - "in the
        review mode, include the options to review flagged and most missed
        questions". */
@@ -54049,25 +54333,21 @@ function showSetup(){
        the whole of every unit unless a shorter version was picked. */
     const partial = !isGame && !reviewAllMode && cfg.units.length > 0 && wholeUnits > 0
       && (n < pool.length || (!isExam && cfg.source !== "all"));
-    /* CUT BY A SHORTER VERSION. The same rule (no whole unit, no hundo),
-       said about the unit it applies to: in a mix, the other units are
-       still whole and still earn theirs, so "won't count toward any
-       hundos" would be wrong. Game too, which has no Length and so never
-       needed a note before - a win on part of a unit neither earns a
-       hundo nor unlocks the next difficulty. */
-    const shortUnits = reviewAllMode ? [] : cfg.units.filter(u => cfg.versions[u] === "test" && UNIT_TEST_VERSIONS[u]);
-    const shortName = shortUnits.map(u => u + " (" + UNIT_TEST_VERSIONS[u].short + ")").join(", ");
-    hundoNote.hidden = !partial && !shortUnits.length;
-    hundoNote.textContent = partial
-      ? (cfg.units.length === 1
-          ? "Not the whole unit, so this run won't count toward a hundo."
-          : "Not every question, so this run won't count toward any hundos.")
-      : !shortUnits.length ? ""
+    /* A SHORTER VERSION SAYS SO IN ITS OWN PICKER, NOT HERE (build 250):
+       "put the warning that it won't be a hundo only at the pop up for
+       which version. Still keep the warning for every unit the same way
+       except this custom version." The version pop-up already says
+       "Doesn't count toward hundos." on the short choice, at the moment
+       it is chosen; this note is for the one thing that pop-up cannot
+       know about - taking fewer than all of what was picked, by How many
+       or by the bank. Measured against the pool, which is the short
+       version's own questions when one was picked, so the version alone
+       never trips it. */
+    hundoNote.hidden = !partial;
+    hundoNote.textContent = !partial ? ""
       : cfg.units.length === 1
-        ? (isGame ? "Not the whole unit, so a win won't count toward a hundo or unlock the next difficulty."
-                  : "Not the whole unit, so this run won't count toward a hundo.")
-        : (isGame ? shortName + " is not the whole unit, so a win won't unlock the next difficulty or earn a hundo for it."
-                  : shortName + " is not the whole unit, so it won't count toward a hundo. The other units still can.");
+        ? "Not the whole unit, so this run won't count toward a hundo."
+        : "Not every question, so this run won't count toward any hundos.";
     /* The sheet's own primary button relabels to match what it will
        actually do while Review is on — the same swap its click handler
        above already makes, just reflected in the button's text too so
@@ -54075,31 +54355,43 @@ function showSetup(){
        screen instead of starting anything. */
     beginBtn.textContent = reviewAllMode ? "Review All" : "Begin";
 
-    /* The top box's tags: every choice on this sheet that shapes the
-       run, said once where the run is summed up. */
+    /* WHAT THE RUN IS SET TO, BACK IN THE TOP BOX (build 250): "still
+       needs to say the settings of the test from that menu, in the top
+       like before just make it better than it was." Before, it was a row
+       of identical grey chips that began "All questions", "All 48" -
+       two ways of saying one number, the second of which the line above
+       already says. Now each setting is one short word with its own
+       small icon, so the row reads as a list of settings rather than a
+       row of buttons, and the count is left to the line above it. */
     sheetSummaryTags.replaceChildren();
     if(cfg.units.length){
-      const tag = (text, cls) => {
+      const ICON = {
+        bank: '<path d="M8 2 14 5 8 8 2 5Z"/><path d="M2 8l6 3 6-3"/><path d="M2 11l6 3 6-3"/>',
+        speed: '<path d="M3 11a5 5 0 1 1 10 0"/><path d="M8 11l3-3"/>',
+        timer: '<circle cx="8" cy="9" r="5"/><path d="M8 6.5V9l1.8 1.2"/><path d="M6.5 2h3"/>',
+        shuffle: '<path d="M2 4.5h2.5c3 0 4 7 7 7H14"/><path d="M2 11.5h2.5c1.3 0 2.2-1.3 3-3"/><path d="M9.5 6c.6-.9 1.2-1.5 2-1.5H14"/><path d="M12.3 2.8 14 4.5l-1.7 1.7"/><path d="M12.3 9.8 14 11.5l-1.7 1.7"/>',
+        order: '<path d="M3 4.5h10"/><path d="M3 8h10"/><path d="M3 11.5h10"/>',
+        hidden: '<path d="M2 8s2.2-4 6-4 6 4 6 4-2.2 4-6 4-6-4-6-4Z"/><path d="M3 13 13 3"/>'
+      };
+      const tag = (text, icon, cls) => {
         const t = document.createElement("span");
         t.className = "sheet-tag" + (cls ? " " + cls : "");
-        t.textContent = text;
+        t.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + ICON[icon] + '</svg>';
+        const w = document.createElement("span"); w.textContent = text; t.appendChild(w);
         sheetSummaryTags.appendChild(t);
       };
-      if(!srcSect.hidden) tag(cfg.source === "recent" ? "Most missed" : cfg.source === "flagged" ? "Flagged" : "All questions",
+      if(!srcSect.hidden) tag(cfg.source === "recent" ? "Most missed" : cfg.source === "flagged" ? "Flagged" : "All questions", "bank",
         cfg.source === "all" ? "" : "is-bank");
-      if(!sizeSect.hidden) tag(cfg.size > 0 && cfg.size < pool.length ? n + " of " + pool.length : "All " + pool.length);
       if(isGame){
         const sp = GAME_SPEEDS[cfg.gameSpeed];
-        tag(sp.label + " \u00b7 " + sp.seconds + "s \u00b7 " + sp.lives + (sp.lives === 1 ? " life" : " lives"));
+        tag(sp.label + " \u00b7 " + sp.seconds + "s \u00b7 " + sp.lives + (sp.lives === 1 ? " life" : " lives"), "speed");
       }
-      if(!timerSect.hidden) tag(cfg.timer === "down" ? cfg.timerMinutes + " min limit" : cfg.timer === "up" ? "Stopwatch" : "No timer");
-      if(!optSect.hidden && !shuffleRow.hidden) tag(cfg.shuffle ? "Shuffled" : "Not shuffled");
-      if(!optSect.hidden && !recallRow.hidden && cfg.recall) tag("Answers hidden");
+      if(!optSect.hidden && !shuffleRow.hidden) tag(cfg.shuffle ? "Shuffled" : "In order", cfg.shuffle ? "shuffle" : "order");
+      if(!optSect.hidden && !recallRow.hidden && cfg.recall) tag("Answers hidden", "hidden");
+      if(!timerSect.hidden) tag(cfg.timer === "down" ? cfg.timerMinutes + " min limit" : cfg.timer === "up" ? "Stopwatch" : "No timer", "timer",
+        cfg.timer === "down" || cfg.timer === "up" ? "is-set" : "");
     }
-    /* NOT SHOWN (build 249): the top box says what you are taking and
-       how many; the tags repeated the controls right under it, and
-       More options now says its own settings on its own row. */
-    if(sheetSummaryTags.parentNode) sheetSummaryTags.remove();
+    if(sheetSummaryTags.parentNode !== sheetSummary || sheetSummary.lastChild !== sheetSummaryTags) sheetSummary.appendChild(sheetSummaryTags);
 
     const lives = GAME_SPEEDS[cfg.gameSpeed].lives;
     /* NOT `disabled`, on purpose. A disabled button swallows the tap and
@@ -55516,7 +55808,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-30-249";
+const APP_BUILD = "2026-09-30-250";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

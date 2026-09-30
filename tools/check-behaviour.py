@@ -628,10 +628,10 @@ def check_ranks(br):
 
     # SEVEN DIFFERENT MARKS, not one mark at seven sizes - and not the
     # chevron set that replaced it either ("I'm not a fan of the iron
-    # bronze silver icons after all"). Since build 245 they are, bottom to
-    # top: a nebula, a protostar, a comet, a binary, a galaxy, a ring
-    # nebula and the Supernova burst (re-dealt so the ladder climbs - see
-    # section 34). The check is structural rather than a look: no two
+    # bronze silver icons after all"). Since build 250 they are, bottom to
+    # top: a nebula, a protostar, a sun with a world, a binary, a spiral
+    # galaxy, a black hole with jets, and the Supernova with a dark heart -
+    # and it has to climb (section 34). The check is structural rather than a look: no two
     # ranks produce the same shape signature, and the top one is the most
     # elaborate thing in the set.
     shapes = pg.evaluate("""()=>{
@@ -1851,9 +1851,10 @@ def check_b234(br):
         res.timerSwitches = sw.length;
         if(sw[0]){ sw[0].checked = true; sw[0].dispatchEvent(new Event('change', { bubbles:true })); }
         res.timerAfter = cfg.timer;
-        /* Build 249: Shuffle and Hide answers live in More options, shut by default. */
-        const mb = sh.querySelector('.more-body');
-        res.optsFolded = !!mb && !mb.classList.contains('open') && !!mb.querySelector('.opt-rows') && mb.querySelectorAll('.opt-rows .opt').length === 2;
+        /* Build 250: Shuffle and Hide answers are their own card; the fold is the timer alone. */
+        const mb = sh.querySelector('.more-body'), rows = sh.querySelector('.optionsmodal-body > .sect > .opt-rows');
+        res.optsFolded = !!mb && !mb.classList.contains('open') && !mb.querySelector('.opt-rows') && !!rows && rows.querySelectorAll('.opt').length === 2
+          && !!mb.querySelector('.timer-sect');
         cfg.timer = 'off';
         return res; });
       document.querySelector('.unitoptions-modal-scrim').click();
@@ -1899,13 +1900,17 @@ def check_b234(br):
     # Build 249: the line under the switch says what the pool is; the
     # switch itself says how big ("the question bank stuff looks super
     # confusing" - the count moved out of the sentence and onto the choice).
-    check("the Question bank choice says what the pool is and how big",
-          sh.get("name") == "All questions" and sh.get("count", "").isdigit(), sh)
+    # Build 250: but not on "All questions" - "All questions / 48" beside
+    # "All 48" under How many "doesn't even make sense".
+    check("the Question bank's All questions carries no second count",
+          sh.get("name") == "All questions" and sh.get("count", "") == "", sh)
     check("the timer is two switches, and the first one sets a time limit",
           sh.get("timerSwitches") == 2 and sh.get("timerAfter") == "down", sh)
     # Build 249: "I need this app to be super simple and that start menu
     # doesn't look simple anymore" - the answer options fold into More options.
-    check("Shuffle and Hide answers fold into More options, shut until opened", sh.get("optsFolded") is True, sh)
+    # Build 250: "the shuffle answers and hide answers should not be in
+    # that drop down. That drop down just needs to be the timer stuff."
+    check("Shuffle and Hide answers are their own card; the fold holds only the timer, shut until opened", sh.get("optsFolded") is True, sh)
     check("the Practice Test screen does not mention the Phoenix banner", r["phoenix"] is False, r["phoenix"])
     th = r["themes"] if isinstance(r["themes"], dict) else {}
     check("Bronze's second colour is not green and Amethyst's is not pink",
@@ -2056,10 +2061,15 @@ def check_b235b(br):
                  oneLine: cap.length === 1 && (cap[0].textContent || '').length > 12,
                  label: (document.querySelector('.bank-sect .slab') || {}).textContent }; });
       document.querySelector('.bank-opt[data-value="recent"]')?.click(); await wait(200);
-      await T('bankInfo', () => !!document.querySelector('.bank-caption .bank-info'));
+      await T('bankInfo', () => { const c = document.querySelector('.bank-caption');
+        return { info: !!document.querySelector('.bank-info, .bank-infobody'), shown: !!c && !c.hidden, len: c ? (c.textContent || '').trim().length : 0 }; });
       cfg.timer = 'down'; cfg.timerMinutes = 20; document.querySelector('.bank-opt[data-value="recent"]')?.click(); await wait(200);
-      await T('tags', () => ({ tags: document.querySelectorAll('.sheet-summary-tags .sheet-tag').length,
-                               state: (document.querySelector('.more-toggle-state') || {}).textContent || '' }));
+      await T('tags', () => { const ts = [...document.querySelectorAll('.sheet-summary .sheet-summary-tags .sheet-tag')];
+        const card = (document.querySelector('.unitoptions-modal-sheet .more-toggle') || {}).parentElement;
+        return { tags: ts.length, texts: ts.map(t => t.textContent), icons: ts.every(t => !!t.querySelector('svg')),
+                 green: !!card && card.classList.contains('is-set') && (() => { const m = (getComputedStyle(card).borderTopColor.match(/[\d.]+/g) || []).map(Number);
+                   return m.length >= 3 && m[1] > m[0] + 80 && m[1] > m[2] + 60; })(),
+                 state: (document.querySelector('.more-toggle-state') || {}).textContent || '' }; });
       await T('timerLabel', () => (document.querySelector('.more-toggle') || {}).textContent || '');
       document.querySelector('.unitoptions-modal-scrim')?.click(); await wait(400);
       // Hold a unit card.
@@ -2093,17 +2103,29 @@ def check_b235b(br):
     b = r["bank"] if isinstance(r["bank"], dict) else {}
     # Build 249: one three-way switch and ONE line under it, not three
     # cards each with a paragraph ("the question bank stuff looks super
-    # confusing"); Most missed's rule sits behind an "i" on that line.
-    check("the Question bank: one three-way switch, one line under it, and an info dot while Most missed is on",
-          b.get("rows") == ["all", "recent", "flagged"] and b.get("bare") and b.get("oneLine") and r.get("bankInfo") is True
-          and b.get("label") == "Question bank", [b, r.get("bankInfo")])
+    # confusing"). Build 250: and that line is SHORT, with no "i" and no
+    # paragraph behind it ("the description for most missed is way too
+    # much") - 249 had both, and fails this.
+    bi = r.get("bankInfo") if isinstance(r.get("bankInfo"), dict) else {}
+    check("the Question bank: one three-way switch, and one short line under it for Most missed - no info dot",
+          b.get("rows") == ["all", "recent", "flagged"] and b.get("bare") and b.get("oneLine")
+          and bi.get("shown") and 0 < bi.get("len", 0) <= 45 and not bi.get("info")
+          and b.get("label") == "Question bank", [b, bi])
     t = r["tags"] if isinstance(r["tags"], dict) else {}
-    # Build 249: no tag row in the top box any more (it repeated the
-    # controls right under it); More options says its own settings on
-    # its own row, so the timer is still readable without opening it.
-    check("the top box has no tag row, and More options says what it is set to without opening",
-          isinstance(t, dict) and t.get("tags") == 0 and "20 min limit" in t.get("state", ""), t)
-    check("the fold is called More options", "More options" in str(r["timerLabel"]), r["timerLabel"])
+    # Build 250: the settings are back in the top box ("still needs to
+    # say the settings of the test from that menu, in the top like
+    # before just make it better"): one word and one icon per setting,
+    # and NO count among them - "All questions" beside "All 48" was the
+    # thing that "doesn't even make sense". The Timer bar still says its
+    # own state without opening.
+    tx = t.get("texts", []) if isinstance(t, dict) else []
+    check("the top box lists the run's settings, each with an icon, and no question count among them",
+          isinstance(t, dict) and t.get("tags", 0) >= 3 and t.get("icons") and "20 min limit" in tx
+          and not any(x.startswith("All ") and x[4:].isdigit() for x in tx) and not any(" of " in x for x in tx)
+          and "20 min limit" in t.get("state", ""), t)
+    # Build 250: "I need this to go green when you change it."
+    check("a timer that is on turns the Timer card green", isinstance(t, dict) and t.get("green") is True, t)
+    check("the fold is called Timer", str(r["timerLabel"]).startswith("Timer"), r["timerLabel"])
     d = r["detail"] if isinstance(r["detail"], dict) else {}
     check("holding a unit card opens its details without ticking it",
           d.get("unticked") is True and d.get("doors") == 2 and "Completed" in d.get("stats", []) and "Best time" in d.get("stats", [])
@@ -3008,6 +3030,9 @@ def check_penal_versions(br):
           and ("%d questions" % len(PENAL_SLIDES_SRCS)) in short[0]
           and ("%d questions" % nums["whole"]) in whole[0], opts)
     check("nothing on it says 'test version'", s1["pop"] and "test version" not in s1["popText"].lower(), s1["popText"])
+    # Build 250: the short version's hundo warning lives here and only here.
+    check("the short choice says on the pop-up that it earns no hundo, and the whole unit does not",
+          "hundo" in short[0].lower() and "hundo" not in whole[0].lower(), opts)
     s2 = choose("short")
     check("choosing slides 0-85 selects the card on that version",
           not s2["pop"] and s2["checked"] and s2["units"] == ["Penal Code"]
@@ -3037,8 +3062,11 @@ def check_penal_versions(br):
     n56 = "%d questions" % len(PENAL_SLIDES_SRCS)
     check("the start sheet and the Start button count the slides 0-85 questions",
           n56 in sheet["line"] and n56 in sheet["start"], sheet)
-    check("the start sheet says it won't count toward a hundo, in its existing words",
-          sheet["note"] == "Not the whole unit, so this run won't count toward a hundo.", sheet["note"])
+    # Build 250: the version pop-up is where the short version says it
+    # earns no hundo ("put the warning ... only at the pop up for which
+    # version"); the sheet's note is for cutting it down further.
+    check("the start sheet does not repeat the version pop-up's hundo warning",
+          sheet["note"] == "", sheet["note"])
     pg.evaluate("()=>document.querySelector('.sheet-begin-btn').click()")
     pg.wait_for_timeout(200)
     run = pg.evaluate(PENAL_RUN)
@@ -3114,8 +3142,8 @@ def check_penal_versions(br):
       const out = { note: note && !note.hidden ? note.textContent : '', line: line ? line.textContent : '',
         want: QUESTIONS.filter(q => (q.topic||'').trim() === 'Identity Crimes').length };
       document.querySelector('.unitoptions-modal-scrim')?.click(); return out; }""")
-    check("with another unit, the note names the Penal Code's slides and says the others still count",
-          "Penal Code (slides 0\u201385)" in mix["note"] and "other units still can" in mix["note"]
+    check("with another unit, the sheet adds no note for the short version either",
+          mix["note"] == ""
           and ("%d questions" % (len(PENAL_SLIDES_SRCS) + mix["want"])) in mix["line"], mix)
     # 9. Review mode shows the version chosen
     pg.evaluate("()=>{ cfg.mode = 'review'; cfg.units = []; cfg.versions = {}; showSetup(); }")
@@ -4173,6 +4201,83 @@ def check_b248_weekly(br):
     ctx.close()
 
 
+def check_b250(br):
+    """Build 250. (1) "Some of them are animated some aren't, ensure the
+    rank ladder makes all of them animated." Every emblem on the road map
+    had layers with an animation on them, so a check for animations passed
+    on the build she was describing - and on the screen Silver's moved
+    about 2 and Gold's about 4 against 7 to 11 for the rest (the mean
+    per-channel change between frames over 2.4s, on a 440x956 phone at
+    2x): their motion was on their faintest lines, or a twelve-tongued
+    corona turning onto itself. So this measures what is SEEN, and the
+    reward chips' flares, which were not animated at all, are included.
+    (2) The set was re-dealt so it reads as one story, and the final
+    three are their own tier - Gold the sun with a world going round it,
+    Sapphire a spiral galaxy, Amethyst a black hole with jets, Supernova
+    a blast with a jagged dark heart (not a round one: that read as the
+    black hole grown up) - and the three banners follow their emblems.
+    Written against build 247 (the animation) and 249 (the drawings),
+    where every one of these fails."""
+    print("\n48-49. build 250: every emblem on the road map moves; the ladder's drawings and banners")
+    from PIL import Image, ImageChops, ImageStat
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, dpr=2)
+    pg.evaluate("()=>{ store.rankMapFx244 = true; store.rankMapSeen = 99; showRanksScreen(); }")
+    pg.wait_for_timeout(1500)
+    moved = []
+    nodes = pg.locator(".rankmap-node")
+    for i in range(nodes.count()):
+        el = nodes.nth(i)
+        el.scroll_into_view_if_needed()
+        pg.wait_for_timeout(250)
+        frames = []
+        for _ in range(6):
+            frames.append(Image.open(io.BytesIO(el.screenshot())).convert("RGB"))
+            pg.wait_for_timeout(400)
+        moved.append(round(max(sum(ImageStat.Stat(ImageChops.difference(frames[0], f)).mean) for f in frames[1:]), 1))
+    check("every rank on the road map visibly moves - none is still beside its neighbours",
+          len(moved) == 7 and min(moved) >= 4.5, moved)
+    chips = pg.evaluate("""()=>[...document.querySelectorAll('.rankmap-giftav svg.rank-emblem-svg')].map(s => s.getAnimations({ subtree: true }).length)""")
+    check("and so does each rank's flare in its rewards", len(chips) >= 7 and all(n > 0 for n in chips), chips)
+    d = pg.evaluate("""()=>{ const out = {};
+      const g = buildRankEmblemSVG('veteran');
+      out.orbit = !!g.querySelector('.rk-orbit') && !!g.querySelector('.rk-orbit-front');
+      const a = buildRankEmblemSVG('adept');
+      out.galaxy = !!a.querySelector('.rk-spin') && a.querySelectorAll('.rk-turn').length >= 1;
+      const e = buildRankEmblemSVG('elite');
+      out.hole = [...e.querySelectorAll('path')].some(p => p.getAttribute('fill') === '#030208') && !!e.querySelector('.rk-flare');
+      const t = buildRankEmblemSVG('titan');
+      const dark = [...t.querySelectorAll('path')].filter(p => p.getAttribute('fill') === '#000000');
+      /* dark, but not a disc: an 8-point star is 8 curves, a circle 2-4 arcs */
+      out.darkStar = dark.length > 0 && dark.every(p => (p.getAttribute('d') || '').split(/[MLQAZ]/i).length > 7);
+      const html = id => buildBannerArt(id).innerHTML;
+      out.sapphireBanner = /bn-spin/.test(html('adept_rank')) && /#3D74E8/i.test(html('adept_rank'));
+      out.amethystBanner = /#030208/.test(html('elite_rank')) && /#A855F7/i.test(html('elite_rank')) && !/#3D74E8/i.test(html('elite_rank'));
+      out.supernovaBanner = /fill="#000000"/.test(html('titan_rank'));
+      return out; }""")
+    check("Gold is a sun with a world going round it, in front and behind", d["orbit"], d)
+    check("Sapphire is a galaxy that turns, with the final three's crown", d["galaxy"], d)
+    check("Amethyst is a black hole with jets", d["hole"], d)
+    check("Supernova's dark heart is a jagged star, not a round hole", d["darkStar"], d)
+    check("the banners follow: Sapphire's the galaxy, Amethyst's the black hole, Supernova's the dark heart",
+          d["sapphireBanner"] and d["amethystBanner"] and d["supernovaBanner"], d)
+    # "The screen has some lag when in the unit selection screen and hit
+    # home." Profiled, a big share of the tap was redrawing the same seven
+    # Home emblems and the same character (twice) on every visit. Timing
+    # is flaky in a harness, so this counts the redraws instead: coming
+    # back to Home must draw neither again.
+    redraw = pg.evaluate("""async ()=>{ const n = { em: 0, ch: 0 };
+      const e0 = window.buildRankEmblemSVG, c0 = window.drawAvatarCharSVG;
+      showHome(); await new Promise(r => setTimeout(r, 400));
+      showSetup(); await new Promise(r => setTimeout(r, 400));
+      window.buildRankEmblemSVG = function(){ n.em++; return e0.apply(this, arguments); };
+      window.drawAvatarCharSVG = function(){ n.ch++; return c0.apply(this, arguments); };
+      showHome(); await new Promise(r => setTimeout(r, 400));
+      window.buildRankEmblemSVG = e0; window.drawAvatarCharSVG = c0;
+      return n; }""")
+    check("going back to Home redraws neither its rank emblems nor your character", redraw == {"em": 0, "ch": 0}, redraw)
+    ctx.close()
+
+
 B245_POLISH = ["modes", "daily_schedule", "slogan", "bugreport", "daily_announce", "start_pill", "daily_header"]
 
 
@@ -4233,6 +4338,7 @@ def main():
                 globals()["check_b245_" + name](br)
             check_b246(br)
             check_b248_weekly(br)
+            check_b250(br)
         finally:
             br.close()
     SERVER.shutdown()
