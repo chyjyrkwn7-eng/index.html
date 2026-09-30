@@ -7962,3 +7962,20 @@ because "succeeded ... with fuzz" is the only warning there is.
 - **The Profile badges row is the Badges tab's medal**, smaller, with
   "Badges / N of 16 earned" and the arrow. No unit name and no hundo
   count ("I don't like how it says what I'm closest to").
+
+### Build 263
+
+- **The Ronin replaces the Night Owl** ("absolutely not the move either,
+  needs to be something cooler, unique") on the same challenge,
+  `bigtest400`. `nightowl` joins `knight` in `RETIRED_CHARACTER_TO` →
+  the Ninja. A cyber-ronin: the wide straw kasa is the silhouette and
+  throws the face into shadow, a black cloth mask, two slanted neon
+  slits for eyes, a katana hilt over the shoulder and a neon scarf
+  (`#FF2E88`, also the glow) streaming off to one side. Its classes and
+  keyframes are all `cx-fx-ronin*` / `cx-ronin-*` - checked unused
+  before writing, per the Knight lesson.
+- Three characters in this slot in four builds. What was asked against
+  each time: armour (the Knight), a cute animal (the Owl). What the set
+  she likes has in common - the Hacker, the Timekeeper, the Valkyrie,
+  Void - is a strong single silhouette and a light of its own on a dark
+  figure. Start there next time.

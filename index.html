@@ -13609,15 +13609,22 @@
   .avatarchar-svg .cx-k-valkyrie{ --cx-blink:6.4s; --cx-blink-at:-3.9s; }
   .avatarchar-svg .cx-k-hacker{ --cx-blink:5.5s; --cx-blink-at:-.7s; }
   .avatarchar-svg .cx-k-timekeeper{ --cx-blink:7.3s; --cx-blink-at:-5.2s; }
-  /* Night Owl (build 262): the head tilts the way an owl's does, and
-     the stars behind it twinkle. */
-  .avatarchar-svg .cx-k-nightowl{ --cx-blink:5.8s; --cx-blink-at:-1.9s; }
+  /* Ronin (build 263): the scarf streams from the throat, the eyes' neon
+     breathes, the slashes behind him drift, and a glint runs across the
+     brim of the hat. Names are the Ronin's own - see the drawing. */
+  .avatarchar-svg .cx-k-ronin{ --cx-blink:6.6s; --cx-blink-at:-3.1s; }
+  .avatarchar-svg .cx-fx-roninscarf{ transform-origin:100% 40%; }
   @media (prefers-reduced-motion:no-preference){
-    .char-live .avatarchar-svg .cx-k-nightowl .cx-head{ animation:cx-owl-tilt 4.6s ease-in-out infinite alternate; }
-    .char-live .avatarchar-svg .cx-fx-owlstars{ animation:cx-glow 3.4s ease-in-out infinite; }
-    .char-react-win .avatarchar-svg .cx-k-nightowl .cx-head{ animation:cx-owl-tilt .5s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-roninscarf{ animation:cx-ronin-scarf 1.8s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-ronineye{ animation:cx-ronin-eye 2.6s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-roninneon{ animation:cx-ronin-neon 4.4s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-roninsheen{ animation:cx-sheen-idle 5.8s ease-in-out -2.6s infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-roninscarf{ animation:cx-ronin-scarf .35s ease-in-out infinite alternate; }
+    .char-react-win .avatarchar-svg .cx-fx-roninsheen{ animation:cx-sheen 1.3s ease-in-out .3s infinite; }
   }
-  @keyframes cx-owl-tilt{ from{ rotate:-6deg; } to{ rotate:6deg; } }
+  @keyframes cx-ronin-scarf{ from{ rotate:-5deg; scale:1 1; } to{ rotate:7deg; scale:1.06 .9; } }
+  @keyframes cx-ronin-eye{ 0%, 100%{ opacity:.55; } 50%{ opacity:.95; } }
+  @keyframes cx-ronin-neon{ from{ transform:translateX(-1.2px); opacity:.7; } to{ transform:translateX(1.2px); opacity:1; } }
   /* Each wing flexes from its root, where it meets the helm. */
   .avatarchar-svg .cx-fx-wing-l{ transform-origin:96% 72%; }
   .avatarchar-svg .cx-fx-wing-r{ transform-origin:4% 72%; }
@@ -31206,8 +31213,8 @@ const AVATAR_CHARACTERS = [
                     244: "I hate the k9 character")
        Wolf       - studied on 30 different days (new in 244: "add
                     another character in the challenge rewards")
-       Night Owl  - pass a test of 400+ questions (new in 262; the Knight
-                    and its Hardcore challenge came and went in 259) */
+       Ronin      - pass a test of 400+ questions (263; the Knight in 259
+                    and the Night Owl in 262 came and went before it) */
   { id: "detective",  kind: "detective",  feat: "daily10" },
   { id: "masked",     kind: "masked",     feat: "retake100" },
   { id: "zeus",       kind: "zeus",       feat: "weektop" },
@@ -31218,7 +31225,7 @@ const AVATAR_CHARACTERS = [
   { id: "astronaut",  kind: "astronaut",  feat: "hundo7day" },
   { id: "hacker",     kind: "hacker",     feat: "study20h" },
   { id: "timekeeper", kind: "timekeeper", feat: "days30" },
-  { id: "nightowl",   kind: "nightowl",   feat: "bigtest400" },
+  { id: "ronin",      kind: "ronin",      feat: "bigtest400" },
   /* ---- SECRETS ----
      Things you FIND rather than work towards. Build 244 took the Officer
      out completely ("we will remove the officer character completely")
@@ -31273,7 +31280,7 @@ const AVATAR_CHARACTERS = [
 const AVATAR_GRID_NAME = { masked: "Masked One" };
 const AVATAR_DISPLAY_NAME = {
   lunar: "Lunar", solar: "Solar", tempest: "Tempest", frost: "Frost", oracle: "Oracle", inferno: "Inferno",
-  swat: "SWAT", valkyrie: "Valkyrie", hacker: "Hacker", timekeeper: "Timekeeper", nightowl: "Night Owl", knight: "Knight",
+  swat: "SWAT", valkyrie: "Valkyrie", hacker: "Hacker", timekeeper: "Timekeeper", ronin: "Ronin", nightowl: "Night Owl", knight: "Knight",
   pirate: "Pirate", scholar: "Scholar", wolf: "Wolf",
   paladin: "Paladin", sentinel: "Sentinel", k9: "K-9",
   ninja: "Ninja", ghost: "Ghost", queen: "Queen", wizard: "Wizard",
@@ -31297,7 +31304,7 @@ const AVATAR_GLOW = {
   k9: "#D9A05A",
   ninja: "#E0453F", ghost: "#E8ECF4", queen: "#8B4FC4", wizard: "#6C5BD4",
   grizzly: "#B9793C", alien: "#4FD18A", samurai: "#C0392B", dragon: "#E04A2F",
-  officer: "#3D74E8", clown: "#F05A9B", swat: "#3D74E8", valkyrie: "#8CC8FF", hacker: "#3DFFB0", timekeeper: "#8A86FF", nightowl: "#B8C4FF", robot: "#6FD3E8", astronaut: "#F2B233",
+  officer: "#3D74E8", clown: "#F05A9B", swat: "#3D74E8", valkyrie: "#8CC8FF", hacker: "#3DFFB0", timekeeper: "#8A86FF", ronin: "#FF2E88", robot: "#6FD3E8", astronaut: "#F2B233",
   /* Read off each one's artwork like the rest: the detective's amber
      street-light, the cold light in Zeus's cracks, the mask's own
      lacquer, and for Void the middle of its three flare colours - the
@@ -31340,7 +31347,8 @@ const CHARACTER_FEATS = {
      {easy, average, hardcore} per unit since Game mode shipped, and the
      ladder inside recordGameBeatIfEligible() already refuses Hardcore
      until Average is beaten. This just counts it. */
-  /* Build 262, the Night Owl: "take a 400 question [test] and pass it".
+  /* Build 262, the Night Owl's then, the Ronin's since 263: "take a 400
+     question [test] and pass it".
      One run of 400 or more questions, finished at the pass mark or
      better - recorded in summarize() beside the Practice Test's own
      pass, so a run that times out or a game that is lost never counts.
@@ -31641,7 +31649,11 @@ const RETIRED_CHARACTER_TO = { queen: "wizard", dragon: "wizard",
   /* build 262: the Knight is gone ("I don't like that character or the
      challenge"); its three days live were not long enough for anybody to
      have earned what replaced it, so it goes to a starter. */
-  knight: "ninja" };
+  knight: "ninja",
+  /* build 263: the Night Owl lasted a day ("absolutely not the move");
+     the Ronin took its challenge. Nobody could have earned the owl in a
+     day, so it goes to a starter too. */
+  nightowl: "ninja" };
 function buildAvatarCharSVG(charId){
   charId = RETIRED_CHARACTER_TO[charId] || charId;
   return buildAvatarCharSVGFresh(charId);
@@ -33063,67 +33075,81 @@ function drawAvatarCharSVG(charId){
     sheen(wingPaths.concat([helm]), "cx-fx-wingsheen", 3.4, 36.6, 3, 16, "#FFFFFF");
     return done();
   }
-  /* ================= NIGHT OWL (build 262) =================
-     Pass a test of 400 or more questions - "make it like take a 400
-     question and pass it". It replaced the Knight (259), which was
-     asked against along with its challenge. The owl is the study-late
-     animal, and the one thing about it that has to be right is the one
-     Void got wrong: HEAD AND BODY ARE ONE SHAPE. An owl has no neck, so
-     the silhouette is a single rounded body with the head's crown and
-     ear tufts on top, and the face is a lighter disc laid on it, not a
-     separate ball set on a torso. Big amber eyes, a small dark beak, a
-     speckled chest, wings folded at the sides, and a few stars behind
-     it twinkling. */
-  if(def.kind === "nightowl"){
-    const feather = headGrad("#C9A27A", "#8A5E3A", "#3A2415");
-    const wing = headGrad("#A57A52", "#6A4428", "#2A170C");
-    const disc = headGrad("#FFF6E6", "#EBD7B8", "#B99A74");
-    const belly = headGrad("#F4E4C8", "#D9BE96", "#9C7A52");
-    const amber = "#F5B533";
-    open("cx-fx cx-fx-owlstars");
-    [[5.4, 8, .5], [34.2, 6.4, .42], [31.8, 15.2, .36], [7.4, 17.4, .34], [36, 22, .3]].forEach(([x, y, r]) =>
-      svg.appendChild(mk("circle", { cx: x, cy: y, r, fill: "#DCE6FF" })));
+  /* ================= RONIN (build 263) =================
+     Pass a test of 400 or more questions. The third try at this slot:
+     the Knight (259) and the Night Owl (262) were both asked against -
+     "needs to be something cooler, unique". A cyber-ronin, and the HAT
+     IS THE SILHOUETTE: a wide straw kasa throws the whole face into
+     shadow, so at 26px it is one shape nothing else in the set has.
+     Under it a black cloth mask and two slanted slits of neon for eyes;
+     a katana hilt over the shoulder; a long neon scarf streaming off to
+     one side. The neon is the only colour on him, which is what makes
+     him read as lit rather than drawn. The body reaches up behind the
+     head (the Void lesson), so a tilt never shows a gap.
+     Every class and keyframe name here is its own - cx-fx-ronin* and
+     cx-ronin-* - because the Knight's plume once borrowed another
+     character's and quietly changed both. */
+  if(def.kind === "ronin"){
+    const neon = "#FF2E88", neonSoft = "#FF8AC0";
+    const cloth = headGrad("#4A4F5E", "#22252E", "#0B0C10");
+    const clothLt = headGrad("#6A7082", "#3A3F4C", "#15171D");
+    const straw = headGrad("#B79A62", "#6E5A36", "#2A2114");
+    const shade = headGrad("#3A2E26", "#1C1512", "#08060A");
+    const wrap = headGrad("#3A3F4C", "#1A1D24", "#07080B");
+    /* neon slashes behind, drifting */
+    open("cx-fx cx-fx-roninneon");
+    svg.appendChild(mk("path", { d: "M6 30 L16 6", stroke: neon, "stroke-width": ".5", "stroke-linecap": "round", opacity: ".5" }));
+    svg.appendChild(mk("path", { d: "M27 36 L35.6 16", stroke: neon, "stroke-width": ".4", "stroke-linecap": "round", opacity: ".35" }));
+    close();
+    /* The katana, behind the shoulder: a wrapped hilt with a diamond
+       pattern and a gold guard, rising up and to the right. */
+    open("cx-fx cx-fx-roninblade");
+    svg.appendChild(mk("path", { d: "M26.4 29.6 L33.4 15.6 L35 16.4 L28.1 30.5 Z", fill: wrap, stroke: "#050608", "stroke-width": ".25" }));
+    for(let i = 0; i < 6; i++){
+      const t = .12 + i * .14, x = 27.25 + (34.2 - 27.25) * t, y = 30.05 + (16 - 30.05) * t;
+      svg.appendChild(mk("path", { d: "M" + (x - .8).toFixed(2) + " " + (y - .2).toFixed(2) + " L" + x.toFixed(2) + " " + (y - .9).toFixed(2) + " L" + (x + .8).toFixed(2) + " " + (y + .2).toFixed(2) + " L" + x.toFixed(2) + " " + (y + .9).toFixed(2) + " Z", fill: "#8A8FA0", opacity: ".55" }));
+    }
+    svg.appendChild(mk("ellipse", { cx: 28.2, cy: 30.9, rx: 2.1, ry: .8, fill: "#C9A23E", stroke: "#6A4F12", "stroke-width": ".2", transform: "rotate(-60 28.2 30.9)" }));
+    svg.appendChild(mk("circle", { cx: 34.25, cy: 15.9, r: .75, fill: "#C9A23E" }));
     close();
     open("cx-body");
-    /* One silhouette from the crown to the base, reaching up behind the
-       head so a tilt never shows a gap. */
-    svg.appendChild(mk("path", { d: "M7.2 40 Q6.2 30 8.4 22 Q10 13 20 12.4 Q30 13 31.6 22 Q33.8 30 32.8 40 Z", fill: feather }));
-    /* The chest, lighter, with rows of little chevron speckles. */
-    svg.appendChild(mk("path", { d: "M12.6 40 Q11.8 31.6 14.6 27 Q20 24.6 25.4 27 Q28.2 31.6 27.4 40 Z", fill: belly }));
-    for(let r = 0; r < 4; r++){
-      const y = 29.4 + r * 2.6, n = r % 2 ? 3 : 4;
-      for(let i = 0; i < n; i++){
-        const x = 20 + (i - (n - 1) / 2) * 3;
-        svg.appendChild(mk("path", { d: "M" + (x - .9) + " " + y + " L" + x + " " + (y + .9) + " L" + (x + .9) + " " + y,
-          fill: "none", stroke: "#8A5E3A", "stroke-width": ".45", "stroke-linecap": "round", "stroke-linejoin": "round", opacity: ".75" }));
-      }
-    }
-    /* Wings folded down each side, with feather lines. */
-    [["M8.4 24 Q6 31 7.6 39.6 L12 39.6 Q11 31.4 12.8 26.4 Q10.6 24.6 8.4 24 Z", "M9 29 Q8.4 33 9.2 37.4 M10.8 28 Q10.2 32.6 10.8 37.6"],
-     ["M31.6 24 Q34 31 32.4 39.6 L28 39.6 Q29 31.4 27.2 26.4 Q29.4 24.6 31.6 24 Z", "M31 29 Q31.6 33 30.8 37.4 M29.2 28 Q29.8 32.6 29.2 37.6"]].forEach(([d, lines]) => {
-      svg.appendChild(mk("path", { d, fill: wing, stroke: "#2A170C", "stroke-width": ".25", "stroke-linejoin": "round" }));
-      svg.appendChild(mk("path", { d: lines, fill: "none", stroke: "#C9A27A", "stroke-width": ".35", "stroke-linecap": "round", opacity: ".55" }));
-    });
+    /* The haori: dark, a V of lighter under-layer at the collar, reaching
+       up behind the head. */
+    svg.appendChild(mk("path", { d: "M4.8 40 Q5.4 31 11.6 28.4 Q13 22.6 20 22.4 Q27 22.6 28.4 28.4 Q34.6 31 35.2 40 Z", fill: cloth }));
+    svg.appendChild(mk("path", { d: "M15.4 28.6 L20 36.4 L24.6 28.6 L22.8 28.6 L20 33.4 L17.2 28.6 Z", fill: clothLt }));
+    svg.appendChild(mk("path", { d: "M15.4 28.6 L20 36.4 L24.6 28.6", fill: "none", stroke: neon, "stroke-width": ".35", opacity: ".55" }));
     close();
+    /* The scarf: wrapped at the throat, its tail streaming off to the left. */
+    open("cx-fx cx-fx-roninscarf");
+    svg.appendChild(mk("path", { d: "M13.2 27.6 Q9.4 28.4 6.4 26.6 Q4.6 25.6 3.4 26.6 Q5 27.4 5.6 29 Q8.8 31.2 13.8 30.2 Z", fill: neon, opacity: ".95" }));
+    svg.appendChild(mk("path", { d: "M12.6 28.4 Q9 29.2 5.8 28", fill: "none", stroke: neonSoft, "stroke-width": ".35", "stroke-linecap": "round", opacity: ".8" }));
+    close();
+    svg.appendChild(mk("path", { d: "M12.6 26.6 Q20 29.8 27.4 26.6 L27.8 29.2 Q20 32.4 12.2 29.2 Z", fill: neon }));
+    svg.appendChild(mk("path", { d: "M13 27.4 Q20 30.4 27 27.4", fill: "none", stroke: neonSoft, "stroke-width": ".3", opacity: ".8" }));
     open("cx-head");
-    /* The crown and the ear tufts, the same feather as the body. */
-    svg.appendChild(mk("path", { d: "M8.6 21.4 Q8.4 13.6 12.2 10.6 L10.4 4.6 Q14.6 6.6 16.2 9.2 Q20 8.2 23.8 9.2 Q25.4 6.6 29.6 4.6 L27.8 10.6 Q31.6 13.6 31.4 21.4 Q26 26 20 26 Q14 26 8.6 21.4 Z", fill: feather }));
-    svg.appendChild(mk("path", { d: "M11.2 6.2 Q13.6 7.6 14.8 9.6 M28.8 6.2 Q26.4 7.6 25.2 9.6", fill: "none", stroke: "#E2C49E", "stroke-width": ".45", "stroke-linecap": "round", opacity: ".7" }));
-    /* The facial disc: two soft rounds meeting over the beak. */
-    svg.appendChild(mk("path", { d: "M20 13.6 Q15.8 11.2 12.4 13.4 Q9.8 15.8 10.4 19.4 Q11.4 23.6 16 24 Q18.6 24 20 22.4 Q21.4 24 24 24 Q28.6 23.6 29.6 19.4 Q30.2 15.8 27.6 13.4 Q24.2 11.2 20 13.6 Z", fill: disc, stroke: "#8A5E3A", "stroke-width": ".3" }));
+    /* The face in the hat's shadow, then the mask over the lower half. */
+    svg.appendChild(mk("path", { d: "M13.6 14.6 Q13.2 22.6 20 25.4 Q26.8 22.6 26.4 14.6 Z", fill: shade }));
+    svg.appendChild(mk("path", { d: "M13.8 20.2 Q16.8 21.6 20 21.2 Q23.2 21.6 26.2 20.2 Q25.8 23.4 20 25.8 Q14.2 23.4 13.8 20.2 Z", fill: "#0A0B0F" }));
+    svg.appendChild(mk("path", { d: "M14.4 20.9 Q20 22.6 25.6 20.9", fill: "none", stroke: "#2C3040", "stroke-width": ".35", opacity: ".8" }));
+    /* The eyes: two slanted slits of neon, with their light spilling. */
     open("cx-eyes");
-    [[15.4, 18.4], [24.6, 18.4]].forEach(([x, y]) => {
-      svg.appendChild(mk("circle", { cx: x, cy: y, r: 3.3, fill: "#2A170C" }));
-      svg.appendChild(mk("circle", { cx: x, cy: y, r: 2.8, fill: amber }));
-      svg.appendChild(mk("circle", { cx: x, cy: y, r: 1.55, fill: "#120A04" }));
-      svg.appendChild(catchlight(x - .7, y - .8, .6));
+    ["M15 17.7 L18.8 18.6 L18.4 19.4 L15.3 18.6 Z", "M25 17.7 L21.2 18.6 L21.6 19.4 L24.7 18.6 Z"].forEach(d => {
+      svg.appendChild(mk("path", { d, fill: neon, opacity: ".55", stroke: neon, "stroke-width": "1.1", "stroke-linejoin": "round", class: "cx-fx-ronineye" }));
+      svg.appendChild(mk("path", { d, fill: "#FFE6F2" }));
     });
     close();
-    closedEyes([[15.4, 18.6, 2.2], [24.6, 18.6, 2.2]], "#5A3A20", .55);
-    /* The beak. */
-    svg.appendChild(mk("path", { d: "M18.6 21.2 L21.4 21.2 L20 24.2 Z", fill: "#4A3218", stroke: "#2A170C", "stroke-width": ".2", "stroke-linejoin": "round" }));
-    svg.appendChild(mk("path", { d: "M19.2 21.5 L20 22.6", stroke: "#8A6A48", "stroke-width": ".3", "stroke-linecap": "round" }));
+    closedEyes([[16.9, 18.6, 1.4], [23.1, 18.6, 1.4]], neon, .4);
+    /* The kasa: a wide shallow cone, straw ridges running from the
+       peak, and the neon catching the underside of the brim. */
+    const kasa = "M5 14.4 Q11.4 6.2 20 3.8 Q28.6 6.2 35 14.4 Q28 16.2 20 16.2 Q12 16.2 5 14.4 Z";
+    svg.appendChild(mk("path", { d: kasa, fill: straw, stroke: "#1E170C", "stroke-width": ".35", "stroke-linejoin": "round" }));
+    [[7.8, 15.1], [11.2, 15.7], [15.4, 16.1], [20, 16.2], [24.6, 16.1], [28.8, 15.7], [32.2, 15.1]].forEach(([x, y]) =>
+      svg.appendChild(mk("path", { d: "M20 4.4 L" + x + " " + y, stroke: "#3A2E1A", "stroke-width": ".28", opacity: ".55" })));
+    svg.appendChild(mk("path", { d: "M9.6 10.2 Q14.6 6.2 20 4.8", fill: "none", stroke: "#E2C88E", "stroke-width": ".5", "stroke-linecap": "round", opacity: ".55" }));
+    svg.appendChild(mk("path", { d: "M5.4 14.6 Q12 16.6 20 16.6 Q28 16.6 34.6 14.6", fill: "none", stroke: neon, "stroke-width": ".55", "stroke-linecap": "round", opacity: ".9" }));
+    svg.appendChild(mk("circle", { cx: 20, cy: 4.1, r: .7, fill: "#C9A23E" }));
     close();
+    sheen([kasa], "cx-fx-roninsheen", 5, 35, 3, 17, "#FFF2DA");
     return done();
   }
   /* ================= HACKER =================
@@ -56061,7 +56087,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-30-262";
+const APP_BUILD = "2026-09-30-263";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

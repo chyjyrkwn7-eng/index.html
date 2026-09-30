@@ -1685,8 +1685,8 @@ def check_b232(br):
     known = ["detective", "masked", "zeus", "poseidon", "clown", "valkyrie", "marksman", "astronaut", "hacker", "timekeeper"]
     secrets = ["voidwalker", "umbra", "singularity"]
     o = r["order"]
-    check("the challenge row: the known challenge characters in order, anything newer after them (the Night Owl), then the secrets",
-          o[:len(known)] == known and o[-len(secrets):] == secrets and "nightowl" in o and "knight" not in o, o)
+    check("the challenge row: the known challenge characters in order, anything newer after them (the Ronin), then the secrets",
+          o[:len(known)] == known and o[-len(secrets):] == secrets and "ronin" in o and "knight" not in o and "nightowl" not in o, o)
     # Build 233: the Masked One is back, for retaking missed questions.
     check("the Masked One unlocks at 100 retaken questions and says how far along you are",
           isinstance(r["masked"], dict) and r["masked"]["feat"] == "retake100" and r["masked"]["before"] is True
@@ -4429,18 +4429,18 @@ def check_b258(br):
         text: held ? held.innerText : '', stillGhost: store.avatarChar === 'ghost' };
       document.querySelectorAll('.invite-overlay').forEach(x => x.remove());
       nj.click(); out.hold.tapPicks = store.avatarChar === 'ninja';
-      /* 8. the Night Owl (262, after the Knight was asked against): pass a
-         test of 400 or more questions */
-      const ow = AVATAR_CHARACTERS.find(c => c.id === 'nightowl');
+      /* 8. the Ronin (263; the Knight and the Night Owl were both asked
+         against): pass a test of 400 or more questions */
+      const ow = AVATAR_CHARACTERS.find(c => c.id === 'ronin');
       const wasBig = store.bigTestPassed; store.bigTestPassed = false;
-      const owlLocked = isLockedCharacter('nightowl');
-      store.bigTestPassed = true; const owlHeld = !isLockedCharacter('nightowl');
+      const owlLocked = isLockedCharacter('ronin');
+      store.bigTestPassed = true; const owlHeld = !isLockedCharacter('ronin');
       store.bigTestPassed = wasBig;
-      const os = buildAvatarCharSVG('nightowl');
-      out.owl = { feat: ow && ow.feat, name: AVATAR_DISPLAY_NAME.nightowl, locked: owlLocked, held: owlHeld,
+      const os = buildAvatarCharSVG('ronin');
+      out.owl = { feat: ow && ow.feat, name: AVATAR_DISPLAY_NAME.ronin, locked: owlLocked, held: owlHeld,
         label: CHARACTER_FEATS.bigtest400.label,
-        parts: ['cx-body', 'cx-head', 'cx-eyes', 'cx-eyes-closed'].every(c => !!os.querySelector('.' + c)),
-        knightGone: !AVATAR_CHARACTERS.some(c => c.id === 'knight'), knightDrawsAs: RETIRED_CHARACTER_TO.knight };
+        parts: ['cx-body', 'cx-head', 'cx-eyes', 'cx-eyes-closed', 'cx-fx-roninscarf'].every(c => !!os.querySelector('.' + c)),
+        knightGone: !AVATAR_CHARACTERS.some(c => c.id === 'knight' || c.id === 'nightowl'), knightDrawsAs: RETIRED_CHARACTER_TO.knight, owlDrawsAs: RETIRED_CHARACTER_TO.nightowl };
       /* 10. leaving for an update lets go of the page first */
       showHome(); await wait(400);
       releasePageForReload(); await wait(50);
@@ -4477,8 +4477,8 @@ def check_b258(br):
           h.get("card") and h.get("tick") and "Unlocked" in h.get("text", "") and "day one" in h.get("text", "")
           and h.get("stillGhost") and h.get("tapPicks"), h)
     ow = r.get("owl") or {}
-    check("the Knight is gone and the Night Owl is a challenge character for passing a 400-question test",
-          ow.get("feat") == "bigtest400" and ow.get("name") == "Night Owl" and ow.get("locked") is True and ow.get("held") is True
+    check("the Knight and the Night Owl are gone; the Ronin is the challenge character for passing a 400-question test",
+          ow.get("feat") == "bigtest400" and ow.get("name") == "Ronin" and ow.get("owlDrawsAs") == "ninja" and ow.get("locked") is True and ow.get("held") is True
           and "400" in ow.get("label", "") and ow.get("parts") is True and ow.get("knightGone") is True and ow.get("knightDrawsAs") == "ninja", ow)
     rl = r.get("release") or {}
     check("before an update reloads, only the Pushing update bar is left and nothing else is animating",
