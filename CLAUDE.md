@@ -7694,3 +7694,21 @@ because "succeeded ... with fuzz" is the only warning there is.
   **Not fixed, and worth knowing:** Ranks' steady state is ~80ms a frame
   at 4x (style + layout + paint every frame from its animations) and was
   the same on 249 — a separate job.
+
+### Build 252
+
+- **The build-250 speed-up is OUT.** Reported straight after 250/251
+  went live: "the main menu is broken. The planet and stuff isn't even
+  there." It could not be reproduced in Chromium (every tab and the
+  unit screen back to Home drew the hero and all seven bubbles, no
+  errors) and no WebKit build is available here, so the only new code on
+  Home - reusing the previous Home's emblem nodes, stamping characters
+  from cached markup (template + `adoptNode`), the idle warm-up, and the
+  header's skip-if-same-character - was taken back out, and each Home
+  emblem is now built inside a try, so a rank drawing that throws leaves
+  an empty bubble instead of no planet. **Do not bring the caching back
+  without a real iPhone to test it on.** check-behaviour 49 asserts the
+  hero and seven bubbles after unit screen → Home, and that a throwing
+  `buildRankEmblemSVG` cannot remove the hero (249 fails it).
+- The lag notes under Build 250 describe code that is no longer there;
+  the profiling numbers are still right about where the time goes.

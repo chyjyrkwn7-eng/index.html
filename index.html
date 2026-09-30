@@ -31494,49 +31494,10 @@ const RETIRED_CHARACTER_TO = { queen: "wizard", dragon: "wizard",
   pirate: "valkyrie", scholar: "hacker", wolf: "timekeeper",
   /* build 245: SWAT removed entirely, nobody keeps it. */
   swat: "ninja" };
-/* EACH CHARACTER IS DRAWN ONCE PER SESSION, THEN STAMPED (build 250).
-   Characters are built node by node, and a screen like Ranks or the
-   leaderboard asks for a dozen of them - profiled at 4x CPU throttle,
-   111ms of the 316ms tap on Ranks was this function. The drawing is a
-   pure function of the id apart from its gradient-id suffix, so the
-   first build is kept as markup split on that suffix, and every later
-   one is the same markup with a fresh suffix, parsed natively. Same
-   pixels (checked character by character), unique ids as before. */
-const _avatarMarkup = {};
 function buildAvatarCharSVG(charId){
   charId = RETIRED_CHARACTER_TO[charId] || charId;
-  const hit = _avatarMarkup[charId];
-  if(hit){
-    const tpl = document.createElement("template");
-    tpl.innerHTML = hit.join(charId + "-" + Math.random().toString(36).slice(2, 9));
-    const fresh = tpl.content.firstElementChild;
-    if(fresh) return document.adoptNode(fresh);
-  }
-  const svg = buildAvatarCharSVGFresh(charId);
-  if(svg && svg.__uid){
-    try { _avatarMarkup[charId] = svg.outerHTML.split(svg.__uid); } catch(e){}
-  }
-  return svg;
+  return buildAvatarCharSVGFresh(charId);
 }
-/* ...and drawn ahead of time, in idle moments after launch, so the FIRST
-   visit to Ranks or the leaderboard gets the stamped copies too rather
-   than paying for every character at the moment of the tap. One per idle
-   slot; nothing here runs while anything else wants the thread. */
-(function warmAvatarMarkup(){
-  const idle = window.requestIdleCallback
-    ? f => window.requestIdleCallback(f, { timeout: 4000 })
-    : f => setTimeout(() => f({ timeRemaining: () => 8 }), 250);
-  let queue = null;
-  const step = dl => {
-    if(!queue) queue = (typeof AVATAR_CHARACTERS !== "undefined" ? AVATAR_CHARACTERS : []).map(c => c.id);
-    while(queue.length && dl.timeRemaining() > 4){
-      const id = queue.shift();
-      if(!_avatarMarkup[RETIRED_CHARACTER_TO[id] || id]){ try { buildAvatarCharSVG(id); } catch(e){} }
-    }
-    if(queue.length) idle(step);
-  };
-  setTimeout(() => idle(step), 6000);
-})();
 function buildAvatarCharSVGFresh(charId){
   const svg = drawAvatarCharSVG(charId);
   const k = AVATAR_ART_SCALE[charId];
@@ -31566,7 +31527,6 @@ function drawAvatarCharSVG(charId){
     return el;
   };
   const uid = charId + "-" + Math.random().toString(36).slice(2, 9);
-  svg.__uid = uid;
   const defs = document.createElementNS(svgNS, "defs");
   svg.appendChild(defs);
   let headGradCount = 0;
@@ -34588,20 +34548,10 @@ function drawAvatarCharSVG(charId){
 
 function updateHeaderTitle(){
   titleEl.textContent = "Nova";
-  /* Called on every screen change; the character only needs redrawing
-     when it is a different one (build 250 - it was two full character
-     builds per navigation, ~50ms of the lag going to Home at 4x). */
-  if(store.avatarChar && avatarEl.dataset.char === store.avatarChar && avatarEl.firstElementChild){
-    avatarEl.hidden = false;
-    syncBottomTabAvatar();
-    return;
-  }
-  delete avatarEl.dataset.char;
   if(store.avatarChar){
     const svg = buildAvatarCharSVG(store.avatarChar);
     if(svg){
       avatarEl.replaceChildren(svg);
-      avatarEl.dataset.char = store.avatarChar;
       avatarEl.classList.add("has-char");
     } else {
       avatarEl.textContent = getInitials(store.firstName);
@@ -34623,11 +34573,9 @@ function syncBottomTabAvatar(){
   const tabIcon = document.querySelector("#bottomtab-profile .bottomtab-icon");
   if(!tabIcon) return;
   tabIcon.classList.add("bottomtab-icon-avatar");
-  if(store.avatarChar && tabIcon.dataset.char === store.avatarChar && tabIcon.firstElementChild) return;
-  delete tabIcon.dataset.char;
   if(store.avatarChar){
     const svg = buildAvatarCharSVG(store.avatarChar);
-    if(svg){ tabIcon.replaceChildren(svg); tabIcon.dataset.char = store.avatarChar; return; }
+    if(svg){ tabIcon.replaceChildren(svg); return; }
   }
   tabIcon.textContent = getInitials(store.firstName) || "";
 }
@@ -45695,22 +45643,19 @@ function accentToGradientStops(forceAccent){
 }
 
 const COSMIC_SMIL = false;
-/* HOME'S SEVEN EMBLEMS ARE BUILT ONCE, NOT ON EVERY VISIT (build 250).
-   "The screen has some lag when in the unit selection screen and hit
-   home." Profiled at 4x CPU throttle, the tap on Home was a 209ms task
-   before the first frame of the transition, and the seven emblems were
-   ~47ms of it, rebuilt identically every time. An SVG node can only be
-   in one place, so the cached one is reused only when the old Home has
-   let go of it; while it is still on screen (a transition's outgoing
-   copy) a fresh one is built, exactly as before. */
-const _homeEmblemCache = {};
+/* HOME'S EMBLEMS CAN NEVER TAKE THE PLANET DOWN WITH THEM (build 252).
+   Build 250 reused the previous Home's emblem nodes to save time on the
+   tap; the main menu was then reported with no planet at all on a phone.
+   Each emblem is built fresh again, and inside a try: a rank drawing that
+   fails on one device leaves its bubble empty, never the whole hero. */
 function homeRankEmblem(tier){
-  const c = _homeEmblemCache[tier];
-  if(c && !c.isConnected) return c;
-  const em = fitRankEmblem(buildRankEmblemSVG(tier), tier);
-  em.classList.add("cosmic-rank-emblem");
-  _homeEmblemCache[tier] = em;
-  return em;
+  try {
+    const em = fitRankEmblem(buildRankEmblemSVG(tier), tier);
+    em.classList.add("cosmic-rank-emblem");
+    return em;
+  } catch(e){
+    return document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  }
 }
 function buildCosmicHero(useTierIcons, forceAccent){
   const svgNS = "http://www.w3.org/2000/svg";
@@ -55801,7 +55746,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-30-251";
+const APP_BUILD = "2026-09-30-252";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

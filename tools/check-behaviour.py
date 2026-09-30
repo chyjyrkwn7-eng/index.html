@@ -4265,21 +4265,26 @@ def check_b250(br):
     check("Supernova's dark heart is a jagged star, not a round hole", d["darkStar"], d)
     check("the banners follow: Sapphire's the galaxy, Amethyst's the black hole, Supernova's the dark heart",
           d["sapphireBanner"] and d["amethystBanner"] and d["supernovaBanner"], d)
-    # "The screen has some lag when in the unit selection screen and hit
-    # home." Profiled, a big share of the tap was redrawing the same seven
-    # Home emblems and the same character (twice) on every visit. Timing
-    # is flaky in a harness, so this counts the redraws instead: coming
-    # back to Home must draw neither again.
-    redraw = pg.evaluate("""async ()=>{ const n = { em: 0, ch: 0 };
-      const e0 = window.buildRankEmblemSVG, c0 = window.drawAvatarCharSVG;
-      showHome(); await new Promise(r => setTimeout(r, 400));
-      showSetup(); await new Promise(r => setTimeout(r, 400));
-      window.buildRankEmblemSVG = function(){ n.em++; return e0.apply(this, arguments); };
-      window.drawAvatarCharSVG = function(){ n.ch++; return c0.apply(this, arguments); };
-      showHome(); await new Promise(r => setTimeout(r, 400));
-      window.buildRankEmblemSVG = e0; window.drawAvatarCharSVG = c0;
-      return n; }""")
-    check("going back to Home redraws neither its rank emblems nor your character", redraw == {"em": 0, "ch": 0}, redraw)
+    # Build 252: "the main menu is broken. The planet and stuff isn't even
+    # there." Home's hero must survive a rank drawing that throws (the
+    # build-250 speed-up was taken back out, and each emblem is built
+    # inside a try), and must be whole after coming back from the unit
+    # screen.
+    hero = pg.evaluate("""async ()=>{ const e0 = window.buildRankEmblemSVG;
+      cfg.mode = 'drill'; showSetup(); await new Promise(r => setTimeout(r, 400));
+      showHome(); await new Promise(r => setTimeout(r, 500));
+      const back = { hero: !!document.querySelector('#stage .cosmic-hero-wrap'), ems: document.querySelectorAll('#stage .cosmic-rank-emblem').length };
+      window.buildRankEmblemSVG = function(){ throw new Error('boom'); };
+      let threw = null;
+      try { showSetup(); await new Promise(r => setTimeout(r, 300)); showHome(); await new Promise(r => setTimeout(r, 500)); } catch(e){ threw = String(e); }
+      window.buildRankEmblemSVG = e0;
+      const broken = { hero: !!document.querySelector('#stage .cosmic-hero-wrap'), threw };
+      showHome(); await new Promise(r => setTimeout(r, 300));
+      return { back, broken }; }""")
+    check("back on Home from the unit screen, the planet and all seven rank bubbles are there",
+          hero["back"]["hero"] and hero["back"]["ems"] == 7, hero)
+    check("and a rank drawing that fails cannot take the planet down with it",
+          hero["broken"]["hero"] and not hero["broken"]["threw"], hero)
     ctx.close()
 
 
