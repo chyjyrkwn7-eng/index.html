@@ -1491,14 +1491,14 @@ def check_b229(br):
           r["top"] == ["Cy", "Bo", "Dee"] and r["podium"] == 3, r)
     # Build 248: the totals are what each had WHEN THE WEEK CLOSED, not
     # today's. Odin and Napoleon's are exact (synced before the rollover);
-    # Sauce's was never stored, only bounded - above Odin's 58,880, and
-    # "58 something" - so it is a label, and never his current 67k.
+    # Sauce's, by instruction in build 257: his current total less this
+    # week's 330 - 67,470 ("needs to be whatever his current xp is minus 330").
     sauce = (r.get("sauce") or [{}])[0]
     check("a hand-recorded week (Sauce, OdinSavior, Napoleon; 21 Sep) shows what each had when the week closed",
           r["pinned"] == [["Eli", None]] and r["pinnedPts"] == ["Winner"]
           and [x["pub"] for x in r["sauce"]] == ["ew7hyxpg5j2y", "kdxnp7smgcre", "mbw5qdhcw2pf"]
           and [x.get("pts") for x in r["sauce"][1:]] == [58880, 31500]
-          and sauce.get("pts") is None and sauce.get("label", "").startswith("58.9K"), r)
+          and sauce.get("pts") == 67470, r)
     ctx.close()
 
 

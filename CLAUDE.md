@@ -7785,3 +7785,31 @@ because "succeeded ... with fuzz" is the only warning there is.
   above it already documents. check-behaviour 49 measures the
   brightness step across the box edge on a 3x render: 255 steps by 8,
   256 by ≤2.
+
+### Build 257
+
+- **The rank hero's rings show now/target, like the words under them.**
+  "It says I have 1 but the progress circle does not reflect that." The
+  rings measured the STEP from the rank you hold to the next (Bronze's 1
+  badge to Silver's 3), so 1 badge filled 0% of the ring over "1 of 3".
+  They are `now / target` now; `heroStepPct` (the road map's measure) is
+  unchanged.
+- **Sauce's closed week is 67,470, by instruction.** "Needs to be
+  whatever his current xp is minus 330." His row: 67,800 XP, 330 this
+  week. `WEEK_RESULTS_KNOWN` carries `pts: 67470`; it replaces the 58.9K
+  estimate (whose reasoning is still in the comment above it, for the
+  record). check-behaviour 23 pins 67470.
+- **Amethyst, stronger again.** Disc spins in 3s with brighter arcs and a
+  fourth; the jets fire (`rk-jet`, stretching along the axis and flaring
+  to full, 1.1s); the photon ring beats (`rk-pulse` → `rk-pulse-big`);
+  lensed arc 1.1s; crown motes 7s/9s. Supernova got a third static spark
+  so it stays the busiest drawing (36 vs 35).
+- **Hacker and Marksman were NOT changed**, and why is worth knowing:
+  both are worked out live from the account's own stats every time
+  (`featAchieved` → `longestStreak >= 150`, `studyHoursTotal() >= 25`),
+  there is no stored "unlocked" list for them, and `legacyChars` only
+  ever holds the Clown and the Astronaut. So an account showing them
+  unlocked has those numbers on record. The streak runs across tests
+  (it resets only on a miss; the daily question does not touch it) and
+  study time is the calendar's log. If the bar is meant to be "150 in
+  one test", that is a rule change, not a bug fix - ask.
