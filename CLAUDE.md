@@ -8023,3 +8023,54 @@ are untouched.
 - Gates: `check_b236` now checks only Zeus for a carved panel and asserts
   Poseidon's id draws `cx-k-anubis`; `check_b243` expects `viper` where
   it used to expect `valkyrie`. The decision changed, not the check.
+
+### Build 266
+
+- **The rank bar is the SLOWER requirement, measured over the step**
+  (`rankStepProgress`). "It looks like I'm really close except I'm still
+  two badges away." Averaging level and badges let a met level hold the
+  bar at half-full, and each half counted from zero rather than from the
+  rank you hold. Now: each half runs from the held rank's requirement
+  (empty) to the next rank's (full), badges count the closest unfinished
+  units' hundos for each badge still missing, and the bar is the `min`
+  of the two. The Profile plate, the Rank hero and the road map all read
+  this one function.
+- **Tap the character (banner, theme) you already have on and its card
+  opens** - picking it again would do nothing. `attachHoldDetail`
+  returns its `open`. The card and the tiles are `user-select:none` and
+  any selection the hold started is cleared, because iOS carried the
+  long-press into a text selection on the card that opened under it.
+- **Review's chip on the unit screen is green** (`.rs-mode-review`) - it
+  fell through to Drill.
+- **The Virtual Room front door is two cards**: Host a room (Private)
+  and Join an open room (Public), with the three games above them.
+  Side by side from 40rem. `.vrc-*`.
+- **A new room has NO game** (`game: null`) until Match settings picks
+  one; the lobby says "No game chosen yet", the start gate needs units
+  AND a game, and Match settings will not save without a game. Old rooms
+  and anything treating a missing game as race are unaffected.
+- **The Open-to-the-class switch**: the button is an invisible 44px
+  target and the track is `::before` at iOS proportions. The button WAS
+  the track, and `min-height:44px` made it a 51x44 lozenge. On is green.
+- **A glow's drop-shadow never goes on the masked character svg.** CSS
+  applies a filter before a mask, so the shoulders-fade mask cut the
+  shadow to a square - reported from the lobby and the invite sheet,
+  the same bug build 246 fixed on the picker. The lobby rows, the
+  Profile hero and the friend rows now put the character in a
+  `.rank-avatar` wrapper and the shadow on that.
+- **The black grows up the top three ranks**: a black dot at Sapphire's
+  core, a hole at Amethyst, the jagged dark at Supernova. **Amethyst is
+  a whirlpool now**, three spiral arms falling into the hole - the
+  flattened disc across it read as a ringed planet. Its banner follows.
+- **Characters**: the Hacker is at a laptop, lit green from below, with
+  code raining behind ("can't tell what that is"); the Viper IS a cobra
+  (scaled head, slit eyes, fangs, belly plates, a tongue that flicks);
+  **Poseidon's id is now the Kraken** (Anubis lasted one build - "I
+  don't like the dog thing"); the Singularity is the third hooded figure,
+  its hood an event horizon with gas spiralling in. New part prefixes
+  `hk3`, `vp` (tongue/sheen), `kr`, `sg2`; `check-loops` knows the three
+  new loops.
+- Gates: `check_b266` in check-behaviour; the b258 rank-percentage check
+  expects the new measure and asserts a met level does not prop the bar
+  up; `check-vroom` and the Penal version gate now pick a game;
+  `check-profilecard` measures the glow on the wrapper.

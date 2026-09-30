@@ -2183,11 +2183,12 @@ def check_b236(br):
          character that inherited its rank, the Oracle. */
       await T('shades', () => { const sv = buildAvatarCharSVGSafe('officer');
         return ((sv.querySelector('.cx-fig') || {}).getAttribute ? sv.querySelector('.cx-fig').getAttribute('class') : '') || ''; });
-      /* build 265: Poseidon's id now draws the Anubis, which has no carved
-         panel - only Zeus keeps one, and the id is asserted to draw Anubis. */
+      /* build 265/266: Poseidon's id drew Anubis, then the Kraken, neither
+         with a carved panel - only Zeus keeps one, and the id is asserted
+         to draw the Kraken. */
       await T('panels', () => ['zeus'].map(k => [...buildAvatarCharSVGSafe(k).querySelectorAll('rect')]
         .some(x => /^#(13263A|0C2E30)$/i.test(x.getAttribute('fill') || ''))).concat(
-        /cx-k-anubis/.test((buildAvatarCharSVGSafe('poseidon').querySelector('.cx-fig') || {getAttribute(){return ''}}).getAttribute('class') || '')));
+        /cx-k-kraken/.test((buildAvatarCharSVGSafe('poseidon').querySelector('.cx-fig') || {getAttribute(){return ''}}).getAttribute('class') || '')));
       // The unit list.
       const unit = u[0], now = Date.now();
       let k = 0;
@@ -2237,7 +2238,7 @@ def check_b236(br):
     rd = r["road"] if isinstance(r["road"], dict) else {}
     check("the road blends from rank to rank, with a light where you are", rd.get("blended") is True and rd.get("tip") == 1, r["road"])
     check("the Officer is gone: an old Officer is drawn as the Oracle (build 244)", "cx-k-oracle" in str(r["shades"]), r["shades"])
-    check("Zeus's symbol sits on a dark carved panel, and Poseidon's id draws the Anubis", r["panels"] == [True, True], r["panels"])
+    check("Zeus's symbol sits on a dark carved panel, and Poseidon's id draws the Kraken", r["panels"] == [True, True], r["panels"])
     cp = r["copy"] if isinstance(r["copy"], dict) else {}
     check("the doors say what they open, and Hundos says nothing about the badge",
           cp.get("doors") == ["Tap to see flagged questions", "Tap to see most missed"]
@@ -3204,6 +3205,8 @@ def check_penal_versions(br):
     room = pg.evaluate("""()=>{ document.getElementById('nextbtn').click();
       const line = document.querySelector('.sheet-summary-line');
       const txt = line ? line.textContent : '';
+      /* build 266: a room has no game until one is picked */
+      document.querySelector('.vroom-host-mode[data-mode="race"]')?.click();
       document.querySelector('.sheet-begin-btn').click();
       return { line: txt, args: window.__room ? JSON.parse(JSON.stringify(window.__room)) : null }; }""")
     args = room.get("args") or []
@@ -4383,7 +4386,12 @@ def check_b258(br):
       store.rankMapSeen = 99; store.rankMapFx244 = true;
       showProfile('profile'); await wait(1400);
       const thr = badgeThresholdFor(us[3]);
-      out.expect = (1 + (1 + 11 / thr) / 3) / 2;
+      /* build 266: the slower requirement, over the step from the rank held. */
+      { const H = TIER_UNLOCKS[rankOf(store)] || {}, nk = TIER_ORDER_FULL[TIER_ORDER_FULL.indexOf(rankOf(store)) + 1], N = TIER_UNLOCKS[nk] || {};
+        const b0 = Math.min(H.badges || 0, N.badges || 0);
+        const bdg = 1 >= (N.badges || 0) ? 1 : (1 + 11 / thr - b0) / ((N.badges || 0) - b0);
+        const lvl = levelOf(store) >= (N.level || 0) ? 1 : 0;
+        out.lvlMet = lvl === 1; out.expect = Math.min(lvl === 1 ? 1 : 0.999, bdg); }
       out.rank = rankOf(store); out.level = levelOf(store);
       out.label = (document.querySelector('.profile-rankplate-next') || {}).textContent || '';
       const sect = document.querySelector('.profile-badgesect');
@@ -4460,6 +4468,10 @@ def check_b258(br):
     got = float(m.group(1)) if m else -1
     check("the rank percentage is exact, to one decimal, not the step-based 50%",
           m is not None and abs(got - int(r["expect"] * 1000) / 10) < 0.11 and got != 50, r)
+    # build 266: "it looks like I'm really close except I'm still two
+    # badges away" - a level already met must not hold the bar up.
+    check("a met level does not prop the bar up while badges are short (266)",
+          r.get("lvlMet") is True and got < 60, r)
     # REVISED IN 262: "I don't like how it says what I'm closest to" - the
     # medal and a count, no unit and no hundos.
     check("no badge icons on the Profile card - the medal and a count, not the closest unit",
@@ -4504,6 +4516,100 @@ def check_b258(br):
 
 
 B245_POLISH = ["modes", "daily_schedule", "slogan", "bugreport", "daily_announce", "start_pill", "daily_header"]
+
+
+def check_b266(br):
+    """Build 266, Madison's list. (1) Review's chip on the unit screen is
+    green, not Drill's red. (2) Tapping the character you already have on
+    opens its card, and nothing on that card can be text-selected by the
+    hold. (3) The Virtual Room front door is two cards, Private and
+    Public. (4) A new room starts with NO game and cannot start until one
+    is picked. (5) The Open-to-the-class switch is a switch-shaped track
+    inside a 44px target, not a 51x44 lozenge. (6) A lobby character's
+    glow comes off a wrapper, never the masked svg - the square. (7)
+    Sapphire carries a black dot, Amethyst has no flattened disc. (8) The
+    redrawn characters: Hacker at a laptop, Viper with a tongue, the
+    Kraken on Poseidon's id, the Singularity hooded. Written against 265,
+    where each one fails."""
+    print("\n48. build 266: review tint, tap-to-card, the Virtual Room door, an empty room, the switch, the glow, the emblems, the characters")
+    import re as _re
+    vr = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "check-vroom.py")).read()
+    fake = _re.search(r'FAKE_FIRESTORE = """(.*?)"""', vr, _re.S).group(1)
+    # The harness stubs onSnapshotResilient; the lobby needs the real one
+    # listening to the fake, so it is kept aside before the stub lands.
+    keep = "window.addEventListener('DOMContentLoaded', function(){ try{ window.__osr = onSnapshotResilient; }catch(e){} });"
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, init=fake + "\n" + keep)
+    r = pg.evaluate("""async ()=>{ const out = {}; const wait = ms => new Promise(r => setTimeout(r, ms));
+      try{
+      document.documentElement.classList.remove('is-reloading'); const pu = document.getElementById('pushing-update'); if(pu) pu.remove();
+      /* 1 */
+      cfg.mode = 'review'; showSetup(); await wait(400);
+      const chip = document.querySelector('.setup-modechip .rs-mode');
+      out.chip = chip ? chip.className : '';
+      /* 2 */
+      showCustomize(); await wait(500);
+      const sel = document.querySelector('.screen-customize .avatarchar-option.selected');
+      if(sel){ sel.click(); await wait(500); }
+      const card = document.querySelector('.invite-sheet.unlock-card');
+      out.tapCard = !!card;
+      out.cardSelect = card ? getComputedStyle(card).userSelect || getComputedStyle(card).webkitUserSelect : '';
+      document.querySelectorAll('.invite-overlay').forEach(o => o.remove());
+      /* 3 */
+      try{ __useFake(); if(window.__osr) onSnapshotResilient = window.__osr; }catch(e){}
+      showVirtualRoomChoice(); await wait(300);
+      out.cards = [...document.querySelectorAll('.vrc-card')].map(c => (c.querySelector('.vrc-chip') || {}).textContent || '');
+      /* 4 */
+      document.querySelector('.vrc-card-host').click();
+      for(let i = 0; i < 30 && !document.querySelector('.vroom-test-summary'); i++) await wait(150);
+      await wait(600);
+      out.summary = (document.querySelector('.vroom-test-summary') || {}).textContent || '';
+      out.note = (document.querySelector('.vroom-autostart-note, .vroom-autostart') || {}).textContent || '';
+      out.game = null;
+      try{ const d = await fbDb.collection('vrooms').doc(vroomCode).get(); out.game = d.data().game; out.hasGameKey = 'game' in d.data(); }catch(e){ out.gameErr = String(e); }
+      /* 5 */
+      const sw = document.querySelector('.vroom-open-toggle');
+      if(sw){ const b = sw.getBoundingClientRect(), tr = getComputedStyle(sw, '::before');
+        out.sw = { h: Math.round(b.height), w: Math.round(b.width), trackH: parseFloat(tr.height), trackBg: getComputedStyle(sw).backgroundColor }; }
+      /* 6 */
+      const av = document.querySelector('.vroom-avatar');
+      if(av){ const w = av.querySelector(':scope > .rank-avatar'), sv = av.querySelector('svg');
+        out.glow = { wrapFilter: w ? getComputedStyle(w).filter : '', svgFilter: getComputedStyle(sv).filter, svgMask: getComputedStyle(sv).maskImage || getComputedStyle(sv).webkitMaskImage }; }
+      /* 7 */
+      out.sapphireDot = buildRankEmblemSVG('adept').innerHTML.indexOf('M59.4 64a4.6 4.6') >= 0;
+      out.amethystFlat = /scale\\(1 \\.19\\)/.test(buildRankEmblemSVG('elite').innerHTML);
+      out.amethystHole = [...buildRankEmblemSVG('elite').querySelectorAll('path')].some(p => p.getAttribute('fill') === '#030208');
+      /* 8 */
+      const cls = id => ((buildAvatarCharSVG(id).querySelector('.cx-fig') || {getAttribute(){return ''}}).getAttribute('class') || '');
+      const has = (id, sel) => !!buildAvatarCharSVG(id).querySelector(sel);
+      out.kraken = { kind: cls('poseidon'), name: AVATAR_DISPLAY_NAME.poseidon };
+      out.hacker = { rain: has('hacker', '.cx-fx-hk3rain'), laptop: buildAvatarCharSVG('hacker').innerHTML.indexOf('M18 30.8 L16.5 32.3') >= 0 };
+      out.viper = { tongue: has('valkyrie', '.cx-fx-vptongue'), name: AVATAR_DISPLAY_NAME.valkyrie };
+      out.sing = { swirl: has('singularity', '.cx-fx-sg2swirl'), eyes: buildAvatarCharSVG('singularity').querySelectorAll('.cx-eyes > *').length };
+      } catch(e){ out.threw = String(e && e.stack || e); }
+      return out; }""")
+    check("Review's chip on the unit screen is Review's, not Drill's", "rs-mode-review" in r.get("chip", ""), r)
+    check("tapping the character you already have on opens its card", r.get("tapCard") is True, r)
+    check("and nothing on that card can be selected by the hold", r.get("cardSelect") == "none", r)
+    check("the Virtual Room door is two cards: host (Private) and join (Public)",
+          [c.strip().lower() for c in r.get("cards", [])] == ["private", "public"], r)
+    check("a new room starts with no game chosen", r.get("hasGameKey") is True and r.get("game") is None, r)
+    check("and the lobby says so instead of saying Race",
+          "No game chosen yet" in r.get("summary", "") and "Race" not in r.get("summary", ""), r)
+    sw = r.get("sw") or {}
+    check("the Open-to-the-class switch is a track inside a 44px target, not a lozenge",
+          sw.get("h") == 44 and 28 <= (sw.get("trackH") or 0) <= 36 and (sw.get("w") or 0) / max(1, sw.get("trackH") or 1) >= 1.5
+          and sw.get("trackBg") in ("rgba(0, 0, 0, 0)", "transparent"), sw)
+    g = r.get("glow") or {}
+    check("a lobby character's glow comes off the wrapper, never the masked drawing",
+          "drop-shadow" in g.get("wrapFilter", "") and "drop-shadow" not in g.get("svgFilter", ""), g)
+    check("Sapphire has a black dot at its heart", r.get("sapphireDot") is True, r)
+    check("Amethyst is a black hole with no flattened planet disc", r.get("amethystHole") is True and r.get("amethystFlat") is False, r)
+    check("Poseidon's id draws the Kraken, and says so", "cx-k-kraken" in r["kraken"]["kind"] and r["kraken"]["name"] == "Kraken", r["kraken"])
+    check("the Hacker sits at a laptop with code raining behind", r["hacker"]["rain"] and r["hacker"]["laptop"], r["hacker"])
+    check("the Viper flicks a tongue", r["viper"]["tongue"] and r["viper"]["name"] == "Viper", r["viper"])
+    check("the Singularity is hooded, with gas spiralling in and eyes in the dark", r["sing"]["swirl"] and r["sing"]["eyes"] >= 2, r["sing"])
+    check("no exception", not r.get("threw"), r.get("threw"))
+    ctx.close()
 
 
 def main():
@@ -4565,6 +4671,7 @@ def main():
             check_b248_weekly(br)
             check_b250(br)
             check_b258(br)
+            check_b266(br)
         finally:
             br.close()
     SERVER.shutdown()

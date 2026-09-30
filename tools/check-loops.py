@@ -45,6 +45,10 @@ KNOWN = {
     # Build 244 characters.
     "cx-cinder": "Inferno's cinder: invisible at both ends of the rise",
     "cx-code": "Hacker's visor code: shifted by exactly six rows (6 x .72)",
+    # Build 266 characters.
+    "cx-hk3-rain": "Hacker's code rain: shifted by exactly one glyph pattern (4 x 1.5)",
+    "cx-hk3-code": "Hacker's lens code: shifted by exactly eight rows (8 x .72) of a pattern drawn twice",
+    "cx-kr-bubble": "Kraken's bubble: invisible at both ends of the rise",
     "cx-sand": "Timekeeper's sand: shifted by exactly one grain pitch (.5)",
     # Build 235: the sleeping character's Zzz.
     "char-zzz": "a letter fades in beside the head and out as it drifts up",

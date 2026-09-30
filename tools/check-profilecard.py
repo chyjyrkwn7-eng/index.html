@@ -74,7 +74,9 @@ with sync_playwright() as pw:
             hasGlow: av?av.classList.contains('has-glow'):null,
             charGlow: av?av.style.getPropertyValue('--char-glow'):null,
             beforeW: cs?cs.width:null,
-            svgFilter: svg?getComputedStyle(svg).filter.slice(0,40):null,
+            /* build 266: the drop-shadow is on the character's wrapper, never
+               the masked svg - on the svg the mask cut it into a square */
+            svgFilter: (av&&av.querySelector(':scope > .rank-avatar'))?getComputedStyle(av.querySelector(':scope > .rank-avatar')).filter.slice(0,40):null,
             plates: plates.length, bcells, bsect: !!bsect,
             plateRects: plates.map(p=>{const b=p.getBoundingClientRect();return [Math.round(b.width),Math.round(b.height)];}),
             plateBg: plates[0]?getComputedStyle(plates[0]).backgroundColor:null,

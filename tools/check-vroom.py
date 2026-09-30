@@ -886,7 +886,9 @@ def main():
         print("\n1. a lobby, and a second device joining it")
         code = host.evaluate("""()=>{
           const units = topicsIn(QUESTIONS).slice(0, 1);
-          createVirtualRoomLobby(units, null);
+          /* build 266: a room has no game until the host picks one, so
+             the harness picks the race it has always tested */
+          createVirtualRoomLobby(units, null, "race");
           return null;}""")
         # WAIT FOR THE LOBBY, DO NOT SLEEP AT IT. These were fixed waits
         # and the whole run failed about one time in three - not on

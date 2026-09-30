@@ -3370,7 +3370,13 @@
       color-mix(in srgb, var(--char-glow, var(--accent)) 15%, transparent) 44%,
       transparent 72%);
   }
-  .vroom-avatar.has-glow > svg{
+  /* ON THE WRAPPER, NOT THE DRAWING (build 266): "When in a lobby or
+     inviting people, your character glow is a square." The drawing
+     carries the shoulders-fade mask, and CSS applies a filter BEFORE the
+     mask, so a drop-shadow on the svg was cut to the mask's rectangle -
+     the exact bug build 246 fixed on the picker. The shadow now comes
+     off .rank-avatar, the already-faded drawing's box. */
+  .vroom-avatar.has-glow > .rank-avatar{
     position:relative; z-index:1;
     filter:drop-shadow(0 0 5px color-mix(in srgb, var(--char-glow, var(--accent)) 78%, transparent))
            drop-shadow(0 0 12px color-mix(in srgb, var(--char-glow, var(--accent)) 38%, transparent));
@@ -4911,6 +4917,94 @@
     .vroom-choice-what{ font-size:.9rem; }
   }
   .vroom-choice-actions .next{ width:100%; min-height:48px; margin-top:0; }
+  /* ---- THE VIRTUAL ROOM FRONT DOOR (build 266) ---- two cards and the
+     three games above them; see showVirtualRoomChoice(). */
+  .vrc-games{
+    display:flex; justify-content:center; flex-wrap:wrap; gap:.5rem;
+    margin:1.1rem auto 0; max-width:30rem;
+  }
+  .vrc-game{
+    display:inline-flex; align-items:center; gap:.4rem;
+    padding:.36rem .8rem .36rem .55rem; border-radius:999px;
+    font-size:.74rem; font-weight:700; letter-spacing:.02em; color:var(--ink);
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
+  }
+  .vrc-game .vroom-host-mode-art{ width:1.55rem; height:1rem; flex:0 0 auto; }
+  .vrc-game-race .vroom-host-mode-art{ color:#7CC0F4; }
+  .vrc-game-tug .vroom-host-mode-art{ color:#F2B35E; }
+  .vrc-game-battle .vroom-host-mode-art{ color:#FF7A7A; }
+  .vrc-cards{
+    display:grid; grid-template-columns:minmax(0, 1fr); gap:.85rem;
+    width:100%; max-width:30rem; margin:1.5rem auto 0;
+  }
+  .vrc-card{
+    position:relative; display:flex; align-items:center; gap:.95rem;
+    width:100%; min-height:6.2rem; margin:0; padding:1.05rem 1rem 1.05rem 1.05rem;
+    text-align:left; color:var(--ink); font:inherit; cursor:pointer;
+    border-radius:1.25rem; border:1px solid rgba(255,255,255,.12);
+    background:linear-gradient(160deg, rgba(255,255,255,.085), rgba(255,255,255,.025) 55%, rgba(0,0,0,.14));
+    box-shadow:0 10px 28px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.12);
+    -webkit-tap-highlight-color:transparent;
+    transition:transform .15s ease, border-color .2s ease, box-shadow .2s ease;
+  }
+  .vrc-card:active{ transform:scale(.985); }
+  .vrc-card-host{
+    border-color:color-mix(in srgb, var(--accent) 45%, rgba(255,255,255,.14));
+    background:
+      radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--accent) 24%, transparent), transparent 60%),
+      linear-gradient(160deg, rgba(255,255,255,.08), rgba(255,255,255,.02) 55%, rgba(0,0,0,.16));
+    box-shadow:0 12px 32px rgba(0,0,0,.3), 0 0 26px color-mix(in srgb, var(--accent) 16%, transparent), inset 0 1px 0 rgba(255,255,255,.14);
+  }
+  .vrc-card.is-busy{ cursor:progress; }
+  .vrc-card.is-busy .vrc-card-icon{ animation:vrc-busy 1s ease-in-out infinite; }
+  @keyframes vrc-busy{ 0%, 100%{ opacity:1; } 50%{ opacity:.45; } }
+  .vrc-card-icon{
+    flex:0 0 auto; display:grid; place-items:center;
+    width:3.1rem; height:3.1rem; border-radius:1rem;
+    background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1);
+    color:var(--ink);
+  }
+  .vrc-card-host .vrc-card-icon{
+    color:#fff;
+    background:linear-gradient(150deg, color-mix(in srgb, var(--accent) 80%, #fff 8%), color-mix(in srgb, var(--accent) 60%, #000 25%));
+    border-color:color-mix(in srgb, var(--accent) 70%, #fff 10%);
+    box-shadow:0 6px 16px color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+  .vrc-card-icon svg{ width:1.55rem; height:1.55rem; }
+  .vrc-card-body{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:.3rem; }
+  .vrc-card-head{ display:flex; align-items:center; flex-wrap:wrap; gap:.45rem; }
+  .vrc-card-title{ font-family:var(--serif); font-size:1.12rem; font-weight:800; line-height:1.2; }
+  .vrc-chip{
+    font-size:.62rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase;
+    padding:.18rem .5rem; border-radius:999px;
+  }
+  .vrc-chip-private{ color:#E6D9FF; background:rgba(160,120,255,.16); border:1px solid rgba(160,120,255,.34); }
+  .vrc-chip-public{ color:#BFF3D2; background:rgba(61,214,140,.14); border:1px solid rgba(61,214,140,.34); }
+  .vrc-card-desc{ font-size:.82rem; line-height:1.42; color:var(--soft); }
+  .vrc-card-chev{ flex:0 0 auto; width:1.3rem; height:1.3rem; color:var(--soft); opacity:.8; }
+  .vrc-card-chev svg{ width:100%; height:100%; }
+  .vrc-note{
+    display:flex; align-items:center; justify-content:center; gap:.5rem;
+    max-width:30rem; margin:1.3rem auto 0; padding:0 .4rem;
+    font-size:.8rem; line-height:1.4; color:var(--soft); text-align:left;
+  }
+  .vrc-note-icon{ flex:0 0 auto; width:1.1rem; height:1.1rem; opacity:.8; }
+  .vrc-note-icon svg{ width:100%; height:100%; }
+  @media (min-width:40rem){
+    .vrc-games{ margin-top:1.4rem; gap:.65rem; }
+    .vrc-game{ font-size:.84rem; padding:.45rem 1rem .45rem .7rem; }
+    .vrc-cards{ grid-template-columns:repeat(2, minmax(0, 1fr)); max-width:44rem; gap:1.1rem; margin-top:2rem; }
+    .vrc-card{ flex-direction:column; align-items:flex-start; min-height:14rem; padding:1.5rem 1.4rem; gap:1.1rem; }
+    .vrc-card-icon{ width:3.8rem; height:3.8rem; border-radius:1.2rem; }
+    .vrc-card-icon svg{ width:1.9rem; height:1.9rem; }
+    .vrc-card-title{ font-size:1.35rem; }
+    .vrc-card-desc{ font-size:.92rem; }
+    .vrc-card-chev{ position:absolute; top:1.5rem; right:1.3rem; }
+    .vrc-note{ font-size:.88rem; margin-top:1.8rem; }
+  }
+  .vroom-summary-game.is-unset{ color:var(--soft); }
+  .vroom-host-modes.needs-pick{ animation:vrc-needs 0.5s ease; }
+  @keyframes vrc-needs{ 0%, 100%{ transform:translateX(0); } 25%{ transform:translateX(-6px); } 75%{ transform:translateX(6px); } }
   /* ---- REPORT A BUG (build 245) ----
      The field borrows .searchbox for the app's glass and its 16px floor,
      and then has to undo the two things that made it "all weird": the
@@ -13629,7 +13723,7 @@
      id), the Hacker, the Clown and Anubis (Poseidon's id). Every class
      and keyframe here is new and unique to its character. */
   .avatarchar-svg .cx-k-viper{ --cx-blink:7.2s; --cx-blink-at:-1.4s; }
-  .avatarchar-svg .cx-k-anubis{ --cx-blink:6.2s; --cx-blink-at:-4.4s; }
+  .avatarchar-svg .cx-k-kraken{ --cx-blink:6.2s; --cx-blink-at:-4.4s; }
   .avatarchar-svg .cx-fx-vphood{ transform-origin:50% 92%; }
   .avatarchar-svg .cx-fx-cl2hat{ transform-origin:50% 100%; }
   @media (prefers-reduced-motion:no-preference){
@@ -13643,14 +13737,35 @@
     .char-live .avatarchar-svg .cx-fx-hk2trace{ animation:cx-mk2-pulse 3s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-cl2hat{ animation:cx-cl2-sway 3.4s ease-in-out infinite alternate; }
     .char-live .avatarchar-svg .cx-fx-cl2bells{ animation:cx-mk2-pulse 1.8s ease-in-out infinite; }
-    .char-live .avatarchar-svg .cx-fx-anbeye{ animation:cx-vp-glint 3.2s ease-in-out infinite; }
-    .char-live .avatarchar-svg .cx-fx-anbsheen{ animation:cx-sheen-idle 6s ease-in-out -2s infinite; }
+    /* build 266: the Hacker's third pass, the Viper's snake head, the
+       Kraken (Poseidon's id, after Anubis) and the Singularity's hood */
+    .char-live .avatarchar-svg .cx-fx-hk3rain{ animation:cx-hk3-rain 1.6s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-hk3code{ animation:cx-hk3-code 2.2s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-hk3glow, .char-live .avatarchar-svg .cx-fx-hk3edge{ animation:cx-hk3-flicker 3.4s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-vptongue{ animation:cx-vp-tongue 3.8s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-vpsheen{ animation:cx-sheen-idle 6.2s ease-in-out -3s infinite; }
+    .char-live .avatarchar-svg .cx-fx-krtent{ animation:cx-kr-sway 3.2s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-krfront{ animation:cx-kr-sway 2.6s ease-in-out -1.3s infinite alternate-reverse; }
+    .char-live .avatarchar-svg .cx-fx-krspot{ animation:cx-mk2-pulse 2.4s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-kreye{ animation:cx-vp-glint 3s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-krbubble{ animation:cx-kr-bubble 3.6s ease-in infinite; }
+    .char-live .avatarchar-svg .cx-fx-krsheen{ animation:cx-sheen-idle 6s ease-in-out -2s infinite; }
+    .char-live .avatarchar-svg .cx-fx-sg2halo{ animation:cx-spin 14s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-sg2swirl{ animation:cx-spin-back 5s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-sg2rim{ animation:cx-mk2-pulse 2.6s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-sg2eye{ animation:cx-vp-glint 2.2s ease-in-out infinite; }
     .char-react-win .avatarchar-svg .cx-fx-mk2crack{ animation:cx-mk2-pulse .5s ease-in-out infinite; }
     .char-react-win .avatarchar-svg .cx-fx-vphood{ animation:cx-vp-flare .45s ease-in-out infinite alternate; }
     .char-react-win .avatarchar-svg .cx-fx-hk2split{ animation:cx-hk2-jitter .6s steps(1) infinite; }
     .char-react-win .avatarchar-svg .cx-fx-hk2slice{ animation:cx-hk2-slice .9s steps(1) infinite; }
     .char-react-win .avatarchar-svg .cx-fx-cl2hat{ animation:cx-cl2-sway .4s ease-in-out infinite alternate; }
-    .char-react-win .avatarchar-svg .cx-fx-anbsheen{ animation:cx-sheen 1.3s ease-in-out .3s infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-hk3rain{ animation:cx-hk3-rain .5s linear infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-vptongue{ animation:cx-vp-tongue 1s ease-in-out infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-vpsheen, .char-react-win .avatarchar-svg .cx-fx-krsheen{ animation:cx-sheen 1.3s ease-in-out .3s infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-krtent{ animation:cx-kr-sway .45s ease-in-out infinite alternate; }
+    .char-react-win .avatarchar-svg .cx-fx-krfront{ animation:cx-kr-sway .4s ease-in-out infinite alternate-reverse; }
+    .char-react-win .avatarchar-svg .cx-fx-sg2halo{ animation:cx-spin 2s linear infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-sg2swirl{ animation:cx-spin-back 1s linear infinite; }
   }
   @keyframes cx-mk2-pulse{ 0%, 100%{ opacity:.6; } 50%{ opacity:1; } }
   @keyframes cx-vp-flare{ from{ scale:1 1; } to{ scale:1.05 1.02; } }
@@ -13659,6 +13774,14 @@
   @keyframes cx-hk2-scan{ 0%{ transform:translateX(0); opacity:0; } 8%{ opacity:1; } 86%{ opacity:1; } 94%{ transform:translateX(17px); opacity:0; } 100%{ transform:translateX(0); opacity:0; } }
   @keyframes cx-hk2-slice{ 0%, 100%{ opacity:0; transform:none; } 72%{ opacity:1; transform:translateX(1.2px); } 75%{ opacity:1; transform:translateX(-1px); } 78%{ opacity:0; transform:none; } }
   @keyframes cx-cl2-sway{ from{ rotate:-3deg; } to{ rotate:3deg; } }
+  @keyframes cx-hk3-rain{ from{ transform:translateY(0); } to{ transform:translateY(6px); } }
+  @keyframes cx-hk3-code{ from{ transform:translateY(0); } to{ transform:translateY(-5.76px); } }
+  @keyframes cx-hk3-flicker{ 0%, 100%{ opacity:1; } 40%{ opacity:.82; } 44%{ opacity:1; } 70%{ opacity:.9; } }
+  @keyframes cx-vp-tongue{ 0%, 62%, 100%{ opacity:0; scale:1 .2; } 66%{ opacity:1; scale:1 1; } 70%{ opacity:1; scale:1 .55; } 74%{ opacity:1; scale:1 1; } 80%{ opacity:0; scale:1 .2; } }
+  @keyframes cx-kr-sway{ from{ rotate:-2.4deg; } to{ rotate:2.4deg; } }
+  @keyframes cx-kr-bubble{ 0%{ transform:translateY(0); opacity:0; } 20%{ opacity:.9; } 100%{ transform:translateY(-7px); opacity:0; } }
+  .avatarchar-svg .cx-fx-vptongue{ transform-origin:50% 0%; }
+  .avatarchar-svg .cx-fx-krtent, .avatarchar-svg .cx-fx-krfront{ transform-origin:50% 0%; }
   /* Each wing flexes from its root, where it meets the helm. */
   .avatarchar-svg .cx-fx-wing-l{ transform-origin:96% 72%; }
   .avatarchar-svg .cx-fx-wing-r{ transform-origin:4% 72%; }
@@ -14609,7 +14732,7 @@
       0 0 0 5.5px color-mix(in srgb, var(--char-glow, var(--accent)) 55%, transparent),
       0 14px 30px rgba(0,0,0,.45);
   }
-  .profile-hero.has-cover .profile-hero-avatar > svg{ clip-path:circle(50% at 50% 50%); }
+  .profile-hero.has-cover .profile-hero-avatar svg.avatarchar-svg{ clip-path:circle(50% at 50% 50%); }
   .profile-hero.has-cover .profile-ranklineup{ margin-top:.55rem; }
   .profile-hero.has-cover .profile-ranklineup.is-unranked{ text-align:center; }
   @media (min-width:40rem){
@@ -14895,7 +15018,7 @@
       color-mix(in srgb, var(--char-glow, var(--accent)) 3%, transparent) 62%,
       transparent 82%);
   }
-  .profile-hero-avatar.has-glow > svg{
+  .profile-hero-avatar.has-glow > .rank-avatar{
     position:relative; z-index:1;
     filter:drop-shadow(0 0 7px color-mix(in srgb, var(--char-glow, var(--accent)) 82%, transparent))
            drop-shadow(0 0 22px color-mix(in srgb, var(--char-glow, var(--accent)) 46%, transparent))
@@ -15764,7 +15887,7 @@
       transparent 72%);
   }
   .friend-row-art.has-glow > .rank-avatar{ position:relative; z-index:1; }
-  .friend-row-art.has-glow > .rank-avatar > svg{
+  .friend-row-art.has-glow > .rank-avatar{
     filter:drop-shadow(0 0 4px color-mix(in srgb, var(--char-glow, var(--accent)) 76%, transparent))
            drop-shadow(0 0 10px color-mix(in srgb, var(--char-glow, var(--accent)) 36%, transparent));
   }
@@ -16399,33 +16522,49 @@
      in a lobby that changes who can walk in, so it reads as a physical
      thing that is on or off rather than a tickbox in a list. 44px of
      target around a 28px pill, which is the app's floor. */
+  /* THE TRACK IS DRAWN, THE BUTTON IS THE TARGET (build 266). "The
+     'open to class' toggle switch is super weirdly shaped." The button
+     WAS the track, and min-height:44px stretched a 28px pill into a
+     51x44 lozenge with the knob floating in its middle. Now the button
+     is an invisible 44px target and the track is ::before, drawn at an
+     iOS switch's proportions inside it. */
   .vroom-open-toggle{
     flex:0 0 auto; position:relative;
-    width:3.2rem; height:1.75rem; min-height:44px; padding:0;
-    border-radius:999px; border:1px solid var(--rule);
-    background:rgba(255,255,255,.06); cursor:pointer;
-    transition:background .18s ease, border-color .18s ease;
+    width:3.3rem; height:44px; min-height:44px; padding:0;
+    border:0; border-radius:0; background:transparent; cursor:pointer;
     -webkit-tap-highlight-color:transparent;
-    display:flex; align-items:center;
   }
-  .vroom-open-toggle.on{
-    background:color-mix(in srgb, var(--accent) 55%, transparent);
-    border-color:color-mix(in srgb, var(--accent) 70%, transparent);
+  .vroom-open-toggle::before{
+    content:""; position:absolute; left:0; right:0; top:50%;
+    height:2rem; transform:translateY(-50%);
+    border-radius:999px;
+    background:rgba(255,255,255,.12);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);
+    transition:background .2s ease, box-shadow .2s ease;
+  }
+  /* On is GREEN, the same green as the Public chip on the way in - on
+     the default theme the accent is near-white and an "on" switch in it
+     read as a grey one. */
+  .vroom-open-toggle.on::before{
+    background:#2FBF71;
+    box-shadow:inset 0 0 0 1px rgba(120,240,170,.55), 0 0 14px rgba(47,191,113,.35);
   }
   .vroom-open-knob{
-    position:absolute; left:.22rem; width:1.3rem; height:1.3rem;
-    border-radius:50%; background:var(--ink);
-    box-shadow:0 1px 4px rgba(0,0,0,.45);
-    transition:transform .18s cubic-bezier(.2,.8,.25,1);
+    position:absolute; left:.18rem; top:50%;
+    width:1.64rem; height:1.64rem; margin-top:-.82rem;
+    border-radius:50%; background:#fff;
+    box-shadow:0 2px 6px rgba(0,0,0,.4), 0 0 0 .5px rgba(0,0,0,.08);
+    transition:transform .22s cubic-bezier(.2,.8,.25,1);
   }
-  .vroom-open-toggle.on .vroom-open-knob{ transform:translateX(1.42rem); }
+  .vroom-open-toggle.on .vroom-open-knob{ transform:translateX(1.3rem); }
   .rooms-list{ display:flex; flex-direction:column; }
   .room-row .friend-row-sub{ color:var(--soft); }
   .rooms-refresh{ width:100%; min-height:44px; margin-top:.9rem; }
   @media (min-width:40rem){
-    .vroom-open-toggle{ width:3.6rem; height:2rem; }
-    .vroom-open-knob{ width:1.5rem; height:1.5rem; }
-    .vroom-open-toggle.on .vroom-open-knob{ transform:translateX(1.6rem); }
+    .vroom-open-toggle{ width:3.6rem; }
+    .vroom-open-toggle::before{ height:2.15rem; }
+    .vroom-open-knob{ width:1.79rem; height:1.79rem; margin-top:-.895rem; }
+    .vroom-open-toggle.on .vroom-open-knob{ transform:translateX(1.45rem); }
   }
   .invite-overlay{
     position:fixed; inset:0; z-index:340; display:flex;
@@ -16483,6 +16622,10 @@
   .person-card.has-cover .person-card-art > .rank-avatar{ border-radius:50%; overflow:hidden; }
   /* ---- the unlock card (build 243) - see showUnlockDetail ---- */
   .invite-sheet.unlock-card{ text-align:center; padding-top:1.2rem; }
+  /* build 266: no text selection carried over from a press-and-hold. */
+  .invite-sheet.unlock-card, .invite-sheet.unlock-card *,
+  .screen-customize .avatarchar-option, .screen-customize .banner-opt, .screen-customize .swatch,
+  .screen-customize .avatarchar-cell{ -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
   .unlock-card-art{ position:relative; margin:0 auto .9rem; display:grid; place-items:center; }
   .unlock-card-banner .unlock-card-art{ height:7.2rem; margin:-1.2rem -1.25rem .9rem; border-radius:22px 22px 0 0; overflow:hidden;
     -webkit-mask-image:linear-gradient(180deg, #000 55%, transparent 100%); mask-image:linear-gradient(180deg, #000 55%, transparent 100%); }
@@ -17061,6 +17204,7 @@
   .rs-mode-exam{ --mode-c:#F7925F; }
   .rs-mode-game{ --mode-c:#EE6FA8; }
   .rs-mode-vroom{ --mode-c:#7CC0F4; }
+  .rs-mode-review{ --mode-c:#4ADE80; }
   .rs-mode-src{ padding-left:.72rem; }
   .rs-units{
     margin:0; font-family:var(--serif); font-size:1.7rem; line-height:1.15;
@@ -17709,6 +17853,7 @@
   .rs-mode-exam{ --mode-c:#F5804D; }
   .rs-mode-game{ --mode-c:#E0559A; }
   .rs-mode-vroom{ --mode-c:#4A9FE8; }
+  .rs-mode-review{ --mode-c:#4ADE80; }
   .rs-mode{
     background:color-mix(in srgb, var(--mode-c) 22%, rgba(20,24,30,.6));
     border-color:color-mix(in srgb, var(--mode-c) 55%, transparent);
@@ -31254,7 +31399,7 @@ const AVATAR_CHARACTERS = [
   { id: "detective",  kind: "detective",  feat: "daily10" },
   { id: "masked",     kind: "masked",     feat: "retake100" },
   { id: "zeus",       kind: "zeus",       feat: "weektop" },
-  { id: "poseidon",   kind: "anubis",     feat: "weektop3x3" },
+  { id: "poseidon",   kind: "kraken",     feat: "weektop3x3" },
   { id: "clown",      kind: "clown",      feat: "vrwins5" },
   { id: "valkyrie",   kind: "viper",      feat: "vrwins10" },
   { id: "marksman",   kind: "marksman",   feat: "streak100" },
@@ -31324,7 +31469,7 @@ const AVATAR_DISPLAY_NAME = {
   officer: "Officer", clown: "Clown", robot: "Robot", astronaut: "Astronaut",
   detective: "Detective", zeus: "Zeus", masked: "The Masked One", voidwalker: "Void",
   champion: "Champion", umbra: "Umbra", singularity: "Singularity",
-  poseidon: "Anubis", spartan: "Spartan", pharaoh: "Pharaoh", marksman: "Marksman",
+  poseidon: "Kraken", spartan: "Spartan", pharaoh: "Pharaoh", marksman: "Marksman",
   blitz: "Blitz"
 };
 /* The glow a SELECTED character gives off - "give the character you have
@@ -31340,7 +31485,7 @@ const AVATAR_GLOW = {
   k9: "#D9A05A",
   ninja: "#E0453F", ghost: "#E8ECF4", queen: "#8B4FC4", wizard: "#6C5BD4",
   grizzly: "#B9793C", alien: "#4FD18A", samurai: "#C0392B", dragon: "#E04A2F",
-  officer: "#3D74E8", clown: "#9B5CFF", swat: "#3D74E8", valkyrie: "#B6FF2E", hacker: "#3DFFB0", timekeeper: "#8A86FF", ronin: "#FF2E88", robot: "#6FD3E8", astronaut: "#F2B233",
+  officer: "#3D74E8", clown: "#9B5CFF", swat: "#3D74E8", valkyrie: "#B6FF2E", hacker: "#3DFF8A", timekeeper: "#8A86FF", ronin: "#FF2E88", robot: "#6FD3E8", astronaut: "#F2B233",
   /* Read off each one's artwork like the rest: the detective's amber
      street-light, the cold light in Zeus's cracks, the mask's own
      lacquer, and for Void the middle of its three flare colours - the
@@ -32360,61 +32505,92 @@ function drawAvatarCharSVG(charId){
      The gold laurel and the bolt carved into the plinth are the only
      colour on him, and the bolt is lit in his own glow colour: it is
      what says Zeus rather than "some Greek". */
-  /* ================= ANUBIS (build 265) =================
+  /* ================= KRAKEN (build 266) =================
      Three weeks in the weekly top three - Poseidon's challenge and
-     Poseidon's id, so everybody who earned it keeps it: "Poseidon needs
-     to be something else, not another Greek god. Make that something
-     unique as well." The jackal-headed guardian. TALL EARS are the
-     silhouette, nothing else in the set has them; a black head with a
-     long muzzle seen from the front, turquoise eyes lit and lined in
-     gold, a gold-and-lapis striped headdress framing it, and a broad
-     jewelled collar. The eyes are the light and a gleam crosses the
-     headdress. Parts are cx-fx-anb* / cx-anb-*: unique. */
-  if(def.kind === "anubis"){
-    const turq = "#3FF5E0";
-    const black = headGrad("#4A4A56", "#18181E", "#040406");
-    const gold = headGrad("#FFF2B8", "#E0B040", "#7A5410");
-    const lapis = headGrad("#4A6FE0", "#1F3A9E", "#0A1640");
+     Poseidon's id, so everybody who earned it keeps it. It was Anubis
+     for one build: "I also don't like the dog thing. Change that one
+     entirely." So nothing with a face you have seen before: the thing
+     from the deep. A domed head like an octopus's mantle, spotted with
+     lights that pulse the way deep-sea things glow, two huge eyes with
+     the horizontal bar pupils an octopus really has - the one thing no
+     other character in the set has - and a beard of tentacles hanging
+     from the face, curling at the tips and swaying, suckers on the
+     front ones. Bubbles rise off it. Parts are cx-fx-kr* / cx-kr-*:
+     unique names. */
+  if(def.kind === "kraken"){
+    const teal = "#3FE0D0", tealSoft = "#B8FFF6";
+    const skin = headGrad("#7E5CB0", "#35195E", "#0C0420");
+    const skinDark = headGrad("#553A80", "#22103E", "#080214");
+    const armour = headGrad("#2E5A66", "#12303A", "#041014");
+    /* one tentacle: a tapered ribbon down from (x0, y0), bending by
+       `bend` and curling its tip by `curl` */
+    const tent = (x0, y0, len, bend, curl, w0) => {
+      const at = t => [x0 + bend * t * t + curl * Math.pow(t, 4) * 1.6, y0 + len * t - Math.abs(curl) * Math.pow(t, 5) * 2.6];
+      const L = [], R = [];
+      for(let i = 0; i <= 20; i++){
+        const t = i / 20, [x, y] = at(t), [x2, y2] = at(Math.min(1, t + .02)), [x1, y1] = at(Math.max(0, t - .02));
+        const dx = x2 - x1, dy = y2 - y1, m = Math.hypot(dx, dy) || 1, nx = -dy / m, ny = dx / m;
+        const w = w0 * Math.pow(1 - t, .85) + .2;
+        L.push([x - w / 2 * nx, y - w / 2 * ny]); R.push([x + w / 2 * nx, y + w / 2 * ny]);
+      }
+      const f = p => p[0].toFixed(2) + " " + p[1].toFixed(2);
+      return "M" + L.map(f).join("L") + "L" + R.reverse().map(f).join("L") + "Z";
+    };
     open("cx-body");
-    svg.appendChild(mk("path", { d: "M4.8 40 Q5.4 31 11.6 28.6 L28.4 28.6 Q34.6 31 35.2 40 Z", fill: black }));
-    /* the broad collar: bands of lapis, gold and turquoise */
-    [[0, lapis], [1.7, gold], [3.2, "#1FB8A8"], [4.5, gold]].forEach(([o, f]) => {
-      svg.appendChild(mk("path", { d: "M" + (8.6 - o * .5) + " " + (29.6 + o) + " Q20 " + (36 + o * 1.2) + " " + (31.4 + o * .5) + " " + (29.6 + o) + " L" + (31.8 + o * .5) + " " + (31.2 + o) + " Q20 " + (37.8 + o * 1.2) + " " + (8.2 - o * .5) + " " + (31.2 + o) + " Z", fill: f }));
+    svg.appendChild(mk("path", { d: "M4.8 40 Q5.4 31 11.6 28.6 Q13 26.4 20 26.2 Q27 26.4 28.4 28.6 Q34.6 31 35.2 40 Z", fill: armour, stroke: "#02080A", "stroke-width": ".3" }));
+    svg.appendChild(mk("path", { d: "M8 33.4 Q20 29.4 32 33.4", fill: "none", stroke: teal, "stroke-width": ".45", opacity: ".6" }));
+    /* barnacles on the shoulders */
+    [[9.4, 31.4, .8], [11.2, 30.2, .55], [30.6, 31.4, .8], [28.8, 30.2, .55], [7.8, 34.6, .6], [32.2, 34.6, .6]].forEach(([x, y, r]) => {
+      svg.appendChild(mk("circle", { cx: x, cy: y, r, fill: "#C8D4CC", opacity: ".75" }));
+      svg.appendChild(mk("circle", { cx: x, cy: y, r: r * .45, fill: "#1A2A2A" }));
     });
     close();
     open("cx-head");
-    /* the headdress: striped lappets framing the head, down to the collar */
-    const nemes = "M9.6 31 Q8.4 21 10.8 14.6 L14.6 12.4 L25.4 12.4 L29.2 14.6 Q31.6 21 30.4 31 L26.2 31 L25.8 19.6 L14.2 19.6 L13.8 31 Z";
-    svg.appendChild(mk("path", { d: nemes, fill: gold, stroke: "#4A3208", "stroke-width": ".3" }));
-    const ncp = uid + "-anbn";
-    const cp = mk("clipPath", { id: ncp }); cp.appendChild(mk("path", { d: nemes })); defs.appendChild(cp);
-    const st = mk("g", { "clip-path": "url(#" + ncp + ")" });
-    for(let y = 13.4; y < 31; y += 2.2) st.appendChild(mk("rect", { x: 8, y: y.toFixed(2), width: 24, height: 1.1, fill: lapis }));
-    svg.appendChild(st);
-    /* the ears: tall, black, lined in gold */
-    [["M13 15.4 L11.2 2.2 L17.6 11.4 Z", "M13.3 13.6 L12.4 4.8 L16.4 11.2 Z"], ["M27 15.4 L28.8 2.2 L22.4 11.4 Z", "M26.7 13.6 L27.6 4.8 L23.6 11.2 Z"]].forEach(([o, i]) => {
-      svg.appendChild(mk("path", { d: o, fill: black, stroke: "#E0B040", "stroke-width": ".35", "stroke-linejoin": "round" }));
-      svg.appendChild(mk("path", { d: i, fill: "#2A1A12" }));
+    /* the tentacles behind, darker */
+    open("cx-fx cx-fx-krtent");
+    [[13.6, 20.6, 11, -5.6, -2.4, 2.6], [26.4, 20.6, 11, 5.6, 2.4, 2.6], [15.6, 21.6, 13.6, -2.6, 2, 2.4], [24.4, 21.6, 13.6, 2.6, -2, 2.4]].forEach(([x, y, l, b, c, w]) =>
+      svg.appendChild(mk("path", { d: tent(x, y, l, b, c, w), fill: skinDark, stroke: "#0A0418", "stroke-width": ".2" })));
+    close();
+    /* THE MANTLE: a tall dome, ridged */
+    const dome = "M20 4.8 Q28.6 5.4 28.8 14.8 Q28.8 19.8 26.2 22.6 Q23.4 24.4 20 24.4 Q16.6 24.4 13.8 22.6 Q11.2 19.8 11.2 14.8 Q11.4 5.4 20 4.8 Z";
+    svg.appendChild(mk("path", { d: dome, fill: skin, stroke: "#0E0620", "stroke-width": ".35" }));
+    svg.appendChild(mk("path", { d: "M17.4 5.6 Q16.6 10 17.4 14 M22.6 5.6 Q23.4 10 22.6 14", fill: "none", stroke: "#2A1650", "stroke-width": ".45", opacity: ".7", "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M14.6 8.8 Q16.6 6 19.4 5.6", fill: "none", stroke: "#E6D8FF", "stroke-width": ".5", "stroke-linecap": "round", opacity: ".7" }));
+    /* the lights in the skin, pulsing */
+    open("cx-fx cx-fx-krspot");
+    [[20, 8.6, .75], [16.2, 10.6, .55], [23.8, 10.6, .55], [14.2, 14.2, .45], [25.8, 14.2, .45], [18.2, 12.6, .35], [21.8, 12.6, .35]].forEach(([x, y, r]) => {
+      svg.appendChild(mk("circle", { cx: x, cy: y, r: r * 2.2, fill: teal, opacity: ".22" }));
+      svg.appendChild(mk("circle", { cx: x, cy: y, r, fill: tealSoft }));
     });
-    /* the head and the long muzzle, from the front */
-    svg.appendChild(mk("path", { d: "M13.2 14.4 Q14 10.4 20 10.2 Q26 10.4 26.8 14.4 Q27.4 18.2 25 21.2 L22.2 28 Q20 29.8 17.8 28 L15 21.2 Q12.6 18.2 13.2 14.4 Z", fill: black, stroke: "#020203", "stroke-width": ".3" }));
-    svg.appendChild(mk("path", { d: "M13.8 12.8 Q20 10.8 26.2 12.8", fill: "none", stroke: "#E0B040", "stroke-width": ".55" }));
-    svg.appendChild(mk("path", { d: "M18.8 20.6 L19.6 26.8 M21.2 20.6 L20.4 26.8", stroke: "#5A5A66", "stroke-width": ".3", opacity: ".7" }));
-    svg.appendChild(mk("ellipse", { cx: 20, cy: 27.6, rx: 1.3, ry: .8, fill: "#020203" }));
-    svg.appendChild(mk("ellipse", { cx: 19.7, cy: 27.3, rx: .4, ry: .2, fill: "#9A9AA8" }));
-    /* the eyes: lit turquoise, lined in gold kohl that sweeps out */
+    close();
+    /* THE EYES: huge, lit, with an octopus's bar pupils, under heavy lids */
     open("cx-eyes");
-    [[16.4, 16.6, -1], [23.6, 16.6, 1]].forEach(([x, y, s]) => {
-      const d = "M" + (x - 1.9) + " " + (y + .2) + " Q" + x + " " + (y - 1.2) + " " + (x + 1.9) + " " + (y + .2) + " Q" + x + " " + (y + 1) + " " + (x - 1.9) + " " + (y + .2) + " Z";
-      svg.appendChild(mk("path", { d, fill: turq, opacity: ".5", stroke: turq, "stroke-width": "1.1", "stroke-linejoin": "round", class: "cx-fx-anbeye" }));
-      svg.appendChild(mk("path", { d, fill: "#D8FFF8" }));
-      svg.appendChild(mk("circle", { cx: x, cy: y, r: .5, fill: "#062A26" }));
-      svg.appendChild(mk("path", { d: "M" + (x + s * 1.9) + " " + (y + .2) + " L" + (x + s * 3.2) + " " + (y + .9), stroke: "#E0B040", "stroke-width": ".45", "stroke-linecap": "round" }));
+    [[16.1, 17.6, 1], [23.9, 17.6, -1]].forEach(([x, y, s]) => {
+      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 2.9, ry: 2.1, fill: teal, opacity: ".4", class: "cx-fx-kreye" }));
+      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 2.2, ry: 1.5, fill: "#DFFFFA", stroke: "#06020E", "stroke-width": ".35" }));
+      svg.appendChild(mk("ellipse", { cx: x, cy: y + .1, rx: 1.7, ry: 1.2, fill: teal }));
+      svg.appendChild(mk("rect", { x: x - 1.15, y: y - .2, width: 2.3, height: .56, rx: .28, fill: "#021210" }));
+      /* the heavy lid, slanting down to the middle - it is not friendly */
+      svg.appendChild(mk("path", { d: "M" + (x - 2.6) + " " + (y - 1.9 + s * .7) + " L" + (x + 2.6) + " " + (y - 1.9 - s * .7) + " L" + (x + 2.4 * s * s) + " " + (y - .2 - s * .6) + " Q" + x + " " + (y - .9) + " " + (x - 2.4) + " " + (y - .2 + s * .6) + " Z", fill: skin }));
+      svg.appendChild(mk("circle", { cx: x - .7, cy: y + .45, r: .28, fill: "#FFFFFF" }));
     });
     close();
-    closedEyes([[16.4, 16.8, 1.6], [23.6, 16.8, 1.6]], "#E0B040", .4);
+    closedEyes([[16.1, 17.8, 2], [23.9, 17.8, 2]], "#0E0620", .5);
+    svg.appendChild(mk("path", { d: "M13.2 15.2 L18.9 17.2 M26.8 15.2 L21.1 17.2", fill: "none", stroke: "#06020E", "stroke-width": ".8", "stroke-linecap": "round" }));
+    /* the front tentacles, lit, with suckers - the beard */
+    open("cx-fx cx-fx-krfront");
+    [[17.6, 21.2, 13.4, -4.6, -2.8, 3.1], [22.4, 21.2, 13.4, 4.6, 2.8, 3.1], [20, 22, 11.4, -1.2, -2.2, 2.8]].forEach(([x, y, l, b, c, w]) =>
+      svg.appendChild(mk("path", { d: tent(x, y, l, b, c, w), fill: skin, stroke: "#0E0620", "stroke-width": ".22" })));
+    [[17.4, 24.4], [16.5, 26.6], [15, 28.6], [22.6, 24.4], [23.5, 26.6], [25, 28.6], [19.9, 25.4], [19.5, 27.6]].forEach(([x, y], i) =>
+      svg.appendChild(mk("circle", { cx: x, cy: y, r: i > 5 ? .28 : .34, fill: "#E2CCFF", stroke: "#4A2C7A", "stroke-width": ".12" })));
     close();
-    sheen([nemes], "cx-fx-anbsheen", 8, 32, 12, 31, "#FFF6D0");
+    close();
+    /* bubbles rising off it */
+    open("cx-fx cx-fx-krbubble");
+    [[7.6, 20, .7], [9.4, 14, .45], [32.4, 18, .6], [30.8, 11.6, .4]].forEach(([x, y, r]) =>
+      svg.appendChild(mk("circle", { cx: x, cy: y, r, fill: "none", stroke: tealSoft, "stroke-width": ".25", opacity: ".8" })));
+    close();
+    sheen([dome], "cx-fx-krsheen", 11, 29, 5, 24, "#F0E8FF");
     return done();
   }
 
@@ -32895,66 +33071,95 @@ function drawAvatarCharSVG(charId){
     close();
     return done();
   }
-  /* ================= VIPER (build 265) =================
-     Ten top-three finishes in a Virtual Room - the Valkyrie's challenge,
-     and the Valkyrie's id, so everybody who earned it keeps it: "could
-     Valkyrie be something different than that and cooler". A cobra-
-     hooded assassin. The HOOD IS THE SILHOUETTE, flared wide either side
-     of the head the way a cobra's is when it rises, scaled, with a lime
-     edge of light; inside it a dark face mask with two fangs at its
-     edge, and SNAKE EYES - lit irises with vertical slit pupils, the one
-     thing nobody else in the set has. The hood breathes and the eyes
-     glint. Parts are cx-fx-vp* / cx-vp-*: unique. */
+  /* ================= VIPER, SECOND PASS (build 266) =================
+     "The snake person is a really cool concept but it's hard to tell
+     what that is so fix it." The 265 Viper was a hooded assassin with
+     snake eyes - a person in a green hood, so it read as a person. Now
+     it IS the snake: a cobra's head on a man's shoulders. Green scaled
+     head with the big crown plates, slit-pupil eyes under angry brows,
+     nostrils on the snout, fangs, a forked tongue that flicks out, the
+     cream belly scales running down the throat, and the hood flared
+     wide behind it with its bands. Still the Valkyrie's id. Parts are
+     cx-fx-vp* / cx-vp-*: unique names. */
   if(def.kind === "viper"){
-    const lime = "#B6FF2E";
-    const hoodG = headGrad("#3E5230", "#1A2413", "#060905");
-    const hoodIn = headGrad("#20291A", "#0E130B", "#030402");
+    const lime = "#B6FF2E", cream = "#E9DFA2";
+    const hoodG = headGrad("#5C9A3C", "#27561C", "#0A1C08");
+    const skin = headGrad("#9EE06A", "#3E8A2A", "#10300B");
     const leather = headGrad("#3A4034", "#1A1E17", "#070806");
-    const maskG = headGrad("#2C3328", "#12160F", "#040503");
     open("cx-body");
     svg.appendChild(mk("path", { d: "M4.8 40 Q5.4 31 11.6 28.4 Q13 22.8 20 22.6 Q27 22.8 28.4 28.4 Q34.6 31 35.2 40 Z", fill: leather }));
-    svg.appendChild(mk("path", { d: "M15.2 28.6 L20 35.2 L24.8 28.6", fill: "none", stroke: lime, "stroke-width": ".4", opacity: ".7" }));
-    /* A strap across the chest, with a fang-shaped blade on it. */
+    svg.appendChild(mk("path", { d: "M14.4 29 L20 36.4 L25.6 29", fill: "none", stroke: lime, "stroke-width": ".4", opacity: ".7" }));
     svg.appendChild(mk("path", { d: "M9.6 31 L29.6 39.6 L28.8 40.8 L8.8 32.4 Z", fill: "#0B0D09", opacity: ".9" }));
     svg.appendChild(mk("path", { d: "M22.6 35.4 L24.4 38.6 L23.4 38.8 Z", fill: "#DCE8C4", stroke: "#4A5A34", "stroke-width": ".15" }));
     close();
     open("cx-head");
-    /* THE HOOD: flared, with scale rows and a lime rim. */
-    const hood = "M20 5.4 Q26.8 6 29.6 10.2 Q36 15.4 35.4 21.4 Q34.6 26.6 30.4 29 L26.4 27.2 Q28.8 22 27.6 17 Q25.6 11.6 20 11.2 Q14.4 11.6 12.4 17 Q11.2 22 13.6 27.2 L9.6 29 Q5.4 26.6 4.6 21.4 Q4 15.4 10.4 10.2 Q13.2 6 20 5.4 Z";
+    /* THE HOOD, flared wide behind the head, with its bands */
+    const hood = "M20 5.4 Q29.8 6.2 33.4 13.8 Q35.6 19.8 32 26.6 Q29 29.6 25 29.4 Q27.8 25 28 19.6 Q28.2 12.6 20 12 Q11.8 12.6 12 19.6 Q12.2 25 15 29.4 Q11 29.6 8 26.6 Q4.4 19.8 6.6 13.8 Q10.2 6.2 20 5.4 Z";
     open("cx-fx cx-fx-vphood");
-    svg.appendChild(mk("path", { d: hood, fill: hoodG, stroke: "#020301", "stroke-width": ".35", "stroke-linejoin": "round" }));
+    svg.appendChild(mk("path", { d: hood, fill: hoodG, stroke: "#040803", "stroke-width": ".35", "stroke-linejoin": "round" }));
     const hcp = uid + "-vphood";
     const cp = mk("clipPath", { id: hcp }); cp.appendChild(mk("path", { d: hood })); defs.appendChild(cp);
-    const sc = mk("g", { "clip-path": "url(#" + hcp + ")", opacity: ".5" });
+    const bands = mk("g", { "clip-path": "url(#" + hcp + ")" });
+    [9.4, 13.4, 17.4, 21.4, 25.4].forEach((y, i) => {
+      bands.appendChild(mk("path", { d: "M3 " + (y + 2) + " Q20 " + (y - 3.2) + " 37 " + (y + 2), fill: "none", stroke: cream, "stroke-width": ".9", opacity: (.42 - i * .04).toFixed(2) }));
+    });
     for(let r = 0; r < 12; r++){
       const y = 6 + r * 1.9, off = r % 2 ? 1 : 0;
       for(let x = 4 + off; x < 36; x += 2){
-        sc.appendChild(mk("path", { d: "M" + x + " " + y.toFixed(2) + " Q" + (x + 1) + " " + (y + 1.5).toFixed(2) + " " + (x + 2) + " " + y.toFixed(2), fill: "none", stroke: "#5E7A3E", "stroke-width": ".22" }));
+        bands.appendChild(mk("path", { d: "M" + x + " " + y.toFixed(2) + " Q" + (x + 1) + " " + (y + 1.4).toFixed(2) + " " + (x + 2) + " " + y.toFixed(2), fill: "none", stroke: "#0E2A0A", "stroke-width": ".2", opacity: ".45" }));
       }
     }
-    svg.appendChild(sc);
-    svg.appendChild(mk("path", { d: "M9.6 29 Q5.4 26.6 4.6 21.4 Q4 15.4 10.4 10.2 Q13.2 6 20 5.4 Q26.8 6 29.6 10.2 Q36 15.4 35.4 21.4 Q34.6 26.6 30.4 29", fill: "none", stroke: lime, "stroke-width": ".55", "stroke-linecap": "round", opacity: ".9" }));
-    /* the hood's gold diamond marks either side */
-    [[7.6, 19.6], [32.4, 19.6]].forEach(([x, y]) => svg.appendChild(mk("path", { d: "M" + x + " " + (y - 1.6) + " L" + (x + 1) + " " + y + " L" + x + " " + (y + 1.6) + " L" + (x - 1) + " " + y + " Z", fill: "#E6C24A", opacity: ".85" })));
+    svg.appendChild(bands);
+    svg.appendChild(mk("path", { d: "M15 29.4 Q11 29.6 8 26.6 Q4.4 19.8 6.6 13.8 Q10.2 6.2 20 5.4 Q29.8 6.2 33.4 13.8 Q35.6 19.8 32 26.6 Q29 29.6 25 29.4", fill: "none", stroke: lime, "stroke-width": ".5", "stroke-linecap": "round", opacity: ".9" }));
     close();
-    svg.appendChild(mk("path", { d: "M12.6 17 Q14.4 11.8 20 11.4 Q25.6 11.8 27.4 17 Q28.4 22.4 26 27.2 L14 27.2 Q11.6 22.4 12.6 17 Z", fill: hoodIn }));
-    /* The face in shadow, and the mask over its lower half with fangs. */
-    svg.appendChild(mk("path", { d: "M14 15.6 Q20 12.8 26 15.6 Q27 22.6 20 26.4 Q13 22.6 14 15.6 Z", fill: "#15120E" }));
-    svg.appendChild(mk("path", { d: "M13.8 19.8 Q20 18.2 26.2 19.8 Q25.6 24 20 27 Q14.4 24 13.8 19.8 Z", fill: maskG, stroke: "#020301", "stroke-width": ".25" }));
-    svg.appendChild(mk("path", { d: "M14.2 20.4 Q20 19 25.8 20.4", fill: "none", stroke: lime, "stroke-width": ".3", opacity: ".6" }));
-    [[18.2, 1], [21.8, -1]].forEach(([x]) => svg.appendChild(mk("path", { d: "M" + (x - .7) + " 22.6 L" + x + " 25 L" + (x + .7) + " 22.6 Z", fill: "#F2F6E8", stroke: "#6A7A54", "stroke-width": ".15" })));
-    svg.appendChild(mk("circle", { cx: 20, cy: 14.8, r: .75, fill: "#3DDC84", stroke: "#E6C24A", "stroke-width": ".25" }));
-    /* SNAKE EYES: a lit iris and a vertical slit pupil. */
+    /* THE THROAT: green, with the cream belly plates down the middle */
+    svg.appendChild(mk("path", { d: "M15.6 22.4 Q15.8 26.6 14.6 29.6 L25.4 29.6 Q24.2 26.6 24.4 22.4 Z", fill: skin }));
+    for(let i = 0; i < 5; i++){
+      const y = 24 + i * 1.18, w = 2.6 + i * .28;
+      svg.appendChild(mk("path", { d: "M" + (20 - w) + " " + y.toFixed(2) + " Q20 " + (y + .7).toFixed(2) + " " + (20 + w) + " " + y.toFixed(2) + " L" + (20 + w - .15) + " " + (y + .95).toFixed(2) + " Q20 " + (y + 1.6).toFixed(2) + " " + (20 - w + .15) + " " + (y + .95).toFixed(2) + " Z", fill: cream, stroke: "#8A7E44", "stroke-width": ".15" }));
+    }
+    /* THE HEAD: a cobra's, from the front - broad at the temples, the
+       snout rounded, scaled all over and plated on the crown */
+    const head = "M20 9.2 Q26.8 9.4 27.8 14.8 Q28.2 18.4 25.8 21.6 Q23.6 24.6 20 25 Q16.4 24.6 14.2 21.6 Q11.8 18.4 12.2 14.8 Q13.2 9.4 20 9.2 Z";
+    svg.appendChild(mk("path", { d: head, fill: skin, stroke: "#08200A", "stroke-width": ".35" }));
+    const scp = uid + "-vphead";
+    const cph = mk("clipPath", { id: scp }); cph.appendChild(mk("path", { d: head })); defs.appendChild(cph);
+    const sc = mk("g", { "clip-path": "url(#" + scp + ")", opacity: ".45" });
+    for(let r = 0; r < 9; r++){
+      const y = 10 + r * 1.7, off = r % 2 ? .9 : 0;
+      for(let x = 11 + off; x < 29; x += 1.8) sc.appendChild(mk("path", { d: "M" + x.toFixed(2) + " " + y.toFixed(2) + " Q" + (x + .9).toFixed(2) + " " + (y + 1.2).toFixed(2) + " " + (x + 1.8).toFixed(2) + " " + y.toFixed(2), fill: "none", stroke: "#123A0C", "stroke-width": ".2" }));
+    }
+    svg.appendChild(sc);
+    /* the crown plates */
+    [["M17.2 10.4 Q20 9.8 22.8 10.4 L22.2 13 Q20 13.6 17.8 13 Z"], ["M14.2 12 L17.4 10.9 L17.7 13.2 L14.8 14.4 Z"], ["M25.8 12 L22.6 10.9 L22.3 13.2 L25.2 14.4 Z"], ["M18.2 13.5 Q20 14 21.8 13.5 L21.3 15.6 Q20 16 18.7 15.6 Z"]].forEach(([d]) =>
+      svg.appendChild(mk("path", { d, fill: "#7ACB4A", stroke: "#1E4A12", "stroke-width": ".25", opacity: ".9" })));
+    svg.appendChild(mk("path", { d: "M16.4 11.2 Q18 10.2 19.6 10.2", fill: "none", stroke: "#E4FFC4", "stroke-width": ".4", "stroke-linecap": "round", opacity: ".8" }));
+    /* the angry brows */
+    svg.appendChild(mk("path", { d: "M13.6 15 L18.4 16.4 M26.4 15 L21.6 16.4", stroke: "#0E2A08", "stroke-width": ".75", "stroke-linecap": "round" }));
+    /* SNAKE EYES: lit, with vertical slit pupils */
     open("cx-eyes");
-    [[16.7, 17.6, -1], [23.3, 17.6, 1]].forEach(([x, y, s]) => {
-      const d = "M" + (x - 2.2 * -s) + " " + (y + .3) + " Q" + x + " " + (y - 1.4) + " " + (x + 2.2 * -s) + " " + (y - .3) + " Q" + x + " " + (y + 1.4) + " " + (x - 2.2 * -s) + " " + (y + .3) + " Z";
-      svg.appendChild(mk("path", { d, fill: lime, opacity: ".5", stroke: lime, "stroke-width": "1", "stroke-linejoin": "round", class: "cx-fx-vpeye" }));
-      svg.appendChild(mk("path", { d, fill: "#E8FF9A" }));
-      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: .34, ry: 1.05, fill: "#0A0D06" }));
+    [[16.4, 17.6], [23.6, 17.6]].forEach(([x, y]) => {
+      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 1.9, ry: 1.25, fill: lime, opacity: ".5", class: "cx-fx-vpeye" }));
+      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 1.45, ry: 1, fill: "#F2FF7A", stroke: "#1E3A0A", "stroke-width": ".2" }));
+      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: .3, ry: .95, fill: "#0A0D06" }));
+      svg.appendChild(mk("circle", { cx: x - .5, cy: y - .4, r: .22, fill: "#FFFFFF" }));
     });
     close();
-    closedEyes([[16.7, 17.8, 1.8], [23.3, 17.8, 1.8]], lime, .4);
+    closedEyes([[16.4, 17.8, 1.5], [23.6, 17.8, 1.5]], "#0E2A08", .45);
+    /* the snout and its nostrils */
+    svg.appendChild(mk("path", { d: "M17.2 20.2 Q20 19.4 22.8 20.2 Q22.4 22.6 20 23.2 Q17.6 22.6 17.2 20.2 Z", fill: "#8FD65E", opacity: ".55" }));
+    svg.appendChild(mk("ellipse", { cx: 19.1, cy: 20.9, rx: .32, ry: .22, fill: "#0A1A06" }));
+    svg.appendChild(mk("ellipse", { cx: 20.9, cy: 20.9, rx: .32, ry: .22, fill: "#0A1A06" }));
+    /* the mouth, the fangs, and the tongue that flicks */
+    open("cx-mouth");
+    svg.appendChild(mk("path", { d: "M15.4 21.8 Q20 25.2 24.6 21.8", fill: "none", stroke: "#0A1A06", "stroke-width": ".4", "stroke-linecap": "round" }));
+    [18.3, 21.7].forEach(x => svg.appendChild(mk("path", { d: "M" + (x - .45) + " " + 23.1 + " L" + x + " 24.6 L" + (x + .45) + " 23.2 Z", fill: "#F6F8EC", stroke: "#5A6A44", "stroke-width": ".12" })));
     close();
+    openHidden("cx-fx cx-fx-vptongue");
+    svg.appendChild(mk("path", { d: "M20 23.8 L20 26.8 M20 26.8 L19 28.1 M20 26.8 L21 28.1", fill: "none", stroke: "#E0304A", "stroke-width": ".55", "stroke-linecap": "round", "stroke-linejoin": "round" }));
+    close();
+    close();
+    sheen([head], "cx-fx-vpsheen", 12, 28, 9, 25, "#E8FFC8");
     return done();
   }
   /* ================= RONIN (build 263) =================
@@ -33034,69 +33239,115 @@ function drawAvatarCharSVG(charId){
     sheen([kasa], "cx-fx-roninsheen", 5, 35, 3, 17, "#FFF2DA");
     return done();
   }
-  /* ================= HACKER, REDRAWN (build 265) =================
-     "Could hacker look a little cooler?" The hood and the visor stay -
-     they are the character - but the figure now GLITCHES: two copies of
-     its silhouette, one red and one cyan, sit a hair either side of it
-     the way a broken signal splits its colours, and every few seconds a
-     slice of the image jumps sideways. The visor is one sleek neon band
-     with a scan line running across it and two pixel eyes in it, and
-     circuit traces glow along the hoodie. Parts are cx-fx-hk2* /
-     cx-hk2-*: unique names. */
+  /* ================= HACKER, THIRD PASS (build 266) =================
+     "Looking at those characters, hacker needs a better look, can't tell
+     what that is." The 265 figure was a hood, a neon band and a colour
+     split - three abstractions, and none of them said HACKER. What does
+     is the scene everybody already has in their head: somebody in a
+     hoodie, face in shadow, lit green from below by a LAPTOP, with code
+     raining down behind them. So the laptop is the new silhouette - its
+     lid across the chest with a </> on the back - the screen's light
+     climbs the face and catches the glasses, and matrix-green code falls
+     on either side. Parts are cx-fx-hk3* / cx-hk3-*: unique names. */
   if(def.kind === "hacker"){
-    const green = "#3DFFB0", cyan = "#2EE6FF";
-    const cloth = headGrad("#3C4452", "#1B2029", "#07090D");
-    const hoodD = "M20 6.4 Q30.4 7 31.4 18.6 Q31.8 25.4 28.6 29.6 L25 27.6 Q27.6 23.8 27.4 19.2 Q26.8 11.4 20 11 Q13.2 11.4 12.6 19.2 Q12.4 23.8 15 27.6 L11.4 29.6 Q8.2 25.4 8.6 18.6 Q9.6 7 20 6.4 Z";
-    const bodyD = "M5 40 Q5.6 31 11.8 28.6 Q13.2 23 20 22.8 Q26.8 23 28.2 28.6 Q34.4 31 35 40 Z";
-    /* the chromatic split behind the figure */
-    open("cx-fx cx-fx-hk2split");
-    [["#FF2E4E", -.9], [cyan, .9]].forEach(([c, dx]) => {
-      const g = mk("g", { transform: "translate(" + dx + " 0)", opacity: ".45" });
-      g.appendChild(mk("path", { d: bodyD, fill: c }));
-      g.appendChild(mk("path", { d: hoodD, fill: c }));
-      svg.appendChild(g);
-    });
-    close();
+    const green = "#3DFF8A", greenSoft = "#A6FFC9";
+    const hoodie = headGrad("#3A4150", "#1B2029", "#07090D");
+    /* CODE RAIN behind the figure: columns of glyphs whose pattern
+       repeats every 6 units, falling exactly 6 - a seamless loop. */
+    {
+      const rcp = uid + "-hk3r";
+      const cp = mk("clipPath", { id: rcp });
+      cp.appendChild(mk("rect", { x: 3, y: 3, width: 34, height: 26 }));
+      defs.appendChild(cp);
+      const clip = mk("g", { "clip-path": "url(#" + rcp + ")", opacity: ".7" });
+      const rain = mk("g", { class: "cx-fx cx-fx-hk3rain" });
+      rain.appendChild(pivot(20, 16, 20));
+      [[4.6, [1, .5, 1, 0]], [7.4, [0, 1, .6, 1]], [10.2, [1, 0, 1, .4]], [29.8, [.4, 1, 0, 1]], [32.6, [1, .6, 1, 0]], [35.4, [0, 1, 1, .5]]].forEach(([x, pat], ci) => {
+        for(let i = 0; i < 20; i++){
+          const on = pat[i % 4];
+          if(!on) continue;
+          const y = -6 + i * 1.5 + (ci % 2) * .7;
+          const lead = (i % 4) === 3;
+          rain.appendChild(mk("rect", { x: x - .35, y: y.toFixed(2), width: .7, height: (i % 3 ? .9 : .55), rx: .12,
+            fill: lead ? greenSoft : green, opacity: (on * (lead ? 1 : .6)).toFixed(2) }));
+        }
+      });
+      clip.appendChild(rain);
+      svg.appendChild(clip);
+    }
     open("cx-body");
-    svg.appendChild(mk("path", { d: bodyD, fill: cloth }));
-    /* circuit traces */
-    open("cx-fx cx-fx-hk2trace");
-    ["M9 36 L12 33 L15.6 33 L17.4 31.2", "M31 36 L28 33 L24.4 33 L22.6 31.2", "M20 40 L20 35.6 L18.4 34"].forEach(d =>
-      svg.appendChild(mk("path", { d, fill: "none", stroke: green, "stroke-width": ".4", "stroke-linecap": "round", "stroke-linejoin": "round", opacity: ".85" })));
-    [[17.4, 31.2], [22.6, 31.2], [18.4, 34], [9, 36], [31, 36]].forEach(([x, y]) => svg.appendChild(mk("circle", { cx: x, cy: y, r: .45, fill: green })));
+    svg.appendChild(mk("path", { d: "M5 40 Q5.6 31 11.8 28.6 Q13.2 23 20 22.8 Q26.8 23 28.2 28.6 Q34.4 31 35 40 Z", fill: hoodie }));
+    /* the drawstrings */
+    svg.appendChild(mk("path", { d: "M17.6 27.4 L17.1 30.4 M22.4 27.4 L22.9 30.4", stroke: "#9AA3B4", "stroke-width": ".4", "stroke-linecap": "round" }));
+    /* the screen's light spilling up over the lid onto the hoodie */
+    open("cx-fx cx-fx-hk3glow");
+    const lg = mk("radialGradient", { id: uid + "-hk3l", cx: ".5", cy: ".85", r: ".6" });
+    lg.appendChild(mk("stop", { offset: "0%", "stop-color": green, "stop-opacity": ".55" }));
+    lg.appendChild(mk("stop", { offset: "100%", "stop-color": green, "stop-opacity": "0" }));
+    defs.appendChild(lg);
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 26.8, rx: 10.5, ry: 6.2, fill: "url(#" + uid + "-hk3l)" }));
     close();
-    /* drawstrings with lit tips */
-    svg.appendChild(mk("path", { d: "M17.6 27.6 L17 32.4 M22.4 27.6 L23 32.4", stroke: "#9AA3B4", "stroke-width": ".4", "stroke-linecap": "round" }));
-    svg.appendChild(mk("circle", { cx: 17, cy: 32.6, r: .5, fill: cyan }));
-    svg.appendChild(mk("circle", { cx: 23, cy: 32.6, r: .5, fill: cyan }));
+    /* THE LAPTOP: the back of the lid, the one shape that says hacker */
+    const lidG = mk("linearGradient", { id: uid + "-hk3m", x1: "0", y1: "0", x2: "0", y2: "1" });
+    [["0%", "#5A6270"], ["45%", "#2A3038"], ["100%", "#101318"]].forEach(([o, c]) => lidG.appendChild(mk("stop", { offset: o, "stop-color": c })));
+    defs.appendChild(lidG);
+    svg.appendChild(mk("path", { d: "M10.6 40 L11.8 29.4 Q11.9 28.6 12.7 28.6 L27.3 28.6 Q28.1 28.6 28.2 29.4 L29.4 40 Z", fill: "url(#" + uid + "-hk3m)", stroke: "#06080B", "stroke-width": ".3", "stroke-linejoin": "round" }));
+    svg.appendChild(mk("path", { d: "M12.2 29.1 L27.8 29.1", stroke: "#8C95A4", "stroke-width": ".3", opacity: ".8" }));
+    open("cx-fx cx-fx-hk3edge");
+    svg.appendChild(mk("path", { d: "M12.6 28.5 L27.4 28.5", stroke: green, "stroke-width": "1.4", "stroke-linecap": "round", opacity: ".35" }));
+    svg.appendChild(mk("path", { d: "M12.6 28.5 L27.4 28.5", stroke: greenSoft, "stroke-width": ".45", "stroke-linecap": "round" }));
+    close();
+    /* the </> on the lid, lit */
+    svg.appendChild(mk("path", { d: "M18 30.8 L16.5 32.3 L18 33.8 M22 30.8 L23.5 32.3 L22 33.8 M20.8 30.4 L19.2 34.2", fill: "none", stroke: green, "stroke-width": "1.3", "stroke-linecap": "round", "stroke-linejoin": "round", opacity: ".3" }));
+    svg.appendChild(mk("path", { d: "M18 30.8 L16.5 32.3 L18 33.8 M22 30.8 L23.5 32.3 L22 33.8 M20.8 30.4 L19.2 34.2", fill: "none", stroke: greenSoft, "stroke-width": ".55", "stroke-linecap": "round", "stroke-linejoin": "round" }));
     close();
     open("cx-head");
-    svg.appendChild(mk("path", { d: hoodD, fill: cloth, stroke: "#040507", "stroke-width": ".3" }));
-    svg.appendChild(mk("path", { d: "M11.4 29.6 Q8.2 25.4 8.6 18.6 Q9.6 7 20 6.4", fill: "none", stroke: cyan, "stroke-width": ".35", opacity: ".55" }));
-    svg.appendChild(mk("path", { d: "M12.8 15.2 Q20 10.8 27.2 15.2 Q28 23.2 20 27.2 Q12 23.2 12.8 15.2 Z", fill: "#05070A" }));
-    /* the visor: one neon band */
-    const visor = "M12.6 16.8 Q20 14.8 27.4 16.8 L27 20.6 Q20 18.8 13 20.6 Z";
-    const vg = mk("linearGradient", { id: uid + "-hk2v", x1: "0", y1: "0", x2: "1", y2: "0" });
-    [["0%", green], ["100%", cyan]].forEach(([o, c]) => vg.appendChild(mk("stop", { offset: o, "stop-color": c })));
-    defs.appendChild(vg);
-    svg.appendChild(mk("path", { d: visor, fill: "url(#" + uid + "-hk2v)", opacity: ".95" }));
-    svg.appendChild(mk("path", { d: visor, fill: "none", stroke: cyan, "stroke-width": "1.2", opacity: ".3" }));
-    /* scan line through the visor */
-    const vcp = uid + "-hk2vc";
-    const cpv = mk("clipPath", { id: vcp }); cpv.appendChild(mk("path", { d: visor })); defs.appendChild(cpv);
-    const scan = mk("g", { "clip-path": "url(#" + vcp + ")" });
-    scan.appendChild(mk("rect", { x: 11, y: 14.6, width: 1.4, height: 7, fill: "#FFFFFF", opacity: ".75", class: "cx-fx-hk2scan" }));
-    for(let y = 16.2; y < 21; y += .7) scan.appendChild(mk("rect", { x: 12, y: y.toFixed(2), width: 16, height: .18, fill: "#04120C", opacity: ".35" }));
-    svg.appendChild(scan);
+    const hoodD = "M20 6.4 Q30.4 7 31.4 18.6 Q31.8 25.4 28.6 29.6 L25 27.6 Q27.6 23.8 27.4 19.2 Q26.8 11.4 20 11 Q13.2 11.4 12.6 19.2 Q12.4 23.8 15 27.6 L11.4 29.6 Q8.2 25.4 8.6 18.6 Q9.6 7 20 6.4 Z";
+    svg.appendChild(mk("path", { d: hoodD, fill: hoodie, stroke: "#040507", "stroke-width": ".3" }));
+    /* THE FACE, dark above and lit green from below by the screen */
+    const fg = mk("linearGradient", { id: uid + "-hk3f", x1: "0", y1: "0", x2: "0", y2: "1" });
+    [["0%", "#0A0C0F"], ["50%", "#1B2A22"], ["100%", "#3E8A5E"]].forEach(([o, c]) => fg.appendChild(mk("stop", { offset: o, "stop-color": c })));
+    defs.appendChild(fg);
+    svg.appendChild(mk("path", { d: "M13.2 15.6 Q20 11.2 26.8 15.6 Q27.6 23 20 27.4 Q12.4 23 13.2 15.6 Z", fill: "url(#" + uid + "-hk3f)" }));
+    /* the light catching the jaw and the hood's inner edge */
+    svg.appendChild(mk("path", { d: "M15.2 23.4 Q20 27.8 24.8 23.4", fill: "none", stroke: greenSoft, "stroke-width": ".35", opacity: ".6", "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M14.4 27.2 Q20 29.6 25.6 27.2", fill: "none", stroke: green, "stroke-width": ".4", opacity: ".45", "stroke-linecap": "round" }));
+    /* THE GLASSES: two dark lenses reflecting lines of green code */
+    const lensL = "M14.3 17.3 Q14.3 16.8 14.8 16.8 L18.6 16.8 Q19.1 16.8 19.1 17.3 L19 19.6 Q19 20.1 18.5 20.1 L14.9 20.1 Q14.4 20.1 14.4 19.6 Z";
+    const lensR = "M20.9 17.3 Q20.9 16.8 21.4 16.8 L25.2 16.8 Q25.7 16.8 25.7 17.3 L25.6 19.6 Q25.6 20.1 25.1 20.1 L21.5 20.1 Q21 20.1 21 19.6 Z";
+    [lensL, lensR].forEach(d => svg.appendChild(mk("path", { d, fill: "#04140C", stroke: "#0A0D10", "stroke-width": ".45" })));
+    svg.appendChild(mk("path", { d: "M19.1 17.6 Q20 17.2 20.9 17.6 M14.3 17.4 L12.9 16.9 M25.7 17.4 L27.1 16.9", fill: "none", stroke: "#0A0D10", "stroke-width": ".45", "stroke-linecap": "round" }));
+    const ccp = uid + "-hk3c";
+    const cpc = mk("clipPath", { id: ccp });
+    [lensL, lensR].forEach(d => cpc.appendChild(mk("path", { d })));
+    defs.appendChild(cpc);
+    const codeG = mk("g", { "clip-path": "url(#" + ccp + ")" });
+    const code = mk("g", { class: "cx-fx cx-fx-hk3code" });
+    code.appendChild(pivot(20, 18.4, 7));
+    /* sixteen rows, the eight-row pattern twice, so a scroll of exactly
+       eight rows (8 x .72) lands on the same picture */
+    const rows = [[14.9, 2.4], [15.3, 1.6], [14.9, 3], [15.7, 1.2], [14.9, 2], [15.3, 2.6], [14.9, 1.4], [15.7, 2.2]];
+    rows.concat(rows).forEach(([x, w], i) => {
+      const y = 16.4 + i * .72;
+      [0, 6.6].forEach(dx => code.appendChild(mk("rect", { x: (x + dx).toFixed(2), y: y.toFixed(2), width: w, height: .28, fill: green, opacity: i % 3 ? ".7" : "1" })));
+    });
+    codeG.appendChild(code);
+    svg.appendChild(codeG);
+    svg.appendChild(mk("path", { d: "M15.1 17.5 L16.4 17.5 M21.7 17.5 L23 17.5", stroke: "#FFFFFF", "stroke-width": ".3", "stroke-linecap": "round", opacity: ".7" }));
+    /* eyes behind the lenses - two pinpoints that blink */
     open("cx-eyes");
-    [[16.4, 17.9], [22.4, 17.9]].forEach(([x, y]) => svg.appendChild(mk("rect", { x, y, width: 1.2, height: 1.2, fill: "#F2FFF8" })));
+    [[16.8, 18.7], [23.2, 18.7]].forEach(([x, y]) => svg.appendChild(mk("circle", { cx: x, cy: y, r: .42, fill: greenSoft })));
     close();
-    closedEyes([[17, 18.6, 1.1], [23, 18.6, 1.1]], "#04120C", .5);
+    closedEyes([[16.8, 18.9, .9], [23.2, 18.9, .9]], greenSoft, .35);
+    /* a smirk */
+    open("cx-mouth");
+    svg.appendChild(mk("path", { d: "M18.2 24 Q20.2 24.9 21.9 23.5", fill: "none", stroke: "#08140E", "stroke-width": ".45", "stroke-linecap": "round" }));
     close();
-    /* glitch slices that jump now and then */
+    close();
+    /* the occasional glitch - the one bit of the 265 figure kept */
     openHidden("cx-fx cx-fx-hk2slice");
-    svg.appendChild(mk("rect", { x: 9, y: 17.4, width: 22, height: 1.1, fill: cyan, opacity: ".7" }));
-    svg.appendChild(mk("rect", { x: 7, y: 31.2, width: 14, height: .8, fill: "#FF2E4E", opacity: ".7" }));
+    svg.appendChild(mk("rect", { x: 9, y: 18, width: 22, height: 1, fill: green, opacity: ".6" }));
+    svg.appendChild(mk("rect", { x: 7, y: 32, width: 14, height: .8, fill: "#FF2E6E", opacity: ".6" }));
     close();
     return done();
   }
@@ -34273,84 +34524,82 @@ function drawAvatarCharSVG(charId){
     return done();
   }
 
-  /* SINGULARITY - the fifth flare, and asked for as "the coolest
-     character". Its head IS a black hole: a perfectly black disc, a thin
-     white-hot photon ring round it, and a tilted accretion disc that
-     passes BEHIND the head across the top and IN FRONT across the
-     bottom - two passes, the way the Bronze emblem draws its ring, so it
-     reads as a disc going round something rather than a line across it.
-     Nothing on it is a face, and that is the point: at the end of the
-     hunt, the thing you find is not somebody. */
+  /* SINGULARITY, SECOND PASS (build 266). "I think singularity needs to
+     be cooler as well, the other two look cooler.." The other two are
+     hooded figures with something inside the hood - a galaxy for the
+     Void, a crescent and two eyes for Umbra - and the Singularity was a
+     black ball with a ring on a pair of shoulders: a planet, not one of
+     the three. So it is the third hooded figure now, and the darkest:
+     the hood's opening is an EVENT HORIZON, rimmed in white-hot light
+     orange on one side and ice-blue on the other, with gas spiralling
+     down into the black inside it and two pinpoint eyes at the bottom
+     of the well. Behind the head a lensed ring of light - the photon
+     ring - turns slowly, and matter streams off the cloak into the
+     hood. Parts are cx-fx-sg2* (plus the old cx-fx-infall dash). */
   if(def.kind === "singularity"){
-    const cloak = headGrad("#1C2A44", "#0F1726", "#06090F");
+    const cloak = headGrad("#22314E", "#0F1726", "#05080E");
     const diskId = "disk-" + uid;
     const dg = mk("linearGradient", { id: diskId, x1: "0", y1: "0", x2: "1", y2: "0" });
     [["0%", "#FF8A3D"], ["30%", "#FFE2A8"], ["50%", "#FFFFFF"], ["70%", "#BDF2FF"], ["100%", "#3FC5F0"]].forEach(([o, c]) =>
       dg.appendChild(mk("stop", { offset: o, "stop-color": c })));
     defs.appendChild(dg);
-    open("cx-body");
-    svg.appendChild(mk("path", { d: "M5.6 40 Q6.4 31 14 28.8 L26 28.8 Q33.6 31 34.4 40 Z", fill: cloak }));
-    /* Stars caught in the cloak. */
-    [[10, 35.4], [14.6, 32.6], [27.2, 33.4], [30.4, 37.2], [22.4, 37.8], [17.2, 38.4]].forEach(([x, y], i) =>
-      svg.appendChild(mk("circle", { cx: x, cy: y, r: i % 2 ? .35 : .5, fill: "#DDF6FF", opacity: ".85" })));
-    svg.appendChild(mk("path", { d: "M14 28.8 Q20 31.8 26 28.8", fill: "none", stroke: "#7FDBFF", "stroke-width": ".5", opacity: ".7" }));
+    /* THE PHOTON RING behind the head, turning */
+    open("cx-fx cx-fx-sg2halo");
+    svg.appendChild(pivot(20, 16.6, 13.4));
+    svg.appendChild(mk("circle", { cx: 20, cy: 16.6, r: 12.6, fill: "none", stroke: "url(#" + diskId + ")", "stroke-width": "2.6", opacity: ".22" }));
+    svg.appendChild(mk("circle", { cx: 20, cy: 16.6, r: 12.6, fill: "none", stroke: "url(#" + diskId + ")", "stroke-width": ".8", opacity: ".95", "stroke-dasharray": "22 3 12 2.4 18 4", "stroke-linecap": "round" }));
     close();
-    /* Build 242, "the singularity character could be improved": matter
-       spiralling down the cloak towards the hole. */
+    open("cx-body");
+    svg.appendChild(mk("path", { d: "M5 40 Q5.8 31 12 28.8 L28 28.8 Q34.2 31 35 40 Z", fill: cloak }));
+    [[10, 35.4], [14.6, 33], [27.2, 33.4], [30.4, 37.2], [22.4, 37.8], [17.2, 38.4], [8.2, 38.6], [32.6, 34]].forEach(([x, y], i) =>
+      svg.appendChild(mk("circle", { cx: x, cy: y, r: i % 2 ? .3 : .45, fill: "#DDF6FF", opacity: ".85" })));
+    close();
     open("cx-fx cx-fx-infall");
-    [["M8 38.6 Q9.6 31.4 16.4 29.6", "#FF9A4D"], ["M32 37.8 Q30.2 31.2 23.6 29.6", "#7FDBFF"]].forEach(([d, c]) =>
+    [["M7.6 38.8 Q9 31 16.4 28.2", "#FF9A4D"], ["M32.4 38 Q30.6 30.8 23.6 28.2", "#7FDBFF"], ["M13 39.6 Q14.6 33.4 18.6 29.4", "#FFE2A8"]].forEach(([d, c]) =>
       svg.appendChild(mk("path", { d: d, fill: "none", stroke: c, "stroke-width": ".6", "stroke-linecap": "round",
                                    "stroke-dasharray": ".2 1.3", opacity: ".85" })));
     close();
     open("cx-head");
-    const cx = 20, cy = 18.4, tilt = -14;
-    /* A warm bloom behind the hole, where the disc's light scatters. */
-    {
-      const bid = uid + "-bloom";
-      const bg = mk("radialGradient", { id: bid, cx: ".5", cy: ".5", r: ".5" });
-      bg.appendChild(mk("stop", { offset: "45%", "stop-color": "#FFB067", "stop-opacity": ".42" }));
-      bg.appendChild(mk("stop", { offset: "100%", "stop-color": "#FF6A3D", "stop-opacity": "0" }));
-      defs.appendChild(bg);
-      svg.appendChild(mk("circle", { cx: cx, cy: cy, r: 15, fill: "url(#" + bid + ")" }));
-    }
-    /* The far half of the disc, behind the head. */
-    const far = mk("path", { d: "M" + (cx - 15) + " " + cy + " A15 3.6 0 0 1 " + (cx + 15) + " " + cy,
-                             fill: "none", stroke: "url(#" + diskId + ")", "stroke-width": "2.1", "stroke-linecap": "round", opacity: ".75" });
-    far.setAttribute("transform", "rotate(" + tilt + " " + cx + " " + cy + ")");
-    svg.appendChild(far);
-    /* THE LENSED DISC: the far side of the disc, seen bent up over the
-       top of the hole and under its bottom - the image that makes a black
-       hole read as one rather than as a black ball with a ring. */
-    svg.appendChild(mk("path", { d: "M" + (cx - 11) + " " + cy + " A11 11 0 0 1 " + (cx + 11) + " " + cy,
-                                 fill: "none", stroke: "url(#" + diskId + ")", "stroke-width": "1.7", opacity: ".85",
-                                 "stroke-linecap": "round" }));
-    svg.appendChild(mk("path", { d: "M" + (cx - 9.6) + " " + (cy + .4) + " A9.6 9.6 0 0 0 " + (cx + 9.6) + " " + (cy + .4),
-                                 fill: "none", stroke: "url(#" + diskId + ")", "stroke-width": ".7", opacity: ".55" }));
-    /* The lensed glow above and below the head - light from the far
-       side of the disc bent over the top of the hole. */
-    open("cx-fx cx-fx-lens");
-    svg.appendChild(mk("circle", { cx: cx, cy: cy, r: 10.2, fill: "none", stroke: "#FFE7C2", "stroke-width": ".9", opacity: ".35" }));
+    /* the hood */
+    const hood = "M20 4.6 Q30.8 5.4 31.6 18 Q32 25.2 28.8 29.6 L11.2 29.6 Q8 25.2 8.4 18 Q9.2 5.4 20 4.6 Z";
+    svg.appendChild(mk("path", { d: hood, fill: cloak, stroke: "#02040A", "stroke-width": ".3" }));
+    svg.appendChild(mk("path", { d: "M11.2 29.6 Q8 25.2 8.4 18 Q9.2 5.4 20 4.6", fill: "none", stroke: "#FF9A4D", "stroke-width": ".35", opacity: ".45" }));
+    svg.appendChild(mk("path", { d: "M28.8 29.6 Q32 25.2 31.6 18 Q30.8 5.4 20 4.6", fill: "none", stroke: "#7FDBFF", "stroke-width": ".35", opacity: ".45" }));
+    /* THE EVENT HORIZON: the hood's opening, black */
+    const well = "M20 9.8 Q27 10.4 27.3 18.6 Q27.4 24.6 20 27.8 Q12.6 24.6 12.7 18.6 Q13 10.4 20 9.8 Z";
+    svg.appendChild(mk("path", { d: well, fill: "#000000" }));
+    /* gas spiralling down into it, turning */
+    const wcp = uid + "-sg2w";
+    const cpw = mk("clipPath", { id: wcp }); cpw.appendChild(mk("path", { d: well })); defs.appendChild(cpw);
+    const wg = mk("g", { "clip-path": "url(#" + wcp + ")" });
+    const swirl = mk("g", { class: "cx-fx cx-fx-sg2swirl" });
+    swirl.appendChild(pivot(20, 18.6, 9));
+    [0, 1, 2].forEach(k => {
+      const pts = [];
+      for(let i = 0; i <= 26; i++){
+        const t = i / 26, a = k * Math.PI * 2 / 3 + t * Math.PI * 2.1, r = 8.6 - t * 7.2;
+        pts.push((20 + Math.cos(a) * r).toFixed(2) + " " + (18.6 + Math.sin(a) * r * 1.08).toFixed(2));
+      }
+      swirl.appendChild(mk("path", { d: "M" + pts.join("L"), fill: "none", stroke: ["#FF9A4D", "#FFFFFF", "#7FDBFF"][k], "stroke-width": ".42", "stroke-linecap": "round", opacity: ".75" }));
+    });
+    wg.appendChild(swirl);
+    svg.appendChild(wg);
+    /* the rim of light round the opening */
+    open("cx-fx cx-fx-sg2rim");
+    svg.appendChild(mk("path", { d: well, fill: "none", stroke: "url(#" + diskId + ")", "stroke-width": "1.8", opacity: ".3" }));
+    svg.appendChild(mk("path", { d: well, fill: "none", stroke: "url(#" + diskId + ")", "stroke-width": ".6" }));
     close();
-    /* The hole, and its photon ring. */
-    svg.appendChild(mk("circle", { cx: cx, cy: cy, r: 8.6, fill: "#000000" }));
-    open("cx-fx cx-fx-ring");
-    svg.appendChild(mk("circle", { cx: cx, cy: cy, r: 8.9, fill: "none", stroke: "#FFFFFF", "stroke-width": ".55", opacity: ".95" }));
+    /* the black at the bottom of the well, ringed */
+    svg.appendChild(mk("circle", { cx: 20, cy: 18.6, r: 2.1, fill: "#000000" }));
+    svg.appendChild(mk("circle", { cx: 20, cy: 18.6, r: 2.1, fill: "none", stroke: "#FFFFFF", "stroke-width": ".3", opacity: ".8" }));
+    /* two pinpoint eyes in the dark */
+    open("cx-eyes");
+    [[16.9, 16.4], [23.1, 16.4]].forEach(([x, y]) => {
+      svg.appendChild(mk("circle", { cx: x, cy: y, r: 1.1, fill: "#BDF2FF", opacity: ".3", class: "cx-fx-sg2eye" }));
+      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: .75, ry: .42, fill: "#F2FCFF" }));
+    });
     close();
-    /* The near half, in front. */
-    const near = mk("path", { d: "M" + (cx - 15) + " " + cy + " A15 3.6 0 0 0 " + (cx + 15) + " " + cy,
-                              fill: "none", stroke: "url(#" + diskId + ")", "stroke-width": "2.4", "stroke-linecap": "round" });
-    near.setAttribute("transform", "rotate(" + tilt + " " + cx + " " + cy + ")");
-    svg.appendChild(near);
-    /* A hot spot riding the disc, and a glint on the ring. */
-    noEyes();
-    open("cx-fx cx-fx-hotspot");
-    svg.appendChild(mk("circle", { cx: 8.6, cy: 22.6, r: .9, fill: "#FFFFFF" }));
-    close();
-    /* The glint rides the photon ring: its group is pinned to the hole's
-       own centre so a turn carries it round the edge. */
-    open("cx-fx cx-fx-orbit");
-    svg.appendChild(pivot(cx, cy, 8.9));
-    svg.appendChild(mk("circle", { cx: 14.4, cy: 11.4, r: .5, fill: "#FFFFFF", opacity: ".9" }));
+    closedEyes([[16.9, 16.6, .9], [23.1, 16.6, .9]], "#7FDBFF", .3);
     close();
     return done();
   }
@@ -40353,7 +40602,7 @@ const BANNER_ART = {
     let knots = "";
     for(let i = 0; i < 34; i++){
       const a = rnd() * Math.PI * 2, rr = 70 + rnd() * 130;
-      const x = CX + Math.cos(a) * rr, y = CY + Math.sin(a) * rr * 0.17;
+      const x = CX + Math.cos(a) * rr, y = CY + Math.sin(a) * rr * 0.5;
       knots += '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(0.9 + rnd() * 1.6) + '" fill="' + (rnd() < 0.5 ? "#FFE6FA" : "#F2E6FF") + '" opacity="' + bnF(0.5 + rnd() * 0.5) + '"' +
         (rnd() < 0.5 ? ' class="bn-twinkle" style="animation-delay:-' + bnF(rnd() * 4) + 's"' : '') + '/>';
     }
@@ -40362,7 +40611,21 @@ const BANNER_ART = {
       ' Q' + bnF(x - h * 0.06) + ' ' + bnF(y - v * 0.06) + ' ' + x + ' ' + bnF(y - v) + 'Z';
     const ev = 'animation-duration:7.2s;animation-delay:-5.6s';
     const tilt = 'rotate(' + TILT + ' ' + CX + ' ' + CY + ')';
-    const disc = '<ellipse cx="' + CX + '" cy="' + CY + '" rx="215" ry="22" fill="url(#' + u + 'disc)"/>';
+    /* A WHIRLPOOL, as on the emblem (build 266): three arms of hot gas
+       winding in to the hole, face-on and tipped a little, instead of a
+       disc seen edge-on - which was the ringed planet. */
+    let arms = "";
+    for(let arm = 0; arm < 3; arm++){
+      const ph = arm * Math.PI * 2 / 3;
+      for(let t = 0.6; t < 6.6; t += 0.09){
+        const r = 30 * Math.exp(0.27 * t), a = -t + ph;
+        if(r > 210) break;
+        const j = (rnd() - 0.5) * r * 0.1, x = Math.cos(a) * (r + j), y = Math.sin(a) * (r + j);
+        const g = r < 70 ? "a1" : (r < 130 ? "a2" : "a3");
+        arms += '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(6 + r * 0.1 + rnd() * 5) + '" fill="url(#' + u + g + ')" opacity="' + bnF(0.5 + rnd() * 0.45) + '"/>';
+      }
+    }
+    const whirl = 'translate(' + CX + ' ' + CY + ') rotate(' + TILT + ') scale(1 .52)';
     const jet = (dir) => '<g transform="rotate(' + (TILT - 4) + ' ' + CX + ' ' + CY + ')">' +
       '<ellipse cx="' + CX + '" cy="' + (CY + dir * 100) + '" rx="9" ry="100" fill="url(#' + u + (dir < 0 ? 'jetU' : 'jetD') + ')" class="bn-pulse" style="animation-duration:2.6s"/>' +
       '<ellipse cx="' + CX + '" cy="' + (CY + dir * 90) + '" rx="2.6" ry="90" fill="url(#' + u + (dir < 0 ? 'coreU' : 'coreD') + ')"/></g>';
@@ -40373,7 +40636,10 @@ const BANNER_ART = {
       bnRad(u + "g1", [[0, "#A855F7", 0.7], [0.5, "#7A2BC8", 0.28], [1, "#7A2BC8", 0]]) +
       bnRad(u + "g2", [[0, "#E060C8", 0.6], [0.5, "#9A2A8A", 0.25], [1, "#9A2A8A", 0]]) +
       bnRad(u + "halo", [[0, "#C98BFF", 0.55], [0.4, "#7A2BC8", 0.25], [1, "#3A1573", 0]]) +
-      bnRad(u + "disc", [[0, "#FFE6FA", 0], [0.2, "#FFE6FA", 0], [0.23, "#FFFFFF", 1], [0.32, "#FFD9F7", 0.95], [0.55, "#D4A8FF", 0.7], [0.8, "#A855F7", 0.35], [1, "#6A2BC8", 0]]) +
+      bnRad(u + "disc", [[0, "#FFE6FA", 0.75], [0.25, "#D4A8FF", 0.45], [0.6, "#A855F7", 0.16], [1, "#6A2BC8", 0]]) +
+      bnRad(u + "a1", [[0, "#FFF0FB", 0.95], [0.45, "#F0B8FF", 0.5], [1, "#C98BFF", 0]]) +
+      bnRad(u + "a2", [[0, "#E6C8FF", 0.85], [0.45, "#B57BFF", 0.42], [1, "#A855F7", 0]]) +
+      bnRad(u + "a3", [[0, "#C98BFF", 0.7], [0.5, "#8A3BE0", 0.3], [1, "#6A2BC8", 0]]) +
       bnRad(u + "ring", [[0.86, "#FFFFFF", 0], [0.92, "#FFFFFF", 1], [0.97, "#E0C4FF", 0.6], [1, "#A855F7", 0]]) +
       bnRad(u + "glow", [[0, "#FFFFFF", 0.9], [0.3, "#F6ECFF", 0.6], [0.7, "#A855F7", 0.15], [1, "#A855F7", 0]]) +
       bnRad(u + "flare", [[0, "#FFFFFF"], [0.15, "#F6ECFF", 0.9], [0.4, "#D4A8FF", 0.4], [0.7, "#A855F7", 0.14], [1, "#A855F7", 0]]) +
@@ -40383,7 +40649,6 @@ const BANNER_ART = {
       bnLin(u + "coreU", [[0, "#FFFFFF", 0], [1, "#FFFFFF", 1]], 0, 0, 0, 1) +
       bnLin(u + "coreD", [[0, "#FFFFFF", 1], [1, "#FFFFFF", 0]], 0, 0, 0, 1) +
       bnLin(u + "hs", [[0, "#A855F7", 0], [0.5, "#FBF4FF"], [1, "#A855F7", 0]], 0, 0, 1, 0) +
-      '<clipPath id="' + u + 'front"><rect x="-20" y="' + (CY + 1) + '" width="520" height="120" transform="' + tilt + '"/></clipPath>' +
       '</defs>' +
       '<g class="bn-jolt" style="' + ev + '">' +
       '<rect x="-10" y="-10" width="500" height="200" fill="url(#' + u + 'sp)"/>' +
@@ -40395,15 +40660,12 @@ const BANNER_ART = {
       '</g>' + gas +
       '<ellipse cx="' + CX + '" cy="' + CY + '" rx="250" ry="120" fill="url(#' + u + 'halo)"/>' +
       jet(-1) + jet(1) +
-      /* the far half of the disc, behind the shadow */
-      '<g transform="' + tilt + '" class="bn-breathe">' + disc + '</g>' + knots +
-      /* the far side, bent up over the top by the hole */
-      '<path d="M' + (CX - 50) + ' ' + (CY + 2) + ' A50 50 0 0 1 ' + (CX + 50) + ' ' + (CY + 2) + '" fill="none" stroke="#D4A8FF" stroke-width="12" opacity=".45" transform="' + tilt + '"/>' +
-      '<path d="M' + (CX - 46) + ' ' + (CY + 2) + ' A46 46 0 0 1 ' + (CX + 46) + ' ' + (CY + 2) + '" fill="none" stroke="#FFE6FA" stroke-width="4" opacity=".9" transform="' + tilt + '"/>' +
-      '<circle cx="' + CX + '" cy="' + CY + '" r="44" fill="url(#' + u + 'ring)"/>' +
-      '<circle cx="' + CX + '" cy="' + CY + '" r="38.5" fill="#030208"/>' +
-      /* the near half, across the front of the shadow */
-      '<g clip-path="url(#' + u + 'front)"><g transform="' + tilt + '" class="bn-breathe">' + disc + '</g></g>' +
+      '<g transform="' + whirl + '">' +
+      '<circle r="210" fill="url(#' + u + 'disc)"/>' +
+      '<g class="bn-spin" style="animation-direction:reverse">' + arms + '</g>' +
+      '</g>' + knots +
+      '<circle cx="' + CX + '" cy="' + CY + '" r="36" fill="url(#' + u + 'ring)"/>' +
+      '<circle cx="' + CX + '" cy="' + CY + '" r="31" fill="#030208"/>' +
       '<ellipse cx="' + CX + '" cy="' + CY + '" rx="228" ry="1.3" fill="url(#' + u + 'hs)" opacity=".55" transform="' + tilt + '"/>' +
       '<circle class="bn-blast" style="' + ev + '" cx="' + CX + '" cy="' + CY + '" r="150" fill="url(#' + u + 'wave)" opacity="0"/>' +
       '<circle class="bn-spike" style="' + ev + '" cx="' + CX + '" cy="' + CY + '" r="90" fill="url(#' + u + 'flare)" opacity="0"/>' +
@@ -40517,7 +40779,8 @@ const BANNER_ART = {
       '<ellipse cx="' + CX + '" cy="' + CY + '" rx="1.1" ry="54" fill="url(#' + u + 'vs)" opacity=".55"/>' +
       '<path d="' + spark(CX, CY, 38, 26) + '" fill="#F2FAFF" opacity=".95" class="bn-pulse" style="animation-duration:4.4s"/>' +
       '<circle cx="' + CX + '" cy="' + CY + '" r="12" fill="url(#' + u + 'core)"/>' +
-      '<circle cx="' + CX + '" cy="' + CY + '" r="4" fill="#FFFFFF"/>' +
+      /* the pinprick of black at the heart, as on the emblem (build 266) */
+      '<circle cx="' + CX + '" cy="' + CY + '" r="4.6" fill="#02040C" stroke="#FFFFFF" stroke-width="1" stroke-opacity=".85"/>' +
       '<circle class="bn-spike" style="' + ev + '" cx="' + CX + '" cy="' + CY + '" r="90" fill="url(#' + u + 'flare)" opacity="0"/>' +
       '<path class="bn-spike" style="' + ev + '" d="' + spark(CX, CY, 76, 46) + '" fill="#F2FAFF" opacity="0"/>' +
       '<path class="bn-glint" style="animation-delay:-.8s" d="' + spark(96, 128, 5, 3.4) + '" fill="#BFFBFF"/>' +
@@ -40845,21 +41108,40 @@ function rankStepProgress(){
   const idx = held ? TIER_ORDER_FULL.indexOf(held) : -1;
   const next = TIER_ORDER_FULL[idx + 1] || null;
   if(!next) return { held, next: null, pct: 1 };
+  /* THE SLOWER REQUIREMENT DECIDES IT, MEASURED OVER THE STEP (build
+     266). "It looks like I'm really close except I'm still two badges
+     away." The two halves were AVERAGED, each as now-over-target, so a
+     level already met counted as half the bar full and the badge half
+     started from zero badges rather than from the rank you hold - two
+     badges short of Sapphire read about 85%. A rank needs both, so the
+     bar is now the half that is furthest behind, and each half runs
+     from the rank you hold (empty) to the next (full). Badges count
+     part-way progress too: for each badge still missing, the closest
+     unfinished unit's hundos towards it. */
   const nextRule = TIER_UNLOCKS[next] || {};
+  const prevRule = (held && TIER_UNLOCKS[held]) || {};
   const lvl = levelOf(store);
   let lvlExact = lvl;
   try{ const lp = levelProgress(store.lifetime ? store.lifetime.points : 0); if(lp.level === lvl && !lp.atCap) lvlExact = lvl + lp.fraction; }catch(e){}
   const badges = badgeCountOf(store);
-  let closest = 0;
+  const needLvl = nextRule.level || 0, needBdg = nextRule.badges || 0;
+  let partials = 0;
   try{
+    const missing = Math.max(0, needBdg - badges);
     const perf = store.unitPerfects || {};
-    topicsIn(QUESTIONS).forEach(u => { if(unitBadgeEarned(u)) return;
-      closest = Math.max(closest, Math.min(.999, (perf[u] || 0) / badgeThresholdFor(u))); });
+    const fr = topicsIn(QUESTIONS).filter(u => !unitBadgeEarned(u))
+      .map(u => Math.min(.999, (perf[u] || 0) / badgeThresholdFor(u))).sort((a, b) => b - a);
+    partials = fr.slice(0, missing).reduce((a, b) => a + b, 0);
   }catch(e){}
-  const part = (v, target) => { const t = Number(target) || 0; return t > 0 ? Math.max(0, Math.min(1, v / t)) : 1; };
-  const lvlPart = lvl >= (nextRule.level || 0) ? 1 : part(lvlExact, nextRule.level);
-  const bdgPart = badges >= (nextRule.badges || 0) ? 1 : part(badges + closest, nextRule.badges);
-  return { held, next, pct: (lvlPart + bdgPart) / 2 };
+  const part = (v, from, to, met) => {
+    if(met) return 1;
+    const span = (Number(to) || 0) - (Number(from) || 0);
+    if(span <= 0) return 0;
+    return Math.max(0, Math.min(.999, (v - (Number(from) || 0)) / span));
+  };
+  const lvlPart = part(lvlExact, Math.min(prevRule.level || 0, needLvl), needLvl, lvl >= needLvl);
+  const bdgPart = part(badges + partials, Math.min(prevRule.badges || 0, needBdg), needBdg, badges >= needBdg);
+  return { held, next, pct: Math.min(lvlPart, bdgPart), lvlPart, bdgPart };
 }
 /* The percentage as it is shown: one decimal, and never 100% until it is. */
 function rankStepPctLabel(pct){
@@ -41716,6 +41998,13 @@ function buildRankEmblemSVG(rankKey){
     add(ellipse(C, C, 17, 11), { fill: uRadial(C, C, 17, [[0, "#FFFFFF", 1], [0.4, ICE, 0.85], [1, LIGHT, 0]]), transform: "rotate(-22 " + C + " " + C + ")" });
     inLayer("rk-pulse", C, C, 0, () => add(disc(C, C, 22), { fill: uRadial(C, C, 22, [[0, "#FFFFFF", 0.9], [0.4, ICE, 0.6], [1, base, 0]]) }));
     glowStar(C, C, 8, 28, "rk-twinkle");
+    /* A SMIDGE OF BLACK (build 266): "could sapphire also get a smidge of
+       black somehow? Maybe a black dot so you can see the black getting
+       cooler/bigger through ranks." The first dark at the heart of the
+       set - a pinprick in the galaxy's core, ringed in its light. It is
+       Amethyst's hole before it opens, and Supernova's blast after. */
+    add(disc(C, C, 4.6), { fill: uRadial(C, C, 4.6, [[0, "#000000", 1], [0.7, "#02040C", 1], [1, "#0A1A3A", 1]]) });
+    add(circle(4.6), { fill: "none", stroke: "#FFFFFF", "stroke-width": ".8", opacity: ".8" });
   } else if(rankKey === "elite"){
     /* AMETHYST (build 250): A QUASAR - the black hole at a galaxy's heart,
        feeding. A shadow that gives off nothing, ringed by a thin line of
@@ -41744,33 +42033,45 @@ function buildRankEmblemSVG(rankKey){
          the most elaborate drawing in it */
       add([1, -1].map(dir => [0.45, 0.7].map(f => disc(C + dir * ax[0] * 63 * f, C + dir * ax[1] * 63 * f, 2.2)).join("")).join(""), { fill: "#FFFFFF", opacity: ".75" });
     });
-    const diskG = uRadial(C, C, 58, [[0, HOT, 0], [0.31, HOT, 0], [0.35, "#FFFFFF", 1], [0.46, HOT, 0.95], [0.64, ICE, 0.75], [0.84, LIGHT, 0.4], [1, base, 0]]);
-    /* the far half of the disc, behind the shadow */
-    const back = group({ transform: flat }); const pv = into; into = back;
-    add(disc(C, C, 58), { fill: diskG });
-    inLayer("rk-spin rk-quick", C, C, 58, () => {
-      add(arc(34, 190, 320), { fill: "none", stroke: "#FFFFFF", "stroke-width": "4", opacity: ".95", "stroke-linecap": "round" });
-      add(arc(44, 20, 160), { fill: "none", stroke: HOT, "stroke-width": "3.4", opacity: ".85", "stroke-linecap": "round" });
-      add(arc(51, 230, 330), { fill: "none", stroke: ICE, "stroke-width": "2.6", opacity: ".75", "stroke-linecap": "round" });
-      add(arc(28, 20, 110), { fill: "none", stroke: "#FFFFFF", "stroke-width": "2.4", opacity: ".8", "stroke-linecap": "round" });
+    /* A WHIRLPOOL, NOT A RINGED PLANET (build 266). "Amethyst is cool
+       but looks too much like a planet ... needs to look more in common
+       with the rank before and after it." The flattened disc across the
+       front was the planet: a black ball with a tilted band round it is
+       Saturn at a glance, whatever the physics says. So the disc is gone
+       and the gas falls in the way Sapphire's galaxy turns - three
+       spiral arms, bright and wound tight, swirling INTO the dark
+       rather than lying round it. The galaxy's arms from the rank below
+       and the jets that become Supernova's flares above, around the
+       black that grows up the ladder: a dot at Sapphire, a hole here, a
+       jagged blast at the top. */
+    const whirl = group({ transform: "rotate(" + TILT + " " + C + " " + C + ") translate(" + C + " " + C + ") scale(1 .86) translate(" + (-C) + " " + (-C) + ")" });
+    const pv = into; into = whirl;
+    add(disc(C, C, 54), { fill: uRadial(C, C, 54, [[0, HOT, 0.62], [0.4, LIGHT, 0.34], [1, base, 0]]) });
+    inLayer("rk-spin rk-quick", C, C, 56, () => {
+      const armBody = uRadial(C, C, 54, [[0, "#FFFFFF", 0.95], [0.3, HOT, 0.85], [0.65, LIGHT, 0.55], [1, base, 0.12]]);
+      const armFill = uRadial(C, C, 54, [[0, "#FFFFFF", 1], [0.4, HOT, 0.95], [0.75, ICE, 0.7], [1, LIGHT, 0.3]]);
+      const third = Math.PI * 2 / 3;
+      [0, 1, 2].forEach(i => add(spiralArm(i * third + third / 2, 7, 0, 3.1, 45).ribbon, { fill: armBody, opacity: ".45" }));
+      let specks = "";
+      [0, 1, 2].forEach(i => {
+        const a0 = i * third, a = spiralArm(a0, 15, 0, 3.4, 46);
+        add(a.ribbon, { fill: armBody });
+        add(spiralArm(a0, 6, 0.8, 3.4, 46).ribbon, { fill: armFill });
+        add(a.lane, { fill: "none", stroke: shade, "stroke-width": "1.5", "stroke-linecap": "round", opacity: String(dk(0.42)) });
+        [[0.34, 1.3], [0.52, 1.6], [0.7, 1.1], [0.86, 1.3]].forEach(([t, r]) => {
+          const th = a0 + t * 3.4, rr = 7 + 46 * t + 1.4, cx = C + Math.cos(th) * rr, cy = C + Math.sin(th) * rr;
+          specks += "M" + (cx - r).toFixed(2) + " " + cy.toFixed(2) + "a" + r + " " + r + " 0 1 0 " + (2 * r) + " 0a" + r + " " + r + " 0 1 0 " + (-2 * r) + " 0Z";
+        });
+      });
+      add(specks, { fill: "#FFFFFF", opacity: ".9" });
     });
     into = pv;
-    /* the far side of the disc, bent up over the top of the shadow by its gravity */
-    inLayer("rk-glow", C, C, 0, () => {
-      const lensArc = (r, w, col, op) => add("M" + (C - r) + " " + (C + 1) + "A" + r + " " + r + " 0 0 1 " + (C + r) + " " + (C + 1),
-        { fill: "none", stroke: col, "stroke-width": String(w), opacity: op, "stroke-linecap": "round", transform: "rotate(" + TILT + " " + C + " " + C + ")" });
-      lensArc(24, 8, ICE, ".5"); lensArc(22, 3.2, HOT, ".85"); lensArc(21, 1.2, "#FFFFFF", ".95");
-    });
-    /* the photon ring and the shadow */
-    /* the photon ring beats (build 257 - "Amethyst animation is weak") */
-    inLayer("rk-pulse", C, C, 0, () => add(disc(C, C, 19), { fill: uRadial(C, C, 19, [[0.78, "#FFFFFF", 0], [0.86, "#FFFFFF", 0.95], [0.93, ICE, 0.6], [1, base, 0]]) }));
-    add(disc(C, C, 16.2), { fill: "#030208" });
-    /* the near half of the disc, across the front of the shadow */
-    const front = group({ transform: flat });
-    const fg = document.createElementNS(NS, "g");
-    fg.setAttribute("clip-path", clipTo(uid + "-qf", "M" + (C - 64) + " " + (C + 1) + "H" + (C + 64) + "V" + (C + 64) + "H" + (C - 64) + "Z"));
-    front.appendChild(fg);
-    addTo(fg, disc(C, C, 58), { fill: diskG });
+    /* the photon ring beats (build 257 - "Amethyst animation is weak"),
+       then the shadow - bigger than Sapphire's dot, round where
+       Supernova's is jagged */
+    inLayer("rk-pulse", C, C, 0, () => add(disc(C, C, 21), { fill: uRadial(C, C, 21, [[0.62, "#FFFFFF", 0], [0.72, "#FFFFFF", 0.95], [0.84, HOT, 0.7], [1, base, 0]]) }));
+    add(disc(C, C, 14.5), { fill: "#030208" });
+    add(circle(14.5), { fill: "none", stroke: "#FFFFFF", "stroke-width": ".9", opacity: ".55" });
   } else {
     /* SUPERNOVA. The last one, and it is the app going off.
        Everything here is about a star that has stopped being a star: a
@@ -53383,8 +53684,11 @@ function showSetup(){
      it, and a change to one is a change to both. */
   const modeRow2 = document.createElement("div");
   modeRow2.className = "setup-modechip";
-  const modeNames = { drill: "Drill", exam: "Exam", game: "Game" };
-  const modeKind = ["drill", "exam", "game"].indexOf(cfg.mode) >= 0 ? cfg.mode : "drill";
+  /* Review is its own colour, the green of its icon (build 266): "the
+     word review at the top of the unit selection is not a green tint,
+     it's the drill tint". It fell through to "drill" here. */
+  const modeNames = { drill: "Drill", exam: "Exam", game: "Game", review: "Review" };
+  const modeKind = ["drill", "exam", "game", "review"].indexOf(cfg.mode) >= 0 ? cfg.mode : "drill";
   const modeChip = document.createElement("span");
   modeChip.className = "rs-mode rs-mode-" + modeKind;
   try{ modeChip.appendChild(modeIcon(modeKind)); }catch(e){}
@@ -55937,7 +56241,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-30-265";
+const APP_BUILD = "2026-09-30-266";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -61468,7 +61772,7 @@ function showVirtualRoomChoice(){
   setActiveNav(null);
   countEl.textContent = "Virtual Room";
   const panel = document.createElement("section");
-  panel.className = "panel";
+  panel.className = "panel screen-vroom-choice";
   panel.appendChild(buildBackLink("Back", showModeSelect));
 
   const title = document.createElement("h1");
@@ -61490,98 +61794,109 @@ function showVirtualRoomChoice(){
     return;
   }
 
-  /* A COLUMN, NOT TWO BUTTONS LOOSE IN A PANEL. Reported as off to
-     the left and different sizes, and both came from one cause:
-     `.next` is inline-block, so these two flowed onto the SAME LINE at
-     their own text widths, left-aligned. Measured: 176x48 beside
-     145x45, the pair starting 92px left of centre on a phone and 285px
-     left on an iPad, with Join beginning at exactly the x Start ended
-     at. A wrapper that stacks and stretches them fixes the size, the
-     alignment and the wrapping together; capped so they do not run the
-     full width of a tablet. */
-  const actions = document.createElement("div");
-  actions.className = "vroom-choice-actions";
+  /* ---- TWO CARDS, NOT TWO BUTTONS (build 266) ----
+     "The virtual room page where you select public or private, this
+     needs a much better layout.. it's bad. Upgrade this screen." It was
+     two pill buttons with a line of grey text over each, and the one
+     thing the screen decides - host your own room (private until you
+     open it) or walk into one somebody opened to the class (public) -
+     was never said in those words. Each way in is a card now: an icon,
+     a name, a Private or Public chip, one line of what happens, and the
+     whole card is the tap. Above them, the three games a room can play,
+     so the screen says what a Virtual Room IS before asking anything.
+     Side by side from tablet up. */
+  const games = document.createElement("div");
+  games.className = "vrc-games";
+  [["race", "Race"], ["tug", "Tug of War"], ["battle", "Battle"]].forEach(([k, label]) => {
+    const g = document.createElement("span");
+    g.className = "vrc-game vrc-game-" + k;
+    g.appendChild(buildVroomModeArt(k));
+    const t = document.createElement("span"); t.textContent = label;
+    g.appendChild(t);
+    games.appendChild(g);
+  });
+  panel.appendChild(games);
 
-  /* ---- A DESCRIPTION BELONGS ABOVE THE BUTTON IT DESCRIBES ----
-     "Those buttons and descriptions are badly spaced out. Fix that -
-     the descriptions are on top of the buttons."
-     They were: one paragraph at the top of the screen covering both,
-     and a second under them covering neither, so the two buttons
-     themselves said nothing about how they differ. Each carries its
-     own line now, directly above it, in one block per choice - which
-     is also what fixes the spacing, because the gap between the two
-     choices is now bigger than the gap inside each one. */
-  const startChoice = document.createElement("div");
-  startChoice.className = "vroom-choice";
-  const startWhat = document.createElement("p");
-  startWhat.className = "vroom-choice-what";
-  startWhat.textContent = "Pick the units, invite whoever you want, and everyone starts together.";
-  startChoice.appendChild(startWhat);
-  const startBtn = document.createElement("button");
-  startBtn.type = "button"; startBtn.className = "next playbtn";
-  startBtn.textContent = "Start a lobby";
+  const ICONS = {
+    host: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+      + '<rect x="3.5" y="4.5" width="17" height="15" rx="3.2"/><path d="M12 8.6v6.8M8.6 12h6.8"/></svg>',
+    browse: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+      + '<circle cx="9" cy="8.6" r="3"/><path d="M3.6 18.6c.6-3 2.8-4.6 5.4-4.6s4.8 1.6 5.4 4.6"/>'
+      + '<circle cx="16.6" cy="9.4" r="2.4"/><path d="M15.6 14.2c2.3-.3 4.3 1 4.8 3.9"/></svg>',
+    chev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 6l6 6-6 6"/></svg>',
+    bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 1.5H5z"/><path d="M10.2 20.2a2 2 0 0 0 3.6 0"/></svg>'
+  };
+  const card = (key, title, chip, desc) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "vrc-card vrc-card-" + key;
+    const ic = document.createElement("span");
+    ic.className = "vrc-card-icon"; ic.innerHTML = ICONS[key];
+    const body = document.createElement("span");
+    body.className = "vrc-card-body";
+    const head = document.createElement("span");
+    head.className = "vrc-card-head";
+    const t = document.createElement("span");
+    t.className = "vrc-card-title"; t.textContent = title;
+    const c = document.createElement("span");
+    c.className = "vrc-chip vrc-chip-" + chip.toLowerCase(); c.textContent = chip;
+    head.append(t, c);
+    const d = document.createElement("span");
+    d.className = "vrc-card-desc"; d.textContent = desc;
+    body.append(head, d);
+    const ch = document.createElement("span");
+    ch.className = "vrc-card-chev"; ch.innerHTML = ICONS.chev;
+    b.append(ic, body, ch);
+    return { b, d, t };
+  };
+
+  const actions = document.createElement("div");
+  actions.className = "vrc-cards";
+  const host = card("host", "Host a room", "Private",
+    "Pick the game and the units, invite who you want, and everyone starts together.");
   /* STRAIGHT INTO THE LOBBY. Picking units before the room existed was
      the same screen twice - "the unit selection screen should ONLY be
-     available from within a lobby, quit showing it beforehand. It's
-     redundant." The room is created empty and the host sets it up from
-     Match settings, which is the one place that choice now lives. The
-     lobby will not start until it has units; see the auto-start gate. */
-  /* ---- THE TAP ANSWERS AT ONCE ----
-     "When I hit start a lobby, the screen lags, like the screen expands
-     or glitches." Measured with a realistic 800ms round trip: nothing
-     at all happened between the tap and the lobby appearing, because
-     the room has to exist before the lobby can listen to it. So the
-     button says what it is doing the moment it is touched, and cannot
-     be tapped twice into two rooms; if the create fails it comes back. */
-  startBtn.addEventListener("click", () => {
-    if(startBtn.disabled) return;
-    startBtn.disabled = true;
-    startBtn.classList.add("is-busy");
-    startBtn.textContent = "Starting a lobby\u2026";
+     available from within a lobby". The room is created EMPTY - no
+     game, no units (build 266) - and the host sets both from Match
+     settings, the one place that choice lives.
+     THE TAP ANSWERS AT ONCE: the room has to exist before the lobby can
+     listen to it, so the card says what it is doing the moment it is
+     touched, and cannot be tapped twice into two rooms; if the create
+     fails it comes back. */
+  const hostDesc = host.d.textContent;
+  host.b.addEventListener("click", () => {
+    if(host.b.disabled) return;
+    host.b.disabled = true;
+    host.b.classList.add("is-busy");
+    host.d.textContent = "Setting up your room\u2026";
     const restore = () => {
-      if(!startBtn.isConnected) return;
-      startBtn.disabled = false;
-      startBtn.classList.remove("is-busy");
-      startBtn.textContent = "Start a lobby";
+      if(!host.b.isConnected) return;
+      host.b.disabled = false;
+      host.b.classList.remove("is-busy");
+      host.d.textContent = hostDesc;
     };
     Promise.resolve(createVirtualRoomLobby([], null)).then(ok => { if(ok === false) restore(); })
       .catch(restore);
   });
-  startChoice.appendChild(startBtn);
-  actions.appendChild(startChoice);
-
-  /* ---- AND THE OTHER WAY IN, WHICH IS NOT A CODE EITHER ----
-     An invite is how you get into somebody's private room. This is how
-     you find one that has been opened to the class on purpose - the
-     "anybody want to run Penal Code?" case, which invites never served
-     because it needs you to already know who is playing. Rooms are
-     private by default, so nothing appears here that its host did not
+  /* AND THE OTHER WAY IN: a room somebody opened to the class on
+     purpose - the "anybody want to run Penal Code?" case. Rooms are
+     private by default, so nothing appears there that its host did not
      deliberately open. */
-  const browseChoice = document.createElement("div");
-  browseChoice.className = "vroom-choice";
-  const browseWhat = document.createElement("p");
-  browseWhat.className = "vroom-choice-what";
-  browseWhat.textContent = "Rooms classmates have opened to 26E. Join one and wait with them for the start.";
-  browseChoice.appendChild(browseWhat);
-  const browseBtn = document.createElement("button");
-  browseBtn.type = "button"; browseBtn.className = "next ghost";
-  browseBtn.textContent = "Browse open rooms";
-  browseBtn.addEventListener("click", showRoomBrowser);
-  browseChoice.appendChild(browseBtn);
-  actions.appendChild(browseChoice);
-
-  /* NO "JOIN A LOBBY" BUTTON, BECAUSE THERE IS NO CODE TO TYPE.
-     Asked for directly: "the invite code for lobbies and chats can be
-     removed entirely, it's all through invites now". Getting into
-     somebody's room is a notification you accept, not a string you
-     copy out of a message and retype. joinVirtualRoomLobby() is still
-     the mechanism - an invite carries the room's id - it simply has no
-     surface that asks a person for one. */
+  const browse = card("browse", "Join an open room", "Public",
+    "Rooms classmates have opened to 26E. Join one and wait with them for the start.");
+  browse.b.addEventListener("click", showRoomBrowser);
+  actions.append(host.b, browse.b);
   panel.appendChild(actions);
 
+  /* NO CODE TO TYPE: getting into somebody's private room is an invite
+     you accept from notifications, never a string you retype. */
   const note = document.createElement("p");
-  note.className = "cal-sub"; note.style.textAlign = "center";
-  note.textContent = "To join somebody else\u2019s lobby, they invite you \u2014 it arrives in your notifications.";
+  note.className = "vrc-note";
+  const bell = document.createElement("span");
+  bell.className = "vrc-note-icon"; bell.innerHTML = ICONS.bell;
+  const nt = document.createElement("span");
+  nt.textContent = "Invited to somebody\u2019s room? The invite shows up in your notifications.";
+  note.append(bell, nt);
   panel.appendChild(note);
 
   stage.replaceChildren(panel);
@@ -61740,7 +62055,7 @@ function showVirtualRoomSetup(editRoom){
      draws from the same questions - see roomVersionsOf(). */
   let pickedVersions = editing ? roomVersionsOf(editRoom) : {};
   let qCount = editing ? (editRoom.count || null) : null;
-  let vroomGame = (editing && editRoom.game) || "race";
+  let vroomGame = (editing && editRoom.game) || null;
 
   const searchWrap = document.createElement("div");
   /* .searchwrap, not "searchbox-wrap" - the latter had no CSS rule
@@ -61955,7 +62270,7 @@ function showVirtualRoomSetup(editRoom){
     });
     gWrap.appendChild(b);
   });
-  gHint.textContent = gDesc[vroomGame] || gDesc.race;
+  gHint.textContent = gDesc[vroomGame] || "Pick a game for the room.";
   gameSect.append(gLab, gWrap, gHint);
   optionsModalBody.appendChild(gameSect);
 
@@ -61972,6 +62287,11 @@ function showVirtualRoomSetup(editRoom){
   beginBtn.textContent = editing ? "Save settings" : "Create lobby";
   beginBtn.addEventListener("click", () => {
     if(picked.size === 0) return;
+    if(!vroomGame){
+      showToast("Pick a game first.");
+      try{ gWrap.classList.remove("needs-pick"); void gWrap.offsetWidth; gWrap.classList.add("needs-pick"); gameSect.scrollIntoView({ block: "center", behavior: "smooth" }); }catch(e){}
+      return;
+    }
     closeOptionsModal();
     const versions = roomVersionsOf({ units: [...picked], versions: pickedVersions });
     if(!editing){ createVirtualRoomLobby([...picked], null, vroomGame, versions); return; }
@@ -62068,7 +62388,9 @@ function showVirtualRoomSetup(editRoom){
     const asked = (qCount && qCount < n) ? qCount : n;
     /* BATTLE CYCLES THE BANK TO AT LEAST FIFTY, so a one-unit room of
        twelve questions still has enough to fight with. */
-    sheetSummaryTime.textContent = vroomGame === "battle"
+    sheetSummaryTime.textContent = !vroomGame
+      ? asked + (asked === 1 ? " question" : " questions") + " \u00b7 no game picked yet"
+      : vroomGame === "battle"
       ? "Two teams \u00b7 " + Math.max(BATTLE_MIN_Q, asked) + " questions, 20s each"
       : (vroomGame === "tug"
       ? "About " + tugPaceMinutes(asked) + " min"
@@ -62172,7 +62494,12 @@ function createVirtualRoomLobby(units, timeLimit, game, versions){
     /* "race" is the Virtual Room as it has always been; "tug" is Tug
        of War. A GAME TYPE, not a mode - everything around it is the
        same room. */
-    game: game || "race",
+    /* NOTHING CHOSEN UNTIL THE HOST CHOOSES IT (build 266). "Starting
+       a lobby it says it's race but I didn't even select any of the
+       match settings yet. Ensure you go in with nothing set." A room is
+       created with no game and no units; the lobby says so and will not
+       start until Match settings has set both. */
+    game: game || null,
     /* PUBLIC OR PRIVATE, and the default is private. A room somebody
        made to race two friends in must not appear on a list the whole
        class can walk into; making the safe answer the default means an
@@ -64758,7 +65085,7 @@ function showRoomBrowser(){
          a room. Said plainly instead, in the order somebody decides
          on: how many are in it, what they are doing, and on what. */
       sub.textContent = entry.count + (entry.count === 1 ? " person waiting" : " people waiting")
-        + " \u00b7 " + (r.game === "tug" ? "Tug of War" : r.game === "battle" ? "Battle" : "Race")
+        + " \u00b7 " + (r.game === "tug" ? "Tug of War" : r.game === "battle" ? "Battle" : r.game ? "Race" : "Game not set yet")
         + " on " + unitLine.toLowerCase();
       text.append(nm, sub);
       const go = document.createElement("button");
@@ -65089,8 +65416,9 @@ function showVirtualRoomLobby(){
         + " stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\">"
         + "<path d=\"M6 21V4\"/><path d=\"M6 4.5h11l-2.2 3.5L17 11.5H6z\"/></svg>";
     const gName = document.createElement("span");
-    gName.textContent = isBattle ? "Battle" : isTug ? "Tug of War" : "Race";
-    t.append(gIcon, gName);
+    const noGame = !data.game;
+    gName.textContent = noGame ? "No game chosen yet" : isBattle ? "Battle" : isTug ? "Tug of War" : "Race";
+    if(noGame){ t.classList.add("is-unset"); t.append(gName); } else t.append(gIcon, gName);
     /* THE ROOM'S OWN COUNT, NOT THE UNITS' (build 246). This printed the
        whole pool of the ticked units, so a host who capped a 56-question
        unit at 10 told everybody joining it was 56. `count` is what every
@@ -65098,14 +65426,16 @@ function showVirtualRoomLobby(){
     const asked = (Number(data.count) > 0 && Number(data.count) < n) ? Number(data.count) : n;
     const l1 = document.createElement("p");
     l1.className = "vroom-test-summary-line";
-    l1.textContent = unitsLine + " \u00b7 " + asked + (asked === 1 ? " question" : " questions");
+    l1.textContent = !units.length ? "No units picked yet"
+      : unitsLine + " \u00b7 " + asked + (asked === 1 ? " question" : " questions");
     const l2 = document.createElement("p");
     l2.className = "vroom-test-summary-line";
     /* WHAT THE CLOCK IS, per game. A race has no time limit any more -
        every question has its own 45 seconds (build 246) - and Tug of War
        was described as "No time limit", which is the one thing it is
        not: its clock is per question and tightens as the match runs. */
-    l2.textContent = isBattle ? "Two teams \u00b7 at least " + BATTLE_MIN_Q + " questions"
+    l2.textContent = noGame ? (vroomIsHost ? "Set both in Match settings." : "The host sets both in Match settings.")
+      : isBattle ? "Two teams \u00b7 at least " + BATTLE_MIN_Q + " questions"
       : isTug ? "Two teams \u00b7 about " + tugPaceMinutes(asked) + " min, the clock tightens"
       : Math.round(RACE_QUESTION_MS / 1000) + " seconds a question";
     testSummary.append(t, l1, l2);
@@ -65273,7 +65603,9 @@ function showVirtualRoomLobby(){
         avatarWrap.className = "lb-avatar vroom-avatar has-glow";
         avatarWrap.style.setProperty("--char-glow",
           avatarGlowColor(p.avatarChar || AVATAR_CHARACTERS[0].id));
-        avatarWrap.appendChild(buildAvatarCharSVGSafe(p.avatarChar || "ninja"));
+        /* In a .rank-avatar wrapper (build 266), which carries the glow's
+           drop-shadow - see .vroom-avatar.has-glow > .rank-avatar. */
+        avatarWrap.appendChild(avatarSpanFor({ avatarChar: p.avatarChar || "ninja" }));
         decorateAvatar(avatarWrap, p.level, p.badges, p.mystery);
         /* IN A LOBBY ONLY: the rank emblem, top-left on its coin. The
            boards lost theirs in this same build ("remove the rank icon
@@ -65366,7 +65698,8 @@ function showVirtualRoomLobby(){
          this is a real state rather than a theoretical one, and the
          note says whose move it is rather than sitting on "waiting for
          everyone to ready up" forever. */
-      const hasUnits = ((data.units || []).length > 0);
+      /* Units AND a game (build 266) - a room now starts with neither. */
+      const hasUnits = ((data.units || []).length > 0) && !!data.game;
       /* EVEN TEAMS FOR TUG OF WAR. A room of three was 2v1, "lopsided but
          honest" - and asked against: the rope is a team game and it
          starts with the same number on each end. Everybody can still
@@ -65393,8 +65726,8 @@ function showVirtualRoomLobby(){
         autostartNote.classList.toggle("all-ready", allReady);
         autostartNote.textContent = !hasUnits
           ? (vroomIsHost
-              ? "Open Match settings and pick the units\u2026"
-              : "Waiting for the host to pick the units\u2026")
+              ? "Open Match settings and pick the game and units\u2026"
+              : "Waiting for the host to pick the game and units\u2026")
           : allReady
             ? "Everyone's ready \u2014 starting\u2026"
             : oddTug && totalN > 1
@@ -67775,7 +68108,7 @@ function showVirtualRoomResults(){
       avatarWrap.className = "lb-avatar vroom-avatar has-glow";
       avatarWrap.style.setProperty("--char-glow",
         avatarGlowColor(p.avatarChar || AVATAR_CHARACTERS[0].id));
-      avatarWrap.appendChild(buildAvatarCharSVGSafe(p.avatarChar || "ninja"));
+      avatarWrap.appendChild(avatarSpanFor({ avatarChar: p.avatarChar || "ninja" }));
       decorateAvatar(avatarWrap, p.level, p.badges, p.mystery);
       if(key !== vroomMyKey){
         row.classList.add("vroom-row", "is-tappable");
@@ -68728,7 +69061,13 @@ function showUnlockDetail(o){
    does not also pick the thing. */
 function attachHoldDetail(el, detail){
   let timer = null, sx = 0, sy = 0, fired = false;
-  const open = () => { const o = detail(); if(o){ o.unlocked = true; showUnlockDetail(o); } };
+  /* NO TEXT SELECTION FROM THE HOLD (build 266). "When I hold it down,
+     the popup text gets highlighted." The finger is still down when the
+     card opens underneath it, and iOS carries the long-press on into a
+     text selection of whatever is under it now. The card and the tile
+     are user-select:none, and any selection that did start is dropped. */
+  const clearSel = () => { try{ const s = window.getSelection && window.getSelection(); if(s && s.rangeCount) s.removeAllRanges(); }catch(e){} };
+  const open = () => { const o = detail(); if(o){ o.unlocked = true; showUnlockDetail(o); clearSel(); setTimeout(clearSel, 60); setTimeout(clearSel, 400); } };
   const cancel = () => { if(timer){ clearTimeout(timer); timer = null; } el.classList.remove("is-pressing"); };
   el.addEventListener("pointerdown", e => {
     if(e.button && e.button !== 0) return;
@@ -68744,6 +69083,7 @@ function attachHoldDetail(el, detail){
     if(fired){ e.preventDefault(); e.stopImmediatePropagation(); fired = false; }
   }, true);
   el.addEventListener("contextmenu", e => { e.preventDefault(); if(!fired){ cancel(); open(); } });
+  return open;
 }
 
 function showCustomize(){
@@ -68890,9 +69230,14 @@ function showCustomize(){
       lockMark.appendChild(buildLockIcon());
       opt.appendChild(lockMark);
     }
-    if(!locked) attachHoldDetail(opt, () => characterDetail(charDef.id));
+    const openHeld = locked ? null : attachHoldDetail(opt, () => characterDetail(charDef.id));
     opt.addEventListener("click", () => {
       if(locked){ showUnlockDetail(characterDetail(charDef.id)); return; }
+      /* A TAP ON THE ONE YOU ALREADY HAVE ON shows its card (build 266):
+         "if I click a character I have unlocked, and it's selected that
+         pop up would appear without holding it down." Picking it again
+         would do nothing, so the tap has something to say instead. */
+      if(opt.classList.contains("selected") && openHeld){ openHeld(); return; }
       store.avatarChar = charDef.id;
       saveStore();
       updateHeaderTitle();
@@ -68972,10 +69317,11 @@ function showCustomize(){
       nd.className = "banner-opt-need"; nd.textContent = need;
       b.appendChild(nd);
     }
-    if(!locked) attachHoldDetail(b, () => id ? bannerDetail(id)
+    const openHeld = locked ? null : attachHoldDetail(b, () => id ? bannerDetail(id)
       : { kind: "banner", id: "", kicker: "Banner", name: "Default", desc: "Yours from day one. It takes the colours of whichever theme you run." });
     b.addEventListener("click", () => {
       if(locked){ showUnlockDetail(bannerDetail(id)); return; }
+      if(b.classList.contains("selected") && openHeld){ openHeld(); return; }
       store.banner = id;
       saveStore();
       bannerGrid.querySelectorAll(".banner-opt").forEach(x => x.classList.toggle("selected", x === b));
@@ -69025,7 +69371,7 @@ function showCustomize(){
       lockMark.appendChild(buildLockIcon());
       b.appendChild(lockMark);
     }
-    if(!locked) attachHoldDetail(b, () => name === "ink"
+    const openHeld = locked ? null : attachHoldDetail(b, () => name === "ink"
       ? { kind: "theme", id: "ink", kicker: "Theme", name: "Default theme", desc: "Yours from day one." }
       : themeDetail(name));
     b.addEventListener("click", () => {
@@ -69033,6 +69379,7 @@ function showCustomize(){
         showUnlockDetail(themeDetail(name));
         return;
       }
+      if(theme.accent === name && openHeld){ openHeld(); return; }
       theme.accent = name; applyTheme(); saveTheme(); paintAccents();
       bannerGrid.querySelectorAll(".bnr-theme").forEach(e => { e.dataset.accent = name; });
     });
@@ -70375,7 +70722,7 @@ function showProfile(defaultTab){
      picker reads, so the light on this card is the light that was
      previewed when it was chosen. */
   heroAvatar.style.setProperty("--char-glow", avatarGlowColor(store.avatarChar));
-  heroAvatar.appendChild(buildAvatarCharSVGSafe(store.avatarChar));
+  heroAvatar.appendChild(avatarSpanFor({ avatarChar: store.avatarChar }));
   setCharState(heroAvatar, "live");
 
   const heroId = document.createElement("div");
@@ -72065,7 +72412,7 @@ function buildRanksTab(){
       const meterFill = document.createElement("span");
       meterFill.className = "rankcard-meterfill";
       meter.appendChild(meterFill);
-      fillsToAnimate.push({ el: meterFill, prop: "width", value: Math.round((heroStepPct != null ? heroStepPct : rankPct(key)) * 100) + "%" });
+      fillsToAnimate.push({ el: meterFill, prop: "width", value: (Math.round((heroStepPct != null ? heroStepPct : rankPct(key)) * 1000) / 10) + "%" });
       card.appendChild(meter);
       const togo = document.createElement("p");
       togo.className = "rankmap-togo";
