@@ -14031,14 +14031,8 @@
     padding:.2rem .9rem .8rem; border-top:1px solid rgba(255,255,255,.1);
   }
   .unitoptions-modal-sheet .optionsmodal-body > .sect .timer-sect{ margin-top:0; }
-  /* a timer that is on: the card goes green, like the switch inside it */
-  .unitoptions-modal-sheet .optionsmodal-body > .sect.is-set{
-    background:linear-gradient(180deg, rgba(52,199,89,.16), rgba(52,199,89,.07));
-    border-color:rgba(52,199,89,.55);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.07), 0 0 0 1px rgba(52,199,89,.12), 0 2px 10px rgba(52,199,89,.14);
-    transition:background .25s ease, border-color .25s ease, box-shadow .25s ease;
-  }
-  .unitoptions-modal-sheet .optionsmodal-body > .sect.is-set .more-toggle-state{ color:#4ADE80; }
+  /* a timer that is on: its pill in the top box goes green, like the
+     switch that turned it on (the card itself stays as it is - build 251) */
   .unitoptions-modal-sheet .sheet-tag.is-set{ color:#fff; background:rgba(52,199,89,.22); border-color:rgba(52,199,89,.55); }
   .unitoptions-modal-sheet .sheet-tag.is-set svg{ color:#4ADE80; }
   .unitoptions-modal-sheet .opt-tiles-sect .opt-rows .opt{ padding:.3rem 0; }
@@ -54298,10 +54292,9 @@ function showSetup(){
     /* The fold holds the timer and nothing else (build 250). */
     moreWrap.hidden = timerSect.hidden;
     moreToggleState.textContent = cfg.timer === "down" ? cfg.timerMinutes + " min limit" : cfg.timer === "up" ? "Stopwatch" : "Off";
-    /* "I need this to go green when you change it" (build 250): a timer
-       that is on turns its card green, the same green as the switch
-       that turned it on, so it reads as set without being opened. */
-    moreWrap.classList.toggle("is-set", cfg.timer === "down" || cfg.timer === "up");
+    /* NOT the card (build 251): the whole Timer card turning green when a
+       timer was on was "kinda weird" - only its pill in the top box goes
+       green (see the tags below). */
     /* Review draws from the same three sources a Drill does - "in the
        review mode, include the options to review flagged and most missed
        questions". */
@@ -55808,7 +55801,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-30-250";
+const APP_BUILD = "2026-09-30-251";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

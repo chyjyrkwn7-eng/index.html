@@ -2067,8 +2067,10 @@ def check_b235b(br):
       await T('tags', () => { const ts = [...document.querySelectorAll('.sheet-summary .sheet-summary-tags .sheet-tag')];
         const card = (document.querySelector('.unitoptions-modal-sheet .more-toggle') || {}).parentElement;
         return { tags: ts.length, texts: ts.map(t => t.textContent), icons: ts.every(t => !!t.querySelector('svg')),
-                 green: !!card && card.classList.contains('is-set') && (() => { const m = (getComputedStyle(card).borderTopColor.match(/[\d.]+/g) || []).map(Number);
-                   return m.length >= 3 && m[1] > m[0] + 80 && m[1] > m[2] + 60; })(),
+                 cardGreen: !!card && card.classList.contains('is-set'),
+                 green: (() => { const p = ts.find(t => /min limit|Stopwatch/.test(t.textContent)); if(!p) return false;
+                   const m = (getComputedStyle(p).borderTopColor.match(/[\d.]+/g) || []).map(Number);
+                   return p.classList.contains('is-set') && m.length >= 3 && m[1] > m[0] + 80 && m[1] > m[2] + 60; })(),
                  state: (document.querySelector('.more-toggle-state') || {}).textContent || '' }; });
       await T('timerLabel', () => (document.querySelector('.more-toggle') || {}).textContent || '');
       document.querySelector('.unitoptions-modal-scrim')?.click(); await wait(400);
@@ -2123,8 +2125,11 @@ def check_b235b(br):
           isinstance(t, dict) and t.get("tags", 0) >= 3 and t.get("icons") and "20 min limit" in tx
           and not any(x.startswith("All ") and x[4:].isdigit() for x in tx) and not any(" of " in x for x in tx)
           and "20 min limit" in t.get("state", ""), t)
-    # Build 250: "I need this to go green when you change it."
-    check("a timer that is on turns the Timer card green", isinstance(t, dict) and t.get("green") is True, t)
+    # Build 250/251: "I need this to go green when you change it" - then
+    # "that box turning green is kinda weird. Don't do that. I like how
+    # the timer thing at the top is green though." The pill, not the card.
+    check("a timer that is on turns its pill in the top box green, and not the Timer card",
+          isinstance(t, dict) and t.get("green") is True and t.get("cardGreen") is False, t)
     check("the fold is called Timer", str(r["timerLabel"]).startswith("Timer"), r["timerLabel"])
     d = r["detail"] if isinstance(r["detail"], dict) else {}
     check("holding a unit card opens its details without ticking it",

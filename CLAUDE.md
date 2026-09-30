@@ -7659,10 +7659,12 @@ because "succeeded ... with fuzz" is the only warning there is.
   a Most missed caption of at most 45 characters with no info dot,
   Shuffle and Hide answers outside the fold, the fold holding only the
   timer and called Timer.
-- **The Timer card goes green when a timer is on** ("I need this to go
-  green when you change it") — the same green as the switch inside it,
-  and the timer's pill in the top box with it. `.sect.is-set`, toggled
-  in `refresh()` beside the state text. check-behaviour 35b.
+- **A timer that is on turns its PILL in the top box green, not the
+  Timer card.** 250 did both ("I need this to go green when you change
+  it"); 251 took the card back off - "that box turning green is kinda
+  weird. Don't do that. I like how the timer thing at the top is green
+  though." `.sheet-tag.is-set`. check-behaviour 35b asserts the pill is
+  green and the card is not.
 - **Gold's four-point flare has to clear its corona.** "Why do I feel
   like the gold symbol is missing that star thing ... how platinum has?"
   It was there: a 34-unit pale-gold flare inside a 42-unit pale-gold
