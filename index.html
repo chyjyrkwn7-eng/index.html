@@ -13944,8 +13944,7 @@
     color:rgba(255,255,255,.9); background:rgba(0,0,0,.18); border:1px solid rgba(255,255,255,.09);
   }
   .unitoptions-modal-sheet .sheet-tag svg{ width:.85rem; height:.85rem; flex:none; color:#6FBEFF; }
-  .unitoptions-modal-sheet .sheet-tag.is-bank{ color:#fff; background:linear-gradient(180deg, #5AB4FF, #3D8BFF); border-color:transparent; }
-  .unitoptions-modal-sheet .sheet-tag.is-bank svg{ color:#fff; }
+
   .sheet-tag{ padding:.2rem .55rem; border-radius:999px; font-size:.7rem; font-weight:700;
     color:rgba(255,255,255,.82); background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.08); }
   .sheet-tag.is-bank{ color:#0B0D10; background:#FFD7C9; border-color:transparent; }
@@ -14017,11 +14016,15 @@
   .unitoptions-modal-sheet .optionsmodal-body > .sect .bank-opts{
     background:rgba(255,255,255,.045); border-color:rgba(255,255,255,.08);
   }
+  /* the choice that is on: a raised glass pill, not a blue button (build
+     254 - "not a fan of the question bank blue buttons"). The segmented
+     control iOS itself uses on a dark screen. */
   .unitoptions-modal-sheet .bank-opt.on,
   .unitoptions-modal-sheet .bank-opt[data-value="recent"].on,
   .unitoptions-modal-sheet .bank-opt[data-value="flagged"].on{
-    background:linear-gradient(180deg, #5AB4FF, #3D8BFF); border-color:transparent;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.35), 0 2px 0 #2A64C0, 0 4px 10px rgba(61,139,255,.3);
+    background:linear-gradient(180deg, rgba(255,255,255,.24), rgba(255,255,255,.13));
+    border-color:rgba(255,255,255,.2);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.3), 0 2px 6px rgba(0,0,0,.35);
   }
   .unitoptions-modal-sheet .bank-opt.on .bank-name,
   .unitoptions-modal-sheet .bank-opt.on .bank-count{ color:#fff; }
@@ -54360,7 +54363,14 @@ function showSetup(){
        or by the bank. Measured against the pool, which is the short
        version's own questions when one was picked, so the version alone
        never trips it. */
-    hundoNote.hidden = !partial;
+    /* NOT FOR THE SHORT VERSION AT ALL (build 254): "when I hit most
+       missed or flagged bank from that one, the warning pops up, don't do
+       that for that shortened version." It can never earn a hundo in the
+       first place - its pop-up already said so - so cutting it down
+       further takes nothing away. In a mix with whole units the note
+       still shows, for them. */
+    const allShort = cfg.units.length > 0 && cfg.units.every(u => cfg.versions[u] === "test" && UNIT_TEST_VERSIONS[u]);
+    hundoNote.hidden = !partial || allShort;
     hundoNote.textContent = !partial ? ""
       : cfg.units.length === 1
         ? "Not the whole unit, so this run won't count toward a hundo."
@@ -54397,16 +54407,20 @@ function showSetup(){
         const w = document.createElement("span"); w.textContent = text; t.appendChild(w);
         sheetSummaryTags.appendChild(t);
       };
-      if(!srcSect.hidden) tag(cfg.source === "recent" ? "Most missed" : cfg.source === "flagged" ? "Flagged" : "All questions", "bank",
-        cfg.source === "all" ? "" : "is-bank");
+      /* ONLY WHAT IS SWITCHED ON (build 254): "if they are in order,
+         don't show that at the top, only show it if it's shuffled. If
+         there's no timer, don't show that either ... And if it's all
+         questions, don't show that." A default says nothing, so an
+         untouched run shows no row at all. */
+      if(!srcSect.hidden && cfg.source !== "all") tag(cfg.source === "recent" ? "Most missed" : "Flagged", "bank");
       if(isGame){
         const sp = GAME_SPEEDS[cfg.gameSpeed];
         tag(sp.label + " \u00b7 " + sp.seconds + "s \u00b7 " + sp.lives + (sp.lives === 1 ? " life" : " lives"), "speed");
       }
-      if(!optSect.hidden && !shuffleRow.hidden) tag(cfg.shuffle ? "Shuffled" : "In order", cfg.shuffle ? "shuffle" : "order");
+      if(!optSect.hidden && !shuffleRow.hidden && cfg.shuffle) tag("Shuffled", "shuffle");
       if(!optSect.hidden && !recallRow.hidden && cfg.recall) tag("Answers hidden", "hidden");
-      if(!timerSect.hidden) tag(cfg.timer === "down" ? cfg.timerMinutes + " min limit" : cfg.timer === "up" ? "Stopwatch" : "No timer", "timer",
-        cfg.timer === "down" || cfg.timer === "up" ? "is-set" : "");
+      if(!timerSect.hidden && (cfg.timer === "down" || cfg.timer === "up"))
+        tag(cfg.timer === "down" ? cfg.timerMinutes + " min limit" : "Stopwatch", "timer", "is-set");
     }
     if(sheetSummaryTags.parentNode !== sheetSummary || sheetSummary.lastChild !== sheetSummaryTags) sheetSummary.appendChild(sheetSummaryTags);
 
@@ -55825,7 +55839,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-30-253";
+const APP_BUILD = "2026-09-30-254";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

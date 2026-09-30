@@ -1839,7 +1839,8 @@ def check_b234(br):
         const sh = document.querySelector('.unitoptions-modal-sheet');
         const hm = sh.querySelector('.howmany-sect');
         const sl = hm && hm.querySelector('.slider');
-        const res = { chips: hm ? hm.querySelectorAll('.chip').length : -1, all: !!(hm && hm.querySelector('.slider-allbtn')),
+        const defaults = [...sh.querySelectorAll('.sheet-summary-tags .sheet-tag')].map(t => t.textContent);
+        const res = { defaults, chips: hm ? hm.querySelectorAll('.chip').length : -1, all: !!(hm && hm.querySelector('.slider-allbtn')),
                       caption: (sh.querySelector('.drawfrom-sect .bank-caption') || {}).textContent || '',
                       count: (sh.querySelector('.drawfrom-sect .bank-opt.on .bank-count') || {}).textContent || '',
                       name: (sh.querySelector('.drawfrom-sect .bank-opt.on .bank-name') || {}).textContent || '' };
@@ -1904,6 +1905,10 @@ def check_b234(br):
     # "All 48" under How many "doesn't even make sense".
     check("the Question bank's All questions carries no second count",
           sh.get("name") == "All questions" and sh.get("count", "") == "", sh)
+    # Build 254: a default says nothing - no "All questions", "In order"
+    # or "No timer" in the top box on an untouched run.
+    check("on an untouched run the top box shows no defaults (All questions, In order, No timer)",
+          not any(x in ("All questions", "In order", "No timer") for x in sh.get("defaults", ["?"])), sh.get("defaults"))
     check("the timer is two switches, and the first one sets a time limit",
           sh.get("timerSwitches") == 2 and sh.get("timerAfter") == "down", sh)
     # Build 249: "I need this app to be super simple and that start menu
@@ -2121,8 +2126,12 @@ def check_b235b(br):
     # thing that "doesn't even make sense". The Timer bar still says its
     # own state without opening.
     tx = t.get("texts", []) if isinstance(t, dict) else []
-    check("the top box lists the run's settings, each with an icon, and no question count among them",
-          isinstance(t, dict) and t.get("tags", 0) >= 3 and t.get("icons") and "20 min limit" in tx
+    # Build 254: and ONLY what is switched on - "if they are in order,
+    # don't show that ... If there's no timer, don't show that either ...
+    # And if it's all questions, don't show that."
+    check("the top box lists only the settings that are on, each with an icon, and no question count",
+          isinstance(t, dict) and t.get("icons") and "20 min limit" in tx and "Most missed" in tx
+          and not any(x in ("All questions", "In order", "No timer") for x in tx)
           and not any(x.startswith("All ") and x[4:].isdigit() for x in tx) and not any(" of " in x for x in tx)
           and "20 min limit" in t.get("state", ""), t)
     # Build 250/251: "I need this to go green when you change it" - then
@@ -3060,10 +3069,19 @@ def check_penal_versions(br):
     check("and selecting it again asks again (every time, never remembered)", s4["pop"] and not s4["checked"], s4)
     choose("short")
     # 3. the sheet and the run
-    sheet = pg.evaluate("""()=>{ document.getElementById('nextbtn').click();
+    sheet = pg.evaluate("""async ()=>{ document.getElementById('nextbtn').click();
       const line = document.querySelector('.sheet-summary-line'), note = document.querySelector('.hundo-note');
-      return { line: line ? line.textContent : '', start: document.getElementById('nextbtn').textContent,
-               note: note && !note.hidden ? note.textContent : '' }; }""")
+      const out = { line: line ? line.textContent : '', start: document.getElementById('nextbtn').textContent,
+               note: note && !note.hidden ? note.textContent : '' };
+      /* Build 254: cut down further (How many under the max), still no note -
+         the short version can never earn a hundo, and its pop-up said so */
+      const sl = document.querySelector('.unitoptions-modal-sheet .howmany-sect .slider');
+      if(sl){ sl.value = sl.min; sl.dispatchEvent(new Event('input', { bubbles: true })); }
+      await new Promise(r => setTimeout(r, 150));
+      out.noteCut = note && !note.hidden ? note.textContent : '';
+      out.cut = cfg.size;
+      if(sl){ sl.value = sl.max; sl.dispatchEvent(new Event('input', { bubbles: true })); }
+      return out; }""")
     n56 = "%d questions" % len(PENAL_SLIDES_SRCS)
     check("the start sheet and the Start button count the slides 0-85 questions",
           n56 in sheet["line"] and n56 in sheet["start"], sheet)
@@ -3072,6 +3090,8 @@ def check_penal_versions(br):
     # version"); the sheet's note is for cutting it down further.
     check("the start sheet does not repeat the version pop-up's hundo warning",
           sheet["note"] == "", sheet["note"])
+    check("and cutting the short version down further (fewer questions, Most missed, Flagged) raises no warning either",
+          sheet.get("cut", 0) > 0 and sheet.get("noteCut") == "", sheet)
     pg.evaluate("()=>document.querySelector('.sheet-begin-btn').click()")
     pg.wait_for_timeout(200)
     run = pg.evaluate(PENAL_RUN)

@@ -7744,3 +7744,24 @@ because "succeeded ... with fuzz" is the only warning there is.
 - Section 26's "top rank is the busiest mark" had gone red (Amethyst 37
   paths vs Supernova 33): Amethyst's four jet knots are one path now and
   Supernova has two more static sparks. No new moving layers either way.
+
+### Build 254
+
+- **The top box lists only what is switched on.** "If they are in
+  order, don't show that at the top, only show it if it's shuffled. If
+  there's no timer, don't show that either ... And if it's all
+  questions, don't show that." Defaults say nothing: no All questions,
+  no In order, no No timer. What can appear: Most missed / Flagged,
+  Shuffled, Answers hidden, the time limit or Stopwatch (still green).
+  check-behaviour 26b asserts an untouched run shows none of the
+  defaults (253 fails it).
+- **The short Penal Code version never raises the hundo warning on the
+  sheet**, even when cut down further (How many, Most missed, Flagged):
+  it can never earn a hundo and its pop-up already said so. In a mix
+  with whole units the note still shows, for them. That it does not
+  count toward hundos was re-verified: section 33's perfect slides
+  0-85 run earns XP and no hundo.
+- **The question bank's selected choice is a raised glass pill, not a
+  blue button** ("not a fan of the question bank blue buttons"); the
+  top box's bank pill lost its blue fill with it. The slider keeps the
+  blue.
