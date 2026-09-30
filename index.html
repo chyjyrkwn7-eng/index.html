@@ -13608,14 +13608,14 @@
   /* Knight (build 258): the plume sways from its socket on the crown,
      at the left of its box; a glint crosses the helm now and then. */
   .avatarchar-svg .cx-k-knight{ --cx-blink:6.9s; --cx-blink-at:-2.4s; }
-  .avatarchar-svg .cx-fx-plume{ transform-origin:2% 45%; }
+  .avatarchar-svg .cx-fx-knightplume{ transform-origin:2% 45%; }
   @media (prefers-reduced-motion:no-preference){
-    .char-live .avatarchar-svg .cx-fx-plume{ animation:cx-plume 3.2s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-knightplume{ animation:cx-knight-plume 3.2s ease-in-out infinite alternate; }
     .char-live .avatarchar-svg .cx-fx-helmsheen{ animation:cx-sheen-idle 5.2s ease-in-out -2.2s infinite; }
-    .char-react-win .avatarchar-svg .cx-fx-plume{ animation:cx-plume .4s ease-in-out infinite alternate; }
+    .char-react-win .avatarchar-svg .cx-fx-knightplume{ animation:cx-knight-plume .4s ease-in-out infinite alternate; }
     .char-react-win .avatarchar-svg .cx-fx-helmsheen{ animation:cx-sheen 1.4s ease-in-out .3s infinite; }
   }
-  @keyframes cx-plume{ from{ rotate:-4deg; } to{ rotate:5deg; } }
+  @keyframes cx-knight-plume{ from{ rotate:-4deg; } to{ rotate:5deg; } }
   /* Each wing flexes from its root, where it meets the helm. */
   .avatarchar-svg .cx-fx-wing-l{ transform-origin:96% 72%; }
   .avatarchar-svg .cx-fx-wing-r{ transform-origin:4% 72%; }
@@ -14351,13 +14351,14 @@
   .bnr-study50 .bn-glow{ animation:bn-glow258 1.5s ease-in-out infinite; }
   @keyframes bn-glow258{ 0%,100%{ opacity:1; } 18%{ opacity:.5; } 37%{ opacity:.95; } 58%{ opacity:.6; } 79%{ opacity:.88; } }
   .bnr-study50 .bn-steam{ stroke-width:2.8; animation:bn-steam258 3.4s ease-out infinite; }
-  @keyframes bn-steam258{ 0%{ transform:translateY(6px); opacity:0; } 25%{ opacity:.8; } 100%{ transform:translateY(-22px); opacity:0; } }
+  @keyframes bn-steam258{ 0%{ transform:translateY(6px); opacity:0; } 25%{ opacity:.8; } 92%{ transform:translateY(-22px); opacity:0; } 93%,100%{ transform:translateY(6px); opacity:0; } }
   .bnr-study50 .bn-mote{ animation-duration:6s !important; }
   .bnr-study50 .bn-pageturn{ transform-box:view-box; transform-origin:291px 140px; animation:bn-pageturn 6s ease-in-out infinite; }
   @keyframes bn-pageturn{ 0%,52%{ transform:scaleX(1) skewY(0deg); opacity:0; } 54%{ opacity:1; }
-    66%{ transform:scaleX(.05) skewY(-8deg); opacity:1; } 80%{ transform:scaleX(-1) skewY(0deg); opacity:1; } 84%,100%{ transform:scaleX(-1); opacity:0; } }
+    66%{ transform:scaleX(.05) skewY(-8deg); opacity:1; } 80%{ transform:scaleX(-1) skewY(0deg); opacity:1; } 84%{ transform:scaleX(-1) skewY(0deg); opacity:0; }
+    85%,100%{ transform:scaleX(1) skewY(0deg); opacity:0; } }
   .bnr-study50 .bn-shoot{ animation:bn-shoot 5s ease-out infinite; }
-  @keyframes bn-shoot{ 0%,62%{ transform:translate(0,0); opacity:0; } 64%{ opacity:1; } 76%{ transform:translate(-92px,26px); opacity:0; } 100%{ opacity:0; } }
+  @keyframes bn-shoot{ 0%,62%{ transform:translate(0,0); opacity:0; } 64%{ opacity:1; } 76%{ transform:translate(-92px,26px); opacity:0; } 77%,100%{ transform:translate(0,0); opacity:0; } }
   .bnr .bn-shower{ animation:bn-shower 8s linear infinite; }
   @keyframes bn-shower{ 0%,100%{ transform:translateX(0); opacity:0; } 1%{ transform:translateX(-4px); opacity:1; } 8%{ opacity:.9; } 12%{ transform:translateX(-230px); opacity:0; } }
   /* Koi Pond: a koi's tail breaking the surface. */
@@ -33091,7 +33092,7 @@ function drawAvatarCharSVG(charId){
     /* The plume, behind the helm: a crest sweeping up and back from a
        gold socket on the crown, in three scalloped tiers of feather. */
     const plumeD = "M20.2 9.0 Q21.4 3.2 27.8 3.4 Q33.8 4.2 35.2 11.2 Q33 9.2 30.8 9.5 Q33 11.4 32.8 15.4 Q30.4 12.2 27.8 12.0 Q28.6 14.0 27.6 16.2 Q25.6 12.0 21.8 11.2 Z";
-    open("cx-fx cx-fx-plume");
+    open("cx-fx cx-fx-knightplume");
     svg.appendChild(mk("path", { d: plumeD, fill: plume, stroke: "#4A0812", "stroke-width": ".3", "stroke-linejoin": "round" }));
     ["M21.6 8.6 Q25 5.0 30.6 6.0", "M22.4 10.0 Q26.6 8.0 31.6 10.2", "M22.6 11.0 Q25.8 10.4 28.6 13.0"].forEach(d =>
       svg.appendChild(mk("path", { d, fill: "none", stroke: "#FFC2C8", "stroke-width": ".35", "stroke-linecap": "round", opacity: ".7" })));
@@ -56059,7 +56060,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-30-260";
+const APP_BUILD = "2026-09-30-261";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

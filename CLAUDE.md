@@ -7911,3 +7911,19 @@ because "succeeded ... with fuzz" is the only warning there is.
   cards' hold rules (420ms, 8px, the ending click swallowed), so a hold
   never also picks the thing and a tap still does. Starters say "Yours
   from day one."; the Customize subtitle mentions the hold.
+
+### Build 261
+
+- **The Knight's plume had taken another character's animation names.**
+  `cx-fx-plume` and `@keyframes cx-plume` already existed, so build 259's
+  Knight rules (a new transform-origin and an alternating sway) were also
+  being applied to the other plumed character, and the Knight was running
+  the older keyframes. The Knight's are `cx-fx-knightplume` /
+  `cx-knight-plume` now. **Grep a class or keyframe name before using
+  it** - CSS never complains about a duplicate, it just quietly lets the
+  later one win.
+- Found by the full gate run on 258, along with three Midnight Oil
+  keyframes whose last frame did not match the first (check-loops; the
+  seam was invisible but the rule is right) and an Astronaut check that
+  still wrote down 7. The Astronaut check reads
+  `CHARACTER_FEATS.hundo7day.need` now, like the Marksman one.

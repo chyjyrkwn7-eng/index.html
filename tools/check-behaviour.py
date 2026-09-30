@@ -2477,17 +2477,19 @@ def check_b241b(br):
       store.hundoDay = null; store.hundoDayBest = 0;
       out.lockedAtStart = isLockedCharacter('astronaut');
       out.msg = characterLockMessage('astronaut');
-      /* 2. seven different units in one day, and only different ones */
+      /* 2. N different units in one day (7 until build 259, 5 now - read
+         off the app, not written down here), and only different ones */
+      const N = CHARACTER_FEATS.hundo7day.need; out.need = N;
       const units = topicsIn(QUESTIONS);
-      for(let i = 0; i < 6; i++) noteHundoDay(units[i]);
+      for(let i = 0; i < N - 1; i++) noteHundoDay(units[i]);
       noteHundoDay(units[0]); noteHundoDay(units[1]);
       out.sixDistinct = hundoDayCount();
       out.lockedAtSix = isLockedCharacter('astronaut');
       /* a new day starts the list again but keeps the best day */
       store.hundoDay.day = '2000-01-01';
-      noteHundoDay(units[6]);
+      noteHundoDay(units[N]);
       out.newDay = { today: store.hundoDay.units.length, best: store.hundoDayBest, locked: isLockedCharacter('astronaut') };
-      for(let i = 0; i < 7; i++) noteHundoDay(units[i]);
+      for(let i = 0; i < N; i++) noteHundoDay(units[i]);
       out.lockedAtSeven = isLockedCharacter('astronaut');
       /* it survives a round trip through the cloud loader */
       const saved = JSON.parse(JSON.stringify(store));
@@ -2536,13 +2538,13 @@ def check_b241b(br):
       return out; }""")
     check("the Astronaut (Blitz's challenge since 243) sits right after the Marksman, locked, with its challenge and progress",
           isinstance(r, dict) and r.get("blitzAt") == 1 and r.get("lockedAtStart") is True
-          and r.get("msg") == "Get a hundo in 7 different units in one day (0 of 7) to unlock Astronaut.", r)
-    check("only different units count, and six is not seven",
-          r.get("sixDistinct") == 6 and r.get("lockedAtSix") is True, r)
+          and r.get("msg") == "Get a hundo in %d different units in one day (0 of %d) to unlock Astronaut." % (r.get("need"), r.get("need")), r)
+    check("only different units count, and one short is not enough",
+          r.get("sixDistinct") == r.get("need", 0) - 1 and r.get("lockedAtSix") is True, r)
     check("a new day starts again but keeps the best day",
-          r.get("newDay") == {"today": 1, "best": 6, "locked": True}, r)
-    check("seven in one day unlocks it, and the best day survives a reload",
-          r.get("lockedAtSeven") is False and r.get("afterLoad") == 7, r)
+          r.get("newDay") == {"today": 1, "best": r.get("need", 0) - 1, "locked": True}, r)
+    check("the full count in one day unlocks it, and the best day survives a reload",
+          r.get("lockedAtSeven") is False and (r.get("afterLoad") or 0) >= r.get("need", 99), r)
     check("an old Blitz id draws as the Astronaut, on the parts every character has",
           r.get("corona") == 7 and r.get("parts") == 4, r)
     check("every theme swatch has its name under it, Default first",
@@ -4429,7 +4431,7 @@ def check_b258(br):
       store.unitGameBeat = realGB;
       const ks = buildAvatarCharSVG('knight');
       out.knight = { feat: kn && kn.feat, name: AVATAR_DISPLAY_NAME.knight, lockedAt4: four, lockedAt5: five,
-        parts: ['cx-body', 'cx-head', 'cx-eyes', 'cx-eyes-closed', 'cx-fx-plume'].every(c => !!ks.querySelector('.' + c)),
+        parts: ['cx-body', 'cx-head', 'cx-eyes', 'cx-eyes-closed', 'cx-fx-knightplume'].every(c => !!ks.querySelector('.' + c)),
         glow: avatarGlowColor('knight') };
       } catch(e){ out.threw = String(e); }
       return out; }""")
