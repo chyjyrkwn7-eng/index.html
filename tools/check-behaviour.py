@@ -4320,6 +4320,26 @@ def check_b250(br):
       return { ranks, home: document.getAnimations().length }; }""")
     check("the Ranks tab runs a budget of animations, not hundreds (only what is on screen moves)",
           load["ranks"] <= 120 and load["home"] <= 160, load)
+    # Build 256: "the glow looks to be cut off on the edges" - an earned
+    # badge's light pool was still a third strong where its box ended.
+    # Measured as the brightness step across the box edge (255: 8).
+    ctx.close()
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, dpr=3)
+    pg.evaluate("""async ()=>{ window.unitBadgeEarned = () => true; showProfile('badges');
+      await new Promise(r => setTimeout(r, 1500));
+      document.querySelector('.badge-tile.is-earned .badge-tile-art').scrollIntoView({ block: 'center', behavior: 'instant' }); }""")
+    pg.wait_for_timeout(800)
+    from PIL import Image as _Im
+    bx = pg.evaluate("()=>{ const b = document.querySelector('.badge-tile.is-earned .badge-tile-art').getBoundingClientRect(); return [b.left, b.top, b.width, b.height]; }")
+    im = _Im.open(io.BytesIO(pg.screenshot())).convert("L")
+    x, y, w, h = [v * 3 for v in bx]
+    px = lambda a, b: im.getpixel((int(a), int(b)))
+    steps = []
+    for f in (0.3, 0.5, 0.7):
+        steps += [abs(px(x + w * f, y + h - 2) - px(x + w * f, y + h + 2)),
+                  abs(px(x + 2, y + h * f) - px(x - 2, y + h * f)),
+                  abs(px(x + w - 2, y + h * f) - px(x + w + 2, y + h * f))]
+    check("an earned badge's glow fades out before its box ends - no hard edge", max(steps) <= 3, steps)
     ctx.close()
 
 

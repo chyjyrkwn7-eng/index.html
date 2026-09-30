@@ -7772,3 +7772,16 @@ because "succeeded ... with fuzz" is the only warning there is.
   road map, remove that." The rank you hold still says You are here and
   its ring still pulses; `.rankmap-you` is no longer built (its CSS is
   left, harmless). check-behaviour 26 asserts no stop carries it.
+
+### Build 256
+
+- **An earned badge's glow no longer stops at a square.** "The glow
+  looks to be cut off on the edges." The Badges tab's light pool under
+  an earned badge was `radial-gradient(circle at 50% 62%, ... 62%)` with
+  no size: farthest-corner sizing put its last stop past the bottom and
+  side edges of `.badge-tile-art`, so the light was still ~1/3 strength
+  where the box ended. It is `circle closest-side at 50% 55%` now, which
+  reaches zero inside all four edges - the same rule the ::before shade
+  above it already documents. check-behaviour 49 measures the
+  brightness step across the box edge on a 3x render: 255 steps by 8,
+  256 by ≤2.

@@ -15352,9 +15352,18 @@
       0 18px 40px rgba(0,0,0,.6),
       inset 0 2px 0 rgba(255,255,255,.05), inset 0 0 60px rgba(0,0,0,.6), inset 0 10px 16px -8px rgba(0,0,0,.85);
   }
-  /* An earned badge sits in a pool of light on the velvet. */
+  /* An earned badge sits in a pool of light on the velvet.
+     SIZED TO FADE OUT INSIDE ITS BOX (build 256). It was `circle at 50%
+     62%` with no size, so the circle was sized to the farthest corner
+     and its 62% stop landed at ~0.49 of the tile's width from a centre
+     only 0.38 above the bottom edge: the light was still at a third of
+     its strength where the box stopped, and the box edge showed as a
+     square round every earned badge - "the glow looks to be cut off on
+     the edges". closest-side from a centre at 55% reaches zero at 0.45
+     of the width, inside all four edges. Same rule as the ::before
+     shade above: the last stop never reaches the boundary. */
   .badges-tab .badge-tile.is-earned .badge-tile-art{
-    background:radial-gradient(circle at 50% 62%, rgba(255,240,215,.16), rgba(255,240,215,0) 62%);
+    background:radial-gradient(circle closest-side at 50% 55%, rgba(255,240,215,.16), rgba(255,240,215,.06) 55%, rgba(255,240,215,0) 100%);
   }
   .badges-tab .badge-tile-name{ color:rgba(236,237,241,.9); }
   .badges-tab .badge-tile.is-locked .badge-tile-name{ color:rgba(205,208,215,.5); }
@@ -55839,7 +55848,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-30-255";
+const APP_BUILD = "2026-09-30-256";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
