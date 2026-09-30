@@ -7498,3 +7498,38 @@ because "succeeded ... with fuzz" is the only warning there is.
   560ms expand it scrolls just far enough for its bottom to clear the
   bar, and never so far that the toggle leaves the top of the screen.
 - check-behaviour 44 covers both.
+
+### Build 248 (hotfix on 247)
+
+- **Last week's podium shows what each person had WHEN THE WEEK CLOSED.**
+  247 used Sauce's current 67,800 less this week's 330 - "he finished with
+  like 58 something". A week total and an all-time total are different
+  numbers; never derive a closed week from today's XP. OdinSavior 58,880
+  and Napoleon 31,500 are exact (both last synced before the rollover, so
+  their published week is still the closed one). Sauce's was never stored
+  anywhere recoverable - he rolled over on a build with no prevWeek, and
+  the device-side top-three cache (`class26e.weektop.v1`) is localStorage,
+  not cloud - but it is BOUNDED: above 58,880 (his phone recorded the
+  win; Odin's last sighting, Sun 21:04 CDT, still had Odin first on
+  58,880) and "58 something". So it shows as a label, `58.9K XP`, rather
+  than an invented exact figure. `WEEK_RESULTS_KNOWN` entries take
+  `{pub, pts}` or `{pub, label}` for exactly that case.
+- **The Rank hero names the next rank once**: the "Next <rank>" pill under
+  the rank name is gone; "To reach <rank>" over the rings stays.
+- **A week is settled from its FINAL standings, not from what a phone last
+  saw** ("ensure this works properly week to week"). `settleWeeklyWin()`
+  used to trust `weekRankSeen`, the rank at the moment its owner last
+  looked. On the live board for 21 Sep that would have handed Odin a win
+  and Zeus (his phone last looked at 21:04 Sunday, before Sauce passed him)
+  and Cap a top-three (seen third on Saturday, finished fourth).
+  `finalRankForWeek()` now reads a hand-recorded week by its order, and
+  last week from every row's own last-week total against this phone's own
+  - and only from rows the SERVER sent (`leaderboardRowsFromServer`),
+  because a cached snapshot is as stale as the sighting it replaces. Until
+  those arrive it WAITS; every board load retries (`settleWeeklyWinQueued`).
+  A week older than last week can no longer be read off the rows (a row
+  keeps one week back) and falls back to the sighting.
+- Checked and already right, now held by check-behaviour 47: a row
+  published in a new week before any XP still carries last week's total
+  (`buildLeaderboardRow()` rolls the week first), and the podium reads
+  rolled and unrolled rows alike and drops a row two weeks stale.

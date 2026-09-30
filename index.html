@@ -11309,16 +11309,6 @@
     text-shadow:0 0 18px color-mix(in srgb, var(--rank-color, var(--accent)) 45%, transparent);
   }
   .rankhero.is-unranked .rankhero-name{ color:var(--ink); text-shadow:none; font-size:1.6rem; }
-  .rankhero-nextrank{
-    display:inline-flex; align-items:center; gap:.4rem; margin:.5rem 0 0;
-    padding:.22rem .6rem .22rem .5rem; border-radius:999px;
-    background:rgba(255,255,255,.06); border:1px solid color-mix(in srgb, var(--next-color, #fff) 35%, rgba(255,255,255,.08));
-    font-size:.74rem; font-weight:700; color:rgba(255,255,255,.85);
-  }
-  .rankhero-nextlab{ font-size:.6rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--soft); }
-  .rankhero-nextemb{ width:1.2rem; height:1.2rem; display:grid; place-items:center; }
-  .rankhero-nextemb svg{ width:100%; height:100%; border-radius:50%; clip-path:circle(50% at 50% 50%); }
-  .rankhero-nextname{ color:color-mix(in srgb, var(--next-color, #fff) 65%, #fff); }
   /* The two requirements, as two rings. */
   .rankhero-gauges{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:.6rem; }
   /* "To reach Bronze" over the two rings (build 247) - see the builder. */
@@ -35312,6 +35302,10 @@ function friendCodeOf(){
    reads one map rather than scanning the array again. `leaderboardRows`
    is whatever the last snapshot delivered. */
 let leaderboardRows = [];
+/* True once leaderboardRows came from the SERVER rather than Firestore's
+   cache - a week's final standings are only read from rows that did (see
+   finalRankForWeek). */
+let leaderboardRowsFromServer = false;
 /* ONLINE, WITHOUT A PRESENCE SYSTEM. Every row already carries
    `lastModified`, written on every push - so somebody whose row moved in
    the last few minutes has the app open. That is not a heartbeat and it
@@ -38569,16 +38563,26 @@ function rememberWeekTop(list){
    October it no longer matches lastWeekKey() and the board reads the
    published prevWeek fields, which build 245 onward keeps properly. */
 /* Sauce, then OdinSavior, then Napoleon - the second and third given by
-   Madison, who saw the board that week. WITH THE TOTALS THE BOARD SHOWED
-   (build 247: "it needs to show their xp amounts as well"): the rebuild
-   put each person's whole history into that week, so that week's board
-   read all-time XP - Odin 58,880 and Napoleon 31,500 are still on their
-   rows as weekPoints === xp, and Sauce's is his 67,800 less the 330 he
-   has earned this week. Ordered that way the three land exactly where
-   Madison remembers them, Cap fourth on 30,535, which is the check that
-   these are the numbers the class saw. */
+   Madison, who saw the board that week - WITH THE TOTALS THEY HAD WHEN
+   THE WEEK CLOSED (build 248: "Sauce didn't finish last week with 67
+   thousand xp, he finished with like 58 something. They need to be the
+   xp what they got right when the leaderboard updated"). Build 247 took
+   Sauce's current 67,800 less this week's 330, and that is not the
+   number the board showed: his week total and his all-time total were
+   never the same thing.
+   OdinSavior 58,880 and Napoleon 31,500 are EXACT: both last synced on
+   27 Sep, before the rollover, so their published week is still the
+   closed one. Sauce's is not recoverable to the point - he rolled over
+   on a build that kept no prevWeek, and the device-side top-three cache
+   lives in localStorage, not in the cloud. What IS known bounds it:
+   his phone recorded him finishing first (weeklyWins 1, and Odin's own
+   last sighting at 21:04 CDT Sunday still had Odin first on 58,880),
+   so he ended above 58,880; and Madison saw "58 something". So it is
+   shown as 58.9K - the most precise figure the evidence supports - and
+   `label` exists so a hand-recorded week can say that rather than
+   print a made-up exact number. */
 const WEEK_RESULTS_KNOWN = { "2026-09-21": [
-  { pub: "ew7hyxpg5j2y", pts: 67470 },
+  { pub: "ew7hyxpg5j2y", label: "58.9K XP" },
   { pub: "kdxnp7smgcre", pts: 58880 },
   { pub: "mbw5qdhcw2pf", pts: 31500 }
 ] };
@@ -38588,8 +38592,9 @@ function lastWeekTop3(list){
     return known.map(k => {
       const pub = typeof k === "string" ? k : k.pub;
       const pts = typeof k === "string" ? null : (typeof k.pts === "number" ? k.pts : null);
+      const label = typeof k === "string" ? null : (k.label || null);
       const e = (list || []).find(x => x && x.pub === pub);
-      return e ? { pub: pub, name: e.firstName || "?", avatar: e.avatarChar || "ninja", pts: pts } : null;
+      return e ? { pub: pub, name: e.firstName || "?", avatar: e.avatarChar || "ninja", pts: pts, label: label } : null;
     }).filter(Boolean);
   }
   const byKey = new Map();
@@ -38649,16 +38654,65 @@ function observeWeeklyRank(list){
   saveStore();
 }
 
+/* Settle, and queue the week-winner's character if that was a win.
+   Named rather than diffed, because there is nothing to diff against:
+   settleWeeklyWin() returning true IS the unlock. Called from Home and
+   from every board load, since a settlement waits for server rows. */
+function settleWeeklyWinQueued(){
+  if(!settleWeeklyWin()) return false;
+  const won = AVATAR_CHARACTERS.find(c => c.feat === "weektop");
+  if(won && !isLockedCharacter(won.id)){
+    store.pendingCharUnlocks = (store.pendingCharUnlocks || []).filter(x => x !== won.id).concat([won.id]);
+    saveStore();
+  }
+  return true;
+}
+/* WHERE YOU FINISHED A WEEK, READ FROM THE FINAL STANDINGS (build 248).
+   Settling used to trust weekRankSeen - the rank this phone last SAW -
+   which is the rank at whatever moment its owner last looked, not at the
+   end of the week. Measured on the live board for the week of 21 Sep:
+   Odin's phone last looked at 21:04 Sunday with Odin first, and Sauce
+   passed him later that night; Cap's saw Cap third on Saturday, before
+   Napoleon passed him. Both phones would have settled a finish that never
+   happened - Zeus for Odin, a top three for Cap - the next time they
+   opened. "Ensure this works properly week to week."
+   So the final rank is read from the rows as they stood when the week
+   closed: a hand-recorded week (WEEK_RESULTS_KNOWN) by its order; last
+   week from every row's own last-week total (lastWeekPointsOfEntry)
+   against this phone's own; and only from rows the SERVER sent, since a
+   cached snapshot can be as stale as the sighting it replaces. null
+   means "cannot tell yet", and the caller waits for the board rather
+   than guess. A week older than last week can no longer be read off the
+   rows (a row keeps one week back), so that falls back to the sighting,
+   the best that is left. */
+function finalRankForWeek(wk){
+  const me = store.publicId;
+  const known = WEEK_RESULTS_KNOWN[wk];
+  if(known){
+    const i = known.findIndex(k => (typeof k === "string" ? k : k.pub) === me);
+    return i >= 0 ? i + 1 : known.length + 1;
+  }
+  if(wk !== lastWeekKey()) return null;
+  if(!leaderboardRowsFromServer || !leaderboardRows || !leaderboardRows.length) return null;
+  const mine = store.prevWeekKey === wk ? (store.prevWeekPoints || 0)
+             : store.weekKey === wk ? (store.weekPoints || 0) : 0;
+  if(!(mine > 0)) return leaderboardRows.length + 1;
+  return 1 + leaderboardRows.filter(e => e && e.pub && e.pub !== me && lastWeekPointsOfEntry(e) > mine).length;
+}
 /* Called from Home, which is the screen every launch and every finished
-   test passes through. Returns true if this settled a win, so the
-   caller can announce it. */
+   test passes through, and again whenever the board arrives from the
+   server. Returns true if this settled a win. */
 function settleWeeklyWin(){
   const seen = store.weekRankSeen;
   if(!seen || !seen.week || seen.week === weekKeyNow()) return false;
-  const won = seen.rank === 1;
+  const final = finalRankForWeek(seen.week);
+  /* Last week, and the board has not come from the server yet: wait. */
+  if(final === null && seen.week === lastWeekKey()) return false;
+  const rank = final === null ? seen.rank : final;
+  const won = rank === 1;
   store.weekRankSeen = null;
   if(won) store.weeklyWins = (store.weeklyWins || 0) + 1;
-  if(seen.rank >= 1 && seen.rank <= 3){
+  if(rank >= 1 && rank <= 3){
     const before = store.weeklyTop3 || 0;
     store.weeklyTop3 = before + 1;
     /* Announced like the Champion: queued for the next results screen,
@@ -51241,18 +51295,7 @@ function showHome(){
   /* Settled here because Home is the one screen every launch and every
      finished test passes through, and the week can only be observed to
      have rolled over by something that runs on an ordinary launch. */
-  if(settleWeeklyWin()){
-    /* Named rather than diffed, because there is nothing to diff
-       against here: settleWeeklyWin() returning true IS the unlock, and
-       a fake "before" set containing one id would be the same statement
-       written so it looks like a measurement. Deferred a beat so the
-       banner lands on Home rather than on whatever is fading out. */
-    const won = AVATAR_CHARACTERS.find(c => c.feat === "weektop");
-    if(won && !isLockedCharacter(won.id)){
-      store.pendingCharUnlocks = (store.pendingCharUnlocks || []).filter(x => x !== won.id).concat([won.id]);
-      saveStore();
-    }
-  }
+  settleWeeklyWinQueued();
   if(store.pendingVoidCutscene){
     stage.replaceChildren();
     playVoidCutscene();
@@ -55459,7 +55502,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-30-247";
+const APP_BUILD = "2026-09-30-248";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -62071,7 +62114,7 @@ function fetchBoardForInvites(force){
       /* An empty answer never takes the class away - the same rule the
          listener carried. */
       if(next.length || !(leaderboardRows && leaderboardRows.length)){
-        leaderboardRows = next;
+        leaderboardRows = next; leaderboardRowsFromServer = !(snap && snap.metadata && snap.metadata.fromCache); try{ settleWeeklyWinQueued(); }catch(e){}
       }
       try{ syncChatDockDot(); }catch(e){}
       try{ if(chatDockOpen && chatDockTab === "notifs") renderNotifications(); }catch(e){}
@@ -64100,7 +64143,7 @@ function openInviteFriendsSheet(roomCode){
           });
           const served = !(snap.metadata && snap.metadata.fromCache);
           if(next.length || served || !(leaderboardRows && leaderboardRows.length)){
-            leaderboardRows = next;
+            leaderboardRows = next; leaderboardRowsFromServer = !(snap && snap.metadata && snap.metadata.fromCache); try{ settleWeeklyWinQueued(); }catch(e){}
           }
           if(!document.body.contains(overlay)) return;
           waitingForBoard = false;
@@ -67706,7 +67749,7 @@ function buildLastWeekPodium(top){
     const nm = document.createElement("span");
     nm.className = "lw-podium-name"; nm.textContent = t.name;
     const pts = document.createElement("span");
-    pts.className = "lw-podium-pts"; pts.textContent = t.pts == null ? (i === 0 ? "Winner" : "") : t.pts.toLocaleString() + " XP";
+    pts.className = "lw-podium-pts"; pts.textContent = t.label ? t.label : t.pts == null ? (i === 0 ? "Winner" : "") : t.pts.toLocaleString() + " XP";
     const block = document.createElement("span");
     block.className = "lw-podium-block"; block.textContent = String(i + 1);
     col.append(av, nm, pts, block);
@@ -68562,7 +68605,7 @@ function attachFriendsBoardListener(){
          only a served answer may take something away. */
       const served = !(snap.metadata && snap.metadata.fromCache);
       if(next.length || served || !(leaderboardRows && leaderboardRows.length)){
-        leaderboardRows = next;
+        leaderboardRows = next; leaderboardRowsFromServer = !(snap && snap.metadata && snap.metadata.fromCache); try{ settleWeeklyWinQueued(); }catch(e){}
       }
       /* Only redraw while Friends is actually the screen on stage -
          a listener that outlives its screen must not rebuild over
@@ -70904,7 +70947,7 @@ function showRankings(defaultBoard){
           /* Shared with the Friends screen, which needs the same rows
              and must not open a second listener on the same
              collection. */
-          leaderboardRows = next;
+          leaderboardRows = next; leaderboardRowsFromServer = !(snap && snap.metadata && snap.metadata.fromCache); try{ settleWeeklyWinQueued(); }catch(e){}
         }
         loaded = true;
         paint();
@@ -71233,19 +71276,11 @@ function buildRanksTab(){
   heroName.className = "rankhero-name";
   heroName.textContent = held ? RANK_DISPLAY_NAME[held] : "No rank yet";
   heroInfo.append(kicker, heroName);
-  if(nextKey){
-    const nextLine = document.createElement("p");
-    nextLine.className = "rankhero-nextrank";
-    const nl = document.createElement("span");
-    nl.className = "rankhero-nextlab"; nl.textContent = "Next";
-    const ne = document.createElement("span");
-    ne.className = "rankhero-nextemb";
-    try{ ne.appendChild(fitRankEmblem(buildRankEmblemSVG(nextKey), nextKey)); }catch(e){}
-    const nn = document.createElement("span");
-    nn.className = "rankhero-nextname"; nn.textContent = RANK_DISPLAY_NAME[nextKey];
-    nextLine.append(nl, ne, nn);
-    heroInfo.appendChild(nextLine);
-  }
+  /* NO "NEXT <rank>" PILL HERE (build 248): "the next rank thing is
+     redundant and shows it twice there ... just removing the 'next rank'
+     and keep the 'to reach next rank'". The gauges' own head, "To reach
+     <rank>", in that rank's colour, is the one place the next rank is
+     named in the hero. */
   heroTop.appendChild(heroInfo);
   hero.appendChild(heroTop);
 

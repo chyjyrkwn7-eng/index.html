@@ -1487,8 +1487,16 @@ def check_b229(br):
     check("consecutive runs of a small unit open with different questions", r["overlap"] == 0, r)
     check("last week's top three come from last week's numbers, not this week's",
           r["top"] == ["Cy", "Bo", "Dee"] and r["podium"] == 3, r)
-    check("a hand-recorded week (Sauce, OdinSavior, Napoleon; 21 Sep) replaces numbers that cannot be trusted, and shows the totals that week's board showed",
-          r["pinned"] == [["Eli", None]] and r["pinnedPts"] == ["Winner"] and [x["pub"] for x in r["sauce"]] == ["ew7hyxpg5j2y", "kdxnp7smgcre", "mbw5qdhcw2pf"] and [x["pts"] for x in r["sauce"]] == [67470, 58880, 31500], r)
+    # Build 248: the totals are what each had WHEN THE WEEK CLOSED, not
+    # today's. Odin and Napoleon's are exact (synced before the rollover);
+    # Sauce's was never stored, only bounded - above Odin's 58,880, and
+    # "58 something" - so it is a label, and never his current 67k.
+    sauce = (r.get("sauce") or [{}])[0]
+    check("a hand-recorded week (Sauce, OdinSavior, Napoleon; 21 Sep) shows what each had when the week closed",
+          r["pinned"] == [["Eli", None]] and r["pinnedPts"] == ["Winner"]
+          and [x["pub"] for x in r["sauce"]] == ["ew7hyxpg5j2y", "kdxnp7smgcre", "mbw5qdhcw2pf"]
+          and [x.get("pts") for x in r["sauce"][1:]] == [58880, 31500]
+          and sauce.get("pts") is None and sauce.get("label", "").startswith("58.9K"), r)
     ctx.close()
 
 
@@ -4057,6 +4065,7 @@ def check_b246(br):
       showRanksScreen(); await wait(900);
       const head = document.querySelector('.rankhero-gaugehead');
       out.head = head ? head.textContent : null;
+      out.nextPill = !!document.querySelector('.rankhero .rankhero-nextrank');
       out.targets = [...document.querySelectorAll('.rankhero-gaugetarget')].map(x => x.textContent);
       showAppearance(); await wait(900);
       const tg = document.querySelector('.adv-toggle');
@@ -4067,8 +4076,81 @@ def check_b246(br):
       return out; }""")
     check("the Rank screen's rings are headed with the rank they are for", bool(k["head"]) and k["head"].startswith("To reach "), k)
     check("a requirement already met says Met, not Done", "Done" not in k["targets"], k["targets"])
+    # Build 248: "the next rank thing is redundant and shows it twice".
+    check("the next rank is named once in the hero - by the rings' head, with no Next pill as well",
+          not k["nextPill"], k)
     check("opening Advanced settings brings it clear of the tab bar, toggle still on screen",
           k["adv"]["bodyBottom"] <= k["adv"]["barTop"] and k["adv"]["toggleTop"] >= 0, k["adv"])
+    ctx.close()
+
+
+def check_b248_weekly(br):
+    """Build 248: the week works week to week. "Ensure this works properly
+    week to week." Settling a finish used to trust the rank a phone last
+    SAW, and the live board for the week of 21 Sep shows what that does:
+    Odin's phone last looked with Odin first, before Sauce passed him, and
+    Cap's saw Cap third before Napoleon did - both would have settled a
+    finish that never happened. Now it is read from the final standings,
+    only from rows the server sent. Also held here: a row published in a
+    new week before any XP still carries last week's total, and the
+    podium reads it. Written against build 247, where the settlement
+    checks fail."""
+    print("\n47. build 248: week to week - the final standings settle the week, not a stale sighting")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""()=>{ const out = {}; try{
+      const lw = lastWeekKey(), now = weekKeyNow();
+      const d = new Date(lw + 'T12:00:00'); d.setDate(d.getDate() - 7);
+      const older = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      store.publicId = 'me000000001'; store.leaderboardOptIn = true;
+      /* Today's "last week" may be a hand-recorded one; the simulated
+         weeks below are not, so it is set aside and put back after. */
+      const pinnedSaved = WEEK_RESULTS_KNOWN[lw]; delete WEEK_RESULTS_KNOWN[lw];
+      const setRows = (fromServer, rows) => { leaderboardRows = rows; if(typeof leaderboardRowsFromServer !== 'undefined') leaderboardRowsFromServer = fromServer; };
+      const mineLastWeek = pts => { store.weekKey = now; store.weekPoints = 10; store.prevWeekKey = lw; store.prevWeekPoints = pts; };
+      const row = (pub, pts, rolled) => rolled ? { pub, firstName: pub, avatarChar: 'ninja', week: now, rawWeekPoints: 5, weekPoints: 5, prevWeek: lw, prevWeekPoints: pts }
+                                               : { pub, firstName: pub, avatarChar: 'ninja', week: lw, rawWeekPoints: pts, weekPoints: 0 };
+      const reset = () => { store.weeklyWins = 0; store.weeklyTop3 = 0; store.pendingCharUnlocks = []; };
+      /* 1. Seen first on Sunday afternoon; passed that night. */
+      reset(); mineLastWeek(58880); store.weekRankSeen = { week: lw, rank: 1 };
+      setRows(true, [row('sauce', 58950, true), row('nap', 31500, false)]);
+      settleWeeklyWin();
+      out.overtaken = { wins: store.weeklyWins, top3: store.weeklyTop3, cleared: store.weekRankSeen === null };
+      /* 2. Seen third, finished fourth. */
+      reset(); mineLastWeek(30535); store.weekRankSeen = { week: lw, rank: 3 };
+      setRows(true, [row('a', 58950, true), row('b', 58880, false), row('c', 31500, true)]);
+      settleWeeklyWin();
+      out.fourth = { top3: store.weeklyTop3 };
+      /* 3. Only a cached board: wait, then settle when the server's arrives. */
+      reset(); mineLastWeek(900); store.weekRankSeen = { week: lw, rank: 2 };
+      setRows(false, [row('a', 100, true)]);
+      out.waited = settleWeeklyWin() === false && !!store.weekRankSeen;
+      setRows(true, [row('a', 100, true)]);
+      out.thenWon = settleWeeklyWinQueued() === true && store.weeklyWins === 1 && store.weekRankSeen === null;
+      /* 4. A hand-recorded week settles by its recorded order. */
+      reset(); WEEK_RESULTS_KNOWN[lw] = [{ pub: 'x', pts: 5 }, { pub: 'me000000001', pts: 4 }];
+      mineLastWeek(999999); store.weekRankSeen = { week: lw, rank: 1 };
+      setRows(true, [row('x', 5, true)]);
+      settleWeeklyWin(); delete WEEK_RESULTS_KNOWN[lw];
+      out.pinned = { wins: store.weeklyWins, top3: store.weeklyTop3 };
+      /* 5. Opening the app in a new week, before any XP, still publishes last week. */
+      store.weekKey = lw; store.weekPoints = 4321; store.prevWeekKey = older; store.prevWeekPoints = 7;
+      const pub = buildLeaderboardRow();
+      out.published = { week: pub.week === now, weekPoints: pub.weekPoints, prevWeek: pub.prevWeek === lw, prevWeekPoints: pub.prevWeekPoints };
+      /* 6. The podium reads rolled and unrolled rows alike, and drops a row two weeks stale. */
+      const stale = { pub: 'old', firstName: 'old', avatarChar: 'ninja', week: older, rawWeekPoints: 99999, weekPoints: 0 };
+      out.podium = lastWeekTop3([row('a', 300, true), row('b', 500, false), row('c', 100, true), stale]).map(t => [t.name, t.pts]);
+      if(pinnedSaved) WEEK_RESULTS_KNOWN[lw] = pinnedSaved;
+    } catch(e){ out.threw = String(e); } return out; }""")
+    check("a phone that saw itself first but was passed later does NOT settle a win",
+          r.get("overtaken", {}).get("wins") == 0 and r["overtaken"].get("top3") == 1 and r["overtaken"].get("cleared"), r)
+    check("a phone that saw itself third but finished fourth settles no top-three", r.get("fourth", {}).get("top3") == 0, r)
+    check("with only a cached board it waits, and settles the real result once the server's arrives",
+          r.get("waited") and r.get("thenWon"), r)
+    check("a hand-recorded week settles by its recorded order", r.get("pinned") == {"wins": 0, "top3": 1}, r)
+    check("a row published in a new week before any XP still carries last week's total",
+          r.get("published") == {"week": True, "weekPoints": 0, "prevWeek": True, "prevWeekPoints": 4321}, r)
+    check("last week's podium reads rolled and unrolled rows, and ignores a row two weeks stale",
+          r.get("podium") == [["b", 500], ["a", 300], ["c", 100]], r)
     ctx.close()
 
 
@@ -4131,6 +4213,7 @@ def main():
             for name in B245_POLISH:
                 globals()["check_b245_" + name](br)
             check_b246(br)
+            check_b248_weekly(br)
         finally:
             br.close()
     SERVER.shutdown()
