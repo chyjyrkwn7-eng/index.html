@@ -1978,9 +1978,9 @@ def check_b235(br):
       showHome(); await wait(4200);
       await T('again', () => document.querySelectorAll('.rs-spot').length);
       // The Marksman: its bar in a row (100 until 246, 150 until 259, 200 now), counted from the streak on record.
-      await T('marksman', () => { const had = store.lifetime.longestStreak, N = CHARACTER_FEATS.streak100.need; store.lifetime.longestStreak = N - 1;
-        const a = isLockedCharacter('marksman'); store.lifetime.longestStreak = N; const b = isLockedCharacter('marksman');
-        store.lifetime.longestStreak = had; return [a, b]; });
+      await T('marksman', () => { const had = store.bestTestStreak, N = CHARACTER_FEATS.streak100.need; store.bestTestStreak = N - 1;
+        const a = isLockedCharacter('marksman'); store.bestTestStreak = N; const b = isLockedCharacter('marksman');
+        store.bestTestStreak = had; return [a, b]; });
       // The ladders sit together, easiest first.
       await T('order', () => BANNERS.map(b => b.id));
       await T('rankArt', () => ['adept_rank', 'elite_rank', 'titan_rank'].map(id => typeof BANNER_ART[id] === 'function' && !!bannerDef(id)));
@@ -2280,8 +2280,10 @@ def check_b237(br):
                coin: Math.round((p.querySelector('.profile-rankcoin') || { getBoundingClientRect: () => ({ width: 0 }) }).getBoundingClientRect().width),
                button: p.tagName }; }""")
     check("the rank is a plate across the card, not a pill", isinstance(r, dict) and r.get("w", 0) > 300 and r.get("coin", 0) >= 50 and r.get("button") == "BUTTON", r)
-    check("it names the rank and how far to the next one", isinstance(r, dict) and r.get("word") == "Gold"
-          and "Platinum" in str(r.get("next")) and "%" in str(r.get("next")) and r.get("fill", 0) > 0, r)
+    # REVISED IN 267: "the current rank in the profile box has a progress
+    # bar, let's remove that" - the plate names the rank and nothing else.
+    check("it names the rank, with no bar under it", isinstance(r, dict) and r.get("word") == "Gold"
+          and not r.get("next") and r.get("fill", 0) == -1, r)
     ctx.close()
 
 
@@ -2462,8 +2464,8 @@ def check_b241(br):
           isinstance(r, dict) and r.get("plates") == 1 and r.get("badgeCells") == 0 and r.get("badgeEarned") == 0, r)
     def hexrgb(h):
         h = h.lstrip("#"); return "rgb(%d, %d, %d)" % (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16))
-    check("the rank bar is the rank's own colour, not a blend into the next",
-          isinstance(r, dict) and r.get("fillBg") and hexrgb(r.get("nextColor", "#000000")) not in r.get("fillBg", ""), r)
+    # REVISED IN 267: there is no rank bar on the plate any more.
+    check("the rank plate carries no bar at all", isinstance(r, dict) and not r.get("fillBg"), r)
     sp = (r or {}).get("spot") if isinstance(r, dict) else None
     check("a banner pop-up sits in the middle of the screen, on screen",
           bool(sp) and abs(sp["x"] - sp["vw"] / 2) <= 4 and sp["y"] >= 0 and sp["w"] > 250, r)
@@ -2682,8 +2684,9 @@ def check_b242(br):
     rb = r.get("rankBox") or {}
     # REVERSED IN 243: "the profile box got worse somehow ... it was so
     # good before" - back to the 241 plate: one bar and "Gold · 35%".
-    check("the rank plate is the 241 one: a bar and the next rank's name and share, no chip",
-          rb.get("bar") and not rb.get("chip") and not rb.get("need") and "%" in rb.get("label", ""), rb)
+    # REVISED IN 267: the bar came off the plate ("no need for that").
+    check("the rank plate carries no bar, no chip and no to-do line",
+          not rb.get("bar") and not rb.get("chip") and not rb.get("need") and rb.get("label", "") == "", rb)
     bt = r.get("badgesTab") or {}
     # REVERSED IN 243: the meter was "terrible, all I wanted was a better
     # way to show it than the 0/16" - a medal with the number in it.
@@ -2857,9 +2860,9 @@ def check_b243(br):
           r.get("feats") == {"clown": "vrwins5", "astronaut": "hundo7day", "hacker": "study20h", "timekeeper": "days30",
                              "valkyrie": "vrwins10", "swatRetired": True}, r.get("feats"))
     check("every retired character is drawn as what replaced it",
-          r.get("retiredTo") == ["ninja", "clown", "astronaut", "solar", "oracle", "viper", "hacker", "solar", "tempest", "viper", "hacker", "timekeeper", "ninja"], r.get("retiredTo"))
-    # build 265: the Viper took the Valkyrie's id (and the characters retired into it).
-    check("the new ones are named", r.get("names") == ["Lunar", "Solar", "Tempest", "Frost", "Oracle", "Inferno", "Hacker", "Timekeeper", "Viper"], r.get("names"))
+          r.get("retiredTo") == ["ninja", "clown", "astronaut", "solar", "oracle", "koi", "hacker", "solar", "tempest", "koi", "hacker", "timekeeper", "ninja"], r.get("retiredTo"))
+    # build 265/267: the Valkyrie's id drew the Viper, then the Koi (and the characters retired into it).
+    check("the new ones are named", r.get("names") == ["Lunar", "Solar", "Tempest", "Frost", "Oracle", "Inferno", "Hacker", "Timekeeper", "Koi"], r.get("names"))
     check("whoever held the Clown under the old ranks keeps it, and nobody at all has the Robot (build 244) - an old Robot is drawn as the Ninja",
           r.get("kept") == ["clown"] and r.get("robotHeld") is False and r.get("robotNew") is True, r)
     check("Customize groups the characters, secrets on their own, and no Robot for somebody who never held it",
@@ -4114,14 +4117,14 @@ def check_b246(br):
     check("a selected character's glow is not on the masked drawing (which cuts it square), but on its button",
           g["masked"] and not g["drawingGlow"] and g["buttonGlow"], g)
     r = pg.evaluate("""()=>{ const H = 3600000, out = {}; store.legacyChars = [];
-      const set = (st, h) => { store.lifetime.longestStreak = st; store.studyLog = { '2026-09-01': h * H }; };
+      const set = (st, h) => { store.bestTestStreak = st; /* build 267: one test */ store.studyLog = { '2026-09-01': h * H }; };
       const N = CHARACTER_FEATS.streak100.need;
       set(N - 1, 24.9); out.under = [isLockedCharacter('marksman'), isLockedCharacter('hacker')];
       set(N, 25); out.at = [isLockedCharacter('marksman'), isLockedCharacter('hacker')];
       const d = JSON.parse(JSON.stringify(store)); d.avatarChar = 'hacker'; d.studyLog = { '2026-09-01': 22 * H };
-      d.lifetime.longestStreak = 120; d.pendingCharUnlocks = ['marksman', 'clown'];
+      d.bestTestStreak = 120; d.pendingCharUnlocks = ['marksman', 'clown'];
       applyLoadedData(d); out.revoked = [store.avatarChar, store.pendingCharUnlocks.slice()];
-      const e = JSON.parse(JSON.stringify(store)); e.avatarChar = 'marksman'; e.lifetime.longestStreak = N + 10;
+      const e = JSON.parse(JSON.stringify(store)); e.avatarChar = 'marksman'; e.bestTestStreak = N + 10;
       e.studyLog = { '2026-09-01': 30 * H }; e.pendingCharUnlocks = ['hacker'];
       applyLoadedData(e); out.kept = [store.avatarChar, store.pendingCharUnlocks.slice()];
       return out; }""")
@@ -4393,7 +4396,10 @@ def check_b258(br):
         const lvl = levelOf(store) >= (N.level || 0) ? 1 : 0;
         out.lvlMet = lvl === 1; out.expect = Math.min(lvl === 1 ? 1 : 0.999, bdg); }
       out.rank = rankOf(store); out.level = levelOf(store);
-      out.label = (document.querySelector('.profile-rankplate-next') || {}).textContent || '';
+      /* build 267: the plate lost its bar and label; the exact figure is
+         still the one the Rank tab and the unlock cards read. */
+      out.label = RANK_DISPLAY_NAME[rankStepProgress().next] + ' · ' + rankStepPctLabel(rankStepProgress().pct);
+      out.plateBar = !!document.querySelector('.profile-rankplate-bar, .profile-rankplate-next');
       const sect = document.querySelector('.profile-badgesect');
       out.badgeSvgs = sect ? sect.querySelectorAll('svg').length : -1;
       out.badgeText = sect ? sect.textContent : '';
@@ -4481,7 +4487,7 @@ def check_b258(br):
     # like the bronze all the way through." The level is blue again and
     # the default cover is the theme, with no rank on it.
     check("the level and XP bar are blue again, and the cover carries no rank",
-          "46, 135, 240" in r.get("fillBg", "") and "63, 127, 208" in r.get("levelBg", "")
+          "61, 139, 255" in r.get("fillBg", "") and "63, 127, 208" in r.get("levelBg", "")
           and r.get("coverMark") == 0 and r.get("coverHasTheme") is True, r)
     check("the banner's art spans the pop-up, edge to edge", all(abs(x) <= 2 for x in r.get("popup", [99, 99])), r.get("popup"))
     vd = r.get("void") or {}
@@ -4575,7 +4581,8 @@ def check_b266(br):
       if(av){ const w = av.querySelector(':scope > .rank-avatar'), sv = av.querySelector('svg');
         out.glow = { wrapFilter: w ? getComputedStyle(w).filter : '', svgFilter: getComputedStyle(sv).filter, svgMask: getComputedStyle(sv).maskImage || getComputedStyle(sv).webkitMaskImage }; }
       /* 7 */
-      out.sapphireDot = buildRankEmblemSVG('adept').innerHTML.indexOf('M59.4 64a4.6 4.6') >= 0;
+      /* build 267: the dot became a dark heart fading into the core, with dust spinning in */
+      out.sapphireDot = [...buildRankEmblemSVG('adept').querySelectorAll('path')].some(p => p.getAttribute('fill') === '#000000');
       out.amethystFlat = /scale\\(1 \\.19\\)/.test(buildRankEmblemSVG('elite').innerHTML);
       out.amethystHole = [...buildRankEmblemSVG('elite').querySelectorAll('path')].some(p => p.getAttribute('fill') === '#030208');
       /* 8 */
@@ -4583,8 +4590,9 @@ def check_b266(br):
       const has = (id, sel) => !!buildAvatarCharSVG(id).querySelector(sel);
       out.kraken = { kind: cls('poseidon'), name: AVATAR_DISPLAY_NAME.poseidon };
       out.hacker = { rain: has('hacker', '.cx-fx-hk3rain'), laptop: buildAvatarCharSVG('hacker').innerHTML.indexOf('M18 30.8 L16.5 32.3') >= 0 };
-      out.viper = { tongue: has('valkyrie', '.cx-fx-vptongue'), name: AVATAR_DISPLAY_NAME.valkyrie };
-      out.sing = { swirl: has('singularity', '.cx-fx-sg2swirl'), eyes: buildAvatarCharSVG('singularity').querySelectorAll('.cx-eyes > *').length };
+      /* build 267: the Valkyrie's id is the Koi's fishbowl, the Singularity a space cat */
+      out.viper = { tongue: has('valkyrie', '.cx-fx-koiswim'), name: AVATAR_DISPLAY_NAME.valkyrie };
+      out.sing = { swirl: has('singularity', '.cx-fx-catstars'), eyes: buildAvatarCharSVG('singularity').querySelectorAll('.cx-eyes > *').length };
       } catch(e){ out.threw = String(e && e.stack || e); }
       return out; }""")
     check("Review's chip on the unit screen is Review's, not Drill's", "rs-mode-review" in r.get("chip", ""), r)
@@ -4606,8 +4614,87 @@ def check_b266(br):
     check("Amethyst is a black hole with no flattened planet disc", r.get("amethystHole") is True and r.get("amethystFlat") is False, r)
     check("Poseidon's id draws the Kraken, and says so", "cx-k-kraken" in r["kraken"]["kind"] and r["kraken"]["name"] == "Kraken", r["kraken"])
     check("the Hacker sits at a laptop with code raining behind", r["hacker"]["rain"] and r["hacker"]["laptop"], r["hacker"])
-    check("the Viper flicks a tongue", r["viper"]["tongue"] and r["viper"]["name"] == "Viper", r["viper"])
-    check("the Singularity is hooded, with gas spiralling in and eyes in the dark", r["sing"]["swirl"] and r["sing"]["eyes"] >= 2, r["sing"])
+    # REVISED IN 267: "That snake character is bad, try something else" and
+    # "the singularity, idek what that is".
+    check("the Valkyrie's id is the Koi, a fish swimming laps in a pink bowl", r["viper"]["tongue"] and r["viper"]["name"] == "Koi", r["viper"])
+    check("the Singularity is a cat made of space, with eyes", r["sing"]["swirl"] and r["sing"]["eyes"] >= 2, r["sing"])
+    check("no exception", not r.get("threw"), r.get("threw"))
+    ctx.close()
+
+
+def check_b267(br):
+    """Build 267, Madison's list. (1) The middle ring's dot orbits faster
+    than the outer ones. (2) The Virtual Room cards' icons sit on coloured
+    tiles. (3) Sapphire's dark heart has dust spinning in it, faster than
+    the arms; Supernova throws dark shards. (4) The Marksman is a
+    single-test streak: a lifetime streak of 500 does not unlock it.
+    (5) Every XP bar is the unlock card's bar. (6) The Profile rank plate
+    has no bar, and the level is not boxed in. (7) The start sheet closes
+    on a swipe down from its middle, not only its handle. (8) A toast
+    shown while the start sheet is open sits above it. Written against
+    266, where each one fails."""
+    print("\n49. build 267: orbit, icons, the dark heart, the Marksman, the XP bar, the plate, the sheet, the toast")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, touch=True)
+    r = pg.evaluate("""async ()=>{ const out = {}; const wait = ms => new Promise(r => setTimeout(r, ms));
+      try{
+      document.documentElement.classList.remove('is-reloading'); const pu = document.getElementById('pushing-update'); if(pu) pu.remove();
+      showHome(); await wait(900);
+      const dur = el => el ? parseFloat(getComputedStyle(el).animationDuration.split(',').pop()) : 0;
+      out.orbit = { outer: dur(document.querySelector('.cosmic-hero-orbitlayer:not(.cosmic-hero-orbitlayer-inner)')),
+                    inner: dur(document.querySelector('.cosmic-hero-orbitlayer-inner')),
+                    innerDots: document.querySelectorAll('.cosmic-hero-orbitlayer-inner .cosmic-orbit-dot').length };
+      showVirtualRoomChoice(); await wait(300);
+      out.icons = [...document.querySelectorAll('.vrc-card-icon')].map(i => getComputedStyle(i).backgroundImage.indexOf('gradient') >= 0
+        && [...i.querySelectorAll('[fill]')].some(e => /^#(?!fff\\b|ffffff\\b)/i.test(e.getAttribute('fill'))));
+      const a = buildRankEmblemSVG('adept');
+      out.dust = !!a.querySelector('.rk-spin.rk-fast') && [...a.querySelectorAll('.rk-spin.rk-fast path')].some(p => /^#0[0-9A-F]{5}$/i.test(p.getAttribute('fill') || ''));
+      out.shards = !!buildRankEmblemSVG('titan').querySelector('.rk-spin.rk-fast');
+      const keep = [store.bestTestStreak, store.lifetime.longestStreak];
+      store.bestTestStreak = 0; store.lifetime.longestStreak = 500; out.lifetimeLocked = isLockedCharacter('marksman');
+      store.bestTestStreak = 200; out.testUnlocked = !isLockedCharacter('marksman');
+      store.bestTestStreak = keep[0] || 0; store.lifetime.longestStreak = keep[1];
+      out.defaulted = (() => { const d = JSON.parse(JSON.stringify(store)); delete d.bestTestStreak; applyLoadedData(d); return store.bestTestStreak; })();
+      showProfile('profile'); await wait(1400);
+      const f = document.querySelector('.profile-xpbar .xpbar-fill'), tr = document.querySelector('.profile-xpbar');
+      out.xp = { bg: getComputedStyle(f).backgroundImage, tr: getComputedStyle(f).transitionDuration, h: Math.round(tr.getBoundingClientRect().height),
+                 sheen: getComputedStyle(f, '::after').content };
+      out.plate = { bar: !!document.querySelector('.profile-rankplate .profile-rankplate-bar, .profile-rankplate .profile-rankplate-next') };
+      const lv = document.querySelector('.profile-level-num');
+      out.level = { bg: getComputedStyle(lv).backgroundColor, border: getComputedStyle(lv).borderTopWidth };
+      cfg.mode = 'game'; cfg.units = [topicsIn(QUESTIONS)[0]]; showSetup(); await wait(600);
+      document.getElementById('nextbtn').click(); await wait(500);
+      showToast('test toast'); await wait(300);
+      const t = document.querySelector('.toast'), m = document.getElementById('unitoptions-modal');
+      out.toastZ = t ? parseInt(getComputedStyle(t).zIndex) : -1; out.sheetZ = m ? parseInt(getComputedStyle(m).zIndex) : -1;
+      const sh = document.querySelector('.unitoptions-modal-sheet').getBoundingClientRect();
+      out.sheetMid = [Math.round(innerWidth / 2), Math.round(sh.top + Math.min(160, sh.height / 2))];
+      } catch(e){ out.threw = String(e && e.stack || e); }
+      return out; }""")
+    x, y = (r.get("sheetMid") or [220, 500])
+    cdp = ctx.new_cdp_session(pg)
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": x, "y": y}]})
+    for i in range(1, 14):
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [{"x": x, "y": y + i * 14}]})
+        pg.wait_for_timeout(16)
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+    pg.wait_for_timeout(600)
+    closed = pg.evaluate("()=>{ const m = document.getElementById('unitoptions-modal'); return !!m && m.hidden; }")
+    o = r.get("orbit") or {}
+    check("the middle ring's dot turns faster than the outer ring", o.get("innerDots", 0) >= 1 and 0 < o.get("inner", 0) < o.get("outer", 0), o)
+    check("both Virtual Room card icons are in colour on a coloured tile", r.get("icons") == [True, True], r.get("icons"))
+    check("Sapphire's dark heart has dark dust spinning faster than its arms", r.get("dust") is True, r)
+    check("Supernova throws dark shards of its own", r.get("shards") is True, r)
+    check("a lifetime streak does not unlock the Marksman; one test's does",
+          r.get("lifetimeLocked") is True and r.get("testUnlocked") is True and r.get("defaulted") == 0, r)
+    xp = r.get("xp") or {}
+    check("the XP bar is the unlock card's bar: its blue, its .9s glide, no sheen",
+          "61, 139, 255" in xp.get("bg", "") and xp.get("tr", "").startswith("0.9") and xp.get("h", 99) <= 12
+          and xp.get("sheen") in ("none", "normal"), xp)
+    check("the Profile rank plate has no bar", (r.get("plate") or {}).get("bar") is False, r.get("plate"))
+    lv = r.get("level") or {}
+    check("the level is not boxed in", lv.get("bg") in ("rgba(0, 0, 0, 0)", "transparent") and lv.get("border") == "0px", lv)
+    check("a toast sits above an open start sheet", r.get("toastZ", -1) > r.get("sheetZ", 0) > 0, [r.get("toastZ"), r.get("sheetZ")])
+    check("the start sheet closes on a swipe down from its middle", closed is True, closed)
     check("no exception", not r.get("threw"), r.get("threw"))
     ctx.close()
 
@@ -4672,6 +4759,7 @@ def main():
             check_b250(br)
             check_b258(br)
             check_b266(br)
+            check_b267(br)
         finally:
             br.close()
     SERVER.shutdown()

@@ -4314,6 +4314,12 @@
      where nobody could see it. With the sheet up, toasts go above it and
      to the top, clear of the input at the bottom. */
   body.chatdock-open .toast{ z-index:390; top:calc(env(safe-area-inset-top, 0px) + .75rem); bottom:auto; }
+  /* OVER AN OPEN START SHEET (build 267): "In game mode, when clicking the
+     mode I don't have unlocked, the pop up is appearing behind the start
+     menu." The toast was z-index 70 under the sheet's 210, and at the
+     bottom where the sheet is. It goes on top, and to the top of the
+     screen, where the sheet is not. */
+  body:has(.unitoptions-modal:not([hidden])) .toast{ z-index:390; top:calc(env(safe-area-inset-top, 0px) + .75rem); bottom:auto; }
   body.chatdock-open .vroom-chat-alert{
     opacity:0 !important; pointer-events:none !important;
   }
@@ -4965,12 +4971,16 @@
     color:var(--ink);
   }
   .vrc-card-host .vrc-card-icon{
-    color:#fff;
-    background:linear-gradient(150deg, color-mix(in srgb, var(--accent) 80%, #fff 8%), color-mix(in srgb, var(--accent) 60%, #000 25%));
-    border-color:color-mix(in srgb, var(--accent) 70%, #fff 10%);
-    box-shadow:0 6px 16px color-mix(in srgb, var(--accent) 30%, transparent);
+    background:linear-gradient(150deg, #A77BFF, #5B2BD9 70%, #3A1896);
+    border-color:rgba(214,196,255,.55);
+    box-shadow:0 6px 18px rgba(124,72,255,.4), inset 0 1px 0 rgba(255,255,255,.35);
   }
-  .vrc-card-icon svg{ width:1.55rem; height:1.55rem; }
+  .vrc-card-browse .vrc-card-icon{
+    background:linear-gradient(150deg, #3FE3A8, #13A57E 70%, #0B6F58);
+    border-color:rgba(191,243,210,.55);
+    box-shadow:0 6px 18px rgba(47,191,113,.36), inset 0 1px 0 rgba(255,255,255,.35);
+  }
+  .vrc-card-icon svg{ width:1.75rem; height:1.75rem; }
   .vrc-card-body{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:.3rem; }
   .vrc-card-head{ display:flex; align-items:center; flex-wrap:wrap; gap:.45rem; }
   .vrc-card-title{ font-family:var(--serif); font-size:1.12rem; font-weight:800; line-height:1.2; }
@@ -4996,7 +5006,7 @@
     .vrc-cards{ grid-template-columns:repeat(2, minmax(0, 1fr)); max-width:44rem; gap:1.1rem; margin-top:2rem; }
     .vrc-card{ flex-direction:column; align-items:flex-start; min-height:14rem; padding:1.5rem 1.4rem; gap:1.1rem; }
     .vrc-card-icon{ width:3.8rem; height:3.8rem; border-radius:1.2rem; }
-    .vrc-card-icon svg{ width:1.9rem; height:1.9rem; }
+    .vrc-card-icon svg{ width:2.2rem; height:2.2rem; }
     .vrc-card-title{ font-size:1.35rem; }
     .vrc-card-desc{ font-size:.92rem; }
     .vrc-card-chev{ position:absolute; top:1.5rem; right:1.3rem; }
@@ -8793,6 +8803,7 @@
     .cosmic-hero-glowbox{ animation:cosmic-glowbox-breathe 4.5s ease-in-out infinite; }
     .cosmic-hero-glowbox.is-legend{ animation:cosmic-glowbox-legend 3.4s ease-in-out infinite; }
     .cosmic-hero-orbitlayer{ animation:cosmic-hero-settle .22s ease-out both, cosmic-orbit-spin 120s linear infinite; }
+    .cosmic-hero-orbitlayer.cosmic-hero-orbitlayer-inner{ animation:cosmic-hero-settle .22s ease-out both, cosmic-orbit-spin 88s linear infinite; }
   }
   /* .3 to .42 on the main glow, as the per-circle breathe was. */
   @keyframes cosmic-glowbox-breathe{ 0%,100%{ opacity:.714; } 50%{ opacity:1; } }
@@ -11581,6 +11592,8 @@
     .rank-emblem-svg .rk-turn.rk-quick{ animation-duration:26s; }
     .rank-emblem-svg .rk-turn.rk-back.rk-quick{ animation-duration:34s; }
     .rank-emblem-svg .rk-spin.rk-quick{ animation-duration:22s; }
+    /* Sapphire's dark dust, falling in faster than the arms turn (267) */
+    .rank-emblem-svg .rk-spin.rk-fast{ animation-duration:8s; }
     .rank-emblem-svg .rk-swing.rk-quick{ animation-duration:5s; }
     /* Gold's world going round its sun (build 250): the same path twice,
        the front copy only showing on the near half of the orbit */
@@ -13722,15 +13735,13 @@
   /* THE FIVE REDRAWN IN 265 - the Masked One, Viper (the Valkyrie's
      id), the Hacker, the Clown and Anubis (Poseidon's id). Every class
      and keyframe here is new and unique to its character. */
-  .avatarchar-svg .cx-k-viper{ --cx-blink:7.2s; --cx-blink-at:-1.4s; }
   .avatarchar-svg .cx-k-kraken{ --cx-blink:6.2s; --cx-blink-at:-4.4s; }
-  .avatarchar-svg .cx-fx-vphood{ transform-origin:50% 92%; }
+  .avatarchar-svg .cx-k-singularity{ --cx-blink:6.8s; --cx-blink-at:-2.4s; }
+  .avatarchar-svg .cx-fx-catcharm{ transform-origin:50% 0%; }
   .avatarchar-svg .cx-fx-cl2hat{ transform-origin:50% 100%; }
   @media (prefers-reduced-motion:no-preference){
     .char-live .avatarchar-svg .cx-fx-mk2crack{ animation:cx-mk2-pulse 2.2s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-mk2glow{ animation:cx-mk2-pulse 2.2s ease-in-out -1.1s infinite; }
-    .char-live .avatarchar-svg .cx-fx-vphood{ animation:cx-vp-flare 3.6s ease-in-out infinite alternate; }
-    .char-live .avatarchar-svg .cx-fx-vpeye{ animation:cx-vp-glint 2.8s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-hk2split{ animation:cx-hk2-jitter 3.2s steps(1) infinite; }
     .char-live .avatarchar-svg .cx-fx-hk2scan{ animation:cx-hk2-scan 2.4s linear infinite; }
     .char-live .avatarchar-svg .cx-fx-hk2slice{ animation:cx-hk2-slice 4.6s steps(1) infinite; }
@@ -13742,33 +13753,32 @@
     .char-live .avatarchar-svg .cx-fx-hk3rain{ animation:cx-hk3-rain 1.6s linear infinite; }
     .char-live .avatarchar-svg .cx-fx-hk3code{ animation:cx-hk3-code 2.2s linear infinite; }
     .char-live .avatarchar-svg .cx-fx-hk3glow, .char-live .avatarchar-svg .cx-fx-hk3edge{ animation:cx-hk3-flicker 3.4s ease-in-out infinite; }
-    .char-live .avatarchar-svg .cx-fx-vptongue{ animation:cx-vp-tongue 3.8s ease-in-out infinite; }
-    .char-live .avatarchar-svg .cx-fx-vpsheen{ animation:cx-sheen-idle 6.2s ease-in-out -3s infinite; }
     .char-live .avatarchar-svg .cx-fx-krtent{ animation:cx-kr-sway 3.2s ease-in-out infinite alternate; }
     .char-live .avatarchar-svg .cx-fx-krfront{ animation:cx-kr-sway 2.6s ease-in-out -1.3s infinite alternate-reverse; }
     .char-live .avatarchar-svg .cx-fx-krspot{ animation:cx-mk2-pulse 2.4s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-kreye{ animation:cx-vp-glint 3s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-krbubble{ animation:cx-kr-bubble 3.6s ease-in infinite; }
     .char-live .avatarchar-svg .cx-fx-krsheen{ animation:cx-sheen-idle 6s ease-in-out -2s infinite; }
-    .char-live .avatarchar-svg .cx-fx-sg2halo{ animation:cx-spin 14s linear infinite; }
-    .char-live .avatarchar-svg .cx-fx-sg2swirl{ animation:cx-spin-back 5s linear infinite; }
-    .char-live .avatarchar-svg .cx-fx-sg2rim{ animation:cx-mk2-pulse 2.6s ease-in-out infinite; }
-    .char-live .avatarchar-svg .cx-fx-sg2eye{ animation:cx-vp-glint 2.2s ease-in-out infinite; }
     .char-react-win .avatarchar-svg .cx-fx-mk2crack{ animation:cx-mk2-pulse .5s ease-in-out infinite; }
-    .char-react-win .avatarchar-svg .cx-fx-vphood{ animation:cx-vp-flare .45s ease-in-out infinite alternate; }
     .char-react-win .avatarchar-svg .cx-fx-hk2split{ animation:cx-hk2-jitter .6s steps(1) infinite; }
     .char-react-win .avatarchar-svg .cx-fx-hk2slice{ animation:cx-hk2-slice .9s steps(1) infinite; }
     .char-react-win .avatarchar-svg .cx-fx-cl2hat{ animation:cx-cl2-sway .4s ease-in-out infinite alternate; }
     .char-react-win .avatarchar-svg .cx-fx-hk3rain{ animation:cx-hk3-rain .5s linear infinite; }
-    .char-react-win .avatarchar-svg .cx-fx-vptongue{ animation:cx-vp-tongue 1s ease-in-out infinite; }
-    .char-react-win .avatarchar-svg .cx-fx-vpsheen, .char-react-win .avatarchar-svg .cx-fx-krsheen{ animation:cx-sheen 1.3s ease-in-out .3s infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-koisheen, .char-react-win .avatarchar-svg .cx-fx-krsheen{ animation:cx-sheen 1.3s ease-in-out .3s infinite; }
+    /* build 267: the Koi's fishbowl and the space cat */
+    .char-live .avatarchar-svg .cx-fx-koiswim{ animation:cx-spin 6s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-koiwater{ animation:cx-koi-slosh 3s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-koibubble{ animation:cx-kr-bubble 2.8s ease-in infinite; }
+    .char-live .avatarchar-svg .cx-fx-koisheen{ animation:cx-sheen-idle 5.6s ease-in-out -1.2s infinite; }
+    .char-live .avatarchar-svg .cx-fx-catstars{ animation:cx-mk2-pulse 2.8s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-cateye{ animation:cx-vp-glint 2.4s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-catcharm{ animation:cx-cl2-sway 2.6s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-catwhisk{ animation:cx-cl2-sway 3.4s ease-in-out infinite alternate; }
+    .char-react-win .avatarchar-svg .cx-fx-koiswim{ animation:cx-spin 1.4s linear infinite; }
     .char-react-win .avatarchar-svg .cx-fx-krtent{ animation:cx-kr-sway .45s ease-in-out infinite alternate; }
     .char-react-win .avatarchar-svg .cx-fx-krfront{ animation:cx-kr-sway .4s ease-in-out infinite alternate-reverse; }
-    .char-react-win .avatarchar-svg .cx-fx-sg2halo{ animation:cx-spin 2s linear infinite; }
-    .char-react-win .avatarchar-svg .cx-fx-sg2swirl{ animation:cx-spin-back 1s linear infinite; }
   }
   @keyframes cx-mk2-pulse{ 0%, 100%{ opacity:.6; } 50%{ opacity:1; } }
-  @keyframes cx-vp-flare{ from{ scale:1 1; } to{ scale:1.05 1.02; } }
   @keyframes cx-vp-glint{ 0%, 100%{ opacity:.45; } 50%{ opacity:.9; } }
   @keyframes cx-hk2-jitter{ 0%, 100%{ transform:none; } 62%{ transform:translateX(.6px); } 66%{ transform:translateX(-.5px); } 70%{ transform:none; } }
   @keyframes cx-hk2-scan{ 0%{ transform:translateX(0); opacity:0; } 8%{ opacity:1; } 86%{ opacity:1; } 94%{ transform:translateX(17px); opacity:0; } 100%{ transform:translateX(0); opacity:0; } }
@@ -13777,10 +13787,9 @@
   @keyframes cx-hk3-rain{ from{ transform:translateY(0); } to{ transform:translateY(6px); } }
   @keyframes cx-hk3-code{ from{ transform:translateY(0); } to{ transform:translateY(-5.76px); } }
   @keyframes cx-hk3-flicker{ 0%, 100%{ opacity:1; } 40%{ opacity:.82; } 44%{ opacity:1; } 70%{ opacity:.9; } }
-  @keyframes cx-vp-tongue{ 0%, 62%, 100%{ opacity:0; scale:1 .2; } 66%{ opacity:1; scale:1 1; } 70%{ opacity:1; scale:1 .55; } 74%{ opacity:1; scale:1 1; } 80%{ opacity:0; scale:1 .2; } }
   @keyframes cx-kr-sway{ from{ rotate:-2.4deg; } to{ rotate:2.4deg; } }
+  @keyframes cx-koi-slosh{ from{ transform:translateX(-.8px) rotate(-2deg); } to{ transform:translateX(.8px) rotate(2deg); } }
   @keyframes cx-kr-bubble{ 0%{ transform:translateY(0); opacity:0; } 20%{ opacity:.9; } 100%{ transform:translateY(-7px); opacity:0; } }
-  .avatarchar-svg .cx-fx-vptongue{ transform-origin:50% 0%; }
   .avatarchar-svg .cx-fx-krtent, .avatarchar-svg .cx-fx-krfront{ transform-origin:50% 0%; }
   /* Each wing flexes from its root, where it meets the helm. */
   .avatarchar-svg .cx-fx-wing-l{ transform-origin:96% 72%; }
@@ -15153,6 +15162,10 @@
     font-variant-numeric:tabular-nums;
   }
   .profile-level-row .profile-statplate + .profile-statplate{ margin-left:0; }
+  .profile-level-num.profile-statplate.is-bare{
+    background:none; border:none; box-shadow:none;
+    padding:.2rem .4rem .2rem .1rem; min-height:44px; justify-content:center;
+  }
 
   /* The bar. It is supposed to look like a game loading in, so it
      fills from empty on arrival and carries a travelling sheen rather
@@ -15197,6 +15210,27 @@
     animation:xp-sheen 2.8s linear infinite;
   }
   @keyframes xp-sheen{ from{ background-position:0% 0; } to{ background-position:-400% 0; } }
+  /* THE UNLOCK CARD'S BAR, EVERYWHERE THERE IS XP (build 267). "The
+     progress bar you see when looking at unlockable progress. That motion
+     to show it is so nice and smooth I love it. I also just love how it
+     looks. Can the xp bar get that look and feel app wide?" So every XP
+     bar - the Profile card and the end of every run - is that bar: a
+     slim rounded track sunk into the surface, a clean left-to-right blue
+     with its own glow, no travelling sheen, and the same long ease-out
+     (.9s, cubic-bezier(.2,.8,.2,1)) that makes it glide in and settle.
+     Same numbers as .unlock-card-bar/.unlock-card-fill; change one,
+     change both. */
+  .xpbar-track, .xpbar-track.profile-xpbar{
+    height:10px; border:none; border-radius:999px; overflow:hidden;
+    background:rgba(255,255,255,.1); box-shadow:inset 0 1px 2px rgba(0,0,0,.5);
+  }
+  .xpbar-fill{
+    background:linear-gradient(90deg, #3D8BFF, #8FC1FF);
+    box-shadow:0 0 10px rgba(61,139,255,.55);
+    transition:width .9s cubic-bezier(.2,.8,.2,1);
+  }
+  .xpbar-fill::after{ content:none; animation:none; }
+  @media (min-width:40rem){ .xpbar-track, .xpbar-track.profile-xpbar{ height:12px; } }
   /* The end-of-run level block. Deliberately the same track and fill
      classes the Profile bar uses (.xpbar-track/.xpbar-fill) rather than
      a second pair that could drift - only the surround is new. */
@@ -31401,7 +31435,7 @@ const AVATAR_CHARACTERS = [
   { id: "zeus",       kind: "zeus",       feat: "weektop" },
   { id: "poseidon",   kind: "kraken",     feat: "weektop3x3" },
   { id: "clown",      kind: "clown",      feat: "vrwins5" },
-  { id: "valkyrie",   kind: "viper",      feat: "vrwins10" },
+  { id: "valkyrie",   kind: "koi",        feat: "vrwins10" },
   { id: "marksman",   kind: "marksman",   feat: "streak100" },
   { id: "astronaut",  kind: "astronaut",  feat: "hundo7day" },
   { id: "hacker",     kind: "hacker",     feat: "study20h" },
@@ -31461,7 +31495,7 @@ const AVATAR_CHARACTERS = [
 const AVATAR_GRID_NAME = { masked: "Masked One" };
 const AVATAR_DISPLAY_NAME = {
   lunar: "Lunar", solar: "Solar", tempest: "Tempest", frost: "Frost", oracle: "Oracle", inferno: "Inferno",
-  swat: "SWAT", valkyrie: "Viper", hacker: "Hacker", timekeeper: "Timekeeper", ronin: "Ronin", nightowl: "Night Owl", knight: "Knight",
+  swat: "SWAT", valkyrie: "Koi", hacker: "Hacker", timekeeper: "Timekeeper", ronin: "Ronin", nightowl: "Night Owl", knight: "Knight",
   pirate: "Pirate", scholar: "Scholar", wolf: "Wolf",
   paladin: "Paladin", sentinel: "Sentinel", k9: "K-9",
   ninja: "Ninja", ghost: "Ghost", queen: "Queen", wizard: "Wizard",
@@ -31485,13 +31519,13 @@ const AVATAR_GLOW = {
   k9: "#D9A05A",
   ninja: "#E0453F", ghost: "#E8ECF4", queen: "#8B4FC4", wizard: "#6C5BD4",
   grizzly: "#B9793C", alien: "#4FD18A", samurai: "#C0392B", dragon: "#E04A2F",
-  officer: "#3D74E8", clown: "#9B5CFF", swat: "#3D74E8", valkyrie: "#B6FF2E", hacker: "#3DFF8A", timekeeper: "#8A86FF", ronin: "#FF2E88", robot: "#6FD3E8", astronaut: "#F2B233",
+  officer: "#3D74E8", clown: "#9B5CFF", swat: "#3D74E8", valkyrie: "#FF6FB5", hacker: "#3DFF8A", timekeeper: "#8A86FF", ronin: "#FF2E88", robot: "#6FD3E8", astronaut: "#F2B233",
   /* Read off each one's artwork like the rest: the detective's amber
      street-light, the cold light in Zeus's cracks, the mask's own
      lacquer, and for Void the middle of its three flare colours - the
      body gives off no light of its own, so the glow is the flares. */
   detective: "#D9A441", zeus: "#7FD4F5", masked: "#C6413F", voidwalker: "#F97316",
-  champion: "#FF4D6D", umbra: "#8B5CF6", singularity: "#9BE8FF",
+  champion: "#FF4D6D", umbra: "#8B5CF6", singularity: "#8B7BFF",
   poseidon: "#3FE0D0", spartan: "#E0612F", pharaoh: "#E9B949", marksman: "#9CE85A",
   /* The visor's sunset. */
   blitz: "#F0643C"
@@ -31607,9 +31641,17 @@ const CHARACTER_FEATS = {
      recordResult() carries lifetime.currentStreak from test to test and
      only a miss resets it - the label now says so. Same take-back as
      before, by the same live check. */
-  streak100: { label: "Answer 200 questions in a row without a miss, across any tests",
-               done: () => ((store.lifetime && store.lifetime.longestStreak) || 0) >= 200,
-               have: () => ((store.lifetime && store.lifetime.longestStreak) || 0), need: 200 },
+  /* ONE TEST AGAIN (build 267): "The marksman challenge, make that for
+     a single test, not over multiple tests. If people unlocked this, take
+     it back." It reads store.bestTestStreak - the longest first-try run
+     inside a single finished test, from summarize() - not the lifetime
+     streak that carries across tests. That field starts at 0 for
+     everybody (no test on record kept its answers in order), so the
+     live lock takes the Marksman back from anybody who got it the other
+     way and revokeRaisedCharacters() takes it off whoever is wearing it. */
+  streak100: { label: "Answer 200 questions in a row without a miss, in a single test",
+               done: () => (store.bestTestStreak || 0) >= 200,
+               have: () => (store.bestTestStreak || 0), need: 200 },
   /* Build 241, Eclipse. Counted from the whole-unit loop in summarize()
      at the moment a unit comes out at 100%, so it is the same "whole
      unit" every hundo already needs. Tracked from this build: nothing
@@ -33071,95 +33113,75 @@ function drawAvatarCharSVG(charId){
     close();
     return done();
   }
-  /* ================= VIPER, SECOND PASS (build 266) =================
-     "The snake person is a really cool concept but it's hard to tell
-     what that is so fix it." The 265 Viper was a hooded assassin with
-     snake eyes - a person in a green hood, so it read as a person. Now
-     it IS the snake: a cobra's head on a man's shoulders. Green scaled
-     head with the big crown plates, slit-pupil eyes under angry brows,
-     nostrils on the snout, fangs, a forked tongue that flicks out, the
-     cream belly scales running down the throat, and the hood flared
-     wide behind it with its bands. Still the Valkyrie's id. Parts are
-     cx-fx-vp* / cx-vp-*: unique names. */
-  if(def.kind === "viper"){
-    const lime = "#B6FF2E", cream = "#E9DFA2";
-    const hoodG = headGrad("#5C9A3C", "#27561C", "#0A1C08");
-    const skin = headGrad("#9EE06A", "#3E8A2A", "#10300B");
-    const leather = headGrad("#3A4034", "#1A1E17", "#070806");
+  /* ================= KOI (build 267) =================
+     Ten top-three finishes in a Virtual Room - the Valkyrie's challenge
+     and the Valkyrie's id, so everybody who earned it keeps it. The
+     Viper lasted one build ("that snake character is bad, try something
+     else"), and the Kraken was the spark: "what about a character with
+     like a pink glass fish bowl thing?" So the head IS a fishbowl - a
+     round bowl of pink glass on a collar ring, half full of glowing
+     water, with a koi swimming laps inside it and bubbles rising off it.
+     There is no face: the fish is the character. Parts are cx-fx-koi* /
+     cx-koi-*: unique names. */
+  if(def.kind === "koi"){
+    const pink = "#FF6FB5", pinkSoft = "#FFC2E2";
+    const suit = headGrad("#F4E8F0", "#C9B4C4", "#5A4658");
+    const ring = headGrad("#FFFFFF", "#D8C8D4", "#6E5A6A");
+    const BX = 20, BY = 16.4, BR = 10.6;
     open("cx-body");
-    svg.appendChild(mk("path", { d: "M4.8 40 Q5.4 31 11.6 28.4 Q13 22.8 20 22.6 Q27 22.8 28.4 28.4 Q34.6 31 35.2 40 Z", fill: leather }));
-    svg.appendChild(mk("path", { d: "M14.4 29 L20 36.4 L25.6 29", fill: "none", stroke: lime, "stroke-width": ".4", opacity: ".7" }));
-    svg.appendChild(mk("path", { d: "M9.6 31 L29.6 39.6 L28.8 40.8 L8.8 32.4 Z", fill: "#0B0D09", opacity: ".9" }));
-    svg.appendChild(mk("path", { d: "M22.6 35.4 L24.4 38.6 L23.4 38.8 Z", fill: "#DCE8C4", stroke: "#4A5A34", "stroke-width": ".15" }));
+    svg.appendChild(mk("path", { d: "M5 40 Q5.6 31 11.8 28.6 Q13.2 25.4 20 25.2 Q26.8 25.4 28.2 28.6 Q34.4 31 35 40 Z", fill: suit, stroke: "#3A2A38", "stroke-width": ".3" }));
+    svg.appendChild(mk("path", { d: "M20 29 L20 40", stroke: pink, "stroke-width": ".5", opacity: ".7" }));
+    [[9.6, 33.6], [30.4, 33.6]].forEach(([x, y]) => svg.appendChild(mk("circle", { cx: x, cy: y, r: 1.3, fill: pink, opacity: ".85" })));
     close();
     open("cx-head");
-    /* THE HOOD, flared wide behind the head, with its bands */
-    const hood = "M20 5.4 Q29.8 6.2 33.4 13.8 Q35.6 19.8 32 26.6 Q29 29.6 25 29.4 Q27.8 25 28 19.6 Q28.2 12.6 20 12 Q11.8 12.6 12 19.6 Q12.2 25 15 29.4 Q11 29.6 8 26.6 Q4.4 19.8 6.6 13.8 Q10.2 6.2 20 5.4 Z";
-    open("cx-fx cx-fx-vphood");
-    svg.appendChild(mk("path", { d: hood, fill: hoodG, stroke: "#040803", "stroke-width": ".35", "stroke-linejoin": "round" }));
-    const hcp = uid + "-vphood";
-    const cp = mk("clipPath", { id: hcp }); cp.appendChild(mk("path", { d: hood })); defs.appendChild(cp);
-    const bands = mk("g", { "clip-path": "url(#" + hcp + ")" });
-    [9.4, 13.4, 17.4, 21.4, 25.4].forEach((y, i) => {
-      bands.appendChild(mk("path", { d: "M3 " + (y + 2) + " Q20 " + (y - 3.2) + " 37 " + (y + 2), fill: "none", stroke: cream, "stroke-width": ".9", opacity: (.42 - i * .04).toFixed(2) }));
-    });
-    for(let r = 0; r < 12; r++){
-      const y = 6 + r * 1.9, off = r % 2 ? 1 : 0;
-      for(let x = 4 + off; x < 36; x += 2){
-        bands.appendChild(mk("path", { d: "M" + x + " " + y.toFixed(2) + " Q" + (x + 1) + " " + (y + 1.4).toFixed(2) + " " + (x + 2) + " " + y.toFixed(2), fill: "none", stroke: "#0E2A0A", "stroke-width": ".2", opacity: ".45" }));
-      }
-    }
-    svg.appendChild(bands);
-    svg.appendChild(mk("path", { d: "M15 29.4 Q11 29.6 8 26.6 Q4.4 19.8 6.6 13.8 Q10.2 6.2 20 5.4 Q29.8 6.2 33.4 13.8 Q35.6 19.8 32 26.6 Q29 29.6 25 29.4", fill: "none", stroke: lime, "stroke-width": ".5", "stroke-linecap": "round", opacity: ".9" }));
+    /* the collar ring the bowl sits in */
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 26.6, rx: 6.4, ry: 1.9, fill: ring, stroke: "#4A3A48", "stroke-width": ".3" }));
+    /* THE BOWL: pink glass */
+    const bowl = "M" + (BX - BR) + " " + BY + " A" + BR + " " + BR + " 0 1 1 " + (BX + BR) + " " + BY + " A" + BR + " " + BR + " 0 1 1 " + (BX - BR) + " " + BY + " Z";
+    const gg = mk("radialGradient", { id: uid + "-koig", cx: ".4", cy: ".35", r: ".7" });
+    [["0%", "#FFE4F2", ".35"], ["60%", pink, ".22"], ["100%", "#C2307A", ".45"]].forEach(([o, c, op]) => gg.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
+    defs.appendChild(gg);
+    svg.appendChild(mk("path", { d: bowl, fill: "url(#" + uid + "-koig)" }));
+    /* the water, the fish and the bubbles, clipped to the bowl */
+    const kcp = uid + "-koic";
+    const cp = mk("clipPath", { id: kcp }); cp.appendChild(mk("path", { d: bowl })); defs.appendChild(cp);
+    const inside = mk("g", { "clip-path": "url(#" + kcp + ")" });
+    const wg = mk("linearGradient", { id: uid + "-koiw", x1: "0", y1: "0", x2: "0", y2: "1" });
+    [["0%", "#FF9ED0", ".55"], ["100%", "#9A4BFF", ".7"]].forEach(([o, c, op]) => wg.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
+    defs.appendChild(wg);
+    const water = mk("g", { class: "cx-fx cx-fx-koiwater" });
+    water.appendChild(mk("path", { d: "M6 14.6 Q10 13.4 14 14.6 T22 14.6 T30 14.6 T38 14.6 L38 30 L6 30 Z", fill: "url(#" + uid + "-koiw)" }));
+    water.appendChild(mk("path", { d: "M6 14.6 Q10 13.4 14 14.6 T22 14.6 T30 14.6 T38 14.6", fill: "none", stroke: pinkSoft, "stroke-width": ".45", opacity: ".9" }));
+    inside.appendChild(water);
+    /* pebbles on the bottom */
+    [[15.4, 25.4, 1.1, "#FFD37A"], [18.2, 26.2, 1.3, "#7CF0E0"], [21.6, 26, 1.2, "#FFFFFF"], [24.6, 25.3, 1, "#FF9ED0"]].forEach(([x, y, r, c]) =>
+      inside.appendChild(mk("ellipse", { cx: x, cy: y, rx: r, ry: r * .7, fill: c, opacity: ".85" })));
+    /* THE KOI, swimming laps round the middle of the bowl */
+    const swim = mk("g", { class: "cx-fx cx-fx-koiswim" });
+    swim.appendChild(pivot(20, 20.2, 3.8));
+    const fish = mk("g", { transform: "translate(23.8 20.2) rotate(180)" });
+    fish.appendChild(mk("path", { d: "M0 -3.6 Q1.9 -2 1.6 .6 Q1.2 2.4 0 3 Q-1.2 2.4 -1.6 .6 Q-1.9 -2 0 -3.6 Z", fill: "#FFF4EC", stroke: "#B8421E", "stroke-width": ".2" }));
+    fish.appendChild(mk("path", { d: "M0 -3.4 Q1.4 -2.2 1.2 -.6 Q.2 -.2 -.6 -1.6 Q-.6 -2.8 0 -3.4 Z M-1.3 .6 Q-.2 .2 .6 1.4 Q0 2.4 -1 1.8 Z", fill: "#FF6A2A" }));
+    fish.appendChild(mk("path", { d: "M0 2.7 Q2 4.2 1.6 5.8 Q.6 4.8 0 4.4 Q-.6 4.8 -1.6 5.8 Q-2 4.2 0 2.7 Z", fill: "#FF8A4A", opacity: ".9", class: "cx-fx-koitail" }));
+    fish.appendChild(mk("path", { d: "M1.5 -.4 L3 .6 L1.4 .9 Z M-1.5 -.4 L-3 .6 L-1.4 .9 Z", fill: "#FFB08A", opacity: ".85" }));
+    fish.appendChild(mk("circle", { cx: .8, cy: -2.3, r: .35, fill: "#1A0A08" }));
+    fish.appendChild(mk("circle", { cx: -.8, cy: -2.3, r: .35, fill: "#1A0A08" }));
+    swim.appendChild(fish);
+    inside.appendChild(swim);
+    /* bubbles, rising and fading */
+    const bub = mk("g", { class: "cx-fx cx-fx-koibubble" });
+    [[16.4, 22, .55], [17.4, 19.6, .4], [22.8, 23, .5], [23.6, 20.2, .35]].forEach(([x, y, r]) =>
+      bub.appendChild(mk("circle", { cx: x, cy: y, r, fill: "none", stroke: "#FFFFFF", "stroke-width": ".22", opacity: ".9" })));
+    inside.appendChild(bub);
+    svg.appendChild(inside);
+    /* the glass: its rim, its lip, and the light on it */
+    svg.appendChild(mk("path", { d: bowl, fill: "none", stroke: pinkSoft, "stroke-width": ".55", opacity: ".95" }));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 6.2, rx: 4.2, ry: .9, fill: "none", stroke: pinkSoft, "stroke-width": ".45", opacity: ".8" }));
+    svg.appendChild(mk("path", { d: "M12.2 12.4 Q13.6 8.2 17.8 6.9", fill: "none", stroke: "#FFFFFF", "stroke-width": "1", "stroke-linecap": "round", opacity: ".85" }));
+    svg.appendChild(mk("path", { d: "M11.6 15.4 Q11.5 14.4 11.8 13.6", fill: "none", stroke: "#FFFFFF", "stroke-width": ".7", "stroke-linecap": "round", opacity: ".6" }));
+    noEyes();
     close();
-    /* THE THROAT: green, with the cream belly plates down the middle */
-    svg.appendChild(mk("path", { d: "M15.6 22.4 Q15.8 26.6 14.6 29.6 L25.4 29.6 Q24.2 26.6 24.4 22.4 Z", fill: skin }));
-    for(let i = 0; i < 5; i++){
-      const y = 24 + i * 1.18, w = 2.6 + i * .28;
-      svg.appendChild(mk("path", { d: "M" + (20 - w) + " " + y.toFixed(2) + " Q20 " + (y + .7).toFixed(2) + " " + (20 + w) + " " + y.toFixed(2) + " L" + (20 + w - .15) + " " + (y + .95).toFixed(2) + " Q20 " + (y + 1.6).toFixed(2) + " " + (20 - w + .15) + " " + (y + .95).toFixed(2) + " Z", fill: cream, stroke: "#8A7E44", "stroke-width": ".15" }));
-    }
-    /* THE HEAD: a cobra's, from the front - broad at the temples, the
-       snout rounded, scaled all over and plated on the crown */
-    const head = "M20 9.2 Q26.8 9.4 27.8 14.8 Q28.2 18.4 25.8 21.6 Q23.6 24.6 20 25 Q16.4 24.6 14.2 21.6 Q11.8 18.4 12.2 14.8 Q13.2 9.4 20 9.2 Z";
-    svg.appendChild(mk("path", { d: head, fill: skin, stroke: "#08200A", "stroke-width": ".35" }));
-    const scp = uid + "-vphead";
-    const cph = mk("clipPath", { id: scp }); cph.appendChild(mk("path", { d: head })); defs.appendChild(cph);
-    const sc = mk("g", { "clip-path": "url(#" + scp + ")", opacity: ".45" });
-    for(let r = 0; r < 9; r++){
-      const y = 10 + r * 1.7, off = r % 2 ? .9 : 0;
-      for(let x = 11 + off; x < 29; x += 1.8) sc.appendChild(mk("path", { d: "M" + x.toFixed(2) + " " + y.toFixed(2) + " Q" + (x + .9).toFixed(2) + " " + (y + 1.2).toFixed(2) + " " + (x + 1.8).toFixed(2) + " " + y.toFixed(2), fill: "none", stroke: "#123A0C", "stroke-width": ".2" }));
-    }
-    svg.appendChild(sc);
-    /* the crown plates */
-    [["M17.2 10.4 Q20 9.8 22.8 10.4 L22.2 13 Q20 13.6 17.8 13 Z"], ["M14.2 12 L17.4 10.9 L17.7 13.2 L14.8 14.4 Z"], ["M25.8 12 L22.6 10.9 L22.3 13.2 L25.2 14.4 Z"], ["M18.2 13.5 Q20 14 21.8 13.5 L21.3 15.6 Q20 16 18.7 15.6 Z"]].forEach(([d]) =>
-      svg.appendChild(mk("path", { d, fill: "#7ACB4A", stroke: "#1E4A12", "stroke-width": ".25", opacity: ".9" })));
-    svg.appendChild(mk("path", { d: "M16.4 11.2 Q18 10.2 19.6 10.2", fill: "none", stroke: "#E4FFC4", "stroke-width": ".4", "stroke-linecap": "round", opacity: ".8" }));
-    /* the angry brows */
-    svg.appendChild(mk("path", { d: "M13.6 15 L18.4 16.4 M26.4 15 L21.6 16.4", stroke: "#0E2A08", "stroke-width": ".75", "stroke-linecap": "round" }));
-    /* SNAKE EYES: lit, with vertical slit pupils */
-    open("cx-eyes");
-    [[16.4, 17.6], [23.6, 17.6]].forEach(([x, y]) => {
-      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 1.9, ry: 1.25, fill: lime, opacity: ".5", class: "cx-fx-vpeye" }));
-      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 1.45, ry: 1, fill: "#F2FF7A", stroke: "#1E3A0A", "stroke-width": ".2" }));
-      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: .3, ry: .95, fill: "#0A0D06" }));
-      svg.appendChild(mk("circle", { cx: x - .5, cy: y - .4, r: .22, fill: "#FFFFFF" }));
-    });
-    close();
-    closedEyes([[16.4, 17.8, 1.5], [23.6, 17.8, 1.5]], "#0E2A08", .45);
-    /* the snout and its nostrils */
-    svg.appendChild(mk("path", { d: "M17.2 20.2 Q20 19.4 22.8 20.2 Q22.4 22.6 20 23.2 Q17.6 22.6 17.2 20.2 Z", fill: "#8FD65E", opacity: ".55" }));
-    svg.appendChild(mk("ellipse", { cx: 19.1, cy: 20.9, rx: .32, ry: .22, fill: "#0A1A06" }));
-    svg.appendChild(mk("ellipse", { cx: 20.9, cy: 20.9, rx: .32, ry: .22, fill: "#0A1A06" }));
-    /* the mouth, the fangs, and the tongue that flicks */
-    open("cx-mouth");
-    svg.appendChild(mk("path", { d: "M15.4 21.8 Q20 25.2 24.6 21.8", fill: "none", stroke: "#0A1A06", "stroke-width": ".4", "stroke-linecap": "round" }));
-    [18.3, 21.7].forEach(x => svg.appendChild(mk("path", { d: "M" + (x - .45) + " " + 23.1 + " L" + x + " 24.6 L" + (x + .45) + " 23.2 Z", fill: "#F6F8EC", stroke: "#5A6A44", "stroke-width": ".12" })));
-    close();
-    openHidden("cx-fx cx-fx-vptongue");
-    svg.appendChild(mk("path", { d: "M20 23.8 L20 26.8 M20 26.8 L19 28.1 M20 26.8 L21 28.1", fill: "none", stroke: "#E0304A", "stroke-width": ".55", "stroke-linecap": "round", "stroke-linejoin": "round" }));
-    close();
-    close();
-    sheen([head], "cx-fx-vpsheen", 12, 28, 9, 25, "#E8FFC8");
+    sheen([bowl], "cx-fx-koisheen", 9, 31, 5, 27, "#FFFFFF");
     return done();
   }
   /* ================= RONIN (build 263) =================
@@ -34524,82 +34546,81 @@ function drawAvatarCharSVG(charId){
     return done();
   }
 
-  /* SINGULARITY, SECOND PASS (build 266). "I think singularity needs to
-     be cooler as well, the other two look cooler.." The other two are
-     hooded figures with something inside the hood - a galaxy for the
-     Void, a crescent and two eyes for Umbra - and the Singularity was a
-     black ball with a ring on a pair of shoulders: a planet, not one of
-     the three. So it is the third hooded figure now, and the darkest:
-     the hood's opening is an EVENT HORIZON, rimmed in white-hot light
-     orange on one side and ice-blue on the other, with gas spiralling
-     down into the black inside it and two pinpoint eyes at the bottom
-     of the well. Behind the head a lensed ring of light - the photon
-     ring - turns slowly, and matter streams off the cloak into the
-     hood. Parts are cx-fx-sg2* (plus the old cx-fx-infall dash). */
+  /* SINGULARITY, THIRD PASS (build 267): A CAT MADE OF SPACE. "The
+     singularity, idek what that is.. fix that or try something else."
+     Two passes tried to draw a black hole - a ball with a ring, then a
+     hood with a whirlpool in it - and both needed explaining. So it is
+     something anybody can name at a glance: a cat, cut out of the night
+     sky. Ears, whiskers and a tail, a coat that is a starfield with a
+     nebula running through it, and eyes that give the name away - each
+     pupil a tiny black hole, a round black heart ringed in white-hot
+     light. A little ringed world hangs off its collar and turns. Parts
+     are cx-fx-cat*: unique names. */
   if(def.kind === "singularity"){
-    const cloak = headGrad("#22314E", "#0F1726", "#05080E");
-    const diskId = "disk-" + uid;
-    const dg = mk("linearGradient", { id: diskId, x1: "0", y1: "0", x2: "1", y2: "0" });
-    [["0%", "#FF8A3D"], ["30%", "#FFE2A8"], ["50%", "#FFFFFF"], ["70%", "#BDF2FF"], ["100%", "#3FC5F0"]].forEach(([o, c]) =>
-      dg.appendChild(mk("stop", { offset: o, "stop-color": c })));
-    defs.appendChild(dg);
-    /* THE PHOTON RING behind the head, turning */
-    open("cx-fx cx-fx-sg2halo");
-    svg.appendChild(pivot(20, 16.6, 13.4));
-    svg.appendChild(mk("circle", { cx: 20, cy: 16.6, r: 12.6, fill: "none", stroke: "url(#" + diskId + ")", "stroke-width": "2.6", opacity: ".22" }));
-    svg.appendChild(mk("circle", { cx: 20, cy: 16.6, r: 12.6, fill: "none", stroke: "url(#" + diskId + ")", "stroke-width": ".8", opacity: ".95", "stroke-dasharray": "22 3 12 2.4 18 4", "stroke-linecap": "round" }));
-    close();
+    const coatId = uid + "-catc";
+    const cg = mk("radialGradient", { id: coatId, gradientUnits: "userSpaceOnUse", cx: "15", cy: "12", r: "26" });
+    [["0%", "#3B2A78"], ["45%", "#1A1640"], ["100%", "#06060F"]].forEach(([o, c]) => cg.appendChild(mk("stop", { offset: o, "stop-color": c })));
+    defs.appendChild(cg);
+    const coat = "url(#" + coatId + ")";
+    const neb = mk("radialGradient", { id: uid + "-catn", cx: ".5", cy: ".5", r: ".5" });
+    [["0%", "#FF6FB5", ".55"], ["55%", "#8B5CF6", ".25"], ["100%", "#8B5CF6", "0"]].forEach(([o, c, op]) => neb.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
+    defs.appendChild(neb);
+    const stars = (cp, pts) => {
+      const g = mk("g", { "clip-path": "url(#" + cp + ")" });
+      pts.forEach(([x, y, r], i) => g.appendChild(mk("circle", { cx: x, cy: y, r, fill: i % 3 ? "#DDE6FF" : "#FFFFFF", opacity: i % 2 ? ".7" : "1" })));
+      return g;
+    };
     open("cx-body");
-    svg.appendChild(mk("path", { d: "M5 40 Q5.8 31 12 28.8 L28 28.8 Q34.2 31 35 40 Z", fill: cloak }));
-    [[10, 35.4], [14.6, 33], [27.2, 33.4], [30.4, 37.2], [22.4, 37.8], [17.2, 38.4], [8.2, 38.6], [32.6, 34]].forEach(([x, y], i) =>
-      svg.appendChild(mk("circle", { cx: x, cy: y, r: i % 2 ? .3 : .45, fill: "#DDF6FF", opacity: ".85" })));
+    const bodyD = "M5.4 40 Q6 31.4 12.4 29 Q14.6 26.4 20 26.2 Q25.4 26.4 27.6 29 Q34 31.4 34.6 40 Z";
+    svg.appendChild(mk("path", { d: bodyD, fill: coat, stroke: "#8B7BFF", "stroke-width": ".35", "stroke-opacity": ".6" }));
+    const bcp = uid + "-catb";
+    const cpb = mk("clipPath", { id: bcp }); cpb.appendChild(mk("path", { d: bodyD })); defs.appendChild(cpb);
+    svg.appendChild(mk("ellipse", { cx: 26, cy: 35, rx: 7, ry: 4, fill: "url(#" + uid + "-catn)", transform: "rotate(-20 26 35)" }));
+    open("cx-fx cx-fx-catstars");
+    svg.appendChild(stars(bcp, [[9.4, 35.6, .35], [12.8, 32.4, .45], [15.4, 37.6, .3], [24.8, 31.6, .4], [28.6, 36.8, .35], [31.4, 33.8, .3], [19.4, 34.2, .3]]));
     close();
-    open("cx-fx cx-fx-infall");
-    [["M7.6 38.8 Q9 31 16.4 28.2", "#FF9A4D"], ["M32.4 38 Q30.6 30.8 23.6 28.2", "#7FDBFF"], ["M13 39.6 Q14.6 33.4 18.6 29.4", "#FFE2A8"]].forEach(([d, c]) =>
-      svg.appendChild(mk("path", { d: d, fill: "none", stroke: c, "stroke-width": ".6", "stroke-linecap": "round",
-                                   "stroke-dasharray": ".2 1.3", opacity: ".85" })));
+    /* the tail, curling up round one side */
+    svg.appendChild(mk("path", { d: "M31.6 39.6 Q37.4 34 34.6 27.4 Q33.4 24.8 35.2 23.2 Q33 23.6 32.6 26.6 Q34.6 33 29.8 38.6 Z", fill: coat, stroke: "#8B7BFF", "stroke-width": ".3", "stroke-opacity": ".6" }));
+    /* the collar, and the little ringed world that turns on it */
+    svg.appendChild(mk("path", { d: "M13.4 27.6 Q20 30.4 26.6 27.6", fill: "none", stroke: "#FF6FB5", "stroke-width": "1.1", "stroke-linecap": "round" }));
+    open("cx-fx cx-fx-catcharm");
+    svg.appendChild(mk("circle", { cx: 20, cy: 31.2, r: 1.5, fill: "#FFD37A", stroke: "#8A5A10", "stroke-width": ".2" }));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 31.2, rx: 2.8, ry: .8, fill: "none", stroke: "#BDF2FF", "stroke-width": ".35", transform: "rotate(-18 20 31.2)" }));
+    close();
     close();
     open("cx-head");
-    /* the hood */
-    const hood = "M20 4.6 Q30.8 5.4 31.6 18 Q32 25.2 28.8 29.6 L11.2 29.6 Q8 25.2 8.4 18 Q9.2 5.4 20 4.6 Z";
-    svg.appendChild(mk("path", { d: hood, fill: cloak, stroke: "#02040A", "stroke-width": ".3" }));
-    svg.appendChild(mk("path", { d: "M11.2 29.6 Q8 25.2 8.4 18 Q9.2 5.4 20 4.6", fill: "none", stroke: "#FF9A4D", "stroke-width": ".35", opacity: ".45" }));
-    svg.appendChild(mk("path", { d: "M28.8 29.6 Q32 25.2 31.6 18 Q30.8 5.4 20 4.6", fill: "none", stroke: "#7FDBFF", "stroke-width": ".35", opacity: ".45" }));
-    /* THE EVENT HORIZON: the hood's opening, black */
-    const well = "M20 9.8 Q27 10.4 27.3 18.6 Q27.4 24.6 20 27.8 Q12.6 24.6 12.7 18.6 Q13 10.4 20 9.8 Z";
-    svg.appendChild(mk("path", { d: well, fill: "#000000" }));
-    /* gas spiralling down into it, turning */
-    const wcp = uid + "-sg2w";
-    const cpw = mk("clipPath", { id: wcp }); cpw.appendChild(mk("path", { d: well })); defs.appendChild(cpw);
-    const wg = mk("g", { "clip-path": "url(#" + wcp + ")" });
-    const swirl = mk("g", { class: "cx-fx cx-fx-sg2swirl" });
-    swirl.appendChild(pivot(20, 18.6, 9));
-    [0, 1, 2].forEach(k => {
-      const pts = [];
-      for(let i = 0; i <= 26; i++){
-        const t = i / 26, a = k * Math.PI * 2 / 3 + t * Math.PI * 2.1, r = 8.6 - t * 7.2;
-        pts.push((20 + Math.cos(a) * r).toFixed(2) + " " + (18.6 + Math.sin(a) * r * 1.08).toFixed(2));
-      }
-      swirl.appendChild(mk("path", { d: "M" + pts.join("L"), fill: "none", stroke: ["#FF9A4D", "#FFFFFF", "#7FDBFF"][k], "stroke-width": ".42", "stroke-linecap": "round", opacity: ".75" }));
-    });
-    wg.appendChild(swirl);
-    svg.appendChild(wg);
-    /* the rim of light round the opening */
-    open("cx-fx cx-fx-sg2rim");
-    svg.appendChild(mk("path", { d: well, fill: "none", stroke: "url(#" + diskId + ")", "stroke-width": "1.8", opacity: ".3" }));
-    svg.appendChild(mk("path", { d: well, fill: "none", stroke: "url(#" + diskId + ")", "stroke-width": ".6" }));
+    /* THE HEAD: a cat's, ears and all */
+    const head = "M11.4 21.4 Q10.4 16.6 11.6 13.2 L10.8 5.6 L16.2 10 Q20 8.8 23.8 10 L29.2 5.6 L28.4 13.2 Q29.6 16.6 28.6 21.4 Q26.6 26.8 20 27.2 Q13.4 26.8 11.4 21.4 Z";
+    svg.appendChild(mk("path", { d: head, fill: coat, stroke: "#8B7BFF", "stroke-width": ".4", "stroke-opacity": ".7", "stroke-linejoin": "round" }));
+    const hcp = uid + "-cath";
+    const cph = mk("clipPath", { id: hcp }); cph.appendChild(mk("path", { d: head })); defs.appendChild(cph);
+    const hn = mk("g", { "clip-path": "url(#" + hcp + ")" });
+    hn.appendChild(mk("ellipse", { cx: 15, cy: 11.6, rx: 7, ry: 4.4, fill: "url(#" + uid + "-catn)", transform: "rotate(-28 15 11.6)" }));
+    svg.appendChild(hn);
+    open("cx-fx cx-fx-catstars");
+    svg.appendChild(stars(hcp, [[13.4, 12.6, .35], [18, 11, .3], [25.4, 12.2, .4], [22.6, 14, .25], [14.4, 24, .3], [26.6, 22.4, .3], [20.4, 12.4, .45]]));
     close();
-    /* the black at the bottom of the well, ringed */
-    svg.appendChild(mk("circle", { cx: 20, cy: 18.6, r: 2.1, fill: "#000000" }));
-    svg.appendChild(mk("circle", { cx: 20, cy: 18.6, r: 2.1, fill: "none", stroke: "#FFFFFF", "stroke-width": ".3", opacity: ".8" }));
-    /* two pinpoint eyes in the dark */
+    /* inside the ears, glowing */
+    svg.appendChild(mk("path", { d: "M12 7.8 L15.4 10.6 L12.6 12.2 Z M28 7.8 L24.6 10.6 L27.4 12.2 Z", fill: "#FF6FB5", opacity: ".75" }));
+    /* THE EYES: each pupil a tiny black hole */
     open("cx-eyes");
-    [[16.9, 16.4], [23.1, 16.4]].forEach(([x, y]) => {
-      svg.appendChild(mk("circle", { cx: x, cy: y, r: 1.1, fill: "#BDF2FF", opacity: ".3", class: "cx-fx-sg2eye" }));
-      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: .75, ry: .42, fill: "#F2FCFF" }));
+    [[16.2, 17.8], [23.8, 17.8]].forEach(([x, y]) => {
+      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 2.6, ry: 2, fill: "#7FDBFF", opacity: ".35", class: "cx-fx-cateye" }));
+      svg.appendChild(mk("path", { d: "M" + (x - 2.2) + " " + y + " Q" + x + " " + (y - 2.2) + " " + (x + 2.2) + " " + y + " Q" + x + " " + (y + 2.2) + " " + (x - 2.2) + " " + y + " Z", fill: "#BDF2FF", stroke: "#1A1640", "stroke-width": ".25" }));
+      svg.appendChild(mk("circle", { cx: x, cy: y, r: 1.05, fill: "#FFD37A" }));
+      svg.appendChild(mk("circle", { cx: x, cy: y, r: .78, fill: "#000000" }));
+      svg.appendChild(mk("circle", { cx: x - .7, cy: y - .7, r: .3, fill: "#FFFFFF" }));
     });
     close();
-    closedEyes([[16.9, 16.6, .9], [23.1, 16.6, .9]], "#7FDBFF", .3);
+    closedEyes([[16.2, 18, 1.9], [23.8, 18, 1.9]], "#BDF2FF", .4);
+    /* nose, mouth, and whiskers of light */
+    svg.appendChild(mk("path", { d: "M19.1 21.2 L20.9 21.2 L20 22.3 Z", fill: "#FF6FB5" }));
+    open("cx-mouth");
+    svg.appendChild(mk("path", { d: "M20 22.3 Q19.2 23.6 18 23.2 M20 22.3 Q20.8 23.6 22 23.2", fill: "none", stroke: "#BDF2FF", "stroke-width": ".35", "stroke-linecap": "round" }));
+    close();
+    open("cx-fx cx-fx-catwhisk");
+    svg.appendChild(mk("path", { d: "M16.4 21.8 L10.6 21 M16.4 22.6 L10.8 23.2 M23.6 21.8 L29.4 21 M23.6 22.6 L29.2 23.2", fill: "none", stroke: "#DDE6FF", "stroke-width": ".3", "stroke-linecap": "round", opacity: ".8" }));
+    close();
     close();
     return done();
   }
@@ -35042,7 +35063,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               mysteryColorsFound: { red: false, orange: false, yellow: false, violet: false, white: false },
               testsUntilMystery: null, flareNextTestAt: 0,
               savedCodePrompts: 0, savedCodeSaved: false,
-              dailyCorrectStreak: 0, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false,
+              dailyCorrectStreak: 0, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bestTestStreak: 0,
               weeklyWins: 0, weeklyTop3: 0, retakenQuestions: 0, hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, unlocksShown: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
               vrMatches: 0, vrWins: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
               fullTestsSeeded: false, practiceExamPerfect: false, banner: "", starfallKept: false,
@@ -35254,6 +35275,7 @@ function applyLoadedData(got){
   store.practiceTestPassed = got.practiceTestPassed === true;
   store.bigTestPassed = got.bigTestPassed === true;
   store.bigTest450Passed = got.bigTest450Passed === true;
+  store.bestTestStreak = Math.max(0, Number(got.bestTestStreak) || 0);
   store.lastModified = typeof got.lastModified === "number" ? got.lastModified : 0;
   store.testHistory = Array.isArray(got.testHistory) ? got.testHistory.slice(0, 20) : [];
   store.avatarChar = typeof got.avatarChar === "string" ? got.avatarChar : null;
@@ -36601,6 +36623,7 @@ function wipeLocalProgressAndSettings(){
   store.practiceTestPassed = false;
   store.bigTestPassed = false;
   store.bigTest450Passed = false;
+  store.bestTestStreak = 0;
   store.weeklyWins = 0; store.weeklyTop3 = 0; store.retakenQuestions = 0; store.hundoDay = null; store.hundoDayBest = 0; store.shadesFound = false; store.shadesAt = null; store.legacyChars = []; store.rankMapSeen = -1; store.rankMapFx244 = false; store.rankMapProg = null;
   store.unlocksShown = { chars: [], banners: [] };
   store.unitRuns = {};
@@ -40748,6 +40771,7 @@ const BANNER_ART = {
       bnRad(u + "halo", [[0, "#3D74E8", 0.42], [0.5, "#1C3AA0", 0.15], [1, "#0A1A4A", 0]]) +
       bnRad(u + "bulge", [[0, "#FFFFFF"], [0.14, "#F2FAFF"], [0.32, "#D9F4FF", 0.92], [0.56, "#7FB4FF", 0.45], [0.8, "#3D74E8", 0.15], [1, "#3D74E8", 0]]) +
       bnRad(u + "core", [[0, "#FFFFFF"], [0.5, "#FFFFFF"], [0.75, "#E4F4FF", 0.85], [1, "#BFE0FF", 0]]) +
+      bnRad(u + "dark", [[0, "#000000", 1], [0.45, "#03060F", 0.95], [0.8, "#0B1C44", 0.5], [1, "#1A3A8A", 0]]) +
       bnRad(u + "flare", [[0, "#FFFFFF"], [0.15, "#E4F6FF", 0.9], [0.4, "#7FB4FF", 0.4], [0.7, "#3D74E8", 0.14], [1, "#3D74E8", 0]]) +
       bnRad(u + "wave", [[0, "#BFE0FF", 0], [0.72, "#BFE0FF", 0], [0.85, "#7FB4FF", 0.35], [0.94, "#F2FAFF", 0.85], [1, "#3D74E8", 0]]) +
       bnRad(u + "fg", [[0, "#EAF6FF", 0.9], [0.4, "#9CC0FF", 0.4], [1, "#3D74E8", 0]]) +
@@ -40780,7 +40804,16 @@ const BANNER_ART = {
       '<path d="' + spark(CX, CY, 38, 26) + '" fill="#F2FAFF" opacity=".95" class="bn-pulse" style="animation-duration:4.4s"/>' +
       '<circle cx="' + CX + '" cy="' + CY + '" r="12" fill="url(#' + u + 'core)"/>' +
       /* the pinprick of black at the heart, as on the emblem (build 266) */
-      '<circle cx="' + CX + '" cy="' + CY + '" r="4.6" fill="#02040C" stroke="#FFFFFF" stroke-width="1" stroke-opacity=".85"/>' +
+      /* the dark heart with its dust spinning in, as on the emblem (267) */
+      '<circle cx="' + CX + '" cy="' + CY + '" r="9" fill="url(#' + u + 'dark)"/>' +
+      '<g transform="translate(' + CX + ' ' + CY + ')"><g class="bn-spin" style="animation-duration:8s">' +
+        [[0.1, 11, 2.2], [1.4, 8.6, 1.8], [2.6, 12.6, 1.7], [3.7, 9.6, 2], [4.8, 13.2, 1.5], [5.7, 8, 1.6]].map(([a, r, sz]) => {
+          const P = (ang, rr) => bnF(Math.cos(ang) * rr) + ' ' + bnF(Math.sin(ang) * rr * 0.62);
+          const ro = r + sz * .45, ri = r - sz * .45, a0 = a - .46, a1 = a + .46;
+          return '<path d="M' + P(a0, r) + ' L' + P(a0 + .12, ro) + ' A' + ro + ' ' + bnF(ro * .62) + ' 0 0 1 ' + P(a1, ro) +
+            ' L' + P(a1, ri) + ' A' + ri + ' ' + bnF(ri * .62) + ' 0 0 0 ' + P(a0 + .12, ri) + ' Z" fill="#03060F" opacity=".9"/>';
+        }).join('') + '</g></g>' +
+      '<circle cx="' + CX + '" cy="' + CY + '" r="3.2" fill="#000000"/>' +
       '<circle class="bn-spike" style="' + ev + '" cx="' + CX + '" cy="' + CY + '" r="90" fill="url(#' + u + 'flare)" opacity="0"/>' +
       '<path class="bn-spike" style="' + ev + '" d="' + spark(CX, CY, 76, 46) + '" fill="#F2FAFF" opacity="0"/>' +
       '<path class="bn-glint" style="animation-delay:-.8s" d="' + spark(96, 128, 5, 3.4) + '" fill="#BFFBFF"/>' +
@@ -41998,13 +42031,36 @@ function buildRankEmblemSVG(rankKey){
     add(ellipse(C, C, 17, 11), { fill: uRadial(C, C, 17, [[0, "#FFFFFF", 1], [0.4, ICE, 0.85], [1, LIGHT, 0]]), transform: "rotate(-22 " + C + " " + C + ")" });
     inLayer("rk-pulse", C, C, 0, () => add(disc(C, C, 22), { fill: uRadial(C, C, 22, [[0, "#FFFFFF", 0.9], [0.4, ICE, 0.6], [1, base, 0]]) }));
     glowStar(C, C, 8, 28, "rk-twinkle");
-    /* A SMIDGE OF BLACK (build 266): "could sapphire also get a smidge of
-       black somehow? Maybe a black dot so you can see the black getting
-       cooler/bigger through ranks." The first dark at the heart of the
-       set - a pinprick in the galaxy's core, ringed in its light. It is
-       Amethyst's hole before it opens, and Supernova's blast after. */
-    add(disc(C, C, 4.6), { fill: uRadial(C, C, 4.6, [[0, "#000000", 1], [0.7, "#02040C", 1], [1, "#0A1A3A", 1]]) });
-    add(circle(4.6), { fill: "none", stroke: "#FFFFFF", "stroke-width": ".8", opacity: ".8" });
+    /* THE DARK HEART, TURNING (build 267). The 266 dot - a flat black
+       disc with a white ring round it - "doesn't look good, make it
+       better, maybe give it small black things where it spins". So the
+       black is not a sticker on the core any more: it is a small shadow
+       that fades out into the core's light, with specks of dark dust
+       caught in the spin round it - little crescents and grains, bigger
+       and nearer the middle, smaller further out, all turning faster than
+       the arms, the way things speed up as they fall in. It is the same
+       idea Amethyst's hole finishes and Supernova's black blast ends. */
+    add(disc(C, C, 7.5), { fill: uRadial(C, C, 7.5, [[0, "#000000", 1], [0.42, "#03060F", 0.95], [0.75, "#0B1C44", 0.55], [1, "#1A3A8A", 0]]) });
+    inLayer("rk-spin rk-fast", C, C, 18, () => {
+      let dust = "";
+      [[0.1, 11.4, 2.4], [1.35, 9.2, 2], [2.5, 13.6, 1.9], [3.55, 10.4, 2.2], [4.7, 14.4, 1.6], [5.6, 8.6, 1.8]].forEach(([a, r, sz]) => {
+        /* a crescent of dust along its orbit: two arcs, one path */
+        const a0 = a - 0.46, a1 = a + 0.46;
+        const p = (ang, rr) => (C + Math.cos(ang) * rr).toFixed(2) + " " + (C + Math.sin(ang) * rr).toFixed(2);
+        /* a curved streak: outer arc, inner arc back, pointed at the tail */
+        const ro = r + sz * .45, ri = r - sz * .45;
+        dust += "M" + p(a0, r) + "L" + p(a0 + .12, ro) + "A" + ro + " " + ro + " 0 0 1 " + p(a1, ro) +
+                "L" + p(a1, ri) + "A" + ri + " " + ri + " 0 0 0 " + p(a0 + .12, ri) + "Z";
+      });
+      add(dust, { fill: "#03060F", opacity: ".92" });
+      let grains = "";
+      [[0.8, 15.6, .9], [2, 6.4, .75], [3.1, 16.2, .75], [4.2, 7, .85], [5.2, 17, .65], [6.0, 12.4, .7]].forEach(([a, r, g]) => {
+        const x = C + Math.cos(a) * r, y = C + Math.sin(a) * r;
+        grains += "M" + (x - g).toFixed(2) + " " + y.toFixed(2) + "a" + g + " " + g + " 0 1 0 " + (2 * g) + " 0a" + g + " " + g + " 0 1 0 " + (-2 * g) + " 0Z";
+      });
+      add(grains, { fill: "#000000", opacity: ".85" });
+    });
+    add(disc(C, C, 3), { fill: "#000000" });
   } else if(rankKey === "elite"){
     /* AMETHYST (build 250): A QUASAR - the black hole at a galaxy's heart,
        feeding. A shadow that gives off nothing, ringed by a thin line of
@@ -42018,7 +42074,7 @@ function buildRankEmblemSVG(rankKey){
     const LIGHT = badgeShade(base, 0.45), ICE = badgeShade(base, 0.82), HOT = "#FFD9F7";
     const TILT = -14, tr = TILT * Math.PI / 180;
     const flat = "rotate(" + TILT + " " + C + " " + C + ") translate(" + C + " " + C + ") scale(1 .19) translate(" + (-C) + " " + (-C) + ")";
-    inLayer("rk-breathe", C, C, 0, () => add(disc(C, C, 60), { fill: uRadial(C, C, 60, [[0, ICE, 0.55], [0.35, LIGHT, 0.42], [1, base, 0]]) }));
+    inLayer("rk-breathe", C, C, 0, () => add(disc(C, C, 60), { fill: uRadial(C, C, 60, [[0, ICE, 0.4], [0.35, LIGHT, 0.26], [1, base, 0]]) }));
     topCrown(2);
     /* the jets, along the spin axis */
     const ax = [Math.sin(tr) * -1, -Math.cos(tr)];
@@ -42046,23 +42102,27 @@ function buildRankEmblemSVG(rankKey){
        jagged blast at the top. */
     const whirl = group({ transform: "rotate(" + TILT + " " + C + " " + C + ") translate(" + C + " " + C + ") scale(1 .86) translate(" + (-C) + " " + (-C) + ")" });
     const pv = into; into = whirl;
-    add(disc(C, C, 54), { fill: uRadial(C, C, 54, [[0, HOT, 0.62], [0.4, LIGHT, 0.34], [1, base, 0]]) });
+    /* held under Supernova's light at bubble size (the ladder climbs: check_b245_ladder) */
+    add(disc(C, C, 54), { fill: uRadial(C, C, 54, [[0, HOT, 0.4], [0.4, LIGHT, 0.2], [1, base, 0]]) });
     inLayer("rk-spin rk-quick", C, C, 56, () => {
       const armBody = uRadial(C, C, 54, [[0, "#FFFFFF", 0.95], [0.3, HOT, 0.85], [0.65, LIGHT, 0.55], [1, base, 0.12]]);
       const armFill = uRadial(C, C, 54, [[0, "#FFFFFF", 1], [0.4, HOT, 0.95], [0.75, ICE, 0.7], [1, LIGHT, 0.3]]);
       const third = Math.PI * 2 / 3;
-      [0, 1, 2].forEach(i => add(spiralArm(i * third + third / 2, 7, 0, 3.1, 45).ribbon, { fill: armBody, opacity: ".45" }));
-      let specks = "";
+      /* the faint arms as one path, and the lanes as one (build 267), so
+         Supernova stays the busiest drawing in the set */
+      add([0, 1, 2].map(i => spiralArm(i * third + third / 2, 7, 0, 3.1, 45).ribbon).join(""), { fill: armBody, opacity: ".45" });
+      let specks = "", lanes = "";
       [0, 1, 2].forEach(i => {
         const a0 = i * third, a = spiralArm(a0, 15, 0, 3.4, 46);
         add(a.ribbon, { fill: armBody });
         add(spiralArm(a0, 6, 0.8, 3.4, 46).ribbon, { fill: armFill });
-        add(a.lane, { fill: "none", stroke: shade, "stroke-width": "1.5", "stroke-linecap": "round", opacity: String(dk(0.42)) });
+        lanes += a.lane;
         [[0.34, 1.3], [0.52, 1.6], [0.7, 1.1], [0.86, 1.3]].forEach(([t, r]) => {
           const th = a0 + t * 3.4, rr = 7 + 46 * t + 1.4, cx = C + Math.cos(th) * rr, cy = C + Math.sin(th) * rr;
           specks += "M" + (cx - r).toFixed(2) + " " + cy.toFixed(2) + "a" + r + " " + r + " 0 1 0 " + (2 * r) + " 0a" + r + " " + r + " 0 1 0 " + (-2 * r) + " 0Z";
         });
       });
+      add(lanes, { fill: "none", stroke: shade, "stroke-width": "1.5", "stroke-linecap": "round", opacity: String(dk(0.42)) });
       add(specks, { fill: "#FFFFFF", opacity: ".9" });
     });
     into = pv;
@@ -42140,6 +42200,25 @@ function buildRankEmblemSVG(rankKey){
     inLayer("rk-turn rk-back rk-quick", C, C, 30, () => {
       add(burst(C, C, 8, 27, 0.38, UP + Math.PI / 8), { fill: "#000000", stroke: badgeShade(base, 0.2), "stroke-width": "1.1", "stroke-linejoin": "round" });
       add(burst(C, C, 8, 20, 0.42, UP), { fill: uRadial(C, C, 20, [[0, "#1A0304", 1], [1, "#000000", 1]]) });
+    });
+    /* THE DARK THROWN OUT (build 267): the ladder's black ends here -
+       Sapphire's dust falling in, Amethyst's hole, and now shards of the
+       dark flung out of the blast with embers riding them, turning the
+       other way from the jagged star. */
+    inLayer("rk-spin rk-fast", C, C, 44, () => {
+      let shards = "", embers = "", dust = "";
+      for(let i = 0; i < 9; i++){
+        const a = i * Math.PI * 2 / 9 + 0.2, r0 = 31 + (i % 3) * 3.4, len = 4 + (i % 2) * 2, w = 1.1 + (i % 3) * .35;
+        const p = (ang, rr) => (C + Math.cos(ang) * rr).toFixed(2) + " " + (C + Math.sin(ang) * rr).toFixed(2);
+        shards += "M" + p(a - w / r0, r0) + "L" + p(a, r0 + len) + "L" + p(a + w / r0, r0) + "Z";
+        const ea = a + 0.35, er = r0 + len * .6;
+        embers += "M" + (C + Math.cos(ea) * er - .8).toFixed(2) + " " + (C + Math.sin(ea) * er).toFixed(2) + "a.8 .8 0 1 0 1.6 0a.8 .8 0 1 0 -1.6 0Z";
+        const da = a - 0.4, dr = 24 + (i % 2) * 2;
+        dust += "M" + p(da - .18, dr) + "A" + dr + " " + dr + " 0 0 1 " + p(da + .18, dr) + "A" + (dr + 1.2) + " " + (dr + 1.2) + " 0 0 0 " + p(da - .18, dr) + "Z";
+      }
+      add(dust, { fill: "#000000", opacity: ".7" });
+      add(shards, { fill: "#050001", stroke: badgeShade(base, -0.2), "stroke-width": ".4", "stroke-linejoin": "round" });
+      add(embers, { fill: "#FFD6CC", opacity: ".9" });
     });
     /* the white-hot core, and its flare across the dark */
     inLayer("rk-pulse rk-fast", C, C, 0, () => {
@@ -46531,6 +46610,9 @@ function buildCosmicHero(useTierIcons, forceAccent){
      in the app. */
   const dotsGroup = document.createElementNS(svgNS, "g");
   dotsGroup.setAttribute("class", "cosmic-orbit-dots-group");
+  const innerOrbitLayer = mkLayer("cosmic-hero-orbitlayer cosmic-hero-orbitlayer-inner");
+  const innerDots = document.createElementNS(svgNS, "g");
+  innerDots.setAttribute("class", "cosmic-orbit-dots-group");
   [[180, 150 - 152], [180 + 152, 150], [180 - 108, 150 + 20], [180 + 104, 150 - 111], [180 - 139, 150 + 62]]
     .slice(0, mysteryOrder.length).forEach(([cx, cy], i) => {
     const dot = document.createElementNS(svgNS, "circle");
@@ -46564,11 +46646,18 @@ function buildCosmicHero(useTierIcons, forceAccent){
         if(e.key === "Enter" || e.key === " "){ e.preventDefault(); sayDot(); }
       });
     }
-    dotsGroup.appendChild(dot);
+    /* THE MIDDLE RING TURNS A LITTLE FASTER (build 267): "can the ones
+       in the middle circle move just slightly faster?" A dot on the
+       inner ring goes on its own layer with its own, quicker spin -
+       a whole svg, like the outer one, so it stays a compositor
+       transform. Nearer the planet, faster round it: what an orbit
+       does anyway. */
+    (Math.hypot(cx - 180, cy - 150) < 130 ? innerDots : dotsGroup).appendChild(dot);
   });
   orbitLayer.appendChild(dotsGroup);
+  innerOrbitLayer.appendChild(innerDots);
   svg.classList.add("cosmic-hero-main");
-  wrap.append(glowBox, svg, animLayer, orbitLayer);
+  wrap.append(glowBox, svg, animLayer, orbitLayer, innerOrbitLayer);
   /* The sphere's life, on the compositor: two soft light pools drifting
      over the surface inside a circular window the exact size of the
      sphere. Transform and opacity only, so it costs nothing per frame
@@ -54493,86 +54582,10 @@ function showSetup(){
   document.body.appendChild(optionsModal);
   function closeOptionsModal(){ optionsModal.hidden = true; }
 
-  /* Swipe-down-to-dismiss, per explicit request \u2014 the drag handle bar
-     already existed here visually (the little pill at the top of the
-     sheet), which was itself a signal this gesture was always meant
-     to work, but no actual touch handling was ever wired up to it, so
-     attempting to swipe down did nothing at all. Attached to the
-     handle and header specifically, not the whole sheet \u2014 the body
-     below is a scrollable options list, and swipe-to-dismiss firing
-     from inside a scroll area is exactly what would make normal
-     scrolling feel broken. This is the standard mobile bottom-sheet
-     pattern (iOS and Android both work this same way): grab the
-     handle/header, drag down, and either commit past a threshold or
-     snap back. */
-  let dragStartY = null;
-  let dragCurrentY = 0;
-  function onSheetDragStart(e){
-    dragStartY = e.touches[0].clientY;
-    dragCurrentY = 0;
-    optionsModalSheet.style.transition = "none";
-  }
-  function onSheetDragMove(e){
-    if(dragStartY === null) return;
-    /* Has to run before the delta check below, not after — the real
-       reason this never actually worked on a touchscreen. A finger
-       practically never moves in a perfectly straight line, so the
-       very first touchmove of a "downward" drag frequently reports a
-       delta of 0 or a hair negative before it settles into a
-       consistent direction. That first event used to return early
-       without calling preventDefault(), which is exactly the one
-       event that decides the gesture: once a touch sequence is
-       allowed to scroll uncontested, mobile Safari (and most mobile
-       browsers) treat the scroll as already committed for the rest of
-       that same sequence, so every later preventDefault() call here —
-       even once delta turned positive — had no effect any more.
-       Calling it unconditionally on every move of this drag, before
-       we even know its direction, keeps the browser from ever making
-       that call for us. */
-    e.preventDefault();
-    const delta = e.touches[0].clientY - dragStartY;
-    if(delta <= 0) return; // only follows downward drags, not upward ones
-    dragCurrentY = delta;
-    optionsModalSheet.style.transform = "translateY(" + delta + "px)";
-  }
-  function onSheetDragEnd(){
-    if(dragStartY === null) return;
-    dragStartY = null;
-    optionsModalSheet.style.transition = "transform .25s ease";
-    if(dragCurrentY > 90){
-      optionsModalSheet.style.transform = "translateY(100%)";
-      setTimeout(() => {
-        closeOptionsModal();
-        optionsModalSheet.style.transition = "";
-        optionsModalSheet.style.transform = "";
-        /* Per explicit report: "swiping down doesn't work to view all
-           questions/answers." With Review on, the sheet holds nothing but
-           the Review toggle itself -- swiping it away and landing back on
-           a bare unit-selection screen, with nothing having actually
-           happened, reads as the gesture having failed outright, not as
-           "dismissed." Swiping past the threshold while Review is on is
-           the same "go" action as tapping the sheet's own (also
-           relabelled, see refresh()) Review All button, just reached by
-           the same swipe that already closes the sheet for every other
-           mode -- not a second, separate gesture to learn. Only reachable
-           with cfg.units already non-empty: the sheet itself can't be
-           opened otherwise (startBtn.disabled), and nothing while it's
-           open can change unit selection out from under it: Start now
-           lands and explains itself rather than being `disabled`, but
-           it still refuses to open the sheet. */
-        if(reviewAllMode){
-          showAnswerReview(cfg.units.slice(), cfg.source, cfg.versions);
-        }
-      }, 200);
-    } else {
-      optionsModalSheet.style.transform = "translateY(0)";
-    }
-  }
-  [optionsModalHandle, optionsModalHead].forEach(el => {
-    el.addEventListener("touchstart", onSheetDragStart, { passive: true });
-    el.addEventListener("touchmove", onSheetDragMove, { passive: false });
-    el.addEventListener("touchend", onSheetDragEnd);
-    el.addEventListener("touchcancel", onSheetDragEnd);
+  /* The whole sheet, not only the handle (build 267): attachSheetSwipe. */
+  attachSheetSwipe(optionsModalSheet, () => {
+    closeOptionsModal();
+    if(reviewAllMode) showAnswerReview(cfg.units.slice(), cfg.source, cfg.versions);
   });
   function openOptionsModal(){ optionsModal.hidden = false; }
   optionsModalScrim.addEventListener("click", closeOptionsModal);
@@ -56241,7 +56254,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-30-266";
+const APP_BUILD = "2026-09-30-267";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -59627,6 +59640,12 @@ function summarize(){
         badgesPaid: badgesEarnedThisRun.filter(u => retroBadges.indexOf(u) < 0)
       };
       runXp = computeRunXp(xpArgs);
+      /* the Marksman's measure: the longest first-try run in THIS test */
+      {
+        let run = 0, best = 0;
+        xpArgs.okList.forEach(ok => { run = ok ? run + 1 : 0; if(run > best) best = run; });
+        if(best > (store.bestTestStreak || 0)) store.bestTestStreak = best;
+      }
       /* A ROOM IS SCORED ON THE RACE, NOT ON YOUR HISTORY: no personal
          bests and no badge - "personal best shouldn't be something that
          counts as your multiplayer score, that would only be on your xp
@@ -61818,11 +61837,27 @@ function showVirtualRoomChoice(){
   panel.appendChild(games);
 
   const ICONS = {
-    host: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
-      + '<rect x="3.5" y="4.5" width="17" height="15" rx="3.2"/><path d="M12 8.6v6.8M8.6 12h6.8"/></svg>',
-    browse: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
-      + '<circle cx="9" cy="8.6" r="3"/><path d="M3.6 18.6c.6-3 2.8-4.6 5.4-4.6s4.8 1.6 5.4 4.6"/>'
-      + '<circle cx="16.6" cy="9.4" r="2.4"/><path d="M15.6 14.2c2.3-.3 4.3 1 4.8 3.9"/></svg>',
+    /* COLOUR IN THE ICONS (build 267): "The join an open room and host a
+       room icons could be better they are boring and are missing color."
+       Host is a door of your own with light spilling out of it and a
+       padlock on it - private until you open it; Join is three
+       classmates in three colours - public. Each sits on a tile in its
+       chip's colour, violet and green, so icon, chip and card agree. */
+    host: '<svg viewBox="0 0 24 24" aria-hidden="true">'
+      + '<defs><linearGradient id="vrcDoor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE7A8"/><stop offset="1" stop-color="#FFB547"/></linearGradient></defs>'
+      + '<path d="M5.4 21.2V8.6a6.6 6.6 0 0 1 13.2 0v12.6" fill="rgba(255,255,255,.14)" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/>'
+      + '<path d="M8 21.2V9.3a4 4 0 0 1 4-4v15.9z" fill="url(#vrcDoor)"/>'
+      + '<path d="M12 5.3l4.2 1.6v14.3H12z" fill="#2A1660" stroke="#fff" stroke-width="1.1" stroke-linejoin="round"/>'
+      + '<circle cx="14.6" cy="13.6" r=".8" fill="#FFD37A"/>'
+      + '<path d="M3.4 21.2h17.2" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>'
+      + '<rect x="15.6" y="15.6" width="6.6" height="5.4" rx="1.3" fill="#1A0F33" stroke="#E6D9FF" stroke-width="1"/>'
+      + '<path d="M17.3 15.6v-1.3a1.6 1.6 0 0 1 3.2 0v1.3" fill="none" stroke="#E6D9FF" stroke-width="1"/>'
+      + '<circle cx="18.9" cy="18.2" r=".7" fill="#E6D9FF"/></svg>',
+    browse: '<svg viewBox="0 0 24 24" aria-hidden="true">'
+      + '<circle cx="6.6" cy="9.6" r="2.5" fill="#6FD3FF"/><path d="M2.4 18.6c.4-3 2.1-4.6 4.2-4.6s3.8 1.6 4.2 4.6z" fill="#6FD3FF"/>'
+      + '<circle cx="17.4" cy="9.6" r="2.5" fill="#FFD37A"/><path d="M13.2 18.6c.4-3 2.1-4.6 4.2-4.6s3.8 1.6 4.2 4.6z" fill="#FFD37A"/>'
+      + '<circle cx="12" cy="8.2" r="3" fill="#fff" stroke="#0C6E5C" stroke-width=".8"/><path d="M6.8 19.8c.5-3.6 2.6-5.6 5.2-5.6s4.7 2 5.2 5.6z" fill="#fff" stroke="#0C6E5C" stroke-width=".8"/>'
+      + '<circle cx="19.6" cy="4.6" r="2.4" fill="#0C6E5C" stroke="#BFF3D2" stroke-width=".9"/><path d="M18.5 4.6l.8.8 1.4-1.6" fill="none" stroke="#BFF3D2" stroke-width=".9" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     chev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 6l6 6-6 6"/></svg>',
     bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 1.5H5z"/><path d="M10.2 20.2a2 2 0 0 0 3.6 0"/></svg>'
   };
@@ -62336,45 +62371,7 @@ function showVirtualRoomSetup(editRoom){
   optionsModalScrim.addEventListener("click", closeOptionsModal);
   optionsModalDone.addEventListener("click", closeOptionsModal);
 
-  /* Swipe-down-to-dismiss, matching showSetup()'s own sheet exactly
-     \u2014 same handle/header-only drag target so it doesn't fight with
-     scrolling inside the body, same threshold, same snap-back. */
-  let dragStartY = null;
-  let dragCurrentY = 0;
-  function onSheetDragStart(e){
-    dragStartY = e.touches[0].clientY;
-    dragCurrentY = 0;
-    optionsModalSheet.style.transition = "none";
-  }
-  function onSheetDragMove(e){
-    if(dragStartY === null) return;
-    e.preventDefault();
-    const delta = e.touches[0].clientY - dragStartY;
-    if(delta <= 0) return;
-    dragCurrentY = delta;
-    optionsModalSheet.style.transform = "translateY(" + delta + "px)";
-  }
-  function onSheetDragEnd(){
-    if(dragStartY === null) return;
-    dragStartY = null;
-    optionsModalSheet.style.transition = "transform .25s ease";
-    if(dragCurrentY > 90){
-      optionsModalSheet.style.transform = "translateY(100%)";
-      setTimeout(() => {
-        closeOptionsModal();
-        optionsModalSheet.style.transition = "";
-        optionsModalSheet.style.transform = "";
-      }, 200);
-    } else {
-      optionsModalSheet.style.transform = "translateY(0)";
-    }
-  }
-  [optionsModalHandle, optionsModalHead].forEach(el => {
-    el.addEventListener("touchstart", onSheetDragStart, { passive: true });
-    el.addEventListener("touchmove", onSheetDragMove, { passive: false });
-    el.addEventListener("touchend", onSheetDragEnd);
-    el.addEventListener("touchcancel", onSheetDragEnd);
-  });
+  attachSheetSwipe(optionsModalSheet, closeOptionsModal);
 
   function refresh(){
     const n = [...picked].reduce((sum, name) =>
@@ -69086,6 +69083,55 @@ function attachHoldDetail(el, detail){
   return open;
 }
 
+/* SWIPE A BOTTOM SHEET DOWN FROM ANYWHERE ON IT (build 267). "The swipe
+   down function from the test start menu is broken. It's not letting me
+   swipe down on it to close it." It only listened on the handle and the
+   title row - a 4px pill and one line of text - and the summary that now
+   opens the sheet is where a thumb actually lands, so a swipe there did
+   nothing at all. Now any drag on the sheet that starts while its list is
+   scrolled to the top and goes DOWN pulls the sheet with it; one that
+   goes up scrolls the list (by hand, because the first move of a touch
+   has to be claimed with preventDefault or iOS commits it to a scroll
+   and nothing later can take it back - see the note in the old handler).
+   A slider, a text field or a select keeps its own touches. */
+function attachSheetSwipe(sheet, onDismiss){
+  let y0 = null, s0 = 0, mode = null, dy = 0;
+  const skip = t => !!(t && t.closest && t.closest('input, textarea, select, [role="slider"]'));
+  sheet.addEventListener("touchstart", e => {
+    if(e.touches.length !== 1 || skip(e.target)){ y0 = null; return; }
+    y0 = e.touches[0].clientY; s0 = sheet.scrollTop; mode = null; dy = 0;
+  }, { passive: true });
+  sheet.addEventListener("touchmove", e => {
+    if(y0 === null) return;
+    const d = e.touches[0].clientY - y0;
+    if(mode === null){
+      /* Scrolled into the list: an ordinary scroll, left to the browser. */
+      if(s0 > 0){ mode = "scroll"; return; }
+      mode = "drag";
+      sheet.style.transition = "none";
+    }
+    if(mode !== "drag") return;
+    e.preventDefault();
+    if(d > 0){ dy = d; sheet.scrollTop = 0; sheet.style.transform = "translateY(" + d + "px)"; }
+    else { dy = 0; sheet.style.transform = ""; sheet.scrollTop = Math.max(0, -d); }
+  }, { passive: false });
+  const end = () => {
+    if(y0 === null) return;
+    y0 = null;
+    if(mode !== "drag"){ mode = null; return; }
+    mode = null;
+    sheet.style.transition = "transform .25s ease";
+    if(dy > 90){
+      sheet.style.transform = "translateY(100%)";
+      setTimeout(() => { sheet.style.transition = ""; sheet.style.transform = ""; onDismiss(); }, 200);
+    } else {
+      sheet.style.transform = "translateY(0)";
+    }
+  };
+  sheet.addEventListener("touchend", end);
+  sheet.addEventListener("touchcancel", end);
+}
+
 function showCustomize(){
   setActiveNav(null);
   countEl.textContent = "Customize";
@@ -70868,26 +70914,12 @@ function showProfile(defaultTab){
        was so good before". This is that plate again: name, then one bar
        in the next rank's colour with "Gold · 35%" beside it. */
     txt.append(kick, word);
-    const meter = document.createElement("span");
-    meter.className = "profile-rankplate-meter";
-    const bar = document.createElement("span");
-    bar.className = "profile-rankplate-bar";
-    const fill = document.createElement("span");
-    fill.className = "profile-rankplate-fill";
-    bar.appendChild(fill);
-    const lab = document.createElement("span");
-    lab.className = "profile-rankplate-next";
-    if(step.next){
-      lab.textContent = RANK_DISPLAY_NAME[step.next] + " \u00b7 " + rankStepPctLabel(step.pct);
-      /* Set a frame after mounting so it fills in front of you. */
-      requestAnimationFrame(() => requestAnimationFrame(() => { fill.style.width = Math.round(step.pct * 1000) / 10 + "%"; }));
-    } else {
-      rankLine.classList.add("is-top");
-      lab.textContent = "The top of the ladder";
-      requestAnimationFrame(() => requestAnimationFrame(() => { fill.style.width = "100%"; }));
-    }
-    meter.append(bar, lab);
-    txt.appendChild(meter);
+    /* NO BAR ON THE PLATE (build 267): "the current rank in the profile
+       box has a progress bar, let's remove that, no need for that." The
+       plate says which rank you hold and opens the Rank tab, where the
+       climb to the next one is shown in full; the name alone now sits
+       centred beside its coin. */
+    if(!step.next) rankLine.classList.add("is-top");
     const chev = document.createElement("span");
     chev.className = "profile-rankplate-chev"; chev.setAttribute("aria-hidden", "true");
     chev.textContent = "\u203a";
@@ -71024,7 +71056,10 @@ function showProfile(defaultTab){
   const levelRow = document.createElement("div");
   levelRow.className = "profile-level-row";
   const levelNum = document.createElement("div");
-  levelNum.className = "profile-level-num profile-statplate";
+  /* is-bare (build 267): "the level you are in the profile box being
+     boxed in like that is ugly too, don't box it in." The number and its
+     word stand on the card on their own, lit, with no plate round them. */
+  levelNum.className = "profile-level-num profile-statplate is-bare";
   const levelNumValue = document.createElement("span");
   levelNumValue.className = "profile-level-value shine-blue";
   levelNumValue.textContent = String(prog.level);

@@ -8074,3 +8074,49 @@ are untouched.
   expects the new measure and asserts a met level does not prop the bar
   up; `check-vroom` and the Penal version gate now pick a game;
   `check-profilecard` measures the glow on the wrapper.
+
+### Build 267
+
+- **The start sheet swipes down from anywhere on it** (`attachSheetSwipe`,
+  used by both the unit screen's sheet and the Virtual Room's). It only
+  listened on the 4px handle and the title row, and the summary that now
+  opens the sheet is where a thumb lands. A drag that starts with the
+  list at the top and goes down pulls the sheet; going up scrolls the
+  list by hand (the first move has to be claimed, see the note there).
+  Sliders, fields and selects keep their own touches.
+- **A toast over an open start sheet goes on top of it and to the top of
+  the screen** (`body:has(.unitoptions-modal:not([hidden])) .toast`) -
+  the locked-difficulty message in Game mode was painting under the
+  sheet.
+- **The Home planet's middle-ring dot orbits faster** (88s vs 120s) on
+  its own svg layer, `.cosmic-hero-orbitlayer-inner`, so it stays a
+  compositor transform.
+- **Virtual Room cards have colour icons**: a door with light and a
+  padlock on violet (Private), three coloured classmates on green
+  (Public).
+- **Sapphire's heart is a dark shadow with dust streaks spinning into
+  it** (`rk-spin rk-fast`, 8s) instead of a flat black dot; its banner
+  follows. Supernova throws dark shards and embers of its own, so the
+  black runs Sapphire (dust in) -> Amethyst (hole) -> Supernova (thrown
+  out). Amethyst's glow came down a touch and two of its path groups were
+  merged, so the ladder still brightens and gets busier at every step
+  (`check_b245_ladder`, `check_ranks`).
+- **The Marksman is ONE test's streak** (`store.bestTestStreak`, the
+  longest first-try run in a finished test, recorded in `summarize()`).
+  New field, defaulted 0, so the live lock takes it back from anybody
+  who had it through the lifetime streak; `revokeRaisedCharacters()`
+  takes it off anyone wearing it.
+- **Every XP bar is the unlock card's bar**: 10px (12 on a tablet)
+  sunk track, `#3D8BFF -> #8FC1FF` with its glow, `.9s
+  cubic-bezier(.2,.8,.2,1)`, no sheen. The numbers are the same as
+  `.unlock-card-bar/.unlock-card-fill`; change them together.
+- **Profile card**: the rank plate has no bar (name and coin only); the
+  level number stands unboxed (`.is-bare`).
+- **Characters**: the Valkyrie's id is now the **Koi** - a pink glass
+  fishbowl for a head with a koi swimming laps inside (the Viper lasted
+  one build). The **Singularity is a cat made of space** with
+  black-hole pupils and a ringed world on its collar (the hood-and-
+  whirlpool was not readable). Parts `koi*`, `cat*`.
+- Gates: `check_b267`; the Profile plate gates (b237, b241, b242, b258)
+  now assert NO bar; b243/b266 expect the Koi; the Marksman gates set
+  `bestTestStreak`.
