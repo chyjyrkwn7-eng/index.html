@@ -7467,7 +7467,9 @@ because "succeeded ... with fuzz" is the only warning there is.
   `label` from `BANNERS`), earned or not.
 - **Last week's top 3 for the week of 21 September is recorded by hand
   in `WEEK_RESULTS_KNOWN`**: Sauce, OdinSavior, Napoleon (second and
-  third named by Madison), "Winner" on the first and no totals. That week's numbers are unrecoverable - most of the class
+  third named by Madison) with the totals that week's board SHOWED -
+  67,470 / 58,880 / 31,500, all-time XP counted into that week by the
+  rebuild, the order confirming Madison's memory, Cap fourth on 30,535. That week's numbers are unrecoverable - most of the class
   updated onto the XP rebuild during it, which re-awarded everybody's
   whole history through `awardXp()`, so those rows carry their all-time
   XP as that week's (`weekPoints === xp`), and anyone who studied since
@@ -7483,3 +7485,16 @@ because "succeeded ... with fuzz" is the only warning there is.
   (check-behaviour 39 caught it at 2.2s against a 2.6s close, on the
   reference devices, twice). **A JS step that follows a CSS animation
   waits for the animation**, with the clock kept only as a fallback.
+
+### Build 247
+
+- **The Rank screen's rings say what they are for**: "To reach Bronze"
+  over them, in the next rank's colour, and a met requirement reads
+  "✓ Met" rather than "Done" - "it says my level is done and the needed
+  badges but it's unclear that's for the next rank". At the top rank
+  the head reads "Your totals".
+- **Opening Advanced settings scrolls it into view.** It is the last
+  thing on Settings and opened downward behind the tab bar. After the
+  560ms expand it scrolls just far enough for its bottom to clear the
+  bar, and never so far that the toggle leaves the top of the screen.
+- check-behaviour 44 covers both.

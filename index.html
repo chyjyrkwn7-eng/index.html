@@ -11321,6 +11321,10 @@
   .rankhero-nextname{ color:color-mix(in srgb, var(--next-color, #fff) 65%, #fff); }
   /* The two requirements, as two rings. */
   .rankhero-gauges{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:.6rem; }
+  /* "To reach Bronze" over the two rings (build 247) - see the builder. */
+  .rankhero-gaugehead{ margin:0 0 -.1rem; text-align:center; font-size:.72rem; font-weight:800;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--soft); }
+  .rankhero-gaugehead b{ color:var(--next-color, var(--rank-color)); font-weight:800; }
   .rankhero-gauge{
     display:flex; align-items:center; gap:.7rem; min-width:0;
     padding:.6rem .7rem; border-radius:1rem;
@@ -38565,14 +38569,27 @@ function rememberWeekTop(list){
    October it no longer matches lastWeekKey() and the board reads the
    published prevWeek fields, which build 245 onward keeps properly. */
 /* Sauce, then OdinSavior, then Napoleon - the second and third given by
-   Madison, who saw the board that week. */
-const WEEK_RESULTS_KNOWN = { "2026-09-21": ["ew7hyxpg5j2y", "kdxnp7smgcre", "mbw5qdhcw2pf"] };
+   Madison, who saw the board that week. WITH THE TOTALS THE BOARD SHOWED
+   (build 247: "it needs to show their xp amounts as well"): the rebuild
+   put each person's whole history into that week, so that week's board
+   read all-time XP - Odin 58,880 and Napoleon 31,500 are still on their
+   rows as weekPoints === xp, and Sauce's is his 67,800 less the 330 he
+   has earned this week. Ordered that way the three land exactly where
+   Madison remembers them, Cap fourth on 30,535, which is the check that
+   these are the numbers the class saw. */
+const WEEK_RESULTS_KNOWN = { "2026-09-21": [
+  { pub: "ew7hyxpg5j2y", pts: 67470 },
+  { pub: "kdxnp7smgcre", pts: 58880 },
+  { pub: "mbw5qdhcw2pf", pts: 31500 }
+] };
 function lastWeekTop3(list){
   const known = WEEK_RESULTS_KNOWN[lastWeekKey()];
   if(known){
-    return known.map(pub => {
+    return known.map(k => {
+      const pub = typeof k === "string" ? k : k.pub;
+      const pts = typeof k === "string" ? null : (typeof k.pts === "number" ? k.pts : null);
       const e = (list || []).find(x => x && x.pub === pub);
-      return e ? { pub: pub, name: e.firstName || "?", avatar: e.avatarChar || "ninja", pts: null } : null;
+      return e ? { pub: pub, name: e.firstName || "?", avatar: e.avatarChar || "ninja", pts: pts } : null;
     }).filter(Boolean);
   }
   const byKey = new Map();
@@ -55442,7 +55459,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-30-246";
+const APP_BUILD = "2026-09-30-247";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -60274,6 +60291,21 @@ function showAppearance(opts){
       if(advOverflowTimer){ clearTimeout(advOverflowTimer); advOverflowTimer = null; }
       if(willOpen){
         advOverflowTimer = setTimeout(() => { advBodyInner.style.overflow = "visible"; }, 540);
+        /* OPENING IT BRINGS IT INTO VIEW (build 247): "The advanced
+           settings button, when you open it, it hides under the bottom
+           tab". It is the last thing on Settings, so it opens downward
+           behind the tab bar. Once it has opened, scroll just far enough
+           that its bottom clears the bar - never so far that the toggle
+           itself goes off the top. */
+        setTimeout(() => {
+          if(!document.body.contains(advBody) || !advBody.classList.contains("open")) return;
+          const bar = document.getElementById("bottomtabs");
+          const floor = (bar && !bar.hidden && bar.offsetHeight) ? bar.getBoundingClientRect().top - 14 : innerHeight - 14;
+          const r = advBody.getBoundingClientRect();
+          const toggleTop = advToggle.getBoundingClientRect().top;
+          const by = Math.min(r.bottom - floor, toggleTop - 90);
+          if(by > 0) window.scrollBy({ top: by, behavior: dailyMotionOff() ? "auto" : "smooth" });
+        }, 560);
       } else {
         advBodyInner.style.overflow = "";
       }
@@ -71255,12 +71287,28 @@ function buildRanksTab(){
     l.className = "rankhero-gaugelab"; l.textContent = label;
     const t = document.createElement("span");
     t.className = "rankhero-gaugetarget";
-    t.textContent = target == null ? "" : (part >= 1 ? "Done" : now + " of " + target);
+    t.textContent = target == null ? "" : (part >= 1 ? "\u2713 Met" : now + " of " + target);
     txt.append(l, t);
     g.append(face, txt);
     g.setAttribute("aria-label", label + " " + now + (target == null ? "" : " of " + target));
     return g;
   };
+  /* WHAT THE RINGS ARE FOR, SAID ABOVE THEM (build 247). "It says my
+     level is done and the needed badges but it's unclear that's for the
+     next rank." Two rings with "Done" and "0 of 1" under them read as a
+     verdict on YOU, not as the next rank's requirements - so they are
+     headed with the rank they measure against, in its colour, and a met
+     requirement says so ("Met") rather than "Done". */
+  const gaugeHead = document.createElement("p");
+  gaugeHead.className = "rankhero-gaugehead";
+  if(nextRule){
+    gaugeHead.append("To reach ");
+    const gn = document.createElement("b"); gn.textContent = RANK_DISPLAY_NAME[nextKey];
+    gaugeHead.appendChild(gn);
+  } else {
+    gaugeHead.textContent = "Your totals";
+  }
+  hero.appendChild(gaugeHead);
   if(nextRule){
     const lp = stepPart(levelNow, prevRule && prevRule.level, nextRule.level);
     const bp = stepPart(badgesNow, prevRule && prevRule.badges, nextRule.badges);

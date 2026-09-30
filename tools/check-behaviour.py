@@ -1487,8 +1487,8 @@ def check_b229(br):
     check("consecutive runs of a small unit open with different questions", r["overlap"] == 0, r)
     check("last week's top three come from last week's numbers, not this week's",
           r["top"] == ["Cy", "Bo", "Dee"] and r["podium"] == 3, r)
-    check("a hand-recorded week (Sauce, OdinSavior, Napoleon; 21 Sep) replaces numbers that cannot be trusted, and shows no made-up total",
-          r["pinned"] == [["Eli", None]] and r["pinnedPts"] == ["Winner"] and r["sauce"] == ["ew7hyxpg5j2y", "kdxnp7smgcre", "mbw5qdhcw2pf"], r)
+    check("a hand-recorded week (Sauce, OdinSavior, Napoleon; 21 Sep) replaces numbers that cannot be trusted, and shows the totals that week's board showed",
+          r["pinned"] == [["Eli", None]] and r["pinnedPts"] == ["Winner"] and [x["pub"] for x in r["sauce"]] == ["ew7hyxpg5j2y", "kdxnp7smgcre", "mbw5qdhcw2pf"] and [x["pts"] for x in r["sauce"]] == [67470, 58880, 31500], r)
     ctx.close()
 
 
@@ -4050,6 +4050,25 @@ def check_b246(br):
     check("Umbra and Singularity are drawn in their pop-ups, not blacked out", t["hiddenArt"] == [False, False], t["hiddenArt"])
     check("all three rank banners animate", t["animated"] == [True, True, True], t["animated"])
     check("every banner in Customize says what it takes, under it", len(t["needs"]) > 10 and all(t["needs"]), t["needs"])
+    # 44. Build 247: the Rank screen says what its rings are for, and
+    # Advanced settings opens into view instead of under the tab bar.
+    k = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      store.rankMapFx244 = true; store.rankMapSeen = 99;
+      showRanksScreen(); await wait(900);
+      const head = document.querySelector('.rankhero-gaugehead');
+      out.head = head ? head.textContent : null;
+      out.targets = [...document.querySelectorAll('.rankhero-gaugetarget')].map(x => x.textContent);
+      showAppearance(); await wait(900);
+      const tg = document.querySelector('.adv-toggle');
+      tg.scrollIntoView({ block: 'end', behavior: 'instant' }); scrollBy(0, 40); await wait(300);
+      tg.click(); await wait(1700);
+      const body = tg.nextElementSibling.getBoundingClientRect(), bar = document.getElementById('bottomtabs').getBoundingClientRect();
+      out.adv = { bodyBottom: Math.round(body.bottom), barTop: Math.round(bar.top), toggleTop: Math.round(tg.getBoundingClientRect().top) };
+      return out; }""")
+    check("the Rank screen's rings are headed with the rank they are for", bool(k["head"]) and k["head"].startswith("To reach "), k)
+    check("a requirement already met says Met, not Done", "Done" not in k["targets"], k["targets"])
+    check("opening Advanced settings brings it clear of the tab bar, toggle still on screen",
+          k["adv"]["bodyBottom"] <= k["adv"]["barTop"] and k["adv"]["toggleTop"] >= 0, k["adv"])
     ctx.close()
 
 
