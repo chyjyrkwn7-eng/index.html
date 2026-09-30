@@ -7533,3 +7533,27 @@ because "succeeded ... with fuzz" is the only warning there is.
   published in a new week before any XP still carries last week's total
   (`buildLeaderboardRow()` rolls the week first), and the podium reads
   rolled and unrolled rows alike and drops a row two weeks stale.
+
+### Build 249
+
+- **The start sheet's Question bank is one three-way switch and one line.**
+  "The question bank stuff looks super confusing." Build 235 had made it
+  three cards, each with an icon, a count and a paragraph - including the
+  two that were usually empty, which explained at length that they had
+  nothing in them. Now: All questions / Most missed / Flagged, each with
+  its count, an empty one dimmed (tap says why), and ONE short line under
+  the switch about the choice that is on. Most missed's rule is behind an
+  "i" on that line, only while it is on. The first choice is "All
+  questions", not "All", because How many directly below already says
+  "All 48". check-behaviour asserts the shape: no description or icon
+  inside a choice, exactly one caption line, the count on the choice.
+- **And the whole start sheet is short again** ("the question bank in
+  start menu is good but makes that menu too big and confusing ... I need
+  this app to be super simple"). What shows: the top box (mode, units,
+  count - no tag row, it repeated the controls under it), the Question
+  bank switch, How many, ONE "More options" row, Begin. More options holds
+  Shuffle answers, Hide answers and the timer as plain switch rows and
+  says what they are set to on its own row ("Shuffled · No timer"), so
+  nothing needs opening to be read. The bank's line under the switch only
+  shows for Most missed and Flagged; "All questions" needs no sentence.
+  Measured: the sheet's content went from 862px to 458px on a Pro Max.

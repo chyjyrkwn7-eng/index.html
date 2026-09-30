@@ -1840,7 +1840,9 @@ def check_b234(br):
         const hm = sh.querySelector('.howmany-sect');
         const sl = hm && hm.querySelector('.slider');
         const res = { chips: hm ? hm.querySelectorAll('.chip').length : -1, all: !!(hm && hm.querySelector('.slider-allbtn')),
-                      caption: (sh.querySelector('.drawfrom-sect .bank-opt.on .bank-desc') || {}).textContent || '' };
+                      caption: (sh.querySelector('.drawfrom-sect .bank-caption') || {}).textContent || '',
+                      count: (sh.querySelector('.drawfrom-sect .bank-opt.on .bank-count') || {}).textContent || '',
+                      name: (sh.querySelector('.drawfrom-sect .bank-opt.on .bank-name') || {}).textContent || '' };
         cfg.size = 0; if(sl){ sl.value = sl.min; sl.dispatchEvent(new Event('input', { bubbles:true })); }
         res.dragged = cfg.size; res.warn = !sh.querySelector('.hundo-note').hidden;
         if(sl){ sl.value = sl.max; sl.dispatchEvent(new Event('input', { bubbles:true })); }
@@ -1849,8 +1851,9 @@ def check_b234(br):
         res.timerSwitches = sw.length;
         if(sw[0]){ sw[0].checked = true; sw[0].dispatchEvent(new Event('change', { bubbles:true })); }
         res.timerAfter = cfg.timer;
-        const tiles = [...sh.querySelectorAll('.opt-tile')].map(t => Math.round(t.getBoundingClientRect().top));
-        res.tilesSideBySide = tiles.length === 2 && tiles[0] === tiles[1];
+        /* Build 249: Shuffle and Hide answers live in More options, shut by default. */
+        const mb = sh.querySelector('.more-body');
+        res.optsFolded = !!mb && !mb.classList.contains('open') && !!mb.querySelector('.opt-rows') && mb.querySelectorAll('.opt-rows .opt').length === 2;
         cfg.timer = 'off';
         return res; });
       document.querySelector('.unitoptions-modal-scrim').click();
@@ -1893,10 +1896,16 @@ def check_b234(br):
           isinstance(sh.get("dragged"), int) and sh.get("dragged", 0) > 0 and sh.get("warn") is True
           and sh.get("atEnd") == 0 and sh.get("warnAtEnd") is False, sh)
     # Build 235: the chips became the Question bank, each row saying what it draws.
-    check("the Question bank choice says what the pool is and how big", "in" in sh.get("caption", "") and any(ch.isdigit() for ch in sh.get("caption", "")), sh.get("caption"))
+    # Build 249: the line under the switch says what the pool is; the
+    # switch itself says how big ("the question bank stuff looks super
+    # confusing" - the count moved out of the sentence and onto the choice).
+    check("the Question bank choice says what the pool is and how big",
+          sh.get("name") == "All questions" and sh.get("count", "").isdigit(), sh)
     check("the timer is two switches, and the first one sets a time limit",
           sh.get("timerSwitches") == 2 and sh.get("timerAfter") == "down", sh)
-    check("the two answer options sit side by side", sh.get("tilesSideBySide") is True, sh)
+    # Build 249: "I need this app to be super simple and that start menu
+    # doesn't look simple anymore" - the answer options fold into More options.
+    check("Shuffle and Hide answers fold into More options, shut until opened", sh.get("optsFolded") is True, sh)
     check("the Practice Test screen does not mention the Phoenix banner", r["phoenix"] is False, r["phoenix"])
     th = r["themes"] if isinstance(r["themes"], dict) else {}
     check("Bronze's second colour is not green and Amethyst's is not pink",
@@ -2042,12 +2051,15 @@ def check_b235b(br):
       if(box){ box.checked = true; box.dispatchEvent(new Event('change', { bubbles: true })); } await wait(200);
       document.getElementById('nextbtn')?.click(); await wait(600);
       await T('bank', () => { const rows = [...document.querySelectorAll('.bank-opt')];
-        return { rows: rows.map(r => r.dataset.value), descs: rows.every(r => (r.querySelector('.bank-desc').textContent || '').length > 12),
-                 info: !!document.querySelector('.bank-opt[data-value="recent"] .bank-info'),
+        const cap = document.querySelectorAll('.bank-sect .bank-caption');
+        return { rows: rows.map(r => r.dataset.value), bare: rows.every(r => !r.querySelector('.bank-desc') && !r.querySelector('.bank-ico')),
+                 oneLine: cap.length === 1 && (cap[0].textContent || '').length > 12,
                  label: (document.querySelector('.bank-sect .slab') || {}).textContent }; });
       document.querySelector('.bank-opt[data-value="recent"]')?.click(); await wait(200);
+      await T('bankInfo', () => !!document.querySelector('.bank-caption .bank-info'));
       cfg.timer = 'down'; cfg.timerMinutes = 20; document.querySelector('.bank-opt[data-value="recent"]')?.click(); await wait(200);
-      await T('tags', () => [...document.querySelectorAll('.sheet-summary-tags .sheet-tag')].map(t => t.textContent));
+      await T('tags', () => ({ tags: document.querySelectorAll('.sheet-summary-tags .sheet-tag').length,
+                               state: (document.querySelector('.more-toggle-state') || {}).textContent || '' }));
       await T('timerLabel', () => (document.querySelector('.more-toggle') || {}).textContent || '');
       document.querySelector('.unitoptions-modal-scrim')?.click(); await wait(400);
       // Hold a unit card.
@@ -2079,12 +2091,19 @@ def check_b235b(br):
     check("no best time on the unit cards", r["noBest"] == 0, r["noBest"])
     check("the unit screen says a card can be held", r["hint"] is True, r["hint"])
     b = r["bank"] if isinstance(r["bank"], dict) else {}
-    check("the Question bank: three rows that each say what they draw, and an info dot on Most missed",
-          b.get("rows") == ["all", "recent", "flagged"] and b.get("descs") and b.get("info") and b.get("label") == "Question bank", b)
-    t = r["tags"] if isinstance(r["tags"], list) else []
-    check("the top box says the bank and the timer without opening anything",
-          "Most missed" in t and "20 min limit" in t, t)
-    check("the timer row says what is in it", "Time limit" in str(r["timerLabel"]) and "stopwatch" in str(r["timerLabel"]).lower(), r["timerLabel"])
+    # Build 249: one three-way switch and ONE line under it, not three
+    # cards each with a paragraph ("the question bank stuff looks super
+    # confusing"); Most missed's rule sits behind an "i" on that line.
+    check("the Question bank: one three-way switch, one line under it, and an info dot while Most missed is on",
+          b.get("rows") == ["all", "recent", "flagged"] and b.get("bare") and b.get("oneLine") and r.get("bankInfo") is True
+          and b.get("label") == "Question bank", [b, r.get("bankInfo")])
+    t = r["tags"] if isinstance(r["tags"], dict) else {}
+    # Build 249: no tag row in the top box any more (it repeated the
+    # controls right under it); More options says its own settings on
+    # its own row, so the timer is still readable without opening it.
+    check("the top box has no tag row, and More options says what it is set to without opening",
+          isinstance(t, dict) and t.get("tags") == 0 and "20 min limit" in t.get("state", ""), t)
+    check("the fold is called More options", "More options" in str(r["timerLabel"]), r["timerLabel"])
     d = r["detail"] if isinstance(r["detail"], dict) else {}
     check("holding a unit card opens its details without ticking it",
           d.get("unticked") is True and d.get("doors") == 2 and "Completed" in d.get("stats", []) and "Best time" in d.get("stats", [])

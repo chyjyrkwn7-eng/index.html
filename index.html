@@ -13836,32 +13836,28 @@
   .unitver .unitver-cancel{ display:flex; width:100%; min-height:44px; margin:.8rem 0 0; justify-content:center; }
   [data-reduce-motion="true"] .unitver, [data-reduce-motion="true"] .unitver-card{ transition-duration:.01s; }
 
-  /* ---- THE QUESTION BANK (build 235) ---- */
-  .unitoptions-modal-sheet .bank-opts{ display:flex; flex-direction:column; gap:.45rem; }
+  /* ---- THE QUESTION BANK (build 249): a three-way switch and one line ---- */
+  .unitoptions-modal-sheet .bank-opts{
+    display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:.3rem; padding:.3rem;
+    border-radius:1rem; background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.09);
+  }
   .bank-opt{
-    display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:.7rem;
-    padding:.65rem .8rem; border-radius:.95rem; cursor:pointer; -webkit-tap-highlight-color:transparent;
-    background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.09);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.12rem;
+    min-height:3.1rem; padding:.4rem .3rem; border-radius:.75rem; cursor:pointer; text-align:center;
+    -webkit-tap-highlight-color:transparent; border:1px solid transparent;
     transition:background .2s ease, border-color .2s ease;
   }
-  .bank-opt.on{ background:rgba(111,194,255,.1); border-color:rgba(111,194,255,.55); box-shadow:inset 0 0 0 1px rgba(111,194,255,.2); }
-  .bank-opt.is-empty{ cursor:default; }
-  .bank-opt.is-empty .bank-ico, .bank-opt.is-empty .bank-name{ opacity:.45; }
-  .bank-ico{ width:2.1rem; height:2.1rem; border-radius:.7rem; display:grid; place-items:center;
-    background:rgba(255,255,255,.07); color:rgba(255,255,255,.8); }
-  .bank-ico svg{ width:1.2rem; height:1.2rem; }
-  .bank-opt.on .bank-ico{ background:rgba(111,194,255,.2); color:#9FD6FF; }
-  .bank-opt[data-value="recent"].on .bank-ico{ background:rgba(255,154,122,.2); color:#FFB39A; }
-  .bank-opt[data-value="recent"].on{ background:rgba(255,154,122,.08); border-color:rgba(255,154,122,.55); box-shadow:inset 0 0 0 1px rgba(255,154,122,.18); }
-  .bank-opt[data-value="flagged"].on .bank-ico{ background:rgba(255,211,77,.2); color:#FFD34D; }
-  .bank-opt[data-value="flagged"].on{ background:rgba(255,211,77,.07); border-color:rgba(255,211,77,.5); box-shadow:inset 0 0 0 1px rgba(255,211,77,.18); }
-  .bank-text{ display:flex; flex-direction:column; gap:.15rem; min-width:0; }
-  .bank-name{ display:flex; align-items:center; gap:.4rem; font-size:.92rem; font-weight:800; color:var(--ink); }
-  .bank-desc{ font-size:.74rem; line-height:1.35; color:var(--soft); }
-  .bank-count{ min-width:2.1rem; text-align:center; padding:.2rem .5rem; border-radius:999px;
-    font-family:var(--mono); font-size:.82rem; font-weight:700; color:var(--ink); background:rgba(255,255,255,.08); }
+  .bank-opt.on{ background:rgba(111,194,255,.16); border-color:rgba(111,194,255,.5); }
+  .bank-opt[data-value="recent"].on{ background:rgba(255,154,122,.14); border-color:rgba(255,154,122,.5); }
+  .bank-opt[data-value="flagged"].on{ background:rgba(255,211,77,.12); border-color:rgba(255,211,77,.45); }
+  .bank-opt.is-empty{ cursor:default; opacity:.42; }
+  .bank-name{ font-size:.86rem; font-weight:800; color:var(--ink); line-height:1.15; }
+  .bank-count{ font-family:var(--mono); font-size:.78rem; font-weight:700; color:var(--soft); }
+  .bank-opt.on .bank-count{ color:var(--ink); }
   .bank-count:empty{ display:none; }
-  .bank-opt.is-empty .bank-count{ opacity:.45; }
+  .bank-caption[hidden]{ display:none; }
+  .bank-caption{ display:flex; align-items:center; gap:.45rem; margin:.5rem .2rem 0; font-size:.78rem; line-height:1.4; color:var(--soft); }
+  .bank-desc{ font-size:inherit; line-height:inherit; color:inherit; }
   /* The info dot: a 44px target round a small printed "i". */
   .bank-info{
     position:relative; width:1.15rem; height:1.15rem; border-radius:50%; padding:0; flex-shrink:0;
@@ -13870,7 +13866,7 @@
   .bank-info::before{ content:""; position:absolute; inset:-14px; }
   .bank-info[aria-expanded="true"]{ background:#FFB39A; }
   .bank-infobody{
-    margin:-.15rem .2rem .2rem; padding:.6rem .75rem; border-radius:.8rem;
+    margin:.45rem .2rem 0; padding:.6rem .75rem; border-radius:.8rem;
     font-size:.76rem; line-height:1.45; color:rgba(255,255,255,.82);
     background:rgba(255,154,122,.07); border:1px solid rgba(255,154,122,.25);
   }
@@ -13882,6 +13878,7 @@
     color:rgba(255,255,255,.82); background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.08); }
   .sheet-tag.is-bank{ color:#0B0D10; background:#FFD7C9; border-color:transparent; }
   /* The two options, side by side as tiles. */
+  .unitoptions-modal-sheet .opt-rows .opt{ padding:.35rem 0; }
   .opt-tiles{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:.55rem; }
   .opt-tiles .opt.opt-tile[hidden]{ display:none; }
   .opt-tiles:has(.opt-tile[hidden]) { grid-template-columns:1fr; }
@@ -53389,47 +53386,31 @@ function showSetup(){
   bankList.setAttribute("role", "radiogroup");
   bankList.setAttribute("aria-label", "Question bank");
   srcSect.appendChild(bankList);
-  const BANK_ICON = {
-    all: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="13" height="16" rx="2"/><path d="M8 7h5M8 11h5M8 15h3"/><path d="M20 7v12a2 2 0 0 1-2 2H8"/></svg>',
-    recent: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>',
-    flagged: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg>'
-  };
+  /* ONE SWITCH AND ONE LINE (build 249): "The question bank stuff looks
+     super confusing." It was three big cards, each with an icon, a
+     count and a paragraph - including the two that were empty, which
+     explained themselves at length about having nothing in them. It is
+     a three-way switch now, like every other switch in the app: the
+     name and how many it holds, and under it ONE short line about the
+     choice that is on. An empty choice is dimmed and says why when
+     tapped. Most missed's rule (30 days, a cap per unit) is behind the
+     "i" on that line, only while Most missed is on. Same cfg.source
+     values underneath. */
   const bankRows = {};
-  [["all", "Every question"], ["recent", "Most missed"], ["flagged", "Flagged"]].forEach(([value, title]) => {
+  [["all", "All questions"], ["recent", "Most missed"], ["flagged", "Flagged"]].forEach(([value, title]) => {
     const row = document.createElement("div");
     row.className = "bank-opt";
     row.dataset.value = value;
     row.setAttribute("role", "radio");
     row.tabIndex = 0;
-    const ico = document.createElement("span");
-    ico.className = "bank-ico"; ico.innerHTML = BANK_ICON[value];
-    const txt = document.createElement("span");
-    txt.className = "bank-text";
     const nm = document.createElement("span");
     nm.className = "bank-name"; nm.textContent = title;
-    const desc = document.createElement("span");
-    desc.className = "bank-desc";
-    txt.append(nm, desc);
     const count = document.createElement("span");
     count.className = "bank-count";
-    row.append(ico, txt, count);
-    let info = null, infoBody = null;
-    if(value === "recent"){
-      info = document.createElement("button");
-      info.type = "button"; info.className = "bank-info";
-      info.setAttribute("aria-label", "How Most missed works");
-      info.setAttribute("aria-expanded", "false");
-      info.textContent = "i";
-      nm.appendChild(info);
-      infoBody = document.createElement("p");
-      infoBody.className = "bank-infobody";
-      infoBody.hidden = true;
-      info.addEventListener("click", e => {
-        e.stopPropagation();
-        infoBody.hidden = !infoBody.hidden;
-        info.setAttribute("aria-expanded", infoBody.hidden ? "false" : "true");
-      });
-    }
+    row.append(nm, count);
+    /* the line this choice shows under the switch while it is on */
+    const desc = document.createElement("span");
+    desc.className = "bank-desc";
     const pick = () => {
       if(row.classList.contains("is-empty")){
         showToast(value === "recent" ? "Nothing missed lately in these units." : "Nothing flagged in these units yet.");
@@ -53440,15 +53421,37 @@ function showSetup(){
     row.addEventListener("click", pick);
     row.addEventListener("keydown", e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); pick(); } });
     bankList.appendChild(row);
-    if(infoBody) bankList.appendChild(infoBody);
-    bankRows[value] = { row, desc, count, infoBody };
+    bankRows[value] = { row, desc, count };
   });
+  const bankCaption = document.createElement("p");
+  bankCaption.className = "bank-caption";
+  const bankInfo = document.createElement("button");
+  bankInfo.type = "button"; bankInfo.className = "bank-info";
+  bankInfo.setAttribute("aria-label", "How Most missed works");
+  bankInfo.setAttribute("aria-expanded", "false");
+  bankInfo.textContent = "i";
+  const bankInfoBody = document.createElement("p");
+  bankInfoBody.className = "bank-infobody";
+  bankInfoBody.hidden = true;
+  bankInfo.addEventListener("click", e => {
+    e.stopPropagation();
+    bankInfoBody.hidden = !bankInfoBody.hidden;
+    bankInfo.setAttribute("aria-expanded", bankInfoBody.hidden ? "false" : "true");
+  });
+  srcSect.append(bankCaption, bankInfoBody);
+  bankRows.recent.infoBody = bankInfoBody;
   srcSect.paint = () => {
     Object.keys(bankRows).forEach(v => {
       const on = cfg.source === v;
       bankRows[v].row.classList.toggle("on", on);
       bankRows[v].row.setAttribute("aria-checked", on ? "true" : "false");
     });
+    const cur = bankRows[cfg.source] || bankRows.all;
+    bankCaption.replaceChildren(cur.desc);
+    /* "All questions" needs no sentence - the switch says it. */
+    bankCaption.hidden = cfg.source !== "recent" && cfg.source !== "flagged";
+    if(cfg.source === "recent") bankCaption.appendChild(bankInfo);
+    else { bankInfoBody.hidden = true; bankInfo.setAttribute("aria-expanded", "false"); }
   };
   /* Counts and words for the units picked right now. */
   srcSect.update = (counts) => {
@@ -53465,13 +53468,9 @@ function showSetup(){
       b.row.classList.toggle("is-empty", empty);
       b.row.setAttribute("aria-disabled", empty ? "true" : "false");
     };
-    set("all", counts.all, units ? "All " + counts.all + " questions in " + whose + ", in a mixed order." : "Every question in the units you pick.");
-    set("recent", counts.recent, !units ? "The ones you get wrong the most." :
-      counts.recent ? "The " + counts.recent + " you have got wrong the most in the last 30 days." :
-      "Nothing missed lately in " + whose + ".");
-    set("flagged", counts.flagged, !units ? "Questions you marked to come back to." :
-      counts.flagged ? "The " + counts.flagged + " you marked with the flag to come back to." :
-      "None flagged yet. Tap the flag on any question during a drill to save it here.");
+    set("all", counts.all, units ? "Every question in " + whose + ", mixed up." : "Every question in the units you pick.");
+    set("recent", counts.recent, counts.recent ? "The " + counts.recent + " you have missed most in the last 30 days." : "Nothing missed lately.");
+    set("flagged", counts.flagged, counts.flagged ? "The " + counts.flagged + " you flagged to come back to." : "None flagged yet.");
     const caps = cfg.units.map(u => mostMissedCapFor(u));
     const capTotal = caps.reduce((a, b) => a + b, 0);
     bankRows.recent.infoBody.textContent =
@@ -53479,6 +53478,7 @@ function showSetup(){
       "up to 15% of each unit: a 20-question unit gives at most 3, a 40-question unit at most 6." +
       (units ? " For " + whose + " that is at most " + capTotal + "." : "") +
       " It updates after every test, and a question drops off 30 days after you last missed it.";
+    srcSect.paint();
   };
   const optionsModalBody = document.createElement("div");
   optionsModalBody.className = "optionsmodal-body";
@@ -53556,9 +53556,12 @@ function showSetup(){
   moreToggle.className = "more-toggle";
   moreToggle.setAttribute("aria-expanded", "false");
   const moreToggleText = document.createElement("span");
-  /* The disclosure holds the timer and nothing else now, so it is
-     called that, and says what is set without being opened. */
-  moreToggleText.textContent = "Time limit & stopwatch";
+  /* ONE FOLD FOR EVERYTHING THAT IS NOT "WHAT AM I STUDYING" (build 249):
+     "I need this app to be super simple and that start menu doesn't
+     look simple anymore." Shuffle, Hide answers and the timer are
+     preferences you set once, so they fold away under one row that
+     says what they are set to without being opened. */
+  moreToggleText.textContent = "More options";
   const moreToggleState = document.createElement("span");
   moreToggleState.className = "more-toggle-state";
   const moreToggleIcon = document.createElement("span");
@@ -53668,12 +53671,14 @@ function showSetup(){
   const optTiles = document.createElement("div");
   optTiles.className = "opt-tiles";
   const shuffleRow = toggle("Shuffle answers",
-    "The choices come in a new order every time, so you learn the answer, not its letter.",
+    "A new order every time, so you learn the answer, not its letter.",
     () => cfg.shuffle, v => { cfg.shuffle = v; });
   const recallRow = toggle("Hide answers",
-    "The choices stay covered until you tap. Think of the answer first, then check.",
+    "Think of the answer first, then tap to see the choices.",
     () => cfg.recall, v => { cfg.recall = v; });
-  shuffleRow.classList.add("opt-tile"); recallRow.classList.add("opt-tile");
+  /* Plain switch rows now, the same as the timer's (build 249) - inside
+     More options every setting is one kind of control. */
+  optTiles.className = "opt-rows";
   optTiles.append(shuffleRow, recallRow);
   optSect.appendChild(optTiles);
   /* "Show all correct answers" is GONE, per explicit request - "we
@@ -53684,7 +53689,8 @@ function showSetup(){
      cfg.revealCorrect survives as a defaulted, unreadable field (see
      applySaved) so an account that had it switched on does not come
      back with answers revealed and no control left to switch it off. */
-  optionsModalBody.insertBefore(optSect, moreWrap);
+  optLab.hidden = true;
+  moreBodyInner.insertBefore(optSect, moreBodyInner.firstChild);
   /* THE SHEET IS A FLAT, LABELLED LIST NOW, per explicit request that
      it reads confusingly in Drill. What it had was one disclosure
      called "Timer & options" holding two unrelated things - the timer
@@ -54004,9 +54010,14 @@ function showSetup(){
     /* AFTER the four it asks about, because it asks them rather than
        re-deriving their conditions - reading them before they are set
        is how this kind of check answers last render's question. */
-    moreWrap.hidden = timerSect.hidden;
-    moreToggleState.textContent = cfg.timer === "down" ? cfg.timerMinutes + " min limit"
-      : cfg.timer === "up" ? "Stopwatch" : "Off";
+    moreWrap.hidden = timerSect.hidden && optSect.hidden;
+    {
+      const bits = [];
+      if(!optSect.hidden && !shuffleRow.hidden) bits.push(cfg.shuffle ? "Shuffled" : "In order");
+      if(!optSect.hidden && !recallRow.hidden && cfg.recall) bits.push("Answers hidden");
+      if(!timerSect.hidden) bits.push(cfg.timer === "down" ? cfg.timerMinutes + " min limit" : cfg.timer === "up" ? "Stopwatch" : "No timer");
+      moreToggleState.textContent = bits.join(" \u00b7 ");
+    }
     /* Review draws from the same three sources a Drill does - "in the
        review mode, include the options to review flagged and most missed
        questions". */
@@ -54074,7 +54085,7 @@ function showSetup(){
         t.textContent = text;
         sheetSummaryTags.appendChild(t);
       };
-      if(!srcSect.hidden) tag(cfg.source === "recent" ? "Most missed" : cfg.source === "flagged" ? "Flagged" : "Every question",
+      if(!srcSect.hidden) tag(cfg.source === "recent" ? "Most missed" : cfg.source === "flagged" ? "Flagged" : "All questions",
         cfg.source === "all" ? "" : "is-bank");
       if(!sizeSect.hidden) tag(cfg.size > 0 && cfg.size < pool.length ? n + " of " + pool.length : "All " + pool.length);
       if(isGame){
@@ -54085,7 +54096,10 @@ function showSetup(){
       if(!optSect.hidden && !shuffleRow.hidden) tag(cfg.shuffle ? "Shuffled" : "Not shuffled");
       if(!optSect.hidden && !recallRow.hidden && cfg.recall) tag("Answers hidden");
     }
-    if(sheetSummaryTags.parentNode !== sheetSummary) sheetSummary.appendChild(sheetSummaryTags);
+    /* NOT SHOWN (build 249): the top box says what you are taking and
+       how many; the tags repeated the controls right under it, and
+       More options now says its own settings on its own row. */
+    if(sheetSummaryTags.parentNode) sheetSummaryTags.remove();
 
     const lives = GAME_SPEEDS[cfg.gameSpeed].lives;
     /* NOT `disabled`, on purpose. A disabled button swallows the tap and
@@ -55502,7 +55516,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-30-248";
+const APP_BUILD = "2026-09-30-249";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
