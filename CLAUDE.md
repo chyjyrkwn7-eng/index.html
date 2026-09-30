@@ -7927,3 +7927,38 @@ because "succeeded ... with fuzz" is the only warning there is.
   seam was invisible but the rule is right) and an Astronaut check that
   still wrote down 7. The Astronaut check reads
   `CHARACTER_FEATS.hundo7day.need` now, like the Marksman one.
+
+### Build 262
+
+- **THE FORCED UPDATE LETS GO OF THE PAGE BEFORE IT RELOADS.** "After an
+  update is pushed, the main menu and a lot of the screens are missing
+  contents." A reload on iOS happens inside the same web process, and
+  the page being left (Home: ~108 running animations, 15
+  `backdrop-filter` glass layers) still holds its graphics memory while
+  the new page builds its own. Past the process limit WebKit stops
+  painting parts of the page - the planet, the bubbles, whole cards -
+  on every screen until the app is closed. A cold launch never has two
+  pages' worth alive, which is why it only ever followed an update, and
+  why Chromium cannot reproduce it (the update path renders perfectly
+  there, measured). `applyUpdate()` now calls `releasePageForReload()`
+  after the fresh fetch: it shows "Pushing update", puts
+  `html.is-reloading` on (every body child but `#pushing-update` goes
+  `display:none`), cancels every other animation, empties the stage,
+  and waits two frames plus 150ms before `location.reload()`. This is
+  very likely also what "stuff disappearing on every screen" after
+  build 250 was: that report followed an update too. **Keep Home's
+  animation and glass count in mind**; the budget gate allows 160.
+- **The Knight is gone** ("I don't like that character or the
+  challenge") and `knight` is in `RETIRED_CHARACTER_TO` → the Ninja.
+  **The Night Owl** replaces it: `bigtest400`, "Pass a test of 400 or
+  more questions (70% or better)", set in `summarize()` beside the
+  Practice Test pass (inside the not-timed-out branch, never Game mode)
+  as `store.bigTestPassed`, defaulted false in `applyLoadedData()` and
+  cleared by a reset. Not retroactive - no per-run question counts were
+  kept before this. The drawing is one silhouette from crown to base
+  (the Void lesson: head and body one shape), a facial disc, amber
+  eyes, ear tufts, a speckled chest; `cx-owl-tilt` tilts the head and
+  the stars behind it twinkle on `cx-glow`.
+- **The Profile badges row is the Badges tab's medal**, smaller, with
+  "Badges / N of 16 earned" and the arrow. No unit name and no hundo
+  count ("I don't like how it says what I'm closest to").

@@ -4378,6 +4378,7 @@ def check_b258(br):
       const sect = document.querySelector('.profile-badgesect');
       out.badgeSvgs = sect ? sect.querySelectorAll('svg').length : -1;
       out.badgeText = sect ? sect.textContent : '';
+      out.badgeMedal = sect ? sect.querySelectorAll('.badges-medal').length : -1;
       const fill = document.querySelector('.profile-hero .profile-xpbar .xpbar-fill');
       out.fillBg = fill ? getComputedStyle(fill).backgroundImage : '';
       const lv = document.querySelector('.profile-hero .profile-level-value');
@@ -4421,18 +4422,24 @@ def check_b258(br):
         text: held ? held.innerText : '', stillGhost: store.avatarChar === 'ghost' };
       document.querySelectorAll('.invite-overlay').forEach(x => x.remove());
       nj.click(); out.hold.tapPicks = store.avatarChar === 'ninja';
-      /* 8. the Knight: a new challenge character, five units on Hardcore */
-      const kn = AVATAR_CHARACTERS.find(c => c.id === 'knight');
-      const realGB = store.unitGameBeat; store.unitGameBeat = {};
-      us.slice(0, 4).forEach(u => store.unitGameBeat[u] = { easy: true, average: true, hardcore: true });
-      const four = isLockedCharacter('knight');
-      store.unitGameBeat[us[4]] = { easy: true, average: true, hardcore: true };
-      const five = isLockedCharacter('knight');
-      store.unitGameBeat = realGB;
-      const ks = buildAvatarCharSVG('knight');
-      out.knight = { feat: kn && kn.feat, name: AVATAR_DISPLAY_NAME.knight, lockedAt4: four, lockedAt5: five,
-        parts: ['cx-body', 'cx-head', 'cx-eyes', 'cx-eyes-closed', 'cx-fx-knightplume'].every(c => !!ks.querySelector('.' + c)),
-        glow: avatarGlowColor('knight') };
+      /* 8. the Night Owl (262, after the Knight was asked against): pass a
+         test of 400 or more questions */
+      const ow = AVATAR_CHARACTERS.find(c => c.id === 'nightowl');
+      const wasBig = store.bigTestPassed; store.bigTestPassed = false;
+      const owlLocked = isLockedCharacter('nightowl');
+      store.bigTestPassed = true; const owlHeld = !isLockedCharacter('nightowl');
+      store.bigTestPassed = wasBig;
+      const os = buildAvatarCharSVG('nightowl');
+      out.owl = { feat: ow && ow.feat, name: AVATAR_DISPLAY_NAME.nightowl, locked: owlLocked, held: owlHeld,
+        label: CHARACTER_FEATS.bigtest400.label,
+        parts: ['cx-body', 'cx-head', 'cx-eyes', 'cx-eyes-closed'].every(c => !!os.querySelector('.' + c)),
+        knightGone: !AVATAR_CHARACTERS.some(c => c.id === 'knight'), knightDrawsAs: RETIRED_CHARACTER_TO.knight };
+      /* 10. leaving for an update lets go of the page first */
+      showHome(); await wait(400);
+      releasePageForReload(); await wait(50);
+      out.release = { shown: [...document.body.children].filter(e => getComputedStyle(e).display !== 'none').map(e => e.id),
+        stage: stage.children.length, running: document.getAnimations().filter(a => a.playState === 'running' && !(a.effect && a.effect.target && a.effect.target.closest && a.effect.target.closest('#pushing-update'))).length };
+      document.documentElement.classList.remove('is-reloading'); const pu = document.getElementById('pushing-update'); if(pu) pu.remove();
       } catch(e){ out.threw = String(e); }
       return out; }""")
     import re as _re
@@ -4440,8 +4447,11 @@ def check_b258(br):
     got = float(m.group(1)) if m else -1
     check("the rank percentage is exact, to one decimal, not the step-based 50%",
           m is not None and abs(got - int(r["expect"] * 1000) / 10) < 0.11 and got != 50, r)
-    check("no badge icons on the Profile card, and it says how far to the next badge",
-          r.get("badgeSvgs") == 0 and "hundo" in r.get("badgeText", ""), r)
+    # REVISED IN 262: "I don't like how it says what I'm closest to" - the
+    # medal and a count, no unit and no hundos.
+    check("no badge icons on the Profile card - the medal and a count, not the closest unit",
+          r.get("badgeSvgs") == 0 and r.get("badgeMedal") == 1 and "hundo" not in r.get("badgeText", "")
+          and "of 16" in r.get("badgeText", ""), r)
     # REVERSED IN 259: "No no no, the profile change is bad there. I don't
     # like the bronze all the way through." The level is blue again and
     # the default cover is the theme, with no rank on it.
@@ -4459,10 +4469,13 @@ def check_b258(br):
     check("holding something you have opens its card, held: a tick, 'Unlocked', and it is not picked by the hold",
           h.get("card") and h.get("tick") and "Unlocked" in h.get("text", "") and "day one" in h.get("text", "")
           and h.get("stillGhost") and h.get("tapPicks"), h)
-    kn = r.get("knight") or {}
-    check("a new challenge character: the Knight, five units on Hardcore, drawn with every moving part",
-          kn.get("feat") == "hardcore5" and kn.get("name") == "Knight" and kn.get("lockedAt4") is True
-          and kn.get("lockedAt5") is False and kn.get("parts") is True and kn.get("glow") == "#E0404F", kn)
+    ow = r.get("owl") or {}
+    check("the Knight is gone and the Night Owl is a challenge character for passing a 400-question test",
+          ow.get("feat") == "bigtest400" and ow.get("name") == "Night Owl" and ow.get("locked") is True and ow.get("held") is True
+          and "400" in ow.get("label", "") and ow.get("parts") is True and ow.get("knightGone") is True and ow.get("knightDrawsAs") == "ninja", ow)
+    rl = r.get("release") or {}
+    check("before an update reloads, only the Pushing update bar is left and nothing else is animating",
+          rl.get("shown") == ["pushing-update"] and rl.get("stage") == 0 and rl.get("running") == 0, rl)
     # 4. Midnight Oil, measured the way section 45 measures the ladder
     pg.evaluate("""()=>{ document.querySelectorAll('.invite-overlay').forEach(x => x.remove());
       const w = document.createElement('div'); w.id = 'bn258';

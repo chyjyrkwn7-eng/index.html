@@ -1130,6 +1130,10 @@
      begins, so the fade is genuinely revealing the real screen the
      whole way through instead of fading to black first. */
   #splashscreen:not(.splash-hide) ~ .wrap{ visibility:hidden; }
+  /* Leaving for an update (build 262): nothing but the "Pushing update"
+     bar stays on the page, so its layers are gone before the reload -
+     see releasePageForReload(). */
+  html.is-reloading body > :not(#pushing-update){ display:none !important; }
   #splashscreen{
     /* Sized in viewport units as well as inset:0, and clipped.
        Reported on a real device: on launch the splash content appears in
@@ -13605,17 +13609,15 @@
   .avatarchar-svg .cx-k-valkyrie{ --cx-blink:6.4s; --cx-blink-at:-3.9s; }
   .avatarchar-svg .cx-k-hacker{ --cx-blink:5.5s; --cx-blink-at:-.7s; }
   .avatarchar-svg .cx-k-timekeeper{ --cx-blink:7.3s; --cx-blink-at:-5.2s; }
-  /* Knight (build 258): the plume sways from its socket on the crown,
-     at the left of its box; a glint crosses the helm now and then. */
-  .avatarchar-svg .cx-k-knight{ --cx-blink:6.9s; --cx-blink-at:-2.4s; }
-  .avatarchar-svg .cx-fx-knightplume{ transform-origin:2% 45%; }
+  /* Night Owl (build 262): the head tilts the way an owl's does, and
+     the stars behind it twinkle. */
+  .avatarchar-svg .cx-k-nightowl{ --cx-blink:5.8s; --cx-blink-at:-1.9s; }
   @media (prefers-reduced-motion:no-preference){
-    .char-live .avatarchar-svg .cx-fx-knightplume{ animation:cx-knight-plume 3.2s ease-in-out infinite alternate; }
-    .char-live .avatarchar-svg .cx-fx-helmsheen{ animation:cx-sheen-idle 5.2s ease-in-out -2.2s infinite; }
-    .char-react-win .avatarchar-svg .cx-fx-knightplume{ animation:cx-knight-plume .4s ease-in-out infinite alternate; }
-    .char-react-win .avatarchar-svg .cx-fx-helmsheen{ animation:cx-sheen 1.4s ease-in-out .3s infinite; }
+    .char-live .avatarchar-svg .cx-k-nightowl .cx-head{ animation:cx-owl-tilt 4.6s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-owlstars{ animation:cx-glow 3.4s ease-in-out infinite; }
+    .char-react-win .avatarchar-svg .cx-k-nightowl .cx-head{ animation:cx-owl-tilt .5s ease-in-out infinite alternate; }
   }
-  @keyframes cx-knight-plume{ from{ rotate:-4deg; } to{ rotate:5deg; } }
+  @keyframes cx-owl-tilt{ from{ rotate:-6deg; } to{ rotate:6deg; } }
   /* Each wing flexes from its root, where it meets the helm. */
   .avatarchar-svg .cx-fx-wing-l{ transform-origin:96% 72%; }
   .avatarchar-svg .cx-fx-wing-r{ transform-origin:4% 72%; }
@@ -15119,23 +15121,23 @@
   .badge-strip-cell.is-earned svg{ filter:drop-shadow(0 0 5px color-mix(in srgb, var(--badge-glow, #fff) 55%, transparent)); }
   .badges-head .badges-count-num{ color:var(--ink); }
   .badges-head-strip{ margin-top:.2rem; }
-  /* ---- the badges row (build 258): no icons, built like the level row ----
-     The fanned stack of earned badges came off on request. The row is now
-     the level row's twin - a plate with the number, and beside it how
-     many hundos to the next badge and in which unit. */
-  .profile-badgesect-head{ align-items:center; margin:0 0 .55rem; }
-  .profile-badgesect-body{ display:flex; align-items:center; gap:.85rem; }
-  .profile-badgeplate{
-    flex:0 0 auto; min-width:5.2rem; display:flex; flex-direction:column; align-items:flex-start; gap:.1rem;
-    padding:.6rem .8rem; border-radius:13px; background:rgba(0,0,0,.22);
-    border:1px solid rgba(255,255,255,.08);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.07), inset 0 -3px 8px rgba(0,0,0,.28);
-  }
-  .profile-badge-closest{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
 
   /* The badge count on its plate is plain white (build 259): the level
      keeps the card's one lit number. */
-  .profile-hero .profile-badge-value{ color:var(--ink); filter:none; }
+  /* The badges row on the Profile card (build 262): the Badges tab's
+     medal, smaller, with its sheen crossing once as the card arrives. */
+  .profile-badgerow{ display:flex; align-items:center; gap:.9rem; }
+  .profile-badgesect .badges-medal.profile-badgemedal{ width:3.6rem; height:3.6rem; }
+  .profile-badgesect .profile-badgemedal .badges-medal-num{ font-size:1.45rem; }
+  .profile-badgesect .profile-badgemedal::after{ animation:badges-medal-sheen 1.3s cubic-bezier(.3,0,.2,1) .5s 1 forwards; }
+  .profile-badgerow-text{ display:flex; flex-direction:column; gap:.15rem; min-width:0; flex:1; }
+  .profile-badgerow-line{ font-size:1.05rem; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; }
+  .profile-badgerow .profile-badgesect-chev{ margin-left:auto; }
+  @media (min-width:40rem){ .profile-badgesect .badges-medal.profile-badgemedal{ width:4.2rem; height:4.2rem; }
+    .profile-badgesect .profile-badgemedal .badges-medal-num{ font-size:1.7rem; } }
+  [data-reduce-motion="true"] .profile-badgesect .profile-badgemedal::after{ animation:none !important; }
+
   /* ---- the count on the Badges tab (build 243) ----
      "All I wanted was a better way to show it than the 0/16" - so a medal
      with the number struck into it, not a bar. Silver until the set is
@@ -31204,8 +31206,8 @@ const AVATAR_CHARACTERS = [
                     244: "I hate the k9 character")
        Wolf       - studied on 30 different days (new in 244: "add
                     another character in the challenge rewards")
-       Knight     - 5 units beaten on Hardcore in Game mode (new in 258:
-                    "we also need to add another character to unlock") */
+       Night Owl  - pass a test of 400+ questions (new in 262; the Knight
+                    and its Hardcore challenge came and went in 259) */
   { id: "detective",  kind: "detective",  feat: "daily10" },
   { id: "masked",     kind: "masked",     feat: "retake100" },
   { id: "zeus",       kind: "zeus",       feat: "weektop" },
@@ -31216,7 +31218,7 @@ const AVATAR_CHARACTERS = [
   { id: "astronaut",  kind: "astronaut",  feat: "hundo7day" },
   { id: "hacker",     kind: "hacker",     feat: "study20h" },
   { id: "timekeeper", kind: "timekeeper", feat: "days30" },
-  { id: "knight",     kind: "knight",     feat: "hardcore5" },
+  { id: "nightowl",   kind: "nightowl",   feat: "bigtest400" },
   /* ---- SECRETS ----
      Things you FIND rather than work towards. Build 244 took the Officer
      out completely ("we will remove the officer character completely")
@@ -31271,7 +31273,7 @@ const AVATAR_CHARACTERS = [
 const AVATAR_GRID_NAME = { masked: "Masked One" };
 const AVATAR_DISPLAY_NAME = {
   lunar: "Lunar", solar: "Solar", tempest: "Tempest", frost: "Frost", oracle: "Oracle", inferno: "Inferno",
-  swat: "SWAT", valkyrie: "Valkyrie", hacker: "Hacker", timekeeper: "Timekeeper", knight: "Knight",
+  swat: "SWAT", valkyrie: "Valkyrie", hacker: "Hacker", timekeeper: "Timekeeper", nightowl: "Night Owl", knight: "Knight",
   pirate: "Pirate", scholar: "Scholar", wolf: "Wolf",
   paladin: "Paladin", sentinel: "Sentinel", k9: "K-9",
   ninja: "Ninja", ghost: "Ghost", queen: "Queen", wizard: "Wizard",
@@ -31295,7 +31297,7 @@ const AVATAR_GLOW = {
   k9: "#D9A05A",
   ninja: "#E0453F", ghost: "#E8ECF4", queen: "#8B4FC4", wizard: "#6C5BD4",
   grizzly: "#B9793C", alien: "#4FD18A", samurai: "#C0392B", dragon: "#E04A2F",
-  officer: "#3D74E8", clown: "#F05A9B", swat: "#3D74E8", valkyrie: "#8CC8FF", hacker: "#3DFFB0", timekeeper: "#8A86FF", knight: "#E0404F", robot: "#6FD3E8", astronaut: "#F2B233",
+  officer: "#3D74E8", clown: "#F05A9B", swat: "#3D74E8", valkyrie: "#8CC8FF", hacker: "#3DFFB0", timekeeper: "#8A86FF", nightowl: "#B8C4FF", robot: "#6FD3E8", astronaut: "#F2B233",
   /* Read off each one's artwork like the rest: the detective's amber
      street-light, the cold light in Zeus's cracks, the mask's own
      lacquer, and for Void the middle of its three flare colours - the
@@ -31338,12 +31340,15 @@ const CHARACTER_FEATS = {
      {easy, average, hardcore} per unit since Game mode shipped, and the
      ladder inside recordGameBeatIfEligible() already refuses Hardcore
      until Average is beaten. This just counts it. */
-  /* Build 258, the Knight: half of the Hardcore banner, so Game mode has
-     a character on the way to it. Counted off store.unitGameBeat like
-     the banner, so every unit already beaten on Hardcore counts. */
-  hardcore5:  { label: "Beat 5 units on Hardcore in Game mode",
-                done: () => hardcoreUnitsBeaten() >= 5,
-                have: () => Math.min(hardcoreUnitsBeaten(), 5), need: 5 },
+  /* Build 262, the Night Owl: "take a 400 question [test] and pass it".
+     One run of 400 or more questions, finished at the pass mark or
+     better - recorded in summarize() beside the Practice Test's own
+     pass, so a run that times out or a game that is lost never counts.
+     Nothing kept question counts per run before this build, so it is
+     tracked from here on. */
+  bigtest400: { label: "Pass a test of 400 or more questions (" + PASS_MARK + "% or better)",
+                done: () => store.bigTestPassed === true,
+                have: () => (store.bigTestPassed === true ? 1 : 0), need: 1 },
   hardcore10: { label: "Beat Hardcore on 10 units",
                 done: () => hardcoreUnitsBeaten() >= 10,
                 have: () => hardcoreUnitsBeaten(), need: 10 },
@@ -31614,7 +31619,7 @@ function buildAvatarCharSVGSafe(charId){
 const AVATAR_ART_SCALE = {
   dragon: 1.09, detective: 1.16, masked: 1.21, zeus: 1.05, poseidon: 1.05,
   voidwalker: 1.23, officer: 1.06, astronaut: 1.10,
-  marksman: 1.06, pharaoh: 1.03, knight: 1.06
+  marksman: 1.06, pharaoh: 1.03
 };
 
 /* The two retired starters are drawn as the Wizard wherever they still
@@ -31632,7 +31637,11 @@ const RETIRED_CHARACTER_TO = { queen: "wizard", dragon: "wizard",
   officer: "oracle", spartan: "valkyrie", k9: "hacker", robot: "ninja",
   pirate: "valkyrie", scholar: "hacker", wolf: "timekeeper",
   /* build 245: SWAT removed entirely, nobody keeps it. */
-  swat: "ninja" };
+  swat: "ninja",
+  /* build 262: the Knight is gone ("I don't like that character or the
+     challenge"); its three days live were not long enough for anybody to
+     have earned what replaced it, so it goes to a starter. */
+  knight: "ninja" };
 function buildAvatarCharSVG(charId){
   charId = RETIRED_CHARACTER_TO[charId] || charId;
   return buildAvatarCharSVGFresh(charId);
@@ -33054,77 +33063,67 @@ function drawAvatarCharSVG(charId){
     sheen(wingPaths.concat([helm]), "cx-fx-wingsheen", 3.4, 36.6, 3, 16, "#FFFFFF");
     return done();
   }
-  /* ================= KNIGHT (build 258) =================
-     Five units beaten on Hardcore in Game mode - "we also need to add
-     another character to unlock". Game mode had a banner (Hardcore on
-     ten units) and no character, and a knight is what beating the
-     hardest setting looks like. THE HELM IS THE FACE: a closed steel
-     great-helm with a gold cross down the front and a visor slit, and
-     behind the slit two points of ember light for eyes - so, like the
-     Hacker, the whole character reads at 26px as one shape with a light
-     in it. A crimson plume sweeps back off the crown; a blue surcoat
-     with a gold shield on the chest. Signature: the plume sways from its
-     socket, and a glint crosses the helm. */
-  if(def.kind === "knight"){
-    const steel = headGrad("#FFFFFF", "#AEBBCB", "#39465A");
-    const steelDk = headGrad("#C4CFDC", "#6D7C92", "#222C3C");
-    const gold = headGrad("#FFF4C8", "#E6B64A", "#7A5210");
-    const plume = headGrad("#FF9AA2", "#D8303F", "#5E0B18");
-    const coat = headGrad("#5C7FD8", "#23408E", "#0A1638");
-    const ember = "#FF7A3D";
-    const mirD = d => d.replace(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g, (m, x, y) => (+(40 - x).toFixed(2)) + " " + y);
+  /* ================= NIGHT OWL (build 262) =================
+     Pass a test of 400 or more questions - "make it like take a 400
+     question and pass it". It replaced the Knight (259), which was
+     asked against along with its challenge. The owl is the study-late
+     animal, and the one thing about it that has to be right is the one
+     Void got wrong: HEAD AND BODY ARE ONE SHAPE. An owl has no neck, so
+     the silhouette is a single rounded body with the head's crown and
+     ear tufts on top, and the face is a lighter disc laid on it, not a
+     separate ball set on a torso. Big amber eyes, a small dark beak, a
+     speckled chest, wings folded at the sides, and a few stars behind
+     it twinkling. */
+  if(def.kind === "nightowl"){
+    const feather = headGrad("#C9A27A", "#8A5E3A", "#3A2415");
+    const wing = headGrad("#A57A52", "#6A4428", "#2A170C");
+    const disc = headGrad("#FFF6E6", "#EBD7B8", "#B99A74");
+    const belly = headGrad("#F4E4C8", "#D9BE96", "#9C7A52");
+    const amber = "#F5B533";
+    open("cx-fx cx-fx-owlstars");
+    [[5.4, 8, .5], [34.2, 6.4, .42], [31.8, 15.2, .36], [7.4, 17.4, .34], [36, 22, .3]].forEach(([x, y, r]) =>
+      svg.appendChild(mk("circle", { cx: x, cy: y, r, fill: "#DCE6FF" })));
+    close();
     open("cx-body");
-    svg.appendChild(mk("path", { d: "M5.4 40 Q6 31 12.6 28.6 L27.4 28.6 Q34 31 34.6 40 Z", fill: coat }));
-    /* Pauldrons: two steel lames on each shoulder. */
-    ["M5.8 37.4 Q6 32.4 10.6 30.6 L12.4 32.4 Q9.2 34 8.8 37.8 Z", "M7 33.6 Q8 29.6 13.4 28.6 L15.6 29.8 Q11 30.8 9.6 34.4 Z"].forEach((d, i) => {
-      [d, mirD(d)].forEach(dd => svg.appendChild(mk("path", { d: dd, fill: i ? steel : steelDk, stroke: "#1E2838", "stroke-width": ".25", "stroke-linejoin": "round" })));
+    /* One silhouette from the crown to the base, reaching up behind the
+       head so a tilt never shows a gap. */
+    svg.appendChild(mk("path", { d: "M7.2 40 Q6.2 30 8.4 22 Q10 13 20 12.4 Q30 13 31.6 22 Q33.8 30 32.8 40 Z", fill: feather }));
+    /* The chest, lighter, with rows of little chevron speckles. */
+    svg.appendChild(mk("path", { d: "M12.6 40 Q11.8 31.6 14.6 27 Q20 24.6 25.4 27 Q28.2 31.6 27.4 40 Z", fill: belly }));
+    for(let r = 0; r < 4; r++){
+      const y = 29.4 + r * 2.6, n = r % 2 ? 3 : 4;
+      for(let i = 0; i < n; i++){
+        const x = 20 + (i - (n - 1) / 2) * 3;
+        svg.appendChild(mk("path", { d: "M" + (x - .9) + " " + y + " L" + x + " " + (y + .9) + " L" + (x + .9) + " " + y,
+          fill: "none", stroke: "#8A5E3A", "stroke-width": ".45", "stroke-linecap": "round", "stroke-linejoin": "round", opacity: ".75" }));
+      }
+    }
+    /* Wings folded down each side, with feather lines. */
+    [["M8.4 24 Q6 31 7.6 39.6 L12 39.6 Q11 31.4 12.8 26.4 Q10.6 24.6 8.4 24 Z", "M9 29 Q8.4 33 9.2 37.4 M10.8 28 Q10.2 32.6 10.8 37.6"],
+     ["M31.6 24 Q34 31 32.4 39.6 L28 39.6 Q29 31.4 27.2 26.4 Q29.4 24.6 31.6 24 Z", "M31 29 Q31.6 33 30.8 37.4 M29.2 28 Q29.8 32.6 29.2 37.6"]].forEach(([d, lines]) => {
+      svg.appendChild(mk("path", { d, fill: wing, stroke: "#2A170C", "stroke-width": ".25", "stroke-linejoin": "round" }));
+      svg.appendChild(mk("path", { d: lines, fill: "none", stroke: "#C9A27A", "stroke-width": ".35", "stroke-linecap": "round", opacity: ".55" }));
     });
-    /* The mail at the throat, then the surcoat's gold hem round the neck. */
-    svg.appendChild(mk("path", { d: "M13.2 30.6 Q13.8 28.2 20 28.2 Q26.2 28.2 26.8 30.6 Q20 32.2 13.2 30.6 Z", fill: steelDk }));
-    for(let x = 14.2; x < 26; x += 1.2) svg.appendChild(mk("circle", { cx: x.toFixed(2), cy: 29.9, r: .38, fill: "none", stroke: "#C4CFDC", "stroke-width": ".2", opacity: ".7" }));
-    svg.appendChild(mk("path", { d: "M13.2 30.6 Q20 32.2 26.8 30.6", fill: "none", stroke: "#E6B64A", "stroke-width": ".5" }));
-    /* The shield on the chest: gold, with a crimson cross. */
-    const shield = "M17 32.4 L23 32.4 L23 35.2 Q23 37.8 20 39 Q17 37.8 17 35.2 Z";
-    svg.appendChild(mk("path", { d: shield, fill: gold, stroke: "#6A4508", "stroke-width": ".3", "stroke-linejoin": "round" }));
-    svg.appendChild(mk("path", { d: "M19.35 33 L20.65 33 L20.65 34.6 L22.3 34.6 L22.3 35.8 L20.65 35.8 L20.65 38.3 L19.35 38.3 L19.35 35.8 L17.7 35.8 L17.7 34.6 L19.35 34.6 Z", fill: "#C42336" }));
     close();
     open("cx-head");
-    /* The plume, behind the helm: a crest sweeping up and back from a
-       gold socket on the crown, in three scalloped tiers of feather. */
-    const plumeD = "M20.2 9.0 Q21.4 3.2 27.8 3.4 Q33.8 4.2 35.2 11.2 Q33 9.2 30.8 9.5 Q33 11.4 32.8 15.4 Q30.4 12.2 27.8 12.0 Q28.6 14.0 27.6 16.2 Q25.6 12.0 21.8 11.2 Z";
-    open("cx-fx cx-fx-knightplume");
-    svg.appendChild(mk("path", { d: plumeD, fill: plume, stroke: "#4A0812", "stroke-width": ".3", "stroke-linejoin": "round" }));
-    ["M21.6 8.6 Q25 5.0 30.6 6.0", "M22.4 10.0 Q26.6 8.0 31.6 10.2", "M22.6 11.0 Q25.8 10.4 28.6 13.0"].forEach(d =>
-      svg.appendChild(mk("path", { d, fill: "none", stroke: "#FFC2C8", "stroke-width": ".35", "stroke-linecap": "round", opacity: ".7" })));
-    close();
-    /* The great-helm: straight sides, a rounded crown, and a gently
-       flared foot. */
-    const helm = "M12.2 27 L12 14.8 Q12 7.2 20 6.8 Q28 7.2 28 14.8 L27.8 27 Q24 28.8 20 28.8 Q16 28.8 12.2 27 Z";
-    svg.appendChild(mk("path", { d: helm, fill: steel, stroke: "#1E2838", "stroke-width": ".35" }));
-    svg.appendChild(mk("path", { d: "M14.4 9.6 Q13.2 11.8 13.2 15", fill: "none", stroke: "#FFFFFF", "stroke-width": ".55", "stroke-linecap": "round", opacity: ".8" }));
-    svg.appendChild(mk("rect", { x: 18.6, y: 5.8, width: 2.8, height: 1.6, rx: .4, fill: gold, stroke: "#6A4508", "stroke-width": ".2" }));
-    /* A gold brow band and a gold strip down the face: the cross. */
-    svg.appendChild(mk("path", { d: "M12 14 Q20 12.6 28 14 L28 15.2 Q20 13.8 12 15.2 Z", fill: gold, stroke: "#6A4508", "stroke-width": ".15" }));
-    svg.appendChild(mk("path", { d: "M19.25 19 L20.75 19 L20.75 28.7 L19.25 28.7 Z", fill: gold, stroke: "#6A4508", "stroke-width": ".15" }));
-    /* The visor slit, one each side of the nasal bar. */
-    ["M13.2 16.6 L18.9 16.4 L18.9 18.1 L13.4 18.3 Z", mirD("M13.2 16.6 L18.9 16.4 L18.9 18.1 L13.4 18.3 Z")].forEach(d =>
-      svg.appendChild(mk("path", { d, fill: "#06080D", stroke: "#1E2838", "stroke-width": ".2" })));
-    /* Breaths: two small grilles of holes low on the helm. */
-    [[15.2, 1], [24.8, -1]].forEach(([x0]) => {
-      for(let r = 0; r < 3; r++) for(let c = 0; c < 2; c++)
-        svg.appendChild(mk("circle", { cx: (x0 + (c - .5) * 1.5).toFixed(2), cy: (21.4 + r * 1.5).toFixed(2), r: .34, fill: "#141A26" }));
-    });
-    /* The eyes: ember light behind the slit. */
+    /* The crown and the ear tufts, the same feather as the body. */
+    svg.appendChild(mk("path", { d: "M8.6 21.4 Q8.4 13.6 12.2 10.6 L10.4 4.6 Q14.6 6.6 16.2 9.2 Q20 8.2 23.8 9.2 Q25.4 6.6 29.6 4.6 L27.8 10.6 Q31.6 13.6 31.4 21.4 Q26 26 20 26 Q14 26 8.6 21.4 Z", fill: feather }));
+    svg.appendChild(mk("path", { d: "M11.2 6.2 Q13.6 7.6 14.8 9.6 M28.8 6.2 Q26.4 7.6 25.2 9.6", fill: "none", stroke: "#E2C49E", "stroke-width": ".45", "stroke-linecap": "round", opacity: ".7" }));
+    /* The facial disc: two soft rounds meeting over the beak. */
+    svg.appendChild(mk("path", { d: "M20 13.6 Q15.8 11.2 12.4 13.4 Q9.8 15.8 10.4 19.4 Q11.4 23.6 16 24 Q18.6 24 20 22.4 Q21.4 24 24 24 Q28.6 23.6 29.6 19.4 Q30.2 15.8 27.6 13.4 Q24.2 11.2 20 13.6 Z", fill: disc, stroke: "#8A5E3A", "stroke-width": ".3" }));
     open("cx-eyes");
-    [[16.2, 17.35], [23.8, 17.35]].forEach(([x, y]) => {
-      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 2.3, ry: 1.25, fill: ember, opacity: ".55" }));
-      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 1.5, ry: .62, fill: "#FFB36B" }));
-      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: .95, ry: .34, fill: "#FFF6EA" }));
+    [[15.4, 18.4], [24.6, 18.4]].forEach(([x, y]) => {
+      svg.appendChild(mk("circle", { cx: x, cy: y, r: 3.3, fill: "#2A170C" }));
+      svg.appendChild(mk("circle", { cx: x, cy: y, r: 2.8, fill: amber }));
+      svg.appendChild(mk("circle", { cx: x, cy: y, r: 1.55, fill: "#120A04" }));
+      svg.appendChild(catchlight(x - .7, y - .8, .6));
     });
     close();
-    closedEyes([[16.2, 17.4, .9], [23.8, 17.4, .9]], "#5A2A18", .4);
+    closedEyes([[15.4, 18.6, 2.2], [24.6, 18.6, 2.2]], "#5A3A20", .55);
+    /* The beak. */
+    svg.appendChild(mk("path", { d: "M18.6 21.2 L21.4 21.2 L20 24.2 Z", fill: "#4A3218", stroke: "#2A170C", "stroke-width": ".2", "stroke-linejoin": "round" }));
+    svg.appendChild(mk("path", { d: "M19.2 21.5 L20 22.6", stroke: "#8A6A48", "stroke-width": ".3", "stroke-linecap": "round" }));
     close();
-    sheen([helm], "cx-fx-helmsheen", 11, 29, 6, 29, "#FFFFFF");
     return done();
   }
   /* ================= HACKER =================
@@ -34920,7 +34919,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               mysteryColorsFound: { red: false, orange: false, yellow: false, violet: false, white: false },
               testsUntilMystery: null, flareNextTestAt: 0,
               savedCodePrompts: 0, savedCodeSaved: false,
-              dailyCorrectStreak: 0, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false,
+              dailyCorrectStreak: 0, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false,
               weeklyWins: 0, weeklyTop3: 0, retakenQuestions: 0, hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, unlocksShown: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
               vrMatches: 0, vrWins: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
               fullTestsSeeded: false, practiceExamPerfect: false, banner: "", starfallKept: false,
@@ -35130,6 +35129,7 @@ function applyLoadedData(got){
   store.unitHundoStreak = typeof got.unitHundoStreak === "number" ? got.unitHundoStreak : 0;
   store.unitHundoStreakUnits = Array.isArray(got.unitHundoStreakUnits) ? got.unitHundoStreakUnits.slice() : [];
   store.practiceTestPassed = got.practiceTestPassed === true;
+  store.bigTestPassed = got.bigTestPassed === true;
   store.lastModified = typeof got.lastModified === "number" ? got.lastModified : 0;
   store.testHistory = Array.isArray(got.testHistory) ? got.testHistory.slice(0, 20) : [];
   store.avatarChar = typeof got.avatarChar === "string" ? got.avatarChar : null;
@@ -36475,6 +36475,7 @@ function wipeLocalProgressAndSettings(){
   store.unitHundoStreak = 0;
   store.unitHundoStreakUnits = [];
   store.practiceTestPassed = false;
+  store.bigTestPassed = false;
   store.weeklyWins = 0; store.weeklyTop3 = 0; store.retakenQuestions = 0; store.hundoDay = null; store.hundoDayBest = 0; store.shadesFound = false; store.shadesAt = null; store.legacyChars = []; store.rankMapSeen = -1; store.rankMapFx244 = false; store.rankMapProg = null;
   store.unlocksShown = { chars: [], banners: [] };
   store.unitRuns = {};
@@ -56060,7 +56061,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-30-261";
+const APP_BUILD = "2026-09-30-262";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -56841,7 +56842,33 @@ async function applyUpdate(){
      triggers narrates an update instead of an ordinary cold boot. */
   try{ sessionStorage.setItem("class26e.updating", "1"); }catch(e){}
   try{ await fetch(location.href, { cache: "reload" }); }catch(e){}
+  /* LET GO OF THIS PAGE BEFORE LOADING THE NEXT ONE (build 262).
+     "After an update is pushed, the main menu and a lot of the screens
+     are missing contents." A reload on iOS happens inside the same web
+     process, and the page being left - Home, with ~108 running
+     animations and 15 frosted-glass layers - still holds its graphics
+     memory while the new page builds its own. Past the process's limit,
+     WebKit stops painting parts of the page: the planet, the bubbles,
+     whole cards simply are not drawn, on every screen, until the app is
+     closed. A cold launch never has two pages' worth alive, which is why
+     it only ever followed an update. So everything but the "Pushing
+     update" bar is taken off the page, every animation is cancelled,
+     and the reload waits two frames for the layers to actually be
+     released before it goes. */
+  releasePageForReload();
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 150))));
   location.reload();
+}
+function releasePageForReload(){
+  try{ showPushingUpdate(); }catch(e){}
+  try{ document.documentElement.classList.add("is-reloading"); }catch(e){}
+  try{
+    document.getAnimations().forEach(a => {
+      const t = a.effect && a.effect.target;
+      if(!(t && t.closest && t.closest("#pushing-update"))) a.cancel();
+    });
+  }catch(e){}
+  try{ if(typeof stage !== "undefined" && stage) stage.replaceChildren(); }catch(e){}
 }
 
 /* Two triggers, covering the two ways a stale copy gets used: opening the
@@ -59341,6 +59368,11 @@ function summarize(){
        only, and ten answered at 90% is not passing a 250-question test.
        (Scoring a timeout over the whole test, blanks as wrong, is the
        way to allow it, if that is ever wanted.) */
+    /* The Night Owl (build 262): 400 questions or more in one run, passed. */
+    if(order.length >= 400 && pct >= PASS_MARK && cfg.mode !== "game" && !store.bigTestPassed){
+      store.bigTestPassed = true;
+      saveStore();
+    }
     if(practiceTestMinutes != null && pct >= PASS_MARK && !store.practiceTestPassed){
       store.practiceTestPassed = true;
       saveStore();
@@ -70816,65 +70848,37 @@ function showProfile(defaultTab){
   const badgeStat = document.createElement("button");
   badgeStat.type = "button";
   badgeStat.className = "profile-badgesect";
-  const badgeHead = document.createElement("span");
-  badgeHead.className = "profile-badgesect-head";
+  /* THE MEDAL, NOT A LIST (build 262). "The badge thing in profile box
+     still not good enough and I don't like how it says what I'm closest
+     to." The row said which unit was nearest its badge and how many
+     hundos it still needed - a to-do list on a card about you. It is the
+     Badges tab's own medal now, the count struck into it (silver, gold
+     once the set is complete), with one plain line beside it and the
+     arrow into the tab where the detail lives. */
+  const allBadges = badgeCount >= totalUnitsForBadges;
+  const badgeRow = document.createElement("span");
+  badgeRow.className = "profile-badgerow";
+  const pMedal = document.createElement("span");
+  pMedal.className = "badges-medal profile-badgemedal" + (allBadges ? " is-complete" : "");
+  pMedal.setAttribute("aria-hidden", "true");
+  const pMedalNum = document.createElement("span");
+  pMedalNum.className = "badges-medal-num"; pMedalNum.textContent = String(badgeCount);
+  pMedal.appendChild(pMedalNum);
+  const badgeText = document.createElement("span");
+  badgeText.className = "profile-badgerow-text";
   const badgeKick = document.createElement("span");
   badgeKick.className = "profile-badgesect-kicker";
   badgeKick.textContent = "Badges";
+  const badgeLine = document.createElement("span");
+  badgeLine.className = "profile-badgerow-line";
+  badgeLine.textContent = allBadges ? "Every badge earned" : badgeCount + " of " + totalUnitsForBadges + " earned";
+  badgeText.append(badgeKick, badgeLine);
   const badgeChev = document.createElement("span");
   badgeChev.className = "profile-badgesect-chev"; badgeChev.setAttribute("aria-hidden", "true");
   badgeChev.textContent = "\u203a";
-  badgeHead.append(badgeKick, badgeChev);
-  /* NO BADGE ICONS HERE (build 258). "The badge thing underneath level
-     I don't like, I don't want to see my badge icons there at all." The
-     earned badges fanned out beside the count came off; the Badges tab,
-     one tap away, is where the set is looked at. In their place the row
-     is built like the level row above it - the number on a plate, and
-     beside it the one thing a badge count makes you want to know next:
-     how many hundos to the next badge, and in which unit. */
-  const badgeBody = document.createElement("span");
-  badgeBody.className = "profile-level-row profile-badgesect-body";
-  const badgePlate = document.createElement("span");
-  badgePlate.className = "profile-badgeplate";
-  const badgePlateNum = document.createElement("span");
-  badgePlateNum.className = "profile-level-value profile-badge-value";
-  badgePlateNum.textContent = String(badgeCount);
-  const badgePlateWord = document.createElement("span");
-  badgePlateWord.className = "profile-level-word";
-  badgePlateWord.textContent = "of " + totalUnitsForBadges;
-  badgePlate.append(badgePlateNum, badgePlateWord);
-  const badgeSide = document.createElement("span");
-  badgeSide.className = "profile-level-side";
-  const badgeSideTop = document.createElement("span");
-  badgeSideTop.className = "profile-level-sidetop";
-  const badgeSideSub = document.createElement("span");
-  badgeSideSub.className = "profile-level-sidesub profile-badge-closest";
-  {
-    let best = null;
-    try{
-      const perf = store.unitPerfects || {};
-      topicsIn(QUESTIONS).forEach(u => {
-        if(unitBadgeEarned(u)) return;
-        const need = badgeThresholdFor(u), have = Math.min(need, perf[u] || 0);
-        if(!best || have / need > best.have / best.need) best = { u, have, need };
-      });
-    }catch(e){}
-    if(!best){
-      badgeSideTop.textContent = "Every badge earned";
-      badgeSideSub.textContent = "The whole set is yours";
-    } else if(!best.have){
-      badgeSideTop.textContent = "No hundos towards the next badge yet";
-      badgeSideSub.textContent = "Ace a whole unit to start one";
-    } else {
-      const left = best.need - best.have;
-      badgeSideTop.textContent = left + (left === 1 ? " hundo" : " hundos") + " to the next badge";
-      badgeSideSub.textContent = best.u + " \u00b7 " + best.have + "/" + best.need;
-    }
-  }
-  badgeSide.append(badgeSideTop, badgeSideSub);
-  badgeBody.append(badgePlate, badgeSide);
-  badgeStat.append(badgeHead, badgeBody);
-  badgeStat.setAttribute("aria-label", "Badges, " + badgeCount + " of " + totalUnitsForBadges + " earned. " + badgeSideTop.textContent + ". Open the Badges tab.");
+  badgeRow.append(pMedal, badgeText, badgeChev);
+  badgeStat.appendChild(badgeRow);
+  badgeStat.setAttribute("aria-label", "Badges, " + badgeCount + " of " + totalUnitsForBadges + " earned. Open the Badges tab.");
   badgeStat.addEventListener("click", () => showRanksScreen("badges"));
   /* One card, not two. "Maybe the top two boxes, the one with the level
      and the other with the name, could be joined instead of appearing as
