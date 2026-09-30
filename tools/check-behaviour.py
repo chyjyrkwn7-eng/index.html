@@ -2338,9 +2338,14 @@ def check_b240_units(br):
     modes = (r or {}).get("modes", {}) if isinstance(r, dict) else {}
     firsts = {m: (v[0] if v else None) for m, v in modes.items()}
     lasts = {m: (v[-1] if v else None) for m, v in modes.items()}
-    check("every mode has four squares", modes and all(len(v) == 4 for v in modes.values()), modes)
-    check("every mode starts with Completed and ends with Hundos",
-          modes and all(f == "Completed" for f in firsts.values()) and all(l == "Hundos" for l in lasts.values()), modes)
+    # REVISED IN 268: "it says drill at the top, but really some of that
+    # stuff shows up across any mode". Four every-mode squares, always the
+    # same and in the same order, then only the mode's own ones.
+    every = ["Completed", "Best score", "Accuracy", "Hundos"]
+    check("every mode opens with the same four every-mode squares", modes and all(v[:4] == every for v in modes.values()), modes)
+    check("only Drill, Exam and Game add squares of their own",
+          modes and len(modes.get("review", [])) == 4 and len(modes.get("vroom", [])) == 4
+          and all(len(modes.get(m, [])) > 4 for m in ("drill", "exam", "game")), modes)
     check("Game shows no best time unless Hardcore is beaten",
           modes.get("game") and not any("time" in x.lower() for x in modes["game"]), modes.get("game"))
     ge = " | ".join(r.get("gameEasy", [])) if isinstance(r, dict) else ""
@@ -2956,9 +2961,16 @@ def check_b244(br):
       showHome(); await wait(900); document.getAnimations().forEach(a => a.pause());
       out.home = [...document.querySelectorAll('.cosmic-icon-badge.cosmic-badge-rank')].map((b, i) => off(b, b.querySelector('svg'), K[i]));
       store.lifetime.points = Math.max(store.lifetime.points || 0, 0);
+      /* build 268: an unranked plate draws no emblem at all, so the coin is
+         measured on an account that holds a rank */
+      const rk0 = rankOf; rankOf = () => 'ranger';
       showProfile('profile'); await wait(900); document.getAnimations().forEach(a => a.pause());
-      const coin = document.querySelector('.profile-rankplate .profile-rankcoin'), held = rankOf(store) || rankStepProgress().next;
-      out.coin = coin ? { fitted: coin.querySelector('svg').classList.contains('is-fitted'), off: off(coin, coin.querySelector('svg'), held) } : null;
+      const coin = document.querySelector('.profile-rankplate .profile-rankcoin'), held = 'ranger';
+      out.coin = coin && coin.querySelector('svg') ? { fitted: coin.querySelector('svg').classList.contains('is-fitted'), off: off(coin, coin.querySelector('svg'), held) } : null;
+      rankOf = rk0;
+      showProfile('profile'); await wait(500);
+      const cu = document.querySelector('.profile-rankplate .profile-rankcoin');
+      out.unrankedEmpty = !rankOf(store) ? (!!cu && !cu.querySelector('svg') && !document.querySelector('.profile-rankplate-wm svg')) : true;
       } catch(e){ out.threw = String(e) + ' ' + (e.stack || '').split('\\n')[1]; }
       return out; }""")
     check("the ladder is Bronze, Silver, Gold, Platinum, Sapphire, Amethyst, Supernova - ranks and themes alike",
@@ -2979,6 +2991,7 @@ def check_b244(br):
     check("every Home bubble's emblem is centred in it (within 1.5px)", len(home) == 7 and max(home) <= 1.5, home)
     coin = r.get("coin") or {}
     check("the Profile plate's coin is cut to fit and centred (within 1px)", coin.get("fitted") is True and coin.get("off", 9) <= 1, coin)
+    check("an unranked plate shows no rank's emblem, in the coin or behind it (268)", r.get("unrankedEmpty") is True, r.get("unrankedEmpty"))
     ctx.close()
 
 
@@ -3778,43 +3791,38 @@ def check_b245_daily_schedule(br):
 
 
 def check_b245_slogan(br):
-    """37. "On the main menu of the app, could put another slogan somewhere
-    maybe, calling this 'the study game'". It is there, between NOVA and
-    the tagline - and Start Studying does not move by a pixel for it: the
-    button is measured with the slogan in place and again with the slogan
-    and its lift taken out, which is the page as it was before. The short
-    viewport tiers drop it, like the tagline one tier further down."""
-    print("\n37. build 245: THE STUDY GAME on Home, and Start Studying unmoved")
+    """37. "Calling this 'the study game'" (245) and then "where it says
+    'the study game' under nova, I feel like that cramps that all up ...
+    either remove it or incorporate it somehow in the sentence" (268).
+    It is part of the tagline now: no line of its own between NOVA and
+    the tagline, the phrase leads the sentence, and Start Studying does
+    not move for it - the button is measured with the new tagline and
+    again with the old one put back."""
+    print("\n37. build 268: 'the study game' is in the tagline, not a line of its own")
     sizes = [(440, 956), (834, 1194), (375, 667), (375, 812), (393, 852), (360, 800),
              (1024, 1366), (1728, 987), (1512, 722), (1194, 834), (956, 440)]
     for w, h in sizes:
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
         r = pg.evaluate("""async ()=>{ showHome(); await new Promise(r => setTimeout(r, 1500));
-          const R = e => { const b = e.getBoundingClientRect(); return { t: b.top, b: b.bottom, l: b.left, r: b.right, h: b.height }; };
+          const R = e => { const b = e.getBoundingClientRect(); return { t: b.top, b: b.bottom, h: b.height }; };
           const frame = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
           const btn = () => R(document.getElementById('nextbtn'));
           const settle = async () => { let a = btn(); for(let i = 0; i < 30; i++){ await frame(); const b = btn(); if(Math.abs(b.t - a.t) < .05) return b; a = b; } return a; };
           await settle();
-          const s = [...document.querySelectorAll('.panel.home *')].find(e => /study game/i.test(e.textContent || '') && e.children.length === 0);
-          const shown = !!s && getComputedStyle(s).display !== 'none' && s.getBoundingClientRect().height > 0;
-          const out = { shown, with: await settle(), tag: R(document.querySelector('.hometagline')) };
-          if(s){ out.s = R(s); out.title = R(document.querySelector('.hometitle'));
-                 out.greet = R(document.querySelector('.homegreeting')); }
-          const panel = document.querySelector('.panel.home');
-          if(s){ s.remove(); panel.style.setProperty('--slogan-lift', '0px'); }
-          out.without = await settle(); out.tag0 = R(document.querySelector('.hometagline'));
+          const wrap = document.querySelector('.hometitle-wrap');
+          const tag = document.querySelector('.hometagline');
+          const lines = [...wrap.children].map(e => e.className);
+          const own = [...document.querySelectorAll('.panel.home *')].filter(e => e !== tag && e.children.length === 0 && /^\\s*the study game\\s*$/i.test(e.textContent || '')).length;
+          const out = { lines, own, text: tag.textContent, with: await settle(),
+                        shown: getComputedStyle(tag).display !== 'none' && tag.getBoundingClientRect().height > 0 };
+          tag.textContent = 'Master the material, one question at a time.';
+          out.without = await settle();
           return out; }""")
         tag = "%dx%d" % (w, h)
-        short = h <= 800 and w >= 544 or h <= 608
-        if not short:
-            check("%s: the slogan is on Home" % tag, r["shown"])
-        if r.get("shown"):
-            check("%s: it sits between NOVA and the tagline, touching neither" % tag,
-                  r["title"]["b"] <= r["s"]["t"] + 0.5 and r["s"]["b"] <= r["tag"]["t"] + 0.5,
-                  [r["title"], r["s"], r["tag"]])
-            check("%s: and the greeting still clears NOVA" % tag, r["greet"]["b"] <= r["title"]["t"] + 0.5)
+        check("%s: no separate slogan line under NOVA" % tag, r["own"] == 0 and len(r["lines"]) == 2, r["lines"])
+        check("%s: the tagline carries the phrase" % tag, re.search(r"study game", r["text"], re.I), r["text"])
         check("%s: Start Studying does not move for it" % tag,
-              abs(r["with"]["t"] - r["without"]["t"]) < 0.6 and abs(r["tag"]["b"] - r["tag0"]["b"]) < 0.6,
+              abs(r["with"]["t"] - r["without"]["t"]) < 0.6,
               [round(r["with"]["t"], 1), round(r["without"]["t"], 1)])
         ctx.close()
 
@@ -3953,7 +3961,7 @@ def check_b245_daily_announce(br):
     print("\n39. build 245: the daily question recharges, then the banner comes out of it")
     for label, w, h in DEVICES + [("iPhone SE 2", 375, 667)]:
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
-        r = pg.evaluate(DAILY_SAMPLER, {"ms": 9800, "reduce": False})
+        r = pg.evaluate(DAILY_SAMPLER, {"ms": 12600, "reduce": False})
         fr = r["frames"]
         charge = next((f["t"] for f in fr if f["charging"]), None)
         closed = next((f["t"] for f in fr if f["arcL"] is not None and abs(f["arcL"]) >= 170), None)
@@ -3961,8 +3969,9 @@ def check_b245_daily_announce(br):
         orbs = [f for f in fr if f["orb"]]
         check("%s: the button starts charging as Home appears" % label, charge is not None and charge < 1000, charge)
         check("%s: the ring closes round it (a full turn)" % label, closed is not None, closed)
-        check("%s: the banner follows the recharge, 2-3.5s in" % label,
-              shown is not None and closed is not None and shown >= closed and 2000 <= shown <= 3500,
+        # 2-3.5s until build 268 asked for "another 2-3 seconds" on the ring
+        check("%s: the banner follows the recharge, 4.5-6s in" % label,
+              shown is not None and closed is not None and shown >= closed and 4500 <= shown <= 6000,
               [closed, shown])
         dist0 = None
         if orbs:
@@ -4001,7 +4010,7 @@ def check_b245_daily_announce(br):
     b = pg.evaluate("""()=>{ const f=document.querySelector('.daily-question-fab'); const r=f.getBoundingClientRect();
       return {x:r.left+r.width/2, y:r.top+r.height/2, charging:f.classList.contains('is-charging')}; }""")
     pg.mouse.click(b["x"], b["y"])
-    pg.wait_for_timeout(4800)
+    pg.wait_for_timeout(7300)
     q = pg.evaluate("""()=>({ daily: !!document.querySelector('.qnum-daily'), orb: !!document.querySelector('.daily-orb'),
                               banner: !!document.getElementById('dailyalert') })""")
     check("a real tap on the button mid-charge opens the question", b["charging"] and q["daily"], [b, q])
@@ -4699,6 +4708,89 @@ def check_b267(br):
     ctx.close()
 
 
+def check_b268(br):
+    """Build 268, Madison's list. (1) The answer-streak pop sits on the
+    screen's centre line, not in the middle of the gap beside it. (2) A
+    cutscene hands straight to the pop-up after it: the screen never comes
+    back up between the two. (3) The unit screen's bar is Home's width on a
+    phone and its icons have room. (4) The road map's light rides the line
+    exactly while it fills. Written against 267, where each one fails."""
+    print("\n50. build 268: streak pop centred, cutscene into pop-up, unit bar spacing, road map light")
+    # 1. the streak pop
+    for w, h in [(440, 956), (834, 1194), (390, 844)]:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate("""async ()=>{
+          const U = topicsIn(QUESTIONS)[0]; const ix = QUESTIONS.map((q,i)=>i).filter(i=>(QUESTIONS[i].topic||'').trim()===U);
+          cfg.mode='drill'; cfg.units=[U]; cfg.source='all'; runMode='drill'; beginRun(ix, null);
+          for(let i = 0; i < 80 && !document.querySelector('.qpanel .choice'); i++) await new Promise(r => setTimeout(r, 150));
+          await new Promise(r => setTimeout(r, 900));
+          theme.muteBanners = false; showRunStreakBanner(25); await new Promise(r => setTimeout(r, 600));
+          const e = document.querySelector('.streak-pop'); if(!e) return null;
+          const b = e.getBoundingClientRect(), p = document.getElementById('pausebtn').getBoundingClientRect();
+          return { c: (b.left + b.right) / 2, vw: innerWidth, inbar: e.classList.contains('is-inbar'),
+                   clearPause: b.right <= p.left, row: Math.abs((b.top + b.bottom) / 2 - (p.top + p.bottom) / 2) }; }""")
+        tag = "%dx%d" % (w, h)
+        check("%s: the streak pop is on the screen's centre line" % tag,
+              r is not None and abs(r["c"] - r["vw"] / 2) <= 1.5, r)
+        check("%s: in the bar, clear of Pause" % tag, r is not None and r["inbar"] and r["clearPause"] and r["row"] <= 2, r)
+        ctx.close()
+    # 2. flare scene -> its pop-up, sampled every frame: how much of the
+    # screen is covered by the scene, the bridge it leaves or the pop-up's dim
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{ showHome(); await new Promise(r => setTimeout(r, 600));
+      theme.muteBanners = false;
+      const cover = () => { let c = 0;
+        document.querySelectorAll('.fl-scene, .scene-bridge').forEach(e => { c = Math.max(c, parseFloat(getComputedStyle(e).opacity) || 0); });
+        const sp = document.querySelector('.rs-spot'); if(sp){ const m = getComputedStyle(sp).backgroundColor.match(/rgba?\\(([^)]+)\\)/);
+          const a = m ? m[1].split(',').map(Number) : []; c = Math.max(c, (a.length > 3 ? a[3] : 1) / .72); }
+        return c; };
+      const frames = []; let stop = false, spotAt = null; const t0 = performance.now();
+      (function tick(){ if(stop) return; frames.push([performance.now() - t0, cover(), !!document.querySelector('.rs-spot')]); requestAnimationFrame(tick); })();
+      const color = VOID_FLARES[0];
+      await new Promise(done => playFlareFoundScene(color, false, () => setTimeout(() => {
+        spotAt = performance.now() - t0;
+        playUnlockSpotlight({ kind: 'banner', kicker: 'Test', name: 'Test', sub: '', color: '#6FC2FF', art: () => document.createElement('div') }, 1, 1, () => {});
+        done(); }, 320)));
+      await new Promise(r => setTimeout(r, 1500)); stop = true;
+      const peak = frames.find(f => f[1] > .95);
+      const after = frames.filter(f => peak && f[0] > peak[0] && f[0] <= spotAt + 1200);
+      const low = after.reduce((m, f) => Math.min(m, f[1]), 1);
+      return { low: Math.round(low * 100) / 100, spotAt: Math.round(spotAt), n: after.length }; }""")
+    check("a flare scene hands to its pop-up without the screen coming back up in between",
+          r["n"] > 10 and r["low"] >= 0.9, r)
+    ctx.close()
+    # 3. the unit screen's bar on a phone
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{ const w = ms => new Promise(r => setTimeout(r, ms));
+      const meas = () => { const bar = document.querySelector('.bottomtabs');
+        const ic = [...bar.querySelectorAll('.bottomtabs-navrow .bottomtab-icon')].filter(e => e.getBoundingClientRect().width > 0).map(e => e.getBoundingClientRect());
+        return { w: Math.round(bar.getBoundingClientRect().width), gap: Math.min.apply(null, ic.slice(1).map((r, i) => r.left - ic[i].right)) }; };
+      showHome(); await w(600); const home = meas();
+      store.seenUnitSelectTour = true; cfg.mode = 'drill'; cfg.units = []; showSetup(); await w(900);
+      const st = document.getElementById('bottomtab-start');
+      return { home, setup: meas(), fits: st.scrollWidth <= st.clientWidth }; }""")
+    check("17 Pro Max: the unit screen's bar is as wide as Home's", abs(r["setup"]["w"] - r["home"]["w"]) <= 1, r)
+    check("and its icons are at least 30px apart", r["setup"]["gap"] >= 30, r)
+    check("and Start still fits its pill", r["fits"], r)
+    ctx.close()
+    # 4. the road map's light
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms));
+      levelOf = () => 40; badgeCountOf = () => 4;
+      showProfile('ranks'); await wait(3500); showHome(); await wait(300);
+      const frames = []; let stop = false;
+      (function tick(){ if(stop) return;
+        const d = document.querySelector('.rankmap-roadtip-dot') || document.querySelector('.rankmap-roadtip');
+        const st = d && d.closest('.rankmap-stop'); const f = st && st.querySelector('.rankmap-roadfill');
+        if(d && f){ const a = d.getBoundingClientRect(), b = f.getBoundingClientRect(); frames.push(Math.abs((a.top + a.height / 2) - b.bottom)); }
+        requestAnimationFrame(tick); })();
+      showProfile('ranks'); await wait(2800); stop = true;
+      return { n: frames.length, worst: Math.round(Math.max.apply(null, frames.concat([0])) * 10) / 10 }; }""")
+    check("the road map's light rides the end of the line while it fills (within 1.5px every frame)",
+          r["n"] > 20 and r["worst"] <= 1.5, r)
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     only = os.environ.get("ONLY_B245")
@@ -4760,6 +4852,7 @@ def main():
             check_b258(br)
             check_b266(br)
             check_b267(br)
+            check_b268(br)
         finally:
             br.close()
     SERVER.shutdown()

@@ -5159,6 +5159,11 @@
   .chatdock-face-more{ font-size:.7rem; font-weight:800; color:var(--ink); background:#2A323C; }
   .chatdock-chatrow.is-unread .chatdock-chatrow-name{ color:#fff; }
   /* The unit details' mode chip (build 240). */
+  .unitdetail-grouphead{ margin:.2rem 0 .45rem; font-size:.66rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--soft); display:flex; align-items:center; }
+  .unitdetail-grouphead + .unitdetail-stats{ margin-bottom:.9rem; }
+  .unitdetail-stats.is-single{ grid-template-columns:minmax(0, 1fr) !important; }
+  /* No text selection from the press-and-hold that opens this (268). */
+  .unitdetail, .unitdetail *{ -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
   .unitdetail-mode{ display:inline-block; margin-left:.55rem; padding:.1rem .5rem; border-radius:999px;
     font-size:.66rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; vertical-align:1px;
     color:#DCEEFF; background:rgba(111,180,255,.14); border:1px solid rgba(111,180,255,.35); }
@@ -6956,6 +6961,26 @@
       width:min(23.5rem, calc(100vw - 1.5rem)); max-width:none;
     }
     .bottomtabs.has-start-tab .bottomtabs-navrow{ min-width:0; }
+  }
+  /* ROOM TO BREATHE (build 268): "on the phone, in the unit selection
+     screen, the bottom tab is pretty pushed together, could we space it
+     out some ... don't spread too much but just enough so it's not
+     cramped." It had FIVE icons in a bar sized for four: the 23.5rem cap
+     above dates from when Home's bar was 376px, and Home grew to 416 when
+     Ranks joined it, so this bar ended up the narrower of the two and its
+     icons 23px apart against Home's 44-67. Its footprint is Home's again
+     (the same 26rem cap, the same 12px off each edge), the Start pill
+     gives back a few pixels of padding it was not using, and the gap to
+     it narrows a little - which puts the room between the icons, where
+     the cramping was. A tablet is untouched: 59-93px apart already. */
+  @media (max-width:639px){
+    .bottomtabs.has-start-tab{ width:min(26rem, calc(100vw - 1.5rem)); gap:.5rem; }
+  }
+  /* The pill's own sizing sits further down the file and would win on
+     source order, hence the extra class; a 320px phone keeps its stacked
+     pill (max-width:359px, below). */
+  @media (min-width:360px) and (max-width:639px){
+    .bottomtabs.has-start-tab .bottomtabs-extrarow .bottomtab-start{ width:clamp(5rem, 22vw, 5.9rem); padding:0 .6rem; }
   }
   @media (min-width:40rem){
     .bottomtabs:not(.has-start-tab){ padding:.55rem; gap:.3rem; }
@@ -9746,56 +9771,7 @@
     font-family:var(--serif); font-style:italic; font-size:.95rem; color:var(--soft);
     margin:clamp(.3rem, 2vh, .6rem) 0 0;
   }
-  /* ---- THE STUDY GAME (build 245) ----
-     The slogan under the wordmark, and the one rule it has to keep:
-     START STUDYING DOES NOT MOVE, ON ANY DEVICE. Added to the column as
-     it is, its ~17px came out of the greeting's auto margin where there
-     is slack and pushed the button down where there is none - measured,
-     18px on a 13 mini, 17 on an SE, 6-14 on every sideways phone,
-     laptop and landscape iPad. So it takes NO layout height at all: the
-     title block is pulled up by exactly the slogan's height (a negative
-     top margin), and the greeting above it is lifted by the same amount
-     (a transform, which moves nothing else). The tagline, the button and
-     everything under them lay out exactly as before; the greeting and
-     NOVA sit one slogan-height higher - which is precisely what the auto
-     margin did anyway on the devices that had room. --slogan-fs is the
-     one number: the line box, the lift and the type all derive from it.
-     On the short-viewport tiers (a laptop window, a phone or small iPad
-     held sideways) it steps out altogether - see below. check-behaviour
-     section 35 holds the button still. */
-  .panel.home.screen-home-actual{
-    --slogan-fs:.66rem;
-    --slogan-lift:calc(var(--slogan-fs) * 1.2 + .3rem);
-  }
-  .hometitle-slogan{
-    display:flex; align-items:center; justify-content:center; gap:.7rem;
-    margin:.3rem 0 0; height:calc(var(--slogan-fs, .66rem) * 1.2); overflow:visible;
-    font-family:var(--sans); font-size:var(--slogan-fs, .66rem); font-weight:800;
-    line-height:1.2; letter-spacing:.42em; text-transform:uppercase; color:var(--soft);
-    /* letter-spacing trails the last letter; indenting by the same
-       amount puts the word back on the column's centre line. */
-    text-indent:.42em; white-space:nowrap;
-  }
-  .hometitle-slogan::before, .hometitle-slogan::after{
-    content:""; flex:0 0 1.4rem; height:1px; background:currentColor; opacity:.45;
-  }
-  .panel.home.screen-home-actual .hometitle-wrap{ margin-top:calc(-1 * var(--slogan-lift)); }
-  .panel.home.screen-home-actual .homegreeting{ transform:translateY(calc(-1 * var(--slogan-lift))); }
-  @media (min-width:40rem) and (min-height:60rem),
-         (min-width:64rem) and (min-height:46rem){
-    .panel.home.screen-home-actual{ --slogan-fs:.78rem; }
-    .hometitle-slogan::before, .hometitle-slogan::after{ flex-basis:2rem; }
-  }
-  /* The short tiers are where Home already does not fit and the hero is
-     sized tight to its orbit, so a lift there puts the greeting on the
-     sphere's lowest bubble (measured -9px on a sideways iPad mini). The
-     slogan is the least load-bearing line on the screen, so like the
-     tagline one tier further down, it steps out rather than squeezing. */
-  @media (max-height:50rem) and (min-width:34rem), (max-height:38rem){
-    .panel.home.screen-home-actual{ --slogan-lift:0px; }
-    .hometitle-slogan{ display:none; }
-  }
-  /* Same explicit iPad request as .cosmic-hero-wrap above: the greeting/
+    /* Same explicit iPad request as .cosmic-hero-wrap above: the greeting/
      NOVA title/tagline block under the sphere ("the welcome thing under
      it") should scale up along with it on a tablet screen, not stay
      phone-sized while the sphere above it grows. Phone is untouched;
@@ -10887,7 +10863,49 @@
   /* Drained while it charges, flaring in the accent as it goes off. */
   .daily-question-fab.is-charging .dq-glyph{
     animation:dq-drain .3s ease-out both,
-              dq-flare .6s cubic-bezier(.2,.9,.3,1.3) calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s)) both;
+              dq-flare 1s cubic-bezier(.2,.9,.3,1.2) calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s)) both;
+  }
+  /* THE HIT (build 268): "have a better pulse effect when that loading
+     circle thing hits". The ring does not just let go any more - the
+     closed ring flashes whole and thick for an instant (.dq-charge-flash),
+     two shockwaves leave it a beat apart (the second, .dq-charge-burst2,
+     wider and softer), and the "?" beats twice like a heart rather than
+     popping once. While it fills, the track glows brighter towards the
+     close so the hit has something building up to it. Still children
+     with pointer-events:none, still once each, still transform, opacity
+     and shadow only. */
+  .dq-charge-flash, .dq-charge-burst2{ position:absolute; pointer-events:none; inset:0; border-radius:50%; box-sizing:border-box; opacity:0; }
+  .dq-charge-flash{
+    border:calc(var(--dq-w) + 1.5px) solid var(--theme-c1);
+    box-shadow:0 0 18px color-mix(in srgb, var(--theme-c1) 80%, transparent),
+               inset 0 0 12px color-mix(in srgb, var(--theme-c1) 55%, transparent);
+  }
+  .daily-question-fab.is-charging .dq-charge-flash{
+    animation:dq-flash .55s cubic-bezier(.2,.8,.3,1) calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s)) both;
+  }
+  .dq-charge-burst2{
+    border:1.5px solid var(--theme-c1);
+    box-shadow:0 0 10px color-mix(in srgb, var(--theme-c1) 55%, transparent);
+  }
+  .daily-question-fab.is-charging .dq-charge-burst2{
+    animation:dq-burst2 calc(var(--dq-burst, .7s) + .25s) cubic-bezier(.15,.7,.3,1) calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s) + .2s) both;
+  }
+  .daily-question-fab.is-charging .dq-charge{
+    animation:dq-build var(--dq-fill, 1.6s) ease-in var(--dq-delay, .35s) both;
+  }
+  @keyframes dq-build{
+    from{ filter:none; }
+    to{ filter:drop-shadow(0 0 6px color-mix(in srgb, var(--theme-c1) 75%, transparent)); }
+  }
+  @keyframes dq-flash{
+    0%{ opacity:0; transform:scale(.96); }
+    18%{ opacity:1; transform:scale(1.06); }
+    100%{ opacity:0; transform:scale(1.14); }
+  }
+  @keyframes dq-burst2{
+    0%{ opacity:0; transform:scale(1); }
+    15%{ opacity:.8; }
+    100%{ opacity:0; transform:scale(3.1); }
   }
   /* The quiet ready ring steps aside while the meter is on the button. */
   .daily-question-fab.is-charging.is-ready::after{ animation:none; opacity:0; }
@@ -10907,7 +10925,9 @@
   @keyframes dq-drain{ from{ opacity:1; } to{ opacity:.32; } }
   @keyframes dq-flare{
     0%{ opacity:.32; transform:scale(1); color:inherit; }
-    35%{ opacity:1; transform:scale(1.32); color:var(--theme-c1); }
+    18%{ opacity:1; transform:scale(1.42); color:var(--theme-c1); }
+    38%{ opacity:1; transform:scale(1.02); color:var(--theme-c1); }
+    56%{ opacity:1; transform:scale(1.26); color:var(--theme-c1); }
     100%{ opacity:1; transform:scale(1); color:inherit; }
   }
   /* ---- THE ORB: THE BANNER LEAVING THE BUTTON ----
@@ -11504,20 +11524,36 @@
     box-shadow:0 0 10px color-mix(in srgb, var(--rank-color) 70%, transparent);
     transition:transform 1.4s cubic-bezier(.2,.8,.2,1) .2s;
   }
-  /* The light at the end of the fill, on the stretch you are climbing. */
+  /* The light at the end of the fill, on the stretch you are climbing.
+     IT RIDES THE SAME TRANSFORM AS THE FILL (build 268): "the circle
+     lags behind the animated line when it happens". The fill grows by
+     transform:scaleY and the light used to travel by transitioning
+     `top` - a layout property, on a different curve and timing from the
+     fill, repainted on the main thread while the compositor ran the
+     line - so the line pulled ahead of its own light. Now
+     .rankmap-roadtip is an empty carrier the exact size and place of the
+     road, moved by translateY(--tip * 100%) - a percentage of its own
+     height, which is the road's length - on the same duration, curve
+     and delay as the fill. Line and light are the same number on the
+     same clock, so they cannot come apart. The visible light is
+     .rankmap-roadtip-dot at the carrier's top edge. */
   .rankmap-roadtip{
-    position:absolute; z-index:1; left:calc(var(--node) / 2); width:14px; height:14px; margin:-7px 0 0 -7px; border-radius:50%;
-    top:calc(var(--node) / 2 + var(--tip, 0) * 100%);
+    position:absolute; z-index:1; left:calc(var(--node) / 2); width:0; pointer-events:none;
+    top:calc(var(--node) / 2); bottom:calc(-1 * var(--node) / 2);
+    transform:translateY(calc(var(--tip, 0) * 100%));
+    transition:transform 1.4s cubic-bezier(.2,.8,.2,1) .2s;
+  }
+  .rankmap-roadtip-dot{
+    position:absolute; left:0; top:0; width:14px; height:14px; margin:-7px 0 0 -7px; border-radius:50%;
     background:radial-gradient(circle, #fff 0 30%, var(--rank-color) 62%);
     box-shadow:0 0 10px 2px color-mix(in srgb, var(--rank-color) 80%, transparent), 0 0 22px 6px color-mix(in srgb, var(--rank-color) 40%, transparent);
-    transition:top 1.4s cubic-bezier(.2,.8,.2,1) .2s;
   }
-  .rankmap-roadtip::after{
+  .rankmap-roadtip-dot::after{
     content:""; position:absolute; inset:-5px; border-radius:50%; border:2px solid var(--rank-color); opacity:0;
     animation:rankmap-tip-ping 2.2s ease-out 1.8s infinite;
   }
   @keyframes rankmap-tip-ping{ 0%{ opacity:0; transform:scale(.6); } 15%{ opacity:.85; } 100%{ opacity:0; transform:scale(2.2); } }
-  [data-reduce-motion="true"] .rankmap-roadtip::after{ animation:none; }
+  [data-reduce-motion="true"] .rankmap-roadtip-dot::after{ animation:none; }
   .rankmap-node{
     position:relative; z-index:1; width:var(--node); height:var(--node); border-radius:50%;
     display:grid; place-items:center;
@@ -11806,8 +11842,8 @@
      from where it was to where you are, and the light at its end swells
      while it moves. */
   .rankmap-stop.is-climbing .rankmap-roadfill{ transition:transform 2.2s cubic-bezier(.3,.7,.2,1); }
-  .rankmap-roadtip{ transition:top 2.2s cubic-bezier(.3,.7,.2,1), background .6s ease, box-shadow .6s ease, opacity .6s ease, transform .5s cubic-bezier(.2,1.6,.4,1); }
-  .rankmap-roadtip.is-climbing{ animation:rankmap-tip-swell 2.2s ease-in-out both; }
+  .rankmap-stop.is-climbing .rankmap-roadtip{ transition:transform 2.2s cubic-bezier(.3,.7,.2,1); }
+  .rankmap-roadtip.is-climbing .rankmap-roadtip-dot{ animation:rankmap-tip-swell 2.2s ease-in-out both; }
   @keyframes rankmap-tip-swell{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.6); } }
   .rankmap-stop.is-climbing .rankmap-meter .rankcard-meterfill{ transition-duration:2.2s; }
   [data-reduce-motion="true"] .rankmap-sparks, [data-reduce-motion="true"] .rankmap-flash{ display:none; }
@@ -17456,6 +17492,27 @@
   }
   .rs-spot.is-up{ background:rgba(6,8,12,.72); transition:background .6s ease; }
   .rs-spot.is-held{ display:none; }
+  /* Straight out of a cutscene (build 268 - see openSceneBridge): the dim
+     is already there, so it starts full rather than fading in again, and
+     the card rises out of the light the scene left almost at once. */
+  .rs-spot.is-bridged{ background:rgba(6,8,12,.72); transition:none; }
+  .rs-spot.is-bridged.is-up .rs-spot-card{ animation-delay:.1s; }
+  .scene-bridge{
+    position:fixed; inset:0; z-index:319; pointer-events:none;
+    background:
+      radial-gradient(circle at 50% 46%, color-mix(in srgb, var(--bridge-color, #6FC2FF) 30%, transparent) 0%,
+        color-mix(in srgb, var(--bridge-color, #6FC2FF) 10%, transparent) 28%, transparent 56%),
+      rgba(6,8,12,.72);
+  }
+  /* Up at once, not faded in: it is born UNDER a scene that is still
+     fully opaque, so nothing sees it arrive - and a fade-in there was a
+     crossover where both layers were half-strength and the screen behind
+     showed through. It only ever fades on the way out. */
+  .scene-bridge.is-off{ opacity:0; transition:opacity .5s ease; }
+  /* Claimed: the pop-up's own dim is under it now, so only the pool of
+     light has anything left to do - it swells into the card and goes. */
+  .scene-bridge.is-claimed{ opacity:0; transform:scale(1.25); transition:opacity .65s ease, transform .65s ease-out; }
+  [data-reduce-motion="true"] .scene-bridge{ display:none; }
   .rs-spot-card{
     position:relative; width:min(22rem, 100%); overflow:hidden;
     padding:1.7rem 1.4rem 1.2rem; border-radius:24px; text-align:center;
@@ -48335,6 +48392,11 @@ function playRankUpScene(tierKey, opts, spec){
     timers.forEach(clearTimeout);
     if(spec.onFinish) spec.onFinish();
     overlay.classList.add("supernova-exit");
+    /* Only when a pop-up is coming: inline, the results sequence has the
+       rank's reward cards next; on Home, the unlock queue does. */
+    let next = inline;
+    if(!inline){ try{ const p = pendingHomeUnlocks(); next = !!(p.chars.length || p.banners.length); }catch(e){} }
+    if(next) openSceneBridge(RANK_COLOR[tierKey]);
     setTimeout(() => {
       overlay.remove();
       if(inline){ opts.onDone(); return; }
@@ -48459,6 +48521,7 @@ function playVoidCutscene(onDone){
     if(finished) return;
     finished = true;
     overlay.classList.add("void-exit");
+    openSceneBridge(avatarGlowColor("voidwalker"));
     setTimeout(() => {
       overlay.remove();
       store.pendingVoidCutscene = false;
@@ -48467,10 +48530,19 @@ function playVoidCutscene(onDone){
          Void unlock is already in its "Unlocked" card. */
       if(onDone){ onDone(); return; }
       showHome();
-      /* The banner AFTER the cutscene, not instead of it - it is what
-         says where to go and do something about it, which a cutscene
-         cannot. */
-      showCharacterUnlockBanner("voidwalker");
+      /* The card AFTER the cutscene, not instead of it - it is what says
+         where to go and do something about it, which a cutscene cannot.
+         Build 268: the same centre card every other unlock gets, straight
+         out of the cutscene's light (see openSceneBridge), rather than a
+         pill at the top of a screen that had just come back up. */
+      if(theme.muteBanners){ markUnlocksShown(["voidwalker"], []); return; }
+      setTimeout(() => {
+        try{
+          const it = characterUnlockItem("voidwalker");
+          it.flyToProfile = true;
+          playUnlockSpotlight(it, 1, 1, () => {});
+        }catch(e){ dropSceneBridge(false); showCharacterUnlockBanner("voidwalker"); }
+      }, 380);
     }, 500);
   }
 
@@ -48983,7 +49055,8 @@ function showDailyAlert(msg, opts){
    follows it are driven by the same numbers. ms. */
 const DAILY_CHARGE = {
   delay: 350,     /* let Home's own entrance settle first */
-  fill: 1600,     /* the ring closing round the button */
+  fill: 4100,     /* the ring closing round the button - 2.5s longer
+                     from build 268: "could last another 2-3 seconds" */
   burst: 700,     /* the button going off */
   launch: 250,    /* after the burst begins, the orb leaves */
   flight: 640,    /* button to banner */
@@ -49002,7 +49075,8 @@ function playDailyRecharge(btn, then){
   ring.innerHTML = "<span class=\"dq-charge-track\"></span>" +
     "<span class=\"dq-charge-half dq-charge-r\"><span class=\"dq-charge-arc\"></span></span>" +
     "<span class=\"dq-charge-half dq-charge-l\"><span class=\"dq-charge-arc\"></span></span>" +
-    "<span class=\"dq-charge-bloom\"></span><span class=\"dq-charge-burst\"></span>";
+    "<span class=\"dq-charge-bloom\"></span><span class=\"dq-charge-burst\"></span>" +
+    "<span class=\"dq-charge-burst2\"></span><span class=\"dq-charge-flash\"></span>";
   btn.style.setProperty("--dq-delay", DAILY_CHARGE.delay + "ms");
   btn.style.setProperty("--dq-fill", DAILY_CHARGE.fill + "ms");
   btn.style.setProperty("--dq-burst", DAILY_CHARGE.burst + "ms");
@@ -49025,7 +49099,7 @@ function playDailyRecharge(btn, then){
   const launch = () => {
     if(launched) return;
     launched = true;
-    setTimeout(tidy, Math.max(0, DAILY_CHARGE.burst + 400 - DAILY_CHARGE.launch));
+    setTimeout(tidy, Math.max(0, DAILY_CHARGE.burst + 700 - DAILY_CHARGE.launch));
     if(!document.body.contains(btn)) return;
     then();
   };
@@ -52185,18 +52259,12 @@ function showHome(){
   const tagline = document.createElement("p");
   tagline.className = "hometagline";
   tagline.style.marginBottom = "1.5rem";
-  tagline.textContent = "Master the material, one question at a time.";
-  /* "Could put another slogan somewhere maybe, calling this 'the study
-     game' or something?" (build 245). A descriptor under the wordmark,
-     the way a brand lockup carries one: small, letter-spaced, between
-     two hairlines, in the same soft grey as the lines around it. Inside
-     .hometitle-wrap, so the height it adds comes out of the greeting's
-     auto margin above the group and Start Studying does not move - see
-     .hometitle-slogan for the devices with no slack to give. */
-  const slogan = document.createElement("p");
-  slogan.className = "hometitle-slogan";
-  slogan.textContent = "The Study Game";
-  titleWrap.append(title, slogan, tagline);
+  /* "The study game" was a slogan line of its own under NOVA (build 245)
+     and was reported as cramping the lockup (build 268): "either remove
+     it or incorporate it somehow in the sentence". It leads the tagline
+     now, so the title block is back to two lines. */
+  tagline.textContent = "The study game. One question at a time.";
+  titleWrap.append(title, tagline);
   panel.appendChild(titleWrap);
 
   const startBtn = document.createElement("button");
@@ -52398,8 +52466,10 @@ function showHome(){
        queued and still plays - just on the next visit to Home. */
     setTimeout(playQueuedBadgeCutscenes, 500);
     /* And anything unlocked away from a results screen, after the
-       badges - see playHomeUnlocks. */
-    scheduleHomeUnlocks();
+       badges - see playHomeUnlocks. Straight away when a cutscene has
+       just handed over (build 268): the bridge it left is holding the
+       dim for this card. */
+    scheduleHomeUnlocks(sceneBridgeOpen() ? 380 : undefined);
   }
 }
 
@@ -53169,61 +53239,57 @@ function attachUnitHold(row, name, mode){
    figure here is one the app already keeps; nothing is shown that it
    would have to guess. */
 function unitDetailStats(name, mode){
-  /* ---- ONE LAYOUT FOR EVERY MODE (build 240) ----
-     "Some of the screens aren't in the same order as the others." Each
-     mode used to build its own list, so Best score sat in a different
-     square on every one and a screenshot did not say which mode it was
-     from. Now it is always four squares in the same places - how many
-     times you have done the unit, two numbers that belong to THIS mode,
-     and your hundos - and the header names the mode. */
+  /* ---- WHAT IS EVERY MODE'S, AND WHAT IS THIS MODE'S (build 268) ----
+     "The details that pop are weird tbh, because it says drill at the
+     top, but really some of that stuff shows up across any mode." It
+     did: a chip at the top said Drill, and three of the four squares
+     under it - how many times you have done the unit, your best score,
+     your hundos - count every mode. So the list is two parts now, and
+     each item says which: `scope: "all"` for the four that are the same
+     whichever mode you are in (always the same four, always in the same
+     places), and `scope: "mode"` for the ones that only this mode has -
+     Drill's best time, Exam's best and average, Game's level and how
+     far you got. Review and the Virtual Room have none of their own. */
   const stats = [];
-  const add = (label, value, sub) => stats.push({ label, value, sub });
+  const add = (label, value, sub, scope) => stats.push({ label, value, sub, scope: scope || "all" });
   const done = unitCompletedCount(name);
-  add("Completed", String(done), done === 1 ? "time, any mode" : "times, any mode");
   const bestPct = unitBestPctOf(name);
   const dash = "\u2014";
+  const acc = unitAccuracyOf(name);
+  add("Completed", String(done), done === 1 ? "time" : "times");
+  add("Best score", typeof bestPct === "number" ? bestPct + "%" : dash, "whole unit");
+  add("Accuracy", acc ? acc.pct + "%" : dash, acc ? "of " + acc.n + " answers" : "nothing answered yet");
+  add("Hundos", String(unitPerfectCount(name)), "100% on the whole unit");
   if(mode === "game"){
     /* THE GAME'S OWN NUMBERS: which level you are on and how far you
-       have got in it - "the current level unlocked and the farthest
-       you've made it on the level". A time only once Hardcore is beaten:
-       "if it's advanced mode you beat, that's when it would give
-       information on best time". */
+       have got in it. A time only once Hardcore is beaten. */
     const beat = gameBeat(name);
     const n = unitQuestionCount(name);
     if(beat.hardcore){
-      add("Level", "All beaten", "Easy, Average and Hardcore");
+      add("Level", "All beaten", "Easy, Average and Hardcore", "mode");
       const ms = (store.gameHardcoreMs || {})[name];
       add("Hardcore best time", typeof ms === "number" ? formatClock(ms) : dash,
-          typeof ms === "number" ? "your fastest Hardcore win" : "win Hardcore again to set one");
+          typeof ms === "number" ? "your fastest Hardcore win" : "win Hardcore again to set one", "mode");
     } else {
       const level = beat.average ? "hardcore" : beat.easy ? "average" : "easy";
       const levelName = { easy: "Easy", average: "Average", hardcore: "Hardcore" }[level];
       add("Level unlocked", levelName, level === "easy" ? "beat it to unlock Average"
-        : level === "average" ? "Easy beaten \u00b7 beat this for Hardcore" : "Average beaten \u00b7 the last level");
+        : level === "average" ? "Easy beaten \u00b7 beat this for Hardcore" : "Average beaten \u00b7 the last level", "mode");
       const far = gameFarthestFor(name, level);
-      add("Farthest on " + levelName, far ? far + " / " + n : dash, far ? "questions reached" : "not played on " + levelName + " yet");
+      add("Farthest on " + levelName, far ? far + " / " + n : dash, far ? "questions reached" : "not played on " + levelName + " yet", "mode");
     }
   } else if(mode === "drill"){
     const ts = store.testStats[name];
     const best = ts && typeof ts.bestMs === "number" ? ts.bestMs : null;
-    add("Best time", best != null ? formatClock(best) : dash, best != null ? "your fastest hundo in Drill" : "get a hundo in Drill to set one");
-    add("Best score", typeof bestPct === "number" ? bestPct + "%" : dash, "whole unit, any mode");
+    add("Best time", best != null ? formatClock(best) : dash, best != null ? "your fastest hundo in Drill" : "get a hundo in Drill to set one", "mode");
   } else if(mode === "exam"){
-    /* THE EXAM'S OWN NUMBERS. An exam is the one mode that grades you the
-       way the real thing will - no second tries, no feedback until the
-       end - so its best and its average are what say whether you are
-       ready, and they are kept apart from Drill, where a retry can
-       carry a score. */
+    /* The one mode that grades you the way the real thing will, so its
+       best and its average are what say whether you are ready. */
     const ex = unitExamOf(name);
-    add("Best exam", ex && ex.n ? ex.best + "%" : dash, ex && ex.n ? "whole unit, in Exam" : "take it in Exam to set one");
+    add("Best exam", ex && ex.n ? ex.best + "%" : dash, ex && ex.n ? "whole unit, in Exam" : "take it in Exam to set one", "mode");
     add("Exam average", ex && ex.n ? Math.round(ex.sum / ex.n) + "%" : dash,
-        ex && ex.n ? "over " + ex.n + (ex.n === 1 ? " exam" : " exams") + " \u00b7 last " + ex.last + "%" : "no exams taken yet");
-  } else {
-    add("Best score", typeof bestPct === "number" ? bestPct + "%" : dash, "whole unit, any mode");
-    const acc = unitAccuracyOf(name);
-    add("Accuracy", acc ? acc.pct + "%" : dash, acc ? "of " + acc.n + " answers, all modes" : "nothing answered yet");
+        ex && ex.n ? "over " + ex.n + (ex.n === 1 ? " exam" : " exams") + " \u00b7 last " + ex.last + "%" : "no exams taken yet", "mode");
   }
-  add("Hundos", String(unitPerfectCount(name)), "100% on the whole unit");
   return stats;
 }
 /* Exam results per unit (build 240): how many, the best, the running
@@ -53270,12 +53336,6 @@ function openUnitDetail(row, name, mode){
   nm.className = "pname"; nm.textContent = name;
   const cnt = document.createElement("p");
   cnt.className = "pcount"; cnt.textContent = unitQuestionCount(name) + " questions";
-  /* Which mode these numbers are for - a screenshot of one looked like
-     a screenshot of any other. */
-  const modeChip = document.createElement("span");
-  modeChip.className = "unitdetail-mode is-" + (mode || "drill");
-  modeChip.textContent = ({ drill: "Drill", exam: "Exam", game: "Game", review: "Review", vroom: "Virtual Room" })[mode] || "Drill";
-  cnt.appendChild(modeChip);
   head.append(nm, cnt);
   appendUnitProgress(head, name);
 
@@ -53283,18 +53343,37 @@ function openUnitDetail(row, name, mode){
   views.className = "unitdetail-views";
   const main = document.createElement("div");
   main.className = "unitdetail-main";
-  const grid = document.createElement("div");
-  grid.className = "unitdetail-stats";
-  unitDetailStats(name, mode === "vroom" ? "vroom" : mode).forEach(st => {
-    const c = document.createElement("div");
-    c.className = "unitdetail-stat";
-    const v = document.createElement("p"); v.className = "unitdetail-statval"; v.textContent = st.value;
-    const l = document.createElement("p"); l.className = "unitdetail-statlab"; l.textContent = st.label;
-    const sb = document.createElement("p"); sb.className = "unitdetail-statsub"; sb.textContent = st.sub || "";
-    c.append(v, l, sb);
-    grid.appendChild(c);
-  });
-  main.appendChild(grid);
+  /* TWO LABELLED GROUPS (build 268): what counts in every mode, then -
+     only for a mode that has numbers of its own - what is this mode's,
+     headed with the mode's chip. The chip used to sit on the card's
+     title, over numbers most of which were not the mode's at all. */
+  const allStats = unitDetailStats(name, mode === "vroom" ? "vroom" : mode);
+  const group = (title, list, chipMode) => {
+    if(!list.length) return;
+    const h = document.createElement("p");
+    h.className = "unitdetail-grouphead";
+    h.textContent = title;
+    if(chipMode){
+      const modeChip = document.createElement("span");
+      modeChip.className = "unitdetail-mode is-" + chipMode;
+      modeChip.textContent = ({ drill: "Drill", exam: "Exam", game: "Game" })[chipMode];
+      h.appendChild(modeChip);
+    }
+    const grid = document.createElement("div");
+    grid.className = "unitdetail-stats" + (list.length === 1 ? " is-single" : "");
+    list.forEach(st => {
+      const c = document.createElement("div");
+      c.className = "unitdetail-stat";
+      const v = document.createElement("p"); v.className = "unitdetail-statval"; v.textContent = st.value;
+      const l = document.createElement("p"); l.className = "unitdetail-statlab"; l.textContent = st.label;
+      const sb = document.createElement("p"); sb.className = "unitdetail-statsub"; sb.textContent = st.sub || "";
+      c.append(v, l, sb);
+      grid.appendChild(c);
+    });
+    main.append(h, grid);
+  };
+  group("Every mode", allStats.filter(x => x.scope === "all"));
+  group("Only in", allStats.filter(x => x.scope === "mode"), ["drill", "exam", "game"].indexOf(mode) >= 0 ? mode : null);
 
   const doors = document.createElement("div");
   doors.className = "unitdetail-doors";
@@ -56254,7 +56333,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-30-267";
+const APP_BUILD = "2026-09-30-268";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -57400,6 +57479,7 @@ function playBadgeCaseScene(units, done){
     timers.forEach(clearTimeout);
     document.body.classList.remove("bc-covering");
     overlay.classList.add("bc-out");
+    openSceneBridge(col);
     setTimeout(() => { overlay.remove(); done(); }, 450);
   }
   overlay.addEventListener("click", finish);
@@ -57580,6 +57660,9 @@ function playFinalFlareScene(color, done, opts){
     timers.forEach(clearTimeout);
     document.body.classList.remove("bc-covering");
     overlay.classList.add("ff-out");
+    /* The character that came out of the dark is what the next pop-up
+       is about, so the light left behind is its colour. */
+    openSceneBridge(avatarGlowColor(emergeChar));
     setTimeout(() => { overlay.remove(); done(); }, 500);
   }
   overlay.addEventListener("click", finish);
@@ -57700,6 +57783,7 @@ function playFlareFoundScene(color, all, done){
     finished = true;
     timers.forEach(clearTimeout);
     overlay.classList.add("fl-out");
+    openSceneBridge(MYSTERY_COLOR[color]);
     setTimeout(() => { overlay.remove(); done(); }, 450);
   }
   overlay.addEventListener("click", finish);
@@ -57957,14 +58041,21 @@ function placeStreakPop(el){
     if(!left || !rightEls.length) return;
     const rightEdge = Math.min.apply(null, rightEls.map(r => r.left));
     const row = rightEls.reduce((a, r) => a.top < r.top ? a : r);
-    const gap = rightEdge - left.right - 16;
-    const w = el.getBoundingClientRect().width;
-    if(w > gap){
+    /* CENTRED ON THE SCREEN, NOT ON THE GAP (build 268). "The streak pop
+       during a test is not centered, it's in a weird spot." It sat in the
+       middle of the space between the question count and the buttons,
+       and because those two are different widths that middle is off to
+       one side. It is centred on the screen now, on the bar's own line,
+       as long as it clears both sides there; compact if it needs to be;
+       and if even that will not fit it stays centred under the bar. */
+    const cx = window.innerWidth / 2;
+    const fits = () => { const hw = el.getBoundingClientRect().width / 2; return cx - hw >= left.right + 8 && cx + hw <= rightEdge - 8; };
+    if(!fits()){
       el.classList.add("is-compact");
-      if(el.getBoundingClientRect().width > gap) { el.classList.remove("is-compact"); return; }
+      if(!fits()){ el.classList.remove("is-compact"); return; }
     }
     el.classList.add("is-inbar");
-    el.style.left = Math.round((left.right + rightEdge) / 2) + "px";
+    el.style.left = Math.round(cx) + "px";
     el.style.top = Math.round(row.top + row.height / 2) + "px";
   }catch(e){}
 }
@@ -58512,6 +58603,65 @@ function buildDifficultyLights(unlocked){
   return wrap;
 }
 
+/* ---- A CUTSCENE HANDS STRAIGHT TO ITS POP-UP (build 268) ----
+   "The secret flare thing is kinda redundant, it does the cut scene,
+   stops, then gives a pop up, I feel like the cut scene should nicely
+   transition to the pop up somehow. That goes for anything that's
+   similar to that sequence so it's smooth." Every scene used to fade all
+   the way out to the screen behind it - the results page, or Home - and
+   a moment later a pop-up dimmed that same screen again and grew its
+   card: dark, light, dark, which read as the scene ending and something
+   unrelated starting.
+   So a scene no longer fades out to the page. As it goes, it leaves a
+   BRIDGE behind it: the pop-up's own dim, with a pool of the scene's
+   colour in the middle, fading in underneath the scene while the scene
+   fades out on top. A pop-up that arrives while the bridge is up CLAIMS
+   it - its own dim starts already at full strength, its card rises out
+   of that pool almost at once, and the bridge goes. Nothing else changes
+   hands: the screen never comes back up between the two.
+   Nothing has to claim it. Where no pop-up follows (a scene that is the
+   last thing in a run), the bridge lets go on its own after
+   SCENE_BRIDGE_WAIT_MS, which is simply a slower fade to the screen.
+   Used by the flare scenes, the badge case, every rank cutscene and the
+   Void cutscene; claimed by playUnlockSpotlight, which is every pop-up
+   they lead into. Under the pop-ups (z 319 against .rs-spot's 320) and
+   under every scene (420 and 500), so it is only ever seen between. */
+const SCENE_BRIDGE_WAIT_MS = 1900;
+let sceneBridge = null, sceneBridgeTimer = null;
+function openSceneBridge(color){
+  if(resultsMotionOff() || theme.muteBanners) return;
+  dropSceneBridge(true);
+  const b = document.createElement("div");
+  b.className = "scene-bridge";
+  b.setAttribute("aria-hidden", "true");
+  if(color) b.style.setProperty("--bridge-color", color);
+  document.body.appendChild(b);
+  sceneBridge = b;
+  sceneBridgeTimer = setTimeout(() => dropSceneBridge(false), SCENE_BRIDGE_WAIT_MS);
+}
+function dropSceneBridge(now){
+  if(sceneBridgeTimer){ clearTimeout(sceneBridgeTimer); sceneBridgeTimer = null; }
+  const b = sceneBridge;
+  sceneBridge = null;
+  if(!b) return;
+  if(now){ b.remove(); return; }
+  b.classList.add("is-off");
+  setTimeout(() => b.remove(), 600);
+}
+/* The pop-up takes the dim over. Its own background is already at full
+   strength by the next frame, so the bridge can go a beat later with
+   nothing showing through. */
+function claimSceneBridge(){
+  if(!sceneBridge) return false;
+  const b = sceneBridge;
+  sceneBridge = null;
+  if(sceneBridgeTimer){ clearTimeout(sceneBridgeTimer); sceneBridgeTimer = null; }
+  b.classList.add("is-claimed");
+  setTimeout(() => b.remove(), 700);
+  return true;
+}
+function sceneBridgeOpen(){ return !!sceneBridge; }
+
 /* The centre-screen banner. Holds for a few seconds, or until tapped,
    then leaves and releases the timeline for the next one. */
 function playUnlockSpotlight(item, n, of, release){
@@ -58528,6 +58678,7 @@ function playUnlockSpotlight(item, n, of, release){
      now, and nothing may be named rs-spot-<a kind>. */
   spot.className = "rs-spot rs-spot-" + item.kind;
   spot.style.setProperty("--spot-color", item.color || "#6FC2FF");
+  if(claimSceneBridge()) spot.classList.add("is-bridged");
   spot.setAttribute("role", "status");
   const card = document.createElement("div");
   card.className = "rs-spot-card";
@@ -59097,6 +59248,11 @@ function showRunRewards(run, hooks, opts){
     let caseDone = false, rankDone = false;
     const bannerIdx = unlockItems.filter(it => it.kind !== "rank" && it.kind !== "badge");
     let gap = 1100;
+    /* Straight out of a scene the next card comes almost at once (build
+       268): the scene has left its light behind (openSceneBridge) and a
+       full second of that before the card read as a stall. */
+    let afterScene = false;
+    const nextGap = () => { const g = afterScene ? 320 : gap; afterScene = false; return g; };
     unlockItems.forEach((it, n) => {
       if(it.kind === "rank"){
         /* THE RANK IS ITS CUTSCENE, played here rather than waiting for
@@ -59119,11 +59275,12 @@ function showRunRewards(run, hooks, opts){
               else playTierCutscene(highest, { from: from, onDone: back });
               return {};
             }, true);
+            afterScene = true;
           } else {
             seq.add(600, () => levelBlock.setRank(highest, true));
           }
         }
-        seq.add(rankDone && n === 0 ? 700 : 260, instant => rsLand(unlockRows[n], instant));
+        seq.add(rankDone && n === 0 ? (afterScene ? 200 : 700) : 160, instant => rsLand(unlockRows[n], instant));
         return;
       }
       /* A BADGE'S MOMENT IS THE CASE, at its unlock - "move that cutscene
@@ -59133,9 +59290,10 @@ function showRunRewards(run, hooks, opts){
       if(it.kind === "badge" && typeof playBadgeCaseScene === "function"){
         if(!caseDone){
           caseDone = true;
-          seq.add(gap, (instant, release) => playBadgeCaseScene(run.badges.slice(), release), true);
+          seq.add(nextGap(), (instant, release) => playBadgeCaseScene(run.badges.slice(), release), true);
+          afterScene = true;
         }
-        seq.add(260, instant => rsLand(unlockRows[n], instant));
+        seq.add(160, instant => rsLand(unlockRows[n], instant));
         return;
       }
       /* A flare's own cutscene BEFORE its banner: the small one for the
@@ -59148,16 +59306,18 @@ function showRunRewards(run, hooks, opts){
          later, and the character's own card is the next item after it. */
       const givesChar = it.kind === "flare" && !!(FLARE_CHARACTER[it.flare] || run.flareAll);
       if(givesChar && typeof playFlareFoundScene === "function" && !theme.muteBanners){
-        seq.add(gap, (instant, release) => playUnlockSpotlight(it, bannerIdx.indexOf(it) + 1, bannerIdx.length, release), true);
+        seq.add(nextGap(), (instant, release) => playUnlockSpotlight(it, bannerIdx.indexOf(it) + 1, bannerIdx.length, release), true);
         seq.add(1800, (instant, release) => playFlareFoundScene(it.flare, run.flareAll, release), true);
-        seq.add(200, instant => rsLand(unlockRows[n], instant));
+        seq.add(120, instant => rsLand(unlockRows[n], instant));
+        afterScene = true;
         return;
       }
       if(it.kind === "flare" && typeof playFlareFoundScene === "function" && !theme.muteBanners){
-        seq.add(gap, (instant, release) => playFlareFoundScene(it.flare, run.flareAll, release), true);
+        seq.add(nextGap(), (instant, release) => playFlareFoundScene(it.flare, run.flareAll, release), true);
+        afterScene = true;
       }
       if(!theme.muteBanners){
-        seq.add(it.kind === "flare" ? 700 : gap, (instant, release) => playUnlockSpotlight(it, bannerIdx.indexOf(it) + 1, bannerIdx.length, release), true);
+        seq.add(nextGap(), (instant, release) => playUnlockSpotlight(it, bannerIdx.indexOf(it) + 1, bannerIdx.length, release), true);
       }
       seq.add(theme.muteBanners ? 420 : 200, instant => rsLand(unlockRows[n], instant));
     });
@@ -70891,7 +71051,11 @@ function showProfile(defaultTab){
   rankLine.addEventListener("click", () => showRanksScreen("ranks"));
   {
     const step = rankStepProgress();
-    const shownKey = rankNow || step.next;
+    /* No rank, no emblem (build 268): "The no rank yet thing in the
+       profile box, the bronze rank is visible for some reason." It drew
+       the NEXT rank's emblem in the coin and as the watermark, so an
+       unranked card wore Bronze. The coin stays an empty dashed ring. */
+    const shownKey = rankNow || null;
     rankLine.style.setProperty("--rank-color", rankNow ? RANK_COLOR[rankNow] : "#8A94A3");
     if(step.next) rankLine.style.setProperty("--next-color", RANK_COLOR[step.next]);
     const wm = document.createElement("span");
@@ -72385,6 +72549,9 @@ function buildRanksTab(){
         tip.className = "rankmap-roadtip";
         tip.setAttribute("aria-hidden", "true");
         tip.style.setProperty("--rank-color", RANK_COLOR[below]);
+        const dot = document.createElement("span");
+        dot.className = "rankmap-roadtip-dot";
+        tip.appendChild(dot);
         stop.appendChild(tip);
         fillsToAnimate.push({ el: tip, prop: "--tip", value: String(Math.round(lit * 1000) / 1000) });
       }

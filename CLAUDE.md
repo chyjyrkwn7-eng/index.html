@@ -8120,3 +8120,63 @@ are untouched.
 - Gates: `check_b267`; the Profile plate gates (b237, b241, b242, b258)
   now assert NO bar; b243/b266 expect the Koi; the Marksman gates set
   `bestTestStreak`.
+
+### Build 268
+
+- **The answer-streak pop is centred on the SCREEN** (`placeStreakPop`),
+  on the top bar's line, and not on the middle of the gap between the
+  question count and Chat/Pause. Those are different widths, so the
+  middle of the gap was off to one side.
+- **A cutscene hands straight to its pop-up** (`openSceneBridge` /
+  `claimSceneBridge`). Each scene used to fade all the way out to the
+  page, then a moment later the pop-up dimmed the page again, which read
+  as the scene stopping and something else starting. Now a finishing
+  scene leaves a **bridge** under itself: the pop-up's own dim plus a
+  pool of the scene's colour. It is up at once and not faded in, because
+  a fade-in there was a crossover where the page showed through. A
+  pop-up that arrives claims the bridge: its dim starts at full strength
+  (`.rs-spot.is-bridged`) and its card rises almost at once. If nothing
+  claims the bridge, it fades out after `SCENE_BRIDGE_WAIT_MS`.
+  - Wired into the small flare scene, the final and Void-flare scenes,
+    the badge case, every rank cutscene (on Home only when the unlock
+    queue has something waiting), and the Void cutscene. The Void
+    cutscene now leads into the centre character card instead of a pill
+    at the top of the screen.
+  - The results sequence has an `afterScene` flag, so the card after a
+    scene comes 320ms later instead of 700–1100ms.
+  - Home schedules its unlock queue at 380ms, not 2.2s, when a bridge is
+    open.
+  - Gate: `check_b268` samples every frame and asserts the covered
+    fraction never drops below 0.9. It dropped to 0 on 267.
+- **The unit details card has no mode chip.** It is two groups:
+  - "Every mode": Completed, Best score, Accuracy, Hundos.
+  - "Only in <mode>": Drill best time; Exam best and average; Game level
+    and farthest.
+
+  Nothing on the card can be text-selected by the hold that opens it.
+- **The unit screen's bar is Home's width on a phone** (26rem cap).
+  - The 23.5rem cap dated from Home's four-tab bar, so this bar had
+    become the narrower of the two while holding five icons.
+  - The Start pill gives back a little padding (360–639px only).
+  - Icons are now 33px apart on a 17 Pro Max (they were 23). Tablets are
+    untouched.
+- **An unranked Profile plate shows no emblem** (coin and watermark),
+  instead of a Bronze one.
+- **The daily-question charge ring runs 2.5s longer** (`DAILY_CHARGE.fill`
+  4100). When it closes it now:
+  - flashes whole (`.dq-charge-flash`);
+  - throws two shockwaves a beat apart (`.dq-charge-burst2`);
+  - makes the "?" beat twice (`dq-flare`).
+
+  The ring also glows brighter as it fills (`dq-build`). The banner now
+  lands 4.5–6s in, and `check_b245_daily_announce` holds that window.
+- **"The study game" is the start of the Home tagline** ("The study
+  game. One question at a time.") rather than a slogan line of its own
+  under NOVA. The slogan element and its `--slogan-lift` CSS are gone.
+  It is one line on every phone, and Start Studying does not move
+  (`check_b245_slogan`).
+- **The road map's light rides the same transform as the line**.
+  `.rankmap-roadtip` is an empty carrier the size of the road, moved by
+  `translateY(--tip * 100%)` on the fill's own duration, curve and delay;
+  the visible light is `.rankmap-roadtip-dot`. It used to transition
+  `top` on a different curve, and trailed the line by up to 37px.
