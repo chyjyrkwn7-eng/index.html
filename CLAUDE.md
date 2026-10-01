@@ -8716,7 +8716,10 @@ are untouched.
   lightsaber ... less like a sword, more space like". It is four strokes
   on one line - wide soft glow, brighter body, pale body, white core,
   round caps - with a light spill on the cloak's shoulder, and the glow
-  hums (`cx-fx-saglow`). **It sits the way the Ronin's katana does**:
+  hums (`cx-fx-saglow`). It keeps a handle ("make it so there's
+  still a handle"): a silver hilt with ridges and a collar, showing just
+  above the shoulder and running down behind the cloak. Silver, because a
+  dark hilt against a dark sky vanished. **It sits the way the Ronin's katana does**:
   it rises from BEHIND the right shoulder at the cloak's edge, its lower
   end hidden by the body, because one standing beside him "comes out the
   background weird". A thing carried on the back has to start inside
