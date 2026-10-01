@@ -4512,8 +4512,12 @@ def check_b258(br):
           and r.get("coverMark") == 0 and r.get("coverHasTheme") is True, r)
     check("the banner's art spans the pop-up, edge to edge", all(abs(x) <= 2 for x in r.get("popup", [99, 99])), r.get("popup"))
     vd = r.get("void") or {}
-    check("Void's cloak reaches up behind its head, wider than the old bust",
-          vd.get("bodyTop", 99) < vd.get("headBottom", 0) - 4 and vd.get("bodyW", 0) > 28, vd)
+    # REVISED IN 275: "the void is worse then when we first came up with
+    # him" - Void is build 215's drawing again, slim bust and all, so the
+    # cloak this checked for is gone on purpose. check_b275 holds the
+    # original. Here: the body still meets the bottom of the hood.
+    check("Void's body meets the bottom of its hood",
+          vd.get("bodyTop", 99) <= vd.get("headBottom", 0) + .5, vd)
     check("the Valkyrie is ten top-three finishes, and ten old wins still keep it", r.get("valk") == [False, True, True], r.get("valk"))
     check("the Astronaut is five hundos in a day", r.get("astro") == 5, r.get("astro"))
     check("the Marksman is 200 in a row", r.get("marks") == 200, r.get("marks"))
@@ -4972,7 +4976,7 @@ def check_b271(br):
       const al = buildAvatarCharSVG('alien');
       out.alienRot = [...al.querySelectorAll('.cx-eyes ellipse')].map(e => Math.abs(parseFloat(((e.getAttribute('transform') || '').match(/rotate\\(([-\\d.]+)/) || [0, 0])[1])));
       /* Void's flare rim */
-      out.voidRim = [...buildAvatarCharSVG('voidwalker').querySelectorAll('path')].some(p => (p.getAttribute('stroke') || '').toUpperCase() === '#F97316' && parseFloat(p.getAttribute('stroke-width')) >= .5);
+      out.voidRimAny = [...buildAvatarCharSVG('voidwalker').querySelectorAll('path')].some(p => p.getAttribute('fill') === 'none' && /^#[0-9A-F]{6}$/i.test(p.getAttribute('stroke') || ''));
       /* an enlarged character's scene is not enlarged with it */
       const vw = buildAvatarCharSVG('voidwalker');
       out.voidBgUnscaled = !!vw.querySelector(':scope > .cx-bg') && !vw.querySelector('g[transform] .cx-bg');
@@ -4998,7 +5002,8 @@ def check_b271(br):
     # like that" - check_b272 holds the three small ones. Here: more than one.
     check("the Koi has more than one fish in its bowl", (r.get("koiFish") or 0) >= 2, r.get("koiFish"))
     check("the Alien's eyes slant hard (20 degrees or more)", len(r.get("alienRot") or []) == 2 and min(r.get("alienRot")) >= 20, r.get("alienRot"))
-    check("Void is lit down one side by flare light", r.get("voidRim") is True, r.get("voidRim"))
+    # REVISED IN 275: the orange rim came off with the return to build 215's Void.
+    check("Void keeps a rim of light down one side", r.get("voidRimAny") is True, r.get("voidRimAny"))
     check("an enlarged character's scene stays at its own size", r.get("voidBgUnscaled") is True, r.get("voidBgUnscaled"))
     check("no exception", not r.get("threw"), r.get("threw"))
     ctx.close()
@@ -5127,6 +5132,46 @@ def check_b274(br):
     ctx.close()
 
 
+def check_b275(br):
+    """Build 275. (1) The Hacker's code rain fades into a circle like
+    every other scene: it sits under the backdrop's radial mask, and
+    there is no rectangular clip on it. (2) Void is build 215's drawing
+    again - the slim bust (its top edge at y=29 and 28.2 wide), drawn at
+    1:1 (no AVATAR_ART_SCALE), no orange rim, no nebula in its face or
+    its scene, its halo open. (3) The Marksman's face tapers to the chin
+    and has the hood's shadow across the brow. Written against 274,
+    where none of it held."""
+    print("\n56. build 275: the Hacker's round scene, Void restored, the Marksman refined")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{ const out = {};
+      try {
+      const hk = buildAvatarCharSVG('hacker'), rain = hk.querySelector('.cx-fx-hk3rain');
+      const holder = rain && rain.parentNode;
+      out.hacker = { masked: !!(holder && /url\\(#/.test(holder.getAttribute('mask') || '')), clipped: !!(holder && holder.getAttribute('clip-path')) };
+      const v = buildAvatarCharSVG('voidwalker');
+      const body = v.querySelector('.cx-body path');
+      const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:0;top:0;width:340px;height:340px'; document.body.appendChild(host);
+      v.style.cssText = 'width:340px;height:340px;display:block'; host.appendChild(v);
+      const b = body.getBoundingClientRect();
+      out.void = { bodyD: body.getAttribute('d'), scaled: typeof AVATAR_ART_SCALE.voidwalker === 'number',
+        top: +(b.top / 10 + 3).toFixed(1),
+        orange: [...v.querySelectorAll('path')].some(p => (p.getAttribute('stroke') || '').toUpperCase() === '#F97316'),
+        nebula: !!v.querySelector('[fill*="-vneb"], .cx-bg [class*="bgneb"]'),
+        halo: !!v.querySelector('circle[fill^="url(#halo-"]') };
+      host.remove();
+      const mk = buildAvatarCharSVG('marksman');
+      out.mark = { shadow: !!mk.querySelector('rect[fill*="-mks"]'), taper: [...mk.querySelectorAll('.cx-head path')].some(p => /28\\.2 20 28\\.4/.test(p.getAttribute('d') || '')) };
+      } catch(e){ out.threw = String(e && e.stack || e); }
+      return out; }""")
+    h, v, m = r.get("hacker") or {}, r.get("void") or {}, r.get("mark") or {}
+    check("the Hacker's rain fades into a circle like every scene, with no rectangular clip", h.get("masked") and not h.get("clipped"), h)
+    check("Void is build 215's drawing: the slim bust, at 1:1", v.get("bodyD") == "M5.9 40 Q6.7 31.2 14.3 29 L25.7 29 Q33.3 31.2 34.1 40 Z" and v.get("scaled") is False, v)
+    check("with its halo open, and no orange rim or nebula on it", v.get("halo") and not v.get("orange") and not v.get("nebula"), v)
+    check("the Marksman's face tapers to the chin, with the hood's shadow on the brow", m.get("shadow") and m.get("taper"), m)
+    check("no exception", not r.get("threw"), r.get("threw"))
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     only = os.environ.get("ONLY_B245")
@@ -5195,6 +5240,7 @@ def main():
             check_b272(br)
             check_b273(br)
             check_b274(br)
+            check_b275(br)
         finally:
             br.close()
     SERVER.shutdown()

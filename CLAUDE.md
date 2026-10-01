@@ -8456,3 +8456,30 @@ are untouched.
 - Gate: `check_b274`. `check_b273`'s Viking check became "the Plague
   Doctor is gone". The older Singularity checks key on its hair
   (`cx-fx-sghair`) instead of the ring.
+
+### Build 275
+
+- **The Hacker's scene is round like the rest**: "the hackers background
+  is more square, not circle". Its code rain was clipped to a rectangle,
+  the one scene in the set with corners. It now sits under the same
+  radial mask `backdrop()` defines for every character (`uid + "-bgm"`).
+- **Void is build 215's drawing again**: "the void is worse then when we
+  first came up with him." Measured against 215, the drawing itself had
+  barely moved. What changed was what had been laid on it:
+  - build 258's wide black cloak, which swallowed the slim bust and the
+    halo round it;
+  - build 271's orange rims, a nebula in the face, and a busy nebula
+    scene;
+  - an `AVATAR_ART_SCALE` of 1.23 added after 215, which made the hood
+    fill the frame.
+
+  All of it is gone. The bust, hood, starfield, flares and blue-grey rim
+  are 215's, path for path, at 1:1; only the part groups are new. Its
+  scene is faint stars only, so the halo is the light again.
+  **Before "improving" Void, render 215's and compare.**
+- **The Marksman, "a smidge better"**: the face tapers to the chin, the
+  hood's shadow falls across the brow, and it has a nose, cheekbones and
+  lighter strip tips.
+- Gate: `check_b275`. `check_b258`'s cloak check and `check_b271`'s
+  orange-rim check were decisions reversed on request, and are revised
+  to what still holds.

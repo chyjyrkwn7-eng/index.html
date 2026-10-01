@@ -32187,7 +32187,7 @@ const AVATAR_HEAD_SCALE = {
 };
 const AVATAR_ART_SCALE = {
   dragon: 1.09, detective: 1.16, masked: 1.08, zeus: 1.05,
-  voidwalker: 1.23, officer: 1.06,
+  officer: 1.06,
   marksman: 1.06, pharaoh: 1.03
 };
 
@@ -32496,7 +32496,7 @@ function drawAvatarCharSVG(charId){
     hacker:     [["nebula", "#3DFF8A", "#0B3B22"]],
     timekeeper: [["stars", "#C9C6FF"], ["runes", "#8A86FF"]],
     ronin:      [["moon", "#FF2E5E", 20, 12.4, 10.6], ["fall", "petal", ["#FF7AB0", "#FFC2DA"]]],
-    voidwalker: [["nebula", "#F97316", "#C23B7A"], ["stars", "#E4ECFF"]],
+    voidwalker: [["stars", "#E4ECFF"]],
     umbra:      [["nebula", "#8B5CF6", "#3B1E7A"], ["moon", "#C4B5FD", 30.8, 8.4, 2.6, true], ["stars", "#E2D8FF"]],
     singularity:[["nebula", "#4A7ACC", "#141A44"], ["stars", "#EAF8FF"], ["rise", "ember", ["#FFFFFF", "#BFE6FF"]]],
     lunar:      [["stars", "#E6EDF6"], ["nebula", "#9FB2C8", "#2B3446"]],
@@ -33046,66 +33046,37 @@ function drawAvatarCharSVG(charId){
      the three things you found, so a change to one has to reach all
      three places or the set stops matching. */
   if(def.kind === "voidwalker"){
+    /* VOID, RESTORED TO ITS FIRST DRAWING (build 275). "I'm still not sure
+       what happened to the void, the void is worse then when we first came
+       up with him." Measured against build 215, where Void was made, the
+       drawing itself had barely moved - what had changed was everything
+       laid on top of it: build 258's wide black cloak swallowed the narrow
+       bust and the halo round it, and build 271 added orange rim strokes,
+       a nebula inside the face and a busy nebula scene behind. So this is
+       build 215's Void again, path for path: the orange-to-magenta halo
+       open all round a slim dark bust, the cool blue-grey rim on one side,
+       a clean starfield face and the three flares. Its scene is faint
+       stars only, so the halo is the light again. Only the part groups
+       (cx-body, cx-head, the starfield and flares) are new, so it still
+       breathes and twinkles like the rest. */
     const halo = mk("radialGradient", { id: "halo-" + uid, cx: "50%", cy: "46%", r: "62%" });
     [["0%", "#F97316", ".34"], ["55%", "#C23B7A", ".16"], ["100%", "#000", "0"]]
       .forEach(([o, c, op]) => halo.appendChild(mk("stop",
         { offset: o, "stop-color": c, "stop-opacity": op })));
     defs.appendChild(halo);
-    /* The halo is a CIRCLE filled with the falloff, not a shape filled
-       with it - the rank emblems' own rule. */
     svg.appendChild(mk("circle", { cx: 20, cy: 20.5, r: 15.5, fill: "url(#halo-" + uid + ")" }));
-
     const body = mk("linearGradient", { id: "void-" + uid, x1: "0", y1: "0", x2: "0", y2: "1" });
     [["0%", "#141A26"], ["55%", "#080B12"], ["100%", "#03050A"]]
       .forEach(([o, c]) => body.appendChild(mk("stop", { offset: o, "stop-color": c })));
     defs.appendChild(body);
     const fill = "url(#void-" + uid + ")";
-
-    /* THE BODY IS THE HOOD'S CLOAK (build 258). "The head doesn't
-       connect to the body and the body doesn't match the head." It was a
-       narrow slate-blue bust starting at y=29, lighter than the black
-       hood above it, with a gap either side where the hood's tips ended
-       and the halo showed through - a head set down on a different
-       object. The cloak now flows out of the hood's tips into the
-       shoulders, in the hood's own black, and reaches up BEHIND the head
-       so a nod or a sway never opens a gap. A few stars in it too, since
-       the whole figure is a window onto space, not just the face. */
-    const cloak = mk("linearGradient", { id: "cloak-" + uid, x1: "0", y1: "24", x2: "0", y2: "40", gradientUnits: "userSpaceOnUse" });
-    [["0%", "#06080E"], ["100%", "#03050A"]]
-      .forEach(([o, c]) => cloak.appendChild(mk("stop", { offset: o, "stop-color": c })));
-    defs.appendChild(cloak);
     open("cx-body");
-    svg.appendChild(mk("path", { d: "M4.6 40 Q5 31.4 10.6 28.9 Q12.6 23.6 20 23.6 Q27.4 23.6 29.4 28.9 Q35 31.4 35.4 40 Z",
-                                 fill: "url(#cloak-" + uid + ")" }));
-    [[10.2, 35.2, .26], [14.6, 37.6, .2], [26.8, 34.4, .24], [30.4, 37.8, .18], [22.4, 38.2, .16]]
-      .forEach(([cx, cy, r]) => svg.appendChild(mk("circle", { cx: cx, cy: cy, r: r, fill: "#CFE0F5", opacity: ".45" })));
-    /* The same one-sided rim as the hood, carried down the shoulder. */
-    svg.appendChild(mk("path", { d: "M34.6 38.6 Q34 31.8 29.2 29.4", fill: "none", stroke: "#F97316",
-                                 "stroke-width": ".5", "stroke-linecap": "round", opacity: ".6" }));
+    svg.appendChild(mk("path", { d: "M5.9 40 Q6.7 31.2 14.3 29 L25.7 29 Q33.3 31.2 34.1 40 Z", fill: fill }));
     close();
     open("cx-head");
     svg.appendChild(mk("ellipse", { cx: 20, cy: 21.4, rx: 9.2, ry: 10, fill: fill }));
-    /* A hood, so the silhouette is a shape rather than a plain head -
-       and so the starfield has an edge to stop at. */
     svg.appendChild(mk("path", { d: "M20 10.4 Q29.4 11 30.2 21.6 Q30.5 26.4 28.4 29.4 L25.2 27.6 Q27.4 24.2 27.2 21.2 Q26.7 14.2 20 13.6 Q13.3 14.2 12.8 21.2 Q12.6 24.2 14.8 27.6 L11.6 29.4 Q9.5 26.4 9.8 21.6 Q10.6 11 20 10.4 Z",
                                  fill: "#05070C" }));
-
-    /* BUILD 271: "at one point void was the best looking character we
-       had but I feel like void regressed." It had gone flat - a black
-       hood on a black cloak on a dark screen, with the halo hidden behind
-       it - so it gets back what made it: deep space in the face, warm
-       with the flares' own colour, and a rim of flare light down the
-       hood and the shoulder, which is how Umbra and the Singularity are
-       lit too. The scene behind it does the rest. */
-    {
-      const ng = mk("radialGradient", { id: uid + "-vneb", cx: ".42", cy: ".46", r: ".6" });
-      [["0%", "#C23B7A", ".5"], ["45%", "#5A1E5E", ".35"], ["100%", "#05070C", "0"]].forEach(([o, c, op]) =>
-        ng.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
-      defs.appendChild(ng);
-      svg.appendChild(mk("ellipse", { cx: 19.8, cy: 20.4, rx: 6.6, ry: 6.8, fill: "url(#" + uid + "-vneb)" }));
-    }
-    /* The starfield, inside the face only. Faint, uneven, and never in a
-       row - three even dots read as a pattern, not as sky. */
     open("cx-fx cx-fx-starfield");
     svg.appendChild(pivot(19.6, 20.4, 5.2));
     [[16.4, 17.2, .34], [23.1, 16.1, .26], [18.2, 24.6, .3], [24.4, 23.2, .22],
@@ -33116,17 +33087,8 @@ function drawAvatarCharSVG(charId){
     noEyes();
     open("cx-fx cx-fx-flares");
     svg.appendChild(pivot(19.8, 19.9, 4.6));
-
-    /* THE THREE FLARES. Bigger than the stars, each with its own soft
-       bloom, in the three hunted colours. These are the whole point of
-       the character, so they are the brightest thing on it. */
     [[16.0, 19.4, MYSTERY_COLOR.red], [20.4, 16.9, MYSTERY_COLOR.orange], [23.4, 21.9, MYSTERY_COLOR.yellow]]
       .forEach(([cx, cy, col], i) => {
-        /* Indexed, never coordinate-named: an id of "fl-20.4-..." puts a
-           dot in a url() fragment, and every gradient id in this file is
-           already unique per instance for the reason the badges learned -
-           sixteen on one screen sharing one id is one definition and
-           fifteen wrong fills. */
         const gid = "fl" + i + "-" + uid;
         const g = mk("radialGradient", { id: gid, cx: "50%", cy: "50%", r: "50%" });
         g.appendChild(mk("stop", { offset: "0%", "stop-color": col, "stop-opacity": ".95" }));
@@ -33137,15 +33099,13 @@ function drawAvatarCharSVG(charId){
         svg.appendChild(mk("circle", { cx: cx, cy: cy, r: .95, fill: col, opacity: ".9" }));
       });
     close();
-
-    /* The rim. One edge only, so there is a light direction - a rim all
-       the way round reads as a sticker cut out of the background. */
-    svg.appendChild(mk("path", { d: "M20 10.5 Q27.6 10.6 29.8 19.4 Q30.2 25.4 28.2 29", fill: "none",
-                                 stroke: "#F97316", "stroke-width": ".62",
-                                 "stroke-linecap": "round", opacity: ".8" }));
-    svg.appendChild(mk("path", { d: "M27.1 14.6 Q24 11.1 20 10.7", fill: "none",
-                                 stroke: "#FFD08A", "stroke-width": ".42",
-                                 "stroke-linecap": "round", opacity: ".75" }));
+    /* The rim. One edge only, so there is a light direction. */
+    svg.appendChild(mk("path", { d: "M12.9 14.6 Q16 11.1 20 10.7", fill: "none",
+                                 stroke: "#8FA8CC", "stroke-width": ".5",
+                                 "stroke-linecap": "round", opacity: ".5" }));
+    svg.appendChild(mk("path", { d: "M11.4 22.6 Q11.5 26 13.4 28.6", fill: "none",
+                                 stroke: "#7C93B8", "stroke-width": ".42",
+                                 "stroke-linecap": "round", opacity: ".38" }));
     close();
     return done();
   }
@@ -33894,11 +33854,12 @@ function drawAvatarCharSVG(charId){
     /* CODE RAIN behind the figure: columns of glyphs whose pattern
        repeats every 6 units, falling exactly 6 - a seamless loop. */
     {
-      const rcp = uid + "-hk3r";
-      const cp = mk("clipPath", { id: rcp });
-      cp.appendChild(mk("rect", { x: 3, y: 3, width: 34, height: 26 }));
-      defs.appendChild(cp);
-      const clip = mk("g", { "clip-path": "url(#" + rcp + ")", opacity: ".7" });
+      /* BUILD 275: "the hackers background is more square, not circle".
+         The rain used to be clipped to a rectangle - the one scene in the
+         set with corners. It now sits under the same radial mask every
+         backdrop uses (backdrop() defines it, before the figure), so it
+         dissolves into a circle like the rest. */
+      const clip = mk("g", { mask: "url(#" + uid + "-bgm)", opacity: ".7" });
       const rain = mk("g", { class: "cx-fx cx-fx-hk3rain" });
       rain.appendChild(pivot(20, 16, 20));
       [[4.6, [1, .5, 1, 0]], [7.4, [0, 1, .6, 1]], [10.2, [1, 0, 1, .4]], [29.8, [.4, 1, 0, 1]], [32.6, [1, .6, 1, 0]], [35.4, [0, 1, 1, .5]]].forEach(([x, pat], ci) => {
@@ -35472,10 +35433,14 @@ function drawAvatarCharSVG(charId){
       const x = 20 + Math.cos(t) * 10, y = 18 + Math.sin(t) * 12;
       const ang = Math.atan2(Math.sin(t) * .8 + 1.1, Math.cos(t)) * 180 / Math.PI;
       svg.appendChild(strip(x, y, 3.2 + (k * 5 % 4) * .7, ang, .55, GREENS[(k * 3) % GREENS.length]));
+      if(k % 3 === 1) svg.appendChild(strip(x + Math.cos(ang * Math.PI / 180) * 1.6, y + Math.sin(ang * Math.PI / 180) * 1.6, 1.8, ang, .32, "#B4B86A"));
     }
     /* THE FACE, in camo paint */
     const skin = headGrad("#D8A47A", "#B88458", "#7A5234");
-    const face = "M14.2 15.8 Q20 13.6 25.8 15.8 Q26.6 22.8 24.4 26.6 Q20 28.8 15.6 26.6 Q13.4 22.8 14.2 15.8 Z";
+    /* BUILD 275, "a smidge better": a jaw that tapers rather than a box,
+       the hood's shadow across the brow, a nose and cheekbones, and
+       lighter tips on the strips so the shag has depth. */
+    const face = "M14.4 15.6 Q20 13.4 25.6 15.6 Q26.6 21.6 24.8 25.4 Q22.6 28.2 20 28.4 Q17.4 28.2 15.2 25.4 Q13.4 21.6 14.4 15.6 Z";
     svg.appendChild(mk("path", { d: face, fill: skin }));
     const fcp = uid + "-mkf";
     const fc = mk("clipPath", { id: fcp }); fc.appendChild(mk("path", { d: face })); defs.appendChild(fc);
@@ -35483,7 +35448,14 @@ function drawAvatarCharSVG(charId){
     paint.appendChild(mk("path", { d: "M12 21.4 L28 17.4 L28 19.6 L12 23.8 Z", fill: "#3E4A24", opacity: ".9" }));
     paint.appendChild(mk("path", { d: "M12 25.6 L28 21.8 L28 23.2 L12 27.2 Z", fill: "#1A1E12", opacity: ".85" }));
     paint.appendChild(mk("path", { d: "M12 17.4 L20 15.6 L20 16.8 L12 18.8 Z", fill: "#1A1E12", opacity: ".8" }));
+    /* the hood's shadow over the brow, and the cheekbones under the eyes */
+    const hs = mk("linearGradient", { id: uid + "-mks", x1: "0", y1: "0", x2: "0", y2: "1" });
+    [["0%", "#0A0C06", ".75"], ["100%", "#0A0C06", "0"]].forEach(([o, c, op]) => hs.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
+    defs.appendChild(hs);
+    paint.appendChild(mk("rect", { x: 12, y: 13.4, width: 16, height: 5.2, fill: "url(#" + uid + "-mks)" }));
+    paint.appendChild(mk("path", { d: "M15.4 23.2 Q17 24.4 18.6 24 M21.4 24 Q23 24.4 24.6 23.2", fill: "none", stroke: "#5A3A22", "stroke-width": ".4", opacity: ".55", "stroke-linecap": "round" }));
     svg.appendChild(paint);
+    svg.appendChild(mk("path", { d: "M20.3 20.4 Q21.2 22.6 19.9 23.2", fill: "none", stroke: "#6A4428", "stroke-width": ".45", "stroke-linecap": "round", opacity: ".7" }));
     /* the fringe of strips hanging over the brow */
     [[15.2, 13.8, 2.8, 96, 0], [16.8, 13.4, 3.4, 84, 1], [18.4, 13.2, 2.6, 92, 2], [21.6, 13.2, 2.4, 88, 3], [23.2, 13.4, 3.2, 98, 4], [24.8, 13.8, 2.6, 86, 5]]
       .forEach(([x, y, l, a, c]) => svg.appendChild(strip(x, y, l, a, .5, GREENS[c])));
@@ -56946,7 +56918,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-01-274";
+const APP_BUILD = "2026-10-01-275";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
