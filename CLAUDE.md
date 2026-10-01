@@ -8699,13 +8699,19 @@ are untouched.
   "Star blade is cool, could it be a little better?" A second pass added
   a constellation and a shoulder guard and was turned back: "it looks
   like a mask, could it have a more hooded feel? The one on the left is
-  cooler. The blade though doesn't really look like a blade." So the
-  final draw is the FIRST one with a deep hood that falls onto the
-  shoulders. The face is lost in it: no cowl panel, which is what read as
-  a mask, and only the visor slit shows. The sword is a real one, with
-  two faces meeting at a ridge, a point, a crossguard and a wrapped grip,
-  and it stands BESIDE the hood, because the deep hood hides anything
-  that crosses it.
+  cooler. The blade though doesn't really look like a blade." A third
+  pass dropped the cowl for a deep hood with the face lost in shadow, and
+  that was turned back too: "that hood and head looks way better before
+  ... you tried a cloak styled hood for v3. That's a good idea, it just
+  needs to be a bit easier to see that way." **So the head is the FIRST
+  draw's, cowl and all, and the cloak is made legible by contrast**: the
+  hood and a mantle over both shoulders are a shade LIGHTER than the body
+  under them, a lining band round the face gives the cloth a thickness,
+  there is a seam down the peak, and a star clasp pins it at the throat.
+  A dark hood on a dark body is what made the third pass's cloak
+  invisible. The sword is slung across the back, point up past the
+  shoulder, with two faces, a fuller of starlight, an angled point and a
+  guard that clears the mantle.
   **It is an assassin first and space second**, because Void, Umbra and
   Horizon are already hooded space figures. The assassin parts are the
   peaked hood, the cowl to the eyes and the sword. The space parts are:
