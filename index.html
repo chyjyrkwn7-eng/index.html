@@ -14357,6 +14357,102 @@
     .unitoptions-modal-sheet{ padding-bottom:calc(1.6rem + env(safe-area-inset-bottom)); }
   }
 
+  /* ---- THE START SHEET, AS SIMPLE AS iOS (build 270) ----
+     "The test start menu, I'm still not in love with it and I want to be
+     in love with it so badly ... I can't put my finger on it, there has
+     got to be a better way to make this screen. A way where it's so
+     simple like Apple iOS that could have anyone understand how to use
+     that start menu." What it was: five boxed cards in a column, each
+     with a label printed inside it, a summary card repeating the title in
+     bigger type, two lines of explanation under every switch, and in
+     Drill the Begin button scrolled out of sight.
+     What it is now is the grammar every iOS settings screen uses, the one
+     everybody already reads without thinking: a large title (the mode
+     itself) with what you picked in grey under it, then plain groups -
+     a small grey heading ABOVE each group rather than inside a box -
+     with rows divided by hairlines and switches on the right, and the
+     one action pinned to the bottom where your thumb is. No control was
+     removed and none moved meaning; this is all presentation, scoped to
+     .is-setup so the Virtual Room's Match settings sheet is untouched. */
+  .unitoptions-modal-sheet.is-setup{ background:#0F1115; }
+  .unitoptions-modal-sheet.is-setup .unitoptions-modal-title{
+    font-family:var(--sans); font-size:1.65rem; font-weight:800; letter-spacing:-.01em; color:#fff;
+  }
+  .unitoptions-modal-sheet.is-setup .unitoptions-modal-head{ margin-bottom:.1rem; }
+  /* What you picked: plain grey text under the title, not a card. */
+  .unitoptions-modal-sheet.is-setup .sheet-summary{
+    display:block; background:none; border:none; box-shadow:none; padding:0 .1rem; margin:0 0 1.35rem;
+  }
+  .unitoptions-modal-sheet.is-setup .sheet-summary-mode,
+  .unitoptions-modal-sheet.is-setup .sheet-summary-tags{ display:none; }
+  .unitoptions-modal-sheet.is-setup .sheet-summary-line{
+    text-align:left; white-space:normal; margin:0; font-size:.95rem; font-weight:600; color:rgba(255,255,255,.62);
+  }
+  .unitoptions-modal-sheet.is-setup .sheet-summary-units{
+    margin:.2rem 0 0; padding:0; border:0; font-size:.82rem; line-height:1.35; color:rgba(255,255,255,.42);
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  /* Groups: no box of their own; the heading sits above, iOS-style. */
+  .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect{
+    background:none; border:none; box-shadow:none; padding:0; margin:0 0 1.45rem;
+  }
+  .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect .slab,
+  .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect .sect-headrow{
+    margin:0 .9rem .45rem; font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    color:rgba(255,255,255,.45);
+  }
+  .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect .sect-headrow .slab{ margin:0; }
+  .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect .sect-headval{
+    text-transform:none; letter-spacing:0; font-size:.86rem; font-weight:700; color:#fff;
+  }
+  /* The question bank: one segmented control, the iOS one. */
+  .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect .bank-opts{
+    background:rgba(118,118,128,.24); border:none; border-radius:11px; padding:3px;
+  }
+  .unitoptions-modal-sheet.is-setup .bank-opt{ border-radius:9px; min-height:40px; }
+  .unitoptions-modal-sheet.is-setup .bank-opt.on,
+  .unitoptions-modal-sheet.is-setup .bank-opt[data-value="recent"].on,
+  .unitoptions-modal-sheet.is-setup .bank-opt[data-value="flagged"].on{
+    background:#636366; border:none; box-shadow:0 3px 8px rgba(0,0,0,.25), 0 3px 1px rgba(0,0,0,.08);
+  }
+  .unitoptions-modal-sheet.is-setup .bank-caption{ margin:.45rem .9rem 0; font-size:.78rem; color:rgba(255,255,255,.45); }
+  /* How many: the slider and All on one plain group row. */
+  .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect .slider-row,
+  .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect .slider-wrap{
+    background:rgba(255,255,255,.07); border-radius:13px; padding:.75rem .9rem;
+  }
+  /* Switches: grouped rows, divided by hairlines, no explanations - the
+     names say it ("Shuffle answers", "Hide answers", "Time limit"). */
+  .unitoptions-modal-sheet.is-setup .opt-rows,
+  .unitoptions-modal-sheet.is-setup .timer-sect{
+    background:rgba(255,255,255,.07); border-radius:13px; padding:0 .9rem;
+  }
+  .unitoptions-modal-sheet.is-setup .opt-tiles-sect .opt-rows .opt,
+  .unitoptions-modal-sheet.is-setup .timer-sect .opt{ padding:.72rem 0; min-height:48px; align-items:center; }
+  .unitoptions-modal-sheet.is-setup .opt-rows .opt + .opt,
+  .unitoptions-modal-sheet.is-setup .timer-sect > * + *{ border-top:1px solid rgba(255,255,255,.09); }
+  .unitoptions-modal-sheet.is-setup .opt .ohint{ display:none; }
+  .unitoptions-modal-sheet.is-setup .opt .otext{ font-size:1rem; color:#fff; }
+  /* Timer: one row that says what it is set to, and opens in place. */
+  .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect:has(> .more-toggle){
+    background:rgba(255,255,255,.07); border-radius:13px;
+  }
+  .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect > .more-toggle{
+    min-height:52px; padding:0 .9rem; font-size:1rem; font-weight:600; letter-spacing:0; text-transform:none; color:#fff;
+  }
+  .unitoptions-modal-sheet.is-setup .more-toggle-state{ font-size:.95rem; font-weight:500; color:rgba(255,255,255,.5); }
+  .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect > .more-body.open > .more-body-inner{ border-top-color:rgba(255,255,255,.09); }
+  .unitoptions-modal-sheet.is-setup .timer-sect{ background:none; padding:0; }
+  /* Game's three speeds stay three tiles - they are the choice - but the
+     legend about the dots on the unit cards is not needed to start. */
+  .unitoptions-modal-sheet.is-setup .speedkey{ display:none; }
+  /* BEGIN NEVER SCROLLS AWAY. Pinned to the foot of the sheet, with the
+     sheet's own colour fading in behind it so the rows pass under it. */
+  .sheet-begin-bar > .sheet-begin-btn{ margin-top:0; }
+  .unitoptions-modal-sheet.is-setup .sheet-begin-bar{
+    position:sticky; bottom:0; z-index:3; margin:0 -1.25rem; padding:1.1rem 1.25rem .2rem;
+    background:linear-gradient(180deg, rgba(15,17,21,0) 0, #0F1115 1.1rem);
+  }
   /* ---------- Profile: identity, level, badges -----------------------
      The shine. One animation, two palettes, used on the level number,
      the badge count and the unlock names. It paints a moving highlight
@@ -54804,7 +54900,12 @@ function showSetup(){
        one mode with no length - it runs until the lives are gone. */
     beginRun(cfg.mode === "game" ? pool : (cfg.size > 0 ? pool.slice(0, cfg.size) : pool), null);
   });
-  optionsModalBody.appendChild(beginBtn);
+  /* Pinned to the foot of the sheet (build 270) on a bar of the sheet's
+     own colour, so it never scrolls away and the rows pass under it. */
+  const beginBar = document.createElement("div");
+  beginBar.className = "sheet-begin-bar";
+  beginBar.appendChild(beginBtn);
+  optionsModalBody.appendChild(beginBar);
 
   /* Draw From, Length, and Timer & Options used to live directly in
      this scrollable page, meaning reaching them meant scrolling all
@@ -54820,18 +54921,20 @@ function showSetup(){
   const optionsModalScrim = document.createElement("div");
   optionsModalScrim.className = "unitoptions-modal-scrim";
   const optionsModalSheet = document.createElement("div");
-  optionsModalSheet.className = "unitoptions-modal-sheet";
+  /* is-setup (build 270): the iOS-grouped look below is this sheet's
+     only - the Virtual Room's Match settings sheet shares the base class. */
+  optionsModalSheet.className = "unitoptions-modal-sheet is-setup";
   const optionsModalHandle = document.createElement("div");
   optionsModalHandle.className = "unitoptions-modal-handle";
   const optionsModalHead = document.createElement("div");
   optionsModalHead.className = "unitoptions-modal-head";
   const optionsModalTitle = document.createElement("p");
   optionsModalTitle.className = "unitoptions-modal-title";
-  /* Renamed from "Options" now that this sheet also carries the
-     pre-test summary and is what Start itself opens \u2014 keeping the
-     old name here would have been actively misleading about what's
-     in it now, per explicit request to call it something else. */
-  optionsModalTitle.textContent = "Review & Start";
+  /* THE MODE IS THE TITLE (build 270). "Review & Start" over a card that
+     then said "Drill" in bigger type was two headings for one thing;
+     the sheet is titled with what you are about to start, and refresh()
+     keeps it current. */
+  optionsModalTitle.textContent = cfg.mode.charAt(0).toUpperCase() + cfg.mode.slice(1);
   const optionsModalDone = document.createElement("button");
   optionsModalDone.type = "button"; optionsModalDone.className = "next";
   optionsModalDone.style.cssText = "padding:.5rem 1.1rem; font-size:.85rem;";
@@ -54919,6 +55022,7 @@ function showSetup(){
     /* "Review Review" is what the old suffix produced once Review
        became a mode of its own rather than a switch on top of one. */
     sheetSummaryMode.textContent = modeLabel;
+    optionsModalTitle.textContent = modeLabel;
     sheetSummaryLine.textContent = cfg.units.length === 0
       ? "No units selected yet"
       : (cfg.units.length === all.length ? "All units" : cfg.units.length + (cfg.units.length === 1 ? " unit" : " units")) +
