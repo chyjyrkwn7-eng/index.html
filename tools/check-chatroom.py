@@ -54,7 +54,7 @@ def main(src):
             ctx.add_init_script(FAKE)
             ctx.add_init_script(
                 "try{localStorage.setItem('class26e.frame.ok','go-live-1');"
-                "localStorage.setItem('class26e.intro.seen','9');}catch(e){}")
+                "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');}catch(e){}")
             errs = []
 
             def tab(name, pub, late=False):
@@ -662,7 +662,7 @@ def main(src):
               const leave = () => [...document.querySelectorAll('.chatdock-mini')].find(x=>x.textContent==='Leave');
               leave().click();
               const card = document.querySelector('.chatdock-confirm');
-              const out = { asked: !!card, title: card ? card.querySelector('.chatdock-confirm-title').textContent : '',
+              const out = { asked: !!card, title: card ? (card.querySelector('#chatdock-confirm-title') || {}).textContent || '' : '',
                             stillIn: !!chatRoomCode };
               document.querySelector('.chatdock-confirm-stay')?.click();
               await new Promise(r => setTimeout(r, 200));

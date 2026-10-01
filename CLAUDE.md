@@ -8499,3 +8499,203 @@ are untouched.
   `AVATAR_GLOW.singularity` move with it.
 - Gate: `check_b276`. It asserts against the character's own drawing,
   not a hex value, and fails on 275.
+
+### Build 277
+
+- **The Ace replaced the Bounty Hunter, and was replaced in turn before
+  shipping** ("Nope, not ace, something cooler, something mysterious and
+  unique"). See build 278.
+- **Void, improved without replacing anything**: "I really like the face
+  with the 3 flares, and the black but it could look better." The head
+  and the hood were the same black, so there was no face, just a dark
+  shape with lights on it. Now:
+  - the hood is one smooth shape with a cool rim;
+  - the face inside it is a window: a deeper, bluer black with a faint
+    wash of the flare colours;
+  - the stars sit at every depth;
+  - the three flares are bigger, each glints on its own beat, and a
+    hairline joins them.
+
+  The slim bust and the open halo are still build 215's. Don't add the
+  258 cloak or the 271 orange rims back; they are what made it worse.
+- **The 4th and 5th flares are worn by their characters**:
+  - Umbra wears the violet flare as the clasp of its cloak (`cx-fx-umflare`);
+  - the Singularity id wears the ice-blue flare on its brow (`cx-fx-sgstar`).
+
+  Each one is drawn the way a flare is drawn (bloom, disc, white-hot
+  core) and from `MYSTERY_COLOR`, so a change to the flare colour
+  reaches the character.
+- **The Singularity is called Horizon**: "Singularity character doesn't
+  look like singularity anymore, change the name. Maybe horizon like you
+  named the flare." It is named after its flare, Event Horizon. The id,
+  the kind and every `cx-fx-sg*` class are unchanged, because the id is
+  what people have stored.
+- Gate: `check_b277`. It fails on 276. Gates that named the Bounty Hunter
+  were revised: `check_b274` now asserts that the Viking stays gone, and
+  the Blitz-retirement checks expect the `ace` kind.
+
+### Build 278
+
+- **The Phantom is on the astronaut id** (kind `phantom`, parts
+  `cx-fx-ph*`). The challenge is five units' hundos in one day, which
+  is a heist, so this is a gentleman phantom thief:
+  - a top hat cocked to one side;
+  - a white half-mask with a gold monocle, and only a violet glint
+    behind it;
+  - a sly smile;
+  - a cape whose crimson lining shows at its front edges over a
+    tailcoat;
+  - the ace of spades turning in the air (`cx-ph-card`);
+  - a moonlit night behind.
+
+  **There is no standing red-lined collar.** That reads as Dracula, and
+  Dracula was turned down in 273. Seven designs have now come and gone
+  in this slot.
+- **Void's head joins its body**: "I feel like voids problem is that the
+  head doesn't connect to the body". **The seam was the gradient, not
+  the shapes.** The hood and the body each filled their own bounding box
+  with the same top-to-bottom ramp, so the hood's darkest edge sat on
+  the body's lightest. That made a band across the neck, under a
+  flat-bottomed hood. Now:
+  - one `userSpaceOnUse` ramp runs from crown to hem, shared by both
+    shapes;
+  - the hood's bottom is rounded and runs about 6 units down past the
+    shoulders;
+  - the shoulders rise to meet it;
+  - the rim light carries on from the hood onto the shoulder.
+
+  **The general lesson:** two shapes that must read as one need one
+  gradient in user space, not one each in their own boxes.
+- **One flare drawing, `wornFlare()`**: "I like the flares of horizon
+  and umbra, ensure they look like that on void." Void's three, Umbra's
+  one and Horizon's one are now the same drawing: a bloom, a rimmed
+  disc, a white core and a glint, with a scale factor. Change it once
+  and all three move. `check_b278` compares the parts structurally
+  across all five flares.
+- **The Home tagline is "Master the material, one level at a time."**
+  "The study game. One question at a time." was reported as bad: "I
+  preferred the master the material one question at a time. Just wanted
+  to incorporate the word game or a synonym." The first attempt was
+  "Master the material. Level up one question at a time." It measured
+  322px, and a 360–375px phone gives the tagline only 295–306px. So it
+  wrapped to two lines and pushed Start Studying 23px down, onto the
+  daily-question circle on an Android phone. Three gates caught this.
+  The current line is 243px.
+  **Measure a tagline against the narrowest phone before choosing it.**
+  `check_b245_slogan` asserts the shape: it leads with "master the
+  material" and contains a game word, and Start Studying must not move.
+- `check_b270`'s back-from-a-list height check now waits for the card's
+  height to settle instead of reading it at a fixed 900ms. Under a
+  loaded full run it read the card mid-transition (786 against 419) on a
+  build where it ends at 419.
+- Gate: `check_b278`. It fails on 276; 277 never shipped.
+- The following gates were revised because the decisions they encoded
+  changed:
+  - `check_b275`'s exact Void body path became "drawn at 1:1";
+  - `check_b258` measures the hood path instead of the old head
+    ellipse;
+  - `check_b277`'s Ace check became "the Bounty Hunter stays gone";
+  - the Blitz-retirement checks expect `phantom`.
+
+### Build 279 (version 7.3)
+
+- **Version 7.3**, with a version-history entry and a What's New popup
+  (`INTRO_REV` 2). Its rows: characters, the Battle mode, chat, holding
+  a unit for its details, the Rank tab, the results refresh, lower badge
+  requirements, and fixes. **Gate fixtures seed `class26e.unithold.tip`
+  beside `class26e.intro.seen`**, for the reason `tourRev` is seeded: an
+  existing account has seen the one-time hold tip, and without the key
+  its overlay sits over the first unit any gate taps.
+- **The one-time hold tip** fires on whichever unit is tapped first
+  (`maybeShowUnitHoldTip`, keyed in `localStorage`, two steps). It has a
+  `check-tours` scenario.
+- **Calendar:** the month grid is bigger on a phone, and today is ringed
+  in the theme colour rather than white.
+- **Badges tab in the cutscene's metal.** The case is slate and the top
+  box is cut from the same metal, with a steel medal. **The lining is
+  graphite in both the tab and the badge cutscene, never navy.** Build
+  232 took the blue out because blue and violet badges sank into it, and
+  the cutscene's navy had the same problem waiting. `check-behaviour`'s
+  "lining is not blue" assertion caught it.
+- **Chat:**
+  - **The "someone" ghost:** pagehide deleted a participant entry and a
+    nested `.seen` beat then recreated it without a name. Presence now
+    patches `seen` instead (`chatPresencePatch`), and nameless entries
+    are filtered out everywhere a roster is drawn.
+  - **Leaving chat** is an action sheet (`.chat-leavesheet`), not a
+    settings-style confirm, and the dock's hide path closes it, so it
+    can no longer be left stranded.
+  - **Online means the app is open.** The presence document is the
+    authority whenever it has an answer, and closing the app writes 0
+    (`sendOffline`). `lastModified` is no longer read at all: a push is
+    what the app does on its way to the background, so it was lighting
+    the dot for five minutes after somebody closed the app. Every live
+    build already wrote presence, so dropping the fallback leaves nobody
+    wrongly offline. `check-friends` holds it.
+- **Rank tab:** opening it glances down to your point on the road map
+  and back.
+- **Badge bands lowered:** 15 / 12 / 8 / 4 / 2 for 25 or fewer, 26–50,
+  51–100, 101–200 (Arrest, Search and Seizure only) and over 200 (Penal
+  Code only) questions. `BADGE_BANDS_VERSION` 3, so
+  `grantRetroBadgesOnce` compares against 210's bands for accounts
+  already on 2. The badges it hands out are celebrated on the next test,
+  with no mastery bonus; anything 210 handed out and not yet celebrated
+  is kept. `check-curve` sections 1 and 7 hold the bands and the
+  hand-out.
+- **Merging a duplicate account** (`mergeLeavingAccount`). The device
+  folds its own progress into the account it joins: counts add, bests
+  keep the better, lists union, and identity stays the target's. A note
+  can also carry `extra` (the numbers off a rankings row whose progress
+  document is gone) and `bonusLevels`.
+  - **The note lives at `progress/<code>__merge`, never `__moved`.** Any
+    build before 279 follows a `__moved` note by taking the target
+    whole, so a merge written there would drop the duplicate's progress
+    the moment it was opened on an old build.
+  - **`mergeHold`** is the account as it stood before the merge. Until a
+    test finishes, Home announces nothing, and `summarize()` takes its
+    before-snapshots against it: merged badges hide with the retro ones,
+    `mergeHidePoints` holds the level, and characters and banners are
+    diffed against the baseline. That is "if anyone unlocks anything
+    because of this, do it after their next test".
+  - **Tool:** `firestore-admin.py merge <from-pub> <to-pub> [--bonus N]
+    [--extra-from <row-pub>] [--yes]`. Bonus and extra ride on the
+    fullest duplicate's note only, so a second device of the same
+    duplicate never pays them twice. `move --finish` deletes followed
+    `__merge` notes and their old documents too.
+  - **Pending, once 7.3 is live:**
+    - LAKE into "- ALFRED LAKE -", `--bonus 1 --extra-from` the orphan
+      "Alfred Lake" row (2,900 XP, 244 correct; its progress document was
+      wiped by a reset on Sept 28, two hours before LAKE's empty first
+      sign-up). The 3 hundos are not recoverable: the row does not say
+      which units they were in.
+    - Jackeline into Aranda, `--bonus 1`.
+    - Remove the three level-1 "Aranda" rows that have no progress
+      documents.
+  - Gate: `check_b279_merge`. Everything the merge adds fails on 278.
+- **Virtual Room results wait for your own reveal.** This device's own
+  reveal used to be waited for only the 45s everybody else gets. A
+  badge case plus a rank-up plus unlock cards runs past that, so the
+  last player to finish had the leaderboard cut into their own
+  cutscene. Now:
+  - this device waits for its own `rs-done`, capped at
+    `VROOM_OWN_REVEAL_CAP_MS` (150s) only for a reveal that has stalled;
+  - others' reveals are waited for 75s;
+  - the roll never starts while `VROOM_SCENE_SELECTOR` matches. Rank-ups
+    play in `#supernova-cutscene` too.
+
+  `check-vroom` section 7 holds it and fails on 278.
+- **The astronaut id is the live Astronaut again**, as build 269 ships
+  it, now with a backdrop. Every replacement since 271 was turned down:
+  - Bounty Hunter, Phantom;
+  - two rounds of hooded fighters;
+  - five creatures (rejected outright: "terrible");
+  - ten masks.
+
+  The last word was "please hurry so I can get this live". **The slot is
+  still open**, and nobody's screen changes until Madison picks one.
+- **Decision checks revised, not deleted:**
+  - b271/b272: the slot draws a real, named character;
+  - b278: it is the live Astronaut, with no Phantom and no Ace;
+  - the Blitz retirement expects `astronaut`;
+  - `check-friends`: a pushed score is not online, and closing the app
+    clears the dot at once.

@@ -121,10 +121,12 @@ def main():
             check("badgeThresholdFor exists", True)
             check("an unknown unit falls back to 35, never to 5",
                   r["unknown"] == 35, r["unknown"])
-        # Madison's bands as of build 210, verbatim: 25 or fewer questions
-        # 20 hundos, 26-50 15, 51-100 10, 101-200 5, over 200 3.
-        bands = [(0, 25, 20), (26, 50, 15), (51, 100, 10),
-                 (101, 200, 5), (201, 10 ** 6, 3)]
+        # Madison's bands as of build 279: "Make the ones that are 10x, 8x.
+        # Make all the 15x 12x. Make all the 20x 15x. Make penal code 2x.
+        # Arrest search and seizure, make it 4x." - the last two being the
+        # only units over 200 and in 101-200.
+        bands = [(0, 25, 15), (26, 50, 12), (51, 100, 8),
+                 (101, 200, 4), (201, 10 ** 6, 2)]
         wrong = []
         for u, v in units.items():
             want = next(h for lo, hi, h in bands if lo <= v["q"] <= hi)
@@ -408,7 +410,15 @@ def main():
             store.badgeBandsVersion = 2; store.retroBadgePending = [];
             store.unitPerfects = {'Identity Crimes': 20};
             grantRetroBadgesOnce();
-            return { listed, first, second, fresh: store.retroBadgePending.slice() };
+            const fresh = store.retroBadgePending.slice();
+            /* BUILD 279: an account already on 210's bands - which is every
+               live account - is owed what 279's lower bands hand it, and
+               keeps anything 210 handed it that is still uncelebrated. */
+            store.badgeBandsVersion = 2; store.retroBadgePending = ['Victims of Crime'];
+            store.unitPerfects = {'TCOLE Rules': 16, 'Penal Code': 2, 'Professionalism and Ethics': 12, 'Identity Crimes': 20};
+            grantRetroBadgesOnce();
+            const b279 = store.retroBadgePending.slice();
+            return { listed, first, second, fresh, b279 };
           } catch(e){ return { threw: String(e) }; }}""")
         if retro.get("threw"):
             check("handed-out badges are listed once, on launch", False, retro["threw"])
@@ -425,6 +435,10 @@ def main():
             check("and never again", not retro["second"]["queued"] and not retro["second"]["tier"]
                   and not retro["first"]["left"], retro["second"])
             check("a new account has nothing handed out", retro["fresh"] == [], retro["fresh"])
+            # Identity Crimes already held 20 of 20 under 210: not news.
+            check("build 279's lower bands hand out what they newly qualify, and keep what 210 still owed",
+                  sorted(retro.get("b279") or []) == ['Penal Code', 'Professionalism and Ethics', 'TCOLE Rules', 'Victims of Crime'],
+                  retro.get("b279"))
 
         check("no uncaught JS along the way", not errs, errs[:3])
         ctx.close(); br.close()

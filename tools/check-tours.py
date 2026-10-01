@@ -76,6 +76,12 @@ SCENARIOS = [
      "setup": "showProfile('profile')", "note": "Customize, calendar, Stats"},
     {"key": "rankings", "flag": "seenRewardsTour", "source": "showRankings",
      "setup": "showRankings()", "note": "the three boards, search, Find me"},
+    # build 279: the one-time "hold a unit" tip, on the first unit tapped.
+    # Gated by a localStorage key, not a store flag, so the setup clears it
+    # and taps the first card itself.
+    {"key": "unithold", "flag": None, "source": "showUnitHoldTip",
+     "setup": "localStorage.removeItem('class26e.unithold.tip'); cfg.mode='drill'; showSetup(); setTimeout(()=>{ const r=document.querySelector('.pick:not(.pick-tba)'); if(r) r.click(); }, 400)",
+     "note": "two steps on the tapped unit card"},
     # summarize() runs at the end of a test and needs a finished run behind
     # it, which no cold mount can produce. Declared here so the coverage
     # check below still sees it, and skipped in the walk.
@@ -204,7 +210,7 @@ def main(argv):
                 pg.add_init_script(
                     "Object.defineProperty(navigator,'standalone',{get:()=>true});")
                 pg.add_init_script(
-                    "try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.drill.v1',%s)}catch(e){}"
+                    "try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.drill.v1',%s)}catch(e){}"
                     % json.dumps(json.dumps(seed)))
                 pg.goto("http://127.0.0.1:%d/index.html" % port)
                 pg.wait_for_timeout(2000)

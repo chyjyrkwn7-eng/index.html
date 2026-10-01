@@ -70,7 +70,7 @@ def page(br, w=440, h=956):
     ctx = br.new_context(viewport={"width": w, "height": h}, has_touch=True)
     ctx.add_init_script(FAKE)
     ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');"
-                        "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.daily.seen','x');"
+                        "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.daily.seen','x');"
                         "localStorage.setItem('class26e.drill.v1',%s);}catch(e){}" % repr(SEED))
     pg = ctx.new_page()
     pg.on("pageerror", lambda e: errors.append(str(e)))

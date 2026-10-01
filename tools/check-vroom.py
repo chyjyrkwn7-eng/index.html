@@ -801,7 +801,7 @@ def main():
         ctx.add_init_script("window.__fakeLatency = %d;" % args.latency)
         ctx.add_init_script(FAKE_FIRESTORE)
 
-        ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');"
+        ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');"
                             "localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % SEED)
 
         def open_tab(name, avatar, points, code, badges=0, rank_key=None):
@@ -1223,8 +1223,17 @@ def main():
             host.wait_for_timeout(max(0, int((t_in + 14.5 - time.time()) * 1000)))
             held = host.evaluate("()=>!document.getElementById('vroom-race-cut') && !!document.getElementById('vroom-prep')")
             check("the cutscene waits while a player's results are still landing", held, held)
+            # BUILD 279: "the leaderboard just wouldn't load till that
+            # person's stuff is done there". A rank-up still playing on THIS
+            # screen holds the roll however ready the room is; written
+            # against 278, where the board cut in over it.
+            host.evaluate("()=>{ const d = document.createElement('div'); d.id = 'supernova-cutscene'; document.body.appendChild(d); }")
             guest.evaluate("""()=>{ window.__holdReveal = false;
               fbDb.collection('vrooms').doc(vroomCode).update({ ['participants.' + vroomMyKey + '.revealDone']: true }); }""")
+            host.wait_for_timeout(10500)
+            check("and never rolls over a cutscene still playing on this screen",
+                  host.evaluate("()=>!document.getElementById('vroom-race-cut')"))
+            host.evaluate("()=>document.getElementById('supernova-cutscene')?.remove()")
             rolled = False
             for _ in range(80):
                 if host.evaluate("()=>!!document.getElementById('vroom-race-cut')"):

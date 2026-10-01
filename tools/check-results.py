@@ -102,7 +102,7 @@ with sync_playwright() as pw:
     ctx = br.new_context(viewport={"width": 440, "height": 956})
     ctx.add_init_script(FAKE)
     ctx.add_init_script("try{localStorage.setItem('class26e.frame.ok','go-live-1');"
-                        "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.daily.seen','x');}catch(e){}")
+                        "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.daily.seen','x');}catch(e){}")
     pg = ctx.new_page()
     errors = []
     pg.on("pageerror", lambda e: errors.append(str(e)))

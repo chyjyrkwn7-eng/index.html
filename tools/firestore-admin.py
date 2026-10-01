@@ -24,6 +24,7 @@ Usage
   python3 tools/firestore-admin.py purge --yes
   python3 tools/firestore-admin.py move <from-public-id> <to-public-id> [--yes]
   python3 tools/firestore-admin.py move --finish [--yes]
+  python3 tools/firestore-admin.py merge <from-public-id> <to-public-id> [--bonus N] [--extra-from ID] [--yes]
 
 `prune` is the one to reach for: it removes only the rankings rows
 nobody is behind any more and leaves every live row alone. `purge`
@@ -643,14 +644,17 @@ def _doc_url(coll, doc_id):
 
 def _write_fields(coll, doc_id, fields, mask=None):
     """PATCH typed fields into one document (creating it if needed)."""
-    typed = {}
-    for k, v in fields.items():
+    def _typed(v):
         if isinstance(v, bool):
-            typed[k] = {"booleanValue": v}
-        elif isinstance(v, int):
-            typed[k] = {"integerValue": str(v)}
-        else:
-            typed[k] = {"stringValue": str(v)}
+            return {"booleanValue": v}
+        if isinstance(v, int):
+            return {"integerValue": str(v)}
+        if isinstance(v, float):
+            return {"doubleValue": v}
+        if isinstance(v, dict):
+            return {"mapValue": {"fields": {k2: _typed(v2) for k2, v2 in v.items()}}}
+        return {"stringValue": str(v)}
+    typed = {k: _typed(v) for k, v in fields.items()}
     qs = ""
     if mask:
         qs = "?" + urllib.parse.urlencode({"updateMask.fieldPaths": list(mask)}, doseq=True)
@@ -687,11 +691,14 @@ def cmd_move(argv):
         print("move needs the admin key: the codes are the progress document ids.")
         return 2
     rows = docs("progress", mask=["firstName", "publicId", "to", "done"])
+    rows = [(c, f) for c, f in rows]
     by_pub = {}
     notes = {}
     for code, f in rows:
         if code.endswith("__moved"):
             notes[code[:-len("__moved")]] = f
+        elif code.endswith("__merge"):
+            notes[code[:-len("__merge")]] = dict(f, _suffix="__merge")
         elif f.get("publicId"):
             by_pub.setdefault(f["publicId"], []).append((code, f))
     confirmed = "--yes" in argv
@@ -706,7 +713,7 @@ def cmd_move(argv):
             print("  %-16s followed; %s" % (name, "deleting the old account" if confirmed else "would delete the old account"))
             if confirmed:
                 _call("DELETE", _doc_url("progress", old))
-                _call("DELETE", _doc_url("progress", old + "__moved"))
+                _call("DELETE", _doc_url("progress", old + note.get("_suffix", "__moved")))
         if not confirmed:
             print("\nRe-run with --yes to delete the followed ones.")
         return 0
@@ -732,6 +739,108 @@ def cmd_move(argv):
             if st != 200:
                 print("    failed: HTTP %s" % st)
                 return 1
+    if not confirmed:
+        print("\nRe-run with --yes to write it.")
+    return 0
+
+
+def cmd_merge(argv):
+    """MERGE A DUPLICATE ACCOUNT INTO THE REAL ONE (build 279).
+
+    Like `move`, but the device that follows the note brings its own
+    progress with it - XP, right answers, hundos, stats, history, study
+    time - and adds it to the account it joins (mergeLeavingAccount in
+    index.html). The note lives at progress/<old code>__merge, NOT
+    __moved: builds before 279 follow __moved by taking the target whole,
+    so a merge written there would throw the duplicate's progress away on
+    any phone that had not updated yet.
+
+      merge <from-public-id> <to-public-id> [--bonus N] [--extra-from <row-public-id>] [--yes]
+
+    --bonus N         whole levels added on top of the merged total
+    --extra-from ID   a rankings row with NO progress document behind it
+                      (an account whose device was reset): its XP, right
+                      answers and this week's points ride on the note, and
+                      with --yes the row itself is deleted, since nothing
+                      will ever come back for it.
+    Public ids in, never names and never codes."""
+    if not admin_ready():
+        print("merge needs the admin key: the codes are the progress document ids.")
+        return 2
+    args = []
+    bonus = 0
+    extra_from = None
+    i = 0
+    rest = [a for a in argv if a != "--yes"]
+    while i < len(rest):
+        a = rest[i]
+        if a == "--bonus":
+            bonus = int(rest[i + 1]); i += 2; continue
+        if a == "--extra-from":
+            extra_from = rest[i + 1]; i += 2; continue
+        args.append(a); i += 1
+    confirmed = "--yes" in argv
+    if len(args) != 2:
+        print("usage: firestore-admin.py merge <from-public-id> <to-public-id> [--bonus N] [--extra-from ID] [--yes]")
+        return 2
+    src, dst = args
+    rows = docs("progress", mask=["firstName", "publicId", "lifetime"])
+    by_pub = {}
+    for code, f in rows:
+        if "__" in code:
+            continue
+        if f.get("publicId"):
+            by_pub.setdefault(f["publicId"], []).append((code, f))
+    if len(by_pub.get(dst, [])) != 1:
+        print("The account to merge into must be exactly one progress document; found %d." % len(by_pub.get(dst, [])))
+        return 1
+    dst_code, dst_f = by_pub[dst][0]
+    # The fullest document first: the bonus and the orphan's numbers ride on
+    # the first note only, and they belong with the account that was really
+    # used, not with an abandoned sign-up sharing its public id.
+    def _pts(item):
+        life = item[1].get("lifetime") or {}
+        try:
+            return int(life.get("points") or 0)
+        except (TypeError, ValueError):
+            return 0
+    olds = sorted(by_pub.get(src, []), key=_pts, reverse=True)
+    if not olds:
+        print("No progress document carries public id %s." % src)
+        return 1
+    extra = None
+    if extra_from:
+        row = next((f for pub, f in docs("leaderboard") if pub == extra_from), None)
+        if row is None:
+            print("No rankings row %s." % extra_from)
+            return 1
+        if by_pub.get(extra_from):
+            print("Row %s still has a progress document - merge it as an account, not as --extra-from." % extra_from)
+            return 1
+        extra = {"points": int(row.get("xp") or 0), "correct": int(row.get("correct") or 0),
+                 "weekPoints": int(row.get("weekPoints") or 0), "week": str(row.get("week") or "")}
+        print("  extra from %s (%s): %s" % (extra_from, row.get("firstName", "?"), extra))
+    for old_code, f in olds:
+        note = {"to": dst_code, "at": int(time.time() * 1000)}
+        if bonus:
+            note["bonusLevels"] = bonus
+        if extra:
+            note["extra"] = extra
+        print("  %-16s -> %-16s merge%s%s  %s" % (f.get("firstName", "?"), dst_f.get("firstName", "?"),
+              (", +%d level(s)" % bonus) if bonus else "", ", + the orphan row" if extra else "",
+              "note written" if confirmed else "would write the note"))
+        if confirmed:
+            st = _write_fields("progress", old_code + "__merge", note)
+            if st != 200:
+                print("    failed: HTTP %s" % st)
+                return 1
+        # The bonus and the orphan's numbers belong on ONE note: a second
+        # device of the same duplicate must not pay them twice.
+        bonus = 0
+        extra = None
+    if extra_from and confirmed:
+        st = _call("DELETE", _doc_url("leaderboard", extra_from))
+        print("  orphan row %s deleted" % extra_from)
     if not confirmed:
         print("\nRe-run with --yes to write it.")
     return 0
@@ -766,6 +875,8 @@ def main(argv):
         return cmd_purge("--yes" in argv)
     if cmd == "move":
         return cmd_move(argv[2:])
+    if cmd == "merge":
+        return cmd_merge(argv[2:])
     print("Unknown command %r" % cmd)
     return 2
 

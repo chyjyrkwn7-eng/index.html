@@ -18,7 +18,7 @@ with sync_playwright() as pw:
     br=pw.chromium.launch(executable_path="/opt/pw-browsers/chromium-1194/chrome-linux/chrome",args=["--no-sandbox"])
     ctx=br.new_context(viewport={"width":440,"height":956})
     ctx.add_init_script(FAKE)
-    ctx.add_init_script("try{localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');}catch(e){}")
+    ctx.add_init_script("try{localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');}catch(e){}")
     pg=ctx.new_page()
     if AGAINST:
         _html=open(AGAINST,encoding="utf-8").read()

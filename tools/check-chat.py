@@ -179,7 +179,7 @@ def run_class(src_dir, label):
                 # The introduction card opens two seconds after Home and
                 # would land on top of everything below. It has its own
                 # section.
-                "localStorage.setItem('class26e.intro.seen','9');}catch(e){}")
+                "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');}catch(e){}")
             pg = ctx.new_page()
             errs = []
             pg.on("pageerror", lambda e: errs.append(str(e)[:200]))
@@ -481,6 +481,7 @@ def run_intro(src_dir, label):
                       saysChat: txt.indexOf('chat') >= 0,
                       saysFriends: txt.indexOf('friend') >= 0,
                       saysPrivate: txt.indexOf('only the people you invite') >= 0,
+                      says73: ['character', 'virtual room', 'chat', 'hold', 'rank', 'results', 'fix'].every(w => txt.indexOf(w) >= 0),
                       go: !!el.querySelector('.intro-go')};}""")
             if not out:
                 fails.append("the introduction never opened")
@@ -491,14 +492,13 @@ def run_intro(src_dir, label):
                     fails.append("the introduction is tooltip-sized, not a popup")
                 if not (out["topReachable"] and out["bottomReachable"]):
                     fails.append("part of the introduction cannot be scrolled to: %s" % out)
-                # It introduces the BUTTON, so the button has to be findable
-                # while it is being talked about.
-                if not out["ringed"]:
-                    fails.append("the chat button is not highlighted while being explained")
-                for key, what in [("saysChat", "the chat"), ("saysFriends", "friends"),
-                                  ("saysPrivate", "who can see a chat")]:
-                    if not out[key]:
-                        fails.append("the introduction never mentions %s" % what)
+                # REVISED IN 279: the card is the 7.3 "what's new" now - the
+                # whole update, not the chat button - so it no longer rings
+                # the button or explains chat privacy. What it must cover is
+                # the list asked for: characters, the Virtual Room mode,
+                # chat, holding a unit, the Rank tab, results and fixes.
+                if not out["says73"]:
+                    fails.append("the what's new card is missing one of the seven things it was asked to say")
                 if not out["go"]:
                     fails.append("there is no way to dismiss the introduction")
 

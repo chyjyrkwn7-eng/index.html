@@ -3189,6 +3189,51 @@
   }
   .cal-cell-sel .cal-cell-dot,
   [data-theme="dark"][data-layout="modern"] .cal-cell-sel .cal-cell-dot{ background:var(--accent-ink); }
+  /* ---- TODAY, IN COLOUR (build 279) ----
+     "Whatever day today is, ensure that box isn't highlighted just white
+     but something so people know to look there." On the default theme
+     --accent IS white, so today's ring was white and, selected (which it
+     is by default), the whole cell was a white tile - the same white as
+     any other picked day. Today now carries the theme's own colours: a
+     warm ring and a soft glow from the triad, and when it is also the
+     selected day a gradient fill rather than flat white. Later than the
+     .cal-cell-sel rules and carrying their prefixes, for the reason the
+     comment above them gives. */
+  .cal-cell-today,
+  [data-layout="modern"] .cal-cell-today,
+  [data-theme="dark"][data-layout="modern"] .cal-cell-today{
+    border:1.5px solid var(--theme-c1);
+    background:color-mix(in srgb, var(--theme-c2) 24%, rgba(26,31,38,.55));
+    box-shadow:0 0 16px -3px color-mix(in srgb, var(--theme-c2) 75%, transparent);
+    color:#FFFFFF;
+  }
+  .cal-cell-today.cal-cell-sel,
+  [data-layout="modern"] .cal-cell-today.cal-cell-sel,
+  [data-theme="dark"][data-layout="modern"] .cal-cell-today.cal-cell-sel{
+    background:linear-gradient(140deg, var(--theme-c1), var(--theme-c2) 60%, var(--theme-c3));
+    border:1.5px solid color-mix(in srgb, var(--theme-c1) 70%, #FFFFFF);
+    color:#FFFFFF; text-shadow:0 1px 2px rgba(0,0,0,.4);
+    box-shadow:0 0 18px -2px color-mix(in srgb, var(--theme-c2) 80%, transparent);
+  }
+  .cal-cell-today .cal-cell-dot,
+  .cal-cell-today.cal-cell-sel .cal-cell-dot,
+  [data-theme="dark"][data-layout="modern"] .cal-cell-today .cal-cell-dot,
+  [data-theme="dark"][data-layout="modern"] .cal-cell-today.cal-cell-sel .cal-cell-dot{ background:#FFFFFF; }
+  .cal-today-badge{
+    color:#FFFFFF; background:linear-gradient(140deg, var(--theme-c1), var(--theme-c2));
+    text-shadow:0 1px 1px rgba(0,0,0,.3);
+  }
+  /* ---- A BIGGER MONTH ON A PHONE (build 279) ----
+     "could the month version of the calendar be a little larger, it is
+     kind of small". 2.9rem cells were ~46px on a phone; a tablet's cells
+     already carry each day's topic and need nothing. */
+  @media (max-width:39.99rem){
+    .cal-grid-head, .cal-grid{ gap:.38rem; }
+    .cal-cell{ min-height:3.55rem; font-size:1.06rem; border-radius:14px; }
+    .cal-grid-dow{ font-size:.72rem; }
+    .cal-cell-dot{ width:.42rem; height:.42rem; }
+    .cal-grid-month{ font-size:1.3rem; }
+  }
   .cal-daycard{
     margin:1rem 0 0; padding:.9rem .95rem; border-radius:14px;
     background:var(--panel); border:1px solid var(--rule);
@@ -3244,6 +3289,7 @@
       overflow-wrap:break-word; word-break:break-word;
     }
     .cal-cell-sel .cal-cell-note{ color:var(--accent-ink); opacity:.85; }
+    .cal-cell-today.cal-cell-sel .cal-cell-note{ color:#FFFFFF; opacity:.95; }
     .cal-cell-holiday .cal-cell-note{ color:var(--wrong); }
     .cal-grid-head, .cal-grid{ gap:.45rem; }
     .cal-grid-dow{ font-size:.74rem; }
@@ -4161,6 +4207,12 @@
     margin:0; font-size:.83rem; line-height:1.45; color:var(--soft);
   }
   .intro-go{ width:100%; min-height:48px; margin-top:1.1rem; }
+  /* Seven rows on one card (7.3): tighter rows so it fits a phone without scrolling. */
+  .intro-card-compact .intro-title{ margin-bottom:.6rem; }
+  .intro-card-compact .intro-row{ padding:.55rem 0; gap:.7rem; }
+  .intro-card-compact .intro-row-icon{ width:1.3rem; height:1.3rem; }
+  .intro-card-compact .intro-row-title{ font-size:.88rem; margin-bottom:.1rem; }
+  .intro-card-compact .intro-row-body{ font-size:.8rem; line-height:1.38; }
   /* The real button, ringed while the card is explaining it - so "the
      button in the top right" is something to look at rather than hunt
      for. The ring is on the BUTTON and the dock sits above the dim, so
@@ -4211,6 +4263,31 @@
   /* The same card, over a Tug of War or a Battle rather than inside the
      dock: fixed to the screen and above the match's cutscene layer. */
   .vroom-leave-confirm{ position:fixed; z-index:460; }
+  /* Leaving a group chat (build 279): an iOS action sheet, not a dialog. */
+  .chatdock-confirm.chat-leavesheet{
+    position:fixed; inset:0; align-items:flex-end; padding:0 .75rem;
+    padding-bottom:calc(.75rem + env(safe-area-inset-bottom, 0px));
+    background:rgba(0,0,0,.32); -webkit-backdrop-filter:none; backdrop-filter:none;
+  }
+  .chat-leavesheet-inner{ width:100%; max-width:24rem; display:flex; flex-direction:column; gap:.5rem;
+    animation:chat-leavesheet-up .24s cubic-bezier(.2,.8,.25,1); }
+  @keyframes chat-leavesheet-up{ from{ transform:translateY(110%); } to{ transform:none; } }
+  .chat-leavesheet-group, .chat-leavesheet-cancel{
+    border-radius:14px; border:1px solid rgba(255,255,255,.1);
+    background:rgba(30,34,42,.94); -webkit-backdrop-filter:blur(14px) saturate(1.6); backdrop-filter:blur(14px) saturate(1.6);
+    box-shadow:0 10px 30px rgba(0,0,0,.4);
+  }
+  .chat-leavesheet-group{ text-align:center; overflow:hidden; }
+  .chat-leavesheet-title{ margin:0; padding:.85rem 1rem .2rem; font-size:.84rem; font-weight:700; color:var(--soft); overflow-wrap:break-word; }
+  .chat-leavesheet-body{ margin:0; padding:0 1rem .8rem; font-size:.76rem; line-height:1.4; color:var(--soft); opacity:.85; }
+  .chat-leavesheet-leave, .chat-leavesheet-cancel{
+    display:block; width:100%; min-height:50px; margin:0; padding:.7rem 1rem;
+    font:inherit; font-size:1.02rem; cursor:pointer; -webkit-tap-highlight-color:transparent;
+  }
+  .chat-leavesheet-leave{ background:transparent; border:0; border-top:1px solid rgba(255,255,255,.1); color:#FF5A52; font-weight:600; }
+  .chat-leavesheet-cancel{ color:var(--ink); font-weight:800; }
+  .chat-leavesheet-leave:active, .chat-leavesheet-cancel:active{ background:rgba(255,255,255,.08); }
+  [data-reduce-motion="true"] .chat-leavesheet-inner{ animation:none; }
   /* What a friend is doing (build 240): subtle - small, soft, one line.
      ONE COLOUR for every activity (build 242): "don't make them different
      colors, make it the same color." The words say what they are doing;
@@ -4804,6 +4881,21 @@
   .chat-member-name{ flex:1 1 auto; min-width:0; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .chat-member-state{ font-size:.72rem; color:var(--soft); }
   .chat-member-state.is-here{ color:#4ADE80; }
+  /* Build 279: a green dot for whoever is here, on the roster chip and in
+     the members sheet - the same green as the Friends list's dot. */
+  .chatdock-who{ position:relative; }
+  .chatdock-who-dot{
+    position:absolute; left:calc(1.6rem - .55rem); top:-.05rem;
+    width:.6rem; height:.6rem; border-radius:50%;
+    background:#4ADE80; border:2px solid #121821;
+    box-shadow:0 0 6px rgba(74,222,128,.6); pointer-events:none;
+  }
+  @media (min-width:40rem){ .chatdock-who-dot{ left:calc(1.8rem - .55rem); } }
+  .chat-online-dot{
+    display:inline-block; width:.5rem; height:.5rem; border-radius:50%;
+    background:#4ADE80; margin-right:.35rem; vertical-align:.05em;
+    box-shadow:0 0 6px rgba(74,222,128,.6);
+  }
   /* Build 222: the two tool buttons, the tray, photos and polls. */
   .vroom-chat-tool{
     -webkit-appearance:none; appearance:none; flex:0 0 auto; width:2.6rem; min-height:44px; border-radius:12px;
@@ -11709,6 +11801,14 @@
   .rankmap-stop.is-locked .rankmap-node{ background:#0C0F14; border-color:rgba(255,255,255,.14); box-shadow:none; }
   .rankmap-stop.is-locked .rankmap-node > svg{ filter:grayscale(1) brightness(.7); opacity:.45; }
   .rankmap-stop.is-next .rankmap-node{ border-style:dashed; }
+  /* The beat the Rank tab's glance holds on (build 279): the stop swells
+     and lights once, so the eye lands on it. */
+  .rankmap-stop.is-glanced .rankmap-node{ animation:rankmap-glance 1.2s ease-out 1; }
+  @keyframes rankmap-glance{
+    0%{ transform:scale(1); box-shadow:0 0 0 0 color-mix(in srgb, var(--rank-color) 0%, transparent); }
+    35%{ transform:scale(1.12); box-shadow:0 0 0 6px color-mix(in srgb, var(--rank-color) 30%, transparent), 0 0 34px color-mix(in srgb, var(--rank-color) 70%, transparent); }
+    100%{ transform:scale(1); box-shadow:0 0 0 0 color-mix(in srgb, var(--rank-color) 0%, transparent); }
+  }
   .rankmap-stop.is-here .rankmap-node{ box-shadow:0 0 0 4px color-mix(in srgb, var(--rank-color) 22%, transparent), 0 0 30px color-mix(in srgb, var(--rank-color) 65%, transparent); }
   .rankmap-stop.is-here .rankmap-node::after{
     content:""; position:absolute; inset:-8px; border-radius:50%; pointer-events:none;
@@ -13519,6 +13619,7 @@
     .char-live .avatarchar-svg .cx-k-umbra .cx-eyes{ animation:cx-ember 3.2s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-crescent{ animation:cx-flicker-soft 4.2s ease-in-out infinite, cx-live-rock 5.3s ease-in-out infinite alternate; }
     .char-live .avatarchar-svg .cx-fx-wisps{ animation:cx-drift 5s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-umflare{ animation:cx-mk2-pulse 2.6s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-infall{ animation:cx-infall 1.6s linear infinite; }
     .char-live .avatarchar-svg .cx-fx-orbit{ animation:cx-spin 6s linear infinite; }
     .char-live .avatarchar-svg .cx-fx-ring{ animation:cx-live-tilt 4.7s ease-in-out infinite alternate; }
@@ -13841,9 +13942,7 @@
     .char-live .avatarchar-svg .cx-fx-bgscan{ animation:cx-bg-scan 3.4s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-bgrung{ animation:cx-bg-glow 2.6s ease-in-out infinite; }
     /* build 273: the Sheriff, the Viking, the Singularity's hair, the aurora */
-    .char-live .avatarchar-svg .cx-fx-sheye, .char-live .avatarchar-svg .cx-fx-bhglow, .char-live .avatarchar-svg .cx-fx-sgvisor{ animation:cx-mk2-pulse 2.4s ease-in-out infinite; }
-    .char-live .avatarchar-svg .cx-fx-bhlight{ animation:cx-flicker-soft 1.4s steps(2) infinite; }
-    .char-live .avatarchar-svg .cx-fx-bhsheen{ animation:cx-sheen-idle 5.6s ease-in-out -1.6s infinite; }
+    .char-live .avatarchar-svg .cx-fx-sheye, .char-live .avatarchar-svg .cx-fx-sgvisor{ animation:cx-mk2-pulse 2.4s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-shstar{ animation:cx-mk2-pulse 1.8s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-sghair{ animation:cx-sg-hair 2.6s ease-in-out infinite alternate; }
     .char-live .avatarchar-svg .cx-fx-koiweed{ animation:cx-cl2-sway 2.8s ease-in-out infinite alternate; }
@@ -13852,9 +13951,8 @@
     .char-react-win .avatarchar-svg .cx-fx-bgfall, .char-react-win .avatarchar-svg .cx-fx-bgfall.cx-fx-bgslow{ animation:cx-bg-fall .9s linear infinite; }
     .char-react-win .avatarchar-svg .cx-fx-bgspin, .char-react-win .avatarchar-svg .cx-fx-bgscope{ animation:cx-spin 6s linear infinite; }
   }
-  .char-sleep .avatarchar-svg :is(.cx-fx-sheye, .cx-fx-bhglow, .cx-fx-sgvisor){ opacity:.35; }
+  .char-sleep .avatarchar-svg :is(.cx-fx-sheye, .cx-fx-sgvisor){ opacity:.35; }
   .avatarchar-svg .cx-fx-koiweed{ transform-origin:50% 100%; }
-  .avatarchar-svg .cx-k-bounty{ --cx-blink:6.9s; --cx-blink-at:-2.2s; }
   .avatarchar-svg .cx-k-sheriff{ --cx-blink:6.4s; --cx-blink-at:-3.1s; }
   .avatarchar-svg .cx-fx-sghair{ transform-origin:50% 100%; }
   @keyframes cx-sg-hair{ from{ scale:1 .96; } to{ scale:1.03 1.04; } }
@@ -18513,7 +18611,7 @@
   .bc-lining{
     display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:.55rem;
     padding:.8rem; border-radius:10px;
-    background:radial-gradient(120% 90% at 50% 0%, #22324A, #111925 70%);
+    background:radial-gradient(120% 90% at 50% 0%, #2A2E35, #121418 70%);
     box-shadow:inset 0 3px 12px rgba(0,0,0,.7), inset 0 0 0 1px rgba(255,255,255,.05);
   }
   /* NOTHING HERE ANIMATES A FILTER. A drop-shadow on sixteen slots, a
@@ -18946,6 +19044,54 @@
   .vrc-board{ flex:0 1 auto; min-height:0; overflow-y:auto; overscroll-behavior:contain;
     -webkit-overflow-scrolling:touch; padding:.35rem .2rem; }
   @media (min-width:40rem){ .vrc-step{ font-size:2rem; } .vrc-fig{ width:3.6rem; height:3.6rem; } .vrc-name{ font-size:1rem; } }
+  /* ---- THE BADGES TAB, IN THE CUTSCENE'S METAL (build 279) ----
+     "The badge case is cool but it's kind of brown, kinda think brown
+     isn't the move. Ensure it matches the cutscene btw. The top box above
+     that case in the tab also doesn't go with the screen." The tab's case
+     was black leather with brass stitching, a bronze bezel and a gold
+     plate; the case that drops in on a badge unlock (.bc-*) is slate
+     gunmetal with a steel rim, a deep navy lining and silver plate and
+     latches. Same object, two finishes. This is the cutscene's finish,
+     colour for colour - except the lining, which is graphite in BOTH
+     now rather than navy: build 232 took the blue out of this lining
+     because every blue and violet badge sank into it, and the
+     cutscene's navy was the same mistake waiting on the same badges.
+     So the case you watch open is the case you then find on the tab - and the box above it is cut from the same metal,
+     with a steel medal instead of a gold one until the set is complete,
+     so the top of the tab and the case read as one thing on the dark
+     screen rather than a pale glass card sitting on top of a black one.
+     Last in the sheet on purpose: it overrides the 242/244 rules above
+     rather than editing them, so the history of how it got here stays. */
+  .badge-case{
+    background:linear-gradient(180deg, #2A3039, #1A1E25);
+    border:1px solid rgba(255,255,255,.1);
+    box-shadow:0 24px 50px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.1), inset 0 0 0 3px #3A414C;
+  }
+  .badge-case::before{ border:1px dashed rgba(200,210,220,.16); }
+  .badge-case-lid{
+    background:linear-gradient(180deg, #353C47 0%, #22272F 100%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.14), inset 0 0 0 3px #454C57, 0 2px 0 rgba(0,0,0,.4);
+  }
+  .badge-case-plate{
+    color:#D8E2EC; background:linear-gradient(180deg, #9FACBA, #6F7C8A);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.5), 0 2px 6px rgba(0,0,0,.4); text-shadow:0 1px 0 rgba(0,0,0,.35);
+  }
+  .badge-case-front span{ background:linear-gradient(180deg, #C8D2DC, #7E8B99); box-shadow:0 2px 5px rgba(0,0,0,.5); }
+  .badges-tab .badge-case .badge-grid, .badges-tab .badge-grid{
+    background:radial-gradient(120% 90% at 50% 0%, #2A2E35, #121418 70%);
+    border:1px solid rgba(255,255,255,.08);
+    box-shadow:0 0 0 3px #3A414C, 0 0 0 4px rgba(0,0,0,.55),
+      inset 0 2px 0 rgba(255,255,255,.05), inset 0 0 50px rgba(0,0,0,.45), inset 0 10px 16px -8px rgba(0,0,0,.7);
+  }
+  .badges-head{
+    background:linear-gradient(180deg, #2A3039, #1A1E25);
+    border:1px solid rgba(255,255,255,.1);
+    box-shadow:0 14px 34px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.1), inset 0 0 0 3px #3A414C;
+  }
+  /* The medal is a "coin" coloured by --coin (build 270). On this tab it
+     is steel, the case's own metal, until the set is complete and it
+     turns gold; the Profile card's coin is left as it is. */
+  .badges-head .badges-medal:not(.is-complete){ --coin:#9FB4CC; }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -31750,7 +31896,7 @@ const AVATAR_CHARACTERS = [
   { id: "clown",      kind: "clown",      feat: "vrwins5" },
   { id: "valkyrie",   kind: "koi",        feat: "vrwins10" },
   { id: "marksman",   kind: "marksman",   feat: "streak100" },
-  { id: "astronaut",  kind: "bounty",     feat: "hundo7day" },
+  { id: "astronaut",  kind: "astronaut",  feat: "hundo7day" },
   { id: "hacker",     kind: "hacker",     feat: "study20h" },
   { id: "timekeeper", kind: "timekeeper", feat: "days30" },
   { id: "ronin",      kind: "ronin",      feat: "bigtest400" },
@@ -31813,9 +31959,9 @@ const AVATAR_DISPLAY_NAME = {
   paladin: "Paladin", sentinel: "Sentinel", k9: "K-9",
   ninja: "Ninja", ghost: "Ghost", queen: "Queen", wizard: "Wizard",
   grizzly: "Bear", alien: "Alien", samurai: "Samurai", dragon: "Dragon",
-  officer: "Officer", clown: "Clown", robot: "Robot", astronaut: "Bounty Hunter",
+  officer: "Officer", clown: "Clown", robot: "Robot", astronaut: "Astronaut",
   detective: "Detective", zeus: "Zeus", masked: "The Masked One", voidwalker: "Void",
-  champion: "Champion", umbra: "Umbra", singularity: "Singularity",
+  champion: "Champion", umbra: "Umbra", singularity: "Horizon",
   poseidon: "Sheriff", spartan: "Spartan", pharaoh: "Pharaoh", marksman: "Marksman",
   blitz: "Blitz"
 };
@@ -31832,7 +31978,7 @@ const AVATAR_GLOW = {
   k9: "#D9A05A",
   ninja: "#E0453F", ghost: "#E8ECF4", queen: "#8B4FC4", wizard: "#6C5BD4",
   grizzly: "#B9793C", alien: "#4FD18A", samurai: "#C0392B", dragon: "#E04A2F",
-  officer: "#3D74E8", clown: "#9B5CFF", swat: "#3D74E8", valkyrie: "#FF6FB5", hacker: "#3DFF8A", timekeeper: "#8A86FF", ronin: "#FF2E88", robot: "#6FD3E8", astronaut: "#FF3B30",
+  officer: "#3D74E8", clown: "#9B5CFF", swat: "#3D74E8", valkyrie: "#FF6FB5", hacker: "#3DFF8A", timekeeper: "#8A86FF", ronin: "#FF2E88", robot: "#6FD3E8", astronaut: "#F2B233",
   /* Read off each one's artwork like the rest: the detective's amber
      street-light, the cold light in Zeus's cracks, the mask's own
      lacquer, and for Void the middle of its three flare colours - the
@@ -32105,7 +32251,7 @@ function characterLockMessage(id){
        you unlock the one before it." The hunt is the point of them, and
        naming the next flare before you have the last one gives it away. */
     if(def.feat === "flare4" && isLockedCharacter("voidwalker")) return "Unlock Void to see how to unlock Umbra.";
-    if(def.feat === "flare5" && isLockedCharacter("umbra")) return "Unlock Umbra to see how to unlock Singularity.";
+    if(def.feat === "flare5" && isLockedCharacter("umbra")) return "Unlock Umbra to see how to unlock Horizon.";
     const f = CHARACTER_FEATS[def.feat];
     if(!f) return "";
     /* The progress, not just the target. "0 of 10" and "7 of 10" are
@@ -32187,7 +32333,7 @@ const AVATAR_HEAD_SCALE = {
 };
 const AVATAR_ART_SCALE = {
   dragon: 1.09, detective: 1.16, masked: 1.08, zeus: 1.05,
-  officer: 1.06,
+  officer: 1.06, astronaut: 1.10,
   marksman: 1.06, pharaoh: 1.03
 };
 
@@ -32392,6 +32538,24 @@ function drawAvatarCharSVG(charId){
   /* For a character with no eyes to close (a visor, a black hole): the
      two groups still exist, empty, so every drawing has the same parts. */
   function noEyes(){ open("cx-eyes"); close(); closedEyes([]); }
+  /* A FLARE AS ITS CHARACTER WEARS IT (build 278): "I like the flares of
+     horizon and umbra, ensure they look like that on void." One drawing
+     for all three - a bloom, a disc with a pale rim, a white-hot core and
+     a small glint off its shoulder - so Void's three, Umbra's one and
+     Horizon's one can never drift apart. k scales it. */
+  let wornFlareSeq = 0;
+  function wornFlare(cx, cy, col, rim, k){
+    k = k || 1;
+    const gid = uid + "-wf" + (wornFlareSeq++);
+    const g = mk("radialGradient", { id: gid });
+    [["0%", ".95"], ["45%", ".4"], ["100%", "0"]].forEach(([o, op]) =>
+      g.appendChild(mk("stop", { offset: o, "stop-color": col, "stop-opacity": op })));
+    defs.appendChild(g);
+    svg.appendChild(mk("circle", { cx, cy, r: +(3.8 * k).toFixed(2), fill: "url(#" + gid + ")" }));
+    svg.appendChild(mk("circle", { cx, cy, r: +(1.5 * k).toFixed(2), fill: col, stroke: rim, "stroke-width": +(.3 * k).toFixed(2) }));
+    svg.appendChild(mk("circle", { cx, cy, r: +(.64 * k).toFixed(2), fill: "#FFFFFF" }));
+    svg.appendChild(sparkle(+(cx + k).toFixed(2), +(cy - .9 * k).toFixed(2), +(.85 * k).toFixed(2), "#FFFFFF"));
+  }
   /* An invisible disc that fixes a group's bounding box, so a group that
      turns (a starfield, an orbiting glint) turns about this centre. */
   function pivot(cx, cy, r){ return mk("circle", { cx, cy, r, fill: "none", stroke: "none" }); }
@@ -32490,9 +32654,9 @@ function drawAvatarCharSVG(charId){
     clown:      [["rays", "#9B5CFF", 12], ["fall", "confetti", ["#FF5A8A", "#FFD23F", "#4FD1FF", "#9BFF6B"]]],
     koi:        [["ripples", "#FF8FC4"], ["fall", "petal", ["#FFB3D9", "#FFFFFF"]]],
     marksman:   [["reticle", "#9CE85A"], ["stars", "#C8F59A"]],
-    bounty:     [["nebula", "#FF4A3A", "#2A1030"], ["stars", "#FFD6CC"], ["planet", "#E88A4A"]],
     /* the Hacker's code rain is part of its own drawing; the scene adds
        the green haze of a screen-lit room behind it */
+    astronaut:  [["nebula", "#F2B233", "#1A1440"], ["planet", "#F5804D"], ["stars", "#FFF2C8"]],
     hacker:     [["nebula", "#3DFF8A", "#0B3B22"]],
     timekeeper: [["stars", "#C9C6FF"], ["runes", "#8A86FF"]],
     ronin:      [["moon", "#FF2E5E", 20, 12.4, 10.6], ["fall", "petal", ["#FF7AB0", "#FFC2DA"]]],
@@ -33046,66 +33210,78 @@ function drawAvatarCharSVG(charId){
      the three things you found, so a change to one has to reach all
      three places or the set stops matching. */
   if(def.kind === "voidwalker"){
-    /* VOID, RESTORED TO ITS FIRST DRAWING (build 275). "I'm still not sure
-       what happened to the void, the void is worse then when we first came
-       up with him." Measured against build 215, where Void was made, the
-       drawing itself had barely moved - what had changed was everything
-       laid on top of it: build 258's wide black cloak swallowed the narrow
-       bust and the halo round it, and build 271 added orange rim strokes,
-       a nebula inside the face and a busy nebula scene behind. So this is
-       build 215's Void again, path for path: the orange-to-magenta halo
-       open all round a slim dark bust, the cool blue-grey rim on one side,
-       a clean starfield face and the three flares. Its scene is faint
-       stars only, so the halo is the light again. Only the part groups
-       (cx-body, cx-head, the starfield and flares) are new, so it still
-       breathes and twinkles like the rest. */
+    /* VOID, BUILD 278. Two reports on top of 277's: "I feel like voids
+       problem is that the head doesn't connect to the body? It looks
+       weird", and "I like the flares of horizon and umbra, ensure they
+       look like that on void."
+       THE SEAM WAS THE GRADIENT, NOT THE SHAPES. The hood and the body
+       each filled their own box with the same top-to-bottom ramp, so
+       where the hood ended (its darkest) the body began (its lightest) -
+       a hard band across the neck, and a flat-bottomed hood parked on
+       top of it. Now one ramp runs in user space from crown to hem and
+       both shapes share it, the hood's bottom is rounded and runs down
+       into the shoulders, the shoulders rise to meet it, and the rim
+       light runs on from the hood onto the shoulder, so it reads as one
+       figure in one cloak.
+       The flares are wornFlare(), the very drawing Umbra and Horizon
+       wear, in the three hunt colours; the hairline that joins them and
+       the window face from 277 stay. The halo and the slim build are
+       still 215's. */
     const halo = mk("radialGradient", { id: "halo-" + uid, cx: "50%", cy: "46%", r: "62%" });
-    [["0%", "#F97316", ".34"], ["55%", "#C23B7A", ".16"], ["100%", "#000", "0"]]
+    [["0%", "#F97316", ".42"], ["55%", "#C23B7A", ".2"], ["100%", "#000", "0"]]
       .forEach(([o, c, op]) => halo.appendChild(mk("stop",
         { offset: o, "stop-color": c, "stop-opacity": op })));
     defs.appendChild(halo);
-    svg.appendChild(mk("circle", { cx: 20, cy: 20.5, r: 15.5, fill: "url(#halo-" + uid + ")" }));
-    const body = mk("linearGradient", { id: "void-" + uid, x1: "0", y1: "0", x2: "0", y2: "1" });
-    [["0%", "#141A26"], ["55%", "#080B12"], ["100%", "#03050A"]]
+    svg.appendChild(mk("circle", { cx: 20, cy: 20.5, r: 16, fill: "url(#halo-" + uid + ")" }));
+    const body = mk("linearGradient", { id: "void-" + uid, gradientUnits: "userSpaceOnUse", x1: "0", y1: "8", x2: "0", y2: "40" });
+    [["0%", "#171C2A"], ["50%", "#0A0D16"], ["100%", "#04060B"]]
       .forEach(([o, c]) => body.appendChild(mk("stop", { offset: o, "stop-color": c })));
     defs.appendChild(body);
     const fill = "url(#void-" + uid + ")";
     open("cx-body");
-    svg.appendChild(mk("path", { d: "M5.9 40 Q6.7 31.2 14.3 29 L25.7 29 Q33.3 31.2 34.1 40 Z", fill: fill }));
+    svg.appendChild(mk("path", { d: "M5.9 40 Q6.6 32 10.4 29.4 Q11.2 27.6 14 26.4 L26 26.4 Q28.8 27.6 29.6 29.4 Q33.4 32 34.1 40 Z", fill: fill }));
+    [[10.4, 35.6, .26], [14.8, 38.2, .2], [27.4, 34.4, .24], [30.6, 37.8, .2], [22.8, 36.6, .16]].forEach(([cx, cy, r]) =>
+      svg.appendChild(mk("circle", { cx, cy, r, fill: "#CFE0F5", opacity: ".45" })));
+    svg.appendChild(mk("path", { d: "M10.6 26.4 Q11.2 28.2 10.4 29.4 Q7.4 32 6.6 37.6", fill: "none", stroke: "#9FB8DC", "stroke-width": ".5", "stroke-linecap": "round", opacity: ".6" }));
+    svg.appendChild(mk("path", { d: "M29.4 26.4 Q28.8 28.2 29.6 29.4 Q32.6 32 33.4 37.6", fill: "none", stroke: "#7C93B8", "stroke-width": ".38", "stroke-linecap": "round", opacity: ".3" }));
     close();
     open("cx-head");
-    svg.appendChild(mk("ellipse", { cx: 20, cy: 21.4, rx: 9.2, ry: 10, fill: fill }));
-    svg.appendChild(mk("path", { d: "M20 10.4 Q29.4 11 30.2 21.6 Q30.5 26.4 28.4 29.4 L25.2 27.6 Q27.4 24.2 27.2 21.2 Q26.7 14.2 20 13.6 Q13.3 14.2 12.8 21.2 Q12.6 24.2 14.8 27.6 L11.6 29.4 Q9.5 26.4 9.8 21.6 Q10.6 11 20 10.4 Z",
-                                 fill: "#05070C" }));
+    /* the hood: rounded at the bottom, running down into the shoulders */
+    const hood = "M20 8.4 Q29.6 8.8 30.2 20.6 Q30.4 25.8 27.6 30.2 Q24 32.2 20 32.2 Q16 32.2 12.4 30.2 Q9.6 25.8 9.8 20.6 Q10.4 8.8 20 8.4 Z";
+    svg.appendChild(mk("path", { d: hood, fill: fill }));
+    svg.appendChild(mk("path", { d: "M10.6 26.4 Q9.6 24 9.8 20.6 Q10.4 8.8 20 8.4 Q24.6 8.6 27.2 11.4", fill: "none", stroke: "#9FB8DC", "stroke-width": ".55", "stroke-linecap": "round", opacity: ".7" }));
+    svg.appendChild(mk("path", { d: "M27.2 11.4 Q29.8 14.4 30.2 20.6 Q30.4 24 29.4 26.4", fill: "none", stroke: "#7C93B8", "stroke-width": ".4", "stroke-linecap": "round", opacity: ".35" }));
+    /* the face: a window onto space, deeper than the hood round it */
+    const faceD = "M20 12.8 Q26.8 13.2 27 21.2 Q27 26.6 20 28.8 Q13 26.6 13 21.2 Q13.2 13.2 20 12.8 Z";
+    const fg = mk("radialGradient", { id: "vface-" + uid, cx: "50%", cy: "44%", r: "60%" });
+    [["0%", "#1E1A40"], ["60%", "#0B0B1E"], ["100%", "#020206"]].forEach(([o, c]) => fg.appendChild(mk("stop", { offset: o, "stop-color": c })));
+    defs.appendChild(fg);
+    const fc = mk("clipPath", { id: "vfc-" + uid }); fc.appendChild(mk("path", { d: faceD })); defs.appendChild(fc);
+    svg.appendChild(mk("path", { d: faceD, fill: "url(#vface-" + uid + ")", stroke: "#000", "stroke-width": ".9" }));
+    const win = mk("g", { "clip-path": "url(#vfc-" + uid + ")" });
+    [[17, 23.6, 4, 2.2, "#C23B7A", ".22"], [22.8, 16.6, 3.4, 1.9, "#F97316", ".14"]].forEach(([cx, cy, rx, ry, c, op], i) => {
+      const gid = "vw" + i + "-" + uid;
+      const g = mk("radialGradient", { id: gid });
+      g.appendChild(mk("stop", { offset: "0%", "stop-color": c, "stop-opacity": op }));
+      g.appendChild(mk("stop", { offset: "100%", "stop-color": c, "stop-opacity": "0" }));
+      defs.appendChild(g);
+      win.appendChild(mk("ellipse", { cx, cy, rx, ry, fill: "url(#" + gid + ")", transform: "rotate(-24 " + cx + " " + cy + ")" }));
+    });
+    svg.appendChild(win);
+    svg.appendChild(mk("path", { d: "M14.2 17.4 Q15.8 13.8 20 13.5", fill: "none", stroke: "#8FA8CC", "stroke-width": ".35", "stroke-linecap": "round", opacity: ".45" }));
     open("cx-fx cx-fx-starfield");
-    svg.appendChild(pivot(19.6, 20.4, 5.2));
-    [[16.4, 17.2, .34], [23.1, 16.1, .26], [18.2, 24.6, .3], [24.4, 23.2, .22],
-     [14.9, 22.4, .24], [21.3, 20.1, .2], [17.1, 20.8, .18]]
-      .forEach(([cx, cy, r]) => svg.appendChild(mk("circle",
-        { cx: cx, cy: cy, r: r, fill: "#CFE0F5", opacity: ".55" })));
+    svg.appendChild(pivot(20, 20.6, 6.4));
+    [[16.2, 16.8, .3], [23.6, 15.6, .24], [18.2, 25.4, .28], [24.6, 24.2, .22], [14.8, 22.4, .22], [21.6, 20.4, .16], [17.4, 21, .14],
+     [25.2, 19.4, .14], [19.2, 14.8, .12], [22.2, 26.6, .14], [15.6, 19.2, .12]]
+      .forEach(([cx, cy, r]) => svg.appendChild(mk("circle", { cx, cy, r, fill: "#DCE8FA", opacity: ".6" })));
     close();
     noEyes();
     open("cx-fx cx-fx-flares");
-    svg.appendChild(pivot(19.8, 19.9, 4.6));
-    [[16.0, 19.4, MYSTERY_COLOR.red], [20.4, 16.9, MYSTERY_COLOR.orange], [23.4, 21.9, MYSTERY_COLOR.yellow]]
-      .forEach(([cx, cy, col], i) => {
-        const gid = "fl" + i + "-" + uid;
-        const g = mk("radialGradient", { id: gid, cx: "50%", cy: "50%", r: "50%" });
-        g.appendChild(mk("stop", { offset: "0%", "stop-color": col, "stop-opacity": ".95" }));
-        g.appendChild(mk("stop", { offset: "100%", "stop-color": col, "stop-opacity": "0" }));
-        defs.appendChild(g);
-        svg.appendChild(mk("circle", { cx: cx, cy: cy, r: 2.5, fill: "url(#" + gid + ")" }));
-        svg.appendChild(mk("circle", { cx: cx, cy: cy, r: .62, fill: "#FFF" }));
-        svg.appendChild(mk("circle", { cx: cx, cy: cy, r: .95, fill: col, opacity: ".9" }));
-      });
+    const FL = [[16.4, 20, MYSTERY_COLOR.red, "#FFB4B4"], [20.6, 17.2, MYSTERY_COLOR.orange, "#FFD2A8"], [23.4, 22.6, MYSTERY_COLOR.yellow, "#FFF0A8"]];
+    svg.appendChild(pivot(20, 20, 5));
+    svg.appendChild(mk("path", { d: "M" + FL.map(f => f[0] + " " + f[1]).join(" L") + " Z", fill: "none", stroke: "#FFE6CC", "stroke-width": ".16", opacity: ".38", "stroke-dasharray": ".35 .45" }));
+    FL.forEach(([cx, cy, col, rim]) => wornFlare(cx, cy, col, rim, .82));
     close();
-    /* The rim. One edge only, so there is a light direction. */
-    svg.appendChild(mk("path", { d: "M12.9 14.6 Q16 11.1 20 10.7", fill: "none",
-                                 stroke: "#8FA8CC", "stroke-width": ".5",
-                                 "stroke-linecap": "round", opacity: ".5" }));
-    svg.appendChild(mk("path", { d: "M11.4 22.6 Q11.5 26 13.4 28.6", fill: "none",
-                                 stroke: "#7C93B8", "stroke-width": ".42",
-                                 "stroke-linecap": "round", opacity: ".38" }));
     close();
     return done();
   }
@@ -34569,60 +34745,67 @@ function drawAvatarCharSVG(charId){
     return done();
   }
 
-  /* ================= BOUNTY HUNTER (build 274) =================
-     A hundo in five different units in one day - the Astronaut's
-     challenge and the Astronaut's id, so everybody who earned it keeps
-     it. Astronaut, Cyborg, Plague Doctor and Viking came and went ("The
-     Viking is a pass, try something else"). The Sheriff landed ("Sheriff
-     is perfect") for the reason the Ronin did: a face you never see, a
-     silhouette nobody else owns, one strong colour, and it reads as
-     WHO it is at a glance. So the hunter who never takes the helmet
-     off: a scuffed gunmetal helmet with a black T-shaped visor lit red
-     at its edges, a red stripe over the crown, a rangefinder stalk on
-     one side, a cape thrown over one shoulder and a plate on the other.
-     A ringed planet in the stars behind. Parts are cx-fx-bh*: unique
-     names. */
-  if(def.kind === "bounty"){
-    const red = "#FF3B30";
-    const metal = headGrad("#C8CED6", "#7A828E", "#2E333B");
+  /* ================= ASTRONAUT, AS IT IS LIVE (build 279) =================
+     Back as build 269 ships it. Seven replacements came and went across
+     builds 271-279 - a Bounty Hunter, the Phantom, two rounds of
+     hooded fighters, a round of creatures and a round of ten masks - and
+     the last word was "those characters you just sent are not it either.
+     Please hurry so I can get this live." So 7.3 goes out with the slot
+     exactly as everybody already has it, and the replacement is still
+     open: nobody's screen changes until there is one Madison picks. */
+  if(def.kind === "astronaut"){
+    /* The top rank's reward, and the one that ties the roster back to
+       the app's own name: the rank emblems are the life of a star and
+       Supernova is the end of it, so the character you get for finishing
+       the climb is the one who is out there in it. The visor is a dark
+       dome with the app's own gold-to-magenta wordmark ramp reflected
+       across it, plus two stars - which is the reflection of Home's own
+       sphere, not a generic shine. */
+    const suit = headGrad("#FFFFFF", "#E2E8EF", "#A9B4C1");
+    const domeId = uid + "-dome";
+    const lg = document.createElementNS(svgNS, "linearGradient");
+    lg.setAttribute("id", domeId);
+    lg.setAttribute("x1", "0"); lg.setAttribute("y1", "0");
+    lg.setAttribute("x2", ".8"); lg.setAttribute("y2", "1");
+    [["0", "#3A1E4A"], [".45", "#12162A"], ["1", "#070A14"]].forEach(([o, c]) => {
+      const st = document.createElementNS(svgNS, "stop");
+      st.setAttribute("offset", o); st.setAttribute("stop-color", c);
+      lg.appendChild(st);
+    });
+    defs.appendChild(lg);
+    /* Shoulders. The suit's helmet ring already reads as a collar, so this
+       is the torso below it rather than a second collar on top. */
     open("cx-body");
-    svg.appendChild(mk("path", { d: "M5 40 Q5.6 30.6 13 28.4 L27 28.4 Q34.4 30.6 35 40 Z", fill: headGrad("#3A3E46", "#22252B", "#0C0D10") }));
-    /* the chest plate */
-    svg.appendChild(mk("path", { d: "M14.2 30 L25.8 30 L25 36.4 Q20 38.2 15 36.4 Z", fill: metal, stroke: "#1A1D22", "stroke-width": ".3" }));
-    svg.appendChild(mk("path", { d: "M20 30.2 L20 37.4 M15.4 33.4 L24.6 33.4", stroke: "#2E333B", "stroke-width": ".3" }));
-    /* the shoulder plate on the right */
-    svg.appendChild(mk("path", { d: "M26.4 28.8 Q32.4 28.6 34.2 33.4 Q30.6 33.8 27 32.6 Z", fill: metal, stroke: "#1A1D22", "stroke-width": ".3" }));
-    /* the cape over the left shoulder, falling across */
-    svg.appendChild(mk("path", { d: "M5 40 Q5.4 31.6 11.4 29 Q15.6 28.4 17.4 30.4 Q14 33.6 13.6 40 Z", fill: headGrad("#8A3A26", "#5E2416", "#2A0E08") }));
-    svg.appendChild(mk("path", { d: "M8.6 31.8 Q10 35.6 9.4 40 M12.4 30.4 Q12.4 35 11.8 40", fill: "none", stroke: "#2A0E08", "stroke-width": ".35", opacity: ".6" }));
+    svg.appendChild(mk("path", { d: "M5.4 40 Q6.2 32.8 13.8 30.6 L26.2 30.6 Q33.8 32.8 34.6 40 Z",
+                                 fill: headGrad("#E6ECF3", "#C2CCD8", "#8E9AA8") }));
     close();
     open("cx-head");
-    /* the helmet */
-    const helm = "M20 8.6 Q27.6 8.8 27.8 18 Q27.8 24.6 25.6 27.8 L23.4 29.4 L16.6 29.4 L14.4 27.8 Q12.2 24.6 12.2 18 Q12.4 8.8 20 8.6 Z";
-    svg.appendChild(mk("path", { d: helm, fill: metal, stroke: "#1A1D22", "stroke-width": ".35" }));
-    /* the red stripe over the crown */
-    svg.appendChild(mk("path", { d: "M18.2 8.8 Q20 8.6 21.8 8.8 L21.6 16.4 L18.4 16.4 Z", fill: "#B22A22" }));
-    /* cheek plates and scuffs */
-    svg.appendChild(mk("path", { d: "M14 22.6 L16.4 24.4 L16.6 29.2 M26 22.6 L23.6 24.4 L23.4 29.2", fill: "none", stroke: "#2E333B", "stroke-width": ".35" }));
-    svg.appendChild(mk("path", { d: "M14.8 12.8 L16.2 13.6 M24.6 11.8 L25.4 13 M15.2 26.4 L15.8 27.4", stroke: "#E8ECF0", "stroke-width": ".3", "stroke-linecap": "round", opacity: ".6" }));
-    /* THE VISOR: a black T, lit red at its edges */
-    const visor = "M13.6 17.8 L26.4 17.8 L26.2 20.8 L21.4 20.8 L21.4 26.6 L18.6 26.6 L18.6 20.8 L13.8 20.8 Z";
-    open("cx-eyes");
-    svg.appendChild(mk("path", { d: visor, fill: "none", stroke: red, "stroke-width": "1.3", opacity: ".35", "stroke-linejoin": "round", class: "cx-fx-bhglow" }));
-    svg.appendChild(mk("path", { d: visor, fill: "#06070A", stroke: "#FF6A5A", "stroke-width": ".3", "stroke-linejoin": "round" }));
-    svg.appendChild(mk("path", { d: "M14.4 18.4 L19.4 18.4", stroke: "#FFFFFF", "stroke-width": ".35", "stroke-linecap": "round", opacity: ".35" }));
+    svg.appendChild(mk("rect", { x: 5.6, y: 16.4, width: 3.6, height: 7.6, rx: 1.6, fill: "#C6D0DB" }));
+    svg.appendChild(mk("rect", { x: 30.8, y: 16.4, width: 3.6, height: 7.6, rx: 1.6, fill: "#C6D0DB" }));
+    svg.appendChild(mk("rect", { x: 8.2, y: 7.6, width: 23.6, height: 24, rx: 9.4, fill: suit,
+                                 stroke: "#96A3B1", "stroke-width": .45 }));
+    svg.appendChild(mk("rect", { x: 11, y: 12.6, width: 18, height: 13.4, rx: 6.2,
+                                 fill: "url(#" + domeId + ")",
+                                 stroke: "#7E8B99", "stroke-width": .7 }));
+    open("cx-fx cx-fx-reflect");
+    svg.appendChild(mk("path", { d: "M12.6 17.2 Q15.4 13.6 20.4 13.6", fill: "none",
+                                 stroke: "#FFFFFF", "stroke-width": 1.1,
+                                 "stroke-linecap": "round", opacity: .42 }));
     close();
-    closedEyes([], "#06070A", .5);
-    open("cx-mouth"); close();
-    /* the rangefinder stalk on the left, its light blinking */
-    svg.appendChild(mk("path", { d: "M12.6 15.4 L10.8 15.4 L10.8 22.4", fill: "none", stroke: "#2E333B", "stroke-width": ".7", "stroke-linejoin": "round" }));
-    svg.appendChild(mk("rect", { x: 10, y: 21.6, width: 1.6, height: 2.2, rx: .4, fill: "#3A3E46" }));
-    open("cx-fx cx-fx-bhlight");
-    svg.appendChild(mk("circle", { cx: 10.8, cy: 22.7, r: .9, fill: red, opacity: ".35" }));
-    svg.appendChild(mk("circle", { cx: 10.8, cy: 22.7, r: .38, fill: "#FF8A80" }));
+    sheen(["M17.2 12.6 L22.8 12.6 A6.2 6.2 0 0 1 29 18.8 L29 19.8 A6.2 6.2 0 0 1 22.8 26 L17.2 26 A6.2 6.2 0 0 1 11 19.8 L11 18.8 A6.2 6.2 0 0 1 17.2 12.6 Z"],
+          "cx-fx-visorsheen", 11, 29, 12.6, 26);
+    open("cx-fx cx-fx-visorstars");
+    const tw1 = mk("circle", { cx: 24.4, cy: 17, r: .85, fill: "#FFD37A" });
+    tw1.setAttribute("class", "avatarchar-twinkle");
+    const tw2 = mk("circle", { cx: 21.2, cy: 21.4, r: .6, fill: "#F5804D" });
+    tw2.setAttribute("class", "avatarchar-twinkle avatarchar-twinkle-b");
+    svg.appendChild(tw1); svg.appendChild(tw2);
+    svg.appendChild(mk("circle", { cx: 26.6, cy: 21.8, r: .45, fill: "#C23B7A" }));
     close();
-    close();
-    sheen([helm], "cx-fx-bhsheen", 12, 28, 8, 30, "#FFFFFF");
+    noEyes();
+    svg.appendChild(mk("rect", { x: 16.4, y: 28.8, width: 7.2, height: 3.4, rx: 1.2, fill: "#C6D0DB" }));
+    svg.appendChild(mk("circle", { cx: 18.4, cy: 30.5, r: .7, fill: "#4DD4E8" }));
+    svg.appendChild(mk("circle", { cx: 21.6, cy: 30.5, r: .7, fill: "#FFD84D" }));
     return done();
   }
 
@@ -35118,6 +35301,13 @@ function drawAvatarCharSVG(charId){
     open("cx-fx cx-fx-crescent");
     svg.appendChild(mk("path", { d: "M21.3 13.9 A2.1 2.1 0 1 1 21.3 16.9 A1.6 1.6 0 1 0 21.3 13.9 Z", fill: "#C4B5FD" }));
     close();
+    /* THE FOURTH FLARE, worn (build 277): "Can you incorporate the 4th
+       flare in umbra". It holds the cloak closed at the throat - the
+       flare's own colour, drawn the way the flare itself is drawn (a
+       bloom, a disc, a white-hot core), so the two read as one thing. */
+    open("cx-fx cx-fx-umflare");
+    wornFlare(20, 30.2, MYSTERY_COLOR.violet, "#C4B5FD", 1.17);
+    close();
     /* Wisps coming off the hem, so the cloak dissolves rather than
        ends. */
     close();
@@ -35180,9 +35370,12 @@ function drawAvatarCharSVG(charId){
     close();
     closedEyes([[20, 19.5, 4.4]], "#9CC8E8", .5);
     open("cx-mouth"); close();
+    /* THE FIFTH FLARE, worn on the brow (build 277): "incorporate ... the
+       5th in singularity". It was a white sparkle standing in for it; now
+       it is the flare itself, in the flare's own colour - bloom, disc,
+       white-hot core - the way Umbra wears the fourth. */
     open("cx-fx cx-fx-sgstar");
-    svg.appendChild(mk("circle", { cx: 20, cy: 15, r: 1.5, fill: ice, opacity: ".35" }));
-    svg.appendChild(sparkle(20, 15, 1.15, "#FFFFFF"));
+    wornFlare(20, 15, MYSTERY_COLOR.white, "#DDF4FF", 1);
     close();
     close();
     return done();
@@ -35575,6 +35768,14 @@ let lastRowKey = null;
 /* Build 242's account move (checkAccountMove, far below): read from
    attachLiveListener, which boot reaches from inside this script. */
 const ACCOUNT_MOVE_SUFFIX = "__moved";
+/* Build 279's merge note lives at its OWN suffix, and that is what keeps
+   it safe: build 242's checkAccountMove, still running on every phone
+   that has not updated, follows any `__moved` note by taking the target
+   whole - a merge written there would drop the duplicate's progress on
+   the floor the moment it was opened on an old build. Nothing before 279
+   reads `__merge`, so the merge can only ever happen on a build that
+   knows how to do it. */
+const ACCOUNT_MERGE_SUFFIX = "__merge";
 let accountMoveChecked = "";
 
 /* AND THE OTHER HALF: A DELETED ROW STILL MATCHES ITS OWN SIGNATURE.
@@ -35937,6 +36138,17 @@ function applyLoadedData(got){
   store.badgeBandsVersion = typeof got.badgeBandsVersion === "number" ? got.badgeBandsVersion : 0;
   store.retroBadgePending = Array.isArray(got.retroBadgePending)
     ? got.retroBadgePending.filter(u => typeof u === "string") : [];
+  /* Build 279: the account as it stood before a duplicate was merged into
+     it, held until the next finished test celebrates what the merge
+     brought - see mergeLeavingAccount(). Null for everybody else, which
+     is every account there is. */
+  store.mergeHold = (got.mergeHold && typeof got.mergeHold === "object" && typeof got.mergeHold.points === "number")
+    ? { points: got.mergeHold.points,
+        perfects: (got.mergeHold.perfects && typeof got.mergeHold.perfects === "object") ? got.mergeHold.perfects : {},
+        chars: Array.isArray(got.mergeHold.chars) ? got.mergeHold.chars.filter(x => typeof x === "string") : [],
+        banners: Array.isArray(got.mergeHold.banners) ? got.mergeHold.banners.filter(x => typeof x === "string") : [],
+        at: Number(got.mergeHold.at) || 0 }
+    : null;
   /* The weekly board's two fields. weekPoints defaults to 0 and weekKey
      to THIS week rather than to null: an existing account has a lifetime
      total but no record of when any of it was earned, and crediting all
@@ -36576,6 +36788,7 @@ function attachPresence(){
         presenceMap = d.p || {};
         presenceActivity = d.a || {};
         try{ paintActivityLabels(); }catch(e){}
+        try{ repaintOnlineDots(); }catch(e){}
         /* Repaint whatever is showing the dot right now. */
         try{ if(typeof refreshPresenceViews === "function") refreshPresenceViews(); }catch(e){}
       });
@@ -36605,6 +36818,33 @@ const PRESENCE_SCREENS = ".screen-friends, .screen-profile";
 function detachPresence(){
   if(presenceUnsub){ try{ presenceUnsub(); }catch(e){} presenceUnsub = null; }
 }
+/* THE DOTS THAT ARE NOT A SCREEN (build 279). refreshPresenceViews()
+   rebuilds the Friends screen; the chat dock's friend rows and DM header
+   were drawn once and never told when somebody came online or left.
+   Everything that shows a dot carries data-online-pub, and every
+   presence snapshot sets the class from the same isOnline() the dot was
+   first drawn with. */
+function repaintOnlineDots(){
+  const rows = rowsByPublicId();
+  document.querySelectorAll("[data-online-pub]").forEach(el => {
+    const pub = el.dataset.onlinePub;
+    if(!pub) return;
+    el.classList.toggle("is-online", isOnline(Object.assign({ pub }, rows[pub] || {})));
+  });
+}
+/* GOING AWAY IS SAID OUT LOUD (build 279). Nothing was written when the
+   app closed, so a closed app stayed green for up to five minutes. A 0
+   in the presence map is "offline now", and isOnline() trusts it. */
+function sendOffline(){
+  if(!fbDb || !syncCode || !store.leaderboardOptIn || !store.publicId) return;
+  lastHeartbeatAt = 0;
+  try{
+    fbDb.collection("vrooms").doc(PRESENCE_DOC)
+      .set({ kind: "presence", p: { [store.publicId]: 0 } }, { merge: true })
+      .catch(() => {});
+  }catch(e){}
+}
+window.addEventListener("pagehide", () => { try{ sendOffline(); }catch(e){} });
 function startHeartbeat(){
   if(heartbeatTimer) return;
   sendHeartbeat(true);
@@ -36616,6 +36856,7 @@ function startHeartbeat(){
      list that is useful and one that is stale. */
   document.addEventListener("visibilitychange", () => {
     if(document.visibilityState === "visible") sendHeartbeat(true);
+    else sendOffline();
   });
 }
 function isOnline(entry){
@@ -36629,7 +36870,16 @@ function isOnline(entry){
   if(presenceMap && entry.pub && typeof presenceMap[entry.pub] === "number"){
     at = presenceMap[entry.pub];
   }
-  at = Math.max(at, Number(entry.seenAt) || 0, Number(entry.lastModified) || 0);
+  /* THE PRESENCE DOCUMENT IS THE AUTHORITY WHEN IT HAS AN ANSWER (build
+     279). Somebody who closes the app now writes 0 there (sendOffline),
+     and that has to win over a leaderboard row they touched a minute ago.
+     `lastModified` is no longer read at all: it moves when a score is
+     pushed, which is exactly "answered a question recently", the thing
+     the online dot was rebuilt in 186 to stop meaning. */
+  if(presenceMap && entry.pub && typeof presenceMap[entry.pub] === "number"){
+    return !!at && (Date.now() - at) < ONLINE_WINDOW_MS;
+  }
+  at = Math.max(at, Number(entry.seenAt) || 0);
   return !!at && (Date.now() - at) < ONLINE_WINDOW_MS;
 }
 
@@ -37707,29 +37957,171 @@ function checkAccountMove(code){
   if(!fbDb || !code || accountMoveChecked === code) return;
   accountMoveChecked = code;
   try{
-    fbDb.collection("progress").doc(code + ACCOUNT_MOVE_SUFFIX).get().then(snap => {
-      if(!snap || !snap.exists || code !== syncCode) return;
+    const follow = (snap, merge) => {
+      if(!snap || !snap.exists || code !== syncCode) return false;
       const note = snap.data() || {};
       const to = String(note.to || "").trim().toUpperCase();
-      if(!SYNC_CODE_RE.test(to) || to === code || note.done) return;
-      followAccountMove(code, to, snap.ref);
-    }).catch(() => {});
+      if(!SYNC_CODE_RE.test(to) || to === code || note.done) return false;
+      followAccountMove(code, to, snap.ref, Object.assign({}, note, { merge: merge }));
+      return true;
+    };
+    /* the merge note first; a plain move only when there is none */
+    fbDb.collection("progress").doc(code + ACCOUNT_MERGE_SUFFIX).get()
+      .then(snap => follow(snap, true))
+      .catch(() => false)
+      .then(done => { if(done) return;
+        return fbDb.collection("progress").doc(code + ACCOUNT_MOVE_SUFFIX).get().then(snap => { follow(snap, false); }); })
+      .catch(() => {});
   }catch(e){}
 }
-function followAccountMove(from, to, noteRef){
+function followAccountMove(from, to, noteRef, note){
   fbDb.collection("progress").doc(to).get().then(target => {
     if(!target.exists || from !== syncCode) return;
     const cloud = target.data();
+    /* A MERGE NOTE BRINGS THIS DEVICE'S PROGRESS ALONG (build 279). Taken
+       as a plain copy BEFORE anything is switched, because setSyncCode
+       and applyLoadedData below replace `store` field by field. */
+    const leaving = (note && note.merge === true) ? JSON.parse(JSON.stringify(store)) : null;
     detachLiveListener();
     setSyncCode(to);
     applyLoadedData(cloud);
+    if(leaving){ try{ mergeLeavingAccount(leaving, note); }catch(e){} }
     persistLocally();
     attachLiveListener(to);
+    /* Pushed at once: the merged account is the one every device on it
+       should now be reading, and until it is in the cloud only this one
+       has it. */
+    if(leaving){ try{ saveStore(); }catch(e){} }
     try{ noteRef.set({ done: Date.now() }, { merge: true }).catch(() => {}); }catch(e){}
     try{ showToast("Signed in to your account" + (store.firstName ? ", " + store.firstName : "")); }catch(e){}
     try{ updateHeaderTitle(); }catch(e){}
     if(store.onboardingComplete && !testInProgress){ try{ showHome(); }catch(e){} }
   }).catch(() => {});
+}
+
+/* ---- MERGING A DUPLICATE ACCOUNT INTO THE REAL ONE (build 279) ----
+   "Delete the two lower level accounts, and make it so those two lower
+   accounts, next time he uses them, his higher level account will be
+   used instead ... take his progress from the lower level accounts and
+   apply it to the main account, so give him that xp, test progress, the
+   stats, all of it. Give lake an extra level as well on top of this."
+   Build 242's move took the target account whole, because Cap's
+   duplicates had nothing worth keeping. These do, so a note can now say
+   `merge: true` and the device folds its own store into the account it
+   is joining, on the device, at the moment it moves - which is the only
+   moment that captures everything, including whatever was played on the
+   duplicate between the note being written and the app being opened.
+   COUNTS ADD, BESTS KEEP THE BETTER ONE, LISTS UNION, and who the person
+   IS (name, character, public id, friend code, theme, tours) stays the
+   target's: the account being left is the duplicate.
+   `note.extra` carries what survives of an account that has no device
+   to follow a note - a rankings row whose progress document is gone -
+   and `note.bonusLevels` is the gift on top, applied once, last, so it
+   lands on the merged total rather than being swallowed by it.
+   "IF ANYONE UNLOCKS ANYTHING BECAUSE OF THIS, DO IT AFTER THEIR NEXT
+   TEST." So the account as it stood before the merge is kept as
+   `mergeHold`, and until a test finishes: Home announces nothing new,
+   and summarize() takes its "before" snapshots against that baseline -
+   the same hiding build 210 does for handed-out badges - so the next
+   results screen plays every badge, rank and unlock the merge brought,
+   exactly as if that test had earned them. A second merge before then
+   keeps the first baseline, the lower one. */
+function mergeLeavingAccount(src, note){
+  const num = v => Number(v) || 0;
+  if(!store.mergeHold){
+    let chars = [], banners = [];
+    try{ chars = [...lockedCharacterSet()]; }catch(e){}
+    try{ banners = [...earnedBannerSet()]; }catch(e){}
+    store.mergeHold = { points: num(store.lifetime && store.lifetime.points),
+                        perfects: Object.assign({}, store.unitPerfects || {}), chars, banners, at: Date.now() };
+  }
+  const L = store.lifetime || (store.lifetime = {}), SL = src.lifetime || {};
+  ["answered", "correct", "drillPlays", "examPlays", "gamePlays", "perfectTests", "points", "fullTests"]
+    .forEach(k => { L[k] = num(L[k]) + num(SL[k]); });
+  L.longestStreak = Math.max(num(L.longestStreak), num(SL.longestStreak));
+  L.currentStreak = Math.max(num(L.currentStreak), num(SL.currentStreak));
+  /* per question: seen, missed, and the recent misses */
+  const st = store.stats || (store.stats = {});
+  Object.keys(src.stats || {}).forEach(k => {
+    const a = st[k] || { n: 0, m: 0, r: [] }, b = src.stats[k] || {};
+    st[k] = { n: num(a.n) + num(b.n), m: num(a.m) + num(b.m),
+              r: (a.r || []).concat(b.r || []).filter(x => typeof x === "number").sort((x, y) => x - y).slice(-20) };
+  });
+  const ts = store.testStats || (store.testStats = {});
+  Object.keys(src.testStats || {}).forEach(k => {
+    const a = ts[k], b = src.testStats[k] || {};
+    if(!a){ ts[k] = Object.assign({}, b); return; }
+    const later = num(b.lastPlayedAt) > num(a.lastPlayedAt) ? b : a;
+    const bests = [a.bestMs, b.bestMs].filter(x => typeof x === "number");
+    ts[k] = Object.assign({}, a, { plays: num(a.plays) + num(b.plays), totalMs: num(a.totalMs) + num(b.totalMs),
+      bestMs: bests.length ? Math.min.apply(null, bests) : null,
+      lastPlayedAt: later.lastPlayedAt, lastElapsedMs: later.lastElapsedMs, lastPct: later.lastPct });
+  });
+  const sumMap = (k) => { const d = store[k] || (store[k] = {}); Object.keys(src[k] || {}).forEach(u => { d[u] = num(d[u]) + num(src[k][u]); }); };
+  const maxMap = (k) => { const d = store[k] || (store[k] = {}); Object.keys(src[k] || {}).forEach(u => { d[u] = Math.max(num(d[u]), num(src[k][u])); }); };
+  const minMap = (k) => { const d = store[k] || (store[k] = {}); Object.keys(src[k] || {}).forEach(u => {
+    const v = num(src[k][u]); if(v > 0) d[u] = d[u] ? Math.min(num(d[u]), v) : v; }); };
+  const orMap = (k) => { const d = store[k] || (store[k] = {}); Object.keys(src[k] || {}).forEach(u => { if(src[k][u]) d[u] = d[u] || src[k][u]; }); };
+  sumMap("studyLog"); sumMap("unitPerfects");
+  orMap("unitBlackStar"); orMap("flagged");
+  maxMap("unitBestPct"); minMap("unitBestMs"); maxMap("flareLevels");
+  /* game records: per unit, per speed */
+  ["unitGameBeat", "gameFarthest"].forEach(k => {
+    const d = store[k] || (store[k] = {});
+    Object.keys(src[k] || {}).forEach(u => {
+      const a = d[u] || {}, b = src[k][u] || {}, out = Object.assign({}, a);
+      Object.keys(b).forEach(sp => { out[sp] = typeof b[sp] === "boolean" ? (a[sp] || b[sp]) : Math.max(num(a[sp]), num(b[sp])); });
+      d[u] = out;
+    });
+  });
+  minMap("gameHardcoreMs");
+  /* exam records and run counts re-seed themselves from the merged
+     history and test counts when they are missing, which is more honest
+     than adding two summaries together */
+  Object.keys(src.unitExam || {}).forEach(u => { if(store.unitExam && store.unitExam[u]) delete store.unitExam[u]; });
+  if(store.unitRuns && src.unitRuns) sumMap("unitRuns"); else store.unitRuns = null;
+  store.testHistory = (store.testHistory || []).concat(src.testHistory || [])
+    .sort((a, b) => num(b && b.playedAt) - num(a && a.playedAt)).slice(0, 20);
+  ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions"].forEach(k => { store[k] = num(store[k]) + num(src[k]); });
+  ["dailyCorrectStreak", "hundoDayBest", "bestTestStreak", "unitHundoStreak"].forEach(k => { store[k] = Math.max(num(store[k]), num(src[k])); });
+  ["vrCounted", "vrTop3Rooms"].forEach(k => {
+    const a = Array.isArray(store[k]) ? store[k] : [];
+    store[k] = a.concat((src[k] || []).filter(x => a.indexOf(x) < 0)).slice(-300);
+  });
+  ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "supernovaAchieved"]
+    .forEach(k => { if(src[k] === true) store[k] = true; });
+  if(src.mysteryColorsFound && store.mysteryColorsFound){
+    Object.keys(src.mysteryColorsFound).forEach(c => { if(src.mysteryColorsFound[c]) store.mysteryColorsFound[c] = true; });
+  }
+  /* friends: both lists, minus either account itself */
+  const me = [store.publicId, src.publicId];
+  ["friendsOut", "friendsIn"].forEach(k => {
+    const a = Array.isArray(store[k]) ? store[k] : [];
+    store[k] = a.concat((src[k] || []).filter(x => a.indexOf(x) < 0)).filter(x => me.indexOf(x) < 0).slice(0, 200);
+  });
+  /* this week's board, where both weeks are this week */
+  try{ rollWeek(); }catch(e){}
+  if(src.weekKey && src.weekKey === store.weekKey) store.weekPoints = num(store.weekPoints) + num(src.weekPoints);
+  /* what is left of an account with no device to bring it */
+  const ex = (note && note.extra) || null;
+  if(ex){
+    L.points = num(L.points) + num(ex.points);
+    L.correct = num(L.correct) + num(ex.correct);
+    L.answered = Math.max(num(L.answered) + num(ex.correct), num(L.correct));
+    if(ex.week && ex.week === store.weekKey) store.weekPoints = num(store.weekPoints) + num(ex.weekPoints);
+  }
+  /* the gift, last: N whole levels up, the same way into the new one */
+  const bonus = Math.max(0, Math.min(5, num(note && note.bonusLevels)));
+  if(bonus){
+    const lp = levelProgress(L.points);
+    if(!lp.atCap){
+      const target = Math.min(LEVEL_CAP, lp.level + bonus);
+      const base = xpForLevel(target);
+      const span = levelProgress(base).span || 0;
+      L.points = Math.max(num(L.points), base + Math.round(lp.fraction * span));
+    }
+  }
+  store.lastModified = Date.now();
 }
 
 function detachLiveListener(){
@@ -38834,7 +39226,12 @@ function preserveLegacyLevel(){
   return 0;
 }
 function levelOf(st){
-  return levelFromPoints(st && st.lifetime ? st.lifetime.points : 0);
+  const p = st && st.lifetime ? st.lifetime.points : 0;
+  /* the held level, only inside summarize()'s snapshot window after a
+     merge - see mergeHidePoints */
+  if(st === store && typeof mergeHidePoints !== "undefined" && mergeHidePoints != null)
+    return levelFromPoints(Math.min(Number(p) || 0, mergeHidePoints));
+  return levelFromPoints(p);
 }
 
 /* One badge per unit, earned by mastering that unit. No longer
@@ -38909,12 +39306,21 @@ const BADGE_THRESHOLD = 35;
    it's reflected like they got it." Rank, colour and character unlocks
    are diffed the same way inside summarize(), so a rank crossed by
    these badges is silent too. */
+/* ---- BUILD 279: LOWER AGAIN ----
+   "Make the ones that are 10x, 8x. Make all the 15x 12x. Make all the
+   20x 15x. Make penal code 2x. Arrest search and seizure, make it 4x."
+   Penal Code is the only unit over 200 questions and Arrest, Search
+   and Seizure the only one between 101 and 200, so those two asks are
+   the two bottom bands and the table stays a table. Every band is again
+   at or below the one it replaces, so this only ADDS badges - and the
+   ones it adds are celebrated on the next finished test, exactly as 210's
+   were (grantRetroBadgesOnce, now version 3). */
 const BADGE_THRESHOLD_BANDS = [
-  { max: 25,       hundos: 20 },
-  { max: 50,       hundos: 15 },
-  { max: 100,      hundos: 10 },
-  { max: 200,      hundos: 5  },
-  { max: Infinity, hundos: 3  }
+  { max: 25,       hundos: 15 },
+  { max: 50,       hundos: 12 },
+  { max: 100,      hundos: 8  },
+  { max: 200,      hundos: 4  },
+  { max: Infinity, hundos: 2  }
 ];
 /* `var`, not `let`, and that is deliberate. This file has now been taken
    down five separate times by a top-level `let` declared below its first
@@ -39005,12 +39411,34 @@ function legacyBadgeThreshold209(name){
    existed before build 211; a brand-new account is marked current at
    sign-up, so a badge it earns under the new bands is never mistaken for
    a handed-out one. */
+/* Build 210's bands, which 279 lowered. An account already on version 2
+   compares against these; one still on 0 or 1 compares against 209's,
+   so somebody who skipped a build is owed every badge either change
+   handed them, not just the latest one's. */
+const LEGACY_BADGE_BANDS_210 = [
+  { max: 25, hundos: 20 }, { max: 50, hundos: 15 }, { max: 100, hundos: 10 },
+  { max: 200, hundos: 5 }, { max: Infinity, hundos: 3 }
+];
+function legacyBadgeThreshold210(name){
+  const n = unitQuestionCount(name);
+  if(!n) return BADGE_THRESHOLD;
+  for(let i = 0; i < LEGACY_BADGE_BANDS_210.length; i++){
+    if(n <= LEGACY_BADGE_BANDS_210[i].max) return LEGACY_BADGE_BANDS_210[i].hundos;
+  }
+  return BADGE_THRESHOLD;
+}
+var BADGE_BANDS_VERSION = 3;
 function grantRetroBadgesOnce(){
-  if(store.badgeBandsVersion >= 2) return;
+  if(store.badgeBandsVersion >= BADGE_BANDS_VERSION) return;
   const perf = store.unitPerfects || {};
-  store.retroBadgePending = topicsIn(QUESTIONS).filter(u =>
-    (perf[u] || 0) >= badgeThresholdFor(u) && (perf[u] || 0) < legacyBadgeThreshold209(u));
-  store.badgeBandsVersion = 2;
+  const was = store.badgeBandsVersion >= 2 ? legacyBadgeThreshold210 : legacyBadgeThreshold209;
+  const owed = topicsIn(QUESTIONS).filter(u =>
+    (perf[u] || 0) >= badgeThresholdFor(u) && (perf[u] || 0) < was(u));
+  /* Added to whatever is still waiting, never in place of it: a badge
+     210 handed out that has not been celebrated yet is still owed. */
+  const prev = Array.isArray(store.retroBadgePending) ? store.retroBadgePending : [];
+  store.retroBadgePending = prev.concat(owed.filter(u => prev.indexOf(u) < 0));
+  store.badgeBandsVersion = BADGE_BANDS_VERSION;
   saveStore();
 }
 function unitBadgeEarned(name){
@@ -41730,6 +42158,10 @@ const RANKING_BOARDS = [
    climbs on. One place, because six call sites used to each do their
    own version of this arithmetic and each phrase the result its own
    way. */
+/* While summarize() takes its "before" snapshots on the first test after
+   a merge, the level is the one held before it - see mergeLeavingAccount.
+   `var`, per the note on UNIT_SIZE_CACHE. */
+var mergeHidePoints = null;
 function tierProgressNow(){
   return { level: levelOf(store), badges: badgeCountOf(store) };
 }
@@ -46457,6 +46889,46 @@ function poolNow(){
    now reads directly from RELEASE_NOTES[0].groups below, so there is
    only one place this content can ever be edited. */
 const RELEASE_NOTES = [
+  /* 7.3 (build 279) - "Update the version history, call this version 7.3
+     and include the new stuff". Everything since 6.9 (build 170) that a
+     classmate would notice. The one-time "New in this update" card says
+     the headline version of the same list. The character in the
+     astronaut slot is named once it is picked - see PICK below. */
+  {
+    version: "7.3",
+    groups: [
+      { label: "Characters", items: [
+        { icon: buildPersonIcon, color: "#FF2E88", title: "New And Redrawn Characters", body: "Every character has been redrawn with its own scene behind it, and the set has grown: a character for each rank from Silver up, challenge characters like the Ronin, the Sheriff, the Marksman, the Hacker and the Koi, and three secret ones — Void, Umbra and Horizon — that you find rather than earn." },
+        { icon: buildSparkleIcon, color: "#7FC8FF", title: "Five Secret Flares", body: "Red, orange and yellow unlock Void; the violet flare unlocks Umbra and the ice-blue flare unlocks Horizon. Each one is worn by the character it hands over, and the orbit on Home lights up as you find them." },
+        { icon: buildPaletteIcon, color: "#C583FF", title: "Banners And Themes", body: "Banners to earn for your profile and your name in a Virtual Room, and a theme colour for every rank. Press and hold anything in Customize to see exactly what it takes." }
+      ]},
+      { label: "Virtual Room", items: [
+        { icon: () => modeIcon("vroom"), title: "Battle", body: "A new mode: two teams, one health bar each. Every right answer hits the other side, powers unlock after question 10, and the first side to zero loses." },
+        { icon: buildDualBoardIcon, color: "#F5804D", title: "Tug of War, Rebuilt", body: "The rope moves by how each side is actually doing, with a real cutscene at the end — and rooms can be public or private, with a browser to find the public ones." },
+        { icon: buildTrophyIcon, color: "#FFD84D", title: "Podiums And Room Stats", body: "Wins and top-three finishes are counted, and a finished room shows its podium." }
+      ]},
+      { label: "Chat", items: [
+        { icon: buildDevicesIcon, color: "#8E7CF5", title: "Friends And Group Chats", body: "A permanent chat with each friend, group chats you can come back to, and an Inbox for everything waiting on you." },
+        { icon: buildTooltipBubbleIcon, color: "#4ADE80", title: "Photos, Polls And Reactions", body: "Send a photo or a poll, react to a message the way you would on iMessage, and see who is typing. Unread counts sit on every tab." },
+        { icon: buildOfflineIcon, color: "#4ADE80", title: "Who Is Online", body: "A green dot shows who has the app open right now." }
+      ]},
+      { label: "Studying", items: [
+        { icon: buildChecklistIcon, color: "#5CA8FF", title: "Hold A Unit For Its Details", body: "Press and hold any unit to see your best score, hundos and last score for each mode, plus the questions you have missed most and the ones you have flagged." },
+        { icon: buildClipboardIcon, color: "#4ADE80", title: "A Simpler Start Sheet", body: "Pick a mode and go: the options are a short list, with Begin always at the bottom." },
+        { icon: buildQuestionMarkIcon, color: "#FFD84D", title: "Daily Question", body: "A new question every day on a set schedule, with a proper charge-up and banner when it is ready." }
+      ]},
+      { label: "Ranks & Results", items: [
+        { icon: buildLadderIcon, color: "#FFD84D", title: "The Rank Tab", body: "A road map of every rank, with your exact progress lit along it, what each rank hands over, and a moment when you open it after climbing." },
+        { icon: buildBarStatsIcon, color: "#F5804D", title: "Results, Refreshed", body: "The end of a test is now two screens: your rewards first, revealed one by one — XP, level, badge progress and anything you unlocked — then the full review." },
+        { icon: buildStarIcon, color: "#4DD0E1", title: "Badges That Fit The Unit", body: "Each badge costs a number of hundos that matches the size of its unit, and the badge case opens with its own cutscene." },
+        { icon: buildStarIcon, color: "#FFD84D", title: "Badges Are Easier To Earn", body: "Every badge needs fewer hundos than before — 15, 12 or 8 by the size of the unit, 4 for Arrest, Search and Seizure and 2 for the Penal Code. Any badge this hands you is celebrated on your next test." }
+      ]},
+      { label: "Fixes & polish", items: [
+        { icon: buildSmoothCurveIcon, color: "#C583FF", title: "Smoother Everywhere", body: "Less lag going to Home, only what is on screen animates, and dozens of layout fixes across phones, tablets and laptops." },
+        { icon: buildRetryIcon, color: "#4DD0E1", title: "Bug Fixes", body: "Updates now arrive reliably, chats and invites tell the truth, and a long list of smaller fixes from your reports." }
+      ]}
+    ]
+  },
   /* 6.9. No "what's new" screen for this one - asked for explicitly,
      "we don't need a what's new screen though just the stuff that shows
      up when you hit version". The one-time introduction card covers the
@@ -50214,9 +50686,9 @@ function openFriendChat(pub){
 function nameChatFrom(participants){
   const me = publicIdOf();
   const names = Object.keys(participants || {})
-    .filter(k => k !== me)
+    .filter(k => k !== me && (participants[k] || {}).name)
     .sort((a, b) => (((participants[a] || {}).joinedAt || 0) - ((participants[b] || {}).joinedAt || 0)))
-    .map(k => (participants[k] || {}).name || "Someone");
+    .map(k => participants[k].name);
   if(!names.length) return "";
   if(names.length === 1) return names[0];
   if(names.length === 2) return names[0] + " & " + names[1];
@@ -50513,6 +50985,13 @@ function presentParticipants(participants){
   const out = {};
   Object.keys(participants).forEach(k => {
     const e = participants[k] || {};
+    /* A NAMELESS ENTRY IS A GHOST, NOT A PERSON (build 279). Older builds
+       stamped `participants.<key>.seen` on its own, and a Firestore update
+       to a nested field CREATES the parent - so a device whose entry had
+       been deleted on pagehide put back {seen} with no name, which every
+       other device drew as "Someone" who never left. Reported as "the app
+       still shows 'someone' when they aren't on". */
+    if(!e.name) return;
     /* No stamp means an older client, which cannot be judged. */
     if(typeof e.seen !== "number" || (now - e.seen) < PRESENCE_STALE_MS) out[k] = e;
   });
@@ -50532,7 +51011,8 @@ let chatAllMembers = {};
 function openChatMembers(){
   const members = chatAllMembers || {};
   const here = liveChatParticipants || {};
-  const keys = Object.keys(members).sort((a, b) =>
+  /* Ghosts (a stamp with no name) are not members - see presentParticipants. */
+  const keys = Object.keys(members).filter(k => k === chatMyKey || (members[k] || {}).name).sort((a, b) =>
     (a === chatMyKey ? -1 : b === chatMyKey ? 1 : 0) ||
     ((members[a] || {}).joinedAt || 0) - ((members[b] || {}).joinedAt || 0));
   const ov = document.createElement("div");
@@ -50556,6 +51036,12 @@ function openChatMembers(){
     const st = document.createElement("span");
     st.className = "chat-member-state" + (here[k] ? " is-here" : "");
     st.textContent = here[k] ? "Here now" : "Away";
+    if(here[k]){
+      /* The same green dot the roster and the Friends list use. */
+      const dot = document.createElement("span");
+      dot.className = "chat-online-dot"; dot.setAttribute("aria-hidden", "true");
+      st.prepend(dot);
+    }
     row.append(art, nm, st);
     if(k !== chatMyKey){
       const dm = document.createElement("button");
@@ -50587,7 +51073,9 @@ function renderChatRoster(participants){
      dimmed; and a line above says how many of each. */
   const here = participants || {};
   const all = (chatAllMembers && Object.keys(chatAllMembers).length) ? chatAllMembers : here;
-  const keys = Object.keys(all).sort((a, b) =>
+  /* Ghost entries (a stamp with no name - see presentParticipants) are
+     not members anybody can see. */
+  const keys = Object.keys(all).filter(k => k === chatMyKey || (all[k] || {}).name).sort((a, b) =>
     (((all[a] || {}).joinedAt || 0) - ((all[b] || {}).joinedAt || 0))
     || (a < b ? -1 : 1));
   const isHere = k => k === chatMyKey || Object.prototype.hasOwnProperty.call(here, k);
@@ -50620,6 +51108,16 @@ function renderChatRoster(participants){
     const c = chatColorFor(k, chatColorBasis(participants));
     if(c && k !== chatMyKey) nm.style.color = c;
     one.append(art, nm);
+    /* A GREEN DOT FOR WHOEVER IS HERE (build 279): "ensure the appearing
+       online functionality works ... by putting a green dot near them".
+       Its own element on the chip rather than an ::after on the art,
+       which clips. */
+    if(isHere(k)){
+      const dot = document.createElement("span");
+      dot.className = "chatdock-who-dot";
+      dot.setAttribute("aria-hidden", "true");
+      one.appendChild(dot);
+    }
     el.appendChild(one);
   });
 }
@@ -50683,13 +51181,34 @@ function startVroomPresence(){
   vroomBeatTimer = setInterval(() => {
     if(!vroomCode || !vroomMyKey || !fbDb){ clearInterval(vroomBeatTimer); vroomBeatTimer = null; return; }
     try{
+      /* Name and character ride along with the stamp (build 279), for the
+         reason chatPresencePatch() gives: a lone nested `.seen` on a
+         deleted entry recreates it nameless. */
       const patch = {};
       patch["participants." + vroomMyKey + ".seen"] = Date.now();
+      patch["participants." + vroomMyKey + ".name"] = store.firstName || "Anonymous";
+      patch["participants." + vroomMyKey + ".avatarChar"] = store.avatarChar || "ninja";
       fbDb.collection("vrooms").doc(vroomCode).update(patch).catch(() => {});
     }catch(e){}
   }, PRESENCE_BEAT_MS);
 }
 
+/* THE WHOLE ENTRY, EVERY BEAT (build 279). Stamping only `.seen` on an
+   entry that had been deleted created a nameless one - the "Someone" in
+   the group chat. Every presence write now carries the fields a reader
+   draws with, so whatever state the document is in, the entry that
+   results is a person. `joinedAt` is left alone: it orders the roster,
+   and a beat must not move anybody to the end of it. */
+function chatPresencePatch(seen){
+  const k = "participants." + chatMyKey + ".";
+  const patch = {};
+  patch[k + "name"] = store.firstName || "Anonymous";
+  patch[k + "avatarChar"] = store.avatarChar || "ninja";
+  patch[k + "level"] = levelOf(store);
+  patch[k + "badges"] = badgeCountOf(store);
+  patch[k + "seen"] = seen;
+  return patch;
+}
 let chatBeatTimer = null;
 function startChatPresence(){
   clearInterval(chatBeatTimer);
@@ -50699,17 +51218,16 @@ function startChatPresence(){
      for up to a beat after walking in. */
   if(chatRoomCode && chatMyKey && fbDb){
     try{
-      const now = {};
-      now["participants." + chatMyKey + ".seen"] = Date.now();
-      fbDb.collection("vrooms").doc(chatRoomCode).update(now).catch(() => {});
+      fbDb.collection("vrooms").doc(chatRoomCode).update(chatPresencePatch(Date.now())).catch(() => {});
     }catch(e){}
   }
   chatBeatTimer = setInterval(() => {
     if(!chatRoomCode || !chatMyKey || !fbDb){ clearInterval(chatBeatTimer); chatBeatTimer = null; return; }
+    /* A hidden app is not here: no beat, so the stamp ages out (and
+       visibilitychange below marks it away at once). */
+    if(document.visibilityState !== "visible") return;
     try{
-      const patch = {};
-      patch["participants." + chatMyKey + ".seen"] = Date.now();
-      fbDb.collection("vrooms").doc(chatRoomCode).update(patch).catch(() => {});
+      fbDb.collection("vrooms").doc(chatRoomCode).update(chatPresencePatch(Date.now())).catch(() => {});
     }catch(e){}
   }, PRESENCE_BEAT_MS);
 }
@@ -50841,34 +51359,42 @@ function confirmLeaveChat(code, onLeave){
   closeLeaveChatConfirm();
   const entry = chatEntry(code);
   const name = entry && entry.name ? entry.name : "";
+  /* AN ACTION SHEET, NOT A SETTINGS DIALOG (build 279). The centred card
+     over a full-screen blur, a title and two side-by-side buttons, read
+     as "a lot like the advanced settings thing", and over the whole app
+     it was reported as "huge and won't go away". This is the shape iOS
+     itself uses for "leave this conversation?": a short sheet that rises
+     from the bottom with the question, one red action, and a separate
+     Cancel - over a light dim rather than a blur. The two classes it
+     shares with the Virtual Room's leave card (.chatdock-confirm) are
+     kept so every close path still finds it; everything it looks like
+     is .chat-leavesheet. */
   const wrap = document.createElement("div");
-  wrap.className = "chatdock-confirm";
+  wrap.className = "chatdock-confirm chat-leavesheet";
   const card = document.createElement("div");
-  card.className = "chatdock-confirm-card";
+  card.className = "chat-leavesheet-group";
   card.setAttribute("role", "alertdialog");
   card.setAttribute("aria-modal", "true");
   const t = document.createElement("p");
-  t.className = "chatdock-confirm-title"; t.id = "chatdock-confirm-title";
-  /* A group is named after the people in it, so it reads as "the chat
-     with ...", not as a title in quotes. */
-  t.textContent = name ? "Leave the group chat with " + name + "?" : "Leave this group chat?";
+  t.className = "chat-leavesheet-title"; t.id = "chatdock-confirm-title";
+  t.textContent = name ? "Leave the chat with " + name + "?" : "Leave this group chat?";
   const b = document.createElement("p");
-  b.className = "chatdock-confirm-body";
-  b.textContent = "You will stop getting its messages and it comes off your list. To come back, someone in it has to invite you again.";
+  b.className = "chat-leavesheet-body";
+  b.textContent = "You will stop getting its messages. Someone in it has to invite you back.";
   card.setAttribute("aria-labelledby", t.id);
-  const row = document.createElement("div");
-  row.className = "chatdock-confirm-actions";
-  const stay = document.createElement("button");
-  stay.type = "button"; stay.className = "next ghost chatdock-confirm-stay"; stay.textContent = "Stay";
   const go = document.createElement("button");
-  go.type = "button"; go.className = "next danger chatdock-confirm-leave"; go.textContent = "Leave";
+  go.type = "button"; go.className = "chat-leavesheet-leave chatdock-confirm-leave"; go.textContent = "Leave chat";
+  card.append(t, b, go);
+  const stay = document.createElement("button");
+  stay.type = "button"; stay.className = "chat-leavesheet-cancel chatdock-confirm-stay"; stay.textContent = "Cancel";
   stay.addEventListener("click", closeLeaveChatConfirm);
   go.addEventListener("click", () => { closeLeaveChatConfirm(); onLeave(); });
   wrap.addEventListener("click", e => { if(e.target === wrap) closeLeaveChatConfirm(); });
   wrap.addEventListener("keydown", e => { if(e.key === "Escape"){ e.stopPropagation(); closeLeaveChatConfirm(); } });
-  row.append(stay, go);
-  card.append(t, b, row);
-  wrap.appendChild(card);
+  const inner = document.createElement("div");
+  inner.className = "chat-leavesheet-inner";
+  inner.append(card, stay);
+  wrap.appendChild(inner);
   host.appendChild(wrap);
   try{ stay.focus({ preventScroll: true }); }catch(e){}
 }
@@ -51314,14 +51840,8 @@ function startChatDock(){
     /* A relaunch is a join as far as everybody else is concerned - the
        stamp on this device's entry is by now minutes old, so without
        this it would sit stale and drop off the roster it is in. */
+    /* startChatPresence() stamps the whole entry immediately. */
     startChatPresence();
-    if(fbDb){
-      try{
-        const patch = {};
-        patch["participants." + chatMyKey + ".seen"] = Date.now();
-        fbDb.collection("vrooms").doc(chatRoomCode).update(patch).catch(() => {});
-      }catch(e){}
-    }
   }
   rebuildChatTab();
   syncChatDock();
@@ -51338,11 +51858,15 @@ window.addEventListener("pagehide", () => {
   /* A queued score that never lands is a score that never appears. */
   try{ if(rowPushTimer) flushLeaderboardRow(); }catch(e){}
   try{
+    /* AWAY, NOT GONE (build 279). This used to delete the entry and
+       announce "<name> left the chat" every time a phone was locked or
+       the app backgrounded - and the next beat put back a nameless entry,
+       the "Someone". Closing the app is not leaving a chat: the entry
+       stays, with its stamp set to 0 so it reads as away at once. Leave
+       is still the one exit that removes you and says so. */
     if(chatRoomCode && chatMyKey && fbDb){
-      const patch = {};
-      patch["participants." + chatMyKey] = firebase.firestore.FieldValue.delete();
+      const patch = chatPresencePatch(0);
       patch["typing." + chatMyKey] = firebase.firestore.FieldValue.delete();
-      patch.lastLeave = { name: store.firstName || "Someone", key: chatMyKey, at: Date.now() };
       fbDb.collection("vrooms").doc(chatRoomCode).update(patch).catch(() => {});
     }
     if(typeof vroomCode !== "undefined" && vroomCode && vroomMyKey && fbDb){
@@ -51354,6 +51878,16 @@ window.addEventListener("pagehide", () => {
       vp.lastLeave = { name: store.firstName || "Someone", key: vroomMyKey, at: Date.now() };
       fbDb.collection("vrooms").doc(vroomCode).update(vp).catch(() => {});
     }
+  }catch(e){}
+});
+
+/* Hidden and shown again without a pagehide - a desktop tab, an Android
+   app switch: away while hidden, here again the moment it is back. */
+document.addEventListener("visibilitychange", () => {
+  try{
+    if(!chatRoomCode || !chatMyKey || !fbDb) return;
+    const visible = document.visibilityState === "visible";
+    fbDb.collection("vrooms").doc(chatRoomCode).update(chatPresencePatch(visible ? Date.now() : 0)).catch(() => {});
   }catch(e){}
 });
 
@@ -51445,6 +51979,7 @@ function rebuildChatTab(){
     who.className = "chatdock-friendhead";
     const art = document.createElement("span");
     art.className = "chatdock-friendhead-art" + (isOnline(e) ? " is-online" : "");
+    art.dataset.onlinePub = pub || "";
     try{ art.appendChild(avatarSpanFor(e)); }catch(err){}
     const txt = document.createElement("span");
     txt.className = "chatdock-friendhead-text";
@@ -51537,6 +52072,7 @@ function renderFriendChatList(){
     open.type = "button"; open.className = "chatdock-chatrow-open";
     const art = document.createElement("span");
     art.className = "chatdock-chatrow-avatar" + (isOnline(e) ? " is-online" : "");
+    art.dataset.onlinePub = e.pub || "";
     try{ art.appendChild(avatarSpanFor(e)); }catch(err){}
     open.appendChild(art);
     const top = document.createElement("span");
@@ -51814,6 +52350,9 @@ function syncChatDock(){
                   || document.getElementById("genprofile-overlay"));
   if(loading){
     chatDock.hidden = true;
+    /* A hidden dock takes its "leave?" sheet with it (build 279) - left
+       behind, it came back over the app the next time the dock showed. */
+    try{ closeLeaveChatConfirm(); }catch(e){}
     chatDockOpen = false;
     chatDock.classList.remove("is-open");
     document.body.classList.remove("chatdock-open");
@@ -52342,7 +52881,10 @@ const INTRO_KEY = "class26e.intro.seen";
 /* 20 x 900ms on top of the first 2s - comfortably past the 8-second
    first-run splash, and it stops rather than spinning. */
 const INTRO_MAX_TRIES = 20;
-const INTRO_REV = 1;
+/* 2 = the 7.3 update (build 279): "give a what's new update thing
+   again". Bumping it shows the card once more to every device that saw
+   rev 1, and to every device that never saw anything. */
+const INTRO_REV = 2;
 function introSeen(){
   try{ return (Number(localStorage.getItem(INTRO_KEY)) || 0) >= INTRO_REV; }
   catch(e){ return true; }
@@ -52381,37 +52923,42 @@ function showIntroPopup(){
   const card = document.createElement("div");
   card.className = "intro-card";
 
+  /* VERSION 7.3. The rows are the headline version of RELEASE_NOTES[0]
+     - "mention the new and redesigned characters, new virtual room mode,
+     chat upgrades, the ability to view unit details by holding them
+     down, ... the new rank tab and result screen refresh and ...
+     bug fixes and overall smoothness improvements". Short on purpose:
+     seven things on one card, and the full list is a tap away under
+     the version number on Home. */
   const eyebrow = document.createElement("p");
-  eyebrow.className = "intro-eyebrow"; eyebrow.textContent = "New in this update";
+  eyebrow.className = "intro-eyebrow"; eyebrow.textContent = "New in version " + RELEASE_NOTES[0].version;
   const title = document.createElement("h2");
-  title.className = "intro-title"; title.textContent = "Chat and friends";
+  title.className = "intro-title"; title.textContent = "What's new";
   card.append(eyebrow, title);
-
-  /* The chat button's own glyph, so the drawing in the card and the
-     drawing in the corner are the same object rather than two things
-     that look similar. */
-  card.appendChild(introRow(
-    "M20.5 11.3a7.8 7.8 0 0 1-8.4 7.8 9.2 9.2 0 0 1-2.7-.4L4 20.7l1.5-4.3"
-    + "a7.6 7.6 0 0 1-1-4.1 7.8 7.8 0 0 1 8-7.8 7.8 7.8 0 0 1 8 7.8Z",
-    "#8E7CF5", "The button in the top right",
-    "It is on every screen. Open it to chat with a friend, start a group "
-    + "chat you can keep going while you study, or read anything waiting "
-    + "on you in the Inbox. A dot on it means there is something new."));
-
-  card.appendChild(introRow(
-    BANNER_KINDS.friend.glyph, "#4ADE80", "Friends",
-    "Add a classmate with your friend code, in Profile › Friends. "
-    + "Friends are who you can invite — to a group chat or to a "
-    + "Virtual Room. There are no codes to type any more; you get an "
-    + "invite and you accept it."));
-
-  card.appendChild(introRow(
-    /* A padlock: the one shape that says "closed" without a word. */
-    "M12 2a5 5 0 0 1 5 5v2h1a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h1V7a5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3v2h6V7a3 3 0 0 0-3-3",
-    "#F5B54D", "A chat is private",
-    "Only the people you invite are in it, and only they can see what "
-    + "is said. Leave a chat and you are out of it — somebody has to "
-    + "invite you back in."));
+  card.classList.add("intro-card-compact");
+  [
+    ["M12 12a4.2 4.2 0 1 0 0-8.4 4.2 4.2 0 0 0 0 8.4Zm0 2c-4.6 0-8.2 2.3-8.2 5.2V20h16.4v-.8c0-2.9-3.6-5.2-8.2-5.2Z",
+     "#FF2E88", "New and redesigned characters",
+     "Every character redrawn with a scene of its own, new ones to earn, and three secret ones you have to find."],
+    ["M13.2 2 4.4 13.6h6.1L9.6 22l8.8-11.6h-6.1L13.2 2Z",
+     "#F5804D", "Battle, a new Virtual Room mode",
+     "Two teams, one health bar each. Every right answer hits the other side."],
+    ["M20.5 11.3a7.8 7.8 0 0 1-8.4 7.8 9.2 9.2 0 0 1-2.7-.4L4 20.7l1.5-4.3a7.6 7.6 0 0 1-1-4.1 7.8 7.8 0 0 1 8-7.8 7.8 7.8 0 0 1 8 7.8Z",
+     "#8E7CF5", "Chat upgrades",
+     "Group chats, photos, polls, reactions, and a green dot for whoever is online."],
+    ["M12 6.5a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11Zm0-4.5a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm0 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16Z",
+     "#5CA8FF", "Hold a unit for its details",
+     "Press and hold any unit to see your scores in every mode, and the questions you miss most."],
+    ["M5 21V3.5h1.8v1h11.4l-2.2 4.2 2.2 4.2H6.8V21H5Z",
+     "#FFD84D", "The Rank tab",
+     "A road map of every rank, with your progress lit along it and what each one hands over."],
+    ["M4 19.6h16v1.8H4v-1.8Zm1.2-7.2h3v5.6h-3v-5.6Zm5.3-5h3v10.6h-3V7.4Zm5.3 3h3v7.6h-3v-7.6Z",
+     "#4ADE80", "A fresh results screen",
+     "Your rewards first, revealed one at a time, then the full review."],
+    ["M12 2.5l1.9 5.9 5.9 1.9-5.9 1.9-1.9 5.9-1.9-5.9-5.9-1.9 5.9-1.9L12 2.5Zm6.5 12.5.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z",
+     "#4DD0E1", "Smoother, with lots of fixes",
+     "Less lag, quicker screens, and a long list of bug fixes from your reports."]
+  ].forEach(([glyph, color, t, b]) => card.appendChild(introRow(glyph, color, t, b)));
 
   const go = document.createElement("button");
   go.type = "button"; go.className = "next intro-go";
@@ -52426,8 +52973,8 @@ function showIntroPopup(){
   document.body.appendChild(el);
   /* And the real button gets a ring underneath, so "the button in the
      top right" is something you can look at rather than hunt for. */
-  const btn = document.getElementById("chatdock-btn");
-  if(btn) btn.classList.add("is-introduced");
+  /* 7.3: no ring on the chat button any more - the card is about the
+     whole update now, not "the button in the top right". */
   requestAnimationFrame(() => el.classList.add("show"));
 
   /* A screen change takes it with it, and counts as seen: somebody who
@@ -52839,9 +53386,16 @@ function showHome(){
   tagline.style.marginBottom = "1.5rem";
   /* "The study game" was a slogan line of its own under NOVA (build 245)
      and was reported as cramping the lockup (build 268): "either remove
-     it or incorporate it somehow in the sentence". It leads the tagline
-     now, so the title block is back to two lines. */
-  tagline.textContent = "The study game. One question at a time.";
+     it or incorporate it somehow in the sentence". Leading the tagline
+     with it came back as bad (build 278): "I preferred the master the
+     material one question at a time. Just wanted to incorporate the word
+     game or a synonym to it". So the old line comes back with the game
+     in it - a level instead of a question. "Master the material. Level
+     up one question at a time." was tried first and is 322px: it wrapped
+     to two lines on every 360-375px phone and pushed Start Studying 23px
+     down, onto the daily-question circle on an Android phone. This one
+     is 243px and stays one line everywhere. */
+  tagline.textContent = "Master the material, one level at a time.";
   titleWrap.append(title, tagline);
   panel.appendChild(titleWrap);
 
@@ -53022,7 +53576,7 @@ function showHome(){
     store.tourRev = TOUR_REV;
     /* Current on badge bands by definition too: every badge this
        account ever gets is earned under them and celebrated at the time. */
-    store.badgeBandsVersion = 2;
+    store.badgeBandsVersion = BADGE_BANDS_VERSION;
     /* And the chat explainer is not news to an account made today: it
        arrived straight after What's New and the tour, headed "New in
        this update", for somebody who had never seen the app before. */
@@ -53811,6 +54365,40 @@ function attachUnitHold(row, name, mode){
     e.preventDefault();
     if(!fired){ cancel(); fired = false; openUnitDetail(row, name, mode); }
   });
+  /* The first ordinary tap on any unit teaches the hold (build 279). */
+  row.addEventListener("click", () => {
+    if(!fired) setTimeout(() => maybeShowUnitHoldTip(row), 350);
+  });
+}
+
+/* ---- "HOLD A UNIT" - ONCE, ON THE FIRST UNIT TAPPED (build 279) ----
+   "the ability to view unit details by holding them down (show a tool
+   tip or 2 for this, it'd only show once and it'd show for whichever
+   unit they click first)". Two steps, both pointing at the card that
+   was just tapped, so the tip is about something in front of you
+   rather than a card somewhere else in the grid.
+   THE FLAG IS IN localStorage, like the "what's new" card: which tips
+   this device has seen is viewing history, not progress, and it has to
+   reach people who already have accounts - a store field would have to
+   default to "seen" for them under the applyLoadedData rule, which is
+   the opposite of what was asked. It is marked BEFORE the tour starts,
+   the same order every seenXTour flag uses. */
+const UNIT_HOLD_TIP_KEY = "class26e.unithold.tip";
+function maybeShowUnitHoldTip(row){
+  try{ if(localStorage.getItem(UNIT_HOLD_TIP_KEY)) return; }catch(e){ return; }
+  if(!row || !row.isConnected) return;
+  /* Never on top of another tour, an open unit card or a sheet. */
+  if(document.getElementById("tour-overlay") || document.querySelector(".unitdetail-scrim")) return;
+  try{ localStorage.setItem(UNIT_HOLD_TIP_KEY, "1"); }catch(e){}
+  document.querySelectorAll(".unit-hold-tip-target").forEach(el => el.classList.remove("unit-hold-tip-target"));
+  row.classList.add("unit-hold-tip-target");
+  showUnitHoldTip();
+}
+function showUnitHoldTip(){
+  startSimpleTour([
+    { target: ".unit-hold-tip-target", text: "Tip: press and hold any unit to see its details." },
+    { target: ".unit-hold-tip-target", text: "Your best and last score, how many times you have finished it, its hundos, and the questions you miss most and have flagged." }
+  ], () => document.querySelectorAll(".unit-hold-tip-target").forEach(el => el.classList.remove("unit-hold-tip-target")));
 }
 
 /* The unit's numbers for the mode you are choosing units for. Every
@@ -55633,7 +56221,7 @@ function showSetup(){
     setTimeout(() => {
       startSimpleTour([
         { target: ".pick", align: "left", vplacement: "below",
-          text: "Tap a unit to add it to this test. The bar under each one is how close you are to its badge \u2014 3 to 20 hundos depending on the unit\u2019s size (the smaller the unit, the more it takes), and a unit you have mastered shows its badge instead." },
+          text: "Tap a unit to add it to this test. The bar under each one is how close you are to its badge \u2014 2 to 15 hundos depending on the unit\u2019s size (the smaller the unit, the more it takes), and a unit you have mastered shows its badge instead." },
         { target: "#bottomtab-start", align: "right", vplacement: "above",
           text: "Once you've picked your units, tap here \u2014 it opens a quick summary and lets you set the timer and other options before you begin." }
       ]);
@@ -56925,7 +57513,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-01-276";
+const APP_BUILD = "2026-10-01-279";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -59084,6 +59672,8 @@ function markUnlocksShown(chars, banners){
   if(changed) saveStore();
 }
 function pendingHomeUnlocks(){
+  /* Held until the next finished test, which announces them itself. */
+  if(store.mergeHold) return { chars: [], banners: [] };
   const u = ensureUnlocksShown();
   const chars = announceableHeldCharacters().filter(id => u.chars.indexOf(id) < 0);
   let banners = [];
@@ -60095,17 +60685,30 @@ function summarize(){
      "before" snapshots only - see grantRetroBadgesOnce(). Only on a run
      that reaches those snapshots, or a character unlocked by the hidden
      badges would be announced by a run that then celebrates nothing. */
-  const retroBadges = (runTrackable && !timedOut && order.length > 0)
-    ? (store.retroBadgePending || []).filter(u => unitBadgeEarned(u)) : [];
+  const snapRun = runTrackable && !timedOut && order.length > 0;
+  /* A MERGE'S UNLOCKS ARE THIS RUN'S (build 279): the badges the merged
+     hundos completed hide with the handed-out ones, the level is the one
+     held before the merge, and characters and banners are diffed against
+     the account as it stood then - so this results screen plays all of it. */
+  const mergeHeld = snapRun ? store.mergeHold : null;
+  const mergeBadges = mergeHeld
+    ? topicsIn(QUESTIONS).filter(u => (store.unitPerfects[u] || 0) >= badgeThresholdFor(u)
+        && (Number(mergeHeld.perfects[u]) || 0) < badgeThresholdFor(u)) : [];
+  const retroBadges = snapRun
+    ? (store.retroBadgePending || []).filter(u => unitBadgeEarned(u))
+        .concat(mergeBadges).filter((u, i, a) => a.indexOf(u) === i) : [];
   retroHideBadges = retroBadges.length ? new Set(retroBadges) : null;
+  if(mergeHeld) mergeHidePoints = mergeHeld.points;
   ensureUnlocksShown();
   const lockedBefore = lockedCharacterSet();
+  if(mergeHeld) mergeHeld.chars.forEach(id => lockedBefore.add(id));
   /* Banners are diffed the same way characters are: whatever this run
      tipped over is announced, whatever was already held is not. Seeded
      first, so the first run after this build does not announce a
      banner somebody earned months ago. */
   try{ seedBannerCounters(); }catch(e){}
   const bannersBefore = earnedBannerSet();
+  if(mergeHeld) [...bannersBefore].forEach(id => { if(mergeHeld.banners.indexOf(id) < 0) bannersBefore.delete(id); });
   /* AND AS THEY STOOD WHEN THE RUN BEGAN. Right answers, the answer
      streak and study time are booked DURING the run (recordResult,
      flushStudyTime above), so the Marksman's 100 in a row, Star Trails'
@@ -60201,6 +60804,7 @@ function summarize(){
     TIER_ORDER.forEach(c => { beforeTiers[c] = tierColorUnlocked(c); });
     /* Every "before" is taken: from here on the handed-out badges count. */
     retroHideBadges = null;
+    mergeHidePoints = null;
     /* Per-unit perfects are resolved HERE, before points, because a hundo
        and a perfect bonus are both per unit now. Take three units, get
        100% on two of them, and that is two hundos and two bonuses - the
@@ -60327,9 +60931,10 @@ function summarize(){
       saveStore();
     }
     badgesEarnedThisRun = badgesEarnedList().filter(u => !badgesBefore.has(u));
-    if(retroBadges.length){
+    if(retroBadges.length || mergeHeld){
       /* Celebrated now, so never again. */
       store.retroBadgePending = [];
+      store.mergeHold = null;
       saveStore();
     }
     if(badgesEarnedThisRun.length){
@@ -60465,6 +61070,7 @@ function summarize(){
      character and a rank character both land here, so neither can have
      a celebration the other does not. */
   retroHideBadges = null;   /* belt and braces - cleared above already */
+  mergeHidePoints = null;
   /* Void is left out here for the reason announceCharacterUnlocks()
      gives: it has a cutscene of its own on the main menu. */
   /* Void, Umbra and Singularity each arrive inside their own flare
@@ -63205,7 +63811,7 @@ function showVirtualRoomSetup(editRoom){
         { target: ".pick", align: "left", vplacement: "below",
           /* Badges have not been a flat 35 since build 210: 3 to 20
              hundos by the unit's size (BADGE_THRESHOLD_BANDS). */
-          text: "Tap a unit to add it to this test. The bar under each one is how close you are to its badge \u2014 3 to 20 hundos depending on the unit\u2019s size (the smaller the unit, the more it takes), and a unit you have mastered shows its badge instead." },
+          text: "Tap a unit to add it to this test. The bar under each one is how close you are to its badge \u2014 2 to 15 hundos depending on the unit\u2019s size (the smaller the unit, the more it takes), and a unit you have mastered shows its badge instead." },
         { target: "#bottomtab-start", align: "right", vplacement: "above",
           text: "Once you've picked your units, tap here \u2014 it opens a quick summary and lets you set the timer and other options before you begin." }
       ]);
@@ -68147,8 +68753,19 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
        a reveal that never reports finishing (a tab left in the
        background, an animation that never ended) must not hold the
        leaderboard, and its exits, back for good. */
+    /* YOUR OWN REVEAL IS WAITED FOR, ALL OF IT (build 279): "ensure
+       cutscenes and unlocks in virtual room result screens working
+       properly, the leaderboard just wouldn't load till that person's
+       stuff is done". The cap here used to be the same 45 seconds the
+       room gives everybody else - and a badge case, a rank-up and a few
+       unlock cards run past that, so the last one to finish had the
+       leaderboard cut into their own cutscene. This device now waits for
+       its own results to land, with a cap only for a reveal that has
+       genuinely stalled. */
     const mine = !onResults || host.classList.contains("rs-done")
-      || (allInAt > 0 && Date.now() - allInAt >= VROOM_REVEAL_WAIT_MS);
+      || (allInAt > 0 && Date.now() - allInAt >= VROOM_OWN_REVEAL_CAP_MS);
+    /* and never over a scene that is playing, whatever the clocks say */
+    const sceneUp = !!document.querySelector(VROOM_SCENE_SELECTOR);
     if(mine && !iSaidDone && vroomCode && vroomMyKey && fbDb){
       iSaidDone = true;
       fbDb.collection("vrooms").doc(vroomCode).update({ ["participants." + vroomMyKey + ".revealDone"]: true }).catch(() => {});
@@ -68164,7 +68781,7 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
        that has said "Preparing leaderboard" turns into a count for the
        last three seconds. */
     const rollAt = revealedAt ? Math.max(allInAt + VROOM_ROLL_AFTER_MS, revealedAt + VROOM_READ_AFTER_REVEAL_MS) : 0;
-    if(rollAt && mine && !rolled && rollAt - now <= 3000){
+    if(rollAt && mine && !sceneUp && !rolled && rollAt - now <= 3000){
       if(!prep) prep = showVroomPrepBanner();
       const left = Math.max(1, Math.ceil((rollAt - now) / 1000));
       const tx = prep.querySelector(".vroom-prep-text");
@@ -68174,7 +68791,7 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
         prep.classList.add("is-counting");
       }
     }
-    if(!rolled && mine && revealedAt &&
+    if(!rolled && mine && !sceneUp && revealedAt &&
        now >= Math.max(allInAt + VROOM_ROLL_AFTER_MS, revealedAt + VROOM_READ_AFTER_REVEAL_MS)){
       rolled = true;
       clearInterval(tick);
@@ -68225,7 +68842,11 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
 const VROOM_PREP_AFTER_MS = 5000;              /* everyone in -> "Preparing leaderboard" */
 const VROOM_ROLL_AFTER_MS = 12000;             /* everyone in -> the cutscene, at the soonest */
 const VROOM_READ_AFTER_REVEAL_MS = 8000;       /* the last reveal done -> the cutscene */
-const VROOM_REVEAL_WAIT_MS = 45000;            /* the longest anyone's reveal is waited for */
+const VROOM_REVEAL_WAIT_MS = 75000;            /* the longest anyone ELSE's reveal is waited for (45s until build 279) */
+const VROOM_OWN_REVEAL_CAP_MS = 150000;        /* and this device's own, only if it has stalled */
+/* Anything that owns the screen while results land: a rank-up (it plays
+   in #supernova-cutscene too), the badge case, Void, a spotlight. */
+const VROOM_SCENE_SELECTOR = "#supernova-cutscene, #badge-cutscene, #void-cutscene, .rs-spot";
 
 /* A pill pinned to the bottom of the screen, so it is seen from wherever
    you have scrolled to - "you'd be to see it from where you are on the
@@ -73345,9 +73966,10 @@ function buildRanksTab(){
   function runRankMapCelebration(){
     if(celebrated) return;
     celebrated = true;
+    armTakeOver();
     const progFill = map.querySelector(".rankmap-roadfill[data-progress-to]");
     if(nowProg != null){ store.rankMapProg = { i: heldIndex, p: nowProg }; saveStore(); }
-    if(!celebrateStops.length && !progFill) return;
+    if(!celebrateStops.length && !progFill){ glanceAtProgress(); return; }
     store.rankMapSeen = heldIndex; saveStore();
     const runProgress = () => {
       if(!progFill) return;
@@ -73398,6 +74020,56 @@ function buildRanksTab(){
         await wait(2600);
         progressStop.classList.remove("is-climbing");
       }
+      /* ...and back up to where the tab opened (build 279). */
+      if(map.isConnected && !userTookOver) try{ window.scrollTo({ top: 0, behavior: "smooth" }); }catch(e){}
+    })();
+  }
+  /* ---- A GLANCE AT WHERE YOU ARE, EVERY TIME (build 279) ----
+     "On the rank tab, ensure the progress thing on the road map, when you
+     open the tab, you get a quick scroll down thing following that ...
+     and then back up." The celebration above only runs when something
+     changed; on every other opening the map now glides down to the stop
+     you are climbing to - the lit end of the road - holds a beat so the
+     light on it is seen, and glides back up. Never under a pop-up or a
+     cutscene, never with reduce-motion on, never if that stop is already
+     on screen, and a finger on the screen ends it there: the person has
+     taken over, so the map stays where they put it. */
+  /* Armed when the tab is SHOWN (runRankMapCelebration), not when it is
+     built: Profile builds every tab up front, and the tap that switched
+     to this one would otherwise count as taking over before it began. */
+  let userTookOver = false;
+  const takeOver = () => { userTookOver = true; };
+  const armTakeOver = () => setTimeout(() =>
+    ["touchstart", "wheel", "pointerdown", "keydown"].forEach(t => window.addEventListener(t, takeOver, { once: true, passive: true })), 120);
+  function glanceAtProgress(){
+    if(theme.reduceMotion) return;
+    const target = map.querySelector(".rankmap-stop.is-next") || map.querySelector(".rankmap-stop.is-here");
+    if(!target) return;
+    const wait = ms => new Promise(r => setTimeout(r, ms));
+    (async () => {
+      await wait(450);
+      for(let n = 0; n < 40; n++){
+        if(!map.isConnected || userTookOver) return;
+        if(!document.querySelector(".rs-spot, .rs-fly, #supernova-cutscene, #badge-cutscene, #void-cutscene, #tour-overlay, #genprofile-overlay, .intro-pop")) break;
+        await wait(300);
+      }
+      if(!map.isConnected || userTookOver || map.offsetParent === null) return;
+      const r = target.getBoundingClientRect();
+      /* Already on screen (a tablet shows most of the map): nothing to
+         travel to, so the stop just lights where it is. */
+      if(r.top >= 0 && r.bottom <= window.innerHeight){
+        target.classList.add("is-glanced");
+        await wait(1300);
+        target.classList.remove("is-glanced");
+        return;
+      }
+      const startY = window.scrollY;
+      try{ target.scrollIntoView({ block: "center", behavior: "smooth" }); }catch(e){ return; }
+      target.classList.add("is-glanced");
+      await wait(1500);
+      target.classList.remove("is-glanced");
+      if(!map.isConnected || userTookOver) return;
+      try{ window.scrollTo({ top: startY, behavior: "smooth" }); }catch(e){}
     })();
   }
   tab.runFill = () => {

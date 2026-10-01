@@ -72,7 +72,7 @@ def booted(br, width=440, height=956):
         # that has not seen it - which is every harness device. Seeded
         # like frame.ok and tourRev, or it drops a dimmed overlay over
         # whatever is being measured.
-        "localStorage.setItem('class26e.intro.seen','9');"
+        "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');"
         "localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % SEED)
     pg = ctx.new_page()
     pg.route("**/index.html", lambda r: r.fulfill(
@@ -258,19 +258,19 @@ def main():
           leaderboardRows = [
             { pub:'alex000000002', firstName:'Alexandra', avatarChar:'officer',
               level:40, badges:8, hundos:90, fcode:'ABC-234',
-              freq:['me0000000001'], facc:[], lastModified: now - 9000 },
+              freq:['me0000000001'], facc:[], seenAt: now - 9000, lastModified: now - 9000 },
             { pub:'ray000000006', firstName:'Ray', avatarChar:'robot',
               level:14, badges:3, hundos:12, fcode:'MND-234',
-              freq:['me0000000001'], facc:[], lastModified: now - 99999999 },
+              freq:['me0000000001'], facc:[], lastModified: now - 9000 },
             { pub:'kim000000003', firstName:'Kim', avatarChar:'astronaut',
               level:18, badges:5, hundos:23, fcode:'LPQ-234',
-              freq:['me0000000001'], facc:[], lastModified: now - 9000 },
+              freq:['me0000000001'], facc:[], seenAt: now - 9000, lastModified: now - 9000 },
             { pub:'zoe000000004', firstName:'Zoe', avatarChar:'clown',
               level:31, badges:9, hundos:88, fcode:'HJK-234',
               freq:[], facc:['me0000000001'], lastModified: now - 99999999 },
             { pub:'dee000000005', firstName:'Dee', avatarChar:'grizzly',
               level:9, badges:1, hundos:4, fcode:'TVW-234',
-              freq:[], facc:[], lastModified: now - 9000 }
+              freq:[], facc:[], seenAt: now - 9000, lastModified: now - 9000 }
           ];
           showFriends();
           const rows = [...document.querySelectorAll('.friend-row')];
@@ -301,7 +301,10 @@ def main():
         check("the name column is not squashed by the buttons",
               r["narrowest"] >= 110, r["narrowest"])
         check("no sideways scroll at 320px", r["overflow"] <= 0, r["overflow"])
-        # Read off lastModified, which the row already publishes.
+        # Read off the heartbeat (seenAt), never lastModified. Ray pushed a
+        # score nine seconds ago and has no heartbeat: that is somebody who
+        # answered and closed the app, and build 279 stopped calling that
+        # online. On 278 he reads online and this counts four.
         check("the green dot marks exactly who is online", r["dots"] == 3, r["dots"])
         check("and the screen threw nothing", not errs2, errs2[:3])
         ctx2.close()
@@ -382,17 +385,25 @@ def main():
             beat: isOnline({ seenAt: now - 60000 }),
             /* and stale seenAt is offline however recent the push. */
             staleBeat: isOnline({ seenAt: now - 9 * 60 * 1000 }),
-            /* THE FALLBACK IS LOAD-BEARING: everybody is on an older
-               build for the first day after this ships, and without it
-               the whole class reads offline until each phone updates. */
+            /* THE lastModified FALLBACK IS GONE (build 279). It carried
+               the class through the day seenAt shipped; every live build
+               writes the presence document now, and a push is what the app
+               does on its way to the background - so the fallback was
+               lighting the dot for five minutes after somebody CLOSED it. */
             oldBuild: isOnline({ lastModified: now - 60000 }),
             oldStale: isOnline({ lastModified: now - 9 * 60 * 1000 }),
+            /* closing the app writes 0 to the presence document, and that
+               wins over a heartbeat still sitting in the row */
+            closed: (() => { const keep = presenceMap; presenceMap = { gone000000009: 0 };
+              const v = isOnline({ pub: 'gone000000009', seenAt: now - 30000 }); presenceMap = keep; return v; })(),
             /* A row with neither is not online, not crashed. */
             empty: isOnline({}), nul: isOnline(null) };}""")
         check("a heartbeat alone makes somebody online", seen["beat"] is True, seen)
         check("and a stale one does not", seen["staleBeat"] is False, seen)
-        check("an older build still reads online from its push",
-              seen["oldBuild"] is True and seen["oldStale"] is False, seen)
+        check("a pushed score alone does not read as online",
+              seen["oldBuild"] is False and seen["oldStale"] is False, seen)
+        check("closing the app takes the dot off at once, whatever the row says",
+              seen.get("closed") is False, seen)
         check("a row with neither is simply offline",
               seen["empty"] is False and seen["nul"] is False, seen)
 

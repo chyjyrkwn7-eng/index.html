@@ -152,7 +152,7 @@ def booted(br, w, h, seed=None, init=None, touch=False, dpr=1):
     if init:
         ctx.add_init_script(init)
     if seed:
-        ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');"
+        ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');"
                             "localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % seed)
     pg = open_page(ctx)
     pg.goto(URL)
@@ -2526,7 +2526,7 @@ def check_b241b(br):
       store.avatarChar = wasChar;
       /* An old Blitz id still draws as the character that took its place. */
       const svg = buildAvatarCharSVG('blitz');
-      out.corona = (svg.querySelector('.cx-fig').getAttribute('class') || '').indexOf('cx-k-bounty') >= 0 ? 7 : 0;
+      out.corona = (svg.querySelector('.cx-fig').getAttribute('class') || '').indexOf('cx-k-' + (AVATAR_CHARACTERS.find(c => c.id === 'astronaut') || {}).kind) >= 0 ? 7 : 0;
       out.parts = ['cx-head', 'cx-eyes'].filter(c => svg.querySelector('.' + c)).length * 2;
       /* 4. theme swatches carry their names (Profile > Customize) */
       showCustomize(); await wait(500);
@@ -2572,7 +2572,7 @@ def check_b241b(br):
           r.get("newDay") == {"today": 1, "best": r.get("need", 0) - 1, "locked": True}, r)
     check("the full count in one day unlocks it, and the best day survives a reload",
           r.get("lockedAtSeven") is False and (r.get("afterLoad") or 0) >= r.get("need", 99), r)
-    check("an old Blitz id draws as what the astronaut id draws (the Bounty Hunter since 274), on the parts every character has",
+    check("an old Blitz id draws as whatever the astronaut id draws, on the parts every character has",
           r.get("corona") == 7 and r.get("parts") == 4, r)
     check("every theme swatch has its name under it, Default first",
           r.get("swatches", 0) >= 7 and len(r.get("names") or []) == r.get("swatches") and (r.get("names") or [""])[0] == "Default", r)
@@ -2873,9 +2873,9 @@ def check_b243(br):
     check("the Clown is five wins, the Astronaut hundos in a day, the Hacker time studied, the Timekeeper days studied, the Valkyrie the Virtual Room, and SWAT is retired (build 245)",
           r.get("feats") == {"clown": "vrwins5", "astronaut": "hundo7day", "hacker": "study20h", "timekeeper": "days30",
                              "valkyrie": "vrwins10", "swatRetired": True}, r.get("feats"))
-    # Kinds, not ids: Blitz goes to the astronaut id, which draws the Bounty Hunter since 274.
+    # Kinds, not ids: Blitz goes to the astronaut id, which draws the Phantom since 278.
     check("every retired character is drawn as what replaced it",
-          r.get("retiredTo") == ["ninja", "clown", "bounty", "solar", "oracle", "koi", "hacker", "solar", "tempest", "koi", "hacker", "timekeeper", "ninja"], r.get("retiredTo"))
+          r.get("retiredTo") == ["ninja", "clown", "astronaut", "solar", "oracle", "koi", "hacker", "solar", "tempest", "koi", "hacker", "timekeeper", "ninja"], r.get("retiredTo"))
     # build 265/267: the Valkyrie's id drew the Viper, then the Koi (and the characters retired into it).
     check("the new ones are named", r.get("names") == ["Lunar", "Solar", "Tempest", "Frost", "Oracle", "Inferno", "Hacker", "Timekeeper", "Koi"], r.get("names"))
     check("whoever held the Clown under the old ranks keeps it, and nobody at all has the Robot (build 244) - an old Robot is drawn as the Ninja",
@@ -3830,7 +3830,13 @@ def check_b245_slogan(br):
           return out; }""")
         tag = "%dx%d" % (w, h)
         check("%s: no separate slogan line under NOVA" % tag, r["own"] == 0 and len(r["lines"]) == 2, r["lines"])
-        check("%s: the tagline carries the phrase" % tag, re.search(r"study game", r["text"], re.I), r["text"])
+        # REVISED IN 278: "The study game. One question at a time." came
+        # back as bad - she preferred "Master the material, one question at
+        # a time" with the game worked in. Asserted by shape: the sentence
+        # she liked still leads, and a game word is in it. (Start Studying
+        # not moving, below, is what keeps it to one line on a phone.)
+        check("%s: the tagline leads with 'master the material' and works a game word in" % tag,
+              re.search(r"^master the material", r["text"], re.I) and re.search(r"\b(game|play|level|quest)", r["text"], re.I), r["text"])
         check("%s: Start Studying does not move for it" % tag,
               abs(r["with"]["t"] - r["without"]["t"]) < 0.6,
               [round(r["with"]["t"], 1), round(r["without"]["t"], 1)])
@@ -4443,7 +4449,8 @@ def check_b258(br):
       document.querySelector('.invite-overlay').remove();
       /* 6. Void */
       const v = buildAvatarCharSVG('voidwalker'); document.body.appendChild(v);
-      const body = v.querySelector('.cx-body path'), head = v.querySelector('.cx-head ellipse');
+      /* REVISED IN 278: the head is the hood path now, not an ellipse */
+      const body = v.querySelector('.cx-body path'), head = v.querySelector('.cx-head path');
       const bb = body.getBBox(), hb = head.getBBox();
       out.void = { bodyTop: bb.y, headBottom: hb.y + hb.height, bodyW: bb.width };
       v.remove();
@@ -4884,6 +4891,10 @@ def check_b270(br):
       const chip = c.querySelector('.unitdetail-missed'), dr = document.querySelector('.unitdetail-door.is-recent .unitdetail-doorcount');
       out.chipColor = chip ? getComputedStyle(chip).color : ''; out.doorColor = dr ? getComputedStyle(dr).color : '';
       c.querySelector('.unitdetail-back').click(); await wait(900);
+      /* Settle rather than trust the 900ms: under a loaded full run the
+         card was read mid-transition (786 against 419) on a build where
+         it ends at 419. Wait for the height to hold still, up to 3s. */
+      { let last = -1, still = 0; for(let i = 0; i < 60 && still < 4; i++){ const hh = Math.round(card().getBoundingClientRect().height); still = hh === last ? still + 1 : 0; last = hh; await wait(50); } }
       out.h1 = Math.round(card().getBoundingClientRect().height);
       document.querySelector('.unitdetail-door.is-flagged').click(); await wait(900);
       out.flagged = { flags: card().querySelectorAll('.unitdetail-q .unitdetail-flag').length, bottomBack: !!card().querySelector('.unitdetail-back.is-bottom') };
@@ -4996,8 +5007,11 @@ def check_b271(br):
     # are gone and the ids are renamed.
     check("Poseidon's id is no longer the Kraken, and is not named for it",
           p.get("kind") not in ("kraken", "") and p.get("name") not in ("Kraken", "", None), p)
-    check("the astronaut id is no longer the Astronaut, and is not named for it",
-          a.get("kind") not in ("astronaut", "") and a.get("name") not in ("Astronaut", "", None), a)
+    # REVISED IN 279: every replacement since 271 was turned down, the last
+    # with "please hurry so I can get this live" - the id draws the live
+    # Astronaut again until one is picked. What still holds: it draws something.
+    check("the astronaut id draws a real character and is named for it",
+          a.get("kind") not in ("", None) and a.get("name") not in ("", None), a)
     # REVISED IN 272: "Not a fan of the bowl head one having two large fish
     # like that" - check_b272 holds the three small ones. Here: more than one.
     check("the Koi has more than one fish in its bowl", (r.get("koiFish") or 0) >= 2, r.get("koiFish"))
@@ -5054,7 +5068,7 @@ def check_b272(br):
     # singularity. Change them." check_b273 holds what replaced them; here
     # only that the Kitsune and the Cyborg have not come back.
     check("Poseidon's id is not the Kitsune", v.get("kind") not in ("kitsune", "kraken", ""), v)
-    check("the astronaut id is not the Cyborg", p.get("kind") not in ("cyborg", "astronaut", ""), p)
+    check("the astronaut id is not the Cyborg", p.get("kind") not in ("cyborg", ""), p)
     k = r.get("koi") or []
     check("the Koi's bowl has three small fish, not two big ones", len(k) == 3 and all(x <= .7 for x in k), k)
     m = r.get("mark") or {}
@@ -5123,8 +5137,10 @@ def check_b274(br):
       } catch(e){ out.threw = String(e && e.stack || e); }
       return out; }""")
     b, s = r.get("bounty") or {}, r.get("sing") or {}
-    check("the astronaut id is the Bounty Hunter, T visor and rangefinder, and is named for it",
-          b.get("kind") == "bounty" and b.get("visor") and b.get("finder") and b.get("name") == "Bounty Hunter", b)
+    # REVISED IN 277: "I don't like the bounty hunter either" - the Ace
+    # took the astronaut id (check_b277). What still holds is that the
+    # Viking this replaced stays gone.
+    check("the astronaut id is no longer the Viking", b.get("kind") != "viking" and b.get("name") != "Viking", b)
     check("the Singularity has no ring behind it, and motes rising in its scene", s.get("ring") is False and s.get("rising") is True, s)
     check("and its hair is two layers of long locks (10 or more), not a crown of spikes", s.get("locks", 0) >= 10, s)
     check("the Sheriff is untouched", r.get("sheriff") == {"kind": "sheriff", "name": "Sheriff"}, r.get("sheriff"))
@@ -5165,7 +5181,11 @@ def check_b275(br):
       return out; }""")
     h, v, m = r.get("hacker") or {}, r.get("void") or {}, r.get("mark") or {}
     check("the Hacker's rain fades into a circle like every scene, with no rectangular clip", h.get("masked") and not h.get("clipped"), h)
-    check("Void is build 215's drawing: the slim bust, at 1:1", v.get("bodyD") == "M5.9 40 Q6.7 31.2 14.3 29 L25.7 29 Q33.3 31.2 34.1 40 Z" and v.get("scaled") is False, v)
+    # REVISED IN 278: "voids problem is that the head doesn't connect to
+    # the body" - the shoulders now rise to meet the hood, so 215's exact
+    # bust path is gone on purpose (check_b278 holds the join). What still
+    # holds from 275: drawn at 1:1, no art scale.
+    check("Void is drawn at 1:1, with no art scale", v.get("scaled") is False, v)
     check("with its halo open, and no orange rim or nebula on it", v.get("halo") and not v.get("orange") and not v.get("nebula"), v)
     check("the Marksman's face tapers to the chin, with the hood's shadow on the brow", m.get("shadow") and m.get("taper"), m)
     check("no exception", not r.get("threw"), r.get("threw"))
@@ -5207,6 +5227,207 @@ def check_b276(br):
     check("it is a real blue, not a near-white", 180 <= (f.get("hue") or 0) <= 230 and (f.get("sat") or 0) >= .6 and (f.get("light") or 1) <= .85, f)
     check("and stays well apart from the fourth flare's violet", (f.get("apart") or 0) >= 40, f)
     check("a found fifth dot on Home paints in it", d.get("n") == 5 and (f.get("fifth") or "?").upper() in (d.get("fills") or []), d)
+    check("no exception", not r.get("threw"), r.get("threw"))
+    ctx.close()
+
+
+def check_b277(br):
+    """Build 277. "I don't like the bounty hunter either, change bounty
+    hunter to something else. and void just doesn't look good.. make void
+    better, I really like the face with the 3 flares, and the black ...
+    Can you incorporate the 4th flare in umbra and the 5th in
+    singularity? Singularity character doesn't look like singularity
+    anymore, change the name. Maybe horizon like you named the flare."
+    (1) The astronaut id is the Ace - goggles holding the sky, a scarf
+    that streams - and named for it; no Bounty Hunter anywhere. (2) Void
+    keeps its black and its three flares (in the flares' own colours)
+    but its face is now a window distinct from the hood, with the three
+    joined by a line. (3) Umbra wears the fourth flare's colour and the
+    Singularity id the fifth's, each as a real flare (a disc with a
+    white core), not just a tint. (4) That id is called Horizon, and no
+    character is called Singularity. Written against 276."""
+    print("\n58. build 277: the Ace; a better Void; the flares worn; Horizon")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{ const out = {};
+      try {
+      const kind = id => (buildAvatarCharSVG(id).querySelector('.cx-fig').getAttribute('class') || '').replace('cx-fig cx-k-', '');
+      const ace = buildAvatarCharSVG('astronaut');
+      out.ace = { kind: kind('astronaut'), name: AVATAR_DISPLAY_NAME.astronaut,
+        goggles: !!ace.querySelector('[fill*="-acesky"]'), scarf: !!ace.querySelector('.cx-fx-acescarf path'),
+        bounty: Object.values(AVATAR_DISPLAY_NAME).includes('Bounty Hunter') };
+      const v = buildAvatarCharSVG('voidwalker');
+      const fills = el => [...el.querySelectorAll('[fill]')].map(e => (e.getAttribute('fill') || '').toUpperCase());
+      const vf = fills(v.querySelector('.cx-fx-flares'));
+      out.void = { flares: VOID_FLARES.every(k => vf.includes(MYSTERY_COLOR[k].toUpperCase())),
+        window: !!v.querySelector('.cx-head [fill^="url(#vface-"]'), line: !!v.querySelector('.cx-fx-flares path[stroke-dasharray]'),
+        orbs: v.querySelectorAll('.cx-fx-flares circle[fill="#FFF"], .cx-fx-flares circle[fill="#FFFFFF"]').length };
+      const worn = (id, key) => { const svg = buildAvatarCharSVG(id), col = MYSTERY_COLOR[key].toUpperCase();
+        const discs = [...svg.querySelectorAll('.cx-fig circle')].filter(c => (c.getAttribute('fill') || '').toUpperCase() === col);
+        return discs.some(d => [...d.parentNode.querySelectorAll('circle')].some(c => /^#FFF(FFF)?$/i.test(c.getAttribute('fill') || ''))); };
+      out.worn = { umbra: worn('umbra', MYSTERY_ORDER[3]), fifth: worn(FLARE_CHARACTER[MYSTERY_ORDER[4]], MYSTERY_ORDER[4]) };
+      out.names = { fifth: AVATAR_DISPLAY_NAME[FLARE_CHARACTER[MYSTERY_ORDER[4]]], flare: MYSTERY_NAME[MYSTERY_ORDER[4]],
+        anySing: Object.values(AVATAR_DISPLAY_NAME).includes('Singularity') };
+      } catch(e){ out.threw = String(e && e.stack || e); }
+      return out; }""")
+    a, v, w, n = r.get("ace") or {}, r.get("void") or {}, r.get("worn") or {}, r.get("names") or {}
+    # REVISED IN 278: "Nope, not ace" - the Phantom took the astronaut id
+    # (check_b278). What still holds: no Bounty Hunter anywhere.
+    check("the Bounty Hunter stays gone", a.get("kind") != "bounty" and not a.get("bounty"), a)
+    check("Void keeps its three flares in the flares' own colours", v.get("flares") and v.get("orbs") == 3, v)
+    check("and its face is a window of its own, the three joined by a line", v.get("window") and v.get("line"), v)
+    check("Umbra wears the fourth flare, the fifth flare's character wears the fifth", w.get("umbra") and w.get("fifth"), w)
+    check("the fifth flare's character is named for the flare, and nobody is called Singularity",
+          bool(n.get("fifth")) and n.get("fifth") in (n.get("flare") or "") and not n.get("anySing"), n)
+    check("no exception", not r.get("threw"), r.get("threw"))
+    ctx.close()
+
+
+def check_b279_merge(br):
+    """Build 279. "Delete the two lower level accounts, and make it so
+    those two lower accounts, next time he uses them, his higher level
+    account will be used instead ... take his progress from the lower
+    level accounts and apply it to the main account ... Give lake an
+    extra level as well." and "If anyone unlocks anything because of
+    this, do it after their next test." A merge note moves the device AND
+    folds its progress into the account it joins, plus a bonus level;
+    what that unlocks waits for the next finished test. Written against
+    build 278, where the device takes the target whole and every number
+    here is the target's alone."""
+    print("\n52. build 279: a duplicate account merged into the real one")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{ const out = {}; const wait = ms => new Promise(r => setTimeout(r, ms));
+      try{
+      const U = 'Identity Crimes';
+      const key0 = Object.keys(store.stats || {})[0];
+      /* the account being joined: its own name and id, 10 of 15 hundos */
+      const main = Object.assign(JSON.parse(JSON.stringify(store)), {
+        firstName: 'Main', publicId: 'pubmain00001', lastModified: 5, mergeHold: null,
+        unitPerfects: { [U]: 10 }, testHistory: [{ label: 'old', playedAt: 1000, pct: 50, units: [U], mode: 'drill' }],
+        studyLog: { '2026-09-30': 60000 }, vrWins: 2 });
+      main.lifetime = Object.assign({}, main.lifetime, { points: xpForLevel(20) + 100, correct: 900, answered: 1000 });
+      main.stats = { [key0]: { n: 4, m: 1, r: [10] } };
+      /* this device, the duplicate: 6 more hundos, its own history */
+      store.firstName = 'Dup'; store.publicId = 'pubdup000002';
+      store.unitPerfects = { [U]: 6 };
+      store.lifetime = Object.assign({}, store.lifetime, { points: 2000, correct: 170, answered: 190 });
+      store.stats = { [key0]: { n: 3, m: 2, r: [20, 30] } };
+      store.testHistory = [{ label: 'new', playedAt: 2000, pct: 100, units: [U], mode: 'drill' }];
+      store.studyLog = { '2026-09-30': 30000, '2026-10-01': 45000 };
+      store.vrWins = 1;
+      const docs = {
+        'ABCD-EFGH__merge': { to: 'JKLM-NPQR', at: 1, bonusLevels: 1,
+                              extra: { points: 500, correct: 40, week: weekKeyNow(), weekPoints: 100 } },
+        'JKLM-NPQR': main };
+      const writes = [];
+      const ref = id => ({ id,
+        get(){ return Promise.resolve({ exists: !!docs[id], data: () => docs[id], ref: ref(id) }); },
+        set(d, o){ writes.push(id); docs[id] = Object.assign({}, (o && o.merge) ? docs[id] : {}, d); return Promise.resolve(); },
+        update(){ return Promise.resolve(); }, delete(){ return Promise.resolve(); },
+        onSnapshot(){ return () => {}; } });
+      fbDb = { collection: () => ({ doc: ref, onSnapshot(){ return () => {}; },
+               get(){ return Promise.resolve({ forEach(){}, size: 0, metadata: {} }); } }) };
+      const realRetire = retireLeaderboardEntry; const retired = [];
+      retireLeaderboardEntry = pub => { retired.push(pub); };
+      syncCode = 'ABCD-EFGH'; accountMoveChecked = '';
+      checkAccountMove('ABCD-EFGH'); await wait(600);
+      retireLeaderboardEntry = realRetire;
+      const base = xpForLevel(20) + 100 + 2000 + 500;
+      out.code = syncCode; out.name = store.firstName; out.pub = store.publicId; out.retired = retired;
+      out.level = levelOf(store); out.levelNoBonus = levelFromPoints(base);
+      out.correct = store.lifetime.correct; out.hundos = store.unitPerfects[U];
+      out.stat = store.stats[key0]; out.hist = store.testHistory.map(h => h.label);
+      out.day = store.studyLog['2026-09-30']; out.vrWins = store.vrWins;
+      out.held = !!store.mergeHold; out.homeQuiet = pendingHomeUnlocks().chars.length + pendingHomeUnlocks().banners.length;
+      out.badgeNow = unitBadgeEarned(U);
+      out.done = !!(docs['ABCD-EFGH__merge'] || {}).done;
+      await wait(1500); out.pushed = writes.indexOf('JKLM-NPQR') >= 0;
+      /* the next finished test, any test at all, plays what the merge brought */
+      const idx = t => QUESTIONS.map((q,i)=>[q,i]).filter(([q]) => (q.topic||'').trim() === t).map(([,i]) => i);
+      const xp0 = store.lifetime.points;
+      cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = ['Victims of Crime'];
+      order = idx('Victims of Crime').slice(0, 5);
+      runTrackable = true; timedOut = false; runMode = 'drill'; runLabel = null;
+      attempts = {}; picked = {}; timedOutSet = {};
+      order.forEach(qi => { attempts[qi] = 1; picked[qi] = optionOrder(qi).indexOf(QUESTIONS[qi].answer); });
+      summarize(); await wait(400);
+      out.celebrated = [...document.querySelectorAll('#stage .rs-unlock-badge .unlockbanner-name')].map(e => e.textContent);
+      out.runXp = store.lifetime.points - xp0;
+      out.heldAfter = !!store.mergeHold;
+      } catch(e){ out.threw = String(e); }
+      return out; }""")
+    check("the duplicate's device lands on the real account, name and id",
+          r.get("code") == "JKLM-NPQR" and r.get("name") == "Main" and r.get("pub") == "pubmain00001"
+          and (r.get("retired") or [None])[0] == "pubdup000002" and r.get("done") is True, r)
+    check("its XP, right answers and hundos are added to the real account's",
+          r.get("correct") == 900 + 170 + 40 and r.get("hundos") == 16, r)
+    check("so are its question stats, history and study time",
+          (r.get("stat") or {}).get("n") == 7 and (r.get("stat") or {}).get("m") == 3
+          and r.get("hist") == ["new", "old"] and r.get("day") == 90000 and r.get("vrWins") == 3, r)
+    check("and the gift is one whole level on top of the merged total",
+          r.get("level") == (r.get("levelNoBonus") or 0) + 1, [r.get("level"), r.get("levelNoBonus")])
+    check("the merged account goes straight to the cloud", r.get("pushed") is True, r)
+    check("what it unlocks waits: nothing announces on Home in the meantime",
+          r.get("held") is True and r.get("homeQuiet") == 0 and r.get("badgeNow") is True, r)
+    check("and the next test of any sort plays it, the merged badge included",
+          any("Identity Crimes" in (n or "") for n in (r.get("celebrated") or [])) and r.get("heldAfter") is False, r)
+    check("with no mastery bonus for a badge the merge earned", 0 < (r.get("runXp") or 0) < 1000, r.get("runXp"))
+    # THE MERGE NOTE HAS ITS OWN NAME. An old build follows any `__moved`
+    # note by taking the target whole; a merge parked there would throw
+    # the duplicate's progress away on a phone that had not updated.
+    import re as _re
+    src = open(SRC, encoding="utf-8").read()
+    check("a merge note is never a `__moved` note, which old builds would follow without merging",
+          '"__merge"' in src and not _re.search(r"merge:\s*true[^;]*__moved", src), "__merge" in src)
+    ctx.close()
+
+
+def check_b278(br):
+    """Build 278. "Nope, not ace, something cooler, something mysterious
+    and unique. I feel like voids problem is that the head doesn't
+    connect to the body? ... I like the flares of horizon and umbra,
+    ensure they look like that on void." (1) The astronaut id is the
+    Phantom - a top hat, a mask with a monocle, a calling card - named
+    for it, and nobody is called Ace. (2) Void's hood and body are one
+    figure: they share one ramp laid in user space (so there is no band
+    where one box's darkest meets the other's lightest), and the hood's
+    bottom runs past the top of the shoulders. (3) Void's three flares
+    are drawn exactly as Umbra's and Horizon's are - the same parts in
+    the same order, a rimmed disc and a white core - in the three hunt
+    colours. Written against 277, where none of it held."""
+    print("\n59. build 278: the Phantom; Void joined to its body; one flare drawing for all three")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{ const out = {};
+      try {
+      const kind = id => (buildAvatarCharSVG(id).querySelector('.cx-fig').getAttribute('class') || '').replace('cx-fig cx-k-', '');
+      const ph = buildAvatarCharSVG('astronaut');
+      out.ph = { kind: kind('astronaut'), name: AVATAR_DISPLAY_NAME.astronaut, card: !!ph.querySelector('.cx-fx-phcard rect'),
+        monocle: !!ph.querySelector('.cx-fx-phsheen'), ace: Object.values(AVATAR_DISPLAY_NAME).includes('Ace') };
+      const v = buildAvatarCharSVG('voidwalker'); document.body.appendChild(v);
+      const body = v.querySelector('.cx-body path'), hood = v.querySelector('.cx-head path');
+      const gradOf = el => { const m = /url\(#([^)]+)\)/.exec(el.getAttribute('fill') || ''); return m && v.querySelector('#' + CSS.escape(m[1])); };
+      const g = gradOf(body);
+      out.join = { same: body.getAttribute('fill') === hood.getAttribute('fill'), user: !!g && g.getAttribute('gradientUnits') === 'userSpaceOnUse',
+        overlap: +(hood.getBBox().y + hood.getBBox().height - body.getBBox().y).toFixed(2) };
+      v.remove();
+      /* the shape of one worn flare: the circles its group draws, as (has stroke, is white) */
+      const sig = (svg, col) => { const disc = [...svg.querySelectorAll('.cx-fig circle')].find(c => (c.getAttribute('fill') || '').toUpperCase() === col.toUpperCase());
+        if(!disc) return null; const cs = [...disc.parentNode.children].filter(e => e.tagName === 'circle');
+        const i = cs.indexOf(disc); return [cs[i - 1], cs[i], cs[i + 1]].map(c => c ? [/^url/.test(c.getAttribute('fill') || ''), !!c.getAttribute('stroke'), /^#FFF(FFF)?$/i.test(c.getAttribute('fill') || '')].join('') : 'none').join('|'); };
+      out.sig = { umbra: sig(buildAvatarCharSVG('umbra'), MYSTERY_COLOR[MYSTERY_ORDER[3]]),
+        fifth: sig(buildAvatarCharSVG(FLARE_CHARACTER[MYSTERY_ORDER[4]]), MYSTERY_COLOR[MYSTERY_ORDER[4]]),
+        void: VOID_FLARES.map(k => sig(buildAvatarCharSVG('voidwalker'), MYSTERY_COLOR[k])) };
+      } catch(e){ out.threw = String(e && e.stack || e); }
+      return out; }""")
+    p, j, sg = r.get("ph") or {}, r.get("join") or {}, r.get("sig") or {}
+    # REVISED IN 279: the Phantom was turned down ("I don't like the
+    # phantom, that one is weird") and so was every round after it; the id
+    # is the live Astronaut again, as build 269 ships it. Still no Ace.
+    check("the astronaut id is the Astronaut as it ships live, named for it; no Phantom, no Ace",
+          p.get("kind") == "astronaut" and p.get("name") == "Astronaut" and not p.get("ace"), p)
+    check("Void's hood and body share one ramp laid in user space", j.get("same") and j.get("user"), j)
+    check("and the hood runs down past the top of the shoulders", (j.get("overlap") or 0) >= 2, j)
+    check("Void's three flares are drawn exactly as Umbra's and Horizon's",
+          sg.get("umbra") and sg.get("umbra") == sg.get("fifth") and all(x == sg.get("umbra") for x in (sg.get("void") or [None])), sg)
     check("no exception", not r.get("threw"), r.get("threw"))
     ctx.close()
 
@@ -5281,6 +5502,9 @@ def main():
             check_b274(br)
             check_b275(br)
             check_b276(br)
+            check_b277(br)
+            check_b278(br)
+            check_b279_merge(br)
         finally:
             br.close()
     SERVER.shutdown()
