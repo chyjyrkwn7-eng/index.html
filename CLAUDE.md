@@ -8710,8 +8710,15 @@ are untouched.
   there is a seam down the peak, and a star clasp pins it at the throat.
   A dark hood on a dark body is what made the third pass's cloak
   invisible. The sword is slung across the back, point up past the
-  shoulder, with two faces, a fuller of starlight, an angled point and a
-  guard that clears the mantle.
+  shoulder: two faces, a lit edge, a point and a guard. A fuller of
+  starlight and a bevel line were on it for one round and came off as
+  "too many details".
+  **The cloak runs to the bottom of the frame.** Every character fades
+  out over its last 30% (the shared `.avatarchar-svg` mask), and a cloak
+  that ends in a hem at the top of that fade leaves nothing under it but
+  a dark body fading to nothing - reported as "the part at the bottom of
+  the cloak, where his body is, it's not there?" A figure has to carry
+  something light-enough INTO the fade, or the fade eats it.
   **It is an assassin first and space second**, because Void, Umbra and
   Horizon are already hooded space figures. The assassin parts are the
   peaked hood, the cowl to the eyes and the sword. The space parts are:
