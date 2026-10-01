@@ -16707,7 +16707,19 @@
   .unlock-card-art.is-hidden-art svg{ filter:brightness(0) opacity(.8); }
   .unlock-card-theme .unlock-card-art{ width:6.2rem; height:6.2rem; }
   .unlock-card-swatch.dot{ width:5.4rem; height:5.4rem; border-radius:50%; display:block;
+    position:relative; overflow:hidden;
     box-shadow:0 0 0 2px rgba(255,255,255,.22), 0 0 30px rgba(255,255,255,.12); }
+  /* The same gloss sweep the swatches in Customize carry (build 269) -
+     the card swirled but had lost the highlight travelling across it,
+     which is the part of the motion you actually see. */
+  .unlock-card-swatch.dot::after{
+    content:""; position:absolute; inset:-30%; pointer-events:none;
+    background:linear-gradient(115deg, transparent 38%, rgba(255,255,255,.62) 50%, transparent 62%);
+    transform:translateX(-140%);
+  }
+  @media (prefers-reduced-motion:no-preference){
+    .unlock-card-swatch.dot::after{ animation:swatch-sheen 4.2s ease-in-out .6s infinite; }
+  }
   .unlock-card-artwrap{ position:relative; width:max-content; max-width:100%; margin:0 auto .9rem; }
   .unlock-card-artwrap > .unlock-card-art{ margin-bottom:0; }
   /* max-width:none (build 258). The wrapper's own max-width:100% capped
@@ -56333,7 +56345,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-09-30-268";
+const APP_BUILD = "2026-10-01-269";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -69127,6 +69139,13 @@ function showUnlockDetail(o){
     art.appendChild(o.id ? buildBannerArt(o.id) : buildThemeBannerArt(theme.accent));
   } else if(o.kind === "character"){
     art.style.setProperty("--char-glow", avatarGlowColor(o.id));
+    /* ALIVE ON ITS CARD (build 269): "when you hold it down to see the
+       details ... ensure the character is doing its animated move there".
+       The idle loops only run under .char-live, and this card never set
+       it, so every character - locked or held - sat frozen on the one
+       card that exists to show it off. A locked one moves too, as its
+       silhouette: what you are working towards should look alive. */
+    art.classList.add("char-live");
     try{ art.appendChild(buildAvatarCharSVG(o.id)); }catch(e){}
     if(o.hideArt) art.classList.add("is-hidden-art");
   } else if(o.kind === "theme"){

@@ -8180,3 +8180,17 @@ are untouched.
   `translateY(--tip * 100%)` on the fill's own duration, curve and delay;
   the visible light is `.rankmap-roadtip-dot`. It used to transition
   `top` on a different curve, and trailed the line by up to 37px.
+
+### Build 269
+
+- **The unlock card is alive.** This is the card that opens from a tap on
+  a locked item, or a hold on one you already have.
+  - The character art carries `.char-live`, so every character runs its
+    idle loop there. Before, it ran in no character on that card, locked
+    or held, because the idle loops only run under `.char-live` and the
+    card never set it. A locked character moves as its silhouette.
+  - A theme's swatch gets the same `swatch-sheen` gloss sweep as the
+    Customize swatches, alongside the swirl it already had.
+  - Animated banners already ran on the card. The first-tier banners are
+    still by design (`BANNER_ANIMATED`).
+  - Gate: `check_b269`, run against all 41 characters. It fails on 268.

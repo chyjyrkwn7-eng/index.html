@@ -4791,6 +4791,35 @@ def check_b268(br):
     ctx.close()
 
 
+def check_b269(br):
+    """Build 269: "when looking at the unlockable characters and you hold it
+    down or whatever to see the details ... ensure the character is doing
+    its animated move there ... same for banners, themes". Every
+    character's card is live (running animations under the card's art),
+    an animated banner runs on its card, and a theme's swatch both swirls
+    and carries the gloss sweep the Customize swatches have. Written
+    against 268, where every character card was frozen."""
+    print("\n51. build 269: unlock cards are alive - characters, banners, themes")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{ const w = ms => new Promise(r => setTimeout(r, ms));
+      const live = root => root ? root.getAnimations({subtree:true}).filter(a => a.playState === 'running') : [];
+      const open = async o => { document.querySelectorAll('.invite-overlay').forEach(e => e.remove()); showUnlockDetail(o); await w(300);
+        return document.querySelector('.unlock-card .unlock-card-art'); };
+      const frozen = [];
+      for(const c of AVATAR_CHARACTERS){ const a = await open(characterDetail(c.id)); if(!live(a).length) frozen.push(c.id); }
+      const held = await open(Object.assign(characterDetail(AVATAR_CHARACTERS[0].id), { unlocked: true }));
+      const heldLive = live(held).length;
+      const bn = await open(bannerDetail(BANNER_ANIMATED[0])); const bannerLive = live(bn).length;
+      const th = await open(themeDetail('titan')); const names = live(th).map(a => a.animationName);
+      return { n: AVATAR_CHARACTERS.length, frozen, heldLive, bannerLive, theme: names }; }""")
+    check("every character moves on its unlock card (%d characters)" % r["n"], not r["frozen"], r["frozen"])
+    check("and on the card of one you already hold", r["heldLive"] > 0, r["heldLive"])
+    check("an animated banner runs on its card", r["bannerLive"] > 0, r["bannerLive"])
+    check("a theme's swatch swirls and carries the gloss sweep",
+          "legend-swirl" in r["theme"] and "swatch-sheen" in r["theme"], r["theme"])
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     only = os.environ.get("ONLY_B245")
@@ -4853,6 +4882,7 @@ def main():
             check_b266(br)
             check_b267(br)
             check_b268(br)
+            check_b269(br)
         finally:
             br.close()
     SERVER.shutdown()
