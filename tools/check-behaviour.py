@@ -1816,6 +1816,10 @@ def check_b234(br):
       // Gold held; the map has already shown Gold, so no show.
       store.rankMapSeen = 2;
       showProfile('ranks'); await wait(900);
+      // Build 279 draws the map's character previews after first paint,
+      // one a frame, so under load they can land after 900ms: wait for
+      // the one this reads rather than reading a gap as "no filter".
+      for(let i = 0; i < 40 && !document.querySelectorAll('.rankmap-stop')[4]?.querySelector('.rankmap-gift.is-char .rankmap-giftav svg'); i++) await wait(100);
       await T('grey', () => { const st = [...document.querySelectorAll('.rankmap-stop')];
         const f = (el) => el ? getComputedStyle(el).filter : null;
         return { reached: f(st[0].querySelector('.rankmap-dot')), next: f(st[3].querySelector('.rankmap-dot')),
