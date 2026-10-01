@@ -8483,3 +8483,19 @@ are untouched.
 - Gate: `check_b275`. `check_b258`'s cloak check and `check_b271`'s
   orange-rim check were decisions reversed on request, and are revised
   to what still holds.
+
+### Build 276
+
+- **The fifth flare is the Singularity's colour**: "I think the 4 flare
+  is purple, so ensure the 5th flare matches singularity color." Umbra's
+  flare is Umbra's violet. Event Horizon was a near-white `#E6F7FF`
+  that matched nothing, and the Singularity's own glow was a purple
+  `#8B7BFF`, a second violet beside Umbra's. Both are now the
+  Singularity's ice blue, `#7FC8FF`, the colour of its visor. The
+  flare's key stays `"white"`: `store.mysteryColorsFound` is keyed by
+  it, so renaming the key would be a migration.
+- **The flare, the character and its glow are one colour.** If the
+  Singularity is redrawn in another colour, `MYSTERY_COLOR.white` and
+  `AVATAR_GLOW.singularity` move with it.
+- Gate: `check_b276`. It asserts against the character's own drawing,
+  not a hex value, and fails on 275.

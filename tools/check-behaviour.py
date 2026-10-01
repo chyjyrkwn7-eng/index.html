@@ -5172,6 +5172,45 @@ def check_b275(br):
     ctx.close()
 
 
+def check_b276(br):
+    """Build 276. The fifth flare (Event Horizon, the one that hands over
+    the Singularity) is the Singularity's own colour: it is the colour
+    the Singularity is drawn in and the colour its selected glow uses, it
+    is a real blue rather than a near-white, and it stays well apart in
+    hue from the fourth (Umbra's violet). On Home, a found fifth dot
+    paints in it. Asserted against the character rather than a hex, so a
+    later redraw of the Singularity moves the gate with it. Written
+    against 275, where the flare was #E6F7FF and matched nothing."""
+    print("\n57. build 276: the fifth flare is the Singularity's colour")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{ const out = {};
+      try {
+      const hsl = hex => { const n = parseInt(hex.slice(1), 16), R = (n>>16&255)/255, G = (n>>8&255)/255, B = (n&255)/255;
+        const mx = Math.max(R,G,B), mn = Math.min(R,G,B), d = mx - mn, l = (mx+mn)/2;
+        let h = 0; if(d){ h = mx===R ? ((G-B)/d)%6 : mx===G ? (B-R)/d+2 : (R-G)/d+4; h = (h*60+360)%360; }
+        const sat = d ? d/(1-Math.abs(2*l-1)) : 0; return { h, s: sat, l }; };
+      const fifth = MYSTERY_COLOR[MYSTERY_ORDER[4]], fourth = MYSTERY_COLOR[MYSTERY_ORDER[3]];
+      const sg = buildAvatarCharSVG(FLARE_CHARACTER[MYSTERY_ORDER[4]]);
+      const used = new Set([...sg.querySelectorAll('[fill],[stroke],stop')].flatMap(e => [e.getAttribute('fill'), e.getAttribute('stroke'), e.getAttribute('stop-color')])
+        .filter(c => c && c[0] === '#').map(c => c.toUpperCase()));
+      const a = hsl(fifth), b = hsl(fourth); let dh = Math.abs(a.h - b.h); if(dh > 180) dh = 360 - dh;
+      out.flare = { fifth, fourth, inDrawing: used.has(fifth.toUpperCase()), glow: AVATAR_GLOW[FLARE_CHARACTER[MYSTERY_ORDER[4]]],
+        hue: Math.round(a.h), sat: +a.s.toFixed(2), light: +a.l.toFixed(2), apart: Math.round(dh) };
+      store.mysteryColorsFound = {}; MYSTERY_ORDER.forEach(k => store.mysteryColorsFound[k] = true);
+      showHome(); await new Promise(res => setTimeout(res, 400));
+      const dots = [...document.querySelectorAll('.cosmic-orbit-dot')];
+      out.dot = { n: dots.length, fills: dots.map(x => (x.getAttribute('fill') || '').toUpperCase()) };
+      } catch(e){ out.threw = String(e && e.stack || e); }
+      return out; }""")
+    f, d = r.get("flare") or {}, r.get("dot") or {}
+    check("the fifth flare is a colour the Singularity is drawn in, and its glow", f.get("inDrawing") and f.get("glow") == f.get("fifth"), f)
+    check("it is a real blue, not a near-white", 180 <= (f.get("hue") or 0) <= 230 and (f.get("sat") or 0) >= .6 and (f.get("light") or 1) <= .85, f)
+    check("and stays well apart from the fourth flare's violet", (f.get("apart") or 0) >= 40, f)
+    check("a found fifth dot on Home paints in it", d.get("n") == 5 and (f.get("fifth") or "?").upper() in (d.get("fills") or []), d)
+    check("no exception", not r.get("threw"), r.get("threw"))
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     only = os.environ.get("ONLY_B245")
@@ -5241,6 +5280,7 @@ def main():
             check_b273(br)
             check_b274(br)
             check_b275(br)
+            check_b276(br)
         finally:
             br.close()
     SERVER.shutdown()

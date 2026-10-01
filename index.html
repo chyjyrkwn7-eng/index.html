@@ -31838,7 +31838,7 @@ const AVATAR_GLOW = {
      lacquer, and for Void the middle of its three flare colours - the
      body gives off no light of its own, so the glow is the flares. */
   detective: "#D9A441", zeus: "#7FD4F5", masked: "#C6413F", voidwalker: "#F97316",
-  champion: "#FF4D6D", umbra: "#8B5CF6", singularity: "#8B7BFF",
+  champion: "#FF4D6D", umbra: "#8B5CF6", singularity: "#7FC8FF",
   poseidon: "#F2A23A", spartan: "#E0612F", pharaoh: "#E9B949", marksman: "#9CE85A",
   /* The visor's sunset. */
   blitz: "#F0643C"
@@ -45744,7 +45744,14 @@ let mysteryColorThisRun = null;  // which of the 3 colors this run's appearance 
    last two only exist for somebody who already holds Void. */
 const MYSTERY_ORDER = ["red", "orange", "yellow", "violet", "white"];
 const VOID_FLARES = ["red", "orange", "yellow"];
-const MYSTERY_COLOR = { red: "#EF4444", orange: "#F97316", yellow: "#FACC15", violet: "#8B5CF6", white: "#E6F7FF" };
+const MYSTERY_COLOR = { red: "#EF4444", orange: "#F97316", yellow: "#FACC15", violet: "#8B5CF6", white: "#7FC8FF" };
+/* THE FIFTH FLARE IS THE SINGULARITY'S ICE BLUE (build 276), not white.
+   "I think the 4 flare is purple, so ensure the 5th flare matches
+   singularity color." Umbra's flare is Umbra's violet; Event Horizon was
+   a near-white #E6F7FF that matched nothing, while the character it
+   hands over is drawn in ice blue - the visor's #7FC8FF, the hair's
+   light tips, the blue nebula behind. The key stays "white": it is what
+   store.mysteryColorsFound is keyed by, so renaming it is a migration. */
 const MYSTERY_NAME  = { red: "Red", orange: "Orange", yellow: "Yellow", violet: "Umbra", white: "Event Horizon" };
 /* The character each Void flare hands over. */
 const FLARE_CHARACTER = { violet: "umbra", white: "singularity" };
@@ -56918,7 +56925,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-01-275";
+const APP_BUILD = "2026-10-01-276";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
