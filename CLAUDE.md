@@ -8684,15 +8684,40 @@ are untouched.
     play in `#supernova-cutscene` too.
 
   `check-vroom` section 7 holds it and fails on 278.
-- **The astronaut id is the live Astronaut again**, as build 269 ships
-  it, now with a backdrop. Every replacement since 271 was turned down:
+- **The astronaut id is Starblade** (kind `starblade`, parts `cx-fx-sa*`).
+  Every replacement since 271 was turned down:
   - Bounty Hunter, Phantom;
   - two rounds of hooded fighters;
   - five creatures (rejected outright: "terrible");
-  - ten masks.
+  - ten masks;
+  - the live Astronaut put back to ship faster ("could we just make the
+    astronaut cooler instead? ... something space themed that's masked
+    ... a hooded assassin would be kinda sick").
 
-  The last word was "please hurry so I can get this live". **The slot is
-  still open**, and nobody's screen changes until Madison picks one.
+  Of three space assassins (Starblade, Corona, Orbit) this one stuck:
+  "Star blade is cool, could it be a little better?"
+  **It is an assassin first and space second**, because Void, Umbra and
+  Horizon are already hooded space figures. The assassin parts are the
+  peaked hood, the cowl to the eyes and the sword. The space parts are:
+  - a hood woven with stars;
+  - a constellation traced across the cowl;
+  - a visor slit with a glint;
+  - a comet scarf that tapers to nothing;
+  - a steel shoulder guard.
+
+  **The guard has its own linear gradient**: `headGrad` is anchored at
+  the face, and that far down it only paints its darkest stop, so the
+  first pass looked hollow.
+- **Bottom tabs answer the tap first** ("some slight lag"). The tapped
+  tab and the bubble move at once and the screen is built on the next
+  frame; `syncActive()` re-runs after, in case the navigation was
+  refused.
+  - `showRanksScreen` builds only the tab you land on and builds the
+    other 450ms later, or on first select.
+  - The road map's six character previews are drawn one a frame by
+    `afterFirstPaint()`.
+  - At 4x CPU the tap now registers in 1-17ms, down from up to 280ms,
+    and a warm switch to Progress takes ~340ms, down from ~550ms.
 - **Decision checks revised, not deleted:**
   - b271/b272: the slot draws a real, named character;
   - b278: it is the live Astronaut, with no Phantom and no Ace;

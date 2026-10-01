@@ -13628,6 +13628,12 @@
     .char-live .avatarchar-svg .cx-fx-antenna{ animation:cx-led 2.4s steps(1, end) infinite; }
     .char-live .avatarchar-svg .cx-fx-pom{ animation:cx-bob 2.4s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-reflect{ animation:cx-slide 5s ease-in-out infinite; }
+    /* build 279: Starblade - the starfield cloth, the comet scarf, the visor, the constellation */
+    .char-live .avatarchar-svg .cx-fx-sastars{ animation:cx-flicker-soft 3.2s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-sascarf{ animation:cx-flutter 2.6s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-saeye{ animation:cx-mk2-pulse 2.4s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-saconst{ animation:cx-flicker-soft 2.8s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-saglint{ animation:cx-flicker-soft 3.6s ease-in-out -1.2s infinite; }
     .char-live .avatarchar-svg .cx-fx-lenssheen{ animation:cx-sheen-idle 6.4s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-glint{ animation:cx-twinkle 3.6s ease-in-out -1.2s infinite; }
     .char-live .avatarchar-svg .cx-fx-led{ animation:cx-led 1.8s steps(1, end) infinite; }
@@ -31896,7 +31902,7 @@ const AVATAR_CHARACTERS = [
   { id: "clown",      kind: "clown",      feat: "vrwins5" },
   { id: "valkyrie",   kind: "koi",        feat: "vrwins10" },
   { id: "marksman",   kind: "marksman",   feat: "streak100" },
-  { id: "astronaut",  kind: "astronaut",  feat: "hundo7day" },
+  { id: "astronaut",  kind: "starblade",  feat: "hundo7day" },
   { id: "hacker",     kind: "hacker",     feat: "study20h" },
   { id: "timekeeper", kind: "timekeeper", feat: "days30" },
   { id: "ronin",      kind: "ronin",      feat: "bigtest400" },
@@ -31959,7 +31965,7 @@ const AVATAR_DISPLAY_NAME = {
   paladin: "Paladin", sentinel: "Sentinel", k9: "K-9",
   ninja: "Ninja", ghost: "Ghost", queen: "Queen", wizard: "Wizard",
   grizzly: "Bear", alien: "Alien", samurai: "Samurai", dragon: "Dragon",
-  officer: "Officer", clown: "Clown", robot: "Robot", astronaut: "Astronaut",
+  officer: "Officer", clown: "Clown", robot: "Robot", astronaut: "Starblade",
   detective: "Detective", zeus: "Zeus", masked: "The Masked One", voidwalker: "Void",
   champion: "Champion", umbra: "Umbra", singularity: "Horizon",
   poseidon: "Sheriff", spartan: "Spartan", pharaoh: "Pharaoh", marksman: "Marksman",
@@ -31978,7 +31984,7 @@ const AVATAR_GLOW = {
   k9: "#D9A05A",
   ninja: "#E0453F", ghost: "#E8ECF4", queen: "#8B4FC4", wizard: "#6C5BD4",
   grizzly: "#B9793C", alien: "#4FD18A", samurai: "#C0392B", dragon: "#E04A2F",
-  officer: "#3D74E8", clown: "#9B5CFF", swat: "#3D74E8", valkyrie: "#FF6FB5", hacker: "#3DFF8A", timekeeper: "#8A86FF", ronin: "#FF2E88", robot: "#6FD3E8", astronaut: "#F2B233",
+  officer: "#3D74E8", clown: "#9B5CFF", swat: "#3D74E8", valkyrie: "#FF6FB5", hacker: "#3DFF8A", timekeeper: "#8A86FF", ronin: "#FF2E88", robot: "#6FD3E8", astronaut: "#5CE1FF",
   /* Read off each one's artwork like the rest: the detective's amber
      street-light, the cold light in Zeus's cracks, the mask's own
      lacquer, and for Void the middle of its three flare colours - the
@@ -32333,7 +32339,7 @@ const AVATAR_HEAD_SCALE = {
 };
 const AVATAR_ART_SCALE = {
   dragon: 1.09, detective: 1.16, masked: 1.08, zeus: 1.05,
-  officer: 1.06, astronaut: 1.10,
+  officer: 1.06,
   marksman: 1.06, pharaoh: 1.03
 };
 
@@ -32656,7 +32662,7 @@ function drawAvatarCharSVG(charId){
     marksman:   [["reticle", "#9CE85A"], ["stars", "#C8F59A"]],
     /* the Hacker's code rain is part of its own drawing; the scene adds
        the green haze of a screen-lit room behind it */
-    astronaut:  [["nebula", "#F2B233", "#1A1440"], ["planet", "#F5804D"], ["stars", "#FFF2C8"]],
+    starblade:  [["nebula", "#2A6CFF", "#0A0E2A"], ["moon", "#BFF4FF", 31, 8.4, 2.6, true], ["rise", "ember", ["#5CE1FF", "#E6FBFF"]], ["stars", "#DFF7FF"]],
     hacker:     [["nebula", "#3DFF8A", "#0B3B22"]],
     timekeeper: [["stars", "#C9C6FF"], ["runes", "#8A86FF"]],
     ronin:      [["moon", "#FF2E5E", 20, 12.4, 10.6], ["fall", "petal", ["#FF7AB0", "#FFC2DA"]]],
@@ -34745,70 +34751,95 @@ function drawAvatarCharSVG(charId){
     return done();
   }
 
-  /* ================= ASTRONAUT, AS IT IS LIVE (build 279) =================
-     Back as build 269 ships it. Seven replacements came and went across
-     builds 271-279 - a Bounty Hunter, the Phantom, two rounds of
-     hooded fighters, a round of creatures and a round of ten masks - and
-     the last word was "those characters you just sent are not it either.
-     Please hurry so I can get this live." So 7.3 goes out with the slot
-     exactly as everybody already has it, and the replacement is still
-     open: nobody's screen changes until there is one Madison picks. */
-  if(def.kind === "astronaut"){
-    /* The top rank's reward, and the one that ties the roster back to
-       the app's own name: the rank emblems are the life of a star and
-       Supernova is the end of it, so the character you get for finishing
-       the climb is the one who is out there in it. The visor is a dark
-       dome with the app's own gold-to-magenta wordmark ramp reflected
-       across it, plus two stars - which is the reflection of Home's own
-       sphere, not a generic shine. */
-    const suit = headGrad("#FFFFFF", "#E2E8EF", "#A9B4C1");
-    const domeId = uid + "-dome";
-    const lg = document.createElementNS(svgNS, "linearGradient");
-    lg.setAttribute("id", domeId);
-    lg.setAttribute("x1", "0"); lg.setAttribute("y1", "0");
-    lg.setAttribute("x2", ".8"); lg.setAttribute("y2", "1");
-    [["0", "#3A1E4A"], [".45", "#12162A"], ["1", "#070A14"]].forEach(([o, c]) => {
-      const st = document.createElementNS(svgNS, "stop");
-      st.setAttribute("offset", o); st.setAttribute("stop-color", c);
-      lg.appendChild(st);
-    });
-    defs.appendChild(lg);
-    /* Shoulders. The suit's helmet ring already reads as a collar, so this
-       is the torso below it rather than a second collar on top. */
+  /* ================= STARBLADE (build 279) =================
+     The astronaut id - five units' hundos in one day - after eight
+     replacements across builds 271-279 were turned down. "Instead of an
+     astronaut, what about something space themed that's masked? ... a
+     hooded assassin would be kinda sick." Of three (Starblade, Corona,
+     Orbit) this was the one: "Star blade is cool, could it be a little
+     better?" Void, Umbra and Horizon are already hooded space figures,
+     so this is an ASSASSIN first - a peaked hood, a cowl to the eyes, a
+     sword - and space only in what it is made of: a hood woven with
+     stars, a constellation traced across the mask, a visor slit that
+     throws a glint, a comet for a scarf. Parts are cx-fx-sa*. */
+  const SA_BODY = "M4.8 40 Q5.4 31 11.6 28.4 Q13 22.6 20 22.4 Q27 22.6 28.4 28.4 Q34.6 31 35.2 40 Z";
+  const SA_HOOD = "M10.6 28.4 Q9 17 11.8 10.6 Q14.8 5.8 20 4.4 Q25.2 5.8 28.2 10.6 Q31 17 29.4 28.4 Q25 23 20 23.2 Q15 23 10.6 28.4 Z";
+  const saStars = (clipD, n, seed, col) => {
+    const cp = mk("clipPath", { id: uid + "-sas" + seed }); cp.appendChild(mk("path", { d: clipD })); defs.appendChild(cp);
+    const g = mk("g", { "clip-path": "url(#" + uid + "-sas" + seed + ")", class: "cx-fx cx-fx-sastars" });
+    let s = seed;
+    const r = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+    for(let i = 0; i < n; i++) g.appendChild(mk("circle", { cx: (6 + r() * 28).toFixed(2), cy: (3 + r() * 37).toFixed(2), r: (.14 + r() * .26).toFixed(2), fill: col, opacity: (.45 + r() * .5).toFixed(2) }));
+    svg.appendChild(g);
+  };
+  if(def.kind === "starblade"){
+    /* ROUND 2 (build 280): "Star blade is cool, could it be a little
+       better?" The same assassin, finished: a constellation traced in
+       light across the mask, a visor that throws a glint, the hood's
+       edge rim-lit, a shoulder guard, a sword with a guard and a wrapped
+       grip and a star at its point, and a comet scarf that tapers away
+       into nothing instead of ending in a blob. */
+    const neon = "#5CE1FF", cloth = headGrad("#2E3A5E", "#131A34", "#04060E");
+    /* the comet scarf: a long tapering tail, brightest at the throat */
+    open("cx-fx cx-fx-sascarf");
+    const sg = uid + "-sasg"; const slg = mk("linearGradient", { id: sg, x1: "1", y1: "0", x2: "0", y2: "0" });
+    [["0%", "#E6FBFF", ".95"], ["35%", neon, ".8"], ["100%", neon, "0"]].forEach(([o, c, op]) => slg.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op }))); defs.appendChild(slg);
+    svg.appendChild(mk("path", { d: "M13.4 27.6 Q8.6 26.4 4.2 22.4 Q2.6 21 1.4 21.4 Q4.4 24.8 5.4 27 Q7.8 29.6 13.6 29.4 Z", fill: "url(#" + sg + ")" }));
+    svg.appendChild(mk("path", { d: "M12.6 28.4 Q8.4 27.8 4 24.4", fill: "none", stroke: "#FFFFFF", "stroke-width": ".25", opacity: ".7", "stroke-linecap": "round" }));
+    [[6.6, 25.6, .32], [4.2, 23.6, .24], [9, 27.6, .26]].forEach(([x, y, r]) => svg.appendChild(mk("circle", { cx: x, cy: y, r, fill: "#FFFFFF" })));
+    close();
+    /* the sword over the shoulder: a blade of starlight, a guard, a wrapped grip */
+    open("cx-fx cx-fx-sablade");
+    const bg = uid + "-sabl"; const lg = mk("linearGradient", { id: bg, x1: "0", y1: "1", x2: "1", y2: "0" });
+    [["0%", "#1A6A9A"], ["45%", neon], ["100%", "#FFFFFF"]].forEach(([o, c]) => lg.appendChild(mk("stop", { offset: o, "stop-color": c }))); defs.appendChild(lg);
+    svg.appendChild(mk("path", { d: "M27.2 27.6 L34.2 10.8 L35 11.2 L28.4 28.2 Z", fill: neon, opacity: ".25" }));
+    svg.appendChild(mk("path", { d: "M27.4 27.8 L34.4 11 L34.8 11.2 L28.1 28.1 Z", fill: "url(#" + bg + ")" }));
+    svg.appendChild(sparkle(34.6, 11, 1.3, "#FFFFFF"));
+    svg.appendChild(mk("path", { d: "M25.8 27.4 L29.8 29", stroke: "#C8D2DC", "stroke-width": ".8", "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M27.6 28.4 L26.4 31.4", stroke: "#1A2030", "stroke-width": "1.1", "stroke-linecap": "round" }));
+    [[27.4, 29], [27, 30], [26.6, 31]].forEach(([x, y]) => svg.appendChild(mk("path", { d: "M" + (x - .5) + " " + (y - .2) + " L" + (x + .5) + " " + (y + .2), stroke: neon, "stroke-width": ".2", opacity: ".8" })));
+    close();
     open("cx-body");
-    svg.appendChild(mk("path", { d: "M5.4 40 Q6.2 32.8 13.8 30.6 L26.2 30.6 Q33.8 32.8 34.6 40 Z",
-                                 fill: headGrad("#E6ECF3", "#C2CCD8", "#8E9AA8") }));
+    svg.appendChild(mk("path", { d: SA_BODY, fill: cloth }));
+    saStars(SA_BODY, 26, 7, "#DFF7FF");
+    /* a shoulder guard, cyan-edged, on the sword side */
+    /* its own ramp: headGrad is anchored at the face, and this far down it
+       only ever paints its darkest stop */
+    const pg = uid + "-sapg"; const plg = mk("linearGradient", { id: pg, x1: "0", y1: "0", x2: "0", y2: "1" });
+    [["0%", "#A8B8D6"], ["55%", "#5A6A8C"], ["100%", "#222A40"]].forEach(([o, c]) => plg.appendChild(mk("stop", { offset: o, "stop-color": c }))); defs.appendChild(plg);
+    svg.appendChild(mk("path", { d: "M24.6 27.4 Q30.4 27 33.2 31.4 L31.4 33.2 Q28.6 30.2 24.4 30 Z", fill: "url(#" + pg + ")", stroke: neon, "stroke-width": ".3", "stroke-opacity": ".85" }));
+    svg.appendChild(mk("path", { d: "M25.4 28.2 Q29.8 28 32 31", fill: "none", stroke: "#E6F2FF", "stroke-width": ".35", opacity: ".7", "stroke-linecap": "round" }));
+    svg.appendChild(mk("circle", { cx: 26.2, cy: 29.2, r: .38, fill: neon }));
+    svg.appendChild(mk("path", { d: "M11.6 29 L24.2 38.4", stroke: "#3A4460", "stroke-width": "1.3" }));
+    [[14.6, 31.2], [17.8, 33.6], [21, 36]].forEach(([x, y]) => svg.appendChild(mk("rect", { x: x - .45, y: y - 1.1, width: .9, height: 2.2, rx: .3, transform: "rotate(-36 " + x + " " + y + ")", fill: "#C8D2DC" })));
     close();
     open("cx-head");
-    svg.appendChild(mk("rect", { x: 5.6, y: 16.4, width: 3.6, height: 7.6, rx: 1.6, fill: "#C6D0DB" }));
-    svg.appendChild(mk("rect", { x: 30.8, y: 16.4, width: 3.6, height: 7.6, rx: 1.6, fill: "#C6D0DB" }));
-    svg.appendChild(mk("rect", { x: 8.2, y: 7.6, width: 23.6, height: 24, rx: 9.4, fill: suit,
-                                 stroke: "#96A3B1", "stroke-width": .45 }));
-    svg.appendChild(mk("rect", { x: 11, y: 12.6, width: 18, height: 13.4, rx: 6.2,
-                                 fill: "url(#" + domeId + ")",
-                                 stroke: "#7E8B99", "stroke-width": .7 }));
-    open("cx-fx cx-fx-reflect");
-    svg.appendChild(mk("path", { d: "M12.6 17.2 Q15.4 13.6 20.4 13.6", fill: "none",
-                                 stroke: "#FFFFFF", "stroke-width": 1.1,
-                                 "stroke-linecap": "round", opacity: .42 }));
+    svg.appendChild(mk("path", { d: SA_HOOD, fill: cloth, stroke: "#03050C", "stroke-width": ".3" }));
+    saStars(SA_HOOD, 30, 3, "#DFF7FF");
+    /* the hood's edge, catching the blade's light */
+    svg.appendChild(mk("path", { d: "M28.2 10.6 Q31 17 29.4 28.4", fill: "none", stroke: neon, "stroke-width": ".45", opacity: ".7", "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M12 11 Q15 6.2 20 4.8", fill: "none", stroke: neon, "stroke-width": ".35", opacity: ".45", "stroke-linecap": "round" }));
+    svg.appendChild(sparkle(14.4, 9.2, .8, "#FFFFFF"));
+    svg.appendChild(mk("path", { d: "M13.4 13.4 Q20 10.2 26.6 13.4 Q27 20 24.6 24.6 L15.4 24.6 Q13 20 13.4 13.4 Z", fill: "#03040A" }));
+    /* the cowl, up to the eyes, a constellation traced across it */
+    svg.appendChild(mk("path", { d: "M13.5 18.8 Q20 20.4 26.5 18.8 L25.6 24.8 Q20 28 14.4 24.8 Z", fill: headGrad("#2E3446", "#161A26", "#06070C") }));
+    open("cx-fx cx-fx-saconst");
+    const cst = [[15.6, 21.2], [17.6, 22.6], [20, 21.6], [22.2, 23.2], [24.2, 21.4]];
+    svg.appendChild(mk("path", { d: "M" + cst.map(p => p.join(" ")).join(" L"), fill: "none", stroke: neon, "stroke-width": ".2", opacity: ".7" }));
+    cst.forEach(([x, y], i) => svg.appendChild(mk("circle", { cx: x, cy: y, r: i === 2 ? .42 : .28, fill: "#E6FBFF" })));
     close();
-    sheen(["M17.2 12.6 L22.8 12.6 A6.2 6.2 0 0 1 29 18.8 L29 19.8 A6.2 6.2 0 0 1 22.8 26 L17.2 26 A6.2 6.2 0 0 1 11 19.8 L11 18.8 A6.2 6.2 0 0 1 17.2 12.6 Z"],
-          "cx-fx-visorsheen", 11, 29, 12.6, 26);
-    open("cx-fx cx-fx-visorstars");
-    const tw1 = mk("circle", { cx: 24.4, cy: 17, r: .85, fill: "#FFD37A" });
-    tw1.setAttribute("class", "avatarchar-twinkle");
-    const tw2 = mk("circle", { cx: 21.2, cy: 21.4, r: .6, fill: "#F5804D" });
-    tw2.setAttribute("class", "avatarchar-twinkle avatarchar-twinkle-b");
-    svg.appendChild(tw1); svg.appendChild(tw2);
-    svg.appendChild(mk("circle", { cx: 26.6, cy: 21.8, r: .45, fill: "#C23B7A" }));
+    open("cx-eyes");
+    const visor = "M14.2 16.2 L19.2 17.4 L20 16.9 L20.8 17.4 L25.8 16.2 L25 17.9 L20.6 18.7 L20 18.3 L19.4 18.7 L15 17.9 Z";
+    svg.appendChild(mk("path", { d: visor, fill: neon, opacity: ".5", stroke: neon, "stroke-width": "1.2", "stroke-linejoin": "round", class: "cx-fx-saeye" }));
+    svg.appendChild(mk("path", { d: visor, fill: "#E6FBFF" }));
+    /* the glint off the visor */
+    svg.appendChild(mk("path", { d: "M22.6 17.4 L27.4 17 L22.6 17.6 Z", fill: "#FFFFFF", opacity: ".85", class: "cx-fx-saglint" }));
     close();
-    noEyes();
-    svg.appendChild(mk("rect", { x: 16.4, y: 28.8, width: 7.2, height: 3.4, rx: 1.2, fill: "#C6D0DB" }));
-    svg.appendChild(mk("circle", { cx: 18.4, cy: 30.5, r: .7, fill: "#4DD4E8" }));
-    svg.appendChild(mk("circle", { cx: 21.6, cy: 30.5, r: .7, fill: "#FFD84D" }));
+    closedEyes([[17.2, 17.6, 2.2], [22.8, 17.6, 2.2]], neon, .4);
+    open("cx-mouth"); close();
+    close();
     return done();
   }
-
   if(def.kind === "queen"){
     /* Bigger face, smaller crown. The crown was nearly as tall as the
        head, which is what made this read as headwear with a face under
@@ -46898,7 +46929,7 @@ const RELEASE_NOTES = [
     version: "7.3",
     groups: [
       { label: "Characters", items: [
-        { icon: buildPersonIcon, color: "#FF2E88", title: "New And Redrawn Characters", body: "Every character has been redrawn with its own scene behind it, and the set has grown: a character for each rank from Silver up, challenge characters like the Ronin, the Sheriff, the Marksman, the Hacker and the Koi, and three secret ones — Void, Umbra and Horizon — that you find rather than earn." },
+        { icon: buildPersonIcon, color: "#FF2E88", title: "New And Redrawn Characters", body: "Every character has been redrawn with its own scene behind it, and the set has grown: a character for each rank from Silver up, challenge characters like the Ronin, the Starblade, the Sheriff, the Marksman, the Hacker and the Koi, and three secret ones — Void, Umbra and Horizon — that you find rather than earn." },
         { icon: buildSparkleIcon, color: "#7FC8FF", title: "Five Secret Flares", body: "Red, orange and yellow unlock Void; the violet flare unlocks Umbra and the ice-blue flare unlocks Horizon. Each one is worn by the character it hands over, and the orbit on Home lights up as you find them." },
         { icon: buildPaletteIcon, color: "#C583FF", title: "Banners And Themes", body: "Banners to earn for your profile and your name in a Virtual Room, and a theme colour for every rank. Press and hold anything in Customize to see exactly what it takes." }
       ]},
@@ -71993,12 +72024,27 @@ function showRanksScreen(defaultTab){
   panel.className = "panel screen-ranks screen-profile-like";
   const seg = document.createElement("div");
   seg.className = "navsegment profiletabs rankstabs";
-  const ranksTab = buildRanksTab();
-  const badgesTab = buildBadgesTab();
+  /* ONLY THE TAB YOU LAND ON IS BUILT BEFORE THE FIRST PAINT (build 279).
+     The other one was built in full and hidden - sixteen badge drawings
+     and the case behind the Rank tab, about 150ms of a 370ms mount - so
+     the tap waited for a screen it could not see. It is built a beat
+     after the screen is up instead, or at once if it is asked for first. */
+  const holder = key => { const h = document.createElement("section"); h.hidden = true; h.dataset.lazyTab = key; return h; };
+  let ranksTab = initialTab === "ranks" ? buildRanksTab() : holder("ranks");
+  let badgesTab = initialTab === "badges" ? buildBadgesTab() : holder("badges");
   const defs = [
     { key: "ranks",  label: "Rank",   node: ranksTab },
     { key: "badges", label: "Badges", node: badgesTab }
   ];
+  const ensureBuilt = key => {
+    const d = defs.find(t => t.key === key);
+    if(!d || !d.node.dataset.lazyTab) return;
+    const real = key === "ranks" ? buildRanksTab() : buildBadgesTab();
+    real.hidden = d.node.hidden;
+    d.node.replaceWith(real);
+    d.node = real;
+    if(key === "ranks") ranksTab = real; else badgesTab = real;
+  };
   const btns = {};
   defs.forEach(t => {
     const b = document.createElement("button");
@@ -72015,6 +72061,7 @@ function showRanksScreen(defaultTab){
   let current = initialTab;
   function select(which){
     current = which;
+    ensureBuilt(which);
     defs.forEach(t => { t.node.hidden = t.key !== which; btns[t.key].classList.toggle("active", t.key === which); });
     if(which === "badges" && badgesTab.runFill) badgesTab.runFill();
     if(which === "ranks" && ranksTab.runFill) ranksTab.runFill();
@@ -72023,6 +72070,7 @@ function showRanksScreen(defaultTab){
   attachTabSwipe(panel, RANKS_TABS, () => current, select);
   stage.replaceChildren(panel);
   toTop(true);
+  setTimeout(() => { if(panel.isConnected) defs.forEach(t => ensureBuilt(t.key)); }, 450);
   requestAnimationFrame(() => {
     if(current === "badges" && badgesTab.runFill) badgesTab.runFill();
     if(current === "ranks" && ranksTab.runFill) ranksTab.runFill();
@@ -73490,6 +73538,23 @@ function buildBadgesTab(){
 
    Built as one detached node for whoever mounts it; nothing in here
    references the screen around it. */
+/* WORK THAT CAN WAIT FOR THE FIRST PAINT (build 279). Queued, then run one
+   item a frame once the current screen has painted, so a tab that has a
+   lot to draw is on screen first and fills in after, instead of holding
+   the tap until the last drawing is done. `var` for the queue, per the
+   note on UNIT_SIZE_CACHE. */
+var afterPaintQueue = [];
+function afterFirstPaint(fn){
+  afterPaintQueue.push(fn);
+  if(afterPaintQueue.length > 1) return;
+  const step = () => {
+    const f = afterPaintQueue.shift();
+    if(f){ try{ f(); }catch(e){} }
+    if(afterPaintQueue.length) requestAnimationFrame(() => setTimeout(step, 0));
+  };
+  requestAnimationFrame(() => setTimeout(step, 0));
+}
+
 function buildRanksTab(){
   const tab = document.createElement("div");
   tab.className = "ranks-tab";
@@ -73874,7 +73939,10 @@ function buildRanksTab(){
     if(charForRank){
       const av = document.createElement("span");
       av.className = "rankmap-giftav";
-      try{ av.appendChild(buildAvatarCharSVGSafe(charForRank.id)); }catch(e){}
+      /* drawn after the screen is up, one a frame (build 279): six full
+         animated characters were a fifth of this tab's mount, and the
+         chip they sit in is a fixed size, so nothing moves when they land */
+      afterFirstPaint(() => { try{ av.appendChild(buildAvatarCharSVGSafe(charForRank.id)); }catch(e){} });
       gift("is-char", av, AVATAR_DISPLAY_NAME[charForRank.id] || charForRank.id);
     }
     /* A rank's own banner - only Supernova has one (build 232). Shown
@@ -74338,8 +74406,25 @@ function applyGlassRefraction(el, mapImgId){
          never blocked longer than that animation would already have
          taken to settle anyway. */
       if(bar.dataset.navigating === "1") return;
+      if(dest === "home" && !testInProgress && stage.querySelector(".screen-home-actual")) return;
       bar.dataset.navigating = "1";
       setTimeout(() => { bar.dataset.navigating = "0"; }, 130);
+      /* THE TAP ANSWERS FIRST, THE SCREEN FOLLOWS (build 279): "the bottom
+         tab functionality when switching tabs could be a little smoother
+         as well, some slight lag." Every tab built its whole screen inside
+         this handler, so nothing - not even the bubble - moved until it
+         was done: measured at 4x CPU, the Rank tab held the tap for up to
+         590ms before the next frame. The highlight and the bubble now move
+         at once (a transform, so the compositor carries it even while the
+         screen is being built), and the screen is built on the frame
+         after. syncActive() runs again once it is up, which puts the
+         highlight back if the navigation was refused (a confirm declined,
+         a cutscene owed). */
+      bar.querySelectorAll(".bottomtab").forEach(t => t.classList.toggle("active", t === tab));
+      slideBubbleToActiveTab();
+      requestAnimationFrame(() => setTimeout(() => { go(); syncActive(); }, 0));
+    });
+    const go = () => {
       if(dest === "home"){
         /* Tapping Home while already there used to re-run showHome()
            from scratch every time, re-triggering the orbit/sphere
@@ -74362,7 +74447,7 @@ function applyGlassRefraction(el, mapImgId){
       else if(dest === "ranks") showRanksScreen();
       else if(dest === "profile") showProfile();
       else if(dest === "settings") showAppearance();
-    });
+    };
   });
 
   /* Mirrors the old header nav's own visibility (already correctly

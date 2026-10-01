@@ -2875,7 +2875,7 @@ def check_b243(br):
                              "valkyrie": "vrwins10", "swatRetired": True}, r.get("feats"))
     # Kinds, not ids: Blitz goes to the astronaut id, which draws the Phantom since 278.
     check("every retired character is drawn as what replaced it",
-          r.get("retiredTo") == ["ninja", "clown", "astronaut", "solar", "oracle", "koi", "hacker", "solar", "tempest", "koi", "hacker", "timekeeper", "ninja"], r.get("retiredTo"))
+          r.get("retiredTo") == ["ninja", "clown", "starblade", "solar", "oracle", "koi", "hacker", "solar", "tempest", "koi", "hacker", "timekeeper", "ninja"], r.get("retiredTo"))
     # build 265/267: the Valkyrie's id drew the Viper, then the Koi (and the characters retired into it).
     check("the new ones are named", r.get("names") == ["Lunar", "Solar", "Tempest", "Frost", "Oracle", "Inferno", "Hacker", "Timekeeper", "Koi"], r.get("names"))
     check("whoever held the Clown under the old ranks keeps it, and nobody at all has the Robot (build 244) - an old Robot is drawn as the Ninja",
@@ -5420,10 +5420,10 @@ def check_b278(br):
       return out; }""")
     p, j, sg = r.get("ph") or {}, r.get("join") or {}, r.get("sig") or {}
     # REVISED IN 279: the Phantom was turned down ("I don't like the
-    # phantom, that one is weird") and so was every round after it; the id
-    # is the live Astronaut again, as build 269 ships it. Still no Ace.
-    check("the astronaut id is the Astronaut as it ships live, named for it; no Phantom, no Ace",
-          p.get("kind") == "astronaut" and p.get("name") == "Astronaut" and not p.get("ace"), p)
+    # phantom, that one is weird") and so was every round after it, until
+    # a hooded space assassin: "Star blade is cool". Still no Ace.
+    check("the astronaut id is Starblade - visor, constellation, comet scarf - and named for it; no Phantom, no Ace",
+          p.get("kind") == "starblade" and p.get("name") == "Starblade" and not p.get("ace"), p)
     check("Void's hood and body share one ramp laid in user space", j.get("same") and j.get("user"), j)
     check("and the hood runs down past the top of the shoulders", (j.get("overlap") or 0) >= 2, j)
     check("Void's three flares are drawn exactly as Umbra's and Horizon's",
