@@ -8632,8 +8632,8 @@ are untouched.
     the dot for five minutes after somebody closed the app. Every live
     build already wrote presence, so dropping the fallback leaves nobody
     wrongly offline. `check-friends` holds it.
-- **Rank tab:** opening it glances down to your point on the road map
-  and back.
+- **Rank tab:** opening it glanced down to your point on the road map
+  and back. **Reversed in 280** - see below.
 - **Badge bands lowered:** 15 / 12 / 8 / 4 / 2 for 25 or fewer, 26–50,
   51–100, 101–200 (Arrest, Search and Seizure only) and over 200 (Penal
   Code only) questions. `BADGE_BANDS_VERSION` 3, so
@@ -8754,3 +8754,22 @@ are untouched.
   - the Blitz retirement expects `astronaut`;
   - `check-friends`: a pushed score is not online, and closing the app
     clears the dot at once.
+
+### Build 280
+
+- **The Rank tab only travels when the climb moved.** *"The animation
+  where it moves the screen down for you to the progress, only do that
+  when the progression changes (even if it's slightly)."* 279's
+  every-opening glance (`glanceAtProgress`, `.is-glanced`) is gone. The
+  scroll belongs to `runRankMapCelebration` alone, which runs when a
+  rank was reached (`rankMapSeen`) or the stretch you are on has grown
+  at all since the last look (`rankMapProg`). "At all" is literal:
+  `rankProgGrew` needed +0.4% of the stretch and now takes any growth
+  (1e-6), because one right answer can move it by less than that.
+  An unranked account has no stretch of road under it, so it never
+  travels. `check_b280_rankmap_still` opens the tab unchanged (no
+  travel) and then after +0.1% (travels, runs the climb). Its fixture
+  is given three held badges, because the seed has none and would sit
+  on no stretch at all - both halves would pass vacuously. Both halves
+  fail on 279.
+

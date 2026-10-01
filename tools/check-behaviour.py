@@ -5449,6 +5449,44 @@ def check_b278(br):
     ctx.close()
 
 
+def check_b280_rankmap_still(br):
+    """Build 280. "The animation where it moves the screen down for you to
+    the progress, only do that when the progression changes (even if it's
+    slightly)." Build 279 glided the road map down to your stop and back
+    on EVERY opening of the Rank tab. Now: opened with nothing changed,
+    the map does not move; opened after the stretch you are on has grown
+    by a hair (a thousandth of it), it travels down and runs the climb.
+    Written against build 279, where the first half fails (it glances
+    every time) and the second fails on the 0.4% threshold."""
+    print("\n53. build 280: the Rank tab only travels to your progress when it changed")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{ const out = {}; const wait = ms => new Promise(r => setTimeout(r, ms));
+      try{
+      /* held badges put the account part-way along a stretch of road
+         (the seed has none, and an unranked account has no stretch) */
+      const u = topicsIn(QUESTIONS); u.slice(0, 3).forEach(n => store.unitPerfects[n] = 999);
+      store.rankMapFx244 = true; store.rankMapSeen = 99; store.rankMapProg = null;
+      const open = async () => { showHome(); await wait(300); window.scrollTo({ top: 0, behavior: 'instant' });
+        showProfile('ranks'); let max = 0; for(let i = 0; i < 45; i++){ await wait(100); max = Math.max(max, window.scrollY); } return max; };
+      /* first look: no record, so the climb plays and the spot is recorded */
+      await open(); await wait(3500);
+      out.recorded = store.rankMapProg ? store.rankMapProg.p : null;
+      /* unchanged: still */
+      out.stillMax = await open();
+      out.stillClimb = !!document.querySelector('.rankmap-roadfill[data-progress-to]');
+      /* grown by a thousandth of the stretch */
+      if(store.rankMapProg) store.rankMapProg.p = Math.max(0, store.rankMapProg.p - 0.001);
+      out.grownMax = await open();
+      out.grownClimb = !!document.querySelector('.rankmap-roadfill[data-progress-to]');
+      }catch(e){ out.threw = String(e); }
+      return out; }""")
+    check("opened with nothing changed, the Rank tab does not travel",
+          r.get("recorded") is not None and 0 < r["recorded"] < 1 and r.get("stillMax", 99) < 2 and not r.get("stillClimb"), r)
+    check("opened after the climb grew by a thousandth, it travels to it and runs the climb",
+          r.get("grownClimb") is True and r.get("grownMax", 0) > 40, r)
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     only = os.environ.get("ONLY_B245")
@@ -5522,6 +5560,7 @@ def main():
             check_b277(br)
             check_b278(br)
             check_b279_merge(br)
+            check_b280_rankmap_still(br)
         finally:
             br.close()
     SERVER.shutdown()
