@@ -5487,6 +5487,38 @@ def check_b280_rankmap_still(br):
     ctx.close()
 
 
+def check_b281_badge_card(br):
+    """Build 281. "The pop ups when clicking the badges ... they stay there
+    till I click off the tab ... make it similar to the character unlock
+    or banner unlock now, you click it, and opens up the progress screen
+    similarly with the green bar." A badge tile opens the unlock card -
+    kind badge, the badge drawn, the green bar, hundos of what it needs -
+    and no info bubble. Written against build 280, where the tap raised
+    showContextualInfo's bubble and no card."""
+    print("\n54. build 281: a badge opens the unlock card")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{ const out = {}; const wait = ms => new Promise(r => setTimeout(r, ms));
+      try{
+      const u = topicsIn(QUESTIONS)[0]; store.unitPerfects[u] = 1;
+      showProfile('badges'); await wait(1200);
+      const tile = [...document.querySelectorAll('.badge-tile')].find(t => t.querySelector('.badge-tile-name').textContent === u);
+      tile.click(); await wait(1400);
+      const c = document.querySelector('.unlock-card');
+      out.card = !!c; out.kind = c ? c.className : '';
+      out.art = !!(c && c.querySelector('.unlock-card-art svg'));
+      out.fill = c ? getComputedStyle(c.querySelector('.unlock-card-fill')).backgroundImage : '';
+      out.count = c ? (c.querySelector('.unlock-card-count') || {}).textContent || '' : '';
+      out.need = String(badgeThresholdFor(u));
+      out.bubble = !!document.getElementById('contextual-info-popup');
+      }catch(e){ out.threw = String(e); }
+      return out; }""")
+    check("a badge opens the unlock card, not the info bubble",
+          r.get("card") is True and "unlock-card-badge" in r.get("kind", "") and r.get("art") is True and r.get("bubble") is False, r)
+    check("the card's bar is the green one and counts hundos of what the badge needs",
+          "47, 191, 113" in r.get("fill", "") and r.get("count", "").endswith(" of " + r.get("need", "?")), r)
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     only = os.environ.get("ONLY_B245")
@@ -5561,6 +5593,7 @@ def main():
             check_b278(br)
             check_b279_merge(br)
             check_b280_rankmap_still(br)
+            check_b281_badge_card(br)
         finally:
             br.close()
     SERVER.shutdown()

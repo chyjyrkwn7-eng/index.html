@@ -8773,3 +8773,60 @@ are untouched.
   on no stretch at all - both halves would pass vacuously. Both halves
   fail on 279.
 
+### Build 281
+
+- **A badge opens the unlock card.** *"The pop ups when clicking the
+  badges ... they stay there till I click off the tab ... make it similar
+  to the character unlock or banner unlock."* `badgeDetail(unit)` feeds
+  `showUnlockDetail` a `kind:"badge"` card: the badge drawn whole in its
+  own enamel (not the empty slot the case shows), "Earn N hundos in this
+  unit.", the green bar and "x of N". `showContextualInfo` is no longer
+  used by the badge case. In Chromium that bubble does fade at 3.2s; on
+  her phone it did not, and it is not worth chasing now nothing here
+  raises it. `check_b281_badge_card` fails on 280.
+- **Tab switches: what was measured, and what was not worth shipping.**
+  *"Switching between tabs lags badly, the animation when opening up
+  tabs is laggy ... the smoothness of the app is a priority."* Traced at
+  4x CPU, a switch paid for:
+  - **forced layouts on mount**, three of them, each laying the brand
+    new screen out on the spot: the tab bubble re-measuring after every
+    screen change (`slideBubbleToActiveTab` now measures only when the
+    active tab or the bar's size changed - `bubbleAt`, a ResizeObserver,
+    and `syncStartAction` forcing only when `has-start-tab` toggled),
+    the keyboard unwind reading `scrollY` after every mount (now only
+    within 4s of a text field having focus - `lastTextFocusAt`), and the
+    toTop observer reading `scrollY` (now `lastToTopFrom`, read in
+    `toTop` on the old, already laid-out screen). Up to 214ms each at 4x.
+  - **the entrance starting before the screen existed.** `screen-fade-in`
+    starts on insertion, and a big screen's first frame outlasted it, so
+    the slide was half over before anything painted. A MutationObserver
+    holds each new `#stage` child's animation paused until two frames
+    have passed (`.qpanel` exempt - measured frame-perfect already).
+    Visible glide frames on Home went 10.5 -> 14.
+  - **everything else starting in the same frames**: rank emblems
+    (`_rkIO`) and character idles (`setCharState`) now wake when the
+    settle window (`beginSettle`, `settleUntil`, ~420ms) ends, and so do
+    `afterFirstPaint` drawings; Progress's second tab builds through that
+    queue rather than on a 450ms timer.
+  - small ones: `formatCalendarDate` uses one cached Intl formatter
+    (54ms of Profile at 4x); badge outlines are measured in idle time 4s
+    after launch instead of on the first Badges visit (~90ms).
+  **Tried and NOT shipped, with numbers:**
+  - a class on `<html>` pausing every animation during the entrance:
+    changing a root class restyles the whole document (55ms at 4x),
+    twice per switch - worse than what it saved. Hence a timestamp.
+  - `will-change:transform` on animated drawings so their drop-shadow
+    glow composites instead of re-blurring per frame: one run said
+    15 -> 5 dropped frames on Profile; side-by-side A/B said no
+    difference. Layers cost iPhone graphics memory (see build 262), so
+    an unproven win does not ship.
+  **How to measure next time:** single runs here swing by 2x with
+  machine load. `/tmp`-style A/B - both builds open in one browser,
+  switches interleaved, medians - is the only comparison worth quoting.
+  What decisively moves the numbers is the animations INSIDE drawings
+  (rank emblems, characters): with them off, Profile drops 1 frame
+  after opening instead of ~15, Home 3 instead of ~11. Glow filters
+  account for about half of that. Freezing or thinning them is a look
+  decision - she asked for them to move (248) - so it is put to her,
+  not done quietly.
+
