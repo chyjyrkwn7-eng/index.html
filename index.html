@@ -6860,9 +6860,15 @@
        own icon/label color underneath (which does use --accent, since
        that's the actual accent usage this app wants), not through
        tinting the glass surface itself. */
-    background-image:linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,0) 55%),
-      linear-gradient(rgba(255,255,255,.14), rgba(255,255,255,.14));
-    will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
+    /* NO BLUR OF ITS OWN (build 282). It sat inside the bar's own
+       blur(30px), so what it blurred was already blurred - and because
+       its width animates on every switch, the browser re-sampled and
+       re-blurred the bar under it on every frame of the slide, at the
+       moment a whole new screen was being built. The fill carries the
+       look instead: a touch brighter to stand in for the saturate and
+       brightness it used to apply. */
+    background-image:linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,0) 55%),
+      linear-gradient(rgba(255,255,255,.17), rgba(255,255,255,.17));
     border:1px solid rgba(255,255,255,.16);
     box-shadow:0 1px 2px rgba(255,255,255,.25) inset, 0 2px 6px rgba(18,26,32,.2);
     z-index:0;
@@ -7325,20 +7331,25 @@
   /* A slow, subtly shifting sheen across the glass \u2014 real glass and
      Liquid Glass both catch ambient light rather than sitting flat, so
      a completely static surface reads as plastic instead. */
+  /* MOVED, NOT REPAINTED (build 282). The sheen used to animate
+     background-position through an overlay blend, which repaints the
+     whole bar - glass, icons and all - on every frame for nine seconds
+     at a time, forever, including through every tab switch. It is a
+     static gradient on a layer two and a half times the bar's width
+     now, slid with transform, which the compositor does on its own. The
+     blend went with it: overlay of 18% white on this dark glass is a
+     faint lift, so it is a plain 8% instead. */
   [data-layout="modern"] .bottomtabs::before{
-    content:""; position:absolute; inset:0; pointer-events:none; z-index:0;
-    background:linear-gradient(120deg, transparent 20%, rgba(255,255,255,.5) 45%, transparent 70%);
-    background-size:250% 250%;
+    content:""; position:absolute; top:0; bottom:0; left:-150%; width:400%; pointer-events:none; z-index:0;
+    background:linear-gradient(120deg, transparent 38%, rgba(255,255,255,.22) 50%, transparent 62%);
     animation:glass-sheen 9s ease-in-out infinite;
-    mix-blend-mode:overlay;
   }
   [data-theme="dark"][data-layout="modern"] .bottomtabs::before{
-    background:linear-gradient(120deg, transparent 20%, rgba(255,255,255,.18) 45%, transparent 70%);
-    background-size:250% 250%;
+    background:linear-gradient(120deg, transparent 38%, rgba(255,255,255,.08) 50%, transparent 62%);
   }
   @keyframes glass-sheen{
-    0%, 100%{ background-position:0% 50%; }
-    50%{ background-position:100% 50%; }
+    0%, 100%{ transform:translate3d(-18%,0,0); }
+    50%{ transform:translate3d(18%,0,0); }
   }
   @media (prefers-reduced-motion:reduce){
     [data-layout="modern"] .bottomtabs::before{ animation:none; }
@@ -15770,16 +15781,62 @@
      beat - the glow swelling and the fill brightening a touch - instead of
      the old fast sweep. 0% and 100% are the same frame, so the loop has no
      seam; reduce-motion stops it with everything else. */
-  @keyframes xp-pump{
-    0%, 100%{ box-shadow:0 0 8px rgba(61,139,255,.42); filter:brightness(1); }
-    50%{ box-shadow:0 0 16px rgba(61,139,255,.8); filter:brightness(1.13); }
-  }
+  /* THE PUMP IS A LIGHT THAT FADES (build 282). It animated the bar's
+     box-shadow and a brightness filter, forever - a repaint on every
+     frame of every second the Profile tab or a results screen was open,
+     underneath every tab switch and every card landing. The swell is a
+     white wash over the fill now and only its opacity moves; the glow
+     round the bar was clipped by the track's own overflow anyway. */
+  @keyframes xp-pump{ 0%, 100%{ opacity:0; } 50%{ opacity:1; } }
   @keyframes coin-pump{
     0%, 100%{ box-shadow:0 0 14px color-mix(in srgb, var(--coin) 42%, transparent), inset 0 0 12px color-mix(in srgb, var(--coin) 26%, transparent); }
     50%{ box-shadow:0 0 26px color-mix(in srgb, var(--coin) 70%, transparent), inset 0 0 16px color-mix(in srgb, var(--coin) 42%, transparent); }
   }
-  .xpbar-fill{ animation:xp-pump 4.4s ease-in-out infinite; }
-  .profile-level-row .profile-level-num.profile-statplate.is-bare{ animation:coin-pump 4.4s ease-in-out infinite; }
+  .xpbar-fill::after{ content:""; position:absolute; inset:0; border-radius:inherit; background:rgba(255,255,255,.16);
+    opacity:0; animation:xp-pump 4.4s ease-in-out infinite; }
+  /* ---- THE RANK TAB'S BOX AND RING, ON PROFILE AND BADGES (build 282) ----
+     See buildStatRing. .rankhero-gauge supplies the dark rounded box and
+     --ring; these rules only undo what the Profile card's own sections
+     carried (the rule between halves, the coin, the pump) and size the
+     Badges tab's ring up. Nothing here glows or loops. */
+  .statbox.profile-level-joined{ margin:.75rem 0 0; padding:.75rem .8rem .7rem;
+    background:rgba(0,0,0,.28); border:1px solid rgba(255,255,255,.07); border-radius:1rem; }
+  .statbox.profile-level-joined + .statbox.profile-level-joined{ margin-top:.6rem; }
+  .profile-level.statbox{ display:block; }
+  .profile-level.statbox .profile-level-row{ align-items:center; gap:.8rem; margin-bottom:.7rem; }
+  .profile-level-row .statring.profile-level-num{ width:3.9rem; height:3.9rem; min-width:0; animation:none; }
+  .profile-level-side .rankhero-gaugelab{ margin-bottom:.05rem; }
+  .profile-badgesect.statbox{ display:block; width:100%; }
+  .profile-badgesect.statbox:active{ background:rgba(0,0,0,.4); }
+  .profile-badgesect.statbox .profile-badgerow{ gap:.8rem; }
+  .profile-badgesect .statring.profile-badgemedal{ width:3.9rem; height:3.9rem; }
+  .profile-badgesect.statbox .profile-badgesect-kicker{ letter-spacing:.12em; font-size:.64rem; color:color-mix(in srgb, var(--ring) 70%, #fff); }
+  .statring.is-plain .rankhero-ringtrack{ stroke:var(--ring); }
+  .statring .rankhero-ringval{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.05rem; line-height:1; }
+  .statring-sub{ font-size:.5rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase;
+    color:color-mix(in srgb, var(--ring) 70%, #fff); }
+  .statbox.is-met .rankhero-ringtrack{ stroke:var(--ring); }
+  .badges-head .statbox.is-big{ gap:1rem; padding:.8rem .95rem; }
+  .badges-head .statbox .badges-head-title{ margin-top:.1rem; }
+  /* A row at every width (build 282). The Rank tab stacks its two small
+     gauges into columns under 24rem; these are one full-width box each,
+     and stacked they centred a line ("Closest ...") wider than the box,
+     which then spilled out of both sides on a 320px phone. */
+  .rankhero-gauge.statbox{ flex-direction:row; text-align:left; }
+  .statbox .rankhero-gaugetxt, .statbox .badges-head-text{ align-items:flex-start; flex:1 1 auto; min-width:0; }
+  .statbox.is-big .statring{ width:5.2rem; height:5.2rem; }
+  .statbox.is-big .statring-num{ font-size:1.7rem; }
+  @media (max-width:24rem){
+    .statbox.is-big .statring{ width:4.4rem; height:4.4rem; }
+    .statbox.is-big .statring-num{ font-size:1.45rem; }
+    .badges-head .statbox.is-big{ gap:.75rem; padding:.7rem .75rem; }
+  }
+  @media (min-width:40rem){
+    .profile-level-row .statring.profile-level-num,
+    .profile-badgesect .statring.profile-badgemedal{ width:4.6rem; height:4.6rem; }
+    .statbox.is-big .statring{ width:6.2rem; height:6.2rem; }
+    .statbox.is-big .statring-num{ font-size:2rem; }
+  }
   .badge-next{ display:flex; align-items:baseline; gap:.45rem; margin-top:.6rem; font-size:.78rem; min-width:0; }
   .badge-next-label{ font-size:.6rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:var(--soft); flex:none; }
   .badge-next-name{ font-weight:700; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
@@ -17569,9 +17626,17 @@
   .rs-card{
     position:relative; margin:0 0 .85rem; padding:1rem 1.1rem 1.05rem; border-radius:18px;
     background:var(--rs-card); border:1px solid var(--rs-line);
-    will-change:backdrop-filter; backdrop-filter:blur(16px) saturate(1.4); -webkit-backdrop-filter:blur(16px) saturate(1.4);
     box-shadow:0 10px 30px -14px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
   }
+  /* NO BACKDROP BLUR ON A RESULTS CARD (build 282). Every card lands by
+     moving - dropping in, slamming down - and a moving backdrop-filter
+     re-samples and re-blurs what is under it on every frame of the
+     move. Measured at 4x CPU, taking it off the cards alone cut the
+     reveal's dropped frames by a third and frames over 50ms by three
+     quarters. What is under them is the app's own soft ambient glow,
+     which a blur does almost nothing to, so the tint carries the glass
+     look on its own - a touch more opaque to stand in for the blur. */
+  .rs-screen{ --rs-card:rgba(24,29,37,.7); }
   .rs-kicker{
     margin:0 0 .65rem; font-size:.68rem; font-weight:800; letter-spacing:.14em;
     text-transform:uppercase; color:rgba(255,255,255,.52);
@@ -17583,19 +17648,29 @@
   .rs-land{ opacity:0; transform:translateY(-18px) scale(1.04); }
   .rs-land.rs-in-now{ opacity:1; transform:none; }
   .rs-land.rs-in{ animation:rs-bang .46s cubic-bezier(.2,1.25,.35,1) both; }
-  .rs-card.rs-land.rs-in{ animation:rs-bang .46s cubic-bezier(.2,1.25,.35,1) both, rs-impact .8s ease-out both; }
+  /* THE IMPACT IS A LAYER THAT FADES (build 282). It used to animate the
+     card's own border colour and box-shadow, which repaints the whole
+     glass card - backdrop blur and all - on every frame of the landing.
+     The flash is the same white rim and bloom on a ::after now, and only
+     its opacity moves, which the compositor does without painting. */
+  .rs-card.rs-land.rs-in{ animation:rs-bang .46s cubic-bezier(.2,1.25,.35,1) both; }
+  .rs-card.rs-land::after{
+    content:""; position:absolute; inset:-1px; border-radius:inherit; pointer-events:none; opacity:0;
+    border:1px solid rgba(255,255,255,.55);
+    box-shadow:0 0 0 1px rgba(255,255,255,.22), 0 0 36px rgba(255,255,255,.14);
+  }
+  .rs-card.rs-land.rs-in::after{ animation:rs-impact .8s ease-out both; }
+  .rs-grade.rs-land.rs-in::after{ animation-duration:1s; }
+  /* Transform and opacity only (build 282). A blur rode the first half
+     of every landing; on a whole card at 3x it is a filter re-rasterised
+     every frame, and under the fade it was all but invisible. */
   @keyframes rs-bang{
-    0%{ opacity:0; transform:translateY(-26px) scale(1.07); filter:blur(3px); }
-    55%{ opacity:1; transform:translateY(3px) scale(.985); filter:blur(0); }
+    0%{ opacity:0; transform:translateY(-26px) scale(1.07); }
+    55%{ opacity:1; transform:translateY(3px) scale(.985); }
     78%{ transform:translateY(-1px) scale(1.004); }
-    100%{ opacity:1; transform:none; filter:none; }
+    100%{ opacity:1; transform:none; }
   }
-  @keyframes rs-impact{
-    0%{ border-color:rgba(255,255,255,.55);
-        box-shadow:0 0 0 1px rgba(255,255,255,.22), 0 0 36px rgba(255,255,255,.14), 0 10px 30px -14px rgba(0,0,0,.6); }
-    100%{ border-color:var(--rs-line);
-        box-shadow:0 10px 30px -14px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22); }
-  }
+  @keyframes rs-impact{ 0%{ opacity:1; } 100%{ opacity:0; } }
   .rs-xpline.rs-land{ transform:translateY(-12px); }
   .rs-xpline.rs-land.rs-in{ animation:rs-drop .34s cubic-bezier(.2,1.3,.4,1) both; }
   @keyframes rs-drop{
@@ -17687,17 +17762,28 @@
   .rs-xp .results-level-gain{ display:none; }
   .rs-xp .results-level-head{ margin:0 0 .5rem; }
   .rs-xp .results-level-line{ text-align:left; margin-top:.5rem; }
-  .rs-xp .results-level-track{ transition:box-shadow .3s ease; }
-  .rs-xp.is-charging .results-level-track{ animation:rs-charge .5s ease-in-out infinite alternate; }
-  @keyframes rs-charge{
-    from{ box-shadow:inset 0 2px 6px rgba(0,0,0,.45), 0 0 0 1px rgba(124,200,255,.3), 0 0 10px rgba(58,140,255,.3); }
-    to{ box-shadow:inset 0 2px 6px rgba(0,0,0,.45), 0 0 0 1px rgba(124,200,255,.65), 0 0 26px rgba(58,140,255,.75); }
+  /* Charging is a ring of light round the track that breathes by
+     OPACITY (build 282) - it was the track's box-shadow, alternating
+     forever while the XP counted in. The ring sits on the level block,
+     which does not clip, at the track's own position. */
+  .results-level-trackwrap{ position:relative; }
+  .results-level-glow{ display:none; }
+  .rs-xp.is-charging .results-level-track{
+    box-shadow:inset 0 2px 6px rgba(0,0,0,.45), 0 0 0 1px rgba(124,200,255,.3), 0 0 10px rgba(58,140,255,.3);
   }
+  .rs-xp .results-level-glow{ display:block; position:absolute; inset:0; border-radius:999px; pointer-events:none; opacity:0;
+    box-shadow:0 0 0 1px rgba(124,200,255,.65), 0 0 26px rgba(58,140,255,.75); }
+  .rs-xp.is-charging .results-level-glow{ animation:rs-charge .5s ease-in-out infinite alternate; }
+  @keyframes rs-charge{ from{ opacity:0; } to{ opacity:1; } }
   .rs-xp.is-charged .results-level-track{ animation:rs-trackpop .65s ease-out; }
+  /* The pop is the track's scale plus the glow layer flaring and fading
+     (build 282) - the burst of light used to be the track's box-shadow. */
   @keyframes rs-trackpop{
-    0%{ transform:scaleY(1); box-shadow:inset 0 2px 6px rgba(0,0,0,.45), 0 0 0 0 rgba(124,200,255,.9); }
-    30%{ transform:scaleY(1.3); box-shadow:inset 0 2px 6px rgba(0,0,0,.45), 0 0 0 5px rgba(124,200,255,.22), 0 0 32px rgba(58,140,255,.85); }
-    100%{ transform:scaleY(1); box-shadow:inset 0 2px 6px rgba(0,0,0,.45), 0 0 0 12px rgba(124,200,255,0); }
+    0%{ transform:scaleY(1); } 30%{ transform:scaleY(1.3); } 100%{ transform:scaleY(1); }
+  }
+  .rs-xp.is-charged .results-level-glow{ animation:rs-glowpop .65s ease-out; }
+  @keyframes rs-glowpop{
+    0%{ opacity:1; transform:scale(1); } 30%{ opacity:1; transform:scale(1.015, 1.5); } 100%{ opacity:0; transform:scale(1.03, 2.2); }
   }
   .rs-xp .results-level.is-levelup .results-level-num{ color:var(--xp); }
   .rs-xp .results-level.is-levelup .results-level-num::after{
@@ -17755,13 +17841,13 @@
   /* The grade, last and loudest. */
   .rs-screen .rs-grade{ padding:1.15rem 1.2rem 1.2rem; margin-bottom:.85rem; }
   .rs-grade.rs-land.rs-in{
-    animation:rs-slam .62s cubic-bezier(.16,1.3,.3,1) both, rs-impact 1s ease-out both;
+    animation:rs-slam .62s cubic-bezier(.16,1.3,.3,1) both;
   }
   @keyframes rs-slam{
-    0%{ opacity:0; transform:scale(1.45); filter:blur(6px); }
-    45%{ opacity:1; transform:scale(.965); filter:blur(0); }
+    0%{ opacity:0; transform:scale(1.45); }
+    45%{ opacity:1; transform:scale(.965); }
     70%{ transform:scale(1.012); }
-    100%{ opacity:1; transform:none; filter:none; }
+    100%{ opacity:1; transform:none; }
   }
   .rs-grade-row{ display:flex; align-items:center; gap:1.1rem; }
   .rs-screen .rs-pct.pct{ font-size:4.2rem; line-height:.95; flex-shrink:0; }
@@ -46940,6 +47026,15 @@ function holdToTop(ms){ toTopHoldUntil = Date.now() + (ms || 600); }
    setting is for scrolling back up the screen you are on; a screen that
    has just been swapped in jumps. */
 let lastStageSwapAt = 0, lastToTopAt = 0, lastToTopFrom = 0;
+/* WHERE THE PAGE IS, AS THE LAST SCROLL EVENT SAID (build 282). toTop()
+   runs straight after a new screen is inserted, and both reading scrollY
+   and calling scrollTo() there lay the whole new screen out on the spot
+   - 50 to 80ms of every tab switch at 4x CPU, inside the tap, for a page
+   that was usually at the top already. A scroll, including the clamp when
+   a page gets shorter, always fires a scroll event, so this is the
+   position without asking layout for it. `var`, per UNIT_SIZE_CACHE. */
+var knownScrollY = 0;
+try{ window.addEventListener("scroll", () => { knownScrollY = window.scrollY; }, { passive:true }); }catch(e){}
 try{ new MutationObserver(() => {
   lastStageSwapAt = Date.now();
   /* And a screen that asked for the top just BEFORE it mounted - several
@@ -46959,9 +47054,11 @@ function toTop(instant){
   lastToTopAt = Date.now();
   /* read here, on the screen that is already laid out, so the mount
      observer never has to (build 281) */
-  try{ lastToTopFrom = window.scrollY; }catch(e){ lastToTopFrom = 1; }
+  lastToTopFrom = knownScrollY;
   if(!instant && Date.now() - lastStageSwapAt < 400) instant = true;
   if(!instant && Date.now() < toTopHoldUntil) return;
+  /* Already at the top: nothing to move, so nothing to lay out for. */
+  if(knownScrollY <= 0) return;
   try{
     /* instant=true bypasses the person's own Smooth Scrolling setting for
        this one call - see openQuestion()'s own call site for why. Every
@@ -57662,7 +57759,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-01-281";
+const APP_BUILD = "2026-10-01-282";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -58649,6 +58746,13 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
   fill.className = "xpbar-fill";
   fill.style.width = (before.atCap ? 100 : Math.round(before.fraction * 1000) / 10) + "%";
   track.appendChild(fill);
+  /* The charging ring (build 282): a sibling the track cannot clip, so
+     its light can breathe by opacity alone. */
+  const trackWrap = document.createElement("div");
+  trackWrap.className = "results-level-trackwrap";
+  const trackGlow = document.createElement("span");
+  trackGlow.className = "results-level-glow"; trackGlow.setAttribute("aria-hidden", "true");
+  trackWrap.append(track, trackGlow);
 
   const line = document.createElement("p");
   line.className = "results-level-line";
@@ -58657,7 +58761,7 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
     : after.total.toLocaleString() + " XP \u00b7 " + after.toNext.toLocaleString() +
       " to level " + (after.level + 1);
 
-  wrap.append(head, track, line);
+  wrap.append(head, trackWrap, line);
 
   /* Kicked off by the caller once the block is actually on screen, for
      the same reason the Profile bar is: a width set in the same tick as
@@ -72637,27 +72741,23 @@ function showProfile(defaultTab){
      silver number. */
   const levelRow = document.createElement("div");
   levelRow.className = "profile-level-row";
-  const levelNum = document.createElement("div");
-  /* is-bare (build 267): "the level you are in the profile box being
-     boxed in like that is ugly too, don't box it in." The number and its
-     word stand on the card on their own, lit, with no plate round them. */
-  levelNum.className = "profile-level-num profile-statplate is-bare";
-  const levelNumValue = document.createElement("span");
-  levelNumValue.className = "profile-level-value shine-blue";
-  levelNumValue.textContent = String(prog.level);
-  const levelNumWord = document.createElement("span");
-  levelNumWord.className = "profile-level-word";
-  levelNumWord.textContent = "level";
-  levelNum.append(levelNumValue, levelNumWord);
+  /* THE RANK TAB'S RING, PLAIN (build 282) - see buildStatRing. The
+     glowing coin that pumped on a 4.4s beat is gone: "make those circles
+     the same, not the glowy ones ... don't need the progress circles". */
+  const levelNum = buildStatRing(prog.level, "", null);
+  levelNum.classList.add("profile-level-num");
   const levelSide = document.createElement("div");
   levelSide.className = "profile-level-side";
+  const levelSideLab = document.createElement("span");
+  levelSideLab.className = "rankhero-gaugelab";
+  levelSideLab.textContent = "Level";
   const levelSideTop = document.createElement("span");
   levelSideTop.className = "profile-level-sidetop";
   levelSideTop.textContent = prog.atCap ? "Level " + LEVEL_CAP + ", the cap" : prog.toNext.toLocaleString() + " XP to level " + (prog.level + 1);
   const levelSideSub = document.createElement("span");
   levelSideSub.className = "profile-level-sidesub";
   levelSideSub.textContent = prog.total.toLocaleString() + " XP earned";
-  levelSide.append(levelSideTop, levelSideSub);
+  levelSide.append(levelSideLab, levelSideTop, levelSideSub);
   levelRow.append(levelNum, levelSide);
   levelSect.appendChild(levelRow);
 
@@ -72698,16 +72798,12 @@ function showProfile(defaultTab){
   const allBadges = badgeCount >= totalUnitsForBadges;
   const badgeRow = document.createElement("span");
   badgeRow.className = "profile-badgerow";
-  const pMedal = document.createElement("span");
-  pMedal.className = "badges-medal profile-badgemedal" + (allBadges ? " is-complete" : "");
-  pMedal.setAttribute("aria-hidden", "true");
-  const pMedalNum = document.createElement("span");
-  pMedalNum.className = "badges-medal-num"; pMedalNum.textContent = String(badgeCount);
-  pMedal.appendChild(pMedalNum);
+  const pMedal = buildStatRing(badgeCount, "", null);
+  pMedal.classList.add("profile-badgemedal");
   const badgeText = document.createElement("span");
   badgeText.className = "profile-badgerow-text";
   const badgeKick = document.createElement("span");
-  badgeKick.className = "profile-badgesect-kicker";
+  badgeKick.className = "profile-badgesect-kicker rankhero-gaugelab";
   badgeKick.textContent = "Badges";
   const badgeLine = document.createElement("span");
   badgeLine.className = "profile-badgerow-line";
@@ -72728,9 +72824,10 @@ function showProfile(defaultTab){
      The class calendar line keeps its own row BELOW the card rather than
      inside it: it is a destination, not a fact about you, and inside the
      card it was the one tappable thing in a block of read-only text. */
-  levelSect.classList.add("profile-level-joined");
+  levelSect.classList.add("profile-level-joined", "rankhero-gauge", "statbox", "is-level");
   heroSect.appendChild(levelSect);
-  badgeStat.classList.add("profile-level-joined");
+  badgeStat.classList.add("profile-level-joined", "rankhero-gauge", "statbox", "is-badges");
+  if(allBadges) badgeStat.classList.add("is-met");
   heroSect.appendChild(badgeStat);
   /* The class no longer rides at the foot of the identity card. It was
      one line there because it was one line of content; now that it is
@@ -73542,6 +73639,56 @@ function buildBadgeStrip(cls){
   return strip;
 }
 
+/* THE RANK TAB'S RING, FOR THE OTHER TWO PLACES THAT COUNT (build 282).
+   "Those boxes that show your level and badge count is really really
+   nice. I want the badge tab at the top to use that same circle idea and
+   color ... and on your profile tab, in the top box, make those circles
+   the same, not the glowy ones. Those ones don't need the progress
+   circles though." One builder, so the three can never drift: the Rank
+   tab's own gauges keep their builder (they animate through
+   fillsToAnimate), this one draws the same 64-unit ring at the same
+   radius and stroke. part == null is a plain ring in the colour - the
+   Profile card's - and a number is an arc over the track, the Badges
+   tab's, which sets it off when the tab is SHOWN (runStatRing). */
+function buildStatRing(value, sub, part){
+  const NS = "http://www.w3.org/2000/svg";
+  const face = document.createElement("span");
+  face.className = "rankhero-ringface statring" + (part == null ? " is-plain" : "");
+  face.setAttribute("aria-hidden", "true");
+  const ring = document.createElementNS(NS, "svg");
+  ring.setAttribute("viewBox", "0 0 64 64");
+  ring.setAttribute("class", "rankhero-ring");
+  const track = document.createElementNS(NS, "circle");
+  track.setAttribute("cx", "32"); track.setAttribute("cy", "32"); track.setAttribute("r", "27");
+  track.setAttribute("class", "rankhero-ringtrack");
+  ring.appendChild(track);
+  if(part != null){
+    const arc = document.createElementNS(NS, "circle");
+    arc.setAttribute("cx", "32"); arc.setAttribute("cy", "32"); arc.setAttribute("r", "27");
+    arc.setAttribute("class", "rankhero-ringarc");
+    arc.setAttribute("pathLength", "100");
+    arc.dataset.target = String(Math.round((1 - Math.max(0, Math.min(1, part))) * 1000) / 10);
+    ring.appendChild(arc);
+  }
+  const mid = document.createElement("span");
+  mid.className = "rankhero-ringval";
+  const num = document.createElement("span");
+  num.className = "statring-num"; num.textContent = String(value);
+  mid.appendChild(num);
+  if(sub){
+    const w = document.createElement("span");
+    w.className = "statring-sub"; w.textContent = sub;
+    mid.appendChild(w);
+  }
+  face.append(ring, mid);
+  return face;
+}
+function runStatRing(root){
+  root.querySelectorAll(".statring .rankhero-ringarc[data-target]").forEach(a => {
+    a.style.strokeDashoffset = a.dataset.target;
+  });
+}
+
 function buildBadgesTab(){
   const tab = document.createElement("div");
   tab.className = "badges-tab";
@@ -73551,27 +73698,28 @@ function buildBadgesTab(){
 
   const head = document.createElement("div");
   head.className = "badges-head";
-  head.classList.add("has-medal");
-  const medal = document.createElement("div");
-  medal.className = "badges-medal" + (earned.length >= units.length ? " is-complete" : "");
+  /* The rank tab's box and gold ring, bigger here and with its arc: the
+     share of the sixteen you hold (build 282, see buildStatRing). */
+  const gaugeBox = document.createElement("div");
+  gaugeBox.className = "rankhero-gauge is-badges statbox is-big" + (earned.length >= units.length ? " is-met" : "");
+  const medal = buildStatRing(earned.length, "of " + units.length, earned.length / units.length);
   medal.setAttribute("role", "img");
+  medal.removeAttribute("aria-hidden");
   medal.setAttribute("aria-label", earned.length + " of " + units.length + " badges earned");
-  const medalNum = document.createElement("span");
-  medalNum.className = "badges-medal-num";
-  medalNum.textContent = String(earned.length);
-  const medalOf = document.createElement("span");
-  medalOf.className = "badges-medal-of";
-  medalOf.textContent = "of " + units.length;
-  medal.append(medalNum, medalOf);
   const headText = document.createElement("div");
   headText.className = "badges-head-text";
+  const headLab = document.createElement("span");
+  headLab.className = "rankhero-gaugelab";
+  headLab.textContent = "Badges";
+  headText.appendChild(headLab);
   const headTitle = document.createElement("p");
   headTitle.className = "badges-head-title";
   headTitle.textContent = earned.length >= units.length ? "Every badge earned"
     : earned.length === 1 ? "1 badge earned" : earned.length + " badges earned";
   headText.appendChild(headTitle);
   if(earned.length < units.length) headText.appendChild(badgeNextLine());
-  head.append(medal, headText);
+  gaugeBox.append(medal, headText);
+  head.appendChild(gaugeBox);
   /* The medal's sheen is set off when the tab is SHOWN, like everything
      else that moves on a Profile tab (see runFill below). */
   const strip = head;
@@ -73652,9 +73800,17 @@ function buildBadgesTab(){
 
   /* Same reason the XP bar waits: this panel is built while another
      tab is showing, so filling on build is filling out of sight. */
+  /* Two frames rather than a forced layout (build 282): the reset has
+     to be painted before the arc has somewhere to travel from, and a
+     read of offsetWidth here was a synchronous layout in the middle of a
+     tab switch. */
   tab.runFill = () => {
-    strip.classList.remove("is-shown"); void strip.offsetWidth;
-    requestAnimationFrame(() => strip.classList.add("is-shown"));
+    strip.classList.remove("is-shown");
+    strip.querySelectorAll(".statring .rankhero-ringarc").forEach(a => { a.style.strokeDashoffset = ""; });
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      strip.classList.add("is-shown");
+      runStatRing(strip);
+    }));
   };
   return tab;
 }
@@ -73706,6 +73862,10 @@ function afterFirstPaint(fn){
    instead, one a frame, a few seconds after launch (build 281). */
 setTimeout(() => {
   try{ topicsIn(QUESTIONS).forEach(u => afterFirstPaint(() => { try{ badgeViewBoxFor(badgeShapeFor(u).d); }catch(e){} })); }catch(e){}
+  /* And the date formatter the class calendar rows use (build 282): the
+     first Intl formatter in a session costs ~50ms at 4x, which landed on
+     the first Profile switch. */
+  afterFirstPaint(() => { try{ formatCalendarDate("2026-01-01"); }catch(e){} });
 }, 4000);
 var settleUntil = 0;
 function beginSettle(ms){ settleUntil = Date.now() + (ms || 420); }
@@ -74121,7 +74281,10 @@ function buildRanksTab(){
     BANNERS.filter(b => b.rank === key).forEach(b => {
       const thumb = document.createElement("span");
       thumb.className = "rankmap-giftbanner";
-      try{ thumb.appendChild(buildBannerArt(b.id)); }catch(e){}
+      /* After the first paint, like the characters above it (build 282):
+         the banner art was half of this tab's own build, for a chip at
+         the bottom of the road map that is a fixed size anyway. */
+      afterFirstPaint(() => { try{ thumb.appendChild(buildBannerArt(b.id)); }catch(e){} });
       gift("is-banner", thumb, b.name + " banner");
     });
     if(pending){
@@ -74325,7 +74488,7 @@ if(backToTopBtn){
   let backToTopRaf = 0;
   const syncBackToTop = () => {
     backToTopRaf = 0;
-    backToTopBtn.classList.toggle("show", window.scrollY > 280 && !backToTopBlocked());
+    backToTopBtn.classList.toggle("show", knownScrollY > 280 && !backToTopBlocked());
   };
   const queueBackToTop = () => { if(!backToTopRaf) backToTopRaf = requestAnimationFrame(syncBackToTop); };
   window.addEventListener("scroll", queueBackToTop, { passive: true });
@@ -74585,7 +74748,12 @@ function applyGlassRefraction(el, mapImgId){
   const oldNav = document.querySelector(".navsegment");
   function syncVisibility(){
     const isModern = document.documentElement.dataset.layout === "modern";
-    const oldNavVisible = oldNav && getComputedStyle(oldNav).display !== "none";
+    /* The DOM, not the computed style (build 282). The legacy nav is
+       shown by exactly one rule - .navsegment:has(> .iconbtn:not([hidden]))
+       - so this is the same answer, without getComputedStyle styling the
+       whole new screen on the spot: 115ms of a Rank tab switch at 4x CPU,
+       on a screen of 4,400 nodes. */
+    const oldNavVisible = !!(oldNav && oldNav.querySelector(":scope > .iconbtn:not([hidden])"));
     /* forceHideBottomTabs is the actual, correct hook for a screen
        that needs the bar hidden regardless of what this legacy oldNav
        element's own visibility says \u2014 the first attempt at this (a
@@ -74629,8 +74797,19 @@ function applyGlassRefraction(el, mapImgId){
        once on page load \u2014 the bar is hidden (zero-size) through the
        whole splash/onboarding sequence, so a one-shot generation at
        load would run against a 0\u00d70 element and never fire again. */
-    if(show) applyGlassRefraction(bar);
+    /* Measured by a ResizeObserver where there is one (build 282): the
+       map depends on the bar's size and nothing else, and reading its
+       rect here - on every stage mutation, straight after a new screen
+       went in - laid that whole screen out inside the tap. The observer
+       fires after the browser's own layout, including when the bar goes
+       from hidden to shown. (iOS skips refraction outright either way.) */
+    if(show && !barGlassRO) applyGlassRefraction(bar);
   }
+  let barGlassRO = null;
+  try{
+    barGlassRO = new ResizeObserver(() => { if(!bar.hidden) applyGlassRefraction(bar); });
+    barGlassRO.observe(bar);
+  }catch(e){ barGlassRO = null; }
   if(oldNav){
     new MutationObserver(syncVisibility).observe(oldNav, { attributes: true, childList: true, subtree: true });
     new MutationObserver(syncVisibility).observe(stage, { childList: true });
@@ -74799,7 +74978,11 @@ function applyGlassRefraction(el, mapImgId){
   if(headerEl){
     function refreshHeaderGlass(){ applyGlassRefraction(headerEl, "glassRefractionHeaderMap"); }
     window.addEventListener("resize", refreshHeaderGlass);
-    new MutationObserver(refreshHeaderGlass).observe(headerEl, { childList: true, subtree: true, characterData: true });
+    /* Size is all the map depends on (build 282): a ResizeObserver
+       instead of a MutationObserver on its text, which measured - and so
+       laid out the page - on every counter tick and every title change. */
+    try{ new ResizeObserver(refreshHeaderGlass).observe(headerEl); }
+    catch(e){ new MutationObserver(refreshHeaderGlass).observe(headerEl, { childList: true, subtree: true, characterData: true }); }
     refreshHeaderGlass();
   }
   new MutationObserver(syncActive).observe(stage, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });

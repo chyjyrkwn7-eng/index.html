@@ -1725,8 +1725,11 @@ def check_b232(br):
       const T = (k, f) => { try{ out[k] = f(); }catch(e){ out[k] = 'THREW ' + e.message; } };
       showProfile('ranks');
       T('ladder', () => [...document.querySelectorAll('.rankmap-stop .rankmap-name')].map(n => n.textContent));
+      /* The chip is there at once; its art is drawn after the first
+         paint (build 282), so this asks for the chip and the art is
+         waited for below. */
       T('novaBanner', () => { const st = [...document.querySelectorAll('.rankmap-stop')].pop();
-        return !!(st && st.querySelector('.rankmap-bannerprev .bnr, .rankmap-gift.is-banner .bnr')); });
+        return !!(st && st.querySelector('.rankmap-bannerprev, .rankmap-gift.is-banner .rankmap-giftbanner')); });
       T('centred', () => [...document.querySelectorAll('.rankmap-node')].map(n => {
         const svg = n.querySelector('svg.rank-emblem-svg'); const a = n.getBoundingClientRect(), b = svg.getBoundingClientRect();
         return { vb: svg.getAttribute('viewBox'), dx: Math.round(Math.abs((a.left + a.width / 2) - (b.left + b.width / 2))),
@@ -1755,6 +1758,16 @@ def check_b232(br):
     check("the ladder reads Bronze first and Supernova last, the way you scroll",
           isinstance(s["ladder"], list) and s["ladder"][:1] == ["Bronze"] and s["ladder"][-1:] == ["Supernova"], s["ladder"])
     check("Supernova's stop shows its banner among what it hands over", s["novaBanner"] is True, s["novaBanner"])
+    # ...and the art fills it once the screen is up (build 282 draws it
+    # after the first paint).
+    pg.evaluate("()=>showProfile('ranks')")
+    try:
+        pg.wait_for_function("""()=>{ const st=[...document.querySelectorAll('.rankmap-stop')].pop();
+          return !!(st && st.querySelector('.rankmap-bannerprev .bnr, .rankmap-gift.is-banner .bnr')); }""", timeout=6000)
+        art = True
+    except Exception:
+        art = False
+    check("and its banner art is drawn into the chip after the first paint", art)
     cen = s["centred"] if isinstance(s["centred"], list) else []
     # Centred on its own drawing. Build 232 also shrank and clipped them;
     # build 234 put the old size back ("the old road map looked so good"),
@@ -1951,9 +1964,14 @@ def check_b235(br):
       const wait = ms => new Promise(r => setTimeout(r, ms));
       // The Profile card: "level" under its number, like "badges".
       showProfile('profile'); await wait(700);
-      await T('plate', () => { const v = document.querySelector('.profile-level-num .profile-level-value');
-        const w = document.querySelector('.profile-level-num .profile-level-word');
-        return Math.round(w.getBoundingClientRect().top - v.getBoundingClientRect().bottom); });
+      /* Build 282: the level is the Rank tab's ring with its number in
+         the middle and "Level" in the box beside it - so: the number is
+         centred in its ring, and the label is the box's, not the ring's. */
+      await T('plate', () => { const f = document.querySelector('.profile-level-num.statring');
+        const v = f.querySelector('.statring-num'); const lab = document.querySelector('.profile-level .rankhero-gaugelab');
+        const a = f.getBoundingClientRect(), b = v.getBoundingClientRect();
+        const off = Math.round(Math.max(Math.abs((a.left + a.width / 2) - (b.left + b.width / 2)), Math.abs((a.top + a.height / 2) - (b.top + b.height / 2))));
+        return lab && lab.getBoundingClientRect().left >= a.right ? off : 'label not beside the ring'; });
       await T('heroLive', () => document.querySelector('.profile-hero-avatar').classList.contains('char-live'));
       // An existing account on Gold, opening this build for the first
       // time, then winning a week off-screen.
@@ -2006,8 +2024,8 @@ def check_b235(br):
         const v = getComputedStyle(document.documentElement).getPropertyValue('--theme-c3').trim();
         document.documentElement.dataset.accent = theme.accent || 'ink'; return v; });
       return out; }""")
-    check("\"level\" sits under its number on the Profile card, the way \"badges\" does",
-          isinstance(r["plate"], int) and r["plate"] >= -2, r["plate"])
+    check("the level number sits centred in its ring on the Profile card, \"Level\" beside it (build 282)",
+          isinstance(r["plate"], int) and r["plate"] <= 2, r["plate"])
     check("your own character is alive on the Profile card", r["heroLive"] is True, r["heroLive"])
     sd = r["seed"] if isinstance(r["seed"], dict) else {}
     check("an account already on Gold is NOT marked as having seen its rank character (Solar since 244)", sd.get("gold") is True and sd.get("pharaoh") is False, r["seed"])
@@ -2454,7 +2472,8 @@ def check_b241(br):
       out.coin = a.childNodes.length;
       /* 3. profile: one level plate, a badges section, a one-colour rank bar */
       showProfile('profile'); await wait(900);
-      out.plates = document.querySelectorAll('.profile-statplate').length;
+      /* build 282: the plate is the Rank tab's ring, plain */
+      out.plates = document.querySelectorAll('.profile-level .statring').length;
       /* Build 243: the badge row is the badges themselves, no meter. */
       out.badgeCells = document.querySelectorAll('.profile-badgesect .badge-meter-seg').length;
       out.badgeEarned = document.querySelectorAll('.profile-badgesect .profile-badgestack-token').length;
@@ -2639,7 +2658,9 @@ def check_b242(br):
       showProfile('badges'); await wait(900);
       out.badgesTab = { strip: document.querySelectorAll('.badges-head .badge-strip-cell').length,
         segs: document.querySelectorAll('.badges-head .badge-meter-seg').length,
-        medal: (document.querySelector('.badges-head .badges-medal-num') || {}).textContent || '',
+        /* build 282: the medal is the Rank tab's gold ring; the count is
+           still struck into the middle of it */
+        medal: (document.querySelector('.badges-head .statring .statring-num') || {}).textContent || '',
         lid: !!document.querySelector('.badge-case .badge-case-lid .badge-case-plate'),
         clasps: document.querySelectorAll('.badge-case .badge-case-front span').length,
         earned: String(badgesEarnedList().length) };
@@ -2711,7 +2732,8 @@ def check_b242(br):
     # way to show it than the 0/16" - a medal with the number in it.
     # The number is the app's own earned count, not a literal: it was "6"
     # until the 279 bands made the same fixture worth 7 badges.
-    check("the Badges tab heads with a medal, no meter, and sits in a case with a lid and two clasps",
+    # AND IN 282: the medal became the Rank tab's ring, number inside.
+    check("the Badges tab heads with its count in a ring, no meter, and sits in a case with a lid and two clasps",
           bt.get("strip") == 0 and bt.get("segs") == 0 and bt.get("medal") == bt.get("earned") and bt.get("medal") not in ("", "0") and bt.get("lid") and bt.get("clasps") == 2, bt)
     ba = r.get("badgeArt") or {}
     check("an earned badge has no printed grain and throws a shadow into its slot",
@@ -3078,6 +3100,15 @@ def check_penal_versions(br):
     def tap():
         # centred first, so the fixed tab bar is never over it
         card.evaluate("e => e.scrollIntoView({block:'center', behavior:'instant'})")
+        # A beat before the tap, the way a finger arrives (build 282). With
+        # a compositor animation running on the tab bar (its sheen), a
+        # click in the SAME instant as the scroll was hit-tested against
+        # where the card had been - under the bar - and Playwright then
+        # re-scrolled the card to the bottom edge to find a clear spot,
+        # leaving it behind the bar. A real mouse click at the card's
+        # centre lands on the card either way; this is the harness racing
+        # itself, which is the one thing a harness must not do.
+        pg.wait_for_timeout(150)
         card.click()
         pg.wait_for_timeout(450)
         return pg.evaluate(PENAL_STATE)
@@ -3116,7 +3147,9 @@ def check_penal_versions(br):
       const t = c && c.querySelector('.pick-version'); if(!t) return null;
       const b = t.getBoundingClientRect();
       const hit = document.elementFromPoint(b.left + b.width/2, b.top + b.height/2);
-      return { text: t.textContent, passesTap: !!hit && c.contains(hit) && !t.contains(hit) }; }""")
+      return { text: t.textContent, passesTap: !!hit && c.contains(hit) && !t.contains(hit),
+        hit: hit ? (hit.id || String(hit.className && hit.className.baseVal !== undefined ? hit.className.baseVal : hit.className)).slice(0, 60) : null,
+        y: Math.round(b.top), vh: innerHeight, sy: Math.round(scrollY) }; }""")
     check("the card says it carries the slides 0-85 version, and a tap on that line is a tap on the card",
           bool(pill) and "0–85" in pill["text"] and pill["passesTap"], pill)
     # 2. deselect never asks; the next select asks again
@@ -3600,13 +3633,16 @@ def check_audit_a(br):
       const tiles = [...document.querySelectorAll('#stage .badge-tile')]; const t = tiles[tiles.length - 1];
       window.scrollBy({ top: t.getBoundingClientRect().bottom - (bar.top - 73), behavior: 'instant' }); await wait(300);
       const tr = t.getBoundingClientRect();
-      t.click(); await wait(500);
-      const p = document.getElementById('contextual-info-popup');
+      t.click(); await wait(700);
+      /* Build 281 answers a badge tap with the unlock card rather than
+         the info bubble this was written for; the card still has to land
+         clear of the bar, whichever badge was tapped. */
+      const p = document.querySelector('.unlock-card-badge') || document.getElementById('contextual-info-popup');
       const pr = p ? p.getBoundingClientRect() : null;
       return { tile: [Math.round(tr.top), Math.round(tr.bottom)], barTop: Math.round(bar.top),
         popup: pr ? [Math.round(pr.top), Math.round(pr.bottom)] : null };
     }""")
-    check("a badge pop-up near the bottom never covers the tab bar",
+    check("what a badge near the bottom opens never covers the tab bar",
           r["popup"] is not None and r["popup"][1] <= r["barTop"], r)
     ctx.close()
 
@@ -4439,13 +4475,15 @@ def check_b258(br):
       out.label = RANK_DISPLAY_NAME[rankStepProgress().next] + ' · ' + rankStepPctLabel(rankStepProgress().pct);
       out.plateBar = !!document.querySelector('.profile-rankplate-bar, .profile-rankplate-next');
       const sect = document.querySelector('.profile-badgesect');
-      out.badgeSvgs = sect ? sect.querySelectorAll('svg').length : -1;
+      /* the ring is the count's own drawing (282); badge ART is anything else */
+      out.badgeSvgs = sect ? sect.querySelectorAll('svg:not(.rankhero-ring)').length : -1;
       out.badgeText = sect ? sect.textContent : '';
-      out.badgeMedal = sect ? sect.querySelectorAll('.badges-medal').length : -1;
+      out.badgeMedal = sect ? sect.querySelectorAll('.statring').length : -1;
       const fill = document.querySelector('.profile-hero .profile-xpbar .xpbar-fill');
       out.fillBg = fill ? getComputedStyle(fill).backgroundImage : '';
-      const lv = document.querySelector('.profile-hero .profile-level-value');
-      out.levelBg = lv ? getComputedStyle(lv).backgroundImage : '';
+      /* build 282: the level is the Rank tab's blue ring; its colour is the stroke */
+      const lv = document.querySelector('.profile-hero .profile-level-num.statring .rankhero-ringtrack');
+      out.levelBg = lv ? getComputedStyle(lv).stroke : '';
       out.coverMark = document.querySelectorAll('.profile-cover .profile-cover-mark').length;
       const cov = document.querySelector('.profile-cover:not(.has-banner)');
       out.coverHasTheme = !!cov && /color-mix|rgb/.test(getComputedStyle(cov).backgroundImage) && !cov.style.getPropertyValue('--card-accent');
@@ -4509,6 +4547,9 @@ def check_b258(br):
       } catch(e){ out.threw = String(e); }
       return out; }""")
     import re as _re
+    def _blue(c):
+        n = [int(float(x)) for x in _re.findall(r"[0-9.]+", c or "")[:3]]
+        return len(n) == 3 and n[2] >= 200 and n[2] - max(n[0], n[1]) >= 50
     m = _re.search(r"([0-9]+(?:\.[0-9])?)%", r.get("label", ""))
     got = float(m.group(1)) if m else -1
     check("the rank percentage is exact, to one decimal, not the step-based 50%",
@@ -4519,7 +4560,8 @@ def check_b258(br):
           r.get("lvlMet") is True and got < 60, r)
     # REVISED IN 262: "I don't like how it says what I'm closest to" - the
     # medal and a count, no unit and no hundos.
-    check("no badge icons on the Profile card - the medal and a count, not the closest unit",
+    # AND IN 282: the medal is the Rank tab's gold ring with the count in it.
+    check("no badge icons on the Profile card - the count in its ring, not the closest unit",
           r.get("badgeSvgs") == 0 and r.get("badgeMedal") == 1 and "hundo" not in r.get("badgeText", "")
           and "of 16" in r.get("badgeText", ""), r)
     # REVERSED IN 259: "No no no, the profile change is bad there. I don't
@@ -4528,7 +4570,10 @@ def check_b258(br):
     check("the level and XP bar are blue again, and the cover carries no rank",
           # REVISED IN 270: the level number is the blue coin (#3D8BFF at its
           # deepest stop), not the older #3F7FD0 - blue is what is asserted.
-          "61, 139, 255" in r.get("fillBg", "") and "61, 139, 255" in r.get("levelBg", "")
+          # REVISED IN 282: the level is the Rank tab's ring, so blue is
+          # asserted as blue (blue channel well clear of red and green)
+          # rather than as one stop of a coin that is gone.
+          "61, 139, 255" in r.get("fillBg", "") and _blue(r.get("levelBg", ""))
           and r.get("coverMark") == 0 and r.get("coverHasTheme") is True, r)
     check("the banner's art spans the pop-up, edge to edge", all(abs(x) <= 2 for x in r.get("popup", [99, 99])), r.get("popup"))
     vd = r.get("void") or {}
@@ -4705,7 +4750,11 @@ def check_b267(br):
       showProfile('profile'); await wait(1400);
       const f = document.querySelector('.profile-xpbar .xpbar-fill'), tr = document.querySelector('.profile-xpbar');
       out.xp = { bg: getComputedStyle(f).backgroundImage, tr: getComputedStyle(f).transitionDuration, h: Math.round(tr.getBoundingClientRect().height),
-                 sheen: getComputedStyle(f, '::after').content };
+                 /* build 282: ::after is the pump's wash now (opacity
+                    only); a SHEEN is a travelling gradient across it */
+                 sheen: (()=>{ const a = getComputedStyle(f, '::after');
+                   return a.content === 'none' || a.content === 'normal' ? 'none'
+                     : (/gradient/.test(a.backgroundImage) || a.animationName === 'xp-sheen') ? 'sheen' : 'none'; })() };
       out.plate = { bar: !!document.querySelector('.profile-rankplate .profile-rankplate-bar, .profile-rankplate .profile-rankplate-next') };
       const lv = document.querySelector('.profile-level-num');
       out.level = { bg: getComputedStyle(lv).backgroundColor, border: getComputedStyle(lv).borderTopWidth,
@@ -5519,6 +5568,104 @@ def check_b281_badge_card(br):
     ctx.close()
 
 
+def check_b282(br):
+    """Build 282. "The rank box where it says what rank you are in the rank
+    tab. Those boxes that show your level and badge count is really really
+    nice. I want the badge tab at the top to use that same circle idea and
+    color ... slightly bigger ... on your profile tab, in the top box, make
+    those circles the same, not the glowy ones. Those ones don't need the
+    progress circles though ... ensure the bottom tab lag is fixed ...
+    Ensure the result screen stuff and animations are lag free."
+    Held as SHAPE: the rings are the Rank tab's (its own --ring colours,
+    read off the Rank tab rather than typed here), the Badges tab's is
+    bigger and carries an arc, the Profile's carry none and nothing on
+    them moves; the bar's bubble has no blur of its own and its sheen, the
+    XP pump and every results-card landing move only transform and
+    opacity; a results card has no backdrop blur; and toTop() at the top
+    of the page asks nothing of layout. Written against build 281."""
+    print("\n55. build 282: the Rank tab's rings elsewhere, and nothing that repaints per frame")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{ const out = {}; const wait = ms => new Promise(r => setTimeout(r, ms));
+      try{
+      const ringOf = el => el ? getComputedStyle(el).getPropertyValue('--ring').trim() : null;
+      showRanksScreen('ranks'); await wait(1400);
+      const rg = document.querySelector('.rankhero-gauge:not(.is-badges)'), rb = document.querySelector('.rankhero-gauge.is-badges');
+      out.rankLevelRing = ringOf(rg); out.rankBadgeRing = ringOf(rb);
+      const rf = document.querySelector('.rankhero .rankhero-ringface');
+      out.rankFaceW = rf ? Math.round(rf.getBoundingClientRect().width) : 0;
+      /* three badges held, so the arc has somewhere real to stand */
+      topicsIn(QUESTIONS).slice(0, 3).forEach(u => store.unitPerfects[u] = 999);
+      showProfile('badges'); await wait(1600);
+      const hb = document.querySelector('.badges-head .rankhero-gauge.is-badges');
+      const hf = hb && hb.querySelector('.rankhero-ringface');
+      const arc = hf && hf.querySelector('.rankhero-ringarc');
+      out.headRing = ringOf(hb); out.headFaceW = hf ? Math.round(hf.getBoundingClientRect().width) : 0;
+      out.headArc = arc ? parseFloat(getComputedStyle(arc).strokeDashoffset) : null;
+      out.headWant = Math.round((1 - badgesEarnedList().length / topicsIn(QUESTIONS).length) * 1000) / 10;
+      out.headMedal = document.querySelectorAll('.badges-head .badges-medal').length;
+      showProfile(); await wait(1600);
+      const lv = document.querySelector('.profile-level.rankhero-gauge'), bd = document.querySelector('.profile-badgesect.rankhero-gauge');
+      out.profLevelRing = ringOf(lv); out.profBadgeRing = ringOf(bd);
+      const rings = [...document.querySelectorAll('.profile-level .rankhero-ringface, .profile-badgesect .rankhero-ringface')];
+      out.profRings = rings.length;
+      out.profArcs = rings.reduce((n, f) => n + f.querySelectorAll('.rankhero-ringarc').length, 0);
+      out.profRingAnims = rings.reduce((n, f) => n + f.getAnimations({ subtree:true }).length, 0)
+        + (document.querySelector('.profile-level-num') ? document.querySelector('.profile-level-num').getAnimations().length : 0);
+      /* every HTML-element animation running on Profile: transform/opacity only */
+      const paintProps = [];
+      document.getAnimations().forEach(a => { const t = a.effect && a.effect.target; if(!t || a.playState !== 'running') return;
+        if(t instanceof SVGElement) return;
+        a.effect.getKeyframes().forEach(k => Object.keys(k).forEach(p => {
+          if(['offset','easing','composite','computedOffset','transform','opacity','translate','rotate','scale'].includes(p)) return;
+          paintProps.push((a.animationName || a.transitionProperty || '?') + ':' + p); })); });
+      out.profPaint = [...new Set(paintProps)];
+      /* the keyframes behind the bar's sheen, the XP pump and the results reveal */
+      const kf = {};
+      const walk = rules => { for(const rule of rules){
+        if(rule.type === CSSRule.KEYFRAMES_RULE){ const props = new Set();
+          for(const k of rule.cssRules) for(let i = 0; i < k.style.length; i++) props.add(k.style[i]);
+          kf[rule.name] = [...props]; }
+        else if(rule.cssRules) walk(rule.cssRules); } };
+      for(const sh of document.styleSheets){ try{ walk(sh.cssRules); }catch(e){} }
+      out.kf = {};
+      ['glass-sheen','xp-pump','rs-bang','rs-slam','rs-impact','rs-charge','rs-trackpop'].forEach(n => out.kf[n] = kf[n] || null);
+      const slider = document.getElementById('bottomtabs-slider');
+      out.sliderBlur = slider ? getComputedStyle(slider).backdropFilter : 'missing';
+      const scr = document.createElement('div'); scr.className = 'rs-screen';
+      const card = document.createElement('div'); card.className = 'rs-card'; scr.appendChild(card); document.body.appendChild(scr);
+      out.cardBlur = getComputedStyle(card).backdropFilter; scr.remove();
+      /* toTop() at the top asks nothing of layout */
+      window.scrollTo({ top:0, behavior:'instant' }); await wait(200);
+      const real = window.scrollTo; let calls = 0;
+      window.scrollTo = function(){ calls++; return real.apply(this, arguments); };
+      toTop(); toTop(true);
+      out.toTopAtTop = calls;
+      window.scrollTo = real;
+      }catch(e){ out.threw = String(e); }
+      return out; }""")
+    check("the Badges tab's ring is the Rank tab's badge ring, bigger, in its box, with no medal",
+          r.get("headRing") and r.get("headRing") == r.get("rankBadgeRing") and r.get("headFaceW", 0) > r.get("rankFaceW", 0) > 0
+          and r.get("headMedal") == 0, r)
+    check("and its arc stands at the share of the badges held",
+          r.get("headArc") is not None and abs(r["headArc"] - r["headWant"]) < 1.5, (r.get("headArc"), r.get("headWant")))
+    check("the Profile card's two rings take the Rank tab's level and badge colours",
+          r.get("profRings") == 2 and r.get("profLevelRing") == r.get("rankLevelRing") and r.get("profBadgeRing") == r.get("rankBadgeRing")
+          and r.get("rankLevelRing") != r.get("rankBadgeRing"), r)
+    check("with no progress arc and nothing on them moving",
+          r.get("profArcs") == 0 and r.get("profRingAnims") == 0, (r.get("profArcs"), r.get("profRingAnims")))
+    check("nothing running on Profile repaints per frame (transform and opacity only)",
+          r.get("profPaint") == [], r.get("profPaint"))
+    kf = r.get("kf") or {}
+    cheap = {"transform", "opacity", "translate", "rotate", "scale"}
+    check("the bar's sheen, the XP pump and every results landing move transform and opacity only",
+          all(kf.get(n) and set(kf[n]) <= cheap for n in kf), kf)
+    check("the tab bar's bubble has no blur of its own, and a results card no backdrop blur",
+          r.get("sliderBlur") == "none" and r.get("cardBlur") == "none", (r.get("sliderBlur"), r.get("cardBlur")))
+    check("toTop() at the top of the page does not scroll, so lays nothing out",
+          r.get("toTopAtTop") == 0, r.get("toTopAtTop"))
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     only = os.environ.get("ONLY_B245")
@@ -5594,6 +5741,7 @@ def main():
             check_b279_merge(br)
             check_b280_rankmap_still(br)
             check_b281_badge_card(br)
+            check_b282(br)
         finally:
             br.close()
     SERVER.shutdown()

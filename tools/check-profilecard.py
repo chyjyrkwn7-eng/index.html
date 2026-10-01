@@ -61,7 +61,12 @@ with sync_playwright() as pw:
           const av=document.querySelector('.profile-hero-avatar');
           const cs=av?getComputedStyle(av,'::before'):null;
           const svg=av?av.querySelector('svg'):null;
-          const plates=[...document.querySelectorAll('.profile-statplate')];
+          /* build 282: the level and the badge count are the Rank tab's
+             ring, plain - one in the level box, one in the badges box */
+          const plates=[...document.querySelectorAll('.profile-level .statring, .profile-badgesect .statring')];
+          const ringArcs=plates.reduce((n,p)=>n+p.querySelectorAll('.rankhero-ringarc').length,0);
+          const ringAnims=plates.reduce((n,p)=>n+p.getAnimations({subtree:true}).length,0);
+          const boxes=[...document.querySelectorAll('.profile-level.statbox, .profile-badgesect.statbox')].map(b=>getComputedStyle(b).backgroundColor);
           const bsect=document.querySelector('.profile-badgesect');
           const bcells=bsect?bsect.querySelectorAll('.badge-meter-seg').length:0;
           const btokens=bsect?bsect.querySelectorAll('.badge-strip-cell, svg.badge-art').length:0;
@@ -77,7 +82,7 @@ with sync_playwright() as pw:
             /* build 266: the drop-shadow is on the character's wrapper, never
                the masked svg - on the svg the mask cut it into a square */
             svgFilter: (av&&av.querySelector(':scope > .rank-avatar'))?getComputedStyle(av.querySelector(':scope > .rank-avatar')).filter.slice(0,40):null,
-            plates: plates.length, bcells, bsect: !!bsect,
+            plates: plates.length, bcells, bsect: !!bsect, ringArcs, ringAnims, boxes,
             plateRects: plates.map(p=>{const b=p.getBoundingClientRect();return [Math.round(b.width),Math.round(b.height)];}),
             plateBg: plates[0]?getComputedStyle(plates[0]).backgroundColor:null,
             trackH: tr?Math.round(tr.getBoundingClientRect().height):null,
@@ -101,10 +106,21 @@ with sync_playwright() as pw:
         # off ("still not a fan of the badge thing. There doesn't need to
         # be a progress bar like that"): a count, and the badges you hold
         # as a small stack - none here, the seed has none.
-        ck("one level plate; badges are their own section, with no meter and no full set",
-           r["plates"]==1 and r["bsect"] and r["bcells"]==0 and r["btokens"]==0,
-           (r["plates"], r["bcells"], r["btokens"]))
-        ck("plates >=44px tall", bool(r["plateRects"]) and min(h for _,h in r["plateRects"])>=44, r["plateRects"])
+        # ---- AND AGAIN (build 282) ----
+        # "Those boxes that show your level and badge count [on the Rank
+        # tab] is really really nice ... on your profile tab, in the top
+        # box, make those circles the same, not the glowy ones. Those ones
+        # don't need the progress circles though." So: two rings (level,
+        # badges), each in its own dark box, with no arc and nothing
+        # moving on them; the badges are still their own section with no
+        # meter and no set.
+        ck("two plain rings, level and badges, each in its own box; no meter and no set",
+           r["plates"]==2 and r["bsect"] and r["bcells"]==0 and r["btokens"]==0
+           and len(r["boxes"])==2 and all(b not in ("rgba(0, 0, 0, 0)","transparent") for b in r["boxes"]),
+           (r["plates"], r["bcells"], r["btokens"], r["boxes"]))
+        ck("no progress arc on either ring, and nothing on them animates",
+           r["ringArcs"]==0 and r["ringAnims"]==0, (r["ringArcs"], r["ringAnims"]))
+        ck("rings >=44px tall", bool(r["plateRects"]) and min(h for _,h in r["plateRects"])>=44, r["plateRects"])
         ck("bar filled to target", r["fillW"] not in (None,"0%"), (r["fillW"],r["fillTarget"]))
         # ---- THIS ENCODED A DECISION, AND IT REVERSED ----
         # The three quarter marks across the XP track were asked for,

@@ -8830,3 +8830,92 @@ are untouched.
   decision - she asked for them to move (248) - so it is put to her,
   not done quietly.
 
+
+### Build 282
+
+- **The Rank tab's rings, in the two other places that count.** *"Those
+  boxes that show your level and badge count [on the Rank tab] is really
+  really nice. I want the badge tab at the top to use that same circle
+  idea and color ... slightly bigger ... on your profile tab, in the top
+  box, make those circles the same, not the glowy ones. Those ones don't
+  need the progress circles though."* `buildStatRing(value, sub, part)`
+  draws the Rank tab's 64-unit ring (same radius, same stroke, same
+  `--ring` colours from `.rankhero-gauge` / `.is-badges`); `part == null`
+  is a plain ring in the colour, a number is the arc over the track.
+  - **Profile**: the level and the badges are each a `.rankhero-gauge
+    .statbox` - the dark rounded box - with a plain ring (blue level,
+    gold badges), the gauge label in the ring's colour, and the XP bar
+    inside the level box. The glowing coin and its `coin-pump` are gone.
+  - **Badges tab**: the silver medal is gone; a bigger gold ring
+    (`.statbox.is-big`, 5.2rem / 6.2rem tablet) with the arc at the share
+    of the sixteen held, in a box inside the case-metal head. The arc is
+    set off when the tab is SHOWN (`runStatRing`), on two frames rather
+    than an `offsetWidth` read.
+  - **A statbox is a row at every width.** The Rank tab stacks its two
+    small gauges into columns under 24rem; a full-width box stacked and
+    centred put "Closest ..." wider than the box, spilling out of both
+    sides on a 320px phone.
+- **Tab switches, round two.** Profiled per switch at 4x CPU:
+  - `toTop()` read `scrollY` and called `scrollTo()` straight after the
+    new screen went in - a forced layout of it, 50-80ms a switch, for a
+    page usually already at the top. `knownScrollY` is kept from scroll
+    events (a clamp fires one too) and `toTop()` returns at 0.
+  - `syncVisibility()` asked `getComputedStyle(oldNav).display` - a style
+    pass over the whole new screen (115ms of Rank's 4,400 nodes). The
+    legacy nav is shown by exactly one rule (`:has(> .iconbtn:not([hidden]))`),
+    so the DOM answers the same question.
+  - glass refraction (never on iOS) measured the bar and the header on
+    every stage mutation / header text change; ResizeObservers now.
+  - Supernova's banner art on the road map is drawn after the first
+    paint, like the character previews (half of buildRanksTab).
+  - The bar's own glass: the bubble's nested `backdrop-filter` (inside
+    the bar's blur(30px), re-blurred every frame its width animated) is
+    gone - a slightly brighter fill instead; the sheen moved from an
+    animated `background-position` under `mix-blend-mode:overlay` (a
+    whole-bar repaint every frame, forever) to a static gradient slid
+    with `transform`.
+  A/B against 281, same browser, interleaved, 8 rounds: Rank 439 -> 316ms
+  blocked and 8 -> 14.5 visible glide frames; Home 17 -> 13 dropped;
+  Profile and Settings within noise. `go()` on Profile 102 -> 50ms, Home
+  34 -> 20ms in the CPU profile.
+- **The results reveal moves nothing that repaints.** Every `.rs-card`
+  had `backdrop-filter:blur(16px)` and every card lands by moving - a
+  re-blur per frame per card; it is a slightly more opaque tint now
+  (screenshots before/after are indistinguishable over the ambient
+  glow). `rs-impact` animated the card's border and box-shadow; it is a
+  `::after` rim that fades. `rs-bang`/`rs-slam` lost their blur.
+  `rs-charge` and the level-up pop light `.results-level-glow` (a
+  sibling the track cannot clip) by opacity. The XP bar's `xp-pump`
+  (box-shadow + brightness, infinite, on Profile and every results
+  screen) is a white wash on `::after` fading in and out. Measured over
+  a whole drill reveal at 4x: long tasks 92 -> 0ms, dropped frames 6 -> 3.
+- **Still on the table, and hers to decide**: the animations INSIDE
+  drawings (rank emblems, characters) remain the largest per-frame cost;
+  freezing or thinning them changes the look (see 281).
+- Gates: `check_b282` (section 55) holds the rings to the Rank tab's own
+  `--ring` values, the Badges ring bigger with an arc at the held share,
+  the Profile rings arc-less and still, every animation running on
+  Profile and the sheen/pump/landing keyframes transform-and-opacity
+  only, no blur on the bubble or a results card, and `toTop()` at the
+  top not scrolling. Fails on 281. `check-profilecard` asserts the two
+  plain rings in their boxes; the old badge-bubble-near-the-tab-bar check
+  asks the same of the unlock card a badge opens since 281.
+- **check-fixes: one finding left open, and it is not new.** "iPhone SE
+  (1st gen) 568x260 browser: GREY BAR - fallback is 10 levels off the
+  fixed layer at the bottom edge". Home is 298px tall in that 260px
+  viewport, so it scrolls 38px, and the html fallback glow (one viewport,
+  attached to the document) sits 38px off `body::before` at the bottom
+  edge. Measured outside the gate, live 279, 281 and 282 render it
+  identically (10 levels at the same pixel). Live 279 PASSED the gate only
+  because its stage-swap observer snapped the page back to the top before
+  the screenshot (scrollY 0 at capture); since 281 reads the scroll from
+  `toTop` the scroll sticks and the gate finally measures what it says it
+  does. It only matters where the fixed layer fails to paint, and the
+  obvious cure (`background-attachment:fixed`) is the one iOS ignores
+  (see the fallback's own note). Left open on purpose, not fudged.
+- **A harness race, fixed in the harness.** The Penal Code card check
+  clicked in the same instant as its own `scrollIntoView`; with the bar's
+  sheen now a compositor animation, Playwright hit-tested the card where
+  it had been (under the bar) and re-scrolled it to the bottom edge. A
+  real mouse click at the card's centre lands on the card on every
+  build; `tap()` now waits 150ms after scrolling, as a finger does.
