@@ -31336,9 +31336,38 @@ document.addEventListener("pointerdown", (e) => {
   a.blur();
 }, true);
 
+/* THE ENTRANCE STARTS ONCE THE SCREEN IS DRAWN (build 281). A screen's
+   slide-in (screen-fade-in, .3s) starts the instant it is inserted, but
+   the first frame of a big screen - style, layout and paint of a few
+   thousand nodes - can take longer than the whole animation, so by the
+   time anything was on glass the slide was half over and it read as a
+   jump: "the animation when opening up tabs is laggy". Held at its first
+   frame until the screen has painted once, then let go, so every frame
+   of the glide is one the screen is already drawn for. The question
+   slide (.qpanel) is left alone - it was measured frame-perfect. */
+new MutationObserver((muts) => {
+  muts.forEach(m => m.addedNodes.forEach(el => {
+    if(el.nodeType !== 1 || el.parentNode !== stage || el.classList.contains("qpanel")) return;
+    el.style.animationPlayState = "paused";
+    requestAnimationFrame(() => requestAnimationFrame(() => { el.style.animationPlayState = ""; }));
+  }));
+}).observe(stage, { childList: true });
+
+/* ONLY AFTER TYPING (build 281). The unwind below reads the scroll
+   position, and reading it straight after a screen mounts forces that
+   whole screen to lay out on the spot - 83ms of every tab switch at 4x
+   CPU, measured, for a problem that only exists when a keyboard was up.
+   A text field focused (or left) in the last few seconds is the only way
+   to be displaced, so that is the only time it runs. */
+var lastTextFocusAt = 0;
+["focusin", "focusout"].forEach(t => document.addEventListener(t, (e) => {
+  if(e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) lastTextFocusAt = Date.now();
+}, true));
 new MutationObserver(() => {
   const focused = document.activeElement;
-  if(focused && /^(INPUT|TEXTAREA)$/.test(focused.tagName)){
+  const typing = focused && /^(INPUT|TEXTAREA)$/.test(focused.tagName);
+  if(!typing && Date.now() - lastTextFocusAt > 4000) return;
+  if(typing){
     focused.blur();
   }
   /* Correct the scroll more than once. iOS restores it asynchronously as
@@ -38803,7 +38832,15 @@ function nextClassEntry(){
 function formatCalendarDate(iso){
   const p = String(iso).split("-").map(Number);
   const d = new Date(p[0], p[1] - 1, p[2]);
-  return d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
+  /* One formatter, made once (build 281): toLocaleDateString with options
+     builds a new Intl formatter on every call, and the class calendar
+     calls this for every day row - 54ms of the Profile tab's switch at
+     4x CPU, for the same three fields each time. */
+  if(!formatCalendarDate._f){
+    try{ formatCalendarDate._f = new Intl.DateTimeFormat([], { weekday: "short", month: "short", day: "numeric" }); }
+    catch(e){ return d.toLocaleDateString(); }
+  }
+  return formatCalendarDate._f.format(d);
 }
 
 
@@ -43383,6 +43420,15 @@ var _rkIO = typeof IntersectionObserver === "function" ? new IntersectionObserve
   entries.forEach(e => {
     const t = e.target;
     if(!t.isConnected){ _rkIO.unobserve(t); _rkSeen.delete(t); return; }
+    /* Waking up waits out a screen's entrance (build 281): the emblems
+       are the costliest motion in the app - every frame of every one
+       restyles and repaints its whole svg - and starting them all in the
+       same frames as the slide-in is what made the slide stutter. */
+    const wait = (typeof settleUntil === "number") ? settleUntil - Date.now() : 0;
+    if(e.isIntersecting && wait > 0){
+      setTimeout(() => { if(t.isConnected) t.classList.remove("rk-idle"); }, wait);
+      return;
+    }
     t.classList.toggle("rk-idle", !e.isIntersecting);
   });
 }, { rootMargin: "60px" }) : null;
@@ -43433,7 +43479,14 @@ function setCharState(el, state){
   el.classList.remove("char-live", "char-sleep");
   const old = el.querySelector(":scope > .char-zzz");
   if(old) old.remove();
-  if(state === "live") el.classList.add("char-live");
+  if(state === "live"){
+    /* The idle loop waits out a screen's entrance (build 281), like the
+       rank emblems: it is motion inside an svg, the costliest kind there
+       is, and the slide-in should have its frames to itself. */
+    const wait = (typeof settleUntil === "number") ? settleUntil - Date.now() : 0;
+    if(wait > 0) setTimeout(() => { if(el.isConnected && !el.classList.contains("char-sleep")) el.classList.add("char-live"); }, wait);
+    else el.classList.add("char-live");
+  }
   if(state === "sleep"){
     el.classList.add("char-sleep");
     const z = document.createElement("span");
@@ -46886,19 +46939,27 @@ function holdToTop(ms){ toTopHoldUntil = Date.now() + (ms || 600); }
    the LAST screen had been left, played out over the new one. The
    setting is for scrolling back up the screen you are on; a screen that
    has just been swapped in jumps. */
-let lastStageSwapAt = 0, lastToTopAt = 0;
+let lastStageSwapAt = 0, lastToTopAt = 0, lastToTopFrom = 0;
 try{ new MutationObserver(() => {
   lastStageSwapAt = Date.now();
   /* And a screen that asked for the top just BEFORE it mounted - several
      do - had its smooth scroll start on the old screen and finish on
-     the new one. If one is still travelling, it lands now. */
-  if(Date.now() - lastToTopAt < 400 && window.scrollY > 0){
+     the new one. If one is still travelling, it lands now.
+     NOT BY READING scrollY HERE (build 281): this runs straight after the
+     new screen is inserted, and asking for the scroll position then lays
+     the whole new screen out on the spot - 214ms of the Progress tab's
+     switch at 4x CPU. Whether a scroll could be travelling is known from
+     where toTop() started it, on the old screen. */
+  if(Date.now() - lastToTopAt < 400 && lastToTopFrom > 0){
     try{ window.scrollTo({ top:0, left:0, behavior:"instant" }); }catch(e){}
   }
 }).observe(stage, { childList: true }); }catch(e){}
 function toTop(instant){
   if(typeof window.scrollTo !== "function") return;
   lastToTopAt = Date.now();
+  /* read here, on the screen that is already laid out, so the mount
+     observer never has to (build 281) */
+  try{ lastToTopFrom = window.scrollY; }catch(e){ lastToTopFrom = 1; }
   if(!instant && Date.now() - lastStageSwapAt < 400) instant = true;
   if(!instant && Date.now() < toTopHoldUntil) return;
   try{
@@ -57601,7 +57662,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-01-280";
+const APP_BUILD = "2026-10-01-281";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -72139,6 +72200,7 @@ function showRanksScreen(defaultTab){
   let current = initialTab;
   function select(which){
     current = which;
+    beginSettle(320);
     ensureBuilt(which);
     defs.forEach(t => { t.node.hidden = t.key !== which; btns[t.key].classList.toggle("active", t.key === which); });
     if(which === "badges" && badgesTab.runFill) badgesTab.runFill();
@@ -72148,7 +72210,9 @@ function showRanksScreen(defaultTab){
   attachTabSwipe(panel, RANKS_TABS, () => current, select);
   stage.replaceChildren(panel);
   toTop(true);
-  setTimeout(() => { if(panel.isConnected) defs.forEach(t => ensureBuilt(t.key)); }, 450);
+  /* the other tab is built once the entrance is over, not on a timer that
+     could land in the middle of it (build 281) */
+  defs.forEach(t => afterFirstPaint(() => { if(panel.isConnected) ensureBuilt(t.key); }));
   requestAnimationFrame(() => {
     if(current === "badges" && badgesTab.runFill) badgesTab.runFill();
     if(current === "ranks" && ranksTab.runFill) ranksTab.runFill();
@@ -72246,6 +72310,7 @@ function showProfile(defaultTab){
   let profileTabKey = initialTab;
   function selectProfileTab(which){
     profileTabKey = which;
+    beginSettle(320);
     profileTabDefs.forEach(t => {
       t.node.hidden = t.key !== which;
       profileTabBtns[t.key].classList.toggle("active", t.key === which);
@@ -73616,12 +73681,34 @@ function afterFirstPaint(fn){
   afterPaintQueue.push(fn);
   if(afterPaintQueue.length > 1) return;
   const step = () => {
+    /* Never inside a screen's entrance (build 281): a drawing built
+       mid-slide is a dropped frame in the one moment smoothness is seen. */
+    if(Date.now() < settleUntil){ setTimeout(step, 60); return; }
     const f = afterPaintQueue.shift();
     if(f){ try{ f(); }catch(e){} }
     if(afterPaintQueue.length) requestAnimationFrame(() => setTimeout(step, 0));
   };
   requestAnimationFrame(() => setTimeout(step, 0));
 }
+/* ---- THE SETTLE WINDOW (build 281) ----
+   "Switching between tabs lags badly, the animation when opening up tabs
+   is laggy ... the smoothness of the app is a priority." Measured at 4x
+   CPU, a tab switch was not slow because of the entrance itself but
+   because of everything that started in the same frames: every rank
+   emblem's inner layers (92 animations on Home, each repainting its
+   whole svg every frame), the characters' idle loops, the glass bar's
+   sheen and the queued drawings above. The queued drawings now wait out
+   this window. (A class on <html> pausing every animation was tried
+   first and measured worse: changing a class on the root restyles the
+   whole document, 55ms at 4x, twice a switch. Hence a timestamp.) */
+/* The sixteen badge outlines are measured (getBBox) the first time each
+   is drawn - 90ms of the first Badges visit at 4x CPU. Measured here
+   instead, one a frame, a few seconds after launch (build 281). */
+setTimeout(() => {
+  try{ topicsIn(QUESTIONS).forEach(u => afterFirstPaint(() => { try{ badgeViewBoxFor(badgeShapeFor(u).d); }catch(e){} })); }catch(e){}
+}, 4000);
+var settleUntil = 0;
+function beginSettle(ms){ settleUntil = Date.now() + (ms || 420); }
 
 function buildRanksTab(){
   const tab = document.createElement("div");
@@ -74462,6 +74549,7 @@ function applyGlassRefraction(el, mapImgId){
          a cutscene owed). */
       bar.querySelectorAll(".bottomtab").forEach(t => t.classList.toggle("active", t === tab));
       slideBubbleToActiveTab();
+      beginSettle();
       requestAnimationFrame(() => setTimeout(() => { go(); syncActive(); }, 0));
     });
     const go = () => {
@@ -74582,16 +74670,29 @@ function applyGlassRefraction(el, mapImgId){
      it stays correct regardless of label length or available width. */
   const navrow = bar.querySelector(".bottomtabs-navrow");
   const slider = document.getElementById("bottomtabs-slider");
-  function slideBubbleToActiveTab(){
+  /* NO MEASURING ON A SCREEN CHANGE (build 281). syncActive runs right
+     after a new screen is mounted, and reading two rects there forced the
+     whole new screen to lay out on the spot - 60 to 350ms of a tab switch
+     at 4x CPU, inside the tap, before the first frame. The bar's own
+     geometry does not depend on the screen at all, so the bubble only
+     measures when the active tab actually changed or the bar was resized,
+     and the click handler has already put it there before the screen is
+     built. */
+  let bubbleAt = null;
+  function slideBubbleToActiveTab(force){
     const activeTab = navrow.querySelector(".bottomtab.active");
-    if(!activeTab){ slider.classList.remove("ready"); return; }
+    if(!activeTab){ slider.classList.remove("ready"); bubbleAt = null; return; }
+    if(force !== true && bubbleAt === activeTab && slider.classList.contains("ready")) return;
     const rowRect = navrow.getBoundingClientRect();
     const tabRect = activeTab.getBoundingClientRect();
+    if(!tabRect.width){ bubbleAt = null; return; }
     slider.style.width = tabRect.width + "px";
     slider.style.transform = "translateX(" + (tabRect.left - rowRect.left) + "px)";
     slider.classList.add("ready");
+    bubbleAt = activeTab;
   }
-  window.addEventListener("resize", slideBubbleToActiveTab);
+  window.addEventListener("resize", () => slideBubbleToActiveTab(true));
+  try{ new ResizeObserver(() => slideBubbleToActiveTab(true)).observe(navrow); }catch(e){}
 
   /* Real drag-to-switch on the tab bar itself, not just a swipe
      anywhere on the page \u2014 press on the bar and the glass bubble
@@ -74621,6 +74722,7 @@ function applyGlassRefraction(el, mapImgId){
     const tabRect = tabEl.getBoundingClientRect();
     slider.style.width = tabRect.width + "px";
     slider.style.transform = "translateX(" + (tabRect.left - rowRect.left) + "px)";
+    bubbleAt = tabEl;   /* where it really is now, so a snap back measures */
   }
   navrow.addEventListener("pointerdown", (e) => {
     if(bar.hidden) return;
@@ -74683,7 +74785,7 @@ function applyGlassRefraction(el, mapImgId){
       setTimeout(() => { bar.dataset.navigating = "0"; }, 130);
       tabDests[tab.id]();
     }
-    else slideBubbleToActiveTab(); // dropped somewhere odd (e.g. off the bar) \u2014 snap back
+    else slideBubbleToActiveTab(true); // dropped somewhere odd (e.g. off the bar) \u2014 snap back
   }
   navrow.addEventListener("pointerup", endTabDrag);
   navrow.addEventListener("pointercancel", endTabDrag);
@@ -74767,6 +74869,11 @@ function applyGlassRefraction(el, mapImgId){
 
   function syncStartAction(){
     const floatBtn = stage.querySelector(".floatbtn");
+    /* Only a change of size needs the bubble re-measured (build 281): this
+       runs on every mutation in the screen, and a forced re-measure here
+       laid the whole new screen out on the spot - 90ms of the Progress
+       tab's switch at 4x CPU, for a bar whose size had not changed. */
+    const hadStart = bar.classList.contains("has-start-tab");
     /* Critical: only merge when the bottom bar is actually visible (it
        hides entirely during a question, on purpose). Merging regardless
        would hide the real Next-question button with no bar visible to
@@ -74797,13 +74904,13 @@ function applyGlassRefraction(el, mapImgId){
          is what keeps the highlight genuinely centered behind the
          active tab instead of sized for a tab that no longer exists
          at that size. */
-      if(typeof slideBubbleToActiveTab === "function") slideBubbleToActiveTab();
+      if(typeof slideBubbleToActiveTab === "function") slideBubbleToActiveTab(!hadStart);
       /* Each split pill gets its own real refraction map now too, per
          explicit request \u2014 not just the plain blur both already had.
          requestAnimationFrame first so this measures the pills at
          their actual post-class-change size, not whatever size they
          had a frame earlier. */
-      requestAnimationFrame(() => {
+      if(!hadStart) requestAnimationFrame(() => {
         applyGlassRefraction(document.querySelector(".bottomtabs-navrow"), "glassRefractionNavrowMap");
         applyGlassRefraction(document.querySelector(".bottomtabs-extrarow"), "glassRefractionExtrarowMap");
       });
@@ -74822,7 +74929,7 @@ function applyGlassRefraction(el, mapImgId){
          every tab back to full size, and without this the slider was
          left sized/positioned for the small compact tab that no
          longer exists at that size. */
-      if(typeof slideBubbleToActiveTab === "function") slideBubbleToActiveTab();
+      if(hadStart && typeof slideBubbleToActiveTab === "function") slideBubbleToActiveTab(true);
     }
   }
   new MutationObserver(syncStartAction).observe(stage, { childList: true, subtree: true, attributes: true, attributeFilter: ["hidden", "disabled"] });
