@@ -4669,7 +4669,8 @@ def check_b267(br):
                  sheen: getComputedStyle(f, '::after').content };
       out.plate = { bar: !!document.querySelector('.profile-rankplate .profile-rankplate-bar, .profile-rankplate .profile-rankplate-next') };
       const lv = document.querySelector('.profile-level-num');
-      out.level = { bg: getComputedStyle(lv).backgroundColor, border: getComputedStyle(lv).borderTopWidth };
+      out.level = { bg: getComputedStyle(lv).backgroundColor, border: getComputedStyle(lv).borderTopWidth,
+                    round: Math.abs(lv.getBoundingClientRect().width - lv.getBoundingClientRect().height) < 1 && parseFloat(getComputedStyle(lv).borderTopLeftRadius) >= lv.getBoundingClientRect().width / 2 - 1 };
       cfg.mode = 'game'; cfg.units = [topicsIn(QUESTIONS)[0]]; showSetup(); await wait(600);
       document.getElementById('nextbtn').click(); await wait(500);
       showToast('test toast'); await wait(300);
@@ -4701,7 +4702,10 @@ def check_b267(br):
           and xp.get("sheen") in ("none", "normal"), xp)
     check("the Profile rank plate has no bar", (r.get("plate") or {}).get("bar") is False, r.get("plate"))
     lv = r.get("level") or {}
-    check("the level is not boxed in", lv.get("bg") in ("rgba(0, 0, 0, 0)", "transparent") and lv.get("border") == "0px", lv)
+    # 267 took the level out of its box; 270 put it in the rank plate's
+    # coin ("the level number could kind of get that same look"), which is
+    # a round lit well, not the square plate 267 removed.
+    check("the level is not in a square box", lv.get("bg") in ("rgba(0, 0, 0, 0)", "transparent") or lv.get("radius", "").endswith("%") or lv.get("round"), lv)
     check("a toast sits above an open start sheet", r.get("toastZ", -1) > r.get("sheetZ", 0) > 0, [r.get("toastZ"), r.get("sheetZ")])
     check("the start sheet closes on a swipe down from its middle", closed is True, closed)
     check("no exception", not r.get("threw"), r.get("threw"))

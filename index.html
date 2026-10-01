@@ -2855,6 +2855,10 @@
     grid-column:1 / -1; grid-row:2; align-self:end; justify-self:start; max-width:100%;
     padding:.16rem .5rem; border-radius:.5rem; font-size:.68rem; font-weight:700; line-height:1.25; letter-spacing:.02em;
     color:#9ED3FF; background:rgba(111,194,255,.1); border:1px solid rgba(111,194,255,.26);
+    /* Its words start on the title's left edge, not the box's (build
+       270: "it needs to be offset so it's inline with the title"), so
+       the box itself sits out by exactly its own padding and border. */
+    margin-left:calc(-.5rem - 1px);
     /* A label, not a control: a tap on it is a tap on the card. */
     pointer-events:none;
   }
@@ -5158,19 +5162,8 @@
   .chatdock-face svg{ width:100%; height:100%; display:block; }
   .chatdock-face-more{ font-size:.7rem; font-weight:800; color:var(--ink); background:#2A323C; }
   .chatdock-chatrow.is-unread .chatdock-chatrow-name{ color:#fff; }
-  /* The unit details' mode chip (build 240). */
-  .unitdetail-grouphead{ margin:.2rem 0 .45rem; font-size:.66rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--soft); display:flex; align-items:center; }
-  .unitdetail-grouphead + .unitdetail-stats{ margin-bottom:.9rem; }
-  .unitdetail-stats.is-single{ grid-template-columns:minmax(0, 1fr) !important; }
   /* No text selection from the press-and-hold that opens this (268). */
   .unitdetail, .unitdetail *{ -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
-  .unitdetail-mode{ display:inline-block; margin-left:.55rem; padding:.1rem .5rem; border-radius:999px;
-    font-size:.66rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; vertical-align:1px;
-    color:#DCEEFF; background:rgba(111,180,255,.14); border:1px solid rgba(111,180,255,.35); }
-  .unitdetail-mode.is-exam{ color:#FFE3B0; background:rgba(255,190,90,.12); border-color:rgba(255,190,90,.38); }
-  .unitdetail-mode.is-game{ color:#C9F5D6; background:rgba(74,222,128,.12); border-color:rgba(74,222,128,.35); }
-  .unitdetail-mode.is-review{ color:#E3D4FF; background:rgba(160,120,255,.13); border-color:rgba(160,120,255,.36); }
-  .unitdetail-mode.is-vroom{ color:#FFD0E6; background:rgba(255,110,170,.12); border-color:rgba(255,110,170,.36); }
   /* ---- build 240: Friends and Group chats ---- */
   .chatdock-tabs .chatdock-tab{ padding:.35rem .6rem; }
   .chatdock-chatrow.is-friend .chatdock-chatrow-open{
@@ -6059,7 +6052,9 @@
      Asked for back: "the 'sync code' words in settings should still
      be blue". The label and the code are the same fixed blue. */
   .sync-code-value{
-    font-family:var(--mono); font-size:.95rem; font-weight:800; color:#6FC2FF;
+    /* A smidge larger (build 270): "lowkey just slightly too small when
+       you click it to view". */
+    font-family:var(--mono); font-size:1.12rem; font-weight:800; color:#6FC2FF; letter-spacing:.04em;
     white-space:nowrap; flex-shrink:0; margin-left:.8rem;
   }
   .sync-code-row .sync-code-label{ color:#6FC2FF; font-weight:700; }
@@ -6202,6 +6197,10 @@
      of the waiting state rather than at the line that sets .hidden. */
   .back-link[hidden]{ display:none; }
   @media (hover:hover){ .back-link:hover{ color:var(--ink); } }
+  /* The drawn chevron (fillBackLabel, build 270): sized to the word's
+     cap height and centred on it by the flex row, not by the font. */
+  .back-chevron{ width:.95em; height:.95em; flex-shrink:0; display:block; margin-left:-.15em; }
+  .back-word{ display:block; line-height:1; }
   .startbar{
     display:flex; align-items:center; gap:1rem; flex-wrap:wrap;
     margin-top:1rem;
@@ -13144,7 +13143,7 @@
      low-opacity ambient glow around it, not from anything that reads
      as a reflection on the surface itself. */
   [data-layout="modern"] .back-link{
-    display:inline-flex; align-items:center;
+    display:inline-flex; align-items:center; justify-content:center; gap:.38rem; line-height:1;
     background-color:#0A0A0C;
     color:#fff; border-radius:999px; padding:.5rem 1rem; font-size:.85rem;
     /* The actual principle behind the white button's highlight: it
@@ -14012,37 +14011,71 @@
   .unitdetail-statlab{ margin:.2rem 0 0; font-size:.68rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.7); }
   .unitdetail-statsub{ margin:.15rem 0 0; font-size:.7rem; color:var(--soft); line-height:1.3; }
   .unitdetail-doors{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:.5rem; margin-top:.75rem; }
+  /* REAL BUTTONS (build 270): "they don't look like buttons, they are
+     missing that same button look I always tell you about" - and "could
+     be a little darker". The dark-glass recipe every secondary button
+     uses (.next.ghost, .back-link): a dark base in the door's own colour,
+     a dark-grey top highlight, a shadow inside the bottom edge and a
+     stacked lift underneath, plus a press that sinks it. */
   .unitdetail-door{
+    --door: 255,201,77;
     display:grid; grid-template-columns:minmax(0,1fr) auto; grid-template-areas:"t c" "s s"; gap:.15rem .4rem; align-items:center;
-    text-align:left; padding:.75rem .8rem; min-height:44px; border-radius:14px; cursor:pointer; color:var(--ink);
-    background:rgba(255,211,77,.08); border:1px solid rgba(255,211,77,.35);
+    text-align:left; padding:.75rem .85rem; min-height:44px; border-radius:14px; cursor:pointer; color:#fff;
+    background-color:#16130A;
+    background-image:linear-gradient(180deg, rgba(var(--door),.13), rgba(var(--door),.04));
+    border:1px solid rgba(var(--door),.32);
+    box-shadow:0 1px 1px rgba(255,255,255,.07) inset, 0 -2px 2px rgba(0,0,0,.5) inset,
+      0 1px 3px rgba(0,0,0,.4), 0 4px 10px rgba(0,0,0,.4), 0 8px 18px -6px rgba(0,0,0,.5);
+    transition:transform .12s ease, box-shadow .12s ease, background-color .12s ease;
   }
-  .unitdetail-door.is-recent{ background:rgba(255,154,122,.08); border-color:rgba(255,154,122,.4); }
+  .unitdetail-door.is-recent{ --door: 255,142,110; background-color:#170D0A; }
+  .unitdetail-door:active{ transform:translateY(1px) scale(.985);
+    box-shadow:0 1px 1px rgba(255,255,255,.05) inset, 0 -1px 2px rgba(0,0,0,.5) inset, 0 1px 2px rgba(0,0,0,.4); }
+  .unitdetail-door .unitdetail-doorcount{ color:rgb(var(--door)); }
   .unitdetail-door.is-empty{ opacity:.55; }
   .unitdetail-doortitle{ grid-area:t; font-size:.9rem; font-weight:800; }
   .unitdetail-doorcount{ grid-area:c; font-family:var(--mono); font-weight:800; font-size:1rem; }
   .unitdetail-doorsub{ grid-area:s; font-size:.7rem; color:var(--soft); }
   .unitdetail-hint{ margin:.9rem 0 0; text-align:center; font-size:.68rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:rgba(255,255,255,.38); }
-  .unitdetail-back{ min-height:44px; padding:0 .8rem; border-radius:999px; font-weight:800; font-size:.85rem; color:var(--ink);
-    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); cursor:pointer; }
+  .unitdetail-back{ display:inline-flex; align-items:center; justify-content:center; gap:.32rem; line-height:1;
+    min-height:44px; padding:0 .95rem 0 .8rem; border-radius:999px; font-weight:800; font-size:.85rem; color:#fff; cursor:pointer;
+    background-color:#0A0A0C; border:none;
+    box-shadow:0 1px 1px rgba(70,74,80,.7) inset, 0 -2px 2px rgba(0,0,0,.5) inset,
+      0 1px 3px rgba(0,0,0,.4), 0 4px 10px rgba(0,0,0,.4); }
+  .unitdetail-back:active{ background-color:#000; }
   .unitdetail-listtitle{ margin:0; font-weight:800; font-size:1rem; color:var(--ink); }
   .unitdetail-listnote{ margin:0 0 .6rem; font-size:.76rem; color:var(--soft); line-height:1.4; }
   .unitdetail-q{ margin-bottom:.8rem; padding:.75rem; border-radius:14px; background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.07); transition:opacity .25s ease; }
   .unitdetail-q.is-unflagged{ opacity:.5; }
   .unitdetail-q .review-question-text{ font-size:.92rem; margin:.4rem 0 .5rem; }
-  .unitdetail-q .choices .choice{ padding-top:.45rem; padding-bottom:.45rem; }
+  /* Height from the parts, not the box (build 270): padding on the box
+     pushed its coloured bar in from the top and bottom, so the green on
+     the right answer stopped short of the edges - "not connected fully".
+     The bar is a grid cell that stretches to the box, so the box itself
+     has none. */
+  .unitdetail-q .choices .choice{ padding:0; }
+  .unitdetail-q .choice .key{ padding-top:.6rem; padding-bottom:.6rem; }
+  .unitdetail-q .choice .text{ padding-top:.55rem; padding-bottom:.55rem; }
+  .unitdetail-q .choice .mark{ padding-top:.55rem; }
   .unitdetail-qtop{ display:flex; align-items:center; justify-content:space-between; gap:.5rem; }
-  .unitdetail-missed{ font-size:.7rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#FFB39A; }
+  /* The Most missed door's own colour (build 270), so the chip on each
+     question reads as belonging to the button that opened the list. */
+  .unitdetail-missed{ display:inline-flex; align-items:center; min-height:26px; padding:0 .6rem; border-radius:999px;
+    font-size:.68rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase;
+    color:rgb(255,142,110); background:rgba(255,142,110,.1); border:1px solid rgba(255,142,110,.32); }
 
   /* ---- The list inside the unit card (build 236) ---- */
   .unitdetail-head .pick-stars{ transition:opacity .25s ease; }
   .unitdetail.is-listing .unitdetail-head .pick-stars,
   .unitdetail.is-listing .unitdetail-head .pick-gamedots{ display:none; }
   .unitdetail.is-listing .unitdetail-head .pcount{ margin-bottom:.2rem; }
+  .unitdetail-list{ display:flex; flex-direction:column; overflow:hidden; padding:0; }
   .unitdetail-listbar{
-    position:sticky; top:0; z-index:2; margin:0 -1.1rem; padding:.3rem 1.1rem .9rem;
-    background:linear-gradient(180deg, rgba(27,32,41,.98) 0%, rgba(27,32,41,.96) 78%, rgba(27,32,41,0) 100%);
+    flex-shrink:0; padding:.3rem 1.1rem .75rem;
+    border-bottom:1px solid rgba(255,255,255,.07);
   }
+  .unitdetail-listscroll{ flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:.75rem 1.1rem 1.1rem; }
+  .unitdetail-back.is-bottom{ display:flex; margin:.4rem auto .2rem; min-width:9rem; }
   .unitdetail-listbarrow{ display:flex; align-items:center; gap:.6rem; }
   .unitdetail-search{ position:relative; margin-top:.55rem; }
   .unitdetail-search input{
@@ -14754,6 +14787,22 @@
     -webkit-mask-image:linear-gradient(180deg, #000 45%, transparent 100%);
             mask-image:linear-gradient(180deg, #000 45%, transparent 100%);
   }
+  /* THE DEFAULT BANNER IS GRAPHITE (build 270). "The default banner kinda
+     looks weird with all of the colors, could the default banner be more
+     neutral colors like black grey but still nice?" It was the theme's
+     three colours in three corners - gold, pink and blue on the default
+     theme - which read as a stain rather than a choice. Now it is the
+     same dark, quietly lit metal the rest of the chrome is made of: a soft
+     light falling from the top left, a cooler one opposite, one faint
+     diagonal sheen, and the stars. The Profile strip and the banner used
+     everywhere else (.bnr-theme) are one rule, so they cannot disagree. */
+  .profile-cover, .bnr.bnr-theme{
+    background:
+      radial-gradient(70% 150% at 12% -12%, rgba(255,255,255,.17), transparent 60%),
+      radial-gradient(55% 130% at 94% 0%, rgba(168,180,198,.15), transparent 62%),
+      linear-gradient(112deg, transparent 38%, rgba(255,255,255,.055) 50%, transparent 62%),
+      linear-gradient(160deg, #26292F 0%, #15171B 58%, #0C0D10 100%);
+  }
   .profile-cover-mark{
     position:absolute; right:-1.2rem; top:-1.6rem; width:8.5rem; height:8.5rem;
     opacity:.2; transform:rotate(-12deg); pointer-events:none;
@@ -14932,12 +14981,9 @@
     box-shadow:0 10px 28px -12px color-mix(in srgb, var(--rank-color) 70%, transparent), inset 0 1px 0 rgba(255,255,255,.12);
   }
   .profile-hero.has-cover .profile-ranklineup.profile-rankplate{ margin-top:.8rem; }
-  .profile-rankplate::after{
-    content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
-    background:linear-gradient(100deg, transparent 38%, rgba(255,255,255,.16) 50%, transparent 62%);
-    transform:translateX(-120%); animation:profile-rankplate-sheen 1.4s cubic-bezier(.3,0,.2,1) .6s 1 forwards;
-  }
-  @keyframes profile-rankplate-sheen{ to{ transform:translateX(120%); } }
+  /* No sweep across the plate as Profile opens (build 270): "the rank
+     thing in profile has like a white flash when you open the tab ... too
+     much is going on when you open that tab so get rid of that effect." */
   .profile-rankplate-wm{
     position:absolute; z-index:0; right:-1.6rem; top:50%; width:8.5rem; height:8.5rem; transform:translateY(-50%) rotate(-12deg);
     opacity:.13; pointer-events:none;
@@ -15013,7 +15059,6 @@
     .profile-rankplate .profile-rankcoin{ width:4rem; height:4rem; }
     .profile-rankplate .profile-rankword{ font-size:1.8rem; }
   }
-  [data-reduce-motion="true"] .profile-rankplate::after{ animation:none; }
 
   .profile-rankcoin{
     width:1.55rem; height:1.55rem; flex:0 0 auto; padding:.14rem;
@@ -15364,7 +15409,6 @@
   .profile-badgerow{ display:flex; align-items:center; gap:.9rem; }
   .profile-badgesect .badges-medal.profile-badgemedal{ width:3.6rem; height:3.6rem; }
   .profile-badgesect .profile-badgemedal .badges-medal-num{ font-size:1.45rem; }
-  .profile-badgesect .profile-badgemedal::after{ animation:badges-medal-sheen 1.3s cubic-bezier(.3,0,.2,1) .5s 1 forwards; }
   .profile-badgerow-text{ display:flex; flex-direction:column; gap:.15rem; min-width:0; flex:1; }
   .profile-badgerow-line{ font-size:1.05rem; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; }
   .profile-badgerow .profile-badgesect-chev{ margin-left:auto; }
@@ -15444,6 +15488,64 @@
       linear-gradient(155deg, #FFF6CF 0%, #F2CF6A 22%, #B8861C 48%, #F5D98A 70%, #9A6A12 100%);
   }
   .badges-medal.is-complete::before{ background:radial-gradient(circle at 50% 28%, #7A5A18 0%, #4E380B 55%, #2E2106 100%); }
+  /* ---- THE STAT COIN: LEVEL AND BADGES IN THE RANK PLATE'S LOOK (build 270) ----
+     "The badge circle thing under it, maybe it shouldn't be silver, I
+     really like how it looks in the rank section so could we use that in
+     both of the other places? The level number could kind of get that same
+     look as well just without the progress bar circle." The rank plate's
+     coin - a dark well lit from inside, a ring in its own colour and the
+     light coming off it - is now the coin for all three: the rank (its
+     rank colour), the level (the XP bar's blue) and the badges (badge
+     gold), on the Profile card and on the Badges tab alike. The silver
+     medal and its sweep are gone, and nothing on these coins flashes on
+     arrival. --coin is the one colour each is built from. */
+  .profile-level-row .profile-level-num.profile-statplate.is-bare, .badges-medal{ --coin:#3D8BFF; }
+  .badges-medal{ --coin:#E2AE45; }
+  .badges-medal.is-complete{ --coin:#FFCB52; }
+  .profile-level-row .profile-level-num.profile-statplate.is-bare, .badges-medal{
+    border-radius:50%; box-sizing:border-box; clip-path:none; overflow:hidden;
+    background:radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--coin) 32%, #10141A), #07090D 76%);
+    border:2px solid color-mix(in srgb, var(--coin) 72%, #fff);
+    box-shadow:0 0 18px color-mix(in srgb, var(--coin) 52%, transparent), inset 0 0 12px color-mix(in srgb, var(--coin) 30%, transparent);
+  }
+  .badges-medal::before, .badges-medal::after{ content:none; animation:none; }
+  .badges-medal-num{ color:color-mix(in srgb, var(--coin) 28%, #fff); text-shadow:0 0 12px color-mix(in srgb, var(--coin) 70%, transparent); }
+  .badges-medal-of{ color:color-mix(in srgb, var(--coin) 55%, #fff); opacity:.8; }
+  .profile-level-row .profile-level-num.profile-statplate.is-bare{
+    flex:0 0 auto; width:3.9rem; height:3.9rem; min-width:0; min-height:0; padding:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.08rem;
+  }
+  /* The level's number in the bar's own blue - "the numbers don't match
+     that look" - instead of the brighter sweep it had. */
+  .profile-level-row .profile-level-num.is-bare .profile-level-value{
+    font-size:1.55rem; line-height:1; animation:none; background-size:auto;
+    background-image:linear-gradient(180deg, #E4F0FF 0%, #8FC1FF 48%, #3D8BFF 100%);
+    filter:drop-shadow(0 0 8px rgba(61,139,255,.55));
+  }
+  .profile-level-row .profile-level-num.is-bare .profile-level-word{
+    font-size:.5rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:#A9CCFF; opacity:.85;
+  }
+  .profile-xp-pct{ color:#8FC1FF; font-variant-numeric:tabular-nums; }
+  @media (min-width:40rem){
+    .profile-level-row .profile-level-num.profile-statplate.is-bare{ width:4.5rem; height:4.5rem; }
+    .profile-level-row .profile-level-num.is-bare .profile-level-value{ font-size:1.85rem; }
+  }
+  /* STILL ALIVE, SLOWER (build 270): "ensure this is still animated
+     slightly though like it's pumping like it was but just better, maybe
+     slower." The bar and the level coin breathe together on one 4.4s
+     beat - the glow swelling and the fill brightening a touch - instead of
+     the old fast sweep. 0% and 100% are the same frame, so the loop has no
+     seam; reduce-motion stops it with everything else. */
+  @keyframes xp-pump{
+    0%, 100%{ box-shadow:0 0 8px rgba(61,139,255,.42); filter:brightness(1); }
+    50%{ box-shadow:0 0 16px rgba(61,139,255,.8); filter:brightness(1.13); }
+  }
+  @keyframes coin-pump{
+    0%, 100%{ box-shadow:0 0 14px color-mix(in srgb, var(--coin) 42%, transparent), inset 0 0 12px color-mix(in srgb, var(--coin) 26%, transparent); }
+    50%{ box-shadow:0 0 26px color-mix(in srgb, var(--coin) 70%, transparent), inset 0 0 16px color-mix(in srgb, var(--coin) 42%, transparent); }
+  }
+  .xpbar-fill{ animation:xp-pump 4.4s ease-in-out infinite; }
+  .profile-level-row .profile-level-num.profile-statplate.is-bare{ animation:coin-pump 4.4s ease-in-out infinite; }
   .badge-next{ display:flex; align-items:baseline; gap:.45rem; margin-top:.6rem; font-size:.78rem; min-width:0; }
   .badge-next-label{ font-size:.6rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:var(--soft); flex:none; }
   .badge-next-name{ font-weight:700; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
@@ -16160,6 +16262,11 @@
   .app-banner-chat{ background:color-mix(in srgb, #8E7CF5 12%, rgba(28,33,40,.55)); }
   .friend-hint{ margin:.5rem 0 0; font-size:.75rem; line-height:1.4; color:var(--soft); }
   .friend-add-row{ display:flex; justify-content:center; gap:.5rem; align-items:stretch; flex-wrap:wrap; }
+  /* Room above it (build 270): "not enough spacing between the stuff
+     above it" - your own code and the box you type theirs into are two
+     different jobs, so they sit apart. */
+  .friend-sect.friend-sect-add{ margin-top:1.6rem; }
+  .friend-sect-add .sect-label{ margin-bottom:.75rem; }
   /* A CODE FIELD IS THE WIDTH OF A CODE. This was `flex:1 1 0`, so it
      ate the whole panel - 690px of input on an iPad for seven
      characters - and reported as huge. It is the same 11rem treatment
@@ -19155,7 +19262,7 @@
       </button>
       <button type="button" class="bottomtab" id="bottomtab-ranks" data-dest="ranks">
         <span class="bottomtab-icon"></span>
-        <span class="bottomtab-label">Ranks</span>
+        <span class="bottomtab-label">Progress</span>
       </button>
       <button type="button" class="bottomtab" id="bottomtab-rewards" data-dest="rewards">
         <span class="bottomtab-icon"></span>
@@ -37473,7 +37580,7 @@ const UNIT_TEST_VERSIONS = {
     label: "Penal Code — Slides 0–85",
     short: "slides 0–85",
     desc: "Only the questions from slides 0–85 of the Penal Code PowerPoint.",
-    tag: "Slides 0–85 version now included"
+    tag: "Slides 0–85 version available"
   }
 };
 function unitHasTestVersion(name){ return !!UNIT_TEST_VERSIONS[name]; }
@@ -38762,6 +38869,42 @@ function badgeShapeFor(unitName){
 
 let badgeSvgSeq = 0;
 
+/* EVERY BADGE INSIDE ITS OWN FRAME (build 270). "The top of the
+   multiculturalism and human relations badge is like cutoff ... ensure
+   it's fixed everywhere though." The trefoil's top lobe runs to y=-7.5
+   once its keyline is drawn, and Victims of Crime's to -5.5, in a 0-100
+   viewBox - and an svg clips at its viewBox, so both lost their tops on
+   the unit card, in the case and on the Badges tab alike. Each outline is
+   measured once (cached by its path) and the frame grows, square and
+   centred on 50,50, to hold it with room for the keyline, so the shape
+   only shrinks as much as it has to and every other badge keeps its
+   0-100 frame exactly. One builder draws every badge, so this is every
+   place a badge appears. */
+const BADGE_VIEWBOX_CACHE = {};
+function badgeViewBoxFor(d){
+  if(BADGE_VIEWBOX_CACHE[d]) return BADGE_VIEWBOX_CACHE[d];
+  let vb = "0 0 100 100";
+  try{
+    const NS = "http://www.w3.org/2000/svg";
+    const host = document.createElementNS(NS, "svg");
+    host.setAttribute("viewBox", "0 0 100 100");
+    host.setAttribute("style", "position:absolute;left:-9999px;top:0;width:100px;height:100px;visibility:hidden");
+    const p = document.createElementNS(NS, "path");
+    p.setAttribute("d", d);
+    host.appendChild(p);
+    (document.body || document.documentElement).appendChild(host);
+    const b = p.getBBox();
+    host.remove();
+    const m = 6.5; /* the keyline and the slot's lip, measured: the drawn badge reaches 6 past its outline */
+    const half = Math.max(50, 50 - (b.x - m), (b.x + b.width + m) - 50, 50 - (b.y - m), (b.y + b.height + m) - 50);
+    if(half > 50.01){
+      const h = Math.ceil(half * 10) / 10;
+      vb = (50 - h) + " " + (50 - h) + " " + (2 * h) + " " + (2 * h);
+    }
+    if(b.width) BADGE_VIEWBOX_CACHE[d] = vb;
+  }catch(e){}
+  return vb;
+}
 function buildUnitBadgeSVG(unitName, earned){
   const NS = "http://www.w3.org/2000/svg";
   const shape = badgeShapeFor(unitName);
@@ -38770,7 +38913,7 @@ function buildUnitBadgeSVG(unitName, earned){
   const cx = shape.c[0], cy = shape.c[1];
   const uid = "bdg" + (++badgeSvgSeq);
   const svg = document.createElementNS(NS, "svg");
-  svg.setAttribute("viewBox", "0 0 100 100");
+  svg.setAttribute("viewBox", badgeViewBoxFor(outline));
   svg.setAttribute("class", "badge-art" + (earned ? " is-earned" : " is-locked"));
   svg.setAttribute("aria-hidden", "true");
 
@@ -42719,13 +42862,33 @@ function buildBackLink(label, onClick){
   const link = document.createElement("button");
   link.type = "button";
   link.className = "back-link";
-  const arrow = document.createElement("span");
-  arrow.setAttribute("aria-hidden", "true");
-  arrow.textContent = "\u2190 ";
-  link.appendChild(arrow);
-  link.appendChild(document.createTextNode(label));
+  fillBackLabel(link, label);
   link.addEventListener("click", onClick);
   return link;
+}
+/* THE ARROW AND THE WORD ON ONE CENTRE LINE (build 270): "the word back
+   and the arrow in the back buttons, the wording and arrow isn't
+   centered". The arrow was a text glyph ("\u2190 " or "\u2039"), and a
+   glyph sits wherever its font puts it - an arrow rides high of the
+   word's middle, a guillemet higher still, and the trailing space pushed
+   the word off the pill's centre. It is a drawn chevron now, in a flex
+   row with a fixed gap, so the two are centred on each other and on the
+   button whatever the font. Every back button in the app goes through
+   here. */
+function fillBackLabel(btn, label){
+  btn.replaceChildren();
+  const ns = "http://www.w3.org/2000/svg";
+  const sv = document.createElementNS(ns, "svg");
+  sv.setAttribute("viewBox", "0 0 16 16"); sv.setAttribute("aria-hidden", "true");
+  sv.setAttribute("class", "back-chevron");
+  const pth = document.createElementNS(ns, "path");
+  pth.setAttribute("d", "M10.2 3.2 L5.4 8 L10.2 12.8");
+  pth.setAttribute("fill", "none"); pth.setAttribute("stroke", "currentColor");
+  pth.setAttribute("stroke-width", "2.1"); pth.setAttribute("stroke-linecap", "round"); pth.setAttribute("stroke-linejoin", "round");
+  sv.appendChild(pth);
+  const t = document.createElement("span");
+  t.className = "back-word"; t.textContent = label;
+  btn.append(sv, t);
 }
 
 /* The little glyph shown per mode — reused on both the Mode Select cards
@@ -47972,7 +48135,7 @@ function startMainMenuTour(){
     { target: "#bottomtab-profile", align: "left", vplacement: "above",
       text: "Profile has your name, avatar and colours, and your stats." },
     { target: "#bottomtab-ranks", align: "left", vplacement: "above",
-      text: "Ranks is the climb — every rank and what it unlocks, and your badge case." },
+      text: "Progress is the climb \u2014 every rank and what it unlocks, and your badge case." },
     { target: "#bottomtab-settings", align: "right", vplacement: "above",
       text: isIOSDevice() && !isStandaloneApp()
         ? "Settings is where the rest of the options live \u2014 including a guide for adding this app to your Home Screen, any time."
@@ -53251,58 +53414,48 @@ function attachUnitHold(row, name, mode){
    figure here is one the app already keeps; nothing is shown that it
    would have to guess. */
 function unitDetailStats(name, mode){
-  /* ---- WHAT IS EVERY MODE'S, AND WHAT IS THIS MODE'S (build 268) ----
-     "The details that pop are weird tbh, because it says drill at the
-     top, but really some of that stuff shows up across any mode." It
-     did: a chip at the top said Drill, and three of the four squares
-     under it - how many times you have done the unit, your best score,
-     your hundos - count every mode. So the list is two parts now, and
-     each item says which: `scope: "all"` for the four that are the same
-     whichever mode you are in (always the same four, always in the same
-     places), and `scope: "mode"` for the ones that only this mode has -
-     Drill's best time, Exam's best and average, Game's level and how
-     far you got. Review and the Virtual Room have none of their own. */
+  /* ---- THE SAME FOUR, IN EVERY MODE (build 270) ----
+     "Let's make these so it's the same for any mode so it's simple to
+     use. It will be best score, completed, and hundos. Maybe one that
+     shows what you got on it the last time you took it." Build 268 split
+     the card into what every mode shares and what only this mode has;
+     that read as two things to learn rather than one card. Now it is one
+     card, identical whichever mode you hold it from - the same four
+     numbers in the same four places - and `mode` is accepted but unused,
+     so nothing that passes it has to change. */
   const stats = [];
-  const add = (label, value, sub, scope) => stats.push({ label, value, sub, scope: scope || "all" });
-  const done = unitCompletedCount(name);
-  const bestPct = unitBestPctOf(name);
+  const add = (label, value, sub) => stats.push({ label, value, sub });
   const dash = "\u2014";
-  const acc = unitAccuracyOf(name);
-  add("Completed", String(done), done === 1 ? "time" : "times");
+  const bestPct = unitBestPctOf(name);
+  const done = unitCompletedCount(name);
+  const last = unitLastScoreOf(name);
   add("Best score", typeof bestPct === "number" ? bestPct + "%" : dash, "whole unit");
-  add("Accuracy", acc ? acc.pct + "%" : dash, acc ? "of " + acc.n + " answers" : "nothing answered yet");
+  add("Last score", last ? last.pct + "%" : dash, last ? lastScoreWhen(last.at) : "not taken yet");
+  add("Completed", String(done), done === 1 ? "time" : "times");
   add("Hundos", String(unitPerfectCount(name)), "100% on the whole unit");
-  if(mode === "game"){
-    /* THE GAME'S OWN NUMBERS: which level you are on and how far you
-       have got in it. A time only once Hardcore is beaten. */
-    const beat = gameBeat(name);
-    const n = unitQuestionCount(name);
-    if(beat.hardcore){
-      add("Level", "All beaten", "Easy, Average and Hardcore", "mode");
-      const ms = (store.gameHardcoreMs || {})[name];
-      add("Hardcore best time", typeof ms === "number" ? formatClock(ms) : dash,
-          typeof ms === "number" ? "your fastest Hardcore win" : "win Hardcore again to set one", "mode");
-    } else {
-      const level = beat.average ? "hardcore" : beat.easy ? "average" : "easy";
-      const levelName = { easy: "Easy", average: "Average", hardcore: "Hardcore" }[level];
-      add("Level unlocked", levelName, level === "easy" ? "beat it to unlock Average"
-        : level === "average" ? "Easy beaten \u00b7 beat this for Hardcore" : "Average beaten \u00b7 the last level", "mode");
-      const far = gameFarthestFor(name, level);
-      add("Farthest on " + levelName, far ? far + " / " + n : dash, far ? "questions reached" : "not played on " + levelName + " yet", "mode");
-    }
-  } else if(mode === "drill"){
-    const ts = store.testStats[name];
-    const best = ts && typeof ts.bestMs === "number" ? ts.bestMs : null;
-    add("Best time", best != null ? formatClock(best) : dash, best != null ? "your fastest hundo in Drill" : "get a hundo in Drill to set one", "mode");
-  } else if(mode === "exam"){
-    /* The one mode that grades you the way the real thing will, so its
-       best and its average are what say whether you are ready. */
-    const ex = unitExamOf(name);
-    add("Best exam", ex && ex.n ? ex.best + "%" : dash, ex && ex.n ? "whole unit, in Exam" : "take it in Exam to set one", "mode");
-    add("Exam average", ex && ex.n ? Math.round(ex.sum / ex.n) + "%" : dash,
-        ex && ex.n ? "over " + ex.n + (ex.n === 1 ? " exam" : " exams") + " \u00b7 last " + ex.last + "%" : "no exams taken yet", "mode");
-  }
   return stats;
+}
+/* What you got the last time you took this unit on its own, in any mode
+   (build 270). The test history keeps the last twenty runs, newest first;
+   past that, the per-test stats remember each test's own last score, and
+   the most recent of this unit's is the answer. */
+function unitLastScoreOf(u){
+  const h = (store.testHistory || []).find(x => x && Array.isArray(x.units) && x.units.length === 1 &&
+    x.units[0] === u && typeof x.pct === "number");
+  if(h) return { pct: h.pct, at: h.playedAt || 0 };
+  let best = null;
+  Object.keys(store.testStats || {}).forEach(k => {
+    if(k.split("|")[0] !== u) return;
+    const t = store.testStats[k];
+    if(t && typeof t.lastPct === "number" && (!best || (t.lastPlayedAt || 0) > best.at)) best = { pct: t.lastPct, at: t.lastPlayedAt || 0 };
+  });
+  return best;
+}
+function lastScoreWhen(at){
+  if(!at) return "last time you took it";
+  const days = Math.floor((Date.now() - at) / 86400000);
+  return days <= 0 ? "today" : days === 1 ? "yesterday" : days < 7 ? days + " days ago"
+    : days < 14 ? "last week" : Math.floor(days / 7) + " weeks ago";
 }
 /* Exam results per unit (build 240): how many, the best, the running
    total for the average, and the last. Seeded once from the test
@@ -53355,37 +53508,19 @@ function openUnitDetail(row, name, mode){
   views.className = "unitdetail-views";
   const main = document.createElement("div");
   main.className = "unitdetail-main";
-  /* TWO LABELLED GROUPS (build 268): what counts in every mode, then -
-     only for a mode that has numbers of its own - what is this mode's,
-     headed with the mode's chip. The chip used to sit on the card's
-     title, over numbers most of which were not the mode's at all. */
-  const allStats = unitDetailStats(name, mode === "vroom" ? "vroom" : mode);
-  const group = (title, list, chipMode) => {
-    if(!list.length) return;
-    const h = document.createElement("p");
-    h.className = "unitdetail-grouphead";
-    h.textContent = title;
-    if(chipMode){
-      const modeChip = document.createElement("span");
-      modeChip.className = "unitdetail-mode is-" + chipMode;
-      modeChip.textContent = ({ drill: "Drill", exam: "Exam", game: "Game" })[chipMode];
-      h.appendChild(modeChip);
-    }
-    const grid = document.createElement("div");
-    grid.className = "unitdetail-stats" + (list.length === 1 ? " is-single" : "");
-    list.forEach(st => {
-      const c = document.createElement("div");
-      c.className = "unitdetail-stat";
-      const v = document.createElement("p"); v.className = "unitdetail-statval"; v.textContent = st.value;
-      const l = document.createElement("p"); l.className = "unitdetail-statlab"; l.textContent = st.label;
-      const sb = document.createElement("p"); sb.className = "unitdetail-statsub"; sb.textContent = st.sub || "";
-      c.append(v, l, sb);
-      grid.appendChild(c);
-    });
-    main.append(h, grid);
-  };
-  group("Every mode", allStats.filter(x => x.scope === "all"));
-  group("Only in", allStats.filter(x => x.scope === "mode"), ["drill", "exam", "game"].indexOf(mode) >= 0 ? mode : null);
+  /* One grid of four, the same in every mode (build 270). */
+  const grid = document.createElement("div");
+  grid.className = "unitdetail-stats";
+  unitDetailStats(name, mode).forEach(st => {
+    const c = document.createElement("div");
+    c.className = "unitdetail-stat";
+    const v = document.createElement("p"); v.className = "unitdetail-statval"; v.textContent = st.value;
+    const l = document.createElement("p"); l.className = "unitdetail-statlab"; l.textContent = st.label;
+    const sb = document.createElement("p"); sb.className = "unitdetail-statsub"; sb.textContent = st.sub || "";
+    c.append(v, l, sb);
+    grid.appendChild(c);
+  });
+  main.appendChild(grid);
 
   const doors = document.createElement("div");
   doors.className = "unitdetail-doors";
@@ -53474,7 +53609,7 @@ function openUnitDetail(row, name, mode){
     barRow.className = "unitdetail-listbarrow";
     const back = document.createElement("button");
     back.type = "button"; back.className = "unitdetail-back";
-    back.textContent = "‹ Back";
+    fillBackLabel(back, "Back");
     const tt = document.createElement("p");
     tt.className = "unitdetail-listtitle";
     tt.textContent = kind === "flagged" ? "Flagged" : "Most missed";
@@ -53491,19 +53626,29 @@ function openUnitDetail(row, name, mode){
     sw.append(si, sx);
     bar.append(barRow, sw);
     pane.appendChild(bar);
+    /* THE HEADER DOES NOT SCROLL (build 270). It was a sticky bar inside
+       the scrolling list, fading to transparent along its bottom edge, so
+       questions showed through under the search field and a band of a
+       different shade sat above Back - "a gap just between the top header
+       where it says back and most missed". The header is its own row now
+       and only what is under it scrolls. */
+    const scroller = document.createElement("div");
+    scroller.className = "unitdetail-listscroll";
+    pane.appendChild(scroller);
+    /* No counts and no "last 30 days" (build 270): "we don't need to
+       mention we track stuff". */
     const note = document.createElement("p");
     note.className = "unitdetail-listnote";
     note.textContent = kind === "flagged"
       ? "Questions you marked to come back to. Unflag one here once you have it down."
-      : "The ones you have missed most in the last 30 days - up to " + mostMissedCapFor(name) +
-        " for this unit. When one leaves the list, the next-most-missed takes its place.";
-    pane.appendChild(note);
+      : "The questions in this unit you have been missing most.";
+    scroller.appendChild(note);
     const listEl = document.createElement("div");
     listEl.className = "unitdetail-qs";
-    pane.appendChild(listEl);
+    scroller.appendChild(listEl);
     const empty = document.createElement("p");
     empty.className = "unitdetail-empty"; empty.hidden = true;
-    pane.appendChild(empty);
+    scroller.appendChild(empty);
 
     /* RESET FOR THIS UNIT, behind a warning - "a reset flag for unit ...
        would give a warning before you commit to it, and same for most
@@ -53525,12 +53670,18 @@ function openUnitDetail(row, name, mode){
     cRow.append(cNo, cYes);
     confirmBox.append(cText, cRow);
     resetWrap.append(resetBtn, confirmBox);
-    pane.appendChild(resetWrap);
+    scroller.appendChild(resetWrap);
+    /* AND A WAY BACK AT THE BOTTOM (build 270): at the end of a long list
+       the Back at the top is a long scroll away. */
+    const backLow = document.createElement("button");
+    backLow.type = "button"; backLow.className = "unitdetail-back is-bottom";
+    fillBackLabel(backLow, "Back");
+    scroller.appendChild(backLow);
     resetBtn.addEventListener("click", () => {
       const n = (kind === "flagged" ? flaggedIndexes() : recentMissedIndexes()).filter(inUnit).length;
       cText.textContent = kind === "flagged"
         ? (n === 1 ? "Unflag the one flagged question in " : "Unflag all " + n + " flagged questions in ") + name + "? This can't be undone."
-        : "Clear " + name + "'s most missed? Its misses from the last 30 days are forgotten, so this list starts again from your next miss. Your hundos and answer history stay. This can't be undone.";
+        : "Clear " + name + "'s most missed? The list starts fresh from your next miss. Your hundos and scores stay. This can't be undone.";
       confirmBox.hidden = false; resetBtn.hidden = true;
     });
     cNo.addEventListener("click", () => { confirmBox.hidden = true; resetBtn.hidden = false; });
@@ -53577,8 +53728,10 @@ function openUnitDetail(row, name, mode){
         top.appendChild(m);
       }
       /* An unflagged one stays, dimmed, until Back - a mis-tap is one tap
-         to undo rather than a question gone from under your finger. */
-      top.appendChild(buildFlagToggle(i, () => { if(kind === "flagged") q.classList.toggle("is-unflagged", !isFlagged(i)); }));
+         to undo rather than a question gone from under your finger. Only
+         on Flagged (build 270): "when looking at your most missed, remove
+         the flag option". */
+      if(kind === "flagged") top.appendChild(buildFlagToggle(i, () => q.classList.toggle("is-unflagged", !isFlagged(i))));
       q.appendChild(top);
       const qt = document.createElement("p");
       qt.className = "qtext review-question-text"; qt.textContent = item.q;
@@ -53602,6 +53755,7 @@ function openUnitDetail(row, name, mode){
     si.addEventListener("input", render);
     sx.addEventListener("click", () => { si.value = ""; render(); si.focus(); });
     render();
+    backLow.addEventListener("click", () => back.click());
     back.addEventListener("click", () => {
       pane.classList.remove("is-in");
       main.classList.remove("is-away");
@@ -53628,9 +53782,24 @@ function openUnitDetail(row, name, mode){
     const vw = innerWidth, vh = innerHeight;
     const w = Math.min(vw - 32, vw >= 640 ? 460 : 420);
     card.style.width = w + "px";
-    const natural = listMode ? vh : (head.offsetHeight + main.scrollHeight + 8);
+    const natural = listMode ? vh : (head.offsetHeight + mainContentHeight() + 8);
     const h = Math.min(natural, vh - 96);
     return { left: (vw - w) / 2, top: Math.max(48, (vh - h) / 2), width: w, height: h };
+  }
+  /* BACK FROM A LIST WAS STUCK AT THE LIST'S SIZE (build 270). main is
+     absolutely positioned to fill the card, so once the card had grown
+     to full height for a list, main.scrollHeight was the card's height
+     too - "the unit details way bigger than it's supposed to be" after
+     Back. Its content is measured instead: from main's top to the bottom
+     of its last child. Transforms move both equally, so a card part-way
+     through its slide still measures true. */
+  function mainContentHeight(){
+    const kids = [...main.children].filter(k => k.getClientRects().length);
+    if(!kids.length) return main.scrollHeight;
+    const top = main.getBoundingClientRect().top;
+    const last = kids[kids.length - 1];
+    const bottom = last.getBoundingClientRect().bottom + (parseFloat(getComputedStyle(last).marginBottom) || 0);
+    return Math.ceil(bottom - top + (parseFloat(getComputedStyle(main).paddingBottom) || 0));
   }
   function fitHeight(listMode){ place(target(listMode)); }
   card.classList.add("is-measuring");
@@ -56345,7 +56514,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-01-269";
+const APP_BUILD = "2026-10-01-270";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -69763,7 +69932,7 @@ function showFriends(){
 
   const back = document.createElement("button");
   back.type = "button"; back.className = "back-link";
-  back.textContent = "\u2039 Profile";
+  fillBackLabel(back, "Profile");
   back.addEventListener("click", () => showProfile("profile"));
   panel.appendChild(back);
 
@@ -69958,16 +70127,18 @@ function showFriends(){
   /* ---- add someone ---- */
   const add = document.createElement("div");
   add.className = "sect friend-sect";
+  /* LESS IN THE BOX (build 270): "the stuff in the box is too much,
+     could just say enter friends code or something more simple". The
+     heading and the field say it; the hint line and the worked example
+     in the placeholder went. */
+  add.classList.add("friend-sect-add");
   const ah = document.createElement("p");
   ah.className = "sect-label"; ah.textContent = "Add a friend";
-  const ahint = document.createElement("p");
-  ahint.className = "friend-hint friend-add-hint";
-  ahint.textContent = "Type a classmate\u2019s code.";
   const addRow = document.createElement("div");
   addRow.className = "friend-add-row";
   const input = document.createElement("input");
   input.type = "text"; input.className = "searchbox searchbox-plain friend-add-input";
-  input.placeholder = "Their code, e.g. ABC-234"; input.maxLength = 7;
+  input.placeholder = "Enter a friend\u2019s code"; input.maxLength = 7;
   input.autocapitalize = "characters"; input.autocomplete = "off"; input.spellcheck = false;
   /* THE DASH TYPES ITSELF, the same as the lobby code field already
      does. A friend code is XXX-XXX and somebody typing six characters
@@ -69986,7 +70157,7 @@ function showFriends(){
   });
   input.addEventListener("keydown", ev => { if(ev.key === "Enter") send.click(); });
   addRow.append(input, send);
-  add.append(ah, ahint, addRow);
+  add.append(ah, addRow);
 
   /* ---- the people you have ---- */
   const list = document.createElement("div");
@@ -70779,7 +70950,12 @@ function showRanksScreen(defaultTab){
   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
   timerlineEl.hidden = true; livesEl.hidden = true;
   setActiveNav("ranks");
-  countEl.textContent = "Ranks";
+  /* "Progress", not "Ranks" (build 270): "the ranks tab, should it be
+     called something else?" It holds two things - the rank ladder and
+     the badge case - and only one of them is a rank; both are how far
+     you have come. The key stays "ranks" so every stored and linked
+     route still lands here. */
+  countEl.textContent = "Progress";
 
   const panel = document.createElement("section");
   panel.className = "panel screen-ranks screen-profile-like";
@@ -73036,10 +73212,12 @@ function applyGlassRefraction(el, mapImgId){
     home: "M4 11l8-7 8 7M6 9.5V20h12V9.5",
     rewards: "M7 4h10v5a5 5 0 01-10 0zM7 5H4a3 3 0 003 5.5M17 5h3a3 3 0 01-3 5.5M12 14v3M8.5 20.5h7l-.8-3H9.3z",
     profile: "M12 12a4 4 0 100-8 4 4 0 000 8zM5 20c0-3.9 3.1-7 7-7s7 3.1 7 7",
-    /* Rank chevrons on a shield (build 226). The hexagon with a star in it
-       was asked about - "not sure what icon it is" - and chevrons are
-       what a rank looks like, doubly so for a police academy class. */
-    ranks: "M12 2.8l7 2.8V11c0 4.6-3 7.9-7 9.8-4-1.9-7-5.2-7-9.8V5.6zM8.3 9.4L12 11.9l3.7-2.5M8.3 13.3L12 15.8l3.7-2.5",
+    /* A MEDAL (build 270): "I also don't know if I like the rank icon on
+       the bottom tab that much either." The shield-and-chevrons read as
+       a second Profile; a medal on its ribbon is what a reward looks
+       like, and the tab is ranks and badges - both of them earned. The
+       star is drawn with round joins so it holds at 28px. */
+    ranks: "M8.2 2.8l2.6 6.3M15.8 2.8l-2.6 6.3M12 9.1a5.6 5.6 0 100 11.2 5.6 5.6 0 000-11.2zM12 12.1l1 2 2.2.3-1.6 1.5.4 2.2-2-1.1-2 1.1.4-2.2-1.6-1.5 2.2-.3z",
     settings: "M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM19 12a7 7 0 00-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 00-2-1.2L14 3h-4l-.5 2.6a7 7 0 00-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 005 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 002 1.2L10 21h4l.5-2.6a7 7 0 002-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"
   };
   bar.querySelectorAll(".bottomtab").forEach(tab => {
@@ -73465,6 +73643,10 @@ function applyGlassRefraction(el, mapImgId){
     if(theme.reduceMotion) return;
     const btn = e.target.closest(".next, .bottomtab-start, .bottomtab, .choice, .chip, .restart, .iconbtn, .selall-btn, .pick, .swatch, .infoicon, .back-link");
     if(!btn || btn.disabled || btn.hidden) return;
+    /* A read-only answer - a review list, the unit card's lists - is not
+       a button and must not press like one (build 270: "the buttons on
+       the pages are tappable"). Every read-only choice is built .locked. */
+    if(btn.classList.contains("choice") && btn.classList.contains("locked")) return;
     activeBtn = btn;
     const rect = btn.getBoundingClientRect();
     startX = e.clientX; startY = e.clientY;
