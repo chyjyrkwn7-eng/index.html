@@ -8710,9 +8710,17 @@ are untouched.
   there is a seam down the peak, and a star clasp pins it at the throat.
   A dark hood on a dark body is what made the third pass's cloak
   invisible. The sword is slung across the back, point up past the
-  shoulder: two faces, a lit edge, a point and a guard. A fuller of
-  starlight and a bevel line were on it for one round and came off as
-  "too many details".
+  shoulder. It went through a steel sword (a fuller of starlight and a
+  bevel came off as "too many details") and then became **a blade of
+  light**: "the sword is supposed to kinda have the blue glow like a
+  lightsaber ... less like a sword, more space like". It is four strokes
+  on one line - wide soft glow, brighter body, pale body, white core,
+  round caps - with a light spill on the cloak's shoulder, and the glow
+  hums (`cx-fx-saglow`). **It sits the way the Ronin's katana does**:
+  it rises from BEHIND the right shoulder at the cloak's edge, its lower
+  end hidden by the body, because one standing beside him "comes out the
+  background weird". A thing carried on the back has to start inside
+  the silhouette.
   **The cloak runs to the bottom of the frame.** Every character fades
   out over its last 30% (the shared `.avatarchar-svg` mask), and a cloak
   that ends in a hem at the top of that fade leaves nothing under it but
