@@ -17047,6 +17047,9 @@
   .unlock-card-character .unlock-card-art svg{ width:100%; height:100%; display:block; }
   .unlock-card-art.is-hidden-art svg{ filter:brightness(0) opacity(.8); }
   .unlock-card-theme .unlock-card-art{ width:6.2rem; height:6.2rem; }
+  .unlock-card-badge .unlock-card-art{ width:7rem; height:7rem;
+    filter:drop-shadow(0 0 18px color-mix(in srgb, var(--badge-glow, #fff) 45%, transparent)); }
+  .unlock-card-badge .unlock-card-art svg{ width:100%; height:100%; display:block; }
   .unlock-card-swatch.dot{ width:5.4rem; height:5.4rem; border-radius:50%; display:block;
     position:relative; overflow:hidden;
     box-shadow:0 0 0 2px rgba(255,255,255,.22), 0 0 30px rgba(255,255,255,.12); }
@@ -70409,6 +70412,21 @@ function bannerDetail(id){
   o.have = Math.min(def.have(), def.need); o.need = def.need;
   return o;
 }
+/* A UNIT BADGE ON THE SAME CARD (build 281): "make it similar to the
+   character unlock or banner unlock now, you click it, and opens up the
+   progress screen similarly with the green bar". The tap used to raise
+   showContextualInfo's bubble, which was not the card everything else in
+   the app opens and was reported as hanging around ("they stay there till
+   I click off the tab"). The bar counts hundos in that unit against what
+   its badge needs. */
+function badgeDetail(unit){
+  const need = badgeThresholdFor(unit);
+  const has = unitBadgeEarned(unit);
+  const done = Math.min(need, (store.unitPerfects && store.unitPerfects[unit]) || 0);
+  return { kind: "badge", id: unit, kicker: "Unit badge", name: unit, unlocked: has,
+    desc: has ? "Earned for mastering the unit." : "Earn " + need + " hundo" + (need === 1 ? "" : "s") + " in this unit.",
+    have: done, need: need };
+}
 function themeDetail(name){
   return Object.assign({ kind: "theme", id: name, kicker: "Theme",
     name: (ACCENT_DISPLAY_NAME[name] || name) + " theme" }, rankDetail(name));
@@ -70434,6 +70452,12 @@ function showUnlockDetail(o){
     art.classList.add("char-live");
     try{ art.appendChild(buildAvatarCharSVG(o.id)); }catch(e){}
     if(o.hideArt) art.classList.add("is-hidden-art");
+  } else if(o.kind === "badge"){
+    /* the badge itself, in its own enamel, even while it is still to
+       earn - what you are working towards should look like the prize,
+       not like the empty slot the case shows */
+    try{ const bt = badgeThemeFor(o.id); if(bt && bt.p) art.style.setProperty("--badge-glow", bt.p); }catch(e){}
+    try{ art.appendChild(buildUnitBadgeSVG(o.id, true)); }catch(e){}
   } else if(o.kind === "theme"){
     const dot = document.createElement("span");
     dot.className = "dot unlock-card-swatch" + (TIER_UNLOCKS[o.id] ? " tier-" + o.id : "") +
@@ -73498,7 +73522,7 @@ function buildBadgesTab(){
      rather than anything you can act on, and it is the first thing on
      a screen whose job is to say what a badge costs. */
   blurb.textContent = "Every unit has a badge. Earn one by mastering its unit — " +
-    "a bigger unit needs fewer hundos than a small one. Tap one you have not earned to see what it takes.";
+    "a bigger unit needs fewer hundos than a small one. Tap any badge to see your progress towards it.";
   head.appendChild(blurb);
   tab.appendChild(head);
 
@@ -73537,17 +73561,7 @@ function buildBadgesTab(){
     prog.textContent = has ? "Mastered" : done + "/" + need;
     tile.appendChild(prog);
 
-    tile.addEventListener("click", () => {
-      showContextualInfo(tile, has
-        ? "The " + unit + " badge \u2014 earned for mastering the unit."
-        /* THE REASONING CAME OFF. It used to finish "...N questions in
-           this unit, so it takes M", which explains the thresholds
-           table to somebody who only asked what this badge needs -
-           reported as a weird description. The number it takes is
-           already in the sentence. */
-        : "Master " + unit + " to earn this badge — " + done + " of " +
-          need + " hundos so far.");
-    });
+    tile.addEventListener("click", () => showUnlockDetail(badgeDetail(unit)));
     grid.appendChild(tile);
   });
   /* ---- A CASE, NOT A TRAY (build 242) ----
