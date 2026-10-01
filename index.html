@@ -13814,10 +13814,6 @@
      of the Kitsune, the Cyborg, the Singularity's fourth pass and the
      Marksman's redraw. Falling and rising things move by exactly the
      12-unit period they are laid out on, so the loop has no seam. */
-  .avatarchar-svg .cx-k-kitsune{ --cx-blink:6.4s; --cx-blink-at:-3.1s; }
-  .avatarchar-svg .cx-k-cyborg{ --cx-blink:5.9s; --cx-blink-at:-2.2s; }
-  .avatarchar-svg .cx-fx-kttail0{ transform-origin:90% 95%; }
-  .avatarchar-svg .cx-fx-kttail1{ transform-origin:10% 95%; }
   @media (prefers-reduced-motion:no-preference){
     .char-live .avatarchar-svg .cx-fx-bgfall{ animation:cx-bg-fall 2.4s linear infinite; }
     .char-live .avatarchar-svg .cx-fx-bgfall.cx-fx-bgslow{ animation-duration:7s; }
@@ -13844,28 +13840,27 @@
     .char-live .avatarchar-svg .cx-fx-bgscope{ animation:cx-spin 40s linear infinite; }
     .char-live .avatarchar-svg .cx-fx-bgscan{ animation:cx-bg-scan 3.4s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-bgrung, .char-live .avatarchar-svg .cx-fx-bgdisk{ animation:cx-bg-glow 2.6s ease-in-out infinite; }
-    .char-live .avatarchar-svg .cx-fx-kttail0{ animation:cx-kt-tail 3s ease-in-out infinite alternate; }
-    .char-live .avatarchar-svg .cx-fx-kttail1{ animation:cx-kt-tail 3s ease-in-out -1.5s infinite alternate-reverse; }
-    .char-live .avatarchar-svg .cx-fx-ktflame{ animation:cx-flicker-soft 1.8s ease-in-out infinite; }
-    .char-live .avatarchar-svg .cx-fx-kteye{ animation:cx-vp-glint 2.6s ease-in-out infinite; }
-    .char-live .avatarchar-svg .cx-fx-ktsheen{ animation:cx-sheen-idle 6s ease-in-out -2.4s infinite; }
-    .char-live .avatarchar-svg .cx-fx-cbeye{ animation:cx-mk2-pulse 1.6s ease-in-out infinite; }
-    .char-live .avatarchar-svg .cx-fx-cbscan{ animation:cx-cb-scan 2.4s ease-in-out infinite; }
-    .char-live .avatarchar-svg .cx-fx-cbseam, .char-live .avatarchar-svg .cx-fx-cbtrace{ animation:cx-hk3-flicker 3s ease-in-out infinite; }
-    .char-live .avatarchar-svg .cx-fx-cbtrim{ animation:cx-mk2-pulse 2.8s ease-in-out infinite; }
-    .char-live .avatarchar-svg .cx-fx-cbsheen{ animation:cx-sheen-idle 5.4s ease-in-out -1.8s infinite; }
     .char-live .avatarchar-svg .cx-fx-sgring{ animation:cx-mk2-pulse 2.6s ease-in-out infinite; }
+    /* build 272: the Vampire, the Plague Doctor, the bats, the Koi's weed */
+    .char-live .avatarchar-svg .cx-fx-vpeye, .char-live .avatarchar-svg .cx-fx-vpgem{ animation:cx-mk2-pulse 2.4s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-pdglow{ animation:cx-mk2-pulse 2.2s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-pdsheen{ animation:cx-sheen-idle 5.8s ease-in-out -2s infinite; }
+    .char-live .avatarchar-svg .cx-fx-bgbat0{ animation:cx-bg-flap .5s ease-in-out infinite alternate, cx-bg-float 3.4s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-bgbat1{ animation:cx-bg-flap .42s ease-in-out -.2s infinite alternate, cx-bg-float 4s ease-in-out -1.6s infinite; }
+    .char-live .avatarchar-svg .cx-fx-koiweed{ animation:cx-cl2-sway 2.8s ease-in-out infinite alternate; }
     .char-live .avatarchar-svg .cx-fx-sgdisk{ animation:cx-mk2-pulse 3.4s ease-in-out -1s infinite; }
     .char-live .avatarchar-svg .cx-fx-sgstar{ animation:cx-flicker-soft 3.2s ease-in-out infinite, cx-live-rock 5s ease-in-out infinite alternate; }
     .char-live .avatarchar-svg .cx-k-singularity .cx-eyes{ animation:cx-ember 3s ease-in-out infinite; }
     .char-react-win .avatarchar-svg .cx-fx-bgfall, .char-react-win .avatarchar-svg .cx-fx-bgfall.cx-fx-bgslow{ animation:cx-bg-fall .9s linear infinite; }
     .char-react-win .avatarchar-svg .cx-fx-bgspin, .char-react-win .avatarchar-svg .cx-fx-bgscope{ animation:cx-spin 6s linear infinite; }
-    .char-react-win .avatarchar-svg .cx-fx-kttail0{ animation:cx-kt-tail .5s ease-in-out infinite alternate; }
-    .char-react-win .avatarchar-svg .cx-fx-kttail1{ animation:cx-kt-tail .5s ease-in-out infinite alternate-reverse; }
-    .char-react-win .avatarchar-svg .cx-fx-cbeye, .char-react-win .avatarchar-svg .cx-fx-sgring{ animation:cx-mk2-pulse .45s ease-in-out infinite; }
-    .char-react-win .avatarchar-svg .cx-fx-ktsheen, .char-react-win .avatarchar-svg .cx-fx-cbsheen{ animation:cx-sheen 1.3s ease-in-out .3s infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-sgring{ animation:cx-mk2-pulse .45s ease-in-out infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-pdsheen{ animation:cx-sheen 1.3s ease-in-out .3s infinite; }
   }
-  .char-sleep .avatarchar-svg :is(.cx-fx-cbeye, .cx-fx-ktflame, .cx-fx-sgring){ opacity:.35; }
+  .char-sleep .avatarchar-svg :is(.cx-fx-pdglow, .cx-fx-vpeye, .cx-fx-sgring){ opacity:.35; }
+  .avatarchar-svg .cx-k-vampire{ --cx-blink:6.4s; --cx-blink-at:-3.1s; }
+  .avatarchar-svg .cx-k-plaguedoc{ --cx-blink:6.9s; --cx-blink-at:-2.2s; }
+  .avatarchar-svg .cx-fx-koiweed{ transform-origin:50% 100%; }
+  @keyframes cx-bg-flap{ from{ scale:1 1; } to{ scale:1 .55; } }
   @keyframes cx-bg-fall{ from{ transform:translateY(0); } to{ transform:translateY(12px); } }
   @keyframes cx-bg-rise{ from{ transform:translateY(0); } to{ transform:translateY(-12px); } }
   @keyframes cx-bg-tw{ 0%, 100%{ opacity:.35; } 50%{ opacity:1; } }
@@ -13875,8 +13870,6 @@
   @keyframes cx-bg-bolt{ 0%, 100%{ opacity:.15; } 6%{ opacity:1; } 9%{ opacity:.3; } 12%{ opacity:1; } 22%{ opacity:.15; } }
   @keyframes cx-bg-ripple{ 0%{ transform:scale(.4); opacity:0; } 20%{ opacity:.9; } 100%{ transform:scale(1.1); opacity:0; } }
   @keyframes cx-bg-scan{ 0%, 100%{ transform:translateY(-9px); opacity:0; } 15%, 85%{ opacity:1; } 50%{ transform:translateY(9px); } }
-  @keyframes cx-kt-tail{ from{ rotate:-4deg; } to{ rotate:4deg; } }
-  @keyframes cx-cb-scan{ 0%, 100%{ transform:translateY(0); opacity:0; } 10%{ opacity:1; } 50%{ transform:translateY(4px); opacity:1; } 60%{ opacity:0; } }
   /* Each wing flexes from its root, where it meets the helm. */
   .avatarchar-svg .cx-fx-wing-l{ transform-origin:96% 72%; }
   .avatarchar-svg .cx-fx-wing-r{ transform-origin:4% 72%; }
@@ -31756,11 +31749,11 @@ const AVATAR_CHARACTERS = [
   { id: "detective",  kind: "detective",  feat: "daily10" },
   { id: "masked",     kind: "masked",     feat: "retake100" },
   { id: "zeus",       kind: "zeus",       feat: "weektop" },
-  { id: "poseidon",   kind: "kitsune",    feat: "weektop3x3" },
+  { id: "poseidon",   kind: "vampire",    feat: "weektop3x3" },
   { id: "clown",      kind: "clown",      feat: "vrwins5" },
   { id: "valkyrie",   kind: "koi",        feat: "vrwins10" },
   { id: "marksman",   kind: "marksman",   feat: "streak100" },
-  { id: "astronaut",  kind: "cyborg",     feat: "hundo7day" },
+  { id: "astronaut",  kind: "plaguedoc",  feat: "hundo7day" },
   { id: "hacker",     kind: "hacker",     feat: "study20h" },
   { id: "timekeeper", kind: "timekeeper", feat: "days30" },
   { id: "ronin",      kind: "ronin",      feat: "bigtest400" },
@@ -31823,10 +31816,10 @@ const AVATAR_DISPLAY_NAME = {
   paladin: "Paladin", sentinel: "Sentinel", k9: "K-9",
   ninja: "Ninja", ghost: "Ghost", queen: "Queen", wizard: "Wizard",
   grizzly: "Bear", alien: "Alien", samurai: "Samurai", dragon: "Dragon",
-  officer: "Officer", clown: "Clown", robot: "Robot", astronaut: "Cyborg",
+  officer: "Officer", clown: "Clown", robot: "Robot", astronaut: "Plague Doctor",
   detective: "Detective", zeus: "Zeus", masked: "The Masked One", voidwalker: "Void",
   champion: "Champion", umbra: "Umbra", singularity: "Singularity",
-  poseidon: "Kitsune", spartan: "Spartan", pharaoh: "Pharaoh", marksman: "Marksman",
+  poseidon: "Vampire", spartan: "Spartan", pharaoh: "Pharaoh", marksman: "Marksman",
   blitz: "Blitz"
 };
 /* The glow a SELECTED character gives off - "give the character you have
@@ -31842,14 +31835,14 @@ const AVATAR_GLOW = {
   k9: "#D9A05A",
   ninja: "#E0453F", ghost: "#E8ECF4", queen: "#8B4FC4", wizard: "#6C5BD4",
   grizzly: "#B9793C", alien: "#4FD18A", samurai: "#C0392B", dragon: "#E04A2F",
-  officer: "#3D74E8", clown: "#9B5CFF", swat: "#3D74E8", valkyrie: "#FF6FB5", hacker: "#3DFF8A", timekeeper: "#8A86FF", ronin: "#FF2E88", robot: "#6FD3E8", astronaut: "#FF3B4A",
+  officer: "#3D74E8", clown: "#9B5CFF", swat: "#3D74E8", valkyrie: "#FF6FB5", hacker: "#3DFF8A", timekeeper: "#8A86FF", ronin: "#FF2E88", robot: "#6FD3E8", astronaut: "#6EF0A0",
   /* Read off each one's artwork like the rest: the detective's amber
      street-light, the cold light in Zeus's cracks, the mask's own
      lacquer, and for Void the middle of its three flare colours - the
      body gives off no light of its own, so the glow is the flares. */
   detective: "#D9A441", zeus: "#7FD4F5", masked: "#C6413F", voidwalker: "#F97316",
   champion: "#FF4D6D", umbra: "#8B5CF6", singularity: "#8B7BFF",
-  poseidon: "#5AB8FF", spartan: "#E0612F", pharaoh: "#E9B949", marksman: "#9CE85A",
+  poseidon: "#E0283C", spartan: "#E0612F", pharaoh: "#E9B949", marksman: "#9CE85A",
   /* The visor's sunset. */
   blitz: "#F0643C"
 };
@@ -32176,6 +32169,25 @@ function buildAvatarCharSVGSafe(charId){
    it is light behind the character, not part of it, and has to stay the
    same size on every one. Re-measure (rasterise, first row with alpha
    over 200) after redrawing anybody, rather than guessing. */
+/* THE STARTERS' HEADS ARE SCALED DOWN ONTO THEIR OWN SHOULDERS (build
+   272). "I've said this 20 times, BUT THE STARTER characters heads are
+   much bigger than every other character." Measured, it was true: the
+   five starters were drawn as heads that fill the frame edge to edge -
+   the Bear 28.8 units wide with its ears, the Ghost 29.6, the Ninja's
+   hood 26, the Alien 25.2 - where every earned character is a head of
+   about 18-22 on a pair of shoulders that reach the edges. Scaling the
+   whole figure would have shrunk the shoulders too and left a small
+   bust floating in the middle; this scales the HEAD group only, about
+   the point where it meets the neck ([k, x, y]), so the body is
+   untouched and the head lands on it at the size the rest of the set
+   uses. Applied inside cx-head, on a wrapper, so the head's own
+   nod/sway animation (a CSS transform on cx-head) still runs. */
+const AVATAR_HEAD_SCALE = {
+  ninja: [.76, 20, 31], ghost: [.74, 20, 35], wizard: [.84, 20, 33],
+  grizzly: [.76, 20, 32], alien: [.83, 20, 31.5],
+  /* the Marksman's ghillie hood, build 272: its shag made it a head that filled the frame too */
+  marksman: [.8, 20, 30]
+};
 const AVATAR_ART_SCALE = {
   dragon: 1.09, detective: 1.16, masked: 1.08, zeus: 1.05,
   voidwalker: 1.23, officer: 1.06,
@@ -32212,6 +32224,14 @@ function buildAvatarCharSVG(charId){
 }
 function buildAvatarCharSVGFresh(charId){
   const svg = drawAvatarCharSVG(charId);
+  const hs = svg && AVATAR_HEAD_SCALE[charId];
+  const head = hs && svg.querySelector(".cx-head");
+  if(head){
+    const w = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    w.setAttribute("transform", "translate(" + hs[1] + " " + hs[2] + ") scale(" + hs[0] + ") translate(" + (-hs[1]) + " " + (-hs[2]) + ")");
+    while(head.firstChild) w.appendChild(head.firstChild);
+    head.appendChild(w);
+  }
   const k = AVATAR_ART_SCALE[charId];
   if(!svg || !k) return svg;
   const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -32469,11 +32489,11 @@ function drawAvatarCharSVG(charId){
     detective:  [["city", "#1A2232", "#F2B84B"], ["fall", "rain", ["#9FB4D6"]]],
     masked:     [["nebula", "#C6413F", "#3A0A12"], ["rise", "ember", ["#FF5A4A", "#FFB070"]]],
     zeus:       [["clouds", "#B8D8EC"], ["bolts", "#7FD4F5"]],
-    kitsune:    [["moon", "#E6F3FF", 9.6, 8.8, 3.6], ["wisps", "#5AB8FF"], ["fall", "petal", ["#FFB3CF", "#FFFFFF"]]],
+    vampire:    [["moon", "#F4E6D8", 29.8, 8.4, 3.8], ["bats", "#1A1018"], ["nebula", "#8E0E1E", "#2A0610"]],
     clown:      [["rays", "#9B5CFF", 12], ["fall", "confetti", ["#FF5A8A", "#FFD23F", "#4FD1FF", "#9BFF6B"]]],
     koi:        [["ripples", "#FF8FC4"], ["fall", "petal", ["#FFB3D9", "#FFFFFF"]]],
     marksman:   [["reticle", "#9CE85A"], ["stars", "#C8F59A"]],
-    cyborg:     [["grid", "#FF3B6B"], ["stars", "#FFC2D0"]],
+    plaguedoc:  [["moon", "#D8F5E2", 9.8, 8.4, 3.4], ["clouds", "#8FB89C"], ["wisps", "#6EF0A0"]],
     /* the Hacker's code rain is part of its own drawing; the scene adds
        the green haze of a screen-lit room behind it */
     hacker:     [["nebula", "#3DFF8A", "#0B3B22"]],
@@ -32641,6 +32661,15 @@ function drawAvatarCharSVG(charId){
             add(g, "circle", { cx: x, cy: y, r: .35, fill: a });
           });
         });
+      } else if(type === "bats"){
+        /* bats crossing the moon side, each flapping on its own beat */
+        [[31.4, 14.6, 1], [26.2, 6.2, .8], [8.2, 9.4, .9], [6.4, 18.6, .7]].forEach(([x, y, k], i) => {
+          const g = grp("cx-fx-bgbat cx-fx-bgbat" + (i % 2));
+          add(g, "path", { d: "M" + x + " " + y + " q" + (-1 * k) + " " + (-1.2 * k) + " " + (-2.6 * k) + " " + (-.6 * k) + " q" + (.6 * k) + " " + (.3 * k) + " " + (.7 * k) + " " + (.9 * k)
+            + " q" + (.5 * k) + " " + (-.3 * k) + " " + (.9 * k) + " " + (.1 * k) + " q.2 " + (-.5 * k) + " " + (1 * k) + " " + (-.4 * k)
+            + " q" + (.8 * k) + " " + (-.1 * k) + " " + (1 * k) + " " + (.4 * k) + " q" + (.4 * k) + " " + (-.4 * k) + " " + (.9 * k) + " " + (-.1 * k)
+            + " q" + (.1 * k) + " " + (-.6 * k) + " " + (.7 * k) + " " + (-.9 * k) + " q" + (-1.6 * k) + " " + (-.6 * k) + " " + (-2.6 * k) + " " + (.6 * k) + " Z", fill: a, stroke: "#5A3A48", "stroke-width": ".15" });
+        });
       } else if(type === "planet"){
         const g = grp("cx-fx-bgdrift");
         add(g, "circle", { cx: 32.2, cy: 8.2, r: 2.2, fill: a, opacity: ".7" });
@@ -32704,12 +32733,12 @@ function drawAvatarCharSVG(charId){
           lg.appendChild(mk("stop", { offset: o, "stop-color": col, "stop-opacity": op })));
         defs.appendChild(lg);
         const g = grp("cx-fx-bgdisk");
-        add(g, "ellipse", { cx: 20, cy: 17.6, rx: 17.2, ry: 4.4, fill: "none", stroke: "url(#" + gid + ")", "stroke-width": "1.5", transform: "rotate(-14 20 17.6)" });
-        add(g, "ellipse", { cx: 20, cy: 17.6, rx: 14.6, ry: 3.5, fill: "none", stroke: a, "stroke-width": ".3", opacity: ".55", transform: "rotate(-14 20 17.6)" });
+        add(g, "ellipse", { cx: 20, cy: 23.5, rx: 17.2, ry: 4.4, fill: "none", stroke: "url(#" + gid + ")", "stroke-width": "1.5", transform: "rotate(-14 20 23.5)" });
+        add(g, "ellipse", { cx: 20, cy: 23.5, rx: 14.6, ry: 3.5, fill: "none", stroke: a, "stroke-width": ".3", opacity: ".55", transform: "rotate(-14 20 23.5)" });
         const sp = grp("cx-fx-bgspin");
-        sp.appendChild(pivot(20, 17.6, 17.6));
+        sp.appendChild(pivot(20, 23.5, 17.6));
         [0, 2.1, 4.2].forEach(t => {
-          const x = 20 + Math.cos(t) * 17.2, y = 17.6 + Math.sin(t) * 4.4;
+          const x = 20 + Math.cos(t) * 17.2, y = 23.5 + Math.sin(t) * 4.4;
           sp.appendChild(sparkle(+x.toFixed(2), +y.toFixed(2), .8, "#FFFFFF"));
         });
       }
@@ -32965,6 +32994,7 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("path", { d: "M6 40 Q6.8 31.4 14.4 29.2 L25.6 29.2 Q33.2 31.4 34 40 Z",
                                  fill: hoodFill }));
     close();
+    open("cx-head");
     /* BUILD 242: "the starter characters don't look as good as any of the
        others." Each gets the one prop that names it, drawn with the same
        care the earned set has. */
@@ -33162,91 +33192,60 @@ function drawAvatarCharSVG(charId){
      The gold laurel and the bolt carved into the plinth are the only
      colour on him, and the bolt is lit in his own glow colour: it is
      what says Zeus rather than "some Greek". */
-  /* ================= KITSUNE (build 271) =================
+  /* ================= VAMPIRE (build 272) =================
      Three weeks in the weekly top three - Poseidon's challenge and
      Poseidon's id, so everybody who earned it keeps it. It was the
-     Kraken for five builds: "Kraken is kind of lame to be honest. I
-     think that could be a different character." The note that came with
-     it was the brief: "Ronin is the coolest one we have." What makes the
-     Ronin is a hidden face, one strong colour and a silhouette nobody
-     else has - so the fox spirit: a white kitsune mask with tall ears
-     and red markings, sly up-slanted eyes glowing blue behind it, a dark
-     haori, and its tails fanning out behind the shoulders, tipped in
-     blue foxfire. The foxfire floats round it in the backdrop. Parts are
-     cx-fx-kt*: unique names. */
-  if(def.kind === "kitsune"){
-    const fire = "#5AB8FF", fireSoft = "#BFE6FF", red = "#E2304A";
-    /* THE TAILS, behind everything: two bushy tails each side, fat in
-       the middle and curling in at the tip, white into blue foxfire. Thin
-       pointed ones read as wings - the first draft was an angel. */
-    const tg = mk("linearGradient", { id: uid + "-ktt", gradientUnits: "userSpaceOnUse", x1: "0", y1: "31", x2: "0", y2: "9" });
-    [["0%", "#C9D3E6"], ["50%", "#FBFCFF"], ["82%", "#D8EEFF"], ["100%", fire]].forEach(([o, c]) => tg.appendChild(mk("stop", { offset: o, "stop-color": c })));
-    defs.appendChild(tg);
-    [[-1, "kttail0"], [1, "kttail1"]].forEach(([f, cls]) => {
-      open("cx-fx cx-fx-kttail cx-fx-" + cls);
-      const X = x => (20 + f * (x - 20)).toFixed(2);
-      const P = pts => pts.map(([c, ...xy]) => c + xy.map((v, k) => k % 2 ? v : X(v)).join(" ")).join(" ");
-      /* the far tail, lower and further out */
-      svg.appendChild(mk("path", { d: P([["M", 15.4, 31.4], ["C", 7.4, 32.4, 2.6, 27.2, 3.4, 21.4], ["C", 3.8, 18, 6.2, 16.4, 7.8, 17.4],
-        ["C", 6.4, 19.2, 6.8, 22.4, 9.4, 24.8], ["C", 11.4, 26.6, 14, 27.6, 16.6, 28], ["Z"]]),
-        fill: "url(#" + uid + "-ktt)", stroke: "#8EA0BE", "stroke-width": ".25" }));
-      /* the near tail, up past the shoulder, the tip curling in */
-      svg.appendChild(mk("path", { d: P([["M", 15.6, 30.2], ["C", 8, 29.6, 4.6, 23.4, 5.6, 16.6], ["C", 6.2, 12.2, 9.4, 9.6, 12, 10.6],
-        ["C", 10.2, 11.8, 9.6, 14.2, 10.4, 17.2], ["C", 11.4, 21.4, 13.6, 24.6, 17, 26.6], ["Z"]]),
-        fill: "url(#" + uid + "-ktt)", stroke: "#8EA0BE", "stroke-width": ".25" }));
-      /* a couple of fur strokes, and foxfire on each tip */
-      svg.appendChild(mk("path", { d: P([["M", 8.2, 21.6], ["Q", 8.6, 24, 10.6, 25.6], ["M", 7.6, 15.4], ["Q", 7.4, 18, 8.4, 20]]), fill: "none", stroke: "#9AABC8", "stroke-width": ".3", "stroke-linecap": "round" }));
-      svg.appendChild(mk("circle", { cx: X(9.6), cy: 11.4, r: 2.4, fill: fire, opacity: ".3" }));
-      svg.appendChild(mk("circle", { cx: X(5.2), cy: 18.6, r: 1.8, fill: fire, opacity: ".25" }));
-      close();
-    });
+     Kraken, then for one build the Kitsune: "I have no idea what the
+     fuck the white fox thing is, change that completely, make it
+     unique." The lesson is the one the Zeus redraw learned: a character
+     has to be NAMEABLE at a glance, at 34px, by anybody. So the one
+     everybody can name - the Count: a pale face, black hair swept back
+     to a widow's peak, pointed ears, red eyes, two fangs, and the high
+     cape collar standing up behind the head, red inside. A full moon
+     and bats behind him. Parts are cx-fx-vp*: unique names. */
+  if(def.kind === "vampire"){
+    const red = "#E0283C", blood = "#8E0E1E";
+    /* THE COLLAR, standing up behind the head: black outside, red in */
+    svg.appendChild(mk("path", { d: "M12 31 L4.6 14.6 Q9.4 18.6 12.4 21.6 Q13.6 14.2 20 13.6 Q26.4 14.2 27.6 21.6 Q30.6 18.6 35.4 14.6 L28 31 Z", fill: "#0B0A10" }));
+    svg.appendChild(mk("path", { d: "M12.8 30 L6.6 17 Q10.2 20.2 13 23.4 Q14.4 15.6 20 15.2 Q25.6 15.6 27 23.4 Q29.8 20.2 33.4 17 L27.2 30 Z", fill: headGrad("#C42034", blood, "#4A0610") }));
     open("cx-body");
-    svg.appendChild(mk("path", { d: "M5.6 40 Q6.4 30.6 13.8 28.6 L26.2 28.6 Q33.6 30.6 34.4 40 Z", fill: headGrad("#3B4170", "#1E2242", "#0B0C1A") }));
-    /* the white under-collar crossing, and a red cord with a bead */
-    svg.appendChild(mk("path", { d: "M15.2 28.8 L20 35.6 L24.8 28.8", fill: "none", stroke: "#F2F5FB", "stroke-width": "1.1", "stroke-linejoin": "round" }));
-    svg.appendChild(mk("path", { d: "M13.6 31.6 Q20 34.4 26.4 31.6", fill: "none", stroke: red, "stroke-width": ".55" }));
-    svg.appendChild(mk("circle", { cx: 20, cy: 33.6, r: .8, fill: fireSoft, stroke: fire, "stroke-width": ".25" }));
+    svg.appendChild(mk("path", { d: "M5.2 40 Q5.8 31 13.2 28.6 L26.8 28.6 Q34.2 31 34.8 40 Z", fill: headGrad("#2A2632", "#121018", "#050408") }));
+    /* the white shirt in a V, the lapels, and a red stone at the throat */
+    svg.appendChild(mk("path", { d: "M16.2 28.6 L20 36.4 L23.8 28.6 Z", fill: "#ECE8F0" }));
+    svg.appendChild(mk("path", { d: "M14.2 28.8 L20 37.4 L16.4 40 Z M25.8 28.8 L20 37.4 L23.6 40 Z", fill: "#1C1824" }));
+    open("cx-fx cx-fx-vpgem");
+    svg.appendChild(mk("circle", { cx: 20, cy: 30.4, r: 1.7, fill: red, opacity: ".35" }));
+    svg.appendChild(mk("path", { d: "M20 29.3 L21 30.4 L20 31.6 L19 30.4 Z", fill: red, stroke: "#FFD6DC", "stroke-width": ".18" }));
+    close();
     close();
     open("cx-head");
-    /* the dark hood the mask is worn in */
-    svg.appendChild(mk("path", { d: "M20 8.4 Q28.6 8.8 29.6 18.6 Q30 25.4 27.4 29.6 L12.6 29.6 Q10 25.4 10.4 18.6 Q11.4 8.8 20 8.4 Z", fill: headGrad("#2E3360", "#171A36", "#08091A") }));
-    /* THE MASK: ears up, cheeks out, a snout down to a point */
-    const mg = mk("linearGradient", { id: uid + "-ktm", x1: "0", y1: "0", x2: "0", y2: "1" });
-    [["0%", "#FFFFFF"], ["60%", "#EEF2F8"], ["100%", "#C3CDDC"]].forEach(([o, c]) => mg.appendChild(mk("stop", { offset: o, "stop-color": c })));
-    defs.appendChild(mg);
-    const mask = "M20 29 Q17.6 27.6 15.2 24.4 Q12.4 21.6 12.4 17.8 Q12.4 15 13 13.4 L12.2 5.4 Q15.4 8 17.2 11.4 Q20 10.6 22.8 11.4 Q24.6 8 27.8 5.4 L27 13.4 Q27.6 15 27.6 17.8 Q27.6 21.6 24.8 24.4 Q22.4 27.6 20 29 Z";
-    svg.appendChild(mk("path", { d: mask, fill: "url(#" + uid + "-ktm)", stroke: "#7D8AA3", "stroke-width": ".3", "stroke-linejoin": "round" }));
-    /* inside the ears */
-    svg.appendChild(mk("path", { d: "M13.2 7.4 L16.2 11.6 L13.8 13 Z M26.8 7.4 L23.8 11.6 L26.2 13 Z", fill: red, opacity: ".9" }));
-    /* the markings: swept brows, three whisker strokes each cheek, a red
-       line down the snout */
-    svg.appendChild(mk("path", { d: "M14.2 15.4 Q16.4 13.6 18.6 15 M25.8 15.4 Q23.6 13.6 21.4 15", fill: "none", stroke: red, "stroke-width": ".75", "stroke-linecap": "round" }));
-    svg.appendChild(mk("path", { d: "M13.4 20.6 L15.6 21.2 M13.6 22.2 L15.6 22.4 M25.8 21.2 L28.6 20.6 M24.4 22.4 L26.4 22.2", fill: "none", stroke: red, "stroke-width": ".5", "stroke-linecap": "round" }));
-    svg.appendChild(mk("path", { d: "M20 12.6 L20 15.2", stroke: red, "stroke-width": ".6", "stroke-linecap": "round" }));
-    /* the eyes: up-slanted slits, the sly look a fox has, lit from behind */
+    const skin = headGrad("#F4F2F7", "#D8D3E2", "#9C95AE");
+    /* pointed ears */
+    svg.appendChild(mk("path", { d: "M12.9 19.6 L9.6 15.8 Q10.2 21.4 13 23 Z M27.1 19.6 L30.4 15.8 Q29.8 21.4 27 23 Z", fill: skin }));
+    svg.appendChild(mk("path", { d: "M20 11.2 Q27.4 11.4 27.4 20.4 Q27.2 26.8 20 29.2 Q12.8 26.8 12.6 20.4 Q12.6 11.4 20 11.2 Z", fill: skin }));
+    /* hollow cheeks */
+    svg.appendChild(mk("path", { d: "M14.4 22.4 Q15.4 25.4 17.4 26.2 M25.6 22.4 Q24.6 25.4 22.6 26.2", fill: "none", stroke: "#8A82A0", "stroke-width": ".45", "stroke-linecap": "round", opacity: ".6" }));
+    /* THE HAIR: black, swept back, down to a widow's peak */
+    svg.appendChild(mk("path", { d: "M12.4 19.2 Q11.4 9.8 20 9.4 Q28.6 9.8 27.6 19.2 Q27 14.8 24.4 13.6 Q22.2 12.8 20 16.4 Q17.8 12.8 15.6 13.6 Q13 14.8 12.4 19.2 Z", fill: "#100E16" }));
+    svg.appendChild(mk("path", { d: "M14.6 12.4 Q17.6 10.4 21.4 10.4", fill: "none", stroke: "#5A5470", "stroke-width": ".45", "stroke-linecap": "round", opacity: ".9" }));
+    /* the brows, hard and down to the nose */
+    svg.appendChild(mk("path", { d: "M14.6 17.6 L18.4 18.8 M25.4 17.6 L21.6 18.8", stroke: "#100E16", "stroke-width": ".85", "stroke-linecap": "round" }));
+    /* the eyes: red, lit */
     open("cx-eyes");
-    [[-1, 16.3], [1, 23.7]].forEach(([f, cx]) => {
-      const inner = cx - f * 2.1, outer = cx + f * 2.1;
-      svg.appendChild(mk("ellipse", { cx: cx, cy: 17.9, rx: 2.2, ry: .95, fill: fire, opacity: ".35", class: "cx-fx-kteye" }));
-      svg.appendChild(mk("path", { d: "M" + inner + " 19 Q" + cx + " 19.5 " + outer + " 16.6 Q" + cx + " 16.7 " + inner + " 19 Z", fill: "#0B1020" }));
-      svg.appendChild(mk("circle", { cx: cx, cy: 18, r: .66, fill: fire }));
-      svg.appendChild(mk("circle", { cx: cx, cy: 18, r: .26, fill: "#FFFFFF" }));
+    [[16.4, 1], [23.6, -1]].forEach(([cx, f]) => {
+      svg.appendChild(mk("ellipse", { cx, cy: 20.2, rx: 2.2, ry: 1.2, fill: red, opacity: ".4", class: "cx-fx-vpeye" }));
+      svg.appendChild(mk("path", { d: "M" + (cx - 1.6) + " " + (20 - f * .3) + " Q" + cx + " 19.2 " + (cx + 1.6) + " " + (20 + f * .3) + " Q" + cx + " 21 " + (cx - 1.6) + " " + (20 - f * .3) + " Z", fill: "#FF4458" }));
+      svg.appendChild(mk("circle", { cx, cy: 20.1, r: .36, fill: "#2A0006" }));
     });
     close();
-    closedEyes([[16.3, 18.2, 1.8], [23.7, 18.2, 1.8]], "#0B1020", .5);
-    /* the snout's nose and a thin fox grin */
-    svg.appendChild(mk("path", { d: "M19 25.6 Q20 25.1 21 25.6 Q20.5 26.6 20 26.8 Q19.5 26.6 19 25.6 Z", fill: "#1A1D2C" }));
+    closedEyes([[16.4, 20.4, 1.6], [23.6, 20.4, 1.6]], "#3A3448", .5);
+    svg.appendChild(mk("path", { d: "M20 20.6 L19.4 23.6 Q20 24 20.6 23.6", fill: "none", stroke: "#8A82A0", "stroke-width": ".4", "stroke-linecap": "round" }));
+    /* a thin smile, and the two fangs over the lip */
     open("cx-mouth");
-    svg.appendChild(mk("path", { d: "M17.2 24.4 Q18.4 25.4 20 26.8 Q21.6 25.4 22.8 24.4", fill: "none", stroke: red, "stroke-width": ".45", "stroke-linecap": "round" }));
-    close();
-    /* foxfire on the brow */
-    open("cx-fx cx-fx-ktflame");
-    svg.appendChild(mk("circle", { cx: 20, cy: 10.6, r: 1.7, fill: fire, opacity: ".35" }));
-    svg.appendChild(mk("path", { d: "M20 8.4 Q21.1 10 20.8 10.9 Q20.5 11.8 20 11.8 Q19.5 11.8 19.2 10.9 Q18.9 10 20 8.4 Z", fill: fire }));
-    svg.appendChild(mk("circle", { cx: 20, cy: 10.9, r: .35, fill: "#FFFFFF" }));
+    svg.appendChild(mk("path", { d: "M17.2 25.4 Q20 26.6 22.8 25.4", fill: "none", stroke: "#5A1020", "stroke-width": ".6", "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M18.3 25.8 L18.7 27.4 L19.1 25.95 Z M21.7 25.8 L21.3 27.4 L20.9 25.95 Z", fill: "#FFFFFF" }));
     close();
     close();
-    sheen([mask], "cx-fx-ktsheen", 12, 28, 5, 29, "#FFFFFF");
     return done();
   }
 
@@ -33780,25 +33779,31 @@ function drawAvatarCharSVG(charId){
     [[15.4, 25.4, 1.1, "#FFD37A"], [18.2, 26.2, 1.3, "#7CF0E0"], [21.6, 26, 1.2, "#FFFFFF"], [24.6, 25.3, 1, "#FF9ED0"]].forEach(([x, y, r, c]) =>
       inside.appendChild(mk("ellipse", { cx: x, cy: y, rx: r, ry: r * .7, fill: c, opacity: ".85" })));
     /* THE KOI, swimming laps round the middle of the bowl */
+    /* BUILD 272: "Not a fan of the bowl head one having two large fish
+       like that." Three SMALL koi now - red-and-white, gold, and black
+       with orange - swimming one behind another round the bowl, which
+       is what a bowl of koi actually looks like, plus two fronds of weed
+       swaying on the bottom. Each fish faces along its path: at angle
+       th on the circle the heading is th + 180 degrees. */
     const swim = mk("g", { class: "cx-fx cx-fx-koiswim" });
     swim.appendChild(pivot(20, 20.2, 3.8));
-    const fish = mk("g", { transform: "translate(23.8 20.2) rotate(180)" });
-    fish.appendChild(mk("path", { d: "M0 -3.6 Q1.9 -2 1.6 .6 Q1.2 2.4 0 3 Q-1.2 2.4 -1.6 .6 Q-1.9 -2 0 -3.6 Z", fill: "#FFF4EC", stroke: "#B8421E", "stroke-width": ".2" }));
-    fish.appendChild(mk("path", { d: "M0 -3.4 Q1.4 -2.2 1.2 -.6 Q.2 -.2 -.6 -1.6 Q-.6 -2.8 0 -3.4 Z M-1.3 .6 Q-.2 .2 .6 1.4 Q0 2.4 -1 1.8 Z", fill: "#FF6A2A" }));
-    fish.appendChild(mk("path", { d: "M0 2.7 Q2 4.2 1.6 5.8 Q.6 4.8 0 4.4 Q-.6 4.8 -1.6 5.8 Q-2 4.2 0 2.7 Z", fill: "#FF8A4A", opacity: ".9", class: "cx-fx-koitail" }));
-    fish.appendChild(mk("path", { d: "M1.5 -.4 L3 .6 L1.4 .9 Z M-1.5 -.4 L-3 .6 L-1.4 .9 Z", fill: "#FFB08A", opacity: ".85" }));
-    fish.appendChild(mk("circle", { cx: .8, cy: -2.3, r: .35, fill: "#1A0A08" }));
-    fish.appendChild(mk("circle", { cx: -.8, cy: -2.3, r: .35, fill: "#1A0A08" }));
-    swim.appendChild(fish);
-    /* the second koi, opposite the first, black with gold */
-    const fish2 = mk("g", { transform: "translate(16.2 20.2)" });
-    fish2.appendChild(mk("path", { d: "M0 -3.6 Q1.9 -2 1.6 .6 Q1.2 2.4 0 3 Q-1.2 2.4 -1.6 .6 Q-1.9 -2 0 -3.6 Z", fill: "#1A1420", stroke: "#000", "stroke-width": ".2" }));
-    fish2.appendChild(mk("path", { d: "M0 -3.3 Q1.2 -2.4 1 -1 Q0 -1.3 -.4 -2.4 Q-.5 -3 0 -3.3 Z M1.2 .4 Q.2 .6 -.2 1.8 Q.8 2.2 1.3 1.2 Z", fill: "#F2B33D" }));
-    fish2.appendChild(mk("path", { d: "M0 2.7 Q2 4.2 1.6 5.8 Q.6 4.8 0 4.4 Q-.6 4.8 -1.6 5.8 Q-2 4.2 0 2.7 Z", fill: "#3A2E44", opacity: ".95" }));
-    fish2.appendChild(mk("path", { d: "M1.5 -.4 L3 .6 L1.4 .9 Z M-1.5 -.4 L-3 .6 L-1.4 .9 Z", fill: "#F2B33D", opacity: ".75" }));
-    fish2.appendChild(mk("circle", { cx: .8, cy: -2.3, r: .32, fill: "#F2B33D" }));
-    fish2.appendChild(mk("circle", { cx: -.8, cy: -2.3, r: .32, fill: "#F2B33D" }));
-    swim.appendChild(fish2);
+    [[0, "#FFF4EC", "#FF5A2A", "#FF8A4A"], [120, "#FFD25A", "#F2A020", "#FFC04A"], [240, "#1E1824", "#FF7A2A", "#3A2E44"]].forEach(([deg, body, patch, tail]) => {
+      const t = deg * Math.PI / 180;
+      const fish = mk("g", { transform: "translate(" + (20 + Math.cos(t) * 3.6).toFixed(2) + " " + (20.2 + Math.sin(t) * 3.6).toFixed(2) + ") rotate(" + (deg + 180) + ") scale(.6)" });
+      fish.appendChild(mk("path", { d: "M0 2.7 Q2 4.2 1.6 5.8 Q.6 4.8 0 4.4 Q-.6 4.8 -1.6 5.8 Q-2 4.2 0 2.7 Z", fill: tail, opacity: ".95" }));
+      fish.appendChild(mk("path", { d: "M1.5 -.4 L3 .6 L1.4 .9 Z M-1.5 -.4 L-3 .6 L-1.4 .9 Z", fill: tail, opacity: ".85" }));
+      fish.appendChild(mk("path", { d: "M0 -3.6 Q1.9 -2 1.6 .6 Q1.2 2.4 0 3 Q-1.2 2.4 -1.6 .6 Q-1.9 -2 0 -3.6 Z", fill: body, stroke: "rgba(0,0,0,.35)", "stroke-width": ".2" }));
+      fish.appendChild(mk("path", { d: "M0 -3.4 Q1.4 -2.2 1.2 -.6 Q.2 -.2 -.6 -1.6 Q-.6 -2.8 0 -3.4 Z M-1.3 .6 Q-.2 .2 .6 1.4 Q0 2.4 -1 1.8 Z", fill: patch }));
+      fish.appendChild(mk("circle", { cx: .8, cy: -2.3, r: .38, fill: "#1A0A08" }));
+      fish.appendChild(mk("circle", { cx: -.8, cy: -2.3, r: .38, fill: "#1A0A08" }));
+      swim.appendChild(fish);
+    });
+    /* two fronds of weed on the bottom */
+    [[14.2, 1], [26, -1]].forEach(([x, f2]) => {
+      const wd = mk("g", { class: "cx-fx cx-fx-koiweed" });
+      wd.appendChild(mk("path", { d: "M" + x + " 26 Q" + (x - f2 * 1.6) + " 22.6 " + (x + f2 * .4) + " 19.8 Q" + (x + f2 * 1.2) + " 22.8 " + (x + .8) + " 26 Z", fill: "#3FBF7A", opacity: ".9" }));
+      inside.appendChild(wd);
+    });
     inside.appendChild(swim);
     /* bubbles, rising and fading */
     const bub = mk("g", { class: "cx-fx cx-fx-koibubble" });
@@ -34624,93 +34629,58 @@ function drawAvatarCharSVG(charId){
     return done();
   }
 
-  /* ================= CYBORG (build 271) =================
+  /* ================= PLAGUE DOCTOR (build 272) =================
      A hundo in five different units in one day - the Astronaut's
      challenge and the Astronaut's id, so everybody who earned it keeps
-     it. "Should the astronaut be changed to something else that's
-     unique? Ronin is the coolest one we have." The Astronaut was a white
-     helmet with nothing behind the visor - a costume, not a character.
-     So the one face in the set that is half machine: a stern man down
-     the left, chrome plate down the right, a seam with a red light
-     leaking through it, and a cyber-eye that glows and scans. A black
-     high-collared jacket with a red neon trim, and a synthwave floor
-     behind him. Parts are cx-fx-cb*: unique names. */
-  if(def.kind === "cyborg"){
-    const red = "#FF2D46", redSoft = "#FF8A9A";
-    const skin = headGrad("#E2A57A", "#C1855A", "#83552F");
+     it. It was the Cyborg for one build: "Not a fan of the half person
+     half robot one." What it needs is what the Ronin has - a face you
+     never see, one silhouette nobody else owns, one strong light - and
+     the plague doctor is all three: a wide-brimmed black hat, a hood
+     under it, a long bone-white beaked mask, and two round glass lenses
+     glowing green. A pale moon in fog behind him. Parts are cx-fx-pd*:
+     unique names. */
+  if(def.kind === "plaguedoc"){
+    const glow = "#6EF0A0";
+    const coat = headGrad("#3A3430", "#1E1A18", "#0A0908");
     open("cx-body");
-    svg.appendChild(mk("path", { d: "M16.6 26 L23.4 26 L23.2 30 Q20 31 16.8 30 Z", fill: "#A06A44" }));
-    svg.appendChild(mk("path", { d: "M5.4 40 Q6 30.8 13.6 28.6 L26.4 28.6 Q34 30.8 34.6 40 Z", fill: headGrad("#3C424E", "#1C2028", "#08090D") }));
-    /* the high collar, a neon edge along it, and a light on the chest */
-    svg.appendChild(mk("path", { d: "M13.6 28.4 L14.6 33 Q20 34.8 25.4 33 L26.4 28.4 Q20 30.6 13.6 28.4 Z", fill: "#121419", stroke: "#2A2F38", "stroke-width": ".3" }));
-    open("cx-fx cx-fx-cbtrim");
-    svg.appendChild(mk("path", { d: "M14.6 33 Q20 34.8 25.4 33", fill: "none", stroke: red, "stroke-width": "1.2", opacity: ".3" }));
-    svg.appendChild(mk("path", { d: "M14.6 33 Q20 34.8 25.4 33", fill: "none", stroke: redSoft, "stroke-width": ".35" }));
-    svg.appendChild(mk("path", { d: "M27.6 35.2 L31 35.2", stroke: red, "stroke-width": ".6", "stroke-linecap": "round" }));
-    close();
-    svg.appendChild(mk("path", { d: "M9 38 Q9.4 33.4 12.6 31.6 M31 38 Q30.6 33.4 27.4 31.6", fill: "none", stroke: "#4A515E", "stroke-width": ".35", opacity: ".8" }));
+    svg.appendChild(mk("path", { d: "M5 40 Q5.6 30.6 13 28.4 L27 28.4 Q34.4 30.6 35 40 Z", fill: coat }));
+    /* a leather strap across the chest and a buckle */
+    svg.appendChild(mk("path", { d: "M10 31.6 L30 39", stroke: "#5A3E26", "stroke-width": "1.4" }));
+    svg.appendChild(mk("rect", { x: 18.6, y: 34.2, width: 2.2, height: 1.6, rx: .3, fill: "none", stroke: "#C9A24A", "stroke-width": ".35", transform: "rotate(20 19.7 35)" }));
     close();
     open("cx-head");
-    svg.appendChild(mk("ellipse", { cx: 11.4, cy: 21.4, rx: 1.4, ry: 2, fill: skin }));
-    svg.appendChild(mk("ellipse", { cx: 20, cy: 20.6, rx: 8.8, ry: 9.8, fill: skin }));
-    /* THE PLATE: the right half of the face, a jagged seam down the
-       middle, chrome lit from the top */
-    const cg = mk("linearGradient", { id: uid + "-cbc", x1: "0", y1: "0", x2: ".4", y2: "1" });
-    [["0%", "#F4F7FA"], ["38%", "#AEB8C4"], ["52%", "#E2E8EE"], ["100%", "#4C5560"]].forEach(([o, c]) => cg.appendChild(mk("stop", { offset: o, "stop-color": c })));
-    defs.appendChild(cg);
-    const plate = "M20.2 10.8 Q28.8 11.2 28.8 20.6 Q28.8 27.4 23 30.2 L20.6 30.4 L21.4 26.4 L20 23 L21 18.4 L19.8 14.4 Z";
-    svg.appendChild(mk("path", { d: plate, fill: "url(#" + uid + "-cbc)" }));
-    /* the seam, and the red light coming through it */
-    open("cx-fx cx-fx-cbseam");
-    svg.appendChild(mk("path", { d: "M20.2 10.8 L19.8 14.4 L21 18.4 L20 23 L21.4 26.4 L20.6 30.4", fill: "none", stroke: red, "stroke-width": "1.1", opacity: ".35", "stroke-linejoin": "round" }));
-    close();
-    svg.appendChild(mk("path", { d: "M20.2 10.8 L19.8 14.4 L21 18.4 L20 23 L21.4 26.4 L20.6 30.4", fill: "none", stroke: "#1A1D22", "stroke-width": ".4", "stroke-linejoin": "round" }));
-    /* panel lines and bolts on the plate */
-    svg.appendChild(mk("path", { d: "M22.2 15.2 L27.8 14.6 M22.6 24.4 L27.4 23 M26.2 26.6 L24.4 29.2", fill: "none", stroke: "#4C5560", "stroke-width": ".3", "stroke-linecap": "round" }));
-    [[27.2, 16.4], [27, 21.8], [23.4, 27.6]].forEach(([x, y]) => svg.appendChild(mk("circle", { cx: x, cy: y, r: .34, fill: "#5E6873", stroke: "#E8EDF2", "stroke-width": ".12" })));
-    /* the hair: a dark undercut swept over the human side */
-    svg.appendChild(mk("path", { d: "M11 17.6 Q10.4 10 19.4 9 Q26.6 8.6 28.8 13.4 Q25.6 11.8 21.6 12.4 Q17.4 13 14.6 14.8 Q12.4 16.2 11 17.6 Z", fill: "#17191F" }));
-    svg.appendChild(mk("path", { d: "M14.2 11.6 Q17.4 9.8 21.4 9.8", fill: "none", stroke: "#4A505C", "stroke-width": ".4", "stroke-linecap": "round", opacity: ".8" }));
-    /* the human eye, a hard level brow over it */
-    svg.appendChild(mk("path", { d: "M13.4 17.2 L18.2 18.2", stroke: "#1E140E", "stroke-width": "1.05", "stroke-linecap": "round" }));
+    /* the hood under the hat, down to the shoulders */
+    svg.appendChild(mk("path", { d: "M11 13.4 Q9.4 22.6 11.8 30.4 L28.2 30.4 Q30.6 22.6 29 13.4 Z", fill: headGrad("#2E2A28", "#171412", "#070605") }));
+    /* THE MASK: a bone-white leather face and a long beak running down */
+    const leather = headGrad("#F2E6CC", "#D2BE96", "#8E7650");
+    svg.appendChild(mk("path", { d: "M13.6 14.2 Q20 12.8 26.4 14.2 L26 20.8 Q23.4 22.2 20 21.6 Q16.6 22.2 14 20.8 Z", fill: leather }));
+    svg.appendChild(mk("path", { d: "M17 19.4 Q20 18.2 23 19.4 Q22.8 25.6 20.7 32.4 Q20 33.4 19.3 32.4 Q17.2 25.6 17 19.4 Z", fill: leather, stroke: "#6E5A3C", "stroke-width": ".3" }));
+    /* the beak's shadow side, and the stitched seam down its middle */
+    svg.appendChild(mk("path", { d: "M20 19.2 Q22.9 19.6 22.8 21 Q22.4 26.4 20.6 32.2 Q20.3 26 20 19.2 Z", fill: "#6E5A3C", opacity: ".35" }));
+    svg.appendChild(mk("path", { d: "M20 19.4 L20 31.6", stroke: "#5A4630", "stroke-width": ".3", "stroke-dasharray": ".5 .45" }));
+    /* the lenses: brass rims, green light */
+    const lg = mk("radialGradient", { id: uid + "-pdl", cx: ".4", cy: ".38", r: ".7" });
+    lg.appendChild(mk("stop", { offset: "0%", "stop-color": "#E4FFEE" }));
+    lg.appendChild(mk("stop", { offset: "45%", "stop-color": glow }));
+    lg.appendChild(mk("stop", { offset: "100%", "stop-color": "#0E5A32" }));
+    defs.appendChild(lg);
     open("cx-eyes");
-    svg.appendChild(mk("ellipse", { cx: 15.9, cy: 19.9, rx: 1.35, ry: .82, fill: "#F2ECE6" }));
-    svg.appendChild(mk("circle", { cx: 16.2, cy: 19.9, r: .62, fill: "#2A1A12" }));
-    svg.appendChild(catchlight(16, 19.65, .2));
-    svg.appendChild(mk("path", { d: "M14.5 19.3 Q15.9 18.8 17.3 19.4", fill: "none", stroke: "#4A2A18", "stroke-width": ".45", "stroke-linecap": "round" }));
+    [16.5, 23.5].forEach(cx => {
+      svg.appendChild(mk("circle", { cx, cy: 17.4, r: 3.4, fill: glow, opacity: ".22", class: "cx-fx-pdglow" }));
+      svg.appendChild(mk("circle", { cx, cy: 17.4, r: 2.2, fill: "#2A2014", stroke: "#C9A24A", "stroke-width": ".55" }));
+      svg.appendChild(mk("circle", { cx, cy: 17.4, r: 1.62, fill: "url(#" + uid + "-pdl)" }));
+      svg.appendChild(mk("path", { d: "M" + (cx - 1) + " 16.6 Q" + (cx - .5) + " 16 " + (cx + .1) + " 15.9", fill: "none", stroke: "#FFFFFF", "stroke-width": ".35", "stroke-linecap": "round", opacity: ".8" }));
+    });
     close();
-    closedEyes([[15.9, 19.9, 1.4]], "#2A1A10", .55);
-    /* THE CYBER-EYE: a socket, a red iris, a white-hot core, light
-       pouring off it, and a scan line that crosses it */
-    const eg = mk("radialGradient", { id: uid + "-cbe" });
-    eg.appendChild(mk("stop", { offset: "0%", "stop-color": red, "stop-opacity": ".7" }));
-    eg.appendChild(mk("stop", { offset: "100%", "stop-color": red, "stop-opacity": "0" }));
-    defs.appendChild(eg);
-    svg.appendChild(mk("circle", { cx: 24.4, cy: 19.6, r: 2.3, fill: "#101317", stroke: "#2A3038", "stroke-width": ".35" }));
-    open("cx-fx cx-fx-cbeye");
-    svg.appendChild(mk("circle", { cx: 24.4, cy: 19.6, r: 4.4, fill: "url(#" + uid + "-cbe)" }));
-    svg.appendChild(mk("circle", { cx: 24.4, cy: 19.6, r: 1.45, fill: "none", stroke: red, "stroke-width": ".55" }));
-    svg.appendChild(mk("circle", { cx: 24.4, cy: 19.6, r: .62, fill: "#FFE2E6" }));
+    closedEyes([[16.5, 17.6, 1.5], [23.5, 17.6, 1.5]], "#2A2014", .5);
+    open("cx-mouth"); close();
+    /* THE HAT: a wide flat brim, a tall crown, a band */
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 13.2, rx: 12.6, ry: 2.5, fill: "#100E12" }));
+    svg.appendChild(mk("path", { d: "M13.4 13.2 L14.2 5.4 Q20 4 25.8 5.4 L26.6 13.2 Q20 14.6 13.4 13.2 Z", fill: headGrad("#36303A", "#18151C", "#060508") }));
+    svg.appendChild(mk("path", { d: "M13.8 10.6 Q20 12 26.2 10.6 L26.4 12.4 Q20 13.8 13.6 12.4 Z", fill: "#5A3E26" }));
+    svg.appendChild(mk("path", { d: "M8 13.6 Q20 11.6 32 13.6", fill: "none", stroke: "#4A4250", "stroke-width": ".4", opacity: ".8" }));
     close();
-    const ecp = uid + "-cbec";
-    const ec = mk("clipPath", { id: ecp }); ec.appendChild(mk("circle", { cx: 24.4, cy: 19.6, r: 2.1 })); defs.appendChild(ec);
-    const scanG = mk("g", { "clip-path": "url(#" + ecp + ")" });
-    const scan = mk("g", { class: "cx-fx cx-fx-cbscan" });
-    scan.appendChild(mk("rect", { x: 22.2, y: 17.4, width: 4.4, height: ".42", fill: redSoft, opacity: ".9" }));
-    scanG.appendChild(scan);
-    svg.appendChild(scanG);
-    /* a circuit trace from the eye back to the temple */
-    open("cx-fx cx-fx-cbtrace");
-    svg.appendChild(mk("path", { d: "M26.7 19.6 L28.2 19.6 L28.6 22.2 M26.4 18 L27.8 16.6", fill: "none", stroke: red, "stroke-width": ".28", "stroke-linecap": "round" }));
-    close();
-    /* the nose shadow and a hard mouth, the right end of it grille */
-    svg.appendChild(mk("path", { d: "M19.6 21.6 Q20.4 23.6 19.2 24.2", fill: "none", stroke: "#7A4A2C", "stroke-width": ".45", "stroke-linecap": "round", opacity: ".6" }));
-    open("cx-mouth");
-    svg.appendChild(mk("path", { d: "M16.4 26.2 Q18.6 26.6 20.6 26.1", fill: "none", stroke: "#5E3620", "stroke-width": ".7", "stroke-linecap": "round" }));
-    svg.appendChild(mk("path", { d: "M21.4 25.5 L21.4 26.7 M22.4 25.3 L22.4 26.5 M23.4 25.1 L23.4 26.2", stroke: "#3A424C", "stroke-width": ".32", "stroke-linecap": "round" }));
-    close();
-    close();
-    sheen([plate], "cx-fx-cbsheen", 20, 29, 10, 30, "#FFFFFF");
+    sheen(["M17 19.4 Q20 18.2 23 19.4 Q22.8 25.6 20.7 32.4 Q20 33.4 19.3 32.4 Q17.2 25.6 17 19.4 Z"], "cx-fx-pdsheen", 17, 23, 18, 33, "#FFFFFF");
     return done();
   }
 
@@ -35215,72 +35185,73 @@ function drawAvatarCharSVG(charId){
     return done();
   }
 
-  /* SINGULARITY, FOURTH PASS (build 271): THE THIRD OF VOID'S FAMILY.
-     "The singularity is a cat. That needs to be changed immediately. It
-     needs to be flare themed. Umbra and void are perfect. Expand on
-     that." So it is the third hooded figure, and the three are one set:
-     a hood, a face that is not a face, a rim of light down one side in
-     the figure's own colour, and the flare it was found by worn on the
-     brow. Void is the black hood with its three flares; Umbra the violet
-     one with its crescent; the Singularity is the white flare, Event
-     Horizon - so its face is a black hole: a perfect black ringed by a
-     line of white-hot light, two ice-white eyes inside it, and an
-     accretion disk that runs behind the figure (the backdrop) and comes
-     round IN FRONT of it here, so the hooded thing is caught inside the
-     ring. Parts are cx-fx-sg*: unique names. */
+  /* SINGULARITY, FIFTH PASS (build 272): THE ONE-EYED THING. "The one
+     after umbra looks too much like umbra, come on make it unique." The
+     fourth pass made it a third hood, and a hood with a dark face and
+     two light slits IS Umbra, whatever colour it is. So the family is
+     kept by what they share - a dark body, a rim of light in the
+     figure's own colour, and a flare worn on the head - and the
+     silhouette is its own: no hood at all. A tall smooth dark head,
+     speckled with stars, with ONE eye in the middle of it - and the eye
+     is the black hole: a perfect black ringed by white-hot light, a
+     streak of bent light across it, the accretion glow round it. A crown
+     of white shards floats over the head, and the disk still runs behind
+     the figure and comes round in front, at the chest now so it never
+     crosses the face. Parts are cx-fx-sg*: unique names. */
   if(def.kind === "singularity"){
     const ice = "#DDF4FF", iceDeep = "#7FC8FF";
-    const cloak = headGrad("#3A4766", "#18203A", "#070A14");
     open("cx-body");
-    svg.appendChild(mk("path", { d: "M5.2 40 Q5.8 30.4 13.6 28.2 L26.4 28.2 Q34.2 30.4 34.8 40 Z", fill: cloak }));
-    svg.appendChild(mk("path", { d: "M33.8 38.6 Q33.2 31.6 27.4 29", fill: "none", stroke: ice, "stroke-width": ".5", "stroke-linecap": "round", opacity: ".55" }));
+    svg.appendChild(mk("path", { d: "M5 40 Q5.6 30.2 13.4 28 L26.6 28 Q34.4 30.2 35 40 Z", fill: headGrad("#2E3A58", "#141C30", "#05070D") }));
+    svg.appendChild(mk("path", { d: "M34 38.6 Q33.4 31.4 27 28.8", fill: "none", stroke: ice, "stroke-width": ".5", "stroke-linecap": "round", opacity: ".6" }));
+    /* a ring of light at the neck */
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 28.6, rx: 5.6, ry: 1.3, fill: "none", stroke: ice, "stroke-width": ".45", opacity: ".75" }));
     close();
     open("cx-head");
-    /* the hood - rounder than Umbra's point, taller than Void's cowl */
-    svg.appendChild(mk("path", { d: "M20 4.2 Q29.6 5.4 30.6 17.8 Q31.1 25.6 27.8 31 L12.2 31 Q8.9 25.6 9.4 17.8 Q10.4 5.4 20 4.2 Z", fill: cloak }));
-    /* the rim light, one side only, the figure's own colour */
-    svg.appendChild(mk("path", { d: "M20.6 4.6 Q29.2 5.9 30.2 17.8 Q30.6 25 27.6 30.4", fill: "none", stroke: ice, "stroke-width": ".7", "stroke-linecap": "round", opacity: ".85" }));
-    /* THE EVENT HORIZON: a perfect black, and the ring of light round it */
-    const fd = "M20 11.2 Q26.6 11.4 26.8 19.2 Q26.8 26.4 20 27.8 Q13.2 26.4 13.2 19.2 Q13.4 11.4 20 11.2 Z";
+    /* the head: tall, smooth, tapering to the chin */
+    const dome = "M20 6.6 Q27.6 7 28 17.6 Q28 25.2 20 28.8 Q12 25.2 12 17.6 Q12.4 7 20 6.6 Z";
+    svg.appendChild(mk("path", { d: dome, fill: headGrad("#2A3452", "#111829", "#04060C") }));
+    [[15.4, 11.6, .28], [23.8, 10.4, .22], [14.6, 22.4, .24], [25.4, 22.8, .26], [21.6, 25.6, .2], [17.2, 8.8, .18], [26.2, 15.4, .2]]
+      .forEach(([x, y, r]) => svg.appendChild(mk("circle", { cx: x, cy: y, r: r, fill: "#CFE6FF", opacity: ".7" })));
+    /* the rim light, one side, the figure's own colour */
+    svg.appendChild(mk("path", { d: "M20.6 6.8 Q27.4 7.6 27.8 17.6 Q27.8 24.6 21.4 28.4", fill: "none", stroke: ice, "stroke-width": ".6", "stroke-linecap": "round", opacity: ".8" }));
+    /* THE EYE */
     open("cx-fx cx-fx-sgring");
-    svg.appendChild(mk("path", { d: fd, fill: "none", stroke: iceDeep, "stroke-width": "2.4", opacity: ".32" }));
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 17.6, rx: 6.4, ry: 4.2, fill: iceDeep, opacity: ".28" }));
     close();
-    svg.appendChild(mk("path", { d: fd, fill: "#000000" }));
-    const rg = mk("linearGradient", { id: uid + "-sgr", x1: "0", y1: "0", x2: "1", y2: "1" });
-    [["0%", "#FFFFFF"], ["50%", ice], ["100%", "#FFB27A"]].forEach(([o, c]) => rg.appendChild(mk("stop", { offset: o, "stop-color": c })));
-    defs.appendChild(rg);
-    svg.appendChild(mk("path", { d: fd, fill: "none", stroke: "url(#" + uid + "-sgr)", "stroke-width": ".62" }));
-    /* the eyes: two ice-white slants, angled down to the nose - the scowl
-       Umbra wears, in the cold colour */
+    const eg = mk("radialGradient", { id: uid + "-sge", cx: ".5", cy: ".5", r: ".5" });
+    [["0%", "#FFFFFF"], ["55%", ice], ["100%", "#FF9A55"]].forEach(([o, c]) => eg.appendChild(mk("stop", { offset: o, "stop-color": c })));
+    defs.appendChild(eg);
     open("cx-eyes");
-    [[-1, 17.1], [1, 22.9]].forEach(([f, cx]) => {
-      const inner = cx - f * 2.1, outer = cx + f * 2.1;
-      svg.appendChild(mk("ellipse", { cx: cx, cy: 18.9, rx: 2.7, ry: 1.25, fill: iceDeep, opacity: ".45" }));
-      svg.appendChild(mk("path", { d: "M" + outer + " 18.1 Q" + cx + " 18.2 " + inner + " 19.6 Q" + cx + " 19.7 " + outer + " 18.1 Z", fill: "#F4FBFF" }));
-    });
+    svg.appendChild(mk("path", { d: "M14.6 17.6 Q20 12.8 25.4 17.6 Q20 22.4 14.6 17.6 Z", fill: "url(#" + uid + "-sge)" }));
+    svg.appendChild(mk("circle", { cx: 20, cy: 17.6, r: 2.25, fill: "#000000" }));
+    svg.appendChild(mk("circle", { cx: 20, cy: 17.6, r: 2.55, fill: "none", stroke: "#FFFFFF", "stroke-width": ".35" }));
+    svg.appendChild(mk("path", { d: "M12.6 17.9 Q20 16.6 27.4 17.3", fill: "none", stroke: "#FFFFFF", "stroke-width": ".3", opacity: ".85", "stroke-linecap": "round" }));
     close();
-    closedEyes([[17.1, 19.1, 1.8], [22.9, 19.1, 1.8]], "#9CC8E8", .4);
-    /* the white flare on the brow - Umbra wears its crescent there */
+    closedEyes([[20, 17.8, 3.6]], "#9CC8E8", .55);
+    open("cx-mouth"); close();
+    /* THE CROWN: white shards floating over the head - the flare it wears */
     open("cx-fx cx-fx-sgstar");
-    svg.appendChild(mk("circle", { cx: 20, cy: 14.4, r: 1.6, fill: ice, opacity: ".35" }));
-    svg.appendChild(sparkle(20, 14.4, 1.25, "#FFFFFF"));
+    [[-150, 1.5], [-120, 2.1], [-90, 2.7], [-60, 2.1], [-30, 1.5]].forEach(([deg, h]) => {
+      const a = deg * Math.PI / 180, x = 20 + Math.cos(a) * 10.4, y = 12.6 + Math.sin(a) * 8.2;
+      const r = deg + 90;
+      svg.appendChild(mk("path", { d: "M" + x.toFixed(2) + " " + (y - h).toFixed(2) + " L" + (x + .55).toFixed(2) + " " + y.toFixed(2) + " L" + x.toFixed(2) + " " + (y + h * .5).toFixed(2) + " L" + (x - .55).toFixed(2) + " " + y.toFixed(2) + " Z",
+        fill: "#F4FBFF", stroke: iceDeep, "stroke-width": ".2", transform: "rotate(" + r + " " + x.toFixed(2) + " " + y.toFixed(2) + ")" }));
+    });
+    svg.appendChild(sparkle(20, 3.4, 1.1, "#FFFFFF"));
     close();
     close();
-    /* THE NEAR SIDE OF THE DISK, in front of everything: the same ellipse
-       the backdrop draws behind (centre 20,17.6, 17.2 by 4.4, at -14deg),
-       only its lower half, so the figure sits inside the ring. */
+    /* THE NEAR SIDE OF THE DISK, across the chest: the same ellipse the
+       backdrop draws behind (centre 20,23.5, 17.2 by 4.4, at -14deg),
+       only its lower half. */
     open("cx-fx cx-fx-sgdisk");
     const dg = mk("linearGradient", { id: uid + "-sgd", x1: "0", y1: "0", x2: "1", y2: "0" });
     [["0%", iceDeep, ".1"], ["35%", ice, ".8"], ["55%", "#FFFFFF", "1"], ["78%", "#FFC98A", ".75"], ["100%", "#FF8A4A", ".1"]].forEach(([o, c, op]) =>
       dg.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
     defs.appendChild(dg);
-    const near = "M3.31 21.76 A17.2 4.4 -14 0 0 36.69 13.44";
+    const near = "M3.31 27.66 A17.2 4.4 -14 0 0 36.69 19.34";
     svg.appendChild(mk("path", { d: near, fill: "none", stroke: ice, "stroke-width": "2.6", opacity: ".16" }));
     svg.appendChild(mk("path", { d: near, fill: "none", stroke: "url(#" + uid + "-sgd)", "stroke-width": ".95", "stroke-linecap": "round" }));
     close();
-    open("cx-fx cx-fx-wisps");
-    [[9, 36.2, 1.1], [13.4, 38.4, .8], [28.2, 37, 1], [31.8, 34.4, .7], [24.4, 38.8, .6]].forEach(([x, y, r]) =>
-      svg.appendChild(mk("circle", { cx: x, cy: y, r: r, fill: iceDeep, opacity: ".5" })));
     return done();
   }
 
@@ -35463,19 +35434,23 @@ function drawAvatarCharSVG(charId){
     return done();
   }
 
-  /* MARKSMAN, REDRAWN (build 271). "Marksmen and astronaut both are kind
-     of lame when looking at the rest ... How could marksmen be cooler?"
-     The last one was a friendly man in a beanie and a headset - a radio
-     operator, not a shooter. The cool version hides the face the way the
-     Ronin does: a ghillie hood of shredded camouflage, a black shemagh
-     wrapped up over the nose, and nothing showing but one eye in the
-     shadow and the scope over the other, its lens lit green with a red
-     dot. The rifle comes up over the shoulder, and a scope's reticle
-     turns behind him in the backdrop. Keeps cx-fx-reticle, -scopeglow
-     and -led, which the sleep state already dims. */
+  /* MARKSMAN, REDRAWN AGAIN (build 272). "The gilly suit one is a great
+     idea, it just doesn't look recognizable, make it better." Build 271's
+     read as a green bush with a dark slot in it: the hood was one
+     smooth shape with a ragged edge, the face was in shadow, and the
+     rifle was a line off the edge of the frame. What makes a ghillie
+     sniper nameable is three things, so all three are loud now:
+       - THE SUIT IS STRIPS. Dozens of separate tapered strips in five
+         greens and browns, hanging off the hood's edge, over the brow
+         and down the shoulders - the shag is the silhouette.
+       - THE FACE IS SHOWN, IN CAMO PAINT: skin with dark green and black
+         bands across it, one eye open, the scope over the other.
+       - THE RIFLE CROSSES THE BODY, stock low, a scope on it and a
+         suppressor up past the right shoulder.
+     Keeps cx-fx-reticle, -scopeglow and -led. */
   if(def.kind === "marksman"){
     const lime = "#A6FF5C";
-    const ghillie = headGrad("#6E7A4A", "#434C2C", "#1E2314");
+    const f = v => v.toFixed(2);
     const glowId = uid + "-scope";
     const sg = mk("radialGradient", { id: glowId, cx: "50%", cy: "50%", r: "50%" });
     sg.appendChild(mk("stop", { offset: "0%", "stop-color": lime, "stop-opacity": ".6" }));
@@ -35487,70 +35462,84 @@ function drawAvatarCharSVG(charId){
     sl.appendChild(mk("stop", { offset: "0%", "stop-color": "#3E7A22" }));
     sl.appendChild(mk("stop", { offset: "100%", "stop-color": "#081204" }));
     defs.appendChild(sl);
-    /* the rifle, behind the shoulder: barrel and suppressor up past the
-       hood on the left */
-    open("cx-fx cx-fx-mkrifle");
-    svg.appendChild(mk("path", { d: "M10.4 33.4 L4.8 6.2", stroke: "#15181C", "stroke-width": "1.5", "stroke-linecap": "round" }));
-    svg.appendChild(mk("path", { d: "M5.9 11.6 L4.6 5.2", stroke: "#22272E", "stroke-width": "2.1", "stroke-linecap": "round" }));
-    svg.appendChild(mk("path", { d: "M5.2 7.6 L5.9 11", stroke: "#58616C", "stroke-width": ".35", "stroke-linecap": "round" }));
-    close();
+    const GREENS = ["#6B7A38", "#8A8048", "#4A5A2A", "#7C8C40", "#3A4420", "#9A8A54"];
+    /* one strip: a tapered leaf from (x,y), `len` long, at `ang` degrees
+       (90 is straight down) */
+    const strip = (x, y, len, ang, w, col) => {
+      const a = ang * Math.PI / 180, ex = x + Math.cos(a) * len, ey = y + Math.sin(a) * len;
+      const nx = -Math.sin(a) * w, ny = Math.cos(a) * w, mx = (x + ex) / 2, my = (y + ey) / 2;
+      return mk("path", { d: "M" + f(x + nx) + " " + f(y + ny) + " Q" + f(mx + nx * 1.3) + " " + f(my + ny * 1.3) + " " + f(ex) + " " + f(ey)
+        + " Q" + f(mx - nx * 1.3) + " " + f(my - ny * 1.3) + " " + f(x - nx) + " " + f(y - ny) + " Z", fill: col });
+    };
     open("cx-body");
-    svg.appendChild(mk("path", { d: "M5.2 40 Q6 30.8 13.6 28.6 L26.4 28.6 Q34 30.8 34.8 40 Z", fill: headGrad("#4A5236", "#2E3422", "#12150C") }));
-    /* a sling across the chest and a strap of rounds */
-    svg.appendChild(mk("path", { d: "M8.4 32.4 L27.6 40", stroke: "#1A1D14", "stroke-width": "1.6" }));
-    [11.6, 13.8, 16, 18.2, 20.4].forEach((x, i) => {
-      const y = 33.7 + i * .88;
-      svg.appendChild(mk("rect", { x: x - .35, y: y - 1.1, width: ".7", height: "1.5", rx: ".3", fill: "#C9A24A", transform: "rotate(22 " + x + " " + y + ")" }));
-    });
+    svg.appendChild(mk("path", { d: "M5 40 Q5.6 30.6 13 28.4 L27 28.4 Q34.4 30.6 35 40 Z", fill: headGrad("#4E5A30", "#2E361C", "#12160A") }));
+    for(let i = 0; i < 22; i++){
+      const x = 5.6 + i * 1.32, y = 29.4 + Math.abs(i - 10.5) * .28 + (i % 3) * .5;
+      svg.appendChild(strip(x, y, 3.6 + (i * 7 % 5) * .6, 78 + (i * 37 % 26), .5, GREENS[i % GREENS.length]));
+    }
+    close();
+    /* THE RIFLE, across the body: stock low on the left, scope, and the
+       suppressor up past the right shoulder */
+    open("cx-fx cx-fx-mkrifle");
+    const P = t => [17 + 19.2 * t, 40 - 31.6 * t];
+    const seg = (t0, t1, w, col, dx, dy) => { const a = P(t0), b = P(t1);
+      return mk("path", { d: "M" + f(a[0] + (dx || 0)) + " " + f(a[1] + (dy || 0)) + " L" + f(b[0] + (dx || 0)) + " " + f(b[1] + (dy || 0)), stroke: col, "stroke-width": w, "stroke-linecap": "round" }); };
+    svg.appendChild(seg(0, .3, 2.6, "#4A3420"));
+    svg.appendChild(seg(.28, .86, 1.3, "#1A1D22"));
+    svg.appendChild(seg(.84, 1, 1.9, "#22262C"));
+    svg.appendChild(seg(.46, .63, 1.6, "#2A3038", -1.05, -.64));
+    svg.appendChild(seg(.47, .62, .4, "#6A747E", -1.45, -.88));
+    { const e = P(.63); svg.appendChild(mk("circle", { cx: f(e[0] - 1.05), cy: f(e[1] - .64), r: .7, fill: lime, opacity: ".85" })); }
     close();
     open("cx-head");
-    /* THE GHILLIE HOOD: a ragged edge of strips, layered */
-    const rag = (cx, cy, rx, ry, n, jag) => {
-      let d = "";
-      for(let i = 0; i <= n; i++){
-        const t = Math.PI + (i / n) * Math.PI, r = i % 2 ? 1 : 1 + jag;
-        const x = cx + Math.cos(t) * rx * r, y = cy + Math.sin(t) * ry * r;
-        d += (i ? " L" : "M") + x.toFixed(2) + " " + y.toFixed(2);
-      }
-      return d + " L" + (cx + rx) + " " + (cy + 12) + " L" + (cx - rx) + " " + (cy + 12) + " Z";
-    };
-    svg.appendChild(mk("path", { d: rag(20, 18.6, 11.4, 13.2, 22, .1), fill: "#2B3220" }));
-    svg.appendChild(mk("path", { d: rag(20, 18.4, 10.4, 12, 18, .09), fill: ghillie }));
-    /* strands hanging off the brow */
-    [[12.4, 15.6, 11.6, 21.4], [14.2, 13.4, 13.6, 17.6], [27.6, 15.6, 28.4, 21.6], [25.8, 13.2, 26.6, 17.4], [16.6, 12.2, 16.2, 15]].forEach(([x1, y1, x2, y2]) =>
-      svg.appendChild(mk("path", { d: "M" + x1 + " " + y1 + " Q" + ((x1 + x2) / 2 + .6) + " " + ((y1 + y2) / 2) + " " + x2 + " " + y2, fill: "none", stroke: "#5E6A3A", "stroke-width": ".55", "stroke-linecap": "round" })));
-    /* the face in shadow, inside the hood */
-    svg.appendChild(mk("path", { d: "M14 17.2 Q20 14.4 26 17.2 L26 24 L14 24 Z", fill: "#2A1E16" }));
-    svg.appendChild(mk("path", { d: "M14 17.2 Q20 14.4 26 17.2 L26 19.4 Q20 17.6 14 19.4 Z", fill: "#120D0A", opacity: ".7" }));
-    /* the open eye, narrowed */
+    const ghillie = headGrad("#5E6C34", "#3A4422", "#181C0C");
+    svg.appendChild(mk("path", { d: "M20 5.8 Q29.6 6.4 30.2 18 Q30.6 25.4 28 30 L12 30 Q9.4 25.4 9.8 18 Q10.4 6.4 20 5.8 Z", fill: ghillie }));
+    /* the shag round the hood's edge, every strip pointing out and down */
+    for(let k = 0; k <= 24; k++){
+      const t = (-200 + k * 9.2) * Math.PI / 180;
+      const x = 20 + Math.cos(t) * 10, y = 18 + Math.sin(t) * 12;
+      const ang = Math.atan2(Math.sin(t) * .8 + 1.1, Math.cos(t)) * 180 / Math.PI;
+      svg.appendChild(strip(x, y, 3.2 + (k * 5 % 4) * .7, ang, .55, GREENS[(k * 3) % GREENS.length]));
+    }
+    /* THE FACE, in camo paint */
+    const skin = headGrad("#D8A47A", "#B88458", "#7A5234");
+    const face = "M14.2 15.8 Q20 13.6 25.8 15.8 Q26.6 22.8 24.4 26.6 Q20 28.8 15.6 26.6 Q13.4 22.8 14.2 15.8 Z";
+    svg.appendChild(mk("path", { d: face, fill: skin }));
+    const fcp = uid + "-mkf";
+    const fc = mk("clipPath", { id: fcp }); fc.appendChild(mk("path", { d: face })); defs.appendChild(fc);
+    const paint = mk("g", { "clip-path": "url(#" + fcp + ")" });
+    paint.appendChild(mk("path", { d: "M12 21.4 L28 17.4 L28 19.6 L12 23.8 Z", fill: "#3E4A24", opacity: ".9" }));
+    paint.appendChild(mk("path", { d: "M12 25.6 L28 21.8 L28 23.2 L12 27.2 Z", fill: "#1A1E12", opacity: ".85" }));
+    paint.appendChild(mk("path", { d: "M12 17.4 L20 15.6 L20 16.8 L12 18.8 Z", fill: "#1A1E12", opacity: ".8" }));
+    svg.appendChild(paint);
+    /* the fringe of strips hanging over the brow */
+    [[15.2, 13.8, 2.8, 96, 0], [16.8, 13.4, 3.4, 84, 1], [18.4, 13.2, 2.6, 92, 2], [21.6, 13.2, 2.4, 88, 3], [23.2, 13.4, 3.2, 98, 4], [24.8, 13.8, 2.6, 86, 5]]
+      .forEach(([x, y, l, a, c]) => svg.appendChild(strip(x, y, l, a, .5, GREENS[c])));
+    /* the open eye, narrowed, and a hard brow */
+    svg.appendChild(mk("path", { d: "M21.6 18.6 L25.4 18.2", stroke: "#1A120C", "stroke-width": ".8", "stroke-linecap": "round" }));
     open("cx-eyes");
-    svg.appendChild(mk("path", { d: "M21.8 20.4 Q23.6 19.5 25.2 20.2 Q23.6 21 21.8 20.4 Z", fill: "#E8E2D8" }));
-    svg.appendChild(mk("circle", { cx: 23.5, cy: 20.25, r: .48, fill: "#1A120C" }));
+    svg.appendChild(mk("path", { d: "M21.8 20.3 Q23.5 19.4 25.2 20.1 Q23.5 20.9 21.8 20.3 Z", fill: "#F2ECE2" }));
+    svg.appendChild(mk("circle", { cx: 23.5, cy: 20.15, r: .5, fill: "#1A120C" }));
     close();
-    closedEyes([[23.5, 20.4, 1.5]], "#0E0A08", .5);
-    svg.appendChild(mk("path", { d: "M21.4 19 L25.6 18.6", stroke: "#0E0A08", "stroke-width": ".7", "stroke-linecap": "round" }));
-    /* THE SHEMAGH: wrapped up over the nose, in folds */
-    svg.appendChild(mk("path", { d: "M12.6 22.4 Q20 20.6 27.4 22.4 L28 26.2 Q26 30.4 20 31 Q14 30.4 12 26.2 Z", fill: headGrad("#2E3326", "#1C2016", "#0A0C07") }));
-    [["M13.2 24.2 Q20 22.4 26.8 24.2"], ["M13.6 26.4 Q20 24.8 26.4 26.4"], ["M15 28.4 Q20 27.4 25 28.4"]].forEach(([d]) =>
-      svg.appendChild(mk("path", { d, fill: "none", stroke: "#4E5640", "stroke-width": ".35", opacity: ".8" })));
-    open("cx-mouth"); close();
-    /* THE SCOPE over the left eye: arm, glow, housing, lens, reticle */
-    svg.appendChild(mk("path", { d: "M11.4 20.4 L13.4 20.6", stroke: "#2A2F36", "stroke-width": ".9", "stroke-linecap": "round" }));
+    closedEyes([[23.5, 20.3, 1.5]], "#1A120C", .5);
+    open("cx-mouth");
+    svg.appendChild(mk("path", { d: "M18.4 25.4 Q20.2 25.7 22 25.3", fill: "none", stroke: "#3A2416", "stroke-width": ".6", "stroke-linecap": "round" }));
+    close();
+    /* THE SCOPE over the left eye */
+    svg.appendChild(mk("path", { d: "M11.6 20.4 L13.6 20.6", stroke: "#2A2F36", "stroke-width": ".9", "stroke-linecap": "round" }));
     open("cx-fx cx-fx-scopeglow");
-    svg.appendChild(mk("circle", { cx: 16.6, cy: 20.6, r: 5.4, fill: "url(#" + glowId + ")" }));
+    svg.appendChild(mk("circle", { cx: 16.8, cy: 20.4, r: 5.2, fill: "url(#" + glowId + ")" }));
     close();
-    svg.appendChild(mk("circle", { cx: 16.6, cy: 20.6, r: 3.15, fill: "#16191E", stroke: "#56606B", "stroke-width": ".45" }));
-    svg.appendChild(mk("circle", { cx: 16.6, cy: 20.6, r: 2.45, fill: "url(#" + lensId + ")" }));
+    svg.appendChild(mk("circle", { cx: 16.8, cy: 20.4, r: 3, fill: "#16191E", stroke: "#56606B", "stroke-width": ".45" }));
+    svg.appendChild(mk("circle", { cx: 16.8, cy: 20.4, r: 2.3, fill: "url(#" + lensId + ")" }));
     open("cx-fx cx-fx-reticle");
-    svg.appendChild(mk("circle", { cx: 16.6, cy: 20.6, r: 1.45, fill: "none", stroke: lime, "stroke-width": ".3" }));
-    svg.appendChild(mk("path", { d: "M16.6 18.4 L16.6 19.8 M16.6 21.4 L16.6 22.8 M14.4 20.6 L15.8 20.6 M17.4 20.6 L18.8 20.6",
-                                 stroke: lime, "stroke-width": ".3", "stroke-linecap": "round" }));
-    svg.appendChild(mk("circle", { cx: 16.6, cy: 20.6, r: .34, fill: "#FF3B30" }));
+    svg.appendChild(mk("circle", { cx: 16.8, cy: 20.4, r: 1.35, fill: "none", stroke: lime, "stroke-width": ".3" }));
+    svg.appendChild(mk("path", { d: "M16.8 18.3 L16.8 19.6 M16.8 21.2 L16.8 22.5 M14.7 20.4 L16 20.4 M17.6 20.4 L18.9 20.4", stroke: lime, "stroke-width": ".3", "stroke-linecap": "round" }));
+    svg.appendChild(mk("circle", { cx: 16.8, cy: 20.4, r: .32, fill: "#FF3B30" }));
     close();
-    svg.appendChild(mk("path", { d: "M14.9 19.3 Q15.5 18.5 16.5 18.3", fill: "none", stroke: "#FFFFFF", "stroke-width": ".38", "stroke-linecap": "round", opacity: ".6" }));
-    /* the red laser running off the scope to the edge */
+    svg.appendChild(mk("path", { d: "M15.1 19.2 Q15.7 18.4 16.7 18.2", fill: "none", stroke: "#FFFFFF", "stroke-width": ".36", "stroke-linecap": "round", opacity: ".6" }));
     open("cx-fx cx-fx-led");
-    svg.appendChild(mk("circle", { cx: 13.9, cy: 18.4, r: .38, fill: "#FF3B30" }));
+    svg.appendChild(mk("circle", { cx: 14.1, cy: 18.3, r: .36, fill: "#FF3B30" }));
     close();
     close();
     return done();
@@ -56985,7 +56974,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-01-271";
+const APP_BUILD = "2026-10-01-272";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

@@ -8341,3 +8341,60 @@ are untouched.
   scene outside the figure; the scene moves only when live; the six
   redraws). It fails on 270. Older checks that named the Kraken, the cat
   or the Astronaut now read kinds and names off the page.
+
+### Build 272
+
+- **THE STARTERS' HEADS ARE THE SET'S SIZE** (`AVATAR_HEAD_SCALE`).
+  "I've said this 20 times, BUT THE STARTER characters heads are much
+  bigger than every other character." Measured on screen, it was true.
+  - The five starters were heads filling the frame edge to edge: Bear
+    28.8 units wide of the 34-unit frame, Ghost 29.6, Ninja hood 26,
+    Alien 25.2.
+  - Every earned character is a head of about 18–22 on shoulders that
+    reach the edges.
+  - **Only the head group is scaled, about the point where it meets the
+    neck.** Scaling the whole figure would have shrunk the shoulders and
+    left a small bust floating mid-frame.
+  - The scale wraps the head's children in a `<g transform>`, so the
+    head's own CSS nod/sway still runs on `cx-head`. A CSS transform on
+    the same element would have replaced the attribute.
+  - The Ninja had no `cx-head` group at all (a stray `close()` ended its
+    figure early). It has one now.
+  - The Marksman's new ghillie hood had the same problem and is scaled
+    the same way.
+  - **`check_b272` measures it**: every starter's head must be ≤ 23
+    units and ≤ 12% over the earned median. On 271 it was 25–30. Use
+    that number, not a screenshot, when this comes up again.
+- **Poseidon's id is the Vampire.** The Kitsune lasted one build: "I
+  have no idea what the fuck the white fox thing is."
+  - **A character has to be nameable at 34px by anybody.** The Vampire
+    has a pale face, a widow's peak, pointed ears, red eyes, fangs and a
+    red-lined cape collar standing up behind the head.
+  - Its scene is a moon and bats (the `bats` motif).
+- **The astronaut id is the Plague Doctor.** The Cyborg lasted one
+  build: "Not a fan of the half person half robot one."
+  - It has a wide-brimmed hat, a hood, a long bone-white stitched beak,
+    and two brass-rimmed lenses glowing green.
+  - Its scene is a pale moon in fog.
+- **The Singularity has no hood.** "The one after umbra looks too much
+  like umbra." A hood with a dark face and two slits IS Umbra, whatever
+  colour it is.
+  - The family is kept by what the three share: a dark body, a rim of
+    light in the figure's own colour, and a flare worn on the head.
+  - The silhouette is its own: a tall dark star-speckled head with ONE
+    eye, and that eye is the black hole. It wears a crown of white
+    shards.
+  - The disk now crosses the chest (centre 20,23.5), never the face.
+- **The Koi has three small fish, not two big ones** (scale .6; red and
+  white, gold, and black with orange), each facing along its path
+  (heading = angle + 180°). Two fronds of weed sway on the bottom.
+- **The Marksman's ghillie is recognisable**: "it just doesn't look
+  recognizable." 271's version read as a green bush with a dark slot in
+  it. Now:
+  - dozens of separate tapered strips in six greens and browns
+    (`strip()`) round the hood, over the brow and down the shoulders;
+  - the face is shown, in camo paint (bands clipped to the face);
+  - the rifle crosses the body, with a scope and a suppressor.
+- Gate: `check_b272`. It fails on 271 for every item. `check_b271`'s
+  Kitsune/Cyborg checks now assert only that the Kraken and the
+  Astronaut are gone, and its Koi check asserts more than one fish.

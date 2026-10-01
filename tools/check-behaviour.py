@@ -2189,7 +2189,7 @@ def check_b236(br):
          to draw the Kraken. */
       await T('panels', () => ['zeus'].map(k => [...buildAvatarCharSVGSafe(k).querySelectorAll('rect')]
         .some(x => /^#(13263A|0C2E30)$/i.test(x.getAttribute('fill') || ''))).concat(
-        /cx-k-kitsune/.test((buildAvatarCharSVGSafe('poseidon').querySelector('.cx-fig') || {getAttribute(){return ''}}).getAttribute('class') || '')));
+        /cx-k-vampire/.test((buildAvatarCharSVGSafe('poseidon').querySelector('.cx-fig') || {getAttribute(){return ''}}).getAttribute('class') || '')));
       // The unit list.
       const unit = u[0], now = Date.now();
       let k = 0;
@@ -2239,8 +2239,8 @@ def check_b236(br):
     rd = r["road"] if isinstance(r["road"], dict) else {}
     check("the road blends from rank to rank, with a light where you are", rd.get("blended") is True and rd.get("tip") == 1, r["road"])
     check("the Officer is gone: an old Officer is drawn as the Oracle (build 244)", "cx-k-oracle" in str(r["shades"]), r["shades"])
-    # REVISED IN 271: the Kraken became the Kitsune ("Kraken is kind of lame").
-    check("Zeus's symbol sits on a dark carved panel, and Poseidon's id draws the Kitsune", r["panels"] == [True, True], r["panels"])
+    # REVISED IN 271/272: the Kraken became the Kitsune, then the Vampire.
+    check("Zeus's symbol sits on a dark carved panel, and Poseidon's id draws the Vampire", r["panels"] == [True, True], r["panels"])
     cp = r["copy"] if isinstance(r["copy"], dict) else {}
     check("the doors say what they open, and Hundos says nothing about the badge",
           cp.get("doors") == ["Tap to see flagged questions", "Tap to see most missed"]
@@ -2526,7 +2526,7 @@ def check_b241b(br):
       store.avatarChar = wasChar;
       /* An old Blitz id still draws as the character that took its place. */
       const svg = buildAvatarCharSVG('blitz');
-      out.corona = (svg.querySelector('.cx-fig').getAttribute('class') || '').indexOf('cx-k-cyborg') >= 0 ? 7 : 0;
+      out.corona = (svg.querySelector('.cx-fig').getAttribute('class') || '').indexOf('cx-k-plaguedoc') >= 0 ? 7 : 0;
       out.parts = ['cx-head', 'cx-eyes'].filter(c => svg.querySelector('.' + c)).length * 2;
       /* 4. theme swatches carry their names (Profile > Customize) */
       showCustomize(); await wait(500);
@@ -2572,7 +2572,7 @@ def check_b241b(br):
           r.get("newDay") == {"today": 1, "best": r.get("need", 0) - 1, "locked": True}, r)
     check("the full count in one day unlocks it, and the best day survives a reload",
           r.get("lockedAtSeven") is False and (r.get("afterLoad") or 0) >= r.get("need", 99), r)
-    check("an old Blitz id draws as what the astronaut id draws (the Cyborg since 271), on the parts every character has",
+    check("an old Blitz id draws as what the astronaut id draws (the Plague Doctor since 272), on the parts every character has",
           r.get("corona") == 7 and r.get("parts") == 4, r)
     check("every theme swatch has its name under it, Default first",
           r.get("swatches", 0) >= 7 and len(r.get("names") or []) == r.get("swatches") and (r.get("names") or [""])[0] == "Default", r)
@@ -2873,9 +2873,9 @@ def check_b243(br):
     check("the Clown is five wins, the Astronaut hundos in a day, the Hacker time studied, the Timekeeper days studied, the Valkyrie the Virtual Room, and SWAT is retired (build 245)",
           r.get("feats") == {"clown": "vrwins5", "astronaut": "hundo7day", "hacker": "study20h", "timekeeper": "days30",
                              "valkyrie": "vrwins10", "swatRetired": True}, r.get("feats"))
-    # Kinds, not ids: Blitz goes to the astronaut id, which draws the Cyborg since 271.
+    # Kinds, not ids: Blitz goes to the astronaut id, which draws the Plague Doctor since 272.
     check("every retired character is drawn as what replaced it",
-          r.get("retiredTo") == ["ninja", "clown", "cyborg", "solar", "oracle", "koi", "hacker", "solar", "tempest", "koi", "hacker", "timekeeper", "ninja"], r.get("retiredTo"))
+          r.get("retiredTo") == ["ninja", "clown", "plaguedoc", "solar", "oracle", "koi", "hacker", "solar", "tempest", "koi", "hacker", "timekeeper", "ninja"], r.get("retiredTo"))
     # build 265/267: the Valkyrie's id drew the Viper, then the Koi (and the characters retired into it).
     check("the new ones are named", r.get("names") == ["Lunar", "Solar", "Tempest", "Frost", "Oracle", "Inferno", "Hacker", "Timekeeper", "Koi"], r.get("names"))
     check("whoever held the Clown under the old ranks keeps it, and nobody at all has the Robot (build 244) - an old Robot is drawn as the Ninja",
@@ -4506,7 +4506,9 @@ def check_b258(br):
     # like the bronze all the way through." The level is blue again and
     # the default cover is the theme, with no rank on it.
     check("the level and XP bar are blue again, and the cover carries no rank",
-          "61, 139, 255" in r.get("fillBg", "") and "63, 127, 208" in r.get("levelBg", "")
+          # REVISED IN 270: the level number is the blue coin (#3D8BFF at its
+          # deepest stop), not the older #3F7FD0 - blue is what is asserted.
+          "61, 139, 255" in r.get("fillBg", "") and "61, 139, 255" in r.get("levelBg", "")
           and r.get("coverMark") == 0 and r.get("coverHasTheme") is True, r)
     check("the banner's art spans the pop-up, edge to edge", all(abs(x) <= 2 for x in r.get("popup", [99, 99])), r.get("popup"))
     vd = r.get("void") or {}
@@ -4631,15 +4633,15 @@ def check_b266(br):
           "drop-shadow" in g.get("wrapFilter", "") and "drop-shadow" not in g.get("svgFilter", ""), g)
     check("Sapphire has a black dot at its heart", r.get("sapphireDot") is True, r)
     check("Amethyst is a black hole with no flattened planet disc", r.get("amethystHole") is True and r.get("amethystFlat") is False, r)
-    # REVISED IN 271: the Kraken became the Kitsune.
-    check("Poseidon's id draws the Kitsune, and says so", "cx-k-kitsune" in r["kraken"]["kind"] and r["kraken"]["name"] == "Kitsune", r["kraken"])
+    # REVISED IN 271/272: the Kraken became the Kitsune, then the Vampire.
+    check("Poseidon's id draws the Vampire, and says so", "cx-k-vampire" in r["kraken"]["kind"] and r["kraken"]["name"] == "Vampire", r["kraken"])
     check("the Hacker sits at a laptop with code raining behind", r["hacker"]["rain"] and r["hacker"]["laptop"], r["hacker"])
     # REVISED IN 267: "That snake character is bad, try something else" and
     # "the singularity, idek what that is".
     check("the Valkyrie's id is the Koi, a fish swimming laps in a pink bowl", r["viper"]["tongue"] and r["viper"]["name"] == "Koi", r["viper"])
     # REVISED IN 271: "The singularity is a cat. That needs to be changed
     # immediately" - a hooded figure caught in an accretion disk.
-    check("the Singularity is a hooded figure inside an accretion disk, with eyes", r["sing"]["swirl"] and r["sing"]["eyes"] >= 2, r["sing"])
+    check("the Singularity is caught in an accretion disk, with its eye", r["sing"]["swirl"] and r["sing"]["eyes"] >= 2, r["sing"])
     check("no exception", not r.get("threw"), r.get("threw"))
     ctx.close()
 
@@ -4961,8 +4963,8 @@ def check_b271(br):
                    star: !!sg.querySelector('.cx-fx-sgstar'), eyes: sg.querySelectorAll('.cx-eyes > *').length };
       /* Kitsune and Cyborg */
       const kind = id => (buildAvatarCharSVG(id).querySelector('.cx-fig').getAttribute('class') || '').replace('cx-fig cx-k-', '');
-      out.pos = { kind: kind('poseidon'), name: AVATAR_DISPLAY_NAME.poseidon, tails: buildAvatarCharSVG('poseidon').querySelectorAll('.cx-fx-kttail').length };
-      out.ast = { kind: kind('astronaut'), name: AVATAR_DISPLAY_NAME.astronaut, eye: !!buildAvatarCharSVG('astronaut').querySelector('.cx-fx-cbeye') };
+      out.pos = { kind: kind('poseidon'), name: AVATAR_DISPLAY_NAME.poseidon };
+      out.ast = { kind: kind('astronaut'), name: AVATAR_DISPLAY_NAME.astronaut };
       /* the Koi's fish */
       const swim = buildAvatarCharSVG('valkyrie').querySelector('.cx-fx-koiswim');
       out.koiFish = swim ? swim.querySelectorAll(':scope > g').length : 0;
@@ -4982,17 +4984,79 @@ def check_b271(br):
     check("the scene only moves when the character is live",
           r.get("stillFall") == "none" and r.get("liveFall") not in (None, "", "none"), (r.get("stillFall"), r.get("liveFall")))
     s = r.get("sing") or {}
-    check("the Singularity is not a cat: a hooded figure in a disk, a flare on its brow, eyes",
+    check("the Singularity is not a cat: a figure in a disk, a flare on its head, an eye",
           s.get("cat") is False and s.get("disk") and s.get("star") and s.get("eyes", 0) >= 2, s)
     p, a = r.get("pos") or {}, r.get("ast") or {}
-    check("Poseidon's id is the Kitsune, with its tails, and is named for it",
-          p.get("kind") == "kitsune" and p.get("tails") == 2 and p.get("name") not in ("Kraken", "", None), p)
-    check("the astronaut id is the Cyborg, with its cyber-eye, and is named for it",
-          a.get("kind") == "cyborg" and a.get("eye") and a.get("name") not in ("Astronaut", "", None), a)
-    check("the Koi has two fish in its bowl", r.get("koiFish") == 2, r.get("koiFish"))
+    # REVISED IN 272: the Kitsune and the Cyborg each lasted one build;
+    # check_b272 holds what replaced them. Here only that the old drawings
+    # are gone and the ids are renamed.
+    check("Poseidon's id is no longer the Kraken, and is not named for it",
+          p.get("kind") not in ("kraken", "") and p.get("name") not in ("Kraken", "", None), p)
+    check("the astronaut id is no longer the Astronaut, and is not named for it",
+          a.get("kind") not in ("astronaut", "") and a.get("name") not in ("Astronaut", "", None), a)
+    # REVISED IN 272: "Not a fan of the bowl head one having two large fish
+    # like that" - check_b272 holds the three small ones. Here: more than one.
+    check("the Koi has more than one fish in its bowl", (r.get("koiFish") or 0) >= 2, r.get("koiFish"))
     check("the Alien's eyes slant hard (20 degrees or more)", len(r.get("alienRot") or []) == 2 and min(r.get("alienRot")) >= 20, r.get("alienRot"))
     check("Void is lit down one side by flare light", r.get("voidRim") is True, r.get("voidRim"))
     check("an enlarged character's scene stays at its own size", r.get("voidBgUnscaled") is True, r.get("voidBgUnscaled"))
+    check("no exception", not r.get("threw"), r.get("threw"))
+    ctx.close()
+
+
+def check_b272(br):
+    """Build 272. (1) THE STARTERS' HEADS ARE THE SET'S SIZE - "I've said
+    this 20 times": measured on screen, every starter's head is no wider
+    than 23 units of the 34-unit frame and no more than 12% over the
+    median of the earned characters' heads. (2) Poseidon's id is the
+    Vampire and the astronaut id the Plague Doctor, each named for it.
+    (3) The Singularity is its own shape, not a third hood: one eye.
+    (4) The Koi's bowl has three small fish, not two big ones. (5) The
+    Marksman's ghillie is strips - dozens of them - with a painted face
+    and the rifle across it. Written against 271, where none of it held."""
+    print("\n53. build 272: starter head size; Vampire, Plague Doctor, the one-eyed Singularity, three koi, the ghillie")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{ const out = {};
+      try {
+      const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:0;top:0;width:340px;height:340px'; document.body.appendChild(host);
+      const headW = id => { host.replaceChildren(); const sv = buildAvatarCharSVG(id); sv.style.cssText = 'width:340px;height:340px;display:block'; host.appendChild(sv);
+        const h = sv.querySelector('.cx-head'); return h ? +(h.getBoundingClientRect().width / 10).toFixed(1) : 99; };
+      const starters = ['ninja', 'ghost', 'wizard', 'grizzly', 'alien'];
+      out.starters = Object.fromEntries(starters.map(id => [id, headW(id)]));
+      const earned = ['zeus', 'hacker', 'umbra', 'lunar', 'solar', 'tempest', 'frost', 'oracle', 'timekeeper', 'singularity'].map(headW).sort((a, b) => a - b);
+      out.median = earned[Math.floor(earned.length / 2)];
+      host.remove();
+      const kind = id => (buildAvatarCharSVG(id).querySelector('.cx-fig').getAttribute('class') || '').replace('cx-fig cx-k-', '');
+      const vp = buildAvatarCharSVG('poseidon'), pd = buildAvatarCharSVG('astronaut');
+      out.vamp = { kind: kind('poseidon'), name: AVATAR_DISPLAY_NAME.poseidon,
+        fangs: [...vp.querySelectorAll('.cx-mouth path')].filter(p => (p.getAttribute('fill') || '').toUpperCase() === '#FFFFFF').length };
+      out.plague = { kind: kind('astronaut'), name: AVATAR_DISPLAY_NAME.astronaut,
+        lenses: [...pd.querySelectorAll('.cx-eyes circle')].filter(c => /url\\(#/.test(c.getAttribute('fill') || '')).length };
+      const sg = buildAvatarCharSVG('singularity'), um = buildAvatarCharSVG('umbra');
+      out.sing = { pupils: [...sg.querySelectorAll('.cx-eyes circle')].filter(c => c.getAttribute('fill') === '#000000').length,
+        shards: sg.querySelectorAll('.cx-fx-sgstar path').length, umbraEyes: um.querySelectorAll('.cx-eyes path').length };
+      const swim = buildAvatarCharSVG('valkyrie').querySelector('.cx-fx-koiswim');
+      out.koi = swim ? [...swim.querySelectorAll(':scope > g')].map(g => +(((g.getAttribute('transform') || '').match(/scale\\(([\\d.]+)\\)/) || [0, 1])[1])) : [];
+      const mk = buildAvatarCharSVG('marksman');
+      out.mark = { strips: mk.querySelectorAll('.cx-head path').length, paint: !!mk.querySelector('.cx-head g[clip-path]'), rifle: !!mk.querySelector('.cx-fx-mkrifle') };
+      } catch(e){ out.threw = String(e && e.stack || e); }
+      return out; }""")
+    st, med = r.get("starters") or {}, r.get("median") or 0
+    check("every starter's head is the set's size (<= 23 units, <= 12%% over the earned median of %s)" % med,
+          st and all(w <= 23 and w <= med * 1.12 for w in st.values()), st)
+    v, p = r.get("vamp") or {}, r.get("plague") or {}
+    check("Poseidon's id is the Vampire, fangs and all, and is named for it",
+          v.get("kind") == "vampire" and v.get("fangs", 0) >= 1 and v.get("name") == "Vampire", v)
+    check("the astronaut id is the Plague Doctor, two glass lenses, and is named for it",
+          p.get("kind") == "plaguedoc" and p.get("lenses") == 2 and p.get("name") == "Plague Doctor", p)
+    s = r.get("sing") or {}
+    check("the Singularity is its own shape: one eye and a crown of shards, where Umbra has two",
+          s.get("pupils") == 1 and s.get("shards", 0) >= 5 and s.get("umbraEyes", 0) >= 2, s)
+    k = r.get("koi") or []
+    check("the Koi's bowl has three small fish, not two big ones", len(k) == 3 and all(x <= .7 for x in k), k)
+    m = r.get("mark") or {}
+    check("the Marksman's ghillie is dozens of strips, with a painted face and the rifle across it",
+          m.get("strips", 0) >= 40 and m.get("paint") and m.get("rifle"), m)
     check("no exception", not r.get("threw"), r.get("threw"))
     ctx.close()
 
@@ -5062,6 +5126,7 @@ def main():
             check_b269(br)
             check_b270(br)
             check_b271(br)
+            check_b272(br)
         finally:
             br.close()
     SERVER.shutdown()
