@@ -2816,6 +2816,7 @@ def check_b243(br):
       const lockedBanner = document.querySelector('.screen-customize .banner-opt.locked[data-banner="tests100"]');
       lockedBanner.click(); await wait(400);
       out.bannerCard = { card: !!document.querySelector('.unlock-card'), bar: !!document.querySelector('.unlock-card .unlock-card-bar'),
+        fill: getComputedStyle(document.querySelector('.unlock-card .unlock-card-fill') || document.body).backgroundImage,
         count: (document.querySelector('.unlock-card-count') || {}).textContent || '' };
       document.querySelectorAll('.invite-overlay').forEach(e => e.remove());
       [...document.querySelectorAll('.screen-customize .swatch.locked')].pop().click(); await wait(400);
@@ -2897,6 +2898,11 @@ def check_b243(br):
     bc = r.get("bannerCard") or {}
     check("a locked banner opens a card with a progress bar and a count, not 0/1 text on the tile",
           bc.get("card") and bc.get("bar") and " of 100" in bc.get("count", ""), bc)
+    # build 279: "change the locked progress bar and make that the green
+    # color like how the unlock ones got" - a locked card's bar is the
+    # held card's green (#2FBF71 at its deepest stop), not the old blue.
+    check("a locked card's progress bar is the same green as a held one's",
+          "47, 191, 113" in bc.get("fill", "") and "61, 139, 255" not in bc.get("fill", ""), bc.get("fill"))
     tc = r.get("themeCard") or {}
     check("a locked theme says the rank it needs and the rank you hold",
           tc.get("desc", "").startswith("Reach ") and ("right now" in tc.get("note", "") or "rank yet" in tc.get("note", "")), tc)
@@ -4726,7 +4732,7 @@ def check_b267(br):
     check("a lifetime streak does not unlock the Marksman; one test's does",
           r.get("lifetimeLocked") is True and r.get("testUnlocked") is True and r.get("defaulted") == 0, r)
     xp = r.get("xp") or {}
-    check("the XP bar is the unlock card's bar: its blue, its .9s glide, no sheen",
+    check("the XP bar is the unlock card's bar in blue: its .9s glide, no sheen",
           "61, 139, 255" in xp.get("bg", "") and xp.get("tr", "").startswith("0.9") and xp.get("h", 99) <= 12
           and xp.get("sheen") in ("none", "normal"), xp)
     check("the Profile rank plate has no bar", (r.get("plate") or {}).get("bar") is False, r.get("plate"))

@@ -15541,7 +15541,8 @@
      with its own glow, no travelling sheen, and the same long ease-out
      (.9s, cubic-bezier(.2,.8,.2,1)) that makes it glide in and settle.
      Same numbers as .unlock-card-bar/.unlock-card-fill; change one,
-     change both. */
+     change both - except the colour: the unlock card's bar went green in
+     279 and the XP bar stays blue. */
   .xpbar-track, .xpbar-track.profile-xpbar{
     height:10px; border:none; border-radius:999px; overflow:hidden;
     background:rgba(255,255,255,.1); box-shadow:inset 0 1px 2px rgba(0,0,0,.5);
@@ -17093,8 +17094,13 @@
   .unlock-card-desc{ margin:0 auto .85rem; max-width:18rem; font-size:.92rem; line-height:1.4; color:rgba(243,245,247,.86); }
   .unlock-card-bar{ position:relative; height:10px; border-radius:999px; overflow:hidden; margin:0 .2rem;
     background:rgba(255,255,255,.1); box-shadow:inset 0 1px 2px rgba(0,0,0,.5); }
+  /* GREEN WHILE LOCKED TOO (build 279): "change the locked progress bar
+     and make that the green color like how the unlock ones got". It was
+     blue until the thing was held; it is the held bar's green now, at
+     every step. The XP bars that copied this bar in 267 stay blue - that
+     colour was asked for separately (259) and is not this one. */
   .unlock-card-fill{ position:absolute; inset:0 auto 0 0; width:0; border-radius:inherit;
-    background:linear-gradient(90deg, #3D8BFF, #8FC1FF); box-shadow:0 0 10px rgba(61,139,255,.55);
+    background:linear-gradient(90deg, #2FBF71, #7CF0A8); box-shadow:0 0 10px rgba(47,191,113,.5);
     transition:width .9s cubic-bezier(.2,.8,.2,1); }
   .unlock-card-count{ margin:.45rem 0 0; font-size:.78rem; font-weight:700; color:rgba(243,245,247,.7); font-variant-numeric:tabular-nums; }
   .unlock-card-note{ margin:.8rem 0 0; font-size:.8rem; font-weight:600; color:rgba(243,245,247,.62); }
