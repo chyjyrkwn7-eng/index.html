@@ -8398,3 +8398,32 @@ are untouched.
 - Gate: `check_b272`. It fails on 271 for every item. `check_b271`'s
   Kitsune/Cyborg checks now assert only that the Kraken and the
   Astronaut are gone, and its Koi check asserts more than one fish.
+
+### Build 273
+
+- **"I don't like Dracula, the big nose thing, or singularity. Change
+  them. Unique."** All three are replaced. The ids and challenges are
+  unchanged, so nobody loses anything.
+  - **Poseidon's id is the Sheriff**: a wide cowboy hat whose brim hides
+    the eyes, a red bandana over the nose, two amber eyes glinting, a
+    duster, and a gold star on the chest. The scene is a desert sunset
+    with buttes and a saguaro (the `mesa` motif).
+  - **The astronaut id is the Viking**: an iron helmet with a nose guard
+    and two horns, a huge braided ginger beard, a glowing ice-blue band
+    of war paint across the eyes, and a fur mantle. The scene is the
+    northern lights (the `aurora` motif) and snow.
+  - **The Singularity** has no hood and no single eye. Long white hair
+    streams UP off its head, as if gravity runs the wrong way. It has a
+    black glossy mask with one line of white-hot light for eyes and the
+    white flare on its brow. The ring now stands behind the head as a
+    halo (backdrop disk centred at 20,14.6) and no longer crosses the
+    body.
+- **The pattern across 271–273, worth keeping:** what survived (Ronin,
+  Hacker, Koi, the Sheriff and Viking so far) has a silhouette nobody
+  else in the set has, one strong light, and is nameable at a glance.
+  What was rejected was either an archetype that is mostly a costume
+  (Astronaut, Cyborg, Plague Doctor) or a creature that has to be
+  explained (Kraken, the fox, the cat).
+- Gate: `check_b273`, which also asserts that no id can reach a rejected
+  drawing. `check_b272`'s Vampire and Plague Doctor checks became "the
+  Kitsune and the Cyborg have not come back".
