@@ -2637,7 +2637,8 @@ def check_b242(br):
         segs: document.querySelectorAll('.badges-head .badge-meter-seg').length,
         medal: (document.querySelector('.badges-head .badges-medal-num') || {}).textContent || '',
         lid: !!document.querySelector('.badge-case .badge-case-lid .badge-case-plate'),
-        clasps: document.querySelectorAll('.badge-case .badge-case-front span').length };
+        clasps: document.querySelectorAll('.badge-case .badge-case-front span').length,
+        earned: String(badgesEarnedList().length) };
       /* 6. an earned badge: no printed grain, and a shadow in its slot */
       const bsvg = buildUnitBadgeSVG(units[0], true);
       out.badgeArt = { hatch: bsvg.querySelectorAll('pattern').length,
@@ -2704,8 +2705,10 @@ def check_b242(br):
     bt = r.get("badgesTab") or {}
     # REVERSED IN 243: the meter was "terrible, all I wanted was a better
     # way to show it than the 0/16" - a medal with the number in it.
+    # The number is the app's own earned count, not a literal: it was "6"
+    # until the 279 bands made the same fixture worth 7 badges.
     check("the Badges tab heads with a medal, no meter, and sits in a case with a lid and two clasps",
-          bt.get("strip") == 0 and bt.get("segs") == 0 and bt.get("medal") == "6" and bt.get("lid") and bt.get("clasps") == 2, bt)
+          bt.get("strip") == 0 and bt.get("segs") == 0 and bt.get("medal") == bt.get("earned") and bt.get("medal") not in ("", "0") and bt.get("lid") and bt.get("clasps") == 2, bt)
     ba = r.get("badgeArt") or {}
     check("an earned badge has no printed grain and throws a shadow into its slot",
           ba.get("hatch") == 0 and ba.get("shadow") is True, ba)
