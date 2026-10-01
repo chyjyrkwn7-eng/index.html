@@ -8716,14 +8716,15 @@ are untouched.
   lightsaber ... less like a sword, more space like". It is four strokes
   on one line - wide soft glow, brighter body, pale body, white core,
   round caps - with a light spill on the cloak's shoulder, and the glow
-  hums (`cx-fx-saglow`). It keeps a handle ("make it so there's
-  still a handle"): a silver hilt with ridges and a collar, showing just
-  above the shoulder and running down behind the cloak. Silver, because a
-  dark hilt against a dark sky vanished. **It sits the way the Ronin's katana does**:
-  it rises from BEHIND the right shoulder at the cloak's edge, its lower
-  end hidden by the body, because one standing beside him "comes out the
-  background weird". A thing carried on the back has to start inside
-  the silhouette.
+  hums (`cx-fx-saglow`). **It sits the way the Ronin's katana does,
+  handle UP**: a silver hilt (ridges, cyan lights, a dark pommel) rises
+  over the right shoulder and the blade of light points DOWN behind his
+  back, its glow showing only where it leaves the emitter at the cloak's
+  edge, with a light spill on the shoulder. Two wrong turns first: a
+  blade standing beside him "comes out the background weird", and a
+  blade pointing up with the hilt below was "backwards". A thing carried
+  on the back has to start inside the silhouette, and the hilt is the
+  part that shows.
   **The cloak runs to the bottom of the frame.** Every character fades
   out over its last 30% (the shared `.avatarchar-svg` mask), and a cloak
   that ends in a hem at the top of that fade leaves nothing under it but

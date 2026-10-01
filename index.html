@@ -34806,25 +34806,30 @@ function drawAvatarCharSVG(charId){
        its lower end and hilt hidden by the body, never standing beside
        him. Drawn before the body so the cloak covers where it starts. */
     open("cx-fx cx-fx-sablade");
-    /* one axis from behind the body up past the shoulder; t runs 0..1 */
-    const ax = (t, off) => { const x0 = 31.2, y0 = 30.2, x1 = 35.4, y1 = 11.6, L = Math.hypot(x1 - x0, y1 - y0);
+    /* "you see how Ronin has it, where the handle is at the top part?
+       That's how it should be." The hilt rises over the right shoulder
+       and the blade of light points DOWN behind his back - only its glow
+       shows, where it leaves the hilt at the cloak's edge. One axis, t
+       from inside the body (0) up to the pommel (1). */
+    const ax = (t, off) => { const x0 = 29.6, y0 = 33, x1 = 35.4, y1 = 15.4, L = Math.hypot(x1 - x0, y1 - y0);
       const ux = (x1 - x0) / L, uy = (y1 - y0) / L, nx = -uy, ny = ux; return [(x0 + ux * t * L + nx * off).toFixed(2), (y0 + uy * t * L + ny * off).toFixed(2)]; };
     const seg = (t0, t1, off) => "M" + ax(t0, off || 0).join(" ") + " L" + ax(t1, off || 0).join(" ");
-    /* "make it so there's still a handle": the hilt shows above the
-       shoulder, its lower end going down behind the cloak - a dark grip
-       with a lit edge and ridges, a collar where the light comes out */
-    svg.appendChild(mk("path", { d: seg(0, .42), stroke: "#7D889C", "stroke-width": "1.6", "stroke-linecap": "round" }));
-    svg.appendChild(mk("path", { d: seg(.02, .41, .48), stroke: "#3A4254", "stroke-width": ".5", "stroke-linecap": "round" }));
-    svg.appendChild(mk("path", { d: seg(.02, .41, -.45), stroke: "#E2E8F0", "stroke-width": ".3", "stroke-linecap": "round" }));
-    [.24, .29, .34].forEach(t => svg.appendChild(mk("path", { d: "M" + ax(t, -.75).join(" ") + " L" + ax(t, .75).join(" "), stroke: "#0A0D16", "stroke-width": ".32" })));
-    svg.appendChild(mk("path", { d: seg(.4, .44), stroke: "#D6DEE8", "stroke-width": "2", "stroke-linecap": "butt" }));
-    const led = ax(.37, 0); svg.appendChild(mk("circle", { cx: led[0], cy: led[1], r: .3, fill: neon }));
-    /* the blade of light, out of the collar: glow, body, core, a round end */
-    const B0 = seg(.44, 1);
-    svg.appendChild(mk("path", { d: B0, stroke: neon, "stroke-width": "3.4", "stroke-linecap": "round", opacity: ".16", class: "cx-fx-saglow" }));
-    svg.appendChild(mk("path", { d: B0, stroke: neon, "stroke-width": "2", "stroke-linecap": "round", opacity: ".45", class: "cx-fx-saglow" }));
+    /* the blade of light, going down behind the cloak */
+    const B0 = seg(0, .4);
+    svg.appendChild(mk("path", { d: B0, stroke: neon, "stroke-width": "3.4", "stroke-linecap": "round", opacity: ".2", class: "cx-fx-saglow" }));
+    svg.appendChild(mk("path", { d: B0, stroke: neon, "stroke-width": "2", "stroke-linecap": "round", opacity: ".5", class: "cx-fx-saglow" }));
     svg.appendChild(mk("path", { d: B0, stroke: "#8CEBFF", "stroke-width": "1.2", "stroke-linecap": "round" }));
     svg.appendChild(mk("path", { d: B0, stroke: "#F2FDFF", "stroke-width": ".5", "stroke-linecap": "round" }));
+    /* the hilt: emitter collar at the shoulder, a silver grip with a lit
+       edge, a shaded edge and ridges, cyan lights, a dark pommel cap */
+    svg.appendChild(mk("path", { d: seg(.4, .97), stroke: "#7D889C", "stroke-width": "1.6", "stroke-linecap": "butt" }));
+    svg.appendChild(mk("path", { d: seg(.42, .96, .48), stroke: "#3A4254", "stroke-width": ".5" }));
+    svg.appendChild(mk("path", { d: seg(.42, .96, -.45), stroke: "#E2E8F0", "stroke-width": ".3" }));
+    [.62, .68, .74, .8].forEach(t => svg.appendChild(mk("path", { d: "M" + ax(t, -.8).join(" ") + " L" + ax(t, .8).join(" "), stroke: "#0A0D16", "stroke-width": ".32" })));
+    svg.appendChild(mk("path", { d: seg(.38, .45), stroke: "#D6DEE8", "stroke-width": "2.1", "stroke-linecap": "butt" }));
+    svg.appendChild(mk("path", { d: seg(.385, .4), stroke: neon, "stroke-width": "2.1", "stroke-linecap": "butt", opacity: ".8" }));
+    [.52, .88].forEach(t => { const p = ax(t, 0); svg.appendChild(mk("circle", { cx: p[0], cy: p[1], r: .32, fill: neon, class: "cx-fx-saglow" })); });
+    svg.appendChild(mk("path", { d: seg(.96, 1), stroke: "#262C3A", "stroke-width": "1.8", "stroke-linecap": "round" }));
     close();
     open("cx-body");
     /* the body, seen only down the cloak's opening; its own gradient,
@@ -34855,8 +34860,8 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("path", { d: "M5.2 31 Q4.2 35 4 40 M34.8 31 Q35.8 35 36 40", fill: "none", stroke: neon, "stroke-width": ".3", opacity: ".4", "stroke-linecap": "round" }));
     /* the blade's light falling on the shoulder it rises behind */
     const spg = uid + "-saspill"; const sprg = mk("radialGradient", { id: spg, cx: "50%", cy: "50%", r: "50%" });
-    [["0%", neon, ".45"], ["100%", neon, "0"]].forEach(([o, c, op]) => sprg.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op }))); defs.appendChild(sprg);
-    svg.appendChild(mk("ellipse", { cx: 32.8, cy: 24.2, rx: 2.8, ry: 2.2, fill: "url(#" + spg + ")", class: "cx-fx-saglow" }));
+    [["0%", "#BFF4FF", ".75"], ["45%", neon, ".4"], ["100%", neon, "0"]].forEach(([o, c, op]) => sprg.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op }))); defs.appendChild(sprg);
+    svg.appendChild(mk("ellipse", { cx: 31.9, cy: 26.6, rx: 3.4, ry: 2.8, fill: "url(#" + spg + ")", class: "cx-fx-saglow" }));
     /* the hood itself, as the first draw had it, in the lighter cloth */
     svg.appendChild(mk("path", { d: SA_HOOD, fill: hoodCloth, stroke: "#03050C", "stroke-width": ".3" }));
     saStars(SA_HOOD, 30, 3, "#DFF7FF");
