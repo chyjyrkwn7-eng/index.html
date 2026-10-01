@@ -8427,3 +8427,32 @@ are untouched.
 - Gate: `check_b273`, which also asserts that no id can reach a rejected
   drawing. `check_b272`'s Vampire and Plague Doctor checks became "the
   Kitsune and the Cyborg have not come back".
+
+### Build 274
+
+- **"Sheriff is perfect."** It is kept as it is, and `check_b274` holds
+  it untouched.
+- **"The Viking is a pass, try something else."** The astronaut id is
+  now the **Bounty Hunter**. The id and challenge are unchanged.
+  - A scuffed gunmetal helmet with a black T-shaped visor lit red at its
+    edges, a red stripe over the crown, and a rangefinder stalk with a
+    blinking light.
+  - A cape thrown over one shoulder and a plate on the other.
+  - A ringed planet in the stars behind (the `planet` motif takes its
+    ring colour per character now).
+  - The same formula as the Sheriff and the Ronin: a face never seen,
+    one silhouette, one colour.
+- **The Singularity**: "I don't like the white thing behind it, that's
+  better though but needs improvement and you are on the right path."
+  - The ring behind the head is gone, and so are the `disk` and `aurora`
+    motifs, which are no longer used.
+  - Its scene is a deep blue nebula with white motes RISING (the pull,
+    shown on everything round it).
+  - The hair is long locks in S-curves (`lock()`: half-width, height,
+    lean, sway), fading to light at the tips, in two layers: a darker
+    set behind for depth. The outer locks fan right out.
+  - A tall collar stands up round the neck. The mask, the line of light
+    and the flare on the brow stay.
+- Gate: `check_b274`. `check_b273`'s Viking check became "the Plague
+  Doctor is gone". The older Singularity checks key on its hair
+  (`cx-fx-sghair`) instead of the ring.

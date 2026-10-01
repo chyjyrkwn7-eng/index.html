@@ -2526,7 +2526,7 @@ def check_b241b(br):
       store.avatarChar = wasChar;
       /* An old Blitz id still draws as the character that took its place. */
       const svg = buildAvatarCharSVG('blitz');
-      out.corona = (svg.querySelector('.cx-fig').getAttribute('class') || '').indexOf('cx-k-viking') >= 0 ? 7 : 0;
+      out.corona = (svg.querySelector('.cx-fig').getAttribute('class') || '').indexOf('cx-k-bounty') >= 0 ? 7 : 0;
       out.parts = ['cx-head', 'cx-eyes'].filter(c => svg.querySelector('.' + c)).length * 2;
       /* 4. theme swatches carry their names (Profile > Customize) */
       showCustomize(); await wait(500);
@@ -2572,7 +2572,7 @@ def check_b241b(br):
           r.get("newDay") == {"today": 1, "best": r.get("need", 0) - 1, "locked": True}, r)
     check("the full count in one day unlocks it, and the best day survives a reload",
           r.get("lockedAtSeven") is False and (r.get("afterLoad") or 0) >= r.get("need", 99), r)
-    check("an old Blitz id draws as what the astronaut id draws (the Viking since 273), on the parts every character has",
+    check("an old Blitz id draws as what the astronaut id draws (the Bounty Hunter since 274), on the parts every character has",
           r.get("corona") == 7 and r.get("parts") == 4, r)
     check("every theme swatch has its name under it, Default first",
           r.get("swatches", 0) >= 7 and len(r.get("names") or []) == r.get("swatches") and (r.get("names") or [""])[0] == "Default", r)
@@ -2873,9 +2873,9 @@ def check_b243(br):
     check("the Clown is five wins, the Astronaut hundos in a day, the Hacker time studied, the Timekeeper days studied, the Valkyrie the Virtual Room, and SWAT is retired (build 245)",
           r.get("feats") == {"clown": "vrwins5", "astronaut": "hundo7day", "hacker": "study20h", "timekeeper": "days30",
                              "valkyrie": "vrwins10", "swatRetired": True}, r.get("feats"))
-    # Kinds, not ids: Blitz goes to the astronaut id, which draws the Viking since 273.
+    # Kinds, not ids: Blitz goes to the astronaut id, which draws the Bounty Hunter since 274.
     check("every retired character is drawn as what replaced it",
-          r.get("retiredTo") == ["ninja", "clown", "viking", "solar", "oracle", "koi", "hacker", "solar", "tempest", "koi", "hacker", "timekeeper", "ninja"], r.get("retiredTo"))
+          r.get("retiredTo") == ["ninja", "clown", "bounty", "solar", "oracle", "koi", "hacker", "solar", "tempest", "koi", "hacker", "timekeeper", "ninja"], r.get("retiredTo"))
     # build 265/267: the Valkyrie's id drew the Viper, then the Koi (and the characters retired into it).
     check("the new ones are named", r.get("names") == ["Lunar", "Solar", "Tempest", "Frost", "Oracle", "Inferno", "Hacker", "Timekeeper", "Koi"], r.get("names"))
     check("whoever held the Clown under the old ranks keeps it, and nobody at all has the Robot (build 244) - an old Robot is drawn as the Ninja",
@@ -4613,7 +4613,7 @@ def check_b266(br):
       out.hacker = { rain: has('hacker', '.cx-fx-hk3rain'), laptop: buildAvatarCharSVG('hacker').innerHTML.indexOf('M18 30.8 L16.5 32.3') >= 0 };
       /* build 267: the Valkyrie's id is the Koi's fishbowl, the Singularity a space cat */
       out.viper = { tongue: has('valkyrie', '.cx-fx-koiswim'), name: AVATAR_DISPLAY_NAME.valkyrie };
-      out.sing = { swirl: has('singularity', '.cx-fx-bgdisk'), eyes: buildAvatarCharSVG('singularity').querySelectorAll('.cx-eyes > *').length };
+      out.sing = { swirl: has('singularity', '.cx-fx-sghair'), eyes: buildAvatarCharSVG('singularity').querySelectorAll('.cx-eyes > *').length };
       } catch(e){ out.threw = String(e && e.stack || e); }
       return out; }""")
     check("Review's chip on the unit screen is Review's, not Drill's", "rs-mode-review" in r.get("chip", ""), r)
@@ -4641,7 +4641,7 @@ def check_b266(br):
     check("the Valkyrie's id is the Koi, a fish swimming laps in a pink bowl", r["viper"]["tongue"] and r["viper"]["name"] == "Koi", r["viper"])
     # REVISED IN 271: "The singularity is a cat. That needs to be changed
     # immediately" - a hooded figure caught in an accretion disk.
-    check("the Singularity has its ring and its eyes", r["sing"]["swirl"] and r["sing"]["eyes"] >= 2, r["sing"])
+    check("the Singularity has its rising hair and its eyes", r["sing"]["swirl"] and r["sing"]["eyes"] >= 2, r["sing"])
     check("no exception", not r.get("threw"), r.get("threw"))
     ctx.close()
 
@@ -4959,7 +4959,7 @@ def check_b271(br):
       out.stillFall = fall(); host.classList.add('char-live'); out.liveFall = fall(); host.remove();
       /* the Singularity */
       const sg = buildAvatarCharSVG('singularity');
-      out.sing = { cat: !!sg.querySelector('[class*="cx-fx-cat"]'), disk: !!sg.querySelector('.cx-fx-bgdisk'),
+      out.sing = { cat: !!sg.querySelector('[class*="cx-fx-cat"]'), disk: !!sg.querySelector('.cx-fx-sghair'),
                    star: !!sg.querySelector('.cx-fx-sgstar'), eyes: sg.querySelectorAll('.cx-eyes > *').length };
       /* Kitsune and Cyborg */
       const kind = id => (buildAvatarCharSVG(id).querySelector('.cx-fig').getAttribute('class') || '').replace('cx-fig cx-k-', '');
@@ -4984,7 +4984,7 @@ def check_b271(br):
     check("the scene only moves when the character is live",
           r.get("stillFall") == "none" and r.get("liveFall") not in (None, "", "none"), (r.get("stillFall"), r.get("liveFall")))
     s = r.get("sing") or {}
-    check("the Singularity is not a cat: a figure with its ring, a flare on its head, eyes",
+    check("the Singularity is not a cat: a figure with its rising hair, a flare on its head, eyes",
           s.get("cat") is False and s.get("disk") and s.get("star") and s.get("eyes", 0) >= 2, s)
     p, a = r.get("pos") or {}, r.get("ast") or {}
     # REVISED IN 272: the Kitsune and the Cyborg each lasted one build;
@@ -5086,11 +5086,43 @@ def check_b273(br):
     a, b, s = r.get("sheriff") or {}, r.get("viking") or {}, r.get("sing") or {}
     check("Poseidon's id is the Sheriff, star on the chest, and is named for it",
           a.get("kind") == "sheriff" and a.get("star") and a.get("name") == "Sheriff", a)
-    check("the astronaut id is the Viking, horns and all, and is named for it",
-          b.get("kind") == "viking" and (b.get("horns") or 0) >= 2 and b.get("name") == "Viking", b)
+    # REVISED IN 274: "The Viking is a pass, try something else" -
+    # check_b274 holds the Bounty Hunter. Here: the Plague Doctor is gone.
+    check("the astronaut id is no longer the Plague Doctor", b.get("kind") not in ("plaguedoc", ""), b)
     check("the Singularity: hair streaming up, a line of light for eyes, a flare on the brow - no single black eye",
           s.get("hair", 0) >= 5 and s.get("visor") and s.get("flare") and s.get("pupils") == 0, s)
     check("no id can reach a rejected drawing, and there is no cat", r.get("reachable") == [] and r.get("cat") is False, r.get("reachable"))
+    check("no exception", not r.get("threw"), r.get("threw"))
+    ctx.close()
+
+
+def check_b274(br):
+    """Build 274: "Sheriff is perfect. Could singularity be better? I
+    don't like the white thing behind it ... The Viking is a pass, try
+    something else." (1) The astronaut id is the Bounty Hunter: a helmet
+    with a T-shaped visor and a rangefinder, named for it. (2) The
+    Singularity has no ring behind it any more - its scene is a nebula
+    with motes rising - and its hair is long locks, two layers of them,
+    not a crown of spikes. (3) The Sheriff is untouched. Written against
+    273, where none of it held."""
+    print("\n55. build 274: the Bounty Hunter; the Singularity without its ring")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{ const out = {};
+      try {
+      const kind = id => (buildAvatarCharSVG(id).querySelector('.cx-fig').getAttribute('class') || '').replace('cx-fig cx-k-', '');
+      const bh = buildAvatarCharSVG('astronaut'), sg = buildAvatarCharSVG('singularity');
+      out.bounty = { kind: kind('astronaut'), name: AVATAR_DISPLAY_NAME.astronaut, visor: !!bh.querySelector('.cx-fx-bhglow'), finder: !!bh.querySelector('.cx-fx-bhlight') };
+      out.sing = { ring: !!sg.querySelector('.cx-bg [class*="disk"], .cx-fx-sgdisk'), rising: !!sg.querySelector('.cx-bg .cx-fx-bgrise'),
+                   locks: sg.querySelectorAll('.cx-fx-sghair path').length };
+      out.sheriff = { kind: kind('poseidon'), name: AVATAR_DISPLAY_NAME.poseidon };
+      } catch(e){ out.threw = String(e && e.stack || e); }
+      return out; }""")
+    b, s = r.get("bounty") or {}, r.get("sing") or {}
+    check("the astronaut id is the Bounty Hunter, T visor and rangefinder, and is named for it",
+          b.get("kind") == "bounty" and b.get("visor") and b.get("finder") and b.get("name") == "Bounty Hunter", b)
+    check("the Singularity has no ring behind it, and motes rising in its scene", s.get("ring") is False and s.get("rising") is True, s)
+    check("and its hair is two layers of long locks (10 or more), not a crown of spikes", s.get("locks", 0) >= 10, s)
+    check("the Sheriff is untouched", r.get("sheriff") == {"kind": "sheriff", "name": "Sheriff"}, r.get("sheriff"))
     check("no exception", not r.get("threw"), r.get("threw"))
     ctx.close()
 
@@ -5162,6 +5194,7 @@ def main():
             check_b271(br)
             check_b272(br)
             check_b273(br)
+            check_b274(br)
         finally:
             br.close()
     SERVER.shutdown()
