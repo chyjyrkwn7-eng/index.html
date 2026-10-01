@@ -5422,8 +5422,12 @@ def check_b278(br):
     # REVISED IN 279: the Phantom was turned down ("I don't like the
     # phantom, that one is weird") and so was every round after it, until
     # a hooded space assassin: "Star blade is cool". Still no Ace.
-    check("the astronaut id is Starblade - visor, constellation, comet scarf - and named for it; no Phantom, no Ace",
-          p.get("kind") == "starblade" and p.get("name") == "Starblade" and not p.get("ace"), p)
+    # The name changed once already ("the name is kinda lame"), so the
+    # shape is asserted, not the string: the hooded assassin drawing, and
+    # a name that is neither of the two turned down.
+    check("the astronaut id is the hooded space assassin, named; no Phantom, no Ace",
+          p.get("kind") == "starblade" and p.get("name") not in ("", None, "Phantom", "Ace", "Starblade")
+          and not p.get("ace"), p)
     check("Void's hood and body share one ramp laid in user space", j.get("same") and j.get("user"), j)
     check("and the hood runs down past the top of the shoulders", (j.get("overlap") or 0) >= 2, j)
     check("Void's three flares are drawn exactly as Umbra's and Horizon's",

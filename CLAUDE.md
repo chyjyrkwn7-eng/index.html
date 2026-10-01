@@ -8684,7 +8684,8 @@ are untouched.
     play in `#supernova-cutscene` too.
 
   `check-vroom` section 7 holds it and fails on 278.
-- **The astronaut id is Starblade** (kind `starblade`, parts `cx-fx-sa*`).
+- **The astronaut id is Orion** (kind `starblade`, parts `cx-fx-sa*`; it
+  was named Starblade until "the name is kinda lame").
   Every replacement since 271 was turned down:
   - Bounty Hunter, Phantom;
   - two rounds of hooded fighters;
@@ -8695,19 +8696,23 @@ are untouched.
     ... a hooded assassin would be kinda sick").
 
   Of three space assassins (Starblade, Corona, Orbit) this one stuck:
-  "Star blade is cool, could it be a little better?"
+  "Star blade is cool, could it be a little better?" A second pass added
+  a constellation and a shoulder guard and was turned back: "it looks
+  like a mask, could it have a more hooded feel? The one on the left is
+  cooler. The blade though doesn't really look like a blade." So the
+  final draw is the FIRST one with a deep hood that falls onto the
+  shoulders. The face is lost in it: no cowl panel, which is what read as
+  a mask, and only the visor slit shows. The sword is a real one, with
+  two faces meeting at a ridge, a point, a crossguard and a wrapped grip,
+  and it stands BESIDE the hood, because the deep hood hides anything
+  that crosses it.
   **It is an assassin first and space second**, because Void, Umbra and
   Horizon are already hooded space figures. The assassin parts are the
   peaked hood, the cowl to the eyes and the sword. The space parts are:
   - a hood woven with stars;
-  - a constellation traced across the cowl;
-  - a visor slit with a glint;
+  - a visor slit in the dark;
   - a comet scarf that tapers to nothing;
-  - a steel shoulder guard.
-
-  **The guard has its own linear gradient**: `headGrad` is anchored at
-  the face, and that far down it only paints its darkest stop, so the
-  first pass looked hollow.
+  - a sword of starlight.
 - **Bottom tabs answer the tap first** ("some slight lag"). The tapped
   tab and the bubble move at once and the screen is built on the next
   frame; `syncActive()` re-runs after, in case the navigation was
