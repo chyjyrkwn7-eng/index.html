@@ -2103,8 +2103,8 @@ def check_b235b(br):
       document.querySelector('.unitdetail-door.is-recent')?.click(); await wait(600);
       await T('list', () => ({ qs: document.querySelectorAll('.unitdetail-list .unitdetail-q').length,
                                flags: document.querySelectorAll('.unitdetail-list .unitdetail-flag').length }));
-      document.querySelector('.unitdetail-list .unitdetail-flag')?.click();
-      await T('flagged', () => flaggedIndexes().length);
+      /* Build 270: Most missed has no flags; the Flagged list keeps them,
+         and check_b270 asserts that with a fixture that has flags. */
       document.querySelector('.unitdetail-back')?.click(); await wait(500);
       document.querySelector('.unitdetail-scrim')?.click(); await wait(700);
       await T('closed', () => !document.querySelector('.unitdetail') && !document.querySelector('.unitdetail-scrim'));
@@ -2151,11 +2151,12 @@ def check_b235b(br):
     check("the fold is called Timer", str(r["timerLabel"]).startswith("Timer"), r["timerLabel"])
     d = r["detail"] if isinstance(r["detail"], dict) else {}
     check("holding a unit card opens its details without ticking it",
-          d.get("unticked") is True and d.get("doors") == 2 and "Completed" in d.get("stats", []) and "Best time" in d.get("stats", [])
+          d.get("unticked") is True and d.get("doors") == 2 and "Completed" in d.get("stats", []) and "Last score" in d.get("stats", [])
           and "Hundos" in d.get("stats", []) and d.get("w", 0) > 300, r["detail"])
     l = r["list"] if isinstance(r["list"], dict) else {}
-    check("Most missed opens inside the card, each question with its flag", l.get("qs", 0) >= 1 and l.get("qs") == l.get("flags"), r["list"])
-    check("a question can be flagged from there", isinstance(r["flagged"], int) and r["flagged"] >= 1, r["flagged"])
+    # REVISED IN 270: "When looking at your most missed, remove the flag
+    # option." Flagging is done from the Flagged list, which keeps it.
+    check("Most missed opens inside the card, with no flag on its questions", l.get("qs", 0) >= 1 and l.get("flags") == 0, r["list"])
     check("tapping off it closes it", isinstance(r["detail"], dict) and r["closed"] is True, r["closed"])
     ctx.close()
 
@@ -2188,7 +2189,7 @@ def check_b236(br):
          to draw the Kraken. */
       await T('panels', () => ['zeus'].map(k => [...buildAvatarCharSVGSafe(k).querySelectorAll('rect')]
         .some(x => /^#(13263A|0C2E30)$/i.test(x.getAttribute('fill') || ''))).concat(
-        /cx-k-kraken/.test((buildAvatarCharSVGSafe('poseidon').querySelector('.cx-fig') || {getAttribute(){return ''}}).getAttribute('class') || '')));
+        /cx-k-kitsune/.test((buildAvatarCharSVGSafe('poseidon').querySelector('.cx-fig') || {getAttribute(){return ''}}).getAttribute('class') || '')));
       // The unit list.
       const unit = u[0], now = Date.now();
       let k = 0;
@@ -2238,7 +2239,8 @@ def check_b236(br):
     rd = r["road"] if isinstance(r["road"], dict) else {}
     check("the road blends from rank to rank, with a light where you are", rd.get("blended") is True and rd.get("tip") == 1, r["road"])
     check("the Officer is gone: an old Officer is drawn as the Oracle (build 244)", "cx-k-oracle" in str(r["shades"]), r["shades"])
-    check("Zeus's symbol sits on a dark carved panel, and Poseidon's id draws the Kraken", r["panels"] == [True, True], r["panels"])
+    # REVISED IN 271: the Kraken became the Kitsune ("Kraken is kind of lame").
+    check("Zeus's symbol sits on a dark carved panel, and Poseidon's id draws the Kitsune", r["panels"] == [True, True], r["panels"])
     cp = r["copy"] if isinstance(r["copy"], dict) else {}
     check("the doors say what they open, and Hundos says nothing about the badge",
           cp.get("doors") == ["Tap to see flagged questions", "Tap to see most missed"]
@@ -2300,12 +2302,14 @@ def check_b238(br):
       store.testStats[u].bestMs = 95000; const set = find('drill', 'Best time').sub;
       const exam = unitDetailStats(u, 'exam').map(x => x.label + ' ' + x.sub).join(' | ');
       return { unset, set, exam }; }""")
-    check("Drill's best time says a hundo sets it, set or not", isinstance(r, dict)
-          and "hundo" in str(r.get("unset")) and "hundo" in str(r.get("set")), r)
+    # REVISED IN 270: the card is the same four in every mode (best score,
+    # last score, completed, hundos), so no mode shows a time any more.
+    check("no mode shows a best time any more (Drill included)", isinstance(r, dict)
+          and r.get("unset") is None and r.get("set") is None, r)
     # Build 240 took the time off Exam altogether ("Best exam" and "Exam
     # average" instead), so the hundo wording is only asserted where a time
     # is still shown. A decision that changed, not a regression.
-    check("Exam no longer shows a time at all", isinstance(r, dict) and "Best exam" in str(r.get("exam"))
+    check("Exam shows no time either", isinstance(r, dict) and "Best time" not in str(r.get("exam"))
           and "Fastest" not in str(r.get("exam")), r)
     ctx.close()
 
@@ -2341,19 +2345,21 @@ def check_b240_units(br):
     # REVISED IN 268: "it says drill at the top, but really some of that
     # stuff shows up across any mode". Four every-mode squares, always the
     # same and in the same order, then only the mode's own ones.
-    every = ["Completed", "Best score", "Accuracy", "Hundos"]
-    check("every mode opens with the same four every-mode squares", modes and all(v[:4] == every for v in modes.values()), modes)
-    check("only Drill, Exam and Game add squares of their own",
-          modes and len(modes.get("review", [])) == 4 and len(modes.get("vroom", [])) == 4
-          and all(len(modes.get(m, [])) > 4 for m in ("drill", "exam", "game")), modes)
+    # REVISED AGAIN IN 270: "Let's make these so it's the same for any mode
+    # so it's simple to use" - one card of four, identical in every mode.
+    # The shape is asserted (same four everywhere, one of them the last
+    # score), not each label.
+    first = next(iter(modes.values()), [])
+    check("every mode shows the same four squares", modes and len(first) == 4 and all(v == first for v in modes.values()), modes)
+    check("and one of them is the last score", any("Last" in x for x in first), first)
     check("Game shows no best time unless Hardcore is beaten",
           modes.get("game") and not any("time" in x.lower() for x in modes["game"]), modes.get("game"))
     ge = " | ".join(r.get("gameEasy", [])) if isinstance(r, dict) else ""
-    check("Game shows the level unlocked and how far you got on it",
-          "Level unlocked=" in ge and "Farthest on " in ge and "7 / " in ge, ge)
+    check("Game adds nothing of its own (no level or farthest square)",
+          "Level unlocked=" not in ge and "Farthest on " not in ge, ge)
     ex = " | ".join(r.get("exam", [])) if isinstance(r, dict) else ""
-    check("Exam shows its best and its average from past exams",
-          "Best exam=80%" in ex and "Exam average=70%" in ex, ex)
+    check("the best and the last score come from past runs (80% best, 60% last)",
+          "=80%" in ex and "Last score=60%" in ex, ex)
     # The header names the mode: open a real card on the Exam unit grid.
     pg.evaluate("()=>{ cfg.mode = 'exam'; cfg.units = []; showSetup(); }")
     pg.wait_for_timeout(700)
@@ -2361,7 +2367,8 @@ def check_b240_units(br):
       if(!row) return 'no row';
       row.dispatchEvent(new MouseEvent('contextmenu', {bubbles:true, cancelable:true}));
       const c = document.querySelector('.unitdetail-mode'); return c ? c.textContent : 'no chip'; }""")
-    check("the details card names the mode it is for", chip == "Exam", chip)
+    # REVISED IN 268/270: the card is the same in every mode, so it names none.
+    check("the details card names no mode - it is the same in every mode", chip == "no chip", chip)
     ctx.close()
 
 
@@ -2495,6 +2502,7 @@ def check_b241b(br):
       store.hundoDay = null; store.hundoDayBest = 0;
       out.lockedAtStart = isLockedCharacter('astronaut');
       out.msg = characterLockMessage('astronaut');
+      out.astroName = AVATAR_DISPLAY_NAME.astronaut;
       /* 2. N different units in one day (7 until build 259, 5 now - read
          off the app, not written down here), and only different ones */
       const N = CHARACTER_FEATS.hundo7day.need; out.need = N;
@@ -2518,7 +2526,7 @@ def check_b241b(br):
       store.avatarChar = wasChar;
       /* An old Blitz id still draws as the character that took its place. */
       const svg = buildAvatarCharSVG('blitz');
-      out.corona = (svg.querySelector('.cx-fig').getAttribute('class') || '').indexOf('cx-k-astronaut') >= 0 ? 7 : 0;
+      out.corona = (svg.querySelector('.cx-fig').getAttribute('class') || '').indexOf('cx-k-cyborg') >= 0 ? 7 : 0;
       out.parts = ['cx-head', 'cx-eyes'].filter(c => svg.querySelector('.' + c)).length * 2;
       /* 4. theme swatches carry their names (Profile > Customize) */
       showCustomize(); await wait(500);
@@ -2554,16 +2562,17 @@ def check_b241b(br):
       vroomMyKey = was;
       } catch(e){ out.threw = String(e); }
       return out; }""")
-    check("the Astronaut (Blitz's challenge since 243) sits right after the Marksman, locked, with its challenge and progress",
+    # The astronaut id draws the Cyborg since 271; the name is read off the page.
+    check("the astronaut id (Blitz's challenge since 243) sits right after the Marksman, locked, with its challenge and progress",
           isinstance(r, dict) and r.get("blitzAt") == 1 and r.get("lockedAtStart") is True
-          and r.get("msg") == "Get a hundo in %d different units in one day (0 of %d) to unlock Astronaut." % (r.get("need"), r.get("need")), r)
+          and r.get("msg") == "Get a hundo in %d different units in one day (0 of %d) to unlock %s." % (r.get("need"), r.get("need"), r.get("astroName")), r)
     check("only different units count, and one short is not enough",
           r.get("sixDistinct") == r.get("need", 0) - 1 and r.get("lockedAtSix") is True, r)
     check("a new day starts again but keeps the best day",
           r.get("newDay") == {"today": 1, "best": r.get("need", 0) - 1, "locked": True}, r)
     check("the full count in one day unlocks it, and the best day survives a reload",
           r.get("lockedAtSeven") is False and (r.get("afterLoad") or 0) >= r.get("need", 99), r)
-    check("an old Blitz id draws as the Astronaut, on the parts every character has",
+    check("an old Blitz id draws as what the astronaut id draws (the Cyborg since 271), on the parts every character has",
           r.get("corona") == 7 and r.get("parts") == 4, r)
     check("every theme swatch has its name under it, Default first",
           r.get("swatches", 0) >= 7 and len(r.get("names") or []) == r.get("swatches") and (r.get("names") or [""])[0] == "Default", r)
@@ -2864,8 +2873,9 @@ def check_b243(br):
     check("the Clown is five wins, the Astronaut hundos in a day, the Hacker time studied, the Timekeeper days studied, the Valkyrie the Virtual Room, and SWAT is retired (build 245)",
           r.get("feats") == {"clown": "vrwins5", "astronaut": "hundo7day", "hacker": "study20h", "timekeeper": "days30",
                              "valkyrie": "vrwins10", "swatRetired": True}, r.get("feats"))
+    # Kinds, not ids: Blitz goes to the astronaut id, which draws the Cyborg since 271.
     check("every retired character is drawn as what replaced it",
-          r.get("retiredTo") == ["ninja", "clown", "astronaut", "solar", "oracle", "koi", "hacker", "solar", "tempest", "koi", "hacker", "timekeeper", "ninja"], r.get("retiredTo"))
+          r.get("retiredTo") == ["ninja", "clown", "cyborg", "solar", "oracle", "koi", "hacker", "solar", "tempest", "koi", "hacker", "timekeeper", "ninja"], r.get("retiredTo"))
     # build 265/267: the Valkyrie's id drew the Viper, then the Koi (and the characters retired into it).
     check("the new ones are named", r.get("names") == ["Lunar", "Solar", "Tempest", "Frost", "Oracle", "Inferno", "Hacker", "Timekeeper", "Koi"], r.get("names"))
     check("whoever held the Clown under the old ranks keeps it, and nobody at all has the Robot (build 244) - an old Robot is drawn as the Ninja",
@@ -4601,7 +4611,7 @@ def check_b266(br):
       out.hacker = { rain: has('hacker', '.cx-fx-hk3rain'), laptop: buildAvatarCharSVG('hacker').innerHTML.indexOf('M18 30.8 L16.5 32.3') >= 0 };
       /* build 267: the Valkyrie's id is the Koi's fishbowl, the Singularity a space cat */
       out.viper = { tongue: has('valkyrie', '.cx-fx-koiswim'), name: AVATAR_DISPLAY_NAME.valkyrie };
-      out.sing = { swirl: has('singularity', '.cx-fx-catstars'), eyes: buildAvatarCharSVG('singularity').querySelectorAll('.cx-eyes > *').length };
+      out.sing = { swirl: has('singularity', '.cx-fx-sgdisk'), eyes: buildAvatarCharSVG('singularity').querySelectorAll('.cx-eyes > *').length };
       } catch(e){ out.threw = String(e && e.stack || e); }
       return out; }""")
     check("Review's chip on the unit screen is Review's, not Drill's", "rs-mode-review" in r.get("chip", ""), r)
@@ -4621,12 +4631,15 @@ def check_b266(br):
           "drop-shadow" in g.get("wrapFilter", "") and "drop-shadow" not in g.get("svgFilter", ""), g)
     check("Sapphire has a black dot at its heart", r.get("sapphireDot") is True, r)
     check("Amethyst is a black hole with no flattened planet disc", r.get("amethystHole") is True and r.get("amethystFlat") is False, r)
-    check("Poseidon's id draws the Kraken, and says so", "cx-k-kraken" in r["kraken"]["kind"] and r["kraken"]["name"] == "Kraken", r["kraken"])
+    # REVISED IN 271: the Kraken became the Kitsune.
+    check("Poseidon's id draws the Kitsune, and says so", "cx-k-kitsune" in r["kraken"]["kind"] and r["kraken"]["name"] == "Kitsune", r["kraken"])
     check("the Hacker sits at a laptop with code raining behind", r["hacker"]["rain"] and r["hacker"]["laptop"], r["hacker"])
     # REVISED IN 267: "That snake character is bad, try something else" and
     # "the singularity, idek what that is".
     check("the Valkyrie's id is the Koi, a fish swimming laps in a pink bowl", r["viper"]["tongue"] and r["viper"]["name"] == "Koi", r["viper"])
-    check("the Singularity is a cat made of space, with eyes", r["sing"]["swirl"] and r["sing"]["eyes"] >= 2, r["sing"])
+    # REVISED IN 271: "The singularity is a cat. That needs to be changed
+    # immediately" - a hooded figure caught in an accretion disk.
+    check("the Singularity is a hooded figure inside an accretion disk, with eyes", r["sing"]["swirl"] and r["sing"]["eyes"] >= 2, r["sing"])
     check("no exception", not r.get("threw"), r.get("threw"))
     ctx.close()
 
@@ -4824,6 +4837,166 @@ def check_b269(br):
     ctx.close()
 
 
+def check_b270(br):
+    """Build 270, Madison's list. (1) The unit details card is the same
+    four numbers in every mode, one of them the last score. (2) Most
+    missed has no flag on its questions and does not mention how much is
+    tracked; both lists end in a Back button; a list's choices are
+    read-only (locked) and its "Missed N times" chip is the door's
+    colour. (3) Back from a list puts the card back to its own size.
+    (4) Every back link's chevron and word share a centre line. (5) No
+    unit badge's drawing leaves its viewBox (Multiculturalism's top was
+    cut off). (6) The Profile rank plate has no white flash. Written
+    against 269, where each of these fails."""
+    print("\n52a. build 270: unit details, the two lists, back links, badges, the rank plate")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{ const out = {};
+      const wait = ms => new Promise(r => setTimeout(r, ms));
+      try {
+      const u = topicsIn(QUESTIONS), unit = u[0], now = Date.now();
+      out.labels = ['drill', 'exam', 'game'].map(m => unitDetailStats(unit, m).map(s => s.label));
+      let k = 0;
+      QUESTIONS.forEach((q, i) => { if((q.topic || '').trim() === unit){ k++; store.stats[KEYS[i]] = { n: 3, m: 3, r: [now - 1000, now - 2000] }; if(k <= 3) store.flagged[KEYS[i]] = true; } });
+      cfg.mode = 'drill'; cfg.units = []; showSetup(); await wait(600);
+      const row = [...document.querySelectorAll('.pick')].find(r => (r.querySelector('input') || {}).value === unit);
+      row.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 50, clientY: 50, button: 0 }));
+      await wait(600); row.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 50, clientY: 50 })); await wait(900);
+      const card = () => document.querySelector('.unitdetail');
+      out.h0 = Math.round(card().getBoundingClientRect().height);
+      document.querySelector('.unitdetail-door.is-recent').click(); await wait(900);
+      const c = card();
+      out.missed = { flags: c.querySelectorAll('.unitdetail-q .unitdetail-flag').length,
+        note: (c.querySelector('.unitdetail-listnote') || {}).textContent || '',
+        bottomBack: !!c.querySelector('.unitdetail-back.is-bottom'),
+        choices: c.querySelectorAll('.unitdetail-q .choice').length,
+        unlocked: [...c.querySelectorAll('.unitdetail-q .choice')].filter(b => !b.classList.contains('locked')).length };
+      /* and pressing one does not press it: the Liquid Glass dip is off */
+      { const ch0 = c.querySelector('.unitdetail-q .choice'); const rb = ch0.getBoundingClientRect();
+        ch0.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: rb.left + 5, clientY: rb.top + 5, button: 0 }));
+        out.missed.pressed = ch0.style.transform || '';
+        ch0.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: rb.left + 5, clientY: rb.top + 5 })); }
+      const chip = c.querySelector('.unitdetail-missed'), dr = document.querySelector('.unitdetail-door.is-recent .unitdetail-doorcount');
+      out.chipColor = chip ? getComputedStyle(chip).color : ''; out.doorColor = dr ? getComputedStyle(dr).color : '';
+      c.querySelector('.unitdetail-back').click(); await wait(900);
+      out.h1 = Math.round(card().getBoundingClientRect().height);
+      document.querySelector('.unitdetail-door.is-flagged').click(); await wait(900);
+      out.flagged = { flags: card().querySelectorAll('.unitdetail-q .unitdetail-flag').length, bottomBack: !!card().querySelector('.unitdetail-back.is-bottom') };
+      /* back links */
+      const bl = buildBackLink('Back', () => {}); bl.style.cssText = 'position:fixed;left:10px;top:10px'; document.body.appendChild(bl);
+      const ch = bl.querySelector('.back-chevron'), wd = bl.querySelector('.back-word');
+      if(ch && wd){ const a = ch.getBoundingClientRect(), b = wd.getBoundingClientRect(); out.backOff = Math.abs((a.top + a.bottom) / 2 - (b.top + b.bottom) / 2); }
+      else out.backOff = 99;
+      bl.remove();
+      /* every badge inside its own box */
+      const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:0;top:0;width:200px;height:200px'; document.body.appendChild(host);
+      out.clipped = [];
+      for(const n of u){ host.replaceChildren(); const sv = buildUnitBadgeSVG(n, true); if(!sv) continue; sv.style.cssText = 'width:200px;height:200px'; host.appendChild(sv);
+        /* on screen, so every transform is applied: each drawn path's box
+           against the svg's own box */
+        const box = sv.getBoundingClientRect();
+        const out1 = [...sv.querySelectorAll('path')].filter(p => !p.closest('defs, clipPath, mask, [clip-path]')).some(p => { const b = p.getBoundingClientRect();
+          return b.width && (b.left < box.left - .5 || b.top < box.top - .5 || b.right > box.right + .5 || b.bottom > box.bottom + .5); });
+        if(out1) out.clipped.push(n); }
+      host.remove();
+      /* the rank plate */
+      document.querySelectorAll('.unitdetail-scrim, .unitdetail').forEach(e => e.remove());
+      showProfile('profile'); await wait(900);
+      const plate = document.querySelector('.profile-rankplate');
+      out.plateAfter = plate ? getComputedStyle(plate, '::after').content : 'missing';
+      } catch(e){ out.threw = String(e && e.stack || e); }
+      return out; }""")
+    L = r.get("labels") or []
+    check("the unit card is the same four numbers in every mode, the last score among them",
+          len(L) == 3 and L[0] == L[1] == L[2] and len(L[0]) == 4 and any("ast" in x for x in L[0]), L)
+    m = r.get("missed") or {}
+    check("Most missed has no flag on its questions", m.get("flags") == 0 and m.get("choices", 0) > 0, m)
+    check("and does not say how much it tracks (no number in its note)", m.get("note") and not any(ch.isdigit() for ch in m.get("note", "")), m.get("note"))
+    check("both lists end in a Back button", m.get("bottomBack") and (r.get("flagged") or {}).get("bottomBack"), (m, r.get("flagged")))
+    check("Flagged keeps its flags", (r.get("flagged") or {}).get("flags", 0) > 0, r.get("flagged"))
+    check("a list's answer choices are read-only, and do not press like buttons", m.get("unlocked") == 0 and not m.get("pressed"), m)
+    check("the Missed chip is the colour of its door", r.get("chipColor") and r.get("chipColor") == r.get("doorColor"), (r.get("chipColor"), r.get("doorColor")))
+    check("Back from a list puts the card back to its own size", abs((r.get("h1") or 0) - (r.get("h0") or -99)) <= 4, (r.get("h0"), r.get("h1")))
+    check("a back link's chevron and word share a centre line", r.get("backOff", 99) <= 1, r.get("backOff"))
+    check("no unit badge's drawing leaves its box", r.get("clipped") == [], r.get("clipped"))
+    check("the Profile rank plate has no white flash", r.get("plateAfter") in ("none", "normal"), r.get("plateAfter"))
+    check("no exception", not r.get("threw"), r.get("threw"))
+    ctx.close()
+
+
+def check_b271(br):
+    """Build 271, the characters. (1) Every character stands in a scene of
+    its own - a backdrop outside the figure, faded by a MASK (never a
+    filter), unscaled when the figure is enlarged, moving only under
+    char-live. (2) The Singularity is no longer a cat: it is the third of
+    Void's hooded family, caught in an accretion disk, a flare on its
+    brow. (3) Poseidon's id is the Kitsune, with tails; the astronaut id
+    the Cyborg, with a cyber-eye - and both say so by name. (4) The Koi
+    has two fish. (5) The Alien's eyes slant hard and a brow cuts them.
+    (6) Void is lit down one side by flare light, like its family.
+    Written against 270, where none of it held."""
+    print("\n52. build 271: a scene behind every character; the Singularity, Kitsune, Cyborg, Koi, Alien and Void")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{ const out = {};
+      try {
+      const active = AVATAR_CHARACTERS.filter(c => !c.retired).map(c => c.id);
+      out.n = active.length;
+      out.noScene = []; out.badScene = [];
+      for(const id of active){
+        const sv = buildAvatarCharSVG(id), bg = sv.querySelector('.cx-bg');
+        if(!bg){ out.noScene.push(id); continue; }
+        const m = bg.getAttribute('mask') || '';
+        if(bg.parentNode !== sv || bg.closest('.cx-fig') || !/^url\\(#/.test(m) || sv.querySelector('filter')) out.badScene.push(id);
+      }
+      /* two characters' scenes should not be the same picture */
+      const sig = id => { const bg = buildAvatarCharSVG(id).querySelector('.cx-bg'); return bg ? [...bg.querySelectorAll('[class*="cx-fx-bg"]')].map(g => g.getAttribute('class')).join('|') : ''; };
+      out.sameScene = sig('detective') === sig('frost') || sig('ronin') === sig('solar');
+      /* motion only when live */
+      const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:0;top:0;width:120px;height:120px';
+      host.appendChild(buildAvatarCharSVG('frost')); document.body.appendChild(host);
+      const fall = () => getComputedStyle(host.querySelector('.cx-fx-bgfall')).animationName;
+      out.stillFall = fall(); host.classList.add('char-live'); out.liveFall = fall(); host.remove();
+      /* the Singularity */
+      const sg = buildAvatarCharSVG('singularity');
+      out.sing = { cat: !!sg.querySelector('[class*="cx-fx-cat"]'), disk: !!sg.querySelector('.cx-fx-sgdisk'),
+                   star: !!sg.querySelector('.cx-fx-sgstar'), eyes: sg.querySelectorAll('.cx-eyes > *').length };
+      /* Kitsune and Cyborg */
+      const kind = id => (buildAvatarCharSVG(id).querySelector('.cx-fig').getAttribute('class') || '').replace('cx-fig cx-k-', '');
+      out.pos = { kind: kind('poseidon'), name: AVATAR_DISPLAY_NAME.poseidon, tails: buildAvatarCharSVG('poseidon').querySelectorAll('.cx-fx-kttail').length };
+      out.ast = { kind: kind('astronaut'), name: AVATAR_DISPLAY_NAME.astronaut, eye: !!buildAvatarCharSVG('astronaut').querySelector('.cx-fx-cbeye') };
+      /* the Koi's fish */
+      const swim = buildAvatarCharSVG('valkyrie').querySelector('.cx-fx-koiswim');
+      out.koiFish = swim ? swim.querySelectorAll(':scope > g').length : 0;
+      /* the Alien's eyes */
+      const al = buildAvatarCharSVG('alien');
+      out.alienRot = [...al.querySelectorAll('.cx-eyes ellipse')].map(e => Math.abs(parseFloat(((e.getAttribute('transform') || '').match(/rotate\\(([-\\d.]+)/) || [0, 0])[1])));
+      /* Void's flare rim */
+      out.voidRim = [...buildAvatarCharSVG('voidwalker').querySelectorAll('path')].some(p => (p.getAttribute('stroke') || '').toUpperCase() === '#F97316' && parseFloat(p.getAttribute('stroke-width')) >= .5);
+      /* an enlarged character's scene is not enlarged with it */
+      const vw = buildAvatarCharSVG('voidwalker');
+      out.voidBgUnscaled = !!vw.querySelector(':scope > .cx-bg') && !vw.querySelector('g[transform] .cx-bg');
+      } catch(e){ out.threw = String(e && e.stack || e); }
+      return out; }""")
+    check("every character (%s) stands in a scene of its own" % r.get("n"), not r.get("noScene") and r.get("n", 0) >= 20, r.get("noScene"))
+    check("the scene sits behind the figure, faded by a mask, with no SVG filter anywhere", not r.get("badScene"), r.get("badScene"))
+    check("two characters' scenes are not the same picture", r.get("sameScene") is False, r.get("sameScene"))
+    check("the scene only moves when the character is live",
+          r.get("stillFall") == "none" and r.get("liveFall") not in (None, "", "none"), (r.get("stillFall"), r.get("liveFall")))
+    s = r.get("sing") or {}
+    check("the Singularity is not a cat: a hooded figure in a disk, a flare on its brow, eyes",
+          s.get("cat") is False and s.get("disk") and s.get("star") and s.get("eyes", 0) >= 2, s)
+    p, a = r.get("pos") or {}, r.get("ast") or {}
+    check("Poseidon's id is the Kitsune, with its tails, and is named for it",
+          p.get("kind") == "kitsune" and p.get("tails") == 2 and p.get("name") not in ("Kraken", "", None), p)
+    check("the astronaut id is the Cyborg, with its cyber-eye, and is named for it",
+          a.get("kind") == "cyborg" and a.get("eye") and a.get("name") not in ("Astronaut", "", None), a)
+    check("the Koi has two fish in its bowl", r.get("koiFish") == 2, r.get("koiFish"))
+    check("the Alien's eyes slant hard (20 degrees or more)", len(r.get("alienRot") or []) == 2 and min(r.get("alienRot")) >= 20, r.get("alienRot"))
+    check("Void is lit down one side by flare light", r.get("voidRim") is True, r.get("voidRim"))
+    check("an enlarged character's scene stays at its own size", r.get("voidBgUnscaled") is True, r.get("voidBgUnscaled"))
+    check("no exception", not r.get("threw"), r.get("threw"))
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     only = os.environ.get("ONLY_B245")
@@ -4887,6 +5060,8 @@ def main():
             check_b267(br)
             check_b268(br)
             check_b269(br)
+            check_b270(br)
+            check_b271(br)
         finally:
             br.close()
     SERVER.shutdown()

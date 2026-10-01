@@ -48,7 +48,11 @@ KNOWN = {
     # Build 266 characters.
     "cx-hk3-rain": "Hacker's code rain: shifted by exactly one glyph pattern (4 x 1.5)",
     "cx-hk3-code": "Hacker's lens code: shifted by exactly eight rows (8 x .72) of a pattern drawn twice",
-    "cx-kr-bubble": "Kraken's bubble: invisible at both ends of the rise",
+    "cx-kr-bubble": "the Koi's bubble (the Kraken's first): invisible at both ends of the rise",
+    # Build 271: the scene behind every character.
+    "cx-bg-fall": "shifted by exactly one 12-unit period of the falling layout",
+    "cx-bg-rise": "shifted by exactly one 12-unit period of the rising layout",
+    "cx-bg-ripple": "a ring that fades to nothing as it spreads",
     "cx-sand": "Timekeeper's sand: shifted by exactly one grain pitch (.5)",
     # Build 235: the sleeping character's Zzz.
     "char-zzz": "a letter fades in beside the head and out as it drifts up",

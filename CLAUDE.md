@@ -8194,3 +8194,150 @@ are untouched.
   - Animated banners already ran on the card. The first-tier banners are
     still by design (`BANNER_ANIMATED`).
   - Gate: `check_b269`, run against all 41 characters. It fails on 268.
+
+### Build 270
+
+- **The unit details card is the same four numbers in every mode**:
+  Best score, Last score, Completed, Hundos (`unitDetailStats`). The
+  mode argument is accepted and ignored, so callers did not change.
+  - "Last score" (`unitLastScoreOf`) is the newest single-unit run in
+    `testHistory`. If there is none, it falls back to the most recently
+    played `testStats` entry for the unit.
+  - Build 268's two groups ("Every mode" / "Only in <mode>") read as two
+    things to learn, so they are gone.
+- **The Flagged and Most missed doors are real buttons**, and a little
+  darker. Each has a dark base, a 3D shadow and an `:active` press,
+  tinted by `--door`.
+- **Back from a list puts the card back to its own size.** `target()`
+  measures `mainContentHeight()`, not `main.scrollHeight`, which had
+  been including the hidden list pane and grew the card from 419 to
+  860px.
+- **The two lists**:
+  - The header is a fixed `.unitdetail-listbar` above a scroller of its
+    own (`.unitdetail-listscroll`), so there is no gap above it while
+    you scroll.
+  - Both lists end in a second Back button (`.unitdetail-back.is-bottom`).
+  - Most missed has no flag toggle. Its note no longer says how much is
+    tracked ("We don't need to mention we track stuff"), and the reset
+    confirmation no longer says 30 days.
+  - The "Missed N times" chip is the Most missed door's coral.
+  - Read-only choices do not press. The Liquid Glass press handler skips
+    any `.choice.locked`. Before, they dipped like buttons ("the buttons
+    on the pages are tappable"). This holds in review mode too.
+  - The right answer's green bar runs the full height of the choice
+    (`.unitdetail-q .choices .choice{padding:0}`, with the padding moved
+    onto key, text and mark).
+- **Every back link's chevron and word are centred together.**
+  `fillBackLabel` builds an SVG `.back-chevron` plus a `.back-word` in
+  an `inline-flex` row. A text "‹" sits on the font's baseline, so it
+  never centred against the word.
+- **The Profile card's level and badge coins** take the rank section's
+  coin look:
+  - Level is blue; badges are gold, brighter when complete.
+  - They have a slow 4.4s pump (`xp-pump`/`coin-pump`, which start and
+    end on the same frame).
+  - The rank plate's white sheen on opening is gone.
+- **Smaller changes**:
+  - The default banner is graphite.
+  - The friend code box has more room above it, a one-line placeholder,
+    and no hint.
+  - The sync code view is 1.12rem.
+  - The Penal Code tag reads "Slides 0–85 version available" and lines
+    up with the title.
+  - The bottom tab is "Progress", with a medal icon.
+- **No unit badge is clipped** (`badgeViewBoxFor`). Each badge's viewBox
+  is sized from its own drawn path with a 6.5 margin, square and
+  centred. Multiculturalism's trefoil top was cut off at 5.
+- **The start sheet is an iOS grouped list** (`.unitoptions-modal-sheet.is-setup`):
+  - the mode name is the title;
+  - your picks are grey text under it;
+  - headings sit above plain groups;
+  - the bank picker is a segmented control;
+  - switch rows have no explanations;
+  - Begin is pinned to the foot in `.sheet-begin-bar`.
+
+  The bar's backdrop lives on the wrapper. A `::before` behind the
+  button itself turned it dark.
+- Gate: `check_b270`. It fails on 269 for every item above, including the
+  press on a read-only choice (`scale(0.97)`) and Multiculturalism
+  leaving its box.
+
+### Build 271
+
+- **A scene behind every character** (`BACKDROP` and `backdrop()` in
+  `drawAvatarCharSVG`). "Hacker is really cool but the background it
+  has is what makes it cool ... This would go for every character btw."
+  - Each scene is built from a small set of motifs: stars, moon, fall
+    and rise (rain, snow, petals, leaves, embers, confetti), nebula,
+    rays, runes, wisps, trees, bamboo, fireflies, planet, city, clouds,
+    bolts, ripples, reticle, grid and disk.
+  - The scatter is seeded by the character's kind, so forty copies on a
+    leaderboard are one picture.
+  - **Faded by a radial MASK, never cut by a clip and never a filter.**
+    A clip shows a hard rectangle on a picker tile, and filters are the
+    one SVG feature that has bitten this app on iOS.
+  - **It sits outside `cx-fig`**, so a bobbing character does not carry
+    its scenery. `buildAvatarCharSVGFresh` leaves `.cx-bg` unscaled when
+    `AVATAR_ART_SCALE` enlarges the figure.
+  - It moves only under `.char-live`. Falling and rising layers are laid
+    out on a 12-unit period and travel exactly 12 (`cx-bg-fall` and
+    `cx-bg-rise`, listed in check-loops' KNOWN), so the loop has no seam.
+  - The Hacker's code rain is still in its own drawing. Its scene adds
+    only a green haze.
+- **The Singularity is the third of Void's family, not a cat** ("needs to
+  be changed immediately. It needs to be flare themed. Umbra and void are
+  perfect. Expand on that"). The three now share one shape: a hood, a
+  face that is not a face, and a rim of light down one side in the
+  figure's own colour.
+  - Void is black with its three flares.
+  - Umbra is violet with its crescent.
+  - The Singularity is the white flare, Event Horizon. Its face is a
+    black hole with a white-hot ring, two ice eyes and a flare star on
+    the brow.
+  - Its accretion disk runs behind it in the scene and comes round in
+    front of it (`cx-fx-sgdisk`). Both halves are the same ellipse
+    (centre 20,17.6, 17.2 by 4.4, at -14°), so they meet.
+- **Void is lit again** ("void regressed"). Its drawing had not changed
+  since build 215; what changed was that it read as a black hood on a
+  black cloak on a dark screen.
+  - It has a nebula in the face in the flares' colours.
+  - A flare-orange rim runs down the hood and shoulder, on the same side
+    as Umbra's and the Singularity's.
+  - The scene behind it does the rest.
+- **The Kraken is now the Kitsune** ("Kraken is kind of lame").
+  - It is still Poseidon's id and still the weekly-top-three challenge,
+    so nobody loses it.
+  - It is a white fox mask with red markings, sly blue eyes and a dark
+    haori, with foxfire on the brow.
+  - It has two bushy tails each side (`cx-fx-kttail0/1`). Thin pointed
+    tails read as angel wings in the first draft.
+- **The Astronaut is now the Cyborg** ("should the astronaut be changed
+  to something else that's unique? Ronin is the coolest one we have").
+  - It is still the astronaut id and still five hundos in a day.
+  - The face is human on the left and chrome on the right, with a seam
+    leaking red light and a scanning cyber-eye.
+  - It wears a black high collar with neon trim, in front of a synthwave
+    floor.
+  - `AVATAR_ART_SCALE` no longer enlarges it. Blitz still maps to this
+    id.
+- **The Marksman hides its face**, as the Ronin does:
+  - a ghillie hood with a shemagh over the nose;
+  - one narrowed eye, with the lit scope over the other;
+  - a rifle behind the shoulder and a bandolier;
+  - a turning reticle in the scene.
+
+  It keeps `cx-fx-reticle`, `-scopeglow` and `-led`, so the sleep state
+  still dims them.
+- **The Koi is sicker**:
+  - a gold collar;
+  - a black-and-gold koi chasing the first round the bowl, yin-yang;
+  - a lotus on the water and light moving through it;
+  - a neon bloom off the glass.
+- **The Alien is meaner.** Its eyes are long and slanted up at the
+  outside (±26°), cut flat across the top by a brow that comes down to
+  the nose, and the mouth is a slight frown. The sleep lids and the win
+  glow use the same geometry.
+- Gate: `check_b271` (every active character has a masked, unfiltered
+  scene outside the figure; the scene moves only when live; the six
+  redraws). It fails on 270. Older checks that named the Kraken, the cat
+  or the Astronaut now read kinds and names off the page.
