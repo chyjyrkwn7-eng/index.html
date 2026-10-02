@@ -11262,45 +11262,8 @@
   }
 
   .panel.modeselect{ position:relative; overflow:hidden; text-align:center; padding-top:2rem; }
-  /* The Practice Test briefing (build 232). */
-  .practice-brief .setup-modechip{ margin-top:.4rem; }
-  .practice-brief .homegreet{ margin-top:.55rem; }
-  .pt-sub{ margin:.25rem 0 1.1rem; font-size:.86rem; color:var(--soft); }
-  .pt-stats{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:.55rem; margin:0 0 1rem; }
-  .pt-stat{
-    display:flex; flex-direction:column; align-items:center; gap:.15rem; padding:.8rem .3rem .7rem;
-    border-radius:1rem; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.09);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
-  }
-  .pt-stat-val{ font-size:1.55rem; font-weight:800; line-height:1.05; color:#FFC4A6; font-variant-numeric:tabular-nums; }
-  .pt-stat-lab{ font-size:.62rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--soft); }
-  .pt-rules{
-    list-style:none; margin:0 0 1rem; padding:.35rem .9rem; text-align:left;
-    border-radius:1.05rem; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
-  }
-  .pt-rule{ display:flex; gap:.75rem; align-items:flex-start; padding:.65rem 0; }
-  .pt-rule + .pt-rule{ border-top:1px solid rgba(255,255,255,.07); }
-  .pt-rule-ico{
-    flex:none; width:2rem; height:2rem; border-radius:.65rem; display:grid; place-items:center;
-    background:color-mix(in srgb, #F5804D 16%, transparent); border:1px solid color-mix(in srgb, #F5804D 34%, transparent);
-  }
-  .pt-rule-ico svg{ width:1.1rem; height:1.1rem; fill:none; stroke:#FFB38E; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
-  .pt-rule-txt{ display:flex; flex-direction:column; gap:.1rem; min-width:0; }
-  .pt-rule-txt strong{ font-size:.9rem; color:var(--ink); }
-  .pt-rule-txt span{ font-size:.8rem; line-height:1.4; color:var(--soft); }
-  .pt-record{
-    display:flex; flex-direction:column; align-items:center; gap:.15rem; margin:0 0 1rem; padding:.75rem .9rem;
-    border-radius:1rem; border:1px dashed rgba(255,255,255,.14);
-  }
-  .pt-record.is-passed{ border-style:solid; border-color:color-mix(in srgb, #7BE0A6 40%, transparent); background:color-mix(in srgb, #7BE0A6 7%, transparent); }
-  .pt-record-lab{ font-size:.62rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--soft); }
-  .pt-record-val{ font-size:.95rem; font-weight:700; color:var(--ink); }
-  .pt-record.is-passed .pt-record-val{ color:#9BEBC0; }
-  .pt-record-tip{ font-size:.74rem; color:var(--soft); margin-top:.1rem; }
-  @media (min-width:40rem){
-    .practice-brief .pt-stats, .practice-brief .pt-rules, .practice-brief .pt-record{ max-width:34rem; margin-left:auto; margin-right:auto; width:100%; }
-    .pt-stat-val{ font-size:1.9rem; }
-  }
+  /* The Practice Test briefing's styles were retired with it in build 283 -
+     retired/practice-test.md. */
   .panel.modeselect .modecards{ position:relative; z-index:1; }
   .homegreet{ font-family:var(--serif); font-size:1.4rem; font-weight:700; color:var(--ink); margin:0; }
   .modecards{ display:flex; flex-direction:column; gap:1rem; margin-top:1.5rem; }
@@ -19679,6 +19642,9 @@ const BANK_TITLE = "Nova \u2014 Class 26E Study";
 const PASS_MARK = 70;
 /* The Ronin's challenge: one run at least this long, passed (build 264). */
 const RONIN_TEST_SIZE = 450;
+/* The Phoenix banner: a perfect Exam of this many questions or more (build 283,
+   when the Practice Test it used to need was retired). */
+const PHOENIX_EXAM_SIZE = 100;
 const POINTS_PER_QUESTION = 10;
 const PERFECT_BONUS = 100;
 /* Paid once per EXTRA unit in a run: two units is +15, three is +30, and
@@ -40595,7 +40561,9 @@ const BANNERS = [
   { id: "level80", name: "Ascension",
     label: "Reach level " + LEVEL_CAP, have: () => levelOf(store), need: LEVEL_CAP },
   { id: "exam100", name: "Phoenix",
-    label: "Score 100% on the Practice Exam", have: () => (store.practiceExamPerfect ? 1 : 0), need: 1 },
+    /* Was "Score 100% on the Practice Exam" until build 283 retired the
+       Practice Test; same flag, a reachable way to set it. */
+    label: "Score 100% on an Exam of " + PHOENIX_EXAM_SIZE + " or more questions", have: () => (store.practiceExamPerfect ? 1 : 0), need: 1 },
   /* Build 235: Sapphire and Amethyst get their own banners, siblings of
      Supernova's - "should look pretty similar to the supernova one". */
   { id: "adept_rank", name: "Sapphire", rank: "adept",
@@ -54213,7 +54181,8 @@ function showModeSelect(){
           (remaining === 1 ? "unit" : "units") + " to unlock Game mode.");
         return;
       }
-      if(m.value === "exam"){ showExamOptions(); return; }
+      /* Exam goes straight to the start sheet (build 283): the Standard /
+         Practice Test picker is retired - see retired/practice-test.md. */
       if(m.value === "vroom"){ cfg.mode = "vroom"; showVirtualRoomChoice(); return; }
       cfg.mode = m.value;
       showSetup();
@@ -54260,187 +54229,10 @@ function showModeSelect(){
   }
 }
 
-/* Exam has two flavors: pick-your-own-units (goes to the normal, locked-down
-   Setup screen), or the one-tap Practice Test — a fixed simulation of the
-   real thing that skips Setup entirely. */
-function showExamOptions(){
-  stopTimer(); stopQuestionTimer();
-  meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
-  timerlineEl.hidden = true; livesEl.hidden = true;
-  appearanceBtn.hidden = false;
-  homeBtn.hidden = false;
-  profileBtn.hidden = false;
-  pauseBtn.hidden = true;
-  paused = false;
-  setActiveNav(null);
-  countEl.textContent = "Choose your exam";
-
-  const panel = document.createElement("section");
-  panel.className = "panel modeselect";
-
-  panel.appendChild(buildBackLink("Back", showModeSelect));
-
-  const head = document.createElement("p");
-  head.className = "homegreet";
-  head.textContent = "Which exam?";
-  panel.appendChild(head);
-
-  const cards = document.createElement("div");
-  cards.className = "modecards";
-
-  const standardCard = document.createElement("button");
-  standardCard.type = "button"; standardCard.className = "modecard";
-  const t1 = document.createElement("span");
-  t1.className = "modecardtitle"; t1.textContent = "Standard Exam";
-  const d1 = document.createElement("span");
-  d1.className = "modecarddesc";
-  d1.textContent = "Pick your own units and length. No feedback until the end, no retries.";
-  standardCard.append(t1, d1);
-  standardCard.addEventListener("click", () => { cfg.mode = "exam"; showSetup(); });
-  cards.appendChild(standardCard);
-
-  const practiceCard = document.createElement("button");
-  practiceCard.type = "button"; practiceCard.className = "modecard";
-  const t2 = document.createElement("span");
-  t2.className = "modecardtitle"; t2.textContent = "Practice Test";
-  const d2 = document.createElement("span");
-  d2.className = "modecarddesc";
-  d2.textContent = PRACTICE_TEST_SIZE + " random questions across every unit, " +
-    PRACTICE_TEST_MINUTES + " minutes on the clock \u2014 built to feel like the real thing.";
-  practiceCard.append(t2, d2);
-  practiceCard.addEventListener("click", showPracticeTestConfirm);
-  cards.appendChild(practiceCard);
-
-  panel.appendChild(cards);
-  stage.replaceChildren(panel);
-  toTop();
-}
-
-/* A confirmation stop before the Practice Test actually begins — so
-   picking the card doesn't drop you straight into a 90-minute exam
-   with no chance to back out. */
-function showPracticeTestConfirm(){
-  stopTimer(); stopQuestionTimer();
-  meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
-  timerlineEl.hidden = true; livesEl.hidden = true;
-  appearanceBtn.hidden = false;
-  homeBtn.hidden = false;
-  profileBtn.hidden = false;
-  pauseBtn.hidden = true;
-  paused = false;
-  setActiveNav(null);
-  countEl.textContent = "Practice Test";
-
-  const panel = document.createElement("section");
-  panel.className = "panel modeselect";
-
-  panel.appendChild(buildBackLink("Back", showExamOptions));
-
-  /* ---- A BRIEFING, NOT A SENTENCE (build 232) ----
-     "When you select practice test, the description box could be a bit
-     better because the screens feel a bit empty." It was one grey line
-     under a title on an otherwise empty screen. Everything it said is
-     still here, laid out the way an exam briefing is: the three numbers
-     that define the test, the rules in the order they matter, and where
-     you stand - so the screen tells you what you are walking into and
-     how you did last time before you tap Start. */
-  panel.classList.add("practice-brief");
-  const chipRow = document.createElement("div");
-  chipRow.className = "setup-modechip";
-  const chip = document.createElement("span");
-  chip.className = "rs-mode rs-mode-exam";
-  try{ chip.appendChild(modeIcon("exam")); }catch(e){}
-  const chipText = document.createElement("span");
-  chipText.textContent = "Practice test";
-  chip.appendChild(chipText);
-  chipRow.appendChild(chip);
-  panel.appendChild(chipRow);
-
-  const head = document.createElement("p");
-  head.className = "homegreet";
-  head.textContent = "Practice Test";
-  panel.appendChild(head);
-  const sub = document.createElement("p");
-  sub.className = "pt-sub";
-  sub.textContent = "Built to feel like the real exam.";
-  panel.appendChild(sub);
-
-  const unitCount = topicsIn(QUESTIONS).length;
-  const stats = document.createElement("div");
-  stats.className = "pt-stats";
-  [[String(PRACTICE_TEST_SIZE), "Questions"], [String(PRACTICE_TEST_MINUTES), "Minutes"], [PASS_MARK + "%", "To pass"]].forEach(([v, l]) => {
-    const t = document.createElement("div");
-    t.className = "pt-stat";
-    const vv = document.createElement("span"); vv.className = "pt-stat-val"; vv.textContent = v;
-    const ll = document.createElement("span"); ll.className = "pt-stat-lab"; ll.textContent = l;
-    t.append(vv, ll);
-    stats.appendChild(t);
-  });
-  panel.appendChild(stats);
-
-  const NS = "http://www.w3.org/2000/svg";
-  const ico = (d) => {
-    const sv = document.createElementNS(NS, "svg");
-    sv.setAttribute("viewBox", "0 0 24 24"); sv.setAttribute("aria-hidden", "true");
-    const pa = document.createElementNS(NS, "path"); pa.setAttribute("d", d);
-    sv.appendChild(pa); return sv;
-  };
-  const rules = document.createElement("ul");
-  rules.className = "pt-rules";
-  [["M4 7h11l-3-3M20 17H9l3 3M4 17h3M17 7h3", "Every unit, shuffled",
-     "Questions are drawn at random from all " + unitCount + " units."],
-   ["M3 12s3.5-6 9-6c2 0 3.7.8 5 1.8M21 12s-3.5 6-9 6c-2 0-3.7-.8-5-1.8M4 20L20 4", "No feedback until the end",
-     "You find out what you got right when you finish, not as you go."],
-   ["M12 7v5l3 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z", "Against the clock",
-     "When the " + PRACTICE_TEST_MINUTES + " minutes run out, the test is marked as it stands."],
-   ["M5 12l4 4L19 6", "One answer each",
-     "No retries and no second chances \u2014 like the real thing."]].forEach(([d, t, b]) => {
-    const li = document.createElement("li");
-    li.className = "pt-rule";
-    const i = document.createElement("span"); i.className = "pt-rule-ico"; i.appendChild(ico(d));
-    const tx = document.createElement("span"); tx.className = "pt-rule-txt";
-    const tt = document.createElement("strong"); tt.textContent = t;
-    const bb = document.createElement("span"); bb.textContent = b;
-    tx.append(tt, bb);
-    li.append(i, tx);
-    rules.appendChild(li);
-  });
-  panel.appendChild(rules);
-
-  /* Where you stand. The last score is the "All units" Exam record,
-     which is what a Practice Test writes to (testKeyFor). */
-  const rec = document.createElement("div");
-  rec.className = "pt-record";
-  const last = (store.testStats || {})["ALL|exam"];
-  const recLab = document.createElement("span"); recLab.className = "pt-record-lab"; recLab.textContent = "Your record";
-  const recVal = document.createElement("span"); recVal.className = "pt-record-val";
-  /* No mention of the Phoenix banner here (build 234: "the practice
-     test screen mentioned the phoenix banner, don't do that"). The
-     record is the point of the box; the banner is Customize's business. */
-  if(store.practiceExamPerfect){ recVal.textContent = "100% \u2014 a perfect score"; rec.classList.add("is-passed"); }
-  else if(store.practiceTestPassed){
-    recVal.textContent = "Passed" + (last && typeof last.lastPct === "number" ? " \u00b7 last score " + last.lastPct + "%" : "");
-    rec.classList.add("is-passed");
-  }
-  else if(last && typeof last.lastPct === "number") recVal.textContent = "Last score " + last.lastPct + "% \u00b7 not passed yet";
-  else recVal.textContent = "Not taken yet";
-  rec.append(recLab, recVal);
-  panel.appendChild(rec);
-
-  const startBtn = document.createElement("button");
-  startBtn.type = "button"; startBtn.className = "next floatbtn playbtn"; startBtn.id = "nextbtn";
-  startBtn.textContent = "Start Practice Test";
-  startBtn.addEventListener("click", () => {
-    cfg.mode = "exam";
-    cfg.units = topicsIn(QUESTIONS);
-    cfg.versions = {};
-    const pool = freshOrder(QUESTIONS.map((q, i) => i)).slice(0, PRACTICE_TEST_SIZE);
-    beginRun(pool, null, PRACTICE_TEST_MINUTES);
-  });
-
-  stage.replaceChildren(panel, startBtn);
-  toTop();
-}
+/* showExamOptions() and showPracticeTestConfirm() - the Standard / Practice
+   Test picker and the Practice Test briefing - were retired in build 283.
+   Their exact code, and how to bring them back, is in
+   retired/practice-test.md. */
 
 /* ONE BUILDER FOR THE UNIT CARD'S PROGRESS, because there are two
    screens that draw unit cards and they had drifted. The test setup
@@ -61180,6 +60972,17 @@ function summarize(){
       saveStore();
     }
     if(practiceTestMinutes != null && pct === 100 && !timedOut && !store.practiceExamPerfect){
+      store.practiceExamPerfect = true;
+      saveStore();
+    }
+    /* THE PHOENIX WITHOUT THE PRACTICE TEST (build 283). The Practice Test
+       is retired (retired/practice-test.md), so the banner is earned by a
+       perfect Exam of PHOENIX_EXAM_SIZE questions or more instead - a real
+       sitting, not a retake and not a Virtual Room race. It writes the
+       same flag the Practice Test did, so everyone who already holds the
+       Phoenix keeps it and nothing new has to sync. */
+    if(cfg.mode === "exam" && order.length >= PHOENIX_EXAM_SIZE && pct === 100 && !timedOut
+       && runTrackable && !isMissedRetake && !inVirtualRoom && !store.practiceExamPerfect){
       store.practiceExamPerfect = true;
       saveStore();
     }
