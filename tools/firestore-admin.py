@@ -23,7 +23,7 @@ Usage
   python3 tools/firestore-admin.py prune [--days N] [--yes]
   python3 tools/firestore-admin.py purge --yes
   python3 tools/firestore-admin.py move <from-public-id> <to-public-id> [--yes]
-  python3 tools/firestore-admin.py move --finish [--yes]
+  python3 tools/firestore-admin.py move --finish [--only NAME] [--yes]
   python3 tools/firestore-admin.py merge <from-public-id> <to-public-id> [--bonus N] [--extra-from ID] [--yes]
 
 `prune` is the one to reach for: it removes only the rankings rows
@@ -704,8 +704,13 @@ def cmd_move(argv):
     confirmed = "--yes" in argv
     if "--finish" in argv:
         pending = 0
+        # --only NAME: finish just that account's note (exact first name),
+        # so one followed merge can be finished without the others.
+        only = argv[argv.index("--only") + 1] if "--only" in argv else None
         for old, note in notes.items():
             name = next((f.get("firstName") for c, f in rows if c == old), "?")
+            if only is not None and name != only:
+                continue
             if not note.get("done"):
                 pending += 1
                 print("  %-16s not followed yet - left alone" % name)
