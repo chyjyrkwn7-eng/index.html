@@ -9063,12 +9063,24 @@ the main account automatically"*, then *"You have full permission"*.
   account document, so no device could follow a merge for them. Their
   XP, right answers and week points ride a note beside the live account;
   both orphan rows were deleted.
-- **Old-build relics deleted, not credited**: Billyswole's level-11 row,
-  Hector, Rogelio and Vishal - rankings rows from before the class-wide
-  reset with no account behind them, and Billyswole's real account is
-  the one on the board. Staccatouser's second sign-up (level 1, 100 XP,
-  a code-keyed row that published its code) has a `__moved` note to the
-  real one and its row is gone.
+- **Billyswole, Hector, Rogelio and Vishal were credited, after a wrong
+  first call.** Their orphan rows were first judged pre-reset relics and
+  deleted; they were last active 09-23/24, AFTER the 09-22 reset - second
+  accounts with real progress, exactly like Cmilledge's. Credited from the
+  audit's numbers (week-of-09-21 points ARE their XP, all earned after the
+  reset; each matches its level on the curve): Vishal +4785/437,
+  Billyswole +3980/333, Rogelio +1470/188, Hector +490/118. **Check a
+  row's lastModified against FRESH_START_CUTOFF before calling it a
+  relic.** Staccatouser's second sign-up (level 1, 100 XP, a code-keyed
+  row that published its code) has a `__moved` note to the real one and
+  its row is gone.
+- **Vishal was overwritten by build 283 itself**, 25 minutes before 284
+  went live: a device last used 09-25 came back at 05:41 UTC and pushed
+  its 100-XP copy over his 8,610-XP account. His totals (8610 XP, 831
+  right) were written back from the audit snapshot with a fresh
+  `lastModified`, so a 283 device adopts them and a 284 device merges
+  them; his question history and hundos come back only if the device
+  that holds them opens on 284.
 - An automatic "save refused" bug report was drafted and refused - it
   would have written device data to a listable collection - so push
   failures are still silent.
