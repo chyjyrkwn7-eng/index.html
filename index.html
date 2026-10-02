@@ -37968,7 +37968,12 @@ function pushToCloud(){
    Set to 0 to disable. Raise it to draw a new line another time. */
 const FRESH_START_CUTOFF = 1790035200000;   /* 2026-09-22T00:00:00Z */
 
-function pullFromCloud(code, onDone){
+/* `adopt` (build 284): signing in or linking takes the account as it is
+   in the cloud and never pushes this device's own copy over it - that
+   copy may be a different account. Every other pull is the same account
+   coming back, and merges (syncSameAccount). */
+function adoptFromCloud(code, onDone){ return pullFromCloud(code, onDone, true); }
+function pullFromCloud(code, onDone, adopt){
   if(!fbDb){ onDone && onDone(false, "no-connection"); return; }
   try {
     fbDb.collection("progress").doc(code).get().then(docSnap => {
@@ -37982,13 +37987,11 @@ function pullFromCloud(code, onDone){
         onDone && onDone(false, "not-found");
         return;
       }
-      const cloudTime = (cloud && cloud.lastModified) || 0;
-      const localTime = store.lastModified || 0;
-      if(cloudTime > localTime){
+      if(adopt){
         applyLoadedData(cloud);
         persistLocally();
       } else {
-        pushToCloud();
+        syncSameAccount(cloud);
       }
       onDone && onDone(true, null);
     }).catch(() => { onDone && onDone(false, "error"); });
@@ -38057,13 +38060,9 @@ function attachLiveListener(code){
          and arming on it would re-open the same hole from the other
          side. */
       if(docSnap.metadata && docSnap.metadata.fromCache === false) hasSeenExist = true;
-      const cloud = docSnap.data();
-      const cloudTime = (cloud && cloud.lastModified) || 0;
-      const localTime = store.lastModified || 0;
-      if(cloudTime <= localTime) return; // our own write echoing back, or already up to date
-      applyLoadedData(cloud);
-      persistLocally();
-      onLiveUpdateApplied();
+      /* Merged, not taken (build 284 - see mergeSameAccount). Our own
+         write echoing back merges to nothing and pushes nothing. */
+      if(syncSameAccount(docSnap.data())) onLiveUpdateApplied();
     });
     /* Now actually reattaches on its own \u2014 see onSnapshotResilient's
        own comment for why this used to just go silently stale. */
@@ -38262,6 +38261,168 @@ function mergeLeavingAccount(src, note){
     }
   }
   store.lastModified = Date.now();
+}
+
+/* ---- TWO DEVICES, ONE ACCOUNT: MERGE, NEVER OVERWRITE (build 284) ----
+   Reported from a device: "on his two devices, he says he synced them but
+   each account is still a different level but I only see one in the
+   leaderboard". Sync was last-write-wins on the WHOLE document, decided
+   by lastModified - and every saveStore() stamps lastModified, including
+   the small saves boot makes before its first pull (a tour re-arm, a
+   study-time flush, a daily roll). So a device that had been away came
+   back, saved something trivial, found itself "newer" than the cloud and
+   pushed its stale copy over the other device's progress. Each device
+   kept re-asserting its own state: two levels, and one leaderboard row
+   flipping between them. Linking from Settings could do the same to the
+   account being linked TO.
+   So the progress half of the account is merged now, field by field, the
+   way two copies of ONE account have to be: every count takes the higher
+   side, every list takes both, every best takes the better. That can
+   never lose progress, it converges (merging again changes nothing), and
+   it does not matter which device's clock is ahead. Preferences - name,
+   character, theme, flags, friends - still come from the newer side,
+   where the newer choice is the right one.
+   NOT mergeLeavingAccount(), which ADDS: that joins two different
+   accounts, where nothing is shared. Two copies of one account share
+   their whole history, so adding would count it twice.
+   Returns { gained, otherHadLess }: whether `src` brought anything into
+   `dst`, and whether `dst` holds anything `src` lacked - which is what
+   decides whether this device has to push. Comparisons are on values,
+   never on a serialisation, so two devices cannot ping-pong over a
+   difference in how a map's keys happen to be ordered. */
+function mergeSameAccount(dst, src){
+  const res = { gained: false, otherHadLess: false };
+  if(!src || typeof src !== "object") return res;
+  const num = v => (typeof v === "number" && isFinite(v)) ? v : (Number(v) || 0);
+  const maxInto = (o, k, v) => {
+    const a = num(o[k]), b = num(v);
+    if(b > a){ o[k] = b; res.gained = true; } else if(a > b) res.otherHadLess = true;
+  };
+  const minPosInto = (o, k, v) => {
+    const a = num(o[k]), b = num(v);
+    if(b > 0 && (!(a > 0) || b < a)){ o[k] = b; res.gained = true; }
+    else if(a > 0 && (!(b > 0) || a < b)) res.otherHadLess = true;
+  };
+  const orInto = (o, k, v) => {
+    if(v === true && o[k] !== true){ o[k] = true; res.gained = true; }
+    else if(o[k] === true && v !== true) res.otherHadLess = true;
+  };
+  const mapOf = (o, k) => (o[k] && typeof o[k] === "object" && !Array.isArray(o[k])) ? o[k] : (o[k] = {});
+  const srcMap = k => (src[k] && typeof src[k] === "object" && !Array.isArray(src[k])) ? src[k] : {};
+  const eachKey = (a, b, fn) => { const seen = new Set(Object.keys(a).concat(Object.keys(b))); seen.forEach(fn); };
+  const maxMap = k => { const d = mapOf(dst, k), s = srcMap(k); eachKey(d, s, u => maxInto(d, u, s[u])); };
+  const minMap = k => { const d = mapOf(dst, k), s = srcMap(k); eachKey(d, s, u => minPosInto(d, u, s[u])); };
+  const orMap  = k => { const d = mapOf(dst, k), s = srcMap(k); eachKey(d, s, u => orInto(d, u, s[u])); };
+  const unionArr = (k, cap) => {
+    const a = Array.isArray(dst[k]) ? dst[k] : [], b = Array.isArray(src[k]) ? src[k] : [];
+    const add = b.filter(x => a.indexOf(x) < 0);
+    if(add.length){ dst[k] = a.concat(add).slice(-(cap || 300)); res.gained = true; }
+    if(a.some(x => b.indexOf(x) < 0)) res.otherHadLess = true;
+  };
+
+  /* counters */
+  const L = mapOf(dst, "lifetime"), SL = src.lifetime || {};
+  ["answered", "correct", "drillPlays", "examPlays", "gamePlays", "perfectTests", "points", "fullTests", "longestStreak"]
+    .forEach(k => maxInto(L, k, SL[k]));
+  /* per question: seen, missed, the recent misses */
+  const st = mapOf(dst, "stats"), sst = srcMap("stats");
+  eachKey(st, sst, k => {
+    const a = st[k], b = sst[k];
+    if(!b || typeof b !== "object"){ if(a) res.otherHadLess = true; return; }
+    if(!a || typeof a !== "object"){ st[k] = JSON.parse(JSON.stringify(b)); res.gained = true; return; }
+    maxInto(a, "n", b.n); maxInto(a, "m", b.m);
+    /* `rc` is when this question's most-missed list was last cleared:
+       a miss from before it stays cleared, whichever device still holds
+       it, or "Clear most missed" would come straight back from the
+       other phone. */
+    maxInto(a, "rc", b.rc);
+    const rc = num(a.rc);
+    const ra = (Array.isArray(a.r) ? a.r : []).filter(x => typeof x === "number" && x > rc);
+    const rb = (Array.isArray(b.r) ? b.r : []).filter(x => typeof x === "number" && x > rc);
+    if(Array.isArray(a.r) && ra.length !== a.r.length) a.r = ra;
+    const addR = rb.filter(x => ra.indexOf(x) < 0);
+    if(addR.length){ a.r = ra.concat(addR).sort((x, y) => x - y).slice(-20); res.gained = true; }
+    if(ra.some(x => rb.indexOf(x) < 0)) res.otherHadLess = true;
+  });
+  /* per test: plays and time are counts, the best is a best, "last" is
+     whichever was played last */
+  const ts = mapOf(dst, "testStats"), sts = srcMap("testStats");
+  eachKey(ts, sts, k => {
+    const a = ts[k], b = sts[k];
+    if(!b || typeof b !== "object"){ if(a) res.otherHadLess = true; return; }
+    if(!a || typeof a !== "object"){ ts[k] = Object.assign({}, b); res.gained = true; return; }
+    maxInto(a, "plays", b.plays); maxInto(a, "totalMs", b.totalMs);
+    if(typeof b.bestMs === "number") minPosInto(a, "bestMs", b.bestMs);
+    if(num(b.lastPlayedAt) > num(a.lastPlayedAt)){
+      ["lastPlayedAt", "lastElapsedMs", "lastPct"].forEach(f => { a[f] = b[f]; });
+      res.gained = true;
+    } else if(num(a.lastPlayedAt) > num(b.lastPlayedAt)) res.otherHadLess = true;
+  });
+  maxMap("studyLog"); maxMap("unitPerfects"); maxMap("unitBestPct"); maxMap("flareLevels");
+  minMap("unitBestMs"); minMap("gameHardcoreMs");
+  orMap("unitBlackStar");
+  if(dst.unitRuns || src.unitRuns){ if(!dst.unitRuns) dst.unitRuns = {}; maxMap("unitRuns"); }
+  /* Exam records per unit: the copy with more sittings behind it, and
+     the better best of the two */
+  { const d = mapOf(dst, "unitExam"), sm = srcMap("unitExam");
+    eachKey(d, sm, u => {
+      const a = d[u], b = sm[u];
+      if(!b){ if(a) res.otherHadLess = true; return; }
+      if(!a){ d[u] = Object.assign({}, b); res.gained = true; return; }
+      if(num(b.n) > num(a.n)){ d[u] = Object.assign({}, b, { best: Math.max(num(a.best), num(b.best)) }); res.gained = true; }
+      else { if(num(a.n) > num(b.n)) res.otherHadLess = true; maxInto(a, "best", b.best); }
+    }); }
+  /* Game mode's records (retired, kept): per unit, per speed */
+  ["unitGameBeat", "gameFarthest"].forEach(k => {
+    const d = mapOf(dst, k), sm = srcMap(k);
+    eachKey(d, sm, u => {
+      const a = (d[u] && typeof d[u] === "object") ? d[u] : (d[u] = {}), b = sm[u] || {};
+      eachKey(a, b, sp => { if(typeof b[sp] === "boolean" || typeof a[sp] === "boolean") orInto(a, sp, b[sp]); else maxInto(a, sp, b[sp]); });
+    });
+  });
+  /* the last twenty runs, from both */
+  { const a = Array.isArray(dst.testHistory) ? dst.testHistory : [], b = Array.isArray(src.testHistory) ? src.testHistory : [];
+    const key = h => h ? String(h.playedAt || h.ts || "") + "|" + String(h.label || "") + "|" + String(h.pct) : "";
+    const have = new Set(a.map(key)), theirs = new Set(b.map(key));
+    const add = b.filter(h => h && !have.has(key(h)));
+    if(add.length){
+      dst.testHistory = a.concat(add).sort((x, y) => num(y && (y.playedAt || y.ts)) - num(x && (x.playedAt || x.ts))).slice(0, 20);
+      res.gained = true;
+    }
+    if(a.some(h => h && !theirs.has(key(h)))) res.otherHadLess = true; }
+  ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "hundoDayBest", "bestTestStreak"]
+    .forEach(k => maxInto(dst, k, src[k]));
+  ["vrCounted", "vrTop3Rooms", "legacyChars"].forEach(k => unionArr(k));
+  ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "supernovaAchieved",
+   "starfallKept", "onboardingComplete", "fullTestsSeeded"].forEach(k => orInto(dst, k, src[k]));
+  if(src.mysteryColorsFound && typeof src.mysteryColorsFound === "object") orMap("mysteryColorsFound");
+  /* this week's board: only where both copies are on the same week */
+  if(src.weekKey && src.weekKey === dst.weekKey) maxInto(dst, "weekPoints", src.weekPoints);
+  return res;
+}
+
+/* Brings a cloud copy of THIS SAME account into the device (build 284).
+   The newer side supplies the preferences; the progress is merged either
+   way. Pushes only when this device holds something the cloud does not,
+   which is also what keeps two listening devices from echoing a merge back
+   and forth: once both hold the merge, neither has anything to add. */
+function syncSameAccount(cloud){
+  const cloudTime = (cloud && cloud.lastModified) || 0;
+  const localTime = store.lastModified || 0;
+  if(cloudTime > localTime){
+    const mine = JSON.parse(JSON.stringify(store));
+    applyLoadedData(cloud);
+    const r = mergeSameAccount(store, mine);
+    /* `gained` here means this device brought something the cloud lacks */
+    if(r.gained) saveStore(); else persistLocally();
+    return true;
+  }
+  const r = mergeSameAccount(store, cloud);
+  if(r.gained) persistLocally();
+  /* This device is the newer side, or holds something the cloud lacks:
+     either way the cloud is behind it, so it goes up. */
+  if(cloudTime < localTime || r.otherHadLess) scheduleCloudPush();
+  return r.gained;
 }
 
 function detachLiveListener(){
@@ -48317,7 +48478,7 @@ function showWelcomeCodeEntry(){
   syncBtn.addEventListener("click", () => {
     if(!verifiedCode) return;
     syncBtn.disabled = true; syncBtn.textContent = "Syncing\u2026";
-    pullFromCloud(verifiedCode, (ok, reason) => {
+    adoptFromCloud(verifiedCode, (ok, reason) => {
       if(ok){
         /* Signing in brings the account from another device, where the
            chat explainer has already been read (or will be) - not
@@ -54087,7 +54248,7 @@ function openUnitDetail(row, name, mode){
       QUESTIONS.forEach((q, i) => {
         if(!inUnit(i)) return;
         if(kind === "flagged"){ if(isFlagged(i)) delete store.flagged[KEYS[i]]; }
-        else { const st = store.stats[KEYS[i]]; if(st && st.r && st.r.length) store.stats[KEYS[i]] = Object.assign({}, st, { r: [] }); }
+        else { const st = store.stats[KEYS[i]]; if(st && st.r && st.r.length) store.stats[KEYS[i]] = Object.assign({}, st, { r: [], rc: Date.now() }); }
       });
       saveStore();
       confirmBox.hidden = true; resetBtn.hidden = false;
@@ -61367,7 +61528,7 @@ function showAppearance(opts){
       const hasLocalProgress = store.lifetime.points > 0 || Object.keys(store.testStats).length > 0;
       if(hasLocalProgress && !window.confirm("This device already has its own progress. Linking will replace it with whatever's saved under that code instead. Continue?")) return;
       linkBtn.disabled = true; linkBtn.textContent = "Linking\u2026";
-      pullFromCloud(code, (ok, reason) => {
+      adoptFromCloud(code, (ok, reason) => {
         if(ok){
           setSyncCode(code);
           attachLiveListener(code);
@@ -74288,7 +74449,7 @@ if(launchCode && !syncCode && !syncOff){
   adoptedLaunchCode = true;
   setSyncCode(launchCode);
   onFirebaseReady(() => {
-    pullFromCloud(launchCode, (ok, why) => {
+    adoptFromCloud(launchCode, (ok, why) => {
       if(ok){
         /* Boot has already drawn Welcome by now on a wiped device, and
            leaving somebody there on top of restored progress is the
