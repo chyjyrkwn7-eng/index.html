@@ -5822,6 +5822,41 @@ def check_b284(br):
     ctx.close()
 
 
+def check_b285(br):
+    """Build 285. (1) The Question bank's two choices fill its bar - the
+    grid was a fixed three columns and left an empty third beside All and
+    Flagged. (2) Unit details' lone Flagged button spans the whole row,
+    bigger, with its title centred. Written against 284, where both fail."""
+    print("\n58. build 285: the bank switch fills its bar, the Flagged button is full width and centred")
+    for w, h, label in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+          try{
+          document.documentElement.classList.remove('is-reloading'); document.getElementById('pushing-update')?.remove();
+          store.seenUnitSelectTour = true; cfg.mode = 'drill'; const unit = topicsIn(QUESTIONS)[0]; cfg.units = [unit];
+          showSetup(); await wait(700);
+          document.getElementById('nextbtn')?.click(); await wait(800);
+          const l = document.querySelector('.unitoptions-modal-sheet .bank-opts'), lr = l.getBoundingClientRect();
+          const os = [...l.querySelectorAll('.bank-opt')].map(o => o.getBoundingClientRect());
+          out.bank = { inner: Math.round(lr.width), used: Math.round(os[os.length - 1].right - os[0].left), n: os.length };
+          document.querySelector('.unitoptions-modal-scrim')?.click(); await wait(500);
+          const row = [...document.querySelectorAll('.pick')].find(r => (r.querySelector('input') || {}).value === unit);
+          row.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 50, clientY: 50, button: 0 }));
+          await wait(600); row.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 50, clientY: 50 })); await wait(900);
+          const d = document.querySelector('.unitdetail-door'), p = d.parentElement.getBoundingClientRect(), dr = d.getBoundingClientRect();
+          const t = d.querySelector('.unitdetail-doortitle').getBoundingClientRect(), c = d.querySelector('.unitdetail-doorcount').getBoundingClientRect();
+          out.door = { w: Math.round(dr.width), row: Math.round(p.width), h: Math.round(dr.height),
+                       off: Math.round(Math.abs(((t.left + c.right) / 2) - (dr.left + dr.width / 2))) };
+          } catch(e){ out.threw = String(e && e.stack || e); }
+          return out; }""")
+        b, d = r.get("bank") or {}, r.get("door") or {}
+        check("%s: All and Flagged fill the Question bank bar" % label,
+              b.get("n") == 2 and b.get("inner", 0) - b.get("used", 0) <= 12, r.get("bank") or r.get("threw"))
+        check("%s: the Flagged button spans its row, is taller, and its title is centred" % label,
+              d.get("w") == d.get("row") and d.get("h", 0) >= 56 and d.get("off", 99) <= 3, r.get("door") or r.get("threw"))
+        ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     only = os.environ.get("ONLY_B245")
@@ -5900,6 +5935,7 @@ def main():
             check_b282(br)
             check_b283(br)
             check_b284(br)
+            check_b285(br)
         finally:
             br.close()
     SERVER.shutdown()

@@ -14143,6 +14143,18 @@
   .unitdetail-statlab{ margin:.2rem 0 0; font-size:.68rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.7); }
   .unitdetail-statsub{ margin:.15rem 0 0; font-size:.7rem; color:var(--soft); line-height:1.3; }
   .unitdetail-doors{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:.5rem; margin-top:.75rem; }
+  /* ONE DOOR, FULL WIDTH AND CENTRED (build 285): "the flag button needs
+     to be centered/bigger". With Most missed gone Flagged was alone in the
+     left half of a two-column row. A lone door takes the whole row, bigger,
+     its title and count centred together and the line under them centred. */
+  .unitdetail-doors:has(> .unitdetail-door:only-child){ grid-template-columns:minmax(0,1fr); }
+  .unitdetail-doors > .unitdetail-door:only-child{
+    grid-template-columns:auto auto; justify-content:center; text-align:center;
+    padding:1rem 1.1rem; min-height:60px; gap:.25rem .5rem;
+  }
+  .unitdetail-doors > .unitdetail-door:only-child .unitdetail-doortitle{ font-size:1.02rem; }
+  .unitdetail-doors > .unitdetail-door:only-child .unitdetail-doorcount{ font-size:1.12rem; }
+  .unitdetail-doors > .unitdetail-door:only-child .unitdetail-doorsub{ font-size:.76rem; }
   /* REAL BUTTONS (build 270): "they don't look like buttons, they are
      missing that same button look I always tell you about" - and "could
      be a little darker". The dark-glass recipe every secondary button
@@ -14294,8 +14306,11 @@
   [data-reduce-motion="true"] .unitver, [data-reduce-motion="true"] .unitver-card{ transition-duration:.01s; }
 
   /* ---- THE QUESTION BANK (build 249): a three-way switch and one line ---- */
+  /* Columns follow the number of banks (build 285): it was a fixed three,
+     and with Most missed gone All and Flagged filled two thirds of the bar
+     and left an empty third beside them. */
   .unitoptions-modal-sheet .bank-opts{
-    display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:.3rem; padding:.3rem;
+    display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0, 1fr); gap:.3rem; padding:.3rem;
     border-radius:1rem; background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.09);
   }
   .bank-opt{
@@ -57030,7 +57045,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-02-284";
+const APP_BUILD = "2026-10-02-285";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

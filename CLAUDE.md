@@ -9085,3 +9085,49 @@ the main account automatically"*, then *"You have full permission"*.
   would have written device data to a listable collection - so push
   failures are still silent.
 
+### Build 285 - the bank switch, the Flagged button, and credits applied on the server
+
+- **The Question bank bar fills its width.** It was a fixed three-column
+  grid from when there were three banks; with Most missed gone, All and
+  Flagged filled two thirds and left an empty third. Columns now follow
+  the number of banks (`grid-auto-flow:column`).
+- **Unit details' Flagged button is full width, bigger and centred** - a
+  lone door takes the whole row (`:only-child`) instead of the left half
+  of a two-column grid. `check_b285` holds both; it fails on 284.
+- **Pending credits were applied on the server, not left for devices.**
+  A credit note waits for that person to open the app, and until then
+  the board looks wrong ("Billyswole is only level 19, but I thought he
+  was level 18 on one account and level 11 on the other"). For each
+  pending note: the counters were added to the account, the id appended
+  to `creditsApplied` and the note marked done - so a device that opens
+  later neither pays it again nor loses it (the 284 merge takes the
+  larger counter) - and the rankings row was set to the app's own
+  `levelProgress()` level. **Levels do not add**: 18 + 11 is not 29,
+  because each level costs more than the last; Billyswole's two accounts
+  together are 12,655 XP, which is level 24.
+- **MERGES NOW HAPPEN ON THE SERVER, NOT WHEN A DEVICE OPENS.** *"I need
+  all their stuff to merge and sync automatically."* A merge note waits
+  for the duplicate's device, which can be days. So the merge itself is
+  run server-side with the APP'S OWN `mergeLeavingAccount()` - both
+  documents loaded into a clean page, `applyLoadedData(main)`, then
+  `mergeLeavingAccount(dup, {merge:true})`, and the resulting `store`
+  written back whole, exactly as the app's `set(store)` would - so the
+  rules cannot drift from the app's. The duplicate's `__merge` note is
+  replaced by a `__moved` note (take the merged account whole), so its
+  device switches over without adding its progress a second time, and
+  the duplicate's row is deleted. Done for Tsale -> TSale (level 19),
+  Bxandonn -> Brandon Rubio (level 27: ~35 runs over five days, never
+  two at the same moment, both the ghost character - one person, two
+  devices), Cadet CB -> Cadetcabble. Back up every account first
+  (`backup-<time>.json`); nothing here deletes the duplicate's document.
+- **Z is the one exception, and why.** His active phone writes to an
+  account in a very old format (no public id, code-keyed row) - a build
+  from before move notes AND before the 284 sync fix, so it pushes its
+  own copy over anything the server changes. A server-side merge into
+  that account would be undone on his next launch. His `__merge` note
+  completes the moment the app updates. The empty "z" account's 2,690
+  XP exists only on its device, so its merge note stays device-side too.
+- **The level-1 rows are real.** Every level-1 account has finished no
+  test - XP is only paid when a test finishes - so 100 XP with some right
+  answers is expected.
+
