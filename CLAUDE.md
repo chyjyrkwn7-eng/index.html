@@ -9131,3 +9131,75 @@ the main account automatically"*, then *"You have full permission"*.
   test - XP is only paid when a test finishes - so 100 XP with some right
   answers is expected.
 
+
+### Build 286 - the unlock hold survives a sync
+
+*"Now that these accounts get fixed, did anyone meet the requirement of
+any unlock? If so, just put it at the end of their next [test]."*
+
+- **Nobody crossed an unlock.** Measured with the app's own
+  `lockedCharacterSet()`, `earnedBannerSet()` and `rankOf()` at each
+  person's XP before and after today's credits and merges: levels rose
+  (Vishal 19->25, Billyswole 19->24, Barron 13->18, Rogelio 11->13,
+  Brandon 25->27, TSale 18->19) but no rank, character or banner. Ranks
+  need badges as well as levels, and none of them has one.
+- **A hold replays UNLOCKS, never level-ups.** `mergeHold` only moves
+  the "before" side of the rank, character, banner and badge diffs in
+  `summarize()`; the results XP bar is built from real points, so nobody
+  watches levels they already have climb again. Asked for exactly that:
+  *"Don't show the level ups ... only show any unlock they got from
+  merging."* The merged accounts keep their holds (Brandon's badge plays
+  after his next test); the five credited accounts had one set and it was
+  CLEARED again, since none of them crossed an unlock and a hold with
+  nothing in it only costs a no-op.
+- **`mergeSameAccount()` now carries the hold.** A device whose own copy
+  was newer - one boot save is enough - kept its copy with no hold in it
+  and pushed that up, so the unlocks would have played on Home. A hold is
+  taken from either side unless a test has spent it since
+  (`mergeHoldDone`, set where `summarize()` clears it); of two, the lower
+  baseline wins. `check-sync` section 8c; it fails on 285.
+- **Level 40+ with no badge is real for most.** XP comes from every
+  right answer; a badge is 12-15 perfect full-unit runs of ONE unit.
+  Napoleon (41) has 45 hundos spread thin, Ht4l24 (39) has 11.
+- **Lost hundos were credited, by count, into units already taken.** The
+  rows they came from kept only totals (Cmilledge's second account 18 -
+  a minimum, Billyswole 5, Vishal 5, Hector 1); which units they were in
+  is gone. So each count went round-robin into units the person has
+  answered or scored in, never one they have not, each held to one short
+  of its badge - "make it closer", never force it. Nothing had to be
+  forced. Barron's and Vishal's pre-overwrite hundos are unknown and
+  were not guessed at.
+- **A hundo is two numbers and both had to move.** `unitPerfects` is
+  badge progress per unit; the count people SEE (`hundosOf()`, the
+  rankings row) is `lifetime.perfectTests`. The first write moved only
+  the per-unit tallies and the visible count stayed put; both now agree
+  (Cmilledge 33, Billyswole 8, Vishal 5, Hector 12).
+- **Second round, asked for by amount.** Barron +1,500 XP and 3 hundos
+  (one each in Racial Profiling, Constitution, Multiculturalism - the
+  units he has taken), level 18 -> 20; Cap +1,000 XP and 1 hundo
+  (Racial Profiling, now 10/15), level 33 -> 34. Same rules: only units
+  already taken, one short of a badge at most, no unlock crossed so no
+  hold. `/tmp`-side script, account + row patched together.
+- **The audit that went with it, and what each oddity turned out to be**,
+  so nobody re-investigates them:
+  - Every pre-2026-09-22 account is dead by `FRESH_START_CUTOFF`, not
+    missing progress (Lol x5, Madison x2, Captain Wharton, Hhhh...).
+  - OdinSavior has a second, level-6 account from the night of the
+    reset with no public id. Every stat in it is in the level-45 account
+    with an equal or higher count and its study day is larger - the same
+    device moved to a new code and kept everything. Nothing missing.
+  - The nameless account sharing Hughesha's public id and friend code is
+    her earlier code; both of its tests are in Hughesha's history.
+  - The two Staccatouser accounts are two sign-ups by one person, and
+    the one with no row has nothing in it.
+  - Cap Cam's move note to Cap is done and its 100 XP went with it.
+  - The level-1 rows (AWilliams, Believein1, brandon_guajardo95, cbill80,
+    Felton, Mjohnson, Staccatouser) are distinct people: different
+    names, friend codes and characters, nobody's progress overlaps
+    theirs, and none has finished a test. Felton and Mjohnson signing
+    up in the same minute is the class opening the app together - so
+    did Ciera, Levni, Hughesha and Tsale that evening.
+  - Two rows were stale against their accounts and were patched:
+    Brandon Rubio's (16 hundos / 0 badges -> 22 / 1, from the merge) and
+    Harris's, which had no `xp` field at all.
+  - Z is still the one open item - see above.

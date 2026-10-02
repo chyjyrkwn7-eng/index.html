@@ -695,6 +695,47 @@ with sync_playwright() as pw:
           r["done"]["after"] == r["done"]["before"], str(r["done"]))
     ctx.close()
 
+    # ---- 8c. the unlock hold travels with the account ----
+    # Build 286. A merge or credit sets mergeHold so what it unlocks plays
+    # after the next test. A device whose own copy was newer kept its
+    # copy without the hold and pushed it up, so the unlocks played on
+    # Home instead. Fails on 285.
+    print("\n8c. the unlock hold survives a sync, and a spent one stays spent")
+    ctx = br.new_context(viewport={"width": 834, "height": 1194})
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.drill.v1', '%s');"
+                        "localStorage.setItem('class26e.synccode','NOVA-2601');}catch(e){}" % STORE)
+    pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
+    pg.evaluate("()=>document.getElementById('splashscreen')?.remove()")
+    r = pg.evaluate("""()=>{
+      const clone = o => JSON.parse(JSON.stringify(o));
+      const base = clone(store); base.mergeHold = null; base.mergeHoldDone = 0;
+      const hold = (pts, at) => ({ points: pts, perfects: {}, chars: [], banners: [], at });
+      const out = {};
+      if(typeof mergeSameAccount !== 'function') return { none: true };
+      /* (a) the cloud carries a hold, this device's newer copy does not */
+      const A = clone(base), B = clone(base); B.mergeHold = hold(500, 1000);
+      mergeSameAccount(A, B); out.a = A.mergeHold ? A.mergeHold.points : null;
+      /* (b) a test on this device spent the hold after it was set */
+      const C = clone(base), D = clone(base); C.mergeHoldDone = 2000; D.mergeHold = hold(500, 1000);
+      mergeSameAccount(C, D); out.b = C.mergeHold;
+      /* ... and the device holding the stale copy learns it was spent */
+      const E = clone(base), F = clone(base); E.mergeHold = hold(500, 1000); F.mergeHoldDone = 2000;
+      mergeSameAccount(E, F); out.b2 = E.mergeHold;
+      /* (c) two holds: the lower baseline is kept */
+      const G = clone(base), H = clone(base); G.mergeHold = hold(900, 3000); H.mergeHold = hold(400, 3100);
+      mergeSameAccount(G, H); out.c = G.mergeHold && G.mergeHold.points;
+      /* (d) and it survives a cloud copy coming back through the listener path */
+      const cloud = clone(base); cloud.mergeHold = hold(700, Date.now()); cloud.lastModified = 1;
+      store.mergeHold = null; store.mergeHoldDone = 0; store.lastModified = Date.now();
+      syncSameAccount(cloud); out.d = store.mergeHold ? store.mergeHold.points : null;
+      return out; }""")
+    check("a hold on the other copy is kept when this device's copy is newer",
+          r.get("a") == 500 and r.get("d") == 700, str(r))
+    check("a hold a test has already spent is not brought back, on either side",
+          r.get("b") is None and r.get("b2") is None, str(r))
+    check("of two holds, the lower baseline is kept", r.get("c") == 400, str(r))
+    ctx.close()
+
     # ---- 7. the sync code never reaches a collection anyone can list ----
     # `leaderboard` and `vrooms` can both be ENUMERATED by anyone - this
     # repo's own firestore-admin.py lists them over plain REST with no

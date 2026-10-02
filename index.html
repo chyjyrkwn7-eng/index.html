@@ -36333,6 +36333,7 @@ function applyLoadedData(got){
         banners: Array.isArray(got.mergeHold.banners) ? got.mergeHold.banners.filter(x => typeof x === "string") : [],
         at: Number(got.mergeHold.at) || 0 }
     : null;
+  store.mergeHoldDone = Number(got.mergeHoldDone) || 0;
   /* The weekly board's two fields. weekPoints defaults to 0 and weekKey
      to THIS week rather than to null: an existing account has a lifetime
      total but no record of when any of it was earned, and crediting all
@@ -38380,6 +38381,25 @@ function mergeSameAccount(dst, src){
     const a = num(o[k]), b = num(v);
     if(b > a){ o[k] = b; res.gained = true; } else if(a > b) res.otherHadLess = true;
   };
+  /* THE UNLOCK HOLD TRAVELS WITH THE ACCOUNT (build 286). A merge or a
+     credit - on a device or on the server - sets `mergeHold` so what it
+     unlocks plays at the end of the next test. Without this, a device
+     whose copy was newer (one boot save is enough) kept its own copy
+     with no hold in it and pushed that up: the hold was gone and the
+     unlocks played on Home instead. A hold is taken from either side
+     unless a test has spent it since (`mergeHoldDone`); of two, the
+     lower baseline wins, as a second merge already keeps the first. */
+  {
+    maxInto(dst, "mergeHoldDone", src.mergeHoldDone);
+    const done = num(dst.mergeHoldDone);
+    const live = h => !!(h && typeof h === "object" && typeof h.points === "number" && num(h.at) > done);
+    if(dst.mergeHold && !live(dst.mergeHold)) dst.mergeHold = null;
+    if(live(src.mergeHold)){
+      if(!dst.mergeHold || src.mergeHold.points < dst.mergeHold.points){
+        dst.mergeHold = JSON.parse(JSON.stringify(src.mergeHold)); res.gained = true;
+      } else if(src.mergeHold.points > dst.mergeHold.points) res.otherHadLess = true;
+    } else if(dst.mergeHold) res.otherHadLess = true;
+  }
   const minPosInto = (o, k, v) => {
     const a = num(o[k]), b = num(v);
     if(b > 0 && (!(a > 0) || b < a)){ o[k] = b; res.gained = true; }
@@ -57045,7 +57065,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-02-285";
+const APP_BUILD = "2026-10-02-286";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -60336,6 +60356,9 @@ function summarize(){
       /* Celebrated now, so never again. */
       store.retroBadgePending = [];
       store.mergeHold = null;
+      /* when the hold was spent, so another device's copy of it is not
+         taken back up by the sync (build 286) */
+      store.mergeHoldDone = Date.now();
       saveStore();
     }
     if(badgesEarnedThisRun.length){
