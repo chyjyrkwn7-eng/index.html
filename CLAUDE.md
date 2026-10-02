@@ -9203,3 +9203,33 @@ any unlock? If so, just put it at the end of their next [test]."*
     Brandon Rubio's (16 hundos / 0 badges -> 22 / 1, from the merge) and
     Harris's, which had no `xp` field at all.
   - Z is still the one open item - see above.
+
+### Build 287 - Virtual Room screens, mode descriptions, and Z merged on the server
+
+- **Every mode card says what it IS, then what it is best for.** Drill
+  and Exam say they are tests; Review says it is not one (reading the
+  study guides, nothing scored) and lost its "no XP, no hundos" line;
+  Virtual Room says it is tests taken together. Same two beats on every
+  card, so they read as a set.
+- **Host and Join are mode cards**, the same `.modecard` as the mode
+  screen, with coloured `modeIcon("host")` / `modeIcon("join")`. Host
+  does not say "Private": a room starts invite-only and can be opened
+  from the lobby, so the card says that instead.
+- **The lobby toggle is "Open room"**, with a line under it that says
+  what On and Off each mean (`openHintText()`), rather than a bare
+  switch whose state had to be guessed at.
+- **An open room in a match is still listed**, marked "In a match", and
+  joining one lands you in the lobby: the Ready button reads "Match in
+  progress" and says you are in the next one. `openRoomsFrom()` no
+  longer filters on status; staleness is by last presence beat. A
+  room's settings line appears only when something is set.
+- **A merge note can carry `base`** (`progressSinceBase()`). Z's phone
+  runs a build from before the 2026-09-22 reset that predates move notes
+  and pushes its whole document on every launch (`firebaseBecameReady`
+  pushes before it pulls), so a server change to the account it uses
+  cannot stick and his merge could not wait for the phone. His two
+  accounts were merged on the server into the one on the board, and the
+  note on his old code carries the old account as merged; when the phone
+  finally updates it adds only the difference. Only the fields
+  `mergeLeavingAccount()` ADDS are reduced - every max, min, either and
+  union is already safe to apply twice. `check-sync` 8d; fails on 286.

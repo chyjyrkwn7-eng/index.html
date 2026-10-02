@@ -5095,6 +5095,36 @@
     font-size:.8rem; line-height:1.4; color:var(--soft); text-align:left;
   }
   .vrc-note-icon{ flex:0 0 auto; width:1.1rem; height:1.1rem; opacity:.8; }
+  /* The open-room list's empty state and row lines (build 287) */
+  .rooms-empty{ display:flex; flex-direction:column; align-items:center; text-align:center; gap:.7rem;
+    padding:2.2rem 1.4rem; margin:.4rem 0; border-radius:1.1rem;
+    background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.09); }
+  .rooms-empty-icon{ display:grid; place-items:center; width:3.4rem; height:3.4rem; border-radius:1rem;
+    background:rgba(63,227,168,.1); border:1px solid rgba(63,227,168,.28); }
+  .rooms-empty-icon .modeicon{ width:1.9rem; height:1.9rem; }
+  .rooms-empty-title{ margin:.3rem 0 0; font-family:var(--serif); font-size:1.18rem; font-weight:800; color:var(--ink); }
+  .rooms-empty-text{ margin:0; max-width:24rem; font-size:.95rem; line-height:1.5; color:var(--soft); }
+  .screen-rooms .rooms-refresh{ margin-top:1.4rem; }
+  .room-state{ font-weight:800; }
+  .room-state.is-lobby{ color:#3FE3A8; }
+  .room-state.is-match{ color:#FFB547; }
+  .room-row-settings{ margin-top:.15rem; }
+  /* Bigger type on this screen (build 287): it read small on a phone and
+     smaller still on an iPad. */
+  .screen-rooms > .friend-hint{ font-size:.95rem; line-height:1.5; margin-bottom:.4rem; }
+  .screen-rooms .room-row{ padding-top:.75rem; padding-bottom:.75rem; }
+  .screen-rooms .room-row .friend-row-name{ font-size:1.05rem; }
+  .screen-rooms .room-row .friend-row-sub{ font-size:.88rem; line-height:1.45; }
+  @media (min-width:40rem){
+    .screen-rooms > .friend-hint{ font-size:1.02rem; }
+    .screen-rooms .room-row .friend-row-name{ font-size:1.18rem; }
+    .screen-rooms .room-row .friend-row-sub{ font-size:.96rem; }
+    .rooms-empty{ padding:3rem 2rem; gap:.85rem; }
+    .rooms-empty-icon{ width:4rem; height:4rem; }
+    .rooms-empty-title{ font-size:1.4rem; }
+    .rooms-empty-text{ font-size:1.05rem; max-width:28rem; }
+    .panel.screen-vroom-choice .vrc-modecard .modecarddesc{ font-size:.98rem; }
+  }
   .vrc-note-icon svg{ width:100%; height:100%; }
   @media (min-width:40rem){
     .vrc-games{ margin-top:1.4rem; gap:.65rem; }
@@ -11374,6 +11404,18 @@
      is. Fixed rather than a theme stop, like the Virtual Room's blue
      beside it: the meaning does not change with the accent. */
   .modeicon-review .modeiconpath{ stroke:#4ADE80; }
+  /* The Virtual Room's two ways in (build 287), coloured like the modes */
+  .modeicon-host .modeiconpath{ stroke:#B48CFF; }
+  .modeicon-join .modeiconpath{ stroke:#3FE3A8; }
+  /* THE TWO WAYS IN ARE MODE CARDS (build 287): "Those two options are
+     small and the Liquid Glass makes them hard to see ... the host a room
+     and the join a room buttons need to match the mode selection
+     buttons." Same card, same icon row, same type as Drill and Exam -
+     stacked on a phone, side by side from tablet up. */
+  .panel.screen-vroom-choice .vrc-modecards{ width:100%; max-width:44rem; margin:1.6rem auto 0; }
+  .panel.screen-vroom-choice .vrc-modecard{ min-height:9rem; }
+  .panel.screen-vroom-choice .vrc-modecard.is-busy{ cursor:progress; }
+  .panel.screen-vroom-choice .vrc-modecard.is-busy .modeicon{ animation:vrc-busy 1s ease-in-out infinite; }
   .modecard.locked .modeicon-review .modeiconpath{ stroke:var(--soft); }
   .modecard.locked .modeicon-drill .modeiconpath,
   .modecard.locked .modeicon-exam .modeiconpath{ stroke:var(--soft); }
@@ -38196,6 +38238,48 @@ function applyAccountCredit(note){
   try{ onLiveUpdateApplied(); }catch(e){}
   return true;
 }
+/* ONLY WHAT WAS PLAYED SINCE THE SERVER MERGED IT (build 287). A merge
+   note normally brings the leaving device's WHOLE store along, because
+   until the device opens nothing else has it. When the server has
+   already folded that account in - done for Z, whose phone runs a build
+   from before move notes and overwrites its own document on every
+   launch, so the merge could not wait for it - the note carries `base`,
+   the account as it stood at that moment, and only the difference is
+   added on top. Without this the device would add everything a second
+   time. Only the fields mergeLeavingAccount() ADDS are reduced; every
+   max, min, "either" and union is already idempotent, and the target
+   holds the base's share of each. Clamped at zero, so a device that
+   somehow has less than the base adds nothing rather than taking away. */
+function progressSinceBase(src, base){
+  const num = v => Number(v) || 0;
+  const out = JSON.parse(JSON.stringify(src));
+  const less = (a, b) => Math.max(0, num(a) - num(b));
+  const L = out.lifetime || (out.lifetime = {}), BL = base.lifetime || {};
+  ["answered", "correct", "drillPlays", "examPlays", "gamePlays", "perfectTests", "points", "fullTests"]
+    .forEach(k => { L[k] = less(L[k], BL[k]); });
+  const bs = base.stats || {};
+  Object.keys(out.stats || {}).forEach(k => {
+    const a = out.stats[k] || {}, b = bs[k];
+    if(!b) return;
+    const seen = new Set((b.r || []).filter(x => typeof x === "number"));
+    out.stats[k] = { n: less(a.n, b.n), m: less(a.m, b.m), r: (a.r || []).filter(x => typeof x === "number" && !seen.has(x)) };
+  });
+  const bts = base.testStats || {};
+  Object.keys(out.testStats || {}).forEach(k => {
+    const a = out.testStats[k], b = bts[k];
+    if(!a || !b) return;
+    a.plays = less(a.plays, b.plays); a.totalMs = less(a.totalMs, b.totalMs);
+  });
+  ["studyLog", "unitPerfects", "unitRuns"].forEach(k => {
+    if(!out[k] || !base[k]) return;
+    Object.keys(out[k]).forEach(u => { out[k][u] = less(out[k][u], base[k][u]); });
+  });
+  const had = new Set((base.testHistory || []).map(t => t && t.playedAt).filter(Boolean));
+  out.testHistory = (out.testHistory || []).filter(t => t && !had.has(t.playedAt));
+  ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions"].forEach(k => { out[k] = less(out[k], base[k]); });
+  if(base.weekKey && base.weekKey === out.weekKey) out.weekPoints = less(out.weekPoints, base.weekPoints);
+  return out;
+}
 function followAccountMove(from, to, noteRef, note){
   fbDb.collection("progress").doc(to).get().then(target => {
     if(!target.exists || from !== syncCode) return;
@@ -38203,7 +38287,8 @@ function followAccountMove(from, to, noteRef, note){
     /* A MERGE NOTE BRINGS THIS DEVICE'S PROGRESS ALONG (build 279). Taken
        as a plain copy BEFORE anything is switched, because setSyncCode
        and applyLoadedData below replace `store` field by field. */
-    const leaving = (note && note.merge === true) ? JSON.parse(JSON.stringify(store)) : null;
+    let leaving = (note && note.merge === true) ? JSON.parse(JSON.stringify(store)) : null;
+    if(leaving && note.base && typeof note.base === "object"){ try{ leaving = progressSinceBase(leaving, note.base); }catch(e){} }
     detachLiveListener();
     setSyncCode(to);
     applyLoadedData(cloud);
@@ -43795,6 +43880,19 @@ function modeIcon(kind){
     svg.append(p1, p2);
     svg.appendChild(mk("M2.5 20c0-3.6 2.7-6.5 6-6.5s6 2.9 6 6.5"));
     svg.appendChild(mk("M14 15c2.6 0 4.7 2.2 4.7 5"));
+  } else if(kind === "host"){
+    /* HOST A ROOM: a doorway with a plus - a room of your own to open
+       (build 287: "the icons need to look like the other mode icons too
+       just colored"). Outline, one colour, the same weight as the rest. */
+    svg.appendChild(mk("M5 21V5.5A1.5 1.5 0 016.5 4h7A1.5 1.5 0 0115 5.5V21"));
+    svg.appendChild(mk("M3 21h14"));
+    svg.appendChild(mk("M12 12.5h.01"));
+    svg.appendChild(mk("M19.5 8v6M16.5 11h6"));
+  } else if(kind === "join"){
+    /* JOIN AN OPEN ROOM: an arrow going in through a doorway. */
+    svg.appendChild(mk("M14 4h4.5A1.5 1.5 0 0120 5.5v13a1.5 1.5 0 01-1.5 1.5H14"));
+    svg.appendChild(mk("M3.5 12H14"));
+    svg.appendChild(mk("M10.5 8.5L14 12l-3.5 3.5"));
   } else if(kind === "review"){
     /* An open book. The one mode that is reading rather than
        answering, so it should not look like any of the others - the
@@ -53799,10 +53897,14 @@ function showModeSelect(){
   cards.className = "modecards";
 
   const MODES = [
+    /* WHAT EACH MODE IS, THEN WHAT IT IS BEST FOR (build 287): "drill
+       ... needs to mention it's a test. Exam needs to mention it's a
+       test. Review needs to mention it's not a test ... Virtual room
+       needs to mention its tests." Same two beats on every card. */
     { value: "drill", title: "Drill",
-      desc: "See right away if you're right, and try again until you get it. Best for learning." },
+      desc: "A test where you don't move on until you get each question right. Best for learning." },
     { value: "exam", title: "Exam",
-      desc: "No feedback until the end, just like the real thing. Best for testing yourself." },
+      desc: "A test with no feedback until the end, just like the real thing. Best for testing yourself." },
     /* THIRD, UNDER EXAM (build 245): "The review option on the mode
        selection screen should not be at the bottom on the iPhone, it'll
        need to be the 3rd one listed, under exam instead." One list, so
@@ -53820,9 +53922,9 @@ function showModeSelect(){
        score, and anything else would make it the cheapest way to farm
        a level. */
     { value: "review", title: "Review",
-      desc: "Browse every question with its correct answer, for the units you pick. Nothing is scored \u2014 no XP, no hundos, no badge progress." },
+      desc: "Not a test \u2014 go through the study guide questions with their answers, unit by unit. Best for going over material." },
     { value: "vroom", title: "Virtual Room",
-      desc: "Start or join a live lobby and take the same test at the same time as everyone else. See where you placed at the end." }
+      desc: "Take tests together, live \u2014 everyone answers the same questions at the same time. Best for studying with classmates." }
   ];
 
   MODES.forEach(m => {
@@ -53893,7 +53995,7 @@ function showModeSelect(){
          hardcoding a fixed opposite direction lets that shared,
          already-correct logic decide for both consistently. */
       { target: '.modecard[data-mode="vroom"]', align: "left", vplacement: "below",
-        text: "Virtual Room lets you and your classmates take the same test together, live, and see how everyone ranks when it's done." }
+        text: "Virtual Room is studying together: you and your classmates take the same test at the same time, live." }
     ]);
   }
 }
@@ -57065,7 +57167,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-02-286";
+const APP_BUILD = "2026-10-02-287";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -62499,7 +62601,9 @@ function showVirtualRoomChoice(){
 
   const sub = document.createElement("p");
   sub.className = "cal-sub"; sub.style.textAlign = "center";
-  sub.textContent = "Everyone in the lobby takes the same test at the same time. See where you placed the moment everyone's finished.";
+  /* "The virtual room description needs to be a smidge better, needs to
+     mention studying together" (build 287). */
+  sub.textContent = "Study together. Everyone in the room takes the same test at the same time, and you see how you all did at the end.";
   panel.appendChild(sub);
 
   if(!fbDb){
@@ -62560,34 +62664,31 @@ function showVirtualRoomChoice(){
     chev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 6l6 6-6 6"/></svg>',
     bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 1.5H5z"/><path d="M10.2 20.2a2 2 0 0 0 3.6 0"/></svg>'
   };
-  const card = (key, title, chip, desc) => {
+  /* Mode cards, not their own card (build 287) - see the CSS note. The
+     old classes stay on them (vrc-card-host / vrc-card-browse) because
+     the tours and gates find the two ways in by those names. */
+  const card = (key, iconKind, title, desc) => {
     const b = document.createElement("button");
     b.type = "button";
-    b.className = "vrc-card vrc-card-" + key;
-    const ic = document.createElement("span");
-    ic.className = "vrc-card-icon"; ic.innerHTML = ICONS[key];
-    const body = document.createElement("span");
-    body.className = "vrc-card-body";
-    const head = document.createElement("span");
-    head.className = "vrc-card-head";
+    b.className = "modecard vrc-modecard vrc-card-" + key;
+    const row = document.createElement("span");
+    row.className = "modecardtitlerow";
+    row.appendChild(modeIcon(iconKind));
     const t = document.createElement("span");
-    t.className = "vrc-card-title"; t.textContent = title;
-    const c = document.createElement("span");
-    c.className = "vrc-chip vrc-chip-" + chip.toLowerCase(); c.textContent = chip;
-    head.append(t, c);
+    t.className = "modecardtitle"; t.textContent = title;
+    row.appendChild(t);
     const d = document.createElement("span");
-    d.className = "vrc-card-desc"; d.textContent = desc;
-    body.append(head, d);
-    const ch = document.createElement("span");
-    ch.className = "vrc-card-chev"; ch.innerHTML = ICONS.chev;
-    b.append(ic, body, ch);
+    d.className = "modecarddesc"; d.textContent = desc;
+    b.append(row, d);
     return { b, d, t };
   };
 
   const actions = document.createElement("div");
-  actions.className = "vrc-cards";
-  const host = card("host", "Host a room", "Private",
-    "Pick the game and the units, invite who you want, and everyone starts together.");
+  actions.className = "modecards vrc-modecards";
+  /* NOT "PRIVATE" (build 287): "The host one says it's private but it's
+     not, it's default private but can be public." So it says so. */
+  const host = card("host", "host", "Host a room",
+    "Make your own room, pick the game and units, and invite classmates. It starts invite only \u2014 you can open it to the class from the lobby.");
   /* STRAIGHT INTO THE LOBBY. Picking units before the room existed was
      the same screen twice - "the unit selection screen should ONLY be
      available from within a lobby". The room is created EMPTY - no
@@ -62616,8 +62717,8 @@ function showVirtualRoomChoice(){
      purpose - the "anybody want to run Penal Code?" case. Rooms are
      private by default, so nothing appears there that its host did not
      deliberately open. */
-  const browse = card("browse", "Join an open room", "Public",
-    "Rooms classmates have opened to 26E. Join one and wait with them for the start.");
+  const browse = card("browse", "join", "Join an open room",
+    "See the rooms classmates have opened to everyone, and hop into one \u2014 even if a match is already going.");
   browse.b.addEventListener("click", showRoomBrowser);
   actions.append(host.b, browse.b);
   panel.appendChild(actions);
@@ -65493,7 +65594,11 @@ function joinVirtualRoomLobby(code){
   return fbDb.collection("vrooms").doc(code).get().then(docSnap => {
     if(!docSnap.exists){ lastJoinGone = true; showToast("That lobby doesn't exist any more \u2014 it has been closed."); return false; }
     const data = docSnap.data();
-    if(data.status !== "waiting"){ lastJoinGone = true; showToast("That lobby is no longer available \u2014 its match has already started or finished."); return false; }
+    /* A MATCH IN PROGRESS IS NOT A CLOSED DOOR (build 287): you join the
+       LOBBY, and play the next match. The racers were named when this one
+       started (vroomRacersOf), and Tug of War and Battle fixed their teams
+       then, so a joiner is in nobody's count until the room is back to
+       waiting. */
     const myKey = publicIdOf();
     /* The actual fix for joining the same lobby twice from two devices
        on one synced account \u2014 confirmed directly: both devices share
@@ -65690,13 +65795,19 @@ function openRoomsFrom(docs){
     if(!r || r.kind === "chat" || r.kind === "bug" || r.kind === "inbox"
        || r.kind === "presence") return;
     if(r.open !== true) return;
-    if(r.status && r.status !== "waiting") return;
-    if((now - (r.createdAt || 0)) > VROOM_BROWSER_STALE_MS) return;
+    /* A ROOM IN A MATCH IS STILL A ROOM (build 287): "If the open room is
+       in a match.. it would still show up, the person joining would just
+       be in the lobby." So status no longer filters, it is SAID. And age
+       is judged by who is still there (the presence beat runs through a
+       match), not by when the room was made - a room that has played
+       three rounds is older than 25 minutes and very much alive. */
     const here = presentParticipants(r.participants || {}) || {};
     const n = Object.keys(here).length;
     if(!n) return;                       /* everybody has gone home */
+    const lastSeen = Math.max(r.createdAt || 0, ...Object.values(here).map(p => Number(p.seen) || 0));
+    if((now - lastSeen) > VROOM_BROWSER_STALE_MS) return;
     if(d.id === vroomCode) return;       /* my own room */
-    out.push({ code: d.id, room: r, count: n });
+    out.push({ code: d.id, room: r, count: n, inMatch: !!(r.status && r.status !== "waiting") });
   });
   /* Fullest first: a room with people in it is the one worth joining,
      and an empty-looking list of one-person rooms is what makes a
@@ -65730,7 +65841,7 @@ function showRoomBrowser(){
      into, and the second half explained a rule about rooms that are
      NOT on the screen. What somebody needs here is what tapping Join
      does. */
-  hint.textContent = "Anyone in 26E can join these. Tap Join and you are in the lobby with them, waiting for the host to start.";
+  hint.textContent = "Rooms classmates have opened to everyone. Tap Join and you are in their lobby \u2014 if a match is going, you are in the next one.";
   panel.appendChild(hint);
 
   const list = document.createElement("div");
@@ -65753,7 +65864,20 @@ function showRoomBrowser(){
   function draw(rooms){
     list.replaceChildren();
     if(!rooms.length){
-      note("No open rooms right now. Start a lobby of your own and switch on \u201cOpen to the class\u201d, and it shows up here for everyone.");
+      /* A REAL EMPTY STATE (build 287): "when there isn't one available,
+         that text box and stuff is small and also pushed too close
+         together." An icon, a title and a line, with room round them. */
+      const empty = document.createElement("div");
+      empty.className = "rooms-empty";
+      const ic = document.createElement("span");
+      ic.className = "rooms-empty-icon"; ic.appendChild(modeIcon("join"));
+      const t = document.createElement("p");
+      t.className = "rooms-empty-title"; t.textContent = "No open rooms right now";
+      const d = document.createElement("p");
+      d.className = "rooms-empty-text";
+      d.textContent = "When a classmate turns on Open room in their lobby, it shows up here. You can also host one yourself.";
+      empty.append(ic, t, d);
+      list.appendChild(empty);
       return;
     }
     rooms.forEach(entry => {
@@ -65768,22 +65892,29 @@ function showRoomBrowser(){
       const nm = document.createElement("p");
       nm.className = "friend-row-name";
       nm.textContent = (r.hostName || "A classmate") + "\u2019s room";
+      /* WHO IS IN IT AND WHERE THEY ARE, then the match settings ONLY IF
+         THEY ARE SET (build 287): "it just shows how many people are in
+         and match settings IF they are set ... state whether they are at
+         the lobby or in a match." */
       const sub = document.createElement("p");
-      sub.className = "friend-row-sub";
+      sub.className = "friend-row-sub room-row-state";
+      const where = document.createElement("span");
+      where.className = "room-state " + (entry.inMatch ? "is-match" : "is-lobby");
+      where.textContent = entry.inMatch ? "In a match" : "In the lobby";
+      sub.append(document.createTextNode(entry.count + (entry.count === 1 ? " person" : " people") + " \u00b7 "), where);
+      text.append(nm, sub);
       const units = r.units || [];
-      const unitLine = units.length === 1 ? units[0]
+      const gameName = r.game === "tug" ? "Tug of War" : r.game === "battle" ? "Battle" : r.game === "race" ? "Race" : "";
+      const unitLine = !units.length ? ""
+        : units.length === 1 ? units[0]
         : units.length >= topicsIn(QUESTIONS).length ? "All units"
         : units.length + " units";
-      /* ---- AND SO DOES THE ROW ----
-         "The description inside the box is confusing too." It was
-         three things joined by dots - "Race - 4 units - 2 people" -
-         which reads as a list of tags rather than as a sentence about
-         a room. Said plainly instead, in the order somebody decides
-         on: how many are in it, what they are doing, and on what. */
-      sub.textContent = entry.count + (entry.count === 1 ? " person waiting" : " people waiting")
-        + " \u00b7 " + (r.game === "tug" ? "Tug of War" : r.game === "battle" ? "Battle" : r.game ? "Race" : "Game not set yet")
-        + " on " + unitLine.toLowerCase();
-      text.append(nm, sub);
+      if(gameName || unitLine){
+        const set = document.createElement("p");
+        set.className = "friend-row-sub room-row-settings";
+        set.textContent = [gameName, unitLine].filter(Boolean).join(" \u00b7 ");
+        text.appendChild(set);
+      }
       const go = document.createElement("button");
       go.type = "button"; go.className = "next friend-act";
       go.textContent = "Join";
@@ -65910,19 +66041,24 @@ function showVirtualRoomLobby(){
       const openText = document.createElement("div");
       openText.className = "vroom-open-text";
       const openLabel = document.createElement("p");
-      openLabel.className = "cal-row-date"; openLabel.textContent = "Open to the class";
+      /* "OPEN ROOM", AND A LINE THAT SAYS WHAT IT DOES (build 287): "The
+         public toggle switch needs to say open room or something so people
+         actually understand what that toggle does, the description of the
+         toggle is bad." The line names where the room turns up. */
+      openLabel.className = "cal-row-date"; openLabel.textContent = "Open room";
       const openHint = document.createElement("p");
       openHint.className = "friend-hint";
-      openHint.textContent = vroomIsOpen
-        ? "Anyone in 26E can find this room and join."
-        : "Invite only \u2014 nobody can join unless you ask them.";
+      const openHintText = () => vroomIsOpen
+        ? "On \u2014 this room is listed under Open rooms, and anyone in 26E can join."
+        : "Off \u2014 only people you invite can join. Turn it on to list this room under Open rooms for the whole class.";
+      openHint.textContent = openHintText();
       openText.append(openLabel, openHint);
       const sw = document.createElement("button");
       sw.type = "button";
       sw.className = "vroom-open-toggle" + (vroomIsOpen ? " on" : "");
       sw.setAttribute("role", "switch");
       sw.setAttribute("aria-checked", vroomIsOpen ? "true" : "false");
-      sw.setAttribute("aria-label", "Open this room to the class");
+      sw.setAttribute("aria-label", "Open room: list this room for the whole class");
       const knob = document.createElement("span");
       knob.className = "vroom-open-knob";
       sw.appendChild(knob);
@@ -65930,14 +66066,12 @@ function showVirtualRoomLobby(){
         vroomIsOpen = !vroomIsOpen;
         sw.classList.toggle("on", vroomIsOpen);
         sw.setAttribute("aria-checked", vroomIsOpen ? "true" : "false");
-        openHint.textContent = vroomIsOpen
-          ? "Anyone in 26E can find this room and join."
-          : "Invite only \u2014 nobody can join unless you ask them.";
+        openHint.textContent = openHintText();
         if(fbDb && vroomCode){
           try{ fbDb.collection("vrooms").doc(vroomCode)
                  .update({ open: vroomIsOpen }).catch(() => {}); }catch(e){}
         }
-        showToast(vroomIsOpen ? "Room is open to the class." : "Room is invite only.");
+        showToast(vroomIsOpen ? "Open room \u2014 classmates can find it under Open rooms." : "Invite only.");
       });
       openRow.append(openText, sw);
       lobbyOpenCard = openRow;
@@ -66405,6 +66539,7 @@ function showVirtualRoomLobby(){
       const allReady = totalN > 1 && readyN === totalN && hasUnits && !oddTug;
       lobbyCanReady = hasUnits && totalN > 1;
       if(data.status === "waiting"){
+        if(readyBtn.textContent === "Match in progress") paintReady();
         readyBtn.disabled = !lobbyCanReady && !amReady;
         readyBtn.classList.toggle("is-waiting", !lobbyCanReady && !amReady);
         /* Somebody who readied up before the last other person left,
@@ -66504,10 +66639,17 @@ function showVirtualRoomLobby(){
       if(data.status && data.status !== "waiting" && !vroomTestStarted && !(data.status === "starting" && inThisStart)){
         readyBtn.disabled = true;
         readyBtn.classList.add("is-waiting");
+        /* NOT "READY UP" WHILE A MATCH YOU ARE NOT IN IS RUNNING (build
+           287): "it wouldn't say ready for everyone when joining like
+           that, it would say in match." */
+        const midMatch = data.status === "starting" && !inThisStart;
+        readyBtn.textContent = midMatch ? "Match in progress" : "Ready up";
         autostartNote.classList.remove("all-ready");
         autostartNote.textContent = vroomIsHost
           ? "Opening the lobby for another match\u2026"
-          : "The last match is still wrapping up \u2014 waiting for the host to open the lobby\u2026";
+          : midMatch
+            ? "A match is in progress \u2014 you\u2019re in the next one when it finishes."
+            : "The last match is still wrapping up \u2014 waiting for the host to open the lobby\u2026";
         if(vroomIsHost && !staleResetSent && fbDb && vroomCode){
           staleResetSent = true;
           const reset = { status: "waiting" };

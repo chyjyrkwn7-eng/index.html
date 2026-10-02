@@ -4638,7 +4638,8 @@ def check_b266(br):
       /* 3 */
       try{ __useFake(); if(window.__osr) onSnapshotResilient = window.__osr; }catch(e){}
       showVirtualRoomChoice(); await wait(300);
-      out.cards = [...document.querySelectorAll('.vrc-card')].map(c => (c.querySelector('.vrc-chip') || {}).textContent || '');
+      out.cards = [...document.querySelectorAll('.vrc-modecard')].map(c => ({ mode: c.classList.contains('modecard'), icon: !!c.querySelector('.modeicon'),
+        title: (c.querySelector('.modecardtitle') || {}).textContent || '', desc: (c.querySelector('.modecarddesc') || {}).textContent || '' }));
       /* 4 */
       document.querySelector('.vrc-card-host').click();
       for(let i = 0; i < 30 && !document.querySelector('.vroom-test-summary'); i++) await wait(150);
@@ -4673,8 +4674,12 @@ def check_b266(br):
     check("Review's chip on the unit screen is Review's, not Drill's", "rs-mode-review" in r.get("chip", ""), r)
     check("tapping the character you already have on opens its card", r.get("tapCard") is True, r)
     check("and nothing on that card can be selected by the hold", r.get("cardSelect") == "none", r)
-    check("the Virtual Room door is two cards: host (Private) and join (Public)",
-          [c.strip().lower() for c in r.get("cards", [])] == ["private", "public"], r)
+    # build 287: the two ways in are mode cards, and Host does not call itself private
+    cs = r.get("cards", [])
+    check("the Virtual Room door is two mode cards, each with a mode icon: host and join",
+          len(cs) == 2 and all(x["mode"] and x["icon"] for x in cs), cs)
+    check("and Host says it starts invite only and can be opened, not that it is private",
+          len(cs) == 2 and "invite only" in cs[0]["desc"].lower() and "open" in cs[0]["desc"].lower(), cs)
     check("a new room starts with no game chosen", r.get("hasGameKey") is True and r.get("game") is None, r)
     check("and the lobby says so instead of saying Race",
           "No game chosen yet" in r.get("summary", "") and "Race" not in r.get("summary", ""), r)
@@ -4722,7 +4727,8 @@ def check_b267(br):
                     inner: dur(document.querySelector('.cosmic-hero-orbitlayer-inner')),
                     innerDots: document.querySelectorAll('.cosmic-hero-orbitlayer-inner .cosmic-orbit-dot').length };
       showVirtualRoomChoice(); await wait(300);
-      out.icons = [...document.querySelectorAll('.vrc-card-icon')].map(i => getComputedStyle(i).backgroundImage.indexOf('gradient') >= 0
+      out.icons = [...document.querySelectorAll('.vrc-modecard .modeicon')].map(i => { const q = i.querySelector('.modeiconpath'); const k = q ? getComputedStyle(q).stroke : ''; return !!k && k !== 'none' && k !== 'rgb(0, 0, 0)' && k !== 'rgb(255, 255, 255)'; })
+      out.iconsOld = [...document.querySelectorAll('.vrc-card-icon')].map(i => getComputedStyle(i).backgroundImage.indexOf('gradient') >= 0
         && [...i.querySelectorAll('[fill]')].some(e => /^#(?!fff\\b|ffffff\\b)/i.test(e.getAttribute('fill'))));
       const a = buildRankEmblemSVG('adept');
       out.dust = !!a.querySelector('.rk-spin.rk-fast') && [...a.querySelectorAll('.rk-spin.rk-fast path')].some(p => /^#0[0-9A-F]{5}$/i.test(p.getAttribute('fill') || ''));
@@ -4764,7 +4770,7 @@ def check_b267(br):
     closed = pg.evaluate("()=>{ const m = document.getElementById('unitoptions-modal'); return !!m && m.hidden; }")
     o = r.get("orbit") or {}
     check("the middle ring's dot turns faster than the outer ring", o.get("innerDots", 0) >= 1 and 0 < o.get("inner", 0) < o.get("outer", 0), o)
-    check("both Virtual Room card icons are in colour on a coloured tile", r.get("icons") == [True, True], r.get("icons"))
+    check("both Virtual Room card icons are mode icons, in colour (build 287)", r.get("icons") == [True, True], r.get("icons"))
     check("Sapphire's dark heart has dark dust spinning faster than its arms", r.get("dust") is True, r)
     check("Supernova throws dark shards of its own", r.get("shards") is True, r)
     check("a lifetime streak does not unlock the Marksman; one test's does",
@@ -5857,6 +5863,32 @@ def check_b285(br):
         ctx.close()
 
 
+def check_b287_rooms(br):
+    """Build 287. An open room in a match is still listed, said to be in
+    a match, and a room's state is said either way; a room everybody has
+    left is not. Written against 286, which dropped any room not waiting."""
+    print("\n59. build 287: open rooms in a match are listed, and say so")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""()=>{ const now = Date.now(); const out = {};
+      try{
+        const doc = (id, r) => ({ id, data: () => r });
+        const here = { a: { name: 'A', seen: now - 5000 }, b: { name: 'B', seen: now - 5000 } };
+        const rooms = openRoomsFrom([
+          doc('LOBBY1', { open: true, status: 'waiting', createdAt: now - 60000, participants: here }),
+          doc('MATCH1', { open: true, status: 'starting', createdAt: now - 3600000, participants: here }),
+          doc('GONE01', { open: true, status: 'waiting', createdAt: now - 3600000, participants: { c: { name: 'C', seen: now - 3600000 } } }),
+          doc('SHUT01', { open: false, status: 'waiting', createdAt: now - 60000, participants: here }) ]);
+        out.rooms = rooms.map(x => [x.code, x.inMatch, x.count]);
+      } catch(e){ out.threw = String(e && e.stack || e); }
+      return out; }""")
+    rooms = {c: (m, n) for c, m, n in (r.get("rooms") or [])}
+    check("a room in a match is listed, marked in a match, with its head count",
+          rooms.get("MATCH1") == (True, 2), str(r))
+    check("a lobby is listed as a lobby; a room everybody left, or a closed one, is not",
+          rooms.get("LOBBY1") == (False, 2) and "GONE01" not in rooms and "SHUT01" not in rooms, str(r))
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     only = os.environ.get("ONLY_B245")
@@ -5936,6 +5968,7 @@ def main():
             check_b283(br)
             check_b284(br)
             check_b285(br)
+            check_b287_rooms(br)
         finally:
             br.close()
     SERVER.shutdown()

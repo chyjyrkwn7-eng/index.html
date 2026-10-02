@@ -736,6 +736,62 @@ with sync_playwright() as pw:
     check("of two holds, the lower baseline is kept", r.get("c") == 400, str(r))
     ctx.close()
 
+    # ---- 8d. a merge the server already did is not added twice ----
+    # Build 287. Z's phone runs a build from before move notes and pushes
+    # its own document over the server on every launch, so his two
+    # accounts were merged on the server and the note on his old code
+    # carries `base`, the account as merged. When the phone finally
+    # updates and follows the note it must add only what was played
+    # since. Fails on 286, which adds the whole store again.
+    print("\n8d. a merge note with a base adds only what was played since")
+    ctx = br.new_context(viewport={"width": 834, "height": 1194})
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.drill.v1', '%s');"
+                        "localStorage.setItem('class26e.synccode','NOVA-OLD1');}catch(e){}" % STORE)
+    pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
+    pg.evaluate("()=>document.getElementById('splashscreen')?.remove()")
+    r = pg.evaluate("""async ()=>{
+      const wait = ms => new Promise(res => setTimeout(res, ms));
+      const clone = o => JSON.parse(JSON.stringify(o));
+      const U = topicsIn(QUESTIONS)[0], K = KEYS[0];
+      const base = clone(store);
+      base.lifetime = { points: 1000, correct: 80, answered: 100, perfectTests: 2 };
+      base.unitPerfects = { [U]: 2 }; base.studyLog = { '2026-09-28': 60000 };
+      base.stats = { [K]: { n: 4, m: 1, r: [111] } };
+      base.testHistory = [{ playedAt: 5000, pct: 100 }];
+      /* the phone kept playing after the server merged it */
+      const now = clone(base);
+      now.lifetime = { points: 1500, correct: 120, answered: 150, perfectTests: 3 };
+      now.unitPerfects = { [U]: 3 }; now.studyLog = { '2026-09-28': 60000, '2026-10-03': 30000 };
+      now.stats = { [K]: { n: 6, m: 2, r: [111, 222] } };
+      now.testHistory = [{ playedAt: 9000, pct: 100 }, { playedAt: 5000, pct: 100 }];
+      /* the account it moves to already holds its own 3000 and the base */
+      const target = clone(base);
+      target.firstName = 'Target'; target.publicId = 'tgt000000000';
+      target.lifetime = { points: 4000, correct: 300, answered: 400, perfectTests: 7 };
+      target.unitPerfects = { [U]: 5 }; target.studyLog = { '2026-09-28': 90000 };
+      target.stats = { [K]: { n: 9, m: 3, r: [111, 333] } };
+      target.testHistory = [{ playedAt: 7000, pct: 90 }, { playedAt: 5000, pct: 100 }];
+      fbDb = { collection: name => ({ doc: id => ({ id,
+        get: () => Promise.resolve(id === 'NOVA-TGT1' ? { exists: true, data: () => clone(target) } : { exists: false }),
+        set: d => Promise.resolve(), update: d => Promise.resolve(), delete: () => Promise.resolve(),
+        onSnapshot: next => () => {} }) }) };
+      Object.keys(now).forEach(k => { store[k] = clone(now[k]); });
+      syncCode = 'NOVA-OLD1';
+      const noteRef = { set: () => Promise.resolve() };
+      followAccountMove('NOVA-OLD1', 'NOVA-TGT1', noteRef, { to: 'NOVA-TGT1', merge: true, base: clone(base) });
+      await wait(500);
+      return { code: syncCode, points: store.lifetime.points, correct: store.lifetime.correct, hundos: store.lifetime.perfectTests,
+               unit: store.unitPerfects[U], study: store.studyLog, n: store.stats[K].n, m: store.stats[K].m,
+               tests: (store.testHistory || []).map(t => t.playedAt) }; }""")
+    check("the device moves to the account it was merged into", r.get("code") == "NOVA-TGT1", str(r))
+    check("and adds only the XP, right answers and hundos earned since the merge",
+          r.get("points") == 4500 and r.get("correct") == 340 and r.get("hundos") == 8 and r.get("unit") == 6, str(r))
+    check("per question and per day, the same: only the difference",
+          r.get("n") == 11 and r.get("m") == 4 and r.get("study") == {"2026-09-28": 90000, "2026-10-03": 30000}, str(r))
+    check("and the test played before the merge is not listed twice",
+          sorted(r.get("tests") or []) == [5000, 7000, 9000], str(r))
+    ctx.close()
+
     # ---- 7. the sync code never reaches a collection anyone can list ----
     # `leaderboard` and `vrooms` can both be ENUMERATED by anyone - this
     # repo's own firestore-admin.py lists them over plain REST with no
