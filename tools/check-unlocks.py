@@ -194,20 +194,9 @@ BEAT_HARDCORE = """(n)=>{
   topics.slice(0, n).forEach(t => {
     store.unitGameBeat[t] = { easy:true, average:true, hardcore:true };
   });
-  return { beaten: hardcoreUnitsBeaten(), locked: !bannerEarned('hardcore10'),
+  return { beaten: hardcoreUnitsBeaten(), banner: !!bannerDef('hardcore10'),
            masked: isLockedCharacter('masked'),
            msg: characterLockMessage('masked') };}"""
-
-# Thunderhead since build 283: 100% in Exam on every unit. Sets the
-# per-unit Exam bests the way summarize() keeps them.
-EXAM_ACES = """(missing)=>{
-  const topics = topicsIn(QUESTIONS);
-  store.unitGameBeat = {}; store.unitExam = {};
-  store.testHistory = (store.testHistory||[]).filter(h => h.mode !== 'exam');
-  topics.forEach((t, i) => { store.unitExam[t] = { n: 1, best: i < missing ? 90 : 100, sum: 100, last: 100 }; });
-  return { earned: bannerEarned('hardcore10'), have: bannerDef('hardcore10').have(), need: bannerDef('hardcore10').need,
-           units: topics.length };}"""
-
 
 HUNDO = """(a)=>{
   const { unitIndex, ace } = a;
@@ -237,30 +226,21 @@ SLICE_RUN = """()=>{
 
 
 def check_hardcore(pg):
-    """The Thunderhead banner and the Masked One's old rule.
+    """The Masked One's old rule, and no Thunderhead.
 
-    Thunderhead was "Beat 10 units on Hardcore in Game mode" until build
-    283 retired Game mode; it is 100% in Exam on every unit now. Whoever
-    met the old rule keeps it, and so does the Masked One's legacy clause,
-    so both are asserted off store.unitGameBeat with no Exam record. The
-    recorder ladder and the unit-card difficulty bubbles that were checked
-    here went with Game mode (retired/game-mode.md)."""
-    print("\n3. Thunderhead: ten old Hardcore units keep it; Exam aces on every unit earn it")
+    Thunderhead was "Beat 10 units on Hardcore in Game mode", moved onto
+    Exam in build 283 and removed outright in build 284 with the rest of
+    the Game banners. The Masked One's legacy clause - ten Hardcore units
+    under the old rule - is kept, so whoever met it keeps the character.
+    That is asserted off store.unitGameBeat, with no Exam record."""
+    print("\n3. the Masked One's old Hardcore rule still holds; Thunderhead is gone")
     for n in (0, 9, 10):
         r = pg.evaluate(BEAT_HARDCORE, n)
         want = n < 10
-        check("%d old Hardcore unit(s) -> banner %s" % (n, "locked" if want else "kept"),
-              r["beaten"] == n and r["locked"] is want, r)
-        # The Masked One is a retake challenge now (build 233), but ten
-        # Hardcore units was its old rule, and whoever met it keeps it.
+        check("%d old Hardcore unit(s) counted, and no Thunderhead banner" % n,
+              r["beaten"] == n and r["banner"] is False, r)
         check("  and ten Hardcore units still unlock the Masked One (%d)" % n,
               r["masked"] is want and (want == (r["msg"] != "")), r)
-    one_short = pg.evaluate(EXAM_ACES, 1)
-    check("100% in Exam on every unit but one leaves Thunderhead locked",
-          one_short["earned"] is False and one_short["have"] == one_short["units"] - 1
-          and one_short["need"] == one_short["units"], one_short)
-    every = pg.evaluate(EXAM_ACES, 0)
-    check("100% in Exam on every unit earns it", every["earned"] is True, every)
 
 
 def check_hundo_streak(pg):

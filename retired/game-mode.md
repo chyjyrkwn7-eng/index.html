@@ -1,6 +1,6 @@
 # Game mode (retired in build 283)
 
-**Removed by:** commit `148456e`, `index.html` only.
+**Removed by:** commit `148456e` (the mode), then `5006899` (its banners, build 284). `index.html` only.
 **Patch:** [`game-mode.patch`](game-mode.patch), the same diff.
 **Restore:** `git revert 148456e`. If that conflicts, use
 `git apply -R --3way retired/game-mode.patch`. See [README.md](README.md)
@@ -54,28 +54,29 @@ testing yourself under pressure."*
 
 ## What happened to its rewards
 
-These rewards moved onto Exam rather than going away. Each banner still
-honours the old Game count, so nobody lost one they had earned.
+**Build 283** moved the three Game banners onto Exam, honouring the old
+Game counts. **Build 284 then removed them outright**:
+*"The banners we have that relevant to the mode game. Let's just go
+ahead and remove those banners entirely actually."* Removed by commit
+`5006899` ([`game-banners.patch`](game-banners.patch)).
 
-| Banner | Before (Game) | Since build 283 (Exam) |
-|---|---|---|
-| Lanterns (`easy10`) | Beat 10 units on Easy in Game mode | Pass an Exam on 10 units (70%+) |
-| Great Wave (`average10`) | Beat 10 units on Average in Game mode | 100% in Exam on 10 units |
-| Thunderhead (`hardcore10`) | Beat 10 units on Hardcore in Game mode | 100% in Exam on every unit |
+| Banner | Rule in Game mode (until 283) | 283 (Exam) | Since 284 |
+|---|---|---|---|
+| Lanterns (`easy10`) | Beat 10 units on Easy in Game mode | Pass an Exam on 10 units | gone |
+| Great Wave (`average10`) | Beat 10 units on Average in Game mode | 100% in Exam on 10 units | gone |
+| Thunderhead (`hardcore10`) | Beat 10 units on Hardcore in Game mode | 100% in Exam on every unit | gone |
 
-The Exam counts come from `examUnitsAtLeast(pct)`, which reads per-unit
-Exam bests (`unitExamOf()`). A multi-unit Exam that covers a unit in
-full counts toward that unit.
+**To bring Game mode back with its banners, revert in this order:**
+`git revert 5006899` (the banners and their art return, on 283's Exam
+rules), then `git revert 148456e` (Game mode returns, and the banners go
+back to their original Game rules). Anybody who wore one of these fell
+back to the default banner and would need to pick it again.
 
 - **The `hardcore10` character feat** ("Beat Hardcore on 10 units") was
-  removed. No character had used it since the Masked One moved to its
-  retake challenge.
+  removed in 283. No character had used it since the Masked One moved to
+  its retake challenge.
 - **The Masked One's legacy clause** (`hardcoreUnitsBeaten() >= 10`) was
   kept as it was.
-- **Restoring Game mode does not require moving the banners back.**
-  Moving them back would lock them again for anybody who earned them
-  through Exam after build 283. If that is wanted, keep the
-  `Math.max(..., examUnitsAtLeast(...))` so it stays one-way.
 
 ## Gate changes to undo on restore
 

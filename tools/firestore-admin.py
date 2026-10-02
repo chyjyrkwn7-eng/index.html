@@ -25,6 +25,7 @@ Usage
   python3 tools/firestore-admin.py move <from-public-id> <to-public-id> [--yes]
   python3 tools/firestore-admin.py move --finish [--only NAME] [--yes]
   python3 tools/firestore-admin.py merge <from-public-id> <to-public-id> [--bonus N] [--extra-from ID] [--yes]
+  python3 tools/firestore-admin.py credit <orphan-row-public-id> <to-public-id> [--yes]
 
 `prune` is the one to reach for: it removes only the rankings rows
 nobody is behind any more and leaves every live row alone. `purge`
@@ -851,6 +852,61 @@ def cmd_merge(argv):
     return 0
 
 
+def cmd_credit(argv):
+    """CREDIT AN ORPHANED ROW TO THE ACCOUNT IT BELONGS TO (build 284).
+
+    For a rankings row with NO progress document behind it - a parallel
+    sign-up whose device was reset - there is no device left to follow a
+    merge note. A credit note goes beside the account it is FOR, at
+    progress/<code>__credit, carrying the row's XP, right answers and
+    this week's points; every device on that account reads it
+    (checkAccountCredit in index.html) and it is paid once per account.
+    With --yes the orphan row is deleted, since nothing will come back
+    for it. Public ids in, never names and never codes."""
+    if not admin_ready():
+        print("credit needs the admin key: the codes are the progress document ids.")
+        return 2
+    args = [a for a in argv if not a.startswith("--")]
+    confirmed = "--yes" in argv
+    if len(args) != 2:
+        print("usage: firestore-admin.py credit <orphan-row-public-id> <to-public-id> [--yes]")
+        return 2
+    orphan, dst = args
+    rows = docs("progress", mask=["firstName", "publicId"])
+    by_pub = {}
+    for code, f in rows:
+        if "__" in code:
+            continue
+        if f.get("publicId"):
+            by_pub.setdefault(f["publicId"], []).append((code, f))
+    if len(by_pub.get(dst, [])) != 1:
+        print("The account to credit must be exactly one progress document; found %d." % len(by_pub.get(dst, [])))
+        return 1
+    if by_pub.get(orphan):
+        print("Row %s still has a progress document - merge it as an account instead." % orphan)
+        return 1
+    dst_code, dst_f = by_pub[dst][0]
+    row = next((f for pub, f in docs("leaderboard") if pub == orphan), None)
+    if row is None:
+        print("No rankings row %s." % orphan)
+        return 1
+    extra = {"points": int(row.get("xp") or 0), "correct": int(row.get("correct") or 0),
+             "weekPoints": int(row.get("weekPoints") or 0), "week": str(row.get("week") or "")}
+    note = {"id": "row:" + orphan, "extra": extra, "at": int(time.time() * 1000)}
+    print("  %s (%s) -> %s: %s  %s" % (orphan, row.get("firstName", "?"), dst_f.get("firstName", "?"), extra,
+                                     "credit written" if confirmed else "would write the credit"))
+    if not confirmed:
+        print("\nRe-run with --yes to write it and delete the orphan row.")
+        return 0
+    st = _write_fields("progress", dst_code + "__credit", note)
+    if st != 200:
+        print("    failed: HTTP %s" % st)
+        return 1
+    st, _ = _call("DELETE", _doc_url("leaderboard", orphan))
+    print("  orphan row %s %s" % (orphan, "deleted" if st == 200 else "NOT deleted: HTTP %s" % st))
+    return 0
+
+
 def main(argv):
     if len(argv) < 2:
         print(__doc__)
@@ -882,6 +938,8 @@ def main(argv):
         return cmd_move(argv[2:])
     if cmd == "merge":
         return cmd_merge(argv[2:])
+    if cmd == "credit":
+        return cmd_credit(argv[2:])
     print("Unknown command %r" % cmd)
     return 2
 

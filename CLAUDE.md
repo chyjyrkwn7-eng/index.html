@@ -1394,6 +1394,38 @@ Everything below follows from that.
   window before the first write, this covers every reconnect after it,
   and **both are needed**. `check-sync.py` section 6 drives the real
   listener with the five snapshots Firestore actually delivers.
+- **TWO DEVICES ON ONE ACCOUNT MERGE; THEY NEVER OVERWRITE (build 284).**
+  Sync was last-write-wins on the whole document by `lastModified`, and
+  boot saves before its first pull, so a device that had been away pushed
+  its stale copy over the other device's progress - two levels on two
+  phones behind one leaderboard row ("Billyswole"). `mergeSameAccount()`
+  combines two copies of ONE account field by field (counts take the
+  higher, lists both, bests the better); `syncSameAccount()` runs it on
+  every pull and in the live listener and pushes only when this device
+  holds something the cloud lacks, which is what stops two listeners
+  echoing a merge back and forth. Preferences still come from the newer
+  side. **Sign-in, Link this device and a launch link ADOPT
+  (`adoptFromCloud`) and push nothing of the device's own**: linking used
+  to push a device's own, different account over the one it linked to.
+  Rules that follow, for anything added later: **a new progress counter
+  belongs in `mergeSameAccount()` or it is last-write-wins again**; and
+  **nothing may "clear" progress by lowering a count**, because the other
+  device's merge brings it straight back - "Reset missed-question
+  history" (which emptied `stats`) was removed for exactly that, and
+  clearing a question's misses records `rc`, a cleared-at time the merge
+  respects. `check-sync` section 8 drives all of it and fails on 283.
+- **A CREDIT NOTE IS FOR PROGRESS NO DEVICE CAN BRING (build 284).** A
+  merge note is followed by a device on the DUPLICATE; when the duplicate
+  is only a rankings row (its device reset, its document gone) nobody is
+  left to follow it. `firestore-admin.py credit <row> <to>` writes
+  `progress/<live code>__credit` `{id, extra:{points, correct,
+  weekPoints, week}}` instead, and every device on the live account reads
+  it in `checkAccountMove()`. **It pays once per account**: the `id`
+  goes into `store.creditsApplied`, which `mergeSameAccount()` unions,
+  and since that merge takes the larger counter rather than adding, two
+  devices crediting at the same moment still land on one total. What it
+  unlocks waits for the next test, like a merge (`mergeHold`).
+  `check-sync` section 8b.
 - **Two synced devices are one row by construction**, because the row's
   document id is the shared code. Duplicates on the board are not two
   devices — they are separate sign-ups, each of which minted a code of its
@@ -8967,4 +8999,77 @@ history from here on.
   Fails on 282. Game-specific checks elsewhere were removed or
   retargeted; each retired note lists exactly which, to put back on a
   restore.
+
+### Build 284 - simpler, and two devices that agree
+
+Madison's list after 283, the Billyswole report, and the audit it led to.
+
+- **No Progress tab.** Four tabs. The Profile card's rank row opens the
+  climb and its badge row the case (they already did); the screen has a
+  "Profile" back link and Profile stays lit on the bar.
+- **Settings:** Keep screen awake (and the wake lock) and Smooth scrolling
+  are gone; `scrollBehavior` is always smooth, whatever was saved.
+- **Rank box** smaller, no "N to go until X" line; the climb's note is one
+  sentence. **Badge box** has no "Closest" line and a one-line blurb.
+- **No answer-streak pop in a test.** `runStreakLive` still counts; the
+  results screen's XP lines are where a streak shows.
+- **Banners removed:** Lanterns, Great Wave and Thunderhead (`5006899`,
+  its own commit, see `retired/game-mode.md`) and Hall of Fame. A worn
+  one falls back to the default through `wornBanner()`.
+- **Most missed removed.** The bank is All questions / Flagged, unit
+  details have one door (Flagged), Settings has no "Reset
+  missed-question history", and a saved `source: "recent"` loads as
+  `"all"`. Misses are still recorded - hundos and stats need them -
+  and `recentMissedIndexes()` still exists for whatever reads it.
+- **Two-device sync merges** - see **Accounts and the sync code**.
+- **The bottom bar is build 218's again.** *"The bottom should return to
+  how it was before the introduction of that new bottom tab."* Build
+  219's five-tab tablet padding (1.1rem / .55rem a side) is gone, the
+  daily-question circle is back at `50% - 21rem`, and the unit screen's
+  phone bar is back to Home's four-tab 23.5rem. Measured against
+  `da0a111` on eight sizes from 320px to 1512px: Home's bar, every tab,
+  the circle and the version label are identical to the pixel. The
+  unit screen differs only by build 245's wider Start pill, which was
+  its own request and stays.
+- **Amethyst slower, Supernova detonates.** *"the amethyst animation
+  spins a little fast ... the supernova animation could be a little
+  cooler, needs to be coolest one."* Amethyst's whirl went 3s -> 5.5s a
+  turn and its other layers about a third slower. Supernova's layers used
+  to breathe on separate clocks, so Amethyst out-moved it; now its core,
+  flares, light, cross-flare (`.rk-nova-x`) and blast shell share one
+  3.2s clock (`rk-nova-*` keyframes) and go off together, the shell
+  thrown outward and fading each time, and its star turns ~3x faster.
+  Keyframes only - no new layer, so the emblem animation budget from
+  build 252 is unchanged. **The cross-flare peaks at 1.05x on purpose**:
+  at 1.35x its four diagonal points squared off the white core and the
+  flash read as a white square. Checked in `check_b284`.
+- Gates: `check_b284` (section 57) and `check-sync` section 8, both
+  failing on 283. Game-, Hall of Fame-, streak-pop- and Most missed-
+  specific checks elsewhere were removed or retargeted.
+
+**The audit, and what was done about it.** Every account was compared
+against its rankings row (`tools/firestore-admin.py` with the admin key,
+codes masked in every listing). Madison: *"I need you to merge all the
+duplicate accounts for people ... make it so all their devices change to
+the main account automatically"*, then *"You have full permission"*.
+- **Jackeline -> Aranda** completed on its own at 04:52 UTC.
+- **Merge notes** (followed by the device the next time it opens, on
+  279+): Tsale -> TSale, z -> Z, and the old-build Z account (code-keyed
+  row, no public id) -> Z. Those duplicates stay on the board until each
+  device opens the app; `move --finish` cleans up after them.
+- **Credit notes**, new in this build (`credit` in the tool,
+  `checkAccountCredit()` in the app): Cmilledge's level-32 parallel
+  account and Barron's 3,350 XP survived only as rankings rows with no
+  account document, so no device could follow a merge for them. Their
+  XP, right answers and week points ride a note beside the live account;
+  both orphan rows were deleted.
+- **Old-build relics deleted, not credited**: Billyswole's level-11 row,
+  Hector, Rogelio and Vishal - rankings rows from before the class-wide
+  reset with no account behind them, and Billyswole's real account is
+  the one on the board. Staccatouser's second sign-up (level 1, 100 XP,
+  a code-keyed row that published its code) has a `__moved` note to the
+  real one and its row is gone.
+- An automatic "save refused" bug report was drafted and refused - it
+  would have written device data to a listable collection - so push
+  failures are still silent.
 

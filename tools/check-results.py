@@ -304,17 +304,9 @@ with sync_playwright() as pw:
     print("7. build 216: found recording every cutscene")
     # Both written against build 215, where both fail.
     # The Game difficulty lights were checked here until build 283.
-    # A streak pill from the last question lives on <body> and rode on
-    # over "Test results" when the run ended on a streak.
-    pg.evaluate("()=>{ theme.muteBanners=false; showRunStreakBanner(25); }")
-    pill_before = pg.evaluate("()=>!!document.querySelector('.streak-pop')")
-    # Read at once: the pill times itself out after 1.9s, so a check that
-    # waited for the results to finish landing could not fail.
-    pill_after = pg.evaluate("([u])=>{ __run(u,0,'drill'); return !!document.querySelector('.streak-pop'); }", [UNIT])
-    wait_done(pg)
-    ck("a streak pill does not ride over the results", pill_before and not pill_after,
-       {"before": pill_before, "after": pill_after})
-    pg.evaluate("()=>{ testInProgress=false; try{ showHome(); }catch(e){} }")
+    # The streak pill riding over "Test results" was checked here until
+    # build 284 took the in-test streak pill out (check-behaviour
+    # check_b284 drives a real run and asserts none appears).
 
     print("8. builds 217-218: the results screen, re-asked")
     # Every one of these fails on build 216.
@@ -325,11 +317,7 @@ with sync_playwright() as pw:
     rgb = [n * 255 if drill.startswith("color(") else n for n in nums]
     # Gold (build 216) is ~255,211,122 even through the chip's mix.
     ck("the Drill chip is red", rgb[0] > 200 and rgb[1] < 175 and rgb[2] < 175, drill)
-    # The streak pill is green, not the XP blue.
-    sk = pg.evaluate("""()=>{ showRunStreakBanner(10); const e=document.querySelector('.streak-pop');
-      const c=e?getComputedStyle(e.querySelector('.streak-pop-num')).color:''; document.querySelectorAll('.streak-pop').forEach(x=>x.remove()); return c; }""")
-    rgb = [int(x) for x in re.findall(r"\d+", sk)[:3]] if sk else [0, 0, 0]
-    ck("the streak pill is green", rgb[1] > rgb[0] + 40 and rgb[1] > rgb[2] + 20, sk)
+    # (The streak pill's colour was checked here until build 284.)
     # XP: the long-test bonus stacks every 50, and the daily question pays 200.
     xp = pg.evaluate("""()=>{ const f=(n,g)=>computeRunXp({good:g, answered:n, elapsedMs:n*20000, okList:[]});
       const k=r=>(r.lines.find(l=>l.key==='long')||{}).value||0;

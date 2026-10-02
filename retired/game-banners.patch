@@ -1,0 +1,347 @@
+commit 5006899b76ebf64f5341a50d7b78f6330ac46552
+Author: Claude <noreply@anthropic.com>
+Date:   Fri Oct 2 05:06:54 2026 +0000
+
+    Remove the Game banners: Lanterns, Great Wave and Thunderhead are gone entirely
+    
+    Their entries, their artwork and the two counters only they read. Anybody
+    wearing one falls back to the default banner (wornBanner() and
+    buildWornBannerArt() already treat an unknown id that way). The Masked One
+    keeps its legacy Hardcore clause.
+    
+    Restorable: git revert this commit, then 148456e (see retired/game-mode.md).
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    Claude-Session: https://claude.ai/code/session_01Y1ntmqBtMsVJcEAs1mn1Fz
+
+diff --git a/index.html b/index.html
+index 42f8bda..0f6a3f5 100644
+--- a/index.html
++++ b/index.html
+@@ -32245,16 +32245,6 @@ function noteHundoDay(unit){
+   if(store.hundoDay.units.indexOf(unit) < 0) store.hundoDay.units.push(unit);
+   store.hundoDayBest = Math.max(store.hundoDayBest || 0, store.hundoDay.units.length);
+ }
+-/* Units with a single-unit Exam best at or above pct - the Exam ladder
+-   of banners (build 283). */
+-function examUnitsAtLeast(pct){
+-  return topicsIn(QUESTIONS).filter(u => { const e = unitExamOf(u); return !!(e && e.best >= pct); }).length;
+-}
+-/* Game mode's old count, read only so a banner earned under it stays. */
+-function gameUnitsBeatenOn(speed){
+-  const b = store.unitGameBeat || {};
+-  return Object.keys(b).filter(u => b[u] && b[u][speed]).length;
+-}
+ 
+ function featAchieved(key){
+   const f = CHARACTER_FEATS[key];
+@@ -40467,7 +40457,7 @@ function hundosOf(st){
+    could have some shaky animations too, you'd see them everywhere they
+    are applied, you'd see it while it's not unlocked". Only these - the
+    ones that take months, or a rank near the top. */
+-const BANNER_EPIC = ["hardcore10", "tests500", "hundos250", "study50", "correct5000", "badges16", "level80", "exam100",
++const BANNER_EPIC = ["tests500", "hundos250", "study50", "correct5000", "badges16", "level80", "exam100",
+                      "adept_rank", "elite_rank", "titan_rank"];
+ /* ONLY THE TOP OF EACH LADDER MOVES (build 241): "ensure the animation is
+    only for the coolest ones and the hardest ones in its kind". Thunderhead
+@@ -40493,7 +40483,7 @@ const BANNER_EPIC = ["hardcore10", "tests500", "hundos250", "study50", "correct5
+    not a ladder of chores, and the rank banners are the one set asked
+    for as a set. See also the .bnr-*_rank rules by bn-spin: the motion
+    they had was a 110s turn, which is too slow to see at all. */
+-const BANNER_ANIMATED = ["average10", "hardcore10", "tests250", "tests500", "hundos250", "adept_rank", "elite_rank", "titan_rank",
++const BANNER_ANIMATED = ["tests250", "tests500", "hundos250", "adept_rank", "elite_rank", "titan_rank",
+                          "study50", "correct5000", "badges16", "level80", "exam100"];
+ const BANNERS = [
+   /* ORDERED BY WHAT YOU DO, THEN HOW FAR (build 235). "Ensure the order
+@@ -40502,24 +40492,10 @@ const BANNERS = [
+      difficulties, the three test counts, the two hundo counts, then the
+      one-offs, then the three rank banners in rank order. Customize lists
+      them in this order. */
+-  /* EXAM SINCE BUILD 283, Game mode before it. Game mode was retired
+-     (retired/game-mode.md) and its ladder moved onto Exam rather than
+-     going with it: pass ten units, ace ten units, ace every unit. Each
+-     one still takes the old Game count where that is higher, so nobody
+-     who earned one of these on the old rule loses it. */
+-  { id: "easy10", name: "Lanterns",
+-    label: "Pass an Exam on 10 units (" + PASS_MARK + "% or better)",
+-    have: () => Math.max(examUnitsAtLeast(PASS_MARK), gameUnitsBeatenOn("easy")), need: 10 },
+-  { id: "average10", name: "Great Wave",
+-    label: "Score 100% in Exam on 10 units",
+-    have: () => Math.max(examUnitsAtLeast(100), gameUnitsBeatenOn("average")), need: 10 },
+-  { id: "hardcore10", name: "Thunderhead",
+-    get label(){ return "Score 100% in Exam on all " + topicsIn(QUESTIONS).length + " units"; },
+-    have: () => {
+-      const all = topicsIn(QUESTIONS).length;
+-      return hardcoreUnitsBeaten() >= 10 ? all : examUnitsAtLeast(100);
+-    },
+-    get need(){ return topicsIn(QUESTIONS).length; } },
++  /* Lanterns, Great Wave and Thunderhead - the Game ladder - were here
++     until build 284: "The banners we have that relevant to the mode
++     game. Let's just go ahead and remove those banners entirely". See
++     retired/game-mode.md to bring them back. */
+   { id: "tests100", name: "Northern Lights",
+     label: "Finish 100 full tests", have: () => fullTestsOf(), need: 100 },
+   { id: "tests250", name: "Sakura",
+@@ -40612,53 +40588,6 @@ function bnStars(rnd, n, yMax, cls){
+ }
+ 
+ const BANNER_ART = {
+-  /* GREAT WAVE (redrawn, build 243) - the middle of the Game ladder, so it
+-     moves, and it is night now: "the great wave one is also boring".
+-     The wave rears under a full moon, its crest breaking into claws of
+-     foam, spray hanging off it, the moon's road glittering on the water
+-     and Fuji small and far off under the moon. */
+-  average10(u){
+-    const rnd = bnRand(1021);
+-    let claws = "", spray = "", glit = "";
+-    for(let i = 0; i < 12; i++){
+-      const a = -2.7 + i * 0.25, cx = 150 + Math.cos(a) * 86, cy = 90 + Math.sin(a) * 72;
+-      claws += '<path d="M' + bnF(cx) + ' ' + bnF(cy) + ' q' + bnF(6 + rnd() * 4) + ' ' + bnF(8 + rnd() * 6) + ' -2 ' + bnF(16 + rnd() * 7) + ' q-3 -9 -9 -10 z"/>';
+-    }
+-    for(let i = 0; i < 34; i++){
+-      spray += '<circle class="bn-spray" style="animation-delay:-' + bnF(rnd() * 4) + 's" cx="' + bnF(160 + rnd() * 130) + '" cy="' + bnF(10 + rnd() * 66) + '" r="' + bnF(0.8 + rnd() * 2.2) + '"/>';
+-    }
+-    for(let i = 0; i < 22; i++){
+-      const y = 128 + rnd() * 48, w = 6 + rnd() * 18, x = 372 - w / 2 + (rnd() - 0.5) * (18 + (y - 128) * 1.2);
+-      glit += '<rect class="bn-twinkle" style="animation-delay:-' + bnF(rnd() * 3.6) + 's" x="' + bnF(x) + '" y="' + bnF(y) + '" width="' + bnF(w) + '" height="1.4" rx=".7" fill="#FFF3C9"/>';
+-    }
+-    return '<defs>' +
+-      bnLin(u + "sky", [[0, "#040A22"], [0.55, "#0F2A5C"], [1, "#2A5A88"]]) +
+-      bnRad(u + "moon", [[0, "#FFF8E0"], [0.35, "#FFE9A8", 0.85], [1, "#FFD37A", 0]]) +
+-      bnLin(u + "wv", [[0, "#2E78B8"], [0.5, "#154A86"], [1, "#07183A"]]) +
+-      bnLin(u + "sea", [[0, "#0D2A55"], [1, "#040D24"]]) +
+-      '</defs>' +
+-      '<rect width="480" height="180" fill="url(#' + u + 'sky)"/>' +
+-      bnStars(rnd, 50, 90, true) +
+-      '<circle cx="372" cy="50" r="64" fill="url(#' + u + 'moon)" opacity=".7"/>' +
+-      '<circle cx="372" cy="50" r="22" fill="#FFF6DA"/>' +
+-      '<circle cx="364" cy="45" r="4" fill="#EADFB8" opacity=".6"/><circle cx="380" cy="58" r="3" fill="#EADFB8" opacity=".5"/>' +
+-      '<path d="M296 128 L346 88 L398 128Z" fill="#1C3C68"/>' +
+-      '<path d="M346 88 L335 98 L341 97 L346 103 L351 97 L357 98Z" fill="#E6EEF8"/>' +
+-      '<rect y="126" width="480" height="54" fill="url(#' + u + 'sea)"/>' + glit +
+-      '<g class="bn-bob">' +
+-      '<path d="M-10 180 L-10 118 C20 78 62 28 132 20 C192 14 240 38 252 68 C234 54 208 50 192 60 C172 74 174 102 198 116 C222 130 264 118 284 98 C302 128 292 170 252 180Z" fill="url(#' + u + 'wv)"/>' +
+-      '<path d="M10 150 C40 100 82 58 132 42" fill="none" stroke="#7FB6E8" stroke-width="3" opacity=".55"/>' +
+-      '<path d="M32 168 C62 124 102 86 152 70" fill="none" stroke="#7FB6E8" stroke-width="2.2" opacity=".42"/>' +
+-      '<path d="M54 176 C84 140 118 112 164 98" fill="none" stroke="#7FB6E8" stroke-width="1.6" opacity=".3"/>' +
+-      '<path d="M132 20 C192 14 240 38 252 68 C238 58 224 56 212 56 C226 46 216 32 192 28 C172 24 152 24 132 20Z" fill="#EAF4FF"/>' +
+-      '<path d="M132 20 C192 14 240 38 252 68" fill="none" stroke="#FFF6DA" stroke-width="1.6" opacity=".8"/>' +
+-      '<g fill="#EAF4FF">' + claws + '</g>' +
+-      '</g>' +
+-      '<path d="M236 180 C276 152 328 148 358 160 C390 150 430 146 490 158 L490 180Z" fill="#081C40"/>' +
+-      '<path d="M246 176 C286 158 328 154 358 164 C392 154 430 152 490 162" fill="none" stroke="#EAF4FF" stroke-width="1.8" opacity=".7"/>' +
+-      '<g fill="#FFFFFF" opacity=".9">' + spray + '</g>';
+-  },
+-
+   /* NORTHERN LIGHTS (redrawn, build 243) - the first of the test ladder,
+      so it is still, but it has to hold up: "the 100 test one is kinda
+      lame". Three curtains of aurora with rays falling out of them, the
+@@ -41326,208 +41255,6 @@ const BANNER_ART = {
+ 
+ 
+ 
+-  /* LANTERNS - ten units beaten on Easy: sky lanterns lifting off a
+-     still lake at dusk, and every one of them doubled in the water. */
+-  easy10(u){
+-    const rnd = bnRand(1010);
+-    let lanterns = "", refl = "";
+-    for(let i = 0; i < 16; i++){
+-      const x = 20 + rnd() * 440, y = 16 + rnd() * 100, s = 0.5 + (y / 120) * 0.9;
+-      const w = 9 * s, h = 12 * s;
+-      lanterns += '<g class="bn-lantern" style="animation-delay:-' + bnF(rnd() * 10) + 's;animation-duration:' + bnF(9 + rnd() * 6) + 's">' +
+-        '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(h * 1.6) + '" fill="url(#' + u + 'gl)"/>' +
+-        '<path d="M' + bnF(x - w / 2) + ' ' + bnF(y - h / 2) + ' L' + bnF(x + w / 2) + ' ' + bnF(y - h / 2) + ' L' + bnF(x + w * 0.38) + ' ' + bnF(y + h / 2) +
+-        ' L' + bnF(x - w * 0.38) + ' ' + bnF(y + h / 2) + 'Z" fill="url(#' + u + 'lp)"/>' +
+-        '<rect x="' + bnF(x - w * 0.2) + '" y="' + bnF(y + h * 0.3) + '" width="' + bnF(w * 0.4) + '" height="' + bnF(h * 0.16) + '" fill="#FFF3C4"/></g>';
+-      if(y > 60) refl += '<rect x="' + bnF(x - w * 0.3) + '" y="' + bnF(150 + (y - 60) * 0.25) + '" width="' + bnF(w * 0.6) + '" height="' + bnF(6 + s * 6) + '" rx="2" fill="#FFB347" opacity=".35"/>';
+-    }
+-    return '<defs>' +
+-      bnLin(u + "sky", [[0, "#120F30"], [0.45, "#3B2460"], [0.78, "#C9607A"], [1, "#F4A261"]]) +
+-      bnLin(u + "lake", [[0, "#5A2E57"], [1, "#150C24"]]) +
+-      bnRad(u + "gl", [[0, "#FFC76B", 0.55], [1, "#FF8A3D", 0]]) +
+-      bnLin(u + "lp", [[0, "#FFE39A"], [0.6, "#FFA23C"], [1, "#E8622C"]]) +
+-      '</defs>' +
+-      '<rect width="480" height="180" fill="url(#' + u + 'sky)"/>' +
+-      bnStars(rnd, 30, 60, true) +
+-      '<path d="M-10 150 L40 120 L80 138 L130 110 L180 150Z M300 150 L360 116 L400 132 L450 106 L490 150Z" fill="#26163A"/>' +
+-      '<rect y="150" width="480" height="30" fill="url(#' + u + 'lake)"/>' +
+-      '<path d="M0 150 L480 150" stroke="#F4A261" stroke-width=".8" opacity=".5"/>' +
+-      refl + lanterns;
+-  },
+-
+-
+-  /* THUNDERHEAD - Hardcore beaten on ten units, the top of the three
+-     Game banners (Lanterns, then Great Wave, then this). The calm lake
+-     and the wave were weather you could look at; this is weather you
+-     are inside: a supercell towering over a black sea, its underside
+-     hanging in pouches, rain driving across the whole frame and the
+-     lightning coming down in the middle of it. A lighthouse on the
+-     cliff gives it scale, the one warm light in a cold picture.
+-
+-     THE BOLTS FLASH, and the sky flashes with them: each bolt and its
+-     own flash share a duration and a delay, so the frame lights up on
+-     the strike and not a beat off it. A third bolt, far off in the
+-     cloud, never goes out - a picture of a thunderstorm caught between
+-     strikes still has to read as a thunderstorm. */
+-  hardcore10(u){
+-    const rnd = bnRand(1030);
+-    /* A jagged bolt: a straight line from top to bottom, knocked
+-       sideways a random amount at every joint, with forks thrown off
+-       some of them. */
+-    const bolt = (x0, y0, x1, y1, n, jit, forks) => {
+-      let main = "M" + bnF(x0) + " " + bnF(y0), fk = "";
+-      for(let i = 1; i <= n; i++){
+-        const t = i / n, x = x0 + (x1 - x0) * t + (i < n ? (rnd() - 0.5) * 2 * jit : 0), y = y0 + (y1 - y0) * t;
+-        main += " L" + bnF(x) + " " + bnF(y);
+-        if(i < n - 1 && forks && rnd() < forks){
+-          const dir = rnd() < 0.5 ? -1 : 1;
+-          let fx = x, fy = y, f = "M" + bnF(x) + " " + bnF(y);
+-          const steps = 2 + Math.floor(rnd() * 2);
+-          for(let k = 0; k < steps; k++){
+-            fx += dir * (4 + rnd() * 7); fy += 4 + rnd() * 6;
+-            f += " L" + bnF(fx) + " " + bnF(fy);
+-          }
+-          fk += f + " ";
+-        }
+-      }
+-      return [main, fk];
+-    };
+-    const drawBolt = (b, w, cls, style) =>
+-      '<g' + (cls ? ' class="' + cls + '"' : '') + (style ? ' style="' + style + '"' : '') + ' fill="none" stroke-linecap="round" stroke-linejoin="round">' +
+-      '<path d="' + b[0] + '" stroke="#7FA8FF" stroke-width="' + bnF(w * 6) + '" opacity=".16"/>' +
+-      '<path d="' + b[0] + '" stroke="#9CBBFF" stroke-width="' + bnF(w * 3) + '" opacity=".3"/>' +
+-      '<path d="' + b[1] + '" stroke="#9CBBFF" stroke-width="' + bnF(w * 2.4) + '" opacity=".22"/>' +
+-      '<path d="' + b[1] + '" stroke="#E4ECFF" stroke-width="' + bnF(w * 0.8) + '" opacity=".9"/>' +
+-      '<path d="' + b[0] + '" stroke="#DDE7FF" stroke-width="' + bnF(w * 1.7) + '"/>' +
+-      '<path d="' + b[0] + '" stroke="#FFFFFF" stroke-width="' + bnF(w * 0.8) + '"/></g>';
+-    const b1 = bolt(238, 60, 252, 146, 12, 8, 0.6);
+-    const b2 = bolt(364, 60, 380, 140, 8, 6, 0.4);
+-    const b3 = bolt(112, 40, 100, 118, 8, 5, 0.35);
+-
+-    /* THE CLOUD. Billows are circles, but never shaded one at a time -
+-       each one shaded on its own is a pile of balls. Every layer shares
+-       ONE gradient in user space, lit at the top and near-black at the
+-       base, and each billow is drawn over a lighter copy of itself
+-       nudged up and left, top to bottom, so each one leaves a crescent
+-       of light along its upper edge: the cauliflower edge of a real
+-       cumulonimbus. The tower climbs out of the frame in the middle,
+-       over the strike; the shelf either side is lower, which is what
+-       makes the middle read as towering. */
+-    const layer = (x0, x1, step, top, r0, r1, rim, rimOp, body) => {
+-      const pts = [];
+-      for(let x = x0; x <= x1; x += step * (0.7 + rnd() * 0.6)){
+-        const r = r0 + rnd() * (r1 - r0);
+-        pts.push([x, top(x) + r * (0.85 + rnd() * 0.4), r]);
+-        /* A second, lower billow under most of them, so the face of the
+-           cloud has texture and not just an edge. */
+-        if(rnd() < 0.75){ const r2 = r * (0.7 + rnd() * 0.3); pts.push([x + (rnd() - 0.5) * step, top(x) + r + r2 * (0.9 + rnd() * 0.8), r2]); }
+-      }
+-      pts.sort((p, q) => p[1] - q[1]);
+-      let out = "";
+-      pts.forEach(([x, y, r]) => {
+-        out += '<circle cx="' + bnF(x - 1.2) + '" cy="' + bnF(y - 2.4) + '" r="' + bnF(r) + '" fill="' + rim + '" opacity="' + rimOp + '"/>' +
+-               '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(r) + '" fill="url(#' + u + body + ')"/>';
+-      });
+-      let floor = "M" + x0 + " 72";
+-      for(let x = x0; x <= x1; x += 10) floor += " L" + x + " " + bnF(top(x) + r1);
+-      return '<path d="' + floor + ' L' + x1 + ' 72Z" fill="url(#' + u + body + ')"/>' + out;
+-    };
+-    const towerTop = x => 34 - 76 * Math.exp(-Math.pow((x - 240) / 58, 2));
+-    const tower = layer(130, 350, 14, towerTop, 13, 22, "#B4BFF2", ".55", "ct");
+-    /* Billows inside the face of the tower too, or it is a smooth dome
+-       with a lumpy edge. Sampled until they sit wholly inside it. */
+-    const inner = [];
+-    for(let tries = 0; inner.length < 16 && tries < 400; tries++){
+-      const x = 170 + rnd() * 140, y = -10 + rnd() * 50, r = 10 + rnd() * 10;
+-      if(y - r > towerTop(x) + 6 && y - r > towerTop(x - r) + 2 && y - r > towerTop(x + r) + 2) inner.push([x, y, r]);
+-    }
+-    inner.sort((p, q) => p[1] - q[1]);
+-    const towerFace = inner.map(([x, y, r]) =>
+-      '<circle cx="' + bnF(x - 1.2) + '" cy="' + bnF(y - 2.4) + '" r="' + bnF(r) + '" fill="#9AA6E2" opacity=".42"/>' +
+-      '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(r) + '" fill="url(#' + u + 'ct)"/>').join("");
+-    const shelf = layer(-20, 500, 22, x => 36 + 6 * Math.sin(x / 31) + 3 * Math.sin(x / 13), 11, 18, "#8390CF", ".45", "cs");
+-    const roll = layer(-20, 500, 20, x => 50 + 3 * Math.sin(x / 17), 8, 12, "#5A67A6", ".45", "cf");
+-    let pouches = "";
+-    for(let i = 0; i < 20; i++){
+-      const x = -4 + i * 25 + rnd() * 8, y = 68 + rnd() * 6, r = 9 + rnd() * 6;
+-      pouches += '<ellipse cx="' + bnF(x) + '" cy="' + bnF(y + 1.8) + '" rx="' + bnF(r) + '" ry="' + bnF(r * 0.72) + '" fill="#46528C" opacity=".5"/>' +
+-                 '<ellipse cx="' + bnF(x) + '" cy="' + bnF(y) + '" rx="' + bnF(r) + '" ry="' + bnF(r * 0.72) + '" fill="#0B0E1C"/>';
+-    }
+-    const ug = (id, stops, y1, y2) => '<linearGradient id="' + u + id + '" gradientUnits="userSpaceOnUse" x1="0" y1="' + y1 + '" x2="0" y2="' + y2 + '">' +
+-      stops.map(t => '<stop offset="' + t[0] + '" stop-color="' + t[1] + '"/>').join("") + '</linearGradient>';
+-    let rain = "", rain2 = "";
+-    for(let i = 0; i < 120; i++){
+-      const x = -20 + rnd() * 540, y = -20 + rnd() * 220, l = 10 + rnd() * 10;
+-      const ln = '<line x1="' + bnF(x) + '" y1="' + bnF(y) + '" x2="' + bnF(x - l * 0.32) + '" y2="' + bnF(y + l) + '"/>';
+-      if(i % 3) rain += ln; else rain2 += ln;
+-    }
+-    let crests = "";
+-    for(let i = 0; i < 30; i++){
+-      const x = rnd() * 480, y = 142 + rnd() * 36, w = 10 + rnd() * 22 * (0.6 + (y - 142) / 40);
+-      crests += '<path d="M' + bnF(x) + ' ' + bnF(y) + ' q' + bnF(w * 0.5) + ' -' + bnF(2 + w * 0.08) + ' ' + bnF(w) + ' 0"/>';
+-    }
+-    /* THE BIG ONE (build 234). Every other strike is a double: a second
+-       bolt comes down beside the first, the sky goes white, the sea
+-       under it lights up and the frame jolts. Drawn last, so the storm
+-       above keeps the random draws it always had. It runs on 7.2s, twice
+-       the main bolt's 3.6s, with the delay picked so it lands on the
+-       same frame as a main strike. */
+-    const b4 = bolt(190, 56, 172, 142, 10, 7, 0.55);
+-    const big = 'animation-delay:-6.8s';
+-    return '<defs>' +
+-      bnLin(u + "sky", [[0, "#03050B"], [0.38, "#0E1528"], [0.6, "#232D56"], [0.77, "#35416F"]]) +
+-      bnRad(u + "inner", [[0, "#8E9DFF", 0.55], [0.5, "#4A57A8", 0.2], [1, "#1A2340", 0]]) +
+-      ug("ct", [[0, "#56619A"], [0.45, "#2C3460"], [1, "#12162C"]], -40, 70) +
+-      ug("cs", [[0, "#3D477A"], [0.5, "#1D2342"], [1, "#0E1226"]], 24, 72) +
+-      ug("cf", [[0, "#262D52"], [1, "#0B0E1C"]], 48, 74) +
+-      bnRad(u + "core", [[0, "#DCE6FF", 0.8], [0.35, "#8E9DFF", 0.35], [1, "#4A57A8", 0]]) +
+-      bnLin(u + "sea", [[0, "#141C33"], [0.3, "#0A1020"], [1, "#03060C"]]) +
+-      bnRad(u + "hit", [[0, "#E4EEFF", 0.9], [0.3, "#9CBBFF", 0.4], [1, "#6E8FFF", 0]]) +
+-      bnRad(u + "lamp", [[0, "#FFF1C4", 0.95], [0.3, "#FFC857", 0.5], [1, "#FF9A3C", 0]]) +
+-      bnLin(u + "beam", [[0, "#FFE7A8", 0.5], [1, "#FFE7A8", 0]], 0, 0, 1, 0) +
+-      bnRad(u + "glare", [[0, "#F2F6FF", 0.9], [0.4, "#AFC4FF", 0.35], [1, "#6E8FFF", 0]]) +
+-      '</defs>' +
+-      '<g class="bn-jolt" style="animation-duration:7.2s;' + big + '">' +
+-      '<rect width="480" height="180" fill="url(#' + u + 'sky)"/>' +
+-      bnStars(rnd, 26, 40, true) +
+-      /* The storm lit from inside, behind everything. */
+-      '<ellipse cx="250" cy="44" rx="190" ry="60" fill="url(#' + u + 'inner)" class="bn-flash" style="animation-duration:3.6s;animation-delay:-3.2s" opacity=".6"/>' +
+-      /* The far bolt, the one that stays lit, behind the cloud. */
+-      '<g opacity=".55">' + drawBolt(b3, 1.2) + '</g>' +
+-      tower + towerFace + shelf + roll + pouches +
+-      /* The strike's own light inside the cloud where it leaves it. */
+-      '<ellipse cx="240" cy="40" rx="80" ry="46" fill="url(#' + u + 'core)" class="bn-flash" style="animation-duration:3.6s;animation-delay:-3.2s" opacity=".3"/>' +
+-      '<ellipse cx="372" cy="44" rx="60" ry="34" fill="url(#' + u + 'core)" class="bn-flash" style="animation-duration:5.2s;animation-delay:-1.4s" opacity="0"/>' +
+-      /* The sea, and the horizon line picked out by the flash. */
+-      '<rect y="138" width="480" height="42" fill="url(#' + u + 'sea)"/>' +
+-      '<path d="M0 138 L480 138" stroke="#7F95D6" stroke-width=".8" opacity=".45"/>' +
+-      '<g class="bn-bob" fill="none" stroke="#8EA4E0" stroke-width="1.1" stroke-linecap="round" opacity=".4">' + crests + '</g>' +
+-      /* The cliff and the lighthouse, off to the left. */
+-      '<path d="M-10 180 L-10 104 L14 100 L30 108 L46 104 L62 116 L74 132 L90 146 L106 180Z" fill="#070A12"/>' +
+-      '<path d="M14 100 L30 108 L46 104 L62 116" fill="none" stroke="#3E4C80" stroke-width="1" opacity=".6"/>' +
+-      '<path d="M40 104 L28 104 L30 78 L38 78Z" fill="#D9DEE8"/><path d="M29.3 88 L38.7 88 L38.5 92 L29.5 92Z" fill="#C6413F"/>' +
+-      '<path d="M28.6 97 L39.4 97 L39.6 101 L28.4 101Z" fill="#C6413F"/>' +
+-      '<rect x="29" y="72" width="10" height="7" fill="#1A1F2E"/><path d="M28 72 L34 66 L40 72Z" fill="#12151F"/>' +
+-      '<path d="M37 75.5 L140 60 L140 92Z" fill="url(#' + u + 'beam)" class="bn-beam"/>' +
+-      '<circle cx="34" cy="75.5" r="16" fill="url(#' + u + 'lamp)" class="bn-glint"/>' +
+-      '<rect x="31" y="73.5" width="6" height="4" fill="#FFE7A8"/>' +
+-      /* The strikes. The main bolt hits the water in the middle of the
+-         frame, where every slice of the banner keeps it. */
+-      '<circle cx="254" cy="146" r="46" fill="url(#' + u + 'hit)" class="bn-flash" style="animation-duration:3.6s;animation-delay:-3.2s" opacity="0"/>' +
+-      drawBolt(b1, 1.9, "bn-bolt", "animation-duration:3.6s;animation-delay:-3.2s") +
+-      drawBolt(b2, 1.1, "bn-bolt", "animation-duration:5.2s;animation-delay:-1.4s") +
+-      '<g class="bn-rain" stroke="#A9BDF0" stroke-width=".7" opacity=".35">' + rain + '</g>' +
+-      '<g class="bn-rain" style="animation-duration:.5s" stroke="#C9D6FF" stroke-width="1" opacity=".3">' + rain2 + '</g>' +
+-      /* The whole sky whitening on a strike. */
+-      '<rect width="480" height="180" fill="#C9D8FF" fill-opacity=".16" class="bn-flash" style="animation-duration:3.6s;animation-delay:-3.2s" opacity="0"/>' +
+-      '<rect width="480" height="180" fill="#C9D8FF" fill-opacity=".12" class="bn-flash" style="animation-duration:5.2s;animation-delay:-1.4s" opacity="0"/>' +
+-      /* The big strike's own parts, all on the 7.2s cycle. */
+-      '<ellipse cx="200" cy="50" rx="120" ry="56" fill="url(#' + u + 'core)" class="bn-flash2" style="' + big + '" opacity="0"/>' +
+-      '<ellipse cx="190" cy="146" rx="80" ry="10" fill="url(#' + u + 'glare)" class="bn-flash2" style="' + big + '" opacity="0"/>' +
+-      '<g class="bn-strike2" style="' + big + '" opacity="0">' + drawBolt(b4, 1.6) + '</g>' +
+-      '<rect width="480" height="180" fill="#D8E3FF" fill-opacity=".34" class="bn-flash2" style="' + big + '" opacity="0"/>' +
+-      '</g>';
+-  },
+ 
+   /* SKY TEMPLE - 250 hundos, two and a half times Summit, and it has to
+      look it. Summit is a mountain you climbed; this is where you end up

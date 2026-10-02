@@ -7070,8 +7070,11 @@
      gives back a few pixels of padding it was not using, and the gap to
      it narrows a little - which puts the room between the icons, where
      the cramping was. A tablet is untouched: 59-93px apart already. */
+  /* FOUR TABS AGAIN (build 284): the Progress tab came off the bar and
+     Home's went back to 376px, so the cap goes back with it - the rule is
+     "the same footprint as Home", and 26rem was Home's five-tab width. */
   @media (max-width:639px){
-    .bottomtabs.has-start-tab{ width:min(26rem, calc(100vw - 1.5rem)); gap:.5rem; }
+    .bottomtabs.has-start-tab{ width:min(23.5rem, calc(100vw - 1.5rem)); gap:.5rem; }
   }
   /* The pill's own sizing sits further down the file and would win on
      source order, hence the extra class; a 320px phone keeps its stacked
@@ -7086,21 +7089,11 @@
     .bottomtabs:not(.has-start-tab) .bottomtab-icon-avatar{ width:2.2rem; height:2.2rem; }
     .bottomtabs:not(.has-start-tab) .bottomtab-label{ font-size:.84rem; }
   }
-  /* FIVE TABS SINCE BUILD 219 (Ranks joined the bar), and at the four-tab
-     padding the pill measured 578px - wide enough that the daily-question
-     circle and the version label, which sit in the open margin beside
-     it, ended up inside it on every sideways phone and on the iPad.
-     1.1rem a side brings it to ~506px; below 56rem wide (a 640-896px
-     window: phones on their side, Split View) it goes tighter again,
-     because there the circle is pinned to the screen edge rather than to
-     the bar and the bar has to leave it room: the bar may be no wider
-     than the viewport minus ~204px. check-fixes measures both. */
-  @media (min-width:40rem){
-    .bottomtabs:not(.has-start-tab) .bottomtab{ padding-left:1.1rem; padding-right:1.1rem; }
-  }
-  @media (min-width:40rem) and (max-width:56rem){
-    .bottomtabs:not(.has-start-tab) .bottomtab{ padding-left:.55rem; padding-right:.55rem; }
-  }
+  /* FOUR TABS AGAIN (build 284). Build 219's five-tab padding (1.1rem a
+     side, .55rem below 56rem wide) is gone with the Progress tab: "the
+     bottom should return to how it was before the introduction of that
+     new bottom tab". Four tabs at the base 1.55rem measure the 480px bar
+     build 218 had, with the daily-question circle back at 21rem. */
   /* The compact, icon-only bar above is a PHONE compromise, and the
      :not(.has-start-tab) that used to run through every rule up there
      applied it everywhere. Reported directly: on an iPad the unit
@@ -11105,9 +11098,8 @@
          measured across the matrix 1.83rem puts the two centre lines at
          exactly 0px apart. */
       bottom:calc(1.46rem + env(safe-area-inset-bottom, 0px));
-      /* 22rem since the fifth tab: the bar's right edge is ~50% + 15.8rem
-         and this circle is 4.6rem, so its left edge lands ~1.6rem clear. */
-      right:max(calc(50% - 22rem), 1rem);
+      /* 21rem again since build 284: the fifth tab (and its 22rem) is gone */
+      right:max(calc(50% - 21rem), 1rem);
     }
   }
   @media (hover:hover){ .homeversion-btn:hover{ opacity:.85; } }
@@ -11766,14 +11758,41 @@
        whips round (3s a turn, brighter arcs), the jets fire - stretching
        along their axis and flaring to full - the lensed arc and the
        photon ring beat, and the crown's motes race. */
-    .rank-emblem-svg.rk-k-elite .rk-spin.rk-quick{ animation-duration:3s; }
-    .rank-emblem-svg.rk-k-elite .rk-turn.rk-quick{ animation-duration:7s; }
-    .rank-emblem-svg.rk-k-elite .rk-turn.rk-back.rk-quick{ animation-duration:9s; }
-    .rank-emblem-svg.rk-k-elite .rk-flare{ animation-name:rk-jet; animation-duration:1.1s; }
-    .rank-emblem-svg.rk-k-elite .rk-glow{ animation-duration:1.1s; }
-    .rank-emblem-svg.rk-k-elite .rk-pulse{ animation-name:rk-pulse-big; animation-duration:1.3s; }
-    .rank-emblem-svg.rk-k-elite .rk-breathe{ animation-duration:2s; }
+    /* ...and back down a little (build 284): "the amethyst animation
+       spins a little fast". The whirl 3s -> 5.5s a turn and everything
+       else about a third slower; still the most motion below Supernova. */
+    .rank-emblem-svg.rk-k-elite .rk-spin.rk-quick{ animation-duration:5.5s; }
+    .rank-emblem-svg.rk-k-elite .rk-turn.rk-quick{ animation-duration:12s; }
+    .rank-emblem-svg.rk-k-elite .rk-turn.rk-back.rk-quick{ animation-duration:15s; }
+    .rank-emblem-svg.rk-k-elite .rk-flare{ animation-name:rk-jet; animation-duration:1.5s; }
+    .rank-emblem-svg.rk-k-elite .rk-glow{ animation-duration:1.5s; }
+    .rank-emblem-svg.rk-k-elite .rk-pulse{ animation-name:rk-pulse-big; animation-duration:1.7s; }
+    .rank-emblem-svg.rk-k-elite .rk-breathe{ animation-duration:2.5s; }
+    /* SUPERNOVA DETONATES (build 284): "the supernova animation could be
+       a little cooler, needs to be coolest one." Its layers each breathed
+       on their own clock, gently, and its star turned once a minute - so
+       Amethyst's whirl out-moved it. Now the same layers keep ONE clock
+       and go off together every 3.2s: the white core flashes, the flares
+       and the light blaze out, the cross-flare snaps open, and the blast
+       shell is thrown outward and fades - an explosion on a loop, where
+       every other rank only breathes. The star and the black shards turn
+       about three times faster. No new layer: same drawing, same count. */
+    .rank-emblem-svg.rk-k-titan .rk-pulse{ animation:rk-nova-core 3.2s cubic-bezier(.2,.7,.3,1) infinite; }
+    .rank-emblem-svg.rk-k-titan .rk-flare{ animation:rk-nova-flare 3.2s cubic-bezier(.2,.7,.3,1) infinite; }
+    .rank-emblem-svg.rk-k-titan .rk-breathe{ animation:rk-nova-halo 3.2s cubic-bezier(.2,.7,.3,1) infinite; }
+    .rank-emblem-svg.rk-k-titan .rk-shock{ animation:rk-nova-shock 3.2s cubic-bezier(.15,.6,.35,1) infinite; }
+    .rank-emblem-svg.rk-k-titan .rk-twinkle{ animation-name:rk-twinkle-big; animation-duration:1.6s; }
+    .rank-emblem-svg.rk-k-titan .rk-nova-x{ animation:rk-nova-x 3.2s cubic-bezier(.2,.7,.3,1) infinite; }
+    .rank-emblem-svg.rk-k-titan .rk-turn.rk-slow{ animation-duration:24s; }
+    .rank-emblem-svg.rk-k-titan .rk-turn.rk-back{ animation-duration:17s; }
+    .rank-emblem-svg.rk-k-titan .rk-turn.rk-back.rk-quick{ animation-duration:11s; }
+    .rank-emblem-svg.rk-k-titan .rk-spin.rk-fast{ animation-duration:5s; }
   }
+  @keyframes rk-nova-core{ 0%{ transform:scale(.85); opacity:.85; } 7%{ transform:scale(1.55); opacity:1; } 24%{ transform:scale(1.05); opacity:1; } 100%{ transform:scale(.85); opacity:.85; } }
+  @keyframes rk-nova-flare{ 0%{ transform:scale(.72); opacity:.4; } 7%{ transform:scale(1.3, 1.2); opacity:1; } 30%{ transform:scale(1); opacity:.85; } 100%{ transform:scale(.72); opacity:.4; } }
+  @keyframes rk-nova-halo{ 0%{ transform:scale(.9); opacity:.5; } 9%{ transform:scale(1.16); opacity:1; } 100%{ transform:scale(.9); opacity:.5; } }
+  @keyframes rk-nova-shock{ 0%{ transform:scale(.6); opacity:0; } 6%{ transform:scale(.72); opacity:1; } 65%{ opacity:.4; } 100%{ transform:scale(1.2); opacity:0; } }
+  @keyframes rk-nova-x{ 0%{ transform:scale(.6); opacity:.25; } 6%{ transform:scale(1.05); opacity:.9; } 35%{ transform:scale(.85); opacity:.6; } 100%{ transform:scale(.6); opacity:.25; } }
   .rankmap-stop.is-locked .rankmap-node{ background:#0C0F14; border-color:rgba(255,255,255,.14); box-shadow:none; }
   .rankmap-stop.is-locked .rankmap-node > svg{ filter:grayscale(1) brightness(.7); opacity:.45; }
   .rankmap-stop.is-next .rankmap-node{ border-style:dashed; }
@@ -35916,6 +35935,15 @@ const ACCOUNT_MOVE_SUFFIX = "__moved";
    reads `__merge`, so the merge can only ever happen on a build that
    knows how to do it. */
 const ACCOUNT_MERGE_SUFFIX = "__merge";
+/* A CREDIT NOTE (build 284) is for progress whose account has no device
+   left to follow a merge note: a rankings row whose progress document is
+   gone, from a parallel sign-up. It sits beside the account it is FOR,
+   at progress/<code>__credit, and every device on that account checks
+   it. `id` names the credit, and `store.creditsApplied` remembers it, so
+   it is paid once per account however many devices see it - and the
+   build 284 sync takes the larger counter rather than adding, so two
+   devices crediting at the same moment still land on one total. */
+const ACCOUNT_CREDIT_SUFFIX = "__credit";
 let accountMoveChecked = "";
 
 /* AND THE OTHER HALF: A DELETED ROW STILL MATCHES ITS OWN SIGNATURE.
@@ -35979,7 +36007,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               dailyCorrectStreak: 0, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bestTestStreak: 0,
               weeklyWins: 0, weeklyTop3: 0, retakenQuestions: 0, hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, unlocksShown: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
               vrMatches: 0, vrWins: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
-              fullTestsSeeded: false, practiceExamPerfect: false, banner: "", starfallKept: false,
+              fullTestsSeeded: false, practiceExamPerfect: false, banner: "", starfallKept: false, creditsApplied: [],
               publicId: null, leaderboardKeyMigrated: false,
               friendCode: null, friendsOut: [], friendsIn: [], friendsDeclined: [],
               lobbyInvitesOut: {},
@@ -36178,6 +36206,7 @@ function applyLoadedData(got){
   store.fullTestsSeeded = got.fullTestsSeeded === true;
   store.practiceExamPerfect = got.practiceExamPerfect === true;
   store.starfallKept = got.starfallKept === true;
+  store.creditsApplied = Array.isArray(got.creditsApplied) ? got.creditsApplied.filter(x => typeof x === "string").slice(-50) : [];
   store.banner = typeof got.banner === "string" ? got.banner : "";
   store.pendingVoidCutscene = got.pendingVoidCutscene === true;
   store.weekRankSeen = (got.weekRankSeen && typeof got.weekRankSeen === "object"
@@ -38095,6 +38124,7 @@ function attachLiveListener(code){
 function checkAccountMove(code){
   if(!fbDb || !code || accountMoveChecked === code) return;
   accountMoveChecked = code;
+  try{ checkAccountCredit(code); }catch(e){}
   try{
     const follow = (snap, merge) => {
       if(!snap || !snap.exists || code !== syncCode) return false;
@@ -38112,6 +38142,43 @@ function checkAccountMove(code){
         return fbDb.collection("progress").doc(code + ACCOUNT_MOVE_SUFFIX).get().then(snap => { follow(snap, false); }); })
       .catch(() => {});
   }catch(e){}
+}
+function checkAccountCredit(code){
+  fbDb.collection("progress").doc(code + ACCOUNT_CREDIT_SUFFIX).get().then(snap => {
+    if(!snap || !snap.exists || code !== syncCode) return;
+    if(applyAccountCredit(snap.data() || {})){
+      try{ snap.ref.set({ done: Date.now() }, { merge: true }).catch(() => {}); }catch(e){}
+    }
+  }).catch(() => {});
+}
+/* The same three numbers a merge note's `extra` carries, added the same
+   way, and held the same way: anything the credit unlocks is announced
+   after the next test, as the merge rule asks. */
+function applyAccountCredit(note){
+  const num = v => Number(v) || 0;
+  const id = typeof note.id === "string" ? note.id : "";
+  if(!id || note.done || !store.onboardingComplete) return false;
+  if(!Array.isArray(store.creditsApplied)) store.creditsApplied = [];
+  if(store.creditsApplied.indexOf(id) >= 0) return false;
+  const ex = (note.extra && typeof note.extra === "object") ? note.extra : {};
+  if(!store.lifetime || typeof store.lifetime !== "object") store.lifetime = {};
+  const L = store.lifetime;
+  if(!store.mergeHold){
+    let chars = [], banners = [];
+    try{ chars = [...lockedCharacterSet()]; }catch(e){}
+    try{ banners = [...earnedBannerSet()]; }catch(e){}
+    store.mergeHold = { points: num(L.points), perfects: Object.assign({}, store.unitPerfects || {}), chars, banners, at: Date.now() };
+  }
+  L.points = num(L.points) + Math.max(0, num(ex.points));
+  L.correct = num(L.correct) + Math.max(0, num(ex.correct));
+  L.answered = Math.max(num(L.answered) + Math.max(0, num(ex.correct)), num(L.correct));
+  try{ rollWeek(); }catch(e){}
+  if(ex.week && ex.week === store.weekKey) store.weekPoints = num(store.weekPoints) + Math.max(0, num(ex.weekPoints));
+  store.creditsApplied = store.creditsApplied.concat([id]).slice(-50);
+  store.lastModified = Date.now();
+  try{ saveStore(); }catch(e){}
+  try{ onLiveUpdateApplied(); }catch(e){}
+  return true;
 }
 function followAccountMove(from, to, noteRef, note){
   fbDb.collection("progress").doc(to).get().then(target => {
@@ -38392,7 +38459,7 @@ function mergeSameAccount(dst, src){
     if(a.some(h => h && !theirs.has(key(h)))) res.otherHadLess = true; }
   ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "hundoDayBest", "bestTestStreak"]
     .forEach(k => maxInto(dst, k, src[k]));
-  ["vrCounted", "vrTop3Rooms", "legacyChars"].forEach(k => unionArr(k));
+  ["vrCounted", "vrTop3Rooms", "legacyChars", "creditsApplied"].forEach(k => unionArr(k));
   ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "supernovaAchieved",
    "starfallKept", "onboardingComplete", "fullTestsSeeded"].forEach(k => orInto(dst, k, src[k]));
   if(src.mysteryColorsFound && typeof src.mysteryColorsFound === "object") orMap("mysteryColorsFound");
@@ -43203,7 +43270,7 @@ function buildRankEmblemSVG(rankKey){
       add(disc(C, C, 13), { fill: uRadial(C, C, 13, [[0, "#FFFFFF", 1], [0.45, "#FFFFFF", 1], [0.7, "#FFD6CC", 0.8], [1, base, 0]]) });
     });
     add(disc(C, C, 5.5), { fill: "#FFFFFF" });
-    inLayer("rk-twinkle rk-d3", C, C, 0, () => {
+    inLayer("rk-twinkle rk-d3 rk-nova-x", C, C, 0, () => {
       add(burst(C, C, 4, 30, 0.06, UP + Math.PI / 4), { fill: "#FFFFFF", opacity: ".7" });
       add(lens(C - 36, C, C + 36, C, 1.4), { fill: "#FFFFFF", opacity: ".95" });
     });
@@ -56963,7 +57030,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-02-283";
+const APP_BUILD = "2026-10-02-284";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

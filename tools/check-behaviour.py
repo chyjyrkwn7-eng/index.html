@@ -530,7 +530,10 @@ def check_ranks(br):
     check("Profile is two tabs, Profile first, and swipes in the same order",
           len(ptabs["rendered"]) == 2 and ptabs["rendered"][:1] == ["Profile"] and
           len(ptabs["swipe"]) == 2, ptabs)
-    check("the tab bar carries a Ranks tab", ptabs["bottom"], ptabs)
+    # Build 284 took the Progress tab back off the bar: "let's remove the
+    # progress tab and put them within profile" - the rank and badge rows
+    # on the Profile card open it (check_b284).
+    check("the tab bar carries no Progress tab (build 284)", not ptabs["bottom"], ptabs)
     pg.evaluate("()=>showProfile('ranks')")
     pg.wait_for_timeout(1500)
     tabs = pg.evaluate("""()=>({
@@ -538,11 +541,11 @@ def check_ranks(br):
       rendered: [...document.querySelectorAll('.profiletabs .iconbtn')].map(b=>b.textContent),
       active: (document.querySelector('.profiletabs .iconbtn.active')||{}).textContent,
       swipe: RANKS_TABS.slice(),
-      tabLit: document.querySelector('#bottomtab-ranks').classList.contains('active')})""")
+      tabLit: document.querySelector('#bottomtab-profile').classList.contains('active')})""")
     check("an old link to Profile's rank tab lands on the Ranks screen, Rank showing",
           tabs["screen"] and len(tabs["rendered"]) == 2 and tabs["active"] == tabs["rendered"][0] and
           tabs["swipe"] == ["ranks", "badges"], tabs)
-    check("the Ranks tab in the bar is lit on its own screen", tabs["tabLit"], tabs)
+    check("Profile stays lit on the bar while the climb is open from it (build 284)", tabs["tabLit"], tabs)
 
     # THE ROAD MAP. Build 232 turned it over: Iron at the top, Supernova
     # at the bottom, so the DOM order IS the climbing order now.
@@ -1133,7 +1136,7 @@ def check_b218(br):
     sh = pg.evaluate("""()=>{ cfg.units=[topicsIn(QUESTIONS)[0]];
       cfg.mode='review'; showSetup(); const d=document.querySelector('.drawfrom-sect');
       return { reviewSources: !!(d && !d.hidden) }; }""")
-    check("Review can draw from flagged and most missed", sh["reviewSources"], sh)
+    check("Review can draw from flagged", sh["reviewSources"], sh)
     # Home: nothing animates an SVG filter every frame.
     an = pg.evaluate("()=>{ showHome(); return document.querySelectorAll('.cosmic-hero-svg animate').length; }")
     check("Home's hero animates no SVG filter", an == 0, an)
@@ -1184,9 +1187,10 @@ def check_b220(br):
       const keep = store.unitGameBeat;
       store.unitGameBeat = {};
       units.forEach(u => store.unitGameBeat[u] = { easy:true, average:false, hardcore:false });
-      // Build 225: the two Game challenges hand over banners, not characters.
-      out.foxAfter = !bannerEarned('easy10');
-      out.vikingAfter = !bannerEarned('average10');
+      // Build 225 gave the two Game challenges banners, not characters;
+      // build 284 removed those banners outright. Neither may exist.
+      out.foxAfter = !bannerDef('easy10');
+      out.vikingAfter = !bannerDef('average10');
       out.noFox = !AVATAR_CHARACTERS.some(c => c.id === 'fox' || c.id === 'viking');
       store.unitGameBeat = keep;
       // Wins: once per room, only first place, and the fifth queues the Champion.
@@ -1200,8 +1204,8 @@ def check_b220(br):
       return out; }""")
     check("the new characters draw and start locked",
           all(c["drawn"]) and all(c["locked"]), c)
-    check("Game beats already on the account earn the Easy banner, not the Average one - and there is no Fox or Viking",
-          not c["foxAfter"] and c["vikingAfter"] and c["noFox"], c)
+    check("no Game banner (Lanterns, Great Wave) exists any more, and there is no Fox or Viking (build 284)",
+          c["foxAfter"] and c["vikingAfter"] and c["noFox"], c)
     check("a room counts once, a win needs a rival, and the fifth hands over the Clown (the Champion's, before 243)",
           c["vr"][0] == 3 and c["vr"][1] == 5 and c["vr"][2] == ["clown"] and not c["champ"], c["vr"])
 
@@ -1549,11 +1553,11 @@ def check_b231(br):
       const out = {};
       bannerEarned = () => true; store.banner = 'tests100';
       out.rowBanner = buildLeaderboardRow().banner;
-      openPersonSheet({ pub:'bo', firstName:'Bo', avatarChar:'robot', level:40, badges:6, banner:'average10' });
+      openPersonSheet({ pub:'bo', firstName:'Bo', avatarChar:'robot', level:40, badges:6, banner:'tests250' });
       const card = document.querySelector('.person-card');
       out.cover = !!(card && card.classList.contains('has-cover') && card.querySelector('.person-card-cover .bnr'));
       document.querySelectorAll('.invite-overlay').forEach(e => e.remove());
-      leaderboardRows = [{ pub:'f1', firstName:'Alex', avatarChar:'dragon', level:40, badges:6, hundos:3, banner:'easy10',
+      leaderboardRows = [{ pub:'f1', firstName:'Alex', avatarChar:'dragon', level:40, badges:6, hundos:3, banner:'tests100',
                            seenAt:Date.now(), lastModified:Date.now() }];
       store.friendsOut = ['f1']; store.friendsIn = ['f1'];
       showFriends();
@@ -1637,12 +1641,9 @@ def check_b232(br):
       T('banners', () => BANNERS.map(b => [b.id, b.name]));
       // A seventeenth unit, for the length of one read: the number has to
       // follow it, which a written-in "16" cannot.
-      T('starfall', () => { const b = bannerDef('badges16');
-        QUESTIONS.push(Object.assign({}, QUESTIONS[0], { topic: 'A Unit Added Later' }));
-        try{ return { label: b.label, need: b.need, units: topicsIn(QUESTIONS).length }; }
-        finally{ QUESTIONS.pop(); } });
-      T('hardcore', () => { store.unitGameBeat = {}; topicsIn(QUESTIONS).slice(0, 10).forEach(t => store.unitGameBeat[t] = { easy:true, average:true, hardcore:true });
-        return bannerEarned('hardcore10'); });
+      // Hall of Fame (badges16) and Thunderhead (hardcore10) were removed
+      // in build 284; both must be gone, not merely locked.
+      T('gone284', () => ['badges16', 'hardcore10', 'easy10', 'average10'].filter(id => !!bannerDef(id)));
       // Planets: highlight and rim are two different colours
       T('planets', () => {
         const hue = h => { const n = parseInt(h.slice(1), 16), r = (n >> 16) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
@@ -1708,15 +1709,9 @@ def check_b232(br):
     names = dict(r["banners"]) if isinstance(r["banners"], list) else {}
     check("Northern Lights is the 100-test banner and Sakura the 250",
           names.get("tests100") == "Northern Lights" and names.get("tests250") == "Sakura", names)
-    check("Thunderhead, Sky Temple and the Supernova banner exist",
-          names.get("hardcore10") == "Thunderhead" and names.get("hundos250") == "Sky Temple"
-          and names.get("titan_rank") == "Supernova", names)
-    # Exam since build 283; ten Hardcore units under the old Game rule
-    # still hold it, which is what this now asserts.
-    check("Hardcore on ten units (the old Game rule) still holds the Thunderhead banner", r["hardcore"] is True, r["hardcore"])
-    sf = r["starfall"] if isinstance(r["starfall"], dict) else {}
-    check("Starfall's count is the units that exist, not a written-in sixteen",
-          sf.get("need") == sf.get("units") and ("all %s badges" % sf.get("units")) in str(sf.get("label")), sf)
+    check("Sky Temple and the Supernova banner exist",
+          names.get("hundos250") == "Sky Temple" and names.get("titan_rank") == "Supernova", names)
+    check("Lanterns, Great Wave, Thunderhead and Hall of Fame are gone (build 284)", r["gone284"] == [], r["gone284"])
     check("the four circled themes put a second colour on the planet",
           isinstance(r["planets"], dict) and all(v >= 35 for v in r["planets"].values()), r["planets"])
     check("putting the app away publishes your leaderboard row there and then", r["publish"] == 1, r["publish"])
@@ -2045,7 +2040,7 @@ def check_b235(br):
         at = [o.index(i) if i in o else -99 for i in ids]
         return all(b == a + 1 for a, b in zip(at, at[1:]))
     check("banners of one ladder sit next to each other, easiest first",
-          run(["easy10", "average10", "hardcore10"]) and run(["tests100", "tests250", "tests500"])
+          run(["tests100", "tests250", "tests500"])
           and run(["hundos100", "hundos250"]) and run(["adept_rank", "elite_rank", "titan_rank"]), o)
     check("Sapphire and Amethyst have banners of their own beside Supernova's", r["rankArt"] == [True, True, True], r["rankArt"])
     # A lost game was a fifth case until Game mode went (build 283).
@@ -2079,6 +2074,8 @@ def check_b235b(br):
       // Most missed: at most 15% of each unit.
       const unit = u[0], n = unitQuestionCount(unit), now = Date.now();
       QUESTIONS.forEach((q, i) => { if((q.topic || '').trim() === unit) store.stats[KEYS[i]] = { n: 3, m: 3, r: [now - 1000, now - 2000] }; });
+      /* build 284: Flagged is the one bank besides All, so give it something */
+      store.flagged = store.flagged || {}; QUESTIONS.forEach((q, i) => { if((q.topic || '').trim() === unit && Object.keys(store.flagged).length < 3) store.flagged[KEYS[i]] = true; });
       await T('cap', () => ({ n, got: recentMissedIndexes().filter(i => (QUESTIONS[i].topic || '').trim() === unit).length, cap: Math.max(1, Math.round(n * .15)) }));
       // A unit WITH a best time, so the check can fail.
       store.testStats[unit] = Object.assign({}, store.testStats[unit] || {}, { label: unit, plays: 5, totalMs: 1e6, bestMs: 250000 });
@@ -2093,10 +2090,10 @@ def check_b235b(br):
         return { rows: rows.map(r => r.dataset.value), bare: rows.every(r => !r.querySelector('.bank-desc') && !r.querySelector('.bank-ico')),
                  oneLine: cap.length === 1 && (cap[0].textContent || '').length > 12,
                  label: (document.querySelector('.bank-sect .slab') || {}).textContent }; });
-      document.querySelector('.bank-opt[data-value="recent"]')?.click(); await wait(200);
+      document.querySelector('.bank-opt[data-value="flagged"]')?.click(); await wait(200);
       await T('bankInfo', () => { const c = document.querySelector('.bank-caption');
         return { info: !!document.querySelector('.bank-info, .bank-infobody'), shown: !!c && !c.hidden, len: c ? (c.textContent || '').trim().length : 0 }; });
-      cfg.timer = 'down'; cfg.timerMinutes = 20; document.querySelector('.bank-opt[data-value="recent"]')?.click(); await wait(200);
+      cfg.timer = 'down'; cfg.timerMinutes = 20; document.querySelector('.bank-opt[data-value="flagged"]')?.click(); await wait(200);
       await T('tags', () => { const ts = [...document.querySelectorAll('.sheet-summary .sheet-summary-tags .sheet-tag')];
         const card = (document.querySelector('.unitoptions-modal-sheet .more-toggle') || {}).parentElement;
         return { tags: ts.length, texts: ts.map(t => t.textContent), icons: ts.every(t => !!t.querySelector('svg')),
@@ -2119,7 +2116,7 @@ def check_b235b(br):
         return { stats: [...d.querySelectorAll('.unitdetail-statlab')].map(e => e.textContent),
                  doors: d.querySelectorAll('.unitdetail-door').length, w: Math.round(r.width),
                  unticked: row.querySelector('input').checked === was }; });
-      document.querySelector('.unitdetail-door.is-recent')?.click(); await wait(600);
+      document.querySelector('.unitdetail-door.is-flagged')?.click(); await wait(600);
       await T('list', () => ({ qs: document.querySelectorAll('.unitdetail-list .unitdetail-q').length,
                                flags: document.querySelectorAll('.unitdetail-list .unitdetail-flag').length }));
       /* Build 270: Most missed has no flags; the Flagged list keeps them,
@@ -2132,7 +2129,7 @@ def check_b235b(br):
     check("every stretch of road on the map is the same length", p.get("max", 99) - p.get("min", 0) <= 2 and p.get("min", 0) > 150, r["pitch"])
     check("on a phone the ranks sit either side of the road, like the iPad", r["sides"] == "LRLRLRL", r["sides"])
     cp = r["cap"] if isinstance(r["cap"], dict) else {}
-    check("Most missed keeps at most 15% of a unit", cp.get("got") == cp.get("cap") and cp.get("got", 99) < cp.get("n", 0), r["cap"])
+    # (Most missed's 15% cap was checked here; the bank went in build 284.)
     check("no best time on the unit cards", r["noBest"] == 0, r["noBest"])
     check("the unit screen says a card can be held", r["hint"] is True, r["hint"])
     b = r["bank"] if isinstance(r["bank"], dict) else {}
@@ -2142,8 +2139,9 @@ def check_b235b(br):
     # paragraph behind it ("the description for most missed is way too
     # much") - 249 had both, and fails this.
     bi = r.get("bankInfo") if isinstance(r.get("bankInfo"), dict) else {}
-    check("the Question bank: one three-way switch, and one short line under it for Most missed - no info dot",
-          b.get("rows") == ["all", "recent", "flagged"] and b.get("bare") and b.get("oneLine")
+    # Build 284: two banks - All questions and Flagged; Most missed is gone.
+    check("the Question bank: All questions and Flagged, one short line under Flagged - no info dot",
+          b.get("rows") == ["all", "flagged"] and b.get("bare") and b.get("oneLine")
           and bi.get("shown") and 0 < bi.get("len", 0) <= 45 and not bi.get("info")
           and b.get("label") == "Question bank", [b, bi])
     t = r["tags"] if isinstance(r["tags"], dict) else {}
@@ -2158,7 +2156,7 @@ def check_b235b(br):
     # don't show that ... If there's no timer, don't show that either ...
     # And if it's all questions, don't show that."
     check("the top box lists only the settings that are on, each with an icon, and no question count",
-          isinstance(t, dict) and t.get("icons") and "20 min limit" in tx and "Most missed" in tx
+          isinstance(t, dict) and t.get("icons") and "20 min limit" in tx and "Flagged" in tx
           and not any(x in ("All questions", "In order", "No timer") for x in tx)
           and not any(x.startswith("All ") and x[4:].isdigit() for x in tx) and not any(" of " in x for x in tx)
           and "20 min limit" in t.get("state", ""), t)
@@ -2170,12 +2168,12 @@ def check_b235b(br):
     check("the fold is called Timer", str(r["timerLabel"]).startswith("Timer"), r["timerLabel"])
     d = r["detail"] if isinstance(r["detail"], dict) else {}
     check("holding a unit card opens its details without ticking it",
-          d.get("unticked") is True and d.get("doors") == 2 and "Completed" in d.get("stats", []) and "Last score" in d.get("stats", [])
+          d.get("unticked") is True and d.get("doors") == 1 and "Completed" in d.get("stats", []) and "Last score" in d.get("stats", [])
           and "Hundos" in d.get("stats", []) and d.get("w", 0) > 300, r["detail"])
     l = r["list"] if isinstance(r["list"], dict) else {}
     # REVISED IN 270: "When looking at your most missed, remove the flag
     # option." Flagging is done from the Flagged list, which keeps it.
-    check("Most missed opens inside the card, with no flag on its questions", l.get("qs", 0) >= 1 and l.get("flags") == 0, r["list"])
+    check("Flagged opens inside the card (its only door since build 284)", l.get("qs", 0) >= 1, r["list"])
     check("tapping off it closes it", isinstance(r["detail"], dict) and r["closed"] is True, r["closed"])
     ctx.close()
 
@@ -2236,11 +2234,8 @@ def check_b236(br):
         document.querySelector('.unitdetail-confirmyes')?.click(); await wait(200);
         return { warned, before, after: flaggedIndexes().filter(i => (QUESTIONS[i].topic || '').trim() === unit).length }; });
       document.querySelector('.unitdetail-back')?.click(); await wait(500);
-      document.querySelector('.unitdetail-door.is-recent')?.click(); await wait(700);
-      await T('clearMissed', async () => { const before = recentMissedIndexes().filter(i => (QUESTIONS[i].topic || '').trim() === unit).length;
-        document.querySelector('.unitdetail-resetbtn')?.click(); await wait(100);
-        document.querySelector('.unitdetail-confirmyes')?.click(); await wait(200);
-        return { before, after: recentMissedIndexes().filter(i => (QUESTIONS[i].topic || '').trim() === unit).length }; });
+      /* build 284: no Most missed door to clear */
+      await T('clearMissed', () => document.querySelectorAll('.unitdetail-door.is-recent').length);
       document.querySelector('.unitdetail-scrim')?.click(); await wait(600);
       // The Virtual Room podium.
       await T('vr', () => {
@@ -2262,7 +2257,7 @@ def check_b236(br):
     check("Zeus's symbol sits on a dark carved panel, and Poseidon's id draws the Sheriff", r["panels"] == [True, True], r["panels"])
     cp = r["copy"] if isinstance(r["copy"], dict) else {}
     check("the doors say what they open, and Hundos says nothing about the badge",
-          cp.get("doors") == ["Tap to see flagged questions", "Tap to see most missed"]
+          cp.get("doors") == ["Tap to see flagged questions"]
           and "badge" not in (cp.get("hundoSub") or "").lower(), r["copy"])
     l = r["list"] if isinstance(r["list"], dict) else {}
     check("the list drops the badge bar, has a search, and the in-test flag",
@@ -2270,8 +2265,7 @@ def check_b236(br):
     check("search filters and Clear brings everything back", r["search"] == {"none": 0, "back": 3}, r["search"])
     rs = r["reset"] if isinstance(r["reset"], dict) else {}
     check("unflagging the unit asks first, then does it", rs.get("warned") and rs.get("before", 0) >= 3 and rs.get("after") == 0, r["reset"])
-    cm = r["clearMissed"] if isinstance(r["clearMissed"], dict) else {}
-    check("clearing a unit's most missed empties it", cm.get("before", 0) > 0 and cm.get("after") == 0, r["clearMissed"])
+    check("there is no Most missed door to clear (build 284)", r["clearMissed"] == 0, r["clearMissed"])
     v = r["vr"] if isinstance(r["vr"], dict) else {}
     check("a podium only from four people; top three counts once, and never in a room of three",
           v.get("places") == [1, 1, 3, 3] and v.get("small") == 0 and v.get("big") == 1, r["vr"])
@@ -2859,12 +2853,13 @@ def check_b243(br):
       store.shadesAt = null;
       /* 8. banner ladders */
       const still = id => buildBannerArt(id).classList.contains('is-still');
-      out.ladders = { first: ['easy10', 'tests100', 'hundos100', 'adept_rank'].map(still),
-        rest: ['average10', 'hardcore10', 'tests250', 'tests500', 'hundos250', 'elite_rank', 'titan_rank'].map(still) };
+      /* the Game ladder (easy10/average10/hardcore10) was removed in build 284 */
+      out.ladders = { first: ['tests100', 'hundos100', 'adept_rank'].map(still),
+        rest: ['tests250', 'tests500', 'hundos250', 'elite_rank', 'titan_rank'].map(still) };
       /* build 244: Hall of Fame is a ring of the badges round a medal, drawn
          twice (behind and in front of it) - so count the distinct badges. */
-      out.hallBadges = new Set([...buildBannerArt('badges16').querySelectorAll('[data-u]')].map(e => e.dataset.u)).size;
-      out.bannerNames = ['badges16', 'level80', 'study50', 'correct5000'].map(id => (bannerDef(id) || {}).name);
+      /* Hall of Fame (badges16) was removed in build 284 */
+      out.bannerNames = ['level80', 'study50', 'correct5000'].map(id => (bannerDef(id) || {}).name);
       /* build 244: the two new banners count what they say, from what is already kept. */
       const wasLife = store.lifetime.correct, wasLog = store.studyLog;
       store.lifetime.correct = 4999; const c1 = bannerEarned('correct5000');
@@ -2934,9 +2929,8 @@ def check_b243(br):
     # move ("All 3 of the rank banners ... Ensure all 3 of them are
     # animated"), so its first rung, Sapphire (the 4th entry), moves too.
     check("the first banner of every ladder is still, bar the rank banners, and every one above it moves",
-          lad.get("first") == [True, True, True, False] and lad.get("rest") == [False] * 7, lad)
-    check("the all-badges banner is the sixteen badges", r.get("hallBadges") == 16, r.get("hallBadges"))
-    check("the redone and new banners are named", r.get("bannerNames") == ["Hall of Fame", "Ascension", "Midnight Oil", "Star Trails"], r.get("bannerNames"))
+          lad.get("first") == [True, True, False] and lad.get("rest") == [False] * 5, lad)
+    check("the redone and new banners are named", r.get("bannerNames") == ["Ascension", "Midnight Oil", "Star Trails"], r.get("bannerNames"))
     check("Star Trails at 5,000 right answers and Midnight Oil at 50 hours studied (build 244)",
           r.get("newBanners") == [False, True, False, True], r.get("newBanners"))
     check("the road map cuts each emblem to the inside of its ring", "circle" in (r.get("mapClip") or ""), r.get("mapClip"))
@@ -4199,14 +4193,15 @@ def check_b246(br):
     # 43. Madison's list after 245, on a real Home.
     t = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
       store.legacyChars = []; store.avatarChar = 'ninja';
-      for(const id of ['bottomtab-ranks', 'bottomtab-rewards', 'bottomtab-profile', 'bottomtab-settings']){
+      for(const id of ['bottomtab-rewards', 'bottomtab-profile', 'bottomtab-settings']){
         showHome(); await wait(600);
         const before = document.querySelector('#stage > *');
         document.getElementById(id).click(); await wait(700);
         const now = document.querySelector('#stage > *');
         out[id] = !!now && now !== before && !now.classList.contains('screen-home-actual');
       }
-      out.ranksScreen = (showHome(), await wait(500), document.getElementById('bottomtab-ranks').click(), await wait(700),
+      /* build 284: no Progress tab - the Profile card's rank row opens it */
+      out.ranksScreen = (showProfile(), await wait(700), (document.querySelector('.profile-rankplate') || document.querySelector('[class*=rankplate]') || {click(){}}).click(), await wait(900),
                          !!document.querySelector('.screen-ranks'));
       out.hiddenArt = ['umbra', 'singularity'].map(id => !!characterDetail(id).hideArt);
       out.animated = ['adept_rank', 'elite_rank', 'titan_rank'].map(id => !buildBannerArt(id).classList.contains('is-still'));
@@ -4214,8 +4209,8 @@ def check_b246(br):
       out.needs = BANNERS.filter(b => !b.secret).map(b => { const o = document.querySelector('.banner-opt[data-banner="' + b.id + '"] .banner-opt-need');
         return !!o && o.textContent === b.label; });
       return out; }""")
-    check("every tab on the bar opens its screen when TAPPED, Ranks included",
-          all(t[k] for k in ("bottomtab-ranks", "bottomtab-rewards", "bottomtab-profile", "bottomtab-settings")) and t["ranksScreen"], t)
+    check("every tab on the bar opens its screen when TAPPED, and the Profile card's rank row opens the climb",
+          all(t[k] for k in ("bottomtab-rewards", "bottomtab-profile", "bottomtab-settings")) and t["ranksScreen"], t)
     check("Umbra and Singularity are drawn in their pop-ups, not blacked out", t["hiddenArt"] == [False, False], t["hiddenArt"])
     check("all three rank banners animate", t["animated"] == [True, True, True], t["animated"])
     check("every banner in Customize says what it takes, under it", len(t["needs"]) > 10 and all(t["needs"]), t["needs"])
@@ -4798,24 +4793,8 @@ def check_b268(br):
     phone and its icons have room. (4) The road map's light rides the line
     exactly while it fills. Written against 267, where each one fails."""
     print("\n50. build 268: streak pop centred, cutscene into pop-up, unit bar spacing, road map light")
-    # 1. the streak pop
-    for w, h in [(440, 956), (834, 1194), (390, 844)]:
-        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
-        r = pg.evaluate("""async ()=>{
-          const U = topicsIn(QUESTIONS)[0]; const ix = QUESTIONS.map((q,i)=>i).filter(i=>(QUESTIONS[i].topic||'').trim()===U);
-          cfg.mode='drill'; cfg.units=[U]; cfg.source='all'; runMode='drill'; beginRun(ix, null);
-          for(let i = 0; i < 80 && !document.querySelector('.qpanel .choice'); i++) await new Promise(r => setTimeout(r, 150));
-          await new Promise(r => setTimeout(r, 900));
-          theme.muteBanners = false; showRunStreakBanner(25); await new Promise(r => setTimeout(r, 600));
-          const e = document.querySelector('.streak-pop'); if(!e) return null;
-          const b = e.getBoundingClientRect(), p = document.getElementById('pausebtn').getBoundingClientRect();
-          return { c: (b.left + b.right) / 2, vw: innerWidth, inbar: e.classList.contains('is-inbar'),
-                   clearPause: b.right <= p.left, row: Math.abs((b.top + b.bottom) / 2 - (p.top + p.bottom) / 2) }; }""")
-        tag = "%dx%d" % (w, h)
-        check("%s: the streak pop is on the screen's centre line" % tag,
-              r is not None and abs(r["c"] - r["vw"] / 2) <= 1.5, r)
-        check("%s: in the bar, clear of Pause" % tag, r is not None and r["inbar"] and r["clearPause"] and r["row"] <= 2, r)
-        ctx.close()
+    # 1. The streak pop's placement was checked here until build 284 took
+    # the pop out of the test altogether (check_b284 asserts it is gone).
     # 2. flare scene -> its pop-up, sampled every frame: how much of the
     # screen is covered by the scene, the bridge it leaves or the pop-up's dim
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
@@ -4928,7 +4907,8 @@ def check_b270(br):
       await wait(600); row.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 50, clientY: 50 })); await wait(900);
       const card = () => document.querySelector('.unitdetail');
       out.h0 = Math.round(card().getBoundingClientRect().height);
-      document.querySelector('.unitdetail-door.is-recent').click(); await wait(900);
+      /* build 284: Flagged is the only list, so it carries the list checks */
+      document.querySelector('.unitdetail-door.is-flagged').click(); await wait(900);
       const c = card();
       out.missed = { flags: c.querySelectorAll('.unitdetail-q .unitdetail-flag').length,
         note: (c.querySelector('.unitdetail-listnote') || {}).textContent || '',
@@ -4940,8 +4920,7 @@ def check_b270(br):
         ch0.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: rb.left + 5, clientY: rb.top + 5, button: 0 }));
         out.missed.pressed = ch0.style.transform || '';
         ch0.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: rb.left + 5, clientY: rb.top + 5 })); }
-      const chip = c.querySelector('.unitdetail-missed'), dr = document.querySelector('.unitdetail-door.is-recent .unitdetail-doorcount');
-      out.chipColor = chip ? getComputedStyle(chip).color : ''; out.doorColor = dr ? getComputedStyle(dr).color : '';
+      out.recentDoor = document.querySelectorAll('.unitdetail-door.is-recent').length;
       c.querySelector('.unitdetail-back').click(); await wait(900);
       /* Settle rather than trust the 900ms: under a loaded full run the
          card was read mid-transition (786 against 419) on a build where
@@ -4978,12 +4957,10 @@ def check_b270(br):
     check("the unit card is the same four numbers in every mode, the last score among them",
           len(L) == 3 and L[0] == L[1] == L[2] and len(L[0]) == 4 and any("ast" in x for x in L[0]), L)
     m = r.get("missed") or {}
-    check("Most missed has no flag on its questions", m.get("flags") == 0 and m.get("choices", 0) > 0, m)
-    check("and does not say how much it tracks (no number in its note)", m.get("note") and not any(ch.isdigit() for ch in m.get("note", "")), m.get("note"))
+    check("there is no Most missed list (build 284), and the Flagged list shows its questions", r.get("recentDoor") == 0 and m.get("choices", 0) > 0, m)
     check("both lists end in a Back button", m.get("bottomBack") and (r.get("flagged") or {}).get("bottomBack"), (m, r.get("flagged")))
     check("Flagged keeps its flags", (r.get("flagged") or {}).get("flags", 0) > 0, r.get("flagged"))
     check("a list's answer choices are read-only, and do not press like buttons", m.get("unlocked") == 0 and not m.get("pressed"), m)
-    check("the Missed chip is the colour of its door", r.get("chipColor") and r.get("chipColor") == r.get("doorColor"), (r.get("chipColor"), r.get("doorColor")))
     check("Back from a list puts the card back to its own size", abs((r.get("h1") or 0) - (r.get("h0") or -99)) <= 4, (r.get("h0"), r.get("h1")))
     check("a back link's chevron and word share a centre line", r.get("backOff", 99) <= 1, r.get("backOff"))
     check("no unit badge's drawing leaves its box", r.get("clipped") == [], r.get("clipped"))
@@ -5661,9 +5638,9 @@ def check_b283(br):
     rewards move onto Exam. (1) The mode screen offers no Game card and
     an Exam card goes straight to unit selection - no Standard / Practice
     choice. (2) Neither screen's builder is left in the page, and a saved
-    Game mode comes back as Drill. (3) Lanterns, Great Wave and
-    Thunderhead are earned off per-unit Exam bests - pass 10, ace 10, ace
-    every unit - and the old Game counts still hold them. (4) Phoenix is
+    Game mode comes back as Drill. (3) [Lanterns, Great Wave and
+    Thunderhead moved onto Exam here; build 284 removed them, so that part
+    is gone from this gate.] (4) Phoenix is
     a perfect Exam of 100 or more questions, through summarize(), and 99
     is not enough. Written against 282, where every one of these fails."""
     print("\n56. build 283: Game mode and the Practice Test retired, their rewards on Exam")
@@ -5681,22 +5658,10 @@ def check_b283(br):
       store.opts = Object.assign({}, store.opts || {}, { mode: 'game' }); applySaved();
       out.savedGame = cfg.mode;
       cfg.mode = 'drill';
-      // Banners off per-unit Exam bests, with no Game record.
       const U = topicsIn(QUESTIONS);
-      store.unitGameBeat = {};
-      store.testHistory = (store.testHistory || []).filter(h => h.mode !== 'exam');
-      const bests = list => { store.unitExam = {}; list.forEach((b, i) => { if(b != null) store.unitExam[U[i]] = { n: 1, best: b, sum: b, last: b }; }); };
-      const E = () => ['easy10', 'average10', 'hardcore10'].map(bannerEarned);
-      bests(U.map((u, i) => i < 9 ? 70 : null));           out.pass9 = E();
-      bests(U.map((u, i) => i < 10 ? 70 : null));          out.pass10 = E();
-      bests(U.map((u, i) => i < 10 ? 100 : null));         out.ace10 = E();
-      bests(U.map(() => 100));                             out.aceAll = E();
-      // The old Game record still holds all three.
-      bests([]);
-      U.slice(0, 10).forEach(u => store.unitGameBeat[u] = { easy: true, average: true, hardcore: true });
-      out.legacy = E();
-      store.unitGameBeat = {};
-      out.labels = ['easy10', 'average10', 'hardcore10', 'exam100'].map(id => bannerDef(id).label);
+      /* Lanterns, Great Wave and Thunderhead moved onto Exam here in 283
+         and were removed outright in 284 (check_b284); Phoenix stays. */
+      out.labels = ['exam100'].map(id => bannerDef(id).label);
       // Phoenix: a real perfect Exam through summarize().
       const units = []; let n = 0;
       for(const u of U){ units.push(u); n += unitQuestionCount(u); if(n >= 100) break; }
@@ -5725,19 +5690,135 @@ def check_b283(br):
           r.get("examLands") is True, r.get("examLands"))
     check("the Game and Practice Test screens are gone from the page", r.get("gone") == [], r.get("gone"))
     check("a saved Game mode comes back as Drill", r.get("savedGame") == "drill", r.get("savedGame"))
-    check("Exam passes on 9 units earn nothing; on 10 they earn Lanterns only",
-          r.get("pass9") == [False, False, False] and r.get("pass10") == [True, False, False], [r.get("pass9"), r.get("pass10")])
-    check("Exam aces on 10 units add Great Wave; on every unit, Thunderhead",
-          r.get("ace10") == [True, True, False] and r.get("aceAll") == [True, True, True], [r.get("ace10"), r.get("aceAll")])
-    check("ten old Hardcore Game units still hold all three", r.get("legacy") == [True, True, True], r.get("legacy"))
     labs = r.get("labels") or []
-    check("none of the four banners asks for Game mode or the Practice Exam",
-          len(labs) == 4 and not any(re.search(r"game|practice", l, re.I) for l in labs) and all("Exam" in l for l in labs), labs)
+    check("Phoenix asks for an Exam, not the Practice Exam",
+          len(labs) == 1 and not any(re.search(r"game|practice", l, re.I) for l in labs) and all("Exam" in l for l in labs), labs)
     check("a perfect Exam of 99 questions is not Phoenix", r.get("phoenix99") is False, r.get("n"))
     check("a perfect Exam of 100 or more questions is, through summarize()",
           r.get("phoenix") is True and r.get("n", 0) >= 100, r.get("n"))
     check("and it records every unit it covered as an Exam ace",
           r.get("acedAfter") == r.get("nUnits") and r.get("nUnits", 0) > 0, (r.get("acedAfter"), r.get("nUnits")))
+    ctx.close()
+
+
+def check_b284(br):
+    """Build 284, Madison's list after 283. (1) Settings has no Smooth
+    scrolling or Keep screen awake switch; scrolling is smooth whatever an
+    older build saved, and nothing asks for a wake lock. (2) No Progress
+    tab: four tabs on the bar, and the Profile card's rank and badge rows
+    open the climb and the case, with a way back to Profile. (3) The rank
+    box has no "N to go until X" line and the badge box no "Closest" line.
+    (4) No answer-streak pop during a test. (5) Lanterns, Great Wave,
+    Thunderhead and Hall of Fame are gone, and somebody wearing one is
+    back on the default. (6) No Most missed: two banks, one door, no
+    reset in Settings, and a saved Most missed bank loads as All. Written
+    against 283, where each one fails."""
+    print("\n57. build 284: Settings switches, no Progress tab, simpler rank boxes, no streak pop, four banners gone")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT,
+                     init="window.__wake = 0; try{ Object.defineProperty(navigator, 'wakeLock', { value: { request: () => { window.__wake++; return Promise.resolve({ release(){} }); } }, configurable: true }); }catch(e){}")
+    r = pg.evaluate("""async ()=>{ const out = {}; const wait = ms => new Promise(r => setTimeout(r, ms));
+      try {
+      /* 1. Settings */
+      store.theme = Object.assign({}, store.theme || {}, { smoothScroll: false, keepAwake: true });
+      loadTheme(); applyTheme(); await wait(200);
+      out.scroll = document.documentElement.style.scrollBehavior;
+      out.wake = window.__wake;
+      showAppearance(); await wait(800);
+      out.rows = [...document.querySelectorAll('.otext')].map(e => (e.firstChild && e.firstChild.textContent || '').trim());
+      /* 2. the bar and the Profile card */
+      out.tabs = [...document.querySelectorAll('#bottomtabs .bottomtab:not(.bottomtab-start)')].map(t => t.dataset.dest);
+      showProfile(); await wait(900);
+      const plate = document.querySelector('.profile-rankplate');
+      if(plate) plate.click(); await wait(900);
+      out.rankOpens = !!document.querySelector('.screen-ranks') && !!(document.querySelector('.rankstabs .iconbtn.active') || {}).textContent;
+      out.profileLit = !!document.querySelector('#bottomtab-profile.active');
+      out.noteLine = !!document.querySelector('.rankhero-next');
+      const back = document.querySelector('.screen-ranks .back-link');
+      if(back) back.click(); await wait(900);
+      out.backToProfile = !!document.querySelector('.screen-profile');
+      const badgeRow = document.querySelector('.screen-profile .profile-badgesect');
+      if(badgeRow) badgeRow.click(); await wait(1200);
+      out.badgesOpen = !!document.querySelector('.screen-ranks .badges-tab:not([hidden])');
+      out.closest = !!document.querySelector('.badge-next');
+      /* 4. a run of right answers in a Drill */
+      const U = topicsIn(QUESTIONS)[0];
+      cfg.mode = 'drill'; runMode = 'drill'; runLabel = null; isMissedRetake = false;
+      let pops = 0; const mo = new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => { if(n.classList && n.classList.contains('streak-pop')) pops++; })));
+      mo.observe(document.body, { childList: true, subtree: true });
+      theme.muteBanners = false; runLiveStreak = 0;
+      for(let i = 0; i < 30; i++) runStreakLive(true);
+      await wait(300); mo.disconnect();
+      out.pops = pops + document.querySelectorAll('.streak-pop').length;
+      runLiveStreak = 0;
+      /* 6. no Most missed: the bank, the unit door, the Settings reset, a saved bank */
+      showAppearance(); await wait(700);
+      out.resetMissed = [...document.querySelectorAll('button')].some(b => /missed-question history/i.test(b.textContent || ''));
+      store.opts = Object.assign({}, store.opts || {}, { source: 'recent', mode: 'drill' }); applySaved();
+      out.savedBank = cfg.source;
+      const unit = topicsIn(QUESTIONS)[0];
+      cfg.mode = 'drill'; cfg.units = []; showSetup(); await wait(700);
+      const box = [...document.querySelectorAll('.pick input')].find(x => x.value === unit);
+      if(box){ box.checked = true; box.dispatchEvent(new Event('change', { bubbles: true })); } await wait(200);
+      document.getElementById('nextbtn')?.click(); await wait(600);
+      out.banks = [...document.querySelectorAll('.bank-opt')].map(r => r.dataset.value);
+      document.querySelector('.unitoptions-modal-scrim')?.click(); await wait(400);
+      const row = [...document.querySelectorAll('.pick')].find(r => (r.querySelector('input') || {}).value === unit);
+      if(row){ row.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 50, clientY: 50, button: 0 }));
+        await wait(600); row.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 50, clientY: 50 })); await wait(800); }
+      out.doors = [...document.querySelectorAll('.unitdetail-door')].map(d => [...d.classList].find(c => c.startsWith('is-') && c !== 'is-empty'));
+      document.querySelectorAll('.unitdetail-scrim, .unitdetail').forEach(e => e.remove());
+      /* 5. the banners */
+      out.gone = ['easy10', 'average10', 'hardcore10', 'badges16'].filter(id => !!bannerDef(id));
+      store.banner = 'badges16'; out.worn = wornBanner();
+      store.banner = '';
+      } catch(e){ out.threw = String(e && e.stack || e); }
+      return out; }""")
+    check("no exception", not r.get("threw"), r.get("threw"))
+    rows = r.get("rows") or []
+    check("Settings has no Smooth scrolling or Keep screen awake switch",
+          len(rows) > 3 and not any(x in ("Smooth scrolling", "Keep screen awake") for x in rows), rows)
+    check("scrolling is smooth even where an older build saved it off", r.get("scroll") == "smooth", r.get("scroll"))
+    check("nothing asks for a wake lock, even where an older build saved it on", r.get("wake") == 0, r.get("wake"))
+    check("four tabs on the bar and none of them Progress",
+          r.get("tabs") == ["home", "profile", "rewards", "settings"], r.get("tabs"))
+    check("the Profile card's rank row opens the climb, with Profile lit on the bar",
+          r.get("rankOpens") is True and r.get("profileLit") is True, (r.get("rankOpens"), r.get("profileLit")))
+    check("and its back link goes to Profile", r.get("backToProfile") is True, r.get("backToProfile"))
+    check("the badge row opens the badge case", r.get("badgesOpen") is True, r.get("badgesOpen"))
+    check("the rank box has no 'N to go until X' line, the badge box no 'Closest' line",
+          r.get("noteLine") is False and r.get("closest") is False, (r.get("noteLine"), r.get("closest")))
+    check("thirty right answers in a row put up no streak pop during the test", r.get("pops") == 0, r.get("pops"))
+    check("Lanterns, Great Wave, Thunderhead and Hall of Fame are gone", r.get("gone") == [], r.get("gone"))
+    check("somebody wearing one of them is back on the default banner", r.get("worn") == "", r.get("worn"))
+    check("the Question bank is All questions and Flagged - no Most missed", r.get("banks") == ["all", "flagged"], r.get("banks"))
+    check("a unit's details have one door, Flagged", r.get("doors") == ["is-flagged"], r.get("doors"))
+    check("a saved Most missed bank comes back as every question", r.get("savedBank") == "all", r.get("savedBank"))
+    check("Settings has no 'Reset missed-question history'", r.get("resetMissed") is False, r.get("resetMissed"))
+    ctx.close()
+    # (7) "the amethyst animation spins a little fast ... the supernova
+    # animation could be a little cooler, needs to be coolest one."
+    # Measured on a live Rank hero emblem: Amethyst's whirl takes longer
+    # than 3s a turn, and Supernova goes off - its core, flares, light,
+    # cross-flare and blast shell on ONE clock with no offset (a single
+    # detonation, not five things breathing), its star turning faster
+    # than once a minute.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    m = pg.evaluate("""()=>{ const host = document.createElement('div'); host.className = 'rankhero-art';
+      host.style.cssText = 'position:fixed;left:0;top:0;width:200px;height:200px'; document.body.appendChild(host);
+      const look = k => { const s = buildRankEmblemSVG(k); host.replaceChildren(s); s.classList.remove('rk-idle');
+        return [...s.querySelectorAll('.rk-a')].map(g => { const c = getComputedStyle(g);
+          return { cls: g.getAttribute('class'), name: c.animationName, dur: parseFloat(c.animationDuration), delay: parseFloat(c.animationDelay) }; }); };
+      const e = look('elite'), t = look('titan');
+      const whirl = e.find(a => /rk-spin rk-quick/.test(a.cls));
+      const boom = t.filter(a => /^rk-nova-/.test(a.name));
+      const star = t.find(a => /rk-turn rk-slow/.test(a.cls));
+      return { whirl: whirl && whirl.dur, boom: boom.map(a => [a.name, a.dur, a.delay]), star: star && star.dur }; }""")
+    check("Amethyst's whirl is slower than it was (more than 3s a turn)", (m.get("whirl") or 0) >= 5, m.get("whirl"))
+    names = sorted({b[0] for b in m.get("boom") or []})
+    check("Supernova detonates: core, flares, light, cross-flare and blast shell on one clock, together",
+          names == ["rk-nova-core", "rk-nova-flare", "rk-nova-halo", "rk-nova-shock", "rk-nova-x"]
+          and len({(b[1], b[2]) for b in m["boom"]}) == 1, m.get("boom"))
+    check("and its star turns faster than once a minute", 0 < (m.get("star") or 0) < 60, m.get("star"))
     ctx.close()
 
 
@@ -5818,6 +5899,7 @@ def main():
             check_b281_badge_card(br)
             check_b282(br)
             check_b283(br)
+            check_b284(br)
         finally:
             br.close()
     SERVER.shutdown()

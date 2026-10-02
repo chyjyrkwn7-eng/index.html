@@ -518,6 +518,183 @@ with sync_playwright() as pw:
               got[i] == s["reset"], "fired=%s" % got[i])
     ctx.close()
 
+    # ---- 8. two devices, one account: merged, never overwritten ----
+    # Build 284. "on his two devices, he says he synced them but each
+    # account is still a different level but I only see one in the
+    # leaderboard". Sync was last-write-wins by lastModified, and a boot
+    # save stamps lastModified before the first pull - so a device that
+    # had been away pushed its stale copy over the other device's
+    # progress. Every case here fails on 283.
+    print("\n8. two devices on one account: merged, never overwritten")
+    ctx = br.new_context(viewport={"width": 834, "height": 1194})
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.drill.v1', '%s');"
+                        "localStorage.setItem('class26e.synccode','NOVA-2601');}catch(e){}" % STORE)
+    pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
+    pg.evaluate("()=>document.getElementById('splashscreen')?.remove()")
+    r = pg.evaluate("""async ()=>{
+      const wait = ms => new Promise(res => setTimeout(res, ms));
+      const clone = o => JSON.parse(JSON.stringify(o));
+      let cloud = null, cb = null;
+      const writes = [];
+      fbDb = { collection: name => ({ doc: id => ({
+        get: () => Promise.resolve(name === 'progress' && cloud ? { exists: true, data: () => clone(cloud) } : { exists: false }),
+        set: d => { if(name === 'progress') writes.push(clone(d)); return Promise.resolve(); },
+        update: d => Promise.resolve(),
+        delete: () => Promise.resolve(),
+        onSnapshot: next => { cb = next; return () => {}; }
+      }) }) };
+      syncCode = 'NOVA-2601';
+      const out = {};
+      const base = () => { const s = clone(store); s.stats = {}; s.testHistory = []; s.unitPerfects = {}; return s; };
+
+      /* (a) THE REPORTED BUG. The other device studied: the cloud has 900
+         points and a question this device never saw. This device is
+         stale (500 points) but saved something trivial at boot, so its
+         stamp is NEWER. */
+      const NOW = Date.now();
+      cloud = base(); cloud.lifetime.points = 900; cloud.lastModified = NOW - 60000;
+      cloud.stats.qOTHER = { n: 4, m: 1, r: [10] };
+      cloud.testHistory = [{ playedAt: 900, label: 'Other device', pct: 100, mode: 'drill', units: [] }];
+      store.lifetime.points = 500; store.stats = { qMINE: { n: 2, m: 0, r: [] } }; store.testHistory = [];
+      store.lastModified = NOW;
+      writes.length = 0;
+      await new Promise(res => pullFromCloud('NOVA-2601', () => res()));
+      await wait(3200);
+      const last = writes[writes.length - 1] || null;
+      out.a = { points: store.lifetime.points, other: !!store.stats.qOTHER, mine: !!store.stats.qMINE,
+                history: (store.testHistory || []).length,
+                pushedPoints: last ? last.lifetime.points : null, pushedBoth: !!(last && last.stats.qOTHER && last.stats.qMINE) };
+
+      /* (b) the other device's clock is BEHIND: its copy arrives through
+         the listener stamped older, with progress this one lacks */
+      attachLiveListener('NOVA-2601');
+      const older = clone(store); older.lastModified = store.lastModified - 3600000; older.lifetime.points = 1200;
+      older.unitPerfects = { 'Identity Crimes': 7 };
+      if(cb) cb({ exists: true, metadata: { fromCache: false }, data: () => clone(older) });
+      out.b = { points: store.lifetime.points, perfects: (store.unitPerfects || {})['Identity Crimes'] || 0 };
+
+      /* (c) our own write echoing back changes nothing and pushes nothing */
+      await wait(3200);
+      writes.length = 0;
+      const echo = clone(store);
+      if(cb) cb({ exists: true, metadata: { fromCache: false }, data: () => clone(echo) });
+      await wait(3200);
+      out.c = { writes: writes.length, points: store.lifetime.points };
+
+      const hasMerge = typeof mergeSameAccount === 'function';
+      if(hasMerge){
+      /* (d) two copies converge, and merging again adds nothing */
+      const A = base(), B = base();
+      A.lifetime.points = 300; A.stats = { q1: { n: 3, m: 1, r: [1] } }; A.unitPerfects = { U: 2 };
+      B.lifetime.points = 450; B.stats = { q2: { n: 1, m: 0, r: [] }, q1: { n: 5, m: 0, r: [2] } }; B.unitPerfects = { U: 1, V: 4 };
+      mergeSameAccount(A, clone(B)); mergeSameAccount(B, clone(A));
+      const canon = v => Array.isArray(v) ? '[' + v.map(canon).join(',') + ']' : (v && typeof v === 'object') ? '{' + Object.keys(v).sort().map(k => k + ':' + canon(v[k])).join(',') + '}' : JSON.stringify(v);
+      const pick = s => canon([s.lifetime.points, s.stats, s.unitPerfects]);
+      const again = mergeSameAccount(A, clone(B));
+      out.d = { same: pick(A) === pick(B), again: again.gained || again.otherHadLess, q1: A.stats.q1 };
+
+      /* (e) a cleared most-missed list stays cleared */
+      const C = base(), D = base();
+      C.stats = { q: { n: 6, m: 3, r: [], rc: 5000 } };
+      D.stats = { q: { n: 6, m: 3, r: [100, 200] } };
+      mergeSameAccount(C, D);
+      out.e = { r: C.stats.q.r || [] };
+      } else { out.d = { same: false, again: true, q1: { n: 0, m: 0 } }; out.e = { r: ['no merge'] }; }
+
+      /* (f) linking ADOPTS: this device's own, different progress is
+         not pushed over the account it links to */
+      detachLiveListener();
+      cloud = base(); cloud.lifetime.points = 777; cloud.lastModified = Date.now() - 600000;
+      store.lifetime.points = 50; store.lastModified = Date.now();
+      writes.length = 0;
+      await new Promise(res => (typeof adoptFromCloud === 'function' ? adoptFromCloud : pullFromCloud)('NOVA-2601', () => res()));
+      await wait(3200);
+      out.f = { points: store.lifetime.points, pushedMine: writes.some(w => w.lifetime && w.lifetime.points === 50) };
+      return out; }""")
+    a = r["a"]
+    check("a stale device stamped newer takes the other device's progress, not the other way round",
+          a["points"] == 900 and a["other"] and a["mine"] and a["history"] == 1, str(a))
+    check("and pushes the merge - both devices' progress - never its stale copy",
+          a["pushedPoints"] == 900 and a["pushedBoth"], str(a))
+    check("progress from a device whose clock is behind still merges in",
+          r["b"]["points"] == 1200 and r["b"]["perfects"] == 7, str(r["b"]))
+    check("this device's own write echoing back pushes nothing",
+          r["c"]["writes"] == 0, str(r["c"]))
+    check("two copies converge, and merging again changes nothing",
+          r["d"]["same"] and not r["d"]["again"] and r["d"]["q1"]["n"] == 5 and r["d"]["q1"]["m"] == 1, str(r["d"]))
+    check("a cleared most-missed list stays cleared when the other device still has the misses",
+          r["e"]["r"] == [], str(r["e"]))
+    check("linking a device takes the account as it is and pushes nothing of the device's own",
+          r["f"]["points"] == 777 and not r["f"]["pushedMine"], str(r["f"]))
+    ctx.close()
+
+    # ---- 8b. a credit note pays an account once ----
+    # Build 284. A parallel sign-up whose device was reset left a
+    # rankings row with no progress document behind it, so there is no
+    # device to follow a merge note. The credit note sits beside the
+    # account it is FOR and every device on that account reads it; it has
+    # to pay once per ACCOUNT, not once per device. Fails on 283, which
+    # has no credit note at all.
+    print("\n8b. a credit note pays an account once, on whichever device sees it")
+    ctx = br.new_context(viewport={"width": 834, "height": 1194})
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.drill.v1', '%s');"
+                        "localStorage.setItem('class26e.synccode','NOVA-2601');}catch(e){}" % STORE)
+    pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
+    pg.evaluate("()=>document.getElementById('splashscreen')?.remove()")
+    r = pg.evaluate("""async ()=>{
+      const wait = ms => new Promise(res => setTimeout(res, ms));
+      const clone = o => JSON.parse(JSON.stringify(o));
+      let credit = null;
+      const marked = [];
+      fbDb = { collection: name => ({ doc: id => ({
+        id,
+        get: () => Promise.resolve(id === 'NOVA-2601__credit' && credit
+          ? { exists: true, data: () => clone(credit), ref: { set: d => { marked.push(clone(d)); credit = Object.assign(credit, d); return Promise.resolve(); } } }
+          : { exists: false }),
+        set: d => Promise.resolve(),
+        update: d => Promise.resolve(),
+        delete: () => Promise.resolve(),
+        onSnapshot: next => () => {}
+      }) }) };
+      syncCode = 'NOVA-2601';
+      try{ rollWeek(); }catch(e){}
+      const run = async () => { accountMoveChecked = ''; checkAccountMove('NOVA-2601'); await wait(400); };
+      const snap = () => ({ points: store.lifetime.points, correct: store.lifetime.correct, week: store.weekPoints || 0 });
+      const out = { before: snap() };
+      credit = { id: 'row:test', extra: { points: 1000, correct: 90, weekPoints: 400, week: store.weekKey }, at: Date.now() };
+      const keep = clone(credit);
+      await run();
+      out.first = snap(); out.marked = marked.length; out.applied = (store.creditsApplied || []).slice();
+      out.held = !!store.mergeHold;
+      /* the note was marked done; pretend that write never landed and
+         the same note is read again */
+      credit = clone(keep); await run(); out.again = snap();
+      /* a second device on the same account that has already synced the
+         first one's creditsApplied does not pay it again */
+      if(typeof mergeSameAccount === 'function'){
+        const other = clone(store);
+        store.creditsApplied = []; store.lifetime.points = out.before.points; store.lifetime.correct = out.before.correct;
+        mergeSameAccount(store, other);
+        credit = clone(keep); await run(); out.second = snap();
+      }
+      /* a note somebody already followed pays nothing on a fresh account */
+      store.creditsApplied = [];
+      const p0 = snap();
+      credit = Object.assign(clone(keep), { done: 123 }); await run(); out.done = { before: p0, after: snap() };
+      return out; }""")
+    b, f = r["before"], r["first"]
+    check("a credit note adds its XP, right answers and this week's points",
+          f["points"] == b["points"] + 1000 and f["correct"] == b["correct"] + 90 and f["week"] == b["week"] + 400, str(r))
+    check("and the device marks the note followed, and holds anything it unlocks for the next test",
+          r["marked"] == 1 and r["applied"] == ["row:test"] and r["held"], str(r))
+    check("the same note read again pays nothing",
+          r.get("again") == f, str(r.get("again")))
+    check("a second device on the account, already synced, pays nothing",
+          r.get("second") == f, str(r.get("second")))
+    check("a note already followed pays nothing",
+          r["done"]["after"] == r["done"]["before"], str(r["done"]))
+    ctx.close()
+
     # ---- 7. the sync code never reaches a collection anyone can list ----
     # `leaderboard` and `vrooms` can both be ENUMERATED by anyone - this
     # repo's own firestore-admin.py lists them over plain REST with no

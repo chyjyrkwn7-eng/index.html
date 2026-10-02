@@ -6,7 +6,7 @@ app; GitHub Pages serves it, but nothing links to it.
 
 | Feature | Retired in | Removed by commit | Notes |
 |---|---|---|---|
-| Game mode | build 283 | `148456e` | [game-mode.md](game-mode.md) |
+| Game mode | build 283 | `148456e`, then its banners `5006899` (284) | [game-mode.md](game-mode.md) |
 | Practice Test | build 283 | `ca1e133` | [practice-test.md](practice-test.md) |
 
 Both were taken out on 2026-10-02 because almost nobody used them.
@@ -21,13 +21,16 @@ Each feature was removed in **its own commit that touches only
 `index.html`**, so the first route is one command:
 
 ```
+git revert 5006899      # Game mode's banners (build 284) - first
 git revert 148456e      # Game mode
 git revert ca1e133      # Practice Test
 ```
 
-Revert both, in that order, and `index.html` comes back byte for byte to
-what it was at `77a1cef` (build 282). Checked before shipping: reverting
-the two commits gave an empty `git diff 77a1cef -- index.html`.
+Revert them in that order and the features come back as they were.
+Reverting `148456e` and `ca1e133` alone was checked to give back build
+282's `index.html` byte for byte (an empty `git diff 77a1cef --
+index.html`); `5006899`, the banners, has to go first because it sits on
+top of `148456e`. Later builds' own changes stay, of course.
 
 If later work has touched the same lines and the revert conflicts, the
 same changes are saved here as patches. Apply one in reverse:

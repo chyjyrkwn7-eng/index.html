@@ -15,7 +15,7 @@ Every check here was written against a build where it failed:
   3. A rank reached on the daily question is told on Home, in order: no
      "Character unlocked" / "Theme unlocked" pills stacked over the
      question; the rank character is left for Home's queue.
-  4. Review mode's sheet counts the bank it will list (Most missed, not the
+  4. Review mode's sheet counts the bank it will list (Flagged since 284, not the
      whole unit).
   5. The Supernova results say "Main menu" like every other run.
   6. The grade's "12 of 12 / right on the first try" is never squeezed into
@@ -162,15 +162,16 @@ with sync_playwright() as pw:
     print("4. Review counts the bank it will list")
     ctx, pg = page(br)
     pg.evaluate("""()=>{ const ids=QUESTIONS.map((q,i)=>i).filter(i=>QUESTIONS[i].topic==='Identity Crimes'); const now=Date.now();
-      ids.slice(2,9).forEach((i,k)=>{ store.stats[KEYS[i]]={n:5,m:k+1,r:Array.from({length:k+1},(_,j)=>now-j*3600e3)}; }); saveStore();
+      /* build 284: Flagged is the bank besides All (Most missed is gone) */
+      store.flagged = store.flagged || {}; ids.slice(2,9).forEach(i=>{ store.flagged[KEYS[i]] = true; }); saveStore();
       cfg.mode='review'; showSetup(); }""")
     pg.wait_for_timeout(600)
     pg.evaluate("()=>[...document.querySelectorAll('.pick')].find(p=>p.textContent.includes('Identity Crimes')).click()"); pg.wait_for_timeout(300)
     pg.evaluate("()=>document.getElementById('nextbtn').click()"); pg.wait_for_timeout(400)
-    pg.evaluate("()=>[...document.querySelectorAll('.bank-opt')].find(r=>/Most missed/.test(r.textContent)).click()"); pg.wait_for_timeout(300)
+    pg.evaluate("()=>[...document.querySelectorAll('.bank-opt')].find(r=>/Flagged/.test(r.textContent)).click()"); pg.wait_for_timeout(300)
     sheet = pg.evaluate("()=>({line:document.querySelector('.sheet-summary-line').textContent, start:document.getElementById('nextbtn').textContent,"
-                        " missed:recentMissedIndexes().filter(i=>QUESTIONS[i].topic==='Identity Crimes').length})")
-    ck("the sheet counts the most-missed questions, not the unit", sheet["line"].endswith(" %d question%s" % (sheet["missed"], "" if sheet["missed"] == 1 else "s")), sheet)
+                        " missed:flaggedIndexes().filter(i=>QUESTIONS[i].topic==='Identity Crimes').length})")
+    ck("the sheet counts the flagged questions, not the unit", sheet["line"].endswith(" %d question%s" % (sheet["missed"], "" if sheet["missed"] == 1 else "s")), sheet)
     pg.evaluate("()=>document.querySelector('.sheet-begin-btn').click()"); pg.wait_for_timeout(800)
     listed = pg.evaluate("()=>document.querySelectorAll('.screen-answerreview .review-question').length")
     ck("and the list it opens is that many", listed == sheet["missed"], (listed, sheet["missed"]))
