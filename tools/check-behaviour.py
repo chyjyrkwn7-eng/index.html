@@ -1695,17 +1695,20 @@ def check_b232(br):
     check("a third week on the weekly podium hands over Poseidon",
           isinstance(r["poseidon"], dict) and r["poseidon"]["top3"] == 3 and "poseidon" in r["poseidon"]["queued"]
           and r["poseidon"]["locked"] is False, r["poseidon"])
-    check("a tenth Virtual Room win hands over the Valkyrie (the Spartan's before 244)",
-          isinstance(r["spartan"], dict) and r["spartan"]["wins"] == 10 and "valkyrie" in r["spartan"]["queued"]
-          and r["spartan"]["locked"] is False, r["spartan"])
+    # Build 289: the Koi (the Valkyrie's id) is seven study days in a row,
+    # so a tenth win counts as a win and hands over nothing.
+    check("a tenth Virtual Room win is counted and no longer hands over the Koi (build 289)",
+          isinstance(r["spartan"], dict) and r["spartan"]["wins"] == 10 and "valkyrie" not in r["spartan"]["queued"], r["spartan"])
     check("a rank character says only which rank unlocks it",
           isinstance(r["rankMsg"], str) and r["rankMsg"].startswith("Unlocks at ") and "rank" in r["rankMsg"]
           and "Level" not in r["rankMsg"] and "badge" not in r["rankMsg"], r["rankMsg"])
     check("Umbra and Singularity keep their requirement hidden until the one before is unlocked",
           isinstance(r["flareMsgs"], list) and "Unlock Void" in r["flareMsgs"][0] and "Unlock Umbra" in r["flareMsgs"][1]
           and "Find" not in "".join(r["flareMsgs"]), r["flareMsgs"])
-    check("a finished retake of five missed questions counts five towards the Masked One",
-          r["retakeRun"] == 12, r["retakeRun"])
+    # Build 289: a retake is counted as each question is answered (check_b289
+    # walks a real one), so the end of the run must add nothing on top.
+    check("finishing a retake run adds nothing on top of what was counted as it was answered",
+          r["retakeRun"] == 7, r["retakeRun"])
     names = dict(r["banners"]) if isinstance(r["banners"], list) else {}
     check("Northern Lights is the 100-test banner and Sakura the 250",
           names.get("tests100") == "Northern Lights" and names.get("tests250") == "Sakura", names)
@@ -2864,8 +2867,9 @@ def check_b243(br):
       const wasLife = store.lifetime.correct, wasLog = store.studyLog;
       store.lifetime.correct = 4999; const c1 = bannerEarned('correct5000');
       store.lifetime.correct = 5000; const c2 = bannerEarned('correct5000');
-      store.studyLog = { '2026-01-01': 49.9 * 3600000 }; const s1 = bannerEarned('study50');
-      store.studyLog = { '2026-01-01': 30 * 3600000, '2026-01-02': 20 * 3600000 }; const s2 = bannerEarned('study50');
+      /* 35 hours since build 289 (was 50) */
+      store.studyLog = { '2026-01-01': 34.9 * 3600000 }; const s1 = bannerEarned('study50');
+      store.studyLog = { '2026-01-01': 20 * 3600000, '2026-01-02': 15 * 3600000 }; const s2 = bannerEarned('study50');
       store.lifetime.correct = wasLife; store.studyLog = wasLog;
       out.newBanners = [c1, c2, s1, s2];
       /* 9. the road map keeps its emblems inside the ring */
@@ -2886,7 +2890,7 @@ def check_b243(br):
           r.get("ranks") == [None, "lunar", "solar", "tempest", "frost", "oracle", "inferno"], r.get("ranks"))
     check("the Clown is five wins, the Astronaut hundos in a day, the Hacker time studied, the Timekeeper days studied, the Valkyrie the Virtual Room, and SWAT is retired (build 245)",
           r.get("feats") == {"clown": "vrwins5", "astronaut": "hundo7day", "hacker": "study20h", "timekeeper": "days30",
-                             "valkyrie": "vrwins10", "swatRetired": True}, r.get("feats"))
+                             "valkyrie": "studyrun7", "swatRetired": True}, r.get("feats"))
     # Kinds, not ids: Blitz goes to the astronaut id, which draws the Phantom since 278.
     check("every retired character is drawn as what replaced it",
           r.get("retiredTo") == ["ninja", "clown", "starblade", "solar", "oracle", "koi", "hacker", "solar", "tempest", "koi", "hacker", "timekeeper", "ninja"], r.get("retiredTo"))
@@ -4492,10 +4496,13 @@ def check_b258(br):
       v.remove();
       /* 7. the two challenges */
       const f = CHARACTER_FEATS;
-      store.vrWins = 0; store.vrTop3 = 9; const nine = f.vrwins10.done();
-      store.vrTop3 = 10; const ten = f.vrwins10.done();
-      store.vrTop3 = 0; store.vrWins = 10; const oldWins = f.vrwins10.done();
-      out.valk = [nine, ten, oldWins];
+      /* build 289: the Koi is seven study days in a row */
+      const wasLog = store.studyLog;
+      store.studyLog = { '2026-03-01': 9, '2026-03-02': 9, '2026-03-03': 9, '2026-03-04': 9, '2026-03-05': 9, '2026-03-06': 9 };
+      const six = f.studyrun7.done();
+      store.studyLog['2026-03-07'] = 9; const seven = f.studyrun7.done();
+      store.studyLog = wasLog; store.vrTop3 = 10; store.vrWins = 10; const vrNo = f.studyrun7.done() === (bestStudyRun() >= 7);
+      out.valk = [six, seven, vrNo];
       out.astro = f.hundo7day.need;
       out.marks = f.streak100.need;
       /* 9. hold something you already have: the same card, marked held */
@@ -4568,7 +4575,7 @@ def check_b258(br):
     # original. Here: the body still meets the bottom of the hood.
     check("Void's body meets the bottom of its hood",
           vd.get("bodyTop", 99) <= vd.get("headBottom", 0) + .5, vd)
-    check("the Valkyrie is ten top-three finishes, and ten old wins still keep it", r.get("valk") == [False, True, True], r.get("valk"))
+    check("the Koi is seven study days in a row, and Virtual Room results have nothing to do with it (build 289)", r.get("valk") == [False, True, True], r.get("valk"))
     check("the Astronaut is five hundos in a day", r.get("astro") == 5, r.get("astro"))
     check("the Marksman is 200 in a row", r.get("marks") == 200, r.get("marks"))
     h = r.get("hold") or {}
@@ -5697,11 +5704,12 @@ def check_b283(br):
     check("the Game and Practice Test screens are gone from the page", r.get("gone") == [], r.get("gone"))
     check("a saved Game mode comes back as Drill", r.get("savedGame") == "drill", r.get("savedGame"))
     labs = r.get("labels") or []
-    check("Phoenix asks for an Exam, not the Practice Exam",
-          len(labs) == 1 and not any(re.search(r"game|practice", l, re.I) for l in labs) and all("Exam" in l for l in labs), labs)
-    check("a perfect Exam of 99 questions is not Phoenix", r.get("phoenix99") is False, r.get("n"))
-    check("a perfect Exam of 100 or more questions is, through summarize()",
-          r.get("phoenix") is True and r.get("n", 0) >= 100, r.get("n"))
+    # Build 289: Phoenix is seven units aced in a row; a perfect long Exam
+    # no longer sets the old flag (anybody holding it keeps the banner).
+    check("Phoenix asks for units aced in a row, not an Exam or the Practice Exam (build 289)",
+          len(labs) == 1 and not any(re.search(r"game|practice|exam", l, re.I) for l in labs) and all("in a row" in l for l in labs), labs)
+    check("a perfect Exam of 100 or more questions no longer sets the old Phoenix flag",
+          r.get("phoenix99") is False and r.get("phoenix") is False and r.get("n", 0) >= 100, r.get("n"))
     check("and it records every unit it covered as an Exam ace",
           r.get("acedAfter") == r.get("nUnits") and r.get("nUnits", 0) > 0, (r.get("acedAfter"), r.get("nUnits")))
     ctx.close()
@@ -5955,6 +5963,130 @@ def check_b288(br):
     ctx.close()
 
 
+def check_b289(br):
+    """Build 289. (1) The rewards count what they say: a Drill question got
+    wrong and answered again is a retake, counted as it happens; the
+    one-time seed fills the retake count and the best runs from what is on
+    record and never lowers anything; the Detective keeps its best run; the
+    Koi is seven study days in a row; Koi Pond a hundo in every unit;
+    Phoenix seven units aced in a row; Midnight Oil 35 hours; Neon City 25
+    matches. (2) Bars fill with a transform. (3) Last week's top 3 are
+    congratulated once. (4) The Profile rank box is one of three, and the
+    three tips are armed by tourRev. Written against 288, where all of it
+    fails."""
+    print("\n61. build 289: rewards, smooth bars, last week's top 3, the rank box")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      try{
+        document.documentElement.classList.remove('is-reloading'); document.getElementById('pushing-update')?.remove();
+        const b = id => (BANNERS.find(x => x.id === id) || {});
+        out.needs = ['study50', 'vr50', 'exam100', 'tests500'].map(id => b(id).need);
+        out.units = topicsIn(QUESTIONS).length;
+        out.koiFeat = (AVATAR_CHARACTERS.find(c => c.id === 'valkyrie') || {}).feat;
+        /* Koi: a run of seven, not seven days */
+        store.studyLog = { '2026-09-01': 9, '2026-09-02': 9, '2026-09-03': 9, '2026-09-05': 9, '2026-09-06': 9, '2026-09-07': 9 };
+        out.koiSix = isLockedCharacter('valkyrie');
+        store.studyLog['2026-09-04'] = 9; store.studyLog['2026-09-08'] = 9;
+        out.koiSeven = !isLockedCharacter('valkyrie');
+        /* Phoenix keeps the best run */
+        store.practiceExamPerfect = false; store.unitHundoStreak = 0; store.unitHundoStreakBest = 6; out.ph6 = bannerEarned('exam100');
+        store.unitHundoStreakBest = 7; out.ph7 = bannerEarned('exam100');
+        /* Detective keeps the best run */
+        store.dailyCorrectStreak = 0; store.dailyCorrectBest = 10; out.det = !isLockedCharacter('detective');
+        /* the seed never lowers, and fills */
+        store.challengeSeed289 = false; store.retakenQuestions = 500; store.lifetime.drillPlays = 4; store.lifetime.examPlays = 0;
+        store.stats[KEYS[0]] = { n: 9, m: 7, r: [] };
+        seedChallenges289(); out.seedKeeps = store.retakenQuestions;
+        store.challengeSeed289 = false; store.retakenQuestions = 0; seedChallenges289(); out.seedFills = store.retakenQuestions;
+        /* a real drill: wrong twice then right is one retake; right first time is none */
+        store.retakenQuestions = 0; store.seenUnitSelectTour = true;
+        cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = ['Identity Crimes'];
+        const qs = QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === 'Identity Crimes').slice(0, 2);
+        beginRun(qs, null, null, false); await wait(3600);
+        let qi = order[pos], right = correctSlot(qi), wrong = right === 0 ? 1 : 0;
+        choose(wrong); await wait(50); choose(wrong); await wait(50); choose(right); await wait(80);
+        out.afterMiss = store.retakenQuestions;
+        advance(); await wait(900);
+        qi = order[pos]; right = correctSlot(qi); choose(right); await wait(80);
+        out.afterClean = store.retakenQuestions;
+        testInProgress = false; showHome(); await wait(300);
+        /* a "Retake missed questions" run counts every question, first try or not */
+        store.retakenQuestions = 0;
+        beginRun(qs, 'Missed questions', null, true); await wait(900);
+        for(let k = 0; k < qs.length; k++){ const q = order[pos]; choose(correctSlot(q)); await wait(80); if(k < qs.length - 1){ advance(); await wait(900); } }
+        out.retakeRun = store.retakenQuestions;
+        testInProgress = false; isMissedRetake = false; showHome(); await wait(300);
+        /* (2) the unlock card's bar */
+        showUnlockDetail(bannerDetail('vr50')); await wait(900);
+        const f = document.querySelector('.unlock-card-fill');
+        out.bar = f ? { sbar: f.classList.contains('sbar'), prop: getComputedStyle(f).transitionProperty, t: getComputedStyle(f).transform !== 'none' } : null;
+        out.note = (document.querySelector('.unlock-card') || {}).innerText || '';
+        document.querySelectorAll('.invite-overlay').forEach(x => x.remove());
+        showUnlockDetail(bannerDetail('tests100')); await wait(300);
+        out.fullNote = /full-length/i.test((document.querySelector('.unlock-card') || {}).innerText || '');
+        document.querySelectorAll('.invite-overlay').forEach(x => x.remove());
+        /* (3) last week's top 3, once */
+        store.seenRewardsTour = true; try{ localStorage.removeItem('class26e.weekcongrats.v1'); }catch(e){}
+        const lw = lastWeekKey();
+        /* A hand-recorded week (WEEK_RESULTS_KNOWN) names its three by id. */
+        const ids = (WEEK_RESULTS_KNOWN[lw] || []).map(k => k.pub || k).concat(['p1', 'p2', 'p3']);
+        leaderboardRows = [ { pub: ids[0], firstName: 'Ada', avatarChar: 'ninja', week: lw, weekPoints: 900 },
+          { pub: ids[1], firstName: 'Bo', avatarChar: 'ghost', week: lw, weekPoints: 800 },
+          { pub: ids[2], firstName: 'Cy', avatarChar: 'alien', week: lw, weekPoints: 700 },
+          { pub: store.publicId, firstName: store.firstName, avatarChar: 'ninja', week: lw, weekPoints: 10 } ];
+        leaderboardRowsFromServer = true;
+        showRankings('overall'); await wait(1600);
+        const card = document.querySelector('.week-congrats');
+        out.congrats = card ? card.querySelectorAll('.lw-podium-spot').length : 0;
+        document.querySelectorAll('.invite-overlay').forEach(x => x.remove());
+        showHome(); await wait(300); showRankings('week'); await wait(1600);
+        out.congratsAgain = !!document.querySelector('.week-congrats');
+        showHome(); await wait(300);
+        /* (4) the rank box and the tips */
+        store.tourRev = 2; store.seenProfileTour = true; store.profileTips289 = false;
+        out.tourRev = TOUR_REV;
+        if(typeof PROFILE_TIPS_289 !== 'undefined'){
+          if(store.onboardingComplete && store.tourRev < TOUR_REV){ store.profileTips289 = true; store.tourRev = TOUR_REV; }
+        }
+        showProfile('profile'); await wait(900);
+        const tip = document.getElementById('tour-text');
+        out.tip = tip ? tip.textContent : '';
+        document.querySelectorAll('#tour-overlay, #tour-tooltip, #tour-line, #tour-line-dot').forEach(x => x.remove());
+        const rb = document.querySelector('.profile-hero .profile-rankplate'), lb = document.querySelector('.profile-hero .profile-level.statbox');
+        if(rb && lb){
+          const a = getComputedStyle(rb), c = getComputedStyle(lb);
+          out.box = { bg: a.backgroundColor === c.backgroundColor && a.backgroundImage === 'none', radius: a.borderTopLeftRadius === c.borderTopLeftRadius,
+            width: Math.abs(rb.getBoundingClientRect().width - lb.getBoundingClientRect().width) < 1, shadow: a.boxShadow === 'none',
+            wm: !document.querySelector('.profile-hero .profile-rankplate-wm') || getComputedStyle(document.querySelector('.profile-hero .profile-rankplate-wm')).display === 'none' };
+        }
+        const eb = document.querySelector('.profile-hero .profile-edit-btn');
+        out.edit = eb ? parseFloat(getComputedStyle(eb).fontSize) : 0;
+      } catch(e){ out.threw = String(e && e.stack || e); }
+      return out; }""")
+    check("the reworked banners: Midnight Oil 35 hours, Neon City 25 matches, Phoenix 7 units in a row, Koi Pond a hundo in every unit",
+          r.get("needs") == [35, 25, 7, r.get("units")], r)
+    check("the Koi is seven study days IN A ROW (six, or seven with a gap, is not enough)",
+          r.get("koiFeat") == "studyrun7" and r.get("koiSix") is True and r.get("koiSeven") is True, r)
+    check("Phoenix and the Detective keep their best run, so a later slip takes nothing back",
+          r.get("ph6") is False and r.get("ph7") is True and r.get("det") is True, r)
+    check("the one-time retake seed fills from misses on record and never lowers a count",
+          r.get("seedKeeps") == 500 and r.get("seedFills", 0) >= 7, r)
+    check("a Drill question got wrong and answered again is one retake, counted at once; a clean one is none",
+          r.get("afterMiss") == 1 and r.get("afterClean") == 1, r)
+    check("every question answered in a Retake missed questions run counts, as it is answered",
+          r.get("retakeRun") == 2, r.get("retakeRun"))
+    check("bars fill with a transform, not width", isinstance(r.get("bar"), dict) and r["bar"]["sbar"] and r["bar"]["prop"] == "transform" and r["bar"]["t"], r.get("bar"))
+    check("the full-tests banners say they count full-length tests", r.get("fullNote") is True, r.get("note"))
+    check("last week's top 3 are congratulated on the first Leaderboard visit, and only once",
+          r.get("congrats") == 3 and r.get("congratsAgain") is False, r)
+    check("tourRev 3 arms the three Profile tips, starting with Customize",
+          r.get("tourRev") == 3 and "Customize" in str(r.get("tip")), r.get("tip"))
+    check("the rank box is one of three: same box, radius, width, no glow, no watermark",
+          isinstance(r.get("box"), dict) and all(r["box"].values()), r.get("box"))
+    check("Customize is a little bigger", r.get("edit", 0) > 13, r.get("edit"))
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     only = os.environ.get("ONLY_B245")
@@ -6036,6 +6168,7 @@ def main():
             check_b285(br)
             check_b287_rooms(br)
             check_b288(br)
+            check_b289(br)
         finally:
             br.close()
     SERVER.shutdown()

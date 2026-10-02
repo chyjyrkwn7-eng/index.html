@@ -73,7 +73,13 @@ SCENARIOS = [
     {"key": "settings", "flag": "seenSettingsTour", "source": "showAppearance",
      "setup": "showAppearance()", "note": "one step per section"},
     {"key": "profile", "flag": "seenProfileTour", "source": "showProfile",
-     "setup": "showProfile('profile')", "note": "Customize, calendar, Stats"},
+     "setup": "showProfile('profile')", "note": "Customize, rank, badges, calendar, Stats"},
+    # Build 289: the same three tips on their own, for everybody who had
+    # already seen the Profile tour - armed by the tourRev 3 re-arm, which
+    # is what the setup does by hand.
+    {"key": "profiletips", "flag": None, "source": "PROFILE_TIPS_289",
+     "setup": "store.seenProfileTour = true; store.profileTips289 = true; showProfile('profile')",
+     "note": "Customize, rank box, badge box"},
     {"key": "rankings", "flag": "seenRewardsTour", "source": "showRankings",
      "setup": "showRankings()", "note": "the three boards, search, Find me"},
     # build 279: the one-time "hold a unit" tip, on the first unit tapped.
@@ -98,6 +104,24 @@ SEED = {
     "unitPerfects": {"Professionalism and Ethics": 35, "TCOLE Rules": 35,
                      "Penal Code": 35, "Racial Profiling": 22},
 }
+
+
+def shared_steps(src, name):
+    """Steps in a `const NAME = [ ... ];` list of tour steps."""
+    m = re.search(r"const %s = \[" % re.escape(name), src)
+    if not m:
+        return 0
+    i = m.end() - 1
+    depth, j = 0, i
+    while j < len(src):
+        if src[j] == "[":
+            depth += 1
+        elif src[j] == "]":
+            depth -= 1
+            if depth == 0:
+                break
+        j += 1
+    return len(re.findall(r"\btarget\s*:", src[i:j]))
 
 
 def declared_steps(src):
@@ -126,6 +150,13 @@ def declared_steps(src):
             fn = f.group(1)
         out.setdefault(fn, 0)
         out[fn] += len(re.findall(r"\btarget\s*:", block))
+        # Build 289: a tour may spread a shared step list into itself
+        # (`...PROFILE_TIPS_289`) - those steps render too, so count them.
+        for sp in re.findall(r"\.\.\.([A-Z0-9_]+)", block):
+            out[fn] += shared_steps(src, sp)
+    # Build 289: the three Profile tips are a shared constant, handed to
+    # startSimpleTour on their own for anybody re-armed by tourRev 3.
+    out["PROFILE_TIPS_289"] = shared_steps(src, "PROFILE_TIPS_289")
     # startMainMenuTour builds `steps` as a variable and passes it by name.
     m = re.search(r"function startMainMenuTour\(\)\{(.*?)\n\}", src, re.S)
     if m:

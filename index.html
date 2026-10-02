@@ -1329,7 +1329,7 @@
     background:rgba(255,255,255,.12); overflow:hidden;
   }
   #teststart-fill{
-    height:100%; width:0%; border-radius:999px;
+    height:100%; width:0%; border-radius:999px; transition:transform .12s linear;
     background:linear-gradient(90deg, var(--theme-c1), var(--theme-c2), var(--theme-c3));
   }
   #teststart-skip{
@@ -7853,6 +7853,23 @@
   .lw-podium-block{ margin-top:.25rem; width:100%; display:grid; place-items:center; border-radius:8px 8px 3px 3px;
     font-weight:900; font-size:.9rem; color:#12151A; background:linear-gradient(180deg, var(--pc), color-mix(in srgb, var(--pc) 60%, #000)); }
   .lw-place-1 .lw-podium-block{ height:2.1rem; } .lw-place-2 .lw-podium-block{ height:1.5rem; } .lw-place-3 .lw-podium-block{ height:1.1rem; }
+  /* Last week's top 3, congratulated (build 289). The podium is the one
+     on This Week, at a size that suits a card of its own. */
+  .week-congrats{ text-align:center; max-width:24rem; }
+  .week-congrats-kicker{ margin:0; font-size:.62rem; font-weight:800; letter-spacing:.18em; text-transform:uppercase; color:#FFD34D; }
+  .week-congrats-title{ margin:.3rem 0 .9rem; font-family:var(--serif); font-size:1.4rem; font-weight:700; line-height:1.2; color:#F3F5F7; }
+  .week-congrats .lw-podium{ margin:0 0 .9rem; padding:1rem .8rem .9rem; }
+  .week-congrats .lw-podium-head{ display:none; }
+  .week-congrats .lw-podium-av{ width:3.2rem; height:3.2rem; }
+  .week-congrats .lw-place-1 .lw-podium-av{ width:4.1rem; height:4.1rem; animation:week-congrats-glow 2.4s ease-in-out infinite; }
+  .week-congrats .lw-podium-name{ font-size:.86rem; }
+  .week-congrats .lw-place-1 .lw-podium-block{ height:2.6rem; } .week-congrats .lw-place-2 .lw-podium-block{ height:1.9rem; } .week-congrats .lw-place-3 .lw-podium-block{ height:1.4rem; }
+  @keyframes week-congrats-glow{
+    0%, 100%{ box-shadow:0 0 0 2.5px var(--pc), 0 0 14px color-mix(in srgb, var(--pc) 45%, transparent); }
+    50%{ box-shadow:0 0 0 2.5px var(--pc), 0 0 26px color-mix(in srgb, var(--pc) 75%, transparent); }
+  }
+  .week-congrats-line{ margin:0 0 .3rem; font-size:.92rem; line-height:1.4; color:var(--ink); font-weight:600; }
+  .week-congrats-sub{ margin:0; font-size:.78rem; color:var(--soft); }
   .daily-alert.is-progress{ display:flex; align-items:center; gap:.7rem; text-align:left; border-left:3px solid var(--theme-c1); }
   .daily-alert-face{ width:2.2rem; height:2.2rem; border-radius:50%; background:rgba(0,0,0,.25); display:grid; place-items:center; }
   .daily-alert-face svg{ width:100%; height:100%; }
@@ -15888,6 +15905,49 @@
   .profile-badgesect.statbox .profile-badgerow{ gap:.8rem; }
   .profile-badgesect .statring.profile-badgemedal{ width:3.9rem; height:3.9rem; }
   .profile-badgesect.statbox .profile-badgesect-kicker{ letter-spacing:.12em; font-size:.64rem; color:color-mix(in srgb, var(--ring) 70%, #fff); }
+  /* ---- THE RANK BOX IS ONE OF THREE (build 289) ----
+     "the rank box there stands out heavily compared to the rest of the
+     screen or at least stands out to that badge box and level box." It
+     was a lit plate - a pool of the rank's colour, a coloured border, a
+     glow under it, a watermark emblem, the name in large gradient serif
+     - sitting directly above two plain boxes. It is their sibling now:
+     the same dark box, border and radius, full width like them, the
+     emblem in a coloured RING the size of theirs, a coloured kicker, and
+     the name in the same weight as "5 of 16 earned". The colour is still
+     the rank's - it is in the ring and the kicker, which is where the
+     other two carry theirs. Still a button to the Rank tab. */
+  .profile-hero .profile-ranklineup.profile-rankplate,
+  .profile-hero.has-cover .profile-ranklineup.profile-rankplate,
+  .profile-hero .profile-ranklineup.profile-rankplate.is-unranked{
+    max-width:none; width:100%; margin:.75rem 0 0; padding:.75rem .8rem .7rem; gap:.8rem;
+    border-radius:1rem; background:rgba(0,0,0,.28); border:1px solid rgba(255,255,255,.07); box-shadow:none;
+  }
+  .profile-hero .profile-ranklineup.profile-rankplate:active{ background:rgba(0,0,0,.4); transform:none; }
+  .profile-hero .profile-rankplate-wm{ display:none; }
+  .profile-hero .profile-rankplate .profile-rankcoin{
+    width:3.9rem; height:3.9rem; padding:.38rem; background:rgba(0,0,0,.35);
+    border:4px solid color-mix(in srgb, var(--rank-color) 85%, #fff); box-shadow:none;
+  }
+  .profile-hero .profile-rankplate.is-unranked .profile-rankcoin{ border:3px dashed rgba(255,255,255,.22); }
+  .profile-hero .profile-rankplate-kicker{ font-size:.64rem; letter-spacing:.12em; opacity:1;
+    color:color-mix(in srgb, var(--rank-color) 70%, #fff); }
+  .profile-hero .profile-rankplate.is-unranked .profile-rankplate-kicker{ color:var(--soft); }
+  .profile-hero .profile-rankplate .profile-rankword,
+  .profile-hero .profile-rankplate.is-unranked .profile-rankword{
+    font-family:inherit; font-size:1.05rem; font-weight:800; line-height:1.25; margin-top:.05rem;
+    background:none; -webkit-background-clip:border-box; background-clip:border-box; color:var(--ink); filter:none;
+  }
+  .profile-hero .profile-rankplate-chev{ font-size:1.25rem; color:rgba(255,255,255,.4); }
+  @media (min-width:40rem){
+    .profile-hero .profile-ranklineup.profile-rankplate{ padding:.75rem .8rem .7rem; }
+    .profile-hero .profile-rankplate .profile-rankcoin{ width:3.9rem; height:3.9rem; }
+    .profile-hero .profile-rankplate .profile-rankword{ font-size:1.05rem; }
+  }
+  /* "Can the customize button be a smidge bigger as well?" About an
+     eighth bigger each way; the name beside it still fits one line on a
+     440px phone. */
+  .profile-hero .profile-edit-btn{ padding:.46rem .88rem; font-size:.84rem; }
+  @media (min-width:40rem){ .profile-hero .profile-edit-btn{ padding:.5rem .95rem; font-size:.9rem; } }
   .statring.is-plain .rankhero-ringtrack{ stroke:var(--ring); }
   .statring .rankhero-ringval{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.05rem; line-height:1; }
   .statring-sub{ font-size:.5rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase;
@@ -17228,6 +17288,16 @@
      blue until the thing was held; it is the held bar's green now, at
      every step. The XP bars that copied this bar in 267 stay blue - that
      colour was asked for separately (259) and is not this one. */
+  /* SMOOTH BARS (build 289) - see setBarFill(). Full width, slid into
+     place with a transform; each bar keeps its own duration and easing,
+     only the PROPERTY changes. An inline transition:none still stops it
+     dead (its duration is 0), which the level wrap-around relies on. */
+  .sbar{
+    width:100% !important; max-width:none !important;
+    transform:translate3d(calc(var(--fill, 0%) - 100%), 0, 0);
+    transition-property:transform !important;
+    backface-visibility:hidden;
+  }
   .unlock-card-fill{ position:absolute; inset:0 auto 0 0; width:0; border-radius:inherit;
     background:linear-gradient(90deg, #2FBF71, #7CF0A8); box-shadow:0 0 10px rgba(47,191,113,.5);
     transition:width .9s cubic-bezier(.2,.8,.2,1); }
@@ -19759,6 +19829,8 @@ const RONIN_TEST_SIZE = 450;
 /* The Phoenix banner: a perfect Exam of this many questions or more (build 283,
    when the Practice Test it used to need was retired). */
 const PHOENIX_EXAM_SIZE = 100;
+/* The Phoenix banner since build 289: units aced in a row. */
+const PHOENIX_UNIT_RUN = 7;
 const POINTS_PER_QUESTION = 10;
 const PERFECT_BONUS = 100;
 /* Paid once per EXTRA unit in a run: two units is +15, three is +30, and
@@ -32064,7 +32136,9 @@ const AVATAR_CHARACTERS = [
        Clown      - first in a Virtual Room 5 times (was the Champion's:
                     "the champion character, just change that to the
                     clown")
-       Valkyrie   - top 3 in a Virtual Room of 4+, 10 times (first 10
+       Koi        - study 7 days in a row (build 289; until then the
+                    Valkyrie id's challenge was top 3 in a Virtual Room
+                    of 4+, 10 times, and first 10
                     times until build 258; was the Spartan's,
                     build 244: "I don't like the spartan, change that
                     to something else")
@@ -32084,7 +32158,7 @@ const AVATAR_CHARACTERS = [
   { id: "zeus",       kind: "zeus",       feat: "weektop" },
   { id: "poseidon",   kind: "sheriff",    feat: "weektop3x3" },
   { id: "clown",      kind: "clown",      feat: "vrwins5" },
-  { id: "valkyrie",   kind: "koi",        feat: "vrwins10" },
+  { id: "valkyrie",   kind: "koi",        feat: "studyrun7" },
   { id: "marksman",   kind: "marksman",   feat: "streak100" },
   { id: "astronaut",  kind: "starblade",  feat: "hundo7day" },
   { id: "hacker",     kind: "hacker",     feat: "study20h" },
@@ -32198,9 +32272,14 @@ function avatarGlowColor(id){
    sentence shown to somebody who has not earned it can never drift
    apart - the same reason TIER_UNLOCKS carries its own label. */
 const CHARACTER_FEATS = {
+  /* THE BEST RUN, NOT THE CURRENT ONE (build 289): "ensure all the
+     rewards/unlocks are accurate to what people have done". This read
+     the live streak, so a Detective earned at ten was taken back by the
+     next wrong daily question. dailyCorrectBest keeps the longest run;
+     the current one still counts so nothing reads lower than it did. */
   daily10:  { label: "Answer 10 daily questions correctly in a row",
-              done: () => (store.dailyCorrectStreak || 0) >= 10,
-              have: () => (store.dailyCorrectStreak || 0), need: 10 },
+              done: () => dailyBestRun() >= 10,
+              have: () => dailyBestRun(), need: 10 },
   /* hardcore10 ("Beat Hardcore on 10 units") was here, the Masked One's
      old feat. No character has used it since the Masked One moved on,
      and it went with Game mode in build 283 (retired/game-mode.md). */
@@ -32235,9 +32314,18 @@ const CHARACTER_FEATS = {
      before this build, so the count starts at zero for everybody; the
      Hardcore clause is the old rule for this character, kept so nobody
      who earned it then loses it now. */
+  /* WHAT COUNTS AS A RETAKE (build 289): "it shows I have 0/100 but
+     I've done some retake questions". Only a FINISHED "Retake missed
+     questions" run ever counted, all at once at its end - leave one
+     half way and none of it did - and the commonest retake in the app
+     did not count at all: a Drill question you got wrong, then answered
+     again until it was right. Both count now, one per question, the
+     moment it is answered (see the drill answer path). Backfilled once
+     from the misses already on record - seedChallenges289(). */
   retake100: { label: "Retake 100 missed questions",
                done: () => (store.retakenQuestions || 0) >= 100 || hardcoreUnitsBeaten() >= 10,
-               have: () => (store.retakenQuestions || 0), need: 100 },
+               have: () => (store.retakenQuestions || 0), need: 100,
+               note: "A question you got wrong and answered again - in a Drill, or through Retake missed questions." },
   weektop:  { label: "Finish a week at the top of the weekly XP board",
               done: () => (store.weeklyWins || 0) >= 1,
               have: () => (store.weeklyWins || 0), need: 1 },
@@ -32327,9 +32415,19 @@ const CHARACTER_FEATS = {
      but the winner is placed). Anybody who already had ten wins keeps
      the Valkyrie: the old rule still counts, so nothing is taken back.
      The key stays `vrwins10` - it is only a name. */
-  vrwins10:  { label: "Finish top 3 in a Virtual Room of 4 or more, 10 times",
-               done: () => (store.vrTop3 || 0) >= 10 || (store.vrWins || 0) >= 10,
-               have: () => Math.max(store.vrTop3 || 0, (store.vrWins || 0) >= 10 ? 10 : 0), need: 10 },
+  /* THE KOI (build 289): "The koi reward requirement is weird, change
+     that to something kind of unique." It was ten top-three finishes in
+     a Virtual Room of four or more - the Clown's challenge again with a
+     bigger number, and one nobody was near (the most rooms anybody had
+     played was three). It is now the one thing no other reward asks
+     for: turning up seven days running. A koi swims upstream, which is
+     the whole idea. Read off the study log the calendar keeps, so every
+     run since the log began counts - and nobody held the Koi under the
+     old rule, so nothing is taken from anybody. */
+  studyrun7: { label: "Study 7 days in a row",
+               done: () => bestStudyRun() >= 7,
+               have: () => Math.min(bestStudyRun(), 7), need: 7,
+               note: "Any study time on a day counts it. Your best run so far counts, not just the one you are on." },
   flare4:    { label: "Find Umbra, the first of Void's flares",
                done: () => !!(store.mysteryColorsFound || {}).violet,
                have: () => ((store.mysteryColorsFound || {}).violet ? 1 : 0), need: 1 },
@@ -32337,6 +32435,47 @@ const CHARACTER_FEATS = {
                done: () => !!(store.mysteryColorsFound || {}).white,
                have: () => ((store.mysteryColorsFound || {}).white ? 1 : 0), need: 1 }
 };
+/* The longest run of consecutive days with any study on the log. Keys
+   are the device's own YYYY-MM-DD, so a day is a calendar day where it
+   was studied; noon UTC keeps a daylight-saving change from turning one
+   day's step into 23 or 25 hours. */
+function bestStudyRun(){
+  let best = 0, run = 0, prev = null;
+  try{
+    Object.keys(store.studyLog || {}).filter(k => (Number(store.studyLog[k]) || 0) > 0 && /^\d{4}-\d{2}-\d{2}$/.test(k)).sort().forEach(k => {
+      const t = Date.parse(k + "T12:00:00Z");
+      run = (prev != null && Math.round((t - prev) / 864e5) === 1) ? run + 1 : 1;
+      prev = t;
+      if(run > best) best = run;
+    });
+  }catch(e){}
+  return best;
+}
+function dailyBestRun(){ return Math.max(store.dailyCorrectBest || 0, store.dailyCorrectStreak || 0); }
+function unitStreakBest(){ return Math.max(store.unitHundoStreakBest || 0, store.unitHundoStreak || 0); }
+/* ONCE PER ACCOUNT (build 289): the counters the new rules read, filled
+   in from what is already on record so nobody starts them at zero.
+   - Retakes: every miss on record in a Drill was a question answered
+     again until it was right, which is a retake under the new rule. The
+     stats keep misses per question across every mode, so the Drill share
+     of them is taken by the share of runs that were Drills (an Exam miss
+     is never asked again). Never lowers a count already there.
+   - The best daily run and the best unit run start at the current ones:
+     nothing kept a best before, and the current run is the most that can
+     honestly be said. */
+function seedChallenges289(){
+  if(store.challengeSeed289) return;
+  let misses = 0;
+  try{ Object.keys(store.stats || {}).forEach(k => { const st = store.stats[k]; misses += (st && Number(st.m)) || 0; }); }catch(e){}
+  const L = store.lifetime || {};
+  const d = Number(L.drillPlays) || 0, e = Number(L.examPlays) || 0;
+  const est = d + e > 0 ? Math.round(misses * d / (d + e)) : 0;
+  store.retakenQuestions = Math.max(store.retakenQuestions || 0, est);
+  store.dailyCorrectBest = dailyBestRun();
+  store.unitHundoStreakBest = unitStreakBest();
+  store.challengeSeed289 = true;
+  saveStore();
+}
 function studyDaysTotal(){
   let n = 0;
   try{ Object.keys(store.studyLog || {}).forEach(k => { if((Number(store.studyLog[k]) || 0) > 0) n++; }); }catch(e){}
@@ -36129,7 +36268,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               mysteryColorsFound: { red: false, orange: false, yellow: false, violet: false, white: false },
               testsUntilMystery: null, flareNextTestAt: 0,
               savedCodePrompts: 0, savedCodeSaved: false,
-              dailyCorrectStreak: 0, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bestTestStreak: 0,
+              dailyCorrectStreak: 0, dailyCorrectBest: 0, unitHundoStreakBest: 0, challengeSeed289: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bestTestStreak: 0,
               weeklyWins: 0, weeklyTop3: 0, retakenQuestions: 0, hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, unlocksShown: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
               vrMatches: 0, vrWins: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
               fullTestsSeeded: false, practiceExamPerfect: false, banner: "", starfallKept: false, creditsApplied: [],
@@ -36286,6 +36425,14 @@ function applyLoadedData(got){
   store.savedCodePrompts = typeof got.savedCodePrompts === "number" ? got.savedCodePrompts : 0;
   store.savedCodeSaved = got.savedCodeSaved === true;
   store.dailyCorrectStreak = typeof got.dailyCorrectStreak === "number" ? got.dailyCorrectStreak : 0;
+  /* Build 289: the best runs the Detective and the Phoenix read, and the
+     one-time seed that fills them (and the retake count) from what is
+     already on record. Defaulted to NOT seeded for an existing account
+     on purpose - seedChallenges289() is how it reaches everybody, and it
+     never lowers anything. */
+  store.dailyCorrectBest = typeof got.dailyCorrectBest === "number" ? got.dailyCorrectBest : 0;
+  store.unitHundoStreakBest = typeof got.unitHundoStreakBest === "number" ? got.unitHundoStreakBest : 0;
+  store.challengeSeed289 = got.challengeSeed289 === true;
   store.weeklyWins = typeof got.weeklyWins === "number" ? got.weeklyWins : 0;
   /* Build 232, Poseidon's counter. Never below the wins: a week won was
      a week on the podium, so an account with a Zeus already carries at
@@ -36478,6 +36625,9 @@ function applyLoadedData(got){
   store.tourRev = typeof got.tourRev === "number" ? got.tourRev : 0;
   store.seenSettingsTour = typeof got.seenSettingsTour === "boolean" ? got.seenSettingsTour : store.onboardingComplete;
   store.seenProfileTour = typeof got.seenProfileTour === "boolean" ? got.seenProfileTour : store.onboardingComplete;
+  /* Build 289's three Profile tips. Off unless the tourRev re-arm turns
+     them on, so an account loaded from anywhere is never ambushed. */
+  store.profileTips289 = got.profileTips289 === true;
   store.seenRewardsTour = typeof got.seenRewardsTour === "boolean" ? got.seenRewardsTour : store.onboardingComplete;
   store.seenUnitOptionsTour = typeof got.seenUnitOptionsTour === "boolean" ? got.seenUnitOptionsTour : store.onboardingComplete;
   store.seenFirstResultsTour = typeof got.seenFirstResultsTour === "boolean" ? got.seenFirstResultsTour : store.onboardingComplete;
@@ -37734,7 +37884,7 @@ function wipeLocalProgressAndSettings(){
   store.gameHardcoreMs = {};
   store.mysteryColorsFound = { red: false, orange: false, yellow: false };
   store.testsUntilMystery = null;
-  store.dailyCorrectStreak = 0;
+  store.dailyCorrectStreak = 0; store.dailyCorrectBest = 0; store.unitHundoStreakBest = 0; store.challengeSeed289 = true;
   store.unitHundoStreak = 0;
   store.unitHundoStreakUnits = [];
   store.practiceTestPassed = false;
@@ -38458,7 +38608,7 @@ function mergeLeavingAccount(src, note){
   store.testHistory = (store.testHistory || []).concat(src.testHistory || [])
     .sort((a, b) => num(b && b.playedAt) - num(a && a.playedAt)).slice(0, 20);
   ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions"].forEach(k => { store[k] = num(store[k]) + num(src[k]); });
-  ["dailyCorrectStreak", "hundoDayBest", "bestTestStreak", "unitHundoStreak"].forEach(k => { store[k] = Math.max(num(store[k]), num(src[k])); });
+  ["dailyCorrectStreak", "hundoDayBest", "bestTestStreak", "unitHundoStreak", "dailyCorrectBest", "unitHundoStreakBest"].forEach(k => { store[k] = Math.max(num(store[k]), num(src[k])); });
   ["vrCounted", "vrTop3Rooms"].forEach(k => {
     const a = Array.isArray(store[k]) ? store[k] : [];
     store[k] = a.concat((src[k] || []).filter(x => a.indexOf(x) < 0)).slice(-300);
@@ -38645,7 +38795,8 @@ function mergeSameAccount(dst, src){
       res.gained = true;
     }
     if(a.some(h => h && !theirs.has(key(h)))) res.otherHadLess = true; }
-  ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "hundoDayBest", "bestTestStreak"]
+  ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "hundoDayBest", "bestTestStreak",
+   "dailyCorrectBest", "unitHundoStreakBest"]
     .forEach(k => maxInto(dst, k, src[k]));
   ["vrCounted", "vrTop3Rooms", "legacyChars", "creditsApplied"].forEach(k => unionArr(k));
   ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "supernovaAchieved",
@@ -40950,26 +41101,50 @@ const BANNERS = [
      until build 284: "The banners we have that relevant to the mode
      game. Let's just go ahead and remove those banners entirely". See
      retired/game-mode.md to bring them back. */
+  /* FULL-LENGTH, SAID OUT LOUD (build 289): "one of them says i need to
+     finish 100 tests, I feel like I've done that already". The Stats tab
+     counts every test finished; these count only the ones where every
+     unit was taken whole ("full tests only, not shortened"), which for
+     the most active account was 84 against 165. Both numbers were right
+     and only one was explained, so the card now says which tests count
+     and what the other number is. */
   { id: "tests100", name: "Northern Lights",
-    label: "Finish 100 full tests", have: () => fullTestsOf(), need: 100 },
+    label: "Finish 100 full-length tests", have: () => fullTestsOf(), need: 100, note: fullTestsNote },
   { id: "tests250", name: "Sakura",
-    label: "Finish 250 full tests", have: () => fullTestsOf(), need: 250 },
+    label: "Finish 250 full-length tests", have: () => fullTestsOf(), need: 250, note: fullTestsNote },
+  /* KOI POND IS ITS OWN CHALLENGE (build 289): "The finish 500 tests
+     banner is quite a lot.. could this be a unique challenge as well."
+     Five hundred full tests was a year of the course. It is now a hundo
+     in EVERY unit - the one banner that asks for range rather than
+     volume: no amount of one favourite unit gets there. The most anybody
+     had was eight of sixteen. The id stays `tests500` - it is only a
+     name, and it is what a person already wearing it has saved. */
   { id: "tests500", name: "Koi Pond",
-    label: "Finish 500 full tests", have: () => fullTestsOf(), need: 500 },
+    label: "Get a hundo in every unit", have: () => unitsWithHundo(), need: topicsIn(QUESTIONS).length,
+    note: "One 100% on each unit, taken whole. Any mode counts." },
   { id: "hundos100", name: "Summit",
     label: "Earn 100 hundos", have: () => hundosOf(store), need: 100 },
   { id: "hundos250", name: "Sky Temple",
     label: "Earn 250 hundos", have: () => hundosOf(store), need: 250 },
+  /* 25 SINCE BUILD 289 (was 50): "make that 25 or something". The id
+     stays `vr50`. Lowering it takes nothing from anybody. */
   { id: "vr50", name: "Neon City",
-    label: "Play 50 Virtual Room matches", have: () => (store.vrMatches || 0), need: 50 },
+    label: "Play 25 Virtual Room matches", have: () => (store.vrMatches || 0), need: 25 },
   /* Build 244: "add another 2 banner unlocks". Two things no banner
      counted yet, both already kept: time studied, read off the same
      study log the calendar and the K-9 read (so every minute since the
      log began counts), and right answers, off store.lifetime.correct,
      which every mode adds to - a game, a drill or a short run counts
      here where it does not towards the full-test banners. */
+  /* 35 HOURS SINCE BUILD 289 (was 50): "The study for 50 hours banner
+     is a lot too. Check to see what people have." Checked against every
+     account: since the class-wide reset, the steadiest studiers had 28
+     to 30 hours and only two were past 50 (one of them a device left
+     open). 35 sits a little past the regulars, and ten hours past the
+     Hacker's 25 so the banner is still the bigger prize. The id stays
+     `study50`. */
   { id: "study50", name: "Midnight Oil",
-    label: "Study for 50 hours in total", have: () => Math.floor(studyHoursTotal()), need: 50 },
+    label: "Study for 35 hours in total", have: () => Math.floor(studyHoursTotal()), need: 35 },
   { id: "correct5000", name: "Star Trails",
     label: "Answer 5,000 questions correctly", have: () => ((store.lifetime && store.lifetime.correct) || 0), need: 5000 },
   /* Hall of Fame (every badge) was here until build 284: "Remove the
@@ -40977,10 +41152,19 @@ const BANNERS = [
      stays defaulted and unread. */
   { id: "level80", name: "Ascension",
     label: "Reach level " + LEVEL_CAP, have: () => levelOf(store), need: LEVEL_CAP },
+  /* PHOENIX (build 289): "change that to something that's hard as well.
+     Something achievable of course." A perfect 100-question Exam was
+     neither - nobody had come close, and it rewarded one sitting. It is
+     now seven different units ACED IN A ROW: each one taken whole with
+     no misses, and a whole unit finished under 100% in between starts
+     the count again (recordUnitHundoStreak). The best run on record
+     counts, so a later slip takes nothing back. The most anybody had
+     was five. Anybody who ever set the old flag keeps the banner. The
+     id stays `exam100`. */
   { id: "exam100", name: "Phoenix",
-    /* Was "Score 100% on the Practice Exam" until build 283 retired the
-       Practice Test; same flag, a reachable way to set it. */
-    label: "Score 100% on an Exam of " + PHOENIX_EXAM_SIZE + " or more questions", have: () => (store.practiceExamPerfect ? 1 : 0), need: 1 },
+    label: "Ace " + PHOENIX_UNIT_RUN + " different units in a row",
+    have: () => (store.practiceExamPerfect ? PHOENIX_UNIT_RUN : Math.min(unitStreakBest(), PHOENIX_UNIT_RUN)), need: PHOENIX_UNIT_RUN,
+    note: "Each unit taken whole, with no misses. Finishing a whole unit under 100% starts the count again." },
   /* Build 235: Sapphire and Amethyst get their own banners, siblings of
      Supernova's - "should look pretty similar to the supernova one". */
   { id: "adept_rank", name: "Sapphire", rank: "adept",
@@ -40990,6 +41174,14 @@ const BANNERS = [
   { id: "titan_rank", name: "Supernova", rank: "titan",
     label: "Reach Supernova rank", have: () => (tierColorUnlocked("titan") ? 1 : 0), need: 1 }
 ];
+function fullTestsNote(){
+  return "A full-length test has every question in each unit you picked. Shortened tests count on your Stats tab (" +
+    testsCompletedOf(store).toLocaleString() + " so far) but not here.";
+}
+function unitsWithHundo(){
+  const up = store.unitPerfects || {};
+  return topicsIn(QUESTIONS).filter(u => (up[u] || 0) > 0).length;
+}
 function bannerDef(id){ return BANNERS.find(b => b.id === id) || null; }
 function bannerEarned(id){
   const b = bannerDef(id);
@@ -42141,14 +42333,6 @@ function seedBannerCounters(){
   const answered = (store.lifetime && store.lifetime.answered) || 0;
   const est = Math.min(testsCompletedOf(store), Math.floor(answered / avg));
   store.lifetime.fullTests = Math.max(fullTestsOf(), est);
-  /* A perfect Practice Exam before this was tracked: the history keeps
-     the last twenty runs, and a 100% "All units" exam among them is one. */
-  if(!store.practiceExamPerfect){
-    const hit = (store.testHistory || []).some(e => e && e.mode === "exam" && e.pct === 100 &&
-      /^All units/.test(e.label || ""));
-    const st = (store.testStats || {})["ALL|exam"];
-    if(hit || (st && st.lastPct === 100)) store.practiceExamPerfect = true;
-  }
   store.fullTestsSeeded = true;
   saveStore();
 }
@@ -42186,11 +42370,7 @@ function recordVroomOutcome(code, sortedKeys, myKey){
     store.vrTop3 = (store.vrTop3 || 0) + 1;
     store.vrTop3Rooms.push(code);
     if(store.vrTop3Rooms.length > 300) store.vrTop3Rooms = store.vrTop3Rooms.slice(-300);
-    /* The Valkyrie since build 258: ten podium finishes. */
-    if(store.vrTop3 === 10 && (store.vrWins || 0) < 10){
-      store.pendingCharUnlocks = (store.pendingCharUnlocks || []).filter(x => x !== "valkyrie").concat(["valkyrie"]);
-      try{ showToast("Ten top-three finishes - the Valkyrie is yours."); }catch(e){}
-    }
+    /* (The Koi was ten of these until build 289 - see studyrun7.) */
   }
   /* A win needs somebody to have beaten. */
   if(sortedKeys.length >= 2 && sortedKeys[0] === myKey){
@@ -42203,11 +42383,6 @@ function recordVroomOutcome(code, sortedKeys, myKey){
       /* The Clown since build 243 (it was the Champion, now retired). */
       store.pendingCharUnlocks = (store.pendingCharUnlocks || []).filter(x => x !== "clown").concat(["clown"]);
       try{ showToast("Five wins - the Clown is yours."); }catch(e){}
-    }
-    if(before < 10 && store.vrWins >= 10 && (store.vrTop3 || 0) < 10){
-      /* The Valkyrie since build 244 (it was the Spartan, now retired). */
-      store.pendingCharUnlocks = (store.pendingCharUnlocks || []).filter(x => x !== "valkyrie").concat(["valkyrie"]);
-      try{ showToast("Ten wins - the Valkyrie is yours."); }catch(e){}
     }
   }
   saveStore();
@@ -45560,6 +45735,7 @@ function recordUnitHundoStreak(runOrder, missed){
   });
   store.unitHundoStreakUnits = list;
   store.unitHundoStreak = list.length;
+  store.unitHundoStreakBest = Math.max(store.unitHundoStreakBest || 0, list.length);
   saveStore();
 }
 
@@ -49012,7 +49188,17 @@ const TOUR_OVERLAY_WAIT_MS = 14000;
    who already saw it has been shown something no longer true. Only the
    tours named in the re-arm block at the end of this file are replayed;
    bumping this on its own does nothing. */
-const TOUR_REV = 2;
+const TOUR_REV = 3;
+/* Build 289. Shared by the Profile tour and the re-armed three-step one
+   so the two can never say different things. */
+const PROFILE_TIPS_289 = [
+  { target: ".profile-edit-btn", align: "right", vplacement: "below",
+    text: "Customize changes your name, your character, your banner and the app\u2019s colour. More of each unlock as you climb the ranks and finish challenges." },
+  { target: ".profile-hero .profile-rankplate", align: "left", vplacement: "below",
+    text: "Your rank. It rises with your level and your badges together \u2014 tap it to see every rank, what the next one needs, and what each one unlocks." },
+  { target: ".profile-hero .profile-badgesect", align: "left", vplacement: "above",
+    text: "Your badges \u2014 one per unit, earned with enough hundos (100% on the whole unit) in it. Tap to open your badge case and see how close each one is." }
+];
 
 function startSimpleTour(steps, onComplete, _waitedMs){
   /* Never over a loading screen. Confirmed from a screenshot: the
@@ -49277,7 +49463,7 @@ function startMainMenuTour(){
     { target: "#bottomtab-rewards", align: "left", vplacement: "above",
       text: "Leaderboard is the class boards \u2014 this week, overall and hundos, updating live. Search for anyone, or tap Find me." },
     { target: "#bottomtab-profile", align: "left", vplacement: "above",
-      text: "Profile has your name, avatar and colours, your stats \u2014 and tap your rank or badges there for the climb and your badge case." },
+      text: "Profile is you: your rank, level and badges, Customize for your name, character, banner and colour, and your stats." },
     { target: "#bottomtab-settings", align: "right", vplacement: "above",
       text: isIOSDevice() && !isStandaloneApp()
         ? "Settings is where the rest of the options live \u2014 including a guide for adding this app to your Home Screen, any time."
@@ -54254,6 +54440,11 @@ function showModeSelect(){
         text: "Drill is the classic mode \u2014 instant feedback, and you can retry until you get it right. Best for learning." },
       { target: '.modecard[data-mode="exam"]', align: "left", vplacement: "below",
         text: "Exam holds feedback until the end, just like the real thing." },
+      /* Review had no step (build 289: "ensure all the tool tips are
+         updated for this new app") - it became a mode of its own in
+         build 128 and the tour went straight from Exam to Virtual Room. */
+      { target: '.modecard[data-mode="review"]', align: "left", vplacement: "below",
+        text: "Review is not a test \u2014 it walks through each unit\u2019s questions with their answers. Good for going over material before you test yourself." },
       /* vplacement was hardcoded to "above" here, mismatched with Game's
          own "below" right above - harmless-looking on phone (cards
          stack in one column, so Virtual Room being last made "above"
@@ -56207,7 +56398,7 @@ let originalTestLabel = null;
    reason retroHideBadges gives. */
 var runStartLocked = null, runStartBanners = null;
 function beginRun(indexes, label, practiceMinutes, missedRetake){
-  try{ seedBannerCounters(); runStartLocked = lockedCharacterSet(); runStartBanners = earnedBannerSet(); }
+  try{ seedBannerCounters(); seedChallenges289(); runStartLocked = lockedCharacterSet(); runStartBanners = earnedBannerSet(); }
   catch(e){ runStartLocked = null; runStartBanners = null; }
   rememberOpeners(indexes);
   order = indexes.slice();
@@ -56307,6 +56498,7 @@ function showCountdown(n){
   barTrack.id = "teststart-track";
   const barFill = document.createElement("div");
   barFill.id = "teststart-fill";
+  setBarFill(barFill, 0);
   barTrack.appendChild(barFill);
   overlay.appendChild(barTrack);
 
@@ -56339,7 +56531,7 @@ function showCountdown(n){
   function tick(){
     if(done) return;
     const frac = Math.min(1, (Date.now() - startedAt) / (TOTAL_MS - 300));
-    barFill.style.width = (frac * 100) + "%";
+    setBarFill(barFill, Math.round(frac * 1000) / 10);
     if(Date.now() - startedAt >= TOTAL_MS){
       done = true;
       clearInterval(countdownHandle);
@@ -56982,6 +57174,15 @@ function choose(slot){
 
   if(slot === correctSlot(qi)){
     cleared = true;
+    /* A RETAKE, counted as it happens (build 289) - the Masked One's
+       count. Every question in a "Retake missed questions" run, and in
+       any other Drill a question got wrong first and then answered
+       again until it was right. Once per question either way: `cleared`
+       ends this question, so a second tap cannot count it twice.
+       recordResult() just below saves it. */
+    if(runLabel !== "Daily question" && (isMissedRetake || attempts[qi] > 1)){
+      store.retakenQuestions = (store.retakenQuestions || 0) + 1;
+    }
     recordResult(qi, attempts[qi] > 1 || hinted);
     runStreakLive(!(attempts[qi] > 1 || hinted));
     /* Daily question never advances to a next question or a separate
@@ -57466,7 +57667,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-02-288";
+const APP_BUILD = "2026-10-02-289";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -58451,7 +58652,7 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
   track.className = "xpbar-track results-level-track";
   const fill = document.createElement("div");
   fill.className = "xpbar-fill";
-  fill.style.width = (before.atCap ? 100 : Math.round(before.fraction * 1000) / 10) + "%";
+  setBarFill(fill, before.atCap ? 100 : Math.round(before.fraction * 1000) / 10);
   track.appendChild(fill);
   /* The charging ring (build 282): a sibling the track cannot clip, so
      its light can breathe by opacity alone. */
@@ -58477,7 +58678,7 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
      reduced-motion paths of the results reveal. */
   wrap.setFinal = function(){
     fill.style.transition = "none";
-    fill.style.width = (after.atCap ? 100 : Math.round(after.fraction * 1000) / 10) + "%";
+    setBarFill(fill, after.atCap ? 100 : Math.round(after.fraction * 1000) / 10);
     lvl.textContent = "Level " + after.level;
     if(after.level !== before.level && !before.atCap) wrap.classList.add("is-levelup");
   };
@@ -58485,10 +58686,10 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
     requestAnimationFrame(() => requestAnimationFrame(() => {
       const target = after.atCap ? 100 : Math.round(after.fraction * 1000) / 10;
       if(after.level === before.level || before.atCap){
-        fill.style.width = target + "%";
+        setBarFill(fill, target);
         return;
       }
-      fill.style.width = "100%";
+      setBarFill(fill, 100);
       /* ONCE. The fallback timer below and transitionend both call this,
          and without the guard the one that lost the race fired later
          anyway and filled the bar a second time - "the level up bar
@@ -58501,14 +58702,14 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
         wrap.classList.add("is-levelup");
         const prev = fill.style.transition;
         fill.style.transition = "none";
-        fill.style.width = "0%";
+        setBarFill(fill, 0);
         void fill.offsetWidth;
         /* One committed frame at zero before the transition goes back
            on, or the browser coalesces the two writes and the bar
            simply jumps. */
         requestAnimationFrame(() => {
           fill.style.transition = prev || "";
-          requestAnimationFrame(() => { fill.style.width = target + "%"; });
+          requestAnimationFrame(() => { setBarFill(fill, target); });
         });
       };
       fill.addEventListener("transitionend", wrapOver, { once: true });
@@ -59964,7 +60165,7 @@ function showRunRewards(run, hooks, opts){
     const fill = document.createElement("div");
     fill.className = "badgeprogress-fill";
     const was = Math.min(need, run.perfectsBefore[u] || 0);
-    fill.style.width = Math.round((was / need) * 100) + "%";
+    setBarFill(fill, Math.round((was / need) * 100));
     fill.dataset.to = Math.round((have / need) * 100) + "%";
     track.appendChild(fill);
     const line = document.createElement("p");
@@ -60105,7 +60306,7 @@ function showRunRewards(run, hooks, opts){
            be red too". */
         const fill = document.createElement("div");
         fill.className = "unit-breakdown-fill" + (up === 100 ? " full is-gold" : up < PASS_MARK ? " low" : "");
-        fill.style.width = "0%";
+        setBarFill(fill, 0);
         fill.dataset.to = up + "%";
         track.appendChild(fill);
         row.append(top, track);
@@ -60188,7 +60389,7 @@ function showRunRewards(run, hooks, opts){
     }
     if(hooks.onDone) hooks.onDone(slot);
   };
-  const fillBars = sel => panel.querySelectorAll(sel).forEach(f => { f.style.width = f.dataset.to; });
+  const fillBars = sel => panel.querySelectorAll(sel).forEach(f => { setBarFill(f, f.dataset.to); });
   const countUp = instant => {
     const target = run.xpTotal;
     if(instant || target <= 0){ totalNum.textContent = "+" + target.toLocaleString(); return; }
@@ -60235,7 +60436,7 @@ function showRunRewards(run, hooks, opts){
   boxes.forEach(b => {
     seq.add(420, instant => {
       rsLand(b, instant);
-      if(badgeBoxes.indexOf(b) >= 0) setTimeout(() => b.querySelectorAll(".badgeprogress-fill[data-to]").forEach(f => { f.style.width = f.dataset.to; }), instant ? 0 : 260);
+      if(badgeBoxes.indexOf(b) >= 0) setTimeout(() => b.querySelectorAll(".badgeprogress-fill[data-to]").forEach(f => { setBarFill(f, f.dataset.to); }), instant ? 0 : 260);
     });
   });
   seq.add(boxes.length ? 520 : 380, instant => {
@@ -60531,7 +60732,7 @@ function summarize(){
      tipped over is announced, whatever was already held is not. Seeded
      first, so the first run after this build does not announce a
      banner somebody earned months ago. */
-  try{ seedBannerCounters(); }catch(e){}
+  try{ seedBannerCounters(); seedChallenges289(); }catch(e){}
   const bannersBefore = earnedBannerSet();
   if(mergeHeld) [...bannersBefore].forEach(id => { if(mergeHeld.banners.indexOf(id) < 0) bannersBefore.delete(id); });
   /* AND AS THEY STOOD WHEN THE RUN BEGAN. Right answers, the answer
@@ -60579,6 +60780,7 @@ function summarize(){
        and this class has plenty of those already. Getting one wrong
        does break it, which is the part that makes it worth holding. */
     store.dailyCorrectStreak = isPerfect ? (store.dailyCorrectStreak || 0) + 1 : 0;
+    store.dailyCorrectBest = Math.max(store.dailyCorrectBest || 0, store.dailyCorrectStreak);
     saveStore();
   }
 
@@ -60737,21 +60939,11 @@ function summarize(){
       store.practiceTestPassed = true;
       saveStore();
     }
-    if(practiceTestMinutes != null && pct === 100 && !timedOut && !store.practiceExamPerfect){
-      store.practiceExamPerfect = true;
-      saveStore();
-    }
-    /* THE PHOENIX WITHOUT THE PRACTICE TEST (build 283). The Practice Test
-       is retired (retired/practice-test.md), so the banner is earned by a
-       perfect Exam of PHOENIX_EXAM_SIZE questions or more instead - a real
-       sitting, not a retake and not a Virtual Room race. It writes the
-       same flag the Practice Test did, so everyone who already holds the
-       Phoenix keeps it and nothing new has to sync. */
-    if(cfg.mode === "exam" && order.length >= PHOENIX_EXAM_SIZE && pct === 100 && !timedOut
-       && runTrackable && !isMissedRetake && !inVirtualRoom && !store.practiceExamPerfect){
-      store.practiceExamPerfect = true;
-      saveStore();
-    }
+    /* (The Phoenix flag, practiceExamPerfect, was set here by a perfect
+       Practice Test and then, from build 283, by a perfect Exam of
+       PHOENIX_EXAM_SIZE questions. Since build 289 the Phoenix is seven
+       units aced in a row - see BANNERS - so nothing sets the flag any
+       more; anybody who ever had it keeps the banner through it.) */
     badgesEarnedThisRun = badgesEarnedList().filter(u => !badgesBefore.has(u));
     if(retroBadges.length || mergeHeld){
       /* Celebrated now, so never again. */
@@ -60870,10 +61062,10 @@ function summarize(){
        you get right through the retake(s)". */
     runXp = computeRunXp({ retake: true, good: good });
     awardXp(runXp.total);
-    /* The Masked One's count (build 233): every question in a finished
-       retake. The unlock is caught by the lockedBefore diff below like
-       any other character. */
-    store.retakenQuestions = (store.retakenQuestions || 0) + total;
+    /* The Masked One's count was added here, all at once, until build
+       289 - it is counted per question as each is answered now, so a
+       retake left half way still counts what was done. The unlock is
+       still caught by the lockedBefore diff below like any other. */
     saveStore();
   }
   /* The single biggest achievement in the app \u2014 reaching the very
@@ -68602,7 +68794,7 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
     const here = presentParticipants(racing) || {};
     const finishedN = Object.keys(racing).filter(k => racing[k].finished || !here[k]).length;
     wCount.textContent = finishedN + "/" + totalN;
-    wFill.style.width = (totalN ? Math.round(finishedN / totalN * 100) : 0) + "%";
+    setBarFill(wFill, totalN ? Math.round(finishedN / totalN * 100) : 0);
     if(totalN > 0 && finishedN === totalN){
       if(!allInAt) allInAt = Date.now();
       wait.classList.add("is-all-in");
@@ -69709,6 +69901,81 @@ function buildLastWeekPodium(top){
   box.appendChild(stage);
   return box;
 }
+/* ---- LAST WEEK'S TOP 3, CONGRATULATED (build 289) ----
+   "Every next week you can see who was top 3 the week before ... the
+   next time people go leaderboard can you make a little pop up
+   congratulating the top 3 and the winner or something? This would show
+   up even for the top 3 as well. Only shows up once, the first time you
+   open it when the weekly thing is there."
+   The same three the podium on This Week shows (lastWeekTop3), on a card
+   of its own, once per week per device: `class26e.weekcongrats.v1` holds
+   the last week this device was shown. Viewing history, not progress -
+   the same reasoning as class26e.daily.seen - so it is not on `store`
+   and does not sync. It waits for the server's rows (a cached board can
+   be a day stale and name the wrong three), for a tour to finish, and
+   for nothing else to be open, and it marks the week seen only when it
+   actually appears. */
+const WEEK_CONGRATS_KEY = "class26e.weekcongrats.v1";
+const PLACE_WORD = ["first", "second", "third"];
+function weekCongratsWeekLabel(wk){
+  const p = String(wk || "").split("-").map(Number);
+  if(p.length !== 3 || p.some(isNaN)) return "Last week";
+  const d = new Date(p[0], p[1] - 1, p[2]);
+  return "Week of " + d.getDate() + " " + d.toLocaleString("en-US", { month: "long" });
+}
+function maybeShowWeekCongrats(panel, getEntries, tries){
+  const n = tries || 0;
+  if(!panel || !document.contains(panel)) return;
+  const lw = lastWeekKey();
+  let seen = null;
+  try{ seen = localStorage.getItem(WEEK_CONGRATS_KEY); }catch(e){}
+  if(seen === lw) return;
+  const busy = document.getElementById("tour-overlay") || document.querySelector(".invite-overlay") ||
+    document.getElementById("splashscreen") || document.getElementById("genprofile-overlay") ||
+    document.getElementById("badge-cutscene") || document.getElementById("supernova-cutscene");
+  const entries = getEntries() || [];
+  const ready = entries.length && (leaderboardRowsFromServer || WEEK_RESULTS_KNOWN[lw]);
+  if(busy || !ready){
+    if(n < 60) setTimeout(() => maybeShowWeekCongrats(panel, getEntries, n + 1), 500);
+    return;
+  }
+  const top = lastWeekTop3(entries);
+  /* A week nobody earned anything in has nobody to congratulate; it is
+     left unmarked, which costs one look at the rows next time. */
+  if(!top.length) return;
+  try{ localStorage.setItem(WEEK_CONGRATS_KEY, lw); }catch(e){}
+  showWeekCongrats(top, lw);
+}
+function showWeekCongrats(top, wk){
+  const overlay = document.createElement("div");
+  overlay.className = "invite-overlay week-congrats-overlay";
+  const sheet = document.createElement("div");
+  sheet.className = "invite-sheet person-card week-congrats";
+  const kick = document.createElement("p");
+  kick.className = "week-congrats-kicker"; kick.textContent = weekCongratsWeekLabel(wk);
+  const h = document.createElement("h2");
+  h.className = "week-congrats-title"; h.textContent = "Congratulations to last week's top 3";
+  const podium = buildLastWeekPodium(top);
+  podium.classList.add("week-congrats-podium");
+  const mine = top.findIndex(t => t.pub && t.pub === store.publicId);
+  const line = document.createElement("p");
+  line.className = "week-congrats-line";
+  const others = top.slice(1).map(t => t.name);
+  if(mine === 0) line.textContent = "You won the week. Well done.";
+  else if(mine > 0) line.textContent = "You finished " + PLACE_WORD[mine] + " for the week. Well done - and congratulations to " + top[0].name + " on the win.";
+  else line.textContent = top[0].name + " won the week" + (others.length ? ", with " + others.join(" and ") + " close behind." : ".");
+  const sub = document.createElement("p");
+  sub.className = "week-congrats-sub";
+  sub.textContent = "This week's board started fresh on Monday.";
+  const close = document.createElement("button");
+  close.type = "button"; close.className = "next person-sheet-close";
+  close.textContent = "Nice";
+  close.addEventListener("click", () => overlay.remove());
+  sheet.append(kick, h, podium, line, sub, close);
+  overlay.appendChild(sheet);
+  overlay.addEventListener("click", e => { if(e.target === overlay) overlay.remove(); });
+  mountSheetOverlay(overlay);
+}
 function renderRankingRows(rows, entries, board, opts){
   const o = opts || {};
   const query = (o.query || "").trim().toLowerCase();
@@ -70092,7 +70359,7 @@ function characterDetail(id){
        show up when you click them". */
     if(/^Unlock /.test(locked)){ o.desc = locked; return o; }
     const f = CHARACTER_FEATS[def.feat];
-    if(f){ o.desc = f.label + "."; o.have = Math.min(f.have(), f.need); o.need = f.need; }
+    if(f){ o.desc = f.label + "."; o.have = Math.min(f.have(), f.need); o.need = f.need; if(f.note) o.note = f.note; }
   }
   return o;
 }
@@ -70104,6 +70371,7 @@ function bannerDetail(id){
   if(def.secret){ o.kicker = "Secret banner"; o.desc = def.label + "."; return o; }
   o.desc = def.label + ".";
   o.have = Math.min(def.have(), def.need); o.need = def.need;
+  if(def.note) o.note = typeof def.note === "function" ? def.note() : def.note;
   return o;
 }
 /* A UNIT BADGE ON THE SAME CARD (build 281): "make it similar to the
@@ -70124,6 +70392,23 @@ function badgeDetail(unit){
 function themeDetail(name){
   return Object.assign({ kind: "theme", id: name, kicker: "Theme",
     name: (ACCENT_DISPLAY_NAME[name] || name) + " theme" }, rankDetail(name));
+}
+/* SMOOTH BARS (build 289). "The loading progress bar for the banners, it
+   lags when it goes ... Ensure all the progress bar stuff is super
+   smooth." Every bar in the app filled by transitioning WIDTH, which is
+   laid out and painted on the main thread every frame - so a bar that
+   starts filling while anything else is busy (the banner card builds a
+   whole animated scene in the same moment) stutters for exactly as long
+   as that work runs. A bar filled through here stays full width and
+   SLIDES in from the left inside its track instead: a transform, which
+   the compositor runs on its own whatever the main thread is doing. The
+   track already clips (every one of these has overflow:hidden and a
+   round end), so it looks identical - a rounded leading edge moving
+   right. `v` is a percentage, as a number or an "NN%" string. */
+function setBarFill(el, v){
+  if(!el) return;
+  el.classList.add("sbar");
+  el.style.setProperty("--fill", typeof v === "number" ? v + "%" : String(v));
 }
 function showUnlockDetail(o){
   if(!o) return;
@@ -70199,9 +70484,12 @@ function showUnlockDetail(o){
     fill.className = "unlock-card-fill";
     bar.appendChild(fill);
     sheet.appendChild(bar);
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      fill.style.width = Math.max(2, Math.min(100, Math.round(frac * 1000) / 10)) + "%";
-    }));
+    /* Starts at zero as a transform and slides once the sheet has
+       settled, so it is not competing with the sheet's own entrance. */
+    setBarFill(fill, 0);
+    setTimeout(() => requestAnimationFrame(() => {
+      setBarFill(fill, Math.max(2, Math.min(100, Math.round(frac * 1000) / 10)));
+    }), 180);
     /* A count under the bar only where it is worth reading: never for a
        one-off ("0/1"), never for a rank step (the note says the rank). */
     if(o.unlocked){
@@ -70500,7 +70788,7 @@ function showCustomize(){
      locked one is dimmed with a padlock and says what it takes and how
      far along you are, so the list is also the list of things to go
      and do. "Theme" is the default cover, in the app's own colours. */
-  try{ seedBannerCounters(); }catch(e){}
+  try{ seedBannerCounters(); seedChallenges289(); }catch(e){}
   const bannerSect = document.createElement("div");
   bannerSect.className = "sect";
   const bannerLab = document.createElement("p");
@@ -72300,7 +72588,7 @@ function showProfile(defaultTab){
   xpTrack.className = "xpbar-track profile-xpbar";
   const xpFill = document.createElement("div");
   xpFill.className = "xpbar-fill";
-  xpFill.style.width = "0%";
+  setBarFill(xpFill, 0);
   xpFill.dataset.target = String(Math.round(prog.fraction * 1000) / 10);
   xpTrack.appendChild(xpFill);
   levelSect.appendChild(xpTrack);
@@ -72456,7 +72744,7 @@ function showProfile(defaultTab){
      on it; one frame is not reliably enough for that. */
   function runXpBarFill(){
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      xpFill.style.width = xpFill.dataset.target + "%";
+      setBarFill(xpFill, Number(xpFill.dataset.target) || 0);
     }));
   }
 
@@ -72652,6 +72940,8 @@ function showProfile(defaultTab){
   if(initialTab === "profile") runXpBarFill();
   if(!store.seenProfileTour){
     store.seenProfileTour = true;
+    /* The full tour includes the three tips below, so it settles them. */
+    store.profileTips289 = false;
     saveStore();
     startSimpleTour([
       /* .profile-edit-btn, not .avatarchar-grid. The character grid and
@@ -72661,8 +72951,7 @@ function showProfile(defaultTab){
          this tour lost its calendar step for months. The step now points
          at the button that opens the screen those controls live on,
          which is the thing somebody on THIS screen needs to know. */
-      { target: ".profile-edit-btn", align: "right", vplacement: "below",
-        text: "Customize opens your name, your character and the app\u2019s colour \u2014 more colours and characters unlock as you climb the ranks." },
+      ...PROFILE_TIPS_289,
       /* .profile-classline, NOT .cal-profile-row. This step pointed at
          .cal-profile-row, which on THIS screen does not exist - it is
          the Settings class for the Share / Add to Home Screen pair. The
@@ -72700,6 +72989,16 @@ function showProfile(defaultTab){
          bottom bar in build 219, and the main menu tour points at it. */
 
     ]);
+  }
+  /* THE THREE TIPS ON THEIR OWN (build 289): "Next time people go to
+     profile, put a tool tip for the badge box, rank box, and the
+     customize button explaining what they do." Everybody who has
+     already seen the Profile tour gets just these three, once - armed
+     by the tourRev block at the end of this file, cleared here. */
+  else if(store.profileTips289 && initialTab === "profile"){
+    store.profileTips289 = false;
+    saveStore();
+    startSimpleTour(PROFILE_TIPS_289.slice());
   }
 }
 
@@ -73104,6 +73403,8 @@ function showRankings(defaultBoard){
         text: "Find me jumps to your own row and flashes it. Everybody's numbers here update live \u2014 there is nothing to refresh." }
     ]);
   }
+  /* After the tour, never under it - maybeShowWeekCongrats waits. */
+  setTimeout(() => maybeShowWeekCongrats(panel, () => entries), 700);
 }
 
 /* ---------- the badge case ----------------------------------------------
@@ -73736,6 +74037,7 @@ function buildRanksTab(){
       meter.className = "rankcard-meter rankmap-meter";
       const meterFill = document.createElement("span");
       meterFill.className = "rankcard-meterfill";
+      setBarFill(meterFill, 0);
       meter.appendChild(meterFill);
       fillsToAnimate.push({ el: meterFill, prop: "width", value: (Math.round((heroStepPct != null ? heroStepPct : rankPct(key)) * 1000) / 10) + "%" });
       card.appendChild(meter);
@@ -73947,7 +74249,7 @@ function buildRanksTab(){
     requestAnimationFrame(() => requestAnimationFrame(() => {
       runRankMapCelebration();
       fillsToAnimate.forEach(({ el, prop, value }) => {
-        if(prop === "width") el.style.width = value;
+        if(prop === "width") setBarFill(el, value);
         else if(prop.indexOf("--") === 0) el.style.setProperty(prop, value);
         else el.style[prop] = value;
       });
@@ -75090,8 +75392,15 @@ if(store.onboardingComplete) grantRetroBadgesOnce();
    Only the two tours whose screens actually changed are re-armed;
    Settings and Rankings are already current and are left alone. */
 if(store.onboardingComplete && (store.tourRev || 0) < TOUR_REV){
-  store.seenProfileTour = false;
-  store.seenUnitSelectTour = false;
+  /* Rev 2: the Profile and unit-select tours whose screens changed. */
+  if((store.tourRev || 0) < 2){
+    store.seenProfileTour = false;
+    store.seenUnitSelectTour = false;
+  }
+  /* Rev 3 (build 289): the rank box, badge box and Customize tips on
+     Profile. Somebody re-armed for the whole Profile tour above gets
+     them inside it; everybody else gets the three on their own. */
+  store.profileTips289 = true;
   store.tourRev = TOUR_REV;
   saveStore();
 }

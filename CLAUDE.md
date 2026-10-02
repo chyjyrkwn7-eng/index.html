@@ -9286,3 +9286,63 @@ and stuff."*
 - `check-behaviour` 60 holds all of this; it fails on 287.
 - **Profile's remaining cost is its animated character and a long page**
   - asked for, and cheap on a real GPU; left alone.
+
+### Build 289 - rewards that say what they count, smoother bars, last week's top 3
+
+- **The Profile rank box is one of three now.** It was a lit plate (a
+  pool of the rank's colour, coloured border and glow, a watermark, the
+  name in large gradient serif) directly above two plain boxes, reported
+  as standing out heavily. It takes the level and badge boxes' look: same
+  dark box, border, radius and full width, the emblem in a coloured RING
+  their size, a coloured kicker, the name in their weight. The colour is
+  in the ring and the kicker, where the other two carry theirs. Customize
+  is about an eighth bigger.
+- **Tooltips.** Mode select gained a Review step (it went Exam -> Virtual
+  Room); the main-menu Profile step names rank, level, badges and
+  Customize. `PROFILE_TIPS_289` (Customize, the rank box, the badge box)
+  is spread into the Profile tour and, for everybody who had already seen
+  it, shown on its own once: TOUR_REV 3 sets `store.profileTips289`, the
+  next visit to the Profile TAB clears it. `check-tours` counts steps
+  spread in with `...NAME` and has a `profiletips` scenario.
+- **Last week's top 3, congratulated.** The podium on This Week already
+  existed (`lastWeekTop3`); the first Leaderboard visit of a new week also
+  opens a card with the same three, once per device
+  (`class26e.weekcongrats.v1` = the last week shown - viewing history, so
+  localStorage, like `class26e.daily.seen`). It waits for server rows (or
+  a hand-recorded week), for a tour and for any other sheet, and marks the
+  week only when it actually appears. The top 3 see it too, with their own
+  line.
+- **Every bar fills with a transform** (`setBarFill()` / `.sbar`): full
+  width, slid in from the left inside its clipping track, so the
+  compositor runs it whatever the main thread is doing. Width transitions
+  stuttered for as long as anything else was busy - the banner card builds
+  a whole animated scene in the same moment, which is the reported lag.
+  The unlock card's bar also starts 180ms in, after the sheet. The test
+  loading bar was 10 steps a second; it glides now. Converted: unlock
+  card, results XP + badge + unit bars, Profile XP, rank meter, Virtual
+  Room wait bar, loading bar. A bar whose track does NOT clip (`.vrc-track`
+  carries the +XP label above it) is left on width.
+- **Rewards, re-audited against every account** (`impact.py` compared
+  288 and 289 per account: nobody loses anything):
+  - *The Masked One* counted only FINISHED "Retake missed questions" runs,
+    all at once at the end; a Drill question got wrong and answered again
+    never counted. Both count now, per question, in the drill answer path.
+    `seedChallenges289()` backfills once from the misses on record (Drill
+    share of runs), never lowering a count: twelve accounts get the Masked
+    One.
+  - *The Detective* read the LIVE daily streak, so one wrong daily took
+    it back. `dailyCorrectBest`. Same for the new Phoenix:
+    `unitHundoStreakBest`. Both seeded from the current runs.
+  - *Koi* (id `valkyrie`, feat `studyrun7`): study 7 days in a row,
+    `bestStudyRun()` off the study log. Was ten Virtual Room top-3s,
+    which nobody was near. Three accounts already qualify.
+  - *Northern Lights / Sakura* still count FULL-LENGTH tests (an earlier
+    explicit request) - the card now says so and prints the Stats tab's
+    all-tests number beside it, which is what made "100 tests" look wrong
+    (84 full against 165 completed on the most active account).
+  - *Koi Pond* (`tests500`): a hundo in every unit, not 500 full tests.
+  - *Phoenix* (`exam100`): ace 7 different units in a row
+    (`PHOENIX_UNIT_RUN`). The old flag still grants it; nothing sets it.
+  - *Midnight Oil* 50 -> 35 hours; *Neon City* 50 -> 25 matches.
+- `check-behaviour` 61 holds the rewards; `verify289.py` in the session
+  scratch walked the drill retake count and the congratulation card.
