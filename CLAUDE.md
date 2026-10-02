@@ -9346,3 +9346,27 @@ and stuff."*
   - *Midnight Oil* 50 -> 35 hours; *Neon City* 50 -> 25 matches.
 - `check-behaviour` 61 holds the rewards; `verify289.py` in the session
   scratch walked the drill retake count and the congratulation card.
+
+### Build 290 - the character glow lights on the tap
+
+"When selecting a character, the glow has a delay when triggering."
+Measured on a 4x-throttled Pro Max, from tap to the glow half up:
+Customize 316ms -> ~207, sign-up 201ms -> ~89. Four causes, all fixed:
+- **The tap did its bookkeeping first.** `saveStore()` and
+  `updateHeaderTitle()` (which redraws the header character) ran before
+  the class went on. They now run 260ms later, after the glow is up; the
+  store already holds the pick, so nothing can read a stale one.
+- **`.avatarchar-cell:has(.selected)`** made every pick re-check the whole
+  page's styles: 5ms of a tap's 5.5ms of style work. It is a plain
+  `.is-selected` on the cell now, set by the same tap. **A `:has()` that
+  watches a class a tap toggles is a per-tap cost - measure before adding
+  one** (bisect by deleting rules one at a time; see check_b290).
+- **`ease` over .5s** spent its first 150ms barely moving, which reads as
+  late rather than gentle. .22s ease-out for the drop-shadows, .3s for the
+  pool, which is on its own layer (`will-change:opacity`) so its fade is
+  the compositor's.
+- **Customize ran at ~30fps idle**: the eight theme swatches repaint
+  their swirl every frame (they alone took it from 55 to 27) and every
+  banner tile is a live scene. An IntersectionObserver pauses any swatch
+  or banner tile out of view (`.is-offscreen`); it is back to ~56.
+`check-behaviour` 62 holds all four; it fails on 289.

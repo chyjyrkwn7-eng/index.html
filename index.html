@@ -2086,9 +2086,19 @@
       color-mix(in srgb, var(--char-glow) 42%, transparent) 0%,
       color-mix(in srgb, var(--char-glow) 17%, transparent) 38%,
       transparent 68%);
-    opacity:0; transition:opacity .5s ease;
+    opacity:0; transition:opacity .3s cubic-bezier(.2,.8,.2,1);
+    /* ITS OWN LAYER (build 290): "the glow has a delay when triggering".
+       Tapping a character redraws its drop-shadows and the header
+       avatar in the same moment, and while that work ran the pool's
+       fade waited behind it - measured, nothing lit for ~300ms on a
+       throttled phone. Promoted, the fade is the compositor's and starts
+       on the next frame whatever else is going on. */
+    will-change:opacity;
   }
   .avatarchar-option.selected::before{ opacity:1; }
+  /* Build 290: see the IntersectionObserver in showCustomize(). */
+  :is(.banner-opt, .swatch).is-offscreen, :is(.banner-opt, .swatch).is-offscreen *,
+  :is(.banner-opt, .swatch).is-offscreen *::before, :is(.banner-opt, .swatch).is-offscreen *::after{ animation-play-state:paused !important; }
   /* The drop-shadows fade through a REGISTERED number, not by
      transitioning `filter` itself: interpolating from a transparent
      shadow to a color-mix() one passes through near-black on the way
@@ -2109,7 +2119,10 @@
   .avatarchar-option:not(.locked) .avatarchar-svg{ position:relative; z-index:1; }
   .avatarchar-option:not(.locked){
     --char-glow-k:0;
-    transition:transform .15s ease, --char-glow-k .5s ease;
+    /* .22s ease-OUT (build 290), not .5s ease: `ease` starts slowly, so
+       half a second of it spent its first 150ms barely moving - which
+       read as the glow arriving late rather than fading in. */
+    transition:transform .15s ease, --char-glow-k .22s cubic-bezier(.2,.8,.2,1);
     filter:drop-shadow(0 0 calc(5px * var(--char-glow-k)) color-mix(in srgb, var(--char-glow) calc(85% * var(--char-glow-k)), transparent))
            drop-shadow(0 0 calc(16px * var(--char-glow-k)) color-mix(in srgb, var(--char-glow) calc(45% * var(--char-glow-k)), transparent));
   }
@@ -17377,7 +17390,11 @@
     .screen-customize .swatch-name{ font-size:.55rem; letter-spacing:-.02em; overflow:visible; text-overflow:clip; max-width:none; }
     .screen-customize .swatch-cell{ padding-left:0; padding-right:0; }
   }
-  .avatarchar-cell:has(.selected) .avatarchar-name{ color:var(--ink); }
+  /* A CLASS ON THE CELL, NOT :has(.selected) (build 290). The :has()
+     version made every pick re-check the whole page's styles - measured,
+     5ms of a tap's 5.5ms of style work, on the frame that lights the
+     glow. The tap handler sets .is-selected on the cell with the class. */
+  .avatarchar-cell.is-selected .avatarchar-name{ color:var(--ink); }
   .avatarchar-name.is-locked{ opacity:.55; }
   /* ONE LINE, EVERY NAME, ON A PHONE (build 243): "On the iPhone screen,
      the names of the characters cut off and it starts typing it
@@ -48820,7 +48837,7 @@ function showWelcomeCharacterPrompt(){
     opt.addEventListener("click", () => {
       if(locked){ showToast(characterLockMessage(charDef.id)); return; }
       selectedChar = charDef.id;
-      avatarGrid.querySelectorAll(".avatarchar-option").forEach(b => b.classList.remove("selected"));
+      avatarGrid.querySelectorAll(".avatarchar-option.selected").forEach(b => b.classList.remove("selected"));
       opt.classList.add("selected");
       /* Explicit, not relying on CSS alone: outline:none and
          -webkit-appearance:none weren't enough on their own, so this
@@ -57667,7 +57684,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-02-289";
+const APP_BUILD = "2026-10-02-290";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -70756,11 +70773,18 @@ function showCustomize(){
          would do nothing, so the tap has something to say instead. */
       if(opt.classList.contains("selected") && openHeld){ openHeld(); return; }
       store.avatarChar = charDef.id;
-      saveStore();
-      updateHeaderTitle();
-      avatarSect.querySelectorAll(".avatarchar-option").forEach(b => b.classList.remove("selected"));
+      avatarSect.querySelectorAll(".avatarchar-option.selected").forEach(b => b.classList.remove("selected"));
+      avatarSect.querySelectorAll(".avatarchar-cell.is-selected").forEach(c => c.classList.remove("is-selected"));
       opt.classList.add("selected");
+      cell.classList.add("is-selected");
       opt.blur();
+      /* THE GLOW FIRST (build 290). Saving and redrawing the header's
+         character used to run before the class went on, so the frame
+         that lights the new pick waited for both - "the glow has a delay
+         when triggering". They wait until the glow has finished coming
+         up (.22s) so they cannot land in the middle of it either; the
+         store already holds the pick, so nothing can read a stale one. */
+      setTimeout(() => { saveStore(); updateHeaderTitle(); }, 260);
     });
     /* THE NAME UNDER EACH ONE, asked for in the same breath as leaving
        the grid alone: "you can put their names under each one though,
@@ -70770,7 +70794,7 @@ function showCustomize(){
        under a locked character is the most natural way to ask what it
        costs, and it now answers. */
     const cell = document.createElement("div");
-    cell.className = "avatarchar-cell";
+    cell.className = "avatarchar-cell" + (store.avatarChar === charDef.id ? " is-selected" : "");
     const nameEl = document.createElement("span");
     nameEl.className = "avatarchar-name" + (locked ? " is-locked" : "");
     nameEl.textContent = AVATAR_GRID_NAME[charDef.id] || AVATAR_DISPLAY_NAME[charDef.id] || charDef.id;
@@ -70915,6 +70939,25 @@ function showCustomize(){
   accentSect.appendChild(swatches);
   panel.appendChild(accentSect);
   panel.appendChild(bannerSect);
+  /* BANNERS AND SWATCHES OFF SCREEN HOLD STILL (build 290). Every banner
+     tile is a live animated scene and every theme swatch repaints its
+     swirl each frame; together they held this screen to ~30fps on a
+     throttled phone - which is what made picking
+     a character feel slow to light up: "the glow has a delay when
+     triggering". A tile scrolled out of view pauses, one in view plays,
+     so nothing anybody can see changes. Disconnects itself once the
+     screen is gone. */
+  if(typeof IntersectionObserver === "function"){
+    const io = new IntersectionObserver(entries => {
+      if(!document.contains(panel)){ io.disconnect(); return; }
+      entries.forEach(e => e.target.classList.toggle("is-offscreen", !e.isIntersecting));
+    }, { rootMargin: "120px 0px" });
+    bannerSect.querySelectorAll(".banner-opt").forEach(b => { b.classList.add("is-offscreen"); io.observe(b); });
+    /* The theme swatches swirl and sheen by repainting every frame, and
+       they cost more than the banners: measured, the eight of them alone
+       took the screen from 55fps to 27. */
+    swatches.querySelectorAll(".swatch").forEach(b => { b.classList.add("is-offscreen"); io.observe(b); });
+  }
 
   function paintAccents(){
     [...swatches.querySelectorAll(".swatch")].forEach((b, i) => {

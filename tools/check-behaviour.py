@@ -6087,6 +6087,48 @@ def check_b289(br):
     ctx.close()
 
 
+def check_b290(br):
+    """Build 290: "When selecting a character, the glow has a delay when
+    triggering." (1) The pick lights in the same tap - class on, store set -
+    with saving and the header redraw held back until after the glow. (2)
+    The glow is a short ease-out, the pool on its own layer. (3) No
+    :has(.selected) on the character cells (it re-checked the page's styles
+    on every pick). (4) Customize pauses the banner tiles and theme
+    swatches it cannot see. Written against 289, where all four fail."""
+    print("\n62. build 290: the character glow lights on the tap")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      try{
+        document.getElementById('pushing-update')?.remove();
+        showCustomize(); await wait(900);
+        const o = [...document.querySelectorAll('.screen-customize .avatarchar-option:not(.locked):not(.selected)')][0];
+        let saves = 0; const realSave = window.saveStore; window.saveStore = function(){ saves++; return realSave.apply(this, arguments); };
+        o.click();
+        out.sync = { selected: o.classList.contains('selected'), cell: o.parentElement.classList.contains('is-selected'), savedYet: saves };
+        await wait(500); out.savedLater = saves > 0; window.saveStore = realSave;
+        const cs = getComputedStyle(o), pool = getComputedStyle(o, '::before');
+        const dur = (prop, list) => { const ps = list.transitionProperty.split(',').map(x => x.trim()), ds = list.transitionDuration.split(',').map(x => parseFloat(x)); const i = ps.indexOf(prop); return i < 0 ? null : ds[i]; };
+        out.glow = { k: dur('--char-glow-k', cs), pool: dur('opacity', pool), poolLayer: pool.willChange };
+        let hasRule = false;
+        [...document.styleSheets].forEach(sh => { try{ [...sh.cssRules].forEach(r => { if(r.selectorText && /avatarchar-cell:has\(/.test(r.selectorText)) hasRule = true; }); }catch(e){} });
+        out.hasRule = hasRule;
+        const sw = document.querySelector('.screen-customize .swatch'), bo = document.querySelector('.screen-customize .banner-opt');
+        out.offscreen = { swatch: !!(sw && sw.classList.contains('is-offscreen')), banner: !!(bo && bo.classList.contains('is-offscreen')) };
+        const dot = sw && sw.querySelector('.dot'); out.dotPaused = dot ? getComputedStyle(dot).animationPlayState : null;
+      } catch(e){ out.threw = String(e && e.stack || e); }
+      return out; }""")
+    s = r.get("sync") or {}
+    check("a pick lights in the same tap, and saving waits until after the glow",
+          s.get("selected") is True and s.get("cell") is True and s.get("savedYet") == 0 and r.get("savedLater") is True, r)
+    g = r.get("glow") or {}
+    check("the glow comes up in a short ease-out, the pool on its own layer",
+          g.get("k") is not None and g["k"] <= 0.25 and g.get("pool") is not None and g["pool"] <= 0.3 and "opacity" in str(g.get("poolLayer")), g)
+    check("no :has(.selected) on the character cells", r.get("hasRule") is False, r.get("hasRule"))
+    check("Customize pauses the swatches and banner tiles it cannot see",
+          (r.get("offscreen") or {}) == {"swatch": True, "banner": True} and r.get("dotPaused") in ("paused", None), r)
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     only = os.environ.get("ONLY_B245")
@@ -6169,6 +6211,7 @@ def main():
             check_b287_rooms(br)
             check_b288(br)
             check_b289(br)
+            check_b290(br)
         finally:
             br.close()
     SERVER.shutdown()
