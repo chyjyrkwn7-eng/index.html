@@ -9436,3 +9436,11 @@ never "every question") and Marksman 250.
     its own label, and a flagged-only run adds "(flagged questions)".
   - The whole panel is vertically centred. The progress bar stays at the
     top, and the header's small scope line is hidden while paused.
+
+### Build 292 - the Hive is 500 in a day
+
+"300 questions in a single day is weak. Make that 500." `HIVE_DAY` is
+500. The feat key stays `busyday300` because it is an id, the same way
+`streak100` still means the Marksman's 250. `check-behaviour` 63 reads
+the threshold from the app for its one-short/exactly-there test and
+pins the decision (500) in one place only.

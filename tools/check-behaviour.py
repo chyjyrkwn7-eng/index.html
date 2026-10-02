@@ -6136,7 +6136,7 @@ def check_b291(br):
     """Build 291. (1) Unlocks in one sitting: cloud data landing after
     Home is up gets its card on the same visit, and anything newly earned
     while a card is up joins the same queue. (2) The Marksman is 250 in a
-    row. (3) The Hive: 300 questions in a day, counted per answer. (4)
+    row. (3) The Hive: 500 questions in a day (300 in 291), counted per answer. (4)
     Sliders follow a touch from anywhere on the track, and the hundo line
     is always there while a run can be cut, so the slider never moves
     mid-drag. (5) The options say "answer choices", carry a one-line
@@ -6160,8 +6160,8 @@ def check_b291(br):
         const qi = QUESTIONS.findIndex(q => (q.topic || '').indexOf('Identity') >= 0);
         try{ recordResult(qi, true); recordResult(qi, false); }catch(e){ out.recordThrew = String(e); }
         out.dayCount = typeof busiestDay === 'function' ? busiestDay() : null;
-        store.dayAnswered = null; store.dayAnsweredBest = 299; out.hiveLocked299 = isLockedCharacter('hive');
-        store.dayAnsweredBest = 300; out.hiveOpen300 = !isLockedCharacter('hive');
+        const HN = CHARACTER_FEATS.busyday300.need; store.dayAnswered = null; store.dayAnsweredBest = HN - 1; out.hiveLocked299 = isLockedCharacter('hive');
+        store.dayAnsweredBest = HN; out.hiveOpen300 = !isLockedCharacter('hive');
         out.defaulted = (() => { const d = JSON.parse(JSON.stringify(store)); delete d.dayAnsweredBest; delete d.dayAnswered; applyLoadedData(d);
           return [store.dayAnsweredBest, store.dayAnswered]; })();
         store.dayAnswered = keep[0]; store.dayAnsweredBest = 0;
@@ -6179,7 +6179,7 @@ def check_b291(br):
         const s1 = document.querySelector('.rs-spot');
         out.first = s1 ? s1.textContent.slice(0, 160) : null;
         /* earned while the first card is up */
-        store.dayAnsweredBest = 300;
+        store.dayAnsweredBest = CHARACTER_FEATS.busyday300.need;
         await wait(800);
         s1 && s1.click();
         t0 = performance.now(); let s2 = null;
@@ -6242,16 +6242,16 @@ def check_b291(br):
         print("   threw:", r["threw"][:400])
     check("the Marksman is 250 in a row in one test", r.get("marks") == 250, r.get("marks"))
     hv = r.get("hive") or {}
-    check("the Hive exists, is drawn with its bees, and asks for 300 questions in a day",
-          hv.get("def") and hv.get("svg") and hv.get("feat") == 300, hv)
-    check("every answer counts toward the day, right or wrong, and the Hive opens at 300, not 299",
+    check("the Hive exists, is drawn with its bees, and asks for 500 questions in a day (build 292)",
+          hv.get("def") and hv.get("svg") and hv.get("feat") == 500, hv)
+    check("every answer counts toward the day, right or wrong, and the Hive opens at its number, not one short",
           r.get("dayCount") == 2 and r.get("hiveLocked0") and r.get("hiveLocked299") and r.get("hiveOpen300"),
           [r.get("dayCount"), r.get("hiveLocked0"), r.get("hiveLocked299"), r.get("hiveOpen300"), r.get("recordThrew")])
     check("an account from an older build gets the day counters defaulted", r.get("defaulted") == [0, None], r.get("defaulted"))
     check("a character that arrives with the cloud copy plays on the same Home visit",
           r.get("spotsAtStart") == 0 and "Marksman" in str(r.get("first")), [r.get("spotsAtStart"), r.get("first")])
     check("and one earned while that card is up plays straight after it, still on Home",
-          "Hive" in str(r.get("second")) and r.get("stillHome"), [r.get("second"), r.get("stillHome")])
+          "Hive" in str(r.get("second")) and "500 questions" in str(r.get("second")) and r.get("stillHome"), [r.get("second"), r.get("stillHome")])
     na, npart = r.get("noteAll") or {}, r.get("notePartial") or {}
     check("on All, the hundo line is already there (says the whole unit counts)",
           na and not na.get("hidden") and "counts as a hundo" in na.get("text", ""), na)

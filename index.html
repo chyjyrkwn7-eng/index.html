@@ -32330,7 +32330,9 @@ function avatarGlowColor(id){
    sentence shown to somebody who has not earned it can never drift
    apart - the same reason TIER_UNLOCKS carries its own label. */
 const MARKSMAN_RUN = 250;
-const HIVE_DAY = 300;
+/* 500, not 300 (build 292): "300 questions in a single day is weak."
+   The feat key stays busyday300 - it is an id, like streak100. */
+const HIVE_DAY = 500;
 const CHARACTER_FEATS = {
   /* THE BEST RUN, NOT THE CURRENT ONE (build 289): "ensure all the
      rewards/unlocks are accurate to what people have done". This read
@@ -57949,7 +57951,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-02-291";
+const APP_BUILD = "2026-10-02-292";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
