@@ -5889,6 +5889,72 @@ def check_b287_rooms(br):
     ctx.close()
 
 
+def check_b288(br):
+    """Build 288. (1) The length slider glides and counts one question at a
+    time on a small unit. (2) The swipe hint points forward, and swipe to
+    advance is switched on once for everyone. (3) The lag fixes are in
+    place: the halo is a drawn-once canvas clipped at the screen, the orbit
+    emblems hold still, the badge cutscene has no full-screen blur, and a
+    second Home visit reuses the glow it already drew. Written against
+    287, where every one of these fails."""
+    print("\n60. build 288: slider, swipe hint, swipe on, and the lag fixes")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      try{
+        document.documentElement.classList.remove('is-reloading'); document.getElementById('pushing-update')?.remove();
+        store.seenUnitSelectTour = true; store.seenUnitOptionsTour = true;
+        /* (2) swipe on, once */
+        try{ localStorage.removeItem('class26e.swipeon.288'); }catch(e){}
+        theme.swipeAdvance = false; if(store.theme) store.theme.swipeAdvance = false; loadTheme();
+        out.swipeOnce = theme.swipeAdvance;
+        theme.swipeAdvance = false; if(store.theme) store.theme.swipeAdvance = false; loadTheme();
+        out.swipeStaysOff = theme.swipeAdvance === false;
+        theme.swipeAdvance = true;
+        /* (3) Home */
+        showHome(); await wait(1500);
+        const glow = document.querySelector('.homeglow-hero');
+        out.halo = glow ? glow.tagName : null;
+        const wrap = document.querySelector('.wrap'); out.clip = wrap ? getComputedStyle(wrap).overflowX : null;
+        out.orbitAnims = document.getAnimations().filter(a => { const t = a.effect && a.effect.target; return t && t.closest && t.closest('.cosmic-icon-badge .rank-emblem-svg'); }).length;
+        const bc = document.createElement('div'); bc.className = 'badge-cutscene'; document.body.appendChild(bc);
+        out.badgeBlur = getComputedStyle(bc).backdropFilter || getComputedStyle(bc).webkitBackdropFilter || 'none'; bc.remove();
+        showProfile(); await wait(500); showHome(); await wait(600);
+        out.glowReused = !!document.querySelector('.cosmic-hero-glowbox > canvas');
+        /* (1) the slider on a small unit */
+        cfg.mode = 'drill'; const unit = topicsIn(QUESTIONS).find(u => u.indexOf('Identity') >= 0); cfg.units = [unit]; cfg.size = 0;
+        showSetup(); await wait(700);
+        document.getElementById('nextbtn')?.click(); await wait(900);
+        const sl = document.querySelector('.howmany-sect input.slider'), val = document.querySelector('.howmany-sect .sliderval');
+        out.step = sl.getAttribute('step') || sl.step;
+        sl.value = '7.4'; sl.dispatchEvent(new Event('input', { bubbles: true })); await wait(50);
+        out.mid = { thumb: Number(sl.value), shown: val.textContent, size: cfg.size };
+        sl.dispatchEvent(new Event('change', { bubbles: true })); await wait(50);
+        out.after = Number(sl.value);
+        /* (2) the hint's chevrons */
+        document.querySelector('.unitoptions-modal-scrim')?.click(); await wait(300);
+        const qs = QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === unit);
+        beginRun(qs); const t0 = performance.now();
+        while(!document.querySelector('.choice') && performance.now() - t0 < 8000) await wait(100);
+        const chev = document.querySelector('.swipehint .swipechev');
+        out.chev = chev ? chev.getAttribute('d') : null;
+      } catch(e){ out.threw = String(e && e.stack || e); }
+      return out; }""")
+    check("the length slider glides (step 'any') and counts one question at a time on a 12-question unit",
+          r.get("step") == "any" and (r.get("mid") or {}).get("size") == 7 and "7 of" in str((r.get("mid") or {}).get("shown")), str(r.get("mid") or r.get("threw")))
+    check("and the thumb stays under the finger mid-drag, then settles on the count",
+          abs((r.get("mid") or {}).get("thumb", 0) - 7.4) < 0.01 and r.get("after") == 7, str([r.get("mid"), r.get("after")]))
+    check("the swipe hint points forward, the way the next question arrives",
+          str(r.get("chev") or "").startswith("M9 5l6 7"), str(r.get("chev")))
+    check("swipe to advance is switched on once, and turning it off afterwards sticks",
+          r.get("swipeOnce") is True and r.get("swipeStaysOff") is True, str([r.get("swipeOnce"), r.get("swipeStaysOff")]))
+    check("Home's halo is a canvas drawn once, clipped at the screen",
+          r.get("halo") == "CANVAS" and r.get("clip") == "clip", str([r.get("halo"), r.get("clip")]))
+    check("the orbit's emblems hold still and the badge cutscene has no full-screen blur",
+          r.get("orbitAnims") == 0 and r.get("badgeBlur") == "none", str([r.get("orbitAnims"), r.get("badgeBlur")]))
+    check("a second Home visit reuses the sphere glow it already drew", r.get("glowReused") is True, str(r.get("glowReused")))
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     only = os.environ.get("ONLY_B245")
@@ -5969,6 +6035,7 @@ def main():
             check_b284(br)
             check_b285(br)
             check_b287_rooms(br)
+            check_b288(br)
         finally:
             br.close()
     SERVER.shutdown()

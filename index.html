@@ -2408,7 +2408,7 @@
   }
   @keyframes swipe-nudge{
     0%, 100%{ transform:translateX(0); }
-    50%{ transform:translateX(-3px); }
+    50%{ transform:translateX(3px); }
   }
   .flagpole{ fill:none; stroke:var(--soft); stroke-width:2; stroke-linecap:round; }
   .flagbanner{ fill:none; stroke:#C9A227; stroke-width:1.6; stroke-linejoin:round; }
@@ -9857,6 +9857,23 @@
      Only the hero variant. The plain .homeglow on the username and
      character screens is a top-of-panel wash with no sphere in it and no
      complaint against it. */
+  [data-theme="dark"] .homeglow.homeglow-hero.homeglow-canvas{ background:none; display:block; }
+  /* ---- NOTHING OF THE HALO DRAWN PAST THE SCREEN (build 288) ----
+     The canvas above was the smaller half of Home's lag. Traced further,
+     most of Home's per-visit raster was the halo's box running PAST THE
+     SCREEN: 190% of the hero is wider than a phone, and that overflow
+     made the panel's layer as big as the halo for the whole of its
+     fade-in. Clipped, a throttled Pro Max went from ~610ms of raster per
+     visit to ~160ms - the same as having no halo at all.
+     Clipped at .wrap, which is the screen: clipping at the PANEL was one
+     line too, and was measured and rejected - the panel stops 20px short
+     of the screen edge and the halo visibly stopped with it, up to 8
+     levels, a seam down both sides. A clip-path on the halo itself was
+     tried as well and saves nothing: Chromium sizes the layer from the
+     LAYOUT overflow, which only `overflow` removes. Pixel-diffed on a
+     Pro Max, an iPad Pro 11 and an SE: zero levels changed. Home only. */
+  .wrap:has(> #stage > .screen-home-actual){ overflow:clip; }
+
   [data-theme="dark"] .homeglow.homeglow-hero{
     background:
       radial-gradient(ellipse at 50% 46%, color-mix(in srgb, var(--theme-c1) 70%, transparent) 0%, transparent 38%),
@@ -11739,8 +11756,22 @@
     .rank-emblem-svg .rk-d2{ animation-delay:-1.1s; }
     .rank-emblem-svg .rk-d3{ animation-delay:-2.2s; }
     /* Everywhere else - the leaderboard column, the watermarks, the
-       little ones in reward chips - an emblem holds still. */
-    .rank-emblem-svg:not(:is(.cosmic-badge-rank, .rankmap-node, .profile-rankcoin, .rankhero-art, .rankhero-nextemb, .rs-morph-to, .tierup-banner-icon, .rk-live) .rank-emblem-svg) .rk-a{ animation:none; }
+       little ones in reward chips - an emblem holds still.
+       AND THE HOME ORBIT, SINCE BUILD 288. `.cosmic-badge-rank` was on
+       this list, and measured on a throttled Pro Max it was the single
+       biggest cause of lag left in the app: seven emblems of a dozen
+       animated parts each, every part inside an SVG and so repainted on
+       the CPU every frame. Home idled at ~27fps with a third of its
+       frames dropped, and the rank-up cutscene - which shows two heroes,
+       fourteen emblems - ran at ~19fps with half its frames dropped.
+       Taking the orbit off the list: Home ~48fps (drops 50 -> 6) and the
+       rank-up ~54fps (drops ~100 -> 5). Keeping only the reached ranks
+       animated was tried first and is not enough - four animating
+       emblems put both straight back, with or without the unreached
+       ones' grayscale filter. The bubbles still float, the orbit still
+       turns, a newly reached bubble still lights up; the Rank tab, where
+       the emblems are big enough to read the motion, keeps all of it. */
+    .rank-emblem-svg:not(:is(.rankmap-node, .profile-rankcoin, .rankhero-art, .rankhero-nextemb, .rs-morph-to, .tierup-banner-icon, .rk-live) .rank-emblem-svg) .rk-a{ animation:none; }
   }
   @keyframes rk-breathe{ from{ opacity:.72; transform:scale(.93); } to{ opacity:1; transform:scale(1.05); } }
   @keyframes rk-twinkle{ from{ transform:scale(.7); opacity:.6; } to{ transform:scale(1.15); opacity:1; } }
@@ -11761,6 +11792,11 @@
   /* the reward chips' tiny flares hold still again (build 253): at 26px the
      motion cannot be seen, and it was 10-20 animations a chip */
   .rankmap-giftav .rank-emblem-svg .rk-a{ animation:none !important; }
+  /* ...and so do the Home orbit's (build 288) - see the list above for
+     why. !important for the same reason as the chips: the per-rank
+     "-big" rules further down set animation-name again at equal
+     specificity, and Gold's swing was still running in every orbit. */
+  .cosmic-badge-rank .rank-emblem-svg .rk-a{ animation:none !important; }
   /* off screen, nothing moves (build 252 - see watchRankEmblemOnScreen) */
   .rank-emblem-svg.rk-idle .rk-a{ animation:none !important; }
   .bnr.rk-idle, .bnr.rk-idle *{ animation:none !important; }
@@ -17415,7 +17451,12 @@
     gap:.2rem; padding:2rem 1.5rem; text-align:center;
     background:radial-gradient(120% 80% at 50% 42%, rgba(12,16,24,.82), rgba(4,6,10,.94));
     opacity:0; transition:opacity .3s ease;
-    -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
+    /* No backdrop blur (build 288). Over Home - which never stops moving:
+       the orbit turns, the glows breathe, the bubbles float - a full-screen
+       blur is re-run every frame, and measured on a throttled Pro Max it
+       was most of the badge cutscene's lag (~290 frames in 9s, 74 dropped;
+       without it ~400, 23). Behind a backdrop already 82-94% dark the 3px
+       of blur was barely there to see. */
   }
   .badge-cutscene-in{ opacity:1; }
   .badge-cutscene-out{ opacity:0; transition:opacity .45s ease .25s; }
@@ -32496,9 +32537,35 @@ const RETIRED_CHARACTER_TO = { queen: "wizard", dragon: "wizard",
      the Ronin took its challenge. Nobody could have earned the owl in a
      day, so it goes to a starter too. */
   nightowl: "ninja" };
+/* ONE DRAWING PER CHARACTER, COPIED AFTER THAT (build 288). Drawing a
+   character is a few hundred createElement / setAttribute calls, and the
+   results screen, Profile, the boards and the lobby each drew the same
+   one again on every visit - ~20ms a time on a throttled phone, much of
+   it on the results reveal. drawAvatarCharSVG() reads nothing but the
+   character id (no store, no listeners, no document), so the first
+   drawing is kept as a template and every later one is a deep copy with
+   its gradient and clip ids moved onto a fresh token - ids have to stay
+   unique per copy, or two copies on one screen would share one gradient. */
+const AVATAR_SVG_TEMPLATE = {};
 function buildAvatarCharSVG(charId){
   charId = RETIRED_CHARACTER_TO[charId] || charId;
-  return buildAvatarCharSVGFresh(charId);
+  let t = AVATAR_SVG_TEMPLATE[charId];
+  if(!t){
+    const svg = buildAvatarCharSVGFresh(charId);
+    if(!svg) return svg;
+    t = AVATAR_SVG_TEMPLATE[charId] = { svg, uid: svg.getAttribute("data-cx-uid") || "" };
+  }
+  const copy = t.svg.cloneNode(true);
+  if(t.uid){
+    const fresh = charId + "-" + Math.random().toString(36).slice(2, 9);
+    copy.setAttribute("data-cx-uid", fresh);
+    [copy, ...copy.querySelectorAll("*")].forEach(el => {
+      for(const a of Array.from(el.attributes)){
+        if(a.value.indexOf(t.uid) >= 0) el.setAttribute(a.name, a.value.split(t.uid).join(fresh));
+      }
+    });
+  }
+  return copy;
 }
 function buildAvatarCharSVGFresh(charId){
   const svg = drawAvatarCharSVG(charId);
@@ -32539,6 +32606,7 @@ function drawAvatarCharSVG(charId){
     return el;
   };
   const uid = charId + "-" + Math.random().toString(36).slice(2, 9);
+  svg.setAttribute("data-cx-uid", uid);
   const defs = document.createElementNS(svgNS, "defs");
   svg.appendChild(defs);
   let headGradCount = 0;
@@ -40224,6 +40292,44 @@ function badgeViewBoxFor(d){
   }catch(e){}
   return vb;
 }
+/* ALL SIXTEEN MEASURED AT ONCE, BEFORE ANYONE ASKS (build 288). Each
+   badgeViewBoxFor() measures its outline with getBBox(), and every one
+   of those forces a fresh layout of the whole document - sixteen of them
+   back to back on the first results screen of a session, ~80ms on a
+   throttled phone, right in the middle of the reveal. One host, every
+   outline in it, one layout, in idle time a few seconds after launch;
+   the per-shape path stays for anything not warmed yet. */
+function warmBadgeViewBoxes(){
+  try{
+    const NS = "http://www.w3.org/2000/svg";
+    const ds = Object.keys(BADGE_SHAPE).map(k => BADGE_SHAPE[k] && BADGE_SHAPE[k].d).filter(d => d && !BADGE_VIEWBOX_CACHE[d]);
+    if(!ds.length) return;
+    const host = document.createElementNS(NS, "svg");
+    host.setAttribute("viewBox", "0 0 100 100");
+    host.setAttribute("style", "position:absolute;left:-9999px;top:0;width:100px;height:100px;visibility:hidden");
+    const paths = ds.map(d => { const p = document.createElementNS(NS, "path"); p.setAttribute("d", d); host.appendChild(p); return p; });
+    (document.body || document.documentElement).appendChild(host);
+    const boxes = paths.map(p => { try{ return p.getBBox(); }catch(e){ return null; } });
+    host.remove();
+    const m = 6.5;
+    ds.forEach((d, i) => {
+      const b = boxes[i];
+      if(!b || !b.width) return;
+      let vb = "0 0 100 100";
+      const half = Math.max(50, 50 - (b.x - m), (b.x + b.width + m) - 50, 50 - (b.y - m), (b.y + b.height + m) - 50);
+      if(half > 50.01){
+        const h = Math.ceil(half * 10) / 10;
+        vb = (50 - h) + " " + (50 - h) + " " + (2 * h) + " " + (2 * h);
+      }
+      BADGE_VIEWBOX_CACHE[d] = vb;
+    });
+  }catch(e){}
+}
+setTimeout(() => {
+  /* and this person's own character, the one every results screen draws */
+  const go = () => { warmBadgeViewBoxes(); try{ buildAvatarCharSVGSafe((store && store.avatarChar) || AVATAR_CHARACTERS[0].id); }catch(e){} };
+  if(typeof window.requestIdleCallback === "function") window.requestIdleCallback(go, { timeout: 4000 }); else go();
+}, 4000);
 function buildUnitBadgeSVG(unitName, earned){
   const NS = "http://www.w3.org/2000/svg";
   const shape = badgeShapeFor(unitName);
@@ -43593,6 +43699,21 @@ function loadTheme(){
     if(typeof store.theme.autoFlagMissed === "boolean") theme.autoFlagMissed = store.theme.autoFlagMissed;
     if(typeof store.theme.showClassDaysLeft === "boolean") theme.showClassDaysLeft = store.theme.showClassDaysLeft;
   }
+  /* SWIPE TO ADVANCE, ON FOR EVERYONE ONCE (build 288): "make the swipe
+     function on automatically if it's not already." It has defaulted on
+     for a long time, but anyone who turned it off - or picked it up off
+     an older default - kept it off. Turned on once per device; turning
+     it off again afterwards sticks. */
+  try{
+    if(!localStorage.getItem("class26e.swipeon.288")){
+      localStorage.setItem("class26e.swipeon.288", "1");
+      if(!theme.swipeAdvance){
+        theme.swipeAdvance = true;
+        if(store.theme) store.theme.swipeAdvance = true;
+        setTimeout(() => { try{ saveTheme(); }catch(e){} }, 0);
+      }
+    }
+  }catch(e){}
 }
 
 /* Paints the CURRENT in-memory `theme` onto the document. Does not touch
@@ -47309,6 +47430,146 @@ const COSMIC_SMIL = false;
    tap; the main menu was then reported with no planet at all on a phone.
    Each emblem is built fresh again, and inside a try: a rank drawing that
    fails on one device leaves its bubble empty, never the whole hero. */
+/* ---- THE HALO BEHIND THE SPHERE, DRAWN ONCE (build 288) ----
+   "There is slight lag when opening a tab again ... exiting a test and
+   going to main menu has slight lag as well." Traced, most of Home's
+   cost on every visit was this one element: two radial gradients over a
+   box 190% the size of the hero, re-rasterised from nothing each time
+   Home mounted - at 3x on a Pro Max that is ~2,300 x 2,300 pixels of
+   gradient. Taking it away dropped Home's raster work from ~660ms to
+   ~130ms per visit on a throttled phone; nothing else on the screen came
+   close (the orbit's seven emblems together were ~10ms).
+   A soft gradient has no detail to lose, so it is drawn ONCE into a
+   256px canvas and the compositor scales that up - the same two
+   gradients, same centres, same fade points, same colours read from
+   the live --theme-c1 / --theme-c3 tokens - and the canvas element
+   itself is kept and re-used on every later visit, redrawn only when
+   the accent changes. The geometry is the CSS one worked out: an
+   ellipse `farthest-corner` from (50%, 46%) in a square box has radii
+   sqrt(2) x (0.5, 0.54) of the box, and the stops are where the CSS
+   puts them. Each stop fades to its OWN colour at zero alpha, not to
+   black, so the edge does not grey out the way an unpremultiplied
+   canvas gradient towards `transparent` would.
+   Dark only: the party theme's glow is a different pair of gradients
+   and keeps its CSS. Anything that cannot get a 2D context gets the CSS
+   div exactly as before. */
+let homeGlowCache = { key: "", canvas: null };
+function cssColorRgb(str){
+  const s = String(str || "");
+  const isFn = /^color\(/i.test(s);
+  const parts = s.replace(/^[a-z]+\(/i, "").replace(/\)\s*$/, "")
+    .replace(/^[a-z][a-z0-9-]*\s+/i, "").split(/[\s,\/]+/).filter(Boolean);
+  if(parts.length < 3) return null;
+  const k = isFn ? 255 : 1;
+  const out = parts.slice(0, 3).map(n => Math.max(0, Math.min(255, Math.round(parseFloat(n) * k))));
+  return out.some(n => !isFinite(n)) ? null : out;
+}
+function homeGlowCanvas(){
+  try{
+    if(document.documentElement.getAttribute("data-theme") !== "dark") return null;
+    const probe = document.createElement("div");
+    probe.style.cssText = "position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none;";
+    document.body.appendChild(probe);
+    const rgbOf = name => { probe.style.color = "var(" + name + ")"; return cssColorRgb(getComputedStyle(probe).color); };
+    const c1 = rgbOf("--theme-c1"), c3 = rgbOf("--theme-c3");
+    probe.remove();
+    if(!c1 || !c3) return null;
+    const key = c1.join(",") + "|" + c3.join(",");
+    if(homeGlowCache.canvas && homeGlowCache.key === key){
+      homeGlowCache.canvas.remove();
+      return homeGlowCache.canvas;
+    }
+    const N = 256;
+    const cv = document.createElement("canvas");
+    cv.width = N; cv.height = N;
+    const ctx = cv.getContext("2d");
+    if(!ctx) return null;
+    const blob = (cy, rgb, alpha, end) => {
+      ctx.save();
+      ctx.translate(0.5 * N, cy * N);
+      ctx.scale(Math.SQRT2 * 0.5 * N, Math.SQRT2 * 0.54 * N);
+      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+      const c = rgb.join(",");
+      g.addColorStop(0, "rgba(" + c + "," + alpha + ")");
+      g.addColorStop(end, "rgba(" + c + ",0)");
+      g.addColorStop(1, "rgba(" + c + ",0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(-2, -2, 4, 4);
+      ctx.restore();
+    };
+    /* bottom layer first: CSS paints its LAST background underneath */
+    blob(0.54, c3, 0.62, 0.52);
+    blob(0.46, c1, 0.70, 0.38);
+    cv.className = "homeglow-canvas";
+    homeGlowCache = { key, canvas: cv };
+    return cv;
+  }catch(e){ return null; }
+}
+/* ---- THE SPHERE'S GLOW, FILTERED ONCE (build 288) ----
+   After the halo, the next biggest cost of opening Home was the two
+   warped glows round the sphere: fractal noise, a displacement map and a
+   blur, re-run from nothing on every visit - about 45ms of pre-paint and
+   75ms of raster per visit unthrottled, a third of what was left. The
+   glows never change while the accent stays the same (their animation is
+   COSMIC_SMIL, off), so the first visit draws them live as it always
+   did, then a beat later the finished layer is drawn once into a canvas,
+   and every visit after that - "opening a tab again" - reuses the canvas.
+   The snapshot covers more than the layer's viewBox because the layer is
+   overflow:visible and the filter region reaches ~12 units past its top;
+   the canvas is placed by the same percentages so it lands exactly where
+   the live layer did. Keyed on both fills and reduced motion, so a new
+   accent draws it live again; a rotation only rescales it, and the box
+   keeps the viewBox's aspect so nothing stretches. */
+let heroGlowCache = { key: "", canvas: null };
+const HERO_GLOW_PAD = { x: 40, y: 40 };
+function heroGlowSnapshot(layer, baseKey){
+  if(!layer || !layer.isConnected) return;
+  const r = layer.getBoundingClientRect();
+  if(!(r.width > 0 && r.height > 0)) return;
+  const clone = layer.cloneNode(true);
+  /* the circles' opacity comes from CSS; bake it in, the image has none */
+  const live = layer.querySelectorAll("circle"), copies = clone.querySelectorAll("circle");
+  live.forEach((c, i) => { const cs = getComputedStyle(c); copies[i].setAttribute("opacity", cs.opacity); copies[i].removeAttribute("class"); });
+  const vbX = 0 - HERO_GLOW_PAD.x, vbY = -12 - HERO_GLOW_PAD.y, vbW = 360 + 2 * HERO_GLOW_PAD.x, vbH = 342 + 2 * HERO_GLOW_PAD.y;
+  const scale = Math.min(2, window.devicePixelRatio || 1);
+  const pxW = Math.round(r.width * vbW / 360 * scale), pxH = Math.round(r.height * vbH / 342 * scale);
+  clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  clone.setAttribute("viewBox", [vbX, vbY, vbW, vbH].join(" "));
+  clone.setAttribute("width", pxW); clone.setAttribute("height", pxH);
+  clone.removeAttribute("class");
+  const img = new Image();
+  img.onload = () => {
+    try{
+      const cv = document.createElement("canvas");
+      cv.width = pxW; cv.height = pxH;
+      const ctx = cv.getContext("2d");
+      if(!ctx) return;
+      ctx.drawImage(img, 0, 0, pxW, pxH);
+      cv.setAttribute("class", layer.getAttribute("class"));
+      cv.setAttribute("aria-hidden", "true");
+      cv.style.left = (-HERO_GLOW_PAD.x / 360 * 100) + "%";
+      cv.style.top = (-HERO_GLOW_PAD.y / 342 * 100) + "%";
+      cv.style.width = (vbW / 360 * 100) + "%";
+      cv.style.height = (vbH / 342 * 100) + "%";
+      heroGlowCache = { key: baseKey, canvas: cv };
+    }catch(e){}
+  };
+  img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(new XMLSerializer().serializeToString(clone));
+}
+/* Home's seven orbit emblems, built once and moved into each new Home
+   (build 288): they depend on the tier and nothing else, and rebuilding
+   them was two thirds of the JavaScript spent opening Home. Only Home
+   asks for these (buildCosmicHero's `reuse`), and only one Home is ever
+   mounted, so moving a node can never take it from a screen still in use;
+   the rank-up cutscene, which builds two heroes at once, builds its own. */
+const homeRankEmblemCache = {};
+function homeRankEmblemReused(tier){
+  const had = homeRankEmblemCache[tier];
+  if(had){ had.remove(); return had; }
+  const em = homeRankEmblem(tier);
+  homeRankEmblemCache[tier] = em;
+  return em;
+}
 function homeRankEmblem(tier){
   try {
     const em = fitRankEmblem(buildRankEmblemSVG(tier), tier);
@@ -47318,7 +47579,7 @@ function homeRankEmblem(tier){
     return document.createElementNS("http://www.w3.org/2000/svg", "svg");
   }
 }
-function buildCosmicHero(useTierIcons, forceAccent){
+function buildCosmicHero(useTierIcons, forceAccent, reuse){
   const svgNS = "http://www.w3.org/2000/svg";
   const wrap = document.createElement("div");
   wrap.className = "cosmic-hero-wrap";
@@ -47556,6 +47817,20 @@ function buildCosmicHero(useTierIcons, forceAccent){
   glowCircle2.setAttribute("fill", accentToGradientStops()[2]);
   glowCircle2.setAttribute("filter", "url(#cosmicGlowWarp)");
   glowLayer.appendChild(glowCircle2);
+  /* A REVISIT REUSES THE GLOW IT ALREADY DREW (build 288) - see
+     heroGlowSnapshot(). Home only, the person's own accent only, and
+     never the Supernova glow, which is a different CSS-driven shape. */
+  if(reuse && useTierIcons && !forceAccent && !store.supernovaAchieved){
+    const glowKey = [glowCircle.getAttribute("fill"), glowCircle2.getAttribute("fill"),
+      (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) ? "rm" : ""].join("|");
+    const cached = heroGlowCache.canvas && heroGlowCache.key === glowKey ? heroGlowCache.canvas : null;
+    if(cached){
+      cached.remove();
+      glowBox.replaceChild(cached, glowLayer);
+    } else {
+      setTimeout(() => { try{ heroGlowSnapshot(glowLayer, glowKey); }catch(e){} }, 900);
+    }
+  }
   const sphere = document.createElementNS(svgNS, "circle");
   sphere.setAttribute("cx", 180); sphere.setAttribute("cy", 150); sphere.setAttribute("r", 52);
   sphere.setAttribute("fill", "url(#cosmicSphereGrad)");
@@ -47873,7 +48148,7 @@ function buildCosmicHero(useTierIcons, forceAccent){
     if(useTierIcons){
       /* Fitted and clipped like the road map's (build 232): centred on
          its own drawing, and nothing reaching past the bubble. */
-      const em = homeRankEmblem(pos.tier);
+      const em = reuse ? homeRankEmblemReused(pos.tier) : homeRankEmblem(pos.tier);
       badge.classList.add("cosmic-badge-rank");
       badge.style.setProperty("--rank-color", RANK_COLOR[pos.tier]);
       badge.appendChild(em);
@@ -53335,7 +53610,7 @@ function showHome(){
      of Welcome's original generic icon set, which stays exactly as it
      was \u2014 explicitly not to be touched. Same sphere and orbit
      geometry either way; only which icons sit in the badges differs. */
-  const heroWrap = buildCosmicHero(true);
+  const heroWrap = buildCosmicHero(true, undefined, true);
 
   /* Appended inside heroWrap itself, as .homeglow-hero, instead of
      alongside it as a plain sibling of panel \u2014 see the .homeglow-hero
@@ -53347,8 +53622,8 @@ function showHome(){
      top or bottom edge depending on viewport height. Living inside
      heroWrap, sized and centered off that box, the glow now always
      covers wherever the sphere actually ends up. */
-  const glow = document.createElement("div");
-  glow.className = "homeglow homeglow-hero";
+  const glow = homeGlowCanvas() || document.createElement("div");
+  glow.classList.add("homeglow", "homeglow-hero");
   glow.setAttribute("aria-hidden", "true");
   heroWrap.appendChild(glow);
 
@@ -55037,8 +55312,19 @@ function showSetup(){
     const wrap = document.createElement("div");
     wrap.className = "sliderwrap";
     const slider = document.createElement("input");
-    slider.type = "range"; slider.min = min; slider.step = step;
+    /* A THUMB THAT GLIDES, ON ANY POOL (build 288): "the sliding toggle
+       when changing the amount of questions on a low amount of
+       questions unit is weird, it moves in large margins and it's not
+       smooth." A step of 5 on a 12-question unit is three stops across
+       the whole track, so the thumb leapt a third of the way at a time.
+       The input is continuous now (step "any") and the COUNT is what
+       snaps: one question at a time on a pool of 60 or fewer, fives
+       above that, and the thumb settles onto the chosen count when it
+       is let go. */
+    slider.type = "range"; slider.min = min; slider.step = "any";
     slider.className = "slider";
+    let dragging = false;
+    const latticeStep = () => getMax() <= 60 ? 1 : step;
     slider.setAttribute("aria-label", labelText);
     const allBtn = document.createElement("button");
     allBtn.type = "button"; allBtn.className = "slider-allbtn";
@@ -55046,15 +55332,22 @@ function showSetup(){
     allBtn.addEventListener("click", () => { setEverything(); paint(); refresh(); });
     function topStopFor(rawMax){
       const dynMax = Math.max(min, rawMax);
-      return Math.max(min, min + Math.floor((dynMax - min) / step) * step);
+      const ls = latticeStep();
+      return Math.max(min, min + Math.floor((dynMax - min) / ls) * ls);
     }
     slider.max = topStopFor(getMax());
     slider.addEventListener("input", () => {
-      const raw = Number(slider.value);
-      if(raw >= topStopFor(getMax())) setEverything();
-      else { set(raw); if(isEverything()) setCustom(); }
+      dragging = true;
+      const ls = latticeStep(), top = topStopFor(getMax());
+      const snapped = Math.min(top, min + Math.round((Number(slider.value) - min) / ls) * ls);
+      if(snapped >= top) setEverything();
+      else { set(snapped); if(isEverything()) setCustom(); }
       sect.paint(); refresh();
     });
+    const settle = () => { if(!dragging) return; dragging = false; sect.paint(); };
+    slider.addEventListener("change", settle);
+    slider.addEventListener("pointerup", settle);
+    slider.addEventListener("touchend", settle);
     wrap.append(slider, allBtn);
     sect.appendChild(wrap);
 
@@ -55073,7 +55366,8 @@ function showSetup(){
       if(!isEverything() && get() >= pool) setEverything();
       if(noChoice) setEverything();
       const every = isEverything();
-      slider.value = noChoice ? 1 : every ? top : Math.min(get(), top);
+      /* mid-drag the thumb stays under the finger; it snaps on release */
+      if(!dragging) slider.value = noChoice ? 1 : every ? top : Math.min(get(), top);
       paintSliderFill(slider);
       allBtn.classList.toggle("on", every);
       allBtn.setAttribute("aria-pressed", every ? "true" : "false");
@@ -56588,10 +56882,15 @@ function render(){
     swipeIcon.setAttribute("aria-hidden", "true");
     const chev1 = document.createElementNS(svgNS, "path");
     chev1.setAttribute("class", "swipechev");
-    chev1.setAttribute("d", "M15 5l-6 7 6 7");
+    /* POINTING FORWARD (build 288): "the arrow at the bottom ... why do
+       I feel like that's facing the wrong direction?" It pointed left,
+       the way the finger moves, and beside the words "Next question"
+       that read as Back. It points where you are going now - the next
+       question comes in from the right - and the gesture is unchanged. */
+    chev1.setAttribute("d", "M9 5l6 7-6 7");
     const chev2 = document.createElementNS(svgNS, "path");
     chev2.setAttribute("class", "swipechev swipechev2");
-    chev2.setAttribute("d", "M20 5l-6 7 6 7");
+    chev2.setAttribute("d", "M4 5l6 7-6 7");
     swipeIcon.append(chev1, chev2);
     next.appendChild(swipeIcon);
   }
@@ -57167,7 +57466,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-02-287";
+const APP_BUILD = "2026-10-02-288";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

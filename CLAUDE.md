@@ -9233,3 +9233,56 @@ any unlock? If so, just put it at the end of their next [test]."*
   finally updates it adds only the difference. Only the fields
   `mergeLeavingAccount()` ADDS are reduced - every max, min, either and
   union is already safe to apply twice. `check-sync` 8d; fails on 286.
+
+### Build 288 - the slider, the swipe hint, and the lag
+
+*"The sliding toggle when changing the amount of questions on a low
+amount of questions unit is weird ... The arrow at the bottom ... why do
+I feel like that's facing the wrong direction? Also make the swipe
+function on automatically ... slight lag when opening a tab again ...
+exiting a test and going to main menu ... the result screen, cutscenes
+and stuff."*
+
+- **How many glides.** The slider is `step="any"` and the COUNT snaps:
+  one question at a time on a pool of 60 or fewer, fives above. Mid-drag
+  the thumb stays under the finger; it settles on the count on release.
+  A step of 5 on a 12-question unit was three stops across the track.
+- **The swipe hint points forward.** It pointed left - the way the
+  finger moves - and beside "Next question" read as Back. The gesture is
+  unchanged (swipe left). Swipe to advance is switched on once per
+  device (`class26e.swipeon.288`); turning it off afterwards sticks.
+- **What the lag was, measured** (throttled Pro Max, Chromium; numbers
+  are for comparing builds, not promises about a device):
+  - *Home's halo* rasterised ~530ms of its ~660ms per visit. Two causes:
+    the gradients redrawn from nothing (now a 256px canvas drawn once and
+    reused, `homeGlowCanvas()`, pixel-matched to the CSS within 3 levels),
+    and the box running PAST THE SCREEN, which made the fading panel's
+    layer as big as the halo. `.wrap:has(> #stage > .screen-home-actual)
+    {overflow:clip}` - at the screen, never at the panel (the panel stops
+    20px short and the halo visibly stopped with it). A clip-path on the
+    halo saves nothing: layers are sized from LAYOUT overflow.
+  - *The sphere's glow filter* (turbulence + displacement + blur) re-ran
+    on every visit. The first visit draws it live; a beat later it is
+    drawn once into a canvas and every later visit reuses it
+    (`heroGlowSnapshot()`). Home only (`buildCosmicHero(..., reuse)`) -
+    the rank-up cutscene builds two heroes at once and must not take
+    Home's. The orbit's seven emblems are reused the same way.
+  - *The orbit's emblems no longer animate inside their bubbles.* This
+    was the biggest single cost left: dozens of parts animating INSIDE
+    SVGs repaint on the CPU every frame. Home idled at ~29fps and the
+    rank-up cutscene (two heroes, fourteen emblems) at ~21fps; now ~56
+    and ~54. Animating only the reached ranks was tried and is not
+    enough - four animating emblems put both straight back. The bubbles
+    still float and the orbit turns; the Rank tab keeps every animation.
+  - *The badge cutscene's full-screen backdrop blur* re-ran every frame
+    over a Home that never stops moving; it is gone (behind 82-94% dark,
+    3px of blur barely showed). ~290 -> ~400 frames in 9s.
+  - *The first results screen of a session* measured all sixteen badge
+    outlines one forced layout at a time, and drew the character from
+    nothing. Both are warmed in idle time 4s after launch
+    (`warmBadgeViewBoxes()`, the character template); characters are
+    drawn once per id and deep-copied with fresh ids after that
+    (`AVATAR_SVG_TEMPLATE`) - pixel-identical to a fresh drawing.
+- `check-behaviour` 60 holds all of this; it fails on 287.
+- **Profile's remaining cost is its animated character and a long page**
+  - asked for, and cheap on a real GPU; left alone.
