@@ -1,0 +1,1426 @@
+commit 148456ef9948b2b10eee5b66886ccf1e5b7bbdd1
+Author: Claude <noreply@anthropic.com>
+Date:   Fri Oct 2 04:34:44 2026 +0000
+
+    Retire Game mode: no Game card, start-sheet speed picker, lives or timer; its banners move onto Exam
+    
+    Lanterns: pass an Exam on 10 units. Great Wave: 100% in Exam on 10 units.
+    Thunderhead: 100% in Exam on every unit. Each still honours the old Game
+    count, so nobody loses one they earned. The dead hardcore10 feat goes; the
+    Masked One keeps its legacy Hardcore clause. A saved Game mode loads as
+    Drill. Old history entries keep their Game label.
+    
+    Restorable: git revert this commit (see retired/game-mode.md).
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    Claude-Session: https://claude.ai/code/session_01Y1ntmqBtMsVJcEAs1mn1Fz
+
+diff --git a/index.html b/index.html
+index 0a0ebd7..4aa8aa0 100644
+--- a/index.html
++++ b/index.html
+@@ -19329,7 +19329,7 @@
+ 
+     var messagePool = [
+       "> booting core runtime...",
+-      "> loading Drill, Game & Exam modes...",
++      "> loading Drill & Exam modes...",
+       "> syncing unit progress...",
+       "> initializing badge case...",
+       "> calibrating XP curve...",
+@@ -19485,7 +19485,6 @@
+       <div class="tbest" id="tbest" hidden></div>
+     </div>
+   </div>
+-  <p class="lives" id="lives" hidden aria-hidden="true"></p>
+   <div class="meter" id="meter" aria-hidden="true"></div>
+   <p class="count" id="count"></p>
+   <main id="stage"></main>
+@@ -31741,7 +31740,6 @@ function renderStatsPopoverContent(){
+   statsPopover.appendChild(brandHead);
+   const streakNum = currentStreak();
+   const drillStars = totalStarsFor("drill");
+-  const gameStars = totalStarsFor("game");
+   const maxStars = maxStarsPossible();
+   const rows = [];
+   if(streakNum >= 1){
+@@ -31772,16 +31770,6 @@ function renderStatsPopoverContent(){
+     r.append(star, num, document.createTextNode(" Drill stars"));
+     rows.push(r);
+   }
+-  {
+-    const r = document.createElement("div");
+-    r.className = "statspopover-row";
+-    const star = document.createElement("span");
+-    star.textContent = "\u2605"; star.className = "statspopover-star"; star.setAttribute("aria-hidden", "true");
+-    const num = document.createElement("span");
+-    num.className = "statspopover-num"; num.textContent = gameStars + "/" + maxStars;
+-    r.append(star, num, document.createTextNode(" Game stars"));
+-    rows.push(r);
+-  }
+   rows.forEach(r => statsPopover.appendChild(r));
+ 
+   const divider = document.createElement("div");
+@@ -31851,7 +31839,6 @@ const hintEl    = document.getElementById("hint");
+ const timerlineEl = document.getElementById("timerline");
+ const tmainEl     = document.getElementById("tmain");
+ const tbestEl     = document.getElementById("tbest");
+-const livesEl     = document.getElementById("lives");
+ const homeBtn       = document.getElementById("homebtn");
+ const appearanceBtn = document.getElementById("appearancebtn");
+ const profileBtn    = document.getElementById("profilebtn");
+@@ -32099,16 +32086,9 @@ const CHARACTER_FEATS = {
+   daily10:  { label: "Answer 10 daily questions correctly in a row",
+               done: () => (store.dailyCorrectStreak || 0) >= 10,
+               have: () => (store.dailyCorrectStreak || 0), need: 10 },
+-  /* BEAT HARDCORE ON TEN UNITS, not a hundo streak. Changed after the
+-     streak version shipped: "The 'hundo in 10 different units in a row'
+-     change that to beat hardcore on 10 units."
+-     It is the better feat for this character anyway - a streak is a
+-     thing you can lose to one bad morning, and Hardcore is 15 seconds a
+-     question with one life, which you either did or did not.
+-     Nothing new is tracked for it: `store.unitGameBeat` has recorded
+-     {easy, average, hardcore} per unit since Game mode shipped, and the
+-     ladder inside recordGameBeatIfEligible() already refuses Hardcore
+-     until Average is beaten. This just counts it. */
++  /* hardcore10 ("Beat Hardcore on 10 units") was here, the Masked One's
++     old feat. No character has used it since the Masked One moved on,
++     and it went with Game mode in build 283 (retired/game-mode.md). */
+   /* Build 262, the Night Owl's then, the Ronin's since 263: "take a 400
+      question [test] and pass it".
+      One run of 400 or more questions, finished at the pass mark or
+@@ -32125,9 +32105,6 @@ const CHARACTER_FEATS = {
+   bigtest400: { label: "Pass a test of " + RONIN_TEST_SIZE + " or more questions (" + PASS_MARK + "% or better)",
+                 done: () => store.bigTest450Passed === true,
+                 have: () => (store.bigTest450Passed === true ? 1 : 0), need: 1 },
+-  hardcore10: { label: "Beat Hardcore on 10 units",
+-                done: () => hardcoreUnitsBeaten() >= 10,
+-                have: () => hardcoreUnitsBeaten(), need: 10 },
+   /* THE WEEKLY BOARD, not the Practice Test. Corrected directly: "The
+      unlock for the greek statue is wrong too, it's supposed to finished
+      the week as the #1 on the weekly xp leaderboard."
+@@ -32268,6 +32245,12 @@ function noteHundoDay(unit){
+   if(store.hundoDay.units.indexOf(unit) < 0) store.hundoDay.units.push(unit);
+   store.hundoDayBest = Math.max(store.hundoDayBest || 0, store.hundoDay.units.length);
+ }
++/* Units with a single-unit Exam best at or above pct - the Exam ladder
++   of banners (build 283). */
++function examUnitsAtLeast(pct){
++  return topicsIn(QUESTIONS).filter(u => { const e = unitExamOf(u); return !!(e && e.best >= pct); }).length;
++}
++/* Game mode's old count, read only so a banner earned under it stays. */
+ function gameUnitsBeatenOn(speed){
+   const b = store.unitGameBeat || {};
+   return Object.keys(b).filter(u => b[u] && b[u][speed]).length;
+@@ -38599,14 +38582,7 @@ const cfg = {
+   countdown: false,  // 3-2-1 countdown before the run begins
+   revealCorrect: false, // unlocked once every unit has its black star
+   timer: "off",      // off | up | down
+-  timerMinutes: 15,
+-  gameSpeed: "easy" // easy | average | hardcore — drives seconds-per-question and lives
+-};
+-
+-const GAME_SPEEDS = {
+-  easy:     { seconds: 45, lives: 3, label: "Easy" },
+-  average:  { seconds: 30, lives: 2, label: "Average" },
+-  hardcore: { seconds: 15, lives: 1, label: "Hardcore" }
++  timerMinutes: 15
+ };
+ /* The full Class 26E course calendar, extracted from the official
+    class schedule \u2014 every real class day from orientation through
+@@ -38905,10 +38881,14 @@ function applySaved(){
+        turn it off. Left out here, cfg keeps its own `false` default
+        whatever the stored copy says. */
+     ["mode", "source", "size", "shuffle", "recall", "countdown",
+-     "timer", "timerMinutes", "gameSpeed"].forEach(k => {
++     "timer", "timerMinutes"].forEach(k => {
+       if(store.opts[k] !== undefined) cfg[k] = store.opts[k];
+     });
+   }
++  /* Game mode was retired in build 283 (retired/game-mode.md); somebody
++     whose last run was a game comes back to Drill, not to a mode with no
++     card and no start sheet. */
++  if(cfg.mode === "game") cfg.mode = "drill";
+   /* SHUFFLED ANSWER POSITIONS ARE ON BY DEFAULT (build 229), and turned
+      on once for everybody who had the old default of off - a saved
+      `false` is almost always just the default nobody changed. The switch
+@@ -38936,7 +38916,7 @@ function rememberConfig(){
+   store.opts = { mode: cfg.mode, source: cfg.source, size: cfg.size,
+                  shuffle: cfg.shuffle, recall: cfg.recall,
+                  countdown: cfg.countdown, revealCorrect: cfg.revealCorrect,
+-                 timer: cfg.timer, timerMinutes: cfg.timerMinutes, gameSpeed: cfg.gameSpeed };
++                 timer: cfg.timer, timerMinutes: cfg.timerMinutes };
+   store.units = cfg.units.slice();
+   saveStore();
+ }
+@@ -40522,12 +40502,24 @@ const BANNERS = [
+      difficulties, the three test counts, the two hundo counts, then the
+      one-offs, then the three rank banners in rank order. Customize lists
+      them in this order. */
++  /* EXAM SINCE BUILD 283, Game mode before it. Game mode was retired
++     (retired/game-mode.md) and its ladder moved onto Exam rather than
++     going with it: pass ten units, ace ten units, ace every unit. Each
++     one still takes the old Game count where that is higher, so nobody
++     who earned one of these on the old rule loses it. */
+   { id: "easy10", name: "Lanterns",
+-    label: "Beat 10 units on Easy in Game mode", have: () => gameUnitsBeatenOn("easy"), need: 10 },
++    label: "Pass an Exam on 10 units (" + PASS_MARK + "% or better)",
++    have: () => Math.max(examUnitsAtLeast(PASS_MARK), gameUnitsBeatenOn("easy")), need: 10 },
+   { id: "average10", name: "Great Wave",
+-    label: "Beat 10 units on Average in Game mode", have: () => gameUnitsBeatenOn("average"), need: 10 },
++    label: "Score 100% in Exam on 10 units",
++    have: () => Math.max(examUnitsAtLeast(100), gameUnitsBeatenOn("average")), need: 10 },
+   { id: "hardcore10", name: "Thunderhead",
+-    label: "Beat 10 units on Hardcore in Game mode", have: () => hardcoreUnitsBeaten(), need: 10 },
++    get label(){ return "Score 100% in Exam on all " + topicsIn(QUESTIONS).length + " units"; },
++    have: () => {
++      const all = topicsIn(QUESTIONS).length;
++      return hardcoreUnitsBeaten() >= 10 ? all : examUnitsAtLeast(100);
++    },
++    get need(){ return topicsIn(QUESTIONS).length; } },
+   { id: "tests100", name: "Northern Lights",
+     label: "Finish 100 full tests", have: () => fullTestsOf(), need: 100 },
+   { id: "tests250", name: "Sakura",
+@@ -42329,7 +42321,7 @@ const RANKING_BOARDS = [
+      clearest label the row can carry. */
+   { key: "hundos", tab: "Hundos", field: "hundos",
+     unit: (n) => n + (n === 1 ? " hundo" : " hundos"),
+-    blurb: "Ranked by hundos \u2014 units finished at 100%, in Drill, Exam, Game or the Virtual Room alike. They count per unit, not per test, so a test covering three units has three hundos on the table." }
++    blurb: "Ranked by hundos \u2014 units finished at 100%, in Drill, Exam or the Virtual Room alike. They count per unit, not per test, so a test covering three units has three hundos on the table." }
+ ];
+ 
+ 
+@@ -43556,7 +43548,6 @@ function isFriendPub(pub){
+ }
+ /* The grade's reaction - 100, 90 and up, a pass, and short of it. */
+ function gradeReaction(run){
+-  if(run.gameLost) return "fail";
+   if(run.isPerfect) return "perfect";
+   if(run.pct >= 90) return "great";
+   if(run.pct >= PASS_MARK) return "pass";
+@@ -45127,7 +45118,7 @@ function testLabelFor(){
+   let base;
+   if(cfg.units.length === 0 || cfg.units.length === all.length) base = "All units";
+   else base = cfg.units.length + " units";
+-  const modeName = cfg.mode === "exam" ? "Exam" : cfg.mode === "game" ? "Game" : "Drill";
++  const modeName = cfg.mode === "exam" ? "Exam" : "Drill";
+   return base + " \u2014 " + modeName;
+ }
+ 
+@@ -45362,89 +45353,11 @@ function gameTrackStars(name){
+   return 0;
+ }
+ 
+-/* Game mode is fully available from the very start now \u2014 no unlock
+-   requirement on units or globally. Kept as functions (rather than
+-   removing every call site) since speedUnlockedForUnit() and various
+-   UI messages still call these; they just always return true now. */
+-function unitGameUnlocked(name){
+-  return true;
+-}
+-
+-const GAME_MODE_MIN_BEGINNERS = 1;
+-
+-function beginnerUnitCount(){
+-  return topicsIn(QUESTIONS).filter(u => unitLevel(u) !== null).length;
+-}
+-
+-function gameModeGloballyUnlocked(){
+-  return true;
+-}
+-
+-function speedUnlockedForUnit(name, speed){
+-  if(!unitGameUnlocked(name)) return false;
+-  if(speed === "easy") return true;
+-  if(speed === "average") return gameBeat(name).easy === true;
+-  return gameBeat(name).average === true; // hardcore
+-}
+-
+-/* For a run covering several units at once, a speed is only usable if
+-   every selected unit individually allows it. Easy is special-cased
+-   to bypass the "at least one unit picked" requirement entirely \u2014
+-   it has no real prerequisite (per speedUnlockedForUnit above), so
+-   with zero units selected yet, this used to show even Easy as
+-   locked (an empty array's .every() is vacuously true in JS, but the
+-   units.length > 0 guard overrode that), which is exactly the
+-   confusing "Easy is locked too" edge case the new visual lock
+-   treatment made visible for the first time. */
+-function speedUnlockedForUnits(units, speed){
+-  if(speed === "easy") return true;
+-  return units.length > 0 && units.every(u => speedUnlockedForUnit(u, speed));
+-}
+-
+-/* A beaten game, per unit. A MULTI-unit game counts for every unit it
+-   covered in full - "if multiple then it would list multiple" - so it
+-   returns the speed and the units it newly beat it on, or null. The
+-   caller only asks for a game that was actually won. */
+-let lastGameBeatUnits = [];
+-function recordGameBeatIfEligible(){
+-  lastGameBeatUnits = [];
+-  if(cfg.source !== "all" || cfg.mode !== "game") return null;
+-  const speed = cfg.gameSpeed;
+-  const whole = (cfg.units || []).filter(name => {
+-    const inRun = order.filter(qi => (QUESTIONS[qi].topic || "").trim() === name).length;
+-    return inRun > 0 && inRun === unitQuestionCount(name);
+-  });
+-  if(!whole.length || whole.length !== (cfg.units || []).length) return null;
+-  whole.forEach(name => {
+-    const g = gameBeat(name);
+-    if(g[speed]) return;
+-    if(speed === "average" && !g.easy) return;
+-    if(speed === "hardcore" && !g.average) return;
+-    store.unitGameBeat[name] = { easy: g.easy || speed === "easy", average: g.average || speed === "average",
+-                                  hardcore: g.hardcore || speed === "hardcore" };
+-    lastGameBeatUnits.push(name);
+-  });
+-  if(!lastGameBeatUnits.length) return null;
+-  saveStore();
+-  return speed;
+-}
+-
+-/* "Personal best" for game mode is how far you got, not how fast —
+-   tracked per unit and per speed. */
+-function gameFarthestFor(name, speed){
+-  return (store.gameFarthest[name] && store.gameFarthest[name][speed]) || 0;
+-}
+-
+-function recordGameFarthest(name, speed, reached){
+-  const cur = store.gameFarthest[name] || {};
+-  if(reached > (cur[speed] || 0)){
+-    cur[speed] = reached;
+-    store.gameFarthest[name] = cur;
+-    saveStore();
+-    return true;
+-  }
+-  return false;
+-}
++/* The rest of Game mode's per-unit machinery - difficulty unlocks, the
++   beaten-game recorder and the farthest-reached record - was here until
++   build 283 (retired/game-mode.md). gameBeat() and hardcoreUnitsBeaten()
++   above stay: they read what people already earned, which still counts
++   towards the banners and the Masked One. */
+ 
+ function blackStarCount(){
+   return topicsIn(QUESTIONS).filter(hasBlackStar).length;
+@@ -45805,7 +45718,6 @@ function confirmMainMenu(){
+     stopQuestionTimer();
+     flushStudyTime();
+     timerlineEl.hidden = true;
+-    livesEl.hidden = true;
+     showHome();
+     return;
+   }
+@@ -45855,7 +45767,6 @@ function confirmMainMenu(){
+     stopQuestionTimer();
+     flushStudyTime();
+     timerlineEl.hidden = true;
+-    livesEl.hidden = true;
+     showHome();
+   });
+   actions.append(stayBtn, leaveBtn);
+@@ -45986,7 +45897,6 @@ function confirmExitTest(){
+     stopQuestionTimer();
+     flushStudyTime();
+     timerlineEl.hidden = true;
+-    livesEl.hidden = true;
+     showHome();
+     return;
+   }
+@@ -46037,7 +45947,6 @@ function confirmExitTest(){
+     stopQuestionTimer();
+     flushStudyTime();
+     timerlineEl.hidden = true;
+-    livesEl.hidden = true;
+     /* The actual fix for a real, confirmed bug: exiting a paused
+        daily question was landing on Mode Select, a screen that has
+        nothing to do with how the daily question is even started (the
+@@ -46080,7 +45989,6 @@ function cancelPauseTiming(){
+   const pausedMs = Date.now() - pauseStartedAt;
+   if(runStartTime != null) runStartTime += pausedMs;
+   if(timerDeadline != null) timerDeadline += pausedMs;
+-  if(questionDeadline != null) questionDeadline += pausedMs;
+   if(raceQuestionDeadline != null) raceQuestionDeadline += pausedMs;
+   if(raceRevealUntil != null) raceRevealUntil += pausedMs;
+   if(qClockQi != null) qClockAt += pausedMs;
+@@ -46093,13 +46001,7 @@ function resumeRun(){
+   cancelPauseTiming();
+   hintEl.hidden = false;
+   pauseBtn.hidden = false;
+-  if(runMode === "game"){
+-    timerlineEl.hidden = false;
+-    tmainEl.classList.add("low");
+-    updateQuestionTimerDisplay();
+-    if(questionTimerHandle) clearInterval(questionTimerHandle);
+-    questionTimerHandle = setInterval(updateQuestionTimerDisplay, 100);
+-  } else if(raceTimed){
++  if(raceTimed){
+     timerlineEl.hidden = true;
+   } else {
+     startTimer(true);
+@@ -46116,37 +46018,15 @@ function onTimeUp(){
+   summarize();
+ }
+ 
+-/* ---------- lives (game mode) ---------- */
++/* ---------- the question clock's handle ----------------------------------
++   Game mode's per-question timer (and its lives) lived here until build 283
++   - retired/game-mode.md. What is left is shared: stopQuestionTimer() also
++   stops the Virtual Room race's clock and is called from every way off a
++   question, and timedOutSet is the race's "ran out of time" record. */
+ 
+-function updateLives(){
+-  if(runMode !== "game"){ livesEl.hidden = true; return; }
+-  const maxLives = GAME_SPEEDS[cfg.gameSpeed].lives;
+-  livesEl.hidden = false;
+-  livesEl.textContent = "\u2665".repeat(Math.max(livesLeft, 0)) +
+-                         "\u2661".repeat(Math.max(maxLives - livesLeft, 0));
+-}
+-
+-/* ---------- per-question timer (game mode only) --------------------------
+-   Each question gets a fixed number of seconds, shown counting down in red.
+-   Running out costs a life and moves on immediately, same as a wrong pick,
+-   but without waiting for one. Pausing freezes it like everything else. */
+-
+-let questionDeadline = null;
+ let questionTimerHandle = null;
+ let timedOutSet = {}; // question index -> true, reset each run
+ 
+-function startQuestionTimer(){
+-  stopQuestionTimer();
+-  if(runMode !== "game") return;
+-  const seconds = GAME_SPEEDS[cfg.gameSpeed].seconds;
+-  questionDeadline = Date.now() + seconds * 1000;
+-  timerlineEl.hidden = false;
+-  tbestEl.hidden = true;
+-  tmainEl.classList.add("low");
+-  updateQuestionTimerDisplay();
+-  questionTimerHandle = setInterval(updateQuestionTimerDisplay, 100);
+-}
+-
+ function stopQuestionTimer(){
+   if(questionTimerHandle){ clearInterval(questionTimerHandle); questionTimerHandle = null; }
+   /* The race's clock goes with it: every way off a question (pause,
+@@ -46154,32 +46034,6 @@ function stopQuestionTimer(){
+   if(typeof stopRaceClock === "function") stopRaceClock();
+ }
+ 
+-function updateQuestionTimerDisplay(){
+-  const left = questionDeadline - Date.now();
+-  tmainEl.textContent = formatClock(Math.max(left, 0));
+-  if(left <= 0){
+-    stopQuestionTimer();
+-    questionTimeUp();
+-  }
+-}
+-
+-/* The per-question clock hit zero: counts exactly like a wrong answer
+-   (costs a life, may end the game) but also forces the question closed
+-   and moves on, since the person never picked anything. */
+-function questionTimeUp(){
+-  if(cleared || paused) return;
+-  const qi = order[pos];
+-  attempts[qi] = (attempts[qi] || 0) + 1;
+-  timedOutSet[qi] = true;
+-  lastWrong = true;
+-  recordResult(qi, true);
+-  runStreakLive(false);
+-  livesLeft -= 1;
+-  if(livesLeft <= 0){ gameOver(); return; }
+-  if(pos === order.length - 1) summarize();
+-  else { pos += 1; openQuestion(); }
+-}
+-
+ /* ---------- the race's per-question clock (Virtual Room, build 246) ------
+    "For the race lets not add time options, just make it where each
+    question has a 45 second timer, if you don't click in time it's wrong
+@@ -46265,27 +46119,6 @@ function finishRaceReveal(){
+   advanceWithSlide();
+ }
+ 
+-/* OUT OF LIVES IS AN END OF RUN, NOT A DEAD END. It used to be a screen
+-   of its own with no XP, no results and nothing to show for the questions
+-   answered - "playing game mode and losing still needs a result screen,
+-   you just don't get the game mode bonus if you don't beat it". So the
+-   run is cut to the questions actually reached and handed to summarize()
+-   like any other: XP for the right answers, streaks and speed, a
+-   "Game over" card where the grade would be, and no hundo, no personal
+-   best and no difficulty or lives bonus - none of which a lost game has
+-   earned. */
+-let gameLostAt = 0;
+-let gameFullLength = 0;
+-let gameLostQi = null;   /* the question that took the last life - a miss */
+-function gameOver(){
+-  stopQuestionTimer();
+-  gameLostQi = order[pos];
+-  gameLostAt = pos + 1;
+-  gameFullLength = order.length;
+-  order = order.slice(0, pos + 1);
+-  summarize();
+-}
+-
+ /* ---------- run state --------------------------------------------------- */
+ 
+ let order = [];      // question indexes for this run, already shuffled
+@@ -46800,7 +46633,6 @@ const PRACTICE_TEST_SIZE = 250;
+ const PRACTICE_TEST_MINUTES = 90;
+ let timedOut = false;      // true when a countdown timer ended the run early
+ let runStartTime = null;   // Date.now() when the current run began
+-let livesLeft = 0;
+ let timerHandle = null;
+ let timerDeadline = null;  // Date.now() target for countdown mode
+ let paused = false;
+@@ -46896,7 +46728,7 @@ function optionOrder(qi){
+     const ids = QUESTIONS[qi].choices.map((c, k) => k);
+     /* fixedOrder: choices that point at each other ("Both A and B", "A & C
+        are correct") keep the study bank's order in every mode. */
+-    if(!QUESTIONS[qi].fixedOrder && (runMode === "game" || runMode === "exam" || cfg.shuffle) && ids.length > 1){
++    if(!QUESTIONS[qi].fixedOrder && (runMode === "exam" || cfg.shuffle) && ids.length > 1){
+       const answer = QUESTIONS[qi].answer, m = lastSlots(), k = KEYS[qi], prev = m[k];
+       let out = ids;
+       for(let t = 0; t < 10; t++){
+@@ -47182,7 +47014,7 @@ const RELEASE_NOTES = [
+         { icon: buildSwipeIcon, color: "#FFD84D", title: "Swipe to Advance", body: "Skip the button \u2014 swipe left to move straight to the next question, on top of the usual tap." }
+       ]},
+       { label: "Settings", items: [
+-        { icon: buildSkipForwardIcon, color: "#5CA8FF", title: "Auto-Advance", body: "Moves you on automatically a moment after you answer \u2014 once you get it right in Drill or Game, or as soon as you pick one in Exam \u2014 with no extra tap needed." },
++        { icon: buildSkipForwardIcon, color: "#5CA8FF", title: "Auto-Advance", body: "Moves you on automatically a moment after you answer \u2014 once you get it right in Drill, or as soon as you pick one in Exam \u2014 with no extra tap needed." },
+         { icon: buildScreenAwakeIcon, color: "#FFD84D", title: "Keep Screen Awake", body: "Stops your screen from locking mid-question. Tells you plainly if your specific device can't support it, rather than silently doing nothing." },
+         { icon: buildPhoneAddIcon, color: "#4ADE80", title: "Add Nova to Your Home Screen", body: "A short, real walkthrough for getting the app onto your home screen like any other app, with steps specific to your device." }
+       ]},
+@@ -47310,7 +47142,7 @@ const RELEASE_NOTES = [
+ function showReleaseHistory(){
+   stopTimer(); stopQuestionTimer();
+   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
+-  timerlineEl.hidden = true; livesEl.hidden = true;
++  timerlineEl.hidden = true;
+   pauseBtn.hidden = true;
+   countEl.textContent = "";
+ 
+@@ -47368,7 +47200,7 @@ function showReleaseHistory(){
+ function showWhatsNew(){
+   stopTimer(); stopQuestionTimer();
+   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
+-  timerlineEl.hidden = true; livesEl.hidden = true;
++  timerlineEl.hidden = true;
+   appearanceBtn.hidden = true;
+   homeBtn.hidden = true;
+   profileBtn.hidden = true;
+@@ -48181,7 +48013,7 @@ function buildCosmicHero(useTierIcons, forceAccent){
+ function showWelcome(){
+   stopTimer(); stopQuestionTimer();
+   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
+-  timerlineEl.hidden = true; livesEl.hidden = true;
++  timerlineEl.hidden = true;
+   appearanceBtn.hidden = true;
+   homeBtn.hidden = true;
+   profileBtn.hidden = true;
+@@ -48298,7 +48130,7 @@ function showWelcomeIntro(){
+      itself an earlier explicit fix for text that read as too small. */
+   const items = [
+     { head: "Built for one thing", body: "Every question is written to match what you'll actually see on test day \u2014 by classmates studying the exact same material." },
+-    { head: "Four ways to study", body: "Drill gives instant feedback, Exam mimics test day, Game adds a timer and lives, and Virtual Room takes it live against classmates." },
++    { head: "Three ways to study", body: "Drill gives instant feedback, Exam mimics test day, and Virtual Room takes it live against classmates." },
+     { head: "Progress that means something", body: "Your accuracy and study time both climb the ranks together \u2014 real progress, not just a number." },
+     { head: "Everything saves itself", body: "No save button \u2014 your progress is already here next time, on any device." },
+   ];
+@@ -48660,7 +48492,7 @@ function showGeneratingProfile(){
+ function buildGeneratingOverlay(labelText, messages, duration, onComplete){
+   stopTimer(); stopQuestionTimer();
+   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
+-  timerlineEl.hidden = true; livesEl.hidden = true;
++  timerlineEl.hidden = true;
+   appearanceBtn.hidden = true;
+   homeBtn.hidden = true;
+   profileBtn.hidden = true;
+@@ -53538,7 +53370,7 @@ function showHome(){
+   testInProgress = false;
+   stopTimer(); stopQuestionTimer();
+   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
+-  timerlineEl.hidden = true; livesEl.hidden = true;
++  timerlineEl.hidden = true;
+   appearanceBtn.hidden = false;
+   homeBtn.hidden = false;
+   profileBtn.hidden = false;
+@@ -54091,7 +53923,7 @@ function showModeSelect(){
+   cfg.versions = {};
+   stopTimer(); stopQuestionTimer();
+   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
+-  timerlineEl.hidden = true; livesEl.hidden = true;
++  timerlineEl.hidden = true;
+   appearanceBtn.hidden = false;
+   homeBtn.hidden = false;
+   profileBtn.hidden = false;
+@@ -54127,7 +53959,8 @@ function showModeSelect(){
+        selection screen should not be at the bottom on the iPhone, it'll
+        need to be the 3rd one listed, under exam instead." One list, so
+        the order is the same on every device; on a tablet's two-across
+-       wrap it reads Drill Exam / Review Game / Virtual Room.
++       wrap it reads Drill Exam / Review Virtual Room (Game retired in
++       build 283 - see retired/game-mode.md).
+        REVIEW IS A MODE, NOT A SWITCH BURIED IN THE START SHEET. It was
+        a toggle inside Advanced options, which put "just show me the
+        questions and answers" behind two taps and a section nobody
+@@ -54140,8 +53973,6 @@ function showModeSelect(){
+        a level. */
+     { value: "review", title: "Review",
+       desc: "Browse every question with its correct answer, for the units you pick. Nothing is scored \u2014 no XP, no hundos, no badge progress." },
+-    { value: "game", title: "Game",
+-      desc: "A timer on every question and a limited number of lives. Best for testing yourself under pressure." },
+     { value: "vroom", title: "Virtual Room",
+       desc: "Start or join a live lobby and take the same test at the same time as everyone else. See where you placed at the end." }
+   ];
+@@ -54155,8 +53986,6 @@ function showModeSelect(){
+        a tour step whose selector points at the wrong card is a tooltip
+        describing Game over the Review card. */
+     card.dataset.mode = m.value;
+-    const locked = m.value === "game" && !gameModeGloballyUnlocked();
+-    if(locked) card.classList.add("locked");
+     const titleRow = document.createElement("span");
+     titleRow.className = "modecardtitlerow";
+     titleRow.appendChild(modeIcon(m.value));
+@@ -54175,12 +54004,6 @@ function showModeSelect(){
+     desc.textContent = m.desc;
+     card.append(titleRow, desc);
+     card.addEventListener("click", () => {
+-      if(locked){
+-        const remaining = GAME_MODE_MIN_BEGINNERS - beginnerUnitCount();
+-        showToast("Reach Beginner (10 perfect Drill runs) on " + remaining + " more " +
+-          (remaining === 1 ? "unit" : "units") + " to unlock Game mode.");
+-        return;
+-      }
+       /* Exam goes straight to the start sheet (build 283): the Standard /
+          Practice Test picker is retired - see retired/practice-test.md. */
+       if(m.value === "vroom"){ cfg.mode = "vroom"; showVirtualRoomChoice(); return; }
+@@ -54206,8 +54029,6 @@ function showModeSelect(){
+         text: "Drill is the classic mode \u2014 instant feedback, and you can retry until you get it right. Best for learning." },
+       { target: '.modecard[data-mode="exam"]', align: "left", vplacement: "below",
+         text: "Exam holds feedback until the end, just like the real thing." },
+-      { target: '.modecard[data-mode="game"]', align: "left", vplacement: "below",
+-        text: "Game adds a timer and limited lives \u2014 good for testing yourself under pressure." },
+       /* vplacement was hardcoded to "above" here, mismatched with Game's
+          own "below" right above - harmless-looking on phone (cards
+          stack in one column, so Virtual Room being last made "above"
+@@ -54320,42 +54141,8 @@ function appendUnitProgress(row, name){
+     }
+     starsWrap.appendChild(barRow);
+   }
+-  /* THREE BUBBLES, one per difficulty, and only in Game mode.
+-     Asked for because there was no way to see it: "I don't know how to
+-     track which units are on what level in the game mode so figure that
+-     out as well. Make it clean, maybe it needs three bubbles on the
+-     unit card?"
+-     The data was always there - store.unitGameBeat has recorded
+-     {easy, average, hardcore} per unit since Game mode shipped - and
+-     nothing on any screen had ever shown it. So this is a display for a
+-     fact the app already knew, which is why it is three spans and not a
+-     feature.
+-     Filled left to right because the difficulties unlock in that order:
+-     recordGameBeatIfEligible() refuses Average until Easy is beaten and
+-     Hardcore until Average is, so three bubbles can only ever fill from
+-     the left and the row reads as a progress meter rather than as three
+-     independent ticks. */
+-  if(cfg.mode === "game"){
+-    const dots = document.createElement("span");
+-    dots.className = "pick-gamedots";
+-    /* TOP RIGHT of the card, not under the mastery bar. Asked as a
+-       question and it is the right answer: the bottom-left row put a
+-       second progress meter directly under the first one, and two
+-       meters stacked read as one thing with six parts. In the corner
+-       it is a STATUS MARK - out of the flow, glanceable, and clearly
+-       about something other than the bar it is no longer touching. */
+-    dots.classList.add("pick-gamedots-corner");
+-    const beat = gameBeat(name);
+-    ["easy", "average", "hardcore"].forEach(key => {
+-      const d = document.createElement("span");
+-      d.className = "pick-gamedot" + (beat[key] ? " on" : "") + " is-" + key;
+-      d.title = GAME_SPEEDS[key].label + (beat[key] ? " beaten" : " not beaten yet");
+-      dots.appendChild(d);
+-    });
+-    /* Appended to the CARD, not to starsWrap: the corner belongs to the
+-       card and starsWrap is a row inside it. */
+-    row.appendChild(dots);
+-  }
++  /* (Game mode's three difficulty bubbles lived here until build 283 -
++     retired/game-mode.md.) */
+ }
+ 
+ 
+@@ -55038,7 +54825,7 @@ function plainSlider(labelText, min, max, step, get, set, formatVal, onChange){
+ function showSetup(){
+   stopTimer(); stopQuestionTimer();
+   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
+-  timerlineEl.hidden = true; livesEl.hidden = true;
++  timerlineEl.hidden = true;
+   appearanceBtn.hidden = false;
+   homeBtn.hidden = false;
+   profileBtn.hidden = false;
+@@ -55145,25 +54932,14 @@ function showSetup(){
+     const cb = document.createElement("input");
+     cb.type = "checkbox"; cb.value = name;
+     cb.checked = cfg.units.indexOf(name) !== -1;
+-    const gameLocked = cfg.mode === "game" && !unitGameUnlocked(name);
+-    if(gameLocked){
+-      cb.disabled = true;
+-      cb.checked = false;
+-      row.classList.add("locked");
+-      row.addEventListener("click", (e) => {
+-        e.preventDefault();
+-        showToast("Reach Beginner on " + name + " in Drill mode first (10 perfect runs) to unlock it for Game mode.");
+-      });
+-    }
+     /* Set directly here too, not just left to the global "change"
+        delegate above — this box can start out already checked
+        (restoring cfg.units), and setting .checked programmatically
+        like this never fires a change event for that listener to
+        catch. */
+     row.classList.toggle("pick-checked", cb.checked);
+-    /* The Penal Code asks which version on every select. A game-locked
+-       card never gets this far: its click is cancelled above. */
+-    if(!gameLocked) guardVersionPick(row, cb, name, version => {
++    /* The Penal Code asks which version on every select. */
++    guardVersionPick(row, cb, name, version => {
+       if(version === "test") cfg.versions[name] = "test";
+       else delete cfg.versions[name];
+       refresh(); paint();
+@@ -55359,95 +55135,8 @@ function showSetup(){
+     return sect;
+   }
+ 
+-  const speedSect = document.createElement("div");
+-  speedSect.className = "sect";
+-  const speedLab = document.createElement("p");
+-  speedLab.className = "slab"; speedLab.textContent = "Speed";
+-  speedSect.appendChild(speedLab);
+-  const speedGrid = document.createElement("div");
+-  speedGrid.className = "speedgrid";
+-  ["easy", "average", "hardcore"].forEach(key => {
+-    const g = GAME_SPEEDS[key];
+-    const b = document.createElement("button");
+-    b.type = "button"; b.className = "speedopt"; b.dataset.value = key;
+-    const name = document.createElement("span");
+-    name.className = "speedname"; name.textContent = g.label;
+-    const meta = document.createElement("span");
+-    meta.className = "speedmeta";
+-    meta.textContent = g.seconds + "s per question \u00b7 " + g.lives + (g.lives === 1 ? " life" : " lives");
+-    const pbLine = document.createElement("span");
+-    pbLine.className = "speedpb";
+-    /* Present on every option, but only actually visible via CSS
+-       when .locked is toggled on below \u2014 simpler than constructing
+-       and removing the icon element on every paint() call. */
+-    const lockIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+-    lockIcon.setAttribute("viewBox", "0 0 24 24");
+-    lockIcon.setAttribute("class", "speedopt-lock");
+-    lockIcon.setAttribute("fill", "none");
+-    lockIcon.setAttribute("aria-hidden", "true");
+-    lockIcon.innerHTML = "<rect x=\"5\" y=\"11\" width=\"14\" height=\"10\" rx=\"2\" stroke=\"currentColor\" stroke-width=\"2\"/><path d=\"M8 11V7a4 4 0 0 1 8 0v4\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"/>";
+-    b.append(name, meta, pbLine, lockIcon);
+-    b.addEventListener("click", () => {
+-      if(!speedUnlockedForUnits(cfg.units, key)){
+-        /* WHICH ONES, when a mix of units is picked - "if you select
+-           multiple units and some aren't to the level the others are,
+-           have it say ensure all selected have reached the level". */
+-        const prereq = key === "average" ? "Easy" : "Average";
+-        const behind = (cfg.units || []).filter(u => !speedUnlockedForUnits([u], key));
+-        if(cfg.units.length > 1 && behind.length && behind.length < cfg.units.length){
+-          showToast("Every unit you pick needs " + prereq + " beaten for " + g.label + ". Not yet: " +
+-            behind.slice(0, 3).join(", ") + (behind.length > 3 ? " and " + (behind.length - 3) + " more" : "") + ".");
+-        } else {
+-          showToast("Beat " + prereq + " on " + (cfg.units.length > 1 ? "every unit you've picked" : "this unit") + " to unlock " + g.label + ".");
+-        }
+-        return;
+-      }
+-      cfg.gameSpeed = key;
+-      paint(); refresh();
+-    });
+-    speedGrid.appendChild(b);
+-  });
+-  speedSect.appendChild(speedGrid);
+-  /* The legend. Three bubbles on a card mean nothing to somebody seeing
+-     them for the first time, and this is the screen they are looking at
+-     when they first see them. */
+-  const speedKey = document.createElement("p");
+-  speedKey.className = "speedkey";
+-  const keyDots = document.createElement("span");
+-  keyDots.className = "pick-gamedots";
+-  ["easy", "average", "hardcore"].forEach(key => {
+-    const d = document.createElement("span");
+-    d.className = "pick-gamedot on is-" + key;
+-    keyDots.appendChild(d);
+-  });
+-  speedKey.appendChild(keyDots);
+-  const keyText = document.createElement("span");
+-  keyText.textContent = "The three dots on each unit are Easy, Average and Hardcore \u2014 filled in once you have beaten that unit at that difficulty.";
+-  speedKey.appendChild(keyText);
+-  speedSect.appendChild(speedKey);
+-  speedSect.paint = () => {
+-    [...speedGrid.querySelectorAll(".speedopt")].forEach(b => {
+-      const key = b.dataset.value;
+-      const unlocked = speedUnlockedForUnits(cfg.units, key);
+-      b.classList.toggle("on", key === cfg.gameSpeed);
+-      b.classList.toggle("locked", !unlocked);
+-      const pbLine = b.querySelector(".speedpb");
+-      /* No "personal best: 7 of 12" any more - "do not track how you
+-         make it on each difficulty level anymore. It's too confusing".
+-         Beaten or not is all a difficulty says. */
+-      if(cfg.units.length === 1 && unlocked && gameBeat(cfg.units[0])[key]){
+-        pbLine.hidden = false;
+-        pbLine.textContent = "Beaten";
+-      } else {
+-        pbLine.hidden = true;
+-      }
+-    });
+-  };
+-  /* Speed goes into the Review & Start sheet, not onto the page,
+-     per explicit request. It is the same argument the time limit
+-     just lost: the sheet is where every other "how should this run
+-     go" answer lives, and a control under a long unit list is easy
+-     to walk straight past on the way to Start. */
++  /* The Game difficulty picker ("Speed") was here until build 283 -
++     retired/game-mode.md. */
+ 
+   const recentCount = recentMissedIndexes().length;
+   const flaggedCount = flaggedIndexes().length;
+@@ -55795,7 +55484,6 @@ function showSetup(){
+      put the difficulty under options drop down, just have them there to
+      see". The difficulty is the first decision a Game makes, so it sits
+      first on the sheet, under the summary. */
+-  optionsModalBody.insertBefore(speedSect, srcSect);
+ 
+   /* The actual "go" action for this sheet \u2014 everything Start used to
+      do immediately (rememberConfig, build the pool, beginRun) now
+@@ -55824,14 +55512,12 @@ function showSetup(){
+       return;
+     }
+     rememberConfig();
+-    const isGameStart = cfg.mode === "game" || cfg.mode === "exam";
+-    const rawPool = isGameStart ? QUESTIONS.map((q, i) => i).filter(inUnits) : poolNow();
++    const rawPool = cfg.mode === "exam" ? QUESTIONS.map((q, i) => i).filter(inUnits) : poolNow();
+     const pool = freshOrder(rawPool);
+     /* EXAM HONOURS LENGTH. The slider is on the sheet for Exam ("Pick
+        your own units and length") but this line only ever trimmed a
+-       Drill, so a shortened exam quietly ran every question. Game is the
+-       one mode with no length - it runs until the lives are gone. */
+-    beginRun(cfg.mode === "game" ? pool : (cfg.size > 0 ? pool.slice(0, cfg.size) : pool), null);
++       Drill, so a shortened exam quietly ran every question. */
++    beginRun(cfg.size > 0 ? pool.slice(0, cfg.size) : pool, null);
+   });
+   /* Pinned to the foot of the sheet (build 270) on a bar of the sheet's
+      own colour, so it never scrolls away and the rows pass under it. */
+@@ -55926,7 +55612,7 @@ function showSetup(){
+   /* --- wiring --- */
+   function paint(){
+     srcSect.paint(); sizeSect.paint();
+-    timerSect.paint(); minutesSect.paint(); speedSect.paint();
++    timerSect.paint(); minutesSect.paint();
+   }
+ 
+   function refresh(){
+@@ -55936,18 +55622,17 @@ function showSetup(){
+     if(!cfg.versions || typeof cfg.versions !== "object") cfg.versions = {};
+     Object.keys(cfg.versions).forEach(u => { if(cfg.units.indexOf(u) < 0) delete cfg.versions[u]; });
+ 
+-    const isGame = cfg.mode === "game";
+     const isExam = cfg.mode === "exam";
+-    /* reviewAllMode folded in alongside isGame/isExam here — same as
++    /* reviewAllMode folded in alongside isExam here — same as
+        either of those, it means "every question for these units," not
+        whatever cfg.size/cfg.source would otherwise narrow it down to
+        (both are hidden and moot while reviewing). */
+-    /* Review is NOT folded in with Game and Exam here any more: it draws
++    /* Review is NOT folded in with Exam here any more: it draws
+        from Most missed and Flagged too (showAnswerReview honours the
+        bank), so its count has to be the bank's - "1 unit · 12 questions"
+        over a list of 2 most missed was the old answer. */
+-    const pool = (isGame || isExam) ? QUESTIONS.map((q, i) => i).filter(inUnits) : poolNow();
+-    const n = (isGame || reviewAllMode) ? pool.length : (cfg.size > 0 ? Math.min(cfg.size, pool.length) : pool.length);
++    const pool = isExam ? QUESTIONS.map((q, i) => i).filter(inUnits) : poolNow();
++    const n = reviewAllMode ? pool.length : (cfg.size > 0 ? Math.min(cfg.size, pool.length) : pool.length);
+ 
+     /* Same computed values as the rest of refresh(), just also shown
+        here at the top of the sheet itself now. */
+@@ -55975,8 +55660,7 @@ function showSetup(){
+        across two spots in this function - the wrapper's own hidden
+        rule and these - which is how a section ends up with two rules
+        that disagree. */
+-    speedSect.hidden = !isGame || reviewAllMode;
+-    minutesSect.hidden = cfg.timer !== "down" || isGame || reviewAllMode;
++    minutesSect.hidden = cfg.timer !== "down" || reviewAllMode;
+     /* The whole "Timer & options" toggle hidden for Game specifically
+        (matching timerSect's own condition, not Exam's) — every row
+        inside it (timer, recall, shuffle, reveal) was already excluded
+@@ -56012,9 +55696,9 @@ function showSetup(){
+        still a dead-end control, and this is still the check for one -
+        it is simply now asking the sections rather than remembering
+        them. */
+-    timerSect.hidden = isGame || reviewAllMode;
+-    recallRow.hidden = isGame || isExam;
+-    shuffleRow.hidden = isGame || isExam;
++    timerSect.hidden = reviewAllMode;
++    recallRow.hidden = isExam;
++    shuffleRow.hidden = isExam;
+     /* ---- A LABEL WITH NOTHING UNDER IT ----
+        "The word Options is underneath the timer stuff for some random
+        reason." It is this section's own header, and both rows it
+@@ -56037,7 +55721,7 @@ function showSetup(){
+     /* Review draws from the same three sources a Drill does - "in the
+        review mode, include the options to review flagged and most missed
+        questions". */
+-    srcSect.hidden = isGame || isExam;
++    srcSect.hidden = isExam;
+     /* Live-updates "Most missed" and "Flagged" to reflect only the
+        currently checked units, rather than a fixed count from when
+        this screen first opened \u2014 runs on every refresh(), which
+@@ -56059,11 +55743,11 @@ function showSetup(){
+        here beside Game, and Game genuinely has no length to pick - it
+        runs until the lives are gone. An exam is a fixed-length paper,
+        which is the whole point of sitting one. */
+-    sizeSect.hidden = isGame || reviewAllMode;
++    sizeSect.hidden = reviewAllMode;
+     const wholeUnits = QUESTIONS.filter(q => cfg.units.indexOf((q.topic || "").trim()) >= 0).length;
+     /* Cut by Length or by the bank - measured against the pool, which is
+        the whole of every unit unless a shorter version was picked. */
+-    const partial = !isGame && !reviewAllMode && cfg.units.length > 0 && wholeUnits > 0
++    const partial = !reviewAllMode && cfg.units.length > 0 && wholeUnits > 0
+       && (n < pool.length || (!isExam && cfg.source !== "all"));
+     /* A SHORTER VERSION SAYS SO IN ITS OWN PICKER, NOT HERE (build 250):
+        "put the warning that it won't be a hundo only at the pop up for
+@@ -56125,10 +55809,6 @@ function showSetup(){
+          questions, don't show that." A default says nothing, so an
+          untouched run shows no row at all. */
+       if(!srcSect.hidden && cfg.source !== "all") tag(cfg.source === "recent" ? "Most missed" : "Flagged", "bank");
+-      if(isGame){
+-        const sp = GAME_SPEEDS[cfg.gameSpeed];
+-        tag(sp.label + " \u00b7 " + sp.seconds + "s \u00b7 " + sp.lives + (sp.lives === 1 ? " life" : " lives"), "speed");
+-      }
+       if(!optSect.hidden && !shuffleRow.hidden && cfg.shuffle) tag("Shuffled", "shuffle");
+       if(!optSect.hidden && !recallRow.hidden && cfg.recall) tag("Answers hidden", "hidden");
+       if(!timerSect.hidden && (cfg.timer === "down" || cfg.timer === "up"))
+@@ -56136,7 +55816,6 @@ function showSetup(){
+     }
+     if(sheetSummaryTags.parentNode !== sheetSummary || sheetSummary.lastChild !== sheetSummaryTags) sheetSummary.appendChild(sheetSummaryTags);
+ 
+-    const lives = GAME_SPEEDS[cfg.gameSpeed].lives;
+     /* NOT `disabled`, on purpose. A disabled button swallows the tap and
+        says nothing, so pressing Start with no units picked did visibly
+        nothing at all - "if you try to hit the start button but don't
+@@ -56153,13 +55832,12 @@ function showSetup(){
+       : (pool.length === 0 ? "Nothing to draw from in those units." : "");
+     /* Review has its own verb (build 245) - it used to fall through to
+        "Start drill", which is not what the button does in Review. */
+-    const verb = cfg.mode === "exam" ? "Start exam, " : isGame ? "Start game, "
++    const verb = cfg.mode === "exam" ? "Start exam, "
+       : reviewAllMode ? "Start review, " : "Start drill, ";
+     startBtn.textContent =
+       cfg.units.length === 0 ? "Start" :
+       pool.length === 0 ? "Nothing to draw" :
+-      verb + n + (n === 1 ? " question" : " questions") +
+-      (isGame ? ", " + lives + (lives === 1 ? " life" : " lives") : "");
++      verb + n + (n === 1 ? " question" : " questions");
+ 
+     selAll.textContent = cfg.units.length === all.length ? "Clear all" : "Select all";
+ 
+@@ -56176,9 +55854,7 @@ function showSetup(){
+       bits.push("Nothing in the units you ticked has been missed in the last 30 days.");
+     else if(cfg.source === "recent")
+       bits.push("Ranked by how often you have missed each one in the last 30 days.");
+-    /* Not in Game: its clock is the per-question one, and the time
+-       limit switch is not even on its sheet. */
+-    if(cfg.timer === "down" && !isGame && !reviewAllMode)
++    if(cfg.timer === "down" && !reviewAllMode)
+       bits.push("When the clock runs out, the run ends early and scores whatever you finished.");
+     if(!storageOK)
+       bits.push("This browser is not letting the page save anything, so your history will not carry over to next time. Download the file and open it in a normal browser tab.");
+@@ -56298,7 +55974,6 @@ function beginRun(indexes, label, practiceMinutes, missedRetake){
+   }
+   practiceTestMinutes = practiceMinutes || null;
+   isMissedRetake = !!missedRetake;
+-  gameLostAt = 0; gameFullLength = 0; gameLostQi = null;
+   qTimeMs = {}; qClockQi = null; runLiveStreak = 0;
+   pendingXpFly = 0;
+   mysteryFoundThisSession = false;
+@@ -56327,7 +56002,6 @@ function beginRun(indexes, label, practiceMinutes, missedRetake){
+   timedOut = false;
+   paused = false;
+   pauseStartedAt = null;
+-  livesLeft = runMode === "game" ? GAME_SPEEDS[cfg.gameSpeed].lives : 0;
+   meterEl.hidden = true;
+   meterEl.replaceChildren(); // never show stale ticks from a previous run
+   /* Invalidates drawMeter()'s own incremental-update cache — order is
+@@ -56343,7 +56017,6 @@ function beginRun(indexes, label, practiceMinutes, missedRetake){
+   profileBtn.hidden = true;
+   /* No Pause on the daily question: one question, no clock. */
+   pauseBtn.hidden = (runLabel === "Daily question");
+-  updateLives();
+ 
+   runStartTime = null; // the clock has not started yet
+   /* Daily question skips the loading screen entirely, per explicit
+@@ -56550,7 +56223,7 @@ function openQuestion(instant){
+   cleared = false;
+   dailyQuestionLocked = false;
+   hinted = false;
+-  revealed = (runMode === "game" || runMode === "exam") ? true : !cfg.recall;
++  revealed = runMode === "exam" ? true : !cfg.recall;
+   render();
+   /* The actual, confirmed fix for a real, reported bug: starting a
+      test itself always landed at true scroll 0, but advancing to the
+@@ -56582,8 +56255,7 @@ function openQuestion(instant){
+      slide is running yet to compete with, so the person's own Smooth
+      Scrolling preference is still exactly right there). */
+   toTop(instant);
+-  if(runMode === "game") startQuestionTimer();
+-  else if(raceTimed) runRaceClock();
++  if(raceTimed) runRaceClock();
+ }
+ 
+ /* drawMeter()'s own cache: the actual <span> for each tile (parallel
+@@ -56668,9 +56340,8 @@ function render(){
+   const right = correctSlot(qi);
+ 
+   drawMeter();
+-  updateLives();
+   countEl.textContent = scopeLabel() + " \u2014 " +
+-    (runMode === "exam" ? "exam, " : runMode === "game" ? "game, " : "") +
++    (runMode === "exam" ? "exam, " : "") +
+     (runLabel ? runLabel + ", " : "") +
+     "question " + (pos + 1) + " of " + order.length;
+   testScopeLabelEl.textContent = countEl.textContent;
+@@ -56976,7 +56647,7 @@ function render(){
+   foot.appendChild(next);
+ 
+   /* after enough wrong tries, offer to point at the answer */
+-  if((runMode === "drill" || runMode === "game") && !cleared && !hinted && attempts[qi] >= HINT_AFTER){
++  if(runMode === "drill" && !cleared && !hinted && attempts[qi] >= HINT_AFTER){
+     const give = document.createElement("div");
+     give.className = "giveup";
+     const b = document.createElement("button");
+@@ -57060,7 +56731,6 @@ function choose(slot){
+ 
+   if(slot === correctSlot(qi)){
+     cleared = true;
+-    if(runMode === "game") stopQuestionTimer();
+     recordResult(qi, attempts[qi] > 1 || hinted);
+     runStreakLive(!(attempts[qi] > 1 || hinted));
+     /* Daily question never advances to a next question or a separate
+@@ -57084,10 +56754,6 @@ function choose(slot){
+     // commitment from the full set of options.
+     lastWrong = true;
+     if(attempts[qi] === 1) runStreakLive(false);
+-    if(runMode === "game"){
+-      livesLeft -= 1;
+-      if(livesLeft <= 0){ stopQuestionTimer(); gameOver(); return; }
+-    }
+     /* The actual "one attempt only" enforcement for a wrong daily
+        question \u2014 per explicit request, unlike normal Drill (which
+        lets you keep retrying the same question indefinitely until
+@@ -57339,9 +57005,7 @@ function advance(){
+      custom slide (both the Next-button/swipe path and the auto-advance
+      timer route through this same advance()), so it's the one that
+      needs its own internal scroll reset to stay silent under that
+-     slide rather than animate on its own. questionTimeUp() below calls
+-     openQuestion() directly, with no slide involved, so it deliberately
+-     keeps the plain, preference-respecting call. */
++     slide rather than animate on its own. */
+   else {
+     pos += 1;
+     /* Pushed the instant it actually happens, per explicit request for
+@@ -59084,10 +58748,8 @@ function roundTo5(n){ return Math.round(n / 5) * 5; }
+ const PB_TIME_BONUS = 100;
+ const DAILY_XP = 200;
+ const PB_SCORE_BONUS = 100;
+-/* Game mode is harder, so it pays more - "the harder the difficulty, the
+-   more the extra xp" - and only for a game actually beaten. */
+-const GAME_BEAT_BONUS = { easy: 100, average: 200, hardcore: 400 };
+-const GAME_LIFE_BONUS = { easy: 25, average: 50, hardcore: 100 };
++/* (Game mode's difficulty and lives bonuses were here until build 283 -
++   retired/game-mode.md.) */
+ /* +5% for each whole unit past the first, to ×1.5. Four units is ×1.15 -
+    "nothing too crazy ... noticeable though". */
+ function multiUnitMultiplier(wholeUnits){
+@@ -59100,7 +58762,7 @@ function multiUnitMultiplier(wholeUnits){
+ /* `r` is plain numbers so this can be asked about any run:
+    good, answered, elapsedMs, okList (first-try right, in the order
+    answered), retake, daily, hundos, wholeUnits, timePRs / scorePRs
+-   ([{unit, text}]), game ({speed, beaten, livesLeft}) and badgesPaid
++   ([{unit, text}]) and badgesPaid
+    ([unit]). */
+ function computeRunXp(r){
+   const lines = [];
+@@ -59156,13 +58818,6 @@ function computeRunXp(r){
+   (r.scorePRs || []).length && add("pbscore", "New best score" + (r.scorePRs.length > 1 ? " ×" + r.scorePRs.length : ""),
+     PB_SCORE_BONUS * r.scorePRs.length, { sub: r.scorePRs.map(p => p.text).join(" · ") });
+ 
+-  if(r.game && r.game.beaten){
+-    const sp = r.game.speed, label = (GAME_SPEEDS[sp] || {}).label || sp;
+-    add("gamebeat", label + " difficulty beaten", GAME_BEAT_BONUS[sp] || 0);
+-    add("gamelives", r.game.livesLeft + (r.game.livesLeft === 1 ? " life" : " lives") + " left × " +
+-        (GAME_LIFE_BONUS[sp] || 0), (GAME_LIFE_BONUS[sp] || 0) * r.game.livesLeft);
+-  }
+-
+   const beforeMult = lines.reduce((s, l) => s + l.value, 0);
+   (r.badgesPaid || []).forEach(u => add("badge", u + " badge", MASTERY_BONUS, { badge: true }));
+   const m = multiUnitMultiplier(r.wholeUnits || 0);
+@@ -59222,7 +58877,7 @@ function qClockStop(){
+    banner at the top, and gone in under two seconds. */
+ let runLiveStreak = 0;
+ function runStreakLive(ok){
+-  if(isMissedRetake || runLabel === "Daily question" || !(runMode === "drill" || runMode === "game")) return;
++  if(isMissedRetake || runLabel === "Daily question" || runMode !== "drill") return;
+   if(!ok){ runLiveStreak = 0; return; }
+   runLiveStreak++;
+   if(runStreakTiersUpTo(runLiveStreak).slice(-1)[0] === runLiveStreak) showRunStreakBanner(runLiveStreak);
+@@ -59458,13 +59113,11 @@ function rsLand(el, instant){
+ function rsModeLabel(run){
+   if(run.vroom) return "Virtual Room";
+   if(run.practice) return "Practice test";
+-  if(run.mode === "game") return "Game · " + ((GAME_SPEEDS[run.gameSpeed] || {}).label || "Game");
+   if(run.mode === "exam") return "Exam";
+   return "Drill";
+ }
+ function rsModeIconKind(run){
+   if(run.vroom) return "vroom";
+-  if(run.mode === "game") return "game";
+   if(run.mode === "exam" || run.practice) return "exam";
+   return "drill";
+ }
+@@ -59566,31 +59219,6 @@ function rsUnlockItems(run){
+                  : "+" + MASTERY_BONUS.toLocaleString() + " XP mastery bonus",
+       color: "#D8E2EC", art: () => buildUnitBadgeSVG(u, true) });
+   });
+-  /* WHICH UNIT UNLOCKED IT, named - every one of them on a multi-unit
+-     game. Worded as what is now open rather than "On Identity Crimes":
+-     "the game mode unlock box, it says 'on identify crimes' but could
+-     say something better". */
+-  if(run.justBeatSpeed){
+-    const next = { easy: "average", average: "hardcore" }[run.justBeatSpeed];
+-    const us = (run.justBeatUnits && run.justBeatUnits.length) ? run.justBeatUnits : run.units.slice(0, 1);
+-    const unitWords = us.length === 1 ? us[0] : us.length + " units";
+-    const beaten = (GAME_SPEEDS[run.justBeatSpeed] || {}).label || run.justBeatSpeed;
+-    if(next){
+-      const sp = GAME_SPEEDS[next];
+-      items.push({ kind: "difficulty", speed: next, kicker: "Game mode unlocked",
+-        name: sp.label + " games", units: us,
+-        detail: "Now open for " + unitWords,
+-        sub: sp.seconds + " seconds a question · " + sp.lives + (sp.lives === 1 ? " life" : " lives"),
+-        need: "Beat " + unitWords + " on " + beaten,
+-        color: GAME_DIFF_COLOR[next], art: () => buildDifficultyLights(next) });
+-    } else {
+-      items.push({ kind: "difficulty", speed: "hardcore", kicker: "Game beaten",
+-        name: "Hardcore cleared", units: us, detail: "Every difficulty beaten for " + unitWords,
+-        sub: "Nothing harder left for " + (us.length === 1 ? "this unit" : "these units"),
+-        need: "Beat " + unitWords + " on Hardcore",
+-        color: GAME_DIFF_COLOR.hardcore, art: () => buildDifficultyLights("hardcore") });
+-    }
+-  }
+   /* A secret flare found this run is the LAST unlock, always. Its scene
+      plays FIRST and its banner after - "the cutscenes need to come
+      before the pop up". */
+@@ -59807,29 +59435,6 @@ function flyArtToProfile(art){
+   return FLIGHT;
+ }
+ 
+-/* The three Game difficulties as three lights, green / amber / red, the
+-   same three colours the Game boxes use. The one just unlocked blinks a
+-   few times and then stays lit, and the ones above it are dark - "the
+-   one you unlocked would blink a few times ... signifying you unlocked
+-   it". */
+-const GAME_DIFF_COLOR = { easy: "#5CD692", average: "#FFB25C", hardcore: "#E8687C" };
+-function buildDifficultyLights(unlocked){
+-  const wrap = document.createElement("span");
+-  wrap.className = "rs-difflights";
+-  const order = ["easy", "average", "hardcore"];
+-  const upto = order.indexOf(unlocked);
+-  order.forEach((k, i) => {
+-    const d = document.createElement("span");
+-    d.className = "rs-difflight" + (i < upto ? " is-on" : i === upto ? " is-new" : "");
+-    d.style.setProperty("--dl", GAME_DIFF_COLOR[k]);
+-    const lab = document.createElement("span");
+-    lab.className = "rs-difflight-label"; lab.textContent = GAME_SPEEDS[k].label;
+-    d.appendChild(lab);
+-    wrap.appendChild(d);
+-  });
+-  return wrap;
+-}
+-
+ /* ---- A CUTSCENE HANDS STRAIGHT TO ITS POP-UP (build 268) ----
+    "The secret flare thing is kinda redundant, it does the cut scene,
+    stops, then gives a pop up, I feel like the cut scene should nicely
+@@ -60011,7 +59616,7 @@ function playUnlockSpotlight(item, n, of, release){
+   requestAnimationFrame(() => requestAnimationFrame(() => spot.classList.add("is-up")));
+   /* Longer, so there is time to take in what it is before it goes -
+      the entrance itself now takes about a second and a half. */
+-  const HOLD = item.kind === "rank" ? 6200 : item.kind === "difficulty" ? 5000
++  const HOLD = item.kind === "rank" ? 6200
+     : item.kind === "character" ? (item.feat ? 6000 : 5000) : 4400;
+   let timer = null, gone = false;
+   function leave(){
+@@ -60048,7 +59653,7 @@ function showRunRewards(run, hooks, opts){
+   const quiet = resultsMotionOff() || !!(opts && opts.instant);
+   meterEl.hidden = true;
+   countEl.textContent = "";
+-  testScopeLabelEl.textContent = run.gameLost ? "Game over" : "Test results";
++  testScopeLabelEl.textContent = "Test results";
+   /* NO PAUSE ON THE RESULTS - "Reverting back, the PAUSE button will
+      not be shown on the result screen" - and with it gone the chat
+      button takes the corner back, because the dock only steps aside
+@@ -60189,14 +59794,14 @@ function showRunRewards(run, hooks, opts){
+      card read louder without saying anything more. */
+   const grade = document.createElement("div");
+   const gradeTone = run.retake ? (run.missed.length ? "is-retake-left" : "is-retake-clear")
+-    : run.gameLost ? "is-over" : run.isPerfect ? "is-perfect" : run.pct >= PASS_MARK ? "is-pass" : "is-fail";
++    : run.isPerfect ? "is-perfect" : run.pct >= PASS_MARK ? "is-pass" : "is-fail";
+   grade.className = "rs-card rs-grade rs-land score " + gradeTone;
+   /* YOUR CHARACTER REACTS TO THE GRADE (build 235), on the XP box's own
+      character - "don't put the character on the grade card, it's perfect
+      being just on the xp box" (build 236). It reacts when the grade card
+      LANDS, not when it is built: the reveal is staged, and a reaction
+      played while the grade is still hidden is one nobody saw. */
+-  if(!run.retake && (run.total > 0 || run.gameLost)){
++  if(!run.retake && run.total > 0){
+     const react = () => {
+       const av = xp.querySelector(".results-level-avatar");
+       if(!av || av.dataset.reacted) return;
+@@ -60236,26 +59841,6 @@ function showRunRewards(run, hooks, opts){
+       ? run.missed.length + (run.missed.length === 1 ? " question" : " questions") + " still to go over"
+       : "Every question you missed, answered right";
+     grade.append(gk, t);
+-  } else if(run.gameLost){
+-    const gk = document.createElement("p");
+-    gk.className = "rs-kicker"; gk.textContent = "Game over";
+-    const big = document.createElement("p");
+-    big.className = "rs-over-title"; big.textContent = "You ran out of lives";
+-    const sub = document.createElement("p");
+-    sub.className = "rs-grade-sub slabel";
+-    /* What it takes, in the difficulty's own words - "beat the unit (or
+-       units) on ___ to unlock ___", and on the hardest, beating the game
+-       for it. */
+-    const sp = run.gameSpeed;
+-    const spLabel = (GAME_SPEEDS[sp] || {}).label || sp;
+-    const nextSp = { easy: "average", average: "hardcore" }[sp];
+-    const what = run.units.length === 1 ? run.units[0] : "all " + run.units.length + " units";
+-    sub.textContent = "You made it to question " + run.gameLost + " of " + run.gameFull + " · " + run.good + " right. " +
+-      (nextSp ? "Beat " + what + " on " + spLabel + " to unlock " + GAME_SPEEDS[nextSp].label + "."
+-              : "Beat " + what + " on " + spLabel + " to beat the game" + (run.units.length === 1 ? " for this unit." : " for these units."));
+-    grade.append(gk, big, sub);
+-    /* No "farthest yet" stamp: the per-difficulty farthest is no longer
+-       shown anywhere (build 218). */
+   } else {
+     const gk = document.createElement("p");
+     gk.className = "rs-kicker"; gk.textContent = run.retake ? "This pass" : "Grade";
+@@ -60416,12 +60001,9 @@ function showRunRewards(run, hooks, opts){
+     }, 30);
+   };
+   const celebrateGrade = () => {
+-    if(run.gameLost || run.retake) return;   /* a retake gets nothing cool */
+-    if(run.isPerfect || run.justBeatSpeed){
+-      const palette = run.justBeatSpeed === "hardcore" ? LEVEL_CONFETTI.black
+-        : run.justBeatSpeed === "average" ? LEVEL_CONFETTI.intermediate
+-        : run.justBeatSpeed === "easy" ? LEVEL_CONFETTI.beginner
+-        : run.leveledUpTo ? LEVEL_CONFETTI[run.leveledUpTo] : null;
++    if(run.retake) return;   /* a retake gets nothing cool */
++    if(run.isPerfect){
++      const palette = run.leveledUpTo ? LEVEL_CONFETTI[run.leveledUpTo] : null;
+       celebrate(palette, grade.querySelector(".rs-pct") || grade);
+     }
+   };
+@@ -60572,7 +60154,7 @@ function buildReviewQuestion(run, qi, n, gotIt){
+   num.className = "rs-q-num"; num.textContent = String(n + 1);
+   const tag = document.createElement("span");
+   tag.className = "rs-q-tag" + (gotIt ? " is-right" : "");
+-  tag.textContent = gotIt ? "Right" : (run.gameLost && qi === run.order[run.order.length - 1] && !run.timedOutSet[qi]) ? "Lost your last life"
++  tag.textContent = gotIt ? "Right"
+     : run.timedOutSet[qi] ? "Ran out of time"
+     : (run.mode === "exam" || run.vroom) ? "Missed"
+     : (run.attempts[qi] || 2) + " tries";
+@@ -60691,7 +60273,6 @@ function summarize(){
+   stopTimer();
+   stopQuestionTimer();
+   timerlineEl.hidden = true;
+-  livesEl.hidden = true;
+   restartEl.hidden = true;
+   appearanceBtn.hidden = false;
+   homeBtn.hidden = false;
+@@ -60781,7 +60362,7 @@ function summarize(){
+     ? (dailyQuestionLocked ? order.slice() : [])
+     : runMode === "exam"
+     ? order.filter(qi => optionOrder(qi)[picked[qi]] !== QUESTIONS[qi].answer)
+-    : order.filter(qi => attempts[qi] > 1 || timedOutSet[qi] || (gameLostAt && qi === gameLostQi));
++    : order.filter(qi => attempts[qi] > 1 || timedOutSet[qi]);
+   const good = total - missed.length;
+   const pct = total === 0 ? 0 : Math.round((good / total) * 100);
+   const isPerfect = total > 0 && pct === 100 && !timedOut;
+@@ -60823,8 +60404,6 @@ function summarize(){
+      itself and never counted as a new best. */
+   if(runLabel !== "Daily question") (cfg.units || []).forEach(u => unitBestPctOf(u));
+   let badgesEarnedThisRun = [];
+-  let justBeatSpeed = null;
+-  let newFarthest = false;
+   let pointsEarned = 0;
+   let perfectBonusEarned = 0;
+   let multiTestBonusEarned = 0;   /* retired in build 213; always 0 */
+@@ -60908,11 +60487,10 @@ function summarize(){
+     if(runLabel === "Daily question") awardXp(pointsEarned);
+     if(runMode === "drill") store.lifetime.drillPlays += 1;
+     else if(runMode === "exam") store.lifetime.examPlays += 1;
+-    else if(runMode === "game") store.lifetime.gamePlays += 1;
+-    /* A FULL test: every unit in it taken whole, and a game only if it
+-       was won - "full tests only, not shortened". */
++    /* A FULL test: every unit in it taken whole - "full tests only, not
++       shortened". */
+     if(runLabel !== "Daily question" && (cfg.units || []).length &&
+-       wholeUnitsInRun === cfg.units.length && !gameLostAt){
++       wholeUnitsInRun === cfg.units.length){
+       store.lifetime.fullTests = (store.lifetime.fullTests || 0) + 1;
+     }
+     /* One per PERFECTED UNIT, not one per perfect run - see hundosEarned
+@@ -60923,13 +60501,11 @@ function summarize(){
+        ? button". */
+     store.lifetime.perfectTests += hundosEarned;
+     saveStore();
+-    /* A game that ran out of lives is not a test played - it has no
+-       grade to put in the history. */
+     /* Seed each unit's exam record from the history BEFORE this run is
+        added to it, or the seed counts this exam and the +1 below counts
+        it again. */
+     if(runMode === "exam") (cfg.units || []).forEach(u => unitExamOf(u));
+-    if(!gameLostAt) newBest = recordTestPlay(elapsedMs, pct);
++    newBest = recordTestPlay(elapsedMs, pct);
+     /* Every points-earning run can newly cross a Mastery Ladder tier
+        now, not just full-unit runs \u2014 a tier needs both stars and
+        points together, so a session that only adds points (without
+@@ -60937,17 +60513,8 @@ function summarize(){
+        that pushes an already-star-sufficient tier over its point
+        threshold too. Checked around the whole points block rather
+        than only inside the star-tracking branch below. */
+-    if(gameLostAt && cfg.source === "all" && isSingleUnitRun() && gameFullLength === unitQuestionCount(cfg.units[0])){
+-      newFarthest = recordGameFarthest(cfg.units[0], cfg.gameSpeed, gameLostAt);
+-    }
+     if(cfg.source === "all"){
+       leveledUpTo = recordUnitPerfectIfEligible(pct);
+-      /* Won only: a lost multi-unit game can have covered one unit in
+-         full before the last life went, and that is not beating it. */
+-      if(runMode === "game" && !gameLostAt){
+-        justBeatSpeed = recordGameBeatIfEligible();
+-        if(isFullUnitRun()) newFarthest = recordGameFarthest(cfg.units[0], cfg.gameSpeed, total);
+-      }
+     }
+     /* After every recording call above, so the diff sees whatever any
+        of them credited. Queued on the store rather than handed to the
+@@ -60963,7 +60530,7 @@ function summarize(){
+        (Scoring a timeout over the whole test, blanks as wrong, is the
+        way to allow it, if that is ever wanted.) */
+     /* The Ronin (build 264): RONIN_TEST_SIZE questions or more in one run, passed. */
+-    if(order.length >= RONIN_TEST_SIZE && pct >= PASS_MARK && cfg.mode !== "game" && !store.bigTest450Passed){
++    if(order.length >= RONIN_TEST_SIZE && pct >= PASS_MARK && !store.bigTest450Passed){
+       store.bigTest450Passed = true;
+       saveStore();
+     }
+@@ -61020,7 +60587,7 @@ function summarize(){
+         const prevPct = unitBestPctOf(u);
+         if(typeof prevPct === "number" && upct > prevPct) scorePRs.push({ unit: u, text: u + " " + upct + "% (was " + prevPct + "%)" });
+         if(typeof prevPct !== "number" || upct > prevPct) store.unitBestPct[u] = upct;
+-        /* Exam results and Hardcore times, per whole unit (build 240).
++        /* Exam results per whole unit (build 240).
+            Not a Virtual Room, which runs as an exam under the hood but
+            is a race, not an exam you sat. */
+         let inRoom = false; try{ inRoom = !!inVirtualRoom; }catch(e){}
+@@ -61028,12 +60595,6 @@ function summarize(){
+           const ex = unitExamOf(u) || { n: 0, best: 0, sum: 0, last: 0 };
+           store.unitExam[u] = { n: ex.n + 1, best: Math.max(ex.best, upct), sum: ex.sum + upct, last: upct };
+         }
+-        if(runMode === "game" && cfg.gameSpeed === "hardcore" && !gameLostAt){
+-          const logged = inUnit.reduce((sum, qi) => sum + (qTimeMs[qi] || 0), 0);
+-          const t = logged > 0 ? logged : Math.round(elapsedMs * inUnit.length / Math.max(1, order.length));
+-          store.gameHardcoreMs = store.gameHardcoreMs || {};
+-          if(typeof store.gameHardcoreMs[u] !== "number" || t < store.gameHardcoreMs[u]) store.gameHardcoreMs[u] = t;
+-        }
+         if(upct === 100){
+           noteHundoDay(u);
+           const logged = inUnit.reduce((sum, qi) => sum + (qTimeMs[qi] || 0), 0);
+@@ -61049,7 +60610,6 @@ function summarize(){
+         okList: order.map(qi => !missedSetXp.has(qi)),
+         hundos: hundosEarned, wholeUnits: runWholeUnits,
+         timePRs: timePRs, scorePRs: scorePRs,
+-        game: runMode === "game" ? { speed: cfg.gameSpeed, beaten: !gameLostAt, livesLeft: Math.max(0, livesLeft) } : null,
+         badgesPaid: badgesEarnedThisRun.filter(u => retroBadges.indexOf(u) < 0)
+       };
+       runXp = computeRunXp(xpArgs);
+@@ -61359,11 +60919,10 @@ function summarize(){
+     flareAll: mysteryFoundThisSession && flareCompletedVoidThisSession, flareCount: mysteryColorsFoundCount(),
+     timedOutSet: Object.assign({}, timedOutSet),
+     mode: runMode, retake: isMissedRetake, practice: practiceTestMinutes != null,
+-    vroom: !!inVirtualRoom, source: cfg.source, gameSpeed: cfg.gameSpeed,
++    vroom: !!inVirtualRoom, source: cfg.source,
+     units: (cfg.units || []).slice(), unitsSat,
+     xpLines, xpTotal, pointsAfter: store.lifetime.points,
+-    hundosEarned, leveledUpTo, justBeatSpeed, justBeatUnits: justBeatSpeed ? lastGameBeatUnits.slice() : [], newBest,
+-    gameLost: gameLostAt, gameFull: gameFullLength, livesLeft: Math.max(0, livesLeft), newFarthest,
++    hundosEarned, leveledUpTo, newBest,
+     progUnits, perfectsBefore,
+     badges: badgesEarnedThisRun.slice(), retroBadges: retroBadges.slice(),
+     colors: newlyUnlockedColors.slice(), characters: newCharacters, banners: newBanners,
+@@ -61456,7 +61015,7 @@ function armConfirm(btn, confirmLabel, onConfirm){
+ function showResetWarning(){
+   stopTimer(); stopQuestionTimer();
+   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
+-  timerlineEl.hidden = true; livesEl.hidden = true;
++  timerlineEl.hidden = true;
+   pauseBtn.hidden = true;
+   countEl.textContent = "";
+ 
+@@ -61717,7 +61276,7 @@ function showAppearance(opts){
+   stopTimer();
+   flushStudyTime();
+   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
+-  timerlineEl.hidden = true; livesEl.hidden = true;
++  timerlineEl.hidden = true;
+   setActiveNav("appearance");
+   countEl.textContent = "Settings";
+ 
+@@ -62942,7 +62501,7 @@ function openCollapsible(bodyEl, open){
+ function showTestReviewList(){
+   stopTimer(); stopQuestionTimer();
+   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
+-  timerlineEl.hidden = true; livesEl.hidden = true;
++  timerlineEl.hidden = true;
+   pauseBtn.hidden = true;
+   countEl.textContent = "";
+ 
+@@ -63029,7 +62588,7 @@ function showTestReviewList(){
+ function showTestHistoryDetail(entry){
+   stopTimer(); stopQuestionTimer();
+   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
+-  timerlineEl.hidden = true; livesEl.hidden = true;
++  timerlineEl.hidden = true;
+   pauseBtn.hidden = true;
+   countEl.textContent = "";
+ 
+@@ -72057,7 +71616,7 @@ function showRanksScreen(defaultTab){
+   stopTimer();
+   flushStudyTime();
+   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
+-  timerlineEl.hidden = true; livesEl.hidden = true;
++  timerlineEl.hidden = true;
+   setActiveNav("ranks");
+   /* "Progress", not "Ranks" (build 270): "the ranks tab, should it be
+      called something else?" It holds two things - the rank ladder and
+@@ -72156,7 +71715,7 @@ function showProfile(defaultTab){
+   stopTimer();
+   flushStudyTime();
+   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
+-  timerlineEl.hidden = true; livesEl.hidden = true;
++  timerlineEl.hidden = true;
+   setActiveNav("profile");
+   countEl.textContent = "Profile";
+ 
+@@ -72756,9 +72315,9 @@ function showProfile(defaultTab){
+     "This month": "Time spent inside tests since the 1st of this month.",
+     "All time": "Every minute you have spent inside tests on this account, across all your devices.",
+     "Study sessions": "Tests you have finished. One test is one session however many units were in it, and a test you quit part way does not count.",
+-    "Questions answered": "Every question you have answered anywhere \u2014 drills, exams, Game, the daily question and the Virtual Room.",
++    "Questions answered": "Every question you have answered anywhere \u2014 drills, exams, the daily question and the Virtual Room.",
+     "Correct answers": "How many of those you got right first time. There is no second chance on a question, so this never counts a retry.",
+-    "Tests finished": "Drills, exams and Game runs you played to the end. The daily question is not a test.",
++    "Tests finished": "Drills and exams you played to the end. The daily question is not a test.",
+     "Hundos": "Units you have finished with every question right. A run covering three units can earn three, and the daily question earns none.",
+     "Matches played": "Virtual Room matches you finished - races, Tug of War and Battle.",
+     "First-place finishes": "Races you won outright, and team matches your side won. It needs at least one other person in the room.",

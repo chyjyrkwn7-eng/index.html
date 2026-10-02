@@ -368,8 +368,9 @@ def check_badges(br):
          {"mode": "drill", "nUnits": 1, "offset": -1, "flat": None, "vroom": False}, 1, 1),
         ("exam, two units, both one short",
          {"mode": "exam", "nUnits": 2, "offset": -1, "flat": None, "vroom": False}, 2, 2),
-        ("game, one unit at 10, nowhere near",
-         {"mode": "game", "nUnits": 1, "offset": None, "flat": 10, "vroom": False}, 0, 0),
+        # A Game run until build 283 retired Game mode.
+        ("drill, one unit at 10, nowhere near",
+         {"mode": "drill", "nUnits": 1, "offset": None, "flat": 10, "vroom": False}, 0, 0),
         ("Virtual Room, two units, both one short",
          {"mode": "exam", "nUnits": 2, "offset": -1, "flat": None, "vroom": True}, 2, 2),
         ("a unit already mastered",
@@ -1127,12 +1128,11 @@ def check_b218(br):
       return r; }""")
     check("no rank coin above a classmate's character", bool(pc) and not pc["coin"], pc)
     check("the last box says Correct answers", bool(pc) and "Correct answers" in pc["labels"], pc)
-    # The Game difficulty is on the sheet, not in a dropdown; Review has sources.
-    sh = pg.evaluate("""()=>{ cfg.mode='game'; cfg.units=[topicsIn(QUESTIONS)[0]]; showSetup();
-      const g=document.querySelector('.speedgrid'); const inDrop=!!(g && g.closest('.more-body'));
+    # Review has sources. (The Game difficulty check that sat here went
+    # with Game mode in build 283; check_b283 asserts it is gone.)
+    sh = pg.evaluate("""()=>{ cfg.units=[topicsIn(QUESTIONS)[0]];
       cfg.mode='review'; showSetup(); const d=document.querySelector('.drawfrom-sect');
-      return { speed: !!g, inDropdown: inDrop, reviewSources: !!(d && !d.hidden) }; }""")
-    check("the Game difficulty is not hidden in the options dropdown", sh["speed"] and not sh["inDropdown"], sh)
+      return { reviewSources: !!(d && !d.hidden) }; }""")
     check("Review can draw from flagged and most missed", sh["reviewSources"], sh)
     # Home: nothing animates an SVG filter every frame.
     an = pg.evaluate("()=>{ showHome(); return document.querySelectorAll('.cosmic-hero-svg animate').length; }")
@@ -1711,7 +1711,9 @@ def check_b232(br):
     check("Thunderhead, Sky Temple and the Supernova banner exist",
           names.get("hardcore10") == "Thunderhead" and names.get("hundos250") == "Sky Temple"
           and names.get("titan_rank") == "Supernova", names)
-    check("Hardcore on ten units hands over the Thunderhead banner", r["hardcore"] is True, r["hardcore"])
+    # Exam since build 283; ten Hardcore units under the old Game rule
+    # still hold it, which is what this now asserts.
+    check("Hardcore on ten units (the old Game rule) still holds the Thunderhead banner", r["hardcore"] is True, r["hardcore"])
     sf = r["starfall"] if isinstance(r["starfall"], dict) else {}
     check("Starfall's count is the units that exist, not a written-in sixteen",
           sf.get("need") == sf.get("units") and ("all %s badges" % sf.get("units")) in str(sf.get("label")), sf)
@@ -1745,9 +1747,6 @@ def check_b232(br):
       T('chip', () => !!document.querySelector('.screen-setup .rs-mode.rs-mode-drill'));
       T('glow', () => { const b = document.querySelector('.pick-badge.earned');
         return b ? [b.style.getPropertyValue('--badge-glow').trim().toUpperCase(), String(badgeThemeFor(u).p).toUpperCase()] : null; });
-      showPracticeTestConfirm();
-      T('brief', () => ({ stats: document.querySelectorAll('.pt-stats .pt-stat').length, rules: document.querySelectorAll('.pt-rules .pt-rule').length,
-                          record: !!document.querySelector('.pt-record') }));
       showCustomize();
       T('fade', () => { const svg = document.querySelector('.avatarchar-option .avatarchar-svg');
         const cs = svg && getComputedStyle(svg); return cs ? (cs.maskImage || cs.webkitMaskImage || '') : null; });
@@ -1780,8 +1779,8 @@ def check_b232(br):
     check("unit selection wears the results screen's mode chip", s["chip"] is True, s["chip"])
     check("an earned badge on a unit card glows in its own colour",
           isinstance(s["glow"], list) and s["glow"][0] == s["glow"][1], s["glow"])
-    check("the Practice Test screen is a briefing: three numbers, four rules, your record",
-          isinstance(s["brief"], dict) and s["brief"]["stats"] == 3 and s["brief"]["rules"] == 4 and s["brief"]["record"], s["brief"])
+    # The Practice Test briefing was checked here until build 283 retired
+    # it (retired/practice-test.md); check_b283 asserts it is gone.
     check("a character's shoulders fade out rather than stopping at a hard line (build 233)",
           isinstance(s["fade"], str) and "linear-gradient" in s["fade"] and "transparent" in s["fade"].replace("rgba(0, 0, 0, 0)", "transparent"), s["fade"])
     check("the words 'Sync code' in Settings are blue", s["sync"] == "rgb(111, 194, 255)", s["sync"])
@@ -1885,8 +1884,6 @@ def check_b234(br):
         cfg.timer = 'off';
         return res; });
       document.querySelector('.unitoptions-modal-scrim').click();
-      showPracticeTestConfirm(); await wait(300);
-      await T('phoenix', () => /Phoenix/i.test(document.getElementById('stage').textContent));
       // Themes: Bronze's second colour is not green, Amethyst's not pink.
       await T('themes', () => {
         const hue = h => { const n = parseInt(h.slice(1), 16), r = (n >> 16) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
@@ -1942,7 +1939,6 @@ def check_b234(br):
     # Build 250: "the shuffle answers and hide answers should not be in
     # that drop down. That drop down just needs to be the timer stuff."
     check("Shuffle and Hide answers are their own card; the fold holds only the timer, shut until opened", sh.get("optsFolded") is True, sh)
-    check("the Practice Test screen does not mention the Phoenix banner", r["phoenix"] is False, r["phoenix"])
     th = r["themes"] if isinstance(r["themes"], dict) else {}
     check("Bronze's second colour is not green and Amethyst's is not pink",
           not (90 <= th.get("bronze", 120) <= 170) and not (290 <= th.get("amethyst", 330) <= 350), th)
@@ -2007,7 +2003,7 @@ def check_b235(br):
       await T('order', () => BANNERS.map(b => b.id));
       await T('rankArt', () => ['adept_rank', 'elite_rank', 'titan_rank'].map(id => typeof BANNER_ART[id] === 'function' && !!bannerDef(id)));
       // The grade's reaction.
-      await T('react', () => [{ isPerfect: true, pct: 100 }, { pct: 93 }, { pct: 75 }, { pct: 40 }, { gameLost: 3, pct: 90 }].map(gradeReaction));
+      await T('react', () => [{ isPerfect: true, pct: 100 }, { pct: 93 }, { pct: 75 }, { pct: 40 }].map(gradeReaction));
       // Asleep: a friend who is not on. Live: anybody else.
       store.friendsIn = ['pubsleepy'];
       openPersonSheet({ pub: 'pubsleepy', firstName: 'Sleepy', avatarChar: 'alien', seenAt: 1 }); await wait(300);
@@ -2052,8 +2048,9 @@ def check_b235(br):
           run(["easy10", "average10", "hardcore10"]) and run(["tests100", "tests250", "tests500"])
           and run(["hundos100", "hundos250"]) and run(["adept_rank", "elite_rank", "titan_rank"]), o)
     check("Sapphire and Amethyst have banners of their own beside Supernova's", r["rankArt"] == [True, True, True], r["rankArt"])
-    check("the results character reacts to 100 / 90+ / a pass / a miss (and a lost game)",
-          r["react"] == ["perfect", "great", "pass", "fail", "fail"], r["react"])
+    # A lost game was a fifth case until Game mode went (build 283).
+    check("the results character reacts to 100 / 90+ / a pass / a miss",
+          r["react"] == ["perfect", "great", "pass", "fail"], r["react"])
     check("a friend who is offline is asleep on their card, Zzz and all",
           r["sleepFriend"] == {"sleep": True, "zzz": True}, r["sleepFriend"])
     check("anybody else - a classmate opened from the Leaderboard - is simply alive",
@@ -2349,11 +2346,8 @@ def check_b240_units(br):
     r = pg.evaluate("""()=>{ const u = topicsIn(QUESTIONS)[0];
       const labs = m => unitDetailStats(u, m).map(x => x.label);
       const out = { modes: {} };
-      ['drill','exam','game','review','vroom'].forEach(m => out.modes[m] = labs(m));
-      store.gameBeat = store.gameBeat || {};
-      const saveBeat = JSON.stringify(gameBeat(u));
-      store.gameFarthest[u] = { easy: 7 };
-      out.gameEasy = unitDetailStats(u, 'game').map(x => x.label + '=' + x.value);
+      // 'game' left this list with Game mode (build 283).
+      ['drill','exam','review','vroom'].forEach(m => out.modes[m] = labs(m));
       if(typeof store.unitExam === 'object') delete store.unitExam[u];
       store.testHistory = (store.testHistory || []).filter(h => !(h.mode === 'exam' && h.units && h.units.length === 1 && h.units[0] === u));
       store.testHistory.unshift({ units: [u], pct: 80, mode: 'exam', playedAt: Date.now() - 1e6 });
@@ -2374,11 +2368,6 @@ def check_b240_units(br):
     first = next(iter(modes.values()), [])
     check("every mode shows the same four squares", modes and len(first) == 4 and all(v == first for v in modes.values()), modes)
     check("and one of them is the last score", any("Last" in x for x in first), first)
-    check("Game shows no best time unless Hardcore is beaten",
-          modes.get("game") and not any("time" in x.lower() for x in modes["game"]), modes.get("game"))
-    ge = " | ".join(r.get("gameEasy", [])) if isinstance(r, dict) else ""
-    check("Game adds nothing of its own (no level or farthest square)",
-          "Level unlocked=" not in ge and "Farthest on " not in ge, ge)
     ex = " | ".join(r.get("exam", [])) if isinstance(r, dict) else ""
     check("the best and the last score come from past runs (80% best, 60% last)",
           "=80%" in ex and "Last score=60%" in ex, ex)
@@ -3776,7 +3765,8 @@ def check_b245_modes(br):
     the bottom on the iPhone, it'll need to be the 3rd one listed, under
     exam instead." Read by each card's own mode icon, not by its words, so
     a renamed card cannot turn this red; on a tablet's two-across wrap
-    Review has to share a row with Game, under Drill and Exam."""
+    Review has to share a row with Virtual Room, under Drill and Exam
+    (it was Game until Game mode was retired in build 283)."""
     print("\n35. build 245: Review is third on the mode screen, on every device")
     for label, w, h in DEVICES + [("iPhone SE", 320, 568)]:
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
@@ -3789,11 +3779,11 @@ def check_b245_modes(br):
         kinds = [c["kind"] for c in r]
         check("%s: Drill, Exam, then Review" % label, kinds[:3] == ["drill", "exam", "review"], kinds)
         check("%s: every mode still offered" % label,
-              sorted(kinds) == sorted(["drill", "exam", "review", "game", "vroom"]), kinds)
-        if w >= 640 and len(r) == 5:
-            check("%s: the grid reads Drill Exam / Review Game / Virtual Room" % label,
+              sorted(kinds) == sorted(["drill", "exam", "review", "vroom"]), kinds)
+        if w >= 640 and len(r) == 4:
+            check("%s: the grid reads Drill Exam / Review Virtual Room" % label,
                   r[0]["top"] == r[1]["top"] and r[2]["top"] == r[3]["top"] > r[0]["top"]
-                  and r[2]["left"] < r[3]["left"] and r[4]["top"] > r[2]["top"], r)
+                  and r[2]["left"] < r[3]["left"], r)
         ctx.close()
 
 
@@ -4759,7 +4749,7 @@ def check_b267(br):
       const lv = document.querySelector('.profile-level-num');
       out.level = { bg: getComputedStyle(lv).backgroundColor, border: getComputedStyle(lv).borderTopWidth,
                     round: Math.abs(lv.getBoundingClientRect().width - lv.getBoundingClientRect().height) < 1 && parseFloat(getComputedStyle(lv).borderTopLeftRadius) >= lv.getBoundingClientRect().width / 2 - 1 };
-      cfg.mode = 'game'; cfg.units = [topicsIn(QUESTIONS)[0]]; showSetup(); await wait(600);
+      cfg.mode = 'drill'; cfg.units = [topicsIn(QUESTIONS)[0]]; showSetup(); await wait(600);
       document.getElementById('nextbtn').click(); await wait(500);
       showToast('test toast'); await wait(300);
       const t = document.querySelector('.toast'), m = document.getElementById('unitoptions-modal');
@@ -4929,7 +4919,7 @@ def check_b270(br):
       const wait = ms => new Promise(r => setTimeout(r, ms));
       try {
       const u = topicsIn(QUESTIONS), unit = u[0], now = Date.now();
-      out.labels = ['drill', 'exam', 'game'].map(m => unitDetailStats(unit, m).map(s => s.label));
+      out.labels = ['drill', 'exam', 'review'].map(m => unitDetailStats(unit, m).map(s => s.label));
       let k = 0;
       QUESTIONS.forEach((q, i) => { if((q.topic || '').trim() === unit){ k++; store.stats[KEYS[i]] = { n: 3, m: 3, r: [now - 1000, now - 2000] }; if(k <= 3) store.flagged[KEYS[i]] = true; } });
       cfg.mode = 'drill'; cfg.units = []; showSetup(); await wait(600);
@@ -5666,6 +5656,91 @@ def check_b282(br):
     ctx.close()
 
 
+def check_b283(br):
+    """Build 283: Game mode and the Practice Test are retired, and their
+    rewards move onto Exam. (1) The mode screen offers no Game card and
+    an Exam card goes straight to unit selection - no Standard / Practice
+    choice. (2) Neither screen's builder is left in the page, and a saved
+    Game mode comes back as Drill. (3) Lanterns, Great Wave and
+    Thunderhead are earned off per-unit Exam bests - pass 10, ace 10, ace
+    every unit - and the old Game counts still hold them. (4) Phoenix is
+    a perfect Exam of 100 or more questions, through summarize(), and 99
+    is not enough. Written against 282, where every one of these fails."""
+    print("\n56. build 283: Game mode and the Practice Test retired, their rewards on Exam")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{ const out = {};
+      const wait = ms => new Promise(r => setTimeout(r, ms));
+      try {
+      store.seenModeSelectTour = true; showModeSelect(); await wait(400);
+      out.kinds = [...document.querySelectorAll('.modeselect .modecard')].map(c => c.dataset.mode);
+      const ex = document.querySelector('.modecard[data-mode="exam"]');
+      if(ex){ ex.click(); await wait(700); }
+      out.examLands = !!document.querySelector('.screen-setup') && cfg.mode === 'exam';
+      out.gone = ['showExamOptions', 'showPracticeTestConfirm', 'gameOver', 'recordGameBeatIfEligible']
+        .filter(n => typeof window[n] === 'function');
+      store.opts = Object.assign({}, store.opts || {}, { mode: 'game' }); applySaved();
+      out.savedGame = cfg.mode;
+      cfg.mode = 'drill';
+      // Banners off per-unit Exam bests, with no Game record.
+      const U = topicsIn(QUESTIONS);
+      store.unitGameBeat = {};
+      store.testHistory = (store.testHistory || []).filter(h => h.mode !== 'exam');
+      const bests = list => { store.unitExam = {}; list.forEach((b, i) => { if(b != null) store.unitExam[U[i]] = { n: 1, best: b, sum: b, last: b }; }); };
+      const E = () => ['easy10', 'average10', 'hardcore10'].map(bannerEarned);
+      bests(U.map((u, i) => i < 9 ? 70 : null));           out.pass9 = E();
+      bests(U.map((u, i) => i < 10 ? 70 : null));          out.pass10 = E();
+      bests(U.map((u, i) => i < 10 ? 100 : null));         out.ace10 = E();
+      bests(U.map(() => 100));                             out.aceAll = E();
+      // The old Game record still holds all three.
+      bests([]);
+      U.slice(0, 10).forEach(u => store.unitGameBeat[u] = { easy: true, average: true, hardcore: true });
+      out.legacy = E();
+      store.unitGameBeat = {};
+      out.labels = ['easy10', 'average10', 'hardcore10', 'exam100'].map(id => bannerDef(id).label);
+      // Phoenix: a real perfect Exam through summarize().
+      const units = []; let n = 0;
+      for(const u of U){ units.push(u); n += unitQuestionCount(u); if(n >= 100) break; }
+      const all = [].concat(...units.map(t => QUESTIONS.map((q, i) => [q, i]).filter(([q]) => (q.topic || '').trim() === t).map(([, i]) => i)));
+      const run = ord => {
+        cfg.mode = 'exam'; cfg.source = 'all'; cfg.units = units.slice();
+        order = ord; runTrackable = true; timedOut = false; runMode = 'exam'; runLabel = null; isMissedRetake = false;
+        attempts = {}; picked = {}; timedOutSet = {};
+        order.forEach(qi => { attempts[qi] = 1; picked[qi] = optionOrder(qi).indexOf(QUESTIONS[qi].answer); });
+        summarize(); document.querySelectorAll('.rs-spot').forEach(e => e.remove());
+        return store.practiceExamPerfect === true; };
+      store.practiceExamPerfect = false; store.unitExam = {};
+      out.n = all.length;
+      out.phoenix99 = run(all.slice(0, 99));
+      out.phoenix = run(all);
+      out.acedAfter = units.filter(u => (unitExamOf(u) || {}).best === 100).length;
+      out.nUnits = units.length;
+      } catch(e){ out.threw = String(e && e.stack || e); }
+      try{ testInProgress = false; showHome(); }catch(e){}
+      return out; }""")
+    check("no exception", not r.get("threw"), r.get("threw"))
+    kinds = r.get("kinds") or []
+    check("the mode screen offers no Game card, and still offers the other four",
+          "game" not in kinds and sorted(kinds) == sorted(["drill", "exam", "review", "vroom"]), kinds)
+    check("the Exam card goes straight to unit selection, with no Practice Test choice first",
+          r.get("examLands") is True, r.get("examLands"))
+    check("the Game and Practice Test screens are gone from the page", r.get("gone") == [], r.get("gone"))
+    check("a saved Game mode comes back as Drill", r.get("savedGame") == "drill", r.get("savedGame"))
+    check("Exam passes on 9 units earn nothing; on 10 they earn Lanterns only",
+          r.get("pass9") == [False, False, False] and r.get("pass10") == [True, False, False], [r.get("pass9"), r.get("pass10")])
+    check("Exam aces on 10 units add Great Wave; on every unit, Thunderhead",
+          r.get("ace10") == [True, True, False] and r.get("aceAll") == [True, True, True], [r.get("ace10"), r.get("aceAll")])
+    check("ten old Hardcore Game units still hold all three", r.get("legacy") == [True, True, True], r.get("legacy"))
+    labs = r.get("labels") or []
+    check("none of the four banners asks for Game mode or the Practice Exam",
+          len(labs) == 4 and not any(re.search(r"game|practice", l, re.I) for l in labs) and all("Exam" in l for l in labs), labs)
+    check("a perfect Exam of 99 questions is not Phoenix", r.get("phoenix99") is False, r.get("n"))
+    check("a perfect Exam of 100 or more questions is, through summarize()",
+          r.get("phoenix") is True and r.get("n", 0) >= 100, r.get("n"))
+    check("and it records every unit it covered as an Exam ace",
+          r.get("acedAfter") == r.get("nUnits") and r.get("nUnits", 0) > 0, (r.get("acedAfter"), r.get("nUnits")))
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     only = os.environ.get("ONLY_B245")
@@ -5742,6 +5817,7 @@ def main():
             check_b280_rankmap_still(br)
             check_b281_badge_card(br)
             check_b282(br)
+            check_b283(br)
         finally:
             br.close()
     SERVER.shutdown()

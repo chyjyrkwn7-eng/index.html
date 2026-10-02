@@ -18,6 +18,12 @@ disagreed, the repo won and the difference is called out.
 - `launch/` — iOS startup images, referenced by path from `index.html`.
   **Deploys with it.** See **iOS install-time metadata**.
 - `version.json` — update-check sidecar. See **Shipping a change**.
+- `retired/` — **features taken out on purpose, kept so they can come back
+  exactly.** Game mode and the Practice Test (build 283), each with a note
+  saying what it was, what its rewards became, the commit that removed it
+  (`git revert` restores it) and the same diff saved as a `.patch`. Read
+  `retired/README.md` first if asked to bring either back. Nothing at
+  runtime reads this folder.
 - `tools/check-js.py` — syntax check for the inline scripts. See **Verifying**.
 - `tools/gen-startup-images.py` — regenerates the iOS launch images. See the
   iOS section. `--check` fails if the block in `index.html` is stale.
@@ -8919,3 +8925,46 @@ are untouched.
   it had been (under the bar) and re-scrolled it to the bottom edge. A
   real mouse click at the card's centre lands on the card on every
   build; `tap()` now waits 150ms after scrolling, as a finger does.
+
+### Build 283 - Game mode and the Practice Test retired, restorably
+
+Asked for after looking at what was being used: Drill 282 runs from 35
+people, Exam 38 runs from 10, Game **one** run. *"let's remove the mode
+"game" and change all unlocks and rewards associated with it ... maybe
+we remove the practice test function? Or at least save it for later"*,
+and then: *"if I ask you to add it back, it'd be back the exact same
+way."* **Everything about bringing either back is in `retired/`.** Any
+note above that describes Game mode or the Practice Test as live is
+history from here on.
+
+- **Two commits, `index.html` only, one per feature**: `ca1e133`
+  (Practice Test) and `148456e` (Game). Reverting both gives back
+  build 282's `index.html` byte for byte, checked before shipping. Gates,
+  the build bump and the docs are in a third commit, so a revert of
+  either feature does not drag tooling with it.
+- **The mode screen is four cards**: Drill, Exam, Review, Virtual Room;
+  two-across on a tablet. **Exam goes straight to the start sheet.**
+  A saved `cfg.mode` of `"game"` loads as Drill (`applySaved()`).
+- **The rewards moved; nobody lost one.** Lanterns = pass an Exam on 10
+  units, Great Wave = 100% in Exam on 10 units, Thunderhead = 100% in
+  Exam on every unit, all off per-unit Exam bests (`examUnitsAtLeast()`
+  over `unitExamOf()`, which a multi-unit Exam covering a unit in full
+  also writes). Each still takes the old Game count where higher, so
+  `unitGameBeat` is read, never written. Phoenix = 100% on an Exam of
+  `PHOENIX_EXAM_SIZE` (100) or more questions, writing the same
+  `practiceExamPerfect` flag. The dead `hardcore10` feat is gone; the
+  Masked One keeps its legacy Hardcore clause.
+- **Left in place on purpose**: every store field both wrote (still
+  defaulted in `applyLoadedData()`), history entries labelled Game, the
+  inert Game CSS, and `practiceTestMinutes` with its two dormant
+  `summarize()` lines. Leaving them is what keeps a restore a pure revert.
+- Gates: `check_b283` (section 56) asserts four mode cards with no Game,
+  Exam straight to the start sheet, the four builder functions gone, a
+  saved Game mode loading as Drill, the three Exam banner thresholds
+  (9 vs 10 passes, 10 aces, every unit), the old Game record still
+  holding all three, no banner label naming Game or the Practice Exam,
+  and Phoenix at 100 questions but not 99 through a real `summarize()`.
+  Fails on 282. Game-specific checks elsewhere were removed or
+  retargeted; each retired note lists exactly which, to put back on a
+  restore.
+

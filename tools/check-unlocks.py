@@ -188,6 +188,8 @@ def check_daily_streak(pg):
 # --------------------------------------------------------------------------
 BEAT_HARDCORE = """(n)=>{
   const topics = [...new Set(QUESTIONS.map(q => (q.topic||'').trim()))].filter(Boolean);
+  // No Exam record at all, so only the old Game count can earn it.
+  store.unitExam = {}; store.testHistory = (store.testHistory||[]).filter(h => h.mode !== 'exam');
   store.unitGameBeat = {};
   topics.slice(0, n).forEach(t => {
     store.unitGameBeat[t] = { easy:true, average:true, hardcore:true };
@@ -196,20 +198,15 @@ BEAT_HARDCORE = """(n)=>{
            masked: isLockedCharacter('masked'),
            msg: characterLockMessage('masked') };}"""
 
-# A real Game run on Hardcore, through the app's own recorder, so the
-# ladder inside it is exercised rather than the store being hand-set.
-GAME_RUN = """(a)=>{
-  const { unitIndex, speed, aced } = a;
-  const topics = [...new Set(QUESTIONS.map(q => (q.topic||'').trim()))].filter(Boolean);
-  const t = topics[unitIndex];
-  cfg.mode='game'; cfg.source='all'; cfg.units=[t]; cfg.gameSpeed=speed;
-  order = QUESTIONS.map((q,i)=>[q,i]).filter(([q]) => (q.topic||'').trim() === t).map(([,i]) => i);
-  runTrackable=true; timedOut=false; runMode='game'; runLabel=null;
-  attempts={}; picked={}; timedOutSet={};
-  order.forEach(qi => { attempts[qi] = aced ? 1 : 2;
-    picked[qi] = optionOrder(qi).indexOf(QUESTIONS[qi].answer); });
-  summarize();
-  return Object.assign({}, gameBeat(t));}"""
+# Thunderhead since build 283: 100% in Exam on every unit. Sets the
+# per-unit Exam bests the way summarize() keeps them.
+EXAM_ACES = """(missing)=>{
+  const topics = topicsIn(QUESTIONS);
+  store.unitGameBeat = {}; store.unitExam = {};
+  store.testHistory = (store.testHistory||[]).filter(h => h.mode !== 'exam');
+  topics.forEach((t, i) => { store.unitExam[t] = { n: 1, best: i < missing ? 90 : 100, sum: 100, last: 100 }; });
+  return { earned: bannerEarned('hardcore10'), have: bannerDef('hardcore10').have(), need: bannerDef('hardcore10').need,
+           units: topics.length };}"""
 
 
 HUNDO = """(a)=>{
@@ -240,46 +237,30 @@ SLICE_RUN = """()=>{
 
 
 def check_hardcore(pg):
-    """Hardcore beaten on ten units, and the ladder that guards it.
+    """The Thunderhead banner and the Masked One's old rule.
 
-    The data has been there since Game mode shipped - store.unitGameBeat
-    records {easy, average, hardcore} per unit - and nothing had ever
-    read it or shown it. So what is worth asserting is that the COUNT is
-    the count, that the app's own recorder still refuses Hardcore before
-    Average, and that a unit card now says which of the three you have."""
-    print("\n3. Hardcore beaten on ten units hands over the Thunderhead banner")
+    Thunderhead was "Beat 10 units on Hardcore in Game mode" until build
+    283 retired Game mode; it is 100% in Exam on every unit now. Whoever
+    met the old rule keeps it, and so does the Masked One's legacy clause,
+    so both are asserted off store.unitGameBeat with no Exam record. The
+    recorder ladder and the unit-card difficulty bubbles that were checked
+    here went with Game mode (retired/game-mode.md)."""
+    print("\n3. Thunderhead: ten old Hardcore units keep it; Exam aces on every unit earn it")
     for n in (0, 9, 10):
         r = pg.evaluate(BEAT_HARDCORE, n)
         want = n < 10
-        check("%d unit(s) beaten -> banner %s" % (n, "locked" if want else "earned"),
+        check("%d old Hardcore unit(s) -> banner %s" % (n, "locked" if want else "kept"),
               r["beaten"] == n and r["locked"] is want, r)
         # The Masked One is a retake challenge now (build 233), but ten
         # Hardcore units was its old rule, and whoever met it keeps it.
         check("  and ten Hardcore units still unlock the Masked One (%d)" % n,
               r["masked"] is want and (want == (r["msg"] != "")), r)
-    # THE LADDER, through the app's own recorder rather than by setting
-    # the store. Hardcore on a unit whose Average is not beaten must not
-    # count, or the feat is ten Easy runs with the difficulty swapped.
-    pg.evaluate("()=>{ store.unitGameBeat = {}; }")
-    straight = pg.evaluate(GAME_RUN, {"unitIndex": 0, "speed": "hardcore", "aced": True})
-    check("Hardcore alone does not count before Average",
-          straight.get("hardcore") is False, straight)
-    pg.evaluate(GAME_RUN, {"unitIndex": 0, "speed": "easy", "aced": True})
-    pg.evaluate(GAME_RUN, {"unitIndex": 0, "speed": "average", "aced": True})
-    climbed = pg.evaluate(GAME_RUN, {"unitIndex": 0, "speed": "hardcore", "aced": True})
-    check("Easy then Average then Hardcore does",
-          climbed.get("hardcore") is True, climbed)
-    # The three bubbles say which, on the unit card, in Game mode.
-    dots = pg.evaluate("""()=>{
-      cfg.mode='game'; showSetup();
-      const row = document.querySelector('.pick .pick-gamedots');
-      if(!row) return { found:false };
-      return { found:true, dots: row.children.length,
-               on: [...row.children].filter(d=>d.classList.contains('on')).length,
-               legend: !!document.querySelector('.speedkey') };}""")
-    check("the unit card carries three difficulty bubbles",
-          dots.get("found") and dots["dots"] == 3, dots)
-    check("and the picker explains what they mean", dots.get("legend") is True, dots)
+    one_short = pg.evaluate(EXAM_ACES, 1)
+    check("100% in Exam on every unit but one leaves Thunderhead locked",
+          one_short["earned"] is False and one_short["have"] == one_short["units"] - 1
+          and one_short["need"] == one_short["units"], one_short)
+    every = pg.evaluate(EXAM_ACES, 0)
+    check("100% in Exam on every unit earns it", every["earned"] is True, every)
 
 
 def check_hundo_streak(pg):

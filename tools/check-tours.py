@@ -65,7 +65,7 @@ SCENARIOS = [
      "setup": "showHome(); startMainMenuTour()",
      "note": "the bottom bar, the daily question, the flares"},
     {"key": "modeselect", "flag": "seenModeSelectTour", "source": "showModeSelect",
-     "setup": "showModeSelect()", "note": "Drill / Exam / Game / Virtual Room"},
+     "setup": "showModeSelect()", "note": "Drill / Exam / Review / Virtual Room"},
     {"key": "unitselect", "flag": "seenUnitSelectTour", "source": "showSetup",
      "setup": "cfg.mode='drill'; showSetup()", "note": "unit cards, the count, Start"},
     {"key": "vroomunits", "flag": "seenUnitSelectTour", "source": "showVirtualRoomSetup",

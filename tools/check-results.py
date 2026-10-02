@@ -21,8 +21,8 @@ button. What is held here is the SHAPE of that, not its words:
   5. (build 213) No Pause on either results screen; the review shows the
      answer you gave; the XP lines come from computeRunXp() and follow its
      rules (speed in steps of 5, streak tiers with xN, multi-unit last,
-     retake = right answers only, Game bonuses only for a game beaten);
-     a lost game still gets a results screen; Re-run is back.
+     retake = right answers only); Re-run is back. (Game's bonuses and
+     its lost-game screen went with Game mode in build 283.)
   6. Reduce motion gets everything at once and no banners.
 
 Drives summarize() directly with a real unit's questions, the way
@@ -215,8 +215,6 @@ with sync_playwright() as pw:
         streaks: L({good:37, answered:38, elapsedMs:38*20000, okList:ok(12).concat([false], ok(25)), hundos:0, wholeUnits:1}),
         multi: computeRunXp({good:40, answered:40, elapsedMs:40*20000, okList:ok(40), hundos:4, wholeUnits:4}).lines.slice(-1)[0],
         retake: L({retake:true, good:3, answered:3, elapsedMs:5000, okList:ok(3)}),
-        gameWon: L({good:12, answered:12, elapsedMs:60000, okList:ok(12), hundos:1, wholeUnits:1, game:{speed:'average', beaten:true, livesLeft:2}}),
-        gameLost: L({good:2, answered:3, elapsedMs:30000, okList:[true,true,false], hundos:0, wholeUnits:0, game:{speed:'average', beaten:false, livesLeft:0}}),
         badge: MASTERY_BONUS
       }; }""")
     if not xr:
@@ -231,23 +229,11 @@ with sync_playwright() as pw:
         ck("a multi-unit run ends on its multiplier, x1.3 for four units",
            xr["multi"]["key"] == "multi" and "1.3" in xr["multi"]["label"], xr["multi"])
         ck("a retake earns its right answers and nothing else", [r[0] for r in xr["retake"]] == ["correct"] and xr["retake"][0][2] == 30, xr["retake"])
-        ck("a Game won pays its difficulty and its lives", g(xr["gameWon"], "gamebeat") and g(xr["gameWon"], "gamelives"), xr["gameWon"])
-        ck("a Game lost pays neither", not g(xr["gameLost"], "gamebeat") and not g(xr["gameLost"], "gamelives"), xr["gameLost"])
+        # The two Game XP lines (difficulty beaten, lives left) went with
+        # Game mode in build 283.
         ck("a badge is worth 1,000", xr["badge"] == 1000, xr["badge"])
-    print("   a lost game still gets a results screen")
-    lost = pg.evaluate("""([u])=>{ if(typeof gameOver !== 'function') return null;
-      cfg.mode='game'; cfg.gameSpeed='easy'; cfg.source='all'; cfg.units=[u];
-      order=QUESTIONS.map((q,i)=>i).filter(i=>(QUESTIONS[i].topic||'').trim()===u);
-      runTrackable=true; timedOut=false; runMode='game'; runLabel=null; isMissedRetake=false; practiceTestMinutes=null; inVirtualRoom=false;
-      attempts={}; picked={}; timedOutSet={}; try{ gameLostAt=0; }catch(e){}
-      order.slice(0,3).forEach((qi,k)=>{ attempts[qi]= k<2 ? 2 : 1; });
-      pos=2; livesLeft=0; runStartTime=Date.now()-30000; testInProgress=true;
-      gameOver();
-      return { title:(document.getElementById('testscopelabel')||{}).textContent,
-               over: !!document.querySelector('#stage .rs-grade.is-over'),
-               xp: !!document.querySelector('#stage .rs-xp') }; }""", [UNIT])
-    ck("out of lives lands on a results screen with XP and a Game over card",
-       bool(lost) and lost["over"] and lost["xp"] and lost["title"] == "Game over", lost)
+    # "a lost game still gets a results screen" lived here until Game
+    # mode was retired in build 283 (retired/game-mode.md).
     wait_done(pg)
 
     print("4. reduce motion: everything at once, no banners")
@@ -317,15 +303,7 @@ with sync_playwright() as pw:
 
     print("7. build 216: found recording every cutscene")
     # Both written against build 215, where both fail.
-    # The difficulty lights' labels hang centred under each light, so the
-    # gap between lights is all the room two labels get: at .9rem
-    # "AVERAGE" and "HARDCORE" overlapped by 10px on the Hardcore unlock.
-    gaps = pg.evaluate("""()=>{ const spot=document.createElement('div'); spot.className='rs-spot';
-      const art=document.createElement('div'); art.className='rs-spot-art';
-      art.appendChild(buildDifficultyLights('hardcore')); spot.appendChild(art); document.body.appendChild(spot);
-      const ls=[...art.querySelectorAll('.rs-difflight-label')].map(l=>l.getBoundingClientRect());
-      const g = ls.slice(1).map((r,i)=>Math.round(r.left-ls[i].right)); spot.remove(); return g; }""")
-    ck("the difficulty labels do not run into each other", len(gaps) == 2 and min(gaps) >= 6, gaps)
+    # The Game difficulty lights were checked here until build 283.
     # A streak pill from the last question lives on <body> and rode on
     # over "Test results" when the run ended on a streak.
     pg.evaluate("()=>{ theme.muteBanners=false; showRunStreakBanner(25); }")
