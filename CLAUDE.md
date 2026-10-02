@@ -9444,3 +9444,40 @@ never "every question") and Marksman 250.
 `streak100` still means the Marksman's 250. `check-behaviour` 63 reads
 the threshold from the app for its one-short/exactly-there test and
 pins the decision (500) in one place only.
+
+### Build 293 - Koi Pond is one unit on ten different days
+
+"Koi pond banner requirement needs to be updated. Says every unit but
+needs to change because we will eventually get more units.. maybe make
+it unique."
+- The requirement is now **a hundo on the same unit on `KOI_DAYS` (10)
+  different days**. It doesn't depend on how many units there are, and
+  nothing else asks for it: the hundo banners count volume, and the
+  Astronaut counts units in one day. Spread over weeks, it is spaced
+  review.
+- The banner's id stays `tests500`.
+- **The comeback was tried first and dropped.** The first draft was
+  "under 70% on a unit, then a hundo on it". A census of every account
+  showed the strongest accounts had not scored under 70% on a whole unit
+  in their last twenty runs, so that challenge would have shut out
+  exactly the people most likely to want it. Measure a challenge
+  against real accounts before shipping it.
+- **How days are stored.** `store.unitHundoDays` maps
+  `{ unit: [day keys] }`:
+  - Each list is kept sorted and capped at 60.
+  - It is written by `noteUnitHundoDay()` from both places that credit a
+    hundo, `recordUnitPerfectIfEligible()` and
+    `recordMultiUnitPerfectsIfEligible()`, so every mode counts.
+  - Progress is `unitHundoDaysBest()`, the best single unit. Two units'
+    days never add up.
+- **Seeding.** `seedHundoDays292()` seeds an older account once from its
+  last twenty runs. Only single-unit, whole runs at 100% count; part
+  runs and the daily question don't. It is gated by `hundoDaysSeeded`,
+  which defaults to true on a new store and to false from
+  `applyLoadedData` for an account that predates it. At ship time
+  nobody was past 2 days.
+- **Merging.** Both merges union the day lists through
+  `mergeHundoDays()`. Because the lists are sorted, two identical copies
+  compare equal, so a merge never reports a change in order as news.
+- `check-behaviour` 64 holds all of this. It fails on 292, and the
+  "needs" line in check 61 now expects 10.

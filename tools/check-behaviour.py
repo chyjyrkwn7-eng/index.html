@@ -6066,8 +6066,10 @@ def check_b289(br):
         out.edit = eb ? parseFloat(getComputedStyle(eb).fontSize) : 0;
       } catch(e){ out.threw = String(e && e.stack || e); }
       return out; }""")
-    check("the reworked banners: Midnight Oil 35 hours, Neon City 25 matches, Phoenix 7 units in a row, Koi Pond a hundo in every unit",
-          r.get("needs") == [35, 25, 7, r.get("units")], r)
+    # REVISED IN 293: Koi Pond is one unit on ten different days, not
+    # every unit (a target that moved whenever a unit was added).
+    check("the reworked banners: Midnight Oil 35 hours, Neon City 25 matches, Phoenix 7 units in a row, Koi Pond 10 days",
+          r.get("needs") == [35, 25, 7, 10], r)
     check("the Koi is seven study days IN A ROW (six, or seven with a gap, is not enough)",
           r.get("koiFeat") == "studyrun7" and r.get("koiSix") is True and r.get("koiSeven") is True, r)
     check("Phoenix and the Detective keep their best run, so a later slip takes nothing back",
@@ -6281,6 +6283,64 @@ def check_b291(br):
     ctx.close()
 
 
+def check_b293(br):
+    """Build 293: "Koi pond banner requirement needs to be updated. Says
+    every unit but needs to change because we will eventually get more
+    units.. maybe make it unique." Koi Pond is a hundo on the SAME unit on
+    10 different days: the count does not follow the number of units, a
+    second hundo on the same day adds nothing, two units do not add up,
+    an older account's recent tests seed it once, and two copies of an
+    account merge their days. Written against 292, where it fails."""
+    print("\n64. build 293: Koi Pond is one unit on ten different days")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{ const out = {};
+      try{
+        document.getElementById('pushing-update')?.remove();
+        const b = BANNERS.find(x => x.id === 'tests500');
+        out.label = b.label; out.need = b.need;
+        out.unitsInLabel = /every unit|all units/i.test(b.label + ' ' + (b.note || ''));
+        const realQ = QUESTIONS; out.needWithMoreUnits = (() => { try{ QUESTIONS.push({ topic: 'A New Unit', src: 'x' }); return BANNERS.find(x => x.id === 'tests500').need; } finally { QUESTIONS.pop(); } })();
+        store.unitHundoDays = {}; store.unitPerfects = store.unitPerfects || {};
+        const A = 'Identity Crimes', B = topicsIn(QUESTIONS).find(u => u !== A);
+        const day = n => new Date(2026, 8, 1 + n, 12).getTime();
+        for(let i = 0; i < 9; i++) noteUnitHundoDay(A, day(i));
+        noteUnitHundoDay(A, day(8) + 3600e3);
+        for(let i = 0; i < 9; i++) noteUnitHundoDay(B, day(20 + i));
+        out.nine = [b.have(), bannerEarned('tests500')];
+        noteUnitHundoDay(A, day(9));
+        out.ten = [b.have(), bannerEarned('tests500')];
+        /* a live hundo records today */
+        store.unitHundoDays = {}; cfg.units = [A]; cfg.source = 'all'; cfg.size = 0; cfg.versions = {};
+        order = QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === A); runLabel = A;
+        recordUnitPerfectIfEligible(100);
+        out.live = (store.unitHundoDays[A] || []).length === 1 && store.unitHundoDays[A][0] === dayKey(new Date());
+        /* an older account: its recent tests seed it, once */
+        const d = JSON.parse(JSON.stringify(store)); delete d.unitHundoDays; delete d.hundoDaysSeeded;
+        d.testHistory = [0, 1, 2].map(i => ({ units: [A], pct: 100, playedAt: day(i), mode: 'drill', label: A }))
+          .concat([{ units: [A], pct: 100, playedAt: day(5), part: true, label: A }, { units: [A], pct: 90, playedAt: day(6), label: A }]);
+        applyLoadedData(d); out.seededFlag = store.hundoDaysSeeded;
+        seedHundoDays292(); out.seeded = b.have();
+        seedHundoDays292(); out.seededTwice = b.have();
+        /* two copies merge their days */
+        out.merged = mergeHundoDays({ [A]: ['2026-09-01', '2026-09-02'] }, { [A]: ['2026-09-02', '2026-09-03'] })[A];
+        out.fresh = (() => { const n = JSON.parse(JSON.stringify(store)); return 'unitHundoDays' in n; })();
+      } catch(e){ out.threw = String(e && e.stack || e); }
+      return out; }""")
+    if r.get("threw"):
+        print("   threw:", r["threw"][:400])
+    check("Koi Pond asks for a hundo on the same unit on 10 different days, and never mentions every unit",
+          r.get("need") == 10 and "same unit" in str(r.get("label")) and not r.get("unitsInLabel"), [r.get("label"), r.get("need")])
+    check("adding a unit to the app does not move the target", r.get("needWithMoreUnits") == 10, r.get("needWithMoreUnits"))
+    check("nine days (a second hundo the same day adds nothing; another unit's days do not add up) is not enough",
+          r.get("nine") == [9, False], r.get("nine"))
+    check("the tenth day earns it", r.get("ten") == [10, True], r.get("ten"))
+    check("a whole-unit hundo records today's date against the unit", r.get("live") is True, r.get("live"))
+    check("an older account is seeded once from its recent whole-unit hundos (not parts, not a 90)",
+          r.get("seededFlag") is False and r.get("seeded") == 3 and r.get("seededTwice") == 3, [r.get("seededFlag"), r.get("seeded"), r.get("seededTwice")])
+    check("two copies of an account keep every day either had", r.get("merged") == ["2026-09-01", "2026-09-02", "2026-09-03"], r.get("merged"))
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     only = os.environ.get("ONLY_B245")
@@ -6365,6 +6425,7 @@ def main():
             check_b289(br)
             check_b290(br)
             check_b291(br)
+            check_b293(br)
         finally:
             br.close()
     SERVER.shutdown()

@@ -32333,6 +32333,9 @@ const MARKSMAN_RUN = 250;
 /* 500, not 300 (build 292): "300 questions in a single day is weak."
    The feat key stays busyday300 - it is an id, like streak100. */
 const HIVE_DAY = 500;
+/* The Koi Pond banner (build 292): one unit, a hundo on this many
+   separate days. See noteUnitHundoDay(). */
+const KOI_DAYS = 10;
 const CHARACTER_FEATS = {
   /* THE BEST RUN, NOT THE CURRENT ONE (build 289): "ensure all the
      rewards/unlocks are accurate to what people have done". This read
@@ -32553,6 +32556,7 @@ function unitStreakBest(){ return Math.max(store.unitHundoStreakBest || 0, store
      nothing kept a best before, and the current run is the most that can
      honestly be said. */
 function seedChallenges289(){
+  try{ seedHundoDays292(); }catch(e){}
   if(store.challengeSeed289) return;
   let misses = 0;
   try{ Object.keys(store.stats || {}).forEach(k => { const st = store.stats[k]; misses += (st && Number(st.m)) || 0; }); }catch(e){}
@@ -36437,7 +36441,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               mysteryColorsFound: { red: false, orange: false, yellow: false, violet: false, white: false },
               testsUntilMystery: null, flareNextTestAt: 0,
               savedCodePrompts: 0, savedCodeSaved: false,
-              dailyCorrectStreak: 0, dailyCorrectBest: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bestTestStreak: 0,
+              dailyCorrectStreak: 0, dailyCorrectBest: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, unitHundoDays: {}, hundoDaysSeeded: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bestTestStreak: 0,
               weeklyWins: 0, weeklyTop3: 0, retakenQuestions: 0, hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, unlocksShown: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
               vrMatches: 0, vrWins: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
               fullTestsSeeded: false, practiceExamPerfect: false, banner: "", starfallKept: false, creditsApplied: [],
@@ -36659,6 +36663,9 @@ function applyLoadedData(got){
     ? { week: got.weekRankSeen.week, rank: got.weekRankSeen.rank } : null;
   store.unitHundoStreak = typeof got.unitHundoStreak === "number" ? got.unitHundoStreak : 0;
   store.unitHundoStreakUnits = Array.isArray(got.unitHundoStreakUnits) ? got.unitHundoStreakUnits.slice() : [];
+  /* build 292: an older account is unseeded, so its recent tests count */
+  store.unitHundoDays = mergeHundoDays(got.unitHundoDays, null);
+  store.hundoDaysSeeded = got.hundoDaysSeeded === true;
   store.practiceTestPassed = got.practiceTestPassed === true;
   store.bigTestPassed = got.bigTestPassed === true;
   store.bigTest450Passed = got.bigTest450Passed === true;
@@ -38064,6 +38071,7 @@ function wipeLocalProgressAndSettings(){
   store.dailyCorrectStreak = 0; store.dailyCorrectBest = 0; store.unitHundoStreakBest = 0; store.challengeSeed289 = true; store.dayAnswered = null; store.dayAnsweredBest = 0;
   store.unitHundoStreak = 0;
   store.unitHundoStreakUnits = [];
+  store.unitHundoDays = {}; store.hundoDaysSeeded = true;
   store.practiceTestPassed = false;
   store.bigTestPassed = false;
   store.bigTest450Passed = false;
@@ -38786,6 +38794,7 @@ function mergeLeavingAccount(src, note){
     .sort((a, b) => num(b && b.playedAt) - num(a && a.playedAt)).slice(0, 20);
   ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions"].forEach(k => { store[k] = num(store[k]) + num(src[k]); });
   ["dailyCorrectStreak", "hundoDayBest", "bestTestStreak", "unitHundoStreak", "dailyCorrectBest", "unitHundoStreakBest", "dayAnsweredBest"].forEach(k => { store[k] = Math.max(num(store[k]), num(src[k])); });
+  store.unitHundoDays = mergeHundoDays(store.unitHundoDays, src.unitHundoDays);
   ["vrCounted", "vrTop3Rooms"].forEach(k => {
     const a = Array.isArray(store[k]) ? store[k] : [];
     store[k] = a.concat((src[k] || []).filter(x => a.indexOf(x) < 0)).slice(-300);
@@ -38976,8 +38985,11 @@ function mergeSameAccount(dst, src){
    "dailyCorrectBest", "unitHundoStreakBest", "dayAnsweredBest"]
     .forEach(k => maxInto(dst, k, src[k]));
   ["vrCounted", "vrTop3Rooms", "legacyChars", "creditsApplied"].forEach(k => unionArr(k));
+  { const before = JSON.stringify(dst.unitHundoDays || {}), m = mergeHundoDays(dst.unitHundoDays, src.unitHundoDays);
+    if(JSON.stringify(m) !== before){ dst.unitHundoDays = m; res.gained = true; }
+    if(JSON.stringify(mergeHundoDays(src.unitHundoDays, null)) !== JSON.stringify(m)) res.otherHadLess = true; }
   ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "supernovaAchieved",
-   "starfallKept", "onboardingComplete", "fullTestsSeeded"].forEach(k => orInto(dst, k, src[k]));
+   "starfallKept", "onboardingComplete", "fullTestsSeeded", "hundoDaysSeeded"].forEach(k => orInto(dst, k, src[k]));
   if(src.mysteryColorsFound && typeof src.mysteryColorsFound === "object") orMap("mysteryColorsFound");
   /* this week's board: only where both copies are on the same week */
   if(src.weekKey && src.weekKey === dst.weekKey) maxInto(dst, "weekPoints", src.weekPoints);
@@ -41297,9 +41309,20 @@ const BANNERS = [
      volume: no amount of one favourite unit gets there. The most anybody
      had was eight of sixteen. The id stays `tests500` - it is only a
      name, and it is what a person already wearing it has saved. */
+  /* KOI POND IS ONE UNIT, KEPT (build 292): "Says every unit but needs
+     to change because we will eventually get more units.. maybe make it
+     unique." Every unit was a target that moved each time a unit was
+     added. It is now one unit brought back to a hundo on KOI_DAYS
+     separate days - a koi returning to the same pond. Nothing else asks
+     for that: the hundo banners count volume and the Astronaut counts
+     units in one day, and a unit kept sharp over weeks is what spaced
+     review actually is. A comeback from under 70% was tried first and
+     dropped: measured, the strongest accounts had not scored under 70%
+     on a whole unit once in their last twenty runs. */
   { id: "tests500", name: "Koi Pond",
-    label: "Get a hundo in every unit", have: () => unitsWithHundo(), need: topicsIn(QUESTIONS).length,
-    note: "One 100% on each unit, taken whole. Any mode counts." },
+    label: "Get a hundo on the same unit on " + KOI_DAYS + " different days",
+    have: () => Math.min(unitHundoDaysBest(), KOI_DAYS), need: KOI_DAYS,
+    note: "Spread out, not crammed: one unit, taken whole, on " + KOI_DAYS + " separate days. Any mode counts, and your recent tests already do." },
   { id: "hundos100", name: "Summit",
     label: "Earn 100 hundos", have: () => hundosOf(store), need: 100 },
   { id: "hundos250", name: "Sky Temple",
@@ -41355,6 +41378,43 @@ const BANNERS = [
 function fullTestsNote(){
   return "A full-length test has every question in each unit you picked. Shortened tests count on your Stats tab (" +
     testsCompletedOf(store).toLocaleString() + " so far) but not here.";
+}
+/* store.unitHundoDays: { unit: [day keys it was hundo'd on] }. */
+function unitHundoDaysBest(){
+  const m = store.unitHundoDays || {};
+  let best = 0;
+  Object.keys(m).forEach(u => { if(Array.isArray(m[u])) best = Math.max(best, m[u].length); });
+  return best;
+}
+function noteUnitHundoDay(name, when){
+  if(!store.unitHundoDays || typeof store.unitHundoDays !== "object") store.unitHundoDays = {};
+  const day = dayKey(when ? new Date(when) : new Date());
+  const list = Array.isArray(store.unitHundoDays[name]) ? store.unitHundoDays[name] : (store.unitHundoDays[name] = []);
+  /* kept sorted, so two copies of the same days compare equal and a
+     merge never mistakes an ordering for news */
+  if(list.indexOf(day) < 0){ list.push(day); list.sort(); if(list.length > 60) list.splice(0, list.length - 60); }
+}
+/* Two copies of the map, every day either one has. */
+function mergeHundoDays(a, b){
+  const out = {};
+  [a, b].forEach(m => { if(!m || typeof m !== "object") return;
+    Object.keys(m).forEach(u => { if(!Array.isArray(m[u])) return;
+      const l = out[u] || (out[u] = []);
+      m[u].forEach(d => { if(l.indexOf(d) < 0) l.push(d); }); }); });
+  Object.keys(out).forEach(u => { out[u].sort(); if(out[u].length > 60) out[u] = out[u].slice(-60); });
+  return out;
+}
+/* Once per account: the last twenty runs on record. Only a single unit
+   taken whole is sure to be a whole-unit hundo. */
+function seedHundoDays292(){
+  if(store.hundoDaysSeeded) return;
+  const all = topicsIn(QUESTIONS);
+  (store.testHistory || []).forEach(h => {
+    if(!h || h.part || h.pct !== 100 || !h.playedAt || h.label === "Daily question" || !Array.isArray(h.units) || h.units.length !== 1) return;
+    if(all.indexOf(h.units[0]) >= 0) noteUnitHundoDay(h.units[0], h.playedAt);
+  });
+  store.hundoDaysSeeded = true;
+  saveStore();
 }
 function unitsWithHundo(){
   const up = store.unitPerfects || {};
@@ -45923,6 +45983,7 @@ function recordUnitPerfectIfEligible(pct){
   const name = cfg.units[0];
   const before = unitLevel(name);
   store.unitPerfects[name] = unitPerfectCount(name) + 1;
+  noteUnitHundoDay(name);
   saveStore();
   const after = unitLevel(name);
   return (after && after !== before) ? after : null;
@@ -45955,6 +46016,7 @@ function recordMultiUnitPerfectsIfEligible(order, missed){
     if(!allCorrect) return;
     const wasStarred = unitDrillStarEarned(name);
     store.unitPerfects[name] = unitPerfectCount(name) + 1;
+    noteUnitHundoDay(name);
     anyRecorded = true;
     perfected.push(name);
     if(!wasStarred && unitDrillStarEarned(name)) newlyStarred.push(name);
@@ -57951,7 +58013,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-02-292";
+const APP_BUILD = "2026-10-02-293";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
