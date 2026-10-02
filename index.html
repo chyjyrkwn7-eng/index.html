@@ -11443,8 +11443,10 @@
      numbers; stacked and centred below that, because a 110px emblem and
      a progress bar do not share a 340px line. */
   .rankhero{
-    display:flex; flex-direction:column; gap:1rem;
-    padding:1.2rem 1.15rem 1.1rem; margin:0 0 1.4rem;
+    /* Smaller since build 284: "the rank map one doesn't even need that
+       box to be so big". */
+    display:flex; flex-direction:column; gap:.7rem;
+    padding:.95rem 1rem .9rem; margin:0 0 1.1rem;
     /* THE GLOW WAS ESCAPING THE BOX - reported directly. A card with a
        radius clips to that radius, so the emblem's light can never reach
        past the edge whatever a later change does to it. */
@@ -11469,7 +11471,7 @@
     border-color:var(--rule); box-shadow:none;
   }
   .rankhero-top{ display:flex; align-items:center; gap:1rem; min-width:0; }
-  .rankhero-art{ width:5.6rem; height:5.6rem; flex:0 0 auto; position:relative; }
+  .rankhero-art{ width:4.4rem; height:4.4rem; flex:0 0 auto; position:relative; }
   /* THE BIGGEST EMBLEM ON THE SCREEN: a pool of light behind it, two
      drop-shadows at different radii, and a slow breath. The global
      [data-reduce-motion="true"] *{animation:none} rule switches the
@@ -11498,11 +11500,11 @@
     color:var(--soft); margin:0 0 .1rem;
   }
   .rankhero-name{
-    font-family:var(--serif); font-size:2rem; font-weight:700; margin:0;
+    font-family:var(--serif); font-size:1.65rem; font-weight:700; margin:0;
     color:color-mix(in srgb, var(--rank-color, var(--ink)) 70%, #fff); line-height:1.08;
     text-shadow:0 0 18px color-mix(in srgb, var(--rank-color, var(--accent)) 45%, transparent);
   }
-  .rankhero.is-unranked .rankhero-name{ color:var(--ink); text-shadow:none; font-size:1.6rem; }
+  .rankhero.is-unranked .rankhero-name{ color:var(--ink); text-shadow:none; font-size:1.4rem; }
   /* The two requirements, as two rings. */
   .rankhero-gauges{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:.6rem; }
   /* "To reach Bronze" over the two rings (build 247) - see the builder. */
@@ -11543,9 +11545,9 @@
     .rankhero-gaugetxt{ align-items:center; }
   }
   @media (min-width:40rem){
-    .rankhero{ padding:1.4rem 1.5rem 1.3rem; }
-    .rankhero-art{ width:7.5rem; height:7.5rem; }
-    .rankhero-name{ font-size:2.5rem; }
+    .rankhero{ padding:1.15rem 1.3rem 1.1rem; }
+    .rankhero-art{ width:5.8rem; height:5.8rem; }
+    .rankhero-name{ font-size:2.05rem; }
     .rankhero-ringface{ width:4.6rem; height:4.6rem; }
     .rankhero-ringval{ font-size:1.5rem; }
     .rankhero-gaugetarget{ font-size:.95rem; }
@@ -19597,10 +19599,6 @@
       <button type="button" class="bottomtab" id="bottomtab-profile" data-dest="profile">
         <span class="bottomtab-icon"></span>
         <span class="bottomtab-label">Profile</span>
-      </button>
-      <button type="button" class="bottomtab" id="bottomtab-ranks" data-dest="ranks">
-        <span class="bottomtab-icon"></span>
-        <span class="bottomtab-label">Progress</span>
       </button>
       <button type="button" class="bottomtab" id="bottomtab-rewards" data-dest="rewards">
         <span class="bottomtab-icon"></span>
@@ -37655,7 +37653,7 @@ function wipeLocalProgressAndSettings(){
      per explicit request, this is opt-in, not something a reset (or a
      fresh sign-up) should turn on for someone who never chose it. */
   theme = { mode: "dark", accent: "ink", layout: "modern", smoothScroll: true, swipeAdvance: true, autoAdvance: false,
-            reduceMotion: false, keepAwake: false, muteBanners: false };
+            reduceMotion: false, muteBanners: false };
 }
 
 function resetEverything(){
@@ -38879,6 +38877,8 @@ function applySaved(){
      whose last run was a game comes back to Drill, not to a mode with no
      card and no start sheet. */
   if(cfg.mode === "game") cfg.mode = "drill";
+  /* ...and a saved Most missed bank comes back as every question (build 284). */
+  if(cfg.source === "recent") cfg.source = "all";
   /* SHUFFLED ANSWER POSITIONS ARE ON BY DEFAULT (build 229), and turned
      on once for everybody who had the old default of off - a saved
      `false` is almost always just the default nobody changed. The switch
@@ -40457,7 +40457,7 @@ function hundosOf(st){
    could have some shaky animations too, you'd see them everywhere they
    are applied, you'd see it while it's not unlocked". Only these - the
    ones that take months, or a rank near the top. */
-const BANNER_EPIC = ["tests500", "hundos250", "study50", "correct5000", "badges16", "level80", "exam100",
+const BANNER_EPIC = ["tests500", "hundos250", "study50", "correct5000", "level80", "exam100",
                      "adept_rank", "elite_rank", "titan_rank"];
 /* ONLY THE TOP OF EACH LADDER MOVES (build 241): "ensure the animation is
    only for the coolest ones and the hardest ones in its kind". Thunderhead
@@ -40484,7 +40484,7 @@ const BANNER_EPIC = ["tests500", "hundos250", "study50", "correct5000", "badges1
    for as a set. See also the .bnr-*_rank rules by bn-spin: the motion
    they had was a 110s turn, which is too slow to see at all. */
 const BANNER_ANIMATED = ["tests250", "tests500", "hundos250", "adept_rank", "elite_rank", "titan_rank",
-                         "study50", "correct5000", "badges16", "level80", "exam100"];
+                         "study50", "correct5000", "level80", "exam100"];
 const BANNERS = [
   /* ORDERED BY WHAT YOU DO, THEN HOW FAR (build 235). "Ensure the order
      they are on matches up so the progression type ones are next to each
@@ -40518,14 +40518,9 @@ const BANNERS = [
     label: "Study for 50 hours in total", have: () => Math.floor(studyHoursTotal()), need: 50 },
   { id: "correct5000", name: "Star Trails",
     label: "Answer 5,000 questions correctly", have: () => ((store.lifetime && store.lifetime.correct) || 0), need: 5000 },
-  { id: "badges16", name: "Hall of Fame",
-    get label(){ return "Earn all " + topicsIn(QUESTIONS).length + " badges"; },
-    have: () => {
-      const n = badgeCountOf(store), all = topicsIn(QUESTIONS).length;
-      if(n >= all && all > 0 && !store.starfallKept) store.starfallKept = true;
-      return store.starfallKept ? Math.max(n, all) : n;
-    },
-    get need(){ return topicsIn(QUESTIONS).length; } },
+  /* Hall of Fame (every badge) was here until build 284: "Remove the
+     hall of fame banner as well". store.starfallKept, which it read,
+     stays defaulted and unread. */
   { id: "level80", name: "Ascension",
     label: "Reach level " + LEVEL_CAP, have: () => levelOf(store), need: LEVEL_CAP },
   { id: "exam100", name: "Phoenix",
@@ -40638,122 +40633,6 @@ const BANNER_ART = {
       '<g transform="translate(96 104)"><path d="M-10 14 L-10 2 L0 -6 L10 2 L10 14Z" fill="#241712"/><path d="M-12 3 L0 -8 L12 3" fill="none" stroke="#E8F3FF" stroke-width="1.6"/>' +
       '<rect x="-4" y="4" width="5" height="5" fill="#FFD27A"/><circle cx="-1.5" cy="6.5" r="12" fill="url(#' + u + 'win)" opacity=".7"/></g>' +
       '<rect x="92" y="126" width="5" height="12" fill="#FFD27A" opacity=".35"/>';
-  },
-
-  /* HALL OF FAME (redrawn, build 244) - every badge. "The badge banner is
-     pretty bad, needs to be way cooler." The 243 version laid the
-     sixteen out in two flat rows, which read as a shelf rather than a
-     prize. Now they ORBIT: all sixteen, each in its own shape and enamel,
-     turning in a ring round a crowned gold medal in a laurel wreath,
-     under a spotlight on dark velvet. The ring is in perspective - the
-     badges shrink going round the back and pass BEHIND the medal, and
-     come round the front over it - which is done without any depth
-     sorting: the ring is drawn twice, once behind the medal and once in
-     front of it clipped to the lower half, and the two copies are the
-     same animation so the hand-over at the sides cannot be seen.
-
-     Each badge is placed at its own angle by a static attribute and the
-     animation only ADDS the turn, so with motion off (reduce motion, or a
-     thumbnail capture) the sixteen still sit spread round the ring
-     rather than stacked on one spot. */
-  badges16(u){
-    const rnd = bnRand(1619);
-    const units = Object.keys(UNIT_BADGE_SHAPE);
-    const CX = 240, CY = 102, R = 196, SQ = 0.27, T = 36;
-    const ring = () => {
-      let out = "";
-      units.forEach((unit, i) => {
-        const th = i * 360 / units.length;
-        const sh = badgeShapeFor(unit);
-        let col = "#C9D3DC";
-        try{ const t = badgeThemeFor(unit); if(t && t.p) col = t.p; }catch(e){}
-        const cx = sh.c[0], cy = sh.c[1];
-        const inset = 'translate(' + cx + ' ' + cy + ') scale(.72) translate(' + (-cx) + ' ' + (-cy) + ')';
-        const badge =
-          '<g transform="scale(.42) translate(' + (-cx) + ' ' + (-cy) + ')">' +
-          '<path d="' + sh.d + '" fill="#000" opacity=".4" transform="translate(4 7)"/>' +
-          '<path d="' + sh.d + '" fill="url(#' + u + 'ag)" stroke="#1C232C" stroke-width="3.4"/>' +
-          '<path d="' + sh.d + '" fill="' + col + '" stroke="#1C232C" stroke-width="2.6" transform="' + inset + '"/>' +
-          '<path d="' + sh.d + '" fill="url(#' + u + 'gl)" transform="' + inset + '"/>' +
-          '</g>';
-        const d = '-' + bnF(th / 360 * T) + 's';
-        out += '<g transform="rotate(' + bnF(th) + ')"><g class="bn-car">' +
-          '<g transform="translate(' + R + ' 0)"><g class="bn-car bn-car-r">' +
-          '<g transform="rotate(' + bnF(-th) + ') scale(1 ' + bnF(1 / SQ * 1000) / 1000 + ')">' +
-          '<g class="bn-depth" data-u="' + i + '" style="animation-delay:' + d + '">' + badge + '</g>' +
-          '</g></g></g></g></g>';
-      });
-      return '<g transform="translate(' + CX + ' ' + CY + ') scale(1 ' + SQ + ')">' + out + '</g>';
-    };
-    /* The laurel: leaves along an arc either side, smaller towards the top. */
-    let laurel = "";
-    [-1, 1].forEach(sd => {
-      for(let i = 0; i < 11; i++){
-        const ph = (28 + i * 12) * Math.PI / 180, rr = 33 + (i % 2 ? 4.5 : -1.5);
-        const lx = 240 + sd * Math.sin(ph) * rr, ly = 84 + Math.cos(ph) * rr;
-        const ang = Math.atan2(-Math.sin(ph), sd * Math.cos(ph)) * 180 / Math.PI + (i % 2 ? -22 : 22) * sd;
-        const k = 1 - i * 0.035;
-        laurel += '<ellipse cx="' + bnF(lx) + '" cy="' + bnF(ly) + '" rx="' + bnF(7.4 * k) + '" ry="' + bnF(3 * k) + '" fill="url(#' + u + 'leaf)" stroke="#6E4608" stroke-width=".6" transform="rotate(' + bnF(ang) + ' ' + bnF(lx) + ' ' + bnF(ly) + ')"/>';
-      }
-    });
-    let rays = "";
-    for(let i = 0; i < 18; i++) rays += '<path d="M0 -3 L170 0 L0 3Z" fill="url(#' + u + 'ray)" transform="rotate(' + (i * 20) + ')"/>';
-    let dust = "";
-    for(let i = 0; i < 26; i++){
-      dust += '<circle class="bn-twinkle" style="animation-delay:-' + bnF(rnd() * 3.6) + 's" cx="' + bnF(rnd() * 480) + '" cy="' + bnF(rnd() * 180) + '" r="' + bnF(0.5 + rnd() * 1.1) + '" fill="#FFE9B0" opacity="' + bnF(0.3 + rnd() * 0.5) + '"/>';
-    }
-    const spark = (x, y, r) => 'M' + x + ' ' + (y - r) + ' Q' + (x + r * .14) + ' ' + (y - r * .14) + ' ' + (x + r) + ' ' + y + ' Q' + (x + r * .14) + ' ' + (y + r * .14) + ' ' + x + ' ' + (y + r) + ' Q' + (x - r * .14) + ' ' + (y + r * .14) + ' ' + (x - r) + ' ' + y + ' Q' + (x - r * .14) + ' ' + (y - r * .14) + ' ' + x + ' ' + (y - r) + 'Z';
-    const MY = 84;
-    return '<defs>' +
-      bnRad(u + "vel", [[0, "#3A1650"], [0.55, "#1A0A2C"], [1, "#07030D"]], "50%", "45%", "75%") +
-      bnLin(u + "ag", [[0, "#FFFFFF"], [0.3, "#D5DDE5"], [0.62, "#7D8997"], [1, "#E4EAF0"]], 0, 0, 1, 1) +
-      bnLin(u + "gl", [[0, "#FFFFFF", 0.5], [0.5, "#FFFFFF", 0], [1, "#000000", 0.25]], 0, 0, 0.5, 1) +
-      bnLin(u + "gold", [[0, "#FFF6CF"], [0.35, "#F4C94E"], [0.7, "#C98A16"], [1, "#7A4A06"]], 0, 0, 0.4, 1) +
-      bnLin(u + "gold2", [[0, "#8A5608"], [0.5, "#E3A92C"], [1, "#FFF1B8"]], 0, 0, 0, 1) +
-      bnLin(u + "leaf", [[0, "#FFF0B0"], [0.55, "#E2A93A"], [1, "#9A6410"]], 0, 0, 1, 1) +
-      bnLin(u + "ray", [[0, "#FFE7A0", 0.42], [1, "#FFE7A0", 0]], 0, 0, 1, 0) +
-      bnLin(u + "spot", [[0, "#FFF3D0", 0.34], [1, "#FFF3D0", 0]]) +
-      bnLin(u + "dim", [[0, "#07030D", 0.62], [0.72, "#07030D", 0.16], [1, "#07030D", 0]]) +
-      bnLin(u + "band", [[0, "#FFFFFF", 0], [0.5, "#FFFFFF", 0.8], [1, "#FFFFFF", 0]], 0, 0, 1, 0) +
-      bnRad(u + "halo", [[0, "#FFE9A8", 0.75], [0.35, "#FFC857", 0.3], [1, "#FF9A3C", 0]]) +
-      bnRad(u + "floor", [[0, "#FFD27A", 0.2], [1, "#FFD27A", 0]]) +
-      bnRad(u + "gem", [[0, "#FFD6E4"], [0.5, "#E0245E"], [1, "#6A0626"]], "35%", "35%", "70%") +
-      bnRad(u + "gemb", [[0, "#D6ECFF"], [0.5, "#2E7BE0"], [1, "#0A2A6A"]], "35%", "35%", "70%") +
-      '<clipPath id="' + u + 'front"><rect x="0" y="' + CY + '" width="480" height="' + (180 - CY) + '"/></clipPath>' +
-      '<clipPath id="' + u + 'med"><circle cx="' + CX + '" cy="' + MY + '" r="24"/></clipPath>' +
-      '</defs>' +
-      '<rect width="480" height="180" fill="url(#' + u + 'vel)"/>' +
-      /* The spotlight on the medal, and the pool it makes on the ring. */
-      '<g class="bn-beam" style="transform-box:view-box;transform-origin:240px -20px"><path d="M214 -20 L266 -20 L340 180 L140 180Z" fill="url(#' + u + 'spot)"/></g>' +
-      '<ellipse cx="' + CX + '" cy="' + CY + '" rx="' + (R + 20) + '" ry="' + bnF(R * SQ + 16) + '" fill="url(#' + u + 'floor)"/>' +
-      '<g transform="translate(' + CX + ' ' + MY + ')"><g class="bn-spin">' + rays + '</g></g>' +
-      /* The orbit itself, a fine gold line the badges ride on. */
-      '<ellipse cx="' + CX + '" cy="' + CY + '" rx="' + R + '" ry="' + bnF(R * SQ) + '" fill="none" stroke="#FFD27A" stroke-width=".8" opacity=".35"/>' +
-      '<ellipse cx="' + CX + '" cy="' + CY + '" rx="' + (R - 14) + '" ry="' + bnF((R - 14) * SQ) + '" fill="none" stroke="#FFD27A" stroke-width=".5" stroke-dasharray="2 5" opacity=".25"/>' +
-      /* The back half of the ring, dimmed as it recedes. */
-      ring() +
-      '<rect width="480" height="' + CY + '" fill="url(#' + u + 'dim)"/>' +
-      /* The medal: halo, wreath, crown, disc, star. */
-      '<circle class="bn-pulse" cx="' + CX + '" cy="' + MY + '" r="62" fill="url(#' + u + 'halo)"/>' +
-      '<path d="M' + (CX - 12) + ' 112 L' + (CX - 22) + ' 138 L' + (CX - 14) + ' 134 L' + (CX - 9) + ' 142 L' + (CX - 2) + ' 114Z" fill="#B3123E" stroke="#5A0820" stroke-width=".8"/>' +
-      '<path d="M' + (CX + 12) + ' 112 L' + (CX + 22) + ' 138 L' + (CX + 14) + ' 134 L' + (CX + 9) + ' 142 L' + (CX + 2) + ' 114Z" fill="#1F5FC4" stroke="#0A2A6A" stroke-width=".8"/>' +
-      laurel +
-      '<circle cx="' + CX + '" cy="' + MY + '" r="27" fill="url(#' + u + 'gold)" stroke="#5E3A05" stroke-width="1.2"/>' +
-      '<circle cx="' + CX + '" cy="' + MY + '" r="21.5" fill="url(#' + u + 'gold2)" stroke="#FFF1B8" stroke-width=".8" opacity=".95"/>' +
-      '<path d="M' + CX + ' ' + (MY - 14) + ' L' + (CX + 4.1) + ' ' + (MY - 5.3) + ' L' + (CX + 13.3) + ' ' + (MY - 4.3) + ' L' + (CX + 6.4) + ' ' + (MY + 2) + ' L' + (CX + 8.2) + ' ' + (MY + 11.3) + ' L' + CX + ' ' + (MY + 6.6) + ' L' + (CX - 8.2) + ' ' + (MY + 11.3) + ' L' + (CX - 6.4) + ' ' + (MY + 2) + ' L' + (CX - 13.3) + ' ' + (MY - 4.3) + ' L' + (CX - 4.1) + ' ' + (MY - 5.3) + 'Z" fill="url(#' + u + 'gold)" stroke="#6E4608" stroke-width=".9"/>' +
-      '<g clip-path="url(#' + u + 'med)"><rect class="bn-sweep" x="-80" y="40" width="44" height="90" fill="url(#' + u + 'band)" transform="skewX(-18)" style="animation-duration:4.8s"/></g>' +
-      /* The crown sits on the medal. */
-      '<path d="M' + (CX - 20) + ' ' + (MY - 25) + ' L' + (CX - 23) + ' ' + (MY - 47) + ' L' + (CX - 11) + ' ' + (MY - 35) + ' L' + CX + ' ' + (MY - 52) + ' L' + (CX + 11) + ' ' + (MY - 35) + ' L' + (CX + 23) + ' ' + (MY - 47) + ' L' + (CX + 20) + ' ' + (MY - 25) + ' Q' + CX + ' ' + (MY - 29) + ' ' + (CX - 20) + ' ' + (MY - 25) + 'Z" fill="url(#' + u + 'gold)" stroke="#5E3A05" stroke-width="1.1" stroke-linejoin="round"/>' +
-      '<path d="M' + (CX - 20) + ' ' + (MY - 29) + ' Q' + CX + ' ' + (MY - 33) + ' ' + (CX + 20) + ' ' + (MY - 29) + '" fill="none" stroke="#FFF3C4" stroke-width="1.2" opacity=".8"/>' +
-      '<circle cx="' + CX + '" cy="' + (MY - 53) + '" r="2.8" fill="#FFF6DA"/>' +
-      '<circle cx="' + (CX - 23) + '" cy="' + (MY - 48) + '" r="2.2" fill="#FFF6DA"/><circle cx="' + (CX + 23) + '" cy="' + (MY - 48) + '" r="2.2" fill="#FFF6DA"/>' +
-      '<circle cx="' + CX + '" cy="' + (MY - 32) + '" r="3.2" fill="url(#' + u + 'gem)"/>' +
-      '<circle cx="' + (CX - 11) + '" cy="' + (MY - 31) + '" r="2.2" fill="url(#' + u + 'gemb)"/><circle cx="' + (CX + 11) + '" cy="' + (MY - 31) + '" r="2.2" fill="url(#' + u + 'gemb)"/>' +
-      /* The front half of the ring, over the medal. */
-      '<g clip-path="url(#' + u + 'front)">' + ring() + '</g>' +
-      dust +
-      '<path class="bn-glint" style="animation-delay:-.6s" d="' + spark(CX + 17, MY - 16, 7) + '" fill="#FFFFFF"/>' +
-      '<path class="bn-glint" style="animation-delay:-2.7s" d="' + spark(CX - 26, MY + 22, 5) + '" fill="#FFF6DA"/>';
   },
 
   /* ASCENSION (redrawn, build 244) - level 80, the top of the ladder.
@@ -43334,7 +43213,7 @@ function accentLockMessage(name){
 /* autoAdvance defaults false — per explicit request, a brand-new
    account should never start with this on; it's opt-in from Settings. */
 let theme = { mode: "dark", accent: "ink", layout: "modern", smoothScroll: true, swipeAdvance: true, autoAdvance: false,
-              reduceMotion: false, keepAwake: false, muteBanners: false,
+              reduceMotion: false, muteBanners: false,
               /* Off by default: silently rewriting someone's flag list is
                  not something to opt people into without them asking. */
               autoFlagMissed: false,
@@ -43357,11 +43236,11 @@ function loadTheme(){
        option now, so any previously-stored "classic" preference is
        simply ignored here rather than honored. */
     theme.layout = "modern";
-    if(typeof store.theme.smoothScroll === "boolean") theme.smoothScroll = store.theme.smoothScroll;
+    /* smoothScroll is no longer read (build 284): smooth scrolling is
+       always on, whatever an older build saved. */
     if(typeof store.theme.swipeAdvance === "boolean") theme.swipeAdvance = store.theme.swipeAdvance;
     if(typeof store.theme.autoAdvance === "boolean") theme.autoAdvance = store.theme.autoAdvance;
     if(typeof store.theme.reduceMotion === "boolean") theme.reduceMotion = store.theme.reduceMotion;
-    if(typeof store.theme.keepAwake === "boolean") theme.keepAwake = store.theme.keepAwake;
     if(typeof store.theme.muteBanners === "boolean") theme.muteBanners = store.theme.muteBanners;
     if(typeof store.theme.autoFlagMissed === "boolean") theme.autoFlagMissed = store.theme.autoFlagMissed;
     if(typeof store.theme.showClassDaysLeft === "boolean") theme.showClassDaysLeft = store.theme.showClassDaysLeft;
@@ -43370,25 +43249,7 @@ function loadTheme(){
 
 /* Paints the CURRENT in-memory `theme` onto the document. Does not touch
    storage — safe to call after every change without re-reading stale data. */
-let wakeLockRef = null;
-
-/* Requests (or releases) a screen wake lock based on the Settings toggle.
-   Wake locks are automatically released by the browser whenever the tab
-   is hidden, so this re-acquires on visibility change too. Silently does
-   nothing on browsers that don't support the API (older Safari). */
-async function updateWakeLock(){
-  if(!navigator.wakeLock) return;
-  if(theme.keepAwake && document.visibilityState === "visible"){
-    if(!wakeLockRef){
-      try{ wakeLockRef = await navigator.wakeLock.request("screen"); }
-      catch(e){ wakeLockRef = null; }
-    }
-  } else if(wakeLockRef){
-    try{ wakeLockRef.release(); }catch(e){}
-    wakeLockRef = null;
-  }
-}
-document.addEventListener("visibilitychange", updateWakeLock);
+/* The wake lock behind "Keep screen awake" was here until build 284. */
 
 function applyTheme(){
   /* Party Mode has been fully retired \u2014 anyone with it saved from
@@ -43400,9 +43261,8 @@ function applyTheme(){
   if(theme.accent === "ink") delete document.documentElement.dataset.accent;
   else document.documentElement.dataset.accent = theme.accent;
   document.documentElement.dataset.layout = theme.layout;
-  document.documentElement.style.scrollBehavior = theme.smoothScroll ? "smooth" : "auto";
+  document.documentElement.style.scrollBehavior = "smooth";   /* always, since build 284 */
   document.documentElement.dataset.reduceMotion = theme.reduceMotion ? "true" : "false";
-  updateWakeLock();
 
   /* Keep the browser's own chrome (status bar tint, native form controls,
      scrollbars) in sync with our theme, so the page reads as fully one
@@ -43531,7 +43391,7 @@ function saveTheme(){
   store.theme = { mode: theme.mode, accent: theme.accent, layout: theme.layout,
                   smoothScroll: theme.smoothScroll, swipeAdvance: theme.swipeAdvance, autoAdvance: theme.autoAdvance,
                   reduceMotion: theme.reduceMotion,
-                  keepAwake: theme.keepAwake, muteBanners: theme.muteBanners,
+                  muteBanners: theme.muteBanners,
                   autoFlagMissed: theme.autoFlagMissed,
                   showClassDaysLeft: theme.showClassDaysLeft };
   saveStore();
@@ -48781,9 +48641,7 @@ function startMainMenuTour(){
     { target: "#bottomtab-rewards", align: "left", vplacement: "above",
       text: "Leaderboard is the class boards \u2014 this week, overall and hundos, updating live. Search for anyone, or tap Find me." },
     { target: "#bottomtab-profile", align: "left", vplacement: "above",
-      text: "Profile has your name, avatar and colours, and your stats." },
-    { target: "#bottomtab-ranks", align: "left", vplacement: "above",
-      text: "Progress is the climb \u2014 every rank and what it unlocks, and your badge case." },
+      text: "Profile has your name, avatar and colours, your stats \u2014 and tap your rank or badges there for the climb and your badge case." },
     { target: "#bottomtab-settings", align: "right", vplacement: "above",
       text: isIOSDevice() && !isStandaloneApp()
         ? "Settings is where the rest of the options live \u2014 including a guide for adding this app to your Home Screen, any time."
@@ -54083,10 +53941,9 @@ function openUnitDetail(row, name, mode){
     return b;
   };
   const flaggedN = flaggedIndexes().filter(inUnit).length;
-  const missedN = recentMissedIndexes().filter(inUnit).length;
+  /* Flagged only since build 284 - no Most missed door. */
   doors.append(
-    door("flagged", "Flagged", flaggedN, flaggedN ? "Tap to see flagged questions" : "None flagged yet"),
-    door("recent", "Most missed", missedN, missedN ? "Tap to see most missed" : "Nothing missed lately"));
+    door("flagged", "Flagged", flaggedN, flaggedN ? "Tap to see flagged questions" : "None flagged yet"));
   main.appendChild(doors);
   const hint = document.createElement("p");
   hint.className = "unitdetail-hint";
@@ -54107,9 +53964,7 @@ function openUnitDetail(row, name, mode){
      the unit takes its place (recentMissedIndexes ranks and caps live). */
   function refreshDoors(){
     const fN = flaggedIndexes().filter(inUnit).length;
-    const mN = recentMissedIndexes().filter(inUnit).length;
-    [["flagged", fN, "Tap to see flagged questions", "None flagged yet"],
-     ["recent", mN, "Tap to see most missed", "Nothing missed lately"]].forEach(([k, n, yes, no]) => {
+    [["flagged", fN, "Tap to see flagged questions", "None flagged yet"]].forEach(([k, n, yes, no]) => {
       const d = doors.querySelector(".is-" + k);
       if(!d) return;
       d.querySelector(".unitdetail-doorcount").textContent = String(n);
@@ -54647,7 +54502,7 @@ function showSetup(){
   /* How anybody finds out the cards can be held. */
   const holdHint = document.createElement("p");
   holdHint.className = "picks-holdhint";
-  holdHint.textContent = "Press and hold a unit to see your stats, flagged and most missed for it.";
+  holdHint.textContent = "Press and hold a unit to see your stats and flagged questions for it.";
   unitSect.appendChild(holdHint);
 
   const list = document.createElement("div");
@@ -54912,7 +54767,12 @@ function showSetup(){
      "i" on that line, only while Most missed is on. Same cfg.source
      values underneath. */
   const bankRows = {};
-  [["all", "All questions"], ["recent", "Most missed"], ["flagged", "Flagged"]].forEach(([value, title]) => {
+  /* TWO BANKS SINCE BUILD 284: "I feel like people even including myself
+     won't and don't use [most missed] ... most missed and flagged are
+     contradictory." Flagged is the one you choose; it stays. Misses are
+     still recorded - hundos, stats and accuracy are built on them - there
+     is simply no list of them to draw from any more. */
+  [["all", "All questions"], ["flagged", "Flagged"]].forEach(([value, title]) => {
     const row = document.createElement("div");
     row.className = "bank-opt";
     row.dataset.value = value;
@@ -54976,7 +54836,6 @@ function showSetup(){
        behind it (30 days, a cap per unit) is not something anybody
        needs before pressing Begin, so the "i" and its paragraph are
        gone too. */
-    set("recent", counts.recent, "Your most missed from the last 30 days.");
     set("flagged", counts.flagged, "Questions you flagged.");
     srcSect.paint();
   };
@@ -55459,6 +55318,7 @@ function showSetup(){
        there's anything to draw from) still tracks the live count. */
     /* A bank that has emptied under you (a unit unticked) falls back
        to every question rather than leaving a run with nothing in it. */
+    if(cfg.source === "recent") cfg.source = "all";   /* no Most missed bank since build 284 */
     if((cfg.source === "recent" && unitRecentCount === 0 && cfg.units.length) ||
        (cfg.source === "flagged" && unitFlaggedCount === 0 && cfg.units.length)) cfg.source = "all";
     srcSect.update({ all: QUESTIONS.filter((q, i) => inUnits(i)).length, recent: unitRecentCount, flagged: unitFlaggedCount });
@@ -58607,65 +58467,13 @@ function runStreakLive(ok){
   if(isMissedRetake || runLabel === "Daily question" || runMode !== "drill") return;
   if(!ok){ runLiveStreak = 0; return; }
   runLiveStreak++;
-  if(runStreakTiersUpTo(runLiveStreak).slice(-1)[0] === runLiveStreak) showRunStreakBanner(runLiveStreak);
+  /* No pop at 10, 25, 50 in a row since build 284: "remove 'answer
+     streak' notification you get mid test, just keep it to the results
+     screen xp stuff". The count goes on; the results screen's XP lines
+     are where a streak is shown (computeRunXp). */
 }
-function showRunStreakBanner(n){
-  if(theme.muteBanners) return;
-  document.querySelectorAll(".streak-pop").forEach(e => e.remove());
-  const idx = runStreakTiersUpTo(n).length;          // 1 for 10, 2 for 25 ...
-  const el = document.createElement("div");
-  el.className = "streak-pop streak-lv" + Math.min(idx, 8);
-  el.setAttribute("aria-live", "polite");
-  const num = document.createElement("span");
-  num.className = "streak-pop-num"; num.textContent = n;
-  const txt = document.createElement("span");
-  txt.className = "streak-pop-text"; txt.textContent = "in a row";
-  el.append(num, txt);
-  document.body.appendChild(el);
-  placeStreakPop(el);
-  setTimeout(() => el.remove(), 1900);
-}
-/* ---- IN THE TOP BAR, NOT UNDER IT (build 244) ----
-   "The answer streak pop is in the way of the question and stuff." It
-   hung just below the top bar, which is exactly where the question
-   starts on a phone, so a streak landed on the first line of the next
-   question. The top bar itself has a gap in the middle - the question
-   count on the left, Chat and Pause on the right - and nothing ever sits
-   there during a test. The pop goes into that gap now, centred on the
-   row's own middle, so it covers nothing. Where the gap is too narrow
-   for the full pill (a 320px phone) it drops the words and shows the
-   number with a small "in a row" underneath; if even that will not fit,
-   it stays where it was. */
-function placeStreakPop(el){
-  try{
-    const left = [document.getElementById("testqcounter"), document.getElementById("count")]
-      .filter(e => e && e.getClientRects().length && e.textContent.trim())
-      .map(e => { const r = e.getBoundingClientRect(); const rg = document.createRange(); rg.selectNodeContents(e);
-                  const t = rg.getBoundingClientRect(); return { right: t.width ? t.right : r.right, top: r.top, bottom: r.bottom }; })[0];
-    const rightEls = [document.getElementById("pausebtn"), document.querySelector(".chatdock-btn")]
-      .filter(e => e && !e.hidden && e.getClientRects().length).map(e => e.getBoundingClientRect())
-      .filter(r => r.top < 200 && r.width > 0);
-    if(!left || !rightEls.length) return;
-    const rightEdge = Math.min.apply(null, rightEls.map(r => r.left));
-    const row = rightEls.reduce((a, r) => a.top < r.top ? a : r);
-    /* CENTRED ON THE SCREEN, NOT ON THE GAP (build 268). "The streak pop
-       during a test is not centered, it's in a weird spot." It sat in the
-       middle of the space between the question count and the buttons,
-       and because those two are different widths that middle is off to
-       one side. It is centred on the screen now, on the bar's own line,
-       as long as it clears both sides there; compact if it needs to be;
-       and if even that will not fit it stays centred under the bar. */
-    const cx = window.innerWidth / 2;
-    const fits = () => { const hw = el.getBoundingClientRect().width / 2; return cx - hw >= left.right + 8 && cx + hw <= rightEdge - 8; };
-    if(!fits()){
-      el.classList.add("is-compact");
-      if(!fits()){ el.classList.remove("is-compact"); return; }
-    }
-    el.classList.add("is-inbar");
-    el.style.left = Math.round(cx) + "px";
-    el.style.top = Math.round(row.top + row.height / 2) + "px";
-  }catch(e){}
-}
+/* showRunStreakBanner() and placeStreakPop() - the in-test streak pop -
+   were here until build 284. */
 
 /* ---- THE END OF A RUN IS TWO SCREENS (build 212) ----------------------
    Asked for in one message: "split the test result screens up, when you
@@ -59421,7 +59229,7 @@ function showRunRewards(run, hooks, opts){
   if(!run.xpLines.length){
     const none = document.createElement("p");
     none.className = "rs-xpline rs-xpline-none rs-land";
-    none.textContent = (run.source === "recent" || run.source === "flagged") ? "Most missed and flagged runs are practice — no XP."
+    none.textContent = (run.source === "recent" || run.source === "flagged") ? "Flagged runs are practice — no XP."
       : run.timedOut && run.total === 0 ? "Time ran out before any questions were answered."
       : "No XP this run.";
     xp.appendChild(none);
@@ -61105,26 +60913,9 @@ function showAppearance(opts){
   studyLab.textContent = "Studying & tests";
   studyDetails.appendChild(studyLab);
 
-  const smoothRow = document.createElement("label");
-  smoothRow.className = "opt";
-  const smoothCb = document.createElement("input");
-  smoothCb.type = "checkbox"; smoothCb.checked = theme.smoothScroll;
-  smoothCb.addEventListener("change", () => {
-    theme.smoothScroll = smoothCb.checked;
-    applyTheme(); saveTheme();
-    showToast(theme.smoothScroll ? "Smooth scrolling on." : "Smooth scrolling off.");
-  });
-  const smoothBox = document.createElement("span");
-  smoothBox.className = "box"; smoothBox.setAttribute("aria-hidden", "true"); smoothBox.textContent = "\u2713";
-  const smoothWrap = document.createElement("span");
-  smoothWrap.className = "otext";
-  smoothWrap.appendChild(document.createTextNode("Smooth scrolling"));
-  const smoothHint = document.createElement("span");
-  smoothHint.className = "ohint";
-  smoothHint.textContent = "Glides back to the top instead of jumping instantly.";
-  smoothWrap.appendChild(smoothHint);
-  smoothRow.append(smoothCb, smoothBox, smoothWrap);
-  motionDetails.appendChild(smoothRow);
+  /* No Smooth scrolling switch since build 284: "Remove the scroll
+     scrolling option, but make it happen automatically now." It is
+     always on - see applyTheme(). */
 
   const motionRow = document.createElement("label");
   motionRow.className = "opt";
@@ -61147,50 +60938,9 @@ function showAppearance(opts){
   motionRow.append(motionCb, motionBox, motionWrap);
   motionDetails.appendChild(motionRow);
 
-  if("wakeLock" in navigator){
-    const awakeRow = document.createElement("label");
-    awakeRow.className = "opt";
-    const awakeCb = document.createElement("input");
-    awakeCb.type = "checkbox"; awakeCb.checked = theme.keepAwake;
-    awakeCb.addEventListener("change", () => {
-      theme.keepAwake = awakeCb.checked;
-      saveTheme();
-      /* Explicit success/failure feedback now, the same way every
-         other toggle already confirms itself with a toast \u2014 the
-         actual wake lock request can fail silently for reasons
-         entirely outside this app's control (iOS in particular has
-         had real, documented limitations with the Wake Lock API
-         specifically inside a Home-Screen-installed PWA, separate
-         from a regular Safari tab), so silently doing nothing when
-         that happens is exactly what read as "doesn't do anything
-         when toggled." This makes the outcome visible either way. */
-      updateWakeLock().then(() => {
-        if(theme.keepAwake){
-          showToast(wakeLockRef ? "Screen will stay awake." : "Couldn't keep the screen awake on this device.");
-        } else {
-          showToast("Screen will lock normally again.");
-        }
-      });
-    });
-    const awakeBox = document.createElement("span");
-    awakeBox.className = "box"; awakeBox.setAttribute("aria-hidden", "true"); awakeBox.textContent = "\u2713";
-    const awakeWrap = document.createElement("span");
-    awakeWrap.className = "otext";
-    awakeWrap.appendChild(document.createTextNode("Keep screen awake"));
-    const awakeHint = document.createElement("span");
-    awakeHint.className = "ohint";
-    /* Reworded: it used to say "so it doesn't dim out mid-question",
-       which describes one moment out of the whole app and reads as a
-       setting about tests. It is about the screen, wherever you are. */
-    awakeHint.textContent = "Stops your screen locking while Nova is open.";
-    awakeWrap.appendChild(awakeHint);
-    awakeRow.append(awakeCb, awakeBox, awakeWrap);
-    /* MOTION & INTERACTION, not Studying & tests. Asked for directly.
-       It is a property of the device while the app is open, the same
-       kind of thing as smooth scrolling and swipe to advance - not
-       something that happens to a test. */
-    motionDetails.appendChild(awakeRow);
-  }
+  /* Keep screen awake was here until build 284: "remove the keep screen
+     awake setting as well, just unnecessary, just remove that function
+     too". The switch and the wake lock behind it are both gone. */
 
   const swipeRow = document.createElement("label");
   swipeRow.className = "opt";
@@ -61339,20 +61089,17 @@ function showAppearance(opts){
       rowByTitle[title] = r;
     });
     const HINTS = {
-      "Smooth scrolling":               "Scrolls back to the top smoothly instead of jumping.",
       "Reduce motion":                  "Turns off shimmer, pulse and other animations.",
       "Show class days remaining":      "Shows the countdown to graduation on your profile.",
       "Swipe to next question":         "Swipe left to move on instead of tapping Next.",
       "Auto-advance on correct":        "Moves on by itself once you're done.",
       "Auto-flag questions you keep missing": "Flags it for review on every fifth miss.",
-      "Mute achievement banners":       "Skips the level-up and unlock banners after a test.",
-      "Keep screen awake":              "Stops the screen locking while you study."
+      "Mute achievement banners":       "Skips the level-up and unlock banners after a test."
     };
     const GROUPS = [
-      [motionDetails, ["Smooth scrolling", "Reduce motion", "Show class days remaining"]],
+      [motionDetails, ["Reduce motion", "Show class days remaining"]],
       [studyDetails,  ["Swipe to next question", "Auto-advance on correct",
-                       "Auto-flag questions you keep missing", "Mute achievement banners",
-                       "Keep screen awake"]]
+                       "Auto-flag questions you keep missing", "Mute achievement banners"]]
     ];
     GROUPS.forEach(([host, titles]) => {
       const card = document.createElement("div");
@@ -61846,23 +61593,9 @@ function showAppearance(opts){
     dataSect.append(advToggle, advBody);
     const resetBar = document.createElement("div");
     resetBar.className = "startbar";
-    {
-      const missedCount = Object.keys(store.stats).length;
-      const resetMissedBtn = document.createElement("button");
-      resetMissedBtn.type = "button"; resetMissedBtn.className = "restart";
-      resetMissedBtn.textContent = "Reset missed-question history";
-      resetMissedBtn.disabled = missedCount === 0;
-      armConfirm(resetMissedBtn, "Tap again to reset history", () => {
-        store.stats = {};
-        saveStore();
-        showAppearance();
-      });
-      const resetMissedWrap = document.createElement("span");
-      resetMissedWrap.style.cssText = "display:inline-flex; align-items:center;";
-      resetMissedWrap.appendChild(resetMissedBtn);
-      resetMissedWrap.appendChild(buildInfoIcon(missedCount === 0 ? "Nothing missed yet \u2014 this becomes available once a question shows up on your \"most missed\" list." : "Clears the list of questions you've missed most often. Your stars, times, and other study stats stay exactly as they are."));
-      resetBar.appendChild(resetMissedWrap);
-    }
+    /* "Reset missed-question history" was here until build 284: it went
+       with Most missed, and wiping every question's stats is something
+       two-device sync would only bring straight back. */
     {
       const flaggedCount = Object.keys(store.flagged).length;
       const resetFlaggedBtn = document.createElement("button");
@@ -71344,7 +71077,7 @@ function showRanksScreen(defaultTab){
   flushStudyTime();
   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
   timerlineEl.hidden = true;
-  setActiveNav("ranks");
+  setActiveNav("profile");
   /* "Progress", not "Ranks" (build 270): "the ranks tab, should it be
      called something else?" It holds two things - the rank ladder and
      the badge case - and only one of them is a rank; both are how far
@@ -71356,6 +71089,12 @@ function showRanksScreen(defaultTab){
   panel.className = "panel screen-ranks screen-profile-like";
   const seg = document.createElement("div");
   seg.className = "navsegment profiletabs rankstabs";
+  /* OPENED FROM THE PROFILE CARD, NOT A TAB (build 284). "Maybe there
+     being 5 tabs at the bottom is a little much? ... let's remove the
+     progress tab and put them within profile where it directly goes to
+     it". The rank row on the card opens the climb and the badges row the
+     case - as they already did - and this is the way back. */
+  panel.appendChild(buildBackLink("Profile", () => showProfile()));
   /* ONLY THE TAB YOU LAND ON IS BUILT BEFORE THE FIRST PAINT (build 279).
      The other one was built in full and hidden - sixteen badge drawings
      and the case behind the Rank tab, about 150ms of a 370ms mount - so
@@ -72695,20 +72434,6 @@ function closestBadge(){
   });
   return best;
 }
-function badgeNextLine(){
-  const c = closestBadge();
-  const line = document.createElement("span");
-  line.className = "badge-next";
-  if(!c){ line.textContent = "Every badge earned"; return line; }
-  const lab = document.createElement("span");
-  lab.className = "badge-next-label"; lab.textContent = "Closest";
-  const name = document.createElement("span");
-  name.className = "badge-next-name"; name.textContent = c.unit;
-  const n = document.createElement("span");
-  n.className = "badge-next-n"; n.textContent = c.done + "/" + c.need + " hundos";
-  line.append(lab, name, n);
-  return line;
-}
 function buildBadgeStrip(cls){
   const strip = document.createElement("span");
   strip.className = "badge-strip" + (cls ? " " + cls : "");
@@ -72806,7 +72531,8 @@ function buildBadgesTab(){
   headTitle.textContent = earned.length >= units.length ? "Every badge earned"
     : earned.length === 1 ? "1 badge earned" : earned.length + " badges earned";
   headText.appendChild(headTitle);
-  if(earned.length < units.length) headText.appendChild(badgeNextLine());
+  /* No "Closest" line since build 284 ("maybe remove the what's closest
+     thing?") - each badge in the case says its own progress. */
   gaugeBox.append(medal, headText);
   head.appendChild(gaugeBox);
   /* The medal's sheen is set off when the tab is SHOWN, like everything
@@ -72823,8 +72549,7 @@ function buildBadgesTab(){
   /* "No two look alike" came off: it is a claim about the drawing
      rather than anything you can act on, and it is the first thing on
      a screen whose job is to say what a badge costs. */
-  blurb.textContent = "Every unit has a badge. Earn one by mastering its unit — " +
-    "a bigger unit needs fewer hundos than a small one. Tap any badge to see your progress towards it.";
+  blurb.textContent = "Master a unit to earn its badge. Tap one to see how close you are.";
   head.appendChild(blurb);
   tab.appendChild(head);
 
@@ -73114,17 +72839,9 @@ function buildRanksTab(){
   }
   hero.appendChild(gauges);
 
-  const note = document.createElement("p");
-  note.className = "rankhero-next";
-  if(nextKey){
-    const parts = tierShortfall(TIER_UNLOCKS[nextKey]).map(t => t.replace(" more ", " "));
-    note.textContent = parts.length
-      ? parts.join(" and ") + " to go until " + RANK_DISPLAY_NAME[nextKey] + "."
-      : "Ready to reach " + RANK_DISPLAY_NAME[nextKey] + ".";
-  } else {
-    note.textContent = "Every rank reached. Nothing above this one.";
-  }
-  hero.appendChild(note);
+  /* No "1 badge to go until Bronze." under the rings (build 284): the
+     rings already say it, and the box was asked to be simpler and
+     smaller. */
   tab.appendChild(hero);
 
   /* ---- the track: every rank, what it costs, what it gives ---- */
@@ -73143,7 +72860,7 @@ function buildRanksTab(){
   tab.appendChild(mapHead);
   const mapNote = document.createElement("p");
   mapNote.className = "ranks-note";
-  mapNote.textContent = "Start at the top and work your way down. Every rank takes a level and a number of badges together \u2014 levels come from everything you do; badges come from mastering a unit.";
+  mapNote.textContent = "Each rank needs a level and a number of badges.";
   tab.appendChild(mapNote);
 
   /* ---- IRON AT THE TOP, SUPERNOVA AT THE BOTTOM (build 232) ----
@@ -73818,13 +73535,6 @@ function applyGlassRefraction(el, mapImgId){
         confirmMainMenu();
       }
       else if(dest === "rewards") showRankings();
-      /* A TAP ON RANKS WENT NOWHERE (fixed in build 246). The tab was
-         added with a destination only in tabDests, which the drag-to-
-         switch path uses, and none here - so dragging onto it worked and
-         tapping it, which is what everybody does, did nothing at all.
-         Reported: "CLICKING the rank button on the bottom does not work,
-         nothing happens". check-behaviour 43 taps every tab. */
-      else if(dest === "ranks") showRanksScreen();
       else if(dest === "profile") showProfile();
       else if(dest === "settings") showAppearance();
     };
@@ -73925,9 +73635,10 @@ function applyGlassRefraction(el, mapImgId){
     const onRewards = !!document.querySelector(".screen-rankings, .screen-rewards");
     const onSettings = !!document.querySelector(".screen-settings");
     const onHome = !!document.querySelector(".homeversion-btn");
+    /* The rank road map and the badge case are opened from the Profile
+       card since build 284 (no tab of their own), so Profile stays lit. */
     const onRanks = !!document.querySelector(".screen-ranks");
-    bar.querySelector("#bottomtab-ranks").classList.toggle("active", onRanks);
-    bar.querySelector("#bottomtab-profile").classList.toggle("active", onProfile);
+    bar.querySelector("#bottomtab-profile").classList.toggle("active", onProfile || onRanks);
     bar.querySelector("#bottomtab-rewards").classList.toggle("active", onRewards);
     bar.querySelector("#bottomtab-settings").classList.toggle("active", onSettings);
     bar.querySelector("#bottomtab-home").classList.toggle("active", onHome);
@@ -73972,7 +73683,6 @@ function applyGlassRefraction(el, mapImgId){
   let tabDragMoved = false;
   let tabDragPointerId = null;
   const tabDests = { "bottomtab-home": () => confirmMainMenu(), "bottomtab-rewards": () => showRankings(),
-    "bottomtab-ranks": () => showRanksScreen(),
     "bottomtab-profile": () => showProfile(), "bottomtab-settings": () => showAppearance() };
   function tabAtPoint(clientX){
     const tabs = [...navrow.querySelectorAll(".bottomtab")];
