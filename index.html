@@ -2407,6 +2407,19 @@
   @media (hover:hover){ .flagbtn:hover{ background:rgba(201,162,39,.1); } }
   .flagbtn.on{ background:rgba(245,197,24,.16); box-shadow:0 0 0 1px rgba(245,197,24,.4) inset; }
   .flagicon{ width:1.35rem; height:1.35rem; }
+  /* THE TEST'S FLAG, BIGGER AND UP IN THE CORNER (build 291): "could it
+     be slightly bigger and be in a better position? ... closer to the
+     top of that like above the question and to the right." A round
+     2.8rem button with a 1.7rem flag, lifted so its centre sits above
+     the "Question N" line, right edge on the card's own right edge. The
+     unit-details list's flag (.unitdetail-flag) keeps its own size. */
+  .qnumrow > .flagbtn:not(.unitdetail-flag){
+    width:2.8rem; height:2.8rem; border-radius:50%;
+    margin-top:-1.15rem; margin-bottom:-.4rem; margin-right:-.55rem;
+    background:rgba(255,255,255,.05); box-shadow:0 0 0 1px rgba(255,255,255,.08) inset;
+  }
+  .qnumrow > .flagbtn:not(.unitdetail-flag) .flagicon{ width:1.7rem; height:1.7rem; }
+  .qnumrow > .flagbtn.on:not(.unitdetail-flag){ background:rgba(245,197,24,.16); box-shadow:0 0 0 1px rgba(245,197,24,.45) inset; }
 
   /* a subtle hint that swipe-to-advance is on, tucked into the button
      itself rather than announced anywhere louder */
@@ -2563,6 +2576,22 @@
   .pausepanel .qtext{ max-width:none; color:var(--soft); font-size:1.05rem; }
   .pausepanel .next{ margin-top:.5rem; }
   .pausepanel .actions{ justify-content:center; }
+  /* ---- THE PAUSE SCREEN, CENTRED (build 291) ----
+     "While in pause, should those buttons and stuff be centered to the
+     middle of the screen? The progress bar can still be at the top of
+     course." The panel takes the height under the bar and centres its
+     contents in it; the header's small scope line gives way to the
+     bigger one in the panel. */
+  .pausepanel.is-pause{
+    display:flex; flex-direction:column; justify-content:center; align-items:center;
+    min-height:calc(100vh - 13rem); min-height:calc(100lvh - 13rem - var(--pad-inset-top, 0px));
+    padding-top:1rem; padding-bottom:4rem; box-sizing:border-box;
+  }
+  .wrap:has(.pausepanel.is-pause) .test-scopelabel{ visibility:hidden; }
+  .pause-info{ margin:.2rem 0 1rem; max-width:34rem; }
+  .pause-units{ margin:0; font-size:1.2rem; font-weight:800; line-height:1.3; color:var(--ink); }
+  .pause-where{ margin:.35rem 0 0; font-size:1rem; font-weight:600; color:var(--soft); }
+  @media (min-width:40rem){ .pause-units{ font-size:1.4rem; } .pause-where{ font-size:1.1rem; } }
 
   /* ---------- setup screen ---------- */
 
@@ -13996,6 +14025,9 @@
     .char-react-win .avatarchar-svg .cx-fx-koisheen{ animation:cx-sheen 1.3s ease-in-out .3s infinite; }
     /* build 267: the Koi's fishbowl and the space cat */
     .char-live .avatarchar-svg .cx-fx-koiswim{ animation:cx-spin 6s linear infinite; }
+    /* build 291: the Hive's bees circle it */
+    .char-live .avatarchar-svg .cx-fx-hivebees{ animation:cx-spin 9s linear infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-hivebees{ animation:cx-spin 2s linear infinite; }
     .char-live .avatarchar-svg .cx-fx-koiwater{ animation:cx-koi-slosh 3s ease-in-out infinite alternate; }
     .char-live .avatarchar-svg .cx-fx-koibubble{ animation:cx-kr-bubble 2.8s ease-in infinite; }
     .char-live .avatarchar-svg .cx-fx-koisheen{ animation:cx-sheen-idle 5.6s ease-in-out -1.2s infinite; }
@@ -14207,6 +14239,10 @@
     background:rgba(255,80,80,.07); border:1px solid rgba(255,90,90,.2);
   }
   .unitoptions-modal-sheet .hundo-note[hidden]{ display:none; }
+  /* Build 291: always the same footprint, whichever it says - two lines'
+     room, so a wrap on a narrow phone cannot change it either. */
+  .unitoptions-modal-sheet .hundo-note{ min-height:calc(2.8em + 1rem + 2px); display:flex; align-items:center; box-sizing:border-box; }
+  .unitoptions-modal-sheet .hundo-note.is-ok{ color:var(--soft); background:rgba(255,255,255,.04); border-color:rgba(255,255,255,.1); }
 
 
   /* ---- UNIT DETAILS: HOLD A UNIT CARD (build 235) ---- */
@@ -14686,7 +14722,8 @@
   .unitoptions-modal-sheet.is-setup .timer-sect .opt{ padding:.72rem 0; min-height:48px; align-items:center; }
   .unitoptions-modal-sheet.is-setup .opt-rows .opt + .opt,
   .unitoptions-modal-sheet.is-setup .timer-sect > * + *{ border-top:1px solid rgba(255,255,255,.09); }
-  .unitoptions-modal-sheet.is-setup .opt .ohint{ display:none; }
+  /* One quick line under each switch again (build 291). */
+  .unitoptions-modal-sheet.is-setup .opt .ohint{ display:block; margin-top:.15rem; font-size:.76rem; line-height:1.3; font-weight:500; color:rgba(255,255,255,.5); }
   .unitoptions-modal-sheet.is-setup .opt .otext{ font-size:1rem; color:#fff; }
   /* Timer: one row that says what it is set to, and opens in place. */
   .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect:has(> .more-toggle){
@@ -32159,7 +32196,7 @@ const AVATAR_CHARACTERS = [
                     times until build 258; was the Spartan's,
                     build 244: "I don't like the spartan, change that
                     to something else")
-       Marksman   - 200 right in a row, across tests (100 until build
+       Marksman   - 250 right in a row in one test (200 until 291; 100 until build
                     246, 150 until 259)
        Astronaut  - a hundo in 5 different units in one day (7 until
                     build 258; was Blitz's)
@@ -32181,6 +32218,8 @@ const AVATAR_CHARACTERS = [
   { id: "hacker",     kind: "hacker",     feat: "study20h" },
   { id: "timekeeper", kind: "timekeeper", feat: "days30" },
   { id: "ronin",      kind: "ronin",      feat: "bigtest400" },
+  /* Build 291: a beehive worn as a mask, for the busiest day's study. */
+  { id: "hive",       kind: "hive",       feat: "busyday300" },
   /* ---- SECRETS ----
      Things you FIND rather than work towards. Build 244 took the Officer
      out completely ("we will remove the officer character completely")
@@ -32244,7 +32283,7 @@ const AVATAR_DISPLAY_NAME = {
   detective: "Detective", zeus: "Zeus", masked: "The Masked One", voidwalker: "Void",
   champion: "Champion", umbra: "Umbra", singularity: "Horizon",
   poseidon: "Sheriff", spartan: "Spartan", pharaoh: "Pharaoh", marksman: "Marksman",
-  blitz: "Blitz"
+  blitz: "Blitz", hive: "Hive"
 };
 /* The glow a SELECTED character gives off - "give the character you have
    selected a nice glow, a glow that kinda matches the color of the
@@ -32268,7 +32307,9 @@ const AVATAR_GLOW = {
   champion: "#FF4D6D", umbra: "#8B5CF6", singularity: "#7FC8FF",
   poseidon: "#F2A23A", spartan: "#E0612F", pharaoh: "#E9B949", marksman: "#9CE85A",
   /* The visor's sunset. */
-  blitz: "#F0643C"
+  blitz: "#F0643C",
+  /* Honey. */
+  hive: "#F5B82E"
 };
 /* A RETIRED CHARACTER GLOWS AS WHAT IT IS DRAWN AS (build 246). The
    drawing already goes through RETIRED_CHARACTER_TO, so a classmate still
@@ -32288,6 +32329,8 @@ function avatarGlowColor(id){
 /* WHAT EACH EARNED CHARACTER COSTS, in one table so the check and the
    sentence shown to somebody who has not earned it can never drift
    apart - the same reason TIER_UNLOCKS carries its own label. */
+const MARKSMAN_RUN = 250;
+const HIVE_DAY = 300;
 const CHARACTER_FEATS = {
   /* THE BEST RUN, NOT THE CURRENT ONE (build 289): "ensure all the
      rewards/unlocks are accurate to what people have done". This read
@@ -32393,9 +32436,13 @@ const CHARACTER_FEATS = {
      everybody (no test on record kept its answers in order), so the
      live lock takes the Marksman back from anybody who got it the other
      way and revokeRaisedCharacters() takes it off whoever is wearing it. */
-  streak100: { label: "Answer 200 questions in a row without a miss, in a single test",
-               done: () => (store.bestTestStreak || 0) >= 200,
-               have: () => (store.bestTestStreak || 0), need: 200 },
+  /* 250 SINCE BUILD 291 (was 200): "Make the marksman challenge 250 not
+     200." Nobody was at 200 (the best single-test run on record was
+     167), so the raise takes nothing from anybody; the live check and
+     revokeRaisedCharacters() would take it back if it did. */
+  streak100: { label: "Answer 250 questions in a row without a miss, in a single test",
+               done: () => (store.bestTestStreak || 0) >= MARKSMAN_RUN,
+               have: () => (store.bestTestStreak || 0), need: MARKSMAN_RUN },
   /* Build 241, Eclipse. Counted from the whole-unit loop in summarize()
      at the moment a unit comes out at 100%, so it is the same "whole
      unit" every hundo already needs. Tracked from this build: nothing
@@ -32441,6 +32488,16 @@ const CHARACTER_FEATS = {
      the whole idea. Read off the study log the calendar keeps, so every
      run since the log began counts - and nobody held the Koi under the
      old rule, so nothing is taken from anybody. */
+  /* HIVE (build 291): "Give it a unique challenge." Busy as a bee - the
+     one challenge about a single big DAY rather than a streak, a total
+     or one test. Counted per question as it is answered (recordResult),
+     against the device's own calendar day; the best day is kept, so a
+     quiet day after it takes nothing back. Nothing kept answers per day
+     before this build, so it counts from here. */
+  busyday300: { label: "Answer " + HIVE_DAY + " questions in a single day",
+                done: () => busiestDay() >= HIVE_DAY,
+                have: () => Math.min(busiestDay(), HIVE_DAY), need: HIVE_DAY,
+                note: "Any mode counts. Your best day from this update on is what counts." },
   studyrun7: { label: "Study 7 days in a row",
                done: () => bestStudyRun() >= 7,
                have: () => Math.min(bestStudyRun(), 7), need: 7,
@@ -32467,6 +32524,19 @@ function bestStudyRun(){
     });
   }catch(e){}
   return best;
+}
+/* The most questions answered on one calendar day: the best on record, or
+   today's if today is beating it. */
+function busiestDay(){
+  const d = store.dayAnswered;
+  const today = d && d.day === dayKey(new Date()) ? (Number(d.n) || 0) : 0;
+  return Math.max(Number(store.dayAnsweredBest) || 0, today);
+}
+function noteAnsweredToday(){
+  const day = dayKey(new Date());
+  if(!store.dayAnswered || store.dayAnswered.day !== day) store.dayAnswered = { day: day, n: 0 };
+  store.dayAnswered.n = (Number(store.dayAnswered.n) || 0) + 1;
+  if(store.dayAnswered.n > (Number(store.dayAnsweredBest) || 0)) store.dayAnsweredBest = store.dayAnswered.n;
 }
 function dailyBestRun(){ return Math.max(store.dailyCorrectBest || 0, store.dailyCorrectStreak || 0); }
 function unitStreakBest(){ return Math.max(store.unitHundoStreakBest || 0, store.unitHundoStreak || 0); }
@@ -33027,7 +33097,9 @@ function drawAvatarCharSVG(charId){
     tempest:    [["clouds", "#5E8C8A"], ["fall", "rain", ["#5EEAD4"]]],
     frost:      [["fall", "snow", ["#EAF4FF", "#B9DBFF"]], ["stars", "#CFE6FF"]],
     oracle:     [["runes", "#C084FC"], ["stars", "#F0DDFF"]],
-    inferno:    [["nebula", "#E8202A", "#5A0A0A"], ["rise", "ember", ["#FF4A2A", "#FFB040"]]]
+    inferno:    [["nebula", "#E8202A", "#5A0A0A"], ["rise", "ember", ["#FF4A2A", "#FFB040"]]],
+    /* the Hive: a warm summer haze, and fireflies standing in for pollen */
+    hive:       [["nebula", "#F5B82E", "#5A360A"], ["flies", "#FFD23F"]]
   };
   function backdrop(){
     const plan = BACKDROP[def.kind];
@@ -34734,6 +34806,84 @@ function drawAvatarCharSVG(charId){
      is still a HARD mask with no expression and a sealed mouth - what
      made this character itself - only now something is lit behind it.
      New parts are cx-fx-mk2* / cx-mk2-*: unique names, checked. */
+  /* HIVE (build 291): "Let's add one more character to the challenge,
+     maybe a beehive for head mask kind of thing could be sick?" A straw
+     skep worn as a helmet - the coiled bands ARE the head, so it reads
+     as a hive at 26px rather than as a person in a hat - with the hive's
+     dark arched door where the face goes and two honey-gold eyes inside
+     it, a drip of honey off the door's sill, bee stripes across the
+     chest, and three bees circling (cx-fx-hivebees, which turn only
+     while the character is live). */
+  if(def.kind === "hive"){
+    const straw = headGrad("#FBE09A", "#DDA544", "#8C5A1E");
+    const suit = headGrad("#3A3226", "#221D16", "#0E0C09");
+    const honey = "#F5B21E";
+    open("cx-body");
+    const torso = "M4.8 40 Q5.6 31 12.2 28.6 Q14.2 26.6 20 26.4 Q25.8 26.6 27.8 28.6 Q34.4 31 35.2 40 Z";
+    svg.appendChild(mk("path", { d: torso, fill: suit }));
+    const clipId = uid + "-hvbody";
+    const cp = mk("clipPath", { id: clipId }); cp.appendChild(mk("path", { d: torso })); defs.appendChild(cp);
+    const stripes = mk("g", { "clip-path": "url(#" + clipId + ")" });
+    stripes.appendChild(mk("path", { d: "M2 31.6 Q20 29.4 38 31.6 L38 33.6 Q20 31.4 2 33.6 Z", fill: "#F2B526" }));
+    stripes.appendChild(mk("path", { d: "M2 36 Q20 33.8 38 36 L38 38 Q20 35.8 2 38 Z", fill: "#F2B526" }));
+    svg.appendChild(stripes);
+    close();
+    open("cx-head");
+    /* The skep: a dome a little taller than wide, flattening to a sill. */
+    const dome = "M9.2 28.4 Q8.4 20.2 10.2 14.6 Q12.8 7 20 6.4 Q27.2 7 29.8 14.6 Q31.6 20.2 30.8 28.4 Q20 30.6 9.2 28.4 Z";
+    svg.appendChild(mk("path", { d: dome, fill: straw, stroke: "#5E3A0E", "stroke-width": ".35", "stroke-linejoin": "round" }));
+    svg.appendChild(mk("path", { d: "M18.3 6.9 Q20 3.8 21.7 6.9 Z", fill: straw, stroke: "#5E3A0E", "stroke-width": ".3" }));
+    /* The coils: one band per row, each a dark seam with straw catching
+       the light just above it. Half-widths follow the dome. */
+    [[9.6, 6.6], [12.6, 8.6], [15.6, 9.9], [18.6, 10.6], [21.6, 10.9], [24.6, 10.9], [27.4, 10.8]].forEach(([y, hw]) => {
+      svg.appendChild(mk("path", { d: "M" + (20 - hw).toFixed(1) + " " + y + " Q20 " + (y + 1.5).toFixed(1) + " " + (20 + hw).toFixed(1) + " " + y,
+        fill: "none", stroke: "#7A4A12", "stroke-width": ".5", "stroke-linecap": "round", opacity: ".85" }));
+      svg.appendChild(mk("path", { d: "M" + (20 - hw * .8).toFixed(1) + " " + (y - .55).toFixed(1) + " Q20 " + (y + .7).toFixed(1) + " " + (20 + hw * .8).toFixed(1) + " " + (y - .55).toFixed(1),
+        fill: "none", stroke: "#FFF0B8", "stroke-width": ".28", "stroke-linecap": "round", opacity: ".55" }));
+    });
+    /* A patch of comb showing through the straw, low on one side -
+       honey-filled cells, the inside of the hive. */
+    const hex = (cx, cy, r) => {
+      let d = "";
+      for(let k = 0; k < 6; k++){ const a = Math.PI / 3 * k + Math.PI / 6; d += (k ? " L" : "M") + (cx + r * Math.cos(a)).toFixed(2) + " " + (cy + r * Math.sin(a)).toFixed(2); }
+      return d + " Z";
+    };
+    [[11.9, 24.2], [13.6, 25.2], [11.9, 26.2], [13.6, 23.2], [27.4, 13.6], [26, 12.6]].forEach(([cx, cy], k) =>
+      svg.appendChild(mk("path", { d: hex(cx, cy, .95), fill: k % 3 === 2 ? "#C98516" : "#F7B92A", stroke: "#7A4A12", "stroke-width": ".22", opacity: ".95" })));
+    /* The door, where a face would be. */
+    const door = "M14.2 22.6 Q14.3 17 20 16.4 Q25.7 17 25.8 22.6 Q20 23.8 14.2 22.6 Z";
+    svg.appendChild(mk("path", { d: door, fill: "#1A0E04", stroke: "#5E3A0E", "stroke-width": ".35" }));
+    svg.appendChild(mk("path", { d: "M14.6 22.3 Q20 23.3 25.4 22.3", fill: "none", stroke: "#FFE08A", "stroke-width": ".3", opacity: ".6" }));
+    open("cx-eyes");
+    [[17.3, 19.9], [22.7, 19.9]].forEach(([cx, cy]) => {
+      svg.appendChild(mk("ellipse", { cx, cy, rx: 1.6, ry: 1.2, fill: honey, opacity: ".35" }));
+      svg.appendChild(mk("ellipse", { cx, cy, rx: .95, ry: .72, fill: "#FFC93C" }));
+      svg.appendChild(mk("circle", { cx: cx + .25, cy: cy - .2, r: .28, fill: "#FFF6D6" }));
+    });
+    close();
+    closedEyes([[17.3, 19.9, .95], [22.7, 19.9, .95]], "#FFC93C", .35);
+    /* Honey off the sill - the mouth, as far as a hive has one. */
+    open("cx-mouth");
+    svg.appendChild(mk("path", { d: "M18.6 23.1 Q18.7 25.8 19.6 26.3 Q20.5 26 20.6 23.3 Z", fill: honey, stroke: "#B9770C", "stroke-width": ".2" }));
+    svg.appendChild(mk("circle", { cx: 19.2, cy: 24.3, r: .22, fill: "#FFF2C2", opacity: ".9" }));
+    close();
+    /* The bees, round the hive. */
+    const bees = mk("g", { class: "cx-fx cx-fx-hivebees" });
+    bees.appendChild(pivot(20, 18.2, 14.2));
+    [[32.4, 11, 30], [7.4, 15.8, -150], [31.6, 24.6, 70]].forEach(([x, y, rot]) => {
+      const b = mk("g", { transform: "translate(" + x + " " + y + ") rotate(" + rot + ") scale(1.25)" });
+      b.appendChild(mk("ellipse", { cx: -.3, cy: -.75, rx: .75, ry: .45, fill: "#FFFFFF", opacity: ".8" }));
+      b.appendChild(mk("ellipse", { cx: .45, cy: -.7, rx: .6, ry: .38, fill: "#FFFFFF", opacity: ".65" }));
+      b.appendChild(mk("ellipse", { cx: 0, cy: 0, rx: 1.05, ry: .68, fill: "#FFC72C", stroke: "#2A1A04", "stroke-width": ".18" }));
+      b.appendChild(mk("path", { d: "M-.2 -.62 L-.2 .62 M.38 -.55 L.38 .55", stroke: "#2A1A04", "stroke-width": ".26" }));
+      b.appendChild(mk("circle", { cx: 1.05, cy: 0, r: .34, fill: "#2A1A04" }));
+      bees.appendChild(b);
+    });
+    svg.appendChild(bees);
+    close();
+    return done();
+  }
+
   if(def.kind === "masked"){
     const red = "#FF2A3A", redSoft = "#FF8A94";
     const coat = headGrad("#5E5870", "#332E40", "#121016");
@@ -36285,7 +36435,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               mysteryColorsFound: { red: false, orange: false, yellow: false, violet: false, white: false },
               testsUntilMystery: null, flareNextTestAt: 0,
               savedCodePrompts: 0, savedCodeSaved: false,
-              dailyCorrectStreak: 0, dailyCorrectBest: 0, unitHundoStreakBest: 0, challengeSeed289: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bestTestStreak: 0,
+              dailyCorrectStreak: 0, dailyCorrectBest: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bestTestStreak: 0,
               weeklyWins: 0, weeklyTop3: 0, retakenQuestions: 0, hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, unlocksShown: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
               vrMatches: 0, vrWins: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
               fullTestsSeeded: false, practiceExamPerfect: false, banner: "", starfallKept: false, creditsApplied: [],
@@ -36450,6 +36600,10 @@ function applyLoadedData(got){
   store.dailyCorrectBest = typeof got.dailyCorrectBest === "number" ? got.dailyCorrectBest : 0;
   store.unitHundoStreakBest = typeof got.unitHundoStreakBest === "number" ? got.unitHundoStreakBest : 0;
   store.challengeSeed289 = got.challengeSeed289 === true;
+  /* Build 291: the Hive's busiest day. Starts at nothing - no answers
+     per day were kept before it. */
+  store.dayAnswered = got.dayAnswered && typeof got.dayAnswered === "object" && typeof got.dayAnswered.day === "string" ? got.dayAnswered : null;
+  store.dayAnsweredBest = typeof got.dayAnsweredBest === "number" ? got.dayAnsweredBest : 0;
   store.weeklyWins = typeof got.weeklyWins === "number" ? got.weeklyWins : 0;
   /* Build 232, Poseidon's counter. Never below the wins: a week won was
      a week on the podium, so an account with a Zeus already carries at
@@ -36707,6 +36861,10 @@ function persistLocally(){
     catch(e){ storageOK = false; }
   }
   idbSave(store);
+  /* Data that arrives from the cloud while Home is up can unlock
+     something (build 291); it is announced in the same sitting, not on
+     the next launch. Next tick, so nothing here runs inside a save. */
+  setTimeout(homeUnlocksAfterSync, 0);
   /* The mirror has to follow the code that is ALREADY on the device, not
      just one being set for the first time: setSyncCode() does not run on
      an ordinary launch, so an install predating the mirror would have had
@@ -37901,7 +38059,7 @@ function wipeLocalProgressAndSettings(){
   store.gameHardcoreMs = {};
   store.mysteryColorsFound = { red: false, orange: false, yellow: false };
   store.testsUntilMystery = null;
-  store.dailyCorrectStreak = 0; store.dailyCorrectBest = 0; store.unitHundoStreakBest = 0; store.challengeSeed289 = true;
+  store.dailyCorrectStreak = 0; store.dailyCorrectBest = 0; store.unitHundoStreakBest = 0; store.challengeSeed289 = true; store.dayAnswered = null; store.dayAnsweredBest = 0;
   store.unitHundoStreak = 0;
   store.unitHundoStreakUnits = [];
   store.practiceTestPassed = false;
@@ -38625,7 +38783,7 @@ function mergeLeavingAccount(src, note){
   store.testHistory = (store.testHistory || []).concat(src.testHistory || [])
     .sort((a, b) => num(b && b.playedAt) - num(a && a.playedAt)).slice(0, 20);
   ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions"].forEach(k => { store[k] = num(store[k]) + num(src[k]); });
-  ["dailyCorrectStreak", "hundoDayBest", "bestTestStreak", "unitHundoStreak", "dailyCorrectBest", "unitHundoStreakBest"].forEach(k => { store[k] = Math.max(num(store[k]), num(src[k])); });
+  ["dailyCorrectStreak", "hundoDayBest", "bestTestStreak", "unitHundoStreak", "dailyCorrectBest", "unitHundoStreakBest", "dayAnsweredBest"].forEach(k => { store[k] = Math.max(num(store[k]), num(src[k])); });
   ["vrCounted", "vrTop3Rooms"].forEach(k => {
     const a = Array.isArray(store[k]) ? store[k] : [];
     store[k] = a.concat((src[k] || []).filter(x => a.indexOf(x) < 0)).slice(-300);
@@ -38813,7 +38971,7 @@ function mergeSameAccount(dst, src){
     }
     if(a.some(h => h && !theirs.has(key(h)))) res.otherHadLess = true; }
   ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "hundoDayBest", "bestTestStreak",
-   "dailyCorrectBest", "unitHundoStreakBest"]
+   "dailyCorrectBest", "unitHundoStreakBest", "dayAnsweredBest"]
     .forEach(k => maxInto(dst, k, src[k]));
   ["vrCounted", "vrTop3Rooms", "legacyChars", "creditsApplied"].forEach(k => unionArr(k));
   ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "supernovaAchieved",
@@ -38975,6 +39133,7 @@ function recordResult(i, missed){
     store.flagged[KEYS[i]] = true;
   }
   store.lifetime.answered += 1;
+  try{ noteAnsweredToday(); }catch(e){}
   if(!missed){
     store.lifetime.correct += 1;
   }
@@ -45890,10 +46049,32 @@ function pauseRun(){
 
 function renderPausedScreen(){
   const panel = document.createElement("section");
-  panel.className = "panel pausepanel";
+  panel.className = "panel pausepanel is-pause";
   const h = document.createElement("p");
   h.className = "qnum";
   h.textContent = "Paused";
+  /* WHAT YOU ARE TAKING, IN THE MIDDLE OF THE SCREEN (build 291): "the
+     information at the top where it says the questions. It needs to
+     mention which units you are taking, and those words need to be
+     slightly bigger AND importantly, it needs to be lowered, they are
+     hard to see all the way up at the top there." The header line said
+     "2 units - question 4 of 20" in small grey type beside the progress
+     bar. The units are named here now, under Paused, with where you are;
+     the progress bar stays at the top. */
+  const info = document.createElement("div");
+  info.className = "pause-info";
+  if(runLabel !== "Daily question"){
+    const all = topicsIn(QUESTIONS);
+    const names = (cfg.units.length === 0 || cfg.units.length === all.length) ? ["All units"]
+      : cfg.units.map(u => (cfg.versions && cfg.versions[u] === "test" && UNIT_TEST_VERSIONS[u]) ? UNIT_TEST_VERSIONS[u].label : u);
+    const unitsEl = document.createElement("p");
+    unitsEl.className = "pause-units";
+    unitsEl.textContent = names.join(" \u00b7 ") + (cfg.source === "flagged" ? " (flagged questions)" : "");
+    const where = document.createElement("p");
+    where.className = "pause-where";
+    where.textContent = "Question " + Math.min(pos + 1, order.length) + " of " + order.length;
+    info.append(unitsEl, where);
+  }
   const p = document.createElement("p");
   p.className = "qtext";
   /* The daily question has no timer at all to speak of — saying one
@@ -45923,7 +46104,7 @@ function renderPausedScreen(){
   menuBtn.textContent = (runLabel === "Daily question") ? "Exit Daily Question" : "Exit test";
   menuBtn.addEventListener("click", confirmExitTest);
   actions.append(resumeBtn, menuBtn);
-  panel.append(h, p, actions);
+  panel.append(h, info, p, actions);
   stage.replaceChildren(panel);
   toTop();
   resumeBtn.focus({ preventScroll: true });
@@ -55219,6 +55400,60 @@ function paintSliderFill(slider){
   const pct = mx > mn ? Math.max(0, Math.min(1, (v - mn) / (mx - mn))) * 100 : 100;
   slider.style.setProperty("--fill", pct.toFixed(2) + "%");
 }
+/* A SLIDER THAT TAKES THE FIRST TOUCH (build 291): "when first doing it
+   when it's on all, the first time you attempt to slide does not
+   register ... It might be same for any other slider." iOS only moves a
+   range input from its THUMB, and on "All" the thumb is pinned at the
+   far right against the All button - so a finger landing anywhere else
+   on the track did nothing the first time. This drives the input from
+   the touch itself: wherever the finger lands, the value goes there and
+   follows it, through the same input/change events the slider already
+   answers. Vertical page scrolls that merely pass over it are let go. */
+function attachRangeTouch(slider){
+  let active = false, startX = 0, startY = 0, decided = false;
+  const valueAt = x => {
+    const r = slider.getBoundingClientRect();
+    const thumb = 26;
+    const f = Math.max(0, Math.min(1, (x - r.left - thumb / 2) / Math.max(1, r.width - thumb)));
+    const mn = Number(slider.min) || 0, mx = Number(slider.max) || 0;
+    let v = mn + f * (mx - mn);
+    const st = slider.step;
+    if(st && st !== "any"){ const k = Number(st) || 1; v = mn + Math.round((v - mn) / k) * k; }
+    return Math.max(mn, Math.min(mx, v));
+  };
+  const drive = x => {
+    slider.value = String(valueAt(x));
+    slider.dispatchEvent(new Event("input", { bubbles: true }));
+  };
+  slider.addEventListener("touchstart", e => {
+    if(slider.disabled || e.touches.length !== 1) return;
+    active = true; decided = false;
+    startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+  }, { passive: true });
+  slider.addEventListener("touchmove", e => {
+    if(!active) return;
+    const t = e.touches[0];
+    if(!decided){
+      const dx = Math.abs(t.clientX - startX), dy = Math.abs(t.clientY - startY);
+      if(dx < 4 && dy < 4) return;
+      decided = true;
+      /* mostly vertical: a scroll, not a slide */
+      if(dy > dx * 1.2){ active = false; return; }
+      drive(startX);
+    }
+    e.preventDefault();
+    drive(t.clientX);
+  }, { passive: false });
+  slider.addEventListener("touchend", e => {
+    if(!active) return;
+    /* a tap with no slide still sets the value where it landed */
+    if(!decided) drive(startX);
+    active = false;
+    slider.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  slider.addEventListener("touchcancel", () => { active = false; });
+}
+
 function plainSlider(labelText, min, max, step, get, set, formatVal, onChange){
   const sect = document.createElement("div");
   sect.className = "sect";
@@ -55241,6 +55476,7 @@ function plainSlider(labelText, min, max, step, get, set, formatVal, onChange){
     paintSliderFill(slider);
     if(typeof onChange === "function") onChange();
   });
+  attachRangeTouch(slider);
   paintSliderFill(slider);
   wrap.append(slider, valDisplay);
   sect.appendChild(wrap);
@@ -55556,6 +55792,7 @@ function showSetup(){
     slider.addEventListener("change", settle);
     slider.addEventListener("pointerup", settle);
     slider.addEventListener("touchend", settle);
+    attachRangeTouch(slider);
     wrap.append(slider, allBtn);
     sect.appendChild(wrap);
 
@@ -55833,11 +56070,16 @@ function showSetup(){
      clock. */
   const timerSect = document.createElement("div");
   timerSect.className = "sect timer-sect";
-  const limitRow = toggle("Time limit",
-    "The run ends when the clock hits zero.",
+  /* NAMED FOR WHAT THEY DO (build 291): "Could the stop watch and time
+     limit have a better title? I feel like some people don't know the
+     difference." One counts DOWN and stops you; the other counts UP and
+     never does - the names say which now, and each has one short line
+     under it. */
+  const limitRow = toggle("Countdown timer",
+    "Pick a time. The test ends when it runs out.",
     () => cfg.timer === "down", v => { cfg.timer = v ? "down" : "off"; });
-  const watchRow = toggle("Stopwatch",
-    "See how long you are taking. No limit.",
+  const watchRow = toggle("Track my time",
+    "Counts up so you can see how long you take. No limit.",
     () => cfg.timer === "up", v => { cfg.timer = v ? "up" : "off"; });
   timerSect.append(limitRow);
   timerSect.paint = () => {
@@ -55896,11 +56138,14 @@ function showSetup(){
   optSect.classList.add("opt-tiles-sect");
   const optTiles = document.createElement("div");
   optTiles.className = "opt-tiles";
-  const shuffleRow = toggle("Shuffle answers",
-    "A new order every time, so you learn the answer, not its letter.",
+  /* "ANSWER CHOICES", NOT "ANSWERS" (build 291), with one quick line
+     under each: "have it say answer choices. Give a description on what
+     they do as well but a quick quick simple one." */
+  const shuffleRow = toggle("Shuffle answer choices",
+    "Mixes up the order of the choices each time.",
     () => cfg.shuffle, v => { cfg.shuffle = v; });
-  const recallRow = toggle("Hide answers",
-    "Think of the answer first, then tap to see the choices.",
+  const recallRow = toggle("Hide answer choices",
+    "Think of the answer first, then tap to show the choices.",
     () => cfg.recall, v => { cfg.recall = v; });
   /* Plain switch rows now, the same as the timer's (build 249) - inside
      More options every setting is one kind of control. */
@@ -56167,7 +56412,7 @@ function showSetup(){
        is how this kind of check answers last render's question. */
     /* The fold holds the timer and nothing else (build 250). */
     moreWrap.hidden = timerSect.hidden;
-    moreToggleState.textContent = cfg.timer === "down" ? cfg.timerMinutes + " min limit" : cfg.timer === "up" ? "Stopwatch" : "Off";
+    moreToggleState.textContent = cfg.timer === "down" ? cfg.timerMinutes + " min countdown" : cfg.timer === "up" ? "Tracking time" : "Off";
     /* NOT the card (build 251): the whole Timer card turning green when a
        timer was on was "kinda weird" - only its pill in the top box goes
        green (see the tags below). */
@@ -56220,8 +56465,26 @@ function showSetup(){
        further takes nothing away. In a mix with whole units the note
        still shows, for them. */
     const allShort = cfg.units.length > 0 && cfg.units.every(u => cfg.versions[u] === "test" && UNIT_TEST_VERSIONS[u]);
-    hundoNote.hidden = !partial || allShort;
-    hundoNote.textContent = !partial ? ""
+    /* THE NOTE NEVER COMES AND GOES UNDER A FINGER (build 291): "The
+       position of the slider and all button change when that hundo
+       earning thing shows up ... the slider moves from under your
+       finger." The sheet grows upward from the bottom of the screen, so
+       a note appearing below the slider pushed the slider UP the moment
+       a drag took the count below All - mid-drag, which is also what
+       swallowed that first drag. The note is always there now while a
+       run can be cut short, and says either thing in the same footprint:
+       a quiet line when the whole unit is in, the red one when it is
+       not. Only things a drag cannot change (no units, Review, a short
+       version) take it away. */
+    const canCut = !reviewAllMode && cfg.units.length > 0 && wholeUnits > 0 && !allShort;
+    hundoNote.hidden = !canCut;
+    hundoNote.classList.toggle("is-ok", canCut && !partial);
+    hundoNote.textContent = !canCut ? ""
+      : !partial
+        /* a short version in the mix never earns one, so this says
+           whole units rather than "every question" */
+        ? (cfg.units.some(u => cfg.versions[u] === "test" && UNIT_TEST_VERSIONS[u]) ? "A 100% counts as a hundo for each whole unit here."
+          : cfg.units.length === 1 ? "The whole unit, so a 100% here counts as a hundo." : "Every question, so a 100% on a unit counts as a hundo.")
       : cfg.units.length === 1
         ? "Not the whole unit, so this run won't count toward a hundo."
         : "Not every question, so this run won't count toward any hundos.";
@@ -56266,7 +56529,7 @@ function showSetup(){
       if(!optSect.hidden && !shuffleRow.hidden && cfg.shuffle) tag("Shuffled", "shuffle");
       if(!optSect.hidden && !recallRow.hidden && cfg.recall) tag("Answers hidden", "hidden");
       if(!timerSect.hidden && (cfg.timer === "down" || cfg.timer === "up"))
-        tag(cfg.timer === "down" ? cfg.timerMinutes + " min limit" : "Stopwatch", "timer", "is-set");
+        tag(cfg.timer === "down" ? cfg.timerMinutes + " min countdown" : "Tracking time", "timer", "is-set");
     }
     if(sheetSummaryTags.parentNode !== sheetSummary || sheetSummary.lastChild !== sheetSummaryTags) sheetSummary.appendChild(sheetSummaryTags);
 
@@ -56542,7 +56805,9 @@ function showCountdown(n){
      interval now that reads how long it has ACTUALLY been, so a late
      tick catches up instead of queueing behind the one before it; the
      total is 3 seconds whatever the phone is doing. */
-  const TOTAL_MS = 300 * 10;
+  /* 2.5s, not 3 (build 291): "Could the loading test screen be like half
+     a second shorter?" The bar still fills in full before it hands over. */
+  const TOTAL_MS = 2500;
   const startedAt = Date.now();
   let done = false;
   function tick(){
@@ -57684,7 +57949,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-02-290";
+const APP_BUILD = "2026-10-02-291";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -59764,6 +60029,14 @@ function markUnlocksShown(chars, banners){
 function pendingHomeUnlocks(){
   /* Held until the next finished test, which announces them itself. */
   if(store.mergeHold) return { chars: [], banners: [] };
+  /* THE COUNTERS FIRST (build 291). "The app gave me a pop for the
+     character I unlocked (koi) ... after closing it out and opening
+     again, that's when the other one came." The Koi reads the study log
+     straight off, so it was ready at launch; the Masked One reads a
+     retake count that seedChallenges289() fills - and nothing on the way
+     to Home ran it, only a test, Customize or the results did. Both are
+     one early return once done, so asking here costs nothing. */
+  try{ seedBannerCounters(); seedChallenges289(); }catch(e){}
   const u = ensureUnlocksShown();
   const chars = announceableHeldCharacters().filter(id => u.chars.indexOf(id) < 0);
   let banners = [];
@@ -59787,6 +60060,16 @@ function homeUnlockBlocked(){
    Home first and the unlock arrives as news, not as part of the load. */
 const HOME_UNLOCK_DELAY_MS = 2200;
 let homeUnlockTimer = null;
+/* True from the first card of a Home queue to the last. */
+let homeUnlockPlaying = false;
+function homeUnlocksAfterSync(){
+  if(homeUnlockPlaying || homeUnlockTimer) return;
+  try{
+    if(!stage || !stage.querySelector('[data-screen="home"]')) return;
+    const p = pendingHomeUnlocks();
+    if(p.chars.length || p.banners.length) scheduleHomeUnlocks(900);
+  }catch(e){}
+}
 function scheduleHomeUnlocks(ms){
   if(homeUnlockTimer) clearTimeout(homeUnlockTimer);
   homeUnlockTimer = setTimeout(() => playHomeUnlocks(0), ms == null ? HOME_UNLOCK_DELAY_MS : ms);
@@ -59807,10 +60090,22 @@ function playHomeUnlocks(tries){
     .concat(p.banners.map(bannerUnlockItem).filter(Boolean));
   items.forEach(it => { it.flyToProfile = true; });
   let i = 0;
+  homeUnlockPlaying = true;
   const next = () => {
-    if(i >= items.length) return;
+    /* ONE SITTING (build 291). Anything that became unlocked while the
+       queue was playing - the cloud copy of the account landing a moment
+       after launch, most often - joins the end of THIS queue instead of
+       waiting for the next time Home is opened. Each card marks itself
+       shown, so the re-check only ever finds new ones. */
+    if(i >= items.length){
+      let more = { chars: [], banners: [] };
+      try{ more = pendingHomeUnlocks(); }catch(e){}
+      const extra = more.chars.map(characterUnlockItem).concat(more.banners.map(bannerUnlockItem).filter(Boolean));
+      extra.forEach(it => { it.flyToProfile = true; items.push(it); });
+      if(i >= items.length){ homeUnlockPlaying = false; return; }
+    }
     /* Left Home mid-queue: the rest wait for the next visit, unshown. */
-    if(!stage.querySelector('[data-screen="home"]')) return;
+    if(!stage.querySelector('[data-screen="home"]')){ homeUnlockPlaying = false; return; }
     const it = items[i++];
     playUnlockSpotlight(it, i, items.length, () => setTimeout(next, 260));
   };

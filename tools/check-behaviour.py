@@ -1868,9 +1868,9 @@ def check_b234(br):
                       count: (sh.querySelector('.drawfrom-sect .bank-opt.on .bank-count') || {}).textContent || '',
                       name: (sh.querySelector('.drawfrom-sect .bank-opt.on .bank-name') || {}).textContent || '' };
         cfg.size = 0; if(sl){ sl.value = sl.min; sl.dispatchEvent(new Event('input', { bubbles:true })); }
-        res.dragged = cfg.size; res.warn = !sh.querySelector('.hundo-note').hidden;
+        res.dragged = cfg.size; { const hn = sh.querySelector('.hundo-note'); res.warn = !hn.hidden && !hn.classList.contains('is-ok'); }
         if(sl){ sl.value = sl.max; sl.dispatchEvent(new Event('input', { bubbles:true })); }
-        res.atEnd = cfg.size; res.warnAtEnd = !sh.querySelector('.hundo-note').hidden;
+        res.atEnd = cfg.size; { const hn = sh.querySelector('.hundo-note'); /* build 291: the line stays at All, as the quiet .is-ok one */ res.warnAtEnd = !hn.hidden && !hn.classList.contains('is-ok'); }
         const sw = sh.querySelectorAll('.timer-sect .opt input[type=checkbox]');
         res.timerSwitches = sw.length;
         if(sw[0]){ sw[0].checked = true; sw[0].dispatchEvent(new Event('change', { bubbles:true })); }
@@ -1993,7 +1993,7 @@ def check_b235(br):
       await T('after', () => ({ spots: document.querySelectorAll('.rs-spot').length, left: pendingHomeUnlocks().chars.length }));
       showHome(); await wait(4200);
       await T('again', () => document.querySelectorAll('.rs-spot').length);
-      // The Marksman: its bar in a row (100 until 246, 150 until 259, 200 now), counted from the streak on record.
+      // The Marksman: its bar in a row (100 until 246, 150 until 259, 200 until 291, 250 now), counted from the streak on record.
       await T('marksman', () => { const had = store.bestTestStreak, N = CHARACTER_FEATS.streak100.need; store.bestTestStreak = N - 1;
         const a = isLockedCharacter('marksman'); store.bestTestStreak = N; const b = isLockedCharacter('marksman');
         store.bestTestStreak = had; return [a, b]; });
@@ -2101,7 +2101,7 @@ def check_b235b(br):
         const card = (document.querySelector('.unitoptions-modal-sheet .more-toggle') || {}).parentElement;
         return { tags: ts.length, texts: ts.map(t => t.textContent), icons: ts.every(t => !!t.querySelector('svg')),
                  cardGreen: !!card && card.classList.contains('is-set'),
-                 green: (() => { const p = ts.find(t => /min limit|Stopwatch/.test(t.textContent)); if(!p) return false;
+                 green: (() => { const p = ts.find(t => /min limit|Stopwatch|min countdown|Tracking time/.test(t.textContent)); if(!p) return false;
                    const m = (getComputedStyle(p).borderTopColor.match(/[\d.]+/g) || []).map(Number);
                    return p.classList.contains('is-set') && m.length >= 3 && m[1] > m[0] + 80 && m[1] > m[2] + 60; })(),
                  state: (document.querySelector('.more-toggle-state') || {}).textContent || '' }; });
@@ -2159,10 +2159,10 @@ def check_b235b(br):
     # don't show that ... If there's no timer, don't show that either ...
     # And if it's all questions, don't show that."
     check("the top box lists only the settings that are on, each with an icon, and no question count",
-          isinstance(t, dict) and t.get("icons") and "20 min limit" in tx and "Flagged" in tx
+          isinstance(t, dict) and t.get("icons") and "20 min countdown" in tx and "Flagged" in tx
           and not any(x in ("All questions", "In order", "No timer") for x in tx)
           and not any(x.startswith("All ") and x[4:].isdigit() for x in tx) and not any(" of " in x for x in tx)
-          and "20 min limit" in t.get("state", ""), t)
+          and "20 min countdown" in t.get("state", ""), t)
     # Build 250/251: "I need this to go green when you change it" - then
     # "that box turning green is kinda weird. Don't do that. I like how
     # the timer thing at the top is green though." The pill, not the card.
@@ -3245,8 +3245,10 @@ def check_penal_versions(br):
       const out = { note: note && !note.hidden ? note.textContent : '', line: line ? line.textContent : '',
         want: QUESTIONS.filter(q => (q.topic||'').trim() === 'Identity Crimes').length };
       document.querySelector('.unitoptions-modal-scrim')?.click(); return out; }""")
-    check("with another unit, the sheet adds no note for the short version either",
-          mix["note"] == ""
+    # REVISED IN 291: the line is always there now (it holds the slider
+    # still), so the rule is that it never claims the short version counts.
+    check("with another unit, the sheet's line never says the short version counts",
+          "Every question" not in mix["note"] and "won't count" not in mix["note"]
           and ("%d questions" % (len(PENAL_SLIDES_SRCS) + mix["want"])) in mix["line"], mix)
     # 9. Review mode shows the version chosen
     pg.evaluate("()=>{ cfg.mode = 'review'; cfg.units = []; cfg.versions = {}; showSetup(); }")
@@ -4577,7 +4579,8 @@ def check_b258(br):
           vd.get("bodyTop", 99) <= vd.get("headBottom", 0) + .5, vd)
     check("the Koi is seven study days in a row, and Virtual Room results have nothing to do with it (build 289)", r.get("valk") == [False, True, True], r.get("valk"))
     check("the Astronaut is five hundos in a day", r.get("astro") == 5, r.get("astro"))
-    check("the Marksman is 200 in a row", r.get("marks") == 200, r.get("marks"))
+    # REVISED IN 291: "Make the marksman challenge 250 not 200."
+    check("the Marksman is 250 in a row (build 291)", r.get("marks") == 250, r.get("marks"))
     h = r.get("hold") or {}
     check("holding something you have opens its card, held: a tick, 'Unlocked', and it is not picked by the hold",
           h.get("card") and h.get("tick") and "Unlocked" in h.get("text", "") and "day one" in h.get("text", "")
@@ -4742,7 +4745,7 @@ def check_b267(br):
       out.shards = !!buildRankEmblemSVG('titan').querySelector('.rk-spin.rk-fast');
       const keep = [store.bestTestStreak, store.lifetime.longestStreak];
       store.bestTestStreak = 0; store.lifetime.longestStreak = 500; out.lifetimeLocked = isLockedCharacter('marksman');
-      store.bestTestStreak = 200; out.testUnlocked = !isLockedCharacter('marksman');
+      store.bestTestStreak = CHARACTER_FEATS.streak100.need; out.testUnlocked = !isLockedCharacter('marksman');
       store.bestTestStreak = keep[0] || 0; store.lifetime.longestStreak = keep[1];
       out.defaulted = (() => { const d = JSON.parse(JSON.stringify(store)); delete d.bestTestStreak; applyLoadedData(d); return store.bestTestStreak; })();
       showProfile('profile'); await wait(1400);
@@ -6129,6 +6132,155 @@ def check_b290(br):
     ctx.close()
 
 
+def check_b291(br):
+    """Build 291. (1) Unlocks in one sitting: cloud data landing after
+    Home is up gets its card on the same visit, and anything newly earned
+    while a card is up joins the same queue. (2) The Marksman is 250 in a
+    row. (3) The Hive: 300 questions in a day, counted per answer. (4)
+    Sliders follow a touch from anywhere on the track, and the hundo line
+    is always there while a run can be cut, so the slider never moves
+    mid-drag. (5) The options say "answer choices", carry a one-line
+    description, and the timers are "Countdown timer" / "Track my time".
+    (6) Loading is half a second shorter. (7) The flag is bigger and up in
+    the corner. (8) Pause names the units, under Paused, in the middle.
+    Written against 290, where every one of these fails."""
+    print("\n63. build 291: one sitting, Hive, sliders, start sheet, flag, pause")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      try{
+        document.documentElement.classList.remove('is-reloading'); document.getElementById('pushing-update')?.remove();
+        store.seenUnitSelectTour = true; store.seenUnitOptionsTour = true;
+        /* (2)(3) the feats */
+        out.marks = CHARACTER_FEATS.streak100 && CHARACTER_FEATS.streak100.need;
+        out.hive = { def: AVATAR_CHARACTERS.some(c => c.id === 'hive'), feat: (CHARACTER_FEATS.busyday300 || {}).need,
+                     svg: (() => { try{ const s = buildAvatarCharSVG('hive'); return !!(s && s.querySelector('.cx-fx-hivebees')); }catch(e){ return false; } })() };
+        const keep = [store.dayAnswered, store.dayAnsweredBest];
+        store.dayAnswered = null; store.dayAnsweredBest = 0;
+        out.hiveLocked0 = isLockedCharacter('hive');
+        const qi = QUESTIONS.findIndex(q => (q.topic || '').indexOf('Identity') >= 0);
+        try{ recordResult(qi, true); recordResult(qi, false); }catch(e){ out.recordThrew = String(e); }
+        out.dayCount = typeof busiestDay === 'function' ? busiestDay() : null;
+        store.dayAnswered = null; store.dayAnsweredBest = 299; out.hiveLocked299 = isLockedCharacter('hive');
+        store.dayAnsweredBest = 300; out.hiveOpen300 = !isLockedCharacter('hive');
+        out.defaulted = (() => { const d = JSON.parse(JSON.stringify(store)); delete d.dayAnsweredBest; delete d.dayAnswered; applyLoadedData(d);
+          return [store.dayAnsweredBest, store.dayAnswered]; })();
+        store.dayAnswered = keep[0]; store.dayAnsweredBest = 0;
+        /* (1) one sitting. A clean slate, then Home. */
+        const kStreak = store.bestTestStreak;
+        store.bestTestStreak = 0;
+        const p0 = pendingHomeUnlocks(); markUnlocksShown(p0.chars, p0.banners);
+        showHome(); await wait(3200);
+        out.spotsAtStart = document.querySelectorAll('.rs-spot').length;
+        /* the cloud copy lands: a character earned elsewhere */
+        store.bestTestStreak = CHARACTER_FEATS.streak100.need;
+        persistLocally();
+        let t0 = performance.now();
+        while(!document.querySelector('.rs-spot') && performance.now() - t0 < 4000) await wait(100);
+        const s1 = document.querySelector('.rs-spot');
+        out.first = s1 ? s1.textContent.slice(0, 160) : null;
+        /* earned while the first card is up */
+        store.dayAnsweredBest = 300;
+        await wait(800);
+        s1 && s1.click();
+        t0 = performance.now(); let s2 = null;
+        while(performance.now() - t0 < 4000){ await wait(100); s2 = document.querySelector('.rs-spot'); if(s2 && s2 !== s1 && s2.isConnected && !/Marksman/.test(s2.textContent)) break; s2 = null; }
+        out.second = s2 ? s2.textContent.slice(0, 160) : null;
+        out.stillHome = !!stage.querySelector('[data-screen="home"]');
+        s2 && s2.click(); await wait(1600);
+        store.bestTestStreak = kStreak; store.dayAnsweredBest = keep[1] || 0;
+        /* (4)(5) the start sheet */
+        cfg.mode = 'drill'; const unit = topicsIn(QUESTIONS).find(u => u.indexOf('Identity') >= 0); cfg.units = [unit]; cfg.size = 0;
+        showSetup(); await wait(700);
+        document.getElementById('nextbtn')?.click(); await wait(900);
+        const sl = document.querySelector('.howmany-sect input.slider');
+        const note = document.querySelector('.unitoptions-modal-sheet .hundo-note');
+        const box = el => { const b = el.getBoundingClientRect(); return [Math.round(b.top), Math.round(b.height)]; };
+        out.noteAll = note ? { hidden: note.hidden, text: note.textContent, h: box(note)[1] } : null;
+        const slTop0 = box(sl)[0];
+        const r0 = sl.getBoundingClientRect(), y = r0.top + r0.height / 2;
+        const touch = (type, x) => { const t = new Touch({ identifier: 1, target: sl, clientX: x, clientY: y });
+          sl.dispatchEvent(new TouchEvent(type, { touches: type === 'touchend' ? [] : [t], changedTouches: [t], targetTouches: type === 'touchend' ? [] : [t], bubbles: true, cancelable: true })); };
+        const x0 = r0.left + r0.width * .35;
+        out.sizeBefore = cfg.size;
+        touch('touchstart', x0); await wait(16);
+        touch('touchmove', x0 + 12); await wait(16);
+        out.midDrag = { size: cfg.size, top: box(sl)[0] };
+        touch('touchmove', x0 + 30); await wait(16);
+        touch('touchend', x0 + 30); await wait(200);
+        out.sizeAfter = cfg.size; out.slTop = [slTop0, box(sl)[0]];
+        out.notePartial = note ? { hidden: note.hidden, text: note.textContent, h: box(note)[1] } : null;
+        /* every other slider on the sheet takes a touch the same way */
+        out.sliders = [...document.querySelectorAll('input[type=range]')].length;
+        const labs = [...document.querySelectorAll('.unitoptions-modal-sheet .otitle, .unitoptions-modal-sheet .olabel, .unitoptions-modal-sheet label')].map(e => e.textContent.trim()).join(' | ');
+        out.labels = labs;
+        out.hints = [...document.querySelectorAll('.unitoptions-modal-sheet .ohint')].filter(h => h.offsetParent && h.textContent.trim()).map(h => h.textContent.trim());
+        out.sheetText = (document.querySelector('.unitoptions-modal-sheet') || {}).textContent || '';
+        document.querySelector('.unitoptions-modal-scrim')?.click(); await wait(300);
+        /* (6) loading, (7) flag, (8) pause */
+        cfg.units = [unit]; cfg.size = 0;
+        const qs = QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === unit);
+        beginRun(qs); t0 = performance.now();
+        while(!document.querySelector('.choice') && performance.now() - t0 < 8000) await wait(25);
+        out.loadMs = Math.round(performance.now() - t0);
+        await wait(700);
+        const fb = document.querySelector('.qnumrow > .flagbtn'), qn = document.querySelector('.qnumrow .qnum'), qt = document.querySelector('.qtext');
+        const card = fb && fb.closest('.panel');
+        if(fb){ const b = fb.getBoundingClientRect(), n = qn.getBoundingClientRect(), t = qt.getBoundingClientRect(), c = card.getBoundingClientRect();
+          out.flag = { w: Math.round(b.width), icon: Math.round(fb.querySelector('.flagicon').getBoundingClientRect().width),
+                       centreAboveLine: Math.round((b.top + b.bottom) / 2 - (n.top + n.bottom) / 2), aboveQuestion: Math.round(t.top - b.bottom),
+                       rightGap: Math.round(c.right - b.right) }; }
+        pauseRun(); await wait(500);
+        const units = document.querySelector('.pause-units'), where = document.querySelector('.pause-where'), pp = document.querySelector('.pausepanel');
+        out.pause = { units: units ? units.textContent : null, where: where ? where.textContent : null,
+                      size: units ? parseFloat(getComputedStyle(units).fontSize) : 0,
+                      centreOff: pp ? Math.round((pp.getBoundingClientRect().top + pp.getBoundingClientRect().bottom) / 2 - innerHeight / 2) : null,
+                      unitsTop: units ? Math.round(units.getBoundingClientRect().top) : null,
+                      scope: (() => { const s = document.querySelector('.test-scopelabel'); return s ? getComputedStyle(s).visibility : 'none'; })() };
+      } catch(e){ out.threw = String(e && e.stack || e); }
+      return out; }""")
+    if r.get("threw"):
+        print("   threw:", r["threw"][:400])
+    check("the Marksman is 250 in a row in one test", r.get("marks") == 250, r.get("marks"))
+    hv = r.get("hive") or {}
+    check("the Hive exists, is drawn with its bees, and asks for 300 questions in a day",
+          hv.get("def") and hv.get("svg") and hv.get("feat") == 300, hv)
+    check("every answer counts toward the day, right or wrong, and the Hive opens at 300, not 299",
+          r.get("dayCount") == 2 and r.get("hiveLocked0") and r.get("hiveLocked299") and r.get("hiveOpen300"),
+          [r.get("dayCount"), r.get("hiveLocked0"), r.get("hiveLocked299"), r.get("hiveOpen300"), r.get("recordThrew")])
+    check("an account from an older build gets the day counters defaulted", r.get("defaulted") == [0, None], r.get("defaulted"))
+    check("a character that arrives with the cloud copy plays on the same Home visit",
+          r.get("spotsAtStart") == 0 and "Marksman" in str(r.get("first")), [r.get("spotsAtStart"), r.get("first")])
+    check("and one earned while that card is up plays straight after it, still on Home",
+          "Hive" in str(r.get("second")) and r.get("stillHome"), [r.get("second"), r.get("stillHome")])
+    na, npart = r.get("noteAll") or {}, r.get("notePartial") or {}
+    check("on All, the hundo line is already there (says the whole unit counts)",
+          na and not na.get("hidden") and "counts as a hundo" in na.get("text", ""), na)
+    check("a touch on the track away from the thumb moves the count, first time, from All",
+          r.get("sizeBefore") == 0 and 0 < (r.get("sizeAfter") or 0) < 12, [r.get("sizeBefore"), (r.get("midDrag") or {}).get("size"), r.get("sizeAfter")])
+    st = r.get("slTop") or [0, 1]
+    check("the slider does not move while it is dragged below All, and the line keeps its height",
+          st[0] == st[1] == (r.get("midDrag") or {}).get("top") and npart.get("h") == na.get("h") and "won't count" in npart.get("text", ""),
+          [st, (r.get("midDrag") or {}).get("top"), na.get("h"), npart.get("h")])
+    txt = r.get("sheetText") or ""
+    check("the options say 'answer choices', and the timers say what they do",
+          all(s in txt for s in ["Shuffle answer choices", "Hide answer choices", "Countdown timer", "Track my time"])
+          and "Stopwatch" not in txt, txt[:300])
+    check("each of those four carries a one-line description",
+          len([h for h in r.get("hints", []) if len(h) < 80]) >= 4, r.get("hints"))
+    check("the loading screen is about half a second shorter (2.5s)",
+          2300 <= (r.get("loadMs") or 0) <= 2850, r.get("loadMs"))
+    fl = r.get("flag") or {}
+    check("the test's flag is bigger (44px+ button, 26px+ icon), up above the question line, right in the corner",
+          fl.get("w", 0) >= 44 and fl.get("icon", 0) >= 26 and fl.get("centreAboveLine", 0) < -3 and fl.get("aboveQuestion", -1) >= 0 and fl.get("rightGap", 99) <= 16, fl)
+    pz = r.get("pause") or {}
+    check("Pause names the unit and the question, in bigger type, lowered from the top",
+          "Identity" in str(pz.get("units")) and "Question 1 of" in str(pz.get("where")) and pz.get("size", 0) >= 19
+          and (pz.get("unitsTop") or 0) > 250, pz)
+    check("and the pause panel sits in the middle of the screen, the header's small line out of the way",
+          abs(pz.get("centreOff") or 999) <= 80 and pz.get("scope") in ("hidden", "none"), pz)
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     only = os.environ.get("ONLY_B245")
@@ -6212,6 +6364,7 @@ def main():
             check_b288(br)
             check_b289(br)
             check_b290(br)
+            check_b291(br)
         finally:
             br.close()
     SERVER.shutdown()

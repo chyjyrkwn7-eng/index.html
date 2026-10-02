@@ -9370,3 +9370,69 @@ Customize 316ms -> ~207, sign-up 201ms -> ~89. Four causes, all fixed:
   banner tile is a live scene. An IntersectionObserver pauses any swatch
   or banner tile out of view (`.is-offscreen`); it is back to ~56.
 `check-behaviour` 62 holds all four; it fails on 289.
+
+### Build 291 - one sitting for unlocks, the Hive, sliders that take the first touch
+
+Eight items from one message. `check-behaviour` 63 holds every one and
+fails on 290 on all fifteen checks. Four older checks were updated:
+b234 and b235b (they now treat the quiet line as no warning and expect
+the new timer words), penal_versions (the line now says "whole unit",
+never "every question") and Marksman 250.
+- **Every unlock shows on the same Home visit.** The report was that the Koi
+  popped on launch and the Masked One only arrived on the next launch.
+  There were two causes:
+  - `pendingHomeUnlocks()` never ran `seedChallenges289()`, so a counter
+    the Masked One reads was only filled by a test, Customize or results.
+    It runs both seeders first now; once each has run, it is a single
+    early return.
+  - Cloud data landing after the queue had played was never looked at
+    again. `persistLocally()` now calls `homeUnlocksAfterSync()`, and the
+    queue's `next()` re-asks `pendingHomeUnlocks()` once it has run out,
+    so anything earned while a card is up is added to the same queue.
+    Each card marks itself shown, so asking again only ever finds new
+    cards.
+- **The Marksman is 250 in a row** (`MARKSMAN_RUN`). The `streak100` key
+  stays, because it is a storage id.
+- **The Hive** (`hive`, feat `busyday300`): a straw skep worn as a mask,
+  with a dark door, amber eyes, a honey drip for a mouth and three bees
+  circling it (`cx-fx-hivebees`, which only moves under `.char-live`).
+  The scene is a honey haze with fireflies. The unlock is **300 questions
+  in one calendar day** (`HIVE_DAY`), in any mode:
+  - `noteAnsweredToday()` is called from `recordResult()`.
+  - `busiestDay()` is the best of `dayAnsweredBest` and today's count.
+  - The two new store fields (`dayAnswered` and `dayAnsweredBest`) carry
+    the usual four defaults: the new store, `applyLoadedData`, reset, and
+    max-merge in both merges. They count from this build onwards; there
+    is no history to backfill them from.
+- **Sliders take the first touch.** iOS moves a range input only from its
+  thumb. On All, the thumb is pinned at the far right against the All
+  button, so a finger landing anywhere else did nothing the first time.
+  - `attachRangeTouch()` drives the value from the touch, wherever it
+    lands. A drag that is mostly vertical is let through as a scroll.
+  - It is attached in `plainSlider` and `sliderWithEverything`, so every
+    slider in the app gets it.
+- **The slider no longer moves under the finger.** The hundo line used to
+  appear below the slider the moment a drag left All. The sheet grows
+  upward from the bottom, so the slider jumped. Now the line is always
+  there whenever a run can be cut short:
+  - With the whole unit selected, it reads as a quiet note
+    (`.is-ok`: "...counts as a hundo").
+  - With part of the unit, it shows the red warning.
+  - With a short version (Penal Code slides 0-85) in the mix, it says
+    "A 100% counts as a hundo for each whole unit here", because the
+    short version never earns one.
+  - Both versions have the same `min-height`.
+- **The options are relabelled**: "Shuffle answer choices", "Hide answer
+  choices", "Countdown timer" and "Track my time" (replacing Time limit
+  and Stopwatch). Each has a one-line `.ohint` underneath saying what it
+  does.
+- **The loading screen is 2.5s** (`TOTAL_MS`), half a second shorter.
+- **The test's flag is a 2.8rem round button** with a 1.7rem icon. It is
+  lifted above the "Question N" line and sits in the card's top-right
+  corner. The unit-details list's flag keeps its own size.
+- **Pause says what you are taking, in the middle of the screen.**
+  - It names the units in `.pause-units` (1.2rem, 1.4rem on a tablet),
+    then "Question N of M", under the word Paused. A test version shows
+    its own label, and a flagged-only run adds "(flagged questions)".
+  - The whole panel is vertically centred. The progress bar stays at the
+    top, and the header's small scope line is hidden while paused.
