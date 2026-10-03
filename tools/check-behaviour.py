@@ -6317,8 +6317,13 @@ def check_b295(br):
         store.banner = 'tests500'; store.koiRevoked295 = false;
         seedChallenges289();
         out.revoked = { shown: store.unlocksShown.banners.slice(), banner: store.banner, flag: store.koiRevoked295 };
-        store.unlocksShown.banners.push('tests500'); seedChallenges289();
-        out.once = store.unlocksShown.banners.indexOf('tests500') >= 0;
+        /* build 296: not just once - while it is not held, a "shown"
+           record arriving from another device is cleared too */
+        store.unlocksShown.banners.push('tests500'); store.koiRevoked295 = true; seedChallenges289();
+        out.once = store.unlocksShown.banners.indexOf('tests500') < 0;
+        /* and once it IS held, the record of its pop-up stays */
+        store.friendsBest = 5; markUnlocksShown([], ['tests500']); seedChallenges289();
+        out.heldStays = store.unlocksShown.banners.indexOf('tests500') >= 0;
         out.pending = (pendingHomeUnlocks().banners || []).indexOf('tests500') >= 0;
         const d = JSON.parse(JSON.stringify(store)); delete d.koiRevoked295; delete d.friendsBest;
         applyLoadedData(d); out.defaulted = [store.koiRevoked295, store.friendsBest];
@@ -6332,10 +6337,61 @@ def check_b295(br):
     rv = r.get("revoked") or {}
     check("294's unlock is taken back: no longer recorded as shown, no longer worn",
           rv.get("shown") == ["tests100"] and rv.get("banner") == "" and rv.get("flag") is True, rv)
-    check("the take-back runs once, and no pop-up is queued for an unlock nobody holds",
+    check("while Koi Pond is not held, a 'shown' record from any device is cleared, and no pop-up is queued",
           r.get("once") is True and r.get("pending") is False, [r.get("once"), r.get("pending")])
+    check("once it is really earned, its pop-up record stays", r.get("heldStays") is True, r.get("heldStays"))
     check("an account from an older build is defaulted unrevoked, with no friends on record",
           r.get("defaulted") == [False, 0], r.get("defaulted"))
+    ctx.close()
+
+
+def check_b296(br):
+    """Build 296: "Viewing flagged questions isn't really a thing ... In
+    the review section we need [something] to do this." Review opens with
+    a Flagged questions card: every flagged question in every unit, with
+    its answer, in one tap; with none flagged it is a disabled card that
+    says how to flag one. Written against 295, where there is no card."""
+    print("\n65. build 296: every flagged question from Review, in one tap")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      try{
+        document.getElementById('pushing-update')?.remove(); store.seenUnitSelectTour = true; store.seenUnitOptionsTour = true;
+        store.flagged = {};
+        cfg.mode = 'review'; cfg.units = []; showSetup(); await wait(600);
+        const e = document.querySelector('.review-flagged-card');
+        out.empty = e ? { disabled: e.disabled, text: e.textContent } : null;
+        /* three flagged, in two units */
+        const all = topicsIn(QUESTIONS), A = all[0], B = all[1];
+        const ia = QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === A).slice(0, 2);
+        const ib = QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === B).slice(0, 1);
+        const want = ia.concat(ib);
+        want.forEach(i => { if(!isFlagged(i)) toggleFlag(i); });
+        out.flaggedNow = flaggedIndexes().length;
+        showSetup(); await wait(600);
+        const c = document.querySelector('.review-flagged-card');
+        out.card = c ? { disabled: c.disabled, text: c.textContent } : null;
+        c && c.click(); await wait(700);
+        const qs = [...document.querySelectorAll('.screen-answerreview .review-question-text')].map(x => x.textContent);
+        out.list = { n: qs.length, all: want.every(i => qs.indexOf(QUESTIONS[i].q) >= 0),
+                     sub: (document.querySelector('.screen-answerreview .cal-sub') || {}).textContent,
+                     open: [...document.querySelectorAll('.screen-answerreview .cal-month-body')].every(b => b.classList.contains('cal-month-body-open')) };
+        /* not on the other modes */
+        cfg.mode = 'drill'; showSetup(); await wait(400);
+        out.drill = !!document.querySelector('.review-flagged-card');
+      } catch(e){ out.threw = String(e && e.stack || e); }
+      return out; }""")
+    if r.get("threw"):
+        print("   threw:", r["threw"][:400])
+    em = r.get("empty") or {}
+    check("with nothing flagged, Review shows the card disabled, saying how to flag one",
+          em.get("disabled") is True and "Tap the flag" in em.get("text", ""), em)
+    cd = r.get("card") or {}
+    check("with questions flagged, the card counts them across units",
+          cd.get("disabled") is False and "3 questions across 2 units" in cd.get("text", ""), cd)
+    ls = r.get("list") or {}
+    check("one tap lists exactly the flagged questions, every unit open",
+          ls.get("n") == 3 and ls.get("all") and ls.get("open") and "Every question you've flagged" in str(ls.get("sub")), ls)
+    check("the card is only on Review", r.get("drill") is False, r.get("drill"))
     ctx.close()
 
 
@@ -6424,6 +6480,7 @@ def main():
             check_b290(br)
             check_b291(br)
             check_b295(br)
+            check_b296(br)
         finally:
             br.close()
     SERVER.shutdown()

@@ -51,8 +51,8 @@ HOOK = '''
     fbDb = { collection: function(name){ return { doc: function(id){ return {
       set: function(v){ window.__set.push(name + "/" + id); return Promise.resolve(); },
       get: function(){ const d = name === "progress" ? window.__cloud[id] : null;
-        return Promise.resolve(d ? { exists: true, data: function(){ return d; } }
-                                 : { exists: false }); },
+        return Promise.resolve(d ? { exists: true, metadata: { fromCache: false }, data: function(){ return d; } }
+                                 : { exists: false, metadata: { fromCache: false } }); },
       delete: function(){ window.__deleted.push(name + "/" + id); return Promise.resolve(); }
     }; } }; } };
     onSnapshotResilient = function(ref, onNext){
@@ -537,7 +537,7 @@ with sync_playwright() as pw:
       let cloud = null, cb = null;
       const writes = [];
       fbDb = { collection: name => ({ doc: id => ({
-        get: () => Promise.resolve(name === 'progress' && cloud ? { exists: true, data: () => clone(cloud) } : { exists: false }),
+        get: () => Promise.resolve(name === 'progress' && cloud ? { exists: true, metadata: { fromCache: false }, data: () => clone(cloud) } : { exists: false, metadata: { fromCache: false } }),
         set: d => { if(name === 'progress') writes.push(clone(d)); return Promise.resolve(); },
         update: d => Promise.resolve(),
         delete: () => Promise.resolve(),
@@ -772,7 +772,7 @@ with sync_playwright() as pw:
       target.stats = { [K]: { n: 9, m: 3, r: [111, 333] } };
       target.testHistory = [{ playedAt: 7000, pct: 90 }, { playedAt: 5000, pct: 100 }];
       fbDb = { collection: name => ({ doc: id => ({ id,
-        get: () => Promise.resolve(id === 'NOVA-TGT1' ? { exists: true, data: () => clone(target) } : { exists: false }),
+        get: () => Promise.resolve(id === 'NOVA-TGT1' ? { exists: true, metadata: { fromCache: false }, data: () => clone(target) } : { exists: false, metadata: { fromCache: false } }),
         set: d => Promise.resolve(), update: d => Promise.resolve(), delete: () => Promise.resolve(),
         onSnapshot: next => () => {} }) }) };
       Object.keys(now).forEach(k => { store[k] = clone(now[k]); });
@@ -790,6 +790,73 @@ with sync_playwright() as pw:
           r.get("n") == 11 and r.get("m") == 4 and r.get("study") == {"2026-09-28": 90000, "2026-10-03": 30000}, str(r))
     check("and the test played before the merge is not listed twice",
           sorted(r.get("tests") or []) == [5000, 7000, 9000], str(r))
+    ctx.close()
+
+    # ---- 8e. a stale device opening does not overwrite the account ----
+    # Build 296. Cmilledge went from level 46 to 26, Billyswole from 8
+    # hundos to 3, on Oct 2-3. Boot called pushToCloud() the moment
+    # Firebase was ready - a whole-document set() of this device's copy,
+    # before it had read anything - so a second device holding older
+    # progress wrote it over the account every time it opened. The merge
+    # could not catch it: Firestore shows a device its own pending write,
+    # so the newer server copy never reached it. Fails on 295.
+    print("\n8e. a stale device opening does not overwrite the account")
+    ctx = br.new_context(viewport={"width": 834, "height": 1194})
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.drill.v1', '%s');"
+                        "localStorage.setItem('class26e.synccode','NOVA-2601');}catch(e){}" % STORE)
+    pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
+    pg.evaluate("()=>document.getElementById('splashscreen')?.remove()")
+    r = pg.evaluate("""async ()=>{
+      const wait = ms => new Promise(res => setTimeout(res, ms));
+      const clone = o => JSON.parse(JSON.stringify(o));
+      const writes = []; let cb = null;
+      fbDb = { collection: name => ({
+        onSnapshot: () => () => {},
+        doc: id => ({
+          get: () => Promise.resolve({ exists: false, metadata: { fromCache: false } }),
+          set: d => { if(name === 'progress' && (id === 'NOVA-2601' || id === 'NOVA-NEW1')) writes.push(clone(d)); return Promise.resolve(); },
+          update: () => Promise.resolve(), delete: () => Promise.resolve(),
+          onSnapshot: next => { if(name === 'progress' && (id === 'NOVA-2601' || id === 'NOVA-NEW1')) cb = next; return () => {}; }
+        }) }) };
+      /* the stale device: 500 points, stamped NOW by a boot save */
+      syncCode = 'NOVA-2601';
+      store.lifetime.points = 500; store.unitPerfects = { U: 1 }; store.lastModified = Date.now();
+      /* the account in the cloud: the other device's 900 points, 5 hundos */
+      const cloud = clone(store); cloud.lifetime.points = 900; cloud.unitPerfects = { U: 5 };
+      cloud.lastModified = Date.now() - 60000;
+      writes.length = 0;
+      fbReadyDrained = false; firebaseBecameReady();
+      await wait(3200);
+      const out = { atBoot: writes.map(w => w.lifetime.points) };
+      /* Firestore delivers its cached copy first: still not the server */
+      if(cb) cb({ exists: true, metadata: { fromCache: true }, data: () => clone(Object.assign(clone(cloud), { lifetime: Object.assign({}, cloud.lifetime, { points: 450 }) })) });
+      await wait(3200);
+      out.afterCache = writes.map(w => w.lifetime.points);
+      /* then the server's */
+      if(cb) cb({ exists: true, metadata: { fromCache: false }, data: () => clone(cloud) });
+      await wait(3200);
+      const last = writes[writes.length - 1] || null;
+      out.after = { n: writes.length, points: last && last.lifetime.points, U: last && (last.unitPerfects || {}).U,
+                    local: store.lifetime.points, localU: (store.unitPerfects || {}).U };
+      out.anyStale = writes.some(w => w.lifetime.points < 900);
+      /* a brand-new account: the server says there is no document, and
+         the first push - the one creating it - goes */
+      writes.length = 0; cb = null;
+      syncCode = 'NOVA-NEW1'; store.lifetime.points = 10; store.lastModified = Date.now();
+      attachLiveListener('NOVA-NEW1'); scheduleCloudPush();
+      await wait(3200);
+      out.newBefore = writes.length;
+      if(cb) cb({ exists: false, metadata: { fromCache: false } });
+      await wait(3200);
+      out.newAfter = writes.length;
+      return out; }""")
+    check("a device opening does not write its copy over the account before reading the server's",
+          r["atBoot"] == [] and r["afterCache"] == [], str([r["atBoot"], r["afterCache"]]))
+    check("once the server's copy arrives, what goes up is the merge - the other device's 900 points and 5 hundos",
+          r["after"]["n"] >= 1 and r["after"]["points"] == 900 and r["after"]["U"] == 5 and not r["anyStale"], str(r["after"]))
+    check("and this device keeps the merged copy", r["after"]["local"] == 900 and r["after"]["localU"] == 5, str(r["after"]))
+    check("a brand-new account's first push still goes, once the server says there is nothing there yet",
+          r["newBefore"] == 0 and r["newAfter"] >= 1, str([r["newBefore"], r["newAfter"]]))
     ctx.close()
 
     # ---- 7. the sync code never reaches a collection anyone can list ----
@@ -819,6 +886,10 @@ with sync_playwright() as pw:
           })
         }) };
       store.leaderboardOptIn = true;
+      /* build 296: a session pushes only once the server's copy has been
+         read; this section is about WHAT is published, so it starts from
+         a confirmed session */
+      if(typeof markCloudConfirmed === 'function') markCloudConfirmed();
       pushToCloud();
       /* And a Virtual Room, which keys its PARTICIPANTS by the same id
          and lives in a collection that is just as listable. */

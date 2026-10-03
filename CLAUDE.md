@@ -9494,3 +9494,72 @@ over about 2.4, because Silver's loop is slow (centred, the old window
 measured it at 4.4-5.7 against a 4.5 bar). The lowest node now measures
 about 11. **When a check fails on a build it passed on yesterday, look
 at what it actually photographed before touching the app.**
+
+### Build 296 - nothing goes up until the server's copy has come down
+
+**The account-loss bug, found on Oct 3.** Cmilledge went from level 46
+to level 26 and lost his credit (`creditsApplied` was emptied).
+Billyswole went from 8 hundos to 3. Each account had one progress
+document, and in both cases another of that person's devices, holding an
+older copy, had written over it.
+
+The cause was `firebaseBecameReady()`. At every launch it called
+`pushToCloud()` immediately after attaching the listener.
+`pushToCloud()` is a whole-document `set()` of this device's copy, so
+the device wrote before it had read anything. The merge
+(`mergeSameAccount`, build 284) could not catch this either: Firestore
+shows a device its own pending write first, so the newer server copy
+never reached it. Every one-time migration that saves at boot (293's
+day seeding, 295's take-back) made the window wider.
+
+**The fix is a gate.** `cloudConfirmedFor` holds the account code
+whose server copy this launch has merged. It is per code, not a flag
+reset on every attach: re-attaching the same account's listener (a merge
+note, Home) does not undo it, and switching accounts does.
+- `scheduleCloudPush()` and `pushToCloud()` only set
+  `cloudPushPending` until a SERVER-confirmed snapshot of that account
+  (`metadata.fromCache === false`) has been merged in.
+- That snapshot can come from the listener or from `pullFromCloud`.
+- `markCloudConfirmed()` then pushes the merged copy.
+- A brand-new account's "no document" answer from the server counts as
+  confirmation, so its first push still goes.
+- Following a merge note confirms too, because the target was just read
+  from the server and merged.
+
+`check-sync` 8e boots a stale device against a richer cloud copy. On
+295 it writes its stale 500 points twice at boot; on 296 it writes
+nothing until the server copy arrives, then writes the merge. The other
+`check-sync` stubs now return `metadata` the way real Firestore does,
+and section 7 starts from a confirmed session.
+
+**What was repaired by hand (backups are in
+`/tmp/claude-0/b296/backup/`):**
+- **Cmilledge:** the `row:7u4czvavkkjf` credit was re-added on the
+  server. That is +28,870 XP and +3,036 correct, for 45,315 XP, level 40.
+  `creditsApplied` was set and his rankings row was updated to match.
+- **Cmilledge's credit note:** it was re-armed (`done:0`). A device on an
+  old build that overwrites the account again will re-apply the credit
+  once. A device whose copy already lists the credit skips it, so it
+  cannot be counted twice.
+- **What only devices hold:** the rest of Cmilledge's level 46 and the
+  extra hundos (including the Penal Code one), and Billyswole's other 5
+  hundos, live only on their other devices. They merge back when those
+  devices open build 296. The stale devices of both accounts were on
+  293 or older.
+
+**A sync rule, stated plainly:** never write the progress document from
+a device that has not yet merged a server-confirmed copy on this launch.
+
+**Koi Pond's take-back is now unconditional.** `revokePenalKoi295()`
+clears "tests500 shown" and takes the banner off whenever it is not
+earned. A one-time flag would merge in from the cloud and skip a device
+that still had the record. No cloud document had it shown, worn, or a
+Penal Code hundo on Oct 3; the holder's other device clears it when it
+opens.
+
+**Flagged questions from Review.** Review now opens with a "Flagged
+questions" card listing every flagged question, in every unit, with its
+answer and every unit expanded, in one tap. With nothing flagged it is
+disabled and says how to flag. It calls
+`showAnswerReview(units, "flagged", {}, { allFlagged:true })`.
+`check-behaviour` 65 covers it.

@@ -2407,6 +2407,18 @@
   @media (hover:hover){ .flagbtn:hover{ background:rgba(201,162,39,.1); } }
   .flagbtn.on{ background:rgba(245,197,24,.16); box-shadow:0 0 0 1px rgba(245,197,24,.4) inset; }
   .flagicon{ width:1.35rem; height:1.35rem; }
+  /* Review's flagged-questions card (build 296) */
+  .review-flagged-card{ display:flex; align-items:center; gap:.85rem; width:100%; margin:0 0 1.1rem; padding:.95rem 1.1rem;
+    border-radius:16px; border:1px solid rgba(245,197,24,.32); background:rgba(245,197,24,.08); color:var(--ink);
+    text-align:left; font:inherit; cursor:pointer; min-height:44px; }
+  .review-flagged-card .flagicon{ width:1.6rem; height:1.6rem; flex:none; }
+  .review-flagged-card .flagbanner{ fill:#F5C518; stroke:#A9820E; }
+  .review-flagged-text{ display:flex; flex-direction:column; gap:.15rem; flex:1; min-width:0; }
+  .review-flagged-title{ font-weight:800; font-size:1rem; }
+  .review-flagged-sub{ font-size:.82rem; color:var(--soft); }
+  .review-flagged-go{ font-size:1.6rem; color:var(--soft); line-height:1; }
+  .review-flagged-card.is-empty{ cursor:default; border-color:rgba(255,255,255,.1); background:rgba(255,255,255,.04); }
+  .review-flagged-card.is-empty .flagbanner{ fill:none; stroke:#C9A227; }
   /* THE TEST'S FLAG, BIGGER AND UP IN THE CORNER (build 291): "could it
      be slightly bigger and be in a better position? ... closer to the
      top of that like above the question and to the right." A round
@@ -36429,6 +36441,23 @@ const SYNC_CODE_KEY = "class26e.synccode";
 let syncCode = null;
 try { syncCode = window.localStorage.getItem(SYNC_CODE_KEY) || null; } catch(e){ syncCode = null; }
 let cloudPushTimer = null;
+/* NOTHING GOES UP UNTIL THE SERVER'S COPY HAS COME DOWN (build 296).
+   pushToCloud() REPLACES the whole progress document with this device's
+   copy, and boot used to call it the moment Firebase was ready - before
+   this device had read anything. A second device holding older progress
+   (an iPad, an old phone, a Safari tab) wrote that older copy over the
+   account every time it opened, and the merge that should have caught it
+   never could: Firestore shows a device its own pending write, so the
+   newer server copy was never seen. That is how Cmilledge went from level
+   46 to 26 and Billyswole from 8 hundos to 3 on Oct 2-3. Now a push waits
+   until a SERVER-confirmed snapshot of this account has been merged in on
+   this launch (markCloudConfirmed), then goes up as the merged copy. */
+/* The code whose server copy this launch has merged. Per code, not a
+   flag: re-attaching the same account's listener does not undo it, and
+   switching accounts does - a write is held until THAT account's copy
+   has come down. */
+let cloudConfirmedFor = "";
+let cloudPushPending = false;
 let storageOK = false;
 let storageHadData = false;
 let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: [], studyLog: {}, theme: null,
@@ -38202,6 +38231,7 @@ function handleRemoteReset(){
 
 function scheduleCloudPush(){
   if(!fbDb || !syncCode) return;
+  if(cloudConfirmedFor !== syncCode){ cloudPushPending = true; return; }
   clearTimeout(cloudPushTimer);
   cloudPushTimer = setTimeout(pushToCloud, 2500);
 }
@@ -38411,8 +38441,14 @@ function flushLeaderboardRow(){
   try{ writeLeaderboardRow(buildLeaderboardRow()); }catch(e){}
 }
 
+function markCloudConfirmed(){
+  if(!syncCode || cloudConfirmedFor === syncCode) return;
+  cloudConfirmedFor = syncCode;
+  if(cloudPushPending){ cloudPushPending = false; scheduleCloudPush(); }
+}
 function pushToCloud(){
   if(!fbDb || !syncCode) return;
+  if(cloudConfirmedFor !== syncCode){ cloudPushPending = true; return; }
   try {
     fbDb.collection("progress").doc(syncCode).set(store).catch(() => {});
   } catch(e){}
@@ -38483,6 +38519,7 @@ function pullFromCloud(code, onDone, adopt){
       } else {
         syncSameAccount(cloud);
       }
+      if(docSnap.metadata && docSnap.metadata.fromCache === false && code === syncCode) markCloudConfirmed();
       onDone && onDone(true, null);
     }).catch(() => { onDone && onDone(false, "error"); });
   } catch(e){ onDone && onDone(false, "error"); }
@@ -38543,6 +38580,9 @@ function attachLiveListener(code){
         if(hasSeenExist && docSnap.metadata && docSnap.metadata.fromCache === false){
           handleRemoteReset();
         }
+        /* the server says there is no document yet: a brand-new account,
+           whose first push is the one waiting */
+        if(!hasSeenExist && docSnap.metadata && docSnap.metadata.fromCache === false) markCloudConfirmed();
         return;
       }
       /* Only a server-confirmed document arms the check above. A cached
@@ -38553,6 +38593,7 @@ function attachLiveListener(code){
       /* Merged, not taken (build 284 - see mergeSameAccount). Our own
          write echoing back merges to nothing and pushes nothing. */
       if(syncSameAccount(docSnap.data())) onLiveUpdateApplied();
+      if(docSnap.metadata && docSnap.metadata.fromCache === false) markCloudConfirmed();
     });
     /* Now actually reattaches on its own \u2014 see onSnapshotResilient's
        own comment for why this used to just go silently stale. */
@@ -38698,6 +38739,9 @@ function followAccountMove(from, to, noteRef, note){
     if(leaving){ try{ mergeLeavingAccount(leaving, note); }catch(e){} }
     persistLocally();
     attachLiveListener(to);
+    /* the target was just read from the server and merged into: that is
+       the confirmation the build 296 gate waits for */
+    if(!(target.metadata && target.metadata.fromCache)) markCloudConfirmed();
     /* Pushed at once: the merged account is the one every device on it
        should now be reading, and until it is in the cloud only this one
        has it. */
@@ -41381,19 +41425,27 @@ function friendsCountBest(){
   if(n > (Number(store.friendsBest) || 0)) store.friendsBest = n;
   return Math.max(Number(store.friendsBest) || 0, n);
 }
-/* ONE-TIME (build 295): build 294's Koi Pond (a Penal Code hundo) is
-   taken back. "If someone unlocked, remove that unlock. Remove it so they
-   don't get the pop up either." The rule change already locks it; this
-   clears the record that it was announced, so the five-friends unlock
-   gets its own pop-up when it is really earned, and takes it off anybody
-   wearing it. */
+/* KOI POND IS ONLY EVER RECORDED AS SHOWN WHILE IT IS HELD (build 295,
+   made unconditional in 296). Build 294's Koi Pond (a Penal Code hundo) is
+   taken back: "If someone unlocked, remove that unlock. Remove it so they
+   don't get the pop up either." While the banner is not earned under the
+   five-friends rule, any record that it was announced is cleared and it
+   comes off anybody wearing it - so the real unlock gets its own pop-up
+   when it is earned, and nothing announces the old one. It used to be a
+   one-time pass behind koiRevoked295, but that flag travels with the
+   account: a device whose copy still said "shown" could merge the flag in
+   from the cloud and never run the pass. Checking the state itself has no
+   such hole, and it saves only when it changes something. */
 function revokePenalKoi295(){
-  if(store.koiRevoked295) return;
+  if(bannerEarned("tests500")) return;
+  let changed = false;
   const u = store.unlocksShown;
-  if(u && Array.isArray(u.banners)) u.banners = u.banners.filter(id => id !== "tests500");
-  if(store.banner === "tests500") store.banner = "";
-  store.koiRevoked295 = true;
-  saveStore();
+  if(u && Array.isArray(u.banners) && u.banners.indexOf("tests500") >= 0){
+    u.banners = u.banners.filter(id => id !== "tests500"); changed = true;
+  }
+  if(store.banner === "tests500"){ store.banner = ""; changed = true; }
+  if(!store.koiRevoked295){ store.koiRevoked295 = true; changed = true; }
+  if(changed) saveStore();
 }
 function unitsWithHundo(){
   const up = store.unitPerfects || {};
@@ -55581,6 +55633,35 @@ function showSetup(){
   modeNote.style.cssText = "margin:.6rem 0 1rem;";
   panel.appendChild(modeNote);
 
+  /* EVERY FLAGGED QUESTION, ONE TAP AWAY (build 296). "Viewing flagged
+     questions isn't really a thing." The Flagged bank on the sheet only
+     covered the units picked first, so there was nowhere to see them all.
+     Review opens with this card on top: every flagged question in every
+     unit, with its answer. With none flagged it says how to flag one. */
+  if(cfg.mode === "review"){
+    const fl = flaggedIndexes();
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "review-flagged-card" + (fl.length ? "" : " is-empty");
+    card.disabled = !fl.length;
+    const ic = buildFlagIcon(); card.appendChild(ic);
+    const txt = document.createElement("span"); txt.className = "review-flagged-text";
+    const t1 = document.createElement("span"); t1.className = "review-flagged-title"; t1.textContent = "Flagged questions";
+    const t2 = document.createElement("span"); t2.className = "review-flagged-sub";
+    const nUnits = new Set(fl.map(i => (QUESTIONS[i].topic || "").trim())).size;
+    t2.textContent = fl.length
+      ? fl.length + (fl.length === 1 ? " question" : " questions") + " across " + nUnits + (nUnits === 1 ? " unit" : " units")
+      : "None yet. Tap the flag on a question during a test to save it here.";
+    txt.append(t1, t2); card.appendChild(txt);
+    if(fl.length){ const go = document.createElement("span"); go.className = "review-flagged-go"; go.setAttribute("aria-hidden", "true"); go.textContent = "\u203A"; card.appendChild(go); }
+    card.addEventListener("click", () => {
+      const all = topicsIn(QUESTIONS);
+      const units = all.filter(u => fl.some(i => (QUESTIONS[i].topic || "").trim() === u));
+      showAnswerReview(units, "flagged", {}, { allFlagged: true });
+    });
+    panel.appendChild(card);
+  }
+
   /* --- units --- */
   const unitSect = document.createElement("div");
   unitSect.className = "sect";
@@ -57990,7 +58071,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-03-295";
+const APP_BUILD = "2026-10-03-296";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -72241,7 +72322,8 @@ function showCalendar(){
    Drill-only, reached from the Options sheet's now-unlocked toggle. */
 /* `versions` is the unit-selection screen's cfg.versions: reviewing the
    Penal Code's slides 0-85 shows those 56 and nothing else. */
-function showAnswerReview(units, source, versions){
+function showAnswerReview(units, source, versions, opts){
+  const allFlagged = !!(opts && opts.allFlagged);
   setActiveNav(null);
   countEl.textContent = "Answer Review";
   /* Only the flagged or most-missed questions, when that is what was
@@ -72259,7 +72341,8 @@ function showAnswerReview(units, source, versions){
 
   const sub = document.createElement("p");
   sub.className = "cal-sub";
-  sub.textContent = source === "flagged" ? "Your flagged questions and their correct answers, for the units you've selected."
+  sub.textContent = allFlagged ? "Every question you've flagged, with its correct answer."
+    : source === "flagged" ? "Your flagged questions and their correct answers, for the units you've selected."
     : source === "recent" ? "The questions you miss most and their correct answers, for the units you've selected."
     : "Every question and its correct answer, for the units you've selected.";
   panel.appendChild(sub);
@@ -72295,7 +72378,8 @@ function showAnswerReview(units, source, versions){
      collapsed by default. */
   const singleUnit = unitKeys.length === 1;
   const expandState = {};
-  unitKeys.forEach(u => { expandState[u] = singleUnit; });
+  /* the whole flagged list is short: every unit open */
+  unitKeys.forEach(u => { expandState[u] = singleUnit || allFlagged; });
 
   function render(filterText){
     list.replaceChildren();
