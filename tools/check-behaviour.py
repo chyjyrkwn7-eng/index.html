@@ -6724,6 +6724,214 @@ def check_b298(br):
     ctx.close()
 
 
+def check_b299(br):
+    """Build 299. "At the bottom of tests where it says you can press the
+    numbers and hit enter ... centered and not offset to left", and "if
+    you unlock something ... the customize button in the profile box has a
+    dot ... and then within customize put a dot ... over the new thing
+    that goes away once you click it". Written against 298, where both fail."""
+    print("\n67. build 299: the keyboard hint is centred; a yellow dot for anything new; every flare moves")
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+          try{
+            document.getElementById('pushing-update')?.remove();
+            cfg.mode = 'drill'; cfg.units = ['Penal Code']; cfg.source = 'all';
+            beginRun(poolNow().slice(0, 5), null); await wait(4200);
+            const hint = document.getElementById('hint'), hb = hint.getBoundingClientRect(), cs = getComputedStyle(hint);
+            const range = document.createRange(); range.selectNodeContents(hint); const tb = range.getBoundingClientRect();
+            out.hint = { align: cs.textAlign, off: Math.round(((tb.left + tb.right) / 2 - (hb.left + hb.right) / 2) * 10) / 10 };
+            /* an account updating into 299: nothing is new (and its road map is up to date) */
+            store.seenUnlocks = null; testInProgress = false;
+            store.rankMapFx244 = true; store.rankMapSeen = TIER_ORDER_FULL.indexOf(rankOf(store));
+            showProfile('profile'); await wait(600);
+            out.firstDots = document.querySelectorAll('.new-dot').length;
+            /* now a character is earned */
+            const u = typeof unlockedIdsNow === 'function' ? unlockedIdsNow() : { chars: [] };
+            const ch = u.chars.find(id => id !== store.avatarChar);
+            if(store.seenUnlocks) store.seenUnlocks.chars = store.seenUnlocks.chars.filter(x => x !== ch);
+            showProfile('profile'); await wait(600);
+            out.profileDot = !!document.querySelector('.profile-hero .new-dot, .namedisplay-row .new-dot');
+            showCustomize(); await wait(700);
+            const dots = [...document.querySelectorAll('.screen-customize .new-dot')];
+            out.custDots = dots.length; out.onChar = dots.length === 1 && dots[0].parentElement.classList.contains('avatarchar-option');
+            const opt = document.querySelector('.screen-customize .avatarchar-option.is-new');
+            if(opt){ opt.click(); await wait(400); }
+            out.after = document.querySelectorAll('.screen-customize .new-dot').length;
+            out.saved = !!(store.seenUnlocks && store.seenUnlocks.chars.indexOf(ch) >= 0);
+            showProfile('profile'); await wait(600);
+            out.profileAfter = !!document.querySelector('.profile-hero .new-dot, .namedisplay-row .new-dot');
+            /* the mark travels with the account: a merge keeps both devices' marks */
+            const a = { seenUnlocks: { chars: ['x'], banners: [], themes: [], badges: ['p'] } }, b = { seenUnlocks: { chars: ['y'], banners: ['z'], themes: [], badges: ['q'] } };
+            mergeSameAccount(a, b); out.merged = a.seenUnlocks.chars.slice().sort().join(',') + '|' + a.seenUnlocks.banners.join(',') + '|' + a.seenUnlocks.badges.slice().sort().join(',');
+          } catch(e){ out.threw = String(e && e.stack || e); }
+          return out; }""")
+        check(f"{dev}: no error", not r.get("threw"), r.get("threw", ""))
+        hh = r.get("hint") or {}
+        check(f"{dev}: the 'press 1 through 9' hint under a test is centred", hh.get("align") == "center" and abs(hh.get("off", 99)) <= 2, hh)
+        check(f"{dev}: an account updating in sees no dots - what it already had is not new", r.get("firstDots") == 0, r.get("firstDots"))
+        check(f"{dev}: something newly unlocked puts a dot on Profile's Customize button, and on that one thing in Customize",
+              r.get("profileDot") and r.get("custDots") == 1 and r.get("onChar"), (r.get("profileDot"), r.get("custDots"), r.get("onChar")))
+        check(f"{dev}: tapping it clears its dot and the Customize button's, and remembers it",
+              r.get("after") == 0 and r.get("saved") and not r.get("profileAfter"), (r.get("after"), r.get("saved"), r.get("profileAfter")))
+        check(f"{dev}: seen on one device is seen on the other (merged, not replaced)", r.get("merged") == "x,y|z|p,q", r.get("merged"))
+        # "Same goes for rank when you rank up, put a dot there or something,
+        # and then same goes for badges when you get a new badge."
+        r2 = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+          try{
+            document.querySelectorAll('.unlock-detail, .unlockdetail-overlay, [class*="unlock-detail"]').forEach(n => n.remove());
+            const units = topicsIn(QUESTIONS);
+            const u0 = units.find(u => !unitBadgeEarned(u)) || units[0];
+            store.unitPerfects[u0] = badgeThresholdFor(u0);
+            if(typeof retroHideBadges !== 'undefined' && retroHideBadges) retroHideBadges.delete(u0);
+            out.unit = u0;
+            const held = TIER_ORDER_FULL.indexOf(rankOf(store)); out.held = held;
+            store.rankMapFx244 = true; store.rankMapSeen = held;
+            showProfile('profile'); await wait(600);
+            out.badgeDot = !!document.querySelector('.profile-badgesect .new-dot');
+            out.rankDotBefore = !!document.querySelector('.profile-rankplate .new-dot');
+            showRanksScreen('ranks'); await wait(800);
+            const seg = () => [...document.querySelectorAll('.rankstabs .iconbtn')];
+            out.segLabels = seg().map(b => b.textContent);
+            out.badgesSegDot = !!seg()[1].querySelector('.new-dot');
+            seg()[1].click(); await wait(900);
+            out.badgesSegAfter = !!seg()[1].querySelector('.new-dot');
+            const tdots = [...document.querySelectorAll('.badges-tab .badge-tile .new-dot')];
+            out.tileDots = tdots.length;
+            const tile = tdots[0] && tdots[0].closest('.badge-tile');
+            out.tileName = tile ? tile.querySelector('.badge-tile-name').textContent : null;
+            if(tile){ tile.click(); await wait(500); }
+            out.tileAfter = document.querySelectorAll('.badges-tab .badge-tile .new-dot').length;
+            out.badgeSaved = store.seenUnlocks.badges.indexOf(u0) >= 0;
+            document.querySelectorAll('.unlock-detail, .unlockdetail-overlay, [class*="unlock-detail"]').forEach(n => n.remove());
+            showProfile('profile'); await wait(600);
+            out.badgeDotAfter = !!document.querySelector('.profile-badgesect .new-dot');
+            /* now a rank-up the road map has not shown yet */
+            if(held >= 0){
+              store.rankMapSeen = held - 1;
+              showProfile('profile'); await wait(600);
+              out.rankDot = !!document.querySelector('.profile-rankplate .new-dot');
+              showRanksScreen('badges'); await wait(800);
+              out.rankSegDot = !!seg()[0].querySelector('.new-dot');
+              seg()[0].click();
+              for(let k = 0; k < 40 && store.rankMapSeen !== held; k++) await wait(250);
+              out.rankSeenNow = store.rankMapSeen === held;
+              out.rankSegAfter = !!seg()[0].querySelector('.new-dot');
+              showProfile('profile'); await wait(600);
+              out.rankDotAfter = !!document.querySelector('.profile-rankplate .new-dot');
+            }
+          } catch(e){ out.threw = String(e && e.stack || e); }
+          return out; }""")
+        check(f"{dev}: rank/badge dots: no error", not r2.get("threw"), r2.get("threw", ""))
+        check(f"{dev}: an up-to-date rank carries no dot", r2.get("rankDotBefore") is False, r2.get("rankDotBefore"))
+        check(f"{dev}: a new badge puts a dot on Profile's badge medal and on the Badges tab label",
+              r2.get("badgeDot") and r2.get("badgesSegDot"), (r2.get("badgeDot"), r2.get("badgesSegDot"), r2.get("segLabels")))
+        check(f"{dev}: in the case the dot is on that one badge, and the tab label's goes once you are there",
+              r2.get("tileDots") == 1 and r2.get("tileName") == r2.get("unit") and not r2.get("badgesSegAfter"),
+              (r2.get("tileDots"), r2.get("tileName"), r2.get("unit"), r2.get("badgesSegAfter")))
+        check(f"{dev}: tapping the badge clears its dot and Profile's, and remembers it",
+              r2.get("tileAfter") == 0 and r2.get("badgeSaved") and not r2.get("badgeDotAfter"),
+              (r2.get("tileAfter"), r2.get("badgeSaved"), r2.get("badgeDotAfter")))
+        check(f"{dev}: the fixture holds a rank, so the rank-up case is exercised", (r2.get("held") if r2.get("held") is not None else -1) >= 0, r2.get("held"))
+        check(f"{dev}: a rank-up the road map has not shown puts a dot on Profile's rank coin and on the Rank tab label",
+              r2.get("rankDot") and r2.get("rankSegDot"), (r2.get("rankDot"), r2.get("rankSegDot")))
+        check(f"{dev}: opening the Rank tab plays the map, and that clears both",
+              r2.get("rankSeenNow") and not r2.get("rankSegAfter") and not r2.get("rankDotAfter"),
+              (r2.get("rankSeenNow"), r2.get("rankSegAfter"), r2.get("rankDotAfter")))
+        # "What if the dot was also on the bottom tab for profile as well",
+        # "what about it being yellow?", and "the animations only happen to
+        # the flare you have unlocked on the main menu, should still be all
+        # the flares".
+        r3 = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+          try{
+            const tab = document.getElementById('bottomtab-profile');
+            /* start from nothing new at all, then make one thing new */
+            const u = unlockedIdsNow(); store.seenUnlocks = JSON.parse(JSON.stringify(u));
+            store.rankMapFx244 = true; store.rankMapSeen = TIER_ORDER_FULL.indexOf(rankOf(store));
+            store.pendingBadgeUnlocks = []; theme.muteBanners = true;
+            showHome(); await wait(400);
+            out.tabDotNone = tab.classList.contains('has-new');
+            const ch = u.chars.find(id => id !== store.avatarChar);
+            store.seenUnlocks.chars = store.seenUnlocks.chars.filter(x => x !== ch);
+            showHome(); await wait(500);
+            out.tabDot = tab.classList.contains('has-new');
+            const dcs = getComputedStyle(tab.querySelector('.bottomtab-icon'), '::after');
+            out.tabDotShown = dcs.content !== 'none' && parseFloat(dcs.width) > 6;
+            out.tabDotColor = dcs.backgroundColor;
+            markUnlockSeen('chars', ch); await wait(50);
+            out.tabDotAfter = tab.classList.contains('has-new');
+            /* the dot inside, same colour */
+            store.seenUnlocks.chars = store.seenUnlocks.chars.filter(x => x !== ch);
+            showProfile('profile'); await wait(600);
+            const d = document.querySelector('.namedisplay-row .new-dot');
+            out.dotColor = d ? getComputedStyle(d).backgroundColor : null;
+            markUnlockSeen('chars', ch);
+            /* every flare moves, locked ones included */
+            store.lifetime.points = 0; topicsIn(QUESTIONS).forEach(x => store.unitPerfects[x] = 0);
+            showHome();
+            const all = () => document.querySelectorAll('.cosmic-badge-rank').length;
+            for(let k = 0; k < 400 && document.querySelectorAll('.cosmic-rank-anim').length < all(); k++) await wait(100);
+            out.flares = all();
+            out.locked = document.querySelectorAll('.cosmic-badge-rank:not(.cosmic-badge-lit)').length;
+            out.lockedPlaying = document.querySelectorAll('.cosmic-badge-rank:not(.cosmic-badge-lit) .cosmic-rank-anim').length;
+            const w = document.querySelector('.cosmic-badge-rank:not(.cosmic-badge-lit) .cosmic-rank-anim');
+            out.lockedGrey = w ? /grayscale/.test(w.style.filter) : null;
+          } catch(e){ out.threw = String(e && e.stack || e); }
+          return out; }""")
+        check(f"{dev}: tab/flare checks: no error", not r3.get("threw"), r3.get("threw", ""))
+        check(f"{dev}: something new puts a dot on the Profile tab in the bottom bar, and seeing it clears it",
+              r3.get("tabDotNone") is False and r3.get("tabDot") and r3.get("tabDotShown") and not r3.get("tabDotAfter"),
+              (r3.get("tabDotNone"), r3.get("tabDot"), r3.get("tabDotShown"), r3.get("tabDotAfter")))
+        check(f"{dev}: the dot is yellow, the same on the tab and on the card",
+              r3.get("dotColor") == "rgb(255, 212, 59)" and r3.get("tabDotColor") == "rgb(255, 212, 59)", (r3.get("dotColor"), r3.get("tabDotColor")))
+        check(f"{dev}: every flare on Home moves, the locked ones too (in their grey)",
+              (r3.get("locked") or 0) > 0 and r3.get("lockedPlaying") == r3.get("locked") and r3.get("lockedGrey"),
+              (r3.get("flares"), r3.get("locked"), r3.get("lockedPlaying"), r3.get("lockedGrey")))
+        # "On the leaderboard, where it has the top 3, you should be able to
+        # hit each user from the top 3 similar to how you can click any user
+        # on the leaderboard."
+        r4 = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+          try{
+            document.querySelectorAll('.invite-overlay').forEach(e => e.remove());
+            const lw = lastWeekKey(), wk = weekKeyNow();
+            const E = (pub, n, x) => Object.assign({ pub, firstName: n, avatarChar: 'ninja', level: 20, badges: 2 }, x);
+            const rows = [E('a', 'Bo', { week: wk, weekPoints: 900, prevWeek: lw, prevWeekPoints: 4200 }),
+                          E(store.publicId, 'Me', { week: wk, weekPoints: 10, prevWeek: lw, prevWeekPoints: 3000 }),
+                          E('c', 'Dee', { week: wk, weekPoints: 300, prevWeek: lw, prevWeekPoints: 2600 })];
+            rows.forEach(e => { e.rawWeekPoints = e.weekPoints; e.weekPoints = weekPointsOfEntry(e); });
+            const pinned = Object.assign({}, WEEK_RESULTS_KNOWN);
+            Object.keys(WEEK_RESULTS_KNOWN).forEach(k => delete WEEK_RESULTS_KNOWN[k]);
+            const host = document.createElement('div'); document.body.appendChild(host);
+            renderRankingRows(host, rows, RANKING_BOARDS.find(b => b.key === 'week'), {});
+            const spots = [...host.querySelectorAll('.lw-podium .lw-podium-spot')];
+            out.spots = spots.length;
+            out.tappable = spots.filter(x => x.classList.contains('is-tappable')).map(x => x.querySelector('.lw-podium-name').textContent).sort().join(',');
+            const bo = spots.find(x => x.querySelector('.lw-podium-name').textContent === 'Bo');
+            if(bo) bo.click(); await wait(300);
+            out.card = (document.querySelector('.person-card .person-sheet-name') || {}).textContent || null;
+            document.querySelectorAll('.invite-overlay').forEach(e => e.remove());
+            /* the congratulations popup's podium stays a picture */
+            const pic = buildLastWeekPodium(lastWeekTop3(rows));
+            out.picTappable = pic.querySelectorAll('.is-tappable').length;
+            Object.keys(WEEK_RESULTS_KNOWN).forEach(k => delete WEEK_RESULTS_KNOWN[k]); Object.assign(WEEK_RESULTS_KNOWN, pinned);
+            host.remove();
+          } catch(e){ out.threw = String(e && e.stack || e); }
+          return out; }""")
+        check(f"{dev}: podium: no error", not r4.get("threw"), r4.get("threw", ""))
+        check(f"{dev}: last week's top 3 are tappable like any row - everyone but you",
+              r4.get("spots") == 3 and r4.get("tappable") == "Bo,Dee", (r4.get("spots"), r4.get("tappable")))
+        check(f"{dev}: tapping one opens that person's card", r4.get("card") == "Bo", r4.get("card"))
+        check(f"{dev}: the congratulations popup's podium is not tappable (no card over a card)", r4.get("picTappable") == 0, r4.get("picTappable"))
+        # "Level at the bottom, badges between the other two."
+        order = pg.evaluate("""async ()=>{ showProfile('profile'); await new Promise(r => setTimeout(r, 600));
+          const hero = document.querySelector('.profile-hero');
+          const pick = el => el.matches('.profile-rankplate') ? 'rank' : el.matches('.profile-badgesect') ? 'badges' : el.matches('.profile-level') ? 'level' : null;
+          const tops = [...hero.querySelectorAll('.profile-rankplate, .profile-badgesect, .profile-level')].map(el => [pick(el), el.getBoundingClientRect().top]);
+          return tops.sort((a, b) => a[1] - b[1]).map(x => x[0]).join(','); }""")
+        check(f"{dev}: the Profile card reads Rank, Badges, Level from the top", order == "rank,badges,level", order)
+        ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     only = os.environ.get("ONLY_B245")
@@ -6811,6 +7019,7 @@ def main():
             check_b295(br)
             check_b297(br)
             check_b298(br)
+            check_b299(br)
         finally:
             br.close()
     SERVER.shutdown()

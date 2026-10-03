@@ -9999,3 +9999,122 @@ question from the guide."*
 - **Gate:** `check-behaviour` 66 asserts all of this. It checks the 341
   against the guide's own numbering (1-346 less the six it skips), and
   that every question in the 0-85 version is in the whole unit too.
+
+
+### Build 299 - a yellow dot for anything new, every flare moves, a tappable podium, Badges above Level, Q61 fixed, and the keyboard hint centred
+
+**The keyboard hint under a test is centred.** *"At the bottom of tests
+where it says you can press the numbers and hit enter to continue,
+ensure that is also centered."* `.hint` had no `text-align`, so it sat
+on the left edge of a centred column. It is `text-align:center` with
+`text-wrap:balance`, so a wrapped hint splits evenly rather than leaving
+one word on its own line. Touch devices still hide it.
+
+**A yellow dot marks anything new until it has been looked at.** *"If you
+unlock something in customize, ensure the customize button in the
+profile box has a dot ... and then within customize put a dot ... over
+the new thing that goes away once you click it"*, then *"same goes for
+rank when you rank up ... and then same goes for badges when you get a
+new badge."*
+
+The Profile tab in the bottom bar carries the dot while anything below
+is new (*"what if the dot was also on the bottom tab for profile as
+well"*).
+
+| New thing | Dot on Profile | Dot inside | Cleared by |
+|---|---|---|---|
+| character, banner, theme | Customize button | the item in Customize | tapping or holding the item |
+| badge | the badge medal | the Badges tab label, and the badge in the case | tapping the badge |
+| rank-up | the rank coin | the Rank tab label | opening the Rank tab (the road map plays it) |
+
+- **Yellow, `--new-dot` (`#FFD43B`), with its own glow.** It was the
+  chat's red first and was reported as blending in: *"I feel like that
+  dot blends in too much, what about it being yellow?"* Red on this dark
+  glass read as one more warm accent.
+- **The bottom-tab dot is `::after` on the icon, toggled by `.has-new`**
+  in `syncProfileTabDot()`, because `syncBottomTabAvatar()` replaces the
+  icon's children. It is re-checked on every screen mount (a
+  `childList`-only observer on `#stage`, not the class-change one
+  `syncActive` uses, so a test never pays for it) and after anything is
+  marked seen. The avatar icon is `overflow:hidden`; while the dot is up
+  that moves to `clip-path:inset(0)` on the SVG, or the dot is clipped
+  to a corner.
+- **Items and badges: `store.seenUnlocks`**, `{chars, banners, themes,
+  badges}` (`SEEN_KINDS`), each a list of ids. It syncs, and
+  `mergeSameAccount` unions it, so seen on one device is seen on all.
+- **It defaults to `null`, and `null` is seeded, not shown.**
+  `ensureSeenUnlocks()` writes in everything already held. Without that,
+  every existing account would update into a dot on everything it has
+  owned for weeks. It is called from `showHome()`, `beginRun()` and
+  `summarize()`, so the seed always happens before a run can award
+  anything; something earned on the first run after updating is still
+  new.
+- **`SEEN_KINDS` is declared above `applyLoadedData()`**, which reads it
+  during boot. Declared next to the helpers (60k lines down) it would be
+  in its temporal dead zone at that point.
+- **A rank-up has no record of its own: it is `store.rankMapSeen`.**
+  The road map already celebrates any rank held past that marker on its
+  next open (build 234), so `rankIsNew()` asks the same question and the
+  dot and the show are one fact. An account that has not opened the map
+  since build 244 has the whole walk-through waiting for it, so it gets
+  the dot too.
+- **`attachNewDot(el, kind, id)` is the one builder** for item and badge
+  dots. It returns the function that clears the dot. A locked item or an
+  unearned badge never gets one.
+- **Anything that clips its contents gets its dot on a wrapper**
+  (`wrapWithNewDot`, `.new-dot-anchor`): the Customize button
+  (`overflow:hidden` for its sheen) and the rank coin (`overflow:hidden`
+  to crop the emblem). A tab label carries an inline dot
+  (`.new-dot.is-inline`) beside the word instead.
+**Every flare on Home moves, locked ones too.** *"The animations only
+happen to the flare you have unlocked on the main menu, should still be
+all the flares."* `startOrbitEmblemAnims()` took only
+`.cosmic-badge-lit`. It takes every `.cosmic-badge-rank` now, the
+reached ones recorded first. A locked flare plays in its grey, because
+the flip-book wrap copies the emblem's own filter and opacity. The cost
+is seven sheets to record instead of the reached few, once per build
+(they are cached), and playback is still compositor-only.
+
+**Last week's top 3 open their person card, like any row.** *"On the
+leaderboard, where it has the top 3, you should be able to hit each user
+from the top 3 similar to how you can click any user on the
+leaderboard."* `buildLastWeekPodium(top, entries)` takes the board's own
+list and finds each spot's full entry by id; a spot carries only a name
+and an avatar, and `openPersonSheet()` needs the row. Three spots are
+not tappable:
+- your own, the same as your own row;
+- anybody no longer on the board;
+- every spot in the weekly congratulations popup, which passes no list,
+  so a card never opens over a card.
+
+**The Profile card reads Rank, Badges, Level.** *"The position of badges
+and levels needs to be swapped here, level at the bottom, badges between
+the other two."* Only the append order in `showProfile()` moved. The
+spacing rule (`.statbox.profile-level-joined + .statbox.profile-level-joined`)
+and the Profile tour (which points at the rank and the badges, not the
+level) do not depend on it. `check-behaviour` 67 asserts the order by
+on-screen position.
+
+**Q61 in US and Texas Constitution (the 8th Amendment) counts the right
+answer now.** The study bank keys it as "the right to a speedy and
+public trial"; the 8th Amendment is excessive bail. Build 215 kept the
+bank's answer and added a red "the correct answer is actually" note.
+Build 299 reverses that: *"just change the answer to the correct answer
+and remove the advisory"*. The `answer` is now choice 1 and
+`bankNoteAnswer` is gone. `buildBankNote()` stays and draws nothing for
+a question without that field. The answer is not part of a question's
+`KEYS` hash, so nobody's history moved. `check-results` 6 asserts the new
+answer and that no `.bank-note` appears in Drill or in an Exam review.
+
+- **Gate:** `check-behaviour` 67, on the 17 Pro Max and the iPad Pro 11":
+  - the hint is centred;
+  - an account updating in sees no dots;
+  - a new character, a new badge and a rank-up each put their dots where
+    the table says;
+  - each one clears the way the table says, and the clear is saved;
+  - the merge is a union;
+  - the Profile tab's dot comes and goes, and every dot is the yellow;
+  - every locked flare on Home is playing, in grey;
+  - the podium opens a card for everyone but you, and the popup's does not.
+
+  32 of its checks fail on 298.

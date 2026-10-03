@@ -7931,6 +7931,10 @@
   .lw-podium-head{ margin:0 0 .5rem; text-align:center; font-size:.68rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:#FFD34D; }
   .lw-podium-stage{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); align-items:end; gap:.5rem; }
   .lw-podium-spot{ display:flex; flex-direction:column; align-items:center; gap:.15rem; min-width:0; --pc:#FFD34D; }
+  /* tappable like a board row (build 299) */
+  .lw-podium-spot.is-tappable{ cursor:pointer; -webkit-tap-highlight-color:transparent; border-radius:14px; transition:transform .15s ease; }
+  .lw-podium-spot.is-tappable:active{ transform:scale(.96); }
+  .lw-podium-spot.is-tappable:focus-visible{ outline:2px solid rgba(255,255,255,.5); outline-offset:3px; }
   .lw-place-2{ --pc:#D7DEE8; } .lw-place-3{ --pc:#E09A5B; }
   .lw-podium-av{ width:2.6rem; height:2.6rem; border-radius:50%; display:grid; place-items:center;
     background:radial-gradient(circle, color-mix(in srgb, var(--pc) 30%, rgba(20,24,30,.9)), rgba(20,24,30,.9) 72%);
@@ -8275,7 +8279,9 @@
 
   .err{ border-left:6px solid var(--wrong); padding:.5rem 0 .5rem 1rem; font-size:.95rem; }
 
-  .hint{ margin-top:1.5rem; font-size:.85rem; color:var(--soft); }
+  /* centred under the question, like everything else in a test (build 298):
+     "ensure that is also centered and not offset to left" */
+  .hint{ margin-top:1.5rem; font-size:.85rem; color:var(--soft); text-align:center; text-wrap:balance; }
   .hint[hidden]{ display:none; }
 
   @media (max-width:639px){
@@ -15157,6 +15163,39 @@
   .profile-hero-meta{ margin-top:.45rem; display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
   .profile-hero-meta:empty{ display:none; }
   .profile-edit-btn{ padding:.4rem .85rem; font-size:.78rem; flex-shrink:0; }
+  /* SOMETHING NEW (build 299): one dot, the same everywhere - the
+     Profile tab, the Customize button, the rank coin, the badge medal,
+     and each new thing behind them. YELLOW, not the chat's red: "I feel
+     like that dot blends in too much, what about it being yellow?" Red
+     on this dark glass read as one more warm accent; a bright yellow
+     with its own glow is the one thing on the card that is not
+     already a colour the card uses. */
+  :root{ --new-dot:#FFD43B; --new-dot-glow:rgba(255,212,59,.65); }
+  .new-dot{
+    position:absolute; top:-.2rem; right:-.2rem; width:.78rem; height:.78rem; border-radius:50%;
+    background:var(--new-dot); box-shadow:0 0 0 2px var(--paper, #12161B), 0 0 12px var(--new-dot-glow);
+    pointer-events:none; z-index:3;
+  }
+  /* The avatar icon clips its character with overflow:hidden, which
+     would clip the dot too - so while the dot is up the clip moves onto
+     the drawing itself (clip-path: the same box) and the icon lets the
+     dot out. */
+  #bottomtab-profile.has-new .bottomtab-icon-avatar{ overflow:visible; }
+  #bottomtab-profile.has-new .bottomtab-icon-avatar > svg{ clip-path:inset(0); }
+  #bottomtab-profile.has-new .bottomtab-icon::after{
+    content:""; position:absolute; top:-.15rem; right:-.2rem; width:.66rem; height:.66rem; border-radius:50%;
+    background:var(--new-dot); box-shadow:0 0 0 2px #0E1116, 0 0 10px var(--new-dot-glow);
+    pointer-events:none; z-index:2;
+  }
+  .new-dot-anchor{ position:relative; display:inline-flex; flex-shrink:0; }
+  .banner-opt > .new-dot{ top:.35rem; right:.35rem; }
+  .avatarchar-option > .new-dot{ top:.1rem; right:.1rem; }
+  /* In a tab label, beside the word (build 299): a segment button clips
+     its own contents, so the dot goes inside it rather than on a corner. */
+  .new-dot.is-inline{ position:static; display:inline-block; vertical-align:middle; width:.55rem; height:.55rem; margin:-.15rem 0 0 .4rem; box-shadow:0 0 8px var(--new-dot-glow); }
+  .badge-tile-art > .new-dot{ top:.05rem; right:.05rem; }
+  .profile-rankplate .new-dot-anchor{ position:relative; z-index:2; }
+  .profile-rankplate .new-dot-anchor > .new-dot{ top:-.1rem; right:-.1rem; }
   /* SMALL TO LOOK AT, 44px TO HIT. These are deliberately compact -
      a chip beside a name, an (i) beside a heading, the x on the chat
      box, a row of version headings - and every one of them measured
@@ -22556,12 +22595,13 @@ const QUESTIONS = [
       "the right to indictment by a grand jury before trial",
       "the right to be free from self-incrimination",
     ],
-    /* THE STUDY BANK'S KEY IS WRONG HERE. The 8th Amendment is about
-       excessive bail - choice 1 - but the test counts choice 0, as the
-       bank does. The answer stays the bank's; bankNoteAnswer names the
-       real one, and a red note says so wherever the answer is shown. */
-    bankNoteAnswer: 1,
-    answer: 0
+    /* The study bank keys this as choice 0 (a speedy trial), which is
+       wrong: the 8th Amendment is excessive bail. Until build 299 the
+       test counted the bank's answer and a red note said so; now it
+       counts the right one, asked for directly - "just change the answer
+       to the correct answer and remove the advisory". The answer is not
+       part of the question's key, so nobody's history moves. */
+    answer: 1
   },
   {
     topic: "US and Texas Constitution and Rights",
@@ -36536,7 +36576,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               testsUntilMystery: null, flareNextTestAt: 0,
               savedCodePrompts: 0, savedCodeSaved: false,
               dailyCorrectStreak: 0, dailyCorrectBest: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, friendsBest: 0, koiRevoked295: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bestTestStreak: 0,
-              weeklyWins: 0, weeklyTop3: 0, retakenQuestions: 0, hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, unlocksShown: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
+              weeklyWins: 0, weeklyTop3: 0, retakenQuestions: 0, hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, unlocksShown: null, seenUnlocks: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
               vrMatches: 0, vrWins: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
               fullTestsSeeded: false, practiceExamPerfect: false, banner: "", starfallKept: false, creditsApplied: [],
               publicId: null, leaderboardKeyMigrated: false,
@@ -36570,6 +36610,9 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
 /* Defensively copies a plain object (parsed JSON, of unknown trustworthiness)
    into `store`, field by field, same shape whether it came from localStorage,
    IndexedDB, or a hand-picked backup file. */
+/* The kinds of thing a new-item dot can sit on (build 299) - declared up
+   here because applyLoadedData() reads it during boot. */
+const SEEN_KINDS = ["chars", "banners", "themes", "badges"];
 function applyLoadedData(got){
   if(!got || typeof got !== "object") return false;
   store.stats        = got.stats        && typeof got.stats        === "object" ? got.stats        : {};
@@ -36730,6 +36773,12 @@ function applyLoadedData(got){
      until unitRunsMap() seeds it from testStats, which has counted
      plays per test since long before this existed. */
   store.unitRuns = got.unitRuns && typeof got.unitRuns === "object" ? got.unitRuns : null;
+  /* Build 299: which unlocked characters, banners, themes and badges
+     have been looked at. Null until ensureSeenUnlocks() seeds it
+     with everything already held, so nobody updates into a page of dots. */
+  store.seenUnlocks = (got.seenUnlocks && SEEN_KINDS.every(k => Array.isArray(got.seenUnlocks[k])))
+    ? SEEN_KINDS.reduce((o, k) => { o[k] = got.seenUnlocks[k].filter(x => typeof x === "string"); return o; }, {})
+    : null;
   store.unlocksShown = (got.unlocksShown && Array.isArray(got.unlocksShown.chars) && Array.isArray(got.unlocksShown.banners))
     ? { chars: got.unlocksShown.chars.filter(x => typeof x === "string"),
         banners: got.unlocksShown.banners.filter(x => typeof x === "string") }
@@ -38186,6 +38235,7 @@ function wipeLocalProgressAndSettings(){
   store.bestTestStreak = 0;
   store.weeklyWins = 0; store.weeklyTop3 = 0; store.retakenQuestions = 0; store.hundoDay = null; store.hundoDayBest = 0; store.shadesFound = false; store.shadesAt = null; store.legacyChars = []; store.rankMapSeen = -1; store.rankMapFx244 = false; store.rankMapProg = null;
   store.unlocksShown = { chars: [], banners: [] };
+  store.seenUnlocks = null;
   store.unitRuns = {};
   store.vrMatches = 0; store.vrWins = 0; store.vrCounted = []; store.vrRetroDone = true;
   store.vrTop3 = 0; store.vrTop3Rooms = []; store.vrTop3RetroDone = true;
@@ -39344,6 +39394,18 @@ function mergeSameAccount(dst, src){
    "dailyCorrectBest", "unitHundoStreakBest", "dayAnsweredBest", "friendsBest"]
     .forEach(k => maxInto(dst, k, src[k]));
   ["vrCounted", "vrTop3Rooms", "legacyChars", "creditsApplied"].forEach(k => unionArr(k));
+  /* The "seen" marks behind the new-item dots (build 299): seen on one
+     device is seen. */
+  { const okSeen = o => o && SEEN_KINDS.every(k => Array.isArray(o[k]));
+    if(okSeen(src.seenUnlocks)){
+      if(!okSeen(dst.seenUnlocks)){ dst.seenUnlocks = JSON.parse(JSON.stringify(src.seenUnlocks)); res.gained = true; }
+      else SEEN_KINDS.forEach(k => {
+        const a = dst.seenUnlocks[k], b = src.seenUnlocks[k];
+        const add = b.filter(x => a.indexOf(x) < 0);
+        if(add.length){ dst.seenUnlocks[k] = a.concat(add); res.gained = true; }
+        if(a.some(x => b.indexOf(x) < 0)) res.otherHadLess = true;
+      });
+    } else if(okSeen(dst.seenUnlocks)) res.otherHadLess = true; }
   ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "supernovaAchieved",
    "starfallKept", "onboardingComplete", "fullTestsSeeded", "koiRevoked295"].forEach(k => orInto(dst, k, src[k]));
   if(src.mysteryColorsFound && typeof src.mysteryColorsFound === "object") orMap("mysteryColorsFound");
@@ -48498,8 +48560,12 @@ function homeRankEmblemReused(tier){
    cycles in it (a 2.8s breathe twice, a 1.6s twinkle four times) and a
    turn too slow to finish one in two loops holds still - at 26s a
    revolution it was barely moving at this size anyway.
-   Only reached ranks move (a locked one is a grey preview); Reduce
-   motion, or the system setting, leaves them all still; capture yields
+   EVERY rank moves, reached or not (build 299): "The animations only
+   happen to the flare you have unlocked on the main menu, should still
+   be all the flares." A locked one plays in its grey - the wrap copies
+   the emblem's filter and opacity - and the reached ones are recorded
+   first. Reduce motion, or the system setting, leaves them all still;
+   capture yields
    between frames so the orbit never stutters while it works; nothing
    is recorded until Home has been up a moment. */
 const ORBIT_ANIM_LOOP_MS = 6000;
@@ -48633,7 +48699,8 @@ function recordRankEmblemFrames(tier, template, px){
    script runs per frame. */
 function startOrbitEmblemAnims(root){
   if(!root || !orbitAnimAllowed()) return;
-  const badges = [...root.querySelectorAll(".cosmic-badge-rank.cosmic-badge-lit")];
+  const all = [...root.querySelectorAll(".cosmic-badge-rank")];
+  const badges = all.filter(b => b.classList.contains("cosmic-badge-lit")).concat(all.filter(b => !b.classList.contains("cosmic-badge-lit")));
   (async () => {
     for(const badge of badges){
       const svg = badge.querySelector("svg.cosmic-rank-emblem");
@@ -54655,6 +54722,9 @@ function openPersonSheet(entry){
 }
 
 function showHome(){
+  /* Settle what counts as already seen before anything can be earned
+     (build 299) - a no-op once the record exists. */
+  try{ if(store.onboardingComplete) ensureSeenUnlocks(); }catch(e){}
   /* Reaching the real Home screen by any path always means the pending
      "return to Setup" state from captureSetupReturn() is stale/no longer
      wanted — confirmMainMenu() already consumes and clears it itself on
@@ -57416,6 +57486,9 @@ let originalTestLabel = null;
    reason retroHideBadges gives. */
 var runStartLocked = null, runStartBanners = null;
 function beginRun(indexes, label, practiceMinutes, missedRetake){
+  /* Settle what counts as already seen before anything can be earned
+     (build 299) - a no-op once the record exists. */
+  try{ if(store.onboardingComplete) ensureSeenUnlocks(); }catch(e){}
   try{ seedBannerCounters(); seedChallenges289(); runStartLocked = lockedCharacterSet(); runStartBanners = earnedBannerSet(); }
   catch(e){ runStartLocked = null; runStartBanners = null; }
   rememberOpeners(indexes);
@@ -58662,7 +58735,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-03-298";
+const APP_BUILD = "2026-10-03-299";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -60755,6 +60828,101 @@ function markUnlocksShown(chars, banners){
   }
   if(changed) saveStore();
 }
+/* ---- WHAT'S NEW IN CUSTOMIZE (build 299) ----
+   "If you unlock something in customize, ensure the customize button in
+   the profile box has a dot there ... and then within customize put a
+   dot ... over the new thing that goes away once you click it." New is
+   held and not yet looked at here: a tap on it, or a press-and-hold on
+   it, marks it seen. Locked things are never new. The record travels
+   with the account (merged as a union), so a dot cleared on one device
+   is cleared on the others. */
+function unlockedIdsNow(){
+  let chars = [], banners = [], themes = [], badges = [];
+  try{ chars = AVATAR_CHARACTERS.filter(c => !c.retired && !isLockedCharacter(c.id)).map(c => c.id); }catch(e){}
+  try{ banners = BANNERS.filter(b => bannerEarned(b.id)).map(b => b.id); }catch(e){}
+  try{ themes = ACCENTS.filter(a => !isLockedAccent(a)); }catch(e){}
+  try{ badges = badgesEarnedList(); }catch(e){}
+  return { chars, banners, themes, badges };
+}
+/* Seeded with everything already held the first time anything asks, so
+   nobody updates into a screen of dots. showHome() and summarize() ask
+   before a run can award anything, so a thing earned on the first run
+   after updating is still new. */
+function ensureSeenUnlocks(){
+  const s = store.seenUnlocks;
+  if(s && SEEN_KINDS.every(k => Array.isArray(s[k]))) return s;
+  const u = unlockedIdsNow();
+  store.seenUnlocks = SEEN_KINDS.reduce((o, k) => { o[k] = u[k].slice(); return o; }, {});
+  saveStore();
+  return store.seenUnlocks;
+}
+function unlockIsNew(kind, id){ return ensureSeenUnlocks()[kind].indexOf(id) < 0; }
+function newCountOf(kinds){
+  const s = ensureSeenUnlocks(), u = unlockedIdsNow();
+  return kinds.reduce((n, k) => n + u[k].filter(id => s[k].indexOf(id) < 0).length, 0);
+}
+function customizeNewCount(){ return newCountOf(["chars", "banners", "themes"]); }
+function badgeNewCount(){ return newCountOf(["badges"]); }
+/* A RANK-UP IS NEW UNTIL THE ROAD MAP HAS SHOWN IT. store.rankMapSeen is
+   already the last rank the Rank tab has walked somebody through, and
+   the map celebrates anything held past it on the next open - so the
+   dot and the show are one fact, and opening the tab clears both. An
+   account that has not opened the map since build 244 has the whole
+   walk-through waiting for it, so it gets the dot too. */
+function rankIsNew(){
+  try{
+    const i = TIER_ORDER_FULL.indexOf(rankOf(store));
+    if(i < 0) return false;
+    if(!store.rankMapFx244) return true;
+    return typeof store.rankMapSeen === "number" && i > store.rankMapSeen;
+  }catch(e){ return false; }
+}
+function markUnlockSeen(kind, id){
+  const s = ensureSeenUnlocks();
+  if(s[kind].indexOf(id) < 0){ s[kind].push(id); saveStore(); }
+  syncProfileTabDot();
+}
+/* The Profile tab carries the dot while anything behind it is new: an
+   item in Customize, a badge, or a rank the map has not shown. Drawn as
+   ::after on the icon, because syncBottomTabAvatar() replaces the
+   icon's children. Re-checked on every screen mount and after anything
+   is marked seen; left alone mid-test, where the bar is hidden anyway. */
+function syncProfileTabDot(){
+  const tab = document.getElementById("bottomtab-profile");
+  if(!tab) return;
+  try{
+    if(!store.onboardingComplete){ tab.classList.remove("has-new"); return; }
+    if(typeof testInProgress !== "undefined" && testInProgress) return;
+    const on = rankIsNew() || customizeNewCount() + badgeNewCount() > 0;
+    tab.classList.toggle("has-new", on);
+  }catch(e){}
+}
+function buildNewDot(inline){
+  const d = document.createElement("span");
+  d.className = "new-dot" + (inline ? " is-inline" : ""); d.setAttribute("aria-hidden", "true");
+  return d;
+}
+/* Wraps `el` so a dot can sit on its corner - for anything that clips
+   its own contents (the Customize button, the rank coin). */
+function wrapWithNewDot(el){
+  const w = document.createElement("span");
+  w.className = "new-dot-anchor";
+  w.append(el, buildNewDot());
+  return w;
+}
+/* Puts the dot on `el` when (kind, id) is new, and returns the function
+   that clears it - for the tap and for the press-and-hold alike. */
+function attachNewDot(el, kind, id){
+  if(!unlockIsNew(kind, id)) return () => {};
+  el.classList.add("is-new");
+  el.appendChild(buildNewDot());
+  return () => {
+    if(!el.classList.contains("is-new")) return;
+    el.classList.remove("is-new");
+    el.querySelectorAll(":scope > .new-dot").forEach(d => d.remove());
+    markUnlockSeen(kind, id);
+  };
+}
 function pendingHomeUnlocks(){
   /* Held until the next finished test, which announces them itself. */
   if(store.mergeHold) return { chars: [], banners: [] };
@@ -61692,6 +61860,9 @@ function resultsScreenUp(){
 }
 
 function summarize(){
+  /* Settle what counts as already seen before anything can be earned
+     (build 299) - a no-op once the record exists. */
+  try{ if(store.onboardingComplete) ensureSeenUnlocks(); }catch(e){}
   /* THE END OF A RUN IS THE MOMENT THE BOARD IS WORTH UPDATING, and the
      only one. Everything in between is a number nobody is looking at -
      see the note on pushLeaderboardRow. Deferred here would still land
@@ -70914,7 +71085,15 @@ function buildTrendMark(moved){
   return el;
 }
 
-function buildLastWeekPodium(top){
+/* `entries` is the board's own list, passed only from the board
+   (build 299): "you should be able to hit each user from the top 3
+   similar to how you can click any user on the leaderboard". Each spot
+   opens the same person card a row does, found by id in that list - a
+   podium spot carries only a name and an avatar. You are not tappable,
+   the same as your own row, and neither is anybody no longer on the
+   board (a week can outlive a reset). The congratulations popup passes
+   nothing, so its podium stays a picture rather than a card over a card. */
+function buildLastWeekPodium(top, entries){
   const box = document.createElement("div");
   box.className = "lw-podium";
   const h = document.createElement("p");
@@ -70937,6 +71116,17 @@ function buildLastWeekPodium(top){
     const block = document.createElement("span");
     block.className = "lw-podium-block"; block.textContent = String(i + 1);
     col.append(av, nm, pts, block);
+    const entry = entries && t.pub && t.pub !== store.publicId ? entries.find(e => e && e.pub === t.pub) : null;
+    if(entry){
+      col.classList.add("is-tappable");
+      col.setAttribute("role", "button");
+      col.tabIndex = 0;
+      col.setAttribute("aria-label", t.name + ", " + (i + 1) + (i === 0 ? "st" : i === 1 ? "nd" : "rd") + " last week");
+      col.addEventListener("click", () => openPersonSheet(entry));
+      col.addEventListener("keydown", e => {
+        if(e.key === "Enter" || e.key === " "){ e.preventDefault(); openPersonSheet(entry); }
+      });
+    }
     stage.appendChild(col);
   });
   box.appendChild(stage);
@@ -71086,7 +71276,7 @@ function renderRankingRows(rows, entries, board, opts){
   if(board.key === "week"){
     rememberWeekTop(entries);
     const top = lastWeekTop3(entries);
-    if(top.length) rows.appendChild(buildLastWeekPodium(top));
+    if(top.length) rows.appendChild(buildLastWeekPodium(top, entries));
   }
   if(ranked.length === 0){
     const empty = document.createElement("p");
@@ -71788,9 +71978,11 @@ function showCustomize(){
       lockMark.appendChild(buildLockIcon());
       opt.appendChild(lockMark);
     }
-    const openHeld = locked ? null : attachHoldDetail(opt, () => characterDetail(charDef.id));
+    const clearNew = locked ? () => {} : attachNewDot(opt, "chars", charDef.id);
+    const openHeld = locked ? null : attachHoldDetail(opt, () => { clearNew(); return characterDetail(charDef.id); });
     opt.addEventListener("click", () => {
       if(locked){ showUnlockDetail(characterDetail(charDef.id)); return; }
+      clearNew();
       /* A TAP ON THE ONE YOU ALREADY HAVE ON shows its card (build 266):
          "if I click a character I have unlocked, and it's selected that
          pop up would appear without holding it down." Picking it again
@@ -71882,10 +72074,12 @@ function showCustomize(){
       nd.className = "banner-opt-need"; nd.textContent = need;
       b.appendChild(nd);
     }
-    const openHeld = locked ? null : attachHoldDetail(b, () => id ? bannerDetail(id)
-      : { kind: "banner", id: "", kicker: "Banner", name: "Default", desc: "Yours from day one. It takes the colours of whichever theme you run." });
+    const clearNew = (locked || !id) ? () => {} : attachNewDot(b, "banners", id);
+    const openHeld = locked ? null : attachHoldDetail(b, () => { clearNew(); return id ? bannerDetail(id)
+      : { kind: "banner", id: "", kicker: "Banner", name: "Default", desc: "Yours from day one. It takes the colours of whichever theme you run." }; });
     b.addEventListener("click", () => {
       if(locked){ showUnlockDetail(bannerDetail(id)); return; }
+      clearNew();
       if(b.classList.contains("selected") && openHeld){ openHeld(); return; }
       store.banner = id;
       saveStore();
@@ -71936,14 +72130,16 @@ function showCustomize(){
       lockMark.appendChild(buildLockIcon());
       b.appendChild(lockMark);
     }
-    const openHeld = locked ? null : attachHoldDetail(b, () => name === "ink"
+    const clearNew = locked ? () => {} : attachNewDot(b, "themes", name);
+    const openHeld = locked ? null : attachHoldDetail(b, () => { clearNew(); return name === "ink"
       ? { kind: "theme", id: "ink", kicker: "Theme", name: "Default theme", desc: "Yours from day one." }
-      : themeDetail(name));
+      : themeDetail(name); });
     b.addEventListener("click", () => {
       if(locked){
         showUnlockDetail(themeDetail(name));
         return;
       }
+      clearNew();
       if(theme.accent === name && openHeld){ openHeld(); return; }
       theme.accent = name; applyTheme(); saveTheme(); paintAccents();
       bannerGrid.querySelectorAll(".bnr-theme").forEach(e => { e.dataset.accent = name; });
@@ -73200,6 +73396,11 @@ function showRanksScreen(defaultTab){
     b.type = "button";
     b.className = "iconbtn" + (initialTab === t.key ? " active" : "");
     b.textContent = t.label;
+    /* The tab you did not land on says if something new is in it
+       (build 299); going there clears it. */
+    try{
+      if(initialTab !== t.key && (t.key === "ranks" ? rankIsNew() : badgeNewCount() > 0)) b.appendChild(buildNewDot(true));
+    }catch(e){}
     b.addEventListener("click", () => select(t.key));
     btns[t.key] = b;
     seg.appendChild(b);
@@ -73213,6 +73414,7 @@ function showRanksScreen(defaultTab){
     beginSettle(320);
     ensureBuilt(which);
     defs.forEach(t => { t.node.hidden = t.key !== which; btns[t.key].classList.toggle("active", t.key === which); });
+    btns[which].querySelectorAll(".new-dot").forEach(d => d.remove());
     if(which === "badges" && badgesTab.runFill) badgesTab.runFill();
     if(which === "ranks" && ranksTab.runFill) ranksTab.runFill();
     toTop();
@@ -73377,7 +73579,20 @@ function showProfile(defaultTab){
      "The button on profile won't say edit anymore, it could say
      customize or something." */
   nameEditBtn.textContent = "Customize";
-  nameDisplayRow.append(nameDisplayText, nameEditBtn);
+  /* something new waiting in Customize (build 299) */
+  /* The button clips its own contents (its glass sheen needs
+     overflow:hidden), so the dot sits on a wrapper around it. */
+  let nameEditSlot = nameEditBtn;
+  try{
+    if(customizeNewCount() > 0){
+      nameEditBtn.classList.add("has-new");
+      nameEditBtn.setAttribute("aria-label", "Customize - something new");
+      nameEditSlot = document.createElement("span");
+      nameEditSlot.className = "new-dot-anchor";
+      nameEditSlot.append(nameEditBtn, buildNewDot());
+    }
+  }catch(e){}
+  nameDisplayRow.append(nameDisplayText, nameEditSlot);
 
   const nameInput = document.createElement("input");
   nameInput.type = "text"; nameInput.className = "searchbox searchbox-plain";
@@ -73515,9 +73730,14 @@ function showProfile(defaultTab){
     const chev = document.createElement("span");
     chev.className = "profile-rankplate-chev"; chev.setAttribute("aria-hidden", "true");
     chev.textContent = "\u203a";
-    rankLine.append(wm, coin, txt, chev);
+    /* A rank the Rank tab has not walked you through yet carries the
+       same dot as Customize (build 299), on the coin itself. */
+    const rankNew = rankIsNew();
+    rankLine.append(wm, rankNew ? wrapWithNewDot(coin) : coin, txt, chev);
+    if(rankNew) rankLine.classList.add("has-new");
     rankLine.setAttribute("aria-label", (rankNow ? RANK_DISPLAY_NAME[rankNow] + " rank" : "No rank yet") +
-      (step.next ? ", " + rankStepPctLabel(step.pct) + " of the way to " + RANK_DISPLAY_NAME[step.next] : ", the top rank") + ". Open the Rank tab.");
+      (step.next ? ", " + rankStepPctLabel(step.pct) + " of the way to " + RANK_DISPLAY_NAME[step.next] : ", the top rank") +
+      (rankNew ? ", new" : "") + ". Open the Rank tab.");
   }
 
   /* THE COVER. A strip across the top of the card, the character
@@ -73718,9 +73938,14 @@ function showProfile(defaultTab){
   const badgeChev = document.createElement("span");
   badgeChev.className = "profile-badgesect-chev"; badgeChev.setAttribute("aria-hidden", "true");
   badgeChev.textContent = "\u203a";
-  badgeRow.append(pMedal, badgeText, badgeChev);
+  /* a badge not yet looked at in the case (build 299) */
+  let badgesNew = 0;
+  try{ badgesNew = badgeNewCount(); }catch(e){}
+  badgeRow.append(badgesNew ? wrapWithNewDot(pMedal) : pMedal, badgeText, badgeChev);
+  if(badgesNew) badgeStat.classList.add("has-new");
   badgeStat.appendChild(badgeRow);
-  badgeStat.setAttribute("aria-label", "Badges, " + badgeCount + " of " + totalUnitsForBadges + " earned. Open the Badges tab.");
+  badgeStat.setAttribute("aria-label", "Badges, " + badgeCount + " of " + totalUnitsForBadges + " earned" +
+    (badgesNew ? ", " + badgesNew + " new" : "") + ". Open the Badges tab.");
   badgeStat.addEventListener("click", () => showRanksScreen("badges"));
   /* One card, not two. "Maybe the top two boxes, the one with the level
      and the other with the name, could be joined instead of appearing as
@@ -73730,11 +73955,16 @@ function showProfile(defaultTab){
      The class calendar line keeps its own row BELOW the card rather than
      inside it: it is a destination, not a fact about you, and inside the
      card it was the one tappable thing in a block of read-only text. */
+  /* Rank, then Badges, then Level (build 299): "the position of badges
+     and levels needs to be swapped here, level at the bottom, badges
+     between the other two". The rank is made of level AND badges, and
+     the two achievements now sit together under it with the long XP bar
+     closing the card. */
   levelSect.classList.add("profile-level-joined", "rankhero-gauge", "statbox", "is-level");
-  heroSect.appendChild(levelSect);
   badgeStat.classList.add("profile-level-joined", "rankhero-gauge", "statbox", "is-badges");
   if(allBadges) badgeStat.classList.add("is-met");
   heroSect.appendChild(badgeStat);
+  heroSect.appendChild(levelSect);
   /* The class no longer rides at the foot of the identity card. It was
      one line there because it was one line of content; now that it is
      today's schedule, the next class day and a count, it is its own box
@@ -74679,7 +74909,9 @@ function buildBadgesTab(){
     prog.textContent = has ? "Mastered" : done + "/" + need;
     tile.appendChild(prog);
 
-    tile.addEventListener("click", () => showUnlockDetail(badgeDetail(unit)));
+    /* a badge you have not looked at since it was earned (build 299) */
+    const clearNew = has ? attachNewDot(art, "badges", unit) : () => {};
+    tile.addEventListener("click", () => { clearNew(); showUnlockDetail(badgeDetail(unit)); });
     grid.appendChild(tile);
   });
   /* ---- A CASE, NOT A TRAY (build 242) ----
@@ -75260,6 +75492,7 @@ function buildRanksTab(){
        280 - the every-opening glance is gone, see below). */
     if(!celebrateStops.length && !progFill) return;
     store.rankMapSeen = heldIndex; saveStore();
+    syncProfileTabDot();
     const runProgress = () => {
       if(!progFill) return;
       progFill.style.setProperty("--lit", progFill.dataset.progressTo);
@@ -75878,6 +76111,9 @@ function applyGlassRefraction(el, mapImgId){
   }
   new MutationObserver(syncActive).observe(stage, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
   syncActive();
+  /* the Profile tab's new-item dot, once per screen mount (build 299) */
+  new MutationObserver(syncProfileTabDot).observe(stage, { childList: true });
+  syncProfileTabDot();
 
   /* Its own small island right in the tab row now, the same size and
      shape as Home/Profile/Rewards/Settings \u2014 not a full-width bar

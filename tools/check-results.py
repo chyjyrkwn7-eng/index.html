@@ -285,20 +285,23 @@ with sync_playwright() as pw:
       return { q61, links, orders }; }""")
     ck("no links left in the unit", cu["links"] == 0, cu["links"])
     ck("Q11 and Q37 keep their order, even shuffled in an Exam", set(cu["orders"]) == {"0123/0123"}, cu["orders"])
+    # Build 299 reversed build 215's decision for Q61: "just change the
+    # answer to the correct answer and remove the advisory". The test now
+    # counts excessive bail, and the red note is gone everywhere.
     pg.wait_for_selector(".qpanel .choice", timeout=20000)
-    pre = pg.evaluate("()=>!!document.querySelector('.bank-note')")
+    key = pg.evaluate("([q])=>QUESTIONS[q].choices[QUESTIONS[q].answer]", [cu["q61"]])
+    ck("Q61 (8th Amendment) counts 'the right to be free from excessive bail'", "excessive bail" in key, key)
     pg.evaluate("()=>{const r=correctSlot(order[pos]); [...document.querySelectorAll('.qpanel .choice')].find(c=>+c.dataset.index===r).click();}")
     pg.wait_for_timeout(400)
-    note = pg.evaluate("()=>(document.querySelector('.qpanel .bank-note')||{}).textContent || ''")
-    ck("Q61's red note is not there before answering", pre is False)
-    ck("and says the real answer once answered in Drill",
-       "excessive bail" in note and "study bank" in note, note[:120])
+    note = pg.evaluate("()=>!!document.querySelector('.bank-note')")
+    ck("and there is no study-bank advisory once answered in Drill", note is False, note)
     rv = pg.evaluate("""([q])=>{ const run = { mode:'exam', vroom:false, gameLost:0, order:[q], missed:[q], attempts:{}, firstPick:{},
-        picked: { [q]: 1 }, timedOutSet:{} };
+        picked: { [q]: 0 }, timedOutSet:{} };
       layout = {}; runMode='exam'; cfg.shuffle=false;
       const li = buildReviewQuestion(run, q, 0);
-      return (li.querySelector('.bank-note')||{}).textContent || ''; }""", [cu["q61"]])
-    ck("and in an Exam it is in the review at the end", "excessive bail" in rv, rv[:80])
+      return { note: !!li.querySelector('.bank-note'), text: li.textContent }; }""", [cu["q61"]])
+    ck("nor in an Exam's review, which shows excessive bail as the correct answer",
+       rv["note"] is False and "excessive bail" in rv["text"], (rv["note"], rv["text"][:160]))
     pg.evaluate("()=>{ testInProgress=false; try{ showHome(); }catch(e){} }")
 
     print("7. build 216: found recording every cutscene")
