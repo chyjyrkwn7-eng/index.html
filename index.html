@@ -2407,31 +2407,59 @@
   @media (hover:hover){ .flagbtn:hover{ background:rgba(201,162,39,.1); } }
   .flagbtn.on{ background:rgba(245,197,24,.16); box-shadow:0 0 0 1px rgba(245,197,24,.4) inset; }
   .flagicon{ width:1.35rem; height:1.35rem; }
-  /* Review's flagged-questions card (build 296) */
-  .review-flagged-card{ display:flex; align-items:center; gap:.85rem; width:100%; margin:0 0 1.1rem; padding:.95rem 1.1rem;
-    border-radius:16px; border:1px solid rgba(245,197,24,.32); background:rgba(245,197,24,.08); color:var(--ink);
-    text-align:left; font:inherit; cursor:pointer; min-height:44px; }
-  .review-flagged-card .flagicon{ width:1.6rem; height:1.6rem; flex:none; }
-  .review-flagged-card .flagbanner{ fill:#F5C518; stroke:#A9820E; }
-  .review-flagged-text{ display:flex; flex-direction:column; gap:.15rem; flex:1; min-width:0; }
-  .review-flagged-title{ font-weight:800; font-size:1rem; }
-  .review-flagged-sub{ font-size:.82rem; color:var(--soft); }
-  .review-flagged-go{ font-size:1.6rem; color:var(--soft); line-height:1; }
-  .review-flagged-card.is-empty{ cursor:default; border-color:rgba(255,255,255,.1); background:rgba(255,255,255,.04); }
-  .review-flagged-card.is-empty .flagbanner{ fill:none; stroke:#C9A227; }
+  /* Review's Flagged questions box (build 297): a unit card two
+     columns wide, first in the grid. */
+  .picks .pick.pick-flagged-all{
+    grid-column:1 / -1; display:flex; align-items:center; gap:.85rem; width:100%; min-height:4.6rem;
+    padding:.9rem 1rem; font:inherit; text-align:left;
+    border-color:rgba(245,197,24,.38);
+    background-image:linear-gradient(135deg, rgba(245,197,24,.13), rgba(245,197,24,.03) 60%);
+  }
+  /* just the flag, no circle round it (build 298) */
+  .pick-flagged-icon{ display:flex; align-items:center; justify-content:center; flex:none; width:2.2rem; height:2.2rem; }
+  .pick-flagged-icon .whatsnew-glyph{ width:2rem; height:2rem; color:var(--ink); }
+  .pick-flagged-text{ display:flex; flex-direction:column; gap:.2rem; flex:1; min-width:0; }
+  .picks .pick-flagged-all .pname, .picks .pick-flagged-all .pcount{ min-height:0; margin:0; padding-top:0; padding-bottom:0; }
+  .picks .pick-flagged-all .pname{ font-size:1rem; }
+  .picks .pick-flagged-all .pcount{ font-size:.75rem; }
+  .pick-flagged-go{ font-size:1.7rem; line-height:1; color:var(--soft); }
+  .pick-flagged-all.is-empty{ border-color:var(--rule); background-image:none; }
+  .pick-flagged-all.is-empty .pick-flagged-icon{ opacity:.5; }
+  /* Answer Review: the question and its flag on one row (build 297) */
+  .review-qhead{ display:flex; align-items:flex-start; gap:.6rem; }
+  .review-qhead > .review-question-text{ flex:1; min-width:0; }
+  .review-qhead > .flagbtn.review-flag{ margin-left:0; margin-top:-.1rem; }
+  .review-question.is-unflagged{ opacity:.5; }
   /* THE TEST'S FLAG, BIGGER AND UP IN THE CORNER (build 291): "could it
      be slightly bigger and be in a better position? ... closer to the
      top of that like above the question and to the right." A round
      2.8rem button with a 1.7rem flag, lifted so its centre sits above
      the "Question N" line, right edge on the card's own right edge. The
      unit-details list's flag (.unitdetail-flag) keeps its own size. */
-  .qnumrow > .flagbtn:not(.unitdetail-flag){
-    width:2.8rem; height:2.8rem; border-radius:50%;
-    margin-top:-1.15rem; margin-bottom:-.4rem; margin-right:-.55rem;
+  /* ONE FLAG, APP WIDE (build 297): the same round button wherever a
+     question is shown - a test, a unit's Flagged list, Answer Review.
+     buildQuestionFlag() makes every one of them. */
+  .flagbtn.qflag{
+    width:2.8rem; height:2.8rem; border-radius:50%; flex:none;
     background:rgba(255,255,255,.05); box-shadow:0 0 0 1px rgba(255,255,255,.08) inset;
   }
-  .qnumrow > .flagbtn:not(.unitdetail-flag) .flagicon{ width:1.7rem; height:1.7rem; }
-  .qnumrow > .flagbtn.on:not(.unitdetail-flag){ background:rgba(245,197,24,.16); box-shadow:0 0 0 1px rgba(245,197,24,.45) inset; }
+  .flagbtn.qflag .flagicon{ width:1.7rem; height:1.7rem; }
+  .flagbtn.qflag.on{ background:rgba(245,197,24,.16); box-shadow:0 0 0 1px rgba(245,197,24,.45) inset; }
+  /* in a test it sits up in the card's corner */
+  .qnumrow > .flagbtn.qflag{ margin-top:-1.15rem; margin-bottom:-.4rem; margin-right:-.55rem; }
+  /* UP INTO THE CORNER (build 298): "a little too low still, needs to be
+     moved up, positioned closer to that line ... perfectly in the corner".
+     The line is #count's bottom border, 32px above the question panel on
+     every device, and its right end is the panel's right edge. Offset,
+     not margin, so the row and the question under it do not move: the
+     flag's top lands 10px under the line and its right edge on the
+     line's end, on a phone and a tablet alike, which also lifts it
+     further clear of the question on a tablet. */
+  /* Only where the row carries "Question N" - a test. The daily
+     question's row has no label and no line above it, its title block
+     sits right on top, and lifted there the flag ran into "One
+     question, one attempt." */
+  .qnumrow:has(> .qnum) > .flagbtn.qflag{ position:relative; top:-1.75rem; left:.69rem; }
 
   /* a subtle hint that swipe-to-advance is on, tucked into the button
      itself rather than announced anywhere louder */
@@ -2600,6 +2628,14 @@
     padding-top:1rem; padding-bottom:4rem; box-sizing:border-box;
   }
   .wrap:has(.pausepanel.is-pause) .test-scopelabel{ visibility:hidden; }
+  /* Resume over Exit, one width, one column (build 297): "it's still
+     not centered, the buttons need to be centered". Side by side they
+     were two different widths sharing a centre line; stacked they are
+     one centred column. The whole group is moved onto the screen's own
+     middle by renderPausedScreen() - see centerPauseStack(). */
+  .pausepanel.is-pause .actions{ flex-direction:column; align-items:center; gap:.75rem; width:100%; margin-top:1.4rem; }
+  .pausepanel.is-pause .actions .next{ width:min(16rem, 100%); margin:0; }
+  .pause-stack{ display:flex; flex-direction:column; align-items:center; width:100%; }
   .pause-info{ margin:.2rem 0 1rem; max-width:34rem; }
   .pause-units{ margin:0; font-size:1.2rem; font-weight:800; line-height:1.3; color:var(--ink); }
   .pause-where{ margin:.35rem 0 0; font-size:1rem; font-weight:600; color:var(--soft); }
@@ -9683,6 +9719,13 @@
     translate:calc((min(2.9rem, 10.7cqw) - max(1.75rem, min(2.9rem, 10.7cqw))) / 2) calc((min(2.9rem, 10.7cqw) - max(1.75rem, min(2.9rem, 10.7cqw))) / 2);
   }
   .cosmic-icon-badge.cosmic-badge-rank svg.cosmic-rank-emblem{ width:100%; height:100%; flex:none; overflow:hidden; border-radius:50%; clip-path:circle(50% at 50% 50%); }
+  /* the recorded motion, laid exactly over the still emblem (build 298) */
+  .cosmic-icon-badge.cosmic-badge-rank .cosmic-rank-anim{ position:absolute; inset:0; overflow:hidden; border-radius:50%; pointer-events:none; z-index:0; mix-blend-mode:screen; }
+  .cosmic-rank-anim .rk-strip{ position:absolute; left:0; top:0; width:100%; animation:rk-flip-y 6s infinite; will-change:transform; }
+  .cosmic-rank-anim .rk-strip img{ display:block; max-width:none; animation:rk-flip-x 1s infinite; will-change:transform; }
+  @keyframes rk-flip-y{ from{ transform:translateY(0); } to{ transform:translateY(-100%); } }
+  @keyframes rk-flip-x{ from{ transform:translateX(0); } to{ transform:translateX(-100%); } }
+  .cosmic-icon-badge.cosmic-badge-rank svg.cosmic-rank-emblem.rk-under-anim{ visibility:hidden; }
   .cosmic-icon-badge.cosmic-badge-rank:not(.cosmic-badge-lit) svg.cosmic-rank-emblem{ filter:grayscale(1) brightness(1.05); opacity:.62; }
   /* ---- A RANK NOT YET REACHED IS LIQUID GLASS AGAIN (build 232) ----
      "The bubbles on the main menu, the ones that aren't unlocked look
@@ -14375,7 +14418,6 @@
     border-bottom:1px solid rgba(255,255,255,.07);
   }
   .unitdetail-listscroll{ flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:.75rem 1.1rem 1.1rem; }
-  .unitdetail-back.is-bottom{ display:flex; margin:.4rem auto .2rem; min-width:9rem; }
   .unitdetail-listbarrow{ display:flex; align-items:center; gap:.6rem; }
   .unitdetail-search{ position:relative; margin-top:.55rem; }
   .unitdetail-search input{
@@ -14389,23 +14431,20 @@
   }
   .unitdetail-searchclear[hidden]{ display:none; }
   .unitdetail-empty{ margin:.6rem 0; font-size:.85rem; color:var(--soft); text-align:center; }
-  /* The flag, the in-test one made louder. */
-  .unitdetail-q .flagbtn.unitdetail-flag{
-    width:auto; height:auto; min-height:40px; gap:.35rem; padding:0 .8rem 0 .55rem; border-radius:999px; margin-left:auto;
-    background:rgba(255,255,255,.06); box-shadow:0 0 0 1px rgba(224,182,70,.45) inset; color:var(--ink);
-  }
-  .unitdetail-q .flagbtn.unitdetail-flag .flagicon{ width:1.45rem; height:1.45rem; }
-  .unitdetail-q .flagbtn.unitdetail-flag.on{
-    background:linear-gradient(180deg, rgba(245,197,24,.28), rgba(245,197,24,.14)); box-shadow:0 0 0 1.5px #F5C518 inset, 0 0 14px rgba(245,197,24,.28);
-  }
-  .unitdetail-flagword{ font-size:.8rem; font-weight:800; letter-spacing:.02em; }
-  .unitdetail-q .flagbtn.unitdetail-flag.on .unitdetail-flagword{ color:#FFD84D; }
-  .unitdetail-reset{ margin:.4rem 0 .6rem; text-align:center; }
+  /* The flag here is the test's own (build 297: buildQuestionFlag). */
+  .unitdetail-q .flagbtn.unitdetail-flag{ margin-left:auto; }
+  .unitdetail-reset{ margin:.9rem 0 .6rem; text-align:center; }
   .unitdetail-reset[hidden]{ display:none; }
+  /* A real button (build 298), not a tinted line of text: full width,
+     solid, raised, the same red as the Unflag all it leads to. */
   .unitdetail-resetbtn{
-    min-height:44px; padding:0 1rem; border-radius:999px; font-size:.82rem; font-weight:800; cursor:pointer;
-    color:#FF9A9A; background:rgba(255,80,80,.08); border:1px solid rgba(255,90,90,.35);
+    display:flex; align-items:center; justify-content:center; gap:.5rem; width:100%; min-height:50px; padding:0 1.1rem;
+    border-radius:14px; font:inherit; font-size:.92rem; font-weight:800; letter-spacing:.01em; cursor:pointer; color:#fff;
+    background:linear-gradient(180deg, #E2564C, #B9372F); border:1px solid rgba(255,140,130,.55);
+    box-shadow:0 1px 0 rgba(255,255,255,.28) inset, 0 -2px 0 rgba(0,0,0,.18) inset, 0 6px 16px rgba(185,55,47,.35);
+    -webkit-tap-highlight-color:transparent; transition:transform .12s ease, filter .12s ease;
   }
+  .unitdetail-resetbtn:active{ transform:translateY(1px) scale(.985); filter:brightness(.92); }
   .unitdetail-resetbtn[hidden]{ display:none; }
   .unitdetail-confirm{ padding:.8rem; border-radius:14px; text-align:left; background:rgba(255,80,80,.08); border:1px solid rgba(255,90,90,.4); }
   .unitdetail-confirm[hidden]{ display:none; }
@@ -19931,7 +19970,7 @@ const QUESTIONS = [
     topic: "Professionalism and Ethics",
     src: 2,
     q: "The misuse of the term professionalism in law enforcement involves which of the following statements?",
-    ref: "(Professionalism & Ethics Section 1.2) (deleted #31 same question)",
+    ref: "(Professionalism & Ethics Section 1.2)",
     choices: [
       "Standards for entry, practice, and ethical conduct",
       "A cool and aloof officer who shows no feeling, with a crisp uniform, shiny shoes, who is an expert at fighting criminals",
@@ -20349,7 +20388,7 @@ const QUESTIONS = [
     topic: "Professional Policing",
     src: 5,
     q: "In law enforcement, which is one of the elements of the ethical role?",
-    ref: "(Professionalism & Ethics, Section 1.4) (Wrong subject) #27 in Professionalism & Ethics)",
+    ref: "(Professionalism & Ethics, Section 1.4)",
     choices: [
       "To conduct daily life in a subjective manner, being influenced by emotion",
       "To intentionally indicate a report of facts known to a person to be false",
@@ -21111,7 +21150,7 @@ const QUESTIONS = [
     topic: "TCOLE Rules",
     src: 15,
     q: "The different proficiency certificates the Commission (TCOLE) offers for peace officers include which of the following:",
-    ref: "(TCOLE Rules Overview, [https://www.tcole.texas.gov/content/proficiency-certificates](https://www.tcole.texas.gov/content/proficiency-certificates) and Texas Administrative Code, Section 221.3 Proficiency Certificate, Section 4.6, page 4 of 5)",
+    ref: "(TCOLE Rules Overview and Texas Administrative Code, Section 221.3 Proficiency Certificate, Section 4.6)",
     choices: [
       "Master Proficiency Certificate",
       "Intermediate Proficiency Certificate",
@@ -21124,7 +21163,7 @@ const QUESTIONS = [
     topic: "TCOLE Rules",
     src: 16,
     q: "The TCOLE license of a person charged with a felony and placed on community supervision shall be suspended for _____ years.",
-    ref: "(TCOLE Rules 1701. Occupations Code, Section 4.2) ([TCOLE - Rules Flashcards | Quizlet](https://quizlet.com/574170279/tcole-rules-flash-cards/), David_19904 #22 of 24)",
+    ref: "(TCOLE Rules 1701. Occupations Code, Section 4.2)",
     choices: [
       "30",
       "10",
@@ -21835,7 +21874,7 @@ const QUESTIONS = [
     topic: "US and Texas Constitution and Rights",
     src: 9,
     q: "The Bill of Rights to the United States Constitution",
-    ref: "(Googled answer) (US & TX Const.)",
+    ref: "(US & TX Const.)",
     choices: [
       "was designed to replace the Articles of Confederation",
       "was added to the original Constitution to ensure individual liberties and civil rights.",
@@ -21877,7 +21916,7 @@ const QUESTIONS = [
     topic: "US and Texas Constitution and Rights",
     src: 12,
     q: "The ultimate evaluation of a law for constitutionality is done by ________.",
-    ref: "(Googled) (Section 7.5, US & TX Constitution)",
+    ref: "(Section 7.5, US & TX Constitution)",
     choices: [
       "The executive branch of government",
       "The judicial branch of government",
@@ -21890,7 +21929,7 @@ const QUESTIONS = [
     topic: "US and Texas Constitution and Rights",
     src: 13,
     q: "The “3 Cs” or components of the criminal justice system are:",
-    ref: "(Googled answer and Quizlet kaylahill01) (US & TX Constitution, 7.2)",
+    ref: "(US & TX Constitution, 7.2)",
     choices: [
       "Cops, Courts, Corrections",
       "Criminals, Cops, Corrections",
@@ -21955,7 +21994,6 @@ const QUESTIONS = [
     topic: "US and Texas Constitution and Rights",
     src: 18,
     q: "Number of Articles in the US Constitution?",
-    ref: "(Googled answer)",
     choices: [
       "Seven",
       "Fourteen",
@@ -21968,7 +22006,6 @@ const QUESTIONS = [
     topic: "US and Texas Constitution and Rights",
     src: 19,
     q: "What is the number of Articles in the US Constitution?",
-    ref: "(Googled answer)",
     choices: [
       "5",
       "12",
@@ -22020,7 +22057,7 @@ const QUESTIONS = [
     topic: "US and Texas Constitution and Rights",
     src: 23,
     q: "The writ that is filed that seeks release from unlawful detention is called",
-    ref: "(US & TX Constitution, 7.1 or CCP Art. 11.17 Googled answer)",
+    ref: "(US & TX Constitution, 7.1 or CCP Art. 11.17)",
     choices: [
       "writ of",
       "writ of habeas corpus",
@@ -22308,7 +22345,7 @@ const QUESTIONS = [
     topic: "US and Texas Constitution and Rights",
     src: 45,
     q: "Which of the following statements is true concerning grand juries?",
-    ref: "(Googled) (Section 7.5)",
+    ref: "(Section 7.5)",
     choices: [
       "Grand juries are required by the Constitution and in all fifty states",
       "The Fourth Amendment provides for the establishment of grand juries",
@@ -22321,7 +22358,6 @@ const QUESTIONS = [
     topic: "US and Texas Constitution and Rights",
     src: 46,
     q: "On September 25, 1789, Congress proposed the first _____ Amendments to the new United States Constitution as the Bill of Rights.",
-    ref: "(Googled Answer).",
     choices: [
       "Six",
       "Eight",
@@ -22451,7 +22487,7 @@ const QUESTIONS = [
     topic: "US and Texas Constitution and Rights",
     src: 56,
     q: "Exceptions to the Protections under the Bill of Rights are usually established by",
-    ref: "(Googled answer under Cases or Controversies) (TX & US Constitution, Section 7.5)",
+    ref: "(TX & US Constitution, Section 7.5)",
     choices: [
       "Supreme Court decision",
       "Legislative decisions",
@@ -22464,7 +22500,6 @@ const QUESTIONS = [
     topic: "US and Texas Constitution and Rights",
     src: 57,
     q: "What does a writ of habeas corpus do?",
-    ref: "(Googled answer) (inserted)",
     choices: [
       "commands the taking into custody of a named person",
       "orders the sheriff to release a person from confinement",
@@ -22623,7 +22658,6 @@ const QUESTIONS = [
     topic: "US and Texas Constitution and Rights",
     src: 69,
     q: "The First Continental Congress was formed in",
-    ref: "(Googled answer)",
     choices: [
       "1774",
       "1784",
@@ -22951,7 +22985,7 @@ const QUESTIONS = [
     topic: "Penal Code",
     src: 11,
     q: "A Texas handgun license holder enters a liquor store while possessing a concealed pistol. What offense has occurred?",
-    ref: "(PC 46.035 (b) (1); PC Section 8.30) Definition Repealed (Left because of Texas question recorded)",
+    ref: "(PC 46.035 (b) (1); PC Section 8.30)",
     choices: [
       "Unlawful carrying of weapons",
       "Places where weapons are prohibited",
@@ -23302,7 +23336,7 @@ const QUESTIONS = [
     topic: "Penal Code",
     src: 38,
     q: "A short-barreled firearm includes a rifle or shotgun that has an overall length shorter than____ inches.",
-    ref: "(PC 46.01 #10; PC Section 8.30) Definition Repealed (Left because of Texas question recorded)",
+    ref: "(PC 46.01 #10; PC Section 8.30)",
     choices: [
       "24",
       "36",
@@ -24939,7 +24973,8 @@ const QUESTIONS = [
   {
     topic: "Penal Code",
     src: 167,
-    q: "42. A person crawls over a locked gate to take a nap in a meadow. The owner finds the person asleep in his pasture and calls the police. The person committed….",
+    q: "A person crawls over a locked gate to take a nap in a meadow. The owner finds the person asleep in his pasture and calls the police. The person committed….",
+    keyText: "42. A person crawls over a locked gate to take a nap in a meadow. The owner finds the person asleep in his pasture and calls the police. The person committed….",
     ref: "(PC Section 8.17; PC 30.05 (a); (b) (2) (B))",
     choices: [
       "No offense",
@@ -25861,7 +25896,8 @@ const QUESTIONS = [
   {
     topic: "Penal Code",
     src: 239,
-    q: "(133 - *duplicate)* Two friends buy a boat together. One of the men becomes angry at the other and tears up the boat that they purchased together. What offense, if any, has been committed?",
+    q: "Two friends buy a boat together. One of the men becomes angry at the other and tears up the boat that they purchased together. What offense, if any, has been committed?",
+    keyText: "(133 - *duplicate)* Two friends buy a boat together. One of the men becomes angry at the other and tears up the boat that they purchased together. What offense, if any, has been committed?",
     ref: "(PC 28.04 (a); PC Section 8.15)",
     choices: [
       "Disorderly conduct",
@@ -25914,7 +25950,7 @@ const QUESTIONS = [
     topic: "Penal Code",
     src: 243,
     q: "Peter has been terminated from the Post Office. In anger, he calls and states that there is a letter bomb in the mail. This causes the evacuation of the Post Office and the alert of the fire department and bomb squad. What offense has been committed?",
-    ref: "(PC 42.06 (a) (1-3), PC Section 8.27), [https://quizlet.com/221179173/penal-code-flash-cards/](https://quizlet.com/221179173/penal-code-flash-cards/) #36 of 121, JeanBrent",
+    ref: "(PC 42.06 (a) (1-3), PC Section 8.27)",
     choices: [
       "Terroristic Threat",
       "False Alarm or Report",
@@ -26161,7 +26197,7 @@ const QUESTIONS = [
     topic: "Penal Code",
     src: 264,
     q: "A person steals an old lawn mower worth $40 out of an old storage shed that is falling apart. What offense has occurred?",
-    ref: "(QuizletPlus TEEX 162.1 #1) (PC 30.02 (a) (1) (3); PC Section 8.17)",
+    ref: "(PC 30.02 (a) (1) (3); PC Section 8.17)",
     choices: [
       "Theft",
       "Criminal trespass",
@@ -27008,7 +27044,7 @@ const QUESTIONS = [
     topic: "Penal Code",
     src: 329,
     q: "Without a concealed handgun license, a woman carries a gun in her purse. She opens her purse at the grocery store check out counter. The gun falls out of purse and discharges. What offense, if any, was committed?",
-    ref: "([https://quizlet.com/532051850/cjle2420-penal-code-flash-cards/](https://quizlet.com/532051850/cjle2420-penal-code-flash-cards/) #38 of 145, Terrell_Andrews9) (PC 46.02 (a) (3) (A), PC Section 8.30)",
+    ref: "(PC 46.02 (a) (3) (A), PC Section 8.30)",
     choices: [
       "Unlawfully carrying a weapon",
       "Failure to obtain a handgun permit",
@@ -27099,7 +27135,7 @@ const QUESTIONS = [
     topic: "Penal Code",
     src: 336,
     q: "A person uses spray paint to tag the outside wall of the rival high school’s building causing damage valued at $2000. What offense has occurred?",
-    ref: "(PC 28.08 (a) (1), (d) (1); https://quizlet.com/138102464/tcole-bpoc-final-questions-ive-gotten-wrong-on-practice-tests-flash-cards/ 5-58, sarah_kate_keith.",
+    ref: "(PC 28.08 (a) (1), (d) (1))",
     choices: [
       "Reckless Damage or Destruction",
       "Criminal Mischief – Misd B",
@@ -28405,7 +28441,7 @@ const QUESTIONS = [
     topic: "Arrest, Search, and Seizure",
     src: 55,
     q: "Consent is considered involuntary if it is obtained by duress, coercion, or",
-    ref: "([https://quizlet.com/476315579/arrest-search-and-seizure-flash-cards/](https://quizlet.com/476315579/arrest-search-and-seizure-flash-cards/), tstrain172 1/56) (Section 10.8, Lecture Scenario #1)",
+    ref: "(Section 10.8, Lecture Scenario #1)",
     choices: [
       "Is volunteered",
       "Limited by the person granting consent",
@@ -29133,7 +29169,7 @@ const QUESTIONS = [
     topic: "Arrest, Search, and Seizure",
     src: 111,
     q: "__________ includes missions within the meaning of the Vienna Convention and any missions representing foreign governments, individually or collectively, which are extended the same privileges and immunities, pursuant to law, as are enjoyed by missions under the Vienna Convention.",
-    ref: "(Arrest, Search, and Seizure, Section 10.4; googled [https://www.law.cornell.edu/uscode/text/22/254a](https://www.law.cornell.edu/uscode/text/22/254a) ; as used in the act #3)",
+    ref: "(Arrest, Search, and Seizure, Section 10.4; 22 U.S.C. 254a)",
     choices: [
       "Excursions",
       "Adventures",
@@ -29145,7 +29181,8 @@ const QUESTIONS = [
   {
     topic: "Arrest, Search, and Seizure",
     src: 112,
-    q: "What is a disadvantage of a no-knock warrant (#57)",
+    q: "What is a disadvantage of a no-knock warrant?",
+    keyText: "What is a disadvantage of a no-knock warrant (#57)",
     ref: "(Arrest, Search, and Seizure, Section 10.10)",
     choices: [
       "Occupant may believe being attacked by home invaders and try to defend self",
@@ -29224,7 +29261,7 @@ const QUESTIONS = [
     topic: "Arrest, Search, and Seizure",
     src: 118,
     q: "Under which of the following situations is a peace officer not justified in making an arrest?",
-    ref: "([https://quizlet.com/365970581/bpoc-capstone-classmarker-final-exam-3-flash-cards/](https://quizlet.com/365970581/bpoc-capstone-classmarker-final-exam-3-flash-cards/) #18 of 100 by firearcher)(Arrest, Search, and Seizure, Section 10.4, & 10.7)",
+    ref: "(Arrest, Search, and Seizure, Section 10.4, & 10.7)",
     choices: [
       "A person restrained under a protective order goes to the victim’s place of employment when prohibited.",
       "A prohibited person goes to a school to see his children when they are let out at the end of the school day, when prohibited.",
@@ -30697,7 +30734,9 @@ const QUESTIONS = [
   {
     topic: "Sexual Assault and Family Violence",
     src: 30,
-    q: "Peter has been terminated from the Post Office. In anger, he calls and states that there is a letter bomb in the mail. This causes the evacuation of the Post Office and the alert of the fire department and bomb squad. What offense has been committed? (PC 42.06 (a) (1-3), PC Section 8.27), https://quizlet.com/221179173/penal-code-flash-cards/ #36 of 121, JeanBrent",
+    q: "Peter has been terminated from the Post Office. In anger, he calls and states that there is a letter bomb in the mail. This causes the evacuation of the Post Office and the alert of the fire department and bomb squad. What offense has been committed?",
+    keyText: "Peter has been terminated from the Post Office. In anger, he calls and states that there is a letter bomb in the mail. This causes the evacuation of the Post Office and the alert of the fire department and bomb squad. What offense has been committed? (PC 42.06 (a) (1-3), PC Section 8.27), https://quizlet.com/221179173/penal-code-flash-cards/ #36 of 121, JeanBrent",
+    ref: "(PC 42.06 (a) (1-3), PC Section 8.27)",
     choices: [
       "Terroristic Threat",
       "False Alarm or Report",
@@ -31339,7 +31378,7 @@ const QUESTIONS = [
     topic: "Civil Process and Liability",
     src: 4,
     q: "An intentional commission or omission of an act by a competent person that violates a law prohibiting or requiring the act and for which punishment is specified by law is a definition of a ___________.",
-    ref: "(Britannica definition, Civil Process, https://www.britannica.com/topic/crime-law)",
+    ref: "(Civil Process)",
     choices: [
       "tort",
       "bias",
@@ -31533,7 +31572,9 @@ const QUESTIONS = [
   {
     topic: "Civil Process and Liability",
     src: 19,
-    q: "A “tort” is a civil action related to (Force Options, Section 28.18; Civil Process, Section 14.2 and 14.6) http://jec.unm.edu/education/online-training/torts-tutorial)",
+    q: "A “tort” is a civil action related to",
+    keyText: "A “tort” is a civil action related to (Force Options, Section 28.18; Civil Process, Section 14.2 and 14.6) http://jec.unm.edu/education/online-training/torts-tutorial)",
+    ref: "(Force Options, Section 28.18; Civil Process, Section 14.2 and 14.6)",
     choices: [
       "a violation of contract",
       "public injury",
@@ -31545,7 +31586,9 @@ const QUESTIONS = [
   {
     topic: "Civil Process and Liability",
     src: 20,
-    q: "A writ is an order from a court of competent jurisdiction to engage in a particular action in response to an action often stemming from civil litigation. Some of the actions which could be called for the court in the execution of the writ include all the following except: (Civil Process and Liability Section 14.5 and 14.6) (CCP 18.02 (a); Arrest, Search, and Seizure, Section 10.9) (Civil Process, Section 14.5) https://www.justice.gov/usao/justice-101/glossary#w; https://www.investopedia.com/terms/w/writ-of-execution.asp under What is a Writ?) A. removal of property",
+    q: "A writ is an order from a court of competent jurisdiction to engage in a particular action in response to an action often stemming from civil litigation. Some of the actions which could be called for the court in the execution of the writ include all the following except:",
+    keyText: "A writ is an order from a court of competent jurisdiction to engage in a particular action in response to an action often stemming from civil litigation. Some of the actions which could be called for the court in the execution of the writ include all the following except: (Civil Process and Liability Section 14.5 and 14.6) (CCP 18.02 (a); Arrest, Search, and Seizure, Section 10.9) (Civil Process, Section 14.5) https://www.justice.gov/usao/justice-101/glossary#w; https://www.investopedia.com/terms/w/writ-of-execution.asp under What is a Writ?) A. removal of property",
+    ref: "(Civil Process and Liability, Sections 14.5 and 14.6; CCP 18.02 (a); Arrest, Search, and Seizure, Section 10.9)",
     choices: [
       "removal of property",
       "preventing the blocking of access to a business",
@@ -31579,6 +31622,29 @@ const QUESTIONS = [
       "45",
     ],
     answer: 2
+  },
+  /* THE SECOND #84 (build 298). The Penal Code deck puts #84 on slide 22
+     AND slide 24, and "if it's in that version, it also needs to be in
+     the entire unit version" - so it is two questions, in the slides
+     0-85 version and in the whole unit. Its own src (347, past the last
+     number the study guide uses) gives it its own identity and history;
+     `repeatOf` says what it repeats. It sits at the END of the bank so
+     no other question's position moves, and the daily question does not
+     deal it (a repeat there is only the same card twice, and it would
+     have reshuffled every Penal Code day still to come). */
+  {
+    topic: "Penal Code",
+    src: 347,
+    repeatOf: 84,
+    q: "Which of the following is not one of the culpable mental states?",
+    ref: "(PC 6.03 (a), (b), and (c); PC Section 8.4)",
+    choices: [
+      "Intentional",
+      "Knowing",
+      "Reckless",
+      "Criminal intent",
+    ],
+    answer: 3
   },
 ];
 
@@ -36463,7 +36529,7 @@ let storageHadData = false;
 let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: [], studyLog: {}, theme: null,
               lifetime: { answered: 0, correct: 0, drillPlays: 0, examPlays: 0, gamePlays: 0,
                           perfectTests: 0, currentStreak: 0, longestStreak: 0, points: 0 },
-              unitPerfects: {}, unitBlackStar: {}, flagged: {},
+              unitPerfects: {}, unitBlackStar: {}, flagged: {}, unflagged: {}, tally: {}, tallyBase: {},
               unitGameBeat: {}, gameFarthest: {}, unitBestPct: {}, unitBestMs: {}, flareLevels: {},
               unitExam: {}, gameHardcoreMs: {},
               mysteryColorsFound: { red: false, orange: false, yellow: false, violet: false, white: false },
@@ -36535,6 +36601,7 @@ function applyLoadedData(got){
   store.unitPerfects  = got.unitPerfects  && typeof got.unitPerfects  === "object" ? got.unitPerfects  : {};
   store.unitBlackStar = got.unitBlackStar && typeof got.unitBlackStar === "object" ? got.unitBlackStar : {};
   store.flagged       = got.flagged       && typeof got.flagged       === "object" ? got.flagged       : {};
+  store.unflagged     = got.unflagged     && typeof got.unflagged     === "object" && !Array.isArray(got.unflagged) ? got.unflagged : {};
   /* Migrates the old single mysteryFound boolean (find-one-thing) into
      the new three-color collection \u2014 anyone who'd already unlocked it
      under the old system keeps full access rather than being asked to
@@ -36852,6 +36919,15 @@ function applyLoadedData(got){
   store.legacyChars = Array.isArray(got.legacyChars) ? got.legacyChars.filter(x => typeof x === "string" && x !== "robot") : legacyCharsFromRanks();
   /* After everything the locks read (the streak, the study log) is in. */
   try{ revokeRaisedCharacters(); }catch(e){}
+  /* Per-device tallies (build 298). A copy without them - an older
+     build, or one from before this - keeps empty ones and is read the
+     old way in a merge; a copy with them has any count it holds beyond
+     its tallies folded into its base, so nothing loaded from elsewhere
+     is ever taken for this device's own new progress. */
+  const okMap = v => v && typeof v === "object" && !Array.isArray(v);
+  store.tally = okMap(got.tally) ? JSON.parse(JSON.stringify(got.tally)) : {};
+  store.tallyBase = okMap(got.tallyBase) ? Object.assign({}, got.tallyBase) : {};
+  tallyNormalize(store);
   return true;
 }
 /* WHAT SOMEBODY HELD UNDER THE PRE-243 RULES and would otherwise lose.
@@ -36894,6 +36970,7 @@ function saveStore(){
    back up (which would ping-pong forever between two devices once live
    listeners are involved). */
 function persistLocally(){
+  try{ tallyCapture(store); }catch(e){}
   if(storageOK){
     try { window.localStorage.setItem(STORE_KEY, JSON.stringify(store)); }
     catch(e){ storageOK = false; }
@@ -38090,6 +38167,8 @@ function wipeLocalProgressAndSettings(){
   store.unitPerfects = {};
   store.unitBlackStar = {};
   store.flagged = {};
+  store.unflagged = {};
+  store.tally = {}; store.tallyBase = {};
   store.unitGameBeat = {};
   store.unitBestPct = {}; store.unitBestMs = {}; store.flareLevels = {};
   store.gameFarthest = {};
@@ -38186,6 +38265,7 @@ function resetEverything(){
      actually resets every synced device, not just the one that tapped it. */
   if(fbDb && syncCode){
     try { fbDb.collection("progress").doc(syncCode).delete().catch(() => {}); } catch(e){}
+    deleteAccountFloor(syncCode);   /* build 298: or it would bring the account back */
     /* The leaderboard entry is a SEPARATE document and was not being
        deleted here, so a reset account stayed on the board forever with
        whatever numbers it had when it was abandoned - reported directly,
@@ -38216,6 +38296,7 @@ function handleRemoteReset(){
      costs nothing and closes the gap. */
   if(fbDb && syncCode){
     try { if(store.publicId) fbDb.collection("leaderboard").doc(store.publicId).delete().catch(() => {}); } catch(e){}
+    deleteAccountFloor(syncCode);   /* build 298 */
     forgetLeaderboardRowCache();
   }
   detachLiveListener();
@@ -38441,10 +38522,77 @@ function flushLeaderboardRow(){
   try{ writeLeaderboardRow(buildLeaderboardRow()); }catch(e){}
 }
 
-function markCloudConfirmed(){
+/* ---- THE ACCOUNT'S HIGH-WATER MARK (build 298) ----
+   296 stopped THIS build writing before it reads. It cannot stop a phone
+   still running 295 or older, and those keep doing exactly that: on
+   every launch they set() their own copy over the account, before
+   anything else. That is how BigSlim lost the alien, 19 hundos and ~10k
+   XP a second time, and Hector lost all but 2,330 of 17,585 XP - hours
+   AFTER 296 shipped, from devices that had not taken it yet.
+   No code in this build can stop an old build's write. What it can do is
+   make the write undoable: a second copy of the account at
+   `progress/<code>__floor`, which old builds have never heard of and so
+   never touch. Every push from this build writes it; every launch reads
+   it (before the first push - floorMergedFor) and MERGES it in, with the
+   same field-by-field rules as two devices (mergeSameAccount), so
+   progress only ever comes back, never goes. An old phone can still
+   knock the account down for the minutes until it updates; the first
+   launch of this build anywhere on that account puts it back.
+   Only into an account that EXISTS on the server: a missing document is
+   either a brand-new account or a reset, and a floor must never bring a
+   reset account back to life - so that path skips the read and lets the
+   next push overwrite the floor. Both reset paths delete it as well. */
+const ACCOUNT_FLOOR_SUFFIX = "__floor";
+const FLOOR_READ_WAIT_MS = 4000;
+let floorMergedFor = "";
+let floorReadingFor = "";
+function floorRefFor(code){ return fbDb.collection("progress").doc(code + ACCOUNT_FLOOR_SUFFIX); }
+function deleteAccountFloor(code){
+  if(!fbDb || !code) return;
+  try { floorRefFor(code).delete().catch(() => {}); } catch(e){}
+}
+function markCloudConfirmed(docExists){
   if(!syncCode || cloudConfirmedFor === syncCode) return;
-  cloudConfirmedFor = syncCode;
-  if(cloudPushPending){ cloudPushPending = false; scheduleCloudPush(); }
+  const code = syncCode;
+  const confirm = () => {
+    if(code !== syncCode || cloudConfirmedFor === code) return;
+    cloudConfirmedFor = code;
+    if(cloudPushPending){ cloudPushPending = false; scheduleCloudPush(); }
+  };
+  if(docExists === false || !fbDb){
+    /* nothing to restore into: the next push writes the floor fresh */
+    floorMergedFor = code;
+    confirm();
+    return;
+  }
+  if(floorReadingFor === code) return;
+  floorReadingFor = code;
+  /* A slow read never holds the account's own saves hostage; it only
+     holds the FLOOR's, which must not be written until it has been read
+     or it would be overwritten with less than it holds. */
+  const wait = setTimeout(confirm, FLOOR_READ_WAIT_MS);
+  const settle = (merged) => {
+    clearTimeout(wait);
+    if(floorReadingFor === code) floorReadingFor = "";
+    if(code !== syncCode) return;
+    if(merged) floorMergedFor = code;
+    confirm();
+    /* anything the floor brought back, or that it lacked, goes up now */
+    if(merged && merged.push && cloudConfirmedFor === code) scheduleCloudPush();
+  };
+  try {
+    floorRefFor(code).get().then(snap => {
+      let r = { gained: false, otherHadLess: true };
+      if(code === syncCode && snap.exists){
+        const f = snap.data();
+        if(f && (!FRESH_START_CUTOFF || (Number(f.lastModified) || 0) >= FRESH_START_CUTOFF)){
+          tallyCapture(store); r = mergeSameAccount(store, f);
+          if(r.gained){ persistLocally(); try{ onLiveUpdateApplied(); }catch(e){} }
+        }
+      }
+      settle({ push: r.gained || r.otherHadLess });
+    }).catch(() => settle(null));
+  } catch(e){ settle(null); }
 }
 function pushToCloud(){
   if(!fbDb || !syncCode) return;
@@ -38452,6 +38600,10 @@ function pushToCloud(){
   try {
     fbDb.collection("progress").doc(syncCode).set(store).catch(() => {});
   } catch(e){}
+  /* the high-water mark, once this launch has read it (see above) */
+  if(floorMergedFor === syncCode){
+    try { floorRefFor(syncCode).set(store).catch(() => {}); } catch(e){}
+  }
   /* A separate, deliberately minimal collection \u2014 only what's needed
      to render a leaderboard entry (name, avatar, points, stars), never
      the full progress document, and only written at all when the
@@ -38519,7 +38671,7 @@ function pullFromCloud(code, onDone, adopt){
       } else {
         syncSameAccount(cloud);
       }
-      if(docSnap.metadata && docSnap.metadata.fromCache === false && code === syncCode) markCloudConfirmed();
+      if(docSnap.metadata && docSnap.metadata.fromCache === false && code === syncCode) markCloudConfirmed(true);
       onDone && onDone(true, null);
     }).catch(() => { onDone && onDone(false, "error"); });
   } catch(e){ onDone && onDone(false, "error"); }
@@ -38582,7 +38734,7 @@ function attachLiveListener(code){
         }
         /* the server says there is no document yet: a brand-new account,
            whose first push is the one waiting */
-        if(!hasSeenExist && docSnap.metadata && docSnap.metadata.fromCache === false) markCloudConfirmed();
+        if(!hasSeenExist && docSnap.metadata && docSnap.metadata.fromCache === false) markCloudConfirmed(false);
         return;
       }
       /* Only a server-confirmed document arms the check above. A cached
@@ -38593,7 +38745,7 @@ function attachLiveListener(code){
       /* Merged, not taken (build 284 - see mergeSameAccount). Our own
          write echoing back merges to nothing and pushes nothing. */
       if(syncSameAccount(docSnap.data())) onLiveUpdateApplied();
-      if(docSnap.metadata && docSnap.metadata.fromCache === false) markCloudConfirmed();
+      if(docSnap.metadata && docSnap.metadata.fromCache === false) markCloudConfirmed(true);
     });
     /* Now actually reattaches on its own \u2014 see onSnapshotResilient's
        own comment for why this used to just go silently stale. */
@@ -38741,7 +38893,7 @@ function followAccountMove(from, to, noteRef, note){
     attachLiveListener(to);
     /* the target was just read from the server and merged into: that is
        the confirmation the build 296 gate waits for */
-    if(!(target.metadata && target.metadata.fromCache)) markCloudConfirmed();
+    if(!(target.metadata && target.metadata.fromCache)) markCloudConfirmed(true);
     /* Pushed at once: the merged account is the one every device on it
        should now be reading, and until it is in the cloud only this one
        has it. */
@@ -38878,6 +39030,151 @@ function mergeLeavingAccount(src, note){
   store.lastModified = Date.now();
 }
 
+/* ---- TWO DEVICES PLAYING AT ONCE BOTH KEEP WHAT THEY EARNED (build 298) ----
+   "Ensure this PROBLEM is permanently fixed." A merge takes the higher of
+   two counts, which is right for two copies of one history and wrong
+   for two devices that both moved on from it: one played a test worth
+   300 XP while the other played one worth 200, the merge kept 300, and
+   the 200 was gone. That is how an account lost a test's XP with both
+   devices up to date.
+   So the counts that grow by play - lifetime XP, answers, plays, hundos,
+   each unit's hundos and this week's points - are kept as a base plus
+   one tally per device (`store.tally[device][key]`, `store.tallyBase`;
+   keys are "L:points", "U:<unit>", "W:<week>" - a colon, never a dot,
+   which Firestore would read as a field path).
+   Each device only ever raises its own tally, by what it earned itself;
+   a merge takes the higher of each device's tally and of the base, and
+   the count is the base plus every tally. Two devices' tests are then
+   ADDED, and merging again still changes nothing.
+   The base is never trusted from a copy that has no tallies (an older
+   build drops them): such a copy is assumed to hold every tally already,
+   which is exactly the old higher-wins merge - never worse than before
+   and never counted twice. A count raised by hand on the server goes
+   into the base the same way, the first time a device loads it. */
+const TALLY_LIFETIME = ["points", "answered", "correct", "drillPlays", "examPlays", "gamePlays", "perfectTests", "fullTests"];
+let tallyDeviceIdMemo = "";
+function tallyDeviceId(){
+  if(tallyDeviceIdMemo) return tallyDeviceIdMemo;
+  let id = "";
+  try{ id = localStorage.getItem("class26e.device") || ""; }catch(e){}
+  if(!/^[a-z0-9]{8,24}$/.test(id)){
+    const a = new Uint8Array(9);
+    try{ crypto.getRandomValues(a); }catch(e){ for(let i = 0; i < a.length; i++) a[i] = Math.floor(Math.random() * 256); }
+    id = "d" + [...a].map(b => (b % 36).toString(36)).join("");
+    try{ localStorage.setItem("class26e.device", id); }catch(e){}
+  }
+  return (tallyDeviceIdMemo = id);
+}
+function tallyNum(v){ return (typeof v === "number" && isFinite(v)) ? v : (Number(v) || 0); }
+/* the counts a copy holds, by tally key; undefined where it has none */
+function tallyGet(c, k){
+  if(!c) return undefined;
+  if(k.charAt(0) === "L") return tallyNum(c.lifetime && c.lifetime[k.slice(2)]);
+  if(k.charAt(0) === "U") return tallyNum(c.unitPerfects && c.unitPerfects[k.slice(2)]);
+  if(k.charAt(0) === "W") return c.weekKey === k.slice(2) ? tallyNum(c.weekPoints) : undefined;
+  return undefined;
+}
+function tallySet(c, k, v){
+  if(k.charAt(0) === "L"){ if(!c.lifetime) c.lifetime = {}; c.lifetime[k.slice(2)] = v; }
+  else if(k.charAt(0) === "U"){ if(!c.unitPerfects || typeof c.unitPerfects !== "object") c.unitPerfects = {}; c.unitPerfects[k.slice(2)] = v; }
+  else if(k.charAt(0) === "W" && c.weekKey === k.slice(2)) c.weekPoints = v;
+}
+function tallyMaps(c){
+  if(!c.tally || typeof c.tally !== "object" || Array.isArray(c.tally)) c.tally = {};
+  if(!c.tallyBase || typeof c.tallyBase !== "object" || Array.isArray(c.tallyBase)) c.tallyBase = {};
+}
+function tallyKeysOf(c){
+  const ks = TALLY_LIFETIME.map(k => "L:" + k);
+  if(c.unitPerfects && typeof c.unitPerfects === "object") Object.keys(c.unitPerfects).forEach(u => ks.push("U:" + u));
+  if(c.weekKey) ks.push("W:" + c.weekKey);
+  const t = (c.tally && typeof c.tally === "object") ? c.tally : {};
+  Object.keys(t).forEach(d => Object.keys(t[d] || {}).forEach(k => ks.push(k)));
+  Object.keys(c.tallyBase || {}).forEach(k => ks.push(k));
+  return [...new Set(ks)];
+}
+function tallySum(c, k){
+  let n = 0; const t = c.tally || {};
+  Object.keys(t).forEach(d => { n += tallyNum(t[d] && t[d][k]); });
+  return n;
+}
+/* A week's keys only live as long as the week. */
+function tallyPrune(c){
+  const keep = k => k.charAt(0) !== "W" || k === "W:" + (c.weekKey || "");
+  Object.keys(c.tallyBase).forEach(k => { if(!keep(k)) delete c.tallyBase[k]; });
+  Object.keys(c.tally).forEach(d => { const m = c.tally[d]; if(!m || typeof m !== "object"){ delete c.tally[d]; return; } Object.keys(m).forEach(k => { if(!keep(k)) delete m[k]; }); });
+}
+/* A loaded copy: anything it counts beyond base + tallies goes into its
+   base. Only on a copy that has a base for that key - one without is
+   read the old way in a merge (see above). */
+function tallyNormalize(c){
+  tallyMaps(c); tallyPrune(c);
+  Object.keys(c.tallyBase).forEach(k => {
+    const v = tallyGet(c, k); if(v === undefined) return;
+    const b = v - tallySum(c, k);
+    if(b > tallyNum(c.tallyBase[k])) c.tallyBase[k] = b;
+  });
+}
+/* THIS device's own progress since its last save goes onto its own tally.
+   Called on the local store only - before it is saved, and before any
+   merge - and never on a copy that has just come from somewhere else. */
+function tallyCapture(c){
+  c = c || store;
+  if(!c || !c.lifetime) return;
+  tallyMaps(c); tallyPrune(c);
+  const me = tallyDeviceId();
+  tallyKeysOf(c).forEach(k => {
+    const v = tallyGet(c, k); if(v === undefined) return;
+    const sum = tallySum(c, k);
+    if(!(k in c.tallyBase)){ c.tallyBase[k] = Math.max(0, v - sum); return; }
+    const grew = v - tallyNum(c.tallyBase[k]) - sum;
+    if(grew > 0){
+      if(!c.tally[me] || typeof c.tally[me] !== "object") c.tally[me] = {};
+      c.tally[me][k] = tallyNum(c.tally[me][k]) + grew;
+    } else if(grew < 0) c.tallyBase[k] = Math.max(0, v - sum);
+  });
+}
+/* Merges src's tallies into dst and sets every tallied count in dst to
+   base + tallies. Reports the same two things mergeSameAccount does. */
+function tallyMerge(dst, src, res){
+  tallyMaps(dst);
+  const st = (src.tally && typeof src.tally === "object" && !Array.isArray(src.tally)) ? src.tally : {};
+  const sb = (src.tallyBase && typeof src.tallyBase === "object" && !Array.isArray(src.tallyBase)) ? src.tallyBase : {};
+  const sameWeek = dst.weekKey && dst.weekKey === src.weekKey;
+  const keys = new Set(tallyKeysOf(dst).concat(tallyKeysOf({ lifetime: src.lifetime, unitPerfects: src.unitPerfects, weekKey: src.weekKey, tally: st, tallyBase: sb })));
+  /* each copy's base for a key: its own count less its own tallies, or -
+     with no base of its own - its count less all of the merged tallies */
+  const pre = {};
+  keys.forEach(k => {
+    if(k.charAt(0) === "W" && !sameWeek) return;
+    const dv = tallyGet(dst, k), sv = tallyGet(src, k);
+    if(dv === undefined && sv === undefined) return;
+    pre[k] = { dv, sv, dOwn: k in dst.tallyBase ? (dv || 0) - tallySum(dst, k) : null,
+      sOwn: k in sb ? (sv || 0) - tallySum({ tally: st }, k) : null };
+  });
+  const devs = new Set(Object.keys(dst.tally).concat(Object.keys(st)));
+  devs.forEach(d => {
+    const a = (dst.tally[d] && typeof dst.tally[d] === "object") ? dst.tally[d] : (dst.tally[d] = {});
+    const b = (st[d] && typeof st[d] === "object") ? st[d] : {};
+    new Set(Object.keys(a).concat(Object.keys(b))).forEach(k => {
+      if(k.charAt(0) === "W" && k !== "W:" + (dst.weekKey || "")) return;
+      const x = tallyNum(a[k]), y = tallyNum(b[k]);
+      if(y > x){ a[k] = y; res.gained = true; } else if(x > y) res.otherHadLess = true;
+    });
+  });
+  Object.keys(pre).forEach(k => {
+    const p = pre[k], sum = tallySum(dst, k);
+    const bases = [p.dOwn === null ? (p.dv || 0) - sum : p.dOwn, p.sOwn === null ? (p.sv || 0) - sum : p.sOwn];
+    const base = Math.max(0, bases[0], bases[1]);
+    if(!(k in dst.tallyBase) || tallyNum(dst.tallyBase[k]) !== base) res.gained = true;
+    if(!(k in sb) || tallyNum(sb[k]) !== base) res.otherHadLess = true;
+    dst.tallyBase[k] = base;
+    const v = base + sum;
+    if(v > (p.dv || 0)){ tallySet(dst, k, v); res.gained = true; }
+    if(v > (p.sv || 0)) res.otherHadLess = true;
+  });
+  tallyPrune(dst);
+}
+
 /* ---- TWO DEVICES, ONE ACCOUNT: MERGE, NEVER OVERWRITE (build 284) ----
    Reported from a device: "on his two devices, he says he synced them but
    each account is still a different level but I only see one in the
@@ -38954,7 +39251,10 @@ function mergeSameAccount(dst, src){
     if(a.some(x => b.indexOf(x) < 0)) res.otherHadLess = true;
   };
 
-  /* counters */
+  /* counters: the ones that grow by play are base + one tally per device
+     (build 298); everything after this only ever confirms them */
+  if(!dst.lifetime || typeof dst.lifetime !== "object") dst.lifetime = {};
+  tallyMerge(dst, src, res);
   const L = mapOf(dst, "lifetime"), SL = src.lifetime || {};
   ["answered", "correct", "drillPlays", "examPlays", "gamePlays", "perfectTests", "points", "fullTests", "longestStreak"]
     .forEach(k => maxInto(L, k, SL[k]));
@@ -38995,6 +39295,22 @@ function mergeSameAccount(dst, src){
   maxMap("studyLog"); maxMap("unitPerfects"); maxMap("unitBestPct"); maxMap("flareLevels");
   minMap("unitBestMs"); minMap("gameHardcoreMs");
   orMap("unitBlackStar");
+  /* Flags: per question, the later of its last flag and its last unflag
+     (build 297 - see setFlag). */
+  { const fd = mapOf(dst, "flagged"), ud = mapOf(dst, "unflagged");
+    const fs = srcMap("flagged"), us = srcMap("unflagged");
+    const keys = new Set(Object.keys(fd).concat(Object.keys(fs), Object.keys(ud), Object.keys(us)));
+    keys.forEach(k => {
+      const fOn = Math.max(flagStamp(fd[k]), flagStamp(fs[k])), fOff = Math.max(num(ud[k]), num(us[k]));
+      const on = fOn > fOff;
+      /* does a side already hold exactly the merged answer? */
+      const holds = (f, u) => on ? (flagStamp(f[k]) === fOn && !(k in u)) : (!(k in f) && num(u[k]) === fOff);
+      if(!holds(fd, ud)) res.gained = true;
+      if(!holds(fs, us)) res.otherHadLess = true;
+      if(on){ fd[k] = fOn === 1 ? true : fOn; delete ud[k]; }
+      else { delete fd[k]; ud[k] = fOff; }
+    });
+  }
   if(dst.unitRuns || src.unitRuns){ if(!dst.unitRuns) dst.unitRuns = {}; maxMap("unitRuns"); }
   /* Exam records per unit: the copy with more sittings behind it, and
      the better best of the two */
@@ -39042,6 +39358,7 @@ function mergeSameAccount(dst, src){
    which is also what keeps two listening devices from echoing a merge back
    and forth: once both hold the merge, neither has anything to add. */
 function syncSameAccount(cloud){
+  tallyCapture(store);
   const cloudTime = (cloud && cloud.lastModified) || 0;
   const localTime = store.lastModified || 0;
   if(cloudTime > localTime){
@@ -39155,7 +39472,7 @@ function hashOf(s){
    which question your history belongs to. */
 const KEYS = QUESTIONS.map((q, i) =>
   (q.topic || "") + "|" + (q.src == null ? i : q.src) + "|" +
-  hashOf(String(q.q) + "\u0001" + (q.choices || []).join("\u0001")));
+  hashOf(String(q.keyText != null ? q.keyText : q.q) + "\u0001" + (q.choices || []).join("\u0001")));
 
 /* How many times a question has to be missed before the opt-in
    auto-flag picks it up. Counted over the question's whole history, not
@@ -39184,7 +39501,7 @@ function recordResult(i, missed){
      question that is currently flagged either way. */
   if(missed && theme.autoFlagMissed && misses > 0 &&
      misses % AUTO_FLAG_MISS_THRESHOLD === 0 && !store.flagged[KEYS[i]]){
-    store.flagged[KEYS[i]] = true;
+    setFlag(i, true);
   }
   store.lifetime.answered += 1;
   try{ noteAnsweredToday(); }catch(e){}
@@ -39250,11 +39567,68 @@ function recentMissedIndexes(){
 
 function isFlagged(qi){ return !!store.flagged[KEYS[qi]]; }
 
-function toggleFlag(qi){
+/* FLAGS ARE MERGED ACROSS DEVICES, AND SO ARE UNFLAGS (build 297).
+   "I'm pretty sure all my flagged questions disappeared." Flags used to
+   ride along with the preferences - name, character, theme - which come
+   whole from whichever device saved last. So a second device that had
+   never flagged anything, saving after the first, replaced the account's
+   flags with its own empty set, and 296's read-before-write then carried
+   that empty set onto the device the flags were made on. Now each flag
+   is stamped with when it was set, and an unflag leaves a stamped note
+   in `unflagged`; a merge keeps whichever happened last, question by
+   question. A flag on either device survives, and an unflag on one
+   does not come back from the other. A legacy `true` counts as the
+   oldest possible flag, so any unflag since beats it. */
+function flagStamp(v){ return typeof v === "number" && isFinite(v) && v > 0 ? v : (v ? 1 : 0); }
+function setFlag(qi, on){
   const key = KEYS[qi];
-  if(store.flagged[key]) delete store.flagged[key];
-  else store.flagged[key] = true;
+  if(!store.unflagged || typeof store.unflagged !== "object") store.unflagged = {};
+  if(on){ store.flagged[key] = Date.now(); delete store.unflagged[key]; }
+  else { delete store.flagged[key]; store.unflagged[key] = Date.now(); }
+}
+function unflagAll(keys){
+  if(!store.unflagged || typeof store.unflagged !== "object") store.unflagged = {};
+  const now = Date.now();
+  (keys || Object.keys(store.flagged)).forEach(k => { delete store.flagged[k]; store.unflagged[k] = now; });
+}
+
+function toggleFlag(qi){
+  setFlag(qi, !isFlagged(qi));
   saveStore();
+}
+
+/* ONE FLAG BUTTON, APP WIDE (build 297): "it's the same one app wide".
+   The round flag a test puts beside "Question N" - in a test, in a
+   unit's Flagged list and on every question in Answer Review - so a
+   flag can be set or taken off wherever a question is shown. `cls`
+   adds a class for placement; `onChange` runs after each tap. */
+function buildQuestionFlag(qi, opts){
+  opts = opts || {};
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "flagbtn qflag" + (opts.cls ? " " + opts.cls : "");
+  const ns = "http://www.w3.org/2000/svg";
+  const sv = document.createElementNS(ns, "svg");
+  sv.setAttribute("viewBox", "0 0 24 24"); sv.setAttribute("class", "flagicon");
+  const g = document.createElementNS(ns, "g"); g.setAttribute("transform", "translate(1.1, 0)");
+  const pole = document.createElementNS(ns, "path"); pole.setAttribute("class", "flagpole"); pole.setAttribute("d", "M5 3v18");
+  const ban = document.createElementNS(ns, "path"); ban.setAttribute("class", "flagbanner");
+  ban.setAttribute("d", "M5 4c2-1.6 4-1.6 6 0s4 1.6 6 0v7.5c-2 1.6-4 1.6-6 0s-4-1.6-6 0z");
+  g.append(pole, ban); sv.appendChild(g); b.appendChild(sv);
+  const paint = () => {
+    const on = isFlagged(qi);
+    b.classList.toggle("on", on);
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+    b.setAttribute("aria-label", on ? "Unflag this question" : "Flag this question");
+  };
+  b.addEventListener("click", e => {
+    e.stopPropagation();
+    toggleFlag(qi); paint();
+    showToast(isFlagged(qi) ? "Question flagged." : "Flag removed.", "flag");
+    if(opts.onChange) opts.onChange(isFlagged(qi));
+  });
+  paint();
+  return b;
 }
 
 function flaggedIndexes(){
@@ -39292,7 +39666,8 @@ function flaggedIndexes(){
 const PENAL_TEST_SRCS = [147, 60, 135, 6, 62, 139, 285, 57, 265, 32, 151, 77, 174, 210,
   51, 172, 219, 259, 313, 44, 274, 191, 153, 7, 33, 53, 182, 303, 15, 218, 214, 84, 75,
   289, 302, 314, 196, 40, 178, 80, 69, 185, 101, 130, 249, 213, 24, 121, 200, 262, 344,
-  128, 159, 61, 95, 183];
+  128, 159, 61, 95, 183,
+  347 /* #84 again: slide 24, after slide 22 */];
 /* Keyed by unit name. `label` is what the pop-up calls the short
    version and `desc` is its one line; the whole unit is always the
    other choice. `tag` is the line on the unit's own card saying the
@@ -46087,6 +46462,11 @@ function updateTimerDisplay(){
 
 function startTimer(isResume){
   const forced = practiceTestMinutes != null;
+  /* The daily question has no clock (build 298): "the best time thing in
+     the top right needs to go, not sure why that's there". It took the
+     test timer setting, so with a timer on it showed a clock and a
+     "Best:" for a one-question, one-attempt run. */
+  if(runLabel === "Daily question"){ timerlineEl.hidden = true; tbestEl.hidden = true; return; }
   if(cfg.timer === "off" && !forced){ timerlineEl.hidden = true; return; }
   timerlineEl.hidden = false;
   tmainEl.classList.remove("low");
@@ -46197,10 +46577,53 @@ function renderPausedScreen(){
   menuBtn.textContent = (runLabel === "Daily question") ? "Exit Daily Question" : "Exit test";
   menuBtn.addEventListener("click", confirmExitTest);
   actions.append(resumeBtn, menuBtn);
-  panel.append(h, info, p, actions);
+  mountPausePanel(panel, [h, info, p, actions], resumeBtn);
+}
+
+/* PAUSE AND ITS CONFIRMATIONS SHARE ONE PLACE (build 297): "ensure the
+   pause exit confirmation thing is in a matched position". Exit this
+   test?, Leave to main menu? and the Virtual Room's leave-while-waiting
+   all mount through here: the same .is-pause panel, the same stacked
+   equal-width buttons, the same group centred on the screen - so going
+   from Pause to its confirmation and back moves nothing but the words. */
+function mountPausePanel(panel, children, focusBtn){
+  panel.classList.add("is-pause");
+  const stack = document.createElement("div");
+  stack.className = "pause-stack";
+  stack.append(...children);
+  panel.append(stack);
   stage.replaceChildren(panel);
   toTop();
-  resumeBtn.focus({ preventScroll: true });
+  centerPauseStack(panel, stack);
+  if(focusBtn) focusBtn.focus({ preventScroll: true });
+}
+
+/* THE BUTTONS ON ONE LINE, ON THE SCREEN'S MIDDLE (build 297). The panel
+   starts under the progress bar, so centring inside it left the group
+   ~60px below the middle of a phone. And Pause and its confirmations
+   carry different amounts of text above their buttons, so centring each
+   group put Keep going ~37px above where Resume had just been. So the
+   BUTTONS are what gets placed: their top on a fixed line just below
+   the middle of the visible screen, the words stacking up above it. On
+   Pause that leaves the whole group within a few px of centre. Never up
+   into the panel's top edge; again on a rotate; measured twice because
+   #stage can still be easing in. */
+function centerPauseStack(panel, stack){
+  const actions = stack.querySelector(".actions");
+  const place = () => {
+    if(!stack.isConnected){ window.removeEventListener("resize", place); return; }
+    stack.style.transform = "";
+    const r = stack.getBoundingClientRect(), pr = panel.getBoundingClientRect();
+    const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const line = vh / 2 + 1.75 * rem;
+    let dy = actions ? line - actions.getBoundingClientRect().top : vh / 2 - (r.top + r.height / 2);
+    dy = Math.max(dy, pr.top + 8 - r.top);
+    stack.style.transform = Math.abs(dy) >= 1 ? "translateY(" + Math.round(dy) + "px)" : "";
+  };
+  requestAnimationFrame(place);
+  setTimeout(place, 450);
+  window.addEventListener("resize", place);
 }
 
 /* A custom, in-page confirmation for leaving mid-test — deliberately NOT
@@ -46306,10 +46729,7 @@ function confirmMainMenu(){
     showHome();
   });
   actions.append(stayBtn, leaveBtn);
-  panel.append(h, p, actions);
-  stage.replaceChildren(panel);
-  toTop();
-  stayBtn.focus({ preventScroll: true });
+  mountPausePanel(panel, [h, p, actions], stayBtn);
 }
 
 /* Leaving while the others are still going. Your score is already
@@ -46349,10 +46769,7 @@ function confirmLeaveWhileWaiting(){
     showHome();
   });
   actions.append(stay, go);
-  panel.append(h, p, actions);
-  stage.replaceChildren(panel);
-  toTop();
-  stay.focus({ preventScroll: true });
+  mountPausePanel(panel, [h, p, actions], stay);
 }
 /* ---- A WAY OUT OF A TUG OF WAR OR A BATTLE (build 246) ----
    There was none. Both matches force the tab bar off, draw no back link,
@@ -46511,10 +46928,7 @@ function confirmExitTest(){
     showHome();
   });
   actions.append(stayBtn, leaveBtn);
-  panel.append(h, p, actions);
-  stage.replaceChildren(panel);
-  toTop();
-  stayBtn.focus({ preventScroll: true });
+  mountPausePanel(panel, [h, p, actions], stayBtn);
 }
 
 /* Accounts for time spent paused without actually resuming the run —
@@ -47259,12 +47673,38 @@ function lastSlots(){
   if(!lastSlotMap){ try{ lastSlotMap = JSON.parse(localStorage.getItem(LAST_SLOT_KEY) || "{}") || {}; }catch(e){ lastSlotMap = {}; } }
   return lastSlotMap;
 }
+/* CHOICES THAT POINT AT OTHER CHOICES NEVER MOVE (build 298). "Ensure
+   even when on shuffle the answer choices aren't mixed, because it makes
+   them confusing" - a Penal Code question whose B was "Both A & B" after
+   a shuffle had put Death Penalty at A and Imprisonment without Parole
+   at D. Two questions were hand-marked `fixedOrder`; 110 more in the bank
+   have a choice that only means something in the study guide's order:
+   a letter ("Both A & B", "A, B, and C", "Neither A nor B", "a and b are
+   correct") or a position ("All of the above", "None of the above",
+   "All the listed answers", "none are correct"). Read off the choices,
+   so a question added later is covered without anyone marking it.
+   Plain prose that happens to start with "All" ("All persons born or
+   naturalized...") does not match: the words above/listed/these, or two
+   single letters joined by and/&/nor, are what it looks for. */
+const CHOICE_REFERS_RE = [
+  /\b(all|none|neither|both)\b[^.]{0,20}?\b(above|listed|these)\b/i,
+  /(^|[\s(])[A-E]\s*(,\s*[A-E]\s*,?\s*)?(&|and|nor)\s*[A-E](\b|$)/i,
+  /\b(none|all) are correct\b/i
+];
+const choicesReferMemo = new Map();
+function choicesReferToEachOther(qi){
+  if(choicesReferMemo.has(qi)) return choicesReferMemo.get(qi);
+  const q = QUESTIONS[qi];
+  const yes = !!(q && (q.fixedOrder || (q.choices || []).some(c => CHOICE_REFERS_RE.some(re => re.test(String(c))))));
+  choicesReferMemo.set(qi, yes);
+  return yes;
+}
 function optionOrder(qi){
   if(!layout[qi]){
     const ids = QUESTIONS[qi].choices.map((c, k) => k);
-    /* fixedOrder: choices that point at each other ("Both A and B", "A & C
-       are correct") keep the study bank's order in every mode. */
-    if(!QUESTIONS[qi].fixedOrder && (runMode === "exam" || cfg.shuffle) && ids.length > 1){
+    /* fixedOrder, or a choice that points at the others: the study
+       bank's order in every mode (see above). */
+    if(!choicesReferToEachOther(qi) && (runMode === "exam" || cfg.shuffle) && ids.length > 1){
       const answer = QUESTIONS[qi].answer, m = lastSlots(), k = KEYS[qi], prev = m[k];
       let out = ids;
       for(let t = 0; t < 10; t++){
@@ -48037,6 +48477,196 @@ function homeRankEmblemReused(tier){
   homeRankEmblemCache[tier] = em;
   return em;
 }
+/* ---- THE ORBIT'S EMBLEMS MOVE AGAIN, FROM FRAMES (build 298) ----
+   "The animations of the rank icons in the flare bubbles isn't
+   happening anymore ... Ensure there is no lag though but also ensure
+   it's smooth and looks great." Build 288 turned them off because a live
+   SVG emblem repaints itself on the CPU every frame it moves - measured
+   again here under a 4x throttle at 3x: Home 32fps still, 17fps with the
+   96 part-animations back on, and still ~21fps with the twinkles off,
+   ~19 with the filters off, ~19 clocked at 15fps. Any moving part
+   repaints the whole emblem.
+   So the motion is RECORDED, once per rank per launch, and PLAYED:
+   the rank's own CSS animations run on a hidden copy, are stepped
+   through ORBIT_ANIM_FRAMES moments of one ORBIT_ANIM_LOOP_MS loop with
+   the Web Animations clock, and each moment is drawn into a sprite sheet
+   (computed transform and opacity inlined, the SVG drawn as an image).
+   Home then plays the sheet as a flip-book: stepped CSS transforms on a
+   layer laid over the static emblem, so the compositor shows each frame
+   and nothing is ever repainted (measured: no paint while it runs).
+   A loop has to close, so every animation runs a whole number of
+   cycles in it (a 2.8s breathe twice, a 1.6s twinkle four times) and a
+   turn too slow to finish one in two loops holds still - at 26s a
+   revolution it was barely moving at this size anyway.
+   Only reached ranks move (a locked one is a grey preview); Reduce
+   motion, or the system setting, leaves them all still; capture yields
+   between frames so the orbit never stutters while it works; nothing
+   is recorded until Home has been up a moment. */
+const ORBIT_ANIM_LOOP_MS = 6000;
+const ORBIT_ANIM_FRAMES = 90;
+const orbitAnimSheets = new Map();
+function orbitAnimAllowed(){
+  if(theme && theme.reduceMotion) return false;
+  try{ if(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false; }catch(e){}
+  return true;
+}
+/* Work in slices of idle time rather than one frame per idle callback:
+   a frame is ~5ms of work, and waiting for a fresh idle period after
+   each one made recording six ranks take 30 seconds. */
+let orbitAnimSliceEnd = 0;
+function orbitAnimYield(){
+  if(performance.now() < orbitAnimSliceEnd) return Promise.resolve();
+  return new Promise(res => {
+    if(window.requestIdleCallback) window.requestIdleCallback(d => { orbitAnimSliceEnd = performance.now() + Math.max(4, Math.min(12, d.timeRemaining())); res(); }, { timeout: 120 });
+    else setTimeout(() => { orbitAnimSliceEnd = performance.now() + 8; res(); }, 16);
+  });
+}
+/* A finished sheet is kept in Cache Storage, keyed by build, rank and
+   size, so only the first Home after an update records anything. */
+const ORBIT_ANIM_CACHE = "class26e.rk-sheets";
+function orbitAnimCacheKey(tier, px){ return "/__rk/" + encodeURIComponent(APP_BUILD) + "/" + tier + "/" + px + ".png"; }
+async function orbitAnimCacheGet(tier, px){
+  try{
+    if(!window.caches) return null;
+    const c = await caches.open(ORBIT_ANIM_CACHE);
+    const r = await c.match(orbitAnimCacheKey(tier, px));
+    return r ? await r.blob() : null;
+  }catch(e){ return null; }
+}
+async function orbitAnimCachePut(tier, px, blob){
+  try{
+    if(!window.caches) return;
+    const c = await caches.open(ORBIT_ANIM_CACHE);
+    const keep = "/__rk/" + encodeURIComponent(APP_BUILD) + "/";
+    (await c.keys()).forEach(k => { if(new URL(k.url).pathname.indexOf(keep) !== 0) c.delete(k); });
+    await c.put(orbitAnimCacheKey(tier, px), new Response(blob, { headers: { "Content-Type": "image/png" } }));
+  }catch(e){}
+}
+async function orbitAnimSheetFromBlob(blob, px){
+  const url = URL.createObjectURL(blob);
+  const pre = new Image(); pre.src = url;
+  try{ await pre.decode(); }catch(e){ return null; }
+  const cols = 10, rows = Math.ceil(ORBIT_ANIM_FRAMES / cols);
+  if(pre.naturalWidth !== cols * px || pre.naturalHeight !== rows * px){ URL.revokeObjectURL(url); return null; }
+  return { url, px, n: ORBIT_ANIM_FRAMES, cols, rows };
+}
+function recordRankEmblemFrames(tier, template, px){
+  const key = tier + "|" + px;
+  if(orbitAnimSheets.has(key)) return orbitAnimSheets.get(key);
+  const job = (async () => {
+    const cached = await orbitAnimCacheGet(tier, px);
+    if(cached){ const sp = await orbitAnimSheetFromBlob(cached, px); if(sp) return sp; }
+    const host = document.createElement("div");
+    host.className = "rk-live rk-record-host";
+    host.setAttribute("aria-hidden", "true");
+    host.style.cssText = "position:fixed;left:-20000px;top:0;width:" + px + "px;height:" + px + "px;pointer-events:none;overflow:hidden;";
+    const live = template.cloneNode(true);
+    live.removeAttribute("class");
+    live.setAttribute("class", "rank-emblem-svg rk-k-" + tier);
+    live.setAttribute("width", px); live.setAttribute("height", px);
+    live.style.cssText = "width:" + px + "px;height:" + px + "px;";
+    host.appendChild(live);
+    document.body.appendChild(host);
+    try{
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const anims = live.getAnimations ? live.getAnimations({ subtree: true }) : [];
+      if(!anims.length) return null;
+      const L = ORBIT_ANIM_LOOP_MS, N = ORBIT_ANIM_FRAMES;
+      const plan = anims.map(a => {
+        const t = a.effect.getTiming();
+        const P = (Number(t.duration) || 1000) * (String(t.direction || "").indexOf("alternate") >= 0 ? 2 : 1);
+        const c = P > 2 * L ? 0 : Math.max(1, Math.round(L / P));
+        a.pause();
+        return { a, base: Number(a.currentTime) || 0, P, c };
+      });
+      const els = [...live.querySelectorAll("*")];
+      const moving = new Set(anims.map(a => a.effect && a.effect.target));
+      const cols = 10, rows = Math.ceil(N / cols);
+      const sheet = document.createElement("canvas");
+      sheet.width = cols * px; sheet.height = rows * px;
+      const g = sheet.getContext("2d");
+      const ser = new XMLSerializer();
+      /* Frames go in small batches: the snapshots are taken together,
+         their images decode side by side, then all are drawn. Decoding
+         one at a time waited a whole frame for each. */
+      const B = 6;
+      for(let f0 = 0; f0 < N; f0 += B){
+        if(!orbitAnimAllowed()) return null;
+        const batch = [];
+        for(let f = f0; f < Math.min(N, f0 + B); f++){
+          const tau = f * L / N;
+          plan.forEach(q => { q.a.currentTime = q.base + (q.c ? tau * q.c * q.P / L : 0); });
+          const copy = live.cloneNode(true);
+          const out = [...copy.querySelectorAll("*")];
+          els.forEach((el, i) => {
+            if(!moving.has(el)) return;
+            const cs = getComputedStyle(el), d = out[i];
+            d.style.transform = cs.transform; d.style.transformOrigin = cs.transformOrigin;
+            d.style.transformBox = cs.transformBox; d.style.opacity = cs.opacity; d.style.animation = "none";
+          });
+          copy.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+          const img = new Image();
+          img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(ser.serializeToString(copy));
+          batch.push({ f, img });
+        }
+        await Promise.all(batch.map(b => b.img.decode()));
+        await orbitAnimYield();
+        batch.forEach(b => g.drawImage(b.img, (b.f % cols) * px, Math.floor(b.f / cols) * px, px, px));
+        await orbitAnimYield();
+      }
+      const blob = await new Promise(r => sheet.toBlob(r, "image/png"));
+      sheet.width = sheet.height = 0;
+      if(!blob) return null;
+      orbitAnimCachePut(tier, px, blob);
+      return await orbitAnimSheetFromBlob(blob, px);
+    } catch(e){ return null; }
+    finally { host.remove(); }
+  })();
+  orbitAnimSheets.set(key, job);
+  job.then(v => { if(!v) orbitAnimSheets.delete(key); });
+  return job;
+}
+/* Home calls this a moment after it is up. Playback is two stepped
+   CSS transforms over the finished sheet - the row on the outer strip,
+   the column on the image inside it - so a frame change is the
+   compositor moving a layer it already has. Nothing repaints and no
+   script runs per frame. */
+function startOrbitEmblemAnims(root){
+  if(!root || !orbitAnimAllowed()) return;
+  const badges = [...root.querySelectorAll(".cosmic-badge-rank.cosmic-badge-lit")];
+  (async () => {
+    for(const badge of badges){
+      const svg = badge.querySelector("svg.cosmic-rank-emblem");
+      const tier = badge.dataset.rankTier;
+      if(!svg || !tier || !badge.isConnected) continue;
+      const r = svg.getBoundingClientRect();
+      const px = Math.round(Math.max(r.width, r.height) * Math.min(window.devicePixelRatio || 1, 2));
+      if(px < 12) continue;
+      const sp = await recordRankEmblemFrames(tier, svg, px);
+      if(!sp || !badge.isConnected || badge.querySelector(".cosmic-rank-anim") || !orbitAnimAllowed()) continue;
+      const wrap = document.createElement("div");
+      wrap.className = "cosmic-rank-anim";
+      wrap.setAttribute("aria-hidden", "true");
+      const cs = getComputedStyle(svg);
+      wrap.style.filter = cs.filter; wrap.style.opacity = cs.opacity;
+      const strip = document.createElement("div");
+      strip.className = "rk-strip";
+      strip.style.height = (sp.rows * 100) + "%";
+      strip.style.animationDuration = ORBIT_ANIM_LOOP_MS + "ms";
+      strip.style.animationTimingFunction = "steps(" + sp.rows + ")";
+      const img = document.createElement("img");
+      img.alt = ""; img.decoding = "sync"; img.src = sp.url;
+      img.style.width = (sp.cols * 100) + "%";
+      img.style.height = "100%";
+      img.style.animationDuration = (ORBIT_ANIM_LOOP_MS / sp.rows) + "ms";
+      img.style.animationTimingFunction = "steps(" + sp.cols + ")";
+      strip.appendChild(img);
+      wrap.appendChild(strip);
+      svg.after(wrap);
+      svg.classList.add("rk-under-anim");
+    }
+  })();
+}
 function homeRankEmblem(tier){
   try {
     const em = fitRankEmblem(buildRankEmblemSVG(tier), tier);
@@ -48617,6 +49247,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
          its own drawing, and nothing reaching past the bubble. */
       const em = reuse ? homeRankEmblemReused(pos.tier) : homeRankEmblem(pos.tier);
       badge.classList.add("cosmic-badge-rank");
+      badge.dataset.rankTier = pos.tier;
       badge.style.setProperty("--rank-color", RANK_COLOR[pos.tier]);
       badge.appendChild(em);
     }
@@ -50625,7 +51256,7 @@ function dailyQuestionIndexFor(key){
   const units = dailyScheduleUnits(row);
   const pools = units.map(u => {
     const ids = [];
-    QUESTIONS.forEach((q, i) => { if((q.topic || "").trim() === u) ids.push(i); });
+    QUESTIONS.forEach((q, i) => { if((q.topic || "").trim() === u && q.repeatOf == null) ids.push(i); });
     return ids;
   }).filter(ids => ids.length);
   if(!pools.length){
@@ -54255,6 +54886,8 @@ function showHome(){
   maybeShowIntro();
   stage.replaceChildren(panel);
   stage.appendChild(dailyBtn);
+  /* the orbit's emblems, recorded once Home has settled (build 298) */
+  setTimeout(() => { if(panel.isConnected) startOrbitEmblemAnims(panel); }, 1600);
   /* The XP a run just earned flies into the Profile tab when you land
      back here - the results screen has no tab bar to fly to. Once. */
   if(pendingXpFly > 0){
@@ -55096,28 +55729,7 @@ function openUnitDetail(row, name, mode){
   }
   /* The in-test flag, larger and with its word beside it. */
   function buildFlagToggle(qi, onChange){
-    const b = document.createElement("button");
-    b.type = "button"; b.className = "flagbtn unitdetail-flag";
-    const ns = "http://www.w3.org/2000/svg";
-    const sv = document.createElementNS(ns, "svg");
-    sv.setAttribute("viewBox", "0 0 24 24"); sv.setAttribute("class", "flagicon");
-    const g = document.createElementNS(ns, "g"); g.setAttribute("transform", "translate(0, 1.5)");
-    const pole = document.createElementNS(ns, "path"); pole.setAttribute("class", "flagpole"); pole.setAttribute("d", "M5 3v18");
-    const ban = document.createElementNS(ns, "path"); ban.setAttribute("class", "flagbanner");
-    ban.setAttribute("d", "M5 4c2-1.6 4-1.6 6 0s4 1.6 6 0v7.5c-2 1.6-4 1.6-6 0s-4-1.6-6 0z");
-    g.append(pole, ban); sv.appendChild(g);
-    const w = document.createElement("span"); w.className = "unitdetail-flagword";
-    b.append(sv, w);
-    const paint = () => {
-      const on = isFlagged(qi);
-      b.classList.toggle("on", on);
-      b.setAttribute("aria-pressed", on ? "true" : "false");
-      b.setAttribute("aria-label", on ? "Unflag this question" : "Flag this question");
-      w.textContent = on ? "Flagged" : "Flag";
-    };
-    b.addEventListener("click", () => { toggleFlag(qi); paint(); if(onChange) onChange(); });
-    paint();
-    return b;
+    return buildQuestionFlag(qi, { cls: "unitdetail-flag", onChange: () => { if(onChange) onChange(); } });
   }
   function showList(kind){
     card.classList.add("is-listing");
@@ -55191,12 +55803,8 @@ function openUnitDetail(row, name, mode){
     confirmBox.append(cText, cRow);
     resetWrap.append(resetBtn, confirmBox);
     scroller.appendChild(resetWrap);
-    /* AND A WAY BACK AT THE BOTTOM (build 270): at the end of a long list
-       the Back at the top is a long scroll away. */
-    const backLow = document.createElement("button");
-    backLow.type = "button"; backLow.className = "unitdetail-back is-bottom";
-    fillBackLabel(backLow, "Back");
-    scroller.appendChild(backLow);
+    /* No second Back at the bottom (build 298): "remove the back button
+       at the very bottom since the other back button is already there." */
     resetBtn.addEventListener("click", () => {
       const n = (kind === "flagged" ? flaggedIndexes() : recentMissedIndexes()).filter(inUnit).length;
       cText.textContent = kind === "flagged"
@@ -55208,7 +55816,7 @@ function openUnitDetail(row, name, mode){
     cYes.addEventListener("click", () => {
       QUESTIONS.forEach((q, i) => {
         if(!inUnit(i)) return;
-        if(kind === "flagged"){ if(isFlagged(i)) delete store.flagged[KEYS[i]]; }
+        if(kind === "flagged"){ if(isFlagged(i)) setFlag(i, false); }
         else { const st = store.stats[KEYS[i]]; if(st && st.r && st.r.length) store.stats[KEYS[i]] = Object.assign({}, st, { r: [], rc: Date.now() }); }
       });
       saveStore();
@@ -55251,11 +55859,16 @@ function openUnitDetail(row, name, mode){
          to undo rather than a question gone from under your finger. Only
          on Flagged (build 270): "when looking at your most missed, remove
          the flag option". */
-      if(kind === "flagged") top.appendChild(buildFlagToggle(i, () => q.classList.toggle("is-unflagged", !isFlagged(i))));
-      q.appendChild(top);
+      if(top.childNodes.length) q.appendChild(top);
       const qt = document.createElement("p");
       qt.className = "qtext review-question-text"; qt.textContent = item.q;
-      q.appendChild(qt);
+      /* the flag beside the question, as in Answer Review (build 297) */
+      if(kind === "flagged"){
+        const head = document.createElement("div");
+        head.className = "review-qhead";
+        head.append(qt, buildFlagToggle(i, () => q.classList.toggle("is-unflagged", !isFlagged(i))));
+        q.appendChild(head);
+      } else q.appendChild(qt);
       const ch = document.createElement("div");
       ch.className = "choices";
       item.choices.forEach((c, ci) => {
@@ -55275,7 +55888,6 @@ function openUnitDetail(row, name, mode){
     si.addEventListener("input", render);
     sx.addEventListener("click", () => { si.value = ""; render(); si.focus(); });
     render();
-    backLow.addEventListener("click", () => back.click());
     back.addEventListener("click", () => {
       pane.classList.remove("is-in");
       main.classList.remove("is-away");
@@ -55633,34 +56245,6 @@ function showSetup(){
   modeNote.style.cssText = "margin:.6rem 0 1rem;";
   panel.appendChild(modeNote);
 
-  /* EVERY FLAGGED QUESTION, ONE TAP AWAY (build 296). "Viewing flagged
-     questions isn't really a thing." The Flagged bank on the sheet only
-     covered the units picked first, so there was nowhere to see them all.
-     Review opens with this card on top: every flagged question in every
-     unit, with its answer. With none flagged it says how to flag one. */
-  if(cfg.mode === "review"){
-    const fl = flaggedIndexes();
-    const card = document.createElement("button");
-    card.type = "button";
-    card.className = "review-flagged-card" + (fl.length ? "" : " is-empty");
-    card.disabled = !fl.length;
-    const ic = buildFlagIcon(); card.appendChild(ic);
-    const txt = document.createElement("span"); txt.className = "review-flagged-text";
-    const t1 = document.createElement("span"); t1.className = "review-flagged-title"; t1.textContent = "Flagged questions";
-    const t2 = document.createElement("span"); t2.className = "review-flagged-sub";
-    const nUnits = new Set(fl.map(i => (QUESTIONS[i].topic || "").trim())).size;
-    t2.textContent = fl.length
-      ? fl.length + (fl.length === 1 ? " question" : " questions") + " across " + nUnits + (nUnits === 1 ? " unit" : " units")
-      : "None yet. Tap the flag on a question during a test to save it here.";
-    txt.append(t1, t2); card.appendChild(txt);
-    if(fl.length){ const go = document.createElement("span"); go.className = "review-flagged-go"; go.setAttribute("aria-hidden", "true"); go.textContent = "\u203A"; card.appendChild(go); }
-    card.addEventListener("click", () => {
-      const all = topicsIn(QUESTIONS);
-      const units = all.filter(u => fl.some(i => (QUESTIONS[i].topic || "").trim() === u));
-      showAnswerReview(units, "flagged", {}, { allFlagged: true });
-    });
-    panel.appendChild(card);
-  }
 
   /* --- units --- */
   const unitSect = document.createElement("div");
@@ -55713,6 +56297,37 @@ function showSetup(){
 
   const list = document.createElement("div");
   list.className = "picks";
+
+  /* EVERY FLAGGED QUESTION, AS A BOX IN THE GRID (build 297). Two tries
+     at this did not land: a card above the list (296) and a switch over
+     it. "Maybe it should be a unit card box kinda but it'd be double
+     wide and it'd be at the top." So it is one: a .pick spanning both
+     columns, first in Review's grid, that opens every flagged question
+     in every unit. Unit cards themselves never say how many are flagged
+     - "hell no". */
+  if(cfg.mode === "review"){
+    const fl = flaggedIndexes();
+    const fUnits = all.filter(u => fl.some(i => (QUESTIONS[i].topic || "").trim() === u));
+    const box = document.createElement("button");
+    box.type = "button";
+    box.className = "pick pick-flagged-all" + (fl.length ? "" : " is-empty");
+    const ic = document.createElement("span"); ic.className = "pick-flagged-icon"; ic.setAttribute("aria-hidden", "true");
+    ic.appendChild(buildFlagIcon());
+    const txt = document.createElement("span"); txt.className = "pick-flagged-text";
+    const nm = document.createElement("span"); nm.className = "pname"; nm.textContent = "Flagged questions";
+    const sub = document.createElement("span"); sub.className = "pcount";
+    sub.textContent = fl.length
+      ? fl.length + (fl.length === 1 ? " question" : " questions") + " \u00b7 " + fUnits.length + (fUnits.length === 1 ? " unit" : " units")
+      : "Tap the flag on any question to save it here";
+    txt.append(nm, sub);
+    box.append(ic, txt);
+    if(fl.length){ const go = document.createElement("span"); go.className = "pick-flagged-go"; go.setAttribute("aria-hidden", "true"); go.textContent = "\u203A"; box.appendChild(go); }
+    box.addEventListener("click", () => {
+      if(!flaggedIndexes().length){ showToast("Nothing flagged yet. Tap the flag on any question to save it here."); return; }
+      showAnswerReview(fUnits, "flagged", {}, { allFlagged: true });
+    });
+    list.appendChild(box);
+  }
 
   all.forEach(name => {
     const row = document.createElement("label");
@@ -56384,11 +56999,12 @@ function showSetup(){
   document.body.appendChild(optionsModal);
   function closeOptionsModal(){ optionsModal.hidden = true; }
 
-  /* The whole sheet, not only the handle (build 267): attachSheetSwipe. */
-  attachSheetSwipe(optionsModalSheet, () => {
-    closeOptionsModal();
-    if(reviewAllMode) showAnswerReview(cfg.units.slice(), cfg.source, cfg.versions);
-  });
+  /* The whole sheet, not only the handle (build 267): attachSheetSwipe.
+     A swipe down CLOSES it, in every mode (build 297): "when in the test
+     start menu in review, swiping down opens up the test". Review's
+     dismiss went on to open the answer review, as if Review All had
+     been pressed - pulling a sheet away is never a yes. */
+  attachSheetSwipe(optionsModalSheet, closeOptionsModal);
   function openOptionsModal(){ optionsModal.hidden = false; }
   optionsModalScrim.addEventListener("click", closeOptionsModal);
   optionsModalDone.addEventListener("click", closeOptionsModal);
@@ -57241,33 +57857,8 @@ function render(){
     numRow.appendChild(num);
   }
 
-  const flagBtn = document.createElement("button");
-  flagBtn.type = "button";
-  flagBtn.className = "flagbtn" + (isFlagged(qi) ? " on" : "");
-  flagBtn.setAttribute("aria-label", "Flag this question");
-  flagBtn.setAttribute("aria-pressed", isFlagged(qi) ? "true" : "false");
-  const svgNS = "http://www.w3.org/2000/svg";
-  const flagSvg = document.createElementNS(svgNS, "svg");
-  flagSvg.setAttribute("viewBox", "0 0 24 24");
-  flagSvg.setAttribute("class", "flagicon");
-  const flagGroup = document.createElementNS(svgNS, "g");
-  flagGroup.setAttribute("transform", "translate(0, 1.5)");
-  const flagPole = document.createElementNS(svgNS, "path");
-  flagPole.setAttribute("class", "flagpole");
-  flagPole.setAttribute("d", "M5 3v18");
-  const flagBanner = document.createElementNS(svgNS, "path");
-  flagBanner.setAttribute("class", "flagbanner");
-  flagBanner.setAttribute("d", "M5 4c2-1.6 4-1.6 6 0s4 1.6 6 0v7.5c-2 1.6-4 1.6-6 0s-4-1.6-6 0z");
-  flagGroup.append(flagPole, flagBanner);
-  flagSvg.appendChild(flagGroup);
-  flagBtn.appendChild(flagSvg);
-  flagBtn.addEventListener("click", () => {
-    toggleFlag(qi);
-    const nowFlagged = isFlagged(qi);
-    flagBtn.classList.toggle("on", nowFlagged);
-    flagBtn.setAttribute("aria-pressed", nowFlagged ? "true" : "false");
-    showToast(nowFlagged ? "Question flagged." : "Flag removed.", "flag");
-  });
+  const flagBtn = buildQuestionFlag(qi);
+  const svgNS = "http://www.w3.org/2000/svg";   /* the swipe hint below draws with it */
   numRow.appendChild(flagBtn);
   if(pos === mysteryAppearsAtPos && mysteryColorThisRun && !mysteryFoundThisSession){
     numRow.appendChild(buildMysterySpark());
@@ -58071,7 +58662,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-03-296";
+const APP_BUILD = "2026-10-03-298";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -58768,22 +59359,38 @@ function forcedUpdateBlocked(){
      from the moment the reveal finished, and never while it is still
      playing. Checked ahead of Pause, which stays up on this screen
      since build 212 and would otherwise hold an update here for good. */
-  if(screen === "results"){
-    if(typeof resultsSeq !== "undefined" && resultsSeq) return true;
-    return (Date.now() - resultsShownAt) < UPDATE_REVIEW_MS;
-  }
+  /* ---- NEVER ON A RESULTS SCREEN, NOT EVEN AFTER A WHILE (build 298) ----
+     "Someone had an update push at the end of a test, this is NOT
+     supposed to happen. Updates can not happen during a test, in the
+     result screen, test leaderboard, virtual room lobby or anything
+     like that." The results screen used to let the update through once
+     UPDATE_REVIEW_MS (10s) had passed since the reveal, which is
+     exactly an update at the end of a test. A test's results, its
+     review and every Virtual Room screen now hold it for as long as
+     they are up; it goes the moment somebody leaves for Home, Profile,
+     Settings or the Leaderboard tab - which is still everywhere else,
+     so the build-279 complaint about never updating stays fixed. */
+  if(screen === "results" || screen === "runreview") return true;
   if(document.querySelector("#pausebtn:not([hidden])")) return true;
+  if(document.querySelector(".qpanel, .pausepanel, .rs-screen, .resetwarning-panel")) return true;
 
   /* Reviewing answers or setting up a retake - both are the tail of a
      test somebody is still working through. */
   if(document.querySelector(".screen-answerreview, .screen-runreview, .screen-setup")) return true;
 
-  /* A Virtual Room: a lobby is a countdown other people are waiting
-     on, and a match is a test with company. */
+  /* A Virtual Room, every screen of it: choosing one, the room browser,
+     the lobby, the match, the waiting room, the results and its
+     leaderboard. A lobby is a countdown other people are waiting on, and
+     a match is a test with company. */
   let inRoom = false;
-  try{ inRoom = !!inVirtualRoom; }catch(e){}
+  try{ inRoom = !!inVirtualRoom || !!vroomCode; }catch(e){}
   if(inRoom) return true;
-  if(document.querySelector(".vroom-lobby-panel, .vroom-chat-slot, .screen-tug, .screen-battle, .screen-battle-wait")) return true;
+  if(document.querySelector(".vroom-lobby-panel, .vroom-chat-slot, .vroom-results-panel, .vroom-finale-panel, " +
+     ".screen-vroom-lobby, .screen-vroom-choice, .screen-rooms, .screen-tug, .screen-tug-wait, .screen-tug-result, " +
+     ".screen-battle, .screen-battle-wait, .screen-battle-result")) return true;
+
+  /* Half-way through signing up: a reload there starts it over. */
+  if(document.querySelector(".welcomeintro-panel, .charselect-panel, .classselect-panel, .synccode-entry-panel, .onboarding-shortform-panel")) return true;
 
   /* And nothing may land on top of a loading screen, a tour or a
      cutscene, wherever they are. */
@@ -62896,7 +63503,7 @@ function showAppearance(opts){
       resetFlaggedBtn.textContent = "Reset flagged questions";
       resetFlaggedBtn.disabled = flaggedCount === 0;
       armConfirm(resetFlaggedBtn, "Tap again to clear", () => {
-        store.flagged = {};
+        unflagAll();
         saveStore();
         showAppearance();
       });
@@ -72336,7 +72943,7 @@ function showAnswerReview(units, source, versions, opts){
   panel.appendChild(buildBackLink("Back to Options", showSetup));
 
   const title = document.createElement("h1");
-  title.className = "cal-title"; title.textContent = "Answer Review";
+  title.className = "cal-title"; title.textContent = source === "flagged" ? "Flagged Questions" : "Answer Review";
   panel.appendChild(title);
 
   const sub = document.createElement("p");
@@ -72377,6 +72984,7 @@ function showAnswerReview(units, source, versions, opts){
      exactly like the calendar's own months: independently tracked,
      collapsed by default. */
   const singleUnit = unitKeys.length === 1;
+  const qIndex = new Map(QUESTIONS.map((it, i) => [it, i]));
   const expandState = {};
   /* the whole flagged list is short: every unit open */
   unitKeys.forEach(u => { expandState[u] = singleUnit || allFlagged; });
@@ -72435,7 +73043,19 @@ function showAnswerReview(units, source, versions, opts){
         const qText = document.createElement("p");
         qText.className = "qtext review-question-text";
         qText.textContent = item.q;
-        qWrap.appendChild(qText);
+        /* The test's own flag beside every question (build 297), so a
+           flag can be added or taken off while reviewing. On the flagged
+           list an unflagged question stays, dimmed, until you leave - a
+           mis-tap is one tap to undo. */
+        const qHead = document.createElement("div");
+        qHead.className = "review-qhead";
+        const qi = qIndex.get(item);
+        qHead.appendChild(qText);
+        if(typeof qi === "number"){
+          qHead.appendChild(buildQuestionFlag(qi, { cls: "review-flag",
+            onChange: on => { if(source === "flagged") qWrap.classList.toggle("is-unflagged", !on); } }));
+        }
+        qWrap.appendChild(qHead);
 
         const choicesList = document.createElement("div");
         choicesList.className = "choices";

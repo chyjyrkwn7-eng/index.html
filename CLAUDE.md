@@ -9562,4 +9562,440 @@ questions" card listing every flagged question, in every unit, with its
 answer and every unit expanded, in one tap. With nothing flagged it is
 disabled and says how to flag. It calls
 `showAnswerReview(units, "flagged", {}, { allFlagged:true })`.
-`check-behaviour` 65 covers it.
+**Replaced in 297** by the All questions / Flagged switch, below.
+
+### Build 297 - flags merge, the Review switch, and a swipe that only closes
+
+**Flags were lost, and the cause was the same kind of bug as 296's.**
+Reported as *"I'm pretty sure all my flagged questions disappeared."*
+`store.flagged` was treated as a preference, like the name, the
+character and the theme, so it came whole from whichever device saved
+last. A second device with no flags, saving later, replaced the
+account's flags with its empty set. Then 296's read-before-write carried
+that empty set onto the device where the flags were made. Measured on
+296: three flags, then `syncSameAccount()` with a newer copy holding
+none, leaves zero.
+
+Flags are merged now, per question:
+- `setFlag(qi, on)` stamps `flagged[key] = Date.now()` when a question
+  is flagged.
+- On unflag, it deletes that entry and writes a tombstone,
+  `unflagged[key] = Date.now()`.
+- `mergeSameAccount` keeps whichever is later, the flag or the unflag,
+  so a flag on either device survives and an unflag is not undone by
+  the other device's older flag.
+- A legacy `true` counts as stamp 1, the oldest possible.
+- Every path that flags or unflags goes through `setFlag` or
+  `unflagAll`: the toggle, auto-flag, a unit's "Unflag all", and
+  Settings' "Reset flagged questions". Never write `store.flagged`
+  directly, or the unflag does not reach the other devices.
+
+`unflagged` is a new persisted field. It defaults to `{}` in the new
+store, in `applyLoadedData()` and on reset.
+
+**The cloud could not tell us what was lost.** No progress document lost
+flags between the 296 backup and the 297 deploy. The loss happened
+before 296 (an old build's boot push of a flagless copy) or on a
+device. Flags gone from every copy cannot be recovered. Flags still on a
+device that has not synced since will merge back when it opens 297.
+
+**Review: a Flagged box in the grid.** Two attempts failed first. The
+296 card above the list was *"not sure I'm a fan of that"*. An All /
+Flagged switch that put "N flagged" on each unit card was rejected the
+same day: *"Do not display the amount of flagged questions on a unit
+card, hell no"*. What was asked for: *"maybe it should be a unit card
+box kinda but it'd be double wide and it'd be at the top"*.
+
+So it is a `.pick.pick-flagged-all` button:
+- it is the first child of Review's `.picks` grid and spans both columns
+  (`grid-column:1 / -1`);
+- it shows a flag icon, "Flagged questions", "N questions · M units" and
+  a chevron;
+- a tap opens `showAnswerReview(units, "flagged", {}, { allFlagged:true })`,
+  titled "Flagged Questions";
+- with nothing flagged it is greyed and a tap explains how to flag.
+
+Unit cards are untouched, and `check-behaviour` asserts no unit card
+mentions flags.
+
+**One flag button, app wide.** *"When reviewing any unit and one of the
+questions is flagged, it should be there ... it's the same one app
+wide."* `buildQuestionFlag(qi, { cls, onChange })` builds the test's
+round 2.8rem flag (`.flagbtn.qflag`). It is used in three places:
+- the test itself;
+- every question in Answer Review (`.review-flag`, beside the question
+  text in `.review-qhead`), in every mode of the review, so a flag can
+  be added or removed while reviewing;
+- a unit's Flagged list (`.unitdetail-flag`, also beside the text).
+
+On a flagged list, an unflagged question stays on screen dimmed
+(`.is-unflagged`) until you leave, so a mis-tap is one tap to undo. The
+unit-details pill with its "Flag"/"Flagged" word is gone. A new place
+that shows a question should use this builder, not draw its own.
+
+**Pause, centred on the screen.** *"It's still not centered, the
+buttons need to be centered."* The buttons were horizontally centred
+but sat side by side at two different widths. The group was also
+centred in the panel under the progress bar, about 60px below the
+middle of a phone.
+- Resume and Exit test are now one column at one width,
+  `min(16rem, 100%)`.
+- `centerPauseStack()` moves `.pause-stack` onto the visual viewport's
+  middle. It never moves it above the panel's top, and it re-measures
+  on resize and once more after #stage's entrance.
+- Measured: 0px off-centre on both reference devices.
+
+**The exit confirmation sits in the same place** (*"ensure the pause exit
+confirmation thing is in a matched position"*). Three screens mount
+through `mountPausePanel()`: Pause, "Exit this test?" and "Leave to main
+menu?" (the Virtual Room's leave-while-waiting uses it as well). They
+all get the same `.is-pause` panel and the same stacked buttons.
+
+Centring each group was not enough: the confirmations carry two fewer
+lines of text, which put Keep going about 37px above where Resume had
+been. So `centerPauseStack()` places the BUTTONS, not the group. The top
+of `.actions` lands on a fixed line, `50% of the visual viewport +
+1.75rem`, and the text stacks above it. Going from Pause to its
+confirmation and back moves only the words. On Pause the group still
+lands within 3px of the screen's middle. `check-behaviour` 65 compares
+the button rectangles before and after, on both reference devices.
+
+**The swipe.** *"When in the test start menu in review, swiping down
+opens up the test."* The sheet's swipe-down dismiss in Review called
+`showAnswerReview()` after closing, as if Review All had been pressed.
+It is `attachSheetSwipe(optionsModalSheet, closeOptionsModal)` in every
+mode now. Pulling a sheet away is never a yes.
+
+`check-behaviour` 65 (`check_b297`) replaces `check_b296`. It drives a
+real touch swipe on the sheet and covers:
+- the Flagged box and its list;
+- the shared flag in Answer Review, unit details and the test;
+- pause centring on both reference devices;
+- the flag merge.
+
+16 of its 17 checks fail on 296. The 17th, "no unit card says how many
+are flagged", is a guard against the rejected design, so 296 passes it
+too.
+
+
+### Build 298 - old builds can no longer cost anyone progress, and updates never land at the end of a test
+
+**What still happened after 296.** 296 stopped THIS build writing before
+it reads, but phones still on 295 or older keep doing it: every launch
+they `set()` their own copy over the account before anything else. On
+Oct 3 that took:
+- **BigSlim** back to 47k XP, 14 hundos and ninja again;
+- **Hector_mendoza** from 17,585 XP to 2,330, three hours after 296
+  shipped;
+- the old-account credits of **Barron, Billyswole, Rogelio.salcedo and
+  Vishal R Sodagar**.
+
+Every account that ever received a credit lost it. The overwriting
+copies had never seen the credit.
+
+**The fix: a high-water mark old builds cannot touch.**
+`progress/<code>__floor` is a second copy of the account.
+- Every push from this build writes it. `markCloudConfirmed(true)` reads
+  it before the first push of a launch and merges it in with
+  `mergeSameAccount`, so progress only ever comes back. An old phone can
+  still knock an account down until it updates; the first 298 launch
+  anywhere on that account restores it.
+- **Never write it before it has been read.** `floorMergedFor` gates it.
+  A slow read (more than `FLOOR_READ_WAIT_MS`) lets the account's own
+  saves go but still holds the floor.
+- **Never merged into a missing account.** `markCloudConfirmed(false)`
+  is the "server says no document" path: new account or reset. It skips
+  the read, and the next push overwrites the floor fresh. Both reset
+  paths also delete it (`deleteAccountFloor`).
+- **Lowering progress on purpose** (an admin correction, a take-back)
+  must lower the floor too, or the next 298 launch merges it straight
+  back.
+- `check-sync` 8f covers all of this and fails on 296.
+
+**Repairs on Oct 3.** Backups are in `/tmp/claude-0/b298/`. Each was
+computed with the app's own `mergeSameAccount` / `mergeLeavingAccount`
+in a headless page, written as a whole document, with its floor written
+first and round-trip compared before the account itself.
+
+| Account | Was | Now | How |
+|---|---|---|---|
+| BigSlim | 47,375 / ninja | 59,356 XP, Lv 45, 33 hundos, alien | the plays only his rich device had, plus Oct 2's hundo credit (+18) |
+| Hector_mendoza | 2,330 | 17,585, 13 hundos | two devices that never shared a play, summed |
+| Vishal R Sodagar | 6,395 | 19,257, 5 hundos | the credited part his device never had |
+| Billyswole | 11,960 | 15,940, 8 hundos | old-account credit, plus Oct 2's hundo credit (+5) |
+| Barron | 4,800 | 8,150 | old-account credit |
+| Rogelio.salcedo | 5,430 | 6,900 | old-account credit |
+| Z | 43,815 | 47,955 | play on the old code after the Oct 2 merge |
+| OdinSavior | 58,880 | 60,900, 143 hundos | an unmerged Sep 22 first account (merge note written) |
+
+Two details on those repairs:
+- BigSlim's one exam that only his stale copy held had its XP split out
+  of that copy's week by questions answered (`compute.py`).
+- Z's merge note was rebased, so its old phone adds only what it plays
+  from now on.
+
+Also: a leaderboard row whose id was a sync code (the merged Z) was
+deleted, and floors were written for all 51 real accounts. After all
+that, every one of the 35 rows matches its account's XP, hundos, name
+and character.
+
+**Updates never land at the end of a test.** *"Someone had an update
+push at the end of a test, this is NOT supposed to happen ... during a
+test, in the result screen, test leaderboard, virtual room lobby or
+anything like that."* `forcedUpdateBlocked()` let the update through
+on the results screen once `UPDATE_REVIEW_MS` (10s) had passed. It now
+blocks for as long as any of these is up:
+- the results screen and its review (`.rs-screen`, `runreview`);
+- a question or Pause;
+- every Virtual Room screen (choice, room browser, lobby, match, waiting
+  room, results and its leaderboard, finale), and while `vroomCode` is
+  set at all;
+- half-way through sign-up.
+
+It still goes on Home, Profile, Settings and the Leaderboard tab, so
+build 279's "they never get the update" stays fixed. `check-behaviour` 9
+was re-read with the decision: results are blocked even ten minutes on,
+and the Leaderboard tab still takes it.
+
+**Two devices playing at once both keep what they earned.** *"Ensure
+this PROBLEM is permanently fixed."* The floor fixes old builds' writes.
+It does not fix the second cause of loss: two devices on one account
+playing between syncs. `mergeSameAccount` took the higher of each
+count. That is right for two copies of one history and wrong for two
+devices that both moved on from it. A 300 XP test on one phone and a
+200 XP test on the other ended on +300, so the 200 was gone.
+
+The counts that grow by play are now a base plus one tally per device:
+- **The counts covered:** lifetime XP, answered, correct, the play
+  counters, hundos, full tests, each unit's hundos (`unitPerfects`) and
+  this week's points.
+- **Where they live:** `store.tally[deviceId][key]` and
+  `store.tallyBase[key]`. Keys are `L:points`, `U:<unit>`, `W:<week>`.
+  They use a colon, never a dot, which Firestore reads as a path.
+- **The device id:** `class26e.device` in `localStorage`, from
+  `tallyDeviceId()`.
+- **`tallyCapture(store)`** puts this device's own growth since its last
+  save onto its own tally. It runs in `persistLocally()` and before
+  either merge (`syncSameAccount`, the floor read). It never runs on a
+  copy that has just arrived.
+- **`tallyNormalize`**, called at the end of `applyLoadedData`, folds
+  anything a loaded copy counts beyond its tallies into its base. A count
+  raised by hand on the server is therefore counted once, however many
+  devices load it.
+- **`tallyMerge`**, called first in `mergeSameAccount`, takes the max of
+  each device's tally and of each copy's base. The count is the base
+  plus every tally. Merging again changes nothing.
+- **A copy with no base for a key** (any pre-298 build drops these
+  fields) is assumed to already hold every tally. That is exactly the
+  old higher-wins merge: never worse than before, and never counted
+  twice.
+
+Still higher-wins: per-question `n`/`m`, `studyLog`, `testStats` and the
+per-unit bests. Losing one of those to concurrency costs a stat line,
+not XP or a badge.
+
+`check-sync` 8g covers concurrent play, convergence, echo, an old-build
+copy that played and one that did not, a server-raised count and reset.
+It fails on 298-without-tally at 1300 instead of 1500.
+
+Three older check-sync fixtures (8, 8e, 8f) set a "stale" value by hand
+on a device whose tallies had already started. The tally read those as
+new play. The fixtures now clear the tallies after setting the stale
+value, which is what a genuinely stale device looks like.
+
+**Second audit, Oct 3 evening.** Every live account was compared, field
+by field, against all five full backups (Oct 2 and the four Oct 3
+ones). The comparison covered every number, true flag and list, which
+includes `legacyChars`, `creditsApplied`, flare levels, unit bests,
+VR/weekly counts and all unlock flags.
+
+Nothing had been lost except **Dell Wyble**: one drill play, ~75 minutes
+of Oct 1 study time and Penal Code test time. A copy written on Oct 3
+was missing them. These were restored by max-merging the Oct 2 backup,
+and his floor was raised to match. Backup:
+`/tmp/claude-0/b298/backup-dell-*.json`.
+
+The rest of what the comparison flagged was not loss:
+- `units` (last selection), `weekRankSeen` and `savedCodePrompts` are
+  display state.
+- Maddog's character change was his choice. One flag he removed is
+  gone.
+- `seenUnlockedTiers` is not loaded from the cloud at all.
+
+All 35 rows still match their accounts, and no account is below its
+floor.
+
+**The rank emblems move again in Home's bubbles, without the lag.** Build
+288 switched the emblem animations off there, because a live SVG emblem
+repaints on the CPU every frame any part of it moves. Measured under a
+4x throttle: Home ran at 32fps with them off and 17fps with them on.
+Clocking them slower or dropping the filters barely helped.
+
+They are now recorded and played back as a flip-book:
+- **Recording.** `recordRankEmblemFrames` runs the rank's own CSS
+  animations on a hidden copy and steps them with the Web Animations
+  clock through `ORBIT_ANIM_FRAMES` (90) moments of one
+  `ORBIT_ANIM_LOOP_MS` (6s) loop. Each frame is drawn into a 10x9 sprite
+  sheet.
+- **Closing the loop.** Each animation runs a whole number of cycles in
+  the loop. A turn too slow to finish one in two loops holds still.
+- **Recording cost.** Frames are recorded in batches of 6 so their
+  images decode side by side, in idle-time slices.
+- **Playback.** `startOrbitEmblemAnims` lays a
+  `.cosmic-rank-anim > .rk-strip > img` over the emblem. Two stepped CSS
+  transforms move the sheet: `steps(9)` on the strip over 6s and
+  `steps(10)` on the image over 6s/9. The compositor shows each frame,
+  with no repaint and no script per frame. `check-behaviour` 66 measures
+  Home's paint with them on against off: 8-14ms against 0 over 2.5s.
+- **Look.** The svg's filter and opacity are copied onto the overlay,
+  and screen blending is kept, so it looks the same as the still emblem.
+- **Caching.** Sheets are cached in Cache Storage (`class26e.rk-sheets`,
+  keyed by `APP_BUILD`, rank and size). Only the first Home after an
+  update records anything, ~2s for the first rank and ~8-12s for all
+  six. Older builds' sheets are deleted when a new one is stored.
+- **When they stay still.** Only reached ranks move. Reduce motion or
+  the system setting leaves them still.
+
+**Flag polish.**
+- The round flag's glyph is `translate(1.1, 0)`, so its painted box sits
+  on the button's centre. It was `(0, 1.5)`, which was 1.1 units left and
+  1.5 low.
+- Review's Flagged box shows the bare flag, with no circle round it.
+- A unit's Flagged list has no second Back at the bottom.
+- "Unflag every question in this unit" is a full-width, solid, raised
+  red button.
+
+Removing the bottom Back left a `backLow.addEventListener` behind. That
+threw, and the whole list stopped rendering. Section 66 caught it.
+
+**The daily question has no clock.** *"The best time thing in the top
+right needs to go."* `startTimer()` took the test timer setting, so with
+a timer on, the one-question run showed a clock and a "Best: m:ss". It
+returns early for `runLabel === "Daily question"`. That is the same
+reasoning that already kept Pause off it. `check-behaviour` 66 covers it
+with the timer on.
+
+**Penal Code counts, checked against the study guide and the deck (Oct
+3).** It was reported that both versions are missing questions. Neither
+is.
+- **The study guide** ("Penal Code Study Questions, reviewed 8-14-26")
+  numbers its questions up to 346. It skips 122, 137, 148, 237, 256 and
+  258 (121 goes straight to 123, and so on), so it holds **340**
+  questions. The app's unit has 340, one per guide number, `src` = the
+  guide's number. Every one was matched by text.
+- **Repeated questions:** the guide has five questions that appear twice
+  under different numbers. The app has all ten as separate questions.
+- **The deck** ("TEXAS PENAL CODE for 736 updated 8-14-26", 578 slides)
+  has its questions in the speaker notes. Slides 1-85 hold 57 entries:
+  56 different questions, with #84 on both slide 22 and slide 24. The
+  slides 0-85 version is exactly those 56. Nothing is on the slide
+  bodies, and nothing is on slides 80-87.
+- **Deck #237** (slide 359, "pecuniary gain ... = benefit") is in the
+  deck but not in the guide. The app has it under Professionalism and
+  Ethics, not Penal Code.
+- **#84's second appearance is now its own question.** Superseded the
+  same evening, see below.
+
+**Choices that point at other choices never move.** *"Ensure even when on
+shuffle the answer choices aren't mixed, because it makes them
+confusing."* This was reported on Penal Code #213, whose "Both A & B"
+had been shuffled to B with the two answers it names at A and D.
+- **The bank:** two questions were hand-marked `fixedOrder`. 109 have a
+  choice that only means something in the study guide's order.
+- **The rule:** `choicesReferToEachOther(qi)`, through
+  `CHOICE_REFERS_RE`, reads the choices themselves. So a question added
+  later is covered without anyone having to mark it.
+- **What it catches:**
+  - two letters joined by and / & / nor ("Both A & B", "A, B, and C",
+    "Neither A nor B", "a and b are correct");
+  - all / none / neither / both near above / listed / these;
+  - "none are correct".
+- **What it leaves alone:** plain answers that start with "All" ("All
+  elements of the criminal justice system").
+- **Where it applies:** `optionOrder()` is the only place choices are
+  shuffled, so it holds in drill-with-shuffle, exams, the daily question
+  and the Virtual Room.
+- **Gate:** `check-behaviour` 66 covers it, and fails on the build
+  before this one.
+
+**Editing notes are out of the question bank.** *"This one ... said at the
+top that it's a duplicate ... remove that stuff."* The study guides'
+editing notes had come into the app with the questions:
+- "(133 - *duplicate)*" in front of Penal Code #239's question;
+- a stray "42." in front of #167;
+- "(#57)" on Arrest, Search and Seizure #112;
+- "(deleted #31 same question)", "(Wrong subject) #27 in ..." and
+  "(Left because of Texas question recorded)";
+- Quizlet links and usernames, "(Googled answer)" notes and raw URLs.
+
+Two questions also had their whole reference line pasted into the
+question text: Sexual Assault and Family Violence #30, and Civil Process
+#19 and #20. Their citations moved into `ref`. 31 questions were cleaned
+in all.
+
+- **Question identity:** `KEYS` hashes a question's text, so rewording
+  one would hand everybody a fresh history and drop their flags on it.
+  An edited question carries `keyText`, its original wording, and `KEYS`
+  hashes that instead. All 894 keys are byte-identical before and after.
+  **Reword a question the same way:** set `keyText` to the old text the
+  first time it changes, and never touch `keyText` again.
+- **References:** `ref` is not part of the identity, so references were
+  edited in place.
+- **What stays:** `*not*`-style asterisks render as emphasis
+  (`renderInlineParts`) and stay. "(#10)" inside a reference is a real
+  statute citation (PC 42.01 (a) (#10)) and stays.
+- **Gate:** `check-behaviour` 66 fails on any of these notes coming back,
+  and on an edited question's key moving.
+
+**One conflicting answer was found and left alone.** The "Peter /
+letter bomb" question is in Penal Code (#243) and in Sexual Assault and
+Family Violence (#30), with different answers:
+- Penal Code: A. Terroristic Threat. Both the Penal Code deck (slide
+  175) and the study guide highlight this.
+- Sexual Assault and Family Violence: B. False Alarm or Report.
+
+The second unit's source guide is not in hand, so it was reported to
+Madison rather than changed.
+
+**The test's flag sits in the corner under the line.** *"A little too
+low still, needs to be moved up, positioned closer to that line ...
+perfectly in the corner ... on larger tablets ... the same position,
+not too close to the question."*
+- **The line:** it is `#count`'s bottom border, 32px above the question
+  panel on every device. Its right end is the panel's right edge.
+- **The move:** `.qnumrow:has(> .qnum) > .flagbtn.qflag` takes
+  `position:relative; top:-1.75rem; left:.69rem`. An offset rather than
+  a margin, so the row and the question do not move.
+- **Where it lands:** measured on a 17 Pro Max, an iPad Pro 11" and a
+  12.9", the flag's top is 10px under the line, its right edge is on the
+  line's end, and it is 31px clear of the question. Before, it was 38px
+  under the line, 11px in from the edge and 3px off the question.
+- **Why `:has(> .qnum)`:** only a test's row carries "Question N". The
+  daily question's row has no label and no line, and its title block
+  sits right above. Lifted there, the flag ran into "One question, one
+  attempt.", so the daily keeps the old position. A browser without
+  `:has()` keeps the old position too.
+- **Gate:** `check-behaviour` 66 covers all three devices.
+
+
+**#84 is in both versions twice, and the whole unit is 341.** *"If the
+questions are in the power point slides 0-86 then yes, it should be
+there no matter what, if it's in that version, it also needs to be in
+the entire unit version. The entire unit version needs every single
+question from the guide."*
+- **The second #84** (the deck's slide 24) is a real Penal Code
+  question, `src: 347` with `repeatOf: 84`. It sits at the END of
+  `QUESTIONS`, so no other question's index moves. Its own `src` gives
+  it its own key and history.
+- **The counts:** it is in `PENAL_TEST_SRCS`, so the slides 0-85 version
+  is the deck's 57 entries. The whole unit is the guide's 340 plus this
+  repeat: 341.
+- **Slide 86** has no questions. Its notes are empty, as are those of
+  slides 80-87, so "0-86" and "0-85" select the same set.
+- **The daily question never deals a `repeatOf` question.** A repeat is
+  the same card twice, and adding one to the pool would have reshuffled
+  every Penal Code day still to come. The next 400 days' daily questions
+  are identical before and after.
+- **Gate:** `check-behaviour` 66 asserts all of this. It checks the 341
+  against the guide's own numbering (1-346 less the six it skips), and
+  that every question in the 0-85 version is in the whole unit too.

@@ -890,17 +890,22 @@ def check_update_and_cards(br):
          feel like the update was live. */
       out.polls = (typeof UPDATE_POLL_MS === 'number') && UPDATE_POLL_MS <= 20000;
 
-      /* THE RESULTS SCREEN IS A FEW SECONDS OF GRACE, NOT A BLOCK.
-         Waiting for Home alone meant somebody who goes from one test
-         straight into another never updated at all. */
+      /* THE RESULTS SCREEN IS A BLOCK, HOWEVER LONG IT IS UP (build 298).
+         It was a few seconds of grace and then the update went - which is
+         "an update push at the end of a test", reported as something that
+         must never happen. Re-read with the decision. */
       const panel = document.createElement('section');
-      panel.className = 'panel'; panel.dataset.screen = 'results';
+      panel.className = 'panel rs-screen'; panel.dataset.screen = 'results';
       stage.replaceChildren(panel);
       resultsShownAt = Date.now();
       out.justFinished = forcedUpdateBlocked();
-      resultsShownAt = Date.now() - (UPDATE_REVIEW_MS + 500);
+      resultsShownAt = Date.now() - 10 * 60 * 1000;
       out.afterReview = forcedUpdateBlocked();
-      out.window = UPDATE_REVIEW_MS;
+      /* every Virtual Room screen, and the test's own leaderboard */
+      out.vroom = ['vroom-results-panel', 'vroom-finale-panel rs-screen', 'screen-vroom-lobby', 'screen-vroom-choice',
+                   'screen-rooms', 'screen-tug', 'screen-tug-result', 'screen-battle-result', 'qpanel', 'pausepanel']
+        .filter(c => { mkScreen(c); return !forcedUpdateBlocked(); });
+      mkScreen('screen-rankings'); out.rankings = forcedUpdateBlocked();
 
       const all = topicsIn(QUESTIONS);
       store.unitPerfects = store.unitPerfects || {};
@@ -935,13 +940,16 @@ def check_update_and_cards(br):
     # The bar is still there on a unit somebody is still working on -
     # this is not "take the bar off unit cards".
     check("an unmastered one still has its bar", got["goingBar"] is True, got["goingBar"])
-    # "give it a few seconds to review the stuff then push it"
-    check("the results screen gets its reading time first",
+    # "UPDATES can not happen during a test, in the result screen, test
+    # leaderboard, virtual room lobby or anything like that" (build 298)
+    check("never on the results screen",
           got["justFinished"] is True, got["justFinished"])
-    check("and the update goes once that window is up",
-          got["afterReview"] is False, got["afterReview"])
-    check("the window is seconds, not minutes",
-          3000 <= got["window"] <= 30000, got["window"])
+    check("not even ten minutes after the results came up",
+          got["afterReview"] is True, got["afterReview"])
+    check("nor on any Virtual Room screen, a question or Pause",
+          got["vroom"] == [], got["vroom"])
+    check("but the Leaderboard tab still takes it",
+          got["rankings"] is False, got["rankings"])
 
     """WHICH PATH A NEW BUILD TAKES, AND IT IS NOT THE BANNER ANY MORE.
     *"Let's just keep it so that it forces updates on everyone, no more
@@ -1446,7 +1454,10 @@ def check_b229(br):
     r = pg.evaluate("""()=>{
       const out = { shuffleOn: cfg.shuffle };
       runMode = 'drill';
-      const qi = QUESTIONS.findIndex(q => !q.fixedOrder && q.choices.length === 4);
+      /* a question that is meant to shuffle: since build 298 one whose
+         choices point at each other ("A, B, and C") keeps its order */
+      const held = i => typeof choicesReferToEachOther === 'function' ? choicesReferToEachOther(i) : !!QUESTIONS[i].fixedOrder;
+      const qi = QUESTIONS.findIndex((q, i) => !held(i) && q.choices.length === 4);
       let prev = null, repeats = 0, bank = 0; const seen = new Set();
       for(let i = 0; i < 30; i++){
         layout = {}; const o = optionOrder(qi); const sl = o.indexOf(QUESTIONS[qi].answer);
@@ -3036,7 +3047,8 @@ PENAL_SLIDES_SRCS = sorted([
     147, 60, 135, 6, 62, 139, 285, 57, 265, 32, 151, 77, 174, 210, 51, 172,
     219, 259, 313, 44, 274, 191, 153, 7, 33, 53, 182, 303, 15, 218, 214, 84,
     75, 289, 302, 314, 196, 40, 178, 80, 69, 185, 101, 130, 249, 213, 24,
-    121, 200, 262, 344, 128, 159, 61, 95, 183])
+    121, 200, 262, 344, 128, 159, 61, 95, 183,
+    347])  # build 298: #84 again - the deck has it on slide 22 and slide 24
 
 PENAL_CARD = ".picks .pick:has(.pname:text-is('Penal Code'))"
 
@@ -4113,7 +4125,8 @@ def check_b245_start_pill(br):
     lab = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms));
       store.seenUnitSelectTour = true; cfg.mode = 'review'; cfg.units = []; cfg.versions = {}; showSetup(); await wait(600);
       document.querySelectorAll('#tour-overlay,#tour-tooltip').forEach(e => e.remove());
-      const cb = [...document.querySelectorAll('.picks .pick')].find(p => !/Penal/.test(p.textContent)).querySelector('input');
+      /* a unit card - Review's first card is the Flagged questions box (build 297), which has no checkbox */
+      const cb = [...document.querySelectorAll('.picks .pick:not(.pick-flagged-all)')].find(p => !/Penal/.test(p.textContent) && p.querySelector('input')).querySelector('input');
       cb.click(); await wait(400);
       return document.getElementById('bottomtab-start').getAttribute('aria-label') || ''; }""")
     check("in Review mode Start says review, not drill", lab.lower().startswith("start review"), lab)
@@ -4935,7 +4948,7 @@ def check_b270(br):
       const c = card();
       out.missed = { flags: c.querySelectorAll('.unitdetail-q .unitdetail-flag').length,
         note: (c.querySelector('.unitdetail-listnote') || {}).textContent || '',
-        bottomBack: !!c.querySelector('.unitdetail-back.is-bottom'),
+        bottomBack: !!c.querySelector('.unitdetail-back.is-bottom'), backs: c.querySelectorAll('.unitdetail-back').length,
         choices: c.querySelectorAll('.unitdetail-q .choice').length,
         unlocked: [...c.querySelectorAll('.unitdetail-q .choice')].filter(b => !b.classList.contains('locked')).length };
       /* and pressing one does not press it: the Liquid Glass dip is off */
@@ -4981,7 +4994,8 @@ def check_b270(br):
           len(L) == 3 and L[0] == L[1] == L[2] and len(L[0]) == 4 and any("ast" in x for x in L[0]), L)
     m = r.get("missed") or {}
     check("there is no Most missed list (build 284), and the Flagged list shows its questions", r.get("recentDoor") == 0 and m.get("choices", 0) > 0, m)
-    check("both lists end in a Back button", m.get("bottomBack") and (r.get("flagged") or {}).get("bottomBack"), (m, r.get("flagged")))
+    # build 298: "remove the back button at the very bottom since the other back button is already there"
+    check("the Flagged list has one Back, at the top, and none at the bottom", not m.get("bottomBack") and not (r.get("flagged") or {}).get("bottomBack") and m.get("backs") == 1, (m, r.get("flagged")))
     check("Flagged keeps its flags", (r.get("flagged") or {}).get("flags", 0) > 0, r.get("flagged"))
     check("a list's answer choices are read-only, and do not press like buttons", m.get("unlocked") == 0 and not m.get("pressed"), m)
     check("Back from a list puts the card back to its own size", abs((r.get("h1") or 0) - (r.get("h0") or -99)) <= 4, (r.get("h0"), r.get("h1")))
@@ -6345,53 +6359,368 @@ def check_b295(br):
     ctx.close()
 
 
-def check_b296(br):
-    """Build 296: "Viewing flagged questions isn't really a thing ... In
-    the review section we need [something] to do this." Review opens with
-    a Flagged questions card: every flagged question in every unit, with
-    its answer, in one tap; with none flagged it is a disabled card that
-    says how to flag one. Written against 295, where there is no card."""
-    print("\n65. build 296: every flagged question from Review, in one tap")
+def check_b297(br):
+    """Build 297.
+    "When in the test start menu in review, swiping down opens up the
+    test": the sheet's swipe-down dismiss went on to open the answer
+    review. Now it only closes.
+    "Maybe it should be a unit card box kinda but it'd be double wide and
+    it'd be at the top", and "do not display the amount of flagged
+    questions on a unit card": a Flagged questions box spanning the
+    grid, first on Review; the unit cards are untouched.
+    "You should be able to see the flagged button similar to how it's
+    displayed in a test ... it's the same one app wide": the test's
+    round flag on every question in Answer Review and in a unit's
+    Flagged list.
+    "I'm pretty sure all my flagged questions disappeared": flags merge
+    across devices, flag and unflag both stamped.
+    "The pause menu ... still not centered": one column of equal-width
+    buttons, the group on the screen's own middle.
+    Written against 296, where all of it fails."""
+    print("\n65. build 297: swipe-down closes, the Flagged box, one flag app wide, flags survive a second device, pause centred")
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
       try{
         document.getElementById('pushing-update')?.remove(); store.seenUnitSelectTour = true; store.seenUnitOptionsTour = true;
-        store.flagged = {};
-        cfg.mode = 'review'; cfg.units = []; showSetup(); await wait(600);
-        const e = document.querySelector('.review-flagged-card');
-        out.empty = e ? { disabled: e.disabled, text: e.textContent } : null;
-        /* three flagged, in two units */
-        const all = topicsIn(QUESTIONS), A = all[0], B = all[1];
-        const ia = QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === A).slice(0, 2);
-        const ib = QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === B).slice(0, 1);
-        const want = ia.concat(ib);
-        want.forEach(i => { if(!isFlagged(i)) toggleFlag(i); });
-        out.flaggedNow = flaggedIndexes().length;
-        showSetup(); await wait(600);
-        const c = document.querySelector('.review-flagged-card');
-        out.card = c ? { disabled: c.disabled, text: c.textContent } : null;
-        c && c.click(); await wait(700);
-        const qs = [...document.querySelectorAll('.screen-answerreview .review-question-text')].map(x => x.textContent);
-        out.list = { n: qs.length, all: want.every(i => qs.indexOf(QUESTIONS[i].q) >= 0),
-                     sub: (document.querySelector('.screen-answerreview .cal-sub') || {}).textContent,
-                     open: [...document.querySelectorAll('.screen-answerreview .cal-month-body')].every(b => b.classList.contains('cal-month-body-open')) };
-        /* not on the other modes */
-        cfg.mode = 'drill'; showSetup(); await wait(400);
-        out.drill = !!document.querySelector('.review-flagged-card');
+        store.flagged = {}; store.unflagged = {};
+        const all = topicsIn(QUESTIONS), A = all[0], B = all[2];
+        const ofU = u => QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === u);
+        const want = ofU(A).slice(0, 2).concat(ofU(B).slice(0, 1));
+        want.forEach(i => toggleFlag(i));
+
+        /* 1. the Flagged box: first in the grid, both columns wide */
+        cfg.mode = 'review'; cfg.units = []; cfg.source = 'all'; showSetup(); await wait(600);
+        const grid = document.querySelector('.screen-setup .picks');
+        const box = grid && grid.querySelector('.pick-flagged-all');
+        const cards = [...grid.querySelectorAll('.pick:not(.pick-flagged-all):not(.pick-tba)')];
+        out.box = box ? { first: grid.firstElementChild === box, text: box.textContent,
+          wide: Math.abs(box.getBoundingClientRect().width - grid.getBoundingClientRect().width) < 2 } : null;
+        out.cardCounts = cards.map(c => (c.querySelector('.pcount') || {}).textContent).filter(t => /flag/i.test(t || ''));
+        out.oldUi = !!document.querySelector('.review-flagged-card, .review-bank');
+
+        /* 2. Start -> the sheet; swipe it down: it closes, nothing opens */
+        const pick = cards[0].querySelector('input'); pick.click(); await wait(200);
+        const startBtn = [...document.querySelectorAll('button')].find(b => /^Start/.test(b.textContent.trim()) && b.offsetParent);
+        startBtn.click(); await wait(400);
+        const modal = document.getElementById('unitoptions-modal');
+        const sheet = modal.querySelector('.unitoptions-modal-sheet');
+        out.sheetOpen = !modal.hidden;
+        const mk = (y) => new Touch({ identifier: 7, target: sheet, clientX: 200, clientY: y });
+        const fire = (type, y, list) => sheet.dispatchEvent(new TouchEvent(type, { bubbles: true, cancelable: true,
+          touches: list ? [mk(y)] : [], targetTouches: list ? [mk(y)] : [], changedTouches: [mk(y)] }));
+        sheet.scrollTop = 0;
+        fire('touchstart', 300, true);
+        for(let y = 310; y <= 520; y += 30) fire('touchmove', y, true);
+        fire('touchend', 520, false);
+        await wait(700);
+        out.afterSwipe = { closed: modal.hidden, screen: document.querySelector('.screen-answerreview') ? 'review' : (document.querySelector('.screen-setup') ? 'setup' : 'other') };
+        modal.hidden = true;
+
+        /* 3. the box opens exactly the flagged ones, each with the test's flag, on */
+        document.querySelector('.pick-flagged-all').click(); await wait(700);
+        const qs = [...document.querySelectorAll('.screen-answerreview .review-question')];
+        out.list = { n: qs.length, all: want.every(i => qs.some(q => q.querySelector('.review-question-text').textContent === QUESTIONS[i].q)),
+                     title: (document.querySelector('.screen-answerreview .cal-title') || {}).textContent,
+                     flags: qs.map(q => { const f = q.querySelector('.flagbtn.qflag'); return f ? f.classList.contains('on') : null; }) };
+        /* unflag one there: it is unflagged, and stays on screen dimmed */
+        const first = qs[0], ftext = first.querySelector('.review-question-text').textContent;
+        const fi = QUESTIONS.findIndex(x => x.q === ftext);
+        first.querySelector('.flagbtn.qflag').click(); await wait(200);
+        out.unflagHere = { flagged: isFlagged(fi), dimmed: first.classList.contains('is-unflagged'), still: first.isConnected };
+        toggleFlag(fi);
+
+        /* 4. any unit's review: every question has the flag, and a flagged one shows on */
+        showAnswerReview([A], 'all', {}); await wait(600);
+        const uq = [...document.querySelectorAll('.screen-answerreview .review-question')];
+        out.unitReview = { n: uq.length, withFlag: uq.filter(q => q.querySelector('.flagbtn.qflag')).length,
+          on: uq.filter(q => (q.querySelector('.flagbtn.qflag') || {classList:{contains:()=>false}}).classList.contains('on')).length };
+        /* flag one from here */
+        const off = uq.find(q => !q.querySelector('.flagbtn.qflag').classList.contains('on'));
+        const offi = QUESTIONS.findIndex(x => x.q === off.querySelector('.review-question-text').textContent);
+        off.querySelector('.flagbtn.qflag').click(); await wait(100);
+        out.flagFromReview = isFlagged(offi);
+        toggleFlag(offi);
+
+        /* 5. flags survive a second device that has none */
+        const other = JSON.parse(JSON.stringify(store));
+        other.flagged = {}; other.unflagged = {}; other.lastModified = Date.now() + 60000;
+        syncSameAccount(other);
+        out.keptOnNewerEmpty = want.every(i => isFlagged(i));
+        const k = KEYS[want[0]];
+        const dev2 = JSON.parse(JSON.stringify(store));
+        setFlag(want[0], false);
+        mergeSameAccount(store, dev2);
+        out.unflagHolds = !isFlagged(want[0]);
+        const dev3 = JSON.parse(JSON.stringify(store)); dev3.flagged[k] = Date.now() + 5000; delete dev3.unflagged[k];
+        mergeSameAccount(store, dev3);
+        out.reflagWins = isFlagged(want[0]);
+        const dev4 = { flagged: { [KEYS[want[2]]]: true } }; store.flagged = {}; store.unflagged = {};
+        mergeSameAccount(store, dev4);
+        out.legacy = isFlagged(want[2]);
+        const again = mergeSameAccount(store, JSON.parse(JSON.stringify(store)));
+        out.converges = !again.gained && !again.otherHadLess;
       } catch(e){ out.threw = String(e && e.stack || e); }
       return out; }""")
     if r.get("threw"):
         print("   threw:", r["threw"][:400])
-    em = r.get("empty") or {}
-    check("with nothing flagged, Review shows the card disabled, saying how to flag one",
-          em.get("disabled") is True and "Tap the flag" in em.get("text", ""), em)
-    cd = r.get("card") or {}
-    check("with questions flagged, the card counts them across units",
-          cd.get("disabled") is False and "3 questions across 2 units" in cd.get("text", ""), cd)
+    bx = r.get("box") or {}
+    check("Review's grid opens with a Flagged questions box, first and full width",
+          bx.get("first") is True and bx.get("wide") is True and "3 questions" in bx.get("text", "") and r.get("oldUi") is False, {**bx, "oldUi": r.get("oldUi")})
+    check("no unit card says how many are flagged", r.get("cardCounts") == [], r.get("cardCounts"))
+    sw = r.get("afterSwipe") or {}
+    check("swiping the Review start sheet down closes it and opens nothing",
+          r.get("sheetOpen") is True and sw.get("closed") is True and sw.get("screen") == "setup", sw)
     ls = r.get("list") or {}
-    check("one tap lists exactly the flagged questions, every unit open",
-          ls.get("n") == 3 and ls.get("all") and ls.get("open") and "Every question you've flagged" in str(ls.get("sub")), ls)
-    check("the card is only on Review", r.get("drill") is False, r.get("drill"))
+    check("the box lists exactly the flagged questions, each with the test's flag, on",
+          ls.get("n") == 3 and ls.get("all") and ls.get("title") == "Flagged Questions" and ls.get("flags") == [True, True, True], ls)
+    uh = r.get("unflagHere") or {}
+    check("unflagging there takes the flag off and leaves the question, dimmed",
+          uh.get("flagged") is False and uh.get("dimmed") is True and uh.get("still") is True, uh)
+    ur = r.get("unitReview") or {}
+    check("a unit's Answer Review has the flag on every question, on where flagged",
+          ur.get("n", 0) > 0 and ur.get("withFlag") == ur.get("n") and ur.get("on") == 2, ur)
+    check("a question can be flagged from Answer Review", r.get("flagFromReview") is True, r.get("flagFromReview"))
+    check("flags survive a newer device that has none", r.get("keptOnNewerEmpty") is True, r.get("keptOnNewerEmpty"))
+    check("an unflag is not undone by another device's older flag", r.get("unflagHolds") is True, r.get("unflagHolds"))
+    check("a flag made after that unflag wins", r.get("reflagWins") is True, r.get("reflagWins"))
+    check("a legacy flag (true) still merges in", r.get("legacy") is True, r.get("legacy"))
+    check("the flag merge converges", r.get("converges") is True, r.get("converges"))
+    ctx.close()
+
+    # the unit-details Flagged list uses the same round flag, and pause is centred - both reference sizes
+    for w, h in [(440, 956), (834, 1194)]:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+          try{
+            document.getElementById('pushing-update')?.remove();
+            cfg.mode = 'drill'; cfg.units = [topicsIn(QUESTIONS)[0]]; cfg.source = 'all';
+            beginRun(QUESTIONS.map((q, i) => i).filter(inUnits).slice(0, 10), null);
+            for(let k = 0; k < 40 && !document.querySelector('.choice'); k++) await wait(200);
+            const tf = document.querySelector('.qnumrow > .flagbtn');
+            out.testFlag = tf ? tf.classList.contains('qflag') : null;
+            pauseRun(); await wait(800);
+            const st = document.querySelector('.pause-stack');
+            const s = st && st.getBoundingClientRect();
+            const bs = [...document.querySelectorAll('.pausepanel .actions button')].map(b => b.getBoundingClientRect());
+            out.pause = s ? { off: Math.round(Math.abs((s.top + s.height / 2) - innerHeight / 2)),
+              stacked: bs.length === 2 && bs[1].top > bs[0].bottom - 1,
+              sameWidth: bs.length === 2 && Math.abs(bs[0].width - bs[1].width) < 1,
+              centred: bs.every(b => Math.abs((b.left + b.width / 2) - innerWidth / 2) < 2) } : null;
+            /* the exit confirmation puts its buttons exactly where Pause's were */
+            const at = () => [...document.querySelectorAll('.pausepanel .actions button')].map(b => { const q = b.getBoundingClientRect(); return [Math.round(q.left), Math.round(q.top), Math.round(q.width)]; });
+            const before = at();
+            [...document.querySelectorAll('.pausepanel button')].find(b => /Exit/.test(b.textContent)).click(); await wait(800);
+            const conf = at();
+            out.confirm = { title: (document.querySelector('.pausepanel .qnum') || {}).textContent, before, conf,
+              same: JSON.stringify(before) === JSON.stringify(conf) };
+          } catch(e){ out.threw = String(e && e.stack || e); }
+          return out; }""")
+        if r.get("threw"):
+            print("   threw:", r["threw"][:300])
+        check("%dx%d: the test's flag is the shared one" % (w, h), r.get("testFlag") is True, r.get("testFlag"))
+        pz = r.get("pause") or {}
+        check("%dx%d: pause buttons stacked, one width, centred, the group on the screen's middle" % (w, h),
+              pz.get("stacked") and pz.get("sameWidth") and pz.get("centred") and pz.get("off", 99) <= 6, pz)
+        cf = r.get("confirm") or {}
+        check("%dx%d: the exit confirmation's buttons sit exactly where Pause's do" % (w, h),
+              cf.get("same") is True and "Exit" in str(cf.get("title")), cf)
+        ctx.close()
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms));
+      document.getElementById('pushing-update')?.remove(); store.seenUnitSelectTour = true; store.seenUnitHoldTip = true;
+      store.flagged = {}; const A = topicsIn(QUESTIONS)[0];
+      QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === A).slice(0, 2).forEach(i => toggleFlag(i));
+      cfg.mode = 'drill'; cfg.units = []; showSetup(); await wait(600);
+      const row = [...document.querySelectorAll('.screen-setup .pick')].find(r => r.querySelector('.pname') && r.querySelector('.pname').textContent === A);
+      row.scrollIntoView({ block: 'center' }); await wait(300); }""")
+    box = pg.evaluate("""()=>{ const A = topicsIn(QUESTIONS)[0];
+      const row = [...document.querySelectorAll('.screen-setup .pick')].find(r => r.querySelector('.pname') && r.querySelector('.pname').textContent === A);
+      const b = row.getBoundingClientRect(); return [b.left + b.width / 2, b.top + b.height / 2]; }""")
+    pg.mouse.move(*box); pg.mouse.down(); pg.wait_for_timeout(900); pg.mouse.up(); pg.wait_for_timeout(800)
+    r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms));
+      const d = [...document.querySelectorAll('button')].find(b => /Flagged/.test(b.textContent) && b.offsetParent && b.closest('[class*=unitdetail]'));
+      d && d.click(); await wait(700);
+      const fl = [...document.querySelectorAll('.unitdetail-q .flagbtn')];
+      return { n: fl.length, shared: fl.every(f => f.classList.contains('qflag') && f.classList.contains('on')),
+               besideText: fl.every(f => f.parentElement.classList.contains('review-qhead')) }; }""")
+    check("a unit's Flagged list uses the same round flag, beside each question",
+          r.get("n") == 2 and r.get("shared") and r.get("besideText"), r)
+    ctx.close()
+
+
+def check_b298(br):
+    """Build 298.
+    "The animations of the rank icons in the flare bubbles isn't happening
+    anymore ... ensure there is not lag": each reached rank's motion is
+    recorded once and played as a stepped flip-book the compositor runs -
+    no repaint and no script per frame. "The flag icon within the small
+    yellow circle is not centered", "just the flag icon there without the
+    circle", "remove the back button at the very bottom", "the remove all
+    flagged questions ... actually looks like a button".
+    Written against 297, where all of it fails."""
+    print("\n66. build 298: rank emblems move again, compositor-only; flag centred; Flagged box and list polish")
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=2)
+        r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+          try{
+            document.getElementById('pushing-update')?.remove();
+            store.lifetime.points = 300000; topicsIn(QUESTIONS).forEach(u => store.unitPerfects[u] = 40);
+            store.pendingBadgeUnlocks = []; theme.muteBanners = true; showHome();
+            const lit = () => document.querySelectorAll('.cosmic-badge-rank.cosmic-badge-lit').length;
+            for(let i = 0; i < 300 && document.querySelectorAll('.cosmic-rank-anim').length < lit(); i++) await wait(100);
+            const wraps = [...document.querySelectorAll('.cosmic-rank-anim')];
+            out.lit = lit(); out.playing = wraps.length;
+            out.running = wraps.every(wr => { const st = wr.querySelector('.rk-strip'), im = wr.querySelector('img');
+              const a = [...st.getAnimations(), ...im.getAnimations()]; return a.length === 2 && a.every(x => x.playState === 'running'); });
+            out.svgHidden = wraps.every(wr => getComputedStyle(wr.previousElementSibling).visibility === 'hidden');
+            out.aligned = wraps.every(wr => { const a = wr.getBoundingClientRect(), b = wr.parentElement.getBoundingClientRect();
+              return Math.abs(a.left - b.left) < 1.5 && Math.abs(a.width - b.width) < 3; });
+            /* moving changes what is on screen, with no script per frame */
+            out.raf = typeof orbitAnimTick === 'function';
+            /* the flag in its round button: drawn on the button's centre */
+            cfg.mode = 'drill'; const qf = buildQuestionFlag(0); qf.style.cssText = 'position:fixed;left:40px;top:40px'; document.body.appendChild(qf); await wait(50);
+            const bb = qf.getBoundingClientRect(); let L = 1e9, T = 1e9, R = -1e9, B = -1e9;
+            qf.querySelectorAll('path').forEach(p => { const r = p.getBoundingClientRect(); L = Math.min(L, r.left); T = Math.min(T, r.top); R = Math.max(R, r.right); B = Math.max(B, r.bottom); });
+            out.flagOff = [Math.round(((L + R) / 2 - (bb.left + bb.right) / 2) * 10) / 10, Math.round(((T + B) / 2 - (bb.top + bb.bottom) / 2) * 10) / 10];
+            qf.remove();
+            /* Review's Flagged box: the flag, no circle */
+            store.flagged = {}; store.unflagged = {};
+            const all = topicsIn(QUESTIONS), A = all[0];
+            QUESTIONS.forEach((q, i) => { if((q.topic || '').trim() === A && Object.keys(store.flagged).length < 3) toggleFlag(i); });
+            cfg.mode = 'review'; cfg.units = []; cfg.source = 'all'; showSetup(); await wait(600);
+            const ic = document.querySelector('.pick-flagged-all .pick-flagged-icon');
+            const cs = ic && getComputedStyle(ic);
+            out.icon = ic ? { bg: cs.backgroundColor, shadow: cs.boxShadow, radius: cs.borderRadius, glyph: !!ic.querySelector('svg') } : null;
+            /* a unit's Flagged list: one Back, and a real Unflag button */
+            cfg.mode = 'drill'; cfg.units = []; showSetup(); await wait(600);
+            const row = [...document.querySelectorAll('.pick')].find(r => (r.querySelector('input') || {}).value === A);
+            row.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 50, clientY: 50, button: 0 }));
+            await wait(600); row.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 50, clientY: 50 })); await wait(900);
+            document.querySelector('.unitdetail-door.is-flagged').click(); await wait(900);
+            const card = document.querySelector('.unitdetail');
+            out.backs = card.querySelectorAll('.unitdetail-back').length;
+            out.bottomBack = !!card.querySelector('.unitdetail-back.is-bottom');
+            const rb = card.querySelector('.unitdetail-resetbtn'), lst = card.querySelector('.unitdetail-listscroll');
+            const rcs = getComputedStyle(rb), rr = rb.getBoundingClientRect(), lr = lst.getBoundingClientRect();
+            out.reset = { h: Math.round(rr.height), wideFrac: Math.round(rr.width / (lr.width - 2 * 17.6) * 100) / 100,
+              solid: /gradient/.test(rcs.backgroundImage), color: rcs.color, radius: rcs.borderRadius, text: rb.textContent };
+          } catch(e){ out.threw = String(e && e.stack || e); }
+          return out; }""")
+        check(f"{dev}: no error", not r.get("threw"), r.get("threw", ""))
+        check(f"{dev}: every reached rank's emblem moves again in its bubble",
+              r.get("lit", 0) > 0 and r.get("playing") == r.get("lit") and r.get("running") and r.get("svgHidden") and r.get("aligned"), r)
+        check(f"{dev}: and it is played by the compositor - no per-frame script", not r.get("raf"), r.get("raf"))
+        fo = r.get("flagOff") or [9, 9]
+        check(f"{dev}: the flag is drawn on its round button's centre (within 1px)", abs(fo[0]) <= 1 and abs(fo[1]) <= 1, fo)
+        ic = r.get("icon") or {}
+        check(f"{dev}: Review's Flagged box shows the flag with no circle round it",
+              ic.get("glyph") and ic.get("bg") in ("rgba(0, 0, 0, 0)", "transparent") and ic.get("shadow") == "none", ic)
+        check(f"{dev}: a unit's Flagged list has one Back, at the top", r.get("backs") == 1 and not r.get("bottomBack"), (r.get("backs"), r.get("bottomBack")))
+        rs = r.get("reset") or {}
+        check(f"{dev}: Unflag every question is a real button: full width, solid, 48px+",
+              rs.get("h", 0) >= 48 and rs.get("wideFrac", 0) >= .95 and rs.get("solid"), rs)
+        ctx.close()
+    # "Daily question, the best time thing in the top right needs to go"
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms));
+      document.getElementById('pushing-update')?.remove();
+      cfg.timer = 'up'; store.dailyQuestionDate = null; showHome(); await wait(700);
+      const k = 'Daily question'; Object.keys(store.testStats || {}).forEach(x => { store.testStats[x].bestMs = 4000; });
+      document.querySelector('.daily-question-fab').click(); await wait(2500);
+      const tl = document.getElementById('timerline') || (typeof timerlineEl !== 'undefined' ? timerlineEl : null);
+      const vis = el => !!el && !el.hidden && el.getBoundingClientRect().width > 0;
+      return { daily: runLabel, timerShown: vis(timerlineEl), bestShown: vis(tbestEl), bestText: tbestEl.textContent }; }""")
+    check("the daily question has no clock and no best time, even with the test timer on",
+          r.get("daily") == "Daily question" and not r.get("timerShown") and not r.get("bestShown"), r)
+    ctx.close()
+    # "ensure even when on shuffle the answer choices aren't mixed" - a choice that points at others
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""()=>{ const out = {};
+      const find = (t, src) => QUESTIONS.findIndex(q => (q.topic || '').trim() === t && q.src === src);
+      cfg.shuffle = true; runMode = 'drill';
+      const refers = i => typeof choicesReferToEachOther === 'function' ? choicesReferToEachOther(i) : !!QUESTIONS[i].fixedOrder;
+      const order20 = qi => { const seen = new Set(); for(let k = 0; k < 20; k++){ delete layout[qi]; seen.add(optionOrder(qi).join(',')); } return [...seen]; };
+      const both = find('Penal Code', 213);              /* "Both A & B" */
+      out.both = { text: QUESTIONS[both].choices.join(' | '), orders: order20(both) };
+      const above = QUESTIONS.findIndex(q => (q.choices || []).some(c => /^all of the above$/i.test(c)));
+      out.above = order20(above);
+      const prose = find('Professional Policing', 17);   /* "All elements of the criminal justice system" is a plain answer */
+      out.prose = order20(prose).length;
+      const plain = QUESTIONS.findIndex(q => (q.choices || []).length === 4 && !refers(QUESTIONS.indexOf(q)));
+      out.plain = order20(plain).length;
+      runMode = 'exam'; cfg.shuffle = false; out.exam = order20(both);
+      out.count = QUESTIONS.filter((q, i) => refers(i)).length;
+      return out; }""")
+    check("a question whose choices name other letters (\"Both A & B\") keeps the study guide's order on shuffle and in an exam",
+          r["both"]["orders"] == ["0,1,2,3"] and r["exam"] == ["0,1,2,3"], r["both"])
+    check("so does one with \"All of the above\"", r["above"] == ["0,1,2,3"], r["above"])
+    check("a plain question, and one whose answer only starts with \"All\", still shuffle", r["plain"] > 1 and r["prose"] > 1, (r["plain"], r["prose"]))
+    check("about a hundred questions in the bank are held in order", 90 <= r["count"] <= 130, r["count"])
+    ctx.close()
+    # "this one ... said at the top that it's a duplicate.. remove that stuff"
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""()=>{ const bad = /quizlet|googled|https?:|duplicate\\)|deleted #|wrong subject|left because|\\(#\\d+\\)|^\\d{1,3}\\.\\s|\\(inserted\\)/i;
+      /* "(#10)" is a real citation in a reference line ("PC 42.01 (a) (#10)"); in the question itself it is a note */
+      const inText = /\\(#\\d+\\)/;
+      const notes = QUESTIONS.map((q, i) => i).filter(i => bad.test(QUESTIONS[i].q) || inText.test(QUESTIONS[i].q) || bad.test((QUESTIONS[i].ref || '').replace(/\\(#\\d+\\)/g, '')) || (QUESTIONS[i].choices || []).some(c => bad.test(c)))
+        .map(i => QUESTIONS[i].topic + ' ' + QUESTIONS[i].src);
+      const edited = QUESTIONS.map((q, i) => i).filter(i => QUESTIONS[i].keyText != null);
+      const keep = edited.every(i => KEYS[i] === (QUESTIONS[i].topic || '') + '|' + QUESTIONS[i].src + '|' + hashOf(String(QUESTIONS[i].keyText) + '\\u0001' + QUESTIONS[i].choices.join('\\u0001')));
+      const boat = QUESTIONS.find(q => (q.topic || '').trim() === 'Penal Code' && q.src === 239);
+      return { notes, edited: edited.length, keep, boat: boat && boat.q.slice(0, 40) }; }""")
+    check("no question carries an editing note: no \"duplicate\", no Quizlet or Googled source, no links, no stray numbers",
+          r["notes"] == [] and r["boat"].startswith("Two friends"), r)
+    check("and a question whose wording was cleaned keeps its identity, so nobody's history or flags on it move",
+          r["edited"] >= 6 and r["keep"], (r["edited"], r["keep"]))
+    ctx.close()
+    # "the flag button in tests is a little too low still ... perfectly in the corner" - on a phone and a tablet alike
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11"), (1024, 1366, "iPad Pro 12.9")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms));
+          document.getElementById('pushing-update')?.remove();
+          cfg.mode = 'drill'; cfg.units = ['Penal Code']; cfg.source = 'all';
+          beginRun(poolNow().slice(0, 10), null); await wait(4200);
+          const f = document.querySelector('.qnumrow > .flagbtn.qflag').getBoundingClientRect();
+          const line = document.getElementById('count').getBoundingClientRect();
+          const qt = document.querySelector('.qnumrow').nextElementSibling.getBoundingClientRect();
+          return { underLine: Math.round(f.top - line.bottom), rightOff: Math.round(f.right - line.right), toQuestion: Math.round(qt.top - f.bottom) }; }""")
+        check(f"{dev}: the test's flag sits in the corner under the line - 6-14px below it, flush with its end, clear of the question",
+              6 <= r["underLine"] <= 14 and abs(r["rightOff"]) <= 2 and r["toQuestion"] >= 16, r)
+        ctx.close()
+    # "if it's in that version, it also needs to be in the entire unit ... every single question from the guide"
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""()=>{ const pc = QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === 'Penal Code');
+      const srcs = pc.map(i => QUESTIONS[i].src);
+      const v = pc.filter(i => inChosenVersion(i, { 'Penal Code': 'test' }));
+      const q84 = QUESTIONS.find(q => q.topic === 'Penal Code' && q.src === 84).q;
+      const days = []; for(let d = 0; d < 400; d++){ const k = new Date(2026, 9, 1 + d); days.push(dailyQuestionIndexFor(k.getFullYear() + '-' + String(k.getMonth() + 1).padStart(2, '0') + '-' + String(k.getDate()).padStart(2, '0'))); }
+      return { n: pc.length, srcs, version: v.length, versionIn: v.every(i => pc.indexOf(i) >= 0), twice84: v.filter(i => QUESTIONS[i].q === q84).length,
+               keysUnique: new Set(pc.map(i => KEYS[i])).size === pc.length, repeatLast: QUESTIONS[QUESTIONS.length - 1].repeatOf === 84,
+               dailyRepeat: days.some(i => QUESTIONS[i] && QUESTIONS[i].repeatOf != null) }; }""")
+    guide = [n for n in range(1, 347) if n not in (122, 137, 148, 237, 256, 258)]
+    check("the whole Penal Code unit is every one of the study guide's 340 questions, plus #84's second appearance in the deck: 341",
+          r["n"] == 341 and sorted(x for x in r["srcs"] if x != 347) == guide and 347 in r["srcs"], (r["n"], len(r["srcs"])))
+    check("the slides 0-85 version is the deck's 57, #84 twice, and every one of them is in the whole unit too",
+          r["version"] == 57 and r["twice84"] == 2 and r["versionIn"], (r["version"], r["twice84"], r["versionIn"]))
+    check("the repeat has its own identity, sits at the end of the bank (no other question moves), and is never a daily question",
+          r["keysUnique"] and r["repeatLast"] and not r["dailyRepeat"], r)
+    ctx.close()
+    # and no lag: with the flip-book playing, Home paints nothing per frame
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, dpr=3)
+    pg.evaluate("""()=>{ document.getElementById('pushing-update')?.remove(); store.lifetime.points = 300000; topicsIn(QUESTIONS).forEach(u => store.unitPerfects[u] = 40);
+      store.pendingBadgeUnlocks = []; theme.muteBanners = true; showHome(); }""")
+    pg.wait_for_function("()=>document.querySelectorAll('.cosmic-rank-anim').length >= document.querySelectorAll('.cosmic-badge-rank.cosmic-badge-lit').length && document.querySelectorAll('.cosmic-rank-anim').length > 0", timeout=60000)
+    def paint_ms(on):
+        pg.evaluate("""(on)=>{ document.querySelectorAll('.cosmic-rank-anim').forEach(w => w.style.display = on ? '' : 'none');
+          document.querySelectorAll('svg.cosmic-rank-emblem').forEach(s => s.classList.toggle('rk-under-anim', on && !!(s.nextElementSibling && s.nextElementSibling.classList.contains('cosmic-rank-anim')))); }""", on)
+        pg.wait_for_timeout(500)
+        br.start_tracing(page=pg, categories=["devtools.timeline", "disabled-by-default-devtools.timeline"])
+        pg.wait_for_timeout(2500)
+        data = json.loads(br.stop_tracing()); ev = data["traceEvents"] if isinstance(data, dict) else data
+        return sum(e.get("dur", 0) for e in ev if e.get("name") in ("Paint", "RasterTask")) / 1000
+    on1, off1, on2, off2 = paint_ms(True), paint_ms(False), paint_ms(True), paint_ms(False)
+    check("17 Pro Max: Home with the emblems moving paints no more than with them still (paint+raster over 2.5s, ms)",
+          min(on1, on2) <= max(off1, off2) + 40, [round(on1), round(off1), round(on2), round(off2)])
     ctx.close()
 
 
@@ -6480,7 +6809,8 @@ def main():
             check_b290(br)
             check_b291(br)
             check_b295(br)
-            check_b296(br)
+            check_b297(br)
+            check_b298(br)
         finally:
             br.close()
     SERVER.shutdown()

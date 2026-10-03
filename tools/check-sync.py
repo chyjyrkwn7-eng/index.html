@@ -555,7 +555,7 @@ with sync_playwright() as pw:
       cloud = base(); cloud.lifetime.points = 900; cloud.lastModified = NOW - 60000;
       cloud.stats.qOTHER = { n: 4, m: 1, r: [10] };
       cloud.testHistory = [{ playedAt: 900, label: 'Other device', pct: 100, mode: 'drill', units: [] }];
-      store.lifetime.points = 500; store.stats = { qMINE: { n: 2, m: 0, r: [] } }; store.testHistory = [];
+      store.lifetime.points = 500; store.stats = { qMINE: { n: 2, m: 0, r: [] } }; store.testHistory = []; /* a stale copy, not play: build 298's tallies would read a value set by hand as this device's own new progress */ if(store.tally){ store.tally = {}; store.tallyBase = {}; }
       store.lastModified = NOW;
       writes.length = 0;
       await new Promise(res => pullFromCloud('NOVA-2601', () => res()));
@@ -820,7 +820,7 @@ with sync_playwright() as pw:
         }) }) };
       /* the stale device: 500 points, stamped NOW by a boot save */
       syncCode = 'NOVA-2601';
-      store.lifetime.points = 500; store.unitPerfects = { U: 1 }; store.lastModified = Date.now();
+      store.lifetime.points = 500; store.unitPerfects = { U: 1 }; store.lastModified = Date.now(); /* a stale copy, not play: build 298's tallies would read a value set by hand as this device's own new progress */ if(store.tally){ store.tally = {}; store.tallyBase = {}; }
       /* the account in the cloud: the other device's 900 points, 5 hundos */
       const cloud = clone(store); cloud.lifetime.points = 900; cloud.unitPerfects = { U: 5 };
       cloud.lastModified = Date.now() - 60000;
@@ -859,6 +859,161 @@ with sync_playwright() as pw:
           r["newBefore"] == 0 and r["newAfter"] >= 1, str([r["newBefore"], r["newAfter"]]))
     ctx.close()
 
+    # ---- 8f. an old build's overwrite comes back from the high-water mark ----
+    # Build 298. A phone still on 295 or older set() its own copy over the
+    # account at every launch - Hector went from 17,585 XP to 2,330 hours
+    # after 296 shipped - and nothing in a new build can stop an old
+    # build's write. progress/<code>__floor, which old builds never touch,
+    # is read on launch and merged in before anything is pushed. Fails on
+    # 297, which has no floor at all.
+    print("\n8f. an old build's overwrite comes back from the high-water mark")
+    ctx = br.new_context(viewport={"width": 834, "height": 1194})
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.drill.v1', '%s');"
+                        "localStorage.setItem('class26e.synccode','NOVA-2602');}catch(e){}" % STORE)
+    pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
+    pg.evaluate("()=>document.getElementById('splashscreen')?.remove()")
+    r = pg.evaluate("""async ()=>{
+      const wait = ms => new Promise(res => setTimeout(res, ms));
+      const clone = o => JSON.parse(JSON.stringify(o));
+      const writes = [], deletes = []; let cb = null; let floor = null; const floorReads = [];
+      fbDb = { collection: name => ({
+        onSnapshot: () => () => {},
+        doc: id => ({
+          get: () => {
+            if(name === 'progress' && /__floor$/.test(id)){
+              floorReads.push(Date.now());
+              /* slow on purpose: nothing may write the floor before this lands */
+              return new Promise(res => setTimeout(() => res(floor ? { exists: true, data: () => clone(floor) } : { exists: false }), 1500));
+            }
+            return Promise.resolve({ exists: false, metadata: { fromCache: false } });
+          },
+          set: d => { if(name === 'progress') writes.push({ id, at: Date.now(), points: (d.lifetime || {}).points, U: (d.unitPerfects || {}).U, cred: d.creditsApplied }); return Promise.resolve(); },
+          update: () => Promise.resolve(),
+          delete: () => { deletes.push(name + '/' + id); return Promise.resolve(); },
+          onSnapshot: next => { if(name === 'progress' && /^NOVA-/.test(id) && !/__/.test(id)) cb = next; return () => {}; }
+        }) }) };
+      const out = {};
+      /* the old build has knocked the account down to its own copy */
+      syncCode = 'NOVA-2602';
+      store.lifetime.points = 2330; store.unitPerfects = {}; store.creditsApplied = []; store.lastModified = Date.now(); /* a stale copy, not play: build 298's tallies would read a value set by hand as this device's own new progress */ if(store.tally){ store.tally = {}; store.tallyBase = {}; }
+      const server = clone(store);
+      floor = clone(store); floor.lifetime.points = 17585; floor.unitPerfects = { U: 13 }; floor.creditsApplied = ['row:old'];
+      floor.lastModified = Date.now() - 3600000;
+      writes.length = 0;
+      fbReadyDrained = false; firebaseBecameReady();
+      await wait(600);
+      if(cb) cb({ exists: true, metadata: { fromCache: false }, data: () => clone(server) });
+      await wait(400);
+      out.floorWritesBeforeRead = writes.filter(w => /__floor$/.test(w.id)).length;
+      await wait(4200);
+      const prog = writes.filter(w => w.id === 'NOVA-2602'), fl = writes.filter(w => /__floor$/.test(w.id));
+      const lastP = prog[prog.length - 1] || {}, lastF = fl[fl.length - 1] || {};
+      out.restored = { local: store.lifetime.points, localU: (store.unitPerfects || {}).U, cred: store.creditsApplied,
+                       pushed: lastP.points, pushedU: lastP.U, floorPoints: lastF.points, floorReads: floorReads.length,
+                       floorNeverLower: fl.every(w => w.points >= 17585) };
+
+      /* a reset account: the server says there is no document. A floor
+         left behind must not bring it back. */
+      writes.length = 0; cb = null; floorReads.length = 0;
+      syncCode = 'NOVA-2603'; cloudConfirmedFor = '';
+      store.lifetime.points = 0; store.unitPerfects = {}; store.lastModified = Date.now();
+      floor = clone(store); floor.lifetime.points = 9999;
+      attachLiveListener('NOVA-2603'); scheduleCloudPush();
+      await wait(300);
+      if(cb) cb({ exists: false, metadata: { fromCache: false } });
+      await wait(3200);
+      out.reset = { local: store.lifetime.points, floorReads: floorReads.length,
+                    floorWritten: writes.filter(w => w.id === 'NOVA-2603__floor').map(w => w.points) };
+
+      /* and resetting deletes it */
+      syncCode = 'NOVA-2602';
+      try{ resetEverything(); }catch(e){ out.resetErr = String(e); }
+      out.deletes = deletes;
+      return out; }""")
+    check("an old build's overwrite is merged back from the floor on launch",
+          r["restored"]["local"] == 17585 and r["restored"]["localU"] == 13 and "row:old" in (r["restored"]["cred"] or []), str(r["restored"]))
+    check("and the restored account is what goes up, to the account and the floor",
+          r["restored"]["pushed"] == 17585 and r["restored"]["pushedU"] == 13 and r["restored"]["floorPoints"] == 17585, str(r["restored"]))
+    check("the floor is never written before it has been read, and never lower",
+          r["floorWritesBeforeRead"] == 0 and r["restored"]["floorNeverLower"] and r["restored"]["floorReads"] >= 1,
+          str([r["floorWritesBeforeRead"], r["restored"]]))
+    check("a floor never brings a missing (reset) account back",
+          r["reset"]["local"] == 0 and r["reset"]["floorReads"] == 0 and all(p == 0 for p in r["reset"]["floorWritten"]), str(r["reset"]))
+    check("resetting deletes the floor with the account",
+          "progress/NOVA-2602__floor" in r.get("deletes", []), str(r.get("deletes")))
+    ctx.close()
+
+    # ---- 8g. two devices playing at once: both keep what they earned ----
+    # Build 298. "Ensure this PROBLEM is permanently fixed." The merge took
+    # the higher of each count, which is right for two copies of one
+    # history and wrong for two devices that both moved on from it: one
+    # played a 300 XP test while the other played a 200 XP one, and the
+    # 200 was gone. Counts that grow by play are base + one tally per
+    # device now. Fails on 297 and 298-before-this, which end on 1300.
+    print("\n8g. two devices playing at once both keep what they earned")
+    ctx = br.new_context(viewport={"width": 834, "height": 1194})
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % STORE)
+    pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
+    pg.evaluate("()=>document.getElementById('splashscreen')?.remove()")
+    r = pg.evaluate("""async ()=>{
+      const clone = o => JSON.parse(JSON.stringify(o));
+      const out = {};
+      try{
+      fbDb = { collection: () => ({ doc: () => ({ set: () => Promise.resolve(), get: () => Promise.resolve({ exists: false }), update: () => Promise.resolve(), delete: () => Promise.resolve() }) }) };
+      syncCode = '';
+      const hasTally = typeof tallyCapture === 'function';
+      const as = id => { if(hasTally) tallyDeviceIdMemo = id; };
+      const save = () => { persistLocally(); return clone(store); };
+      const load = d => { applyLoadedData(clone(d)); };
+      const view = () => ({ points: store.lifetime.points, hundos: store.lifetime.perfectTests, U: (store.unitPerfects || {}).U, week: store.weekPoints });
+      /* where both devices start: one account, in step */
+      as('devA');
+      store.lifetime.points = 1000; store.lifetime.perfectTests = 5; store.unitPerfects = { U: 5 };
+      rollWeek(); store.weekPoints = 100; store.lastModified = 1000;
+      const X = save();
+      /* device A plays a test: 300 XP, two hundos */
+      as('devA'); load(X); awardXp(300); store.lifetime.perfectTests += 2; store.unitPerfects.U += 2; store.lastModified = 2000;
+      const A = save();
+      /* device B, at the same time: 200 XP, one hundo */
+      as('devB'); load(X); awardXp(200); store.lifetime.perfectTests += 1; store.unitPerfects.U += 1; store.lastModified = 3000;
+      const B = save();
+      /* A hears from B */
+      as('devA'); load(A); syncSameAccount(clone(B)); out.onA = view(); const AM = clone(store);
+      /* B hears from A (its merged copy) */
+      as('devB'); load(B); syncSameAccount(clone(AM)); out.onB = view(); const BM = clone(store);
+      /* and again: nothing changes, and nothing to push */
+      as('devA'); load(AM); const before = JSON.stringify(view()); const g = syncSameAccount(clone(BM));
+      out.echo = { same: JSON.stringify(view()) === before, gained: g };
+      /* a phone on an old build: it drops the tallies and plays 50 */
+      const old = clone(AM); delete old.tally; delete old.tallyBase; old.lifetime.points += 50; old.lastModified = 9000;
+      as('devA'); load(AM); syncSameAccount(clone(old)); out.oldBuild = view();
+      /* an old build that did not play: nothing is counted twice */
+      const old2 = clone(AM); delete old2.tally; delete old2.tallyBase; old2.lastModified = 9500;
+      as('devA'); load(AM); syncSameAccount(clone(old2)); out.oldNoPlay = view();
+      /* a count raised by hand on the server, loaded by both devices,
+         then merged between them: once, not twice */
+      const srv = clone(AM); srv.lifetime.points += 18; srv.lastModified = 10000;
+      as('devA'); load(srv); store.lastModified = 10001; const SA = save();
+      as('devB'); load(srv); store.lastModified = 10002; const SB = save();
+      as('devA'); load(SA); syncSameAccount(clone(SB)); out.server = view();
+      /* a reset leaves no tallies behind */
+      try{ wipeLocalProgressAndSettings(); }catch(e){ try{ resetEverything(); }catch(e2){} }
+      out.afterReset = { tally: Object.keys(store.tally || {}).length, points: store.lifetime.points };
+      } catch(e){ out.threw = String(e && e.stack || e); }
+      return out; }""")
+    check("no error", not r.get("threw"), r.get("threw", ""))
+    want = {"points": 1500, "hundos": 8, "U": 8, "week": 600}
+    check("a 300 XP test on one device and a 200 XP test on the other are both kept: 1000 + 300 + 200, hundos and the week too",
+          r.get("onA") == want, str(r.get("onA")))
+    check("and the other device lands on exactly the same", r.get("onB") == want, str(r.get("onB")))
+    check("merging again changes nothing and has nothing to push", (r.get("echo") or {}).get("same") and not (r.get("echo") or {}).get("gained"), str(r.get("echo")))
+    check("an old build's copy without tallies is read the old way: its 50 counts once, nothing twice",
+          (r.get("oldBuild") or {}).get("points") == 1550, str(r.get("oldBuild")))
+    check("an old build's copy that did not play changes nothing", (r.get("oldNoPlay") or {}).get("points") == 1500, str(r.get("oldNoPlay")))
+    check("a count raised on the server and loaded by both devices is counted once", (r.get("server") or {}).get("points") == 1518, str(r.get("server")))
+    check("a reset leaves no tallies behind", (r.get("afterReset") or {}).get("tally") == 0, str(r.get("afterReset")))
+    ctx.close()
+
     # ---- 7. the sync code never reaches a collection anyone can list ----
     # `leaderboard` and `vrooms` can both be ENUMERATED by anyone - this
     # repo's own firestore-admin.py lists them over plain REST with no
@@ -889,7 +1044,7 @@ with sync_playwright() as pw:
       /* build 296: a session pushes only once the server's copy has been
          read; this section is about WHAT is published, so it starts from
          a confirmed session */
-      if(typeof markCloudConfirmed === 'function') markCloudConfirmed();
+      if(typeof markCloudConfirmed === 'function') markCloudConfirmed(false);
       pushToCloud();
       /* And a Virtual Room, which keys its PARTICIPANTS by the same id
          and lives in a collection that is just as listable. */
