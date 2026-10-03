@@ -9445,27 +9445,52 @@ never "every question") and Marksman 250.
 the threshold from the app for its one-short/exactly-there test and
 pins the decision (500) in one place only.
 
-### Builds 293-294 - Koi Pond is a hundo on the Penal Code
+### Builds 293-295 - Koi Pond is five friends
 
-"Says every unit but needs to change because we will eventually get more
-units.. maybe make it unique." Then, about 293's answer: "too confusing
-and weird. Simple and unique, change it."
-- The requirement is now **"Get a hundo on the Penal Code"** (`KOI_UNIT`).
-  It is the biggest unit, at 340 questions. Adding units doesn't change
-  it, and nothing else asks for it. When this shipped, one account in
-  the class had done it.
-- The short version (slides 0-85) never counts, because
-  `recordUnitPerfectIfEligible()` only credits a run that covers the
-  whole unit. The note says so and reads the question count from
-  `QUESTIONS`. A banner `note` may be a function.
-- The banner's id stays `tests500`.
-- **Two ideas were tried and dropped:**
-  - "Under 70% on a unit, then a hundo on it" never shipped. A census
-    showed the strongest accounts never score under 70% on a whole unit.
-  - "The same unit on 10 different days" shipped in 293 and was rejected
-    as confusing. Its `unitHundoDays` code was taken back out in 294.
-    Any copies of that field already in cloud documents are simply
-    ignored.
-- **The lesson: a challenge has to read in one line.** If it needs a note
-  to explain what counts, it is the wrong challenge.
-- `check-behaviour` 64 holds this, and it fails on 293.
+The banner's requirement was rejected three times in a row:
+- "Every unit" moved each time a unit was added.
+- "The same unit on 10 different days" (293) was "too confusing and
+  weird".
+- "A hundo on the Penal Code" (294) was "not a good one".
+
+The fourth came from a list Madison picked from: **"Add 5 friends"**
+(`KOI_FRIENDS`). The ID stays `tests500`.
+
+**How the count works:**
+- `friendsCountBest()` keeps the best friend count ever held, in
+  `store.friendsBest`.
+- That matters because `friendPublicIds()` reads the rankings for the
+  other half of each friendship, so before they load the live count
+  comes up short. Without the stored best, the banner would flicker
+  locked on every cold start.
+- A friend counts once they accept.
+- At ship time the most anybody had was four.
+
+**294's unlock is taken back:** `revokePenalKoi295()` runs once
+(`koiRevoked295`) through the `seedChallenges289()` hook.
+- It removes `tests500` from `unlocksShown`, so the real five-friends
+  unlock still gets its own pop-up.
+- It takes the banner off anybody wearing it.
+- The rule change itself is what locks it, so nobody gets a pop-up for
+  the Penal Code version.
+
+**Lessons:**
+- **After two rejected guesses, offer a list.** Picking a "unique"
+  challenge alone failed three times. Several clearly different
+  options, each one line long, got an answer straight away.
+- **Measure before shipping.** "Under 70% then a hundo" never shipped,
+  because a census showed the strongest accounts never score under 70%.
+- **The "ten days" version's code is gone.** Copies of its
+  `unitHundoDays` field still in cloud documents are ignored.
+
+`check-behaviour` 64 covers all of this and fails on 294.
+
+**The road-map motion check (b250) measured the tab bar.** On Oct 3 it
+went red on 294 too, with nothing in the app changed. It had scrolled
+each node "into view", which can leave a node at the bottom edge under
+the tab bar, so a still bar read as a still emblem. It now centres each
+node first, and samples 10 frames over about 4 seconds instead of 6
+over about 2.4, because Silver's loop is slow (centred, the old window
+measured it at 4.4-5.7 against a 4.5 bar). The lowest node now measures
+about 11. **When a check fails on a build it passed on yesterday, look
+at what it actually photographed before touching the app.**

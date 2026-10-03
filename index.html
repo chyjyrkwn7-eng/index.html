@@ -32333,8 +32333,8 @@ const MARKSMAN_RUN = 250;
 /* 500, not 300 (build 292): "300 questions in a single day is weak."
    The feat key stays busyday300 - it is an id, like streak100. */
 const HIVE_DAY = 500;
-/* The Koi Pond banner's unit (build 294). */
-const KOI_UNIT = "Penal Code";
+/* The Koi Pond banner (build 295): this many friends. */
+const KOI_FRIENDS = 5;
 const CHARACTER_FEATS = {
   /* THE BEST RUN, NOT THE CURRENT ONE (build 289): "ensure all the
      rewards/unlocks are accurate to what people have done". This read
@@ -32555,6 +32555,7 @@ function unitStreakBest(){ return Math.max(store.unitHundoStreakBest || 0, store
      nothing kept a best before, and the current run is the most that can
      honestly be said. */
 function seedChallenges289(){
+  try{ revokePenalKoi295(); }catch(e){}
   if(store.challengeSeed289) return;
   let misses = 0;
   try{ Object.keys(store.stats || {}).forEach(k => { const st = store.stats[k]; misses += (st && Number(st.m)) || 0; }); }catch(e){}
@@ -36439,7 +36440,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               mysteryColorsFound: { red: false, orange: false, yellow: false, violet: false, white: false },
               testsUntilMystery: null, flareNextTestAt: 0,
               savedCodePrompts: 0, savedCodeSaved: false,
-              dailyCorrectStreak: 0, dailyCorrectBest: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bestTestStreak: 0,
+              dailyCorrectStreak: 0, dailyCorrectBest: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, friendsBest: 0, koiRevoked295: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bestTestStreak: 0,
               weeklyWins: 0, weeklyTop3: 0, retakenQuestions: 0, hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, unlocksShown: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
               vrMatches: 0, vrWins: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
               fullTestsSeeded: false, practiceExamPerfect: false, banner: "", starfallKept: false, creditsApplied: [],
@@ -36661,6 +36662,10 @@ function applyLoadedData(got){
     ? { week: got.weekRankSeen.week, rank: got.weekRankSeen.rank } : null;
   store.unitHundoStreak = typeof got.unitHundoStreak === "number" ? got.unitHundoStreak : 0;
   store.unitHundoStreakUnits = Array.isArray(got.unitHundoStreakUnits) ? got.unitHundoStreakUnits.slice() : [];
+  /* build 295: Koi Pond's friend count, and the one-time take-back of
+     294's Penal Code unlock (false for an account that predates it) */
+  store.friendsBest = typeof got.friendsBest === "number" ? got.friendsBest : 0;
+  store.koiRevoked295 = got.koiRevoked295 === true;
   store.practiceTestPassed = got.practiceTestPassed === true;
   store.bigTestPassed = got.bigTestPassed === true;
   store.bigTest450Passed = got.bigTest450Passed === true;
@@ -38066,6 +38071,7 @@ function wipeLocalProgressAndSettings(){
   store.dailyCorrectStreak = 0; store.dailyCorrectBest = 0; store.unitHundoStreakBest = 0; store.challengeSeed289 = true; store.dayAnswered = null; store.dayAnsweredBest = 0;
   store.unitHundoStreak = 0;
   store.unitHundoStreakUnits = [];
+  store.friendsBest = 0; store.koiRevoked295 = true;
   store.practiceTestPassed = false;
   store.bigTestPassed = false;
   store.bigTest450Passed = false;
@@ -38787,7 +38793,7 @@ function mergeLeavingAccount(src, note){
   store.testHistory = (store.testHistory || []).concat(src.testHistory || [])
     .sort((a, b) => num(b && b.playedAt) - num(a && a.playedAt)).slice(0, 20);
   ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions"].forEach(k => { store[k] = num(store[k]) + num(src[k]); });
-  ["dailyCorrectStreak", "hundoDayBest", "bestTestStreak", "unitHundoStreak", "dailyCorrectBest", "unitHundoStreakBest", "dayAnsweredBest"].forEach(k => { store[k] = Math.max(num(store[k]), num(src[k])); });
+  ["dailyCorrectStreak", "hundoDayBest", "bestTestStreak", "unitHundoStreak", "dailyCorrectBest", "unitHundoStreakBest", "dayAnsweredBest", "friendsBest"].forEach(k => { store[k] = Math.max(num(store[k]), num(src[k])); });
   ["vrCounted", "vrTop3Rooms"].forEach(k => {
     const a = Array.isArray(store[k]) ? store[k] : [];
     store[k] = a.concat((src[k] || []).filter(x => a.indexOf(x) < 0)).slice(-300);
@@ -38975,11 +38981,11 @@ function mergeSameAccount(dst, src){
     }
     if(a.some(h => h && !theirs.has(key(h)))) res.otherHadLess = true; }
   ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "hundoDayBest", "bestTestStreak",
-   "dailyCorrectBest", "unitHundoStreakBest", "dayAnsweredBest"]
+   "dailyCorrectBest", "unitHundoStreakBest", "dayAnsweredBest", "friendsBest"]
     .forEach(k => maxInto(dst, k, src[k]));
   ["vrCounted", "vrTop3Rooms", "legacyChars", "creditsApplied"].forEach(k => unionArr(k));
   ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "supernovaAchieved",
-   "starfallKept", "onboardingComplete", "fullTestsSeeded"].forEach(k => orInto(dst, k, src[k]));
+   "starfallKept", "onboardingComplete", "fullTestsSeeded", "koiRevoked295"].forEach(k => orInto(dst, k, src[k]));
   if(src.mysteryColorsFound && typeof src.mysteryColorsFound === "object") orMap("mysteryColorsFound");
   /* this week's board: only where both copies are on the same week */
   if(src.weekKey && src.weekKey === dst.weekKey) maxInto(dst, "weekPoints", src.weekPoints);
@@ -41299,17 +41305,17 @@ const BANNERS = [
      volume: no amount of one favourite unit gets there. The most anybody
      had was eight of sixteen. The id stays `tests500` - it is only a
      name, and it is what a person already wearing it has saved. */
-  /* KOI POND IS THE PENAL CODE (build 294). "Every unit" moved each time
-     a unit was added; "the same unit on ten different days" (293) was
-     "too confusing and weird. Simple and unique." The biggest unit in the
-     app, all of it, no misses: one line, nothing else asks for it, and a
-     new unit does not move it. The short version (slides 0-85) is not the
-     whole unit, so it never counts - recordUnitPerfectIfEligible only
-     credits a run covering the unit in full. */
+  /* KOI POND IS FIVE FRIENDS (build 295). "Every unit" moved whenever a
+     unit was added; "the same unit on ten different days" (293) was
+     "confusing and weird"; "a hundo on the Penal Code" (294) was "not a
+     good one". Picked by Madison from a list: koi swim together, and
+     nothing else in the app counts friends. It counts the best number of
+     friends ever held (friendsCountBest), so it does not flicker locked
+     while the rankings - where half of each friendship lives - load. */
   { id: "tests500", name: "Koi Pond",
-    label: "Get a hundo on the " + KOI_UNIT,
-    have: () => ((store.unitPerfects || {})[KOI_UNIT] > 0 ? 1 : 0), need: 1,
-    note: () => "All " + QUESTIONS.filter(q => (q.topic || "").trim() === KOI_UNIT).length + " questions in one run, every one right. The short version does not count." },
+    label: "Add " + KOI_FRIENDS + " friends",
+    have: () => Math.min(friendsCountBest(), KOI_FRIENDS), need: KOI_FRIENDS,
+    note: "A friend counts once they accept." },
   { id: "hundos100", name: "Summit",
     label: "Earn 100 hundos", have: () => hundosOf(store), need: 100 },
   { id: "hundos250", name: "Sky Temple",
@@ -41365,6 +41371,29 @@ const BANNERS = [
 function fullTestsNote(){
   return "A full-length test has every question in each unit you picked. Shortened tests count on your Stats tab (" +
     testsCompletedOf(store).toLocaleString() + " so far) but not here.";
+}
+/* The most friends this account has had at once. friendPublicIds() reads
+   the rankings for the other half of each friendship, so before they load
+   it comes up short; the best on record never does. */
+function friendsCountBest(){
+  let n = 0;
+  try{ n = friendPublicIds().length; }catch(e){}
+  if(n > (Number(store.friendsBest) || 0)) store.friendsBest = n;
+  return Math.max(Number(store.friendsBest) || 0, n);
+}
+/* ONE-TIME (build 295): build 294's Koi Pond (a Penal Code hundo) is
+   taken back. "If someone unlocked, remove that unlock. Remove it so they
+   don't get the pop up either." The rule change already locks it; this
+   clears the record that it was announced, so the five-friends unlock
+   gets its own pop-up when it is really earned, and takes it off anybody
+   wearing it. */
+function revokePenalKoi295(){
+  if(store.koiRevoked295) return;
+  const u = store.unlocksShown;
+  if(u && Array.isArray(u.banners)) u.banners = u.banners.filter(id => id !== "tests500");
+  if(store.banner === "tests500") store.banner = "";
+  store.koiRevoked295 = true;
+  saveStore();
 }
 function unitsWithHundo(){
   const up = store.unitPerfects || {};
@@ -57961,7 +57990,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-02-294";
+const APP_BUILD = "2026-10-03-295";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;

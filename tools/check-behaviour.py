@@ -4342,10 +4342,17 @@ def check_b250(br):
     nodes = pg.locator(".rankmap-node")
     for i in range(nodes.count()):
         el = nodes.nth(i)
-        el.scroll_into_view_if_needed()
+        # CENTRED, not merely "in view" (fixed in 295): scrolled just far
+        # enough, a node can stop at the bottom edge under the tab bar,
+        # and then this measured the bar - a still bar read as a still
+        # emblem, and failed on a day when nothing in the app had changed.
+        el.evaluate("e => e.scrollIntoView({ block: 'center', behavior: 'instant' })")
         pg.wait_for_timeout(250)
         frames = []
-        for _ in range(6):
+        # 10 frames over ~4s (was 6 over ~2.4s, fixed in 295): Silver's
+        # loop is slow, and centred it measured 4.4-5.7 against a 4.5 bar
+        # depending on where in its cycle the window fell.
+        for _ in range(10):
             frames.append(Image.open(io.BytesIO(el.screenshot())).convert("RGB"))
             pg.wait_for_timeout(400)
         moved.append(round(max(sum(ImageStat.Stat(ImageChops.difference(frames[0], f)).mean) for f in frames[1:]), 1))
@@ -6066,10 +6073,10 @@ def check_b289(br):
         out.edit = eb ? parseFloat(getComputedStyle(eb).fontSize) : 0;
       } catch(e){ out.threw = String(e && e.stack || e); }
       return out; }""")
-    # REVISED IN 294: Koi Pond is a hundo on the Penal Code (was every
-    # unit, then one unit on ten days in 293).
-    check("the reworked banners: Midnight Oil 35 hours, Neon City 25 matches, Phoenix 7 units in a row, Koi Pond one Penal Code hundo",
-          r.get("needs") == [35, 25, 7, 1], r)
+    # REVISED IN 295: Koi Pond is five friends (was every unit, then one
+    # unit on ten days in 293, then a Penal Code hundo in 294).
+    check("the reworked banners: Midnight Oil 35 hours, Neon City 25 matches, Phoenix 7 units in a row, Koi Pond 5 friends",
+          r.get("needs") == [35, 25, 7, 5], r)
     check("the Koi is seven study days IN A ROW (six, or seven with a gap, is not enough)",
           r.get("koiFeat") == "studyrun7" and r.get("koiSix") is True and r.get("koiSeven") is True, r)
     check("Phoenix and the Detective keep their best run, so a later slip takes nothing back",
@@ -6283,47 +6290,52 @@ def check_b291(br):
     ctx.close()
 
 
-def check_b294(br):
-    """Build 294: "that koi pond challenge is too confusing and weird.
-    Simple and unique, change it." Koi Pond is a hundo on the Penal Code:
-    one line, the target does not follow the number of units, the short
-    version never counts, and a whole-unit Penal Code hundo earns it.
-    Written against 293, where it fails."""
-    print("\n64. build 294: Koi Pond is a hundo on the Penal Code")
+def check_b295(br):
+    """Build 295: "Naw get a hundo on the penal code is not a good one.
+    Change it. If someone unlocked, remove that unlock. Remove it so they
+    don't get the pop up either." Koi Pond is five friends, picked from a
+    list. A Penal Code hundo no longer earns it; anyone shown the 294
+    unlock has that record cleared once and stops wearing it; the friend
+    count keeps its best so the banner does not flicker locked before the
+    rankings load. Written against 294, where it fails."""
+    print("\n64. build 295: Koi Pond is five friends; 294's unlock taken back")
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""async ()=>{ const out = {};
       try{
         document.getElementById('pushing-update')?.remove();
         const b = BANNERS.find(x => x.id === 'tests500');
         out.label = b.label; out.need = b.need;
-        out.note = typeof b.note === 'function' ? b.note() : b.note;
-        out.needWithMoreUnits = (() => { try{ QUESTIONS.push({ topic: 'A New Unit', src: 'x' }); return BANNERS.find(x => x.id === 'tests500').need; } finally { QUESTIONS.pop(); } })();
-        store.unitPerfects = {};
-        const P = 'Penal Code';
-        out.none = bannerEarned('tests500');
-        /* the short version: not the whole unit, so no hundo */
-        cfg.units = [P]; cfg.source = 'all'; cfg.versions = { [P]: 'test' }; runLabel = P;
-        order = QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === P).slice(0, 56);
-        recordUnitPerfectIfEligible(100); out.short = bannerEarned('tests500');
-        /* another unit's hundo does nothing */
-        store.unitPerfects['Identity Crimes'] = 3; out.other = bannerEarned('tests500');
-        /* the whole unit */
-        cfg.versions = {}; order = QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === P);
-        out.total = order.length;
-        recordUnitPerfectIfEligible(100); out.whole = bannerEarned('tests500');
-        const d = bannerDetail('tests500'); out.detail = d && (d.need || d.label || '') + ' ' + (d.note || '');
+        const ids = n => Array.from({ length: n }, (_, i) => 'pub-test-' + i);
+        store.friendsBest = 0; leaderboardRows = [];
+        store.unitPerfects = Object.assign({}, store.unitPerfects, { 'Penal Code': 3 });
+        store.friendsIn = ids(4); out.four = bannerEarned('tests500');
+        store.friendsIn = ids(5); out.five = bannerEarned('tests500');
+        store.friendsIn = []; out.kept = bannerEarned('tests500');
+        /* 294's unlock, taken back once */
+        store.friendsBest = 0;
+        store.unlocksShown = { chars: [], banners: ['tests500', 'tests100'] };
+        store.banner = 'tests500'; store.koiRevoked295 = false;
+        seedChallenges289();
+        out.revoked = { shown: store.unlocksShown.banners.slice(), banner: store.banner, flag: store.koiRevoked295 };
+        store.unlocksShown.banners.push('tests500'); seedChallenges289();
+        out.once = store.unlocksShown.banners.indexOf('tests500') >= 0;
+        out.pending = (pendingHomeUnlocks().banners || []).indexOf('tests500') >= 0;
+        const d = JSON.parse(JSON.stringify(store)); delete d.koiRevoked295; delete d.friendsBest;
+        applyLoadedData(d); out.defaulted = [store.koiRevoked295, store.friendsBest];
       } catch(e){ out.threw = String(e && e.stack || e); }
       return out; }""")
     if r.get("threw"):
         print("   threw:", r["threw"][:400])
-    check("Koi Pond says one simple thing: a hundo on the Penal Code",
-          r.get("label") == "Get a hundo on the Penal Code" and r.get("need") == 1, [r.get("label"), r.get("need")])
-    check("the note gives the real question count and says the short version does not count",
-          ("All %s questions" % r.get("total")) in str(r.get("note")) and "short version" in str(r.get("note")), r.get("note"))
-    check("adding a unit to the app does not move the target", r.get("needWithMoreUnits") == 1, r.get("needWithMoreUnits"))
-    check("nothing, the short version, or another unit's hundo does not earn it",
-          r.get("none") is False and r.get("short") is False and r.get("other") is False, [r.get("none"), r.get("short"), r.get("other")])
-    check("a whole Penal Code hundo earns it", r.get("whole") is True, r.get("whole"))
+    check("Koi Pond says one simple thing: add 5 friends", r.get("label") == "Add 5 friends" and r.get("need") == 5, [r.get("label"), r.get("need")])
+    check("four friends and a Penal Code hundo do not earn it; five do", r.get("four") is False and r.get("five") is True, [r.get("four"), r.get("five")])
+    check("it keeps the best count, so it does not flicker locked while the rankings load", r.get("kept") is True, r.get("kept"))
+    rv = r.get("revoked") or {}
+    check("294's unlock is taken back: no longer recorded as shown, no longer worn",
+          rv.get("shown") == ["tests100"] and rv.get("banner") == "" and rv.get("flag") is True, rv)
+    check("the take-back runs once, and no pop-up is queued for an unlock nobody holds",
+          r.get("once") is True and r.get("pending") is False, [r.get("once"), r.get("pending")])
+    check("an account from an older build is defaulted unrevoked, with no friends on record",
+          r.get("defaulted") == [False, 0], r.get("defaulted"))
     ctx.close()
 
 
@@ -6411,7 +6423,7 @@ def main():
             check_b289(br)
             check_b290(br)
             check_b291(br)
-            check_b294(br)
+            check_b295(br)
         finally:
             br.close()
     SERVER.shutdown()
