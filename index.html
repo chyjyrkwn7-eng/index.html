@@ -19412,6 +19412,15 @@
      and Main menu side by side under it. */
   .actions.rs-final{ flex-wrap:wrap; }
   .actions.rs-final .rs-wide{ flex:1 1 100%; }
+  /* ROOM BETWEEN THEM (build 304). "The continue to review, re run, and
+     main button are kinda spaced a little close together ... less of a
+     chance to accidentally click the wrong thing." The shared .actions
+     gap is .6rem - about 10px between Continue to review and Re-run, and
+     between Re-run and Main menu side by side. Three different outcomes
+     a thumb's width apart; these get 1rem between the rows, .9rem across,
+     and a taller target each. */
+  .actions.rs-final{ gap:1.15rem .9rem; align-items:center; }
+  .actions.rs-final > button{ min-height:3.15rem; }
 
   /* ---- ANSWER STREAKS, DURING A TEST ----
      At the TOP, asked for directly, just under the top bar - below where

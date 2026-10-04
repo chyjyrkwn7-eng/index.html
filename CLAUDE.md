@@ -10580,6 +10580,16 @@ default theme the pill is white. The start sheet's Begin wears the same
 raised recipe as the tab Start, the same halo and sweep, and a play mark
 drawn as a CSS mask so its words can still be set with `textContent`.
 
+**The results buttons have room between them** (*"kinda spaced a little
+close together ... less of a chance to accidentally click the wrong
+thing"*). `.actions.rs-final` was the shared `.6rem` gap - ~10px between
+three different outcomes. It is `1.15rem` between rows and `.9rem` across
+(measured 18px / 14px on both reference devices), each button at least
+`3.15rem`, and `align-items:center`. Do not push one button down with a
+margin to make room: a margin on Re-run alone left it 2px lower than Main
+menu beside it. The review screen's Retake / Back to results use the same
+class and get the same room.
+
 Gates: `check-behaviour` section 74 (`check_b304`), written against 303 and
 red there on every group; section 75 (`check_b304_polish`) for the second
 list, red on 303 on every check of the change.
