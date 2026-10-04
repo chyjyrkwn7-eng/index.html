@@ -1747,7 +1747,17 @@
      matrix, which is what the sweep caught.
      Excluded by name for the same reason as the others: a bar anchored
      to the screen edge has no use for an entrance that moves it. */
-  #stage > *:not(.floatbtn):not(:has(.floatbtn)):not(.vroom-setup-bar){ animation:screen-fade-in .3s ease-out; }
+  /* ---- NO ENTRANCE MOVEMENT (build 302) ----
+     "There's a slight lag when opening bottom tabs and the lag also gives
+     it an effect where the page slightly laps up or down. Not smooth at
+     all." That lap WAS this rule: every mounted screen was drawn 6px low,
+     held there for two frames (the pause below) and then glided up over
+     300ms - dragging the whole page under the tab bar's and header's
+     backdrop blur, the most expensive thing iOS composites, on every
+     tab switch. A screen now simply appears where it belongs, the way a
+     native tab bar works. The keyframes are left defined because inline
+     overrides elsewhere still name them; nothing plays them. */
+  #stage > *:not(.floatbtn):not(:has(.floatbtn)):not(.vroom-setup-bar){ animation:none; }
   /* PROMOTING THE QUESTION PANEL'S LAYER UP FRONT WAS TRIED AND
      REJECTED, with numbers, so nobody spends the afternoon on it
      again. The idea was sound: advanceWithSlide() sets will-change at
@@ -3338,6 +3348,25 @@
     box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
   }
   .cal-daycard-empty{ background:transparent; border-style:dashed; }
+  /* A day with nothing on (build 302): a quieter card, same shape. */
+  .cal-daycard-none .cal-row-text{ color:var(--soft); }
+  .cal-grid-hint{ margin:.7rem 0 0; font-size:.74rem; color:var(--soft); text-align:center; }
+  /* No-class days are buttons too now - quiet until picked. */
+  .cal-cell-free{ cursor:pointer; }
+  /* ---- TODAY, AND THE DAY YOU PICKED, ARE TWO DIFFERENT MARKS (build 302) ----
+     Today unpicked carried a tint, a glow and white type - it looked
+     selected even when another day was, which is how "I can't click
+     today" read. Unpicked, today is now its ring alone; picked, it is the
+     gradient fill below, and any other picked day is the accent fill. */
+  .cal-cell-today:not(.cal-cell-sel),
+  [data-layout="modern"] .cal-cell-today:not(.cal-cell-sel),
+  [data-theme="dark"][data-layout="modern"] .cal-cell-today:not(.cal-cell-sel){
+    background:transparent; box-shadow:none; color:var(--ink);
+    border:2px solid var(--theme-c1);
+  }
+  [data-theme="dark"][data-layout="modern"] .cal-cell-today.cal-cell-class:not(.cal-cell-sel){
+    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4);
+  }
   .cal-grid-legend{
     display:flex; flex-wrap:wrap; gap:.25rem .9rem; margin:.8rem 0 0;
     font-size:.72rem; color:var(--soft);
@@ -8015,6 +8044,20 @@
     transform:translateY(-8px);
   }
   .toast-flag.show{ transform:translateY(0); }
+  .flag-note{
+    position:fixed; z-index:70; pointer-events:none;
+    display:inline-flex; align-items:center; gap:.35rem;
+    padding:.3rem 0; text-shadow:0 1px 6px rgba(0,0,0,.55);
+    color:#AEB7C2; font-size:.82rem; font-weight:600; letter-spacing:.01em; white-space:nowrap;
+    opacity:0; transform:translateX(6px); transition:opacity .18s ease, transform .18s ease;
+  }
+  .flag-note.show{ opacity:1; transform:translateX(0); }
+  .flag-note svg{ width:.95rem; height:.95rem; flex:none; }
+  .flag-note .fn-pole{ stroke:currentColor; stroke-width:2; stroke-linecap:round; fill:none; }
+  .flag-note .fn-banner{ fill:none; stroke:currentColor; stroke-width:1.8; stroke-linejoin:round; }
+  .flag-note.has-back{ background:rgba(18,22,28,.94); padding:.3rem .6rem; border-radius:8px; text-shadow:none; }
+  .flag-note.is-on{ color:#F5C518; }
+  .flag-note.is-on .fn-banner{ fill:#F5C518; }
   .confetti-piece{
     position:absolute; top:-12px; width:7px; height:13px; opacity:.9; border-radius:1px;
     animation-name:confetti-fall; animation-timing-function:cubic-bezier(.25,.46,.45,.94);
@@ -10964,9 +11007,16 @@
   @media (max-width:639px){
     html.has-bottom-inset .homeversion, html.has-bottom-inset .homeversion.homeversion-btn{
       display:block; z-index:1;
-      left:max(1.1rem, env(safe-area-inset-left, 0px));
+      /* CLEAR OF THE ROUNDED CORNER (build 302). "It's off the screen and
+         barely visible" on a 17 Pro Max: at 1.1rem from the edge and ~15px
+         up, the label sat inside the display's rounded corner (a radius
+         of ~55-62pt on a current iPhone), which cuts the "v" off - and at
+         half opacity what was left barely read. 2.6rem in clears a 62pt
+         corner by ~20px at the text's lowest point on every phone in the
+         matrix; check-fixes models the corner and holds it there. */
+      left:max(2.6rem, calc(env(safe-area-inset-left, 0px) + 1.1rem));
       bottom:calc((env(safe-area-inset-bottom, 0px) + .6rem - 1.15em) / 2);
-      font-size:.7rem; line-height:1.15em; opacity:.5;
+      font-size:.72rem; line-height:1.15em; opacity:.72;
       padding:.45rem .6rem; margin:-.45rem -.6rem;
     }
   }
@@ -11777,12 +11827,15 @@
     background:repeating-linear-gradient(to bottom, rgba(255,255,255,.16) 0 7px, transparent 7px 13px);
     z-index:0; overflow:hidden;
   }
+  /* SLOWER (build 302): "the progress bar on the road map moves fast, slow
+     that down some so it's cooler" - 1.4s to 2.4s here, 2.2s to 3.2s for
+     the climb, and runRankMapCelebration() waits the extra time. */
   .rankmap-roadfill{
     position:absolute; inset:0; transform-origin:50% 0%; transform:scaleY(var(--lit, 0));
     /* From the rank above to the rank below (build 236). */
     background:linear-gradient(to bottom, var(--from-color, var(--rank-color)), var(--rank-color));
     box-shadow:0 0 10px color-mix(in srgb, var(--rank-color) 70%, transparent);
-    transition:transform 1.4s cubic-bezier(.2,.8,.2,1) .2s;
+    transition:transform 2.4s cubic-bezier(.22,.7,.2,1) .25s;
   }
   /* The light at the end of the fill, on the stretch you are climbing.
      IT RIDES THE SAME TRANSFORM AS THE FILL (build 268): "the circle
@@ -11801,7 +11854,7 @@
     position:absolute; z-index:1; left:calc(var(--node) / 2); width:0; pointer-events:none;
     top:calc(var(--node) / 2); bottom:calc(-1 * var(--node) / 2);
     transform:translateY(calc(var(--tip, 0) * 100%));
-    transition:transform 1.4s cubic-bezier(.2,.8,.2,1) .2s;
+    transition:transform 2.4s cubic-bezier(.22,.7,.2,1) .25s;
   }
   .rankmap-roadtip-dot{
     position:absolute; left:0; top:0; width:14px; height:14px; margin:-7px 0 0 -7px; border-radius:50%;
@@ -11982,6 +12035,14 @@
        spins a little fast". The whirl 3s -> 5.5s a turn and everything
        else about a third slower; still the most motion below Supernova. */
     .rank-emblem-svg.rk-k-elite .rk-spin.rk-quick{ animation-duration:5.5s; }
+    /* THE SPIN QUICKENS UP THE TOP OF THE LADDER (build 302): Platinum's
+       young spiral one turn in 24s, Sapphire's galaxy 12s ("slowly
+       spinning as well, similar to amethyst just much slower but still
+       noticeable"), Amethyst's whirl 5.5s. The same speeds on Home - see
+       rk-sym2/rk-sym4 in recordRankEmblemFrames(). */
+    .rank-emblem-svg.rk-k-adept .rk-spin.rk-quick.rk-sym2{ animation-duration:12s; }
+    .rank-emblem-svg.rk-k-vanguard .rk-spin.rk-quick.rk-sym4{ animation-duration:24s; }
+    .rank-emblem-svg.rk-k-ranger .rk-twinkle.rk-soft{ animation-name:rk-twinkle-soft; animation-duration:3.1s; }
     .rank-emblem-svg.rk-k-elite .rk-turn.rk-quick{ animation-duration:12s; }
     .rank-emblem-svg.rk-k-elite .rk-turn.rk-back.rk-quick{ animation-duration:15s; }
     .rank-emblem-svg.rk-k-elite .rk-flare{ animation-name:rk-jet; animation-duration:1.5s; }
@@ -12147,11 +12208,11 @@
   /* The climb since you last looked (build 244): the road runs slowly
      from where it was to where you are, and the light at its end swells
      while it moves. */
-  .rankmap-stop.is-climbing .rankmap-roadfill{ transition:transform 2.2s cubic-bezier(.3,.7,.2,1); }
-  .rankmap-stop.is-climbing .rankmap-roadtip{ transition:transform 2.2s cubic-bezier(.3,.7,.2,1); }
-  .rankmap-roadtip.is-climbing .rankmap-roadtip-dot{ animation:rankmap-tip-swell 2.2s ease-in-out both; }
+  .rankmap-stop.is-climbing .rankmap-roadfill{ transition:transform 3.2s cubic-bezier(.3,.7,.2,1); }
+  .rankmap-stop.is-climbing .rankmap-roadtip{ transition:transform 3.2s cubic-bezier(.3,.7,.2,1); }
+  .rankmap-roadtip.is-climbing .rankmap-roadtip-dot{ animation:rankmap-tip-swell 3.2s ease-in-out both; }
   @keyframes rankmap-tip-swell{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.6); } }
-  .rankmap-stop.is-climbing .rankmap-meter .rankcard-meterfill{ transition-duration:2.2s; }
+  .rankmap-stop.is-climbing .rankmap-meter .rankcard-meterfill{ transition-duration:3.2s; }
   [data-reduce-motion="true"] .rankmap-sparks, [data-reduce-motion="true"] .rankmap-flash{ display:none; }
   .rankmap-stop.is-celebrating .rankmap-card{ box-shadow:0 0 34px -4px color-mix(in srgb, var(--rank-color) 85%, transparent); }
   .rankmap-card{ position:relative; }
@@ -13927,11 +13988,17 @@
   }
 
   /* ---- the poses that hold with no animation at all ---- */
-  /* Asleep: every other loop stops - idle and reaction alike - and the
-     eyes shut, the head goes down, the lights go low. The :is(#cx-none)
-     is a specificity lift and matches nothing: it puts this rule above
-     every live and reaction rule, whatever else is on the ancestor. */
-  .char-sleep .avatarchar-svg :is(#cx-none, [class*="cx-"], .avatarchar-scan, .avatarchar-twinkle){ animation:none; }
+  /* Asleep: the eyes shut, the head goes down, the lights go low - and
+     EVERYTHING ELSE KEEPS MOVING (build 302). This used to stop every
+     loop, idle and reaction alike, background scene included: "when the
+     z's are showing, the character and the character background lose
+     the animation". A sleeping character is still alive. So only the
+     parts the sleeping pose owns are held - eyes, head, body, shades -
+     and setCharState() gives a sleeper char-live as well, so the scene
+     behind it, its effects and its glow run exactly as they do awake.
+     The :is(#cx-none) is a specificity lift and matches nothing: it
+     puts this rule above every live and reaction rule. */
+  .char-sleep .avatarchar-svg :is(#cx-none, .cx-eyes, .cx-eyes-closed, .cx-head, .cx-body, .cx-fx-shades){ animation:none; }
   .char-sleep .avatarchar-svg .cx-eyes{ opacity:0; }
   .char-sleep .avatarchar-svg .cx-eyes-closed{ opacity:1; }
   .char-sleep .avatarchar-svg .cx-head{ transform:translateY(.8px) rotate(5deg); }
@@ -15879,6 +15946,8 @@
   .profile-level-row .profile-level-num.profile-statplate{ flex:0 0 auto; min-width:5.2rem; }
   .profile-level-side{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; justify-content:center; gap:.2rem; }
   .profile-level-sidetop{ font-size:.95rem; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; }
+  .profile-level-total{ margin:.45rem 0 0; padding-top:.45rem; border-top:1px solid rgba(255,255,255,.07);
+    font-size:.76rem; font-weight:600; color:var(--soft); font-variant-numeric:tabular-nums; }
   .profile-level-sidesub{ font-size:.76rem; font-weight:600; color:var(--soft); font-variant-numeric:tabular-nums; }
   .profile-badgesect{
     display:block; width:100%; text-align:left; font:inherit; color:inherit; cursor:pointer;
@@ -16047,6 +16116,26 @@
   }
   .xpbar-fill::after{ content:""; position:absolute; inset:0; border-radius:inherit; background:rgba(255,255,255,.16);
     opacity:0; animation:xp-pump 4.4s ease-in-out infinite; }
+  /* ---- A SLOW LIGHT ALONG THE BAR (build 302) ----
+     "Make sure there's still a constant effect to that xp bar that's
+     subtle but smooth." The pump alone is a change of brightness and
+     reads as nothing at a glance. This is a soft band of light that
+     glides along the FILLED part every few seconds and rests between.
+     Sized and placed off --fill (setBarFill), so it travels the lit
+     length whatever it is, and moved by transform alone: no repaint per
+     frame, which is what took the old sheen off this bar. */
+  .xpbar-fill.sbar::before{
+    content:""; position:absolute; top:0; bottom:0; z-index:1; pointer-events:none;
+    left:calc(100% - var(--fill, 0%)); width:calc(var(--fill, 0%) * .42);
+    background:linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.34) 50%, rgba(255,255,255,0));
+    transform:translate3d(-100%, 0, 0); will-change:transform;
+    animation:xp-glide 5.2s cubic-bezier(.45,.05,.3,1) 1.6s infinite;
+  }
+  @keyframes xp-glide{ 0%{ transform:translate3d(-100%, 0, 0); } 48%, 100%{ transform:translate3d(240%, 0, 0); } }
+  /* The app's own Reduce motion switch: its rule is "*", and "*" does not
+     match a pseudo-element, so the pump and the glide had to be named. */
+  [data-reduce-motion="true"] .xpbar-fill::after,
+  [data-reduce-motion="true"] .xpbar-fill::before{ animation:none !important; }
   /* ---- THE RANK TAB'S BOX AND RING, ON PROFILE AND BADGES (build 282) ----
      See buildStatRing. .rankhero-gauge supplies the dark rounded box and
      --ring; these rules only undo what the Profile card's own sections
@@ -16102,6 +16191,22 @@
     .profile-hero .profile-rankplate .profile-rankcoin{ width:3.9rem; height:3.9rem; }
     .profile-hero .profile-rankplate .profile-rankword{ font-size:1.05rem; }
   }
+  /* ---- THREE RINGS, ONE SIZE (build 302) ----
+     "The circles around badge and level are bigger than the rank one."
+     On a tablet they were: 4.6rem against the rank coin's 3.9rem. And on
+     a phone, where the boxes matched, the SVG ring's 6-unit stroke drew
+     a ~6px line beside the coin's 4px border, so they still read
+     heavier. Both rings are now the coin's size at every width, and the
+     line is the coin's 4px with its outer edge on the box edge
+     (r 29.9 + half of 4.1 = 32 in a 64-unit box at 62.4px). */
+  .profile-level-row .statring.profile-level-num,
+  .profile-badgesect .statring.profile-badgemedal{ width:3.9rem; height:3.9rem; }
+  .profile-level-row .statring .rankhero-ringtrack,
+  .profile-badgesect .statring .rankhero-ringtrack{ stroke-width:4.1; r:29.9px; }
+  @media (min-width:40rem){
+    .profile-level-row .statring.profile-level-num,
+    .profile-badgesect .statring.profile-badgemedal{ width:3.9rem; height:3.9rem; }
+  }
   /* "Can the customize button be a smidge bigger as well?" About an
      eighth bigger each way; the name beside it still fits one line on a
      440px phone. */
@@ -16128,8 +16233,8 @@
     .badges-head .statbox.is-big{ gap:.75rem; padding:.7rem .75rem; }
   }
   @media (min-width:40rem){
-    .profile-level-row .statring.profile-level-num,
-    .profile-badgesect .statring.profile-badgemedal{ width:4.6rem; height:4.6rem; }
+    /* The Profile rings are the rank coin's 3.9rem at every width now
+       (build 302, see THREE RINGS, ONE SIZE). */
     .statbox.is-big .statring{ width:6.2rem; height:6.2rem; }
     .statbox.is-big .statring-num{ font-size:2rem; }
   }
@@ -17927,7 +18032,7 @@
      Late in the file on purpose: several older results rules win on
      source order otherwise. See showRunRewards(). */
   .rs-screen{
-    --xp:#7CC8FF; --xp-deep:#2E87F0; --xp-glow:rgba(58,140,255,.55);
+    --xp:#8FC1FF; --xp-deep:#3D8BFF; --xp-glow:rgba(61,139,255,.55);
     --rs-card:rgba(24,29,37,.62); --rs-line:rgba(255,255,255,.09);
   }
   .wrap:has(#stage > .rs-screen) .test-scopelabel{
@@ -18050,7 +18155,7 @@
 
   /* XP. */
   .rs-screen .rs-xp{
-    border-color:rgba(124,200,255,.2);
+    border-color:rgba(143,193,255,.2);
     background:linear-gradient(180deg, rgba(46,135,240,.13), var(--rs-card) 60%);
   }
   .rs-xpline{
@@ -18065,6 +18170,7 @@
   }
   .rs-xptotal-label{ font-size:.95rem; font-weight:800; color:var(--ink); }
   .rs-xptotal-num{
+    contain:layout paint;
     font-family:var(--mono); font-size:2.1rem; font-weight:800; line-height:1;
     color:var(--xp); text-shadow:0 0 18px var(--xp-glow); letter-spacing:-.02em;
     font-variant-numeric:tabular-nums;
@@ -18084,10 +18190,10 @@
   .results-level-trackwrap{ position:relative; }
   .results-level-glow{ display:none; }
   .rs-xp.is-charging .results-level-track{
-    box-shadow:inset 0 2px 6px rgba(0,0,0,.45), 0 0 0 1px rgba(124,200,255,.3), 0 0 10px rgba(58,140,255,.3);
+    box-shadow:inset 0 2px 6px rgba(0,0,0,.45), 0 0 0 1px rgba(143,193,255,.3), 0 0 10px rgba(61,139,255,.3);
   }
-  .rs-xp .results-level-glow{ display:block; position:absolute; inset:0; border-radius:999px; pointer-events:none; opacity:0;
-    box-shadow:0 0 0 1px rgba(124,200,255,.65), 0 0 26px rgba(58,140,255,.75); }
+  .rs-xp .results-level-glow{ display:block; position:absolute; inset:0; border-radius:999px; pointer-events:none; opacity:0; will-change:opacity, transform;
+    box-shadow:0 0 0 1px rgba(143,193,255,.65), 0 0 26px rgba(61,139,255,.75); }
   .rs-xp.is-charging .results-level-glow{ animation:rs-charge .5s ease-in-out infinite alternate; }
   @keyframes rs-charge{ from{ opacity:0; } to{ opacity:1; } }
   .rs-xp.is-charged .results-level-track{ animation:rs-trackpop .65s ease-out; }
@@ -18127,12 +18233,15 @@
   }
   .results-level.is-rankup .results-level-avatar{ animation:rs-rankup-avatar 1.1s cubic-bezier(.2,1.4,.4,1); }
   .results-level.is-rankup .results-level-rank{ animation:rs-rankup-name 1.1s ease-out; }
+  /* Transform and opacity only (build 302): the avatar's pop animated a
+     box-shadow and the rank name its letter-spacing, which repaint and
+     re-lay-out every frame of the moment that most wants to be smooth. */
   @keyframes rs-rankup-avatar{
-    0%{ transform:scale(1); box-shadow:inset 0 0 0 1px rgba(255,255,255,.12), 0 0 0 0 var(--xp-glow); }
-    35%{ transform:scale(1.18); box-shadow:inset 0 0 0 2px rgba(255,255,255,.5), 0 0 0 8px rgba(255,255,255,.08), 0 0 30px rgba(255,255,255,.35); }
+    0%{ transform:scale(1); }
+    35%{ transform:scale(1.18); }
     100%{ transform:scale(1); }
   }
-  @keyframes rs-rankup-name{ 0%{ opacity:0; letter-spacing:.4em; } 100%{ opacity:1; } }
+  @keyframes rs-rankup-name{ 0%{ opacity:0; transform:translateY(4px); } 100%{ opacity:1; transform:none; } }
   @media (min-width:40rem){
     .results-level-avatar{ width:3.6rem; height:3.6rem; }
     .results-level-avatar > svg{ width:2.9rem; height:2.9rem; }
@@ -18244,7 +18353,7 @@
   .rs-endslot .vroom-finale-inline .info-note{ margin-top:0 !important; }
   /* XP is blue wherever it is printed, not only on this screen - the
      daily question and the Virtual Room standings share the level block. */
-  .results-level-gain{ color:#7CC8FF; }
+  .results-level-gain{ color:#8FC1FF; }
 
   /* One unlock at a time, centre screen. */
   .rs-spot{
@@ -18737,7 +18846,7 @@
   .rs-xpline{ align-items:flex-start; }
   .rs-xpline-label{ display:flex; flex-direction:column; min-width:0; }
   .rs-xpline-sub{ font-size:.76rem; color:var(--soft); margin-top:.12rem; line-height:1.3; }
-  .rs-xpline.is-multi{ margin-top:.55rem; padding-top:.55rem; border-top:1px dashed rgba(124,200,255,.22); }
+  .rs-xpline.is-multi{ margin-top:.55rem; padding-top:.55rem; border-top:1px dashed rgba(143,193,255,.22); }
   .rs-xpline.is-multi .rs-xpline-name{ font-weight:800; color:var(--xp); }
 
   /* EVERY CARD CARRIES A TINT, each one its own idea's colour, on the
@@ -18953,7 +19062,7 @@
     box-shadow:0 0 22px color-mix(in srgb, var(--dq) 55%, transparent);
   }
   .dailyq-outro-head{ margin:.6rem 0 0; font-family:var(--serif); font-size:1.9rem; font-weight:700; color:#fff; }
-  .dailyq-outro-xp{ margin:.2rem 0 0; font-size:1rem; font-weight:800; color:#7CC8FF; letter-spacing:.02em; }
+  .dailyq-outro-xp{ margin:.2rem 0 0; font-size:1rem; font-weight:800; color:#8FC1FF; letter-spacing:.02em; }
   .dailyq-outro.is-wrong .dailyq-outro-xp{ color:var(--soft); }
   .dailyq-outro-next{ margin:.6rem 0 0; font-size:1.02rem; font-weight:600; color:rgba(255,255,255,.88); }
   .dailyq-outro-streak{ margin:.55rem 0 0; font-size:.8rem; color:#D9A441; font-weight:700; }
@@ -18962,9 +19071,9 @@
 
   /* ---- XP IS BLUE WHEREVER IT FLIES ---- */
   #welcomebonus-banner, [data-theme="dark"] #welcomebonus-banner{
-    background:rgba(20,28,42,.7); color:#7CC8FF;
-    border:1px solid rgba(124,200,255,.3);
-    box-shadow:0 8px 24px rgba(0,0,0,.3), 0 0 18px rgba(58,140,255,.3), inset 0 1px 0 rgba(255,255,255,.08);
+    background:rgba(20,28,42,.7); color:#8FC1FF;
+    border:1px solid rgba(143,193,255,.3);
+    box-shadow:0 8px 24px rgba(0,0,0,.3), 0 0 18px rgba(61,139,255,.3), inset 0 1px 0 rgba(255,255,255,.08);
   }
 
   /* ---- THE BADGE CASE ---- */
@@ -19366,7 +19475,7 @@
     will-change:backdrop-filter; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
     transition:transform .8s cubic-bezier(.2,.9,.25,1), box-shadow .6s ease, border-color .6s ease;
   }
-  .vrc-row.is-me{ border-color:rgba(124,200,255,.35); }
+  .vrc-row.is-me{ border-color:rgba(143,193,255,.35); }
   .vrc-fig{ position:relative; width:2.9rem; height:2.9rem; flex-shrink:0; }
   .vrc-fig svg{ width:100%; height:100%; display:block; }
   .vrc-place{
@@ -19379,15 +19488,15 @@
   .vrc-track{ position:relative; height:.7rem; border-radius:999px; background:rgba(255,255,255,.07); overflow:visible; }
   .vrc-fill{
     height:100%; width:0; border-radius:999px;
-    background:linear-gradient(90deg, #2E87F0, #7CC8FF); box-shadow:0 0 12px rgba(58,140,255,.55);
+    background:linear-gradient(90deg, #3D8BFF, #8FC1FF); box-shadow:0 0 12px rgba(61,139,255,.55);
     transition:width .9s cubic-bezier(.2,.8,.25,1);
   }
   .vrc-gain{
-    position:absolute; right:0; top:-1.15rem; font-size:.72rem; font-weight:800; color:#9FE0FF; opacity:0;
+    position:absolute; right:0; top:-1.15rem; font-size:.72rem; font-weight:800; color:#B9D8FF; opacity:0;
   }
   .vrc-gain.is-on{ animation:vrc-gain 1.4s ease-out both; }
   @keyframes vrc-gain{ 0%{ opacity:0; transform:translateY(6px); } 20%{ opacity:1; transform:none; } 80%{ opacity:1; } 100%{ opacity:0; transform:translateY(-4px); } }
-  .vrc-num{ font-family:var(--mono); font-size:1.15rem; font-weight:800; color:#7CC8FF; min-width:4.2rem; text-align:right; }
+  .vrc-num{ font-family:var(--mono); font-size:1.15rem; font-weight:800; color:#8FC1FF; min-width:4.2rem; text-align:right; }
   .vrc-row.place-1{ --pc:#FFD37A; border-color:rgba(255,211,122,.7); box-shadow:0 0 28px -4px rgba(255,200,80,.75), inset 0 0 20px rgba(255,200,80,.12); }
   .vrc-row.place-2{ --pc:#DCE4EE; border-color:rgba(220,228,238,.6); box-shadow:0 0 24px -6px rgba(220,228,238,.6); }
   .vrc-row.place-3{ --pc:#E0A36C; border-color:rgba(224,163,108,.6); box-shadow:0 0 24px -6px rgba(224,163,108,.6); }
@@ -19397,11 +19506,11 @@
   .vrc-row[class*="place-"] .vrc-fig{ filter:drop-shadow(0 0 10px var(--pc)); }
   /* Player colours, the drop-in, and chat above the whole thing. */
   .vrc-row:not([class*="place-"]) .vrc-fill{
-    background:linear-gradient(90deg, color-mix(in srgb, var(--pl, #2E87F0) 55%, #0A0C18), var(--pl, #7CC8FF));
+    background:linear-gradient(90deg, color-mix(in srgb, var(--pl, #3D8BFF) 55%, #0A0C18), var(--pl, #8FC1FF));
     box-shadow:0 0 12px color-mix(in srgb, var(--pl, #3A8CFF) 55%, transparent);
   }
-  .vrc-row:not([class*="place-"]) .vrc-num{ color:color-mix(in srgb, var(--pl, #7CC8FF) 70%, #fff); }
-  .vrc-row:not([class*="place-"]) .vrc-gain{ color:color-mix(in srgb, var(--pl, #9FE0FF) 60%, #fff); }
+  .vrc-row:not([class*="place-"]) .vrc-num{ color:color-mix(in srgb, var(--pl, #8FC1FF) 70%, #fff); }
+  .vrc-row:not([class*="place-"]) .vrc-gain{ color:color-mix(in srgb, var(--pl, #B9D8FF) 60%, #fff); }
   .vrc-row.is-dropping{ animation:vrc-drop .7s cubic-bezier(.2,1.25,.35,1) var(--drop, .3s) both; }
   @keyframes vrc-drop{ 0%{ opacity:0; translate:0 -46px; } 100%{ opacity:1; translate:0 0; } }
   /* "Chat must work during the leaderboard" - the dock sat at 300 under
@@ -31837,7 +31946,7 @@ new MutationObserver(() => {
      keyboard displacement is still unwound the moment it lifts. */
   const settle = () => {
     if(Date.now() < toTopHoldUntil) return;
-    if(displaced()) window.scrollTo(0, 0);
+    if(displaced()) jumpToTop();
   };
   settle();
   requestAnimationFrame(settle);
@@ -36608,7 +36717,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               unitGameBeat: {}, gameFarthest: {}, unitBestPct: {}, unitBestMs: {}, flareLevels: {},
               unitExam: {}, gameHardcoreMs: {},
               mysteryColorsFound: { red: false, orange: false, yellow: false, violet: false, white: false },
-              testsUntilMystery: null, flareNextTestAt: 0,
+              testsUntilMystery: null, flareNextTestAt: 0, flareSchedRev: 0,
               savedCodePrompts: 0, savedCodeSaved: false,
               dailyCorrectStreak: 0, dailyCorrectBest: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, friendsBest: 0, koiRevoked295: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bestTestStreak: 0,
               weeklyWins: 0, weeklyTop3: 0, retakenQuestions: 0, hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, unlocksShown: null, seenUnlocks: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
@@ -36703,6 +36812,9 @@ function applyLoadedData(got){
      level: the lifetime test count before which the next one may not
      appear. 0 = no hold. */
   store.flareNextTestAt = typeof got.flareNextTestAt === "number" ? got.flareNextTestAt : 0;
+  /* 0 for every existing account, deliberately: the build 302 reschedule
+     is FOR people who already have levels behind them. */
+  store.flareSchedRev = typeof got.flareSchedRev === "number" ? got.flareSchedRev : 0;
   store.testsUntilMystery = typeof got.testsUntilMystery === "number" ? got.testsUntilMystery : null;
   /* NOT defaulted to a fresh id here. applyLoadedData runs on data that
      arrived from the cloud, and minting one at that moment would give a
@@ -39721,11 +39833,81 @@ function buildQuestionFlag(qi, opts){
   b.addEventListener("click", e => {
     e.stopPropagation();
     toggleFlag(qi); paint();
-    showToast(isFlagged(qi) ? "Question flagged." : "Flag removed.", "flag");
+    showFlagNote(b, isFlagged(qi));
     if(opts.onChange) opts.onChange(isFlagged(qi));
   });
   paint();
   return b;
+}
+
+/* THE FLAG'S CONFIRMATION SITS BESIDE THE FLAG (build 302). It was a
+   full-width yellow bar pinned to the top of the screen: "it looks like a
+   button but the color is nice ... being at the very top of the screen
+   isn't the move ... the chat button is over it". Up there it covered the
+   top bar - pause and the chat button, which painted over it - and a
+   solid filled bar with a border is exactly what a button looks like. So
+   it is plain text now - no fill, no outline, no pill - said where the tap happened: to the LEFT of
+   the flag, on its centre line, in the header row that is otherwise empty
+   (the same gap the flare glint uses). The yellow survives as the TEXT
+   and the little flag, not as a fill. pointer-events:none, so it can
+   never take a tap meant for anything under it. It is fixed-position on
+   <body> (a test's #stage animates, and a transform there re-parents a
+   fixed child), so it goes the moment the page scrolls or the screen
+   changes - a label that stays put while its flag moves is pointing at
+   nothing. If there is no room to the left (a flag near the left edge)
+   it drops below the flag instead. */
+function showFlagNote(btn, on){
+  document.querySelectorAll(".flag-note").forEach(n => n.remove());
+  if(!btn || !btn.isConnected) return;
+  const note = document.createElement("div");
+  note.className = "flag-note" + (on ? " is-on" : "");
+  note.setAttribute("role", "status");
+  const ns = "http://www.w3.org/2000/svg";
+  const sv = document.createElementNS(ns, "svg");
+  sv.setAttribute("viewBox", "0 0 24 24"); sv.setAttribute("aria-hidden", "true");
+  const pole = document.createElementNS(ns, "path"); pole.setAttribute("d", "M6 3v18");
+  pole.setAttribute("class", "fn-pole");
+  const ban = document.createElementNS(ns, "path");
+  ban.setAttribute("d", "M6 4c2-1.6 4-1.6 6 0s4 1.6 6 0v7.5c-2 1.6-4 1.6-6 0s-4-1.6-6 0z");
+  ban.setAttribute("class", "fn-banner");
+  sv.append(pole, ban);
+  const t = document.createElement("span");
+  t.textContent = on ? "Flagged" : "Flag removed";
+  note.append(sv, t);
+  document.body.appendChild(note);
+  const r = btn.getBoundingClientRect(), nr = note.getBoundingClientRect();
+  const vw = document.documentElement.clientWidth, gap = 8;
+  if(r.left - gap - nr.width >= 8){
+    note.style.left = Math.round(r.left - gap - nr.width) + "px";
+    note.style.top = Math.round(r.top + r.height / 2 - nr.height / 2) + "px";
+  } else {
+    note.style.left = Math.round(Math.min(Math.max(8, r.left + r.width / 2 - nr.width / 2), vw - nr.width - 8)) + "px";
+    note.style.top = Math.round(r.bottom + gap) + "px";
+  }
+  /* In a test the row left of the flag is empty. In a unit's Flagged
+     list and in Answer Review the question's own text runs up to the
+     flag, so there the words get a backing to sit on rather than being
+     printed over a sentence. */
+  const nb = note.getBoundingClientRect();
+  const overText = [...(btn.parentElement ? btn.parentElement.children : [])].some(c => {
+    if(c === btn || !(c.textContent || "").trim()) return false;
+    const cr = c.getBoundingClientRect();
+    return !(cr.right <= nb.left || cr.left >= nb.right || cr.bottom <= nb.top || cr.top >= nb.bottom);
+  });
+  if(overText) note.classList.add("has-back");
+  requestAnimationFrame(() => note.classList.add("show"));
+  let gone = false;
+  const drop = () => {
+    if(gone) return; gone = true;
+    window.removeEventListener("scroll", drop, true);
+    mo.disconnect(); clearTimeout(tm);
+    note.classList.remove("show");
+    setTimeout(() => note.remove(), 220);
+  };
+  const mo = new MutationObserver(() => { if(!btn.isConnected) drop(); });
+  mo.observe(stage, { childList: true, subtree: true });
+  window.addEventListener("scroll", drop, { capture: true, passive: true });
+  const tm = setTimeout(drop, 1800);
 }
 
 function flaggedIndexes(){
@@ -44077,8 +44259,12 @@ function buildRankEmblemSVG(rankKey){
     into = prev;
     inLayer("rk-pulse", C, C, 0, () => add(disc(C, C, 22), { fill: glow }));
     sepRing(C, C, 14, 5, 0.24);
-    /* the star's flare runs along the jets, so the two are one axis */
-    starAt(C, C, 14, 28, "rk-twinkle", 0, T * Math.PI / 180);
+    /* the star's flare runs along the jets, so the two are one axis.
+       GENTLE (build 302): it ran the big twinkle (scale .45 to 1.3), and
+       at its peak Silver was one huge star - "it even looks too much like
+       bronze", and too much like Gold beside it. The disc and the jets
+       are what make it Silver; the star now just glints. */
+    starAt(C, C, 12, 22, "rk-twinkle rk-soft", 0, T * Math.PI / 180);
     /* the near half of the disc, over the foot of the star */
     const front = group({ transform: flat });
     const fg = document.createElementNS(NS, "g");
@@ -44111,9 +44297,16 @@ function buildRankEmblemSVG(rankKey){
       for(let i = 0; i <= 30; i++){ const [x, y] = onOrbit(t0 + (t1 - t0) * i / 30); d += (i ? "L" : "M") + x.toFixed(2) + " " + y.toFixed(2); }
       return d; };
     const [wx, wy] = onOrbit(T0);
+    /* A COMPANION STAR, NOT A WORLD (build 302). "Silver and gold look
+       way too similar ... maybe gold needs a little redesign to look more
+       like it's going into platinum". Platinum is two stars; so what goes
+       round Gold's sun is now a small star of its own - lit from inside,
+       with its own four-point glint - the second star arriving one rank
+       early, rather than a planet that no rank after it has. */
     const world = () => {
-      add(disc(wx, wy, 9), { fill: uRadial(wx, wy, 9, [[0, LIGHT, 0.5], [1, base, 0]]) });
-      add(disc(wx, wy, 5.2), { fill: uRadial(wx + 1.6, wy - 1.8, 6.4, [[0, "#FFF8E2"], [0.45, badgeShade(base, 0.3)], [1, badgeShade(base, -0.55)]]), stroke: dark, "stroke-width": ".7" });
+      add(disc(wx, wy, 11), { fill: uRadial(wx, wy, 11, [[0, "#FFFFFF", 0.75], [0.35, ICE, 0.55], [1, base, 0]]) });
+      add(disc(wx, wy, 4.4), { fill: uRadial(wx, wy, 4.4, [[0, "#FFFFFF", 1], [0.55, ICE, 1], [1, LIGHT, 0.95]]) });
+      add(burst(wx, wy, 4, 11, 0.09, UP + Math.PI / 4), { fill: "#FFFFFF", opacity: ".95" });
     };
     inLayer("rk-breathe", C, C, 0, () => halo(50));
     /* the corona: long tongues and short ones, turning against each other
@@ -44141,8 +44334,12 @@ function buildRankEmblemSVG(rankKey){
        behind it. So Gold's gets a white four-point flare of its own that
        reaches past the corona, crisp against the dark. */
     inLayer("rk-twinkle", C, C, 0, () => {
-      add(burst(C, C, 4, 49, 0.04, UP), { fill: "#FFFFFF", opacity: ".78" });
-      add(burst(C, C, 4, 26, 0.08, UP), { fill: "#FFFFFF", opacity: ".9" });
+      /* 49 to 36 (build 302): at 49 the white flare WAS Gold - one huge
+         four-point star, Silver's shape again. Shorter, the corona and
+         the companion star carry it, and the flare still clears the
+         short tongues. */
+      add(burst(C, C, 4, 36, 0.05, UP), { fill: "#FFFFFF", opacity: ".62" });
+      add(burst(C, C, 4, 22, 0.08, UP), { fill: "#FFFFFF", opacity: ".85" });
     });
     /* the near half, over the foot of the sun, and the world in front */
     add(orbitArc(Math.PI * 0.06, Math.PI * 0.94), { fill: "none", stroke: ICE, "stroke-width": "1.3", "stroke-linecap": "round", "stroke-dasharray": "1.5 4", opacity: ".7" });
@@ -44157,6 +44354,28 @@ function buildRankEmblemSVG(rankKey){
        sized so their tips just clear the body - at half the span they sat
        inside the white core and read as a star printed on a ball. */
     inLayer("rk-breathe", C, C, 0, () => halo(50));
+    /* THE GALAXY BEGINNING (build 302): "platinum doesn't look like it's
+       turning into sapphire". Behind the pair, on Sapphire's own tilt, a
+       faint four-armed spiral of the pair's light turns slowly - the
+       disc Sapphire becomes. Four arms, so a quarter turn is the same
+       picture (rk-sym4): the Home flip-book can play it at one turn in
+       24s, half Sapphire's speed, which is half Amethyst's. */
+    {
+      const PL = badgeShade(base, 0.45), PI2 = badgeShade(base, 0.82);
+      const pPlane = group({ transform: "rotate(-22 " + C + " " + C + ") translate(" + C + " " + C + ") scale(1 .72) translate(" + (-C) + " " + (-C) + ")" });
+      const prevPP = into; into = pPlane;
+      inLayer("rk-spin rk-quick rk-sym4", C, C, 54, () => {
+        const armBody = uRadial(C, C, 52, [[0, "#FFFFFF", 0.9], [0.4, PI2, 0.75], [0.75, PL, 0.5], [1, base, 0.1]]);
+        [0, Math.PI / 2, Math.PI, Math.PI * 1.5].forEach(a0 => add(spiralArm(a0, 10, 0, 2.6, 46).ribbon, { fill: armBody, opacity: ".8" }));
+        let motes = "";
+        [0, Math.PI / 2, Math.PI, Math.PI * 1.5].forEach(a0 => [[0.45, 1.1], [0.72, 0.9]].forEach(([t, r]) => {
+          const th = a0 + t * 2.6, rr = 9 + 44 * t, cx = C + Math.cos(th) * rr, cy = C + Math.sin(th) * rr;
+          motes += "M" + (cx - r).toFixed(2) + " " + cy.toFixed(2) + "a" + r + " " + r + " 0 1 0 " + (2 * r) + " 0a" + r + " " + r + " 0 1 0 " + (-2 * r) + " 0Z";
+        }));
+        add(motes, { fill: "#FFFFFF", opacity: ".7" });
+      });
+      into = prevPP;
+    }
     const swing = inLayer("rk-swing rk-quick", C, C, 52, () => {});
     into = swing;
     const orbit = inLayer("rk-shimmer", C, C, 0, () => {});
@@ -44198,7 +44417,7 @@ function buildRankEmblemSVG(rankKey){
     const plane = group({ transform: tilt });
     const prevP = into; into = plane;
     add(disc(C, C, 52), { fill: uRadial(C, C, 52, [[0, ICE, 0.55], [0.55, LIGHT, 0.26], [1, base, 0]]) });
-    inLayer("rk-spin rk-quick", C, C, 54, () => {
+    inLayer("rk-spin rk-quick rk-sym2", C, C, 54, () => {
       const armBody = uRadial(C, C, 54, [[0, ICE, 0.85], [0.55, LIGHT, 0.55], [1, base, 0.14]]);
       const armFill = uRadial(C, C, 54, [[0, "#FFFFFF", 1], [0.35, ICE, 0.95], [0.7, LIGHT, 0.8], [1, LIGHT, 0.35]]);
       /* the faint arms between the bright ones, so the disc is not two ribbons on black */
@@ -44232,10 +44451,17 @@ function buildRankEmblemSVG(rankKey){
        and nearer the middle, smaller further out, all turning faster than
        the arms, the way things speed up as they fall in. It is the same
        idea Amethyst's hole finishes and Supernova's black blast ends. */
-    add(disc(C, C, 7.5), { fill: uRadial(C, C, 7.5, [[0, "#000000", 1], [0.42, "#03060F", 0.95], [0.75, "#0B1C44", 0.55], [1, "#1A3A8A", 0]]) });
-    inLayer("rk-spin rk-fast", C, C, 18, () => {
+    /* BIGGER, AND RIMMED WITH LIGHT (build 302): "the black animation
+       thing in the middle could be a little bit better so that's
+       noticeable too". The shadow is larger, a thin ring of the core's
+       own light pulses round its edge - the line that makes a dark spot
+       read as a hole - and the dust swirling in is bigger and further
+       out, where it shows against the light rather than on the black. */
+    add(disc(C, C, 9.6), { fill: uRadial(C, C, 9.6, [[0, "#000000", 1], [0.5, "#02040B", 0.97], [0.8, "#0B1C44", 0.6], [1, "#1A3A8A", 0]]) });
+    inLayer("rk-glow", C, C, 0, () => add(disc(C, C, 10.4), { fill: "none", stroke: ICE, "stroke-width": "1.15", opacity: ".95" }));
+    inLayer("rk-spin rk-fast", C, C, 22, () => {
       let dust = "";
-      [[0.1, 11.4, 2.4], [1.35, 9.2, 2], [2.5, 13.6, 1.9], [3.55, 10.4, 2.2], [4.7, 14.4, 1.6], [5.6, 8.6, 1.8]].forEach(([a, r, sz]) => {
+      [[0.1, 13.2, 3], [1.35, 11.2, 2.5], [2.5, 15.6, 2.4], [3.55, 12.4, 2.7], [4.7, 16.6, 2], [5.6, 10.8, 2.2]].forEach(([a, r, sz]) => {
         /* a crescent of dust along its orbit: two arcs, one path */
         const a0 = a - 0.46, a1 = a + 0.46;
         const p = (ang, rr) => (C + Math.cos(ang) * rr).toFixed(2) + " " + (C + Math.sin(ang) * rr).toFixed(2);
@@ -44244,15 +44470,15 @@ function buildRankEmblemSVG(rankKey){
         dust += "M" + p(a0, r) + "L" + p(a0 + .12, ro) + "A" + ro + " " + ro + " 0 0 1 " + p(a1, ro) +
                 "L" + p(a1, ri) + "A" + ri + " " + ri + " 0 0 0 " + p(a0 + .12, ri) + "Z";
       });
-      add(dust, { fill: "#03060F", opacity: ".92" });
+      add(dust, { fill: "#02040B", opacity: ".96" });
       let grains = "";
-      [[0.8, 15.6, .9], [2, 6.4, .75], [3.1, 16.2, .75], [4.2, 7, .85], [5.2, 17, .65], [6.0, 12.4, .7]].forEach(([a, r, g]) => {
+      [[0.8, 18, 1.1], [2, 12.6, .9], [3.1, 18.6, .9], [4.2, 13, 1], [5.2, 19.4, .8], [6.0, 14.6, .85]].forEach(([a, r, g]) => {
         const x = C + Math.cos(a) * r, y = C + Math.sin(a) * r;
         grains += "M" + (x - g).toFixed(2) + " " + y.toFixed(2) + "a" + g + " " + g + " 0 1 0 " + (2 * g) + " 0a" + g + " " + g + " 0 1 0 " + (-2 * g) + " 0Z";
       });
-      add(grains, { fill: "#000000", opacity: ".85" });
+      add(grains, { fill: "#000000", opacity: ".9" });
     });
-    add(disc(C, C, 3), { fill: "#000000" });
+    add(disc(C, C, 4.2), { fill: "#000000" });
   } else if(rankKey === "elite"){
     /* AMETHYST (build 250): A QUASAR - the black hole at a galaxy's heart,
        feeding. A shadow that gives off nothing, ringed by a thin line of
@@ -44515,6 +44741,11 @@ function setCharState(el, state){
     else el.classList.add("char-live");
   }
   if(state === "sleep"){
+    /* Live as well as asleep (build 302): the idle loops and the
+       background keep running under the sleeping pose. */
+    const wait = (typeof settleUntil === "number") ? settleUntil - Date.now() : 0;
+    if(wait > 0) setTimeout(() => { if(el.isConnected && el.classList.contains("char-sleep")) el.classList.add("char-live"); }, wait);
+    else el.classList.add("char-live");
     el.classList.add("char-sleep");
     const z = document.createElement("span");
     z.className = "char-zzz";
@@ -47320,9 +47551,43 @@ let mysteryLeftFrac = .5;
    four tests - about ten tests for three, which is what was asked for.
    Nobody who has one is given it again: the hunt only ever looks for
    the next colour still missing. */
+/* THE SCHEDULE MOVED DOWN IN BUILD 302: "the first flare ... by level
+   20 ... orange ... about level 35 ... yellow ... about level 48. Umbra
+   will be 60 or so and horizon will be 70-72." Every level drawn under
+   the old windows is outside the new ones, so `inWindow` redraws it the
+   first time it is asked - nothing has to be migrated by hand.
+   Lowering the levels makes a lot of people owed flares on the same day,
+   so the catch-up for them is spread too - see applyFlareReschedule(). */
 const FLARE_WINDOWS = {
-  red: [35, 35], orange: [40, 41], yellow: [42, 45], violet: [55, 59], white: [68, 72]
+  red: [20, 20], orange: [34, 36], yellow: [47, 49], violet: [59, 61], white: [70, 72]
 };
+/* ONE-TIME RESCHEDULE (build 302). Asked for with the new levels: "for
+   the people who already meet these thresholds make them random for
+   them over their next 10 tests or so". Counted once per account, keyed
+   by a revision rather than a yes/no so the next schedule change can
+   ask again by bumping the number. The first owed flare lands somewhere
+   in a window sized so that it and armFlareCatchup()'s three-or-four
+   test gaps after it all fit inside about ten tests: one owed is any of
+   the next ten, two owed is the first six, three or more is the next
+   one or two. Nobody is owed less than they were - only WHEN changes. */
+const FLARE_SCHED_REV = 302;
+function applyFlareReschedule(){
+  if((store.flareSchedRev || 0) >= FLARE_SCHED_REV) return;
+  store.flareSchedRev = FLARE_SCHED_REV;
+  const found = store.mysteryColorsFound || {};
+  const lvl = levelOf(store);
+  let owed = 0;
+  for(const c of MYSTERY_ORDER){
+    if(found[c]) continue;
+    if(lvl < mysteryLevelGate(c)) break;
+    owed++;
+  }
+  if(owed > 0){
+    const spread = Math.max(1, 10 - 4 * (owed - 1));
+    store.flareNextTestAt = testsCompletedOf(store) + Math.floor(Math.random() * spread);
+  }
+  saveStore();
+}
 function mysteryLevelGate(color){
   store.flareLevels = store.flareLevels || {};
   const w = FLARE_WINDOWS[color];
@@ -47464,6 +47729,7 @@ function buildShadesSpark(){
 function maybeStartMysteryForRun(){
   mysteryAppearsAtPos = -1;
   mysteryColorThisRun = null;
+  applyFlareReschedule();
   const color = nextNeededMysteryColor();
   if(!color) return;
   if(!order || order.length < MYSTERY_MIN_RUN) return;
@@ -47923,32 +48189,46 @@ try{ new MutationObserver(() => {
      the whole new screen out on the spot - 214ms of the Progress tab's
      switch at 4x CPU. Whether a scroll could be travelling is known from
      where toTop() started it, on the old screen. */
-  if(Date.now() - lastToTopAt < 400 && lastToTopFrom > 0){
-    try{ window.scrollTo({ top:0, left:0, behavior:"instant" }); }catch(e){}
-  }
+  if(Date.now() - lastToTopAt < 400 && lastToTopFrom > 0) jumpToTop();
 }).observe(stage, { childList: true }); }catch(e){}
+/* ---- A JUMP THAT IS A JUMP ON EVERY iOS (build 302) ----
+   scrollTo({behavior:"instant"}) is the newer spelling, and a WebKit that
+   does not know "instant" throws on it - swallowed by the try - so the
+   page's own scroll-behavior:smooth (set by applyTheme) was left in
+   charge and the new screen glided up from wherever the last one had
+   been left: the other half of "the page slightly laps up or down".
+   Turning the root's smooth off for the one call is understood
+   everywhere. */
+function jumpToTop(){
+  const de = document.documentElement;
+  const was = de.style.scrollBehavior;
+  try{
+    de.style.scrollBehavior = "auto";
+    /* READ IT BACK before scrolling: a style write is only applied at the
+       next style recalc, and scrollTo() will happily use the stale
+       "smooth" if nothing forces one - measured, the page still glided
+       the whole way up until this line went in. */
+    void getComputedStyle(de).scrollBehavior;
+    window.scrollTo(0, 0);
+  }catch(e){}
+  de.style.scrollBehavior = was;
+  knownScrollY = 0;
+}
+/* EVERY CALLER BUT ONE IS A SCREEN MOUNTING, so a jump is the default
+   now (build 302). It used to glide unless the mount had been seen -
+   but the mount observer runs after toTop() is called, so it never had
+   been. Only the back-to-top button asks for the glide, by name. */
 function toTop(instant){
   if(typeof window.scrollTo !== "function") return;
   lastToTopAt = Date.now();
   /* read here, on the screen that is already laid out, so the mount
      observer never has to (build 281) */
   lastToTopFrom = knownScrollY;
-  if(!instant && Date.now() - lastStageSwapAt < 400) instant = true;
-  if(!instant && Date.now() < toTopHoldUntil) return;
+  if(instant !== true && Date.now() < toTopHoldUntil) return;
   /* Already at the top: nothing to move, so nothing to lay out for. */
   if(knownScrollY <= 0) return;
-  try{
-    /* instant=true bypasses the person's own Smooth Scrolling setting for
-       this one call - see openQuestion()'s own call site for why. Every
-       other caller keeps passing nothing, which still respects that
-       setting exactly as before (documentElement.style.scrollBehavior
-       already governs a plain, no-options scrollTo(0,0) call). Passing
-       an explicit behavior in the options-object form is what actually
-       forces an immediate jump regardless of that CSS property - "auto"
-       would just defer back to it, same as calling scrollTo(0,0). */
-    if(instant) window.scrollTo({ top:0, left:0, behavior:"instant" });
-    else window.scrollTo(0, 0);
-  }catch(e){}
+  if(instant !== "smooth"){ jumpToTop(); return; }
+  try{ window.scrollTo({ top:0, left:0, behavior:"smooth" }); }catch(e){ jumpToTop(); }
 }
 
 /* Renders text, turning *word* into bold. textContent throughout. */
@@ -48574,7 +48854,12 @@ function heroGlowSnapshot(layer, baseKey){
 const homeRankEmblemCache = {};
 function homeRankEmblemReused(tier){
   const had = homeRankEmblemCache[tier];
-  if(had){ had.remove(); return had; }
+  /* NOT STILL HIDDEN (build 302). Last visit's recording hid this same
+     node under its flip-book (rk-under-anim). The flip-book went with the
+     old screen; the flag did not, so three of the seven bubbles came back
+     EMPTY until a new one was laid over them - "the flares don't get
+     filled in for about a second or two". */
+  if(had){ had.remove(); had.classList.remove("rk-under-anim"); return had; }
   const em = homeRankEmblem(tier);
   homeRankEmblemCache[tier] = em;
   return em;
@@ -48629,9 +48914,9 @@ function homeRankEmblemReused(tier){
      emblem itself changes.
    And 24 frames a second rather than 15, which is the "smoothly". */
 const ORBIT_ANIM_LOOP_MS = 6000;
-const ORBIT_ANIM_FRAMES = 144;
+const ORBIT_ANIM_FRAMES = 180;   /* 30 a second (build 302; was 24) */
 const ORBIT_ANIM_COLS = 12;
-const ORBIT_ANIM_VER = "v3";
+const ORBIT_ANIM_VER = "v4";
 const orbitAnimSheets = new Map();
 /* sheets already recorded this session, by the same key - Home plays these
    on its first frame instead of waiting for the recorder's settle delay */
@@ -48725,7 +49010,13 @@ function recordRankEmblemFrames(tier, _live, px){
       const plan = anims.map(a => {
         const t = a.effect.getTiming();
         const P = (Number(t.duration) || 1000) * (String(t.direction || "").indexOf("alternate") >= 0 ? 2 : 1);
-        const c = P > 2 * L ? 0 : Math.max(1, Math.round(L / P));
+        /* A layer that looks the same after 1/k of a turn (rk-sym2,
+           rk-sym4) may play just 1/k of its cycle per loop and still
+           join up seamlessly, so a slow spin stays slow here instead of
+           being rounded up to a whole turn every 6s (build 302). */
+        const tg = a.effect && a.effect.target, tc = tg && tg.classList;
+        const k = tc && tc.contains("rk-sym4") ? 4 : tc && tc.contains("rk-sym2") ? 2 : 1;
+        const c = P > 2 * L * k ? 0 : Math.max(1 / k, Math.round(L / P * k) / k);
         a.pause();
         return { a, base: Number(a.currentTime) || 0, P, c };
       });
@@ -49268,7 +49559,15 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
   const innerOrbitLayer = mkLayer("cosmic-hero-orbitlayer cosmic-hero-orbitlayer-inner");
   const innerDots = document.createElementNS(svgNS, "g");
   innerDots.setAttribute("class", "cosmic-orbit-dots-group");
-  [[180, 150 - 152], [180 + 152, 150], [180 - 108, 150 + 20], [180 + 104, 150 - 111], [180 - 139, 150 + 62]]
+  /* SPREAD OUT (build 302): "some of them are close together, maybe 2 of
+     them need to be in the inner circle (maybe the 4th and 5th)". Red,
+     Umbra and Orange sat at 0, 43 and 90 degrees on the outer ring - one
+     quarter of it. Umbra and Event Horizon move to the inner ring, where
+     they and Yellow are an even 120 degrees apart (19.5, 139.5, 259.5),
+     and Red and Orange take opposite sides of the outer one (0 and 180).
+     Inner or outer is decided by distance from the centre below, so the
+     coordinates are the whole change. */
+  [[180, 150 - 152], [180, 150 + 152], [180 - 108, 150 + 20], [216.05, 48.2], [250.14, 232.12]]
     .slice(0, mysteryOrder.length).forEach(([cx, cy], i) => {
     const dot = document.createElementNS(svgNS, "circle");
     dot.setAttribute("cx", cx); dot.setAttribute("cy", cy); dot.setAttribute("r", 4.5);
@@ -54435,7 +54734,7 @@ function openChatInviteSheet(){
       art.appendChild(avatarSpanFor(e));
       decorateAvatar(art, e.level, e.badges, e.mystery);
       /* Asleep when they are not on - "same when you go to invite". */
-      if(e.firstName && !isOnline(e)) setCharState(art, "sleep");
+      if(e.firstName) setCharState(art, isOnline(e) ? "live" : "sleep");
       const text = document.createElement("div");
       text.className = "friend-row-text";
       const nm = document.createElement("p");
@@ -55142,7 +55441,10 @@ function showHome(){
   stage.appendChild(dailyBtn);
   /* the orbit's emblems, recorded once Home has settled (build 298); any
      already recorded this session play from the first frame (build 300) */
-  afterFirstPaint(() => { if(panel.isConnected) startOrbitEmblemAnims(panel, true); });
+  /* Sheets already recorded are only an <img> each, so they go on in the
+     first frame back on Home rather than after the settle window
+     (build 302); recording new ones still waits for 1600ms. */
+  requestAnimationFrame(() => { if(panel.isConnected) startOrbitEmblemAnims(panel, true); });
   setTimeout(() => { if(panel.isConnected) startOrbitEmblemAnims(panel); }, 1600);
   /* The XP a run just earned flies into the Profile tab when you land
      back here - the results screen has no tab bar to fly to. Once. */
@@ -58921,7 +59223,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-04-301";
+const APP_BUILD = "2026-10-04-302";
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
    pushing when I open the app?" Because this gap is shared by every way
@@ -60625,13 +60927,70 @@ function runStreakLive(ok){
   if(isMissedRetake || runLabel === "Daily question" || runMode !== "drill") return;
   if(!ok){ runLiveStreak = 0; return; }
   runLiveStreak++;
-  /* No pop at 10, 25, 50 in a row since build 284: "remove 'answer
-     streak' notification you get mid test, just keep it to the results
-     screen xp stuff". The count goes on; the results screen's XP lines
-     are where a streak is shown (computeRunXp). */
+  /* BACK (build 302): "Bring back the correct answer streak thing you
+     get during tests." It came off in 284 ("remove 'answer streak'
+     notification you get mid test"); it is the build-283 pop exactly,
+     at 10, 25, 50 ... in a row, in the top bar's own line. */
+  if(runStreakTiersUpTo(runLiveStreak).slice(-1)[0] === runLiveStreak) showRunStreakBanner(runLiveStreak);
 }
-/* showRunStreakBanner() and placeStreakPop() - the in-test streak pop -
-   were here until build 284. */
+function showRunStreakBanner(n){
+  if(theme.muteBanners) return;
+  document.querySelectorAll(".streak-pop").forEach(e => e.remove());
+  const idx = runStreakTiersUpTo(n).length;          // 1 for 10, 2 for 25 ...
+  const el = document.createElement("div");
+  el.className = "streak-pop streak-lv" + Math.min(idx, 8);
+  el.setAttribute("aria-live", "polite");
+  const num = document.createElement("span");
+  num.className = "streak-pop-num"; num.textContent = n;
+  const txt = document.createElement("span");
+  txt.className = "streak-pop-text"; txt.textContent = "in a row";
+  el.append(num, txt);
+  document.body.appendChild(el);
+  placeStreakPop(el);
+  setTimeout(() => el.remove(), 1900);
+}
+/* ---- IN THE TOP BAR, NOT UNDER IT (build 244) ----
+   "The answer streak pop is in the way of the question and stuff." It
+   hung just below the top bar, which is exactly where the question
+   starts on a phone, so a streak landed on the first line of the next
+   question. The top bar itself has a gap in the middle - the question
+   count on the left, Chat and Pause on the right - and nothing ever sits
+   there during a test. The pop goes into that gap now, centred on the
+   row's own middle, so it covers nothing. Where the gap is too narrow
+   for the full pill (a 320px phone) it drops the words and shows the
+   number with a small "in a row" underneath; if even that will not fit,
+   it stays where it was. */
+function placeStreakPop(el){
+  try{
+    const left = [document.getElementById("testqcounter"), document.getElementById("count")]
+      .filter(e => e && e.getClientRects().length && e.textContent.trim())
+      .map(e => { const r = e.getBoundingClientRect(); const rg = document.createRange(); rg.selectNodeContents(e);
+                  const t = rg.getBoundingClientRect(); return { right: t.width ? t.right : r.right, top: r.top, bottom: r.bottom }; })[0];
+    const rightEls = [document.getElementById("pausebtn"), document.querySelector(".chatdock-btn")]
+      .filter(e => e && !e.hidden && e.getClientRects().length).map(e => e.getBoundingClientRect())
+      .filter(r => r.top < 200 && r.width > 0);
+    if(!left || !rightEls.length) return;
+    const rightEdge = Math.min.apply(null, rightEls.map(r => r.left));
+    const row = rightEls.reduce((a, r) => a.top < r.top ? a : r);
+    /* CENTRED ON THE SCREEN, NOT ON THE GAP (build 268). "The streak pop
+       during a test is not centered, it's in a weird spot." It sat in the
+       middle of the space between the question count and the buttons,
+       and because those two are different widths that middle is off to
+       one side. It is centred on the screen now, on the bar's own line,
+       as long as it clears both sides there; compact if it needs to be;
+       and if even that will not fit it stays centred under the bar. */
+    const cx = window.innerWidth / 2;
+    const fits = () => { const hw = el.getBoundingClientRect().width / 2; return cx - hw >= left.right + 8 && cx + hw <= rightEdge - 8; };
+    if(!fits()){
+      el.classList.add("is-compact");
+      if(!fits()){ el.classList.remove("is-compact"); return; }
+    }
+    el.classList.add("is-inbar");
+    el.style.left = Math.round(cx) + "px";
+    el.style.top = Math.round(row.top + row.height / 2) + "px";
+  }catch(e){}
+}
+
 
 /* ---- THE END OF A RUN IS TWO SCREENS (build 212) ----------------------
    Asked for in one message: "split the test result screens up, when you
@@ -61811,12 +62170,22 @@ function showRunRewards(run, hooks, opts){
   const countUp = instant => {
     const target = run.xpTotal;
     if(instant || target <= 0){ totalNum.textContent = "+" + target.toLocaleString(); return; }
-    const t0 = Date.now(), dur = 750;
-    const iv = setInterval(() => {
-      const t = Math.min(1, (Date.now() - t0) / dur);
-      totalNum.textContent = "+" + Math.round(target * (1 - Math.pow(1 - t, 3))).toLocaleString();
-      if(t >= 1){ clearInterval(iv); totalNum.textContent = "+" + target.toLocaleString(); }
-    }, 30);
+    /* ON THE FRAME, NOT A 30ms TIMER (build 302): "the xp stuff at the
+       test result screen seems a bit laggy and not extremely smooth". A
+       setInterval ticks out of step with the display, so the number
+       landed on some frames twice and skipped others; and it rewrote the
+       text 25 times whether the number had changed or not. One write per
+       frame, only when the figure moves. */
+    const t0 = performance.now(), dur = 900;
+    let shown = -1;
+    const tick = now => {
+      if(!totalNum.isConnected) return;
+      const t = Math.min(1, (now - t0) / dur);
+      const v = t >= 1 ? target : Math.round(target * (1 - Math.pow(1 - t, 3)));
+      if(v !== shown){ shown = v; totalNum.textContent = "+" + v.toLocaleString(); }
+      if(t < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
   };
   const celebrateGrade = () => {
     if(run.retake) return;   /* a retake gets nothing cool */
@@ -61850,7 +62219,9 @@ function showRunRewards(run, hooks, opts){
     if(instant){ if(levelBlock.setFinal) levelBlock.setFinal(); }
     else if(levelBlock.runFill) levelBlock.runFill();
   });
-  seq.add(1250, () => { xp.classList.remove("is-charging"); xp.classList.add("is-charged"); });
+  /* The pop lands when the bar has finished, not part-way through a
+     level-up's second fill (build 302): a wrap is two fills, ~1.9s. */
+  seq.add((levelBlock.matches && levelBlock.matches(".is-levelup, :has(.is-levelup)")) ? 2050 : 1250, () => { xp.classList.remove("is-charging"); xp.classList.add("is-charged"); });
   boxes.forEach(b => {
     seq.add(420, instant => {
       rsLand(b, instant);
@@ -64080,7 +64451,9 @@ function showAppearance(opts){
       const r0 = sect.getBoundingClientRect();
       const target = Math.max(0,
         window.scrollY + r0.top - Math.max(0, (window.innerHeight - r0.height) / 2));
-      const park = () => window.scrollTo({ top: target, behavior: "instant" });
+      const park = () => { const de = document.documentElement, was = de.style.scrollBehavior;
+        de.style.scrollBehavior = "auto"; void getComputedStyle(de).scrollBehavior;
+        try{ window.scrollTo(0, target); }catch(e){} de.style.scrollBehavior = was; };
       park();
       setTimeout(park, 140);
       setTimeout(park, 360);
@@ -67603,7 +67976,7 @@ function openInviteFriendsSheet(roomCode){
       art.className = "friend-row-art";
       art.appendChild(avatarSpanFor(e));
       decorateAvatar(art, e.level, e.badges, e.mystery);
-      if(e.firstName && !isOnline(e)) setCharState(art, "sleep");
+      if(e.firstName) setCharState(art, isOnline(e) ? "live" : "sleep");
       const text = document.createElement("div");
       text.className = "friend-row-text";
       const nm = document.createElement("p");
@@ -72568,7 +72941,7 @@ function showFriends(){
        each corner and they cannot land on each other. */
     const online = isOnline(entry);
     /* Asleep when they are not on - "same ... on your friend list". */
-    if(!online && entry && entry.firstName) setCharState(art, "sleep");
+    if(entry && entry.firstName) setCharState(art, online ? "live" : "sleep");
     if(online){
       const dot = document.createElement("span");
       dot.className = "friend-online-dot";
@@ -72914,6 +73287,13 @@ function showCalendar(){
   grid.className = "cal-grid";
   monthWrap.appendChild(grid);
 
+  /* THE HINT LIVES UNDER THE GRID NOW (build 302), not in the card: the
+     card always has a day in it - today, on opening - so a hint there
+     was only ever seen on a blank card. */
+  const gridHint = document.createElement("p");
+  gridHint.className = "cal-grid-hint";
+  gridHint.textContent = "Tap any day to see what's on it.";
+  monthWrap.appendChild(gridHint);
   const dayCard = document.createElement("div");
   dayCard.className = "cal-daycard";
   monthWrap.appendChild(dayCard);
@@ -73153,11 +73533,37 @@ function showCalendar(){
     return null;
   })();
   let gridMonthIdx = Math.max(0, monthKeys.indexOf(todayMonthKey));
-  let selectedDate = byDate[todayStr] ? todayStr : null;
+  /* ---- EVERY DAY CAN BE TAPPED, AND TODAY IS PICKED ON OPENING (build 302) ----
+     "It doesn't let you click the weekends ... if I click off that day by
+     clicking another, I can't click today, it should just show no class
+     today." Only class days were buttons; a weekend - today, when it was
+     reported - was a plain span with no handler, so once you had picked
+     another day there was no way back to it. Every day of the month is a
+     button now, and a day with nothing on says so. */
+  let selectedDate = monthKeys.indexOf(todayMonthKey) >= 0 ? todayStr : null;
 
   function renderDayCard(){
     dayCard.replaceChildren();
     const entry = selectedDate ? byDate[selectedDate] : null;
+    if(!entry && selectedDate){
+      dayCard.className = "cal-daycard cal-daycard-none";
+      const head = document.createElement("p");
+      head.className = "cal-row-date"; head.textContent = formatDayHead(selectedDate);
+      if(selectedDate === todayStr){
+        const badge = document.createElement("span");
+        badge.className = "cal-today-badge"; badge.textContent = "Today";
+        head.appendChild(badge);
+      }
+      const [yy, mm, dd] = selectedDate.split("-").map(Number);
+      const dow = new Date(yy, mm - 1, dd).getDay();
+      const body = document.createElement("p");
+      body.className = "cal-row-text";
+      body.textContent = (dow === 0 || dow === 6)
+        ? "No class \u2014 it's the weekend."
+        : (selectedDate === todayStr ? "No class today." : "No class this day.");
+      dayCard.append(head, body);
+      return;
+    }
     if(!entry){
       dayCard.className = "cal-daycard cal-daycard-empty";
       const p = document.createElement("p");
@@ -73201,7 +73607,8 @@ function showCalendar(){
     for(let d = 1; d <= daysInMonth; d++){
       const ds = key + "-" + String(d).padStart(2, "0");
       const entry = byDate[ds];
-      const cell = document.createElement(entry ? "button" : "span");
+      const cell = document.createElement("button");
+      cell.type = "button";
       let cls = "cal-cell";
       if(entry) cls += " cal-cell-class";
       if(entry && entry.holiday) cls += " cal-cell-holiday";
@@ -73215,7 +73622,8 @@ function showCalendar(){
       if(entry && isTestDay(entry)) cls += " cal-cell-test";
       if(ds === todayStr) cls += " cal-cell-today";
       if(ds === lastClassDay) cls += " cal-cell-last";
-      if(entry && ds === selectedDate) cls += " cal-cell-sel";
+      if(!entry) cls += " cal-cell-free";
+      if(ds === selectedDate) cls += " cal-cell-sel";
       cell.className = cls;
       cell.dataset.date = ds;
       const num = document.createElement("span");
@@ -73252,12 +73660,17 @@ function showCalendar(){
           dots.appendChild(testDot);
         }
         cell.appendChild(dots);
-        cell.addEventListener("click", () => {
-          selectedDate = (selectedDate === ds) ? null : ds;
-          renderGrid();
-          renderDayCard();
-        });
+      } else {
+        cell.setAttribute("aria-label", formatDayHead(ds) + " \u2014 no class");
       }
+      cell.setAttribute("aria-pressed", ds === selectedDate ? "true" : "false");
+      /* Tapping picks the day. It no longer toggles off: un-picking left an
+         empty card and was the other half of "I can't get back to today". */
+      cell.addEventListener("click", () => {
+        selectedDate = ds;
+        renderGrid();
+        renderDayCard();
+      });
       grid.appendChild(cell);
     }
   }
@@ -73272,8 +73685,8 @@ function showCalendar(){
   });
   gridTodayBtn.addEventListener("click", () => {
     const idx = monthKeys.indexOf(todayMonthKey);
-    if(idx < 0 || !byDate[todayStr]){
-      showToast("Today isn't a class day on the calendar.");
+    if(idx < 0){
+      showToast("Today isn't on the class calendar.");
       return;
     }
     gridMonthIdx = idx; selectedDate = todayStr;
@@ -74037,10 +74450,16 @@ function showProfile(defaultTab){
   const levelSideTop = document.createElement("span");
   levelSideTop.className = "profile-level-sidetop";
   levelSideTop.textContent = prog.atCap ? "Level " + LEVEL_CAP + ", the cap" : prog.toNext.toLocaleString() + " XP to level " + (prog.level + 1);
-  const levelSideSub = document.createElement("span");
-  levelSideSub.className = "profile-level-sidesub";
-  levelSideSub.textContent = prog.total.toLocaleString() + " XP earned";
-  levelSide.append(levelSideLab, levelSideTop, levelSideSub);
+  /* THE TOTAL GOES AT THE BOTTOM (build 302). "Where it says how much xp
+     you have earned ... shouldn't that be at the bottom and not in the
+     middle? Shouldn't it say total xp earned too?" It sat between the
+     next-level line and the bar, where it read as part of the climb to
+     the next level. It is the box's footnote now, under the bar, and it
+     says what it is. */
+  const levelSideSub = document.createElement("p");
+  levelSideSub.className = "profile-level-total";
+  levelSideSub.textContent = prog.total.toLocaleString() + " total XP earned";
+  levelSide.append(levelSideLab, levelSideTop);
   levelRow.append(levelNum, levelSide);
   levelSect.appendChild(levelRow);
 
@@ -74062,6 +74481,7 @@ function showProfile(defaultTab){
   xpLinePct.textContent = prog.atCap ? "100%" : Math.floor(prog.fraction * 100) + "%";
   xpLine.append(xpLineMain, xpLinePct);
   levelSect.appendChild(xpLine);
+  levelSect.appendChild(levelSideSub);
 
   /* The badges as a count, and the ones you HAVE as a small overlapping
      stack (build 243). Build 242 put a sixteen-segment meter here and it
@@ -75686,7 +76106,7 @@ function buildRanksTab(){
         try{ c.stop.scrollIntoView({ block: "center", behavior: "smooth" }); }catch(e){}
         await wait(many ? 600 : 750);
         const rf = map.querySelector('.rankmap-roadfill[data-celebrate-for="' + c.key + '"]');
-        if(rf){ rf.style.setProperty("--lit", "1"); await wait(many ? 900 : 1100); }
+        if(rf){ rf.style.setProperty("--lit", "1"); await wait(many ? 1500 : 1800); }
         c.stop.classList.add("is-celebrating");
         finish(c);
         await wait(many ? 1500 : 1900);
@@ -75696,7 +76116,7 @@ function buildRanksTab(){
         try{ progressStop.scrollIntoView({ block: "center", behavior: "smooth" }); }catch(e){}
         await wait(700);
         runProgress();
-        await wait(2600);
+        await wait(3600);
         progressStop.classList.remove("is-climbing");
       }
       /* ...and back up to where the tab opened (build 279). */
@@ -75789,7 +76209,7 @@ if(backToTopBtn){
      argument - and an event object is truthy, so every press took the
      instant branch and snapped to the top with no glide. The smooth
      scroll was not removed, it was being suppressed by its own caller. */
-  backToTopBtn.addEventListener("click", () => toTop());
+  backToTopBtn.addEventListener("click", () => toTop("smooth"));
 }
 
 /* Bottom floating tab bar. Its icons are built once here (not per-screen)
@@ -76001,7 +76421,10 @@ function applyGlassRefraction(el, mapImgId){
       bar.querySelectorAll(".bottomtab").forEach(t => t.classList.toggle("active", t === tab));
       slideBubbleToActiveTab();
       beginSettle();
-      requestAnimationFrame(() => setTimeout(() => { go(); syncActive(); }, 0));
+      /* The settle window restarts once the new screen is in (build 302):
+         counted from the tap, a slow build used most of it up, and the
+         emblems and characters woke while the screen was still landing. */
+      requestAnimationFrame(() => setTimeout(() => { go(); syncActive(); beginSettle(360); }, 0));
     });
     const go = () => {
       if(dest === "home"){

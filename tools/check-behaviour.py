@@ -1202,9 +1202,11 @@ def check_b220(br):
     r = pg.evaluate("""()=>{
       const out = {};
       out.order = MYSTERY_ORDER.slice();
-      // The windows: red at 35, orange 40-41, yellow before 46, violet by 60.
+      // The windows are FLARE_WINDOWS (build 302: 20 / 34-36 / 47-49 / 59-61 / 70-72).
       store.flareLevels = { orange: 45, yellow: 66 };   // the old schedule's draws
       out.gates = ['red','orange','yellow','violet','white'].map(k => mysteryLevelGate(k));
+      out.windows = ['red','orange','yellow','violet','white'].map(k => FLARE_WINDOWS[k]);
+      out.oldOutside = !(45 >= FLARE_WINDOWS.orange[0] && 45 <= FLARE_WINDOWS.orange[1]) && !(66 >= FLARE_WINDOWS.yellow[0] && 66 <= FLARE_WINDOWS.yellow[1]);
       // Void's flares are not looked for until Void is held.
       store.mysteryColorsFound = { red:false, orange:false, yellow:false, violet:false, white:false };
       store.flareNextTestAt = 0;
@@ -1221,8 +1223,15 @@ def check_b220(br):
     check("five flares, the last two Void's",
           r["order"] == ["red", "orange", "yellow", "violet", "white"], r["order"])
     g = r["gates"]
+    # The windows are read off the page: they moved in build 302 (red 20,
+    # orange ~35, yellow ~48, Umbra ~60, Horizon 70-72) and a gate that
+    # names the numbers fails the app for being right. What is asserted is
+    # the shape - every draw inside its own window, the old draws redrawn,
+    # and the windows climbing in order. Section 71 holds the numbers.
+    w = r["windows"]
     check("each flare's level sits in its window, old draws redrawn",
-          g[0] == 35 and g[1] in (40, 41) and 42 <= g[2] <= 45 and 55 <= g[3] <= 59 and 68 <= g[4] <= 72, g)
+          all(w[i][0] <= g[i] <= w[i][1] for i in range(5)) and r["oldOutside"]
+          and all(w[i][1] < w[i + 1][0] for i in range(4)), (g, w))
     check("Void's flares wait for Void", not r["violetBeforeVoid"] and r["redAt75"], r)
     check("somebody behind gets the next one three or four tests later, not the next test",
           r["hold"] in (3, 4) and not r["orangeNow"], r)
@@ -5830,7 +5839,8 @@ def check_b284(br):
       theme.muteBanners = false; runLiveStreak = 0;
       for(let i = 0; i < 30; i++) runStreakLive(true);
       await wait(300); mo.disconnect();
-      out.pops = pops + document.querySelectorAll('.streak-pop').length;
+      /* the pops that went up - the last may still be on screen (build 302) */
+      out.pops = pops;
       runLiveStreak = 0;
       /* 6. no Most missed: the bank, the unit door, the Settings reset, a saved bank */
       showAppearance(); await wait(700);
@@ -5869,7 +5879,9 @@ def check_b284(br):
     check("the badge row opens the badge case", r.get("badgesOpen") is True, r.get("badgesOpen"))
     check("the rank box has no 'N to go until X' line, the badge box no 'Closest' line",
           r.get("noteLine") is False and r.get("closest") is False, (r.get("noteLine"), r.get("closest")))
-    check("thirty right answers in a row put up no streak pop during the test", r.get("pops") == 0, r.get("pops"))
+    # REVERSED IN 302: "Bring back the correct answer streak thing you get
+    # during tests." Thirty in a row is the pop at 10 and the pop at 25.
+    check("thirty right answers in a row put up the streak pop at 10 and at 25", r.get("pops") == 2, r.get("pops"))
     check("Lanterns, Great Wave, Thunderhead and Hall of Fame are gone", r.get("gone") == [], r.get("gone"))
     check("somebody wearing one of them is back on the default banner", r.get("worn") == "", r.get("worn"))
     check("the Question bank is All questions and Flagged - no Most missed", r.get("banks") == ["all", "flagged"], r.get("banks"))
@@ -7033,7 +7045,7 @@ def check_b300(br):
             /* recorded once: the cache key is the drawing, not the build */
             const keys = window.caches ? (await (await caches.open('class26e.rk-sheets')).keys()).map(k => new URL(k.url).pathname) : [];
             out.keys = keys.length; out.buildKeyed = keys.some(k => k.indexOf(encodeURIComponent(APP_BUILD)) >= 0);
-            out.v3 = keys.filter(k => k.indexOf('/__rk/v3/') === 0).length;
+            out.v3 = keys.filter(k => k.indexOf('/__rk/v4/') === 0).length;
             /* a second Home reuses them: all playing again almost at once */
             showProfile('profile'); await wait(400); showHome();
             const t0 = performance.now();
@@ -7053,7 +7065,7 @@ def check_b300(br):
               per and all(p.get("anims") == 1 and p.get("offPx") == 0 and isinstance(p.get("frameDev"), (int, float))
                           and abs(p["frameDev"] - round(p["frameDev"])) < 0.02 for p in per),
               [(p.get("offPx"), p.get("frameDev") if not isinstance(p.get("frameDev"), (int, float)) else round(p["frameDev"], 2)) for p in per])
-        check(f"{dev}: 24 frames a second (144 over the 6s loop)", per and all(p.get("n") == 144 for p in per), [p.get("n") for p in per])
+        check(f"{dev}: 30 frames a second (180 over the 6s loop; build 302)", per and all(p.get("n") == 180 for p in per), [p.get("n") for p in per])
         check(f"{dev}: the sheets are cached by drawing, not by build, so an update does not re-record them",
               r.get("keys", 0) > 0 and not r.get("buildKeyed") and r.get("v3") == r.get("keys"), (r.get("keys"), r.get("buildKeyed"), r.get("v3")))
         check(f"{dev}: coming back to Home, every flare is playing again within a second",
@@ -7191,6 +7203,266 @@ def check_b301_chat(br):
     check("and nothing threw", not r.get("threw"), r.get("threw"))
     ctx.close()
 
+
+def check_b302(br):
+    """Build 302: tabs that do not lap, a calendar where every day can be
+    picked, a sleeper that still moves, matched rings, the total XP at the
+    bottom, Home's bubbles filled on the way back, the road map slower and
+    the emblems' new shapes. Written against build 301; every group fails
+    there."""
+    print("\n70. build 302: no lap on a tab switch, every calendar day, and the rest")
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate("""async ()=>{
+          const wait = ms => new Promise(r => setTimeout(r, ms));
+          const out = {};
+          try{
+          document.getElementById('pushing-update')?.remove();
+          /* 1. a tab switch from a scrolled page: no movement after mount */
+          showAppearance(); await wait(500);
+          document.documentElement.style.scrollBehavior = 'smooth';
+          window.scrollTo({ top: 600, behavior: 'instant' }); await wait(200);
+          out.scrolledFrom = window.scrollY;
+          const seen = []; let first = null;
+          document.getElementById('bottomtab-profile').click();
+          const t0 = performance.now();
+          while(performance.now() - t0 < 700){
+            await new Promise(r => requestAnimationFrame(r));
+            const el = stage.firstElementChild;
+            if(el && el.classList.contains('screen-profile') || (el && el.querySelector('.profile-hero'))){
+              if(first === null) first = performance.now() - t0;
+              seen.push({ y: window.scrollY, tf: getComputedStyle(el).transform });
+            }
+          }
+          out.frames = seen.length;
+          out.moved = seen.filter(f => f.tf && f.tf !== 'none').length;
+          out.glided = seen.filter(f => f.y > 0 && f.y < out.scrolledFrom).length;
+          out.endY = window.scrollY;
+          out.ys = seen.map(f => Math.round(f.y)).slice(0, 12);
+          /* 2. the calendar: a weekend is a button, today is picked, the two marks differ */
+          showCalendar(); await wait(400);
+          const cells = [...document.querySelectorAll('.cal-grid .cal-cell[data-date]')];
+          const wk = cells.find(c => { const [y, m, d] = c.dataset.date.split('-').map(Number); const dw = new Date(y, m - 1, d).getDay(); return dw === 6 && !c.classList.contains('cal-cell-class'); });
+          out.weekendIsButton = !!(wk && wk.tagName === 'BUTTON');
+          if(wk){ wk.click(); await wait(100); }
+          out.weekendCard = (document.querySelector('.cal-daycard') || {}).textContent || '';
+          const cls = [...document.querySelectorAll('.cal-grid .cal-cell.cal-cell-class:not(.cal-cell-today)')][0];
+          if(cls){ cls.click(); await wait(100); }
+          const today = document.querySelector('.cal-grid .cal-cell-today');
+          out.todayMarkedUnpicked = !!(today && !today.classList.contains('cal-cell-sel'));
+          if(today){ today.click(); await wait(100); }
+          const today2 = document.querySelector('.cal-grid .cal-cell-today');
+          out.todayPickable = !!(today2 && today2.classList.contains('cal-cell-sel'));
+          out.hint = !!document.querySelector('.cal-grid-hint');
+          /* 3. asleep and still moving */
+          const av = avatarSpanFor({ avatarChar: 'ninja' }); document.body.appendChild(av);
+          setCharState(av, 'live'); await wait(80);
+          const liveN = av.getAnimations ? av.getAnimations({ subtree: true }).length : 0;
+          setCharState(av, 'sleep'); await wait(80);
+          out.sleepLive = av.classList.contains('char-live');
+          out.sleepN = av.getAnimations ? av.getAnimations({ subtree: true }).filter(a => !(a.effect && a.effect.target && a.effect.target.closest && a.effect.target.closest('.char-zzz'))).length : 0;
+          out.liveN = liveN;
+          av.remove();
+          /* 4. three rings, one size; 5. the total at the bottom */
+          showProfile('profile'); await wait(700);
+          const wOf = sel => { const e = document.querySelector(sel); return e ? Math.round(e.getBoundingClientRect().width) : null; };
+          out.rings = [wOf('.profile-rankplate .profile-rankcoin'), wOf('.profile-level-row .statring'), wOf('.profile-badgesect .statring')];
+          const tot = document.querySelector('.profile-level-total'), bar = document.querySelector('.profile-xpbar');
+          out.total = tot ? tot.textContent : '';
+          out.totalBelowBar = !!(tot && bar && (bar.compareDocumentPosition(tot) & Node.DOCUMENT_POSITION_FOLLOWING));
+          const fill = document.querySelector('.profile-xpbar .xpbar-fill');
+          out.glide = fill ? getComputedStyle(fill, '::before').animationName : '';
+          /* 6. Home's bubbles on the way back */
+          showHome(); await wait(9000);
+          document.getElementById('bottomtab-profile').click(); await wait(800);
+          document.querySelector('.bottomtab').click();
+          await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+          await wait(120);
+          const bub = [...document.querySelectorAll('.cosmic-badge-rank')];
+          out.bubbles = bub.length;
+          out.blank = bub.filter(b => { const s = b.querySelector('svg.cosmic-rank-emblem'); const shown = s && getComputedStyle(s).visibility !== 'hidden'; return !shown && !b.querySelector('.cosmic-rank-anim'); }).length;
+          /* 7. the shapes and the orbit */
+          const sap = buildRankEmblemSVG('adept'), plat = buildRankEmblemSVG('vanguard'), sil = buildRankEmblemSVG('ranger');
+          out.sapSym = !!sap.querySelector('.rk-spin.rk-sym2');
+          out.platSpiral = !!plat.querySelector('.rk-spin.rk-sym4');
+          out.silverSoft = !!sil.querySelector('.rk-twinkle.rk-soft');
+          const dots = [...document.querySelectorAll('.cosmic-orbit-dot')];
+          out.innerDots = dots.filter(d => Math.hypot(+d.getAttribute('cx') - 180, +d.getAttribute('cy') - 150) < 130).length;
+          /* 8. the road map is slower */
+          showRanksScreen('ranks'); await wait(300);
+          const rf = document.querySelector('.rankmap-roadfill');
+          out.roadDur = rf ? getComputedStyle(rf).transitionDuration : '';
+          } catch(e){ out.threw = String(e && e.stack || e); }
+          return out; }""")
+        check(f"{dev}: a tab switch moves nothing once the new screen is up - no slide, no glide to the top",
+              r.get("frames", 0) > 5 and r.get("moved") == 0 and r.get("glided") == 0 and r.get("endY") == 0, r)
+        check(f"{dev}: a weekend can be picked and says there is no class",
+              r.get("weekendIsButton") is True and "No class" in (r.get("weekendCard") or ""), [r.get("weekendIsButton"), r.get("weekendCard")])
+        check(f"{dev}: today keeps its mark when another day is picked, and can be picked again",
+              r.get("todayMarkedUnpicked") is True and r.get("todayPickable") is True and r.get("hint") is True, r)
+        check(f"{dev}: a sleeping character is still live and still animating",
+              r.get("sleepLive") is True and r.get("sleepN", 0) >= max(3, r.get("liveN", 0) // 2), [r.get("sleepLive"), r.get("liveN"), r.get("sleepN")])
+        rings = r.get("rings") or []
+        check(f"{dev}: the rank, level and badge rings are one size", len(rings) == 3 and None not in rings and max(rings) - min(rings) <= 1, rings)
+        check(f"{dev}: the total XP sits under the bar and says so",
+              r.get("totalBelowBar") is True and (r.get("total") or "").endswith("total XP earned"), r.get("total"))
+        check(f"{dev}: the XP bar carries its slow light", r.get("glide") == "xp-glide", r.get("glide"))
+        check(f"{dev}: back on Home, no flare bubble is empty", r.get("bubbles", 0) >= 7 and r.get("blank") == 0, [r.get("bubbles"), r.get("blank")])
+        check(f"{dev}: Sapphire turns on a half-turn loop, Platinum has its spiral, Silver's star glints",
+              r.get("sapSym") and r.get("platSpiral") and r.get("silverSoft"), [r.get("sapSym"), r.get("platSpiral"), r.get("silverSoft")])
+        check(f"{dev}: three orbit dots on the inner ring", r.get("innerDots") == 3, r.get("innerDots"))
+        check(f"{dev}: the road map fills over 2.4s", (r.get("roadDur") or "").startswith("2.4s"), r.get("roadDur"))
+        check(f"{dev}: nothing threw", not r.get("threw"), r.get("threw"))
+        ctx.close()
+
+def check_b302_flares(br):
+    """Build 302: the flare levels move down (20 / ~35 / ~48 / ~60 / 70-72)
+    and anybody already past one is handed it at random over about their
+    next ten tests, once. Written against build 301; fails there."""
+    print("\n71. build 302: new flare levels, and the owed ones spread over ten tests")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""() => {
+      const out = {};
+      try{
+      out.windows = JSON.stringify(typeof FLARE_WINDOWS !== 'undefined' ? FLARE_WINDOWS : null);
+      out.hasFn = typeof applyFlareReschedule === 'function';
+      const realLevel = levelOf;
+      const tests = testsCompletedOf(store);
+      out.tests = tests;
+      const trial = (lvl, found, n) => {
+        const offs = [];
+        for(let i = 0; i < n; i++){
+          levelOf = () => lvl;
+          store.mysteryColorsFound = Object.assign({}, found);
+          store.flareLevels = { red: 35, orange: 40, yellow: 44, violet: 57, white: 69 };
+          store.flareSchedRev = 0; store.flareNextTestAt = -99;
+          if(out.hasFn) applyFlareReschedule();
+          offs.push(store.flareNextTestAt === -99 ? null : store.flareNextTestAt - tests);
+        }
+        return offs;
+      };
+      const span = a => a.some(x => x === null) ? null : [Math.min(...a), Math.max(...a), new Set(a).size];
+      out.one = span(trial(25, {}, 300));
+      out.two = span(trial(45, {}, 300));
+      out.three = span(trial(50, {}, 300));
+      out.none = trial(10, {}, 5);
+      /* once only: a second call leaves the schedule alone */
+      levelOf = () => 25; store.mysteryColorsFound = {}; store.flareSchedRev = 0;
+      if(out.hasFn) applyFlareReschedule();
+      const first = store.flareNextTestAt; store.flareNextTestAt = first + 7;
+      if(out.hasFn) applyFlareReschedule();
+      out.onceOnly = out.hasFn && store.flareNextTestAt === first + 7;
+      /* red at exactly 20, with nothing holding it back */
+      store.flareSchedRev = 999; store.flareNextTestAt = 0; store.mysteryColorsFound = {};
+      levelOf = () => 19; out.red19 = mysteryGateMet('red');
+      levelOf = () => 20; out.red20 = mysteryGateMet('red');
+      /* an old drawn level is redrawn into its new window */
+      store.flareLevels = { orange: 41 };
+      out.orangeRedrawn = mysteryLevelGate('orange');
+      levelOf = realLevel;
+      /* an existing account loads with the reschedule still to come */
+      const doc = JSON.parse(JSON.stringify(store)); delete doc.flareSchedRev;
+      applyLoadedData(doc);
+      out.loadedRev = store.flareSchedRev;
+      }catch(e){ out.err = String(e); }
+      return out;
+    }""")
+    ctx.close()
+    check("no error in the flare checks", "err" not in r, r.get("err"))
+    check("flare levels are 20 / 34-36 / 47-49 / 59-61 / 70-72",
+          r.get("windows") == '{"red":[20,20],"orange":[34,36],"yellow":[47,49],"violet":[59,61],"white":[70,72]}',
+          r.get("windows"))
+    one, two, three = r.get("one"), r.get("two"), r.get("three")
+    check("one flare owed: lands anywhere in the next ten tests",
+          bool(one) and one[0] == 0 and 7 <= one[1] <= 9 and one[2] >= 6, one)
+    check("two owed: the first within six, so both fit inside ten",
+          bool(two) and two[0] == 0 and two[1] <= 5 and two[2] >= 3, two)
+    check("three owed: the first within two", bool(three) and three[1] <= 1, three)
+    check("nobody owed: the schedule is left alone", r.get("none") == [None] * 5, r.get("none"))
+    check("the reschedule happens once per account", r.get("onceOnly") is True)
+    check("red is level 20 exactly", r.get("red19") is False and r.get("red20") is True,
+          (r.get("red19"), r.get("red20")))
+    check("an old drawn orange level is redrawn into 34-36",
+          isinstance(r.get("orangeRedrawn"), int) and 34 <= r["orangeRedrawn"] <= 36, r.get("orangeRedrawn"))
+    check("an existing account loads with the reschedule pending", r.get("loadedRev") == 0, r.get("loadedRev"))
+
+
+FLAGNOTE_VIEWPORTS = [
+    (320, 568), (375, 667), (375, 812), (393, 852), (440, 956), (518, 1125),
+    (744, 1133), (768, 1024), (810, 1080), (820, 1180), (834, 1194),
+    (1024, 1366), (1032, 1376), (360, 800), (800, 1280),
+    (1366, 768), (1512, 982), (1728, 1117), (1920, 1080), (1440, 900),
+    (1280, 800), (2560, 1440)]
+
+
+def check_b302_flagnote(br):
+    """Build 302: the flag's confirmation is a label beside the flag, not
+    a yellow bar across the top of the screen. "It looks like a button ...
+    being at the very top of the screen isn't the move ... the chat button
+    is over it." On every matrix size, upright and on its side: no toast,
+    a label on the flag's own line, inside the screen, clear of the flag,
+    Pause, the chat button and the top bar, and with no fill of its own
+    in a test. Written against build 301; fails there."""
+    print("\n72. build 302: the flag says so beside the flag, on every device")
+    sizes = []
+    for (w, h) in FLAGNOTE_VIEWPORTS:
+        sizes.append((w, h))
+        if w < h:
+            sizes.append((h, w))
+    bad = []
+    for (w, h) in sizes:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        try:
+            pg.evaluate("""async ()=>{ const wt = ms => new Promise(r => setTimeout(r, ms));
+              document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());
+              cfg.mode='drill'; cfg.units=['Identity Crimes']; cfg.versions={}; cfg.source='all'; cfg.size=0;
+              showSetup(); await wt(400); document.getElementById('nextbtn').click(); await wt(300);
+              document.querySelector('.sheet-begin-btn').click(); }""")
+            pg.wait_for_selector(".choice", timeout=25000)
+            pg.wait_for_timeout(500)
+            r = pg.evaluate("""async ()=>{ const wt = ms => new Promise(r => setTimeout(r, ms));
+              const f = document.querySelector('.qflag'); if(!f) return { noFlag: true };
+              if(isFlagged(order[pos])){ setFlag(order[pos], false); }
+              f.click(); await wt(260);
+              const R = e => e && e.getBoundingClientRect();
+              const n = document.querySelector('.flag-note'), t = document.getElementById('toast');
+              if(!n) return { noNote: true, toast: !!(t && t.textContent) };
+              const nr = R(n), fr = R(f);
+              const hit = (a, b) => !!(a && b && b.width && !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom));
+              const cs = getComputedStyle(n);
+              return {
+                toast: !!(t && t.textContent && t.classList.contains('show')),
+                text: n.textContent,
+                inView: nr.left >= 0 && nr.right <= innerWidth && nr.top >= 0 && nr.bottom <= innerHeight,
+                onLine: Math.abs((nr.top + nr.bottom) / 2 - (fr.top + fr.bottom) / 2) <= 2 || nr.top >= fr.bottom,
+                hitsFlag: hit(nr, fr),
+                hitsPause: hit(nr, R(document.getElementById('pausebtn'))),
+                hitsChat: hit(nr, R(document.querySelector('.chatdock-btn'))),
+                hitsTop: hit(nr, R(document.querySelector('.wrap > .top'))),
+                filled: cs.backgroundColor !== 'rgba(0, 0, 0, 0)' && cs.backgroundColor !== 'transparent'
+              }; }""")
+        except Exception as e:
+            r = {"err": str(e)[:100]}
+        ctx.close()
+        tag = "%dx%d" % (w, h)
+        if r.get("err") or r.get("noFlag"):
+            bad.append("%s: %s" % (tag, r)); continue
+        if r.get("noNote"):
+            bad.append("%s: no label beside the flag (toast: %s)" % (tag, r.get("toast"))); continue
+        for k, what in (("toast", "the old top bar still shows"), ("hitsFlag", "covers the flag"),
+                        ("hitsPause", "covers Pause"), ("hitsChat", "is under the chat button"),
+                        ("hitsTop", "sits in the top bar"), ("filled", "has a fill, like a button")):
+            if r.get(k):
+                bad.append("%s: label %s" % (tag, what))
+        if not r.get("inView"):
+            bad.append("%s: label is off the screen" % tag)
+        if not r.get("onLine"):
+            bad.append("%s: label is not on the flag's line" % tag)
+        if r.get("text") != "Flagged":
+            bad.append("%s: label reads %r" % (tag, r.get("text")))
+    check("the flag label lands beside the flag on all %d sizes" % len(sizes), not bad, bad[:6])
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     only = os.environ.get("ONLY_B245")
@@ -7281,6 +7553,9 @@ def main():
             check_b299(br)
             check_b300(br)
             check_b301_chat(br)
+            check_b302(br)
+            check_b302_flares(br)
+            check_b302_flagnote(br)
         finally:
             br.close()
     SERVER.shutdown()

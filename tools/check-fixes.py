@@ -286,8 +286,20 @@ def main():
                                         fails.append(f"{tag}: the version label touches the tab bar ({round(vl['t'])} vs bar bottom {round(vl['barBottom'])})")
                                     if vl["b"] > H or vl["l"] < 0:
                                         fails.append(f"{tag}: the version label runs off the screen ({round(vl['l'])},{round(vl['b'])} vs H {H})")
-                                    if vl["l"] > 40 or vl["r"] > vw / 2 - 70:
+                                    if vl["l"] > 64 or vl["r"] > vw / 2 - 70:
                                         fails.append(f"{tag}: the version label is not in the bottom-left corner (left {round(vl['l'])}, right {round(vl['r'])})")
+                                    # A phone with a home indicator has rounded display
+                                    # corners, ~55-62pt on a current iPhone. The label's
+                                    # lowest-left point must sit outside a 62px corner
+                                    # circle, or the corner eats the "v" (build 302: "it's
+                                    # off the screen and barely visible").
+                                    R = 62
+                                    up = H - vl["b"]
+                                    if up < R:
+                                        import math
+                                        edge = R - math.sqrt(R * R - (R - up) ** 2)
+                                        if vl["l"] < edge + 4:
+                                            fails.append(f"{tag}: the version label is inside the rounded display corner (left {round(vl['l'])}, corner edge {round(edge)} at {round(up)}px up)")
                                     if not str(vl["text"]).startswith("v"):
                                         fails.append(f"{tag}: the version label reads {vl['text']!r}, not 'v...'")
                                 elif vl["shown"]:

@@ -5777,7 +5777,8 @@ last, so the locked one's numbers described a page that had moved).
 **Every flare is a level now** (`FLARE_WINDOWS`): red at 35, orange
 40-41, yellow 42-45, then Void's two - **Umbra** (violet, 55-59) and
 **Event Horizon** (white, 68-72) - which only exist for somebody who
-holds Void. Levels are drawn once per account into `store.flareLevels`;
+holds Void. *(Superseded in build 302: red 20, orange 34-36, yellow
+47-49, Umbra 59-61, Event Horizon 70-72 - see Build 302.)* Levels are drawn once per account into `store.flareLevels`;
 a stored draw outside its window (the old 45-47 / 65-67) is redrawn.
 **Catch-up**: finding a flare while the next is already owed sets
 `store.flareNextTestAt` three or four tests on, so somebody far past
@@ -10299,3 +10300,112 @@ LEFT was put straight back on the list by its own old ping
   build 300.
 - Nothing was written to the live inbox: the old pings are simply ignored
   now, and the next time a chat is read its pings are cleared.
+
+### Build 302 - tabs that do not lap, every calendar day, and the middle of the ladder
+
+**Tabs.** *"There's a slight lag when opening bottom tabs and the lag also
+gives it an effect where the page slightly laps up or down."* Three causes,
+all fixed and gated in `check-behaviour` 70 (which fails on 301):
+- Every mounted screen played `screen-fade-in`: drawn 6px low, held two
+  frames, glided up over 300ms under the bar's backdrop blur. That rule is
+  `animation:none` now; a screen appears where it belongs.
+- `toTop()` glided unless the mount had been seen, and the mount observer
+  runs after `toTop()`. It jumps by default now (`jumpToTop()`); only the
+  back-to-top button passes `"smooth"`. `jumpToTop()` turns the root's
+  smooth scroll off for the call **and reads the computed style back** -
+  without that read the browser used the stale `smooth` and the page still
+  glided the whole way up. `behavior:"instant"` is not used: a WebKit that
+  does not know it throws inside the try and leaves the glide in charge.
+- The settle window restarts once the new screen is in (`beginSettle(360)`
+  after `go()`), so emblems and characters do not wake mid-build.
+
+**Home's flares on the way back.** `homeRankEmblemReused()` hands back the
+same SVG node every visit, and it still carried last visit's
+`rk-under-anim` (visibility hidden) - three of seven bubbles came back
+empty until a new flip-book was laid over them. The flag comes off on
+reuse, and sheets already recorded go on in the first frame rather than
+after the settle window. Flip-books are 30fps now (180 frames, cache v4).
+
+**Calendar.** Every day is a button; a day with nothing on says "No
+class" (or "it's the weekend"); today is picked on opening; picking no
+longer toggles off; unpicked today is a ring, picked today the gradient,
+any other picked day the accent fill. The hint lives under the grid.
+
+**Asleep is still alive.** `setCharState(el, "sleep")` adds `char-live`
+too, and the sleep rule holds only eyes, head, body and shades. Friend
+lists give an online friend `live` so asleep and awake are the same
+character.
+
+**Profile.** The level and badge rings are the rank coin's 3.9rem at every
+width with a 4px line (`r:29.9px; stroke-width:4.1`); a later tablet rule
+set them to 4.6rem and had to go too. "N total XP earned" is the footnote
+under the bar. `.xpbar-fill.sbar::before` is a slow band of light sized
+off `--fill` and moved by transform only (`xp-glide`). The app's Reduce
+motion `*` rule does not match pseudo-elements, so both `::before` and
+`::after` are named.
+
+**One XP blue.** Results, the "+N XP" banner, the daily outro and the
+Virtual Room standings use the Profile bar's `#3D8BFF` / `#8FC1FF`.
+
+**Results XP.** The count-up runs on `requestAnimationFrame` and writes
+only when the figure changes; the "charged" pop waits for a level-up's
+second fill; the rank-up avatar and name animate transform/opacity only.
+
+**Road map** fills over 2.4s (climb 3.2s), and the celebration waits the
+extra time.
+
+**Version label on a phone** sits 2.6rem in: at 1.1rem the display's
+rounded corner (~55-62pt) cut off the "v". `check-fixes` models a 62px
+corner on every phone with a strip.
+
+**Orbit dots.** Umbra and Event Horizon moved to the inner ring with
+Yellow, 120 degrees apart; Red and Orange take opposite sides outside.
+
+**Emblems.** Silver's star glints (`rk-twinkle rk-soft`, smaller) instead
+of swelling into a Bronze-like star. Gold's planet is a companion star
+and its big white flare is shorter, so it leads into Platinum's pair.
+Platinum has a faint four-armed spiral turning behind the pair on
+Sapphire's tilt. Sapphire spins at 12s with a bigger, light-rimmed dark
+heart. Spin quickens up the top: Platinum 24s, Sapphire 12s, Amethyst
+5.5s - on Home too, because a layer marked `rk-sym2`/`rk-sym4` (looks the
+same after 1/k of a turn) may play 1/k of its cycle per flip-book loop.
+
+**The in-test streak pop is back (also 302).** *"Bring back the correct
+answer streak thing you get during tests."* Build 284 took it off;
+`showRunStreakBanner()` and `placeStreakPop()` are restored exactly as
+build 283 had them (Drill only, not a retake or the daily question; at
+10, 25, 50, 75, 100, 150, 250, 350 and every 50 after; in the top bar's
+own line, centred on the screen; muted by "Mute banners"). The 284 check
+is reversed: thirty in a row puts up exactly two pops, at 10 and 25.
+
+**The flare levels moved down (also 302).** *"The first flare ... by
+level 20 ... orange ... about level 35 ... yellow ... about level 48.
+Umbra will be 60 or so and horizon will be 70-72."* `FLARE_WINDOWS` is
+now red 20, orange 34-36, yellow 47-49, Umbra 59-61, Event Horizon
+70-72. Every level drawn under the old windows is outside the new ones,
+so `mysteryLevelGate()` redraws it on first ask - no migration.
+**Owed flares are spread, once.** *"For the people who already meet
+these thresholds make them random for them over their next 10 tests or
+so."* `applyFlareReschedule()` runs at the start of the first run after
+the update (`store.flareSchedRev` < `FLARE_SCHED_REV`, default 0 for
+every existing account), counts the flares this person is already past,
+and sets `flareNextTestAt` to a random point: any of the next ten tests
+for one owed, the next six for two, the next two for three or more -
+`armFlareCatchup()`'s three-or-four-test gaps then fit the rest inside
+about ten. To spread a future change the same way, bump
+`FLARE_SCHED_REV`. Gate: check-behaviour section 71, fails on 301.
+
+**The flag confirmation is a label beside the flag (also 302).** *"When
+the flagged/unflagged thing pops up, it looks like a button but the
+color is nice ... being at the very top of the screen isn't the move ...
+the chat button is over it."* It was `showToast(..., "flag")` - a solid
+yellow, bordered, full-width bar pinned over the top bar, where the chat
+button painted over it. `showFlagNote()` replaces it: plain text and a
+small flag, yellow for "Flagged" and grey for "Flag removed", on the
+flag's own centre line to its LEFT (the header row a test leaves empty),
+no fill. Where question text runs up to the flag (a unit's Flagged
+list, Answer Review) it gets a solid backing (`.has-back`) so it is not
+printed over a sentence. It lives on `<body>` and goes on scroll, on a
+screen change and after 1.8s. `.toast-flag` CSS is now unused. Gate:
+check-behaviour section 72, every matrix size both ways up; fails on 301.
+
