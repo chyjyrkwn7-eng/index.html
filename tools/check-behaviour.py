@@ -7813,6 +7813,49 @@ def check_b304_polish(br):
               bg.get("icon") and bg.get("lip") and bg.get("halo") == "start-ready-halo" and "start-ready-sheen" in (bg.get("anim") or ""), bg)
 
 
+def check_b304_noxpfly(br):
+    """Build 304: no XP banner flies into Profile after a run. A drill
+    with one miss, its retake, then Main menu - the reported route - and
+    Home is watched for the fly. Written against 303, where it flies."""
+    print("\n76. build 304: no XP fly into Profile after a run")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate("""async ()=>{ const w = ms => new Promise(r => setTimeout(r, ms));
+      setInterval(()=>[...document.body.children].forEach(n=>{ if(getComputedStyle(n).position==='fixed' && /challenge complete|character unlocked/i.test(n.textContent||'')) n.remove(); }), 40);
+      document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove()); theme.reduceMotion = true; applyTheme();
+      cfg.mode='drill'; cfg.units=['Identity Crimes']; cfg.versions={}; cfg.source='all'; cfg.size=0; cfg.timer='off'; cfg.flashcards=false;
+      beginRun(freshOrder(QUESTIONS.map((q,i)=>i).filter(i=>QUESTIONS[i].topic==='Identity Crimes')), null); }""")
+    def play(miss_first):
+        pg.wait_for_selector(".qpanel .choice", timeout=25000); pg.wait_for_timeout(400)
+        for i in range(40):
+            if pg.evaluate("()=>!!document.querySelector('.rs-rewards')"): break
+            p = pg.evaluate("()=>pos")
+            pg.evaluate("""(m)=>{ const r=correctSlot(order[pos]); const pick=s=>document.querySelector('.qpanel .choice[data-index="'+s+'"]').click();
+              if(m) pick((r+1)%4); pick(r); }""", miss_first and i == 0)
+            pg.wait_for_timeout(250)
+            pg.evaluate("()=>{ const b=document.getElementById('nextbtn'); if(b && !b.hidden) b.click(); }")
+            for _ in range(40):
+                pg.wait_for_timeout(100)
+                if pg.evaluate("()=>pos") != p or pg.evaluate("()=>!!document.querySelector('.rs-rewards')"): break
+        for _ in range(150):
+            pg.wait_for_timeout(200)
+            if pg.evaluate("()=>!!document.querySelector('.rs-rewards.rs-done')"): break
+    play(True)
+    pg.evaluate("""async ()=>{ const w = ms => new Promise(r => setTimeout(r, ms));
+      document.querySelector('.rs-continue').click(); await w(900);
+      [...document.querySelectorAll('button')].find(b => /Retake missed/.test(b.textContent)).click(); }""")
+    play(False)
+    r = pg.evaluate("""async ()=>{ const w = ms => new Promise(r => setTimeout(r, ms));
+      let flew = false;
+      const mo = new MutationObserver(() => { if(document.getElementById('welcomebonus-banner')) flew = true; });
+      mo.observe(document.body, { childList: true, subtree: true });
+      const mm = [...document.querySelectorAll('.rs-actions button')].find(b => /Main menu/.test(b.textContent));
+      const had = !!mm; if(mm) mm.click(); await w(2500); mo.disconnect();
+      return { had, flew, home: !!document.querySelector('[data-screen="home"]') }; }""")
+    ctx.close()
+    check("the retake ends on a results screen with Main menu", r.get("had") is True, r)
+    check("Main menu lands on Home with no XP flying into Profile", r.get("home") is True and r.get("flew") is False, r)
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     only = os.environ.get("ONLY_B245")
@@ -7909,6 +7952,7 @@ def main():
             check_b303(br)
             check_b304(br)
             check_b304_polish(br)
+            check_b304_noxpfly(br)
         finally:
             br.close()
     SERVER.shutdown()

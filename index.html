@@ -57265,13 +57265,17 @@ function showHome(){
      (build 302); recording new ones still waits for 1600ms. */
   requestAnimationFrame(() => { if(panel.isConnected) startOrbitEmblemAnims(panel, true); });
   setTimeout(() => { if(panel.isConnected) startOrbitEmblemAnims(panel); }, 1600);
-  /* The XP a run just earned flies into the Profile tab when you land
-     back here - the results screen has no tab bar to fly to. Once. */
-  if(pendingXpFly > 0){
-    const n = pendingXpFly;
-    pendingXpFly = 0;
-    setTimeout(() => showPointsFlyEffect("+" + n.toLocaleString() + " XP"), 450);
-  }
+  /* NO XP FLY AFTER A RUN (build 304). The XP a run earned used to fly
+     into the Profile tab when you landed back here, from back when the
+     results screen did not show it. It does now - every mode ends on
+     buildResultsLevelBlock, the XP card with the level bar filling - so
+     the fly told you the same thing a second time, out of context:
+     "at the end of taking a retake portion and hitting main menu, for
+     some reason the xp number banner pops up and then shoots over to
+     profile, get rid of that". pendingXpFly is still set and cleared by
+     the run code, and simply never read; the welcome bonus's fly
+     (awardWelcomeBonus) is a different moment and stays. */
+  pendingXpFly = 0;
   /* After the XP has flown, the Detective's progress drops in along the
      top - once, and only if you are still on Home by then. */
   if(pendingDailyProgress){
