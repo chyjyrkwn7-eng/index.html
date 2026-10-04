@@ -73,6 +73,11 @@ disagreed, the repo won and the difference is called out.
   the thing it guards is gone. Takes `--only <substring>` like the sweep,
   because 63 runs of a page that waits on a splash is a long time to wait
   to find out one device is wrong.
+- `tools/check-groupchat.py` — group chats with three classmates and a
+  second device, phone and iPad: who is in a group (including members an
+  older build left nameless), how they are drawn now, the list, leaving on
+  one device, and the toast and leave sheet staying their own size. Takes
+  `--against <dir>`. See **Build 307**.
 - `tools/check-sync.py` — the question none of the three layout tools can
   answer: **does this build still keep people's accounts?** The sync code
   surviving, recovery landing somewhere that isn't Welcome, a rankings row
@@ -10927,3 +10932,67 @@ in the served copy (`BODY`) per look. Previews of all three are in
   because tests, review and unit details each set their own). *"The
   checkmarks and x's are centered, the letters on the left aren't
   centered now."* Section 79 measures every letter against its row.
+
+### Build 307 - group chats, by the people in them
+
+*"When starting a group chat, there's a massive box that takes over the
+entire screen ... similar thing happens when leaving a chat. Looking at an
+old group chat, previous members of it randomly got kicked out ... the list
+of your group chats and who's in them ... definitely not showing correctly
+... the characters match up ... clicking the group chat stuff but not a
+button makes the background go dark."* Every one of these reproduced on
+build 306, and `tools/check-groupchat.py` (three classmates plus a second
+device, phone and iPad) fails 34 checks there and passes on 307.
+
+- **The "massive box" was a toast.** `body.chatdock-open .toast` pins a
+  toast to the top; `body.has-bottomtabs .toast{bottom:9.5rem}` is the same
+  specificity ~3,500 lines later, so on any screen with the tab bar the
+  toast was pinned top AND bottom - "Chat started", "Joined" and "Left the
+  chat" in the corner of a 792px glass box. The open-dock rule now carries a
+  second, more specific selector. **Two rules setting opposite edges of one
+  fixed box is a stretch, not a conflict - nothing warns.**
+- **The dark tap was iOS's tap highlight**, switched off only for
+  `<button>`. The chat panel listens for touches (it is a draggable sheet)
+  and the roster opens the member list, so a tap anywhere blank greyed the
+  whole panel at 18% black. `html{-webkit-tap-highlight-color:transparent}`
+  now, inherited by everything. Chromium never draws it, so the gate reads
+  the computed value rather than looking. The roster also carries a
+  "Members ›" pill: it opens a dimmed sheet, and with nothing on it to say
+  so, that read as an accident.
+- **Nobody was kicked out; they had lost their names.** Older builds
+  stamped `participants.<key>.seen` on its own, and a nested-field update
+  CREATES the entry - so live rooms hold members with a stamp and nothing
+  else (Napoleon and Billyswole, active on 10-01, in one of the class's
+  chats). Every reader dropped a nameless entry as a ghost.
+  `chatMemberMap()` is now the one definition of who is in a group: the
+  person's name and CURRENT character come from their rankings row first
+  (`chatPersonOf()`), the entry second. Still a ghost: a key nobody can put
+  a name to, or a nameless stamp older than that person's own Leave. The
+  roster, the member sheet, the list's name/faces/"Group · N", `with`, and
+  the message bubbles (`CTX.nameFor`) all read it - so somebody who renamed
+  (Davis -> Maddog) or changed character is drawn as they are now
+  everywhere, not as they were the last time they opened that room.
+- **Leaving on one device no longer gets undone by another.** A second
+  phone with the chat open went on beating presence onto an entry that had
+  been deleted, which put its owner straight back in. Presence is now
+  stamped only onto a room whose latest snapshot had you in it
+  (`chatSawMeIn`, `chatMayStamp()`), the first stamp happens on that
+  snapshot rather than blind on entry, and a snapshot WITHOUT you in a group
+  you were in closes it, takes it off the list and says so. Every way into a
+  group writes you into it before the room opens, which is what makes "not
+  in the snapshot" mean "left". Friend chats are exempt - there is no
+  leaving one. A missing `joinedAt` is filled in once, from `createdAt`.
+- **The list drops groups you are not in**: `refreshChatList()` forgets a
+  group the server says is gone or has no entry for you (only on a
+  server-confirmed read, never the open chat). A group with nobody else
+  left says "Just you" instead of wearing the names of people who left.
+- **"Leave this group chat?" lives in the chat panel**, not fixed to the
+  screen - on an iPad it rose from the bottom of the whole app with
+  everything dimmed - and closing or backing out of the chat takes it away;
+  it used to stay up over the list.
+- `avatarSpanFor()` stamps `data-char` on what it draws, so a gate can ask
+  which character a face is without comparing drawings (their gradient ids
+  differ per copy, so two identical characters never compare equal).
+- **Not done, on purpose: the live rooms were not rewritten.** The
+  nameless entries are drawn correctly from the rankings, and each person's
+  own device fills in their entry the next time they open that chat.

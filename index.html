@@ -1645,6 +1645,15 @@
      there anymore" even though it technically still was. */
   .avatar-pulse{ animation:avatar-pulse-anim .8s ease-out; transform-origin:center; }
 
+  /* NO GREY FLASH ANYWHERE (build 307). iOS paints a translucent dark box
+     over whatever element owns a tap handler, and it was only switched
+     off for <button>. The chat panel listens for touches (it is a sheet
+     you can drag) and the roster of faces opens the member list, so a tap
+     on any blank part of a group chat greyed the whole panel - "clicking
+     the group chat stuff but not a button makes the background go dark".
+     Inherited, so this covers every element in the app; everything that
+     is meant to react to a press already has its own :active state. */
+  html{ -webkit-tap-highlight-color:transparent; }
   button{
     touch-action:manipulation;
     -webkit-tap-highlight-color:transparent;
@@ -4709,6 +4718,14 @@
     padding-bottom:calc(.75rem + env(safe-area-inset-bottom, 0px));
     background:rgba(0,0,0,.32); -webkit-backdrop-filter:none; backdrop-filter:none;
   }
+  /* INSIDE THE CHAT, NOT OVER THE WHOLE APP (build 307). It was fixed to
+     the screen, which on a phone is roughly where the chat is anyway - but
+     on an iPad the chat is a panel in the top corner, and the question
+     rose from the bottom of the whole screen with everything dimmed.
+     Now it lives in the panel and covers only that. */
+  .chatdock-panel > .chatdock-confirm.chat-leavesheet{
+    position:absolute; inset:0; border-radius:inherit; overflow:hidden;
+  }
   .chat-leavesheet-inner{ width:100%; max-width:24rem; display:flex; flex-direction:column; gap:.5rem;
     animation:chat-leavesheet-up .24s cubic-bezier(.2,.8,.25,1); }
   @keyframes chat-leavesheet-up{ from{ transform:translateY(110%); } to{ transform:none; } }
@@ -4834,7 +4851,17 @@
      drawn at z-index 70 under a sheet at 300 - "Chat muted" appeared
      where nobody could see it. With the sheet up, toasts go above it and
      to the top, clear of the input at the bottom. */
-  body.chatdock-open .toast{ z-index:390; top:calc(env(safe-area-inset-top, 0px) + .75rem); bottom:auto; }
+  /* ...AND ITS BOTTOM HAS TO STAY OFF (build 307). `body.has-bottomtabs
+     .toast{bottom:9.5rem}` sits ~3,500 lines further down at the same
+     specificity, so on any screen with the tab bar it won on source order
+     and the toast was pinned top AND bottom at once - a box stretched over
+     most of the screen with "Chat started", "Joined the chat" or "Left the
+     chat" in its corner. Reported as "a massive box that takes over the
+     entire screen" on starting and leaving a group chat. The second
+     selector is one class more specific than that rule, whatever order
+     the two end up in. */
+  body.chatdock-open .toast,
+  body.chatdock-open.has-bottomtabs .toast{ z-index:390; top:calc(env(safe-area-inset-top, 0px) + .75rem); bottom:auto; }
   /* OVER AN OPEN START SHEET (build 267): "In game mode, when clicking the
      mode I don't have unlocked, the pop up is appearing behind the start
      menu." The toast was z-index 70 under the sheet's 210, and at the
@@ -5316,6 +5343,16 @@
     padding:.12rem .45rem; border-radius:999px; color:#9CCBFF; background:rgba(111,180,255,.12); border:1px solid rgba(111,180,255,.3); }
   .chatdock-chatrow-kind.is-group{ color:#C9B6FF; background:rgba(160,120,255,.12); border-color:rgba(160,120,255,.35); }
   .chatdock-roomwho{ cursor:pointer; }
+  /* SAYS IT IS A BUTTON (build 307). The roster opens the full member
+     list, and with nothing on it to say so, a tap that opened a sheet and
+     dimmed the screen read as the app doing something by accident. */
+  .chatdock-who-more{
+    flex:0 0 auto; display:inline-flex; align-items:center; gap:.15rem;
+    margin-left:auto; padding:.18rem .55rem; border-radius:999px;
+    font-size:.72rem; font-weight:800; color:var(--ink);
+    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14);
+  }
+  .chatdock-roomwho:active .chatdock-who-more{ background:rgba(255,255,255,.16); }
   .chat-member{ display:flex; align-items:center; gap:.6rem; padding:.45rem 0; border-top:1px solid rgba(255,255,255,.06); }
   .chat-member-art{ width:2.3rem; height:2.3rem; flex:0 0 auto; }
   .chat-member-name{ flex:1 1 auto; min-width:0; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -47192,6 +47229,9 @@ function gradeReaction(run){
 function avatarSpanFor(entry){
   const span = document.createElement("span");
   span.className = "rank-avatar";
+  /* Which character this is, readable without comparing drawings (whose
+     gradient ids differ per copy) - check-groupchat asserts on it. */
+  span.dataset.char = (entry && entry.avatarChar) || AVATAR_CHARACTERS[0].id;
   span.appendChild(buildAvatarCharSVGSafe((entry && entry.avatarChar) || AVATAR_CHARACTERS[0].id));
   return span;
 }
@@ -54887,9 +54927,22 @@ let chatListLast = {};
 let chatListPeople = {};
 /* Up to three faces, overlapping, then "+n". Before the room has been
    read, the people recorded on the entry stand in, drawn plain. */
+/* The other members of a chat, in join order, as the list draws them -
+   from chatMemberMap(), so a row's faces are the same people, with the
+   same characters, as the roster inside it (build 307). */
+function chatPeopleOf(members){
+  const me = publicIdOf();
+  const m = members || {};
+  return Object.keys(m).filter(k => k !== me)
+    .sort((a, b) => (((m[a] || {}).joinedAt || 0) - ((m[b] || {}).joinedAt || 0)) || (a < b ? -1 : 1))
+    .map(k => ({ key: k, name: (m[k] || {}).name || "", avatarChar: (m[k] || {}).avatarChar || "ninja" }));
+}
 function paintChatFaces(el, code){
+  /* Before the room has been read, the people recorded on the entry
+     stand in - drawn as they look NOW on the rankings, not as a row of
+     default ninjas (build 307). */
   const people = chatListPeople[code]
-    || ((chatEntry(code) || {}).with || []).map(k => ({ key: k, name: "", avatarChar: "ninja" }));
+    || ((chatEntry(code) || {}).with || []).map(k => Object.assign({ key: k }, chatPersonOf(k, null)));
   el.replaceChildren();
   people.slice(0, 3).forEach(p => {
     const f = document.createElement("span");
@@ -54920,7 +54973,24 @@ function refreshChatList(force){
   entries.forEach(entry => {
     if(!entry || !entry.code) return;
     fbDb.collection("vrooms").doc(entry.code).get().then(snap => {
-      if(!snap || !snap.exists) return;
+      if(!snap) return;
+      const fromServer = !(snap.metadata && snap.metadata.fromCache);
+      const isGroup = !isFriendChatCode(entry.code);
+      /* A GROUP YOU ARE NOT IN IS NOT ON YOUR LIST (build 307). Left on
+         another device, or the room is gone: the row stayed here for
+         good, opening onto a chat you were not a member of. Only on the
+         server's word - a cached miss is not proof - and never the chat
+         that is open, which its own listener already handles. */
+      if(isGroup && fromServer && entry.code !== chatRoomCode){
+        const parts = snap.exists ? ((snap.data() || {}).participants || {}) : {};
+        if(!snap.exists || !parts[publicIdOf()]){
+          forgetChat(entry.code);
+          const row = document.querySelector('.chatdock-chatrow[data-code="' + entry.code + '"]');
+          if(row){ rebuildChatTab(); }
+          return;
+        }
+      }
+      if(!snap.exists) return;
       const data = snap.data() || {};
       let msgs = data.chatMessages || [];
       /* A friend chat's history is a day long, so the preview is too. */
@@ -54936,14 +55006,16 @@ function refreshChatList(force){
       /* The name too, so a chat accepted from an invitation and never
          opened stops reading as its own code the first time the list
          is looked at. */
-      const nm = nameChatFrom(data.participants || null);
-      if(nm && entry.name !== nm && chatEntry(entry.code) && !isFriendChatCode(entry.code)){ entry.name = nm; saveStore(); }
-      try{
-        const me = publicIdOf(), parts = data.participants || {};
-        chatListPeople[entry.code] = Object.keys(parts).filter(k => k !== me)
-          .sort((a, b) => ((parts[a] || {}).joinedAt || 0) - ((parts[b] || {}).joinedAt || 0))
-          .map(k => ({ key: k, name: (parts[k] || {}).name || "", avatarChar: (parts[k] || {}).avatarChar || "ninja" }));
-      }catch(e){}
+      /* Named, counted and drawn from the MEMBERS (build 307): a ghost
+         is not a face, and a nameless entry is somebody whose name is
+         one rankings lookup away. `with` follows too, which is what the
+         "Group · N" on the row counts. */
+      const members = chatMemberMap(data.participants || null, data);
+      const nm = nameChatFrom(members);
+      if(chatEntry(entry.code) && isGroup){
+        rememberChat(entry.code, nm, Object.keys(members).filter(k => k !== publicIdOf()).sort());
+      }
+      try{ chatListPeople[entry.code] = chatPeopleOf(members); }catch(e){}
       paintChatRow(entry.code);
     }).catch(() => {});
   });
@@ -54957,7 +55029,18 @@ function paintChatRow(code){
   const entry = chatEntry(code) || {};
   const last = chatListLast[code] || null;
   const nameEl = row.querySelector(".chatdock-chatrow-name");
-  if(nameEl && entry.name) nameEl.textContent = entry.name;
+  /* A GROUP NOBODY ELSE IS IN ANY MORE says so (build 307), rather than
+     going on wearing the names of the people who have left it. Only once
+     the room has actually been read - `with` alone is a guess. */
+  const alone = !isFriendChatCode(code) && Array.isArray(chatListPeople[code]) && !chatListPeople[code].length;
+  if(nameEl && alone) nameEl.textContent = "Just you";
+  else if(nameEl && entry.name) nameEl.textContent = entry.name;
+  /* The size, from the same members the faces are drawn from. */
+  const kindEl = row.querySelector(".chatdock-chatrow-kind.is-group");
+  if(kindEl){
+    const n = Array.isArray(chatListPeople[code]) ? chatListPeople[code].length : (entry.with || []).length;
+    kindEl.textContent = "Group · " + (n + 1);
+  }
   row.classList.toggle("is-muted", isChatMuted(code));
   const facesEl = row.querySelector(".chatdock-chatrow-faces");
   if(facesEl) paintChatFaces(facesEl, code);
@@ -55196,6 +55279,7 @@ const CHAT_CTX = {
   code: () => chatRoomCode,
   myKey: () => chatMyKey,
   colorFor: (key, parts) => chatColorFor(key, chatColorBasis(parts)),
+  nameFor: (key, fallback) => chatPersonOf(key, { name: fallback }).name,
   /* NOBODY IS HOST OF A CHAT LOBBY - it has no match to run - so "the
      host trims" has no meaning. The author of the NEWEST message trims,
      which is exactly one device per event and is already the device
@@ -55241,14 +55325,47 @@ const CHAT_CTX = {
        joined, there was just nothing on screen with their name on it.
        It is the same avatar row the rest of the app draws people with,
        so a classmate looks the same here as on the boards. */
-    const p = presentParticipants(data.participants || null);
+    /* Every reader below works from the members (build 307), not the raw
+       map: named from the rankings, ghosts out. */
+    const raw = data.participants || {};
+    const code = chatRoomCode;
+    const mine = chatMyKey ? raw[chatMyKey] : null;
+    if(code && mine){
+      const first = chatSawMeIn !== code;
+      chatSawMeIn = code;
+      /* Here from the first snapshot that has you in it, not before - see
+         startChatPresence. A missing joinedAt (older builds) is filled in
+         once, so the roster's order and colours stop shifting. */
+      if(fbDb && (first || !mine.joinedAt)){
+        try{
+          const patch = chatPresencePatch(Date.now());
+          if(!mine.joinedAt) patch["participants." + chatMyKey + ".joinedAt"] = data.createdAt || Date.now();
+          fbDb.collection("vrooms").doc(code).update(patch).catch(() => {});
+        }catch(e){}
+      }
+    } else if(code && !mine && !isFriendChatCode(code) && chatMyKey){
+      /* NOT IN IT ANY MORE (build 307). Every way into a group chat writes
+         you into it before the room opens, so a snapshot without you
+         means you left - on another device of yours - and this one used
+         to go on stamping its presence, which put you straight back in.
+         Close it, take it off the list, and say why. */
+      setTimeout(() => {
+        if(chatRoomCode !== code) return;
+        forgetChat(code);
+        closeChatRoom();
+        showToast("You're no longer in that group chat.");
+      }, 0);
+      return {};
+    }
+    const members = chatMemberMap(raw, data);
+    const p = presentParticipants(members);
     /* Same reason as the Virtual Room's, one function up: withMeInChat()
        has to be answerable from the invite sheet and the notifications
        list, neither of which can see this panel's own state. The PRESENT
        set, not the raw map - somebody whose phone died is invitable
        again, which is the same rule the roster itself draws by. */
     liveChatParticipants = p;
-    chatAllMembers = data.participants || {};
+    chatAllMembers = members;
     renderChatRoster(p);
     announceChatRoomChange(data, p);
     /* THE LIST'S NAMES COME FROM HERE, which is the only place that
@@ -55259,9 +55376,11 @@ const CHAT_CTX = {
        so this does not write on every message. */
     if(chatRoomCode){
       const me = publicIdOf();
-      const others = Object.keys(data.participants || {})
-        .filter(k => k !== me).sort();
-      rememberChat(chatRoomCode, nameChatFrom(data.participants || null), others);
+      const others = Object.keys(members).filter(k => k !== me).sort();
+      rememberChat(chatRoomCode, nameChatFrom(members), others);
+      /* The list's faces for this chat too, so going Back does not show
+         whatever the last sweep of the list happened to read. */
+      chatListPeople[chatRoomCode] = chatPeopleOf(members);
     }
     return p;
   },
@@ -55477,6 +55596,43 @@ function presentParticipants(participants){
 /* EVERYBODY IN THE CHAT, here right now or not - the roster in the
    header only shows who is present. */
 let chatAllMembers = {};
+/* ---- WHO IS IN A GROUP, AND WHAT THEY LOOK LIKE NOW (build 307) ----
+   "Looking at an old group chat, previous members of it randomly got
+   kicked out and I don't see them." They had not been: the live room had
+   them in it, but with no name - older builds stamped `.seen` on its own,
+   which creates an entry with nothing else in it - and every reader
+   dropped a nameless entry as a ghost. Napoleon and Billyswole were both
+   in one of the class's group chats on 10-01 and neither could be seen.
+   An entry is somebody's public id, so a name is only ever a lookup away:
+   the rankings row has their name and their CURRENT character. Taken from
+   there first, it also answers "the characters match up" - an entry holds
+   whatever character that person had when they last opened the room, so
+   somebody who has since changed theirs (or renamed, Davis to Maddog)
+   showed the old one in every chat they had not reopened.
+   What is still a ghost: a key nobody can put a name to at all, and a
+   nameless stamp older than that same person's own Leave. */
+function chatPersonOf(key, entry){
+  const e = entry || {};
+  if(key && key === publicIdOf()){
+    return { name: store.firstName || e.name || "You", avatarChar: store.avatarChar || e.avatarChar || "ninja" };
+  }
+  let row = null;
+  try{ row = rowsByPublicId()[key] || null; }catch(err){}
+  return { name: (row && row.firstName) || e.name || "",
+           avatarChar: (row && row.avatarChar) || e.avatarChar || "ninja" };
+}
+function chatMemberMap(participants, data){
+  const out = {};
+  const l = data && data.lastLeave;
+  Object.keys(participants || {}).forEach(k => {
+    const e = participants[k] || {};
+    const who = chatPersonOf(k, e);
+    if(!who.name) return;
+    if(!e.name && l && l.key === k && (l.at || 0) >= (e.seen || 0)) return;
+    out[k] = Object.assign({}, e, who);
+  });
+  return out;
+}
 /* ---- MEMBERS ----
    "Show who is in the chat." Tapping the header opens the whole list:
    everybody who is a member, who of them is here now, and a way to
@@ -55593,6 +55749,11 @@ function renderChatRoster(participants){
     }
     el.appendChild(one);
   });
+  /* What tapping the row does, on the row (build 307). */
+  const more = document.createElement("span");
+  more.className = "chatdock-who-more";
+  more.textContent = "Members ›";
+  el.appendChild(more);
 }
 
 /* ---- SOMEBODY ARRIVING IS AN EVENT, AND IT HAD NONE ----
@@ -55683,19 +55844,31 @@ function chatPresencePatch(seen){
   return patch;
 }
 let chatBeatTimer = null;
+/* The group chat whose latest snapshot had this device's entry in it
+   (build 307). Presence is only ever stamped onto a room that does: a
+   stamp is an update to a nested field, and that CREATES the entry if it
+   is not there - so a phone still sitting in a chat its owner had left on
+   another device kept writing them back into it. */
+let chatSawMeIn = null;
+function chatMayStamp(){
+  return !!(chatRoomCode && chatMyKey && fbDb
+    && (isFriendChatCode(chatRoomCode) || chatSawMeIn === chatRoomCode));
+}
 function startChatPresence(){
   clearInterval(chatBeatTimer);
-  /* STAMPED NOW, NOT 45 SECONDS FROM NOW (build 239). Re-opening a chat
-     you last had open a while ago left your `seen` stale until the first
-     beat, so you showed as Away - to yourself and to everybody else -
-     for up to a beat after walking in. */
-  if(chatRoomCode && chatMyKey && fbDb){
+  /* STAMPED ON ARRIVAL, NOT 45 SECONDS FROM NOW (build 239) - but on the
+     first snapshot that has you in it (build 307, participantsOf), not
+     blind: an immediate stamp here is the write that re-adds somebody who
+     has already left. A friend chat has no leaving, so it stamps now. */
+  chatSawMeIn = null;
+  if(chatRoomCode && chatMyKey && fbDb && isFriendChatCode(chatRoomCode)){
     try{
       fbDb.collection("vrooms").doc(chatRoomCode).update(chatPresencePatch(Date.now())).catch(() => {});
     }catch(e){}
   }
   chatBeatTimer = setInterval(() => {
     if(!chatRoomCode || !chatMyKey || !fbDb){ clearInterval(chatBeatTimer); chatBeatTimer = null; return; }
+    if(!chatMayStamp()) return;
     /* A hidden app is not here: no beat, so the stamp ages out (and
        visibilitychange below marks it away at once). */
     if(document.visibilityState !== "visible") return;
@@ -55754,8 +55927,9 @@ function joinChatRoom(rawCode){
        "it shows a number instead of their username" report. The
        document is already in hand here, so the name is too. */
     try{
-      const others = Object.keys((snap.data() || {}).participants || {}).filter(k => k !== me).sort();
-      rememberChat(code, nameChatFrom((snap.data() || {}).participants || null), others);
+      const members = chatMemberMap((snap.data() || {}).participants || null, snap.data() || {});
+      const others = Object.keys(members).filter(k => k !== me).sort();
+      rememberChat(code, nameChatFrom(members), others);
     }catch(e){}
     const patch = {};
     patch["participants." + me] = chatSelfEntry();
@@ -55807,7 +55981,10 @@ function closeChatRoom(){
      were looking at it. */
   markChatSeen(chatRoomCode, Date.now());
   clearInterval(chatBeatTimer); chatBeatTimer = null;
-  chatRoomCode = null; chatMyKey = null;
+  chatRoomCode = null; chatMyKey = null; chatSawMeIn = null;
+  /* A leave question about the chat you just backed out of has nothing
+     left to ask about (build 307) - it used to stay up over the list. */
+  closeLeaveChatConfirm();
   saveChatRoom(null);
   if(chatPanelCleanup){ try{ chatPanelCleanup(); }catch(e){} chatPanelCleanup = null; }
   rebuildChatTab();
@@ -55827,7 +56004,9 @@ function closeLeaveChatConfirm(){
 }
 function confirmLeaveChat(code, onLeave){
   if(!code) return;
-  const host = document.getElementById("chatdock");
+  /* In the panel (build 307), so on an iPad it covers the chat and not
+     the whole screen. */
+  const host = document.getElementById("chatdock-panel") || document.getElementById("chatdock");
   if(!host){ onLeave(); return; }
   closeLeaveChatConfirm();
   const entry = chatEntry(code);
@@ -55875,7 +56054,8 @@ function confirmLeaveChat(code, onLeave){
 function leaveChatRoom(quiet){
   const code = chatRoomCode, me = chatMyKey;
   clearInterval(chatBeatTimer); chatBeatTimer = null;
-  chatRoomCode = null; chatMyKey = null;
+  chatRoomCode = null; chatMyKey = null; chatSawMeIn = null;
+  closeLeaveChatConfirm();
   saveChatRoom(null);
   if(chatPanelCleanup){ try{ chatPanelCleanup(); }catch(e){} chatPanelCleanup = null; }
   if(code && me && fbDb){
@@ -56337,7 +56517,7 @@ window.addEventListener("pagehide", () => {
        the "Someone". Closing the app is not leaving a chat: the entry
        stays, with its stamp set to 0 so it reads as away at once. Leave
        is still the one exit that removes you and says so. */
-    if(chatRoomCode && chatMyKey && fbDb){
+    if(chatMayStamp()){
       const patch = chatPresencePatch(0);
       patch["typing." + chatMyKey] = firebase.firestore.FieldValue.delete();
       fbDb.collection("vrooms").doc(chatRoomCode).update(patch).catch(() => {});
@@ -56358,7 +56538,7 @@ window.addEventListener("pagehide", () => {
    app switch: away while hidden, here again the moment it is back. */
 document.addEventListener("visibilitychange", () => {
   try{
-    if(!chatRoomCode || !chatMyKey || !fbDb) return;
+    if(!chatMayStamp()) return;
     const visible = document.visibilityState === "visible";
     fbDb.collection("vrooms").doc(chatRoomCode).update(chatPresencePatch(visible ? Date.now() : 0)).catch(() => {});
   }catch(e){}
@@ -61926,7 +62106,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-04-306";
+const APP_BUILD = "2026-10-04-307";
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
    pushing when I open the app?" Because this gap is shared by every way
@@ -72302,7 +72482,11 @@ function buildVroomChatPanel(container, ctx){
         msg.className = "vroom-chat-msg";
         const name = document.createElement("span");
         name.className = "vroom-chat-msg-name" + (m.key === CTX.myKey() ? " is-me" : "");
-        name.textContent = m.name + ": ";
+        /* The name they go by NOW, where the context knows it (build
+           307): a message keeps the name it was sent under, so a group
+           chat went on saying "Davis" for somebody the list and the
+           roster both call Maddog. */
+        name.textContent = ((CTX.nameFor && m.key) ? (CTX.nameFor(m.key, m.name) || m.name) : m.name) + ": ";
         /* Your own name stays on the accent - that is the one colour you
            already read as "me" everywhere else in the app - and everyone
            else takes the colour their marker has on the race line. */
