@@ -10690,8 +10690,8 @@ lists.
     forty floors up: towers in two depths, a needle tower with its beacon,
     searchlights, a plane crossing, the moon in drifting cloud.
   - **Zenith** (`zenith`, `ultimate: true`) - last in the list. The Zenith
-    character's own sky: wings of light in every rank colour, a halo of the
-    seven rank stones, a crown over a star, a prism shock every 8s.
+    character's own sky, in whichever look ships (`ZENITH_BANNER`, see
+    **Zenith, redrawn** below).
 - **Zenith the character** (`{ id: "zenith", kind: "zenith", feat:
   "everything", ultimate: true }`). Customize lists it last, in its own
   **Ultimate** group after Secrets; the Challenge group filters
@@ -10750,3 +10750,54 @@ Rules for a new animated banner:
   things vanish in build 253. Event layers carry `opacity:0` inline so
   they are absent with motion off.
 - No SVG filters, ids unique per copy (the template token does it).
+
+### Zenith, redrawn (build 304)
+
+*"Zenith design is kinda eh, I feel like it could be better. Not a fan of
+the gold and rainbow."* The pearl-and-gold knight with wings in all seven
+rank colours, its halo of rank stones and its gold-crowned banner are gone.
+There is **no gold and no ladder of colours** in any of what replaced it.
+
+**Three looks were built, all real and all shippable, and one constant
+picks between them**: `ZENITH_STYLE` (next to `AVATAR_GLOW`).
+- `"a"` **Obsidian & starlight** - black glass armour in lit and shadowed
+  planes, white-hot rim one side and violet the other, a void face with two
+  ice-white eyes, a crowned helm under a ring of starlight with the zenith
+  star at its top and a spark running round it. Banner: a spire of black
+  glass under a ring laid flat round the star (the spark runs behind the
+  spire, then in front - two clipped copies of one turning layer), a black
+  mirror floor, a white shock every 8s.
+- `"b"` **Celestial silver & midnight** - **the one that ships.** Midnight
+  helm and plate under platinum, a platinum face guard with starlight eyes,
+  feathered platinum wings at the temples, constellations etched on the
+  helm and plate, a cape of night, and a crown of seven white stars that
+  twinkle in turn. Banner: the sky straight up - star trails wheeling round
+  one pole star (one turning layer, so seamless), the seven-star crown over
+  it, a moonlit ridge, meteors, a ring of light every 9s.
+- `"c"` **Astral plasma** - teal-black plate with cyan plasma in its seams,
+  wings of light in shards (the Valkyrie's wing classes), a V visor with
+  cyan-white eyes, a floating crown of light shards. Banner: a plane of
+  cyan light with a beam rising out of it, rings climbing the beam, shards
+  hanging in the air, plasma ribbons, a surge every 7s.
+
+Why `"b"`: at 26px on a rankings row it is the only one that cannot be
+taken for one of the hood family (Void, Umbra, Horizon) - `"a"` can - and
+the star-trail banner is the most finished of the three.
+
+**Everything that must agree reads `ZENITH_LOOK`**: the glow
+(`AVATAR_GLOW.zenith`), the scene behind the figure (`BACKDROP.zenith`), the
+Profile card's tint (`BANNER_TINT.zenith`) and the banner. Each look's tint
+was MEASURED off its own banner the `bannertint.py` way; B and C are a single
+hue family, so their second colour is the next 15-degree bucket, not the
+next 30-degree one (which repeated the first). Switching looks is the one
+constant - ids, the unlock, `ultimateProgress()` and both list positions do
+not move. CSS for all three is always present (`cx-fx-za*`, `zb*`, `zc*`);
+only the drawn look's parts exist, so the rest matches nothing.
+
+**The banners use only the shared `bl-*` motions**, so check-loops needed no
+new `KNOWN` entry. The one new keyframe (`cx-zc-hover`) is played
+`alternate`, which check-loops does not need to see.
+
+**Preview without editing the file**: the render harness swaps the constant
+in the served copy (`BODY`) per look. Previews of all three are in
+`/tmp/claude-0/b291/zenith2/` (`zenith-concepts.png` side by side).
