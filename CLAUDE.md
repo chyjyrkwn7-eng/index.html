@@ -11259,7 +11259,10 @@ device, phone and iPad) fails 34 checks there and passes on 307.
   Before giving up on "beside", it tries a one-line form ("Done for today
   · next in 18h 24m", `.is-compact`). That fits the ~50px gap between
   Start Studying and the bar in a phone browser window, where two lines
-  had lifted it 56px away over the button.
+  had lifted it 56px away over the button. "Above" also tries the
+  bubble pinned to the screen edge, as long as the caret still lands on
+  the "?". On a display-zoomed phone Start Studying reaches out over the
+  "?", and the edge spot is the one that clears it.
 
   The top `.daily-alert` is only the fallback when the "?" is not on
   screen. `check-fixes.py` 9b holds this on every device: a bubble, on
@@ -11341,3 +11344,20 @@ device, phone and iPad) fails 34 checks there and passes on 307.
 - **A test fixture that seeds `store.seenUnlocks` must stamp `.v =
   SEEN_VERSION`.** Without the stamp the v2 re-seed reads it as an old
   record and marks things new again.
+- **"It's out" opens beside the "?" too.** The ready announcement and the
+  "not yet" answer are one function, `showDailyTip(full, compact, opts)`,
+  so they share one placement and cannot disagree about where they open.
+  "It's out" is the live form (`.is-live`): tappable, role=button, opens
+  the question, stays `DAILY_CHARGE.stay`. It pops out of the "?" when the
+  ring goes off; there is no orb flight to a top banner any more. The
+  top banner is only the fallback for when the "?" is not on screen.
+  check-behaviour 39 and check-statsbadges 3 were rewritten to this
+  decision; they used to assert a centred banner at the top.
+- **The charge ring is seen CLOSED before it goes off** ("doesn't
+  complete"). It did reach 100%, but the burst, flash and bloom fired on
+  the same frame and the ring began fading 120ms later, so a closed ring
+  was never on screen. `DAILY_CHARGE.hold` / `--dq-hold` (500ms) now sits
+  between the ring sealing and everything that follows it, with a
+  brightening `dq-sealed` beat. check-behaviour 39 times the burst
+  against the sealed ring: ≥300ms now; it measured 60ms on the build
+  before.

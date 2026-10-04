@@ -272,7 +272,9 @@ def main():
                           const out = {tip:!!t, banner:!!document.querySelector('.daily-alert')};
                           if(tr){ out.gap=Math.round(Math.max(fr.left-tr.right, tr.left-fr.right, fr.top-tr.bottom, tr.top-fr.bottom));
                             out.onScreen=tr.left>=0&&tr.top>=0&&tr.right<=innerWidth&&tr.bottom<=innerHeight;
-                            out.btn=hit(tr,btn); out.bar=hit(tr,bar); }
+                            out.btn=hit(tr,btn); out.bar=hit(tr,bar);
+                            const q=r=>r?[Math.round(r.left),Math.round(r.top),Math.round(r.right),Math.round(r.bottom)]:null;
+                            out.geo={tip:q(tr),fab:q(fr),btn:q(btn),bar:q(bar),cls:t.className}; }
                           t&&t.remove(); store.dailyQuestionDate=null; return out; }""")
                         if dl:
                             if not dl["tip"]: fails.append(f"{tag}: tapping a done daily question opened no bubble by the button")
@@ -284,7 +286,7 @@ def main():
                                 # Within 24px: where two lines will not fit beside the
                                 # "?" (a phone browser window, Start Studying just above
                                 # the bar) it drops to one line rather than lifting away.
-                                if dl["gap"] > 24: fails.append(f"{tag}: the daily 'done' bubble is {dl['gap']}px from the button")
+                                if dl["gap"] > 24: fails.append(f"{tag}: the daily 'done' bubble is {dl['gap']}px from the button {dl.get('geo')}")
 
                         # --- The version label on a phone (build 300): "can be put
                         # on the phone ... the very bottom left corner, with just

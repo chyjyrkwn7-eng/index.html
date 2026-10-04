@@ -4075,12 +4075,15 @@ DAILY_SAMPLER = """async (opts)=>{
     if(!m || m === 'none') return 0; const v = m.match(/matrix\\(([^)]+)\\)/); if(!v) return null;
     const p = v[1].split(',').map(Number); return Math.round(Math.atan2(p[1], p[0]) * 180 / Math.PI); };
   (function tick(){ if(stop) return;
-    const f = document.querySelector('.daily-question-fab'), a = document.getElementById('dailyalert');
+    /* REVISED IN 309: the announcement is the bubble beside the "?" now
+       (#daily-lock-tip.is-live), the top banner only its fallback. */
+    const f = document.querySelector('.daily-question-fab'), a = document.querySelector('#daily-lock-tip.is-live') || document.getElementById('dailyalert');
     const orb = document.querySelector('.daily-orb-core');
     const ar = a ? a.getBoundingClientRect() : null;
     frames.push({ t: performance.now() - t0,
       charging: !!(f && f.classList.contains('is-charging')),
       arcL: rot(document.querySelector('.dq-charge-l .dq-charge-arc')),
+      burst: (b => b ? parseFloat(getComputedStyle(b).opacity) : 0)(document.querySelector('.dq-charge-burst')),
       orb: orb ? (b => [b.left + b.width / 2, b.top + b.height / 2])(orb.getBoundingClientRect()) : null,
       op: a ? parseFloat(getComputedStyle(a).opacity) : 0,
       a: ar ? [ar.left, ar.top, ar.right, ar.bottom] : null });
@@ -4092,7 +4095,7 @@ DAILY_SAMPLER = """async (opts)=>{
   const cb = document.getElementById('chatdock-btn');
   const ch = cb ? cb.getBoundingClientRect() : null;
   return { frames, fab: [fb.left + fb.width / 2, fb.top + fb.height / 2],
-           chat: ch ? [ch.left, ch.top, ch.right, ch.bottom] : null, vw: innerWidth }; }"""
+           chat: ch ? [ch.left, ch.top, ch.right, ch.bottom] : null, vw: innerWidth, vh: innerHeight }; }"""
 
 
 def check_b245_daily_announce(br):
@@ -4117,31 +4120,31 @@ def check_b245_daily_announce(br):
         orbs = [f for f in fr if f["orb"]]
         check("%s: the button starts charging as Home appears" % label, charge is not None and charge < 1000, charge)
         check("%s: the ring closes round it (a full turn)" % label, closed is not None, closed)
-        # 2-3.5s until build 268 asked for "another 2-3 seconds" on the ring
-        check("%s: the banner follows the recharge, 4.5-6s in" % label,
-              shown is not None and closed is not None and shown >= closed and 4500 <= shown <= 6000,
+        # 2-3.5s until build 268 asked for "another 2-3 seconds" on the ring;
+        # +0.5s in 309, the ring holding closed before it goes off
+        check("%s: the announcement follows the recharge, 4.5-6.5s in" % label,
+              shown is not None and closed is not None and shown >= closed and 4500 <= shown <= 6500,
               [closed, shown])
-        dist0 = None
-        if orbs:
-            first = orbs[0]["orb"]
-            dist0 = max(abs(first[0] - r["fab"][0]), abs(first[1] - r["fab"][1]))
-        check("%s: and it leaves FROM the button" % label,
-              bool(orbs) and dist0 <= 30 and closed is not None and orbs[0]["t"] >= closed,
-              [dist0, orbs[0]["t"] if orbs else None])
+        # REVISED IN 309: "it shouldn't go to the top ... needs to go near
+        # the daily question button". No orb flight to a top banner: the
+        # bubble opens beside the "?" itself, clear of the chat button,
+        # and the ring is seen CLOSED before it goes ("the circle when
+        # it's fully charged doesn't complete").
+        sealed = next((f["t"] for f in fr if f["arcL"] is not None and abs(f["arcL"]) >= 179), None)
+        boom = next((f["t"] for f in fr if f["burst"] > 0.1), None)
+        check("%s: the ring is seen whole before it goes off" % label,
+              sealed is not None and boom is not None and boom - sealed >= 300, [sealed, boom])
         settled = [f for f in fr if f["op"] > 0.99 and f["a"] and f["t"] > (shown or 0) + 700]
         if settled:
-            a = settled[0]["a"]
-            if orbs:
-                check("%s: the orb lands on the banner's own icon" % label,
-                      a[0] <= orbs[-1]["orb"][0] <= a[0] + 60 and a[1] <= orbs[-1]["orb"][1] <= a[3],
-                      [orbs[-1]["orb"], a])
-            centre = (a[0] + a[2]) / 2 - r["vw"] / 2
-            check("%s: the banner settles centred on the screen" % label, abs(centre) <= 2, round(centre, 1))
+            a = settled[0]["a"]; fx, fy = r["fab"]
+            gap = max(a[0] - fx, fx - a[2], a[1] - fy, fy - a[3])
+            check("%s: the bubble opens beside the button, not at the top" % label,
+                  a[1] > 0.5 * r["vh"] and gap <= 80, [a, r["fab"]])  # from the button's CENTRE: its radius + the 10px gap
             ch = r["chat"]
             clear = ch is None or a[2] <= ch[0] - 4 or a[3] <= ch[1] or a[1] >= ch[3]
             check("%s: clear of the chat button" % label, clear, [a, ch])
         else:
-            check("%s: the banner settles" % label, False)
+            check("%s: the bubble settles" % label, False)
         stays = [f for f in fr if f["op"] > 0.9 and shown is not None and f["t"] >= shown + 6000]
         check("%s: and is still up six seconds later" % label, bool(stays), round(fr[-1]["t"] - (shown or 0)))
         ctx.close()
@@ -4150,7 +4153,7 @@ def check_b245_daily_announce(br):
     fr = r["frames"]
     shown = next((f["t"] for f in fr if f["op"] > 0.5), None)
     check("Reduce motion: no recharge, no orb", not any(f["charging"] or f["orb"] for f in fr))
-    check("Reduce motion: just the banner, at once", shown is not None and shown < 800, shown)
+    check("Reduce motion: just the bubble, at once", shown is not None and shown < 800, shown)
     ctx.close()
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     pg.evaluate("()=>{ store.dailyQuestionDate=''; saveStore(); localStorage.setItem('class26e.daily.seen','2000-01-01'); showHome(); }")
@@ -4160,7 +4163,7 @@ def check_b245_daily_announce(br):
     pg.mouse.click(b["x"], b["y"])
     pg.wait_for_timeout(7300)
     q = pg.evaluate("""()=>({ daily: !!document.querySelector('.qnum-daily'), orb: !!document.querySelector('.daily-orb'),
-                              banner: !!document.getElementById('dailyalert') })""")
+                              banner: !!document.getElementById('dailyalert') || !!document.getElementById('daily-lock-tip') })""")
     check("a real tap on the button mid-charge opens the question", b["charging"] and q["daily"], [b, q])
     check("and nothing of the sequence is left over the question", not q["orb"] and not q["banner"], q)
     ctx.close()

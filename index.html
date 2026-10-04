@@ -1548,7 +1548,7 @@
      visibly belongs to the thing it's explaining. */
   /* An opaque one, for when it opens over a control (build 309). */
   /* The daily question's "not yet" answer (build 309) - beside the "?" */
-  #daily-lock-tip{ position:fixed; z-index:260; display:flex; flex-direction:column; gap:.1rem; padding:.55rem .85rem; border-radius:14px;
+  #daily-lock-tip{ position:fixed; z-index:260; display:flex; flex-direction:column; gap:.1rem; padding:.55rem .75rem; border-radius:14px;
     background:#1E242C; border:1px solid rgba(255,255,255,.16); box-shadow:0 10px 28px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.1);
     color:var(--ink, #F2F4F7); font-size:.86rem; line-height:1.25; white-space:nowrap; pointer-events:none;
     opacity:0; transform:scale(.92); transition:opacity .18s ease, transform .2s cubic-bezier(.2,.9,.3,1.2); }
@@ -1556,6 +1556,13 @@
   #daily-lock-tip.is-above{ transform-origin:var(--caret, 50%) 100%; }
   #daily-lock-tip.is-on{ opacity:1; transform:none; }
   #daily-lock-tip b{ font-weight:700; }
+  #daily-lock-tip.is-live{ pointer-events:auto; cursor:pointer; border-color:color-mix(in srgb, var(--theme-c1) 55%, transparent);
+    box-shadow:0 10px 28px rgba(0,0,0,.55), 0 0 18px color-mix(in srgb, var(--theme-c1) 30%, transparent), inset 0 1px 0 rgba(255,255,255,.1); }
+  #daily-lock-tip.is-live b{ color:var(--theme-c1); }
+  #daily-lock-tip.is-live::after{ border-color:color-mix(in srgb, var(--theme-c1) 55%, transparent); }
+  #daily-lock-tip.is-fresh.is-on{ animation:dq-tip-pop .5s cubic-bezier(.2,.9,.3,1.25) both; }
+  @keyframes dq-tip-pop{ from{ opacity:0; transform:scale(.4); } to{ opacity:1; transform:none; } }
+  [data-reduce-motion="true"] #daily-lock-tip.is-fresh.is-on{ animation:none; }
   #daily-lock-tip.is-compact{ flex-direction:row; align-items:baseline; gap:.35rem; padding:.45rem .75rem; }
   #daily-lock-tip span{ color:var(--soft, #A9B1BC); font-size:.8rem; }
   #daily-lock-tip::after{ content:""; position:absolute; width:10px; height:10px; background:#1E242C; border:1px solid rgba(255,255,255,.16); }
@@ -11897,7 +11904,7 @@
     transform-origin:0% 50%; transform:rotate(0deg);
   }
   .daily-question-fab.is-charging .dq-charge-track{
-    animation:dq-fade-in .3s ease-out var(--dq-delay, .35s) both, dq-fade-out .45s ease-in calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s) + .15s) forwards;
+    animation:dq-fade-in .3s ease-out var(--dq-delay, .35s) both, dq-fade-out .45s ease-in calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s) + var(--dq-hold, .5s) + .15s) forwards;
   }
   .daily-question-fab.is-charging .dq-charge-r .dq-charge-arc{
     animation:dq-sweep calc(var(--dq-fill, 1.6s) / 2) linear var(--dq-delay, .35s) both;
@@ -11907,7 +11914,7 @@
   }
   /* Once the ring closes, the whole meter lets go with the burst. */
   .daily-question-fab.is-charging .dq-charge-half{
-    animation:dq-fade-out .4s ease-in calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s) + .12s) forwards;
+    animation:dq-fade-out .4s ease-in calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s) + var(--dq-hold, .5s) + .12s) forwards;
   }
   .dq-charge-burst{
     inset:0; border-radius:50%; box-sizing:border-box;
@@ -11917,7 +11924,7 @@
     opacity:0; transform:scale(1);
   }
   .daily-question-fab.is-charging .dq-charge-burst{
-    animation:dq-burst var(--dq-burst, .7s) cubic-bezier(.15,.7,.3,1) calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s)) both;
+    animation:dq-burst var(--dq-burst, .7s) cubic-bezier(.15,.7,.3,1) calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s) + var(--dq-hold, .5s)) both;
   }
   .dq-charge-bloom{
     inset:-30%; border-radius:50%;
@@ -11926,12 +11933,12 @@
     opacity:0; transform:scale(.6);
   }
   .daily-question-fab.is-charging .dq-charge-bloom{
-    animation:dq-bloom calc(var(--dq-burst, .7s) + .25s) ease-out calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s) - .05s) both;
+    animation:dq-bloom calc(var(--dq-burst, .7s) + .25s) ease-out calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s) + var(--dq-hold, .5s) - .05s) both;
   }
   /* Drained while it charges, flaring in the accent as it goes off. */
   .daily-question-fab.is-charging .dq-glyph{
     animation:dq-drain .3s ease-out both,
-              dq-flare 1s cubic-bezier(.2,.9,.3,1.2) calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s)) both;
+              dq-flare 1s cubic-bezier(.2,.9,.3,1.2) calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s) + var(--dq-hold, .5s)) both;
   }
   /* THE HIT (build 268): "have a better pulse effect when that loading
      circle thing hits". The ring does not just let go any more - the
@@ -11949,14 +11956,14 @@
                inset 0 0 12px color-mix(in srgb, var(--theme-c1) 55%, transparent);
   }
   .daily-question-fab.is-charging .dq-charge-flash{
-    animation:dq-flash .55s cubic-bezier(.2,.8,.3,1) calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s)) both;
+    animation:dq-flash .55s cubic-bezier(.2,.8,.3,1) calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s) + var(--dq-hold, .5s)) both;
   }
   .dq-charge-burst2{
     border:1.5px solid var(--theme-c1);
     box-shadow:0 0 10px color-mix(in srgb, var(--theme-c1) 55%, transparent);
   }
   .daily-question-fab.is-charging .dq-charge-burst2{
-    animation:dq-burst2 calc(var(--dq-burst, .7s) + .25s) cubic-bezier(.15,.7,.3,1) calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s) + .2s) both;
+    animation:dq-burst2 calc(var(--dq-burst, .7s) + .25s) cubic-bezier(.15,.7,.3,1) calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s) + var(--dq-hold, .5s) + .2s) both;
   }
   .daily-question-fab.is-charging .dq-charge{
     animation:dq-build var(--dq-fill, 1.6s) ease-in var(--dq-delay, .35s) both;
@@ -11975,6 +11982,16 @@
     15%{ opacity:.8; }
     100%{ opacity:0; transform:scale(3.1); }
   }
+  /* CLOSED, THEN GONE (build 309): "the circle when it's fully charged
+     doesn't complete". It did reach 100% - but the burst went off on the
+     same frame and the ring began fading 120ms later, so the closed ring
+     was never actually on screen. It now holds closed for --dq-hold,
+     brightening to full as it seals, and only then goes off. */
+  .daily-question-fab.is-charging .dq-charge-half{
+    animation:dq-sealed var(--dq-hold, .5s) ease-out calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s)) both,
+              dq-fade-out .4s ease-in calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s) + var(--dq-hold, .5s) + .12s) forwards;
+  }
+  @keyframes dq-sealed{ from{ filter:brightness(1); } 40%{ filter:brightness(1.7) drop-shadow(0 0 4px var(--theme-c1)); } to{ filter:brightness(1.35) drop-shadow(0 0 3px var(--theme-c1)); } }
   /* The quiet ready ring steps aside while the meter is on the button. */
   .daily-question-fab.is-charging.is-ready::after{ animation:none; opacity:0; }
   @keyframes dq-sweep{ from{ transform:rotate(0deg); } to{ transform:rotate(180deg); } }
@@ -55542,7 +55559,8 @@ const DAILY_CHARGE = {
   launch: 250,    /* after the burst begins, the orb leaves */
   flight: 640,    /* button to banner */
   unfurl: 460,    /* the banner opening out of the orb */
-  stay: 8000      /* the banner then stays this long */
+  stay: 8000,     /* the banner then stays this long */
+  hold: 500       /* the ring sits closed and lit before it goes off (309) */
 };
 function dailyMotionOff(){
   try { return resultsMotionOff(); } catch(e){ return !!theme.reduceMotion; }
@@ -55561,6 +55579,7 @@ function playDailyRecharge(btn, then){
   btn.style.setProperty("--dq-delay", DAILY_CHARGE.delay + "ms");
   btn.style.setProperty("--dq-fill", DAILY_CHARGE.fill + "ms");
   btn.style.setProperty("--dq-burst", DAILY_CHARGE.burst + "ms");
+  btn.style.setProperty("--dq-hold", DAILY_CHARGE.hold + "ms");
   btn.appendChild(ring);
   btn.classList.remove("is-charging");
   void btn.offsetWidth;
@@ -55574,7 +55593,7 @@ function playDailyRecharge(btn, then){
      hangs off the second half's animationend, with the old schedule
      kept only as a late fallback, and the ring is tidied away after the
      burst it actually played rather than on the clock. */
-  const goesOff = DAILY_CHARGE.delay + DAILY_CHARGE.fill;
+  const goesOff = DAILY_CHARGE.delay + DAILY_CHARGE.fill + DAILY_CHARGE.hold;
   let launched = false;
   const tidy = () => { btn.classList.remove("is-charging"); ring.remove(); };
   const launch = () => {
@@ -55586,7 +55605,7 @@ function playDailyRecharge(btn, then){
   };
   const lastArc = ring.querySelector(".dq-charge-l .dq-charge-arc");
   if(lastArc) lastArc.addEventListener("animationend", e => {
-    if(e.animationName === "dq-sweep") setTimeout(launch, DAILY_CHARGE.launch);
+    if(e.animationName === "dq-sweep") setTimeout(launch, DAILY_CHARGE.hold + DAILY_CHARGE.launch);
   });
   setTimeout(launch, goesOff + DAILY_CHARGE.launch + 1500);
   setTimeout(() => { if(!launched) tidy(); }, goesOff + DAILY_CHARGE.launch + 3000);
@@ -55671,16 +55690,118 @@ function announceDailyReset(btn){
      the "?" charges for about two seconds and goes off, and the banner
      rises out of it. With motion reduced (the app's switch or the OS's)
      there is no sequence at all - the banner simply appears. */
+  /* NEAR THE BUTTON (build 309): "the daily question alert that it's
+     ready is cool but again, it shouldn't go to the top ... needs to go
+     near the daily question button". The bubble opens out of the "?" the
+     moment the ring goes off, and is itself the way in. The top banner
+     is only the fallback for when the "?" is not on screen. */
   const announce = motion => {
     if(!document.body.contains(btn)) return;
-    showDailyAlert("It's out. One question, no retakes.", {
-      live: true,
-      from: motion ? btn : null,
-      onTap: () => { try { btn.click(); } catch(e){} }
-    });
+    const tap = () => { try { btn.click(); } catch(e){} };
+    const tip = showDailyTip('<b>Daily question</b><span>It\u2019s out \u00b7 tap to answer</span>',
+      '<b>Daily question</b><span>\u00b7 tap to answer</span>', { onTap: tap, stay: DAILY_CHARGE.stay });
+    if(tip){ if(motion) tip.classList.add("is-fresh"); return; }
+    showDailyAlert("It's out. One question, no retakes.", { live: true, from: motion ? btn : null, onTap: tap });
   };
   if(dailyMotionOff()){ announce(false); return; }
   playDailyRecharge(btn, () => announce(true));
+}
+
+/* THE DAILY QUESTION ANSWERS BESIDE ITS BUTTON (build 309) - both
+   things it has to say: "not yet" when you tap it too early, and "it's
+   out" when it has just charged. "If I click it when it's not ready the
+   notification that comes up needs to be near the button", and of the
+   ready alert, "it shouldn't go to the top ... needs to go near the daily
+   question button". One bubble, one placement, so the two can never
+   disagree about where they open. `full` is the two-line form, `compact`
+   the one-line form for when two lines will not fit beside the "?".
+   Returns the bubble, or null when the "?" is not on screen (the caller
+   falls back to the top banner). opts: onTap (makes it a live button),
+   stay (ms before it closes itself). */
+function showDailyTip(full, compact, opts){
+  opts = opts || {};
+  const fab = document.querySelector(".daily-question-fab");
+  const fr = fab ? fab.getBoundingClientRect() : null;
+  if(!fr || !fr.width) return null;
+  document.getElementById("daily-lock-tip")?.remove();
+  {
+    const tip = document.createElement("div");
+    tip.id = "daily-lock-tip";
+    if(opts.onTap){ tip.setAttribute("role", "button"); tip.tabIndex = 0; tip.classList.add("is-live"); }
+    else tip.setAttribute("role", "status");
+    tip.innerHTML = full;
+    document.body.appendChild(tip);
+    const gap = 10, vw = window.innerWidth, vh = window.innerHeight;
+    const blockers = () => [".panel.home.screen-home-actual .playbtn", ".bottomtabs:not([hidden])"]
+      .map(sel => document.querySelector(sel)).filter(Boolean).map(el => el.getBoundingClientRect()).filter(r => r.width > 0);
+    const cy = fr.top + fr.height / 2;
+    /* Where it can go, best first: beside the "?" (centred on it, then in
+       the gap between Start Studying and the bar, then level with its
+       foot), then above it. A position counts only if it is on screen and
+       touches neither Start Studying nor the bar. */
+    const place = (tw, th) => {
+      const hits = (x, y) => blockers().some(r => x < r.right && x + tw > r.left && y < r.bottom && y + th > r.top);
+      const ok = (x, y) => x >= 8 && y >= 8 && x + tw <= vw - 8 && y + th <= vh - 8 && !hits(x, y);
+      const lx = fr.left - gap - tw;
+      const over = blockers().filter(r => lx < r.right && lx + tw > r.left);
+      const lo = Math.max(-1e9, ...over.filter(r => r.bottom <= cy).map(r => r.bottom + 6));
+      const hi = Math.min(1e9, ...over.filter(r => r.top >= cy).map(r => r.top - 6));
+      const band = Math.min(Math.max(cy - th / 2, lo), hi - th);
+      for(const y of [cy - th / 2, band, fr.bottom - th, fr.top]) if(ok(lx, y)) return { x: lx, y, side: "left" };
+      /* above: over the "?", or pushed to the screen's edge - which clears
+         a Start Studying that reaches out over the "?" (a zoomed phone) -
+         as long as the caret still lands on the "?" */
+      const ay = fr.top - gap - th;
+      for(const ax of [Math.max(8, Math.min(fr.right - tw, vw - tw - 8)), vw - tw - 8])
+        if(fr.left + fr.width / 2 >= ax + 14 && fr.left + fr.width / 2 <= ax + tw - 14 && ok(ax, ay)) return { x: ax, y: ay, side: "above" };
+      return null;
+    };
+    let spot = place(tip.offsetWidth, tip.offsetHeight);
+    /* No room for two lines beside it (a phone browser window, where
+       Start Studying sits just above the bar): the one-line form. */
+    if(!spot || spot.side !== "left"){
+      tip.classList.add("is-compact");
+      tip.innerHTML = compact;
+      const c = place(tip.offsetWidth, tip.offsetHeight);
+      if(c && (c.side === "left" || !spot)) spot = c;
+      else { tip.classList.remove("is-compact"); tip.innerHTML = full; }
+    }
+    /* Last resort: above, lifted clear of whatever it would touch. */
+    if(!spot){
+      const tw = tip.offsetWidth, th = tip.offsetHeight;
+      let x = Math.max(8, Math.min(fr.right - tw, vw - tw - 8)), y = fr.top - gap - th;
+      for(let i = 0; i < 3; i++){
+        const tops = blockers().filter(r => x < r.right && x + tw > r.left && y < r.bottom && y + th > r.top).map(r => r.top);
+        if(!tops.length) break;
+        y = Math.min(...tops) - gap - th;
+      }
+      spot = { x, y, side: "above" };
+    }
+    const x = spot.x, y = spot.y, side = spot.side;
+    tip.classList.add("is-" + side);
+    tip.style.left = Math.round(x) + "px";
+    tip.style.top = Math.round(y) + "px";
+    /* the caret points at the middle of the "?" whichever side it opened on */
+    tip.style.setProperty("--caret", side === "left" ? Math.round(fr.top + fr.height / 2 - y) + "px" : Math.round(fr.left + fr.width / 2 - x) + "px");
+    requestAnimationFrame(() => tip.classList.add("is-on"));
+    const outside = e => { if(!tip.contains(e.target)) close(); };
+    const close = () => {
+      if(!tip.isConnected) return;
+      tip.classList.remove("is-on");
+      setTimeout(() => tip.remove(), 220);
+      document.removeEventListener("pointerdown", outside, true);
+    };
+    if(opts.onTap){
+      const go = () => { close(); opts.onTap(); };
+      tip.addEventListener("click", go);
+      tip.addEventListener("keydown", e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); go(); } });
+    }
+    setTimeout(() => document.addEventListener("pointerdown", outside, true), 0);
+    setTimeout(close, opts.stay || 3600);
+    const stage = document.getElementById("stage");
+    if(stage){ const mo = new MutationObserver(() => { mo.disconnect(); close(); }); mo.observe(stage, { childList: true }); }
+    return tip;
+  }
 }
 
 function showDailyQuestionLockedPopup(){
@@ -55711,76 +55832,8 @@ function showDailyQuestionLockedPopup(){
      bar, where there is exactly room for it) and ABOVE it wherever that
      would touch the tab bar or the button - an iPad, where the "?" sits
      in the corner beside the bar. Measured, never assumed. */
-  const fab = document.querySelector(".daily-question-fab");
-  const fr = fab ? fab.getBoundingClientRect() : null;
-  if(fr && fr.width > 0){
-    document.getElementById("daily-lock-tip")?.remove();
-    const tip = document.createElement("div");
-    tip.id = "daily-lock-tip";
-    tip.setAttribute("role", "status");
-    tip.innerHTML = '<b>Done for today</b><span>Next one in ' + timeLeft + '</span>';
-    document.body.appendChild(tip);
-    const gap = 10, vw = window.innerWidth, vh = window.innerHeight;
-    const blockers = () => [".panel.home.screen-home-actual .playbtn", ".bottomtabs:not([hidden])"]
-      .map(sel => document.querySelector(sel)).filter(Boolean).map(el => el.getBoundingClientRect()).filter(r => r.width > 0);
-    const cy = fr.top + fr.height / 2;
-    /* Where it can go, best first: beside the "?" (centred on it, then in
-       the gap between Start Studying and the bar, then level with its
-       foot), then above it. A position counts only if it is on screen and
-       touches neither Start Studying nor the bar. */
-    const place = (tw, th) => {
-      const hits = (x, y) => blockers().some(r => x < r.right && x + tw > r.left && y < r.bottom && y + th > r.top);
-      const ok = (x, y) => x >= 8 && y >= 8 && x + tw <= vw - 8 && y + th <= vh - 8 && !hits(x, y);
-      const lx = fr.left - gap - tw;
-      const over = blockers().filter(r => lx < r.right && lx + tw > r.left);
-      const lo = Math.max(-1e9, ...over.filter(r => r.bottom <= cy).map(r => r.bottom + 6));
-      const hi = Math.min(1e9, ...over.filter(r => r.top >= cy).map(r => r.top - 6));
-      const band = Math.min(Math.max(cy - th / 2, lo), hi - th);
-      for(const y of [cy - th / 2, band, fr.bottom - th, fr.top]) if(ok(lx, y)) return { x: lx, y, side: "left" };
-      const ax = Math.max(8, Math.min(fr.right - tw, vw - tw - 8));
-      if(ok(ax, fr.top - gap - th)) return { x: ax, y: fr.top - gap - th, side: "above" };
-      return null;
-    };
-    let spot = place(tip.offsetWidth, tip.offsetHeight);
-    /* No room for two lines beside it (a phone browser window, where
-       Start Studying sits just above the bar): the one-line form. */
-    if(!spot || spot.side !== "left"){
-      tip.classList.add("is-compact");
-      tip.innerHTML = '<b>Done for today</b><span>\u00b7 next in ' + timeLeft + '</span>';
-      const c = place(tip.offsetWidth, tip.offsetHeight);
-      if(c && (c.side === "left" || !spot)) spot = c;
-      else { tip.classList.remove("is-compact"); tip.innerHTML = '<b>Done for today</b><span>Next one in ' + timeLeft + '</span>'; }
-    }
-    /* Last resort: above, lifted clear of whatever it would touch. */
-    if(!spot){
-      const tw = tip.offsetWidth, th = tip.offsetHeight;
-      let x = Math.max(8, Math.min(fr.right - tw, vw - tw - 8)), y = fr.top - gap - th;
-      for(let i = 0; i < 3; i++){
-        const tops = blockers().filter(r => x < r.right && x + tw > r.left && y < r.bottom && y + th > r.top).map(r => r.top);
-        if(!tops.length) break;
-        y = Math.min(...tops) - gap - th;
-      }
-      spot = { x, y, side: "above" };
-    }
-    const x = spot.x, y = spot.y, side = spot.side;
-    tip.classList.add("is-" + side);
-    tip.style.left = Math.round(x) + "px";
-    tip.style.top = Math.round(y) + "px";
-    /* the caret points at the middle of the "?" whichever side it opened on */
-    tip.style.setProperty("--caret", side === "left" ? Math.round(fr.top + fr.height / 2 - y) + "px" : Math.round(fr.left + fr.width / 2 - x) + "px");
-    requestAnimationFrame(() => tip.classList.add("is-on"));
-    const close = () => {
-      if(!tip.isConnected) return;
-      tip.classList.remove("is-on");
-      setTimeout(() => tip.remove(), 220);
-      document.removeEventListener("pointerdown", close, true);
-    };
-    setTimeout(() => document.addEventListener("pointerdown", close, true), 0);
-    setTimeout(close, 3600);
-    const stage = document.getElementById("stage");
-    if(stage){ const mo = new MutationObserver(() => { mo.disconnect(); close(); }); mo.observe(stage, { childList: true }); }
-    return;
-  }
+  if(showDailyTip('<b>Done for today</b><span>Next in ' + timeLeft + '</span>',
+                  '<b>Done for today</b><span>\u00b7 next in ' + timeLeft + '</span>')) return;
   showDailyAlert("Already done for today \u2014 resets in " + timeLeft + " (5pm daily).");
 }
 
