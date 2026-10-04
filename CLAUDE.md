@@ -10590,16 +10590,20 @@ margin to make room: a margin on Re-run alone left it 2px lower than Main
 menu beside it. The review screen's Retake / Back to results use the same
 class and get the same room.
 
-**No XP flies into Profile after a run.** *"At the end of taking a retake
+**No XP flies into Profile after a test - only after the daily question.** *"At the end of taking a retake
 portion and hitting main menu, for some reason the xp number banner pops up
 and then shoots over to profile, get rid of that."* Every run used to set
 `pendingXpFly` and `showHome()` flew it into the Profile tab - from before
 the results screen showed XP itself. Every mode now ends on the XP card
 (`buildResultsLevelBlock`), so the fly was the same news twice, out of
-context. `showHome()` just clears `pendingXpFly`; the welcome bonus's fly
-(`awardWelcomeBonus`) is a different moment and stays. Section 76
+context. Then: *"Unless it's a daily question"* - its result is a small
+box of its own, so its XP still flies. The daily path in `summarize()` sets
+`pendingXpFlyDaily`, every other run clears it, and `showHome()` flies only
+when it is set. The welcome bonus's fly (`awardWelcomeBonus`) is a
+different moment and stays. Section 76
 (`check_b304_noxpfly`) walks the reported route - a drill with a miss, its
-retake, Main menu - and fails on 303.
+retake, Main menu - and fails on 303, and checks the daily question's XP
+still flies.
 
 Gates: `check-behaviour` section 74 (`check_b304`), written against 303 and
 red there on every group; section 75 (`check_b304_polish`) for the second

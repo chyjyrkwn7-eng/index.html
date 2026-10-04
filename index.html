@@ -57265,17 +57265,22 @@ function showHome(){
      (build 302); recording new ones still waits for 1600ms. */
   requestAnimationFrame(() => { if(panel.isConnected) startOrbitEmblemAnims(panel, true); });
   setTimeout(() => { if(panel.isConnected) startOrbitEmblemAnims(panel); }, 1600);
-  /* NO XP FLY AFTER A RUN (build 304). The XP a run earned used to fly
-     into the Profile tab when you landed back here, from back when the
-     results screen did not show it. It does now - every mode ends on
-     buildResultsLevelBlock, the XP card with the level bar filling - so
-     the fly told you the same thing a second time, out of context:
-     "at the end of taking a retake portion and hitting main menu, for
-     some reason the xp number banner pops up and then shoots over to
-     profile, get rid of that". pendingXpFly is still set and cleared by
-     the run code, and simply never read; the welcome bonus's fly
-     (awardWelcomeBonus) is a different moment and stays. */
+  /* THE XP FLIES IN AFTER THE DAILY QUESTION ONLY (build 304). It used
+     to fly after every run, from back when the results screen did not
+     show XP. A test's results screen does now - buildResultsLevelBlock,
+     the XP card with the level bar filling - so after a test the fly was
+     the same news twice: "at the end of taking a retake portion and
+     hitting main menu ... the xp number banner pops up and then shoots
+     over to profile, get rid of that" - and then "unless it's a daily
+     question". The daily question's result is its own small box, so its
+     XP still flies. pendingXpFlyDaily is set by the daily path in
+     summarize() and cleared by every other run. */
+  if(pendingXpFly > 0 && pendingXpFlyDaily){
+    const n = pendingXpFly;
+    setTimeout(() => showPointsFlyEffect("+" + n.toLocaleString() + " XP"), 450);
+  }
   pendingXpFly = 0;
+  pendingXpFlyDaily = false;
   /* After the XP has flown, the Detective's progress drops in along the
      top - once, and only if you are still on Home by then. */
   if(pendingDailyProgress){
@@ -62851,6 +62856,8 @@ function unitBestPctOf(u){
    paused; cancelPauseTiming() shifts it along with the run clock. */
 let qTimeMs = {};
 let pendingXpFly = 0;
+/* Only the daily question's XP flies into Profile (build 304) - see showHome. */
+let pendingXpFlyDaily = false;
 /* The Detective's daily-question run, said as a top banner on the main
    menu after the daily question rather than inside its result box. */
 let pendingDailyProgress = null;
@@ -64963,6 +64970,7 @@ function summarize(){
       exitBtn.focus({ preventScroll: true });
     }
     pendingXpFly = pointsEarned;
+    pendingXpFlyDaily = true;
     return;
   }
 
@@ -64981,6 +64989,7 @@ function summarize(){
   lastRunXpLines = xpLines.filter(l => !l.badge);
   if(!runXp || isMissedRetake) lastRunRoomXp = null;
   pendingXpFly = xpTotal;
+  pendingXpFlyDaily = false;
 
   /* Only the units THIS run earned a hundo in - "the badge rows will
      only be for the badge progress for the hits you took from that

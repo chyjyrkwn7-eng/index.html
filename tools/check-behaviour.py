@@ -7854,6 +7854,25 @@ def check_b304_noxpfly(br):
     ctx.close()
     check("the retake ends on a results screen with Main menu", r.get("had") is True, r)
     check("Main menu lands on Home with no XP flying into Profile", r.get("home") is True and r.get("flew") is False, r)
+    # "Unless it's a daily question": its result is a small box, so its XP still flies.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    d = pg.evaluate("""async ()=>{ const w = ms => new Promise(r => setTimeout(r, ms));
+      setInterval(()=>[...document.body.children].forEach(n=>{ if(getComputedStyle(n).position==='fixed' && /challenge complete|character unlocked/i.test(n.textContent||'')) n.remove(); }), 40);
+      document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove()); theme.reduceMotion = true; applyTheme();
+      try{ startDailyQuestion(); }catch(e){ return { err: String(e).slice(0, 120) }; }
+      for(let t = 0; t < 60 && !document.querySelector('.qpanel .choice'); t++) await w(100);
+      const c = document.querySelector('.qpanel .choice[data-index="' + correctSlot(order[pos]) + '"]');
+      if(!c) return { noQuestion: true };
+      c.click();
+      for(let t = 0; t < 60 && !document.getElementById('dailyq-exitbtn'); t++) await w(100);
+      let flew = false;
+      const mo = new MutationObserver(() => { if(document.getElementById('welcomebonus-banner')) flew = true; });
+      mo.observe(document.body, { childList: true, subtree: true });
+      const ex = document.getElementById('dailyq-exitbtn'); const had = !!ex; if(ex) ex.click();
+      await w(2500); mo.disconnect();
+      return { had, flew }; }""")
+    ctx.close()
+    check("after the daily question, its XP still flies into Profile", d.get("had") is True and d.get("flew") is True, d)
 
 
 def main():
