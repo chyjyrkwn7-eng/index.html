@@ -10996,3 +10996,184 @@ device, phone and iPad) fails 34 checks there and passes on 307.
 - **Not done, on purpose: the live rooms were not rewritten.** The
   nameless entries are drawn correctly from the rankings, and each person's
   own device fills in their entry the next time they open that chat.
+
+### Build 308 - smooth characters, faces left alone, Home put back, tests that hold still
+
+- **Small characters are flip-books** (`recordCharFrames()`,
+  `charFlipAttach()`, wired through `setCharState(..., "live")`). A live
+  character is motion inside an svg, which the browser repaints on the CPU,
+  whole drawing, every frame - a 40-row board measured 116ms a frame at 4x
+  CPU throttle with them on, 16.7 with them off, and no amount of trimming
+  filters or blur got below ~66. Anything 80 CSS px or smaller now records
+  its idle loop ONCE (6s, 144 frames, 12 across) into a sprite sheet and
+  plays it as a stepped transform on an `<img>` - the Home bubbles' method
+  from build 298. Measured after: 16.7ms idle and scrolling on the same
+  board. Bigger heroes (Profile, the unlock card) stay live: one svg is
+  affordable. Rules that matter:
+  - The sheet has to carry what CSS gave the drawing, because an image
+    cannot see the page: the `#avatarDepth` shading is cloned into the
+    sheet and the bottom dissolve (a CSS mask on `.avatarchar-svg`) is
+    baked in as an svg luminance mask - without it every recorded character
+    had a hard cut at the shoulders. Compare a recorded frame with the live
+    drawing side by side after touching either.
+  - The drawing is serialised once with a marker on each moving part and
+    patched per frame; serialising the whole svg 144 times was the cost.
+    Batches of four with a yield between frames: decoding an svg image is
+    main-thread work and 36 at once held a throttled phone for most of a
+    second.
+  - Sheets live in the orbit sheets' Cache Storage under `/__ch/`, keyed by
+    a hash of the drawing, so only a redraw re-records. **The orbit
+    recorder's cleanup used to delete everything not under its own path** -
+    it is scoped to `/__rk/` now, and each recorder only clears its own old
+    versions. A new recorder sharing that cache must do the same.
+  - A loop slower than twice the 6s sheet is held still in the sheet (a
+    40s starfield). Periods that divide 6s record exactly; others are
+    rounded to a whole number of cycles per sheet.
+  - A reaction or the sleeping pose hides the flip-book and shows the live
+    drawing (`[class*="char-react-"]`, `.char-sleep`).
+- **No bounce.** The breathe/sway on every figure and head and the Ghost's
+  float are gone ("the characters are like bouncing around ... kinda ruins
+  it"); only their details move.
+- **Detective's `AVATAR_ART_SCALE` is 1** - at 1.16 the whole figure read
+  bigger than everybody beside it.
+- **Faces are left alone.** Umbra lost the spiral in its hood and the
+  crescent's eclipse, Horizon lost the disk, motes, ripple and visor glint -
+  all on the face ("takes away from their cool faces"). What moves now is
+  round them: Umbra's shadow breathing off the hood, its rim light, hem
+  wisps and throat flare; light rising up Horizon's hair. **Zenith** lost
+  the helm sheen (the "face glistening") and has a turning 12-ray corona
+  behind the halo, two counter-sparks on the ring, a star flare with a
+  shockwave and stardust off the shoulders - the most motion in the set, as
+  the ultimate character should have. All of it is transform/opacity/dash.
+- **Unlock notes only where the rule has a catch** (`UNLOCK_NOTES`): a run
+  a miss resets, one day / one test, #1 when the week ends, the secrets.
+  "Keep studying" and "every right answer counts" are gone, and so is the
+  per-kind fallback.
+- **Customize: only the selected tile carries the glow filter**
+  (`glowOff()`, `.is-unglowing` for the fade out). A zero-size
+  drop-shadow is still a filter; 33ms -> 16.7ms a frame scrolling at 4x.
+- **Home is put back**: the smoke is thin and slow (.26/.24 opacity,
+  70s/90s laps) so the planet's colour shows; the night side is gentle and
+  has no hard glint; the rings are plain again; every tiny flare is the
+  same soft point (glow in its gradient, no catch-light, no filter); the
+  bubbles lost the hard white crescent and 0-blur rim at the top. **The
+  phone version label** sits up the screen's corner curve (1.6rem in,
+  1.2rem up, .84rem, 88%) - check-fixes models the corner and the bar.
+- **Open rooms keep looking** for ~6.5s before "No open rooms found at
+  this time"; a read that never answers ends the same way.
+- **Start fills from its centre** as it lights (`.just-ready`, a clip-path
+  on `::before`); the breathing halo and sweep are gone.
+- **The test header is pinned, not sticky** (`syncTestPin()`,
+  `.wrap.test-pinned`): measured from `.wrap`'s top padding and fixed
+  there while a question is up, with `.wrap` reserving its height and a
+  fade behind it so a long question scrolls under the mode and count. iOS
+  trails a sticky row by a frame in momentum scrolling - the reason Pause
+  was fixed in 240. **Paused, the row keeps its 44px** on a phone; it used
+  to drop 23px under the chat button.
+- **Timer on the right**, and **Best** is a chip before the clock; the
+  timer row has a min-height so hiding the chip on pause moves nothing.
+- **Flashcards are green again** (the white of 306 is gone).
+- **Answer feedback is compositor-only**: no filter on the press, no
+  animated box-shadow on the right pop, press 70ms (was 110). Feedback
+  lands ~90ms after the tap at 4x, from ~135.
+- **Dark buttons stay dark when pressed**: the press shimmer is a faint
+  lift on `.next.ghost` and back links (it was a 28% white pool). With
+  307's transparent tap highlight, that is both halves of "the black
+  buttons turn white".
+- **Unit details open cheaper**: the scrim fades by opacity with a fixed
+  blur (it animated the blur radius), the card is contained, and its big
+  shadow is a separate layer that fades in once the card lands
+  (`.unitdetail-shadow`).
+- **Review's starred card** has its own gold star (`buildStarredCardStar()`).
+- **check-admin-auth no longer prints a key.** Its "no key" step only
+  cleared two of the four variables the tool reads, so with real
+  credentials in the environment it found them and printed the private
+  key into the gate log. It clears all four and prints only whether a key
+  was found. **Never print a key, in a gate or anywhere.**
+- Still open from this build's check: `check-fixes` reports a 10-level
+  grey bar at the bottom edge of an SE 1st gen in landscape in a browser.
+  Build 306 reports the same, so it predates this build.
+- **The two timer switches are one or the other, and both always show.**
+  "Track my time" was hidden whenever Countdown was on (so after one
+  countdown run it had "disappeared"), and a switch's change only ran
+  `refresh()`, never `timerSect.paint()`, so turning one on left the other
+  still showing on. Each switch now repaints the pair. The "when the clock
+  runs out" line over the unit list is gone - it read as the timer
+  settings leaking out of the sheet.
+- **Sliders are precise and pulled towards fives** (`sliderMagnet()`):
+  any whole number, but a multiple of five owns 0.8 of a step either side,
+  so 69 is reachable and 69.5 lands on 70. A `plainSlider` with step 5
+  gets this, and so does How many; the Virtual Room's question slider tops
+  out at the pool itself now that every count is reachable.
+- **The Masked One's red mark is clipped to the mask** (`.cx-mkmark`,
+  one clipPath of the mask outline round the crack, forks, flash and bolt).
+  The bolt used to come down through the mane.
+- **The results character is bigger**: 4.4rem circle on a phone, 5rem
+  from tablet up (from 3.1/3.6), still under the flip-book ceiling.
+- **The unlock sequence, reordered and slowed down:**
+  - **Badge first**, because a badge is what tips a rank: `rsUnlockItems`
+    lists badges, then ranks, then the rank's rewards, then challenge
+    characters and banners, then a flare.
+  - **One card for everything a rank hands over** (`rankRewardsItem()`,
+    `kind: "rankrewards"`): theme, character and banner as tiles in one
+    pop-up. Each still gets its own row in the Unlocked list and its own
+    dot in Customize. Home's queue groups the same way
+    (`groupRankRewards()`), and after Home's own rank scene that rank's
+    theme joins the card (`rankJustReachedOnHome`).
+  - **Pop-ups hold 8.5-12s** before closing on their own; tap is the way on.
+  - **Less waiting before the first scene**: the Unlocked box at 1.3s
+    after the grade, the first scene 1.2s after that (it was 1.7s + 3s,
+    which read as broken).
+- **The rank-up scene: the flares orbit, the planet holds still.**
+  `rankOrbitFlares()` moves the seven bubbles onto a carrier that turns
+  (30s a lap) while each slot turns back so the emblems stay upright.
+  **The ring is centred by measurement** (`rankOrbitCentre()`): bubbles
+  are placed by their top-left corner, so their ring sits half a bubble
+  down-right of the planet - invisible while still, obvious once it
+  turns; the carrier turns about the ring's centre and is shifted onto
+  the planet's. Then the rank's flare **ignites while it all turns**
+  (colour, glow, swell; the others dim), then the flash, the colour
+  change and "You ranked up" (now on Home's scene too). Both planets'
+  carriers start in the same frame so the swap does not jump them.
+- **The badge scene, rebuilt.** The badge comes first, alone: it spins up
+  like a coin (`.bc-coin`, rotateY, slowing to a stop), light turns behind
+  it, and it is named - unit, "Badge earned", what it paid - for about
+  four seconds. Then it lifts, the case rises in under it, the **lid opens
+  towards you** (positive rotateX about the far edge; it was -104deg,
+  swinging down into the case), and the badge drops into its slot.
+  **The lag**: the case grew from 4% scale, re-drawing sixteen SVG badges
+  at every step on a phone, and the glint ran inside all sixteen at once.
+  The case now rises at full size on one layer, and only the new badge
+  glints.
+- **Gates that had gone stale, fixed rather than ignored.** `check-chat`'s
+  fake Firestore dropped every `set()`, so from build 307 (which checks you
+  are still in a group chat you have open) the room it made never had its
+  own creator in it. `check-friends` and `check-chatroom` set `syncCode` by
+  hand and pushed, which since build 296 writes nothing until the cloud
+  copy has been read (`cloudConfirmedFor`); five and one checks had failed
+  on every build since, 306 included (verified on a clean 306 checkout).
+  The fixtures now do what a real launch does first.
+- **The phone version label never rises into the tab bar.** The strip
+  under the bar is .6rem plus the inset: 43px on an iPhone, but only 34px
+  on an Android phone with a 24px inset, where 1.2rem up put the label a
+  pixel into the bar. `bottom` is capped at the strip less the label, and
+  `left` steps in where the strip is short (lower on the corner curve
+  means a wider corner). On an iPhone both caps sit past the 1.2rem / 1.6rem
+  values and change nothing.
+- **More gates that encoded a decision, re-read.** check-results asserted
+  "rank, theme, character, then badge" and check-behaviour asserted Zeus
+  before Solar on Home; both orders changed on request. Three checks
+  counted a character as alive only with `char-live`, and the flip-book
+  class `char-flip` is alive too. The rank-sheet cache check counted every
+  key in a cache the character sheets now share under `/__ch/`.
+  check-curve built a "whole unit" from every question tagged Penal Code
+  (341) where the unit is 340 (`inWholeUnit`), so its run never counted as
+  full - failing since 298. check-loops lists the four new seamless loops
+  in KNOWN with the reason for each. The exit confirmation compares
+  unrounded positions within half a pixel: a 0.14px centring difference
+  had rounded to two different integers.
+- **Run the long gates one or two at a time.** Three in parallel plus a
+  recording made six checks fail on timing (an orb sampled mid-flight, a
+  board fetched late, a chat message not delivered in its window); each
+  passed alone. A red check on a loaded machine is re-run alone before it
+  is believed or explained away.

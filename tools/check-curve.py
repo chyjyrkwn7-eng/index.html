@@ -323,8 +323,14 @@ def main():
             const topics = [...new Set(QUESTIONS.map(q => (q.topic||'').trim()))].filter(Boolean);
             const big = topics.reduce((a,b) => unitQuestionCount(b) > unitQuestionCount(a) ? b : a);
             const small = topics.reduce((a,b) => unitQuestionCount(b) < unitQuestionCount(a) ? b : a);
+            /* THE WHOLE UNIT AS THE APP COUNTS IT (build 308): inWholeUnit.
+               The Penal Code carries a question that exists only in its
+               slides 0-85 version, so "every question tagged Penal Code" is
+               341 where the unit is 340 - and a run of 341 is not a full
+               unit, so its row never appeared and this failed on every
+               build since 298. */
             const idx = t => QUESTIONS.map((q,i)=>[q,i])
-              .filter(([q]) => (q.topic||'').trim() === t).map(([,i]) => i);
+              .filter(([q]) => (q.topic||'').trim() === t && inWholeUnit(q)).map(([,i]) => i);
             const run = (units, slice) => {
               store.unitPerfects = {}; store.pendingBadgeUnlocks = [];
               cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = units.slice();

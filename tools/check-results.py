@@ -329,10 +329,13 @@ with sync_playwright() as pw:
     ck("a long test pays +100 for every 50 questions, stacking", xp["a49"] == 0 and xp["a50"] == 100 and xp["a120"] == 200, xp)
     ck("scaled by accuracy", xp["half"] == 100, xp)
     ck("the daily question is worth 200 XP", xp["daily"] == 200, xp)
-    # The rank comes first, then what it handed over, then the badges.
+    # BUILD 308: the badge comes first - it is what tips the rank - then
+    # the rank, then what it handed over. ("I would also think the badge
+    # cutscene would be first to go because that's what is needed to
+    # trigger a rank up.")
     order = pg.evaluate("""()=>rsUnlockItems({ colors:['vanguard'], badges:['Identity Crimes'], retroBadges:[],
       characters:['robot'], justBeatSpeed:null, units:[], flare:null }).map(i=>i.kind)""")
-    ck("unlocks run rank, theme, character, then badge", order[:4] == ["rank", "theme", "character", "badge"], order)
+    ck("unlocks run badge, rank, then what the rank handed over", order[:3] == ["badge", "rank", "theme"] and "character" in order[3:], order)
     # A run that missed one: the badge line, the avatar, the chip.
     pg.evaluate("([u])=>{ store.unitPerfects = store.unitPerfects || {}; store.unitPerfects[u] = 3; __run(u,0,'drill'); }", [UNIT])
     wait_done(pg)

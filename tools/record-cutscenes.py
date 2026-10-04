@@ -232,6 +232,17 @@ def badge_queue(pg, rec):
     pg.wait_for_timeout(16500)
 
 
+def badge_case(pg, rec):
+    """The results-screen badge scene (build 308): the badge spins up on
+    its own and is named, the case rises under it, the lid lifts towards
+    you, and the badge goes into its slot. ~14s."""
+    pg.evaluate("()=>showHome()")
+    pg.wait_for_timeout(700)
+    rec.start(); pg.wait_for_timeout(400)
+    pg.evaluate("()=>playBadgeCaseScene(['Identity Crimes'], ()=>{})")
+    pg.wait_for_timeout(15200)
+
+
 def rank_cutscene(key):
     def body(pg, rec):
         pg.evaluate("()=>showHome()")
@@ -239,7 +250,7 @@ def rank_cutscene(key):
         rec.start(); pg.wait_for_timeout(400)
         pg.evaluate("(k)=>{store.pendingTierCutscene=k; playTierCutscene(k)}",
                     key)
-        pg.wait_for_timeout(11800)   # 8s cutscene, then the RANK UP banner
+        pg.wait_for_timeout(15200)   # build 308: ~13.8s - orbit, ignite, flash, name
     return body
 
 
@@ -249,7 +260,7 @@ def supernova(pg, rec):
     rec.start(); pg.wait_for_timeout(400)
     pg.evaluate("()=>{store.pendingSupernovaCutscene=true;"
                 "playSupernovaCutscene()}")
-    pg.wait_for_timeout(23500)       # burst 9s, settle 13.5s, finish 20s
+    pg.wait_for_timeout(19500)       # build 308: ignite 3.6s, burst 8s, name 9.6s, ends ~18.5s
 
 
 def void_cutscene(pg, rec):
@@ -286,19 +297,52 @@ def test_to_badge(pg, rec):
         document.querySelector('.choice[data-index="'+r+'"]').click();}""")
     pg.wait_for_timeout(1500)
     pg.evaluate("()=>document.getElementById('nextbtn').click()")
-    pg.wait_for_timeout(6800)
-    pg.evaluate("""()=>{const b=[...document.querySelectorAll('button')]
-        .find(x=>/main menu/i.test(x.textContent||'')); b && b.click();}""")
-    # This run is the 6th badge AND level 30, so it tips Gold as well: the
-    # rank cutscene takes Home first and the badge cutscene follows it.
-    pg.wait_for_timeout(15500)
+    # BUILD 308: everything plays ON THE RESULTS SCREEN, in order - the
+    # badge's case, then the rank it tipped, then one card for that rank's
+    # rewards. A pop-up holds for ~10s untouched; here each one is tapped
+    # through after 5s so the clip is the sequence, not the waiting.
+    seen = 0
+    for _ in range(600):
+        pg.wait_for_timeout(100)
+        up = pg.evaluate("()=>!!document.querySelector('.rs-spot.is-up')")
+        seen = seen + 1 if up else 0
+        if seen >= 50:
+            pg.evaluate("()=>document.querySelector('.rs-spot.is-up')?.click()")
+            seen = 0
+        if pg.evaluate("()=>!!document.querySelector('.rs-rewards.rs-done')"):
+            break
+    pg.wait_for_timeout(1500)
+
+
+def test_to_rank(pg, rec):
+    """The whole build 308 sequence on one run: the ninth badge tips
+    Sapphire, so the case plays, then the rank's scene, then ONE card with
+    Sapphire's theme, character and banner. Set up on the page, from the
+    app's own thresholds, so it does not go stale when they move."""
+    pg.evaluate("""()=>{
+      const topics = [...new Set(QUESTIONS.map(q => (q.topic||'').trim()))].filter(Boolean)
+        .filter(t => t !== 'Identity Crimes');
+      store.unitPerfects = {};
+      topics.slice(0, 8).forEach(t => { store.unitPerfects[t] = badgeThresholdFor(t); });
+      store.unitPerfects['Identity Crimes'] = badgeThresholdFor('Identity Crimes') - 1;
+      let pts = 1000; while(levelProgress(pts).level < 54) pts += 2000;
+      store.lifetime.points = pts;
+      store.seenUnlockedTiers = TIER_ORDER_FULL.slice(0, 4);
+      store.theme = store.theme || {};
+      saveStore(); showHome(); }""")
+    test_to_badge(pg, rec)
 
 
 SCENES = [
+    ("badge-case",     PHONE,  badge_case,                10,  GIF_W),
+    ("badge-case",     TABLET, badge_case,                10,  340),
     ("badge-unlock",   PHONE,  badge_cutscene,            FPS, GIF_W),
     ("badge-unlock",   TABLET, badge_cutscene,            FPS, 340),
     ("badge-queue",    PHONE,  badge_queue,               10,  GIF_W),
-    ("test-to-badge",  PHONE,  test_to_badge,             10,  GIF_W),
+    ("test-to-badge",  PHONE,  test_to_badge,             8,   GIF_W),
+    ("test-to-badge",  TABLET, test_to_badge,             8,   340),
+    ("test-to-rank",   PHONE,  test_to_rank,              8,   GIF_W),
+    ("test-to-rank",   TABLET, test_to_rank,              8,   340),
     ("rank-rookie",    PHONE,  rank_cutscene("rookie"),   10,  GIF_W),
     ("rank-ranger",    PHONE,  rank_cutscene("ranger"),   10,  GIF_W),
     ("rank-veteran",   PHONE,  rank_cutscene("veteran"),  10,  GIF_W),

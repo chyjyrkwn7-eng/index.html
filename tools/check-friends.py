@@ -29,6 +29,12 @@ from playwright.sync_api import sync_playwright
 CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 INSET_RE = re.compile(r"env\(safe-area-inset-(top|bottom|left|right)(?:\s*,[^()]*)?\)")
+# A FIXTURE IS A LAUNCH THAT HAS ALREADY READ ITS CLOUD COPY (build 308).
+# Since build 296 pushToCloud() writes nothing until this launch has read
+# the account back (cloudConfirmedFor), so a fixture that sets syncCode by
+# hand and pushes was measuring a write that, rightly, never happened -
+# five checks here failed on 296 through 307 for that reason alone. Every
+# push in a fixture now marks the read done first, as a real launch has.
 SRC = (sys.argv[sys.argv.index("--against") + 1] if "--against" in sys.argv
        else os.path.join(ROOT, "index.html"))
 
@@ -218,7 +224,7 @@ def main():
             set: d => { wrote.push({n:n, id:id, d:d}); return Promise.resolve(); },
             update: ()=>Promise.resolve(), delete: ()=>Promise.resolve() }) }) };
           store.leaderboardOptIn = true;
-          pushToCloud();
+          cloudConfirmedFor = syncCode; pushToCloud();
           const lb = wrote.filter(w=>w.n==='leaderboard');
           const flat = JSON.stringify(lb);
           return { n: lb.length,
@@ -485,7 +491,7 @@ def main():
                 update: () => ({ catch: () => {} }) }) }) };
               syncCode = "AAAA-1111"; store.leaderboardOptIn = true; store.publicId = "me01";
               store.firstName = "Madison";
-              pushToCloud();
+              cloudConfirmedFor = syncCode; pushToCloud();
               return { has: !!(payload && payload.seenAt), keys: payload ? 1 : 0 };}""")
             check("a stats push republishes seenAt rather than wiping it",
                   pushes["has"] is True, pushes)
@@ -700,19 +706,19 @@ def main():
 
           /* (1) A save that changes nothing on the row - a theme toggle,
              a tour flag, a dismissed notification all look like this. */
-          saveStore(); pushToCloud(); pushToCloud();
+          saveStore(); cloudConfirmedFor = syncCode; pushToCloud(); cloudConfirmedFor = syncCode; pushToCloud();
           const afterNoChange = writes;
 
           /* (2) Only the numbers moved: answering a question. */
           store.lifetime.correct = (store.lifetime.correct || 0) + 1;
-          pushToCloud();
+          cloudConfirmedFor = syncCode; pushToCloud();
           store.lifetime.correct += 1;
-          pushToCloud();
+          cloudConfirmedFor = syncCode; pushToCloud();
           const afterScore = writes;
 
           /* (3) An invite lands in this same row and cannot wait. */
           store.chatInvitesOut = { zzz999: { code: 'ABCD-1234', at: Date.now() } };
-          pushToCloud();
+          cloudConfirmedFor = syncCode; pushToCloud();
           const afterInvite = writes;
 
           /* (4) And the end of a run publishes the numbers held back. */
@@ -755,10 +761,10 @@ def main():
           return new Promise(r => setTimeout(() => {
             /* Off, then on, through the store the control writes to. */
             store.leaderboardOptIn = false; store.leaderboardOptInChanged = true;
-            pushToCloud();
+            cloudConfirmedFor = syncCode; pushToCloud();
             const afterOff = { w: writes, d: deletes };
             store.leaderboardOptIn = true; store.leaderboardOptInChanged = true;
-            pushToCloud();
+            cloudConfirmedFor = syncCode; pushToCloud();
             r({ before: before, offDeletes: afterOff.d,
                 backOn: writes - afterOff.w, hadBox: !!box });
           }, 200));}""")

@@ -37,7 +37,13 @@ window.__updates = [];
 window.firebase = { apps: [], initializeApp(){ window.firebase.apps.push({}); return {}; },
   firestore(){ return { collection(){ return { doc(__id){ return {
     get(){ return Promise.resolve({exists:true, data:()=>window.__room, metadata:{fromCache:false}}); },
-    set(){ return Promise.resolve(); },
+    /* A WRITE LANDS (build 308). This used to drop every set(), which was
+       harmless until build 307 started checking that you are still in a
+       group chat you have open: the room this stub served never had the
+       person who had just created it, so the app (rightly) said "You're
+       no longer in that group chat" and every step after it failed. A
+       real set() puts the creator in the room; so does this one. */
+    set(d){ if(d && d.participants) Object.assign(window.__room.participants, d.participants); return Promise.resolve(); },
     update(d){ window.__updates.push({id: __id, d: d}); return Promise.resolve(); },
     delete(){ return Promise.resolve(); },
     onSnapshot(cb){ window.__snaps.push(cb);
@@ -309,7 +315,13 @@ def run_class(src_dir, label):
                 .find(b => /^Start a group chat$/.test(b.textContent));
               if(!start) return {no: 'no Start a group chat button'};
               start.click();
-              return new Promise(r => setTimeout(() => r({
+              /* WAIT FOR THE ROOM, not a fixed 200ms (build 308): the
+                 write resolves on the next free task, and on a page still
+                 recording its character flip-books in the background that
+                 can be later than 200ms. Polled, up to 3s. */
+              return new Promise(r => { const t0 = Date.now(); const poll = () => {
+                if(!chatRoomCode && Date.now() - t0 < 3000){ setTimeout(poll, 60); return; }
+                setTimeout(() => r({
                 code: chatRoomCode,
                 input: !!document.querySelector('.chatdock-chathost .vroom-chat-input'),
                 invite: !!([...document.querySelectorAll('.chatdock-mini')]
@@ -320,7 +332,7 @@ def run_class(src_dir, label):
                    growing back. Searched as the actual string, which is
                    the only thing that catches it wherever it is put. */
                 codeOnScreen: document.body.innerText.indexOf(chatRoomCode) >= 0,
-                joinField: !!document.querySelector('.chatdock-joininput')}), 200));}""")
+                joinField: !!document.querySelector('.chatdock-joininput')}), 200); }; poll(); });}""")
             if started.get("no"):
                 fails.append(started["no"])
             else:

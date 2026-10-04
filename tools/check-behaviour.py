@@ -2045,7 +2045,11 @@ def check_b235(br):
       showHome(); await wait(600);
       await T('notYet', () => !!document.querySelector('.rs-spot'));
       await wait(3400);
-      await T('first', () => { const sp = document.querySelector('.rs-spot'); return sp ? sp.textContent : null; });
+      /* Build 308: a rank's reward comes ahead of a challenge's, so it
+         follows the rank-up straight away. */
+      await T('first', () => { const sp = document.querySelector('.rs-spot'); if(!sp) return null;
+        const st = sp.querySelector('.rs-spot-strip.is-rankreward');
+        return { text: sp.textContent, strip: st ? st.textContent : null, emblem: !!(st && st.querySelector('svg')) }; });
       document.querySelector('.rs-spot')?.click(); await wait(200);
       await T('flying', () => { const f = document.querySelector('body > .rs-fly'); if(!f) return null;
         const r = f.getBoundingClientRect(); return { y: Math.round(r.top), pos: getComputedStyle(f).position }; });
@@ -2076,7 +2080,9 @@ def check_b235(br):
       document.querySelectorAll('.invite-overlay').forEach(e => e.remove());
       openPersonSheet({ pub: 'pubstranger', firstName: 'Stranger', avatarChar: 'alien', seenAt: 1 }); await wait(300);
       await T('liveStranger', () => { const a = document.querySelector('.person-card-art');
-        return { live: a.classList.contains('char-live'), sleep: a.classList.contains('char-sleep') }; });
+        /* A flip-book (build 308) is alive too - a small character plays
+           its recorded loop rather than the live svg. */
+        return { live: a.classList.contains('char-live') || a.classList.contains('char-flip'), sleep: a.classList.contains('char-sleep') }; });
       document.querySelectorAll('.invite-overlay').forEach(e => e.remove());
       // Bronze is wine.
       // Build 244: Bronze is the rookie key now (it was ranger's).
@@ -2090,16 +2096,20 @@ def check_b235(br):
     sd = r["seed"] if isinstance(r["seed"], dict) else {}
     check("an account already on Gold is NOT marked as having seen its rank character (Solar since 244)", sd.get("gold") is True and sd.get("pharaoh") is False, r["seed"])
     check("Home waits a beat before an unlock arrives", r["notYet"] is False, r["notYet"])
-    check("Zeus, won away from any results screen, plays on Home as a finished challenge",
-          isinstance(r["first"], str) and "Zeus" in r["first"] and r["first"].count("Challenge complete") == 1
-          and "Character unlocked" in r["first"], r["first"])
+    # BUILD 308: a rank's reward plays ahead of a challenge's (it follows
+    # the rank-up), so Gold's Solar is first and Zeus second. The
+    # assertions about each card are unchanged; only their order moved.
+    fc = r["first"] if isinstance(r["first"], dict) else {}
+    check("Gold's character (Solar since 244) plays first on Home as a Rank reward, with Gold's emblem and name in the strip",
+          "Solar" in str(fc.get("text")) and "Rank reward" in str(fc.get("strip")) and "Gold" in str(fc.get("strip"))
+          and fc.get("emblem") is True, r["first"])
     fl = r["flying"] if isinstance(r["flying"], dict) else {}
     check("tapping it away flies it to the Profile tab (fixed, above the screen) and rings the tab",
           fl.get("pos") == "fixed" and 0 < fl.get("y", -1) < 956 and r["pulse"] is True, [r["flying"], r["pulse"]])
     sc = r["second"] if isinstance(r["second"], dict) else {}
-    check("Gold's character (Solar since 244) follows as a Rank reward, with Gold's emblem and name in the strip",
-          "Solar" in str(sc.get("text")) and "Rank reward" in str(sc.get("strip")) and "Gold" in str(sc.get("strip"))
-          and sc.get("emblem") is True, r["second"])
+    st = str(sc.get("text"))
+    check("Zeus, won away from any results screen, follows as a finished challenge",
+          "Zeus" in st and st.count("Challenge complete") == 1 and "Character unlocked" in st, r["second"])
     af = r["after"] if isinstance(r["after"], dict) else {}
     check("each plays once: nothing left afterwards, nothing on the next visit",
           af.get("spots") == 0 and af.get("left") == 0 and r["again"] == 0, [r["after"], r["again"]])
@@ -6573,12 +6583,17 @@ def check_b297(br):
               sameWidth: bs.length === 2 && Math.abs(bs[0].width - bs[1].width) < 1,
               centred: bs.every(b => Math.abs((b.left + b.width / 2) - innerWidth / 2) < 2) } : null;
             /* the exit confirmation puts its buttons exactly where Pause's were */
-            const at = () => [...document.querySelectorAll('.pausepanel .actions button')].map(b => { const q = b.getBoundingClientRect(); return [Math.round(q.left), Math.round(q.top), Math.round(q.width)]; });
+            /* UNROUNDED, within half a pixel (build 308). Both screens centre
+               their stack, so the buttons land on fractional pixels; a
+               0.14px difference rounded 564.49 and 564.63 to two different
+               integers and failed a move nobody can see. A real move is
+               whole pixels and still fails. */
+            const at = () => [...document.querySelectorAll('.pausepanel .actions button')].map(b => { const q = b.getBoundingClientRect(); return [+q.left.toFixed(2), +q.top.toFixed(2), +q.width.toFixed(2)]; });
             const before = at();
             [...document.querySelectorAll('.pausepanel button')].find(b => /Exit/.test(b.textContent)).click(); await wait(800);
             const conf = at();
             out.confirm = { title: (document.querySelector('.pausepanel .qnum') || {}).textContent, before, conf,
-              same: JSON.stringify(before) === JSON.stringify(conf) };
+              same: before.length === conf.length && before.every((p, i) => p.every((v, j) => Math.abs(v - conf[i][j]) < 0.5)) };
           } catch(e){ out.threw = String(e && e.stack || e); }
           return out; }""")
         if r.get("threw"):
@@ -7055,7 +7070,9 @@ def check_b300(br):
               return res;
             });
             /* recorded once: the cache key is the drawing, not the build */
-            const keys = window.caches ? (await (await caches.open('class26e.rk-sheets')).keys()).map(k => new URL(k.url).pathname) : [];
+            /* Rank sheets only (build 308): the character flip-books share
+               this cache under /__ch/. */
+            const keys = window.caches ? (await (await caches.open('class26e.rk-sheets')).keys()).map(k => new URL(k.url).pathname).filter(p => p.indexOf('/__rk/') === 0) : [];
             out.keys = keys.length; out.buildKeyed = keys.some(k => k.indexOf(encodeURIComponent(APP_BUILD)) >= 0);
             out.v3 = keys.filter(k => k.indexOf('/__rk/v4/') === 0).length;
             /* a second Home reuses them: all playing again almost at once */
@@ -7707,7 +7724,9 @@ def check_b304(br):
           showRankings('level'); await wait(1500);
           const all = [...document.querySelectorAll('.rank-row:not(.rank-row-head)')];
           out.rows = all.length;
-          out.liveRows = all.filter(x => x.querySelector('.rank-avatar-wrap.char-live')).length;
+          /* char-flip counts (build 308): a row's character plays its
+             recorded loop rather than the live svg - that is the lag fix. */
+          out.liveRows = all.filter(x => x.querySelector('.rank-avatar-wrap.char-live, .rank-avatar-wrap.char-flip')).length;
           out.offRows = all.filter(x => x.classList.contains('is-offscreen')).length;
           const me = document.querySelector('.rank-row.lb-row-me');
           out.meTappable = !!(me && me.classList.contains('is-tappable'));
@@ -7723,7 +7742,11 @@ def check_b304(br):
           /* the tab bar's character moves */
           store.avatarChar = chars.find(id => { const d = AVATAR_CHARACTERS.find(c => c.id === id); return d && !d.unlock && !d.feat; }) || chars[0];
           syncBottomTabAvatar(); await wait(300);
-          out.tabLive = !!document.querySelector('#bottomtab-profile .bottomtab-icon.char-live svg');
+          /* Live, or a flip-book of its loop (build 308): either is moving. */
+          /* A sheet may still be recording on a cold page, so give it a few seconds. */
+          const sel = '#bottomtab-profile .bottomtab-icon.char-live svg, #bottomtab-profile .bottomtab-icon.char-flip .char-flip-play';
+          for(let k = 0; k < 40 && !document.querySelector(sel); k++) await wait(150);
+          out.tabLive = !!document.querySelector(sel);
           }catch(e){ out.err = String(e).slice(0, 200); }
           return out;
         }""" % CLEAR)
@@ -7802,6 +7825,7 @@ def check_b304_polish(br):
           out.inertAnim = getComputedStyle(tab, '::after').animationName;
           [...document.querySelectorAll('.screen-setup .pick')].find(p => /Identity Crimes/.test(p.textContent)).click(); await wait(100);
           out.pop = tab.classList.contains('just-ready');
+          out.fill = getComputedStyle(tab, '::before').animationName;
           await wait(900);
           out.popGone = !tab.classList.contains('just-ready');
           out.halo = getComputedStyle(tab, '::after').animationName;
@@ -7823,12 +7847,13 @@ def check_b304_polish(br):
               r.get("whyInGrid") is True and 0 <= (r.get("whyGap") or -1) <= 20 and r.get("whyVisible") is True,
               (r.get("whyInGrid"), r.get("whyGap"), r.get("whyVisible")))
         check(dev + ": a grey Start does not animate", r.get("inertBefore") is True and r.get("inertAnim") in ("none", ""), r.get("inertAnim"))
-        check(dev + ": Start pops once as it lights up", r.get("pop") is True and r.get("popGone") is True, (r.get("pop"), r.get("popGone")))
-        check(dev + ": and while ready it breathes a halo and a sweep",
-              r.get("halo") == "start-ready-halo" and "start-ready-sheen" in (r.get("sweep") or ""), (r.get("halo"), r.get("sweep")))
+        check(dev + ": Start fills from its centre once as it lights up (build 308)",
+              r.get("pop") is True and r.get("fill") == "start-fill-in" and r.get("popGone") is True, (r.get("pop"), r.get("fill"), r.get("popGone")))
+        check(dev + ": and once ready it does not pulse - no halo, no sweep (build 308)",
+              r.get("halo") in ("none", "") and r.get("sweep") in ("none", ""), (r.get("halo"), r.get("sweep")))
         bg = r.get("begin") or {}
-        check(dev + ": the sheet's Begin is raised, marked with a play icon, and alive the same way",
-              bg.get("icon") and bg.get("lip") and bg.get("halo") == "start-ready-halo" and "start-ready-sheen" in (bg.get("anim") or ""), bg)
+        check(dev + ": the sheet's Begin is raised, marked with a play icon, and does not pulse",
+              bg.get("icon") and bg.get("lip") and bg.get("halo") in ("none", "") and bg.get("anim") in ("none", ""), bg)
 
 
 def check_b304_noxpfly(br):
@@ -8045,11 +8070,11 @@ def check_b306_marks(br):
         check(dev + ": every choice's letter sits in the middle of its row", r.get("keyOff") is not None and r["keyOff"] <= 2, r.get("keyOff"))
         check(dev + ": the count reads like the mode name in a drill, an exam and flashcards",
               r.get("drillSame") is True and r.get("examSame") is True and r.get("fcSame") is True, (r.get("drillSame"), r.get("examSame"), r.get("fcSame")))
-        def white(c):
+        def green(c):
             import re
             n = [float(x) for x in re.findall(r"[\d.]+", c or "")]
-            return len(n) >= 3 and min(n[:3]) >= 240
-        check(dev + ": the flashcard bar is white, not green", white(r.get("cleanBg")) and white(r.get("nowBg")), (r.get("cleanBg"), r.get("nowBg")))
+            return len(n) >= 3 and n[1] > n[0] + 40 and n[1] > n[2] + 20
+        check(dev + ": the flashcard bar is green again (build 308)", green(r.get("cleanBg")), (r.get("cleanBg"), r.get("nowBg")))
         check(dev + ": a wordy card's first choice is clear of the star", (r.get("starGap") or 0) >= 8, r.get("starGap"))
 
 
@@ -8111,8 +8136,172 @@ def check_b306_fcmotion(br):
     check("and both are faint", wa and ra and max(wa) <= 0.2 and max(ra) <= 0.2, (wa, ra))
 
 
+def check_b308_timer(br):
+    """Build 308: the two timer switches are one-or-the-other and both
+    always show (Track my time used to vanish whenever Countdown was on,
+    and turning one on left the other still showing on); no timer note
+    over the unit list; and the sliders take any whole number but pull
+    towards fives. Written against 307, where every one of these fails."""
+    print("\n81. build 308: timer switches exclusive and always shown; sliders pull to fives")
+    for w, h in ((440, 956), (834, 1194)):
+        dev = "%dx%d" % (w, h)
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms));
+          document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());
+          cfg.mode='drill'; cfg.timer='down'; cfg.timerMinutes=20; showSetup(); await wait(400);
+          const note = document.querySelector('.screen-setup .info-note');
+          const noteTxt = note && !note.hidden ? note.textContent : '';
+          const m = document.getElementById('unitoptions-modal'); m.hidden = false;
+          m.querySelector('.more-toggle')?.click(); await wait(400);
+          const rows = [...m.querySelectorAll('.timer-sect > .opt')];
+          const st = () => rows.map(r => (r.hidden || !r.offsetParent ? 'H' : '') + (r.querySelector('input').checked ? 'on' : 'off')).join('/');
+          const out = { noteTxt, n: rows.length, start: st() };
+          rows[1].querySelector('input').click(); await wait(150); out.watch = st() + ' ' + cfg.timer;
+          rows[0].querySelector('input').click(); await wait(150); out.limit = st() + ' ' + cfg.timer;
+          const mins = m.querySelector('.minutes-sect input[type=range]');
+          out.mins = [69.0, 69.5, 70.4, 71.0].map(v => { mins.value = v; mins.dispatchEvent(new Event('input')); return cfg.timerMinutes; });
+          const how = m.querySelector('.howmany-sect input[type=range]');
+          out.how = [69.0, 69.5, 70.4].map(v => { how.value = v; how.dispatchEvent(new Event('input')); return cfg.size; });
+          return out; }""")
+        ctx.close()
+        check(dev + ": no timer note over the unit list", not r["noteTxt"], r["noteTxt"])
+        check(dev + ": both timer switches show with Countdown on", r["n"] == 2 and r["start"] == "on/off", r["start"])
+        check(dev + ": Track my time on turns Countdown off", r["watch"] == "off/on up", r["watch"])
+        check(dev + ": Countdown on turns Track my time off", r["limit"] == "on/off down", r["limit"])
+        check(dev + ": Minutes reaches 69 and pulls 69.5 and 70.4 to 70", r["mins"] == [69, 70, 70, 71], r["mins"])
+        check(dev + ": How many does the same", r["how"] == [69, 70, 70], r["how"])
+
+
+UNLOCK_ORDER_RUN = """async (a)=>{
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());
+  const log = [];
+  /* Every scene and pop-up answers at once and says what it was. */
+  window.playBadgeCaseScene = (units, done) => { log.push('badge'); setTimeout(done, 20); return {}; };
+  window.playTierCutscene = (k, o) => { log.push('rank:' + k); setTimeout(() => o && o.onDone && o.onDone(), 20); return {}; };
+  window.playSupernovaCutscene = (o) => { log.push('rank:titan'); setTimeout(() => o && o.onDone && o.onDone(), 20); return {}; };
+  window.playUnlockSpotlight = (it, n, of, release) => {
+    log.push('spot:' + it.kind + (it.kind === 'rankrewards' ? '[' + it.parts.map(p => p.kind).join('+') + ']' : ''));
+    setTimeout(release, 20); return { skip(){}, stop(){} }; };
+  const topics = [...new Set(QUESTIONS.map(q => (q.topic||'').trim()))].filter(Boolean);
+  const t = topics.find(x => x === 'Identity Crimes') || topics[0];
+  store.unitPerfects = {}; store.unitPerfects[t] = Math.max(0, badgeThresholdFor(t) - 1);
+  store.lifetime.points = 30000; store.pendingBadgeUnlocks = [];
+  cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = [t];
+  order = QUESTIONS.map((q,i) => [q,i]).filter(([q]) => (q.topic||'').trim() === t).map(([,i]) => i);
+  runTrackable = true; timedOut = false; runMode = 'drill'; runLabel = null;
+  attempts = {}; picked = {}; timedOutSet = {};
+  order.forEach(qi => { attempts[qi] = 1; picked[qi] = optionOrder(qi).indexOf(QUESTIONS[qi].answer); });
+  const rankBefore = rankOf(store);
+  summarize();
+  for(let i = 0; i < 400 && !document.querySelector('.rs-rewards.rs-done'); i++) await wait(100);
+  return { log, rankBefore, rankAfter: rankOf(store), rows: document.querySelectorAll('.rs-unlock-row, .rs-unlocked .unlockbanner').length };
+}"""
+
+
+def check_b308_unlocks(br):
+    """Build 308: the unlock sequence. The badge's case first (it is what
+    tips the rank), then the rank's scene, then ONE card for everything
+    the rank handed over; the rank scene turns the flares round a still
+    planet and lights the rank's own flare before the flash; the badge
+    spins in on its own and is named before the case comes up, and the
+    case's lid lifts towards you; pop-ups stay up for a good while; the
+    Masked One's red mark stays on the mask; the results character is
+    bigger. Written against 306/307, where these fail."""
+    print("\n82. build 308: unlock order, rank orbit, badge case, pop-up hold")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate(UNLOCK_ORDER_RUN)
+    ctx.close()
+    log = r["log"]
+    check("a badge that tips a rank: the case plays first", bool(log) and log[0] == "badge", log)
+    rk = [i for i, x in enumerate(log) if x.startswith("rank:")]
+    check("then the rank's own scene", bool(rk) and rk[0] == 1, log)
+    rew = [x for x in log if x.startswith("spot:")]
+    check("then one card for the rank's rewards, not one each",
+          len(rew) >= 1 and (rew[0].startswith("spot:rankrewards") or len(rew) == 1)
+          and not any(x in ("spot:theme",) for x in rew[1:]), log)
+
+    for w, h in ((440, 956), (834, 1194)):
+        dev = "%dx%d" % (w, h)
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        sc = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms));
+          document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());
+          playTierCutscene('vanguard', { from: 'veteran', onDone(){} });
+          await wait(1800);
+          const o = document.querySelector('#supernova-cutscene .rank-before .rank-orbit');
+          const spin = document.querySelector('#supernova-cutscene .rank-spin');
+          const main = document.querySelector('#supernova-cutscene .rank-before .cosmic-hero-main').getBoundingClientRect();
+          const slots = [...o.querySelectorAll('.rank-orbit-slot')].map(s => s.getBoundingClientRect());
+          const cx = slots.reduce((a, r) => a + r.left + r.width / 2, 0) / slots.length;
+          const cy = slots.reduce((a, r) => a + r.top + r.height / 2, 0) / slots.length;
+          const off = Math.hypot(cx - (main.left + main.width / 2), cy - (main.top + main.height * 162 / 342)) / main.width;
+          const rot1 = getComputedStyle(o).rotate;
+          await wait(1800);
+          const rot2 = getComputedStyle(o).rotate;
+          const lit = document.querySelector('#supernova-cutscene .rank-before .rank-orbit-slot.is-igniting .cosmic-badge-lit');
+          const burst = document.getElementById('supernova-cutscene').classList.contains('supernova-burst');
+          return { planetStill: getComputedStyle(spin).transform === 'none', rot1, rot2, off: +off.toFixed(3), slots: slots.length, lit: !!lit, burstYet: burst };}""")
+        ctx.close()
+        check(dev + ": the planet itself does not spin", sc["planetStill"], sc)
+        check(dev + ": the seven flares turn round it", sc["slots"] == 7 and sc["rot1"] != sc["rot2"], sc)
+        check(dev + ": centred on the planet, not beside it", sc["off"] < 0.03, sc["off"])
+        check(dev + ": the rank's flare lights while they turn, before the flash", sc["lit"] and not sc["burstYet"], sc)
+
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        bc = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms));
+          document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());
+          playBadgeCaseScene(['Identity Crimes'], ()=>{});
+          await wait(2600);
+          const kase = document.querySelector('.bc-case');
+          const intro = document.querySelector('.bc-intro');
+          const first = { caseOp: +getComputedStyle(kase).opacity, introIn: intro && intro.classList.contains('is-in'),
+                          named: intro ? intro.textContent : '' };
+          await wait(5800);
+          const m = getComputedStyle(document.querySelector('.bc-lid')).transform;
+          const v = (m.match(/matrix3d\\(([^)]*)\\)/) || [, ''])[1].split(',').map(Number);
+          return { first, lidSin: v.length > 6 ? v[6] : null, lidOpen: kase.classList.contains('bc-open') };}""")
+        ctx.close()
+        check(dev + ": the badge comes up alone first, named", bc["first"]["caseOp"] < 0.05 and bc["first"]["introIn"]
+              and "Identity Crimes" in bc["first"]["named"], bc["first"])
+        check(dev + ": the lid lifts towards you, not down into the case", bc["lidOpen"] and (bc["lidSin"] or 0) > 0.3, bc)
+
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    ex = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms));
+      document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());
+      const id = (typeof BANNERS !== "undefined" && BANNERS.length) ? BANNERS[BANNERS.length-1].id : null;
+      const it = id ? bannerUnlockItem(id) : characterUnlockItem(AVATAR_CHARACTERS[AVATAR_CHARACTERS.length-1].id);
+      playUnlockSpotlight(it, 1, 1, ()=>{});
+      await wait(7000);
+      const still = !!document.querySelector('.rs-spot.is-up');
+      document.querySelectorAll('.rs-spot').forEach(n => n.remove());
+      const svg = buildAvatarCharSVGFresh('masked');
+      const mark = svg.querySelector('.cx-mkmark');
+      const clip = mark && mark.getAttribute('clip-path');
+      const inside = !!(mark && mark.querySelector('.cx-fx-mk3bolt') && mark.querySelector('.cx-fx-mk2crack'));
+      const a = document.createElement('span'); a.className = 'results-level-avatar'; document.body.appendChild(a);
+      const px = a.getBoundingClientRect().width; a.remove();
+      return { still, clip, inside, px };}""")
+    ctx.close()
+    check("a pop-up is still up after 7 seconds untouched", ex["still"], ex)
+    check("the Masked One's red mark is clipped to the mask", bool(ex["clip"]) and ex["inside"], ex)
+    check("the results character's circle is bigger (at least 4.2rem)", ex["px"] >= 4.2 * 16 - 1, ex["px"])
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
+    # ONLY_FN=check_b308_timer,... runs just those sections.
+    fns = os.environ.get("ONLY_FN")
+    if fns:
+        with sync_playwright() as pw:
+            br = pw.chromium.launch(executable_path=CHROME)
+            try:
+                for name in fns.split(","):
+                    globals()[name](br)
+            finally:
+                br.close()
+        SERVER.shutdown()
+        print("\n%s  (%d failure(s))" % ("ALL PASS" if not FAILURES else "FAILED: " + ", ".join(FAILURES), len(FAILURES)))
+        return 1 if FAILURES else 0
     only = os.environ.get("ONLY_B245")
     if only:
         with sync_playwright() as pw:
@@ -8212,6 +8401,8 @@ def main():
             check_b305_resultstap(br)
             check_b306_marks(br)
             check_b306_fcmotion(br)
+            check_b308_timer(br)
+            check_b308_unlocks(br)
         finally:
             br.close()
     SERVER.shutdown()

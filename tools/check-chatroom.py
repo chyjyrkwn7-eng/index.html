@@ -79,7 +79,7 @@ def main(src):
                   ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour',
                    'seenRewardsTour','seenSettingsTour','seenUnitOptionsTour',
                    'seenUnitSelectTour','seenMainMenuTour'].forEach(k=>store[k]=true);
-                  syncCode = 'SYNC-' + a.pub;
+                  syncCode = 'SYNC-' + a.pub; cloudConfirmedFor = syncCode;  /* read done, as on a real launch (build 296 guard) */
                   try{ localStorage.removeItem('class26e.chatroom'); }catch(e){}
                   chatRoomCode = null; chatMyKey = null;
                   showHome();}""", {"name": name, "pub": pub})
@@ -113,7 +113,7 @@ def main(src):
               ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour',
                'seenRewardsTour','seenSettingsTour','seenUnitOptionsTour',
                'seenUnitSelectTour','seenMainMenuTour'].forEach(k=>store[k]=true);
-              syncCode = 'SYNC-' + a.pub;
+              syncCode = 'SYNC-' + a.pub; cloudConfirmedFor = syncCode;  /* read done, as on a real launch (build 296 guard) */
               showHome();
               return new Promise(r=>setTimeout(()=>r({
                 db: !!fbDb, watching: !!inviteWatchUnsub}), 400));}""",
