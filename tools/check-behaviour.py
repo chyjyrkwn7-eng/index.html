@@ -1747,9 +1747,13 @@ def check_b232(br):
     # build for adding a character, which is the one thing this row is for.
     known = ["detective", "masked", "zeus", "poseidon", "clown", "valkyrie", "marksman", "astronaut", "hacker", "timekeeper"]
     secrets = ["voidwalker", "umbra", "singularity"]
+    # Build 304: Zenith, the ultimate, is a feat too and comes after the
+    # secrets - "it will be the last character on the list".
     o = r["order"]
-    check("the challenge row: the known challenge characters in order, anything newer after them (the Ronin), then the secrets",
-          o[:len(known)] == known and o[-len(secrets):] == secrets and "ronin" in o and "knight" not in o and "nightowl" not in o, o)
+    ult = o[-1:] == ["zenith"]
+    o = [x for x in o if x != "zenith"]
+    check("the challenge row: the known challenge characters in order, anything newer after them (the Ronin), then the secrets, then Zenith last",
+          ult and o[:len(known)] == known and o[-len(secrets):] == secrets and "ronin" in o and "knight" not in o and "nightowl" not in o, r["order"])
     # Build 233: the Masked One is back, for retaking missed questions.
     check("the Masked One unlocks at 100 retaken questions and says how far along you are",
           isinstance(r["masked"], dict) and r["masked"]["feat"] == "retake100" and r["masked"]["before"] is True
@@ -2960,8 +2964,9 @@ def check_b243(br):
     check("the new ones are named", r.get("names") == ["Lunar", "Solar", "Tempest", "Frost", "Oracle", "Inferno", "Hacker", "Timekeeper", "Koi"], r.get("names"))
     check("whoever held the Clown under the old ranks keeps it, and nobody at all has the Robot (build 244) - an old Robot is drawn as the Ninja",
           r.get("kept") == ["clown"] and r.get("robotHeld") is False and r.get("robotNew") is True, r)
-    check("Customize groups the characters, secrets on their own, and no Robot for somebody who never held it",
-          r.get("groups") == ["Starters", "Rank rewards", "Challenge rewards", "Secrets"] and r.get("robotShown") is False, r.get("groups"))
+    # Build 304: the Ultimate group (Zenith) is the last one, after the secrets.
+    check("Customize groups the characters, secrets on their own, the Ultimate last, and no Robot for somebody who never held it",
+          r.get("groups") == ["Starters", "Rank rewards", "Challenge rewards", "Secrets", "Ultimate"] and r.get("robotShown") is False, r.get("groups"))
     check("five across on a phone, and every name on one line",
           r.get("cols") == 5 and r.get("twoLine") == [], [r.get("cols"), r.get("twoLine")])
     # Build 246: every tile carries its requirement (was the default's line only).
@@ -4441,7 +4446,8 @@ def check_b250(br):
       /* dark, but not a disc: an 8-point star is 8 curves, a circle 2-4 arcs */
       out.darkStar = dark.length > 0 && dark.every(p => (p.getAttribute('d') || '').split(/[MLQAZ]/i).length > 7);
       const html = id => buildBannerArt(id).innerHTML;
-      out.sapphireBanner = /bn-spin/.test(html('adept_rank')) && /#3D74E8/i.test(html('adept_rank'));
+      /* build 304: the turn is a layer on the compositor now (bl-spin) */
+      out.sapphireBanner = /b[nl]-spin/.test(html('adept_rank')) && /#3D74E8/i.test(html('adept_rank'));
       out.amethystBanner = /#030208/.test(html('elite_rank')) && /#A855F7/i.test(html('elite_rank')) && !/#3D74E8/i.test(html('elite_rank'));
       out.supernovaBanner = /fill="#000000"/.test(html('titan_rank'));
       return out; }""")
