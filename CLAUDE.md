@@ -10484,3 +10484,84 @@ XP. `setActiveNav()` closes a deck left by any other route.
 Gate: check-behaviour section 73 (both reference devices); against build
 302 it fails 43 checks.
 
+
+### Build 304 - banners and the ultimate unlock
+
+Asked for in one message: a banner for 10,000 right answers, animated;
+"the amethyst banner doesn't animate like the rank icon, fix it, ensure
+those 3 banners don't lag ... ensure none of them do"; a second Midnight
+Oil on a high-rise balcony at 60 hours; and "the coolest character and
+banner you can get", unlocked by unlocking everything else, last in both
+lists.
+
+- **New banners** (`BANNERS`, `BANNER_ART`, all three in `BANNER_ANIMATED`
+  and `BANNER_EPIC`):
+  - **Myriad** (`correct10000`) - `store.lifetime.correct >= 10000`, the
+    same count as Star Trails, and sits right after it. The Milky Way over
+    a mountain lake with a meteor shower; Star Trails' observatory on the
+    ridge.
+  - **Midnight Skyline** (`study60`) - `studyHoursTotal() >= 60`, the same
+    study log as Midnight Oil, right after it. A desk on a glass balcony
+    forty floors up: towers in two depths, a needle tower with its beacon,
+    searchlights, a plane crossing, the moon in drifting cloud.
+  - **Zenith** (`zenith`, `ultimate: true`) - last in the list. The Zenith
+    character's own sky: wings of light in every rank colour, a halo of the
+    seven rank stones, a crown over a star, a prism shock every 8s.
+- **Zenith the character** (`{ id: "zenith", kind: "zenith", feat:
+  "everything", ultimate: true }`). Customize lists it last, in its own
+  **Ultimate** group after Secrets; the Challenge group filters
+  `!c.ultimate`. It is a feat, so every unlock
+  route that already announces challenge characters (the results diff,
+  `pendingHomeUnlocks()` on Home, `announceCharacterUnlocks`) announces it
+  with no new code - verified: with everything else held, Home plays the
+  character card and then the banner card. Kickers: "Ultimate reward",
+  "Ultimate banner".
+- **`ultimateProgress()` is the one count** both Zenith items read:
+  earnable characters (feat or rank, not retired/legacy/ultimate) +
+  every banner but Zenith + the seven rank themes, checked with
+  `isLockedCharacter` / `bannerEarned` / `isLockedAccent` - so it can never
+  disagree with Customize. 43 today. Each ultimate item leaves itself out,
+  which is also what stops either check recursing. `need` is a getter on
+  both definitions: anything added later joins the count, and Zenith waits
+  until it is held too. The card shows "N of 43" and a note naming what is
+  left ("Still to unlock: 3 characters, 2 banners, 1 theme.").
+  `characterDetail`'s secret-flare guard (`/^Unlock /`) is now limited to
+  `def.secret` - Zenith's own label starts with "Unlock" and lost its
+  progress bar to it.
+- **Amethyst moves like its emblem**: the whirl turns in 7s (was 110s), the
+  jets fire on the emblem's 1.5s, the photon ring beats on 1.7s, the glow
+  round the hole breathes on 1.5s.
+
+**WHY BANNERS LAGGED, AND THE RULE NOW.** A banner was one svg, and anything
+animated INSIDE an svg (a star twinkling, a disc turning) is restyled and
+the whole svg repainted on the main thread every frame - every radial
+gradient in it - and again through the grey filter a locked banner wears.
+Every animated banner is now **LAYERED** (`bnLayerHTML`, see the comment
+above it): the art function returns an array of layers, each a small svg
+in its own box, and the motion is a transform or an opacity on the BOX, so
+the compositor runs it and nothing repaints. Groups instead of particles:
+two twinkle layers out of phase, petals as a tiled sheet that slides
+exactly one tile, debris drawn where it lands and scaled out from the core.
+`bnTemplate()` builds each banner once and copies it with fresh ids.
+Measured (trace, 4x CPU throttle, dpr 3, one banner at 428x160): paint on
+the main thread went to **0** for all thirteen; the rank banners went from
+27 / 17 / 40 dropped frames in 3s to 0 / 0 / 2; three Supernovas went from
+411 running animations to 48 and main-thread busy from 2719ms to 1040ms of
+3000. Whatever long frames remain in headless Chromium are its software
+compositor, not the page.
+
+Rules for a new animated banner:
+- **Return layers, never animate inside the svg.** A `bn-*` class on an
+  svg child is the old way and is what lagged.
+- **Units are percentages of the layer's own box** (`bl-*` keyframes); a
+  `bn-*` keyframe with lengths in it does not mean the same thing on an
+  HTML box. Unitless ones (rotate, scale, opacity, skew) can be reused
+  inline (`style: "animation:bn-flip ..."`).
+- **The stage is held at 8:3 with container units** (`.bnr-layered
+  {container-type:size}`), so origins and positions are exact; without
+  them (iOS 15) the stage just fills the banner and stays whole.
+- **Keep the layer count to roughly a dozen and the boxes tight** - every
+  animated box is a compositor layer, and graphics memory is what made
+  things vanish in build 253. Event layers carry `opacity:0` inline so
+  they are absent with motion off.
+- No SVG filters, ids unique per copy (the template token does it).
