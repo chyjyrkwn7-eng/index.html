@@ -7734,6 +7734,79 @@ def check_b304(br):
         check(dev + ": the Customize button is on top of the character's glow", r2.get("customizeOnTop") is True, r2.get("customizeOnTop"))
 
 
+def check_b304_polish(br):
+    """Build 304, second list: the Profile card takes its banner's
+    colours, a stat's explanation opens under the row you tapped, and
+    Start says it is ready - a pop when it lights up, a halo and a sweep
+    while it stays ready - with the start sheet's Begin raised to match.
+    Written against build 303: every check of the change fails there; the
+    two that pass are "no error" and the guard that a grey Start stays
+    still, which is a property 303 already had and 304 must keep."""
+    print("\n75. build 304: banner-tinted Profile card, stat answers in place, Start that says it is ready")
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate("""async ()=>{
+          const wait = ms => new Promise(r => setTimeout(r, ms));
+          const out = {};
+          try{
+          setInterval(()=>[...document.body.children].forEach(n=>{ if(getComputedStyle(n).position==='fixed' && /challenge complete|character unlocked/i.test(n.textContent||'')) n.remove(); }), 40);
+          document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());
+          /* the card under a banner wears that banner's colours */
+          bannerEarned = () => true;
+          const tints = [];
+          for(const id of ['tests100', 'vr50', 'exam100']){
+            store.banner = id; showProfile('profile'); await wait(500);
+            const hero = document.querySelector('.profile-hero');
+            tints.push({ id, t1: hero.style.getPropertyValue('--hero-t1').trim(), bg: getComputedStyle(hero).backgroundImage });
+          }
+          out.tints = tints.map(t => ({ id: t.id, t1: t.t1, tinted: /gradient/.test(t.bg) }));
+          out.distinct = new Set(tints.map(t => t.t1)).size;
+          store.banner = ''; showProfile('profile'); await wait(500);
+          out.defaultTinted = /gradient/.test(getComputedStyle(document.querySelector('.profile-hero')).backgroundImage);
+          /* a stat's answer opens under the tapped card's row */
+          showProfile('stats'); await wait(700);
+          const cards = [...document.querySelectorAll('.stat-card')];
+          const first = cards[0]; first.scrollIntoView({ block: 'center' }); await wait(200); first.click(); await wait(400);
+          const box = document.querySelector('.stat-why');
+          out.whyGap = Math.round(box.getBoundingClientRect().top - first.getBoundingClientRect().bottom);
+          out.whyInGrid = box.parentElement === first.parentElement;
+          out.whyVisible = !box.hidden && box.getBoundingClientRect().bottom <= innerHeight;
+          /* Start: a pop as it lights up, then a halo and a sweep */
+          store.seenUnitSelectTour = true; store.seenUnitHoldTip = true; cfg.mode = 'drill'; cfg.units = []; showSetup(); await wait(800);
+          const tab = document.getElementById('bottomtab-start');
+          out.inertBefore = tab.classList.contains('is-inert');
+          out.inertAnim = getComputedStyle(tab, '::after').animationName;
+          [...document.querySelectorAll('.screen-setup .pick')].find(p => /Identity Crimes/.test(p.textContent)).click(); await wait(100);
+          out.pop = tab.classList.contains('just-ready');
+          await wait(900);
+          out.popGone = !tab.classList.contains('just-ready');
+          out.halo = getComputedStyle(tab, '::after').animationName;
+          out.sweep = getComputedStyle(tab).animationName;
+          tab.click(); await wait(900);
+          const b = document.querySelector('.sheet-begin-btn');
+          const bs = getComputedStyle(b), bb = getComputedStyle(b, '::before');
+          out.begin = { anim: bs.animationName, halo: getComputedStyle(b, '::after').animationName,
+                        icon: (bb.webkitMaskImage || bb.maskImage || '').indexOf('svg') >= 0, lip: /inset/.test(bs.boxShadow) && (bs.boxShadow.match(/rgba?\(/g) || []).length >= 4 };
+          }catch(e){ out.err = String(e).slice(0, 200); }
+          return out;
+        }""")
+        ctx.close()
+        check(dev + ": no error in the 304 polish run", "err" not in r, r.get("err"))
+        check(dev + ": the Profile card under a banner is tinted, and differently per banner",
+              all(t["tinted"] and t["t1"] for t in r.get("tints", [])) and r.get("distinct") == 3, r.get("tints"))
+        check(dev + ": the default banner's card takes the theme's colours", r.get("defaultTinted") is True)
+        check(dev + ": a stat's explanation opens directly under the row you tapped",
+              r.get("whyInGrid") is True and 0 <= (r.get("whyGap") or -1) <= 20 and r.get("whyVisible") is True,
+              (r.get("whyInGrid"), r.get("whyGap"), r.get("whyVisible")))
+        check(dev + ": a grey Start does not animate", r.get("inertBefore") is True and r.get("inertAnim") in ("none", ""), r.get("inertAnim"))
+        check(dev + ": Start pops once as it lights up", r.get("pop") is True and r.get("popGone") is True, (r.get("pop"), r.get("popGone")))
+        check(dev + ": and while ready it breathes a halo and a sweep",
+              r.get("halo") == "start-ready-halo" and "start-ready-sheen" in (r.get("sweep") or ""), (r.get("halo"), r.get("sweep")))
+        bg = r.get("begin") or {}
+        check(dev + ": the sheet's Begin is raised, marked with a play icon, and alive the same way",
+              bg.get("icon") and bg.get("lip") and bg.get("halo") == "start-ready-halo" and "start-ready-sheen" in (bg.get("anim") or ""), bg)
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     only = os.environ.get("ONLY_B245")
@@ -7829,6 +7902,7 @@ def main():
             check_b302_flagnote(br)
             check_b303(br)
             check_b304(br)
+            check_b304_polish(br)
         finally:
             br.close()
     SERVER.shutdown()

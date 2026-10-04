@@ -7573,6 +7573,74 @@
     background-color:rgba(128,128,128,.16); background-image:none; color:var(--soft);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.07), inset 0 0 0 1px rgba(255,255,255,.05);
   }
+  /* ---- START, READY (build 304) ----
+     "When the start button does turn white because you do have units
+     selected, ensure that's a subtle animated thing so it's noticeable
+     that the start button is there and it's ready." Two quiet motions
+     and one loud moment:
+       - a halo (::after) that breathes out from the pill and fades, every
+         2.8s - transform and opacity only, so the compositor runs it;
+       - a highlight that sweeps across the face every ~4s, as a moving
+         background layer (a pseudo-element would need overflow:hidden on
+         the pill, which would also clip the halo);
+       - `.just-ready`, one small pop the moment it lights up
+         (syncStartInert), so the change from grey is seen, not missed.
+     The sweep has a dark leading edge as well as a light one, because on
+     the default theme the pill IS white and a white sweep on it would be
+     invisible. Inert, none of it runs. The global reduce-motion rule
+     switches all of it off without naming it. */
+  @keyframes start-ready-halo{
+    0%{ opacity:.6; transform:scale(1); }
+    65%, 100%{ opacity:0; transform:scale(1.14, 1.32); }
+  }
+  @keyframes start-ready-sheen{
+    0%, 55%{ background-position:160% 0, 0 0; }
+    85%, 100%{ background-position:-60% 0, 0 0; }
+  }
+  @keyframes start-ready-pop{
+    0%{ transform:scale(1); } 40%{ transform:scale(1.09); } 70%{ transform:scale(.97); } 100%{ transform:scale(1); }
+  }
+  .bottomtabs.has-start-tab .bottomtab-start:not(.is-inert):not(:disabled),
+  .sheet-begin-btn.next.playbtn:not(.is-inert):not(:disabled){
+    position:relative; isolation:isolate;
+    background-image:
+      linear-gradient(105deg, transparent 38%, rgba(20,24,32,.07) 45%, rgba(255,255,255,.75) 50%, transparent 58%),
+      linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,0) 58%);
+    background-size:260% 100%, 100% 100%;
+    background-repeat:no-repeat;
+    background-position:160% 0, 0 0;
+    animation:start-ready-sheen 4.2s ease-in-out 1s infinite;
+  }
+  .bottomtabs.has-start-tab .bottomtab-start:not(.is-inert):not(:disabled)::after,
+  .sheet-begin-btn.next.playbtn:not(.is-inert):not(:disabled)::after{
+    content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:-1;
+    box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 80%, transparent),
+      0 0 16px 3px color-mix(in srgb, var(--accent) 45%, transparent);
+    opacity:0; animation:start-ready-halo 2.8s ease-out infinite;
+  }
+  .bottomtabs.has-start-tab .bottomtab-start.just-ready{ animation:start-ready-pop .6s cubic-bezier(.3,.7,.3,1) both, start-ready-sheen 4.2s ease-in-out .3s infinite; }
+  /* THE BEGIN BUTTON ON THE START SHEET wears the same raised recipe as
+     the tab bar's Start - fill, top highlight, a bright inset hairline, a
+     darker lip along the bottom, a three-layer shadow - instead of the
+     flat white pill it was ("the start button in tests ... looks ehh"),
+     and a solid play mark before its words, drawn as a mask so the words
+     can still be set with textContent. */
+  .sheet-begin-btn.next.playbtn{
+    display:flex; align-items:center; justify-content:center; gap:.55rem;
+    min-height:3.4rem; border-radius:999px; font-weight:800; font-size:1.05rem; letter-spacing:.02em;
+    background-color:var(--accent); color:var(--accent-ink); border:none;
+    box-shadow:0 1px 1px rgba(255,255,255,.95) inset, 0 -3px 3px rgba(18,26,32,.22) inset,
+      0 1px 3px rgba(0,0,0,.24), 0 6px 14px rgba(0,0,0,.28), 0 14px 26px -10px rgba(0,0,0,.45);
+  }
+  .sheet-begin-btn.next.playbtn::before{
+    content:""; width:.85rem; height:.95rem; flex-shrink:0; background:currentColor;
+    -webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 14'><path d='M1.5 1.2v11.6c0 .7.8 1.1 1.4.7l8.6-5.8c.5-.3.5-1.1 0-1.4L2.9.5C2.3.1 1.5.5 1.5 1.2z'/></svg>") center / contain no-repeat;
+            mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 14'><path d='M1.5 1.2v11.6c0 .7.8 1.1 1.4.7l8.6-5.8c.5-.3.5-1.1 0-1.4L2.9.5C2.3.1 1.5.5 1.5 1.2z'/></svg>") center / contain no-repeat;
+  }
+  .sheet-begin-btn.next.playbtn:active{
+    transform:scale(.97);
+    box-shadow:0 2px 3px rgba(18,26,32,.3) inset, 0 -1px 1px rgba(255,255,255,.5) inset, 0 1px 2px rgba(0,0,0,.22);
+  }
   /* A 320px phone cannot spare a horizontal pill's width from five
      icons, so there it stacks as before - but wider than it is tall
      now (4.2rem against 3.1), which is most of the "awkward" gone. */
@@ -13510,6 +13578,11 @@
     font-size:.8rem; line-height:1.45; color:var(--ink);
   }
   .stat-why[hidden]{ display:none; }
+  /* Inside a stat grid it is a full-width row under the tapped card
+     (build 304), with a notch pointing back up at it. */
+  .stat-grid > .stat-why{ grid-column:1 / -1; margin:0; }
+  .stat-why.is-in{ animation:stat-why-in .22s ease-out both; }
+  @keyframes stat-why-in{ from{ opacity:0; transform:translateY(-4px); } to{ opacity:1; transform:none; } }
   .stat-why-label{
     display:block; font-size:.62rem; font-weight:800; letter-spacing:.09em;
     color:var(--accent); margin-bottom:.2rem;
@@ -15670,6 +15743,23 @@
      padding with negative margins so it runs edge to edge and takes the
      card's top corners. */
   .profile-hero.has-cover{ padding-top:0; overflow:hidden; position:relative; }
+  /* ---- THE CARD WEARS THE BANNER'S COLOURS (build 304) ----
+     Two soft pools of the banner's own two colours (bannerTintOf) rising
+     from under the cover and fading out before the bottom of the card,
+     over the same dark glass - so the text keeps its contrast and the
+     card reads as one piece with the strip above it. The default banner
+     is the theme, so its card takes the theme's c2/c3. Static: nothing
+     here animates, the cover already does. */
+  .profile-hero.has-cover.has-tint{
+    --hero-t1: var(--theme-c2, #8a7cff);
+    --hero-t2: var(--theme-c3, #46b4ff);
+    background:
+      radial-gradient(120% 70% at 12% 0%, color-mix(in srgb, var(--hero-t1) 30%, transparent), transparent 70%),
+      radial-gradient(120% 70% at 88% 6%, color-mix(in srgb, var(--hero-t2) 26%, transparent), transparent 72%),
+      radial-gradient(110% 55% at 85% 100%, color-mix(in srgb, var(--hero-t2) 16%, transparent), transparent 75%),
+      linear-gradient(180deg, color-mix(in srgb, var(--hero-t1) 14%, #10131A) 0%, color-mix(in srgb, var(--hero-t1) 6%, #10131A) 60%, color-mix(in srgb, var(--hero-t2) 9%, #10131A) 100%);
+    border-color: color-mix(in srgb, var(--hero-t1) 34%, rgba(255,255,255,.1));
+  }
   .profile-cover{
     position:relative; height:6.4rem; margin:0 -1.45rem;
     background:
@@ -43979,6 +44069,63 @@ function buildThemeBannerArt(accent){
   el.dataset.accent = (accent && ACCENTS.indexOf(accent) >= 0) ? accent : "ink";
   return el;
 }
+/* ---- A BANNER'S OWN TWO COLOURS (build 304) ----
+   "The background in the box underneath banner ... needs to kinda match
+   that banner's color scheme as well." Banners are drawn, not described -
+   nothing lists their palette - so this reads it off the drawing: every
+   #rrggbb in the banner's svg, scored by how vivid it is (saturated and
+   neither near-black nor near-white), the best one, then the best one at
+   least 40 degrees of hue away from it (or the runner-up if the banner is
+   all one family). A banner added later is covered without a table to
+   keep in step. Cached per id. */
+/* MEASURED, NOT GUESSED: reading the svg's colours alone picks the most
+   vivid fill, which is often a small accent - Northern Lights came out
+   orange off its cabin window, the Koi Pond orange off one fish. These
+   are each banner RENDERED and its pixels bucketed by hue, weighted by
+   how much of the banner each one covers (tools: b304/bannertint.py
+   method - render 480x180, 30-degree hue buckets, saturation-weighted).
+   A banner missing here falls back to reading its svg. */
+const BANNER_TINT = {
+  tests100: ["#5CCBB9", "#5089D7"],
+  tests250: ["#E2467D", "#AF59CF"],
+  tests500: ["#3DD0EB", "#57D17D"],
+  hundos100: ["#EA3E60", "#7A61C7"],
+  hundos250: ["#5B7FCD", "#D27E56"],
+  vr50: ["#7635F2", "#D652A9"],
+  study50: ["#CF8459", "#4D68DB"],
+  correct5000: ["#486DE0", "#716CBC"],
+  level80: ["#7655D3", "#C167AA"],
+  exam100: ["#F95F2F", "#FF2932"],
+  adept_rank: ["#4572E3", "#559ED3"],
+  elite_rank: ["#8D4DDB", "#9D60C8"],
+  titan_rank: ["#EC3C55", "#B83DEB"]
+};
+const bannerTintCache = {};
+function bannerTintOf(id){
+  if(!id || !BANNER_ART[id]) return null;
+  if(BANNER_TINT[id]) return BANNER_TINT[id];
+  if(bannerTintCache[id]) return bannerTintCache[id];
+  let svg = "";
+  try{ svg = BANNER_ART[id]("tint-"); }catch(e){ return null; }
+  const seen = {}, cols = [];
+  (svg.match(/#[0-9a-fA-F]{6}\b/g) || []).forEach(h => {
+    h = h.toUpperCase(); if(seen[h]) { seen[h].n++; return; }
+    const n = parseInt(h.slice(1), 16), r = (n >> 16) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
+    const sat = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+    let hue = 0;
+    if(d){ hue = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; hue = (hue * 60 + 360) % 360; }
+    const c = { h: h, hue: hue, n: 1, score: sat * (1 - Math.abs(l - .5) * 1.6) };
+    seen[h] = c; cols.push(c);
+  });
+  const vivid = cols.filter(c => c.score > .12).sort((a, b) => (b.score * (1 + Math.min(b.n, 6) * .08)) - (a.score * (1 + Math.min(a.n, 6) * .08)));
+  if(!vivid.length) return null;
+  const a = vivid[0];
+  const hueGap = c => { const x = Math.abs(c.hue - a.hue) % 360; return Math.min(x, 360 - x); };
+  const b = vivid.find(c => hueGap(c) >= 40) || vivid[1] || a;
+  return (bannerTintCache[id] = [a.h, b.h]);
+}
+
 /* Somebody's banner as the rest of the app should draw it: the one they
    wear if this build knows it, and otherwise the default - their theme. */
 function buildWornBannerArt(bannerId, accent){
@@ -57439,7 +57586,16 @@ function guardVersionPick(row, cb, name, onChosen){
    so the look is the same everywhere including the Virtual Room sheet. */
 function syncStartInert(inert){
   const tab = document.getElementById("bottomtab-start");
-  if(tab) tab.classList.toggle("is-inert", !!inert);
+  if(!tab) return;
+  const was = tab.classList.contains("is-inert");
+  tab.classList.toggle("is-inert", !!inert);
+  /* The moment it lights up (build 304): one small pop, so the change
+     from grey is seen. Only on the change, never on a re-render that
+     leaves it ready. */
+  if(was && !inert && !tab.hidden){
+    tab.classList.remove("just-ready"); void tab.offsetWidth; tab.classList.add("just-ready");
+    clearTimeout(tab._readyT); tab._readyT = setTimeout(() => tab.classList.remove("just-ready"), 700);
+  }
 }
 function paintSliderFill(slider){
   if(!slider) return;
@@ -75541,6 +75697,13 @@ function showProfile(defaultTab){
     cover.dataset.banner = worn;
     cover.appendChild(buildBannerArt(worn));
   }
+  /* The card under the cover carries the banner's colours (build 304);
+     with the default banner that is the theme's own, through CSS. */
+  {
+    const tint = worn ? bannerTintOf(worn) : null;
+    heroSect.classList.add("has-tint");
+    if(tint){ heroSect.style.setProperty("--hero-t1", tint[0]); heroSect.style.setProperty("--hero-t2", tint[1]); }
+  }
   /* NO RANK ON THE COVER (build 259). "Maybe making the default banner
      just something not to do with the rank? Maybe just default to the
      theme you have set if you don't have a banner set." The strip is the
@@ -75918,11 +76081,23 @@ function showProfile(defaultTab){
       card.classList.add("is-asked"); card.setAttribute("aria-expanded", "true");
       statWhyLabel.textContent = label.toUpperCase();
       statWhyText.textContent = why || "";
+      /* ---- UNDER THE ROW YOU TAPPED (build 304) ----
+         "When clicking the stat boxes for information, those show up at
+         the bottom, but they should show up near the box you click."
+         The panel lived under the second grid, a screen away from a
+         card in the first. It moves INTO the grid now, straight after
+         the last card on the tapped card's row and spanning every
+         column (grid-column:1/-1), so it opens directly beneath what
+         you tapped and the cards below it move down to make room. The
+         row is read off the layout (offsetTop), because the column
+         count changes with the width. */
+      const gridEl = card.parentElement;
+      const rowCards = [...gridEl.querySelectorAll(":scope > .stat-card")].filter(c => c.offsetTop === card.offsetTop);
+      const lastInRow = rowCards[rowCards.length - 1] || card;
+      lastInRow.after(statWhyBox);
       statWhyBox.hidden = false;
-      /* The panel lives below the SECOND grid, so a tap on a card in
-         the first one has to bring it up to that card rather than
-         leaving the answer off the bottom of a phone screen. */
-      statWhyBox.scrollIntoView({ block: "nearest" });
+      statWhyBox.classList.remove("is-in"); void statWhyBox.offsetWidth; statWhyBox.classList.add("is-in");
+      statWhyBox.scrollIntoView({ block: "nearest", behavior: "smooth" });
     });
     return card;
   }

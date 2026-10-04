@@ -10551,8 +10551,38 @@ out of view gets `.is-offscreen` from one `IntersectionObserver` per list
 and swatch pickers already use, so forty characters cost what the visible
 ten do. `syncBottomTabAvatar()` makes the tab's character live.
 
-Gate: `check-behaviour` section 74 (`check_b304`), written against 303 and
-red there on every group.
+**The Profile card wears its banner's colours.** *"The background in the
+box underneath banner needs to kinda match that banner's color scheme."*
+`bannerTintOf(id)` gives two colours: from `BANNER_TINT` when the banner is
+listed there - each one MEASURED, by rendering the banner and bucketing its
+pixels by hue weighted by area and saturation - and otherwise read off the
+banner's svg source. **Reading the svg alone is wrong for a reason worth
+knowing:** it finds the most vivid fill, which is usually a small accent
+(Northern Lights came out orange from its cabin window, the Koi Pond orange
+from one fish). A new banner should get a measured row. The card sets
+`--hero-t1/--hero-t2` and `.profile-hero.has-cover.has-tint` paints two
+pools under the cover and a wash that carries to the bottom; the default
+banner leaves them unset and the rule falls back to `--theme-c2/c3`.
+
+**A stat's explanation opens under the row you tapped** (*"they should show
+up near the box you click"*): the one `.stat-why` panel moves into the
+tapped card's grid, after the last card on its row (row read off
+`offsetTop`, because the column count changes with width), spanning
+`grid-column:1/-1`.
+
+**Start says it is ready.** On the unit screen the tab bar's Start, once
+units are picked, breathes a halo (`::after`, transform/opacity) and has a
+highlight sweep across it (a moving background layer - a pseudo-element
+would need `overflow:hidden`, which would clip the halo), and pops once at
+the moment it lights up (`.just-ready`, set in `syncStartInert` only on the
+grey-to-ready change). The sweep has a dark leading edge because on the
+default theme the pill is white. The start sheet's Begin wears the same
+raised recipe as the tab Start, the same halo and sweep, and a play mark
+drawn as a CSS mask so its words can still be set with `textContent`.
+
+Gates: `check-behaviour` section 74 (`check_b304`), written against 303 and
+red there on every group; section 75 (`check_b304_polish`) for the second
+list, red on 303 on every check of the change.
 
 **Gates that named a 303 label were re-read.** 303 renamed Flagged to
 Starred and Review to Learn on request, and five older checks asserted the
