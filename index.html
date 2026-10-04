@@ -9727,10 +9727,10 @@
   .cosmic-icon-badge.cosmic-badge-rank svg.cosmic-rank-emblem{ width:100%; height:100%; flex:none; overflow:hidden; border-radius:50%; clip-path:circle(50% at 50% 50%); }
   /* the recorded motion, laid exactly over the still emblem (build 298) */
   .cosmic-icon-badge.cosmic-badge-rank .cosmic-rank-anim{ position:absolute; inset:0; overflow:hidden; border-radius:50%; pointer-events:none; z-index:0; mix-blend-mode:screen; }
-  .cosmic-rank-anim .rk-strip{ position:absolute; left:0; top:0; width:100%; animation:rk-flip-y 6s infinite; will-change:transform; }
-  .cosmic-rank-anim .rk-strip img{ display:block; max-width:none; animation:rk-flip-x 1s infinite; will-change:transform; }
-  @keyframes rk-flip-y{ from{ transform:translateY(0); } to{ transform:translateY(-100%); } }
-  @keyframes rk-flip-x{ from{ transform:translateX(0); } to{ transform:translateX(-100%); } }
+  /* One window onto the sheet, centred, exactly one cell square; the
+     sheet slides under it on a single stepped animation (build 300). */
+  .cosmic-rank-anim .rk-frame{ position:absolute; left:50%; top:50%; overflow:hidden; }
+  .cosmic-rank-anim .rk-frame img{ display:block; max-width:none; will-change:transform; backface-visibility:hidden; }
   .cosmic-icon-badge.cosmic-badge-rank svg.cosmic-rank-emblem.rk-under-anim{ visibility:hidden; }
   .cosmic-icon-badge.cosmic-badge-rank:not(.cosmic-badge-lit) svg.cosmic-rank-emblem{ filter:grayscale(1) brightness(1.05); opacity:.62; }
   /* ---- A RANK NOT YET REACHED IS LIQUID GLASS AGAIN (build 232) ----
@@ -10947,6 +10947,28 @@
      .friend-act and .bottomtab-label already carry notes about. */
   @media (max-width:639px){
     .homeversion, .homeversion.homeversion-btn{ display:none; }
+  }
+  /* BACK ON THE PHONE, IN THE VERY CORNER (build 300). "The version
+     history stuff can be put on the phone.. just needs to go on the
+     bottom left of home with just the letter v ... in the very bottom
+     left corner." Not where it was: above the tab bar it boxed Start
+     Studying in (the reason it came off). It goes BELOW the bar, in the
+     strip the home indicator leaves, centred in that strip's height and
+     tucked into the left corner, clear of the indicator in the middle.
+     That strip only exists with a home indicator, so it is gated on
+     html.has-bottom-inset - set by syncBottomInsetClass() from a probe
+     sized by env() - and stays off on a phone with no room under the bar
+     (an SE, a browser tab). The tap target grows by padding pulled back
+     out with a negative margin, so the label sits exactly where drawn. */
+  .sa-probe{ position:fixed; left:0; bottom:0; width:0; height:env(safe-area-inset-bottom, 0px); visibility:hidden; pointer-events:none; }
+  @media (max-width:639px){
+    html.has-bottom-inset .homeversion, html.has-bottom-inset .homeversion.homeversion-btn{
+      display:block; z-index:1;
+      left:max(1.1rem, env(safe-area-inset-left, 0px));
+      bottom:calc((env(safe-area-inset-bottom, 0px) + .6rem - 1.15em) / 2);
+      font-size:.7rem; line-height:1.15em; opacity:.5;
+      padding:.45rem .6rem; margin:-.45rem -.6rem;
+    }
   }
   .homeversion-btn{ background:none; border:none; padding:0; font:inherit; cursor:pointer; text-decoration:underline; text-decoration-thickness:from-font; text-decoration-color:color-mix(in srgb, currentColor 40%, transparent); text-underline-offset:2px; }
   /* The daily-question circle itself \u2014 a small offset FAB, not a
@@ -15190,9 +15212,6 @@
   .new-dot-anchor{ position:relative; display:inline-flex; flex-shrink:0; }
   .banner-opt > .new-dot{ top:.35rem; right:.35rem; }
   .avatarchar-option > .new-dot{ top:.1rem; right:.1rem; }
-  /* In a tab label, beside the word (build 299): a segment button clips
-     its own contents, so the dot goes inside it rather than on a corner. */
-  .new-dot.is-inline{ position:static; display:inline-block; vertical-align:middle; width:.55rem; height:.55rem; margin:-.15rem 0 0 .4rem; box-shadow:0 0 8px var(--new-dot-glow); }
   .badge-tile-art > .new-dot{ top:.05rem; right:.05rem; }
   .profile-rankplate .new-dot-anchor{ position:relative; z-index:2; }
   .profile-rankplate .new-dot-anchor > .new-dot{ top:-.1rem; right:-.1rem; }
@@ -31664,18 +31683,23 @@ const QUESTIONS = [
     answer: 2
   },
   /* THE SECOND #84 (build 298). The Penal Code deck puts #84 on slide 22
-     AND slide 24, and "if it's in that version, it also needs to be in
-     the entire unit version" - so it is two questions, in the slides
-     0-85 version and in the whole unit. Its own src (347, past the last
-     number the study guide uses) gives it its own identity and history;
-     `repeatOf` says what it repeats. It sits at the END of the bank so
-     no other question's position moves, and the daily question does not
-     deal it (a repeat there is only the same card twice, and it would
-     have reshuffled every Penal Code day still to come). */
+     AND slide 24, so the slides 0-85 version carries it twice. Its own src
+     (347, past the last number the study guide uses) gives it its own
+     identity and history; `repeatOf` says what it repeats. It sits at the
+     END of the bank so no other question's position moves, and the daily
+     question does not deal it.
+     IN THE 0-85 VERSION ONLY (build 300): "remove it from the entire unit
+     one, the entire unit one should be 340 questions not 341" - the whole
+     unit is the study guide, and the guide has #84 once. `versionOnly`
+     keeps it out of everything that means "the whole unit"
+     (inChosenVersion, inWholeUnit, unitQuestionCount). It stays in the
+     bank rather than being deleted so the 0-85 version keeps it and
+     anybody's history on it survives. */
   {
     topic: "Penal Code",
     src: 347,
     repeatOf: 84,
+    versionOnly: true,
     q: "Which of the following is not one of the culpable mental states?",
     ref: "(PC 6.03 (a), (b), and (c); PC Section 8.4)",
     choices: [
@@ -36421,6 +36445,18 @@ function updateHeaderTitle(){
    person's own picture as their tab, the way Reddit's bottom bar uses
    the signed-in avatar for its own "You" tab, rather than a generic
    person glyph every account looks identical with. */
+/* Whether there is a home-indicator strip under the tab bar (build 300):
+   a probe sized by env(safe-area-inset-bottom) says, since CSS cannot
+   compare an env() value to a threshold on its own. 20px is the smallest
+   strip the version label fits in without touching the bar. Re-checked
+   on resize, which covers rotation. */
+function syncBottomInsetClass(){
+  try{
+    let probe = document.getElementById("sa-probe");
+    if(!probe){ probe = document.createElement("div"); probe.id = "sa-probe"; probe.className = "sa-probe"; probe.setAttribute("aria-hidden", "true"); document.body.appendChild(probe); }
+    document.documentElement.classList.toggle("has-bottom-inset", probe.getBoundingClientRect().height >= 20);
+  }catch(e){}
+}
 function syncBottomTabAvatar(){
   const tabIcon = document.querySelector("#bottomtab-profile .bottomtab-icon");
   if(!tabIcon) return;
@@ -39746,13 +39782,18 @@ const UNIT_TEST_VERSIONS = {
   }
 };
 function unitHasTestVersion(name){ return !!UNIT_TEST_VERSIONS[name]; }
+/* Is this question part of its WHOLE unit? Everything is, except a
+   question that exists only for a unit's short version (build 300 - the
+   Penal Code deck's second #84). Every count of "the unit" goes through
+   this, so the whole unit, its card and its hundo all agree. */
+function inWholeUnit(q){ return !(q && q.versionOnly); }
 /* Is question i in the version of its unit that `versions` asks for?
    Anything not marked "test" is the whole unit. */
 function inChosenVersion(i, versions){
   const t = (QUESTIONS[i].topic || "").trim();
-  if(!versions || versions[t] !== "test") return true;
+  if(!versions || versions[t] !== "test") return inWholeUnit(QUESTIONS[i]);
   const tv = UNIT_TEST_VERSIONS[t];
-  return !tv || tv.srcs.has(Number(QUESTIONS[i].src));
+  return !tv ? inWholeUnit(QUESTIONS[i]) : tv.srcs.has(Number(QUESTIONS[i].src));
 }
 /* THE CARD SAYS IT HAS A SECOND VERSION. One line under the unit's
    name, in the pop-up's own blue, on every picker that asks (the test
@@ -40715,7 +40756,7 @@ function unitQuestionCount(name){
     UNIT_SIZE_CACHE = {};
     try {
       QUESTIONS.forEach(q => {
-        if(q && q.topic) UNIT_SIZE_CACHE[q.topic] = (UNIT_SIZE_CACHE[q.topic] || 0) + 1;
+        if(q && q.topic && inWholeUnit(q)) UNIT_SIZE_CACHE[q.topic] = (UNIT_SIZE_CACHE[q.topic] || 0) + 1;
       });
     } catch(e){ UNIT_SIZE_CACHE = null; return 0; }
   }
@@ -46080,7 +46121,7 @@ function isSingleUnitRun(){ return cfg.units.length === 1; }
    complete, individual unit — any mode, but the whole thing. */
 function isFullUnitRun(){
   if(!isSingleUnitRun()) return false;
-  const unitTotal = QUESTIONS.filter(q => (q.topic || "").trim() === cfg.units[0]).length;
+  const unitTotal = QUESTIONS.filter(q => (q.topic || "").trim() === cfg.units[0] && inWholeUnit(q)).length;
   return order.length === unitTotal;
 }
 
@@ -46421,7 +46462,7 @@ function unitsFullyCoveredBy(runOrder){
   const seen = [];
   (cfg.units || []).forEach(name => {
     const inRun = runOrder.filter(qi => (QUESTIONS[qi].topic || "").trim() === name);
-    const unitTotal = QUESTIONS.filter(q => (q.topic || "").trim() === name).length;
+    const unitTotal = QUESTIONS.filter(q => (q.topic || "").trim() === name && inWholeUnit(q)).length;
     if(unitTotal > 0 && inRun.length === unitTotal) seen.push(name);
   });
   return seen;
@@ -46477,7 +46518,7 @@ function recordMultiUnitPerfectsIfEligible(order, missed){
   let anyRecorded = false;
   cfg.units.forEach(name => {
     const unitQuestionIdx = order.filter(qi => (QUESTIONS[qi].topic || "").trim() === name);
-    const unitTotal = QUESTIONS.filter(q => (q.topic || "").trim() === name).length;
+    const unitTotal = QUESTIONS.filter(q => (q.topic || "").trim() === name && inWholeUnit(q)).length;
     if(unitQuestionIdx.length === 0 || unitQuestionIdx.length !== unitTotal) return; // partial slice, not the full unit
     const allCorrect = unitQuestionIdx.every(qi => !missedSet.has(qi));
     if(!allCorrect) return;
@@ -48568,9 +48609,34 @@ function homeRankEmblemReused(tier){
    capture yields
    between frames so the orbit never stutters while it works; nothing
    is recorded until Home has been up a moment. */
+/* BUILD 300: "the bubble flares on home ... slightly shaking? And not
+   all of them are animating properly/smoothly." Three causes, each
+   measured, each fixed below:
+   - THE SHAKE was two clocks. The row and the column were two stepped
+     animations (6s and 0.6s) that drift apart, so at every row change a
+     frame from a second away showed for an instant - the emblem jumped.
+     One animation now walks every frame from one keyframe list
+     (orbitAnimKeyframes), so the row and column can never disagree.
+   - THE SHIMMER was half pixels. A sheet cell of 83px shown at 41.73 CSS
+     px on a 3x screen is a 1.5x stretch with each frame landing on a
+     different sub-pixel, so each one was sampled differently. The cell is
+     an EVEN number of pixels now and is shown at exactly cell / scale CSS
+     px, so every frame step is a whole number of device pixels at 1x,
+     2x and 3x.
+   - THE STILL ONES were waiting. Every update re-recorded all seven
+     sheets (the cache was keyed by build), so after each update most
+     flares stood still until their turn came. The key is the emblem's
+     own drawing now, so a sheet is recorded once and reused until the
+     emblem itself changes.
+   And 24 frames a second rather than 15, which is the "smoothly". */
 const ORBIT_ANIM_LOOP_MS = 6000;
-const ORBIT_ANIM_FRAMES = 90;
+const ORBIT_ANIM_FRAMES = 144;
+const ORBIT_ANIM_COLS = 12;
+const ORBIT_ANIM_VER = "v3";
 const orbitAnimSheets = new Map();
+/* sheets already recorded this session, by the same key - Home plays these
+   on its first frame instead of waiting for the recorder's settle delay */
+const orbitAnimReady = new Map();
 function orbitAnimAllowed(){
   if(theme && theme.reduceMotion) return false;
   try{ if(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false; }catch(e){}
@@ -48590,7 +48656,8 @@ function orbitAnimYield(){
 /* A finished sheet is kept in Cache Storage, keyed by build, rank and
    size, so only the first Home after an update records anything. */
 const ORBIT_ANIM_CACHE = "class26e.rk-sheets";
-function orbitAnimCacheKey(tier, px){ return "/__rk/" + encodeURIComponent(APP_BUILD) + "/" + tier + "/" + px + ".png"; }
+/* tier here is the sheet's identity: the rank plus a hash of its drawing */
+function orbitAnimCacheKey(tier, px){ return "/__rk/" + ORBIT_ANIM_VER + "/" + encodeURIComponent(tier) + "/" + px + ".png"; }
 async function orbitAnimCacheGet(tier, px){
   try{
     if(!window.caches) return null;
@@ -48603,7 +48670,7 @@ async function orbitAnimCachePut(tier, px, blob){
   try{
     if(!window.caches) return;
     const c = await caches.open(ORBIT_ANIM_CACHE);
-    const keep = "/__rk/" + encodeURIComponent(APP_BUILD) + "/";
+    const keep = "/__rk/" + ORBIT_ANIM_VER + "/";
     (await c.keys()).forEach(k => { if(new URL(k.url).pathname.indexOf(keep) !== 0) c.delete(k); });
     await c.put(orbitAnimCacheKey(tier, px), new Response(blob, { headers: { "Content-Type": "image/png" } }));
   }catch(e){}
@@ -48612,15 +48679,33 @@ async function orbitAnimSheetFromBlob(blob, px){
   const url = URL.createObjectURL(blob);
   const pre = new Image(); pre.src = url;
   try{ await pre.decode(); }catch(e){ return null; }
-  const cols = 10, rows = Math.ceil(ORBIT_ANIM_FRAMES / cols);
+  const cols = ORBIT_ANIM_COLS, rows = Math.ceil(ORBIT_ANIM_FRAMES / cols);
   if(pre.naturalWidth !== cols * px || pre.naturalHeight !== rows * px){ URL.revokeObjectURL(url); return null; }
   return { url, px, n: ORBIT_ANIM_FRAMES, cols, rows };
 }
-function recordRankEmblemFrames(tier, template, px){
-  const key = tier + "|" + px;
+/* One clean copy of each rank's drawing per session, and its identity:
+   the rank plus a hash of the drawing, so the cache outlives an update
+   that does not touch the emblem and is replaced by one that does. The
+   live emblem on Home is NOT used for this - it is not byte-identical
+   between visits, which gave a new key and a re-record every time Home
+   opened. The per-instance gradient ids ("rk12-...") come out of the hash
+   for the same reason. */
+const orbitAnimDrawings = new Map();
+function orbitAnimDrawing(tier){
+  if(!orbitAnimDrawings.has(tier)){
+    const svg = homeRankEmblem(tier);
+    const id = tier + "-" + hashOf(new XMLSerializer().serializeToString(svg).replace(/\brk\d+/g, "rk"));
+    orbitAnimDrawings.set(tier, { svg, id });
+  }
+  return orbitAnimDrawings.get(tier);
+}
+function recordRankEmblemFrames(tier, _live, px){
+  const drawing = orbitAnimDrawing(tier);
+  const template = drawing.svg, id = drawing.id;
+  const key = id + "|" + px;
   if(orbitAnimSheets.has(key)) return orbitAnimSheets.get(key);
   const job = (async () => {
-    const cached = await orbitAnimCacheGet(tier, px);
+    const cached = await orbitAnimCacheGet(id, px);
     if(cached){ const sp = await orbitAnimSheetFromBlob(cached, px); if(sp) return sp; }
     const host = document.createElement("div");
     host.className = "rk-live rk-record-host";
@@ -48647,7 +48732,7 @@ function recordRankEmblemFrames(tier, template, px){
       });
       const els = [...live.querySelectorAll("*")];
       const moving = new Set(anims.map(a => a.effect && a.effect.target));
-      const cols = 10, rows = Math.ceil(N / cols);
+      const cols = ORBIT_ANIM_COLS, rows = Math.ceil(N / cols);
       const sheet = document.createElement("canvas");
       sheet.width = cols * px; sheet.height = rows * px;
       const g = sheet.getContext("2d");
@@ -48683,52 +48768,83 @@ function recordRankEmblemFrames(tier, template, px){
       const blob = await new Promise(r => sheet.toBlob(r, "image/png"));
       sheet.width = sheet.height = 0;
       if(!blob) return null;
-      orbitAnimCachePut(tier, px, blob);
+      orbitAnimCachePut(id, px, blob);
       return await orbitAnimSheetFromBlob(blob, px);
     } catch(e){ return null; }
     finally { host.remove(); }
   })();
   orbitAnimSheets.set(key, job);
-  job.then(v => { if(!v) orbitAnimSheets.delete(key); });
+  job.then(v => { if(!v) orbitAnimSheets.delete(key); else orbitAnimReady.set(key, v); });
   return job;
 }
-/* Home calls this a moment after it is up. Playback is two stepped
-   CSS transforms over the finished sheet - the row on the outer strip,
-   the column on the image inside it - so a frame change is the
-   compositor moving a layer it already has. Nothing repaints and no
-   script runs per frame. */
-function startOrbitEmblemAnims(root){
+/* One keyframe list per sheet shape, written once: frame k at k/N of
+   the loop, holding (step-end) until the next. Every step is a whole
+   number of CSS pixels times the cell, so with an even cell it is whole
+   device pixels at any of 1x, 2x and 3x. */
+const orbitAnimKeyframesMade = new Set();
+function orbitAnimKeyframes(cellCss, cols, n){
+  const name = "rk-sheet-" + cols + "-" + n + "-" + String(cellCss).replace(".", "_");
+  if(orbitAnimKeyframesMade.has(name)) return name;
+  let css = "@keyframes " + name + "{";
+  for(let k = 0; k < n; k++){
+    const x = (k % cols) * cellCss, y = Math.floor(k / cols) * cellCss;
+    css += (k * 100 / n).toFixed(4) + "%{transform:translate3d(" + (-x) + "px," + (-y) + "px,0)}";
+  }
+  const lx = ((n - 1) % cols) * cellCss, ly = Math.floor((n - 1) / cols) * cellCss;
+  css += "100%{transform:translate3d(" + (-lx) + "px," + (-ly) + "px,0)}}";
+  let st = document.getElementById("rk-sheet-keyframes");
+  if(!st){ st = document.createElement("style"); st.id = "rk-sheet-keyframes"; document.head.appendChild(st); }
+  st.appendChild(document.createTextNode(css));
+  orbitAnimKeyframesMade.add(name);
+  return name;
+}
+/* Home calls this a moment after it is up. Playback is ONE stepped CSS
+   animation on the finished sheet, so a frame change is the compositor
+   moving a layer it already has. Nothing repaints, no script runs per
+   frame, and there is no second clock to drift against. */
+function startOrbitEmblemAnims(root, readyOnly){
   if(!root || !orbitAnimAllowed()) return;
   const all = [...root.querySelectorAll(".cosmic-badge-rank")];
   const badges = all.filter(b => b.classList.contains("cosmic-badge-lit")).concat(all.filter(b => !b.classList.contains("cosmic-badge-lit")));
+  const scale = Math.min(window.devicePixelRatio || 1, 2);
   (async () => {
     for(const badge of badges){
       const svg = badge.querySelector("svg.cosmic-rank-emblem");
       const tier = badge.dataset.rankTier;
       if(!svg || !tier || !badge.isConnected) continue;
-      const r = svg.getBoundingClientRect();
-      const px = Math.round(Math.max(r.width, r.height) * Math.min(window.devicePixelRatio || 1, 2));
+      /* The hero sits inside a scaled wrapper (0.94), so whole CSS pixels
+         are not whole SCREEN pixels. Size the cell from what is on screen
+         and divide that scale back out: each frame step is then exactly
+         cell * dpr / scale device pixels - a whole number with an even
+         cell at 2x and 3x - however the ancestors are scaled. */
+      const bcs = getComputedStyle(badge);
+      const layoutW = parseFloat(bcs.width) || 0;
+      const shownW = badge.getBoundingClientRect().width;
+      const S = layoutW > 0 && shownW > 0 ? shownW / layoutW : 1;
+      /* an EVEN cell, so cell / scale * devicePixelRatio is whole at 3x too */
+      let px = Math.round(shownW * scale);
+      px -= px % 2;
       if(px < 12) continue;
+      if(readyOnly && !orbitAnimReady.has(orbitAnimDrawing(tier).id + "|" + px)) continue;
       const sp = await recordRankEmblemFrames(tier, svg, px);
       if(!sp || !badge.isConnected || badge.querySelector(".cosmic-rank-anim") || !orbitAnimAllowed()) continue;
+      const cellCss = sp.px / scale / S;
       const wrap = document.createElement("div");
       wrap.className = "cosmic-rank-anim";
       wrap.setAttribute("aria-hidden", "true");
       const cs = getComputedStyle(svg);
       wrap.style.filter = cs.filter; wrap.style.opacity = cs.opacity;
-      const strip = document.createElement("div");
-      strip.className = "rk-strip";
-      strip.style.height = (sp.rows * 100) + "%";
-      strip.style.animationDuration = ORBIT_ANIM_LOOP_MS + "ms";
-      strip.style.animationTimingFunction = "steps(" + sp.rows + ")";
+      const frame = document.createElement("div");
+      frame.className = "rk-frame";
+      frame.style.width = frame.style.height = cellCss + "px";
+      frame.style.marginLeft = frame.style.marginTop = (-cellCss / 2) + "px";
       const img = document.createElement("img");
       img.alt = ""; img.decoding = "sync"; img.src = sp.url;
-      img.style.width = (sp.cols * 100) + "%";
-      img.style.height = "100%";
-      img.style.animationDuration = (ORBIT_ANIM_LOOP_MS / sp.rows) + "ms";
-      img.style.animationTimingFunction = "steps(" + sp.cols + ")";
-      strip.appendChild(img);
-      wrap.appendChild(strip);
+      img.style.width = (sp.cols * cellCss) + "px";
+      img.style.height = (sp.rows * cellCss) + "px";
+      img.style.animation = orbitAnimKeyframes(cellCss, sp.cols, sp.n) + " " + ORBIT_ANIM_LOOP_MS + "ms step-end infinite";
+      frame.appendChild(img);
+      wrap.appendChild(frame);
       svg.after(wrap);
       svg.classList.add("rk-under-anim");
     }
@@ -54956,7 +55072,9 @@ function showHome(){
   maybeShowIntro();
   stage.replaceChildren(panel);
   stage.appendChild(dailyBtn);
-  /* the orbit's emblems, recorded once Home has settled (build 298) */
+  /* the orbit's emblems, recorded once Home has settled (build 298); any
+     already recorded this session play from the first frame (build 300) */
+  afterFirstPaint(() => { if(panel.isConnected) startOrbitEmblemAnims(panel, true); });
   setTimeout(() => { if(panel.isConnected) startOrbitEmblemAnims(panel); }, 1600);
   /* The XP a run just earned flies into the Profile tab when you land
      back here - the results screen has no tab bar to fly to. Once. */
@@ -56081,7 +56199,7 @@ function askUnitVersion(name, onPick){
     ov.classList.remove("show");
     setTimeout(() => ov.remove(), 220);
   }
-  const whole = QUESTIONS.filter(q => (q.topic || "").trim() === name).length;
+  const whole = QUESTIONS.filter(q => (q.topic || "").trim() === name && inWholeUnit(q)).length;
   [["all", name, "Every " + name + " question in the app.", whole],
    ["test", tv.label, tv.desc, unitVersionCount(name, "test")]].forEach(([value, label, desc, n]) => {
     const b = document.createElement("button");
@@ -56425,7 +56543,7 @@ function showSetup(){
     appendUnitVersionTag(row, name);
     const count = document.createElement("span");
     count.className = "pcount";
-    count.textContent = QUESTIONS.filter(x => (x.topic || "").trim() === name).length + " questions";
+    count.textContent = QUESTIONS.filter(x => (x.topic || "").trim() === name && inWholeUnit(x)).length + " questions";
     row.appendChild(count);
     appendUnitProgress(row, name);
     /* No "Best: 4:12" on the card any more (build 235) - "the best time
@@ -58735,7 +58853,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-03-299";
+const APP_BUILD = "2026-10-03-300";
 const FRAME_OK_KEY = "class26e.frame.ok";
 const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
 let lastUpdateCheck = 0;
@@ -60897,9 +61015,9 @@ function syncProfileTabDot(){
     tab.classList.toggle("has-new", on);
   }catch(e){}
 }
-function buildNewDot(inline){
+function buildNewDot(){
   const d = document.createElement("span");
-  d.className = "new-dot" + (inline ? " is-inline" : ""); d.setAttribute("aria-hidden", "true");
+  d.className = "new-dot"; d.setAttribute("aria-hidden", "true");
   return d;
 }
 /* Wraps `el` so a dot can sit on its corner - for anything that clips
@@ -62091,7 +62209,7 @@ function summarize(){
        it is the units the run actually covered in full, less one. */
     const wholeUnitsInRun = (cfg.units || []).filter(name => {
       const inRun = order.filter(qi => (QUESTIONS[qi].topic || "").trim() === name).length;
-      const total = QUESTIONS.filter(q => (q.topic || "").trim() === name).length;
+      const total = QUESTIONS.filter(q => (q.topic || "").trim() === name && inWholeUnit(q)).length;
       return inRun > 0 && inRun === total;
     }).length;
     /* The flat per-unit bonus is gone: a multi-unit run now carries a
@@ -64641,7 +64759,7 @@ function showVirtualRoomSetup(editRoom){
     appendUnitVersionTag(row, name);
     const count = document.createElement("span");
     count.className = "pcount";
-    count.textContent = QUESTIONS.filter(x => (x.topic || "").trim() === name).length + " questions";
+    count.textContent = QUESTIONS.filter(x => (x.topic || "").trim() === name && inWholeUnit(x)).length + " questions";
     row.appendChild(count);
     /* The same badge, bar and count the test setup screen draws. This
        list had none of it - a checkbox, a name and a question count -
@@ -73352,83 +73470,31 @@ function showRanksScreen(defaultTab){
   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
   timerlineEl.hidden = true;
   setActiveNav("profile");
-  /* "Progress", not "Ranks" (build 270): "the ranks tab, should it be
-     called something else?" It holds two things - the rank ladder and
-     the badge case - and only one of them is a rank; both are how far
-     you have come. The key stays "ranks" so every stored and linked
-     route still lands here. */
-  countEl.textContent = "Progress";
+  /* ONE SCREEN, NOT TWO TABS (build 299). "When clicking rank, or
+     badges, there's a tab at the top for both as well, remove that.. not
+     sure why that's there." The Rank/Badges switcher was left over from
+     when this was a bottom tab of its own (build 219); since build 284
+     the Profile card opens each one directly, so the switcher was a
+     second way to the same two places. The rank row opens the climb,
+     the badges row opens the case, and Back returns to Profile. The
+     header names what is open. RANKS_TABS stays as the list of valid
+     names, so every stored or linked route ("ladder", "unlocks"...)
+     still lands. */
+  countEl.textContent = initialTab === "badges" ? "Badges" : "Rank";
 
   const panel = document.createElement("section");
   panel.className = "panel screen-ranks screen-profile-like";
-  const seg = document.createElement("div");
-  seg.className = "navsegment profiletabs rankstabs";
   /* OPENED FROM THE PROFILE CARD, NOT A TAB (build 284). "Maybe there
      being 5 tabs at the bottom is a little much? ... let's remove the
      progress tab and put them within profile where it directly goes to
      it". The rank row on the card opens the climb and the badges row the
      case - as they already did - and this is the way back. */
   panel.appendChild(buildBackLink("Profile", () => showProfile()));
-  /* ONLY THE TAB YOU LAND ON IS BUILT BEFORE THE FIRST PAINT (build 279).
-     The other one was built in full and hidden - sixteen badge drawings
-     and the case behind the Rank tab, about 150ms of a 370ms mount - so
-     the tap waited for a screen it could not see. It is built a beat
-     after the screen is up instead, or at once if it is asked for first. */
-  const holder = key => { const h = document.createElement("section"); h.hidden = true; h.dataset.lazyTab = key; return h; };
-  let ranksTab = initialTab === "ranks" ? buildRanksTab() : holder("ranks");
-  let badgesTab = initialTab === "badges" ? buildBadgesTab() : holder("badges");
-  const defs = [
-    { key: "ranks",  label: "Rank",   node: ranksTab },
-    { key: "badges", label: "Badges", node: badgesTab }
-  ];
-  const ensureBuilt = key => {
-    const d = defs.find(t => t.key === key);
-    if(!d || !d.node.dataset.lazyTab) return;
-    const real = key === "ranks" ? buildRanksTab() : buildBadgesTab();
-    real.hidden = d.node.hidden;
-    d.node.replaceWith(real);
-    d.node = real;
-    if(key === "ranks") ranksTab = real; else badgesTab = real;
-  };
-  const btns = {};
-  defs.forEach(t => {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.className = "iconbtn" + (initialTab === t.key ? " active" : "");
-    b.textContent = t.label;
-    /* The tab you did not land on says if something new is in it
-       (build 299); going there clears it. */
-    try{
-      if(initialTab !== t.key && (t.key === "ranks" ? rankIsNew() : badgeNewCount() > 0)) b.appendChild(buildNewDot(true));
-    }catch(e){}
-    b.addEventListener("click", () => select(t.key));
-    btns[t.key] = b;
-    seg.appendChild(b);
-    t.node.hidden = initialTab !== t.key;
-  });
-  panel.appendChild(seg);
-  panel.append(...defs.map(t => t.node));
-  let current = initialTab;
-  function select(which){
-    current = which;
-    beginSettle(320);
-    ensureBuilt(which);
-    defs.forEach(t => { t.node.hidden = t.key !== which; btns[t.key].classList.toggle("active", t.key === which); });
-    btns[which].querySelectorAll(".new-dot").forEach(d => d.remove());
-    if(which === "badges" && badgesTab.runFill) badgesTab.runFill();
-    if(which === "ranks" && ranksTab.runFill) ranksTab.runFill();
-    toTop();
-  }
-  attachTabSwipe(panel, RANKS_TABS, () => current, select);
+  const body = initialTab === "badges" ? buildBadgesTab() : buildRanksTab();
+  panel.appendChild(body);
   stage.replaceChildren(panel);
   toTop(true);
-  /* the other tab is built once the entrance is over, not on a timer that
-     could land in the middle of it (build 281) */
-  defs.forEach(t => afterFirstPaint(() => { if(panel.isConnected) ensureBuilt(t.key); }));
-  requestAnimationFrame(() => {
-    if(current === "badges" && badgesTab.runFill) badgesTab.runFill();
-    if(current === "ranks" && ranksTab.runFill) ranksTab.runFill();
-  });
+  requestAnimationFrame(() => { if(body.runFill) body.runFill(); });
 }
 
 function showProfile(defaultTab){
@@ -76114,6 +76180,10 @@ function applyGlassRefraction(el, mapImgId){
   /* the Profile tab's new-item dot, once per screen mount (build 299) */
   new MutationObserver(syncProfileTabDot).observe(stage, { childList: true });
   syncProfileTabDot();
+  /* is there a home-indicator strip for the phone's version label */
+  syncBottomInsetClass();
+  window.addEventListener("resize", syncBottomInsetClass);
+  window.addEventListener("orientationchange", () => setTimeout(syncBottomInsetClass, 300));
 
   /* Its own small island right in the tab row now, the same size and
      shape as Home/Profile/Rewards/Settings \u2014 not a full-width bar

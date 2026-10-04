@@ -10118,3 +10118,120 @@ answer and that no `.bank-note` appears in Drill or in an Exam review.
   - the podium opens a card for everyone but you, and the popup's does not.
 
   32 of its checks fail on 298.
+
+
+### Build 300 - Rank and Badges are two screens, and the Home flares stop shaking
+
+*"When clicking rank, or badges, there's a tab at the top for both as
+well, remove that.. not sure why that's there."* The Rank/Badges
+segment switcher was left over from build 219, when the two were a
+bottom tab of their own. Build 284 moved them onto the Profile card, so
+the rank row and the badges row each already opened one of them
+directly, and the switcher was a second way to the same two places.
+
+- **`showRanksScreen(tab)` builds only the one it was asked for**, with
+  the back link to Profile above it. There is no swipe, and the header
+  says "Rank" or "Badges" rather than "Progress".
+- **`RANKS_TABS` stays** as the list of valid names, so every stored or
+  linked route (`"ladder"`, `"unlocks"`, `showProfile('ranks')`) still
+  lands on the right one.
+- **The build 299 tab-label dots went with the switcher.** The dots on
+  Profile's rank coin and badge medal, on each new badge in the case and
+  on the Profile tab are unchanged. A rank dot still clears when the
+  Rank screen's road map plays.
+- **Gates re-read with the decision:**
+  - `check-behaviour` 1 asserts the Rank screen has no switcher.
+  - The build 284 navigation check looks for the road map rather than an
+    active tab.
+  - 67 asserts each screen stands alone with its own header, and fails on
+    299.
+
+**The Home flares shook, and some sat still.** *"The bubble flares on
+home, slight bug or something where they are slightly shaking? And not
+all of them are animating properly/smoothly."* Four causes, each
+measured:
+
+- **Two clocks.** The flip-book's row and column were two stepped
+  animations, 6s and 0.6s. They drift apart, so at a row change a frame
+  from a second away showed for an instant, which read as the emblem
+  jumping. It is ONE animation now. `orbitAnimKeyframes()` writes one
+  `@keyframes` list per sheet shape, each frame's exact offset, played
+  `step-end`, so the row and column cannot disagree.
+- **Half pixels.** An 83px cell shown at 41.7 CSS px on a 3x screen is a
+  1.5x stretch, and each frame landed on a different sub-pixel. The hero
+  also sits inside a `scale(0.94)` wrapper, so whole CSS pixels are not
+  whole screen pixels. The cell is now an even number of pixels, sized
+  from the on-screen width, and shown at `cell / scale / S` CSS px, where
+  `S` is the measured ancestor scale. Every frame step is then a whole
+  number of device pixels at 2x and 3x.
+- **Re-recording.** The sheet cache was keyed by `APP_BUILD`, so every
+  update re-recorded all seven, and the flares stood still until their
+  turn. It is keyed by a hash of the emblem's drawing now
+  (`orbitAnimDrawing`, from a fresh `homeRankEmblem`). The live emblem on
+  Home is not byte-identical between visits, and its rect is taken
+  mid-entrance; both gave a new key on every visit.
+- **Waiting anyway.** Sheets already recorded this session
+  (`orbitAnimReady`) play on Home's first frame. Only new ones wait for
+  the 1.6s settle.
+
+It also plays at 24 frames a second (144 frames over the 6s loop, in a
+12-column sheet) instead of 15.
+
+Gates:
+- `check-behaviour` 68 walks every frame of every flare on the 17 Pro Max
+  (3x) and the iPad Pro 11 (2x). It asserts one animation, the right
+  frame at every moment including row changes, whole device pixels
+  (after the hero's scale), 144 frames, drawing-keyed cache entries, and
+  every flare back within a second on a second visit. 12 of its checks
+  fail on 299.
+- `check-behaviour` 66 now expects one animation per flare.
+
+Rotations slower than two loops (the 22-34s turns in Silver, Sapphire,
+Amethyst and Supernova) still hold still in the bubble, as they did
+since build 298. They barely move at that size, and closing the loop on
+them would need a sheet several times longer.
+
+**The version label is back on the phone, in the very bottom-left
+corner.** *"The version history stuff can be put on the phone.. just
+needs to go on the bottom left of home with just the letter v ... It can
+go in the very bottom left corner."*
+- **Where it goes:** below the tab bar, in the strip the home indicator
+  leaves. It reads `v7.3`, the `.homeversion-short` span. It sits at
+  `left:max(1.1rem, inset-left)`, vertically centred in the strip, and
+  clear of the indicator in the middle.
+- **Why not above the bar:** it came off phones in the first place
+  because, above the bar, it boxed Start Studying in against the
+  daily-question circle.
+- **It only exists where that strip does.** CSS cannot compare an
+  `env()` value to a number, so `syncBottomInsetClass()` measures a
+  `.sa-probe` sized by `env(safe-area-inset-bottom)` and sets
+  `html.has-bottom-inset` at 20px or more. It runs at boot, on resize and
+  after rotation. On a phone with no strip (an SE, a browser tab) the
+  label stays off, as before.
+- **The tap target** grows by padding that a negative margin pulls back
+  out, so the label sits exactly where it is drawn.
+- **Tablets are unchanged:** "Version 7.3" beside the tab pill.
+- **Gate:** `check-fixes` asserts it on every phone in the matrix. With a
+  strip it must be shown, read `v…`, sit in the left corner wholly below
+  the bar and on screen. Without a strip it must be hidden. It fails on
+  299, where the label was off every phone.
+
+**The whole Penal Code unit is 340, not 341.** *"Remove it from the
+entire unit one, the entire unit one should be 340 questions not 341."*
+The deck's second #84 (src 347, `repeatOf: 84`) stays in the slides 0-85
+version, which keeps its 57. It now carries `versionOnly: true` and is
+left out of everything that means "the whole unit":
+- `inChosenVersion()` (so every pool: Drill, Exam, Review and a Virtual
+  Room with no version picked);
+- `inWholeUnit()`, which the unit card's count, the version picker's
+  "every question" count, `isFullUnitRun()`, `unitsFullyCoveredBy()`, the
+  hundo recorder and the multi-unit bonus all use;
+- `unitQuestionCount()` (badge thresholds).
+
+It is not deleted from the bank, so the 0-85 version keeps it and
+anybody's history on it survives. Gates:
+- `check-behaviour` 66 asserts the whole unit is exactly the guide's 340
+  through the real pool.
+- `check-behaviour` 68 asserts the card reads "340 questions", that a
+  340-question run is a full unit (its hundo lands), and that the 0-85
+  version still has 57 including the repeat.

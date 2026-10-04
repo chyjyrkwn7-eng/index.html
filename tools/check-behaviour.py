@@ -542,9 +542,10 @@ def check_ranks(br):
       active: (document.querySelector('.profiletabs .iconbtn.active')||{}).textContent,
       swipe: RANKS_TABS.slice(),
       tabLit: document.querySelector('#bottomtab-profile').classList.contains('active')})""")
-    check("an old link to Profile's rank tab lands on the Ranks screen, Rank showing",
-          tabs["screen"] and len(tabs["rendered"]) == 2 and tabs["active"] == tabs["rendered"][0] and
-          tabs["swipe"] == ["ranks", "badges"], tabs)
+    # Build 299 took the Rank/Badges switcher off: "when clicking rank, or
+    # badges, there's a tab at the top for both as well, remove that".
+    check("an old link to Profile's rank tab lands on the Rank screen, with no switcher on it",
+          tabs["screen"] and len(tabs["rendered"]) == 0 and tabs["swipe"] == ["ranks", "badges"], tabs)
     check("Profile stays lit on the bar while the climb is open from it (build 284)", tabs["tabLit"], tabs)
 
     # THE ROAD MAP. Build 232 turned it over: Iron at the top, Supernova
@@ -3056,7 +3057,7 @@ PENAL_CARD = ".picks .pick:has(.pname:text-is('Penal Code'))"
 PENAL_RUN = """()=>{ const o = (typeof order !== 'undefined' && Array.isArray(order)) ? order : [];
   return { n: o.length, srcs: o.map(i => Number(QUESTIONS[i].src)).sort((a, b) => a - b),
            allPenal: o.every(i => (QUESTIONS[i].topic || '').trim() === 'Penal Code'),
-           unitTotal: QUESTIONS.filter(q => (q.topic || '').trim() === 'Penal Code').length }; }"""
+           unitTotal: QUESTIONS.filter(q => (q.topic || '').trim() === 'Penal Code' && !q.versionOnly).length }; }"""
 # Stops the LOADING TEST count so it cannot open a question over whatever
 # the check does next.
 PENAL_HALT = """()=>{ try{ clearInterval(countdownHandle); }catch(e){}
@@ -3124,7 +3125,9 @@ def check_penal_versions(br):
     check("selecting the Penal Code opens a pop-up, and holds the tick until it is answered",
           s1["pop"] and not s1["checked"] and s1["units"] == [], s1)
     opts = s1["opts"]
-    nums = pg.evaluate("""()=>({ whole: QUESTIONS.filter(q => (q.topic||'').trim() === 'Penal Code').length })""")
+    # The whole unit is the study guide's 340 (build 300): the second #84,
+    # flagged versionOnly, belongs to the slides 0-85 version alone.
+    nums = pg.evaluate("""()=>({ whole: QUESTIONS.filter(q => (q.topic||'').trim() === 'Penal Code' && !q.versionOnly).length })""")
     short = [o for o in opts if ("0–85" in o or "0-85" in o)]
     whole = [o for o in opts if o not in short]
     check("two choices: the whole unit, and the one from slides 0-85 of the PowerPoint",
@@ -5768,7 +5771,7 @@ def check_b284(br):
       showProfile(); await wait(900);
       const plate = document.querySelector('.profile-rankplate');
       if(plate) plate.click(); await wait(900);
-      out.rankOpens = !!document.querySelector('.screen-ranks') && !!(document.querySelector('.rankstabs .iconbtn.active') || {}).textContent;
+      out.rankOpens = !!document.querySelector('.screen-ranks .rankmap-stop');
       out.profileLit = !!document.querySelector('#bottomtab-profile.active');
       out.noteLine = !!document.querySelector('.rankhero-next');
       const back = document.querySelector('.screen-ranks .back-link');
@@ -6570,8 +6573,9 @@ def check_b298(br):
             for(let i = 0; i < 300 && document.querySelectorAll('.cosmic-rank-anim').length < lit(); i++) await wait(100);
             const wraps = [...document.querySelectorAll('.cosmic-rank-anim')];
             out.lit = lit(); out.playing = wraps.length;
-            out.running = wraps.every(wr => { const st = wr.querySelector('.rk-strip'), im = wr.querySelector('img');
-              const a = [...st.getAnimations(), ...im.getAnimations()]; return a.length === 2 && a.every(x => x.playState === 'running'); });
+            /* one animation on one image since build 300 (two clocks drifted) */
+            out.running = wraps.every(wr => { const im = wr.querySelector('img');
+              const a = [...wr.querySelectorAll('*')].flatMap(e => e.getAnimations()); return !!im && a.length === 1 && a.every(x => x.playState === 'running'); });
             out.svgHidden = wraps.every(wr => getComputedStyle(wr.previousElementSibling).visibility === 'hidden');
             out.aligned = wraps.every(wr => { const a = wr.getBoundingClientRect(), b = wr.parentElement.getBoundingClientRect();
               return Math.abs(a.left - b.left) < 1.5 && Math.abs(a.width - b.width) < 3; });
@@ -6689,18 +6693,24 @@ def check_b298(br):
         ctx.close()
     # "if it's in that version, it also needs to be in the entire unit ... every single question from the guide"
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
-    r = pg.evaluate("""()=>{ const pc = QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === 'Penal Code');
+    r = pg.evaluate("""()=>{ const all = QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === 'Penal Code');
+      /* the WHOLE unit, as a run draws it (build 300: the repeat is the 0-85 version's only) */
+      cfg.mode = 'drill'; cfg.units = ['Penal Code']; cfg.source = 'all'; cfg.versions = {};
+      const pc = poolNow();
       const srcs = pc.map(i => QUESTIONS[i].src);
-      const v = pc.filter(i => inChosenVersion(i, { 'Penal Code': 'test' }));
+      const v = all.filter(i => inChosenVersion(i, { 'Penal Code': 'test' }));
       const q84 = QUESTIONS.find(q => q.topic === 'Penal Code' && q.src === 84).q;
       const days = []; for(let d = 0; d < 400; d++){ const k = new Date(2026, 9, 1 + d); days.push(dailyQuestionIndexFor(k.getFullYear() + '-' + String(k.getMonth() + 1).padStart(2, '0') + '-' + String(k.getDate()).padStart(2, '0'))); }
-      return { n: pc.length, srcs, version: v.length, versionIn: v.every(i => pc.indexOf(i) >= 0), twice84: v.filter(i => QUESTIONS[i].q === q84).length,
-               keysUnique: new Set(pc.map(i => KEYS[i])).size === pc.length, repeatLast: QUESTIONS[QUESTIONS.length - 1].repeatOf === 84,
+      return { n: pc.length, srcs, size: unitQuestionCount('Penal Code'), version: v.length,
+               versionIn: v.every(i => pc.indexOf(i) >= 0 || QUESTIONS[i].repeatOf === 84), twice84: v.filter(i => QUESTIONS[i].q === q84).length,
+               keysUnique: new Set(all.map(i => KEYS[i])).size === all.length, repeatLast: QUESTIONS[QUESTIONS.length - 1].repeatOf === 84,
                dailyRepeat: days.some(i => QUESTIONS[i] && QUESTIONS[i].repeatOf != null) }; }""")
     guide = [n for n in range(1, 347) if n not in (122, 137, 148, 237, 256, 258)]
-    check("the whole Penal Code unit is every one of the study guide's 340 questions, plus #84's second appearance in the deck: 341",
-          r["n"] == 341 and sorted(x for x in r["srcs"] if x != 347) == guide and 347 in r["srcs"], (r["n"], len(r["srcs"])))
-    check("the slides 0-85 version is the deck's 57, #84 twice, and every one of them is in the whole unit too",
+    # Build 300: "remove it from the entire unit one, the entire unit one
+    # should be 340 questions not 341" - the second #84 is the 0-85 version's only.
+    check("the whole Penal Code unit is exactly the study guide's 340 questions - #84 once, no repeat",
+          r["n"] == 340 and sorted(r["srcs"]) == guide and 347 not in r["srcs"] and r["size"] == 340, (r["n"], len(r["srcs"]), r["size"]))
+    check("the slides 0-85 version is the deck's 57, #84 twice, and every other one of them is in the whole unit too",
           r["version"] == 57 and r["twice84"] == 2 and r["versionIn"], (r["version"], r["twice84"], r["versionIn"]))
     check("the repeat has its own identity, sits at the end of the bank (no other question moves), and is never a daily question",
           r["keysUnique"] and r["repeatLast"] and not r["dailyRepeat"], r)
@@ -6730,7 +6740,7 @@ def check_b299(br):
     you unlock something ... the customize button in the profile box has a
     dot ... and then within customize put a dot ... over the new thing
     that goes away once you click it". Written against 298, where both fail."""
-    print("\n67. build 299: the keyboard hint is centred; a yellow dot for anything new; every flare moves")
+    print("\n67. build 300: the keyboard hint is centred; a yellow dot for anything new; every flare moves; Rank and Badges stand alone")
     for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
         r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
@@ -6790,12 +6800,15 @@ def check_b299(br):
             showProfile('profile'); await wait(600);
             out.badgeDot = !!document.querySelector('.profile-badgesect .new-dot');
             out.rankDotBefore = !!document.querySelector('.profile-rankplate .new-dot');
+            /* each opens on its own - no Rank/Badges switcher (build 299) */
             showRanksScreen('ranks'); await wait(800);
-            const seg = () => [...document.querySelectorAll('.rankstabs .iconbtn')];
-            out.segLabels = seg().map(b => b.textContent);
-            out.badgesSegDot = !!seg()[1].querySelector('.new-dot');
-            seg()[1].click(); await wait(900);
-            out.badgesSegAfter = !!seg()[1].querySelector('.new-dot');
+            out.rankScreen = { switcher: document.querySelectorAll('.screen-ranks .navsegment, .screen-ranks .iconbtn').length,
+              map: !!document.querySelector('.screen-ranks .rankmap-stop'), badges: !!document.querySelector('.screen-ranks .badges-tab'),
+              head: document.getElementById('count') ? document.getElementById('count').textContent : null };
+            showRanksScreen('badges'); await wait(900);
+            out.badgeScreen = { switcher: document.querySelectorAll('.screen-ranks .navsegment, .screen-ranks .iconbtn').length,
+              map: !!document.querySelector('.screen-ranks .rankmap-stop'), badges: !!document.querySelector('.screen-ranks .badges-tab'),
+              head: document.getElementById('count') ? document.getElementById('count').textContent : null };
             const tdots = [...document.querySelectorAll('.badges-tab .badge-tile .new-dot')];
             out.tileDots = tdots.length;
             const tile = tdots[0] && tdots[0].closest('.badge-tile');
@@ -6811,12 +6824,9 @@ def check_b299(br):
               store.rankMapSeen = held - 1;
               showProfile('profile'); await wait(600);
               out.rankDot = !!document.querySelector('.profile-rankplate .new-dot');
-              showRanksScreen('badges'); await wait(800);
-              out.rankSegDot = !!seg()[0].querySelector('.new-dot');
-              seg()[0].click();
+              showRanksScreen('ranks');
               for(let k = 0; k < 40 && store.rankMapSeen !== held; k++) await wait(250);
               out.rankSeenNow = store.rankMapSeen === held;
-              out.rankSegAfter = !!seg()[0].querySelector('.new-dot');
               showProfile('profile'); await wait(600);
               out.rankDotAfter = !!document.querySelector('.profile-rankplate .new-dot');
             }
@@ -6824,20 +6834,21 @@ def check_b299(br):
           return out; }""")
         check(f"{dev}: rank/badge dots: no error", not r2.get("threw"), r2.get("threw", ""))
         check(f"{dev}: an up-to-date rank carries no dot", r2.get("rankDotBefore") is False, r2.get("rankDotBefore"))
-        check(f"{dev}: a new badge puts a dot on Profile's badge medal and on the Badges tab label",
-              r2.get("badgeDot") and r2.get("badgesSegDot"), (r2.get("badgeDot"), r2.get("badgesSegDot"), r2.get("segLabels")))
-        check(f"{dev}: in the case the dot is on that one badge, and the tab label's goes once you are there",
-              r2.get("tileDots") == 1 and r2.get("tileName") == r2.get("unit") and not r2.get("badgesSegAfter"),
-              (r2.get("tileDots"), r2.get("tileName"), r2.get("unit"), r2.get("badgesSegAfter")))
+        rs, bs = r2.get("rankScreen") or {}, r2.get("badgeScreen") or {}
+        check(f"{dev}: Rank and Badges each open on their own, with no switcher at the top",
+              rs.get("switcher") == 0 and bs.get("switcher") == 0 and rs.get("map") and not rs.get("badges")
+              and bs.get("badges") and not bs.get("map") and rs.get("head") == "Rank" and bs.get("head") == "Badges", (rs, bs))
+        check(f"{dev}: a new badge puts a dot on Profile's badge medal", r2.get("badgeDot"), r2.get("badgeDot"))
+        check(f"{dev}: in the case the dot is on that one badge",
+              r2.get("tileDots") == 1 and r2.get("tileName") == r2.get("unit"),
+              (r2.get("tileDots"), r2.get("tileName"), r2.get("unit")))
         check(f"{dev}: tapping the badge clears its dot and Profile's, and remembers it",
               r2.get("tileAfter") == 0 and r2.get("badgeSaved") and not r2.get("badgeDotAfter"),
               (r2.get("tileAfter"), r2.get("badgeSaved"), r2.get("badgeDotAfter")))
         check(f"{dev}: the fixture holds a rank, so the rank-up case is exercised", (r2.get("held") if r2.get("held") is not None else -1) >= 0, r2.get("held"))
-        check(f"{dev}: a rank-up the road map has not shown puts a dot on Profile's rank coin and on the Rank tab label",
-              r2.get("rankDot") and r2.get("rankSegDot"), (r2.get("rankDot"), r2.get("rankSegDot")))
-        check(f"{dev}: opening the Rank tab plays the map, and that clears both",
-              r2.get("rankSeenNow") and not r2.get("rankSegAfter") and not r2.get("rankDotAfter"),
-              (r2.get("rankSeenNow"), r2.get("rankSegAfter"), r2.get("rankDotAfter")))
+        check(f"{dev}: a rank-up the road map has not shown puts a dot on Profile's rank coin", r2.get("rankDot"), r2.get("rankDot"))
+        check(f"{dev}: opening Rank plays the map, and that clears it",
+              r2.get("rankSeenNow") and not r2.get("rankDotAfter"), (r2.get("rankSeenNow"), r2.get("rankDotAfter")))
         # "What if the dot was also on the bottom tab for profile as well",
         # "what about it being yellow?", and "the animations only happen to
         # the flare you have unlocked on the main menu, should still be all
@@ -6932,6 +6943,108 @@ def check_b299(br):
         ctx.close()
 
 
+def check_b300(br):
+    """Build 300. "The bubble flares on home, slight bug or something where
+    they are slightly shaking? And not all of them are animating
+    properly/smoothly." Three causes, each asserted: two stepped clocks that
+    drifted (a wrong frame at every row change), sheet cells that landed on
+    half pixels at 3x, and a cache keyed by build so every update
+    re-recorded every flare. Written against 299, where it fails."""
+    print("\n68. build 300: the Home flares play on one clock, on whole pixels, and are recorded once")
+    for (w, h, dev, dpr) in ((440, 956, "17 Pro Max", 3), (834, 1194, "iPad Pro 11", 2)):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=dpr)
+        r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+          try{
+            document.getElementById('pushing-update')?.remove();
+            store.pendingBadgeUnlocks = []; theme.muteBanners = true; showHome();
+            const all = () => document.querySelectorAll('.cosmic-badge-rank').length;
+            for(let k = 0; k < 600 && document.querySelectorAll('.cosmic-rank-anim').length < all(); k++) await wait(100);
+            const wraps = [...document.querySelectorAll('.cosmic-rank-anim')];
+            out.flares = all(); out.playing = wraps.length;
+            const dprNow = window.devicePixelRatio;
+            out.per = wraps.map(wr => {
+              const imgs = wr.querySelectorAll('img'); const img = imgs[0];
+              const anims = [...wr.querySelectorAll('*')].flatMap(e => e.getAnimations());
+              const frame = img.parentElement, fw = parseFloat(frame.style.width);
+              /* SCREEN pixels: the hero is scaled, so take the ancestors' scale too */
+              const badge = wr.parentElement, S = badge.getBoundingClientRect().width / parseFloat(getComputedStyle(badge).width);
+              const res = { imgs: imgs.length, anims: anims.length, running: anims.every(a => a.playState === 'running'),
+                frameDev: fw * S * dprNow, wrong: 0, offPx: 0 };
+              if(anims.length !== 1) return res;
+              /* walk the whole loop: at the middle of every frame and just
+                 after every frame boundary, the frame on show must be that one */
+              const a = anims[0], L = Number(a.effect.getTiming().duration);
+              const cols = Math.round(img.offsetWidth / fw), n = a.effect.getKeyframes().length - 1;
+              a.pause();
+              for(let k = 0; k < n; k++){
+                for(const t of [(k + 0.5) * L / n, k * L / n + 0.5]){
+                  a.currentTime = t;
+                  const m = new DOMMatrix(getComputedStyle(img).transform);
+                  const col = Math.round(-m.m41 / fw), row = Math.round(-m.m42 / fw);
+                  if(row * cols + col !== k) res.wrong++;
+                  for(const v of [m.m41 * S * dprNow, m.m42 * S * dprNow]) if(Math.abs(v - Math.round(v)) > 0.02) res.offPx++;
+                }
+              }
+              a.play();
+              res.n = n;
+              return res;
+            });
+            /* recorded once: the cache key is the drawing, not the build */
+            const keys = window.caches ? (await (await caches.open('class26e.rk-sheets')).keys()).map(k => new URL(k.url).pathname) : [];
+            out.keys = keys.length; out.buildKeyed = keys.some(k => k.indexOf(encodeURIComponent(APP_BUILD)) >= 0);
+            out.v3 = keys.filter(k => k.indexOf('/__rk/v3/') === 0).length;
+            /* a second Home reuses them: all playing again almost at once */
+            showProfile('profile'); await wait(400); showHome();
+            const t0 = performance.now();
+            for(let k = 0; k < 100 && document.querySelectorAll('.cosmic-rank-anim').length < all(); k++) await wait(50);
+            out.againMs = Math.round(performance.now() - t0); out.againPlaying = document.querySelectorAll('.cosmic-rank-anim').length;
+          } catch(e){ out.threw = String(e && e.stack || e); }
+          return out; }""")
+        check(f"{dev}: no error", not r.get("threw"), r.get("threw", ""))
+        per = r.get("per") or []
+        check(f"{dev}: every flare on Home is playing ({r.get('flares')})",
+              r.get("flares", 0) > 0 and r.get("playing") == r.get("flares"), (r.get("flares"), r.get("playing")))
+        check(f"{dev}: each is ONE animation on ONE image - no second clock to drift",
+              per and all(p["imgs"] == 1 and p["anims"] == 1 and p["running"] for p in per), [(p["imgs"], p["anims"]) for p in per])
+        check(f"{dev}: the frame on show is the right one at every moment of the loop, row changes included (no shake)",
+              per and all(p.get("anims") == 1 and p.get("wrong") == 0 for p in per), [p.get("wrong") for p in per])
+        check(f"{dev}: every frame step lands on whole device pixels (no shimmer)",
+              per and all(p.get("anims") == 1 and p.get("offPx") == 0 and isinstance(p.get("frameDev"), (int, float))
+                          and abs(p["frameDev"] - round(p["frameDev"])) < 0.02 for p in per),
+              [(p.get("offPx"), p.get("frameDev") if not isinstance(p.get("frameDev"), (int, float)) else round(p["frameDev"], 2)) for p in per])
+        check(f"{dev}: 24 frames a second (144 over the 6s loop)", per and all(p.get("n") == 144 for p in per), [p.get("n") for p in per])
+        check(f"{dev}: the sheets are cached by drawing, not by build, so an update does not re-record them",
+              r.get("keys", 0) > 0 and not r.get("buildKeyed") and r.get("v3") == r.get("keys"), (r.get("keys"), r.get("buildKeyed"), r.get("v3")))
+        check(f"{dev}: coming back to Home, every flare is playing again within a second",
+              r.get("againPlaying") == r.get("flares") and r.get("againMs", 9999) < 1000, (r.get("againPlaying"), r.get("againMs")))
+        ctx.close()
+
+    # "Remove it from the entire unit one, the entire unit one should be 340
+    # questions not 341" - the card says so, and a whole-unit run of 340
+    # is still a whole unit (its hundo counts); the 0-85 version keeps 57.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      try{
+        document.getElementById('pushing-update')?.remove();
+        cfg.mode = 'drill'; cfg.units = []; cfg.versions = {}; cfg.source = 'all'; showSetup(); await wait(700);
+        const row = [...document.querySelectorAll('.pick')].find(x => (x.querySelector('input') || {}).value === 'Penal Code');
+        out.card = row ? (row.querySelector('.pcount') || {}).textContent : null;
+        cfg.units = ['Penal Code']; cfg.versions = {};
+        order = poolNow(); out.whole = order.length; out.full = isFullUnitRun();
+        out.covered = unitsFullyCoveredBy(order);
+        cfg.versions = { 'Penal Code': 'test' }; out.test = poolNow().length;
+        out.testHas347 = poolNow().some(i => QUESTIONS[i].src === 347);
+        cfg.versions = {};
+      } catch(e){ out.threw = String(e && e.stack || e); }
+      return out; }""")
+    check("Penal Code: no error", not r.get("threw"), r.get("threw", ""))
+    check("Penal Code: the unit card says 340 questions", r.get("card") == "340 questions", r.get("card"))
+    check("Penal Code: a whole-unit run is 340 and counts as the full unit (its hundo still lands)",
+          r.get("whole") == 340 and r.get("full") is True and r.get("covered") == ["Penal Code"], (r.get("whole"), r.get("full"), r.get("covered")))
+    check("Penal Code: the slides 0-85 version still has its 57, the second #84 included",
+          r.get("test") == 57 and r.get("testHas347"), (r.get("test"), r.get("testHas347")))
+    ctx.close()
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     only = os.environ.get("ONLY_B245")
@@ -7020,6 +7133,7 @@ def main():
             check_b297(br)
             check_b298(br)
             check_b299(br)
+            check_b300(br)
         finally:
             br.close()
     SERVER.shutdown()

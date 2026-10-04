@@ -255,6 +255,44 @@ def main():
                                 if hf[k] is not None and 0 <= hf[k] < 12:
                                     fails.append(f"{tag}: Start Studying clears the {what} by only {hf[k]}px")
 
+                        # --- The version label on a phone (build 300): "can be put
+                        # on the phone ... the very bottom left corner, with just
+                        # the letter v". It lives in the home-indicator strip under
+                        # the tab bar, so: where that strip exists (an installed
+                        # phone with a bottom inset of 20px or more) it is shown,
+                        # in the left corner, wholly below the bar, clear of the
+                        # indicator in the middle and on screen; where there is no
+                        # strip it stays off, as it was.
+                        if vw < 640:
+                            # Measured once its entrance has finished (it arrives 6px
+                            # low and rises), and by the TEXT, not the button: the
+                            # button carries tap padding pulled back out with a
+                            # negative margin, and invisible padding past the edge
+                            # is not a label running off the screen.
+                            vl = pg.evaluate("""async ()=>{ const v=document.querySelector('.homeversion'), b=document.querySelector('.bottomtabs');
+                              if(!v||!b) return null;
+                              const settle = [v, ...(v.parentElement ? [v.parentElement] : [])].flatMap(e => e.getAnimations ? e.getAnimations() : []).map(a => a.finished.catch(()=>{}));
+                              await Promise.race([Promise.all(settle), new Promise(r => setTimeout(r, 2500))]);
+                              const s=v.querySelector('.homeversion-short');
+                              const r=(s && getComputedStyle(s).display!=='none' ? s : v).getBoundingClientRect(), br=b.getBoundingClientRect();
+                              return {shown: r.width>0 && getComputedStyle(v).display!=='none', l:r.left, r:r.right, t:r.top, b:r.bottom,
+                                      barBottom:br.bottom, text:(s&&getComputedStyle(s).display!=='none')?s.textContent:v.textContent};}""")
+                            strip = mode == "installed" and I[2] >= 20
+                            if vl is not None:
+                                if strip and not vl["shown"]:
+                                    fails.append(f"{tag}: the version label is missing from the bottom-left corner")
+                                elif strip:
+                                    if vl["t"] < vl["barBottom"] + 2:
+                                        fails.append(f"{tag}: the version label touches the tab bar ({round(vl['t'])} vs bar bottom {round(vl['barBottom'])})")
+                                    if vl["b"] > H or vl["l"] < 0:
+                                        fails.append(f"{tag}: the version label runs off the screen ({round(vl['l'])},{round(vl['b'])} vs H {H})")
+                                    if vl["l"] > 40 or vl["r"] > vw / 2 - 70:
+                                        fails.append(f"{tag}: the version label is not in the bottom-left corner (left {round(vl['l'])}, right {round(vl['r'])})")
+                                    if not str(vl["text"]).startswith("v"):
+                                        fails.append(f"{tag}: the version label reads {vl['text']!r}, not 'v...'")
+                                elif vl["shown"]:
+                                    fails.append(f"{tag}: the version label shows on a phone with no room under the tab bar")
+
                         # --- The grey bar, measured the only way that means
                         # anything: what body::before paints at the bottom edge
                         # against what html falls back to there. body::before is
