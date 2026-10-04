@@ -54,6 +54,8 @@ KNOWN = {
     "cx-bg-rise": "shifted by exactly one 12-unit period of the rising layout",
     "cx-bg-ripple": "a ring that fades to nothing as it spreads",
     "cx-sand": "Timekeeper's sand: shifted by exactly one grain pitch (.5)",
+    # Build 304.
+    "cx-sg3-orbit": "Horizon's disk: shifted by exactly one lap (18.78 = the ellipse's circumference = its dash + gap)",
     # Build 235: the sleeping character's Zzz.
     "char-zzz": "a letter fades in beside the head and out as it drifts up",
     # Build 235: the characters' own motion (all invisible at both ends, or a whole turn).

@@ -14503,6 +14503,125 @@
   @keyframes cx-sand{ from{ transform:none; } to{ transform:translateY(.5px); } }
   /* Asleep, the visor dims and the dial's hands stop where they are. */
   .char-sleep .avatarchar-svg :is(.cx-fx-code, .cx-fx-grid){ opacity:.35; }
+  /* ---- BUILD 304: THE ONES THAT DID NOTHING ----
+     "Umbra and horizon characters animations are super lame, the
+     characters don't even do anything, improve that. Same with the
+     marksmen, Orion, masked one and others ... the mark on the mask could
+     do a lightning strike type of animation in red." Each one now does
+     the thing it is about, on a beat you can see within a couple of
+     seconds of looking at it:
+       Masked One  a red bolt runs down the crack, forks, flashes, and the
+                   head jolts with it
+       Umbra       the crescent eclipses to a corona and back, the void in
+                   the hood turns, a light runs down the rim, wisps rise
+       Horizon     matter orbits the disk round the brow flare, motes
+                   spiral in and go out, bent light ripples off it, a
+                   glint crosses the visor
+       Marksman    takes aim - the eye narrows, red brackets lock on the
+                   scope, the lens catches the light - and the ghillie
+                   stirs in the wind
+       Orion       his constellation is traced across the cowl, line by
+                   line, and the belt's three stars flare in turn
+     and from the audit, the three that only blinked: Zeus's stone eyes
+     light when his storm strikes and a glint runs along the laurel; the
+     Sheriff's eyes watch the street and his star glints; the Detective's
+     eyes slide side to side as headlights cross his hat. The Wizard's
+     crystal gets two orbiting motes.
+     Same rules as every loop here: transform, opacity and a dash offset
+     only, never a filter; each loop ends on its first frame (anything
+     that has to travel does it while invisible), except the disk's lap,
+     listed in check-loops; and everything is under char-live, so a still
+     drawing is unchanged. The second motions on the eyes and the Masked
+     One's head use the separate `translate` / `scale` properties, so the
+     blink and the sway keep running underneath them. */
+  .avatarchar-svg :is(.cx-fx-mk3shag, .cx-fx-mk3fringe){ transform-origin:50% 0%; }
+  /* A sleeping Marksman is not aiming: no lock, no glint (the same lift
+     as the sleep pose's own rule, so it beats the live one). */
+  .char-sleep .avatarchar-svg :is(#cx-none, .cx-fx-mk3lock, .cx-fx-mk3glint){ animation:none; }
+  @media (prefers-reduced-motion:no-preference){
+    /* The Masked One: one 3.8s beat for the bolt, its forks, the glow and the jolt */
+    .char-live .avatarchar-svg .cx-fx-mk3bolt{ animation:cx-mk3-bolt 3.8s linear -1.4s infinite; }
+    .char-live .avatarchar-svg .cx-fx-mk3fork{ animation:cx-mk3-fork 3.8s linear -1.4s infinite; }
+    .char-live .avatarchar-svg .cx-fx-mk3flash{ animation:cx-mk3-flash 3.8s ease-out -1.4s infinite; }
+    .char-live .avatarchar-svg .cx-k-masked .cx-head{ animation:cx-live-sway 7.5s ease-in-out -2s infinite alternate, cx-mk3-jolt 3.8s linear -1.4s infinite; }
+    /* Umbra: a 7s eclipse; the crescent keeps its rock but not its flicker */
+    .char-live .avatarchar-svg .cx-k-umbra .cx-fx-crescent{ animation:cx-live-rock 5.3s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-umshade{ animation:cx-um-shade 7s ease-in-out -1.2s infinite; }
+    .char-live .avatarchar-svg .cx-fx-umcorona{ animation:cx-um-corona 7s ease-in-out -1.2s infinite; }
+    .char-live .avatarchar-svg .cx-fx-umdiamond{ animation:cx-um-diamond 7s ease-out -1.2s infinite; }
+    .char-live .avatarchar-svg .cx-fx-umvortex{ animation:cx-spin-back 16s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-umrim{ animation:cx-um-rim 3.4s ease-in -.4s infinite; }
+    .char-live .avatarchar-svg .cx-fx-umwisp{ animation:cx-um-wisp 4.15s ease-out infinite; }
+    /* Horizon */
+    .char-live .avatarchar-svg .cx-fx-sg3orbit{ animation:cx-sg3-orbit 2.6s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-sg3fall0{ animation:cx-spin 3.1s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-sg3fall1{ animation:cx-spin 3.7s linear -1.2s infinite; }
+    .char-live .avatarchar-svg .cx-fx-sg3fall2{ animation:cx-spin 4.3s linear -2.5s infinite; }
+    .char-live .avatarchar-svg .cx-fx-sg3mote{ animation:cx-sg3-in 2.3s ease-in infinite; }
+    .char-live .avatarchar-svg .cx-fx-sg3fall1 .cx-fx-sg3mote{ animation-delay:-.8s; }
+    .char-live .avatarchar-svg .cx-fx-sg3fall2 .cx-fx-sg3mote{ animation-delay:-1.5s; }
+    .char-live .avatarchar-svg .cx-fx-sg3ripple{ animation:cx-sg3-ripple 3.3s ease-out -.6s infinite; }
+    .char-live .avatarchar-svg .cx-fx-sg3glint{ animation:cx-sg3-glint 3.6s ease-in-out -1s infinite; }
+    /* The Marksman: one 4.4s aim for the squint, the lock, the sheen and the glint */
+    .char-live .avatarchar-svg .cx-k-marksman .cx-eyes{ animation:cx-blink var(--cx-blink, 6s) var(--cx-blink-at, 0s) ease-in-out infinite, cx-mk3-squint 4.4s ease-in-out -1s infinite; }
+    .char-live .avatarchar-svg .cx-fx-mk3lock{ animation:cx-mk3-lock 4.4s ease-out -1s infinite; }
+    .char-live .avatarchar-svg .cx-fx-mk3sheen{ animation:cx-sheen-idle 4.4s ease-in-out -1s infinite; }
+    .char-live .avatarchar-svg .cx-fx-mk3glint{ animation:cx-glint 4.4s ease-in-out -1s infinite; }
+    .char-live .avatarchar-svg .cx-fx-mk3shag{ animation:cx-mk3-wind 2.3s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-mk3fringe{ animation:cx-mk3-wind 1.7s ease-in-out -.4s infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-mk3hood{ animation:cx-mk3-rustle 1.9s ease-in-out -.7s infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-mk3led{ animation:cx-led 2.6s steps(1, end) -.9s infinite; }
+    /* Orion: the trace, the belt (its delays are on the stars), the clasp */
+    .char-live .avatarchar-svg .cx-fx-sa3line0{ animation:cx-sa3-trace 6s ease-in-out -.3s infinite; }
+    .char-live .avatarchar-svg .cx-fx-sa3line1{ animation:cx-sa3-trace 6s ease-in-out -5.4s infinite; }
+    .char-live .avatarchar-svg .cx-fx-sa3belt{ animation:cx-sa3-belt 2.6s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-sa3clasp{ animation:cx-twinkle 3.1s ease-in-out infinite; }
+    /* Zeus: on the scene's bolt beat (cx-fx-bgbolt0, 4.2s from 0) */
+    .char-live .avatarchar-svg .cx-fx-zs3eyes{ animation:cx-zs3-eyes 4.2s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-zs3sheen{ animation:cx-sheen-idle 6.3s ease-in-out -1.1s infinite; }
+    /* The Sheriff, the Detective, the Wizard */
+    .char-live .avatarchar-svg .cx-fx-sh3pupil{ animation:cx-sh3-glance 5.2s ease-in-out -1.5s infinite; }
+    .char-live .avatarchar-svg .cx-fx-sh3glint{ animation:cx-glint 4.6s ease-in-out -2.2s infinite; }
+    .char-live .avatarchar-svg .cx-k-detective .cx-eyes{ animation:cx-blink var(--cx-blink, 6s) var(--cx-blink-at, 0s) ease-in-out infinite, cx-dt3-glance 6.4s ease-in-out -2s infinite; }
+    .char-live .avatarchar-svg .cx-fx-dt3lights{ animation:cx-sheen-idle 5.4s ease-in-out -.8s infinite; }
+    .char-live .avatarchar-svg .cx-fx-wz3orbit{ animation:cx-spin 3.4s linear infinite; }
+    /* A Virtual Room win: the bolt strikes again and again, the eclipse
+       races, the disk spins up, the lock and the glint come fast. */
+    .char-react-win .avatarchar-svg .cx-fx-mk3bolt{ animation:cx-mk3-bolt 1.3s linear infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-mk3fork{ animation:cx-mk3-fork 1.3s linear infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-mk3flash{ animation:cx-mk3-flash 1.3s ease-out infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-umshade{ animation:cx-um-shade 2.4s ease-in-out infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-umcorona{ animation:cx-um-corona 2.4s ease-in-out infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-umdiamond{ animation:cx-um-diamond 2.4s ease-out infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-sg3orbit{ animation:cx-sg3-orbit .8s linear infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-mk3lock{ animation:cx-mk3-lock 1.6s ease-out infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-mk3glint{ animation:cx-glint 1.6s ease-in-out infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-sa3belt{ animation:cx-sa3-belt 1s ease-in-out infinite; }
+  }
+  @keyframes cx-mk3-bolt{ 0%, 55%, 92%, 100%{ stroke-dashoffset:27; opacity:0; } 56%{ opacity:1; } 62%{ stroke-dashoffset:0; opacity:1; } 64%{ opacity:.25; } 66%{ opacity:1; } 72%{ opacity:.85; } 82%{ stroke-dashoffset:0; opacity:0; } }
+  @keyframes cx-mk3-fork{ 0%, 61%, 100%{ opacity:0; } 63%{ opacity:1; } 65%{ opacity:.2; } 67%{ opacity:.95; } 77%{ opacity:0; } }
+  @keyframes cx-mk3-flash{ 0%, 58%, 100%{ opacity:0; } 63%{ opacity:1; } 66%{ opacity:.55; } 68%{ opacity:.9; } 85%{ opacity:0; } }
+  @keyframes cx-mk3-jolt{ 0%, 61%, 72%, 100%{ translate:0 0; } 63%{ translate:.24px -.1px; } 66%{ translate:-.2px .06px; } 69%{ translate:.1px 0; } }
+  @keyframes cx-um-shade{ 0%, 20%, 86%, 100%{ transform:none; } 44%, 60%{ transform:translateX(2.03px) scale(1.42); } }
+  @keyframes cx-um-corona{ 0%, 38%, 100%{ opacity:0; transform:scale(.8); } 46%{ opacity:1; transform:none; } 58%{ opacity:.9; transform:scale(1.1); } 68%{ opacity:0; transform:scale(1.2); } }
+  @keyframes cx-um-diamond{ 0%, 59%, 100%{ opacity:0; transform:scale(.2); } 63%{ opacity:1; transform:scale(1.15) rotate(30deg); } 71%{ opacity:0; transform:scale(.3) rotate(70deg); } }
+  @keyframes cx-um-rim{ 0%, 100%{ stroke-dashoffset:4; opacity:0; } 5%{ opacity:1; } 55%{ stroke-dashoffset:-31; opacity:1; } 58%{ stroke-dashoffset:-31; opacity:0; } }
+  @keyframes cx-um-wisp{ 0%, 100%{ transform:none; opacity:0; } 22%{ opacity:.75; } 82%{ transform:translateY(-2.8px) scale(.45); opacity:0; } }
+  /* one lap of the disk: 18.78 is the ellipse's circumference, and its
+     dash plus gap (2.4 + 16.38), so the end is the start */
+  @keyframes cx-sg3-orbit{ from{ stroke-dashoffset:0; } to{ stroke-dashoffset:-18.78; } }
+  @keyframes cx-sg3-in{ 0%, 100%{ transform:none; opacity:0; } 14%{ opacity:1; } 80%{ transform:translateX(-4.6px) scale(.3); opacity:.9; } 86%{ transform:translateX(-5px) scale(.1); opacity:0; } }
+  @keyframes cx-sg3-ripple{ 0%, 100%{ transform:scale(.8); opacity:0; } 10%{ opacity:.4; } 58%{ transform:scale(3); opacity:0; } }
+  @keyframes cx-sg3-glint{ 0%, 100%{ stroke-dashoffset:1.8; opacity:0; } 6%{ opacity:1; } 40%{ stroke-dashoffset:-10.8; opacity:1; } 44%{ stroke-dashoffset:-10.8; opacity:0; } }
+  @keyframes cx-mk3-squint{ 0%, 30%, 74%, 100%{ scale:1; } 40%, 64%{ scale:1 .55; } }
+  @keyframes cx-mk3-lock{ 0%, 34%, 100%{ opacity:0; transform:scale(1.7); } 46%{ opacity:1; transform:none; } 52%{ opacity:.3; } 56%{ opacity:1; } 64%{ opacity:1; transform:none; } 72%{ opacity:0; transform:scale(.9); } }
+  @keyframes cx-mk3-wind{ from{ transform:skewX(-3deg); } to{ transform:skewX(3.5deg); } }
+  @keyframes cx-mk3-rustle{ from{ rotate:-1.4deg; } to{ rotate:1.6deg; } }
+  @keyframes cx-sa3-trace{ 0%, 100%{ stroke-dashoffset:var(--sa-len); opacity:0; } 3%{ opacity:.85; } 38%{ stroke-dashoffset:0; } 78%{ stroke-dashoffset:0; opacity:.85; } 90%{ stroke-dashoffset:0; opacity:0; } }
+  @keyframes cx-sa3-belt{ 0%, 30%, 100%{ opacity:0; transform:scale(.3); } 40%{ opacity:1; transform:scale(1.25) rotate(45deg); } 54%{ opacity:0; transform:scale(.4) rotate(90deg); } }
+  @keyframes cx-zs3-eyes{ 0%, 4.5%, 30%, 100%{ opacity:0; } 6%{ opacity:1; } 9%{ opacity:.35; } 12%{ opacity:1; } 22%{ opacity:.5; } }
+  @keyframes cx-sh3-glance{ 0%, 24%, 88%, 100%{ transform:none; } 32%, 48%{ transform:translateX(-.6px); } 58%, 76%{ transform:translateX(.6px); } }
+  @keyframes cx-dt3-glance{ 0%, 22%, 86%, 100%{ translate:0 0; } 30%, 46%{ translate:-.7px 0; } 56%, 76%{ translate:.6px 0; } }
   [data-reduce-motion="true"] .avatarchar-svg,
   [data-reduce-motion="true"] .avatarchar-svg *{ animation:none !important; }
 
@@ -34107,6 +34226,15 @@ function drawAvatarCharSVG(charId){
       defs.appendChild(og);
       svg.appendChild(mk("circle", { cx: 32.7, cy: 9.2, r: 3.1, fill: "#8E7CF5", opacity: ".28" }));
       svg.appendChild(mk("circle", { cx: 32.7, cy: 9.2, r: 1.9, fill: "url(#" + oid + ")" }));
+      /* build 304: two motes of light orbit the crystal - a flattened
+         ring, so the turn reads as round (the squash is on the holder,
+         the turn on the motes' own group) */
+      const ring = mk("g", { transform: "translate(32.7 9.2) scale(1 .42) translate(-32.7 -9.2)" });
+      const orbit = mk("g", { class: "cx-fx cx-fx-wz3orbit" });
+      orbit.appendChild(pivot(32.7, 9.2, 3.2));
+      orbit.appendChild(mk("circle", { cx: 35.9, cy: 9.2, r: ".62", fill: "#FFFFFF" }));
+      orbit.appendChild(mk("circle", { cx: 29.5, cy: 9.2, r: ".5", fill: "#E2D8FF" }));
+      ring.appendChild(orbit); svg.appendChild(ring);
     }
     close();
     open("cx-head");
@@ -34442,6 +34570,11 @@ function drawAvatarCharSVG(charId){
       svg.appendChild(mk("circle", { cx: (26 + Math.cos(a) * 2.1).toFixed(2), cy: (33.4 + Math.sin(a) * 2.1).toFixed(2), r: .22, fill: "#FFF2C8" })); });
     svg.appendChild(mk("circle", { cx: 26, cy: 33.4, r: .45, fill: "#9A6A14" }));
     close();
+    /* build 304: the star catches the light now and then, and under the
+       brim the eyes go left and right - a lawman watching the street. */
+    openHidden("cx-fx cx-fx-sh3glint");
+    svg.appendChild(sparkle(27.2, 32.2, 1.5, "#FFF6D8"));
+    close();
     close();
     open("cx-head");
     const skin = headGrad("#C8936A", "#A67650", "#6A4428");
@@ -34452,7 +34585,7 @@ function drawAvatarCharSVG(charId){
     [16.8, 23.2].forEach(cx => {
       svg.appendChild(mk("ellipse", { cx, cy: 18.8, rx: 1.9, ry: .9, fill: amber, opacity: ".35", class: "cx-fx-sheye" }));
       svg.appendChild(mk("path", { d: "M" + (cx - 1.3) + " 18.9 Q" + cx + " 18.2 " + (cx + 1.3) + " 18.9 Q" + cx + " 19.4 " + (cx - 1.3) + " 18.9 Z", fill: "#FFD27A" }));
-      svg.appendChild(mk("circle", { cx, cy: 18.85, r: .3, fill: "#2A1404" }));
+      svg.appendChild(mk("circle", { cx, cy: 18.85, r: .3, fill: "#2A1404", class: "cx-fx-sh3pupil" }));
     });
     close();
     closedEyes([[16.8, 19, 1.4], [23.2, 19, 1.4]], "#2A1404", .5);
@@ -35440,6 +35573,19 @@ function drawAvatarCharSVG(charId){
       svg.appendChild(mk("path", { d: "M" + (cx - 1.9) + " 14.2 Q" + cx + " 13 " + (cx + 1.9) + " 14.2", fill: "none",
                                    stroke: line, "stroke-width": ".45", "stroke-linecap": "round" }));
     });
+    /* BUILD 304: the statue does not breathe, so it was the one character
+       that did nothing at all. When the storm behind it strikes, the
+       blank stone eyes light with the same bolt (cx-zs3-eyes runs on the
+       scene's own 4.2s bolt beat, from the same moment, so the two flash
+       together), and a glint of light runs along the gilt laurel. Inside
+       cx-eyes, so a sleeping Zeus does not glow. */
+    openHidden("cx-fx cx-fx-zs3eyes");
+    [17.3, 22.7].forEach(cx => {
+      svg.appendChild(mk("ellipse", { cx, cy: 14.3, rx: 2.7, ry: 1.4, fill: "#7FD4F5", opacity: ".45" }));
+      svg.appendChild(mk("path", { d: "M" + (cx - 1.8) + " 14.3 Q" + cx + " 13.3 " + (cx + 1.8) + " 14.3 Q" + cx + " 15.4 " + (cx - 1.8) + " 14.3 Z", fill: "#DFF7FF" }));
+      svg.appendChild(mk("ellipse", { cx, cy: 14.3, rx: .8, ry: .42, fill: "#FFFFFF" }));
+    });
+    close();
     close();
     closedEyes([[17.3, 14.2, 1.8], [22.7, 14.2, 1.8]], line, .45);
     /* The Greek nose: brow straight into the bridge, shadowed on the
@@ -35452,12 +35598,18 @@ function drawAvatarCharSVG(charId){
        side, the one colour on the stone. */
     svg.appendChild(mk("path", { d: "M12.8 12.6 Q16 9.6 20 9.4 Q24 9.6 27.2 12.6", fill: "none",
                                  stroke: "#A8822A", "stroke-width": ".55", "stroke-linecap": "round" }));
+    const leafDs = [];
     [[13.4, 11.6, -48], [15.1, 10.3, -32], [17, 9.5, -16], [23, 9.5, 16], [24.9, 10.3, 32], [26.6, 11.6, 48]]
       .forEach(([x, y, rot]) => {
         const leaf = mk("ellipse", { cx: x, cy: y - .25, rx: 1.35, ry: .62, fill: gold });
         leaf.setAttribute("transform", "rotate(" + rot + " " + x + " " + y + ")");
         svg.appendChild(leaf);
+        /* the same leaf as a path, for the glint's clip (build 304) */
+        const a = rot * Math.PI / 180, ccx = x + .25 * Math.sin(a), ccy = y - .25 * Math.cos(a);
+        const p1 = (ccx - 1.35 * Math.cos(a)).toFixed(2) + " " + (ccy - 1.35 * Math.sin(a)).toFixed(2), p2 = (ccx + 1.35 * Math.cos(a)).toFixed(2) + " " + (ccy + 1.35 * Math.sin(a)).toFixed(2);
+        leafDs.push("M" + p1 + " A1.35 .62 " + rot + " 1 1 " + p2 + " A1.35 .62 " + rot + " 1 1 " + p1 + " Z");
       });
+    sheen(leafDs, "cx-fx-zs3sheen", 12, 28, 8.4, 12.8, "#FFFBE6");
 
     /* One cool highlight down the lit side of the face and the shoulder,
        and marble has a sheen rather than a flat bounce. */
@@ -35595,6 +35747,26 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("path", { d: crack + " M23.4 15.4 L21.8 14.6 M23.8 22.4 L25.4 23.2", fill: "none", stroke: red, "stroke-width": ".55", "stroke-linejoin": "round", "stroke-linecap": "round" }));
     svg.appendChild(mk("path", { d: crack, fill: "none", stroke: "#FFD6DA", "stroke-width": ".2", "stroke-linejoin": "round" }));
     close();
+    /* THE STRIKE (build 304): "the mark on the mask could do a lightning
+       strike type of animation in red". Every few seconds a bolt runs
+       down through the mane into the crack and along it, forks off it,
+       flashes and goes out, and the mask glows red round it. The bolt is
+       drawn in by stroke-dashoffset (27 is its length, 26.64, rounded up
+       so the dash covers it); the forks and the glow only fade. Every part is opacity 0 until its keyframes light it, so the
+       still drawing (and Reduce motion) is the crack as it was. */
+    open("cx-fx cx-fx-mk3strike");
+    { const fg = uid + "-mk3f"; const rg = mk("radialGradient", { id: fg });
+      [["0%", red, ".55"], ["60%", red, ".18"], ["100%", red, "0"]].forEach(([o, c, op]) => rg.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
+      defs.appendChild(rg);
+      svg.appendChild(mk("ellipse", { cx: 23.6, cy: 20.4, rx: 5.4, ry: 9.4, fill: "url(#" + fg + ")", opacity: "0", class: "cx-fx-mk3flash" })); }
+    svg.appendChild(mk("path", { d: "M23.4 15.4 L21.4 14.1 L20.3 14.9 M25 17.4 L26.6 16.7 L27 15.3 M23.8 22.4 L25.6 23 L26.2 24.6 M21.9 25.4 L20.1 25.9 L19.3 25.1",
+      fill: "none", stroke: "#FF6470", "stroke-width": ".42", "stroke-linejoin": "round", "stroke-linecap": "round", opacity: "0", class: "cx-fx-mk3fork" }));
+    const bolt = "M26.6 6 L25.3 8.2 L26.7 9.6 L" + crack.slice(1);
+    svg.appendChild(mk("path", { d: bolt, fill: "none", stroke: red, "stroke-width": "1.5", "stroke-linejoin": "round", "stroke-linecap": "round", "stroke-opacity": ".7",
+      "stroke-dasharray": "27 27", opacity: "0", class: "cx-fx-mk3bolt" }));
+    svg.appendChild(mk("path", { d: bolt, fill: "none", stroke: "#FFF1F2", "stroke-width": ".5", "stroke-linejoin": "round", "stroke-linecap": "round",
+      "stroke-dasharray": "27 27", opacity: "0", class: "cx-fx-mk3bolt" }));
+    close();
     /* The eye slots: hollow, angled down to the centre, and burning. */
     open("cx-eyes");
     ["M14.1 18.6 L19.2 20.3 L19 21.5 L14.1 20.4 Z", "M25.9 18.6 L20.8 20.3 L21 21.5 L25.9 20.4 Z"].forEach(d => {
@@ -35691,6 +35863,10 @@ function drawAvatarCharSVG(charId){
     /* A dent in the crown, so it is a fedora and not a bowler. */
     svg.appendChild(mk("path", { d: "M17.2 10 Q20 11.7 22.8 10", fill: "none",
                                  stroke: "#101117", "stroke-width": ".55", "stroke-linecap": "round" }));
+    /* BUILD 304: a car goes by in the rain - its headlights sweep across
+       the felt of the hat - and under the brim the eyes slide left and
+       right, watching (cx-dt3-*). */
+    sheen(["M12.4 16.8 Q12.9 9.2 20 8.7 Q27.1 9.2 27.6 16.8 Z", "M7.2 17.4 Q20 13.6 32.8 17.4 Q20 20.2 7.2 17.4 Z"], "cx-fx-dt3lights", 7.2, 32.8, 8.7, 20.2, "#FFE7B0");
     close();
     return done();
   }
@@ -36061,11 +36237,38 @@ function drawAvatarCharSVG(charId){
     /* the cowl, up to the eyes */
     svg.appendChild(mk("path", { d: "M13.5 18.8 Q20 20.4 26.5 18.8 L25.6 24.8 Q20 28 14.4 24.8 Z", fill: headGrad("#2E3446", "#161A26", "#06070C") }));
     svg.appendChild(mk("path", { d: "M14.2 21.4 Q20 22.8 25.8 21.4 M20 20.2 L20 27", fill: "none", stroke: "#3E465C", "stroke-width": ".3" }));
+    /* ORION HIMSELF, ACROSS THE COWL (build 304): "same with the
+       marksmen, Orion ...". The hunter's constellation is traced on the
+       mask - Betelgeuse and Bellatrix for shoulders, the three stars of
+       the belt, Saiph and Rigel below - and live it is drawn in, line by
+       line, held, and let go; the belt's three stars flare one after
+       another, left to right. At rest the lines and stars simply sit
+       there, which is the drawing. Each line's dash is its own length
+       (--sa-len), so the trace starts exactly empty and ends exactly
+       full. */
+    { const S = { bg: [16.1, 21], bl: [23.9, 20.8], ak: [18.4, 24.1], an: [20, 23.7], mt: [21.6, 23.3], sp: [17.2, 25.6], rg: [23, 25.5] };
+      const line = (keys, cls) => {
+        const pts = keys.map(k => S[k]); let len = 0;
+        for(let i = 1; i < pts.length; i++) len += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+        const L = (len + .05).toFixed(2);
+        svg.appendChild(mk("path", { d: pts.map((p, i) => (i ? "L" : "M") + p[0] + " " + p[1]).join(" "), fill: "none", stroke: neon, "stroke-width": ".2",
+          "stroke-linejoin": "round", "stroke-linecap": "round", opacity: ".55", "stroke-dasharray": L + " " + L, style: "--sa-len:" + L, class: "cx-fx-sa3line " + cls }));
+      };
+      line(["sp", "ak", "bg", "bl", "mt", "rg"], "cx-fx-sa3line0");
+      line(["ak", "an", "mt"], "cx-fx-sa3line1");
+      [["bg", .42, "#FFB37A"], ["bl", .32, "#E6FBFF"], ["sp", .3, "#E6FBFF"], ["rg", .42, "#CFF4FF"], ["ak", .34, "#FFFFFF"], ["an", .34, "#FFFFFF"], ["mt", .34, "#FFFFFF"]]
+        .forEach(([k, r, c]) => svg.appendChild(mk("circle", { cx: S[k][0], cy: S[k][1], r, fill: c })));
+      ["ak", "an", "mt"].forEach((k, i) => {
+        const sp = sparkle(S[k][0], S[k][1], .95, "#F2FDFF");
+        sp.setAttribute("class", "cx-fx-sa3belt"); sp.setAttribute("opacity", "0");
+        sp.setAttribute("style", "animation-delay:" + (-.9 + i * .3).toFixed(2) + "s");
+        svg.appendChild(sp);
+      }); }
     /* the star that pins the cloak at the throat */
     open("cx-fx cx-fx-saclasp");
     svg.appendChild(mk("circle", { cx: 20, cy: 28.6, r: 1.6, fill: neon, opacity: ".25" }));
     svg.appendChild(mk("circle", { cx: 20, cy: 28.6, r: .95, fill: "#C8D2DC", stroke: "#03050C", "stroke-width": ".25" }));
-    svg.appendChild(sparkle(20, 28.6, .9, "#E6FBFF"));
+    { const cs = sparkle(20, 28.6, .9, "#E6FBFF"); cs.setAttribute("class", "cx-fx-sa3clasp"); svg.appendChild(cs); }
     close();
     open("cx-eyes");
     const visor = "M14.4 16.4 L19.2 17.5 L20 17.1 L20.8 17.5 L25.6 16.4 L24.9 17.9 L20.6 18.6 L20 18.3 L19.4 18.6 L15.1 17.9 Z";
@@ -36549,9 +36752,41 @@ function drawAvatarCharSVG(charId){
     /* The hood: a tall point, wide at the shoulders. */
     svg.appendChild(mk("path", { d: "M20 3.8 Q27.4 8.6 29.6 18.6 Q30.8 25.6 27.6 31.2 L12.4 31.2 Q9.2 25.6 10.4 18.6 Q12.6 8.6 20 3.8 Z", fill: cloak }));
     /* The dark inside, where a face should be. */
-    svg.appendChild(mk("path", { d: "M20 10.8 Q26.4 13.4 26.6 21.4 Q26.6 26.6 20 28.6 Q13.4 26.6 13.4 21.4 Q13.6 13.4 20 10.8 Z", fill: "#050409" }));
+    const umFace = "M20 10.8 Q26.4 13.4 26.6 21.4 Q26.6 26.6 20 28.6 Q13.4 26.6 13.4 21.4 Q13.6 13.4 20 10.8 Z";
+    svg.appendChild(mk("path", { d: umFace, fill: "#050409" }));
+    /* BUILD 304: "Umbra and horizon characters animations are super lame,
+       the characters don't even do anything." Three things move now, and
+       each is the shadow doing something:
+         - THE VOID TURNS. Three faint violet arms spiral slowly in the
+           dark where a face should be (cx-fx-umvortex), clipped to it -
+           dark matter, not a face.
+         - THE CRESCENT ECLIPSES. Its shadow slides across until the moon
+           is gone and only a corona is left, a diamond ring flashes as
+           the light comes back, and it is a crescent again (below).
+         - A LIGHT RUNS DOWN THE RIM, and the wisps at the hem rise off it
+           and fade.
+       Only transforms, opacity and one dash offset move. */
+    { const vc = uid + "-umv"; const cp = mk("clipPath", { id: vc });
+      cp.appendChild(mk("path", { d: umFace })); defs.appendChild(cp);
+      const holder = mk("g", { "clip-path": "url(#" + vc + ")" });
+      const sw = mk("g", { class: "cx-fx cx-fx-umvortex" });
+      sw.appendChild(pivot(20, 21.6, 8.4));
+      [0, 1, 2].forEach(k => {
+        let d = "";
+        for(let i = 0; i <= 24; i++){ const t = i / 24, th = k * 2.094 + t * 3.8, r = .7 + t * 7.4;
+          d += (i ? " L" : "M") + (20 + Math.cos(th) * r).toFixed(2) + " " + (21.6 + Math.sin(th) * r * .84).toFixed(2); }
+        sw.appendChild(mk("path", { d, fill: "none", stroke: k === 1 ? "#8B5CF6" : "#A78BFA", "stroke-width": ".4", "stroke-linecap": "round", opacity: ".27" }));
+        const th = k * 2.094 + 2.4, r = .7 + 4.7;
+        sw.appendChild(mk("circle", { cx: (20 + Math.cos(th) * r).toFixed(2), cy: (21.6 + Math.sin(th) * r * .84).toFixed(2), r: ".26", fill: "#DDD6FE", opacity: ".6" }));
+      });
+      holder.appendChild(sw); svg.appendChild(holder); }
     /* The rim light, one side only. */
-    svg.appendChild(mk("path", { d: "M20.4 4.4 Q27.2 9 29.2 18.6 Q30.2 24.8 27.4 30.6", fill: "none", stroke: "#A78BFA", "stroke-width": ".7", "stroke-linecap": "round", opacity: ".85" }));
+    const umRim = "M20.4 4.4 Q27.2 9 29.2 18.6 Q30.2 24.8 27.4 30.6";
+    svg.appendChild(mk("path", { d: umRim, fill: "none", stroke: "#A78BFA", "stroke-width": ".7", "stroke-linecap": "round", opacity: ".85" }));
+    /* the light that runs down it: one 4-unit dash on a 64 pitch, longer
+       than the rim (29.5), so only one is ever on it */
+    svg.appendChild(mk("path", { d: umRim, fill: "none", stroke: "#F5F3FF", "stroke-width": ".85", "stroke-linecap": "round",
+      "stroke-dasharray": "4 60", opacity: "0", class: "cx-fx-umrim" }));
     svg.appendChild(mk("path", { d: "M20.2 11.4 Q26 14 26.2 21.2", fill: "none", stroke: "#7C3AED", "stroke-width": ".5", opacity: ".7" }));
     /* The eyes: two narrow slants, a soft bloom behind each. */
     /* Angled down towards the nose - the scowl, the same rule the Dragon
@@ -36567,8 +36802,28 @@ function drawAvatarCharSVG(charId){
     closedEyes([[16.8, 20.5, 1.9], [23.2, 20.5, 1.9]], "#8B6CD8", .4);
     /* The crescent on the brow, cut the way the Silver emblem cuts
        its moon: a disc minus a disc, one path. */
+    /* Build 304: drawn as the moon's disc with its shadow on it, clipped
+       to the disc, rather than as the cut shape - at rest it is the same
+       crescent to the pixel (outer disc centre 22.77,15.4 r 2.1; the
+       shadow is the old cut, 20.74,15.4 r 1.6, in the face's own black),
+       and live the shadow can move. Sliding 2.03 right and growing 1.42x
+       covers the disc exactly: totality. */
     open("cx-fx cx-fx-crescent");
-    svg.appendChild(mk("path", { d: "M21.3 13.9 A2.1 2.1 0 1 1 21.3 16.9 A1.6 1.6 0 1 0 21.3 13.9 Z", fill: "#C4B5FD" }));
+    { const cg = uid + "-umc"; const rg = mk("radialGradient", { id: cg });
+      [["0%", "#C4B5FD", "0"], ["55%", "#C4B5FD", ".55"], ["70%", "#8B5CF6", ".3"], ["100%", "#8B5CF6", "0"]].forEach(([o, c, op]) => rg.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
+      defs.appendChild(rg);
+      const cor = mk("g", { class: "cx-fx-umcorona", opacity: "0" });
+      cor.appendChild(mk("circle", { cx: 22.77, cy: 15.4, r: 3.9, fill: "url(#" + cg + ")" }));
+      cor.appendChild(mk("circle", { cx: 22.77, cy: 15.4, r: 2.2, fill: "none", stroke: "#EDE9FE", "stroke-width": ".32" }));
+      svg.appendChild(cor);
+      const cp = mk("clipPath", { id: cg + "c" }); cp.appendChild(mk("circle", { cx: 22.77, cy: 15.4, r: 2.1 })); defs.appendChild(cp);
+      const moon = mk("g", { "clip-path": "url(#" + cg + "c)" });
+      moon.appendChild(mk("circle", { cx: 22.77, cy: 15.4, r: 2.1, fill: "#C4B5FD" }));
+      moon.appendChild(mk("circle", { cx: 20.74, cy: 15.4, r: 1.6, fill: "#050409", class: "cx-fx-umshade" }));
+      svg.appendChild(moon);
+      const dia = sparkle(24.7, 14.9, 1.25, "#FFFFFF");
+      dia.setAttribute("class", "cx-fx-umdiamond"); dia.setAttribute("opacity", "0");
+      svg.appendChild(dia); }
     close();
     /* THE FOURTH FLARE, worn (build 277): "Can you incorporate the 4th
        flare in umbra". It holds the cloak closed at the throat - the
@@ -36581,8 +36836,8 @@ function drawAvatarCharSVG(charId){
        ends. */
     close();
     open("cx-fx cx-fx-wisps");
-    [[9, 36.2, 1.2], [13.4, 38.2, .9], [28.2, 36.8, 1.1], [31.6, 34.2, .8], [24.4, 38.6, .7]].forEach(([x, y, r]) =>
-      svg.appendChild(mk("circle", { cx: x, cy: y, r: r, fill: "#8B5CF6", opacity: ".55" })));
+    [[9, 36.2, 1.2], [13.4, 38.2, .9], [28.2, 36.8, 1.1], [31.6, 34.2, .8], [24.4, 38.6, .7]].forEach(([x, y, r], i) =>
+      svg.appendChild(mk("circle", { cx: x, cy: y, r: r, fill: "#8B5CF6", opacity: ".55", class: "cx-fx-umwisp", style: "animation-delay:" + (-i * .83).toFixed(2) + "s" })));
     return done();
   }
 
@@ -36636,6 +36891,10 @@ function drawAvatarCharSVG(charId){
     open("cx-eyes");
     svg.appendChild(mk("path", { d: "M14.6 19.4 Q20 18 25.4 19.4", fill: "none", stroke: iceDeep, "stroke-width": "2.2", "stroke-linecap": "round", opacity: ".45", class: "cx-fx-sgvisor" }));
     svg.appendChild(mk("path", { d: "M14.8 19.4 Q20 18.1 25.2 19.4", fill: "none", stroke: "#FFFFFF", "stroke-width": ".75", "stroke-linecap": "round" }));
+    /* build 304: light bending across the visor - a short bright run
+       crosses the line now and then (the line is 10.5 long) */
+    svg.appendChild(mk("path", { d: "M14.8 19.4 Q20 18.1 25.2 19.4", fill: "none", stroke: "#F4FBFF", "stroke-width": "1.45", "stroke-linecap": "round",
+      "stroke-dasharray": "1.6 30", opacity: "0", class: "cx-fx-sg3glint" }));
     close();
     closedEyes([[20, 19.5, 4.4]], "#9CC8E8", .5);
     open("cx-mouth"); close();
@@ -36643,9 +36902,35 @@ function drawAvatarCharSVG(charId){
        5th in singularity". It was a white sparkle standing in for it; now
        it is the flare itself, in the flare's own colour - bloom, disc,
        white-hot core - the way Umbra wears the fourth. */
+    /* BUILD 304: THE HORIZON PULLS. "Umbra and horizon characters
+       animations are super lame." The flare on the brow is an event
+       horizon, so things fall into it: a tilted accretion disk with a
+       bright clump of matter orbiting round it (a dash run round the
+       ellipse - 18.78 is its circumference, so the dash and gap make one
+       lap and the loop is seamless), motes spiralling in and going out
+       as they reach it (each turns with its group while it falls along
+       the radius), and a ring of bent light rippling off it. The faint
+       half of the disk is drawn behind the flare and the near half in
+       front, so it reads as round. */
+    const disk = "rotate(-14 20 15)";
+    svg.appendChild(mk("ellipse", { cx: 20, cy: 15, rx: 4.4, ry: 1.05, transform: disk, fill: "none", stroke: ice, "stroke-width": ".28", opacity: ".38" }));
     open("cx-fx cx-fx-sgstar");
     wornFlare(20, 15, MYSTERY_COLOR.white, "#DDF4FF", 1);
     close();
+    svg.appendChild(mk("path", { d: "M24.4 15 A4.4 1.05 0 0 1 15.6 15", transform: disk, fill: "none", stroke: ice, "stroke-width": ".32", opacity: ".6" }));
+    /* the tilt sits on a plain holder: on the classed ellipse, the
+       shared transform-origin rule would move the rotate's centre */
+    { const tilt = mk("g", { transform: disk });
+      tilt.appendChild(mk("ellipse", { cx: 20, cy: 15, rx: 4.4, ry: 1.05, fill: "none", stroke: "#FFFFFF", "stroke-width": ".5", "stroke-linecap": "round",
+        "stroke-dasharray": "2.4 16.38", class: "cx-fx-sg3orbit" }));
+      svg.appendChild(tilt); }
+    svg.appendChild(mk("circle", { cx: 20, cy: 15, r: 2, fill: "none", stroke: ice, "stroke-width": ".22", opacity: "0", class: "cx-fx-sg3ripple" }));
+    [0, 1, 2].forEach(k => {
+      const g = mk("g", { class: "cx-fx cx-fx-sg3fall cx-fx-sg3fall" + k });
+      g.appendChild(pivot(20, 15, 5.4));
+      g.appendChild(mk("circle", { cx: 25.2, cy: 15, r: ".46", fill: k === 1 ? "#FFFFFF" : "#BFE6FF", opacity: "0", class: "cx-fx-sg3mote" }));
+      svg.appendChild(g);
+    });
     close();
     return done();
   }
@@ -36868,10 +37153,13 @@ function drawAvatarCharSVG(charId){
     };
     open("cx-body");
     svg.appendChild(mk("path", { d: "M5 40 Q5.6 30.6 13 28.4 L27 28.4 Q34.4 30.6 35 40 Z", fill: headGrad("#4E5A30", "#2E361C", "#12160A") }));
+    /* build 304: the strips are grouped so the wind can move them (cx-fx-mk3shag) */
+    open("cx-fx cx-fx-mk3shag");
     for(let i = 0; i < 22; i++){
       const x = 5.6 + i * 1.32, y = 29.4 + Math.abs(i - 10.5) * .28 + (i % 3) * .5;
       svg.appendChild(strip(x, y, 3.6 + (i * 7 % 5) * .6, 78 + (i * 37 % 26), .5, GREENS[i % GREENS.length]));
     }
+    close();
     close();
     /* THE RIFLE, across the body: stock low on the left, scope, and the
        suppressor up past the right shoulder */
@@ -36884,12 +37172,13 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(seg(.84, 1, 1.9, "#22262C"));
     svg.appendChild(seg(.46, .63, 1.6, "#2A3038", -1.05, -.64));
     svg.appendChild(seg(.47, .62, .4, "#6A747E", -1.45, -.88));
-    { const e = P(.63); svg.appendChild(mk("circle", { cx: f(e[0] - 1.05), cy: f(e[1] - .64), r: .7, fill: lime, opacity: ".85" })); }
+    { const e = P(.63); svg.appendChild(mk("circle", { cx: f(e[0] - 1.05), cy: f(e[1] - .64), r: .7, fill: lime, opacity: ".85", class: "cx-fx-mk3led" })); }
     close();
     open("cx-head");
     const ghillie = headGrad("#5E6C34", "#3A4422", "#181C0C");
     svg.appendChild(mk("path", { d: "M20 5.8 Q29.6 6.4 30.2 18 Q30.6 25.4 28 30 L12 30 Q9.4 25.4 9.8 18 Q10.4 6.4 20 5.8 Z", fill: ghillie }));
     /* the shag round the hood's edge, every strip pointing out and down */
+    open("cx-fx cx-fx-mk3hood");
     for(let k = 0; k <= 24; k++){
       const t = (-200 + k * 9.2) * Math.PI / 180;
       const x = 20 + Math.cos(t) * 10, y = 18 + Math.sin(t) * 12;
@@ -36897,6 +37186,7 @@ function drawAvatarCharSVG(charId){
       svg.appendChild(strip(x, y, 3.2 + (k * 5 % 4) * .7, ang, .55, GREENS[(k * 3) % GREENS.length]));
       if(k % 3 === 1) svg.appendChild(strip(x + Math.cos(ang * Math.PI / 180) * 1.6, y + Math.sin(ang * Math.PI / 180) * 1.6, 1.8, ang, .32, "#B4B86A"));
     }
+    close();
     /* THE FACE, in camo paint */
     const skin = headGrad("#D8A47A", "#B88458", "#7A5234");
     /* BUILD 275, "a smidge better": a jaw that tapers rather than a box,
@@ -36919,8 +37209,10 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(paint);
     svg.appendChild(mk("path", { d: "M20.3 20.4 Q21.2 22.6 19.9 23.2", fill: "none", stroke: "#6A4428", "stroke-width": ".45", "stroke-linecap": "round", opacity: ".7" }));
     /* the fringe of strips hanging over the brow */
+    open("cx-fx cx-fx-mk3fringe");
     [[15.2, 13.8, 2.8, 96, 0], [16.8, 13.4, 3.4, 84, 1], [18.4, 13.2, 2.6, 92, 2], [21.6, 13.2, 2.4, 88, 3], [23.2, 13.4, 3.2, 98, 4], [24.8, 13.8, 2.6, 86, 5]]
       .forEach(([x, y, l, a, c]) => svg.appendChild(strip(x, y, l, a, .5, GREENS[c])));
+    close();
     /* the open eye, narrowed, and a hard brow */
     svg.appendChild(mk("path", { d: "M21.6 18.6 L25.4 18.2", stroke: "#1A120C", "stroke-width": ".8", "stroke-linecap": "round" }));
     open("cx-eyes");
@@ -36938,12 +37230,21 @@ function drawAvatarCharSVG(charId){
     close();
     svg.appendChild(mk("circle", { cx: 16.8, cy: 20.4, r: 3, fill: "#16191E", stroke: "#56606B", "stroke-width": ".45" }));
     svg.appendChild(mk("circle", { cx: 16.8, cy: 20.4, r: 2.3, fill: "url(#" + lensId + ")" }));
+    /* BUILD 304: "same with the marksmen". He AIMS now, on one beat
+       (cx-mk3-*, 4.4s): the eye narrows, red brackets close in on the
+       lens and lock, and as he settles the glass catches the light - a
+       sweep across the lens and a star off its rim. The ghillie strips
+       stir in the wind the whole time, on their own pendulums. */
+    sheen(["M14.5 20.4 A2.3 2.3 0 1 0 19.1 20.4 A2.3 2.3 0 1 0 14.5 20.4 Z"], "cx-fx-mk3sheen", 14.5, 19.1, 18.1, 22.7, "#E8FFD0");
     open("cx-fx cx-fx-reticle");
     svg.appendChild(mk("circle", { cx: 16.8, cy: 20.4, r: 1.35, fill: "none", stroke: lime, "stroke-width": ".3" }));
     svg.appendChild(mk("path", { d: "M16.8 18.3 L16.8 19.6 M16.8 21.2 L16.8 22.5 M14.7 20.4 L16 20.4 M17.6 20.4 L18.9 20.4", stroke: lime, "stroke-width": ".3", "stroke-linecap": "round" }));
     svg.appendChild(mk("circle", { cx: 16.8, cy: 20.4, r: .32, fill: "#FF3B30" }));
     close();
     svg.appendChild(mk("path", { d: "M15.1 19.2 Q15.7 18.4 16.7 18.2", fill: "none", stroke: "#FFFFFF", "stroke-width": ".36", "stroke-linecap": "round", opacity: ".6" }));
+    svg.appendChild(mk("path", { d: "M14.6 19.4 L14.6 18.2 L15.8 18.2 M17.8 18.2 L19 18.2 L19 19.4 M19 21.4 L19 22.6 L17.8 22.6 M15.8 22.6 L14.6 22.6 L14.6 21.4",
+      fill: "none", stroke: "#FF3B30", "stroke-width": ".38", "stroke-linecap": "round", "stroke-linejoin": "round", opacity: "0", class: "cx-fx-mk3lock" }));
+    { const gl = sparkle(15.2, 18.9, 1.5, "#FFFFFF"); gl.setAttribute("class", "cx-fx-mk3glint"); gl.setAttribute("opacity", "0"); svg.appendChild(gl); }
     open("cx-fx cx-fx-led");
     svg.appendChild(mk("circle", { cx: 14.1, cy: 18.3, r: .36, fill: "#FF3B30" }));
     close();
