@@ -7590,7 +7590,8 @@
      invisible. Inert, none of it runs. The global reduce-motion rule
      switches all of it off without naming it. */
   @keyframes start-ready-halo{
-    0%{ opacity:.6; transform:scale(1); }
+    0%{ opacity:0; transform:scale(1); }
+    12%{ opacity:.6; transform:scale(1.02, 1.04); }
     65%, 100%{ opacity:0; transform:scale(1.14, 1.32); }
   }
   @keyframes start-ready-sheen{
@@ -15765,7 +15766,7 @@
   @keyframes bl-rise{ from{ transform:translateY(0); } to{ transform:translateY(-50%); } }
   @keyframes bl-sweep{ from{ transform:rotate(-14deg); } to{ transform:rotate(14deg); } }
   @keyframes bl-blink{ 0%{ opacity:1; } 12%{ opacity:.12; } 100%{ opacity:.12; } }
-  @keyframes bl-cross{ 0%{ transform:translateX(0); } 100%{ transform:translateX(-1000%); } }
+  @keyframes bl-cross{ 0%{ transform:translateX(0); } 100%{ transform:translateX(-1150%); } }
   @keyframes bl-meteor{ 0%,58%{ transform:translate(0,0); opacity:0; } 60%{ opacity:1; } 72%{ transform:translate(-60%, 60%); opacity:0; } 100%{ transform:translate(-60%, 60%); opacity:0; } }
   @keyframes bl-steam{ 0%{ transform:translateY(12%) scaleX(.8); opacity:0; } 25%{ opacity:.75; } 100%{ transform:translateY(-34%) scaleX(1.25); opacity:0; } }
   @keyframes bl-flame{ 0%{ transform:scale(1, 1) skewX(0deg); } 30%{ transform:scale(.9, 1.12) skewX(-5deg); } 65%{ transform:scale(1.05, .94) skewX(3deg); } 100%{ transform:scale(.96, 1.06) skewX(-2deg); } }
@@ -18190,7 +18191,8 @@
   .unlock-card-name{ margin:.2rem 0 .5rem; font-family:var(--serif); font-size:1.55rem; font-weight:700; color:#F3F5F7; line-height:1.15; }
   .unlock-card-desc{ margin:0 auto .85rem; max-width:18rem; font-size:.92rem; line-height:1.4; color:rgba(243,245,247,.86); }
   .unlock-card-bar{ position:relative; height:10px; border-radius:999px; overflow:hidden; margin:0 .2rem;
-    background:rgba(255,255,255,.1); box-shadow:inset 0 1px 2px rgba(0,0,0,.5); isolation:isolate; }
+    background:rgba(255,255,255,.1); box-shadow:inset 0 1px 2px rgba(0,0,0,.5); isolation:isolate;
+    clip-path:inset(0 round 999px); }
   /* GREEN WHILE LOCKED TOO (build 279): "change the locked progress bar
      and make that the green color like how the unlock ones got". It was
      blue until the thing was held; it is the held bar's green now, at
@@ -43572,7 +43574,7 @@ const BANNER_ART = {
     for(let i = 0; i < 20; i++){
       rnd(); rnd();
       const x = 120 + rnd() * 240, y = rnd() * 180, r = 0.6 + rnd() * 1.1;
-      motes += '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(r) + '" fill="#FFE9B8"/><circle cx="' + bnF(x + 6) + '" cy="' + bnF(y + 180) + '" r="' + bnF(r) + '" fill="#FFE9B8"/>';
+      motes += '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(r) + '" fill="#FFE9B8"/><circle cx="' + bnF(x) + '" cy="' + bnF(y + 180) + '" r="' + bnF(r) + '" fill="#FFE9B8"/>';
     }
     const spark = (x, y, r, w) => 'M' + x + ' ' + (y - r) + ' Q' + (x + w) + ' ' + (y - w) + ' ' + (x + r) + ' ' + y + ' Q' + (x + w) + ' ' + (y + w) + ' ' + x + ' ' + (y + r) + ' Q' + (x - w) + ' ' + (y + w) + ' ' + (x - r) + ' ' + y + ' Q' + (x - w) + ' ' + (y - w) + ' ' + x + ' ' + (y - r) + 'Z';
     const SX = HX, SY = 30;
@@ -44192,7 +44194,7 @@ const BANNER_ART = {
       const x = 100 + rnd() * 280, y = rnd() * 180;
       rnd(); rnd();
       const r = bnF(0.8 + rnd() * 1.8), c = rnd() < 0.5 ? "#FFD27A" : "#FF8A3D";
-      embers += '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + r + '" fill="' + c + '"/><circle cx="' + bnF(x + 8) + '" cy="' + bnF(y + 180) + '" r="' + r + '" fill="' + c + '"/>';
+      embers += '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + r + '" fill="' + c + '"/><circle cx="' + bnF(x) + '" cy="' + bnF(y + 180) + '" r="' + r + '" fill="' + c + '"/>';
     }
     /* THE WINGBEAT (build 234): every 6.4s, on top of the steady flap,
        the phoenix raises its wings and drives them down hard. On the
@@ -44819,8 +44821,9 @@ const BANNER_ART = {
     let motes = "";
     for(let i = 0; i < 26; i++){
       const x = 110 + rnd() * 260, y = rnd() * 180, r = 0.7 + rnd() * 1.4, c = rnd() < 0.6 ? "#FFF2CC" : STONES[Math.floor(rnd() * 7)];
-      motes += '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(r) + '" fill="' + c + '" opacity="' + bnF(0.5 + rnd() * 0.5) + '"/>' +
-        '<circle cx="' + bnF(x) + '" cy="' + bnF(y + 180) + '" r="' + bnF(r) + '" fill="' + c + '" opacity="' + bnF(0.5 + rnd() * 0.5) + '"/>';
+      const op = bnF(0.5 + rnd() * 0.5); rnd();
+      motes += '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(r) + '" fill="' + c + '" opacity="' + op + '"/>' +
+        '<circle cx="' + bnF(x) + '" cy="' + bnF(y + 180) + '" r="' + bnF(r) + '" fill="' + c + '" opacity="' + op + '"/>';
     }
     const spark = (x, y, h, v) => 'M' + x + ' ' + (y - v) + ' Q' + bnF(x + h * 0.08) + ' ' + bnF(y - v * 0.08) + ' ' + (x + h) + ' ' + y +
       ' Q' + bnF(x + h * 0.08) + ' ' + bnF(y + v * 0.08) + ' ' + x + ' ' + (y + v) + ' Q' + bnF(x - h * 0.08) + ' ' + bnF(y + v * 0.08) + ' ' + (x - h) + ' ' + y +
@@ -74520,16 +74523,18 @@ function showUnlockDetail(o){
     sheet.appendChild(bar);
     /* FROM THE START, ON EVERY DEVICE (build 304): "when opening up the
        pop to see the green progress bar, it starts in the middle not at
-       the beginning". This bar slid in as a transform (setBarFill), and
-       iOS does not clip a composited, transformed child to a rounded
-       overflow:hidden parent the way Chromium does - so on the phone the
-       fill could show part-way along before it moved. This one bar grows
-       its WIDTH instead: one small element, no layer to escape the clip,
-       and the empty state is painted (two frames) before it fills. */
-    fill.style.width = "0%";
+       the beginning". This bar slides in as a transform (setBarFill -
+       the smooth-bars rule, build 289), and iOS does not clip a
+       composited, transformed child to a rounded overflow:hidden parent
+       the way Chromium does - so on the phone the fill, parked off to the
+       left, could show through part-way along before it moved. The TRACK
+       now clips with clip-path as well (.unlock-card-bar), which iOS does
+       honour for composited children, and the empty state is committed
+       for two frames before the fill is set going. */
+    setBarFill(fill, 0);
     const target = Math.max(2, Math.min(100, Math.round(frac * 1000) / 10));
     setTimeout(() => requestAnimationFrame(() => requestAnimationFrame(() => {
-      fill.style.width = target + "%";
+      setBarFill(fill, target);
     })), 220);
     /* A count under the bar only where it is worth reading: never for a
        one-off ("0/1"), never for a rank step (the note says the rank). */

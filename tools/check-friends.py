@@ -590,8 +590,10 @@ def main():
                    othersTappable: others.length > 0 && others.every(r => r.classList.contains("is-tappable")) };}""")
         check("the board drew its rows", lb["rows"] >= 2, lb)
         check("somebody else's row is tappable", lb["othersTappable"] is True, lb)
-        # NOTHING TO DO WITH YOURSELF, so your own row is not a button.
-        check("and your own row is not", lb["mineTappable"] is False, lb)
+        # REVISED IN 304: "I should be able to click myself on the
+        # leaderboard ... it would say go to profile" - your own row is a
+        # button now, and opens your own card (check-behaviour section 74).
+        check("and so is your own (build 304: it opens your card)", lb["mineTappable"] is True, lb)
 
         sent = pg4.evaluate("""()=>{
           let pushed = 0;

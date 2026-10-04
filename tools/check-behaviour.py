@@ -4666,9 +4666,12 @@ def check_b258(br):
           h.get("card") and h.get("tick") and "Unlocked" in h.get("text", "") and "day one" in h.get("text", "")
           and h.get("stillGhost") and h.get("tapPicks"), h)
     ow = r.get("owl") or {}
-    check("the Knight and the Night Owl are gone; the Ronin is passing a 450-question test, and an old 400 pass does not count",
+    # REVISED IN 304: "Take ronin challenge to 500 questions not 450." The
+    # size is read off the page (RONIN_TEST_SIZE) and the label must say
+    # it - the shape, not the number - and it may never fall below 450.
+    check("the Knight and the Night Owl are gone; the Ronin is passing a test of RONIN_TEST_SIZE (500) questions, and an old 400 pass does not count",
           ow.get("feat") == "bigtest400" and ow.get("name") == "Ronin" and ow.get("owlDrawsAs") == "ninja" and ow.get("locked") is True and ow.get("held") is True
-          and "450" in ow.get("label", "") and ow.get("size") == 450 and ow.get("oldRuleLocked") is True and ow.get("parts") is True and ow.get("knightGone") is True and ow.get("knightDrawsAs") == "ninja", ow)
+          and str(ow.get("size")) in ow.get("label", "") and (ow.get("size") or 0) >= 450 and ow.get("oldRuleLocked") is True and ow.get("parts") is True and ow.get("knightGone") is True and ow.get("knightDrawsAs") == "ninja", ow)
     rl = r.get("release") or {}
     check("before an update reloads, only the Pushing update bar is left and nothing else is animating",
           rl.get("shown") == ["pushing-update"] and rl.get("stage") == 0 and rl.get("running") == 0, rl)
@@ -6989,8 +6992,10 @@ def check_b299(br):
           } catch(e){ out.threw = String(e && e.stack || e); }
           return out; }""")
         check(f"{dev}: podium: no error", not r4.get("threw"), r4.get("threw", ""))
-        check(f"{dev}: last week's top 3 are tappable like any row - everyone but you",
-              r4.get("spots") == 3 and r4.get("tappable") == "Bo,Dee", (r4.get("spots"), r4.get("tappable")))
+        # REVISED IN 304: "I should be able to click myself on the
+        # leaderboard" - your own spot opens your card too (Go to profile).
+        check(f"{dev}: last week's top 3 are tappable like any row - you included (build 304)",
+              r4.get("spots") == 3 and r4.get("tappable") == "Bo,Dee,Me", (r4.get("spots"), r4.get("tappable")))
         check(f"{dev}: tapping one opens that person's card", r4.get("card") == "Bo", r4.get("card"))
         check(f"{dev}: the congratulations popup's podium is not tappable (no card over a card)", r4.get("picTappable") == 0, r4.get("picTappable"))
         # "Level at the bottom, badges between the other two."
@@ -7668,10 +7673,16 @@ def check_b304(br):
           /* the unlock card's bar, from its start */
           showUnlockDetail(characterDetail('hacker'));
           const fill = document.querySelector('.unlock-card-fill'), bar = document.querySelector('.unlock-card-bar');
-          out.barAtOpen = fill ? fill.getBoundingClientRect().width : null;
+          /* what SHOWS of the fill: it is full width and slides in
+             (setBarFill), so the visible part is where it overlaps the
+             track, and that must start at the track's left edge */
+          const shown = () => { const f = fill.getBoundingClientRect(), b = bar.getBoundingClientRect();
+            return { w: Math.max(0, Math.min(f.right, b.right) - Math.max(f.left, b.left)), left: Math.round(Math.max(f.left, b.left) - b.left) }; };
+          out.barClip = bar ? getComputedStyle(bar).clipPath : null;
+          out.barAtOpen = fill && bar ? shown().w : null;
           await wait(1500);
-          out.barLater = fill ? fill.getBoundingClientRect().width : null;
-          out.barLeft = fill && bar ? Math.round(fill.getBoundingClientRect().left - bar.getBoundingClientRect().left) : null;
+          out.barLater = fill && bar ? shown().w : null;
+          out.barLeft = fill && bar ? shown().left : null;
           out.note = (document.querySelector('.unlock-card-note') || {}).textContent || '';
           document.querySelectorAll('.invite-overlay').forEach(n => n.remove());
           /* every unlock card has a line saying how */
@@ -7723,9 +7734,10 @@ def check_b304(br):
         check(dev + ": and Continue picks up on the same question",
               r2.get("inTest") is True and r2.get("pos") == r.get("pos") and r2.get("q") == r.get("q"), (r.get("pos"), r2.get("pos"), r2.get("inTest")))
         check(dev + ": Ronin asks for 500 questions", "500" in (r2.get("ronin") or ""), r2.get("ronin"))
-        check(dev + ": the unlock card's bar starts empty at its left end and fills",
-              r2.get("barAtOpen") is not None and r2["barAtOpen"] < 3 and (r2.get("barLater") or 0) > 3 and r2.get("barLeft") == 0,
-              (r2.get("barAtOpen"), r2.get("barLater"), r2.get("barLeft")))
+        check(dev + ": the unlock card's bar starts empty at its left end and fills, inside a clipped track",
+              r2.get("barAtOpen") is not None and r2["barAtOpen"] < 3 and (r2.get("barLater") or 0) > 3 and r2.get("barLeft") == 0
+              and "inset" in (r2.get("barClip") or ""),
+              (r2.get("barAtOpen"), r2.get("barLater"), r2.get("barLeft"), r2.get("barClip")))
         check(dev + ": every unlock card has a line saying how", r2.get("noNote") == [] and bool(r2.get("note")), (r2.get("noNote"), r2.get("note")))
         check(dev + ": a rank card says what the rank takes", "takes level" in (r2.get("rankNote") or ""), r2.get("rankNote"))
         check(dev + ": the Default banner tile has no theme colour behind it", r2.get("noneBg") == "none", r2.get("noneBg"))

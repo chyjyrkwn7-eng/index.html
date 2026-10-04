@@ -10526,10 +10526,26 @@ than nothing, and starters get nothing, because there is nothing to earn.
 Rank cards say what the rank takes (`TIER_UNLOCKS[k].label`) before where
 you are.
 
-**The unlock card's bar fills from its left end.** It used `setBarFill`
-(a transform), and iOS does not clip a composited, transformed child to a
-rounded `overflow:hidden` parent, so the fill could show part-way along
-before it moved. This one bar animates `width` from 0 after two frames.
+**The unlock card's bar fills from its left end.** It uses `setBarFill`
+(a transform - the smooth-bars rule), and iOS does not clip a composited,
+transformed child to a rounded `overflow:hidden` parent, so the fill parked
+off to the left could show part-way along before it moved. The track now
+clips with `clip-path:inset(0 round 999px)` too, which iOS does honour, and
+the empty state is committed for two frames before the fill starts. (A
+first pass animated `width` instead; that broke the build-289 gate "bars
+fill with a transform, not width" - the gate was right.)
+
+**Banner loops that jumped.** `check-loops` caught three real seams in the
+new layered banners: Midnight Skyline's plane stopped at x=10 instead of
+off the left edge (`bl-cross` is -1150% now); the rising motes and embers
+had each copy 6-8px to the side of the original, so they hopped sideways
+once a cycle; and one set of motes gave each copy its own random opacity,
+so it flickered. The rest are listed in `KNOWN` with their reasons. The
+Start halo faded in from nothing rather than appearing at 60%.
+
+**Older gates re-read for 304's decisions**: Ronin's size is read off the
+page (`RONIN_TEST_SIZE`) rather than pinned at 450, and your own row and
+podium spot are tappable now (check-behaviour section 64, check-friends).
 
 **The Default banner tile** had a theme-coloured gradient behind its art
 that bled out as a rim round the tile; it is a flat `#10131A`, and the
