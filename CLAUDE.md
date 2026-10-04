@@ -10409,3 +10409,78 @@ printed over a sentence. It lives on `<body>` and goes on scroll, on a
 screen change and after 1.8s. `.toast-flag` CSS is now unused. Gate:
 check-behaviour section 72, every matrix size both ways up; fails on 301.
 
+### Build 303 - the test screen, the star, instant feedback, Learn and flashcards
+
+**Top row in a test.** *"The current mode needs to be in the left, and the
+question (60/80) will be centered."* `#testmodelabel` (`runModeTitle()`:
+Drill / Exam / Retake / Virtual Room, nothing on the daily question) on
+the left; `#testqcounter` is absolutely centred on `.top`, so on the
+screen, not in whatever is left between the mode and Pause.
+
+**The timer moved under the progress bar, above the line**, into the slot
+`#count`'s invisible text held (`#timerline` now follows `#meter` in the
+markup, and `.meter ~ .timerline + .count` folds that text line away).
+The divider rule is `.meter:not([hidden]) + .count` OR `+ .timerline +
+.count` - an adjacency selector, so anything put between them has to be
+added to it. **Paused, the clock stays up**: `pauseRun()` and the two
+confirm screens add `.is-paused` (amber number, amber clock icon, a
+PAUSED chip) instead of hiding it; `startTimer()`/`resumeRun()` take it
+off.
+
+**A pick is a press, then the answer** (`renderAfterPress`,
+`CHOICE_PRESS_MS` 110). All the state - scoring, streak, auto-advance -
+changes at once; only the redraw waits, so keyboard, gates and
+auto-advance see the result immediately. `choiceFx` is a one-render
+effect: right = `.is-right-pop`, wrong = `.is-wrong-flash` (red edge and
+a nudge, removed after `WRONG_FLASH_MS` 2.6s, or gone the moment the right
+one is picked because that render rebuilds the list). Everything is
+transform/box-shadow. The "no strike-out" rule still holds - the red goes
+away on its own. `.qpanel > .status` has a .85rem gap under it now.
+
+**Next question is a rising 3D pill** (`.floatbtn.qnext`): still
+`#nextbtn` and still `.floatbtn`, drawn centred, `min(23rem, 100% -
+2.5rem)` wide, clear of the bottom edge, with the Start pill's shadow
+stack. It rises once per question (`nextRisenFor`) after .75s;
+`AUTO_ADVANCE_MS` is back to 550 so with auto-advance on the run moves
+before it ever shows.
+
+**Feedback has personality** (`correctLine(qi)`): first try / second try /
+3+ tries / hinted / last question / last couple / every fifth in a row,
+picked by `(qi*7 + tries) % n` so a re-render never swaps the words.
+
+**The flag is a star, everywhere it is shown.** `buildQuestionFlag()`
+draws `.starring` (ripple), `.starfill` (scaled from its own centre over
+.8s - the colour spreads outwards) and `.starline`; on = soft yellow glow.
+Every visible "flag/flagged/unflag" string became star/starred/unstar
+(the What's New history entries were left as history). **The data is
+untouched**: `store.flagged`, `cfg.source === "flagged"`, `.flagbtn`,
+`.qflag` and `flaggedIndexes()` keep their names.
+
+**Exam: Instant feedback** (`cfg.examFeedback`, start sheet, Exam only,
+off by default, remembered). `examFeedbackNext` is set only by the sheet's
+own Begin and becomes `runExamFeedback` for that run alone - a Virtual
+Room, a retake or a re-run never inherits it. With it on, a pick is final
+(`choose()` refuses a second), the right answer and a wrong pick are
+marked and locked, and the status line says which.
+
+**Review is Learn** - on screen only. The mode value is still `"review"`
+(stored in `store.opts`, asked for everywhere); `modeTitleOf()` is what
+says Learn. The list screen's title is Learn (or Starred Questions).
+Each question there is its own card now, with the wrong choices stepped
+back, because the old list read as a wall.
+
+**Flashcards** (`cfg.flashcards`, a switch on Learn's sheet; Begin reads
+"Start flashcards"). `showFlashcards()` / `renderFlashcard()` / `fc`:
+one tall card, question front and answer back (tap to flip, 3D), the star
+in its top corner, back bottom-left and play bottom-right (always there),
+swipe and arrow keys too. An answer that points at the others ("All of
+the above", "Both...") also lists the choices on the back. It borrows the
+test chrome: Learn on the left, "n / N" centred, the tick meter (green up
+to the current card, and green comes off going back), Pause - which
+`pauseRun()` hands to `pauseFlashcards()` while `fc` is set; Resume puts
+the card back, Exit flashcards goes to the sheet. No timer, no score, no
+XP. `setActiveNav()` closes a deck left by any other route.
+
+Gate: check-behaviour section 73 (both reference devices); against build
+302 it fails 43 checks.
+

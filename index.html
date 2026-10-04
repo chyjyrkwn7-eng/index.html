@@ -2269,7 +2269,8 @@
      below it \u2014 scoped to only when the meter is actually visible (an
      active question), not the many other screens that reuse #count as
      a generic context label. */
-  .meter:not([hidden]) + .count{ padding-bottom:1.1rem; border-bottom:1px solid var(--rule); }
+  .meter:not([hidden]) + .count,
+  .meter:not([hidden]) + .timerline + .count{ padding-bottom:1.1rem; border-bottom:1px solid var(--rule); }
 
   .panel{
     background:var(--panel); border:1px solid var(--rule); border-radius:3px;
@@ -2493,6 +2494,101 @@
   [data-theme="dark"] .flagpole{ stroke:var(--soft); }
   [data-theme="dark"] .flagbanner{ stroke:#E0B646; }
   [data-theme="dark"] .flagbtn.on .flagbanner{ fill:#F5C518; stroke:#F5C518; }
+  /* ---- FLASHCARDS (build 303) - see showFlashcards() ---- */
+  .wrap:has(.fc-screen) #count{ display:none; }
+  .wrap:has(.fc-screen) .meter{ margin-bottom:1.1rem; }
+  .panel.fc-screen{ background:none; border:none; box-shadow:none; padding:0; }
+  .fc-scene{ perspective:1600px; }
+  @keyframes fc-in-right{ from{ opacity:0; transform:translateX(26px); } to{ opacity:1; transform:none; } }
+  @keyframes fc-in-left{ from{ opacity:0; transform:translateX(-26px); } to{ opacity:1; transform:none; } }
+  .fc-scene.is-from-right{ animation:fc-in-right .3s cubic-bezier(.2,.8,.2,1); }
+  .fc-scene.is-from-left{ animation:fc-in-left .3s cubic-bezier(.2,.8,.2,1); }
+  .fc-card{
+    position:relative; height:clamp(19rem, 58vh, 40rem);
+    transform-style:preserve-3d; -webkit-transform-style:preserve-3d;
+    transition:transform .6s cubic-bezier(.22,.8,.24,1);
+    cursor:pointer; -webkit-tap-highlight-color:transparent; outline:none;
+  }
+  .fc-card.is-flipped{ transform:rotateY(180deg); }
+  .fc-face{
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    padding:1.25rem 1.4rem 1.1rem; border-radius:26px;
+    backface-visibility:hidden; -webkit-backface-visibility:hidden;
+    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.035));
+    border:1px solid rgba(255,255,255,.1);
+    box-shadow:0 18px 40px -18px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  .fc-back{ transform:rotateY(180deg); background:linear-gradient(180deg, color-mix(in srgb, var(--right) 12%, rgba(255,255,255,.05)), rgba(255,255,255,.035)); border-color:color-mix(in srgb, var(--right) 28%, transparent); }
+  .fc-face-top{ display:flex; align-items:center; justify-content:space-between; gap:.75rem; min-height:2.6rem; }
+  .fc-tag{ font-size:.72rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--soft); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .fc-back .fc-tag{ color:var(--right); }
+  .fc-face .flagbtn.fc-star{ width:2.6rem; height:2.6rem; border-radius:50%; flex:none; margin-left:auto; }
+  .fc-face .flagbtn.fc-star .flagicon{ width:1.6rem; height:1.6rem; }
+  .fc-text{
+    margin:auto 0; padding:.5rem 0; max-height:100%; overflow-y:auto;
+    font-family:var(--sans); font-size:clamp(1.3rem, 5.2vw, 1.95rem); line-height:1.33; font-weight:500;
+    color:var(--ink); letter-spacing:-.005em;
+  }
+  .fc-answer-extra{ margin-top:.25rem; }
+  .fc-ref{ font-size:.82rem; color:var(--soft); margin:0 0 .4rem; }
+  .fc-choices{ list-style:none; margin:0 0 .6rem; padding:0; display:flex; flex-direction:column; gap:.3rem; font-size:.88rem; color:var(--soft); line-height:1.35; }
+  .fc-choices li.is-answer{ color:var(--right); font-weight:700; }
+  .fc-back .fc-text{ margin:auto 0 .5rem; }
+  .fc-fliphint{ margin:0; text-align:center; font-size:.75rem; font-weight:600; color:var(--soft); opacity:.6; letter-spacing:.02em; }
+  .fc-nav{ display:flex; align-items:center; justify-content:space-between; margin-top:1.1rem; padding:0 .4rem; }
+  .fc-navbtn{
+    width:3.4rem; height:3.4rem; border-radius:50%; border:none; background:none; color:var(--ink);
+    display:inline-flex; align-items:center; justify-content:center; cursor:pointer;
+    -webkit-tap-highlight-color:transparent; transition:transform .12s ease, background-color .2s ease, opacity .2s ease;
+  }
+  .fc-navbtn:active{ transform:scale(.9); background:rgba(255,255,255,.08); }
+  .fc-navbtn:disabled{ opacity:.25; cursor:default; }
+  .fc-navbtn svg{ width:1.75rem; height:1.75rem; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
+  .fc-next-btn svg{ fill:currentColor; stroke-width:1.6; }
+  .fc-done{ text-align:center; padding:3rem 1rem 0; }
+  .fc-done-title{ font-size:1.6rem; font-weight:800; margin:0 0 .5rem; }
+  .fc-done-sub{ color:var(--soft); margin:0 0 1.6rem; }
+  .fc-done-actions{ display:flex; flex-direction:column; gap:.7rem; max-width:20rem; margin:0 auto; }
+  @media (min-width:40rem){
+    .fc-scene, .fc-nav{ max-width:40rem; margin-left:auto; margin-right:auto; }
+    .fc-face{ padding:1.6rem 1.9rem 1.3rem; border-radius:30px; }
+    .fc-text{ font-size:clamp(1.6rem, 3.2vw, 2.2rem); }
+  }
+  /* Learn's list, less of a wall (build 303): "could they be better
+     spaced so they all don't appear so cramped? Looks like a lot looking
+     at so many at once". Each question is its own card now with real air
+     between them, and the choices that are not the answer step back so
+     the eye lands on the question and the right one. */
+  .screen-answerreview .review-question{
+    padding:1.1rem 1.1rem .4rem; margin:0 0 1.15rem; border-radius:18px;
+    background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.07);
+  }
+  .screen-answerreview .review-question .qtext{ margin-bottom:.85rem; font-size:1.12rem; line-height:1.42; }
+  .screen-answerreview .review-question .choices{ gap:.42rem; margin-bottom:.75rem; }
+  .screen-answerreview .review-question .choice:not(.is-right){ opacity:.62; }
+  .screen-answerreview .review-question .choice .text{ padding:.62rem 0; font-size:.95rem; }
+  .screen-answerreview .review-question .choice .key{ padding:.66rem 0 .66rem .4rem; }
+  .screen-answerreview .cal-month-body-open{ padding-top:.9rem; }
+  /* ---- THE STAR (build 303) - see buildQuestionFlag ---- */
+  .flagicon{ overflow:visible; }
+  .flagicon .starline{ fill:none; stroke:#E0B646; stroke-width:1.6; stroke-linejoin:round; transition:stroke .3s ease; }
+  .flagicon .starfill{
+    fill:#F5C518; transform-box:fill-box; transform-origin:center;
+    transform:scale(0); opacity:.6;
+    transition:transform .2s ease-in, opacity .2s ease-in;
+  }
+  .flagbtn.on .flagicon .starfill{
+    transform:scale(1); opacity:1;
+    transition:transform .8s cubic-bezier(.33,.55,.25,1), opacity .5s ease;
+  }
+  .flagbtn.on .flagicon .starline{ stroke:#F5C518; }
+  .flagicon .starring{ fill:none; stroke:#F5C518; stroke-width:1.4; opacity:0; transform-box:fill-box; transform-origin:center; }
+  @keyframes star-ripple{ 0%{ opacity:.7; transform:scale(.35); } 100%{ opacity:0; transform:scale(1.5); } }
+  .flagbtn.just-on .flagicon .starring{ animation:star-ripple .9s cubic-bezier(.25,.6,.3,1); }
+  /* The soft glow while it is on. */
+  .flagbtn.on .flagicon{ filter:drop-shadow(0 0 4px rgba(245,197,24,.55)); }
+  .flagbtn.qflag.on{ box-shadow:0 0 0 1px rgba(245,197,24,.4) inset, 0 0 16px rgba(245,197,24,.18); }
+  .flag-note .fn-banner{ stroke-width:1.6; }
 
   .qtext{
     font-family:var(--serif); font-size:1.3rem; line-height:1.45;
@@ -2541,6 +2637,42 @@
   @media (hover:hover){ .choice.is-wrong-pick.locked:hover{ border-color:var(--wrong); } }
 
   .choice.hinted{ border-color:var(--right); border-style:dashed; }
+  /* ---- A TAP THAT FEELS LIKE ONE (build 303) ----
+     "Each question when selecting, there needs to be a very very short
+     delay to the answer box you select and very very subtly but smooth
+     animation to it, so if it's right, maybe it does A VERY quick effect
+     ... same if it's wrong." The press is instant and small (.is-pressing,
+     ~110ms, see CHOICE_PRESS_MS); the result lands after it. Right: one
+     quick swell and a ring of green light. Wrong: a short nudge and a red
+     edge that stays a couple of seconds (.is-wrong-flash, WRONG_FLASH_MS)
+     and fades on its own, or goes the moment the right one is picked
+     because that render rebuilds the list without it. All of it is
+     transform and box-shadow, so nothing reflows. */
+  .qpanel .choice{ transition:transform .11s ease, filter .11s ease, box-shadow .6s ease, border-color .6s ease; }
+  .qpanel .choice .bar, .qpanel .choice .key{ transition:background-color .6s ease, color .6s ease; }
+  .qpanel .choice.is-pressing{ transform:scale(.982); filter:brightness(1.14); }
+  @keyframes choice-right-pop{
+    0%{ transform:scale(.982); box-shadow:0 0 0 0 color-mix(in srgb, var(--right) 0%, transparent); }
+    38%{ transform:scale(1.016); box-shadow:0 0 0 3px color-mix(in srgb, var(--right) 30%, transparent), 0 0 22px color-mix(in srgb, var(--right) 38%, transparent); }
+    100%{ transform:scale(1); box-shadow:0 0 0 0 color-mix(in srgb, var(--right) 0%, transparent), 0 0 0 color-mix(in srgb, var(--right) 0%, transparent); }
+  }
+  .qpanel .choice.is-right-pop{ animation:choice-right-pop .44s cubic-bezier(.2,.8,.2,1); }
+  @keyframes choice-wrong-nudge{
+    0%{ transform:translateX(0) scale(.982); } 22%{ transform:translateX(-4px); } 46%{ transform:translateX(3px); }
+    70%{ transform:translateX(-1.5px); } 100%{ transform:translateX(0); }
+  }
+  .qpanel .choice.is-wrong-flash{
+    border-color:var(--wrong);
+    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--wrong) 70%, transparent), 0 0 18px color-mix(in srgb, var(--wrong) 26%, transparent);
+    animation:choice-wrong-nudge .34s ease-out;
+  }
+  .qpanel .choice.is-wrong-flash .bar{ background:var(--wrong); }
+  .qpanel .choice.is-wrong-flash .key{ color:var(--wrong); }
+  @keyframes choice-pick-pop{ 0%{ transform:scale(.982); } 45%{ transform:scale(1.01); } 100%{ transform:scale(1); } }
+  .qpanel .choice.is-pick-pop{ animation:choice-pick-pop .3s cubic-bezier(.2,.8,.2,1); }
+  /* The line that says right or wrong had no space under it at all -
+     "super close to the top answer". */
+  .qpanel > .status{ margin:0 0 .85rem; }
   .choice.locked{ cursor:default; }
   @media (hover:hover){ .choice.locked:hover{ border-color:var(--rule); } }
   @media (hover:hover){ .choice.is-right.locked:hover{ border-color:var(--right); } }
@@ -2573,6 +2705,43 @@
     background:radial-gradient(circle 60px at var(--shimmer-x, 50%) var(--shimmer-y, 50%), rgba(255,255,255,.28), transparent 70%);
   }
   .next:active{ transform:scale(.97); opacity:.93; }
+  /* ---- NEXT QUESTION: A BUTTON, RISING (build 303) ----
+     "Could it slightly have that 3d button look? ... this bottom button
+     doesn't need to stretch from side to side of the screen and/or touch
+     the bottom of the screen, it can just be a nice big button ... a
+     second after you get it right or answer ... it slowly comes up from
+     the bottom of the screen." It is the bar's own button still
+     (#nextbtn, .floatbtn - so every keyboard, swipe and gate path is
+     unchanged), drawn as a centred 3D pill clear of the bottom edge, and
+     it rises once per question (nextRisenFor): a re-render of the same
+     answered question - pause and resume, a flag tapped - shows it
+     already up. With auto-advance on the run moves after AUTO_ADVANCE_MS,
+     well before the rise starts, so it is never seen. */
+  [data-layout="modern"] .foot > .floatbtn.qnext,
+  .foot > .floatbtn.qnext{
+    left:50%; right:auto; width:min(23rem, calc(100% - 2.5rem));
+    bottom:calc(var(--vv-lift, 0px) + max(1.1rem, calc(env(safe-area-inset-bottom, 0px) + .35rem)));
+    padding:1.02rem 1.6rem; border:none; border-radius:999px;
+    transform:translateX(-50%);
+    font-size:1.08rem; font-weight:800; letter-spacing:-.005em;
+    background-color:#F5F6F7; color:#14171C;
+    background-image:linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,0) 58%);
+    box-shadow:0 1px 1px rgba(255,255,255,.95) inset, 0 -2px 2px rgba(18,26,32,.26) inset,
+      0 1px 3px rgba(0,0,0,.26), 0 6px 14px rgba(0,0,0,.28), 0 14px 28px -8px rgba(0,0,0,.45);
+    transition:box-shadow .12s ease, transform .12s ease;
+  }
+  .foot > .floatbtn.qnext:active{
+    transform:translateX(-50%) translateY(1px); opacity:1;
+    box-shadow:0 1px 2px rgba(18,26,32,.28) inset, 0 -1px 1px rgba(255,255,255,.5) inset, 0 1px 3px rgba(0,0,0,.24);
+  }
+  .foot > .floatbtn.qnext .swipehint{ opacity:.6; }
+  @keyframes qnext-rise{
+    from{ transform:translate(-50%, calc(100% + 3rem)); opacity:0; }
+    35%{ opacity:1; }
+    to{ transform:translate(-50%, 0); opacity:1; }
+  }
+  .foot > .floatbtn.qnext.is-rising{ animation:qnext-rise .62s cubic-bezier(.16,.84,.3,1) .75s both; }
+  [data-reduce-motion="true"] .foot > .floatbtn.qnext.is-rising{ animation:none; }
   .next.ghost:active{ background:rgba(128,128,128,.15); opacity:1; }
   .next:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
   .next[hidden]{ display:none; }
@@ -8455,6 +8624,24 @@
     font-family:var(--mono); font-size:.85rem; font-weight:700; color:var(--soft);
     letter-spacing:.01em; margin:0; flex-shrink:0;
   }
+  /* MODE ON THE LEFT, COUNT IN THE MIDDLE (build 303): "While in a test
+     or anything, the current mode needs to be in the left, and the
+     question (60/80) will be centered." The count is centred on the
+     ROW (and so on the screen), not left over between the mode and
+     Pause, so it does not drift with the length of the mode's name. */
+  .test-modelabel{ display:none; }
+  .wrap:has(.fc-screen) .test-modelabel:not(:empty),
+  .wrap:has(.qnumrow):not(:has(.pausepanel)) .test-modelabel:not(:empty){
+    display:block; margin:0; flex-shrink:0;
+    font-size:.85rem; font-weight:700; color:var(--soft); letter-spacing:.02em;
+  }
+  .wrap:has(.fc-screen) .top .test-qcounter{ display:block; font-family:var(--mono); font-weight:700; color:var(--ink); margin:0; }
+  .wrap:has(.qnumrow):not(:has(.pausepanel)) .top{ position:sticky; }
+  .wrap:has(.fc-screen) .top .test-qcounter,
+  .wrap:has(.qnumrow):not(:has(.pausepanel)) .top .test-qcounter{
+    position:absolute; left:50%; top:50%; transform:translate(-50%, -50%);
+    font-size:.95rem; color:var(--ink);
+  }
   .navsegment{
     display:none; align-items:center; background:var(--rule);
     border-radius:999px; padding:.2rem; gap:.1rem;
@@ -8563,9 +8750,24 @@
   [data-theme="dark"] .navsegment .iconbtn.active{ box-shadow:0 1px 3px rgba(0,0,0,.5); }
 
   /* ---------- timer ---------- */
-  .timerline{ display:flex; justify-content:flex-end; margin:.85rem 0 0; }
+  .timerline{ display:flex; justify-content:flex-start; margin:.55rem 0 0; }
   .timerline[hidden]{ display:none; }
-  .timerbox{ text-align:right; line-height:1.2; }
+  .timerbox{ display:flex; align-items:center; gap:.4rem; line-height:1.2; }
+  .tclock{ width:.95rem; height:.95rem; fill:none; stroke:var(--soft); stroke-width:2; stroke-linecap:round; opacity:.8; flex:none; }
+  .tpaused{ display:none; font-size:.7rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    color:#F5B83D; border:1px solid rgba(245,184,61,.45); border-radius:999px; padding:.08rem .45rem; }
+  /* PAUSED, STILL SHOWING (build 303): "When paused, still show the timer
+     but having a different color or something so it stands out as
+     paused". Amber, the clock icon with it, and a Paused chip - the
+     number itself is frozen because the interval is stopped. */
+  .timerline.is-paused .tmain, .timerline.is-paused .tmain.low{ color:#F5B83D; }
+  .timerline.is-paused .tclock{ stroke:#F5B83D; opacity:1; }
+  .timerline.is-paused .tpaused{ display:inline-block; }
+  .timerline.is-paused .tbest{ display:none; }
+  /* The timer sits where #count's (invisible, in a test) text line was,
+     so with the timer up that line folds away and the divider stays one
+     gap below the clock rather than two. */
+  .meter:not([hidden]) ~ .timerline:not([hidden]) + .count{ font-size:0; line-height:0; padding-top:0; }
   .tmain{
     font-family:var(--mono); font-size:.92rem; font-weight:600; letter-spacing:.02em;
     font-variant-numeric:tabular-nums; color:var(--soft);
@@ -19914,6 +20116,7 @@
       </button>
       <h1 id="banktitle">Nova</h1>
     </div>
+    <p class="test-modelabel" id="testmodelabel"></p>
     <p class="test-qcounter" id="testqcounter"></p>
     <p class="test-scopelabel" id="testscopelabel"></p>
     <div class="topctrls">
@@ -19940,13 +20143,20 @@
       <div class="vroom-racetrack-markers" id="vroomracemarkers"></div>
     </div>
   </div>
+  <div class="meter" id="meter" aria-hidden="true"></div>
+  <!-- UNDER THE PROGRESS BAR, ABOVE THE LINE (build 303): "the timer
+       during a test is in a cramped spot, being by the chat and pause
+       button, I feel like it should be underneath the progress bars but
+       above that line". It takes the slot the invisible #count text used
+       to hold there. -->
   <div class="timerline" id="timerline" hidden>
     <div class="timerbox">
+      <svg class="tclock" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M10 2h4"/></svg>
       <div class="tmain" id="tmain">0:00</div>
+      <span class="tpaused" aria-hidden="true">Paused</span>
       <div class="tbest" id="tbest" hidden></div>
     </div>
   </div>
-  <div class="meter" id="meter" aria-hidden="true"></div>
   <p class="count" id="count"></p>
   <main id="stage"></main>
   <button id="backtotop" class="backtotop" type="button" aria-label="Back to top" hidden>
@@ -32203,6 +32413,15 @@ const meterEl   = document.getElementById("meter");
 const countEl   = document.getElementById("count");
 const testScopeLabelEl = document.getElementById("testscopelabel");
 const testQCounterEl = document.getElementById("testqcounter");
+const testModeLabelEl = document.getElementById("testmodelabel");
+/* What the top-left of a question says (build 303). The daily question
+   has its own title on the screen and says nothing up here. */
+function runModeTitle(){
+  if(runLabel === "Daily question") return "";
+  if(vroomCode) return "Virtual Room";
+  if(isMissedRetake) return "Retake";
+  return runMode === "exam" ? "Exam" : "Drill";
+}
 const titleEl   = document.getElementById("banktitle");
 const titleBtnEl = document.getElementById("banktitlebtn");
 const avatarEl = document.getElementById("bankavatar");
@@ -32342,6 +32561,9 @@ function setActiveNav(name){
      Settings), so it's the natural place to make sure a results
      screen's own forced hide never lingers past that one screen. */
   window.forceHideBottomTabs = false;
+  /* A deck left by any route other than its own Exit is closed here, so
+     Pause never answers for flashcards that are no longer on screen. */
+  if(typeof fc !== "undefined" && fc){ fcLeave(); }
   /* THE RACE LINE BELONGS TO A RACE. "The race shows up on the main menu
      when it's finished" - it is position:fixed on <body>, so no screen
      change ever removed it, and only the room's own screens knew to
@@ -37630,7 +37852,7 @@ const ACTIVITY_TEXT = {
   drill:   ["In a Drill",     "In a Drill"],
   exam:    ["Taking an Exam", "Taking an Exam"],
   game:    ["In Game mode",   "Playing Game mode"],
-  review:  ["Reviewing",      "Reviewing questions"],
+  review:  ["Learning",       "Going over questions"],
   daily:   ["Daily question", "On the daily question"],
   lobby:   ["In a lobby",     "In a Virtual Room lobby"],
   match:   ["In a match",     "In a Virtual Room match"],
@@ -39819,20 +40041,32 @@ function buildQuestionFlag(qi, opts){
   const ns = "http://www.w3.org/2000/svg";
   const sv = document.createElementNS(ns, "svg");
   sv.setAttribute("viewBox", "0 0 24 24"); sv.setAttribute("class", "flagicon");
-  const g = document.createElementNS(ns, "g"); g.setAttribute("transform", "translate(1.1, 0)");
-  const pole = document.createElementNS(ns, "path"); pole.setAttribute("class", "flagpole"); pole.setAttribute("d", "M5 3v18");
-  const ban = document.createElementNS(ns, "path"); ban.setAttribute("class", "flagbanner");
-  ban.setAttribute("d", "M5 4c2-1.6 4-1.6 6 0s4 1.6 6 0v7.5c-2 1.6-4 1.6-6 0s-4-1.6-6 0z");
-  g.append(pole, ban); sv.appendChild(g); b.appendChild(sv);
+  /* A STAR, NOT A FLAG (build 303): "The flagged button, we are gonna
+     change it to a star, would go with theme better ... It will still be
+     yellow, but give it a soft soft glow if enabled ... when you click it
+     there is a soft effect where it slowly fills with colors outwards so
+     it's satisfying to select." Three layers: a ring that ripples out on
+     the tap, the fill (scaled from the star's own centre, so the colour
+     spreads outward from the middle) and the outline over both. The data
+     is still store.flagged - only the drawing and the words changed. */
+  const ring = document.createElementNS(ns, "circle"); ring.setAttribute("class", "starring");
+  ring.setAttribute("cx", "12"); ring.setAttribute("cy", "12.4"); ring.setAttribute("r", "9.5");
+  const fill = document.createElementNS(ns, "path"); fill.setAttribute("class", "starfill"); fill.setAttribute("d", "M12 2.7l2.83 5.95 6.5.82-4.8 4.47 1.24 6.45L12 17.22 6.23 20.4l1.24-6.45-4.8-4.47 6.5-.82z");
+  const line = document.createElementNS(ns, "path"); line.setAttribute("class", "starline"); line.setAttribute("d", "M12 2.7l2.83 5.95 6.5.82-4.8 4.47 1.24 6.45L12 17.22 6.23 20.4l1.24-6.45-4.8-4.47 6.5-.82z");
+  sv.append(ring, fill, line); b.appendChild(sv);
   const paint = () => {
     const on = isFlagged(qi);
     b.classList.toggle("on", on);
     b.setAttribute("aria-pressed", on ? "true" : "false");
-    b.setAttribute("aria-label", on ? "Unflag this question" : "Flag this question");
+    b.setAttribute("aria-label", on ? "Unstar this question" : "Star this question");
   };
   b.addEventListener("click", e => {
     e.stopPropagation();
     toggleFlag(qi); paint();
+    if(isFlagged(qi)){
+      b.classList.remove("just-on"); void b.offsetWidth; b.classList.add("just-on");
+      clearTimeout(b._jo); b._jo = setTimeout(() => b.classList.remove("just-on"), 800);
+    }
     showFlagNote(b, isFlagged(qi));
     if(opts.onChange) opts.onChange(isFlagged(qi));
   });
@@ -39865,14 +40099,12 @@ function showFlagNote(btn, on){
   const ns = "http://www.w3.org/2000/svg";
   const sv = document.createElementNS(ns, "svg");
   sv.setAttribute("viewBox", "0 0 24 24"); sv.setAttribute("aria-hidden", "true");
-  const pole = document.createElementNS(ns, "path"); pole.setAttribute("d", "M6 3v18");
-  pole.setAttribute("class", "fn-pole");
   const ban = document.createElementNS(ns, "path");
-  ban.setAttribute("d", "M6 4c2-1.6 4-1.6 6 0s4 1.6 6 0v7.5c-2 1.6-4 1.6-6 0s-4-1.6-6 0z");
+  ban.setAttribute("d", "M12 2.7l2.83 5.95 6.5.82-4.8 4.47 1.24 6.45L12 17.22 6.23 20.4l1.24-6.45-4.8-4.47 6.5-.82z");
   ban.setAttribute("class", "fn-banner");
-  sv.append(pole, ban);
+  sv.append(ban);
   const t = document.createElement("span");
-  t.textContent = on ? "Flagged" : "Flag removed";
+  t.textContent = on ? "Starred" : "Star removed";
   note.append(sv, t);
   document.body.appendChild(note);
   const r = btn.getBoundingClientRect(), nr = note.getBoundingClientRect();
@@ -40026,7 +40258,9 @@ const cfg = {
   countdown: false,  // 3-2-1 countdown before the run begins
   revealCorrect: false, // unlocked once every unit has its black star
   timer: "off",      // off | up | down
-  timerMinutes: 15
+  timerMinutes: 15,
+  examFeedback: false, // Exam only: say right or wrong on each pick (build 303)
+  flashcards: false    // Learn only: one card at a time instead of the list (build 303)
 };
 /* The full Class 26E course calendar, extracted from the official
    class schedule \u2014 every real class day from orientation through
@@ -40325,7 +40559,7 @@ function applySaved(){
        turn it off. Left out here, cfg keeps its own `false` default
        whatever the stored copy says. */
     ["mode", "source", "size", "shuffle", "recall", "countdown",
-     "timer", "timerMinutes"].forEach(k => {
+     "timer", "timerMinutes", "examFeedback", "flashcards"].forEach(k => {
       if(store.opts[k] !== undefined) cfg[k] = store.opts[k];
     });
   }
@@ -40358,11 +40592,17 @@ function applySaved(){
   cfg.source = "all";   // never open straight into a weak-list run
 }
 
+/* What a mode is called on screen (build 303): "review" is Learn. */
+function modeTitleOf(mode){
+  if(mode === "review") return "Learn";
+  return String(mode || "").charAt(0).toUpperCase() + String(mode || "").slice(1);
+}
 function rememberConfig(){
   store.opts = { mode: cfg.mode, source: cfg.source, size: cfg.size,
                  shuffle: cfg.shuffle, recall: cfg.recall,
                  countdown: cfg.countdown, revealCorrect: cfg.revealCorrect,
-                 timer: cfg.timer, timerMinutes: cfg.timerMinutes };
+                 timer: cfg.timer, timerMinutes: cfg.timerMinutes,
+                 examFeedback: cfg.examFeedback, flashcards: cfg.flashcards };
   store.units = cfg.units.slice();
   saveStore();
 }
@@ -45440,13 +45680,12 @@ function buildFlagIcon(){
   svg.setAttribute("viewBox", "0 0 24 24");
   svg.setAttribute("class", "whatsnew-glyph");
   svg.setAttribute("aria-hidden", "true");
-  const pole = document.createElementNS(svgNS, "path");
-  pole.setAttribute("d", "M6 3v18");
-  pole.setAttribute("stroke", "currentColor"); pole.setAttribute("stroke-width", "1.8"); pole.setAttribute("stroke-linecap", "round");
+  /* A star since build 303, like the button it stands for. */
   const flag = document.createElementNS(svgNS, "path");
-  flag.setAttribute("d", "M6 4.5c3-1.5 4.5 1.5 7.5 0s4.5 1.5 4.5 1.5v7c0 0-1.5-1.5-4.5 0s-4.5-1.5-7.5 0z");
-  flag.setAttribute("fill", "#F5C518");
-  svg.append(pole, flag);
+  flag.setAttribute("d", "M12 2.7l2.83 5.95 6.5.82-4.8 4.47 1.24 6.45L12 17.22 6.23 20.4l1.24-6.45-4.8-4.47 6.5-.82z");
+  flag.setAttribute("fill", "#F5C518"); flag.setAttribute("stroke", "#F5C518");
+  flag.setAttribute("stroke-width", "1.4"); flag.setAttribute("stroke-linejoin", "round");
+  svg.append(flag);
   return svg;
 }
 
@@ -46803,6 +47042,7 @@ function startTimer(isResume){
   if(cfg.timer === "off" && !forced){ timerlineEl.hidden = true; return; }
   timerlineEl.hidden = false;
   tmainEl.classList.remove("low");
+  timerlineEl.classList.remove("is-paused");
   if(!isResume){
     if(forced) timerDeadline = Date.now() + practiceTestMinutes * 60000;
     else if(cfg.timer === "down") timerDeadline = Date.now() + cfg.timerMinutes * 60000;
@@ -46836,6 +47076,7 @@ function pauseRun(){
      populated there and this would otherwise draw "the question and
      timer are on hold" over a screen with no question on it. */
   if(vroomAwaitingOthers){ confirmLeaveWhileWaiting(); return; }
+  if(fc){ pauseFlashcards(); return; }
   /* A Tug of War or a Battle cannot be held - the rope and the health
      bars are everybody's - so Pause there is the way out (build 246). */
   if(vroomTeamMatchUp()){ confirmLeaveTeamMatch(); return; }
@@ -46848,7 +47089,10 @@ function pauseRun(){
   stopTimer();
   stopQuestionTimer();
   pauseBtn.hidden = true;
-  timerlineEl.hidden = true;
+  /* The clock stays up while paused (build 303), frozen and in amber -
+     the interval is already stopped above. Whether it shows at all is
+     still startTimer()'s call, so a run with no timer shows none. */
+  timerlineEl.classList.add("is-paused");
   hintEl.hidden = true;
   renderPausedScreen();
 }
@@ -46875,7 +47119,7 @@ function renderPausedScreen(){
       : cfg.units.map(u => (cfg.versions && cfg.versions[u] === "test" && UNIT_TEST_VERSIONS[u]) ? UNIT_TEST_VERSIONS[u].label : u);
     const unitsEl = document.createElement("p");
     unitsEl.className = "pause-units";
-    unitsEl.textContent = names.join(" \u00b7 ") + (cfg.source === "flagged" ? " (flagged questions)" : "");
+    unitsEl.textContent = names.join(" \u00b7 ") + (cfg.source === "flagged" ? " (starred questions)" : "");
     const where = document.createElement("p");
     where.className = "pause-where";
     where.textContent = "Question " + Math.min(pos + 1, order.length) + " of " + order.length;
@@ -47021,7 +47265,7 @@ function confirmMainMenu(){
     stopTimer();
     stopQuestionTimer();
     pauseBtn.hidden = true;
-    timerlineEl.hidden = true;
+    timerlineEl.classList.add("is-paused");
     hintEl.hidden = true;
   }
 
@@ -47194,7 +47438,7 @@ function confirmExitTest(){
     stopTimer();
     stopQuestionTimer();
     pauseBtn.hidden = true;
-    timerlineEl.hidden = true;
+    timerlineEl.classList.add("is-paused");
     hintEl.hidden = true;
   }
 
@@ -47284,6 +47528,7 @@ function resumeRun(){
   cancelPauseTiming();
   hintEl.hidden = false;
   pauseBtn.hidden = false;
+  timerlineEl.classList.remove("is-paused");
   if(raceTimed){
     timerlineEl.hidden = true;
   } else {
@@ -47418,6 +47663,16 @@ let picked = {};     // question index -> chosen option (exam mode)
 let firstPick = {};  // question index -> first option tapped (drill, game)
 let layout = {};     // question index -> option order used this run
 let lastWrong = false;  // the previous pick on this question was wrong
+/* Build 303's answer feel - see the .is-pressing CSS. choiceFx is the
+   one effect the NEXT render should play (and only the next one), and
+   nextRisenFor the question whose Next has already risen into place. */
+const CHOICE_PRESS_MS = 110;
+const WRONG_FLASH_MS = 2600;
+let choiceFx = null;
+let choicePressTimer = null;
+let nextRisenFor = null;
+let runExamFeedback = false;
+let examFeedbackNext = false;
 let cleared = false;
 /* Daily question only ever gets one attempt, right or wrong \u2014 kept
    deliberately separate from `cleared` rather than reusing it,
@@ -48252,7 +48507,7 @@ function scopeLabel(){
   else if(cfg.units.length === 1) base = cfg.units[0];
   else base = cfg.units.length + " units";
   if(cfg.source === "recent") base += ", most missed";
-  if(cfg.source === "flagged") base += ", flagged";
+  if(cfg.source === "flagged") base += ", starred";
   return base;
 }
 
@@ -55864,8 +56119,12 @@ function showModeSelect(){
        hundos, no badge progress. Browsing answers is studying, not a
        score, and anything else would make it the cheapest way to farm
        a level. */
-    { value: "review", title: "Review",
-      desc: "Not a test \u2014 go through the study guide questions with their answers, unit by unit. Best for going over material." },
+    /* LEARN, NOT REVIEW (build 303): "this mode is gonna be renamed to
+       learn and we are finally gonna introduce flash cards". The value
+       stays "review" - it is stored in store.opts and every check in the
+       file asks for it - and only what is shown changes (modeTitleOf). */
+    { value: "review", title: "Learn",
+      desc: "Not a test \u2014 go through the study guide questions and their answers as a list or as flashcards. Best for going over material." },
     { value: "vroom", title: "Virtual Room",
       desc: "Take tests together, live \u2014 everyone answers the same questions at the same time. Best for studying with classmates." }
   ];
@@ -55926,7 +56185,7 @@ function showModeSelect(){
          updated for this new app") - it became a mode of its own in
          build 128 and the tour went straight from Exam to Virtual Room. */
       { target: '.modecard[data-mode="review"]', align: "left", vplacement: "below",
-        text: "Review is not a test \u2014 it walks through each unit\u2019s questions with their answers. Good for going over material before you test yourself." },
+        text: "Learn is not a test \u2014 it walks through each unit\u2019s questions and answers, as a list or as flashcards. Good for going over material before you test yourself." },
       /* vplacement was hardcoded to "above" here, mismatched with Game's
          own "below" right above - harmless-looking on phone (cards
          stack in one column, so Virtual Room being last made "above"
@@ -56120,7 +56379,7 @@ function maybeShowUnitHoldTip(row){
 function showUnitHoldTip(){
   startSimpleTour([
     { target: ".unit-hold-tip-target", text: "Tip: press and hold any unit to see its details." },
-    { target: ".unit-hold-tip-target", text: "Your best and last score, how many times you have finished it, its hundos, and the questions you miss most and have flagged." }
+    { target: ".unit-hold-tip-target", text: "Your best and last score, how many times you have finished it, its hundos, and the questions you miss most and have starred." }
   ], () => document.querySelectorAll(".unit-hold-tip-target").forEach(el => el.classList.remove("unit-hold-tip-target")));
 }
 
@@ -56248,7 +56507,7 @@ function openUnitDetail(row, name, mode){
     b.append(t, c, s2);
     if(!n) b.classList.add("is-empty");
     b.addEventListener("click", () => {
-      if(!n){ showToast(kind === "flagged" ? "Nothing flagged in " + name + " yet." : "Nothing missed lately in " + name + "."); return; }
+      if(!n){ showToast(kind === "flagged" ? "Nothing starred in " + name + " yet." : "Nothing missed lately in " + name + "."); return; }
       showList(kind);
     });
     return b;
@@ -56256,7 +56515,7 @@ function openUnitDetail(row, name, mode){
   const flaggedN = flaggedIndexes().filter(inUnit).length;
   /* Flagged only since build 284 - no Most missed door. */
   doors.append(
-    door("flagged", "Flagged", flaggedN, flaggedN ? "Tap to see flagged questions" : "None flagged yet"));
+    door("flagged", "Starred", flaggedN, flaggedN ? "Tap to see starred questions" : "None starred yet"));
   main.appendChild(doors);
   const hint = document.createElement("p");
   hint.className = "unitdetail-hint";
@@ -56277,7 +56536,7 @@ function openUnitDetail(row, name, mode){
      the unit takes its place (recentMissedIndexes ranks and caps live). */
   function refreshDoors(){
     const fN = flaggedIndexes().filter(inUnit).length;
-    [["flagged", fN, "Tap to see flagged questions", "None flagged yet"]].forEach(([k, n, yes, no]) => {
+    [["flagged", fN, "Tap to see starred questions", "None starred yet"]].forEach(([k, n, yes, no]) => {
       const d = doors.querySelector(".is-" + k);
       if(!d) return;
       d.querySelector(".unitdetail-doorcount").textContent = String(n);
@@ -56302,14 +56561,14 @@ function openUnitDetail(row, name, mode){
     fillBackLabel(back, "Back");
     const tt = document.createElement("p");
     tt.className = "unitdetail-listtitle";
-    tt.textContent = kind === "flagged" ? "Flagged" : "Most missed";
+    tt.textContent = kind === "flagged" ? "Starred" : "Most missed";
     barRow.append(back, tt);
     /* A search, with a clear - "a little search bar to search the
        flagged and most missed and a clear search". */
     const sw = document.createElement("div");
     sw.className = "unitdetail-search";
     const si = document.createElement("input");
-    si.type = "search"; si.placeholder = kind === "flagged" ? "Search flagged" : "Search most missed";
+    si.type = "search"; si.placeholder = kind === "flagged" ? "Search starred" : "Search most missed";
     si.setAttribute("aria-label", si.placeholder);
     const sx = document.createElement("button");
     sx.type = "button"; sx.className = "unitdetail-searchclear"; sx.textContent = "Clear"; sx.hidden = true;
@@ -56330,7 +56589,7 @@ function openUnitDetail(row, name, mode){
     const note = document.createElement("p");
     note.className = "unitdetail-listnote";
     note.textContent = kind === "flagged"
-      ? "Questions you marked to come back to. Unflag one here once you have it down."
+      ? "Questions you marked to come back to. Unstar one here once you have it down."
       : "The questions in this unit you have been missing most.";
     scroller.appendChild(note);
     const listEl = document.createElement("div");
@@ -56349,14 +56608,14 @@ function openUnitDetail(row, name, mode){
     resetWrap.className = "unitdetail-reset";
     const resetBtn = document.createElement("button");
     resetBtn.type = "button"; resetBtn.className = "unitdetail-resetbtn";
-    resetBtn.textContent = kind === "flagged" ? "Unflag every question in this unit" : "Clear most missed for this unit";
+    resetBtn.textContent = kind === "flagged" ? "Unstar every question in this unit" : "Clear most missed for this unit";
     const confirmBox = document.createElement("div");
     confirmBox.className = "unitdetail-confirm"; confirmBox.hidden = true;
     const cText = document.createElement("p");
     const cRow = document.createElement("div"); cRow.className = "unitdetail-confirmrow";
     const cNo = document.createElement("button"); cNo.type = "button"; cNo.className = "unitdetail-confirmno"; cNo.textContent = "Cancel";
     const cYes = document.createElement("button"); cYes.type = "button"; cYes.className = "unitdetail-confirmyes";
-    cYes.textContent = kind === "flagged" ? "Unflag all" : "Clear it";
+    cYes.textContent = kind === "flagged" ? "Unstar all" : "Clear it";
     cRow.append(cNo, cYes);
     confirmBox.append(cText, cRow);
     resetWrap.append(resetBtn, confirmBox);
@@ -56366,7 +56625,7 @@ function openUnitDetail(row, name, mode){
     resetBtn.addEventListener("click", () => {
       const n = (kind === "flagged" ? flaggedIndexes() : recentMissedIndexes()).filter(inUnit).length;
       cText.textContent = kind === "flagged"
-        ? (n === 1 ? "Unflag the one flagged question in " : "Unflag all " + n + " flagged questions in ") + name + "? This can't be undone."
+        ? (n === 1 ? "Unstar the one starred question in " : "Unstar all " + n + " starred questions in ") + name + "? This can't be undone."
         : "Clear " + name + "'s most missed? The list starts fresh from your next miss. Your hundos and scores stay. This can't be undone.";
       confirmBox.hidden = false; resetBtn.hidden = true;
     });
@@ -56379,7 +56638,7 @@ function openUnitDetail(row, name, mode){
       });
       saveStore();
       confirmBox.hidden = true; resetBtn.hidden = false;
-      showToast(kind === "flagged" ? "Unflagged every question in " + name + "." : "Most missed cleared for " + name + ".");
+      showToast(kind === "flagged" ? "Unstarred every question in " + name + "." : "Most missed cleared for " + name + ".");
       render();
       refreshDoors();
     });
@@ -56397,7 +56656,7 @@ function openUnitDetail(row, name, mode){
       shown.forEach(i => listEl.appendChild(questionCard(i)));
       empty.hidden = shown.length > 0;
       empty.textContent = ids.length ? "Nothing matches “" + si.value.trim() + "”."
-        : kind === "flagged" ? "Nothing flagged in this unit." : "Nothing missed lately in this unit.";
+        : kind === "flagged" ? "Nothing starred in this unit." : "Nothing missed lately in this unit.";
       resetWrap.hidden = ids.length === 0;
     }
     function questionCard(i){
@@ -56781,7 +57040,7 @@ function showSetup(){
   /* Review is its own colour, the green of its icon (build 266): "the
      word review at the top of the unit selection is not a green tint,
      it's the drill tint". It fell through to "drill" here. */
-  const modeNames = { drill: "Drill", exam: "Exam", game: "Game", review: "Review" };
+  const modeNames = { drill: "Drill", exam: "Exam", game: "Game", review: "Learn" };
   const modeKind = ["drill", "exam", "game", "review"].indexOf(cfg.mode) >= 0 ? cfg.mode : "drill";
   const modeChip = document.createElement("span");
   modeChip.className = "rs-mode rs-mode-" + modeKind;
@@ -56850,7 +57109,7 @@ function showSetup(){
   /* How anybody finds out the cards can be held. */
   const holdHint = document.createElement("p");
   holdHint.className = "picks-holdhint";
-  holdHint.textContent = "Press and hold a unit to see your stats and flagged questions for it.";
+  holdHint.textContent = "Press and hold a unit to see your stats and starred questions for it.";
   unitSect.appendChild(holdHint);
 
   const list = document.createElement("div");
@@ -56872,16 +57131,16 @@ function showSetup(){
     const ic = document.createElement("span"); ic.className = "pick-flagged-icon"; ic.setAttribute("aria-hidden", "true");
     ic.appendChild(buildFlagIcon());
     const txt = document.createElement("span"); txt.className = "pick-flagged-text";
-    const nm = document.createElement("span"); nm.className = "pname"; nm.textContent = "Flagged questions";
+    const nm = document.createElement("span"); nm.className = "pname"; nm.textContent = "Starred questions";
     const sub = document.createElement("span"); sub.className = "pcount";
     sub.textContent = fl.length
       ? fl.length + (fl.length === 1 ? " question" : " questions") + " \u00b7 " + fUnits.length + (fUnits.length === 1 ? " unit" : " units")
-      : "Tap the flag on any question to save it here";
+      : "Tap the star on any question to save it here";
     txt.append(nm, sub);
     box.append(ic, txt);
     if(fl.length){ const go = document.createElement("span"); go.className = "pick-flagged-go"; go.setAttribute("aria-hidden", "true"); go.textContent = "\u203A"; box.appendChild(go); }
     box.addEventListener("click", () => {
-      if(!flaggedIndexes().length){ showToast("Nothing flagged yet. Tap the flag on any question to save it here."); return; }
+      if(!flaggedIndexes().length){ showToast("Nothing starred yet. Tap the star on any question to save it here."); return; }
       showAnswerReview(fUnits, "flagged", {}, { allFlagged: true });
     });
     list.appendChild(box);
@@ -57171,7 +57430,7 @@ function showSetup(){
      contradictory." Flagged is the one you choose; it stays. Misses are
      still recorded - hundos, stats and accuracy are built on them - there
      is simply no list of them to draw from any more. */
-  [["all", "All questions"], ["flagged", "Flagged"]].forEach(([value, title]) => {
+  [["all", "All questions"], ["flagged", "Starred"]].forEach(([value, title]) => {
     const row = document.createElement("div");
     row.className = "bank-opt";
     row.dataset.value = value;
@@ -57187,7 +57446,7 @@ function showSetup(){
     desc.className = "bank-desc";
     const pick = () => {
       if(row.classList.contains("is-empty")){
-        showToast(value === "recent" ? "Nothing missed lately in these units." : "Nothing flagged in these units yet.");
+        showToast(value === "recent" ? "Nothing missed lately in these units." : "Nothing starred in these units yet.");
         return;
       }
       cfg.source = value; srcSect.paint(); refresh();
@@ -57235,7 +57494,7 @@ function showSetup(){
        behind it (30 days, a cap per unit) is not something anybody
        needs before pressing Begin, so the "i" and its paragraph are
        gone too. */
-    set("flagged", counts.flagged, "Questions you flagged.");
+    set("flagged", counts.flagged, "Questions you starred.");
     srcSect.paint();
   };
   const optionsModalBody = document.createElement("div");
@@ -57442,10 +57701,23 @@ function showSetup(){
   const recallRow = toggle("Hide answer choices",
     "Think of the answer first, then tap to show the choices.",
     () => cfg.recall, v => { cfg.recall = v; });
+  /* INSTANT FEEDBACK, EXAM ONLY, OFF UNLESS ASKED FOR (build 303): "In
+     exam mode, introduce a button for instant feedback in the start menu
+     options where if you have this on, it does tell you if you got it
+     wrong (you can't change it in this mode of course) this is off by
+     default". A pick is final with it on - see runExamFeedback. */
+  const feedbackRow = toggle("Instant feedback",
+    "Shows right or wrong as soon as you answer. Your answer locks in.",
+    () => cfg.examFeedback, v => { cfg.examFeedback = v; });
   /* Plain switch rows now, the same as the timer's (build 249) - inside
      More options every setting is one kind of control. */
   optTiles.className = "opt-rows";
-  optTiles.append(shuffleRow, recallRow);
+  /* FLASHCARDS, LEARN ONLY (build 303): "When you begin from the start
+     menu, the option toggle will be there." Off is the list. */
+  const flashRow = toggle("Flashcards",
+    "One card at a time. Tap a card to flip it.",
+    () => cfg.flashcards, v => { cfg.flashcards = v; });
+  optTiles.append(shuffleRow, recallRow, feedbackRow, flashRow);
   optSect.appendChild(optTiles);
   /* "Show all correct answers" is GONE, per explicit request - "we
      don't need it anymore because of the review button". It highlighted
@@ -57501,7 +57773,9 @@ function showSetup(){
        called it either: Draw from/Length/Timer are hidden and untouched
        while reviewing, so there's nothing new here worth persisting. */
     if(reviewAllMode){
-      showAnswerReview(cfg.units.slice(), cfg.source, cfg.versions);
+      rememberConfig();
+      if(cfg.flashcards) showFlashcards(cfg.units.slice(), cfg.source, cfg.versions);
+      else showAnswerReview(cfg.units.slice(), cfg.source, cfg.versions);
       return;
     }
     rememberConfig();
@@ -57510,6 +57784,7 @@ function showSetup(){
     /* EXAM HONOURS LENGTH. The slider is on the sheet for Exam ("Pick
        your own units and length") but this line only ever trimmed a
        Drill, so a shortened exam quietly ran every question. */
+    examFeedbackNext = cfg.mode === "exam" && !!cfg.examFeedback;
     beginRun(cfg.size > 0 ? pool.slice(0, cfg.size) : pool, null);
   });
   /* Pinned to the foot of the sheet (build 270) on a bar of the sheet's
@@ -57546,7 +57821,7 @@ function showSetup(){
      then said "Drill" in bigger type was two headings for one thing;
      the sheet is titled with what you are about to start, and refresh()
      keeps it current. */
-  optionsModalTitle.textContent = cfg.mode.charAt(0).toUpperCase() + cfg.mode.slice(1);
+  optionsModalTitle.textContent = modeTitleOf(cfg.mode);
   const optionsModalDone = document.createElement("button");
   optionsModalDone.type = "button"; optionsModalDone.className = "next";
   optionsModalDone.style.cssText = "padding:.5rem 1.1rem; font-size:.85rem;";
@@ -57630,7 +57905,7 @@ function showSetup(){
 
     /* Same computed values as the rest of refresh(), just also shown
        here at the top of the sheet itself now. */
-    const modeLabel = cfg.mode.charAt(0).toUpperCase() + cfg.mode.slice(1);
+    const modeLabel = modeTitleOf(cfg.mode);
     /* "Review Review" is what the old suffix produced once Review
        became a mode of its own rather than a switch on top of one. */
     sheetSummaryMode.textContent = modeLabel;
@@ -57693,6 +57968,8 @@ function showSetup(){
     timerSect.hidden = reviewAllMode;
     recallRow.hidden = isExam;
     shuffleRow.hidden = isExam;
+    feedbackRow.hidden = !isExam;
+    flashRow.hidden = !reviewAllMode;
     /* ---- A LABEL WITH NOTHING UNDER IT ----
        "The word Options is underneath the timer stuff for some random
        reason." It is this section's own header, and both rows it
@@ -57702,7 +57979,8 @@ function showSetup(){
        inside it is hidden, rather than naming the two modes that
        happened to be true when it was written. A row added later is
        covered without anybody having to remember this line. */
-    optSect.hidden = reviewAllMode || (recallRow.hidden && shuffleRow.hidden);
+    if(reviewAllMode){ recallRow.hidden = true; shuffleRow.hidden = true; }
+    optSect.hidden = recallRow.hidden && shuffleRow.hidden && feedbackRow.hidden && flashRow.hidden;
     /* AFTER the four it asks about, because it asks them rather than
        re-deriving their conditions - reading them before they are set
        is how this kind of check answers last render's question. */
@@ -57789,7 +58067,7 @@ function showSetup(){
        above already makes, just reflected in the button's text too so
        it doesn't keep saying "Begin" while actually opening the review
        screen instead of starting anything. */
-    beginBtn.textContent = reviewAllMode ? "Review All" : "Begin";
+    beginBtn.textContent = reviewAllMode ? (cfg.flashcards ? "Start flashcards" : "Show all") : "Begin";
 
     /* WHAT THE RUN IS SET TO, BACK IN THE TOP BOX (build 250): "still
        needs to say the settings of the test from that menu, in the top
@@ -57821,9 +58099,10 @@ function showSetup(){
          there's no timer, don't show that either ... And if it's all
          questions, don't show that." A default says nothing, so an
          untouched run shows no row at all. */
-      if(!srcSect.hidden && cfg.source !== "all") tag(cfg.source === "recent" ? "Most missed" : "Flagged", "bank");
+      if(!srcSect.hidden && cfg.source !== "all") tag(cfg.source === "recent" ? "Most missed" : "Starred", "bank");
       if(!optSect.hidden && !shuffleRow.hidden && cfg.shuffle) tag("Shuffled", "shuffle");
       if(!optSect.hidden && !recallRow.hidden && cfg.recall) tag("Answers hidden", "hidden");
+      if(!optSect.hidden && !feedbackRow.hidden && cfg.examFeedback) tag("Instant feedback", "feedback");
       if(!timerSect.hidden && (cfg.timer === "down" || cfg.timer === "up"))
         tag(cfg.timer === "down" ? cfg.timerMinutes + " min countdown" : "Tracking time", "timer", "is-set");
     }
@@ -57846,7 +58125,7 @@ function showSetup(){
     /* Review has its own verb (build 245) - it used to fall through to
        "Start drill", which is not what the button does in Review. */
     const verb = cfg.mode === "exam" ? "Start exam, "
-      : reviewAllMode ? "Start review, " : "Start drill, ";
+      : reviewAllMode ? "Start learning, " : "Start drill, ";
     startBtn.textContent =
       cfg.units.length === 0 ? "Start" :
       pool.length === 0 ? "Nothing to draw" :
@@ -58000,6 +58279,11 @@ function beginRun(indexes, label, practiceMinutes, missedRetake){
   attempts = {};
   picked = {};
   firstPick = {};
+  choiceFx = null; nextRisenFor = null; clearTimeout(choicePressTimer); choicePressTimer = null;
+  /* Only the start sheet's own Begin can switch this on, and only for
+     the one run it starts - a Virtual Room, a retake or a re-run never
+     inherits it. */
+  runExamFeedback = examFeedbackNext; examFeedbackNext = false;
   layout = {};
   timedOutSet = {};
   raceTimed = raceTimedNext; raceTimedNext = false;
@@ -58355,6 +58639,10 @@ function buildBankNote(item){
 function render(){
   const qi = order[pos];
   const item = QUESTIONS[qi];
+  /* One render plays an effect; any render after it (pause and resume,
+     a flag tapped) draws the plain state. */
+  const fx = (choiceFx && choiceFx.qi === qi && Date.now() - choiceFx.at < WRONG_FLASH_MS) ? choiceFx : null;
+  choiceFx = null;
   const slots = optionOrder(qi);
   const right = correctSlot(qi);
 
@@ -58373,6 +58661,7 @@ function render(){
      keeps it invisible for that one case rather than a "1/1" nobody
      asked for. */
   testQCounterEl.textContent = (runLabel === "Daily question") ? "" : (pos + 1) + "/" + order.length;
+  testModeLabelEl.textContent = runModeTitle();
 
   const panel = document.createElement("section");
   panel.className = "panel qpanel";
@@ -58475,15 +58764,17 @@ function render(){
   if(raceRevealing){
     status.classList.add("bad");
     status.textContent = "Out of time \u2014 counted as wrong. The right answer is highlighted.";
+  } else if(runMode === "exam" && runExamFeedback && picked[qi] !== undefined){
+    const ok = picked[qi] === right;
+    status.classList.add(ok ? "good" : "bad");
+    status.textContent = ok ? correctLine(qi) : "Not quite \u2014 the right answer is marked.";
   } else if(runMode === "exam"){
     status.textContent = picked[qi] === undefined
       ? "Choose an answer."
       : "You can still change your answer before continuing.";
   } else if(cleared){
     status.classList.add("good");
-    status.textContent = attempts[qi] === 1
-      ? "Correct, first try."
-      : "Correct, after " + attempts[qi] + " attempts.";
+    status.textContent = correctLine(qi);
   } else if(hinted){
     status.textContent = "The correct answer is outlined. Select it to continue.";
   } else if(dailyQuestionLocked){
@@ -58539,8 +58830,23 @@ function render(){
       if(slot === right){ btn.classList.add("is-right", "locked"); mark.textContent = "\u2713"; }
       else { btn.classList.add("locked"); }
       btn.disabled = true;
+    } else if(runMode === "exam" && runExamFeedback && picked[qi] !== undefined){
+      /* Answered with instant feedback on: judged and locked, the way a
+         wrong daily question is - the right one marked, yours too if it
+         was not the right one. */
+      if(slot === right){
+        btn.classList.add("is-right", "locked"); mark.textContent = "\u2713";
+        if(fx && fx.kind === "right") btn.classList.add("is-right-pop");
+      } else if(picked[qi] === slot){
+        btn.classList.add("is-wrong-pick", "locked"); mark.textContent = "\u2715";
+        if(fx && fx.kind === "wrong-lock") btn.classList.add("is-pick-pop");
+      } else { btn.classList.add("locked"); }
+      btn.disabled = true;
     } else if(runMode === "exam"){
-      if(picked[qi] === slot){ btn.classList.add("is-picked"); mark.textContent = "\u25CF"; }
+      if(picked[qi] === slot){
+        btn.classList.add("is-picked"); mark.textContent = "\u25CF";
+        if(fx && fx.kind === "pick" && fx.slot === slot) btn.classList.add("is-pick-pop");
+      }
       btn.addEventListener("click", () => choose(slot));
     } else if(cleared || dailyQuestionLocked){
       /* dailyQuestionLocked added here alongside cleared \u2014 a wrong
@@ -58549,7 +58855,10 @@ function render(){
          cleared (correct) state does, even though cleared itself
          deliberately stays false for a wrong answer (see its own
          declaration comment for why). */
-      if(slot === right){ btn.classList.add("is-right", "locked"); mark.textContent = "\u2713"; }
+      if(slot === right){
+        btn.classList.add("is-right", "locked"); mark.textContent = "\u2713";
+        if(fx && fx.kind === "right") btn.classList.add("is-right-pop");
+      }
       /* A wrong daily question marks what you picked as well as the
          answer, in the wrong colour - it used to show only the answer,
          so the card said "Not this time" without saying which you chose. */
@@ -58558,6 +58867,15 @@ function render(){
       btn.disabled = true;
     } else {
       if((hinted || cfg.revealCorrect) && slot === right){ btn.classList.add("hinted"); }
+      /* The wrong pick lights up red for a moment and lets go on its own
+         (build 303) - long enough to register, not long enough to turn
+         the next try into elimination, which is what the no-strike-out
+         rule below choose() is protecting. */
+      if(fx && fx.kind === "wrong" && fx.slot === slot){
+        btn.classList.add("is-wrong-flash");
+        const left = WRONG_FLASH_MS - (Date.now() - fx.at);
+        setTimeout(() => btn.classList.remove("is-wrong-flash"), Math.max(0, left));
+      }
       btn.addEventListener("click", () => choose(slot));
     }
 
@@ -58623,6 +58941,10 @@ function render(){
      say about it. */
   next.hidden = (runLabel === "Daily question") ? true
     : runMode === "exam" ? (picked[qi] === undefined) : !cleared;
+  next.classList.add("qnext");
+  if(!next.hidden){
+    if(nextRisenFor !== qi){ next.classList.add("is-rising"); nextRisenFor = qi; }
+  }
   if(theme.swipeAdvance){
     const swipeIcon = document.createElementNS(svgNS, "svg");
     swipeIcon.setAttribute("viewBox", "0 0 24 24");
@@ -58697,7 +59019,11 @@ function scheduleAutoAdvance(qi){
     if(runMode === "exam" && picked[capturedQi] === undefined) return;
     if(runMode !== "exam" && !cleared) return;
     advanceWithSlide();
-    /* 500ms was HALF A SECOND OF NOTHING HAPPENING, and on
+    /* AUTO_ADVANCE_MS (build 303): back to about half a second - "it will
+       automatically move on after about half a second". The pick now
+       takes CHOICE_PRESS_MS before the result is drawn, so 300 left the
+       right answer on screen for under 200ms.
+       500ms was HALF A SECOND OF NOTHING HAPPENING, and on
        auto-advance it is by far the largest part of the wait between
        questions - bigger than the slide it precedes by a factor of
        three. Measured end to end from the tap: the question did not
@@ -58707,8 +59033,9 @@ function scheduleAutoAdvance(qi){
        still a clear beat and takes 40% off the wait. Anyone who wants
        none of it can turn auto-advance off in Settings, which is the
        default. */
-  }, 300);
+  }, AUTO_ADVANCE_MS);
 }
+const AUTO_ADVANCE_MS = 550;
 
 function choose(slot){
   const qi = order[pos];
@@ -58716,8 +59043,11 @@ function choose(slot){
   if(runMode === "exam"){
     /* A race question that ran out is answered - by the clock. */
     if(raceTimed && (paused || raceRevealUntil != null || timedOutSet[qi])) return;
+    if(runExamFeedback && (picked[qi] !== undefined || paused)) return;
     picked[qi] = slot;
-    render();
+    choiceFx = { qi, slot, at: Date.now(),
+      kind: !runExamFeedback ? "pick" : slot === correctSlot(qi) ? "right" : "wrong-lock" };
+    renderAfterPress(qi, slot);
     scheduleAutoAdvance(qi);
     return;
   }
@@ -58755,6 +59085,7 @@ function choose(slot){
        so that trailing render() would immediately rebuild the panel
        from scratch again and wipe out the Exit button it just added. */
     if(runLabel === "Daily question"){ summarize(); return; }
+    choiceFx = { qi, slot, kind: "right", at: Date.now() };
     scheduleAutoAdvance(qi);
   } else {
     // The loophole fix: nothing is struck through and nothing is disabled, so
@@ -58780,8 +59111,47 @@ function choose(slot){
       summarize();
       return;
     }
+    choiceFx = { qi, slot, kind: "wrong", at: Date.now() };
   }
-  render();
+  renderAfterPress(qi, slot);
+}
+
+/* The press, then the answer (build 303). Everything a pick DOES has
+   already happened by the time this runs - scoring, the streak, the
+   auto-advance timer - so a gate or a key press reading state sees it at
+   once; only the redraw waits the length of the press. A render that
+   lands in between (another pick) cancels this one, and a pause in the
+   gap wins: the question is not drawn back over the pause screen. */
+function renderAfterPress(qi, slot){
+  clearTimeout(choicePressTimer); choicePressTimer = null;
+  const btn = theme.reduceMotion ? null : stage.querySelector('.qpanel .choice[data-index="' + slot + '"]');
+  if(!btn){ render(); return; }
+  btn.classList.add("is-pressing");
+  choicePressTimer = setTimeout(() => {
+    choicePressTimer = null;
+    if(paused || !testInProgress || order[pos] !== qi) return;
+    render();
+  }, CHOICE_PRESS_MS);
+}
+
+/* WHAT A RIGHT ANSWER SAYS (build 303): "instead of saying that all the
+   time, can you give that stuff more personality, like you've got this
+   and keep going you are almost there when you are close and almost had
+   it when it takes 2". Picked from the situation - first try, second,
+   later, near the end, a run going - and fixed per question (indexed by
+   the question, not Math.random) so a re-render does not swap the words
+   under somebody. Plain, short and not cute: this is an academy class. */
+function correctLine(qi){
+  const tries = attempts[qi] || 1;
+  const left = order.length - 1 - pos;
+  const pickOf = list => list[(qi * 7 + tries) % list.length];
+  if(hinted) return pickOf(["Now you've seen it \u2014 it'll stick next time.", "That's the one. Worth another look later.", "Got it marked. You'll know it next time."]);
+  if(tries === 2) return pickOf(["Almost had it \u2014 right on the second try.", "Close the first time. Got it now.", "Second try. That one's yours now."]);
+  if(tries >= 3) return pickOf(["Got there \u2014 " + tries + " tries.", "Stuck with it. Right after " + tries + " tries.", "Right after " + tries + " tries. Worth a second look later."]);
+  if(order.length > 1 && left === 0) return pickOf(["Correct \u2014 that's the last one.", "Last one, first try. Done.", "Finished strong."]);
+  if(order.length >= 6 && left <= 2) return pickOf(["Correct \u2014 almost there.", "Keep going, you're nearly done.", "Right. Just a couple left."]);
+  if(runLiveStreak >= 5 && runLiveStreak % 5 === 0) return "Correct \u2014 " + runLiveStreak + " in a row.";
+  return pickOf(["Correct \u2014 first try.", "Nailed it.", "That's the one.", "Spot on.", "Right the first time.", "You've got this.", "Clean answer.", "Correct. Keep it going."]);
 }
 
 /* The actual sliding transition, per explicit request \u2014 "like you
@@ -59223,7 +59593,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-04-302";
+const APP_BUILD = "2026-10-04-303";
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
    pushing when I open the app?" Because this gap is shared by every way
@@ -61192,7 +61562,7 @@ function buildRunHead(run){
   if(run.source === "recent" || run.source === "flagged"){
     const src = document.createElement("span");
     src.className = "rs-mode rs-mode-src";
-    src.textContent = run.source === "recent" ? "Most missed" : "Flagged";
+    src.textContent = run.source === "recent" ? "Most missed" : "Starred";
     chipRow.appendChild(src);
   }
   head.appendChild(chipRow);
@@ -61871,7 +62241,7 @@ function showRunRewards(run, hooks, opts){
   if(!run.xpLines.length){
     const none = document.createElement("p");
     none.className = "rs-xpline rs-xpline-none rs-land";
-    none.textContent = (run.source === "recent" || run.source === "flagged") ? "Flagged runs are practice — no XP."
+    none.textContent = (run.source === "recent" || run.source === "flagged") ? "Starred runs are practice — no XP."
       : run.timedOut && run.total === 0 ? "Time ran out before any questions were answered."
       : "No XP this run.";
     xp.appendChild(none);
@@ -63698,7 +64068,7 @@ function showAppearance(opts){
   autoFlagCb.addEventListener("change", () => {
     theme.autoFlagMissed = autoFlagCb.checked;
     saveTheme();
-    showToast(theme.autoFlagMissed ? "Questions you keep missing will be flagged." : "Auto-flagging off.");
+    showToast(theme.autoFlagMissed ? "Questions you keep missing will be starred." : "Auto-flagging off.");
   });
   const autoFlagBox = document.createElement("span");
   autoFlagBox.className = "box"; autoFlagBox.setAttribute("aria-hidden", "true"); autoFlagBox.textContent = "\u2713";
@@ -63711,7 +64081,7 @@ function showAppearance(opts){
      behaviour. Both are true (see AUTO_FLAG_MISS_THRESHOLD and
      recordResult), but a settings hint should say what the switch does,
      not document its rules. */
-  autoFlagHint.textContent = "Flags questions you keep getting wrong, so they're saved for review.";
+  autoFlagHint.textContent = "Stars questions you keep getting wrong, so they're saved for review.";
   autoFlagWrap.appendChild(autoFlagHint);
   autoFlagRow.append(autoFlagCb, autoFlagBox, autoFlagWrap);
   studyDetails.appendChild(autoFlagRow);
@@ -63744,7 +64114,7 @@ function showAppearance(opts){
       "Show class days remaining":      "Shows the countdown to graduation on your profile.",
       "Swipe to next question":         "Swipe left to move on instead of tapping Next.",
       "Auto-advance on correct":        "Moves on by itself once you're done.",
-      "Auto-flag questions you keep missing": "Flags it for review on every fifth miss.",
+      "Auto-flag questions you keep missing": "Stars it for review on every fifth miss.",
       "Mute achievement banners":       "Skips the level-up and unlock banners after a test."
     };
     const GROUPS = [
@@ -64251,7 +64621,7 @@ function showAppearance(opts){
       const flaggedCount = Object.keys(store.flagged).length;
       const resetFlaggedBtn = document.createElement("button");
       resetFlaggedBtn.type = "button"; resetFlaggedBtn.className = "restart";
-      resetFlaggedBtn.textContent = "Reset flagged questions";
+      resetFlaggedBtn.textContent = "Reset starred questions";
       resetFlaggedBtn.disabled = flaggedCount === 0;
       armConfirm(resetFlaggedBtn, "Tap again to clear", () => {
         unflagAll();
@@ -64261,7 +64631,7 @@ function showAppearance(opts){
       const resetFlaggedWrap = document.createElement("span");
       resetFlaggedWrap.style.cssText = "display:inline-flex; align-items:center;";
       resetFlaggedWrap.appendChild(resetFlaggedBtn);
-      resetFlaggedWrap.appendChild(buildInfoIcon(flaggedCount === 0 ? "Nothing flagged yet \u2014 this becomes available once you flag a question during a run." : "Un-flags every question you've marked to revisit later. Nothing else about your progress is affected."));
+      resetFlaggedWrap.appendChild(buildInfoIcon(flaggedCount === 0 ? "Nothing starred yet \u2014 this becomes available once you star a question during a run." : "Un-flags every question you've marked to revisit later. Nothing else about your progress is affected."));
       resetBar.appendChild(resetFlaggedWrap);
     }
     {
@@ -64482,7 +64852,7 @@ function showAppearance(opts){
       { target: "#settings-motion", align: "left", vplacement: "below",
         text: "How the app moves: smooth scrolling, reduced motion, and swiping to the next question." },
       { target: "#settings-study", align: "left", vplacement: "below",
-        text: "How tests behave: keep the screen awake, advance on its own, mute banners, and flag a question you keep missing." },
+        text: "How tests behave: keep the screen awake, advance on its own, mute banners, and star a question you keep missing." },
       { target: "#settings-rankings", align: "left", vplacement: "below",
         text: "Turn this off to come off the class leaderboards. Your XP, badges and hundos all still count \u2014 nobody else sees them." },
       { target: "#settings-sync", align: "left", vplacement: "below",
@@ -73750,7 +74120,7 @@ function showCalendar(){
 function showAnswerReview(units, source, versions, opts){
   const allFlagged = !!(opts && opts.allFlagged);
   setActiveNav(null);
-  countEl.textContent = "Answer Review";
+  countEl.textContent = "Learn";
   /* Only the flagged or most-missed questions, when that is what was
      picked on the sheet. */
   const only = source === "flagged" ? new Set(flaggedIndexes())
@@ -73761,13 +74131,13 @@ function showAnswerReview(units, source, versions, opts){
   panel.appendChild(buildBackLink("Back to Options", showSetup));
 
   const title = document.createElement("h1");
-  title.className = "cal-title"; title.textContent = source === "flagged" ? "Flagged Questions" : "Answer Review";
+  title.className = "cal-title"; title.textContent = source === "flagged" ? "Starred Questions" : "Learn";
   panel.appendChild(title);
 
   const sub = document.createElement("p");
   sub.className = "cal-sub";
-  sub.textContent = allFlagged ? "Every question you've flagged, with its correct answer."
-    : source === "flagged" ? "Your flagged questions and their correct answers, for the units you've selected."
+  sub.textContent = allFlagged ? "Every question you've starred, with its correct answer."
+    : source === "flagged" ? "Your starred questions and their correct answers, for the units you've selected."
     : source === "recent" ? "The questions you miss most and their correct answers, for the units you've selected."
     : "Every question and its correct answer, for the units you've selected.";
   panel.appendChild(sub);
@@ -73930,6 +74300,240 @@ function showAnswerReview(units, source, versions, opts){
   stage.replaceChildren(panel);
   toTop();
 }
+
+/* ---- FLASHCARDS (build 303) ----------------------------------------------
+   "Flashcards will come in one by one, with an always available arrow in
+   the bottom right, you click the card to flip it ... ours won't have the
+   speech button on the card. There will be a back button though ... No
+   timer of course in learn mode so yeah, you leave from the pause button.
+   There will still be the progress thing at the top but it would only
+   turn green as you progress and the green would come off if you go
+   back." Drawn after the Quizlet card that came with the request: one
+   tall card, the question in big left-aligned type, the star in its top
+   corner, back bottom-left and forward bottom-right, the count centred
+   at the top.
+   It borrows the test's chrome rather than drawing its own - the top
+   row's mode and count, the tick meter, Pause - so it reads as the same
+   app; `fc` is what tells those pieces they are serving a deck and not a
+   run (pauseRun() checks it first). Nothing here is scored or saved:
+   Learn awards nothing, the same as the list. The deck is the list's own
+   selection - same units, same version, same Starred filter. */
+let fc = null;
+function flashcardDeck(units, source, versions){
+  const only = source === "flagged" ? new Set(flaggedIndexes())
+             : source === "recent" ? new Set(recentMissedIndexes()) : null;
+  const deck = [];
+  units.forEach(u => {
+    QUESTIONS.forEach((item, i) => {
+      if(item.topic !== u) return;
+      if(only && !only.has(i)) return;
+      if(!inChosenVersion(i, versions)) return;
+      deck.push(i);
+    });
+  });
+  return deck;
+}
+function showFlashcards(units, source, versions){
+  const deck = flashcardDeck(units, source, versions);
+  if(!deck.length){ showToast("No questions to show for these units."); showSetup(); return; }
+  setActiveNav(null);
+  fc = { deck, pos: 0, flipped: false, units: units.slice(), source, versions };
+  appearanceBtn.hidden = true; homeBtn.hidden = true; profileBtn.hidden = true;
+  restartEl.hidden = true; hintEl.hidden = true; timerlineEl.hidden = true;
+  pauseBtn.hidden = false;
+  meterEl.hidden = false;
+  meterTicks = null; meterNowIndex = -1;
+  meterEl.replaceChildren(...deck.map(() => { const t = document.createElement("span"); t.className = "tick"; return t; }));
+  countEl.textContent = "";
+  renderFlashcard(0);
+  if(typeof syncChatDock === "function") syncChatDock();
+}
+function fcLeave(){
+  fc = null;
+  pauseBtn.hidden = true; meterEl.hidden = true;
+  meterEl.replaceChildren(); meterTicks = null; meterNowIndex = -1;
+  testQCounterEl.textContent = ""; testModeLabelEl.textContent = "";
+}
+function fcPaintMeter(){
+  const ticks = meterEl.children;
+  for(let k = 0; k < ticks.length; k++){
+    ticks[k].className = "tick" + (k < fc.pos ? " clean" : k === fc.pos ? " now" : "");
+  }
+}
+function renderFlashcard(dir){
+  if(!fc) return;
+  const qi = fc.deck[fc.pos];
+  const item = QUESTIONS[qi];
+  fc.flipped = false;
+  testModeLabelEl.textContent = "Learn";
+  testQCounterEl.textContent = (fc.pos + 1) + " / " + fc.deck.length;
+  fcPaintMeter();
+
+  const screen = document.createElement("section");
+  screen.className = "panel fc-screen";
+  const scene = document.createElement("div");
+  scene.className = "fc-scene" + (dir > 0 ? " is-from-right" : dir < 0 ? " is-from-left" : "");
+  const card = document.createElement("div");
+  card.className = "fc-card";
+  card.setAttribute("role", "button"); card.tabIndex = 0;
+  card.setAttribute("aria-label", "Flashcard. Tap to flip.");
+
+  const face = (cls, label, body, extra) => {
+    const f = document.createElement("div");
+    f.className = "fc-face " + cls;
+    const top = document.createElement("div"); top.className = "fc-face-top";
+    const tag = document.createElement("span"); tag.className = "fc-tag"; tag.textContent = label;
+    top.appendChild(tag);
+    f.appendChild(top);
+    const txt = document.createElement("p"); txt.className = "fc-text";
+    if(typeof body === "string") txt.textContent = body; else txt.appendChild(body);
+    f.appendChild(txt);
+    if(extra) f.appendChild(extra);
+    return f;
+  };
+  const qText = document.createElement("span"); writeText(qText, item.q);
+  const front = face("fc-front", item.topic || "Question", qText);
+  const ansWrap = document.createElement("div"); ansWrap.className = "fc-answer-extra";
+  /* "All of the above" on its own is not an answer you can learn from -
+     it only means something next to what it is all of. For an answer
+     that points at the other choices, the back lists them too, the
+     right one marked. */
+  const ansText = String(item.choices[item.answer] || "");
+  if(/\b(all|none|both|neither) of the (above|these)\b|^(both|neither)\b|^[a-e] (and|&) [a-e]\b/i.test(ansText)){
+    const ul = document.createElement("ul"); ul.className = "fc-choices";
+    item.choices.forEach((c, ci) => {
+      const li = document.createElement("li");
+      li.className = ci === item.answer ? "is-answer" : "";
+      li.textContent = LETTERS[ci] + ". " + c;
+      ul.appendChild(li);
+    });
+    ansWrap.appendChild(ul);
+  }
+  if(item.ref){ const r = document.createElement("p"); r.className = "fc-ref"; r.textContent = item.ref; ansWrap.appendChild(r); }
+  const bn = buildBankNote(item); if(bn) ansWrap.appendChild(bn);
+  const back = face("fc-back", "Answer", ansText, ansWrap.childNodes.length ? ansWrap : null);
+  /* The star sits on the card, top right, the way the reference has it -
+     one per face so it is there whichever side is up, both the same
+     question's star. A tap on it is not a tap on the card. */
+  [front, back].forEach(f => {
+    const st = buildQuestionFlag(qi, { cls: "fc-star", onChange: () => {
+      card.querySelectorAll(".fc-star").forEach(o => { if(o !== st) o.classList.toggle("on", isFlagged(qi)); });
+    } });
+    st.addEventListener("click", e => e.stopPropagation());
+    f.querySelector(".fc-face-top").appendChild(st);
+  });
+  const hint = document.createElement("p"); hint.className = "fc-fliphint"; hint.textContent = "Tap to flip";
+  front.appendChild(hint);
+  card.append(front, back);
+  const flip = () => {
+    fc.flipped = !fc.flipped;
+    card.classList.toggle("is-flipped", fc.flipped);
+  };
+  card.addEventListener("click", flip);
+  card.addEventListener("keydown", e => { if(e.key === " " || e.key === "Enter"){ e.preventDefault(); flip(); } });
+  /* A sideways swipe on the card moves the deck, as on the reference. */
+  let sx = null, sy = null;
+  card.addEventListener("pointerdown", e => { sx = e.clientX; sy = e.clientY; });
+  card.addEventListener("pointerup", e => {
+    if(sx == null) return;
+    const dx = e.clientX - sx, dy = e.clientY - sy; sx = null;
+    if(Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.4){
+      e.stopPropagation(); card.dataset.swiped = "1";
+      setTimeout(() => { delete card.dataset.swiped; }, 0);
+      fcStep(dx < 0 ? 1 : -1);
+    }
+  });
+  card.addEventListener("click", e => { if(card.dataset.swiped){ e.stopImmediatePropagation(); } }, true);
+  scene.appendChild(card);
+
+  const nav = document.createElement("div");
+  nav.className = "fc-nav";
+  const mkNav = (cls, label, d, svgPath) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "fc-navbtn " + cls; b.setAttribute("aria-label", label);
+    const ns = "http://www.w3.org/2000/svg";
+    const sv = document.createElementNS(ns, "svg"); sv.setAttribute("viewBox", "0 0 24 24"); sv.setAttribute("aria-hidden", "true");
+    const pth = document.createElementNS(ns, "path"); pth.setAttribute("d", svgPath); sv.appendChild(pth);
+    b.appendChild(sv);
+    b.addEventListener("click", () => fcStep(d));
+    return b;
+  };
+  const backBtn = mkNav("fc-back-btn", "Previous card", -1, "M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 010 11H11");
+  backBtn.disabled = fc.pos === 0;
+  const fwdBtn = mkNav("fc-next-btn", fc.pos === fc.deck.length - 1 ? "Finish" : "Next card", 1, "M8 5.5v13l10.5-6.5z");
+  fwdBtn.id = "fcnext";
+  nav.append(backBtn, fwdBtn);
+
+  screen.append(scene, nav);
+  stage.replaceChildren(screen);
+  jumpToTop();
+}
+function fcStep(d){
+  if(!fc) return;
+  const next = fc.pos + d;
+  if(next < 0) return;
+  if(next >= fc.deck.length){ showFlashcardsDone(); return; }
+  fc.pos = next;
+  renderFlashcard(d);
+}
+function showFlashcardsDone(){
+  if(!fc) return;
+  const n = fc.deck.length;
+  fc.pos = n;
+  fcPaintMeter();
+  pauseBtn.hidden = true;
+  testQCounterEl.textContent = n + " / " + n;
+  const panel = document.createElement("section");
+  panel.className = "panel fc-screen fc-done";
+  const h = document.createElement("p"); h.className = "fc-done-title"; h.textContent = "That's the deck.";
+  const sub = document.createElement("p"); sub.className = "fc-done-sub";
+  sub.textContent = "You went through all " + n + (n === 1 ? " card." : " cards.");
+  const actions = document.createElement("div"); actions.className = "actions fc-done-actions";
+  const again = document.createElement("button"); again.type = "button"; again.className = "next"; again.textContent = "Go again";
+  const units = fc.units, source = fc.source, versions = fc.versions;
+  again.addEventListener("click", () => { fcLeave(); showFlashcards(units, source, versions); });
+  const done = document.createElement("button"); done.type = "button"; done.className = "next ghost"; done.textContent = "Done";
+  done.addEventListener("click", () => { fcLeave(); showSetup(); });
+  actions.append(again, done);
+  panel.append(h, sub, actions);
+  stage.replaceChildren(panel);
+  jumpToTop();
+}
+/* Pause in flashcards is the way out (there is nothing to hold - no
+   clock, no score). Resume puts the same card back, unflipped. */
+function pauseFlashcards(){
+  if(!fc) return;
+  pauseBtn.hidden = true;
+  const at = fc.pos;
+  const panel = document.createElement("section");
+  panel.className = "panel pausepanel is-pause";
+  const h = document.createElement("p"); h.className = "qnum"; h.textContent = "Paused";
+  const info = document.createElement("div"); info.className = "pause-info";
+  const unitsEl = document.createElement("p"); unitsEl.className = "pause-units";
+  unitsEl.textContent = fc.units.join(" · ") + (fc.source === "flagged" ? " (starred questions)" : "");
+  const where = document.createElement("p"); where.className = "pause-where";
+  where.textContent = "Card " + Math.min(at + 1, fc.deck.length) + " of " + fc.deck.length;
+  info.append(unitsEl, where);
+  const actions = document.createElement("div"); actions.className = "actions";
+  const resumeBtn = document.createElement("button"); resumeBtn.type = "button"; resumeBtn.className = "next"; resumeBtn.id = "resumebtn";
+  resumeBtn.textContent = "Resume";
+  resumeBtn.addEventListener("click", () => {
+    if(!fc) return;
+    pauseBtn.hidden = false;
+    if(fc.pos >= fc.deck.length) showFlashcardsDone(); else renderFlashcard(0);
+  });
+  const leaveBtn = document.createElement("button"); leaveBtn.type = "button"; leaveBtn.className = "next ghost";
+  leaveBtn.textContent = "Exit flashcards";
+  leaveBtn.addEventListener("click", () => { fcLeave(); showSetup(); });
+  actions.append(resumeBtn, leaveBtn);
+  mountPausePanel(panel, [h, info, actions], resumeBtn);
+}
+document.addEventListener("keydown", e => {
+  if(!fc || !stage.querySelector(".fc-card")) return;
+  if(e.target && /input|textarea|select/i.test(e.target.tagName)) return;
+  if(e.key === "ArrowRight"){ e.preventDefault(); fcStep(1); }
+  else if(e.key === "ArrowLeft"){ e.preventDefault(); fcStep(-1); }
+});
 
 /* defaultTab exists so a future link can drop someone straight onto
    Stats; every current call site passes nothing and lands on Profile. */
@@ -74855,7 +75459,7 @@ function showProfile(defaultTab){
         /* The row stopped counting down the days when it was asked to
            just open the calendar; this line went on describing the
            counter for a while after that. */
-        text: "Opens the full course calendar \u2014 every class day, and every question you have flagged on it." },
+        text: "Opens the full course calendar \u2014 every class day, and every question you have starred on it." },
       /* This used to target ".points-progress-sect" and talk about stars
          — leftover copy from a stars/points summary box that lived
          here before it was removed as a duplicate of Rewards' own

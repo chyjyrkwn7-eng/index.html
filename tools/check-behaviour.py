@@ -7463,6 +7463,151 @@ def check_b302_flagnote(br):
     check("the flag label lands beside the flag on all %d sizes" % len(sizes), not bad, bad[:6])
 
 
+def check_b303(br):
+    """Build 303: the test screen (mode left, count centred, timer under
+    the bar and amber while paused, a press then a result, a wrong pick
+    that lights and lets go, a 3D Next that rises), feedback with some
+    personality, the star, Exam's instant feedback, and Learn with its
+    flashcards. Written against build 302; every group fails there."""
+    print("\n73. build 303: test screen, star, instant feedback, Learn and flashcards")
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate("""async ()=>{
+          const wait = ms => new Promise(r => setTimeout(r, ms));
+          const R = e => e && e.getBoundingClientRect();
+          const out = {};
+          try{
+          setInterval(()=>[...document.body.children].forEach(n=>{ if(getComputedStyle(n).position==='fixed' && /challenge complete|character unlocked/i.test(n.textContent||'')) n.remove(); }), 40);
+          document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());
+          const start = async (mode, extra) => {
+            cfg.mode = mode; cfg.units = ['Identity Crimes']; cfg.versions = {}; cfg.source = 'all'; cfg.size = 0; cfg.timer = 'up';
+            if(extra) extra();
+            showSetup(); await wait(400); document.getElementById('nextbtn').click(); await wait(400);
+            document.querySelector('.sheet-begin-btn').click();
+            for(let t = 0; t < 80 && !document.querySelector('.qpanel .choice'); t++) await wait(100);
+            await wait(300);
+          };
+          await start('drill');
+          /* 1. top row: mode on the left, count centred on the screen */
+          const ml = document.getElementById('testmodelabel'), qc = document.getElementById('testqcounter');
+          out.mode = ml ? ml.textContent : null;
+          out.modeLeft = ml ? Math.round(R(ml).left) : null;
+          out.countMid = qc ? Math.round((R(qc).left + R(qc).right) / 2 - innerWidth / 2) : null;
+          /* 2. the timer under the progress bar, above the line */
+          const tl = document.getElementById('timerline'), mt = document.getElementById('meter'), ct = document.getElementById('count');
+          out.timerUnderMeter = !!(tl && !tl.hidden && R(tl).top >= R(mt).bottom - 1 && R(tl).bottom <= R(ct).bottom + 1);
+          /* 3. a wrong pick: pressed, then red, then let go */
+          const qi = order[pos], right = correctSlot(qi), wrongSlot = (right + 1) % 4;
+          document.querySelector('.qpanel .choice[data-index="' + wrongSlot + '"]').click();
+          out.pressing = !!document.querySelector('.qpanel .choice.is-pressing');
+          await wait(250);
+          const wb = document.querySelector('.qpanel .choice[data-index="' + wrongSlot + '"]');
+          out.wrongFlash = wb.classList.contains('is-wrong-flash');
+          const st = document.querySelector('.qpanel > .status');
+          out.statusGap = Math.round(R(document.querySelector('.qpanel .choices')).top - R(st).bottom);
+          await wait(2700);
+          out.wrongLetGo = !document.querySelector('.qpanel .choice[data-index="' + wrongSlot + '"]').classList.contains('is-wrong-flash');
+          /* 4. the right pick: a pop, a line that is not the old one, a rising Next */
+          document.querySelector('.qpanel .choice[data-index="' + right + '"]').click();
+          await wait(200);
+          out.rightPop = !!document.querySelector('.qpanel .choice.is-right-pop');
+          out.line = (document.querySelector('.qpanel > .status') || {}).textContent || '';
+          const nb = document.getElementById('nextbtn');
+          out.nextRising = nb.classList.contains('is-rising');
+          await wait(1500);
+          const nr = R(nb);
+          out.nextPill = { w: Math.round(nr.width), vw: innerWidth, gapBottom: Math.round(innerHeight - nr.bottom), radius: getComputedStyle(nb).borderTopLeftRadius };
+          /* 5. the star */
+          const fb = document.querySelector('.qpanel .qflag');
+          out.star = !!(fb && fb.querySelector('.starfill') && !fb.querySelector('.flagpole'));
+          if(isFlagged(qi)) setFlag(qi, false);
+          fb.click(); await wait(100);
+          out.starOn = fb.classList.contains('on') && fb.classList.contains('just-on');
+          out.starNote = (document.querySelector('.flag-note') || {}).textContent || '';
+          /* 6. paused: the clock stays, in amber */
+          document.getElementById('pausebtn').click(); await wait(400);
+          out.pausedTimer = !tl.hidden && tl.classList.contains('is-paused') && getComputedStyle(tl.querySelector('.tpaused')).display !== 'none';
+          document.getElementById('resumebtn').click(); await wait(300);
+          out.resumedTimer = !tl.classList.contains('is-paused');
+          /* 7. Exam: the switch is Exam's alone, and with it a pick is judged and locked */
+          cfg.mode = 'drill'; showSetup(); await wait(300); document.getElementById('nextbtn').click(); await wait(400);
+          const rowText = [...document.querySelectorAll('.unitoptions-modal .opt')].filter(o => !o.hidden && o.offsetParent).map(o => o.textContent);
+          out.drillHasFeedback = rowText.some(t => /Instant feedback/.test(t));
+          document.getElementById('unitoptions-modal')?.remove();
+          await start('exam', () => { cfg.examFeedback = true; });
+          const eqi = order[pos], er = correctSlot(eqi), ew = (er + 1) % 4;
+          document.querySelector('.qpanel .choice[data-index="' + ew + '"]').click(); await wait(300);
+          out.examJudged = !!document.querySelector('.qpanel .choice.is-right') && !!document.querySelector('.qpanel .choice.is-wrong-pick');
+          document.querySelector('.qpanel .choice[data-index="' + er + '"]').click(); await wait(200);
+          out.examLocked = picked[eqi] === ew;
+          out.examMode = document.getElementById('testmodelabel').textContent;
+          cfg.examFeedback = false;
+          /* 8. Learn, and its flashcards */
+          testInProgress = false;
+          cfg.mode = 'review'; cfg.flashcards = true; showSetup(); await wait(300); document.getElementById('nextbtn').click(); await wait(400);
+          out.sheetTitle = (document.querySelector('.unitoptions-modal-title') || {}).textContent;
+          out.beginText = document.querySelector('.sheet-begin-btn').textContent;
+          document.querySelector('.sheet-begin-btn').click(); await wait(700);
+          const card = document.querySelector('.fc-card');
+          out.fcCard = !!card;
+          out.fcCount = document.getElementById('testqcounter').textContent;
+          out.fcMode = document.getElementById('testmodelabel').textContent;
+          out.fcTimer = document.getElementById('timerline').hidden;
+          out.fcStar = !!(card && card.querySelector('.fc-star .starfill'));
+          card.click(); await wait(700);
+          out.fcFlipped = card.classList.contains('is-flipped');
+          document.getElementById('fcnext').click(); await wait(150);
+          document.getElementById('fcnext').click(); await wait(400);
+          out.fcGreenAt3 = document.querySelectorAll('#meter .tick.clean').length;
+          document.querySelector('.fc-back-btn').click(); await wait(400);
+          out.fcGreenBack = document.querySelectorAll('#meter .tick.clean').length;
+          document.getElementById('pausebtn').click(); await wait(400);
+          out.fcPause = !!document.querySelector('.pausepanel') && /Exit flashcards/.test(document.querySelector('.pausepanel').textContent);
+          [...document.querySelectorAll('.pausepanel .next')].find(b => /Exit/.test(b.textContent)).click(); await wait(400);
+          out.fcLeft = (typeof fc === 'undefined' || fc === null) && document.getElementById('pausebtn').hidden;
+          /* 9. Learn's list, as cards with air between them */
+          cfg.flashcards = false; showAnswerReview(['Identity Crimes'], 'all', {}); await wait(400);
+          const qs = [...document.querySelectorAll('.screen-answerreview .review-question')];
+          out.listTitle = (document.querySelector('.screen-answerreview .cal-title') || {}).textContent;
+          out.listGap = qs.length > 1 ? Math.round(R(qs[1]).top - R(qs[0]).bottom) : null;
+          out.listCard = qs.length ? parseFloat(getComputedStyle(qs[0]).borderTopLeftRadius) : 0;
+          /* 10. the words */
+          out.modeCard = (document.querySelector ? true : true);
+          }catch(e){ out.err = String(e).slice(0, 200); }
+          return out;
+        }""")
+        ctx.close()
+        check(dev + ": no error in the 303 run", "err" not in r, r.get("err"))
+        check(dev + ": the top row says the mode on the left", r.get("mode") == "Drill" and (r.get("modeLeft") or 999) < 60, (r.get("mode"), r.get("modeLeft")))
+        check(dev + ": and the count in the middle of the screen", r.get("countMid") is not None and abs(r["countMid"]) <= 2, r.get("countMid"))
+        check(dev + ": the timer sits under the progress bar, above the line", r.get("timerUnderMeter") is True)
+        check(dev + ": a pick is pressed before it is answered", r.get("pressing") is True)
+        check(dev + ": a wrong pick lights up red", r.get("wrongFlash") is True)
+        check(dev + ": and lets go on its own after a couple of seconds", r.get("wrongLetGo") is True)
+        check(dev + ": the feedback line has space under it", (r.get("statusGap") or 0) >= 10, r.get("statusGap"))
+        check(dev + ": a right pick pops", r.get("rightPop") is True)
+        check(dev + ": and says something other than the old fixed line",
+              bool(r.get("line")) and r["line"] not in ("Correct, first try.",) and not r["line"].startswith("Correct, after "), r.get("line"))
+        np_ = r.get("nextPill") or {}
+        check(dev + ": Next rises, as a pill clear of the edges",
+              r.get("nextRising") is True and np_.get("w", 9999) < np_.get("vw", 0) - 30 and np_.get("gapBottom", 0) >= 12 and np_.get("radius", "0px") != "0px", np_)
+        check(dev + ": the flag is a star, and fills when tapped", r.get("star") is True and r.get("starOn") is True, (r.get("star"), r.get("starOn")))
+        check(dev + ": and says Starred", r.get("starNote") == "Starred", r.get("starNote"))
+        check(dev + ": paused, the timer stays up in its paused colour", r.get("pausedTimer") is True and r.get("resumedTimer") is True)
+        check(dev + ": Instant feedback is not offered in Drill", r.get("drillHasFeedback") is False)
+        check(dev + ": in Exam with it on, a pick is judged and locked",
+              r.get("examJudged") is True and r.get("examLocked") is True and r.get("examMode") == "Exam", (r.get("examJudged"), r.get("examLocked"), r.get("examMode")))
+        check(dev + ": Review is called Learn", r.get("sheetTitle") == "Learn" and r.get("listTitle") == "Learn", (r.get("sheetTitle"), r.get("listTitle")))
+        check(dev + ": with Flashcards on, Begin says so and opens a card", r.get("beginText") == "Start flashcards" and r.get("fcCard") is True, r.get("beginText"))
+        check(dev + ": the card has the count in the middle, Learn on the left, no timer and a star",
+              r.get("fcCount") == "1 / 12" and r.get("fcMode") == "Learn" and r.get("fcTimer") is True and r.get("fcStar") is True,
+              (r.get("fcCount"), r.get("fcMode"), r.get("fcTimer"), r.get("fcStar")))
+        check(dev + ": a tap flips it", r.get("fcFlipped") is True)
+        check(dev + ": the bar goes green as you go and un-greens going back", r.get("fcGreenAt3") == 2 and r.get("fcGreenBack") == 1, (r.get("fcGreenAt3"), r.get("fcGreenBack")))
+        check(dev + ": Pause is the way out", r.get("fcPause") is True and r.get("fcLeft") is True, (r.get("fcPause"), r.get("fcLeft")))
+        check(dev + ": the list's questions are cards with room between them", (r.get("listGap") or 0) >= 14 and (r.get("listCard") or 0) >= 10, (r.get("listGap"), r.get("listCard")))
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     only = os.environ.get("ONLY_B245")
@@ -7556,6 +7701,7 @@ def main():
             check_b302(br)
             check_b302_flares(br)
             check_b302_flagnote(br)
+            check_b303(br)
         finally:
             br.close()
     SERVER.shutdown()
