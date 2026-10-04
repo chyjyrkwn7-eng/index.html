@@ -2142,6 +2142,14 @@
        half a second of it spent its first 150ms barely moving - which
        read as the glow arriving late rather than fading in. */
     transition:transform .15s ease, --char-glow-k .22s cubic-bezier(.2,.8,.2,1);
+  }
+  /* ONLY THE LIT ONE CARRIES THE FILTER (build 308). Every tile used to
+     wear these drop-shadows at zero size, and a zero-size drop-shadow is
+     still a filter: thirty filtered drawings, each re-rendered as the
+     grid scrolled - "there's so much lag when looking at characters".
+     The selected tile has them, and the one just deselected keeps them
+     for the length of its fade (.is-unglowing, see glowOff()). */
+  .avatarchar-option:not(.locked):is(.selected, .is-unglowing){
     filter:drop-shadow(0 0 calc(5px * var(--char-glow-k)) color-mix(in srgb, var(--char-glow) calc(85% * var(--char-glow-k)), transparent))
            drop-shadow(0 0 calc(16px * var(--char-glow-k)) color-mix(in srgb, var(--char-glow) calc(45% * var(--char-glow-k)), transparent));
   }
@@ -2907,6 +2915,24 @@
   .next:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
   .next[hidden]{ display:none; }
   .next:disabled{ opacity:.35; cursor:default; }
+  /* build 308: a reset with nothing to reset - looks off, still explains
+     itself on a tap (markOffButton). */
+  .restart.is-off, .next.is-off{ opacity:.4; cursor:default; }
+  .under-note{
+    position:fixed; z-index:420; max-width:min(18rem, calc(100vw - 24px));
+    padding:.55rem .75rem; border-radius:12px;
+    font-size:.78rem; line-height:1.35; font-weight:600; color:var(--ink); text-align:center;
+    background:rgba(28,32,40,.96); border:1px solid rgba(255,255,255,.12);
+    box-shadow:0 8px 24px rgba(0,0,0,.4);
+    opacity:0; transform:translateY(-4px); transition:opacity .16s ease, transform .16s ease;
+    pointer-events:none;
+  }
+  .under-note.show{ opacity:1; transform:none; }
+  .under-note::before{
+    content:""; position:absolute; top:-6px; left:var(--arrow-x, 50%); width:10px; height:10px;
+    margin-left:-5px; transform:rotate(45deg);
+    background:rgba(28,32,40,.96); border-left:1px solid rgba(255,255,255,.12); border-top:1px solid rgba(255,255,255,.12);
+  }
   /* Scoped to the id, not the whole .next class — #nextbtn is reused
      one screen at a time (only ever one in the DOM), so this promotes
      just today's actual primary action to its own compositor layer
@@ -6589,6 +6615,8 @@
     transition:grid-template-rows .5s cubic-bezier(.22,.8,.24,1), margin-top .5s cubic-bezier(.22,.8,.24,1);
   }
   .more-body.open{ margin-top:1rem; grid-template-rows:1fr; }
+  /* build 308: Advanced settings - no height animation, see the toggle. */
+  .more-body.is-instant{ transition:none; }
   .more-body-inner{ overflow:hidden; min-height:0; }
   .more-body-inner > *{ opacity:0; transform:translateY(-10px) scale(.985); transition:opacity .22s ease, transform .3s ease; }
   .more-body.open .more-body-inner > *{
@@ -7069,8 +7097,10 @@
     background:var(--panel); border:1px solid var(--rule);
     display:flex; align-items:center; justify-content:center;
     box-shadow:0 2px 10px rgba(18,26,32,.18); cursor:pointer;
-    opacity:0; pointer-events:none; transition:opacity .2s ease;
+    opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease;
+    transform:scale(.9); will-change:opacity, transform;
   }
+  .backtotop.show{ transform:none; }
   [data-theme="dark"] .backtotop{ box-shadow:0 2px 10px rgba(0,0,0,.5); }
   .backtotop.show{ opacity:1; pointer-events:auto; }
   .backtotop[hidden]{ display:none; }
@@ -7892,7 +7922,17 @@
   [data-layout="modern"] .bottomtabs,
   [data-layout="modern"] .bottomtabs.has-glass-refraction{
     backdrop-filter:blur(30px) saturate(1.8); -webkit-backdrop-filter:blur(30px) saturate(1.8);
+    /* THE TEAR, AGAIN (build 308): "the settings tab on the bottom has
+       glitched lines running through it" on the Reset screen. The same
+       iOS fault the update banner had (see Known quirks): solid layers
+       inside a backdrop-filter surface resampled through the blur every
+       frame. The surface declares the filter will change, and the
+       pieces painted on it - the sliding pill and the tabs - get their
+       own layers so they are rasterised once. */
+    will-change:backdrop-filter;
   }
+  [data-layout="modern"] .bottomtabs .bottomtabs-slider{ will-change:transform; backface-visibility:hidden; -webkit-backface-visibility:hidden; }
+  [data-layout="modern"] .bottomtabs .bottomtab{ isolation:isolate; backface-visibility:hidden; -webkit-backface-visibility:hidden; }
   [data-theme="dark"][data-layout="modern"] .bottomtabs{
     background:rgba(20,24,30,.84);
     box-shadow:0 8px 32px rgba(0,0,0,.5), inset 0 1px 1px rgba(255,255,255,.12), inset 0 -1px 1px rgba(0,0,0,.3);
@@ -11924,7 +11964,11 @@
   .resetwarning-panel{
     text-align:center; box-sizing:border-box;
     min-height:calc(100dvh - var(--panel-reserve) - var(--pad-inset-top) - var(--pad-inset-bottom));
-    display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+    /* ONE BLOCK IN THE MIDDLE (build 308): "make those buttons and that
+       description and stuff centered to the screen". It was the warning
+       at the top and the buttons on the floor with the whole screen
+       empty between them. */
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
   }
   /* Both buttons here get an explicit, matching width instead of each
      sizing to its own text length, which is what was producing two
@@ -11936,8 +11980,9 @@
      exactly the drift that stopped this screen matching the Settings
      Reset button. */
   .resetwarning-confirm{
-    margin-top:auto;
+    margin-top:1.6rem;
   }
+  .resetwarning-panel .hometagline{ max-width:26rem; }
   /* "This app" is a stack of equal rows now. The gaps were whatever
      each control happened to bring with it - a ghost pill with an
      inline marginTop, a slab with none - so the section read as
@@ -14342,6 +14387,16 @@
      sleeping and failing POSES are plain properties rather than
      keyframes, so eyes stay shut and the head stays down with every
      animation switched off. */
+  /* The flip-book over a small live character (build 308, see
+     charFlipAttach): one stepped transform on an image, so the drawing
+     under it is hidden rather than removed - it still sizes the tile,
+     and a reaction class shows it again. */
+  .char-flip-play{ position:absolute; overflow:hidden; pointer-events:none; contain:strict; }
+  .char-flip-play img{ position:absolute; left:0; top:0; max-width:none; max-height:none; display:block; will-change:transform; }
+  .char-under-flip{ visibility:hidden; }
+  [class*="char-react-"] .char-flip-play, .char-sleep .char-flip-play{ display:none; }
+  [class*="char-react-"] .char-under-flip, .char-sleep .char-under-flip{ visibility:visible; }
+  [data-reduce-motion="true"] .char-flip-play img{ animation-play-state:paused !important; }
   .avatarchar-svg [class*="cx-"]{ transform-box:fill-box; transform-origin:50% 50%; }
   .avatarchar-svg .cx-fig{ transform-origin:50% 100%; }
   .avatarchar-svg .cx-head{ transform-origin:50% 92%; }
@@ -14381,6 +14436,7 @@
   .avatarchar-svg .cx-k-inferno{ --cx-blink:5.6s; --cx-blink-at:-2.7s; }
   .avatarchar-svg .cx-k-k9{ --cx-blink:4.9s; --cx-blink-at:-1.4s; }
   .avatarchar-svg .cx-fx-flame{ transform-origin:50% 100%; }
+  .avatarchar-svg :is(.cx-fx-umaura, .cx-fx-umaura2){ transform-origin:50% 100%; }
 
   @media (prefers-reduced-motion:no-preference){
     /* ---- BUILD 241: A BREATH AND A SWAY, NEVER A VISIBLE LOOP ----
@@ -14395,17 +14451,15 @@
        each other so the two never line up into a recognisable cycle.
        Each character is offset by its own blink phase. These come FIRST
        so every per-character rule below still wins where it is set. */
-    .char-live .avatarchar-svg .cx-fig{
-      animation:cx-live-breathe var(--cx-br, 4.3s) ease-in-out var(--cx-blink-at, 0s) infinite alternate; }
-    .char-live .avatarchar-svg .cx-head{
-      animation:cx-live-sway var(--cx-hd, 6.1s) ease-in-out var(--cx-blink-at, 0s) infinite alternate; }
-    /* Marble does not breathe. */
-    .char-live .avatarchar-svg :is(.cx-k-zeus, .cx-k-poseidon), .char-live .avatarchar-svg :is(.cx-k-zeus, .cx-k-poseidon) .cx-head{ animation:none; }
+    /* BUILD 308: NO BREATH, NO SWAY, NO FLOAT. "One of the common
+       effects I see is the characters are like bouncing around? We don't
+       really need that effect, kinda ruins it." The whole figure and the
+       head moving was that bounce; the character itself now holds still
+       and only its own details move - eyes, flares, flames, scenery. */
     /* ---- char-live: the idle loops ---- */
     .char-live .avatarchar-svg .cx-eyes{ animation:cx-blink var(--cx-blink, 6s) var(--cx-blink-at, 0s) ease-in-out infinite; }
     /* Carved, hollow, or light rather than eyes: these do not blink. */
     .char-live .avatarchar-svg :is(.cx-k-zeus, .cx-k-poseidon, .cx-k-masked, .cx-k-spartan, .cx-k-umbra) .cx-eyes{ animation:none; }
-    .char-live .avatarchar-svg .cx-k-ghost{ animation:cx-live-float 3.8s ease-in-out infinite alternate; }
     .char-live .avatarchar-svg .cx-fx-tail1{ animation:cx-flutter 1.7s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-tail2{ animation:cx-flutter-b 1.7s ease-in-out -.55s infinite; }
     .char-live .avatarchar-svg .cx-fx-jewel .cx-glint{ animation:cx-glint 4.6s ease-in-out infinite; }
@@ -14420,7 +14474,6 @@
     .char-live .avatarchar-svg .cx-k-dragon .cx-mouth{ animation:cx-jaw 6.2s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-jawgap{ animation:cx-jawgap 6.2s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-smoke{ animation:cx-smoke 6.2s ease-out infinite; }
-    .char-live .avatarchar-svg .cx-k-masked .cx-head{ animation:cx-live-sway 7.5s ease-in-out -2s infinite alternate; }
     .char-live .avatarchar-svg .cx-fx-mark{ animation:cx-flicker-soft 3.8s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-bolt{ animation:cx-bolt 4.4s linear infinite; }
     .char-live .avatarchar-svg .cx-fx-trident, .char-live .avatarchar-svg .cx-fx-gem{ animation:cx-glow 3.4s ease-in-out infinite; }
@@ -14434,7 +14487,6 @@
        the one with the ring could have that move". */
     .char-live .avatarchar-svg .cx-fx-starfield{ animation:cx-spin 40s linear infinite; }
     .char-live .avatarchar-svg .cx-fx-flares{ animation:cx-spin-back 20s linear infinite, cx-live-pulse 2.9s ease-in-out infinite alternate; }
-    .char-live .avatarchar-svg .cx-k-umbra .cx-eyes{ animation:cx-ember 3.2s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-crescent{ animation:cx-flicker-soft 4.2s ease-in-out infinite, cx-live-rock 5.3s ease-in-out infinite alternate; }
     .char-live .avatarchar-svg .cx-fx-wisps{ animation:cx-drift 5s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-umflare{ animation:cx-mk2-pulse 2.6s ease-in-out infinite; }
@@ -14780,7 +14832,8 @@
     .char-live .avatarchar-svg .cx-fx-sghair{ animation:cx-sg-hair 2.6s ease-in-out infinite alternate; }
     .char-live .avatarchar-svg .cx-fx-koiweed{ animation:cx-cl2-sway 2.8s ease-in-out infinite alternate; }
     .char-live .avatarchar-svg .cx-fx-sgstar{ animation:cx-flicker-soft 3.2s ease-in-out infinite, cx-live-rock 5s ease-in-out infinite alternate; }
-    .char-live .avatarchar-svg .cx-k-singularity .cx-eyes{ animation:cx-ember 3s ease-in-out infinite; }
+    /* build 308: Horizon's visor holds still */
+    .char-live .avatarchar-svg .cx-k-singularity .cx-eyes{ animation:none; }
     .char-react-win .avatarchar-svg .cx-fx-bgfall, .char-react-win .avatarchar-svg .cx-fx-bgfall.cx-fx-bgslow{ animation:cx-bg-fall .9s linear infinite; }
     .char-react-win .avatarchar-svg .cx-fx-bgspin, .char-react-win .avatarchar-svg .cx-fx-bgscope{ animation:cx-spin 6s linear infinite; }
   }
@@ -14841,12 +14894,22 @@
   .avatarchar-svg .cx-k-zenith{ --cx-blink:7.4s; --cx-blink-at:-3.2s; }
   @media (prefers-reduced-motion:no-preference){
     .char-live .avatarchar-svg .cx-k-zenith .cx-eyes{ animation:cx-ember 3.1s ease-in-out infinite; }
-    .char-live .avatarchar-svg .cx-fx-zaorbit{ animation:cx-spin 7s linear infinite; }
-    .char-live .avatarchar-svg .cx-fx-zaring{ animation:cx-glow 5.2s ease-in-out -1.3s infinite; }
-    .char-live .avatarchar-svg .cx-fx-zastar{ animation:cx-twinkle 2.8s ease-in-out infinite; }
-    .char-live .avatarchar-svg :is(.cx-fx-zaeyeglow, .cx-fx-zbeyeglow, .cx-fx-zceyeglow){ animation:cx-ember 3.1s ease-in-out infinite; }
-    .char-live .avatarchar-svg .cx-fx-zachest{ animation:cx-twinkle 3.4s ease-in-out -1.6s infinite; }
-    .char-live .avatarchar-svg .cx-fx-zasheen{ animation:cx-sheen-idle 5.6s ease-in-out -1.4s infinite; }
+    /* Zenith A (build 308): everything round the face, nothing on it,
+       and every period a divisor of 6s */
+    .char-live .avatarchar-svg .cx-fx-zarays{ animation:cx-za-rays 6s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-zaorbit{ animation:cx-spin 3s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-zaorbit2{ animation:cx-spin-back 6s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-zaring{ animation:cx-glow 3s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-zastar{ animation:cx-za-star 3s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-zaflare{ animation:cx-za-flare 3s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-zawave{ animation:cx-za-wave 3s ease-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-zadust{ animation:cx-za-dust 3s ease-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-zachest{ animation:cx-twinkle 3s ease-in-out -1.5s infinite; }
+    .char-live .avatarchar-svg :is(.cx-fx-zbeyeglow, .cx-fx-zceyeglow){ animation:cx-ember 3.1s ease-in-out infinite; }
+    /* Umbra and Horizon (build 308): round the face, never on it */
+    .char-live .avatarchar-svg .cx-fx-umaura{ animation:cx-um-aura 3s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-umaura2{ animation:cx-um-aura 3s ease-in-out -1.5s infinite; }
+    .char-live .avatarchar-svg .cx-fx-sgrise{ animation:cx-sg-rise 3s ease-in infinite; }
     .char-live .avatarchar-svg .cx-fx-zbstar{ animation:cx-twinkle 2.66s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-zbtrails{ animation:cx-spin 90s linear infinite; }
     .char-live .avatarchar-svg .cx-fx-zbcapestars0{ animation:cx-bg-tw 2.9s ease-in-out infinite; }
@@ -14860,6 +14923,8 @@
     .char-live .avatarchar-svg .cx-fx-zccrown{ animation:cx-mk2-pulse 2.6s ease-in-out -.7s infinite, cx-zc-hover 3.4s ease-in-out infinite alternate; }
     .char-live .avatarchar-svg .cx-fx-zcsheen{ animation:cx-sheen-idle 5.4s ease-in-out -.9s infinite; }
     .char-react-win .avatarchar-svg .cx-fx-zaorbit{ animation:cx-spin 1.2s linear infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-zarays{ animation:cx-za-rays 1.5s linear infinite; }
+    .char-react-win .avatarchar-svg :is(.cx-fx-zastar, .cx-fx-zaflare, .cx-fx-zawave){ animation-duration:1s; }
     .char-react-win .avatarchar-svg .cx-fx-zbstar{ animation:cx-twinkle .9s ease-in-out infinite; }
     .char-react-win .avatarchar-svg .cx-fx-zbtrails{ animation:cx-spin 8s linear infinite; }
     .char-react-win .avatarchar-svg :is(.cx-fx-zcveins, .cx-fx-zcseam){ animation:cx-mk2-pulse .5s ease-in-out infinite; }
@@ -14910,25 +14975,10 @@
     .char-live .avatarchar-svg .cx-fx-mk3bolt{ animation:cx-mk3-bolt 3.8s linear -1.4s infinite; }
     .char-live .avatarchar-svg .cx-fx-mk3fork{ animation:cx-mk3-fork 3.8s linear -1.4s infinite; }
     .char-live .avatarchar-svg .cx-fx-mk3flash{ animation:cx-mk3-flash 3.8s ease-out -1.4s infinite; }
-    .char-live .avatarchar-svg .cx-k-masked .cx-head{ animation:cx-live-sway 7.5s ease-in-out -2s infinite alternate, cx-mk3-jolt 3.8s linear -1.4s infinite; }
+    .char-live .avatarchar-svg .cx-k-masked .cx-head{ animation:cx-mk3-jolt 3.8s linear -1.4s infinite; }
     /* Umbra: a 7s eclipse; the crescent keeps its rock but not its flicker */
-    .char-live .avatarchar-svg .cx-k-umbra .cx-fx-crescent{ animation:cx-live-rock 5.3s ease-in-out infinite alternate; }
-    .char-live .avatarchar-svg .cx-fx-umshade{ animation:cx-um-shade 7s ease-in-out -1.2s infinite; }
-    .char-live .avatarchar-svg .cx-fx-umcorona{ animation:cx-um-corona 7s ease-in-out -1.2s infinite; }
-    .char-live .avatarchar-svg .cx-fx-umdiamond{ animation:cx-um-diamond 7s ease-out -1.2s infinite; }
-    .char-live .avatarchar-svg .cx-fx-umvortex{ animation:cx-spin-back 16s linear infinite; }
     .char-live .avatarchar-svg .cx-fx-umrim{ animation:cx-um-rim 3.4s ease-in -.4s infinite; }
     .char-live .avatarchar-svg .cx-fx-umwisp{ animation:cx-um-wisp 4.15s ease-out infinite; }
-    /* Horizon */
-    .char-live .avatarchar-svg .cx-fx-sg3orbit{ animation:cx-sg3-orbit 2.6s linear infinite; }
-    .char-live .avatarchar-svg .cx-fx-sg3fall0{ animation:cx-spin 3.1s linear infinite; }
-    .char-live .avatarchar-svg .cx-fx-sg3fall1{ animation:cx-spin 3.7s linear -1.2s infinite; }
-    .char-live .avatarchar-svg .cx-fx-sg3fall2{ animation:cx-spin 4.3s linear -2.5s infinite; }
-    .char-live .avatarchar-svg .cx-fx-sg3mote{ animation:cx-sg3-in 2.3s ease-in infinite; }
-    .char-live .avatarchar-svg .cx-fx-sg3fall1 .cx-fx-sg3mote{ animation-delay:-.8s; }
-    .char-live .avatarchar-svg .cx-fx-sg3fall2 .cx-fx-sg3mote{ animation-delay:-1.5s; }
-    .char-live .avatarchar-svg .cx-fx-sg3ripple{ animation:cx-sg3-ripple 3.3s ease-out -.6s infinite; }
-    .char-live .avatarchar-svg .cx-fx-sg3glint{ animation:cx-sg3-glint 3.6s ease-in-out -1s infinite; }
     /* The Marksman: one 4.4s aim for the squint, the lock, the sheen and the glint */
     .char-live .avatarchar-svg .cx-k-marksman .cx-eyes{ animation:cx-blink var(--cx-blink, 6s) var(--cx-blink-at, 0s) ease-in-out infinite, cx-mk3-squint 4.4s ease-in-out -1s infinite; }
     .char-live .avatarchar-svg .cx-fx-mk3lock{ animation:cx-mk3-lock 4.4s ease-out -1s infinite; }
@@ -14952,15 +15002,12 @@
     .char-live .avatarchar-svg .cx-k-detective .cx-eyes{ animation:cx-blink var(--cx-blink, 6s) var(--cx-blink-at, 0s) ease-in-out infinite, cx-dt3-glance 6.4s ease-in-out -2s infinite; }
     .char-live .avatarchar-svg .cx-fx-dt3lights{ animation:cx-sheen-idle 5.4s ease-in-out -.8s infinite; }
     .char-live .avatarchar-svg .cx-fx-wz3orbit{ animation:cx-spin 3.4s linear infinite; }
-    /* A Virtual Room win: the bolt strikes again and again, the eclipse
-       races, the disk spins up, the lock and the glint come fast. */
+    /* A Virtual Room win: the bolt strikes again and again, Umbra's
+       shadow and Horizon's light race, the lock and the glint come fast. */
     .char-react-win .avatarchar-svg .cx-fx-mk3bolt{ animation:cx-mk3-bolt 1.3s linear infinite; }
     .char-react-win .avatarchar-svg .cx-fx-mk3fork{ animation:cx-mk3-fork 1.3s linear infinite; }
     .char-react-win .avatarchar-svg .cx-fx-mk3flash{ animation:cx-mk3-flash 1.3s ease-out infinite; }
-    .char-react-win .avatarchar-svg .cx-fx-umshade{ animation:cx-um-shade 2.4s ease-in-out infinite; }
-    .char-react-win .avatarchar-svg .cx-fx-umcorona{ animation:cx-um-corona 2.4s ease-in-out infinite; }
-    .char-react-win .avatarchar-svg .cx-fx-umdiamond{ animation:cx-um-diamond 2.4s ease-out infinite; }
-    .char-react-win .avatarchar-svg .cx-fx-sg3orbit{ animation:cx-sg3-orbit .8s linear infinite; }
+    .char-react-win .avatarchar-svg :is(.cx-fx-umaura, .cx-fx-umaura2, .cx-fx-sgrise){ animation-duration:1s; }
     .char-react-win .avatarchar-svg .cx-fx-mk3lock{ animation:cx-mk3-lock 1.6s ease-out infinite; }
     .char-react-win .avatarchar-svg .cx-fx-mk3glint{ animation:cx-glint 1.6s ease-in-out infinite; }
     .char-react-win .avatarchar-svg .cx-fx-sa3belt{ animation:cx-sa3-belt 1s ease-in-out infinite; }
@@ -14969,17 +15016,18 @@
   @keyframes cx-mk3-fork{ 0%, 61%, 100%{ opacity:0; } 63%{ opacity:1; } 65%{ opacity:.2; } 67%{ opacity:.95; } 77%{ opacity:0; } }
   @keyframes cx-mk3-flash{ 0%, 58%, 100%{ opacity:0; } 63%{ opacity:1; } 66%{ opacity:.55; } 68%{ opacity:.9; } 85%{ opacity:0; } }
   @keyframes cx-mk3-jolt{ 0%, 61%, 72%, 100%{ translate:0 0; } 63%{ translate:.24px -.1px; } 66%{ translate:-.2px .06px; } 69%{ translate:.1px 0; } }
-  @keyframes cx-um-shade{ 0%, 20%, 86%, 100%{ transform:none; } 44%, 60%{ transform:translateX(2.03px) scale(1.42); } }
-  @keyframes cx-um-corona{ 0%, 38%, 100%{ opacity:0; transform:scale(.8); } 46%{ opacity:1; transform:none; } 58%{ opacity:.9; transform:scale(1.1); } 68%{ opacity:0; transform:scale(1.2); } }
-  @keyframes cx-um-diamond{ 0%, 59%, 100%{ opacity:0; transform:scale(.2); } 63%{ opacity:1; transform:scale(1.15) rotate(30deg); } 71%{ opacity:0; transform:scale(.3) rotate(70deg); } }
   @keyframes cx-um-rim{ 0%, 100%{ stroke-dashoffset:4; opacity:0; } 5%{ opacity:1; } 55%{ stroke-dashoffset:-31; opacity:1; } 58%{ stroke-dashoffset:-31; opacity:0; } }
   @keyframes cx-um-wisp{ 0%, 100%{ transform:none; opacity:0; } 22%{ opacity:.75; } 82%{ transform:translateY(-2.8px) scale(.45); opacity:0; } }
-  /* one lap of the disk: 18.78 is the ellipse's circumference, and its
-     dash plus gap (2.4 + 16.38), so the end is the start */
-  @keyframes cx-sg3-orbit{ from{ stroke-dashoffset:0; } to{ stroke-dashoffset:-18.78; } }
-  @keyframes cx-sg3-in{ 0%, 100%{ transform:none; opacity:0; } 14%{ opacity:1; } 80%{ transform:translateX(-4.6px) scale(.3); opacity:.9; } 86%{ transform:translateX(-5px) scale(.1); opacity:0; } }
-  @keyframes cx-sg3-ripple{ 0%, 100%{ transform:scale(.8); opacity:0; } 10%{ opacity:.4; } 58%{ transform:scale(3); opacity:0; } }
-  @keyframes cx-sg3-glint{ 0%, 100%{ stroke-dashoffset:1.8; opacity:0; } 6%{ opacity:1; } 40%{ stroke-dashoffset:-10.8; opacity:1; } 44%{ stroke-dashoffset:-10.8; opacity:0; } }
+  /* build 308: Umbra's shadow breathing off the hood, light rising up
+     Horizon's hair (pathLength 10, a 2.4 dash), and Zenith's corona,
+     star flare, shockwave and stardust */
+  @keyframes cx-um-aura{ 0%, 100%{ transform:scale(.97, .95); opacity:.35; } 50%{ transform:scale(1.03, 1.06); opacity:.85; } }
+  @keyframes cx-sg-rise{ 0%{ stroke-dashoffset:2.4; opacity:0; } 12%{ opacity:.95; } 70%{ opacity:.8; } 86%, 100%{ stroke-dashoffset:-10; opacity:0; } }
+  @keyframes cx-za-rays{ from{ transform:none; } to{ transform:rotate(30deg); } }
+  @keyframes cx-za-star{ 0%, 100%{ transform:none; } 46%{ transform:scale(.9); } 54%{ transform:scale(1.35) rotate(45deg); } 70%{ transform:rotate(90deg); } }
+  @keyframes cx-za-flare{ 0%, 46%, 100%{ transform:scale(.2, .6); opacity:0; } 54%{ transform:none; opacity:1; } 76%{ transform:scale(.7, .9); opacity:0; } }
+  @keyframes cx-za-wave{ 0%, 50%{ transform:scale(.6); opacity:0; } 54%{ opacity:.9; } 90%, 100%{ transform:scale(3.4); opacity:0; } }
+  @keyframes cx-za-dust{ 0%{ transform:none; opacity:0; } 15%{ opacity:.95; } 85%{ opacity:.5; } 100%{ transform:translateY(-9px) scale(.5); opacity:0; } }
   @keyframes cx-mk3-squint{ 0%, 30%, 74%, 100%{ scale:1; } 40%, 64%{ scale:1 .55; } }
   @keyframes cx-mk3-lock{ 0%, 34%, 100%{ opacity:0; transform:scale(1.7); } 46%{ opacity:1; transform:none; } 52%{ opacity:.3; } 56%{ opacity:1; } 64%{ opacity:1; transform:none; } 72%{ opacity:0; transform:scale(.9); } }
   @keyframes cx-mk3-wind{ from{ transform:skewX(-3deg); } to{ transform:skewX(3.5deg); } }
@@ -34113,8 +34161,13 @@ const AVATAR_HEAD_SCALE = {
   /* the Marksman's ghillie hood, build 272: its shag made it a head that filled the frame too */
   marksman: [.8, 20, 30]
 };
+/* Detective was 1.16 (build 272's "fills its tile to the same height"),
+   which made the whole figure - hat, head and shoulders - visibly bigger
+   than everybody beside it: "some of the characters when selected, they
+   appear larger throughout the app. Like detective for example looks much
+   bigger on the leaderboard." Back to 1 (build 308). */
 const AVATAR_ART_SCALE = {
-  dragon: 1.09, detective: 1.16, masked: 1.08, zeus: 1.05,
+  dragon: 1.09, detective: 1, masked: 1.08, zeus: 1.05,
   officer: 1.06,
   marksman: 1.06, pharaoh: 1.03
 };
@@ -35821,7 +35874,27 @@ function drawAvatarCharSVG(charId){
     const darkB = lin([["0%", "#5A5AA6"], ["30%", "#22245A"], ["100%", "#010103"]], 31, 27.4, 28, 36);
     const plane = (pts, fill, edgeC, ew) => svg.appendChild(mk("path", { d: poly(pts), fill, stroke: edgeC || "none", "stroke-width": ew || ".22", "stroke-linejoin": "round" }));
     const RCX = 20, RCY = 16.6, RR = 11;
-    /* THE RING OF STARLIGHT: a halo behind the head, a spark running
+    /* BUILD 308: THE ULTIMATE CHARACTER MOVES LIKE ONE. "Zenith effects
+       is just the face glistening which is super lame." The sheen across
+       the helm and the ember in the eyes are gone - the face is black
+       glass and stays still - and the light is all round it:
+         - a corona of twelve rays behind the halo, long and short,
+           turning slowly (12-fold, so 30deg a loop joins up);
+         - two sparks lapping the ring in opposite directions;
+         - the zenith star flaring on a beat, streaks out and a ring of
+           light thrown off it;
+         - stardust rising off the shoulders into the halo.
+       Every period divides 6s, so the recorded flip-book loops clean. */
+    open("cx-fx cx-fx-zarays");
+    svg.appendChild(pivot(RCX, RCY, RR + 5));
+    { const rg = rad([["0%", "#FFFFFF", ".0"], ["62%", "#C9D6FF", ".0"], ["70%", "#D6E0FF", ".55"], ["100%", "#9C8BFF", "0"]], RCX, RCY, RR + 5.2);
+      for(let k = 0; k < 12; k++){
+        const a = (k * 30 - 90) * Math.PI / 180, long = k % 2 === 0, r1 = RR + (long ? 5.1 : 3.2), w = long ? .055 : .04;
+        const pA = [RCX + Math.cos(a - w) * (RR - .4), RCY + Math.sin(a - w) * (RR - .4)], pB = [RCX + Math.cos(a + w) * (RR - .4), RCY + Math.sin(a + w) * (RR - .4)];
+        svg.appendChild(mk("path", { d: "M" + f2(pA[0]) + " " + f2(pA[1]) + " L" + f2(RCX + Math.cos(a) * r1) + " " + f2(RCY + Math.sin(a) * r1) + " L" + f2(pB[0]) + " " + f2(pB[1]) + " Z", fill: rg, opacity: long ? ".9" : ".6" }));
+      } }
+    close();
+    /* THE RING OF STARLIGHT: a halo behind the head, sparks running
        round it; the zenith star sits at its top */
     open("cx-fx cx-fx-zaring");
     svg.appendChild(mk("circle", { cx: RCX, cy: RCY, r: RR, fill: "none", stroke: "#B9C4FF", "stroke-width": "1.9", opacity: ".16" }));
@@ -35839,6 +35912,20 @@ function drawAvatarCharSVG(charId){
       svg.appendChild(star4(hx, hy, .9, 1.25, "#FFFFFF"));
     }
     close();
+    /* the second spark, the other way round, violet */
+    open("cx-fx cx-fx-zaorbit2");
+    svg.appendChild(pivot(RCX, RCY, RR));
+    {
+      const head = Math.PI - .5, p = a => f2(RCX + Math.cos(a) * RR) + " " + f2(RCY + Math.sin(a) * RR);
+      [[.9, .26, ".25"], [.4, .44, ".6"]].forEach(([len, w, op]) =>
+        svg.appendChild(mk("path", { d: "M" + p(head) + " A" + RR + " " + RR + " 0 0 1 " + p(head + len), fill: "none", stroke: "#C9B8FF", "stroke-width": w, "stroke-linecap": "round", opacity: op })));
+      svg.appendChild(mk("circle", { cx: f2(RCX + Math.cos(head) * RR), cy: f2(RCY + Math.sin(head) * RR), r: .42, fill: "#F1ECFF" }));
+    }
+    close();
+    /* stardust rising off the shoulders into the halo */
+    [[9.6, 30.4, .3], [13, 28.6, .22], [30.4, 30.4, .3], [27, 28.6, .22], [7.2, 26, .2], [32.8, 26, .2]].forEach(([x, y, r], i) =>
+      svg.appendChild(mk("circle", { cx: x, cy: y, r, fill: i % 2 ? "#D8CCFF" : "#FFFFFF", opacity: "0", class: "cx-fx cx-fx-zadust",
+        style: "animation-delay:" + (-i * .5).toFixed(2) + "s" })));
     open("cx-body");
     /* the torso, two planes meeting down the middle */
     svg.appendChild(mk("path", { d: "M5.4 40 Q5.8 31.4 12.8 29 L20 29 L20 40 Z", fill: litB }));
@@ -35890,12 +35977,16 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("path", { d: "M24.5 17.9 Q22.3 17.8 20.6 19.3 Q22.6 20.1 24.5 17.9 Z", fill: "#FFFFFF" }));
     close();
     closedEyes([[17.5, 19, 1.5], [22.5, 19, 1.5]], "#8FCBFF", .4);
-    sheen([helmD], "cx-fx-zasheen", 11.6, 28.4, 5.8, 29.2, "#FFFFFF");
     /* THE ZENITH STAR, at the top of the ring, over the spire */
+    svg.appendChild(mk("circle", { cx: RCX, cy: f2(RCY - RR), r: 2.2, fill: "none", stroke: "#E6ECFF", "stroke-width": ".3", opacity: "0", class: "cx-fx cx-fx-zawave" }));
     open("cx-fx cx-fx-zastar");
     svg.appendChild(mk("circle", { cx: RCX, cy: f2(RCY - RR), r: 3.6, fill: rad([["0%", "#FFFFFF", ".9"], ["30%", "#DDE8FF", ".5"], ["100%", "#A9B8FF", "0"]], RCX, f2(RCY - RR), 3.6) }));
     svg.appendChild(star4(RCX, f2(RCY - RR), 1.7, 2.5, "#FFFFFF"));
     svg.appendChild(mk("circle", { cx: RCX, cy: f2(RCY - RR), r: .5, fill: "#FFFFFF" }));
+    close();
+    /* the flare: streaks out either side, longer across than down */
+    open("cx-fx cx-fx-zaflare");
+    svg.appendChild(star4(RCX, f2(RCY - RR), 7.2, 3.4, "#FFFFFF", .85));
     close();
     return done();
   }
@@ -37668,6 +37759,14 @@ function drawAvatarCharSVG(charId){
      the full shadow of an eclipse, which is what its name means. */
   if(def.kind === "umbra"){
     const cloak = headGrad("#3A2A5E", "#1E1636", "#0C0916");
+    /* the shadow breathing off the hood: two soft violet flames licking
+       up behind the point, on their own beats */
+    { const ag = uid + "-uma"; const rg = mk("radialGradient", { id: ag, gradientUnits: "userSpaceOnUse", cx: 20, cy: 14, r: 13 });
+      [["0%", "#8B5CF6", ".55"], ["55%", "#6D28D9", ".22"], ["100%", "#4C1D95", "0"]].forEach(([o, c, op]) => rg.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
+      defs.appendChild(rg);
+      [["M20 1.2 Q25.6 6.4 27.2 14 Q28.8 22 26 30 L14 30 Q11.2 22 12.8 14 Q14.4 6.4 20 1.2 Z", "cx-fx-umaura"],
+       ["M20 -.6 Q27.4 5.6 29.6 14.4 Q31 23 27.4 31 L12.6 31 Q9 23 10.4 14.4 Q12.6 5.6 20 -.6 Z", "cx-fx-umaura2"]].forEach(([d, c]) =>
+        svg.appendChild(mk("path", { d, fill: "url(#" + ag + ")", class: "cx-fx " + c }))); }
     open("cx-body");
     svg.appendChild(mk("path", { d: "M5.4 40 Q6 30.4 13.8 28.2 L26.2 28.2 Q34 30.4 34.6 40 Z", fill: cloak }));
     close();
@@ -37677,32 +37776,14 @@ function drawAvatarCharSVG(charId){
     /* The dark inside, where a face should be. */
     const umFace = "M20 10.8 Q26.4 13.4 26.6 21.4 Q26.6 26.6 20 28.6 Q13.4 26.6 13.4 21.4 Q13.6 13.4 20 10.8 Z";
     svg.appendChild(mk("path", { d: umFace, fill: "#050409" }));
-    /* BUILD 304: "Umbra and horizon characters animations are super lame,
-       the characters don't even do anything." Three things move now, and
-       each is the shadow doing something:
-         - THE VOID TURNS. Three faint violet arms spiral slowly in the
-           dark where a face should be (cx-fx-umvortex), clipped to it -
-           dark matter, not a face.
-         - THE CRESCENT ECLIPSES. Its shadow slides across until the moon
-           is gone and only a corona is left, a diamond ring flashes as
-           the light comes back, and it is a crescent again (below).
-         - A LIGHT RUNS DOWN THE RIM, and the wisps at the hem rise off it
-           and fade.
-       Only transforms, opacity and one dash offset move. */
-    { const vc = uid + "-umv"; const cp = mk("clipPath", { id: vc });
-      cp.appendChild(mk("path", { d: umFace })); defs.appendChild(cp);
-      const holder = mk("g", { "clip-path": "url(#" + vc + ")" });
-      const sw = mk("g", { class: "cx-fx cx-fx-umvortex" });
-      sw.appendChild(pivot(20, 21.6, 8.4));
-      [0, 1, 2].forEach(k => {
-        let d = "";
-        for(let i = 0; i <= 24; i++){ const t = i / 24, th = k * 2.094 + t * 3.8, r = .7 + t * 7.4;
-          d += (i ? " L" : "M") + (20 + Math.cos(th) * r).toFixed(2) + " " + (21.6 + Math.sin(th) * r * .84).toFixed(2); }
-        sw.appendChild(mk("path", { d, fill: "none", stroke: k === 1 ? "#8B5CF6" : "#A78BFA", "stroke-width": ".4", "stroke-linecap": "round", opacity: ".27" }));
-        const th = k * 2.094 + 2.4, r = .7 + 4.7;
-        sw.appendChild(mk("circle", { cx: (20 + Math.cos(th) * r).toFixed(2), cy: (21.6 + Math.sin(th) * r * .84).toFixed(2), r: ".26", fill: "#DDD6FE", opacity: ".6" }));
-      });
-      holder.appendChild(sw); svg.appendChild(holder); }
+    /* BUILD 308: THE FACE STAYS STILL. Build 304 turned a spiral in the
+       dark of the hood and eclipsed the crescent on the brow, and both
+       were on the face: "Umbra and horizon animations are bad because it
+       takes away from their cool faces.. revert and fix and make less in
+       the face". The face is the empty dark and the two slants again;
+       what moves is round it - the light running down the rim, the
+       flare at the throat, the hem dissolving, and the shadow itself
+       breathing off the hood (cx-fx-umaura, behind everything). */
     /* The rim light, one side only. */
     const umRim = "M20.4 4.4 Q27.2 9 29.2 18.6 Q30.2 24.8 27.4 30.6";
     svg.appendChild(mk("path", { d: umRim, fill: "none", stroke: "#A78BFA", "stroke-width": ".7", "stroke-linecap": "round", opacity: ".85" }));
@@ -37732,21 +37813,12 @@ function drawAvatarCharSVG(charId){
        and live the shadow can move. Sliding 2.03 right and growing 1.42x
        covers the disc exactly: totality. */
     open("cx-fx cx-fx-crescent");
-    { const cg = uid + "-umc"; const rg = mk("radialGradient", { id: cg });
-      [["0%", "#C4B5FD", "0"], ["55%", "#C4B5FD", ".55"], ["70%", "#8B5CF6", ".3"], ["100%", "#8B5CF6", "0"]].forEach(([o, c, op]) => rg.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
-      defs.appendChild(rg);
-      const cor = mk("g", { class: "cx-fx-umcorona", opacity: "0" });
-      cor.appendChild(mk("circle", { cx: 22.77, cy: 15.4, r: 3.9, fill: "url(#" + cg + ")" }));
-      cor.appendChild(mk("circle", { cx: 22.77, cy: 15.4, r: 2.2, fill: "none", stroke: "#EDE9FE", "stroke-width": ".32" }));
-      svg.appendChild(cor);
+    { const cg = uid + "-umc";
       const cp = mk("clipPath", { id: cg + "c" }); cp.appendChild(mk("circle", { cx: 22.77, cy: 15.4, r: 2.1 })); defs.appendChild(cp);
       const moon = mk("g", { "clip-path": "url(#" + cg + "c)" });
       moon.appendChild(mk("circle", { cx: 22.77, cy: 15.4, r: 2.1, fill: "#C4B5FD" }));
-      moon.appendChild(mk("circle", { cx: 20.74, cy: 15.4, r: 1.6, fill: "#050409", class: "cx-fx-umshade" }));
-      svg.appendChild(moon);
-      const dia = sparkle(24.7, 14.9, 1.25, "#FFFFFF");
-      dia.setAttribute("class", "cx-fx-umdiamond"); dia.setAttribute("opacity", "0");
-      svg.appendChild(dia); }
+      moon.appendChild(mk("circle", { cx: 20.74, cy: 15.4, r: 1.6, fill: "#050409" }));
+      svg.appendChild(moon); }
     close();
     /* THE FOURTH FLARE, worn (build 277): "Can you incorporate the 4th
        flare in umbra". It holds the cloak closed at the throat - the
@@ -37801,8 +37873,22 @@ function drawAvatarCharSVG(charId){
        out and the sway is wide, so each one is a wave, not a spike */
     [[13.4, 2, 10, -8.4, 3.6], [16.6, 2, 14, -4.6, -3.6], [23.4, 2, 14, 4.6, 3.6], [26.6, 2, 10, 8.4, -3.6]].forEach(([x, w, h, lean, sway]) =>
       svg.appendChild(lock(x, 19.2, w, h, lean, sway, back, ".9")));
-    [[12.6, 1.7, 8, -7.6, -3], [14.8, 1.8, 11.6, -4.4, 3.4], [17.4, 1.8, 14.4, -1.6, -3.4], [20, 1.9, 15.6, .6, 3], [22.6, 1.8, 14.4, 2.2, -3.4], [25.2, 1.8, 11.6, 4.8, 3.4], [27.4, 1.7, 8, 7.8, -3]].forEach(([x, w, h, lean, sway]) =>
+    const frontLocks = [[12.6, 1.7, 8, -7.6, -3], [14.8, 1.8, 11.6, -4.4, 3.4], [17.4, 1.8, 14.4, -1.6, -3.4], [20, 1.9, 15.6, .6, 3], [22.6, 1.8, 14.4, 2.2, -3.4], [25.2, 1.8, 11.6, 4.8, 3.4], [27.4, 1.7, 8, 7.8, -3]];
+    frontLocks.forEach(([x, w, h, lean, sway]) =>
       svg.appendChild(lock(x, 19.6, w, h, lean, sway, front, "1")));
+    close();
+    /* BUILD 308: THE PULL, SHOWN IN THE HAIR. Light rises up the locks
+       from the roots and leaves off the tips - the same pull the motes
+       in the sky behind show - each lock on its own beat. pathLength
+       makes every lock 10 long, so one dash and one keyframe fit all. */
+    open("cx-fx cx-fx-sglight");
+    frontLocks.forEach(([bx, w, h, lean, sway], i) => {
+      const by = 18.6, tx = bx + lean, ty = 19.6 - h;
+      svg.appendChild(mk("path", { d: "M" + f(bx) + " " + f(by) + " C" + f(bx + sway * .45) + " " + f(by - h * .4) + " " + f(tx - sway * .6) + " " + f(ty + h * .35) + " " + f(tx) + " " + f(ty),
+        pathLength: "10", fill: "none", stroke: "#FFFFFF", "stroke-width": i === 3 ? ".62" : ".5", "stroke-linecap": "round",
+        "stroke-dasharray": "2.4 30", "stroke-dashoffset": "2.4", opacity: "0", class: "cx-fx-sgrise",
+        style: "animation-delay:" + (-[0, 1.9, .7, 2.6, 1.3, .3, 2.2][i]).toFixed(2) + "s" }));
+    });
     close();
     /* the collar standing up round the neck */
     svg.appendChild(mk("path", { d: "M12.6 31 Q11.8 25.6 13.6 22.6 Q15.4 26.6 20 27.8 Q24.6 26.6 26.4 22.6 Q28.2 25.6 27.4 31 Z", fill: headGrad("#2E3A5C", "#141C32", "#05070E") }));
@@ -37814,10 +37900,6 @@ function drawAvatarCharSVG(charId){
     open("cx-eyes");
     svg.appendChild(mk("path", { d: "M14.6 19.4 Q20 18 25.4 19.4", fill: "none", stroke: iceDeep, "stroke-width": "2.2", "stroke-linecap": "round", opacity: ".45", class: "cx-fx-sgvisor" }));
     svg.appendChild(mk("path", { d: "M14.8 19.4 Q20 18.1 25.2 19.4", fill: "none", stroke: "#FFFFFF", "stroke-width": ".75", "stroke-linecap": "round" }));
-    /* build 304: light bending across the visor - a short bright run
-       crosses the line now and then (the line is 10.5 long) */
-    svg.appendChild(mk("path", { d: "M14.8 19.4 Q20 18.1 25.2 19.4", fill: "none", stroke: "#F4FBFF", "stroke-width": "1.45", "stroke-linecap": "round",
-      "stroke-dasharray": "1.6 30", opacity: "0", class: "cx-fx-sg3glint" }));
     close();
     closedEyes([[20, 19.5, 4.4]], "#9CC8E8", .5);
     open("cx-mouth"); close();
@@ -37825,35 +37907,13 @@ function drawAvatarCharSVG(charId){
        5th in singularity". It was a white sparkle standing in for it; now
        it is the flare itself, in the flare's own colour - bloom, disc,
        white-hot core - the way Umbra wears the fourth. */
-    /* BUILD 304: THE HORIZON PULLS. "Umbra and horizon characters
-       animations are super lame." The flare on the brow is an event
-       horizon, so things fall into it: a tilted accretion disk with a
-       bright clump of matter orbiting round it (a dash run round the
-       ellipse - 18.78 is its circumference, so the dash and gap make one
-       lap and the loop is seamless), motes spiralling in and going out
-       as they reach it (each turns with its group while it falls along
-       the radius), and a ring of bent light rippling off it. The faint
-       half of the disk is drawn behind the flare and the near half in
-       front, so it reads as round. */
-    const disk = "rotate(-14 20 15)";
-    svg.appendChild(mk("ellipse", { cx: 20, cy: 15, rx: 4.4, ry: 1.05, transform: disk, fill: "none", stroke: ice, "stroke-width": ".28", opacity: ".38" }));
+    /* BUILD 308: the accretion disk, the motes falling into it and the
+       ripple are gone - they all sat on the face ("revert and fix and
+       make less in the face"). The flare is worn on the brow as it was
+       before 304 and holds still. */
     open("cx-fx cx-fx-sgstar");
     wornFlare(20, 15, MYSTERY_COLOR.white, "#DDF4FF", 1);
     close();
-    svg.appendChild(mk("path", { d: "M24.4 15 A4.4 1.05 0 0 1 15.6 15", transform: disk, fill: "none", stroke: ice, "stroke-width": ".32", opacity: ".6" }));
-    /* the tilt sits on a plain holder: on the classed ellipse, the
-       shared transform-origin rule would move the rotate's centre */
-    { const tilt = mk("g", { transform: disk });
-      tilt.appendChild(mk("ellipse", { cx: 20, cy: 15, rx: 4.4, ry: 1.05, fill: "none", stroke: "#FFFFFF", "stroke-width": ".5", "stroke-linecap": "round",
-        "stroke-dasharray": "2.4 16.38", class: "cx-fx-sg3orbit" }));
-      svg.appendChild(tilt); }
-    svg.appendChild(mk("circle", { cx: 20, cy: 15, r: 2, fill: "none", stroke: ice, "stroke-width": ".22", opacity: "0", class: "cx-fx-sg3ripple" }));
-    [0, 1, 2].forEach(k => {
-      const g = mk("g", { class: "cx-fx cx-fx-sg3fall cx-fx-sg3fall" + k });
-      g.appendChild(pivot(20, 15, 5.4));
-      g.appendChild(mk("circle", { cx: 25.2, cy: 15, r: ".46", fill: k === 1 ? "#FFFFFF" : "#BFE6FF", opacity: "0", class: "cx-fx-sg3mote" }));
-      svg.appendChild(g);
-    });
     close();
     return done();
   }
@@ -47190,16 +47250,30 @@ setInterval(() => { _rkSeen.forEach(t => { if(!t.isConnected){ try { _rkIO && _r
    classmate opened from the Leaderboard is simply live. */
 function setCharState(el, state){
   if(!el) return el;
-  el.classList.remove("char-live", "char-sleep");
+  el.classList.remove("char-live", "char-sleep", "char-flip");
   const old = el.querySelector(":scope > .char-zzz");
   if(old) old.remove();
+  el.querySelectorAll(".char-flip-play").forEach(n => n.remove());
+  el.querySelectorAll(".char-under-flip").forEach(n => n.classList.remove("char-under-flip"));
   if(state === "live"){
     /* The idle loop waits out a screen's entrance (build 281), like the
        rank emblems: it is motion inside an svg, the costliest kind there
-       is, and the slide-in should have its frames to itself. */
+       is, and the slide-in should have its frames to itself.
+       A small tile plays a recorded flip-book instead of the live svg
+       (build 308, see charFlipAttach); anything that turns out too big,
+       or cannot be recorded, falls back to the live drawing. */
+    el.classList.add("char-flip");
+    const goLive = () => { if(el.classList.contains("char-flip")){ el.classList.remove("char-flip"); el.classList.add("char-live"); } };
+    let tries = 0;
+    const attach = () => {
+      if(!el.classList.contains("char-flip") || el.classList.contains("char-sleep")) return;
+      if(!el.isConnected){ if(++tries < 40) setTimeout(attach, 150); return; }
+      const r = charFlipAttach(el);
+      if(r === false) goLive();
+      else if(r === null){ if(++tries < 40) setTimeout(attach, 150); else goLive(); }
+    };
     const wait = (typeof settleUntil === "number") ? settleUntil - Date.now() : 0;
-    if(wait > 0) setTimeout(() => { if(el.isConnected && !el.classList.contains("char-sleep")) el.classList.add("char-live"); }, wait);
-    else el.classList.add("char-live");
+    setTimeout(attach, Math.max(0, wait));
   }
   if(state === "sleep"){
     /* Live as well as asleep (build 302): the idle loops and the
@@ -47739,6 +47813,44 @@ function buildStreakBadge(){
    popover on click, for reference-style text that doesn't need to sit
    permanently on screen (as opposed to decision-support text, which
    stays inline since it helps an active choice). */
+/* ---- A BUTTON THAT CAN'T, SAYS WHY (build 308) ----
+   Drawn dimmed like a disabled one, but it still takes the tap, and the
+   tap puts a small note directly underneath it for a few seconds. One
+   note at a time; it goes on any scroll or the next tap anywhere. */
+function markOffButton(btn, why){
+  btn.classList.add("is-off");
+  btn.setAttribute("aria-disabled", "true");
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    showUnderNote(btn, why);
+  });
+}
+function showUnderNote(anchor, text){
+  document.querySelectorAll(".under-note").forEach(n => n.remove());
+  const note = document.createElement("div");
+  note.className = "under-note";
+  note.setAttribute("role", "status");
+  note.textContent = text;
+  document.body.appendChild(note);
+  const r = anchor.getBoundingClientRect();
+  const w = Math.min(note.offsetWidth, window.innerWidth - 24);
+  const left = Math.max(12, Math.min(window.innerWidth - 12 - w, r.left + r.width / 2 - w / 2));
+  note.style.left = Math.round(left) + "px";
+  note.style.top = Math.round(r.bottom + 8) + "px";
+  note.style.setProperty("--arrow-x", Math.round(r.left + r.width / 2 - left) + "px");
+  requestAnimationFrame(() => note.classList.add("show"));
+  const drop = () => {
+    note.classList.remove("show");
+    setTimeout(() => note.remove(), 200);
+    window.removeEventListener("scroll", drop, true);
+    document.removeEventListener("pointerdown", drop, true);
+  };
+  setTimeout(drop, 3200);
+  setTimeout(() => {
+    window.addEventListener("scroll", drop, true);
+    document.addEventListener("pointerdown", drop, true);
+  }, 0);
+}
 function buildInfoIcon(text){
   const wrap = document.createElement("span");
   wrap.className = "infoicon-wrap";
@@ -51435,7 +51547,8 @@ async function orbitAnimCachePut(tier, px, blob){
     if(!window.caches) return;
     const c = await caches.open(ORBIT_ANIM_CACHE);
     const keep = "/__rk/" + ORBIT_ANIM_VER + "/";
-    (await c.keys()).forEach(k => { if(new URL(k.url).pathname.indexOf(keep) !== 0) c.delete(k); });
+    /* only its own old versions: the character sheets share this cache */
+    (await c.keys()).forEach(k => { const pn = new URL(k.url).pathname; if(pn.indexOf("/__rk/") === 0 && pn.indexOf(keep) !== 0) c.delete(k); });
     await c.put(orbitAnimCacheKey(tier, px), new Response(blob, { headers: { "Content-Type": "image/png" } }));
   }catch(e){}
 }
@@ -51619,6 +51732,277 @@ function startOrbitEmblemAnims(root, readyOnly){
       svg.classList.add("rk-under-anim");
     }
   })();
+}
+/* ---- CHARACTERS AS FLIP-BOOKS (build 308) ----
+   "All the character animations on the leaderboard LOOK SO LAGGY and
+   bad. It's not smooth at all." Measured on a 40-row board at 4x CPU
+   throttle: 116ms a frame with the idle loops on, 16.7 with them off.
+   Taking away the filters, the row blur or the breathing alone got it
+   to 66-83 at best - the cost is motion INSIDE an svg, which the
+   browser repaints on the CPU, whole drawing, every frame, for every
+   row. So a small character does what the Home flare bubbles already
+   do (build 298): its idle loop is recorded ONCE into a sprite sheet
+   and played as a stepped transform on an <img>, which is the
+   compositor moving a layer it already has.
+   - Only small tiles (CHAR_FLIP_MAX_CSS) - rows, the tab bar, chat
+     faces, pickers. A large hero keeps the live drawing, where one
+     svg is affordable and the extra sharpness shows.
+   - Never asleep: the sleeping pose is a different picture, and a
+     sleeper is a friend's card, not a board of forty.
+   - Same cache as the orbit sheets, under its own path, keyed by a
+     hash of the drawing so a redraw re-records and nothing else does. */
+const CHAR_ANIM_LOOP_MS = 6000;
+const CHAR_ANIM_FRAMES = 144;   /* 24 a second */
+const CHAR_ANIM_COLS = 12;
+const CHAR_ANIM_VER = "c2";
+const CHAR_FLIP_MAX_CSS = 80;
+const charAnimSheets = new Map();
+const charAnimDrawings = new Map();
+function charAnimDrawing(charId){
+  if(!charAnimDrawings.has(charId)){
+    const svg = buildAvatarCharSVGSafe(charId);
+    const uid = svg.getAttribute("data-cx-uid") || "\u0000";
+    const id = charId + "-" + hashOf(new XMLSerializer().serializeToString(svg).split(uid).join("u"));
+    charAnimDrawings.set(charId, { svg, id });
+  }
+  return charAnimDrawings.get(charId);
+}
+function charAnimCacheKey(id, px){ return "/__ch/" + CHAR_ANIM_VER + "/" + encodeURIComponent(id) + "/" + px + ".png"; }
+async function charAnimCacheGet(id, px){
+  try{
+    if(!window.caches) return null;
+    const c = await caches.open(ORBIT_ANIM_CACHE);
+    const r = await c.match(charAnimCacheKey(id, px));
+    return r ? await r.blob() : null;
+  }catch(e){ return null; }
+}
+async function charAnimCachePut(id, px, blob){
+  try{
+    if(!window.caches) return;
+    const c = await caches.open(ORBIT_ANIM_CACHE);
+    const keep = "/__ch/" + CHAR_ANIM_VER + "/";
+    /* and this character's older drawings, so a redraw does not leave
+       its previous sheets behind for good */
+    const mine = keep + encodeURIComponent(String(id).replace(/-[^-]*$/, "")) + "-";
+    const now = new URL(charAnimCacheKey(id, px), location.href).pathname;
+    (await c.keys()).forEach(k => {
+      const pn = new URL(k.url).pathname;
+      if(pn.indexOf("/__ch/") === 0 && (pn.indexOf(keep) !== 0 || (pn.indexOf(mine) === 0 && pn.split("/")[3] !== now.split("/")[3]))) c.delete(k);
+    });
+    await c.put(charAnimCacheKey(id, px), new Response(blob, { headers: { "Content-Type": "image/png" } }));
+  }catch(e){}
+}
+async function charAnimSheetFromBlob(blob, px){
+  const url = URL.createObjectURL(blob);
+  const pre = new Image(); pre.src = url;
+  try{ await pre.decode(); }catch(e){ URL.revokeObjectURL(url); return null; }
+  const cols = CHAR_ANIM_COLS, rows = Math.ceil(CHAR_ANIM_FRAMES / cols);
+  if(pre.naturalWidth !== cols * px || pre.naturalHeight !== rows * px){ URL.revokeObjectURL(url); return null; }
+  return { url, px, n: CHAR_ANIM_FRAMES, cols, rows };
+}
+/* Everything an idle loop moves. `rotate`, `scale` and `translate` are
+   separate properties from `transform` and several loops layer them, so
+   copying transform alone would freeze half the motion. */
+const CHAR_ANIM_PROPS = ["transform", "transformOrigin", "transformBox", "rotate", "scale", "translate", "opacity", "strokeDashoffset"];
+/* One recording at a time: a board asks for a dozen characters at once,
+   and twelve recorders interleaving would make the first one wait for
+   all of them. */
+let charAnimQueue = Promise.resolve();
+function recordCharFrames(charId, px){
+  const drawing = charAnimDrawing(charId);
+  const key = drawing.id + "|" + px;
+  if(charAnimSheets.has(key)) return charAnimSheets.get(key);
+  const job = charAnimQueue.then(async () => {
+    const cached = await charAnimCacheGet(drawing.id, px);
+    if(cached){ const sp = await charAnimSheetFromBlob(cached, px); if(sp) return sp; }
+    const host = document.createElement("div");
+    host.className = "char-live char-record-host";
+    host.setAttribute("aria-hidden", "true");
+    host.style.cssText = "position:fixed;left:-20000px;top:0;width:" + px + "px;height:" + px + "px;pointer-events:none;overflow:hidden;";
+    const live = drawing.svg.cloneNode(true);
+    live.setAttribute("width", px); live.setAttribute("height", px);
+    live.style.cssText = "width:" + px + "px;height:" + px + "px;";
+    host.appendChild(live);
+    document.body.appendChild(host);
+    try{
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const anims = live.getAnimations ? live.getAnimations({ subtree: true }) : [];
+      if(!anims.length) return null;
+      const L = CHAR_ANIM_LOOP_MS, N = CHAR_ANIM_FRAMES;
+      /* Each loop plays a whole number of its own cycles in the 6s
+         sheet, so the sheet joins up with itself. A loop slower than
+         twice that (a 40s starfield) is held still rather than jumping. */
+      const plan = anims.map(a => {
+        const t = a.effect.getTiming();
+        const P = (Number(t.duration) || 1000) * (String(t.direction || "").indexOf("alternate") >= 0 ? 2 : 1);
+        const c = P > 2 * L ? 0 : Math.max(1, Math.round(L / P));
+        a.pause();
+        return { a, base: Number(a.currentTime) || 0, P, c };
+      });
+      const els = [...live.querySelectorAll("*")];
+      const moving = new Set(anims.map(a => a.effect && a.effect.target));
+      const svgNS = "http://www.w3.org/2000/svg";
+      /* The drawing is serialised ONCE, with a marker on every part that
+         moves; a frame is then that string with each marker swapped for
+         the part's computed style at that moment. Cloning and serialising
+         the whole svg per frame was most of a 2s recording. */
+      const tpl = live.cloneNode(true);
+      const tplEls = [...tpl.querySelectorAll("*")];
+      const movers = [];
+      els.forEach((el, i) => {
+        if(!moving.has(el)) return;
+        tplEls[i].setAttribute("data-fxi", String(movers.length));
+        movers.push({ el, base: (tplEls[i].getAttribute("style") || "").replace(/"/g, "'") });
+        tplEls[i].removeAttribute("style");
+      });
+      tpl.setAttribute("xmlns", svgNS);
+      tpl.removeAttribute("class");
+      tpl.removeAttribute("style");
+      /* The depth shading is a CSS filter on the svg pointing at a
+         filter in the page; an image cannot see the page, so the sheet
+         carries its own copy, applied to a group round the art. */
+      const depth = document.getElementById("avatarDepth");
+      if(depth){
+        let defs = tpl.querySelector(":scope > defs");
+        if(!defs){ defs = document.createElementNS(svgNS, "defs"); tpl.insertBefore(defs, tpl.firstChild); }
+        const fl = depth.cloneNode(true); fl.setAttribute("id", "cxdepth");
+        defs.appendChild(fl);
+        const wrap = document.createElementNS(svgNS, "g");
+        wrap.setAttribute("filter", "url(#cxdepth)");
+        [...tpl.childNodes].forEach(n => { if(n !== defs) wrap.appendChild(n); });
+        tpl.appendChild(wrap);
+      }
+      /* ...and the fade at the bottom (build 242's dissolve), which is a
+         CSS mask on the drawing and so would not reach an image either.
+         Same stops, as a luminance mask over the whole viewBox, outside
+         the shading - CSS applies the filter first and the mask after. */
+      {
+        const vb = (tpl.getAttribute("viewBox") || "0 0 40 40").split(/[\s,]+/).map(Number);
+        let defs = tpl.querySelector(":scope > defs");
+        if(!defs){ defs = document.createElementNS(svgNS, "defs"); tpl.insertBefore(defs, tpl.firstChild); }
+        const lg = document.createElementNS(svgNS, "linearGradient");
+        lg.setAttribute("id", "cxfadeg"); lg.setAttribute("x1", "0"); lg.setAttribute("y1", "0"); lg.setAttribute("x2", "0"); lg.setAttribute("y2", "1");
+        [["0", "#FFFFFF"], [".7", "#FFFFFF"], [".86", "#737373"], ["1", "#000000"]].forEach(([o, c]) => {
+          const st = document.createElementNS(svgNS, "stop"); st.setAttribute("offset", o); st.setAttribute("stop-color", c); lg.appendChild(st);
+        });
+        const mk = document.createElementNS(svgNS, "mask");
+        mk.setAttribute("id", "cxfade"); mk.setAttribute("maskUnits", "userSpaceOnUse");
+        mk.setAttribute("x", vb[0]); mk.setAttribute("y", vb[1]); mk.setAttribute("width", vb[2]); mk.setAttribute("height", vb[3]);
+        const r = document.createElementNS(svgNS, "rect");
+        r.setAttribute("x", vb[0]); r.setAttribute("y", vb[1]); r.setAttribute("width", vb[2]); r.setAttribute("height", vb[3]);
+        r.setAttribute("fill", "url(#cxfadeg)");
+        mk.appendChild(r);
+        defs.appendChild(lg); defs.appendChild(mk);
+        const outer = document.createElementNS(svgNS, "g");
+        outer.setAttribute("mask", "url(#cxfade)");
+        [...tpl.childNodes].forEach(n => { if(n !== defs) outer.appendChild(n); });
+        tpl.appendChild(outer);
+      }
+      const parts = new XMLSerializer().serializeToString(tpl).split(/data-fxi="(\d+)"/);
+      const kebab = p => p.replace(/[A-Z]/g, m => "-" + m.toLowerCase());
+      const frameSrc = () => {
+        const st = movers.map(m => {
+          const cs = getComputedStyle(m.el);
+          let css = m.base ? m.base.replace(/;?\s*$/, ";") : "";
+          CHAR_ANIM_PROPS.forEach(p => { const v = cs[p]; if(v) css += kebab(p) + ":" + v.replace(/"/g, "'") + ";"; });
+          return 'style="' + css + 'animation:none"';
+        });
+        let out = "";
+        for(let k = 0; k < parts.length; k++) out += (k % 2) ? st[+parts[k]] : parts[k];
+        return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(out);
+      };
+      const cols = CHAR_ANIM_COLS, rows = Math.ceil(N / cols);
+      const sheet = document.createElement("canvas");
+      sheet.width = cols * px; sheet.height = rows * px;
+      const g = sheet.getContext("2d");
+      /* Small batches with a yield between frames while building and
+         drawing: decoding an svg image is main-thread work, and 36 at
+         once held a throttled phone for most of a second. */
+      const B = 4;
+      for(let f0 = 0; f0 < N; f0 += B){
+        if(!host.isConnected) return null;
+        const batch = [];
+        for(let f = f0; f < Math.min(N, f0 + B); f++){
+          const tau = f * L / N;
+          plan.forEach(q => { q.a.currentTime = q.base + (q.c ? tau * q.c * q.P / L : 0); });
+          const img = new Image();
+          img.src = frameSrc();
+          batch.push({ f, img });
+          await orbitAnimYield();
+        }
+        await Promise.all(batch.map(b => b.img.decode()));
+        for(const b of batch){
+          await orbitAnimYield();
+          g.drawImage(b.img, (b.f % cols) * px, Math.floor(b.f / cols) * px, px, px);
+        }
+      }
+      const blob = await new Promise(r => sheet.toBlob(r, "image/png"));
+      sheet.width = sheet.height = 0;
+      if(!blob) return null;
+      charAnimCachePut(drawing.id, px, blob);
+      return await charAnimSheetFromBlob(blob, px);
+    } catch(e){ return null; }
+    finally { host.remove(); }
+  });
+  charAnimQueue = job.catch(() => null);
+  charAnimSheets.set(key, job);
+  job.then(v => { if(!v) charAnimSheets.delete(key); });
+  return job;
+}
+/* Which character a drawing is: the span's data-char when the builder
+   set one, else the cx-k-<kind> on its figure. */
+function charIdOfSvg(el, svg){
+  const holder = svg.closest("[data-char]");
+  if(holder && el.contains(holder) && holder.dataset.char) return RETIRED_CHARACTER_TO[holder.dataset.char] || holder.dataset.char;
+  const fig = svg.querySelector("[class*='cx-k-']");
+  const m = fig && /\bcx-k-([a-z0-9]+)/.exec(fig.getAttribute("class") || "");
+  if(!m) return null;
+  const hit = AVATAR_CHARACTERS.find(c => c.id === m[1] && !c.retired) || AVATAR_CHARACTERS.find(c => c.kind === m[1] && !c.retired);
+  return hit ? hit.id : m[1];
+}
+/* Puts a playing flip-book over a small character. Returns null when
+   the tile is not laid out yet (the caller retries), false when this
+   one should stay a live drawing, true once it is attached. */
+function charFlipAttach(el){
+  if(!el || !el.isConnected || !el.classList.contains("char-flip") || el.classList.contains("char-sleep")) return false;
+  const svg = el.querySelector("svg.avatarchar-svg");
+  if(!svg) return false;
+  if(el.querySelector(":scope .char-flip-play")) return true;
+  const layoutW = svg.clientWidth || parseFloat(getComputedStyle(svg).width) || 0;
+  if(!layoutW) return null;
+  if(layoutW > CHAR_FLIP_MAX_CSS) return false;
+  const charId = charIdOfSvg(el, svg);
+  if(!charId) return false;
+  const scale = Math.min(window.devicePixelRatio || 1, 2);
+  let px = Math.round(layoutW * scale);
+  px += px % 2;
+  if(px < 12) return false;
+  recordCharFrames(charId, px).then(sp => {
+    if(!sp || !el.isConnected || !el.classList.contains("char-flip") || el.classList.contains("char-sleep")) return;
+    if(!svg.isConnected || el.querySelector(".char-flip-play")) return;
+    const cellCss = sp.px / scale;
+    const play = document.createElement("span");
+    play.className = "char-flip-play";
+    play.setAttribute("aria-hidden", "true");
+    /* placed over the svg in its parent's own (unscaled) units */
+    const par = svg.parentNode, pr = par.getBoundingClientRect(), sr = svg.getBoundingClientRect();
+    const S = sr.width > 0 ? sr.width / layoutW : 1;
+    play.style.left = ((sr.left - pr.left) / S - par.clientLeft) + "px";
+    play.style.top = ((sr.top - pr.top) / S - par.clientTop) + "px";
+    play.style.width = play.style.height = cellCss + "px";
+    const img = document.createElement("img");
+    img.alt = ""; img.decoding = "sync"; img.src = sp.url;
+    img.style.width = (sp.cols * cellCss) + "px";
+    img.style.height = (sp.rows * cellCss) + "px";
+    /* each tile starts somewhere different in its loop, so a board of
+       one character does not blink in unison */
+    img.style.animation = orbitAnimKeyframes(cellCss, sp.cols, sp.n) + " " + CHAR_ANIM_LOOP_MS + "ms step-end " + (-Math.random() * CHAR_ANIM_LOOP_MS).toFixed(0) + "ms infinite";
+    play.appendChild(img);
+    if(getComputedStyle(svg.parentNode).position === "static") svg.parentNode.style.position = "relative";
+    svg.after(play);
+    svg.classList.add("char-under-flip");
+  });
+  return true;
 }
 function homeRankEmblem(tier){
   try {
@@ -52811,7 +53195,7 @@ function showWelcomeCharacterPrompt(){
     opt.addEventListener("click", () => {
       if(locked){ showToast(characterLockMessage(charDef.id)); return; }
       selectedChar = charDef.id;
-      avatarGrid.querySelectorAll(".avatarchar-option.selected").forEach(b => b.classList.remove("selected"));
+      avatarGrid.querySelectorAll(".avatarchar-option.selected").forEach(glowOff);
       opt.classList.add("selected");
       /* Explicit, not relying on CSS alone: outline:none and
          -webkit-appearance:none weren't enough on their own, so this
@@ -67137,32 +67521,34 @@ function showAppearance(opts){
        unfired event would silently leave the clip in place, which is
        exactly the bug being fixed; the worst a stale timer can do is
        nothing, and it is cleared on every toggle either way. */
-    let advOverflowTimer = null;
+    /* OPENS AT ONCE, SCROLLS AT ONCE (build 308): "When hitting advanced
+       setting dropdown, the lag is real, the bottom tab takes too long to
+       move out of the way and it's just not smooth." Two causes. The
+       height animated through grid-template-rows, which re-lays-out the
+       whole Settings page on every frame while the tab bar's 30px blur
+       re-samples it; and the scroll that brings it out from behind the
+       bar waited 560ms for that to finish. Now the body takes its full
+       height in one layout, its rows fade and rise in (transform and
+       opacity only, which the compositor does on its own), and the page
+       scrolls in the same frame - so the content comes up from behind
+       the bar as it appears. */
+    advBody.classList.add("is-instant");
     advToggle.addEventListener("click", () => {
       const willOpen = !advBody.classList.contains("open");
-      moreBodyMoving(advBody);
       advBody.classList.toggle("open", willOpen);
       advToggle.classList.toggle("open", willOpen);
-      if(advOverflowTimer){ clearTimeout(advOverflowTimer); advOverflowTimer = null; }
+      advBodyInner.style.overflow = willOpen ? "visible" : "";
       if(willOpen){
-        advOverflowTimer = setTimeout(() => { advBodyInner.style.overflow = "visible"; }, 540);
-        /* OPENING IT BRINGS IT INTO VIEW (build 247): "The advanced
-           settings button, when you open it, it hides under the bottom
-           tab". It is the last thing on Settings, so it opens downward
-           behind the tab bar. Once it has opened, scroll just far enough
-           that its bottom clears the bar - never so far that the toggle
-           itself goes off the top. */
-        setTimeout(() => {
-          if(!document.body.contains(advBody) || !advBody.classList.contains("open")) return;
-          const bar = document.getElementById("bottomtabs");
-          const floor = (bar && !bar.hidden && bar.offsetHeight) ? bar.getBoundingClientRect().top - 14 : innerHeight - 14;
-          const r = advBody.getBoundingClientRect();
-          const toggleTop = advToggle.getBoundingClientRect().top;
-          const by = Math.min(r.bottom - floor, toggleTop - 90);
-          if(by > 0) window.scrollBy({ top: by, behavior: dailyMotionOff() ? "auto" : "smooth" });
-        }, 560);
-      } else {
-        advBodyInner.style.overflow = "";
+        /* OPENING IT BRINGS IT INTO VIEW (build 247): it is the last
+           thing on Settings, so it opens downward behind the tab bar.
+           Scroll just far enough that its bottom clears the bar - never
+           so far that the toggle itself goes off the top. */
+        const bar = document.getElementById("bottomtabs");
+        const floor = (bar && !bar.hidden && bar.offsetHeight) ? bar.getBoundingClientRect().top - 14 : innerHeight - 14;
+        const r = advBody.getBoundingClientRect();
+        const toggleTop = advToggle.getBoundingClientRect().top;
+        const by = Math.min(r.bottom - floor, toggleTop - 90);
+        if(by > 0) window.scrollBy({ top: by, behavior: dailyMotionOff() ? "auto" : "smooth" });
       }
       advToggle.setAttribute("aria-expanded", willOpen ? "true" : "false");
     });
@@ -67177,12 +67563,20 @@ function showAppearance(opts){
       const resetFlaggedBtn = document.createElement("button");
       resetFlaggedBtn.type = "button"; resetFlaggedBtn.className = "restart";
       resetFlaggedBtn.textContent = "Reset starred questions";
-      resetFlaggedBtn.disabled = flaggedCount === 0;
-      armConfirm(resetFlaggedBtn, "Tap again to clear", () => {
-        unflagAll();
-        saveStore();
-        showAppearance();
-      });
+      /* A TAP ON NOTHING TO CLEAR ANSWERS (build 308): "ensure you get a
+         tiny popup there underneath it that explains why it can't if you
+         don't have any starred questions yet." A disabled button swallows
+         the tap and says nothing, so it is drawn off instead and the tap
+         explains itself. */
+      if(flaggedCount === 0){
+        markOffButton(resetFlaggedBtn, "Nothing to reset yet — star a question during a test and it can be cleared here.");
+      } else {
+        armConfirm(resetFlaggedBtn, "Tap again to clear", () => {
+          unflagAll();
+          saveStore();
+          showAppearance();
+        });
+      }
       const resetFlaggedWrap = document.createElement("span");
       resetFlaggedWrap.style.cssText = "display:inline-flex; align-items:center;";
       resetFlaggedWrap.appendChild(resetFlaggedBtn);
@@ -67194,14 +67588,17 @@ function showAppearance(opts){
       const clearBtn = document.createElement("button");
       clearBtn.type = "button"; clearBtn.className = "restart";
       clearBtn.textContent = "Clear analytics";
-      clearBtn.disabled = !hasAnalytics;
-      armConfirm(clearBtn, "Tap again to clear", () => {
-        store.testStats = {};
-        store.testHistory = [];
-        store.studyLog = {};
-        saveStore();
-        showAppearance();
-      });
+      if(!hasAnalytics){
+        markOffButton(clearBtn, "Nothing recorded yet — finish a test and your results and study time can be cleared here.");
+      } else {
+        armConfirm(clearBtn, "Tap again to clear", () => {
+          store.testStats = {};
+          store.testHistory = [];
+          store.studyLog = {};
+          saveStore();
+          showAppearance();
+        });
+      }
       const clearWrap = document.createElement("span");
       clearWrap.style.cssText = "display:inline-flex; align-items:center;";
       clearWrap.appendChild(clearBtn);
@@ -72865,12 +73262,27 @@ function buildVroomChatPanel(container, ctx){
     CHAT_EMOJI.forEach(e => {
       const b = document.createElement("button");
       b.type = "button"; b.className = "vroom-chat-emoji"; b.textContent = e;
+      /* NO KEYBOARD FOR AN EMOJI (build 308). Focusing the field after
+         every pick put the caret back for the next one - which on a phone
+         or an iPad means the on-screen keyboard springs up over the tray
+         the moment you choose a face. Reported exactly that way. On a
+         touch screen the emoji goes in and the field is left alone; the
+         caret only comes back where there is a real keyboard. */
+      let touchPick = false;
+      b.addEventListener("pointerdown", (pe) => { touchPick = pe.pointerType === "touch" || pe.pointerType === "pen"; });
       b.addEventListener("click", (e2) => {
         e2.stopPropagation();
-        const at = input.selectionStart != null ? input.selectionStart : input.value.length;
+        const coarse = touchPick || (window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
+        /* At the end on a touch screen: moving the selection of an
+           unfocused field is exactly the kind of thing iOS answers by
+           focusing it. */
+        const at = (!coarse && input.selectionStart != null) ? input.selectionStart : input.value.length;
         input.value = (input.value.slice(0, at) + e + input.value.slice(at)).slice(0, 200);
-        input.focus({ preventScroll: true });
-        try{ input.setSelectionRange(at + e.length, at + e.length); }catch(err){}
+        try{ input.dispatchEvent(new Event("input", { bubbles: true })); }catch(err){}
+        if(!coarse){
+          input.focus({ preventScroll: true });
+          try{ input.setSelectionRange(at + e.length, at + e.length); }catch(err){}
+        }
       });
       tray.appendChild(b);
     });
@@ -75182,48 +75594,31 @@ function setBarFill(el, v){
   el.classList.add("sbar");
   el.style.setProperty("--fill", typeof v === "number" ? v + "%" : String(v));
 }
-/* ---- EVERY CARD SAYS HOW, IN ONE PLAIN LINE (build 304) ----
-   "When holding down a character unlock, there's information at the
-   bottom of only some ... ensure it's all on ... simple and not
-   confusing." The line under the bar came from a `note` on the feat or
-   the banner, and only five of them had one. This is the rest, kept in
-   one table rather than spread across the two definition lists so a
-   new unlock is one line to add - and a card with no entry still gets a
-   line for its kind (unlockNoteFor's fallback) rather than nothing.
-   Keyed "kind:id". Each says what counts, in words a first-week
-   classmate would follow; the "what" is already the line above it. */
+/* ---- ONLY THE LINES THAT ARE NEEDED (build 308) ----
+   "The descriptions that come up when hitting an unlock underneath the
+   progress bar is actually not the move, remove this. Only keep the
+   ones that are needed." A line now appears only where the bar above
+   it cannot tell you the rule: a run that a miss resets, a count that
+   has to land on one day or in one test, a board you have to top when
+   the week ends, and the three secrets. "Every right answer counts",
+   "keep studying" and the like said nothing the bar did not, so they
+   and the per-kind fallback are gone. The notes defined on a feat or a
+   banner itself (Second Wind, Unbroken and so on) stay: each is a
+   rule like these. */
 const UNLOCK_NOTES = {
   "character:detective": "The daily question on Home. A miss starts a new run, but your best run is kept.",
-  "character:zeus": "The This Week board on the Leaderboard. Be #1 on it when the week ends.",
-  "character:poseidon": "The This Week board on the Leaderboard. The 3 weeks don't have to be in a row.",
-  "character:clown": "Come first in a Virtual Room match. Wins add up over time.",
-  "character:marksman": "Right on the first try, 250 times in a row, inside one test. A miss starts it over.",
+  "character:zeus": "Be #1 on the This Week board when the week ends.",
+  "character:poseidon": "#1 on the This Week board 3 times. The weeks don't have to be in a row.",
+  "character:marksman": "250 in a row, right on the first try, inside one test. A miss starts it over.",
   "character:astronaut": "A hundo is 100% on a whole unit. Get one in 5 different units on the same day.",
-  "character:hacker": "All your study time counts, added up across every day.",
-  "character:timekeeper": "Any day you study counts once. The days don't have to be in a row.",
-  "character:ronin": "One test, " + RONIN_TEST_SIZE + " questions or more, finished at " + PASS_MARK + "% or better. Pick enough units to reach " + RONIN_TEST_SIZE + ".",
+  "character:ronin": "One test of " + RONIN_TEST_SIZE + " questions or more, finished at " + PASS_MARK + "% or better.",
   "character:voidwalker": "They hide inside tests. Keep your eyes open.",
   "character:umbra": "A secret. Its challenge shows here once you have Void.",
-  "character:singularity": "A secret. Its challenge shows here once you have Umbra.",
-  "banner:hundos100": "A hundo is 100% on a whole unit. Every hundo you've earned counts.",
-  "banner:hundos250": "A hundo is 100% on a whole unit. Every hundo you've earned counts.",
-  "banner:vr50": "Every Virtual Room match you finish counts, win or lose.",
-  "banner:study50": "All your study time counts, added up across every day.",
-  "banner:correct5000": "Every right answer counts, in any mode.",
-  "banner:correct10000": "Every right answer counts, in any mode - the same count as Star Trails, carried on.",
-  "banner:study60": "All your study time counts, added up across every day - the same clock as Midnight Oil.",
-  "banner:level80": "Every test earns XP towards your next level. " + LEVEL_CAP + " is the top level."
+  "character:singularity": "A secret. Its challenge shows here once you have Umbra."
 };
 function unlockNoteFor(o){
   if(!o) return "";
-  const hit = UNLOCK_NOTES[o.kind + ":" + o.id];
-  if(hit) return hit;
-  if(o.kind === "badge") return "A hundo is 100% on the whole unit, every question in it.";
-  /* Nothing to say about something everybody already has. */
-  if(o.kicker === "Starter" || !o.id) return "";
-  if(o.kind === "character") return "Keep studying - it counts from every mode.";
-  if(o.kind === "banner") return "Keep studying - it counts from every mode.";
-  return "";
+  return UNLOCK_NOTES[o.kind + ":" + o.id] || "";
 }
 function showUnlockDetail(o){
   if(!o) return;
@@ -75428,6 +75823,15 @@ function attachSheetSwipe(sheet, onDismiss){
   sheet.addEventListener("touchcancel", end);
 }
 
+/* A deselected character keeps its filter while its glow fades (the
+   .22s on --char-glow-k), then drops it - see .is-unglowing. */
+function glowOff(opt){
+  if(!opt) return;
+  opt.classList.remove("selected");
+  opt.classList.add("is-unglowing");
+  clearTimeout(opt._unglow);
+  opt._unglow = setTimeout(() => opt.classList.remove("is-unglowing"), 260);
+}
 function showCustomize(){
   setActiveNav(null);
   countEl.textContent = "Customize";
@@ -75587,7 +75991,7 @@ function showCustomize(){
          would do nothing, so the tap has something to say instead. */
       if(opt.classList.contains("selected") && openHeld){ openHeld(); return; }
       store.avatarChar = charDef.id;
-      avatarSect.querySelectorAll(".avatarchar-option.selected").forEach(b => b.classList.remove("selected"));
+      avatarSect.querySelectorAll(".avatarchar-option.selected").forEach(glowOff);
       avatarSect.querySelectorAll(".avatarchar-cell.is-selected").forEach(c => c.classList.remove("is-selected"));
       opt.classList.add("selected");
       cell.classList.add("is-selected");
@@ -79580,9 +79984,29 @@ if(backToTopBtn){
     });
   };
   let backToTopRaf = 0;
+  /* NO FLICKER ON THE WAY UP (build 308): "the scroll to the top button
+     randomly glitches ... when scrolling to the top on your own". One
+     threshold meant a flick upwards that coasted and bounced around
+     280px turned it on and off several times in a second. Two
+     thresholds - on past 320, off under 180 - and whatever it decides
+     holds for a moment before it may change its mind. Read from
+     window.scrollY directly; knownScrollY is updated by a listener that
+     can run after this one. */
+  let backToTopShown = false, backToTopFlipAt = 0;
   const syncBackToTop = () => {
     backToTopRaf = 0;
-    backToTopBtn.classList.toggle("show", knownScrollY > 280 && !backToTopBlocked());
+    const y = window.scrollY || 0;
+    let want = backToTopShown ? y > 180 : y > 320;
+    if(want && backToTopBlocked()) want = false;
+    if(want === backToTopShown) return;
+    const now = performance.now();
+    if(now - backToTopFlipAt < 220){
+      /* Too soon after the last change: look again once it has settled. */
+      setTimeout(queueBackToTop, 230 - (now - backToTopFlipAt));
+      return;
+    }
+    backToTopShown = want; backToTopFlipAt = now;
+    backToTopBtn.classList.toggle("show", want);
   };
   const queueBackToTop = () => { if(!backToTopRaf) backToTopRaf = requestAnimationFrame(syncBackToTop); };
   window.addEventListener("scroll", queueBackToTop, { passive: true });

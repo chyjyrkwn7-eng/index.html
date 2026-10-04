@@ -21,11 +21,18 @@ subprocess.run(["openssl", "rsa", "-in", priv, "-pubout", "-out", pub],
                check=True, stderr=subprocess.DEVNULL)
 pem = open(priv).read()
 
-# 1. no key configured -> anonymous, and it must say so rather than crash
-os.environ.pop("NOVA_ADMIN_KEY", None)
-os.environ.pop("NOVA_ADMIN_KEY_FILE", None)
-print("no key -> _load_key():", fa._load_key())
-assert fa._load_key() is None
+# 1. no key configured -> anonymous, and it must say so rather than crash.
+# Every variable the tool reads is cleared first - including the split
+# NOVA_ADMIN_EMAIL / NOVA_ADMIN_PRIVATE_KEY pair, which an environment
+# with real credentials has set. This line used to print _load_key()'s
+# return value, and with the real pair still set that was the live
+# private key, written into a gate log. Never print a key: print only
+# whether one was found.
+for _v in ("NOVA_ADMIN_KEY", "NOVA_ADMIN_KEY_FILE", "NOVA_ADMIN_EMAIL", "NOVA_ADMIN_PRIVATE_KEY"):
+    os.environ.pop(_v, None)
+_k = fa._load_key()
+print("no key -> _load_key() is None:", _k is None)
+assert _k is None, "a key was found with every admin variable cleared"
 
 # 2. a key from the env var is parsed
 fake = {"client_email": "nova@example.iam.gserviceaccount.com",

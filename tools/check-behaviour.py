@@ -7686,13 +7686,13 @@ def check_b304(br):
           out.barLeft = fill && bar ? shown().left : null;
           out.note = (document.querySelector('.unlock-card-note') || {}).textContent || '';
           document.querySelectorAll('.invite-overlay').forEach(n => n.remove());
-          /* every unlock card has a line saying how */
-          const none = [];
-          const look = o => { if(!o || o.kicker === 'Starter' || !o.id) return; if(!(o.note || unlockNoteFor(o))) none.push(o.kind + ':' + o.id); };
+          /* build 308: a line only where the rule has a catch - "only keep
+             the ones that are needed". Which cards carry one: */
+          const withNote = [];
+          const look = o => { if(!o || !o.id) return; if(o.note || unlockNoteFor(o)) withNote.push(o.kind + ':' + o.id); };
           AVATAR_CHARACTERS.forEach(c => look(characterDetail(c.id)));
           BANNERS.forEach(b => look(bannerDetail(b.id)));
-          Object.keys(TIER_UNLOCKS).forEach(k => look(themeDetail(k)));
-          out.noNote = none;
+          out.withNote = withNote;
           out.rankNote = themeDetail('veteran').note;
           /* the Default banner tile: no theme colour bleeding as a rim */
           showCustomize(); await wait(700);
@@ -7739,7 +7739,12 @@ def check_b304(br):
               r2.get("barAtOpen") is not None and r2["barAtOpen"] < 3 and (r2.get("barLater") or 0) > 3 and r2.get("barLeft") == 0
               and "inset" in (r2.get("barClip") or ""),
               (r2.get("barAtOpen"), r2.get("barLater"), r2.get("barLeft"), r2.get("barClip")))
-        check(dev + ": every unlock card has a line saying how", r2.get("noNote") == [] and bool(r2.get("note")), (r2.get("noNote"), r2.get("note")))
+        wn = set(r2.get("withNote") or [])
+        need = {"character:detective", "character:marksman", "character:astronaut", "character:ronin", "character:zeus", "character:poseidon"}
+        check(dev + ": the cards whose rule has a catch keep their line", need <= wn, sorted(need - wn))
+        check(dev + ": a plain count has no line under its bar (build 308)",
+              r2.get("note") == "" and not ({"character:hacker", "character:timekeeper", "banner:correct5000", "banner:study50"} & wn),
+              (r2.get("note"), sorted(wn)))
         check(dev + ": a rank card says what the rank takes", "takes level" in (r2.get("rankNote") or ""), r2.get("rankNote"))
         check(dev + ": the Default banner tile has no theme colour behind it", r2.get("noneBg") == "none", r2.get("noneBg"))
         check(dev + ": your own leaderboard row is tappable", r2.get("meTappable") is True)
