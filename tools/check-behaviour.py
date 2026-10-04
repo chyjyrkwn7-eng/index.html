@@ -971,6 +971,9 @@ def check_update_and_cards(br):
         try{ localStorage.removeItem('class26e.update.dismissed'); }catch(e){}
         const real = window.fetch;
         window.fetch = () => Promise.resolve({ ok:true, json: () => Promise.resolve(body) });
+        /* the app's own check may still be out (build 301 lets the
+           poll and screen changes really ask); this one is the test */
+        try{ updateCheckInFlight = 0; }catch(e){}
         lastUpdateCheck = 0;
         await checkForUpdate(true);
         window.fetch = real;
@@ -994,6 +997,44 @@ def check_update_and_cards(br):
     purpose. It is also what a device falls back to once the forced
     push has failed its three tries, which is the reason the banner
     code is still here at all."""
+    """THE POLL HAS TO ACTUALLY ASK, AND SO DOES COMING BACK (build 301).
+    "Why aren't the updates pushing when I open the app?" The 15-second
+    poll above was real and was asserted - by reading UPDATE_POLL_MS -
+    and every one of its calls was turned away by a 15-minute gap that
+    every trigger shared. A check that reads a constant cannot see a
+    second constant overruling it. So this one counts the requests that
+    actually go out: a check made a minute ago must not stop the poll,
+    and one made two seconds ago must not stop coming back to the app."""
+    asks = pg.evaluate("""async ()=>{
+      const out = {};
+      const real = window.fetch; let n = 0;
+      window.fetch = (u, o) => { if(String(u).indexOf('version.json') >= 0){ n++;
+        return Promise.resolve({ ok:true, json: () => Promise.resolve({ build: APP_BUILD }) }); }
+        return real(u, o); };
+      try{
+        document.querySelectorAll('.update-banner, #pushing-update').forEach(x => x.remove());
+        await new Promise(r => setTimeout(r, 50));
+        try{ updateCheckInFlight = 0; }catch(e){}
+        lastUpdateCheck = Date.now() - 60 * 1000; n = 0;
+        await checkForUpdate();                       /* what the poll calls */
+        await new Promise(r => setTimeout(r, 50));
+        out.poll = n;
+        lastUpdateCheck = Date.now() - 2000; n = 0;
+        document.dispatchEvent(new Event('visibilitychange'));
+        await new Promise(r => setTimeout(r, 120));
+        out.resume = n;
+        lastUpdateCheck = Date.now() - 1000; n = 0;
+        await checkForUpdate();                       /* a burst of screen changes */
+        await checkForUpdate();
+        out.burst = n;
+      } finally { window.fetch = real; }
+      return out; }""")
+    check("the poll asks for real: a check a minute ago does not turn it away",
+          asks.get("poll") == 1, asks)
+    check("coming back to the app always asks, even seconds after the last check",
+          asks.get("resume") == 1, asks)
+    check("but a burst of screen changes does not fire a burst of requests",
+          asks.get("burst") == 0, asks)
     check("only force:false asks for the banner back",
           paths["flagFalse"]["pushed"] is False and paths["flagFalse"]["banner"] is True,
           paths["flagFalse"])
@@ -7045,6 +7086,111 @@ def check_b300(br):
           r.get("test") == 57 and r.get("testHas347"), (r.get("test"), r.get("testHas347")))
     ctx.close()
 
+
+def check_b301_chat(br):
+    """Build 301: "old chats are showing up as notifications and old chats
+    are giving the chat bubble a red dot as if there's an unread chat."
+
+    A message drops a small `msgping` into each member's inbox document,
+    and nothing ever took one out again. Madison's inbox on the live
+    project held three pings from one group chat, eight days old. They
+    count as unread whenever this device has no record of reading that
+    chat - the record is per-device localStorage, which a re-add, iOS
+    tidying storage, or simply never having opened it HERE all lose -
+    and a chat you had left was put straight back on your list by its
+    own old ping. So: a ping has a shelf life, reading a chat takes its
+    pings out of the mailbox, a chat you left stays left, and an old
+    ping never pops a banner. Written against build 300, where every
+    one of these fails."""
+    print("\n69. build 301: old chat pings stay old")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{
+      const wait = ms => new Promise(r => setTimeout(r, ms));
+      const out = {};
+      try{
+      const docs = {}, updates = [];
+      const doc = id => ({
+        onSnapshot(){ return () => {}; },
+        get(){ return Promise.resolve({ exists: !!docs[id], data: () => docs[id] || {} }); },
+        set(d){ docs[id] = d; return Promise.resolve(); },
+        update(...a){ updates.push({ id, keys: a.length > 1 ? a.filter((x, i) => i % 2 === 0).map(f => (f.segs || []).join('.')) : Object.keys(a[0] || {}) });
+                      return Promise.resolve(); } });
+      if(typeof firebase === 'undefined') window.firebase = {
+        firestore: { FieldPath: function(){ this.segs = [...arguments]; }, FieldValue: { delete: () => '__del__' } } };
+      fbDb = { collection: () => ({ doc, onSnapshot(){ return () => {}; },
+                 get(){ return Promise.resolve({ forEach(){}, size:0, metadata:{} }); } }),
+               runTransaction(fn){ return Promise.resolve().then(() => fn({
+                 get: ref => ref.get(), set: (ref, d) => ref.set(d), update: () => {} })); } };
+      theme.muteBanners = false;
+      store.friendsIn = ['bo00000000001'];
+      leaderboardRows = [{ pub:'bo00000000001', firstName:'Bo', avatarChar:'robot', level:5, badges:1, seenAt: Date.now() }];
+      store.chats = [{ code:'GRP-OLD1', name:'Study group', at: Date.now() - 9 * 864e5, with:['cy','od'] }];
+      localStorage.removeItem('class26e.chatseen');          /* a device with no read history */
+      showHome(); await wait(500);
+      const txt = id => { const e = document.getElementById(id); return e && !e.hidden ? e.textContent : '0'; };
+      const day = 864e5, now = Date.now();
+      /* A. Madison's inbox, as it is: three pings, one chat, eight days old */
+      inboxMsgs = {
+        'cy~m': { type:'msgping', code:'GRP-OLD1', pub:'cy', firstName:'Cap', text:'So could he make one this week', at: now - 8 * day },
+        'od~m': { type:'msgping', code:'GRP-OLD1', pub:'od', firstName:'Odin', text:'T for tolerance', at: now - 8 * day + 3000 },
+        'sa~m': { type:'msgping', code:'GRP-OLD1', pub:'sa', firstName:'Sauce', text:'T is for trust', at: now - 8 * day - 8000 } };
+      syncChatDockDot();
+      out.oldDot = txt('chatdock-dot'); out.oldGroups = txt('chatdock-groupscount');
+      /* B. a chat you left stays left, even with its old ping still in the box */
+      store.chats.push({ code:'GRP-LEFT', name:'Left group', at: now - day, with:['cy'] });
+      inboxMsgs['zz~m'] = { type:'msgping', code:'GRP-LEFT', pub:'zz', firstName:'Zed', text:'bye', at: now - 3600e3 };
+      markChatSeen('GRP-LEFT', now - 3600e3);
+      leaveChatByCode('GRP-LEFT'); await wait(50);
+      syncChatDockDot(); chatUnreadByTab();
+      out.leftBack = !!chatEntry('GRP-LEFT');
+      document.querySelectorAll('.toast').forEach(t => t.remove());
+      /* C. reading a chat takes its pings out of the mailbox */
+      store.chats.push({ code:'GRP-NEW1', name:'New group', at: now, with:['cy'] });
+      inboxMsgs['cy2~m'] = { type:'msgping', code:'GRP-NEW1', pub:'cy2', firstName:'Cy', text:'hi', at: now - 5 * 60e3 };
+      syncChatDockDot();
+      out.newDot = txt('chatdock-dot');
+      updates.length = 0;
+      markChatSeen('GRP-NEW1', Date.now());
+      await wait(50); syncChatDockDot();
+      out.afterRead = txt('chatdock-dot');
+      out.cleared = updates.filter(u => /^inbox-/.test(u.id)).flatMap(u => u.keys);
+      /* D. an old ping never pops a banner, a fresh one still does */
+      document.querySelectorAll('.vroom-chat-alert').forEach(e => e.remove());
+      const keep = inboxMsgs;
+      pingPreviewSeen = null; inboxMsgs = {}; previewNewPings();
+      inboxMsgs = { 'cy~m': keep['cy~m'], 'od~m': keep['od~m'] }; previewNewPings();
+      out.oldBanner = !!document.querySelector('.vroom-chat-alert.is-ping');
+      inboxMsgs['fr~m'] = { type:'msgping', code:'GRP-OLD1', pub:'fr', firstName:'Fresh', text:'now', at: Date.now() };
+      previewNewPings();
+      out.freshBanner = !!document.querySelector('.vroom-chat-alert.is-ping');
+      document.querySelectorAll('.vroom-chat-alert').forEach(e => e.remove());
+      /* E. a friend chat whose history has expired is still read by opening it */
+      const fc = friendChatCode('bo00000000001');
+      docs[fc] = { kind:'chat', chatMessages: [], participants: {} };
+      inboxMsgs = { 'bo00000000001~m': { type:'msgping', code: fc, pub:'bo00000000001', firstName:'Bo', text:'yo', at: Date.now() - 30 * 3600e3 } };
+      syncChatDockDot();
+      out.friendBefore = txt('chatdock-friendscount');
+      chatDockTab = 'friends'; openChatDock(); await wait(200);
+      openFriendChat('bo00000000001'); await wait(400);
+      markOpenChatSeen(); await wait(50);
+      out.friendAfter = txt('chatdock-friendscount');
+      closeChatDock();
+      } catch(e){ out.threw = String(e && e.stack || e); }
+      return out; }""")
+    check("an eight-day-old ping is not an unread chat, with or without a read record",
+          r.get("oldDot") == "0" and r.get("oldGroups") == "0", r)
+    check("a chat you left is not put back on your list by its old ping",
+          r.get("leftBack") is False, r)
+    check("a fresh ping still counts", r.get("newDot") == "1", r)
+    check("reading a chat clears it, and takes its ping out of the mailbox",
+          r.get("afterRead") == "0" and any("cy2~m" in k for k in (r.get("cleared") or [])), r)
+    check("an old ping never pops a message banner", r.get("oldBanner") is False, r)
+    check("a fresh one still does", r.get("freshBanner") is True, r)
+    check("opening a friend chat whose history has expired still reads it",
+          r.get("friendBefore") == "1" and r.get("friendAfter") == "0", r)
+    check("and nothing threw", not r.get("threw"), r.get("threw"))
+    ctx.close()
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     only = os.environ.get("ONLY_B245")
@@ -7134,6 +7280,7 @@ def main():
             check_b298(br)
             check_b299(br)
             check_b300(br)
+            check_b301_chat(br)
         finally:
             br.close()
     SERVER.shutdown()

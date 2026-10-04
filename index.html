@@ -32085,9 +32085,8 @@ new MutationObserver(() => {
     /* Self-healing: if the load-time check was spent during the splash,
        or bailed because a test was running, arriving at a new screen
        tries again. Safe to call this often - every early bail above is a
-       cheap synchronous test, and the 15-minute throttle is stamped
-       before the fetch is awaited, so this can never produce overlapping
-       requests. */
+       cheap synchronous test, and the 10-second gap plus the in-flight
+       flag mean this can never produce overlapping requests. */
     checkForUpdate();
   }
 }).observe(stage, { childList: true, subtree: true });
@@ -51986,8 +51985,33 @@ function chatSeenMap(){
   try{ return JSON.parse(localStorage.getItem(CHAT_SEEN_KEY) || "{}") || {}; }
   catch(e){ return {}; }
 }
+/* ---- READ IS READ EVERYWHERE (build 301) ----
+   The read record lives on this device, so a ping left in the mailbox
+   came back as unread on the other device, or on this one the moment
+   that record was lost. Once a chat has been read up to a point, every
+   ping for it from before that point is taken out of the mailbox for
+   good. One write, and only when there is something to take out. A
+   FieldPath, not "msgs." + slot: a ping's slot is "<sender>~m", and a
+   dotted field path may not contain "~". */
+function clearReadPings(code, ts){
+  if(!code || !ts || !inboxMsgs) return;
+  const slots = Object.keys(inboxMsgs).filter(k => {
+    const m = inboxMsgs[k];
+    return m && m.type === "msgping" && m.code === code && (m.at || 0) <= ts;
+  });
+  if(!slots.length) return;
+  slots.forEach(k => { delete inboxMsgs[k]; });
+  if(!fbDb) return;
+  try{
+    const args = [];
+    slots.forEach(k => { args.push(new firebase.firestore.FieldPath("msgs", k), firebase.firestore.FieldValue.delete()); });
+    const ref = inboxDocFor(publicIdOf());
+    ref.update.apply(ref, args).catch(() => {});
+  }catch(e){}
+}
 function markChatSeen(code, ts){
   if(!code || !ts) return;
+  clearReadPings(code, ts);
   try{
     const m = chatSeenMap();
     if((m[code] || 0) >= ts) return;
@@ -52148,14 +52172,36 @@ function rememberChat(code, name, withPubs){
     if(!name) return;
     had.name = name; had.at = at;
   } else {
+    /* Back in it on purpose - joined, accepted, started again. */
+    setChatLeft(code, 0);
     list.unshift({ code: code, name: name || "", at: at,
                    with: withPubs || [] });
     if(list.length > CHAT_LIST_MAX) list.length = CHAT_LIST_MAX;
   }
   saveStore();
 }
+/* When this device left (or deleted) each chat. Device-local for the
+   same reason the read record is, and bounded the same way. */
+const CHAT_LEFT_KEY = "class26e.chatleft";
+function chatLeftMap(){
+  try{ return JSON.parse(localStorage.getItem(CHAT_LEFT_KEY) || "{}") || {}; }
+  catch(e){ return {}; }
+}
+function setChatLeft(code, at){
+  try{
+    const m = chatLeftMap();
+    if(at) m[code] = at; else delete m[code];
+    const keys = Object.keys(m);
+    if(keys.length > CHAT_LIST_MAX * 2){
+      keys.sort((a, b) => (m[a] || 0) - (m[b] || 0))
+          .slice(0, keys.length - CHAT_LIST_MAX * 2).forEach(k => { delete m[k]; });
+    }
+    localStorage.setItem(CHAT_LEFT_KEY, JSON.stringify(m));
+  }catch(e){}
+}
 function forgetChat(code){
   if(!code) return;
+  setChatLeft(code, Date.now());
   const list = chatList();
   const i = list.findIndex(c => c && c.code === code);
   if(i < 0) return;
@@ -52466,13 +52512,30 @@ function showChatPreview(who, text, onTap){
   requestAnimationFrame(() => bar.classList.add("show"));
   setTimeout(drop, 4600);
 }
+/* ---- A PING HAS A SHELF LIFE (build 301) ----
+   "Old chats are showing up as notifications and old chats are giving
+   the chat bubble a red dot as if there's an unread chat." A ping is a
+   small "something new in this chat" left in each member's inbox, and
+   nothing ever took one out: the live inbox that reported this held
+   three from one group chat, eight days old. Whether they counted came
+   down to this device's localStorage record of having read that chat -
+   which a re-add, iOS tidying storage, or simply never having opened
+   the chat on THIS device all lose - and then a week-old conversation
+   lit the dot, came back onto the list, and could pop a banner. Two
+   days is long past "you have not seen this yet"; the chat itself, and
+   its history, are untouched. Every reader goes through this one
+   function, so the dot, the per-tab counts, the list rows, re-adding a
+   chat and the preview banner all agree. */
+const CHAT_PING_FRESH_MS = 2 * 24 * 60 * 60 * 1000;
 /* The pings waiting for THIS device, newest per chat. */
 function chatPings(){
   const out = {};
+  const now = Date.now();
   try{
     Object.keys(inboxMsgs || {}).forEach(k => {
       const m = inboxMsgs[k];
       if(!m || m.type !== "msgping" || !m.code) return;
+      if(now - (m.at || 0) >= CHAT_PING_FRESH_MS) return;
       if(!out[m.code] || (m.at || 0) > (out[m.code].at || 0)) out[m.code] = m;
     });
   }catch(e){}
@@ -52493,11 +52556,16 @@ function chatUnreadByTab(){
   const out = { friends: 0, groups: 0 };
   let added = false;
   const friends = new Set(friendPublicIds().map(p => friendChatCode(p)));
+  const left = chatLeftMap();
   Object.keys(pings).forEach(code => {
     const m = pings[code];
     /* A friend chat from somebody who is no longer a friend is not a
        chat you have. */
     if(isFriendChatCode(code) && !friends.has(code)) return;
+    /* A CHAT YOU LEFT STAYS LEFT (build 301). Its last ping is still in
+       the mailbox, and this used to put it straight back on the list
+       and count it. Only something newer than the leaving reopens it. */
+    if(!chatEntry(code) && (left[code] || 0) >= (m.at || 0)) return;
     if(!chatEntry(code)){
       const list = chatList();
       list.unshift({ code: code, name: m.firstName || "", at: m.at || Date.now(), with: m.pub ? [m.pub] : [] });
@@ -58853,10 +58921,25 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-03-300";
+const APP_BUILD = "2026-10-04-301";
 const FRAME_OK_KEY = "class26e.frame.ok";
-const UPDATE_CHECK_MIN_GAP_MS = 15 * 60 * 1000;
+/* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
+   pushing when I open the app?" Because this gap is shared by every way
+   a check is asked for - the 15-second poll, coming back to the app, a
+   screen change - and at fifteen minutes it quietly overruled all of
+   them: the poll fired every 15s and was turned away every time, and
+   reopening an app that had checked a few minutes before the push
+   learned nothing. A launch from cold was the only thing that reliably
+   asked. It is a de-duplicating guard now and nothing more - the screen
+   observer calls in on every mutation under #stage, which is the only
+   reason it needs one at all - and version.json is a few hundred bytes
+   on GitHub Pages, not a Firestore read. */
+const UPDATE_CHECK_MIN_GAP_MS = 10 * 1000;
 let lastUpdateCheck = 0;
+/* When the request now out was sent, or 0. A timestamp rather than a
+   flag so a request that never comes back (a dead connection) cannot
+   stop every later check for the rest of the session. */
+let updateCheckInFlight = 0;
 let splashRetries = 0;
 /* Held rather than shown immediately, because a check can easily land
    while someone is deep in Settings or part-way through picking a test.
@@ -58864,7 +58947,7 @@ let splashRetries = 0;
 let pendingNotice = null;
 /* Session-scoped, deliberately not persisted: "Not now" on the re-add
    notice means not again this sitting, and it is back on the next launch.
-   Without this the 15-minute check would re-raise it every time the app
+   Without this the update check would re-raise it every time the app
    came back to the foreground, which for a purely cosmetic strip of
    colour is nagging rather than reminding. The only thing that stops it
    for good is "I've done this". */
@@ -59119,12 +59202,15 @@ async function checkForUpdate(force){
     return;
   }
   const now = Date.now();
-  /* force skips the 15-minute gap, and exactly one caller passes it: the
-     end of a test. "Right when they finish their next test push it for
-     them" cannot be honoured by a check that may have been spent
-     fourteen minutes ago on the screen they started from. */
+  /* force skips the gap. Two callers pass it: the end of a test ("right
+     when they finish their next test push it for them") and coming back
+     to the app, which is when somebody is looking for the new build. */
   if(!force && now - lastUpdateCheck < UPDATE_CHECK_MIN_GAP_MS) return;
+  /* One request at a time: a forced check (coming back to the app) can
+     land while the poll's is still out. */
+  if(updateCheckInFlight && now - updateCheckInFlight < 15000) return;
   lastUpdateCheck = now;
+  updateCheckInFlight = now;
   let info;
   try{
     /* no-store, not no-cache: the whole point is to learn what the server
@@ -59136,6 +59222,7 @@ async function checkForUpdate(force){
     if(!res.ok) return;
     info = await res.json();
   }catch(e){ return; }
+  finally{ updateCheckInFlight = 0; }
   if(!info) return;
 
   /* Page updates win when both apply. Getting someone onto the current
@@ -59688,8 +59775,12 @@ function releasePageForReload(){
    the splash properly, so this no longer has to try to time its way past
    it - it just starts, and retries until the app is actually on screen. */
 window.addEventListener("load", () => setTimeout(checkForUpdate, 1500));
+/* Coming back to the app is the moment somebody is looking for the new
+   build - "when I open the app" - so it always asks, whatever the gap
+   says. On iOS a Home Screen app is resumed far more often than it is
+   launched cold. */
 document.addEventListener("visibilitychange", () => {
-  if(!document.hidden) checkForUpdate();
+  if(!document.hidden) checkForUpdate(true);
 });
 
 /* ---- AND WHILE SOMEBODY IS JUST USING IT ----
@@ -61997,8 +62088,8 @@ function summarize(){
   /* The end of a test is the moment the forced update was asked to land
      on. Deferred a beat so the results screen paints first - finishing a
      run and being shown a loading bar instead of the score reads as a
-     crash, not an update. force=true because the ordinary 15-minute
-     throttle would routinely swallow this exact check. */
+     crash, not an update. force=true so the ordinary gap can never
+     swallow this exact check. */
   setTimeout(() => checkForUpdate(true), 1200);
   stopTimer();
   stopQuestionTimer();

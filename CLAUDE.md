@@ -10235,3 +10235,67 @@ anybody's history on it survives. Gates:
 - `check-behaviour` 68 asserts the card reads "340 questions", that a
   340-question run is a full unit (its hundo lands), and that the 0-85
   version still has 57 including the repeat.
+
+### Build 301 - updates actually reach an open app
+
+*"Why aren't the updates pushing when I open the app?"* Because every
+way the app asks for `version.json` - the 15-second poll, coming back to
+the app, a screen change - went through one `UPDATE_CHECK_MIN_GAP_MS`,
+and it was **fifteen minutes**. The poll fired every 15s and was turned
+away every time; resuming an app that had checked a few minutes before
+the push learned nothing. Only a cold launch reliably asked, and on iOS a
+Home Screen app is resumed far more often than it is launched.
+
+- **The gap is 10 seconds**, a de-duplicating guard and nothing more: the
+  `#stage` observer calls `checkForUpdate()` on every mutation, which is
+  the only reason a gap is needed at all. It costs no Firestore quota -
+  `version.json` is a static file on Pages.
+- **Coming back to the app always asks**: `visibilitychange` passes
+  `force`, so the gap can never swallow the one moment somebody is
+  looking for the new build.
+- **One request at a time**: `updateCheckInFlight` is the send time, not
+  a flag, so a request that never returns cannot block every later check
+  for the session (it lapses after 15s).
+- **The old gate could not fail.** Section 9 asserted
+  `UPDATE_POLL_MS <= 20000` by reading the constant, and a second
+  constant was overruling it the whole time. It now counts the requests
+  that actually go out: the poll must ask a minute after the last check,
+  resuming must ask seconds after it, and a burst of screen changes must
+  not fire a burst. Both of the first two fail on 300.
+- **End to end** (an open app, version.json bumped under it): 300 sent
+  no request at all in 40s; 301 pushed in under 8s.
+
+A device still running 300 or older has the 15-minute gap baked in, so
+it picks up 301 on its next cold launch (swipe the app away and reopen)
+or within 15 minutes of its last check, and from then on keeps up.
+
+**Old chat pings stay old (also build 301).** *"Old chats are showing up as
+notifications and old chats are giving the chat bubble a red dot as if
+there's an unread chat."* Each message drops a `msgping` into every other
+member's inbox document (`vrooms/inbox-<publicId>`, slot `<sender>~m`), and
+nothing ever took one out. Read on the live project, the reporter's inbox
+held three pings from one group chat, **eight days old**. Whether they
+counted came down to `class26e.chatseen`, this device's localStorage record
+of having read the chat - which a re-add, iOS tidying storage, or never
+having opened the chat on this device all lose. Then a week-old
+conversation lit the dot and the Groups count, and a chat that had been
+LEFT was put straight back on the list by its own old ping
+(`chatUnreadByTab()` re-adds any pinged chat it does not know).
+- **`CHAT_PING_FRESH_MS` (2 days).** `chatPings()` drops anything older,
+  and every reader goes through it - the dot, the per-tab counts, the
+  list rows, re-adding a chat and the preview banner - so they agree.
+- **Reading takes the pings out of the mailbox.** `markChatSeen()` calls
+  `clearReadPings()`, which deletes every ping for that chat at or before
+  the read point, with one write and only when there is one to delete.
+  It has to be a `FieldPath("msgs", slot)`: a slot is `<sender>~m`, and a
+  dotted field-path string may not contain `~`.
+- **A chat you left stays left.** `forgetChat()` stamps
+  `class26e.chatleft`; a ping no newer than that does not re-add or
+  count the chat. `rememberChat()` clears the stamp, so joining again
+  works as before.
+- **Gate:** `check-behaviour` 69 drives the real inbox shape (three
+  eight-day-old pings, no read record), a left chat, reading a chat, the
+  preview banner, and an expired friend chat. Five of its checks fail on
+  build 300.
+- Nothing was written to the live inbox: the old pings are simply ignored
+  now, and the next time a chat is read its pings are cleared.
