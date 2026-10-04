@@ -11177,3 +11177,167 @@ device, phone and iPad) fails 34 checks there and passes on 307.
   board fetched late, a chat message not delivered in its window); each
   passed alone. A red check on a loaded machine is re-run alone before it
   is believed or explained away.
+
+### Build 309 - held flares stay lit, a road you can see, one line per kind of XP
+
+- **A lit Silver is polished metal, not pale glass.** Silver's colour is a
+  pale blue-grey, so 24% of it over the lit bubble's glass came out as the
+  same pale glass an unreached rank wears - "almost looks too much like a
+  non unlocked one". `[data-rank-tier="ranger"].cosmic-badge-lit` has its
+  own steel body, bright rim and halo. Any rank whose colour is near-white
+  or near-grey needs the same check: compare it lit against unlit.
+- **Tapping a reached flare says it is reached and lit, nothing about the
+  theme** ("don't mention that the 'theme is yours' part").
+- **The rank hero has one light, not two.** The next rank's colour used to
+  wash in from the bottom-right corner; on a Silver card that was a Gold
+  glow nobody could account for. "To reach Gold" says where you are going.
+- **The road map's fill and light start at the node's EDGE.** The road runs
+  centre to centre, so the first and last half-node of it are under the
+  circles: at the very start of a rank the light sat hidden under the rank
+  you hold. Both are measured over the visible stretch now, and the light is
+  drawn at 0% too (it used to need `lit > 0`), so a fresh rank shows its
+  light just below you.
+- **Best time is in the unit details, not on the card.** A fifth stat,
+  full width (the grid's odd-last rule). It is `unitBestTimeOf()`: the
+  per-unit `store.unitBestMs` (a 100% on the whole unit, alone or inside a
+  multi-unit run, timed by that unit's own questions) or the older
+  Drill-only `testStats` mark, whichever is faster. Short phones get a
+  tighter card so the Starred door stays on screen.
+- **One XP line per kind.** Streak tiers are one "Streak bonus" line with
+  the tiers under it (`10 ×2 · 25 in a row`); personal bests are one line;
+  badges are one line. Same totals - check-results asserts the sums. The
+  Virtual Room's step still matches `/^streak/`.
+- **The start sheet's Timer is not a dropdown.** A heading above its card,
+  like Options. `.more-toggle.is-static` is a div, no chevron, body always
+  open.
+- **Every test starts from the defaults.** `SHEET_DEFAULTS` /
+  `resetSheetOptions()`: on entering unit selection, and whenever the Start
+  button lights up or goes dark (units go from none to some, or back).
+  While it stays lit, what you chose holds - add a unit and the countdown
+  you set is still on. Mode is not in the sheet and is not reset. Re-run
+  uses the run's own cfg and is untouched.
+- **A rank-up cutscene lights every rank below the one it celebrates.**
+  `syncSceneFlares()`: ranks are cumulative, so the scene says so from the
+  rank rather than from whatever the store holds that instant. Only ranks
+  you do NOT hold step back while yours ignites - dimming all of them made
+  held flares read as locked. The secret-flare dots are the hero's own,
+  from `store.mysteryColorsFound`. The recordings had shown every flare
+  dark because `record-cutscenes.py` seeded no rank; `SEED_RANK` now seeds
+  the account to the rank it records. `rankCutFromTo()` with no `from`
+  names the rank below, not "Your first rank".
+- **Stat cards are top-aligned.** A `<button>` centres its content, so a
+  number beside a two-line label sat 9px lower than its neighbour. An odd
+  card out on a phone runs full width; the grid's bottom margin is dropped
+  when it is the last thing in its card.
+- **A theme unlock shows a lit world in its own three colours**, not a flat
+  disc: the dot wears `data-accent`, so `--theme-c1/2/3` resolve on it.
+  Shading is in `em`, so a bigger dot sets a bigger font-size.
+- **Onboarding polish.** The intro title is upper-case like the other
+  onboarding headers. The username field is centred on a phone. The
+  character grid is a centred flex-wrap rather than a fixed grid, so a
+  short last row sits in the middle. The intro copy names the four modes
+  and the ways to climb.
+- **A lone last badge in the three-column case sits in the middle
+  column**, not hanging off the left.
+
+#### Build 309, second batch
+
+- **Tapping the daily question before it is ready answers BESIDE the
+  button.** `showDailyQuestionLockedPopup()` builds its own small bubble
+  (`#daily-lock-tip`) with a caret pointing at the "?". This had been
+  asked for before and had come back as a top banner. Its first fix in
+  309 used `showContextualInfo()`, which centres on its target, so it
+  opened over Start Studying with a tether line drawn across. Placement
+  is measured, in this order:
+  1. To the left of the "?", centred on it (a phone).
+  2. To the left, level with the "?"'s foot, if Start Studying comes down
+     beside it.
+  3. Above it, lifted past the tab bar. On a tablet and on a phone held
+     sideways, the "?" sits on the bar's centre line, so its top is below
+     the bar's.
+
+  Before giving up on "beside", it tries a one-line form ("Done for today
+  · next in 18h 24m", `.is-compact`). That fits the ~50px gap between
+  Start Studying and the bar in a phone browser window, where two lines
+  had lifted it 56px away over the button.
+
+  The top `.daily-alert` is only the fallback when the "?" is not on
+  screen. `check-fixes.py` 9b holds this on every device: a bubble, on
+  screen, clear of Start Studying and the bar, near the button, and no
+  banner.
+- **The start sheet's bank says it is about the units you picked**:
+  "Every question in the unit you selected" or "Only your starred
+  questions in the 3 units you selected". A Penal Code version names
+  itself. The caption always shows.
+- **Yellow dots v2: an item you have never touched is new, whenever you
+  got it.** v1 seeded every item already held as seen, so anybody who
+  unlocked something before the dots shipped was never told about it.
+  `SEEN_VERSION = 2` re-seeds a v1 record once. It marks as seen only
+  free characters and the character, banner and theme you are actually
+  wearing, and keeps badges as they were. The cloud merge takes a
+  higher-version record wholesale and ignores marks from a lower one.
+  Without that, the union merge would put every old v1 mark straight
+  back from the second device.
+- **Tagline: "Master the material, one rank at a time."**
+- **Koi: every fish faces the way its ring carries it.** The white koi
+  had a `rotate(180)` on a counter-clockwise layer, so it swam tail
+  first. Check a fish's heading against its layer's spin direction
+  (`bl-spin` clockwise, `bl-spin-r` counter-clockwise), not by
+  eye on a still.
+- **Midnight Skyline is a future city.** `skylineFuture(u, HZ)` sits just
+  above `BANNER_ART` and adds layers behind the balcony rail:
+  - neon holo billboards on two clocks, plus one that glitches;
+  - neon signs;
+  - a maglev rail with a train crossing;
+  - three flying cars.
+- **Star Trails (5,000) is toned up a step.** The wheel turns in 80s
+  (150s read as a still). The pole star pulses. Two meteors with glowing
+  heads cross on their own clocks.
+  **Its one meteor used to fly backwards:** the gradient lit the trailing
+  end. Every `bl-meteor`/`bl-trailmet` streak travels down-left, so the
+  lit end and the head are the LOWER-LEFT end.
+- **Myriad (10,000) has much more going on:**
+  - the Milky Way and its reflection swell together (`bl-myband`);
+  - the core pulses in scale as well as light;
+  - six four-point sparkles twinkle;
+  - eight meteors with a soft outer tail, a bright core and a glowing
+    head (they were hairlines, gone before the eye found them);
+  - once every 9.5s, a green-tailed fireball with a flash over the sky
+    and a fainter one on the lake.
+
+  `bl-myflash` runs on the SAME duration and delay as the bolide's
+  `bl-meteor`, and its keyframes are timed to that animation's 60%
+  appearance. Change one clock and change the other.
+- **The start sheet's grab bar is a pinned strip.** Scrolled, the sheet's
+  headings ran right up under its rounded top and were cut there, against
+  the page's "UNITS" label just above: two half-words colliding. The
+  strip (`.is-setup .unitoptions-modal-handle`) is sticky, spans edge to
+  edge and fades at its foot.
+  **Sticky `top` measures from the content edge, not the padding edge**,
+  so it is `top:-.45rem` (minus the sheet's top padding). At `top:0` it
+  left a 7px slot for text to show through above it.
+  The sheet also has `overflow-x:hidden`. The pinned Begin bar runs a
+  pixel past each side to cover the borders, which made the sheet 2px
+  wider than its scrollport: a sideways wiggle under a thumb.
+- **The line under the results level bar follows the number above it.**
+  It was written from where the run ENDED as soon as the card was built,
+  while the number still showed where it STARTED until the bar wrapped.
+  So any level-up read "Level 23 … 815 to level 25" for the length of the
+  fill. It now changes over at the wrap, with the number. `check-results`
+  asserts both readings. On 308 it read `[22, 25]` (level shown, "to
+  level"), now `[22, 23]`.
+- **Unit selection resets its options only for a NEW test.** Arriving
+  with no units picked (the mode menu clears them) resets to defaults.
+  Arriving WITH units picked (a tab round trip, a sync restore) keeps
+  them, and `sheetLit` starts from that, because Start never went dark.
+  The first version reset on every `showSetup()`, which wiped a timer you
+  had set whenever you popped over to Profile and back.
+- **The road map's line ends at its light.** The stretch carrying the
+  light (`.rankmap-roadfill.is-tipped`) runs over the same span the light
+  does, 9px in from each node, plus a fixed 9px `.rankmap-roadstub` up to
+  the rank above. Before, the line ran edge to edge while the light kept
+  9px clear of both nodes, so they parted by 9px at either end
+  (check-behaviour b268 measured it).
+- **A test fixture that seeds `store.seenUnlocks` must stamp `.v =
+  SEEN_VERSION`.** Without the stamp the v2 re-seed reads it as an old
+  record and marks things new again.

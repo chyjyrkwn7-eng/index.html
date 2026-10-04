@@ -1546,6 +1546,23 @@
      tapping a Flare, a ladder tier, or the Home orbit sphere,
      replacing a generic bottom-of-screen toast with something that
      visibly belongs to the thing it's explaining. */
+  /* An opaque one, for when it opens over a control (build 309). */
+  /* The daily question's "not yet" answer (build 309) - beside the "?" */
+  #daily-lock-tip{ position:fixed; z-index:260; display:flex; flex-direction:column; gap:.1rem; padding:.55rem .85rem; border-radius:14px;
+    background:#1E242C; border:1px solid rgba(255,255,255,.16); box-shadow:0 10px 28px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.1);
+    color:var(--ink, #F2F4F7); font-size:.86rem; line-height:1.25; white-space:nowrap; pointer-events:none;
+    opacity:0; transform:scale(.92); transition:opacity .18s ease, transform .2s cubic-bezier(.2,.9,.3,1.2); }
+  #daily-lock-tip.is-left{ transform-origin:100% var(--caret, 50%); }
+  #daily-lock-tip.is-above{ transform-origin:var(--caret, 50%) 100%; }
+  #daily-lock-tip.is-on{ opacity:1; transform:none; }
+  #daily-lock-tip b{ font-weight:700; }
+  #daily-lock-tip.is-compact{ flex-direction:row; align-items:baseline; gap:.35rem; padding:.45rem .75rem; }
+  #daily-lock-tip span{ color:var(--soft, #A9B1BC); font-size:.8rem; }
+  #daily-lock-tip::after{ content:""; position:absolute; width:10px; height:10px; background:#1E242C; border:1px solid rgba(255,255,255,.16); }
+  #daily-lock-tip.is-left::after{ right:-6px; top:calc(var(--caret, 50%) - 5px); border-left:0; border-bottom:0; transform:rotate(45deg); }
+  #daily-lock-tip.is-above::after{ bottom:-6px; left:calc(var(--caret, 50%) - 5px); border-left:0; border-top:0; transform:rotate(45deg); }
+  [data-reduce-motion="true"] #daily-lock-tip{ transition:none; transform:none; }
+  #contextual-info-popup.is-solid{ background:#1E242C; -webkit-backdrop-filter:none; backdrop-filter:none; border-color:rgba(255,255,255,.16); box-shadow:0 10px 28px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.1); }
   #contextual-info-popup{
     position:fixed; z-index:220; max-width:15rem;
     background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); color:#F3F5F7; padding:.75rem .9rem; border-radius:12px;
@@ -1934,12 +1951,24 @@
     .panel.home.charselect-panel .avatarchar-grid{ max-width:24rem; }
     .panel.home.charselect-panel .avatarchar-grid .avatarchar-option{ max-width:6.6rem; }
   }
+  /* FIVE STARTERS NOW, so a grid of three left a row of two hanging off
+     the left edge under a row of three. Wrapped and centred instead: three
+     over two, both rows on the same centre line (build 309). The spacing
+     between characters is the same as the three columns gave. */
+  .panel.home.charselect-panel .avatarchar-grid{ display:flex; flex-wrap:wrap; justify-content:center; column-gap:1.3rem; }
+  .panel.home.charselect-panel .avatarchar-grid .avatarchar-option{ flex:0 0 5.2rem; width:5.2rem; }
+  @media (min-width:40rem){
+    .panel.home.charselect-panel .avatarchar-grid{ column-gap:1.4rem; }
+    .panel.home.charselect-panel .avatarchar-grid .avatarchar-option{ flex-basis:6.6rem; width:6.6rem; }
+  }
   /* The name field is sized for the widest screen it appears on and was
      reported as wider than it needs to be on a phone - "a good size for
      the larger devices but could be a smidge shortened for the phones".
      A ceiling only below 32rem, so nothing on a tablet moves. */
   @media (max-width:639px){
-    .panel.home.onboarding-shortform-panel .searchbox{ max-width:15rem; }
+    /* ...and centred in its 17rem wrap: the ceiling alone left it 16px
+       left of the title above it (build 309). */
+    .panel.home.onboarding-shortform-panel .searchbox{ max-width:15rem; display:block; margin-left:auto; margin-right:auto; }
   }
   /* SIX, AND IT STAYS SIX. An earlier pass moved this to four on a
      phone and eight on a tablet, on the "column count follows item
@@ -6054,6 +6083,10 @@
   .welcomeintro-title{
     font-family:var(--serif); font-size:1.3rem; font-weight:800; text-align:center;
     margin:0 0 .35rem;
+    /* Upper case like every other onboarding title (build 309) - "Pick
+       your class" and "What This Actually Is" were the two in mixed case
+       between ENTER YOUR CODE and ENTER A USERNAME. */
+    text-transform:uppercase; letter-spacing:.04em;
   }
   /* Rebalanced after direct feedback that this still read as tight
      overall \u2014 the title's own size/margin and the gap between cards
@@ -6619,6 +6652,8 @@
     transform:rotate(45deg); transition:transform .2s ease; flex-shrink:0;
   }
   .more-toggle.open .more-toggle-icon{ transform:rotate(225deg); }
+  /* a heading, not a control (build 309 - the start sheet's Timer card) */
+  .more-toggle.is-static{ cursor:default; -webkit-tap-highlight-color:transparent; }
   /* SMOOTHER, AND NO HARD EDGE - "when opening or closing the advanced
      settings drop down, make sure the stuff that's appearing or
      disappearing has a smoother transition, it seems like it has hard
@@ -7000,6 +7035,9 @@
     box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
   }
   .points-progress-sect .slab{ margin:0 0 .5rem; }
+  /* The grid's own bottom margin is for a grid followed by something;
+     as the last thing in its card it was an empty strip (build 309). */
+  .points-progress-sect > .stat-grid:last-child{ margin-bottom:0; }
   /* Matches Profile's own .stat-num treatment exactly, per explicit
      request \u2014 these were plain ink-colored text, not matching the
      gradient-number styling Profile already uses everywhere else. */
@@ -10058,7 +10096,10 @@
   .rank-orbit-slot.is-igniting::before{ opacity:1; transform:scale(1); animation:rank-ignite-breathe 1.5s ease-in-out 1.1s infinite alternate; }
   .rank-orbit-slot.is-igniting > .cosmic-icon-badge{ scale:1.4; }
   @keyframes rank-ignite-breathe{ from{ scale:1; opacity:1; } to{ scale:1.22; opacity:.7; } }
-  .tier-cutscene.is-igniting:not(.is-swapped) .rank-before .rank-orbit-slot:not(.is-igniting){ opacity:.45; }
+  /* Only the ranks you do NOT hold step back while yours lights (build
+     309) - dimming every other flare made the ones you already hold read
+     as locked. */
+  .tier-cutscene.is-igniting:not(.is-swapped) .rank-before .rank-orbit-slot:not(.is-igniting):not(:has(> .cosmic-badge-lit)){ opacity:.5; }
   .rank-after{ position:absolute; inset:0; opacity:0; pointer-events:none; }
   .tier-cutscene.is-swapped .rank-before{ opacity:0; transition:opacity .2s ease; }
   .tier-cutscene.is-swapped .rank-after{ opacity:1; transition:opacity .35s ease; }
@@ -10474,6 +10515,27 @@
       3px 7px 12px -2px rgba(0,0,0,.45);
   }
   .cosmic-icon-badge.cosmic-badge-rank{ position:absolute; overflow:hidden; }
+  /* ---- SILVER, LIT, IS POLISHED METAL - NOT PALE GLASS (build 309) ----
+     "The silver flare on the Home Screen looks good but it almost looks
+     too much like a non unlocked one." Silver's colour is a pale
+     blue-grey, and 24% of a pale grey over glass is pale glass: the exact
+     body an unreached bubble has. So a lit Silver gets the cues the
+     unreached ones never carry - a cool steel body instead of a white
+     wash, a bright polished rim, a crisp highlight, and a halo - and the
+     emblem keeps its full brightness inside it. */
+  .cosmic-icon-badge.cosmic-badge-rank.cosmic-badge-lit[data-rank-tier="ranger"]{
+    background:#3C4A5E;
+    background-image:
+      radial-gradient(120% 80% at 38% 0%, rgba(236,244,255,.42), rgba(236,244,255,0) 62%),
+      radial-gradient(95% 65% at 50% 100%, rgba(186,206,232,.5), transparent 72%),
+      linear-gradient(160deg, #66798F, #2A3546 70%);
+    border:1.5px solid #E4EEFA;
+    box-shadow:0 1px 3px rgba(255,255,255,.45) inset, 0 -2px 4px rgba(10,16,26,.5) inset,
+      0 0 0 1px rgba(160,184,214,.35),
+      0 0 16px 3px rgba(196,218,246,.62),
+      3px 7px 12px -2px rgba(0,0,0,.45);
+  }
+  .cosmic-icon-badge.cosmic-badge-rank.cosmic-badge-lit[data-rank-tier="ranger"] svg.cosmic-rank-emblem{ filter:saturate(1.1) brightness(1.3) contrast(1.08); }
   .cosmic-icon-badge.cosmic-badge-rank svg.cosmic-rank-emblem{ position:relative; z-index:0; }
   /* The lens, above the emblem. It was a crescent of light across the
      top third, and its edge was the "weird circle like thing at the top"
@@ -12377,17 +12439,19 @@
        emblem's corner in the rank's colour, with a second light in the
        NEXT rank's colour coming in from the opposite corner - where you
        are and where you are going, on one card. */
+    /* ONE LIGHT, NOT TWO (build 309). The next rank's colour used to come
+       in from the bottom-right corner, and on a Silver card that was a
+       Gold glow nobody could account for: "the bottom right corner of
+       that card has an orange glow? Not sure why." "To reach Gold" over
+       the rings already says where you are going, in Gold. */
     background:
       radial-gradient(90% 120% at 0% 0%, color-mix(in srgb, var(--rank-color, var(--accent)) 30%, transparent), transparent 62%),
-      radial-gradient(80% 110% at 100% 100%, color-mix(in srgb, var(--next-color, var(--rank-color, var(--accent))) 18%, transparent), transparent 60%),
       linear-gradient(160deg, #161B23, #0C0F14);
     border:1px solid color-mix(in srgb, var(--rank-color, var(--accent)) 42%, rgba(255,255,255,.06));
     box-shadow:0 14px 34px -20px var(--rank-color, var(--accent)), inset 0 1px 0 rgba(255,255,255,.07);
   }
   .rankhero.is-unranked{
-    background:
-      radial-gradient(80% 110% at 100% 100%, color-mix(in srgb, var(--next-color, #8B939E) 16%, transparent), transparent 60%),
-      linear-gradient(160deg, #161B23, #0C0F14);
+    background:linear-gradient(160deg, #161B23, #0C0F14);
     border-color:var(--rule); box-shadow:none;
   }
   .rankhero-top{ display:flex; align-items:center; gap:1rem; min-width:0; }
@@ -12507,13 +12571,30 @@
   /* SLOWER (build 302): "the progress bar on the road map moves fast, slow
      that down some so it's cooler" - 1.4s to 2.4s here, 2.2s to 3.2s for
      the climb, and runRankMapCelebration() waits the extra time. */
+  /* THE FILL AND ITS LIGHT START AT THE NODE'S EDGE, NOT ITS CENTRE
+     (build 309). The road runs centre to centre, so the first and last
+     half-node of it are underneath the circles: "I'm at the very
+     beginning to the next rank, but the rank road map progression thing
+     is hiding underneath my current rank, it should still be visible,
+     just at the beginning of that map part". Both are measured over the
+     stretch you can actually see, so 0% is the light sitting just below
+     your rank and 100% is it arriving at the next. */
   .rankmap-roadfill{
-    position:absolute; inset:0; transform-origin:50% 0%; transform:scaleY(var(--lit, 0));
+    position:absolute; left:0; right:0; top:calc(var(--node) / 2); bottom:calc(var(--node) / 2);
+    transform-origin:50% 0%; transform:scaleY(var(--lit, 0));
     /* From the rank above to the rank below (build 236). */
     background:linear-gradient(to bottom, var(--from-color, var(--rank-color)), var(--rank-color));
     box-shadow:0 0 10px color-mix(in srgb, var(--rank-color) 70%, transparent);
     transition:transform 2.4s cubic-bezier(.22,.7,.2,1) .25s;
   }
+  /* The stretch carrying the light (build 309): its line runs over the
+     same span the light does - 9px in from each node - and a fixed 9px
+     stub of the from-colour joins it to the rank above. Without this the
+     line ran edge to edge while the light kept 9px clear of both nodes,
+     so the two parted by up to 9px at either end of a climb. */
+  .rankmap-roadfill.is-tipped{ top:calc(var(--node) / 2 + 9px); bottom:calc(var(--node) / 2 + 9px); }
+  .rankmap-roadstub{ position:absolute; left:0; right:0; top:calc(var(--node) / 2); height:9px;
+    background:var(--from-color, var(--rank-color)); box-shadow:0 0 10px color-mix(in srgb, var(--from-color, var(--rank-color)) 70%, transparent); }
   /* The light at the end of the fill, on the stretch you are climbing.
      IT RIDES THE SAME TRANSFORM AS THE FILL (build 268): "the circle
      lags behind the animated line when it happens". The fill grows by
@@ -12530,7 +12611,7 @@
   .rankmap-roadtip{
     position:absolute; z-index:1; left:calc(var(--node) / 2); width:0; pointer-events:none;
     top:calc(var(--node) / 2); bottom:calc(-1 * var(--node) / 2);
-    transform:translateY(calc(var(--tip, 0) * 100%));
+    transform:translateY(calc(var(--node) / 2 + 9px + var(--tip, 0) * (100% - var(--node) - 18px)));
     transition:transform 2.4s cubic-bezier(.22,.7,.2,1) .25s;
   }
   .rankmap-roadtip-dot{
@@ -13957,6 +14038,20 @@
      STAT_MEANINGS - rather than composed from the label, which is how a
      help text ends up describing something the app stopped doing. */
   .stat-card{ cursor:pointer; -webkit-tap-highlight-color:transparent; font:inherit; text-align:left; }
+  /* NUMBERS ON ONE LINE (build 309). A stat card is a <button>, and a
+     button centres its content vertically - so beside a card whose label
+     wrapped to two lines ("Questions answered"), the next card's number
+     sat 9px lower. Top-aligned, every number in a row is level. And an
+     odd card out on a phone runs the full width rather than leaving a
+     hole beside it. */
+  .stat-card{ display:flex; flex-direction:column; justify-content:flex-start; align-items:stretch; }
+  @media (max-width:39.99rem){
+    .stat-grid > button.stat-card:last-of-type:nth-of-type(odd){ grid-column:1 / -1; }
+  }
+  /* five on a tablet are one row of five, not three and a gap */
+  @media (min-width:40rem){
+    .stat-grid:has(> button.stat-card:nth-of-type(5):last-of-type){ grid-template-columns:repeat(5, minmax(0, 1fr)); }
+  }
   .stat-card.is-asked{
     border-color:color-mix(in srgb, var(--accent) 55%, transparent);
     box-shadow:0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
@@ -15299,6 +15394,16 @@
   .unitdetail-statval{ margin:0; font-size:1.35rem; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; line-height:1.1; }
   .unitdetail-statlab{ margin:.2rem 0 0; font-size:.68rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.7); }
   .unitdetail-statsub{ margin:.15rem 0 0; font-size:.7rem; color:var(--soft); line-height:1.3; }
+  /* Five stats since build 309 (Best time joined): on the shortest
+     phones the card tightens so the Starred door stays on screen. */
+  @media (max-height:41rem){
+    .unitdetail-stats{ gap:.4rem; }
+    .unitdetail-stat{ padding:.45rem .65rem; }
+    .unitdetail-statval{ font-size:1.12rem; }
+    .unitdetail-statlab{ margin-top:.12rem; font-size:.62rem; }
+    .unitdetail-statsub{ font-size:.66rem; margin-top:.08rem; }
+    .unitdetail-doors{ margin-top:.55rem; }
+  }
   .unitdetail-doors{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:.5rem; margin-top:.75rem; }
   /* ONE DOOR, FULL WIDTH AND CENTRED (build 285): "the flag button needs
      to be centered/bigger". With Most missed gone Flagged was alone in the
@@ -15674,7 +15779,27 @@
      one action pinned to the bottom where your thumb is. No control was
      removed and none moved meaning; this is all presentation, scoped to
      .is-setup so the Virtual Room's Match settings sheet is untouched. */
-  .unitoptions-modal-sheet.is-setup{ background:#0F1115; }
+  /* overflow-x: the pinned Begin bar runs a pixel past each side to cover
+     the sheet's borders, which left the sheet 2px wider than its own
+     scrollport - a sideways wiggle under a thumb on a phone. */
+  .unitoptions-modal-sheet.is-setup{ background:#0F1115; overflow-x:hidden; }
+  /* The grab bar is a solid strip pinned to the top of the sheet (309).
+     Scrolled, the sheet's own headings used to run right up under its
+     rounded top edge and get cut there, against the page's "UNITS"
+     label just above it - two half-words colliding. The strip spans
+     the sheet edge to edge (it pulls back out through the padding) and
+     fades at its foot, so content slides under it instead. The bar
+     itself is drawn as a background, centred. */
+  .unitoptions-modal-sheet.is-setup .unitoptions-modal-handle{
+    /* top: minus the sheet's own top padding - sticky measures from the
+       content edge, so top:0 left a 7px slot above the strip for text to
+       show through */
+    position:sticky; top:-.45rem; z-index:3; width:auto; height:1.45rem; border-radius:0;
+    margin:-.45rem -1.15rem .4rem;
+    background:
+      linear-gradient(rgba(255,255,255,.26), rgba(255,255,255,.26)) 50% .7rem / 2.4rem 4px no-repeat,
+      linear-gradient(#0F1115 72%, rgba(15,17,21,0));
+  }
   .unitoptions-modal-sheet.is-setup .unitoptions-modal-title{
     font-family:var(--sans); font-size:1.65rem; font-weight:800; letter-spacing:-.01em; color:#fff;
   }
@@ -15744,6 +15869,19 @@
   .unitoptions-modal-sheet.is-setup .more-toggle-state{ font-size:.95rem; font-weight:500; color:rgba(255,255,255,.5); }
   .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect > .more-body.open > .more-body-inner{ border-top-color:rgba(255,255,255,.09); }
   .unitoptions-modal-sheet.is-setup .timer-sect{ background:none; padding:0; }
+  /* NO DROPDOWN (build 309): Timer is a heading above its card, the same
+     as Options above its own - the card is the two switches. */
+  .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect:has(> .more-toggle.is-static){ background:none; border-radius:0; }
+  .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect > .more-toggle.is-static{
+    display:block; width:auto; min-height:0; padding:0; margin:0 .9rem .45rem;
+    font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:rgba(255,255,255,.45);
+  }
+  .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect:has(> .more-toggle.is-static) > .more-body.open > .more-body-inner{
+    border-top:0; padding:0;
+  }
+  .unitoptions-modal-sheet.is-setup .sect:has(> .more-toggle.is-static) .timer-sect{
+    background:rgba(255,255,255,.07); border-radius:13px; padding:0 .9rem;
+  }
   /* Game's three speeds stay three tiles - they are the choice - but the
      legend about the dots on the unit cards is not needed to start. */
   .unitoptions-modal-sheet.is-setup .speedkey{ display:none; }
@@ -16094,6 +16232,7 @@
     .bn-stage .bl-meteor{ animation:bl-meteor 6s ease-in infinite; opacity:0; }
     .bn-stage .bl-steam{ animation:bl-steam 3.6s ease-out infinite; opacity:0; }
     .bn-stage .bl-flame{ animation:bl-flame 1.6s ease-in-out infinite alternate; }
+    .bn-stage .bl-myband{ animation:bl-myband 5s ease-in-out infinite alternate; }
     .bn-stage .bl-breathe{ animation:bl-breathe 5s ease-in-out infinite alternate; }
     .bn-stage .bl-shimmer{ animation:bl-shimmer 3.4s ease-in-out infinite alternate; }
     .bn-stage .bl-wingL{ animation:bl-wingL 3.6s ease-in-out infinite alternate; }
@@ -16142,6 +16281,9 @@
   /* one tile down and 40 units left, of a 380 x 360 sheet (see Sakura) */
   @keyframes bl-fall{ from{ transform:translate(0,0); } to{ transform:translate(-10.526%, 50%); } }
   /* Star Trails' meteor: bn-meteor's -110, 60 as a share of its 183 x 100 box */
+  @keyframes bl-myband{ from{ opacity:.62; } to{ opacity:1; } }
+  /* Myriad's fireball flash (309): on bl-meteor's clock - dark until the bolide shows at 60%, gone by 76% */
+  @keyframes bl-myflash{ 0%,59%{ opacity:0; } 62%{ opacity:.32; } 68%{ opacity:.1; } 76%,100%{ opacity:0; } }
   @keyframes bl-trailmet{ 0%{ transform:translate(0,0); opacity:0; } 3%{ opacity:1; } 14%{ transform:translate(-60.1%, 60%); opacity:0; } 100%{ transform:translate(-60.1%, 60%); opacity:0; } }
   /* bn-quake and bn-sway, as shares of a whole-scene box */
   @keyframes bl-quake{
@@ -18677,6 +18819,11 @@
   @media (min-width:27rem){
     .badge-grid{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
   }
+  /* Sixteen in threes is five rows and one over: the last badge sits in
+     the middle of its row rather than alone at the left (build 309). */
+  @media (min-width:27rem) and (max-width:39.99rem){
+    .badge-grid > .badge-tile:last-child:nth-child(3n+1){ grid-column:2; }
+  }
   @media (min-width:40rem){
     .avatarchar-option{ max-width:4.5rem; }
     .avatarchar-grid-appearance{ grid-template-columns:repeat(6, minmax(0, 1fr)); gap:.8rem .5rem; }
@@ -19347,13 +19494,21 @@
   .rs-unlock-text{ min-width:0; }
   .rs-unlocked .unlockbanner-kicker{ color:var(--spot-color); opacity:1; font-size:.62rem; letter-spacing:.13em; text-transform:uppercase; }
   .rs-unlocked .unlockbanner-name{ font-size:1.02rem; color:var(--ink); }
+  /* A THEME IS SHOWN AS A LIT WORLD IN ITS OWN THREE COLOURS (build
+     309), not a flat disc. The dot carries data-accent, and every
+     [data-accent] block declares --theme-c1/2/3 on whatever element
+     wears it - so this is the theme's own triad, the same three the app
+     glows in, lit from the upper left like the planet on Home. */
   .rs-themedot{
     display:block; width:1.7rem; height:1.7rem; border-radius:50%;
-    background:radial-gradient(circle at 34% 30%,
-      color-mix(in srgb, var(--spot-color) 100%, #fff 28%) 0%,
-      var(--spot-color) 58%,
-      color-mix(in srgb, var(--spot-color) 70%, #000) 100%);
-    box-shadow:0 0 0 2px color-mix(in srgb, var(--spot-color) 45%, transparent);
+    background:
+      radial-gradient(circle at 32% 26%, rgba(255,255,255,.9) 0, rgba(255,255,255,.35) 9%, rgba(255,255,255,0) 30%),
+      radial-gradient(circle at 74% 78%, color-mix(in srgb, var(--theme-c3, var(--spot-color)) 90%, transparent) 0, transparent 58%),
+      radial-gradient(circle at 26% 34%, color-mix(in srgb, var(--theme-c1, var(--spot-color)) 85%, transparent) 0, transparent 62%),
+      var(--theme-c2, var(--spot-color));
+    box-shadow:inset -.22em -.32em .6em rgba(0,0,0,.5), inset .12em .16em .3em rgba(255,255,255,.22),
+      0 0 0 2px color-mix(in srgb, var(--spot-color) 40%, transparent),
+      0 0 1.1em color-mix(in srgb, var(--spot-color) 45%, transparent);
   }
   .rs-diffmark{ font-size:1.1rem; font-weight:800; color:var(--spot-color); letter-spacing:-.08em; }
 
@@ -19611,7 +19766,8 @@
   }
   @keyframes rs-artpop{ 0%{ opacity:0; transform:scale(.2) rotate(-12deg); } 100%{ opacity:1; transform:none; } }
   .rs-spot-art svg{ width:100%; height:100%; display:block; }
-  .rs-spot-art .rs-themedot{ width:4.6rem; height:4.6rem; box-shadow:0 0 0 3px color-mix(in srgb, var(--spot-color) 45%, transparent); }
+  /* the shading is in em, so a bigger orb carries a bigger font-size */
+  .rs-spot-art .rs-themedot{ width:4.6rem; height:4.6rem; font-size:2.7rem; }
   .rs-spot-art .rs-diffmark{ font-size:2.6rem; }
   /* The rank-reward card's tiles (build 308): theme, character and
      banner side by side, each landing a beat after the last. */
@@ -19625,7 +19781,7 @@
     box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--rank-color, #fff) 35%, rgba(255,255,255,.1));
   }
   .rs-reward-art > svg{ width:4rem; height:4rem; display:block; }
-  .rs-reward-art .rs-themedot{ width:3.2rem; height:3.2rem; }
+  .rs-reward-art .rs-themedot{ width:3.2rem; height:3.2rem; font-size:1.9rem; }
   .rs-reward-tile.is-banner .rs-reward-art{ width:min(15rem, 100%); height:auto; aspect-ratio:16 / 6; overflow:hidden; border-radius:12px; background:none; }
   .rs-reward-tile.is-banner .rs-reward-art > *{ position:absolute; inset:0; width:100%; height:100%; }
   .rs-reward-kind{ font-size:.6rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:color-mix(in srgb, var(--rank-color, #fff) 60%, #fff); opacity:.85; }
@@ -38821,6 +38977,8 @@ function applyLoadedData(got){
   store.seenUnlocks = (got.seenUnlocks && SEEN_KINDS.every(k => Array.isArray(got.seenUnlocks[k])))
     ? SEEN_KINDS.reduce((o, k) => { o[k] = got.seenUnlocks[k].filter(x => typeof x === "string"); return o; }, {})
     : null;
+  /* build 309: the record's version, so a re-seed is not undone by a merge */
+  if(store.seenUnlocks && typeof got.seenUnlocks.v === "number") store.seenUnlocks.v = got.seenUnlocks.v;
   store.unlocksShown = (got.unlocksShown && Array.isArray(got.unlocksShown.chars) && Array.isArray(got.unlocksShown.banners))
     ? { chars: got.unlocksShown.chars.filter(x => typeof x === "string"),
         banners: got.unlocksShown.banners.filter(x => typeof x === "string") }
@@ -41441,8 +41599,11 @@ function mergeSameAccount(dst, src){
   /* The "seen" marks behind the new-item dots (build 299): seen on one
      device is seen. */
   { const okSeen = o => o && SEEN_KINDS.every(k => Array.isArray(o[k]));
+    const ver = o => (o && typeof o.v === "number") ? o.v : 1;
     if(okSeen(src.seenUnlocks)){
-      if(!okSeen(dst.seenUnlocks)){ dst.seenUnlocks = JSON.parse(JSON.stringify(src.seenUnlocks)); res.gained = true; }
+      if(!okSeen(dst.seenUnlocks) || ver(src.seenUnlocks) > ver(dst.seenUnlocks)){ dst.seenUnlocks = JSON.parse(JSON.stringify(src.seenUnlocks)); res.gained = true; }
+      /* an older-version record does not bring its marks back (build 309) */
+      else if(ver(src.seenUnlocks) < ver(dst.seenUnlocks)) res.otherHadLess = true;
       else SEEN_KINDS.forEach(k => {
         const a = dst.seenUnlocks[k], b = src.seenUnlocks[k];
         const add = b.filter(x => a.indexOf(x) < 0);
@@ -42273,6 +42434,19 @@ function applySaved(){
 function modeTitleOf(mode){
   if(mode === "review") return "Review";
   return String(mode || "").charAt(0).toUpperCase() + String(mode || "").slice(1);
+}
+/* ---- EVERY TEST STARTS FROM THE DEFAULTS (build 309) ----
+   "The settings that are within the start menu, ensure they are reset
+   each time the start menu button lights up or unlights up too. So each
+   time I go to take a test I select what I want." What is in the start
+   sheet is a choice about THIS test, not a preference to carry: a
+   countdown left on from last week's exam was quietly timing today's
+   drill. The mode is not in the sheet (it is the screen you chose), so
+   it is not reset. */
+const SHEET_DEFAULTS = { source: "all", size: 0, shuffle: true, recall: false,
+  timer: "off", timerMinutes: 15, examFeedback: false, flashcards: false };
+function resetSheetOptions(){
+  Object.keys(SHEET_DEFAULTS).forEach(k => { cfg[k] = SHEET_DEFAULTS[k]; });
 }
 function rememberConfig(){
   store.opts = { mode: cfg.mode, source: cfg.source, size: cfg.size,
@@ -44184,6 +44358,67 @@ function bnTemplate(id){
   return t;
 }
 
+/* Midnight Skyline's future city (build 309) - see study60. Layers in
+   the 480 x 180 scene, all behind the balcony rail at y 115. */
+function skylineFuture(u, HZ){
+  const g = (id, a, b) => bnLin(u + id, [[0, a], [1, b]], 0, 0, 1, 1);
+  const defs = '<defs>' +
+    g("bbA", "#FF3DB4", "#7A2CFF") + g("bbB", "#2CF0FF", "#2A6BFF") + g("bbC", "#FF9A3D", "#FF3D7A") +
+    g("bbD", "#3DFFC8", "#1A9CFF") + g("bbE", "#FF6AE6", "#FF3D5A") +
+    bnRad(u + "bbH", [[0, "#FFFFFF", 0.32], [1, "#FFFFFF", 0]]) +
+    bnLin(u + "car1", [[0, "#2CF0FF", 0.95], [1, "#2CF0FF", 0]], 0, 0, 1, 0) +
+    bnLin(u + "car2", [[0, "#FF4FD0", 0.95], [1, "#FF4FD0", 0]], 0, 0, 1, 0) +
+    bnLin(u + "car3", [[0, "#FFE36A", 0.95], [1, "#FFE36A", 0]], 0, 0, 1, 0) +
+    bnLin(u + "train", [[0, "#9FF7FF", 0], [0.6, "#9FF7FF", 0.85], [1, "#FFFFFF", 1]], 0, 0, 1, 0) +
+    '</defs>';
+  /* a board: a glowing panel, a frame of brighter light, and an ad's
+     worth of glyphs - a mark and two lines of "text" - never real words */
+  const board = (x, y, w, h, id, col, kind) => {
+    let glyph;
+    if(kind === "tall"){
+      glyph = [0, 1, 2, 3].map(i => '<rect x="' + (x + w * 0.25) + '" y="' + (y + 4 + i * (h - 8) / 4) + '" width="' + (w * 0.5) + '" height="' + ((h - 8) / 4 - 2) + '" rx="1" fill="#FFFFFF" opacity=".75"/>').join("");
+    } else {
+      glyph = '<circle cx="' + (x + h * 0.5) + '" cy="' + (y + h / 2) + '" r="' + (h * 0.26) + '" fill="#FFFFFF" opacity=".85"/>' +
+        '<rect x="' + (x + h * 0.95) + '" y="' + (y + h * 0.3) + '" width="' + (w - h * 1.25) + '" height="' + (h * 0.14) + '" rx=".8" fill="#FFFFFF" opacity=".8"/>' +
+        '<rect x="' + (x + h * 0.95) + '" y="' + (y + h * 0.56) + '" width="' + ((w - h * 1.25) * 0.65) + '" height="' + (h * 0.12) + '" rx=".8" fill="#FFFFFF" opacity=".55"/>';
+    }
+    return '<ellipse cx="' + (x + w / 2) + '" cy="' + (y + h / 2) + '" rx="' + (w * 0.95) + '" ry="' + (h * 1.05) + '" fill="' + col + '" opacity=".22"/>' +
+      '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="1.6" fill="url(#' + u + id + ')"/>' +
+      '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="1.6" fill="url(#' + u + 'bbH)"/>' +
+      '<rect x="' + (x + 0.5) + '" y="' + (y + 0.5) + '" width="' + (w - 1) + '" height="' + (h - 1) + '" rx="1.4" fill="none" stroke="#FFFFFF" stroke-width=".7" opacity=".7"/>' + glyph;
+  };
+  /* tall neon signs down a tower's side: lit segments, like characters */
+  const sign = (x, y, n, col) => {
+    let out = '<rect x="' + (x - 1.5) + '" y="' + (y - 2) + '" width="9" height="' + (n * 7 + 3) + '" rx="1" fill="#0A0A1A" opacity=".85"/>';
+    for(let i = 0; i < n; i++){
+      const yy = y + i * 7;
+      out += '<rect x="' + x + '" y="' + yy + '" width="6" height="1.2" fill="' + col + '"/>' +
+        '<rect x="' + (x + (i % 2 ? 4.8 : 0)) + '" y="' + yy + '" width="1.2" height="4.6" fill="' + col + '"/>' +
+        '<rect x="' + x + '" y="' + (yy + 4) + '" width="' + (i % 3 ? 6 : 3.6) + '" height="1.2" fill="' + col + '"/>';
+    }
+    return '<g filter="none">' + out + '</g>';
+  };
+  const car = (y, id, w) => '<path d="M6 4 L' + (6 + w) + ' 4" stroke="url(#' + u + id + ')" stroke-width="1.6" stroke-linecap="round"/>' +
+    '<rect x="0" y="2.4" width="7" height="3.2" rx="1.6" fill="#E9F2FF"/><circle cx="1.2" cy="4" r="1" fill="#FFFFFF"/>';
+  return [
+    /* the maglev: a rail across the middle distance, under the boards */
+    { svg: defs + '<rect x="-10" y="101" width="500" height="1.6" fill="#3A4A8A" opacity=".9"/><rect x="-10" y="102.6" width="500" height=".6" fill="#2CF0FF" opacity=".45"/>' +
+        [20, 90, 160, 230, 300, 370, 440].map(x => '<rect x="' + x + '" y="103" width="2.4" height="25" fill="#1A2048"/>').join("") },
+    { svg: '<rect x="0" y="0" width="70" height="2.2" rx="1.1" fill="url(#' + u + 'train)"/>', box: [490, 99.4, 70, 2.2], cls: "bl-cross", style: "animation-duration:6.5s;animation-delay:-2s" },
+    /* the boards, in two groups breathing out of step, and one that glitches */
+    { svg: board(14, 60, 34, 16, "bbA", "#FF3DB4") + board(256, 70, 36, 15, "bbC", "#FF7A3D") + board(452, 58, 24, 32, "bbE", "#FF6AE6", "tall"),
+      cls: "bl-glow", style: "animation-duration:2.6s" },
+    { svg: board(196, 54, 22, 36, "bbB", "#2CF0FF", "tall") + board(368, 74, 30, 16, "bbD", "#3DFFC8"),
+      cls: "bl-glow", style: "animation-duration:3.4s;animation-delay:-1.7s" },
+    { svg: board(96, 46, 26, 14, "bbB", "#2CF0FF"), cls: "bl-blink", style: "animation-duration:3.1s;animation-timing-function:steps(2)" },
+    /* the neon signs */
+    { svg: sign(60, 40, 6, "#FF4FD0") + sign(238, 60, 5, "#5CF3FF") + sign(344, 52, 6, "#FFE36A"), cls: "bl-glow", style: "animation-duration:1.8s;animation-delay:-.6s" },
+    /* the flying cars, crossing between the towers at three heights */
+    { svg: car(0, "car1", 26), box: [490, 80, 40, 8], vb: [0, 0, 40, 8], cls: "bl-cross", style: "animation-duration:8s;animation-delay:-3s" },
+    { svg: car(0, "car2", 34), box: [490, 92, 46, 8], vb: [0, 0, 46, 8], cls: "bl-cross", style: "animation-duration:6s;animation-delay:-1s" },
+    { svg: car(0, "car3", 22), box: [490, 68, 36, 8], vb: [0, 0, 36, 8], cls: "bl-cross", style: "animation-duration:10s;animation-delay:-6.5s" }
+  ];
+}
 const BANNER_ART = {
   /* NORTHERN LIGHTS (redrawn, build 243) - the first of the test ladder,
      so it is still, but it has to hold up: "the 100 test one is kinda
@@ -44363,7 +44598,8 @@ const BANNER_ART = {
       bnLin(u + "dome", [[0, "#C9D4E2"], [0.5, "#7D8BA0"], [1, "#39445A"]], 0, 0, 1, 0) +
       bnLin(u + "slit", [[0, "#FFE7A8"], [1, "#FF9A4A"]]) +
       bnRad(u + "glow", [[0, "#FFC878", 0.55], [1, "#FFC878", 0]]) +
-      bnLin(u + "met", [[0, "#FFFFFF", 0], [1, "#FFFFFF", 0.95]], 0, 0, 1, 0) +
+      bnLin(u + "met", [[0, "#FFFFFF", 0.95], [1, "#FFFFFF", 0]], 0, 0, 1, 0) +
+      bnRad(u + "mh", [[0, "#FFFFFF", 0.9], [1, "#CFE4FF", 0]]) +
       '</defs>';
     /* LAYERED (build 304 - see bnLayerHTML): the sky wheels round the pole
        as one layer - drawn round (0,0) and turned on the compositor - so
@@ -44372,10 +44608,17 @@ const BANNER_ART = {
     const R = 292;
     return [
       { svg: defs + '<rect width="480" height="180" fill="url(#' + u + 'sky)"/><ellipse cx="240" cy="176" rx="320" ry="60" fill="url(#' + u + 'hz)"/>' },
-      { svg: '<g transform="translate(' + (-PX) + ' ' + (-PY) + ')" fill="none" stroke-linecap="round">' + trails + '</g>', box: [PX - R, PY - R, 2 * R, 2 * R], vb: [-R, -R, 2 * R, 2 * R], cls: "bl-spin", style: "animation-duration:150s" },
-      { svg: '<circle cx="' + PX + '" cy="' + PY + '" r="12" fill="url(#' + u + 'pole)"/>' },
+      /* Build 309: "hard to notice". The wheel turns twice as fast as it
+         did (150s a turn read as a still), the pole star breathes, and
+         two meteors cross on their own clocks instead of one every 7.8s.
+         The meteors' bright end is the LOWER-LEFT one now: they travel
+         down and left, and the head leads - it used to be the tail that
+         was lit, so the one meteor there was flew backwards. */
+      { svg: '<g transform="translate(' + (-PX) + ' ' + (-PY) + ')" fill="none" stroke-linecap="round">' + trails + '</g>', box: [PX - R, PY - R, 2 * R, 2 * R], vb: [-R, -R, 2 * R, 2 * R], cls: "bl-spin", style: "animation-duration:80s" },
+      { svg: '<circle cx="' + PX + '" cy="' + PY + '" r="14" fill="url(#' + u + 'pole)"/>', box: [PX - 16, PY - 16, 32, 32], o: [PX, PY], cls: "bl-pulse", style: "animation-duration:2.2s" },
       { svg: '<circle cx="' + PX + '" cy="' + PY + '" r="2" fill="#FFFFFF"/>', box: [PX - 3, PY - 3, 6, 6], cls: "bl-glint" },
-      { svg: '<path d="M150 10 L196 -16" stroke="url(#' + u + 'met)" stroke-width="1.4" stroke-linecap="round"/>', box: [140, -20, 183, 100], style: "opacity:0;animation:bl-trailmet 7.8s linear -2s infinite" },
+      { svg: '<path d="M150 10 L196 -16" stroke="url(#' + u + 'met)" stroke-width="1.8" stroke-linecap="round"/><circle cx="150" cy="10" r="3" fill="url(#' + u + 'mh)"/>', box: [140, -20, 183, 100], style: "opacity:0;animation:bl-trailmet 4.6s linear -1.2s infinite" },
+      { svg: '<path d="M372 34 L412 12" stroke="url(#' + u + 'met)" stroke-width="1.5" stroke-linecap="round"/><circle cx="372" cy="34" r="2.6" fill="url(#' + u + 'mh)"/>', box: [362, 4, 160, 90], style: "opacity:0;animation:bl-trailmet 6.2s linear -4.1s infinite" },
       { svg: '<path d="M0 164 Q60 136 116 134 Q170 133 220 150 Q330 160 480 158 L480 180 L0 180Z" fill="url(#' + u + 'hill)"/>' +
           '<g fill="#05070F">' + trees + '</g>' },
       /* the slit's glow, behind the dome */
@@ -44434,9 +44677,30 @@ const BANNER_ART = {
       const h = 8 + rnd() * 12, b = WL + 1;
       pines += '<path d="M' + bnF(x) + ' ' + bnF(b - h) + ' L' + bnF(x + h * 0.3) + ' ' + b + ' L' + bnF(x - h * 0.3) + ' ' + b + 'Z"/>';
     }
-    const meteor = (x, y, len, dur, dl) => ({
-      svg: '<path d="M0 0 L' + len + ' ' + bnF(-len * 0.42) + '" stroke="url(#' + u + 'met)" stroke-width="1.8" stroke-linecap="round"/><circle r="1.4" fill="#FFFFFF"/>',
+    /* Build 309: "really make the 10000 better". A meteor is a glowing
+       head and a two-stroke tail now (a wide soft one, a bright core
+       inside it), not a hairline - at a Profile header's size the old
+       ones were gone before the eye found them. */
+    const meteor = (x, y, len, dur, dl, w) => ({
+      svg: '<path d="M0 0 L' + len + ' ' + bnF(-len * 0.42) + '" stroke="url(#' + u + 'met)" stroke-width="' + bnF(w * 2.6) + '" stroke-linecap="round" opacity=".35"/>' +
+        '<path d="M0 0 L' + len + ' ' + bnF(-len * 0.42) + '" stroke="url(#' + u + 'met)" stroke-width="' + bnF(w) + '" stroke-linecap="round"/>' +
+        '<circle r="' + bnF(w * 2.4) + '" fill="url(#' + u + 'mhead)"/><circle r="' + bnF(w * 0.8) + '" fill="#FFFFFF"/>',
       box: [x - 50, y - 22, 100, 44], vb: [-50, -22, 100, 44], cls: "bl-meteor", style: "animation-duration:" + dur + "s;animation-delay:" + dl + "s" });
+    /* the fireball: once a cycle, a bolide comes down the whole sky, green
+       at the tail the way a real one burns, and the sky and the lake
+       light up with it (bl-myflash keeps the same clock as bl-meteor) */
+    const BOL = 9.5, BOLD = -3;
+    const bolide = {
+      svg: '<path d="M0 0 L112 -48" stroke="url(#' + u + 'bolg)" stroke-width="11" stroke-linecap="round" opacity=".4"/>' +
+        '<path d="M0 0 L112 -48" stroke="url(#' + u + 'bol)" stroke-width="3.6" stroke-linecap="round"/>' +
+        '<circle r="10" fill="url(#' + u + 'mhead)"/><circle r="3" fill="#FFFFFF"/>',
+      box: [300, -10, 260, 120], vb: [-130, -60, 260, 120], cls: "bl-meteor", style: "animation-duration:" + BOL + "s;animation-delay:" + BOLD + "s" };
+    const flash = (y, h, o) => ({ svg: '<rect x="-10" y="' + y + '" width="500" height="' + h + '" fill="#CFE6FF" opacity="' + o + '"/>',
+      style: "opacity:0;animation:bl-myflash " + BOL + "s linear " + BOLD + "s infinite" });
+    /* sparkles: the brightest stars, four-pointed, longer up than across */
+    const spark = (x, y, s, dur, dl) => ({
+      svg: '<path d="M0 ' + bnF(-s * 1.5) + ' L' + bnF(s * .18) + ' ' + bnF(-s * .18) + ' L' + bnF(s) + ' 0 L' + bnF(s * .18) + ' ' + bnF(s * .18) + ' L0 ' + bnF(s * 1.5) + ' L' + bnF(-s * .18) + ' ' + bnF(s * .18) + ' L' + bnF(-s) + ' 0 L' + bnF(-s * .18) + ' ' + bnF(-s * .18) + 'Z" fill="#FFFFFF"/><circle r="' + bnF(s * .55) + '" fill="url(#' + u + 'mhead)"/>',
+      box: [x - s * 1.6, y - s * 1.6, s * 3.2, s * 3.2], vb: [-s * 1.6, -s * 1.6, s * 3.2, s * 3.2], cls: "bl-glint", style: "animation-duration:" + dur + "s;animation-delay:" + dl + "s" });
     const defs = '<defs>' +
       bnLin(u + "sky", [[0, "#02030E"], [0.45, "#071334"], [0.8, "#123A62"], [1, "#2A5A7A"]]) +
       bnRad(u + "b1", [[0, "#B8C8FF", 0.5], [1, "#6A7ACC", 0]]) +
@@ -44452,16 +44716,24 @@ const BANNER_ART = {
       bnLin(u + "met", [[0, "#FFFFFF", 1], [1, "#BFE0FF", 0]], 0, 0, 1, 0) +
       bnLin(u + "dome", [[0, "#C9D4E2"], [0.5, "#7D8BA0"], [1, "#39445A"]], 0, 0, 1, 0) +
       bnRad(u + "slit", [[0, "#FFE7A8", 0.9], [1, "#FF9A4A", 0]]) +
+      bnRad(u + "mhead", [[0, "#FFFFFF", 1], [0.35, "#DDF0FF", 0.6], [1, "#BFE0FF", 0]]) +
+      bnLin(u + "bol", [[0, "#FFFFFF", 1], [0.3, "#E4FFF0", 0.9], [0.65, "#7FE8B0", 0.5], [1, "#2FBF8A", 0]], 0, 0, 1, 0) +
+      bnLin(u + "bolg", [[0, "#DFFFF0", 0.8], [1, "#2FBF8A", 0]], 0, 0, 1, 0) +
       '<clipPath id="' + u + 'lk"><rect x="-10" y="' + WL + '" width="500" height="60"/></clipPath>' +
       '</defs>';
     const sky = '<g transform="' + tilt + '">' + band + dust + lanes + '</g>';
     return [
-      { svg: defs + '<rect width="480" height="180" fill="url(#' + u + 'sky)"/>' + st.still + sky },
+      { svg: defs + '<rect width="480" height="180" fill="url(#' + u + 'sky)"/>' + st.still },
+      /* the Milky Way itself swells and settles - its own layer since 309 */
+      { svg: sky, cls: "bl-myband", style: "animation-duration:5.5s" },
       { svg: st.a, cls: "bl-tw", style: "animation-duration:2.4s" },
       { svg: st.b, cls: "bl-tw", style: "animation-duration:3.4s;animation-delay:-1.5s" },
-      /* the core breathes */
-      { svg: '<g transform="' + tilt + '">' + core + '</g>', box: [170, 20, 220, 150], cls: "bl-glow", style: "animation-duration:4s" },
-      meteor(160, 30, 52, 4.6, -0.4), meteor(380, 18, 40, 5.4, -2.6), meteor(250, 52, 60, 6.2, -4.9), meteor(90, 60, 34, 5, -3.6), meteor(440, 50, 44, 4.2, -1.4), meteor(320, 12, 30, 5.8, -0.9),
+      /* the core pulses - scale as well as light since 309, round its own centre */
+      { svg: '<g transform="' + tilt + '">' + core + '</g>', box: [170, 20, 220, 150], o: [300, 90], cls: "bl-pulse", style: "animation-duration:3.2s" },
+      spark(42, 26, 3.4, 3.1, -0.3), spark(134, 44, 2.6, 4.2, -2.1), spark(206, 14, 3, 3.6, -1.2), spark(362, 30, 3.6, 2.8, -1.9), spark(452, 22, 2.8, 4.6, -3.4), spark(262, 62, 2.4, 3.3, -0.8),
+      flash(-10, WL + 10, 0.55),
+      meteor(160, 30, 58, 3.4, -0.4, 1.6), meteor(380, 18, 46, 4, -2.6, 1.4), meteor(250, 52, 64, 4.6, -4.1, 1.8), meteor(90, 60, 40, 3.8, -3, 1.3), meteor(440, 50, 50, 3.2, -1.4, 1.5), meteor(320, 12, 36, 4.4, -0.9, 1.3), meteor(30, 24, 44, 4.9, -2.2, 1.4), meteor(200, 70, 34, 3.6, -1.8, 1.2),
+      bolide,
       /* the horizon's glow, the ridge, the pines, the observatory */
       { svg: '<rect x="-10" y="70" width="500" height="' + (WL - 70) + '" fill="url(#' + u + 'air)"/><ellipse cx="240" cy="' + WL + '" rx="300" ry="34" fill="url(#' + u + 'glow)"/>' +
           '<path d="' + ridge + '" fill="url(#' + u + 'ridge)"/><path d="' + snow + '" fill="#C9D8EE" opacity=".7"/>' +
@@ -44469,9 +44741,10 @@ const BANNER_ART = {
           '<rect x="58" y="102" width="20" height="10" fill="#1B2236"/><path d="M56 103 A12 12 0 0 1 80 103Z" fill="url(#' + u + 'dome)"/>' +
           '<path d="M66 91.5 L70 91.5 L71 103 L65 103Z" fill="#FFC878"/>' +
           /* the lake, and the sky in it */
-          '<rect x="-10" y="' + WL + '" width="500" height="60" fill="url(#' + u + 'lake)"/>' +
-          '<g clip-path="url(#' + u + 'lk)" opacity=".42"><g transform="translate(0 ' + (2 * WL) + ') scale(1 -1)">' + sky + '<g transform="' + tilt + '">' + core + '</g></g></g>' +
-          '<rect x="-10" y="' + WL + '" width="500" height="1" fill="#9FC8E8" opacity=".35"/>' },
+          '<rect x="-10" y="' + WL + '" width="500" height="60" fill="url(#' + u + 'lake)"/>' },
+      { svg: '<g clip-path="url(#' + u + 'lk)" opacity=".42"><g transform="translate(0 ' + (2 * WL) + ') scale(1 -1)">' + sky + '<g transform="' + tilt + '">' + core + '</g></g></g>', cls: "bl-myband", style: "animation-duration:5.5s" },
+      flash(WL, 60, 0.3),
+      { svg: '<rect x="-10" y="' + WL + '" width="500" height="1" fill="#9FC8E8" opacity=".35"/>' },
       /* the slit's light, glinting */
       { svg: '<circle cx="68" cy="96" r="9" fill="url(#' + u + 'slit)"/>', box: [56, 84, 24, 24], cls: "bl-glow", style: "animation-duration:2.2s" },
       /* the lake's light shivers */
@@ -44704,6 +44977,17 @@ const BANNER_ART = {
           '<g fill="url(#' + u + 'far)">' + farSil + '</g>' + '<rect x="-10" y="' + (HZ + 2) + '" width="500" height="' + (182 - HZ) + '" fill="#0B0D24"/>' + midSil + tops + needle + needleWin + winStill },
       { svg: winA, cls: "bl-tw", style: "animation-duration:4.2s" },
       { svg: winB, cls: "bl-tw", style: "animation-duration:2.6s;animation-delay:-1.1s" },
+      /* ---- THE CITY OF THE FUTURE (build 309) ----
+         "Midnight skyline animation is pretty weak. Maybe the skyline in
+         the background can be more futuristic and cool with like
+         billboards and stuff neon lights." Holo billboards hung on the
+         towers, each glowing in its own neon and breathing on its own
+         clock (one glitches), tall neon signs down the sides of two
+         towers, a maglev rail across the middle distance with a train of
+         light running it, and flying cars streaking between the towers.
+         All of it sits behind the balcony, so the desk is still the
+         foreground and the moon still has its sky. */
+      ...skylineFuture(u, HZ),
       /* the beacons on the needle and on the tallest roofs */
       { svg: beacon(NX, 3, 1.2) + mid.filter(t => HZ - t.top > 90 && (t.x < 300 || t.x > 352)).slice(0, 4).map(t => beacon(bnF(t.x + t.w / 2), bnF(t.top - 1), 0.9)).join(""), cls: "bl-blink", style: "animation-duration:2.2s" },
       /* the balcony: glass, posts, the rail, the floor */
@@ -44867,7 +45151,13 @@ const BANNER_ART = {
       { svg: '<g opacity=".5">' + [[90, 30], [220, 44], [360, 36]].map(([x, w]) =>
           '<path d="M' + x + ' -10 L' + (x + w) + ' -10 L' + (x + w - 60) + ' 190 L' + (x - 60) + ' 190Z" fill="url(#' + u + 'shaft)"/>').join("") + '</g>', o: [0, 0], cls: "bl-sway" },
       { svg: petals, box: [-20, -10, 520, 200], cls: "bl-drift", style: "animation-duration:16s" },
-      { svg: '<g transform="translate(240 116) rotate(180) scale(.8)">' + koi("#FFFFFF", "#E8322A", false) + '</g>', box: [140, -10, 200, 200], o: [240, 90], cls: "bl-spin-r", style: "animation-duration:17s" },
+      /* NOSE FIRST (build 309): "some of the fish move backwards". This one
+         turns the other way round the pond (bl-spin-r), so below the centre
+         it travels to the right - and it was drawn rotated 180 to face
+         left. Each koi faces the way its own layer carries it now: the two
+         turning clockwise face right at the top and left at the bottom,
+         this one faces right at the bottom. */
+      { svg: '<g transform="translate(240 116) scale(.8)">' + koi("#FFFFFF", "#E8322A", false) + '</g>', box: [140, -10, 200, 200], o: [240, 90], cls: "bl-spin-r", style: "animation-duration:17s" },
       { svg: '<g transform="translate(240 38)">' + koi("#FF7A2F", "#FFF6EC", false) + '</g>', box: [140, -10, 200, 200], o: [240, 90], cls: "bl-spin", style: "animation-duration:22s" },
       { svg: '<g transform="translate(240 142) rotate(180)">' + koi("#FFD24A", "#FFFFFF", false) + '</g>', box: [140, -10, 200, 200], o: [240, 90], cls: "bl-spin", style: "animation-duration:28s" },
       { svg: rings, box: [SX - 72, SY - 46, 144, 92], o: [SX, SY], cls: "bl-blast", style: ev + "animation-duration:7.5s;opacity:0" },
@@ -52944,7 +53234,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
          the flare descriptions are updated". */
       const showFlareInfo = () => {
         if(achieved){
-          showContextualInfo(badge, rankName + " rank \u2014 reached. Its flare is lit and its " + flareName + " theme is yours.");
+          showContextualInfo(badge, rankName + " rank \u2014 reached. Its flare is lit.");
           return;
         }
         const parts = tierShortfall(TIER_UNLOCKS[pos.tier]);
@@ -53115,8 +53405,8 @@ function showWelcomeIntro(){
      itself an earlier explicit fix for text that read as too small. */
   const items = [
     { head: "Built for one thing", body: "Every question is written to match what you'll actually see on test day \u2014 by classmates studying the exact same material." },
-    { head: "Three ways to study", body: "Drill gives instant feedback, Exam mimics test day, and Virtual Room takes it live against classmates." },
-    { head: "Progress that means something", body: "Your accuracy and study time both climb the ranks together \u2014 real progress, not just a number." },
+    { head: "Four ways to study", body: "Drill gives instant feedback, Exam mimics test day, Review goes over the material, and Virtual Room takes it live against classmates." },
+    { head: "Progress that means something", body: "Right answers level you up, a perfect unit earns its badge, and levels and badges together climb the ranks." },
     { head: "Everything saves itself", body: "No save button \u2014 your progress is already here next time, on any device." },
   ];
   items.forEach(item => {
@@ -54371,6 +54661,9 @@ function rankCutKicker(){
   return k;
 }
 function rankCutFromTo(from, to){
+  /* With no "from" passed, the rank below this one - every rank under
+     it is held (build 309: "Your first rank" over a Sapphire rank-up). */
+  if(!from) from = TIER_ORDER_FULL[TIER_ORDER_FULL.indexOf(to) - 1] || null;
   return from ? (RANK_DISPLAY_NAME[from] || from) + "  \u2192  " + (RANK_DISPLAY_NAME[to] || to)
               : "Your first rank";
 }
@@ -54461,6 +54754,31 @@ function rankOrbitCentre(orbit){
   orbit.style.transformOrigin = ((x - o.left) / o.width * 100).toFixed(2) + "% " + ((y - o.top) / o.height * 100).toFixed(2) + "%";
   orbit.style.translate = ((px - x) / o.width * 100).toFixed(2) + "% " + ((py - y) / o.height * 100).toFixed(2) + "%";
 }
+/* THE FLARES YOU HOLD ARE ALREADY LIT (build 309): "In the rank up
+   cutscene, ensure the ones you already have lit up are already lit up
+   too, doesn't appear that way from those screenshots. Ensure it's
+   matched to what you have for any cutscene, like the secret flares for
+   example." Ranks are cumulative - every threshold below a rank is lower
+   than its own - so reaching one means holding every rank under it, and
+   the scene says so from what the rank IS rather than from whatever the
+   store happens to hold at that instant (a cloud copy landing late, or
+   a recording seeded straight to a rank). `upTo` is the last rank lit:
+   the one below this rank on the planet you had, this rank on the one
+   you are getting. The secret flares are the hero's own - drawn from
+   store.mysteryColorsFound, which is what you have found. */
+function syncSceneFlares(hero, tierKey, includeSelf){
+  if(!hero) return;
+  const top = TIER_ORDER_FULL.indexOf(tierKey) - (includeSelf ? 0 : 1);
+  hero.querySelectorAll(".cosmic-icon-badge[data-rank-tier]").forEach(b => {
+    const t = b.dataset.rankTier;
+    const held = TIER_ORDER_FULL.indexOf(t) <= top;
+    b.classList.remove("cosmic-badge-newly-lit");
+    b.classList.toggle("cosmic-badge-lit", held);
+    b.classList.toggle("cosmic-badge-noir", held && !!FLARE_NOIR[t]);
+    if(held) b.style.setProperty("--tier-glow", flareColorOf(t));
+    else b.style.removeProperty("--tier-glow");
+  });
+}
 function playRankUpScene(tierKey, opts, spec){
   opts = opts || {};
   const inline = !!opts.onDone;
@@ -54484,12 +54802,7 @@ function playRankUpScene(tierKey, opts, spec){
   /* THE PLANET YOU HAD: your own theme, and this rank's flare still dark. */
   try{
     heroBefore = buildCosmicHero(true);
-    const b0 = rankTierBadge(heroBefore, tierKey);
-    if(b0){
-      b0.classList.remove("cosmic-badge-lit", "cosmic-badge-noir", "cosmic-badge-newly-lit");
-      b0.style.removeProperty("--tier-glow");
-    }
-    heroBefore.querySelectorAll(".cosmic-badge-newly-lit").forEach(x => x.classList.remove("cosmic-badge-newly-lit"));
+    syncSceneFlares(heroBefore, tierKey, false);
     before.appendChild(heroBefore);
   }catch(e){}
   spin.appendChild(before);
@@ -54503,7 +54816,7 @@ function playRankUpScene(tierKey, opts, spec){
   document.documentElement.dataset.accent = tierKey;
   try{
     heroAfter = buildCosmicHero(true, tierKey);
-    heroAfter.querySelectorAll(".cosmic-badge-newly-lit").forEach(x => x.classList.remove("cosmic-badge-newly-lit"));
+    syncSceneFlares(heroAfter, tierKey, true);
     after.appendChild(heroAfter);
   }catch(e){}
   document.documentElement.dataset.accent = realAccent;
@@ -55384,6 +55697,90 @@ function showDailyQuestionLockedPopup(){
      can collide with, so there is no height down there that works.
      showDailyAlert() is the banner built for exactly this message and it
      already positions itself under the update notice when one is up. */
+  /* BESIDE THE BUTTON YOU TAPPED (build 309): "If I click it when it's
+     not ready the notification that comes up needs to be near the button
+     or something, not at the top of the screen." The top banner answered
+     a tap in the bottom corner from the far end of the screen. It is the
+     same bubble the flares on Home answer with, pointing at the "?" and
+     opening above it - clear of Start Studying and the tab bar. The top
+     banner stays as the fallback for anywhere the button is not up. */
+  /* Its own small bubble with a caret, not the tethered info popup: that
+     one centres itself on the target, so in this corner it opened over
+     Start Studying with a line drawn across to the "?". This one sits
+     BESIDE the button on a phone (between Start Studying and the tab
+     bar, where there is exactly room for it) and ABOVE it wherever that
+     would touch the tab bar or the button - an iPad, where the "?" sits
+     in the corner beside the bar. Measured, never assumed. */
+  const fab = document.querySelector(".daily-question-fab");
+  const fr = fab ? fab.getBoundingClientRect() : null;
+  if(fr && fr.width > 0){
+    document.getElementById("daily-lock-tip")?.remove();
+    const tip = document.createElement("div");
+    tip.id = "daily-lock-tip";
+    tip.setAttribute("role", "status");
+    tip.innerHTML = '<b>Done for today</b><span>Next one in ' + timeLeft + '</span>';
+    document.body.appendChild(tip);
+    const gap = 10, vw = window.innerWidth, vh = window.innerHeight;
+    const blockers = () => [".panel.home.screen-home-actual .playbtn", ".bottomtabs:not([hidden])"]
+      .map(sel => document.querySelector(sel)).filter(Boolean).map(el => el.getBoundingClientRect()).filter(r => r.width > 0);
+    const cy = fr.top + fr.height / 2;
+    /* Where it can go, best first: beside the "?" (centred on it, then in
+       the gap between Start Studying and the bar, then level with its
+       foot), then above it. A position counts only if it is on screen and
+       touches neither Start Studying nor the bar. */
+    const place = (tw, th) => {
+      const hits = (x, y) => blockers().some(r => x < r.right && x + tw > r.left && y < r.bottom && y + th > r.top);
+      const ok = (x, y) => x >= 8 && y >= 8 && x + tw <= vw - 8 && y + th <= vh - 8 && !hits(x, y);
+      const lx = fr.left - gap - tw;
+      const over = blockers().filter(r => lx < r.right && lx + tw > r.left);
+      const lo = Math.max(-1e9, ...over.filter(r => r.bottom <= cy).map(r => r.bottom + 6));
+      const hi = Math.min(1e9, ...over.filter(r => r.top >= cy).map(r => r.top - 6));
+      const band = Math.min(Math.max(cy - th / 2, lo), hi - th);
+      for(const y of [cy - th / 2, band, fr.bottom - th, fr.top]) if(ok(lx, y)) return { x: lx, y, side: "left" };
+      const ax = Math.max(8, Math.min(fr.right - tw, vw - tw - 8));
+      if(ok(ax, fr.top - gap - th)) return { x: ax, y: fr.top - gap - th, side: "above" };
+      return null;
+    };
+    let spot = place(tip.offsetWidth, tip.offsetHeight);
+    /* No room for two lines beside it (a phone browser window, where
+       Start Studying sits just above the bar): the one-line form. */
+    if(!spot || spot.side !== "left"){
+      tip.classList.add("is-compact");
+      tip.innerHTML = '<b>Done for today</b><span>\u00b7 next in ' + timeLeft + '</span>';
+      const c = place(tip.offsetWidth, tip.offsetHeight);
+      if(c && (c.side === "left" || !spot)) spot = c;
+      else { tip.classList.remove("is-compact"); tip.innerHTML = '<b>Done for today</b><span>Next one in ' + timeLeft + '</span>'; }
+    }
+    /* Last resort: above, lifted clear of whatever it would touch. */
+    if(!spot){
+      const tw = tip.offsetWidth, th = tip.offsetHeight;
+      let x = Math.max(8, Math.min(fr.right - tw, vw - tw - 8)), y = fr.top - gap - th;
+      for(let i = 0; i < 3; i++){
+        const tops = blockers().filter(r => x < r.right && x + tw > r.left && y < r.bottom && y + th > r.top).map(r => r.top);
+        if(!tops.length) break;
+        y = Math.min(...tops) - gap - th;
+      }
+      spot = { x, y, side: "above" };
+    }
+    const x = spot.x, y = spot.y, side = spot.side;
+    tip.classList.add("is-" + side);
+    tip.style.left = Math.round(x) + "px";
+    tip.style.top = Math.round(y) + "px";
+    /* the caret points at the middle of the "?" whichever side it opened on */
+    tip.style.setProperty("--caret", side === "left" ? Math.round(fr.top + fr.height / 2 - y) + "px" : Math.round(fr.left + fr.width / 2 - x) + "px");
+    requestAnimationFrame(() => tip.classList.add("is-on"));
+    const close = () => {
+      if(!tip.isConnected) return;
+      tip.classList.remove("is-on");
+      setTimeout(() => tip.remove(), 220);
+      document.removeEventListener("pointerdown", close, true);
+    };
+    setTimeout(() => document.addEventListener("pointerdown", close, true), 0);
+    setTimeout(close, 3600);
+    const stage = document.getElementById("stage");
+    if(stage){ const mo = new MutationObserver(() => { mo.disconnect(); close(); }); mo.observe(stage, { childList: true }); }
+    return;
+  }
   showDailyAlert("Already done for today \u2014 resets in " + timeLeft + " (5pm daily).");
 }
 
@@ -58741,7 +59138,7 @@ function showHome(){
      to two lines on every 360-375px phone and pushed Start Studying 23px
      down, onto the daily-question circle on an Android phone. This one
      is 243px and stays one line everywhere. */
-  tagline.textContent = "Master the material, one level at a time.";
+  tagline.textContent = "Master the material, one rank at a time.";
   titleWrap.append(title, tagline);
   panel.appendChild(titleWrap);
 
@@ -59580,7 +59977,24 @@ function unitDetailStats(name, mode){
   add("Last score", last ? last.pct + "%" : dash, last ? lastScoreWhen(last.at) : "not taken yet");
   add("Completed", String(done), done === 1 ? "time" : "times");
   add("Hundos", String(unitPerfectCount(name)), "100% on the whole unit");
+  /* BEST TIME, IN THE DETAILS AND NOT ON THE CARD (build 309): "In the
+     unit details, go ahead and put the best time you have there. Not on
+     the unit card, but within the details." It is the fastest 100% on
+     the whole unit - taken on its own, or inside a multi-unit run, where
+     the time is what that unit's own questions took (qTimeMs). Fifth of
+     five, so the grid's odd-last rule lays it across both columns. */
+  const bestMs = unitBestTimeOf(name);
+  add("Best time", typeof bestMs === "number" ? formatClock(bestMs) : dash,
+      typeof bestMs === "number" ? "fastest 100% on the whole unit" : "get 100% on the whole unit to set one");
   return stats;
+}
+/* The unit's best time: the per-unit mark summarize() keeps, and the
+   older Drill-only one from before that existed - whichever is faster. */
+function unitBestTimeOf(u){
+  const a = store.unitBestMs && store.unitBestMs[u];
+  const b = bestMsForUnitAnyMode(u);
+  const both = [a, b].filter(x => typeof x === "number" && x > 0);
+  return both.length ? Math.min.apply(null, both) : null;
 }
 /* What you got the last time you took this unit on its own, in any mode
    (build 270). The test history keeps the last twenty runs, newest first;
@@ -60240,6 +60654,11 @@ function plainSlider(labelText, min, max, step, get, set, formatVal, onChange){
 }
 
 function showSetup(){
+  /* Arriving with no units picked (from the mode menu, which clears them)
+     is a new test: defaults. Arriving WITH units picked is a round trip -
+     a tab and back - and Start never went dark, so what you set stays. */
+  const arrivedLit = Array.isArray(cfg.units) && cfg.units.length > 0;
+  if(!arrivedLit) resetSheetOptions();
   stopTimer(); stopQuestionTimer();
   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
   timerlineEl.hidden = true;
@@ -60698,8 +61117,8 @@ function showSetup(){
     });
     const cur = bankRows[cfg.source] || bankRows.all;
     bankCaption.replaceChildren(cur.desc);
-    /* "All questions" needs no sentence - the switch says it. */
-    bankCaption.hidden = cfg.source !== "recent" && cfg.source !== "flagged";
+    /* Both choices say what they draw from (build 309). */
+    bankCaption.hidden = false;
   };
   /* Counts and words for the units picked right now. */
   srcSect.update = (counts) => {
@@ -60719,13 +61138,19 @@ function showSetup(){
       b.row.classList.toggle("is-empty", empty);
       b.row.setAttribute("aria-disabled", empty ? "true" : "false");
     };
-    set("all", counts.all, units ? "Every question in " + whose + ", mixed up." : "Every question in the units you pick.");
+    /* SAYS IT IS YOUR SELECTION (build 309): "where it says all questions,
+       and starred, could it be more specific to clarify that is for the
+       ones you have selected? Simple of course though very simple." One
+       line under the switch, for both choices now. */
+    const picked = oneShort ? UNIT_TEST_VERSIONS[cfg.units[0]].short
+      : units === 1 ? "the unit you selected" : "the " + units + " units you selected";
+    set("all", counts.all, units ? "Every question in " + picked + "." : "Every question in the units you pick.");
     /* ONE SHORT LINE (build 250): "the description for most missed is
        way too much." The count is already on the switch, and the rule
        behind it (30 days, a cap per unit) is not something anybody
        needs before pressing Begin, so the "i" and its paragraph are
        gone too. */
-    set("flagged", counts.flagged, "Questions you starred.");
+    set("flagged", counts.flagged, units ? "Only your starred questions in " + picked + "." : "Questions you starred.");
     srcSect.paint();
   };
   const optionsModalBody = document.createElement("div");
@@ -60799,10 +61224,12 @@ function showSetup(){
 
   const moreWrap = document.createElement("div");
   moreWrap.className = "sect";
-  const moreToggle = document.createElement("button");
-  moreToggle.type = "button";
-  moreToggle.className = "more-toggle";
-  moreToggle.setAttribute("aria-expanded", "false");
+  /* NOT A DROPDOWN ANY MORE (build 309): "Don't put the timer options
+     in a drop down anymore, remove the drop down for that." The card
+     keeps its header row - the word Timer over the two switches - but it
+     is a plain heading, always open, with no chevron and no tap. */
+  const moreToggle = document.createElement("div");
+  moreToggle.className = "more-toggle is-static";
   const moreToggleText = document.createElement("span");
   /* ONE FOLD FOR EVERYTHING THAT IS NOT "WHAT AM I STUDYING" (build 249):
      "I need this app to be super simple and that start menu doesn't
@@ -60812,22 +61239,12 @@ function showSetup(){
   moreToggleText.textContent = "Timer";
   const moreToggleState = document.createElement("span");
   moreToggleState.className = "more-toggle-state";
-  const moreToggleIcon = document.createElement("span");
-  moreToggleIcon.className = "more-toggle-icon";
-  moreToggleIcon.setAttribute("aria-hidden", "true");
-  moreToggle.append(moreToggleText, moreToggleState, moreToggleIcon);
+  moreToggle.append(moreToggleText);
   const moreBody = document.createElement("div");
-  moreBody.className = "more-body";
+  moreBody.className = "more-body open is-instant";
   const moreBodyInner = document.createElement("div");
   moreBodyInner.className = "more-body-inner";
   moreBody.appendChild(moreBodyInner);
-  moreToggle.addEventListener("click", () => {
-    const willOpen = !moreBody.classList.contains("open");
-    moreBodyMoving(moreBody);
-    moreBody.classList.toggle("open", willOpen);
-    moreToggle.classList.toggle("open", willOpen);
-    moreToggle.setAttribute("aria-expanded", willOpen ? "true" : "false");
-  });
   moreWrap.append(moreToggle, moreBody);
   /* ---- AND IT IS ACTUALLY IN THE SHEET NOW ----
      This collapsible was built and then never appended to anything, so
@@ -60920,6 +61337,7 @@ function showSetup(){
     wrap.appendChild(h);
     row.append(cb, box, wrap);
     if(lockMsg && lockMsg()) row.classList.add("locked");
+    row.sync = () => { cb.checked = get(); };
     return row;
   }
 
@@ -61123,8 +61541,21 @@ function showSetup(){
     timerSect.paint(); minutesSect.paint();
   }
 
+  /* The Start button lighting up or going dark is a new test being set
+     up, so the sheet goes back to its defaults (build 309). */
+  let sheetLit = arrivedLit;
+  function resetForNewTest(){
+    resetSheetOptions();
+    lastSliderSize = 10;
+    paint();
+    [shuffleRow, recallRow, feedbackRow, flashRow].forEach(r => { if(r && r.sync) r.sync(); });
+  }
   function refresh(){
     cfg.units = chosenUnits();
+    if((cfg.units.length > 0) !== sheetLit){
+      sheetLit = cfg.units.length > 0;
+      resetForNewTest();
+    }
     /* A version belongs to a selected unit and goes with it: deselect
        the Penal Code and the next select asks again. */
     if(!cfg.versions || typeof cfg.versions !== "object") cfg.versions = {};
@@ -62839,7 +63270,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-04-308";
+const APP_BUILD = "2026-10-04-309";
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
    pushing when I open the app?" Because this gap is shared by every way
@@ -63875,10 +64306,17 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
 
   const line = document.createElement("p");
   line.className = "results-level-line";
-  line.textContent = after.atCap
-    ? after.total.toLocaleString() + " XP \u00b7 level " + LEVEL_CAP + ", the cap"
-    : after.total.toLocaleString() + " XP \u00b7 " + after.toNext.toLocaleString() +
-      " to level " + (after.level + 1);
+  const lineFor = p => p.atCap
+    ? p.total.toLocaleString() + " XP \u00b7 level " + LEVEL_CAP + ", the cap"
+    : p.total.toLocaleString() + " XP \u00b7 " + p.toNext.toLocaleString() +
+      " to level " + (p.level + 1);
+  /* The line under the bar follows the level ABOVE it (build 309). It was
+     written from where the run ENDED the moment the card was built, while
+     the number above still showed where it STARTED until the bar wrapped -
+     so a level-up read "Level 23 ... 815 to level 25" for the length of
+     the fill. It changes over at the wrap, with the number. */
+  const levelsUp = after.level !== before.level && !before.atCap;
+  line.textContent = lineFor(levelsUp ? before : after);
 
   wrap.append(head, trackWrap, line);
 
@@ -63891,6 +64329,7 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
     fill.style.transition = "none";
     setBarFill(fill, after.atCap ? 100 : Math.round(after.fraction * 1000) / 10);
     lvl.textContent = "Level " + after.level;
+    line.textContent = lineFor(after);
     if(after.level !== before.level && !before.atCap) wrap.classList.add("is-levelup");
   };
   wrap.runFill = function(){
@@ -63910,6 +64349,7 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
         if(wrapped) return;
         wrapped = true;
         lvl.textContent = "Level " + after.level;
+        line.textContent = lineFor(after);
         wrap.classList.add("is-levelup");
         const prev = fill.style.transition;
         fill.style.transition = "none";
@@ -64502,14 +64942,21 @@ function computeRunXp(r){
 
   if(r.hundos > 0) add("hundo", r.hundos > 1 ? "Hundo bonus ×" + r.hundos : "Hundo bonus", r.hundos * PERFECT_BONUS);
 
+  /* ONE STREAK LINE, NOT ONE PER TIER (build 309): "The xp board looks
+     good but it quickly seems to flood in with multiple types of xp
+     earning, if there's a way to combine like the streak ones or
+     something that would help." A long clean run used to print 10, 25,
+     50, 75 and 100 as five lines; it is one line now, worth the same,
+     with the tiers it reached listed under it. */
   const tiers = runStreakTiersFor(r.okList || []);
-  Object.keys(tiers).map(Number).sort((a, b) => a - b).forEach(t => {
-    const n = tiers[t];
-    /* "Streak bonus · 10", so the line says what KIND of bonus it is -
-       "needs to just say streak bonus 10 or something". */
-    add("streak" + t, "Streak bonus · " + t + (n > 1 ? " ×" + n : ""), runStreakTierXp(t) * n,
-        { streak: t, times: n, sub: t + " right in a row" + (n > 1 ? ", " + n + " times" : "") });
-  });
+  const tierKeys = Object.keys(tiers).map(Number).sort((a, b) => a - b);
+  if(tierKeys.length){
+    const streakXp = tierKeys.reduce((sum, t) => sum + runStreakTierXp(t) * tiers[t], 0);
+    const top = tierKeys[tierKeys.length - 1];
+    add("streak", "Streak bonus", streakXp, {
+      streak: top, tiers: tierKeys.map(t => ({ t: t, n: tiers[t] })),
+      sub: tierKeys.map(t => t + (tiers[t] > 1 ? " \u00d7" + tiers[t] : "")).join(" \u00b7 ") + " in a row" });
+  }
 
   if(r.answered > 0 && r.elapsedMs > 0){
     const avgSec = r.elapsedMs / 1000 / r.answered;
@@ -64533,13 +64980,28 @@ function computeRunXp(r){
         { sub: (longBlocks * LONG_TEST_EVERY) + "+ questions · +" + LONG_TEST_XP + " every " + LONG_TEST_EVERY });
   }
 
-  (r.timePRs || []).length && add("pbtime", "New best time" + (r.timePRs.length > 1 ? " ×" + r.timePRs.length : ""),
-    PB_TIME_BONUS * r.timePRs.length, { sub: r.timePRs.map(p => p.text).join(" · ") });
-  (r.scorePRs || []).length && add("pbscore", "New best score" + (r.scorePRs.length > 1 ? " ×" + r.scorePRs.length : ""),
-    PB_SCORE_BONUS * r.scorePRs.length, { sub: r.scorePRs.map(p => p.text).join(" · ") });
+  /* Personal bests, one line for both kinds (build 309) - the same
+     flooding, from a multi-unit run that set a time and a score on each
+     unit. Worth what the separate lines were. */
+  {
+    const tp = r.timePRs || [], sp = r.scorePRs || [];
+    const n = tp.length + sp.length;
+    if(n){
+      const what = tp.length && sp.length ? "New personal bests" : tp.length ? "New best time" : "New best score";
+      add("pb", what + (n > 1 && !(tp.length && sp.length) ? " \u00d7" + n : ""),
+        PB_TIME_BONUS * tp.length + PB_SCORE_BONUS * sp.length,
+        { pbTime: tp.length, pbScore: sp.length,
+          sub: sp.map(p => p.text).concat(tp.map(p => p.text)).join(" \u00b7 ") });
+    }
+  }
 
   const beforeMult = lines.reduce((s, l) => s + l.value, 0);
-  (r.badgesPaid || []).forEach(u => add("badge", u + " badge", MASTERY_BONUS, { badge: true }));
+  /* Badges, one line however many (build 309). */
+  {
+    const bp = r.badgesPaid || [];
+    if(bp.length) add("badge", bp.length > 1 ? "Badge bonus \u00d7" + bp.length : bp[0] + " badge",
+      MASTERY_BONUS * bp.length, { badge: true, sub: bp.length > 1 ? bp.join(" \u00b7 ") : "" });
+  }
   const m = multiUnitMultiplier(r.wholeUnits || 0);
   if(m > 1){
     add("multi", "Multi-unit ×" + (Math.round(m * 100) / 100), roundTo5(beforeMult * (m - 1)),
@@ -65052,6 +65514,7 @@ function themeUnlockItem(c){
     color: ACCENT_SWATCH[c], art: () => {
       const d = document.createElement("span");
       d.className = "rs-themedot"; d.style.setProperty("--spot-color", ACCENT_SWATCH[c]);
+      d.dataset.accent = c;
       return d; } };
 }
 /* Home's queue, grouped the same way: each rank's rewards as one card,
@@ -65192,11 +65655,34 @@ function unlockedIdsNow(){
    nobody updates into a screen of dots. showHome() and summarize() ask
    before a run can award anything, so a thing earned on the first run
    after updating is still new. */
+/* VERSION 2 (build 309): "Ensure the yellow dots are on anyways profile
+   who already unlocked anything and they hadn't clicked on it or used it
+   btw. So they know." Version 1 seeded everything already held as seen,
+   so a character earned before build 299 and never tapped never got a
+   dot. Re-seeded once per account: a character, banner or theme you
+   earned is new again unless it is the one you are using, or it was
+   never locked (the starters, the default theme). Badges keep their
+   marks - they are not something you use. The version travels with the
+   record, and the merge takes the newer version whole rather than
+   unioning the old full list back in. */
+const SEEN_VERSION = 2;
 function ensureSeenUnlocks(){
   const s = store.seenUnlocks;
-  if(s && SEEN_KINDS.every(k => Array.isArray(s[k]))) return s;
+  const ok = s && SEEN_KINDS.every(k => Array.isArray(s[k]));
+  if(ok && s.v === SEEN_VERSION) return s;
   const u = unlockedIdsNow();
-  store.seenUnlocks = SEEN_KINDS.reduce((o, k) => { o[k] = u[k].slice(); return o; }, {});
+  const charDef = id => (typeof AVATAR_CHARACTERS !== "undefined" ? AVATAR_CHARACTERS.find(c => c.id === id) : null);
+  const fresh = {
+    chars: u.chars.filter(id => { const c = charDef(id); return !c || !c.unlock || id === store.avatarChar; }),
+    banners: u.banners.filter(id => id === store.banner),
+    themes: u.themes.filter(a => !TIER_UNLOCKS[a] || a === theme.accent),
+    badges: ok ? s.badges.slice() : u.badges.slice()
+  };
+  /* An account with no record at all is a new one (or an old one on a
+     device that never asked): everything it holds right now is its
+     starting point, as in version 1. Only a version-1 record re-seeds. */
+  store.seenUnlocks = ok ? fresh : SEEN_KINDS.reduce((o, k) => { o[k] = u[k].slice(); return o; }, {});
+  store.seenUnlocks.v = SEEN_VERSION;
   saveStore();
   return store.seenUnlocks;
 }
@@ -80188,7 +80674,14 @@ function buildRanksTab(){
       /* AND A LIGHT AT THE END OF THE FILL on the stretch you are on - "it'd
          be cool if that line got closer and closer as you progress to the
          next rank". It rides down the road with your progress. */
-      if(lit > 0 && lit < 1 && celebrateKeys.indexOf(below) < 0){
+      if((lit > 0 || below === nextKey) && lit < 1 && celebrateKeys.indexOf(below) < 0){
+        /* The line on this stretch is measured exactly as the light is
+           (9px in from each node), with a fixed 9px stub joining it to the
+           rank above - so the end of the line IS the light, every frame. */
+        roadFill.classList.add("is-tipped");
+        const stub = document.createElement("span");
+        stub.className = "rankmap-roadstub";
+        road.insertBefore(stub, roadFill);
         const tip = document.createElement("span");
         tip.className = "rankmap-roadtip";
         tip.setAttribute("aria-hidden", "true");

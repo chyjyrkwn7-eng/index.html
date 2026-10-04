@@ -224,8 +224,20 @@ with sync_playwright() as pw:
         ck("speed under 5s a question is 150", g(xr["fast"], "speed") and g(xr["fast"], "speed")[0][2] == 150, xr["fast"])
         ck("speed past two minutes a question is 10", g(xr["slow"], "speed") and g(xr["slow"], "speed")[0][2] == 10, xr["slow"])
         ck("every speed bonus is a multiple of 5", all(r[2] % 5 == 0 for rows in (xr["fast"], xr["slow"]) for r in g(rows, "speed")))
-        st10 = g(xr["streaks"], "streak10"); st25 = g(xr["streaks"], "streak25")
-        ck("two runs past 10 count as 10 in a row x2, and 25 once", st10 and "\u00d72" in st10[0][1] and st25 and "\u00d7" not in st25[0][1], xr["streaks"])
+        # ONE streak line since build 309 ("combine like the streak ones"),
+        # worth what the per-tier lines were: 10 twice and 25 once.
+        stl = g(xr["streaks"], "streak")
+        ck("the streaks are ONE line, worth 10 twice and 25 once",
+           len([r for r in xr["streaks"] if r[0].startswith("streak")]) == 1 and stl
+           and stl[0][2] == pg.evaluate("()=>runStreakTierXp(10)*2 + runStreakTierXp(25)"), xr["streaks"])
+        sub = pg.evaluate("""()=>computeRunXp({good:37, answered:38, elapsedMs:38*20000,
+          okList:Array(12).fill(true).concat([false], Array(25).fill(true)), hundos:0, wholeUnits:1})
+          .lines.find(l=>l.key==='streak').sub""")
+        ck("and it lists the tiers it reached, 10 x2 and 25", sub == "10 \u00d72 \u00b7 25 in a row", sub)
+        bl = pg.evaluate("()=>computeRunXp({good:12, answered:12, elapsedMs:60000, okList:Array(12).fill(true), hundos:0, wholeUnits:1, badgesPaid:['A','B','C']}).lines.filter(l=>l.badge)")
+        ck("three badges are one line worth three", len(bl) == 1 and bl[0]["value"] == 3000 and "\u00d73" in bl[0]["label"], bl)
+        pb = pg.evaluate("()=>computeRunXp({good:12, answered:12, elapsedMs:60000, okList:Array(12).fill(true), hundos:0, wholeUnits:1, timePRs:[{unit:'A',text:'A 1:00'}], scorePRs:[{unit:'A',text:'A 100%'},{unit:'B',text:'B 90%'}]}).lines.filter(l=>l.key.startsWith('pb'))")
+        ck("personal bests are one line worth all three", len(pb) == 1 and pb[0]["value"] == pg.evaluate("()=>PB_TIME_BONUS + 2*PB_SCORE_BONUS"), pb)
         ck("a multi-unit run ends on its multiplier, x1.3 for four units",
            xr["multi"]["key"] == "multi" and "1.3" in xr["multi"]["label"], xr["multi"])
         ck("a retake earns its right answers and nothing else", [r[0] for r in xr["retake"]] == ["correct"] and xr["retake"][0][2] == 30, xr["retake"])
@@ -255,7 +267,7 @@ with sync_playwright() as pw:
     ck("a one-unit test says 1 unit and lists it", hd["title"] == "1 unit" and hd["items"] == [UNIT], hd)
     lab = pg.evaluate("()=>computeRunXp({good:12, answered:12, elapsedMs:60000, okList:Array(12).fill(true), hundos:0, wholeUnits:1})"
                       ".lines.filter(l=>/^streak/.test(l.key)).map(l=>l.label)")
-    ck("a streak line says what kind of bonus it is", lab == ["Streak bonus \u00b7 10"], lab)
+    ck("a streak line says what kind of bonus it is", lab == ["Streak bonus"], lab)
     pg.evaluate("([u])=>__run(u,1,'drill',true)", [UNIT]); wait_done(pg)
     rt = pg.evaluate("()=>({ pct: !!document.querySelector('#stage .rs-pct'),"
       " note: (document.querySelector('#stage .rs-retake-line')||{}).textContent,"
@@ -266,9 +278,9 @@ with sync_playwright() as pw:
     pg.evaluate("([u])=>__run(u,0,'drill')", [UNIT]); wait_done(pg, 60000)
     rm2 = pg.evaluate("()=>({ mine: (lastRunResult.xpLines||[]).map(l=>l.key),"
                       " room: ((lastRunRoomXp||{}).lines||[]).map(l=>l.key) })")
-    ck("a new best score is in YOUR XP", "pbscore" in rm2["mine"], rm2)
+    ck("a new best score is in YOUR XP", "pb" in rm2["mine"], rm2)
     ck("and not in the Virtual Room's score, nor a badge",
-       "pbscore" not in rm2["room"] and "pbtime" not in rm2["room"] and "badge" not in rm2["room"], rm2)
+       "pb" not in rm2["room"] and "badge" not in rm2["room"], rm2)
 
     print("6. build 215: the Constitution unit")
     cu = pg.evaluate("""()=>{ const U = 'US and Texas Constitution and Rights';
@@ -358,6 +370,20 @@ with sync_playwright() as pw:
       const n=document.querySelector('.rs-spot-need-text'); t=n?n.textContent:''; document.querySelectorAll('.rs-spot').forEach(x=>x.remove()); return t; }""")
     ck("a character unlock says what it took", bool(need) and "week" in need.lower(), need)
     pg.evaluate("()=>{ testInProgress=false; try{ showHome(); }catch(e){} }")
+
+    # BUILD 309: the line under the level bar names the SAME level as the
+    # number above it, before the wrap and after it. It was written from
+    # where the run ended while the number still showed where it started:
+    # "Level 23 ... 815 to level 25" for the whole fill.
+    lv = pg.evaluate("""async ()=>{ let p=0; while(levelProgress(p).level < 23) p+=25;
+      const lo=p; while(levelProgress(p).level < 24) p+=25; p+=200;
+      const w=buildResultsLevelBlock(p-lo+50, p, {}); document.getElementById('stage').appendChild(w);
+      const read=()=>{ const n=+(w.querySelector('.results-level-num').textContent.match(/\\d+/)||[0])[0];
+        const m=(w.querySelector('.results-level-line').textContent.match(/to level (\\d+)/)||[])[1]; return [n, m?+m:null]; };
+      const start=read(); w.runFill(); await new Promise(r=>setTimeout(r,2600)); const end=read(); w.remove();
+      return {start, end}; }""")
+    ck("the level line names the next level after the one shown, while filling and after",
+       lv["start"][1] == lv["start"][0] + 1 and lv["end"][1] == lv["end"][0] + 1 and lv["end"][0] > lv["start"][0], lv)
 
     ck("no page errors", not errors, errors[:3])
     br.close()

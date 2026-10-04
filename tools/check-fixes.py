@@ -255,6 +255,37 @@ def main():
                                 if hf[k] is not None and 0 <= hf[k] < 12:
                                     fails.append(f"{tag}: Start Studying clears the {what} by only {hf[k]}px")
 
+                        # 9b. The daily question's "not yet" answer opens BESIDE
+                        # the "?" (build 309): "we've been over this before and
+                        # it's still not fixed ... needs to be near the button".
+                        # It had come back as a top banner, then as a tethered
+                        # popup over Start Studying. So: next to the button,
+                        # on screen, clear of Start Studying and the tab bar,
+                        # and no banner at the top.
+                        dl = pg.evaluate("""async ()=>{ store.dailyQuestionDate = dailyPeriodKey(); showHome();
+                          await new Promise(r=>setTimeout(r,300));
+                          const f=document.querySelector('.daily-question-fab'); if(!f||!f.getBoundingClientRect().width) return null;
+                          f.click(); await new Promise(r=>setTimeout(r,350));
+                          const t=document.getElementById('daily-lock-tip'); const R=e=>e&&e.getBoundingClientRect();
+                          const tr=R(t), fr=R(f), btn=R(document.querySelector('.panel.home .playbtn')), bar=R(document.querySelector('.bottomtabs:not([hidden])'));
+                          const hit=(a,b)=>!!(a&&b&&b.width&&!(a.right<=b.left||a.left>=b.right||a.bottom<=b.top||a.top>=b.bottom));
+                          const out = {tip:!!t, banner:!!document.querySelector('.daily-alert')};
+                          if(tr){ out.gap=Math.round(Math.max(fr.left-tr.right, tr.left-fr.right, fr.top-tr.bottom, tr.top-fr.bottom));
+                            out.onScreen=tr.left>=0&&tr.top>=0&&tr.right<=innerWidth&&tr.bottom<=innerHeight;
+                            out.btn=hit(tr,btn); out.bar=hit(tr,bar); }
+                          t&&t.remove(); store.dailyQuestionDate=null; return out; }""")
+                        if dl:
+                            if not dl["tip"]: fails.append(f"{tag}: tapping a done daily question opened no bubble by the button")
+                            if dl["banner"]: fails.append(f"{tag}: tapping a done daily question put a banner at the top")
+                            if dl["tip"]:
+                                if not dl["onScreen"]: fails.append(f"{tag}: the daily 'done' bubble runs off the screen")
+                                if dl["btn"]: fails.append(f"{tag}: the daily 'done' bubble covers Start Studying")
+                                if dl["bar"]: fails.append(f"{tag}: the daily 'done' bubble covers the tab bar")
+                                # Within 24px: where two lines will not fit beside the
+                                # "?" (a phone browser window, Start Studying just above
+                                # the bar) it drops to one line rather than lifting away.
+                                if dl["gap"] > 24: fails.append(f"{tag}: the daily 'done' bubble is {dl['gap']}px from the button")
+
                         # --- The version label on a phone (build 300): "can be put
                         # on the phone ... the very bottom left corner, with just
                         # the letter v". It lives in the home-indicator strip under
@@ -367,9 +398,14 @@ def main():
                             if bt["offBottom"]: fails.append(f"{tag}: back-to-top below the fold")
                             if bt["offRight"] < 0: fails.append(f"{tag}: back-to-top off the right edge")
 
-                        # 8. daily "already done" must be a top banner clear of the bar
+                        # 8. daily "already done": the bubble beside the "?" since
+                        # build 309 (checked in 9b). The top banner is only the
+                        # FALLBACK for when the "?" is not on screen, and that
+                        # fallback must still be on screen and clear of the bar.
                         dq = pg.evaluate("""async ()=>{showHome();
                           store.dailyQuestionDate = dailyPeriodKey(); startDailyQuestion();
+                          const tip=document.getElementById('daily-lock-tip');
+                          if(tip){ tip.remove(); store.dailyQuestionDate=null; return {bubble:true}; }
                           const a=document.getElementById('dailyalert');
                           // .daily-alert enters from translateY(-8px) and only
                           // gets .show on the next frame, so measuring it
@@ -396,7 +432,8 @@ def main():
                           return {banner:true, toast:!!t, top:Math.round(r.top),
                                   onScreen:r.top>=0&&r.bottom<=innerHeight,
                                   clearsBar:A?Math.round(A.top-r.bottom):999};}""")
-                        if not dq["banner"]: fails.append(f"{tag}: daily 'already done' is not a banner")
+                        if dq.get("bubble"): pass
+                        elif not dq["banner"]: fails.append(f"{tag}: daily 'already done' shows neither the bubble nor the fallback banner")
                         elif dq["toast"]: fails.append(f"{tag}: daily 'already done' still raises a toast")
                         elif dq.get("never"): fails.append(f"{tag}: daily banner never animated in")
                         elif not dq["onScreen"]: fails.append(f"{tag}: daily banner off-screen (top {dq['top']})")

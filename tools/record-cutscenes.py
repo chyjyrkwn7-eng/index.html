@@ -243,8 +243,25 @@ def badge_case(pg, rec):
     pg.wait_for_timeout(15200)
 
 
+# THE ACCOUNT HOLDS THE RANK IT IS CELEBRATING (build 309). The account
+# here had no rank at all, so every recording showed only the new flare
+# lit and the ones below it dark - which is not what anybody climbing to
+# that rank ever sees, and was reported as exactly that. Seeded from the
+# app's own thresholds, so it does not go stale when they move.
+SEED_RANK = """(k)=>{
+  const rule = TIER_UNLOCKS[k] || {};
+  const topics = [...new Set(QUESTIONS.map(q => (q.topic||'').trim()))].filter(Boolean);
+  store.unitPerfects = {};
+  topics.slice(0, rule.badges || 0).forEach(t => { store.unitPerfects[t] = badgeThresholdFor(t); });
+  let pts = 1000; while(levelProgress(pts).level < (rule.level || 0)) pts += 500;
+  store.lifetime = store.lifetime || {}; store.lifetime.points = pts;
+  store.seenUnlockedTiers = TIER_ORDER_FULL.slice(0, TIER_ORDER_FULL.indexOf(k) + 1);
+  homeUnlockPlaying = true; saveStore(); }"""
+
+
 def rank_cutscene(key):
     def body(pg, rec):
+        pg.evaluate(SEED_RANK, key)
         pg.evaluate("()=>showHome()")
         pg.wait_for_timeout(700)
         rec.start(); pg.wait_for_timeout(400)
@@ -255,6 +272,7 @@ def rank_cutscene(key):
 
 
 def supernova(pg, rec):
+    pg.evaluate(SEED_RANK, "titan")
     pg.evaluate("()=>showHome()")
     pg.wait_for_timeout(700)
     rec.start(); pg.wait_for_timeout(400)

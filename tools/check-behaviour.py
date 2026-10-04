@@ -1943,8 +1943,10 @@ def check_b234(br):
         res.timerAfter = cfg.timer;
         /* Build 250: Shuffle and Hide answers are their own card; the fold is the timer alone. */
         const mb = sh.querySelector('.more-body'), rows = sh.querySelector('.optionsmodal-body > .sect > .opt-rows');
-        res.optsFolded = !!mb && !mb.classList.contains('open') && !mb.querySelector('.opt-rows') && !!rows && rows.querySelectorAll('.opt:not([hidden])').length === 2
+        res.optsFolded = !!mb && !mb.querySelector('.opt-rows') && !!rows && rows.querySelectorAll('.opt:not([hidden])').length === 2
           && !!mb.querySelector('.timer-sect');
+        /* build 309: the Timer card is not a dropdown - open from the start, no button to fold it */
+        res.timerOpen = !!mb && mb.classList.contains('open') && !document.querySelector('.unitoptions-modal-sheet button.more-toggle');
         cfg.timer = 'off';
         return res; });
       document.querySelector('.unitoptions-modal-scrim').click();
@@ -2002,7 +2004,11 @@ def check_b234(br):
     # doesn't look simple anymore" - the answer options fold into More options.
     # Build 250: "the shuffle answers and hide answers should not be in
     # that drop down. That drop down just needs to be the timer stuff."
-    check("Shuffle and Hide answers are their own card; the fold holds only the timer, shut until opened", sh.get("optsFolded") is True, sh)
+    # REVISED IN 309: "Don't put the timer options in a drop down anymore,
+    # remove the drop down for that." The timer card is open from the
+    # start, with no toggle to fold it; the switches are still in it alone.
+    check("Shuffle and Hide answers are their own card; the timer has its own card, open, no dropdown",
+          sh.get("optsFolded") is True and sh.get("timerOpen") is True, sh)
     th = r["themes"] if isinstance(r["themes"], dict) else {}
     check("Bronze's second colour is not green and Amethyst's is not pink",
           not (90 <= th.get("bronze", 120) <= 170) and not (290 <= th.get("amethyst", 330) <= 350), th)
@@ -2219,9 +2225,12 @@ def check_b235b(br):
     # much") - 249 had both, and fails this.
     bi = r.get("bankInfo") if isinstance(r.get("bankInfo"), dict) else {}
     # Build 284: two banks - All questions and Flagged; Most missed is gone.
+    # REVISED IN 309: the line names your selection ("could it be more
+    # specific to clarify that is for the ones you have selected?"), so it
+    # is allowed 60 characters, still one short line.
     check("the Question bank: All questions and Flagged, one short line under Flagged - no info dot",
           b.get("rows") == ["all", "flagged"] and b.get("bare") and b.get("oneLine")
-          and bi.get("shown") and 0 < bi.get("len", 0) <= 45 and not bi.get("info")
+          and bi.get("shown") and 0 < bi.get("len", 0) <= 60 and not bi.get("info")
           and b.get("label") == "Question bank", [b, bi])
     t = r["tags"] if isinstance(r["tags"], dict) else {}
     # Build 250: the settings are back in the top box ("still needs to
@@ -2237,8 +2246,9 @@ def check_b235b(br):
     check("the top box lists only the settings that are on, each with an icon, and no question count",
           isinstance(t, dict) and t.get("icons") and "20 min countdown" in tx and ("Flagged" in tx or "Starred" in tx)
           and not any(x in ("All questions", "In order", "No timer") for x in tx)
-          and not any(x.startswith("All ") and x[4:].isdigit() for x in tx) and not any(" of " in x for x in tx)
-          and "20 min countdown" in t.get("state", ""), t)
+          and not any(x.startswith("All ") and x[4:].isdigit() for x in tx) and not any(" of " in x for x in tx), t)
+    # (The Timer bar's own "20 min countdown" state went with the dropdown
+    # in build 309 - the switch beside it says so.)
     # Build 250/251: "I need this to go green when you change it" - then
     # "that box turning green is kinda weird. Don't do that. I like how
     # the timer thing at the top is green though." The pill, not the card.
@@ -2395,15 +2405,12 @@ def check_b238(br):
       store.testStats[u].bestMs = 95000; const set = find('drill', 'Best time').sub;
       const exam = unitDetailStats(u, 'exam').map(x => x.label + ' ' + x.sub).join(' | ');
       return { unset, set, exam }; }""")
-    # REVISED IN 270: the card is the same four in every mode (best score,
-    # last score, completed, hundos), so no mode shows a time any more.
-    check("no mode shows a best time any more (Drill included)", isinstance(r, dict)
-          and r.get("unset") is None and r.get("set") is None, r)
-    # Build 240 took the time off Exam altogether ("Best exam" and "Exam
-    # average" instead), so the hundo wording is only asserted where a time
-    # is still shown. A decision that changed, not a regression.
-    check("Exam shows no time either", isinstance(r, dict) and "Best time" not in str(r.get("exam"))
-          and "Fastest" not in str(r.get("exam")), r)
+    # REVISED IN 309: "In the unit details, go ahead and put the best time
+    # you have there." Back as a fifth stat, the same in every mode, and it
+    # still says a 100% on the whole unit is what sets one.
+    check("the best time is in the details, and says a 100% on the whole unit sets it", isinstance(r, dict)
+          and "100% on the whole unit" in str(r.get("unset")) and "100%" in str(r.get("set")), r)
+    check("and it is the same card in every mode", isinstance(r, dict) and "Best time" in str(r.get("exam")), r)
     ctx.close()
 
 
@@ -2439,8 +2446,11 @@ def check_b240_units(br):
     # so it's simple to use" - one card of four, identical in every mode.
     # The shape is asserted (same four everywhere, one of them the last
     # score), not each label.
+    # REVISED IN 309: a fifth, Best time, asked for in the details - the
+    # same five everywhere is still the shape.
     first = next(iter(modes.values()), [])
-    check("every mode shows the same four squares", modes and len(first) == 4 and all(v == first for v in modes.values()), modes)
+    check("every mode shows the same five squares", modes and len(first) == 5 and all(v == first for v in modes.values())
+          and any("time" in x.lower() for x in first), modes)
     check("and one of them is the last score", any("Last" in x for x in first), first)
     ex = " | ".join(r.get("exam", [])) if isinstance(r, dict) else ""
     check("the best and the last score come from past runs (80% best, 60% last)",
@@ -3955,8 +3965,10 @@ def check_b245_slogan(br):
         # a time" with the game worked in. Asserted by shape: the sentence
         # she liked still leads, and a game word is in it. (Start Studying
         # not moving, below, is what keeps it to one line on a phone.)
+        # REVISED IN 309: "one level at a time" became "one rank at a time"
+        # on request, so rank counts as the game word too.
         check("%s: the tagline leads with 'master the material' and works a game word in" % tag,
-              re.search(r"^master the material", r["text"], re.I) and re.search(r"\b(game|play|level|quest)", r["text"], re.I), r["text"])
+              re.search(r"^master the material", r["text"], re.I) and re.search(r"\b(game|play|level|quest|rank)", r["text"], re.I), r["text"])
         check("%s: Start Studying does not move for it" % tag,
               abs(r["with"]["t"] - r["without"]["t"]) < 0.6,
               [round(r["with"]["t"], 1), round(r["without"]["t"], 1)])
@@ -5063,8 +5075,10 @@ def check_b270(br):
       } catch(e){ out.threw = String(e && e.stack || e); }
       return out; }""")
     L = r.get("labels") or []
-    check("the unit card is the same four numbers in every mode, the last score among them",
-          len(L) == 3 and L[0] == L[1] == L[2] and len(L[0]) == 4 and any("ast" in x for x in L[0]), L)
+    # REVISED IN 309: five, Best time added.
+    check("the unit card is the same five numbers in every mode, the last score and best time among them",
+          len(L) == 3 and L[0] == L[1] == L[2] and len(L[0]) == 5 and any("ast" in x for x in L[0])
+          and any("time" in x.lower() for x in L[0]), L)
     m = r.get("missed") or {}
     check("there is no Most missed list (build 284), and the Flagged list shows its questions", r.get("recentDoor") == 0 and m.get("choices", 0) > 0, m)
     # build 298: "remove the back button at the very bottom since the other back button is already there"
@@ -6936,6 +6950,8 @@ def check_b299(br):
             const tab = document.getElementById('bottomtab-profile');
             /* start from nothing new at all, then make one thing new */
             const u = unlockedIdsNow(); store.seenUnlocks = JSON.parse(JSON.stringify(u));
+            /* a CURRENT record (309 versions it): without the stamp the v2 re-seed reads it as an old one */
+            if(typeof SEEN_VERSION !== 'undefined') store.seenUnlocks.v = SEEN_VERSION;
             store.rankMapFx244 = true; store.rankMapSeen = TIER_ORDER_FULL.indexOf(rankOf(store));
             store.pendingBadgeUnlocks = []; theme.muteBanners = true;
             showHome(); await wait(400);
@@ -8148,7 +8164,10 @@ def check_b308_timer(br):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
         r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms));
           document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());
-          cfg.mode='drill'; cfg.timer='down'; cfg.timerMinutes=20; showSetup(); await wait(400);
+          /* REVISED IN 309: arriving with no units picked is a new test and
+             resets the sheet, so the preset rides in with a unit picked -
+             the round trip that keeps what you set. */
+          cfg.mode='drill'; cfg.units=topicsIn(QUESTIONS).filter(u => !/penal/i.test(u)); cfg.timer='down'; cfg.timerMinutes=20; showSetup(); await wait(400);
           const note = document.querySelector('.screen-setup .info-note');
           const noteTxt = note && !note.hidden ? note.textContent : '';
           const m = document.getElementById('unitoptions-modal'); m.hidden = false;
