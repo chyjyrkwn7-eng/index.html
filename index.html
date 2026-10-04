@@ -2549,9 +2549,35 @@
   }
   .fc-answer-extra{ margin-top:.25rem; }
   .fc-ref{ font-size:.82rem; color:var(--soft); margin:0 0 .4rem; }
-  .fc-choices{ list-style:none; margin:0 0 .6rem; padding:0; display:flex; flex-direction:column; gap:.3rem; font-size:.88rem; color:var(--soft); line-height:1.35; }
-  .fc-choices li.is-answer{ color:var(--right); font-weight:700; }
-  .fc-back .fc-text{ margin:auto 0 .5rem; }
+  .fc-choices{ list-style:none; margin:0 0 .7rem; padding:0; display:flex; flex-direction:column; gap:.35rem; font-size:.9rem; color:var(--soft); line-height:1.35; }
+  .fc-choices li{ padding:.42rem .7rem; border-radius:12px; border:1px solid transparent; }
+  .fc-choices li{ display:flex; gap:.45rem; align-items:flex-start; }
+  .fc-letter{ flex:none; font-weight:700; }
+  .fc-choice-text{ min-width:0; }
+  /* The right one is a green box with white text in it (build 305):
+     a long answer set in bold green was the hardest thing on the card
+     to read. The letter and the tick carry the green. */
+  .fc-choices li.is-answer{ color:var(--ink); font-weight:500; background:color-mix(in srgb, var(--right) 14%, transparent); border-color:color-mix(in srgb, var(--right) 40%, transparent); }
+  .fc-choices li.is-answer .fc-letter{ color:var(--right); }
+  /* The answer, then the choices under it, as one group in the middle
+     of the card. A card whose answer side needs more room is made taller
+     by fcFitCard(), so nothing in it has to scroll. */
+  .fc-back .fc-text{ margin:auto 0 .6rem; flex:none; max-height:none; overflow:visible; }
+  .fc-back .fc-answer-extra{ margin-bottom:auto; }
+  /* Size steps by length (fcSizeClass). Long text also drops to a
+     regular weight and opens its leading - at a smaller size the medium
+     weight is what made a long question read as a block. */
+  .fc-text.fc-size-2{ font-size:clamp(1.15rem, 4.3vw, 1.5rem); line-height:1.38; }
+  .fc-text.fc-size-3{ font-size:clamp(1.05rem, 3.9vw, 1.28rem); line-height:1.45; font-weight:400; }
+  .fc-text.fc-size-4{ font-size:clamp(.98rem, 3.6vw, 1.12rem); line-height:1.5; font-weight:400; }
+  /* An answer side that is only the list sits it in the middle and
+     gives it the room the headline had. */
+  .fc-back.is-list-only .fc-answer-extra{ margin-top:auto; }
+  .fc-back.is-list-only .fc-choices{ font-size:.98rem; gap:.45rem; }
+  .fc-back.is-list-only .fc-choices.is-mid{ font-size:1.08rem; gap:.55rem; }
+  .fc-back.is-list-only .fc-choices.is-short{ font-size:1.22rem; gap:.65rem; }
+  .fc-back.is-list-only .fc-choices.is-short li{ padding:.6rem .85rem; }
+  .fc-choices li.is-answer::after{ content:"\2713"; margin-left:auto; padding-left:.4rem; flex:none; font-weight:800; color:var(--right); }
   .fc-fliphint{ margin:0; text-align:center; font-size:.75rem; font-weight:600; color:var(--soft); opacity:.6; letter-spacing:.02em; }
   .fc-nav{ display:flex; align-items:center; justify-content:space-between; margin-top:1.1rem; padding:0 .4rem; }
   .fc-navbtn{
@@ -2563,7 +2589,15 @@
   .fc-navbtn:disabled{ opacity:.25; cursor:default; }
   .fc-navbtn svg{ width:1.75rem; height:1.75rem; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
   .fc-next-btn svg{ fill:currentColor; stroke-width:1.6; }
-  .fc-done{ text-align:center; padding:3rem 1rem 0; }
+  /* Centred under the bar, the same way the pause screen is (build 305):
+     "The buttons at the end of flashcards needs to be centered". */
+  .panel.fc-screen.fc-done{
+    display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center;
+    min-height:calc(100vh - 13rem); min-height:calc(100lvh - 13rem - var(--pad-inset-top, 0px));
+    padding:1rem 1rem 4rem; box-sizing:border-box;
+  }
+  .fc-done .fc-done-actions{ width:100%; }
+  .fc-done-actions > .next{ width:100%; }
   .fc-done-title{ font-size:1.6rem; font-weight:800; margin:0 0 .5rem; }
   .fc-done-sub{ color:var(--soft); margin:0 0 1.6rem; }
   .fc-done-actions{ display:flex; flex-direction:column; gap:.7rem; max-width:20rem; margin:0 auto; }
@@ -2571,6 +2605,12 @@
     .fc-scene, .fc-nav{ max-width:40rem; margin-left:auto; margin-right:auto; }
     .fc-face{ padding:1.6rem 1.9rem 1.3rem; border-radius:30px; }
     .fc-text{ font-size:clamp(1.6rem, 3.2vw, 2.2rem); }
+    .fc-text.fc-size-2{ font-size:clamp(1.4rem, 2.6vw, 1.8rem); }
+    .fc-text.fc-size-3{ font-size:clamp(1.2rem, 2.1vw, 1.45rem); }
+    .fc-text.fc-size-4{ font-size:clamp(1.08rem, 1.8vw, 1.25rem); }
+    .fc-back.is-list-only .fc-choices{ font-size:1.1rem; }
+    .fc-back.is-list-only .fc-choices.is-mid{ font-size:1.25rem; }
+    .fc-back.is-list-only .fc-choices.is-short{ font-size:1.45rem; }
   }
   /* Learn's list, less of a wall (build 303): "could they be better
      spaced so they all don't appear so cramped? Looks like a lot looking
@@ -8722,6 +8762,11 @@
     display:block; margin:0; flex-shrink:0;
     font-size:.85rem; font-weight:700; color:var(--soft); letter-spacing:.02em;
   }
+  /* A flashcard taller than the screen scrolls the page (build 305), and
+     the bar here has no background in the dark layout, so a sticky one
+     sat its count and mode on top of the card's text. In flashcards it
+     scrolls away with the page instead. */
+  .wrap:has(.fc-screen) .top{ position:relative; top:0; }
   .wrap:has(.fc-screen) .top .test-qcounter{ display:block; font-family:var(--mono); font-weight:700; color:var(--ink); margin:0; }
   .wrap:has(.qnumrow):not(:has(.pausepanel)) .top{ position:sticky; }
   .wrap:has(.fc-screen) .top .test-qcounter,
@@ -41558,9 +41603,11 @@ function applySaved(){
   cfg.source = "all";   // never open straight into a weak-list run
 }
 
-/* What a mode is called on screen (build 303): "review" is Learn. */
+/* What a mode is called on screen. Build 303 showed "review" as Learn;
+   build 305 put it back: "let's go ahead and keep that section as
+   'review' let's not rename it learn." */
 function modeTitleOf(mode){
-  if(mode === "review") return "Learn";
+  if(mode === "review") return "Review";
   return String(mode || "").charAt(0).toUpperCase() + String(mode || "").slice(1);
 }
 function rememberConfig(){
@@ -57879,11 +57926,12 @@ function showModeSelect(){
        hundos, no badge progress. Browsing answers is studying, not a
        score, and anything else would make it the cheapest way to farm
        a level. */
-    /* LEARN, NOT REVIEW (build 303): "this mode is gonna be renamed to
-       learn and we are finally gonna introduce flash cards". The value
+    /* REVIEW AGAIN (build 305). Build 303 renamed it Learn ("this mode
+       is gonna be renamed to learn and we are finally gonna introduce
+       flash cards"); 305 put the name back. The value
        stays "review" - it is stored in store.opts and every check in the
        file asks for it - and only what is shown changes (modeTitleOf). */
-    { value: "review", title: "Learn",
+    { value: "review", title: "Review",
       desc: "Not a test \u2014 go through the study guide questions and their answers as a list or as flashcards. Best for going over material." },
     { value: "vroom", title: "Virtual Room",
       desc: "Take tests together, live \u2014 everyone answers the same questions at the same time. Best for studying with classmates." }
@@ -57945,7 +57993,7 @@ function showModeSelect(){
          updated for this new app") - it became a mode of its own in
          build 128 and the tour went straight from Exam to Virtual Room. */
       { target: '.modecard[data-mode="review"]', align: "left", vplacement: "below",
-        text: "Learn is not a test \u2014 it walks through each unit\u2019s questions and answers, as a list or as flashcards. Good for going over material before you test yourself." },
+        text: "Review is not a test \u2014 it walks through each unit\u2019s questions and answers, as a list or as flashcards. Good for going over material before you test yourself." },
       /* vplacement was hardcoded to "above" here, mismatched with Game's
          own "below" right above - harmless-looking on phone (cards
          stack in one column, so Virtual Room being last made "above"
@@ -58809,7 +58857,7 @@ function showSetup(){
   /* Review is its own colour, the green of its icon (build 266): "the
      word review at the top of the unit selection is not a green tint,
      it's the drill tint". It fell through to "drill" here. */
-  const modeNames = { drill: "Drill", exam: "Exam", game: "Game", review: "Learn" };
+  const modeNames = { drill: "Drill", exam: "Exam", game: "Game", review: "Review" };
   const modeKind = ["drill", "exam", "game", "review"].indexOf(cfg.mode) >= 0 ? cfg.mode : "drill";
   const modeChip = document.createElement("span");
   modeChip.className = "rs-mode rs-mode-" + modeKind;
@@ -61365,7 +61413,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-04-304";
+const APP_BUILD = "2026-10-04-305";
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
    pushing when I open the app?" Because this gap is shared by every way
@@ -75987,7 +76035,7 @@ function showCalendar(){
 function showAnswerReview(units, source, versions, opts){
   const allFlagged = !!(opts && opts.allFlagged);
   setActiveNav(null);
-  countEl.textContent = "Learn";
+  countEl.textContent = "Review";
   /* Only the flagged or most-missed questions, when that is what was
      picked on the sheet. */
   const only = source === "flagged" ? new Set(flaggedIndexes())
@@ -75998,7 +76046,7 @@ function showAnswerReview(units, source, versions, opts){
   panel.appendChild(buildBackLink("Back to Options", showSetup));
 
   const title = document.createElement("h1");
-  title.className = "cal-title"; title.textContent = source === "flagged" ? "Starred Questions" : "Learn";
+  title.className = "cal-title"; title.textContent = source === "flagged" ? "Starred Questions" : "Review";
   panel.appendChild(title);
 
   const sub = document.createElement("p");
@@ -76227,13 +76275,20 @@ function fcPaintMeter(){
     ticks[k].className = "tick" + (k < fc.pos ? " clean" : k === fc.pos ? " now" : "");
   }
 }
+/* Type steps down with length (build 305). A median question is 133
+   characters and a tenth are over 275; at the short-card size those were
+   a wall of 31px text that ran off the card. */
+function fcSizeClass(text){
+  const n = String(text || "").length;
+  return n <= 90 ? "fc-size-1" : n <= 170 ? "fc-size-2" : n <= 280 ? "fc-size-3" : "fc-size-4";
+}
 function renderFlashcard(dir){
   if(!fc) return;
   const qi = fc.deck[fc.pos];
   const item = QUESTIONS[qi];
   fc.flipped = false;
-  testModeLabelEl.textContent = "Learn";
-  testQCounterEl.textContent = (fc.pos + 1) + " / " + fc.deck.length;
+  testModeLabelEl.textContent = "Review";
+  testQCounterEl.textContent = (fc.pos + 1) + "/" + fc.deck.length;
   fcPaintMeter();
 
   const screen = document.createElement("section");
@@ -76252,33 +76307,48 @@ function renderFlashcard(dir){
     const tag = document.createElement("span"); tag.className = "fc-tag"; tag.textContent = label;
     top.appendChild(tag);
     f.appendChild(top);
-    const txt = document.createElement("p"); txt.className = "fc-text";
-    if(typeof body === "string") txt.textContent = body; else txt.appendChild(body);
-    f.appendChild(txt);
+    if(body != null){
+      const txt = document.createElement("p"); txt.className = "fc-text " + fcSizeClass(body.textContent != null ? body.textContent : body);
+      if(typeof body === "string") txt.textContent = body; else txt.appendChild(body);
+      f.appendChild(txt);
+    }
     if(extra) f.appendChild(extra);
     return f;
   };
   const qText = document.createElement("span"); writeText(qText, item.q);
   const front = face("fc-front", item.topic || "Question", qText);
   const ansWrap = document.createElement("div"); ansWrap.className = "fc-answer-extra";
-  /* "All of the above" on its own is not an answer you can learn from -
-     it only means something next to what it is all of. For an answer
-     that points at the other choices, the back lists them too, the
-     right one marked. */
-  const ansText = String(item.choices[item.answer] || "");
-  if(/\b(all|none|both|neither) of the (above|these)\b|^(both|neither)\b|^[a-e] (and|&) [a-e]\b/i.test(ansText)){
-    const ul = document.createElement("ul"); ul.className = "fc-choices";
+  /* Every back lists the choices under the answer, the right one marked
+     (build 305): "I kind of liked how the cards had the right answer and
+     it showed the answer choices with the right answer underneath it
+     too." It began as the "All of the above" case only, where the answer
+     means nothing without what it is all of; it turned out to be the
+     layout people wanted on every card. */
+  const ansText = String((item.choices || [])[item.answer] || "");
+  if(Array.isArray(item.choices) && item.choices.length > 1){
+    /* Short choices get bigger type: with no headline above them, a
+       list of four one-word choices at list size sat small in a big card. */
+    const total = item.choices.reduce((n, c) => n + String(c).length, 0);
+    const ul = document.createElement("ul"); ul.className = "fc-choices" + (total <= 90 ? " is-short" : total <= 200 ? " is-mid" : "");
     item.choices.forEach((c, ci) => {
       const li = document.createElement("li");
       li.className = ci === item.answer ? "is-answer" : "";
-      li.textContent = LETTERS[ci] + ". " + c;
+      const lt = document.createElement("span"); lt.className = "fc-letter"; lt.textContent = LETTERS[ci] + ".";
+      const tx = document.createElement("span"); tx.className = "fc-choice-text"; tx.textContent = c;
+      li.append(lt, tx);
       ul.appendChild(li);
     });
     ansWrap.appendChild(ul);
   }
   if(item.ref){ const r = document.createElement("p"); r.className = "fc-ref"; r.textContent = item.ref; ansWrap.appendChild(r); }
   const bn = buildBankNote(item); if(bn) ansWrap.appendChild(bn);
-  const back = face("fc-back", "Answer", ansText, ansWrap.childNodes.length ? ansWrap : null);
+  /* The answer side IS the list (build 305): "it should just have the
+     answer choices with the right one, not the right answer above all
+     that". The answer printed above the list was the same words twice,
+     and with long choices that made the card ugly. The headline is only
+     kept for a question with no choices to list. */
+  const hasList = !!ansWrap.querySelector(".fc-choices");
+  const back = face("fc-back" + (hasList ? " is-list-only" : ""), "Answer", hasList ? null : ansText, ansWrap.childNodes.length ? ansWrap : null);
   /* The star sits on the card, top right, the way the reference has it -
      one per face so it is there whichever side is up, both the same
      question's star. A tap on it is not a tap on the card. */
@@ -76333,8 +76403,29 @@ function renderFlashcard(dir){
 
   screen.append(scene, nav);
   stage.replaceChildren(screen);
+  fcFitCard(card);
   jumpToTop();
 }
+/* The card grows to whichever face needs more room (build 305). With
+   the choices on every back, a long question's answer side outgrew the
+   fixed card on a small phone; scrolling inside a card that flips is
+   easy to miss, so the card is made tall enough and the page scrolls
+   instead. Never shorter than the CSS height, so short cards are
+   untouched. */
+function fcFitCard(card){
+  if(!card || !card.isConnected) return;
+  card.style.height = "";
+  const base = card.offsetHeight;
+  card.style.height = "auto";
+  let need = 0;
+  card.querySelectorAll(".fc-face").forEach(f => {
+    f.style.position = "relative"; f.style.inset = "auto";
+    need = Math.max(need, f.offsetHeight);
+    f.style.position = ""; f.style.inset = "";
+  });
+  card.style.height = need > base + 1 ? Math.ceil(need) + "px" : "";
+}
+window.addEventListener("resize", () => { const c = document.querySelector(".fc-card"); if(c) fcFitCard(c); });
 function fcStep(d){
   if(!fc) return;
   const next = fc.pos + d;
@@ -76349,7 +76440,7 @@ function showFlashcardsDone(){
   fc.pos = n;
   fcPaintMeter();
   pauseBtn.hidden = true;
-  testQCounterEl.textContent = n + " / " + n;
+  testQCounterEl.textContent = n + "/" + n;
   const panel = document.createElement("section");
   panel.className = "panel fc-screen fc-done";
   const h = document.createElement("p"); h.className = "fc-done-title"; h.textContent = "That's the deck.";
@@ -76359,8 +76450,10 @@ function showFlashcardsDone(){
   const again = document.createElement("button"); again.type = "button"; again.className = "next"; again.textContent = "Go again";
   const units = fc.units, source = fc.source, versions = fc.versions;
   again.addEventListener("click", () => { fcLeave(); showFlashcards(units, source, versions); });
-  const done = document.createElement("button"); done.type = "button"; done.className = "next ghost"; done.textContent = "Done";
-  done.addEventListener("click", () => { fcLeave(); showSetup(); });
+  /* "Main menu", not "Done" (build 305): Done went back to the test
+     setup, which read as going nowhere. */
+  const done = document.createElement("button"); done.type = "button"; done.className = "next ghost"; done.textContent = "Main menu";
+  done.addEventListener("click", () => { fcLeave(); showHome(); });
   actions.append(again, done);
   panel.append(h, sub, actions);
   stage.replaceChildren(panel);

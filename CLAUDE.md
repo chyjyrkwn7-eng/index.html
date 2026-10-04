@@ -10750,3 +10750,52 @@ Rules for a new animated banner:
   things vanish in build 253. Event layers carry `opacity:0` inline so
   they are absent with motion off.
 - No SVG filters, ids unique per copy (the template token does it).
+
+### Build 305 - flashcards: the choices on every answer, long cards that read, Review again
+
+- **Every card's answer side lists the choices under the answer, the
+  right one in a green pill.** It began as the "All of the above" case
+  only and was asked for on every card: *"I kind of liked how the cards
+  had the right answer and it showed the answer choices with the right
+  answer underneath it too."*
+- **A card is as tall as its taller face, never shorter than the CSS
+  height** (`fcFitCard()`, re-run on resize). With choices on every back,
+  313 of 894 cards outgrew the fixed card on an SE 2nd/3rd gen. Scrolling
+  inside a card that flips is easy to miss, so the card grows and the
+  page scrolls instead.
+- **The flashcard top bar is `position:relative; top:0`, not sticky.**
+  The dark layout's bar has no background, so once a card could be
+  taller than the screen a sticky count sat on the card's text. Both
+  halves matter: `relative` alone keeps the sticky `top` offset and
+  pushes the whole row ~59px down on a phone.
+- **The end of a deck is centred under the bar like the pause screen,
+  and its second button is "Main menu", to Home.** *"The buttons at the
+  end of flashcards needs to be centered, done needs to be 'main menu'."*
+  "Done" went back to the setup screen.
+- **The answer side is the choice list and nothing else.** It went
+  through two steps in one build: first the answer printed above the
+  list only for short answers, then *"it should just have the answer
+  choices with the right one, not the right answer above all that"* -
+  the same words twice, and with long choices it made the card ugly. A
+  headline survives only for a question with no choices to list. The
+  right answer is WHITE text in a green box with the letter and a tick in
+  green; bold green at length was the hardest thing on the card to read.
+  The list's type steps up when the choices are short (`is-short` <= 90
+  characters in all, `is-mid` <= 200), so four one-word choices do not
+  sit small in a big card.
+- **The question side's type steps down with length** (`fcSizeClass()`:
+  <=90, <=170, <=280, longer characters; the bottom two drop to a regular
+  weight and open the leading). Measured: a median question is 133
+  characters and a tenth are over 275 - at the short-card 31px that was
+  a wall. *"Those flashcards where there's a ton of text like that, it's
+  kinda hard to even read the card."*
+- **The mode is "Review" again, everywhere** (`modeTitleOf`, the mode
+  card, the sheet, the list, the card's top row): *"let's go ahead and
+  keep that section as 'review' let's not rename it learn."* The stored
+  value was always `"review"`, so nothing migrates.
+- **The flashcard count is `5/12`, like every other mode's.** The top
+  row was already the same everywhere - same place, size, weight and
+  colour - and the spaced `5 / 12` was the one difference.
+- `check-behaviour` section 77 (`check_b305_flashcards`) walks all 894
+  cards on three sizes; it fails on 304 for every assertion that
+  discriminates.

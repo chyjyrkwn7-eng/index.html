@@ -7609,10 +7609,11 @@ def check_b303(br):
         check(dev + ": Instant feedback is not offered in Drill", r.get("drillHasFeedback") is False)
         check(dev + ": in Exam with it on, a pick is judged and locked",
               r.get("examJudged") is True and r.get("examLocked") is True and r.get("examMode") == "Exam", (r.get("examJudged"), r.get("examLocked"), r.get("examMode")))
-        check(dev + ": Review is called Learn", r.get("sheetTitle") == "Learn" and r.get("listTitle") == "Learn", (r.get("sheetTitle"), r.get("listTitle")))
+        # Build 305 put the name back to Review; the sheet, the list and the card all say the same thing.
+        check(dev + ": the mode is called Review everywhere", r.get("sheetTitle") == "Review" and r.get("listTitle") == "Review", (r.get("sheetTitle"), r.get("listTitle")))
         check(dev + ": with Flashcards on, Begin says so and opens a card", r.get("beginText") == "Start flashcards" and r.get("fcCard") is True, r.get("beginText"))
-        check(dev + ": the card has the count in the middle, Learn on the left, no timer and a star",
-              r.get("fcCount") == "1 / 12" and r.get("fcMode") == "Learn" and r.get("fcTimer") is True and r.get("fcStar") is True,
+        check(dev + ": the card has the count in the middle, Review on the left, no timer and a star",
+              r.get("fcCount") == "1/12" and r.get("fcMode") == "Review" and r.get("fcTimer") is True and r.get("fcStar") is True,
               (r.get("fcCount"), r.get("fcMode"), r.get("fcTimer"), r.get("fcStar")))
         check(dev + ": a tap flips it", r.get("fcFlipped") is True)
         check(dev + ": the bar goes green as you go and un-greens going back", r.get("fcGreenAt3") == 2 and r.get("fcGreenBack") == 1, (r.get("fcGreenAt3"), r.get("fcGreenBack")))
@@ -7887,6 +7888,58 @@ def check_b304_noxpfly(br):
     check("after the daily question, its XP still flies into Profile", d.get("had") is True and d.get("flew") is True, d)
 
 
+def check_b305_flashcards(br):
+    """Build 305: every flashcard's answer side lists the choices with
+    the right one marked, and nothing on a card is cut off on the
+    smallest phone; the end of a deck is centred under the bar and its
+    second button is Main menu, which lands on Home. Written against
+    304, where only "All of the above" cards listed choices and the end
+    screen sat at the top with Done going back to the setup screen."""
+    print("\n77. build 305: flashcard answers list the choices, long cards read; the end of a deck")
+    for w, h in ((375, 667), (440, 956), (834, 1194)):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate("""async ()=>{ const w = ms => new Promise(r => setTimeout(r, ms));
+          document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());
+          const units = [...new Set(QUESTIONS.map(q => q.topic))];
+          showFlashcards(units, 'all', {}); await w(300);
+          let bad = 0, clipped = 0, worst = 0, dupLong = 0, noHead = 0, shortFs = 999, longFs = 0; const n = fc.deck.length;
+          for(let i = 0; i < n; i++){
+            fc.pos = i; renderFlashcard(0);
+            const b = document.querySelector('.fc-back');
+            const lis = b.querySelectorAll('.fc-choices li'), right = b.querySelectorAll('.fc-choices li.is-answer');
+            if(lis.length !== QUESTIONS[fc.deck[i]].choices.length || right.length !== 1) bad++;
+            const o = Math.max(...[...document.querySelectorAll('.fc-face')].map(f => f.scrollHeight - f.clientHeight));
+            if(o > 1){ clipped++; worst = Math.max(worst, o); }
+            const q = QUESTIONS[fc.deck[i]], al = String(q.choices[q.answer]).length, ql = String(q.q).length;
+            const head = b.querySelector('.fc-text');
+            if(head) dupLong++;
+            const fs = parseFloat(getComputedStyle(document.querySelector('.fc-front .fc-text')).fontSize);
+            if(ql <= 90) shortFs = Math.min(shortFs, fs); if(ql > 280) longFs = Math.max(longFs, fs);
+          }
+          fcLeave(); showFlashcards(['Identity Crimes'], 'all', {}); await w(300);
+          showFlashcardsDone(); await w(300);
+          const p = document.querySelector('.fc-done'), a = document.querySelector('.fc-done-actions');
+          const pr = p.getBoundingClientRect();
+          const t = document.querySelector('.fc-done-title').getBoundingClientRect(), ar = a.getBoundingClientRect();
+          const groupMid = (t.top + ar.bottom) / 2, panelMid = (pr.top + pr.bottom) / 2;
+          const labels = [...a.querySelectorAll('button')].map(b => b.textContent.trim());
+          const mm = [...a.querySelectorAll('button')].find(b => /Main menu/.test(b.textContent));
+          const btnMid = Math.round(ar.left + ar.width / 2 - innerWidth / 2);
+          if(mm) mm.click(); await w(900);
+          return { n, bad, clipped, worst, dupLong, noHead, shortFs, longFs, labels, btnMid, offCentre: Math.round(groupMid - panelMid), panelH: Math.round(pr.height), vh: innerHeight,
+                   home: !!document.querySelector('[data-screen="home"]') }; }""")
+        ctx.close()
+        dev = "%dx%d" % (w, h)
+        check(dev + ": every card's answer side lists its choices, one marked right", r.get("bad") == 0 and r.get("n", 0) > 100, (r.get("n"), r.get("bad")))
+        check(dev + ": no card is cut off, on either side", r.get("clipped") == 0, (r.get("clipped"), r.get("worst")))
+        check(dev + ": the answer side is the choices alone, no answer printed above them", r.get("dupLong") == 0, r.get("dupLong"))
+        check(dev + ": a long question is set smaller than a short one", 0 < r.get("longFs", 0) < r.get("shortFs", 0) * 0.8, (r.get("shortFs"), r.get("longFs")))
+        check(dev + ": the end of a deck offers Go again and Main menu", r.get("labels") == ["Go again", "Main menu"], r.get("labels"))
+        check(dev + ": its buttons are centred across the screen", r.get("btnMid") is not None and abs(r["btnMid"]) <= 2, r.get("btnMid"))
+        check(dev + ": and the group sits in the middle of the space under the bar", r.get("panelH", 0) > r.get("vh", 0) * 0.5 and abs(r.get("offCentre") or 999) <= 40, (r.get("offCentre"), r.get("panelH")))
+        check(dev + ": Main menu lands on Home", r.get("home") is True, r)
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     only = os.environ.get("ONLY_B245")
@@ -7984,6 +8037,7 @@ def main():
             check_b304(br)
             check_b304_polish(br)
             check_b304_noxpfly(br)
+            check_b305_flashcards(br)
         finally:
             br.close()
     SERVER.shutdown()
