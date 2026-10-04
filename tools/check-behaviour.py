@@ -6771,6 +6771,11 @@ def check_b298(br):
           r["notes"] == [] and r["boat"].startswith("Two friends"), r)
     check("and a question whose wording was cleaned keeps its identity, so nobody's history or flags on it move",
           r["edited"] >= 6 and r["keep"], (r["edited"], r["keep"]))
+    # "that circled stuff should [be] the same way all the other questions are where it's sitting under the question"
+    tails = pg.evaluate("""()=>{ const cite = /(\\((PC|CCP|FC|CPRC|Sec\\.?|Section|US &|Victims of|Sexual|Civil)[ ,][^?]{0,140}|\\bPC \\d+\\.\\d+[^?]{0,60}\\))\\s*[,;]?\\s*$/;
+      return QUESTIONS.map((q, i) => i).filter(i => cite.test(QUESTIONS[i].q)).map(i => QUESTIONS[i].topic + ' ' + QUESTIONS[i].src); }""")
+    check("no question ends in its own citation: the source sits in the grey line under it, like every other question",
+          tails == [], tails)
     ctx.close()
     # "the flag button in tests is a little too low still ... perfectly in the corner" - on a phone and a tablet alike
     for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11"), (1024, 1366, "iPad Pro 12.9")):

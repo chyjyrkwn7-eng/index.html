@@ -239,6 +239,17 @@ easy to conclude there is none. Decode it to edit; never hand-patch the base64.
 - **Don't reorder or rename questions' `topic`/`src`.** Question identity is a
   hash of those fields (`KEYS` via `hashOf()`), so changing them scrambles a
   real person's answer history for that question.
+  **The hash also covers the question TEXT and choices**, so rewording a
+  question means pinning the old text in `keyText` first, the way the
+  cleaned-up questions do. Build 309 moved 29 citations out of question
+  text (*"(PC 39.03 (a) (3); Professionalism & Ethics, Section 1.6)"* on
+  the end of the question itself) into `ref`, the grey line under the
+  question every other one uses. All 29 carry `keyText`, and the 895 keys
+  were compared before and after: identical. Several had been split
+  half-and-half between `q` and `ref` by the import (`q` ending
+  `(PC 22.011 (b)`, `ref` starting `(3, 5, and 8, …`), so the two halves
+  were rejoined rather than just cut. `check-behaviour` (b298) fails on
+  any question that still ends in its own citation.
 
 ---
 
