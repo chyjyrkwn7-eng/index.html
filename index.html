@@ -2107,8 +2107,8 @@
   }
   .avatarchar-option.selected::before{ opacity:1; }
   /* Build 290: see the IntersectionObserver in showCustomize(). */
-  :is(.banner-opt, .swatch).is-offscreen, :is(.banner-opt, .swatch).is-offscreen *,
-  :is(.banner-opt, .swatch).is-offscreen *::before, :is(.banner-opt, .swatch).is-offscreen *::after{ animation-play-state:paused !important; }
+  :is(.banner-opt, .swatch, .rank-row, .lw-podium-spot).is-offscreen, :is(.banner-opt, .swatch, .rank-row, .lw-podium-spot).is-offscreen *,
+  :is(.banner-opt, .swatch, .rank-row, .lw-podium-spot).is-offscreen *::before, :is(.banner-opt, .swatch, .rank-row, .lw-podium-spot).is-offscreen *::after{ animation-play-state:paused !important; }
   /* The drop-shadows fade through a REGISTERED number, not by
      transitioning `filter` itself: interpolating from a transparent
      shadow to a color-mix() one passes through near-black on the way
@@ -2494,6 +2494,24 @@
   [data-theme="dark"] .flagpole{ stroke:var(--soft); }
   [data-theme="dark"] .flagbanner{ stroke:#E0B646; }
   [data-theme="dark"] .flagbtn.on .flagbanner{ fill:#F5C518; stroke:#F5C518; }
+  /* ---- THE RESUME OFFER (build 304) - see showResumeOffer() ---- */
+  .resume-offer{
+    position:fixed; inset:0; z-index:420; display:flex; align-items:center; justify-content:center;
+    padding:1.25rem; background:rgba(6,8,12,.55); opacity:0; transition:opacity .22s ease;
+    -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+  }
+  .resume-offer.show{ opacity:1; }
+  .resume-card{
+    width:min(24rem, 100%); padding:1.5rem 1.35rem 1.25rem; border-radius:24px; text-align:center;
+    background:linear-gradient(180deg, rgba(40,44,54,.96), rgba(24,27,34,.98));
+    border:1px solid rgba(255,255,255,.1); box-shadow:0 24px 60px -20px rgba(0,0,0,.7);
+    transform:translateY(10px) scale(.98); transition:transform .28s cubic-bezier(.2,.8,.2,1);
+  }
+  .resume-offer.show .resume-card{ transform:none; }
+  .resume-title{ margin:0 0 .45rem; font-size:1.2rem; font-weight:800; color:var(--ink); }
+  .resume-sub{ margin:0 0 1.2rem; font-size:.92rem; line-height:1.45; color:var(--soft); }
+  .resume-actions{ display:flex; flex-direction:column; gap:.6rem; }
+  .resume-actions .next{ width:100%; }
   /* ---- FLASHCARDS (build 303) - see showFlashcards() ---- */
   .wrap:has(.fc-screen) #count{ display:none; }
   .wrap:has(.fc-screen) .meter{ margin-bottom:1.1rem; }
@@ -15417,15 +15435,25 @@
     background:#10131A; border:1px solid rgba(255,255,255,.1);
     transition:box-shadow .3s ease, transform .2s ease;
   }
-  .banner-opt.is-none .banner-opt-art{
-    background:
-      radial-gradient(90% 150% at 12% 0%, color-mix(in srgb, var(--theme-c1) 46%, transparent), transparent 62%),
-      radial-gradient(80% 140% at 88% 8%, color-mix(in srgb, var(--theme-c3) 50%, transparent), transparent 64%),
-      linear-gradient(160deg, #1B2130, #10131A);
-  }
+  /* The tile under the default banner is the same plain dark every other
+     tile has (build 304). It used to be painted in the theme's colours -
+     from before the default had art of its own - and with the grey art
+     now on top, that colour showed only as a gold and magenta rim round
+     the rounded edge, where the art's anti-aliasing lets the tile through:
+     "the default ones border is kinda bugged". */
+  .banner-opt.is-none .banner-opt-art{ background:#10131A; }
   .banner-opt.selected .banner-opt-art{
     box-shadow:0 0 0 2px #fff, 0 0 18px rgba(255,255,255,.28);
   }
+  /* THE ART STAYS INSIDE ITS CORNERS (build 304): "the default ones border
+     is kinda bugged". The art is an animated, composited layer, and iOS
+     (and here and there Chromium) does not clip such a layer to a rounded
+     overflow:hidden parent - the square corners of the default banner's
+     colour glow showed past the rounded border, worst on the selected
+     tile where the white ring makes the corner obvious. A rounded
+     clip-path on the art clips its composited children where
+     overflow:hidden alone does not, and leaves the ring outside alone. */
+  .banner-opt-art > .bnr{ border-radius:inherit; clip-path:inset(0 round 11px); }
   .banner-opt:active .banner-opt-art{ transform:scale(.98); }
   .banner-opt.locked .banner-opt-art > .bnr{ filter:grayscale(.85) brightness(.45); }
   .banner-opt-lock{
@@ -15882,6 +15910,13 @@
   }
   /* The coin stays on top of the pool. */
   .profile-hero-avatar.has-glow .lb-rankmark{ z-index:2; }
+  /* THE NAME ROW SITS OVER THE GLOW (build 304): "When I hit the customize
+     button, the glow from the characters covers it in a glitchy way." The
+     character is z-index:1 with three wide drop-shadows, and the row under
+     it had no z-index at all - so the light painted over Customize, and on
+     a tap (the button scales, which re-layers it on iOS) it flickered in
+     and out over the label. The row is lifted above the whole avatar. */
+  .profile-hero .profile-hero-id, .profile-hero .namedisplay-row{ position:relative; z-index:3; }
   @media (min-width:40rem){
     .profile-ranklineup{ font-size:.88rem; }
     .profile-rankcoin{ width:1.95rem; height:1.95rem; }
@@ -17748,7 +17783,7 @@
   .unlock-card-name{ margin:.2rem 0 .5rem; font-family:var(--serif); font-size:1.55rem; font-weight:700; color:#F3F5F7; line-height:1.15; }
   .unlock-card-desc{ margin:0 auto .85rem; max-width:18rem; font-size:.92rem; line-height:1.4; color:rgba(243,245,247,.86); }
   .unlock-card-bar{ position:relative; height:10px; border-radius:999px; overflow:hidden; margin:0 .2rem;
-    background:rgba(255,255,255,.1); box-shadow:inset 0 1px 2px rgba(0,0,0,.5); }
+    background:rgba(255,255,255,.1); box-shadow:inset 0 1px 2px rgba(0,0,0,.5); isolation:isolate; }
   /* GREEN WHILE LOCKED TOO (build 279): "change the locked progress bar
      and make that the green color like how the unlock ones got". It was
      blue until the thing was held; it is the held bar's green now, at
@@ -20307,7 +20342,12 @@ const BANK_TITLE = "Nova \u2014 Class 26E Study";
    threshold, not something taken from the study material. */
 const PASS_MARK = 70;
 /* The Ronin's challenge: one run at least this long, passed (build 264). */
-const RONIN_TEST_SIZE = 450;
+/* 500 SINCE BUILD 304: "Take ronin challenge to 500 questions not 450".
+   A new flag again (bigTest500Passed) for the same reason 264 added one,
+   but anybody who already earned the Ronin on the 450 rule keeps it -
+   taking a character back off somebody is worse than a short-lived
+   easier rule. */
+const RONIN_TEST_SIZE = 500;
 /* The Phoenix banner: a perfect Exam of this many questions or more (build 283,
    when the Practice Test it used to need was retired). */
 const PHOENIX_EXAM_SIZE = 100;
@@ -32414,6 +32454,168 @@ const countEl   = document.getElementById("count");
 const testScopeLabelEl = document.getElementById("testscopelabel");
 const testQCounterEl = document.getElementById("testqcounter");
 const testModeLabelEl = document.getElementById("testmodelabel");
+/* ---- A TEST SURVIVES THE APP BEING CLOSED (build 304) --------------------
+   "I left the app for a while, when I came back it took me back to the
+   main menu, I wasn't able to finish my test ... there could be a second
+   or two delay and then a pop up hits your screen that says your test
+   session was interrupted, would you like to continue". iOS throws an
+   installed app out of memory when it has been in the background a while,
+   and the relaunch boots to Home with the run gone.
+   The run is written to this DEVICE (localStorage, never `store`: resuming
+   happens where the test was being taken, and syncing a half-finished run
+   to another phone would offer it there too) every time it moves - a new
+   question, a pick, a pause, the app being hidden. It is cleared the
+   moment the run ends any proper way: results, Exit test, Leave to main
+   menu, a new run. So a session still here at launch is exactly a run the
+   app lost. Home offers it after a short beat; Continue rebuilds the run
+   where it stopped - the same questions in the same order, the same
+   answer positions, what was already answered, the clock where it was -
+   and No discards it.
+   Not saved: the daily question (one question), a Virtual Room (it is
+   everybody's, and it has moved on without you), a timed race, and a run
+   older than RUN_SESSION_MAX_AGE_MS. */
+const RUN_SESSION_KEY = "class26e.runsession.v1";
+const RUN_SESSION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+function runSessionSavable(){
+  return testInProgress && order.length > 0 && runLabel !== "Daily question" &&
+         !inVirtualRoom && !vroomCode && !raceTimed && (runMode === "drill" || runMode === "exam");
+}
+function saveRunSession(){
+  try{
+    if(!runSessionSavable()){ return; }
+    if(pos >= order.length) return;
+    const now = Date.now();
+    const at = paused && pauseStartedAt ? pauseStartedAt : now;
+    const s = {
+      v: 1, at: now, build: APP_BUILD,
+      cfg: { mode: cfg.mode, units: cfg.units.slice(), versions: Object.assign({}, cfg.versions || {}),
+             source: cfg.source, size: cfg.size, timer: cfg.timer, timerMinutes: cfg.timerMinutes,
+             recall: cfg.recall, shuffle: cfg.shuffle },
+      order: order.slice(), pos, attempts, picked, firstPick, layout, timedOutSet,
+      runLabel, runMode, isMissedRetake, practiceTestMinutes, runTrackable, runExamFeedback,
+      runLiveStreak, qTimeMs, cleared, lastWrong, hinted, revealed,
+      elapsedMs: runStartTime ? Math.max(0, at - runStartTime) : 0,
+      timerLeftMs: (timerDeadline && (cfg.timer === "down" || practiceTestMinutes != null)) ? Math.max(0, timerDeadline - at) : null,
+      runStartLocked: runStartLocked ? Array.from(runStartLocked) : null,
+      runStartBanners: runStartBanners ? Array.from(runStartBanners) : null,
+      lastRunPool: lastRunPool.slice(), lastRunLabel, originalTestPool: originalTestPool.slice(), originalTestLabel
+    };
+    localStorage.setItem(RUN_SESSION_KEY, JSON.stringify(s));
+  }catch(e){}
+}
+function clearRunSession(){ try{ localStorage.removeItem(RUN_SESSION_KEY); }catch(e){} }
+function readRunSession(){
+  try{
+    const raw = localStorage.getItem(RUN_SESSION_KEY);
+    if(!raw) return null;
+    const s = JSON.parse(raw);
+    if(!s || s.v !== 1 || !Array.isArray(s.order) || !s.order.length) return null;
+    if(Date.now() - (s.at || 0) > RUN_SESSION_MAX_AGE_MS){ clearRunSession(); return null; }
+    if(s.order.some(i => typeof i !== "number" || !QUESTIONS[i])){ clearRunSession(); return null; }
+    return s;
+  }catch(e){ return null; }
+}
+function resumeRunSession(s){
+  ["mode", "units", "versions", "source", "size", "timer", "timerMinutes", "recall", "shuffle"].forEach(k => {
+    if(s.cfg && s.cfg[k] !== undefined) cfg[k] = s.cfg[k];
+  });
+  clearTimeout(choicePressTimer); choicePressTimer = null; choiceFx = null; nextRisenFor = null;
+  order = s.order.slice();
+  testInProgress = true;
+  lastRunPool = (s.lastRunPool || s.order).slice(); lastRunLabel = s.lastRunLabel || null;
+  originalTestPool = (s.originalTestPool || s.order).slice(); originalTestLabel = s.originalTestLabel || null;
+  practiceTestMinutes = s.practiceTestMinutes == null ? null : s.practiceTestMinutes;
+  isMissedRetake = !!s.isMissedRetake;
+  qTimeMs = s.qTimeMs || {}; qClockQi = null; runLiveStreak = s.runLiveStreak || 0;
+  pendingXpFly = 0;
+  mysteryFoundThisSession = false; flareCompletedVoidThisSession = false;
+  mysteryAppearsAtPos = -1; mysteryColorThisRun = null; shadesAppearsAtPos = -1;
+  attempts = s.attempts || {}; picked = s.picked || {}; firstPick = s.firstPick || {};
+  layout = s.layout || {}; timedOutSet = s.timedOutSet || {};
+  runExamFeedback = !!s.runExamFeedback; examFeedbackNext = false;
+  raceTimed = false; raceTimedNext = false; raceQuestionDeadline = null; raceRevealUntil = null; raceRevealQi = null;
+  runLabel = s.runLabel || null; runMode = s.runMode || "drill";
+  runTrackable = !!s.runTrackable;
+  runStartLocked = s.runStartLocked ? new Set(s.runStartLocked) : null;
+  runStartBanners = s.runStartBanners ? new Set(s.runStartBanners) : null;
+  timedOut = false; paused = false; pauseStartedAt = null;
+  pos = Math.min(Math.max(0, s.pos | 0), order.length - 1);
+  meterEl.replaceChildren(); meterTicks = null; meterNowIndex = -1;
+  meterEl.hidden = false;
+  restartEl.hidden = true; hintEl.hidden = false;
+  appearanceBtn.hidden = true; homeBtn.hidden = true; profileBtn.hidden = true;
+  pauseBtn.hidden = false;
+  raceBarEl.hidden = true;
+  runStartTime = Date.now() - (s.elapsedMs || 0);
+  if(s.timerLeftMs != null) timerDeadline = Date.now() + s.timerLeftMs;
+  startTimer(true);
+  /* The question it stopped on, as it was: openQuestion() draws it fresh,
+     then what had already happened on it is put back, so an answered
+     question is not answered (and counted) twice. */
+  openQuestion();
+  if(s.cleared || s.lastWrong || s.hinted){
+    cleared = !!s.cleared; lastWrong = !!s.lastWrong; hinted = !!s.hinted;
+    if(typeof s.revealed === "boolean") revealed = s.revealed;
+    render();
+  }
+  /* The meter only knows how to move forward one tick at a time; the
+     ticks behind the current one are painted the way it would have. */
+  if(meterTicks){
+    for(let k = 0; k < pos && k < meterTicks.length; k++){
+      const qk = order[k];
+      meterTicks[k].className = "tick " + (runMode === "exam" ? "done" : ((attempts[qk] === 1 && !timedOutSet[qk]) ? "clean" : "messy"));
+    }
+  }
+  saveRunSession();
+}
+let resumeOfferShown = false;
+function scheduleResumeOffer(){
+  if(resumeOfferShown || testInProgress) return;
+  if(!readRunSession()) return;
+  resumeOfferShown = true;
+  setTimeout(() => showResumeOffer(0), 1500);
+}
+function showResumeOffer(tries){
+  const s = readRunSession();
+  if(!s || testInProgress) return;
+  if(!stage.querySelector('[data-screen="home"]')) return;
+  /* After a splash, a loading overlay or a tour - never on top of one. */
+  if(document.getElementById("splashscreen") || document.getElementById("genprofile-overlay") ||
+     document.getElementById("tour-overlay") || document.querySelector(".rs-spot")){
+    if(tries < 30) setTimeout(() => showResumeOffer(tries + 1), 800);
+    return;
+  }
+  document.getElementById("resume-offer")?.remove();
+  const wrap = document.createElement("div");
+  wrap.id = "resume-offer"; wrap.className = "resume-offer";
+  wrap.setAttribute("role", "dialog"); wrap.setAttribute("aria-modal", "true");
+  const card = document.createElement("div"); card.className = "resume-card";
+  const h = document.createElement("p"); h.className = "resume-title"; h.textContent = "Your test was interrupted";
+  const units = (s.cfg && s.cfg.units && s.cfg.units.length)
+    ? (s.cfg.units.length === 1 ? s.cfg.units[0] : s.cfg.units.length + " units") : "All units";
+  const mode = s.runMode === "exam" ? "Exam" : (s.isMissedRetake ? "Retake" : "Drill");
+  const sub = document.createElement("p"); sub.className = "resume-sub";
+  sub.textContent = mode + " · " + units + " · question " + (Math.min(s.pos + 1, s.order.length)) + " of " + s.order.length + ". Pick up where you left off?";
+  const actions = document.createElement("div"); actions.className = "resume-actions";
+  const go = document.createElement("button"); go.type = "button"; go.className = "next"; go.textContent = "Continue test"; go.id = "resume-go";
+  const no = document.createElement("button"); no.type = "button"; no.className = "next ghost"; no.textContent = "No thanks";
+  const close = () => { wrap.classList.remove("show"); setTimeout(() => wrap.remove(), 220); };
+  go.addEventListener("click", () => { close(); const fresh = readRunSession(); if(fresh) resumeRunSession(fresh); });
+  no.addEventListener("click", () => {
+    clearRunSession(); close();
+    /* Anything that run had earned was held for its results; with the run
+       gone, Home announces it instead. */
+    setTimeout(() => { try{ homeUnlocksAfterSync(); }catch(e){} }, 400);
+  });
+  actions.append(go, no);
+  card.append(h, sub, actions);
+  wrap.appendChild(card);
+  document.body.appendChild(wrap);
+  requestAnimationFrame(() => wrap.classList.add("show"));
+}
+document.addEventListener("visibilitychange", () => { if(document.visibilityState === "hidden") saveRunSession(); });
+window.addEventListener("pagehide", saveRunSession);
+
 /* What the top-left of a question says (build 303). The daily question
    has its own title on the screen and says nothing up here. */
 function runModeTitle(){
@@ -32833,8 +33035,8 @@ const CHARACTER_FEATS = {
      rule that no longer says so. The old field stays defaulted and
      unread. The key stays `bigtest400` - it is only a name. */
   bigtest400: { label: "Pass a test of " + RONIN_TEST_SIZE + " or more questions (" + PASS_MARK + "% or better)",
-                done: () => store.bigTest450Passed === true,
-                have: () => (store.bigTest450Passed === true ? 1 : 0), need: 1 },
+                done: () => store.bigTest500Passed === true || store.bigTest450Passed === true,
+                have: () => (store.bigTest500Passed === true || store.bigTest450Passed === true ? 1 : 0), need: 1 },
   /* THE WEEKLY BOARD, not the Practice Test. Corrected directly: "The
      unlock for the greek statue is wrong too, it's supposed to finished
      the week as the #1 on the weekly xp leaderboard."
@@ -36793,7 +36995,9 @@ function syncBottomTabAvatar(){
   tabIcon.classList.add("bottomtab-icon-avatar");
   if(store.avatarChar){
     const svg = buildAvatarCharSVG(store.avatarChar);
-    if(svg){ tabIcon.replaceChildren(svg); return; }
+    /* Alive in the tab bar too (build 304): "your character needs to
+       have its animations displayed as well." */
+    if(svg){ tabIcon.replaceChildren(svg); setCharState(tabIcon, "live"); return; }
   }
   tabIcon.textContent = getInitials(store.firstName) || "";
 }
@@ -36941,7 +37145,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               mysteryColorsFound: { red: false, orange: false, yellow: false, violet: false, white: false },
               testsUntilMystery: null, flareNextTestAt: 0, flareSchedRev: 0,
               savedCodePrompts: 0, savedCodeSaved: false,
-              dailyCorrectStreak: 0, dailyCorrectBest: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, friendsBest: 0, koiRevoked295: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bestTestStreak: 0,
+              dailyCorrectStreak: 0, dailyCorrectBest: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, friendsBest: 0, koiRevoked295: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bigTest500Passed: false, bestTestStreak: 0,
               weeklyWins: 0, weeklyTop3: 0, retakenQuestions: 0, hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, unlocksShown: null, seenUnlocks: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
               vrMatches: 0, vrWins: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
               fullTestsSeeded: false, practiceExamPerfect: false, banner: "", starfallKept: false, creditsApplied: [],
@@ -37183,6 +37387,7 @@ function applyLoadedData(got){
   store.practiceTestPassed = got.practiceTestPassed === true;
   store.bigTestPassed = got.bigTestPassed === true;
   store.bigTest450Passed = got.bigTest450Passed === true;
+  store.bigTest500Passed = got.bigTest500Passed === true;
   store.bestTestStreak = Math.max(0, Number(got.bestTestStreak) || 0);
   store.lastModified = typeof got.lastModified === "number" ? got.lastModified : 0;
   store.testHistory = Array.isArray(got.testHistory) ? got.testHistory.slice(0, 20) : [];
@@ -38601,6 +38806,7 @@ function wipeLocalProgressAndSettings(){
   store.practiceTestPassed = false;
   store.bigTestPassed = false;
   store.bigTest450Passed = false;
+  store.bigTest500Passed = false;
   store.bestTestStreak = 0;
   store.weeklyWins = 0; store.weeklyTop3 = 0; store.retakenQuestions = 0; store.hundoDay = null; store.hundoDayBest = 0; store.shadesFound = false; store.shadesAt = null; store.legacyChars = []; store.rankMapSeen = -1; store.rankMapFx244 = false; store.rankMapProg = null;
   store.unlocksShown = { chars: [], banners: [] };
@@ -39413,7 +39619,7 @@ function mergeLeavingAccount(src, note){
     const a = Array.isArray(store[k]) ? store[k] : [];
     store[k] = a.concat((src[k] || []).filter(x => a.indexOf(x) < 0)).slice(-300);
   });
-  ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "supernovaAchieved"]
+  ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "bigTest500Passed", "supernovaAchieved"]
     .forEach(k => { if(src[k] === true) store[k] = true; });
   if(src.mysteryColorsFound && store.mysteryColorsFound){
     Object.keys(src.mysteryColorsFound).forEach(c => { if(src.mysteryColorsFound[c]) store.mysteryColorsFound[c] = true; });
@@ -39775,7 +39981,7 @@ function mergeSameAccount(dst, src){
         if(a.some(x => b.indexOf(x) < 0)) res.otherHadLess = true;
       });
     } else if(okSeen(dst.seenUnlocks)) res.otherHadLess = true; }
-  ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "supernovaAchieved",
+  ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "bigTest500Passed", "supernovaAchieved",
    "starfallKept", "onboardingComplete", "fullTestsSeeded", "koiRevoked295"].forEach(k => orInto(dst, k, src[k]));
   if(src.mysteryColorsFound && typeof src.mysteryColorsFound === "object") orMap("mysteryColorsFound");
   /* this week's board: only where both copies are on the same week */
@@ -47094,6 +47300,7 @@ function pauseRun(){
      still startTimer()'s call, so a run with no timer shows none. */
   timerlineEl.classList.add("is-paused");
   hintEl.hidden = true;
+  saveRunSession();
   renderPausedScreen();
 }
 
@@ -55408,11 +55615,24 @@ function openPersonSheet(entry){
 
   const act = document.createElement("button");
   act.type = "button"; act.className = "next person-sheet-act";
-  const state = friendStateOf(entry.pub);
+  /* ---- YOUR OWN CARD (build 304) ----
+     "It won't say message or friend of course it would say go to
+     profile or something." Same card, same numbers as a classmate sees
+     - it is read off the same row - and the one thing to do with
+     yourself is go to your own Profile. */
+  const isSelf = !!(store.publicId && entry.pub === store.publicId);
+  const state = isSelf ? "self" : friendStateOf(entry.pub);
+  if(isSelf) sheet.classList.add("is-self");
   /* FOUR STATES, AND EACH ONE SAYS WHICH IN A WORD. A button that says
      "Add friend" to somebody who already asked you is how a request
      sits unanswered for a week. */
-  if(state === "friends"){
+  if(state === "self"){
+    act.textContent = "Go to profile";
+    act.addEventListener("click", () => {
+      overlay.remove();
+      showProfile("profile");
+    });
+  } else if(state === "friends"){
     /* ---- ALREADY FRIENDS IS NOT AN OUTCOME, IT IS A STARTING POINT ----
        "If you are already friends then it will just say message or
        something and it will open the direct chat you have with the
@@ -55446,7 +55666,7 @@ function openPersonSheet(entry){
   const hint = document.createElement("p");
   hint.className = "friend-hint person-sheet-hint";
   hint.textContent = "Friends are who you can invite to a chat or a Virtual Room.";
-  sheet.appendChild(hint);
+  if(!isSelf) sheet.appendChild(hint);
 
   const close = document.createElement("button");
   close.type = "button"; close.className = "next ghost person-sheet-close";
@@ -55503,7 +55723,10 @@ function showHome(){
     }
     return;
   }
-  testInProgress = false;
+  /* A run that was going when Home was asked for has been left on
+     purpose (Exit test, Leave to main menu): it is not one to offer back.
+     At launch nothing is in progress yet, so a saved session survives. */
+  if(testInProgress) clearRunSession();
   testInProgress = false;
   stopTimer(); stopQuestionTimer();
   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
@@ -55792,6 +56015,7 @@ function showHome(){
        just handed over (build 268): the bridge it left is holding the
        dim for this card. */
     scheduleHomeUnlocks(sceneBridgeOpen() ? 380 : undefined);
+    try{ scheduleResumeOffer(); }catch(e){}
   }
 }
 
@@ -58259,6 +58483,7 @@ function beginRun(indexes, label, practiceMinutes, missedRetake){
   try{ seedBannerCounters(); seedChallenges289(); runStartLocked = lockedCharacterSet(); runStartBanners = earnedBannerSet(); }
   catch(e){ runStartLocked = null; runStartBanners = null; }
   rememberOpeners(indexes);
+  clearRunSession();
   order = indexes.slice();
   testInProgress = true;
   lastRunPool = indexes.slice();
@@ -58528,6 +58753,7 @@ function openQuestion(instant){
   hinted = false;
   revealed = runMode === "exam" ? true : !cfg.recall;
   render();
+  saveRunSession();
   /* The actual, confirmed fix for a real, reported bug: starting a
      test itself always landed at true scroll 0, but advancing to the
      next question consistently left the page scrolled down (measured
@@ -59123,6 +59349,7 @@ function choose(slot){
    lands in between (another pick) cancels this one, and a pause in the
    gap wins: the question is not drawn back over the pause screen. */
 function renderAfterPress(qi, slot){
+  saveRunSession();
   clearTimeout(choicePressTimer); choicePressTimer = null;
   const btn = theme.reduceMotion ? null : stage.querySelector('.qpanel .choice[data-index="' + slot + '"]');
   if(!btn){ render(); return; }
@@ -61889,6 +62116,9 @@ function homeUnlockBlocked(){
        unlock landing on top of the dock somebody had just opened. It
        waits until they close it. */
     document.querySelector(".chatdock.is-open") ||
+    /* A run waiting to be resumed (build 304) holds anything it earned
+       for its own results; if it is turned down, the queue plays then. */
+    document.getElementById("resume-offer") || !!readRunSession() ||
     (store.pendingBadgeUnlocks || []).length);
 }
 /* A beat after Home settles - long enough that the screen is read as
@@ -62810,6 +63040,7 @@ function resultsScreenUp(){
 }
 
 function summarize(){
+  clearRunSession();
   /* Settle what counts as already seen before anything can be earned
      (build 299) - a no-op once the record exists. */
   try{ if(store.onboardingComplete) ensureSeenUnlocks(); }catch(e){}
@@ -63093,8 +63324,8 @@ function summarize(){
        (Scoring a timeout over the whole test, blanks as wrong, is the
        way to allow it, if that is ever wanted.) */
     /* The Ronin (build 264): RONIN_TEST_SIZE questions or more in one run, passed. */
-    if(order.length >= RONIN_TEST_SIZE && pct >= PASS_MARK && !store.bigTest450Passed){
-      store.bigTest450Passed = true;
+    if(order.length >= RONIN_TEST_SIZE && pct >= PASS_MARK && !store.bigTest500Passed){
+      store.bigTest500Passed = true;
       saveStore();
     }
     if(practiceTestMinutes != null && pct >= PASS_MARK && !store.practiceTestPassed){
@@ -72061,6 +72292,7 @@ function buildLastWeekPodium(top, entries){
     const av = document.createElement("span");
     av.className = "lw-podium-av";
     av.appendChild(buildAvatarCharSVGSafe(t.avatar));
+    setCharState(av, "live");
     const nm = document.createElement("span");
     nm.className = "lw-podium-name"; nm.textContent = t.name;
     const pts = document.createElement("span");
@@ -72068,7 +72300,7 @@ function buildLastWeekPodium(top, entries){
     const block = document.createElement("span");
     block.className = "lw-podium-block"; block.textContent = String(i + 1);
     col.append(av, nm, pts, block);
-    const entry = entries && t.pub && t.pub !== store.publicId ? entries.find(e => e && e.pub === t.pub) : null;
+    const entry = entries && t.pub ? entries.find(e => e && e.pub === t.pub) : null;
     if(entry){
       col.classList.add("is-tappable");
       col.setAttribute("role", "button");
@@ -72271,6 +72503,10 @@ function renderRankingRows(rows, entries, board, opts){
     avatar.className = "rank-avatar";
     avatar.appendChild(buildAvatarCharSVGSafe(entry.avatarChar));
     avatarWrap.appendChild(avatar);
+    /* Alive on the boards (build 304): "make all characters in the
+       leaderboard have their animations, would make people want them
+       all". A row scrolled out of view is paused (lbWatchOffscreen). */
+    setCharState(avatarWrap, "live");
     /* ---- NO EMBLEM ON THE CHARACTER HERE ----
        "Let's also remove the rank icon that's showing on the character
        while looking at character in the leaderboard." The emblem was
@@ -72315,10 +72551,11 @@ function renderRankingRows(rows, entries, board, opts){
     if(typeof moved === "number" && moved !== 0) stats.appendChild(buildTrendMark(moved));
 
     /* TAP A CLASSMATE, GET THE ONE THING YOU WANT FROM A BOARD: a way
-       to add them. Your own row is not tappable - there is nothing to
-       do with yourself - and it is the row already marked `isMe`, so
-       there is no second test to keep in step. */
-    if(!isMe){
+       to add them. Your own row is tappable too (build 304) - "I should
+       be able to click myself on the leaderboard to view stats similar
+       to others" - and openPersonSheet swaps the friend button for Go
+       to profile on it, off the same `pub` test as `isMe`. */
+    {
       row.classList.add("is-tappable");
       row.setAttribute("role", "button");
       row.tabIndex = 0;
@@ -72331,6 +72568,23 @@ function renderRankingRows(rows, entries, board, opts){
     if(cols){ row.classList.add("has-cols"); row.appendChild(cols); }
     rows.appendChild(row);
   });
+  lbWatchOffscreen(rows);
+}
+
+/* Forty animated characters in one list is forty svgs repainting every
+   frame, most of them below the fold. Same treatment as the banner and
+   swatch pickers: a row out of view is paused, one in view plays, so
+   nothing anybody can see changes. One observer per list, replaced on
+   every rebuild and dropped once the list leaves the document. */
+function lbWatchOffscreen(rows){
+  if(!rows || typeof IntersectionObserver !== "function") return;
+  if(rows._lbIo) rows._lbIo.disconnect();
+  const io = new IntersectionObserver(list => {
+    if(!document.contains(rows)){ io.disconnect(); return; }
+    list.forEach(e => e.target.classList.toggle("is-offscreen", !e.isIntersecting));
+  }, { rootMargin: "120px 0px" });
+  rows._lbIo = io;
+  rows.querySelectorAll(".rank-row, .lw-podium-spot").forEach(r => { r.classList.add("is-offscreen"); io.observe(r); });
 }
 
 /* The three columns on an Overall row: the rank (its emblem over its
@@ -72515,7 +72769,11 @@ function currentRankLine(){
    is the very next rank - a bar of how far into that step you are. */
 function rankDetail(rankKey){
   const step = rankStepProgress();
-  const out = { desc: "Reach " + RANK_DISPLAY_NAME[rankKey] + " rank.", note: currentRankLine() };
+  /* What the rank takes, then where you are (build 304) - "Reach Gold
+     rank" alone sends you off to find out what Gold is. */
+  const rule = TIER_UNLOCKS[rankKey];
+  const takes = rule && rule.label ? RANK_DISPLAY_NAME[rankKey] + " takes " + rule.label.replace(/^Reach /, "") + ". " : "";
+  const out = { desc: "Reach " + RANK_DISPLAY_NAME[rankKey] + " rank.", note: takes + currentRankLine() };
   if(step.next === rankKey){ out.frac = step.pct; out.count = ""; }
   return out;
 }
@@ -72593,8 +72851,50 @@ function setBarFill(el, v){
   el.classList.add("sbar");
   el.style.setProperty("--fill", typeof v === "number" ? v + "%" : String(v));
 }
+/* ---- EVERY CARD SAYS HOW, IN ONE PLAIN LINE (build 304) ----
+   "When holding down a character unlock, there's information at the
+   bottom of only some ... ensure it's all on ... simple and not
+   confusing." The line under the bar came from a `note` on the feat or
+   the banner, and only five of them had one. This is the rest, kept in
+   one table rather than spread across the two definition lists so a
+   new unlock is one line to add - and a card with no entry still gets a
+   line for its kind (unlockNoteFor's fallback) rather than nothing.
+   Keyed "kind:id". Each says what counts, in words a first-week
+   classmate would follow; the "what" is already the line above it. */
+const UNLOCK_NOTES = {
+  "character:detective": "The daily question on Home. A miss starts a new run, but your best run is kept.",
+  "character:zeus": "The This Week board on the Leaderboard. Be #1 on it when the week ends.",
+  "character:poseidon": "The This Week board on the Leaderboard. The 3 weeks don't have to be in a row.",
+  "character:clown": "Come first in a Virtual Room match. Wins add up over time.",
+  "character:marksman": "Right on the first try, 250 times in a row, inside one test. A miss starts it over.",
+  "character:astronaut": "A hundo is 100% on a whole unit. Get one in 5 different units on the same day.",
+  "character:hacker": "All your study time counts, added up across every day.",
+  "character:timekeeper": "Any day you study counts once. The days don't have to be in a row.",
+  "character:ronin": "One test, " + RONIN_TEST_SIZE + " questions or more, finished at " + PASS_MARK + "% or better. Pick enough units to reach " + RONIN_TEST_SIZE + ".",
+  "character:voidwalker": "They hide inside tests. Keep your eyes open.",
+  "character:umbra": "A secret. Its challenge shows here once you have Void.",
+  "character:singularity": "A secret. Its challenge shows here once you have Umbra.",
+  "banner:hundos100": "A hundo is 100% on a whole unit. Every hundo you've earned counts.",
+  "banner:hundos250": "A hundo is 100% on a whole unit. Every hundo you've earned counts.",
+  "banner:vr50": "Every Virtual Room match you finish counts, win or lose.",
+  "banner:study50": "All your study time counts, added up across every day.",
+  "banner:correct5000": "Every right answer counts, in any mode.",
+  "banner:level80": "Every test earns XP towards your next level. " + LEVEL_CAP + " is the top level."
+};
+function unlockNoteFor(o){
+  if(!o) return "";
+  const hit = UNLOCK_NOTES[o.kind + ":" + o.id];
+  if(hit) return hit;
+  if(o.kind === "badge") return "A hundo is 100% on the whole unit, every question in it.";
+  /* Nothing to say about something everybody already has. */
+  if(o.kicker === "Starter" || !o.id) return "";
+  if(o.kind === "character") return "Keep studying - it counts from every mode.";
+  if(o.kind === "banner") return "Keep studying - it counts from every mode.";
+  return "";
+}
 function showUnlockDetail(o){
   if(!o) return;
+  if(!o.note){ const n = unlockNoteFor(o); if(n) o.note = n; }
   const overlay = document.createElement("div");
   overlay.className = "invite-overlay";
   const sheet = document.createElement("div");
@@ -72667,12 +72967,19 @@ function showUnlockDetail(o){
     fill.className = "unlock-card-fill";
     bar.appendChild(fill);
     sheet.appendChild(bar);
-    /* Starts at zero as a transform and slides once the sheet has
-       settled, so it is not competing with the sheet's own entrance. */
-    setBarFill(fill, 0);
-    setTimeout(() => requestAnimationFrame(() => {
-      setBarFill(fill, Math.max(2, Math.min(100, Math.round(frac * 1000) / 10)));
-    }), 180);
+    /* FROM THE START, ON EVERY DEVICE (build 304): "when opening up the
+       pop to see the green progress bar, it starts in the middle not at
+       the beginning". This bar slid in as a transform (setBarFill), and
+       iOS does not clip a composited, transformed child to a rounded
+       overflow:hidden parent the way Chromium does - so on the phone the
+       fill could show part-way along before it moved. This one bar grows
+       its WIDTH instead: one small element, no layer to escape the clip,
+       and the empty state is painted (two frames) before it fills. */
+    fill.style.width = "0%";
+    const target = Math.max(2, Math.min(100, Math.round(frac * 1000) / 10));
+    setTimeout(() => requestAnimationFrame(() => requestAnimationFrame(() => {
+      fill.style.width = target + "%";
+    })), 220);
     /* A count under the bar only where it is worth reading: never for a
        one-off ("0/1"), never for a rank step (the note says the rank). */
     if(o.unlocked){

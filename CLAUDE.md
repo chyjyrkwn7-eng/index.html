@@ -10484,3 +10484,78 @@ XP. `setActiveNav()` closes a deck left by any other route.
 Gate: check-behaviour section 73 (both reference devices); against build
 302 it fails 43 checks.
 
+
+### Build 304 - an interrupted test comes back, your own card, live characters, a line on every unlock
+
+**An interrupted test is offered back.** *"I left the app for a while, when
+I came back it took me back to the main menu ... pop up ... your test
+session was interrupted, would you like to continue."* iOS throws an idle
+home-screen app away, and every run lived in globals. `saveRunSession()`
+writes the run to `class26e.runsession.v1` (localStorage, per device, not
+`store` - it is where this device was, not progress) at the end of
+`openQuestion`, after every pick (`renderAfterPress`), on `pauseRun`, and on
+`visibilitychange`→hidden and `pagehide`. `summarize()`, `beginRun()` and
+`showHome()` with a test in progress clear it. Only Drill and Exam runs are
+saved (`runSessionSavable`): never the daily question, a Virtual Room, or a
+timed race - those are live against other people and cannot be paused by
+one of them. Sessions older than `RUN_SESSION_MAX_AGE_MS` (24h) are dropped.
+`showHome()` → `scheduleResumeOffer()` puts `#resume-offer` up ~1.5s after
+Home lands; Continue rebuilds the run with `resumeRunSession(s)` (order,
+pos, attempts, picks, layout, cleared/hinted/revealed, the timer's elapsed
+and remaining time, and the run's locked/banner snapshots so a held unlock
+is still held), No thanks clears it.
+
+**That is also why a character unlock popped up on rejoin.** Unlocks earned
+mid-test are held for that test's results screen. A run abandoned by iOS
+never reached it, so the Home queue announced the unlock at the next launch,
+out of nowhere. `homeUnlockBlocked()` now also waits while `#resume-offer`
+is up or a saved session exists; No thanks hands back to
+`homeUnlocksAfterSync`.
+
+**Ronin is 500.** `RONIN_TEST_SIZE = 500` and a new
+`store.bigTest500Passed`; `bigTest450Passed` is still read, so nobody who
+earned it at 450 loses it (same reasoning as the 400→450 move: a new flag,
+never the old one with a new number). Defaulted in `applyLoadedData`, the
+reset, the initial store and both merge OR-lists.
+
+**Every unlock card has a line saying how** (`UNLOCK_NOTES`, keyed
+`"kind:id"`, read by `unlockNoteFor()` in `showUnlockDetail()` whenever the
+detail has no `note` of its own). A new feat or banner needs one line
+there; anything without one still gets a generic line for its kind rather
+than nothing, and starters get nothing, because there is nothing to earn.
+Rank cards say what the rank takes (`TIER_UNLOCKS[k].label`) before where
+you are.
+
+**The unlock card's bar fills from its left end.** It used `setBarFill`
+(a transform), and iOS does not clip a composited, transformed child to a
+rounded `overflow:hidden` parent, so the fill could show part-way along
+before it moved. This one bar animates `width` from 0 after two frames.
+
+**The Default banner tile** had a theme-coloured gradient behind its art
+that bled out as a rim round the tile; it is a flat `#10131A`, and the
+banner art inside every tile is `clip-path:inset(0 round 11px)` - a mask on
+the parent would also clip the selection ring.
+
+**Customize sits above the character's glow** (`.profile-hero-id`,
+`.namedisplay-row` at `z-index:3`).
+
+**Your own leaderboard row opens your card.** Same `openPersonSheet()`,
+same numbers a classmate sees; on your own `pub` the button is **Go to
+profile** and the friends line is left off. The podium's own spot is
+tappable too.
+
+**Characters are alive on the boards and in the tab bar.** Every row's
+avatar (and the podium's) gets `setCharState(..., "live")`; a row scrolled
+out of view gets `.is-offscreen` from one `IntersectionObserver` per list
+(`lbWatchOffscreen`) and its animations pause - the same rule the banner
+and swatch pickers already use, so forty characters cost what the visible
+ten do. `syncBottomTabAvatar()` makes the tab's character live.
+
+Gate: `check-behaviour` section 74 (`check_b304`), written against 303 and
+red there on every group.
+
+**Gates that named a 303 label were re-read.** 303 renamed Flagged to
+Starred and Review to Learn on request, and five older checks asserted the
+old words (and one counted the start sheet's hidden option toggles). They
+now accept either wording or count only visible toggles - the shape, not the
+string, as **A GATE THAT NAMES A LABEL GOES STALE** says.

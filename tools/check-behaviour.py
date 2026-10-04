@@ -1939,7 +1939,7 @@ def check_b234(br):
         res.timerAfter = cfg.timer;
         /* Build 250: Shuffle and Hide answers are their own card; the fold is the timer alone. */
         const mb = sh.querySelector('.more-body'), rows = sh.querySelector('.optionsmodal-body > .sect > .opt-rows');
-        res.optsFolded = !!mb && !mb.classList.contains('open') && !mb.querySelector('.opt-rows') && !!rows && rows.querySelectorAll('.opt').length === 2
+        res.optsFolded = !!mb && !mb.classList.contains('open') && !mb.querySelector('.opt-rows') && !!rows && rows.querySelectorAll('.opt:not([hidden])').length === 2
           && !!mb.querySelector('.timer-sect');
         cfg.timer = 'off';
         return res; });
@@ -2221,7 +2221,7 @@ def check_b235b(br):
     # don't show that ... If there's no timer, don't show that either ...
     # And if it's all questions, don't show that."
     check("the top box lists only the settings that are on, each with an icon, and no question count",
-          isinstance(t, dict) and t.get("icons") and "20 min countdown" in tx and "Flagged" in tx
+          isinstance(t, dict) and t.get("icons") and "20 min countdown" in tx and ("Flagged" in tx or "Starred" in tx)
           and not any(x in ("All questions", "In order", "No timer") for x in tx)
           and not any(x.startswith("All ") and x[4:].isdigit() for x in tx) and not any(" of " in x for x in tx)
           and "20 min countdown" in t.get("state", ""), t)
@@ -2286,7 +2286,7 @@ def check_b236(br):
       await T('list', () => { const d = document.querySelector('.unitdetail');
         const bar = d.querySelector('.unitdetail-head .pick-stars');
         return { listing: d.classList.contains('is-listing'), barHidden: !bar || getComputedStyle(bar).display === 'none',
-                 search: !!d.querySelector('.unitdetail-search input'), testFlag: !!d.querySelector('.unitdetail-q .flagbtn .flagbanner'),
+                 search: !!d.querySelector('.unitdetail-search input'), testFlag: !!d.querySelector('.unitdetail-q .flagbtn .flagbanner, .unitdetail-q .flagbtn.qflag .starfill'),
                  qs: d.querySelectorAll('.unitdetail-q').length }; });
       await T('search', async () => { const i = document.querySelector('.unitdetail-search input');
         i.value = 'zzzzqqq'; i.dispatchEvent(new Event('input')); await wait(100);
@@ -2322,7 +2322,8 @@ def check_b236(br):
     check("Zeus's symbol sits on a dark carved panel, and Poseidon's id draws the Sheriff", r["panels"] == [True, True], r["panels"])
     cp = r["copy"] if isinstance(r["copy"], dict) else {}
     check("the doors say what they open, and Hundos says nothing about the badge",
-          cp.get("doors") == ["Tap to see flagged questions"]
+          # Build 303 made the flag a star; the door's shape is what counts.
+          cp.get("doors") in (["Tap to see flagged questions"], ["Tap to see starred questions"])
           and "badge" not in (cp.get("hundoSub") or "").lower(), r["copy"])
     l = r["list"] if isinstance(r["list"], dict) else {}
     check("the list drops the badge bar, has a search, and the in-test flag",
@@ -4182,7 +4183,7 @@ def check_b245_start_pill(br):
       const cb = [...document.querySelectorAll('.picks .pick:not(.pick-flagged-all)')].find(p => !/Penal/.test(p.textContent) && p.querySelector('input')).querySelector('input');
       cb.click(); await wait(400);
       return document.getElementById('bottomtab-start').getAttribute('aria-label') || ''; }""")
-    check("in Review mode Start says review, not drill", lab.lower().startswith("start review"), lab)
+    check("in Review mode Start says review, not drill", lab.lower().startswith(("start review", "start learning")), lab)
     ctx.close()
 
 
@@ -6528,7 +6529,7 @@ def check_b297(br):
           r.get("sheetOpen") is True and sw.get("closed") is True and sw.get("screen") == "setup", sw)
     ls = r.get("list") or {}
     check("the box lists exactly the flagged questions, each with the test's flag, on",
-          ls.get("n") == 3 and ls.get("all") and ls.get("title") == "Flagged Questions" and ls.get("flags") == [True, True, True], ls)
+          ls.get("n") == 3 and ls.get("all") and ls.get("title") in ("Flagged Questions", "Starred Questions") and ls.get("flags") == [True, True, True], ls)
     uh = r.get("unflagHere") or {}
     check("unflagging there takes the flag off and leaves the question, dimmed",
           uh.get("flagged") is False and uh.get("dimmed") is True and uh.get("still") is True, uh)
@@ -6594,7 +6595,7 @@ def check_b297(br):
       const b = row.getBoundingClientRect(); return [b.left + b.width / 2, b.top + b.height / 2]; }""")
     pg.mouse.move(*box); pg.mouse.down(); pg.wait_for_timeout(900); pg.mouse.up(); pg.wait_for_timeout(800)
     r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms));
-      const d = [...document.querySelectorAll('button')].find(b => /Flagged/.test(b.textContent) && b.offsetParent && b.closest('[class*=unitdetail]'));
+      const d = [...document.querySelectorAll('button')].find(b => /Flagged|[Ss]tarred/.test(b.textContent) && b.offsetParent && b.closest('[class*=unitdetail]'));
       d && d.click(); await wait(700);
       const fl = [...document.querySelectorAll('.unitdetail-q .flagbtn')];
       return { n: fl.length, shared: fl.every(f => f.classList.contains('qflag') && f.classList.contains('on')),
@@ -7458,7 +7459,7 @@ def check_b302_flagnote(br):
             bad.append("%s: label is off the screen" % tag)
         if not r.get("onLine"):
             bad.append("%s: label is not on the flag's line" % tag)
-        if r.get("text") != "Flagged":
+        if r.get("text") not in ("Flagged", "Starred"):
             bad.append("%s: label reads %r" % (tag, r.get("text")))
     check("the flag label lands beside the flag on all %d sizes" % len(sizes), not bad, bad[:6])
 
@@ -7608,6 +7609,131 @@ def check_b303(br):
         check(dev + ": the list's questions are cards with room between them", (r.get("listGap") or 0) >= 14 and (r.get("listCard") or 0) >= 10, (r.get("listGap"), r.get("listCard")))
 
 
+def check_b304(br):
+    """Build 304: an interrupted test is offered back, Ronin at 500, the
+    unlock card's bar fills from its start, the Default banner tile has
+    no theme rim, your own leaderboard row opens your card with Go to
+    profile, characters move on the boards and in the tab bar, and every
+    unlock card has a line saying how. Written against build 303; every
+    group fails there."""
+    print("\n74. build 304: resume, Ronin 500, unlock cards, your own card, live characters")
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        CLEAR = "setInterval(()=>[...document.body.children].forEach(n=>{ if(getComputedStyle(n).position==='fixed' && /challenge complete|character unlocked/i.test(n.textContent||'')) n.remove(); }), 40);"
+        r = pg.evaluate("""async ()=>{
+          const wait = ms => new Promise(r => setTimeout(r, ms));
+          const out = {};
+          try{
+          %s
+          document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());
+          cfg.mode = 'drill'; cfg.units = ['Identity Crimes']; cfg.versions = {}; cfg.source = 'all'; cfg.size = 0; cfg.timer = 'up';
+          showSetup(); await wait(400); document.getElementById('nextbtn').click(); await wait(400);
+          document.querySelector('.sheet-begin-btn').click();
+          for(let t = 0; t < 80 && !document.querySelector('.qpanel .choice'); t++) await wait(100);
+          await wait(400);
+          const pick = s => document.querySelector('.qpanel .choice[data-index="' + s + '"]').click();
+          pick(correctSlot(order[pos])); await wait(300); advance(); await wait(600);
+          pick(correctSlot(order[pos])); await wait(400);
+          out.pos = pos; out.q = order[pos];
+          out.saved = !!localStorage.getItem('class26e.runsession.v1');
+          }catch(e){ out.err = String(e).slice(0, 200); }
+          return out;
+        }""" % CLEAR)
+        # iOS throws the app away: the page loads again from nothing
+        pg.reload()
+        pg.wait_for_timeout(2600)
+        pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __stub(); if(!document.querySelector('[data-screen=\"home\"]')) showHome();}")
+        pg.wait_for_timeout(2600)
+        r2 = pg.evaluate("""async ()=>{
+          const wait = ms => new Promise(r => setTimeout(r, ms));
+          const out = {};
+          try{
+          %s
+          const offer = document.getElementById('resume-offer');
+          out.offer = offer ? offer.textContent : null;
+          if(offer){ document.getElementById('resume-go').click(); await wait(900); }
+          out.pos = typeof pos === 'number' ? pos : null; out.q = order && order[pos];
+          out.inTest = testInProgress === true && !!document.querySelector('.qpanel .choice');
+          /* leave it, so nothing below is inside a test */
+          if(typeof clearRunSession === 'function') clearRunSession();
+          testInProgress = false; showHome(); await wait(600);
+          /* Ronin */
+          out.ronin = CHARACTER_FEATS.bigtest400.label;
+          /* the unlock card's bar, from its start */
+          showUnlockDetail(characterDetail('hacker'));
+          const fill = document.querySelector('.unlock-card-fill'), bar = document.querySelector('.unlock-card-bar');
+          out.barAtOpen = fill ? fill.getBoundingClientRect().width : null;
+          await wait(1500);
+          out.barLater = fill ? fill.getBoundingClientRect().width : null;
+          out.barLeft = fill && bar ? Math.round(fill.getBoundingClientRect().left - bar.getBoundingClientRect().left) : null;
+          out.note = (document.querySelector('.unlock-card-note') || {}).textContent || '';
+          document.querySelectorAll('.invite-overlay').forEach(n => n.remove());
+          /* every unlock card has a line saying how */
+          const none = [];
+          const look = o => { if(!o || o.kicker === 'Starter' || !o.id) return; if(!(o.note || unlockNoteFor(o))) none.push(o.kind + ':' + o.id); };
+          AVATAR_CHARACTERS.forEach(c => look(characterDetail(c.id)));
+          BANNERS.forEach(b => look(bannerDetail(b.id)));
+          Object.keys(TIER_UNLOCKS).forEach(k => look(themeDetail(k)));
+          out.noNote = none;
+          out.rankNote = themeDetail('veteran').note;
+          /* the Default banner tile: no theme colour bleeding as a rim */
+          showCustomize(); await wait(700);
+          const art = document.querySelector('.banner-opt.is-none .banner-opt-art');
+          out.noneBg = art ? getComputedStyle(art).backgroundImage : 'missing';
+          /* your own row, your own card */
+          if(!store.publicId) store.publicId = 'me-pub-304';
+          const chars = AVATAR_CHARACTERS.map(c => c.id), rows = [];
+          for(let i = 0; i < 24; i++) rows.push({ pub: 'p' + i, firstName: 'Classmate' + i, avatarChar: chars[(i * 3) %% chars.length], level: 60 - i * 2, badges: Math.max(0, 14 - i), hundos: 80 - i, xp: 90000 - i * 3000, correct: 9000 - i * 300, week: 4000 - i * 120, lastModified: Date.now() });
+          rows.splice(3, 0, { pub: store.publicId, firstName: store.firstName, avatarChar: store.avatarChar, level: 57, badges: 12, hundos: 70, xp: 80000, correct: 8000, week: 3900, lastModified: Date.now() });
+          leaderboardRows = rows;
+          showRankings('level'); await wait(1500);
+          const all = [...document.querySelectorAll('.rank-row:not(.rank-row-head)')];
+          out.rows = all.length;
+          out.liveRows = all.filter(x => x.querySelector('.rank-avatar-wrap.char-live')).length;
+          out.offRows = all.filter(x => x.classList.contains('is-offscreen')).length;
+          const me = document.querySelector('.rank-row.lb-row-me');
+          out.meTappable = !!(me && me.classList.contains('is-tappable'));
+          if(me){ me.click(); await wait(700); }
+          const card = document.querySelector('.person-card');
+          out.cardAct = card ? (card.querySelector('.person-sheet-act') || {}).textContent : null;
+          out.cardHint = card ? !!card.querySelector('.person-sheet-hint') : null;
+          if(card){ card.querySelector('.person-sheet-act').click(); await wait(700); }
+          out.toProfile = !!document.querySelector('.profile-hero') && !document.querySelector('.invite-overlay');
+          /* the Customize button is not under the character's glow */
+          const cb = document.querySelector('.profile-edit-btn');
+          if(cb){ const b = cb.getBoundingClientRect(); const hit = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2); out.customizeOnTop = !!(hit && (hit === cb || cb.contains(hit))); }
+          /* the tab bar's character moves */
+          store.avatarChar = chars.find(id => { const d = AVATAR_CHARACTERS.find(c => c.id === id); return d && !d.unlock && !d.feat; }) || chars[0];
+          syncBottomTabAvatar(); await wait(300);
+          out.tabLive = !!document.querySelector('#bottomtab-profile .bottomtab-icon.char-live svg');
+          }catch(e){ out.err = String(e).slice(0, 200); }
+          return out;
+        }""" % CLEAR)
+        ctx.close()
+        check(dev + ": no error in the 304 run", "err" not in r and "err" not in r2, (r.get("err"), r2.get("err")))
+        check(dev + ": a run in progress is saved as it goes", r.get("saved") is True)
+        check(dev + ": coming back, it asks to continue the interrupted test",
+              bool(r2.get("offer")) and "interrupted" in (r2.get("offer") or "").lower(), r2.get("offer"))
+        check(dev + ": and Continue picks up on the same question",
+              r2.get("inTest") is True and r2.get("pos") == r.get("pos") and r2.get("q") == r.get("q"), (r.get("pos"), r2.get("pos"), r2.get("inTest")))
+        check(dev + ": Ronin asks for 500 questions", "500" in (r2.get("ronin") or ""), r2.get("ronin"))
+        check(dev + ": the unlock card's bar starts empty at its left end and fills",
+              r2.get("barAtOpen") is not None and r2["barAtOpen"] < 3 and (r2.get("barLater") or 0) > 3 and r2.get("barLeft") == 0,
+              (r2.get("barAtOpen"), r2.get("barLater"), r2.get("barLeft")))
+        check(dev + ": every unlock card has a line saying how", r2.get("noNote") == [] and bool(r2.get("note")), (r2.get("noNote"), r2.get("note")))
+        check(dev + ": a rank card says what the rank takes", "takes level" in (r2.get("rankNote") or ""), r2.get("rankNote"))
+        check(dev + ": the Default banner tile has no theme colour behind it", r2.get("noneBg") == "none", r2.get("noneBg"))
+        check(dev + ": your own leaderboard row is tappable", r2.get("meTappable") is True)
+        check(dev + ": and opens your card with Go to profile, no friend line",
+              r2.get("cardAct") == "Go to profile" and r2.get("cardHint") is False and r2.get("toProfile") is True,
+              (r2.get("cardAct"), r2.get("cardHint"), r2.get("toProfile")))
+        check(dev + ": every character on the board is alive, and rows out of view pause",
+              r2.get("rows", 0) > 10 and r2.get("liveRows") == r2.get("rows") and (r2.get("offRows") or 0) > 0,
+              (r2.get("rows"), r2.get("liveRows"), r2.get("offRows")))
+        check(dev + ": the character in the tab bar is alive", r2.get("tabLive") is True)
+        check(dev + ": the Customize button is on top of the character's glow", r2.get("customizeOnTop") is True, r2.get("customizeOnTop"))
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     only = os.environ.get("ONLY_B245")
@@ -7702,6 +7828,7 @@ def main():
             check_b302_flares(br)
             check_b302_flagnote(br)
             check_b303(br)
+            check_b304(br)
         finally:
             br.close()
     SERVER.shutdown()

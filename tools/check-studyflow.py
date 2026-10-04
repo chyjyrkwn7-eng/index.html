@@ -164,11 +164,11 @@ with sync_playwright() as pw:
     pg.evaluate("""()=>{ const ids=QUESTIONS.map((q,i)=>i).filter(i=>QUESTIONS[i].topic==='Identity Crimes'); const now=Date.now();
       /* build 284: Flagged is the bank besides All (Most missed is gone) */
       store.flagged = store.flagged || {}; ids.slice(2,9).forEach(i=>{ store.flagged[KEYS[i]] = true; }); saveStore();
-      cfg.mode='review'; showSetup(); }""")
+      cfg.mode='review'; cfg.flashcards=false; showSetup(); }""")
     pg.wait_for_timeout(600)
     pg.evaluate("()=>[...document.querySelectorAll('.pick')].find(p=>p.textContent.includes('Identity Crimes')).click()"); pg.wait_for_timeout(300)
     pg.evaluate("()=>document.getElementById('nextbtn').click()"); pg.wait_for_timeout(400)
-    pg.evaluate("()=>[...document.querySelectorAll('.bank-opt')].find(r=>/Flagged/.test(r.textContent)).click()"); pg.wait_for_timeout(300)
+    pg.evaluate("()=>[...document.querySelectorAll('.bank-opt')].find(r=>/Flagged|Starred/.test(r.textContent)).click()"); pg.wait_for_timeout(300)
     sheet = pg.evaluate("()=>({line:document.querySelector('.sheet-summary-line').textContent, start:document.getElementById('nextbtn').textContent,"
                         " missed:flaggedIndexes().filter(i=>QUESTIONS[i].topic==='Identity Crimes').length})")
     ck("the sheet counts the flagged questions, not the unit", sheet["line"].endswith(" %d question%s" % (sheet["missed"], "" if sheet["missed"] == 1 else "s")), sheet)
