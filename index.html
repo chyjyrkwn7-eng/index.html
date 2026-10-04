@@ -9423,6 +9423,40 @@
   @keyframes cosmic-plasma-a{ 0%{ transform:translate(-8%, -4%) rotate(0deg) scale(1); } 100%{ transform:translate(9%, 7%) rotate(40deg) scale(1.12); } }
   @keyframes cosmic-plasma-b{ 0%{ transform:translate(7%, 5%) rotate(0deg) scale(1.08); } 100%{ transform:translate(-9%, -6%) rotate(-35deg) scale(.95); } }
   [data-reduce-motion="true"] .cosmic-plasma span{ animation:none; }
+  /* THE SMOKE (build 304) - see cosmicSmokeURL. Clipped by clip-path as
+     well as the radius: iOS does not clip a composited, transformed child
+     to a rounded overflow:hidden parent, and these are exactly that. The
+     lit layer is the theme's warm colour lifted towards white, the shade
+     layer the theme's cool colour pushed towards black, so on every theme
+     the smoke is that theme's - and both are visible on a light sphere
+     and a dark one. */
+  .cosmic-plasma{ clip-path:circle(50% at 50% 50%); opacity:.9; }
+  .cosmic-plasma .cosmic-smoke{
+    position:absolute; inset:-45%; display:block; will-change:transform;
+    -webkit-mask-image:var(--smoke); mask-image:var(--smoke);
+    -webkit-mask-size:100% 100%; mask-size:100% 100%;
+  }
+  .cosmic-plasma .cosmic-smoke-lit{
+    background:color-mix(in srgb, var(--theme-c1, #FFD37A) 55%, #fff);
+    opacity:.5;
+    animation:cosmic-smoke-a 26s linear infinite;
+  }
+  .cosmic-plasma .cosmic-smoke-shade{
+    background:color-mix(in srgb, var(--theme-c3, #6A3FB0) 45%, #000);
+    opacity:.55;
+    animation:cosmic-smoke-b 34s linear infinite;
+  }
+  @keyframes cosmic-smoke-a{
+    0%{ transform:rotate(0deg) translate(4%, -3%) scale(1); }
+    50%{ transform:rotate(180deg) translate(-5%, 4%) scale(1.08); }
+    100%{ transform:rotate(360deg) translate(4%, -3%) scale(1); }
+  }
+  @keyframes cosmic-smoke-b{
+    0%{ transform:rotate(0deg) translate(-4%, 3%) scale(1.1); }
+    50%{ transform:rotate(-180deg) translate(5%, -4%) scale(1); }
+    100%{ transform:rotate(-360deg) translate(-4%, 3%) scale(1.1); }
+  }
+  [data-reduce-motion="true"] .cosmic-plasma .cosmic-smoke{ animation:none; }
   /* The halo round the sphere breathes, as the filter used to make it
      seem to - on an HTML layer, so it is composited. */
   /* ---- BY OPACITY, NEVER BY SCALE (build 230) ----
@@ -50952,6 +50986,46 @@ function homeRankEmblem(tier){
     return document.createElementNS("http://www.w3.org/2000/svg", "svg");
   }
 }
+/* Fractal value noise, drawn ONCE per session onto a small canvas and kept
+   as a data URL (build 304) - the sphere's smoke. A canvas rather than an
+   svg feTurbulence image: svg filters are the one feature that has bitten
+   this app on real iOS hardware, and a PNG is just pixels. Alpha carries
+   the smoke; the colour comes from the layer that masks with it. Seeded,
+   so every launch draws the same smoke. */
+let cosmicSmokeCache = null;
+function cosmicSmokeURL(){
+  if(cosmicSmokeCache !== null) return cosmicSmokeCache;
+  try{
+    const N = 128, c = document.createElement("canvas");
+    c.width = N; c.height = N;
+    const g = c.getContext("2d");
+    if(!g) return (cosmicSmokeCache = "");
+    let seed = 1337;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    const G = 16, grid = [];
+    for(let i = 0; i < G * G; i++) grid.push(rnd());
+    const at = (x, y) => grid[((y % G + G) % G) * G + ((x % G + G) % G)];
+    const sm = t => t * t * (3 - 2 * t);
+    const noise = (x, y) => {
+      const x0 = Math.floor(x), y0 = Math.floor(y), fx = sm(x - x0), fy = sm(y - y0);
+      const a = at(x0, y0), b = at(x0 + 1, y0), c2 = at(x0, y0 + 1), d = at(x0 + 1, y0 + 1);
+      return a + (b - a) * fx + (c2 - a) * fy + (a - b - c2 + d) * fx * fy;
+    };
+    const img = g.createImageData(N, N);
+    for(let y = 0; y < N; y++) for(let x = 0; x < N; x++){
+      let v = 0, amp = .55, f = 4 / N;
+      for(let o = 0; o < 4; o++){ v += amp * noise(x * f * (1 << o), y * f * (1 << o)); amp *= .5; }
+      /* wisps, not fog: only the upper part of the range shows, eased */
+      const a = Math.max(0, Math.min(1, (v - .42) / .38));
+      const k = (y * N + x) * 4;
+      img.data[k] = img.data[k + 1] = img.data[k + 2] = 255;
+      img.data[k + 3] = Math.round(sm(a) * 255);
+    }
+    g.putImageData(img, 0, 0);
+    cosmicSmokeCache = c.toDataURL("image/png");
+  }catch(e){ cosmicSmokeCache = ""; }
+  return cosmicSmokeCache;
+}
 function buildCosmicHero(useTierIcons, forceAccent, reuse){
   const svgNS = "http://www.w3.org/2000/svg";
   const wrap = document.createElement("div");
@@ -51423,6 +51497,25 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
   plasma.className = "cosmic-plasma";
   plasma.setAttribute("aria-hidden", "true");
   plasma.append(document.createElement("span"), document.createElement("span"));
+  /* THE SMOKE (build 304). "That smokey effect within the large sphere ...
+     isn't noticeable anymore. Ensure this noticeable and ensure it's good
+     to go on every theme." The roiling surface was the turbulence filter's
+     animated baseFrequency, switched off in the lag pass because it re-ran
+     the filter on the CPU every frame; what was left moving was two faint
+     light pools at about a quarter opacity. The smoke comes back as a
+     TEXTURE: fractal noise drawn once onto a canvas (cosmicSmokeURL) and
+     used as a mask, so the colour is the theme's own and the motion is a
+     transform - two layers, one lit and one in shadow, turning and
+     drifting against each other. Nothing repaints per frame. */
+  const smokeUrl = cosmicSmokeURL();
+  if(smokeUrl){
+    ["cosmic-smoke cosmic-smoke-lit", "cosmic-smoke cosmic-smoke-shade"].forEach(cls => {
+      const sm = document.createElement("i");
+      sm.className = cls;
+      sm.style.setProperty("--smoke", "url(" + smokeUrl + ")");
+      plasma.appendChild(sm);
+    });
+  }
   wrap.appendChild(plasma);
 
   const iconGlyphs = {

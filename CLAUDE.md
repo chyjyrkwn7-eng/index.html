@@ -10605,6 +10605,23 @@ different moment and stays. Section 76
 retake, Main menu - and fails on 303, and checks the daily question's XP
 still flies.
 
+**The sphere's smoke is back, and on every theme.** *"That smokey effect
+within the large sphere in the large planet isn't noticeable anymore."* The
+roiling surface was the turbulence filter's animated `baseFrequency`,
+switched off in the lag pass (it re-ran the filter on the CPU every frame);
+what was left moving was `.cosmic-plasma`'s two light pools at about a
+quarter opacity. It is a TEXTURE now: `cosmicSmokeURL()` draws seeded
+fractal value noise once per session onto a 128px canvas, and two
+`.cosmic-smoke` layers use it as a mask - one lit (`--theme-c1` towards
+white), one in shade (`--theme-c3` towards black) - turning and drifting
+against each other on transform alone. A canvas, not an svg feTurbulence
+image, because svg filters are what has bitten this app on real iOS
+hardware. The plasma window gained `clip-path:circle()` because iOS does
+not clip composited transformed children to a rounded `overflow:hidden`
+parent. Measured: on-screen change inside the sphere over 4s roughly
+doubled (6 to 12-13 levels) on all eight themes; Home frame timing at 4x
+throttle unchanged within noise.
+
 Gates: `check-behaviour` section 74 (`check_b304`), written against 303 and
 red there on every group; section 75 (`check_b304_polish`) for the second
 list, red on 303 on every check of the change.
