@@ -2240,6 +2240,12 @@
     box-shadow:0 0 2px 0px var(--accent);
   }
   .tick.clean{ background:var(--right); }
+  /* Flashcards are not marked right or wrong, so their bar is white, not
+     green (build 306): "maybe the progress bar shouldn't be green, maybe
+     it should be white?" Cards seen are soft white; the card you are on
+     is full white with a little light round it. */
+  .wrap:has(.fc-screen) .tick.clean{ background:rgba(255,255,255,.62); }
+  .wrap:has(.fc-screen) .tick.now{ background:#fff; box-shadow:0 0 0 1.5px rgba(255,255,255,.22), 0 0 7px rgba(255,255,255,.5); }
   .tick.messy{ background:var(--wrong); }
   .tick.done{ background:var(--accent); opacity:.55; }
   .meter[hidden]{ display:none; }
@@ -2516,18 +2522,72 @@
   .wrap:has(.fc-screen) #count{ display:none; }
   .wrap:has(.fc-screen) .meter{ margin-bottom:1.1rem; }
   .panel.fc-screen{ background:none; border:none; box-shadow:none; padding:0; }
-  .fc-scene{ perspective:1600px; }
-  @keyframes fc-in-right{ from{ opacity:0; transform:translateX(26px); } to{ opacity:1; transform:none; } }
-  @keyframes fc-in-left{ from{ opacity:0; transform:translateX(-26px); } to{ opacity:1; transform:none; } }
-  .fc-scene.is-from-right{ animation:fc-in-right .3s cubic-bezier(.2,.8,.2,1); }
-  .fc-scene.is-from-left{ animation:fc-in-left .3s cubic-bezier(.2,.8,.2,1); }
+  /* ---- MOVING THROUGH THE DECK (build 306) ----
+     "Ensure you can swipe to the next flash card but give it a nice
+     effect where it doesn't swipe till you swipe ALL the way over ...
+     of course the button too which would have a similar effect." The
+     card follows the finger (.fc-mover), tilting as it goes, and only
+     lets go once it is dragged most of the way across (FC_SWIPE_COMMIT
+     of its width); short of that it springs back. The next card waits
+     underneath (.fc-under) and comes up to meet the gap as you drag.
+     Let go past the line - or tap the arrow - and the card is thrown
+     off the side and the next rises from behind it. Transform and
+     opacity only. */
+  .fc-scene{ position:relative; }
+  .fc-mover{
+    position:relative; z-index:1; perspective:1600px;
+    touch-action:pan-y; will-change:transform;
+    /* No text selection on a card you drag: a first drag selected the
+       words, and the next one picked them up as a native text drag and
+       cancelled the swipe. */
+    -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
+  }
+  .fc-mover.is-returning{ transition:transform .46s cubic-bezier(.2,1.3,.36,1); }
+  .fc-mover.is-throwing{ transition:transform .3s cubic-bezier(.45,0,.75,.6), opacity .3s ease-in; opacity:0; }
+  .fc-under{
+    position:absolute; inset:0; border-radius:26px; pointer-events:none;
+    background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.025));
+    border:1px solid rgba(255,255,255,.08);
+    opacity:calc(.25 + .45 * var(--p, 0)); transform:translateY(calc(10px - 10px * var(--p, 0))) scale(calc(.92 + .06 * var(--p, 0)));
+  }
+  @media (min-width:40rem){ .fc-under{ border-radius:30px; } }
+  /* Past the line, the card says so before you let go: it lifts a
+     little and its edge brightens. */
+  .fc-mover.is-armed .fc-face{ border-color:rgba(255,255,255,.3); }
+  .fc-mover .fc-face{ transition:border-color .18s ease; }
+  @keyframes fc-in-next{ from{ opacity:0; transform:translateY(12px) scale(.93); } to{ opacity:1; transform:none; } }
+  @keyframes fc-in-prev{ from{ opacity:0; transform:translateX(-62%) rotate(-9deg); } to{ opacity:1; transform:none; } }
+  .fc-scene.is-from-right .fc-mover{ animation:fc-in-next .36s cubic-bezier(.2,.85,.25,1); }
+  .fc-scene.is-from-left .fc-mover{ animation:fc-in-prev .4s cubic-bezier(.2,.85,.25,1); }
   .fc-card{
     position:relative; height:clamp(19rem, 58vh, 40rem);
     transform-style:preserve-3d; -webkit-transform-style:preserve-3d;
-    transition:transform .6s cubic-bezier(.22,.8,.24,1);
+    transition:transform .72s cubic-bezier(.3,.75,.18,1);
     cursor:pointer; -webkit-tap-highlight-color:transparent; outline:none;
   }
   .fc-card.is-flipped{ transform:rotateY(180deg); }
+  /* THE FLIP (build 306): "Ensure the tap to flip animation is cool."
+     The card lifts off the table as it turns - up and a touch bigger at
+     the halfway point, settling as it lands - and a band of light runs
+     across each face as it comes round. The lift is the individual
+     `translate`/`scale` properties, which compose with the rotateY on
+     `transform` instead of fighting it. */
+  @keyframes fc-lift{
+    0%{ translate:0 0; scale:1; }
+    45%{ translate:0 -14px; scale:1.06; }
+    100%{ translate:0 0; scale:1; }
+  }
+  .fc-card.is-flipping{ animation:fc-lift .72s cubic-bezier(.3,.75,.18,1); }
+  /* The band slides by its background, not by a transform: a moving
+     layer inside a rounded card is not clipped to the corners on iOS. */
+  .fc-face::after{
+    content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; opacity:0;
+    background:linear-gradient(105deg, transparent 38%, rgba(255,255,255,.15) 48%, rgba(255,255,255,.05) 54%, transparent 62%) no-repeat;
+    background-size:300% 100%; background-position:100% 0;
+  }
+  @keyframes fc-sheen{ 0%{ opacity:0; background-position:100% 0; } 35%{ opacity:1; } 100%{ opacity:0; background-position:0% 0; } }
+  .fc-card.is-flipping .fc-face::after{ animation:fc-sheen .72s ease-out; }
+  [data-reduce-motion="true"] .fc-mover.is-throwing{ transition:none; }
   .fc-face{
     position:absolute; inset:0; display:flex; flex-direction:column;
     padding:1.25rem 1.4rem 1.1rem; border-radius:26px;
@@ -2537,7 +2597,10 @@
     box-shadow:0 18px 40px -18px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.06);
   }
   .fc-back{ transform:rotateY(180deg); background:linear-gradient(180deg, color-mix(in srgb, var(--right) 12%, rgba(255,255,255,.05)), rgba(255,255,255,.035)); border-color:color-mix(in srgb, var(--right) 28%, transparent); }
-  .fc-face-top{ display:flex; align-items:center; justify-content:space-between; gap:.75rem; min-height:2.6rem; }
+  /* Room under the star (build 306): on a wordy card the answer list
+     starts as high as it can, and with no gap the star sat on the first
+     choice - "the star is super super close to the top one, touching it". */
+  .fc-face-top{ display:flex; align-items:center; justify-content:space-between; gap:.75rem; min-height:2.6rem; flex:none; margin-bottom:.8rem; }
   .fc-tag{ font-size:.72rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--soft); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .fc-back .fc-tag{ color:var(--right); }
   .fc-face .flagbtn.fc-star{ width:2.6rem; height:2.6rem; border-radius:50%; flex:none; margin-left:auto; }
@@ -2577,7 +2640,7 @@
   .fc-back.is-list-only .fc-choices.is-mid{ font-size:1.08rem; gap:.55rem; }
   .fc-back.is-list-only .fc-choices.is-short{ font-size:1.22rem; gap:.65rem; }
   .fc-back.is-list-only .fc-choices.is-short li{ padding:.6rem .85rem; }
-  .fc-choices li.is-answer::after{ content:"\2713"; margin-left:auto; padding-left:.4rem; flex:none; font-weight:800; color:var(--right); }
+  .fc-choices li.is-answer::after{ content:"\2713"; margin-left:auto; padding-left:.4rem; flex:none; align-self:center; line-height:1; font-weight:800; color:var(--right); }
   .fc-fliphint{ margin:0; text-align:center; font-size:.75rem; font-weight:600; color:var(--soft); opacity:.6; letter-spacing:.02em; }
   .fc-nav{ display:flex; align-items:center; justify-content:space-between; margin-top:1.1rem; padding:0 .4rem; }
   .fc-navbtn{
@@ -2677,7 +2740,27 @@
     padding:.85rem 0 .85rem .4rem;
   }
   .text{ padding:.8rem 0; }
-  .mark{ font-family:var(--sans); font-size:.95rem; padding:.8rem .7rem 0 0; color:transparent; }
+  /* The letter sits in the middle of its row too (build 306): "The
+     checkmarks and x's are centered, the letters on the left aren't
+     centered now." It hung from the top of the row on its own padding,
+     a few px above the text's middle on a one-line choice, and visibly
+     high once the tick beside it was centred. Every screen that draws a
+     choice (tests, review, unit details) set its own top padding, so the
+     vertical padding goes outright here. */
+  .choice > .key{
+    align-self:stretch; display:flex; align-items:center;
+    padding-top:0 !important; padding-bottom:0 !important;
+  }
+  /* The tick and the cross sit in the middle of their row, both ways
+     (build 306): "Ensure the check mark and x are centered properly,
+     doesn't look like they are." The mark used to hang from the top of
+     the row at .8rem while the letter and the text sat at 1.05rem on a
+     touch screen, so it rode high on every one-line choice. */
+  .mark{
+    font-family:var(--sans); font-size:1rem; font-weight:700; line-height:1; color:transparent;
+    align-self:stretch; display:flex; align-items:center; justify-content:center;
+    padding:0 .7rem 0 0; transition:color .6s ease;
+  }
 
   /* exam mode: a pick is recorded, not judged */
   .choice.is-picked{ border-color:var(--accent); }
@@ -2711,21 +2794,32 @@
   .qpanel .choice.is-pressing{ transform:scale(.982); filter:brightness(1.14); }
   @keyframes choice-right-pop{
     0%{ transform:scale(.982); box-shadow:0 0 0 0 color-mix(in srgb, var(--right) 0%, transparent); }
-    38%{ transform:scale(1.016); box-shadow:0 0 0 3px color-mix(in srgb, var(--right) 30%, transparent), 0 0 22px color-mix(in srgb, var(--right) 38%, transparent); }
-    100%{ transform:scale(1); box-shadow:0 0 0 0 color-mix(in srgb, var(--right) 0%, transparent), 0 0 0 color-mix(in srgb, var(--right) 0%, transparent); }
+    38%{ transform:scale(1.016); box-shadow:0 0 0 2px color-mix(in srgb, var(--right) 14%, transparent), 0 0 16px color-mix(in srgb, var(--right) 20%, transparent); }
+    100%{ transform:scale(1); box-shadow:0 0 0 0 color-mix(in srgb, var(--right) 0%, transparent), 0 0 12px color-mix(in srgb, var(--right) 12%, transparent); }
   }
   .qpanel .choice.is-right-pop{ animation:choice-right-pop .44s cubic-bezier(.2,.8,.2,1); }
   @keyframes choice-wrong-nudge{
     0%{ transform:translateX(0) scale(.982); } 22%{ transform:translateX(-4px); } 46%{ transform:translateX(3px); }
     70%{ transform:translateX(-1.5px); } 100%{ transform:translateX(0); }
   }
+  /* ONE GLOW FOR RIGHT AND WRONG, AND BARELY THERE (build 306): "It
+     looks like the incorrect answers has a glow, ensure the right answer
+     matches that but ensure it's very very subtle for either one." The
+     same faint halo in each one's colour; the wrong one went from a ring
+     plus an 18px 26% halo down to this. */
   .qpanel .choice.is-wrong-flash{
     border-color:var(--wrong);
-    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--wrong) 70%, transparent), 0 0 18px color-mix(in srgb, var(--wrong) 26%, transparent);
+    box-shadow:0 0 12px color-mix(in srgb, var(--wrong) 12%, transparent);
     animation:choice-wrong-nudge .34s ease-out;
   }
+  .qpanel .choice.is-right{ box-shadow:0 0 12px color-mix(in srgb, var(--right) 12%, transparent); }
+  .qpanel .choice.is-wrong-pick{ box-shadow:0 0 12px color-mix(in srgb, var(--wrong) 12%, transparent); }
   .qpanel .choice.is-wrong-flash .bar{ background:var(--wrong); }
   .qpanel .choice.is-wrong-flash .key{ color:var(--wrong); }
+  /* A wrong pick gets its cross, the way a right one gets its tick
+     (build 306): "When wrong, there should be an x similar to the
+     checkmark". It fades out with the red. */
+  .qpanel .choice.is-wrong-flash .mark{ color:var(--wrong); }
   @keyframes choice-pick-pop{ 0%{ transform:scale(.982); } 45%{ transform:scale(1.01); } 100%{ transform:scale(1); } }
   .qpanel .choice.is-pick-pop{ animation:choice-pick-pop .3s cubic-bezier(.2,.8,.2,1); }
   /* The line that says right or wrong had no space under it at all -
@@ -8748,8 +8842,8 @@
   .test-qcounter{ display:none; }
   .wrap:has(.qnumrow):not(:has(.pausepanel)) .test-qcounter{
     display:block;
-    font-family:var(--mono); font-size:.85rem; font-weight:700; color:var(--soft);
-    letter-spacing:.01em; margin:0; flex-shrink:0;
+    font-family:var(--sans); font-size:.85rem; font-weight:700; color:var(--soft);
+    letter-spacing:.02em; font-variant-numeric:tabular-nums; margin:0; flex-shrink:0;
   }
   /* MODE ON THE LEFT, COUNT IN THE MIDDLE (build 303): "While in a test
      or anything, the current mode needs to be in the left, and the
@@ -8767,12 +8861,17 @@
      sat its count and mode on top of the card's text. In flashcards it
      scrolls away with the page instead. */
   .wrap:has(.fc-screen) .top{ position:relative; top:0; }
-  .wrap:has(.fc-screen) .top .test-qcounter{ display:block; font-family:var(--mono); font-weight:700; color:var(--ink); margin:0; }
+  .wrap:has(.fc-screen) .top .test-qcounter{ display:block; font-family:var(--sans); font-weight:700; color:var(--soft); letter-spacing:.02em; font-variant-numeric:tabular-nums; margin:0; }
   .wrap:has(.qnumrow):not(:has(.pausepanel)) .top{ position:sticky; }
   .wrap:has(.fc-screen) .top .test-qcounter,
   .wrap:has(.qnumrow):not(:has(.pausepanel)) .top .test-qcounter{
     position:absolute; left:50%; top:50%; transform:translate(-50%, -50%);
-    font-size:.95rem; color:var(--ink);
+    /* The count reads like the mode name beside it - same grey, size and
+       weight - in every mode (build 306): "The '1/12' at the top used to
+       be like a grey, it should be the same color of the name of the
+       mode and look and feel." Tabular figures so it does not shuffle
+       sideways as the digits change. */
+    font-size:.85rem; color:var(--soft);
   }
   .navsegment{
     display:none; align-items:center; background:var(--rule);
@@ -15064,7 +15163,7 @@
   .unitdetail-q .choices .choice{ padding:0; }
   .unitdetail-q .choice .key{ padding-top:.6rem; padding-bottom:.6rem; }
   .unitdetail-q .choice .text{ padding-top:.55rem; padding-bottom:.55rem; }
-  .unitdetail-q .choice .mark{ padding-top:.55rem; }
+  .unitdetail-q .choice .mark{ padding-top:0; }
   .unitdetail-qtop{ display:flex; align-items:center; justify-content:space-between; gap:.5rem; }
   /* The Most missed door's own colour (build 270), so the chip on each
      question reads as belonging to the button that opened the list. */
@@ -18783,6 +18882,12 @@
      .rs-in-now is where it rests, and is what the reduced-motion and
      skipped paths go straight to. */
   .rs-land{ opacity:0; transform:translateY(-18px) scale(1.04); }
+  /* A card that has not landed yet takes no taps (build 305). The run's
+     buttons are on the panel from the start and only fade in at the end,
+     so at opacity 0 a tap where Main menu would be went straight Home -
+     "I tapped the screen ... while the test results came up ... it send
+     me back to the main menu". Now the tap falls through to the panel. */
+  .rs-land:not(.rs-in):not(.rs-in-now){ pointer-events:none; }
   .rs-land.rs-in-now{ opacity:1; transform:none; }
   .rs-land.rs-in{ animation:rs-bang .46s cubic-bezier(.2,1.25,.35,1) both; }
   /* THE IMPACT IS A LAYER THAT FADES (build 282). It used to animate the
@@ -61099,6 +61204,7 @@ function render(){
          rule below choose() is protecting. */
       if(fx && fx.kind === "wrong" && fx.slot === slot){
         btn.classList.add("is-wrong-flash");
+        mark.textContent = "\u2715";
         const left = WRONG_FLASH_MS - (Date.now() - fx.at);
         setTimeout(() => btn.classList.remove("is-wrong-flash"), Math.max(0, left));
       }
@@ -61820,7 +61926,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-04-305";
+const APP_BUILD = "2026-10-04-306";
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
    pushing when I open the app?" Because this gap is shared by every way
@@ -63620,8 +63726,9 @@ function placeStreakPop(el){
    Continue button is not there until the banners are done, so Pause is
    the one way off this screen mid-reveal; it has to freeze the reveal
    and give it back exactly where it was, not replay it. A tap on the
-   screen skips to the banners, because the fifth test of an evening
-   should not have to sit through the whole show again.
+   screen finishes the card on screen and brings the next one in (build
+   305; it used to skip to the next banner), because the fifth test of
+   an evening should not have to sit through the whole show again.
 
    REDUCE MOTION GETS EVERYTHING AT ONCE. The global
    [data-reduce-motion] rule strips animations, and a card waiting on an
@@ -63668,6 +63775,15 @@ function makeRevealSequence(alive){
       fast = true;
       if(timer){ clearTimeout(timer); timer = null; fire(); }
     },
+    /* One step, not the rest (build 305): the next card comes in now
+       instead of after its wait. A banner or a cutscene holding the
+       timeline is left alone - they have their own tap. */
+    next(){
+      if(finished || paused || holder) return false;
+      if(timer){ clearTimeout(timer); timer = null; fire(); return true; }
+      return false;
+    },
+    isHeld(){ return !!holder; },
     stop(){
       finished = true;
       if(timer){ clearTimeout(timer); timer = null; }
@@ -63707,6 +63823,21 @@ function makeRevealSequence(alive){
     advance();
   }
   return seq;
+}
+
+/* Runs every finite animation and transition on the panel to its end -
+   a landing card, a filling bar. Looping ones (a glow, a character's
+   idle) are left running: finishing an infinite animation throws. */
+function rsFinishMoving(root){
+  if(!root || !root.getAnimations) return;
+  root.querySelectorAll(".rs-land.rs-in").forEach(el => { el.classList.remove("rs-in"); el.classList.add("rs-in-now"); });
+  root.getAnimations({ subtree: true }).forEach(a => {
+    try{
+      const t = a.effect && a.effect.getComputedTiming ? a.effect.getComputedTiming() : null;
+      if(t && t.iterations === Infinity) return;
+      a.finish();
+    }catch(err){}
+  });
 }
 
 function endResultsReveal(){
@@ -64925,9 +65056,18 @@ function showRunRewards(run, hooks, opts){
   if(actions) seq.add(unlocked ? 450 : 620, instant => rsLand(actions, instant));
   seq.add(0, () => { resultsSeq = null; finish(); });
 
+  /* A TAP SPEEDS UP THE BOX ON SCREEN, NOT THE WHOLE SHOW (build 305):
+     "You can tap the screen by speeding up the box it's currently
+     showing (not cutscenes or pop ups)". It finishes whatever is still
+     moving on the panel - the card's landing, a bar filling, a count -
+     and brings the next card in straight away. It used to run every step
+     up to the next banner at once. Cutscenes and unlock pop-ups hold the
+     timeline and keep their own tap. */
   panel.addEventListener("click", e => {
     if(e.target.closest("button")) return;
-    if(resultsSeq === seq) seq.skip();
+    if(resultsSeq !== seq || seq.isHeld()) return;
+    rsFinishMoving(panel);
+    seq.next();
   });
   seq.start();
 }
@@ -76671,6 +76811,7 @@ function showFlashcards(units, source, versions){
   if(typeof syncChatDock === "function") syncChatDock();
 }
 function fcLeave(){
+  if(fcThrowing){ clearTimeout(fcThrowing.timer); fcThrowing = null; }
   fc = null;
   pauseBtn.hidden = true; meterEl.hidden = true;
   meterEl.replaceChildren(); meterTicks = null; meterNowIndex = -1;
@@ -76773,22 +76914,20 @@ function renderFlashcard(dir){
     fc.flipped = !fc.flipped;
     card.classList.toggle("is-flipped", fc.flipped);
   };
-  card.addEventListener("click", flip);
-  card.addEventListener("keydown", e => { if(e.key === " " || e.key === "Enter"){ e.preventDefault(); flip(); } });
-  /* A sideways swipe on the card moves the deck, as on the reference. */
-  let sx = null, sy = null;
-  card.addEventListener("pointerdown", e => { sx = e.clientX; sy = e.clientY; });
-  card.addEventListener("pointerup", e => {
-    if(sx == null) return;
-    const dx = e.clientX - sx, dy = e.clientY - sy; sx = null;
-    if(Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.4){
-      e.stopPropagation(); card.dataset.swiped = "1";
-      setTimeout(() => { delete card.dataset.swiped; }, 0);
-      fcStep(dx < 0 ? 1 : -1);
+  card.addEventListener("click", () => {
+    if(card.dataset.swiped) return;
+    flip();
+    if(!resultsMotionOff()){
+      card.classList.remove("is-flipping"); void card.offsetWidth; card.classList.add("is-flipping");
+      clearTimeout(card._flipT); card._flipT = setTimeout(() => card.classList.remove("is-flipping"), 760);
     }
   });
-  card.addEventListener("click", e => { if(card.dataset.swiped){ e.stopImmediatePropagation(); } }, true);
-  scene.appendChild(card);
+  card.addEventListener("keydown", e => { if(e.key === " " || e.key === "Enter"){ e.preventDefault(); card.click(); } });
+  const mover = document.createElement("div"); mover.className = "fc-mover";
+  const under = document.createElement("div"); under.className = "fc-under"; under.setAttribute("aria-hidden", "true");
+  mover.appendChild(card);
+  scene.append(under, mover);
+  fcWireDrag(mover, card, scene);
 
   const nav = document.createElement("div");
   nav.className = "fc-nav";
@@ -76799,7 +76938,7 @@ function renderFlashcard(dir){
     const sv = document.createElementNS(ns, "svg"); sv.setAttribute("viewBox", "0 0 24 24"); sv.setAttribute("aria-hidden", "true");
     const pth = document.createElementNS(ns, "path"); pth.setAttribute("d", svgPath); sv.appendChild(pth);
     b.appendChild(sv);
-    b.addEventListener("click", () => fcStep(d));
+    b.addEventListener("click", () => fcGo(d));
     return b;
   };
   const backBtn = mkNav("fc-back-btn", "Previous card", -1, "M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 010 11H11");
@@ -76833,6 +76972,79 @@ function fcFitCard(card){
   card.style.height = need > base + 1 ? Math.ceil(need) + "px" : "";
 }
 window.addEventListener("resize", () => { const c = document.querySelector(".fc-card"); if(c) fcFitCard(c); });
+/* Dragging a card: it follows the finger, tilting, and commits only past
+   FC_SWIPE_COMMIT of its width (build 306) - short of that it springs
+   back. A mostly vertical drag is left to the page so a long card can
+   still be scrolled. Swiping left is the next card, right the last. */
+const FC_SWIPE_COMMIT = 0.42;
+function fcWireDrag(mover, card, scene){
+  let sx = 0, sy = 0, id = null, dragging = false, width = 1, armed = false, dx = 0;
+  const canGo = d => fc && (d > 0 || fc.pos > 0);
+  const setP = p => scene.style.setProperty("--p", String(Math.max(0, Math.min(1, p))));
+  mover.addEventListener("pointerdown", e => {
+    if(e.button > 0 || fcThrowing) return;
+    sx = e.clientX; sy = e.clientY; id = e.pointerId; dragging = false; armed = false; dx = 0;
+    width = mover.offsetWidth || 1;
+    mover.classList.remove("is-returning");
+  });
+  mover.addEventListener("pointermove", e => {
+    if(id !== e.pointerId) return;
+    const mx = e.clientX - sx, my = e.clientY - sy;
+    if(!dragging){
+      if(Math.abs(my) > 10 && Math.abs(my) > Math.abs(mx)){ id = null; return; }
+      if(Math.abs(mx) < 10 || Math.abs(mx) < Math.abs(my) * 1.2) return;
+      dragging = true;
+      try{ mover.setPointerCapture(id); }catch(err){}
+    }
+    const d = mx < 0 ? 1 : -1;
+    /* Toward a card that is not there (back from the first) it only
+       gives a little, like pulling against a stop. */
+    dx = canGo(d) ? mx : mx * 0.25;
+    const p = canGo(d) ? Math.abs(dx) / (width * FC_SWIPE_COMMIT) : 0;
+    armed = p >= 1;
+    mover.classList.toggle("is-armed", armed);
+    setP(p);
+    mover.style.transform = "translate3d(" + dx.toFixed(1) + "px,0,0) rotate(" + (dx / width * 9).toFixed(2) + "deg)";
+  });
+  const end = e => {
+    if(id !== e.pointerId) return;
+    id = null;
+    if(!dragging) return;
+    dragging = false;
+    card.dataset.swiped = "1";
+    setTimeout(() => { delete card.dataset.swiped; }, 0);
+    mover.classList.remove("is-armed");
+    const d = dx < 0 ? 1 : -1;
+    if(armed && canGo(d)){ fcGo(d, dx); return; }
+    mover.classList.add("is-returning");
+    mover.style.transform = "";
+    setP(0);
+  };
+  mover.addEventListener("pointerup", end);
+  mover.addEventListener("pointercancel", end);
+  mover.addEventListener("dragstart", e => e.preventDefault());
+}
+/* Throws the card off the side and moves the deck once it is gone. The
+   arrow buttons and the keyboard go the same way as a finished swipe. A
+   second tap while a card is still in the air finishes that move at
+   once and starts the next, so tapping quickly never loses a card. */
+let fcThrowing = null;
+function fcGo(d, fromX){
+  if(!fc) return;
+  if(fc.pos + d < 0) return;
+  if(fcThrowing){ const t = fcThrowing; fcThrowing = null; clearTimeout(t.timer); fcStep(t.d); if(!fc || fc.pos + d < 0) return; }
+  const mover = document.querySelector(".fc-mover");
+  if(!mover || resultsMotionOff()){ fcStep(d); return; }
+  const w = mover.offsetWidth || 300;
+  const x = (d > 0 ? -1 : 1) * (w * 1.15 + Math.abs(fromX || 0));
+  mover.classList.remove("is-returning", "is-armed");
+  mover.classList.add("is-throwing");
+  const scene = mover.parentElement; if(scene) scene.style.setProperty("--p", "1");
+  requestAnimationFrame(() => { mover.style.transform = "translate3d(" + x.toFixed(0) + "px,-10px,0) rotate(" + (d > 0 ? -14 : 14) + "deg)"; });
+  const t = { d: d, timer: 0 };
+  t.timer = setTimeout(() => { if(fcThrowing === t){ fcThrowing = null; fcStep(d); } }, 300);
+  fcThrowing = t;
+}
 function fcStep(d){
   if(!fc) return;
   const next = fc.pos + d;
@@ -76898,8 +77110,8 @@ function pauseFlashcards(){
 document.addEventListener("keydown", e => {
   if(!fc || !stage.querySelector(".fc-card")) return;
   if(e.target && /input|textarea|select/i.test(e.target.tagName)) return;
-  if(e.key === "ArrowRight"){ e.preventDefault(); fcStep(1); }
-  else if(e.key === "ArrowLeft"){ e.preventDefault(); fcStep(-1); }
+  if(e.key === "ArrowRight"){ e.preventDefault(); fcGo(1); }
+  else if(e.key === "ArrowLeft"){ e.preventDefault(); fcGo(-1); }
 });
 
 /* defaultTab exists so a future link can drop someone straight onto
@@ -80066,6 +80278,9 @@ document.addEventListener("keydown", (e) => {
     const reveal = document.getElementById("revealbtn");
     if(reveal){ e.preventDefault(); reveal.click(); return; }
     const next = document.getElementById("nextbtn");
+    /* Not a results button that has not landed yet - the same hole as
+       the tap, from a keyboard. */
+    if(next && next.closest(".rs-land:not(.rs-in):not(.rs-in-now)")) return;
     if(next && !next.hidden && !next.disabled){ e.preventDefault(); next.click(); }
   }
 });

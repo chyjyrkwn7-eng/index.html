@@ -7940,6 +7940,172 @@ def check_b305_flashcards(br):
         check(dev + ": Main menu lands on Home", r.get("home") is True, r)
 
 
+def check_b305_resultstap(br):
+    """Build 305: a tap on the results screen while it is still coming in
+    never leaves it. The run's buttons were on the panel from the start at
+    opacity 0, so a tap where Main menu would be went Home - "I tapped the
+    screen ... while the test results came up ... it send me back to the
+    main menu". A tap now finishes the card on screen and brings the NEXT
+    one in (not the whole reveal), and Main menu works once it is there.
+    Written against 305-pre-fix, where the first check goes Home."""
+    print("\n78. build 305: a tap during the results reveal speeds it up, never leaves")
+    for w, h in ((440, 956), (834, 1194)):
+        dev = "%dx%d" % (w, h)
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, touch=True)
+        pg.evaluate("""()=>{ setInterval(()=>[...document.body.children].forEach(n=>{ if(getComputedStyle(n).position==='fixed' && /challenge complete|character unlocked/i.test(n.textContent||'')) n.remove(); }), 40);
+          document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove()); theme.reduceMotion = true; applyTheme();
+          cfg.mode='drill'; cfg.units=['Identity Crimes']; cfg.versions={}; cfg.source='all'; cfg.size=0; cfg.timer='off'; cfg.flashcards=false;
+          beginRun(freshOrder(QUESTIONS.map((q,i)=>i).filter(i=>QUESTIONS[i].topic==='Identity Crimes')), null); }""")
+        pg.wait_for_selector(".qpanel .choice", timeout=25000); pg.wait_for_timeout(300)
+        for i in range(40):
+            p = pg.evaluate("()=>pos"); last = pg.evaluate("()=>pos===order.length-1")
+            if last: pg.evaluate("()=>{ theme.reduceMotion=false; applyTheme(); }")
+            pg.evaluate("""()=>{ const r=correctSlot(order[pos]); document.querySelector('.qpanel .choice[data-index="'+r+'"]').click(); }""")
+            pg.wait_for_timeout(150)
+            if last: pg.wait_for_timeout(500); break
+            pg.evaluate("()=>{ const b=document.getElementById('nextbtn'); if(b && !b.hidden) b.click(); }")
+            for _ in range(60):
+                pg.wait_for_timeout(30)
+                if pg.evaluate("()=>pos") != p: break
+        pg.evaluate("()=>document.getElementById('nextbtn').click()")
+        pg.wait_for_selector(".rs-rewards", timeout=5000); pg.wait_for_timeout(150)
+        where = pg.evaluate("""()=>{ const b=[...document.querySelectorAll('.rs-actions button')].find(x=>/Main menu/.test(x.textContent));
+          const r=b.getBoundingClientRect(); return [r.left+r.width/2, r.top+r.height/2]; }""")
+        pg.touchscreen.tap(where[0], where[1]); pg.wait_for_timeout(900)
+        r1 = pg.evaluate("()=>({ home: !!document.querySelector('[data-screen=\"home\"]'), results: !!document.querySelector('.rs-rewards') })")
+        check(dev + ": a tap where Main menu will be, before it is there, stays on the results", r1["results"] and not r1["home"], r1)
+        # one tap, one card
+        landed = "()=>document.querySelectorAll('.rs-rewards .rs-land.rs-in, .rs-rewards .rs-land.rs-in-now').length"
+        total = pg.evaluate("()=>document.querySelectorAll('.rs-rewards .rs-land').length")
+        before = pg.evaluate(landed)
+        pg.touchscreen.tap(w / 2, h * 0.45); pg.wait_for_timeout(60)
+        after = pg.evaluate(landed)
+        check(dev + ": a tap on the screen brings in the next card, not the rest of them",
+              after == before + 1 and after < total, (before, after, total))
+        for _ in range(150):
+            pg.wait_for_timeout(200)
+            if pg.evaluate("()=>!!document.querySelector('.rs-rewards.rs-done')"): break
+        pg.touchscreen.tap(where[0], where[1]); pg.wait_for_timeout(1200)
+        r2 = pg.evaluate("()=>!!document.querySelector('[data-screen=\"home\"]')")
+        ctx.close()
+        check(dev + ": once it has landed, Main menu goes Home", r2 is True, r2)
+
+
+def check_b306_marks(br):
+    """Build 306: a wrong pick shows a cross the way a right one shows a
+    tick, both centred in their row; the count at the top reads like the
+    mode name beside it in every mode; flashcards have a white bar and
+    room under the star. Written against 305, where a wrong pick had no
+    mark, the tick rode high, the count was white mono and the bar green."""
+    print("\n79. build 306: tick and cross centred, a grey count, a white flashcard bar")
+    for w, h in ((440, 956), (834, 1194)):
+        dev = "%dx%d" % (w, h)
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, touch=True)
+        r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+          document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());
+          const mid = b => { const k=b.querySelector('.mark'), br=b.getBoundingClientRect(); const rg=document.createRange(); rg.selectNodeContents(k); const g=rg.getBoundingClientRect();
+            return { text:k.textContent, off: Math.round((g.top+g.height/2) - (br.top+br.height/2)), color: getComputedStyle(k).color }; };
+          const same = () => { const a=getComputedStyle(document.getElementById('testmodelabel')), b=getComputedStyle(document.getElementById('testqcounter'));
+            return a.color===b.color && a.fontSize===b.fontSize && a.fontWeight===b.fontWeight && a.fontFamily===b.fontFamily; };
+          cfg.mode='drill'; cfg.units=['Identity Crimes']; cfg.versions={}; cfg.source='all'; cfg.size=0; cfg.timer='off'; cfg.flashcards=false;
+          beginRun(freshOrder(QUESTIONS.map((q,i)=>i).filter(i=>QUESTIONS[i].topic==='Identity Crimes')), null);
+          for(let t=0; t<80 && !document.querySelector('.qpanel .choice'); t++) await wait(100);
+          await wait(400);
+          const right = correctSlot(order[pos]);
+          document.querySelector('.qpanel .choice[data-index="'+((right+1)%4)+'"]').click(); await wait(450);
+          const wb = document.querySelector('.qpanel .choice.is-wrong-flash'); out.wrong = wb ? mid(wb) : null;
+          document.querySelector('.qpanel .choice[data-index="'+right+'"]').click(); await wait(500);
+          const rb = document.querySelector('.qpanel .choice.is-right'); out.right = rb ? mid(rb) : null;
+          out.drillSame = same();
+          out.keyOff = Math.max(...[...document.querySelectorAll('.qpanel .choice')].map(b => { const k=b.querySelector('.key'), br=b.getBoundingClientRect(); const rg=document.createRange(); rg.selectNodeContents(k); const g=rg.getBoundingClientRect(); return Math.abs(Math.round((g.top+g.height/2)-(br.top+br.height/2))); }));
+          testInProgress = false;
+          cfg.mode='exam'; cfg.timer='on'; cfg.timerMinutes=60;
+          beginRun(freshOrder(QUESTIONS.map((q,i)=>i).filter(i=>QUESTIONS[i].topic==='Identity Crimes')), null);
+          for(let t=0; t<80 && !document.querySelector('.qpanel .choice'); t++) await wait(100);
+          await wait(300); out.examSame = same();
+          testInProgress = false;
+          const qi = QUESTIONS.findIndex(q=>/clearly define acts constituting racial profiling, strictly/.test(q.choices[q.answer]));
+          showFlashcards([QUESTIONS[qi].topic], 'all', {}); const at=fc.deck.indexOf(qi); fc.deck.splice(at,1); fc.deck.splice(3,0,qi); fc.pos=3; renderFlashcard(0); await wait(300);
+          out.fcSame = same();
+          const tc = document.querySelector('#meter .tick.clean'), tn = document.querySelector('#meter .tick.now');
+          out.cleanBg = tc ? getComputedStyle(tc).backgroundColor : null; out.nowBg = tn ? getComputedStyle(tn).backgroundColor : null;
+          const s = document.querySelector('.fc-back .fc-star').getBoundingClientRect(), l = document.querySelector('.fc-back .fc-choices li').getBoundingClientRect();
+          out.starGap = Math.round(l.top - s.bottom);
+          return out; }""")
+        ctx.close()
+        wr, rt = r.get("wrong") or {}, r.get("right") or {}
+        check(dev + ": a wrong pick shows a cross in the wrong colour", wr.get("text") == "\u2715" and wr.get("color") not in ("rgba(0, 0, 0, 0)", "transparent"), wr)
+        check(dev + ": the cross sits in the middle of its row", abs(wr.get("off", 99)) <= 2, wr.get("off"))
+        check(dev + ": the tick sits in the middle of its row", rt.get("text") == "\u2713" and abs(rt.get("off", 99)) <= 2, rt)
+        check(dev + ": every choice's letter sits in the middle of its row", r.get("keyOff") is not None and r["keyOff"] <= 2, r.get("keyOff"))
+        check(dev + ": the count reads like the mode name in a drill, an exam and flashcards",
+              r.get("drillSame") is True and r.get("examSame") is True and r.get("fcSame") is True, (r.get("drillSame"), r.get("examSame"), r.get("fcSame")))
+        def white(c):
+            import re
+            n = [float(x) for x in re.findall(r"[\d.]+", c or "")]
+            return len(n) >= 3 and min(n[:3]) >= 240
+        check(dev + ": the flashcard bar is white, not green", white(r.get("cleanBg")) and white(r.get("nowBg")), (r.get("cleanBg"), r.get("nowBg")))
+        check(dev + ": a wordy card's first choice is clear of the star", (r.get("starGap") or 0) >= 8, r.get("starGap"))
+
+
+def check_b306_fcmotion(br):
+    """Build 306: a flashcard only moves on when it is dragged most of the
+    way across - a short drag springs back - and the arrow throws it the
+    same way; two quick taps on the arrow still move two cards. The flip
+    lifts the card. A right answer glows like a wrong one, both faint.
+    Written against 305, where a 60px flick moved the deck."""
+    print("\n80. build 306: flashcards swipe all the way or spring back; matched faint glows")
+    for w, h in ((440, 956), (834, 1194)):
+        dev = "%dx%d" % (w, h)
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        pg.evaluate("()=>{ document.querySelectorAll('#pushing-update,#intro-pop,.rs-spot').forEach(n=>n.remove()); cfg.mode='review'; cfg.flashcards=true; showFlashcards(['Identity Crimes'],'all',{}); }")
+        pg.wait_for_timeout(800)
+        b = pg.evaluate("()=>{ const r=document.querySelector('.fc-card').getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; }")
+        cx, cy = b[0] + b[2] / 2, b[1] + b[3] / 2
+        def drag(frac):
+            pg.mouse.move(cx + 50, cy); pg.mouse.down()
+            for i in range(1, 21):
+                pg.mouse.move(cx + 50 - b[2] * frac * i / 20, cy); pg.wait_for_timeout(16)
+            pg.mouse.up(); pg.wait_for_timeout(700)
+            return pg.evaluate("()=>fc.pos")
+        short = drag(0.25)
+        full = drag(0.6)
+        pg.mouse.click(cx, cy); pg.wait_for_timeout(120)
+        lifting = pg.evaluate("()=>document.querySelector('.fc-card').classList.contains('is-flipping')")
+        pg.wait_for_timeout(900)
+        pg.evaluate("()=>{ document.getElementById('fcnext').click(); }"); pg.wait_for_timeout(120)
+        pg.evaluate("()=>{ document.getElementById('fcnext').click(); }"); pg.wait_for_timeout(700)
+        twice = pg.evaluate("()=>fc.pos")
+        ctx.close()
+        check(dev + ": a short drag springs back and stays on the card", short == 0, short)
+        check(dev + ": a drag most of the way across moves to the next card", full == 1, full)
+        check(dev + ": two quick taps on the arrow move two cards", twice == 3, twice)
+        check(dev + ": the flip lifts the card as it turns", lifting is True, lifting)
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    g = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms));
+      document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());
+      cfg.mode='drill'; cfg.units=['Identity Crimes']; cfg.versions={}; cfg.source='all'; cfg.size=0; cfg.timer='off'; cfg.flashcards=false;
+      beginRun(freshOrder(QUESTIONS.map((q,i)=>i).filter(i=>QUESTIONS[i].topic==='Identity Crimes')), null);
+      for(let t=0; t<80 && !document.querySelector('.qpanel .choice'); t++) await wait(100);
+      await wait(400); const r = correctSlot(order[pos]);
+      document.querySelector('.qpanel .choice[data-index="'+((r+1)%4)+'"]').click(); await wait(500);
+      const ws = getComputedStyle(document.querySelector('.qpanel .choice.is-wrong-flash')).boxShadow;
+      document.querySelector('.qpanel .choice[data-index="'+r+'"]').click(); await wait(800);
+      const rs = getComputedStyle(document.querySelector('.qpanel .choice.is-right')).boxShadow;
+      return { ws, rs }; }""")
+    ctx.close()
+    import re
+    def parts(sh):
+        # color(srgb r g b / a) or rgba(r, g, b, a): the alpha of each shadow
+        alpha = [float(x) for x in re.findall(r"/\s*([\d.]+)\)", sh or "")]
+        alpha += [float(x.split(",")[3]) for x in re.findall(r"rgba\(([^)]*)\)", sh or "") if len(x.split(",")) > 3]
+        px = re.findall(r"(\d+(?:\.\d+)?)px", sh or "")
+        return alpha, [float(p) for p in px]
+    wa, wp = parts(g["ws"]); ra, rp = parts(g["rs"])
+    check("a right answer has a glow, the same size as a wrong one's", bool(rp) and bool(wp) and max(rp) == max(wp), (g["rs"], g["ws"]))
+    check("and both are faint", wa and ra and max(wa) <= 0.2 and max(ra) <= 0.2, (wa, ra))
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     only = os.environ.get("ONLY_B245")
@@ -8038,6 +8204,9 @@ def main():
             check_b304_polish(br)
             check_b304_noxpfly(br)
             check_b305_flashcards(br)
+            check_b305_resultstap(br)
+            check_b306_marks(br)
+            check_b306_fcmotion(br)
         finally:
             br.close()
     SERVER.shutdown()

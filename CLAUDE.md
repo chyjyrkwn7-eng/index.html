@@ -10854,3 +10854,76 @@ new `KNOWN` entry. The one new keyframe (`cx-zc-hover`) is played
 **Preview without editing the file**: the render harness swaps the constant
 in the served copy (`BODY`) per look. Previews of all three are in
 `/tmp/claude-0/b291/zenith2/` (`zenith-concepts.png` side by side).
+
+### Build 306 - a tap on the results screen speeds it up, never leaves
+
+- **A results card that has not landed takes no taps**
+  (`.rs-land:not(.rs-in):not(.rs-in-now){pointer-events:none}`). The
+  run's buttons are on the panel from the first frame and fade in last,
+  and at opacity 0 they still took taps: a tap where Main menu would be
+  went Home, where Re-run would be started a new run. *"I tapped the
+  screen at the end of a test while the test results came up ... it send
+  me back to the main menu."* The Enter key had the same hole through
+  `#nextbtn` and checks for it too.
+- **A tap finishes the card on screen and brings the NEXT one in**, not
+  every card up to the next banner as `skip()` did: *"You can tap the
+  screen by speeding up the box it's currently showing (not cutscenes or
+  pop ups)."* `rsFinishMoving()` runs every finite animation on the panel
+  to its end (`getAnimations({subtree:true})`, looping ones left alone -
+  `finish()` throws on an infinite one), then `seq.next()` fires one step.
+  A banner or cutscene holding the timeline (`seq.isHeld()`) ignores the
+  panel tap; it has its own.
+- `check-behaviour` section 78 (`check_b305_resultstap`) taps where Main
+  menu will be before it lands, checks one tap lands exactly one card,
+  and that Main menu works once landed. Against the build before the
+  fix its first check goes Home.
+- **A wrong pick shows a cross (`✕`) the way a right one shows a
+  tick**, in the wrong colour, fading out with the red flash: *"When
+  wrong, there should be an x similar to the checkmark."* **Both marks
+  are centred in their row** - `.mark` is a stretched flex box centring
+  its glyph, with no top padding. It used to hang at `.8rem` from the top
+  while the letter and text sat at `1.05rem` on a touch screen, so it
+  rode ~5px high on every one-line choice.
+- **The count at the top reads like the mode name beside it** - same
+  grey, size, weight and font, tabular figures - in every mode, flashcards
+  included: *"The '1/12' at the top used to be like a grey, it should be
+  the same color of the name of the mode."* It was white mono at .95rem.
+- **Flashcards: a white bar, not green** (seen cards soft white, the
+  current one full white with a little light), and **`.fc-face-top` has
+  `.8rem` under it**, so a wordy answer list no longer starts against the
+  star.
+- `check-behaviour` section 79 (`check_b306_marks`) measures the cross
+  and tick against their rows, compares the count's computed style to the
+  mode name's in a drill, an exam and flashcards, and the bar's colour.
+- **Flashcards move like cards** (build 306): *"Ensure the tap to flip
+  animation is cool. And ensure you can swipe to the next flash card but
+  give it a nice effect where it doesn't swipe till you swipe ALL the way
+  over ... of course the button too."* The card sits in a `.fc-mover`
+  that follows a drag, tilting with it; it commits only past
+  `FC_SWIPE_COMMIT` (0.42) of its width, otherwise springs back
+  (`.is-returning`, an overshooting curve). `.fc-under` is the next card
+  waiting underneath, coming up to meet the gap as `--p` rises. A commit
+  - or the arrow, or the keyboard - goes through `fcGo()`, which throws
+  the card off the side and calls `fcStep()` when it has gone. **A second
+  tap while a card is in the air finishes that move first**, so quick
+  taps never drop a card (the 303 gate clicks Next twice 150ms apart).
+  Back is the old card thrown right and the previous one coming in from
+  the left. The flip adds a lift (the individual `translate`/`scale`
+  properties, which compose with the `rotateY` on `transform`) and a band
+  of light that slides by **background-position**, not transform: a
+  transformed layer inside a rounded card is not clipped to its corners
+  on iOS. **The card is `user-select:none`**: a first mouse drag selected
+  its words and the next drag picked them up as a native text drag and
+  cancelled the swipe.
+- **Right and wrong glow the same, and faintly**: one `0 0 12px` halo at
+  12% of each one's colour (wrong was a ring plus 18px at 26%; right had
+  none once its pop ended). *"Ensure the right answer matches that but
+  ensure it's very very subtle for either one."*
+- `check-behaviour` section 80 (`check_b306_fcmotion`): a 25% drag stays,
+  a 60% drag moves, two quick arrow taps move two cards, the flip lifts,
+  and the two glows match and stay under 20%.
+- **The choice letter is centred in its row too**: `.choice > .key` is a
+  stretched flex box with its vertical padding removed (`!important`,
+  because tests, review and unit details each set their own). *"The
+  checkmarks and x's are centered, the letters on the left aren't
+  centered now."* Section 79 measures every letter against its row.
