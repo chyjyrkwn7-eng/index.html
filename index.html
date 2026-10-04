@@ -9457,6 +9457,47 @@
     100%{ transform:rotate(-360deg) translate(-4%, 3%) scale(1.1); }
   }
   [data-reduce-motion="true"] .cosmic-plasma .cosmic-smoke{ animation:none; }
+  /* ---- DEPTH ON HOME'S PLANET SYSTEM (build 304) ----
+     One light, from the upper left, everywhere. The planet: a terminator
+     - the night side - falling away to the lower right, a thin bright
+     edge where the atmosphere catches the light on the lit limb, a crisp
+     specular glint on top of the soft highlight it already had, and a
+     faint atmosphere in the theme's colour just outside the limb. All
+     static gradients and shadows on one HTML disc: nothing animates, so
+     it costs one paint. */
+  .cosmic-sphere-shade{
+    position:absolute; left:50%; top:47.37%; width:28.9%; aspect-ratio:1; border-radius:50%;
+    transform:translate(-50%,-50%); pointer-events:none; z-index:2;
+    background:
+      radial-gradient(14% 10% at 35% 27%, rgba(255,255,255,.75), rgba(255,255,255,0) 100%),
+      radial-gradient(circle at 34% 30%, rgba(0,0,0,0) 34%, rgba(0,0,0,.14) 58%, rgba(0,0,0,.42) 82%, rgba(0,0,0,.6) 100%);
+    box-shadow:
+      inset 3px 4px 6px -2px rgba(255,255,255,.35),
+      inset -10px -14px 22px -6px rgba(0,0,0,.45),
+      0 0 0 1px color-mix(in srgb, var(--theme-c2, #B48EE0) 22%, transparent),
+      0 0 22px 3px color-mix(in srgb, var(--theme-c2, #B48EE0) 28%, transparent);
+  }
+  /* The rings: nearer edge brighter (cosmicRingGrad). The Supernova ring
+     keeps its own colour. */
+  .cosmic-orbit-ring.cosmic-orbit-ring-lit{ stroke-width:1.15; }
+  /* The tiny flares: lit beads with a catch-light and a little light of
+     their own. A found one keeps its colour as the bead. */
+  .cosmic-orbit-dot{ filter:drop-shadow(0 0 2.5px rgba(255,255,255,.45)); }
+  .cosmic-dot-spec{ fill:#fff; opacity:.8; pointer-events:none; }
+  /* The flare bubbles: a glass bead lit from the upper left - a crisp
+     glint in the light it already caught, the lower right falling into
+     shade, and the bead casting a soft shadow down and away from the
+     light. Drawn in the lens (::after) above the emblem, so the emblem
+     is inside the glass and takes the shading with it. */
+  .cosmic-icon-badge.cosmic-badge-rank::after{
+    background:
+      radial-gradient(22% 14% at 36% 22%, rgba(255,255,255,.85), rgba(255,255,255,0) 100%),
+      radial-gradient(70% 42% at 42% 14%, rgba(255,255,255,.42), rgba(255,255,255,0) 70%),
+      radial-gradient(circle at 34% 30%, rgba(0,0,0,0) 45%, rgba(0,0,0,.16) 72%, rgba(0,0,0,.34) 100%),
+      radial-gradient(60% 22% at 58% 96%, rgba(255,255,255,.2), rgba(255,255,255,0) 80%);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.08), inset -3px -4px 7px rgba(0,0,0,.22), inset 2px 2px 4px rgba(255,255,255,.12);
+  }
+
   /* The halo round the sphere breathes, as the filter used to make it
      seem to - on an HTML layer, so it is composited. */
   /* ---- BY OPACITY, NEVER BY SCALE (build 230) ----
@@ -10117,7 +10158,7 @@
     border:1px solid rgba(255,255,255,.24);
     -webkit-backdrop-filter:blur(6px) saturate(1.4); backdrop-filter:blur(6px) saturate(1.4);
     box-shadow:0 1px 1px rgba(255,255,255,.28) inset, 0 -1px 2px rgba(255,255,255,.08) inset,
-      0 4px 10px rgba(0,0,0,.22);
+      3px 7px 12px -2px rgba(0,0,0,.42);
   }
   /* Lit: a dark glass bubble with the rank's colour in its rim and halo,
      so the emblem is what you see - the old solid fill drowned it. */
@@ -10138,7 +10179,7 @@
     -webkit-backdrop-filter:blur(6px) saturate(1.5); backdrop-filter:blur(6px) saturate(1.5);
     box-shadow:0 1px 1px rgba(255,255,255,.35) inset, 0 -1px 2px rgba(255,255,255,.1) inset,
       0 0 14px 2px color-mix(in srgb, var(--rank-color) 55%, transparent),
-      0 4px 10px rgba(0,0,0,.25);
+      3px 7px 12px -2px rgba(0,0,0,.45);
   }
   .cosmic-icon-badge.cosmic-badge-rank{ position:absolute; overflow:hidden; }
   .cosmic-icon-badge.cosmic-badge-rank svg.cosmic-rank-emblem{ position:relative; z-index:0; }
@@ -51026,6 +51067,7 @@ function cosmicSmokeURL(){
   }catch(e){ cosmicSmokeCache = ""; }
   return cosmicSmokeCache;
 }
+let cosmicDepthSeq = 0;
 function buildCosmicHero(useTierIcons, forceAccent, reuse){
   const svgNS = "http://www.w3.org/2000/svg";
   const wrap = document.createElement("div");
@@ -51085,6 +51127,38 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
   const animLayer = mkLayer("cosmic-hero-animlayer");
   const orbitLayer = mkLayer("cosmic-hero-orbitlayer");
   const defs = document.createElementNS(svgNS, "defs");
+  /* DEPTH (build 304): "the large planet, the flare bubbles, the tiny
+     flares ... could look a little more 3d/legit". One light, from the
+     upper left, for the whole system. The tiny flares are lit beads
+     (cosmicDotGrad, its focal point up and left) and the rings are
+     brighter along their near, lower edge than their far, upper one
+     (cosmicRingGrad), which is what makes a flat ellipse read as a hoop
+     tilted towards you. Ids unique to each copy of the hero
+     (cosmicDepthSeq), set inline: a shared id resolves to the FIRST copy
+     in the document, and when that copy is a hidden or detached hero the
+     reference paints nothing - which is how the rings vanished on the
+     first try. */
+  const depthId = "cdepth" + (++cosmicDepthSeq) + "-";
+  {
+    const dg = document.createElementNS(svgNS, "radialGradient");
+    dg.setAttribute("id", depthId + "dot");
+    dg.setAttribute("cx", "50%"); dg.setAttribute("cy", "50%"); dg.setAttribute("r", "55%");
+    dg.setAttribute("fx", "34%"); dg.setAttribute("fy", "30%");
+    [["0%", "#FFFFFF", "1"], ["45%", "#E8EDF5", ".95"], ["100%", "#8C97AA", ".7"]].forEach(([o, c, a]) => {
+      const st = document.createElementNS(svgNS, "stop");
+      st.setAttribute("offset", o); st.setAttribute("stop-color", c); st.setAttribute("stop-opacity", a);
+      dg.appendChild(st);
+    });
+    const rg = document.createElementNS(svgNS, "linearGradient");
+    rg.setAttribute("id", depthId + "ring");
+    rg.setAttribute("x1", "0"); rg.setAttribute("y1", "0"); rg.setAttribute("x2", "0"); rg.setAttribute("y2", "1");
+    [["0%", ".07"], ["50%", ".16"], ["100%", ".34"]].forEach(([o, a]) => {
+      const st = document.createElementNS(svgNS, "stop");
+      st.setAttribute("offset", o); st.setAttribute("stop-color", "#FFFFFF"); st.setAttribute("stop-opacity", a);
+      rg.appendChild(st);
+    });
+    defs.append(dg, rg);
+  }
   const grad = document.createElementNS(svgNS, "radialGradient");
   grad.setAttribute("id", "cosmicSphereGrad");
   grad.setAttribute("cx", "32%"); grad.setAttribute("cy", "28%");
@@ -51184,7 +51258,8 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
        one every account starts with, so reaching the top of the
        ladder visibly changes the sphere itself, not just one badge
        among six. */
-    ring.setAttribute("class", "cosmic-orbit-ring" + (store.supernovaAchieved ? " cosmic-orbit-ring-supernova" : ""));
+    ring.setAttribute("class", "cosmic-orbit-ring" + (store.supernovaAchieved ? " cosmic-orbit-ring-supernova" : " cosmic-orbit-ring-lit"));
+    if(!store.supernovaAchieved) ring.style.stroke = "url(#" + depthId + "ring)";
     svg.appendChild(ring);
   });
   const glowFilter = document.createElementNS(svgNS, "filter");
@@ -51483,7 +51558,15 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
        a whole svg, like the outer one, so it stays a compositor
        transform. Nearer the planet, faster round it: what an orbit
        does anyway. */
-    (Math.hypot(cx - 180, cy - 150) < 130 ? innerDots : dotsGroup).appendChild(dot);
+    if(!found) dot.style.fill = "url(#" + depthId + "dot)";
+    const dotHome = Math.hypot(cx - 180, cy - 150) < 130 ? innerDots : dotsGroup;
+    dotHome.appendChild(dot);
+    /* A catch-light on every tiny flare (build 304), found or not, so a
+       coloured one is a lit bead of its colour too. */
+    const spec = document.createElementNS(svgNS, "circle");
+    spec.setAttribute("cx", cx - 1.5); spec.setAttribute("cy", cy - 1.6); spec.setAttribute("r", 1.45);
+    spec.setAttribute("class", "cosmic-dot-spec");
+    dotHome.appendChild(spec);
   });
   orbitLayer.appendChild(dotsGroup);
   innerOrbitLayer.appendChild(innerDots);
@@ -51517,6 +51600,13 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
     });
   }
   wrap.appendChild(plasma);
+  /* The planet's own shadow and edge light (build 304) - see
+     .cosmic-sphere-shade. Above the smoke, so the smoke turns into the
+     night side with the surface rather than floating on top of it. */
+  const shade = document.createElement("div");
+  shade.className = "cosmic-sphere-shade";
+  shade.setAttribute("aria-hidden", "true");
+  wrap.appendChild(shade);
 
   const iconGlyphs = {
     book: "M4 5.5C4 4.7 4.7 4 5.5 4H12v16H5.5A1.5 1.5 0 014 18.5zM20 5.5c0-.8-.7-1.5-1.5-1.5H12v16h6.5c.8 0 1.5-.7 1.5-1.5z",

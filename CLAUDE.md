@@ -10622,6 +10622,28 @@ parent. Measured: on-screen change inside the sphere over 4s roughly
 doubled (6 to 12-13 levels) on all eight themes; Home frame timing at 4x
 throttle unchanged within noise.
 
+**Home's planet system has depth** (*"the large planet, the flare bubbles,
+the tiny flares, and all that could look a little more 3d/legit"*). One
+light, from the upper left, for everything:
+- the planet: `.cosmic-sphere-shade`, one static HTML disc above the smoke
+  - a night side falling away to the lower right, a lit-limb edge, a crisp
+  glint, and a thin atmosphere in `--theme-c2` just outside the limb;
+- the flare bubbles: the lens (`::after`) gains a glint, a shaded lower
+  right and a light catch along the bottom, and the cast shadow moved
+  down and right (`3px 7px 12px -2px`). The shadow is in the bubble's own
+  `box-shadow`, NOT a `filter:drop-shadow` - a filter on the same element
+  as its `backdrop-filter` breaks the glass;
+- the tiny flares: a lit-bead radial gradient plus a catch-light circle
+  (`.cosmic-dot-spec`) on every dot, found or not;
+- the rings: a vertical gradient stroke, brighter on the near (lower)
+  edge, so they read as hoops tilted towards you. Supernova's coloured
+  ring keeps its own colour.
+**The dot and ring gradients have ids unique to each hero copy**
+(`cosmicDepthSeq`), applied as inline style. A shared id resolves to the
+first copy in the document; when that copy was a hidden hero the rings
+painted nothing at all - which is exactly what the first attempt did.
+Frame timing on Home at 4x throttle unchanged within noise.
+
 Gates: `check-behaviour` section 74 (`check_b304`), written against 303 and
 red there on every group; section 75 (`check_b304_polish`) for the second
 list, red on 303 on every check of the change.
