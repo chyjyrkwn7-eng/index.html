@@ -10766,23 +10766,27 @@ picks between them**: `ZENITH_STYLE` (next to `AVATAR_GLOW`).
   star at its top and a spark running round it. Banner: a spire of black
   glass under a ring laid flat round the star (the spark runs behind the
   spire, then in front - two clipped copies of one turning layer), a black
-  mirror floor, a white shock every 8s.
-- `"b"` **Celestial silver & midnight** - **the one that ships.** Midnight
+  mirror floor, a white shock every 8s. **The one that ships** - Madison
+  picked it from the three: *"Use A. Save the other two in case I need
+  them later."*
+- `"b"` **Celestial silver & midnight** - kept, not shipped. Midnight
   helm and plate under platinum, a platinum face guard with starlight eyes,
   feathered platinum wings at the temples, constellations etched on the
   helm and plate, a cape of night, and a crown of seven white stars that
   twinkle in turn. Banner: the sky straight up - star trails wheeling round
   one pole star (one turning layer, so seamless), the seven-star crown over
   it, a moonlit ridge, meteors, a ring of light every 9s.
-- `"c"` **Astral plasma** - teal-black plate with cyan plasma in its seams,
+- `"c"` **Astral plasma** - kept, not shipped. Teal-black plate with cyan plasma in its seams,
   wings of light in shards (the Valkyrie's wing classes), a V visor with
   cyan-white eyes, a floating crown of light shards. Banner: a plane of
   cyan light with a beam rising out of it, rings climbing the beam, shards
   hanging in the air, plasma ribbons, a surge every 7s.
 
-Why `"b"`: at 26px on a rankings row it is the only one that cannot be
-taken for one of the hood family (Void, Umbra, Horizon) - `"a"` can - and
-the star-trail banner is the most finished of the three.
+`"b"` was the recommendation - at 26px on a rankings row it is the only
+one that cannot be taken for one of the hood family (Void, Umbra,
+Horizon), and `"a"` can - but `"a"` was chosen. **B and C are kept on
+purpose, fully drawn behind the switch, so either can come back by
+changing the one constant.** Do not delete them as dead code.
 
 **Everything that must agree reads `ZENITH_LOOK`**: the glow
 (`AVATAR_GLOW.zenith`), the scene behind the figure (`BACKDROP.zenith`), the
