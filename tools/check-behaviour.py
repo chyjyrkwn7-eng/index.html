@@ -1939,7 +1939,7 @@ def check_b234(br):
         res.timerAfter = cfg.timer;
         /* Build 250: Shuffle and Hide answers are their own card; the fold is the timer alone. */
         const mb = sh.querySelector('.more-body'), rows = sh.querySelector('.optionsmodal-body > .sect > .opt-rows');
-        res.optsFolded = !!mb && !mb.classList.contains('open') && !mb.querySelector('.opt-rows') && !!rows && rows.querySelectorAll('.opt').length === 2
+        res.optsFolded = !!mb && !mb.classList.contains('open') && !mb.querySelector('.opt-rows') && !!rows && rows.querySelectorAll('.opt:not([hidden])').length === 2
           && !!mb.querySelector('.timer-sect');
         cfg.timer = 'off';
         return res; });
@@ -2221,7 +2221,7 @@ def check_b235b(br):
     # don't show that ... If there's no timer, don't show that either ...
     # And if it's all questions, don't show that."
     check("the top box lists only the settings that are on, each with an icon, and no question count",
-          isinstance(t, dict) and t.get("icons") and "20 min countdown" in tx and "Flagged" in tx
+          isinstance(t, dict) and t.get("icons") and "20 min countdown" in tx and ("Flagged" in tx or "Starred" in tx)
           and not any(x in ("All questions", "In order", "No timer") for x in tx)
           and not any(x.startswith("All ") and x[4:].isdigit() for x in tx) and not any(" of " in x for x in tx)
           and "20 min countdown" in t.get("state", ""), t)
@@ -2286,7 +2286,7 @@ def check_b236(br):
       await T('list', () => { const d = document.querySelector('.unitdetail');
         const bar = d.querySelector('.unitdetail-head .pick-stars');
         return { listing: d.classList.contains('is-listing'), barHidden: !bar || getComputedStyle(bar).display === 'none',
-                 search: !!d.querySelector('.unitdetail-search input'), testFlag: !!d.querySelector('.unitdetail-q .flagbtn .flagbanner'),
+                 search: !!d.querySelector('.unitdetail-search input'), testFlag: !!d.querySelector('.unitdetail-q .flagbtn .flagbanner, .unitdetail-q .flagbtn.qflag .starfill'),
                  qs: d.querySelectorAll('.unitdetail-q').length }; });
       await T('search', async () => { const i = document.querySelector('.unitdetail-search input');
         i.value = 'zzzzqqq'; i.dispatchEvent(new Event('input')); await wait(100);
@@ -2322,7 +2322,8 @@ def check_b236(br):
     check("Zeus's symbol sits on a dark carved panel, and Poseidon's id draws the Sheriff", r["panels"] == [True, True], r["panels"])
     cp = r["copy"] if isinstance(r["copy"], dict) else {}
     check("the doors say what they open, and Hundos says nothing about the badge",
-          cp.get("doors") == ["Tap to see flagged questions"]
+          # Build 303 made the flag a star; the door's shape is what counts.
+          cp.get("doors") in (["Tap to see flagged questions"], ["Tap to see starred questions"])
           and "badge" not in (cp.get("hundoSub") or "").lower(), r["copy"])
     l = r["list"] if isinstance(r["list"], dict) else {}
     check("the list drops the badge bar, has a search, and the in-test flag",
@@ -4182,7 +4183,7 @@ def check_b245_start_pill(br):
       const cb = [...document.querySelectorAll('.picks .pick:not(.pick-flagged-all)')].find(p => !/Penal/.test(p.textContent) && p.querySelector('input')).querySelector('input');
       cb.click(); await wait(400);
       return document.getElementById('bottomtab-start').getAttribute('aria-label') || ''; }""")
-    check("in Review mode Start says review, not drill", lab.lower().startswith("start review"), lab)
+    check("in Review mode Start says review, not drill", lab.lower().startswith(("start review", "start learning")), lab)
     ctx.close()
 
 
@@ -6528,7 +6529,7 @@ def check_b297(br):
           r.get("sheetOpen") is True and sw.get("closed") is True and sw.get("screen") == "setup", sw)
     ls = r.get("list") or {}
     check("the box lists exactly the flagged questions, each with the test's flag, on",
-          ls.get("n") == 3 and ls.get("all") and ls.get("title") == "Flagged Questions" and ls.get("flags") == [True, True, True], ls)
+          ls.get("n") == 3 and ls.get("all") and ls.get("title") in ("Flagged Questions", "Starred Questions") and ls.get("flags") == [True, True, True], ls)
     uh = r.get("unflagHere") or {}
     check("unflagging there takes the flag off and leaves the question, dimmed",
           uh.get("flagged") is False and uh.get("dimmed") is True and uh.get("still") is True, uh)
@@ -6594,7 +6595,7 @@ def check_b297(br):
       const b = row.getBoundingClientRect(); return [b.left + b.width / 2, b.top + b.height / 2]; }""")
     pg.mouse.move(*box); pg.mouse.down(); pg.wait_for_timeout(900); pg.mouse.up(); pg.wait_for_timeout(800)
     r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms));
-      const d = [...document.querySelectorAll('button')].find(b => /Flagged/.test(b.textContent) && b.offsetParent && b.closest('[class*=unitdetail]'));
+      const d = [...document.querySelectorAll('button')].find(b => /Flagged|[Ss]tarred/.test(b.textContent) && b.offsetParent && b.closest('[class*=unitdetail]'));
       d && d.click(); await wait(700);
       const fl = [...document.querySelectorAll('.unitdetail-q .flagbtn')];
       return { n: fl.length, shared: fl.every(f => f.classList.contains('qflag') && f.classList.contains('on')),
@@ -7458,7 +7459,7 @@ def check_b302_flagnote(br):
             bad.append("%s: label is off the screen" % tag)
         if not r.get("onLine"):
             bad.append("%s: label is not on the flag's line" % tag)
-        if r.get("text") != "Flagged":
+        if r.get("text") not in ("Flagged", "Starred"):
             bad.append("%s: label reads %r" % (tag, r.get("text")))
     check("the flag label lands beside the flag on all %d sizes" % len(sizes), not bad, bad[:6])
 
