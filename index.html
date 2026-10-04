@@ -44978,17 +44978,20 @@ function buildThemeBannerArt(accent){
 const BANNER_TINT = {
   tests100: ["#5CCBB9", "#5089D7"],
   tests250: ["#E2467D", "#AF59CF"],
-  tests500: ["#3DD0EB", "#57D17D"],
+  tests500: ["#3CD1EB", "#57D17D"],
   hundos100: ["#EA3E60", "#7A61C7"],
   hundos250: ["#5B7FCD", "#D27E56"],
   vr50: ["#7635F2", "#D652A9"],
   study50: ["#CF8459", "#4D68DB"],
-  correct5000: ["#486DE0", "#716CBC"],
-  level80: ["#7655D3", "#C167AA"],
-  exam100: ["#F95F2F", "#FF2932"],
-  adept_rank: ["#4572E3", "#559ED3"],
-  elite_rank: ["#8D4DDB", "#9D60C8"],
-  titan_rank: ["#EC3C55", "#B83DEB"]
+  study60: ["#566CD2", "#675DCB"],
+  correct5000: ["#496EDF", "#766EBA"],
+  correct10000: ["#427CE5", "#50A0D8"],
+  level80: ["#7655D3", "#C167A9"],
+  exam100: ["#F95E2F", "#FF2931"],
+  adept_rank: ["#4572E3", "#4D9FDA"],
+  elite_rank: ["#8D4DDB", "#9D61C7"],
+  titan_rank: ["#EC3C55", "#BC3DEB"],
+  zenith: ["#6C4CDC", "#E1BC47"]
 };
 const bannerTintCache = {};
 function bannerTintOf(id){
@@ -61167,7 +61170,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-04-303";
+const APP_BUILD = "2026-10-04-304";
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
    pushing when I open the app?" Because this gap is shared by every way
@@ -74229,6 +74232,8 @@ const UNLOCK_NOTES = {
   "banner:vr50": "Every Virtual Room match you finish counts, win or lose.",
   "banner:study50": "All your study time counts, added up across every day.",
   "banner:correct5000": "Every right answer counts, in any mode.",
+  "banner:correct10000": "Every right answer counts, in any mode - the same count as Star Trails, carried on.",
+  "banner:study60": "All your study time counts, added up across every day - the same clock as Midnight Oil.",
   "banner:level80": "Every test earns XP towards your next level. " + LEVEL_CAP + " is the top level."
 };
 function unlockNoteFor(o){
