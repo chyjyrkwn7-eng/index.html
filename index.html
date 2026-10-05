@@ -53582,7 +53582,7 @@ function applyFlareReschedule(){
     const spread = Math.max(1, 10 - 4 * (owed - 1));
     store.flareNextTestAt = testsCompletedOf(store) + Math.floor(Math.random() * spread);
   }
-  saveStore();
+  saveIfAccount();
 }
 function mysteryLevelGate(color){
   store.flareLevels = store.flareLevels || {};
@@ -53591,9 +53591,23 @@ function mysteryLevelGate(color){
   const inWindow = typeof cur === "number" && cur >= w[0] && cur <= w[1];
   if(!inWindow){
     store.flareLevels[color] = w[0] + Math.floor(Math.random() * (w[1] - w[0] + 1));
-    saveStore();
+    saveIfAccount();
   }
   return store.flareLevels[color];
+}
+/* ---- A GETTER THAT SAVES MUST NOT SAVE AN EMPTY STORE (build 313) ----
+   mysteryLevelGate rolls a flare's level lazily and saved it on the spot.
+   Build 313 started asking it from inside the Home/Welcome planet's
+   drawing (flareHuntState), which runs on EVERY launch before boot
+   recovery has read the IndexedDB mirror - so a device whose localStorage
+   had been cleared saved its brand-new empty store over the mirror, and
+   recovery then "restored" nothing: Welcome, no progress, the account
+   one tap from being overwritten. check-sync section 4 caught it.
+   Before an account exists there is nothing to persist; the roll stays in
+   memory and is saved with the first real save after sign-up or
+   recovery. */
+function saveIfAccount(){
+  if(store && store.onboardingComplete) saveStore();
 }
 function mysteryGateMet(color){
   if(levelOf(store) < mysteryLevelGate(color)) return false;
