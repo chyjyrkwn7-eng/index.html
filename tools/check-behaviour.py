@@ -9025,6 +9025,14 @@ def check_b313_lead(br):
       const why = document.querySelector('.hundo-why');
       out.why = (chip && why && !why.hidden) ? { gap: Math.round(why.getBoundingClientRect().top - chip.getBoundingClientRect().bottom), text: why.textContent.trim() } : null;
       document.querySelector('#unitoptions-modal')?.remove(); document.querySelector('.unitoptions-scrim')?.remove();
+      /* Customize goes up before its banner scenes are drawn, and every
+         one of them is drawn a moment later */
+      showCustomize();
+      const tiles = () => [...document.querySelectorAll('.screen-customize .banner-opt:not(.is-none)')];
+      out.custNow = { tiles: tiles().length, drawn: tiles().filter(t => t.querySelector('.bnr')).length };
+      await wait(1500);
+      out.custLater = { tiles: tiles().length, drawn: tiles().filter(t => t.querySelector('.bnr')).length };
+      showHome(); await wait(300);
       /* ---- the board ---- */
       store.publicId = 'me0000000001'; store.leaderboardOptIn = true; syncCode = syncCode || 'SYNC-test';
       const mk = (rows, cache) => ({ metadata: { fromCache: !!cache }, size: rows.length, empty: !rows.length, forEach: f => rows.forEach(r => f({ id: r.pub, data: () => r })) });
@@ -9068,6 +9076,9 @@ def check_b313_lead(br):
     w = r.get("why")
     check("tapping No hundo opens its note right under the chip, saying to slide to All",
           isinstance(w, dict) and 0 <= w["gap"] <= 40 and "All" in w["text"], w)
+    cn, cl = r.get("custNow") or {}, r.get("custLater") or {}
+    check("Customize opens before drawing its banner scenes, and draws every one of them a moment later",
+          cn.get("tiles", 0) > 10 and cn.get("drawn") == 0 and cl.get("drawn") == cl.get("tiles") == cn.get("tiles"), [cn, cl])
     c = r.get("cold") or {}
     check("a cold open shows placeholder rows, not you alone in 1st place, while the cache knows only you",
           c.get("skel", 0) >= 5 and c.get("rows") == 0, c)

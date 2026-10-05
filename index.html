@@ -79393,6 +79393,9 @@ function showCustomize(){
   const bannerGrid = document.createElement("div");
   bannerGrid.className = "banner-grid";
   const current = wornBanner();
+  /* Drawn just after the screen is up, not before (build 313) - see
+     fillDeferredBannerArt. */
+  const bannerArtQueue = [];
   const bannerOpt = (id, name, needText, locked) => {
     const b = document.createElement("button");
     b.type = "button";
@@ -79401,7 +79404,7 @@ function showCustomize(){
     b.dataset.banner = id;
     const art = document.createElement("span");
     art.className = "banner-opt-art";
-    art.appendChild(id ? buildBannerArt(id) : buildThemeBannerArt(theme.accent));
+    if(id) bannerArtQueue.push({ art, id }); else art.appendChild(buildThemeBannerArt(theme.accent));
     if(locked){
       const lk = document.createElement("span");
       lk.className = "banner-opt-lock";
@@ -79537,6 +79540,41 @@ function showCustomize(){
 
   stage.replaceChildren(panel);
   toTop();
+  fillDeferredBannerArt(bannerArtQueue);
+}
+
+/* ---- CUSTOMIZE OPENS FIRST AND DRAWS ITS BANNERS AFTER (build 313) ----
+   "Ensure all pages and tabs load properly and smoothly." Timed on every
+   main screen with the CPU slowed four times, Customize was the one
+   outlier by a distance: ~800ms of building before anything could paint,
+   against under 150 for every other screen - and the banner artwork was
+   half of it, nineteen full scenes cloned and re-id'd, all of them
+   further down the page than the screen is tall. The tiles go up at
+   once with their names and requirements (the art slot is a fixed 16:6,
+   so nothing moves when the art lands); the scenes are drawn in the
+   frames after, a few milliseconds' worth per frame and NEAREST THE
+   SCREEN FIRST, so a fast scroll down finds them drawn rather than
+   waiting. */
+function fillDeferredBannerArt(queue){
+  if(!queue || !queue.length) return;
+  const fill = q => {
+    q.done = true;
+    try{ q.art.insertBefore(buildBannerArt(q.id), q.art.firstChild); }catch(e){}
+  };
+  const step = () => {
+    const live = queue.filter(q => !q.done && q.art.isConnected);
+    if(!live.length) return;
+    const vh = window.innerHeight || 800;
+    const away = q => { const r = q.art.getBoundingClientRect(); return r.bottom < 0 ? -r.bottom : r.top > vh ? r.top - vh : 0; };
+    live.sort((x, y) => away(x) - away(y));
+    const t0 = performance.now();
+    for(const q of live){
+      fill(q);
+      if(performance.now() - t0 > 8) break;
+    }
+    requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
 }
 
 /* WHICH CALENDAR VIEW IS SHOWING. A module variable rather than a field
