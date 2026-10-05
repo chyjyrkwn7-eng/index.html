@@ -20876,13 +20876,52 @@
   @keyframes streak-prism{ to{ background-position:-200% 0; } }
   .streak-pop-num{ font-family:var(--mono); font-size:1.3rem; font-weight:800; color:var(--sk); text-shadow:0 0 12px color-mix(in srgb, var(--sk) 60%, transparent); }
   .streak-pop-text{ font-size:.72rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.75); }
-  .streak-lv3::after, .streak-lv4::after, .streak-lv5::after, .streak-lv6::after, .streak-lv7::after, .streak-lv8::after{
+  .streak-lv2::after, .streak-lv3::after, .streak-lv4::after, .streak-lv5::after, .streak-lv6::after, .streak-lv7::after, .streak-lv8::after{
     content:""; position:absolute; inset:-3px; border-radius:inherit; pointer-events:none;
     border:2px solid var(--sk); animation:streak-ring 1s ease-out .1s both;
   }
+  /* ---- AND IT GETS COOLER, NOT JUST ANOTHER COLOUR (build 313) ----
+     "Ensure they get progressively cooler/different when it gets higher
+     and higher." Each tier keeps everything the one below it had and
+     adds one thing, so 100 is visibly a bigger moment than 25:
+       25   a ring goes out
+       50   a sweep of light crosses the pill
+       75   sparks burst off it
+       100  a bigger pop, a second ring, and a flame beside the number
+       150  more sparks
+       250  the edges of the screen flash its colour
+       350  all of it, in every colour (the prism)
+     One-shot, transform and opacity only, gone with the pill. */
+  .streak-lv5, .streak-lv6{ --sk-pop:1.14; }
+  .streak-lv7, .streak-lv8{ --sk-pop:1.22; }
+  .streak-lv5::before, .streak-lv6::before, .streak-lv7::before, .streak-lv8::before{
+    content:""; position:absolute; inset:-3px; border-radius:inherit; pointer-events:none;
+    border:2px solid var(--sk); animation:streak-ring 1.2s ease-out .45s both;
+  }
+  .streak-clip{ position:absolute; inset:0; border-radius:inherit; overflow:hidden; pointer-events:none; }
+  .streak-sheen{ position:absolute; top:0; bottom:0; left:0; width:45%;
+    background:linear-gradient(100deg, transparent 15%, rgba(255,255,255,.3) 50%, transparent 85%);
+    transform:translateX(-120%); animation:streak-sheen 1.1s ease-in-out .3s 2 both; }
+  @keyframes streak-sheen{ to{ transform:translateX(320%); } }
+  .streak-sparks{ position:absolute; left:50%; top:50%; width:0; height:0; pointer-events:none; }
+  .streak-spark{ position:absolute; left:-2px; top:-2px; width:4px; height:4px; border-radius:50%;
+    background:var(--sk); box-shadow:0 0 6px var(--sk); opacity:0;
+    animation:streak-spark .95s cubic-bezier(.2,.7,.3,1) var(--sd, .1s) both; }
+  @keyframes streak-spark{
+    0%{ opacity:1; transform:rotate(var(--a)) translateX(14px) scale(1); }
+    100%{ opacity:0; transform:rotate(var(--a)) translateX(var(--d)) scale(.4); }
+  }
+  .streak-ico{ width:.95em; height:1.1em; align-self:center; margin-right:-.15rem; flex-shrink:0;
+    fill:var(--sk); filter:drop-shadow(0 0 5px var(--sk)); transform-origin:50% 100%;
+    animation:streak-flick .5s ease-in-out infinite; }
+  @keyframes streak-flick{ 0%, 100%{ transform:scaleY(1); } 50%{ transform:scaleY(.84) translateY(1px); } }
+  .streak-flash{ position:fixed; inset:0; z-index:249; pointer-events:none; opacity:0;
+    box-shadow:inset 0 0 80px 8px color-mix(in srgb, var(--sk) 55%, transparent);
+    animation:streak-flash 1.4s ease-out both; }
+  @keyframes streak-flash{ 0%{ opacity:0; } 14%{ opacity:1; } 100%{ opacity:0; } }
   @keyframes streak-pop{
     0%{ opacity:0; transform:translateX(-50%) translateY(-14px) scale(.9); }
-    8%{ opacity:1; transform:translateX(-50%) translateY(0) scale(1.04); }
+    8%{ opacity:1; transform:translateX(-50%) translateY(0) scale(var(--sk-pop, 1.04)); }
     13%{ transform:translateX(-50%) scale(1); }
     87%{ opacity:1; }
     100%{ opacity:0; transform:translateX(-50%) translateY(-8px); }
@@ -20898,7 +20937,7 @@
   .streak-pop.is-compact .streak-pop-text{ font-size:.5rem; letter-spacing:.1em; }
   @keyframes streak-pop-bar{
     0%{ opacity:0; transform:translate(-50%, -50%) translateY(-8px) scale(.9); }
-    8%{ opacity:1; transform:translate(-50%, -50%) scale(1.05); }
+    8%{ opacity:1; transform:translate(-50%, -50%) scale(var(--sk-pop, 1.05)); }
     13%{ transform:translate(-50%, -50%) scale(1); }
     87%{ opacity:1; transform:translate(-50%, -50%); }
     100%{ opacity:0; transform:translate(-50%, -50%) translateY(-5px); }
@@ -66952,7 +66991,7 @@ function runStreakLive(ok){
 }
 function showRunStreakBanner(n){
   if(theme.muteBanners) return;
-  document.querySelectorAll(".streak-pop").forEach(e => e.remove());
+  document.querySelectorAll(".streak-pop, .streak-flash").forEach(e => e.remove());
   const idx = runStreakTiersUpTo(n).length;          // 1 for 10, 2 for 25 ...
   const el = document.createElement("div");
   el.className = "streak-pop streak-lv" + Math.min(idx, 8);
@@ -66962,12 +67001,45 @@ function showRunStreakBanner(n){
   const txt = document.createElement("span");
   txt.className = "streak-pop-text"; txt.textContent = "in a row";
   el.append(num, txt);
+  /* The tier's extras (build 313) - see "AND IT GETS COOLER" in the CSS. */
+  if(idx >= 3){
+    const clip = document.createElement("span"); clip.className = "streak-clip";
+    const sheen = document.createElement("span"); sheen.className = "streak-sheen";
+    clip.appendChild(sheen); el.prepend(clip);
+  }
+  if(idx >= 5){
+    const ico = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    ico.setAttribute("viewBox", "0 0 14 16"); ico.setAttribute("class", "streak-ico"); ico.setAttribute("aria-hidden", "true");
+    ico.innerHTML = '<path d="M7 0C7.6 3 11.5 5 11.5 9.6 11.5 13 9.5 16 7 16S2.5 13 2.5 9.8C2.5 7.6 3.6 6.2 4.6 5.2 4.7 7 5.4 8 6.3 8.4 6 5.6 6.4 2.6 7 0Z"/>';
+    el.insertBefore(ico, num);
+  }
+  if(idx >= 4){
+    const sparks = document.createElement("span"); sparks.className = "streak-sparks";
+    const n = idx >= 6 ? 14 : 9;
+    for(let i = 0; i < n; i++){
+      const sp = document.createElement("span"); sp.className = "streak-spark";
+      sp.style.setProperty("--a", Math.round(i * 360 / n + (i % 2 ? 9 : -6)) + "deg");
+      sp.style.setProperty("--d", (idx >= 6 ? 62 : 48) + (i % 3) * 9 + "px");
+      sp.style.setProperty("--sd", (0.08 + (i % 3) * 0.05).toFixed(2) + "s");
+      sparks.appendChild(sp);
+    }
+    el.appendChild(sparks);
+  }
   document.body.appendChild(el);
   placeStreakPop(el);
+  if(idx >= 7){
+    const flash = document.createElement("div"); flash.className = "streak-flash";
+    flash.style.setProperty("--sk", getComputedStyle(el).getPropertyValue("--sk").trim() || "#FF4A6B");
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 1500);
+  }
   /* 3.2s (build 310, was 1.9): "the notification is quick, could last an
      extra second or 1.5 ... that can stay until it disappears on its own."
-     It lives on <body>, so moving to the next question never touches it. */
-  setTimeout(() => el.remove(), 3200);
+     It lives on <body>, so moving to the next question never touches it.
+     The two biggest tiers hold a little longer (build 313). */
+  const life = idx >= 7 ? 4000 : 3200;
+  if(life !== 3200) el.style.animationDuration = (life / 1000) + "s";
+  setTimeout(() => el.remove(), life);
 }
 /* ---- IN THE TOP BAR, NOT UNDER IT (build 244) ----
    "The answer streak pop is in the way of the question and stuff." It
@@ -68051,7 +68123,7 @@ function showRunRewards(run, hooks, opts){
      3.2s and used to ride on over the top of "Test results" when the
      run ended on a streak (25 in a row sat over the header). The XP
      box says it now, so it goes when the results arrive. */
-  document.querySelectorAll(".streak-pop").forEach(e => e.remove());
+  document.querySelectorAll(".streak-pop, .streak-flash").forEach(e => e.remove());
   /* Coming BACK from the review is the finished screen, drawn at once:
      no boxes landing again, and above all no badge case, spotlight or
      flare scene playing a second time. */

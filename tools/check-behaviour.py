@@ -9033,6 +9033,12 @@ def check_b313_lead(br):
       await wait(1500);
       out.custLater = { tiles: tiles().length, drawn: tiles().filter(t => t.querySelector('.bnr')).length };
       showHome(); await wait(300);
+      /* the in-test streak: every tier keeps the last one's extras and adds one */
+      theme.muteBanners = false;
+      out.streak = [10, 25, 50, 75, 100, 250].map(n => { showRunStreakBanner(n); const e = document.querySelector('.streak-pop');
+        return { n, ring: getComputedStyle(e, '::after').content !== 'none', sheen: !!e.querySelector('.streak-sheen'), sparks: e.querySelectorAll('.streak-spark').length,
+                 flame: !!e.querySelector('.streak-ico'), flash: !!document.querySelector('.streak-flash') }; });
+      document.querySelectorAll('.streak-pop, .streak-flash').forEach(e => e.remove());
       /* ---- the board ---- */
       store.publicId = 'me0000000001'; store.leaderboardOptIn = true; syncCode = syncCode || 'SYNC-test';
       const mk = (rows, cache) => ({ metadata: { fromCache: !!cache }, size: rows.length, empty: !rows.length, forEach: f => rows.forEach(r => f({ id: r.pub, data: () => r })) });
@@ -9079,6 +9085,14 @@ def check_b313_lead(br):
     cn, cl = r.get("custNow") or {}, r.get("custLater") or {}
     check("Customize opens before drawing its banner scenes, and draws every one of them a moment later",
           cn.get("tiles", 0) > 10 and cn.get("drawn") == 0 and cl.get("drawn") == cl.get("tiles") == cn.get("tiles"), [cn, cl])
+    st = {x["n"]: x for x in (r.get("streak") or [])}
+    def lvl(n):
+        x = st.get(n) or {}
+        return (x.get("ring"), x.get("sheen"), x.get("sparks", 0) > 0, x.get("flame"), x.get("flash"))
+    check("the streak pop gets more each tier: ring at 25, sweep at 50, sparks at 75, flame at 100, screen flash at 250",
+          lvl(10) == (False, False, False, False, False) and lvl(25) == (True, False, False, False, False)
+          and lvl(50) == (True, True, False, False, False) and lvl(75) == (True, True, True, False, False)
+          and lvl(100) == (True, True, True, True, False) and lvl(250) == (True, True, True, True, True), r.get("streak"))
     c = r.get("cold") or {}
     check("a cold open shows placeholder rows, not you alone in 1st place, while the cache knows only you",
           c.get("skel", 0) >= 5 and c.get("rows") == 0, c)
