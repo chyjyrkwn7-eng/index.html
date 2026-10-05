@@ -2014,8 +2014,12 @@ def check_b234(br):
     # "All 48" under How many "doesn't even make sense".
     # REVISED IN 311: the box carries what it draws ("The whole unit"),
     # still never a number - the rule from 250 is the number.
-    check("the Question bank's All questions carries no second count",
-          sh.get("name") == "All questions" and not any(ch.isdigit() for ch in sh.get("count", "")), sh)
+    # REVISED IN 313: "it says the whole unit but what if you have
+    # multiple units?" - the choice is "Your unit" / "Your units", and with
+    # several it says how many UNITS (never how many questions).
+    check("the bank's first choice is Your unit(s), with no question count",
+          sh.get("name") in ("Your unit", "Your units")
+          and re.fullmatch(r"(\d+ units)?", sh.get("count", "")) is not None, sh)
     # Build 254: a default says nothing - no "All questions", "In order"
     # or "No timer" in the top box on an untouched run.
     check("on an untouched run the top box shows no defaults (All questions, In order, No timer)",
@@ -2197,7 +2201,10 @@ def check_b235b(br):
         /* build 311: what each draws is IN its box ("should it just be in
            those boxes?") and the line under the switch is gone */
         return { rows: rows.map(r => r.dataset.value), bare: rows.every(r => !r.querySelector('.bank-desc') && !r.querySelector('.bank-ico')),
-                 oneLine: [...cap].every(c => c.hidden) && rows.every(r => ((r.querySelector('.bank-count') || {}).textContent || '').trim().length > 2),
+                 /* 313: with ONE unit "Your unit" needs no second line;
+                    with several it says how many units */
+                 oneLine: [...cap].every(c => c.hidden) && rows.every(r => { const t = ((r.querySelector('.bank-count') || {}).textContent || '').trim();
+                   return r.dataset.value === 'all' ? (t === '' || /^\d+ units$/.test(t)) : t.length > 2; }),
                  allSays: ((document.querySelector('.bank-opt[data-value="all"] .bank-count') || {}).textContent || ''),
                  label: (document.querySelector('.bank-sect .slab') || {}).textContent }; });
       document.querySelector('.bank-opt[data-value="flagged"]')?.click(); await wait(200);
@@ -2256,10 +2263,10 @@ def check_b235b(br):
     # is allowed 60 characters, still one short line.
     # REVISED IN 311: the words moved INTO the boxes and the line under
     # the switch went - "should it just be in those boxes?"
-    check("the Question bank: All questions and Starred, each saying what it draws in its own box - no info dot",
+    check("Questions from: Your units and Starred, each saying what it draws in its own box - no info dot",
           b.get("rows") == ["all", "flagged"] and b.get("bare") and b.get("oneLine")
           and bi.get("shown") and 0 < bi.get("len", 0) <= 60 and not bi.get("info")
-          and b.get("label") == "Question bank", [b, bi])
+          and b.get("label") == "Questions from", [b, bi])
     t = r["tags"] if isinstance(r["tags"], dict) else {}
     # Build 250: the settings are back in the top box ("still needs to
     # say the settings of the test from that menu, in the top like
@@ -8973,6 +8980,102 @@ def check_b312_looks(br):
           r.get("orionLines") and all(x < 11 for x in r["orionLines"]), r.get("orionLines"))
     check("each board avatar is clipped to its circle", r.get("clip") and all(c.startswith("hidden") and "circle" in c for c in r["clip"]), r.get("clip"))
     check("the tab bubble is inset from the bar's top and bottom edges", r.get("pill") and r["pill"]["top"] == "5px" and r["pill"]["bottom"] == "5px", r.get("pill"))
+    ctx.close()
+
+
+def check_b313_lead(br):
+    """Build 313, the lead's own list: "settings still says auto flag";
+    the leaderboard blurbs "shortened"; an unlocked badge "just like the
+    challenge is displayed on the non unlocked ones"; Phoenix "the hardest
+    unique challenge"; the rank bars "applied to all of them"; the no-hundo
+    note "near the button"; and the Leaderboard that "sometimes only
+    displays myself" and "opens poorly with a missing piece"."""
+    print("\n90. build 313 (lead): Auto-star, short blurbs, badge text, Phoenix 10, rank bars, the no-hundo note, the board that only showed you")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      showAppearance(); await wait(500);
+      out.autoStar = [...document.querySelectorAll('#stage *')].some(e => e.childElementCount === 0 && /Auto-star questions you keep missing/.test(e.textContent || ''))
+        || /Auto-star questions you keep missing/.test(document.getElementById('stage').textContent);
+      out.autoFlag = /Auto-flag/i.test(document.getElementById('stage').textContent);
+      out.blurbs = RANKING_BOARDS.map(b => (b.blurb || '').length);
+      const U = topicsIn(QUESTIONS);
+      store.unitPerfects = store.unitPerfects || {}; store.unitPerfects[U[0]] = badgeThresholdFor(U[0]) + 3; store.unitPerfects[U[1]] = 0;
+      out.descHeld = badgeDetail(U[0]).desc; out.descNot = badgeDetail(U[1]).desc;
+      out.phoenix = typeof PHOENIX_UNIT_RUN === 'number' ? PHOENIX_UNIT_RUN : null;
+      /* the rank's colour on a bar that is met, not green */
+      showRankLore('rookie'); await wait(900);
+      out.fills = [...document.querySelectorAll('.ranklore-reqfill')].map(f => { const c = getComputedStyle(f); return { img: c.backgroundImage.slice(0, 15), glow: c.boxShadow !== 'none', met: f.closest('.ranklore-req').classList.contains('is-met') }; });
+      document.querySelector('.invite-overlay')?.remove();
+      /* a version label that only writes when it changes */
+      showProfile('stats'); await wait(700);
+      const st = document.documentElement.style, orig = st.setProperty.bind(st); let writes = 0;
+      st.setProperty = (k, v, pr) => { if(k === '--vv-shift') writes++; return orig(k, v, pr); };
+      const max = document.documentElement.scrollHeight - innerHeight;
+      for(let i = 0; i < 16; i++){ window.scrollTo({ top: (i % 2) ? max : Math.max(0, max - 120), behavior: 'instant' }); await new Promise(r => requestAnimationFrame(r)); }
+      delete st.setProperty; out.shiftWrites = writes;
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      /* the no-hundo note sits by its chip */
+      cfg.mode = 'drill'; cfg.units = []; cfg.size = 0; showSetup(); await wait(700);
+      document.querySelector('.picks .pick .pname')?.click(); await wait(300);
+      [...document.querySelectorAll('button')].find(b => /^start$/i.test(b.textContent.trim()))?.click(); await wait(1000);
+      const sl = document.querySelector('#unitoptions-modal .howmany-sect input.slider');
+      if(sl){ sl.value = Math.max(1, Math.floor(Number(sl.max) / 2)); sl.dispatchEvent(new Event('input', { bubbles: true })); sl.dispatchEvent(new Event('change', { bubbles: true })); }
+      await wait(600);
+      const chip = document.querySelector('.hundo-chip'); chip?.click(); await wait(400);
+      const why = document.querySelector('.hundo-why');
+      out.why = (chip && why && !why.hidden) ? { gap: Math.round(why.getBoundingClientRect().top - chip.getBoundingClientRect().bottom), text: why.textContent.trim() } : null;
+      document.querySelector('#unitoptions-modal')?.remove(); document.querySelector('.unitoptions-scrim')?.remove();
+      /* ---- the board ---- */
+      store.publicId = 'me0000000001'; store.leaderboardOptIn = true; syncCode = syncCode || 'SYNC-test';
+      const mk = (rows, cache) => ({ metadata: { fromCache: !!cache }, size: rows.length, empty: !rows.length, forEach: f => rows.forEach(r => f({ id: r.pub, data: () => r })) });
+      const me = { pub: 'me0000000001', firstName: 'Me', avatarChar: 'grizzly', level: 3, badges: 0, hundos: 1, week: weekKeyNow(), weekPoints: 10 };
+      const class10 = Array.from({ length: 10 }, (_, i) => ({ pub: 'p' + String(i).padStart(11, '0'), firstName: 'P' + i, avatarChar: 'zeus', level: 40 - i, badges: 3, hundos: 20 - i, week: weekKeyNow(), weekPoints: 900 - i * 50 }));
+      let cbs = [];
+      const real = fbDb, realOSR = onSnapshotResilient;
+      /* the harness stub answers every listener with an empty SERVED
+         snapshot; this test needs the snapshots it hands over itself */
+      onSnapshotResilient = (ref, onNext) => ref.onSnapshot(onNext, () => {});
+      fbDb = { collection: n => n !== 'leaderboard' ? real.collection(n) : ({ doc: id => real.collection(n).doc(id),
+        get: () => new Promise(() => {}), onSnapshot: cb => { cbs.push(cb); return () => { cbs = cbs.filter(c => c !== cb); }; } }) };
+      const real4 = () => document.querySelectorAll('.rank-row:not(.rank-row-skel)').length;
+      /* cold: nothing in memory, the cache knows only you */
+      leaderboardRows = []; showRankings('week'); await wait(60);
+      cbs.forEach(cb => cb(mk([me], true))); await wait(300);
+      out.cold = { skel: document.querySelectorAll('.rank-row-skel').length, rows: real4() };
+      cbs.forEach(cb => cb(mk(class10.concat([me]), false))); await wait(300);
+      out.coldServed = { skel: document.querySelectorAll('.rank-row-skel').length, rows: real4() };
+      /* warm: the class is in memory, the cache answers with only you */
+      showHome(); await wait(300); cbs = [];
+      leaderboardRows = class10.slice(); showRankings('week'); await wait(60);
+      out.warmFirst = real4();
+      cbs.forEach(cb => cb(mk([me], true))); await wait(300);
+      out.warmAfterCache = real4();
+      /* the server may still take somebody off */
+      cbs.forEach(cb => cb(mk(class10.slice(0, 7).concat([me]), false))); await wait(300);
+      out.afterServed = real4();
+      fbDb = real; onSnapshotResilient = realOSR; showHome();
+      return out; }""")
+    check("Settings says Auto-star, and nothing says Auto-flag", r.get("autoStar") is True and r.get("autoFlag") is False, [r.get("autoStar"), r.get("autoFlag")])
+    check("each board's blurb is one short line (80 characters or fewer)", r.get("blurbs") and max(r["blurbs"]) <= 80 and min(r["blurbs"]) > 0, r.get("blurbs"))
+    check("an earned badge states its challenge exactly the way a locked one does",
+          bool(re.fullmatch(r"Earn \d+ hundos? in this unit\.", r.get("descHeld") or "")) and bool(re.fullmatch(r"Earn \d+ hundos? in this unit\.", r.get("descNot") or "")),
+          [r.get("descHeld"), r.get("descNot")])
+    check("Phoenix asks for 10 units at 100% in a row", r.get("phoenix") == 10, r.get("phoenix"))
+    f = r.get("fills") or []
+    check("every requirement bar on a rank is in the rank's colour with its glow - a met one too, never green",
+          len(f) == 2 and any(x["met"] for x in f) and all(x["img"].startswith("linear-gradient") and x["glow"] for x in f), f)
+    check("scrolling does not rewrite the page's root style on every frame", r.get("shiftWrites") == 0, r.get("shiftWrites"))
+    w = r.get("why")
+    check("tapping No hundo opens its note right under the chip, saying to slide to All",
+          isinstance(w, dict) and 0 <= w["gap"] <= 40 and "All" in w["text"], w)
+    c = r.get("cold") or {}
+    check("a cold open shows placeholder rows, not you alone in 1st place, while the cache knows only you",
+          c.get("skel", 0) >= 5 and c.get("rows") == 0, c)
+    cs = r.get("coldServed") or {}
+    check("and the class replaces the placeholders the moment the server answers", cs.get("skel") == 0 and cs.get("rows") == 11, cs)
+    check("an open with the class in memory paints it in the first frame", r.get("warmFirst", 0) >= 10, r.get("warmFirst"))
+    check("a cached answer holding only you does not shrink the board to you", r.get("warmAfterCache", 0) >= 10, r.get("warmAfterCache"))
+    check("but the server's answer can still take somebody off", r.get("afterServed") == 8, r.get("afterServed"))
     ctx.close()
 
 

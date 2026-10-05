@@ -4145,6 +4145,15 @@
     background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); border:1px solid rgba(255,255,255,.11);
     box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
   }
+  /* Placeholder rows while the board loads (build 313): the real row's
+     box, with soft bars where the name and the stat go. The breathing
+     is opacity only, staggered down the list, so it costs the
+     compositor nothing and reads as "coming" rather than "broken". */
+  .rank-row-skel{ height:66px; box-sizing:border-box; animation:rank-skel 1.5s ease-in-out infinite; animation-delay:calc(var(--skel-i, 0) * 90ms); }
+  .rank-skel-av{ width:2.6rem; height:2.6rem; border-radius:50%; flex-shrink:0; background:rgba(255,255,255,.08); }
+  .rank-skel-line{ display:block; height:.62rem; width:46%; border-radius:99px; background:rgba(255,255,255,.1); }
+  .rank-skel-line.is-short{ width:30%; margin-top:.45rem; background:rgba(255,255,255,.06); }
+  @keyframes rank-skel{ 0%, 100%{ opacity:.55; } 50%{ opacity:1; } }
   .rank-place{ font-family:var(--mono); font-size:.85rem; font-weight:800; color:var(--soft); width:2.2rem; flex-shrink:0; }
   /* position:relative on the WRAP, not the avatar, so the rank emblem
      can hang over the avatar's edge without being clipped by it. */
@@ -34145,10 +34154,19 @@ if(window.visualViewport){
      this cannot be regression-tested locally - the same caveat the two
      blocks above already carry. What CAN be checked, and is, is that
      the token is 0 and the button unmoved when nothing is focused. */
+  /* WRITTEN ONLY WHEN IT CHANGES (build 313). This runs on every scroll
+     event of every screen, for a number that is 0 unless a keyboard is
+     up, and a custom property on <html> is the one write that can
+     restyle the whole document. Chromium skips a same-value write (so
+     this measured no different there); it costs nothing to not depend
+     on WebKit doing the same while somebody flings down Profile. */
+  let lastShift = null;
   const setShift = () => {
     let px = 0;
     try{ px = Math.max(0, Math.round((vv.pageTop || 0) - (window.scrollY || 0))); }
     catch(e){ px = 0; }
+    if(px === lastShift) return;
+    lastShift = px;
     try{ document.documentElement.style.setProperty("--vv-shift", px + "px"); }
     catch(e){}
   };
@@ -40640,6 +40658,31 @@ let leaderboardRows = [];
    cache - a week's final standings are only read from rows that did (see
    finalRankForWeek). */
 let leaderboardRowsFromServer = false;
+/* ---- ONLY THE SERVER MAY TAKE PEOPLE OFF THE BOARD (build 313) ----
+   "Sometimes it only displays myself." Firestore answers from its CACHE
+   first and the server a beat later, and the cache on a device often
+   holds exactly one leaderboard document: your own, because you just
+   wrote it. Every listener guarded against an EMPTY cached answer and
+   none against a SHORT one, so a one-row cache replaced a full class
+   for most of a second on every open. Measured on 312: 25 rows, then 1
+   row (you, in 1st place), then 25 again.
+   So a cached answer can add people and update the ones it carries, but
+   never remove anybody - removal (a retired row, a reset) is the server's
+   word only. Returns the rows to hold now. Every reader of the
+   `leaderboard` collection goes through this, so the rule cannot be
+   honoured on one screen and missed on another. */
+function mergeBoardSnapshot(current, next, snap){
+  const have = Array.isArray(current) ? current : [];
+  if(!have.length) return next;
+  const served = !(snap && snap.metadata && snap.metadata.fromCache);
+  if(served) return next.length ? next : have;
+  if(next.length >= have.length) return next;
+  const byPub = new Map(next.map(e => [e.pub, e]));
+  const out = have.map(e => byPub.has(e.pub) ? byPub.get(e.pub) : e);
+  const seen = new Set(have.map(e => e.pub));
+  next.forEach(e => { if(!seen.has(e.pub)) out.push(e); });
+  return out;
+}
 /* ONLINE, WITHOUT A PRESENCE SYSTEM. Every row already carries
    `lastModified`, written on every push - so somebody whose row moved in
    the last few minutes has the app open. That is not a heartbeat and it
@@ -49010,7 +49053,14 @@ var _rkIO = typeof IntersectionObserver === "function" ? new IntersectionObserve
     }
     t.classList.toggle("rk-idle", !e.isIntersecting);
   });
-}, { rootMargin: "60px" }) : null;
+/* A screen ahead and behind, not 60px (build 313): "if I scroll to the
+   bottom fast, all the stuff lags and doesn't load right". Waking an
+   emblem restarts its animations from their first frame, and with a
+   60px margin a fling arrived at emblems still frozen and watched them
+   all jump into motion at once. Woken a screen early, that happens out
+   of sight. Still only the neighbourhood of the viewport, so the
+   build-252 memory budget holds. */
+}, { rootMargin: "100% 0px" }) : null;
 function watchRankEmblemOnScreen(svg){
   /* var, not const, above: this can be reached before those lines have
      run, and a const there would be a ReferenceError that kills the app */
@@ -72490,9 +72540,7 @@ function fetchBoardForInvites(force){
       });
       /* An empty answer never takes the class away - the same rule the
          listener carried. */
-      if(next.length || !(leaderboardRows && leaderboardRows.length)){
-        leaderboardRows = next; leaderboardRowsFromServer = !(snap && snap.metadata && snap.metadata.fromCache); try{ settleWeeklyWinQueued(); }catch(e){}
-      }
+      leaderboardRows = mergeBoardSnapshot(leaderboardRows, next, snap); leaderboardRowsFromServer = !(snap && snap.metadata && snap.metadata.fromCache); try{ settleWeeklyWinQueued(); }catch(e){}
       try{ syncChatDockDot(); }catch(e){}
       try{ if(chatDockOpen && chatDockTab === "notifs") renderNotifications(); }catch(e){}
       try{ checkLobbyInvites(); checkFriendRequests(); checkChatInvites(); }catch(e){}
@@ -74525,9 +74573,7 @@ function openInviteFriendsSheet(roomCode){
             next.push(e);
           });
           const served = !(snap.metadata && snap.metadata.fromCache);
-          if(next.length || served || !(leaderboardRows && leaderboardRows.length)){
-            leaderboardRows = next; leaderboardRowsFromServer = !(snap && snap.metadata && snap.metadata.fromCache); try{ settleWeeklyWinQueued(); }catch(e){}
-          }
+          leaderboardRows = mergeBoardSnapshot(leaderboardRows, next, snap); leaderboardRowsFromServer = served; try{ settleWeeklyWinQueued(); }catch(e){}
           if(!document.body.contains(overlay)) return;
           waitingForBoard = false;
           /* Only the list is rebuilt, never the sheet, so nothing under
@@ -79553,9 +79599,7 @@ function attachFriendsBoardListener(){
          report. Same reasoning as handleRemoteReset's fromCache guard:
          only a served answer may take something away. */
       const served = !(snap.metadata && snap.metadata.fromCache);
-      if(next.length || served || !(leaderboardRows && leaderboardRows.length)){
-        leaderboardRows = next; leaderboardRowsFromServer = !(snap && snap.metadata && snap.metadata.fromCache); try{ settleWeeklyWinQueued(); }catch(e){}
-      }
+      leaderboardRows = mergeBoardSnapshot(leaderboardRows, next, snap); leaderboardRowsFromServer = served; try{ settleWeeklyWinQueued(); }catch(e){}
       /* Only redraw while Friends is actually the screen on stage -
          a listener that outlives its screen must not rebuild over
          whatever replaced it. */
@@ -82346,6 +82390,7 @@ function showRankings(defaultBoard){
        position up to date - where hooking the weekly board alone would
        have made the feat depend on which tab somebody happens to like. */
     observeWeeklyRank(list);
+    rows.removeAttribute("aria-busy");
     renderRankingRows(rows, list, board, { query: search.value });
   }
 
@@ -82405,7 +82450,13 @@ function showRankings(defaultBoard){
     mine.addEventListener("animationend", () => mine.classList.remove("rank-flash"), { once: true });
   });
 
+  /* Only over NOTHING. The listener retries by itself, and a dropped
+     connection used to swap a full board for this sentence until the
+     retry landed - one more way the screen looked like it had lost
+     people. */
   const showError = () => {
+    if(loaded) return;
+    rows.removeAttribute("aria-busy");
     rows.replaceChildren();
     const p = document.createElement("p");
     p.className = "info-note";
@@ -82420,10 +82471,34 @@ function showRankings(defaultBoard){
   if(loaded){
     paint();
   } else {
-    const loading = document.createElement("p");
-    loading.className = "lb-board-empty";
-    loading.textContent = "Loading the rankings\u2026";
-    rows.appendChild(loading);
+    /* PLACEHOLDER ROWS, NOT A LINE OF TEXT (build 313). "The page opens
+       poorly with a missing piece": with nothing in memory yet the board
+       was a search bar over an empty hole and one small grey sentence,
+       and then 25 rows arrived at once and shoved everything. Rows the
+       shape of real ones hold the space, so the board fills in place
+       rather than appearing. The words stay, for a screen reader. */
+    rows.setAttribute("aria-busy", "true");
+    const label = document.createElement("p");
+    label.className = "sr-only";
+    label.textContent = "Loading the rankings\u2026";
+    rows.appendChild(label);
+    for(let i = 0; i < 7; i++){
+      const sk = document.createElement("div");
+      sk.className = "rank-row rank-row-skel";
+      sk.setAttribute("aria-hidden", "true");
+      sk.style.setProperty("--skel-i", i);
+      sk.innerHTML = "<span class=\"rank-place\"></span><span class=\"rank-skel-av\"></span>"
+        + "<span class=\"rank-name-wrap\"><span class=\"rank-skel-line\"></span><span class=\"rank-skel-line is-short\"></span></span>";
+      rows.appendChild(sk);
+    }
+    /* Offline, or a server that never answers: after a beat show what
+       the cache had - which may be only you - rather than placeholders
+       forever. */
+    setTimeout(() => {
+      if(loaded || !rows.isConnected || !fbDb) return;
+      if(!rows.querySelector(".rank-row-skel")) return;
+      loaded = true; paint();
+    }, 2500);
   }
 
   if(rankingsLiveUnsub){ try{ rankingsLiveUnsub(); }catch(e){} rankingsLiveUnsub = null; }
@@ -82471,13 +82546,21 @@ function showRankings(defaultBoard){
            Every other reader in this file already carries this guard
            (fetchBoardForInvites, the friends listener); this one, the
            screen where it is most visible, did not. */
-        if(next.length || !entries.length){
-          entries = next;
-          /* Shared with the Friends screen, which needs the same rows
-             and must not open a second listener on the same
-             collection. */
-          leaderboardRows = next; leaderboardRowsFromServer = !(snap && snap.metadata && snap.metadata.fromCache); try{ settleWeeklyWinQueued(); }catch(e){}
-        }
+        /* Build 313: a SHORT cached answer is the same artifact as an
+           empty one - usually just your own row, because you wrote it -
+           and it replaced the whole class for most of a second. See
+           mergeBoardSnapshot. */
+        const served = !(snap && snap.metadata && snap.metadata.fromCache);
+        entries = mergeBoardSnapshot(entries, next, snap);
+        /* Shared with the Friends screen, which needs the same rows
+           and must not open a second listener on the same
+           collection. */
+        leaderboardRows = entries; leaderboardRowsFromServer = served; try{ settleWeeklyWinQueued(); }catch(e){}
+        /* A cache that knows nobody but you is not the class: the
+           placeholders stay up until the server answers, rather than
+           crowning you 1st of 1 for a second. Offline, the fallback
+           timer below paints whatever there is. */
+        if(!loaded && !served && !entries.some(e => e.pub !== store.publicId)) return;
         loaded = true;
         paint();
       }, { onError: showError });
