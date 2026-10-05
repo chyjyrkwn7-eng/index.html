@@ -8972,6 +8972,171 @@ def check_b312_looks(br):
     ctx.close()
 
 
+def check_b313_chars_centred(br):
+    """Build 313: "Leaderboard character display problem (maybe an app wide
+    problem idk ...) the characters move positions within their circle and
+    aren't properly centered/displayed." The flip-book over a small
+    character was laid at the corner of the SCALED drawing at full size:
+    on the boards (drawing scaled .94) every one landed 1.5px right and
+    down and 7% bigger, so it jumped off centre whenever its loop took
+    over. Written against build 312, where it fails on every row."""
+    print("\n91. build 313: every board character's flip-book sits exactly on its drawing, centred in its circle")
+    chars = ['ninja', 'zeus', 'poseidon', 'astronaut', 'ronin', 'astral', 'celestial', 'zenith']
+    import re as _re
+    vr = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "check-vroom.py")).read()
+    fake = _re.search(r'FAKE_FIRESTORE = """(.*?)"""', vr, _re.S).group(1)
+    keep = "window.addEventListener('DOMContentLoaded', function(){ try{ window.__osr = onSnapshotResilient; }catch(e){} });"
+    for label, w, h, dpr in [("iPhone 17 Pro Max", 440, 956, 3), ('iPad Pro 11"', 834, 1194, 2)]:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=dpr, init=fake + "\n" + keep)
+        r = pg.evaluate("""async (chars) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          try{ __useFake(); if(window.__osr) onSnapshotResilient = window.__osr; }catch(e){}
+          for(let i = 0; i < chars.length; i++) await fbDb.collection('leaderboard').doc('c' + i).set({ pub: 'c' + i, firstName: chars[i], avatarChar: chars[i], accent: 'ink', level: 40 - i, badges: 3, hundos: 20 - i, xp: 40000 - i * 900, tests: 30, week: weekKeyNow(), weekPoints: 900 - i * 50, lastModified: Date.now(), seenAt: Date.now() });
+          showRankings(); const out = { rows: [] };
+          for(let t = 0; t < 70; t++){ await wait(250); if(document.querySelectorAll('.rank-row .char-flip-play').length >= 4) break; }
+          const read = () => [...document.querySelectorAll('.rank-row .rank-avatar-wrap')].filter(wr => wr.querySelector('.char-flip-play')).map(wr => {
+            const c = wr.querySelector('.rank-avatar').getBoundingClientRect(), s = wr.querySelector('svg.avatarchar-svg').getBoundingClientRect(), f = wr.querySelector('.char-flip-play').getBoundingClientRect();
+            return { dx: +((f.left + f.width / 2) - (s.left + s.width / 2)).toFixed(2), dy: +((f.top + f.height / 2) - (s.top + s.height / 2)).toFixed(2),
+                     size: +(f.width / s.width).toFixed(3), off: +Math.hypot((f.left + f.width / 2) - (c.left + c.width / 2), (f.top + f.height / 2) - (c.top + c.height / 2)).toFixed(2) }; });
+          out.rows = read(); await wait(2100); out.later = read(); await wait(2100); out.last = read();
+          return out; }""", chars)
+        rows = r.get("rows") or []
+        worst = max([max(abs(x["dx"]), abs(x["dy"])) for x in rows] or [99])
+        size = max([abs(x["size"] - 1) for x in rows] or [99])
+        off = max([x["off"] for x in rows] or [99])
+        drift = max([abs(a["dx"] - b["dx"]) + abs(a["dy"] - b["dy"]) for seq in (r.get("later") or [], r.get("last") or []) for a, b in zip(rows, seq)] or [0])
+        check("%s: flip-books measured on %d rows" % (label, len(rows)), len(rows) >= 4, len(rows))
+        check("%s: each flip-book's centre is within 0.6px of its drawing's" % label, worst <= 0.6, "%.2fpx" % worst)
+        check("%s: each flip-book is the drawing's size (within 3%%)" % label, size <= 0.03, "%.1f%%" % (size * 100))
+        check("%s: each sits within 1px of its circle's centre" % label, off <= 1.0, "%.2fpx" % off)
+        check("%s: and stays put across the loop" % label, drift <= 0.1, drift)
+        ctx.close()
+
+
+def check_b313_no_sweep(br):
+    """Build 313: "the suffering effect thing some characters get that
+    shoots across their face, let's get rid of that animation entirely."
+    It was a band of light (sheen()) run across Orion's visor, Astral's
+    helm, Celestial's mask, the Ronin's hat, the Marksman's lens and more.
+    Written against build 312, where nine drawings carry one and the
+    stylesheet still runs cx-sheen / cx-sheen-idle / avatar-scan."""
+    print("\n92. build 313: no sweep of light crosses any character")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""() => { const out = { swept: [], kf: [] };
+      AVATAR_CHARACTERS.forEach(c => { const sv = buildAvatarCharSVG(c.id); if(sv && sv.querySelector('.cx-fx-sheen, .avatarchar-scan, [class*="sheen"], [class*="sweep"]')) out.swept.push(c.id); });
+      const bad = /^(cx-sheen|cx-sheen-idle|avatar-scan|cx-hk2-scan|cx-scan)$/;
+      for(const sh of document.styleSheets){ let rules; try{ rules = sh.cssRules; }catch(e){ continue; }
+        const walk = list => { for(const ru of list){ if(ru.cssRules) walk(ru.cssRules);
+          if(ru.type === CSSRule.KEYFRAMES_RULE && bad.test(ru.name)) out.kf.push(ru.name);
+          if(ru.style && bad.test((ru.style.animationName || '').split(',')[0].trim())) out.kf.push(ru.selectorText); } };
+        walk(rules); }
+      return out; }""")
+    check("no character drawing carries a sweep", r["swept"] == [], r["swept"])
+    check("no sweep keyframes or rules are left in the stylesheet", r["kf"] == [], r["kf"][:6])
+    ctx.close()
+
+
+def check_b313_alive(br):
+    """Build 313: "Orions and sheriffs effects are lame"; "ronins animations
+    are also non existent"; "Astrals effects are nonexistent ... The
+    ultimate characters should be coolest and best in the app ... we need
+    them all 3 to be a big cooler/better". Counts the parts that move on a
+    live drawing - build 312 had Orion 24, the Sheriff 13, the Ronin 8,
+    Astral 15, Celestial 21 and Zenith 26 - and checks each now moves more,
+    the three ultimates the most of any earnable character, and that every
+    new loop has its period divide the flip-book's 6s."""
+    print("\n93. build 313: Orion, the Sheriff, the Ronin and the three ultimates do much more")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async () => { const out = { n: {}, odd: [] };
+      const host = document.createElement('div'); host.className = 'char-live'; host.style.cssText = 'position:fixed;left:0;top:0;width:120px;height:120px'; document.body.appendChild(host);
+      for(const c of AVATAR_CHARACTERS.filter(c => !c.retired)){
+        host.innerHTML = ''; const sv = buildAvatarCharSVG(c.id); host.appendChild(sv);
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+        const anims = sv.getAnimations({ subtree: true });
+        out.n[c.id] = new Set(anims.map(a => a.effect.target)).size;
+        if(['astronaut', 'poseidon', 'ronin', 'astral', 'celestial', 'zenith'].indexOf(c.id) >= 0)
+          anims.filter(a => /^cx-(sa5|sh4|ronin2|zc2|zb2|za2|dt4)-/.test(a.animationName)).forEach(a => { const t = a.effect.getTiming(); const P = Number(t.duration) * (String(t.direction).indexOf('alternate') >= 0 ? 2 : 1);
+            const k = 6000 / P; if(P <= 12000 && Math.abs(k - Math.round(k)) > .01) out.odd.push(c.id + ':' + a.animationName + ':' + P); });
+      }
+      host.remove(); return out; }""")
+    n = r["n"]
+    before = {"astronaut": 24, "poseidon": 13, "ronin": 8, "astral": 15, "celestial": 21, "zenith": 26}
+    for cid, b in before.items():
+        need = b + (8 if cid in ("astral", "celestial", "zenith") else 4)
+        check("%s moves at least %d parts (was %d)" % (cid, need, b), n.get(cid, 0) >= need, n.get(cid))
+    others = {k: v for k, v in n.items() if k not in ("astral", "celestial", "zenith", "voidwalker", "umbra", "singularity", "astronaut")}
+    check("each ultimate moves more parts than every challenge, rank and starter character but Orion",
+          all(n.get(u, 0) > max(others.values()) for u in ("astral", "celestial", "zenith")), (max(others.items(), key=lambda kv: kv[1]), {u: n.get(u) for u in ("astral", "celestial", "zenith")}))
+    check("every loop added in 313 divides the 6s flip-book", r["odd"] == [], r["odd"][:6])
+    ctx.close()
+
+
+def check_b313_grades(br):
+    """Build 313: "Ensure all the test results animations look good, ensure
+    they work for the grade. Ensure they are noticeable, the emotions and
+    everything." Four real drill runs of Identity Crimes (12 questions):
+    all right (100), one wrong (91.7), three wrong (75) and six wrong (50).
+    Each must land its own reaction on the results character, with the
+    sign round it that every character shows however it is drawn; and on
+    every character the drawing's own move must actually run (a per-
+    character idle rule must not win over it). Written against build 312,
+    which had no sign at all and a head tilt of a pixel or two for three
+    of the four grades."""
+    print("\n94. build 313: every grade shows on the results character - 100, 90+, a pass and a fail")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = { runs: {}, chars: [] };
+      const U = 'Identity Crimes';
+      const run = async wrong => {
+        cfg.mode = 'drill'; cfg.units = [U]; cfg.source = 'all'; cfg.size = 0; cfg.versions = {}; theme.autoAdvance = true;
+        beginRun(freshOrder(QUESTIONS.map((q, i) => i).filter(i => QUESTIONS[i].topic.trim() === U)), null);
+        for(let i = 0; i < 80 && !document.querySelector('.choice'); i++) await wait(100);
+        let last = -1, guard = 0, k = 0;
+        while(testInProgress && guard++ < 240){
+          /* a drill keeps the question until it is answered right, so a
+             miss is a wrong pick first and then the right one */
+          const ch = [...document.querySelectorAll('#stage .choice')];
+          if(ch.length && !document.querySelector('#stage .choice.locked.correct, #stage .choice.is-correct')){
+            const slot = correctSlot(order[pos]); let pick = slot;
+            if(pos !== last){ last = pos; if(k++ < wrong) pick = (slot + 1) % ch.length; }
+            if(ch[pick] && !ch[pick].classList.contains('locked')) ch[pick].click();
+          }
+          await wait(250);
+        }
+        for(let i = 0; i < 60 && !document.querySelector('.results-level-avatar[data-reacted]'); i++){ document.querySelector('.rs-screen')?.click(); await wait(200); }
+        await wait(1600);
+        const av = document.querySelector('.results-level-avatar');
+        const res = av ? { cls: [...av.classList].filter(c => /char-react-/.test(c)).sort().join(' '),
+          back: av.querySelectorAll(':scope > .char-emote-back').length, front: av.querySelector(':scope > .char-emote-front') ? av.querySelector(':scope > .char-emote-front').className : '',
+          anims: [...new Set(av.getAnimations({ subtree: true }).map(a => a.animationName))] } : null;
+        testInProgress = false; showHome(); await wait(500);
+        return res;
+      };
+      for(const [band, wrong] of [['perfect', 0], ['great', 1], ['pass', 3], ['fail', 6]]) out.runs[band] = await run(wrong);
+      /* every character, every band: its own move runs */
+      const want = { perfect: 'cx-hop-big', great: 'cx-hop', pass: 'cx-r3-nod2', fail: 'cx-r3-slump' };
+      const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:0;top:0'; document.body.appendChild(host);
+      for(const c of AVATAR_CHARACTERS.filter(c => !c.retired)) for(const band of Object.keys(want)){
+        const av = document.createElement('span'); av.className = 'results-level-avatar char-live'; av.appendChild(buildAvatarCharSVG(c.id)); host.appendChild(av);
+        if(typeof reactCharacter === 'function') reactCharacter(av, band); else { av.classList.remove('char-live'); av.classList.add('char-react-' + band); }
+        await new Promise(r => requestAnimationFrame(r));
+        const names = av.getAnimations({ subtree: true }).map(a => a.animationName);
+        /* a hundo plays the character's own winning move on its figure,
+           which for the Ghost is its turn and float rather than the hop */
+        if(names.indexOf(want[band]) < 0 && !(band === 'perfect' && names.indexOf('cx-turn') >= 0)) out.chars.push(c.id + '/' + band);
+        av.remove();
+      }
+      host.remove();
+      return out; }""")
+    runs = r["runs"]
+    for band, sign in [("perfect", "char-emote-perfect"), ("great", "char-emote-great"), ("pass", "char-emote-pass"), ("fail", "char-emote-fail")]:
+        x = runs.get(band) or {}
+        want_cls = "char-react-perfect char-react-win" if band == "perfect" else "char-react-" + band
+        check("a %s run lands %s on the results character" % (band, want_cls), x.get("cls") == want_cls, x)
+        check("a %s run shows its sign round the character" % band, sign in (x.get("front") or ""), x.get("front"))
+    check("the four grades look four different ways", len({(runs.get(b) or {}).get("front") for b in runs}) == 4, [(runs.get(b) or {}).get("front") for b in runs])
+    check("every character's own reaction move runs for every grade", r["chars"] == [], r["chars"][:8])
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -9096,6 +9261,10 @@ def main():
             check_b312_unlocks(br)
             check_b312_looks(br)
             check_b312_flares(br)
+            check_b313_chars_centred(br)
+            check_b313_no_sweep(br)
+            check_b313_alive(br)
+            check_b313_grades(br)
         finally:
             br.close()
     SERVER.shutdown()
