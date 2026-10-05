@@ -15786,6 +15786,94 @@
   @keyframes cx-ronin2-scarf{ from{ rotate:-9deg; scale:1 .82; } to{ rotate:10deg; scale:1.14 1.08; } }
   @keyframes cx-ronin2-eyeglow{ 0%, 100%{ opacity:.35; } 50%{ opacity:1; } }
   @keyframes cx-ronin2-flick{ 0%, 80%, 100%{ opacity:1; } 81%{ opacity:.1; } 82.5%{ opacity:1; } 84%{ opacity:.25; } 85%{ opacity:1; } 87%{ opacity:.05; } 89%{ opacity:1; } }
+  /* ---- BUILD 313: THE THREE ULTIMATES ----
+     "Astrals effects are nonexistent, fix this, needs to be awesome. The
+     ultimate characters should be coolest and best in the app, right in
+     front of the secret flare ones. Celestial is cool but also kinda eh
+     ... I like how they are all the same kinda theme, we just need them
+     all 3 to be a big cooler/better, the coolest animations of any
+     characters." The shared idea stays - something overhead, two lit
+     eyes - and each gets the most motion of any character, all of it
+     round the face and none of it across it:
+       Astral     two rings of plasma turning against each other behind
+                  the head with arcs crackling off them; plasma pumping out
+                  of the core along every vein and a ring thrown off it on
+                  each beat; light running out along the wings, shard by
+                  shard, as they beat; the crown pulsing and hovering
+       Celestial  the sky wheels round the pole star (six-fold trails, so a
+                  sixth of a turn is a loop); a meteor shower behind him;
+                  the crown's constellation draws itself in light as its
+                  seven stars ignite in a wave; a crescent moon orbits the
+                  crown; the platinum wings beat
+       Zenith     everything it had, and a ring laid round him at the
+                  shoulders like a planet's with a comet of starlight going
+                  round it - behind him, then across his chest
+     Every period divides 6s and every keyframe ends where it starts. */
+  .avatarchar-svg .cx-fx-zb2wingl{ transform-origin:96% 80%; }
+  .avatarchar-svg .cx-fx-zb2wingr{ transform-origin:4% 80%; }
+  @media (prefers-reduced-motion:no-preference){
+    /* Astral */
+    .char-live .avatarchar-svg .cx-fx-zc2ringa{ animation:cx-spin 6s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-zc2ringb{ animation:cx-spin-back 3s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-zc2arcs{ animation:cx-crackle 3s linear -.4s infinite; }
+    .char-live .avatarchar-svg .cx-fx-zc2shard{ animation:cx-zc2-shard 1.5s ease-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-zc2flow{ animation:cx-zc2-flow 1.2s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-zc2pulse{ animation:cx-zc2-pulse 1.5s ease-out infinite; }
+    .char-live .avatarchar-svg :is(.cx-fx-zcveins, .cx-fx-zcseam){ animation:cx-mk2-pulse 1.5s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-zccore{ animation:cx-zc2-core 1.5s ease-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-zccrown{ animation:cx-mk2-pulse 3s ease-in-out -.7s infinite, cx-zc-hover 1.5s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg :is(.cx-fx-zbeyeglow, .cx-fx-zceyeglow){ animation:cx-ember 3s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-k-zenith .cx-fx-wing-l{ animation:cx-zc2-wingl 1.5s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-k-zenith .cx-fx-wing-r{ animation:cx-zc2-wingr 1.5s ease-in-out infinite alternate; }
+    /* Celestial */
+    .char-live .avatarchar-svg .cx-fx-zbtrails{ animation:cx-zb2-trails 6s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-zb2met{ animation:cx-zb2-met 3s ease-in infinite; }
+    .char-live .avatarchar-svg .cx-fx-zbstar{ animation:cx-zb2-star 3s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-zb2line{ animation:cx-zb2-line 3s ease-in-out -.3s infinite; }
+    .char-live .avatarchar-svg .cx-fx-zb2moon{ opacity:1; }
+    .char-live .avatarchar-svg .cx-fx-zb2mx{ animation:cx-zb2-mx 3s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-zb2my{ animation:cx-zb2-my 3s ease-in-out -1.5s infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-zb2wingl{ animation:cx-zb2-wingl 1.5s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-zb2wingr{ animation:cx-zb2-wingr 1.5s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-zbcapestars0{ animation:cx-bg-tw 3s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-zbcapestars1{ animation:cx-bg-tw 3s ease-in-out -1.5s infinite; }
+    .char-live .avatarchar-svg :is(.cx-fx-zbetch, .cx-fx-zbetch2){ animation:cx-flicker-soft 3s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-zbclasp{ animation:cx-twinkle 3s ease-in-out -.8s infinite; }
+    /* Zenith */
+    .char-live .avatarchar-svg .cx-fx-za2cx{ animation:cx-za2-cx 1.5s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-za2cy{ animation:cx-za2-cy 1.5s ease-in-out -.75s infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-za2near{ animation:cx-za2-near 3s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-za2far{ animation:cx-za2-far 3s linear infinite; }
+    /* a Virtual Room win: all of it quickens */
+    .char-react-win .avatarchar-svg .cx-fx-zc2ringa{ animation:cx-spin 1.5s linear infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-zc2ringb{ animation:cx-spin-back 1s linear infinite; }
+    .char-react-win .avatarchar-svg :is(.cx-fx-zc2flow, .cx-fx-zc2pulse, .cx-fx-zc2shard){ animation-duration:.6s; }
+    .char-react-win .avatarchar-svg .cx-fx-zbtrails{ animation:cx-zb2-trails 1.5s linear infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-zb2met{ animation:cx-zb2-met 1s ease-in infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-zbstar{ animation:cx-zb2-star 1s ease-in-out infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-zb2moon{ opacity:1; }
+    .char-react-win .avatarchar-svg :is(.cx-fx-zb2mx, .cx-fx-zb2my){ animation-duration:.75s; }
+    .char-react-win .avatarchar-svg :is(.cx-fx-za2cx, .cx-fx-za2cy){ animation-duration:.5s; }
+    .char-react-win .avatarchar-svg :is(.cx-fx-za2near, .cx-fx-za2far){ animation-duration:1s; }
+  }
+  @keyframes cx-zc2-shard{ 0%, 100%{ opacity:0; } 18%{ opacity:.85; } 60%{ opacity:0; } }
+  @keyframes cx-zc2-flow{ from{ stroke-dashoffset:0; } to{ stroke-dashoffset:-2.4; } }
+  @keyframes cx-zc2-pulse{ 0%, 100%{ opacity:0; transform:scale(.6); } 8%{ opacity:.95; } 80%{ opacity:0; transform:scale(3.4); } 81%{ opacity:0; transform:scale(.6); } }
+  @keyframes cx-zc2-core{ 0%, 100%{ scale:1; } 10%{ scale:1.28; } 40%{ scale:.96; } }
+  @keyframes cx-zc2-wingl{ from{ rotate:3deg; } to{ rotate:-10deg; } }
+  @keyframes cx-zc2-wingr{ from{ rotate:-3deg; } to{ rotate:10deg; } }
+  @keyframes cx-zb2-trails{ from{ transform:none; } to{ transform:rotate(60deg); } }
+  @keyframes cx-zb2-met{ 0%, 100%{ opacity:0; transform:translate(1.6px, -1.1px); } 6%{ opacity:1; } 30%{ opacity:0; transform:translate(-4.4px, 2.9px); } 31%{ opacity:0; transform:translate(1.6px, -1.1px); } }
+  @keyframes cx-zb2-star{ 0%, 26%, 100%{ transform:none; opacity:.85; } 8%{ transform:scale(1.7) rotate(45deg); opacity:1; } }
+  @keyframes cx-zb2-line{ 0%, 100%{ stroke-dashoffset:var(--zb-len); opacity:0; } 4%{ opacity:.95; } 34%{ stroke-dashoffset:0; opacity:.95; } 60%{ stroke-dashoffset:0; opacity:0; } 61%{ stroke-dashoffset:var(--zb-len); opacity:0; } }
+  @keyframes cx-zb2-mx{ from{ transform:translateX(12px); } to{ transform:translateX(-12px); } }
+  @keyframes cx-zb2-my{ from{ transform:translateY(-2.2px); } to{ transform:translateY(2.2px); } }
+  @keyframes cx-zb2-wingl{ from{ rotate:4deg; } to{ rotate:-9deg; } }
+  @keyframes cx-zb2-wingr{ from{ rotate:-4deg; } to{ rotate:9deg; } }
+  @keyframes cx-za2-cx{ from{ transform:translateX(15.6px); } to{ transform:translateX(-15.6px); } }
+  @keyframes cx-za2-cy{ from{ transform:translateY(-3.6px); } to{ transform:translateY(3.6px); } }
+  @keyframes cx-za2-near{ 0%, 100%{ opacity:.5; } 4%, 46%{ opacity:1; } 54%, 96%{ opacity:0; } }
+  @keyframes cx-za2-far{ 0%, 100%{ opacity:.5; } 4%, 46%{ opacity:0; } 54%, 96%{ opacity:1; } }
   [data-reduce-motion="true"] .avatarchar-svg,
   [data-reduce-motion="true"] .avatarchar-svg *{ animation:none !important; }
 
@@ -36956,14 +37044,28 @@ function drawAvatarCharSVG(charId){
       const nightDk = headGrad("#1E2F78", "#0B1440", "#03061A");
       const capeG = lin([["0%", "#1A2A72"], ["60%", "#0B1240"], ["100%", "#04071C"]], 0, 27, 0, 40);
       const lineC = "#CFE0FF";
-      /* the trails: the sky turning round the pole star over its head */
+      /* the trails: the sky turning round the pole star over its head.
+         BUILD 313 ("Celestial is cool but also kinda eh"): they turned
+         once in 90s, which on a 6s loop is standing still. They are laid
+         out six-fold now - each ring of trails repeats every 60deg - so a
+         sixth of a turn in 6s is a whole loop and the sky visibly wheels. */
       open("cx-fx cx-fx-zbtrails");
       svg.appendChild(pivot(20, 9.4, 26));
-      [[13, 40, 120, .3], [16.4, 200, 300, .26], [19.6, 10, 95, .22], [22.4, 160, 250, .2], [10.2, 230, 330, .28], [25, 300, 380, .16]].forEach(([r, a0, a1, op]) => {
+      [[10.2, 8, 34, .34, .26], [13, 30, 50, .3, .24], [16.4, 14, 42, .26, .22], [19.6, 40, 58, .24, .2], [22.4, 4, 30, .2, .18], [25, 26, 52, .16, .16]].forEach(([r, a0, a1, op, w]) => {
         const p = a => f2(20 + Math.cos(a * Math.PI / 180) * r) + " " + f2(9.4 + Math.sin(a * Math.PI / 180) * r);
-        svg.appendChild(mk("path", { d: "M" + p(a0) + " A" + r + " " + r + " 0 0 1 " + p(a1), fill: "none", stroke: "#BFD0FF", "stroke-width": ".22", "stroke-linecap": "round", opacity: op }));
+        let d = "";
+        for(let k = 0; k < 6; k++) d += "M" + p(a0 + k * 60) + " A" + r + " " + r + " 0 0 1 " + p(a1 + k * 60) + " ";
+        svg.appendChild(mk("path", { d, fill: "none", stroke: "#BFD0FF", "stroke-width": w, "stroke-linecap": "round", opacity: op }));
       });
       close();
+      /* a meteor shower behind him: three streaks falling across the sky
+         in turn, each invisible at both ends of its fall */
+      [[31.4, 3.4, 0], [8.6, 5.2, -1], [35, 13, -2]].forEach(([x, y, d]) => {
+        const g = mk("g", { class: "cx-fx cx-fx-zb2met", opacity: "0", style: "animation-delay:" + d + "s" });
+        g.appendChild(mk("path", { d: "M" + x + " " + y + " L" + f2(x + 3.6) + " " + f2(y - 2.4), stroke: "#DCE6FF", "stroke-width": ".3", "stroke-linecap": "round", opacity: ".7" }));
+        g.appendChild(mk("circle", { cx: x, cy: y, r: .36, fill: "#FFFFFF" }));
+        svg.appendChild(g);
+      });
       /* the cape of night, wider than the shoulders, full of stars */
       open("cx-fx cx-fx-zbcape");
       const capeD = "M12.6 27.2 Q5.2 30.4 3.2 40 L36.8 40 Q34.8 30.4 27.4 27.2 Z";
@@ -37007,9 +37109,14 @@ function drawAvatarCharSVG(charId){
         const mx = x0 + dx * .45, my = y0 + dy * .45;
         return "M" + x0 + " " + y0 + " Q" + f2(mx + nx) + " " + f2(my + ny) + " " + x1 + " " + y1 + " Q" + f2(mx - nx * .4) + " " + f2(my - ny * .4) + " " + x0 + " " + y0 + " Z";
       };
-      [[6.6, 8.6, 1.3], [5.8, 11.6, 1.2], [6.6, 14.6, 1]].forEach(([tx, ty, w]) => {
-        svg.appendChild(mk("path", { d: feather(12.6, 16.4, tx, ty, w), fill: plat, stroke: "#4A5670", "stroke-width": ".18", "stroke-linejoin": "round" }));
-        svg.appendChild(mk("path", { d: feather(27.4, 16.4, f2(40 - tx), ty, -w), fill: plat, stroke: "#4A5670", "stroke-width": ".18", "stroke-linejoin": "round" }));
+      /* each wing its own group (build 313), beating from the temple */
+      [-1, 1].forEach(side => {
+        open("cx-fx " + (side < 0 ? "cx-fx-zb2wingl" : "cx-fx-zb2wingr"));
+        [[6.6, 8.6, 1.3], [5.8, 11.6, 1.2], [6.6, 14.6, 1]].forEach(([tx, ty, w]) => {
+          if(side < 0) svg.appendChild(mk("path", { d: feather(12.6, 16.4, tx, ty, w), fill: plat, stroke: "#4A5670", "stroke-width": ".18", "stroke-linejoin": "round" }));
+          else svg.appendChild(mk("path", { d: feather(27.4, 16.4, f2(40 - tx), ty, -w), fill: plat, stroke: "#4A5670", "stroke-width": ".18", "stroke-linejoin": "round" }));
+        });
+        close();
       });
       /* the helm, midnight, lit along its edge */
       const helmD = "M20 6.8 Q28.6 7.2 28.8 16.4 L28 23.8 Q26 28.4 20 29.4 Q14 28.4 12 23.8 L11.2 16.4 Q11.4 7.2 20 6.8 Z";
@@ -37049,6 +37156,12 @@ function drawAvatarCharSVG(charId){
       const CR = 10.8, CY0 = 16.4;
       const crown = [-66, -44, -22, 0, 22, 44, 66].map(d => { const a = (d - 90) * Math.PI / 180; return [f2(20 + Math.cos(a) * CR), f2(CY0 + Math.sin(a) * CR), d]; });
       svg.appendChild(mk("path", { d: "M" + crown.map(([x, y]) => x + " " + y).join(" L"), fill: "none", stroke: lineC, "stroke-width": ".16", opacity: ".45" }));
+      /* build 313: the constellation draws itself in light along the
+         crown, left to right, on the stars' own wave */
+      { let L = 0; for(let i = 1; i < crown.length; i++) L += Math.hypot(crown[i][0] - crown[i - 1][0], crown[i][1] - crown[i - 1][1]);
+        const LL = f2(L + .1);
+        svg.appendChild(mk("path", { d: "M" + crown.map(([x, y]) => x + " " + y).join(" L"), fill: "none", stroke: "#FFFFFF", "stroke-width": ".34", "stroke-linecap": "round", "stroke-linejoin": "round",
+          "stroke-dasharray": LL + " " + LL, "stroke-dashoffset": LL, opacity: "0", style: "--zb-len:" + LL, class: "cx-fx cx-fx-zb2line" })); }
       crown.forEach(([x, y, d], i) => {
         const big = d === 0 ? 1.7 : (Math.abs(d) === 22 ? 1.2 : (Math.abs(d) === 44 ? 1 : .85));
         const g = mk("g", { class: "cx-fx cx-fx-zbstar", style: "animation-delay:" + (-i * .38).toFixed(2) + "s" });
@@ -37056,6 +37169,20 @@ function drawAvatarCharSVG(charId){
         g.appendChild(star4(x, y, f2(big * .72), big, "#FFFFFF"));
         svg.appendChild(g);
       });
+      /* a crescent moon in orbit round the crown (build 313): two nested
+         pendulums, across and up-and-down a quarter-beat apart, so it
+         goes round on a flattened ellipse. Hidden when still. */
+      open("cx-fx cx-fx-zb2moon", { opacity: "0" });
+      { const gx = mk("g", { class: "cx-fx-zb2mx" }), gy = mk("g", { class: "cx-fx-zb2my" });
+        const mx = 20, my = 6.6, cut = uid + "-zbm";
+        const cm = mk("mask", { id: cut, maskUnits: "userSpaceOnUse", x: mx - 3, y: my - 3, width: 6, height: 6 });
+        cm.appendChild(mk("rect", { x: mx - 3, y: my - 3, width: 6, height: 6, fill: "#FFFFFF" }));
+        cm.appendChild(mk("circle", { cx: f2(mx + .62), cy: f2(my - .42), r: 1.02, fill: "#000000" }));
+        defs.appendChild(cm);
+        gy.appendChild(mk("circle", { cx: mx, cy: my, r: 2.2, fill: "#C9D8FF", opacity: ".18" }));
+        gy.appendChild(mk("circle", { cx: mx, cy: my, r: 1.15, fill: "#F2F6FF", mask: "url(#" + cut + ")" }));
+        gx.appendChild(gy); svg.appendChild(gx); }
+      close();
       return done();
     }
 
@@ -37077,10 +37204,30 @@ function drawAvatarCharSVG(charId){
           const k = (root[0] * .62 + x * .38), ky = (root[1] * .62 + ty * .38);
           svg.appendChild(mk("path", { d: "M" + root.join(" ") + " L" + f2(k + nx * w * 1.6) + " " + f2(ky + ny * w * 1.6) + " L" + x + " " + ty + " L" + f2(k - nx * w * 1.6) + " " + f2(ky - ny * w * 1.6) + " Z", fill: g, opacity: ".32" }));
           svg.appendChild(mk("path", { d: "M" + root.join(" ") + " L" + f2(k + nx * w * .7) + " " + f2(ky + ny * w * .7) + " L" + x + " " + ty + " L" + f2(k - nx * w * .7) + " " + f2(ky - ny * w * .7) + " Z", fill: g, opacity: ".95" }));
+          /* build 313: a white-hot copy of the shard that lights in
+             turn, root feather first - light running out along the wing */
+          svg.appendChild(mk("path", { d: "M" + root.join(" ") + " L" + f2(k + nx * w * .5) + " " + f2(ky + ny * w * .5) + " L" + x + " " + ty + " L" + f2(k - nx * w * .5) + " " + f2(ky - ny * w * .5) + " Z", fill: "#FFFFFF", opacity: "0",
+            class: "cx-fx-zc2shard", style: "animation-delay:" + (-1.5 + (4 - i) * .14).toFixed(2) + "s" }));
           svg.appendChild(mk("path", { d: "M" + root.join(" ") + " L" + x + " " + ty, stroke: "#FFFFFF", "stroke-width": ".2", opacity: ".7" }));
         });
         close();
       };
+      /* THE REACTOR (build 313: "Astrals effects are nonexistent, fix
+         this, needs to be awesome"). Two rings of plasma behind the head,
+         dashed, turning against each other - the zenith of this look is a
+         machine of light - with arcs crackling across the gap. */
+      open("cx-fx cx-fx-zc2ringa");
+      svg.appendChild(pivot(20, 15.6, 12.2));
+      svg.appendChild(mk("circle", { cx: 20, cy: 15.6, r: 12.2, fill: "none", stroke: cyan, "stroke-width": "1.4", opacity: ".1" }));
+      svg.appendChild(mk("circle", { cx: 20, cy: 15.6, r: 12.2, fill: "none", stroke: "#9FF8FF", "stroke-width": ".42", "stroke-dasharray": "4.2 2.19", opacity: ".8" }));
+      close();
+      open("cx-fx cx-fx-zc2ringb");
+      svg.appendChild(pivot(20, 15.6, 13.8));
+      svg.appendChild(mk("circle", { cx: 20, cy: 15.6, r: 13.8, fill: "none", stroke: white, "stroke-width": ".22", "stroke-dasharray": ".5 1.668", opacity: ".7" }));
+      close();
+      open("cx-fx cx-fx-zc2arcs", { opacity: "0" });
+      svg.appendChild(mk("path", { d: "M8.4 12.6 L7.6 11.2 L8.6 10.4 L7.4 8.8 M31.6 12.6 L32.6 11 L31.4 10.2 L32.8 8.6 M14.2 4.6 L13 3.8 L13.8 3 M25.8 4.6 L27 3.8 L26.2 3", fill: "none", stroke: white, "stroke-width": ".3", "stroke-linecap": "round", "stroke-linejoin": "round" }));
+      close();
       wing(-1); wing(1);
       open("cx-body");
       const bodyD = "M5.6 40 Q6.2 31.2 13 28.8 L27 28.8 Q33.8 31.2 34.4 40 Z";
@@ -37095,10 +37242,16 @@ function drawAvatarCharSVG(charId){
       svg.appendChild(mk("path", { d: veins, fill: "none", stroke: cyan, "stroke-width": ".9", "stroke-linecap": "round", "stroke-linejoin": "round", opacity: ".28" }));
       svg.appendChild(mk("path", { d: veins, fill: "none", stroke: white, "stroke-width": ".26", "stroke-linecap": "round", "stroke-linejoin": "round" }));
       close();
+      /* build 313: plasma pumping OUT of the core along every vein - a
+         dash that runs the way each vein is drawn, from the heart */
+      svg.appendChild(mk("path", { d: veins, fill: "none", stroke: "#FFFFFF", "stroke-width": ".55", "stroke-linecap": "round", "stroke-linejoin": "round",
+        "stroke-dasharray": ".6 1.8", class: "cx-fx cx-fx-zc2flow" }));
       open("cx-fx cx-fx-zccore");
       svg.appendChild(mk("circle", { cx: 20, cy: 32.6, r: 3.2, fill: rad([["0%", "#FFFFFF", ".95"], ["35%", "#8FF6FF", ".6"], ["100%", "#18C8E0", "0"]], 20, 32.6, 3.2) }));
       svg.appendChild(mk("path", { d: "M20 30.4 L21.4 32.6 L20 34.8 L18.6 32.6 Z", fill: white, stroke: cyan, "stroke-width": ".25" }));
       close();
+      /* a ring of plasma thrown off the core with every beat */
+      svg.appendChild(mk("circle", { cx: 20, cy: 32.6, r: 1.9, fill: "none", stroke: "#BFFBFF", "stroke-width": ".4", opacity: "0", class: "cx-fx cx-fx-zc2pulse" }));
       close();
       open("cx-head");
       /* the helm: sleek, swept back, a fin of plasma down its crest */
@@ -37208,6 +37361,34 @@ function drawAvatarCharSVG(charId){
     [[9.6, 30.4, .3], [13, 28.6, .22], [30.4, 30.4, .3], [27, 28.6, .22], [7.2, 26, .2], [32.8, 26, .2]].forEach(([x, y, r], i) =>
       svg.appendChild(mk("circle", { cx: x, cy: y, r, fill: i % 2 ? "#D8CCFF" : "#FFFFFF", opacity: "0", class: "cx-fx cx-fx-zadust",
         style: "animation-delay:" + (-i * .5).toFixed(2) + "s" })));
+    /* THE ORBIT (build 313: "the ultimate characters should be coolest
+       and best in the app ... the coolest animations of any characters").
+       A ring laid round him at the shoulders like a planet's, tilted, and
+       a comet of starlight going round it - behind him across the top,
+       in front of his chest across the bottom. The ring is two halves
+       (the far one drawn before the body, the near one after the head);
+       the comet rides two nested pendulums inside the ring's tilt, and
+       its far and near copies hand over at the ring's two ends. */
+    const OX = 20, OY = 26.6, ORX = 15.6, ORY = 3.6, OT = -10;
+    const orbitTilt = "rotate(" + OT + " " + OX + " " + OY + ")";
+    const orbitArc = up => "M" + f2(OX - ORX) + " " + OY + " A" + ORX + " " + ORY + " 0 0 " + (up ? 1 : 0) + " " + f2(OX + ORX) + " " + OY;
+    const orbitRing = up => { const g = mk("g", { transform: orbitTilt });
+      g.appendChild(mk("path", { d: orbitArc(up), fill: "none", stroke: "#B9C4FF", "stroke-width": "1.3", opacity: ".14" }));
+      g.appendChild(mk("path", { d: orbitArc(up), fill: "none", stroke: ringG, "stroke-width": ".3", opacity: up ? ".55" : ".9" }));
+      g.appendChild(mk("path", { d: orbitArc(up), fill: "none", stroke: "#E4ECFF", "stroke-width": ".16", "stroke-dasharray": ".2 .9", opacity: ".6", transform: "translate(0 " + (up ? -.7 : .7) + ")" }));
+      return g; };
+    const orbitComet = near => {
+      const tilt = mk("g", { transform: orbitTilt });
+      const gx = mk("g", { class: "cx-fx-za2cx" }), gy = mk("g", { class: "cx-fx-za2cy" });
+      gy.appendChild(mk("circle", { cx: OX, cy: OY, r: 1.5, fill: "#C9D2FF", opacity: ".3" }));
+      gy.appendChild(star4(OX, OY, .75, 1.05, "#FFFFFF"));
+      gy.appendChild(mk("circle", { cx: OX, cy: OY, r: .42, fill: "#FFFFFF" }));
+      gx.appendChild(gy); tilt.appendChild(gx);
+      const vis = mk("g", { class: "cx-fx " + (near ? "cx-fx-za2near" : "cx-fx-za2far"), opacity: "0" });
+      vis.appendChild(tilt);
+      return vis; };
+    svg.appendChild(orbitRing(true));
+    svg.appendChild(orbitComet(false));
     open("cx-body");
     /* the torso, two planes meeting down the middle */
     svg.appendChild(mk("path", { d: "M5.4 40 Q5.8 31.4 12.8 29 L20 29 L20 40 Z", fill: litB }));
@@ -37307,6 +37488,9 @@ function drawAvatarCharSVG(charId){
        two nested pendulums, across and up-and-down a quarter-beat apart
        (the Clown's juggling, smaller), half an orbit from each other.
        Hidden in a still drawing, where they would only be two dots. */
+    /* the near half of the orbit, and the comet when it is in front */
+    svg.appendChild(orbitRing(false));
+    svg.appendChild(orbitComet(true));
     open("cx-fx cx-fx-zasats", { opacity: "0" });
     [["#FFFFFF", .42, 0], ["#C9B8FF", .3, -1.5]].forEach(([c, r, lag]) => {
       const gx = mk("g", { class: "cx-fx-zasatx", style: "animation-delay:" + lag + "s" });

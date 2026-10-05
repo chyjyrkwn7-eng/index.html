@@ -98,6 +98,8 @@ KNOWN = {
     "cx-za-rays8": "Zenith's eight rays, long and short: a quarter turn lands on the same picture",
     # Build 313 characters.
     "cx-sa5-drift": "Orion's cloak stars: laid on a 12-unit tile drawn four times, moved exactly one tile",
+    "cx-zb2-trails": "Celestial's star trails are laid out six-fold, so a sixth of a turn lands on the same picture",
+    "cx-zc2-flow": "Astral's plasma in its veins: a .6 1.8 dash moved by exactly one period (2.4)",
 }
 s = open(SRC, encoding="utf-8").read()
 kf = {}
