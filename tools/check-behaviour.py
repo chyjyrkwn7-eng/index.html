@@ -1234,8 +1234,9 @@ def check_b220(br):
       out.orangeNow = mysteryGateMet('orange');
       levelOf = lv;
       return out; }""")
-    check("five flares, the last two Void's",
-          r["order"] == ["red", "orange", "yellow", "violet", "white"], r["order"])
+    # build 313: a sixth, the planet's own, appended after the five
+    check("five flares, the last two Void's (and the planet's own after them)",
+          r["order"][:5] == ["red", "orange", "yellow", "violet", "white"], r["order"])
     g = r["gates"]
     # The windows are read off the page: they moved in build 302 (red 20,
     # orange ~35, yellow ~48, Umbra ~60, Horizon 70-72) and a gate that
@@ -1760,7 +1761,7 @@ def check_b232(br):
     # the secrets last - because a list written out in full failed the
     # build for adding a character, which is the one thing this row is for.
     known = ["detective", "masked", "zeus", "poseidon", "clown", "valkyrie", "marksman", "astronaut", "hacker", "timekeeper"]
-    secrets = ["voidwalker", "umbra", "singularity"]
+    secrets = ["voidwalker", "umbra", "singularity", "genesis"]  # Genesis: build 313
     # Build 304: Zenith, the ultimate, is a feat too and comes after the
     # secrets - "it will be the last character on the list".
     # Build 312: three ultimates, Zenith still last - Astral, Celestial, Zenith.
@@ -3796,7 +3797,9 @@ def check_audit_a(br):
       const paint = dots.map(d => getComputedStyle(d).stroke);
       return { n: dots.length, hits: hits.filter(Boolean).length, paint };
     }""")
-    check("the secret-flare dots take a tap 15px from their centre", r["n"] == 5 and r["hits"] == 5, r)
+    # build 313: only the first three show until Void is held (this account
+    # has found none), and each is an HTML flare with a 44px tap disc
+    check("the secret-flare dots take a tap 15px from their centre", r["n"] == 3 and r["hits"] == 3, r)
     check("and paint nothing new doing it", all(("0, 0, 0, 0" in x) or x in ("none", "transparent") for x in r["paint"]), r["paint"])
     ctx.close()
 
@@ -5404,14 +5407,16 @@ def check_b276(br):
       store.mysteryColorsFound = {}; MYSTERY_ORDER.forEach(k => store.mysteryColorsFound[k] = true);
       showHome(); await new Promise(res => setTimeout(res, 400));
       const dots = [...document.querySelectorAll('.cosmic-orbit-dot')];
-      out.dot = { n: dots.length, fills: dots.map(x => (x.getAttribute('fill') || '').toUpperCase()) };
+      /* build 313: a flare's colour is its --fc (the fill attribute lost to the stylesheet) */
+      out.dot = { n: dots.length, fills: dots.map(x => (getComputedStyle(x).getPropertyValue('--fc') || x.getAttribute('fill') || '').trim().toUpperCase()) };
       } catch(e){ out.threw = String(e && e.stack || e); }
       return out; }""")
     f, d = r.get("flare") or {}, r.get("dot") or {}
     check("the fifth flare is a colour the Singularity is drawn in, and its glow", f.get("inDrawing") and f.get("glow") == f.get("fifth"), f)
     check("it is a real blue, not a near-white", 180 <= (f.get("hue") or 0) <= 230 and (f.get("sat") or 0) >= .6 and (f.get("light") or 1) <= .85, f)
     check("and stays well apart from the fourth flare's violet", (f.get("apart") or 0) >= 40, f)
-    check("a found fifth dot on Home paints in it", d.get("n") == 5 and (f.get("fifth") or "?").upper() in (d.get("fills") or []), d)
+    # build 313: six flares on Home once the fifth is found (the sixth on the planet)
+    check("a found fifth dot on Home paints in it", d.get("n") == 6 and (f.get("fifth") or "?").upper() in (d.get("fills") or []), d)
     check("no exception", not r.get("threw"), r.get("threw"))
     ctx.close()
 
@@ -7426,8 +7431,11 @@ def check_b302(br):
           out.sapSym = !!sap.querySelector('.rk-spin.rk-sym2');
           out.platSpiral = !!plat.querySelector('.rk-spin.rk-sym4');
           out.silverSoft = !!sil.querySelector('.rk-twinkle.rk-soft');
-          const dots = [...document.querySelectorAll('.cosmic-orbit-dot')];
-          out.innerDots = dots.filter(d => Math.hypot(+d.getAttribute('cx') - 180, +d.getAttribute('cy') - 150) < 130).length;
+          /* build 313: the 4th and 5th only show once Void is held - look with it held */
+          const keepF = store.mysteryColorsFound; store.mysteryColorsFound = { red: true, orange: true, yellow: true };
+          showHome(); await wait(400);
+          out.innerDots = document.querySelectorAll('.cosmic-hero-orbitlayer-inner .cosmic-orbit-dot').length;
+          store.mysteryColorsFound = keepF;
           /* 8. the road map is slower */
           showRanksScreen('ranks'); await wait(300);
           const rf = document.querySelector('.rankmap-roadfill');
@@ -7509,8 +7517,9 @@ def check_b302_flares(br):
     }""")
     ctx.close()
     check("no error in the flare checks", "err" not in r, r.get("err"))
+    # build 313 added the sixth (78-80) after these; the five are unchanged
     check("flare levels are 20 / 34-36 / 47-49 / 59-61 / 70-72",
-          r.get("windows") == '{"red":[20,20],"orange":[34,36],"yellow":[47,49],"violet":[59,61],"white":[70,72]}',
+          (r.get("windows") or "").startswith('{"red":[20,20],"orange":[34,36],"yellow":[47,49],"violet":[59,61],"white":[70,72]'),
           r.get("windows"))
     one, two, three = r.get("one"), r.get("two"), r.get("three")
     check("one flare owed: lands anywhere in the next ten tests",
@@ -8488,9 +8497,14 @@ def check_b310(br):
       out.grace = typeof OFFLINE_GRACE_MS !== 'undefined' ? OFFLINE_GRACE_MS : 0;
       /* the tiny flares are one bubble, all alike */
       showHome(); await wait(900);
+      /* build 313: HTML flares, every one the same box (its width as a share
+         of the hero) and the same glass body; three until Void is held */
       const dots = [...document.querySelectorAll('.cosmic-hero-wrap .cosmic-orbit-dot')];
-      out.dots = dots.length; out.dotR = [...new Set(dots.map(d => d.getAttribute('r')))];
-      out.rims = document.querySelectorAll('.cosmic-hero-wrap .cosmic-orbit-rim').length;
+      const hw = (document.querySelector('.cosmic-hero-wrap') || { getBoundingClientRect: () => ({ width: 1 }) }).getBoundingClientRect().width;
+      /* offsetWidth: the layers turn, and a turned box's bounding rect is bigger */
+      const hwo = (document.querySelector('.cosmic-hero-wrap') || { offsetWidth: 1 }).offsetWidth;
+      out.dots = dots.length; out.dotR = [...new Set(dots.map(d => (d.offsetWidth / hwo * 360 / 2).toFixed(0)))];
+      out.rims = document.querySelectorAll('.cosmic-hero-wrap .cosmic-orbit-dot .cof-body').length;
       out.shade = !!document.querySelector('.cosmic-sphere-shade');
       out.litSmoke = !!document.querySelector('.cosmic-smoke-lit');
       /* emblems: Platinum's pair goes round and nothing swings; Silver has a world */
@@ -8514,7 +8528,7 @@ def check_b310(br):
     check("a leaderboard snapshot keeps each character (no restart, no shake)", r["sameAvatar"] and r["boardFound"], r)
     check("no banners on leaderboard rows until one is picked", r["noRowBanner"], r)
     check("online: heartbeat green, just left green, left 3 min ago grey, 0 grey", r["online"] == [True, True, False, False] and r["grace"] == 120000, r)
-    check("the five tiny flares are all one size of bubble, each with a rim", r["dots"] == 5 and r["dotR"] == ["5"] and r["rims"] == 5, r)
+    check("the tiny flares are all one size of bubble, each with a rim", r["dots"] == 3 and r["dotR"] == ["5"] and r["rims"] == 3, r)
     check("the big planet is the original: no night-side layer, no pale smoke", not r["shade"] and not r["litSmoke"], r)
     check("Platinum's two stars go round each other and nothing swings", r["plat"], r)
     check("Silver has a world going round it", r["silver"], r)
@@ -8972,6 +8986,185 @@ def check_b312_looks(br):
     ctx.close()
 
 
+def check_b313_flares(br):
+    """Build 313, the secret flares: "None of my secret flares are lit up";
+    "when tapping the tiny secret flares, sometimes they and sometimes the
+    text box won't show up ... ensure it properly and smoothly follows the
+    selected flare"; "there will only be 3 at first, the 4th and 5th flare
+    will appear once void is unlocked"; "ensure the flares in the middle are
+    moving at a faster pace"; "the umbra missing flare did not change at
+    all"; a sixth flare, on the planet, found at level 78-80, handing over
+    the last secret character; names, not colours; locked secret characters
+    as silhouettes; a banner for each. Written against build 312, where the
+    found flares computed white, the tooltip stayed where it was opened,
+    all five dots always showed, and none of the rest existed."""
+    print("\n91. build 313: secret flares lit, tappable and followed; three then five then six; the sixth flare; names; silhouettes; banners")
+    FOUND = lambda *ks: "{" + ",".join('"%s":%s' % (k, "true" if k in ks else "false") for k in ["red", "orange", "yellow", "violet", "white", "core"]) + "}"
+    for label, w, h in DEVICES:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate("""async (F) => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+          try{
+          document.querySelectorAll('.app-banner, #save-code').forEach(e => e.remove());
+          store.unlocksShown = store.unlocksShown || { chars: [], banners: [] };
+          const shownNow = () => { try{ ensureUnlocksShown(); markUnlocksShown(announceableHeldCharacters(), BANNERS.filter(b => bannerEarned(b.id)).map(b => b.id)); }catch(e){}
+            store.flareHintsShown = ['umbra', 'singularity', 'genesis']; };
+          const home = async (found) => { store.mysteryColorsFound = JSON.parse(found); shownNow(); showHome(); await wait(1500);
+            document.querySelectorAll('.rs-spot, .app-banner').forEach(e => e.remove()); };
+          const hex = c => { const n = parseInt(c.slice(1), 16); return 'rgb(' + (n >> 16) + ', ' + ((n >> 8) & 255) + ', ' + (n & 255) + ')'; };
+          /* 1. lit: a found flare paints in its own colour */
+          await home(F.void);
+          const dots = [...document.querySelectorAll('.panel.home .cosmic-orbit-dot')];
+          out.count3 = 0; out.countVoid = dots.length;
+          out.lit = dots.filter(d => (store.mysteryColorsFound || {})[d.dataset.flare || ''] || /found/.test(d.getAttribute('class') || '')).map(d => {
+            const key = d.dataset.flare || ['red', 'orange', 'yellow'][dots.indexOf(d)];
+            const b = d.querySelector('.cof-body'); const cs = getComputedStyle(b || d);
+            return { key, ok: (cs.backgroundImage + '|' + cs.fill).indexOf(hex(MYSTERY_COLOR[key] || '#000000')) >= 0 };
+          });
+          /* the next one wears its colour - Umbra's, once Void is held */
+          const vio = document.querySelector('.panel.home [data-flare="violet"]');
+          out.nextTinted = !!(vio && vio.classList.contains('is-next') && parseFloat(getComputedStyle(vio.querySelector('.cof-tint')).opacity) > .2);
+          /* 2. three, then five, then six */
+          await home(F.none); out.count3 = document.querySelectorAll('.panel.home .cosmic-orbit-dot').length;
+          await home(F.five); out.count6 = document.querySelectorAll('.panel.home .cosmic-orbit-dot').length;
+          out.coreOnPlanet = !!document.querySelector('.panel.home .cosmic-core-orbit [data-flare="core"]');
+          /* 3. the inner ring is well over twice as quick */
+          const dur = el => el ? parseFloat(getComputedStyle(el).animationDuration.split(',').pop()) : 0;
+          out.spin = [dur(document.querySelector('.cosmic-hero-orbitlayer:not(.cosmic-hero-orbitlayer-inner)')), dur(document.querySelector('.cosmic-hero-orbitlayer-inner'))];
+          /* 4. names, not colours */
+          out.names = MYSTERY_ORDER.map(k => MYSTERY_NAME[k]);
+          out.order = MYSTERY_ORDER.slice(); out.coreWin = (typeof FLARE_WINDOWS !== 'undefined') ? FLARE_WINDOWS.core : null;
+          /* 5. the sixth: next after the fifth, at level 78-80 */
+          const realLevel = levelOf;
+          store.mysteryColorsFound = JSON.parse(F.five); store.flareNextTestAt = 0;
+          out.nextAfterFive = nextNeededMysteryColor();
+          levelOf = () => 77; out.gate77 = mysteryGateMet('core');
+          levelOf = () => 80; out.gate80 = mysteryGateMet('core');
+          levelOf = realLevel;
+          out.genesisLockedBefore = isLockedCharacter('genesis');
+          store.mysteryColorsFound = JSON.parse(F.all); out.genesisHeld = !isLockedCharacter('genesis');
+          out.items = rsUnlockItems({ badges: [], retroBadges: [], colors: [], characters: [], banners: ['flare_genesis'], justBeatSpeed: null, units: [], flare: 'core', flareAll: false, flareCount: 6 })
+            .map(i => i.kind + ':' + (i.flare || i.character || i.banner || '') + ':' + (i.name || ''));
+          /* 6. silhouettes: with only Void held, the other three are black cut-outs in Customize */
+          store.mysteryColorsFound = JSON.parse(F.void); showCustomize(); await wait(900);
+          const opt = id => [...document.querySelectorAll('.avatarchar-option')].find(o => o.title === (AVATAR_DISPLAY_NAME[id] || id));
+          out.sil = ['umbra', 'singularity', 'genesis'].map(id => { const o = opt(id); if(!o) return 'missing';
+            const p = o.querySelector('.char-sil-body .cx-head :is(path, circle, ellipse):not([fill="none"])');
+            return o.classList.contains('is-silhouette') && p ? getComputedStyle(p).fill : 'not-silhouette'; });
+          out.voidShown = (() => { const o = opt('voidwalker'); return !!o && !o.classList.contains('is-silhouette'); })();
+          out.silLive = !!document.querySelector('.avatarchar-option.is-silhouette .char-sil.char-live');
+          /* 7. banners: one per secret character, held with it */
+          out.banners = ['flare_void', 'flare_umbra', 'flare_horizon', 'flare_genesis'].map(id => !!bannerDef(id) && typeof BANNER_ART[id] === 'function');
+          out.bannerHeld = [bannerEarned('flare_void'), bannerEarned('flare_umbra')];
+          out.secretLocked = !!document.querySelector('.banner-opt.locked.is-secret[data-banner="flare_umbra"]');
+          /* an account already holding Void is handed its banner on Home */
+          shownNow(); store.unlocksShown.banners = store.unlocksShown.banners.filter(x => x !== 'flare_void');
+          showHome(); await wait(4200);
+          const spot = document.querySelector('.rs-spot'); out.homeBanner = spot ? spot.textContent : '';
+          }catch(e){ out.err = String(e && e.stack || e); }
+          return out; }""", {"none": FOUND(), "void": FOUND("red", "orange", "yellow"),
+                            "five": FOUND("red", "orange", "yellow", "violet", "white"),
+                            "all": FOUND("red", "orange", "yellow", "violet", "white", "core")})
+        check(f"{label}: no exception", "err" not in r, r.get("err"))
+        lit = r.get("lit") or []
+        check(f"{label}: every found flare on Home is lit in its own colour (they computed white)",
+              len(lit) == 3 and all(x["ok"] for x in lit), lit)
+        check(f"{label}: the flare being hunted next wears its colour (Umbra's, once Void is held)", r.get("nextTinted") is True, r.get("nextTinted"))
+        check(f"{label}: three flares before Void, five with it, six once the fifth is found",
+              (r.get("count3"), r.get("countVoid"), r.get("count6")) == (3, 5, 6), (r.get("count3"), r.get("countVoid"), r.get("count6")))
+        check(f"{label}: the sixth flare is on the planet", r.get("coreOnPlanet") is True)
+        sp = r.get("spin") or [0, 0]
+        check(f"{label}: the inner ring turns at least twice as fast as the outer", sp[1] > 0 and sp[0] >= 2 * sp[1], sp)
+        nm = r.get("names") or []
+        check(f"{label}: every flare has a name of its own, not a colour",
+              len(nm) == 6 and len(set(nm)) == 6 and not any(n.lower() in ("red", "orange", "yellow", "violet", "white") for n in nm), nm)
+        check(f"{label}: the sixth flare comes after the fifth, at level 78-80",
+              r.get("order", [])[-1:] == ["core"] and r.get("coreWin") == [78, 80] and r.get("nextAfterFive") == "core"
+              and r.get("gate77") is False and r.get("gate80") is True, [r.get("order"), r.get("coreWin"), r.get("nextAfterFive"), r.get("gate77"), r.get("gate80")])
+        check(f"{label}: it hands over Genesis", r.get("genesisLockedBefore") is True and r.get("genesisHeld") is True)
+        check(f"{label}: the results name the flare, then the character, then its banner",
+              (r.get("items") or [])[-3:] == ["flare:core:Worldheart", "character:genesis:Genesis", "banner:flare_genesis:Genesis"], r.get("items"))
+        check(f"{label}: a locked secret character is a black cut-out in Customize, the held one is not",
+              r.get("sil") == ["rgb(5, 6, 10)"] * 3 and r.get("voidShown") is True and r.get("silLive") is True, [r.get("sil"), r.get("voidShown"), r.get("silLive")])
+        check(f"{label}: a banner for each secret character, held with it, dark until then",
+              r.get("banners") == [True] * 4 and r.get("bannerHeld") == [True, False] and r.get("secretLocked") is True, [r.get("banners"), r.get("bannerHeld"), r.get("secretLocked")])
+        check(f"{label}: an account already holding Void is handed its banner on Home",
+              "Void" in (r.get("homeBanner") or "") and "Banner" in (r.get("homeBanner") or ""), r.get("homeBanner"))
+        ctx.close()
+
+    # Real taps, at each flare's live position, and the tooltip following it.
+    # (The sync-code notice sits along the top, where the red flare can be.)
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, init="try{localStorage.setItem('class26e.savecode.asked','1');}catch(e){}")
+    pg.evaluate("""()=>{ document.querySelectorAll('.app-banner, #save-code').forEach(e => e.remove());
+      store.mysteryColorsFound = { red: true, orange: true, yellow: true, violet: true, white: true };
+      try{ ensureUnlocksShown(); markUnlocksShown(announceableHeldCharacters(), BANNERS.filter(b => bannerEarned(b.id)).map(b => b.id)); }catch(e){}
+      store.flareHintsShown = ['umbra', 'singularity', 'genesis']; showHome(); }""")
+    pg.wait_for_timeout(2500)
+    pg.evaluate("()=>document.querySelectorAll('.rs-spot').forEach(e => e.remove())")
+    keys = ["red", "orange", "yellow", "violet", "white"]
+    ok, missed = 0, []
+    for i in range(15):
+        k = keys[i % 5]
+        pos = pg.evaluate("""(k)=>{ const d = document.querySelector('.panel.home [data-flare="' + k + '"]') || [...document.querySelectorAll('.panel.home .cosmic-orbit-dot')][['red','orange','yellow','violet','white'].indexOf(k)];
+          if(!d) return null; const r = d.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }""", k)
+        if not pos:
+            missed.append((k, "no dot")); continue
+        pg.evaluate("()=>{ document.querySelectorAll('.app-banner, #save-code, .daily-alert, .rs-spot, #contextual-info-popup').forEach(e => e.remove()); }")
+        pg.mouse.click(pos[0], pos[1])
+        pg.wait_for_timeout(150)
+        t = pg.evaluate("()=>{ const p = document.getElementById('contextual-info-popup'); return p ? p.textContent : ''; }")
+        nm = pg.evaluate("(k)=>MYSTERY_NAME[k]", k)
+        if nm in t:
+            ok += 1
+        else:
+            missed.append((k, t[:40]))
+        pg.wait_for_timeout(250)
+    check("every real tap on a found flare opens its tooltip, naming the flare", ok == 15, missed)
+    pos = pg.evaluate("""()=>{ const d = document.querySelector('.panel.home [data-flare="violet"]') || [...document.querySelectorAll('.panel.home .cosmic-orbit-dot')][3];
+      const r = d.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }""")
+    pg.mouse.click(pos[0], pos[1])
+    f = pg.evaluate("""async ()=>{ const d = document.querySelector('.panel.home [data-flare="violet"]') || [...document.querySelectorAll('.panel.home .cosmic-orbit-dot')][3];
+      const out = []; const t0 = performance.now();
+      while(performance.now() - t0 < 1200){ await new Promise(r => requestAnimationFrame(r));
+        const m = document.getElementById('contextual-info-line-dot'); if(!m) continue;
+        const a = d.getBoundingClientRect(), b = m.getBoundingClientRect();
+        out.push([Math.hypot(a.left + a.width / 2 - b.left - b.width / 2, a.top + a.height / 2 - b.top - b.height / 2), a.left, a.top]); }
+      return out; }""")
+    moved = max(abs(f[-1][1] - f[0][1]), abs(f[-1][2] - f[0][2])) if f else 0
+    worst = max(x[0] for x in f) if f else 99
+    check("the tooltip's marker stays on the flare as it moves (within 2px over 1.2s)", len(f) > 20 and moved > 3 and worst <= 2, ("frames", len(f), "moved", round(moved, 1), "worst", round(worst, 1)))
+    ctx.close()
+
+    # The characters and the scenes.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      try{
+      const host = document.createElement('div'); host.className = 'char-live'; host.style.cssText = 'position:fixed;left:0;top:0;width:80px;height:80px';
+      document.body.appendChild(host);
+      const anim = (id, sel) => { host.innerHTML = ''; const s = buildAvatarCharSVG(id); if(!s) return 'nodrawing'; host.appendChild(s);
+        const e = s.querySelector(sel); return e ? getComputedStyle(e).animationName : 'missing'; };
+      out.genesis = [anim('genesis', '.cx-fx-gnspin'), anim('genesis', '.cx-fx-gnmoonfront'), anim('genesis', '.cx-eyes')];
+      out.umbraMoon = [anim('umbra', '.cx-fx-umdark'), anim('umbra', '.cx-fx-umlit')];
+      out.horizonSurge = [anim('singularity', '.cx-fx-sgsurgew'), anim('singularity', '.cx-fx-sgsurgeb')];
+      host.remove();
+      store.mysteryColorsFound = { red: true, orange: true, yellow: true, violet: true, white: true, core: true };
+      out.scenes = [];
+      for(const c of ['violet', 'white', 'core']){
+        const h = playFlareFoundScene(c, false, () => {}); await wait(400);
+        const o = document.querySelector('.ff-scene'); out.scenes.push(o ? o.className.split(' ').filter(x => /^xs-(umbra|horizon|genesis)$/.test(x)).join('') : 'none');
+        h && h.stop && h.stop(); await wait(100);
+      }
+      }catch(e){ out.err = String(e && e.stack || e); }
+      return out; }""")
+    check("no exception in the character and scene checks", "err" not in r, r.get("err"))
+    g = r.get("genesis") or []
+    check("Genesis is drawn, its moon orbits and passes behind, and it blinks",
+          g[:2] == ["cx-gn-spin", "cx-gn-front"] and "cx-blink" in (g[2] if len(g) > 2 else ""), g)
+    check("Umbra's moon goes through its phases", r.get("umbraMoon") == ["cx-um-dark", "cx-um-lit"], r.get("umbraMoon"))
+    check("Horizon's hair surges white and deep blue", r.get("horizonSurge") == ["cx-sg-surgew", "cx-sg-surgeb"], r.get("horizonSurge"))
+    check("Umbra, Horizon and Genesis each have a scene of their own", r.get("scenes") == ["xs-umbra", "xs-horizon", "xs-genesis"], r.get("scenes"))
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -9096,6 +9289,7 @@ def main():
             check_b312_unlocks(br)
             check_b312_looks(br)
             check_b312_flares(br)
+            check_b313_flares(br)
         finally:
             br.close()
     SERVER.shutdown()

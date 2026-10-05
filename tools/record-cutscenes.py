@@ -361,10 +361,14 @@ def flare_scene(color, void_flare):
         pg.evaluate("()=>showHome()")
         pg.wait_for_timeout(700)
         rec.start(); pg.wait_for_timeout(300)
+        # Build 313: Umbra, Horizon and Genesis each have a scene of their
+        # own, reached the way the results screen reaches them.
         pg.evaluate("""(a)=>{
-            store.mysteryColorsFound = a.v ? { red:true, orange:true, yellow:true, violet: a.c === 'white' } : { red:true, orange:true };
-            playFinalFlareScene(a.c, () => {}, a.v ? { voidFlare: true } : undefined);}""", {"c": color, "v": void_flare})
-        pg.wait_for_timeout(19000)
+            const order = ['red','orange','yellow','violet','white','core'];
+            store.mysteryColorsFound = {}; order.slice(0, order.indexOf(a.c) + 1).forEach(k => store.mysteryColorsFound[k] = true);
+            if(a.v) playFlareFoundScene(a.c, false, () => {});
+            else playFinalFlareScene(a.c, () => {});}""", {"c": color, "v": void_flare})
+        pg.wait_for_timeout(19500)
     return body
 
 
@@ -393,6 +397,8 @@ SCENES = [
     ("flare-void",     TABLET, flare_scene("yellow", False), 10, 340),
     ("flare-umbra",    PHONE,  flare_scene("violet", True),  10, GIF_W),
     ("flare-horizon",  PHONE,  flare_scene("white", True),   10, GIF_W),
+    ("flare-genesis",  PHONE,  flare_scene("core", True),    10, GIF_W),
+    ("flare-genesis",  TABLET, flare_scene("core", True),    10, 340),
 ]
 
 
