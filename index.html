@@ -20126,6 +20126,87 @@
      drawing stays under the flip-book's 80px ceiling at both. */
   .results-level-avatar > svg{ width:3.6rem; height:3.6rem; }
   .results-level-avatar .results-level-mark{ top:-.15rem; left:-.2rem; width:1.5rem; height:1.5rem; }
+  /* ---- THE GRADE ON THE CHARACTER (build 313, see reactCharacter) ----
+     Two layers either side of the drawing, so every character shows its
+     grade however it is drawn - a visor, a fishbowl, a mask with no
+     mouth. Transform and opacity only; no filter anywhere near the
+     drawing. Each layer's resting state IS its final picture, so with
+     motion off a 100 still has its light, a pass its tick and a fail its
+     cloud - only the movement goes. */
+  .char-emote{ position:absolute; inset:0; pointer-events:none; }
+  .char-emote-back{ z-index:0; }
+  .char-emote-back ~ svg{ position:relative; z-index:1; }
+  .char-emote-front{ z-index:2; }
+  .char-emote i{ position:absolute; display:block; }
+  /* 100: gold light turning behind, stars bursting off the circle */
+  .char-emote-back.char-emote-perfect i{ inset:-20%; border-radius:50%;
+    background:radial-gradient(circle, rgba(255,214,90,.42), rgba(255,214,90,0) 60%),
+               repeating-conic-gradient(from 0deg, rgba(255,226,130,.5) 0deg 4deg, rgba(255,214,90,0) 4deg 30deg);
+    -webkit-mask:radial-gradient(circle, #000 30%, rgba(0,0,0,0) 66%); mask:radial-gradient(circle, #000 30%, rgba(0,0,0,0) 66%); }
+  .char-emote-front.char-emote-perfect i{ left:50%; top:50%; width:.62rem; height:.62rem; margin:-.31rem 0 0 -.31rem; opacity:0;
+    background:#FFE07A; rotate:calc(var(--k) * 45deg + 22deg);
+    clip-path:polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%); }
+  .char-emote-front.char-emote-perfect i:nth-child(even){ background:#FFFFFF; width:.46rem; height:.46rem; margin:-.23rem 0 0 -.23rem; }
+  /* 90-99: a warm glow breathing behind, sparkles round the head */
+  .char-emote-back.char-emote-great i{ inset:-14%; border-radius:50%;
+    background:radial-gradient(circle, rgba(255,214,120,.5), rgba(110,231,183,.2) 46%, rgba(110,231,183,0) 68%); }
+  .char-emote-front.char-emote-great i{ width:.7rem; height:.7rem; background:#FFE9A8; opacity:.9;
+    clip-path:polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%); }
+  .char-emote-front.char-emote-great i:nth-child(1){ left:4%; top:10%; }
+  .char-emote-front.char-emote-great i:nth-child(2){ right:2%; top:4%; width:.86rem; height:.86rem; background:#FFFFFF; }
+  .char-emote-front.char-emote-great i:nth-child(3){ right:-6%; top:52%; width:.56rem; height:.56rem; }
+  /* 70-89: a green tick on the circle's edge */
+  .char-emote-front.char-emote-pass i{ right:-.22rem; top:-.12rem; width:1.5rem; height:1.5rem; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #5FE39A, #22A85E 70%);
+    box-shadow:0 0 0 2px rgba(14,18,26,.95), 0 0 12px rgba(61,220,132,.55); }
+  .char-emote-front.char-emote-pass i::after{ content:""; position:absolute; left:32%; top:24%; width:30%; height:46%;
+    border:solid #FFFFFF; border-width:0 .2rem .2rem 0; rotate:40deg; border-radius:1px; }
+  /* under 70: the light drains out of the circle and a cloud hangs over it */
+  .char-emote-front.char-emote-fail i:nth-child(1){ inset:0; border-radius:50%;
+    background:radial-gradient(circle at 50% 38%, rgba(40,52,72,.18), rgba(10,14,22,.58) 72%); }
+  .char-emote-front.char-emote-fail i:nth-child(2){ left:50%; top:-.5rem; width:2rem; height:.95rem; margin-left:-1rem;
+    background:radial-gradient(circle .36rem at 26% 64%, #8E99AB 96%, rgba(142,153,171,0) 100%),
+               radial-gradient(circle .46rem at 54% 46%, #A6B0C0 96%, rgba(166,176,192,0) 100%),
+               radial-gradient(circle .32rem at 80% 66%, #8E99AB 96%, rgba(142,153,171,0) 100%); }
+  .char-emote-front.char-emote-fail i:nth-child(n+3){ top:.32rem; width:.13rem; height:.38rem; border-radius:.1rem; background:#9FC4FF; opacity:0; }
+  .char-emote-front.char-emote-fail i:nth-child(3){ left:42%; }
+  .char-emote-front.char-emote-fail i:nth-child(4){ left:57%; }
+  @media (prefers-reduced-motion:no-preference){
+    .char-emote-back.char-emote-perfect i{ animation:char-emote-spin 6s linear infinite, char-emote-in .7s ease-out both; }
+    .char-emote-front.char-emote-perfect i{ animation:char-emote-burst 2.2s ease-out infinite; animation-delay:calc(var(--k) * -.275s); }
+    .char-emote-back.char-emote-great i{ animation:char-emote-breathe 1.5s ease-in-out infinite alternate, char-emote-in .7s ease-out both; }
+    .char-emote-front.char-emote-great i{ animation:char-emote-twinkle 1.8s ease-in-out infinite; animation-delay:calc(var(--k) * -.6s); }
+    .char-emote-front.char-emote-pass i{ animation:char-emote-pop .6s cubic-bezier(.3,1.6,.5,1) .35s both, char-emote-nudge 3s ease-in-out 1s infinite; }
+    .char-emote-front.char-emote-fail i:nth-child(1){ animation:char-emote-in 1.4s ease-out both; }
+    .char-emote-front.char-emote-fail i:nth-child(2){ animation:char-emote-cloud .9s ease-out .3s both, char-emote-bob 1.5s ease-in-out 1.2s infinite alternate; }
+    .char-emote-front.char-emote-fail i:nth-child(n+3){ animation:char-emote-rain .9s linear infinite; }
+    .char-emote-front.char-emote-fail i:nth-child(4){ animation-delay:-.45s; }
+    /* the drawing's own moves, bigger than before (they come after the
+       build 235 rules and replace them) */
+    .char-react-great .avatarchar-svg .cx-fig{ animation:cx-hop .75s cubic-bezier(.3,.7,.4,1) both, cx-hop-loop 2.4s ease-in-out .75s infinite; }
+    .char-react-great .avatarchar-svg .cx-eyes{ animation:cx-joy-open 1.3s ease-in-out .1s both; }
+    .char-react-great .avatarchar-svg .cx-eyes-closed{ animation:cx-joy-shut 1.3s ease-in-out .1s both; }
+    .char-react-pass .avatarchar-svg .cx-head{ animation:cx-r3-nod2 1.2s ease-in-out .2s both, cx-nod-soft 3s ease-in-out 1.4s infinite; }
+    .char-react-fail .avatarchar-svg .cx-fig{ animation:cx-r3-sink 1.2s ease-out both; }
+    .char-react-fail .avatarchar-svg .cx-head{ animation:cx-r3-slump 1.2s ease-out both, cx-r3-sigh 3s ease-in-out 1.2s infinite; }
+  }
+  /* the fail pose, held with motion off as well */
+  .char-react-fail .avatarchar-svg .cx-fig{ transform:translateY(1.6px) scale(.96); }
+  .char-react-fail .avatarchar-svg .cx-head{ transform:translateY(1.5px) rotate(-10deg); }
+  @keyframes char-emote-in{ from{ opacity:0; } to{ opacity:1; } }
+  @keyframes char-emote-spin{ from{ transform:none; } to{ transform:rotate(30deg); } }
+  @keyframes char-emote-burst{ 0%, 100%{ opacity:0; transform:translateY(-.7rem) scale(.3); } 12%{ opacity:1; } 80%{ opacity:0; transform:translateY(-3.1rem) scale(1) rotate(90deg); } }
+  @keyframes char-emote-breathe{ from{ transform:scale(.9); opacity:.6; } to{ transform:scale(1.08); opacity:1; } }
+  @keyframes char-emote-twinkle{ 0%, 100%{ transform:scale(.2); opacity:0; } 40%{ transform:scale(1.15) rotate(45deg); opacity:1; } 75%{ transform:scale(.4) rotate(90deg); opacity:0; } }
+  @keyframes char-emote-pop{ from{ scale:0; opacity:0; } to{ scale:1; opacity:1; } }
+  @keyframes char-emote-nudge{ 0%, 70%, 100%{ transform:none; } 78%{ transform:scale(1.16) rotate(-8deg); } 86%{ transform:scale(.98); } }
+  @keyframes char-emote-cloud{ from{ opacity:0; transform:translateY(-.4rem); } to{ opacity:1; transform:none; } }
+  @keyframes char-emote-bob{ from{ translate:0 0; } to{ translate:0 -.12rem; } }
+  @keyframes char-emote-rain{ 0%, 100%{ opacity:0; transform:none; } 10%{ opacity:.9; } 80%{ opacity:0; transform:translateY(1rem); } 81%{ opacity:0; transform:none; } }
+  @keyframes cx-r3-nod2{ 0%, 40%, 80%, 100%{ transform:none; } 20%, 60%{ transform:translateY(.9px) rotate(2.5deg); } }
+  @keyframes cx-r3-sink{ from{ transform:none; } to{ transform:translateY(1.6px) scale(.96); } }
+  @keyframes cx-r3-slump{ 0%{ transform:none; } 60%{ transform:translateY(1.8px) rotate(-11deg); } 100%{ transform:translateY(1.5px) rotate(-10deg); } }
+  @keyframes cx-r3-sigh{ 0%, 100%{ transform:translateY(1.5px) rotate(-10deg); } 50%{ transform:translateY(1.9px) rotate(-11deg); } }
   .results-level-metext{ display:flex; flex-direction:column; gap:.12rem; min-width:0; }
   .results-level-rank{
     font-size:.72rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase;
@@ -49377,6 +49458,45 @@ function gradeReaction(run){
   if(run.pct >= PASS_MARK) return "pass";
   return "fail";
 }
+/* THE CHARACTER FEELS THE GRADE (build 313). "Ensure all the test
+   results animations look good, ensure they work for the grade. Ensure
+   they are noticeable, the emotions and everything." Measured at the
+   size it is drawn (a 58px circle on a phone), the four reactions were
+   one hop and three head tilts of a pixel or two - a 92, a 75 and a 40
+   looked the same, and a character without a mouth or with a visor had
+   nothing to show at all. So the drawing's own moves are bigger, and
+   every grade also gets a sign round the character that does not depend
+   on how it is drawn:
+     perfect  gold light turning behind it, stars bursting off the circle,
+              the big hop, happy eyes and its own winning move
+     great    a warm glow breathing behind it, sparkles round the head,
+              a happy hop that keeps going, happy eyes
+     pass     a firm double nod, and a green tick that pops onto the
+              circle's edge and stays
+     fail     the figure sinks and the head drops, the light drains out
+              of the circle, and a small rain cloud hangs over it
+   The sign is two layers either side of the drawing (char-emote-back /
+   -front), built here so every caller gets the same thing. With motion
+   off, each settles into its final picture. */
+function reactCharacter(av, band){
+  if(!av) return av;
+  av.classList.remove("char-live", "char-react-perfect", "char-react-great", "char-react-pass", "char-react-fail", "char-react-win");
+  av.querySelectorAll(":scope > .char-emote").forEach(n => n.remove());
+  av.classList.add("char-react-" + band);
+  if(band === "perfect") av.classList.add("char-react-win");
+  const layer = (where, kids) => {
+    const el = document.createElement("span");
+    el.className = "char-emote char-emote-" + where + " char-emote-" + band;
+    el.setAttribute("aria-hidden", "true");
+    for(let i = 0; i < kids; i++){ const k = document.createElement("i"); k.style.setProperty("--k", i); el.appendChild(k); }
+    return el;
+  };
+  const back = layer("back", band === "perfect" ? 1 : (band === "great" ? 1 : 0));
+  const front = layer("front", band === "perfect" ? 8 : (band === "great" ? 3 : (band === "pass" ? 1 : 4)));
+  av.insertBefore(back, av.firstChild);
+  av.appendChild(front);
+  return av;
+}
 function avatarSpanFor(entry){
   const span = document.createElement("span");
   span.className = "rank-avatar";
@@ -68399,16 +68519,16 @@ function showRunRewards(run, hooks, opts){
       const av = xp.querySelector(".results-level-avatar");
       if(!av || av.dataset.reacted) return;
       av.dataset.reacted = "1";
-      av.classList.remove("char-live");
       const g = gradeReaction(run);
-      av.classList.add("char-react-" + g);
+      /* the class, the hundo's own move and the sign round it - see
+         reactCharacter */
+      reactCharacter(av, g);
       /* A HUNDO GETS THE CHARACTER'S OWN MOVE (build 241) - "the cooler
          animations/happy for the hundo and then lower for that." The
          perfect hop and joy on top of the move each character makes when
          it wins a Virtual Room: the dragon's fire, the wizard's spell,
          Void's flares spinning. 90 and up is a hop and a nod, a pass a
          nod, and short of it a slump. */
-      if(g === "perfect") av.classList.add("char-react-win");
     };
     if(opts && opts.instant) setTimeout(react, 0);
     else {
