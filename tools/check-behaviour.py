@@ -8076,6 +8076,15 @@ def check_b305_resultstap(br):
         for _ in range(150):
             pg.wait_for_timeout(200)
             if pg.evaluate("()=>!!document.querySelector('.rs-rewards.rs-done')"): break
+        # measured again HERE, once the page has stopped moving: the finished reveal scrolls the buttons into view
+        # (50-94px on a phone when the machine is busy), so the spot measured
+        # before the reveal can be empty page by now - that tap missed, it was
+        # not the app ignoring one
+        where = pg.evaluate("""async ()=>{ const b=[...document.querySelectorAll('.rs-actions button')].find(x=>/Main menu/.test(x.textContent));
+          let last = null, still = 0;
+          for(let k = 0; k < 60 && still < 4; k++){ await new Promise(r => setTimeout(r, 100));
+            const y = Math.round(b.getBoundingClientRect().top) + '|' + Math.round(scrollY); still = y === last ? still + 1 : 0; last = y; }
+          const r=b.getBoundingClientRect(); return [r.left+r.width/2, r.top+r.height/2]; }""")
         pg.touchscreen.tap(where[0], where[1]); pg.wait_for_timeout(1200)
         r2 = pg.evaluate("()=>!!document.querySelector('[data-screen=\"home\"]')")
         ctx.close()
