@@ -16682,15 +16682,17 @@
   /* ALL, AS A CLEAN PILL (build 310): "The current all button looks funny
      btw, needs to look better." It was a raised key with a hard 3px ledge
      under it, beside a flat slider - two different materials side by
-     side. Now it is a slim glass pill the slider's own height, matching
-     the track's blue: an outline when it is not on, filled with a tick
-     when it is, and it presses in rather than down. */
+     side. Now it is a slim glass pill the slider's own height: an
+     outline when it is not on, filled with a tick when it is, and it
+     presses in rather than down. Neutral, not blue (build 313: "the all
+     button in the start menu is blue for some reason") - filled it is
+     the same glass as the selected "Your units" box above it. */
   .unitoptions-modal-sheet .slider-allbtn{
     display:inline-flex; align-items:center; justify-content:center; gap:.3rem;
     min-width:4.2rem; min-height:2.1rem; padding:.25rem .85rem;
     font-size:.78rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase;
     color:rgba(255,255,255,.82); background:rgba(255,255,255,.05);
-    border:1.5px solid rgba(160,205,255,.38);
+    border:1.5px solid rgba(255,255,255,.22);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
     transition:background .2s ease, color .2s ease, border-color .2s ease, transform .12s ease, box-shadow .2s ease;
   }
@@ -16699,9 +16701,9 @@
     transition:width .2s ease, opacity .2s ease;
   }
   .unitoptions-modal-sheet .slider-allbtn.on{
-    color:#06121F; border-color:transparent;
-    background:linear-gradient(180deg, #CFE6FF, #8CC4FF);
-    box-shadow:0 0 0 3px rgba(90,180,255,.22), 0 4px 12px -4px rgba(90,180,255,.6);
+    color:#fff; border-color:rgba(255,255,255,.14);
+    background:rgba(255,255,255,.17);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
   }
   .unitoptions-modal-sheet .slider-allbtn.on::before{ width:.8em; opacity:1; }
   .unitoptions-modal-sheet .slider-allbtn:active{ transform:scale(.95); }
