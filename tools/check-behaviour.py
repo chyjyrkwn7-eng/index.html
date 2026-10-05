@@ -8790,7 +8790,7 @@ def check_b312_unlocks(br):
     short before anybody saw it still counted and Home never played it.
     And the three ultimates: Astral (every character), Celestial (every
     banner), Zenith (everything, the other two included)."""
-    print("\n88. build 312: an unlock card counts only once seen; three ultimates; First Light")
+    print("\n88. build 312: an unlock card counts only once seen; three ultimates; Lights Out")
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
       const shown = id => !!(store.unlocksShown && (store.unlocksShown.chars || []).indexOf(id) >= 0);
@@ -8819,11 +8819,19 @@ def check_b312_unlocks(br):
       out.zenith = !isLockedCharacter('zenith');
       const up = ultimateProgress(); out.up = up;
       window.isLockedCharacter = realLocked; window.bannerEarned = realEarned; window.isLockedAccent = realAccent;
-      /* First Light: units with at least one hundo, read off unitPerfects */
-      const U = topicsIn(QUESTIONS); store.unitPerfects = {};
-      U.slice(0, 3).forEach(u => store.unitPerfects[u] = 2); store.unitPerfects['A unit no longer in the bank'] = 5;
-      out.early = bannerDef('early10') ? { need: bannerDef('early10').need, have: bannerDef('early10').have(), name: bannerDef('early10').name, label: bannerDef('early10').label } : null;
-      U.slice(0, 12).forEach(u => store.unitPerfects[u] = 1);
+      /* Lights Out: hundos between 8 PM and midnight, seeded once from
+         the history. 21:00 with hundos:1 counts 1; 22:00 with unit scores
+         {100, 90} counts 1; 23:00 part of a unit counts 0; 07:00 counts 0. */
+      const at = h => { const d = new Date(); d.setHours(h, 10, 0, 0); return d.getTime(); };
+      store.testHistory = [
+        { label: 'a', units: ['x'], pct: 100, playedAt: at(21), hundos: 1 },
+        { label: 'b', units: ['x', 'y'], pct: 95, playedAt: at(22), up: { x: 100, y: 90 } },
+        { label: 'c', units: ['x'], pct: 100, playedAt: at(23), part: true },
+        { label: 'd', units: ['x'], pct: 100, playedAt: at(7) } ];
+      store.lateHundos = 0; store.lateHundosSeed312 = false;
+      const b = bannerDef('early10');
+      out.early = b ? { need: b.need, have: b.have(), name: b.name, label: b.label } : null;
+      store.lateHundos = 3;
       out.earned = bannerEarned('early10');
       return out; }""")
     check("an unlock card cut short before it was seen stays owed, so Home still plays it", r.get("cutShort") is False, r)
@@ -8835,12 +8843,36 @@ def check_b312_unlocks(br):
     check("every other character earns Astral and every banner earns Celestial, character and banner alike",
           r.get("astral") and r.get("celestial") and r.get("astralBanner") and r.get("celestialBanner"), r)
     check("Zenith asks for everything, the other two ultimates included", r.get("zenith") is True and r["up"]["have"] == r["up"]["need"], r.get("up"))
-    # First Light was "10 tests before 8 in the morning" for one round and
-    # was turned down: "I wouldn't even want to do that challenge".
-    check("First Light is a hundo in 10 different units: only units still in the bank count, and 12 lit earns it",
-          r.get("early") and r["early"]["need"] == 10 and r["early"]["have"] == 3 and r["early"]["name"] == "First Light"
-          and "morning" not in r["early"]["label"] and r.get("earned") is True, r)
+    # First Light was "10 tests before 8 in the morning" ("I wouldn't even
+    # want to do that challenge"), then a hundo in 10 units. Madison's own
+    # idea replaced both: "get a hundo between 8pm and 12pm ... Or 3 hundos".
+    check("Lights Out is 3 hundos between 8 PM and midnight, seeded from the evening hundos already in the history",
+          r.get("early") and r["early"]["need"] == 3 and r["early"]["have"] == 2 and r["early"]["name"] == "Lights Out"
+          and "8 PM" in r["early"]["label"] and r.get("earned") is True, r)
     ctx.close()
+    # A real perfect run counts only in the evening: the same whole-unit
+    # hundo at 21:30 adds one, at 10:30 adds nothing.
+    for hour, want in ((21, 1), (10, 0)):
+        ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+        r = pg.evaluate("""async (hour) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          const real = Date.now.bind(Date), d = new Date(); d.setHours(hour, 30, 0, 0);
+          const off = d.getTime() - real(); Date.now = () => real() + off;
+          store.lateHundosSeed312 = true; store.lateHundos = 0;
+          cfg.mode = 'drill'; cfg.units = ['Identity Crimes']; cfg.source = 'all'; cfg.size = 0; cfg.versions = {}; theme.autoAdvance = true;
+          beginRun(freshOrder(QUESTIONS.map((q, i) => i).filter(i => QUESTIONS[i].topic.trim() === 'Identity Crimes')), null);
+          for(let i = 0; i < 80 && !document.querySelector('.choice'); i++) await wait(100);
+          let last = -1, guard = 0;
+          while(testInProgress && guard++ < 240){
+            const ch = [...document.querySelectorAll('#stage .choice:not(.locked)')];
+            if(pos !== last && ch.length){ last = pos; const slot = correctSlot(order[pos]); ch[slot] && ch[slot].click(); }
+            await wait(250);
+          }
+          await wait(600);
+          Date.now = real;
+          return { late: store.lateHundos, top: (store.testHistory[0] || {}).pct }; }""", hour)
+        check("a whole-unit hundo finished at %02d:30 adds %d to Lights Out" % (hour, want),
+              r.get("top") == 100 and r.get("late") == want, r)
+        ctx.close()
 
 
 def check_b312_flares(br):

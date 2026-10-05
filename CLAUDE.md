@@ -11668,7 +11668,7 @@ flashcard bar colour, the slide (a push now), and build 280's still map.
 **Known and not this build's**: sweep-layout reports a GREY BAR on an
 SE 1st gen at 568x260 in a browser (landscape). It is red on 309 as well.
 
-### Build 312 - a real shuffle, every character alive, three ultimates, First Light
+### Build 312 - a real shuffle, every character alive, three ultimates, Lights Out
 
 **Held for Madison's go, together with 310 and 311.** None was merged;
 312 is the build number all three ship under. The leaderboard row
@@ -11752,13 +11752,28 @@ unlocking all characters, one is banners, zenith is everything")
   first two, `ultimateProgress()` leaves out only Zenith itself. Each has
   its banner (`ZENITH_BANNER.c/.b/.a`), all three last in both lists.
 
-**First Light** - the new unique banner: a hundo in 10 different units
-(`litUnitsOf()`, read straight off `unitPerfects`, only units still in the
-bank). Sunrise over the city across the water - the sky lighting up unit
-by unit. It was "10 tests before 8 in the morning" for one round and was
-turned down at once: "I wouldn't even want to do that challenge". **A
-challenge rewards studying, not WHEN you study.** The early-test counter
-never shipped and is gone entirely; the id stays `early10`.
+**Lights Out** - the unique banner: 3 hundos earned between 8 PM and
+midnight, by the device's clock (`LATE_HUNDOS`, `isLateHour()`,
+`store.lateHundos`). The city across the water at night: windows going
+dark a group at a time (`bl-lightsout`, the same at both ends so the loop
+has no seam), a crescent moon, and one window high in the tall tower that
+never goes out. It took three rounds. "10 tests before 8 in the morning"
+was turned down at once ("I wouldn't even want to do that challenge");
+"a hundo in 10 different units" was the next; Madison's own idea replaced
+it: "get a hundo between 8pm and 12pm ... Or 3 hundos". **So a
+time-of-day challenge is fine - the evening is when people study; the
+4 AM start was the problem.**
+- The count is added in `summarize()` next to `perfectTests`, by
+  `hundosEarned`, so it is whole units only, like every other hundo.
+- An existing account is seeded ONCE from its test history
+  (`seedLateHundos312()`, flag `lateHundosSeed312`, false by default in
+  `applyLoadedData()` and true on a fresh store): an entry's own `hundos`,
+  else its per-unit `up` scores of 100, else a 100% run not marked `part`.
+  It is seeded BEFORE the run being counted joins the history, so that run
+  is counted once.
+- `lateHundos` is in all three merge lists (the diff, the sum and the max),
+  like the other counters. The id stays `early10`; nothing was ever earned
+  under it.
 
 **The secret flares, again** ("This secret flare has a square around it";
 "the void cutscene ... started hopping up and down"; "you get a banner

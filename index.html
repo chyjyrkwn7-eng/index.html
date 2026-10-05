@@ -16761,6 +16761,7 @@
     .bn-stage .bl-rise{ animation:bl-rise 7s linear infinite; }
     .bn-stage .bl-sweep{ animation:bl-sweep 9s ease-in-out infinite alternate; }
     .bn-stage .bl-blink{ animation:bl-blink 2.4s steps(1) infinite; }
+    .bn-stage .bl-lightsout{ animation:bl-lightsout 12s linear infinite; }
     .bn-stage .bl-cross{ animation:bl-cross 24s linear infinite; }
     .bn-stage .bl-meteor{ animation:bl-meteor 6s ease-in infinite; opacity:0; }
     .bn-stage .bl-steam{ animation:bl-steam 3.6s ease-out infinite; opacity:0; }
@@ -16802,6 +16803,9 @@
   @keyframes bl-rise{ from{ transform:translateY(0); } to{ transform:translateY(-50%); } }
   @keyframes bl-sweep{ from{ transform:rotate(-14deg); } to{ transform:rotate(14deg); } }
   @keyframes bl-blink{ 0%{ opacity:1; } 12%{ opacity:.12; } 100%{ opacity:.12; } }
+  /* Lights Out's windows: on, out for a while, back on - the same at
+     both ends, so the loop has no seam */
+  @keyframes bl-lightsout{ 0%, 46%{ opacity:1; } 49%, 93%{ opacity:.04; } 96%, 100%{ opacity:1; } }
   @keyframes bl-cross{ 0%{ transform:translateX(0); } 100%{ transform:translateX(-1150%); } }
   @keyframes bl-meteor{ 0%,58%{ transform:translate(0,0); opacity:0; } 60%{ opacity:1; } 72%{ transform:translate(-60%, 60%); opacity:0; } 100%{ transform:translate(-60%, 60%); opacity:0; } }
   @keyframes bl-steam{ 0%{ transform:translateY(12%) scaleX(.8); opacity:0; } 25%{ opacity:.75; } 100%{ transform:translateY(-34%) scaleX(1.25); opacity:0; } }
@@ -35077,16 +35081,34 @@ function unitStreakBest(){ return Math.max(store.unitHundoStreakBest || 0, store
    - The best daily run and the best unit run start at the current ones:
      nothing kept a best before, and the current run is the most that can
      honestly be said. */
-/* FIRST LIGHT (build 312): units lit - every unit you have earned at
-   least one hundo in. It was "10 tests before 8 in the morning" first,
-   and that was turned down straight away ("I wouldn't even want to do
-   that challenge"): a reward has to be for studying, not for when. Read
-   straight off unitPerfects, so it counts what is already on record and
-   needs no counter of its own. Only units still in the bank count. */
-const LIT_UNITS = 10;
-function litUnitsOf(){
-  try{ return topicsIn(QUESTIONS).filter(u => unitPerfectCount(u) > 0).length; }catch(e){ return 0; }
+/* LIGHTS OUT (build 312): hundos earned between 8 PM and midnight, by
+   this device's clock. Two versions came before it: "10 tests before 8
+   in the morning" ("I wouldn't even want to do that challenge") and a
+   hundo in ten different units. This one is Madison's own: "get a hundo
+   between 8pm and 12pm ... or 3 hundos". The evening is when people
+   actually study, so a time-of-day challenge is fine HERE; it was the
+   4 AM start that was the problem.
+   An existing account is seeded once from its test history, so evening
+   hundos already on record count: an entry's own `hundos` where it has
+   one (build 311 on), its whole-unit scores of 100 where it has those,
+   and otherwise a 100% run that was not part of a unit. */
+const LATE_HUNDOS = 3;
+function isLateHour(ms){ const h = new Date(ms).getHours(); return h >= 20 && h <= 23; }
+function lateHundosInEntry(t){
+  if(!t || !t.playedAt || !isLateHour(t.playedAt)) return 0;
+  if(typeof t.hundos === "number") return t.hundos;
+  if(t.up && typeof t.up === "object") return Object.keys(t.up).filter(u => t.up[u] === 100).length;
+  if(t.pct === 100 && !t.part && t.label !== "Daily question") return Math.max(1, (t.units || []).length);
+  return 0;
 }
+function seedLateHundos312(){
+  if(store.lateHundosSeed312) return;
+  let n = 0;
+  (store.testHistory || []).forEach(t => { n += lateHundosInEntry(t); });
+  store.lateHundos = Math.max(Number(store.lateHundos) || 0, n);
+  store.lateHundosSeed312 = true;
+}
+function lateHundosOf(){ try{ seedLateHundos312(); }catch(e){} return Number(store.lateHundos) || 0; }
 function seedChallenges289(){
   try{ revokePenalKoi295(); }catch(e){}
   if(store.challengeSeed289) return;
@@ -39754,7 +39776,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               savedCodePrompts: 0, savedCodeSaved: false,
               dailyCorrectStreak: 0, dailyCorrectBest: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, friendsBest: 0, koiRevoked295: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bigTest500Passed: false, bestTestStreak: 0,
               weeklyWins: 0, weeklyTop3: 0, retakenQuestions: 0, hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, unlocksShown: null, seenUnlocks: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
-              flareHintsShown: [],
+              lateHundos: 0, lateHundosSeed312: true, flareHintsShown: [],
               vrMatches: 0, vrWins: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
               fullTestsSeeded: false, practiceExamPerfect: false, banner: "", starfallKept: false, creditsApplied: [],
               publicId: null, leaderboardKeyMigrated: false,
@@ -39971,6 +39993,12 @@ function applyLoadedData(got){
      already done (seedBannerCounters, seedVroomHistory) rather than
      starting from nothing. */
   store.vrMatches = typeof got.vrMatches === "number" ? got.vrMatches : 0;
+  /* LIGHTS OUT's count (build 312): hundos earned between 8 PM and
+     midnight. An existing account is seeded once from its test history -
+     seedLateHundos312() - which is why the flag defaults to false here
+     and true on a fresh store. */
+  store.lateHundos = typeof got.lateHundos === "number" ? got.lateHundos : 0;
+  store.lateHundosSeed312 = got.lateHundosSeed312 === true;
   store.flareHintsShown = Array.isArray(got.flareHintsShown) ? got.flareHintsShown.filter(x => typeof x === "string") : [];
   store.vrWins = typeof got.vrWins === "number" ? got.vrWins : 0;
   store.vrCounted = Array.isArray(got.vrCounted) ? got.vrCounted.filter(x => typeof x === "string") : [];
@@ -41451,7 +41479,7 @@ function wipeLocalProgressAndSettings(){
   store.seenUnlocks = null;
   store.unitRuns = {};
   store.vrMatches = 0; store.vrWins = 0; store.vrCounted = []; store.vrRetroDone = true;
-  store.flareHintsShown = [];
+  store.lateHundos = 0; store.lateHundosSeed312 = true; store.flareHintsShown = [];
   store.vrTop3 = 0; store.vrTop3Rooms = []; store.vrTop3RetroDone = true;
   store.fullTestsSeeded = true; store.practiceExamPerfect = false; store.banner = ""; store.starfallKept = false;
   store.weekRankSeen = null;
@@ -42136,7 +42164,7 @@ function progressSinceBase(src, base){
   });
   const had = new Set((base.testHistory || []).map(t => t && t.playedAt).filter(Boolean));
   out.testHistory = (out.testHistory || []).filter(t => t && !had.has(t.playedAt));
-  ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions"].forEach(k => { out[k] = less(out[k], base[k]); });
+  ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "lateHundos"].forEach(k => { out[k] = less(out[k], base[k]); });
   if(base.weekKey && base.weekKey === out.weekKey) out.weekPoints = less(out.weekPoints, base.weekPoints);
   return out;
 }
@@ -42252,7 +42280,7 @@ function mergeLeavingAccount(src, note){
   if(store.unitRuns && src.unitRuns) sumMap("unitRuns"); else store.unitRuns = null;
   store.testHistory = (store.testHistory || []).concat(src.testHistory || [])
     .sort((a, b) => num(b && b.playedAt) - num(a && a.playedAt)).slice(0, TEST_HISTORY_MAX);
-  ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions"].forEach(k => { store[k] = num(store[k]) + num(src[k]); });
+  ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "lateHundos"].forEach(k => { store[k] = num(store[k]) + num(src[k]); });
   ["dailyCorrectStreak", "hundoDayBest", "bestTestStreak", "unitHundoStreak", "dailyCorrectBest", "unitHundoStreakBest", "dayAnsweredBest", "friendsBest"].forEach(k => { store[k] = Math.max(num(store[k]), num(src[k])); });
   ["vrCounted", "vrTop3Rooms", "flareHintsShown"].forEach(k => {
     const a = Array.isArray(store[k]) ? store[k] : [];
@@ -42605,7 +42633,7 @@ function mergeSameAccount(dst, src){
     }
     if(a.some(h => h && !theirs.has(key(h)))) res.otherHadLess = true; }
   ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "hundoDayBest", "bestTestStreak",
-   "dailyCorrectBest", "unitHundoStreakBest", "dayAnsweredBest", "friendsBest"]
+   "dailyCorrectBest", "unitHundoStreakBest", "dayAnsweredBest", "friendsBest", "lateHundos"]
     .forEach(k => maxInto(dst, k, src[k]));
   ["vrCounted", "vrTop3Rooms", "legacyChars", "creditsApplied", "flareHintsShown"].forEach(k => unionArr(k));
   /* The "seen" marks behind the new-item dots (build 299): seen on one
@@ -45173,11 +45201,11 @@ const BANNERS = [
      counts, so a later slip takes nothing back. The most anybody had
      was five. Anybody who ever set the old flag keeps the banner. The
      id stays `exam100`. */
-  /* FIRST LIGHT (build 312) - the sky lighting up unit by unit. See
-     LIT_UNITS. The id stays `early10`; nothing was ever earned under it. */
-  { id: "early10", name: "First Light",
-    label: "Earn a hundo in " + LIT_UNITS + " different units", have: () => Math.min(litUnitsOf(), LIT_UNITS), need: LIT_UNITS,
-    note: "One hundo in a unit lights it. Any mode counts." },
+  /* LIGHTS OUT (build 312) - the city going dark while you study. See
+     LATE_HUNDOS. The id stays `early10`; nothing was ever earned under it. */
+  { id: "early10", name: "Lights Out",
+    label: "Earn " + LATE_HUNDOS + " hundos between 8 PM and midnight", have: () => Math.min(lateHundosOf(), LATE_HUNDOS), need: LATE_HUNDOS,
+    note: "A hundo counts if its test finishes between 8 PM and midnight." },
   { id: "exam100", name: "Phoenix",
     label: "Ace " + PHOENIX_UNIT_RUN + " different units in a row",
     have: () => (store.practiceExamPerfect ? PHOENIX_UNIT_RUN : Math.min(unitStreakBest(), PHOENIX_UNIT_RUN)), need: PHOENIX_UNIT_RUN,
@@ -45907,93 +45935,100 @@ const BANNER_ART = {
      flicker, the beacons blink, the beams sweep, the clouds drift, the
      plane crosses, the steam rises and the lamp breathes - every one of
      them a box on the compositor. */
-  /* FIRST LIGHT (build 312): "add another banner that's a unique reward,
-     make it a cool banner." Ten tests finished before 8 in the morning -
-     the one thing no other banner counts: WHEN you study, not how much.
-     The city at sunrise across the water: the sun breaking the skyline,
-     its rays turning slowly, clouds catching the light from underneath,
-     a column of sun on the water that shimmers, the last stars fading at
-     the top, a beacon on the tallest tower still blinking from the night
-     shift, and birds crossing. */
+  /* LIGHTS OUT (build 312): "add another banner that's a unique reward,
+     make it a cool banner." Three hundos earned between 8 PM and
+     midnight - the one banner that counts WHEN you study. The same city
+     across the water, at night: windows going dark a few at a time as
+     the city turns in (and now and then one coming back on), a crescent
+     moon with its light breathing and a column of it on the water, the
+     stars out, the beacon on the tallest tower blinking - and one window
+     high up in that tower that never goes out, which is you, still at
+     it. */
   early10(u){
-    const rnd = bnRand(8080);
-    const st = bnStarsSplit(rnd, 26, 40);
-    const HZ = 134, SX = 300;
-    let rays = "";
-    for(let k = 0; k < 24; k++){
-      const a0 = k * Math.PI / 12, a1 = a0 + Math.PI / 30;
-      rays += '<path d="M' + SX + ' ' + HZ + ' L' + bnF(SX + Math.cos(a0) * 300) + ' ' + bnF(HZ + Math.sin(a0) * 300) + ' L' + bnF(SX + Math.cos(a1) * 300) + ' ' + bnF(HZ + Math.sin(a1) * 300) +
-        'Z" fill="url(#' + u + 'ray)" opacity="' + (k % 2 ? '.5' : '.9') + '"/>';
-    }
-    const towers = (x0, x1, hMin, hMax, wMin, wMax, fill, lit) => {
-      let out = "", win = "", x = x0;
+    const rnd = bnRand(8020);
+    const st = bnStarsSplit(rnd, 70, 104);
+    const HZ = 134, MX = 336, MY = 38, G = 7;
+    /* the windows, dealt into G groups that each go out on their own
+       clock; group 0 stays lit */
+    const wins = Array.from({ length: G }, () => "");
+    const win = (x, y, w, h, op) => { wins[Math.floor(rnd() * G)] += '<rect x="' + bnF(x) + '" y="' + bnF(y) + '" width="' + w + '" height="' + h + '" fill="#FFD9A0" opacity="' + bnF(op) + '"/>'; };
+    const towers = (x0, x1, hMin, hMax, wMin, wMax, fill, rate, avoid) => {
+      let out = "", x = x0;
       while(x < x1){
-        const w = wMin + rnd() * (wMax - wMin), h = hMin + Math.pow(rnd(), 1.4) * (hMax - hMin), top = HZ - h;
-        /* the sun rises in the gap: nothing stands in front of it */
-        if(x + w > SX - 30 && x < SX + 30){ x += w + rnd() * 2.5; continue; }
+        const w = wMin + rnd() * (wMax - wMin);
+        let h = hMin + Math.pow(rnd(), 1.4) * (hMax - hMin);
+        /* lower under the moon, so it stays in the sky */
+        if(avoid && x + w > MX - 26 && x < MX + 26) h = Math.min(h, 40);
+        const top = HZ - h;
         out += '<rect x="' + bnF(x) + '" y="' + bnF(top) + '" width="' + bnF(w) + '" height="' + bnF(h + 1) + '" fill="' + fill + '"/>';
-        /* the edge facing the sun catches it */
-        if(lit) out += '<rect x="' + bnF(x < SX ? x + w - 1.2 : x) + '" y="' + bnF(top) + '" width="1.2" height="' + bnF(h) + '" fill="#FF9A6A" opacity=".45"/>' +
-          '<rect x="' + bnF(x) + '" y="' + bnF(top) + '" width="' + bnF(w) + '" height="1" fill="#FFB27A" opacity=".55"/>';
+        /* the moonlit edge */
+        if(rate) out += '<rect x="' + bnF(x) + '" y="' + bnF(top) + '" width="' + bnF(w) + '" height=".8" fill="#9FB4FF" opacity=".22"/>';
         if(rnd() < .35) out += '<rect x="' + bnF(x + w * .3) + '" y="' + bnF(top - 4) + '" width="' + bnF(w * .4) + '" height="4" fill="' + fill + '"/>';
-        if(lit) for(let yy = top + 4; yy < HZ - 3; yy += 4.4) for(let xx = x + 2; xx < x + w - 2.5; xx += 3.8)
-          if(rnd() < .16) win += '<rect x="' + bnF(xx) + '" y="' + bnF(yy) + '" width="1.7" height="2.1" fill="#FFD9A0" opacity="' + bnF(.45 + rnd() * .5) + '"/>';
+        if(rate) for(let yy = top + 4; yy < HZ - 3; yy += 4.4) for(let xx = x + 2; xx < x + w - 2.5; xx += 3.8)
+          if(rnd() < rate) win(xx, yy, 1.7, 2.1, .55 + rnd() * .45);
         x += w + rnd() * 2.5;
       }
-      return out + win;
+      return out;
     };
-    const far = towers(-8, 490, 14, 44, 10, 24, "url(#" + u + "far)", false);
-    const near = towers(-12, 236, 18, 64, 14, 28, "url(#" + u + "near)", true) + towers(352, 494, 18, 60, 14, 28, "url(#" + u + "near)", true);
-    /* the tall tower left of the sun, with its beacon */
+    const far = towers(-8, 490, 14, 46, 10, 24, "url(#" + u + "far)", 0, true);
+    const near = towers(-12, 168, 18, 66, 14, 28, "url(#" + u + "near)", .3, false) + towers(224, 494, 18, 62, 14, 28, "url(#" + u + "near)", .3, true);
+    /* the tall tower and its beacon */
     const TX = 196;
     const tower = '<path d="M' + (TX - 11) + ' ' + (HZ + 1) + ' L' + (TX - 9) + ' 48 L' + (TX - 4) + ' 42 L' + (TX - 1.2) + ' 22 L' + (TX + 1.2) + ' 22 L' + (TX + 4) + ' 42 L' + (TX + 9) + ' 48 L' + (TX + 11) + ' ' + (HZ + 1) + 'Z" fill="url(#' + u + 'near)"/>' +
-      '<path d="M' + (TX + 9) + ' 48 L' + (TX + 11) + ' ' + HZ + '" stroke="#FFB070" stroke-width=".9" opacity=".7"/>';
-    let towerWin = "";
-    for(let y = 54; y < HZ - 3; y += 4) for(let x = TX - 7; x < TX + 7; x += 3.4) if(rnd() < .2) towerWin += '<rect x="' + bnF(x) + '" y="' + y + '" width="1.6" height="2" fill="#FFD9A0" opacity=".7"/>';
-    const cloud = (x, y, w, h, op) => '<ellipse cx="' + x + '" cy="' + y + '" rx="' + w + '" ry="' + h + '" fill="url(#' + u + 'cloud)" opacity="' + op + '"/>';
+      '<path d="M' + (TX - 9) + ' 48 L' + (TX - 11) + ' ' + HZ + '" stroke="#9FB4FF" stroke-width=".8" opacity=".3"/>';
+    for(let y = 54; y < HZ - 3; y += 4) for(let x = TX - 7; x < TX + 7; x += 3.4) if(y !== 66 && rnd() < .3) win(x, y, 1.6, 2, .7);
+    /* your window: the one that stays on */
+    const YX = TX - 3.6, YY = 65;
+    const mine = '<rect x="' + YX + '" y="' + YY + '" width="3.4" height="3" fill="#FFE8B8"/>';
     let ripples = "";
     for(let y = HZ + 4; y < 180; y += 3.2){
-      const k = (y - HZ) / 46, w = 10 + k * 34;
-      ripples += '<rect x="' + bnF(SX - w / 2 + (rnd() - .5) * 6) + '" y="' + bnF(y) + '" width="' + bnF(w * (.5 + rnd() * .5)) + '" height="1.1" fill="#FFE2A8" opacity="' + bnF(.35 + rnd() * .5) + '"/>';
+      const k = (y - HZ) / 46, w = 8 + k * 26;
+      ripples += '<rect x="' + bnF(MX - w / 2 + (rnd() - .5) * 6) + '" y="' + bnF(y) + '" width="' + bnF(w * (.5 + rnd() * .5)) + '" height="1" fill="#DCE6FF" opacity="' + bnF(.25 + rnd() * .45) + '"/>';
     }
-    const bird = (x, y, s) => '<path d="M' + bnF(x - 4 * s) + ' ' + bnF(y - 1.6 * s) + ' Q' + bnF(x - 1.6 * s) + ' ' + bnF(y - 2.2 * s) + ' ' + x + ' ' + y + ' Q' + bnF(x + 1.6 * s) + ' ' + bnF(y - 2.2 * s) + ' ' + bnF(x + 4 * s) + ' ' + bnF(y - 1.6 * s) + '" fill="none" stroke="#3A2032" stroke-width="' + bnF(.9 * s) + '" stroke-linecap="round"/>';
+    /* the city's own lights on the water, under the lit towers */
+    let glints = "";
+    for(let i = 0; i < 46; i++){
+      const x = rnd() * 480;
+      if(Math.abs(x - MX) < 24) continue;
+      glints += '<rect x="' + bnF(x) + '" y="' + bnF(HZ + 4 + rnd() * 30) + '" width="' + bnF(2 + rnd() * 5) + '" height=".9" fill="#FFD9A0" opacity="' + bnF(.15 + rnd() * .3) + '"/>';
+    }
     const defs = '<defs>' +
-      bnLin(u + "sky", [[0, "#1A1846"], [0.32, "#4A2A6A"], [0.58, "#B4507A"], [0.8, "#F08A5A"], [1, "#FFD08A"]]) +
-      bnRad(u + "sun", [[0, "#FFFDF0"], [0.6, "#FFF0C4"], [1, "#FFD27A"]]) +
-      bnRad(u + "sglow", [[0, "#FFE6A8", 0.95], [0.25, "#FFB46A", 0.55], [0.6, "#F0786A", 0.18], [1, "#B4507A", 0]]) +
-      bnRad(u + "ray", [[0, "#FFE6B0", 0.5], [0.5, "#FFC88A", 0.16], [1, "#FFC88A", 0]], "0%", "0%", "100%") +
-      bnRad(u + "cloud", [[0, "#FFC08A", 0.8], [0.55, "#E07A7A", 0.35], [1, "#8A4A7A", 0]]) +
-      bnLin(u + "far", [[0, "#8A4A78"], [1, "#6A3A6A"]]) +
-      bnLin(u + "near", [[0, "#3A2240"], [1, "#24142C"]]) +
-      bnLin(u + "water", [[0, "#C4607A"], [0.4, "#6A2E5A"], [1, "#24142C"]]) +
-      bnLin(u + "wfade", [[0, "#24142C", 0], [1, "#24142C", 0.85]]) +
+      bnLin(u + "sky", [[0, "#03050F"], [0.45, "#0A1030"], [0.82, "#1A1E4A"], [1, "#3A2A5A"]]) +
+      bnRad(u + "mglow", [[0, "#DCE6FF", 0.5], [0.3, "#9FB4FF", 0.18], [1, "#9FB4FF", 0]]) +
+      bnRad(u + "moon", [[0, "#FFFDF4"], [0.7, "#F2F0E2"], [1, "#D8D6C8"]], "40%", "40%", "60%") +
+      bnLin(u + "far", [[0, "#1C2248"], [1, "#151A38"]]) +
+      bnLin(u + "near", [[0, "#0C1024"], [1, "#070914"]]) +
+      bnLin(u + "water", [[0, "#1A2048"], [0.4, "#0C1130"], [1, "#04060F"]]) +
+      bnLin(u + "wfade", [[0, "#04060F", 0], [1, "#04060F", 0.85]]) +
       bnRad(u + "red", [[0, "#FF3B3B", 0.75], [1, "#FF3B3B", 0]]) +
+      bnRad(u + "lamp", [[0, "#FFD9A0", 0.7], [1, "#FFD9A0", 0]]) +
+      '<mask id="' + u + 'cres"><circle cx="' + MX + '" cy="' + MY + '" r="13" fill="#fff"/><circle cx="' + (MX + 6) + '" cy="' + (MY - 4) + '" r="11.5" fill="#000"/></mask>' +
       '</defs>';
+    const groups = [];
+    for(let g = 1; g < G; g++){
+      groups.push({ svg: wins[g], cls: "bl-lightsout", style: "animation-duration:" + (9 + g * 1.7).toFixed(1) + "s;animation-delay:-" + (g * 3.1).toFixed(1) + "s" });
+    }
     return [
       { svg: defs + '<rect width="480" height="180" fill="url(#' + u + 'sky)"/>' + st.still },
-      /* the last stars, fading at the top of the sky */
       { svg: st.a, cls: "bl-tw", style: "animation-duration:3s" },
-      /* the sun's rays, turning slowly */
-      { svg: rays, box: [SX - 300, HZ - 300, 600, 600], o: [SX, HZ], cls: "bl-spin", style: "animation-duration:90s" },
-      /* its glow breathing, and the sun itself breaking the skyline */
-      { svg: '<circle cx="' + SX + '" cy="' + HZ + '" r="120" fill="url(#' + u + 'sglow)"/>', box: [SX - 120, HZ - 120, 240, 240], o: [SX, HZ], cls: "bl-breathe", style: "animation-duration:5s" },
-      { svg: '<circle cx="' + SX + '" cy="' + (HZ - 6) + '" r="20" fill="url(#' + u + 'sun)"/>' },
-      /* clouds lit from underneath, drifting */
-      { svg: cloud(120, 46, 90, 6, ".85") + cloud(250, 30, 70, 5, ".7") + cloud(400, 56, 100, 7, ".8") + cloud(330, 92, 80, 4, ".6") + cloud(60, 96, 70, 4, ".5"),
-        box: [-40, 14, 560, 96], cls: "bl-drift", style: "animation-duration:30s" },
+      { svg: st.b, cls: "bl-tw", style: "animation-duration:4.2s;animation-delay:-2s" },
+      /* the moon, its light breathing */
+      { svg: '<circle cx="' + MX + '" cy="' + MY + '" r="70" fill="url(#' + u + 'mglow)"/>', box: [MX - 70, MY - 70, 140, 140], o: [MX, MY], cls: "bl-breathe", style: "animation-duration:6s" },
+      { svg: '<circle cx="' + MX + '" cy="' + MY + '" r="13" fill="url(#' + u + 'moon)" mask="url(#' + u + 'cres)"/>' },
       /* the city, far then near */
-      { svg: far + '<rect x="-10" y="' + HZ + '" width="500" height="2" fill="#6A3A6A"/>' },
-      { svg: near + tower + towerWin },
-      /* the beacon on the tower, still blinking from the night shift */
+      { svg: far + '<rect x="-10" y="' + HZ + '" width="500" height="2" fill="#151A38"/>' },
+      { svg: near + tower + wins[0] + mine },
+      /* the windows going out, a group at a time */
+      ...groups,
+      /* your lamp, breathing */
+      { svg: '<circle cx="' + (YX + 1.7) + '" cy="' + (YY + 1.5) + '" r="7" fill="url(#' + u + 'lamp)"/>', box: [YX - 6, YY - 6, 15, 15], o: [YX + 1.7, YY + 1.5], cls: "bl-breathe", style: "animation-duration:3.4s" },
+      /* the beacon on the tower */
       { svg: '<circle cx="' + TX + '" cy="21" r="5" fill="url(#' + u + 'red)"/><circle cx="' + TX + '" cy="21" r="1.4" fill="#FF6A6A"/>', box: [TX - 6, 15, 12, 12], cls: "bl-blink", style: "animation-duration:2.4s" },
-      /* the water, and the sun's column on it shimmering */
+      /* the water, the city upside down in it, and the moon's column */
       { svg: '<rect x="-10" y="' + (HZ + 1) + '" width="500" height="50" fill="url(#' + u + 'water)"/>' +
-          /* the city upside down in it, fading with depth */
-          '<g transform="translate(0 ' + (2 * HZ + 2) + ') scale(1 -1)" opacity=".22">' + near + tower + '</g>' +
+          '<g transform="translate(0 ' + (2 * HZ + 2) + ') scale(1 -1)" opacity=".2">' + near + tower + '</g>' + glints +
           '<rect x="-10" y="' + (HZ + 1) + '" width="500" height="50" fill="url(#' + u + 'wfade)"/>' },
-      { svg: ripples, cls: "bl-tw", style: "animation-duration:1.6s" },
-      /* birds, crossing right to left */
-      { svg: bird(498, 60, 1) + bird(510, 54, .8) + bird(520, 64, .7), box: [490, 48, 40, 20], cls: "bl-cross", style: "animation-duration:24s;animation-delay:-6s" }
+      { svg: ripples, cls: "bl-tw", style: "animation-duration:1.8s" }
     ];
   },
   study60(u){
@@ -47326,6 +47361,7 @@ const BANNER_TINT = {
   study60: ["#566CD2", "#675DCB"],
   correct5000: ["#496EDF", "#766EBA"],
   correct10000: ["#427CE5", "#50A0D8"],
+  early10: ["#4A5AB8", "#D9A45A"],
   level80: ["#7655D3", "#C167A9"],
   exam100: ["#F95E2F", "#FF2931"],
   adept_rank: ["#4572E3", "#4D9FDA"],
@@ -68714,6 +68750,9 @@ function summarize(){
        would have made the ranking mostly "how many days did you tap the
        ? button". */
     store.lifetime.perfectTests += hundosEarned;
+    /* LIGHTS OUT: seeded before this run is added to the history, so it
+       is counted once. */
+    try{ seedLateHundos312(); if(hundosEarned && isLateHour(Date.now())) store.lateHundos = (Number(store.lateHundos) || 0) + hundosEarned; }catch(e){}
     saveStore();
     /* Seed each unit's exam record from the history BEFORE this run is
        added to it, or the seed counts this exam and the +1 below counts
