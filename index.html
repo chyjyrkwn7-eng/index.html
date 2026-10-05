@@ -16912,7 +16912,12 @@
     .bn-stage .bl-bob{ animation:bl-bob 5s ease-in-out infinite; }
     .bn-stage .bl-pour{ animation:bl-pour .8s linear infinite; }
     .bn-stage .bl-mote{ animation:bl-mote 6s ease-in-out infinite; }
+    .bn-stage .bl-crownwave{ animation:bl-crownwave 3s ease-in-out infinite; }
+    .bn-stage .bl-crackle{ animation:bl-crackle 2.4s linear infinite; opacity:0; }
   }
+  /* build 313: Celestial's crown igniting star by star, and Astral's arcs */
+  @keyframes bl-crownwave{ 0%, 30%, 100%{ transform:scale(.72); opacity:.6; } 10%{ transform:scale(1.55) rotate(45deg); opacity:1; } }
+  @keyframes bl-crackle{ 0%, 56%, 100%{ opacity:0; } 58%{ opacity:1; } 60%{ opacity:.15; } 62%{ opacity:1; } 65%{ opacity:.6; } 70%{ opacity:0; } 84%{ opacity:0; } 85.5%{ opacity:.9; } 88%{ opacity:0; } }
   @keyframes bl-spin{ from{ transform:rotate(0deg); } to{ transform:rotate(360deg); } }
   @keyframes bl-tw{ from{ opacity:1; } to{ opacity:.18; } }
   @keyframes bl-drift{ from{ transform:translateX(0); } to{ transform:translateX(-3%); } }
@@ -47414,6 +47419,7 @@ const ZENITH_BANNER = {
       bnLin(u + "hz", [[0, "#9C8BFF", 0], [0.5, "#F2F6FF"], [1, "#9C8BFF", 0]], 0, 0, 1, 0) +
       bnLin(u + "refl", [[0, "#000000", 0.5], [1, "#000000", 1]]) +
       '<clipPath id="' + u + 'fc"><rect x="-10" y="150" width="500" height="50"/></clipPath>' +
+      bnLin(u + "met", [[0, "#FFFFFF"], [1, "#B9C6FF", 0]], 0, 0, 1, 0) +
       '</defs>';
     return [
       { svg: defs + '<rect x="-10" y="-10" width="500" height="200" fill="url(#' + u + 'sky)"/>' + st.still },
@@ -47426,7 +47432,7 @@ const ZENITH_BANNER = {
       { svg: '<circle cx="' + CX + '" cy="' + SY + '" r="110" fill="url(#' + u + 'glow)"/>', box: [CX - 110, SY - 110, 220, 220], o: [CX, SY], cls: "bl-pulse", style: "animation-duration:2.6s" },
       /* the far half of the ring, and its spark when it is round the back */
       { svg: ringD, box: ringBox, vb: ringVb, o: [CX, RY], wrap: TILT, clip: "inset(0 0 50% 0)" },
-      { svg: comet, box: ringBox, vb: ringVb, o: [CX, RY], wrap: TILT, clip: "inset(0 0 50% 0)", cls: "bl-spin", style: "animation-duration:9s" },
+      { svg: comet, box: ringBox, vb: ringVb, o: [CX, RY], wrap: TILT, clip: "inset(0 0 50% 0)", cls: "bl-spin", style: "animation-duration:6s" },
       /* the spire of black glass and its two lesser shards */
       { svg: glass(sl, .8) + glass(sr, .8) + glass(spire, 1) +
           /* a reflection of the sky down the spire's lit face */
@@ -47445,13 +47451,18 @@ const ZENITH_BANNER = {
       { svg: '<circle cx="' + CX + '" cy="' + SY + '" r="9" fill="url(#' + u + 'sg)"/><circle cx="' + CX + '" cy="' + SY + '" r="3.6" fill="#FFFFFF"/>' },
       /* the near half of the ring, in front of the spire, and the spark coming round */
       { svg: ringD, box: ringBox, vb: ringVb, o: [CX, RY], wrap: TILT, clip: "inset(50% 0 0 0)" },
-      { svg: comet, box: ringBox, vb: ringVb, o: [CX, RY], wrap: TILT, clip: "inset(50% 0 0 0)", cls: "bl-spin", style: "animation-duration:9s" },
+      { svg: comet, box: ringBox, vb: ringVb, o: [CX, RY], wrap: TILT, clip: "inset(50% 0 0 0)", cls: "bl-spin", style: "animation-duration:6s" },
       /* the black mirror the spire stands in */
       { svg: '<rect x="-10" y="150" width="500" height="40" fill="url(#' + u + 'floor)"/>' +
           '<g clip-path="url(#' + u + 'fc)"><g transform="translate(0 300) scale(1 -1)" opacity=".28">' + glass(spire, 1) + '</g></g>' +
           '<rect x="-10" y="150" width="500" height="40" fill="url(#' + u + 'refl)" opacity=".55"/>' +
           '<ellipse cx="' + CX + '" cy="150" rx="236" ry="1.3" fill="url(#' + u + 'hz)" opacity=".8"/>' },
-      { svg: motes, box: [0, 0, 480, 360], vb: [0, 0, 480, 360], cls: "bl-rise", style: "animation-duration:11s" }
+      { svg: motes, box: [0, 0, 480, 360], vb: [0, 0, 480, 360], cls: "bl-rise", style: "animation-duration:11s" },
+      /* BUILD 313: the light the star throws down rings out across the
+         black mirror, and stars fall past the spire now and then */
+      { svg: '<ellipse cx="' + CX + '" cy="152" rx="230" ry="16" fill="none" stroke="#DDE6FF" stroke-width="1.6" opacity=".7"/>', box: [CX - 232, 134, 464, 36], o: [CX, 152], cls: "bl-out", style: "animation-duration:3s" },
+      { svg: '<path d="M0 0 L34 -14.4" stroke="url(#' + u + 'met)" stroke-width="1.7" stroke-linecap="round"/><circle r="1.4" fill="#FFFFFF"/>', box: [380, 20, 100, 44], vb: [-50, -22, 100, 44], cls: "bl-meteor", style: "animation-duration:6s;animation-delay:-2s" },
+      { svg: '<path d="M0 0 L24 -10" stroke="url(#' + u + 'met)" stroke-width="1.3" stroke-linecap="round"/><circle r="1" fill="#FFFFFF"/>', box: [120, 8, 100, 44], vb: [-50, -22, 100, 44], cls: "bl-meteor", style: "animation-duration:8s;animation-delay:-6.5s" }
     ];
   },
   b(u){
@@ -47472,9 +47483,16 @@ const ZENITH_BANNER = {
     const spark = (x, y, h, v) => 'M' + x + ' ' + bnF(y - v) + ' Q' + bnF(x + h * 0.08) + ' ' + bnF(y - v * 0.08) + ' ' + bnF(x + h) + ' ' + y +
       ' Q' + bnF(x + h * 0.08) + ' ' + bnF(y + v * 0.08) + ' ' + x + ' ' + bnF(y + v) + ' Q' + bnF(x - h * 0.08) + ' ' + bnF(y + v * 0.08) + ' ' + bnF(x - h) + ' ' + y +
       ' Q' + bnF(x - h * 0.08) + ' ' + bnF(y - v * 0.08) + ' ' + x + ' ' + bnF(y - v) + 'Z';
+    let rays8 = "";
+    for(let k = 0; k < 8; k++){
+      const a = k * Math.PI / 4, L = k % 2 ? 44 : 78, w = k % 2 ? 1.4 : 2.2;
+      const nx = -Math.sin(a) * w, ny = Math.cos(a) * w;
+      rays8 += '<path d="M' + bnF(PX + nx) + ' ' + bnF(PY + ny) + ' L' + bnF(PX + Math.cos(a) * L) + ' ' + bnF(PY + Math.sin(a) * L) + ' L' + bnF(PX - nx) + ' ' + bnF(PY - ny) + 'Z" fill="#E6ECFF" opacity="' + (k % 2 ? '.28' : '.45') + '"/>';
+    }
     /* THE CROWN: seven stars on an arc over the pole, joined like a constellation */
     const crown = [-60, -40, -20, 0, 20, 40, 60].map(d => { const a = (d - 90) * Math.PI / 180; return [bnF(PX + Math.cos(a) * 74), bnF(PY + 16 + Math.sin(a) * 66), d]; });
-    const crownLine = '<path d="M' + crown.map(c => c[0] + ' ' + c[1]).join(' L') + '" fill="none" stroke="#CFE0FF" stroke-width=".8" opacity=".5"/>';
+    const crownLine = '<path d="M' + crown.map(c => c[0] + ' ' + c[1]).join(' L') + '" fill="none" stroke="#CFE0FF" stroke-width="2.4" opacity=".12"/>' +
+      '<path d="M' + crown.map(c => c[0] + ' ' + c[1]).join(' L') + '" fill="none" stroke="#E4EEFF" stroke-width=".9" opacity=".65"/>';
     const crownStars = k => crown.filter((c, i) => i % 2 === k).map(([x, y, d]) => { const s = d === 0 ? 1.3 : 1;
       return '<circle cx="' + x + '" cy="' + y + '" r="' + bnF(6 * s) + '" fill="url(#' + u + 'cs)"/><path d="' + spark(+x, +y, 3.4 * s, 5 * s) + '" fill="#FFFFFF"/>'; }).join("");
     /* the ridge under the sky, moonlit along its crest */
@@ -47488,6 +47506,19 @@ const ZENITH_BANNER = {
     for(let x = -10; x <= 490; x += 18) ridge2 += " L" + x + " " + bnF(166 - Math.abs(Math.sin(x * 0.013 + 2) * 12) + rnd() * 3);
     ridge2 += " L490 200 Z";
     const ev = "animation-duration:9s;animation-delay:-7s;";
+    const MX = 70, MY = 58;
+    /* THE AURORA (build 313): two curtains of light hung over the ridge,
+       each a wavy band with rays of light down it, swaying on its own
+       clock - drawn wider than the scene so the sway never shows an end */
+    const curtain = (g, y0, amp, ph, seed) => {
+      const r2 = bnRand(seed); let top = "", rays = "";
+      for(let x = -60; x <= 540; x += 12){
+        const y = y0 + Math.sin(x * 0.018 + ph) * amp + Math.sin(x * 0.051 + ph * 2) * amp * 0.35;
+        top += (top ? " L" : "M") + x + " " + bnF(y);
+        if(r2() < 0.7) rays += '<path d="M' + x + ' ' + bnF(y + 4) + ' L' + x + ' 150" stroke="#E6F0FF" stroke-width="' + bnF(0.6 + r2() * 1.6) + '" opacity="' + bnF(0.04 + r2() * 0.12) + '"/>';
+      }
+      return '<path d="' + top + ' L540 152 L-60 152 Z" fill="url(#' + u + g + ')"/>' + rays;
+    };
     const defs = '<defs>' +
       bnRad(u + "sky", [[0, "#24387E"], [0.35, "#101C52"], [0.75, "#060B2A"], [1, "#02040F"]], "50%", "38%", "75%") +
       bnRad(u + "milk", [[0, "#8FA8FF", 0.24], [1, "#2A3A8A", 0]]) +
@@ -47497,27 +47528,43 @@ const ZENITH_BANNER = {
       bnLin(u + "r2", [[0, "#050A22"], [1, "#010208"]]) +
       bnLin(u + "met", [[0, "#FFFFFF"], [1, "#BFD0FF", 0]], 0, 0, 1, 0) +
       bnRad(u + "wave", [[0, "#FFFFFF", 0], [0.8, "#FFFFFF", 0], [0.9, "#CFE0FF", 0.5], [0.96, "#FFFFFF", 0.8], [1, "#8FA8FF", 0]]) +
+      bnLin(u + "au1", [[0, "#7A5BFF", 0], [0.55, "#7A8CFF", 0.28], [0.86, "#9FE6FF", 0.55], [1, "#9FE6FF", 0]]) +
+      bnLin(u + "au2", [[0, "#3A7BFF", 0], [0.5, "#5FA8FF", 0.22], [0.85, "#C9B8FF", 0.45], [1, "#C9B8FF", 0]]) +
+      bnRad(u + "moon", [[0, "#FFFFFF", 0.5], [0.3, "#C9D8FF", 0.2], [1, "#8FA8FF", 0]]) +
+      '<mask id="' + u + 'mc"><rect x="0" y="0" width="480" height="180" fill="#FFFFFF"/><circle cx="' + (MX + 9) + '" cy="' + (MY - 6) + '" r="17" fill="#000000"/></mask>' +
       '</defs>';
     return [
       { svg: defs + '<rect x="-10" y="-10" width="500" height="200" fill="url(#' + u + 'sky)"/>' + st.still +
-          '<ellipse cx="240" cy="70" rx="300" ry="46" fill="url(#' + u + 'milk)" transform="rotate(-14 240 70)"/>' },
+          '<ellipse cx="240" cy="70" rx="300" ry="46" fill="url(#' + u + 'milk)" transform="rotate(-14 240 70)"/>' +
+          /* BUILD 313 ("its banner and character are the most boring of
+             them all"): a crescent moon low in the west, lighting the ridge */
+          '<circle cx="' + MX + '" cy="' + MY + '" r="60" fill="url(#' + u + 'moon)"/>' +
+          '<circle cx="' + MX + '" cy="' + MY + '" r="19" fill="#EEF3FF" mask="url(#' + u + 'mc)"/>' },
       { svg: st.a, cls: "bl-tw", style: "animation-duration:2.7s" },
       { svg: st.b, cls: "bl-tw", style: "animation-duration:3.6s;animation-delay:-1.8s" },
       /* the trails wheel round the pole */
-      { svg: trails, box: [PX - R, PY - R, 2 * R, 2 * R], vb: [-R, -R, 2 * R, 2 * R], o: [PX, PY], cls: "bl-spin", style: "animation-duration:120s" },
+      { svg: trails, box: [PX - R, PY - R, 2 * R, 2 * R], vb: [-R, -R, 2 * R, 2 * R], o: [PX, PY], cls: "bl-spin", style: "animation-duration:60s" },
+      { svg: curtain("au2", 84, 12, 1.7, 7101), box: [-60, 50, 600, 102], vb: [-60, 50, 600, 102], o: [240, 150], cls: "bl-sway", style: "animation-duration:11s;animation-delay:-4s" },
+      { svg: curtain("au1", 96, 10, 0, 7102), box: [-60, 60, 600, 92], vb: [-60, 60, 600, 92], o: [240, 150], cls: "bl-sway", style: "animation-duration:8s" },
+      /* the pole star's rays, long and short, turning */
+      { svg: rays8, box: [PX - 80, PY - 80, 160, 160], o: [PX, PY], cls: "bl-spin", style: "animation-duration:30s" },
       /* the pole star: its light, its long platinum glint, its core */
       { svg: '<circle cx="' + PX + '" cy="' + PY + '" r="70" fill="url(#' + u + 'pole)"/>', box: [PX - 70, PY - 70, 140, 140], o: [PX, PY], cls: "bl-pulse", style: "animation-duration:2.4s" },
       { svg: '<path d="' + spark(PX, PY, 92, 5) + '" fill="#FFFFFF" opacity=".95"/><path d="' + spark(PX, PY, 6, 26) + '" fill="#FFFFFF" opacity=".9"/>' +
           '<path d="' + spark(PX, PY, 6, 6) + '" fill="#EEF3FF" opacity=".8" transform="rotate(45 ' + PX + ' ' + PY + ')"/>',
         box: [PX - 94, PY - 28, 188, 56], o: [PX, PY], cls: "bl-shimmer", style: "animation-duration:2.4s" },
       { svg: '<circle cx="' + PX + '" cy="' + PY + '" r="4.6" fill="#FFFFFF"/>' },
-      /* the crown of seven, twinkling four then three */
+      /* the crown of seven: its line, and the stars igniting in a wave
+         left to right (build 313), each star its own small layer */
       { svg: crownLine },
-      { svg: crownStars(0), cls: "bl-tw", style: "animation-duration:2.2s" },
-      { svg: crownStars(1), cls: "bl-tw", style: "animation-duration:2.2s;animation-delay:-2.2s" },
+      ...crown.map(([x, y, d], i) => { const sc = d === 0 ? 1.3 : 1;
+        return { svg: '<circle cx="' + x + '" cy="' + y + '" r="' + bnF(9 * sc) + '" fill="url(#' + u + 'cs)"/><path d="' + spark(+x, +y, 4 * sc, 6.4 * sc) + '" fill="#FFFFFF"/>',
+          box: [x - 10 * sc, y - 10 * sc, 20 * sc, 20 * sc], o: [+x, +y], cls: "bl-crownwave", style: "animation-delay:" + bnF(-3 + i * 0.16) + "s" }; }),
       /* a meteor now and then */
       { svg: '<path d="M0 0 L30 -12.6" stroke="url(#' + u + 'met)" stroke-width="1.6" stroke-linecap="round"/><circle r="1.3" fill="#FFFFFF"/>', box: [330, 2, 100, 44], vb: [-50, -22, 100, 44], cls: "bl-meteor", style: "animation-duration:7s;animation-delay:-3s" },
       { svg: '<path d="M0 0 L22 -9.2" stroke="url(#' + u + 'met)" stroke-width="1.3" stroke-linecap="round"/><circle r="1" fill="#FFFFFF"/>', box: [110, 10, 100, 44], vb: [-50, -22, 100, 44], cls: "bl-meteor", style: "animation-duration:11s;animation-delay:-8s" },
+      { svg: '<path d="M0 0 L36 -15" stroke="url(#' + u + 'met)" stroke-width="1.8" stroke-linecap="round"/><circle r="1.5" fill="#FFFFFF"/>', box: [400, 30, 100, 44], vb: [-50, -22, 100, 44], cls: "bl-meteor", style: "animation-duration:5s;animation-delay:-1s" },
+      { svg: '<path d="M0 0 L26 -10.8" stroke="url(#' + u + 'met)" stroke-width="1.4" stroke-linecap="round"/><circle r="1.1" fill="#FFFFFF"/>', box: [220, 40, 100, 44], vb: [-50, -22, 100, 44], cls: "bl-meteor", style: "animation-duration:6s;animation-delay:-4.6s" },
       /* every 9s a ring of light goes out from the pole */
       { svg: '<circle cx="' + PX + '" cy="' + PY + '" r="200" fill="url(#' + u + 'wave)"/>', box: [PX - 200, PY - 200, 400, 400], o: [PX, PY], cls: "bl-blast", style: ev + "opacity:0" },
       /* the ridge, its crest lit by the sky */
@@ -47554,6 +47601,23 @@ const ZENITH_BANNER = {
       const x = CX + (rnd() - 0.5) * 120, y = rnd() * 180, r = 0.6 + rnd() * 1.2, c = rnd() < 0.5 ? "#FFFFFF" : "#7FF4FF", op = bnF(0.45 + rnd() * 0.5);
       motes += '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(r) + '" fill="' + c + '" opacity="' + op + '"/><circle cx="' + bnF(x) + '" cy="' + bnF(y + 180) + '" r="' + bnF(r) + '" fill="' + c + '" opacity="' + op + '"/>';
     }
+    /* BUILD 313: WINGS OF LIGHT off the beam's foot, the character's own,
+       fanned up both sides and beating; reactor rings round the beam,
+       laid flat and turning against each other; arcs crackling off it */
+    const wingFan = side => { let out = "";
+      [[150, 26, 9], [118, 52, 8.4], [96, 84, 7.6], [86, 112, 6.6], [92, 132, 5.6]].forEach(([dx, ty, w], i) => {
+        const tx = CX + side * dx, root = [CX + side * 8, HY - 4];
+        const ddx = tx - root[0], ddy = ty - root[1], L = Math.hypot(ddx, ddy), nx = -ddy / L, ny = ddx / L;
+        const kx = root[0] * .62 + tx * .38, ky = root[1] * .62 + ty * .38;
+        const kite = k => 'M' + root[0] + ' ' + root[1] + ' L' + bnF(kx + nx * w * k) + ' ' + bnF(ky + ny * w * k) + ' L' + bnF(tx) + ' ' + ty + ' L' + bnF(kx - nx * w * k) + ' ' + bnF(ky - ny * w * k) + 'Z';
+        out += '<path d="' + kite(1.6) + '" fill="url(#' + u + 'wg)" opacity=".28"/><path d="' + kite(.7) + '" fill="url(#' + u + 'wg)" opacity=".9"/>' +
+          '<path d="M' + root[0] + ' ' + root[1] + ' L' + bnF(tx) + ' ' + ty + '" stroke="#FFFFFF" stroke-width=".7" opacity=".6"/>';
+      });
+      return out; };
+    const reactor = (r, dash, w, op) => '<circle r="' + r + '" fill="none" stroke="#3EF0FF" stroke-width="' + (w * 4) + '" opacity=".12"/>' +
+      '<circle r="' + r + '" fill="none" stroke="#BFFBFF" stroke-width="' + w + '" stroke-dasharray="' + dash + '" opacity="' + op + '"/>';
+    const arcs = 'M' + (CX - 8) + ' 96 L' + (CX - 16) + ' 90 L' + (CX - 12) + ' 84 L' + (CX - 22) + ' 76 M' + (CX + 8) + ' 60 L' + (CX + 18) + ' 54 L' + (CX + 13) + ' 48 L' + (CX + 24) + ' 40' +
+      ' M' + (CX - 7) + ' 30 L' + (CX - 15) + ' 24 L' + (CX - 11) + ' 18';
     /* the plane: lines of light running out from under the beam */
     let plane = "";
     for(let i = -9; i <= 9; i++) plane += '<path d="M' + CX + ' ' + HY + ' L' + (CX + i * 46) + ' 190" stroke="#3EF0FF" stroke-width=".7" opacity="' + bnF(0.34 - Math.abs(i) * 0.025) + '"/>';
@@ -47572,6 +47636,7 @@ const ZENITH_BANNER = {
       bnLin(u + "sh", [[0, "#FFFFFF"], [0.5, "#9FF8FF"], [1, "#18C8E0"]], 0, 0, 1, 1) +
       bnRad(u + "wave", [[0, "#FFFFFF", 0], [0.8, "#FFFFFF", 0], [0.9, "#7FF4FF", 0.5], [0.96, "#FFFFFF", 0.85], [1, "#3EF0FF", 0]]) +
       bnLin(u + "flash", [[0, "#3EF0FF", 0], [0.45, "#CFFBFF", 0.8], [0.5, "#FFFFFF", 1], [0.55, "#CFFBFF", 0.8], [1, "#3EF0FF", 0]], 0, 0, 1, 0) +
+      bnLin(u + "wg", [[0, "#FFFFFF", 0.95], [0.35, "#9FF8FF", 0.7], [1, "#18C8E0", 0]], 0, 1, 0, 0) +
       '</defs>';
     return [
       { svg: defs + '<rect x="-10" y="-10" width="500" height="200" fill="url(#' + u + 'sky)"/>' + st.still },
@@ -47585,9 +47650,17 @@ const ZENITH_BANNER = {
       /* the shards, two sets floating out of step */
       { svg: shardsA, box: [70, 30, 340, 100], vb: [70, 30, 340, 100], cls: "bl-float", style: "animation-duration:4.6s" },
       { svg: shardsB, box: [30, 10, 420, 60], vb: [30, 10, 420, 60], cls: "bl-float", style: "animation-duration:3.8s;animation-delay:-1.9s" },
+      /* the wings, beating from the beam's foot */
+      { svg: wingFan(-1), box: [CX - 170, 0, 170, HY + 4], vb: [CX - 170, 0, 170, HY + 4], o: [CX - 8, HY - 4], cls: "bl-wingL", style: "animation-duration:1.8s" },
+      { svg: wingFan(1), box: [CX, 0, 170, HY + 4], vb: [CX, 0, 170, HY + 4], o: [CX + 8, HY - 4], cls: "bl-wingR", style: "animation-duration:1.8s" },
       /* THE BEAM: a wide soft column that breathes, and the hard core of it */
       { svg: '<rect x="' + (CX - 40) + '" y="-10" width="80" height="' + (HY + 10) + '" fill="url(#' + u + 'beam)" opacity=".7"/>', box: [CX - 40, -10, 80, HY + 10], o: [CX, HY], cls: "bl-shimmer", style: "animation-duration:1.6s" },
       { svg: '<rect x="' + (CX - 7) + '" y="-10" width="14" height="' + (HY + 10) + '" fill="url(#' + u + 'beam)"/><rect x="' + (CX - 1.4) + '" y="-10" width="2.8" height="' + (HY + 10) + '" fill="#FFFFFF" opacity=".9"/>' },
+      /* the reactor rings, flat round the beam, turning against each other */
+      { svg: reactor(44, "14 6.73", 1.4, ".85"), box: [CX - 48, 92 - 48, 96, 96], vb: [-48, -48, 96, 96], o: [CX, 92], wrap: "scaleY(.26)", cls: "bl-spin", style: "animation-duration:4s" },
+      { svg: reactor(30, "3 4.85", 1.1, ".9"), box: [CX - 34, 52 - 34, 68, 68], vb: [-34, -34, 68, 68], o: [CX, 52], wrap: "scaleY(.26)", cls: "bl-spin-r", style: "animation-duration:3s" },
+      /* arcs crackling off the column */
+      { svg: '<path d="' + arcs + '" fill="none" stroke="#E6FDFF" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>', box: [CX - 26, 14, 52, 86], vb: [CX - 26, 14, 52, 86], cls: "bl-crackle" },
       /* rings climbing it */
       { svg: rings, box: [CX - 30, -60, 60, 360], vb: [CX - 30, -60, 60, 360], cls: "bl-rise", style: "animation-duration:4s" },
       { svg: motes, box: [0, 0, 480, 360], vb: [0, 0, 480, 360], cls: "bl-rise", style: "animation-duration:8s" },
