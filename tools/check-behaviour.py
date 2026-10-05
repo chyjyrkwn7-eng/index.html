@@ -8757,6 +8757,33 @@ def check_b312_results(br):
     check("a 100% run's final buttons include Review test", "Review test" in (r.get("btns") or []), r.get("btns"))
     check("Review test opens every question, each one right", r.get("items", 0) >= 10 and r.get("allRight") is True and "right" in r.get("summary", ""), r)
     ctx.close()
+    # "if I get a hundo on a unit that I already have a badge on, you don't
+    # need to show the badge stuff there, no point"
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      const U = 'Identity Crimes';
+      const run = async () => {
+        cfg.mode = 'drill'; cfg.units = [U]; cfg.source = 'all'; cfg.size = 0; cfg.versions = {}; theme.autoAdvance = true;
+        beginRun(freshOrder(QUESTIONS.map((q, i) => i).filter(i => QUESTIONS[i].topic.trim() === U)), null);
+        for(let i = 0; i < 80 && !document.querySelector('.choice'); i++) await wait(100);
+        let last = -1, guard = 0;
+        while(testInProgress && guard++ < 240){
+          const ch = [...document.querySelectorAll('#stage .choice:not(.locked)')];
+          if(pos !== last && ch.length){ last = pos; const slot = correctSlot(order[pos]); ch[slot] && ch[slot].click(); }
+          await wait(250);
+        }
+        for(let i = 0; i < 100 && !document.querySelector('.rs-final button'); i++){ document.querySelector('.rs-screen')?.click(); await wait(200); }
+        return document.querySelectorAll('.badgeprogress-wrap').length;
+      };
+      store.unitPerfects[U] = badgeThresholdFor(U) + 3; saveStore();
+      out.held = await run();
+      testInProgress = false; showHome(); await wait(600);
+      store.unitPerfects[U] = 0; saveStore();
+      out.filling = await run();
+      return out; }""")
+    check("a hundo on a unit whose badge you already hold shows no badge box", r.get("held") == 0, r)
+    check("and one still filling up keeps its badge progress box", r.get("filling", 0) >= 1, r)
+    ctx.close()
 
 
 def check_b312_unlocks(br):

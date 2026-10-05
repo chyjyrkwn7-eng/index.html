@@ -11805,3 +11805,10 @@ a question with "Both A & B" or "All of the above" was never reordered -
 build 298's rule. Build 312 replaced it, so those checks now assert the
 new shape (the pointing choice stays put, the rest shuffle where the
 meaning allows) and section 86 proves meaning across the whole bank.
+
+**No badge box for a badge you already hold.** "If I get a hundo on a
+unit that I already have a badge on, you don't need to show the badge
+stuff there, no point." `progUnits` in `summarize()` now leaves out any
+unit in `badgesBefore` (held before the run). A badge earned BY the run
+was already left out of the boxes (the unlock says it), so a box only
+ever appears for a unit still filling up. Section 87 asserts both sides.

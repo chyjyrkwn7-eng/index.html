@@ -69074,9 +69074,13 @@ function summarize(){
 
   /* Only the units THIS run earned a hundo in - "the badge rows will
      only be for the badge progress for the hits you took from that
-     test". A unit whose count did not move gets no row. */
+     test". A unit whose count did not move gets no row. Nor does one
+     whose badge was ALREADY held before the run (build 312): "if I get
+     a hundo on a unit that I already have a badge on, you don't need to
+     show the badge stuff there, no point". A badge earned by this very
+     run still gets its row - that is the moment it is about. */
   const progUnits = (runTrackable && !timedOut && cfg.source === "all")
-    ? (cfg.units || []).filter(u => unitQuestionCount(u) > 0 && unitPerfectCount(u) > (perfectsBefore[u] || 0))
+    ? (cfg.units || []).filter(u => unitQuestionCount(u) > 0 && unitPerfectCount(u) > (perfectsBefore[u] || 0) && !badgesBefore.has(u))
     : [];
   /* The units the run actually covered, in the order they were chosen -
      which for a retake of missed questions is only the ones it drew from. */
