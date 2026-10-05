@@ -8902,6 +8902,7 @@
      layers are removed only after it. */
   .hfx-out{ opacity:0 !important; transition:opacity .6s ease !important; }
   .rs-card.hfx-over{ z-index:61; }
+  .confetti-layer.hfx-layer.is-page{ position:absolute; right:auto; bottom:auto; }
   .hfx-box{ position:absolute; inset:0; border-radius:inherit; overflow:hidden; pointer-events:none; z-index:2;
     clip-path:inset(0 round var(--hfx-r, 18px)); }
   .hfx-box > *, .hfx-layer > *{ pointer-events:none; }
@@ -9026,7 +9027,8 @@
     animation:hfx-fadeburst .7s ease-out var(--t) both; }
   .hfx-fw-launch{ position:absolute; width:52px; height:34px; margin:-17px 0 0 -26px; border-radius:50%; opacity:0;
     background:radial-gradient(closest-side, #fff, color-mix(in srgb, var(--c) 55%, transparent) 45%, transparent);
-    animation:hfx-fadeburst .8s ease-out var(--t) both; }
+    animation:hfx-fuse 1.1s ease-out var(--t) both; }
+  @keyframes hfx-fuse{ 0%{ opacity:0; transform:scale(.4); } 25%{ opacity:.9; transform:scale(.8); } 32%{ opacity:1; transform:scale(1.2); } 100%{ opacity:0; transform:scale(1); } }
 
   /* Starfall: each meteor is turned to its heading once (a static
      transform) and its image runs along that axis. */
@@ -9071,6 +9073,76 @@
   .hfx-gx-star{ animation:hfx-gx-star var(--d) linear var(--t) both; }
   @keyframes hfx-gx-star{ 0%{ opacity:0; } 12%{ opacity:1; } 70%{ opacity:.9; } 100%{ opacity:0; } }
 
+  /* UFO. One 7s timeline shared by the saucer's path, its rocking and
+     settle, its beam and its lights, so they cannot drift apart. */
+  .hfx-ufo-dim{ position:absolute; inset:0; background:#020305; opacity:0; animation:hfx-ufo-dim 7.6s linear both; }
+  @keyframes hfx-ufo-dim{ 0%{ opacity:0; } 8%{ opacity:.93; } 16%{ opacity:.93; } 26%{ opacity:.55; } 74%{ opacity:.55; } 100%{ opacity:0; } }
+  .hfx-ufo-boxdim{ position:absolute; inset:0; background:#020305; opacity:0; animation:hfx-ufo-boxdim 2.2s linear both; }
+  @keyframes hfx-ufo-boxdim{ 0%{ opacity:0; } 27%{ opacity:.93; } 55%{ opacity:.93; } 91%, 100%{ opacity:0; } }
+  /* (not .hfx-ufo: the effect's own layers are named hfx-<id>) */
+  .hfx-saucer{ position:absolute; width:0; height:0; opacity:0; animation:hfx-ufo-path 7s linear both; }
+  @keyframes hfx-ufo-path{
+    0%{ transform:translate(var(--sx), var(--sy)) scale(.5); opacity:0; }
+    14.3%{ transform:translate(var(--sx), var(--sy)) scale(.5); opacity:0; animation-timing-function:cubic-bezier(.2,.6,.35,1); }
+    16%{ opacity:1; }
+    37.1%{ transform:translate(0, var(--hov)) scale(1); }
+    48.6%{ transform:translate(0, var(--hov)) scale(1); animation-timing-function:cubic-bezier(.45,0,.35,1); }
+    58.6%{ transform:translate(0, 0) scale(1); }
+    77.1%{ transform:translate(0, 0) scale(1); animation-timing-function:cubic-bezier(.45,0,.4,1); }
+    85.7%{ transform:translate(0, -70px) scale(1); animation-timing-function:cubic-bezier(.6,0,.9,.6); }
+    94.3%{ transform:translate(var(--ox), var(--oy)) scale(.25); opacity:1; }
+    100%{ transform:translate(var(--ox), var(--oy)) scale(.25); opacity:0; } }
+  .hfx-ufo-bob{ position:absolute; left:calc(var(--uw) / -2); top:calc(var(--uh) * -1); width:var(--uw); height:var(--uh); transform-origin:50% 100%;
+    animation:hfx-ufo-bob 7s linear both; }
+  @keyframes hfx-ufo-bob{ 0%, 14.3%{ transform:rotate(-8deg); } 22%{ transform:rotate(6deg); } 30%{ transform:rotate(-4deg); } 37.1%{ transform:rotate(2deg); }
+    43%{ transform:translateY(-3px) rotate(-1.5deg); } 48.6%{ transform:translateY(0) rotate(0deg); }
+    58.6%{ transform:translateY(0) scale(1, 1); } 60.5%{ transform:translateY(2px) scale(1.05, .9); } 63%{ transform:translateY(-6px) scale(.98, 1.03); }
+    65.5%{ transform:translateY(0) scale(1, 1); } 70%{ transform:translateY(-2px); } 74%{ transform:translateY(0); } 77.1%{ transform:rotate(0deg); }
+    85.7%{ transform:rotate(-4deg); } 94.3%, 100%{ transform:rotate(14deg); } }
+  .hfx-ufo-body, .hfx-ufo-lights{ position:absolute; inset:0; background:center / 100% 100% no-repeat; }
+  .hfx-ufo-lights{ animation:hfx-chase .45s ease-in-out 1s 13 alternate both; }
+  .hfx-ufo-lights.is-odd{ animation-name:hfx-chase-b; }
+  @keyframes hfx-chase{ from{ opacity:.12; } to{ opacity:1; } }
+  @keyframes hfx-chase-b{ from{ opacity:1; } to{ opacity:.12; } }
+  .hfx-ufo-glow{ position:absolute; left:15%; right:15%; bottom:-14%; height:50%; border-radius:50%;
+    background:radial-gradient(closest-side, rgba(150,255,175,.55), rgba(107,255,143,0)); }
+  .hfx-ufo-beam{ position:absolute; left:calc(var(--bw) / -2); width:var(--bw); top:calc(var(--uh) * -.2); height:var(--bh); transform-origin:50% 0;
+    background:center / 100% 100% no-repeat; opacity:0; animation:hfx-ufo-beam 7s linear both; }
+  @keyframes hfx-ufo-beam{ 0%, 37%{ transform:scaleY(0); opacity:0; } 40.5%{ transform:scaleY(1); opacity:1; } 76%{ transform:scaleY(1); opacity:1; } 80%, 100%{ transform:scaleY(0); opacity:0; } }
+  .hfx-ufo-ring{ position:absolute; left:calc(var(--rw) / -2); width:var(--rw); height:calc(var(--rw) * .3); top:calc(var(--rw) * -.15);
+    background:center / 100% 100% no-repeat; opacity:0; animation:hfx-ufo-ring .75s ease-in var(--t) both; }
+  @keyframes hfx-ufo-ring{ 0%{ transform:translateY(calc(var(--uh) * -.2)) scale(.5); opacity:0; } 20%{ opacity:1; } 100%{ transform:translateY(var(--fall)) scale(1.15); opacity:0; } }
+  .hfx-ufo-dust{ position:absolute; width:60px; height:30px; margin:-15px 0 0 -30px; border-radius:50%;
+    background:radial-gradient(closest-side, rgba(200,255,215,.6), rgba(200,255,215,0)); opacity:0; animation:hfx-ufo-dust 1.3s ease-out 4.1s both; }
+  @keyframes hfx-ufo-dust{ 0%{ transform:translate(0, 0) scale(.3); opacity:0; } 15%{ opacity:1; } 100%{ transform:translate(var(--dx), -12px) scale(1.5); opacity:0; } }
+  .hfx-ufo-inbeam{ position:absolute; top:0; width:var(--iw); height:var(--ih); margin-left:calc(var(--iw) / -2); transform-origin:50% 0;
+    background:center / 100% 100% no-repeat; opacity:0; animation:hfx-ufo-inbeam 7s linear both; }
+  @keyframes hfx-ufo-inbeam{ 0%, 37%{ transform:scaleY(0); opacity:0; } 41%{ transform:scaleY(1); opacity:.45; } 58%{ opacity:.45; } 61%{ opacity:.7; } 76%{ transform:scaleY(1); opacity:.7; } 80%, 100%{ transform:scaleY(.2); opacity:0; } }
+  .hfx-ufo-landglow{ position:absolute; inset:0; border-radius:inherit; opacity:0;
+    box-shadow:inset 0 0 0 1.5px rgba(150,255,175,.8), inset 0 0 30px rgba(107,255,143,.35);
+    animation:hfx-ufo-landglow 2.4s ease-out var(--t) both; }
+  @keyframes hfx-ufo-landglow{ 0%{ opacity:0; } 10%{ opacity:1; } 60%{ opacity:.6; } 100%{ opacity:0; } }
+  .hfx-ufo-spark{ animation:hfx-ufo-spark 1.3s ease-in var(--t) both; }
+  @keyframes hfx-ufo-spark{ 0%{ transform:scale(.2); opacity:0; } 15%{ transform:scale(1.25); opacity:1; } 30%{ transform:translateY(0) scale(1); } 88%{ transform:translateY(var(--up)) scale(.6); opacity:1; } 100%{ transform:translateY(var(--up)) scale(.1); opacity:0; } }
+  .hfx-scan{ position:absolute; left:0; right:0; top:0; height:2px; background:var(--c); opacity:0;
+    box-shadow:0 0 8px 2px var(--c), 0 0 18px 6px color-mix(in srgb, var(--c) 40%, transparent);
+    animation:hfx-scan 1.6s cubic-bezier(.45,0,.55,1) var(--dl) both; }
+  @keyframes hfx-scan{ 0%{ transform:translateY(0); opacity:0; } 10%{ opacity:1; } 80%{ opacity:.85; } 100%{ transform:translateY(var(--bh)); opacity:0; } }
+
+  /* THE BOX TAKES THE EFFECT'S COLOURS while it plays, and eases back:
+     the border by a transition, the wash and the numerals by an overlay
+     whose opacity fades in and out over the effect's own length. */
+  .rs-screen .rs-card.rs-grade, .hfx-stage{ transition:border-color 1s ease; }
+  .rs-screen .rs-card.rs-grade.is-perfect.hfx-tinted, .hfx-stage.hfx-tinted, .hfx-preview-card.hfx-tinted{ border-color:var(--hfx-b); }
+  .hfx-tint{ position:absolute; inset:0; border-radius:inherit; opacity:0;
+    background:linear-gradient(180deg, color-mix(in srgb, var(--hfx-b) 20%, transparent), transparent 62%);
+    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--hfx-b) 55%, transparent), inset 0 0 26px color-mix(in srgb, var(--hfx-b) 22%, transparent);
+    animation:hfx-tint var(--tot) linear both; }
+  @keyframes hfx-tint{ 0%{ opacity:0; } 9%{ opacity:1; } 80%{ opacity:1; } 96%, 100%{ opacity:0; } }
+  .hfx-tintnum{ position:absolute; display:block; white-space:nowrap; opacity:0; animation:hfx-tint var(--tot) linear both; }
+  .hfx-tintnum, .hfx-carry-txt.is-tinted{ color:transparent;
+    background:linear-gradient(105deg, var(--hfx-g1), var(--hfx-g2) 55%, var(--hfx-g3, var(--hfx-g1)));
+    -webkit-background-clip:text; background-clip:text; }
   /* World Tree. Each branch is a box rotated about the tip it grows
      from and scaled up out of it, tapered by its clip, with a vein of
      light that flares as it grows - a pulse running up the wood. The
@@ -17651,6 +17723,11 @@
   /* its card and its results pop-up */
   .unlock-card-fx .unlock-card-art{ width:min(16rem, 74vw); }
   .unlock-card-preview{ margin-top:1rem; }
+  .rs-spot-use{ margin:.9rem auto 0; display:block; min-height:2.9rem; padding:0 1.4rem; }
+  /* an effect's whole play inside a pop-up: the pop-up is its screen */
+  .rs-spot > .hfx-layer.is-inset{ position:absolute; z-index:0; }
+  .rs-spot > .rs-spot-card{ position:relative; z-index:1; }
+  .rs-spot > .hfx-layer.is-inset:not(.hfx-worldtree){ z-index:2; }
   .rs-spot-art.is-fx{ width:min(15rem, 70vw); height:auto; filter:none; }
   .rs-spot-art.is-fx .hfx-stage{ box-shadow:0 10px 40px rgba(0,0,0,.5), 0 0 28px color-mix(in srgb, var(--spot-color) 30%, transparent); }
   .rs-unlock-fx .rs-unlock-art{ filter:none; }
@@ -36116,7 +36193,10 @@ const HUNDO_FX = [
   { id: "fireworks", name: "Fireworks",  need: 50,  color: "#FFB24A" },
   { id: "aurora",    name: "Aurora",     need: 100, color: "#5CFFB0" },
   { id: "worldtree", name: "World Tree", need: 200, color: "#FF9EC8" },
-  { id: "bubbles",   name: "Bubbles",    need: 350, color: "#9FE8FF" }
+  { id: "bubbles",   name: "Bubbles",    need: 350, color: "#9FE8FF" },
+  /* "Maybe the one after bubbles is ... a ufo landing on the grade box?"
+     500 by default; nobody is near it (the top is 158). */
+  { id: "ufo",       name: "UFO",        need: 500, color: "#6BFF8F" }
 ];
 function hundoFxDef(id){ return HUNDO_FX.find(d => d.id === id) || null; }
 /* Held at `hundos` (this account's own count when left out). */
@@ -41501,7 +41581,13 @@ function applyLoadedData(got){
   if(store.seenUnlocks && Array.isArray(got.seenUnlocks.fx)) store.seenUnlocks.fx = got.seenUnlocks.fx.filter(x => typeof x === "string");
   store.unlocksShown = (got.unlocksShown && Array.isArray(got.unlocksShown.chars) && Array.isArray(got.unlocksShown.banners))
     ? { chars: got.unlocksShown.chars.filter(x => typeof x === "string"),
-        banners: got.unlocksShown.banners.filter(x => typeof x === "string") }
+        banners: got.unlocksShown.banners.filter(x => typeof x === "string"),
+        /* build 313: the hundo effects announced. DEFAULTS TO NONE, on
+           purpose and against the usual rule: everybody already holding
+           one when this ships is meant to get its pop-up once ("For the
+           people who meet these, they will get the popups next time they
+           log on or are at the main menu"). */
+        fx: Array.isArray(got.unlocksShown.fx) ? got.unlocksShown.fx.filter(x => typeof x === "string") : [] }
     : null;
   /* Build 220. The counters default to zero and the two "done" flags to
      false, so every existing account is seeded once from what it has
@@ -43022,7 +43108,7 @@ function wipeLocalProgressAndSettings(){
   store.bigTest500Passed = false;
   store.bestTestStreak = 0;
   store.weeklyWins = 0; store.weeklyTop3 = 0; store.retakenQuestions = 0; store.hundoDay = null; store.hundoDayBest = 0; store.shadesFound = false; store.shadesAt = null; store.legacyChars = []; store.rankMapSeen = -1; store.rankMapFx244 = false; store.rankMapProg = null;
-  store.unlocksShown = { chars: [], banners: [] };
+  store.unlocksShown = { chars: [], banners: [], fx: [] };
   store.seenUnlocks = null;
   store.unitRuns = {};
   store.vrMatches = 0; store.vrWins = 0; store.vrCounted = []; store.vrRetroDone = true;
@@ -68346,11 +68432,24 @@ function celebrate(palette, origin){
 const HUNDO_FX_TAIL_MS = 1200;
 /* When each effect's layers are removed: every piece has faded out by
    then. The box-only play (Customize, the unlock card) runs shorter. */
-const HUNDO_FX_TOTAL = { fireworks: 5800, starfall: 5600, aurora: 6400, galaxy: 5200, worldtree: 8800, bubbles: 7000 };
-const HUNDO_FX_BOX_TOTAL = { confetti: 3000, fireworks: 4000, starfall: 4000, aurora: 4600, galaxy: 4000, worldtree: 6400, bubbles: 4600 };
+const HUNDO_FX_TOTAL = { fireworks: 5800, starfall: 5600, aurora: 6400, galaxy: 5200, worldtree: 8800, bubbles: 7000, ufo: 8600 };
+const HUNDO_FX_BOX_TOTAL = { confetti: 3000, fireworks: 4000, starfall: 4000, aurora: 4600, galaxy: 4000, worldtree: 6400, bubbles: 4600, ufo: 7400 };
 /* When the last tail starts, for the gate: everything is still on
    screen and part-way faded between this and the total. */
-const HUNDO_FX_TAIL_AT = { fireworks: 4300, starfall: 4000, aurora: 4800, galaxy: 3700, worldtree: 6600, bubbles: 5300 };
+const HUNDO_FX_TAIL_AT = { fireworks: 4300, starfall: 4000, aurora: 4800, galaxy: 3700, worldtree: 6600, bubbles: 5300, ufo: 7000 };
+/* THE BOX'S COLOURS WHILE EACH ONE PLAYS (build 313): "Would be pretty
+   cool if the themes matches the box, cause if the just stays yellow it
+   would get kinda boring." Border, wash and the numerals' gradient;
+   Confetti keeps the yellow. */
+const HFX_TINT = {
+  fireworks: { b: "#FF8FB8", g1: "#FFE08A", g2: "#FF5FA2", g3: "#FFB24A" },
+  starfall:  { b: "#A9C2FF", g1: "#FFFFFF", g2: "#9DB8FF", g3: "#E2EAFF" },
+  aurora:    { b: "#5CFFB0", g1: "#B6FFE0", g2: "#5CFFB0", g3: "#9DB2FF" },
+  galaxy:    { b: "#B49CFF", g1: "#FFD6F4", g2: "#B49CFF", g3: "#9FD0FF" },
+  worldtree: { b: "#7CD69A", g1: "#FFD1E4", g2: "#FF8FBF", g3: "#B8F2A0" },
+  bubbles:   { b: "#9FE8FF", g1: "#B4F0FF", g2: "#FFB3E6", g3: "#C9B3FF" },
+  ufo:       { b: "#6BFF8F", g1: "#EAFFEE", g2: "#6BFF8F", g3: "#B8FFF2" }
+};
 function hfxMotionOff(){
   try{ if(theme.reduceMotion) return true; }catch(e){}
   return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
@@ -68404,7 +68503,7 @@ function hfxContext(opts){
   const k = 1;
   return { vw, vh, box, br, bw, bh, p, k, pct: opts.pct || null,
     pc: { x: br.left + (p.x + p.w / 2) * k, y: br.top + (p.y + p.h / 2) * k },
-    palette: hfxPalette(opts.palette), boxOnly: !!opts.boxOnly, mini: !!opts.mini };
+    palette: hfxPalette(opts.palette), boxOnly: !!opts.boxOnly, mini: !!opts.mini, noDim: !!opts.noDim };
 }
 /* THE "100%" LIT. A copy of the number laid exactly over it in light,
    shown either as a band that sweeps across (a beam passing over it) or
@@ -68682,8 +68781,11 @@ function hfxCarry(scr, c){
   hfxSpray(scr, pc.x, pc.y + rise, gs * .7, popAt, true);
   const r2 = hfxMk(scr, "span", "hfx-spray", { left: pc.x + "px", top: (pc.y + rise) + "px", "--sz": (gs * 1.1) + "px", "--dl": popAt + .12 });
   hfxMk(r2, "i", "hfx-rainbow").style.backgroundImage = hfxRingURL();
+  if(c.tintNum) txt.classList.add("is-tinted");
   try{ c.pct.animate([{ opacity: 1 }, { opacity: 1, offset: .1 }, { opacity: 0, offset: .13 }, { opacity: 0, offset: .95 }, { opacity: 1 }],
     { duration: D * 1000, delay: T0 * 1000 }); }catch(e){}
+  /* its coloured copy stays down for the whole carry, then hands back */
+  if(c.tintNum){ try{ c.tintNum.animate([{ opacity: 0 }, { opacity: 0, offset: .95 }, { opacity: 1 }], { duration: D * 1000, delay: T0 * 1000 }); }catch(e){} }
 }
 
 /* ---- SPRITES ----
@@ -68745,6 +68847,7 @@ function hfxWarm(id){
     else if(id === "fireworks"){ HFX_FW_COLORS.forEach(cl => urls.push(hfxBurstURL(cl), hfxRocketURL(cl))); urls.push(hfxGlitterURL()); }
     else if(id === "starfall"){ HFX_STAR_COLORS.forEach(cl => urls.push(hfxMeteorURL(cl))); urls.push(hfxGlintURL()); }
     else if(id === "aurora"){ HFX_AURORA.forEach(p => urls.push(hfxRibbonURL(p[0], p[1]))); urls.push(hfxGlintURL()); }
+    else if(id === "ufo"){ urls.push(hfxUfoURL(), hfxUfoLightsURL(false), hfxUfoLightsURL(true), hfxBeamURL(), hfxBeamRingURL(), hfxGlintURL(), hfxMeteorURL("#9DFFB4")); }
     else if(id === "galaxy"){ urls.push(hfxGalaxyURL("#9FB4FF", "#FF8FD8"), hfxGalaxyURL("#FFD27A", "#8FE8FF"), hfxGlintURL()); }
   }catch(e){}
   /* every sprite made so far, this effect's included, to a bitmap */
@@ -68828,7 +68931,7 @@ function hfxFireworks(scr, bx, c){
     const lx = r.left + r.width * (.12 + .76 * (i + .5) / n) + hfxR(-10, 10), ly = r.top + 3;
     const room = Math.max(150, r.top - 50);
     shells.push({ lx, ly, ax: lx + hfxR(-1, 1) * c.vw * .16, ay: Math.max(60, ly - room * hfxR(.4, .95)),
-      t: .15 + i * .34 + hfxR(0, .1), fly: hfxR(.55, .75), col: cols[i % cols.length], sz: (c.vw < 600 ? 180 : 250) * hfxR(.8, 1.15) });
+      t: .4 + i * .34 + hfxR(0, .1), fly: hfxR(.55, .75), col: cols[i % cols.length], sz: (c.vw < 600 ? 180 : 250) * hfxR(.8, 1.15) });
   }
   if(scr){
     shells.forEach(s => {
@@ -68841,7 +68944,8 @@ function hfxFireworks(scr, bx, c){
   }
   if(bx){
     /* each launch flares on the box's top edge; the number catches the first burst */
-    shells.forEach(s => hfxMk(bx, "i", "hfx-fw-launch", { left: (c.boxOnly ? c.bw * (.15 + .7 * Math.random()) : s.lx - r.left) + "px", top: "0px", "--c": s.col, "--t": s.t }));
+    /* each shell's fuse lights on the box's top edge a beat before it goes */
+    shells.forEach(s => hfxMk(bx, "i", "hfx-fw-launch", { left: (c.boxOnly ? c.bw * (.15 + .7 * Math.random()) : s.lx - r.left) + "px", top: "0px", "--c": s.col, "--t": Math.max(0, s.t - .3) }));
     hfxLitText(bx, c, { mode: "flash", color: "#FFF6E0", glow: cols[0], dl: shells[0].t + shells[0].fly, dur: 2.2 });
     if(c.boxOnly){
       shells.slice(0, 3).forEach((s, i) => hfxPiece(bx, "hfx-fw-burst", hfxBurstURL(s.col), c.bw * (.25 + i * .25), c.bh * hfxR(.3, .45), c.bh * .9, { "--t": .3 + i * .45, "--d": 1.6 }));
@@ -69149,6 +69253,113 @@ function hfxWorldTree(scr, bx, c){
   }
 }
 
+/* ============ UFO - the top of the ladder ============
+   "Maybe the one after bubbles is the screen turning black then fades
+   into the screen and it's a ufo landing on the grade box?" The screen
+   goes to black, stars come out, the results fade back in round a lit
+   100% box, and a saucer comes down out of the dark: rocking on its way,
+   landing lights chasing round its rim, it hovers and throws a tractor
+   beam down onto the box, sets down on the box's top edge with a little
+   settle and bob, sweeps the 100% with its light and lifts a spark out
+   of it, then lifts off and streaks away, and everything fades slowly.
+   The card is lifted over the dim (hfx-over), so the number is never
+   dimmed once the screen comes back; the black over the card in the
+   first second is the box layer's own. */
+function hfxUfoURL(){
+  return hfxSprite("ufo", () => 'viewBox="0 0 200 124"><defs>' +
+    '<linearGradient id="d" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E9FFFB" stop-opacity=".95"/><stop offset=".55" stop-color="#7FE9FF" stop-opacity=".45"/><stop offset="1" stop-color="#2A6F86" stop-opacity=".6"/></linearGradient>' +
+    '<linearGradient id="m" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F4F7FB"/><stop offset=".45" stop-color="#AEB8C8"/><stop offset=".55" stop-color="#7C879A"/><stop offset="1" stop-color="#3C4352"/></linearGradient>' +
+    '<linearGradient id="h" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#596274"/><stop offset="1" stop-color="#232833"/></linearGradient>' +
+    '<radialGradient id="e"><stop offset="0" stop-color="#F2FFF4"/><stop offset=".4" stop-color="#6BFF8F"/><stop offset="1" stop-color="#6BFF8F" stop-opacity="0"/></radialGradient></defs>' +
+    '<path d="M70 106 L60 120 M130 106 L140 120 M100 100 L100 121" stroke="#9AA4B5" stroke-width="3" stroke-linecap="round"/>' +
+    '<path d="M54 120 H66 M134 120 H146 M94 121 H106" stroke="#C9D1DD" stroke-width="3" stroke-linecap="round"/>' +
+    '<ellipse cx="100" cy="92" rx="56" ry="15" fill="url(#h)"/>' +
+    '<ellipse cx="100" cy="99" rx="30" ry="9" fill="url(#e)"/>' +
+    '<ellipse cx="100" cy="76" rx="96" ry="22" fill="url(#m)"/>' +
+    '<ellipse cx="100" cy="70" rx="80" ry="8" fill="#fff" fill-opacity=".28"/>' +
+    '<path d="M60 64 A40 40 0 0 1 140 64 Z" fill="url(#d)"/>' +
+    '<ellipse cx="100" cy="50" rx="11" ry="12" fill="#7BE27A"/><ellipse cx="95.5" cy="49" rx="3.6" ry="5" fill="#13261A" transform="rotate(-18 95.5 49)"/><ellipse cx="104.5" cy="49" rx="3.6" ry="5" fill="#13261A" transform="rotate(18 104.5 49)"/>' +
+    '<path d="M68 52 A34 30 0 0 1 96 32" fill="none" stroke="#fff" stroke-opacity=".8" stroke-width="3" stroke-linecap="round"/></svg>', 640);
+}
+/* the rim lights, two sets that take turns: a chase, not a flash */
+function hfxUfoLightsURL(odd){
+  return hfxSprite("ufol" + (odd ? 1 : 0), () => {
+    let o = "";
+    for(let i = 0; i < 9; i++){
+      if((i % 2 === 1) !== !!odd) continue;
+      const a = Math.PI * (.08 + .84 * i / 8), x = 100 - Math.cos(a) * 86, y = 78 + Math.sin(a) * 15;
+      const col = ["#6BFF8F", "#FFE45C", "#7FE9FF"][i % 3];
+      o += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="9" fill="' + col + '" fill-opacity=".3"/><circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="4" fill="#fff"/><circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="5.5" fill="' + col + '" fill-opacity=".7"/>';
+    }
+    return 'viewBox="0 0 200 124">' + o + '</svg>';
+  }, 640);
+}
+function hfxBeamURL(){
+  return hfxSprite("beam", () => 'viewBox="0 0 100 200"><defs><linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C8FFD4" stop-opacity=".75"/><stop offset=".35" stop-color="#6BFF8F" stop-opacity=".38"/><stop offset="1" stop-color="#6BFF8F" stop-opacity=".1"/></linearGradient>' +
+    '<linearGradient id="c" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>' +
+    '<path d="M38 0 L62 0 L100 200 L0 200 Z" fill="url(#b)"/><path d="M45 0 L55 0 L70 200 L30 200 Z" fill="url(#c)"/></svg>', 400);
+}
+function hfxBeamRingURL(){
+  return hfxSprite("bring", () => 'viewBox="0 0 100 30"><ellipse cx="50" cy="15" rx="46" ry="11" fill="none" stroke="#B8FFC8" stroke-width="2.6" stroke-opacity=".85"/><ellipse cx="50" cy="15" rx="46" ry="11" fill="none" stroke="#6BFF8F" stroke-width="7" stroke-opacity=".25"/></svg>', 256);
+}
+function hfxUfo(scr, bx, c){
+  const r = c.br, small = c.vw < 600;
+  const L = { x: r.left + r.width / 2, y: r.top + 1 };
+  if(scr){
+    if(!c.noDim) hfxMk(scr, "i", "hfx-ufo-dim");
+    for(let i = 0; i < (small ? 14 : 20); i++){
+      hfxPiece(scr, "hfx-glint is-ufo", hfxGlintURL(), hfxR(.04, .96) * c.vw, hfxR(.03, .97) * c.vh, hfxR(8, 18), { "--t": .45 + hfxR(0, 1.1), "--d": hfxR(4.6, 6) });
+    }
+    const w = small ? 168 : 230, h = w * .62;
+    const hov = -Math.round(Math.min(120, Math.max(60, r.top * .25)));
+    const exit = { x: (Math.random() < .5 ? -1 : 1) * c.vw * .9, y: -L.y - 160 };
+    const u = hfxMk(scr, "span", "hfx-saucer", { left: L.x + "px", top: L.y + "px", "--sx": (hfxR(-.3, .3) * c.vw) + "px", "--sy": (-L.y - h - 20) + "px",
+      "--hov": hov + "px", "--ox": exit.x + "px", "--oy": exit.y + "px", "--uw": w + "px", "--uh": h + "px" });
+    /* the beam hangs under the hull and rides with it */
+    const beam = hfxMk(u, "i", "hfx-ufo-beam", { "--bh": (-hov + 18) + "px", "--bw": (w * .82) + "px" });
+    beam.style.backgroundImage = hfxBeamURL();
+    for(let k = 0; k < 3; k++){
+      hfxMk(u, "i", "hfx-ufo-ring", { "--rw": (w * .5) + "px", "--fall": (-hov) + "px", "--t": 2.75 + k * .22 }).style.backgroundImage = hfxBeamRingURL();
+    }
+    const bob = hfxMk(u, "i", "hfx-ufo-bob");
+    hfxMk(bob, "i", "hfx-ufo-glow");
+    hfxMk(bob, "i", "hfx-ufo-body").style.backgroundImage = hfxUfoURL();
+    hfxMk(bob, "i", "hfx-ufo-lights").style.backgroundImage = hfxUfoLightsURL(false);
+    hfxMk(bob, "i", "hfx-ufo-lights is-odd").style.backgroundImage = hfxUfoLightsURL(true);
+    /* dust where the feet touch the box */
+    [-1, 1].forEach(s => hfxMk(scr, "i", "hfx-ufo-dust", { left: (L.x + s * w * .32) + "px", top: L.y + "px", "--dx": (s * 26) + "px" }));
+    /* the trail it leaves going, and a last glint where it went */
+    const ang = Math.atan2(exit.y + 70, exit.x) * 180 / Math.PI;
+    const tr = hfxMk(scr, "span", "hfx-mt", { left: L.x + "px", top: (L.y - 70) + "px", "--ra": ang.toFixed(1) + "deg" });
+    const run = hfxMk(tr, "i", "hfx-mt-run is-big hfx-ufo-trail", { "--ml": "260px", "--dist": (Math.hypot(exit.x, exit.y + 70) + 200) + "px", "--t": 6.05, "--d": .7 });
+    run.style.backgroundImage = hfxMeteorURL("#9DFFB4");
+  }
+  if(bx){
+    const cx = c.bw / 2;
+    if(!c.boxOnly){
+      if(!c.noDim) hfxMk(bx, "i", "hfx-ufo-boxdim");
+      hfxMk(bx, "i", "hfx-ufo-inbeam", { left: cx + "px", "--ih": (c.p.y + c.p.h + 14) + "px", "--iw": Math.min(c.bw * .8, c.p.w * 1.6) + "px" }).style.backgroundImage = hfxBeamURL();
+      hfxMk(bx, "i", "hfx-ufo-landglow", { "--t": 4.1 });
+    } else {
+      /* in a small box: it comes down into the box, hovers over the
+         number with its beam on it, and goes */
+      const w = c.bw * (c.mini ? .34 : .3), h = w * .62;
+      const u = hfxMk(bx, "span", "hfx-saucer is-mini", { left: cx + "px", top: Math.max(h * .9, c.p.y - 2) + "px", "--sx": "0px", "--sy": (-c.bh) + "px",
+        "--hov": "0px", "--ox": (c.bw * .7) + "px", "--oy": (-c.bh) + "px", "--uw": w + "px", "--uh": h + "px" });
+      const beam = hfxMk(u, "i", "hfx-ufo-beam", { "--bh": (c.p.h + 10) + "px", "--bw": (c.p.w * 1.1) + "px" });
+      beam.style.backgroundImage = hfxBeamURL();
+      const bob = hfxMk(u, "i", "hfx-ufo-bob");
+      hfxMk(bob, "i", "hfx-ufo-body").style.backgroundImage = hfxUfoURL();
+      hfxMk(bob, "i", "hfx-ufo-lights").style.backgroundImage = hfxUfoLightsURL(false);
+      hfxMk(bob, "i", "hfx-ufo-lights is-odd").style.backgroundImage = hfxUfoLightsURL(true);
+    }
+    /* the beam sweeps the number, and lifts a spark out of it */
+    hfxMk(bx, "i", "hfx-scan is-ufo", { "--bh": (c.p.y + c.p.h) + "px", "--c": "#6BFF8F", "--dl": 4.25 });
+    hfxLitText(bx, c, { mode: "sweep", color: "#F0FFF2", glow: "#6BFF8F", dl: 4.4, dur: 1 });
+    hfxPiece(bx, "hfx-ufo-spark", hfxGlintURL(), c.p.x + c.p.w / 2, c.p.y + c.p.h / 2, c.mini ? 14 : 24, { "--up": (-(c.p.y + c.p.h / 2) - 6) + "px", "--t": 4.8 });
+  }
+}
+
 /* A small nova for the box-only play (Customize, the unlock card):
    celebrate()'s own pieces, inside the box instead of across the screen. */
 function hfxConfettiBox(bx, c){
@@ -69171,8 +69382,19 @@ function hfxConfettiBox(bx, c){
 /* Every effect that can play - the four candidates for the first two
    rungs included, whether or not HUNDO_FX lists them. */
 const HUNDO_FX_BUILD = { fireworks: hfxFireworks, starfall: hfxStarfall, aurora: hfxAurora, galaxy: hfxGalaxy,
-  worldtree: hfxWorldTree, bubbles: hfxBubbles };
+  worldtree: hfxWorldTree, bubbles: hfxBubbles, ufo: hfxUfo };
 
+/* The 100% in the effect's colours: a copy laid exactly over the real
+   numerals, filled with the effect's gradient, fading in and out. */
+function hfxTintNum(bx, c){
+  if(!c.pct) return null;
+  const cs = getComputedStyle(c.pct);
+  const t = hfxMk(bx, "span", "hfx-tintnum", { left: c.p.x + "px", top: c.p.y + "px", width: c.p.w + "px", height: c.p.h + "px" });
+  t.textContent = c.pct.textContent;
+  t.style.fontFamily = cs.fontFamily; t.style.fontSize = cs.fontSize; t.style.fontWeight = cs.fontWeight;
+  t.style.letterSpacing = cs.letterSpacing; t.style.lineHeight = cs.lineHeight;
+  return t;
+}
 /* Fades a layer out over 0.6s and then removes it - for a scene going
    up over it, or the screen changing under it. Never a cut. */
 function hfxFadeOut(el){
@@ -69190,6 +69412,8 @@ function playHundoFx(id, opts){
   if(hfxMotionOff()) return null;
   if(id === "confetti" && !opts.boxOnly){ celebrate(opts.palette, opts.pct || opts.box); return null; }
   const c = hfxContext(opts);
+  const total = opts.boxOnly ? HUNDO_FX_BOX_TOTAL[id] : HUNDO_FX_TOTAL[id];
+  const tint = HFX_TINT[id] || null;
   let scr = null, bx = null;
   if(!opts.boxOnly){
     scr = document.createElement("div");
@@ -69201,16 +69425,43 @@ function playHundoFx(id, opts){
     bx.className = "hfx-box hfx-" + id + (opts.boxOnly ? "" : " is-grade");
     bx.setAttribute("aria-hidden", "true");
   }
+  if(tint){
+    [opts.box, scr].forEach(el => { if(el){ el.style.setProperty("--hfx-b", tint.b); el.style.setProperty("--hfx-g1", tint.g1); el.style.setProperty("--hfx-g2", tint.g2); el.style.setProperty("--hfx-g3", tint.g3); } });
+    if(bx){
+      bx.style.setProperty("--tot", (total / 1000) + "s");
+      hfxMk(bx, "i", "hfx-tint");
+      c.tintNum = hfxTintNum(bx, c);
+    }
+  }
   try{
     if(id === "confetti") hfxConfettiBox(bx, c);
     else HUNDO_FX_BUILD[id](scr, bx, c);
   }catch(e){ return null; }
-  if(scr) document.body.appendChild(scr);
+  if(scr){
+    if(opts.layerParent){ scr.classList.add("is-inset"); opts.layerParent.insertBefore(scr, opts.layerBefore || null); }
+    else {
+      /* PINNED TO THE PAGE, NOT THE SCREEN. The results reveal scrolls
+         down as later cards land, and a fixed layer stayed where the box
+         WAS - the UFO set down 69px above it. Placed on the page at the
+         scroll it started at, everything moves with the box. */
+      if(!opts.preview){
+        scr.classList.add("is-page");
+        scr.style.top = (window.scrollY || 0) + "px"; scr.style.left = (window.scrollX || 0) + "px";
+        scr.style.width = c.vw + "px"; scr.style.height = c.vh + "px";
+      }
+      document.body.appendChild(scr);
+    }
+  }
   if(bx) opts.box.appendChild(bx);
   /* The World Tree grows BEHIND the 100% box: the box is lifted over the
      screen layer while it plays, so the number stays clear and the
      vines round it read as the tree's own. */
-  if(id === "worldtree" && scr && opts.box) opts.box.classList.add("hfx-over");
+  if((id === "worldtree" || id === "ufo") && scr && opts.box) opts.box.classList.add("hfx-over");
+  /* the colours ease in now and back out before the end, so they are
+     yellow again by the time the last pieces have gone */
+  let untintTimer = null;
+  const untint = () => { if(opts.box) opts.box.classList.remove("hfx-tinted"); };
+  if(tint && opts.box){ void opts.box.offsetWidth; opts.box.classList.add("hfx-tinted"); untintTimer = setTimeout(untint, Math.max(600, total - 1700)); }
   /* The bubbles' box wobbles like the film they are blown from: its own
      `scale` property, through the Web Animations API, so the transform
      its landing animation holds is never touched and nothing restarts. */
@@ -69218,12 +69469,11 @@ function playHundoFx(id, opts){
     try{ opts.box.animate([{ scale: "1" }, { scale: "1.03 .97" }, { scale: ".98 1.02" }, { scale: "1.016 .984" }, { scale: ".994 1.006" }, { scale: "1" }],
       { duration: 2300, delay: 60, easing: "ease-in-out" }); }catch(e){}
   }
-  const total = opts.boxOnly ? HUNDO_FX_BOX_TOTAL[id] : HUNDO_FX_TOTAL[id];
   const handle = { id, screen: scr, box: bx, total, startedAt: performance.now(), done: false };
   const lifted = () => { if(opts.box) opts.box.classList.remove("hfx-over"); };
-  const end = () => { if(handle.done) return; handle.done = true; if(scr) scr.remove(); if(bx) bx.remove(); if(mo) mo.disconnect(); lifted(); };
+  const end = () => { if(handle.done) return; handle.done = true; if(scr) scr.remove(); if(bx) bx.remove(); if(mo) mo.disconnect(); lifted(); clearTimeout(untintTimer); untint(); };
   handle.timer = setTimeout(end, total);
-  handle.stop = () => { if(handle.done) return; handle.done = true; clearTimeout(handle.timer); if(mo) mo.disconnect(); hfxFadeOut(scr); hfxFadeOut(bx); setTimeout(lifted, 650); };
+  handle.stop = () => { if(handle.done) return; handle.done = true; clearTimeout(handle.timer); clearTimeout(untintTimer); untint(); if(mo) mo.disconnect(); hfxFadeOut(scr); hfxFadeOut(bx); setTimeout(lifted, 650); };
   /* the screen changing under it: fade, don't leave it over the next one */
   let mo = null;
   if(scr && opts.box && !opts.preview && typeof stage !== "undefined" && stage){
@@ -69257,12 +69507,21 @@ function buildHundoFxStage(id, o){
   }
   if(o.live){
     const period = (HUNDO_FX_BOX_TOTAL[id] || 3000) + 900;
-    let handle = null, tries = 0;
+    let handle = null, tries = 0, shown = false;
+    st.stopFx = () => { st.__dead = true; if(handle && handle.stop) handle.stop(); };
     const tick = () => {
-      if(!st.isConnected) return;
+      if(!st.isConnected || st.__dead) return;
       const off = !!st.closest(".is-offscreen");
-      if(!off && !hfxMotionOff() && (!handle || handle.done)) handle = playHundoFx(id, { box: st, pct, boxOnly: true, mini: !o.big });
-      setTimeout(tick, off ? 700 : period);
+      let wait = off ? 700 : period;
+      if(!off && !hfxMotionOff() && (!handle || handle.done)){
+        const sc = !shown && o.showcase ? o.showcase(st) : null;
+        shown = true;
+        if(sc){
+          handle = playHundoFx(id, { box: st, pct, preview: true, layerParent: sc.parent, layerBefore: sc.before, noDim: true });
+          wait = (HUNDO_FX_TOTAL[id] || 6000) + 600;
+        } else handle = playHundoFx(id, { box: st, pct, boxOnly: true, mini: !o.big });
+      }
+      setTimeout(tick, wait);
     };
     const first = () => { if(st.isConnected) tick(); else if(++tries < 12) setTimeout(first, 300); };
     setTimeout(first, o.delay != null ? o.delay : 900);
@@ -69287,6 +69546,12 @@ function buildHundoFxStill(id){
     body = '<defs><linearGradient id="' + g + 'a" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#5CFFB0"/><stop offset=".6" stop-color="#3BC8FF" stop-opacity=".45"/><stop offset="1" stop-color="#B47CFF" stop-opacity="0"/></linearGradient></defs>' +
       '<path d="M4 44 Q10 30 8 6 L20 6 Q22 30 16 44 Z M18 44 Q26 28 24 4 L36 4 Q36 28 30 44 Z M30 44 Q38 30 38 10 L46 10 Q46 30 42 44 Z" fill="url(#' + g + 'a)"/>' +
       '<circle cx="12" cy="10" r="1" fill="#fff"/><circle cx="40" cy="6" r="1.2" fill="#fff"/>';
+  } else if(id === "ufo"){
+    body = '<defs><linearGradient id="' + g + 'b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C8FFD4" stop-opacity=".7"/><stop offset="1" stop-color="#6BFF8F" stop-opacity="0"/></linearGradient></defs>' +
+      '<path d="M20 26 L28 26 L40 47 L8 47 Z" fill="url(#' + g + 'b)"/>' +
+      '<path d="M15 19 A9 9 0 0 1 33 19 Z" fill="#7FE9FF" fill-opacity=".7"/><circle cx="24" cy="15" r="2.6" fill="#7BE27A"/>' +
+      '<ellipse cx="24" cy="21" rx="20" ry="5.4" fill="#AEB8C8"/><ellipse cx="24" cy="25" rx="11" ry="3" fill="#3C4352"/>' +
+      '<circle cx="9" cy="22" r="1.4" fill="#6BFF8F"/><circle cx="17" cy="24" r="1.4" fill="#FFE45C"/><circle cx="31" cy="24" r="1.4" fill="#6BFF8F"/><circle cx="39" cy="22" r="1.4" fill="#FFE45C"/>';
   } else if(id === "galaxy"){
     let arms = "";
     for(let k = 0; k < 2; k++) for(let j = 0; j < 22; j++){ const r = 2 + j * .95, th = k * Math.PI + r * .2; arms += '<circle cx="' + (24 + Math.cos(th) * r).toFixed(1) + '" cy="' + (24 + Math.sin(th) * r).toFixed(1) + '" r="' + (j % 3 ? .9 : 1.4) + '" fill="' + (j % 2 ? "#9FB4FF" : "#FF8FD8") + '"/>'; }
@@ -70984,10 +71249,16 @@ function bannerUnlockItem(id){
 function hundoFxUnlockItem(id){
   const d = hundoFxDef(id);
   if(!d || !d.need) return null;
-  return { kind: "fx", fx: id, feat: true, kicker: "Hundo effect", name: d.name,
-    sub: "Pick it in Customize", need: hundoFxNeedText(d), color: d.color,
+  /* The pop-up plays the effect round its own small 100% box, over and
+     over while it is up ("maybe the popup could show the effects
+     animated"); the top three first play the WHOLE thing once across the
+     pop-up - the UFO most of all. */
+  const top = ["worldtree", "bubbles", "ufo"].indexOf(id) >= 0;
+  return { kind: "fx", fx: id, feat: true, kicker: "Hundo effect unlocked", name: d.name,
+    sub: "Plays when you score 100%", need: hundoFxNeedText(d), color: d.color,
     art: () => buildHundoFxStill(id),
-    liveArt: () => buildHundoFxStage(id, { live: true, big: true }) };
+    liveArt: () => buildHundoFxStage(id, { live: true, big: true, delay: 1500,
+      showcase: top ? (st => { const spot = st.closest(".rs-spot"); return spot ? { parent: spot, before: id === "worldtree" ? spot.querySelector(".rs-spot-card") : null } : null; }) : null }) };
 }
 
 /* ---- ONE POP-UP FOR EVERYTHING A RANK HANDS OVER (build 308) ----
@@ -71100,13 +71371,18 @@ function announceableHeldCharacters(){
 }
 function ensureUnlocksShown(){
   const u = store.unlocksShown;
-  if(u && Array.isArray(u.chars) && Array.isArray(u.banners)) return u;
+  if(u && Array.isArray(u.chars) && Array.isArray(u.banners)){
+    /* not seeded with what is held, unlike the two above - see applyLoadedData */
+    if(!Array.isArray(u.fx)) u.fx = [];
+    return u;
+  }
   const waiting = (store.pendingCharUnlocks || []).concat(UNLOCKS_NEW_IN_235);
   let banners = [];
   try{ banners = BANNERS.filter(b => bannerEarned(b.id)).map(b => b.id); }catch(e){}
   store.unlocksShown = {
     chars: announceableHeldCharacters().filter(id => waiting.indexOf(id) < 0),
-    banners: banners.filter(id => waiting.indexOf(id) < 0)
+    banners: banners.filter(id => waiting.indexOf(id) < 0),
+    fx: []
   };
   saveStore();
   return store.unlocksShown;
@@ -71115,9 +71391,10 @@ function unlockWasShown(kind, id){
   const u = store.unlocksShown;
   return !!(u && Array.isArray(u[kind]) && u[kind].indexOf(id) >= 0);
 }
-function markUnlocksShown(chars, banners){
+function markUnlocksShown(chars, banners, fx){
   const u = ensureUnlocksShown();
   let changed = false;
+  (fx || []).forEach(id => { if(u.fx.indexOf(id) < 0){ u.fx.push(id); changed = true; } });
   (chars || []).forEach(id => { if(u.chars.indexOf(id) < 0){ u.chars.push(id); changed = true; } });
   (banners || []).forEach(id => { if(u.banners.indexOf(id) < 0){ u.banners.push(id); changed = true; } });
   if(chars && chars.length && Array.isArray(store.pendingCharUnlocks)){
@@ -71253,7 +71530,7 @@ function attachNewDot(el, kind, id){
 }
 function pendingHomeUnlocks(){
   /* Held until the next finished test, which announces them itself. */
-  if(store.mergeHold) return { chars: [], banners: [] };
+  if(store.mergeHold) return { chars: [], banners: [], hints: [], fx: [] };
   /* THE COUNTERS FIRST (build 291). "The app gave me a pop for the
      character I unlocked (koi) ... after closing it out and opening
      again, that's when the other one came." The Koi reads the study log
@@ -71268,7 +71545,10 @@ function pendingHomeUnlocks(){
   try{ banners = BANNERS.filter(b => bannerEarned(b.id) && u.banners.indexOf(b.id) < 0).map(b => b.id); }catch(e){}
   let hints = [];
   try{ hints = pendingFlareHints(); }catch(e){}
-  return { chars, banners, hints };
+  /* hundo effects held and never announced, lowest first (build 313) */
+  let fx = [];
+  try{ fx = earnedHundoFx().filter(id => (u.fx || []).indexOf(id) < 0); }catch(e){}
+  return { chars, banners, hints, fx };
 }
 /* THE NEXT SECRET, ANNOUNCED (build 312): "Ensure when you go back to
    main menu, you get a banner pop up that says the you can now unlock
@@ -71319,7 +71599,7 @@ function flareHintItem(ch){
       return f;
     } };
 }
-function homeUnlocksOwed(p){ return !!(p && (p.chars.length || p.banners.length || (p.hints || []).length)); }
+function homeUnlocksOwed(p){ return !!(p && (p.chars.length || p.banners.length || (p.hints || []).length || (p.fx || []).length)); }
 /* Anything that already owns the screen. The Home unlocks wait for all
    of it - a badge cutscene queued from the same run goes first. */
 function homeUnlockBlocked(){
@@ -71365,9 +71645,11 @@ function playHomeUnlocks(tries){
   }
   /* Muted: recorded as shown and never played, the same as the badge
      queue, so unmuting weeks later does not ambush anybody. */
-  if(theme.muteBanners){ markUnlocksShown(p.chars, p.banners); p.hints.forEach(markFlareHintShown); return; }
+  if(theme.muteBanners){ markUnlocksShown(p.chars, p.banners, p.fx); p.hints.forEach(markFlareHintShown); return; }
   const items = groupRankRewards(p.chars.map(characterUnlockItem)
     .concat(p.banners.map(bannerUnlockItem).filter(Boolean)));
+  /* hundo effects after the things you wear, lowest first */
+  (p.fx || []).forEach(id => { const it = hundoFxUnlockItem(id); if(it) items.push(it); });
   items.forEach(it => { it.flyToProfile = true; });
   /* The next secret goes last, after anything you now hold - and it does
      not fly to Profile, because nothing new is in there yet. */
@@ -71384,6 +71666,7 @@ function playHomeUnlocks(tries){
       let more = { chars: [], banners: [] };
       try{ more = pendingHomeUnlocks(); }catch(e){}
       const extra = groupRankRewards(more.chars.map(characterUnlockItem).concat(more.banners.map(bannerUnlockItem).filter(Boolean)));
+      (more.fx || []).filter(id => !items.some(it => it.fx === id)).forEach(id => { const it = hundoFxUnlockItem(id); if(it) extra.push(it); });
       extra.forEach(it => { it.flyToProfile = true; items.push(it); });
       (more.hints || []).filter(h => !items.some(it => it.hint === h)).forEach(h => items.push(flareHintItem(h)));
       if(i >= items.length){ homeUnlockPlaying = false; return; }
@@ -71513,6 +71796,7 @@ function playUnlockSpotlight(item, n, of, release){
     if(item.kind === "banner" && item.banner) markUnlocksShown([], [item.banner]);
     if(item.kind === "rankrewards") markUnlocksShown(item.chars || [], item.banners || []);
     if(item.kind === "hint" && item.hint) markFlareHintShown(item.hint);
+    if(item.kind === "fx" && item.fx) markUnlocksShown([], [], [item.fx]);
   };
   const spot = document.createElement("div");
   /* THE KIND CLASS WAS A COLLISION (build 241). A banner's pop-up was
@@ -71628,6 +71912,20 @@ function playUnlockSpotlight(item, n, of, release){
     card.append(art, kicker, name, sub);
   }
   if(need) card.appendChild(need);
+  /* A HUNDO EFFECT CAN BE PUT ON FROM ITS POP-UP (build 313) */
+  if(item.kind === "fx" && item.fx){
+    const use = document.createElement("button");
+    use.type = "button"; use.className = "next rs-spot-use";
+    const set = () => { use.textContent = "In use"; use.disabled = true; };
+    use.textContent = "Use this effect";
+    if(store.hundoFx === item.fx) set();
+    use.addEventListener("click", e => {
+      e.stopPropagation();
+      store.hundoFx = item.fx; saveStore(); set();
+      try{ markUnlockSeen("fx", item.fx); }catch(err){}
+    });
+    card.appendChild(use);
+  }
   card.appendChild(foot);
   spot.appendChild(card);
   document.body.appendChild(spot);
@@ -71644,9 +71942,11 @@ function playUnlockSpotlight(item, n, of, release){
   let timer = null, gone = false;
   const spotAt = performance.now();
   setTimeout(() => { if(spot.isConnected && !gone) markSeen(); }, SPOT_SEEN_MS);
+  const stopFx = () => art.querySelectorAll(".hfx-stage").forEach(st => { try{ st.stopFx && st.stopFx(); }catch(e){} });
   function leave(byTap){
     if(gone) return;
     gone = true;
+    stopFx();
     /* a tap on the card is a read; a skip from outside it only counts
        once the card has had a moment on screen */
     if(byTap === true || performance.now() - spotAt >= 450) markSeen();
@@ -71664,7 +71964,7 @@ function playUnlockSpotlight(item, n, of, release){
   timer = setTimeout(() => leave(true), HOLD);
   return {
     skip(){ leave(); },
-    stop(){ gone = true; if(timer) clearTimeout(timer); spot.remove(); }
+    stop(){ gone = true; stopFx(); if(timer) clearTimeout(timer); spot.remove(); }
   };
 }
 
@@ -83346,7 +83646,9 @@ function showCustomize(){
     b.dataset.fx = d.id;
     const art = document.createElement("span");
     art.className = "hfx-opt-art";
-    art.appendChild(buildHundoFxStage(d.id, { live: true, delay: 700 + i * 650 }));
+    /* after the banner scenes are drawn (fillDeferredBannerArt), so
+       Customize opens and fills exactly as fast as it did */
+    art.appendChild(buildHundoFxStage(d.id, { live: true, delay: 1800 + i * 600 }));
     if(locked){
       const lk = document.createElement("span");
       lk.className = "hfx-opt-lock";
@@ -83405,6 +83707,7 @@ function showCustomize(){
   stage.replaceChildren(panel);
   toTop();
   fillDeferredBannerArt(bannerArtQueue);
+  setTimeout(() => { if(panel.isConnected) HUNDO_FX.forEach(d => { if(d.need) hfxWarm(d.id); }); }, 1500);
 }
 
 /* ---- CUSTOMIZE OPENS FIRST AND DRAWS ITS BANNERS AFTER (build 313) ----
