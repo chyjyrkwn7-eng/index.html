@@ -66749,12 +66749,74 @@ function correctLine(qi){
    new one arrives at full strength, and the whole push is 280ms on an
    even curve. A swipe also DRAGS the question under your thumb (see the
    touchmove below) and the push carries on from wherever you let go. */
+/* THE NEXT QUESTION IS ALREADY THERE, OUT OF FOCUS (build 313): "when
+   swiping, the question should already be there HOWEVER it gets less and
+   less blurry the more you swipe and then it's finally readable once
+   fully swiped ... similar to the flash card swipe". Two pieces:
+   - buildQuestionPreviewPanel() makes a stand-in of the next question
+     from the current panel's own markup (so it is the same size and the
+     same chrome) with the next question's number, text, reference and
+     choices in their real order (optionOrder is cached per question, so
+     it is the order render() will draw). Nothing in the run changes.
+   - The blur is never animated. Each stand-in is two copies, one blurred
+     once and one sharp, and the swipe CROSSFADES them (opacity only), so
+     every frame is compositor work - the same reason the slide is
+     transform-only. A blur radius changing per frame would re-rasterise
+     the whole question each frame on a phone.
+   On release the real next question takes over at exactly the same
+   place and the same mix of sharp and soft, and finishes the trip. */
+const Q_BLUR_PX = 6;
+function buildQuestionPreviewPanel(cur, nextPos){
+  const qi = order[nextPos], item = QUESTIONS[qi];
+  if(!item || !cur) return null;
+  const pv = cur.cloneNode(true);
+  pv.removeAttribute("id"); pv.querySelectorAll("[id]").forEach(e => e.removeAttribute("id"));
+  pv.removeAttribute("style"); pv.className = "panel qpanel";
+  [...pv.children].forEach(c => { if(!c.matches(".qnumrow, .qtext, .ref, .status, .choices")) c.remove(); });
+  const num = pv.querySelector(".qnum"); if(num) num.textContent = "Question " + (nextPos + 1);
+  pv.querySelectorAll(".flagbtn").forEach(b => b.classList.remove("on", "just-on"));
+  const qt = pv.querySelector(".qtext"); if(qt){ qt.replaceChildren(); writeText(qt, item.q); }
+  const ref = pv.querySelector(".ref"); if(ref){ ref.hidden = !item.ref; ref.textContent = item.ref || ""; }
+  const st = pv.querySelector(".status");
+  if(st){ st.className = "status"; st.textContent = runMode === "exam" ? "Choose an answer." : "Pick the correct answer to continue."; }
+  const list = pv.querySelector(".choices");
+  if(list){
+    const tpl = list.querySelector(".choice");
+    if(!tpl || (runMode !== "exam" && cfg.recall)) list.remove();
+    else list.replaceChildren(...optionOrder(qi).map((orig, slot) => {
+      const b = tpl.cloneNode(true); b.className = "choice"; b.removeAttribute("style");
+      const k = b.querySelector(".key"); if(k) k.textContent = LETTERS[slot];
+      const t = b.querySelector(".text"); if(t) t.textContent = item.choices[orig];
+      const m = b.querySelector(".mark"); if(m) m.textContent = "";
+      return b;
+    }));
+  }
+  return pv;
+}
+/* A fixed layer at a panel's measured rect holding a soft and a sharp
+   copy of it; mix(k) shows k of the sharp one and the rest of the soft. */
+function blurPair(panel, rect){
+  const wrap = document.createElement("div");
+  wrap.className = "q-blurpair";
+  wrap.setAttribute("aria-hidden", "true"); wrap.setAttribute("inert", "");
+  wrap.style.cssText = "position:fixed; top:" + rect.top + "px; left:" + rect.left + "px; width:" + rect.width + "px; " +
+    "margin:0; z-index:249; pointer-events:none; will-change:transform;";
+  const soft = panel, sharp = panel.cloneNode(true);
+  soft.style.cssText = "margin:0; animation:none; filter:blur(" + Q_BLUR_PX + "px); will-change:opacity;";
+  sharp.style.cssText = "margin:0; animation:none; position:absolute; top:0; left:0; width:100%; will-change:opacity;";
+  wrap.append(soft, sharp);
+  const mix = k => { const e = Math.pow(Math.max(0, Math.min(1, k)), 1.4); sharp.style.opacity = String(e); soft.style.opacity = String(1 - e); return e; };
+  return { wrap, soft, sharp, mix };
+}
+let qPreview = null;
+function dropQPreview(){ if(qPreview){ qPreview.wrap.remove(); qPreview = null; } }
 const SLIDE_MS = 280;
 const SLIDE_GAP = 28;
 const SLIDE_EASE = "cubic-bezier(.3,.7,.2,1)";
 let slideTransitionInFlight = false;
-function advanceWithSlide(fromDx){
+function advanceWithSlide(fromDx, sharpness){
   fromDx = Math.min(0, Number(fromDx) || 0);
+  sharpness = Math.max(0, Math.min(1, Number(sharpness) || 0));
   /* The actual root cause of the reported "glitchy/buggy, slow"
      transition, confirmed directly by reading this function —
      nothing stopped it from re-entering while a previous call's own
@@ -66774,7 +66836,7 @@ function advanceWithSlide(fromDx){
      to use: it can no longer be fired into a half-finished state. */
   if(slideTransitionInFlight) return;
   const outgoing = stage.querySelector(".panel");
-  if(!outgoing || theme.reduceMotion){ advance(); return; }
+  if(!outgoing || theme.reduceMotion){ dropQPreview(); advance(); return; }
   slideTransitionInFlight = true;
   const rect = outgoing.getBoundingClientRect();
   const clone = outgoing.cloneNode(true);
@@ -66836,7 +66898,26 @@ function advanceWithSlide(fromDx){
   advance();
 
   const incoming = stage.querySelector(".panel");
-  if(!incoming){ clone.remove(); document.documentElement.classList.remove("q-sliding"); slideTransitionInFlight = false; return; }
+  if(!incoming){ clone.remove(); dropQPreview(); document.documentElement.classList.remove("q-sliding"); slideTransitionInFlight = false; return; }
+  /* the soft copy of the real next question, laid exactly over it and
+     travelling with it; the two crossfade as it arrives */
+  incoming.style.animation = "none";
+  let haze = null, startMix = sharpness;
+  if(incoming.classList.contains("qpanel") && outgoing.classList.contains("qpanel")){
+    try{
+      const ir = incoming.getBoundingClientRect();
+      const copy = incoming.cloneNode(true);
+      copy.removeAttribute("id"); copy.querySelectorAll("[id]").forEach(e => e.removeAttribute("id"));
+      haze = blurPair(copy, ir);
+      haze.sharp.remove();
+      haze.wrap.style.transition = "transform " + SLIDE_MS + "ms " + SLIDE_EASE;
+      haze.wrap.style.transform = "translateX(" + (push + fromDx) + "px)";
+      haze.soft.style.transition = "opacity " + SLIDE_MS + "ms cubic-bezier(.35,0,.55,1)";
+      haze.soft.style.opacity = String(1 - Math.pow(startMix, 1.4));
+      document.body.appendChild(haze.wrap);
+    }catch(e){ haze = null; }
+  }
+  dropQPreview();
   /* The actual fix for a real, separate bug found while verifying this
      \u2014 the incoming panel is a brand-new direct child of #stage, so it
      also picks up the screen-fade-in CSS animation (a translateY
@@ -66846,8 +66927,7 @@ function advanceWithSlide(fromDx){
      which meant the intended slide was being computed correctly but
      never actually rendering. Explicitly turning the animation off
      here removes that competition. */
-  incoming.style.animation = "none";
-  incoming.style.opacity = ".85";
+  incoming.style.opacity = haze ? String(Math.pow(startMix, 1.4)) : ".85";
   incoming.style.transform = "translateX(" + (push + fromDx) + "px)";
   incoming.style.transition = "none";
   incoming.style.willChange = "opacity, transform";
@@ -66874,7 +66954,7 @@ function advanceWithSlide(fromDx){
      at 50% opacity is unreadable mush, and this screen has already
      been reported once for showing two questions at once. */
   incoming.style.transition =
-    "opacity " + SLIDE_MS + "ms ease-out, transform " + SLIDE_MS + "ms " + SLIDE_EASE;
+    "opacity " + SLIDE_MS + "ms cubic-bezier(.35,0,.55,1), transform " + SLIDE_MS + "ms " + SLIDE_EASE;
   /* NO rAF AT ALL, AND THAT IS THE REST OF THE "LAG". This used to
      wait TWO frames before setting the final transforms. Measured at
      4x CPU throttle: the tap did nothing whatsoever for 46.6ms - four
@@ -66902,8 +66982,10 @@ function advanceWithSlide(fromDx){
   clone.style.transform = "translateX(" + (-push - fromDx) + "px) scale(.96)";
   incoming.style.opacity = "1";
   incoming.style.transform = "translateX(0)";
+  if(haze){ void haze.wrap.offsetWidth; haze.wrap.style.transform = "translateX(0)"; haze.soft.style.opacity = "0"; }
   setTimeout(() => {
     clone.remove();
+    if(haze) haze.wrap.remove();
     incoming.style.opacity = "";
     incoming.style.transform = "";
     /* THE ANIMATION STAYS OFF, and clearing it here was a second,
@@ -87212,12 +87294,41 @@ function swipeDragTo(dx){
     swipeDragPanel = p;
     p.style.animation = "none"; p.style.transition = "none"; p.style.willChange = "transform";
     document.documentElement.classList.add("q-sliding");
+    dropQPreview();
+    if(Array.isArray(order) && pos + 1 < order.length){
+      try{
+        const r = p.getBoundingClientRect();
+        const pv = buildQuestionPreviewPanel(p, pos + 1);
+        if(pv){
+          const pair = blurPair(pv, r);
+          pair.push = Math.round(r.width + SLIDE_GAP);
+          pair.wrap.style.transform = "translateX(" + pair.push + "px)";
+          pair.mix(0); pair.p = 0;
+          document.body.appendChild(pair.wrap);
+          qPreview = pair;
+        }
+      }catch(e){ dropQPreview(); }
+    }
   }
   swipeDragDx = dx < 0 ? dx : dx * .18;
   swipeDragPanel.style.transform = "translateX(" + swipeDragDx + "px)";
+  if(qPreview){
+    const d = Math.min(0, swipeDragDx);
+    qPreview.wrap.style.transform = "translateX(" + (qPreview.push + d) + "px)";
+    qPreview.k = qPreview.mix(-d / qPreview.push) ;
+    qPreview.p = -d / qPreview.push;
+  }
 }
 function swipeDragRelease(){
   const p = swipeDragPanel; swipeDragPanel = null; swipeDragDx = 0;
+  if(qPreview){
+    const q = qPreview; qPreview = null;
+    q.wrap.style.transition = "transform .22s cubic-bezier(.3,.7,.2,1)";
+    q.wrap.style.transform = "translateX(" + q.push + "px)";
+    q.sharp.style.transition = q.soft.style.transition = "opacity .22s ease";
+    q.mix(0);
+    setTimeout(() => q.wrap.remove(), 240);
+  }
   if(!p || !p.isConnected){ if(!slideTransitionInFlight) document.documentElement.classList.remove("q-sliding"); return; }
   p.style.transition = "transform .22s cubic-bezier(.3,.7,.2,1)";
   p.style.transform = "translateX(0)";
@@ -87292,8 +87403,9 @@ SWIPE_SURFACE.addEventListener("touchend", (e) => {
        swipe. */
     if(next && !next.hidden && !next.disabled){
       const from = swipeDragPanel ? swipeDragDx : 0;
+      const sharp = qPreview ? Math.min(1, qPreview.p || 0) : 0;
       swipeDragPanel = null; swipeDragDx = 0;
-      advanceWithSlide(from);
+      advanceWithSlide(from, sharp);
       return;
     }
   }

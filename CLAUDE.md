@@ -12592,3 +12592,22 @@ TouchEvent drag moves the panel, springs back, and advances) and fails on 312.
   have no descenders, so equal line-box padding left the ink high. 52px,
   with the spare room at the top.
 - check-behaviour 96 (`check_b313_sheet2`) holds all of it and fails on 312.
+
+#### The next question is already there, out of focus
+
+"When swiping, the question should already be there HOWEVER it gets less and
+less blurry the more you swipe ... similar to the flash card swipe". On the
+first sideways move of a drag, `buildQuestionPreviewPanel()` makes a
+stand-in of the NEXT question out of the current panel's own markup (same
+size and chrome) with the next number, text, reference and choices in their
+real order (`optionOrder` is cached per question, so it is what `render()`
+will draw); nothing in the run changes. It rides in from the right beside the
+dragged question. **The blur is never animated**: `blurPair()` holds a copy
+blurred once and a sharp copy, and the drag crossfades them (opacity only) -
+a blur radius changing per frame re-rasterises the whole question on a
+phone. Released, `advanceWithSlide(fromDx, sharpness)` lays a soft copy of
+the REAL next question over it at the same mix and finishes the crossfade as
+it arrives; Next and auto-advance get the same soft-to-sharp arrival from 0.
+Short of the line, the stand-in slides back out and is removed. check-behaviour
+95 asserts the stand-in names the right question, starts blurred, sharpens as
+the drag grows, and is gone afterwards.

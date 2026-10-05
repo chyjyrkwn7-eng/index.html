@@ -1196,16 +1196,27 @@ def check_b313_qmotion(br):
       fire('touchstart', 330, 600); await wait(16);
       fire('touchmove', 300, 602); await wait(16); fire('touchmove', 250, 603); await wait(32);
       const during = Math.round(p.getBoundingClientRect().left - x0);
+      const pair = document.querySelector('.q-blurpair');
+      const pv = pair ? { n: (pair.querySelector('.qnum')||{}).textContent, sharp: +pair.children[1].style.opacity,
+        blur: getComputedStyle(pair.children[0]).filter } : null;
+      fire('touchmove', 150, 603); await wait(32);
+      const pv2 = pair ? +pair.children[1].style.opacity : null;
+      fire('touchmove', 250, 603); await wait(16);
       fire('touchmove', 300, 603); await wait(16); fire('touchend', 318, 603); await wait(400);
       const back = { x: Math.round(p.getBoundingClientRect().left - x0), pos: pos === q0 };
       fire('touchstart', 330, 600); await wait(16);
       fire('touchmove', 280, 602); await wait(16); fire('touchmove', 200, 603); await wait(16);
       fire('touchend', 200, 603); await wait(500);
-      return { during, back, advanced: pos !== q0, clone: !!document.querySelector('body > .panel') }; }""")
+      return { during, back, advanced: pos !== q0, clone: !!document.querySelector('body > .panel'), pv, pv2,
+               left: document.querySelectorAll('.q-blurpair').length, want: 'Question ' + (q0 + 2) }; }""")
     check("dragging sideways moves the question with the thumb", drag["during"] <= -60, drag)
     check("let go short of the line, it springs back and stays on the question",
           abs(drag["back"]["x"]) <= 1 and drag["back"]["pos"], drag)
     check("let go past it, the next question comes in", drag["advanced"] and not drag["clone"], drag)
+    pv = drag.get("pv") or {}
+    check("mid-drag the next question is already there, out of focus, and sharpens the further it comes",
+          pv.get("n") == drag.get("want") and "blur" in (pv.get("blur") or "") and pv.get("sharp", 1) < .4
+          and (drag.get("pv2") or 0) > pv.get("sharp", 1) and drag.get("left") == 0, drag)
     ctx.close()
 
 
