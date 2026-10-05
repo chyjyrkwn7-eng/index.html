@@ -68,6 +68,16 @@ KNOWN = {
     "cx-sand": "Timekeeper's sand: shifted by exactly one grain pitch (.5)",
     # Build 304.
     "cx-sg3-orbit": "Horizon's disk: shifted by exactly one lap (18.78 = the ellipse's circumference = its dash + gap)",
+    # Build 313: the secret flares.
+    "cco-turn": "the planet flare's orbit - a full turn",
+    "cco-back": "the planet flare turned back the other way as it goes - a full turn",
+    "cof-call": "the hunted flare's ring: fades to nothing at the end, restarts from small",
+    "cx-gn-spin": "Genesis's moon round its ring - a full turn",
+    "cx-gn-back": "Genesis's moon kept upright - a full turn the other way",
+    "cx-gn-drift": "Genesis's weather bands: shifted by exactly one 8-unit period of bands drawn twice",
+    "cx-gn-erupt": "Genesis's eruption: invisible at both ends",
+    "xs-turn": "the secret flare scenes' orbits, corona and disc - a full turn",
+    "xs-turnback": "a rider on a scene's orbit kept upright - a full turn the other way",
     # Build 235: the sleeping character's Zzz.
     "char-zzz": "a letter fades in beside the head and out as it drifts up",
     # Build 235: the characters' own motion (all invisible at both ends, or a whole turn).

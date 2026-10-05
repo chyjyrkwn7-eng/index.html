@@ -1658,6 +1658,9 @@
     box-shadow:0 0 6px rgba(0,0,0,.25);
   }
   #contextual-info-line.contextual-info-show, #contextual-info-line-dot.contextual-info-show{ opacity:1; }
+  /* Round a tiny secret flare: a ring, so the flare itself still shows
+     through it (build 313). */
+  #contextual-info-line-dot.is-ring{ background:transparent; border:2px solid #6A717B; box-shadow:0 0 6px rgba(0,0,0,.35), inset 0 0 4px rgba(0,0,0,.25); }
   .contextual-info-text{ font-size:.85rem; line-height:1.4; margin:0; color:#F3F5F7; }
 
   #welcomebonus-banner{
@@ -2256,6 +2259,23 @@
      nothing even while it is the one being looked at. */
   .avatarchar-option.locked::before{ display:none; }
   .avatarchar-option.locked.selected svg{ filter:saturate(.3) contrast(.4) brightness(1.34); }
+  /* ---- THE SECRET SILHOUETTE (build 313) - see buildCharSilhouette ---- */
+  .char-sil{ position:relative; display:block; width:100%; height:100%; }
+  .char-sil > svg{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+  /* a soft pool of its colour behind the cut-out - round, never a filter */
+  .char-sil::before{ content:""; position:absolute; inset:8% 10% 18%; border-radius:50%; pointer-events:none;
+    background:radial-gradient(closest-side, color-mix(in srgb, var(--sil-rim) 34%, transparent), color-mix(in srgb, var(--sil-rim) 10%, transparent) 60%, transparent); }
+  .avatarchar-option.locked.is-silhouette{ opacity:1; }
+  .avatarchar-option.locked .char-sil > svg, .avatarchar-option.locked.selected .char-sil > svg{ filter:none; }
+  .char-sil .cx-bg, .char-sil > svg > circle, .char-sil .cx-fx-sparkles{ display:none; }
+  .char-sil-body .cx-fig *:not(:is(.cx-fx-flares, .cx-fx-umflare, .cx-fx-sgstar, .cx-fx-gnheart, .cx-fx-wfrings, .cx-fx-wforbit), :is(.cx-fx-flares, .cx-fx-umflare, .cx-fx-sgstar, .cx-fx-gnheart, .cx-fx-wfrings, .cx-fx-wforbit) *){ fill:#05060A !important; stroke:none !important; }
+  .char-sil-body .cx-fig [fill="none"]:not(:is(.cx-fx-flares, .cx-fx-umflare, .cx-fx-sgstar, .cx-fx-gnheart, .cx-fx-wfrings, .cx-fx-wforbit), :is(.cx-fx-flares, .cx-fx-umflare, .cx-fx-sgstar, .cx-fx-gnheart, .cx-fx-wfrings, .cx-fx-wforbit) *){ fill:none !important; stroke:#05060A !important; }
+  .char-sil-rim .cx-fig *{ fill:var(--sil-rim) !important; stroke:var(--sil-rim) !important; stroke-width:1.7px !important; stroke-linejoin:round; }
+  .char-sil-rim .cx-fig [fill="none"]{ fill:none !important; }
+  .char-sil-rim{ opacity:.9; }
+  /* the worn flare stays lit on the black (left out of the rule above),
+     and has no outline of its own */
+  .char-sil-rim .cx-fig :is(.cx-fx-flares, .cx-fx-umflare, .cx-fx-sgstar, .cx-fx-gnheart, .cx-fx-wfrings, .cx-fx-wforbit){ visibility:hidden; }
   /* Genuinely bigger on a tablet-width screen, not just the same
      phone-tuned 4.6rem cap sitting in the middle of much bigger grid
      cells \u2014 per explicit report that the picker "doesn't enlarge"
@@ -10024,21 +10044,19 @@
   .cosmic-hero-main{ position:relative; will-change:transform; }
   .cosmic-hero-glowbox{ position:absolute; inset:0; pointer-events:none; will-change:opacity; }
   .cosmic-hero-layer{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; will-change:transform; }
-  .cosmic-hero-orbitlayer{ transform-origin:50% 47.368%; }
+  /* The secret flares' two rings are divs (build 313) and sit ABOVE the
+     rank bubbles (z-index 2), so a flare that turns past a bubble crosses
+     in front of it and can still be tapped - under it, it could not. */
+  .cosmic-hero-orbitlayer{ transform-origin:50% 47.368%; z-index:2; }
   .cosmic-hero-orbitlayer .cosmic-badge-tappable{ pointer-events:auto; }
-  /* The five secret-flare dots answer a tap but were 11-15px targets. A
-     transparent stroke drawn at a fixed 40px (non-scaling, so the same on
-     every hero size) makes each one a ~44px target without painting
-     anything; the bubbles sit above the dots, so where the two overlap a
-     tap still reaches the bubble. */
-  .cosmic-hero-orbitlayer .cosmic-orbit-dot.cosmic-badge-tappable{
-    stroke:transparent; stroke-width:40px; vector-effect:non-scaling-stroke; pointer-events:all;
-  }
   @media (prefers-reduced-motion:no-preference){
     .cosmic-hero-glowbox{ animation:cosmic-glowbox-breathe 4.5s ease-in-out infinite; }
     .cosmic-hero-glowbox.is-legend{ animation:cosmic-glowbox-legend 3.4s ease-in-out infinite; }
     .cosmic-hero-orbitlayer{ animation:cosmic-hero-settle .22s ease-out both, cosmic-orbit-spin 120s linear infinite; }
-    .cosmic-hero-orbitlayer.cosmic-hero-orbitlayer-inner{ animation:cosmic-hero-settle .22s ease-out both, cosmic-orbit-spin 88s linear infinite; }
+    /* THE MIDDLE RING IS QUICKER (build 313): "Ensure the flares in the
+       middle are moving at a faster pace than the others." 88s against
+       120s was too close to see; 52s is well over twice as fast. */
+    .cosmic-hero-orbitlayer.cosmic-hero-orbitlayer-inner{ animation:cosmic-hero-settle .22s ease-out both, cosmic-orbit-spin 52s linear infinite; }
   }
   /* .3 to .42 on the main glow, as the per-circle breathe was. */
   @keyframes cosmic-glowbox-breathe{ 0%,100%{ opacity:.714; } 50%{ opacity:1; } }
@@ -10438,7 +10456,7 @@
      dissolve into it. */
   #supernova-cutscene.tier-cutscene.supernova-burst .rank-after .cosmic-icon-badge{ opacity:1; }
   /* Found secret flares, bigger and lit, so they read in the scene. */
-  .tier-cutscene .cosmic-orbit-dot-found{ scale:1.8; stroke:currentColor; stroke-opacity:.35; stroke-width:3px; }
+  .tier-cutscene .cosmic-orbit-dot-found{ scale:1.8; }
   /* The end: no words, the dark stays, every flare in view. */
   #supernova-cutscene.tier-cutscene.rank-outro .supernova-title,
   #supernova-cutscene.tier-cutscene.rank-outro .supernova-subtitle,
@@ -10711,8 +10729,112 @@
     84%{ transform:scale(1.05); opacity:.32; }
     100%{ transform:scale(1.7); opacity:0; }
   }
-  .cosmic-orbit-dot-found{ r:5; filter:drop-shadow(0 0 3px currentColor); }
-  .cosmic-orbit-rim{ fill:none; stroke:rgba(255,255,255,.6); stroke-width:.7px; }
+  /* ---- THE SECRET FLARES ON HOME (build 313) - see buildCosmicHero ----
+     A box 2.9% of the hero wide (the old r 5 bubble), centred on its
+     point; a 44px invisible disc round it takes the tap. Pressing it
+     moves nothing - the shared :active shrink is what used to throw the
+     dot out from under the finger. Every part is a small box that only
+     ever changes transform or opacity. */
+  .cosmic-flare-dot{
+    position:absolute; width:2.9%; aspect-ratio:1; translate:-50% -50%; display:block;
+    -webkit-tap-highlight-color:transparent; transition:none;
+  }
+  .cosmic-flare-dot.cosmic-badge-tappable:active{ transform:none; }
+  .cosmic-flare-dot::after{ content:""; position:absolute; left:50%; top:50%; width:44px; height:44px; translate:-50% -50%; border-radius:50%; }
+  .cosmic-flare-dot > i{ position:absolute; inset:0; border-radius:50%; pointer-events:none; }
+  /* Missing: the tiny glass bubble, clear in the middle and bright at the
+     rim, the same for every one (build 310). */
+  .cosmic-flare-dot .cof-body{
+    background:radial-gradient(circle, rgba(255,255,255,.10) 0 50%, rgba(238,242,250,.18) 60%, rgba(221,230,245,.46) 82%, rgba(255,255,255,.8) 100%);
+    box-shadow:0 0 0 .7px rgba(255,255,255,.6), 0 0 4px rgba(255,255,255,.18);
+  }
+  .cosmic-flare-dot :is(.cof-halo, .cof-ring, .cof-tint, .cof-core, .cof-spark){ opacity:0; }
+  /* The one the hunt is looking for next wears its colour, faintly - "the
+     umbra missing flare did not change at all". Once its level has come
+     (is-hunting) the colour is stronger and a ring of it goes out every
+     few seconds: that one can turn up in a test now. */
+  /* glass with colour IN it - clear-ish middle, coloured towards the rim,
+     no white-hot core: lit is a different thing (is-found) */
+  .cosmic-flare-dot .cof-tint{ background:radial-gradient(circle, color-mix(in srgb, var(--fc) 30%, transparent) 0%, color-mix(in srgb, var(--fc) 65%, transparent) 62%, color-mix(in srgb, var(--fc) 80%, #fff) 88%, transparent 100%); }
+  .cosmic-flare-dot.is-next .cof-tint{ opacity:.5; }
+  .cosmic-flare-dot.is-next .cof-body{ box-shadow:0 0 0 .7px color-mix(in srgb, var(--fc) 45%, #fff), 0 0 6px color-mix(in srgb, var(--fc) 40%, transparent); }
+  .cosmic-flare-dot.is-hunting .cof-tint{ opacity:.75; }
+  .cosmic-flare-dot .cof-ring{ inset:-10%; border:1.5px solid color-mix(in srgb, var(--fc) 75%, #fff); }
+  /* Found: lit in its own colour - a white-hot core, the colour round it,
+     a deeper rim - with its light pooled round it (a round gradient,
+     never a filter) and a glint now and then. */
+  .cosmic-flare-dot.is-found .cof-body{
+    background:radial-gradient(circle at 42% 40%, #FFFFFF 0 16%, color-mix(in srgb, var(--fc) 45%, #fff) 30%, var(--fc) 58%, color-mix(in srgb, var(--fc) 72%, #000) 100%);
+    box-shadow:0 0 0 .7px color-mix(in srgb, var(--fc) 40%, #fff), 0 0 7px var(--fc);
+  }
+  .cosmic-flare-dot .cof-halo{ inset:-190%; background:radial-gradient(circle, color-mix(in srgb, var(--fc) 62%, transparent) 0%, color-mix(in srgb, var(--fc) 24%, transparent) 30%, color-mix(in srgb, var(--fc) 7%, transparent) 50%, transparent 68%); }
+  .cosmic-flare-dot.is-found .cof-halo{ opacity:.9; }
+  .cosmic-flare-dot .cof-core{ inset:30%; background:radial-gradient(circle, #FFFFFF 0 40%, rgba(255,255,255,0) 100%); }
+  .cosmic-flare-dot.is-found .cof-core{ opacity:.95; }
+  /* The glint: a cross of light, its two streaks deliberately unequal (a
+     cross of equal arms reads as a plus sign, not a flare). */
+  .cosmic-flare-dot .cof-spark{ inset:-260%; border-radius:0;
+    background:
+      radial-gradient(closest-side, #FFFFFF, color-mix(in srgb, var(--fc) 50%, transparent) 40%, transparent) 50% 50% / 100% 9% no-repeat,
+      radial-gradient(closest-side, #FFFFFF, color-mix(in srgb, var(--fc) 50%, transparent) 40%, transparent) 50% 50% / 7% 62% no-repeat; }
+  @media (prefers-reduced-motion:no-preference){
+    .cosmic-flare-dot.is-found .cof-halo{ animation:cof-breathe 3.8s ease-in-out var(--fd, 0s) infinite; }
+    .cosmic-flare-dot.is-found .cof-core{ animation:cof-flicker 2.6s ease-in-out var(--fd, 0s) infinite; }
+    .cosmic-flare-dot.is-found .cof-spark{ animation:cof-glint var(--fg, 8s) ease-in-out var(--fd, 0s) infinite; }
+    .cosmic-flare-dot.is-next .cof-tint{ animation:cof-tint 4.6s ease-in-out infinite; }
+    .cosmic-flare-dot.is-hunting .cof-tint{ animation-name:cof-tint-hunt; }
+    .cosmic-flare-dot.is-hunting .cof-ring{ animation:cof-call 3.2s ease-out 1s infinite; }
+  }
+  @keyframes cof-breathe{ 0%,100%{ transform:scale(.86); opacity:.72; } 50%{ transform:scale(1.08); opacity:1; } }
+  @keyframes cof-flicker{ 0%,100%{ opacity:.95; transform:scale(1); } 40%{ opacity:.7; transform:scale(.85); } 70%{ opacity:1; transform:scale(1.08); } }
+  @keyframes cof-glint{ 0%,82%,100%{ opacity:0; transform:scale(.35) rotate(0deg); } 88%{ opacity:1; transform:scale(1) rotate(12deg); } 94%{ opacity:0; transform:scale(.6) rotate(20deg); } }
+  @keyframes cof-tint{ 0%,100%{ opacity:.3; } 50%{ opacity:.6; } }
+  @keyframes cof-tint-hunt{ 0%,100%{ opacity:.5; } 50%{ opacity:.9; } }
+  @keyframes cof-call{ 0%{ opacity:.9; transform:scale(.8); } 70%,100%{ opacity:0; transform:scale(3.2); } }
+  /* ---- The sixth, skimming the planet (build 313) ----
+     The planet is 104 units across at the hero's 50% / 47.368%; the orbit
+     is 124 across (r 62), tilted 18 degrees and squashed to .3 - a ring
+     seen from just above. The arm turns once every 14s; the flare at its
+     end turns back the other way and undoes the squash, so it stays round.
+     cco-occlude hides it on the stretch of the far side where the planet
+     is in front of it (the far half of the orbit is |sin| > .57 over the
+     disc: 59.7% to 90.3% of a turn), and dims and shrinks it as it goes
+     round the back. */
+  .cosmic-core-orbit{ position:absolute; left:50%; top:47.368%; width:34.44%; aspect-ratio:1; translate:-50% -50%; z-index:3; pointer-events:none; }
+  .cosmic-core-orbit .cosmic-badge-tappable{ pointer-events:auto; }
+  .cco-plane{ position:absolute; inset:0; transform:rotate(-18deg) scaleY(.3); }
+  .cco-spin{ position:absolute; inset:0; }
+  .cco-arm{ position:absolute; left:50%; top:50%; width:50%; height:0; }
+  /* The flare's box: 2.9% of the hero, which is 16.84% of the arm (the
+     arm is r 62 of 360) - a touch bigger, as the nearest thing to you. */
+  .cco-counter{ position:absolute; left:100%; top:0; width:17.5%; aspect-ratio:1; translate:-50% -50%; transform:scaleY(3.3333) rotate(18deg); }
+  .cco-counter > .cosmic-flare-dot{ left:50%; top:50%; width:100%; }
+  /* The tail lies in the orbit's plane, behind the flare (a clockwise turn
+     moves the arm's end towards its local +y, so behind is -y). */
+  .cco-tail{ position:absolute; left:98%; bottom:0; width:5%; aspect-ratio:1 / 11; translate:-50% 0; border-radius:999px; opacity:0;
+    background:linear-gradient(180deg, transparent, color-mix(in srgb, var(--cco-c, #fff) 75%, transparent)); }
+  .cosmic-core-orbit.is-found .cco-tail{ --cco-c:#FF5CA8; opacity:.85; }
+  .cosmic-core-orbit:not(.is-found) .cco-tail{ opacity:.35; }
+  @media (prefers-reduced-motion:no-preference){
+    .cco-spin{ animation:cco-turn 14s linear infinite; }
+    .cco-counter{ animation:cco-back 14s linear infinite; }
+    .cco-arm{ animation:cco-occlude 14s linear infinite; }
+    .cco-counter > .cosmic-flare-dot{ animation:cco-depth 14s linear infinite; }
+  }
+  /* at rest (reduce motion) it sits on the near side, in front of the planet */
+  .cco-spin{ rotate:62deg; }
+  .cco-counter{ rotate:-62deg; }
+  @keyframes cco-turn{ from{ rotate:0deg; } to{ rotate:360deg; } }
+  @keyframes cco-back{ from{ rotate:0deg; } to{ rotate:-360deg; } }
+  @keyframes cco-occlude{
+    0%, 58.6%{ opacity:1; visibility:visible; }
+    60.4%, 89.6%{ opacity:0; visibility:hidden; }
+    91.4%, 100%{ opacity:1; visibility:visible; }
+  }
+  @keyframes cco-depth{
+    0%{ scale:.96; animation-timing-function:ease-out; } 25%{ scale:1.16; animation-timing-function:ease-in; }
+    50%{ scale:.96; animation-timing-function:ease-out; } 75%{ scale:.78; animation-timing-function:ease-in; } 100%{ scale:.96; animation-timing-function:ease-out; }
+  }
   /* A full orbit every two minutes \u2014 slow enough to read as graceful
      drift rather than a spinning wheel, since this sits right next to
      text people are meant to actually read. transform-origin uses the
@@ -15122,7 +15244,10 @@
        the one with the ring could have that move". */
     .char-live .avatarchar-svg .cx-fx-starfield{ animation:cx-spin 40s linear infinite; }
     .char-live .avatarchar-svg .cx-fx-flares{ animation:cx-spin-back 20s linear infinite, cx-live-pulse 2.9s ease-in-out infinite alternate; }
-    .char-live .avatarchar-svg .cx-fx-crescent{ animation:cx-flicker-soft 4.2s ease-in-out infinite, cx-live-rock 5.3s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-crescent{ animation:cx-live-rock 5.3s ease-in-out infinite alternate; }
+    /* Umbra's moon, crescent to half to gibbous to full and back (build 313) */
+    .char-live .avatarchar-svg .cx-fx-umdark{ animation:cx-um-dark 7s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-umlit{ animation:cx-um-lit 7s ease-in-out infinite alternate; }
     .char-live .avatarchar-svg .cx-fx-wisps{ animation:cx-drift 5s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-umflare{ animation:cx-mk2-pulse 2.6s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-infall{ animation:cx-infall 1.6s linear infinite; }
@@ -15378,6 +15503,7 @@
      and keyframe here is new and unique to its character. */
   .avatarchar-svg .cx-k-singularity{ --cx-blink:6.8s; --cx-blink-at:-2.4s; }
   .avatarchar-svg .cx-k-umbra{ --cx-blink:6.2s; --cx-blink-at:-1.6s; }
+  .avatarchar-svg .cx-k-genesis{ --cx-blink:7.4s; --cx-blink-at:-3.3s; }
   .avatarchar-svg .cx-k-zeus{ --cx-blink:7.6s; --cx-blink-at:-4.9s; }
   .avatarchar-svg .cx-k-masked{ --cx-blink:5.8s; --cx-blink-at:-.3s; }
   /* the rest that had no beat of their own, so a row of them never
@@ -15702,6 +15828,23 @@
     .char-live .avatarchar-svg .cx-fx-wforbit{ opacity:1; animation:cx-spin 4s linear infinite; }
     .char-live .avatarchar-svg .cx-fx-wfring{ animation:cx-wf-ring 2.6s ease-out infinite; }
     .char-live .avatarchar-svg .cx-fx-sgwave{ animation:cx-sg-wave 3s ease-in-out infinite; }
+    /* Horizon's surges (build 313): white-hot on a 17s clock, deep blue on
+       a 29s one - see the drawing */
+    .char-live .avatarchar-svg .cx-fx-sgsurgew{ animation:cx-sg-surgew 17s ease-out -4s infinite; }
+    .char-live .avatarchar-svg .cx-fx-sgsurgeb{ animation:cx-sg-surgeb 29s ease-in-out -9s infinite; }
+    /* GENESIS (build 313): the moon goes round the ring and really passes
+       behind the planet (the near copy is shown only on the near half),
+       the weather drifts across the face by exactly one period, the seams
+       glow like magma, the core light under the planet breathes, and now
+       and then the planet's crown erupts. */
+    .char-live .avatarchar-svg .cx-fx-gnspin{ animation:cx-gn-spin 9s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-gnback{ animation:cx-gn-back 9s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-gnmoonfront{ animation:cx-gn-front 9s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-gnbands{ animation:cx-gn-drift 14s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-gnseam{ animation:cx-gn-seam 3.4s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-gnleak{ animation:cx-glow 3.4s ease-in-out -1.7s infinite; }
+    .char-live .avatarchar-svg .cx-fx-gnatm{ animation:cx-glow 5.2s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-gnerupt{ animation:cx-gn-erupt 6.6s ease-out 1.2s infinite; }
     .char-live .avatarchar-svg .cx-fx-sgsparks{ opacity:1; }
     .char-live .avatarchar-svg .cx-fx-sgspark{ animation:cx-sg-spark 3s ease-out infinite; }
     .char-live .avatarchar-svg .cx-fx-zarays8{ animation:cx-za-rays8 6s linear infinite; }
@@ -15724,6 +15867,17 @@
     .char-react-win .avatarchar-svg :is(.cx-fx-zasatx, .cx-fx-zasaty){ animation-duration:.5s; }
     .char-react-win .avatarchar-svg .cx-fx-zapourline{ animation-duration:1s; }
   }
+  /* Genesis at rest: the moon sits on the near side, right of centre */
+  .avatarchar-svg .cx-fx-gnspin{ transform:rotate(38deg); }
+  .avatarchar-svg .cx-fx-gnback{ transform:rotate(-38deg); }
+  .avatarchar-svg .cx-fx-gnerupt{ transform-origin:50% 100%; }
+  @keyframes cx-gn-spin{ from{ transform:rotate(0deg); } to{ transform:rotate(360deg); } }
+  @keyframes cx-gn-back{ from{ transform:rotate(0deg); } to{ transform:rotate(-360deg); } }
+  /* near half = 0-180 degrees of the turn (the lower half of the ring) */
+  @keyframes cx-gn-front{ 0%, 49.4%{ opacity:1; } 50.6%, 99.4%{ opacity:0; } 100%{ opacity:1; } }
+  @keyframes cx-gn-drift{ from{ transform:translateX(0); } to{ transform:translateX(-8px); } }
+  @keyframes cx-gn-seam{ 0%, 100%{ opacity:.75; } 50%{ opacity:1; } }
+  @keyframes cx-gn-erupt{ 0%, 70%{ opacity:0; transform:scale(.3) translateY(1px); } 76%{ opacity:1; transform:scale(1.1) translateY(0); } 90%{ opacity:.6; transform:scale(1.25) translateY(-1.2px); } 100%{ opacity:0; transform:scale(1.35) translateY(-2px); } }
   @keyframes cx-fr-spin{ from{ transform:none; } to{ transform:rotate(60deg); } }
   @keyframes cx-fr-glint{ 0%, 70%, 100%{ opacity:0; } 76%{ opacity:.85; } 88%{ opacity:0; } }
   @keyframes cx-fr-tip{ 0%, 74%, 100%{ opacity:0; transform:scale(.3); } 80%{ opacity:1; transform:scale(1.2) rotate(30deg); } 92%{ opacity:0; transform:scale(.5) rotate(60deg); } }
@@ -15735,6 +15889,27 @@
   @keyframes cx-cl3-honk{ 0%, 20%, 100%{ scale:1; } 6%{ scale:1.3 1.18; } 11%{ scale:.92; } 15%{ scale:1.05; } }
   @keyframes cx-cl3-wink{ 0%, 60%, 70%, 100%{ scale:1; } 63%, 67%{ scale:1 .1; } }
   @keyframes cx-bg-phase{ 0%, 100%{ transform:none; } 40%{ transform:translateX(3.3px); } 40.01%{ transform:translateX(-8px); } 80%{ transform:translateX(-2.34px); } }
+  /* the crescent at rest: a dark terminator .7 of the way across */
+  .avatarchar-svg .cx-fx-umdark{ transform:scaleX(.7); }
+  .avatarchar-svg .cx-fx-umlit{ transform:scaleX(0); }
+  .avatarchar-svg :is(.cx-fx-sgsurgew, .cx-fx-sgsurgeb){ transform-origin:50% 100%; }
+  @keyframes cx-sg-surgew{
+    0%, 30%{ opacity:0; transform:scaleY(1); }
+    31.2%{ opacity:.95; transform:scaleY(1.07); }
+    33.5%{ opacity:.8; transform:scaleY(1.03); }
+    41%{ opacity:0; transform:scaleY(1); }
+    70%{ opacity:0; }
+    70.8%{ opacity:.7; } 71.6%{ opacity:.1; } 72.4%{ opacity:.8; transform:scaleY(1.04); }
+    77%, 100%{ opacity:0; transform:scaleY(1); }
+  }
+  @keyframes cx-sg-surgeb{
+    0%, 52%{ opacity:0; }
+    56%{ opacity:.95; }
+    68%{ opacity:.95; }
+    74%, 100%{ opacity:0; }
+  }
+  @keyframes cx-um-dark{ 0%{ transform:scaleX(.8); } 46%, 100%{ transform:scaleX(0); } }
+  @keyframes cx-um-lit{ 0%, 46%{ transform:scaleX(0); } 94%, 100%{ transform:scaleX(1); } }
   @keyframes cx-um-cglow{ 0%, 100%{ opacity:.15; transform:scale(.85); } 50%{ opacity:.8; transform:scale(1.1); } }
   @keyframes cx-um-cglint{ 0%, 40%, 100%{ opacity:0; transform:scale(.3); } 50%{ opacity:1; transform:scale(1.15) rotate(45deg); } 62%{ opacity:0; transform:scale(.4) rotate(90deg); } }
   @keyframes cx-wf-ring{ 0%{ opacity:0; transform:scale(.7); } 12%{ opacity:.8; } 100%{ opacity:0; transform:scale(2.6); } }
@@ -17113,6 +17288,13 @@
   .banner-opt-art > .bnr{ border-radius:inherit; clip-path:inset(0 round 11px); }
   .banner-opt:active .banner-opt-art{ transform:scale(.98); }
   .banner-opt.locked .banner-opt-art > .bnr{ filter:grayscale(.85) brightness(.45); }
+  /* A secret flare character's banner is darker than locked: no colour,
+     only the shapes of the brightest things in it, like a cut-out held up
+     to the light (build 313). The banner is an opaque box, so a filter on
+     it cannot light a square. */
+  .banner-opt.locked.is-secret .banner-opt-art > .bnr{ filter:grayscale(1) brightness(.34) contrast(1.7); }
+  .banner-opt.locked.is-secret .banner-opt-art::after{ content:"?"; position:absolute; inset:0; display:grid; place-items:center;
+    font:800 1.6rem/1 var(--serif, serif); color:rgba(255,255,255,.22); pointer-events:none; }
   .banner-opt-lock{
     position:absolute; right:.45rem; top:.45rem; width:1.5rem; height:1.5rem; border-radius:50%;
     display:flex; align-items:center; justify-content:center;
@@ -21615,6 +21797,191 @@
   .ff-name{ margin:.35rem 0 0; font-family:var(--serif); font-size:1.9rem; font-weight:700; color:#fff; line-height:1.15; }
   .ff-sub{ margin:.35rem 0 0; font-size:.9rem; color:rgba(255,255,255,.7); }
   @media (min-width:40rem){ .ff-field{ transform:scale(.6); } .ff-in .ff-field{ transform:scale(1.25); } .ff-name{ font-size:2.3rem; } }
+  /* ---- UMBRA, HORIZON AND GENESIS: THEIR OWN SCENES (build 313) ----
+     See flareSceneShell. The field is the shared 320px .ff-field; every
+     timeline class (xs-*) goes on the overlay. Transform and opacity only,
+     and the character always comes in live (.char-live). */
+  .xs-field > *{ position:absolute; }
+  .xs-figbox{ left:50%; top:46%; width:min(64vw, 300px); aspect-ratio:1; translate:-50% -50%; pointer-events:none; }
+  .xs-fig{ position:absolute; inset:6%; opacity:0; transition:opacity 5.5s cubic-bezier(.55,0,.35,1); }
+  .xs-fig svg{ position:relative; width:100%; height:100%; display:block;
+    -webkit-mask-image:linear-gradient(180deg, #000 62%, transparent 96%); mask-image:linear-gradient(180deg, #000 62%, transparent 96%); }
+  .xs-fig::before{ content:""; position:absolute; inset:4%; border-radius:50%; z-index:-1;
+    background:radial-gradient(closest-side, color-mix(in srgb, var(--flare-color) 30%, transparent), transparent); }
+  .xs-emerge .xs-fig{ opacity:1; }
+  .xs-scene .cosmic-hero-wrap, .xs-scene .cosmic-hero-wrap *{ pointer-events:none !important; }
+  /* riders on a tilted orbit (tiltedOrbit) */
+  .xs-oplane{ position:absolute; left:50%; top:50%; width:96%; aspect-ratio:1; translate:-50% -50%; transform:rotate(var(--tilt, 0deg)) scaleY(var(--sq, .3)); opacity:0; scale:.2; transition:opacity 1.4s ease, scale 2.4s cubic-bezier(.2,1.2,.3,1); }
+  .xs-ospin{ position:absolute; inset:0; animation:xs-turn 10s linear infinite; }
+  .xs-oarm{ position:absolute; left:50%; top:50%; width:50%; height:0; transform-origin:0 0; }
+  .xs-oback{ position:absolute; left:100%; top:0; width:30px; height:30px; translate:-50% -50%; animation:xs-turnback 10s linear infinite; }
+  .xs-oup{ position:absolute; inset:0; transform:scaleY(calc(1 / var(--sq, .3))) rotate(calc(-1 * var(--tilt, 0deg))); }
+  .xs-orb, .xs-orb svg{ width:100%; height:100%; display:block; overflow:visible; }
+  .xs-orbit .xs-oplane{ opacity:1; scale:1; }
+  @keyframes xs-turn{ from{ transform:rotate(0deg); } to{ transform:rotate(360deg); } }
+  @keyframes xs-turnback{ from{ transform:rotate(var(--a0, 0deg)); } to{ transform:rotate(calc(var(--a0, 0deg) - 360deg)); } }
+
+  /* UMBRA - the eclipse */
+  .xs-moon{ left:50%; top:46%; width:62%; aspect-ratio:1; translate:-50% -50%; border-radius:50%; overflow:hidden;
+    background:radial-gradient(circle at 38% 34%, #F6F2FF, #CFC2FF 36%, #8F72DA 76%, #573A9E 100%);
+    box-shadow:0 0 46px rgba(196,181,253,.35); opacity:0; scale:.86; transition:opacity 1.2s ease .2s, scale 3s cubic-bezier(.2,.8,.2,1), box-shadow 2s ease; }
+  .ff-in .xs-moon{ opacity:1; scale:1; }
+  .xs-moon-craters{ position:absolute; inset:0; border-radius:50%;
+    background:radial-gradient(circle at 30% 60%, rgba(70,40,130,.28) 0 9%, transparent 10%), radial-gradient(circle at 62% 30%, rgba(70,40,130,.22) 0 7%, transparent 8%),
+      radial-gradient(circle at 68% 68%, rgba(70,40,130,.2) 0 12%, transparent 13%), radial-gradient(circle at 46% 44%, rgba(70,40,130,.14) 0 5%, transparent 6%); }
+  .xs-shadow{ position:absolute; inset:-2%; border-radius:50%; background:radial-gradient(circle at 46% 46%, #08060F, #030207 70%); translate:120% 0; transition:translate 3.1s cubic-bezier(.45,0,.3,1); }
+  .xs-eclipse .xs-shadow{ translate:0 0; }
+  .xs-total .xs-moon{ box-shadow:0 0 0 1px rgba(237,228,255,.9), 0 0 30px rgba(196,181,253,.7); }
+  .xs-corona{ left:50%; top:46%; width:118%; aspect-ratio:1; translate:-50% -50%; opacity:0; scale:.8; transition:opacity 1.6s ease, scale 2.2s cubic-bezier(.2,.9,.2,1); }
+  .xs-corona::before{ content:""; position:absolute; inset:0; border-radius:50%;
+    background:radial-gradient(circle, transparent 25.5%, #F5F0FF 26.6%, color-mix(in srgb, #C4B5FD 80%, transparent) 29%, color-mix(in srgb, #8B5CF6 40%, transparent) 36%, transparent 62%); }
+  .xs-corona-rays{ position:absolute; inset:-12%; border-radius:50%;
+    background:conic-gradient(from 10deg, transparent 0 3%, rgba(221,210,255,.55) 6%, transparent 10%, transparent 17%, rgba(196,181,253,.4) 21%, transparent 27%,
+      transparent 36%, rgba(237,228,255,.5) 40%, transparent 45%, transparent 55%, rgba(196,181,253,.35) 61%, transparent 66%, transparent 74%, rgba(221,210,255,.5) 79%, transparent 85%, transparent 92%, rgba(196,181,253,.4) 96%, transparent);
+    -webkit-mask:radial-gradient(circle, transparent 22%, #000 26%, rgba(0,0,0,.5) 40%, transparent 62%); mask:radial-gradient(circle, transparent 22%, #000 26%, rgba(0,0,0,.5) 40%, transparent 62%);
+    animation:xs-turn 70s linear infinite; }
+  .xs-total .xs-corona{ opacity:1; scale:1; }
+  .xs-diamond{ left:30.9%; top:21.6%; width:64px; height:64px; margin:-32px 0 0 -32px; opacity:0; border-radius:50%;
+    background:radial-gradient(circle, #FFFFFF 0 10%, rgba(245,243,255,.85) 20%, rgba(196,181,253,.35) 45%, transparent 70%); }
+  .xs-diamond::after{ content:""; position:absolute; left:-60%; right:-60%; top:50%; height:2px; margin-top:-1px; border-radius:2px;
+    background:linear-gradient(90deg, transparent, #FFFFFF, transparent); }
+  .xs-total .xs-diamond{ animation:xs-diamond 1.6s ease-out both; }
+  @keyframes xs-diamond{ 0%{ opacity:0; transform:scale(.3); } 14%{ opacity:1; transform:scale(1.35); } 100%{ opacity:0; transform:scale(.7); } }
+  .xs-ucomet{ transform:translate(-160px, 220px) scale(1.6); }
+  .xs-ucomet.ff-comet-go{ transform:translate(-62px, -40px) scale(1); }
+  .xs-ucomet::before{ rotate:-36deg; }
+  .xs-lit.xs-umbra .xs-moon{ box-shadow:0 0 56px rgba(139,92,246,.6); }
+  .xs-ueyes{ left:50%; top:46%; width:42%; height:16%; translate:-50% -50%; }
+  .xs-ueye{ position:absolute; top:28%; width:42%; height:44%; background:#EDE4FF; scale:1 0; opacity:0; transition:scale .5s cubic-bezier(.2,1.3,.4,1), opacity .4s ease; }
+  .xs-ueye.is-l{ left:2%; clip-path:polygon(0 8%, 60% 30%, 100% 62%, 92% 92%, 40% 70%, 4% 40%); }
+  .xs-ueye.is-r{ right:2%; clip-path:polygon(100% 8%, 40% 30%, 0 62%, 8% 92%, 60% 70%, 96% 40%); }
+  .xs-ueyes::before{ content:""; position:absolute; inset:-80% -20%; border-radius:50%; opacity:0; transition:opacity .8s ease;
+    background:radial-gradient(closest-side, rgba(139,92,246,.55), transparent); }
+  .xs-eyes .xs-ueye{ scale:1 1; opacity:1; }
+  .xs-eyes .xs-ueyes::before{ opacity:1; }
+  .xs-emerge .xs-ueyes{ opacity:0; transition:opacity 3s ease 1.5s; }
+  .xs-umbra.xs-emerge .xs-moon{ scale:.86; transition:scale 6s ease, box-shadow 2s ease; }
+  .xs-phases{ position:absolute; inset:-6%; opacity:1; animation:xs-turn 50s linear infinite; }
+  .xs-phase{ position:absolute; left:50%; top:50%; width:0; height:0; }
+  .xs-phase-in{ position:absolute; width:26px; height:26px; left:-13px; top:-13px; translate:0 -158px; opacity:0; scale:.3;
+    transition:opacity .9s ease, scale 1.2s cubic-bezier(.2,1.3,.3,1); transition-delay:inherit; }
+  .xs-phase{ transition-delay:0s; }
+  .xs-phase-in svg{ width:100%; height:100%; display:block; }
+  .xs-phased .xs-phase-in{ opacity:1; scale:1; }
+  @media (min-width:40rem){ .xs-phase-in{ translate:0 -150px; } }
+
+  /* HORIZON - the event horizon */
+  .xs-hole{ left:50%; top:46%; width:30%; aspect-ratio:1; translate:-50% -50%; border-radius:50%; background:#010205; opacity:0; scale:.15;
+    box-shadow:0 0 0 2px rgba(240,250,255,.9), 0 0 22px 6px rgba(127,200,255,.55); transition:opacity 1s ease, scale 2.6s cubic-bezier(.2,.8,.2,1); }
+  .xs-hlens{ left:50%; top:46%; width:44%; height:36%; translate:-50% -50%; border-radius:50%; opacity:0; scale:.2;
+    box-shadow:0 0 0 2px rgba(221,244,255,.75), 0 0 16px 3px rgba(127,200,255,.45), inset 0 0 14px rgba(127,200,255,.4); transition:opacity 1.2s ease .3s, scale 2.6s cubic-bezier(.2,.8,.2,1) .2s; }
+  .xs-hdisk{ left:50%; top:46%; width:150%; aspect-ratio:1; translate:-50% -50%; transform:rotate(-8deg) scaleY(.12); opacity:0; transition:opacity 1.6s ease .4s; }
+  .xs-hdisk-spin{ position:absolute; inset:0; border-radius:50%;
+    background:conic-gradient(from 0deg, rgba(255,255,255,.95), rgba(127,200,255,.35), rgba(221,244,255,.85), rgba(127,200,255,.3), rgba(255,255,255,.95));
+    -webkit-mask:radial-gradient(circle, transparent 20%, #000 23%, rgba(0,0,0,.6) 40%, transparent 66%); mask:radial-gradient(circle, transparent 20%, #000 23%, rgba(0,0,0,.6) 40%, transparent 66%);
+    animation:xs-turn 4s linear infinite; }
+  .xs-pull :is(.xs-hole, .xs-hlens){ opacity:1; scale:1; }
+  .xs-pull .xs-hdisk{ opacity:1; }
+  .xs-hcomet{ transform:translate(0, -260px) scale(1.6); }
+  .xs-hcomet::before{ rotate:180deg; }
+  .xs-hcomet.ff-comet-go{ transform:translate(0, -118px) scale(1); }
+  .xs-spiral{ left:50%; top:46%; width:0; height:0; opacity:0; transition:opacity .6s ease; }
+  .xs-lit .xs-spiral{ opacity:1; }
+  .xs-sp-arm{ position:absolute; left:0; top:0; width:118px; height:0; transform-origin:0 0; }
+  .xs-sp-orb{ position:absolute; left:100%; top:0; width:34px; height:34px; margin:-17px 0 0 -17px; rotate:90deg; }
+  .xs-sp-orb svg{ width:100%; height:100%; display:block; overflow:visible; }
+  .xs-pull .xs-spiral{ animation:xs-spiral 3.1s cubic-bezier(.55,0,.85,.55) forwards; }
+  .xs-pull .xs-sp-orb{ animation:xs-stretch 3.1s cubic-bezier(.55,0,.85,.55) forwards; }
+  @keyframes xs-spiral{ from{ transform:rotate(0deg) scale(1); } to{ transform:rotate(760deg) scale(.24); } }
+  @keyframes xs-stretch{ 0%{ transform:scale(1, 1); } 70%{ transform:scale(.55, 2.6); opacity:1; } 100%{ transform:scale(.3, 3.4); opacity:.6; } }
+  .xs-still .xs-spiral{ opacity:0; transition:opacity 1.6s ease; }
+  .xs-still .xs-hdisk-spin{ animation-duration:40s; }
+  .xs-hback{ left:50%; top:46%; width:40%; aspect-ratio:1; translate:-50% -50%; border-radius:50%; opacity:0; border:3px solid #F0FAFF;
+    box-shadow:0 0 24px rgba(127,200,255,.7), inset 0 0 18px rgba(127,200,255,.5); }
+  .xs-return .xs-hback{ animation:xs-hback 1.7s cubic-bezier(.1,.7,.3,1) both; }
+  @keyframes xs-hback{ 0%{ opacity:1; transform:scale(.6); } 100%{ opacity:0; transform:scale(4.4); } }
+  .xs-return .xs-hdisk-spin{ animation-duration:5s; }
+  .xs-horizon.xs-emerge .xs-hole{ scale:.75; transition:scale 6s ease; }
+  .xs-visor{ position:absolute; left:34%; width:32%; top:47.4%; height:2.4%; margin-top:-1.2%; border-radius:999px; scale:0 1; opacity:0;
+    background:linear-gradient(90deg, transparent, #FFFFFF 20%, #FFFFFF 80%, transparent); box-shadow:0 0 14px 3px rgba(127,200,255,.7);
+    transition:scale 1.1s cubic-bezier(.2,.9,.2,1), opacity .6s ease; }
+  .xs-visorlit .xs-visor{ scale:1 1; opacity:1; }
+  .xs-emerge .xs-visor{ opacity:0; transition:opacity 3.4s ease 2.2s; }
+  .xs-hrise{ position:absolute; left:20%; right:20%; top:-10%; bottom:42%; opacity:0; transition:opacity 2s ease;
+    background:repeating-linear-gradient(90deg, transparent 0 9px, rgba(221,244,255,.5) 9px 10.5px, transparent 10.5px 17px);
+    -webkit-mask:linear-gradient(180deg, transparent, #000 40%, #000 70%, transparent); mask:linear-gradient(180deg, transparent, #000 40%, #000 70%, transparent); }
+  .xs-hrise::after{ content:""; position:absolute; inset:0; background:inherit; translate:0 30%; opacity:.6; }
+  .xs-visorlit .xs-hrise{ opacity:.7; animation:xs-hrise 2.4s linear infinite; }
+  @keyframes xs-hrise{ 0%,100%{ opacity:.35; } 50%{ opacity:.8; } }
+  .xs-emerge .xs-hrise{ opacity:0; transition:opacity 4s ease 2s; animation:none; }
+
+  /* GENESIS - the planet */
+  .xs-planetwrap{ left:50%; top:46%; width:150%; translate:-50% -50%; opacity:0; transition:opacity 1s ease .1s, transform 4.6s cubic-bezier(.45,0,.2,1); transform-origin:50% 47.37%; }
+  .ff-in .xs-planetwrap{ opacity:1; }
+  .xs-shakebox{ position:relative; }
+  .xs-clear .xs-planetwrap .cosmic-icon-badge{ opacity:0; transition:opacity 1.2s ease; }
+  /* the orbit layers' settle-in animation holds their opacity, so it goes */
+  .xs-clear .xs-planetwrap .cosmic-hero-orbitlayer{ animation:none !important; opacity:0; transition:opacity 1.2s ease; }
+  .xs-clear .xs-planetwrap .cosmic-orbit-ring, .xs-clear .xs-planetwrap .cosmic-pulse-ring{ opacity:0; transition:opacity 1.2s ease; }
+  .xs-clear .xs-planetwrap{ transform:scale(1.9); }
+  .xs-dive .xs-planetwrap .cosmic-core-orbit{ opacity:0; transition:opacity .3s ease; }
+  .xs-planetfx{ position:absolute; left:50%; top:47.37%; width:28.89%; aspect-ratio:1; translate:-50% -50%; border-radius:50%; z-index:4; }
+  .xs-cracks{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
+  .xs-crack{ opacity:0; transition:opacity .5s ease; }
+  .xs-crack1 .xs-crack-1, .xs-crack2 .xs-crack-2{ opacity:1; }
+  .xs-crack1 .xs-crack-1{ animation:xs-flick 1.1s ease-in-out .5s infinite alternate; }
+  @keyframes xs-flick{ from{ opacity:1; } to{ opacity:.65; } }
+  .xs-coreglow{ position:absolute; inset:-30%; border-radius:50%; opacity:0; scale:.4; transition:opacity 1.6s ease, scale 2.4s ease;
+    background:radial-gradient(closest-side, rgba(255,240,224,.9), rgba(255,92,168,.55) 35%, rgba(255,92,168,.15) 60%, transparent); }
+  .xs-crack1 .xs-coreglow{ opacity:.55; scale:.8; }
+  .xs-crack2 .xs-coreglow{ opacity:.85; scale:1.05; }
+  .xs-shake .xs-shakebox{ animation:xs-shake .9s linear 1; }
+  @keyframes xs-shake{ 0%,100%{ transform:translate(0,0); } 10%{ transform:translate(-2px,1px); } 20%{ transform:translate(2px,-1px); } 30%{ transform:translate(-3px,0); }
+    40%{ transform:translate(3px,1px); } 50%{ transform:translate(-2px,-2px); } 60%{ transform:translate(2px,2px); } 70%{ transform:translate(-1px,1px); } 85%{ transform:translate(1px,-1px); } }
+  /* the swap: a CSS copy of the planet in two halves, put in under the
+     flash at the same size, then pulled apart on the core */
+  .xs-half{ position:absolute; inset:0; opacity:0; }
+  .xs-half.is-l{ clip-path:inset(-2% 50% -2% -2%); }
+  .xs-half.is-r{ clip-path:inset(-2% -2% -2% 50%); }
+  .xs-half-in{ position:absolute; inset:0; border-radius:50%;
+    background:radial-gradient(circle at 32% 28%, color-mix(in srgb, var(--pl0) 80%, #fff), var(--pl1) 22%, var(--pl2) 58%, color-mix(in srgb, var(--pl2) 45%, #12040E) 100%);
+    box-shadow:inset -10px -12px 24px rgba(0,0,0,.45); }
+  .xs-half-in::after{ content:""; position:absolute; inset:0; border-radius:50%; background:radial-gradient(circle at 50% 50%, rgba(255,92,168,.5), transparent 60%); }
+  .xs-split .xs-half{ opacity:1; transition:opacity .15s ease .12s; }
+  /* the hero's own layers go at the flash (visibility, because their
+     settle-in animation holds opacity); the effects inside it stay */
+  .xs-split .xs-planetwrap .cosmic-hero-wrap > :not(.xs-planetfx){ visibility:hidden; transition:visibility 0s linear .14s; }
+  .xs-split .xs-cracks{ opacity:0; transition:opacity .4s ease .5s; }
+  .xs-rise .xs-half.is-l{ transform:translate(-62%, 6%) rotate(-16deg); opacity:0; transition:transform 4.5s cubic-bezier(.2,.7,.2,1), opacity 3.4s ease 1.6s; }
+  .xs-rise .xs-half.is-r{ transform:translate(62%, 6%) rotate(16deg); opacity:0; transition:transform 4.5s cubic-bezier(.2,.7,.2,1), opacity 3.4s ease 1.6s; }
+  .xs-core{ position:absolute; inset:18%; border-radius:50%; opacity:0; scale:.3;
+    background:radial-gradient(circle, #FFFFFF 0 22%, #FFE2C4 38%, rgba(255,92,168,.75) 58%, transparent 72%); }
+  .xs-split .xs-core{ opacity:1; scale:1.2; transition:opacity .3s ease, scale 1.2s cubic-bezier(.2,1.3,.3,1); }
+  .xs-rise .xs-core{ opacity:0; scale:2.6; transition:opacity 4s ease 1.2s, scale 5s ease; }
+  .xs-beam{ position:absolute; left:50%; bottom:50%; width:30%; height:340%; translate:-50% 0; transform-origin:50% 100%; scale:1 0; opacity:0; border-radius:999px;
+    background:linear-gradient(0deg, rgba(255,240,224,.95), rgba(255,92,168,.55) 40%, transparent);
+    -webkit-mask-image:linear-gradient(90deg, transparent, #000 32%, #000 68%, transparent); mask-image:linear-gradient(90deg, transparent, #000 32%, #000 68%, transparent); }
+  .xs-split .xs-beam{ scale:1 1; opacity:1; transition:scale .9s cubic-bezier(.2,.9,.2,1), opacity .3s ease; }
+  .xs-rise .xs-beam{ opacity:0; transition:opacity 3s ease 1.4s; }
+  .xs-gflash{ left:50%; top:46%; width:300px; height:300px; margin:-150px 0 0 -150px; border-radius:50%; opacity:0;
+    background:radial-gradient(circle, #FFFFFF 0 12%, rgba(255,226,196,.8) 26%, rgba(255,92,168,.4) 46%, transparent 68%); }
+  .xs-split .xs-gflash{ animation:ff-flash 1s ease-out both; }
+  .xs-gcomet{ position:absolute; left:50%; top:47.37%; width:30px; height:30px; margin:-15px 0 0 -15px; opacity:0; transform:translate(70px, -78px) scale(1.2); z-index:5; }
+  .xs-gcomet svg{ width:100%; height:100%; display:block; overflow:visible; }
+  .xs-dive .xs-gcomet{ opacity:1; transform:translate(0, 0) scale(.2); transition:transform .8s cubic-bezier(.55,0,.9,.4), opacity .2s ease; }
+  .xs-crack1 .xs-gcomet{ opacity:0; transition:opacity .2s ease; }
+  .xs-genesis .xs-figbox{ translate:-50% -36%; transition:translate 4.8s cubic-bezier(.2,.75,.2,1); }
+  .xs-genesis.xs-rise .xs-figbox{ translate:-50% -50%; }
+  .xs-genesis.xs-rise .xs-fig{ opacity:1; transition:opacity 4.2s cubic-bezier(.4,0,.3,1) .2s; }
+  /* the world's ring, the one the six flares ride (the orbit plane is
+     96% wide and squashed to .24, tilted -12deg - so this is its ellipse) */
+  .xs-gring, .xs-gring-back{ position:absolute; left:50%; top:50%; width:96%; height:23.04%; translate:-50% -50%; rotate:-12deg; border-radius:50%; scale:0 1; opacity:0;
+    border:2px solid rgba(255,227,196,.9); box-shadow:0 0 14px rgba(255,92,168,.6), inset 0 0 10px rgba(255,92,168,.45); transition:scale 1.6s cubic-bezier(.2,.9,.2,1), opacity .6s ease; }
+  .xs-gring{ clip-path:inset(50% -10% -10% -10%); }
+  .xs-gring-back{ clip-path:inset(-10% -10% 50% -10%); opacity:0; }
+  .xs-ringup :is(.xs-gring, .xs-gring-back){ scale:1 1; opacity:1; }
+  .xs-ringup .xs-gring-back{ opacity:.55; }
+  @media (prefers-reduced-motion:reduce){ .xs-scene *{ animation-duration:.01ms !important; animation-iteration-count:1 !important; } }
 
   /* ---- THE FLARE ITSELF, BIGGER AND LOUDER ----
      "Make them a little bigger, can't risk someone missing it." Still in
@@ -34974,6 +35341,9 @@ const AVATAR_CHARACTERS = [
   { id: "voidwalker", kind: "voidwalker", feat: "flares", secret: true },
   { id: "umbra",       kind: "umbra",       feat: "flare4", secret: true },
   { id: "singularity", kind: "singularity", feat: "flare5", secret: true },
+  /* GENESIS (build 313), the last of them: the planet on Home, alive.
+     Found on the planet itself at level 78-80 - see MYSTERY_ORDER. */
+  { id: "genesis",     kind: "genesis",     feat: "flare6", secret: true },
   /* ---- RANK REWARDS (build 244) ----
      One per rank from Silver up, each a crowned sovereign of its rank's
      own element and colour, each more spectacular than the one below:
@@ -35048,7 +35418,7 @@ const AVATAR_DISPLAY_NAME = {
   grizzly: "Bear", alien: "Alien", samurai: "Samurai", dragon: "Dragon",
   officer: "Officer", clown: "Clown", robot: "Robot", astronaut: "Orion",
   detective: "Detective", zeus: "Zeus", masked: "The Masked One", voidwalker: "Void",
-  champion: "Champion", umbra: "Umbra", singularity: "Horizon",
+  champion: "Champion", umbra: "Umbra", singularity: "Horizon", genesis: "Genesis",
   poseidon: "Sheriff", spartan: "Spartan", pharaoh: "Pharaoh", marksman: "Marksman",
   blitz: "Blitz", hive: "Hive", zenith: "Zenith", astral: "Astral", celestial: "Celestial"
 };
@@ -35099,6 +35469,8 @@ const AVATAR_GLOW = {
      body gives off no light of its own, so the glow is the flares. */
   detective: "#D9A441", zeus: "#7FD4F5", masked: "#C6413F", voidwalker: "#F97316",
   champion: "#FF4D6D", umbra: "#8B5CF6", singularity: "#7FC8FF",
+  /* Worldheart's rose - the planet's own light (MYSTERY_COLOR.core) */
+  genesis: "#FF5CA8",
   poseidon: "#F2A23A", spartan: "#E0612F", pharaoh: "#E9B949", marksman: "#9CE85A",
   /* The visor's sunset. */
   blitz: "#F0643C",
@@ -35204,7 +35576,7 @@ const CHARACTER_FEATS = {
      three found without passing through foundMysteryFlare - a cloud
      document from another device, most obviously - holds the character
      just the same. */
-  flares:   { label: "Find all three Secret Flares",
+  flares:   { label: "Find the first three secret flares",
               done: () => voidFlaresAllFound(),
               have: () => VOID_FLARES.filter(k => (store.mysteryColorsFound || {})[k]).length, need: 3 },
   /* Build 220. The Game ones count the same `store.unitGameBeat` the
@@ -35304,12 +35676,16 @@ const CHARACTER_FEATS = {
                done: () => bestStudyRun() >= 7,
                have: () => Math.min(bestStudyRun(), 7), need: 7,
                note: "Any study time on a day counts it. Your best run so far counts, not just the one you are on." },
-  flare4:    { label: "Find Umbra, the first of Void's flares",
+  flare4:    { label: "Find Penumbra, the fourth secret flare",
                done: () => !!(store.mysteryColorsFound || {}).violet,
                have: () => ((store.mysteryColorsFound || {}).violet ? 1 : 0), need: 1 },
-  flare5:    { label: "Find Event Horizon, the last flare",
+  flare5:    { label: "Find Event Horizon, the fifth secret flare",
                done: () => !!(store.mysteryColorsFound || {}).white,
                have: () => ((store.mysteryColorsFound || {}).white ? 1 : 0), need: 1 },
+  /* build 313: the sixth, on the planet itself, from level 78 */
+  flare6:    { label: "Find Worldheart, the planet's own secret flare",
+               done: () => !!(store.mysteryColorsFound || {}).core,
+               have: () => ((store.mysteryColorsFound || {}).core ? 1 : 0), need: 1 },
   /* ASTRAL and CELESTIAL (build 312): the two ultimates under Zenith -
      every character, and every banner. See collectionProgress(). */
   allchars:   { label: "Unlock every other character",
@@ -35545,12 +35921,16 @@ function characterLockMessage(id){
        naming the next flare before you have the last one gives it away. */
     if(def.feat === "flare4" && isLockedCharacter("voidwalker")) return "Unlock Void to see how to unlock Umbra.";
     if(def.feat === "flare5" && isLockedCharacter("umbra")) return "Unlock Umbra to see how to unlock Horizon.";
+    if(def.feat === "flare6" && isLockedCharacter("singularity")) return "Unlock Horizon to see how to unlock Genesis.";
     const f = CHARACTER_FEATS[def.feat];
     if(!f) return "";
     /* The progress, not just the target. "0 of 10" and "7 of 10" are
        different pieces of information and the second is the one that
        makes somebody go and finish it. */
     const suffix = f.need > 1 ? " (" + Math.min(f.have(), f.need) + " of " + f.need + ")" : "";
+    /* a secret's label names the flare and says which it is, so it reads
+       as two sentences (build 313) */
+    if(def.secret) return f.label + suffix + ". It unlocks " + (AVATAR_DISPLAY_NAME[id] || id) + ".";
     return f.label + suffix + " to unlock " +
       (AVATAR_DISPLAY_NAME[id] || id) + ".";
   }
@@ -35588,6 +35968,33 @@ function characterLockMessage(id){
    to receive, not a corrupt document. */
 function buildAvatarCharSVGSafe(charId){
   return buildAvatarCharSVG(charId) || buildAvatarCharSVG(AVATAR_CHARACTERS[0].id);
+}
+/* ---- A SECRET FLARE CHARACTER IS A SILHOUETTE UNTIL IT IS YOURS (build 313) ----
+   "In the character selection screen, can we make it so void, umbra, and
+   horizon are hidden? ... it will just be a cutout of the character until
+   it's unlocked ... The character can still animate and stuff in the list
+   of characters but it should be blacked out or something with the
+   outline." Two copies of the live drawing, laid one over the other: the
+   back one drawn wholly in the character's own glow colour with a wide
+   stroke (that is the outline), the front one wholly black. The flare it
+   wears stays lit on the black - the one thing you are told is the thing
+   you have to go and find. No filter anywhere (a filter over a drawing
+   with a soft full-box backdrop lights the box on iOS): it is CSS fill
+   and stroke on the parts, and the scenery and the halo are left out.
+   Both copies are made in the same moment, so every loop runs in step. */
+function isSecretSilhouette(id){
+  const def = AVATAR_CHARACTERS.find(c => c.id === id);
+  return !!(def && def.secret && isLockedCharacter(id));
+}
+function buildCharSilhouette(id){
+  const wrap = document.createElement("span");
+  wrap.className = "char-sil";
+  wrap.style.setProperty("--sil-rim", avatarGlowColor(id));
+  const rim = buildAvatarCharSVGSafe(id), body = buildAvatarCharSVGSafe(id);
+  rim.classList.add("char-sil-rim");
+  body.classList.add("char-sil-body");
+  wrap.append(rim, body);
+  return wrap;
 }
 
 /* EVERY CHARACTER FILLS ITS TILE TO THE SAME HEIGHT.
@@ -36008,6 +36415,8 @@ function drawAvatarCharSVG(charId){
        with the moon") - see "phasemoon" below. */
     umbra:      [["nebula", "#8B5CF6", "#3B1E7A"], ["phasemoon", "#C4B5FD", 30.8, 8.4, 2.6], ["stars", "#E2D8FF"]],
     singularity:[["nebula", "#4A7ACC", "#141A44"], ["stars", "#EAF8FF"], ["rise", "ember", ["#FFFFFF", "#BFE6FF"]]],
+    /* Genesis (build 313): a world being forged - rose haze, embers rising */
+    genesis:    [["nebula", "#FF5CA8", "#3A0F3A"], ["rise", "ember", ["#FFB86B", "#FF5CA8"]], ["stars", "#FFE3F0"]],
     lunar:      [["stars", "#E6EDF6"], ["nebula", "#9FB2C8", "#2B3446"]],
     solar:      [["rays", "#F7C21E", 16]],
     tempest:    [["clouds", "#5E8C8A"], ["fall", "rain", ["#5EEAD4"]]],
@@ -39639,9 +40048,21 @@ function drawAvatarCharSVG(charId){
     open("cx-fx cx-fx-crescent");
     { const cg = uid + "-umc";
       const cp = mk("clipPath", { id: cg + "c" }); cp.appendChild(mk("circle", { cx: 22.77, cy: 15.4, r: 2.1 })); defs.appendChild(cp);
+      /* BUILD 313: THE MOON GOES THROUGH ITS PHASES. "The moon on umbras
+         face needs to move between moon stages to make it cooler." Drawn
+         the way a real phase is: the right half lit, and an ellipse over
+         the middle whose width is the terminator - dark and narrowing for
+         a crescent (it covers part of the lit half), gone at the half, and
+         LIT and widening for a gibbous (it lights part of the dark half),
+         full when it is the whole disc. Only the two ellipses' scaleX
+         moves, so it is a transform. At rest it is the crescent. The dark
+         side is the faint purple of earthshine, not the face's black, so
+         the whole disc reads as a moon at every phase. */
       const moon = mk("g", { "clip-path": "url(#" + cg + "c)" });
-      moon.appendChild(mk("circle", { cx: 22.77, cy: 15.4, r: 2.1, fill: "#C4B5FD" }));
-      moon.appendChild(mk("circle", { cx: 20.74, cy: 15.4, r: 1.6, fill: "#050409" }));
+      moon.appendChild(mk("circle", { cx: 22.77, cy: 15.4, r: 2.1, fill: "#241A3E" }));
+      moon.appendChild(mk("path", { d: "M22.77 13.3 A2.1 2.1 0 0 1 22.77 17.5 Z", fill: "#C4B5FD" }));
+      moon.appendChild(mk("ellipse", { cx: 22.77, cy: 15.4, rx: 2.1, ry: 2.12, fill: "#241A3E", class: "cx-fx-umdark" }));
+      moon.appendChild(mk("ellipse", { cx: 22.77, cy: 15.4, rx: 2.1, ry: 2.12, fill: "#C4B5FD", class: "cx-fx-umlit" }));
       svg.appendChild(moon); }
     close();
     { const gl = sparkle(21.3, 13.9, .9, "#FFFFFF"); gl.setAttribute("class", "cx-fx cx-fx-umcglint"); gl.setAttribute("opacity", "0"); svg.appendChild(gl); }
@@ -39722,6 +40143,28 @@ function drawAvatarCharSVG(charId){
       });
       /* inside the hair's own group, so it breathes with the locks */
       sgHairG.appendChild(au);
+      /* BUILD 313: THE SURGE. "Horizons hair needs a cooler effect at
+         random points ... Maybe it randomly changed to dark blue or white
+         idk? Unique and cool." Two copies of every lock over the hair,
+         back and front: one WHITE-HOT, which flashes up the hair and
+         flickers out, and one DEEP BLUE, the light drained out of it for
+         a few seconds with only the tips still lit - light that went over
+         the horizon. Each runs on its own long, uneven clock (17s and
+         29s, which share no factor), so the two never fall into a pattern
+         you can see - the same hair does something different every time
+         you look, which is what "at random points" needs without a timer. */
+      { const wg = mk("linearGradient", { id: uid + "-sgsw", gradientUnits: "userSpaceOnUse", x1: "0", y1: "20", x2: "0", y2: "2" });
+        [["0%", "#E8F6FF", ".9"], ["60%", "#FFFFFF", "1"], ["100%", "#FFFFFF", ".85"]].forEach(([o, c, op]) => wg.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
+        const bg = mk("linearGradient", { id: uid + "-sgsb", gradientUnits: "userSpaceOnUse", x1: "0", y1: "20", x2: "0", y2: "2" });
+        [["0%", "#081436", "1"], ["58%", "#1A3A9E", "1"], ["86%", "#3B6FE0", ".95"], ["100%", "#CFE6FF", ".9"]].forEach(([o, c, op]) => bg.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
+        defs.append(wg, bg);
+        const backLocks = [[15.4, 2, 10, -10.4, 3.6], [16.6, 2, 14, -4.6, -3.6], [23.4, 2, 14, 4.6, 3.6], [24.6, 2, 10, 10.4, -3.6]];
+        [["cx-fx-sgsurgeb", "-sgsb"], ["cx-fx-sgsurgew", "-sgsw"]].forEach(([cls, gid]) => {
+          const g = mk("g", { class: "cx-fx " + cls, opacity: "0" });
+          backLocks.forEach(([x, w, h, lean, sway]) => g.appendChild(lock(x, 19.2, w, h, lean, sway, "url(#" + uid + gid + ")", ".92")));
+          frontLocks.forEach(([x, w, h, lean, sway]) => g.appendChild(lock(x, 19.6, w, h, lean, sway, "url(#" + uid + gid + ")", "1")));
+          sgHairG.appendChild(g);
+        }); }
       const sp = mk("g", { class: "cx-fx cx-fx-sgsparks", opacity: "0" });
       frontLocks.forEach(([x, w, h, lean], i) => {
         if(i === 3) return;
@@ -39768,6 +40211,143 @@ function drawAvatarCharSVG(charId){
     close();
     wornFlareFx(20, 15, "#DDF4FF", .9);
     close();
+    return done();
+  }
+
+  /* ---- GENESIS (build 313) - the sixth secret flare's character ----
+     "This one's theme will be the sickest out of all the secret flare
+     characters, it will be the coolest cleverest flare character." The
+     clever part is what it is: THE PLANET ON HOME, ALIVE. Its head is that
+     planet - the same gold-to-rose-to-magenta ramp, the same ring - with
+     two eyes open on its face, and the flare that skims the planet on
+     Home, Worldheart, is the heart it wears: the light at its chest, with
+     the seams of the world it forged running out from it across rock
+     shoulders. Round the planet a ring, drawn in two passes (the far half
+     behind the head, the near half in front - the Bronze emblem's rule),
+     and a small moon going round on it that really passes behind.
+     Alive (char-live only): the moon orbits, the weather bands drift
+     across the face, the seams pulse with magma, the planet erupts now
+     and then, embers rise, and the worn flare rings. Parts are cx-fx-gn*. */
+  if(def.kind === "genesis"){
+    const f = v => (+v).toFixed(2);
+    const PX = 20, PY = 19.4, PR = 7.6;
+    /* the body: dark basalt, one ramp from collar to hem */
+    const rock = mk("linearGradient", { id: uid + "-gnrock", gradientUnits: "userSpaceOnUse", x1: "0", y1: "24", x2: "0", y2: "40" });
+    [["0%", "#33202E"], ["55%", "#1A0F1A"], ["100%", "#09050B"]].forEach(([o, c]) => rock.appendChild(mk("stop", { offset: o, "stop-color": c })));
+    defs.appendChild(rock);
+    const planet = mk("radialGradient", { id: uid + "-gnpl", gradientUnits: "userSpaceOnUse", cx: "17.2", cy: "15.6", r: "11.6" });
+    [["0%", "#FFF1CF"], ["16%", "#FFD37A"], ["38%", "#F5804D"], ["66%", "#C23B7A"], ["100%", "#3A0D2E"]].forEach(([o, c]) => planet.appendChild(mk("stop", { offset: o, "stop-color": c })));
+    defs.appendChild(planet);
+    const ringG = mk("linearGradient", { id: uid + "-gnring", gradientUnits: "userSpaceOnUse", x1: "-12.6", y1: "0", x2: "12.6", y2: "0" });
+    [["0%", "#FFB0D2", ".35"], ["30%", "#FFE3C4", ".95"], ["70%", "#FF8FC0", ".9"], ["100%", "#FFB0D2", ".35"]].forEach(([o, c, op]) => ringG.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
+    defs.appendChild(ringG);
+    const moonG = mk("radialGradient", { id: uid + "-gnmoon", cx: "38%", cy: "34%", r: "70%" });
+    [["0%", "#FFFFFF"], ["55%", "#F2C6D9"], ["100%", "#7A4060"]].forEach(([o, c]) => moonG.appendChild(mk("stop", { offset: o, "stop-color": c })));
+    defs.appendChild(moonG);
+    open("cx-body");
+    svg.appendChild(mk("path", { d: "M5.4 40 Q6 30.6 13.4 28.2 Q16.4 27.4 20 27.6 Q23.6 27.4 26.6 28.2 Q34 30.6 34.6 40 Z", fill: "url(#" + uid + "-gnrock)" }));
+    /* the plates' edges, so it reads as rock rather than cloth */
+    svg.appendChild(mk("path", { d: "M7.6 33.6 L11.2 31.4 L13.4 33.8 M27.4 31.6 L30.4 33.2 L32.6 32.2 M10.2 38.6 L13.6 36.8", fill: "none", stroke: "#000", "stroke-width": ".4", opacity: ".45", "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M33.8 38.2 Q33.2 31.6 27 29", fill: "none", stroke: "#FFB0D2", "stroke-width": ".45", "stroke-linecap": "round", opacity: ".5" }));
+    /* THE SEAMS: the world's fault lines, running out from its heart.
+       A soft glow under a bright line, so they read as heat, not paint. */
+    const seams = "M20 31.4 L17.4 32.6 L15.6 32 L12.6 34.4 L9.8 34 L7.4 36.4 M20 31.4 L22.8 32.8 L24.2 32.2 L27.6 34.2 L30 33.4 L32.2 35.6 M20 31.4 L19.2 34 L20.6 36.4 L19.6 40 M15.6 32 L15 35.2 L13 37.4 M27.6 34.2 L27 37 L28.6 39.4";
+    open("cx-fx cx-fx-gnseam");
+    svg.appendChild(mk("path", { d: seams, fill: "none", stroke: "#FF5CA8", "stroke-width": "1.3", "stroke-linejoin": "round", "stroke-linecap": "round", opacity: ".32" }));
+    svg.appendChild(mk("path", { d: seams, fill: "none", stroke: "#FFB86B", "stroke-width": ".42", "stroke-linejoin": "round", "stroke-linecap": "round" }));
+    close();
+    close();
+    open("cx-head");
+    /* the ring's far half and its moon's far copy, behind the planet */
+    const ringPath = (front) => front ? "M12.6 0 A12.6 3 0 0 1 -12.6 0" : "M-12.6 0 A12.6 3 0 0 1 12.6 0";
+    const ring = (front) => {
+      const g = mk("g", { transform: "translate(" + PX + " " + f(PY + .6) + ") rotate(-14)" });
+      g.appendChild(mk("path", { d: ringPath(front), fill: "none", stroke: "url(#" + uid + "-gnring)", "stroke-width": "1.5", opacity: front ? ".55" : ".35" }));
+      g.appendChild(mk("path", { d: ringPath(front), fill: "none", stroke: "#FFE9D6", "stroke-width": ".42", opacity: front ? ".95" : ".55" }));
+      /* the moon: squashed plane, a turning arm, and the moon turned back
+         and un-squashed at its end, so it stays round as it goes */
+      const plane = mk("g", { transform: "scale(1 .238)" });
+      const spin = mk("g", { class: "cx-fx-gnspin" });
+      spin.appendChild(pivot(0, 0, 12.6));
+      const arm = mk("g", { transform: "translate(12.6 0)" });
+      const back = mk("g", { class: "cx-fx-gnback" });
+      back.appendChild(pivot(0, 0, 1.1));
+      const un = mk("g", { transform: "scale(1 4.2)" });
+      un.appendChild(mk("circle", { cx: 0, cy: 0, r: ".98", fill: "url(#" + uid + "-gnmoon)" }));
+      back.appendChild(un); arm.appendChild(back); spin.appendChild(arm); plane.appendChild(spin);
+      const holder = mk("g", { class: front ? "cx-fx-gnmoonfront" : "cx-fx-gnmoonback" });
+      holder.appendChild(plane);
+      g.appendChild(holder);
+      svg.appendChild(g);
+    };
+    ring(false);
+    /* the collar it sits in */
+    svg.appendChild(mk("path", { d: "M12.4 30.4 Q12.2 26.8 14.2 25.2 Q20 28.4 25.8 25.2 Q27.8 26.8 27.6 30.4 Q20 32.6 12.4 30.4 Z", fill: "url(#" + uid + "-gnrock)" }));
+    svg.appendChild(mk("path", { d: "M14.2 25.2 Q20 28.4 25.8 25.2", fill: "none", stroke: "#FF8FC0", "stroke-width": ".4", opacity: ".7" }));
+    /* the light of the core, leaking up round the planet's base */
+    { const lg = uid + "-gnlk"; const rg = mk("radialGradient", { id: lg });
+      rg.appendChild(mk("stop", { offset: "0%", "stop-color": "#FFC9A0", "stop-opacity": ".75" }));
+      rg.appendChild(mk("stop", { offset: "100%", "stop-color": "#FF5CA8", "stop-opacity": "0" }));
+      defs.appendChild(rg);
+      svg.appendChild(mk("ellipse", { cx: PX, cy: 26.6, rx: 6.4, ry: 1.8, fill: "url(#" + lg + ")", class: "cx-fx cx-fx-gnleak" })); }
+    /* its atmosphere: a rose rim of light just off the surface, like the
+       glow round the planet on Home */
+    { const ag = uid + "-gnatm"; const rg = mk("radialGradient", { id: ag, gradientUnits: "userSpaceOnUse", cx: PX, cy: PY, r: "10.4" });
+      [["0%", "#FF5CA8", "0"], ["70%", "#FF5CA8", "0"], ["76%", "#FF8FC0", ".55"], ["86%", "#FF5CA8", ".22"], ["100%", "#FF5CA8", "0"]].forEach(([o, c, op]) => rg.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
+      defs.appendChild(rg);
+      svg.appendChild(mk("circle", { cx: PX, cy: PY, r: "10.4", fill: "url(#" + ag + ")", class: "cx-fx cx-fx-gnatm" })); }
+    /* THE PLANET */
+    svg.appendChild(mk("circle", { cx: PX, cy: PY, r: PR, fill: "url(#" + uid + "-gnpl)" }));
+    { const cp = mk("clipPath", { id: uid + "-gnclip" }); cp.appendChild(mk("circle", { cx: PX, cy: PY, r: PR })); defs.appendChild(cp);
+      const inside = mk("g", { "clip-path": "url(#" + uid + "-gnclip)" });
+      /* weather: wavy bands on an 8-unit period, two periods wide, so a
+         drift of exactly 8 loops without a seam */
+      const drift = mk("g", { class: "cx-fx cx-fx-gnbands" });
+      const band = (y, amp, col, w, op) => {
+        let d = "M4 " + f(y);
+        for(let x = 4; x < 44; x += 4) d += " Q" + f(x + 2) + " " + f(y + (((x / 4) % 2) ? amp : -amp)) + " " + f(x + 4) + " " + f(y);
+        drift.appendChild(mk("path", { d, fill: "none", stroke: col, "stroke-width": w, "stroke-linecap": "round", opacity: op }));
+      };
+      band(14.6, .5, "#FFF0D0", ".7", ".35");
+      band(17.4, .6, "#8A1E5A", ".9", ".35");
+      band(23.2, .5, "#5A0F3E", "1.2", ".4");
+      band(25.4, .4, "#FFC08A", ".5", ".3");
+      inside.appendChild(drift);
+      /* the night side, lower right */
+      inside.appendChild(mk("circle", { cx: 25.6, cy: 24.6, r: 8.6, fill: "#14051A", opacity: ".5" }));
+      svg.appendChild(inside); }
+    /* the lit limb, upper left */
+    svg.appendChild(mk("path", { d: "M13.4 15.6 Q15.2 12.6 18.6 11.9", fill: "none", stroke: "#FFF6E0", "stroke-width": ".5", "stroke-linecap": "round", opacity: ".7" }));
+    svg.appendChild(mk("circle", { cx: PX, cy: PY, r: PR, fill: "none", stroke: "#FFC2DE", "stroke-width": ".35", opacity: ".55" }));
+    /* THE EYES: two lights open on the planet's face */
+    open("cx-eyes");
+    [[16.6, -1], [23.4, 1]].forEach(([cx, s]) => {
+      svg.appendChild(mk("ellipse", { cx, cy: 19.8, rx: 2.5, ry: 1.25, fill: "#FF5CA8", opacity: ".55" }));
+      const o = cx + s * 1.9, i = cx - s * 1.9;
+      svg.appendChild(mk("path", { d: "M" + f(i) + " 19.9 Q" + f(cx) + " 18.2 " + f(o) + " 19.4 Q" + f(cx) + " 21 " + f(i) + " 19.9 Z", fill: "#FFF6E6" }));
+      svg.appendChild(mk("circle", { cx: f(cx + s * .2), cy: 19.6, r: ".5", fill: "#FFFFFF" }));
+    });
+    close();
+    closedEyes([[16.6, 19.9, 1.9], [23.4, 19.9, 1.9]], "#FFE0C0", .45);
+    open("cx-mouth"); close();
+    /* AN ERUPTION, now and then, off the planet's crown */
+    open("cx-fx cx-fx-gnerupt", { opacity: "0" });
+    { const eg = uid + "-gner"; const rg = mk("radialGradient", { id: eg });
+      rg.appendChild(mk("stop", { offset: "0%", "stop-color": "#FFFFFF", "stop-opacity": "1" }));
+      rg.appendChild(mk("stop", { offset: "45%", "stop-color": "#FFB86B", "stop-opacity": ".7" }));
+      rg.appendChild(mk("stop", { offset: "100%", "stop-color": "#FF5CA8", "stop-opacity": "0" }));
+      defs.appendChild(rg);
+      svg.appendChild(mk("ellipse", { cx: 17.6, cy: 11.2, rx: 1.4, ry: 2.6, fill: "url(#" + eg + ")", transform: "rotate(-24 17.6 11.2)" }));
+      [[15.8, 8.6, .32], [18.6, 7.8, .26], [16.4, 6.6, .22]].forEach(([x, y, r]) => svg.appendChild(mk("circle", { cx: x, cy: y, r, fill: "#FFE3C4" }))); }
+    close();
+    /* the ring's near half and the moon's near copy, in front */
+    ring(true);
+    close();
+    /* WORLDHEART, worn at the chest, with the seams running out of it */
+    open("cx-fx cx-fx-gnheart");
+    wornFlare(20, 31.4, MYSTERY_COLOR.core, "#FFC2DE", 1.05);
+    close();
+    wornFlareFx(20, 31.4, "#FFC2DE", 1.05);
     return done();
   }
 
@@ -40281,7 +40861,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               unitPerfects: {}, unitBlackStar: {}, flagged: {}, unflagged: {}, tally: {}, tallyBase: {},
               unitGameBeat: {}, gameFarthest: {}, unitBestPct: {}, unitBestMs: {}, flareLevels: {},
               unitExam: {}, gameHardcoreMs: {},
-              mysteryColorsFound: { red: false, orange: false, yellow: false, violet: false, white: false },
+              mysteryColorsFound: { red: false, orange: false, yellow: false, violet: false, white: false, core: false },
               testsUntilMystery: null, flareNextTestAt: 0, flareSchedRev: 0,
               savedCodePrompts: 0, savedCodeSaved: false,
               dailyCorrectStreak: 0, dailyCorrectBest: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, friendsBest: 0, koiRevoked295: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bigTest500Passed: false, bestTestStreak: 0,
@@ -40367,12 +40947,14 @@ function applyLoadedData(got){
       orange: got.mysteryColorsFound.orange === true,
       yellow: got.mysteryColorsFound.yellow === true,
       violet: got.mysteryColorsFound.violet === true,
-      white: got.mysteryColorsFound.white === true
+      white: got.mysteryColorsFound.white === true,
+      /* the sixth (build 313), on the planet itself - nobody has it yet */
+      core: got.mysteryColorsFound.core === true
     };
   } else if(got.mysteryFound === true){
-    store.mysteryColorsFound = { red: true, orange: true, yellow: true, violet: false, white: false };
+    store.mysteryColorsFound = { red: true, orange: true, yellow: true, violet: false, white: false, core: false };
   } else {
-    store.mysteryColorsFound = { red: false, orange: false, yellow: false, violet: false, white: false };
+    store.mysteryColorsFound = { red: false, orange: false, yellow: false, violet: false, white: false, core: false };
   }
   /* The catch-up gate for flares owed to somebody already past their
      level: the lifetime test count before which the next one may not
@@ -41998,7 +42580,7 @@ function wipeLocalProgressAndSettings(){
   store.gameFarthest = {};
   store.unitExam = {};
   store.gameHardcoreMs = {};
-  store.mysteryColorsFound = { red: false, orange: false, yellow: false };
+  store.mysteryColorsFound = { red: false, orange: false, yellow: false, violet: false, white: false, core: false };
   store.testsUntilMystery = null;
   store.dailyCorrectStreak = 0; store.dailyCorrectBest = 0; store.unitHundoStreakBest = 0; store.challengeSeed289 = true; store.dayAnswered = null; store.dayAnsweredBest = 0;
   store.unitHundoStreak = 0;
@@ -45618,7 +46200,9 @@ function hundosOf(st){
    are applied, you'd see it while it's not unlocked". Only these - the
    ones that take months, or a rank near the top. */
 const BANNER_EPIC = ["tests500", "hundos250", "study50", "correct5000", "level80", "exam100",
-                     "adept_rank", "elite_rank", "titan_rank", "study60", "correct10000", "early10", "astral", "celestial", "zenith"];
+                     "adept_rank", "elite_rank", "titan_rank", "study60", "correct10000", "early10", "astral", "celestial", "zenith",
+                     /* build 313: the secret flare characters' banners */
+                     "flare_void", "flare_umbra", "flare_horizon", "flare_genesis"];
 /* ONLY THE TOP OF EACH LADDER MOVES (build 241): "ensure the animation is
    only for the coolest ones and the hardest ones in its kind". Thunderhead
    (the Game ladder), Koi Pond (tests), Sky Temple (hundos), Supernova (the
@@ -45646,7 +46230,8 @@ const BANNER_EPIC = ["tests500", "hundos250", "study50", "correct5000", "level80
 const BANNER_ANIMATED = ["tests250", "tests500", "hundos250", "adept_rank", "elite_rank", "titan_rank",
                          "study50", "correct5000", "level80", "exam100",
                          /* build 304: the three new ones move too - see BANNERS */
-                         "study60", "correct10000", "early10", "astral", "celestial", "zenith"];
+                         "study60", "correct10000", "early10", "astral", "celestial", "zenith",
+                         "flare_void", "flare_umbra", "flare_horizon", "flare_genesis"];
 const BANNERS = [
   /* ORDERED BY WHAT YOU DO, THEN HOW FAR (build 235). "Ensure the order
      they are on matches up so the progression type ones are next to each
@@ -45753,6 +46338,22 @@ const BANNERS = [
     label: "Reach Amethyst rank", have: () => (tierColorUnlocked("elite") ? 1 : 0), need: 1 },
   { id: "titan_rank", name: "Supernova", rank: "titan",
     label: "Reach Supernova rank", have: () => (tierColorUnlocked("titan") ? 1 : 0), need: 1 },
+  /* THE SECRET FLARE BANNERS (build 313): "Give the secret flare characters
+     banners." Each is held exactly when its character is - read off
+     isLockedCharacter, so there is one answer to both, and an account that
+     already holds Void, Umbra or Horizon holds its banner the moment this
+     ships (Home announces it like any other). Shown in Customize as a dark
+     silhouette until then. The label says only that it comes with the
+     character: how to find a flare is the character's card's to say, and
+     only once the flare before it is found. */
+  { id: "flare_void", name: "Void", flareChar: "voidwalker",
+    label: "Comes with Void, a secret flare character", have: () => (isLockedCharacter("voidwalker") ? 0 : 1), need: 1 },
+  { id: "flare_umbra", name: "Umbra", flareChar: "umbra",
+    label: "Comes with Umbra, a secret flare character", have: () => (isLockedCharacter("umbra") ? 0 : 1), need: 1 },
+  { id: "flare_horizon", name: "Horizon", flareChar: "singularity",
+    label: "Comes with Horizon, a secret flare character", have: () => (isLockedCharacter("singularity") ? 0 : 1), need: 1 },
+  { id: "flare_genesis", name: "Genesis", flareChar: "genesis",
+    label: "Comes with Genesis, a secret flare character", have: () => (isLockedCharacter("genesis") ? 0 : 1), need: 1 },
   /* ZENITH (build 304) - the last banner in the list, and the Zenith
      character's own: "the banner match its theme/look". Held when every
      other character, banner and theme is - ultimateProgress(), the same
@@ -47465,6 +48066,224 @@ const BANNER_ART = {
     ] }];
   },
 
+  /* ---- THE SECRET FLARE BANNERS (build 313) ----
+     "Give the secret flare characters banners ... Include unlock banners
+     for all the secret flare characters, same concept though, greyed out
+     or silhouette till it's actually unlocked." One per character, held
+     the moment the character is (bannerEarned reads isLockedCharacter, so
+     an account that already has Void has its banner too), each named for
+     its character the way the ultimates' are, and each its character's
+     own sky - none of them another black hole with jets (that is
+     Amethyst's):
+       Void    - the three lights it was made of, joined like the stars on
+                 its face, over a slow dark vortex;
+       Umbra   - a total eclipse with a violet corona, the moon's phases
+                 strung across the sky and a dark ridge under it;
+       Horizon - a black hole seen edge-on: the disc across its front, the
+                 far side lensed over the top, light pulled up and in;
+       Genesis - the planet on Home rising over the bottom edge, its seams
+                 glowing, its ring across the frame, embers going up.
+     All layered (bnLayerHTML), every motion a transform or an opacity. */
+  flare_void(u){
+    const rnd = bnRand(31113);
+    const st = bnStarsSplit(rnd, 120, 180);
+    const CX = 240, CY = 92;
+    const P = [[148, 58, "#EF4444", "#FFB4B4"], [322, 44, "#F97316", "#FFD2A8"], [262, 138, "#FACC15", "#FFF0A8"]];
+    /* the dark vortex: three lanes of dust winding in, drawn round (0,0) */
+    let lanes = "";
+    for(let arm = 0; arm < 3; arm++){
+      const ph = arm * Math.PI * 2 / 3;
+      for(let t = 0.4; t < 6.4; t += 0.1){
+        const r = 22 * Math.exp(0.3 * t), a = -t + ph;
+        if(r > 200) break;
+        lanes += '<circle cx="' + bnF(Math.cos(a) * r) + '" cy="' + bnF(Math.sin(a) * r) + '" r="' + bnF(3 + r * .07 + rnd() * 3) + '" fill="#030207" opacity="' + bnF(.55 + rnd() * .35) + '"/>';
+      }
+    }
+    const spark = (x, y, h, v) => 'M' + x + ' ' + bnF(y - v) + ' Q' + bnF(x + h * .06) + ' ' + bnF(y - v * .06) + ' ' + bnF(x + h) + ' ' + y +
+      ' Q' + bnF(x + h * .06) + ' ' + bnF(y + v * .06) + ' ' + x + ' ' + bnF(y + v) + ' Q' + bnF(x - h * .06) + ' ' + bnF(y + v * .06) + ' ' + bnF(x - h) + ' ' + y +
+      ' Q' + bnF(x - h * .06) + ' ' + bnF(y - v * .06) + ' ' + x + ' ' + bnF(y - v) + 'Z';
+    const defs = '<defs>' +
+      bnRad(u + "sp", [[0, "#140A1E"], [0.55, "#07060F"], [1, "#020206"]], "50%", "50%", "75%") +
+      bnRad(u + "glow", [[0, "#FFE0B0", 0.0], [0.14, "#FFD08A", 0.55], [0.3, "#F97316", 0.4], [0.55, "#EF4444", 0.24], [0.8, "#FACC15", 0.08], [1, "#FACC15", 0]]) +
+      bnRad(u + "n1", [[0, "#7A1F1F", 0.4], [1, "#7A1F1F", 0]]) +
+      bnRad(u + "n2", [[0, "#7A4A0A", 0.34], [1, "#7A4A0A", 0]]) +
+      P.map((p, i) => bnRad(u + "f" + i, [[0, "#FFFFFF"], [0.12, p[3]], [0.3, p[2], 0.7], [0.62, p[2], 0.18], [1, p[2], 0]])).join("") +
+      P.map((p, i) => bnLin(u + "s" + i, [[0, p[2], 0], [0.5, p[3], 0.9], [1, p[2], 0]], 0, 0, 1, 0)).join("") +
+      bnRad(u + "core", [[0, "#000000"], [0.7, "#000000"], [1, "#000000", 0]]) +
+      '</defs>';
+    /* the hairlines between them: the constellation on Void's face */
+    const line = (a, b) => '<path d="M' + a[0] + ' ' + a[1] + ' L' + b[0] + ' ' + b[1] + '" stroke="#F2F4FF" stroke-width="1.3" stroke-dasharray="3 4" stroke-linecap="round" opacity=".8"/>';
+    const flare = (p, i) => '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="34" fill="url(#' + u + 'f' + i + ')"/>' +
+      '<rect x="' + (p[0] - 44) + '" y="' + (p[1] - .9) + '" width="88" height="1.8" fill="url(#' + u + 's' + i + ')"/>' +
+      '<path d="' + spark(p[0], p[1], 3.2, 14) + '" fill="' + p[3] + '" opacity=".85"/>' +
+      '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="3.4" fill="#FFFFFF"/>';
+    return [
+      { svg: defs + '<rect x="-10" y="-10" width="500" height="200" fill="url(#' + u + 'sp)"/>' + st.still },
+      { svg: st.a, cls: "bl-tw", style: "animation-duration:2.6s" },
+      { svg: st.b, cls: "bl-tw", style: "animation-duration:3.7s;animation-delay:-1.6s" },
+      { svg: '<ellipse cx="60" cy="150" rx="150" ry="60" fill="url(#' + u + 'n1)"/><ellipse cx="430" cy="30" rx="150" ry="56" fill="url(#' + u + 'n2)"/>',
+        box: [-20, -20, 520, 220], cls: "bl-drift", style: "animation-duration:18s" },
+      /* the faint light of everything it has swallowed, in the three colours */
+      { svg: '<ellipse cx="' + CX + '" cy="' + CY + '" rx="210" ry="110" fill="url(#' + u + 'glow)"/>', box: [CX - 210, CY - 110, 420, 220], cls: "bl-breathe", style: "animation-duration:6s" },
+      /* the dark winding in */
+      { svg: lanes, box: [CX - 200, CY - 200, 400, 400], vb: [-200, -200, 400, 400], o: [CX, CY], wrap: "rotate(-12deg) scaleY(.5)", cls: "bl-spin-r", style: "animation-duration:40s" },
+      { svg: '<circle cx="' + CX + '" cy="' + CY + '" r="30" fill="url(#' + u + 'core)"/>' },
+      { svg: line(P[0], P[1]) + line(P[1], P[2]) + line(P[2], P[0]), cls: "bl-glow", style: "animation-duration:3.2s;animation-delay:-1s" },
+      /* the three, each breathing on its own beat */
+      ...P.map((p, i) => ({ svg: flare(p, i), box: [p[0] - 46, p[1] - 36, 92, 72], o: [p[0], p[1]], cls: "bl-pulse",
+        style: "animation-duration:" + [2.4, 3.1, 2.8][i] + "s;animation-delay:-" + [0, 1.3, .6][i] + "s" }))
+    ];
+  },
+  flare_umbra(u){
+    const rnd = bnRand(40404);
+    const st = bnStarsSplit(rnd, 110, 120);
+    const EX = 306, EY = 74, ER = 30;
+    /* the corona: soft streamers of uneven length, never a ring of spokes */
+    let streams = "";
+    for(let i = 0; i < 11; i++){
+      const a = i / 11 * Math.PI * 2 + rnd() * .35, L = ER * (1.5 + rnd() * 1.6), w = .16 + rnd() * .12;
+      const p = (t, r) => bnF(Math.cos(t) * r) + " " + bnF(Math.sin(t) * r);
+      streams += '<path d="M' + p(a - w, ER * .9) + ' Q' + p(a - w * .4, L * .7) + ' ' + p(a, L) + ' Q' + p(a + w * .4, L * .7) + ' ' + p(a + w, ER * .9) + ' Z" fill="url(#' + u + 'str)" opacity="' + bnF(.35 + rnd() * .4) + '"/>';
+    }
+    /* the moon's phases strung across the sky, crescent to full */
+    const phases = [.86, .55, .1, -.4, -1].map((k, i) => {
+      const x = 46 + i * 46, y = 46 + Math.sin(i / 4 * Math.PI) * -16, r = 9;
+      const lit = '<path d="M' + x + ' ' + (y - r) + ' A' + r + ' ' + r + ' 0 0 1 ' + x + ' ' + (y + r) + ' Z" fill="#D9CCFF"/>';
+      const ell = '<ellipse cx="' + x + '" cy="' + y + '" rx="' + bnF(r * Math.abs(k)) + '" ry="' + (r + .2) + '" fill="' + (k > 0 ? "#1C1432" : "#D9CCFF") + '"/>';
+      return '<g><circle cx="' + x + '" cy="' + y + '" r="' + (r * 2.2) + '" fill="url(#' + u + 'mh)"/><circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="#1C1432"/>' + lit + ell + '</g>';
+    }).join("");
+    let ridge = "M-10 180 L-10 148";
+    for(let x = -10; x <= 490; x += 14) ridge += " L" + x + " " + bnF(150 - Math.abs(Math.sin(x / 60)) * 16 - rnd() * 10 - (x > 380 && x < 440 ? 14 : 0));
+    ridge += " L490 180 Z";
+    const defs = '<defs>' +
+      bnLin(u + "sky", [[0, "#0B0618"], [0.6, "#1A0F38"], [1, "#2A1650"]]) +
+      bnRad(u + "cor", [[0, "#FFFFFF", 0], [0.4, "#FFFFFF", 0], [0.47, "#F3EEFF", 1], [0.56, "#C4B5FD", 0.6], [0.75, "#8B5CF6", 0.22], [1, "#8B5CF6", 0]]) +
+      bnRad(u + "str", [[0, "#EDE4FF", 0.9], [0.6, "#A78BFA", 0.35], [1, "#8B5CF6", 0]], "50%", "50%", "60%") +
+      bnRad(u + "dia", [[0, "#FFFFFF"], [0.2, "#F5F3FF", 0.9], [0.5, "#C4B5FD", 0.35], [1, "#8B5CF6", 0]]) +
+      bnRad(u + "mh", [[0, "#C4B5FD", 0.4], [1, "#C4B5FD", 0]]) +
+      bnLin(u + "mist", [[0, "#8B5CF6", 0], [0.5, "#8B5CF6", 0.3], [1, "#4C1D95", 0.05]]) +
+      bnLin(u + "rid", [[0, "#120A22"], [1, "#05030A"]]) +
+      '</defs>';
+    const ev = "animation-duration:8s;animation-delay:-2.5s;";
+    return [
+      { svg: defs + '<rect x="-10" y="-10" width="500" height="200" fill="url(#' + u + 'sky)"/>' + st.still },
+      { svg: st.a, cls: "bl-tw", style: "animation-duration:2.9s" },
+      { svg: st.b, cls: "bl-tw", style: "animation-duration:4.1s;animation-delay:-2s" },
+      { svg: phases },
+      /* the corona turning, very slowly, and breathing */
+      { svg: streams, box: [EX - 110, EY - 110, 220, 220], vb: [-110, -110, 220, 220], o: [EX, EY], cls: "bl-spin", style: "animation-duration:90s" },
+      { svg: '<circle cx="' + EX + '" cy="' + EY + '" r="' + (ER * 2.1) + '" fill="url(#' + u + 'cor)"/>', box: [EX - ER * 2.1, EY - ER * 2.1, ER * 4.2, ER * 4.2], o: [EX, EY], cls: "bl-breathe", style: "animation-duration:4.5s" },
+      { svg: '<circle cx="' + EX + '" cy="' + EY + '" r="' + ER + '" fill="#06040C"/>' },
+      /* the diamond ring: one bead of light on the edge, now and then */
+      { svg: '<circle cx="' + (EX - ER * .62) + '" cy="' + (EY - ER * .78) + '" r="16" fill="url(#' + u + 'dia)"/>' +
+          '<rect x="' + (EX - ER * .62 - 30) + '" y="' + (EY - ER * .78 - .8) + '" width="60" height="1.6" fill="#F5F3FF" opacity=".8"/>',
+        box: [EX - ER * .62 - 30, EY - ER * .78 - 16, 60, 32], cls: "bl-spike", style: ev + "opacity:0" },
+      /* the mist in the valley, drifting, and the dark ridge over it */
+      { svg: '<rect x="-20" y="118" width="520" height="50" fill="url(#' + u + 'mist)"/>', box: [-20, 110, 520, 70], cls: "bl-drift", style: "animation-duration:16s" },
+      { svg: '<path d="' + ridge + '" fill="url(#' + u + 'rid)"/><path d="' + ridge.replace(/ L490 180 Z$/, "").replace(/^M-10 180 L-10 148/, "M-10 148") + '" fill="none" stroke="#A78BFA" stroke-width=".8" opacity=".45"/>' }
+    ];
+  },
+  flare_horizon(u){
+    const rnd = bnRand(70272);
+    const st = bnStarsSplit(rnd, 140, 180);
+    const CX = 240, CY = 94, HR = 24;
+    /* light drawn up and in: thin streaks rising on a 180 tile, drawn twice */
+    let pull = "";
+    for(let i = 0; i < 26; i++){
+      const x = rnd() * 480, y = rnd() * 180, h = 8 + rnd() * 18;
+      [0, 180].forEach(dy => { pull += '<rect x="' + bnF(x) + '" y="' + bnF(y + dy) + '" width=".9" height="' + bnF(h) + '" rx=".45" fill="url(#' + u + 'pl)" opacity="' + bnF(.3 + rnd() * .4) + '"/>'; });
+    }
+    /* the disc's grains, round in their own plane */
+    let grains = "";
+    for(let i = 0; i < 90; i++){
+      const a = rnd() * Math.PI * 2, r = 40 + rnd() * 170;
+      grains += '<circle cx="' + bnF(Math.cos(a) * r) + '" cy="' + bnF(Math.sin(a) * r) + '" r="' + bnF(.8 + rnd() * 1.6) + '" fill="' + (rnd() < .5 ? "#FFFFFF" : "#BFE6FF") + '" opacity="' + bnF(.4 + rnd() * .5) + '"/>';
+    }
+    const defs = '<defs>' +
+      bnRad(u + "sp", [[0, "#0D1A3A"], [0.5, "#060B1C"], [1, "#02040A"]], "50%", "52%", "75%") +
+      bnRad(u + "halo", [[0, "#7FC8FF", 0.4], [0.35, "#4A7ACC", 0.18], [1, "#141A44", 0]]) +
+      bnLin(u + "disc", [[0, "#7FC8FF", 0], [0.18, "#BFE6FF", 0.7], [0.42, "#FFFFFF", 1], [0.58, "#DDF4FF", 0.85], [0.85, "#7FC8FF", 0.45], [1, "#7FC8FF", 0]], 0, 0, 1, 0) +
+      bnRad(u + "lens", [[0.8, "#FFFFFF", 0], [0.88, "#DDF4FF", 0.85], [0.94, "#FFFFFF", 1], [1, "#7FC8FF", 0]]) +
+      bnRad(u + "ring", [[0.86, "#FFFFFF", 0], [0.93, "#FFFFFF", 1], [1, "#7FC8FF", 0]]) +
+      bnLin(u + "pl", [[0, "#DDF4FF", 0], [1, "#FFFFFF", 0.9]]) +
+      '</defs>';
+    return [
+      { svg: defs + '<rect x="-10" y="-10" width="500" height="200" fill="url(#' + u + 'sp)"/>' + st.still },
+      { svg: st.a, cls: "bl-tw", style: "animation-duration:2.4s" },
+      { svg: st.b, cls: "bl-tw", style: "animation-duration:3.3s;animation-delay:-1.2s" },
+      /* the pull: everything rising towards the dark */
+      { svg: pull, box: [0, 0, 480, 360], cls: "bl-rise", style: "animation-duration:9s" },
+      { svg: '<ellipse cx="' + CX + '" cy="' + CY + '" rx="230" ry="90" fill="url(#' + u + 'halo)"/>', box: [CX - 230, CY - 90, 460, 180], cls: "bl-breathe", style: "animation-duration:5s" },
+      /* the far side of the disc, bent up over the top of the hole and under it */
+      { svg: '<ellipse cx="' + CX + '" cy="' + CY + '" rx="' + (HR * 2.05) + '" ry="' + (HR * 1.8) + '" fill="url(#' + u + 'lens)"/>', box: [CX - HR * 2.1, CY - HR * 1.9, HR * 4.2, HR * 3.8], o: [CX, CY], cls: "bl-pulse", style: "animation-duration:2.6s" },
+      /* the disc's grains turning, in its edge-on plane */
+      { svg: grains, box: [CX - 210, CY - 210, 420, 420], vb: [-210, -210, 420, 420], o: [CX, CY], wrap: "rotate(-4deg) scaleY(.07)", cls: "bl-spin-r", style: "animation-duration:9s" },
+      { svg: '<circle cx="' + CX + '" cy="' + CY + '" r="' + (HR * 1.22) + '" fill="url(#' + u + 'ring)"/><circle cx="' + CX + '" cy="' + CY + '" r="' + HR + '" fill="#010205"/>' },
+      /* the near side of the disc, across the front of the hole */
+      { svg: '<ellipse cx="' + CX + '" cy="' + CY + '" rx="220" ry="6.5" fill="url(#' + u + 'disc)" transform="rotate(-4 ' + CX + ' ' + CY + ')"/>' +
+          '<ellipse cx="' + CX + '" cy="' + CY + '" rx="200" ry="1.4" fill="#FFFFFF" opacity=".7" transform="rotate(-4 ' + CX + ' ' + CY + ')"/>',
+        box: [CX - 220, CY - 22, 440, 44], cls: "bl-shimmer", style: "animation-duration:3s" }
+    ];
+  },
+  flare_genesis(u){
+    const rnd = bnRand(80080);
+    const st = bnStarsSplit(rnd, 120, 110);
+    const PX = 240, PY = 330, PR = 236;
+    /* the seams: cracks across the visible cap of the world */
+    let seams = "";
+    for(let k = 0; k < 7; k++){
+      let x = 40 + k * 66 + rnd() * 20, y = 170, d = "M" + bnF(x) + " " + y;
+      for(let s = 0; s < 6; s++){
+        x += (rnd() - .5) * 26; y -= 6 + rnd() * 10;
+        if(Math.hypot(x - PX, y - PY) > PR - 4) break;
+        d += " L" + bnF(x) + " " + bnF(y);
+      }
+      seams += '<path d="' + d + '" fill="none" stroke="#FF5CA8" stroke-width="6" stroke-linejoin="round" stroke-linecap="round" opacity=".3"/>' +
+        '<path d="' + d + '" fill="none" stroke="#FFD0A0" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>';
+    }
+    let bands = "";
+    for(let i = 0; i < 6; i++){
+      const y = 104 + i * 13 + rnd() * 5;
+      bands += '<ellipse cx="' + bnF(PX + (rnd() - .5) * 60) + '" cy="' + bnF(y) + '" rx="' + bnF(200 + rnd() * 60) + '" ry="' + bnF(2 + rnd() * 2.5) + '" fill="' + (i % 2 ? "#5A0F3E" : "#FFE2B0") + '" opacity="' + bnF(i % 2 ? .22 : .1) + '"/>';
+    }
+    let embers = "";
+    for(let i = 0; i < 30; i++){
+      const x = 60 + rnd() * 360, y = rnd() * 180, r = .8 + rnd() * 1.5, c = rnd() < .5 ? "#FFB86B" : "#FF5CA8";
+      [0, 180].forEach(dy => { embers += '<circle cx="' + bnF(x) + '" cy="' + bnF(y + dy) + '" r="' + bnF(r) + '" fill="' + c + '" opacity="' + bnF(.4 + rnd() * .5) + '"/>'; });
+    }
+    const ringBack = '<path d="M-60 ' + (PY - PR + 34) + ' A300 34 0 0 1 540 ' + (PY - PR + 34) + '" fill="none" stroke="url(#' + u + 'ring)" stroke-width="7" opacity=".5" transform="rotate(-6 240 ' + (PY - PR + 34) + ')"/>';
+    const ringFront = '<path d="M540 ' + (PY - PR + 34) + ' A300 34 0 0 1 -60 ' + (PY - PR + 34) + '" fill="none" stroke="url(#' + u + 'ring)" stroke-width="7" opacity=".85" transform="rotate(-6 240 ' + (PY - PR + 34) + ')"/>' +
+      '<path d="M540 ' + (PY - PR + 34) + ' A300 34 0 0 1 -60 ' + (PY - PR + 34) + '" fill="none" stroke="#FFF0E0" stroke-width="1.2" opacity=".9" transform="rotate(-6 240 ' + (PY - PR + 34) + ')"/>';
+    const defs = '<defs>' +
+      bnLin(u + "sky", [[0, "#07030C"], [0.55, "#1A0820"], [1, "#3A0F2E"]]) +
+      bnRad(u + "pl", [[0, "#FFF1CF"], [0.1, "#FFD37A"], [0.22, "#F5804D"], [0.38, "#D9467F"], [0.6, "#8A1E5A"], [1, "#22061C"]], "34%", "2%", "80%") +
+      bnRad(u + "atm", [[0, "#FF5CA8", 0], [0.88, "#FF5CA8", 0], [0.93, "#FF8FC0", 0.6], [0.97, "#FF5CA8", 0.25], [1, "#FF5CA8", 0]]) +
+      bnRad(u + "neb1", [[0, "#FF5CA8", 0.32], [1, "#FF5CA8", 0]]) +
+      bnRad(u + "neb2", [[0, "#FFB86B", 0.24], [1, "#FFB86B", 0]]) +
+      bnLin(u + "ring", [[0, "#FFB0D2", 0.1], [0.3, "#FFE3C4", 0.9], [0.7, "#FF8FC0", 0.85], [1, "#FFB0D2", 0.1]], 0, 0, 1, 0) +
+      bnRad(u + "erupt", [[0, "#FFFFFF"], [0.25, "#FFC08A", 0.8], [0.6, "#FF5CA8", 0.3], [1, "#FF5CA8", 0]]) +
+      '<clipPath id="' + u + 'clip"><circle cx="' + PX + '" cy="' + PY + '" r="' + PR + '"/></clipPath>' +
+      '</defs>';
+    const ev = "animation-duration:7.6s;animation-delay:-3s;";
+    return [
+      { svg: defs + '<rect x="-10" y="-10" width="500" height="200" fill="url(#' + u + 'sky)"/>' + st.still },
+      { svg: st.a, cls: "bl-tw", style: "animation-duration:2.7s" },
+      { svg: st.b, cls: "bl-tw", style: "animation-duration:3.9s;animation-delay:-1.7s" },
+      { svg: '<ellipse cx="90" cy="40" rx="140" ry="50" fill="url(#' + u + 'neb1)"/><ellipse cx="400" cy="56" rx="130" ry="46" fill="url(#' + u + 'neb2)"/>', box: [-20, -20, 520, 160], cls: "bl-drift", style: "animation-duration:20s" },
+      { svg: ringBack },
+      /* the world's air, breathing */
+      { svg: '<circle cx="' + PX + '" cy="' + PY + '" r="' + (PR + 22) + '" fill="url(#' + u + 'atm)"/>', box: [PX - PR - 22, PY - PR - 22, 2 * PR + 44, 2 * PR + 44], o: [PX, PY], cls: "bl-breathe", style: "animation-duration:5.5s" },
+      { svg: '<circle cx="' + PX + '" cy="' + PY + '" r="' + PR + '" fill="url(#' + u + 'pl)"/><g clip-path="url(#' + u + 'clip)">' + bands + '</g>' },
+      /* the seams glowing with the heat underneath */
+      { svg: '<g clip-path="url(#' + u + 'clip)">' + seams + '</g>', cls: "bl-glow", style: "animation-duration:2.2s" },
+      /* now and then the crown erupts */
+      { svg: '<ellipse cx="300" cy="' + (PY - PR + 4) + '" rx="10" ry="22" fill="url(#' + u + 'erupt)"/>', box: [288, PY - PR - 20, 24, 48], o: [300, PY - PR + 4], cls: "bl-spike", style: ev + "opacity:0" },
+      { svg: ringFront },
+      /* embers going up off the world, on a 180 tile drawn twice */
+      { svg: embers, box: [0, 0, 480, 360], cls: "bl-rise", style: "animation-duration:11s" }
+    ];
+  },
+
   /* ZENITH (build 304) - the last banner in the list, held when every
      other character, banner and theme is: "the banner match its
      theme/look ... Make it super super sick." It is the Zenith
@@ -47998,7 +48817,10 @@ const BANNER_TINT = {
   titan_rank: ["#EC3C55", "#BC3DEB"],
   /* measured per look - see ZENITH_LOOKS */
   zenith: ZENITH_LOOK.tint,
-  astral: ZENITH_LOOKS.c.tint, celestial: ZENITH_LOOKS.b.tint
+  astral: ZENITH_LOOKS.c.tint, celestial: ZENITH_LOOKS.b.tint,
+  /* build 313, the secret flare banners - read off their renders */
+  flare_void: ["#E0662A", "#C9383A"], flare_umbra: ["#7A55D8", "#A58BF0"],
+  flare_horizon: ["#4E8FD8", "#8FCBF5"], flare_genesis: ["#D9467F", "#F08A4E"]
 };
 const bannerTintCache = {};
 function bannerTintOf(id){
@@ -52524,9 +53346,16 @@ let mysteryColorThisRun = null;  // which of the 3 colors this run's appearance 
    VOID_FLARES is the first three and is what Void, the Home orbit's
    first three dots and the third-flare scene are all built from; the
    last two only exist for somebody who already holds Void. */
-const MYSTERY_ORDER = ["red", "orange", "yellow", "violet", "white"];
+/* SIX SINCE BUILD 313: "We are also going to add a 4th character here,
+   this flare will be a secret flare that is somehow placed in a cool way
+   on the planet ... you see this flare in a test when reaching level
+   78-80." The sixth is `core` - the planet's own - and it hands over
+   Genesis. Appended, never inserted: the hunt only ever looks for the
+   first colour still missing, so a new key at the end changes nothing for
+   anybody part-way through the first five. */
+const MYSTERY_ORDER = ["red", "orange", "yellow", "violet", "white", "core"];
 const VOID_FLARES = ["red", "orange", "yellow"];
-const MYSTERY_COLOR = { red: "#EF4444", orange: "#F97316", yellow: "#FACC15", violet: "#8B5CF6", white: "#7FC8FF" };
+const MYSTERY_COLOR = { red: "#EF4444", orange: "#F97316", yellow: "#FACC15", violet: "#8B5CF6", white: "#7FC8FF", core: "#FF5CA8" };
 /* THE FIFTH FLARE IS THE SINGULARITY'S ICE BLUE (build 276), not white.
    "I think the 4 flare is purple, so ensure the 5th flare matches
    singularity color." Umbra's flare is Umbra's violet; Event Horizon was
@@ -52534,9 +53363,44 @@ const MYSTERY_COLOR = { red: "#EF4444", orange: "#F97316", yellow: "#FACC15", vi
    hands over is drawn in ice blue - the visor's #7FC8FF, the hair's
    light tips, the blue nebula behind. The key stays "white": it is what
    store.mysteryColorsFound is keyed by, so renaming it is a migration. */
-const MYSTERY_NAME  = { red: "Red", orange: "Orange", yellow: "Yellow", violet: "Umbra", white: "Event Horizon" };
-/* The character each Void flare hands over. */
-const FLARE_CHARACTER = { violet: "umbra", white: "singularity" };
+/* EVERY FLARE HAS A NAME OF ITS OWN (build 313): "The flares names just
+   being their colors is kind of lame as well. Give each secret flare a
+   cool name, make sure they are relevant to what they go to though and
+   the color and stuff." Each is named for what it hands over and what
+   colour it is:
+     Redshift      - light stretched red as it falls away into the dark;
+     Accretion     - the orange disc of matter spiralling into a black hole;
+     Afterglow     - the gold left behind once a star has gone out.
+                     The three are the light Void swallowed.
+     Penumbra      - the violet half-shadow round the full shadow: Umbra's.
+     Event Horizon - the ice-blue edge nothing comes back from: Horizon's.
+     Worldheart    - the rose light at the planet's core: Genesis's.
+   Display only. The keys (red ... core) are what store.mysteryColorsFound
+   is keyed by, so they never change. */
+const MYSTERY_NAME  = { red: "Redshift", orange: "Accretion", yellow: "Afterglow", violet: "Penumbra", white: "Event Horizon", core: "Worldheart" };
+/* The character each flare after the first three hands over. */
+const FLARE_CHARACTER = { violet: "umbra", white: "singularity", core: "genesis" };
+/* Which flare hands over which secret character - the other way round. */
+const CHARACTER_FLARE = { voidwalker: "yellow", umbra: "violet", singularity: "white", genesis: "core" };
+/* WHAT HOME SHOWS, IN THREE STEPS (build 313): "there will be only be 3
+   at first, THE 4th and 5th flare will appear once void is unlocked."
+   And the sixth, the planet's own, once the fifth is found - the hunt is
+   in order, so a sixth light before the fifth would give the order away. */
+function homeFlareKeys(){
+  const f = (typeof store !== "undefined" && store.mysteryColorsFound) || {};
+  const out = VOID_FLARES.slice();
+  if(VOID_FLARES.every(k => f[k])){ out.push("violet", "white"); if(f.white) out.push("core"); }
+  return out;
+}
+/* The flare the hunt is looking for next, and whether its level has come:
+   "hunting" is the one a test can hide right now (bar the catch-up gap). */
+function flareHuntState(key){
+  const f = (typeof store !== "undefined" && store.mysteryColorsFound) || {};
+  if(f[key]) return "found";
+  if(nextNeededMysteryColor() !== key) return "missing";
+  try{ if(levelOf(store) >= mysteryLevelGate(key)) return "hunting"; }catch(e){}
+  return "next";
+}
 /* HOW HIDDEN, and it is measured in TESTS COMPLETED rather than in runs
    between appearances. Asked for by number: "a person should see the
    first flare when they get to 80-90 tests taken. The second one can be
@@ -52597,8 +53461,10 @@ let mysteryLeftFrac = .5;
    first time it is asked - nothing has to be migrated by hand.
    Lowering the levels makes a lot of people owed flares on the same day,
    so the catch-up for them is spread too - see applyFlareReschedule(). */
+/* The sixth (build 313): "you see this flare in a test when reaching
+   level 78-80". 80 is the level cap, so the window ends exactly there. */
 const FLARE_WINDOWS = {
-  red: [20, 20], orange: [34, 36], yellow: [47, 49], violet: [59, 61], white: [70, 72]
+  red: [20, 20], orange: [34, 36], yellow: [47, 49], violet: [59, 61], white: [70, 72], core: [78, 80]
 };
 /* ONE-TIME RESCHEDULE (build 302). Asked for with the new levels: "for
    the people who already meet these thresholds make them random for
@@ -52880,7 +53746,7 @@ function foundMysteryFlare(btn){
   if(mysteryFoundThisSession || !mysteryColorThisRun) return;
   const color = mysteryColorThisRun;
   mysteryFoundThisSession = true;
-  store.mysteryColorsFound = store.mysteryColorsFound || { red: false, orange: false, yellow: false, violet: false, white: false };
+  store.mysteryColorsFound = store.mysteryColorsFound || { red: false, orange: false, yellow: false, violet: false, white: false, core: false };
   const hadVoid = voidFlaresAllFound();
   store.mysteryColorsFound[color] = true;
   /* `all` is the moment the Void hunt completes - the third flare - and
@@ -54808,7 +55674,6 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
   const glowDefs = document.createElementNS(svgNS, "defs");
   glowLayer.appendChild(glowDefs);
   const animLayer = mkLayer("cosmic-hero-animlayer");
-  const orbitLayer = mkLayer("cosmic-hero-orbitlayer");
   const defs = document.createElementNS(svgNS, "defs");
   /* DEPTH (build 304): "the large planet, the flare bubbles, the tiny
      flares ... could look a little more 3d/legit". One light, from the
@@ -55173,101 +56038,115 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
   highlight.setAttribute("transform", "rotate(-25 163 132)");
   highlight.setAttribute("pointer-events", "none");
   svg.appendChild(highlight);
-  /* The 3 small orbit dots were purely decorative \u2014 now each one is
-     a real mystery-star tracker (red, orange, yellow, matching the
-     actual hidden stars) that lights up in its real color once found,
-     instead of a separate new element cluttering the scene. */
+  /* ---- THE SECRET FLARES ON HOME (rebuilt in build 313) ----
+     Each tiny flare is an HTML element now, not an svg circle, on two
+     div layers that turn as wholes (the outer ring and the faster inner
+     one) - so everything a flare does (the halo breathing, the glint,
+     the pulse of the one being hunted) is a transform or an opacity on
+     its own small box, on the compositor, instead of a repaint of a
+     full-size svg every frame.
+
+     Four things were wrong at once, all reported from one account:
+     - "None of my secret flares are lit up." A found dot set its colour
+       as a fill ATTRIBUTE, and `.cosmic-orbit-dot{ fill:... }` in the
+       stylesheet beats a presentation attribute - every found flare was
+       painted the same white as a missing one. The colour is a custom
+       property on the element now (--fc) and the lit look reads it.
+     - "Sometimes they and sometimes the text box won't show up." The
+       shared `.cosmic-badge-tappable:active{ transform:scale(.88) }`
+       scaled an svg circle about the svg's ORIGIN, not its own centre,
+       so a finger landing on a dot threw it 12% of the way to the top
+       left corner - the dot vanished from under the finger and the tap
+       landed on whatever was there instead. And a dot that had turned
+       under a rank bubble could not be tapped at all: the bubbles sat
+       above the dots. The layers are above the bubbles now and nothing
+       on a flare moves its box when pressed.
+     - "The umbra missing flare did not change at all." The flare the
+       hunt is looking for next carries its own colour, faintly, and
+       pulses once its level has come (flareHuntState).
+     - The positions: even spacing read as a pattern - "could look better
+       and more random ... kinda how they used to be". They sit at uneven
+       angles again, the way the first three did, and the inner ring
+       turns more than twice as fast as the outer one. */
   const mysteryColors = MYSTERY_COLOR;
-  /* All five, always (build 244): "The main menu has 3 tiny circle
-     flares, add the 2 more in the large ring for the other secret flare
-     characters. Make it look the same." The fourth and fifth - Void's
-     own flares, Umbra's and Singularity's - used to exist only for
-     somebody already holding Void; now they sit on the large ring from
-     the start, dark until found like the first three, and the same size
-     as them. */
-  const mysteryOrder = MYSTERY_ORDER.slice();
-  /* A slow, continuous rotation of the whole group (not each dot
-     independently) keeps their relative spacing intact while making
-     them genuinely orbit the ring, the way a real satellite would \u2014
-     rather than each one drifting on its own and passing through
-     each other. Respects reduced-motion like every other animation
-     in the app. */
-  const dotsGroup = document.createElementNS(svgNS, "g");
-  dotsGroup.setAttribute("class", "cosmic-orbit-dots-group");
-  const innerOrbitLayer = mkLayer("cosmic-hero-orbitlayer cosmic-hero-orbitlayer-inner");
-  const innerDots = document.createElementNS(svgNS, "g");
-  innerDots.setAttribute("class", "cosmic-orbit-dots-group");
-  /* SPREAD OUT (build 302): "some of them are close together, maybe 2 of
-     them need to be in the inner circle (maybe the 4th and 5th)". Red,
-     Umbra and Orange sat at 0, 43 and 90 degrees on the outer ring - one
-     quarter of it. Umbra and Event Horizon move to the inner ring, where
-     they and Yellow are an even 120 degrees apart (19.5, 139.5, 259.5),
-     and Red and Orange take opposite sides of the outer one (0 and 180).
-     Inner or outer is decided by distance from the centre below, so the
-     coordinates are the whole change. */
-  [[180, 150 - 152], [180, 150 + 152], [180 - 108, 150 + 20], [216.05, 48.2], [250.14, 232.12]]
-    .slice(0, mysteryOrder.length).forEach(([cx, cy], i) => {
-    const dot = document.createElementNS(svgNS, "circle");
-    dot.setAttribute("cx", cx); dot.setAttribute("cy", cy); dot.setAttribute("r", 4.5);
-    const colorKey = mysteryOrder[i];
-    const found = !!(typeof store !== "undefined" && store.mysteryColorsFound && store.mysteryColorsFound[colorKey]);
-    dot.setAttribute("class", "cosmic-orbit-dot" + (found ? " cosmic-orbit-dot-found" : ""));
-    if(found){ dot.setAttribute("fill", mysteryColors[colorKey]); dot.style.color = mysteryColors[colorKey]; }
-    /* ---- AND THESE ANSWER A TAP TOO ----
-       "When you click the secret flares on the Home Screen, ensure it
-       says something there too, like the other bubbles."
-       These three dots are what is left of the Secret Flares, which
-       were scrapped - they are decoration now, and the seven marks
-       around them all say something when tapped, so three that stay
-       silent read as broken rather than as scenery.
-       It says what they are rather than inventing a feature for them.
-       Home only, like the flares themselves: useTierIcons is true
-       nowhere else. */
-    if(useTierIcons){
-      dot.setAttribute("class", dot.getAttribute("class") + " cosmic-badge-tappable");
-      dot.setAttribute("role", "button");
-      dot.setAttribute("tabindex", "0");
-      /* The dots are the Secret Flares again (build 213 brought the
-         hunt back) - "Just a star" was left over from when they were
-         scrapped. A found one names itself; a missing one only hints. */
-      const sayDot = () => showContextualInfo(dot, found
-        ? (i >= 3 ? MYSTERY_NAME[colorKey] + " \u2014 a Void flare, found." : "A secret flare \u2014 found.")
-        : (i >= 3 ? "There appears to be a missing Void flare." : "There appears to be a missing flare."));
-      dot.addEventListener("click", sayDot);
-      dot.addEventListener("keydown", (e) => {
-        if(e.key === "Enter" || e.key === " "){ e.preventDefault(); sayDot(); }
-      });
+  const shownFlares = homeFlareKeys();
+  const orbitLayer = document.createElement("div");
+  orbitLayer.className = "cosmic-hero-layer cosmic-hero-orbitlayer";
+  const innerOrbitLayer = document.createElement("div");
+  innerOrbitLayer.className = "cosmic-hero-layer cosmic-hero-orbitlayer cosmic-hero-orbitlayer-inner";
+  /* [ring radius, degrees clockwise from the top], in the 0 -12 360 342
+     viewBox the planet is drawn in (centre 180,150; rings 108 and 152). */
+  const FLARE_SPOT = { red: [152, 337], orange: [152, 128], yellow: [108, 236], violet: [108, 32], white: [108, 141] };
+  /* Something to say when a flare is tapped. A found one names itself
+     and what it brought; a missing one only hints. */
+  const flareSays = (key, state) => {
+    const nm = MYSTERY_NAME[key];
+    if(state === "found"){
+      if(VOID_FLARES.indexOf(key) >= 0) return nm + " — found. One of the three that made Void.";
+      if(key === "core") return nm + " — found. The planet's own light. It woke Genesis.";
+      return nm + " — found. It brought " + (AVATAR_DISPLAY_NAME[FLARE_CHARACTER[key]] || "") + " out of the dark.";
     }
-    /* THE MIDDLE RING TURNS A LITTLE FASTER (build 267): "can the ones
-       in the middle circle move just slightly faster?" A dot on the
-       inner ring goes on its own layer with its own, quicker spin -
-       a whole svg, like the outer one, so it stays a compositor
-       transform. Nearer the planet, faster round it: what an orbit
-       does anyway. */
-    /* ---- TINY BUBBLES, ALL ALIKE (build 310) ----
-       "I kinda feel like they should be super tiny bubbles more than just
-       a white glow dot? I also really liked how they originally were."
-       Originally a crisp 4.5 dot; build 308 made them 7.5 blurs of light.
-       Now each is the original size again, drawn as a bubble: a clear
-       body bright at its rim and a hairline edge. Every one is built the same way
-       on both rings; a found one is the same bubble in its colour. */
-    dot.setAttribute("r", 5);
-    if(!found) dot.style.fill = "url(#" + depthId + "dot)";
-    else { dot.style.fillOpacity = ".82"; }
-    /* the rim is its own circle: the dot's stroke is its 44px tap target */
-    const rim = document.createElementNS(svgNS, "circle");
-    rim.setAttribute("cx", cx); rim.setAttribute("cy", cy); rim.setAttribute("r", 4.65);
-    rim.setAttribute("class", "cosmic-orbit-rim");
-    rim.setAttribute("pointer-events", "none");
-    /* No glint: the whole ring turns, so an off-centre glint would point
-       a different way on every bubble at once - the "they aren't all the
-       same" again. A bubble's light here is its rim, which looks the
-       same from every angle. */
-    const dotHome = Math.hypot(cx - 180, cy - 150) < 130 ? innerDots : dotsGroup;
-    dotHome.append(dot, rim);
+    if(state === "hunting") return "The next secret flare. It is out there now, hidden in one of your tests.";
+    if(state === "next") return "The next secret flare. It is not out there yet.";
+    return "A secret flare, still missing.";
+  };
+  const makeFlare = (key) => {
+    const state = (typeof store !== "undefined") ? flareHuntState(key) : "missing";
+    const el = document.createElement("span");
+    el.className = "cosmic-orbit-dot cosmic-flare-dot" + (state === "found" ? " cosmic-orbit-dot-found is-found" :
+      state === "hunting" ? " is-next is-hunting" : state === "next" ? " is-next" : "");
+    el.dataset.flare = key;
+    el.style.setProperty("--fc", mysteryColors[key]);
+    /* each on its own clock, so six never breathe or glint in step */
+    const k = MYSTERY_ORDER.indexOf(key);
+    el.style.setProperty("--fd", (-[0, 2.3, 4.1, 1.2, 3.4, .6][k] || 0) + "s");
+    el.style.setProperty("--fg", ([7.3, 9.1, 11.7, 8.3, 10.3, 6.7][k] || 8) + "s");
+    el.innerHTML = '<i class="cof-halo"></i><i class="cof-ring"></i><i class="cof-body"></i><i class="cof-tint"></i><i class="cof-core"></i><i class="cof-spark"></i>';
+    if(useTierIcons){
+      el.classList.add("cosmic-badge-tappable");
+      el.setAttribute("role", "button");
+      el.setAttribute("tabindex", "0");
+      el.setAttribute("aria-label", state === "found" ? MYSTERY_NAME[key] + ", a secret flare you have found" : "A secret flare");
+      const say = (e) => {
+        if(e) e.stopPropagation();
+        showContextualInfo(el, flareSays(key, state), { follow: true, ring: true,
+          refind: () => document.querySelector('.panel.home .cosmic-hero-wrap [data-flare="' + key + '"]') });
+      };
+      el.addEventListener("click", say);
+      el.addEventListener("keydown", (e) => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); say(); } });
+    }
+    return el;
+  };
+  shownFlares.forEach(key => {
+    const spot = FLARE_SPOT[key];
+    if(!spot) return;
+    const a = spot[1] * Math.PI / 180;
+    const cx = 180 + spot[0] * Math.sin(a), cy = 150 - spot[0] * Math.cos(a);
+    const el = makeFlare(key);
+    el.style.left = (cx / 360 * 100).toFixed(3) + "%";
+    el.style.top = ((cy + 12) / 342 * 100).toFixed(3) + "%";
+    (spot[0] < 130 ? innerOrbitLayer : orbitLayer).appendChild(el);
   });
-  orbitLayer.appendChild(dotsGroup);
-  innerOrbitLayer.appendChild(innerDots);
+  /* ---- THE SIXTH, ON THE PLANET (build 313) ----
+     "This flare will be a secret flare that is somehow placed in a cool
+     way on the planet ... that moves in a cool way." It skims the planet
+     in a low, tilted orbit - across the face, round the limb, and BEHIND
+     it, gone for a moment, then back round the other side. One orbit,
+     drawn with transforms only: a squashed, tilted plane turns an arm,
+     and the flare at the arm's end turns back the other way and is
+     un-squashed, so it stays a round bead moving on an ellipse. It hides
+     on the far side only where the planet is in front of it (see
+     cof-occlude), and its short tail lies in the orbit's own plane. */
+  let coreFlare = null;
+  if(shownFlares.indexOf("core") >= 0){
+    coreFlare = document.createElement("div");
+    coreFlare.className = "cosmic-core-orbit";
+    coreFlare.innerHTML = '<div class="cco-plane"><div class="cco-spin"><div class="cco-arm"><i class="cco-tail"></i><div class="cco-counter"></div></div></div></div>';
+    const fl = makeFlare("core");
+    fl.classList.add("is-core");
+    if(fl.classList.contains("is-found")) coreFlare.classList.add("is-found");
+    coreFlare.querySelector(".cco-counter").appendChild(fl);
+  }
   svg.classList.add("cosmic-hero-main");
   wrap.append(glowBox, svg, animLayer, orbitLayer, innerOrbitLayer);
   /* The sphere's life, on the compositor: two soft light pools drifting
@@ -55299,6 +56178,8 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
     });
   }
   wrap.appendChild(plasma);
+  /* above the plasma, so the sixth flare crosses in front of the planet */
+  if(coreFlare) wrap.appendChild(coreFlare);
   /* The planet's own shadow and edge light (build 304) came off in build
      310 - the planet is the original one again; see "DARK SMOKE ONLY". */
 
@@ -65555,7 +66436,9 @@ const LEVEL_CONFETTI = {
    viewport, auto-flipping above/below), and thin-triangle arrow as
    the tour tooltip, since all three are the same underlying idea:
    information anchored to a specific point on screen. */
-function showContextualInfo(targetEl, message){
+function showContextualInfo(targetEl, message, opts){
+  opts = opts || {};
+  if(showContextualInfo._raf){ cancelAnimationFrame(showContextualInfo._raf); showContextualInfo._raf = 0; }
   const existing = document.getElementById("contextual-info-popup");
   if(existing) existing.remove();
   const existingLine = document.getElementById("contextual-info-line");
@@ -65641,6 +66524,64 @@ function showContextualInfo(targetEl, message){
   lineDot.style.left = (targetCenterX - 4.5) + "px";
   lineDot.style.top = (targetCenterY - 4.5) + "px";
 
+  /* ---- IT FOLLOWS WHAT IT POINTS AT (build 313) ----
+     "If the text box does show up, ensure that it properly and smoothly
+     follows the selected flare while the text box is open with the arrow
+     like thing being placed in it correctly." A secret flare is on a ring
+     that turns, so the box was placed once and the flare left it behind.
+     With `follow`, every frame re-reads where the target is and moves the
+     box with it (a translate, so nothing reflows), keeps the side it
+     opened on (no flipping above and below as it goes round), and re-aims
+     the line from the nearest point of the box's edge to the target's
+     centre. `ring` draws a ring round the target in place of the dot,
+     which would otherwise sit on top of the very flare being explained.
+     If the screen is rebuilt under it, `refind` finds the same flare in
+     the new one rather than closing. */
+  if(opts.ring){
+    lineDot.classList.add("is-ring");
+    const tw = Math.max(rect.width, rect.height);
+    const d = Math.max(16, Math.min(28, tw + 9));
+    lineDot.style.width = lineDot.style.height = d + "px";
+    lineDot.style.left = (targetCenterX - d / 2) + "px";
+    lineDot.style.top = (targetCenterY - d / 2) + "px";
+  }
+  if(opts.follow){
+    const baseLeft = popupLeft;
+    const baseTop = pRect.top;
+    let tgt = targetEl;
+    const aim = () => {
+      if(!popup.isConnected){ showContextualInfo._raf = 0; return; }
+      if(!tgt.isConnected && opts.refind){ const again = opts.refind(); if(again) tgt = again; }
+      if(tgt.isConnected){
+        const r = tgt.getBoundingClientRect();
+        const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        const w = pRect.width, h = pRect.height;
+        let left = Math.max(margin, Math.min(cx - w / 2, window.innerWidth - w - margin));
+        let top = above ? r.top - 14 - h : r.bottom + 14;
+        top = Math.max(margin, Math.min(top, window.innerHeight - h - margin));
+        popup.style.translate = (left - baseLeft).toFixed(1) + "px " + (top - baseTop).toFixed(1) + "px";
+        const sy = above ? top + h - 6 : top + 6;
+        const sx = Math.max(left + 18, Math.min(cx, left + w - 18));
+        const ddx = cx - sx, ddy = cy - sy;
+        line.style.left = sx + "px";
+        line.style.top = (sy - 1.5) + "px";
+        /* in ring mode the line stops at the ring, not on the flare */
+        const ringR = opts.ring ? (parseFloat(lineDot.style.width) || 18) / 2 : 0;
+        line.style.width = Math.max(0, Math.sqrt(ddx * ddx + ddy * ddy) - ringR) + "px";
+        line.style.transform = "rotate(" + (Math.atan2(ddy, ddx) * 180 / Math.PI) + "deg)";
+        if(opts.ring){
+          const d = parseFloat(lineDot.style.width) || 18;
+          lineDot.style.left = (cx - d / 2) + "px";
+          lineDot.style.top = (cy - d / 2) + "px";
+        } else {
+          lineDot.style.left = (cx - 4.5) + "px";
+          lineDot.style.top = (cy - 4.5) + "px";
+        }
+      }
+      showContextualInfo._raf = requestAnimationFrame(aim);
+    };
+    aim();
+  }
   requestAnimationFrame(() => { popup.classList.add("contextual-info-show"); line.classList.add("contextual-info-show"); lineDot.classList.add("contextual-info-show"); });
   /* It lives on <body>, so a screen change does not take it: tapping a
      Home flare and then a tab left "Supernova rank - 56 more levels"
@@ -65650,6 +66591,8 @@ function showContextualInfo(targetEl, message){
   if(showContextualInfo._mo) showContextualInfo._mo.disconnect();
   const orphanWatch = showContextualInfo._mo = new MutationObserver(() => {
     if(targetEl.isConnected && popup.isConnected) return;
+    /* a followed flare whose screen was rebuilt is found again by aim() */
+    if(opts.follow && opts.refind && popup.isConnected && opts.refind()) return;
     orphanWatch.disconnect();
     popup.remove(); line.remove(); lineDot.remove();
   });
@@ -65660,7 +66603,7 @@ function showContextualInfo(targetEl, message){
     line.classList.remove("contextual-info-show");
     lineDot.classList.remove("contextual-info-show");
     setTimeout(() => { popup.remove(); line.remove(); lineDot.remove(); }, 250);
-  }, 3200);
+  }, opts.follow ? 4200 : 3200);
 }
 
 function showToast(msg, tone){
@@ -67211,7 +68154,7 @@ function playFinalFlareScene(color, done, opts){
   /* "The void cutscene needs to say there's more to reveal." The last
      line, a beat after the figure has fully arrived. */
   if(!opts.voidFlare){
-    later(15200, () => say(kick, who + " came out of the dark", "Two more flares are still out there."));
+    later(15200, () => say(kick, who + " came out of the dark", "Three more flares are still out there."));
   } else if(color === "violet"){
     later(15200, () => say(kick, who + " came out of the dark", "One more is still out there."));
   } else {
@@ -67219,6 +68162,265 @@ function playFinalFlareScene(color, done, opts){
   }
   later(18200, finish);
   return { skip: finish, stop(){ finished = true; timers.forEach(clearTimeout); document.body.classList.remove("bc-covering"); overlay.remove(); } };
+}
+
+/* ---- THREE MORE SCENES, EACH ITS OWN (build 313) ----
+   "Ensure the cutscenes for the 2nd and 3rd secret flare characters are
+   cooler and are different from each and are different than void too ...
+   Ensure this one's cutscene is different than the other 3, make it
+   cooler, make it more about the planet." Umbra, Horizon and Genesis used
+   to share Void's scene with a different backdrop. Each now tells its own
+   character's story, and none of them reuses another's beats:
+     Umbra   - an eclipse. The flare lights the moon's edge, the shadow
+               slides across it, the corona and the diamond ring flare at
+               totality, two eyes open in the dark disc, and Umbra stands
+               up out of the shadow with the moon's phases circling it.
+     Horizon - an event horizon. The five flares are pulled into a black
+               hole, stretched as they go, and stop dead at its edge; then
+               the light comes back out in a ring, the visor lights first,
+               and Horizon rises with the flares going round it edge-on.
+     Genesis - THE HOME PLANET ITSELF. Your own planet, its ranks and its
+               flares; Worldheart dives into it, it cracks with rose light,
+               shakes, splits open on a blazing core, and Genesis rises out
+               of it while the ring forms round its head and all six
+               flares go round on that ring.
+   One shell (flareSceneShell) for what they share - the dark, the stars,
+   the words, the timers, a tap to skip - so the three stay in step with
+   Void's rules: transform and opacity only, no filter on anything that
+   holds a soft full-box drawing, and the character comes in live. */
+function flareSceneShell(kind, color, ch, done){
+  clearCelebrationsForScene();
+  const overlay = document.createElement("div");
+  overlay.className = "ff-scene xs-scene xs-" + kind;
+  overlay.style.setProperty("--flare-color", MYSTERY_COLOR[color]);
+  const stars = document.createElement("div");
+  stars.className = "ff-stars xs-stars";
+  for(let i = 0; i < 70; i++){
+    const st = document.createElement("span");
+    st.style.left = (Math.random() * 100) + "%";
+    st.style.top = (Math.random() * 100) + "%";
+    st.style.animationDelay = (Math.random() * 3) + "s";
+    st.style.setProperty("--z", (0.5 + Math.random()).toFixed(2));
+    stars.appendChild(st);
+  }
+  overlay.appendChild(stars);
+  const field = document.createElement("div");
+  field.className = "ff-field xs-field";
+  overlay.appendChild(field);
+  const words = document.createElement("div");
+  words.className = "ff-words";
+  const kicker = document.createElement("p"); kicker.className = "ff-kicker";
+  const name = document.createElement("p"); name.className = "ff-name";
+  const sub = document.createElement("p"); sub.className = "ff-sub";
+  words.append(kicker, name, sub);
+  overlay.appendChild(words);
+  const say = (k, n, t) => {
+    words.classList.remove("is-in");
+    setTimeout(() => { kicker.textContent = k; name.textContent = n; sub.textContent = t || ""; words.classList.add("is-in"); }, 220);
+  };
+  const timers = [];
+  let finished = false;
+  const later = (ms, fn) => timers.push(setTimeout(fn, ms));
+  const step = (ms, cls) => later(ms, () => overlay.classList.add(cls));
+  function finish(){
+    if(finished) return;
+    finished = true;
+    timers.forEach(clearTimeout);
+    document.body.classList.remove("bc-covering");
+    overlay.classList.add("ff-out");
+    openSceneBridge(avatarGlowColor(ch));
+    setTimeout(() => { overlay.remove(); done(); }, 500);
+  }
+  overlay.addEventListener("click", finish);
+  document.body.appendChild(overlay);
+  void overlay.offsetWidth;
+  requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add("ff-in")));
+  later(320, () => document.body.classList.add("bc-covering"));
+  const fig = document.createElement("div");
+  fig.className = "xs-fig char-live";
+  try{ fig.appendChild(buildAvatarCharSVGSafe(ch)); }catch(e){}
+  return { overlay, field, say, later, step, finish, fig,
+    handle: { skip: finish, stop(){ finished = true; timers.forEach(clearTimeout); document.body.classList.remove("bc-covering"); overlay.remove(); } } };
+}
+const xsEl = (cls, parent, tag) => { const e = document.createElement(tag || "div"); e.className = cls; if(parent) parent.appendChild(e); return e; };
+/* A moon at phase k: 1 a thin crescent, 0 the half, -1 full (the lit
+   right half plus an ellipse over the middle, as Umbra's brow moon). */
+function phaseMoonSVG(k){
+  const NS = "http://www.w3.org/2000/svg";
+  const s = document.createElementNS(NS, "svg");
+  s.setAttribute("viewBox", "-10 -10 20 20");
+  s.innerHTML = '<circle r="9" fill="#21183A"/><path d="M0 -9 A9 9 0 0 1 0 9 Z" fill="#DCD2FF"/>' +
+    '<ellipse rx="' + (9 * Math.abs(k)).toFixed(2) + '" ry="9.1" fill="' + (k > 0 ? "#21183A" : "#DCD2FF") + '"/>' +
+    '<circle r="9" fill="none" stroke="#C4B5FD" stroke-width=".6" opacity=".6"/>';
+  return s;
+}
+/* An orbit seen at an angle: a squashed, tilted plane that turns, each
+   rider turned back and un-squashed so it stays round (the Home planet
+   flare's trick). `n` riders, each built by make(i). */
+function tiltedOrbit(cls, n, make, squash, tilt){
+  const plane = xsEl("xs-oplane " + cls);
+  plane.style.setProperty("--sq", squash); plane.style.setProperty("--tilt", tilt + "deg");
+  const spin = xsEl("xs-ospin", plane);
+  for(let i = 0; i < n; i++){
+    const arm = xsEl("xs-oarm", spin);
+    arm.style.rotate = (i * 360 / n) + "deg";
+    const back = xsEl("xs-oback", arm);
+    back.style.setProperty("--a0", (-i * 360 / n) + "deg");
+    const up = xsEl("xs-oup", back);
+    up.appendChild(make(i));
+  }
+  return plane;
+}
+
+function playUmbraScene(done){
+  const S = flareSceneShell("umbra", "violet", "umbra", done);
+  const f = S.field;
+  const moon = xsEl("xs-moon", f);
+  xsEl("xs-moon-craters", moon);
+  xsEl("xs-shadow", moon);
+  const corona = xsEl("xs-corona", f);
+  xsEl("xs-corona-rays", corona);
+  xsEl("xs-diamond", f);
+  const comet = xsEl("ff-comet xs-ucomet", f);
+  comet.appendChild(buildFlareOrb(MYSTERY_COLOR.violet, "xsu"));
+  const eyes = xsEl("xs-ueyes", f);
+  xsEl("xs-ueye is-l", eyes); xsEl("xs-ueye is-r", eyes);
+  const box = xsEl("xs-figbox", f);
+  box.appendChild(S.fig);
+  /* the moon's phases, circling it once it is up: crescent to full and back */
+  const ring = xsEl("xs-phases", box);
+  [.82, .45, 0, -.45, -1, -.45, 0, .45].forEach((k, i) => {
+    const m = xsEl("xs-phase", ring);
+    m.style.rotate = (i * 45) + "deg";
+    m.style.transitionDelay = (i * .14) + "s";
+    const inner = xsEl("xs-phase-in", m);
+    inner.style.rotate = (-i * 45) + "deg";
+    inner.appendChild(phaseMoonSVG(k));
+  });
+  const who = AVATAR_DISPLAY_NAME.umbra || "Umbra";
+  S.later(700, () => comet.classList.add("ff-comet-go"));
+  S.later(1750, () => { comet.classList.add("ff-comet-done"); S.overlay.classList.add("xs-lit");
+    S.say("SECRET FLARE FOUND", MYSTERY_NAME.violet, "The fourth secret flare"); });
+  S.step(3300, "xs-eclipse");
+  S.later(3500, () => S.say("THE MOON GOES DARK", "", ""));
+  S.step(6400, "xs-total");
+  S.step(7400, "xs-eyes");
+  S.later(7600, () => S.say("TOTALITY", "Something opens its eyes", ""));
+  S.step(9200, "xs-emerge");
+  S.step(12000, "xs-phased");
+  S.later(12800, () => S.say("FROM THE SHADOW", who + " stepped out of the eclipse", ""));
+  S.later(15300, () => S.say("FROM THE SHADOW", who + " stepped out of the eclipse", "Two more are still out there."));
+  S.later(18400, S.finish);
+  return S.handle;
+}
+
+function playHorizonScene(done){
+  const S = flareSceneShell("horizon", "white", "singularity", done);
+  const f = S.field;
+  const found = MYSTERY_ORDER.filter(k => k === "white" || (store.mysteryColorsFound || {})[k]).slice(0, 5);
+  /* the flares, on a ring that spirals in */
+  const spiral = xsEl("xs-spiral", f);
+  found.forEach((k, i) => {
+    const a = xsEl("xs-sp-arm", spiral);
+    a.style.rotate = (i * 360 / found.length - 90) + "deg";
+    const o = xsEl("xs-sp-orb", a);
+    o.style.setProperty("--flare-color", MYSTERY_COLOR[k]);
+    o.appendChild(buildFlareOrb(MYSTERY_COLOR[k], "xsh" + i));
+  });
+  const disk = xsEl("xs-hdisk", f);
+  xsEl("xs-hdisk-spin", disk);
+  xsEl("xs-hlens", f);
+  xsEl("xs-hole", f);
+  xsEl("xs-hback", f);
+  const comet = xsEl("ff-comet xs-hcomet", f);
+  comet.appendChild(buildFlareOrb(MYSTERY_COLOR.white, "xshc"));
+  const box = xsEl("xs-figbox", f);
+  xsEl("xs-hrise", box);
+  box.appendChild(S.fig);
+  xsEl("xs-visor", box);
+  box.appendChild(tiltedOrbit("xs-horbit", found.length, i => {
+    const o = xsEl("xs-orb");
+    o.appendChild(buildFlareOrb(MYSTERY_COLOR[found[i]], "xsho" + i));
+    return o;
+  }, .26, -8));
+  const who = AVATAR_DISPLAY_NAME.singularity || "Horizon";
+  S.later(700, () => comet.classList.add("ff-comet-go"));
+  S.later(1750, () => { comet.classList.add("ff-comet-done"); S.overlay.classList.add("xs-lit");
+    S.say("SECRET FLARE FOUND", MYSTERY_NAME.white, "The fifth secret flare"); });
+  S.step(3200, "xs-pull");
+  S.later(3400, () => S.say("THE PULL", "Every light you found, falling", ""));
+  S.step(6300, "xs-still");
+  S.later(6500, () => S.say("THE EVENT HORIZON", "Nothing comes back from here", ""));
+  S.step(8600, "xs-return");
+  S.step(9200, "xs-visorlit");
+  S.step(10000, "xs-emerge");
+  S.step(12600, "xs-orbit");
+  S.later(13200, () => S.say("THE EVENT HORIZON", who + " came back", ""));
+  S.later(15600, () => S.say("THE EVENT HORIZON", who + " came back", "One more waits on the planet."));
+  S.later(18600, S.finish);
+  return S.handle;
+}
+
+function playGenesisScene(done){
+  const S = flareSceneShell("genesis", "core", "genesis", done);
+  const f = S.field;
+  const stops = accentToGradientStops();
+  S.overlay.style.setProperty("--pl0", stops[0]); S.overlay.style.setProperty("--pl1", stops[1]); S.overlay.style.setProperty("--pl2", stops[2]);
+  /* YOUR planet, the one on Home, with its ranks and its flares */
+  const wrap = xsEl("xs-planetwrap", f);
+  const shake = xsEl("xs-shakebox", wrap);
+  let hero = null;
+  try{ hero = buildCosmicHero(true); shake.appendChild(hero); }catch(e){}
+  /* over the planet itself - inside the hero, so its centre and size are
+     the planet's own (the hero has a max width of its own) */
+  const fx = xsEl("xs-planetfx", hero || shake);
+  const NS = "http://www.w3.org/2000/svg";
+  const cracks = document.createElementNS(NS, "svg");
+  cracks.setAttribute("viewBox", "0 0 100 100");
+  cracks.setAttribute("class", "xs-cracks");
+  const C = [
+    "M50 50 L44 38 L47 27 L41 14 L43 3", "M50 50 L62 44 L71 47 L84 39 L97 42", "M50 50 L46 63 L38 70 L35 84 L27 95",
+    "M50 50 L57 61 L68 66 L73 79 L82 90", "M50 50 L37 52 L27 46 L14 51 L3 47", "M44 38 L35 33 L28 22", "M62 44 L64 31 L74 22", "M46 63 L58 74 L57 88"];
+  const cid = "xsgc" + (++flareOrbSeq);
+  let html = '<defs><clipPath id="' + cid + '"><circle cx="50" cy="50" r="50"/></clipPath></defs><g clip-path="url(#' + cid + ')">';
+  C.forEach((d, i) => { html += '<g class="xs-crack xs-crack-' + (i < 5 ? 1 : 2) + '"><path d="' + d + '" fill="none" stroke="#FF5CA8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity=".35"/>' +
+    '<path d="' + d + '" fill="none" stroke="#FFE2C4" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></g>'; });
+  cracks.innerHTML = html + '</g>';
+  fx.appendChild(cracks);
+  xsEl("xs-coreglow", fx);
+  const halfL = xsEl("xs-half is-l", fx), halfR = xsEl("xs-half is-r", fx);
+  [halfL, halfR].forEach(h => xsEl("xs-half-in", h));
+  xsEl("xs-core", fx);
+  xsEl("xs-beam", fx);
+  const comet = xsEl("xs-gcomet", hero || shake);
+  comet.appendChild(buildFlareOrb(MYSTERY_COLOR.core, "xsgc"));
+  xsEl("xs-gflash", f);
+  const box = xsEl("xs-figbox", f);
+  xsEl("xs-gring-back", box);
+  box.appendChild(S.fig);
+  xsEl("xs-gring", box);
+  box.appendChild(tiltedOrbit("xs-gorbit", MYSTERY_ORDER.length, i => {
+    const o = xsEl("xs-orb");
+    o.appendChild(buildFlareOrb(MYSTERY_COLOR[MYSTERY_ORDER[i]], "xsgo" + i));
+    return o;
+  }, .24, -12));
+  const who = AVATAR_DISPLAY_NAME.genesis || "Genesis";
+  S.later(900, () => { S.overlay.classList.add("xs-lit");
+    S.say("SECRET FLARE FOUND", MYSTERY_NAME.core, "The planet's own light — the last secret flare"); });
+  S.step(3300, "xs-clear");
+  S.step(3900, "xs-dive");
+  S.later(4300, () => S.say("YOUR PLANET", "It is waking up", ""));
+  S.step(4700, "xs-crack1");
+  S.step(5600, "xs-crack2");
+  S.step(6100, "xs-shake");
+  S.step(7300, "xs-split");
+  S.step(7500, "xs-rise");
+  S.step(10600, "xs-ringup");
+  S.step(12200, "xs-orbit");
+  S.later(12800, () => S.say("GENESIS", who + " rose out of the world", ""));
+  S.later(15400, () => S.say("GENESIS", who + " rose out of the world", "Every secret flare is yours."));
+  S.later(18800, S.finish);
+  return S.handle;
 }
 
 /* Confetti still falling from the grade, removed before a cutscene or a
@@ -67238,6 +68440,10 @@ function clearCelebrationsForScene(){
 function playFlareFoundScene(color, all, done){
   if(FLARE_CHARACTER[color]){
     if(theme.muteBanners || resultsMotionOff()){ done(); return null; }
+    /* each its own scene since build 313 */
+    if(color === "violet") return playUmbraScene(done);
+    if(color === "white") return playHorizonScene(done);
+    if(color === "core") return playGenesisScene(done);
     return playFinalFlareScene(color, done, { voidFlare: true });
   }
   if(all){
@@ -67927,7 +69133,12 @@ function rsUnlockItems(run){
   /* A rank's own character and banner sit with its theme, ahead of any
      challenge's: together they are the one rank-reward pop-up. */
   const chars = run.characters.map(characterUnlockItem);
-  const banners = (run.banners || []).map(bannerUnlockItem).filter(Boolean);
+  /* A secret flare character's banner comes straight after its character,
+     at the very end (build 313) - announcing it first would give away who
+     the flare's scene is about to bring out. */
+  const flareBanners = (run.banners || []).filter(id => (bannerDef(id) || {}).flareChar);
+  const banners = (run.banners || []).filter(id => flareBanners.indexOf(id) < 0).map(bannerUnlockItem).filter(Boolean);
+  const flareBannerItem = ch => { const b = BANNERS.find(x => x.flareChar === ch && flareBanners.indexOf(x.id) >= 0); return b ? bannerUnlockItem(b.id) : null; };
   chars.filter(isRankRewardItem).forEach(it => items.push(it));
   banners.filter(isRankRewardItem).forEach(it => items.push(it));
   chars.filter(it => !isRankRewardItem(it)).forEach(it => items.push(it));
@@ -67937,31 +69148,39 @@ function rsUnlockItems(run){
      plays FIRST and its banner after - "the cutscenes need to come
      before the pop up". */
   if(run.flare && FLARE_CHARACTER[run.flare]){
-    /* A VOID FLARE - the fourth or fifth. Its own words, and the
-       character it hands over straight after it. */
-    const isLast = run.flare === "white";
+    /* The fourth, fifth or sixth: each hands over a character of its own.
+       Named, so the card says WHICH flare it was (build 313: "when
+       clicking the secret flare, ensure it mentions which flare you
+       found"), then the character, then its banner. */
     const ch = FLARE_CHARACTER[run.flare];
-    items.push({ kind: "flare", flare: run.flare, kicker: "Void flare found",
+    const nthAll = MYSTERY_ORDER.indexOf(run.flare) + 1;
+    items.push({ kind: "flare", flare: run.flare, kicker: "Secret flare found",
       name: MYSTERY_NAME[run.flare],
-      sub: isLast ? "The last light in the dark" : "One more is still out there",
+      sub: run.flare === "core" ? "The planet's own light — the last secret flare"
+        : run.flare === "white" ? "The " + ["", "first", "second", "third", "fourth", "fifth"][nthAll] + " secret flare — one more waits on the planet"
+        : "The " + ["", "first", "second", "third", "fourth", "fifth"][nthAll] + " secret flare",
       color: MYSTERY_COLOR[run.flare], art: () => buildFlareOrb(MYSTERY_COLOR[run.flare], "ul") });
-    items.push({ kind: "character", character: ch, feat: true, kicker: "Character unlocked",
+    items.push({ kind: "character", character: ch, feat: true, secret: true, kicker: "Character unlocked",
       name: AVATAR_DISPLAY_NAME[ch] || ch,
       sub: "Yours to pick in Customize", need: characterChallenge(ch), color: avatarGlowColor(ch),
       art: () => buildAvatarCharSVGSafe(ch) });
+    const bi = flareBannerItem(ch); if(bi) items.push(bi);
   } else if(run.flare){
     const nth = VOID_FLARES.filter(k => (store.mysteryColorsFound || {})[k]).length;
     items.push({ kind: "flare", flare: run.flare, kicker: "Secret flare found",
       name: MYSTERY_NAME[run.flare] + " — " + nth + " of " + VOID_FLARES.length,
-      sub: run.flareAll ? "The last one in the sky" : "Keep an eye out for the next one",
+      sub: run.flareAll ? "The last of the three in the sky" : "Keep an eye out for the next one",
       color: MYSTERY_COLOR[run.flare], art: () => buildFlareOrb(MYSTERY_COLOR[run.flare], "ul") });
     if(run.flareAll){
-      items.push({ kind: "character", character: "voidwalker", feat: true, kicker: "Character unlocked",
+      items.push({ kind: "character", character: "voidwalker", feat: true, secret: true, kicker: "Character unlocked",
         name: AVATAR_DISPLAY_NAME.voidwalker || "Void",
         sub: "Yours to pick in Customize", need: characterChallenge("voidwalker"), color: avatarGlowColor("voidwalker"),
         art: () => buildAvatarCharSVGSafe("voidwalker") });
+      const bi = flareBannerItem("voidwalker"); if(bi) items.push(bi);
     }
   }
+  /* a flare banner earned some other way (a cloud copy landing mid-run) */
+  flareBanners.forEach(id => { if(!items.some(it => it.kind === "banner" && it.banner === id)){ const bi = bannerUnlockItem(id); if(bi) items.push(bi); } });
   return items;
 }
 
@@ -67989,7 +69208,7 @@ function bannerUnlockItem(id){
      same "Challenge complete" strip a challenge character does (build
      242): "the banner unlock doesn't have the reward thing like the
      other rewards pop ups have." */
-  return { kind: "banner", banner: id, rankReward: def.rank || null, feat: !def.rank, secret: !!def.secret,
+  return { kind: "banner", banner: id, rankReward: def.rank || null, feat: !def.rank, secret: !!(def.secret || def.flareChar),
     epic: BANNER_EPIC.indexOf(id) >= 0,
     kicker: "Banner unlocked", name: def.name,
     sub: "Wear it in Customize", need: def.label,
@@ -68088,7 +69307,7 @@ let rankJustReachedOnHome = null;
 
    The flare characters are left out: each arrives inside its own flare
    scene. */
-const HOME_UNLOCK_SKIP = ["voidwalker", "umbra", "singularity"];
+const HOME_UNLOCK_SKIP = ["voidwalker", "umbra", "singularity", "genesis"];
 /* New in 235 and already held by some: these are NOT seeded as shown,
    so an account that already holds Gold is handed the Pharaoh on its
    next launch - "give it a delay and then give them the one they have
@@ -68286,6 +69505,8 @@ function pendingFlareHints(){
   const out = [];
   if(!isLockedCharacter("voidwalker") && isLockedCharacter("umbra") && shown.indexOf("umbra") < 0) out.push("umbra");
   if(!isLockedCharacter("umbra") && isLockedCharacter("singularity") && shown.indexOf("singularity") < 0) out.push("singularity");
+  /* build 313: holding Horizon opens the last one, the planet's own */
+  if(!isLockedCharacter("singularity") && isLockedCharacter("genesis") && shown.indexOf("genesis") < 0) out.push("genesis");
   return out;
 }
 function markFlareHintShown(id){
@@ -68295,20 +69516,24 @@ function markFlareHintShown(id){
   saveStore();
 }
 function flareHintItem(ch){
-  const flare = ch === "umbra" ? "violet" : "white";
+  const flare = CHARACTER_FLARE[ch] || "violet";
   const who = AVATAR_DISPLAY_NAME[ch] || ch;
+  /* the flare by name, and where to look (build 313) */
   return { kind: "hint", hint: ch, kicker: "A new secret", name: who + " is out there",
     sub: ch === "umbra"
-      ? "A fourth flare is hiding in your tests. Find it to unlock " + who + "."
-      : "The last flare is hiding in your tests. Find it to unlock " + who + ".",
+      ? "A fourth flare, " + MYSTERY_NAME.violet + ", is hiding in your tests. Find it to unlock " + who + "."
+      : ch === "genesis"
+      ? "The last flare, " + MYSTERY_NAME.core + ", is the planet's own. From level " + FLARE_WINDOWS.core[0] + " it can turn up in your tests. Find it to unlock " + who + "."
+      : "A fifth flare, " + MYSTERY_NAME.white + ", is hiding in your tests. Find it to unlock " + who + ".",
     color: MYSTERY_COLOR[flare], art: () => {
       /* The flare, sitting where it will be worn, in front of a ghost of
          the character it hands over - there, but not yet yours. */
       const f = document.createDocumentFragment();
       const ghost = document.createElement("span"); ghost.className = "rs-hint-ghost char-live";
-      try{ ghost.appendChild(buildAvatarCharSVGSafe(ch)); }catch(e){}
+      /* not yet yours, so its silhouette (build 313) */
+      try{ ghost.appendChild(isSecretSilhouette(ch) ? buildCharSilhouette(ch) : buildAvatarCharSVGSafe(ch)); }catch(e){}
       const orb = document.createElement("span"); orb.className = "rs-hint-orb";
-      orb.style.setProperty("--hy", ch === "umbra" ? "80%" : "35%");
+      orb.style.setProperty("--hy", ch === "umbra" ? "80%" : ch === "genesis" ? "83%" : "35%");
       orb.appendChild(buildFlareOrb(MYSTERY_COLOR[flare], "hint-" + ch));
       f.append(ghost, orb);
       return f;
@@ -69785,7 +71010,7 @@ function summarize(){
      scene, so they are not announced a second time here. */
   const newCharacters = AVATAR_CHARACTERS
     .filter(c => lockedBefore.has(c.id) && !isLockedCharacter(c.id) &&
-                 ["voidwalker", "umbra", "singularity"].indexOf(c.id) < 0)
+                 ["voidwalker", "umbra", "singularity", "genesis"].indexOf(c.id) < 0)
     .map(c => c.id);
   const newBanners = BANNERS.filter(b => !bannersBefore.has(b.id) && bannerEarned(b.id)).map(b => b.id);
   /* And any earned off the results screen since the last one. Not on the
@@ -79492,9 +80717,14 @@ function characterDetail(id){
        show up when you click them". */
     /* secrets only (build 304): Zenith's own requirement starts "Unlock"
        too, and it needs its progress bar */
-    if(def.secret && /^Unlock /.test(locked)){ o.desc = locked; return o; }
+    /* "Ensure this reads well in the descriptions" (build 313): a secret
+       flare character is shown as a silhouette until it is yours, and its
+       card says so before it says how. */
+    const secretLead = def.secret && locked ? "A secret flare character, hidden until it is yours. " : "";
+    if(def.secret && /^Unlock /.test(locked)){ o.desc = secretLead + locked; return o; }
     const f = CHARACTER_FEATS[def.feat];
-    if(f){ o.desc = f.label + "."; o.have = Math.min(f.have(), f.need); o.need = f.need; if(f.note) o.note = f.note; }
+    if(f){ o.desc = secretLead + f.label + "."; o.have = Math.min(f.have(), f.need); o.need = f.need; if(f.note) o.note = f.note; }
+    if(f && def.secret && locked) o.note = (o.note ? o.note + " " : "") + "Secret flares hide in your tests, one at a time, from a certain level on.";
   }
   return o;
 }
@@ -79504,6 +80734,12 @@ function bannerDetail(id){
   if(!def) return o;
   if(def.rank) return Object.assign(o, { kicker: "Rank banner" }, rankDetail(def.rank));
   if(def.secret){ o.kicker = "Secret banner"; o.desc = def.label + "."; return o; }
+  if(def.flareChar){
+    o.kicker = "Secret banner";
+    o.desc = def.label + ".";
+    if(!bannerEarned(id)) o.note = "Find the character's flare and both are yours. Until then it stays in the dark.";
+    return o;
+  }
   if(def.ultimate) o.kicker = "Ultimate banner";
   o.desc = def.label + ".";
   o.have = Math.min(def.have(), def.need); o.need = def.need;
@@ -79601,7 +80837,8 @@ function showUnlockDetail(o){
        card that exists to show it off. A locked one moves too, as its
        silhouette: what you are working towards should look alive. */
     art.classList.add("char-live");
-    try{ art.appendChild(buildAvatarCharSVG(o.id)); }catch(e){}
+    if(isSecretSilhouette(o.id)){ art.classList.add("is-silhouette"); try{ art.appendChild(buildCharSilhouette(o.id)); }catch(e){} }
+    else { try{ art.appendChild(buildAvatarCharSVG(o.id)); }catch(e){} }
     if(o.hideArt) art.classList.add("is-hidden-art");
   } else if(o.kind === "badge"){
     /* the badge itself, in its own enamel, even while it is still to
@@ -79934,7 +81171,13 @@ function showCustomize(){
     opt.style.setProperty("--char-glow", avatarGlowColor(charDef.id));
     opt.title = AVATAR_DISPLAY_NAME[charDef.id] || charDef.id;
     opt.setAttribute("aria-label", opt.title);
-    opt.appendChild(buildAvatarCharSVG(charDef.id));
+    /* a secret flare character is a live black cut-out until it is yours */
+    if(locked && isSecretSilhouette(charDef.id)){
+      opt.classList.add("is-silhouette");
+      const sil = buildCharSilhouette(charDef.id);
+      sil.classList.add("char-live");
+      opt.appendChild(sil);
+    } else opt.appendChild(buildAvatarCharSVG(charDef.id));
     if(locked){
       const lockMark = document.createElement("span");
       lockMark.className = "avatarchar-lockmark";
@@ -80016,6 +81259,7 @@ function showCustomize(){
     const b = document.createElement("button");
     b.type = "button";
     b.className = "banner-opt" + (id ? "" : " is-none") + (locked ? " locked" : "") +
+      (locked && id && (bannerDef(id) || {}).flareChar ? " is-secret" : "") +
       (current === id ? " selected" : "");
     b.dataset.banner = id;
     const art = document.createElement("span");
