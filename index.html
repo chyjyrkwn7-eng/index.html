@@ -15093,11 +15093,11 @@
     .char-live .avatarchar-svg .cx-fx-pom{ animation:cx-bob 2.4s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-reflect{ animation:cx-slide 5s ease-in-out infinite; }
     /* build 279: Starblade - the starfield cloth, the comet scarf, the visor, the constellation */
-    .char-live .avatarchar-svg .cx-fx-sastars{ animation:cx-flicker-soft 3.2s ease-in-out infinite; }
-    .char-live .avatarchar-svg .cx-fx-sascarf{ animation:cx-flutter 2.6s ease-in-out infinite; }
-    .char-live .avatarchar-svg .cx-fx-saeye{ animation:cx-mk2-pulse 2.4s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-sastars{ animation:cx-flicker-soft 3s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-sascarf{ animation:cx-flutter 1.5s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-saeye{ animation:cx-mk2-pulse 3s ease-in-out infinite; }
     /* the blade of light on Orion's back hums */
-    .char-live .avatarchar-svg .cx-fx-saglow{ animation:cx-mk2-pulse 1.7s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-saglow{ animation:cx-mk2-pulse 1.5s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-glint{ animation:cx-twinkle 3.6s ease-in-out -1.2s infinite; }
     .char-live .avatarchar-svg .cx-fx-led{ animation:cx-led 1.8s steps(1, end) infinite; }
     .char-live .avatarchar-svg .cx-fx-uraeus{ animation:cx-bob 4.2s ease-in-out infinite; }
@@ -15571,8 +15571,8 @@
     /* Orion: the trace, the belt (its delays are on the stars), the clasp */
     .char-live .avatarchar-svg .cx-fx-sa3line0{ animation:cx-sa3-trace 6s ease-in-out -.3s infinite; }
     .char-live .avatarchar-svg .cx-fx-sa3line1{ animation:cx-sa3-trace 6s ease-in-out -5.4s infinite; }
-    .char-live .avatarchar-svg .cx-fx-sa3belt{ animation:cx-sa3-belt 2.6s ease-in-out infinite; }
-    .char-live .avatarchar-svg .cx-fx-sa3clasp{ animation:cx-twinkle 3.1s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-sa3belt{ animation:cx-sa3-belt 3s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-sa3clasp{ animation:cx-twinkle 3s ease-in-out infinite; }
     /* Zeus: on the scene's bolt beat (cx-fx-bgbolt0, 4.2s from 0) */
     .char-live .avatarchar-svg .cx-fx-zs3eyes{ animation:cx-zs3-eyes 4.2s linear infinite; }
     /* The Sheriff, the Detective, the Wizard */
@@ -15704,6 +15704,88 @@
   @keyframes cx-za-satx{ from{ transform:translateX(-3.3px); } to{ transform:translateX(3.3px); } }
   @keyframes cx-za-saty{ from{ transform:translateY(1.3px); } to{ transform:translateY(-1.3px); } }
   @keyframes cx-za-pour{ 0%{ stroke-dashoffset:1.6; opacity:0; } 10%{ opacity:1; } 78%{ opacity:.85; } 92%, 100%{ stroke-dashoffset:-10; opacity:0; } }
+  /* ---- BUILD 313: ORION, THE SHERIFF, THE RONIN ----
+     "Orions and sheriffs effects are lame, give them a cool character
+     animation as well." "Also forgot to mention, ronins animations are
+     also non existent." Each now does something you can see on a 42px
+     row within a couple of seconds of looking, and nothing crosses a
+     face. Every period divides 6s (the flip-book's loop), every keyframe
+     ends on its first frame, and anything that only makes sense moving
+     carries opacity 0 in the drawing.
+       Orion    the stars in his cloak drift like the sky turning; a
+                shooting star crosses behind him; the blade of light
+                surges every three seconds - the emitter flares, a ring
+                goes out, the visor burns brighter with it; stardust
+                streams off the comet scarf
+       Sheriff  tips his hat; the bandana's tails snap in the wind; a
+                tumbleweed rolls past behind him; dust gusts across; the
+                star on his coat spins like a coin
+       Ronin    a neon slash cuts the air behind him; his eyes stutter on
+                like a neon sign; petals blow across him; the scarf
+                streams hard; light runs to the tip of the hilt */
+  @media (prefers-reduced-motion:no-preference){
+    .char-live .avatarchar-svg .cx-fx-sadrift{ animation:cx-sa5-drift 6s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-sa5meteor{ animation:cx-sa5-meteor 6s ease-in -1.2s infinite; }
+    .char-live .avatarchar-svg .cx-fx-sa5surge{ animation:cx-sa5-surge 3s ease-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-sa5flare{ animation:cx-sa5-flare 3s ease-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-sa5ring{ animation:cx-sa5-ring 3s ease-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-sa5visor{ animation:cx-sa5-visor 3s ease-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-sa5mote{ animation:cx-sa5-mote 2s ease-out infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-sadrift{ animation:cx-sa5-drift 1.5s linear infinite; }
+    .char-react-win .avatarchar-svg :is(.cx-fx-sa5surge, .cx-fx-sa5flare, .cx-fx-sa5ring, .cx-fx-sa5visor){ animation-duration:1s; }
+    .char-react-win .avatarchar-svg .cx-fx-sa5meteor{ animation:cx-sa5-meteor 2s ease-in infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-sa5mote{ animation:cx-sa5-mote .8s ease-out infinite; }
+    /* the Sheriff - these come after build 304's rules for his star,
+       eyes and glint, and retime them to divide the 6s loop */
+    .char-live .avatarchar-svg .cx-fx-shhat{ animation:cx-sh4-tip 6s ease-in-out -1s infinite; }
+    .char-live .avatarchar-svg .cx-fx-sh4tails{ animation:cx-sh4-tails .75s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-sh4weed{ animation:cx-sh4-weed 6s linear -3.4s infinite; }
+    .char-live .avatarchar-svg .cx-fx-sh4roll{ animation:cx-spin-back 1s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-sh4dust{ animation:cx-sh4-dust 3s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-shstar{ animation:cx-mk2-pulse 1.5s ease-in-out infinite, cx-sh4-coin 6s ease-in-out -4.2s infinite; }
+    .char-live .avatarchar-svg .cx-fx-sh3pupil{ animation:cx-sh3-glance 6s ease-in-out -1.5s infinite; }
+    .char-live .avatarchar-svg .cx-fx-sh3glint{ animation:cx-glint 3s ease-in-out -1.2s infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-shhat{ animation:cx-sh4-tip 1.5s ease-in-out infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-sh4tails{ animation:cx-sh4-tails .3s ease-in-out infinite alternate; }
+    .char-react-win .avatarchar-svg .cx-fx-shstar{ animation:cx-sh4-coin 1.2s ease-in-out infinite; }
+  }
+  .avatarchar-svg .cx-fx-shhat{ transform-origin:82% 88%; }
+  .avatarchar-svg .cx-fx-sh4tails{ transform-origin:4% 50%; }
+  .char-sleep .avatarchar-svg :is(#cx-none, .cx-fx-shhat){ animation:none; transform:translateY(.9px); }
+  @keyframes cx-sh4-tip{ 0%, 52%, 90%, 100%{ transform:none; } 60%, 74%{ transform:translateY(-1.1px) rotate(-11deg); } 80%{ transform:translateY(.15px) rotate(1.5deg); } }
+  @keyframes cx-sh4-tails{ from{ rotate:-7deg; scale:1 .85; } to{ rotate:9deg; scale:1.08 1.1; } }
+  @keyframes cx-sh4-weed{ 0%, 100%{ opacity:0; transform:none; } 4%{ opacity:1; } 14%{ transform:translate(-4.5px, -1.4px); } 24%{ transform:translate(-9px, 0); } 34%{ transform:translate(-13.5px, -1.2px); }
+    44%{ transform:translate(-18px, 0); } 54%{ transform:translate(-22.5px, -1px); } 64%{ transform:translate(-27px, 0); } 68%{ opacity:1; } 72%{ opacity:0; transform:translate(-30.6px, -.4px); } 73%{ opacity:0; transform:none; } }
+  @keyframes cx-sh4-dust{ 0%, 100%{ opacity:0; transform:translateX(3px); } 30%{ opacity:1; } 70%{ opacity:0; transform:translateX(-5px); } 71%{ opacity:0; transform:translateX(3px); } }
+  @keyframes cx-sh4-coin{ 0%, 70%, 100%{ transform:none; } 74%{ transform:scaleX(.06); } 78%{ transform:scaleX(-1); } 82%{ transform:scaleX(.06); } 86%{ transform:none; } }
+  @keyframes cx-sa5-drift{ from{ transform:none; } to{ transform:translateX(-12px); } }
+  @keyframes cx-sa5-meteor{ 0%, 56%, 100%{ opacity:0; transform:translate(7px, -3.85px); } 60%{ opacity:1; } 74%{ opacity:.9; } 82%{ opacity:0; transform:translate(-8px, 4.4px); } }
+  @keyframes cx-sa5-surge{ 0%, 52%, 100%{ opacity:0; } 60%{ opacity:1; } 70%{ opacity:.45; } 76%{ opacity:.85; } 94%{ opacity:0; } }
+  @keyframes cx-sa5-flare{ 0%, 54%, 100%{ transform:scale(.3); } 62%{ transform:scale(1.25) rotate(45deg); } 92%{ transform:scale(.4) rotate(90deg); } }
+  @keyframes cx-sa5-ring{ 0%, 56%, 100%{ opacity:0; transform:scale(.6); } 62%{ opacity:.9; } 92%{ opacity:0; transform:scale(3.2); } }
+  @keyframes cx-sa5-visor{ 0%, 54%, 100%{ opacity:0; } 62%{ opacity:.75; } 90%{ opacity:0; } }
+  @keyframes cx-sa5-mote{ 0%, 100%{ opacity:0; transform:none; } 14%{ opacity:1; } 86%{ opacity:0; transform:translate(-2.8px, -1.5px) scale(.3); } }
+  @media (prefers-reduced-motion:no-preference){
+    /* the Ronin */
+    .char-live .avatarchar-svg .cx-fx-ronin2slash{ animation:cx-ronin2-slash 6s ease-out -1.5s infinite; }
+    .char-live .avatarchar-svg .cx-fx-ronin2slash2{ animation:cx-ronin2-slash 6s ease-out -4.5s infinite; }
+    .char-live .avatarchar-svg .cx-fx-ronin2glint{ animation:cx-glint 3s ease-in-out -1.85s infinite; }
+    .char-live .avatarchar-svg .cx-fx-ronin2petals{ animation:cx-ronin2-petals 6s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-roninscarf{ animation:cx-ronin2-scarf .75s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-ronineye{ animation:cx-ronin2-eyeglow 3s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-roninneon{ animation:cx-ronin-neon 3s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-k-ronin .cx-eyes{ animation:cx-blink var(--cx-blink, 6s) var(--cx-blink-at, 0s) ease-in-out infinite, cx-ronin2-flick 6s linear -2.4s infinite; }
+    .char-react-win .avatarchar-svg :is(.cx-fx-ronin2slash, .cx-fx-ronin2slash2){ animation-duration:1.5s; }
+    .char-react-win .avatarchar-svg .cx-fx-roninscarf{ animation:cx-ronin2-scarf .3s ease-in-out infinite alternate; }
+  }
+  .avatarchar-svg .cx-fx-ronin2slash{ transform-origin:0% 100%; }
+  .avatarchar-svg .cx-fx-ronin2slash2{ transform-origin:100% 100%; }
+  .avatarchar-svg .cx-k-ronin{ --cx-blink:6s; }
+  @keyframes cx-ronin2-slash{ 0%, 56%, 100%{ opacity:0; transform:scale(.12); } 58%{ opacity:1; } 64%{ opacity:1; transform:none; } 76%{ opacity:0; transform:none; } 77%{ opacity:0; transform:scale(.12); } }
+  @keyframes cx-ronin2-petals{ 0%, 100%{ opacity:0; transform:translate(-13px, -2px); } 8%{ opacity:1; } 62%{ opacity:1; } 72%{ opacity:0; transform:translate(16px, 3px); } 73%{ opacity:0; transform:translate(-13px, -2px); } }
+  @keyframes cx-ronin2-scarf{ from{ rotate:-9deg; scale:1 .82; } to{ rotate:10deg; scale:1.14 1.08; } }
+  @keyframes cx-ronin2-eyeglow{ 0%, 100%{ opacity:.35; } 50%{ opacity:1; } }
+  @keyframes cx-ronin2-flick{ 0%, 80%, 100%{ opacity:1; } 81%{ opacity:.1; } 82.5%{ opacity:1; } 84%{ opacity:.25; } 85%{ opacity:1; } 87%{ opacity:.05; } 89%{ opacity:1; } }
   [data-reduce-motion="true"] .avatarchar-svg,
   [data-reduce-motion="true"] .avatarchar-svg *{ animation:none !important; }
 
@@ -36325,6 +36407,25 @@ function drawAvatarCharSVG(charId){
      cx-fx-sh*: unique names. */
   if(def.kind === "sheriff"){
     const amber = "#F2A23A";
+    /* THE WIND OFF THE MESA (build 313: "sheriffs effects are lame").
+       Dust gusts across behind him, and a tumbleweed rolls the length of
+       the horizon - in from the right, behind his shoulders, out on the
+       left. Both are drawn behind the figure and are invisible at both
+       ends of their run, so nothing jumps and a still drawing has none. */
+    open("cx-fx cx-fx-sh4dust", { opacity: "0" });
+    svg.appendChild(mk("path", { d: "M27.6 23.6 L35.4 23.2 M30.2 25.6 L36.6 25.4 M3.6 24.4 L9.6 24 M5 26.8 L10.4 26.6", fill: "none", stroke: "#E8C08A", "stroke-width": ".32", "stroke-linecap": "round", opacity: ".7" }));
+    close();
+    { const wx = 34.6, wy = 25.2, wr = 1.9;
+      const roll = mk("g", { class: "cx-fx-sh4roll" });
+      roll.appendChild(pivot(wx, wy, wr));
+      roll.appendChild(mk("circle", { cx: wx, cy: wy, r: wr, fill: "#3A2614", opacity: ".35" }));
+      let d = "";
+      for(let k = 0; k < 7; k++){ const a = k * 2.3, b = a + 2.1;
+        d += "M" + (wx + Math.cos(a) * wr).toFixed(2) + " " + (wy + Math.sin(a) * wr).toFixed(2) + " Q" + (wx + Math.cos(a + 1) * wr * .2).toFixed(2) + " " + (wy + Math.sin(a + 1) * wr * .2).toFixed(2) + " " + (wx + Math.cos(b) * wr).toFixed(2) + " " + (wy + Math.sin(b) * wr).toFixed(2) + " "; }
+      roll.appendChild(mk("path", { d, fill: "none", stroke: "#B48A54", "stroke-width": ".26", "stroke-linecap": "round" }));
+      roll.appendChild(mk("circle", { cx: wx, cy: wy, r: wr, fill: "none", stroke: "#8A6438", "stroke-width": ".24", "stroke-dasharray": ".9 .5" }));
+      const weed = mk("g", { class: "cx-fx cx-fx-sh4weed", opacity: "0" });
+      weed.appendChild(roll); svg.appendChild(weed); }
     open("cx-body");
     svg.appendChild(mk("path", { d: "M5 40 Q5.6 30.6 13 28.4 L27 28.4 Q34.4 30.6 35 40 Z", fill: headGrad("#8A6440", "#5A3E26", "#26180C") }));
     svg.appendChild(mk("path", { d: "M16.4 28.4 L20 35.2 L23.6 28.4 Z", fill: "#2E2218" }));
@@ -36346,6 +36447,14 @@ function drawAvatarCharSVG(charId){
     close();
     close();
     open("cx-head");
+    /* the bandana's tails, knotted behind his head and snapping in the
+       wind (build 313) - they swing from the knot */
+    open("cx-fx cx-fx-sh4tails");
+    { const bg = headGrad("#D8483C", "#A82A22", "#5A120C");
+      svg.appendChild(mk("path", { d: "M25.4 21.6 Q29.2 20 33.4 21 L32.6 22.4 Q29 21.8 25.8 23.4 Z", fill: bg, stroke: "#5A120C", "stroke-width": ".2" }));
+      svg.appendChild(mk("path", { d: "M25.6 23 Q28.8 24 32 26.4 L30.8 27.2 Q28.2 25.2 25.2 24.6 Z", fill: bg, stroke: "#5A120C", "stroke-width": ".2" }));
+      svg.appendChild(mk("circle", { cx: 25.8, cy: 23, r: .9, fill: "#A82A22" })); }
+    close();
     const skin = headGrad("#C8936A", "#A67650", "#6A4428");
     svg.appendChild(mk("ellipse", { cx: 20, cy: 21.6, rx: 6.6, ry: 7.4, fill: skin }));
     /* the brim's shadow over the eyes */
@@ -36364,7 +36473,9 @@ function drawAvatarCharSVG(charId){
     [[16.4, 22.2], [20, 21.6], [23.6, 22.2], [18, 25], [22, 25], [20, 27.8]].forEach(([x, y]) =>
       svg.appendChild(mk("circle", { cx: x, cy: y, r: .32, fill: "#FFE6D6", opacity: ".85" })));
     open("cx-mouth"); close();
-    /* THE HAT: a wide brim curling up at the sides, a pinched crown, a band */
+    /* THE HAT: a wide brim curling up at the sides, a pinched crown, a
+       band. Its own group (build 313), so he can tip it. */
+    open("cx-fx cx-fx-shhat");
     const hat = headGrad("#7A5A3C", "#4A3422", "#1E140A");
     svg.appendChild(mk("path", { d: "M12.6 14.6 Q12.6 7.6 16.6 6.4 Q18.4 7.8 20 7 Q21.6 7.8 23.4 6.4 Q27.4 7.6 27.4 14.6 Q20 16.2 12.6 14.6 Z", fill: hat }));
     svg.appendChild(mk("path", { d: "M20 7.2 L20 12.4", stroke: "#1E140A", "stroke-width": ".45", opacity: ".7" }));
@@ -36372,6 +36483,7 @@ function drawAvatarCharSVG(charId){
     [15, 17.5].forEach(x => svg.appendChild(mk("circle", { cx: x, cy: 13.7, r: .42, fill: "#D8DCE2" })));
     svg.appendChild(mk("path", { d: "M4.8 14.6 Q6.6 11.8 10.8 13.6 Q20 16.4 29.2 13.6 Q33.4 11.8 35.2 14.6 Q32.4 18 20 18.2 Q7.6 18 4.8 14.6 Z", fill: hat, stroke: "#140C06", "stroke-width": ".3" }));
     svg.appendChild(mk("path", { d: "M6 14.2 Q8 12.8 11 14.2 Q20 17 29 14.2 Q32 12.8 34 14.2", fill: "none", stroke: "#A88058", "stroke-width": ".35", opacity: ".8" }));
+    close();
     close();
     return done();
   }
@@ -37434,6 +37546,18 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("path", { d: "M6 30 L16 6", stroke: neon, "stroke-width": ".5", "stroke-linecap": "round", opacity: ".5" }));
     svg.appendChild(mk("path", { d: "M27 36 L35.6 16", stroke: neon, "stroke-width": ".4", "stroke-linecap": "round", opacity: ".35" }));
     close();
+    /* THE CUT (build 313: "ronins animations are also non existent").
+       Every three seconds a blade of neon slashes the air behind him, one
+       way and then back the other: a crescent that draws itself out from
+       where the cut starts and fades. Hidden in a still drawing. */
+    [["M4 35 Q11.6 9.4 36.4 3.6 Q15.4 12.6 4 35 Z", "M4.6 34 Q13 10.4 35.6 4", "cx-fx-ronin2slash"],
+     ["M36.4 33 Q27.4 9.8 3.6 5.4 Q24.8 13.4 36.4 33 Z", "M35.8 32 Q26.2 11.2 4.4 6", "cx-fx-ronin2slash2"]].forEach(([d, core, cls]) => {
+      open("cx-fx " + cls, { opacity: "0" });
+      svg.appendChild(mk("path", { d: core, fill: "none", stroke: neon, "stroke-width": "2.6", "stroke-linecap": "round", opacity: ".28" }));
+      svg.appendChild(mk("path", { d, fill: neonSoft, opacity: ".85" }));
+      svg.appendChild(mk("path", { d: core, fill: "none", stroke: "#FFF2F8", "stroke-width": ".8", "stroke-linecap": "round" }));
+      close();
+    });
     /* The katana, behind the shoulder: a wrapped hilt with a diamond
        pattern and a gold guard, rising up and to the right. */
     open("cx-fx cx-fx-roninblade");
@@ -37445,6 +37569,8 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("ellipse", { cx: 28.2, cy: 30.9, rx: 2.1, ry: .8, fill: "#C9A23E", stroke: "#6A4F12", "stroke-width": ".2", transform: "rotate(-60 28.2 30.9)" }));
     svg.appendChild(mk("circle", { cx: 34.25, cy: 15.9, r: .75, fill: "#C9A23E" }));
     close();
+    /* light catching the pommel, on the slash's beat */
+    { const gl = sparkle(34.25, 15.9, 1.7, "#FFE6F2"); gl.setAttribute("class", "cx-fx cx-fx-ronin2glint"); gl.setAttribute("opacity", "0"); svg.appendChild(gl); }
     open("cx-body");
     /* The haori: dark, a V of lighter under-layer at the collar, reaching
        up behind the head. */
@@ -37481,6 +37607,11 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("path", { d: "M9.6 10.2 Q14.6 6.2 20 4.8", fill: "none", stroke: "#E2C88E", "stroke-width": ".5", "stroke-linecap": "round", opacity: ".55" }));
     svg.appendChild(mk("path", { d: "M5.4 14.6 Q12 16.6 20 16.6 Q28 16.6 34.6 14.6", fill: "none", stroke: neon, "stroke-width": ".55", "stroke-linecap": "round", opacity: ".9" }));
     svg.appendChild(mk("circle", { cx: 20, cy: 4.1, r: .7, fill: "#C9A23E" }));
+    close();
+    /* petals blown across him at chest height, never across the face */
+    open("cx-fx cx-fx-ronin2petals", { opacity: "0" });
+    [[8.4, 32.2, 30], [13.8, 35.4, -20], [19.6, 31.4, 60], [25.2, 34.6, 10]].forEach(([x, y, r], i) =>
+      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 1.05, ry: .56, fill: i % 2 ? "#FFC2DA" : "#FF7AB0", transform: "rotate(" + r + " " + x + " " + y + ")" })));
     close();
     return done();
   }
@@ -38386,7 +38517,20 @@ function drawAvatarCharSVG(charId){
     const g = mk("g", { "clip-path": "url(#" + uid + "-sas" + seed + ")", class: "cx-fx cx-fx-sastars" });
     let s = seed;
     const r = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
-    for(let i = 0; i < n; i++) g.appendChild(mk("circle", { cx: (6 + r() * 28).toFixed(2), cy: (3 + r() * 37).toFixed(2), r: (.14 + r() * .26).toFixed(2), fill: col, opacity: (.45 + r() * .5).toFixed(2) }));
+    /* A CLOAK OF MOVING SKY (build 313: "Orions ... effects are lame,
+       give them a cool character animation"). The stars woven into the
+       hood and the mantle drift across the cloth like the night sky
+       turning: laid out on a 12-unit tile repeated four times, and the
+       sheet slides exactly one tile (cx-sa5-drift), so the loop has no
+       seam and the clip keeps them in the cloth. Still, it is the same
+       field of stars it always was. */
+    const drift = mk("g", { class: "cx-fx-sadrift" });
+    const per = Math.round(n * 12 / 28);
+    for(let i = 0; i < per; i++){
+      const x = r() * 12, y = 3 + r() * 37, rr = (.18 + r() * .3).toFixed(2), op = (.55 + r() * .45).toFixed(2), c = i % 4 === 1 ? "#7FE8FF" : col;
+      for(let t = 0; t < 4; t++) drift.appendChild(mk("circle", { cx: (2 + x + t * 12).toFixed(2), cy: y.toFixed(2), r: rr, fill: c, opacity: op }));
+    }
+    g.appendChild(drift);
     svg.appendChild(g);
   };
   if(def.kind === "starblade"){
@@ -38403,6 +38547,17 @@ function drawAvatarCharSVG(charId){
        details". Round 6 made it a blade of light - see below. */
     const neon = "#5CE1FF";
     const hoodCloth = headGrad("#43527E", "#222C52", "#0A0E20");
+    /* A SHOOTING STAR across the sky behind him (build 313), past the
+       moon and down behind the hood, once a loop. Drawn where it ends up
+       and carried there by the keyframes; invisible at both ends of its
+       run, and hidden in a still drawing. */
+    open("cx-fx cx-fx-sa5meteor", { opacity: "0" });
+    { const mg = uid + "-sa5m"; const ml = mk("linearGradient", { id: mg, gradientUnits: "userSpaceOnUse", x1: "27.4", y1: "7.4", x2: "34.6", y2: "3.4" });
+      [["0%", "#FFFFFF", "1"], ["30%", "#BFF4FF", ".7"], ["100%", neon, "0"]].forEach(([o, c, op]) => ml.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op }))); defs.appendChild(ml);
+      svg.appendChild(mk("path", { d: "M27.4 7.4 L34.6 3.4", stroke: "url(#" + mg + ")", "stroke-width": ".55", "stroke-linecap": "round" }));
+      svg.appendChild(mk("circle", { cx: 27.4, cy: 7.4, r: 1.1, fill: neon, opacity: ".35" }));
+      svg.appendChild(mk("circle", { cx: 27.4, cy: 7.4, r: .42, fill: "#FFFFFF" })); }
+    close();
     /* the comet scarf, tapering to nothing */
     open("cx-fx cx-fx-sascarf");
     const sg = uid + "-sasg"; const slg = mk("linearGradient", { id: sg, x1: "1", y1: "0", x2: "0", y2: "0" });
@@ -38410,6 +38565,10 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("path", { d: "M12.6 29.2 Q8.2 28.2 4.2 24.6 Q2.6 23.2 1.4 23.6 Q4.4 27 5.4 29 Q7.8 31.4 12.8 31 Z", fill: "url(#" + sg + ")" }));
     [[6.6, 27.6, .3], [4.2, 25.8, .22], [9, 29.6, .24]].forEach(([x, y, r]) => svg.appendChild(mk("circle", { cx: x, cy: y, r, fill: "#FFFFFF" })));
     close();
+    /* stardust streaming off the comet's tail (build 313): each mote
+       leaves the tip, drifts away and goes out, then comes back unseen */
+    [[2.6, 24.2, .3, 0], [4.4, 26.2, .24, -.7], [3.2, 25.2, .2, -1.4]].forEach(([x, y, r, d]) =>
+      svg.appendChild(mk("circle", { cx: x, cy: y, r, fill: "#E6FBFF", opacity: "0", class: "cx-fx cx-fx-sa5mote", style: "animation-delay:" + d + "s" })));
     /* the blade on his back, round 6: "the sword is supposed to kinda have
        the blue glow like a lightsaber ... less like a sword, more space
        like. And it comes out the background weird, needs to look like
@@ -38445,6 +38604,19 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("path", { d: seg(.385, .4), stroke: neon, "stroke-width": "2.1", "stroke-linecap": "butt", opacity: ".8" }));
     [.52, .88].forEach(t => { const p = ax(t, 0); svg.appendChild(mk("circle", { cx: p[0], cy: p[1], r: .32, fill: neon, class: "cx-fx-saglow" })); });
     svg.appendChild(mk("path", { d: seg(.96, 1), stroke: "#262C3A", "stroke-width": "1.8", "stroke-linecap": "round" }));
+    close();
+    /* THE BLADE SURGES (build 313): every three seconds the light at the
+       emitter flares, a ring of it goes out off the shoulder and the
+       blade's glow swells - the hum made visible. Hidden when still. */
+    open("cx-fx cx-fx-sa5surge", { opacity: "0" });
+    { const e = ax(.4, 0), sp = uid + "-sa5s"; const sr = mk("radialGradient", { id: sp, cx: "50%", cy: "50%", r: "50%" });
+      [["0%", "#FFFFFF", ".95"], ["35%", "#BFF4FF", ".6"], ["100%", neon, "0"]].forEach(([o, c, op]) => sr.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op }))); defs.appendChild(sr);
+      svg.appendChild(mk("path", { d: seg(-.05, .42), stroke: neon, "stroke-width": "4.4", "stroke-linecap": "round", opacity: ".22" }));
+      svg.appendChild(mk("circle", { cx: e[0], cy: e[1], r: 3.4, fill: "url(#" + sp + ")" }));
+      const fl = sparkle(+e[0], +e[1], 2.2, "#F2FDFF"); fl.setAttribute("class", "cx-fx-sa5flare"); svg.appendChild(fl); }
+    close();
+    open("cx-fx cx-fx-sa5ring", { opacity: "0" });
+    { const e = ax(.4, 0); svg.appendChild(mk("circle", { cx: e[0], cy: e[1], r: 1.6, fill: "none", stroke: "#BFF4FF", "stroke-width": ".3" })); }
     close();
     open("cx-body");
     /* the body, seen only down the cloak's opening; its own gradient,
@@ -38532,6 +38704,8 @@ function drawAvatarCharSVG(charId){
     const visor = "M14.4 16.4 L19.2 17.5 L20 17.1 L20.8 17.5 L25.6 16.4 L24.9 17.9 L20.6 18.6 L20 18.3 L19.4 18.6 L15.1 17.9 Z";
     svg.appendChild(mk("path", { d: visor, fill: neon, opacity: ".45", stroke: neon, "stroke-width": "1.1", "stroke-linejoin": "round", class: "cx-fx-saeye" }));
     svg.appendChild(mk("path", { d: visor, fill: "#E6FBFF" }));
+    /* the visor answers the blade: it burns brighter on each surge */
+    svg.appendChild(mk("path", { d: visor, fill: "none", stroke: "#BFF4FF", "stroke-width": "1.9", "stroke-linejoin": "round", opacity: "0", class: "cx-fx-sa5visor" }));
     close();
     closedEyes([[17.2, 17.6, 2.2], [22.8, 17.6, 2.2]], neon, .4);
     /* a scan of light along the visor, now and then (build 312) */
@@ -53633,6 +53807,10 @@ function startOrbitEmblemAnims(root, readyOnly){
 const CHAR_ANIM_LOOP_MS = 6000;
 const CHAR_ANIM_FRAMES = 144;   /* 24 a second */
 const CHAR_ANIM_COLS = 12;
+/* c3 (build 313): a sheet is keyed by its DRAWING, so a change to the
+   motion alone (new keyframes, a new period) would have played last
+   build's recording; the version clears every old sheet at once. Bump it
+   whenever character CSS motion changes without the drawing changing. */
 const CHAR_ANIM_VER = "c3";
 const CHAR_FLIP_MAX_CSS = 80;
 const charAnimSheets = new Map();

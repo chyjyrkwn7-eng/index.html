@@ -96,6 +96,8 @@ KNOWN = {
     "cx-wf-ring": "a ring off a worn flare that fades to nothing as it spreads",
     "cx-za-pour": "light poured down Zenith's halo: invisible at both ends of its run",
     "cx-za-rays8": "Zenith's eight rays, long and short: a quarter turn lands on the same picture",
+    # Build 313 characters.
+    "cx-sa5-drift": "Orion's cloak stars: laid on a 12-unit tile drawn four times, moved exactly one tile",
 }
 s = open(SRC, encoding="utf-8").read()
 kf = {}
