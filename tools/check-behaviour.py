@@ -8981,7 +8981,7 @@ def check_b313_chars_centred(br):
     down and 7% bigger, so it jumped off centre whenever its loop took
     over. Written against build 312, where it fails on every row."""
     print("\n91. build 313: every board character's flip-book sits exactly on its drawing, centred in its circle")
-    chars = ['ninja', 'zeus', 'poseidon', 'astronaut', 'ronin', 'astral', 'celestial', 'zenith']
+    chars = ['astral', 'celestial', 'zenith', 'ninja', 'poseidon', 'astronaut', 'ronin', 'zeus']
     import re as _re
     vr = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "check-vroom.py")).read()
     fake = _re.search(r'FAKE_FIRESTORE = """(.*?)"""', vr, _re.S).group(1)
@@ -8992,12 +8992,16 @@ def check_b313_chars_centred(br):
           try{ __useFake(); if(window.__osr) onSnapshotResilient = window.__osr; }catch(e){}
           for(let i = 0; i < chars.length; i++) await fbDb.collection('leaderboard').doc('c' + i).set({ pub: 'c' + i, firstName: chars[i], avatarChar: chars[i], accent: 'ink', level: 40 - i, badges: 3, hundos: 20 - i, xp: 40000 - i * 900, tests: 30, week: weekKeyNow(), weekPoints: 900 - i * 50, lastModified: Date.now(), seenAt: Date.now() });
           showRankings(); const out = { rows: [] };
-          for(let t = 0; t < 70; t++){ await wait(250); if(document.querySelectorAll('.rank-row .char-flip-play').length >= 4) break; }
+          for(let t = 0; t < 200; t++){ await wait(250); if(document.querySelectorAll('.rank-row .char-flip-play').length >= 4) break; }
           const read = () => [...document.querySelectorAll('.rank-row .rank-avatar-wrap')].filter(wr => wr.querySelector('.char-flip-play')).map(wr => {
             const c = wr.querySelector('.rank-avatar').getBoundingClientRect(), s = wr.querySelector('svg.avatarchar-svg').getBoundingClientRect(), f = wr.querySelector('.char-flip-play').getBoundingClientRect();
             return { dx: +((f.left + f.width / 2) - (s.left + s.width / 2)).toFixed(2), dy: +((f.top + f.height / 2) - (s.top + s.height / 2)).toFixed(2),
                      size: +(f.width / s.width).toFixed(3), off: +Math.hypot((f.left + f.width / 2) - (c.left + c.width / 2), (f.top + f.height / 2) - (c.top + c.height / 2)).toFixed(2) }; });
           out.rows = read(); await wait(2100); out.later = read(); await wait(2100); out.last = read();
+          /* and each plays its OWN loop: Astral, Celestial and Zenith share
+             a kind, and a flip-book picked by kind gave all three Zenith's */
+          for(let t = 0; t < 200; t++){ const n = ['astral', 'celestial', 'zenith'].filter(c => [...document.querySelectorAll('.rank-row')].some(r => r.dataset.av === c && r.querySelector('.char-flip-play img'))).length; if(n === 3) break; await wait(250); }
+          out.sheets = ['astral', 'celestial', 'zenith'].map(c => { const r = [...document.querySelectorAll('.rank-row')].find(r => r.dataset.av === c); const img = r && r.querySelector('.char-flip-play img'); return img ? img.src : null; });
           return out; }""", chars)
         rows = r.get("rows") or []
         worst = max([max(abs(x["dx"]), abs(x["dy"])) for x in rows] or [99])
@@ -9009,6 +9013,9 @@ def check_b313_chars_centred(br):
         check("%s: each flip-book is the drawing's size (within 3%%)" % label, size <= 0.03, "%.1f%%" % (size * 100))
         check("%s: each sits within 1px of its circle's centre" % label, off <= 1.0, "%.2fpx" % off)
         check("%s: and stays put across the loop" % label, drift <= 0.1, drift)
+        sh = r.get("sheets") or []
+        check("%s: Astral, Celestial and Zenith each play their own loop, not one shared one" % label,
+              len(sh) == 3 and all(sh) and len(set(sh)) == 3, [bool(x) for x in sh] + [len(set(sh))])
         ctx.close()
 
 

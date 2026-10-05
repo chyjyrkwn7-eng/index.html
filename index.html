@@ -35575,6 +35575,10 @@ function buildAvatarCharSVG(charId){
   if(!t){
     const svg = buildAvatarCharSVGFresh(charId);
     if(!svg) return svg;
+    /* the drawing says which character it is (build 313): three
+       characters share the zenith kind, and a flip-book that went by the
+       kind gave Astral and Celestial Zenith's loop on every board */
+    svg.setAttribute("data-char", charId);
     t = AVATAR_SVG_TEMPLATE[charId] = { svg, uid: svg.getAttribute("data-cx-uid") || "" };
   }
   const copy = t.svg.cloneNode(true);
@@ -54421,6 +54425,7 @@ function recordCharFrames(charId, px){
 /* Which character a drawing is: the span's data-char when the builder
    set one, else the cx-k-<kind> on its figure. */
 function charIdOfSvg(el, svg){
+  if(svg.getAttribute("data-char")) return svg.getAttribute("data-char");
   const holder = svg.closest("[data-char]");
   if(holder && el.contains(holder) && holder.dataset.char) return RETIRED_CHARACTER_TO[holder.dataset.char] || holder.dataset.char;
   const fig = svg.querySelector("[class*='cx-k-']");
