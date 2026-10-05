@@ -873,8 +873,8 @@ def sections_313(ctx, open_tab, args):
                        exits: btns, hs: document.documentElement.scrollWidth - innerWidth }; }""")
             want = ["Winner"] if n < 4 else ["1st", "2nd", "3rd"]
             check("%d people: everybody is on the leaderboard" % n, b["rows"] == n, b)
-            check("%d people: %s" % (n, "one winner, nobody else placed" if n < 4 else "a podium of three"),
-                  sorted(b["places"]) == sorted(want), b["places"])
+            check("%d people: %s" % (n, "one winner, nobody else placed" if n < 4 else "a podium of three, top to bottom"),
+                  b["places"] == want, b["places"])
             check("%d people: both ways out are on screen and tappable" % n,
                   len(b["exits"]) == 2 and all(e["ok"] for e in b["exits"]) and b["hs"] <= 0, b)
             home(pg)
@@ -913,6 +913,23 @@ def sections_313(ctx, open_tab, args):
         if took is not None:
             last = pg.evaluate("()=>[...document.querySelectorAll('#vroom-race-cut .vrc-row')].length")
             check("and is still on it, last", last == 5, last)
+        home(pg)
+
+        # A LOBBY OF TWENTY: Ready up used to sit ~2,000px down a phone.
+        pg.evaluate("()=>createVirtualRoomLobby(['Identity Crimes'], null, 'race')")
+        pg.wait_for_function("()=>typeof vroomCode==='string' && vroomCode", timeout=20000)
+        pg.wait_for_selector(".vroom-readyup-btn", state="visible", timeout=20000)
+        pg.evaluate("""()=>{ const AV = AVATAR_CHARACTERS.map(c => c.id); const f = {};
+          for(let i = 1; i < 20; i++) f['participants.l' + i] = { name: 'P' + i, avatarChar: AV[i % AV.length], level: i,
+            joinedAt: Date.now() + i, seen: Date.now(), ready: i % 3 === 0, progress: 0, finished: false };
+          return fbDb.collection('vrooms').doc(vroomCode).update(f); }""")
+        pg.wait_for_function("()=>document.querySelectorAll('.vroom-row').length === 20", timeout=15000)
+        pg.wait_for_timeout(500)
+        lob = pg.evaluate("""()=>({ ready: Math.round(document.querySelector('.vroom-readyup-btn').getBoundingClientRect().top + scrollY),
+          vh: innerHeight, hs: document.documentElement.scrollWidth - innerWidth,
+          dots: document.querySelectorAll('.vroom-ready-badge.is-ready').length })""")
+        check("a lobby of twenty keeps Ready up within the first screen and a bit, with nothing off the side",
+              lob["ready"] <= lob["vh"] and lob["hs"] <= 0 and lob["dots"] == 6, lob)
         home(pg)
         pg.close()
     except Exception as e:

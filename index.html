@@ -4037,12 +4037,25 @@
   .vroom-roster-head .vroom-readycount{ margin:0; font-size:.78rem; }
   .vroom-roster-list{ margin:0; }
   .vroom-roster-list .vroom-row:last-child{ border-bottom:none; }
-  .vroom-roster.is-crowded .vroom-roster-list .vroom-row{ padding-top:.32rem; padding-bottom:.32rem; min-height:0; }
-  .vroom-roster.is-crowded .vroom-avatar{ width:2.5rem; height:2.5rem; }
-  .vroom-roster.is-crowded .lb-name{ font-size:.88rem; }
+  /* Two across at every width; on a phone the level line goes and the
+     ready chip is a dot (the row's green edge says it too). */
+  .vroom-roster.is-crowded .vroom-roster-list{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); column-gap:.45rem; }
+  .vroom-roster.is-crowded .vroom-roster-list .vroom-row{ gap:.45rem; padding:.4rem .5rem; margin-bottom:.45rem; min-height:0; min-width:0; }
+  .vroom-roster.is-crowded .vroom-avatar{ width:2.2rem; height:2.2rem; flex:0 0 auto; }
+  .vroom-roster.is-crowded .lb-name-wrap{ flex:1 1 auto; min-width:0; }
+  .vroom-roster.is-crowded .lb-name{ font-size:.82rem; }
+  .vroom-roster.is-crowded .vroom-you-tag{ margin-left:.25rem; }
+  .vroom-roster.is-crowded .vroom-row-sub{ display:none; }
+  .vroom-roster.is-crowded .vroom-ready-badge{
+    width:.62rem; height:.62rem; padding:0; font-size:0; border-radius:50%;
+    background:rgba(160,170,185,.35);
+  }
+  .vroom-roster.is-crowded .vroom-ready-badge.is-ready{ background:#3DD68C; }
   @media (min-width:40rem){
-    .vroom-roster.is-crowded .vroom-roster-list{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); column-gap:.6rem; }
-    .vroom-roster.is-crowded .vroom-avatar{ width:2.9rem; height:2.9rem; }
+    .vroom-roster.is-crowded .vroom-roster-list .vroom-row{ padding:.5rem .7rem; }
+    .vroom-roster.is-crowded .vroom-avatar{ width:2.7rem; height:2.7rem; }
+    .vroom-roster.is-crowded .lb-name{ font-size:.9rem; }
+    .vroom-roster.is-crowded .vroom-row-sub{ display:block; }
   }
   .vroom-setup-head{ margin-top:1.4rem; }
   @media (min-width:40rem){
@@ -77743,8 +77756,11 @@ function playVroomRaceCutscene(ranked){
         if(add > 0) x.gain.classList.add("is-on");
         countTo(x, x.shown + add, quiet ? 0 : STEP_MS * .6);
       });
-      /* Once this step's numbers have landed, the board re-sorts. */
-      setTimeout(() => reshuffle(x => x.shown), quiet ? 0 : STEP_MS * .65);
+      /* Once this step's numbers have landed, the board re-sorts. NOT with
+         reduce motion (build 313): every step and the final order are all
+         due at once then, and these re-sorts landed AFTER the final one,
+         on half-counted numbers - the board ended 1st, 3rd, 2nd. */
+      if(!quiet) setTimeout(() => reshuffle(x => x.shown), STEP_MS * .65);
     });
     t += STEP_MS;
   });
