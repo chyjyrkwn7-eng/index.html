@@ -11227,12 +11227,18 @@ device, phone and iPad) fails 34 checks there and passes on 307.
 
 ### Build 309 - held flares stay lit, a road you can see, one line per kind of XP
 
-- **A lit Silver is polished metal, not pale glass.** Silver's colour is a
-  pale blue-grey, so 24% of it over the lit bubble's glass came out as the
-  same pale glass an unreached rank wears - "almost looks too much like a
-  non unlocked one". `[data-rank-tier="ranger"].cosmic-badge-lit` has its
-  own steel body, bright rim and halo. Any rank whose colour is near-white
-  or near-grey needs the same check: compare it lit against unlit.
+- **Every lit flare is the same glass; Silver differs only in its tint.**
+  Silver's colour is a pale blue-grey, so 24% of it over the lit bubble's
+  glass came out as the same pale glass an unreached rank wears - "almost
+  looks too much like a non unlocked one". The first answer gave Silver a
+  look of its own (steel body, white rim, bigger halo) and it came straight
+  back: *"it doesn't look like the bronze one.. ensure all these flares
+  when lit up have the same look."* So the lit recipe reads
+  `var(--flare-tint, var(--rank-color))` and Silver's bubble sets only
+  `--flare-tint:#7D97BC`, a deeper silver-blue: same body, rim and halo as
+  the other six, and still clearly lit beside an unreached one. **Never
+  give one flare its own recipe again** - fix a colour that does not read
+  by tinting, and compare it lit against both a lit neighbour AND unlit.
 - **Tapping a reached flare says it is reached and lit, nothing about the
   theme** ("don't mention that the 'theme is yours' part").
 - **The rank hero has one light, not two.** The next rank's colour used to

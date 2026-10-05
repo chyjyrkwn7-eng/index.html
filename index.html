@@ -10511,38 +10511,29 @@
      ::after below) so the emblem reads as sitting INSIDE the glass. */
   .cosmic-icon-badge.cosmic-badge-rank.cosmic-badge-lit,
   .cosmic-icon-badge.cosmic-badge-rank.cosmic-badge-noir{
-    background:color-mix(in srgb, var(--rank-color) 24%, rgba(255,255,255,.07));
+    background:color-mix(in srgb, var(--flare-tint, var(--rank-color)) 24%, rgba(255,255,255,.07));
     background-image:
       radial-gradient(120% 90% at 40% 0%, rgba(255,255,255,.14), rgba(255,255,255,0) 70%),
-      radial-gradient(90% 60% at 50% 100%, color-mix(in srgb, var(--rank-color) 45%, transparent), transparent 70%);
-    border:1px solid color-mix(in srgb, var(--rank-color) 60%, rgba(255,255,255,.7));
+      radial-gradient(90% 60% at 50% 100%, color-mix(in srgb, var(--flare-tint, var(--rank-color)) 45%, transparent), transparent 70%);
+    border:1px solid color-mix(in srgb, var(--flare-tint, var(--rank-color)) 60%, rgba(255,255,255,.7));
     -webkit-backdrop-filter:blur(6px) saturate(1.5); backdrop-filter:blur(6px) saturate(1.5);
     box-shadow:0 1px 4px rgba(255,255,255,.12) inset, 0 -1px 3px rgba(255,255,255,.07) inset,
-      0 0 14px 2px color-mix(in srgb, var(--rank-color) 55%, transparent),
+      0 0 14px 2px color-mix(in srgb, var(--flare-tint, var(--rank-color)) 55%, transparent),
       3px 7px 12px -2px rgba(0,0,0,.45);
   }
   .cosmic-icon-badge.cosmic-badge-rank{ position:absolute; overflow:hidden; }
-  /* ---- SILVER, LIT, IS POLISHED METAL - NOT PALE GLASS (build 309) ----
+  /* ---- EVERY LIT FLARE IS THE SAME GLASS (build 309) ----
      "The silver flare on the Home Screen looks good but it almost looks
-     too much like a non unlocked one." Silver's colour is a pale
-     blue-grey, and 24% of a pale grey over glass is pale glass: the exact
-     body an unreached bubble has. So a lit Silver gets the cues the
-     unreached ones never carry - a cool steel body instead of a white
-     wash, a bright polished rim, a crisp highlight, and a halo - and the
-     emblem keeps its full brightness inside it. */
-  .cosmic-icon-badge.cosmic-badge-rank.cosmic-badge-lit[data-rank-tier="ranger"]{
-    background:#3C4A5E;
-    background-image:
-      radial-gradient(120% 80% at 38% 0%, rgba(236,244,255,.42), rgba(236,244,255,0) 62%),
-      radial-gradient(95% 65% at 50% 100%, rgba(186,206,232,.5), transparent 72%),
-      linear-gradient(160deg, #66798F, #2A3546 70%);
-    border:1.5px solid #E4EEFA;
-    box-shadow:0 1px 3px rgba(255,255,255,.45) inset, 0 -2px 4px rgba(10,16,26,.5) inset,
-      0 0 0 1px rgba(160,184,214,.35),
-      0 0 16px 3px rgba(196,218,246,.62),
-      3px 7px 12px -2px rgba(0,0,0,.45);
-  }
-  .cosmic-icon-badge.cosmic-badge-rank.cosmic-badge-lit[data-rank-tier="ranger"] svg.cosmic-rank-emblem{ filter:saturate(1.1) brightness(1.3) contrast(1.08); }
+     too much like a non unlocked one" was answered first with a Silver of
+     its own - a steel body, a white rim, a bigger halo - and that came
+     back as "it doesn't look like the bronze one ... ensure all these
+     flares when lit up have the same look." The cause was never the
+     recipe, it was the colour: Silver's rank colour is a pale blue-grey,
+     and 24% of a pale grey over glass is the unreached bubble's white
+     wash. So Silver keeps the shared recipe exactly and only TINTS it with
+     a deeper silver-blue, through --flare-tint; every other rank falls
+     through to its own --rank-color. */
+  .cosmic-icon-badge.cosmic-badge-rank[data-rank-tier="ranger"]{ --flare-tint:#7D97BC; }
   .cosmic-icon-badge.cosmic-badge-rank svg.cosmic-rank-emblem{ position:relative; z-index:0; }
   /* The lens, above the emblem. It was a crescent of light across the
      top third, and its edge was the "weird circle like thing at the top"
