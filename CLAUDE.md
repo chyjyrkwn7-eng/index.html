@@ -11749,10 +11749,13 @@ unlocking all characters, one is banners, zenith is everything")
   first two, `ultimateProgress()` leaves out only Zenith itself. Each has
   its banner (`ZENITH_BANNER.c/.b/.a`), all three last in both lists.
 
-**First Light** - the new unique banner: 10 tests finished between 4 and
-8 AM. `store.earlyTests` is merged like `vrMatches` on all three merge
-paths and seeded once from history (`seedEarlyTests312`). Sunrise over
-the city across the water.
+**First Light** - the new unique banner: a hundo in 10 different units
+(`litUnitsOf()`, read straight off `unitPerfects`, only units still in the
+bank). Sunrise over the city across the water - the sky lighting up unit
+by unit. It was "10 tests before 8 in the morning" for one round and was
+turned down at once: "I wouldn't even want to do that challenge". **A
+challenge rewards studying, not WHEN you study.** The early-test counter
+never shipped and is gone entirely; the id stays `early10`.
 
 **The secret flares, again** ("This secret flare has a square around it";
 "the void cutscene ... started hopping up and down"; "you get a banner

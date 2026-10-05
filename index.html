@@ -35077,21 +35077,18 @@ function unitStreakBest(){ return Math.max(store.unitHundoStreakBest || 0, store
    - The best daily run and the best unit run start at the current ones:
      nothing kept a best before, and the current run is the most that can
      honestly be said. */
-/* FIRST LIGHT (build 312): a test counts if it was finished between 4
-   and 8 in the morning, by this device's clock. Before 4 is the night
-   before, not an early start. */
-const EARLY_TESTS = 10;
-function isEarlyHour(ms){ const h = new Date(ms).getHours(); return h >= 4 && h < 8; }
-function seedEarlyTests312(){
-  if(store.earlyTestsSeed312) return;
-  const n = (store.testHistory || []).filter(t => t && t.playedAt && isEarlyHour(t.playedAt)).length;
-  store.earlyTests = Math.max(Number(store.earlyTests) || 0, n);
-  store.earlyTestsSeed312 = true;
+/* FIRST LIGHT (build 312): units lit - every unit you have earned at
+   least one hundo in. It was "10 tests before 8 in the morning" first,
+   and that was turned down straight away ("I wouldn't even want to do
+   that challenge"): a reward has to be for studying, not for when. Read
+   straight off unitPerfects, so it counts what is already on record and
+   needs no counter of its own. Only units still in the bank count. */
+const LIT_UNITS = 10;
+function litUnitsOf(){
+  try{ return topicsIn(QUESTIONS).filter(u => unitPerfectCount(u) > 0).length; }catch(e){ return 0; }
 }
-function earlyTestsOf(){ try{ seedEarlyTests312(); }catch(e){} return Number(store.earlyTests) || 0; }
 function seedChallenges289(){
   try{ revokePenalKoi295(); }catch(e){}
-  try{ seedEarlyTests312(); }catch(e){}
   if(store.challengeSeed289) return;
   let misses = 0;
   try{ Object.keys(store.stats || {}).forEach(k => { const st = store.stats[k]; misses += (st && Number(st.m)) || 0; }); }catch(e){}
@@ -39757,7 +39754,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               savedCodePrompts: 0, savedCodeSaved: false,
               dailyCorrectStreak: 0, dailyCorrectBest: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, friendsBest: 0, koiRevoked295: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bigTest500Passed: false, bestTestStreak: 0,
               weeklyWins: 0, weeklyTop3: 0, retakenQuestions: 0, hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, unlocksShown: null, seenUnlocks: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
-              earlyTests: 0, earlyTestsSeed312: true, flareHintsShown: [],
+              flareHintsShown: [],
               vrMatches: 0, vrWins: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
               fullTestsSeeded: false, practiceExamPerfect: false, banner: "", starfallKept: false, creditsApplied: [],
               publicId: null, leaderboardKeyMigrated: false,
@@ -39974,12 +39971,6 @@ function applyLoadedData(got){
      already done (seedBannerCounters, seedVroomHistory) rather than
      starting from nothing. */
   store.vrMatches = typeof got.vrMatches === "number" ? got.vrMatches : 0;
-  /* FIRST LIGHT's count (build 312): tests finished before 8 in the
-     morning. An existing account is seeded once from its test history -
-     seedEarlyTests312() - which is why the flag defaults to false here
-     and true on a fresh store. */
-  store.earlyTests = typeof got.earlyTests === "number" ? got.earlyTests : 0;
-  store.earlyTestsSeed312 = got.earlyTestsSeed312 === true;
   store.flareHintsShown = Array.isArray(got.flareHintsShown) ? got.flareHintsShown.filter(x => typeof x === "string") : [];
   store.vrWins = typeof got.vrWins === "number" ? got.vrWins : 0;
   store.vrCounted = Array.isArray(got.vrCounted) ? got.vrCounted.filter(x => typeof x === "string") : [];
@@ -41460,7 +41451,7 @@ function wipeLocalProgressAndSettings(){
   store.seenUnlocks = null;
   store.unitRuns = {};
   store.vrMatches = 0; store.vrWins = 0; store.vrCounted = []; store.vrRetroDone = true;
-  store.earlyTests = 0; store.earlyTestsSeed312 = true; store.flareHintsShown = [];
+  store.flareHintsShown = [];
   store.vrTop3 = 0; store.vrTop3Rooms = []; store.vrTop3RetroDone = true;
   store.fullTestsSeeded = true; store.practiceExamPerfect = false; store.banner = ""; store.starfallKept = false;
   store.weekRankSeen = null;
@@ -42145,7 +42136,7 @@ function progressSinceBase(src, base){
   });
   const had = new Set((base.testHistory || []).map(t => t && t.playedAt).filter(Boolean));
   out.testHistory = (out.testHistory || []).filter(t => t && !had.has(t.playedAt));
-  ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "earlyTests"].forEach(k => { out[k] = less(out[k], base[k]); });
+  ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions"].forEach(k => { out[k] = less(out[k], base[k]); });
   if(base.weekKey && base.weekKey === out.weekKey) out.weekPoints = less(out.weekPoints, base.weekPoints);
   return out;
 }
@@ -42261,7 +42252,7 @@ function mergeLeavingAccount(src, note){
   if(store.unitRuns && src.unitRuns) sumMap("unitRuns"); else store.unitRuns = null;
   store.testHistory = (store.testHistory || []).concat(src.testHistory || [])
     .sort((a, b) => num(b && b.playedAt) - num(a && a.playedAt)).slice(0, TEST_HISTORY_MAX);
-  ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "earlyTests"].forEach(k => { store[k] = num(store[k]) + num(src[k]); });
+  ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions"].forEach(k => { store[k] = num(store[k]) + num(src[k]); });
   ["dailyCorrectStreak", "hundoDayBest", "bestTestStreak", "unitHundoStreak", "dailyCorrectBest", "unitHundoStreakBest", "dayAnsweredBest", "friendsBest"].forEach(k => { store[k] = Math.max(num(store[k]), num(src[k])); });
   ["vrCounted", "vrTop3Rooms", "flareHintsShown"].forEach(k => {
     const a = Array.isArray(store[k]) ? store[k] : [];
@@ -42614,7 +42605,7 @@ function mergeSameAccount(dst, src){
     }
     if(a.some(h => h && !theirs.has(key(h)))) res.otherHadLess = true; }
   ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "hundoDayBest", "bestTestStreak",
-   "dailyCorrectBest", "unitHundoStreakBest", "dayAnsweredBest", "friendsBest", "earlyTests"]
+   "dailyCorrectBest", "unitHundoStreakBest", "dayAnsweredBest", "friendsBest"]
     .forEach(k => maxInto(dst, k, src[k]));
   ["vrCounted", "vrTop3Rooms", "legacyChars", "creditsApplied", "flareHintsShown"].forEach(k => unionArr(k));
   /* The "seen" marks behind the new-item dots (build 299): seen on one
@@ -45182,11 +45173,11 @@ const BANNERS = [
      counts, so a later slip takes nothing back. The most anybody had
      was five. Anybody who ever set the old flag keeps the banner. The
      id stays `exam100`. */
-  /* FIRST LIGHT (build 312) - the unique one: it counts WHEN you study.
-     See EARLY_TESTS and seedEarlyTests312(). */
+  /* FIRST LIGHT (build 312) - the sky lighting up unit by unit. See
+     LIT_UNITS. The id stays `early10`; nothing was ever earned under it. */
   { id: "early10", name: "First Light",
-    label: "Finish " + EARLY_TESTS + " tests before 8 in the morning", have: () => Math.min(earlyTestsOf(), EARLY_TESTS), need: EARLY_TESTS,
-    note: "Any test finished between 4 and 8 AM counts." },
+    label: "Earn a hundo in " + LIT_UNITS + " different units", have: () => Math.min(litUnitsOf(), LIT_UNITS), need: LIT_UNITS,
+    note: "One hundo in a unit lights it. Any mode counts." },
   { id: "exam100", name: "Phoenix",
     label: "Ace " + PHOENIX_UNIT_RUN + " different units in a row",
     have: () => (store.practiceExamPerfect ? PHOENIX_UNIT_RUN : Math.min(unitStreakBest(), PHOENIX_UNIT_RUN)), need: PHOENIX_UNIT_RUN,
@@ -50683,8 +50674,6 @@ function recordTestPlay(elapsedMs, pct){
      got deleted after a day or something". It is still counted
      everywhere else (testStats above, the daily streak, XP). */
   if(runLabel === "Daily question"){ saveStore(); return newBest; }
-  /* seeded before this test is added, so it is counted once */
-  try{ seedEarlyTests312(); if(isEarlyHour(Date.now())) store.earlyTests = (Number(store.earlyTests) || 0) + 1; }catch(e){}
   store.testHistory.unshift({
     label: testLabelFor(),
     /* The units themselves, so the review list can say what was actually

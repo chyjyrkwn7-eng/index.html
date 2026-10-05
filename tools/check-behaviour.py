@@ -8794,12 +8794,12 @@ def check_b312_unlocks(br):
       out.zenith = !isLockedCharacter('zenith');
       const up = ultimateProgress(); out.up = up;
       window.isLockedCharacter = realLocked; window.bannerEarned = realEarned; window.isLockedAccent = realAccent;
-      /* First Light: seeded from the history, then counted */
-      const at = h => { const d = new Date(); d.setHours(h, 30, 0, 0); return d.getTime(); };
-      store.earlyTests = 0; store.earlyTestsSeed312 = false;
-      store.testHistory = [{ playedAt: at(6), pct: 80 }, { playedAt: at(7), pct: 90 }, { playedAt: at(13), pct: 70 }, { playedAt: at(2), pct: 60 }];
-      out.seeded = earlyTestsOf();
-      out.early = bannerDef('early10') ? { need: bannerDef('early10').need, have: bannerDef('early10').have(), name: bannerDef('early10').name } : null;
+      /* First Light: units with at least one hundo, read off unitPerfects */
+      const U = topicsIn(QUESTIONS); store.unitPerfects = {};
+      U.slice(0, 3).forEach(u => store.unitPerfects[u] = 2); store.unitPerfects['A unit no longer in the bank'] = 5;
+      out.early = bannerDef('early10') ? { need: bannerDef('early10').need, have: bannerDef('early10').have(), name: bannerDef('early10').name, label: bannerDef('early10').label } : null;
+      U.slice(0, 12).forEach(u => store.unitPerfects[u] = 1);
+      out.earned = bannerEarned('early10');
       return out; }""")
     check("an unlock card cut short before it was seen stays owed, so Home still plays it", r.get("cutShort") is False, r)
     check("an unlock card that stayed up counts as shown", r.get("seen") is True, r)
@@ -8810,8 +8810,11 @@ def check_b312_unlocks(br):
     check("every other character earns Astral and every banner earns Celestial, character and banner alike",
           r.get("astral") and r.get("celestial") and r.get("astralBanner") and r.get("celestialBanner"), r)
     check("Zenith asks for everything, the other two ultimates included", r.get("zenith") is True and r["up"]["have"] == r["up"]["need"], r.get("up"))
-    check("First Light counts tests finished between 4 and 8 in the morning, seeded from the history",
-          r.get("seeded") == 2 and r.get("early") and r["early"]["need"] == 10 and r["early"]["have"] == 2 and r["early"]["name"] == "First Light", r)
+    # First Light was "10 tests before 8 in the morning" for one round and
+    # was turned down: "I wouldn't even want to do that challenge".
+    check("First Light is a hundo in 10 different units: only units still in the bank count, and 12 lit earns it",
+          r.get("early") and r["early"]["need"] == 10 and r["early"]["have"] == 3 and r["early"]["name"] == "First Light"
+          and "morning" not in r["early"]["label"] and r.get("earned") is True, r)
     ctx.close()
 
 
