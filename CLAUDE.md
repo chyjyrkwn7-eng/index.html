@@ -11830,3 +11830,635 @@ stuff there, no point." `progUnits` in `summarize()` now leaves out any
 unit in `badgesBefore` (held before the run). A badge earned BY the run
 was already left out of the boxes (the unlock says it), so a box only
 ever appears for a unit still filling up. Section 87 asserts both sides.
+
+
+### Build 313 - lit secret flares and Genesis, characters that move, a board that keeps the class, chat that is really a day
+
+**Held for Madison's go.** Not merged to `main`; `main` is still 312 plus
+Lights Out. Leaderboard row banners are still OFF. Built as four parallel
+pieces - the lead's list, the secret flares, the characters, chat and the
+Virtual Room - merged into one branch; each piece's own notes follow.
+
+**Open decision, flagged to Madison:** Astral and Celestial ("every other
+character / banner") now count Genesis and the four secret banners, which
+puts Astral effectively behind level 78+. Excluding them is a change to
+`collectionProgress`.
+
+#### The lead's list: ranks, copy, the start sheet, loading, the streak
+
+**Ranks**
+- **Every requirement bar is in its rank's colour, met or not.** "Ensure
+  that's applied to all of them ... it's currently only set for a few of
+  them." A met bar used to turn green, so a rank you had passed never
+  showed its colour; the "Met" beside it says met. `.ranklore-reqfill` is
+  a rank-colour gradient with its own glow.
+- A reached stop on the road map glows (`.rankmap-stop.is-reached`), the
+  current-rank gauge head is the plain name with no icon ("remove the
+  icon, keep just the name"), and the climb note names no ranks.
+- **Platinum's core** is a dark disc with four broken arcs and a dashed
+  rim, drawn BETWEEN the back and front copies of the orbiting stars
+  (`rk-bin-a-front`), so the stars pass behind and in front of it. **Gold**
+  carries a dark speck at its centre. Both were asked for by name.
+- Lit Home flares are brighter (tint 34%, a double halo, the emblem
+  `saturate(1.4) brightness(1.32)`): "look good but also a little dull".
+
+**Copy**
+- Settings says **Auto-star** ("settings still says auto flag"). The
+  three leaderboard blurbs are one short line each, and the info bubble
+  is one sentence per board.
+- **An earned badge says its challenge exactly the way a locked one
+  does** - "Earn N hundos in this unit." - which is what "just like the
+  challenge is displayed on the non unlocked ones" asked for.
+- **Phoenix is 10 units at 100% in a row** (`PHOENIX_UNIT_RUN`), "the
+  hardest unique challenge". Nobody held it at the time (the best run was
+  5), so the change revokes nothing; check that again before raising it.
+- The Midnight skyline banner's background towers carry billboards
+  (`skylineFuture`) instead of shapes nobody could read. **Position
+  numbers inside a template string with `Math.round`, never `bnF()`** -
+  `bnF` returns a string, and `"12.3" + 17` is `"12.317"`, which put the
+  billboards in the wrong place with their pictures missing.
+- The phone version label is top-left on every phone, level with the
+  chat button.
+
+**The start sheet**
+- "Questions from" is **Your unit / Your units** and **Starred**. With one
+  unit the first box needs no second line; with several it says how many
+  UNITS - never how many questions, the rule from build 250.
+- The two-way switches sit flush (`.is-setup .bank-opt.on`): "it's like
+  the box is sitting on it".
+- **Time limit** and **Stopwatch**, each with a one-line description that
+  says what it does; the shuffle line says questions always come in a
+  random order and this shuffles the choices too.
+- **The no-hundo note opens UNDER its chip**, not at the top of the sheet
+  (`.hundo-why`, arrow at `--tip-x`), and says what to do: slide How many
+  all the way to All. It closes after 7s or on the next touch, and
+  `hideHundoWhy()` runs whenever the chip goes.
+- **Start fills, then settles - it does not flash.** The grey dip at the
+  end was the background-colour transition running while the ready
+  classes came off; `ready-settle` turns transitions off for two frames at
+  the handover. The fill is .6s and the pop waits .5s for it: "a tiny bit
+  slowed down".
+
+**Loading** ("we need to absolutely ensure opening any page will load it
+perfectly and smoothly")
+- **ONLY THE SERVER MAY TAKE PEOPLE OFF THE BOARD.** "Sometimes it only
+  displays myself." Firestore answers from its cache first, and a
+  device's cache often holds exactly one leaderboard document - its own,
+  because it just wrote it. Every listener guarded against an EMPTY
+  cached answer and none against a SHORT one, so a one-row cache
+  replaced the whole class for most of a second on every open. Measured
+  on 312: 25 rows, then 1 (you, in 1st place), then 25.
+  `mergeBoardSnapshot(current, next, snap)` is the rule, and **every
+  reader of the `leaderboard` collection goes through it**: a cached
+  answer can add and update rows but never remove one; a served answer
+  replaces (unless it is empty).
+- **A cold open shows placeholder rows, not you alone.** With nothing in
+  memory the board was a search bar over an empty hole and one grey
+  sentence, which then got shoved down by 25 rows arriving at once - "the
+  page opens poorly with a missing piece". `.rank-row-skel` rows are the
+  real row's exact height (66px), stay up until somebody other than you
+  is known or the server answers, and give way after 2.5s offline. A
+  dropped listener no longer swaps a full board for an error line;
+  `showError` only ever replaces nothing.
+- **Customize draws its banner scenes after it opens.** Timed with the
+  CPU slowed 4x, every main screen built in under 150ms except Customize,
+  at ~800ms - half of it nineteen banner scenes, all below the fold.
+  `fillDeferredBannerArt()` draws them in the frames after the mount, 8ms
+  per frame and nearest the screen first; the art slot is a fixed 16:6,
+  so nothing moves when one lands. 880 -> 290ms to build, 2.1 -> 0.74s to
+  first paint (throttled). **Anything that reads a banner tile's art right
+  after `showCustomize()` has to wait for it.**
+- `--vv-shift` is written only when it changes. It runs on every scroll
+  event, and a custom property on `<html>` is the one write that can
+  restyle the whole document; Chromium skips a same-value write, so this
+  measured no different here - it is there so a fling down Profile does
+  not depend on WebKit doing the same.
+- Rank emblems wake a screen ahead (`rootMargin: "100% 0px"`, was 60px):
+  waking restarts an emblem's animations from their first frame, and a
+  fast scroll arrived at frozen ones and watched them all jump into
+  motion at once.
+- **What could not be reproduced:** the Profile fast-scroll lag itself.
+  Profile renders completely on a throttled fling in Chromium; the two
+  changes above are the measurable candidates, and the report should be
+  re-checked on her phone.
+
+**The answer streak gets cooler as it climbs**
+- "Ensure they get progressively cooler/different when it gets higher
+  and higher." Each tier keeps the last one's extras and adds one: a ring
+  at 25, a sweep of light at 50, sparks at 75, a bigger pop with a second
+  ring and a flame at 100, more sparks at 150, the screen's edges flashing
+  its colour at 250, the prism at 350. One-shot, transform and opacity
+  only; the top two tiers hold 4s. Anything that clears `.streak-pop`
+  clears `.streak-flash` with it.
+
+**Results: every unlock waits in a visible slot.** The Unlocked card lands
+before the first cutscene and each row drops in after its own, so for a
+moment it was a heading over an empty box. Each row sits in a
+`.rs-unlock-slot` with a faint placeholder its own size, which fades (via
+`:has(.rs-in)`) as the real row lands on it.
+
+**Gates.** `check_b313_lead` (section 90) covers all of the above and fails
+on 312 everywhere except its guards (the server can still remove a row, a
+warm open paints at once). The Question bank checks in
+234/235b follow the new labels.
+
+#### The secret flares: lit, tappable, six of them, and four characters that are their own
+
+**Every found flare was painted white, and that was the stylesheet.**
+*"None of my secret flares are lit up, ensure that is correctly fixed."*
+Madison's account holds red, orange and yellow. `buildCosmicHero` set a
+found dot's colour as an svg `fill` ATTRIBUTE, and
+`.cosmic-orbit-dot{ fill:rgba(255,255,255,.55) }` beats a presentation
+attribute - so every found flare computed the same white as a missing
+one. The flares are HTML now (below) and the colour is a custom property
+on the element (`--fc`), which the lit look reads. **A colour set as an
+svg attribute loses to any CSS rule on the same element; set it as a
+property or a custom property, and check the COMPUTED value.**
+check-behaviour 91 reads the computed paint of every found flare.
+
+**Taps that "sometimes" did nothing had two causes.**
+*"When tapping the tiny secret flares, sometimes they and sometimes the
+text box won't show up."*
+- The shared `.cosmic-badge-tappable:active{ transform:scale(.88) }`
+  applied to the svg dots, and an svg element scales about the svg's
+  ORIGIN, not its own centre: a finger landing on a dot threw it 12% of
+  the way towards the top-left corner - the dot vanished from under the
+  finger and the tap landed on whatever was there. **Never let a shared
+  :active transform reach an svg child**; the flares have
+  `:active{ transform:none }` and nothing on them moves its box.
+- The dots turned UNDER the rank bubbles (the bubbles were later in the
+  DOM), so a dot passing a bubble could not be tapped at all - on 312 a
+  real click on the violet dot opened "Silver rank - 4 more levels".
+  The two orbit layers are `z-index:2` now, above the bubbles.
+- Measured with real `page.mouse.click`/touch taps at each flare's live
+  position, 35 of 35 on both reference devices (the planet flare is
+  skipped while it is behind the planet, where the planet takes the tap -
+  correct).
+
+**The tooltip follows the flare.** *"Ensure that it properly and smoothly
+follows the selected flare while the text box is open with the arrow like
+thing being placed in it correctly."* `showContextualInfo(target, text,
+{ follow, ring, refind })`: every frame it re-reads the target's box and
+moves the popup with a `translate` (no reflow), keeps the side it opened
+on (no flipping above/below as the ring turns), and re-aims the line from
+the nearest point of the popup's edge to the target. `ring` draws a ring
+round the target instead of the grey dot (which used to sit ON the very
+flare it explained), and the line stops at the ring. `refind` finds the
+same flare again if Home is rebuilt underneath (the old MutationObserver
+closed it). Open 4.2s for a followed target. Measured: the marker stays
+within 0.1px of the flare's centre over 1.2s of movement (312: 10.6px
+off and growing).
+
+**The flares are HTML, not svg circles.** Each tiny flare is a
+`span.cosmic-flare-dot` (2.9% of the hero, the old r 5) on two div
+layers that turn as wholes, with child `<i>`s for the halo, glass body,
+tint, core and glint - so everything they do is transform/opacity on a
+small box, on the compositor, instead of a repaint of a full-size svg.
+A 44px `::after` disc takes the tap.
+- **Lit** = a white-hot core, the colour round it, a darker rim, its
+  light pooled round it (a round gradient - never a filter), a breathing
+  halo and a glint now and then (a cross whose two streaks are unequal).
+  Each flare on its own clock (`--fd`, `--fg`).
+- **Missing** = the build-310 glass bubble, identical for all.
+- **The one the hunt wants next wears its colour** (`flareHuntState`:
+  `next` faintly; `hunting` - its level has come - stronger, with a ring
+  of its colour going out every 3.2s). *"I found the first three, and
+  unlocked void, the umbra missing flare did not change at all."* Now
+  it does.
+- **Three, then five, then six.** *"There will only be 3 at first, THE
+  4th and 5th flare will appear once void is unlocked."*
+  `homeFlareKeys()`. The sixth appears once the fifth is found: the hunt
+  is in order, and a sixth light before the fifth would give the order
+  away.
+- **Uneven positions** (*"more random ... kinda how they used to be"* -
+  build 97 had them at uneven angles on mixed rings): `FLARE_SPOT`, ring
+  radius and an angle each - red 337 and orange 128 on the outer ring,
+  yellow 236, Penumbra 32 and Event Horizon 141 on the inner.
+- **The inner ring turns in 52s, the outer in 120s** (was 88/120 - too
+  close to see). *"Ensure the flares in the middle are moving at a faster
+  pace."*
+
+**The sixth flare skims the planet.** *"Somehow placed in a cool way on
+the planet ... that moves in a cool way."* `.cosmic-core-orbit`: a low
+orbit (r 62 round the r 52 planet) tilted -18deg and squashed to .3, one
+turn every 14s. The squash/tilt is undone on the rider
+(`transform:scaleY(3.333) rotate(18deg)` after the counter-rotation), so
+it stays a round bead moving on an ellipse - pure transforms. It passes
+in front of the planet, round the limb, and hides (opacity AND
+visibility, so it cannot be tapped) only on the stretch of the far side
+where the planet is in front of it: |sin| > .57 on the far half, i.e.
+59.7%-90.3% of a turn. It shrinks going round the back and its tail lies
+in the orbit's own plane. **The same trick (a squashed plane, the rider
+turned back and un-squashed) is `tiltedOrbit()` in the new cutscenes and
+Genesis's moon - use it rather than inventing another.**
+
+**The sixth flare: `core`, Worldheart, level 78-80.** Appended to
+`MYSTERY_ORDER` (never inserted - the hunt looks for the first missing
+colour, so a new key at the end changes nothing for anybody part-way).
+`FLARE_WINDOWS.core = [78, 80]` (80 is the cap). `core: false` added to
+every place `mysteryColorsFound` is created, defaulted, reset or merged
+(the merges iterate keys). It needs the fifth first, like every flare.
+
+**Names, not colours.** *"Give each secret flare a cool name, make sure
+they are relevant to what they go to though and the color."*
+`MYSTERY_NAME`: Redshift, Accretion, Afterglow (the light Void swallowed),
+Penumbra (Umbra's - the half-shadow), Event Horizon (Horizon's),
+Worldheart (Genesis's - the planet's own). Display only; the keys never
+change. Used on the Home tap ("Redshift - found. One of the three that
+made Void."), the results cards ("Secret flare found / Penumbra / The
+fourth secret flare"), the scenes, the hint cards and the challenge
+labels.
+
+**Genesis - the planet on Home, alive.** *"The coolest cleverest flare
+character."* Its head IS the Home planet: the same gold-rose-magenta ramp
+(the wordmark's), the same ring (drawn in two passes, far half behind the
+head), a moon going round the ring that really passes behind it (two
+copies; the near one shown only on the near half), weather bands drifting
+across the face (one 8-unit period, drawn twice), two eyes, an
+atmosphere, eruptions off the crown, embers rising behind. Worldheart is
+worn at its chest with the world's seams running out of it across rock
+shoulders, pulsing with magma. Id `genesis`, kind `genesis`, feat
+`flare6`, secret. Rose `#FF5CA8` everywhere (flare, glow, backdrop).
+
+**Umbra's moon has phases; Horizon's hair surges.** *"The moon on umbras
+face needs to move between moon stages"*: the brow moon is drawn the way
+a real phase is - the right half lit plus an ellipse over the middle
+whose width is the terminator, dark for a crescent, lit for a gibbous -
+and only the two ellipses' `scaleX` moves (crescent -> half -> gibbous ->
+full -> back, 7s each way). The dark side is earthshine purple, not the
+face's black, so it reads as a moon at every phase. *"Horizons hair needs
+a cooler effect at random points"*: two copies of every lock over the
+hair, one WHITE-HOT (a flash up the hair, a double flicker) on a 17s
+clock and one DEEP BLUE (the light drained, tips still lit) on a 29s
+clock - 17 and 29 share no factor, so the pattern only repeats every
+~8 minutes, which is what "random" needs without a timer.
+
+**Locked secret characters are silhouettes.** *"It will just be a cutout
+of the character until it's unlocked ... it can still animate ... blacked
+out with the outline."* `buildCharSilhouette(id)`: two live copies laid
+over each other - the back one drawn entirely in the character's glow
+colour with a 1.7px stroke (the outline), the front one entirely black
+(`fill:#05060A !important` beats the attributes - the same rule that hid
+the lit flares, used on purpose). The worn flare stays lit on the black;
+scenery, halo and sparkles are left out; a round pool of its colour sits
+behind (never a filter). Used in Customize, on the character's card
+(`showUnlockDetail`) and in the Home hint ghost. Card copy: "A secret
+flare character, hidden until it is yours." then how (or "Unlock X to see
+how" while the flare before is missing). The onboarding picker shows no
+locked characters, so nothing changes there.
+
+**Four scenes, none shared.** *"Ensure the cutscenes for the 2nd and 3rd
+secret flare characters are cooler and are different from each other and
+different than void ... [the 4th's] more about the planet."* Void keeps
+build 312's scene. `flareSceneShell()` holds what the other three share
+(dark, stars, words, timers, tap to skip, the bridge colour):
+- **Umbra - an eclipse.** Penumbra lights the moon's edge; the shadow
+  slides across; totality - corona (soft streamers of uneven length, not
+  spokes) and a diamond-ring flash; two violet eyes open in the black
+  disc; Umbra fades up out of it with the moon's phases circling.
+- **Horizon - an event horizon.** Every flare found is pulled into a
+  black hole, stretched as it goes (spaghettified: scaled along its orbit)
+  and stops dead at the edge; the light comes back out in a ring; the
+  visor lights first, light rises; Horizon comes up with the five flares
+  going round it edge-on.
+- **Genesis - your own Home planet** (`buildCosmicHero(true)`): its ranks
+  and flares clear, the camera closes in, Worldheart dives in, rose
+  cracks spread and the core glows through, it shakes, and under a flash
+  it is swapped for a CSS copy in two halves that part on a blazing core
+  with a column of light; Genesis rises out of it while the world's ring
+  forms round it and all six flares ride that ring. The hero's own layers
+  go with `visibility` (their settle-in animation holds `opacity`, so an
+  opacity rule does nothing - the reason the orbit layers stayed up on
+  the first pass). **Anything put over the planet goes INSIDE the hero**
+  (`.cosmic-hero-wrap` has its own max-width, so a sibling sized in % of
+  the wrapper is the wrong size).
+Each is about 18.5s, like Void's.
+
+**A banner per secret character.** `flare_void` "Void" (the three lights
+joined like the stars on its face, over a slow dark vortex),
+`flare_umbra` "Umbra" (a total eclipse, the moon's phases strung across
+the sky, a dark ridge), `flare_horizon` "Horizon" (an edge-on black hole:
+the disc across the front, the lensed far side, light pulled up),
+`flare_genesis` "Genesis" (the Home planet rising, seams glowing, its
+ring across the frame, embers). None is another black hole with jets -
+that is Amethyst's. Held exactly when the character is (`have` reads
+`isLockedCharacter`), so an account already holding Void holds its
+banner at once and Home announces it; all four are layered, animated and
+epic. Locked: `.banner-opt.locked.is-secret` - greyscale, near-black,
+contrast up so only the brightest shapes show, and a "?" over it. The
+banner is an opaque box, so a filter on it is safe. On the results
+screen a flare banner comes AFTER its character (it would give away who
+the scene is about to bring out): flare -> scene -> character -> banner.
+
+**The ultimates count them.** Astral ("every other character") and
+Celestial ("every other banner") now include Genesis and the four secret
+banners, and Zenith with them. That is deliberate: a secret flare is not
+luck - it comes back in every run of 5+ questions until it is tapped,
+from its level on - and "every other character" that quietly skipped
+four would be untrue. Celestial already needed level 80 (Ascension), so
+Worldheart's 78-80 adds nothing to it; Astral now needs level 78+.
+
+**Home says Worldheart is out there** once Horizon is held
+(`pendingFlareHints` - "genesis"), naming the flare and its level. 
+
+**Gates.** check-behaviour 91 (`check_b313_flares`, 33 checks, every one
+fails on 312). Revised to the new decisions: audit_a R7 (three flares
+for an account with none found), 276 (six flares once the fifth is found;
+colour read from `--fc`), 302 (inner ring counted with Void held), 310
+(flare size read off the box), 302_flares (the five windows unchanged,
+a sixth after them). check-loops: `cco-*`, `cof-call`, `cx-gn-*`,
+`xs-turn*` added to KNOWN with reasons.
+
+**A secret's lock line is two sentences** ("Find Penumbra, the fourth
+secret flare. It unlocks Umbra."), because the label now names the flare
+and says which it is; "... flare to unlock Umbra" read as one run-on.
+
+**Verified**: check-js, check-loops (0 seams), check-behaviour 91 plus
+every older section that touches the flares (11, 17, 32, 47-49, 52, 54,
+57-59, 67-71, 82-83, 88-90 and the audit) green, check-unlocks green,
+sweep-layout --quick 14/14 clean; real end-to-end runs of a drill with
+the third, fourth and sixth flare tapped in the test, through the
+results screen (flare card, its scene, character card, banner card).
+Screenshots and GIFs: /tmp/claude-0/b313/shots/flares/.
+
+#### Characters: centred on the boards, no sweeps, Orion / Sheriff / Ronin, the three ultimates, every grade on the results character
+
+**Board characters jumped off centre in their circles** (*"the characters
+move positions within their circle and aren't properly centered/displayed"*).
+App-wide, and it was the flip-book, not the drawing. `charFlipAttach()`
+measured the drawing's box AFTER its CSS transform (the boards scale it
+`.94` about `50% 56%`) and laid an unscaled sheet at that box's corner: every
+flip-book sat 1.5px right and down of the still drawing and 7.4% bigger, so
+each character jumped the moment its loop took over, and again on every
+rebuild. Now the drawing's layout box is read with its transform lifted for
+the read, the sheet is centred on it (a cell is within a quarter pixel of the
+box) and carries the drawing's own transform about the same origin. Measured:
+0.19px and 1.0% (was 1.55px and 7.4%) on both reference devices.
+**Rule: an overlay that stands in for an element copies its transform; never
+measure a transformed box and place an untransformed thing at its corner.**
+
+**Astral and Celestial played Zenith's loop on every board.** Found on the
+screenshot, not by a check: the flip-book picked its character by the
+drawing's `cx-k-<kind>` when the row's span had no `data-char`, and all three
+ultimates share the `zenith` kind. The drawing now carries `data-char` itself
+(set once on the template in `buildAvatarCharSVG`), and `charIdOfSvg` reads it
+first. **Anything keyed by kind is wrong for the three looks of one kind.**
+
+**`CHAR_ANIM_VER` is `c3`.** A sheet is keyed by a hash of the DRAWING, so a
+motion-only change (new keyframes, a new period) would replay last build's
+recording; bump the version whenever character CSS motion changes without the
+drawing changing.
+
+**No sweep across any face** (*"the suffering effect thing some characters
+get that shoots across their face, let's get rid of that animation
+entirely"*). It was `sheen()`: a band of light clipped to a shape, run across
+Orion's visor, Astral's helm, Celestial's mask, the Ronin's hat, the
+Marksman's lens, the Detective's brim (the "headlights"), Zeus's laurel, the
+Koi's bowl and Lunar's crescent, plus the Robot's `avatar-scan`. `sheen()`
+draws nothing now, every call is gone, and so are the `cx-sheen`,
+`cx-sheen-idle`, `cx-hk2-scan`, `cx-scan` and `avatar-scan` keyframes and every
+rule using them. The Detective lost his only effect besides the glance, so the
+rain now drips off both ends of his brim instead. check-behaviour 92 fails on
+any drawing that carries a sweep or any stylesheet rule that runs one.
+
+**Orion, the Sheriff and the Ronin** (*"Orions and sheriffs effects are lame,
+give them a cool character animation"*, *"ronins animations are also non
+existent"*). Each now does something visible on a 42px row within a couple of
+seconds, nothing crosses a face, and every new period divides 6s (the
+flip-book loop):
+- **Orion** - the stars in his hood and mantle drift like the sky turning (a
+  12-unit tile drawn four times, moved one tile - `cx-sa5-drift`, in
+  check-loops' KNOWN); a shooting star crosses behind him; every 3s the blade
+  of light surges (emitter flare, a ring off the shoulder) and the visor burns
+  brighter with it; stardust streams off the comet scarf.
+- **Sheriff** - tips his hat (`cx-fx-shhat`, its own group now); the bandana's
+  tails, knotted behind his head, snap in the wind; a tumbleweed rolls the
+  length of the horizon behind his shoulders; dust gusts; the star on his coat
+  spins like a coin.
+- **Ronin** - every 3s a neon slash cuts the air behind him, one way then the
+  other; his eyes stutter on like a neon sign; the brim's neon flares on the
+  slash; petals blow across at chest height; the scarf streams hard; light
+  catches the pommel.
+**A slash or a meteor behind a figure has to be bolder than looks right in
+isolation** - most of it is hidden by the figure, and the first Ronin slash
+read as a faint line behind the hat.
+
+**The three ultimates** (*"Astrals effects are nonexistent ... The ultimate
+characters should be coolest and best in the app ... Celestial is cool but
+also kinda eh ... the coolest animations of any characters"*). Same theme
+(something overhead, two lit eyes), most motion of any earnable character
+(29 / 30 / 34 moving parts against Inferno's 25; they were 15 / 21 / 26):
+- **Astral** - two dashed plasma rings behind the head turning against each
+  other with arcs crackling off them; plasma pumped out of the core along
+  every vein (a dash run along the vein paths - `cx-zc2-flow`, KNOWN); a ring
+  thrown off the core each beat; light running out along each wing shard by
+  shard as the wings beat.
+- **Celestial** - the star trails were one turn in 90s, which on a 6s loop is
+  standing still; they are six-fold now, so a sixth of a turn is a loop and
+  the sky visibly wheels (`cx-zb2-trails`, KNOWN); a meteor shower; the crown's
+  constellation draws itself in light as its seven stars ignite in a wave; a
+  crescent moon orbits the crown; the platinum wings beat; starlight runs down
+  the cape's edges.
+- **Zenith** - everything it had, plus a ring laid round the shoulders like a
+  planet's, tilted, with a comet of starlight going round it - behind him
+  across the top, across his chest at the bottom. Two halves of the ring (far
+  before the body, near after the head) and two copies of the comet that hand
+  over at the ring's ends; the comet rides two nested pendulums inside the
+  tilt. **An orbit round a bust goes round the shoulders, not the head** - at
+  head height its near half crosses the face.
+
+**Their banners.** Celestial's (the one called the most boring): a crescent
+moon low in the west, two aurora curtains swaying over the ridge, the pole
+star's eight rays turning, the crown's seven stars igniting in a wave (each
+its own small layer, `bl-crownwave`), two more meteors, the trails at 60s.
+Astral's: wings of light off the beam's foot, beating; two flat reactor rings
+round the beam turning against each other (a dashed circle spun inside a
+static `scaleY(.26)` wrap); arcs crackling off the column (`bl-crackle`).
+Zenith's: light ringing out across the black mirror, falling stars, the comet
+lapping in 6s. All still layered, transform/opacity only, no filters.
+
+**Every grade shows on the results character** (*"Ensure all the test results
+animations look good, ensure they work for the grade. Ensure they are
+noticeable, the emotions and everything"*). Measured at its real size (a
+58px circle), 90+, a pass and a fail were three head tilts of a pixel or two,
+and a character with a visor or no mouth showed nothing at all.
+`reactCharacter(av, band)` (beside `gradeReaction`) is now the one way a
+reaction lands: the class, the hundo's winning move, and a sign in two layers
+either side of the drawing (`.char-emote-back` / `-front`) that every
+character shows however it is drawn:
+- 100: gold light turning behind it, stars bursting off the circle, the big
+  hop, happy eyes, its own winning move;
+- 90-99: a warm glow breathing behind it, sparkles round the head, a happy hop
+  that keeps going, happy eyes;
+- 70-89: a firm double nod, and a green tick that pops onto the circle's edge;
+- under 70: the figure sinks and the head drops further, the light drains out
+  of the circle, a small rain cloud hangs over it.
+Each layer's resting state is its final picture, so with motion off a 100
+keeps its light, a pass its tick and a fail its cloud. The Ghost's hundo is
+its turn-and-float, not the hop - that is its winning move, on purpose.
+
+**Gates.** check-behaviour 91 (flip-book centred on its drawing and circle,
+same size, stays put, and Astral/Celestial/Zenith each play their own sheet -
+phone and iPad), 92 (no sweep anywhere), 93 (moving-part counts for the six,
+ultimates above every earnable character but Orion, new loops divide 6s), 94
+(four real Identity Crimes drills - 12/12, 11/12, 9/12, 6/12 - each lands its
+class and its sign, all four look different, and every character's own
+reaction move runs for every band). All fail on build 312. **A drill keeps a
+missed question until it is answered right**, so a harness that wants a miss
+picks wrong once and then right; `#nextbtn` stays hidden until then.
+
+Screenshots and GIFs: `/tmp/claude-0/b313/shots/chars/`.
+
+#### Chat history that really is a day, group chats you can read at a glance, Pause hands its spot over, and the Virtual Room at 2 to 20 people
+
+**The chat keeps 24 hours, everywhere, and nothing older is ever drawn.**
+*"The chat stuff, I thought we said that old chat messages delete after 24
+hours? I still see some."* She did see some, four ways at once:
+- a GROUP chat's history reset at local midnight rather than after a day,
+  and kept its last three messages whatever their age "so it never opens
+  empty" (`keepStale: 3`);
+- the trim only ran when the author of the newest message wrote again, so a
+  quiet group kept last week for good;
+- the panel drew whatever the document held, so even a friend chat showed a
+  day-old line until the trim's write came back;
+- the Virtual Room's own chat had no age limit at all.
+Now: `CHAT_HISTORY_MS` (24h, the same number as `FRIEND_CHAT_HISTORY_MS`),
+`chatHistoryCut()` and `freshChatMessages()`. Every READER filters on it - the
+panel (`renderMessages` filters before anything else, so the count, the banner
+and the reactions all work from the same list), the list's previews
+(`refreshChatList`, the cached line in `paintChatRow`), and the ping shelf life
+(`CHAT_PING_FRESH_MS` is now one day, not two - a two-day ping lit the dot for a
+message that had already been cleared). And anybody who OPENS a chat with a
+line past its day trims the document in a transaction (`CHAT_CTX.shouldTrim`),
+so it goes for everyone; once trimmed nothing is stale, so the next opener
+writes nothing. The Virtual Room chat's host trims the same way
+(`VROOM_CHAT_CTX.staleBefore`). An empty chat says why: "No messages in the
+last day - say hi. Messages clear after 24 hours."
+- **Own data only.** A trimmed photo's own `vrooms` document (`img-...`) is
+  deleted only when it is YOUR photo (`m.key === myKey`); stale `msgping`
+  slots are taken out of YOUR OWN inbox only (`pruneStalePings`, server
+  snapshots only, at most once a minute). Nothing deletes anybody else's data.
+- **The rule that keeps it right: an age limit is a READ rule first and a
+  write second.** The write (the trim) depends on somebody opening the chat;
+  the read never does. Anything new that shows a message - a preview, a
+  banner, a count - goes through `freshChatMessages()` / `chatHistoryCut()`.
+
+**"Loading who is in it..." is gone, and the list is drawn complete at once.**
+*"The group chats keep doing the 'loading who's in it' thing and then it
+takes forever."* Two causes:
+- `chatListFetchAt` was ONE stamp for both tabs, so opening Friends and then
+  Groups inside 20s read nothing for Groups at all, and every unnamed row sat
+  on "Loading who is in it..." until something else rebuilt the list. It is
+  per tab now.
+- Each row only learned its people and last line from a fresh read, so every
+  launch opened on a list that knew nothing. `class26e.chatlistcache`
+  (localStorage, viewing state, never `store`) keeps each listed chat's last
+  line and members; the list is drawn from it instantly and the reads only
+  bring it up to date. `groupChatNameNow()` names a row from what is already
+  known (its saved name, the cached members, `with` looked up on the rankings,
+  then "Group chat") - never a loading line.
+- An opened group drew "Chat" and an empty count until the first snapshot;
+  `seedChatRosterFromList()` draws the roster from the list's members at once
+  (everyone but you as away until the room answers).
+
+**A group row is the same shape as a friend row.** *"The display of group
+chats when not in the group chat could have improvements."* A group row was a
+strip of faces stacked ABOVE its name, so every group was a two-storey box and
+the two tabs looked like two apps. Now: a round cluster of faces where a
+friend's character sits (one, two, or two and "+n"), the name and time, the
+last line (or "No messages in the last day"), and "N members". The leave x is
+quieter (no fill) - it is the thing you least want to hit - and still 44px.
+**A group invite says what the group is**: "Fay invited you to a group chat",
+then its members' faces and "With Fay, Gus & Hana - 3 members" (one read of
+the room per invite while the Inbox or its banner is showing,
+`peekChatInvite`, remembered for the session); a gone room says "That chat
+doesn't exist any more." The banner names the others too.
+
+**Paused, the chat button takes Pause's place.** *"When paused, the chat
+button needs to be put in the right not the same spot, that open space on the
+right looks weird."* Pause hides itself on its own screen and the button held
+the spot it had BESIDE Pause, leaving a Pause-sized hole at the end of the
+row. `placeDockBesidePause` now records Pause's right edge as well
+(`dockBesidePause.pausedRight`) and, paused, puts the button there on the same
+line (build 311's "it looks like it is being lowered" still holds - the height
+does not change). After a rotation the old measurement belongs to another
+width, so the CSS corner takes over. check-behaviour `check_b313_pause`
+(phone, small phone, phone sideways, iPad), fails on 312.
+
+**The Virtual Room, driven at 2, 3, 4, 5, 8, 12 and 20 people.** One real
+device and simulated classmates writing exactly what their phones would. What
+was wrong:
+- **No race had counted as a match since build 240.** `recordVroomOutcome` was
+  called only from `showVirtualRoomResults()`, which a race no longer reaches -
+  so "Matches played", first places, top threes and the Clown's five wins never
+  moved for a race. Tug of War never called it at all. It is called when the
+  race's finale sees everyone in (ranked like the leaderboard) and from the Tug
+  result (a side's win is a first place, like Battle).
+- **Only the first match in a room ever counted** - outcomes were keyed by the
+  room code, and a room is played again and again from its lobby. The key is
+  the room plus its `startAt` now.
+- **A racer whose phone died held the leaderboard ~85 seconds.** They counted
+  as "in" (presence), but the roll waited for every racer's `revealDone`, and a
+  reveal that never ran never reports. Only people still here are waited for.
+- **A dead HOST stranded a Tug of War or a Battle for good.** The host is the
+  earliest joiner, computed - but a host whose phone died stays on the
+  document, so the one device that calls the match over was a dead one.
+  `syncVroomHost` now takes the earliest joiner who is still PRESENT (falling
+  back to everyone when nobody stamps presence).
+- **A dead player held a team match until the pace clock ran out** (6+ min for
+  Tug, ~20 for Battle) - "everybody out of questions" waited for them. Gone
+  counts as done, and **a side with nobody left on it has lost** (forfeit).
+- **Twenty people broke the Battle screen**: every member's face was drawn in
+  the side's header, which ran off the screen and scrolled the whole match
+  sideways (78px). Three faces and "+n" now; the same on the winner scene,
+  whose four full-size figures were 464px on a 440px phone and gave no sign of
+  the other six.
+- **Team names were a paragraph**: "You & Ben & Dee & Fay & Hana & Jon & Lou &
+  Nia & Pia & Rae pulled it over the line." `vroomNameList()`: two names and a
+  count, you first as "You" (Battle said "Madison" for you).
+- **The waiting card sat inside the XP card** on the results, between "Total"
+  and the level bar - the level bar moved into the XP card and the card was
+  still inserted before the level bar. It goes above the XP card now.
+- **A lobby of twenty put Ready up two thousand pixels down** a phone. Past six
+  people the roster goes two across at every width (`.vroom-roster.is-crowded`);
+  on a phone the level line goes and the ready chip becomes a dot (the row's
+  green edge already said it). Ready up is on the first screen at twenty.
+- **With reduce motion the race leaderboard could end in the wrong order**
+  (1st, 3rd, 2nd top to bottom). Every count step and the final order are all
+  due at once then, and the per-step re-sorts ran AFTER the final one on
+  half-counted numbers. No per-step re-sort with reduce motion.
+Gates: check-vroom sections 20-22 (`--only-313`), every one fails on 312:
+race at 2/3/4/8/20 (all in, own card, counts once, everybody on the board,
+winner-only under four and a podium from four, exits on screen), a rematch in
+the same room counts, a dead racer does not hold the roll; Tug and Battle at
+2/4/20 (they end, no sideways scroll, a one-line summary, everybody on the
+board, no tab bar, counts), two matches in one room are two; a dead host, a
+gone side, and a side of ten on the winner scene.
+- check-groupchat sections 8-10 hold the chat half (24h everywhere, the trim,
+  the photo, pings, the VR chat, the list after Friends, the list with no read
+  ever coming back, the roster before the room answers, the invite). Its old
+  check "says it is a group of three" now reads the number, not "Group · 3".
+
+Found and NOT fixed (outside this change or deliberately left):
+- A dead host in the LOBBY is now replaced too (same `syncVroomHost`), but two
+  devices whose clocks straddle the 150s staleness line could briefly both
+  believe they are host; for the auto-start that would be two start writes.
+  Judged far less likely than a phone dying, which bricked the room outright.
+- Tug's rope averages over every member of a side, including one whose phone
+  died, so that side pulls at a discount. Changing the average mid-match by
+  presence would make the rope jump, so it was left.
+
+Also, smaller, all build 313:
+- In a crowded lobby on a phone "(You)" is hidden (the name cut it off) and
+  your own row carries the accent edge instead (`.vroom-row.is-you`).
+- Battle's damage column ("125 dmg") no longer wraps and squeezes the name;
+  the Tug board says "You" for you, as Battle's and every side label do.
+- check-behaviour `check_b301_chat` part E used a 30-hour-old ping as "unread
+  with its history expired"; a ping is a day long now, so the fixture is 23
+  hours (still an empty room - what it tests is that opening an empty chat
+  reads its ping).
+- check-groupchat 4 read "Group · 3"; it reads the number now ("3 members").
+- Harness lesson, worth keeping: a simulated room needs EVERY simulated member
+  to act, including a simulated host - the first 20-person guest run sat on
+  19/20 for good because the bot that was host never raced. That was the
+  harness, not the app; check-vroom 20-22 drive every bot.
