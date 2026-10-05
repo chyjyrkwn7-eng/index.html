@@ -8657,11 +8657,14 @@ def check_b311_rank(br):
     check("the road's light is placed in plain pixels, never a calc() with a percentage (WebKit jumps those)",
           r.get("tips", 0) >= 1 and r.get("tipPx") is True, r)
     check("the level and badge rings fill over 2.2s, not 1.2s", r.get("ringDur") == "2.2s", r)
-    check("'To reach' names the rank with its emblem, in the lifted colour the map uses rather than the raw one",
-          r.get("headEm") is True and r.get("headCol") and r.get("headCol") != r.get("rawCol"), r)
+    check("'To reach' names the rank (no emblem since 313), in the lifted colour the map uses rather than the raw one",
+          r.get("headEm") is False and r.get("headCol") and r.get("headCol") != r.get("rawCol"), r)
     check("every reward chip on a card is one size and starts at one x",
           r.get("chips") and all(c["n"] >= 2 and c["w"] <= 1 and c["x"] <= 1 and c["h"] <= 1 for c in r["chips"]), r.get("chips"))
-    check("the climb's description names what the ranks unlock", "unlock" in r.get("note", "") and "character" in r.get("note", "") and "banner" in r.get("note", ""), r.get("note"))
+    # Build 313: "the climb description is bad, it's talking about specific
+    # ranks" - it says ranks unlock rewards and names no rank.
+    check("the climb's description says ranks unlock rewards without listing ranks",
+          "unlock" in r.get("note", "") and not any(n in r.get("note", "") for n in ("Iron", "Bronze", "Silver", "Gold", "Platinum", "Sapphire", "Amethyst", "Supernova")), r.get("note"))
     check("every rank circle is a button that opens its card", r.get("tappable") is True and r.get("reached") and r.get("locked"), r)
     check("a reached rank's card tells its story, with both requirements and its unlocks",
           r.get("reached") and "is-reached" in r["reached"]["cls"] and len(r["reached"]["lore"]) > 60 and "story" not in r["reached"]["lore"]

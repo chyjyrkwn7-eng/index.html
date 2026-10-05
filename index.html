@@ -10868,7 +10868,22 @@
      The bubble already makes its own stacking context (backdrop-filter),
      so the blend reaches only as far as the glass. */
   .cosmic-icon-badge.cosmic-badge-rank svg.cosmic-rank-emblem{ mix-blend-mode:screen; }
-  .cosmic-icon-badge.cosmic-badge-rank.cosmic-badge-lit svg.cosmic-rank-emblem{ filter:saturate(1.25) brightness(1.18); }
+  /* BRIGHTER WHEN LIT (build 313): "The lit up flares (bronze, silver)
+     look good but also a little dull? ... Maybe it's the glow?" It was
+     the glow, and the glass: a 24% tint and one 14px halo at 55% is a
+     coloured bead, not a light. The lit bubble takes more of its colour,
+     a second, wider halo round the first, and a brighter emblem; an
+     unreached one is untouched, so the difference between the two is
+     bigger than it was. */
+  .cosmic-icon-badge.cosmic-badge-rank.cosmic-badge-lit svg.cosmic-rank-emblem{ filter:saturate(1.4) brightness(1.32); }
+  .cosmic-icon-badge.cosmic-badge-rank.cosmic-badge-lit{
+    background-color:color-mix(in srgb, var(--flare-tint, var(--rank-color)) 34%, rgba(255,255,255,.08));
+    border-color:color-mix(in srgb, var(--flare-tint, var(--rank-color)) 72%, #fff);
+    box-shadow:0 1px 4px rgba(255,255,255,.16) inset, 0 -1px 3px rgba(255,255,255,.08) inset,
+      0 0 10px 1px color-mix(in srgb, var(--flare-tint, var(--rank-color)) 75%, transparent),
+      0 0 26px 5px color-mix(in srgb, var(--flare-tint, var(--rank-color)) 38%, transparent),
+      3px 7px 12px -2px rgba(0,0,0,.45);
+  }
   .cosmic-icon-badge.cosmic-badge-rank:not(.cosmic-badge-lit) svg.cosmic-rank-emblem{ filter:grayscale(1) brightness(1.9) contrast(.9); opacity:.62; }
   .cosmic-icon-badge.cosmic-badge-rank{ isolation:isolate; }
   /* the refraction at the rim: soft, never a drawn line - at 0 blur it
@@ -12799,17 +12814,13 @@
   /* The two requirements, as two rings. */
   .rankhero-gauges{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:.6rem; }
   /* "To reach Bronze" over the two rings (build 247) - see the builder. */
-  .rankhero-gaugehead{ margin:0 0 -.1rem; text-align:center; font-size:.72rem; font-weight:800;
+  .rankhero-gaugehead{ margin:0 0 .15rem; text-align:center; font-size:.72rem; font-weight:800;
     letter-spacing:.14em; text-transform:uppercase; color:var(--soft); }
   /* The next rank's name as the rank itself reads (build 311): the same
      lift towards white the road map's titles use, glowing like its
      emblem, with the emblem in front of it. */
   .rankhero-gaugehead b{ color:color-mix(in srgb, var(--next-color, var(--rank-color)) 58%, #fff); font-weight:800;
     text-shadow:0 0 12px color-mix(in srgb, var(--next-color, var(--rank-color)) 55%, transparent); white-space:nowrap; }
-  .rankhero-gaugehead-em{ display:inline-block; width:1.5em; height:1.5em; margin:0 .3em 0 .1em; vertical-align:-.45em;
-    border-radius:50%; overflow:hidden; background:radial-gradient(circle, color-mix(in srgb, var(--next-color, var(--rank-color)) 30%, #10141A), #0A0C10 75%);
-    box-shadow:0 0 0 1px color-mix(in srgb, var(--next-color, var(--rank-color)) 60%, transparent), 0 0 10px color-mix(in srgb, var(--next-color, var(--rank-color)) 45%, transparent); }
-  .rankhero-gaugehead-em svg{ width:100%; height:100%; display:block; }
   .rankhero-gauge{
     display:flex; align-items:center; gap:.7rem; min-width:0;
     padding:.6rem .7rem; border-radius:1rem;
@@ -13009,6 +13020,7 @@
     .rank-emblem-svg .rk-bin-a{ animation-name:rk-bin-a; animation-duration:6s; animation-timing-function:linear; animation-direction:normal; }
     .rank-emblem-svg .rk-bin-b{ animation-name:rk-bin-b; animation-duration:6s; animation-timing-function:linear; animation-direction:normal; }
     .rank-emblem-svg .rk-bin-b-front{ animation-name:rk-bin-b-front; animation-duration:6s; animation-timing-function:linear; animation-direction:normal; }
+    .rank-emblem-svg .rk-bin-a-front{ animation-name:rk-bin-a-front; animation-duration:6s; animation-timing-function:linear; animation-direction:normal; }
     .rank-emblem-svg .rk-shimmer{ animation-name:rk-glow; animation-duration:3s; }
     .rank-emblem-svg .rk-drift{ animation-name:rk-drift; animation-duration:5s; }
     .rank-emblem-svg .rk-tail{ animation-name:rk-tail; animation-duration:2.2s; }
@@ -13052,9 +13064,10 @@
   @keyframes rk-pulse{ from{ transform:scale(.88); opacity:.85; } to{ transform:scale(1.12); opacity:1; } }
   /* Platinum's pair going round each other (build 310) - generated, a 6s
      orbit on the emblem's ring: see buildRankEmblemSVG. */
-  @keyframes rk-bin-a{ 0%{transform:translate(0px,0px)} 2.08%{transform:translate(-.8px,-.2px)} 4.17%{transform:translate(-1.4px,-.6px)} 6.25%{transform:translate(-1.8px,-1px)} 8.33%{transform:translate(-2px,-1.6px)} 10.42%{transform:translate(-2px,-2.2px)} 12.5%{transform:translate(-1.8px,-2.9px)} 14.58%{transform:translate(-1.4px,-3.7px)} 16.67%{transform:translate(-.8px,-4.5px)} 18.75%{transform:translate(0px,-5.3px)} 20.83%{transform:translate(1px,-6.2px)} 22.92%{transform:translate(2.1px,-7.1px)} 25%{transform:translate(3.3px,-7.9px)} 27.08%{transform:translate(4.7px,-8.8px)} 29.17%{transform:translate(6.2px,-9.6px)} 31.25%{transform:translate(7.7px,-10.3px)} 33.33%{transform:translate(9.2px,-11px)} 35.42%{transform:translate(10.8px,-11.6px)} 37.5%{transform:translate(12.4px,-12.1px)} 39.58%{transform:translate(13.9px,-12.5px)} 41.67%{transform:translate(15.3px,-12.9px)} 43.75%{transform:translate(16.7px,-13.1px)} 45.83%{transform:translate(17.9px,-13.2px)} 47.92%{transform:translate(19px,-13.1px)} 50%{transform:translate(20px,-13px)} 52.08%{transform:translate(20.8px,-12.8px)} 54.17%{transform:translate(21.4px,-12.4px)} 56.25%{transform:translate(21.8px,-12px)} 58.33%{transform:translate(22px,-11.4px)} 60.42%{transform:translate(22px,-10.8px)} 62.5%{transform:translate(21.8px,-10.1px)} 64.58%{transform:translate(21.4px,-9.3px)} 66.67%{transform:translate(20.8px,-8.5px)} 68.75%{transform:translate(20px,-7.7px)} 70.83%{transform:translate(19px,-6.8px)} 72.92%{transform:translate(17.9px,-5.9px)} 75%{transform:translate(16.7px,-5.1px)} 77.08%{transform:translate(15.3px,-4.2px)} 79.17%{transform:translate(13.8px,-3.4px)} 81.25%{transform:translate(12.3px,-2.7px)} 83.33%{transform:translate(10.8px,-2px)} 85.42%{transform:translate(9.2px,-1.4px)} 87.5%{transform:translate(7.6px,-.9px)} 89.58%{transform:translate(6.1px,-.5px)} 91.67%{transform:translate(4.7px,-.2px)} 93.75%{transform:translate(3.3px,.1px)} 95.83%{transform:translate(2.1px,.1px)} 97.92%{transform:translate(1px,.1px)} 100%{transform:translate(0px,0px)} }
-  @keyframes rk-bin-b{ 0%{transform:translate(0px,0px)} 2.08%{transform:translate(1.9px,.6px)} 4.17%{transform:translate(3.3px,1.4px)} 6.25%{transform:translate(4.3px,2.5px)} 8.33%{transform:translate(4.7px,3.8px)} 10.42%{transform:translate(4.7px,5.3px)} 12.5%{transform:translate(4.2px,7px)} 14.58%{transform:translate(3.3px,8.8px)} 16.67%{transform:translate(1.8px,10.7px)} 18.75%{transform:translate(-.1px,12.7px)} 20.83%{transform:translate(-2.4px,14.8px)} 22.92%{transform:translate(-5px,16.9px)} 25%{transform:translate(-8px,18.9px)} 27.08%{transform:translate(-11.2px,20.9px)} 29.17%{transform:translate(-14.7px,22.8px)} 31.25%{transform:translate(-18.3px,24.6px)} 33.33%{transform:translate(-22px,26.2px)} 35.42%{transform:translate(-25.8px,27.7px)} 37.5%{transform:translate(-29.5px,28.9px)} 39.58%{transform:translate(-33.1px,29.9px)} 41.67%{transform:translate(-36.6px,30.6px)} 43.75%{transform:translate(-39.8px,31.1px)} 45.83%{transform:translate(-42.8px,31.4px)} 47.92%{transform:translate(-45.4px,31.3px)} 50%{transform:translate(-47.7px,31px)} 52.08%{transform:translate(-49.6px,30.4px)} 54.17%{transform:translate(-51px,29.6px)} 56.25%{transform:translate(-52px,28.5px)} 58.33%{transform:translate(-52.4px,27.2px)} 60.42%{transform:translate(-52.4px,25.7px)} 62.5%{transform:translate(-51.9px,24.1px)} 64.58%{transform:translate(-51px,22.2px)} 66.67%{transform:translate(-49.5px,20.3px)} 68.75%{transform:translate(-47.6px,18.3px)} 70.83%{transform:translate(-45.3px,16.2px)} 72.92%{transform:translate(-42.7px,14.1px)} 75%{transform:translate(-39.7px,12.1px)} 77.08%{transform:translate(-36.5px,10.1px)} 79.17%{transform:translate(-33px,8.2px)} 81.25%{transform:translate(-29.4px,6.4px)} 83.33%{transform:translate(-25.7px,4.8px)} 85.42%{transform:translate(-21.9px,3.4px)} 87.5%{transform:translate(-18.2px,2.1px)} 89.58%{transform:translate(-14.6px,1.1px)} 91.67%{transform:translate(-11.1px,.4px)} 93.75%{transform:translate(-7.9px,-.1px)} 95.83%{transform:translate(-4.9px,-.4px)} 97.92%{transform:translate(-2.3px,-.3px)} 100%{transform:translate(0px,0px)} }
-  @keyframes rk-bin-b-front{ 0%{transform:translate(0px,0px);opacity:0} 2.08%{transform:translate(1.9px,.6px);opacity:0} 4.17%{transform:translate(3.3px,1.4px);opacity:0} 6.25%{transform:translate(4.3px,2.5px);opacity:0} 8.33%{transform:translate(4.7px,3.8px);opacity:1} 10.42%{transform:translate(4.7px,5.3px);opacity:1} 12.5%{transform:translate(4.2px,7px);opacity:1} 14.58%{transform:translate(3.3px,8.8px);opacity:1} 16.67%{transform:translate(1.8px,10.7px);opacity:1} 18.75%{transform:translate(-.1px,12.7px);opacity:1} 20.83%{transform:translate(-2.4px,14.8px);opacity:1} 22.92%{transform:translate(-5px,16.9px);opacity:1} 25%{transform:translate(-8px,18.9px);opacity:1} 27.08%{transform:translate(-11.2px,20.9px);opacity:1} 29.17%{transform:translate(-14.7px,22.8px);opacity:1} 31.25%{transform:translate(-18.3px,24.6px);opacity:1} 33.33%{transform:translate(-22px,26.2px);opacity:1} 35.42%{transform:translate(-25.8px,27.7px);opacity:1} 37.5%{transform:translate(-29.5px,28.9px);opacity:1} 39.58%{transform:translate(-33.1px,29.9px);opacity:1} 41.67%{transform:translate(-36.6px,30.6px);opacity:1} 43.75%{transform:translate(-39.8px,31.1px);opacity:1} 45.83%{transform:translate(-42.8px,31.4px);opacity:1} 47.92%{transform:translate(-45.4px,31.3px);opacity:1} 50%{transform:translate(-47.7px,31px);opacity:1} 52.08%{transform:translate(-49.6px,30.4px);opacity:1} 54.17%{transform:translate(-51px,29.6px);opacity:1} 56.25%{transform:translate(-52px,28.5px);opacity:1} 58.33%{transform:translate(-52.4px,27.2px);opacity:0} 60.42%{transform:translate(-52.4px,25.7px);opacity:0} 62.5%{transform:translate(-51.9px,24.1px);opacity:0} 64.58%{transform:translate(-51px,22.2px);opacity:0} 66.67%{transform:translate(-49.5px,20.3px);opacity:0} 68.75%{transform:translate(-47.6px,18.3px);opacity:0} 70.83%{transform:translate(-45.3px,16.2px);opacity:0} 72.92%{transform:translate(-42.7px,14.1px);opacity:0} 75%{transform:translate(-39.7px,12.1px);opacity:0} 77.08%{transform:translate(-36.5px,10.1px);opacity:0} 79.17%{transform:translate(-33px,8.2px);opacity:0} 81.25%{transform:translate(-29.4px,6.4px);opacity:0} 83.33%{transform:translate(-25.7px,4.8px);opacity:0} 85.42%{transform:translate(-21.9px,3.4px);opacity:0} 87.5%{transform:translate(-18.2px,2.1px);opacity:0} 89.58%{transform:translate(-14.6px,1.1px);opacity:0} 91.67%{transform:translate(-11.1px,.4px);opacity:0} 93.75%{transform:translate(-7.9px,-.1px);opacity:0} 95.83%{transform:translate(-4.9px,-.4px);opacity:0} 97.92%{transform:translate(-2.3px,-.3px);opacity:0} 100%{transform:translate(0px,0px);opacity:0} }
+  @keyframes rk-bin-a{ 0%{transform:translate(0px,0px)} 2.08%{transform:translate(.2px,.9px)} 4.17%{transform:translate(.1px,2px)} 6.25%{transform:translate(-.3px,3.2px)} 8.33%{transform:translate(-1.1px,4.4px)} 10.42%{transform:translate(-2.2px,5.7px)} 12.5%{transform:translate(-3.6px,7.1px)} 14.58%{transform:translate(-5.2px,8.5px)} 16.67%{transform:translate(-7.1px,9.9px)} 18.75%{transform:translate(-9.2px,11.3px)} 20.83%{transform:translate(-11.4px,12.6px)} 22.92%{transform:translate(-13.8px,13.9px)} 25%{transform:translate(-16.3px,15.1px)} 27.08%{transform:translate(-18.8px,16.1px)} 29.17%{transform:translate(-21.3px,17.1px)} 31.25%{transform:translate(-23.8px,17.9px)} 33.33%{transform:translate(-26.3px,18.5px)} 35.42%{transform:translate(-28.6px,18.9px)} 37.5%{transform:translate(-30.7px,19.2px)} 39.58%{transform:translate(-32.6px,19.3px)} 41.67%{transform:translate(-34.3px,19.2px)} 43.75%{transform:translate(-35.8px,18.9px)} 45.83%{transform:translate(-37px,18.5px)} 47.92%{transform:translate(-37.8px,17.9px)} 50%{transform:translate(-38.4px,17.1px)} 52.08%{transform:translate(-38.6px,16.2px)} 54.17%{transform:translate(-38.5px,15.1px)} 56.25%{transform:translate(-38px,13.9px)} 58.33%{transform:translate(-37.3px,12.7px)} 60.42%{transform:translate(-36.2px,11.3px)} 62.5%{transform:translate(-34.8px,10px)} 64.58%{transform:translate(-33.2px,8.6px)} 66.67%{transform:translate(-31.3px,7.1px)} 68.75%{transform:translate(-29.2px,5.8px)} 70.83%{transform:translate(-27px,4.4px)} 72.92%{transform:translate(-24.6px,3.2px)} 75%{transform:translate(-22.1px,2px)} 77.08%{transform:translate(-19.6px,.9px)} 79.17%{transform:translate(-17px,0px)} 81.25%{transform:translate(-14.5px,-.8px)} 83.33%{transform:translate(-12.1px,-1.4px)} 85.42%{transform:translate(-9.8px,-1.8px)} 87.5%{transform:translate(-7.7px,-2.1px)} 89.58%{transform:translate(-5.7px,-2.2px)} 91.67%{transform:translate(-4px,-2.1px)} 93.75%{transform:translate(-2.6px,-1.9px)} 95.83%{transform:translate(-1.4px,-1.4px)} 97.92%{transform:translate(-.5px,-.8px)} 100%{transform:translate(0px,0px)} }
+  @keyframes rk-bin-a-front{ 0%{transform:translate(0px,0px);opacity:0} 2.08%{transform:translate(.2px,.9px);opacity:1} 4.17%{transform:translate(.1px,2px);opacity:1} 6.25%{transform:translate(-.3px,3.2px);opacity:1} 8.33%{transform:translate(-1.1px,4.4px);opacity:1} 10.42%{transform:translate(-2.2px,5.7px);opacity:1} 12.5%{transform:translate(-3.6px,7.1px);opacity:1} 14.58%{transform:translate(-5.2px,8.5px);opacity:1} 16.67%{transform:translate(-7.1px,9.9px);opacity:1} 18.75%{transform:translate(-9.2px,11.3px);opacity:1} 20.83%{transform:translate(-11.4px,12.6px);opacity:1} 22.92%{transform:translate(-13.8px,13.9px);opacity:1} 25%{transform:translate(-16.3px,15.1px);opacity:1} 27.08%{transform:translate(-18.8px,16.1px);opacity:1} 29.17%{transform:translate(-21.3px,17.1px);opacity:1} 31.25%{transform:translate(-23.8px,17.9px);opacity:1} 33.33%{transform:translate(-26.3px,18.5px);opacity:1} 35.42%{transform:translate(-28.6px,18.9px);opacity:1} 37.5%{transform:translate(-30.7px,19.2px);opacity:1} 39.58%{transform:translate(-32.6px,19.3px);opacity:1} 41.67%{transform:translate(-34.3px,19.2px);opacity:1} 43.75%{transform:translate(-35.8px,18.9px);opacity:1} 45.83%{transform:translate(-37px,18.5px);opacity:1} 47.92%{transform:translate(-37.8px,17.9px);opacity:1} 50%{transform:translate(-38.4px,17.1px);opacity:0} 52.08%{transform:translate(-38.6px,16.2px);opacity:0} 54.17%{transform:translate(-38.5px,15.1px);opacity:0} 56.25%{transform:translate(-38px,13.9px);opacity:0} 58.33%{transform:translate(-37.3px,12.7px);opacity:0} 60.42%{transform:translate(-36.2px,11.3px);opacity:0} 62.5%{transform:translate(-34.8px,10px);opacity:0} 64.58%{transform:translate(-33.2px,8.6px);opacity:0} 66.67%{transform:translate(-31.3px,7.1px);opacity:0} 68.75%{transform:translate(-29.2px,5.8px);opacity:0} 70.83%{transform:translate(-27px,4.4px);opacity:0} 72.92%{transform:translate(-24.6px,3.2px);opacity:0} 75%{transform:translate(-22.1px,2px);opacity:0} 77.08%{transform:translate(-19.6px,.9px);opacity:0} 79.17%{transform:translate(-17px,0px);opacity:0} 81.25%{transform:translate(-14.5px,-.8px);opacity:0} 83.33%{transform:translate(-12.1px,-1.4px);opacity:0} 85.42%{transform:translate(-9.8px,-1.8px);opacity:0} 87.5%{transform:translate(-7.7px,-2.1px);opacity:0} 89.58%{transform:translate(-5.7px,-2.2px);opacity:0} 91.67%{transform:translate(-4px,-2.1px);opacity:0} 93.75%{transform:translate(-2.6px,-1.9px);opacity:0} 95.83%{transform:translate(-1.4px,-1.4px);opacity:0} 97.92%{transform:translate(-.5px,-.8px);opacity:0} 100%{transform:translate(0px,0px);opacity:0} }
+  @keyframes rk-bin-b{ 0%{transform:translate(0px,0px)} 2.08%{transform:translate(-.4px,-1.5px)} 4.17%{transform:translate(-.2px,-3.3px)} 6.25%{transform:translate(.6px,-5.3px)} 8.33%{transform:translate(1.9px,-7.4px)} 10.42%{transform:translate(3.7px,-9.6px)} 12.5%{transform:translate(5.9px,-11.9px)} 14.58%{transform:translate(8.7px,-14.2px)} 16.67%{transform:translate(11.8px,-16.6px)} 18.75%{transform:translate(15.3px,-18.9px)} 20.83%{transform:translate(19px,-21.1px)} 22.92%{transform:translate(23px,-23.2px)} 25%{transform:translate(27.1px,-25.1px)} 27.08%{transform:translate(31.3px,-26.9px)} 29.17%{transform:translate(35.6px,-28.4px)} 31.25%{transform:translate(39.7px,-29.8px)} 33.33%{transform:translate(43.8px,-30.8px)} 35.42%{transform:translate(47.6px,-31.5px)} 37.5%{transform:translate(51.2px,-32px)} 39.58%{transform:translate(54.4px,-32.2px)} 41.67%{transform:translate(57.2px,-32px)} 43.75%{transform:translate(59.7px,-31.6px)} 45.83%{transform:translate(61.6px,-30.8px)} 47.92%{transform:translate(63px,-29.8px)} 50%{transform:translate(63.9px,-28.5px)} 52.08%{transform:translate(64.3px,-26.9px)} 54.17%{transform:translate(64.1px,-25.2px)} 56.25%{transform:translate(63.4px,-23.2px)} 58.33%{transform:translate(62.1px,-21.1px)} 60.42%{transform:translate(60.3px,-18.9px)} 62.5%{transform:translate(58px,-16.6px)} 64.58%{transform:translate(55.3px,-14.3px)} 66.67%{transform:translate(52.2px,-11.9px)} 68.75%{transform:translate(48.7px,-9.6px)} 70.83%{transform:translate(44.9px,-7.4px)} 72.92%{transform:translate(41px,-5.3px)} 75%{transform:translate(36.8px,-3.3px)} 77.08%{transform:translate(32.6px,-1.6px)} 79.17%{transform:translate(28.4px,0px)} 81.25%{transform:translate(24.2px,1.3px)} 83.33%{transform:translate(20.2px,2.3px)} 85.42%{transform:translate(16.4px,3.1px)} 87.5%{transform:translate(12.8px,3.5px)} 89.58%{transform:translate(9.6px,3.7px)} 91.67%{transform:translate(6.7px,3.5px)} 93.75%{transform:translate(4.3px,3.1px)} 95.83%{transform:translate(2.3px,2.3px)} 97.92%{transform:translate(.9px,1.3px)} 100%{transform:translate(0px,0px)} }
+  @keyframes rk-bin-b-front{ 0%{transform:translate(0px,0px);opacity:0} 2.08%{transform:translate(-.4px,-1.5px);opacity:0} 4.17%{transform:translate(-.2px,-3.3px);opacity:0} 6.25%{transform:translate(.6px,-5.3px);opacity:0} 8.33%{transform:translate(1.9px,-7.4px);opacity:0} 10.42%{transform:translate(3.7px,-9.6px);opacity:0} 12.5%{transform:translate(5.9px,-11.9px);opacity:0} 14.58%{transform:translate(8.7px,-14.2px);opacity:0} 16.67%{transform:translate(11.8px,-16.6px);opacity:0} 18.75%{transform:translate(15.3px,-18.9px);opacity:0} 20.83%{transform:translate(19px,-21.1px);opacity:0} 22.92%{transform:translate(23px,-23.2px);opacity:0} 25%{transform:translate(27.1px,-25.1px);opacity:0} 27.08%{transform:translate(31.3px,-26.9px);opacity:0} 29.17%{transform:translate(35.6px,-28.4px);opacity:0} 31.25%{transform:translate(39.7px,-29.8px);opacity:0} 33.33%{transform:translate(43.8px,-30.8px);opacity:0} 35.42%{transform:translate(47.6px,-31.5px);opacity:0} 37.5%{transform:translate(51.2px,-32px);opacity:0} 39.58%{transform:translate(54.4px,-32.2px);opacity:0} 41.67%{transform:translate(57.2px,-32px);opacity:0} 43.75%{transform:translate(59.7px,-31.6px);opacity:0} 45.83%{transform:translate(61.6px,-30.8px);opacity:0} 47.92%{transform:translate(63px,-29.8px);opacity:0} 50%{transform:translate(63.9px,-28.5px);opacity:0} 52.08%{transform:translate(64.3px,-26.9px);opacity:1} 54.17%{transform:translate(64.1px,-25.2px);opacity:1} 56.25%{transform:translate(63.4px,-23.2px);opacity:1} 58.33%{transform:translate(62.1px,-21.1px);opacity:1} 60.42%{transform:translate(60.3px,-18.9px);opacity:1} 62.5%{transform:translate(58px,-16.6px);opacity:1} 64.58%{transform:translate(55.3px,-14.3px);opacity:1} 66.67%{transform:translate(52.2px,-11.9px);opacity:1} 68.75%{transform:translate(48.7px,-9.6px);opacity:1} 70.83%{transform:translate(44.9px,-7.4px);opacity:1} 72.92%{transform:translate(41px,-5.3px);opacity:1} 75%{transform:translate(36.8px,-3.3px);opacity:1} 77.08%{transform:translate(32.6px,-1.6px);opacity:1} 79.17%{transform:translate(28.4px,0px);opacity:1} 81.25%{transform:translate(24.2px,1.3px);opacity:1} 83.33%{transform:translate(20.2px,2.3px);opacity:1} 85.42%{transform:translate(16.4px,3.1px);opacity:1} 87.5%{transform:translate(12.8px,3.5px);opacity:1} 89.58%{transform:translate(9.6px,3.7px);opacity:1} 91.67%{transform:translate(6.7px,3.5px);opacity:1} 93.75%{transform:translate(4.3px,3.1px);opacity:1} 95.83%{transform:translate(2.3px,2.3px);opacity:1} 97.92%{transform:translate(.9px,1.3px);opacity:1} 100%{transform:translate(0px,0px);opacity:0} }
   @keyframes rk-drift{ from{ transform:translate(-1.6px, 1.2px); } to{ transform:translate(1.6px, -1.2px); } }
   @keyframes rk-tail{ from{ transform:scale(.92); opacity:.82; } to{ transform:scale(1.05); opacity:1; } }
   @keyframes rk-flare{ from{ transform:scale(.86, .9); opacity:.6; } to{ transform:scale(1.1, 1.06); opacity:1; } }
@@ -13155,6 +13168,21 @@
   .rankmap-stop.is-locked .rankmap-node{ background:#0C0F14; border-color:rgba(255,255,255,.14); box-shadow:none; }
   .rankmap-stop.is-locked .rankmap-node > svg{ filter:grayscale(1) brightness(.7); opacity:.45; }
   .rankmap-stop.is-next .rankmap-node{ border-style:dashed; }
+  /* EVERY RANK YOU HOLD GLOWS (build 313): "I feel like bronze isn't
+     really glowing like the others? Ensure all those ranks in the road
+     map look super nice and cohesive. Seems like silver is glowing (looks
+     nice) but the others I'm at don't." Only the rank you are on had the
+     lit halo; a rank behind you fell back to the base 18px wash, which on
+     Bronze's dark copper reads as no glow at all. Every reached rank now
+     carries the same light as the one you are on, a step softer, and the
+     one you are on keeps its ring and its ping on top. */
+  .rankmap-stop.is-reached .rankmap-node{
+    border-color:color-mix(in srgb, var(--rank-color) 62%, #fff);
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--rank-color) 16%, transparent),
+               0 0 26px color-mix(in srgb, var(--rank-color) 58%, transparent),
+               inset 0 0 14px color-mix(in srgb, var(--rank-color) 32%, transparent);
+  }
+  .rankmap-stop.is-reached .rankmap-node > svg.rank-emblem-svg{ filter:drop-shadow(0 0 7px color-mix(in srgb, var(--rank-color) 75%, transparent)); }
   .rankmap-stop.is-here .rankmap-node{ box-shadow:0 0 0 4px color-mix(in srgb, var(--rank-color) 22%, transparent), 0 0 30px color-mix(in srgb, var(--rank-color) 65%, transparent); }
   .rankmap-stop.is-here .rankmap-node::after{
     content:""; position:absolute; inset:-8px; border-radius:50%; pointer-events:none;
@@ -13243,8 +13271,17 @@
   .ranklore-req.is-met .ranklore-reqval{ color:#7BE0A6; }
   .ranklore-reqbar{ flex:1 0 100%; position:relative; height:5px; border-radius:3px; overflow:hidden; background:rgba(255,255,255,.08);
     clip-path:inset(0 round 3px); }
-  .ranklore-reqfill{ position:absolute; inset:0; border-radius:3px; background:color-mix(in srgb, var(--rank-color) 75%, #fff); }
-  .ranklore-req.is-met .ranklore-reqfill{ background:#5ED69A; }
+  /* THE RANK'S COLOUR ON EVERY BAR, MET OR NOT (build 313): "The
+     progress bars matching the color of the rank is a cool idea, but
+     ensure that's applied to all of them and ensure the color is
+     correct, because it's currently only set for a few of them." A met
+     requirement used to turn its bar green, so a rank you had passed
+     never showed its colour at all. The "Met" beside it says met; the bar
+     is the rank's, lifted the way the map's names are so Silver reads
+     silver and not grey, with a little of its own light. */
+  .ranklore-reqfill{ position:absolute; inset:0; border-radius:3px;
+    background:linear-gradient(90deg, color-mix(in srgb, var(--rank-color) 88%, #000), color-mix(in srgb, var(--rank-color) 62%, #fff));
+    box-shadow:0 0 8px color-mix(in srgb, var(--rank-color) 60%, transparent); }
   .ranklore-card .rankmap-giftshead{ text-align:left; margin-top:.9rem; }
   .ranklore-card .rankmap-gifts{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
   .ranklore-card.is-locked .rankmap-dot{ filter:grayscale(1); opacity:.28; box-shadow:none; }
@@ -48553,6 +48590,12 @@ function buildRankEmblemSVG(rankKey){
       add(burst(C, C, 4, 30, 0.06, UP), { fill: ICE, opacity: ".8" });
       add(burst(C, C, 4, 13, 0.12, UP), { fill: "#FFFFFF", opacity: ".95" });
     });
+    /* A SPECK OF DARK AT THE HEART (build 313): "put a black spec (still
+       barely noticeable but noticeable) in the core of the gold one" - the
+       first hint of the dark that Platinum's pair turns round and
+       Sapphire's galaxy is built on. Soft-edged, so it is a speck in the
+       light and not a hole punched through it. */
+    add(disc(C, C, 3.2), { fill: uRadial(C, C, 3.2, [[0, "#140C02", 0.92], [0.55, "#2A1A04", 0.6], [1, "#2A1A04", 0]]) });
     /* the near half, over the foot of the sun, and the world in front */
     add(orbitArc(Math.PI * 0.08, Math.PI * 0.42), { fill: "none", stroke: ICE, "stroke-width": "2.4", "stroke-linecap": "round", opacity: ".8" });
     add(orbitArc(Math.PI * 0.58, Math.PI * 0.92), { fill: "none", stroke: ICE, "stroke-width": "2.4", "stroke-linecap": "round", opacity: ".8" });
@@ -48603,32 +48646,52 @@ function buildRankEmblemSVG(rankKey){
     const LIGHTP = badgeShade(base, 0.45);
     const ringPlane = group({ transform: "rotate(-24 " + C + " " + C + ") translate(" + C + " " + C + ") scale(1 " + (15 / 44).toFixed(4) + ") translate(" + (-C) + " " + (-C) + ")" });
     const prevR = into; into = ringPlane;
-    inLayer("rk-spin rk-quick rk-sym4", C, C, 44, () => {
-      [0, 90, 180, 270].forEach((a, n) => add(arc(44, a + 12, a + 72), { fill: "none", stroke: badgeShade(base, n % 2 ? 0.45 : 0.6), "stroke-width": "2.8", "stroke-linecap": "round", opacity: n % 2 ? ".75" : ".9" }));
+    /* the broken ring is the small star's own orbit (35, build 313) */
+    inLayer("rk-spin rk-quick rk-sym4", C, C, 35, () => {
+      [0, 90, 180, 270].forEach((a, n) => add(arc(35, a + 12, a + 72), { fill: "none", stroke: badgeShade(base, n % 2 ? 0.45 : 0.6), "stroke-width": "2.8", "stroke-linecap": "round", opacity: n % 2 ? ".75" : ".9" }));
     });
     into = prevR;
     const starHalo = ramp(uid + "bh", [[0, "#FFFFFF", 0.7], [0.32, badgeShade(base, 0.5), 0.55], [0.62, base, 0.2], [1, base, 0]], "50%", "50%", "50%");
     const starBody = ramp(uid + "bs", [[0, "#FFFFFF", 1], [0.3, badgeShade(base, 0.86), 1], [0.62, LIGHTP, 1], [0.88, base, 0.95], [1, badgeShade(base, -0.18 * DK), 0.85]], "50%", "50%", "50%");
-    const AX = C - 10, AY = C + 6.5, BX = C + 23.85, BY = C - 15.5;
+    /* ROUND SOMETHING NOW (build 313): "could it be circling a black
+       small/tiny but noticeable black fragmented circle, so the
+       progression looks legit ... make it circle something in the
+       middle". The pair used to orbit an empty point hidden under the big
+       star. Both stars are smaller and wider out now, on one tilted plane,
+       going round a tiny broken ring of black at the centre - the first
+       sight of the dark core Sapphire's galaxy turns round. Each star has
+       a back copy (always behind the core) and a front copy shown only on
+       the near half of its orbit, so the core is passed behind and in
+       front of, as an orbit does. Positions and keyframes come from one
+       orbit (radius 21 and 35 on the -24 degree plane, 15/44 deep). */
+    const AX = 83.18, AY = 55.46, BX = 32.03, BY = 78.24;
     const small = () => {
-      inLayer("rk-glow rk-d2", BX, BY, 0, () => add(disc(BX, BY, 20), { fill: starHalo }));
-      sepRing(BX, BY, 10.5, 4, 0.24);
-      add(disc(BX, BY, 10.5), { fill: starBody });
+      inLayer("rk-glow rk-d2", BX, BY, 0, () => add(disc(BX, BY, 17), { fill: starHalo }));
+      sepRing(BX, BY, 9, 4, 0.24);
+      add(disc(BX, BY, 9), { fill: starBody });
       inLayer("rk-twinkle rk-d2", BX, BY, 0, () => {
         add(burst(BX, BY, 4, 14, 0.07, UP + Math.PI / 4), { fill: badgeShade(base, 0.8), opacity: ".92" });
         add(burst(BX, BY, 4, 5, 0.14, UP + Math.PI / 4), { fill: "#FFFFFF", opacity: ".95" });
       });
     };
-    inLayer("rk-bin-b", BX, BY, 0, small);
-    inLayer("rk-bin-a", AX, AY, 0, () => {
-      inLayer("rk-glow", AX, AY, 0, () => add(disc(AX, AY, 34), { fill: starHalo }));
-      sepRing(AX, AY, 20, 6, 0.26);
-      add(disc(AX, AY, 20), { fill: starBody });
+    const big = () => {
+      inLayer("rk-glow", AX, AY, 0, () => add(disc(AX, AY, 26), { fill: starHalo }));
+      sepRing(AX, AY, 14, 5, 0.26);
+      add(disc(AX, AY, 14), { fill: starBody });
       inLayer("rk-twinkle", AX, AY, 0, () => {
-        add(burst(AX, AY, 4, 25, 0.07, UP), { fill: badgeShade(base, 0.8), opacity: ".92" });
-        add(burst(AX, AY, 4, 9, 0.14, UP), { fill: "#FFFFFF", opacity: ".95" });
+        add(burst(AX, AY, 4, 19, 0.07, UP), { fill: badgeShade(base, 0.8), opacity: ".92" });
+        add(burst(AX, AY, 4, 7, 0.14, UP), { fill: "#FFFFFF", opacity: ".95" });
       });
-    });
+    };
+    inLayer("rk-bin-b", BX, BY, 0, small);
+    inLayer("rk-bin-a", AX, AY, 0, big);
+    /* the core: a speck of black in a broken ring, a hairline of the
+       pair's light on its rim so it reads against the dark */
+    add(disc(C, C, 6.8), { fill: uRadial(C, C, 6.8, [[0, "#000000", 0.75], [0.6, "#02060A", 0.55], [1, "#02060A", 0]]) });
+    [20, 110, 200, 290].forEach(a0 => add(arc(4.6, a0, a0 + 62), { fill: "none", stroke: "#03070B", "stroke-width": "1.7", "stroke-linecap": "round" }));
+    add(disc(C, C, 2.2), { fill: "#010203" });
+    add(circle(5.6), { fill: "none", stroke: badgeShade(base, 0.6), "stroke-width": ".5", opacity: ".45", "stroke-dasharray": "5 3.8" });
+    inLayer("rk-bin-a-front", AX, AY, 0, big);
     inLayer("rk-bin-b-front", BX, BY, 0, small);
     into = art;
   } else if(rankKey === "adept"){
@@ -83001,12 +83064,11 @@ function buildRanksTab(){
        the circles' rims) lifts that colour towards white, which is the
        pale gold the emblem itself reads as. Same mix as the map's names
        now, glowing the way the emblem does, with the emblem beside it. */
+    /* THE NAME ONLY (build 313): "it says to reach gold and has golds
+       icon, remove the icon, keep just the name". */
     gaugeHead.append("To reach ");
     const gn = document.createElement("b");
-    const gem = document.createElement("span");
-    gem.className = "rankhero-gaugehead-em";
-    try{ gem.appendChild(fitRankEmblem(buildRankEmblemSVG(nextKey), nextKey)); }catch(e){}
-    gn.append(gem, document.createTextNode(RANK_DISPLAY_NAME[nextKey]));
+    gn.textContent = RANK_DISPLAY_NAME[nextKey];
     gaugeHead.appendChild(gn);
   } else {
     gaugeHead.textContent = "Your totals";
@@ -83058,12 +83120,12 @@ function buildRanksTab(){
      unlocks at certain ranks and stuff." Built from the same tables the
      cards are, so it cannot promise a character or a banner a rank does
      not hand over. */
-  const firstCharRank = TIER_ORDER_FULL.find(k => AVATAR_CHARACTERS.some(c => c.unlock === k && !c.retired));
-  const bannerRanks = TIER_ORDER_FULL.filter(k => BANNERS.some(b => b.rank === k)).map(k => RANK_DISPLAY_NAME[k]);
-  const listOf = a => a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1];
-  mapNote.textContent = "Each rank asks for a level and a number of badges. Every rank unlocks its theme colour and a flare for Home" +
-    (firstCharRank ? "; from " + RANK_DISPLAY_NAME[firstCharRank] + " up, a character too" : "") +
-    (bannerRanks.length ? ", and " + listOf(bannerRanks) + " each add a banner" : "") + ". Tap a rank to read about it.";
+  /* PLAIN, NOT A LIST OF RANKS (build 313): "the climb description is
+     bad, it's talking about specific ranks and stuff". Built from the
+     tables, it read "from Gold up, a character too, and Bronze, Silver
+     and Gold each add a banner" - true, and a paragraph to parse. Each
+     stop below already says exactly what it hands over. */
+  mapNote.textContent = "Each rank needs a level and a number of badges, and unlocks rewards along the way. Tap a rank to see what it gives.";
   tab.appendChild(mapNote);
 
   /* ---- IRON AT THE TOP, SUPERNOVA AT THE BOTTOM (build 232) ----
