@@ -76,6 +76,8 @@ KNOWN = {
     "cx-gn-back": "Genesis's moon kept upright - a full turn the other way",
     "cx-gn-drift": "Genesis's weather bands: shifted by exactly one 8-unit period of bands drawn twice",
     "cx-gn-erupt": "Genesis's eruption: invisible at both ends",
+    "xs-turn": "the secret flare scenes' orbits, corona and disc - a full turn",
+    "xs-turnback": "a rider on a scene's orbit kept upright - a full turn the other way",
     # Build 235: the sleeping character's Zzz.
     "char-zzz": "a letter fades in beside the head and out as it drifts up",
     # Build 235: the characters' own motion (all invisible at both ends, or a whole turn).
