@@ -8843,10 +8843,13 @@ def check_b312_unlocks(br):
       window.isLockedCharacter = id => ultIds.indexOf(id) >= 0 ? realLocked(id) : false;
       window.bannerEarned = id => ultIds.indexOf(id) >= 0 ? realEarned(id) : true;
       window.isLockedAccent = () => false;
+      /* build 313: Zenith also counts the hundo effects, read off the hundos */
+      const hundosWas = store.lifetime.perfectTests; store.lifetime.perfectTests = Math.max(hundosWas || 0, 300);
       out.astral = !isLockedCharacter('astral'); out.celestial = !isLockedCharacter('celestial');
       out.astralBanner = bannerEarned('astral'); out.celestialBanner = bannerEarned('celestial');
       out.zenith = !isLockedCharacter('zenith');
       const up = ultimateProgress(); out.up = up;
+      store.lifetime.perfectTests = hundosWas;
       window.isLockedCharacter = realLocked; window.bannerEarned = realEarned; window.isLockedAccent = realAccent;
       /* Lights Out: hundos between 8 PM and midnight, seeded once from
          the history. 21:00 with hundos:1 counts 1; 22:00 with unit scores
