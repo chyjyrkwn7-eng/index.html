@@ -4224,7 +4224,9 @@ def check_b245_start_pill(br):
           const R = e => { const b = e.getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom]; };
           const off = R(st);
           const cb = [...document.querySelectorAll('.picks .pick')].find(p => !/Penal/.test(p.textContent) && !p.classList.contains('locked')).querySelector('input');
-          cb.click(); await wait(500);
+          /* 1300, not 500 (build 313): the fill was slowed on request ("a
+             tiny bit slowed down") and the lit depth lands when it ends */
+          cb.click(); await wait(1300);
           const on = R(st), cs = getComputedStyle(st);
           const bar = R(document.querySelector('.bottomtabs'));
           const tabs = [...document.querySelectorAll('.bottomtabs-navrow .bottomtab')].map(R);

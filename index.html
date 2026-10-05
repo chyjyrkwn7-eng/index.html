@@ -50140,7 +50140,10 @@ function buildRankEmblemSVG(rankKey){
     const prevR = into; into = ringPlane;
     /* the broken ring is the small star's own orbit (35, build 313) */
     inLayer("rk-spin rk-quick rk-sym4", C, C, 35, () => {
-      [0, 90, 180, 270].forEach((a, n) => add(arc(35, a + 12, a + 72), { fill: "none", stroke: badgeShade(base, n % 2 ? 0.45 : 0.6), "stroke-width": "2.8", "stroke-linecap": "round", opacity: n % 2 ? ".75" : ".9" }));
+      /* one path per shade, not one per arc (build 313: the busiest-mark
+         rule - Platinum must stay simpler than Supernova) */
+      [0, 1].forEach(n => add([0, 90, 180, 270].filter((a, i) => i % 2 === n).map(a => arc(35, a + 12, a + 72)).join(" "),
+        { fill: "none", stroke: badgeShade(base, n ? 0.45 : 0.6), "stroke-width": "2.8", "stroke-linecap": "round", opacity: n ? ".75" : ".9" }));
     });
     into = prevR;
     const starHalo = ramp(uid + "bh", [[0, "#FFFFFF", 0.7], [0.32, badgeShade(base, 0.5), 0.55], [0.62, base, 0.2], [1, base, 0]], "50%", "50%", "50%");
@@ -50157,8 +50160,11 @@ function buildRankEmblemSVG(rankKey){
        front of, as an orbit does. Positions and keyframes come from one
        orbit (radius 21 and 35 on the -24 degree plane, 15/44 deep). */
     const AX = 83.18, AY = 55.46, BX = 32.03, BY = 78.24;
-    const small = () => {
-      inLayer("rk-glow rk-d2", BX, BY, 0, () => add(disc(BX, BY, 17), { fill: starHalo }));
+    /* The front copies carry no halo of their own: the back copy's halo
+       is already there behind them, and a second one doubled the glow on
+       the near half of every orbit. */
+    const small = (front) => {
+      if(!front) inLayer("rk-glow rk-d2", BX, BY, 0, () => add(disc(BX, BY, 17), { fill: starHalo }));
       sepRing(BX, BY, 9, 4, 0.24);
       add(disc(BX, BY, 9), { fill: starBody });
       inLayer("rk-twinkle rk-d2", BX, BY, 0, () => {
@@ -50166,8 +50172,8 @@ function buildRankEmblemSVG(rankKey){
         add(burst(BX, BY, 4, 5, 0.14, UP + Math.PI / 4), { fill: "#FFFFFF", opacity: ".95" });
       });
     };
-    const big = () => {
-      inLayer("rk-glow", AX, AY, 0, () => add(disc(AX, AY, 26), { fill: starHalo }));
+    const big = (front) => {
+      if(!front) inLayer("rk-glow", AX, AY, 0, () => add(disc(AX, AY, 26), { fill: starHalo }));
       sepRing(AX, AY, 14, 5, 0.26);
       add(disc(AX, AY, 14), { fill: starBody });
       inLayer("rk-twinkle", AX, AY, 0, () => {
@@ -50175,16 +50181,16 @@ function buildRankEmblemSVG(rankKey){
         add(burst(AX, AY, 4, 7, 0.14, UP), { fill: "#FFFFFF", opacity: ".95" });
       });
     };
-    inLayer("rk-bin-b", BX, BY, 0, small);
-    inLayer("rk-bin-a", AX, AY, 0, big);
+    inLayer("rk-bin-b", BX, BY, 0, () => small(false));
+    inLayer("rk-bin-a", AX, AY, 0, () => big(false));
     /* the core: a speck of black in a broken ring, a hairline of the
        pair's light on its rim so it reads against the dark */
     add(disc(C, C, 6.8), { fill: uRadial(C, C, 6.8, [[0, "#000000", 0.75], [0.6, "#02060A", 0.55], [1, "#02060A", 0]]) });
-    [20, 110, 200, 290].forEach(a0 => add(arc(4.6, a0, a0 + 62), { fill: "none", stroke: "#03070B", "stroke-width": "1.7", "stroke-linecap": "round" }));
+    add([20, 110, 200, 290].map(a0 => arc(4.6, a0, a0 + 62)).join(" "), { fill: "none", stroke: "#03070B", "stroke-width": "1.7", "stroke-linecap": "round" });
     add(disc(C, C, 2.2), { fill: "#010203" });
     add(circle(5.6), { fill: "none", stroke: badgeShade(base, 0.6), "stroke-width": ".5", opacity: ".45", "stroke-dasharray": "5 3.8" });
-    inLayer("rk-bin-a-front", AX, AY, 0, big);
-    inLayer("rk-bin-b-front", BX, BY, 0, small);
+    inLayer("rk-bin-a-front", AX, AY, 0, () => big(true));
+    inLayer("rk-bin-b-front", BX, BY, 0, () => small(true));
     into = art;
   } else if(rankKey === "adept"){
     /* SAPPHIRE (build 250): A SPIRAL GALAXY - the first of the final
@@ -65026,7 +65032,7 @@ function showSetup(){
      mention shuffling the questions and answer choices in the same
      sentence." */
   const shuffleRow = toggle("Shuffle answer choices",
-    "Questions always come in a random order, and this shuffles each question's answer choices too.",
+    "Questions always come in a random order; this shuffles the answer choices too.",
     () => cfg.shuffle, v => { cfg.shuffle = v; });
   const recallRow = toggle("Hide answer choices",
     "Think of the answer first, then tap to show the choices.",
