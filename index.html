@@ -2824,6 +2824,10 @@
   .qtext{
     font-family:var(--serif); font-size:1.3rem; line-height:1.45;
     margin:0 0 .5rem; max-width:34em;
+    /* A fill-in blank is one long run of underscores with nowhere to
+       break, and on a 320px phone it pushed the review list 50px past
+       the right edge (build 312 audit). It may break anywhere. */
+    overflow-wrap:anywhere;
   }
   .qtext strong{ font-weight:700; }
 
@@ -3054,7 +3058,11 @@
     35%{ opacity:1; }
     to{ transform:translate(-50%, 0); opacity:1; }
   }
-  .foot > .floatbtn.qnext.is-rising{ animation:qnext-rise .62s cubic-bezier(.16,.84,.3,1) .75s both; }
+  /* SOONER (build 312): "it could be like 0.25 seconds faster or even
+     0.50 faster? Still not immediately." It waited .75s and rose over
+     .62s; it waits .4s and rises over .5s now - in place about half a
+     second sooner, and still after the answer's colour has landed. */
+  .foot > .floatbtn.qnext.is-rising{ animation:qnext-rise .5s cubic-bezier(.16,.84,.3,1) .4s both; }
   [data-reduce-motion="true"] .foot > .floatbtn.qnext.is-rising{ animation:none; }
   .next.ghost:active{ background:rgba(128,128,128,.15); opacity:1; }
   .next:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
@@ -4143,6 +4151,20 @@
   .rank-avatar-wrap{ position:relative; width:2.6rem; height:2.6rem; flex-shrink:0; }
   .rank-avatar{ display:block; width:100%; height:100%; }
   .rank-avatar svg{ width:100%; height:100%; }
+  /* IN A CIRCLE, AND KEPT IN IT (build 312). "On the leaderboard, the
+     characters within the circles are kind of protruding outside the
+     circles." Each drawing carries its own round backdrop and its props
+     - the ninja's bamboo, the wizard's staff, the masked one's lightning
+     - reach past it by up to 19px on a 42px row. On the boards the
+     character now sits on a disc of its own colour with a hairline rim,
+     clipped to it, so every row reads as the same round token. */
+  .rank-row .rank-avatar{
+    border-radius:50%; overflow:hidden; clip-path:circle(50% at 50% 50%);
+    background:radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--char-glow, #8FA4BE) 30%, #151A22) 0%, #0D1117 78%);
+    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--char-glow, #8FA4BE) 45%, rgba(255,255,255,.18)),
+               inset 0 1px 0 rgba(255,255,255,.14);
+  }
+  .rank-row .rank-avatar svg{ transform:scale(.94); transform-origin:50% 56%; }
   .rank-name-wrap{ display:flex; flex-direction:column; min-width:0; flex:1; }
   .rank-name{ font-weight:700; font-size:.95rem; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .rank-stat{ font-size:.78rem; color:var(--soft); }
@@ -7587,15 +7609,47 @@
        moment a whole new screen was being built. The fill carries the
        look instead: a touch brighter to stand in for the saturate and
        brightness it used to apply. */
-    background-image:linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,0) 55%),
-      linear-gradient(rgba(255,255,255,.17), rgba(255,255,255,.17));
-    border:1px solid rgba(255,255,255,.16);
-    box-shadow:0 1px 2px rgba(255,255,255,.25) inset, 0 2px 6px rgba(18,26,32,.2);
+    /* A PILL INSIDE THE BAR, NOT THE BAR'S FULL HEIGHT (build 312). "The
+       current tab you are on, the very bottom of the bubble has a weird
+       line on it." The box was the row's whole height with fully round
+       ends, so on a ~76px tab in a ~79px bar it drew an OVAL whose
+       bottom edge lay exactly on the bar's own bottom rim - the line.
+       The box still spans the tab (the FLIP below needs its width), but
+       what you see is ::before, inset from the top and bottom: a true
+       pill floating in the glass, the way iOS draws its selected tab. */
+    background:none; border:0; box-shadow:none;
     z-index:0;
     transition:transform .45s cubic-bezier(0.34, 1.56, 0.64, 1);
     transform-origin:0 50%; will-change:transform;
     opacity:0;
   }
+  .bottomtabs-slider::before{
+    content:""; position:absolute; inset:5px 2px; border-radius:999px; pointer-events:none;
+    background-image:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.04) 60%, rgba(255,255,255,.07)),
+      linear-gradient(rgba(255,255,255,.12), rgba(255,255,255,.12));
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.13), inset 0 1px 0 rgba(255,255,255,.26), 0 2px 8px rgba(0,0,0,.16);
+    transform-origin:50% 50%;
+  }
+  /* THE LENS (build 312), from the iOS tab bar Madison sent: while the
+     selection travels, the pill swells into a clear glass lens - brighter
+     rim, a faint split of colour at its edge where the glass bends the
+     light - and settles back into the flat pill under the new tab. On
+     ::before, so it never fights the FLIP transform on the box. */
+  .bottomtabs-slider.is-moving::before{ animation:tab-lens .52s cubic-bezier(.3,1.25,.45,1); }
+  .bottomtabs-slider.dragging::before{
+    transform:scale(1.12, 1.18);
+    background-image:linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.02) 60%, rgba(255,255,255,.06));
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.42), inset 2px 0 4px rgba(120,214,255,.32), inset -2px 0 4px rgba(255,130,210,.28), 0 6px 18px rgba(0,0,0,.28);
+    transition:transform .2s ease, box-shadow .2s ease;
+  }
+  @keyframes tab-lens{
+    0%{ transform:scale(1); }
+    38%{ transform:scale(1.13, 1.2);
+         background-image:linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.02) 60%, rgba(255,255,255,.06));
+         box-shadow:inset 0 0 0 1px rgba(255,255,255,.42), inset 2px 0 4px rgba(120,214,255,.32), inset -2px 0 4px rgba(255,130,210,.28), 0 6px 18px rgba(0,0,0,.28); }
+    100%{ transform:scale(1); }
+  }
+  [data-reduce-motion="true"] .bottomtabs-slider.is-moving::before{ animation:none; }
   /* Everywhere else in the app, backdrop-filter is layered on top of an
      already-solid background color, so a browser that can't do the
      blur still shows a normal-looking, fully opaque surface — this
@@ -7611,7 +7665,7 @@
      degrades safely on its own since it only ever adds to an existing
      solid background rather than replacing one. */
   @supports not (backdrop-filter: blur(1px)){
-    .bottomtabs-slider{ background-color:rgba(255,255,255,.4); }
+    .bottomtabs-slider::before{ background-color:rgba(255,255,255,.4); }
   }
   .bottomtabs-slider.ready{ opacity:1; }
   /* Instant position tracking while a finger is actively dragging the
@@ -8118,8 +8172,11 @@
   [data-layout="modern"] .bottomtabs .bottomtabs-slider{ will-change:transform; backface-visibility:hidden; -webkit-backface-visibility:hidden; }
   [data-layout="modern"] .bottomtabs .bottomtab{ isolation:isolate; backface-visibility:hidden; -webkit-backface-visibility:hidden; }
   [data-theme="dark"][data-layout="modern"] .bottomtabs{
-    background:rgba(20,24,30,.84);
-    box-shadow:0 8px 32px rgba(0,0,0,.5), inset 0 1px 1px rgba(255,255,255,.12), inset 0 -1px 1px rgba(0,0,0,.3);
+    /* A clearer rim (build 312): a hairline all the way round and a
+       brighter catch-light along the top, as the reference's bar has -
+       the edge of a piece of glass, not of a dark plate. */
+    background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 40%), rgba(20,24,30,.8);
+    box-shadow:0 8px 32px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.07), inset 0 1px 0 rgba(255,255,255,.2), inset 0 -1px 1px rgba(0,0,0,.3);
   }
   /* A slow, subtly shifting sheen across the glass \u2014 real glass and
      Liquid Glass both catch ambient light rather than sitting flat, so
@@ -9159,6 +9216,13 @@
        mode and look and feel." Tabular figures so it does not shuffle
        sideways as the digits change. */
     font-size:.85rem; color:var(--soft);
+  }
+  /* On a 320px phone the centre of the row is under the chat button
+     beside Pause (build 312 audit: "1/19" half hidden on an SE 1st gen),
+     so there the count sits in the gap between the mode and the buttons. */
+  @media (max-width:22rem){
+    .wrap:has(.fc-screen) .top .test-qcounter,
+    .wrap:has(.qnumrow):not(:has(.pausepanel)) .top .test-qcounter{ left:38%; }
   }
   .navsegment{
     display:none; align-items:center; background:var(--rule);
@@ -13129,7 +13193,9 @@
   }
   .rankmap-stop.is-locked .rankmap-card{ background:rgba(20,24,30,.55); border-color:rgba(255,255,255,.07); }
   .rankmap-stop.is-here .rankmap-card{ border-color:color-mix(in srgb, var(--rank-color) 70%, #fff); box-shadow:0 0 22px -6px color-mix(in srgb, var(--rank-color) 70%, transparent); }
-  .rankmap-head{ display:flex; align-items:center; justify-content:space-between; gap:.5rem; }
+  /* wraps only when the chip cannot fit beside the name - a 320px phone
+     clipped "You are here" off the card's edge (build 312 audit) */
+  .rankmap-head{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.25rem .5rem; }
   .rankmap-name{ margin:0; font-family:var(--serif); font-size:1.25rem; font-weight:700; color:color-mix(in srgb, var(--rank-color) 55%, #fff); }
   .rankmap-stop.is-locked .rankmap-name{ color:rgba(255,255,255,.62); }
   .rankmap-state{
@@ -14990,7 +15056,12 @@
     /* ---- char-live: the idle loops ---- */
     .char-live .avatarchar-svg .cx-eyes{ animation:cx-blink var(--cx-blink, 6s) var(--cx-blink-at, 0s) ease-in-out infinite; }
     /* Carved, hollow, or light rather than eyes: these do not blink. */
-    .char-live .avatarchar-svg :is(.cx-k-zeus, .cx-k-poseidon, .cx-k-masked, .cx-k-spartan, .cx-k-umbra) .cx-eyes{ animation:none; }
+    /* EVERYBODY BLINKS (build 312): "ensure all characters blink". Zeus's
+       stone eyes, the Masked One's slits, Umbra's slants and Horizon's
+       visor were held still as "carved, hollow, or light rather than
+       eyes"; they blink now like everyone else. Only the retired kinds
+       stay as they were. */
+    .char-live .avatarchar-svg :is(.cx-k-poseidon, .cx-k-spartan) .cx-eyes{ animation:none; }
     .char-live .avatarchar-svg .cx-fx-tail1{ animation:cx-flutter 1.7s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-tail2{ animation:cx-flutter-b 1.7s ease-in-out -.55s infinite; }
     .char-live .avatarchar-svg .cx-fx-jewel .cx-glint{ animation:cx-glint 4.6s ease-in-out infinite; }
@@ -15051,7 +15122,7 @@
     .char-live .avatarchar-svg .cx-fx-crystals{ animation:cx-spin 22s linear infinite; }
     .char-live .avatarchar-svg .cx-fx-flame{ animation:cx-flame 1.3s ease-in-out infinite alternate; }
     .char-live .avatarchar-svg .cx-fx-embers{ animation:cx-embers 2.6s ease-in-out infinite; }
-    .char-live .avatarchar-svg :is(.cx-k-paladin, .cx-k-inferno) .cx-eyes{ animation:cx-ember 2.8s ease-in-out infinite; }
+    .char-live .avatarchar-svg :is(.cx-k-paladin, .cx-k-inferno) .cx-eyes{ animation:cx-blink var(--cx-blink, 6s) var(--cx-blink-at, 0s) ease-in-out infinite, cx-ember 2.8s ease-in-out infinite; }
 
     /* ---- the four results reactions: once, then a quiet loop ---- */
     .char-react-perfect .avatarchar-svg .cx-fig{ animation:cx-hop-big 1s cubic-bezier(.3,.7,.4,1) both, cx-hop-loop 2.2s ease-in-out 1s infinite; }
@@ -15285,6 +15356,15 @@
      id), the Hacker, the Clown and Anubis (Poseidon's id). Every class
      and keyframe here is new and unique to its character. */
   .avatarchar-svg .cx-k-singularity{ --cx-blink:6.8s; --cx-blink-at:-2.4s; }
+  .avatarchar-svg .cx-k-umbra{ --cx-blink:6.2s; --cx-blink-at:-1.6s; }
+  .avatarchar-svg .cx-k-zeus{ --cx-blink:7.6s; --cx-blink-at:-4.9s; }
+  .avatarchar-svg .cx-k-masked{ --cx-blink:5.8s; --cx-blink-at:-.3s; }
+  /* the rest that had no beat of their own, so a row of them never
+     blinks in unison */
+  .avatarchar-svg .cx-k-hive{ --cx-blink:6.7s; --cx-blink-at:-2s; }
+  .avatarchar-svg .cx-k-voidwalker{ --cx-blink:7s; --cx-blink-at:-5.5s; }
+  .avatarchar-svg .cx-k-starblade{ --cx-blink:5.3s; --cx-blink-at:-3.4s; }
+  .avatarchar-svg .cx-k-koi{ --cx-blink:6.1s; --cx-blink-at:-.9s; }
   .avatarchar-svg .cx-fx-cl2hat{ transform-origin:50% 100%; }
   @media (prefers-reduced-motion:no-preference){
     .char-live .avatarchar-svg .cx-fx-mk2crack{ animation:cx-mk2-pulse 2.2s ease-in-out infinite; }
@@ -15363,8 +15443,8 @@
     .char-live .avatarchar-svg .cx-fx-sghair{ animation:cx-sg-hair 2.6s ease-in-out infinite alternate; }
     .char-live .avatarchar-svg .cx-fx-koiweed{ animation:cx-cl2-sway 2.8s ease-in-out infinite alternate; }
     .char-live .avatarchar-svg .cx-fx-sgstar{ animation:cx-flicker-soft 3.2s ease-in-out infinite, cx-live-rock 5s ease-in-out infinite alternate; }
-    /* build 308: Horizon's visor holds still */
-    .char-live .avatarchar-svg .cx-k-singularity .cx-eyes{ animation:none; }
+    /* build 308 held Horizon's visor still; build 312 lets it blink
+       (the generic cx-eyes rule) - a line of light shutting and opening. */
     .char-react-win .avatarchar-svg .cx-fx-bgfall, .char-react-win .avatarchar-svg .cx-fx-bgfall.cx-fx-bgslow{ animation:cx-bg-fall .9s linear infinite; }
     .char-react-win .avatarchar-svg .cx-fx-bgspin, .char-react-win .avatarchar-svg .cx-fx-bgscope{ animation:cx-spin 6s linear infinite; }
   }
@@ -15424,16 +15504,16 @@
      quickens. Transform and opacity only. */
   .avatarchar-svg .cx-k-zenith{ --cx-blink:7.4s; --cx-blink-at:-3.2s; }
   @media (prefers-reduced-motion:no-preference){
-    .char-live .avatarchar-svg .cx-k-zenith .cx-eyes{ animation:cx-ember 3.1s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-k-zenith .cx-eyes{ animation:cx-blink var(--cx-blink, 6s) var(--cx-blink-at, 0s) ease-in-out infinite, cx-ember 3.1s ease-in-out infinite; }
     /* Zenith A (build 308): everything round the face, nothing on it,
        and every period a divisor of 6s */
     .char-live .avatarchar-svg .cx-fx-zarays{ animation:cx-za-rays 6s linear infinite; }
     .char-live .avatarchar-svg .cx-fx-zaorbit{ animation:cx-spin 3s linear infinite; }
     .char-live .avatarchar-svg .cx-fx-zaorbit2{ animation:cx-spin-back 6s linear infinite; }
     .char-live .avatarchar-svg .cx-fx-zaring{ animation:cx-glow 3s ease-in-out infinite; }
-    .char-live .avatarchar-svg .cx-fx-zastar{ animation:cx-za-star 3s ease-in-out infinite; }
-    .char-live .avatarchar-svg .cx-fx-zaflare{ animation:cx-za-flare 3s ease-in-out infinite; }
-    .char-live .avatarchar-svg .cx-fx-zawave{ animation:cx-za-wave 3s ease-out infinite; }
+    /* build 312: the zenith star breathes rather than pops - see the
+       drawing. Its rays, streak, satellites and pour are further down. */
+    .char-live .avatarchar-svg .cx-fx-zastar{ animation:cx-za-breathe 3s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-zadust{ animation:cx-za-dust 3s ease-out infinite; }
     .char-live .avatarchar-svg .cx-fx-zachest{ animation:cx-twinkle 3s ease-in-out -1.5s infinite; }
     .char-live .avatarchar-svg :is(.cx-fx-zbeyeglow, .cx-fx-zceyeglow){ animation:cx-ember 3.1s ease-in-out infinite; }
@@ -15455,7 +15535,7 @@
     .char-live .avatarchar-svg .cx-fx-zcsheen{ animation:cx-sheen-idle 5.4s ease-in-out -.9s infinite; }
     .char-react-win .avatarchar-svg .cx-fx-zaorbit{ animation:cx-spin 1.2s linear infinite; }
     .char-react-win .avatarchar-svg .cx-fx-zarays{ animation:cx-za-rays 1.5s linear infinite; }
-    .char-react-win .avatarchar-svg :is(.cx-fx-zastar, .cx-fx-zaflare, .cx-fx-zawave){ animation-duration:1s; }
+    .char-react-win .avatarchar-svg .cx-fx-zastar{ animation-duration:1s; }
     .char-react-win .avatarchar-svg .cx-fx-zbstar{ animation:cx-twinkle .9s ease-in-out infinite; }
     .char-react-win .avatarchar-svg .cx-fx-zbtrails{ animation:cx-spin 8s linear infinite; }
     .char-react-win .avatarchar-svg :is(.cx-fx-zcveins, .cx-fx-zcseam){ animation:cx-mk2-pulse .5s ease-in-out infinite; }
@@ -15555,9 +15635,7 @@
   @keyframes cx-um-aura{ 0%, 100%{ transform:scale(.97, .95); opacity:.35; } 50%{ transform:scale(1.03, 1.06); opacity:.85; } }
   @keyframes cx-sg-rise{ 0%{ stroke-dashoffset:2.4; opacity:0; } 12%{ opacity:.95; } 70%{ opacity:.8; } 86%, 100%{ stroke-dashoffset:-10; opacity:0; } }
   @keyframes cx-za-rays{ from{ transform:none; } to{ transform:rotate(30deg); } }
-  @keyframes cx-za-star{ 0%, 100%{ transform:none; } 46%{ transform:scale(.9); } 54%{ transform:scale(1.35) rotate(45deg); } 70%{ transform:rotate(90deg); } }
-  @keyframes cx-za-flare{ 0%, 46%, 100%{ transform:scale(.2, .6); opacity:0; } 54%{ transform:none; opacity:1; } 76%{ transform:scale(.7, .9); opacity:0; } }
-  @keyframes cx-za-wave{ 0%, 50%{ transform:scale(.6); opacity:0; } 54%{ opacity:.9; } 90%, 100%{ transform:scale(3.4); opacity:0; } }
+  @keyframes cx-za-breathe{ 0%, 100%{ transform:none; } 50%{ transform:scale(1.12); } }
   @keyframes cx-za-dust{ 0%{ transform:none; opacity:0; } 15%{ opacity:.95; } 85%{ opacity:.5; } 100%{ transform:translateY(-9px) scale(.5); opacity:0; } }
   @keyframes cx-mk3-squint{ 0%, 30%, 74%, 100%{ scale:1; } 40%, 64%{ scale:1 .55; } }
   @keyframes cx-mk3-lock{ 0%, 34%, 100%{ opacity:0; transform:scale(1.7); } 46%{ opacity:1; transform:none; } 52%{ opacity:.3; } 56%{ opacity:1; } 64%{ opacity:1; transform:none; } 72%{ opacity:0; transform:scale(.9); } }
@@ -15568,6 +15646,98 @@
   @keyframes cx-zs3-eyes{ 0%, 4.5%, 30%, 100%{ opacity:0; } 6%{ opacity:1; } 9%{ opacity:.35; } 12%{ opacity:1; } 22%{ opacity:.5; } }
   @keyframes cx-sh3-glance{ 0%, 24%, 88%, 100%{ transform:none; } 32%, 48%{ transform:translateX(-.6px); } 58%, 76%{ transform:translateX(.6px); } }
   @keyframes cx-dt3-glance{ 0%, 22%, 86%, 100%{ translate:0 0; } 30%, 46%{ translate:-.7px 0; } 56%, 76%{ translate:.6px 0; } }
+  /* ---- BUILD 312: THE CHARACTER PASS ----
+     "The frost character does not have any cool animations.. the clowns
+     animations are lame as well. Orions animations are kinda over the top
+     ... Umbras animations are lame ... do something with the moon and
+     ensure the secret flare has an effect too.. same for horizon ... Zenith
+     effect is cool but the flashing thing at the top isn't it." Same rules
+     as every loop above: transform, opacity and dash offsets only, never a
+     filter; every loop seamless (or invisible at both ends, listed in
+     check-loops); everything under char-live, and anything that would
+     read wrong standing still (juggling balls, satellites, orbit sparks)
+     carries opacity 0 in the drawing and is only shown here.
+       Frost    an ice sigil turns behind the head; light runs up the
+                crown spike by spike and flashes off each tip; the eyes and
+                the frost on the cheeks catch that same light
+       Clown    juggles three balls under his grin; the bells jingle one
+                after another; the nose honks; one eye winks
+       Orion    his constellation is in the sky now, not on his face; a
+                scan of light crosses the visor
+       Umbra    the moon behind goes through its phases; the crescent on
+                the brow swells with light and glints at its horn; the flare
+                at the throat throws off rings and has sparks orbiting it
+       Horizon  a wave of light ripples across the hair and sparks lift
+                off the tips; the flare on the brow throws off rings and
+                has sparks orbiting it
+       Zenith   the star breathes, its rays turn, a lens streak swells
+                across it, two satellites circle it, and light pours down
+                both sides of the halo
+     and everybody blinks (see the char-live block). */
+  .avatarchar-svg .cx-fx-cl3bell{ transform-origin:50% 0%; }
+  @media (prefers-reduced-motion:no-preference){
+    .char-live .avatarchar-svg .cx-fx-frflake{ animation:cx-fr-spin 12s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-frflakeglow{ animation:cx-glow 6s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-frglint{ animation:cx-fr-glint 4s ease-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-frtip{ animation:cx-fr-tip 4s ease-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-freye{ animation:cx-fr-eye 4s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-frcheek{ animation:cx-fr-cheek 4s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-cl3balls{ opacity:1; }
+    .char-live .avatarchar-svg .cx-fx-cl3jx{ animation:cx-cl3-jx 1.2s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-cl3jy{ animation:cx-cl3-jy 1.2s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-cl3bell{ animation:cx-cl3-jingle 3.6s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-cl3nose{ animation:cx-cl3-honk 3.6s ease-out -1.4s infinite; }
+    .char-live .avatarchar-svg .cx-fx-cl3wink{ animation:cx-cl3-wink 7.2s ease-in-out -2s infinite; }
+    .char-live .avatarchar-svg .cx-fx-sa4scan{ animation:cx-sheen-idle 5s ease-in-out -2.2s infinite; }
+    .char-live .avatarchar-svg .cx-fx-bgphase{ animation:cx-bg-phase 12s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-umcglow{ animation:cx-um-cglow 6s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-umcglint{ animation:cx-um-cglint 6s ease-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-wforbit{ opacity:1; animation:cx-spin 4s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-wfring{ animation:cx-wf-ring 2.6s ease-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-sgwave{ animation:cx-sg-wave 3s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-sgsparks{ opacity:1; }
+    .char-live .avatarchar-svg .cx-fx-sgspark{ animation:cx-sg-spark 3s ease-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-zarays8{ animation:cx-za-rays8 6s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-zastreak{ animation:cx-za-streak 6s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-zasats{ opacity:1; }
+    .char-live .avatarchar-svg .cx-fx-zasatx{ animation:cx-za-satx 1.5s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-zasaty{ animation:cx-za-saty 1.5s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-zapour{ opacity:1; }
+    .char-live .avatarchar-svg .cx-fx-zapourline{ animation:cx-za-pour 3s ease-in infinite; }
+    /* A Virtual Room win: everything quickens. */
+    .char-react-win .avatarchar-svg .cx-fx-frflake{ animation:cx-fr-spin 2s linear infinite; }
+    .char-react-win .avatarchar-svg :is(.cx-fx-frglint, .cx-fx-frtip, .cx-fx-freye, .cx-fx-frcheek){ animation-duration:1.2s; }
+    .char-react-win .avatarchar-svg :is(.cx-fx-cl3jx, .cx-fx-cl3jy){ animation-duration:.45s; }
+    .char-react-win .avatarchar-svg .cx-fx-cl3bell{ animation:cx-cl3-jingle 1.1s ease-in-out infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-bgphase{ animation-duration:3s; }
+    .char-react-win .avatarchar-svg .cx-fx-wfring{ animation-duration:1s; }
+    .char-react-win .avatarchar-svg .cx-fx-wforbit{ animation-duration:1.2s; }
+    .char-react-win .avatarchar-svg :is(.cx-fx-sgwave, .cx-fx-sgspark){ animation-duration:1s; }
+    .char-react-win .avatarchar-svg .cx-fx-zarays8{ animation-duration:1.5s; }
+    .char-react-win .avatarchar-svg :is(.cx-fx-zasatx, .cx-fx-zasaty){ animation-duration:.5s; }
+    .char-react-win .avatarchar-svg .cx-fx-zapourline{ animation-duration:1s; }
+  }
+  @keyframes cx-fr-spin{ from{ transform:none; } to{ transform:rotate(60deg); } }
+  @keyframes cx-fr-glint{ 0%, 70%, 100%{ opacity:0; } 76%{ opacity:.85; } 88%{ opacity:0; } }
+  @keyframes cx-fr-tip{ 0%, 74%, 100%{ opacity:0; transform:scale(.3); } 80%{ opacity:1; transform:scale(1.2) rotate(30deg); } 92%{ opacity:0; transform:scale(.5) rotate(60deg); } }
+  @keyframes cx-fr-eye{ 0%, 60%, 100%{ opacity:.4; } 80%{ opacity:1; } }
+  @keyframes cx-fr-cheek{ 0%, 70%, 100%{ opacity:0; } 82%{ opacity:.9; } }
+  @keyframes cx-cl3-jx{ from{ transform:translateX(-7.6px); } to{ transform:translateX(7.6px); } }
+  @keyframes cx-cl3-jy{ from{ transform:translateY(1.5px); } to{ transform:translateY(-1.5px); } }
+  @keyframes cx-cl3-jingle{ 0%, 15%, 100%{ rotate:0deg; } 3%{ rotate:16deg; } 6%{ rotate:-13deg; } 9%{ rotate:9deg; } 12%{ rotate:-5deg; } }
+  @keyframes cx-cl3-honk{ 0%, 20%, 100%{ scale:1; } 6%{ scale:1.3 1.18; } 11%{ scale:.92; } 15%{ scale:1.05; } }
+  @keyframes cx-cl3-wink{ 0%, 60%, 70%, 100%{ scale:1; } 63%, 67%{ scale:1 .1; } }
+  @keyframes cx-bg-phase{ 0%, 100%{ transform:none; } 40%{ transform:translateX(3.3px); } 40.01%{ transform:translateX(-8px); } 80%{ transform:translateX(-2.34px); } }
+  @keyframes cx-um-cglow{ 0%, 100%{ opacity:.15; transform:scale(.85); } 50%{ opacity:.8; transform:scale(1.1); } }
+  @keyframes cx-um-cglint{ 0%, 40%, 100%{ opacity:0; transform:scale(.3); } 50%{ opacity:1; transform:scale(1.15) rotate(45deg); } 62%{ opacity:0; transform:scale(.4) rotate(90deg); } }
+  @keyframes cx-wf-ring{ 0%{ opacity:0; transform:scale(.7); } 12%{ opacity:.8; } 100%{ opacity:0; transform:scale(2.6); } }
+  @keyframes cx-sg-wave{ 0%, 55%, 100%{ opacity:0; } 22%{ opacity:.85; } }
+  @keyframes cx-sg-spark{ 0%{ opacity:0; transform:none; } 15%{ opacity:1; } 100%{ opacity:0; transform:translateY(-3px) scale(.4); } }
+  @keyframes cx-za-rays8{ from{ transform:none; } to{ transform:rotate(90deg); } }
+  @keyframes cx-za-streak{ 0%, 100%{ opacity:.5; transform:scale(.8, 1); } 50%{ opacity:1; transform:scale(1.15, 1); } }
+  @keyframes cx-za-satx{ from{ transform:translateX(-3.3px); } to{ transform:translateX(3.3px); } }
+  @keyframes cx-za-saty{ from{ transform:translateY(1.3px); } to{ transform:translateY(-1.3px); } }
+  @keyframes cx-za-pour{ 0%{ stroke-dashoffset:1.6; opacity:0; } 10%{ opacity:1; } 78%{ opacity:.85; } 92%, 100%{ stroke-dashoffset:-10; opacity:0; } }
   [data-reduce-motion="true"] .avatarchar-svg,
   [data-reduce-motion="true"] .avatarchar-svg *{ animation:none !important; }
 
@@ -20180,6 +20350,25 @@
   }
   .rs-spot.is-up .rs-spot-art{ animation:rs-artpop .8s cubic-bezier(.2,1.5,.4,1) .85s both; }
   .rs-spot-art.is-banner{ width:auto; height:auto; filter:none; }
+  /* A FLARE IS ALREADY LIGHT (build 312). The drop-shadow above, on an
+     orb whose own bloom fills its whole square box, came out on iOS as a
+     lit square round the flare - "This secret flare has a square around
+     it" - because WebKit composites a filtered element as its rectangle.
+     No filter here: the orb's bloom is the glow, and a round halo behind
+     it (a circle, never the box) adds the reach the shadow gave. */
+  .rs-spot-art.is-flare{ filter:none; position:relative; }
+  .rs-spot-art.is-flare::before{
+    content:""; position:absolute; inset:-28%; border-radius:50%; pointer-events:none; z-index:-1;
+    background:radial-gradient(closest-side, color-mix(in srgb, var(--spot-color) 38%, transparent), color-mix(in srgb, var(--spot-color) 12%, transparent) 55%, transparent);
+  }
+  /* The next secret: a ghost of the character, with its flare lit where
+     it will be worn. The ghost breathes in and out of the dark. */
+  .rs-spot-art.is-hint{ width:8.6rem; height:8.6rem; }
+  .rs-hint-ghost{ position:absolute; inset:0; opacity:.2; animation:rs-hint-ghost 4.8s ease-in-out 1.6s infinite;
+    -webkit-mask-image:radial-gradient(closest-side, #000 55%, transparent);
+            mask-image:radial-gradient(closest-side, #000 55%, transparent); }
+  @keyframes rs-hint-ghost{ 0%,100%{ opacity:.2; } 50%{ opacity:.42; } }
+  .rs-hint-orb{ position:absolute; left:50%; top:var(--hy, 50%); width:40%; height:40%; transform:translate(-50%, -50%); }
   .rs-spot-art.is-character{ position:relative; }
   .rs-spot-art.is-character::after{
     content:""; position:absolute; left:8%; right:8%; bottom:-8%; height:26%; pointer-events:none; z-index:-1;
@@ -20935,7 +21124,6 @@
   .ff-scene.ff-out{ opacity:0; }
   .ff-stars{ position:absolute; inset:0; pointer-events:none; opacity:0; transition:opacity 1s ease .2s, transform 3.5s cubic-bezier(.3,0,.2,1); }
   .ff-in .ff-stars{ opacity:1; }
-  .ff-emerge .ff-stars{ transform:scale(1.25); }
   .ff-stars span{
     position:absolute; width:2px; height:2px; border-radius:50%; background:#fff; opacity:.8;
     transform:scale(var(--z)); animation:vrc-twinkle 3.2s ease-in-out infinite;
@@ -21003,45 +21191,105 @@
      flares that made it keep circling it once it is up. */
   .ff-void{
     position:absolute; left:50%; top:50%; width:min(64vw, 300px); aspect-ratio:1;
-    transform:translate(-50%, -38%) scale(.55); opacity:0;
-    transition:opacity 1.4s ease, transform 2.4s cubic-bezier(.16,1,.3,1);
+    transform:translate(-50%, -50%) scale(.92); opacity:0;
+    transition:opacity .6s ease, transform 8s cubic-bezier(.2,.6,.3,1);
   }
-  .ff-emerge .ff-void{ opacity:1; transform:translate(-50%, -50%); }
+  /* BUILD 312: out of the dark, not up from below. The box no longer
+     rises or breathes - "it started hopping up and down" - it holds
+     still at the centre and swells a few percent over eight seconds
+     while everything inside it fades up. */
+  .ff-seed .ff-void{ opacity:1; }
+  .ff-emerge .ff-void{ transform:translate(-50%, -50%) scale(1); }
   .ff-rim{
-    position:absolute; inset:-18%; border-radius:50%;
+    position:absolute; inset:-18%; border-radius:50%; opacity:0;
     background:conic-gradient(from 0deg, var(--fc0), var(--fc1), var(--fc2), var(--fc3, var(--fc0)), var(--fc4, var(--fc1)), var(--fc0));
     -webkit-mask:radial-gradient(circle, transparent 26%, #000 44%, rgba(0,0,0,.5) 58%, transparent 72%);
             mask:radial-gradient(circle, transparent 26%, #000 44%, rgba(0,0,0,.5) 58%, transparent 72%);
-    filter:blur(14px); opacity:.75;
+    filter:blur(14px); transition:opacity 4s ease 2.2s;
+    animation:ff-rim 9s linear infinite;
   }
-  .ff-emerge .ff-rim{ animation:ff-rim 9s linear infinite; }
+  .ff-emerge .ff-rim{ opacity:.7; }
   @keyframes ff-rim{ to{ transform:rotate(360deg); } }
   .ff-void::after{
     content:""; position:absolute; inset:-40%; border-radius:50%; z-index:-1;
     background:radial-gradient(circle, rgba(0,0,0,.9) 0%, rgba(0,0,0,.55) 30%, transparent 60%);
   }
-  /* The mask goes on the DRAWING, the glow on its box: masking the box
-     cut the glow off in a straight line along its top. */
-  .ff-fig{
-    position:absolute; inset:6%;
-    filter:drop-shadow(0 0 18px color-mix(in srgb, var(--flare-color) 45%, transparent));
+  /* The glow is a round pool behind the figure, never a filter on its
+     box: a drop-shadow over a box holding a semi-transparent full-size
+     drawing lights the whole box on iOS - a square. */
+  .ff-fig{ position:absolute; inset:6%; opacity:0; transition:opacity 6.2s cubic-bezier(.55,0,.35,1); }
+  .ff-fig::before{
+    content:""; position:absolute; inset:2%; border-radius:50%; z-index:-1; opacity:0;
+    background:radial-gradient(closest-side, color-mix(in srgb, var(--flare-color) 34%, transparent), transparent);
+    transition:opacity 5s ease 1.5s;
   }
+  .ff-emerge .ff-fig, .ff-emerge .ff-fig::before{ opacity:1; }
   .ff-fig svg{
     -webkit-mask-image:linear-gradient(180deg, #000 62%, transparent 96%);
             mask-image:linear-gradient(180deg, #000 62%, transparent 96%);
   }
-  .ff-emerge .ff-fig{ animation:ff-breathe 4s ease-in-out 2.4s infinite; }
-  @keyframes ff-breathe{ 0%,100%{ transform:translateY(0) scale(1); } 50%{ transform:translateY(-4px) scale(1.015); } }
-  .ff-fig svg{ width:100%; height:100%; display:block; }
-  /* The flares, circling what they made. */
-  .ff-orbiters{ position:absolute; inset:-8%; opacity:0; transition:opacity 1.2s ease 1.4s; }
-  .ff-emerge .ff-orbiters{ opacity:1; animation:ff-rim 7s linear infinite; }
+  .ff-fig svg, .ff-figflares svg{ position:relative; width:100%; height:100%; display:block; }
+  /* The flares it wears, first and alone: the same drawing laid exactly
+     over the figure with everything but its flares hidden. */
+  .ff-figflares{ position:absolute; inset:6%; opacity:0; pointer-events:none; transition:opacity 1.6s ease; }
+  .ff-figflares svg *{ visibility:hidden; }
+  .ff-figflares :is(.cx-fx-flares, .cx-fx-umflare, .cx-fx-sgstar, .cx-fx-wfrings, .cx-fx-wforbit),
+  .ff-figflares :is(.cx-fx-flares, .cx-fx-umflare, .cx-fx-sgstar, .cx-fx-wfrings, .cx-fx-wforbit) *{ visibility:visible; }
+  .ff-seed .ff-figflares{ opacity:1; animation:ff-seedpulse 1.9s ease-in-out .4s 1 both; }
+  /* It stays on once the figure is up: laid over the masked drawing,
+     it keeps the flares bright where the fade at the hem would dim them. */
+  @keyframes ff-seedpulse{ 0%,100%{ transform:scale(1); } 45%{ transform:scale(1.06); } }
+  .ff-hold .ff-stars{ opacity:.25; transition:opacity 1.8s ease; }
+  .ff-emerge .ff-stars{ opacity:.85; transition:opacity 5s ease 1.5s, transform 9s cubic-bezier(.3,0,.2,1); transform:scale(1.18); }
+  /* What it came out of, behind everything, rising over the emerge. */
+  .ff-back{ position:absolute; inset:-22%; opacity:0; pointer-events:none; transition:opacity 5s ease 1s; }
+  .ff-emerge .ff-back{ opacity:1; }
+  .ff-back > div{ position:absolute; border-radius:50%; }
+  .ff-swirl{
+    inset:8%;
+    background:conic-gradient(from 90deg, transparent, color-mix(in srgb, var(--fc0) 40%, transparent), transparent 30%,
+      color-mix(in srgb, var(--fc1) 40%, transparent), transparent 63%, color-mix(in srgb, var(--fc2) 40%, transparent), transparent);
+    -webkit-mask:radial-gradient(circle, transparent 30%, #000 46%, transparent 70%);
+            mask:radial-gradient(circle, transparent 30%, #000 46%, transparent 70%);
+    animation:ff-rim 14s linear infinite reverse;
+  }
+  /* Umbra: a violet moon that an eclipse slides across, leaving the
+     corona burning round its edge. */
+  .ff-moon{ left:50%; top:50%; width:58%; height:58%; margin:-29% 0 0 -29%; overflow:hidden;
+    background:radial-gradient(circle at 38% 34%, #E9E1FF, #A78BFA 46%, #5B3FA8 100%); }
+  .ff-moonshadow{ position:absolute; inset:-2%; border-radius:50%; background:#05040A; transform:translateX(105%);
+    transition:transform 6s cubic-bezier(.45,0,.25,1) 1.2s; }
+  .ff-emerge .ff-moonshadow{ transform:translateX(5%); }
+  .ff-corona{ left:50%; top:50%; width:78%; height:78%; margin:-39% 0 0 -39%; opacity:0;
+    background:radial-gradient(circle, transparent 35%, color-mix(in srgb, #C4B5FD 85%, #fff) 37.5%, color-mix(in srgb, #8B5CF6 45%, transparent) 44%, transparent 68%);
+    transition:opacity 3s ease 5.6s; }
+  .ff-emerge .ff-corona{ opacity:1; animation:ff-corona 4s ease-in-out 8.6s infinite; }
+  @keyframes ff-corona{ 0%,100%{ transform:scale(1); opacity:1; } 50%{ transform:scale(1.05); opacity:.8; } }
+  /* Horizon: a disk of white light turning round a dark centre, seen
+     edge-on, with the bright ring of light that orbits it. */
+  .ff-disk{ left:50%; top:50%; width:96%; height:96%; margin:-48% 0 0 -48%; transform:rotate(-10deg) scaleY(.26); }
+  .ff-disk-spin{ position:absolute; inset:0; border-radius:50%;
+    background:conic-gradient(from 0deg, rgba(221,244,255,.8), rgba(125,211,252,.3), rgba(221,244,255,.8), rgba(125,211,252,.3), rgba(221,244,255,.8));
+    -webkit-mask:radial-gradient(circle, transparent 30%, #000 36%, rgba(0,0,0,.45) 56%, transparent 70%);
+            mask:radial-gradient(circle, transparent 30%, #000 36%, rgba(0,0,0,.45) 56%, transparent 70%);
+    animation:ff-rim 6s linear infinite; }
+  .ff-photon{ left:50%; top:50%; width:46%; height:46%; margin:-23% 0 0 -23%;
+    box-shadow:0 0 0 2px rgba(240,250,255,.85), 0 0 18px 4px rgba(186,230,253,.55), inset 0 0 14px rgba(186,230,253,.45);
+    transform:scale(.6); opacity:0; transition:transform 6s cubic-bezier(.2,.7,.3,1) 1.4s, opacity 3s ease 1.4s; }
+  .ff-emerge .ff-photon{ transform:scale(1); opacity:1; }
+  /* The flares that made it: gathered at the centre, then sent out to
+     circle what they made. */
+  .ff-orbiters{ position:absolute; inset:-8%; opacity:0; scale:.18; animation:ff-rim 7s linear infinite;
+    transition:opacity 1.4s ease, scale 2.6s cubic-bezier(.2,1.2,.3,1); }
+  .ff-orbit-out .ff-orbiters{ opacity:1; scale:1; }
   .ff-orbiter{ position:absolute; left:50%; top:50%; width:26px; height:26px; margin:-13px 0 0 -13px; }
   .ff-orbiter svg{ width:100%; height:100%; display:block; overflow:visible; }
   .ff-words{ min-height:6rem; text-align:center; opacity:0; transform:translateY(10px); transition:opacity .35s ease, transform .35s ease; padding:0 1.2rem; }
   .ff-words.is-in{ opacity:1; transform:none; }
   .ff-kicker{ margin:0; font-size:.74rem; font-weight:800; letter-spacing:.22em; color:var(--flare-color); }
   .ff-emerge .ff-kicker{ background:linear-gradient(90deg, var(--fc0), var(--fc1), var(--fc2)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  /* Umbra and Horizon each came out of ONE flare; the line is in its colour. */
+  .is-voidflare.ff-emerge .ff-kicker{ background:linear-gradient(90deg, var(--flare-color), #fff, var(--flare-color)); -webkit-background-clip:text; background-clip:text; }
   .ff-name{ margin:.35rem 0 0; font-family:var(--serif); font-size:1.9rem; font-weight:700; color:#fff; line-height:1.15; }
   .ff-sub{ margin:.35rem 0 0; font-size:.9rem; color:rgba(255,255,255,.7); }
   @media (min-width:40rem){ .ff-field{ transform:scale(.6); } .ff-in .ff-field{ transform:scale(1.25); } .ff-name{ font-size:2.3rem; } }
@@ -34412,6 +34660,20 @@ const AVATAR_CHARACTERS = [
      challenge characters, so every unlock route already in the app
      announces it, but `ultimate` keeps it out of the challenge grid and
      gives it a section of its own, last. See ultimateProgress(). */
+  /* THREE ULTIMATES (build 312): "Earlier you showed me 3 characters, one
+     of them was zenith but there two others as well. I really like the
+     green plasma one ... is there a way we can use that one in the
+     ultimate section somehow? And same with the 3rd one? Could we somehow
+     make zenith the hardest ultimate, and then the other two
+     prerequisites? Maybe one is unlocking all characters, one is
+     banners, zenith is everything? They each get that banner and stuff."
+     They are the two looks drawn for Zenith in build 304 and kept
+     switchable (ZENITH_LOOKS): Astral (c, the cyan plasma) for every
+     character, Celestial (b, the crown of seven stars) for every banner,
+     and Zenith (a) for everything, the other two included. `zstyle`
+     picks the look per character, so all three are one drawing. */
+  { id: "astral",    kind: "zenith", zstyle: "c", feat: "allchars",   ultimate: true },
+  { id: "celestial", kind: "zenith", zstyle: "b", feat: "allbanners", ultimate: true },
   { id: "zenith",   kind: "zenith",   feat: "everything", ultimate: true },
   /* RETIRED. Anybody still wearing one is drawn as what took its place
      (RETIRED_CHARACTER_TO). The Robot was a rank reward with nothing to
@@ -34453,7 +34715,7 @@ const AVATAR_DISPLAY_NAME = {
   detective: "Detective", zeus: "Zeus", masked: "The Masked One", voidwalker: "Void",
   champion: "Champion", umbra: "Umbra", singularity: "Horizon",
   poseidon: "Sheriff", spartan: "Spartan", pharaoh: "Pharaoh", marksman: "Marksman",
-  blitz: "Blitz", hive: "Hive", zenith: "Zenith"
+  blitz: "Blitz", hive: "Hive", zenith: "Zenith", astral: "Astral", celestial: "Celestial"
 };
 /* ZENITH'S LOOK (build 304, redrawn). "Zenith design is kinda eh ... Not a
    fan of the gold and rainbow." Three looks were drawn, each a character,
@@ -34508,7 +34770,9 @@ const AVATAR_GLOW = {
   /* Honey. */
   hive: "#F5B82E",
   /* Zenith's own light, whichever look ships (ZENITH_LOOK). */
-  zenith: ZENITH_LOOK.glow
+  zenith: ZENITH_LOOK.glow,
+  /* the other two ultimates wear the other two looks (build 312) */
+  astral: ZENITH_LOOKS.c.glow, celestial: ZENITH_LOOKS.b.glow
 };
 /* A RETIRED CHARACTER GLOWS AS WHAT IT IS DRAWN AS (build 246). The
    drawing already goes through RETIRED_CHARACTER_TO, so a classmate still
@@ -34711,6 +34975,18 @@ const CHARACTER_FEATS = {
   flare5:    { label: "Find Event Horizon, the last flare",
                done: () => !!(store.mysteryColorsFound || {}).white,
                have: () => ((store.mysteryColorsFound || {}).white ? 1 : 0), need: 1 },
+  /* ASTRAL and CELESTIAL (build 312): the two ultimates under Zenith -
+     every character, and every banner. See collectionProgress(). */
+  allchars:   { label: "Unlock every other character",
+               done: () => { const p = collectionProgress("chars"); return p.have >= p.need; },
+               have: () => collectionProgress("chars").have,
+               get need(){ return collectionProgress("chars").need; },
+               get note(){ return collectionProgress("chars").note; } },
+  allbanners: { label: "Unlock every banner",
+               done: () => { const p = collectionProgress("banners"); return p.have >= p.need; },
+               have: () => collectionProgress("banners").have,
+               get need(){ return collectionProgress("banners").need; },
+               get note(){ return collectionProgress("banners").note; } },
   /* ZENITH (build 304): everything else first. See ultimateProgress(). */
   everything: { label: "Unlock every other character, banner and theme",
                done: () => { const p = ultimateProgress(); return p.have >= p.need; },
@@ -34729,9 +35005,25 @@ const CHARACTER_FEATS = {
    banner), which is also what stops either check asking itself.
    Live, like every other unlock here: something added to the app later
    joins the count, and Zenith waits until that is held too. */
+/* BUILD 312: THREE ULTIMATES, ONE LADDER. Astral asks for every
+   character that is not an ultimate, Celestial for every banner that is
+   not one, and Zenith for EVERYTHING - which now includes Astral and
+   Celestial and their banners. Zenith leaves only itself out (its
+   character and its banner), so no check ever asks itself; and since
+   holding everything else already earns the other two, counting them
+   costs nobody a step, it only says so. */
+const ULTIMATE_TOP = "zenith";
+function collectionProgress(which){
+  const items = which === "banners"
+    ? BANNERS.filter(b => !b.ultimate).map(b => () => { try{ return bannerEarned(b.id); }catch(e){ return false; } })
+    : AVATAR_CHARACTERS.filter(c => !c.retired && !c.legacy && !c.ultimate && (c.feat || c.unlock)).map(c => () => !isLockedCharacter(c.id));
+  const have = items.filter(f => f()).length, need = items.length, left = need - have;
+  const word = which === "banners" ? "banner" : "character";
+  return { have, need, note: left > 0 ? "Still to unlock: " + left + " " + word + (left === 1 ? "" : "s") + "." : "Every " + word + " is yours." };
+}
 function ultimateProgress(){
-  const chars = AVATAR_CHARACTERS.filter(c => !c.retired && !c.legacy && !c.ultimate && (c.feat || c.unlock));
-  const banners = BANNERS.filter(b => !b.ultimate);
+  const chars = AVATAR_CHARACTERS.filter(c => !c.retired && !c.legacy && c.id !== ULTIMATE_TOP && (c.feat || c.unlock));
+  const banners = BANNERS.filter(b => b.id !== ULTIMATE_TOP);
   const themes = ACCENTS.filter(a => !!TIER_UNLOCKS[a]);
   let ch = 0, bn = 0, th = 0;
   chars.forEach(c => { if(!isLockedCharacter(c.id)) ch++; });
@@ -34785,8 +35077,21 @@ function unitStreakBest(){ return Math.max(store.unitHundoStreakBest || 0, store
    - The best daily run and the best unit run start at the current ones:
      nothing kept a best before, and the current run is the most that can
      honestly be said. */
+/* FIRST LIGHT (build 312): a test counts if it was finished between 4
+   and 8 in the morning, by this device's clock. Before 4 is the night
+   before, not an early start. */
+const EARLY_TESTS = 10;
+function isEarlyHour(ms){ const h = new Date(ms).getHours(); return h >= 4 && h < 8; }
+function seedEarlyTests312(){
+  if(store.earlyTestsSeed312) return;
+  const n = (store.testHistory || []).filter(t => t && t.playedAt && isEarlyHour(t.playedAt)).length;
+  store.earlyTests = Math.max(Number(store.earlyTests) || 0, n);
+  store.earlyTestsSeed312 = true;
+}
+function earlyTestsOf(){ try{ seedEarlyTests312(); }catch(e){} return Number(store.earlyTests) || 0; }
 function seedChallenges289(){
   try{ revokePenalKoi295(); }catch(e){}
+  try{ seedEarlyTests312(); }catch(e){}
   if(store.challengeSeed289) return;
   let misses = 0;
   try{ Object.keys(store.stats || {}).forEach(k => { const st = store.stats[k]; misses += (st && Number(st.m)) || 0; }); }catch(e){}
@@ -35226,6 +35531,25 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("circle", { cx, cy, r: +(.64 * k).toFixed(2), fill: "#FFFFFF" }));
     svg.appendChild(sparkle(+(cx + k).toFixed(2), +(cy - .9 * k).toFixed(2), +(.85 * k).toFixed(2), "#FFFFFF"));
   }
+  /* A WORN FLARE, ALIVE (build 312): "ensure the secret flare has an
+     effect too". Rings of the flare's light pulse out off it one after
+     another, and three sparks orbit it close in. Both are hidden in a
+     still drawing (opacity 0) and only char-live shows them, so a
+     rankings row draws the flare exactly as before. k scales it. */
+  function wornFlareFx(cx, cy, col, k){
+    k = k || 1;
+    const rings = mk("g", { class: "cx-fx cx-fx-wfrings" });
+    [0, 1].forEach(i => rings.appendChild(mk("circle", { cx, cy, r: +(1.6 * k).toFixed(2), fill: "none", stroke: col, "stroke-width": +(.32 * k).toFixed(2),
+      opacity: "0", class: "cx-fx-wfring", style: "animation-delay:" + (-i * 1.3).toFixed(2) + "s" })));
+    svg.appendChild(rings);
+    const orbit = mk("g", { class: "cx-fx cx-fx-wforbit", opacity: "0" });
+    orbit.appendChild(pivot(cx, cy, +(2.5 * k).toFixed(2)));
+    [0, 120, 240].forEach((deg, i) => {
+      const a = deg * Math.PI / 180, r = 2.5 * k;
+      orbit.appendChild(mk("circle", { cx: +(cx + Math.cos(a) * r).toFixed(2), cy: +(cy + Math.sin(a) * r).toFixed(2), r: +((i ? .2 : .28) * k).toFixed(2), fill: i ? col : "#FFFFFF" }));
+    });
+    svg.appendChild(orbit);
+  }
   /* An invisible disc that fixes a group's bounding box, so a group that
      turns (a starfield, an orbiting glint) turns about this centre. */
   function pivot(cx, cy, r){ return mk("circle", { cx, cy, r, fill: "none", stroke: "none" }); }
@@ -35331,7 +35655,9 @@ function drawAvatarCharSVG(charId){
     timekeeper: [["stars", "#C9C6FF"], ["runes", "#8A86FF"]],
     ronin:      [["moon", "#FF2E5E", 20, 12.4, 10.6], ["fall", "petal", ["#FF7AB0", "#FFC2DA"]]],
     voidwalker: [["stars", "#E4ECFF"]],
-    umbra:      [["nebula", "#8B5CF6", "#3B1E7A"], ["moon", "#C4B5FD", 30.8, 8.4, 2.6, true], ["stars", "#E2D8FF"]],
+    /* Umbra's moon goes through its phases (build 312: "do something
+       with the moon") - see "phasemoon" below. */
+    umbra:      [["nebula", "#8B5CF6", "#3B1E7A"], ["phasemoon", "#C4B5FD", 30.8, 8.4, 2.6], ["stars", "#E2D8FF"]],
     singularity:[["nebula", "#4A7ACC", "#141A44"], ["stars", "#EAF8FF"], ["rise", "ember", ["#FFFFFF", "#BFE6FF"]]],
     lunar:      [["stars", "#E6EDF6"], ["nebula", "#9FB2C8", "#2B3446"]],
     solar:      [["rays", "#F7C21E", 16]],
@@ -35345,7 +35671,8 @@ function drawAvatarCharSVG(charId){
     zenith:     ZENITH_LOOK.scene
   };
   function backdrop(){
-    const plan = BACKDROP[def.kind];
+    /* the three ultimates share a kind and differ by look (build 312) */
+    const plan = def.zstyle ? (ZENITH_LOOKS[def.zstyle] || ZENITH_LOOK).scene : BACKDROP[def.kind];
     if(!plan) return;
     /* A fixed scatter per character, so every copy of one character is
        the same picture - a leaderboard of forty rows must not shimmer. */
@@ -35393,6 +35720,26 @@ function drawAvatarCharSVG(charId){
           add(g, "circle", { cx: b - d * .3, cy: c - d * .25, r: d * .28, fill: "#000", opacity: ".12" });
           add(g, "circle", { cx: b + d * .35, cy: c + d * .3, r: d * .18, fill: "#000", opacity: ".1" });
         }
+      } else if(type === "phasemoon"){
+        /* A MOON THAT WAXES AND WANES (build 312). The lit disc with a
+           disc of night over it, clipped to the moon, so the night can
+           slide: off to the right is full, back in from the left is new,
+           and at rest it sits where the old crescent was. The jump from
+           right to left happens while the night is wholly off the disc,
+           so nothing is seen to move. */
+        const gid = uid + "-bgpm";
+        const rg = mk("radialGradient", { id: gid });
+        rg.appendChild(mk("stop", { offset: "0%", "stop-color": a, "stop-opacity": ".55" }));
+        rg.appendChild(mk("stop", { offset: "100%", "stop-color": a, "stop-opacity": "0" }));
+        defs.appendChild(rg);
+        const g = grp("cx-fx-bgmoon");
+        add(g, "circle", { cx: b, cy: c, r: d * 2.3, fill: "url(#" + gid + ")" });
+        const cp = mk("clipPath", { id: gid + "c" }); cp.appendChild(mk("circle", { cx: b, cy: c, r: d })); defs.appendChild(cp);
+        const disc = add(g, "g", { "clip-path": "url(#" + gid + "c)" });
+        add(disc, "circle", { cx: b, cy: c, r: d, fill: a, opacity: ".9" });
+        add(disc, "circle", { cx: b - d * .3, cy: c - d * .25, r: d * .26, fill: "#000", opacity: ".1" });
+        add(disc, "circle", { cx: b + d * .32, cy: c + d * .34, r: d * .16, fill: "#000", opacity: ".08" });
+        add(disc, "circle", { cx: +(b + d * .9).toFixed(2), cy: c, r: +(d * 1.04).toFixed(2), fill: "#120A26", opacity: ".93", class: "cx-fx-bgphase" });
       } else if(type === "fall" || type === "rise"){
         /* Six columns down the two sides, each repeating every 12 units
            from y=-12 to 40, and the whole group travels 12: seamless. */
@@ -36061,6 +36408,34 @@ function drawAvatarCharSVG(charId){
     const ice = headGrad("#FFFFFF", "#9ED0FF", "#2A55BE");
     const saph = headGrad("#C4DCFF", "#3D74E8", "#10266E");
     const robe = headGrad("#6E9CFF", "#2A4BA8", "#0B1A4A");
+    /* THE ICE SIGIL (build 312): "The frost character does not have any
+       cool animations." A great snowflake stands behind the monarch and
+       turns - six arms, so a sixth of a turn joins up - breathing light
+       as it goes; it shows round the hair and between the crown's
+       spikes and never on the face. */
+    { const fx = 20, fy = 15.6, f3 = v => +v.toFixed(2);
+      const spin = mk("g", { class: "cx-fx cx-fx-frflake" });
+      spin.appendChild(pivot(fx, fy, 13.2));
+      const glow = mk("g", { class: "cx-fx-frflakeglow" });
+      let d = "";
+      for(let k = 0; k < 6; k++){
+        const a = (k * 60 - 90) * Math.PI / 180, c = Math.cos(a), sn = Math.sin(a);
+        const P = (r, off) => { const b = a + off; return f3(fx + Math.cos(b) * r) + " " + f3(fy + Math.sin(b) * r); };
+        d += "M" + f3(fx + c * 3.4) + " " + f3(fy + sn * 3.4) + " L" + f3(fx + c * 12.6) + " " + f3(fy + sn * 12.6);
+        [[7.4, 2.4], [10.2, 1.7]].forEach(([r, L]) => {
+          const bx = fx + c * r, by = fy + sn * r;
+          [-1, 1].forEach(side => { const b = a + side * Math.PI / 4;
+            d += " M" + f3(bx) + " " + f3(by) + " L" + f3(bx + Math.cos(b) * L) + " " + f3(by + Math.sin(b) * L); });
+        });
+      }
+      glow.appendChild(mk("path", { d, fill: "none", stroke: "#8FC8FF", "stroke-width": ".8", "stroke-linecap": "round", opacity: ".14" }));
+      glow.appendChild(mk("path", { d, fill: "none", stroke: "#DDF0FF", "stroke-width": ".3", "stroke-linecap": "round", opacity: ".62" }));
+      /* a bead of ice at each arm's end */
+      for(let k = 0; k < 6; k++){ const a = (k * 60 - 90) * Math.PI / 180;
+        glow.appendChild(mk("circle", { cx: f3(fx + Math.cos(a) * 12.9), cy: f3(fy + Math.sin(a) * 12.9), r: ".36", fill: "#EAF6FF", opacity: ".7" })); }
+      glow.appendChild(mk("circle", { cx: fx, cy: fy, r: 3.4, fill: "none", stroke: "#CFE8FF", "stroke-width": ".25", opacity: ".5" }));
+      spin.appendChild(glow);
+      svg.appendChild(spin); }
     open("cx-body");
     svg.appendChild(mk("path", { d: "M5.6 40 Q6.2 31 13.2 28.8 L26.8 28.8 Q33.8 31 34.4 40 Z", fill: robe }));
     svg.appendChild(mk("path", { d: "M16 40 L20 32.8 L24 40", fill: "none", stroke: "#CFE6FF", "stroke-width": ".5", opacity: ".7" }));
@@ -36079,12 +36454,20 @@ function drawAvatarCharSVG(charId){
       .forEach(([a, b, c, d, e, f], i) => {
         svg.appendChild(mk("path", { d: "M" + a + " " + b + " L" + c + " " + d + " L" + e + " " + f + " Z", fill: i === 2 ? saph : ice, stroke: "#E6F2FF", "stroke-width": ".25" }));
         svg.appendChild(mk("path", { d: "M" + ((a + c) / 2) + " " + ((b + d) / 2) + " L" + c + " " + d, stroke: "#FFFFFF", "stroke-width": ".3", opacity: ".8" }));
+        /* build 312: light runs up the crown, spike after spike, and
+           the tip of each one flashes as it reaches it */
+        svg.appendChild(mk("path", { d: "M" + a + " " + b + " L" + c + " " + d + " L" + e + " " + f + " Z", fill: "#FFFFFF", opacity: "0", class: "cx-fx-frglint",
+          style: "animation-delay:" + (-3.2 + i * .16).toFixed(2) + "s" }));
+        const tip = sparkle(c, d, i === 2 ? 1.25 : .85, "#FFFFFF");
+        tip.setAttribute("class", "cx-fx-frtip"); tip.setAttribute("opacity", "0");
+        tip.setAttribute("style", "animation-delay:" + (-3.05 + i * .16).toFixed(2) + "s");
+        svg.appendChild(tip);
       });
     svg.appendChild(mk("path", { d: "M12.8 11.6 Q20 9 27.2 11.6 L27 12.6 Q20 10.2 13 12.6 Z", fill: saph }));
     close();
     open("cx-eyes");
     [[16.8, 17.6], [23.2, 17.6]].forEach(([x, y]) => {
-      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 1.6, ry: .95, fill: "#7DD3FF", opacity: ".5" }));
+      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 1.6, ry: .95, fill: "#7DD3FF", opacity: ".5", class: "cx-fx-freye" }));
       svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 1.05, ry: .64, fill: "#EAF9FF" }));
       svg.appendChild(mk("circle", { cx: x, cy: y, r: .38, fill: "#2A7BE8" }));
     });
@@ -36092,6 +36475,8 @@ function drawAvatarCharSVG(charId){
     closedEyes([[16.8, 17.8, 1.1], [23.2, 17.8, 1.1]], "#2A55BE", .35);
     svg.appendChild(mk("path", { d: "M14.9 15.7 L18.4 16.2 M25.1 15.7 L21.6 16.2", stroke: "#FFFFFF", "stroke-width": ".65", "stroke-linecap": "round" }));
     svg.appendChild(mk("path", { d: "M14.2 20.2 L15.6 21.4 L14.6 22.8 M25.8 20.2 L24.4 21.4 L25.4 22.8", fill: "none", stroke: "#5E9BE8", "stroke-width": ".35", "stroke-linecap": "round", opacity: ".85" }));
+    /* the frost marks on the cheeks catch the cold light on the crown's beat */
+    svg.appendChild(mk("path", { d: "M14.2 20.2 L15.6 21.4 L14.6 22.8 M25.8 20.2 L24.4 21.4 L25.4 22.8", fill: "none", stroke: "#DDF3FF", "stroke-width": ".4", "stroke-linecap": "round", opacity: "0", class: "cx-fx-frcheek" }));
     svg.appendChild(mk("path", { d: "M18.4 23.8 Q20 24.4 21.6 23.8", fill: "none", stroke: "#4A6E9E", "stroke-width": ".45", "stroke-linecap": "round" }));
     close();
     open("cx-fx cx-fx-tip");
@@ -36446,6 +36831,9 @@ function drawAvatarCharSVG(charId){
      cx-fx-zb*, cx-fx-zc*. Only transform and opacity move, under
      char-live, never a filter. */
   if(def.kind === "zenith"){
+    /* which look: the character's own (the other ultimates, build 312),
+       or the one Zenith ships */
+    const ZS = def.zstyle || ZENITH_STYLE;
     const f2 = v => +(+v).toFixed(2);
     const lin = (stops, x1, y1, x2, y2) => {
       const id = uid + "-zl" + (headGradCount++);
@@ -36472,7 +36860,7 @@ function drawAvatarCharSVG(charId){
     const mir = pts => pts.map(([x, y]) => [f2(40 - x), y]);
     const poly = pts => "M" + pts.map(([x, y]) => x + " " + y).join(" L") + " Z";
 
-    if(ZENITH_STYLE === "b"){
+    if(ZS === "b"){
       /* ---- B: CELESTIAL. Midnight and platinum. ---- */
       const plat = headGrad("#FFFFFF", "#C9D2DF", "#5E6A80");
       const platFace = headGrad("#FFFFFF", "#DCE3EE", "#7C889E");
@@ -36584,7 +36972,7 @@ function drawAvatarCharSVG(charId){
       return done();
     }
 
-    if(ZENITH_STYLE === "c"){
+    if(ZS === "c"){
       /* ---- C: ASTRAL. Teal-black plate, cyan plasma, wings of light. ---- */
       const plate = headGrad("#2C5A62", "#0C2A30", "#010A0C");
       const plateDk = headGrad("#1C4249", "#071C21", "#000506");
@@ -36785,16 +37173,61 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("path", { d: "M24.5 17.9 Q22.3 17.8 20.6 19.3 Q22.6 20.1 24.5 17.9 Z", fill: "#FFFFFF" }));
     close();
     closedEyes([[17.5, 19, 1.5], [22.5, 19, 1.5]], "#8FCBFF", .4);
-    /* THE ZENITH STAR, at the top of the ring, over the spire */
-    svg.appendChild(mk("circle", { cx: RCX, cy: f2(RCY - RR), r: 2.2, fill: "none", stroke: "#E6ECFF", "stroke-width": ".3", opacity: "0", class: "cx-fx cx-fx-zawave" }));
-    open("cx-fx cx-fx-zastar");
-    svg.appendChild(mk("circle", { cx: RCX, cy: f2(RCY - RR), r: 3.6, fill: rad([["0%", "#FFFFFF", ".9"], ["30%", "#DDE8FF", ".5"], ["100%", "#A9B8FF", "0"]], RCX, f2(RCY - RR), 3.6) }));
-    svg.appendChild(star4(RCX, f2(RCY - RR), 1.7, 2.5, "#FFFFFF"));
-    svg.appendChild(mk("circle", { cx: RCX, cy: f2(RCY - RR), r: .5, fill: "#FFFFFF" }));
+    /* THE ZENITH STAR (build 312): "Zenith effect is cool but the
+       flashing thing at the top isn't it, could be way cooler." It was a
+       pop - the star swelling, a streak flashing out and a shockwave ring
+       thrown off it every three seconds - which read as a strobe. Now it
+       is a star that is always alight and alive:
+         - eight fine rays behind it, long and short, turning slowly
+           (a quarter turn joins up, since the set repeats every 90deg);
+         - the star itself breathing, never popping;
+         - a long thin lens streak across it that swells and settles;
+         - two tiny satellites circling it close, on a tilted orbit;
+         - and light POURING from it down both sides of the halo, meeting
+           at the bottom - the zenith feeding the ring it sits on.
+       Every period divides 6s, as before. */
+    const ZX = RCX, ZY = f2(RCY - RR);
+    /* the light pouring down the ring: two arcs from the top to the
+       bottom, one each way, each a single dash that runs their length */
+    open("cx-fx cx-fx-zapour", { opacity: "0" });
+    [1, -1].forEach(dir => {
+      const P = a => f2(RCX + Math.cos(a) * RR) + " " + f2(RCY + Math.sin(a) * RR);
+      svg.appendChild(mk("path", { d: "M" + P(-Math.PI / 2) + " A" + RR + " " + RR + " 0 0 " + (dir > 0 ? 1 : 0) + " " + P(Math.PI / 2), pathLength: "10",
+        fill: "none", stroke: "#FFFFFF", "stroke-width": ".55", "stroke-linecap": "round", "stroke-dasharray": "1.6 30", "stroke-dashoffset": "1.6", class: "cx-fx-zapourline" }));
+    });
     close();
-    /* the flare: streaks out either side, longer across than down */
-    open("cx-fx cx-fx-zaflare");
-    svg.appendChild(star4(RCX, f2(RCY - RR), 7.2, 3.4, "#FFFFFF", .85));
+    open("cx-fx cx-fx-zarays8");
+    svg.appendChild(pivot(ZX, ZY, 4.6));
+    for(let k = 0; k < 8; k++){
+      const a = k * Math.PI / 4, long = k % 2 === 0, L = long ? 4.4 : 2.7, w = long ? .2 : .14;
+      const tx = f2(ZX + Math.cos(a) * L), ty = f2(ZY + Math.sin(a) * L);
+      const nx = -Math.sin(a) * w, ny = Math.cos(a) * w;
+      svg.appendChild(mk("path", { d: "M" + f2(ZX + nx) + " " + f2(ZY + ny) + " L" + tx + " " + ty + " L" + f2(ZX - nx) + " " + f2(ZY - ny) + " Z", fill: "#E6ECFF", opacity: long ? ".55" : ".35" }));
+    }
+    close();
+    /* the lens streak: long across, short down, thin - light, not a flash */
+    open("cx-fx cx-fx-zastreak");
+    { const sg = rad([["0%", "#FFFFFF", ".95"], ["40%", "#DDE6FF", ".45"], ["100%", "#A9B8FF", "0"]], ZX, ZY, 1);
+      svg.appendChild(mk("ellipse", { cx: ZX, cy: ZY, rx: 7.6, ry: .34, fill: "#FFFFFF", opacity: ".55" }));
+      svg.appendChild(mk("ellipse", { cx: ZX, cy: ZY, rx: 4.2, ry: .22, fill: "#FFFFFF", opacity: ".9" }));
+      svg.appendChild(mk("ellipse", { cx: ZX, cy: ZY, rx: .26, ry: 2.6, fill: "#FFFFFF", opacity: ".55" })); }
+    close();
+    open("cx-fx cx-fx-zastar");
+    svg.appendChild(mk("circle", { cx: ZX, cy: ZY, r: 3.6, fill: rad([["0%", "#FFFFFF", ".9"], ["30%", "#DDE8FF", ".5"], ["100%", "#A9B8FF", "0"]], ZX, ZY, 3.6) }));
+    svg.appendChild(star4(ZX, ZY, 1.5, 2.3, "#FFFFFF"));
+    svg.appendChild(mk("circle", { cx: ZX, cy: ZY, r: .5, fill: "#FFFFFF" }));
+    close();
+    /* two satellites circling the star on a flattened orbit: each rides
+       two nested pendulums, across and up-and-down a quarter-beat apart
+       (the Clown's juggling, smaller), half an orbit from each other.
+       Hidden in a still drawing, where they would only be two dots. */
+    open("cx-fx cx-fx-zasats", { opacity: "0" });
+    [["#FFFFFF", .42, 0], ["#C9B8FF", .3, -1.5]].forEach(([c, r, lag]) => {
+      const gx = mk("g", { class: "cx-fx-zasatx", style: "animation-delay:" + lag + "s" });
+      const gy = mk("g", { class: "cx-fx-zasaty", style: "animation-delay:" + (lag - .75) + "s" });
+      gy.appendChild(mk("circle", { cx: ZX, cy: ZY, r, fill: c }));
+      gx.appendChild(gy); svg.appendChild(gx);
+    });
     close();
     return done();
   }
@@ -37846,8 +38279,12 @@ function drawAvatarCharSVG(charId){
     [16.4, 23.6].forEach(x => svg.appendChild(mk("path", { d: "M" + x + " 15.4 L" + (x + 1.5) + " 19.2 L" + x + " 23 L" + (x - 1.5) + " 19.2 Z", fill: "#15111C" })));
     open("cx-eyes");
     [16.4, 23.6].forEach(x => {
-      svg.appendChild(mk("circle", { cx: x, cy: 19.2, r: .95, fill: "#F4F0FF" }));
-      svg.appendChild(mk("circle", { cx: x, cy: 19.3, r: .45, fill: violet }));
+      /* the right eye is its own group so it can wink (build 312) */
+      const g = x > 20 ? mk("g", { class: "cx-fx-cl3wink" }) : null;
+      const host = g || svg;
+      host.appendChild(mk("circle", { cx: x, cy: 19.2, r: .95, fill: "#F4F0FF" }));
+      host.appendChild(mk("circle", { cx: x, cy: 19.3, r: .45, fill: violet }));
+      if(g) svg.appendChild(g);
     });
     close();
     closedEyes([[16.4, 19.4, 1.1], [23.6, 19.4, 1.1]], "#F4F0FF", .4);
@@ -37856,7 +38293,7 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("path", { d: "M14.2 23 Q15.6 22.8 16.4 23.8 Q20 26.4 23.6 23.8 Q24.4 22.8 25.8 23 Q24.4 24.4 23.8 25.2 Q20 28.2 16.2 25.2 Q15.6 24.4 14.2 23 Z", fill: "#7A0E2A", stroke: "#15111C", "stroke-width": ".25", "stroke-linejoin": "round" }));
     svg.appendChild(mk("path", { d: "M16.8 24.4 Q20 26.2 23.2 24.4", fill: "none", stroke: "#F4F0FF", "stroke-width": ".3", opacity: ".8" }));
     close();
-    open("cx-fx cx-fx-nose");
+    open("cx-fx cx-fx-nose cx-fx-cl3nose");
     svg.appendChild(mk("circle", { cx: 20, cy: 21.6, r: 1.5, fill: "#E23B3B" }));
     svg.appendChild(catchlight(19.5, 21.1, .45));
     close();
@@ -37869,12 +38306,33 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("path", { d: "M11.2 16.4 Q20 11.2 28.8 16.4 L28.4 14.6 Q20 9.6 11.6 14.6 Z", fill: "#15111C", stroke: violet, "stroke-width": ".3" }));
     close();
     open("cx-fx cx-fx-cl2bells");
-    [[5, 11.6], [35, 11.6], [22.4, 3.6]].forEach(([x, y]) => {
-      svg.appendChild(mk("circle", { cx: x, cy: y, r: 1.9, fill: bell, opacity: ".35" }));
-      svg.appendChild(mk("circle", { cx: x, cy: y, r: 1, fill: bell }));
-      svg.appendChild(mk("circle", { cx: x - .3, cy: y - .3, r: .3, fill: "#FFFFFF" }));
+    /* each bell on its own hinge, so they jingle one after another
+       (build 312) rather than the whole set pulsing as one */
+    [[5, 11.6], [35, 11.6], [22.4, 3.6]].forEach(([x, y], i) => {
+      const g = mk("g", { class: "cx-fx-cl3bell", style: "animation-delay:" + (-2.2 + i * .22).toFixed(2) + "s" });
+      g.appendChild(mk("circle", { cx: x, cy: y, r: 1.9, fill: bell, opacity: ".35" }));
+      g.appendChild(mk("circle", { cx: x, cy: y, r: 1, fill: bell }));
+      g.appendChild(mk("circle", { cx: x - .3, cy: y - .3, r: .3, fill: "#FFFFFF" }));
+      svg.appendChild(g);
     });
     close();
+    close();
+    /* JUGGLING (build 312): "the clowns animations are lame". Three balls
+       going round in front of the tunic, under the grin and never over
+       it. Each ball rides two nested pendulums - across and up-and-down,
+       a quarter of a beat apart - which is a loop with no seam, and the
+       three are a third of the loop apart. */
+    /* Hidden in a still drawing (opacity 0 until char-live shows it):
+       at rest the three would sit stacked on the chest as one ball. */
+    open("cx-fx cx-fx-cl3balls", { opacity: "0" });
+    [["#FF5A8A", 0], ["#FFD23F", 1], ["#4FD1FF", 2]].forEach(([c, i]) => {
+      const lag = (-i * 2.4 / 3).toFixed(2);
+      const gx = mk("g", { class: "cx-fx-cl3jx", style: "animation-delay:" + lag + "s" });
+      const gy = mk("g", { class: "cx-fx-cl3jy", style: "animation-delay:" + (lag - .6).toFixed(2) + "s" });
+      gy.appendChild(mk("circle", { cx: 20, cy: 30.4, r: 1.05, fill: c, stroke: "#15111C", "stroke-width": ".2" }));
+      gy.appendChild(mk("circle", { cx: 19.65, cy: 30.05, r: .32, fill: "#FFFFFF", opacity: ".85" }));
+      gx.appendChild(gy); svg.appendChild(gx);
+    });
     close();
     return done();
   }
@@ -38069,29 +38527,31 @@ function drawAvatarCharSVG(charId){
     /* the cowl, up to the eyes */
     svg.appendChild(mk("path", { d: "M13.5 18.8 Q20 20.4 26.5 18.8 L25.6 24.8 Q20 28 14.4 24.8 Z", fill: headGrad("#2E3446", "#161A26", "#06070C") }));
     svg.appendChild(mk("path", { d: "M14.2 21.4 Q20 22.8 25.8 21.4 M20 20.2 L20 27", fill: "none", stroke: "#3E465C", "stroke-width": ".3" }));
-    /* ORION HIMSELF, ACROSS THE COWL (build 304): "same with the
-       marksmen, Orion ...". The hunter's constellation is traced on the
-       mask - Betelgeuse and Bellatrix for shoulders, the three stars of
-       the belt, Saiph and Rigel below - and live it is drawn in, line by
-       line, held, and let go; the belt's three stars flare one after
-       another, left to right. At rest the lines and stars simply sit
-       there, which is the drawing. Each line's dash is its own length
-       (--sa-len), so the trace starts exactly empty and ends exactly
-       full. */
-    { const S = { bg: [16.1, 21], bl: [23.9, 20.8], ak: [18.4, 24.1], an: [20, 23.7], mt: [21.6, 23.3], sp: [17.2, 25.6], rg: [23, 25.5] };
+    /* ORION HIMSELF, IN THE SKY (build 312). Build 304 traced the
+       hunter's constellation across the cowl, over where a mouth would
+       be, and it came back as "kinda over the top with the mouth stuff,
+       I'm not sure what's even going on there". The cowl is plain cloth
+       again and the constellation hangs in the sky to his right, small and
+       faint, where it reads as stars rather than as something happening
+       to his face: Betelgeuse and Bellatrix for shoulders, the belt,
+       Saiph and Rigel below. Live it is still drawn in line by line and
+       let go, and the belt's three stars glint in turn. Each line's dash
+       is its own length (--sa-len), so the trace starts exactly empty and
+       ends exactly full. */
+    { const S = { bg: [4.8, 7.6], bl: [10, 6.4], ak: [6.4, 11.6], an: [7.5, 11.2], mt: [8.6, 10.8], sp: [5.4, 16], rg: [10, 15.2] };
       const line = (keys, cls) => {
         const pts = keys.map(k => S[k]); let len = 0;
         for(let i = 1; i < pts.length; i++) len += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
         const L = (len + .05).toFixed(2);
-        svg.appendChild(mk("path", { d: pts.map((p, i) => (i ? "L" : "M") + p[0] + " " + p[1]).join(" "), fill: "none", stroke: neon, "stroke-width": ".2",
-          "stroke-linejoin": "round", "stroke-linecap": "round", opacity: ".55", "stroke-dasharray": L + " " + L, style: "--sa-len:" + L, class: "cx-fx-sa3line " + cls }));
+        svg.appendChild(mk("path", { d: pts.map((p, i) => (i ? "L" : "M") + p[0] + " " + p[1]).join(" "), fill: "none", stroke: "#9FE9FF", "stroke-width": ".18",
+          "stroke-linejoin": "round", "stroke-linecap": "round", opacity: ".45", "stroke-dasharray": L + " " + L, style: "--sa-len:" + L, class: "cx-fx-sa3line " + cls }));
       };
       line(["sp", "ak", "bg", "bl", "mt", "rg"], "cx-fx-sa3line0");
       line(["ak", "an", "mt"], "cx-fx-sa3line1");
-      [["bg", .42, "#FFB37A"], ["bl", .32, "#E6FBFF"], ["sp", .3, "#E6FBFF"], ["rg", .42, "#CFF4FF"], ["ak", .34, "#FFFFFF"], ["an", .34, "#FFFFFF"], ["mt", .34, "#FFFFFF"]]
+      [["bg", .36, "#FFB37A"], ["bl", .28, "#E6FBFF"], ["sp", .26, "#E6FBFF"], ["rg", .34, "#CFF4FF"], ["ak", .26, "#FFFFFF"], ["an", .26, "#FFFFFF"], ["mt", .26, "#FFFFFF"]]
         .forEach(([k, r, c]) => svg.appendChild(mk("circle", { cx: S[k][0], cy: S[k][1], r, fill: c })));
       ["ak", "an", "mt"].forEach((k, i) => {
-        const sp = sparkle(S[k][0], S[k][1], .95, "#F2FDFF");
+        const sp = sparkle(S[k][0], S[k][1], .7, "#F2FDFF");
         sp.setAttribute("class", "cx-fx-sa3belt"); sp.setAttribute("opacity", "0");
         sp.setAttribute("style", "animation-delay:" + (-.9 + i * .3).toFixed(2) + "s");
         svg.appendChild(sp);
@@ -38108,6 +38568,8 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("path", { d: visor, fill: "#E6FBFF" }));
     close();
     closedEyes([[17.2, 17.6, 2.2], [22.8, 17.6, 2.2]], neon, .4);
+    /* a scan of light along the visor, now and then (build 312) */
+    sheen([visor], "cx-fx-sa4scan", 14.4, 25.6, 16.4, 18.6, "#FFFFFF");
     open("cx-mouth"); close();
     close();
     return done();
@@ -38219,6 +38681,10 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("circle", { cx: 12.9, cy: 4.6, r: .8, fill: "#E6FFF0" }));
     svg.appendChild(mk("circle", { cx: 27.1, cy: 4.6, r: .8, fill: "#E6FFF0" }));
     close();
+    /* build 312: the antennae transmit - a ring of signal off each tip,
+       the two out of step (the worn flares' ring, in green) */
+    [[12.9, 0], [27.1, -1.3]].forEach(([x, lag]) => svg.appendChild(mk("circle", { cx: x, cy: 4.6, r: 1, fill: "none", stroke: "#B6FFD0", "stroke-width": ".26",
+      opacity: "0", class: "cx-fx cx-fx-wfring", style: "animation-delay:" + lag + "s" })));
     svg.appendChild(mk("path", {
       d: "M20 4.6c-7.4 0-12.6 5.8-12.6 13.6 0 7 4.4 11.8 8.6 14.3 1.3.8 2.7 1.2 4 1.2"
        + "s2.7-.4 4-1.2c4.2-2.5 8.6-7.3 8.6-14.3C32.6 10.4 27.4 4.6 20 4.6z",
@@ -38630,6 +39096,13 @@ function drawAvatarCharSVG(charId){
        shadow is the old cut, 20.74,15.4 r 1.6, in the face's own black),
        and live the shadow can move. Sliding 2.03 right and growing 1.42x
        covers the disc exactly: totality. */
+    /* build 312: the crescent's own light - a halo that swells and a
+       glint at its upper horn (21.3, 13.9 is where the two discs cross) */
+    { const hg = uid + "-umch"; const hr = mk("radialGradient", { id: hg });
+      hr.appendChild(mk("stop", { offset: "0%", "stop-color": "#DDD3FF", "stop-opacity": ".7" }));
+      hr.appendChild(mk("stop", { offset: "100%", "stop-color": "#8B5CF6", "stop-opacity": "0" }));
+      defs.appendChild(hr);
+      svg.appendChild(mk("circle", { cx: 22.6, cy: 15.4, r: 3.6, fill: "url(#" + hg + ")", opacity: "0", class: "cx-fx cx-fx-umcglow" })); }
     open("cx-fx cx-fx-crescent");
     { const cg = uid + "-umc";
       const cp = mk("clipPath", { id: cg + "c" }); cp.appendChild(mk("circle", { cx: 22.77, cy: 15.4, r: 2.1 })); defs.appendChild(cp);
@@ -38638,6 +39111,7 @@ function drawAvatarCharSVG(charId){
       moon.appendChild(mk("circle", { cx: 20.74, cy: 15.4, r: 1.6, fill: "#050409" }));
       svg.appendChild(moon); }
     close();
+    { const gl = sparkle(21.3, 13.9, .9, "#FFFFFF"); gl.setAttribute("class", "cx-fx cx-fx-umcglint"); gl.setAttribute("opacity", "0"); svg.appendChild(gl); }
     /* THE FOURTH FLARE, worn (build 277): "Can you incorporate the 4th
        flare in umbra". It holds the cloak closed at the throat - the
        flare's own colour, drawn the way the flare itself is drawn (a
@@ -38645,6 +39119,7 @@ function drawAvatarCharSVG(charId){
     open("cx-fx cx-fx-umflare");
     wornFlare(20, 30.2, MYSTERY_COLOR.violet, "#C4B5FD", 1.17);
     close();
+    wornFlareFx(20, 30.2, "#C4B5FD", 1.17);
     /* Wisps coming off the hem, so the cloak dissolves rather than
        ends. */
     close();
@@ -38689,12 +39164,38 @@ function drawAvatarCharSVG(charId){
     open("cx-fx cx-fx-sghair");
     /* [base x, half-width, height, lean, sway]: the outer locks fan right
        out and the sway is wide, so each one is a wave, not a spike */
-    [[13.4, 2, 10, -8.4, 3.6], [16.6, 2, 14, -4.6, -3.6], [23.4, 2, 14, 4.6, 3.6], [26.6, 2, 10, 8.4, -3.6]].forEach(([x, w, h, lean, sway]) =>
+    /* build 312: the outer locks' roots moved in behind the mask (tips
+       unchanged) - rooted at the mask's edge, their flat bases showed
+       beside it as a straight cut across the hair */
+    [[15.4, 2, 10, -10.4, 3.6], [16.6, 2, 14, -4.6, -3.6], [23.4, 2, 14, 4.6, 3.6], [24.6, 2, 10, 10.4, -3.6]].forEach(([x, w, h, lean, sway]) =>
       svg.appendChild(lock(x, 19.2, w, h, lean, sway, back, ".9")));
-    const frontLocks = [[12.6, 1.7, 8, -7.6, -3], [14.8, 1.8, 11.6, -4.4, 3.4], [17.4, 1.8, 14.4, -1.6, -3.4], [20, 1.9, 15.6, .6, 3], [22.6, 1.8, 14.4, 2.2, -3.4], [25.2, 1.8, 11.6, 4.8, 3.4], [27.4, 1.7, 8, 7.8, -3]];
+    const frontLocks = [[15.2, 1.7, 8, -10.2, -3], [16, 1.8, 11.6, -5.6, 3.4], [17.4, 1.8, 14.4, -1.6, -3.4], [20, 1.9, 15.6, .6, 3], [22.6, 1.8, 14.4, 2.2, -3.4], [24, 1.8, 11.6, 6, 3.4], [24.8, 1.7, 8, 10.4, -3]];
     frontLocks.forEach(([x, w, h, lean, sway]) =>
       svg.appendChild(lock(x, 19.6, w, h, lean, sway, front, "1")));
-    close();
+    const sgHairG = close();
+    /* BUILD 312: "horizons hair could get a cool effect". A wave of
+       light ripples across the locks from one side to the other - each
+       lock lit from the tip down by a gradient that is clear at the root,
+       on its own delay - and sparks lift off the tips and go out. All of
+       it is in the hair, none of it on the face. */
+    { const ag = mk("linearGradient", { id: uid + "-sgau", gradientUnits: "userSpaceOnUse", x1: "0", y1: "19", x2: "0", y2: "3" });
+      [["0%", "#7FC8FF", "0"], ["45%", "#9FE2FF", ".35"], ["100%", "#FFFFFF", "1"]].forEach(([o, c, op]) => ag.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
+      defs.appendChild(ag);
+      const au = mk("g", { class: "cx-fx cx-fx-sgaurora" });
+      frontLocks.forEach(([x, w, h, lean, sway], i) => {
+        const l = lock(x, 19.6, w, h, lean, sway, "url(#" + uid + "-sgau)", "0");
+        l.setAttribute("class", "cx-fx-sgwave"); l.setAttribute("style", "animation-delay:" + (-3 + i * .2).toFixed(2) + "s");
+        au.appendChild(l);
+      });
+      /* inside the hair's own group, so it breathes with the locks */
+      sgHairG.appendChild(au);
+      const sp = mk("g", { class: "cx-fx cx-fx-sgsparks", opacity: "0" });
+      frontLocks.forEach(([x, w, h, lean], i) => {
+        if(i === 3) return;
+        sp.appendChild(mk("circle", { cx: +(x + lean).toFixed(2), cy: +(19.6 - h + .4).toFixed(2), r: i % 2 ? ".26" : ".34", fill: "#FFFFFF",
+          class: "cx-fx-sgspark", style: "animation-delay:" + (-[0, 1.4, .5, 0, 1.9, .9, 2.4][i]).toFixed(2) + "s" }));
+      });
+      svg.appendChild(sp); }
     /* BUILD 308: THE PULL, SHOWN IN THE HAIR. Light rises up the locks
        from the roots and leaves off the tips - the same pull the motes
        in the sky behind show - each lock on its own beat. pathLength
@@ -38732,6 +39233,7 @@ function drawAvatarCharSVG(charId){
     open("cx-fx cx-fx-sgstar");
     wornFlare(20, 15, MYSTERY_COLOR.white, "#DDF4FF", 1);
     close();
+    wornFlareFx(20, 15, "#DDF4FF", .9);
     close();
     return done();
   }
@@ -39255,6 +39757,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               savedCodePrompts: 0, savedCodeSaved: false,
               dailyCorrectStreak: 0, dailyCorrectBest: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, friendsBest: 0, koiRevoked295: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bigTest500Passed: false, bestTestStreak: 0,
               weeklyWins: 0, weeklyTop3: 0, retakenQuestions: 0, hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, unlocksShown: null, seenUnlocks: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
+              earlyTests: 0, earlyTestsSeed312: true, flareHintsShown: [],
               vrMatches: 0, vrWins: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
               fullTestsSeeded: false, practiceExamPerfect: false, banner: "", starfallKept: false, creditsApplied: [],
               publicId: null, leaderboardKeyMigrated: false,
@@ -39471,6 +39974,13 @@ function applyLoadedData(got){
      already done (seedBannerCounters, seedVroomHistory) rather than
      starting from nothing. */
   store.vrMatches = typeof got.vrMatches === "number" ? got.vrMatches : 0;
+  /* FIRST LIGHT's count (build 312): tests finished before 8 in the
+     morning. An existing account is seeded once from its test history -
+     seedEarlyTests312() - which is why the flag defaults to false here
+     and true on a fresh store. */
+  store.earlyTests = typeof got.earlyTests === "number" ? got.earlyTests : 0;
+  store.earlyTestsSeed312 = got.earlyTestsSeed312 === true;
+  store.flareHintsShown = Array.isArray(got.flareHintsShown) ? got.flareHintsShown.filter(x => typeof x === "string") : [];
   store.vrWins = typeof got.vrWins === "number" ? got.vrWins : 0;
   store.vrCounted = Array.isArray(got.vrCounted) ? got.vrCounted.filter(x => typeof x === "string") : [];
   store.vrRetroDone = got.vrRetroDone === true;
@@ -40950,6 +41460,7 @@ function wipeLocalProgressAndSettings(){
   store.seenUnlocks = null;
   store.unitRuns = {};
   store.vrMatches = 0; store.vrWins = 0; store.vrCounted = []; store.vrRetroDone = true;
+  store.earlyTests = 0; store.earlyTestsSeed312 = true; store.flareHintsShown = [];
   store.vrTop3 = 0; store.vrTop3Rooms = []; store.vrTop3RetroDone = true;
   store.fullTestsSeeded = true; store.practiceExamPerfect = false; store.banner = ""; store.starfallKept = false;
   store.weekRankSeen = null;
@@ -41634,7 +42145,7 @@ function progressSinceBase(src, base){
   });
   const had = new Set((base.testHistory || []).map(t => t && t.playedAt).filter(Boolean));
   out.testHistory = (out.testHistory || []).filter(t => t && !had.has(t.playedAt));
-  ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions"].forEach(k => { out[k] = less(out[k], base[k]); });
+  ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "earlyTests"].forEach(k => { out[k] = less(out[k], base[k]); });
   if(base.weekKey && base.weekKey === out.weekKey) out.weekPoints = less(out.weekPoints, base.weekPoints);
   return out;
 }
@@ -41750,9 +42261,9 @@ function mergeLeavingAccount(src, note){
   if(store.unitRuns && src.unitRuns) sumMap("unitRuns"); else store.unitRuns = null;
   store.testHistory = (store.testHistory || []).concat(src.testHistory || [])
     .sort((a, b) => num(b && b.playedAt) - num(a && a.playedAt)).slice(0, TEST_HISTORY_MAX);
-  ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions"].forEach(k => { store[k] = num(store[k]) + num(src[k]); });
+  ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "earlyTests"].forEach(k => { store[k] = num(store[k]) + num(src[k]); });
   ["dailyCorrectStreak", "hundoDayBest", "bestTestStreak", "unitHundoStreak", "dailyCorrectBest", "unitHundoStreakBest", "dayAnsweredBest", "friendsBest"].forEach(k => { store[k] = Math.max(num(store[k]), num(src[k])); });
-  ["vrCounted", "vrTop3Rooms"].forEach(k => {
+  ["vrCounted", "vrTop3Rooms", "flareHintsShown"].forEach(k => {
     const a = Array.isArray(store[k]) ? store[k] : [];
     store[k] = a.concat((src[k] || []).filter(x => a.indexOf(x) < 0)).slice(-300);
   });
@@ -42103,9 +42614,9 @@ function mergeSameAccount(dst, src){
     }
     if(a.some(h => h && !theirs.has(key(h)))) res.otherHadLess = true; }
   ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "hundoDayBest", "bestTestStreak",
-   "dailyCorrectBest", "unitHundoStreakBest", "dayAnsweredBest", "friendsBest"]
+   "dailyCorrectBest", "unitHundoStreakBest", "dayAnsweredBest", "friendsBest", "earlyTests"]
     .forEach(k => maxInto(dst, k, src[k]));
-  ["vrCounted", "vrTop3Rooms", "legacyChars", "creditsApplied"].forEach(k => unionArr(k));
+  ["vrCounted", "vrTop3Rooms", "legacyChars", "creditsApplied", "flareHintsShown"].forEach(k => unionArr(k));
   /* The "seen" marks behind the new-item dots (build 299): seen on one
      device is seen. */
   { const okSeen = o => o && SEEN_KINDS.every(k => Array.isArray(o[k]));
@@ -44553,7 +45064,7 @@ function hundosOf(st){
    are applied, you'd see it while it's not unlocked". Only these - the
    ones that take months, or a rank near the top. */
 const BANNER_EPIC = ["tests500", "hundos250", "study50", "correct5000", "level80", "exam100",
-                     "adept_rank", "elite_rank", "titan_rank", "study60", "correct10000", "zenith"];
+                     "adept_rank", "elite_rank", "titan_rank", "study60", "correct10000", "early10", "astral", "celestial", "zenith"];
 /* ONLY THE TOP OF EACH LADDER MOVES (build 241): "ensure the animation is
    only for the coolest ones and the hardest ones in its kind". Thunderhead
    (the Game ladder), Koi Pond (tests), Sky Temple (hundos), Supernova (the
@@ -44581,7 +45092,7 @@ const BANNER_EPIC = ["tests500", "hundos250", "study50", "correct5000", "level80
 const BANNER_ANIMATED = ["tests250", "tests500", "hundos250", "adept_rank", "elite_rank", "titan_rank",
                          "study50", "correct5000", "level80", "exam100",
                          /* build 304: the three new ones move too - see BANNERS */
-                         "study60", "correct10000", "zenith"];
+                         "study60", "correct10000", "early10", "astral", "celestial", "zenith"];
 const BANNERS = [
   /* ORDERED BY WHAT YOU DO, THEN HOW FAR (build 235). "Ensure the order
      they are on matches up so the progression type ones are next to each
@@ -44671,6 +45182,11 @@ const BANNERS = [
      counts, so a later slip takes nothing back. The most anybody had
      was five. Anybody who ever set the old flag keeps the banner. The
      id stays `exam100`. */
+  /* FIRST LIGHT (build 312) - the unique one: it counts WHEN you study.
+     See EARLY_TESTS and seedEarlyTests312(). */
+  { id: "early10", name: "First Light",
+    label: "Finish " + EARLY_TESTS + " tests before 8 in the morning", have: () => Math.min(earlyTestsOf(), EARLY_TESTS), need: EARLY_TESTS,
+    note: "Any test finished between 4 and 8 AM counts." },
   { id: "exam100", name: "Phoenix",
     label: "Ace " + PHOENIX_UNIT_RUN + " different units in a row",
     have: () => (store.practiceExamPerfect ? PHOENIX_UNIT_RUN : Math.min(unitStreakBest(), PHOENIX_UNIT_RUN)), need: PHOENIX_UNIT_RUN,
@@ -44687,6 +45203,17 @@ const BANNERS = [
      character's own: "the banner match its theme/look". Held when every
      other character, banner and theme is - ultimateProgress(), the same
      count the character reads. */
+  /* ASTRAL and CELESTIAL (build 312): the banners of the two ultimates
+     under Zenith, held with their characters - each one that character's
+     own sky, from the looks drawn for Zenith (ZENITH_BANNER c and b). */
+  { id: "astral", name: "Astral", ultimate: true,
+    label: "Unlock every other character",
+    have: () => collectionProgress("chars").have, get need(){ return collectionProgress("chars").need; },
+    note: () => collectionProgress("chars").note },
+  { id: "celestial", name: "Celestial", ultimate: true,
+    label: "Unlock every other banner",
+    have: () => collectionProgress("banners").have, get need(){ return collectionProgress("banners").need; },
+    note: () => collectionProgress("banners").note },
   { id: "zenith", name: "Zenith", ultimate: true,
     label: "Unlock every other character, banner and theme",
     have: () => ultimateProgress().have, get need(){ return ultimateProgress().need; },
@@ -45389,6 +45916,95 @@ const BANNER_ART = {
      flicker, the beacons blink, the beams sweep, the clouds drift, the
      plane crosses, the steam rises and the lamp breathes - every one of
      them a box on the compositor. */
+  /* FIRST LIGHT (build 312): "add another banner that's a unique reward,
+     make it a cool banner." Ten tests finished before 8 in the morning -
+     the one thing no other banner counts: WHEN you study, not how much.
+     The city at sunrise across the water: the sun breaking the skyline,
+     its rays turning slowly, clouds catching the light from underneath,
+     a column of sun on the water that shimmers, the last stars fading at
+     the top, a beacon on the tallest tower still blinking from the night
+     shift, and birds crossing. */
+  early10(u){
+    const rnd = bnRand(8080);
+    const st = bnStarsSplit(rnd, 26, 40);
+    const HZ = 134, SX = 300;
+    let rays = "";
+    for(let k = 0; k < 24; k++){
+      const a0 = k * Math.PI / 12, a1 = a0 + Math.PI / 30;
+      rays += '<path d="M' + SX + ' ' + HZ + ' L' + bnF(SX + Math.cos(a0) * 300) + ' ' + bnF(HZ + Math.sin(a0) * 300) + ' L' + bnF(SX + Math.cos(a1) * 300) + ' ' + bnF(HZ + Math.sin(a1) * 300) +
+        'Z" fill="url(#' + u + 'ray)" opacity="' + (k % 2 ? '.5' : '.9') + '"/>';
+    }
+    const towers = (x0, x1, hMin, hMax, wMin, wMax, fill, lit) => {
+      let out = "", win = "", x = x0;
+      while(x < x1){
+        const w = wMin + rnd() * (wMax - wMin), h = hMin + Math.pow(rnd(), 1.4) * (hMax - hMin), top = HZ - h;
+        /* the sun rises in the gap: nothing stands in front of it */
+        if(x + w > SX - 30 && x < SX + 30){ x += w + rnd() * 2.5; continue; }
+        out += '<rect x="' + bnF(x) + '" y="' + bnF(top) + '" width="' + bnF(w) + '" height="' + bnF(h + 1) + '" fill="' + fill + '"/>';
+        /* the edge facing the sun catches it */
+        if(lit) out += '<rect x="' + bnF(x < SX ? x + w - 1.2 : x) + '" y="' + bnF(top) + '" width="1.2" height="' + bnF(h) + '" fill="#FF9A6A" opacity=".45"/>' +
+          '<rect x="' + bnF(x) + '" y="' + bnF(top) + '" width="' + bnF(w) + '" height="1" fill="#FFB27A" opacity=".55"/>';
+        if(rnd() < .35) out += '<rect x="' + bnF(x + w * .3) + '" y="' + bnF(top - 4) + '" width="' + bnF(w * .4) + '" height="4" fill="' + fill + '"/>';
+        if(lit) for(let yy = top + 4; yy < HZ - 3; yy += 4.4) for(let xx = x + 2; xx < x + w - 2.5; xx += 3.8)
+          if(rnd() < .16) win += '<rect x="' + bnF(xx) + '" y="' + bnF(yy) + '" width="1.7" height="2.1" fill="#FFD9A0" opacity="' + bnF(.45 + rnd() * .5) + '"/>';
+        x += w + rnd() * 2.5;
+      }
+      return out + win;
+    };
+    const far = towers(-8, 490, 14, 44, 10, 24, "url(#" + u + "far)", false);
+    const near = towers(-12, 236, 18, 64, 14, 28, "url(#" + u + "near)", true) + towers(352, 494, 18, 60, 14, 28, "url(#" + u + "near)", true);
+    /* the tall tower left of the sun, with its beacon */
+    const TX = 196;
+    const tower = '<path d="M' + (TX - 11) + ' ' + (HZ + 1) + ' L' + (TX - 9) + ' 48 L' + (TX - 4) + ' 42 L' + (TX - 1.2) + ' 22 L' + (TX + 1.2) + ' 22 L' + (TX + 4) + ' 42 L' + (TX + 9) + ' 48 L' + (TX + 11) + ' ' + (HZ + 1) + 'Z" fill="url(#' + u + 'near)"/>' +
+      '<path d="M' + (TX + 9) + ' 48 L' + (TX + 11) + ' ' + HZ + '" stroke="#FFB070" stroke-width=".9" opacity=".7"/>';
+    let towerWin = "";
+    for(let y = 54; y < HZ - 3; y += 4) for(let x = TX - 7; x < TX + 7; x += 3.4) if(rnd() < .2) towerWin += '<rect x="' + bnF(x) + '" y="' + y + '" width="1.6" height="2" fill="#FFD9A0" opacity=".7"/>';
+    const cloud = (x, y, w, h, op) => '<ellipse cx="' + x + '" cy="' + y + '" rx="' + w + '" ry="' + h + '" fill="url(#' + u + 'cloud)" opacity="' + op + '"/>';
+    let ripples = "";
+    for(let y = HZ + 4; y < 180; y += 3.2){
+      const k = (y - HZ) / 46, w = 10 + k * 34;
+      ripples += '<rect x="' + bnF(SX - w / 2 + (rnd() - .5) * 6) + '" y="' + bnF(y) + '" width="' + bnF(w * (.5 + rnd() * .5)) + '" height="1.1" fill="#FFE2A8" opacity="' + bnF(.35 + rnd() * .5) + '"/>';
+    }
+    const bird = (x, y, s) => '<path d="M' + bnF(x - 4 * s) + ' ' + bnF(y - 1.6 * s) + ' Q' + bnF(x - 1.6 * s) + ' ' + bnF(y - 2.2 * s) + ' ' + x + ' ' + y + ' Q' + bnF(x + 1.6 * s) + ' ' + bnF(y - 2.2 * s) + ' ' + bnF(x + 4 * s) + ' ' + bnF(y - 1.6 * s) + '" fill="none" stroke="#3A2032" stroke-width="' + bnF(.9 * s) + '" stroke-linecap="round"/>';
+    const defs = '<defs>' +
+      bnLin(u + "sky", [[0, "#1A1846"], [0.32, "#4A2A6A"], [0.58, "#B4507A"], [0.8, "#F08A5A"], [1, "#FFD08A"]]) +
+      bnRad(u + "sun", [[0, "#FFFDF0"], [0.6, "#FFF0C4"], [1, "#FFD27A"]]) +
+      bnRad(u + "sglow", [[0, "#FFE6A8", 0.95], [0.25, "#FFB46A", 0.55], [0.6, "#F0786A", 0.18], [1, "#B4507A", 0]]) +
+      bnRad(u + "ray", [[0, "#FFE6B0", 0.5], [0.5, "#FFC88A", 0.16], [1, "#FFC88A", 0]], "0%", "0%", "100%") +
+      bnRad(u + "cloud", [[0, "#FFC08A", 0.8], [0.55, "#E07A7A", 0.35], [1, "#8A4A7A", 0]]) +
+      bnLin(u + "far", [[0, "#8A4A78"], [1, "#6A3A6A"]]) +
+      bnLin(u + "near", [[0, "#3A2240"], [1, "#24142C"]]) +
+      bnLin(u + "water", [[0, "#C4607A"], [0.4, "#6A2E5A"], [1, "#24142C"]]) +
+      bnLin(u + "wfade", [[0, "#24142C", 0], [1, "#24142C", 0.85]]) +
+      bnRad(u + "red", [[0, "#FF3B3B", 0.75], [1, "#FF3B3B", 0]]) +
+      '</defs>';
+    return [
+      { svg: defs + '<rect width="480" height="180" fill="url(#' + u + 'sky)"/>' + st.still },
+      /* the last stars, fading at the top of the sky */
+      { svg: st.a, cls: "bl-tw", style: "animation-duration:3s" },
+      /* the sun's rays, turning slowly */
+      { svg: rays, box: [SX - 300, HZ - 300, 600, 600], o: [SX, HZ], cls: "bl-spin", style: "animation-duration:90s" },
+      /* its glow breathing, and the sun itself breaking the skyline */
+      { svg: '<circle cx="' + SX + '" cy="' + HZ + '" r="120" fill="url(#' + u + 'sglow)"/>', box: [SX - 120, HZ - 120, 240, 240], o: [SX, HZ], cls: "bl-breathe", style: "animation-duration:5s" },
+      { svg: '<circle cx="' + SX + '" cy="' + (HZ - 6) + '" r="20" fill="url(#' + u + 'sun)"/>' },
+      /* clouds lit from underneath, drifting */
+      { svg: cloud(120, 46, 90, 6, ".85") + cloud(250, 30, 70, 5, ".7") + cloud(400, 56, 100, 7, ".8") + cloud(330, 92, 80, 4, ".6") + cloud(60, 96, 70, 4, ".5"),
+        box: [-40, 14, 560, 96], cls: "bl-drift", style: "animation-duration:30s" },
+      /* the city, far then near */
+      { svg: far + '<rect x="-10" y="' + HZ + '" width="500" height="2" fill="#6A3A6A"/>' },
+      { svg: near + tower + towerWin },
+      /* the beacon on the tower, still blinking from the night shift */
+      { svg: '<circle cx="' + TX + '" cy="21" r="5" fill="url(#' + u + 'red)"/><circle cx="' + TX + '" cy="21" r="1.4" fill="#FF6A6A"/>', box: [TX - 6, 15, 12, 12], cls: "bl-blink", style: "animation-duration:2.4s" },
+      /* the water, and the sun's column on it shimmering */
+      { svg: '<rect x="-10" y="' + (HZ + 1) + '" width="500" height="50" fill="url(#' + u + 'water)"/>' +
+          /* the city upside down in it, fading with depth */
+          '<g transform="translate(0 ' + (2 * HZ + 2) + ') scale(1 -1)" opacity=".22">' + near + tower + '</g>' +
+          '<rect x="-10" y="' + (HZ + 1) + '" width="500" height="50" fill="url(#' + u + 'wfade)"/>' },
+      { svg: ripples, cls: "bl-tw", style: "animation-duration:1.6s" },
+      /* birds, crossing right to left */
+      { svg: bird(498, 60, 1) + bird(510, 54, .8) + bird(520, 64, .7), box: [490, 48, 40, 20], cls: "bl-cross", style: "animation-duration:24s;animation-delay:-6s" }
+    ];
+  },
   study60(u){
     const rnd = bnRand(6060);
     const st = bnStarsSplit(rnd, 50, 70);
@@ -46267,6 +46883,9 @@ const BANNER_ART = {
      theme/look ... Make it super super sick." It is the Zenith
      character's own sky, in whichever look ships - see ZENITH_BANNER
      (below) and ZENITH_STYLE. */
+  /* build 312: the other two ultimates' banners are the other two looks */
+  astral(u){ return ZENITH_BANNER.c(u); },
+  celestial(u){ return ZENITH_BANNER.b(u); },
   zenith(u){
     return (ZENITH_BANNER[ZENITH_STYLE] || ZENITH_BANNER.a)(u);
   },
@@ -46401,7 +47020,10 @@ const BANNER_ART = {
      a  OBSIDIAN  - a spire of black glass under a ring of starlight laid
                     flat round the zenith star, a spark running the ring
                     (behind the spire, then in front of it), a black
-                    mirror floor, and every 8s a shock of white light;
+                    mirror floor; since build 312 the zenith star burns
+                    the way the character's does - turning rays, a streak
+                    that breathes, two satellites circling it - where it
+                    used to throw a shock of white light every 8s;
      b  CELESTIAL - the sky straight up: star trails wheeling round one
                     brilliant pole star, the seven-star crown above it,
                     a moonlit ridge, a meteor now and then;
@@ -46442,7 +47064,17 @@ const ZENITH_BANNER = {
       const x = 150 + rnd() * 180, y = rnd() * 180, r = 0.6 + rnd() * 1.2, c = rnd() < 0.7 ? "#FFFFFF" : "#BFC8FF", op = bnF(0.4 + rnd() * 0.5);
       motes += '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(r) + '" fill="' + c + '" opacity="' + op + '"/><circle cx="' + bnF(x) + '" cy="' + bnF(y + 180) + '" r="' + bnF(r) + '" fill="' + c + '" opacity="' + op + '"/>';
     }
-    const ev = "animation-duration:8s;animation-delay:-6.4s;";
+    /* BUILD 312: the star as the character now wears it. Eight rays,
+       long and short, turning slowly behind it; two satellites. */
+    let rays8 = "";
+    for(let k = 0; k < 8; k++){
+      const a = k * Math.PI / 4, L = k % 2 ? 40 : 74, w = k % 2 ? 1.6 : 2.4;
+      const nx = -Math.sin(a) * w, ny = Math.cos(a) * w;
+      rays8 += '<path d="M' + bnF(CX + nx) + ' ' + bnF(SY + ny) + ' L' + bnF(CX + Math.cos(a) * L) + ' ' + bnF(SY + Math.sin(a) * L) + ' L' + bnF(CX - nx) + ' ' + bnF(SY - ny) +
+        'Z" fill="#E6ECFF" opacity="' + (k % 2 ? '.3' : '.5') + '"/>';
+    }
+    const sats = '<circle cx="' + (CX + 24) + '" cy="' + SY + '" r="2.6" fill="#FFFFFF"/><circle cx="' + (CX + 24) + '" cy="' + SY + '" r="6" fill="url(#' + u + 'sg)" opacity=".7"/>' +
+      '<circle cx="' + (CX - 24) + '" cy="' + SY + '" r="1.9" fill="#C9B8FF"/>';
     const defs = '<defs>' +
       bnRad(u + "sky", [[0, "#1E2258"], [0.45, "#0A0C26"], [1, "#020206"]], "50%", "26%", "70%") +
       bnRad(u + "n1", [[0, "#7A5BFF", 0.42], [1, "#2A1A6A", 0]]) +
@@ -46458,8 +47090,6 @@ const ZENITH_BANNER = {
       bnLin(u + "hz", [[0, "#9C8BFF", 0], [0.5, "#F2F6FF"], [1, "#9C8BFF", 0]], 0, 0, 1, 0) +
       bnLin(u + "refl", [[0, "#000000", 0.5], [1, "#000000", 1]]) +
       '<clipPath id="' + u + 'fc"><rect x="-10" y="150" width="500" height="50"/></clipPath>' +
-      bnRad(u + "shock", [[0, "#FFFFFF", 0], [0.78, "#FFFFFF", 0], [0.86, "#9FB0FF", 0.35], [0.93, "#FFFFFF", 0.85], [0.97, "#B49CFF", 0.5], [1, "#7A6BFF", 0]]) +
-      bnRad(u + "flash", [[0, "#FFFFFF", 1], [0.35, "#E4ECFF", 0.6], [1, "#E4ECFF", 0]]) +
       '</defs>';
     return [
       { svg: defs + '<rect x="-10" y="-10" width="500" height="200" fill="url(#' + u + 'sky)"/>' + st.still },
@@ -46479,10 +47109,15 @@ const ZENITH_BANNER = {
           '<path d="M' + (CX - 3) + ' ' + (SY + 12) + ' L' + (CX - 15) + ' 90 L' + (CX - 21) + ' 150 L' + (CX - 15) + ' 150 L' + (CX - 9) + ' 90 Z" fill="url(#' + u + 'el)" opacity=".35"/>' },
       /* the light running down its edge breathes with the star */
       { svg: '<path d="' + spire.edgeL + '" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linejoin="round" opacity=".55"/>', box: [CX - 34, SY, 40, 150], vb: [CX - 34, SY, 40, 150], cls: "bl-glow", style: "animation-duration:2.6s" },
-      /* the zenith star on the spire's point: a long thin streak across, a shorter one down */
+      /* the zenith star on the spire's point: its rays turning behind it,
+         a long thin streak across and a shorter one down, breathing slowly
+         (it pulsed every 1.8s and flashed every 8s - a strobe), and two
+         satellites circling it */
+      { svg: rays8, box: [CX - 76, SY - 76, 152, 152], o: [CX, SY], cls: "bl-spin", style: "animation-duration:24s" },
       { svg: '<path d="' + spark(CX, SY, 96, 7) + '" fill="#FFFFFF" opacity=".95"/><path d="' + spark(CX, SY, 8, 30) + '" fill="#FFFFFF" opacity=".9"/>' +
           '<path d="' + spark(CX, SY, 7, 7) + '" fill="#E4ECFF" opacity=".8" transform="rotate(45 ' + CX + ' ' + SY + ')"/>',
-        box: [CX - 98, SY - 32, 196, 64], o: [CX, SY], cls: "bl-pulse", style: "animation-duration:1.8s" },
+        box: [CX - 98, SY - 32, 196, 64], o: [CX, SY], cls: "bl-pulse", style: "animation-duration:6s" },
+      { svg: sats, box: [CX - 31, SY - 31, 62, 62], o: [CX, SY], cls: "bl-spin", style: "animation-duration:6s" },
       { svg: '<circle cx="' + CX + '" cy="' + SY + '" r="9" fill="url(#' + u + 'sg)"/><circle cx="' + CX + '" cy="' + SY + '" r="3.6" fill="#FFFFFF"/>' },
       /* the near half of the ring, in front of the spire, and the spark coming round */
       { svg: ringD, box: ringBox, vb: ringVb, o: [CX, RY], wrap: TILT, clip: "inset(50% 0 0 0)" },
@@ -46492,11 +47127,7 @@ const ZENITH_BANNER = {
           '<g clip-path="url(#' + u + 'fc)"><g transform="translate(0 300) scale(1 -1)" opacity=".28">' + glass(spire, 1) + '</g></g>' +
           '<rect x="-10" y="150" width="500" height="40" fill="url(#' + u + 'refl)" opacity=".55"/>' +
           '<ellipse cx="' + CX + '" cy="150" rx="236" ry="1.3" fill="url(#' + u + 'hz)" opacity=".8"/>' },
-      { svg: motes, box: [0, 0, 480, 360], vb: [0, 0, 480, 360], cls: "bl-rise", style: "animation-duration:11s" },
-      /* every 8s: a shock of white light out of the star */
-      { svg: '<ellipse cx="' + CX + '" cy="' + SY + '" rx="260" ry="80" fill="url(#' + u + 'shock)"/>', box: [CX - 260, SY - 80, 520, 160], o: [CX, SY], cls: "bl-blast", style: ev + "opacity:0" },
-      { svg: '<rect x="-10" y="-10" width="500" height="200" fill="#DDE6FF" fill-opacity=".12"/><circle cx="' + CX + '" cy="' + SY + '" r="120" fill="url(#' + u + 'flash)"/>' +
-          '<path d="' + spark(CX, SY, 250, 6) + '" fill="#FFFFFF"/><path d="' + spark(CX, SY, 6, 60) + '" fill="#FFFFFF"/>', cls: "bl-spike", style: ev + "opacity:0" }
+      { svg: motes, box: [0, 0, 480, 360], vb: [0, 0, 480, 360], cls: "bl-rise", style: "animation-duration:11s" }
     ];
   },
   b(u){
@@ -46710,7 +47341,8 @@ const BANNER_TINT = {
   elite_rank: ["#8D4DDB", "#9D61C7"],
   titan_rank: ["#EC3C55", "#BC3DEB"],
   /* measured per look - see ZENITH_LOOKS */
-  zenith: ZENITH_LOOK.tint
+  zenith: ZENITH_LOOK.tint,
+  astral: ZENITH_LOOKS.c.tint, celestial: ZENITH_LOOKS.b.tint
 };
 const bannerTintCache = {};
 function bannerTintOf(id){
@@ -50051,6 +50683,8 @@ function recordTestPlay(elapsedMs, pct){
      got deleted after a day or something". It is still counted
      everywhere else (testStats above, the daily streak, XP). */
   if(runLabel === "Daily question"){ saveStore(); return newBest; }
+  /* seeded before this test is added, so it is counted once */
+  try{ seedEarlyTests312(); if(isEarlyHour(Date.now())) store.earlyTests = (Number(store.earlyTests) || 0) + 1; }catch(e){}
   store.testHistory.unshift({
     label: testLabelFor(),
     /* The units themselves, so the review list can say what was actually
@@ -51737,11 +52371,26 @@ function spreadOrder(order){
    client already has and which is the one number they are guaranteed to
    agree on. A plain LCG: this needs to be reproducible, not
    unpredictable. */
+/* A BETTER SEEDED SHUFFLE (build 312). It was a bare LCG taken modulo
+   (i + 1) - and the low bits of a power-of-two LCG run in short cycles
+   (the lowest one simply alternates), so the swaps it made near the end
+   of the order fell into the same pattern room after room. mulberry32
+   mixes every bit; it is still a pure function of the seed, so every
+   device in a room still gets one order. A room only ever runs on one
+   build's rule, since its order is drawn once, at the start, by each
+   device - so a room with a 311 and a 312 phone in it would disagree;
+   the update prompt makes that a minutes-long window. */
 function shuffleSeeded(arr, seed){
-  let x = (seed >>> 0) || 1;
+  let a = (seed >>> 0) || 1;
+  const next = () => {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
   for(let i = arr.length - 1; i > 0; i--){
-    x = (x * 1664525 + 1013904223) >>> 0;
-    const j = x % (i + 1);
+    const j = Math.floor(next() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
@@ -51795,23 +52444,8 @@ function optionOrder(qi){
     const ids = QUESTIONS[qi].choices.map((c, k) => k);
     /* fixedOrder, or a choice that points at the others: the study
        bank's order in every mode (see above). */
-    if(!choicesReferToEachOther(qi) && (runMode === "exam" || cfg.shuffle) && ids.length > 1){
-      const answer = QUESTIONS[qi].answer, m = lastSlots(), k = KEYS[qi], prev = m[k];
-      let out = ids;
-      /* MOVED, NOT NUDGED (build 309): "answer choices aren't always
-         shuffled well." A fair shuffle of four leaves two of them exactly
-         where the study guide had them about a quarter of the time, which
-         reads as barely shuffled; so at most one may stay put. */
-      const maxStay = ids.length >= 3 ? 1 : 0;
-      for(let t = 0; t < 30; t++){
-        out = shuffle(ids.slice());
-        const slot = out.indexOf(answer);
-        const stay = out.filter((v, i) => v === i).length;
-        if(stay <= maxStay && slot !== prev) break;
-      }
-      m[k] = out.indexOf(answer);
-      try{ localStorage.setItem(LAST_SLOT_KEY, JSON.stringify(m)); }catch(e){}
-      layout[qi] = out;
+    if((runMode === "exam" || cfg.shuffle) && ids.length > 1){
+      layout[qi] = shuffledChoiceOrder(qi, true);
     } else {
       layout[qi] = pointsUpLast(qi, ids);
     }
@@ -51829,6 +52463,88 @@ function pointsUpLast(qi, ids){
   if(ch.some(c => CHOICE_REFERS_RE[1].test(String(c)))) return ids;
   const up = ids.filter(k => CHOICE_POINTS_UP_RE.test(String(ch[k])));
   return up.length ? ids.filter(k => !up.includes(k)).concat(up) : ids;
+}
+/* ---- SHUFFLED, EVEN WHERE A CHOICE POINTS AT THE OTHERS (build 312) ----
+   "The answer choice shuffling issue must be a bug, I'm noticing that the
+   answer choices still aren't being properly shuffled ... this has been
+   a thing I've mentioned numerous times." The shuffle itself was sound -
+   measured over real starts, every ordinary question moved - but 121 of
+   the 895 questions (13.5%; a THIRD of Sexual Assault and Family
+   Violence, 16 of 46, and of Code of Criminal Procedure, 11 of 35) never
+   moved at all, because one choice reads "All of the above", "A, B, and
+   C" or "Both A & B" and build 298 froze the whole question rather than
+   risk that choice pointing at the wrong ones. Studying a unit, you met
+   one of them every few questions in the study guide's exact order, and
+   that is what reads as "not shuffled".
+   Freezing the whole question was never needed. A choice that points at
+   others stays exactly where it is, and every other choice moves - but
+   only among the positions that are pointed at by the SAME set of
+   pointing choices. "All of the above" points at everything above it,
+   so everything above it shuffles. "A, B, and C" on a four-choice
+   question points at all three, so all three shuffle. "Both A & B" with
+   a C beside it: A and B swap with each other, C stays C, and "Both A &
+   B" still means the same two answers. Meaning is preserved by
+   construction, whatever a question added later says.
+   A hand-marked `fixedOrder` (Constitution Q11 and Q37, asked for by
+   name) still never moves. `remember` is the test's own rule that the
+   right answer does not land where it sat last time; flashcards pass
+   false, they have no slot worth remembering. */
+const CHOICE_LETTER_RE = /(?:^|[^A-Za-z])([A-Ea-e])(?=$|[^A-Za-z])/g;
+function shuffledChoiceOrder(qi, remember){
+  const q = QUESTIONS[qi], ch = q.choices || [];
+  const ids0 = ch.map((c, k) => k);
+  if(q.fixedOrder || ids0.length < 2) return pointsUpLast(qi, ids0);
+  /* "All of the above" reads last; then work in that order */
+  const base = pointsUpLast(qi, ids0);
+  const isLetterRef = k => CHOICE_REFERS_RE[1].test(String(ch[k]));
+  const isRef = k => CHOICE_REFERS_RE.some(re => re.test(String(ch[k])));
+  /* For each position in `base`, the set of pointing choices that point
+     at it; positions with the same set may trade places. */
+  const sig = base.map(() => []);
+  base.forEach((k, pos) => {
+    if(!isRef(k)) return;
+    let targets;
+    if(isLetterRef(k)){
+      targets = [];
+      String(ch[k]).replace(CHOICE_LETTER_RE, (m, L) => { targets.push(L.toUpperCase().charCodeAt(0) - 65); return m; });
+      /* letters name positions in the study guide's order, which is
+         `base` exactly when nothing was moved for "above" */
+    } else {
+      targets = base.slice(0, pos).map((x, i) => i);
+    }
+    targets.forEach(t => { if(t >= 0 && t < sig.length && t !== pos) sig[t].push(pos); });
+  });
+  const groups = {};
+  base.forEach((k, pos) => {
+    if(isRef(k)) return;
+    const key = sig[pos].join(",");
+    (groups[key] = groups[key] || []).push(pos);
+  });
+  const movable = Object.values(groups).filter(g => g.length > 1);
+  if(!movable.length) return base;
+  const draw = () => {
+    const out = base.slice();
+    movable.forEach(g => { const vals = shuffle(g.map(p => base[p])); g.forEach((p, i) => { out[p] = vals[i]; }); });
+    return out;
+  };
+  const answer = q.answer;
+  const m = remember ? lastSlots() : null, key = KEYS[qi], prev = m ? m[key] : undefined;
+  const free = movable.reduce((n, g) => n + g.length, 0);
+  /* MOVED, NOT NUDGED (build 309): at most one choice of the movable
+     ones left where the guide had it, and the right answer not in last
+     time's slot - when the groups leave room for that at all. */
+  const maxStay = free >= 3 ? 1 : 0;
+  let out = draw();
+  for(let t = 0; t < 30; t++){
+    const stay = out.filter((v, i) => v === base[i] && !isRef(v)).length;
+    if(stay <= maxStay && (prev === undefined || out.indexOf(answer) !== prev)) break;
+    out = draw();
+  }
+  if(m){
+    m[key] = out.indexOf(answer);
+    try{ localStorage.setItem(LAST_SLOT_KEY, JSON.stringify(m)); }catch(e){}
+  }
+  return out;
 }
 function correctSlot(qi){ return optionOrder(qi).indexOf(QUESTIONS[qi].answer); }
 
@@ -55591,7 +56307,7 @@ function playRankUpScene(tierKey, opts, spec){
     /* Only when a pop-up is coming: inline, the results sequence has the
        rank's reward cards next; on Home, the unlock queue does. */
     let next = inline;
-    if(!inline){ try{ const p = pendingHomeUnlocks(); next = !!(p.chars.length || p.banners.length); }catch(e){} }
+    if(!inline){ try{ next = homeUnlocksOwed(pendingHomeUnlocks()); }catch(e){} }
     if(next) openSceneBridge(RANK_COLOR[tierKey]);
     if(!inline) rankJustReachedOnHome = tierKey;
     setTimeout(() => {
@@ -60465,10 +61181,16 @@ function showModeSelect(){
        ... needs to mention it's a test. Exam needs to mention it's a
        test. Review needs to mention it's not a test ... Virtual room
        needs to mention its tests." Same two beats on every card. */
+    /* RIGHT OR WRONG, SAID OUTRIGHT (build 312): "Exam description and
+       drill mode descriptions could be better. Needs to mention you see
+       if you are right or wrong kinda thing, seems a smidge vague." The
+       difference between the two IS when you find out, so each card
+       says it in those words. Exam names its Instant feedback switch
+       because that is the one way the answer changes. */
     { value: "drill", title: "Drill",
-      desc: "A test where you don't move on until you get each question right. Best for learning." },
+      desc: "A test that shows you right away if you got each question right or wrong. Miss one and you try again before moving on. Best for learning." },
     { value: "exam", title: "Exam",
-      desc: "A test with no feedback until the end, just like the real thing. Best for testing yourself." },
+      desc: "A test where you find out what you got right and wrong at the end, like the real thing (or turn on Instant feedback to see it as you go). Best for testing yourself." },
     /* THIRD, UNDER EXAM (build 245): "The review option on the mode
        selection screen should not be at the bottom on the iPhone, it'll
        need to be the 3rd one listed, under exam instead." One list, so
@@ -64166,7 +64888,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-05-311";
+const APP_BUILD = "2026-10-05-312";
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
    pushing when I open the app?" Because this gap is shared by every way
@@ -65573,6 +66295,27 @@ function playFinalFlareScene(color, done, opts){
      from the start and does its winning move once it has come out. */
   const fig = document.createElement("div"); fig.className = "ff-fig char-live";
   try{ fig.appendChild(buildAvatarCharSVGSafe(emergeChar)); }catch(e){}
+  /* OUT OF THE DARK, FLARES FIRST (build 312): "void should have became
+     super faint and slowly started to appear out of the dark, potentially
+     starting with the flares being placed in the middle". A second copy
+     of the same drawing in which only the flares it wears are visible
+     (CSS shows nothing else) lights first, alone in the dark; the whole
+     figure then fades up round them over about six seconds. Same drawing,
+     same size, inserted at the same moment as the first, so its flares
+     sit exactly on the figure's own and their loops run in step. */
+  const figFlares = document.createElement("div"); figFlares.className = "ff-figflares char-live";
+  try{ figFlares.appendChild(buildAvatarCharSVGSafe(emergeChar)); }catch(e){}
+  /* What each one comes out of: Umbra out of an eclipse, Horizon out of
+     a ring of light, Void out of the three colours that made it. */
+  const back = document.createElement("div");
+  back.className = "ff-back is-" + (emergeChar === "umbra" ? "umbra" : emergeChar === "singularity" ? "horizon" : "void");
+  if(emergeChar === "umbra"){
+    back.innerHTML = '<div class="ff-corona"></div><div class="ff-moon"><div class="ff-moonshadow"></div></div>';
+  } else if(emergeChar === "singularity"){
+    back.innerHTML = '<div class="ff-disk"><div class="ff-disk-spin"></div></div><div class="ff-photon"></div>';
+  } else {
+    back.innerHTML = '<div class="ff-swirl"></div>';
+  }
   const orbiters = document.createElement("div"); orbiters.className = "ff-orbiters";
   set.forEach((k, i) => {
     const o = document.createElement("span"); o.className = "ff-orbiter";
@@ -65582,7 +66325,7 @@ function playFinalFlareScene(color, done, opts){
     orbiters.appendChild(o);
   });
   orbiters.style.containerType = "inline-size";
-  voidWrap.append(rim, orbiters, fig);
+  voidWrap.append(back, rim, orbiters, fig, figFlares);
   field.append(planet, orbit, comet, flash, shock1, shock2, voidWrap);
   overlay.appendChild(field);
 
@@ -65633,27 +66376,31 @@ function playFinalFlareScene(color, done, opts){
   later(4700, () => overlay.classList.add("ff-converge"));
   later(5400, () => overlay.classList.add("ff-collapse"));
   later(5950, () => overlay.classList.add("ff-burst"));
-  later(6300, () => {
-    overlay.classList.add("ff-emerge");
-    later(900, () => { fig.classList.remove("char-live"); fig.classList.add("char-react-win"); });
-    if(opts.voidFlare){
-      say(color === "white" ? "BOTH VOID FLARES" : "A VOID FLARE",
-          (AVATAR_DISPLAY_NAME[emergeChar] || emergeChar) + " came out of the dark", "");
-    } else {
-      say("ALL THREE SECRET FLARES", "Something came out of the dark", "");
-    }
-  });
+  /* BUILD 312: THE DARK, THEN THE FLARES, THEN THE FIGURE. After the
+     burst the screen holds black; the flares the figure wears light in
+     the middle of it; the figure fades up round them over six seconds
+     with nothing hopping (it used to swap to the Virtual Room win
+     reaction, which bounces, and breathe up and down on top of that:
+     "it started hopping up and down"); what it came out of rises
+     behind it; then the flares that made it move out to circle it. Seven
+     seconds longer than it was ("lasting another 5-10 seconds"). */
+  const kick = opts.voidFlare ? (color === "white" ? "BOTH VOID FLARES" : "A VOID FLARE") : "ALL THREE SECRET FLARES";
+  const who = AVATAR_DISPLAY_NAME[emergeChar] || emergeChar;
+  later(6300, () => overlay.classList.add("ff-hold"));
+  later(6700, () => { overlay.classList.add("ff-seed"); say(kick, "Something stirs in the dark", ""); });
+  later(8600, () => { overlay.classList.add("ff-emerge"); words.classList.remove("is-in"); });
+  later(11800, () => overlay.classList.add("ff-orbit-out"));
+  later(12800, () => say(kick, who + " came out of the dark", ""));
   /* "The void cutscene needs to say there's more to reveal." The last
-     line, a beat after Void has fully arrived - and only on the third
-     flare: after the fifth there is nothing left to hint at. */
+     line, a beat after the figure has fully arrived. */
   if(!opts.voidFlare){
-    later(8300, () => say("ALL THREE SECRET FLARES", "Something came out of the dark",
-                          "Two more flares are still out there."));
+    later(15200, () => say(kick, who + " came out of the dark", "Two more flares are still out there."));
   } else if(color === "violet"){
-    later(8300, () => say("A VOID FLARE", (AVATAR_DISPLAY_NAME[emergeChar] || emergeChar) + " came out of the dark",
-                          "One more is still out there."));
+    later(15200, () => say(kick, who + " came out of the dark", "One more is still out there."));
+  } else {
+    later(15200, () => say(kick, who + " came out of the dark", "Every flare in the sky is yours."));
   }
-  later(opts.voidFlare && color === "white" ? 11200 : 10800, finish);
+  later(18200, finish);
   return { skip: finish, stop(){ finished = true; timers.forEach(clearTimeout); document.body.classList.remove("bc-covering"); overlay.remove(); } };
 }
 
@@ -66670,8 +67417,54 @@ function pendingHomeUnlocks(){
   const chars = announceableHeldCharacters().filter(id => u.chars.indexOf(id) < 0);
   let banners = [];
   try{ banners = BANNERS.filter(b => bannerEarned(b.id) && u.banners.indexOf(b.id) < 0).map(b => b.id); }catch(e){}
-  return { chars, banners };
+  let hints = [];
+  try{ hints = pendingFlareHints(); }catch(e){}
+  return { chars, banners, hints };
 }
+/* THE NEXT SECRET, ANNOUNCED (build 312): "Ensure when you go back to
+   main menu, you get a banner pop up that says the you can now unlock
+   umbra or something". Holding Void opens the hunt for Umbra's flare,
+   and holding Umbra opens Horizon's - but nothing said so except a line
+   in Customize. So Home says it once, after anything unlocked, in the
+   colour of the flare that is now out there. Once per account (the list
+   travels with it and merges as a union), and an account that already
+   holds Void when this ships is told on its next visit, which is the
+   point: it is news to them too. */
+function pendingFlareHints(){
+  if(store.mergeHold) return [];
+  const shown = Array.isArray(store.flareHintsShown) ? store.flareHintsShown : [];
+  const out = [];
+  if(!isLockedCharacter("voidwalker") && isLockedCharacter("umbra") && shown.indexOf("umbra") < 0) out.push("umbra");
+  if(!isLockedCharacter("umbra") && isLockedCharacter("singularity") && shown.indexOf("singularity") < 0) out.push("singularity");
+  return out;
+}
+function markFlareHintShown(id){
+  if(!Array.isArray(store.flareHintsShown)) store.flareHintsShown = [];
+  if(store.flareHintsShown.indexOf(id) >= 0) return;
+  store.flareHintsShown.push(id);
+  saveStore();
+}
+function flareHintItem(ch){
+  const flare = ch === "umbra" ? "violet" : "white";
+  const who = AVATAR_DISPLAY_NAME[ch] || ch;
+  return { kind: "hint", hint: ch, kicker: "A new secret", name: who + " is out there",
+    sub: ch === "umbra"
+      ? "A fourth flare is hiding in your tests. Find it to unlock " + who + "."
+      : "The last flare is hiding in your tests. Find it to unlock " + who + ".",
+    color: MYSTERY_COLOR[flare], art: () => {
+      /* The flare, sitting where it will be worn, in front of a ghost of
+         the character it hands over - there, but not yet yours. */
+      const f = document.createDocumentFragment();
+      const ghost = document.createElement("span"); ghost.className = "rs-hint-ghost char-live";
+      try{ ghost.appendChild(buildAvatarCharSVGSafe(ch)); }catch(e){}
+      const orb = document.createElement("span"); orb.className = "rs-hint-orb";
+      orb.style.setProperty("--hy", ch === "umbra" ? "80%" : "35%");
+      orb.appendChild(buildFlareOrb(MYSTERY_COLOR[flare], "hint-" + ch));
+      f.append(ghost, orb);
+      return f;
+    } };
+}
+function homeUnlocksOwed(p){ return !!(p && (p.chars.length || p.banners.length || (p.hints || []).length)); }
 /* Anything that already owns the screen. The Home unlocks wait for all
    of it - a badge cutscene queued from the same run goes first. */
 function homeUnlockBlocked(){
@@ -66699,7 +67492,7 @@ function homeUnlocksAfterSync(){
   try{
     if(!stage || !stage.querySelector('[data-screen="home"]')) return;
     const p = pendingHomeUnlocks();
-    if(p.chars.length || p.banners.length) scheduleHomeUnlocks(900);
+    if(homeUnlocksOwed(p)) scheduleHomeUnlocks(900);
   }catch(e){}
 }
 function scheduleHomeUnlocks(ms){
@@ -66710,17 +67503,20 @@ function playHomeUnlocks(tries){
   homeUnlockTimer = null;
   if(!stage.querySelector('[data-screen="home"]')) return;
   const p = pendingHomeUnlocks();
-  if(!p.chars.length && !p.banners.length) return;
+  if(!homeUnlocksOwed(p)) return;
   if(homeUnlockBlocked()){
     if(tries < 40) homeUnlockTimer = setTimeout(() => playHomeUnlocks(tries + 1), 1000);
     return;
   }
   /* Muted: recorded as shown and never played, the same as the badge
      queue, so unmuting weeks later does not ambush anybody. */
-  if(theme.muteBanners){ markUnlocksShown(p.chars, p.banners); return; }
+  if(theme.muteBanners){ markUnlocksShown(p.chars, p.banners); p.hints.forEach(markFlareHintShown); return; }
   const items = groupRankRewards(p.chars.map(characterUnlockItem)
     .concat(p.banners.map(bannerUnlockItem).filter(Boolean)));
   items.forEach(it => { it.flyToProfile = true; });
+  /* The next secret goes last, after anything you now hold - and it does
+     not fly to Profile, because nothing new is in there yet. */
+  p.hints.forEach(h => items.push(flareHintItem(h)));
   let i = 0;
   homeUnlockPlaying = true;
   const next = () => {
@@ -66734,6 +67530,7 @@ function playHomeUnlocks(tries){
       try{ more = pendingHomeUnlocks(); }catch(e){}
       const extra = groupRankRewards(more.chars.map(characterUnlockItem).concat(more.banners.map(bannerUnlockItem).filter(Boolean)));
       extra.forEach(it => { it.flyToProfile = true; items.push(it); });
+      (more.hints || []).filter(h => !items.some(it => it.hint === h)).forEach(h => items.push(flareHintItem(h)));
       if(i >= items.length){ homeUnlockPlaying = false; return; }
     }
     /* Left Home mid-queue: the rest wait for the next visit, unshown. */
@@ -66840,12 +67637,28 @@ function sceneBridgeOpen(){ return !!sceneBridge; }
 
 /* The centre-screen banner. Holds for a few seconds, or until tapped,
    then leaves and releases the timeline for the next one. */
+const SPOT_SEEN_MS = 1200;
 function playUnlockSpotlight(item, n, of, release){
   clearCelebrationsForScene();
-  /* Shown is shown, wherever it was shown - see ensureUnlocksShown. */
-  if(item.kind === "character" && item.character) markUnlocksShown([item.character], []);
-  if(item.kind === "banner" && item.banner) markUnlocksShown([], [item.banner]);
-  if(item.kind === "rankrewards") markUnlocksShown(item.chars || [], item.banners || []);
+  /* SHOWN WHEN IT WAS SEEN, NOT WHEN IT STARTED (build 312). "The Home
+     Screen unlock banner didn't show up for Zeus when I unlocked it." The
+     account had Zeus held and marked shown - because this marked a card
+     shown the instant it was BUILT. A card cut short before anybody could
+     read it (the screen changing under it, a fast tap through a results
+     screen, a cutscene clearing the stage) still counted, so Home - which
+     only plays what has not been shown - never got its turn. Now a card
+     counts once it has been up for SPOT_SEEN_MS or was tapped away; one
+     that dies sooner stays owed, and Home hands it over. Shown is still
+     shown, wherever it was shown - see ensureUnlocksShown. */
+  let seenMarked = false;
+  const markSeen = () => {
+    if(seenMarked) return;
+    seenMarked = true;
+    if(item.kind === "character" && item.character) markUnlocksShown([item.character], []);
+    if(item.kind === "banner" && item.banner) markUnlocksShown([], [item.banner]);
+    if(item.kind === "rankrewards") markUnlocksShown(item.chars || [], item.banners || []);
+    if(item.kind === "hint" && item.hint) markFlareHintShown(item.hint);
+  };
   const spot = document.createElement("div");
   /* THE KIND CLASS WAS A COLLISION (build 241). A banner's pop-up was
      "rs-spot-banner", which is also what the banner picture inside it was
@@ -66862,7 +67675,9 @@ function playUnlockSpotlight(item, n, of, release){
   const art = document.createElement("div");
   art.className = "rs-spot-art" + (item.kind === "banner" ? " is-banner" : "") +
     (item.kind === "character" ? " is-character char-live" : "") +
-    (item.kind === "rankrewards" ? " is-rewards" : "");
+    (item.kind === "rankrewards" ? " is-rewards" : "") +
+    (item.kind === "flare" || item.kind === "hint" ? " is-flare" : "") +
+    (item.kind === "hint" ? " is-hint" : "");
   if(item.kind === "rank"){
     /* THE COOLEST BANNER OF THEM ALL - "maybe make the pop up kinda do a
        thing where the old rank icon morphs or something into the new
@@ -66970,9 +67785,14 @@ function playUnlockSpotlight(item, n, of, release){
     : item.kind === "rank" ? 10000
     : item.kind === "character" ? (item.feat ? 10000 : 9000) : 8500;
   let timer = null, gone = false;
-  function leave(){
+  const spotAt = performance.now();
+  setTimeout(() => { if(spot.isConnected && !gone) markSeen(); }, SPOT_SEEN_MS);
+  function leave(byTap){
     if(gone) return;
     gone = true;
+    /* a tap on the card is a read; a skip from outside it only counts
+       once the card has had a moment on screen */
+    if(byTap === true || performance.now() - spotAt >= 450) markSeen();
     if(timer){ clearTimeout(timer); timer = null; }
     /* On Home the thing itself flies into the Profile tab while the
        card falls away - "it does an effect where it shoots over to the
@@ -66983,8 +67803,8 @@ function playUnlockSpotlight(item, n, of, release){
     setTimeout(() => spot.remove(), 320);
     setTimeout(release, Math.max(320, flight + 120));
   }
-  spot.addEventListener("click", leave);
-  timer = setTimeout(leave, HOLD);
+  spot.addEventListener("click", () => leave(true));
+  timer = setTimeout(() => leave(true), HOLD);
   return {
     skip(){ leave(); },
     stop(){ gone = true; if(timer) clearTimeout(timer); spot.remove(); }
@@ -67617,15 +68437,20 @@ function showRunReview(run, hooks){
   const head = buildRunHead(run);
   const summary = document.createElement("p");
   summary.className = "rs-review-summary";
-  summary.textContent = run.missed.length + (run.missed.length === 1 ? " question" : " questions") + " to go over";
+  /* nothing missed: the whole run, every question marked right (build 312) */
+  const allRight = run.missed.length === 0;
+  summary.textContent = allRight
+    ? "All " + run.order.length + (run.order.length === 1 ? " question" : " questions") + " right"
+    : run.missed.length + (run.missed.length === 1 ? " question" : " questions") + " to go over";
+  if(allRight) panel.classList.add("is-all-right");
   head.appendChild(summary);
   panel.appendChild(head);
 
   const list = document.createElement("ol");
   list.className = "rs-qlist";
-  const sorted = run.missed.slice();
-  if(run.mode === "drill") sorted.sort((a, b) => (run.attempts[b] || 0) - (run.attempts[a] || 0));
-  sorted.forEach((qi, n) => list.appendChild(buildReviewQuestion(run, qi, n)));
+  const sorted = allRight ? run.order.slice() : run.missed.slice();
+  if(!allRight && run.mode === "drill") sorted.sort((a, b) => (run.attempts[b] || 0) - (run.attempts[a] || 0));
+  sorted.forEach((qi, n) => list.appendChild(buildReviewQuestion(run, qi, n, allRight)));
   panel.appendChild(list);
 
   const actions = hooks.finalActions({ where: "review", toResults: () => showRunRewards(run, hooks, { instant: true }) });
@@ -68314,7 +69139,18 @@ function summarize(){
       }
     }, stillMissed ? null : "nextbtn");
     const home = mk("Main menu", "next ghost", showHome);
-    actions.append(rerun, home);
+    /* A PERFECT RUN CAN STILL BE LOOKED BACK AT (build 312). "When getting
+       a 100, still provide a review option for the test at the test
+       result that says review test and it just opens it up and you can
+       look back at it ... If you retake questions and get to the point
+       of answering them all right, same option." With nothing missed
+       there was no review at all; now the same review screen opens with
+       every question in the run, each marked right. */
+    if(!stillMissed && where.toReview){
+      actions.append(rerun, mk("Review test", "next ghost rs-review-all", where.toReview), home);
+    } else {
+      actions.append(rerun, home);
+    }
     return actions;
   };
   const resultsTour = () => {
@@ -77480,6 +78316,7 @@ function renderRankingRows(rows, entries, board, opts){
       avatarWrap.className = "rank-avatar-wrap";
       const avatar = document.createElement("span");
       avatar.className = "rank-avatar";
+      try{ avatar.style.setProperty("--char-glow", avatarGlowColor(entry.avatarChar)); }catch(e){}
       avatar.appendChild(buildAvatarCharSVGSafe(entry.avatarChar));
       avatarWrap.appendChild(avatar);
       /* Alive on the boards (build 304): "make all characters in the
@@ -77842,8 +78679,9 @@ function badgeDetail(unit){
        got so it'd say the challenge." It said "Earned for mastering the
        unit", which is the one thing the badge itself already says. */
     desc: has
-      ? "The challenge: " + need + " hundo" + (need === 1 ? "" : "s") + " here \u2014 the whole unit, every question right, " + need + " time" + (need === 1 ? "" : "s") + ". " +
-        (((store.unitPerfects && store.unitPerfects[unit]) || 0) > need ? "You have " + store.unitPerfects[unit] + " now." : "Done.")
+      /* just what it took (build 312): "it doesn't need to tell you how
+         many you have if it's the unlock, only the requirement" */
+      ? "The challenge: " + need + " hundo" + (need === 1 ? "" : "s") + " in this unit \u2014 the whole unit, every question right, " + need + " time" + (need === 1 ? "" : "s") + "."
       : "Earn " + need + " hundo" + (need === 1 ? "" : "s") + " in this unit.",
     have: done, need: need };
 }
@@ -78214,7 +79052,8 @@ function showCustomize(){
       ids: AVATAR_CHARACTERS.filter(c => c.secret).map(c => c.id) },
     /* THE LAST ONE (build 304): "It will be the last character on the
        list." Its own section, after everything it asks for. */
-    { title: "Ultimate", note: "Unlock everything else first",
+    /* BUILD 312: three of them, hardest last - Astral, Celestial, Zenith */
+    { title: "Ultimate", note: "The hardest three \u2014 Zenith takes everything",
       ids: AVATAR_CHARACTERS.filter(c => c.ultimate).map(c => c.id) },
     /* A character from an earlier version that nobody can earn now, shown
        only to whoever holds it (or is still wearing a retired one). */
@@ -79687,7 +80526,9 @@ function flashcardDeck(units, source, versions){
       deck.push(i);
     });
   });
-  return deck;
+  /* SHUFFLED (build 312): the deck was the study guide's order, every
+     time - "neither are the order of questions". Spread like a test's. */
+  return spreadOrder(shuffle(deck));
 }
 function showFlashcards(units, source, versions){
   const deck = flashcardDeck(units, source, versions);
@@ -79772,10 +80613,15 @@ function renderFlashcard(dir){
        list of four one-word choices at list size sat small in a big card. */
     const total = item.choices.reduce((n, c) => n + String(c).length, 0);
     const ul = document.createElement("ul"); ul.className = "fc-choices" + (total <= 90 ? " is-short" : total <= 200 ? " is-mid" : "");
-    item.choices.forEach((c, ci) => {
+    /* in a shuffled order too (build 312), the same safe shuffle a test
+       uses, fixed once per card so flipping back and forth keeps it */
+    if(!fc.choiceOrder) fc.choiceOrder = {};
+    if(!fc.choiceOrder[qi]) fc.choiceOrder[qi] = shuffledChoiceOrder(qi, false);
+    fc.choiceOrder[qi].forEach((ci, slot) => {
+      const c = item.choices[ci];
       const li = document.createElement("li");
       li.className = ci === item.answer ? "is-answer" : "";
-      const lt = document.createElement("span"); lt.className = "fc-letter"; lt.textContent = LETTERS[ci] + ".";
+      const lt = document.createElement("span"); lt.className = "fc-letter"; lt.textContent = LETTERS[slot] + ".";
       const tx = document.createElement("span"); tx.className = "fc-choice-text"; tx.textContent = c;
       li.append(lt, tx);
       ul.appendChild(li);
@@ -83082,6 +83928,11 @@ function applyGlassRefraction(el, mapImgId){
     void slider.offsetWidth;
     slider.style.transition = "";
     slider.style.transform = "translateX(" + x + "px)";
+    /* the lens, only when it actually travels (build 312) */
+    if(Math.abs(fromX - x) > 2){
+      slider.classList.remove("is-moving"); void slider.offsetWidth; slider.classList.add("is-moving");
+      clearTimeout(slider._lensT); slider._lensT = setTimeout(() => slider.classList.remove("is-moving"), 560);
+    }
   }
   window.addEventListener("resize", () => slideBubbleToActiveTab(true));
   try{ new ResizeObserver(() => slideBubbleToActiveTab(true)).observe(navrow); }catch(e){}

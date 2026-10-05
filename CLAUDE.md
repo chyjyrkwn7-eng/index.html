@@ -11667,3 +11667,138 @@ flashcard bar colour, the slide (a push now), and build 280's still map.
 
 **Known and not this build's**: sweep-layout reports a GREY BAR on an
 SE 1st gen at 568x260 in a browser (landscape). It is red on 309 as well.
+
+### Build 312 - a real shuffle, Review test on a perfect run, every character alive, three ultimates, First Light
+
+**Held for Madison's go, together with 310 and 311.** None was merged;
+312 is the build number all three ship under. The leaderboard row
+banners are still OFF.
+
+**The shuffle** ("the answer choices still aren't being properly
+shuffled and neither are the order of questions" - raised many times)
+- **It was real, and it was three bugs.** 121 of 895 questions could
+  NEVER move: any question with a choice that points at the others
+  ("all of the above", "both A and B") was frozen whole, which was a
+  third of Sexual Assault/Family Violence and of the CCP. Flashcards were
+  never shuffled at all. And the Virtual Room's shared shuffle was an LCG
+  whose low bits repeat, so short rooms came out in near-identical orders.
+- **`shuffledChoiceOrder(qi, remember)`** is the one shuffle. Pointing
+  choices stay where they are; every other choice moves, but only among
+  the positions that the pointing choices see the same way (a "both A and
+  B" keeps pointing at the same two answers, an "all of the above" keeps
+  everything above it). It retries until no more than one choice is left
+  where it was, and with `remember` the answer never lands in the slot it
+  had last time (`LAST_SLOT_KEY`). `q.fixedOrder` (Constitution Q11, Q37)
+  never moves. **check-behaviour 86** checks all of it over the whole bank.
+- `shuffleSeeded` is mulberry32 now. A room with people on 311 and 312
+  at once would disagree on order - one more reason the hold matters.
+
+**Results**
+- **A 100% run offers "Review test"** (`.rs-review-all`), and so does a
+  retake that reaches all-right; `showRunReview` lists every question as
+  right ("All N questions right", `.is-all-right`).
+- **An unlock card counts as shown only once it has been seen** -
+  `SPOT_SEEN_MS` (1.2s) on screen, or tapped. It used to be marked the
+  instant it was built, so a card cut short (a screen change, a fast tap)
+  still counted and Home never played it: that is why Zeus never got his
+  Home banner. Madison's account already had Zeus marked shown and was not
+  re-queued; she has him in Customize.
+- A badge card says only the requirement once it is earned.
+
+**UI**
+- Leaderboard avatars are clipped to their circles (`overflow:hidden` +
+  `clip-path:circle()`), the artwork scaled .94.
+- **The tab bubble** is drawn on `.bottomtabs-slider::before`, inset 5px
+  top and bottom, so it never touches the bar's own edge (the "weird
+  line" was the two edges coinciding). It lenses while it moves
+  (`.is-moving`, 560ms) - the Liquid Glass bar the reference recording
+  shows.
+- **Next rises 0.35s sooner**: `.4s` delay, `.5s` rise (was `.75s`/`.62s`).
+- Drill and Exam descriptions say outright when you find out right or
+  wrong.
+
+**Characters** - see the BUILD 312 CHARACTER PASS block in the stylesheet
+- **Everybody blinks.** Zeus, the Masked One, Umbra, Horizon, Inferno and
+  Zenith were held still; they blink now (Inferno and Zenith keep their
+  ember under it). Every live character has its own `--cx-blink` beat so a
+  row never blinks in unison. check-behaviour 89.
+- **Frost**: an ice sigil turning behind the head (60deg loop), light up
+  the crown spike by spike, eyes and cheek frost on the same beat.
+- **Clown**: juggles three balls under the grin (two nested pendulums per
+  ball - hidden in a still drawing, where they would stack as one), bells
+  that jingle in turn, a nose honk, a wink.
+- **Orion**: the constellation is OFF his face ("over the top with the
+  mouth stuff") and in the sky to the left; a visor scan.
+- **Umbra**: the background moon goes through its phases (`phasemoon` in
+  the backdrop), the brow crescent swells and glints. **Horizon**: a wave
+  of light across the hair and sparks off the tips; the outer locks'
+  roots moved behind the mask (their flat bases showed as a cut).
+  **Both secret flares** have `wornFlareFx()` - rings off them and three
+  orbiting sparks, shown only under char-live.
+- **Zenith's star** no longer pops and flashes: eight rays turning, a
+  breathing streak, two satellites, light pouring down the halo. **His
+  banner matches** - the 8s white shock is gone, rays and satellites added.
+- The Alien's antennae send rings.
+
+**Three ultimates** ("make zenith the hardest ultimate ... one is
+unlocking all characters, one is banners, zenith is everything")
+- **Astral** (look c, the cyan plasma Madison called green) for every
+  non-ultimate character; **Celestial** (look b) for every non-ultimate
+  banner; **Zenith** (a) for everything, the other two INCLUDED. One
+  drawing, `def.zstyle` picks the look; `collectionProgress()` counts the
+  first two, `ultimateProgress()` leaves out only Zenith itself. Each has
+  its banner (`ZENITH_BANNER.c/.b/.a`), all three last in both lists.
+
+**First Light** - the new unique banner: 10 tests finished between 4 and
+8 AM. `store.earlyTests` is merged like `vrMatches` on all three merge
+paths and seeded once from history (`seedEarlyTests312`). Sunrise over
+the city across the water.
+
+**The secret flares, again** ("This secret flare has a square around it";
+"the void cutscene ... started hopping up and down"; "you get a banner
+pop up that says the you can now unlock umbra")
+- **The square was a CSS `drop-shadow` on `.rs-spot-art`**, round an orb
+  whose own bloom fills its whole box. WebKit composites a filtered element
+  as its rectangle, so iOS lit the box. `.is-flare` takes no filter and
+  gets a round `::before` halo instead. Same rule as the hero and the
+  characters: **never a filter on a box holding a semi-transparent
+  full-box drawing.**
+- **The hop was two things**: the figure was swapped to `char-react-win`
+  (the Virtual Room win bounce) and `.ff-fig` breathed `translateY(-4px)`
+  on top of that. Both are gone. The scene now holds black after the
+  burst, lights the figure's OWN flares alone in the middle (`.ff-figflares`
+  - a second copy of the same drawing with everything but its flare groups
+  `visibility:hidden`, laid exactly over the first so the loops run in
+  step), then fades the figure up round them over six seconds with what
+  it came out of rising behind it, then sends the flares that made it out
+  to orbit. 18.2s against 11.2s. Timeline classes: `ff-hold` 6.3s,
+  `ff-seed` 6.7s, `ff-emerge` 8.6s, `ff-orbit-out` 11.8s.
+- **Each of the three has its own backdrop** (`.ff-back.is-void|is-umbra|
+  is-horizon`): Void a swirl of the three colours, Umbra a violet moon an
+  eclipse slides across leaving a corona, Horizon an edge-on disk of light
+  with a photon ring. Umbra and Horizon's kicker is their own flare's
+  colour, not the five-colour rim's.
+- **The orbiters scale with the `scale` property, not `transform`**: they
+  already rotate with an animation on `transform`, which would override a
+  transform transition outright.
+- **Home now says when a hunt opens.** Holding Void owes "Umbra is out
+  there", holding Umbra owes the Horizon one: a `kind:"hint"` card after
+  anything unlocked in the same queue, a ghost of the character with its
+  flare lit where it will be worn, no flight to Profile (nothing is in
+  there yet). Once per account: `store.flareHintsShown`, defaulted to `[]`
+  and unioned on both sync merge paths. Muted banners mark it shown.
+  `homeUnlocksOwed()` is the one "is anything owed" test now; every
+  caller that used to check `chars.length || banners.length` uses it.
+
+**The audit's three 320px finds** (iPhone SE 1st gen, every other device
+clean): a fill-in blank (`________________`) is one unbreakable word and
+pushed Answer Review 50px sideways, so `.qtext` is
+`overflow-wrap:anywhere`; the test's centred "1/19" sat under the chat
+button, so below 22rem it sits at 38%; the Rank tab's "You are here" chip
+ran off its card, so `.rankmap-head` wraps when it must.
+
+**The shuffle gate changed with the decision.** Section 66 asserted that
+a question with "Both A & B" or "All of the above" was never reordered -
+build 298's rule. Build 312 replaced it, so those checks now assert the
+new shape (the pointing choice stays put, the rest shuffle where the
+meaning allows) and section 86 proves meaning across the whole bank.

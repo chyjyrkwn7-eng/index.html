@@ -1763,10 +1763,12 @@ def check_b232(br):
     secrets = ["voidwalker", "umbra", "singularity"]
     # Build 304: Zenith, the ultimate, is a feat too and comes after the
     # secrets - "it will be the last character on the list".
+    # Build 312: three ultimates, Zenith still last - Astral, Celestial, Zenith.
     o = r["order"]
-    ult = o[-1:] == ["zenith"]
-    o = [x for x in o if x != "zenith"]
-    check("the challenge row: the known challenge characters in order, anything newer after them (the Ronin), then the secrets, then Zenith last",
+    ULT = ["astral", "celestial", "zenith"]
+    ult = o[-3:] == ULT
+    o = [x for x in o if x not in ULT]
+    check("the challenge row: the known challenge characters in order, anything newer after them (the Ronin), then the secrets, then the three ultimates with Zenith last",
           ult and o[:len(known)] == known and o[-len(secrets):] == secrets and "ronin" in o and "knight" not in o and "nightowl" not in o, r["order"])
     # Build 233: the Masked One is back, for retaking missed questions.
     check("the Masked One unlocks at 100 retaken questions and says how far along you are",
@@ -6817,9 +6819,16 @@ def check_b298(br):
           if(o.filter((v, j) => v === j).length >= 2) stay2++; slots[o.indexOf(QUESTIONS[i].answer)]++; } });
       out.stay2 = stay2 / n4; out.slots = slots.map(x => +(x / n4).toFixed(3));
       return out; }""")
-    check("a question whose choices name other letters (\"Both A & B\") keeps the study guide's order on shuffle and in an exam",
-          r["both"]["orders"] == ["0,1,2,3"] and r["exam"] == ["0,1,2,3"], r["both"])
-    check("so does one with \"All of the above\"", r["above"] == ["0,1,2,3"], r["above"])
+    # BUILD 312 changed the decision this encoded: a question with a
+    # pointing choice is no longer frozen whole ("the answer choices still
+    # aren't being properly shuffled"). The pointing choice stays where it
+    # is and still means the same choices; section 86 proves that across
+    # the whole bank. What is asserted here is that shape, on the two
+    # questions this section was written about.
+    both_ok = lambda os: all(o.split(",")[2:] == ["2", "3"] and sorted(o.split(",")[:2]) == ["0", "1"] for o in os)
+    check("a question whose choices name other letters (\"Both A & B\"): A and B may trade places, C and \"Both A & B\" stay put, on shuffle and in an exam",
+          both_ok(r["both"]["orders"]) and both_ok(r["exam"]), r["both"])
+    check("one with \"All of the above\" keeps it last, with the rest shuffling above it", len(r["above"]) > 1 and len({o.split(",")[-1] for o in r["above"]}) == 1, r["above"])
     check("a plain question, and one whose answer only starts with \"All\", still shuffle", r["plain"] > 1 and r["prose"] > 1, (r["plain"], r["prose"]))
     check("about a hundred questions in the bank are held in order", 90 <= r["count"] <= 130, r["count"])
     check("on shuffle, an \"of the above\" / \"All the listed\" / \"All are true\" choice always lands at the bottom",
@@ -6828,8 +6837,8 @@ def check_b298(br):
           r["near"] < 0.5 and r["twins"] < 0.5, (r["near"], r["twins"]))
     check("a shuffled question leaves at most one choice where the guide had it, and the answer still lands on every letter about equally",
           r["stay2"] == 0 and all(0.2 <= s <= 0.3 for s in r["slots"]), (r["stay2"], r["slots"]))
-    check("and one whose choices name letters (\"A or B\", \"a and b are correct\") is never reordered",
-          r["moved"] == [], r["moved"])
+    check("and one whose choices name letters (\"A or B\", \"a and b are correct\") now moves around them (build 312: frozen whole before)",
+          len(r["moved"]) > 0, r["moved"])
     ctx.close()
     # "this one ... said at the top that it's a duplicate.. remove that stuff"
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
@@ -8662,6 +8671,247 @@ def check_b311_rank(br):
     ctx.close()
 
 
+def check_b312_shuffle(br):
+    """Build 312, the shuffle: "the answer choices still aren't being
+    properly shuffled and neither are the order of questions". Written
+    against build 311, where 121 of 895 questions could never move (every
+    question with a choice that points at the others was frozen whole),
+    flashcards were never shuffled at all, and the same slot could hold
+    the answer twice running."""
+    print("\n86. build 312: the shuffle - every question can move, the pointing choices stay true, flashcards shuffle")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""() => { const out = {};
+      const ids = qi => (QUESTIONS[qi].choices || []).map((c, k) => k);
+      /* every question that is not hand-fixed moves at least once in 60 tries */
+      let never = [], fixedMoved = [], checked = 0;
+      QUESTIONS.forEach((q, qi) => {
+        const n = (q.choices || []).length; if(n < 2) return;
+        const base = pointsUpLast(qi, ids(qi)).join();
+        let moved = false;
+        for(let t = 0; t < 60 && !moved; t++) if(shuffledChoiceOrder(qi, false).join() !== base) moved = true;
+        if(q.fixedOrder){ if(moved) fixedMoved.push(qi); return; }
+        checked++; if(!moved) never.push(q.src);
+      });
+      out.checked = checked; out.never = never.slice(0, 8); out.neverN = never.length; out.fixedMoved = fixedMoved.length;
+      out.fixedN = QUESTIONS.filter(q => q.fixedOrder).length;
+      /* a choice that points at the others still points at the same set */
+      let bad = [], pointing = 0;
+      QUESTIONS.forEach((q, qi) => {
+        if(!choicesReferToEachOther(qi) || q.fixedOrder) return; pointing++;
+        const ch = q.choices, base = pointsUpLast(qi, ids(qi));
+        const isLetter = k => CHOICE_REFERS_RE[1].test(String(ch[k]));
+        const isRef = k => CHOICE_REFERS_RE.some(re => re.test(String(ch[k])));
+        const refSet = (o, k) => { const at = o.indexOf(k);
+          if(isLetter(k)){ const t = []; String(ch[k]).replace(CHOICE_LETTER_RE, (m, x) => { t.push(o[x.toUpperCase().charCodeAt(0) - 65]); return m; }); return t.filter(x => x !== undefined && x !== k).sort().join(); }
+          return o.slice(0, at).filter(x => !isRef(x)).sort().join(); };
+        for(let t = 0; t < 120; t++){
+          const o = shuffledChoiceOrder(qi, false);
+          for(const k of ch.map((c, i) => i).filter(isRef))
+            if(refSet(o, k) !== refSet(base, k) || o.indexOf(k) !== base.indexOf(k)){ bad.push([q.src, ch[k], o.join(''), base.join('')]); t = 999; break; }
+        }
+      });
+      out.pointing = pointing; out.bad = bad.slice(0, 4);
+      /* asked again, the answer is not in the same slot as last time */
+      const qi0 = QUESTIONS.findIndex(q => !q.fixedOrder && (q.choices || []).length >= 4 && !choicesReferToEachOther(QUESTIONS.indexOf(q)));
+      let repeats = 0, prev = null;
+      for(let t = 0; t < 40; t++){ const o = shuffledChoiceOrder(qi0, true); const slot = o.indexOf(QUESTIONS[qi0].answer); if(slot === prev) repeats++; prev = slot; }
+      out.repeats = repeats;
+      /* flashcards come in a fresh order each deck */
+      try{ const fu = [topicsIn(QUESTIONS)[1]];
+        const a = flashcardDeck(fu, 'all', {}).join(), b = flashcardDeck(fu, 'all', {}).join(), c = flashcardDeck(fu, 'all', {}).join();
+        out.fcDiffer = (a !== b) || (b !== c); out.fcLen = a.split(',').length; }catch(e){ out.fcErr = String(e); }
+      return out; }""")
+    check("every question that is not hand-fixed can come up in a new choice order (build 311: 121 never moved)",
+          r.get("checked", 0) > 800 and r.get("neverN") == 0, {k: r.get(k) for k in ("checked", "neverN", "never")})
+    check("the hand-fixed questions (Constitution Q11 and Q37) never move", r.get("fixedN", 0) >= 2 and r.get("fixedMoved") == 0, r)
+    check("a choice that points at the others (all/none of the above, both A and B) keeps pointing at the same choices",
+          r.get("pointing", 0) > 50 and not r.get("bad"), {k: r.get(k) for k in ("pointing", "bad")})
+    check("asked again, the answer does not sit in the same slot as it did the time before", r.get("repeats") == 0, r.get("repeats"))
+    check("flashcards come in a new order each time", r.get("fcDiffer") is True and r.get("fcLen", 0) > 5, r)
+    ctx.close()
+
+
+def check_b312_results(br):
+    """Build 312: "When getting a 100, still provide a review option for
+    the test at the test result that says review test". Build 311 offered
+    only Re-run and Main menu on a perfect run - the review list was built
+    from the misses, and there were none."""
+    print("\n87. build 312: a perfect run offers Review test, and the list is every question, right")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      cfg.mode = 'drill'; cfg.units = ['Identity Crimes']; cfg.source = 'all'; cfg.size = 0; cfg.versions = {};
+      theme.autoAdvance = true;
+      beginRun(freshOrder(QUESTIONS.map((q, i) => i).filter(i => QUESTIONS[i].topic.trim() === 'Identity Crimes')), null);
+      for(let i = 0; i < 80 && !document.querySelector('.choice'); i++) await wait(100);
+      let last = -1, guard = 0;
+      while(testInProgress && guard++ < 240){
+        const ch = [...document.querySelectorAll('#stage .choice:not(.locked)')];
+        if(pos !== last && ch.length){ last = pos; const slot = correctSlot(order[pos]); ch[slot] && ch[slot].click(); }
+        await wait(250);
+      }
+      for(let i = 0; i < 100 && !document.querySelector('.rs-review-all'); i++){ document.querySelector('.rs-screen')?.click(); await wait(200); }
+      const btns = [...document.querySelectorAll('.rs-final button')].map(b => b.textContent.trim());
+      document.querySelector('.rs-review-all')?.click(); await wait(900);
+      return { btns, summary: (document.querySelector('.rs-review-summary') || {}).textContent || '',
+               items: document.querySelectorAll('.rs-q').length, allRight: !!document.querySelector('.is-all-right') }; }""")
+    check("a 100% run's final buttons include Review test", "Review test" in (r.get("btns") or []), r.get("btns"))
+    check("Review test opens every question, each one right", r.get("items", 0) >= 10 and r.get("allRight") is True and "right" in r.get("summary", ""), r)
+    ctx.close()
+
+
+def check_b312_unlocks(br):
+    """Build 312: "The Home Screen unlock banner didn't show up for Zeus".
+    Build 311 marked a pop-up shown the moment it was BUILT, so one cut
+    short before anybody saw it still counted and Home never played it.
+    And the three ultimates: Astral (every character), Celestial (every
+    banner), Zenith (everything, the other two included)."""
+    print("\n88. build 312: an unlock card counts only once seen; three ultimates; First Light")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      const shown = id => !!(store.unlocksShown && (store.unlocksShown.chars || []).indexOf(id) >= 0);
+      store.unlocksShown = store.unlocksShown || { chars: [], banners: [] };
+      store.unlocksShown.chars = (store.unlocksShown.chars || []).filter(x => x !== 'zeus' && x !== 'clown');
+      /* cut short at 300ms: still owed */
+      let h = playUnlockSpotlight({ kind: 'character', character: 'zeus', feat: true, kicker: 'Character unlocked' }, 1, 1, () => {});
+      await wait(300); h.stop(); await wait(1300);
+      out.cutShort = shown('zeus');
+      /* left up: counted once it has been seen */
+      h = playUnlockSpotlight({ kind: 'character', character: 'clown', feat: true, kicker: 'Character unlocked' }, 1, 1, () => {});
+      await wait(1500); out.seen = shown('clown'); h.stop();
+      /* the ultimates, in order, each its own look */
+      out.ult = AVATAR_CHARACTERS.filter(c => c.ultimate).map(c => c.id);
+      const looks = {}; out.ult.forEach(id => { const sv = buildAvatarCharSVG(id); looks[id] = ['za', 'zb', 'zc'].filter(k => sv.querySelector('[class*="cx-fx-' + k + '"]')); });
+      out.looks = looks;
+      out.ultBanners = BANNERS.filter(b => b.ultimate).map(b => b.id);
+      /* the ladder: everything else held -> Astral and Celestial, and Zenith only once those are too */
+      const realLocked = isLockedCharacter, realEarned = bannerEarned, realAccent = isLockedAccent;
+      const ultIds = ['astral', 'celestial', 'zenith'];
+      window.isLockedCharacter = id => ultIds.indexOf(id) >= 0 ? realLocked(id) : false;
+      window.bannerEarned = id => ultIds.indexOf(id) >= 0 ? realEarned(id) : true;
+      window.isLockedAccent = () => false;
+      out.astral = !isLockedCharacter('astral'); out.celestial = !isLockedCharacter('celestial');
+      out.astralBanner = bannerEarned('astral'); out.celestialBanner = bannerEarned('celestial');
+      out.zenith = !isLockedCharacter('zenith');
+      const up = ultimateProgress(); out.up = up;
+      window.isLockedCharacter = realLocked; window.bannerEarned = realEarned; window.isLockedAccent = realAccent;
+      /* First Light: seeded from the history, then counted */
+      const at = h => { const d = new Date(); d.setHours(h, 30, 0, 0); return d.getTime(); };
+      store.earlyTests = 0; store.earlyTestsSeed312 = false;
+      store.testHistory = [{ playedAt: at(6), pct: 80 }, { playedAt: at(7), pct: 90 }, { playedAt: at(13), pct: 70 }, { playedAt: at(2), pct: 60 }];
+      out.seeded = earlyTestsOf();
+      out.early = bannerDef('early10') ? { need: bannerDef('early10').need, have: bannerDef('early10').have(), name: bannerDef('early10').name } : null;
+      return out; }""")
+    check("an unlock card cut short before it was seen stays owed, so Home still plays it", r.get("cutShort") is False, r)
+    check("an unlock card that stayed up counts as shown", r.get("seen") is True, r)
+    check("three ultimates, hardest last: Astral, Celestial, Zenith", r.get("ult") == ["astral", "celestial", "zenith"], r.get("ult"))
+    check("each ultimate wears its own look (Astral the plasma, Celestial the stars, Zenith the obsidian)",
+          r.get("looks") == {"astral": ["zc"], "celestial": ["zb"], "zenith": ["za"]}, r.get("looks"))
+    check("each ultimate has its banner, last in the list", r.get("ultBanners") == ["astral", "celestial", "zenith"], r.get("ultBanners"))
+    check("every other character earns Astral and every banner earns Celestial, character and banner alike",
+          r.get("astral") and r.get("celestial") and r.get("astralBanner") and r.get("celestialBanner"), r)
+    check("Zenith asks for everything, the other two ultimates included", r.get("zenith") is True and r["up"]["have"] == r["up"]["need"], r.get("up"))
+    check("First Light counts tests finished between 4 and 8 in the morning, seeded from the history",
+          r.get("seeded") == 2 and r.get("early") and r["early"]["need"] == 10 and r["early"]["have"] == 2 and r["early"]["name"] == "First Light", r)
+    ctx.close()
+
+
+def check_b312_flares(br):
+    """Build 312, the secret flares: "This secret flare has a square around
+    it"; "the void cutscene ... started hopping up and down ... void should
+    have became super faint and slowly started to appear out of the dark,
+    potentially starting with the flares being placed in the middle ...
+    lasting another 5-10 seconds"; "when you go back to main menu, you get
+    a banner pop up that says the you can now unlock umbra". Written
+    against build 311, where the flare card carried a drop-shadow filter
+    (a lit square on iOS), the figure swapped to the bouncing win reaction
+    and breathed up and down, the scene ended at 11.2s, and Home said
+    nothing about the hunt that had just opened."""
+    print("\n90. build 312: the flare card has no box, Void fades up out of the dark without hopping, Home tells you Umbra is out there")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      /* the flare card: no filter on the art (WebKit paints a filtered box as its rectangle) */
+      const h = playUnlockSpotlight({ kind: 'flare', flare: 'yellow', kicker: 'Secret flare found', name: 'Yellow',
+        color: MYSTERY_COLOR.yellow, art: () => buildFlareOrb(MYSTERY_COLOR.yellow, 't') }, 1, 1, () => {});
+      await wait(1900);
+      const art = document.querySelector('.rs-spot .rs-spot-art');
+      out.cardFilter = art ? getComputedStyle(art).filter : 'missing';
+      h.stop();
+      /* the Void scene */
+      store.mysteryColorsFound = { red: true, orange: true, yellow: true };
+      const sc = playFinalFlareScene('yellow', () => {});
+      await wait(9800);
+      const ov = document.querySelector('.ff-scene');
+      out.hop = !!(ov && ov.querySelector('.char-react-win'));
+      const fig = ov && ov.querySelector('.ff-fig');
+      out.figFilter = fig ? getComputedStyle(fig).filter : 'missing';
+      out.figAnim = fig ? getComputedStyle(fig).animationName : 'missing';
+      out.flaresFirst = !!(ov && ov.querySelector('.ff-figflares svg'));
+      await wait(6800);
+      out.stillUpAt16s = !!document.querySelector('.ff-scene');
+      sc && sc.stop && sc.stop();
+      /* the Home card */
+      ensureUnlocksShown(); markUnlocksShown(announceableHeldCharacters(), BANNERS.filter(b => bannerEarned(b.id)).map(b => b.id));
+      store.flareHintsShown = [];
+      out.owed = typeof pendingFlareHints === 'function' ? pendingFlareHints() : 'none';
+      showHome(); await wait(4200);
+      const spot = document.querySelector('.rs-spot');
+      out.card = spot ? spot.textContent : '';
+      spot && spot.click(); await wait(1200);
+      out.shown = (store.flareHintsShown || []).slice();
+      showHome(); await wait(4200);
+      out.again = !!document.querySelector('.rs-spot');
+      store.mysteryColorsFound = { red: true, orange: true, yellow: true, violet: true };
+      out.owedNext = typeof pendingFlareHints === 'function' ? pendingFlareHints() : 'none';
+      return out; }""")
+    check("the secret flare card draws no filter round the orb (the square on iOS)", r.get("cardFilter") == "none", r.get("cardFilter"))
+    check("Void never takes the bouncing win reaction in its own scene", r.get("hop") is False, r)
+    check("the emerging figure has no filter and no up-and-down animation", r.get("figFilter") == "none" and r.get("figAnim") == "none", r)
+    check("its flares light first, alone in the dark", r.get("flaresFirst") is True, r)
+    check("the scene runs past 16 seconds (it ended at 11 before)", r.get("stillUpAt16s") is True, r)
+    check("holding Void owes the Umbra hint, and Home shows it", r.get("owed") == ["umbra"] and "Umbra is out there" in r.get("card", ""), r)
+    check("tapped away, it is recorded and never shown again", r.get("shown") == ["umbra"] and r.get("again") is False, r)
+    check("holding Umbra owes the Horizon hint next", r.get("owedNext") == ["singularity"], r)
+    ctx.close()
+
+
+def check_b312_looks(br):
+    """Build 312: "ensure all characters blink"; the leaderboard's
+    characters "protruding outside the circles"; the tab bubble's "weird
+    line" along its bottom; the Next button "0.25 seconds faster"."""
+    print("\n89. build 312: everyone blinks, board avatars stay in their circles, the tab bubble, the Next button")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      const host = document.createElement('div'); host.className = 'char-live'; host.style.cssText = 'position:fixed;left:0;top:0;width:60px;height:60px';
+      document.body.appendChild(host);
+      out.noBlink = []; out.ballsStill = null;
+      AVATAR_CHARACTERS.filter(c => !c.retired).forEach(c => {
+        host.innerHTML = ''; const sv = buildAvatarCharSVG(c.id); host.appendChild(sv);
+        const e = sv.querySelector('.cx-eyes');
+        if(!e || !/cx-blink/.test(getComputedStyle(e).animationName)) out.noBlink.push(c.id);
+      });
+      host.remove();
+      const still = buildAvatarCharSVG('clown'); document.body.appendChild(still);
+      out.ballsStill = getComputedStyle(still.querySelector('.cx-fx-cl3balls')).opacity; still.remove();
+      /* Orion's constellation is in the sky, not across his face */
+      const orion = buildAvatarCharSVG('astronaut');
+      out.orionLines = [...orion.querySelectorAll('.cx-fx-sa3line')].map(l => Math.max(...l.getAttribute('d').match(/[0-9.]+/g).filter((v, i) => i % 2 === 0).map(Number)));
+      /* the board's avatars */
+      for(let i = 0; i < 6; i++) await fbDb.collection('leaderboard').doc('p' + i).set({ firstName: 'P' + i, avatarChar: ['zeus', 'inferno', 'singularity', 'clown', 'zenith', 'astral'][i], accent: 'ink', level: 40 - i, badges: 3, hundos: 20 - i, xp: 40000 - i * 900, tests: 30, week: weekKeyNow(), weekPoints: 900 - i * 50, lastModified: Date.now(), seenAt: Date.now() });
+      showRankings(); await wait(1800);
+      out.clip = [...document.querySelectorAll('.rank-row .rank-avatar')].slice(0, 6).map(a => { const s = getComputedStyle(a); return s.overflow + '|' + s.clipPath; });
+      /* the tab bubble sits inside the bar, so it has no edge on the bar's own */
+      const sl = document.querySelector('.bottomtabs-slider');
+      out.pill = sl ? { top: getComputedStyle(sl, '::before').top, bottom: getComputedStyle(sl, '::before').bottom } : null;
+      return out; }""")
+    check("every character blinks", r.get("noBlink") == [], r.get("noBlink"))
+    check("the Clown's juggling balls are hidden in a still drawing (they would stack as one ball)", r.get("ballsStill") == "0", r.get("ballsStill"))
+    check("Orion's constellation sits in the sky beside him, clear of his face (x under 11)",
+          r.get("orionLines") and all(x < 11 for x in r["orionLines"]), r.get("orionLines"))
+    check("each board avatar is clipped to its circle", r.get("clip") and all(c.startswith("hidden") and "circle" in c for c in r["clip"]), r.get("clip"))
+    check("the tab bubble is inset from the bar's top and bottom edges", r.get("pill") and r["pill"]["top"] == "5px" and r["pill"]["bottom"] == "5px", r.get("pill"))
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -8781,6 +9031,11 @@ def main():
             check_b310(br)
             check_b310_vroom(br)
             check_b311_rank(br)
+            check_b312_shuffle(br)
+            check_b312_results(br)
+            check_b312_unlocks(br)
+            check_b312_looks(br)
+            check_b312_flares(br)
         finally:
             br.close()
     SERVER.shutdown()

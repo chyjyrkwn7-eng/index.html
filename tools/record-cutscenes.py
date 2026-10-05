@@ -351,6 +351,23 @@ def test_to_rank(pg, rec):
     test_to_badge(pg, rec)
 
 
+def flare_scene(color, void_flare):
+    """The secret-flare scene that actually plays at the end of a run
+    (playFinalFlareScene), rebuilt in build 312: the flare streaks in, the
+    planet collapses, the dark holds, the figure's own flares light alone,
+    and it fades up round them. 18.2s long - a shorter capture misses the
+    whole point of the rebuild, which is the slow arrival."""
+    def body(pg, rec):
+        pg.evaluate("()=>showHome()")
+        pg.wait_for_timeout(700)
+        rec.start(); pg.wait_for_timeout(300)
+        pg.evaluate("""(a)=>{
+            store.mysteryColorsFound = a.v ? { red:true, orange:true, yellow:true, violet: a.c === 'white' } : { red:true, orange:true };
+            playFinalFlareScene(a.c, () => {}, a.v ? { voidFlare: true } : undefined);}""", {"c": color, "v": void_flare})
+        pg.wait_for_timeout(19000)
+    return body
+
+
 SCENES = [
     ("badge-case",     PHONE,  badge_case,                10,  GIF_W),
     ("badge-case",     TABLET, badge_case,                10,  340),
@@ -372,6 +389,10 @@ SCENES = [
     ("supernova",      TABLET, supernova,                 8,   340),
     ("void",           PHONE,  void_cutscene,             10,  GIF_W),
     ("void",           TABLET, void_cutscene,             10,  340),
+    ("flare-void",     PHONE,  flare_scene("yellow", False), 10, GIF_W),
+    ("flare-void",     TABLET, flare_scene("yellow", False), 10, 340),
+    ("flare-umbra",    PHONE,  flare_scene("violet", True),  10, GIF_W),
+    ("flare-horizon",  PHONE,  flare_scene("white", True),   10, GIF_W),
 ]
 
 

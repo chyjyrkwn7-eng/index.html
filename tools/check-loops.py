@@ -89,7 +89,13 @@ KNOWN = {
     "cx-sg-rise": "light rising up Horizon's hair - invisible at both ends",
     "cx-za-dust": "Zenith's stardust - each mote fades to nothing at both ends",
     "cx-za-rays": "Zenith's corona turns 30deg - it has twelve rays, so 30deg is a whole step",
-    "cx-za-wave": "Zenith's shockwave - fades to nothing as it spreads",
+    "cx-za-wave": "Zenith's shockwave - fades to nothing as it spreads (retired in 312; kept so an old build's file still reads)",
+    # Build 312 character pass.
+    "cx-fr-spin": "Frost's six-armed sigil: a sixth of a turn lands on the same picture",
+    "cx-sg-spark": "a spark off Horizon's hair that is invisible at both ends of its rise",
+    "cx-wf-ring": "a ring off a worn flare that fades to nothing as it spreads",
+    "cx-za-pour": "light poured down Zenith's halo: invisible at both ends of its run",
+    "cx-za-rays8": "Zenith's eight rays, long and short: a quarter turn lands on the same picture",
 }
 s = open(SRC, encoding="utf-8").read()
 kf = {}
