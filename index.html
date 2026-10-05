@@ -20602,6 +20602,17 @@
   }
   .rs-screen .rs-unlocked .rs-unlock + .rs-unlock{ margin-top:.6rem; border-top:1px solid rgba(255,255,255,.06); }
   .rs-unlocked .rs-kicker + .rs-unlock{ padding-top:0; }
+  /* The slot each row waits in (build 313) - see the row builder. */
+  .rs-unlock-slot{ position:relative; }
+  .rs-screen .rs-unlocked .rs-unlock-slot + .rs-unlock-slot{ margin-top:.6rem; border-top:1px solid rgba(255,255,255,.06); }
+  .rs-screen .rs-unlocked .rs-unlock-slot + .rs-unlock-slot > .rs-unlock{ padding-top:.6rem; }
+  .rs-unlocked .rs-kicker + .rs-unlock-slot > .rs-unlock{ padding-top:0; }
+  .rs-unlock-ghost{ position:absolute; left:0; right:0; bottom:0; height:2.7rem; display:flex; align-items:center; gap:.85rem;
+    pointer-events:none; transition:opacity .25s ease; animation:rank-skel 1.6s ease-in-out infinite; }
+  .rs-unlock-ghost i{ width:2.7rem; height:2.7rem; border-radius:50%; flex-shrink:0;
+    border:1px dashed rgba(255,255,255,.18); background:rgba(255,255,255,.035); }
+  .rs-unlock-ghost b{ height:.62rem; width:42%; border-radius:99px; background:rgba(255,255,255,.08); }
+  .rs-unlock-slot:has(> .rs-unlock.rs-in, > .rs-unlock.rs-in-now) > .rs-unlock-ghost{ opacity:0; animation:none; }
   /* The rows land one at a time now, so the animation:none above (which
      is there to stop .unlockbanner's own slide-in) must not reach a row
      that is landing - it left them at opacity 0 for good. */
@@ -70548,7 +70559,19 @@ function showRunRewards(run, hooks, opts){
         text.appendChild(d);
       }
       row.append(art, text);
-      unlocked.appendChild(row);
+      /* EACH ROW WAITS IN A VISIBLE SLOT (build 313). The card lands
+         before its first cutscene and every row drops in after its own,
+         so for a moment it was a heading over an empty box - "ensure the
+         unlock stuff in test result screen makes sense". A faint
+         placeholder the row's own size says something is coming, one per
+         thing, and fades as the real row lands on it. */
+      const slotEl = document.createElement("div");
+      slotEl.className = "rs-unlock-slot";
+      const ghost = document.createElement("span");
+      ghost.className = "rs-unlock-ghost"; ghost.setAttribute("aria-hidden", "true");
+      ghost.innerHTML = "<i></i><b></b>";
+      slotEl.append(ghost, row);
+      unlocked.appendChild(slotEl);
       unlockRows.push(row);
     });
     panel.appendChild(unlocked);
