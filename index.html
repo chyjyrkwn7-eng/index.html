@@ -69132,18 +69132,13 @@ function summarize(){
       }
     }, stillMissed ? null : "nextbtn");
     const home = mk("Main menu", "next ghost", showHome);
-    /* A PERFECT RUN CAN STILL BE LOOKED BACK AT (build 312). "When getting
-       a 100, still provide a review option for the test at the test
-       result that says review test and it just opens it up and you can
-       look back at it ... If you retake questions and get to the point
-       of answering them all right, same option." With nothing missed
-       there was no review at all; now the same review screen opens with
-       every question in the run, each marked right. */
-    if(!stillMissed && where.toReview){
-      actions.append(rerun, mk("Review test", "next ghost rs-review-all", where.toReview), home);
-    } else {
-      actions.append(rerun, home);
-    }
+    /* NO "REVIEW TEST" ON A PERFECT RUN (build 312). It was added this
+       build - "when getting a 100, still provide a review option" - and
+       taken back before it shipped: "Nvm, if you get a 100, let's not do
+       the review test thing." With nothing missed the results end on
+       Re-run and Main menu, as they did in build 311; the review is only
+       ever reached through Continue to review, for the misses. */
+    actions.append(rerun, home);
     return actions;
   };
   const resultsTour = () => {

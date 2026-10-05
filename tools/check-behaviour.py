@@ -8732,11 +8732,12 @@ def check_b312_shuffle(br):
 
 
 def check_b312_results(br):
-    """Build 312: "When getting a 100, still provide a review option for
-    the test at the test result that says review test". Build 311 offered
-    only Re-run and Main menu on a perfect run - the review list was built
-    from the misses, and there were none."""
-    print("\n87. build 312: a perfect run offers Review test, and the list is every question, right")
+    """Build 312: "Review test" on a perfect run was asked for ("when getting
+    a 100, still provide a review option") and taken back before it shipped
+    ("Nvm, if you get a 100, let's not do the review test thing"). A 100%
+    run ends on Re-run and Main menu, as build 311 did; the review is only
+    for the misses."""
+    print("\n87. build 312: a perfect run ends on Re-run and Main menu - no Review test")
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
       cfg.mode = 'drill'; cfg.units = ['Identity Crimes']; cfg.source = 'all'; cfg.size = 0; cfg.versions = {};
@@ -8749,13 +8750,10 @@ def check_b312_results(br):
         if(pos !== last && ch.length){ last = pos; const slot = correctSlot(order[pos]); ch[slot] && ch[slot].click(); }
         await wait(250);
       }
-      for(let i = 0; i < 100 && !document.querySelector('.rs-review-all'); i++){ document.querySelector('.rs-screen')?.click(); await wait(200); }
-      const btns = [...document.querySelectorAll('.rs-final button')].map(b => b.textContent.trim());
-      document.querySelector('.rs-review-all')?.click(); await wait(900);
-      return { btns, summary: (document.querySelector('.rs-review-summary') || {}).textContent || '',
-               items: document.querySelectorAll('.rs-q').length, allRight: !!document.querySelector('.is-all-right') }; }""")
-    check("a 100% run's final buttons include Review test", "Review test" in (r.get("btns") or []), r.get("btns"))
-    check("Review test opens every question, each one right", r.get("items", 0) >= 10 and r.get("allRight") is True and "right" in r.get("summary", ""), r)
+      for(let i = 0; i < 100 && !document.querySelector('.rs-final button'); i++){ document.querySelector('.rs-screen')?.click(); await wait(200); }
+      await wait(600);
+      return { btns: [...document.querySelectorAll('.rs-final button')].map(b => b.textContent.trim()) }; }""")
+    check("a 100% run's final buttons are Re-run and Main menu, with no Review test", r.get("btns") == ["Re-run", "Main menu"], r.get("btns"))
     ctx.close()
     # "if I get a hundo on a unit that I already have a badge on, you don't
     # need to show the badge stuff there, no point"

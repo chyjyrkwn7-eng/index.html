@@ -11668,7 +11668,7 @@ flashcard bar colour, the slide (a push now), and build 280's still map.
 **Known and not this build's**: sweep-layout reports a GREY BAR on an
 SE 1st gen at 568x260 in a browser (landscape). It is red on 309 as well.
 
-### Build 312 - a real shuffle, Review test on a perfect run, every character alive, three ultimates, First Light
+### Build 312 - a real shuffle, every character alive, three ultimates, First Light
 
 **Held for Madison's go, together with 310 and 311.** None was merged;
 312 is the build number all three ship under. The leaderboard row
@@ -11694,9 +11694,12 @@ shuffled and neither are the order of questions" - raised many times)
   at once would disagree on order - one more reason the hold matters.
 
 **Results**
-- **A 100% run offers "Review test"** (`.rs-review-all`), and so does a
-  retake that reaches all-right; `showRunReview` lists every question as
-  right ("All N questions right", `.is-all-right`).
+- **No "Review test" on a 100% run.** It was built this round ("when
+  getting a 100, still provide a review option") and taken back before it
+  shipped: "Nvm, if you get a 100, let's not do the review test thing." A
+  run with nothing missed ends on Re-run and Main menu, as in 311. The
+  all-right branch of `showRunReview` (`.is-all-right`) is still there as
+  a safe fallback but nothing on the results screen reaches it.
 - **An unlock card counts as shown only once it has been seen** -
   `SPOT_SEEN_MS` (1.2s) on screen, or tapped. It used to be marked the
   instant it was built, so a card cut short (a screen change, a fast tap)
