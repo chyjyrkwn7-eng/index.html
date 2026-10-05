@@ -12570,3 +12570,23 @@ the other icons (`rgba(236,239,245,.5)`); on, a less saturated gold
 `#E8C770` with a gentler glow. check-behaviour 95 (`check_b313_qmotion`)
 holds all three (star neutral, outgoing solid a third of the way off, a real
 TouchEvent drag moves the panel, springs back, and advances) and fails on 312.
+
+#### The start sheet, last round
+
+- **The hundo chip is centred over the slider and says what it costs.**
+  "Won't count as a hundo" (just "No hundo" under 25rem, where the row
+  cannot hold both); tapped, the note leads with "won't count toward your
+  hundo total or your badge count", then why, then "slide How many to
+  All". Absolutely positioned in the How many row, so it still appears and
+  goes without moving the slider (the build-291 rule).
+- **The shuffle line no longer mentions question order** ("Questions always
+  come shuffled no matter what, that's dumb"): "Shuffles the order of the
+  answer choices."
+- **The time limit has a Max button** that behaves exactly like All:
+  `syncTopButton()` is shared by both (white and raised below the top, a
+  quiet tick at the top, Start's fill-and-pop the moment it lights). Pass
+  a 9th argument to `plainSlider()` to give any slider one.
+- **The question-bank halves are centred by eye, not by box** - both lines
+  have no descenders, so equal line-box padding left the ink high. 52px,
+  with the spare room at the top.
+- check-behaviour 96 (`check_b313_sheet2`) holds all of it and fails on 312.

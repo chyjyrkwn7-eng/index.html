@@ -9591,6 +9591,18 @@
   .hundo-why[hidden]{ display:none; }
   @keyframes hundo-why-in{ from{ opacity:0; transform:translateY(-4px); } to{ opacity:1; transform:none; } }
   .hundo-chip + .sect-headval{ margin-left:0; }
+  .hundo-chip .hc-short{ display:none; }
+  /* Centred over the slider, in the How many row (build 313). Out of the
+     flow, so it still comes and goes without moving anything. */
+  .unitoptions-modal-sheet .sect-headrow:has(> .hundo-chip){ position:relative; }
+  .unitoptions-modal-sheet .sect-headrow > .hundo-chip{
+    position:absolute; left:50%; top:50%; transform:translate(-50%, -50%); margin:0;
+    text-transform:none; letter-spacing:.02em;
+  }
+  @media (max-width:25rem){
+    .hundo-chip .hc-long{ display:none; }
+    .hundo-chip .hc-short{ display:inline; }
+  }
   /* A question pushing in from the right must not scroll the page
      sideways for the moment it is off-screen (build 311, advanceWithSlide). */
   html.q-sliding, html.q-sliding body{ overflow-x:clip; }
@@ -16873,6 +16885,12 @@
     background:transparent; border:0; box-shadow:none;
   }
   .unitoptions-modal-sheet.is-setup .bank-count{ font-family:inherit; font-size:.74rem; font-weight:600; letter-spacing:0; }
+  /* CENTRED BY EYE (build 313): "ensure that stuff is centered because
+     it's not." The two lines were centred by their line boxes, 6px above
+     and 6px below - but neither line has anything below its baseline, so
+     the ink sat high in the box. A little more room, and the space moved
+     to the top, puts the ink in the middle. */
+  .unitoptions-modal-sheet.is-setup .bank-opt{ min-height:52px; padding-top:calc(.4rem + 3px); padding-bottom:calc(.4rem - 1px); gap:.1rem; line-height:1.15; }
   .unitoptions-modal-sheet.is-setup .bank-caption{ margin:.45rem .9rem 0; font-size:.78rem; color:rgba(255,255,255,.45); }
   /* How many: the slider and All on one plain group row. */
   .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect .slider-row,
@@ -64361,26 +64379,31 @@ function buildEverythingSlider(labelText, everythingLabel, customLabel, min, get
     /* mid-drag the thumb stays under the finger; it snaps on release */
     if(!dragging) slider.value = noChoice ? 1 : every ? top : Math.min(get(), top);
     paintSliderFill(slider);
-    const wasOn = allBtn.classList.contains("on");
-    allBtn.classList.toggle("on", every);
-    allBtn.setAttribute("aria-pressed", every ? "true" : "false");
-    /* the moment All lights up (the count moved off the top): fill from
-       the centre and pop, as Start does - never on the first paint */
-    if(wasOn && !every && allBtn.isConnected && !allBtn.disabled){
-      allBtn.classList.remove("just-ready", "ready-pop"); void allBtn.offsetWidth;
-      allBtn.classList.add("just-ready", "ready-pop");
-      clearTimeout(allBtn._readyT); allBtn._readyT = setTimeout(() => {
-        allBtn.classList.add("ready-settle"); allBtn.classList.remove("just-ready"); void allBtn.offsetWidth;
-        requestAnimationFrame(() => requestAnimationFrame(() => allBtn.classList.remove("ready-settle")));
-      }, 680);
-      clearTimeout(allBtn._popT); allBtn._popT = setTimeout(() => allBtn.classList.remove("ready-pop"), 1000);
-    } else if(every){ clearTimeout(allBtn._readyT); clearTimeout(allBtn._popT); allBtn.classList.remove("just-ready", "ready-pop", "ready-settle"); }
+    syncTopButton(allBtn, every);
     valDisplay.textContent = every ? "All " + pool : get() + " of " + pool;
   };
   return sect;
 }
 
-function plainSlider(labelText, min, max, step, get, set, formatVal, onChange){
+/* All (How many) and Max (Minutes) are one button (build 313): white and
+   raised whenever the slider is below the top, the quiet glass with a tick
+   at the top, and at the moment it lights up it fills from its centre and
+   pops, as Start does - never on a first paint. */
+function syncTopButton(btn, atTop){
+  const wasOn = btn.classList.contains("on");
+  btn.classList.toggle("on", atTop);
+  btn.setAttribute("aria-pressed", atTop ? "true" : "false");
+  if(wasOn && !atTop && btn.isConnected && !btn.disabled){
+    btn.classList.remove("just-ready", "ready-pop"); void btn.offsetWidth;
+    btn.classList.add("just-ready", "ready-pop");
+    clearTimeout(btn._readyT); btn._readyT = setTimeout(() => {
+      btn.classList.add("ready-settle"); btn.classList.remove("just-ready"); void btn.offsetWidth;
+      requestAnimationFrame(() => requestAnimationFrame(() => btn.classList.remove("ready-settle")));
+    }, 680);
+    clearTimeout(btn._popT); btn._popT = setTimeout(() => btn.classList.remove("ready-pop"), 1000);
+  } else if(atTop){ clearTimeout(btn._readyT); clearTimeout(btn._popT); btn.classList.remove("just-ready", "ready-pop", "ready-settle"); }
+}
+function plainSlider(labelText, min, max, step, get, set, formatVal, onChange, topLabel){
   const sect = document.createElement("div");
   sect.className = "sect";
   const lab = document.createElement("p");
@@ -64418,12 +64441,40 @@ function plainSlider(labelText, min, max, step, get, set, formatVal, onChange){
   attachRangeTouch(slider);
   paintSliderFill(slider);
   wrap.append(slider, valDisplay);
+  /* A button to the top (build 313: "similar to the all button for the
+     questions, give the [time limit] a button but it would be max"). It
+     slides the thumb there the way All does. */
+  let topBtn = null;
+  if(topLabel){
+    topBtn = document.createElement("button");
+    topBtn.type = "button"; topBtn.className = "slider-allbtn slider-maxbtn";
+    topBtn.textContent = topLabel;
+    topBtn.addEventListener("click", () => {
+      const from = Number(slider.value);
+      set(max); valDisplay.textContent = formatVal(max);
+      if(typeof onChange === "function") onChange();
+      syncTopButton(topBtn, true);
+      if(!(max > from) || (theme && theme.reduceMotion)){ slider.value = max; paintSliderFill(slider); return; }
+      const t0 = performance.now(), D = 260;
+      const step = now => {
+        if(!slider.isConnected || dragging) return;
+        const k = Math.min(1, (now - t0) / D), e = 1 - Math.pow(1 - k, 3);
+        slider.value = from + (max - from) * e; paintSliderFill(slider);
+        if(k < 1) requestAnimationFrame(step); else { slider.value = max; paintSliderFill(slider); }
+      };
+      requestAnimationFrame(step);
+    });
+    slider.addEventListener("input", () => syncTopButton(topBtn, get() >= max));
+    wrap.appendChild(topBtn);
+    syncTopButton(topBtn, get() >= max);
+  }
   sect.appendChild(wrap);
   sect.paint = () => {
     /* mid-drag the thumb stays under the finger; it settles on release */
     if(!dragging) slider.value = get();
     paintSliderFill(slider);
     valDisplay.textContent = formatVal(get());
+    if(topBtn) syncTopButton(topBtn, get() >= max);
   };
   return sect;
 }
@@ -64941,7 +64992,11 @@ function showSetup(){
   hundoNote.type = "button";
   hundoNote.className = "hundo-chip";
   hundoNote.hidden = true;
-  hundoNote.textContent = "No hundo";
+  /* SAYS WHAT IT MEANS, CENTRED OVER THE SLIDER (build 313): "Where it
+     says no hundo, could that centered above the slider? Could it also be
+     a little less vague?" The long form on any phone with room for it,
+     the short one on the narrowest, where the row cannot hold both. */
+  hundoNote.innerHTML = '<span class="hc-long">Won\u2019t count as a hundo</span><span class="hc-short">No hundo</span>';
   /* THE REASON OPENS BESIDE THE CHIP (build 313): "The description when
      hitting no hundo in the start menu is cool but it's at the top, again,
      put it near the button and make that description better." It was a
@@ -65090,7 +65145,7 @@ function showSetup(){
   moreBodyInner.appendChild(timerSect);
   const minutesSect = plainSlider("Minutes", 5, 90, 5,
     () => cfg.timerMinutes, v => { cfg.timerMinutes = v; },
-    v => v + " min", refresh);
+    v => v + " min", refresh, "Max");
   minutesSect.classList.add("minutes-sect");
   timerSect.appendChild(minutesSect);
 
@@ -65152,7 +65207,7 @@ function showSetup(){
      mention shuffling the questions and answer choices in the same
      sentence." */
   const shuffleRow = toggle("Shuffle answer choices",
-    "Questions always come in a random order; this shuffles the answer choices too.",
+    "Shuffles the order of the answer choices.",
     () => cfg.shuffle, v => { cfg.shuffle = v; });
   const recallRow = toggle("Hide answer choices",
     "Think of the answer first, then tap to show the choices.",
@@ -65530,11 +65585,15 @@ function showSetup(){
        (build 313): it said "Set How many to All for one", which needs the
        reader to know "one" means a hundo and where All is. It now says
        what is left out, what that costs, and exactly what to do. */
+    /* "Does not count towards hundo total or badge count (maybe this
+       could be kinda what's shown when clicking it?)" (build 313): the
+       note leads with what it costs - the hundo total AND the badge -
+       then why, then the one thing to do about it. */
     hundoNote.dataset.why = cfg.source !== "all"
-      ? "Starred questions are only part of a unit, so a 100% won't count as a hundo. To earn one, pick Your " + (cfg.units.length === 1 ? "unit" : "units") + " above and slide How many all the way to All."
+      ? "A 100% here won't count toward your hundo total or your badge count - starred questions are only part of a unit. Pick All questions above and slide How many to All to make it count."
       : cfg.units.length === 1
-        ? "This test leaves out some of the unit's questions, so a 100% won't count as a hundo. To earn one, slide How many all the way to All."
-        : "This test leaves out some questions from these units, so a 100% won't count toward hundos. To earn them, slide How many all the way to All.";
+        ? "A 100% here won't count toward your hundo total or your badge count - this test leaves out some of the unit's questions. Slide How many to All to make it count."
+        : "A 100% here won't count toward your hundo total or your badge count - this test leaves out some questions from these units. Slide How many to All to make it count.";
     if(!canCut || !partial) hideHundoWhy();
     /* The sheet's own primary button relabels to match what it will
        actually do while Review is on — the same swap its click handler

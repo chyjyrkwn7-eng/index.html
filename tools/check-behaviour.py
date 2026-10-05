@@ -1209,6 +1209,48 @@ def check_b313_qmotion(br):
     ctx.close()
 
 
+def check_b313_sheet2(br):
+    """Build 313, the start sheet's last round: the hundo chip centred over
+    the slider and saying what it costs, no "random order" in the shuffle
+    line, a Max button on the time limit that works like All, and the two
+    question-bank halves centred by eye. Fails on 312."""
+    print("\n96. build 313: start sheet - centred hundo chip, Max on the time limit, no shuffle filler")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); const out={};
+      document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());
+      cfg.mode='drill'; cfg.units=[]; cfg.size=0; showSetup(); await wait(700);
+      document.querySelector('.picks .pick .pname').click(); await wait(300);
+      document.getElementById('nextbtn')?.click(); await wait(1000);
+      const sheet=document.querySelector('#unitoptions-modal');
+      out.shuffle=[...sheet.querySelectorAll('*')].filter(e=>e.childElementCount===0).map(e=>e.textContent).find(t=>/answer choices\./.test(t) && /huffle/.test(t)) || '';
+      const sl=sheet.querySelector('.howmany-sect input.slider');
+      sl.value=Math.floor(Number(sl.max)/2); sl.dispatchEvent(new Event('input',{bubbles:true})); sl.dispatchEvent(new Event('change',{bubbles:true})); await wait(500);
+      const chip=sheet.querySelector('.hundo-chip'); const c=chip.getBoundingClientRect(), w=sl.parentElement.getBoundingClientRect();
+      out.chip={ off: Math.round((c.left+c.right)/2-(w.left+w.right)/2), text: chip.innerText };
+      chip.click(); await wait(300); out.why=(sheet.querySelector('.hundo-why')||{}).textContent||'';
+      document.body.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true})); await wait(100);
+      const inp=[...sheet.querySelectorAll('input[type=checkbox]')].find(x=>{ let e=x; for(let k=0;k<4&&e;k++){ e=e.parentElement; if(e && /Time limit/.test(e.textContent) && !/Stopwatch/.test(e.textContent)) return true; } return false; });
+      inp && inp.click(); await wait(500);
+      const mb=sheet.querySelector('.minutes-sect .slider-maxbtn');
+      out.max0 = mb ? { on: mb.classList.contains('on'), text: mb.textContent } : null;
+      if(mb){ mb.click(); await wait(500); out.max1 = { on: mb.classList.contains('on'), mins: cfg.timerMinutes,
+        val: (sheet.querySelector('.minutes-sect input.slider')||{}).value }; }
+      const ms=sheet.querySelector('.minutes-sect input.slider');
+      if(ms && mb){ ms.value=30; ms.dispatchEvent(new Event('input',{bubbles:true})); await wait(80); out.max2 = { on: mb.classList.contains('on'), lit: mb.classList.contains('just-ready') }; }
+      return out; }""")
+    ctx.close()
+    check("the shuffle line says what it does and nothing about question order",
+          r["shuffle"] and "random order" not in r["shuffle"], r["shuffle"])
+    check("the No hundo chip is centred over the slider", abs(r["chip"]["off"]) <= 1, r["chip"])
+    check("and says it won't count, and its note names the hundo total and the badge count",
+          "count" in r["chip"]["text"].lower() and "hundo total" in r["why"] and "badge" in r["why"], [r["chip"], r["why"]])
+    m0, m1, m2 = r.get("max0") or {}, r.get("max1") or {}, r.get("max2") or {}
+    check("the time limit has a Max button, lit while the limit is below the top",
+          m0.get("text", "").strip().lower() == "max" and m0.get("on") is False, m0)
+    check("Max takes the limit to the top and goes quiet; dragging back lights it up again",
+          m1.get("on") is True and m1.get("mins") == 90 and m2.get("on") is False and m2.get("lit") is True, [m1, m2])
+
+
 def check_b218(br):
     """Build 218: what Madison re-asked for off Home, Settings and the boards.
 
@@ -9813,6 +9855,7 @@ def main():
             check_b312_flares(br)
             check_b313_lead(br)
             check_b313_qmotion(br)
+            check_b313_sheet2(br)
             check_b313_chars_centred(br)
             check_b313_no_sweep(br)
             check_b313_alive(br)
