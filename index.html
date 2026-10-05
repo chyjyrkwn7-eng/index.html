@@ -4044,7 +4044,10 @@
   .vroom-roster.is-crowded .vroom-avatar{ width:2.2rem; height:2.2rem; flex:0 0 auto; }
   .vroom-roster.is-crowded .lb-name-wrap{ flex:1 1 auto; min-width:0; }
   .vroom-roster.is-crowded .lb-name{ font-size:.82rem; }
-  .vroom-roster.is-crowded .vroom-you-tag{ margin-left:.25rem; }
+  /* In a crowded room on a phone "(You)" would be cut off by the name;
+     your own row carries the accent edge instead. */
+  .vroom-roster.is-crowded .vroom-you-tag{ display:none; }
+  .vroom-roster.is-crowded .vroom-row.is-you{ border-color:var(--accent); }
   .vroom-roster.is-crowded .vroom-row-sub{ display:none; }
   .vroom-roster.is-crowded .vroom-ready-badge{
     width:.62rem; height:.62rem; padding:0; font-size:0; border-radius:50%;
@@ -4056,6 +4059,7 @@
     .vroom-roster.is-crowded .vroom-avatar{ width:2.7rem; height:2.7rem; }
     .vroom-roster.is-crowded .lb-name{ font-size:.9rem; }
     .vroom-roster.is-crowded .vroom-row-sub{ display:block; }
+    .vroom-roster.is-crowded .vroom-you-tag{ display:inline; }
   }
   .vroom-setup-head{ margin-top:1.4rem; }
   @media (min-width:40rem){
@@ -75542,6 +75546,7 @@ function showVirtualRoomLobby(){
           const youTag = document.createElement("span");
           youTag.className = "vroom-you-tag"; youTag.textContent = "(You)";
           name.appendChild(youTag);
+          row.classList.add("is-you");
         }
         nameWrap.appendChild(name);
         /* ---- RANK AND LEVEL, UNDER THE NAME ----

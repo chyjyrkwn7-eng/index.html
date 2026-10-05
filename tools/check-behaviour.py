@@ -7319,7 +7319,11 @@ def check_b301_chat(br):
       /* E. a friend chat whose history has expired is still read by opening it */
       const fc = friendChatCode('bo00000000001');
       docs[fc] = { kind:'chat', chatMessages: [], participants: {} };
-      inboxMsgs = { 'bo00000000001~m': { type:'msgping', code: fc, pub:'bo00000000001', firstName:'Bo', text:'yo', at: Date.now() - 30 * 3600e3 } };
+      /* 23 hours, not 30: since build 313 a ping is a day long, the same as
+         the chat's own history, so a 30-hour ping is not unread at all.
+         The room is still empty - what is under test is that opening a
+         chat with nothing in it reads its ping. */
+      inboxMsgs = { 'bo00000000001~m': { type:'msgping', code: fc, pub:'bo00000000001', firstName:'Bo', text:'yo', at: Date.now() - 23 * 3600e3 } };
       syncChatDockDot();
       out.friendBefore = txt('chatdock-friendscount');
       chatDockTab = 'friends'; openChatDock(); await wait(200);
