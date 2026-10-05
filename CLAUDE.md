@@ -9934,6 +9934,21 @@ had been shuffled to B with the two answers it names at A and D.
   and the Virtual Room.
 - **Gate:** `check-behaviour` 66 covers it, and fails on the build
   before this one.
+- **Build 309 widened it**, after "Any of the above are without consent"
+  was shuffled to A: *"the all of the above answer should always be at the
+  bottom, or ... where it says a and b are correct, those questions, their
+  answer choice order should not be changed even on shuffle."* "any",
+  "A or B" and "all/none is/are true/correct/false" are the same idea and
+  were slipping through; Civil Process #1 ("Both ..." / "Neither ..." about
+  the two choices above them) is `fixedOrder`. 109 held became 121, and the
+  12 extra are exactly those wordings: nothing plain started holding.
+- **And an "above/listed" choice always reads last**, via
+  `pointsUpLast()`, even where the bank has it elsewhere (SAFV #41's "All
+  the listed are methods" was C of four). It only reorders when no choice
+  names a letter: moving one past "a and b are correct" would make that
+  choice point at the wrong two. `check-behaviour` b298 asserts both
+  halves on six shuffles of every such question, and lists 11 + 1
+  offenders on the previous build.
 
 **Editing notes are out of the question bank.** *"This one ... said at the
 top that it's a duplicate ... remove that stuff."* The study guides'

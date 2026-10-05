@@ -6749,12 +6749,28 @@ def check_b298(br):
       out.plain = order20(plain).length;
       runMode = 'exam'; cfg.shuffle = false; out.exam = order20(both);
       out.count = QUESTIONS.filter((q, i) => refers(i)).length;
+      /* "the all of the above answer should always be at the bottom" - "Any of the above", "A or B", "All are true" too */
+      runMode = 'drill'; cfg.shuffle = true;
+      const pointer = /\\b(above|listed)\\b|^all are (true|correct)$/i, letter = /(^|[\\s(])[A-E]\\s*(,\\s*[A-E]\\s*,?\\s*)?(&|and|or|nor)\\s*[A-E](\\b|$)/i;
+      /* a choice naming letters ("A or B", "a and b are correct") holds the bank's order exactly */
+      out.moved = QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].choices || []).some(c => letter.test(c)))
+        .filter(i => { for(let k = 0; k < 6; k++){ delete layout[i]; if(optionOrder(i).some((v, j) => v !== j)) return true; } return false; })
+        .map(i => QUESTIONS[i].topic + ' ' + QUESTIONS[i].src);
+      out.astray = QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].choices || []).some(c => pointer.test(c)) && !(QUESTIONS[i].choices || []).some(c => letter.test(c)))
+        .filter(i => { for(let k = 0; k < 6; k++){ delete layout[i]; const o = optionOrder(i), ch = QUESTIONS[i].choices;
+          const last = o.map(x => pointer.test(ch[x])); const first = last.indexOf(true);
+          if(first < 0 || last.slice(first).some(v => !v)) return true; } return false; })
+        .map(i => QUESTIONS[i].topic + ' ' + QUESTIONS[i].src);
       return out; }""")
     check("a question whose choices name other letters (\"Both A & B\") keeps the study guide's order on shuffle and in an exam",
           r["both"]["orders"] == ["0,1,2,3"] and r["exam"] == ["0,1,2,3"], r["both"])
     check("so does one with \"All of the above\"", r["above"] == ["0,1,2,3"], r["above"])
     check("a plain question, and one whose answer only starts with \"All\", still shuffle", r["plain"] > 1 and r["prose"] > 1, (r["plain"], r["prose"]))
     check("about a hundred questions in the bank are held in order", 90 <= r["count"] <= 130, r["count"])
+    check("on shuffle, an \"of the above\" / \"All the listed\" / \"All are true\" choice always lands at the bottom",
+          r["astray"] == [], r["astray"])
+    check("and one whose choices name letters (\"A or B\", \"a and b are correct\") is never reordered",
+          r["moved"] == [], r["moved"])
     ctx.close()
     # "this one ... said at the top that it's a duplicate.. remove that stuff"
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)

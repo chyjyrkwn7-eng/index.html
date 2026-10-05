@@ -32804,6 +32804,7 @@ const QUESTIONS = [
     src: 1,
     q: "If the disposition resulting from an officer's wrongful actions results in a conviction and punishment is rendered, who is most likely to be involved in the civil actions that are totally separate from the criminal trial?",
     ref: "(Civil Process and Liability Section 14.1)",
+    fixedOrder: true,
     choices: [
       "The officer",
       "The officer's commissioning authority",
@@ -51208,11 +51209,15 @@ function lastSlots(){
    so a question added later is covered without anyone marking it.
    Plain prose that happens to start with "All" ("All persons born or
    naturalized...") does not match: the words above/listed/these, or two
-   single letters joined by and/&/nor, are what it looks for. */
+   single letters joined by and/&/nor, are what it looks for.
+   Build 309 widened it after "Any of the above are without consent" was
+   shuffled to A ("the all of the above answer should always be at the
+   bottom"): "any", "A or B" and "All are true" are the same idea, and in
+   the bank every one of those choices is already the last. */
 const CHOICE_REFERS_RE = [
-  /\b(all|none|neither|both)\b[^.]{0,20}?\b(above|listed|these)\b/i,
-  /(^|[\s(])[A-E]\s*(,\s*[A-E]\s*,?\s*)?(&|and|nor)\s*[A-E](\b|$)/i,
-  /\b(none|all) are correct\b/i
+  /\b(all|any|none|neither|both)\b[^.]{0,20}?\b(above|listed|these)\b/i,
+  /(^|[\s(])[A-E]\s*(,\s*[A-E]\s*,?\s*)?(&|and|or|nor)\s*[A-E](\b|$)/i,
+  /\b(none|all) (are|is) (correct|true|false)\b/i
 ];
 const choicesReferMemo = new Map();
 function choicesReferToEachOther(qi){
@@ -51240,10 +51245,22 @@ function optionOrder(qi){
       try{ localStorage.setItem(LAST_SLOT_KEY, JSON.stringify(m)); }catch(e){}
       layout[qi] = out;
     } else {
-      layout[qi] = ids;
+      layout[qi] = pointsUpLast(qi, ids);
     }
   }
   return layout[qi];
+}
+/* "the all of the above answer should always be at the bottom": a choice
+   that points back at the others reads last even where the bank has it
+   elsewhere ("All the listed are methods" was C of four). Only when no
+   choice names a letter - moving one would make "a and b" point at the
+   wrong two. */
+const CHOICE_POINTS_UP_RE = /\b(above|listed|these)\b|^\s*(all|none) (are|is) (correct|true|false)\b/i;
+function pointsUpLast(qi, ids){
+  const ch = QUESTIONS[qi].choices || [];
+  if(ch.some(c => CHOICE_REFERS_RE[1].test(String(c)))) return ids;
+  const up = ids.filter(k => CHOICE_POINTS_UP_RE.test(String(ch[k])));
+  return up.length ? ids.filter(k => !up.includes(k)).concat(up) : ids;
 }
 function correctSlot(qi){ return optionOrder(qi).indexOf(QUESTIONS[qi].answer); }
 
