@@ -12611,3 +12611,181 @@ it arrives; Next and auto-advance get the same soft-to-sharp arrival from 0.
 Short of the line, the stand-in slides back out and is removed. check-behaviour
 95 asserts the stand-in names the right question, starts blurred, sharpens as
 the drag grows, and is gone afterwards.
+
+#### Hundo effects (build 313)
+
+*"Can we introduce 1 new type of unlock? ... the effect you get when getting a
+100? It's confetti by default? ... The ultimate character zenith would need
+these to be completed as well ... maybe like the 100 percent box gets it
+entirely too? ... make these ones kind of inline so it's the same challenge
+but harder and harder."* Then, in review: *"It would obviously disappear
+slowly like how it does now"*; *"make them start from the 100 box and spread
+out"*; *"Bubbles should be the rarest one lol"*; *"the first one now unlocks
+at 50 hundos"*; *"The first two are ehh maybe try something else for those"*;
+*"Tree and bubbles are the coolest, they could look even better though and be
+smoother"*; *"the one after bubbles is the screen turning black ... a ufo
+landing on the grade box"*; *"Would be pretty cool if the themes matches the
+box"*; and the pop-ups: *"For the people who meet these, they will get the
+popups next time they log on or are at the main menu. The others will get it
+in the result screen ... maybe the popup could show the effects animated."*
+
+**The ladder.** `HUNDO_FX` (above `ULTIMATE_TOP`, ahead of everything that runs
+at boot, because `ultimateProgress()` reads it) is the ONE table: Confetti 0
+(everybody's - `celebrate()`, untouched), **Fireworks 50, Aurora 100, World
+Tree 200, Bubbles 350, UFO 500**, counted in `hundosOf(store)`. Holding one is
+not stored - it is read off the count - only the pick is: `store.hundoFx`,
+default `"confetti"` in the fresh store, `applyLoadedData()` (any non-empty
+string is kept, so a later build's id survives) and the reset; like
+`store.banner` it is in no merge list. `hundoFxInUse()` falls back to Confetti
+when the pick is not held here. Against the class as it stood (top two 158 and
+143, then 59, 50, 46; median 1): two people hold Fireworks and Aurora the day
+this ships and three more hold Fireworks; nobody holds World Tree, Bubbles or
+the UFO.
+
+**The first two rungs are a choice still to make.** Laser Show and Lightning
+were replaced; four candidates were built and all four stay in the file,
+whole, behind `HUNDO_FX_BUILD`: **Fireworks** (shells launch off the box's top
+edge and burst), **Starfall** (a meteor shower streaking out of the 100%,
+leaving twinkling stars), **Aurora** (curtains of light unfurling up out of
+the box and swaying) and **Galaxy** (a spiral galaxy spinning up out of the
+number until its arms sweep the screen). Fireworks and Aurora are wired in;
+swapping one is its id and name in its `HUNDO_FX` row (plus the ids in
+`USED_ACCOUNT`'s `unlocksShown.fx` in check-behaviour, which lists all seven).
+
+**Every effect starts AT the 100% box and spreads out**, plays across the
+screen (a `.confetti-layer.hfx-layer`) and inside the box (`.hfx-box`), and
+**the box takes the effect's colours while it plays** (`HFX_TINT`: the
+border by a 1s transition on `.hfx-tinted`, a wash and the numerals'
+gradient as overlays fading over the effect's own length), easing back to
+yellow before the end. Confetti keeps the yellow. The UFO is the one that does
+not start at the box: by request the screen goes black and it comes down out
+of the dark - and LANDS on the box.
+
+**Rules they keep** (comment above `HUNDO_FX_TAIL_MS`):
+- Transform and opacity only; one-shot (every iteration count finite); no svg
+  filters; every keyframe that starts a piece late opens at opacity 0.
+- **They end the way confetti ends**: the last pieces keep moving while they
+  fade over at least `HUNDO_FX_TAIL_MS` (1.2s); layers come off only at
+  `HUNDO_FX_TOTAL[id]`; a scene going up or the screen changing FADES them
+  (`hfxFadeOut`), never a cut. `HUNDO_FX_TAIL_AT` is where each tail starts,
+  for the gate.
+- **Every picture is a sprite: drawn once as svg, cached by what it depends
+  on, then RASTERISED ONCE to a PNG blob** (`hfxSprite` / `hfxRasterise`,
+  run by `hfxWarm(id)` as the results screen opens and as Customize settles).
+  Measured at 4x CPU, the images were most of an effect's first-frame cost.
+  The svg stays as the fallback for a sprite asked for before its bitmap is
+  ready.
+- **The screen layer is pinned to the PAGE, not the viewport** (`.is-page`,
+  placed at the scroll it started at). The results reveal scrolls down as
+  later cards land, and a fixed layer stayed where the box WAS - the UFO set
+  down 69px above it. Found by the gate's landing check.
+- **The effect's layers are named `hfx-<id>`, so no piece may be called
+  that.** The saucer was `.hfx-ufo` - the same class as the UFO's own screen
+  layer - and the whole layer became a 0x0 animated box: only the border
+  recoloured. It is `.hfx-saucer` now.
+- The World Tree and the UFO lift the card over their screen layer
+  (`.rs-card.hfx-over`, z 61), so the number is never covered or dimmed. The
+  tree grows from the box's top EDGE, not from behind it: the card is
+  translucent and a trunk behind it showed through over the number.
+- **Measure the box where it will REST** (`hfxContext`): an effect starts
+  while the grade card is still landing at 1.45x, and corners measured off
+  that rect put the first lasers' emitters at the screen's edges. The layout
+  size round the on-screen centre is the box at rest.
+- Bubbles' showpiece carries the 100% up in a giant bubble: a copy laid
+  exactly over the numerals rides the bubble while the real ones (and their
+  tinted copy) are hidden by their own opacity through the Web Animations API;
+  the card's wobble is its `scale` property through WAAPI too, so the
+  landing animation's `transform` is never touched or restarted.
+- Reduce motion: nothing plays, exactly as `celebrate()`. `muteBanners` is not
+  consulted for the effect (confetti never was); it is for the pop-ups.
+
+**Smoother, measured** (4x CPU, 440x956 at dpr 3, on a quiet page - the busy
+Home behind the results masked everything - 6s from the start, rAF intervals;
+idle page: 316 frames, 30-35 over 25ms, 2-3 over 50ms):
+
+| | frames | >25ms | >50ms | worst | nodes |
+|---|---|---|---|---|---|
+| World Tree before | 131-195 | 84-105 | 18-28 | 400-433ms | ~1,240 |
+| World Tree after | 268-277 | 55-59 | 6-8 | 150-183ms | ~190 |
+| Bubbles before (no showpiece) | 259-261 | 65-67 | 6-8 | 283-317ms | ~210 |
+| Bubbles after (with showpiece) | 285-297 | 45-54 | 3-5 | 117-133ms | 145 |
+| UFO (first 6s of 8.6) | 319-331 | 24-25 | 1-4 | 50-83ms | 38 |
+
+("After" is with the sprites rasterised first, as the real results screen
+does while it lands.)
+
+The tree went from six levels of thin twigs plus a flower, glow, ring and
+puff per tip to four levels of branches and one cluster IMAGE per tip; the
+vines in the box from 44 segments to four wiped images; bubbles lost a
+wrapper layer each (the bud's growth is the first stretch of the path's own
+keyframes) and a pop's droplets are one image scaled out, not five layers.
+The worst single frame is each effect's first (creating its layers).
+
+**Choosing one: Customize** - a "Hundo effect" section after Banner, the
+banner picker's shape; each tile a small 100% box playing the box half of its
+effect, recoloured, while on screen (the shared `is-offscreen` observer).
+Tiles start at 1.8s, AFTER `fillDeferredBannerArt` has drawn the banners:
+started at 0.7s they slowed the banner fill and `check_b313_lead` caught 20 of
+23 scenes drawn. Locked tiles are dimmed by a layer (they are live); tap or
+hold opens `hundoFxDetail` with have/need and a Preview (`previewHundoFx`, the
+dim and the box as two fixed layers so the effect plays between them). Reduce
+motion: each tile shows a still (`buildHundoFxStill`).
+
+**THE POP-UPS.**
+- **Already holding one: Home.** `pendingHomeUnlocks()` returns `fx` - held
+  effects not in `store.unlocksShown.fx`, lowest first - and `playHomeUnlocks`
+  queues them after characters and banners, in the existing spotlight. **The
+  record DEFAULTS TO NOT SHOWN, against the usual rule, on purpose**: missing
+  in `applyLoadedData` it is `[]`, and `ensureUnlocksShown()` never seeds it
+  with what is held (it does for characters and banners). So every existing
+  account at 50+ hundos gets its pop-ups once; a fresh account at 0 sees
+  nothing. Each card marks itself shown (`markUnlocksShown([], [], [id])`),
+  and the record travels with the account, so a second device does not replay
+  it. Muted banners mark them shown without playing.
+- **Crossed in a run: the results screen**, as before (`rsUnlockItems` ->
+  `hundoFxUnlockItem`, a row in its `.rs-unlock-slot`); the same spotlight
+  marks it shown, so Home never repeats it.
+- **The card**: "Hundo effect unlocked", the name, "Earn 50 hundos" under the
+  Challenge strip, **Use this effect** (sets `store.hundoFx`, then says
+  "In use"), and tap to continue. The art is the effect LIVE round its own
+  small 100% box, looping while the card is up, recoloured; World Tree,
+  Bubbles and the UFO first play their WHOLE effect across the pop-up
+  (`showcase` - the tree behind the card, the bubbles and the saucer in front;
+  no black-out inside a pop-up). `stopFx` on the stage stops it when the card
+  goes. Home's queue already waits for tours, the splash and the generating
+  overlay (`homeUnlockBlocked`).
+
+**Zenith** counts every hundo effect, the UFO included (`ultimateProgress()`
+reads `HUNDO_FX`; "Still to unlock: 1 hundo effect."), and says so: "Unlock
+every other character, banner, theme and hundo effect". **Astral and
+Celestial are unchanged** - "every other character" and "every other banner".
+**Whether anybody HOLDS Zenith today was NOT checked** (workers have no
+Firestore access). Zenith is derived, not stored, so this build takes it from
+anyone holding it without 500 hundos (the top is 158). Check the board before
+shipping (e.g. `tools/firestore-admin.py list`, anybody wearing `zenith`);
+Astral and Celestial cannot be affected by this change.
+
+**Gates.** `check_b313_fx` (after `check_b313_pause`): the six tiles and the
+ladder 50/100/200/350/500; locked by hundos; picking; the field saved and read
+back by `loadStore()`, defaulted from a cloud copy without it; the fallback;
+for each of the seven effects on a real 100% - it plays on screen and in the
+box, **the box's border is not yellow during and is yellow after**, the tail
+fades rather than cuts, everything is gone after; for six, **pixel-measured
+spread**: every animation paused, the screen taken with and without the
+effect's layers, and the difference must be ≥85% on the box (grown 48px) at an
+early moment and cover a real area outside it (box grown 120px) later - an
+area, not a share, because the box's own new colours are a lot of pixels
+inside it and a meteor is thin; for the UFO, its feet on the box's top edge
+(±8px) over its middle; the Home pop-ups for an account at 120 hundos
+(Fireworks then Aurora, a live preview in each, gone on close, recorded, none
+on the next launch); none at 0 hundos; crossing 50 in a run (pop-up and row on
+results, not again on Home); Zenith one short at 400 and held at 500. Fails on
+312 everywhere except four guards. **A harness reload re-runs its seed**, so
+"survives a reload" is read back via `loadStore()`. **The `USED_ACCOUNT`
+fixture now carries `unlocksShown`** (the record the app would seed for it,
+plus every effect shown): an up-to-date account has had its pop-ups, and
+without it every section landing on Home would have met two of them.
+`check_b312_unlocks` holds 500 hundos in its "everything else held" mock.
+
+Recordings: `/tmp/claude-0/b313/shots/fx/` (MP4, and a GIF beside each effect
+clip); the four candidates in `candidates/`.
