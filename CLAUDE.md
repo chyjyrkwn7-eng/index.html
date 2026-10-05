@@ -12547,3 +12547,26 @@ element is fresh). Only `.is-right-pop` / `.is-wrong-flash` fade - a later
 rebuild of the same list must not fade an old answer in again.
 check-behaviour 80 (`check_b306_fcmotion`) samples the border and the bar
 every frame and asserts no `box-shadow` and no `::after`; it fails on 312.
+
+#### The next question: a solid push you can drag, and a quiet star
+
+**The question follows the thumb, and both halves stay solid while they
+move.** "It's hard to tell that the question is literally moving ... I want
+to see the question swipe as the next comes". The push (build 311) faded the
+outgoing question to 40% and brought the new one up from 55%, and a fading
+card reads as a dissolve - the only solid thing crossing the screen was the
+star, which is what was reported. Now the outgoing one holds its strength for
+most of the trip (opacity on an ease-in, scale .96), the incoming arrives at
+85%+, 280ms on `cubic-bezier(.3,.7,.2,1)`. A sideways drag moves the panel
+with the finger (`swipeDragTo`; a fifth of the distance to the right, where
+there is nothing), springs back if released short (`swipeDragRelease`), and
+`advanceWithSlide(fromDx)` carries on from where it was let go. The panel's
+`animation` is set to none before the drag, for the same reason as the
+clone: a running animation beats an inline transform.
+
+**An unstarred star is chrome, not gold.** "The color of the star is kinda
+harsh ... it kinda catches your eye". Off, the outline is the soft white of
+the other icons (`rgba(236,239,245,.5)`); on, a less saturated gold
+`#E8C770` with a gentler glow. check-behaviour 95 (`check_b313_qmotion`)
+holds all three (star neutral, outgoing solid a third of the way off, a real
+TouchEvent drag moves the panel, springs back, and advances) and fails on 312.

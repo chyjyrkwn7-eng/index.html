@@ -2569,7 +2569,7 @@
     background:rgba(255,255,255,.05); box-shadow:0 0 0 1px rgba(255,255,255,.08) inset;
   }
   .flagbtn.qflag .flagicon{ width:1.7rem; height:1.7rem; }
-  .flagbtn.qflag.on{ background:rgba(245,197,24,.16); box-shadow:0 0 0 1px rgba(245,197,24,.45) inset; }
+  .flagbtn.qflag.on{ background:rgba(232,199,112,.11); box-shadow:0 0 0 1px rgba(232,199,112,.3) inset; }
   /* in a test it sits up in the card's corner */
   .qnumrow > .flagbtn.qflag{ margin-top:-1.15rem; margin-bottom:-.4rem; margin-right:-.55rem; }
   /* UP INTO THE CORNER (build 298): "a little too low still, needs to be
@@ -2815,9 +2815,17 @@
   .screen-answerreview .cal-month-body-open{ padding-top:.9rem; }
   /* ---- THE STAR (build 303) - see buildQuestionFlag ---- */
   .flagicon{ overflow:visible; }
-  .flagicon .starline{ fill:none; stroke:#E0B646; stroke-width:1.6; stroke-linejoin:round; transition:stroke .3s ease; }
+  /* SOFTER, AND QUIET UNTIL IT IS ON (build 313): "the color of the star
+     is kinda harsh, doesn't go with the entire screen beautifully, it
+     kinda catches your eye". An unstarred question's star was drawn in
+     saturated gold, so on every question - and all the way across every
+     slide between them - the one coloured thing on a grey screen was a
+     button nobody had pressed. Off, it is the same soft white as the
+     rest of the chrome; on, a warmer, less saturated gold with a gentler
+     glow. */
+  .flagicon .starline{ fill:none; stroke:rgba(236,239,245,.5); stroke-width:1.6; stroke-linejoin:round; transition:stroke .3s ease; }
   .flagicon .starfill{
-    fill:#F5C518; transform-box:fill-box; transform-origin:center;
+    fill:#E8C770; transform-box:fill-box; transform-origin:center;
     transform:scale(0); opacity:.6;
     transition:transform .2s ease-in, opacity .2s ease-in;
   }
@@ -2825,13 +2833,13 @@
     transform:scale(1); opacity:1;
     transition:transform .8s cubic-bezier(.33,.55,.25,1), opacity .5s ease;
   }
-  .flagbtn.on .flagicon .starline{ stroke:#F5C518; }
-  .flagicon .starring{ fill:none; stroke:#F5C518; stroke-width:1.4; opacity:0; transform-box:fill-box; transform-origin:center; }
+  .flagbtn.on .flagicon .starline{ stroke:#E8C770; }
+  .flagicon .starring{ fill:none; stroke:#E8C770; stroke-width:1.4; opacity:0; transform-box:fill-box; transform-origin:center; }
   @keyframes star-ripple{ 0%{ opacity:.7; transform:scale(.35); } 100%{ opacity:0; transform:scale(1.5); } }
   .flagbtn.just-on .flagicon .starring{ animation:star-ripple .9s cubic-bezier(.25,.6,.3,1); }
   /* The soft glow while it is on. */
-  .flagbtn.on .flagicon{ filter:drop-shadow(0 0 4px rgba(245,197,24,.55)); }
-  .flagbtn.qflag.on{ box-shadow:0 0 0 1px rgba(245,197,24,.4) inset, 0 0 16px rgba(245,197,24,.18); }
+  .flagbtn.on .flagicon{ filter:drop-shadow(0 0 3px rgba(232,199,112,.35)); }
+  .flagbtn.qflag.on{ box-shadow:0 0 0 1px rgba(232,199,112,.3) inset, 0 0 12px rgba(232,199,112,.1); }
   .flag-note .fn-banner{ stroke-width:1.6; }
 
   .qtext{
@@ -66670,11 +66678,23 @@ function correctLine(qi){
    the sideways overflow for the moment the new panel is off to the right
    (clip, not hidden: it makes no scroll container, so the sticky top bar
    is untouched). */
-const SLIDE_MS = 240;
-const SLIDE_GAP = 24;
-const SLIDE_EASE = "cubic-bezier(.25,.8,.25,1)";
+/* MORE OF A MOVE, STILL QUICK (build 313): "it's hard to tell that the
+   question is literally moving ... I want to see the question swipe as
+   the next comes". The two halves used to fade as they travelled (the
+   old one to 40%, the new one up from 55%), and a fading card reads as
+   a dissolve rather than as something moving - the eye locked onto the
+   one solid thing crossing the screen, which was the star. Now both
+   stay solid while they move: the old question keeps its full strength
+   for most of the trip and steps back a little in scale as it goes, the
+   new one arrives at full strength, and the whole push is 280ms on an
+   even curve. A swipe also DRAGS the question under your thumb (see the
+   touchmove below) and the push carries on from wherever you let go. */
+const SLIDE_MS = 280;
+const SLIDE_GAP = 28;
+const SLIDE_EASE = "cubic-bezier(.3,.7,.2,1)";
 let slideTransitionInFlight = false;
-function advanceWithSlide(){
+function advanceWithSlide(fromDx){
+  fromDx = Math.min(0, Number(fromDx) || 0);
   /* The actual root cause of the reported "glitchy/buggy, slow"
      transition, confirmed directly by reading this function —
      nothing stopped it from re-entering while a previous call's own
@@ -66747,8 +66767,8 @@ function advanceWithSlide(){
   clone.style.cssText =
     "position:fixed; top:" + rect.top + "px; left:" + rect.left + "px; " +
     "width:" + rect.width + "px; margin:0; z-index:250; animation:none; " +
-    "transition:opacity " + SLIDE_MS + "ms ease-out, transform " + SLIDE_MS + "ms " + SLIDE_EASE + "; " +
-    "pointer-events:none; will-change:opacity, transform;";
+    "transition:opacity " + SLIDE_MS + "ms cubic-bezier(.6,0,.9,.6), transform " + SLIDE_MS + "ms " + SLIDE_EASE + "; " +
+    "pointer-events:none; will-change:opacity, transform; transform-origin:100% 40%;";
   document.body.appendChild(clone);
   document.documentElement.classList.add("q-sliding");
   const push = Math.round(rect.width + SLIDE_GAP);
@@ -66767,8 +66787,8 @@ function advanceWithSlide(){
      never actually rendering. Explicitly turning the animation off
      here removes that competition. */
   incoming.style.animation = "none";
-  incoming.style.opacity = ".55";
-  incoming.style.transform = "translateX(" + push + "px)";
+  incoming.style.opacity = ".85";
+  incoming.style.transform = "translateX(" + (push + fromDx) + "px)";
   incoming.style.transition = "none";
   incoming.style.willChange = "opacity, transform";
   // Force layout so the starting position is actually committed before
@@ -66818,8 +66838,8 @@ function advanceWithSlide(){
      one. */
   void clone.offsetWidth;
   void incoming.offsetWidth;
-  clone.style.opacity = ".4";
-  clone.style.transform = "translateX(-" + push + "px)";
+  clone.style.opacity = ".55";
+  clone.style.transform = "translateX(" + (-push - fromDx) + "px) scale(.96)";
   incoming.style.opacity = "1";
   incoming.style.transform = "translateX(0)";
   setTimeout(() => {
@@ -87114,7 +87134,39 @@ SWIPE_SURFACE.addEventListener("touchstart", (e) => {
 function endSwipeGesture(){
   swipeStartX = null; swipeStartY = null; swipeTouchId = null; swipeLocked = false;
 }
-SWIPE_SURFACE.addEventListener("touchcancel", endSwipeGesture, { passive: true });
+/* THE QUESTION FOLLOWS THE THUMB (build 313). Once a drag is clearly
+   sideways, the question panel moves with it - all the way to the left,
+   only a little to the right (there is nothing that way) - so a swipe
+   is something you are visibly doing to the question rather than a
+   gesture that fires a transition afterwards. Released past the
+   threshold, advanceWithSlide() carries it on from where it is; short
+   of it, it springs back. Transform only, and the panel's own entrance
+   animation is switched off first because a running animation beats an
+   inline transform on the same property. */
+let swipeDragPanel = null, swipeDragDx = 0;
+function swipeDragTo(dx){
+  if(slideTransitionInFlight || theme.reduceMotion) return;
+  if(!swipeDragPanel){
+    const p = stage.querySelector(".panel");
+    if(!p || !p.querySelector(".choices")) return;
+    swipeDragPanel = p;
+    p.style.animation = "none"; p.style.transition = "none"; p.style.willChange = "transform";
+    document.documentElement.classList.add("q-sliding");
+  }
+  swipeDragDx = dx < 0 ? dx : dx * .18;
+  swipeDragPanel.style.transform = "translateX(" + swipeDragDx + "px)";
+}
+function swipeDragRelease(){
+  const p = swipeDragPanel; swipeDragPanel = null; swipeDragDx = 0;
+  if(!p || !p.isConnected){ if(!slideTransitionInFlight) document.documentElement.classList.remove("q-sliding"); return; }
+  p.style.transition = "transform .22s cubic-bezier(.3,.7,.2,1)";
+  p.style.transform = "translateX(0)";
+  setTimeout(() => {
+    if(p.isConnected){ p.style.transition = ""; p.style.transform = ""; p.style.willChange = ""; }
+    if(!slideTransitionInFlight && !swipeDragPanel) document.documentElement.classList.remove("q-sliding");
+  }, 240);
+}
+SWIPE_SURFACE.addEventListener("touchcancel", () => { endSwipeGesture(); swipeDragRelease(); }, { passive: true });
 
 /* THE REASON THIS GESTURE DID NOT FIRE, and it is the same one the tab
    swipe was fixed for months ago - the fix simply never reached here.
@@ -87138,7 +87190,11 @@ SWIPE_SURFACE.addEventListener("touchmove", (e) => {
   if(!t) return;
   const dx = t.clientX - swipeStartX, dy = t.clientY - swipeStartY;
   if(!swipeLocked && Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) swipeLocked = true;
-  if(swipeLocked) e.preventDefault();
+  if(swipeLocked){
+    e.preventDefault();
+    const nb = document.getElementById("nextbtn");
+    if(nb && !nb.hidden && !nb.disabled) swipeDragTo(dx);
+  }
 }, { passive: false });
 
 SWIPE_SURFACE.addEventListener("touchend", (e) => {
@@ -87147,7 +87203,7 @@ SWIPE_SURFACE.addEventListener("touchend", (e) => {
   for(let i = 0; i < e.changedTouches.length; i++){
     if(e.changedTouches[i].identifier === swipeTouchId){ t = e.changedTouches[i]; break; }
   }
-  if(!t){ if(e.touches.length === 0) endSwipeGesture(); return; }
+  if(!t){ if(e.touches.length === 0){ endSwipeGesture(); swipeDragRelease(); } return; }
   const dx = t.clientX - swipeStartX;
   const dy = t.clientY - swipeStartY;
   /* READ THE LOCK BEFORE CLEARING IT. endSwipeGesture() sets
@@ -87174,8 +87230,14 @@ SWIPE_SURFACE.addEventListener("touchend", (e) => {
        meant the gesture depended on the button being hit-testable as
        well as visible. Its own re-entry guard still covers a double
        swipe. */
-    if(next && !next.hidden && !next.disabled) advanceWithSlide();
+    if(next && !next.hidden && !next.disabled){
+      const from = swipeDragPanel ? swipeDragDx : 0;
+      swipeDragPanel = null; swipeDragDx = 0;
+      advanceWithSlide(from);
+      return;
+    }
   }
+  swipeDragRelease();
 }, { passive: true });
 
 /* Swipe-between-tabs, iOS-style. Built on pointer events rather than

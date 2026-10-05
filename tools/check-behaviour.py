@@ -1155,6 +1155,60 @@ def check_slide(br):
         ctx.close()
 
 
+def check_b313_qmotion(br):
+    """Build 313: the star stops shouting, and the next question visibly
+    moves. "The color of the star is kinda harsh ... it kinda catches your
+    eye" and "it's hard to tell that the question is literally moving".
+    Written against 312, where the star is saturated gold unstarred, the
+    outgoing question fades to 40% as it goes, and a drag does nothing
+    until the finger lifts."""
+    print("\n95. build 313: a quiet star, a solid slide, a question that follows the thumb")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, touch=True)
+    pg.evaluate("""()=>{ cfg.units=[topicsIn(QUESTIONS)[0]]; cfg.mode='drill'; cfg.size=12; cfg.source='all';
+      const u=topicsIn(QUESTIONS)[0], idx=[]; QUESTIONS.forEach((q,i)=>{ if(q.topic===u && idx.length<12) idx.push(i); });
+      beginRun(idx); }""")
+    pg.wait_for_selector(".choice", timeout=20000)
+    pg.wait_for_timeout(700)
+    star = pg.evaluate("""()=>{ const l=document.querySelector('.qpanel .flagbtn:not(.on) .starline');
+      if(!l) return null; const c=getComputedStyle(l).stroke.match(/[\\d.]+/g).map(Number);
+      return { stroke: getComputedStyle(l).stroke, spread: Math.max(c[0],c[1],c[2]) - Math.min(c[0],c[1],c[2]) }; }""")
+    check("an unstarred question's star is the soft white of the rest of the chrome, not gold",
+          bool(star) and star["spread"] <= 24, star)
+    _answer(pg)
+    pg.wait_for_timeout(600)
+    mid = pg.evaluate("""async ()=>{ advanceWithSlide(); const out=[];
+      for(let i=0;i<30;i++){ await new Promise(r=>requestAnimationFrame(r));
+        const c=document.querySelector('body > .panel'); if(!c) break;
+        const r=c.getBoundingClientRect(); out.push({ op:+getComputedStyle(c).opacity, x:Math.round(r.left) }); }
+      return out; }""")
+    halfway = [f for f in mid if f["x"] < -150]
+    check("the outgoing question is still solid a third of the way off",
+          bool(halfway) and halfway[0]["op"] >= .9, (halfway[:2], len(mid)))
+    pg.wait_for_timeout(600)
+    _answer(pg)
+    pg.wait_for_timeout(600)
+    drag = pg.evaluate("""async ()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms));
+      const p=document.querySelector('#stage > .panel'); const x0=p.getBoundingClientRect().left;
+      const T=(x,y)=>new Touch({identifier:7, target:p, clientX:x, clientY:y});
+      const fire=(type,x,y)=>{ const t=T(x,y); p.dispatchEvent(new TouchEvent(type,{bubbles:true,cancelable:true,
+        touches: type==='touchend'?[]:[t], targetTouches: type==='touchend'?[]:[t], changedTouches:[t]})); };
+      const q0=pos;
+      fire('touchstart', 330, 600); await wait(16);
+      fire('touchmove', 300, 602); await wait(16); fire('touchmove', 250, 603); await wait(32);
+      const during = Math.round(p.getBoundingClientRect().left - x0);
+      fire('touchmove', 300, 603); await wait(16); fire('touchend', 318, 603); await wait(400);
+      const back = { x: Math.round(p.getBoundingClientRect().left - x0), pos: pos === q0 };
+      fire('touchstart', 330, 600); await wait(16);
+      fire('touchmove', 280, 602); await wait(16); fire('touchmove', 200, 603); await wait(16);
+      fire('touchend', 200, 603); await wait(500);
+      return { during, back, advanced: pos !== q0, clone: !!document.querySelector('body > .panel') }; }""")
+    check("dragging sideways moves the question with the thumb", drag["during"] <= -60, drag)
+    check("let go short of the line, it springs back and stays on the question",
+          abs(drag["back"]["x"]) <= 1 and drag["back"]["pos"], drag)
+    check("let go past it, the next question comes in", drag["advanced"] and not drag["clone"], drag)
+    ctx.close()
+
+
 def check_b218(br):
     """Build 218: what Madison re-asked for off Home, Settings and the boards.
 
@@ -9758,6 +9812,7 @@ def main():
             check_b312_looks(br)
             check_b312_flares(br)
             check_b313_lead(br)
+            check_b313_qmotion(br)
             check_b313_chars_centred(br)
             check_b313_no_sweep(br)
             check_b313_alive(br)
