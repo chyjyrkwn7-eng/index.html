@@ -9583,11 +9583,16 @@
   /* The chip's reason, dropped from the chip over the slider (build 313). */
   .howmany-sect{ position:relative; }
   .hundo-why{ position:absolute; left:.2rem; right:.2rem; z-index:5; padding:.7rem .85rem; border-radius:.85rem;
-    font-size:.82rem; line-height:1.4; font-weight:600; color:#FFE3DE; text-align:left;
-    background:rgba(52,22,20,.96); border:1px solid rgba(255,107,91,.42);
+    font-size:.82rem; line-height:1.4; font-weight:600; color:#FFD9D2; text-align:left;
+    /* THE CHIP'S OWN RED (build 313: "it looks like a different red than
+       where it says no hundo"). It was a separate dark brown. Now it is the
+       chip's tint and the chip's border, laid over the sheet's own colour
+       so it stays solid over the slider. */
+    background:linear-gradient(rgba(255,107,91,.12), rgba(255,107,91,.12)), #0F1115;
+    border:1px solid rgba(255,107,91,.35);
     box-shadow:0 10px 24px rgba(0,0,0,.45); animation:hundo-why-in .18s ease-out; }
   .hundo-why::before{ content:""; position:absolute; top:-6px; left:calc(var(--tip-x, 50%) - 6px - .2rem); width:11px; height:11px;
-    transform:rotate(45deg); background:inherit; border-left:1px solid rgba(255,107,91,.42); border-top:1px solid rgba(255,107,91,.42); }
+    transform:rotate(45deg); background:inherit; border-left:1px solid rgba(255,107,91,.35); border-top:1px solid rgba(255,107,91,.35); }
   .hundo-why[hidden]{ display:none; }
   @keyframes hundo-why-in{ from{ opacity:0; transform:translateY(-4px); } to{ opacity:1; transform:none; } }
   .hundo-chip + .sect-headval{ margin-left:0; }

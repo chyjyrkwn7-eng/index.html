@@ -1239,6 +1239,8 @@ def check_b313_sheet2(br):
       const chip=sheet.querySelector('.hundo-chip'); const c=chip.getBoundingClientRect(), w=sl.parentElement.getBoundingClientRect();
       out.chip={ off: Math.round((c.left+c.right)/2-(w.left+w.right)/2), text: chip.innerText };
       chip.click(); await wait(300); out.why=(sheet.querySelector('.hundo-why')||{}).textContent||'';
+      { const w=sheet.querySelector('.hundo-why'); const bg = el => { const c=getComputedStyle(el); return c.backgroundImage + ' | ' + c.backgroundColor + ' | ' + c.borderTopColor; };
+        out.reds = w ? [bg(chip), bg(w)] : null; }
       document.body.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true})); await wait(100);
       const inp=[...sheet.querySelectorAll('input[type=checkbox]')].find(x=>{ let e=x; for(let k=0;k<4&&e;k++){ e=e.parentElement; if(e && /Time limit/.test(e.textContent) && !/Stopwatch/.test(e.textContent)) return true; } return false; });
       inp && inp.click(); await wait(500);
@@ -1265,6 +1267,10 @@ def check_b313_sheet2(br):
     ce = r.get("centre") or [9, 9, 99]
     check("the word sits in the middle of Max and All when there is no tick",
           abs(ce[0]) <= 1 and abs(ce[1]) <= 1 and 2 <= ce[2] <= 9, ce)
+    # "it looks like a different red": the note is the chip's tint and border
+    rd = r.get("reds") or ["", ""]
+    check("the No hundo note is the same red as its chip, tint and border",
+          "rgba(255, 107, 91, 0.12)" in rd[1] and rd[0].split(" | ")[2] == rd[1].split(" | ")[2], rd)
     m0, m1, m2 = r.get("max0") or {}, r.get("max1") or {}, r.get("max2") or {}
     check("the time limit has a Max button, lit while the limit is below the top",
           m0.get("text", "").strip().lower() == "max" and m0.get("on") is False, m0)
