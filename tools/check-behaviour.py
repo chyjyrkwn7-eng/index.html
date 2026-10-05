@@ -9548,7 +9548,7 @@ def check_b313_flares_glass(br):
     names itself. Written against the first pass (flares on top), where the
     paint-order and the under-a-bubble tap both fail; against 312 the
     flare in the clear says nothing about which flare it is."""
-    print("\n92. build 313: the secret flares pass under the Liquid Glass bubbles; taps stay right")
+    print("\n93. build 313: the secret flares pass under the Liquid Glass bubbles (centred on their rings); taps stay right")
     for label, w, h in DEVICES:
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, init="try{localStorage.setItem('class26e.savecode.asked','1');}catch(e){}")
         pg.evaluate("""()=>{ document.querySelectorAll('.app-banner, #save-code').forEach(e => e.remove());
@@ -9581,6 +9581,33 @@ def check_b313_flares_glass(br):
         t2 = pg.evaluate("()=>{ const p = document.getElementById('contextual-info-popup'); return p ? p.textContent : ''; }")
         nm = pg.evaluate("()=>MYSTERY_NAME.violet")
         check(f"{label}: the same flare in the clear still takes the tap and names itself", bool(clear) and nm in t2, [clear, t2[:60]])
+        # THE BUBBLES SIT ON THE RINGS, BY THEIR CENTRES - and so a flare on
+        # a bubble's ring goes straight under its middle, not past its rim.
+        geo = pg.evaluate("""()=>{
+          const wrap = document.querySelector('.panel.home .cosmic-hero-wrap');
+          wrap.querySelectorAll('*').forEach(e => { e.style.animationPlayState = ''; });
+          const bubs = [...wrap.querySelectorAll(':scope > .cosmic-icon-badge')];
+          bubs.forEach(b => b.style.animation = 'none');
+          const W = wrap.getBoundingClientRect(), u = W.width / 360;
+          const cx = W.left + W.width / 2, cy = W.top + W.height * 162 / 342;
+          const outer = typeof HOME_OUTER_R === 'number' ? HOME_OUTER_R : 152;
+          const ctr = b => { const r = b.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
+          const off = bubs.map(b => { const [x, y] = ctr(b); const d = Math.hypot(x - cx, y - cy) / u;
+            return +Math.min(Math.abs(d - 108), Math.abs(d - outer)) * u; });
+          /* one revolution of the inner ring: the closest any inner flare comes to any bubble's centre */
+          const inner = wrap.querySelector('.cosmic-hero-orbitlayer-inner');
+          const flares = [...inner.querySelectorAll('.cosmic-orbit-dot')];
+          const dur = parseFloat(getComputedStyle(inner).animationDuration.split(',').pop()) || 60;
+          let best = 1e9;
+          for(let t = 0; t < dur; t += dur / 1440){
+            inner.style.animationDelay = '0s, -' + t.toFixed(3) + 's';
+            flares.forEach(f => { const r = f.getBoundingClientRect(); const fx = r.left + r.width / 2, fy = r.top + r.height / 2;
+              bubs.forEach(b => { const [x, y] = ctr(b); best = Math.min(best, Math.hypot(fx - x, fy - y)); }); });
+          }
+          inner.style.animationDelay = ''; bubs.forEach(b => b.style.animation = '');
+          return { off: off.map(v => +v.toFixed(2)), closest: +best.toFixed(2) }; }""")
+        check(f"{label}: every bubble's centre is on its ring (within 1.5px)", bool(geo["off"]) and max(geo["off"]) <= 1.5, geo["off"])
+        check(f"{label}: a flare passes within 3px of a bubble's centre - through it, not past the rim", geo["closest"] <= 3, geo["closest"])
         # The glass is the glass it was: nothing about a bubble with nothing
         # behind it changed (its fill, blur and rim are 312's).
         g = pg.evaluate("""()=>{ const u = document.querySelector('.panel.home .cosmic-icon-badge.cosmic-badge-rank:not(.cosmic-badge-lit)');

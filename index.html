@@ -10993,8 +10993,11 @@
      2.9rem above stands, on a browser without container units. */
   .panel.home.screen-home-actual .cosmic-icon-badge.cosmic-badge-rank{
     width:max(1.75rem, min(2.9rem, 10.7cqw)); height:max(1.75rem, min(2.9rem, 10.7cqw));
-    translate:calc((min(2.9rem, 10.7cqw) - max(1.75rem, min(2.9rem, 10.7cqw))) / 2) calc((min(2.9rem, 10.7cqw) - max(1.75rem, min(2.9rem, 10.7cqw))) / 2);
   }
+  /* Centred on its point (build 313), whatever size the floor makes it -
+     a % translate is of the bubble's own box. `translate`, so the float,
+     the press and the newly-lit pop (all `transform`) compose with it. */
+  .cosmic-hero-wrap > .cosmic-icon-badge.is-centred, .rank-orbit-slot.is-centred{ translate:-50% -50%; }
   .cosmic-icon-badge.cosmic-badge-rank svg.cosmic-rank-emblem{ width:100%; height:100%; flex:none; overflow:hidden; border-radius:50%; clip-path:circle(50% at 50% 50%); }
   /* the recorded motion, laid exactly over the still emblem (build 298) */
   .cosmic-icon-badge.cosmic-badge-rank .cosmic-rank-anim{ position:absolute; inset:0; overflow:hidden; border-radius:50%; pointer-events:none; z-index:0; mix-blend-mode:screen; }
@@ -55719,6 +55722,12 @@ function cosmicSmokeURL(){
   return cosmicSmokeCache;
 }
 let cosmicDepthSeq = 0;
+/* Home's outer orbit (build 313): the outer rank bubbles sit on it by
+   their centres and the outer secret flares ride it. 140, not the drawn
+   152 it used to be - centred on 152 the top bubble rose above the hero's
+   box - and see the measurements in CLAUDE.md (build 313, under the
+   glass). Welcome keeps its 152. */
+const HOME_OUTER_R = 140;
 function buildCosmicHero(useTierIcons, forceAccent, reuse){
   const svgNS = "http://www.w3.org/2000/svg";
   const wrap = document.createElement("div");
@@ -55904,7 +55913,8 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
   defs.appendChild(turbFilter);
   defs.appendChild(grad); defs.appendChild(rimGrad);
   svg.appendChild(defs);
-  [108, 152].forEach(r => {
+  /* Home's outer ring is HOME_OUTER_R (build 313) - see homePositions */
+  [108, useTierIcons ? HOME_OUTER_R : 152].forEach(r => {
     const ring = document.createElementNS(svgNS, "circle");
     ring.setAttribute("cx", 180); ring.setAttribute("cy", 150); ring.setAttribute("r", r);
     /* The permanent, post-cutscene reward for the rings specifically
@@ -56178,7 +56188,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
   innerOrbitLayer.className = "cosmic-hero-layer cosmic-hero-orbitlayer cosmic-hero-orbitlayer-inner";
   /* [ring radius, degrees clockwise from the top], in the 0 -12 360 342
      viewBox the planet is drawn in (centre 180,150; rings 108 and 152). */
-  const FLARE_SPOT = { red: [152, 337], orange: [152, 128], yellow: [108, 236], violet: [108, 32], white: [108, 141] };
+  const FLARE_SPOT = { red: [HOME_OUTER_R, 337], orange: [HOME_OUTER_R, 128], yellow: [108, 236], violet: [108, 32], white: [108, 141] };
   /* Something to say when a flare is tapped. A found one names itself
      and what it brought; a missing one only hints. */
   const flareSays = (key, state) => {
@@ -56347,10 +56357,21 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
        is the fix that does not move the other six: the inner ring is
        untouched, and the top badge keeps its clearance from the notice
        banner above it. */
-    const r = (i % 2 === 0) ? 38 : 30;
-    const top = 44 - r * Math.cos(angle);
-    const left = 50 + r * Math.sin(angle);
-    return { icon: "book", top: top.toFixed(1) + "%", left: left.toFixed(1) + "%", tier };
+    /* ---- ON THE RING, BY THE CENTRE (build 313) ----
+       "Ensure those go under the flare bubble when passing through." A
+       bubble was placed by its top-left corner at 38% / 30% of the box,
+       so its centre sat half a bubble down and right of any ring - the
+       secret flares on those rings only ever grazed a rim. Now each
+       bubble's CENTRE is on its ring, worked out in the planet's own
+       viewBox units (centre 180,150 in 0 -12 360 342, so the two axes
+       are scaled separately), and the bubble is centred on it with a
+       translate (.is-centred). The inner ring is 108, as drawn; the
+       outer one is HOME_OUTER_R, drawn there too, and the outer secret
+       flares ride it - so every flare passes straight under the middle
+       of the bubbles on its ring. */
+    const R = (i % 2 === 0) ? HOME_OUTER_R : 108;
+    const cx = 180 + R * Math.sin(angle), cy = 150 - R * Math.cos(angle);
+    return { icon: "book", top: ((cy + 12) / 342 * 100).toFixed(2) + "%", left: (cx / 360 * 100).toFixed(2) + "%", tier, centred: true };
   });
   const positions = useTierIcons ? homePositions : welcomePositions;
   /* Tracks which tiers were already unlocked as of the last time Home
@@ -56367,6 +56388,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
     const isNewlyLit = useTierIcons && achieved && !seenUnlocked.includes(pos.tier);
     badge.className = "cosmic-icon-badge cosmic-icon-badge-" + (i % 3) + (achieved ? " cosmic-badge-lit" : "") + (isNewlyLit ? " cosmic-badge-newly-lit" : "");
     badge.style.top = pos.top; badge.style.left = pos.left;
+    if(pos.centred) badge.classList.add("is-centred");
     if(achieved) badge.style.setProperty("--tier-glow", flareColorOf(pos.tier));
     if(achieved && FLARE_NOIR[pos.tier]) badge.classList.add("cosmic-badge-noir");
     if(achieved) newlySeenThisRender.push(pos.tier);
@@ -57927,6 +57949,7 @@ function rankOrbitFlares(hero){
     const slot = document.createElement("div");
     slot.className = "rank-orbit-slot";
     if(b.dataset.rankTier) slot.dataset.rankTier = b.dataset.rankTier;
+    if(b.classList.contains("is-centred")) slot.classList.add("is-centred");
     slot.style.top = b.style.top; slot.style.left = b.style.left;
     b.style.top = "0"; b.style.left = "0";
     slot.appendChild(b);
