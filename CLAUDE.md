@@ -12181,6 +12181,60 @@ the third, fourth and sixth flare tapped in the test, through the
 results screen (flare card, its scene, character card, banner card).
 Screenshots and GIFs: /tmp/claude-0/b313/shots/flares/.
 
+**Under the glass (build 313, second pass).** *"Ensure those go under the
+flare bubble when passing through, that would look so so sick with the
+Liquid Glass flare bubbles."* The first pass had put the two rings of
+secret flares ABOVE the rank bubbles (z-index 2) to fix taps. The tap
+fault was really the svg `:active` shrink (already gone), not the order,
+so the rings go back to no z-index: they come before the bubbles in the
+hero and paint beneath them, and each bubble's own glass - its 6px
+backdrop blur with saturate, its tint, its screen-blended emblem, its lens
+and rim - draws a passing flare through it, softened and coloured, until
+it comes out sharp on the other side. A lit flare's halo and a hunted
+one's tint and pulse ring all read through it. The glass was NOT changed
+(a 3px blur read a little crisper but moved every bubble ~1.4 levels with
+nothing behind it; the brief was "identical"), and the bubbles are placed
+by their top-left corner, so a flare grazes most of them rather than
+crossing the middle - which is the look in the recordings.
+**Paint order is hit-test order, so no second hit layer**: while a flare
+is under a bubble, the bubble is what a finger lands on and it opens its
+rank; anywhere the flare is clear of the glass its 44px disc takes the
+tap. One element for both means the drawing and the tap can never
+disagree, and nothing is computed per frame. The tooltip keeps following
+a flare that slides under a bubble (its ring and line draw on top).
+Gate: check-behaviour 92 (`check_b313_flares_glass`) freezes a flare under
+a bubble and asserts the bubble is above it in `elementsFromPoint`, that a
+real click there opens the bubble's rank, that the same flare in the clear
+names itself, and that an unreached bubble's fill/blur/rim/opacity are
+312's. It fails on the first pass (flares on top). On 312 itself it
+passes: 312's svg dots also painted under the bubbles - the regression
+was the first pass. Section 91's tap loop now waits for each flare to be
+clear of the glass before tapping it.
+
+**The bubbles sit ON the rings, by their centres** (the follow-up: the
+flares only grazed the rims). A Home rank bubble was placed by its top-left
+corner at 38% / 30% of the box, so its centre sat half a bubble down and
+right of any ring and a flare on that ring passed its edge. `homePositions`
+now works each bubble's centre out in the planet's viewBox units (centre
+180,150 in 0 -12 360 342 - the two axes scale differently) and
+`.is-centred` centres it with `translate:-50% -50%` (the float, the press
+and the newly-lit pop are all `transform`, so they compose; the rank
+cutscene's slots carry `.is-centred` too and their orbit stays centred and
+upright). Inner bubbles sit on the drawn 108 ring; outer ones on
+`HOME_OUTER_R` = 140, which is now also the drawn outer ring on Home and the
+outer secret flares' ring (Welcome keeps 152). Centred on 152 the top
+bubble rose 9-14px above the hero's box on every device; at 140 the
+nearest any bubble's box comes to the hero box (installed, portrait) is
++2px on a 16 Pro Max (was +10 corner-anchored), +1 on a 13 mini / 14, +9 to
++15 on iPads; phones in landscape -7 to -12 (were -5 to -9 before). The
+GLOW has more room than before on every phone (16 Pro Max 10px, was -8;
+13 mini 3, was -12), because the right-hand bubble no longer sticks out.
+The top bubble now sits ~20px higher, so a top notice (update / re-add)
+overlaps it by ~27px on a 16 Pro Max where it overlapped by 7 before.
+check-behaviour 93 asserts every bubble centre is within 1.5px of its ring
+(0.00-0.03 measured; 5-32px on the old layout) and that a flare comes
+within 3px of a bubble's centre in one turn (0.03; 7.8 / 8.6 before).
+
 #### Characters: centred on the boards, no sweeps, Orion / Sheriff / Ronin, the three ultimates, every grade on the results character
 
 **Board characters jumped off centre in their circles** (*"the characters
@@ -12462,3 +12516,19 @@ Also, smaller, all build 313:
   to act, including a simulated host - the first 20-person guest run sat on
   19/20 for good because the bot that was host never raced. That was the
   harness, not the app; check-vroom 20-22 drive every bot.
+
+#### Recovery: a build-time save must not overwrite the recovery mirror
+
+**`saveIfAccount()` exists because a render saved an empty store.** The
+flare gate (`mysteryLevelGate`) and `applyFlareReschedule` called
+`saveStore()` while Home's hero was being built - which on a device whose
+`localStorage` had been evicted happens BEFORE boot's
+`if(!storageHadData)` recovery has read the IndexedDB mirror. That save
+wrote a fresh, empty store over the mirror, and the recovery then found
+nothing to recover: the exact "I came back and it was at the Welcome
+screen" bug, re-made by a feature that has nothing to do with accounts.
+check-sync's recovery sections went red; found by bisecting the build and
+tracing `localStorage.setItem` stacks. **Anything that saves as a side
+effect of drawing a screen goes through `saveIfAccount()`**, which saves
+only once `store.onboardingComplete` is true. A save is a write to the
+recovery copy too, so "harmless bookkeeping" during a render is not.
