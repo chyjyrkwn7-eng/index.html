@@ -2266,6 +2266,23 @@
      nothing even while it is the one being looked at. */
   .avatarchar-option.locked::before{ display:none; }
   .avatarchar-option.locked.selected svg{ filter:saturate(.3) contrast(.4) brightness(1.34); }
+  /* ---- THE SECRET SILHOUETTE (build 313) - see buildCharSilhouette ---- */
+  .char-sil{ position:relative; display:block; width:100%; height:100%; }
+  .char-sil > svg{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+  /* a soft pool of its colour behind the cut-out - round, never a filter */
+  .char-sil::before{ content:""; position:absolute; inset:8% 10% 18%; border-radius:50%; pointer-events:none;
+    background:radial-gradient(closest-side, color-mix(in srgb, var(--sil-rim) 34%, transparent), color-mix(in srgb, var(--sil-rim) 10%, transparent) 60%, transparent); }
+  .avatarchar-option.locked.is-silhouette{ opacity:1; }
+  .avatarchar-option.locked .char-sil > svg, .avatarchar-option.locked.selected .char-sil > svg{ filter:none; }
+  .char-sil .cx-bg, .char-sil > svg > circle, .char-sil .cx-fx-sparkles{ display:none; }
+  .char-sil-body .cx-fig *:not(:is(.cx-fx-flares, .cx-fx-umflare, .cx-fx-sgstar, .cx-fx-gnheart, .cx-fx-wfrings, .cx-fx-wforbit), :is(.cx-fx-flares, .cx-fx-umflare, .cx-fx-sgstar, .cx-fx-gnheart, .cx-fx-wfrings, .cx-fx-wforbit) *){ fill:#05060A !important; stroke:none !important; }
+  .char-sil-body .cx-fig [fill="none"]:not(:is(.cx-fx-flares, .cx-fx-umflare, .cx-fx-sgstar, .cx-fx-gnheart, .cx-fx-wfrings, .cx-fx-wforbit), :is(.cx-fx-flares, .cx-fx-umflare, .cx-fx-sgstar, .cx-fx-gnheart, .cx-fx-wfrings, .cx-fx-wforbit) *){ fill:none !important; stroke:#05060A !important; }
+  .char-sil-rim .cx-fig *{ fill:var(--sil-rim) !important; stroke:var(--sil-rim) !important; stroke-width:1.7px !important; stroke-linejoin:round; }
+  .char-sil-rim .cx-fig [fill="none"]{ fill:none !important; }
+  .char-sil-rim{ opacity:.9; }
+  /* the worn flare stays lit on the black (left out of the rule above),
+     and has no outline of its own */
+  .char-sil-rim .cx-fig :is(.cx-fx-flares, .cx-fx-umflare, .cx-fx-sgstar, .cx-fx-gnheart, .cx-fx-wfrings, .cx-fx-wforbit){ visibility:hidden; }
   /* Genuinely bigger on a tablet-width screen, not just the same
      phone-tuned 4.6rem cap sitting in the middle of much bigger grid
      cells \u2014 per explicit report that the picker "doesn't enlarge"
@@ -10802,7 +10819,7 @@
   }
   @keyframes cco-depth{
     0%{ scale:.96; animation-timing-function:ease-out; } 25%{ scale:1.16; animation-timing-function:ease-in; }
-    50%{ scale:.96; animation-timing-function:ease-out; } 75%{ scale:.78; animation-timing-function:ease-in; } 100%{ scale:.96; }
+    50%{ scale:.96; animation-timing-function:ease-out; } 75%{ scale:.78; animation-timing-function:ease-in; } 100%{ scale:.96; animation-timing-function:ease-out; }
   }
   /* A full orbit every two minutes \u2014 slow enough to read as graceful
      drift rather than a spinning wheel, since this sits right next to
@@ -15194,7 +15211,10 @@
        the one with the ring could have that move". */
     .char-live .avatarchar-svg .cx-fx-starfield{ animation:cx-spin 40s linear infinite; }
     .char-live .avatarchar-svg .cx-fx-flares{ animation:cx-spin-back 20s linear infinite, cx-live-pulse 2.9s ease-in-out infinite alternate; }
-    .char-live .avatarchar-svg .cx-fx-crescent{ animation:cx-flicker-soft 4.2s ease-in-out infinite, cx-live-rock 5.3s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-crescent{ animation:cx-live-rock 5.3s ease-in-out infinite alternate; }
+    /* Umbra's moon, crescent to half to gibbous to full and back (build 313) */
+    .char-live .avatarchar-svg .cx-fx-umdark{ animation:cx-um-dark 7s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-umlit{ animation:cx-um-lit 7s ease-in-out infinite alternate; }
     .char-live .avatarchar-svg .cx-fx-wisps{ animation:cx-drift 5s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-umflare{ animation:cx-mk2-pulse 2.6s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-infall{ animation:cx-infall 1.6s linear infinite; }
@@ -15462,6 +15482,7 @@
      and keyframe here is new and unique to its character. */
   .avatarchar-svg .cx-k-singularity{ --cx-blink:6.8s; --cx-blink-at:-2.4s; }
   .avatarchar-svg .cx-k-umbra{ --cx-blink:6.2s; --cx-blink-at:-1.6s; }
+  .avatarchar-svg .cx-k-genesis{ --cx-blink:7.4s; --cx-blink-at:-3.3s; }
   .avatarchar-svg .cx-k-zeus{ --cx-blink:7.6s; --cx-blink-at:-4.9s; }
   .avatarchar-svg .cx-k-masked{ --cx-blink:5.8s; --cx-blink-at:-.3s; }
   /* the rest that had no beat of their own, so a row of them never
@@ -15800,6 +15821,23 @@
     .char-live .avatarchar-svg .cx-fx-wforbit{ opacity:1; animation:cx-spin 4s linear infinite; }
     .char-live .avatarchar-svg .cx-fx-wfring{ animation:cx-wf-ring 2.6s ease-out infinite; }
     .char-live .avatarchar-svg .cx-fx-sgwave{ animation:cx-sg-wave 3s ease-in-out infinite; }
+    /* Horizon's surges (build 313): white-hot on a 17s clock, deep blue on
+       a 29s one - see the drawing */
+    .char-live .avatarchar-svg .cx-fx-sgsurgew{ animation:cx-sg-surgew 17s ease-out -4s infinite; }
+    .char-live .avatarchar-svg .cx-fx-sgsurgeb{ animation:cx-sg-surgeb 29s ease-in-out -9s infinite; }
+    /* GENESIS (build 313): the moon goes round the ring and really passes
+       behind the planet (the near copy is shown only on the near half),
+       the weather drifts across the face by exactly one period, the seams
+       glow like magma, the core light under the planet breathes, and now
+       and then the planet's crown erupts. */
+    .char-live .avatarchar-svg .cx-fx-gnspin{ animation:cx-gn-spin 9s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-gnback{ animation:cx-gn-back 9s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-gnmoonfront{ animation:cx-gn-front 9s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-gnbands{ animation:cx-gn-drift 14s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-gnseam{ animation:cx-gn-seam 3.4s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-gnleak{ animation:cx-glow 3.4s ease-in-out -1.7s infinite; }
+    .char-live .avatarchar-svg .cx-fx-gnatm{ animation:cx-glow 5.2s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-gnerupt{ animation:cx-gn-erupt 6.6s ease-out 1.2s infinite; }
     .char-live .avatarchar-svg .cx-fx-sgsparks{ opacity:1; }
     .char-live .avatarchar-svg .cx-fx-sgspark{ animation:cx-sg-spark 3s ease-out infinite; }
     .char-live .avatarchar-svg .cx-fx-zarays8{ animation:cx-za-rays8 6s linear infinite; }
@@ -15822,6 +15860,17 @@
     .char-react-win .avatarchar-svg :is(.cx-fx-zasatx, .cx-fx-zasaty){ animation-duration:.5s; }
     .char-react-win .avatarchar-svg .cx-fx-zapourline{ animation-duration:1s; }
   }
+  /* Genesis at rest: the moon sits on the near side, right of centre */
+  .avatarchar-svg .cx-fx-gnspin{ transform:rotate(38deg); }
+  .avatarchar-svg .cx-fx-gnback{ transform:rotate(-38deg); }
+  .avatarchar-svg .cx-fx-gnerupt{ transform-origin:50% 100%; }
+  @keyframes cx-gn-spin{ from{ transform:rotate(0deg); } to{ transform:rotate(360deg); } }
+  @keyframes cx-gn-back{ from{ transform:rotate(0deg); } to{ transform:rotate(-360deg); } }
+  /* near half = 0-180 degrees of the turn (the lower half of the ring) */
+  @keyframes cx-gn-front{ 0%, 49.4%{ opacity:1; } 50.6%, 99.4%{ opacity:0; } 100%{ opacity:1; } }
+  @keyframes cx-gn-drift{ from{ transform:translateX(0); } to{ transform:translateX(-8px); } }
+  @keyframes cx-gn-seam{ 0%, 100%{ opacity:.75; } 50%{ opacity:1; } }
+  @keyframes cx-gn-erupt{ 0%, 70%{ opacity:0; transform:scale(.3) translateY(1px); } 76%{ opacity:1; transform:scale(1.1) translateY(0); } 90%{ opacity:.6; transform:scale(1.25) translateY(-1.2px); } 100%{ opacity:0; transform:scale(1.35) translateY(-2px); } }
   @keyframes cx-fr-spin{ from{ transform:none; } to{ transform:rotate(60deg); } }
   @keyframes cx-fr-glint{ 0%, 70%, 100%{ opacity:0; } 76%{ opacity:.85; } 88%{ opacity:0; } }
   @keyframes cx-fr-tip{ 0%, 74%, 100%{ opacity:0; transform:scale(.3); } 80%{ opacity:1; transform:scale(1.2) rotate(30deg); } 92%{ opacity:0; transform:scale(.5) rotate(60deg); } }
@@ -15833,6 +15882,27 @@
   @keyframes cx-cl3-honk{ 0%, 20%, 100%{ scale:1; } 6%{ scale:1.3 1.18; } 11%{ scale:.92; } 15%{ scale:1.05; } }
   @keyframes cx-cl3-wink{ 0%, 60%, 70%, 100%{ scale:1; } 63%, 67%{ scale:1 .1; } }
   @keyframes cx-bg-phase{ 0%, 100%{ transform:none; } 40%{ transform:translateX(3.3px); } 40.01%{ transform:translateX(-8px); } 80%{ transform:translateX(-2.34px); } }
+  /* the crescent at rest: a dark terminator .7 of the way across */
+  .avatarchar-svg .cx-fx-umdark{ transform:scaleX(.7); }
+  .avatarchar-svg .cx-fx-umlit{ transform:scaleX(0); }
+  .avatarchar-svg :is(.cx-fx-sgsurgew, .cx-fx-sgsurgeb){ transform-origin:50% 100%; }
+  @keyframes cx-sg-surgew{
+    0%, 30%{ opacity:0; transform:scaleY(1); }
+    31.2%{ opacity:.95; transform:scaleY(1.07); }
+    33.5%{ opacity:.8; transform:scaleY(1.03); }
+    41%{ opacity:0; transform:scaleY(1); }
+    70%{ opacity:0; }
+    70.8%{ opacity:.7; } 71.6%{ opacity:.1; } 72.4%{ opacity:.8; transform:scaleY(1.04); }
+    77%, 100%{ opacity:0; transform:scaleY(1); }
+  }
+  @keyframes cx-sg-surgeb{
+    0%, 52%{ opacity:0; }
+    56%{ opacity:.95; }
+    68%{ opacity:.95; }
+    74%, 100%{ opacity:0; }
+  }
+  @keyframes cx-um-dark{ 0%{ transform:scaleX(.8); } 46%, 100%{ transform:scaleX(0); } }
+  @keyframes cx-um-lit{ 0%, 46%{ transform:scaleX(0); } 94%, 100%{ transform:scaleX(1); } }
   @keyframes cx-um-cglow{ 0%, 100%{ opacity:.15; transform:scale(.85); } 50%{ opacity:.8; transform:scale(1.1); } }
   @keyframes cx-um-cglint{ 0%, 40%, 100%{ opacity:0; transform:scale(.3); } 50%{ opacity:1; transform:scale(1.15) rotate(45deg); } 62%{ opacity:0; transform:scale(.4) rotate(90deg); } }
   @keyframes cx-wf-ring{ 0%{ opacity:0; transform:scale(.7); } 12%{ opacity:.8; } 100%{ opacity:0; transform:scale(2.6); } }
@@ -35373,6 +35443,33 @@ function characterLockMessage(id){
 function buildAvatarCharSVGSafe(charId){
   return buildAvatarCharSVG(charId) || buildAvatarCharSVG(AVATAR_CHARACTERS[0].id);
 }
+/* ---- A SECRET FLARE CHARACTER IS A SILHOUETTE UNTIL IT IS YOURS (build 313) ----
+   "In the character selection screen, can we make it so void, umbra, and
+   horizon are hidden? ... it will just be a cutout of the character until
+   it's unlocked ... The character can still animate and stuff in the list
+   of characters but it should be blacked out or something with the
+   outline." Two copies of the live drawing, laid one over the other: the
+   back one drawn wholly in the character's own glow colour with a wide
+   stroke (that is the outline), the front one wholly black. The flare it
+   wears stays lit on the black - the one thing you are told is the thing
+   you have to go and find. No filter anywhere (a filter over a drawing
+   with a soft full-box backdrop lights the box on iOS): it is CSS fill
+   and stroke on the parts, and the scenery and the halo are left out.
+   Both copies are made in the same moment, so every loop runs in step. */
+function isSecretSilhouette(id){
+  const def = AVATAR_CHARACTERS.find(c => c.id === id);
+  return !!(def && def.secret && isLockedCharacter(id));
+}
+function buildCharSilhouette(id){
+  const wrap = document.createElement("span");
+  wrap.className = "char-sil";
+  wrap.style.setProperty("--sil-rim", avatarGlowColor(id));
+  const rim = buildAvatarCharSVGSafe(id), body = buildAvatarCharSVGSafe(id);
+  rim.classList.add("char-sil-rim");
+  body.classList.add("char-sil-body");
+  wrap.append(rim, body);
+  return wrap;
+}
 
 /* EVERY CHARACTER FILLS ITS TILE TO THE SAME HEIGHT.
    Reported: "the characters from ninja to alien are just bigger than the
@@ -35793,6 +35890,8 @@ function drawAvatarCharSVG(charId){
        with the moon") - see "phasemoon" below. */
     umbra:      [["nebula", "#8B5CF6", "#3B1E7A"], ["phasemoon", "#C4B5FD", 30.8, 8.4, 2.6], ["stars", "#E2D8FF"]],
     singularity:[["nebula", "#4A7ACC", "#141A44"], ["stars", "#EAF8FF"], ["rise", "ember", ["#FFFFFF", "#BFE6FF"]]],
+    /* Genesis (build 313): a world being forged - rose haze, embers rising */
+    genesis:    [["nebula", "#FF5CA8", "#3A0F3A"], ["rise", "ember", ["#FFB86B", "#FF5CA8"]], ["stars", "#FFE3F0"]],
     lunar:      [["stars", "#E6EDF6"], ["nebula", "#9FB2C8", "#2B3446"]],
     solar:      [["rays", "#F7C21E", 16]],
     tempest:    [["clouds", "#5E8C8A"], ["fall", "rain", ["#5EEAD4"]]],
@@ -39240,9 +39339,21 @@ function drawAvatarCharSVG(charId){
     open("cx-fx cx-fx-crescent");
     { const cg = uid + "-umc";
       const cp = mk("clipPath", { id: cg + "c" }); cp.appendChild(mk("circle", { cx: 22.77, cy: 15.4, r: 2.1 })); defs.appendChild(cp);
+      /* BUILD 313: THE MOON GOES THROUGH ITS PHASES. "The moon on umbras
+         face needs to move between moon stages to make it cooler." Drawn
+         the way a real phase is: the right half lit, and an ellipse over
+         the middle whose width is the terminator - dark and narrowing for
+         a crescent (it covers part of the lit half), gone at the half, and
+         LIT and widening for a gibbous (it lights part of the dark half),
+         full when it is the whole disc. Only the two ellipses' scaleX
+         moves, so it is a transform. At rest it is the crescent. The dark
+         side is the faint purple of earthshine, not the face's black, so
+         the whole disc reads as a moon at every phase. */
       const moon = mk("g", { "clip-path": "url(#" + cg + "c)" });
-      moon.appendChild(mk("circle", { cx: 22.77, cy: 15.4, r: 2.1, fill: "#C4B5FD" }));
-      moon.appendChild(mk("circle", { cx: 20.74, cy: 15.4, r: 1.6, fill: "#050409" }));
+      moon.appendChild(mk("circle", { cx: 22.77, cy: 15.4, r: 2.1, fill: "#241A3E" }));
+      moon.appendChild(mk("path", { d: "M22.77 13.3 A2.1 2.1 0 0 1 22.77 17.5 Z", fill: "#C4B5FD" }));
+      moon.appendChild(mk("ellipse", { cx: 22.77, cy: 15.4, rx: 2.1, ry: 2.12, fill: "#241A3E", class: "cx-fx-umdark" }));
+      moon.appendChild(mk("ellipse", { cx: 22.77, cy: 15.4, rx: 2.1, ry: 2.12, fill: "#C4B5FD", class: "cx-fx-umlit" }));
       svg.appendChild(moon); }
     close();
     { const gl = sparkle(21.3, 13.9, .9, "#FFFFFF"); gl.setAttribute("class", "cx-fx cx-fx-umcglint"); gl.setAttribute("opacity", "0"); svg.appendChild(gl); }
@@ -39323,6 +39434,28 @@ function drawAvatarCharSVG(charId){
       });
       /* inside the hair's own group, so it breathes with the locks */
       sgHairG.appendChild(au);
+      /* BUILD 313: THE SURGE. "Horizons hair needs a cooler effect at
+         random points ... Maybe it randomly changed to dark blue or white
+         idk? Unique and cool." Two copies of every lock over the hair,
+         back and front: one WHITE-HOT, which flashes up the hair and
+         flickers out, and one DEEP BLUE, the light drained out of it for
+         a few seconds with only the tips still lit - light that went over
+         the horizon. Each runs on its own long, uneven clock (17s and
+         29s, which share no factor), so the two never fall into a pattern
+         you can see - the same hair does something different every time
+         you look, which is what "at random points" needs without a timer. */
+      { const wg = mk("linearGradient", { id: uid + "-sgsw", gradientUnits: "userSpaceOnUse", x1: "0", y1: "20", x2: "0", y2: "2" });
+        [["0%", "#E8F6FF", ".9"], ["60%", "#FFFFFF", "1"], ["100%", "#FFFFFF", ".85"]].forEach(([o, c, op]) => wg.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
+        const bg = mk("linearGradient", { id: uid + "-sgsb", gradientUnits: "userSpaceOnUse", x1: "0", y1: "20", x2: "0", y2: "2" });
+        [["0%", "#081436", "1"], ["58%", "#1A3A9E", "1"], ["86%", "#3B6FE0", ".95"], ["100%", "#CFE6FF", ".9"]].forEach(([o, c, op]) => bg.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
+        defs.append(wg, bg);
+        const backLocks = [[15.4, 2, 10, -10.4, 3.6], [16.6, 2, 14, -4.6, -3.6], [23.4, 2, 14, 4.6, 3.6], [24.6, 2, 10, 10.4, -3.6]];
+        [["cx-fx-sgsurgeb", "-sgsb"], ["cx-fx-sgsurgew", "-sgsw"]].forEach(([cls, gid]) => {
+          const g = mk("g", { class: "cx-fx " + cls, opacity: "0" });
+          backLocks.forEach(([x, w, h, lean, sway]) => g.appendChild(lock(x, 19.2, w, h, lean, sway, "url(#" + uid + gid + ")", ".92")));
+          frontLocks.forEach(([x, w, h, lean, sway]) => g.appendChild(lock(x, 19.6, w, h, lean, sway, "url(#" + uid + gid + ")", "1")));
+          sgHairG.appendChild(g);
+        }); }
       const sp = mk("g", { class: "cx-fx cx-fx-sgsparks", opacity: "0" });
       frontLocks.forEach(([x, w, h, lean], i) => {
         if(i === 3) return;
@@ -39369,6 +39502,143 @@ function drawAvatarCharSVG(charId){
     close();
     wornFlareFx(20, 15, "#DDF4FF", .9);
     close();
+    return done();
+  }
+
+  /* ---- GENESIS (build 313) - the sixth secret flare's character ----
+     "This one's theme will be the sickest out of all the secret flare
+     characters, it will be the coolest cleverest flare character." The
+     clever part is what it is: THE PLANET ON HOME, ALIVE. Its head is that
+     planet - the same gold-to-rose-to-magenta ramp, the same ring - with
+     two eyes open on its face, and the flare that skims the planet on
+     Home, Worldheart, is the heart it wears: the light at its chest, with
+     the seams of the world it forged running out from it across rock
+     shoulders. Round the planet a ring, drawn in two passes (the far half
+     behind the head, the near half in front - the Bronze emblem's rule),
+     and a small moon going round on it that really passes behind.
+     Alive (char-live only): the moon orbits, the weather bands drift
+     across the face, the seams pulse with magma, the planet erupts now
+     and then, embers rise, and the worn flare rings. Parts are cx-fx-gn*. */
+  if(def.kind === "genesis"){
+    const f = v => (+v).toFixed(2);
+    const PX = 20, PY = 19.4, PR = 7.6;
+    /* the body: dark basalt, one ramp from collar to hem */
+    const rock = mk("linearGradient", { id: uid + "-gnrock", gradientUnits: "userSpaceOnUse", x1: "0", y1: "24", x2: "0", y2: "40" });
+    [["0%", "#33202E"], ["55%", "#1A0F1A"], ["100%", "#09050B"]].forEach(([o, c]) => rock.appendChild(mk("stop", { offset: o, "stop-color": c })));
+    defs.appendChild(rock);
+    const planet = mk("radialGradient", { id: uid + "-gnpl", gradientUnits: "userSpaceOnUse", cx: "17.2", cy: "15.6", r: "11.6" });
+    [["0%", "#FFF1CF"], ["16%", "#FFD37A"], ["38%", "#F5804D"], ["66%", "#C23B7A"], ["100%", "#3A0D2E"]].forEach(([o, c]) => planet.appendChild(mk("stop", { offset: o, "stop-color": c })));
+    defs.appendChild(planet);
+    const ringG = mk("linearGradient", { id: uid + "-gnring", gradientUnits: "userSpaceOnUse", x1: "-12.6", y1: "0", x2: "12.6", y2: "0" });
+    [["0%", "#FFB0D2", ".35"], ["30%", "#FFE3C4", ".95"], ["70%", "#FF8FC0", ".9"], ["100%", "#FFB0D2", ".35"]].forEach(([o, c, op]) => ringG.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
+    defs.appendChild(ringG);
+    const moonG = mk("radialGradient", { id: uid + "-gnmoon", cx: "38%", cy: "34%", r: "70%" });
+    [["0%", "#FFFFFF"], ["55%", "#F2C6D9"], ["100%", "#7A4060"]].forEach(([o, c]) => moonG.appendChild(mk("stop", { offset: o, "stop-color": c })));
+    defs.appendChild(moonG);
+    open("cx-body");
+    svg.appendChild(mk("path", { d: "M5.4 40 Q6 30.6 13.4 28.2 Q16.4 27.4 20 27.6 Q23.6 27.4 26.6 28.2 Q34 30.6 34.6 40 Z", fill: "url(#" + uid + "-gnrock)" }));
+    /* the plates' edges, so it reads as rock rather than cloth */
+    svg.appendChild(mk("path", { d: "M7.6 33.6 L11.2 31.4 L13.4 33.8 M27.4 31.6 L30.4 33.2 L32.6 32.2 M10.2 38.6 L13.6 36.8", fill: "none", stroke: "#000", "stroke-width": ".4", opacity: ".45", "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M33.8 38.2 Q33.2 31.6 27 29", fill: "none", stroke: "#FFB0D2", "stroke-width": ".45", "stroke-linecap": "round", opacity: ".5" }));
+    /* THE SEAMS: the world's fault lines, running out from its heart.
+       A soft glow under a bright line, so they read as heat, not paint. */
+    const seams = "M20 31.4 L17.4 32.6 L15.6 32 L12.6 34.4 L9.8 34 L7.4 36.4 M20 31.4 L22.8 32.8 L24.2 32.2 L27.6 34.2 L30 33.4 L32.2 35.6 M20 31.4 L19.2 34 L20.6 36.4 L19.6 40 M15.6 32 L15 35.2 L13 37.4 M27.6 34.2 L27 37 L28.6 39.4";
+    open("cx-fx cx-fx-gnseam");
+    svg.appendChild(mk("path", { d: seams, fill: "none", stroke: "#FF5CA8", "stroke-width": "1.3", "stroke-linejoin": "round", "stroke-linecap": "round", opacity: ".32" }));
+    svg.appendChild(mk("path", { d: seams, fill: "none", stroke: "#FFB86B", "stroke-width": ".42", "stroke-linejoin": "round", "stroke-linecap": "round" }));
+    close();
+    close();
+    open("cx-head");
+    /* the ring's far half and its moon's far copy, behind the planet */
+    const ringPath = (front) => front ? "M12.6 0 A12.6 3 0 0 1 -12.6 0" : "M-12.6 0 A12.6 3 0 0 1 12.6 0";
+    const ring = (front) => {
+      const g = mk("g", { transform: "translate(" + PX + " " + f(PY + .6) + ") rotate(-14)" });
+      g.appendChild(mk("path", { d: ringPath(front), fill: "none", stroke: "url(#" + uid + "-gnring)", "stroke-width": "1.5", opacity: front ? ".55" : ".35" }));
+      g.appendChild(mk("path", { d: ringPath(front), fill: "none", stroke: "#FFE9D6", "stroke-width": ".42", opacity: front ? ".95" : ".55" }));
+      /* the moon: squashed plane, a turning arm, and the moon turned back
+         and un-squashed at its end, so it stays round as it goes */
+      const plane = mk("g", { transform: "scale(1 .238)" });
+      const spin = mk("g", { class: "cx-fx-gnspin" });
+      spin.appendChild(pivot(0, 0, 12.6));
+      const arm = mk("g", { transform: "translate(12.6 0)" });
+      const back = mk("g", { class: "cx-fx-gnback" });
+      back.appendChild(pivot(0, 0, 1.1));
+      const un = mk("g", { transform: "scale(1 4.2)" });
+      un.appendChild(mk("circle", { cx: 0, cy: 0, r: ".98", fill: "url(#" + uid + "-gnmoon)" }));
+      back.appendChild(un); arm.appendChild(back); spin.appendChild(arm); plane.appendChild(spin);
+      const holder = mk("g", { class: front ? "cx-fx-gnmoonfront" : "cx-fx-gnmoonback" });
+      holder.appendChild(plane);
+      g.appendChild(holder);
+      svg.appendChild(g);
+    };
+    ring(false);
+    /* the collar it sits in */
+    svg.appendChild(mk("path", { d: "M12.4 30.4 Q12.2 26.8 14.2 25.2 Q20 28.4 25.8 25.2 Q27.8 26.8 27.6 30.4 Q20 32.6 12.4 30.4 Z", fill: "url(#" + uid + "-gnrock)" }));
+    svg.appendChild(mk("path", { d: "M14.2 25.2 Q20 28.4 25.8 25.2", fill: "none", stroke: "#FF8FC0", "stroke-width": ".4", opacity: ".7" }));
+    /* the light of the core, leaking up round the planet's base */
+    { const lg = uid + "-gnlk"; const rg = mk("radialGradient", { id: lg });
+      rg.appendChild(mk("stop", { offset: "0%", "stop-color": "#FFC9A0", "stop-opacity": ".75" }));
+      rg.appendChild(mk("stop", { offset: "100%", "stop-color": "#FF5CA8", "stop-opacity": "0" }));
+      defs.appendChild(rg);
+      svg.appendChild(mk("ellipse", { cx: PX, cy: 26.6, rx: 6.4, ry: 1.8, fill: "url(#" + lg + ")", class: "cx-fx cx-fx-gnleak" })); }
+    /* its atmosphere: a rose rim of light just off the surface, like the
+       glow round the planet on Home */
+    { const ag = uid + "-gnatm"; const rg = mk("radialGradient", { id: ag, gradientUnits: "userSpaceOnUse", cx: PX, cy: PY, r: "10.4" });
+      [["0%", "#FF5CA8", "0"], ["70%", "#FF5CA8", "0"], ["76%", "#FF8FC0", ".55"], ["86%", "#FF5CA8", ".22"], ["100%", "#FF5CA8", "0"]].forEach(([o, c, op]) => rg.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
+      defs.appendChild(rg);
+      svg.appendChild(mk("circle", { cx: PX, cy: PY, r: "10.4", fill: "url(#" + ag + ")", class: "cx-fx cx-fx-gnatm" })); }
+    /* THE PLANET */
+    svg.appendChild(mk("circle", { cx: PX, cy: PY, r: PR, fill: "url(#" + uid + "-gnpl)" }));
+    { const cp = mk("clipPath", { id: uid + "-gnclip" }); cp.appendChild(mk("circle", { cx: PX, cy: PY, r: PR })); defs.appendChild(cp);
+      const inside = mk("g", { "clip-path": "url(#" + uid + "-gnclip)" });
+      /* weather: wavy bands on an 8-unit period, two periods wide, so a
+         drift of exactly 8 loops without a seam */
+      const drift = mk("g", { class: "cx-fx cx-fx-gnbands" });
+      const band = (y, amp, col, w, op) => {
+        let d = "M4 " + f(y);
+        for(let x = 4; x < 44; x += 4) d += " Q" + f(x + 2) + " " + f(y + (((x / 4) % 2) ? amp : -amp)) + " " + f(x + 4) + " " + f(y);
+        drift.appendChild(mk("path", { d, fill: "none", stroke: col, "stroke-width": w, "stroke-linecap": "round", opacity: op }));
+      };
+      band(14.6, .5, "#FFF0D0", ".7", ".35");
+      band(17.4, .6, "#8A1E5A", ".9", ".35");
+      band(23.2, .5, "#5A0F3E", "1.2", ".4");
+      band(25.4, .4, "#FFC08A", ".5", ".3");
+      inside.appendChild(drift);
+      /* the night side, lower right */
+      inside.appendChild(mk("circle", { cx: 25.6, cy: 24.6, r: 8.6, fill: "#14051A", opacity: ".5" }));
+      svg.appendChild(inside); }
+    /* the lit limb, upper left */
+    svg.appendChild(mk("path", { d: "M13.4 15.6 Q15.2 12.6 18.6 11.9", fill: "none", stroke: "#FFF6E0", "stroke-width": ".5", "stroke-linecap": "round", opacity: ".7" }));
+    svg.appendChild(mk("circle", { cx: PX, cy: PY, r: PR, fill: "none", stroke: "#FFC2DE", "stroke-width": ".35", opacity: ".55" }));
+    /* THE EYES: two lights open on the planet's face */
+    open("cx-eyes");
+    [[16.6, -1], [23.4, 1]].forEach(([cx, s]) => {
+      svg.appendChild(mk("ellipse", { cx, cy: 19.8, rx: 2.5, ry: 1.25, fill: "#FF5CA8", opacity: ".55" }));
+      const o = cx + s * 1.9, i = cx - s * 1.9;
+      svg.appendChild(mk("path", { d: "M" + f(i) + " 19.9 Q" + f(cx) + " 18.2 " + f(o) + " 19.4 Q" + f(cx) + " 21 " + f(i) + " 19.9 Z", fill: "#FFF6E6" }));
+      svg.appendChild(mk("circle", { cx: f(cx + s * .2), cy: 19.6, r: ".5", fill: "#FFFFFF" }));
+    });
+    close();
+    closedEyes([[16.6, 19.9, 1.9], [23.4, 19.9, 1.9]], "#FFE0C0", .45);
+    open("cx-mouth"); close();
+    /* AN ERUPTION, now and then, off the planet's crown */
+    open("cx-fx cx-fx-gnerupt", { opacity: "0" });
+    { const eg = uid + "-gner"; const rg = mk("radialGradient", { id: eg });
+      rg.appendChild(mk("stop", { offset: "0%", "stop-color": "#FFFFFF", "stop-opacity": "1" }));
+      rg.appendChild(mk("stop", { offset: "45%", "stop-color": "#FFB86B", "stop-opacity": ".7" }));
+      rg.appendChild(mk("stop", { offset: "100%", "stop-color": "#FF5CA8", "stop-opacity": "0" }));
+      defs.appendChild(rg);
+      svg.appendChild(mk("ellipse", { cx: 17.6, cy: 11.2, rx: 1.4, ry: 2.6, fill: "url(#" + eg + ")", transform: "rotate(-24 17.6 11.2)" }));
+      [[15.8, 8.6, .32], [18.6, 7.8, .26], [16.4, 6.6, .22]].forEach(([x, y, r]) => svg.appendChild(mk("circle", { cx: x, cy: y, r, fill: "#FFE3C4" }))); }
+    close();
+    /* the ring's near half and the moon's near copy, in front */
+    ring(true);
+    close();
+    /* WORLDHEART, worn at the chest, with the seams running out of it */
+    open("cx-fx cx-fx-gnheart");
+    wornFlare(20, 31.4, MYSTERY_COLOR.core, "#FFC2DE", 1.05);
+    close();
+    wornFlareFx(20, 31.4, "#FFC2DE", 1.05);
     return done();
   }
 
@@ -67719,7 +67989,8 @@ function flareHintItem(ch){
          the character it hands over - there, but not yet yours. */
       const f = document.createDocumentFragment();
       const ghost = document.createElement("span"); ghost.className = "rs-hint-ghost char-live";
-      try{ ghost.appendChild(buildAvatarCharSVGSafe(ch)); }catch(e){}
+      /* not yet yours, so its silhouette (build 313) */
+      try{ ghost.appendChild(isSecretSilhouette(ch) ? buildCharSilhouette(ch) : buildAvatarCharSVGSafe(ch)); }catch(e){}
       const orb = document.createElement("span"); orb.className = "rs-hint-orb";
       orb.style.setProperty("--hy", ch === "umbra" ? "80%" : "35%");
       orb.appendChild(buildFlareOrb(MYSTERY_COLOR[flare], "hint-" + ch));
@@ -78909,9 +79180,14 @@ function characterDetail(id){
        show up when you click them". */
     /* secrets only (build 304): Zenith's own requirement starts "Unlock"
        too, and it needs its progress bar */
-    if(def.secret && /^Unlock /.test(locked)){ o.desc = locked; return o; }
+    /* "Ensure this reads well in the descriptions" (build 313): a secret
+       flare character is shown as a silhouette until it is yours, and its
+       card says so before it says how. */
+    const secretLead = def.secret && locked ? "A secret flare character, hidden until it is yours. " : "";
+    if(def.secret && /^Unlock /.test(locked)){ o.desc = secretLead + locked; return o; }
     const f = CHARACTER_FEATS[def.feat];
-    if(f){ o.desc = f.label + "."; o.have = Math.min(f.have(), f.need); o.need = f.need; if(f.note) o.note = f.note; }
+    if(f){ o.desc = secretLead + f.label + "."; o.have = Math.min(f.have(), f.need); o.need = f.need; if(f.note) o.note = f.note; }
+    if(f && def.secret && locked) o.note = (o.note ? o.note + " " : "") + "Secret flares hide in your tests, one at a time, from a certain level on.";
   }
   return o;
 }
@@ -79017,7 +79293,8 @@ function showUnlockDetail(o){
        card that exists to show it off. A locked one moves too, as its
        silhouette: what you are working towards should look alive. */
     art.classList.add("char-live");
-    try{ art.appendChild(buildAvatarCharSVG(o.id)); }catch(e){}
+    if(isSecretSilhouette(o.id)){ art.classList.add("is-silhouette"); try{ art.appendChild(buildCharSilhouette(o.id)); }catch(e){} }
+    else { try{ art.appendChild(buildAvatarCharSVG(o.id)); }catch(e){} }
     if(o.hideArt) art.classList.add("is-hidden-art");
   } else if(o.kind === "badge"){
     /* the badge itself, in its own enamel, even while it is still to
@@ -79350,7 +79627,13 @@ function showCustomize(){
     opt.style.setProperty("--char-glow", avatarGlowColor(charDef.id));
     opt.title = AVATAR_DISPLAY_NAME[charDef.id] || charDef.id;
     opt.setAttribute("aria-label", opt.title);
-    opt.appendChild(buildAvatarCharSVG(charDef.id));
+    /* a secret flare character is a live black cut-out until it is yours */
+    if(locked && isSecretSilhouette(charDef.id)){
+      opt.classList.add("is-silhouette");
+      const sil = buildCharSilhouette(charDef.id);
+      sil.classList.add("char-live");
+      opt.appendChild(sil);
+    } else opt.appendChild(buildAvatarCharSVG(charDef.id));
     if(locked){
       const lockMark = document.createElement("span");
       lockMark.className = "avatarchar-lockmark";
