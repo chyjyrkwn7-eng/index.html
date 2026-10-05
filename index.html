@@ -35352,7 +35352,7 @@ const CHARACTER_FEATS = {
                done: () => !!(store.mysteryColorsFound || {}).white,
                have: () => ((store.mysteryColorsFound || {}).white ? 1 : 0), need: 1 },
   /* build 313: the sixth, on the planet itself, from level 78 */
-  flare6:    { label: "Find Worldheart, the flare on the planet",
+  flare6:    { label: "Find Worldheart, the planet's own secret flare",
                done: () => !!(store.mysteryColorsFound || {}).core,
                have: () => ((store.mysteryColorsFound || {}).core ? 1 : 0), need: 1 },
   /* ASTRAL and CELESTIAL (build 312): the two ultimates under Zenith -
@@ -35597,6 +35597,9 @@ function characterLockMessage(id){
        different pieces of information and the second is the one that
        makes somebody go and finish it. */
     const suffix = f.need > 1 ? " (" + Math.min(f.have(), f.need) + " of " + f.need + ")" : "";
+    /* a secret's label names the flare and says which it is, so it reads
+       as two sentences (build 313) */
+    if(def.secret) return f.label + suffix + ". It unlocks " + (AVATAR_DISPLAY_NAME[id] || id) + ".";
     return f.label + suffix + " to unlock " +
       (AVATAR_DISPLAY_NAME[id] || id) + ".";
   }
