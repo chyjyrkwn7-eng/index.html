@@ -32678,11 +32678,17 @@ const QUESTIONS = [
     src: 5,
     q: "Which of the following is an aspect or element of effective victim intervention and response",
     ref: "(Victims of Crime, Section 20.4)",
-    choices: [
+    keyChoices: [
       "Assure victims that their reactions are natural and understandable.",
       "Recognize “frozen fright” or the victim's complete dissociation between them and the",
       "event.",
       "Victims may “deny or minimize” the impact of the assault or crime they've been subjected to. All of the Above",
+    ],
+    choices: [
+      "Assure victims that their reactions are natural and understandable.",
+      "Recognize “frozen fright” or the victim's complete dissociation between them and the event.",
+      "Victims may “deny or minimize” the impact of the assault or crime they've been subjected to.",
+      "All of the Above",
     ],
     answer: 3
   },
@@ -44507,7 +44513,11 @@ function hashOf(s){
    which question your history belongs to. */
 const KEYS = QUESTIONS.map((q, i) =>
   (q.topic || "") + "|" + (q.src == null ? i : q.src) + "|" +
-  hashOf(String(q.keyText != null ? q.keyText : q.q) + "\u0001" + (q.choices || []).join("\u0001")));
+  hashOf(String(q.keyText != null ? q.keyText : q.q) + "\u0001" + (q.keyChoices || q.choices || []).join("\u0001")));
+/* keyChoices does for repaired choices what keyText does for cleaned
+   wording: the identity stays the one the question was first stored
+   under. Build 313 split a Victims of Crime question whose import had
+   cut one choice in half and glued "All of the Above" onto another. */
 
 /* How many times a question has to be missed before the opt-in
    auto-flag picks it up. Counted over the question's whole history, not
@@ -54519,40 +54529,50 @@ function shuffle(arr){
   return arr;
 }
 
-/* ---- QUESTIONS YOU HAVE NOT JUST SEEN GO FIRST (build 229) ----
-   "I feel like the shuffling of answer choices [isn't] shuffled hard
-   enough or the order of the questions, I feel like I always see them in
-   the same spot." The run order was already random - but random means
-   the same few questions open a run again and again by chance. So each
-   run remembers the first third of what it opened with (at most twelve),
-   and the next run shuffles and then moves those to the back. */
+/* ---- A FRESH SHUFFLE EVERY RUN, WITH ONE SMALL RULE (build 313) ----
+   "Can we double check that all the questions are being shuffled
+   properly, seems like the shuffling is not that great." It was not.
+   Build 229 tried to stop the same questions opening run after run
+   ("I always see them in the same spot") by moving everything opened
+   recently to the BACK of the next run, ordered by how long ago. That
+   is a rule, and a rule is a pattern: measured over 40 runs of every
+   unit, a question's place correlated -0.47 with its place one run
+   earlier on every small unit - what ended one run opened the next,
+   each run close to the last one played backwards - and +0.2 three
+   runs later, a cycle. The big units went the other way (+0.16 to
+   +0.24), because the 48 "recent" questions sat at the end of every
+   run in a row. None of it is random, and all of it can be felt.
+   Now: a plain Fisher-Yates shuffle on crypto randomness, then the one
+   thing build 229 actually asked for - the last run's first few
+   questions do not open this one. Each that lands in the first few
+   places is swapped with a random question from further down, so
+   nothing else about the order is decided. Measured the same way,
+   every lag correlates at about 0 (check_b313_shuffle). */
 const RECENT_Q_KEY = "class26e.recentq";
 function recentOpeners(){ try{ return JSON.parse(localStorage.getItem(RECENT_Q_KEY) || "[]") || []; }catch(e){ return []; } }
 function rememberOpeners(order){
   try{
-    const n = Math.min(12, Math.max(1, Math.ceil(order.length / 3)));
-    const first = order.slice(0, n).map(qi => KEYS[qi]);
-    const keep = first.concat(recentOpeners().filter(k => first.indexOf(k) < 0)).slice(0, 48);
+    const first = order.slice(0, 6).map(qi => KEYS[qi]);
+    const keep = first.concat(recentOpeners().filter(k => first.indexOf(k) < 0)).slice(0, 24);
     localStorage.setItem(RECENT_Q_KEY, JSON.stringify(keep));
   }catch(e){}
 }
-/* Never-opened-with first; then the ones opened with LONGEST ago; the
-   ones that opened the last run or two go last. On a small unit every
-   question is "recent" within a few runs, so it has to be an order by
-   age rather than a yes/no, or run four would fall back to plain chance
-   and open with run three's questions again. */
+function openersHowMany(n){ return Math.min(4, Math.floor(n / 3)); }
 function freshOrder(indexes){
-  const arr = shuffle(indexes.slice());
-  const recent = recentOpeners();
-  if(!recent.length || arr.length < 4) return spreadOrder(arr);
-  const age = new Map(recent.map((k, i) => [k, i]));
-  const fresh = arr.filter(qi => !age.has(KEYS[qi]));
-  const stale = arr.filter(qi => age.has(KEYS[qi])).sort((a, b) => age.get(KEYS[b]) - age.get(KEYS[a]));
-  const half = Math.ceil(stale.length / 2);
-  /* spread each part on its own: across the whole order the look-ahead
-     pulled a recent opener forward into the fresh part on a small unit,
-     which is the one thing this function exists to prevent */
-  return spreadOrder(fresh).concat(spreadOrder(shuffle(stale.slice(0, half))), spreadOrder(shuffle(stale.slice(half))));
+  const arr = spreadOrder(shuffle(indexes.slice()));
+  const n = arr.length, k = openersHowMany(n);
+  if(k < 1) return arr;
+  const avoid = new Set(recentOpeners().slice(0, k));
+  const ok = qi => !avoid.has(KEYS[qi]);
+  for(let i = 0; i < k; i++){
+    if(ok(arr[i])) continue;
+    const cand = [];
+    for(let j = k; j < n; j++) if(ok(arr[j])) cand.push(j);
+    if(!cand.length) break;
+    const j = cand[randIndex(cand.length)];
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
 }
 /* ---- SPREAD OUT, NOT JUST RANDOM (build 309) ----
    "Always feels like questions are around the same area of a test." The
@@ -54734,19 +54754,17 @@ function shuffledChoiceOrder(qi, remember){
   const isRef = k => CHOICE_REFERS_RE.some(re => re.test(String(ch[k])));
   /* For each position in `base`, the set of pointing choices that point
      at it; positions with the same set may trade places. */
+  /* A LETTER FOLLOWS ITS CHOICE (build 313). "Both A & B" used to pin
+     A and B to each other, so the six questions written that way could
+     only ever swap two answers - "the answer choices still aren't being
+     shuffled that great". Now every ordinary choice shuffles, the
+     pointing choice stays in its place, and choiceShown() rewrites its
+     letters to wherever the choices it names have landed. Only "above"
+     still groups positions, since that one points by place. */
   const sig = base.map(() => []);
   base.forEach((k, pos) => {
-    if(!isRef(k)) return;
-    let targets;
-    if(isLetterRef(k)){
-      targets = [];
-      String(ch[k]).replace(CHOICE_LETTER_RE, (m, L) => { targets.push(L.toUpperCase().charCodeAt(0) - 65); return m; });
-      /* letters name positions in the study guide's order, which is
-         `base` exactly when nothing was moved for "above" */
-    } else {
-      targets = base.slice(0, pos).map((x, i) => i);
-    }
-    targets.forEach(t => { if(t >= 0 && t < sig.length && t !== pos) sig[t].push(pos); });
+    if(!isRef(k) || isLetterRef(k)) return;
+    base.slice(0, pos).forEach((x, t) => { if(t !== pos) sig[t].push(pos); });
   });
   const groups = {};
   base.forEach((k, pos) => {
@@ -54781,6 +54799,27 @@ function shuffledChoiceOrder(qi, remember){
   return out;
 }
 function correctSlot(qi){ return optionOrder(qi).indexOf(QUESTIONS[qi].answer); }
+/* A choice as it reads in the order `ord`: unchanged, unless it names
+   other choices by letter ("Both A & C"). Those letters name the study
+   guide's own order, so each is moved to the slot its choice now sits
+   in, written in alphabetical order and in the case the guide used:
+   with Death Penalty at C and Imprisonment without Parole at A, "Both A
+   & B" reads "Both A & C". Every place that shows a choice in a run's
+   order goes through here; a list in the guide's own order does not. */
+function choiceShown(qi, orig, ord){
+  const q = QUESTIONS[qi], c = String((q.choices || [])[orig]);
+  if(!ord || !CHOICE_REFERS_RE[1].test(c)) return c;
+  const named = [];
+  c.replace(CHOICE_LETTER_RE, (m, L) => { named.push(L); return m; });
+  const now = named.map(L => ord.indexOf(L.toUpperCase().charCodeAt(0) - 65));
+  if(now.some(p => p < 0)) return c;
+  now.sort((a, b) => a - b);
+  let i = 0;
+  return c.replace(CHOICE_LETTER_RE, (m, L) => {
+    const nl = LETTERS[now[i++]];
+    return m.replace(L, L === L.toLowerCase() ? nl.toLowerCase() : nl);
+  });
+}
 
 /* ---------- bank validation --------------------------------------------- */
 
@@ -66803,7 +66842,7 @@ function render(){
     const key = document.createElement("span");
     key.className = "key"; key.textContent = LETTERS[slot];
     const text = document.createElement("span");
-    text.className = "text"; text.textContent = item.choices[orig];
+    text.className = "text"; text.textContent = choiceShown(qi, orig, slots);
     const mark = document.createElement("span");
     mark.className = "mark"; mark.setAttribute("aria-hidden", "true");
 
@@ -67232,7 +67271,7 @@ function buildQuestionPreviewPanel(cur, nextPos){
     else list.replaceChildren(...optionOrder(qi).map((orig, slot) => {
       const b = tpl.cloneNode(true); b.className = "choice"; b.removeAttribute("style");
       const k = b.querySelector(".key"); if(k) k.textContent = LETTERS[slot];
-      const t = b.querySelector(".text"); if(t) t.textContent = item.choices[orig];
+      const t = b.querySelector(".text"); if(t) t.textContent = choiceShown(qi, orig, optionOrder(qi));
       const m = b.querySelector(".mark"); if(m) m.textContent = "";
       return b;
     }));
@@ -72856,7 +72895,7 @@ function buildReviewQuestion(run, qi, n, gotIt){
     const yours = document.createElement("p");
     yours.className = "rs-q-yours";
     const lab = document.createElement("span"); lab.textContent = "Your answer";
-    yours.append(lab, document.createTextNode(item.choices[optionOrder(qi)[pickSlot]]));
+    yours.append(lab, document.createTextNode(choiceShown(qi, optionOrder(qi)[pickSlot], optionOrder(qi))));
     ans.appendChild(yours);
   } else if(run.timedOutSet[qi]){
     const yours = document.createElement("p");
@@ -72868,7 +72907,7 @@ function buildReviewQuestion(run, qi, n, gotIt){
   const right = document.createElement("p");
   right.className = "rs-q-right";
   const rl = document.createElement("span"); rl.textContent = "Correct answer";
-  right.append(rl, document.createTextNode(item.choices[item.answer]));
+  right.append(rl, document.createTextNode(choiceShown(qi, item.answer, optionOrder(qi))));
   ans.appendChild(right);
   li.append(top, q, ans);
   const bankNote = buildBankNote(item);
@@ -81966,8 +82005,8 @@ function buildRunReviewBlock(){
     q.className = "rq"; writeText(q, item.q);
     const a = document.createElement("div");
     a.className = "ra";
-    const yours = picked[qi] !== undefined ? "You answered: " + item.choices[optionOrder(qi)[picked[qi]]] + ". " : "";
-    a.textContent = yours + "Correct answer: " + item.choices[item.answer] + (item.ref ? "  " + item.ref : "");
+    const yours = picked[qi] !== undefined ? "You answered: " + choiceShown(qi, optionOrder(qi)[picked[qi]], optionOrder(qi)) + ". " : "";
+    a.textContent = yours + "Correct answer: " + choiceShown(qi, item.answer, optionOrder(qi)) + (item.ref ? "  " + item.ref : "");
     box.append(q, a);
     const bn = buildBankNote(item);
     if(bn) box.appendChild(bn);
@@ -85353,7 +85392,7 @@ function renderFlashcard(dir){
     if(!fc.choiceOrder) fc.choiceOrder = {};
     if(!fc.choiceOrder[qi]) fc.choiceOrder[qi] = shuffledChoiceOrder(qi, false);
     fc.choiceOrder[qi].forEach((ci, slot) => {
-      const c = item.choices[ci];
+      const c = choiceShown(qi, ci, fc.choiceOrder[qi]);
       const li = document.createElement("li");
       li.className = ci === item.answer ? "is-answer" : "";
       const lt = document.createElement("span"); lt.className = "fc-letter"; lt.textContent = LETTERS[slot] + ".";

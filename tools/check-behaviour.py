@@ -1224,6 +1224,100 @@ def check_b313_qmotion(br):
     ctx.close()
 
 
+def check_b313_shuffle(br):
+    """Build 313: "Can we double check that all the questions are being
+    shuffled properly ... please please ensure this." Measured, the
+    question order was not random: build 229's rule moved every recently
+    opened question to the back of the next run, so on every small unit a
+    question's place correlated about -0.47 with its place one run before
+    (each run close to the last one backwards) and the big units carried
+    the same 48 questions at the end of run after run. Now a plain
+    shuffle with only the opening questions kept fresh. Also: a Victims
+    of Crime question whose import had cut one choice in half and glued
+    "All of the Above" onto another. Fails on 312."""
+    print("\n97. build 313: question order and answer choices are really shuffled")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""()=>{
+      const out = { units: [] };
+      localStorage.removeItem('class26e.recentq');
+      const RUNS = 60;
+      topicsIn(QUESTIONS).forEach(u => {
+        const ids = QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === u.trim());
+        if(ids.length < 19) return;
+        const runs = [];
+        for(let r = 0; r < RUNS; r++){ const o = freshOrder(ids); rememberOpeners(o); runs.push(o); }
+        const pos = runs.map(o => { const m = new Map(); o.forEach((qi, i) => m.set(qi, i)); return m; });
+        const n = ids.length, mx = (n - 1) / 2;
+        const corr = k => { let s = 0, c = 0; for(let r = k; r < RUNS; r++){ let num = 0, d = 0;
+          ids.forEach(q => { const a = pos[r].get(q) - mx, b = pos[r - k].get(q) - mx; num += a * b; d += a * a; }); s += num / d; c++; } return s / c; };
+        // the opening few never repeat the last run's opening few
+        const k = Math.min(4, Math.floor(n / 3)); let reopen = 0;
+        for(let r = 1; r < RUNS; r++) reopen += runs[r].slice(0, k).filter(x => runs[r - 1].slice(0, k).includes(x)).length;
+        out.units.push({ u: u.slice(0, 24), n, c: [1, 2, 3, 4].map(corr).map(x => +x.toFixed(3)), reopen });
+      });
+      // answer choices: every question that can move shows several orders,
+      // and where the right answer is an ordinary choice it lands in every
+      // slot about equally often
+      const isRef = (q, k) => CHOICE_REFERS_RE.some(re => re.test(String(q.choices[k])));
+      let few = [], slot = [0, 0, 0, 0], freeAns = 0;
+      QUESTIONS.forEach((q, qi) => {
+        if(q.fixedOrder || (q.choices || []).length !== 4) return;
+        const seen = new Set();
+        for(let t = 0; t < 20; t++){ layout = {}; runMode = 'drill'; cfg.shuffle = true; const o = optionOrder(qi); seen.add(o.join());
+          if(!isRef(q, q.answer)) slot[o.indexOf(q.answer)]++; }
+        if(!isRef(q, q.answer)) freeAns++;
+        const movable = q.choices.filter((c, k) => !isRef(q, k)).length;
+        if(movable >= 3 && seen.size < 3) few.push(q.topic.trim().slice(0, 12) + ' ' + q.src);
+      });
+      // "Both A & C" names the right two after a shuffle
+      out.letters = [];
+      QUESTIONS.forEach((q, qi) => (q.choices || []).forEach((c, k) => {
+        if(!CHOICE_REFERS_RE[1].test(String(c)) || typeof choiceShown !== 'function') return;
+        for(let t = 0; t < 12; t++){ layout = {}; runMode = 'exam'; const o = optionOrder(qi);
+          const named = []; String(c).replace(CHOICE_LETTER_RE, (m, L) => { named.push(q.choices[L.toUpperCase().charCodeAt(0) - 65]); return m; });
+          const shown = choiceShown(qi, k, o); const now = []; shown.replace(CHOICE_LETTER_RE, (m, L) => { now.push(q.choices[o[L.toUpperCase().charCodeAt(0) - 65]]); return m; });
+          if(named.slice().sort().join('|') !== now.slice().sort().join('|')) out.letters.push(q.src + ': ' + c + ' -> ' + shown); }
+      }));
+      out.hasShown = typeof choiceShown === 'function';
+      const tot = slot.reduce((a, b) => a + b, 0);
+      out.slotPct = slot.map(x => +(100 * x / tot).toFixed(1)); out.few = few.slice(0, 8); out.fewN = few.length; out.freeAns = freeAns;
+      // the import damage
+      const v = QUESTIONS.findIndex(q => (q.topic || '').trim() === 'Victims of Crime' && q.src === 5);
+      out.victim = v >= 0 ? QUESTIONS[v].choices.slice() : null;
+      out.victimKeep = v >= 0 && KEYS[v] === 'Victims of Crime|5|' + hashOf(String(QUESTIONS[v].q) + '\\u0001' + [
+        'Assure victims that their reactions are natural and understandable.',
+        'Recognize \\u201cfrozen fright\\u201d or the victim\\'s complete dissociation between them and the',
+        'event.',
+        'Victims may \\u201cdeny or minimize\\u201d the impact of the assault or crime they\\'ve been subjected to. All of the Above'].join('\\u0001'));
+      // a choice cut off mid-sentence ("...between them and the") with
+      // its last word left over as the next choice ("event.")
+      out.damaged = QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].choices || []).some((c, k, all) => {
+        const t = String(c).trim(), prev = k ? String(all[k - 1]).trim() : '';
+        return (/.\\s(all|none) of the above\\s*\\.?$/i.test(t) && !/^(all|none|any)/i.test(t))
+          || (/\\b(the|and|of|or|a|an|to|between)$/i.test(prev) && /^[a-z]/.test(t)); }))
+        .map(i => QUESTIONS[i].topic.trim().slice(0, 12) + ' ' + QUESTIONS[i].src);
+      return out; }""")
+    bad = [u for u in r["units"] if any(abs(c) > (0.15 if u["n"] >= 30 else 0.3) for c in u["c"])]
+    check("a question's place in one run has nothing to do with its place 1-4 runs earlier, on every unit",
+          r["units"] and not bad, bad or [(u["u"], u["c"]) for u in r["units"]][:6])
+    check("the opening questions never repeat the last run's opening questions",
+          r["units"] and all(u["reopen"] == 0 for u in r["units"]), [(u["u"], u["reopen"]) for u in r["units"] if u["reopen"]])
+    check("every four-choice question that can move comes up in several orders", r["fewN"] == 0, r["few"])
+    check("a choice like \"Both A & C\" is rewritten to name the same two choices wherever they land",
+          r["hasShown"] is True and r["letters"] == [], r["letters"][:4] if r["hasShown"] else "no choiceShown")
+    check("an ordinary right answer lands in A, B, C and D about equally (20-30% each)",
+          r["freeAns"] > 500 and all(20 <= x <= 30 for x in r["slotPct"]), r["slotPct"])
+    check("the Victims of Crime question is four whole choices, with All of the Above on its own",
+          r["victim"] and r["victim"][3] == "All of the Above" and r["victim"][1].endswith("the event.") and not r["victim"][2].endswith("Above"), r["victim"])
+    check("and keeps its identity, so nobody's history on it moves", r["victimKeep"] is True, r["victimKeep"])
+    # US and Texas Constitution 23 has a wrong answer reading just "writ
+    # of" - cut off in the study guide itself, and what it said is not
+    # known, so it is left alone (asked about) rather than made up.
+    check("no other choice in the bank is a cut-off fragment or has All of the Above glued on",
+          [d for d in r["damaged"] if d != "US and Texas 23"] == [], r["damaged"])
+    ctx.close()
+
+
 def check_b313_sheet2(br):
     """Build 313, the start sheet's last round: the hundo chip centred over
     the slider and saying what it costs, no "random order" in the shuffle
@@ -6970,8 +7064,12 @@ def check_b298(br):
     # is and still means the same choices; section 86 proves that across
     # the whole bank. What is asserted here is that shape, on the two
     # questions this section was written about.
-    both_ok = lambda os: all(o.split(",")[2:] == ["2", "3"] and sorted(o.split(",")[:2]) == ["0", "1"] for o in os)
-    check("a question whose choices name other letters (\"Both A & B\"): A and B may trade places, C and \"Both A & B\" stay put, on shuffle and in an exam",
+    # BUILD 313 moved it again: "Both A & B" no longer pins A and B - all
+    # three ordinary choices shuffle and its letters are rewritten to
+    # follow them (section 97 proves they name the same two). What stays
+    # is the pointing choice in its own place, and real movement.
+    both_ok = lambda os: all(o.split(",")[3] == "3" for o in os) and len(set(os)) >= 3
+    check("a question whose choices name other letters (\"Both A & B\"): every other choice shuffles, \"Both A & B\" stays put, on shuffle and in an exam",
           both_ok(r["both"]["orders"]) and both_ok(r["exam"]), r["both"])
     check("one with \"All of the above\" keeps it last, with the rest shuffling above it", len(r["above"]) > 1 and len({o.split(",")[-1] for o in r["above"]}) == 1, r["above"])
     check("a plain question, and one whose answer only starts with \"All\", still shuffle", r["plain"] > 1 and r["prose"] > 1, (r["plain"], r["prose"]))
@@ -8775,7 +8873,11 @@ def check_b310_vroom(br):
     check("the start sheet lists Stopwatch first, then Time limit (renamed in 313)", r.get("timerRows") == ["Stopwatch", "Time limit"], r.get("timerRows"))
     check("the timer card is called Stopwatch & timer", "Stopwatch" in (r.get("fold") or ""), r.get("fold"))
     check("the toggles are 'Answer choice options', not 'Options'", r.get("optLab") == "Answer choice options", r.get("optLab"))
-    check("the shuffle line mentions the question order", "order" in (r.get("shuffleHint") or "").lower() and "question" in (r.get("shuffleHint") or "").lower(), r.get("shuffleHint"))
+    # Build 313, later the same day: "Dont mention in the shuffle thing
+    # about the random question if questions already come shuffled no
+    # matter what" - the line is about the choices and nothing else.
+    check("the shuffle line is about the answer choices only, not the question order",
+          "answer choices" in (r.get("shuffleHint") or "").lower() and "question" not in (r.get("shuffleHint") or "").lower(), r.get("shuffleHint"))
 
 
 def check_b311_rank(br):
@@ -8874,7 +8976,9 @@ def check_b312_shuffle(br):
         const isLetter = k => CHOICE_REFERS_RE[1].test(String(ch[k]));
         const isRef = k => CHOICE_REFERS_RE.some(re => re.test(String(ch[k])));
         const refSet = (o, k) => { const at = o.indexOf(k);
-          if(isLetter(k)){ const t = []; String(ch[k]).replace(CHOICE_LETTER_RE, (m, x) => { t.push(o[x.toUpperCase().charCodeAt(0) - 65]); return m; }); return t.filter(x => x !== undefined && x !== k).sort().join(); }
+          /* build 313: the letters are rewritten to follow their choices
+             (choiceShown), so read them off the choice AS SHOWN */
+          if(isLetter(k)){ const t = []; String(typeof choiceShown === 'function' ? choiceShown(qi, k, o) : ch[k]).replace(CHOICE_LETTER_RE, (m, x) => { t.push(o[x.toUpperCase().charCodeAt(0) - 65]); return m; }); return t.filter(x => x !== undefined && x !== k).sort().join(); }
           return o.slice(0, at).filter(x => !isRef(x)).sort().join(); };
         for(let t = 0; t < 120; t++){
           const o = shuffledChoiceOrder(qi, false);
@@ -10148,6 +10252,7 @@ def main():
             check_b313_lead(br)
             check_b313_qmotion(br)
             check_b313_sheet2(br)
+            check_b313_shuffle(br)
             check_b313_chars_centred(br)
             check_b313_no_sweep(br)
             check_b313_alive(br)

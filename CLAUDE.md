@@ -12789,3 +12789,42 @@ without it every section landing on Home would have met two of them.
 
 Recordings: `/tmp/claude-0/b313/shots/fx/` (MP4, and a GIF beside each effect
 clip); the four candidates in `candidates/`.
+
+### Shuffling, measured (build 313)
+
+"Can we double check that all the questions are being shuffled properly
+... please please ensure this." Measured over 40-60 consecutive runs of
+every unit, and through the real Begin button:
+
+- **The question order was not random, and a rule made it so.** Build
+  229 moved every recently-opened question to the BACK of the next run,
+  ordered by age. On every small unit a question's place then correlated
+  about **-0.47** with its place one run earlier - each run close to the
+  last one backwards - and +0.2 three runs later, a cycle; the big units
+  carried the same 48 questions at the end of run after run (+0.16 to
+  +0.24). `freshOrder()` is now a plain crypto Fisher-Yates shuffle,
+  `spreadOrder()`, and the ONE rule 229 asked for: the last run's first
+  `openersHowMany(n)` (up to 4) questions do not open this one, each
+  swapped with a random question further down. Every lag now measures
+  about 0. **A rule that makes a shuffle "feel" more random is a pattern;
+  measure it across runs before adding one.**
+- **The answer choices were already fair** - an ordinary right answer
+  lands in A/B/C/D at 24/25/25/25%. What reads as "it's always D" is the
+  study guide: 4-30% of a unit's answers are "All of the above" (30% of
+  Sexual Assault and TCOLE), which Madison asked to keep at the bottom.
+  That is the content, not the shuffle.
+- **"Both A & B" no longer pins A and B.** The 14 letter-pointing choices
+  in the bank stay in their own slot, every ordinary choice shuffles, and
+  `choiceShown(qi, orig, ord)` rewrites the letters to wherever the named
+  choices landed ("Both A & B" -> "Both B & C"). **Every place that shows
+  a choice in a run's order goes through `choiceShown`** (the question,
+  the slide preview, flashcards, the results "Your answer"/"Correct
+  answer", the Virtual Room review). A list in the guide's own order
+  shows the guide's text. "All of the above" still groups by place.
+- **Victims of Crime src 5 was damaged by the import**: one choice cut
+  in half ("...between them and the" / "event.") and "All of the Above"
+  glued onto the last. Repaired; `keyChoices` keeps its old identity the
+  way `keyText` does for cleaned wording. US & TX Constitution src 23
+  has a wrong answer that reads just "writ of" - cut off in the guide,
+  text unknown, left alone. Fitness src 11 lists "20-25%" twice.
+- `check_b313_shuffle` (section 97) holds all of it and fails on 312.
