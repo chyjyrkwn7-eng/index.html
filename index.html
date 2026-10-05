@@ -2111,21 +2111,14 @@
     display:grid; place-items:center; pointer-events:none;
   }
   .avatarchar-lockmark .lockglyph{ width:.66rem; height:.66rem; color:#F3F5F7; }
-  /* The Robot's visor scan and the Astronaut's reflected stars. These
-     are the only two moving characters in the set and that is
-     deliberate - "maybe someone that is animated". Both are CSS on a
-     classed element inside the SVG rather than SMIL, so the app's own
-     [data-reduce-motion="true"] *{animation:none} rule turns them off
-     without naming them, and both degrade to a perfectly readable
-     still character rather than to a blank one. */
+  /* The Astronaut's reflected stars. CSS on a classed element inside the
+     SVG rather than SMIL, so the app's own [data-reduce-motion="true"]
+     *{animation:none} rule turns it off without naming it. (The Robot's
+     visor scan that sat beside it went in build 313 with every other
+     sweep across a face.) */
   @media (prefers-reduced-motion:no-preference){
-    .avatarchar-scan{ animation:avatar-scan 3.8s ease-in-out infinite; }
     .avatarchar-twinkle{ animation:avatar-twinkle 2.6s ease-in-out infinite; }
     .avatarchar-twinkle-b{ animation-delay:1.1s; }
-  }
-  @keyframes avatar-scan{
-    0%, 58%  { transform:translateX(0); }
-    88%, 100%{ transform:translateX(38px); }
   }
   @keyframes avatar-twinkle{
     0%, 100%{ opacity:.25; }
@@ -15072,7 +15065,6 @@
     .char-live .avatarchar-svg .cx-fx-star2{ animation:cx-flicker-soft 2.6s ease-in-out -1.6s infinite; }
     .char-live .avatarchar-svg .cx-fx-ear-l{ animation:cx-twitch-l 5.6s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-ear-r{ animation:cx-twitch-r 5.6s ease-in-out -2.8s infinite; }
-    .char-live .avatarchar-svg .cx-fx-bladesheen{ animation:cx-sheen-idle 5.2s ease-in-out -1s infinite; }
     .char-live .avatarchar-svg .cx-k-dragon .cx-mouth{ animation:cx-jaw 6.2s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-jawgap{ animation:cx-jawgap 6.2s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-smoke{ animation:cx-smoke 6.2s ease-out infinite; }
@@ -15106,10 +15098,8 @@
     .char-live .avatarchar-svg .cx-fx-saeye{ animation:cx-mk2-pulse 2.4s ease-in-out infinite; }
     /* the blade of light on Orion's back hums */
     .char-live .avatarchar-svg .cx-fx-saglow{ animation:cx-mk2-pulse 1.7s ease-in-out infinite; }
-    .char-live .avatarchar-svg .cx-fx-lenssheen{ animation:cx-sheen-idle 6.4s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-glint{ animation:cx-twinkle 3.6s ease-in-out -1.2s infinite; }
     .char-live .avatarchar-svg .cx-fx-led{ animation:cx-led 1.8s steps(1, end) infinite; }
-    .char-live .avatarchar-svg .cx-fx-goldsheen{ animation:cx-sheen-idle 7s ease-in-out -2s infinite; }
     .char-live .avatarchar-svg .cx-fx-uraeus{ animation:cx-bob 4.2s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-scopeglow{ animation:cx-glow 2.8s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-reticle{ animation:cx-aim 6s ease-in-out infinite; }
@@ -15117,7 +15107,6 @@
        Paladin - the plume and a gold sheen; Sentinel - a scan across the
        visor; Frost - snow and a cold glint in the crown; Oracle - her
        amethysts turning round her; Inferno - the fire itself. */
-    .char-live .avatarchar-svg .cx-fx-scan{ animation:cx-scan 3.4s ease-in-out infinite alternate; }
     .char-live .avatarchar-svg .cx-fx-crown{ animation:cx-glow 4.4s ease-in-out -1s infinite; }
     .char-live .avatarchar-svg .cx-fx-crystals{ animation:cx-spin 22s linear infinite; }
     .char-live .avatarchar-svg .cx-fx-flame{ animation:cx-flame 1.3s ease-in-out infinite alternate; }
@@ -15162,9 +15151,7 @@
     .char-react-win .avatarchar-svg .cx-fx-visorflash{ animation:cx-flash 1.6s ease-out .3s infinite; }
     .char-react-win .avatarchar-svg .cx-fx-antenna{ animation:cx-led .5s steps(1, end) infinite; }
     .char-react-win .avatarchar-svg .cx-fx-eyeglow{ animation:cx-flash-soft 1.4s ease-in-out .3s infinite; }
-    .char-react-win .avatarchar-svg .cx-fx-crownsheen{ animation:cx-sheen 1.6s ease-in-out .3s infinite; }
     .char-react-win .avatarchar-svg .cx-fx-jewel .cx-glint{ animation:cx-glint-fast 1.6s ease-in-out .5s infinite; }
-    .char-react-win .avatarchar-svg .cx-fx-bladesheen{ animation:cx-sheen 1.4s ease-in-out .3s infinite; }
     .char-react-win .avatarchar-svg .cx-fx-visorblaze, .char-react-win .avatarchar-svg .cx-fx-blaze,
     .char-react-win .avatarchar-svg .cx-fx-slotglow{ animation:cx-flash-soft 1.5s ease-in-out .3s infinite; }
     .char-react-win .avatarchar-svg .cx-fx-plume{ animation:cx-plume .8s ease-in-out infinite; }
@@ -15180,11 +15167,7 @@
     .char-react-win .avatarchar-svg .cx-fx-ear-r{ animation:cx-twitch-r .9s ease-in-out -.45s infinite; }
     .char-react-win .avatarchar-svg .cx-fx-nose{ animation:cx-honk 1.2s ease-in-out .3s infinite; }
     .char-react-win .avatarchar-svg .cx-fx-pom{ animation:cx-bob .6s ease-in-out infinite; }
-    .char-react-win .avatarchar-svg .cx-fx-visorsheen{ animation:cx-sheen 1.8s ease-in-out .3s infinite; }
-    .char-react-win .avatarchar-svg .cx-fx-capsheen{ animation:cx-sheen 1.8s ease-in-out .2s infinite; }
-    .char-react-win .avatarchar-svg .cx-fx-lenssheen{ animation:cx-sheen 1.8s ease-in-out .7s infinite; }
     .char-react-win .avatarchar-svg .cx-fx-glint{ animation:cx-twinkle .9s ease-in-out infinite; }
-    .char-react-win .avatarchar-svg .cx-fx-goldsheen{ animation:cx-sheen 1.8s ease-in-out .3s infinite; }
     .char-react-win .avatarchar-svg .cx-fx-uraeus{ animation:cx-rise 1.6s ease-in-out infinite; }
     .char-react-win .avatarchar-svg .cx-fx-reticle{ animation:cx-lockon 1.8s ease-in-out .3s infinite; }
     .char-react-win .avatarchar-svg .cx-fx-scopeglow{ animation:cx-flare 1.8s ease-in-out .3s infinite; }
@@ -15259,7 +15242,6 @@
     .char-live .avatarchar-svg .cx-fx-moon2{ animation:cx-moon-drift 5.4s ease-in-out -2.7s infinite alternate-reverse; }
     .char-live .avatarchar-svg .cx-fx-dust{ animation:cx-dust 3.8s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-moonstar{ animation:cx-twinkle 3.4s ease-in-out infinite; }
-    .char-live .avatarchar-svg .cx-fx-moonsheen{ animation:cx-sheen-idle 6.6s ease-in-out -1.4s infinite; }
     .char-live .avatarchar-svg .cx-k-lunar .cx-fx-crown{ animation:none; }
     /* Solar */
     .char-live .avatarchar-svg .cx-fx-corona{ animation:cx-spin 30s linear infinite; }
@@ -15345,9 +15327,7 @@
     .char-live .avatarchar-svg .cx-fx-roninscarf{ animation:cx-ronin-scarf 1.8s ease-in-out infinite alternate; }
     .char-live .avatarchar-svg .cx-fx-ronineye{ animation:cx-ronin-eye 2.6s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-roninneon{ animation:cx-ronin-neon 4.4s ease-in-out infinite alternate; }
-    .char-live .avatarchar-svg .cx-fx-roninsheen{ animation:cx-sheen-idle 5.8s ease-in-out -2.6s infinite; }
     .char-react-win .avatarchar-svg .cx-fx-roninscarf{ animation:cx-ronin-scarf .35s ease-in-out infinite alternate; }
-    .char-react-win .avatarchar-svg .cx-fx-roninsheen{ animation:cx-sheen 1.3s ease-in-out .3s infinite; }
   }
   @keyframes cx-ronin-scarf{ from{ rotate:-5deg; scale:1 1; } to{ rotate:7deg; scale:1.06 .9; } }
   @keyframes cx-ronin-eye{ 0%, 100%{ opacity:.55; } 50%{ opacity:.95; } }
@@ -15370,7 +15350,6 @@
     .char-live .avatarchar-svg .cx-fx-mk2crack{ animation:cx-mk2-pulse 2.2s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-mk2glow{ animation:cx-mk2-pulse 2.2s ease-in-out -1.1s infinite; }
     .char-live .avatarchar-svg .cx-fx-hk2split{ animation:cx-hk2-jitter 3.2s steps(1) infinite; }
-    .char-live .avatarchar-svg .cx-fx-hk2scan{ animation:cx-hk2-scan 2.4s linear infinite; }
     .char-live .avatarchar-svg .cx-fx-hk2slice{ animation:cx-hk2-slice 4.6s steps(1) infinite; }
     .char-live .avatarchar-svg .cx-fx-hk2trace{ animation:cx-mk2-pulse 3s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-cl2hat{ animation:cx-cl2-sway 3.4s ease-in-out infinite alternate; }
@@ -15385,7 +15364,6 @@
     .char-react-win .avatarchar-svg .cx-fx-hk2slice{ animation:cx-hk2-slice .9s steps(1) infinite; }
     .char-react-win .avatarchar-svg .cx-fx-cl2hat{ animation:cx-cl2-sway .4s ease-in-out infinite alternate; }
     .char-react-win .avatarchar-svg .cx-fx-hk3rain{ animation:cx-hk3-rain .5s linear infinite; }
-    .char-react-win .avatarchar-svg .cx-fx-koisheen{ animation:cx-sheen 1.3s ease-in-out .3s infinite; }
     /* build 267: the Koi's fishbowl and the space cat */
     .char-live .avatarchar-svg .cx-fx-koiswim{ animation:cx-spin 6s linear infinite; }
     /* build 291: the Hive's bees circle it */
@@ -15393,13 +15371,11 @@
     .char-react-win .avatarchar-svg .cx-fx-hivebees{ animation:cx-spin 2s linear infinite; }
     .char-live .avatarchar-svg .cx-fx-koiwater{ animation:cx-koi-slosh 3s ease-in-out infinite alternate; }
     .char-live .avatarchar-svg .cx-fx-koibubble{ animation:cx-kr-bubble 2.8s ease-in infinite; }
-    .char-live .avatarchar-svg .cx-fx-koisheen{ animation:cx-sheen-idle 5.6s ease-in-out -1.2s infinite; }
     .char-react-win .avatarchar-svg .cx-fx-koiswim{ animation:cx-spin 1.4s linear infinite; }
   }
   @keyframes cx-mk2-pulse{ 0%, 100%{ opacity:.6; } 50%{ opacity:1; } }
   @keyframes cx-vp-glint{ 0%, 100%{ opacity:.45; } 50%{ opacity:.9; } }
   @keyframes cx-hk2-jitter{ 0%, 100%{ transform:none; } 62%{ transform:translateX(.6px); } 66%{ transform:translateX(-.5px); } 70%{ transform:none; } }
-  @keyframes cx-hk2-scan{ 0%{ transform:translateX(0); opacity:0; } 8%{ opacity:1; } 86%{ opacity:1; } 94%{ transform:translateX(17px); opacity:0; } 100%{ transform:translateX(0); opacity:0; } }
   @keyframes cx-hk2-slice{ 0%, 100%{ opacity:0; transform:none; } 72%{ opacity:1; transform:translateX(1.2px); } 75%{ opacity:1; transform:translateX(-1px); } 78%{ opacity:0; transform:none; } }
   @keyframes cx-cl2-sway{ from{ rotate:-3deg; } to{ rotate:3deg; } }
   @keyframes cx-hk3-rain{ from{ transform:translateY(0); } to{ transform:translateY(6px); } }
@@ -15467,13 +15443,11 @@
   .avatarchar-svg .cx-fx-wing-r{ transform-origin:4% 72%; }
   @media (prefers-reduced-motion:no-preference){
     /* Valkyrie */
-    .char-live .avatarchar-svg .cx-fx-wingsheen{ animation:cx-sheen-idle 5.6s ease-in-out -1.8s infinite; }
     .char-live .avatarchar-svg .cx-fx-wing-l{ animation:cx-wing-l 3.4s ease-in-out infinite alternate; }
     .char-live .avatarchar-svg .cx-fx-wing-r{ animation:cx-wing-r 3.4s ease-in-out infinite alternate; }
     /* Hacker: six rows of code at .72 each, so a 4.32 scroll lands on
        the picture it started from. */
     .char-live .avatarchar-svg .cx-fx-code{ animation:cx-code 3.6s linear infinite; }
-    .char-live .avatarchar-svg .cx-fx-visorsweep{ animation:cx-sheen-idle 4.9s ease-in-out -.6s infinite; }
     .char-live .avatarchar-svg .cx-fx-grid{ animation:cx-glow 5.2s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-aglets{ animation:cx-glow 3.1s ease-in-out -1s infinite; }
     /* Timekeeper: the minute hand goes round in 20s, the hour hand in
@@ -15482,11 +15456,9 @@
     .char-live .avatarchar-svg .cx-fx-hand-h{ animation:cx-spin 240s linear infinite; }
     .char-live .avatarchar-svg .cx-fx-sand{ animation:cx-sand .7s linear infinite; }
     /* A Virtual Room win: the wings beat, the code races, time runs fast. */
-    .char-react-win .avatarchar-svg .cx-fx-wingsheen{ animation:cx-sheen 1.6s ease-in-out .3s infinite; }
     .char-react-win .avatarchar-svg .cx-fx-wing-l{ animation:cx-wing-l .45s ease-in-out infinite alternate; }
     .char-react-win .avatarchar-svg .cx-fx-wing-r{ animation:cx-wing-r .45s ease-in-out infinite alternate; }
     .char-react-win .avatarchar-svg .cx-fx-code{ animation:cx-code .7s linear infinite; }
-    .char-react-win .avatarchar-svg .cx-fx-visorsweep{ animation:cx-sheen 1.2s ease-in-out .3s infinite; }
     .char-react-win .avatarchar-svg .cx-fx-hand-m{ animation:cx-spin 1.4s linear infinite; }
     .char-react-win .avatarchar-svg .cx-fx-hand-h{ animation:cx-spin 16.8s linear infinite; }
     .char-react-win .avatarchar-svg .cx-fx-sand{ animation:cx-sand .25s linear infinite; }
@@ -15528,11 +15500,9 @@
     .char-live .avatarchar-svg :is(.cx-fx-zbetch, .cx-fx-zbetch2){ animation:cx-flicker-soft 3.6s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-zbetch2{ animation-delay:-1.8s; }
     .char-live .avatarchar-svg .cx-fx-zbclasp{ animation:cx-twinkle 3.2s ease-in-out -.8s infinite; }
-    .char-live .avatarchar-svg .cx-fx-zbsheen{ animation:cx-sheen-idle 6.2s ease-in-out -2s infinite; }
     .char-live .avatarchar-svg :is(.cx-fx-zcveins, .cx-fx-zcseam){ animation:cx-mk2-pulse 1.9s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-zccore{ animation:cx-live-pulse 1.9s ease-in-out infinite alternate; }
     .char-live .avatarchar-svg .cx-fx-zccrown{ animation:cx-mk2-pulse 2.6s ease-in-out -.7s infinite, cx-zc-hover 3.4s ease-in-out infinite alternate; }
-    .char-live .avatarchar-svg .cx-fx-zcsheen{ animation:cx-sheen-idle 5.4s ease-in-out -.9s infinite; }
     .char-react-win .avatarchar-svg .cx-fx-zaorbit{ animation:cx-spin 1.2s linear infinite; }
     .char-react-win .avatarchar-svg .cx-fx-zarays{ animation:cx-za-rays 1.5s linear infinite; }
     .char-react-win .avatarchar-svg .cx-fx-zastar{ animation-duration:1s; }
@@ -15593,7 +15563,6 @@
     /* The Marksman: one 4.4s aim for the squint, the lock, the sheen and the glint */
     .char-live .avatarchar-svg .cx-k-marksman .cx-eyes{ animation:cx-blink var(--cx-blink, 6s) var(--cx-blink-at, 0s) ease-in-out infinite, cx-mk3-squint 4.4s ease-in-out -1s infinite; }
     .char-live .avatarchar-svg .cx-fx-mk3lock{ animation:cx-mk3-lock 4.4s ease-out -1s infinite; }
-    .char-live .avatarchar-svg .cx-fx-mk3sheen{ animation:cx-sheen-idle 4.4s ease-in-out -1s infinite; }
     .char-live .avatarchar-svg .cx-fx-mk3glint{ animation:cx-glint 4.4s ease-in-out -1s infinite; }
     .char-live .avatarchar-svg .cx-fx-mk3shag{ animation:cx-mk3-wind 2.3s ease-in-out infinite alternate; }
     .char-live .avatarchar-svg .cx-fx-mk3fringe{ animation:cx-mk3-wind 1.7s ease-in-out -.4s infinite alternate; }
@@ -15606,12 +15575,10 @@
     .char-live .avatarchar-svg .cx-fx-sa3clasp{ animation:cx-twinkle 3.1s ease-in-out infinite; }
     /* Zeus: on the scene's bolt beat (cx-fx-bgbolt0, 4.2s from 0) */
     .char-live .avatarchar-svg .cx-fx-zs3eyes{ animation:cx-zs3-eyes 4.2s linear infinite; }
-    .char-live .avatarchar-svg .cx-fx-zs3sheen{ animation:cx-sheen-idle 6.3s ease-in-out -1.1s infinite; }
     /* The Sheriff, the Detective, the Wizard */
     .char-live .avatarchar-svg .cx-fx-sh3pupil{ animation:cx-sh3-glance 5.2s ease-in-out -1.5s infinite; }
     .char-live .avatarchar-svg .cx-fx-sh3glint{ animation:cx-glint 4.6s ease-in-out -2.2s infinite; }
     .char-live .avatarchar-svg .cx-k-detective .cx-eyes{ animation:cx-blink var(--cx-blink, 6s) var(--cx-blink-at, 0s) ease-in-out infinite, cx-dt3-glance 6.4s ease-in-out -2s infinite; }
-    .char-live .avatarchar-svg .cx-fx-dt3lights{ animation:cx-sheen-idle 5.4s ease-in-out -.8s infinite; }
     .char-live .avatarchar-svg .cx-fx-wz3orbit{ animation:cx-spin 3.4s linear infinite; }
     /* A Virtual Room win: the bolt strikes again and again, Umbra's
        shadow and Horizon's light race, the lock and the glint come fast. */
@@ -15688,7 +15655,6 @@
     .char-live .avatarchar-svg .cx-fx-cl3bell{ animation:cx-cl3-jingle 3.6s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-cl3nose{ animation:cx-cl3-honk 3.6s ease-out -1.4s infinite; }
     .char-live .avatarchar-svg .cx-fx-cl3wink{ animation:cx-cl3-wink 7.2s ease-in-out -2s infinite; }
-    .char-live .avatarchar-svg .cx-fx-sa4scan{ animation:cx-sheen-idle 5s ease-in-out -2.2s infinite; }
     .char-live .avatarchar-svg .cx-fx-bgphase{ animation:cx-bg-phase 12s linear infinite; }
     .char-live .avatarchar-svg .cx-fx-umcglow{ animation:cx-um-cglow 6s ease-in-out infinite; }
     .char-live .avatarchar-svg .cx-fx-umcglint{ animation:cx-um-cglint 6s ease-out infinite; }
@@ -15762,8 +15728,6 @@
   @keyframes cx-flicker-soft{ 0%, 100%{ opacity:1; } 50%{ opacity:.45; } }
   @keyframes cx-twitch-l{ 0%, 84%, 100%{ transform:none; } 88%{ transform:rotate(-13deg); } 91%{ transform:rotate(4deg); } 94%{ transform:rotate(-6deg); } 97%{ transform:none; } }
   @keyframes cx-twitch-r{ 0%, 84%, 100%{ transform:none; } 88%{ transform:rotate(13deg); } 91%{ transform:rotate(-4deg); } 94%{ transform:rotate(6deg); } 97%{ transform:none; } }
-  @keyframes cx-sheen-idle{ 0%, 70%{ opacity:0; transform:none; } 73%{ opacity:.5; } 88%{ opacity:.5; transform:translateX(var(--sheen-x)); } 90%, 100%{ opacity:0; transform:translateX(var(--sheen-x)); } }
-  @keyframes cx-sheen{ 0%{ opacity:0; transform:none; } 12%{ opacity:.62; } 62%{ opacity:.62; transform:translateX(var(--sheen-x)); } 70%, 100%{ opacity:0; transform:translateX(var(--sheen-x)); } }
   @keyframes cx-jaw{ 0%, 38%, 72%, 100%{ transform:none; } 46%, 62%{ transform:translateY(.7px); } }
   @keyframes cx-jawgap{ 0%, 38%, 72%, 100%{ opacity:0; transform:scaleY(.3); } 46%, 62%{ opacity:1; transform:none; } }
   @keyframes cx-smoke{ 0%, 50%{ opacity:0; transform:none; } 58%{ opacity:.75; transform:translateY(-.8px) scale(1.1); } 82%, 100%{ opacity:0; transform:translateY(-3.4px) scale(1.7); } }
@@ -15780,7 +15744,6 @@
   @keyframes cx-led{ 0%{ opacity:1; } 55%{ opacity:.3; } }
   @keyframes cx-bob{ 0%, 100%{ transform:none; } 50%{ transform:translateY(-.5px); } }
   @keyframes cx-slide{ 0%, 100%{ transform:none; } 50%{ transform:translateX(1.4px); } }
-  @keyframes cx-scan{ from{ transform:none; } to{ transform:translateX(13px); } }
   @keyframes cx-flame{ from{ transform:scaleY(.94) skewX(1.5deg); opacity:.92; } to{ transform:scaleY(1.07) skewX(-2deg); opacity:1; } }
   @keyframes cx-embers{ 0%{ transform:none; opacity:0; } 25%{ opacity:1; } 100%{ transform:translateY(-3px); opacity:0; } }
   @keyframes cx-aim{ 0%, 100%{ transform:none; } 35%{ transform:rotate(12deg) scale(.92); } 60%{ transform:rotate(-6deg); } }
@@ -35572,22 +35535,17 @@ function drawAvatarCharSVG(charId){
   /* An invisible disc that fixes a group's bounding box, so a group that
      turns (a starfield, an orbiting glint) turns about this centre. */
   function pivot(cx, cy, r){ return mk("circle", { cx, cy, r, fill: "none", stroke: "none" }); }
-  /* A band of light that crosses a shape once when its state asks it to:
-     clipped to the shape, parked off its left edge and invisible at rest. */
-  function sheen(ds, cls, x0, x1, y0, y1, color){
-    const clipId = uid + "-sh" + (sheenCount++);
-    const cp = mk("clipPath", { id: clipId });
-    ds.forEach(d => cp.appendChild(mk("path", { d })));
-    defs.appendChild(cp);
-    const g = mk("g", { "clip-path": "url(#" + clipId + ")" });
-    const w = 2.6;
-    g.appendChild(mk("path", {
-      d: "M" + (x0 - w - 3) + " " + y1 + " L" + (x0 - 3) + " " + y1 + " L" + (x0 + 1) + " " + y0 + " L" + (x0 - w + 1) + " " + y0 + " Z",
-      fill: color || "#FFFFFF", opacity: "0", class: "cx-fx cx-fx-sheen " + cls,
-      style: "--sheen-x:" + (x1 - x0 + w + 6).toFixed(1) + "px" }));
-    svg.appendChild(g);
-  }
-  let sheenCount = 0;
+  /* NO SWEEPS ACROSS A FACE (build 313). This drew a band of light,
+     clipped to a shape, that ran across it every few seconds - over
+     Orion's visor, Astral's helm, Celestial's mask, the Ronin's hat, the
+     Marksman's lens, the Detective's brim, Zeus's laurel, the Koi's bowl
+     and Lunar's crescent. "A weird effect but the suffering effect thing
+     some characters get that shoots across their face, let's get rid of
+     that animation entirely." It now draws nothing, so every caller is
+     left as it was and none of them can bring it back; each of those
+     characters has its own motion round it instead. check-behaviour 91
+     fails on any drawing that still carries a cx-fx-sheen. */
+  function sheen(){}
   /* Four-point sparkle, for the perfect and win reactions. */
   function sparkle(x, y, r, fill){
     return mk("path", { d: "M" + x + " " + (y - r) + " Q" + (x + r * .18) + " " + (y - r * .18) + " " + (x + r) + " " + y
@@ -36633,7 +36591,6 @@ function drawAvatarCharSVG(charId){
     [[15, 20.6], [15.9, 21.2], [25, 20.6], [24.1, 21.2]].forEach(([x, y]) => svg.appendChild(mk("circle", { cx: x, cy: y, r: .22, fill: "#FFFFFF", opacity: ".9" })));
     svg.appendChild(mk("path", { d: "M18.6 23.9 Q20 24.4 21.4 23.9", fill: "none", stroke: "#6C7A90", "stroke-width": ".42", "stroke-linecap": "round" }));
     close();
-    sheen([crescent], "cx-fx-moonsheen", 15.6, 24.4, 5, 11, "#FFFFFF");
     return done();
   }
   /* GOLD - Solar, the sun sovereign. A radiate crown of gold rays with a
@@ -36975,7 +36932,6 @@ function drawAvatarCharSVG(charId){
       [[17.5, 19.1, -1], [22.5, 19.1, 1]].forEach(([x, y, s]) => svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 1.05, ry: .38, fill: "#FFFFFF", transform: "rotate(" + (-s * 14) + " " + x + " " + y + ")" })));
       close();
       closedEyes([[17.5, 19.3, 1.3], [22.5, 19.3, 1.3]], "#8FB0FF", .35);
-      sheen([maskD], "cx-fx-zbsheen", 14.8, 25.2, 14, 27, "#FFFFFF");
       /* THE CROWN OF SEVEN STARS: an arc of them over the head, the
          middle one the brightest, on a faint line like a constellation */
       const CR = 10.8, CY0 = 16.4;
@@ -37055,7 +37011,6 @@ function drawAvatarCharSVG(charId){
       closedEyes([[17.2, 19.3, 1.5], [22.8, 19.3, 1.5]], cyan, .35);
       /* the jaw: a plasma line where the mouth would be */
       svg.appendChild(mk("path", { d: "M18 25.4 L20 26.4 L22 25.4", fill: "none", stroke: cyan, "stroke-width": ".3", opacity: ".8", "stroke-linejoin": "round" }));
-      sheen([helmD], "cx-fx-zcsheen", 12, 28, 6.4, 29.4, "#CFFBFF");
       /* THE CROWN: three shards of light floating over the crest, on an arc of plasma */
       open("cx-fx cx-fx-zccrown");
       svg.appendChild(mk("path", { d: "M12.6 9.6 Q20 2.6 27.4 9.6", fill: "none", stroke: cyan, "stroke-width": ".9", opacity: ".25" }));
@@ -37451,7 +37406,6 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("path", { d: "M11.6 15.4 Q11.5 14.4 11.8 13.6", fill: "none", stroke: "#FFFFFF", "stroke-width": ".7", "stroke-linecap": "round", opacity: ".6" }));
     noEyes();
     close();
-    sheen([bowl], "cx-fx-koisheen", 9, 31, 5, 27, "#FFFFFF");
     return done();
   }
   /* ================= RONIN (build 263) =================
@@ -37528,7 +37482,6 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("path", { d: "M5.4 14.6 Q12 16.6 20 16.6 Q28 16.6 34.6 14.6", fill: "none", stroke: neon, "stroke-width": ".55", "stroke-linecap": "round", opacity: ".9" }));
     svg.appendChild(mk("circle", { cx: 20, cy: 4.1, r: .7, fill: "#C9A23E" }));
     close();
-    sheen([kasa], "cx-fx-roninsheen", 5, 35, 3, 17, "#FFF2DA");
     return done();
   }
   /* ================= HACKER, THIRD PASS (build 266) =================
@@ -37883,7 +37836,6 @@ function drawAvatarCharSVG(charId){
         const p1 = (ccx - 1.35 * Math.cos(a)).toFixed(2) + " " + (ccy - 1.35 * Math.sin(a)).toFixed(2), p2 = (ccx + 1.35 * Math.cos(a)).toFixed(2) + " " + (ccy + 1.35 * Math.sin(a)).toFixed(2);
         leafDs.push("M" + p1 + " A1.35 .62 " + rot + " 1 1 " + p2 + " A1.35 .62 " + rot + " 1 1 " + p1 + " Z");
       });
-    sheen(leafDs, "cx-fx-zs3sheen", 12, 28, 8.4, 12.8, "#FFFBE6");
 
     /* One cool highlight down the lit side of the face and the shoulder,
        and marble has a sheen rather than a flat bounce. */
@@ -38150,7 +38102,6 @@ function drawAvatarCharSVG(charId){
     /* BUILD 304: a car goes by in the rain - its headlights sweep across
        the felt of the hat - and under the brim the eyes slide left and
        right, watching (cx-dt3-*). */
-    sheen(["M12.4 16.8 Q12.9 9.2 20 8.7 Q27.1 9.2 27.6 16.8 Z", "M7.2 17.4 Q20 13.6 32.8 17.4 Q20 20.2 7.2 17.4 Z"], "cx-fx-dt3lights", 7.2, 32.8, 8.7, 20.2, "#FFE7B0");
     close();
     return done();
   }
@@ -38255,7 +38206,6 @@ function drawAvatarCharSVG(charId){
     const lensL = "M14 8.4 Q16.4 7.7 19.2 8 L19 10.5 Q17 10 14.6 10.4 Q14 10.4 13.9 9.9 Z";
     const lensR = "M26 8.4 Q23.6 7.7 20.8 8 L21 10.5 Q23 10 25.4 10.4 Q26 10.4 26.1 9.9 Z";
     [lensL, lensR].forEach(d => svg.appendChild(mk("path", { d, fill: "url(#" + lensId + ")" })));
-    sheen([lensL, lensR], "cx-fx-lenssheen", 13.9, 26.1, 7.7, 10.6);
     svg.appendChild(mk("path", { d: "M14.9 8.5 L16.1 8.3 M21.7 8.3 L22.7 8.2", stroke: "#FFFFFF", "stroke-width": ".42", "stroke-linecap": "round", opacity: ".85" }));
     close();
     return done();
@@ -38403,9 +38353,6 @@ function drawAvatarCharSVG(charId){
     shut.appendChild(mk("path", { d: "M14.8 18.4 L17.6 18.4 M22.4 18.4 L25.2 18.4", stroke: "#2E7F8C",
                                   "stroke-width": ".7", "stroke-linecap": "round" }));
     g.appendChild(shut);
-    const sweep = mk("rect", { x: -9, y: 12.4, width: 6, height: 11.2, fill: "#BFEFF8", opacity: .5 });
-    sweep.setAttribute("class", "avatarchar-scan");
-    g.appendChild(sweep);
     /* A win whites the whole visor out for a beat. */
     g.appendChild(mk("rect", { x: 11.4, y: 13.4, width: 17.2, height: 9.2, fill: "#DFFBFF", opacity: "0",
                                class: "cx-fx cx-fx-visorflash" }));
@@ -38588,7 +38535,6 @@ function drawAvatarCharSVG(charId){
     close();
     closedEyes([[17.2, 17.6, 2.2], [22.8, 17.6, 2.2]], neon, .4);
     /* a scan of light along the visor, now and then (build 312) */
-    sheen([visor], "cx-fx-sa4scan", 14.4, 25.6, 16.4, 18.6, "#FFFFFF");
     open("cx-mouth"); close();
     close();
     return done();
@@ -38628,8 +38574,6 @@ function drawAvatarCharSVG(charId){
                                  fill: "#E8B923" }));
     svg.appendChild(mk("rect", { x: 11.2, y: 12.1, width: 17.6, height: 2.5, rx: .8,
                                  fill: "#D2A417" }));
-    sheen(["M11.4 12.4 L13.6 6.6 L16.8 10.6 L20 5.2 L23.2 10.6 L26.4 6.6 L28.6 12.4 Z", "M11.2 12.1 L28.8 12.1 L28.8 14.6 L11.2 14.6 Z"],
-          "cx-fx-crownsheen", 11.2, 28.8, 5.2, 14.6, "#FFF8D8");
     [[20, 6.6, 1.35, "#C23B7A"], [13.6, 8.2, .85, "#5B8FD8"], [26.4, 8.2, .85, "#5B8FD8"]].forEach(([cx, cy, r, c], i) => {
       open("cx-fx cx-fx-jewel cx-fx-jewel" + i);
       svg.appendChild(mk("circle", { cx, cy, r, fill: c }));
@@ -39315,7 +39259,6 @@ function drawAvatarCharSVG(charId){
     closedEyes([[16.2, 19.6, 1.6], [23.8, 19.6, 1.6]], "#FFE3B0", .5);
     /* The glass catching the light, and a sheen a win runs across it. */
     svg.appendChild(mk("path", { d: "M11.2 16.2 Q16 14.6 21.4 14.9 L20.2 16.4 Q15.6 16.2 11.4 17.6 Z", fill: "#FFFFFF", opacity: ".38" }));
-    sheen([visD], "cx-fx-visorsheen", 9, 31, 13, 25);
     /* The chin guard and its vents. */
     svg.appendChild(mk("path", { d: "M12.4 25.6 Q20 28 27.6 25.6", fill: "none", stroke: "rgba(40,48,60,.35)", "stroke-width": ".8", "stroke-linecap": "round" }));
     [18, 20, 22].forEach(x => svg.appendChild(mk("rect", { x: x - .45, y: 26.6, width: .9, height: 2, rx: .45, fill: "#2A303A" })));
@@ -39430,8 +39373,6 @@ function drawAvatarCharSVG(charId){
     /* Gold wants a hard highlight or it reads as yellow. */
     svg.appendChild(mk("path", { d: "M14.6 14.6 Q14 18 14.6 21.2", fill: "none", stroke: "#FFFBE6", "stroke-width": ".55", "stroke-linecap": "round", opacity: ".6" }));
     svg.appendChild(mk("path", { d: "M13.8 7.6 Q16.4 5.9 19.4 5.7", fill: "none", stroke: "#FFFBE6", "stroke-width": ".5", "stroke-linecap": "round", opacity: ".7" }));
-    sheen([nemesD, "M20 11.7 Q26.9 11.9 27 19.3 Q27 25.6 23.4 27.8 Q21.8 28.8 20 28.8 Q18.2 28.8 16.6 27.8 Q13 25.6 13 19.3 Q13.1 11.9 20 11.7 Z"],
-          "cx-fx-goldsheen", 6.5, 33.5, 5.3, 28.8, "#FFFDF0");
     close();
     return done();
   }
@@ -39557,7 +39498,6 @@ function drawAvatarCharSVG(charId){
        lens and lock, and as he settles the glass catches the light - a
        sweep across the lens and a star off its rim. The ghillie strips
        stir in the wind the whole time, on their own pendulums. */
-    sheen(["M14.5 20.4 A2.3 2.3 0 1 0 19.1 20.4 A2.3 2.3 0 1 0 14.5 20.4 Z"], "cx-fx-mk3sheen", 14.5, 19.1, 18.1, 22.7, "#E8FFD0");
     open("cx-fx cx-fx-reticle");
     svg.appendChild(mk("circle", { cx: 16.8, cy: 20.4, r: 1.35, fill: "none", stroke: lime, "stroke-width": ".3" }));
     svg.appendChild(mk("path", { d: "M16.8 18.3 L16.8 19.6 M16.8 21.2 L16.8 22.5 M14.7 20.4 L16 20.4 M17.6 20.4 L18.9 20.4", stroke: lime, "stroke-width": ".3", "stroke-linecap": "round" }));
@@ -53693,7 +53633,7 @@ function startOrbitEmblemAnims(root, readyOnly){
 const CHAR_ANIM_LOOP_MS = 6000;
 const CHAR_ANIM_FRAMES = 144;   /* 24 a second */
 const CHAR_ANIM_COLS = 12;
-const CHAR_ANIM_VER = "c2";
+const CHAR_ANIM_VER = "c3";
 const CHAR_FLIP_MAX_CSS = 80;
 const charAnimSheets = new Map();
 const charAnimDrawings = new Map();
@@ -53946,12 +53886,34 @@ function charFlipAttach(el){
     const play = document.createElement("span");
     play.className = "char-flip-play";
     play.setAttribute("aria-hidden", "true");
-    /* placed over the svg in its parent's own (unscaled) units */
-    const par = svg.parentNode, pr = par.getBoundingClientRect(), sr = svg.getBoundingClientRect();
+    /* EXACTLY OVER THE DRAWING, CENTRE ON CENTRE (build 313). "The
+       characters move positions within their circle and aren't properly
+       centered." The board scales its drawing (.94 about 50% 56%) and
+       this used to measure the SCALED box and lay an unscaled sheet at
+       its corner: every flip-book landed 1.5px right and down of the
+       still drawing and 7% bigger, so each character visibly jumped off
+       centre the moment its loop took over, and back on every rebuild.
+       Now the drawing's own layout box is measured with its transform
+       lifted for the read, the sheet is centred on it (a cell is within
+       a quarter pixel of the box), and it carries the drawing's own
+       transform about the same point - so the two are one picture. */
+    const par = svg.parentNode, pr = par.getBoundingClientRect();
+    const svgCs = getComputedStyle(svg);
+    const svgT = svgCs.transform, svgO = svgCs.transformOrigin;
+    const prevT = svg.style.transform;
+    svg.style.transform = "none";
+    const sr = svg.getBoundingClientRect();
+    svg.style.transform = prevT;
     const S = sr.width > 0 ? sr.width / layoutW : 1;
-    play.style.left = ((sr.left - pr.left) / S - par.clientLeft) + "px";
-    play.style.top = ((sr.top - pr.top) / S - par.clientTop) + "px";
+    const inset = (layoutW - cellCss) / 2;
+    play.style.left = ((sr.left - pr.left) / S - par.clientLeft + inset) + "px";
+    play.style.top = ((sr.top - pr.top) / S - par.clientTop + inset) + "px";
     play.style.width = play.style.height = cellCss + "px";
+    if(svgT && svgT !== "none"){
+      const o = String(svgO || "").split(" ").map(v => parseFloat(v));
+      play.style.transform = svgT;
+      if(o.length >= 2 && o.every(v => isFinite(v))) play.style.transformOrigin = (o[0] - inset) + "px " + (o[1] - inset) + "px";
+    }
     const img = document.createElement("img");
     img.alt = ""; img.decoding = "sync"; img.src = sp.url;
     img.style.width = (sp.cols * cellCss) + "px";
