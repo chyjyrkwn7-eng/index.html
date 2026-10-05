@@ -310,33 +310,30 @@ def main():
                               const r=(s && getComputedStyle(s).display!=='none' ? s : v).getBoundingClientRect(), br=b.getBoundingClientRect();
                               return {shown: r.width>0 && getComputedStyle(v).display!=='none', l:r.left, r:r.right, t:r.top, b:r.bottom,
                                       barBottom:br.bottom, text:(s&&getComputedStyle(s).display!=='none')?s.textContent:v.textContent};}""")
-                            strip = mode == "installed" and I[2] >= 20
+                            # TOP LEFT SINCE BUILD 313 ("the version number placement
+                            # on the phone still stands out/looks weird"): on every
+                            # phone, on the chat button's centre line, mirroring it,
+                            # clear of it and of everything in the planet scene.
+                            cb = pg.evaluate("""()=>{ const c=document.querySelector('#chatdock-btn'); if(!c) return null; const r=c.getBoundingClientRect();
+                              const hits=[...document.querySelectorAll('.cosmic-icon-badge, .cosmic-hero-wrap .cosmic-orbit-dot')].map(e=>e.getBoundingClientRect()).filter(q=>q.width>0);
+                              return {cy:(r.top+r.bottom)/2, l:r.left, hits:hits.map(q=>[q.left,q.top,q.right,q.bottom])}; }""")
                             if vl is not None:
-                                if strip and not vl["shown"]:
-                                    fails.append(f"{tag}: the version label is missing from the bottom-left corner")
-                                elif strip:
-                                    if vl["t"] < vl["barBottom"] + 2:
-                                        fails.append(f"{tag}: the version label touches the tab bar ({round(vl['t'])} vs bar bottom {round(vl['barBottom'])})")
-                                    if vl["b"] > H or vl["l"] < 0:
-                                        fails.append(f"{tag}: the version label runs off the screen ({round(vl['l'])},{round(vl['b'])} vs H {H})")
-                                    if vl["l"] > 64 or vl["r"] > vw / 2 - 70:
-                                        fails.append(f"{tag}: the version label is not in the bottom-left corner (left {round(vl['l'])}, right {round(vl['r'])})")
-                                    # A phone with a home indicator has rounded display
-                                    # corners, ~55-62pt on a current iPhone. The label's
-                                    # lowest-left point must sit outside a 62px corner
-                                    # circle, or the corner eats the "v" (build 302: "it's
-                                    # off the screen and barely visible").
-                                    R = 62
-                                    up = H - vl["b"]
-                                    if up < R:
-                                        import math
-                                        edge = R - math.sqrt(R * R - (R - up) ** 2)
-                                        if vl["l"] < edge + 4:
-                                            fails.append(f"{tag}: the version label is inside the rounded display corner (left {round(vl['l'])}, corner edge {round(edge)} at {round(up)}px up)")
+                                if not vl["shown"]:
+                                    fails.append(f"{tag}: the version label is missing from Home")
+                                else:
+                                    if vl["t"] < 0 or vl["l"] < 8:
+                                        fails.append(f"{tag}: the version label runs off the screen ({round(vl['l'])},{round(vl['t'])})")
+                                    if vl["l"] > 48:
+                                        fails.append(f"{tag}: the version label is not in the top-left corner (left {round(vl['l'])})")
+                                    if cb:
+                                        mid = (vl["t"] + vl["b"]) / 2
+                                        if abs(mid - cb["cy"]) > 4:
+                                            fails.append(f"{tag}: the version label is off the chat button's centre line ({round(mid)} vs {round(cb['cy'])})")
+                                        for q in cb["hits"]:
+                                            if not (vl["r"] <= q[0] or vl["l"] >= q[2] or vl["b"] <= q[1] or vl["t"] >= q[3]):
+                                                fails.append(f"{tag}: the version label overlaps the planet scene"); break
                                     if not str(vl["text"]).startswith("v"):
                                         fails.append(f"{tag}: the version label reads {vl['text']!r}, not 'v...'")
-                                elif vl["shown"]:
-                                    fails.append(f"{tag}: the version label shows on a phone with no room under the tab bar")
 
                         # --- The grey bar, measured the only way that means
                         # anything: what body::before paints at the bottom edge

@@ -6143,8 +6143,8 @@ def check_b289(br):
         store.studyLog['2026-09-04'] = 9; store.studyLog['2026-09-08'] = 9;
         out.koiSeven = !isLockedCharacter('valkyrie');
         /* Phoenix keeps the best run */
-        store.practiceExamPerfect = false; store.unitHundoStreak = 0; store.unitHundoStreakBest = 6; out.ph6 = bannerEarned('exam100');
-        store.unitHundoStreakBest = 7; out.ph7 = bannerEarned('exam100');
+        store.practiceExamPerfect = false; store.unitHundoStreak = 0; store.unitHundoStreakBest = 9; out.ph6 = bannerEarned('exam100');
+        store.unitHundoStreakBest = 10; out.ph7 = bannerEarned('exam100');
         /* Detective keeps the best run */
         store.dailyCorrectStreak = 0; store.dailyCorrectBest = 10; out.det = !isLockedCharacter('detective');
         /* the seed never lowers, and fills */
@@ -6219,8 +6219,8 @@ def check_b289(br):
       return out; }""")
     # REVISED IN 295: Koi Pond is five friends (was every unit, then one
     # unit on ten days in 293, then a Penal Code hundo in 294).
-    check("the reworked banners: Midnight Oil 35 hours, Neon City 25 matches, Phoenix 7 units in a row, Koi Pond 5 friends",
-          r.get("needs") == [35, 25, 7, 5], r)
+    check("the reworked banners: Midnight Oil 35 hours, Neon City 25 matches, Phoenix 10 units in a row (313), Koi Pond 5 friends",
+          r.get("needs") == [35, 25, 10, 5], r)
     check("the Koi is seven study days IN A ROW (six, or seven with a gap, is not enough)",
           r.get("koiFeat") == "studyrun7" and r.get("koiSix") is True and r.get("koiSeven") is True, r)
     check("Phoenix and the Detective keep their best run, so a later slip takes nothing back",

@@ -238,7 +238,7 @@ def main():
                   // has to ask the vertical question about the right things.
                   const overlapsX = r => r && !(r.right <= br_.left || r.left >= br_.right);
                   const floors = [tbt, overlapsX(fab) ? fab.top : null,
-                                       overlapsX(vr) ? vr.top : null]
+                                       overlapsX(vr) && vr.top > br_.top ? vr.top : null]
                                    .filter(v=>v!==null && v!==undefined);
                   return {above: tlb!==null?Math.round(br_.top-tlb):null,
                           below: floors.length?Math.round(Math.min.apply(null,floors)-br_.bottom):null,

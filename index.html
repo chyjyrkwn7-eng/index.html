@@ -12014,8 +12014,27 @@
      .homeversion-btn, and .homeversion-btn sets its own display-ish
      properties further down this file - the same specificity trap
      .friend-act and .bottomtab-label already carry notes about. */
+  /* ---- TOP LEFT ON A PHONE (build 313) ----
+     "The version number placement on the phone still stands out/looks
+     weird. Maybe the corner placement on the phone is bad and it should
+     be raised up or to the right?" Three bottom placements have been
+     tried (above the bar, where it boxed Start Studying in; then under
+     the bar in the home-indicator strip, twice) and every one of them
+     either crowded something or hid in the display's rounded corner.
+     The top left of Home is empty, and the chat button already owns the
+     top right - so the label goes there, on the chat button's own
+     centre line and the same distance in from the edge, and the two
+     corners read as a pair. Every phone, not only ones with a home
+     indicator. A tablet keeps it in the bottom corner beside the bar. */
   @media (max-width:639px){
-    .homeversion, .homeversion.homeversion-btn{ display:none; }
+    .homeversion, .homeversion.homeversion-btn{
+      display:block; z-index:1;
+      top:calc(env(safe-area-inset-top, 0px) + .75rem + 22px); bottom:auto; right:auto;
+      transform:translateY(-50%);
+      left:max(1.5rem, calc(env(safe-area-inset-left, 0px) + 1.2rem));
+      font-size:.84rem; line-height:1.15em; opacity:.72; font-weight:600;
+      padding:.7rem .6rem; margin:0 -.6rem;
+    }
   }
   /* BACK ON THE PHONE, IN THE VERY CORNER (build 300). "The version
      history stuff can be put on the phone.. just needs to go on the
@@ -12030,44 +12049,8 @@
      (an SE, a browser tab). The tap target grows by padding pulled back
      out with a negative margin, so the label sits exactly where drawn. */
   .sa-probe{ position:fixed; left:0; bottom:0; width:0; height:env(safe-area-inset-bottom, 0px); visibility:hidden; pointer-events:none; }
-  @media (max-width:639px){
-    html.has-bottom-inset .homeversion, html.has-bottom-inset .homeversion.homeversion-btn{
-      display:block; z-index:1;
-      /* CLEAR OF THE ROUNDED CORNER (build 302). "It's off the screen and
-         barely visible" on a 17 Pro Max: at 1.1rem from the edge and ~15px
-         up, the label sat inside the display's rounded corner (a radius
-         of ~55-62pt on a current iPhone), which cuts the "v" off - and at
-         half opacity what was left barely read. 2.6rem in clears a 62pt
-         corner by ~20px at the text's lowest point on every phone in the
-         matrix; check-fixes models the corner and holds it there. */
-      /* IN THE CORNER, ALONG ITS CURVE (build 308). "The version number in
-         the bottom corner is soooo tiny on the phone and it's not even
-         perfectly in the corner." It was .72rem at 72%, 2.6rem in and
-         ~13px up - clear of the rounded corner by sitting well away from
-         it. It now sits up the curve instead of along the floor: 1.6rem
-         in and 1.2rem up is ~8px inside a 62pt corner at the text's
-         lowest point, and the text's top stays ~8px under the tab bar's
-         bottom edge (.6rem + the inset). check-fixes models both. */
-      /* Lower down the curve the corner is wider, so where the strip is
-         short the label also steps in: 1.6rem on an iPhone's 34px inset,
-         ~2.1rem on a 24px one. */
-      left:calc(env(safe-area-inset-left, 0px) + max(1.6rem, calc(3.6rem - env(safe-area-inset-bottom, 0px))));
-      /* NEVER UP INTO THE BAR. The strip under the tab bar is .6rem plus
-         the inset - 43px on an iPhone, but only 34 on an Android phone
-         with a 24px inset, where 1.2rem up put the label's top a pixel
-         into the bar. Capped at the strip less the label's own height and
-         a 2px gap; on an iPhone the cap is above 1.2rem and changes
-         nothing. */
-      /* UP A LITTLE (build 310): "still too hidden, needs to be up a
-         little more to be perfectly in the corner on my iPhone 17 pro
-         max". 1.2rem -> 1.45rem: higher up the corner's curve, so less of
-         the glyph is near the rounded edge, and still ~5px under the bar
-         on an iPhone; the cap below keeps it out of the bar elsewhere. */
-      bottom:min(1.45rem, calc(env(safe-area-inset-bottom, 0px) + .6rem - 1.2rem));
-      font-size:.84rem; line-height:1.15em; opacity:.88; font-weight:600;
-      padding:.45rem .6rem; margin:-.45rem -.6rem;
-    }
-  }
+  /* (The build 300-310 placement under the tab bar, gated on
+     html.has-bottom-inset, came out in build 313 - see TOP LEFT ON A PHONE.) */
   .homeversion-btn{ background:none; border:none; padding:0; font:inherit; cursor:pointer; text-decoration:underline; text-decoration-thickness:from-font; text-decoration-color:color-mix(in srgb, currentColor 40%, transparent); text-underline-offset:2px; }
   /* The daily-question circle itself \u2014 a small offset FAB, not a
      full-width button, fixed to the viewport so its position is
@@ -22028,8 +22011,12 @@ const RONIN_TEST_SIZE = 500;
 /* The Phoenix banner: a perfect Exam of this many questions or more (build 283,
    when the Practice Test it used to need was retired). */
 const PHOENIX_EXAM_SIZE = 100;
-/* The Phoenix banner since build 289: units aced in a row. */
-const PHOENIX_UNIT_RUN = 7;
+/* The Phoenix banner since build 289: units aced in a row. TEN SINCE
+   BUILD 313 (was 7): "The phoenix banner is kind of easy to obtain ...
+   I want that tone the hardest unique challenge." Nobody held it when it
+   moved - the best run on record was five - so nothing is taken back,
+   and the run anybody is on keeps counting towards the new number. */
+const PHOENIX_UNIT_RUN = 10;
 const POINTS_PER_QUESTION = 10;
 const PERFECT_BONUS = 100;
 /* Paid once per EXTRA unit in a run: two units is +15, three is +30, and
@@ -45416,7 +45403,7 @@ function bnTemplate(id){
 
 /* Midnight Skyline's future city (build 309) - see study60. Layers in
    the 480 x 180 scene, all behind the balcony rail at y 115. */
-function skylineFuture(u, HZ){
+function skylineFuture(u, HZ, roofs){
   const g = (id, a, b) => bnLin(u + id, [[0, a], [1, b]], 0, 0, 1, 1);
   const defs = '<defs>' +
     g("bbA", "#FF3DB4", "#7A2CFF") + g("bbB", "#2CF0FF", "#2A6BFF") + g("bbC", "#FF9A3D", "#FF3D7A") +
@@ -45427,21 +45414,39 @@ function skylineFuture(u, HZ){
     bnLin(u + "car3", [[0, "#FFE36A", 0.95], [1, "#FFE36A", 0]], 0, 0, 1, 0) +
     bnLin(u + "train", [[0, "#9FF7FF", 0], [0.6, "#9FF7FF", 0.85], [1, "#FFFFFF", 1]], 0, 0, 1, 0) +
     '</defs>';
-  /* a board: a glowing panel, a frame of brighter light, and an ad's
-     worth of glyphs - a mark and two lines of "text" - never real words */
+  /* ---- BILLBOARDS THAT READ AS BILLBOARDS (build 313) ----
+     "The midnight skyline, the banners in the background, idk what those
+     are supposed to be, make that card better." They were panels of
+     "text" floating in ovals of coloured haze - at banner size, a row of
+     phone notifications hanging in the sky. A billboard now stands ON a
+     roof, on two legs, lit from a bar along its top, and shows a picture
+     anybody can read at a glance: a neon sunset, a ringed planet, a
+     wave. No haze round it, no lines of pretend text. */
   const board = (x, y, w, h, id, col, kind) => {
-    let glyph;
-    if(kind === "tall"){
-      glyph = [0, 1, 2, 3].map(i => '<rect x="' + (x + w * 0.25) + '" y="' + (y + 4 + i * (h - 8) / 4) + '" width="' + (w * 0.5) + '" height="' + ((h - 8) / 4 - 2) + '" rx="1" fill="#FFFFFF" opacity=".75"/>').join("");
+    const cx = x + w / 2, cy = y + h / 2;
+    let pic;
+    if(kind === "planet"){
+      pic = '<circle cx="' + bnF(cx) + '" cy="' + bnF(cy) + '" r="' + bnF(h * 0.26) + '" fill="#FFFFFF" opacity=".9"/>' +
+        '<ellipse cx="' + bnF(cx) + '" cy="' + bnF(cy) + '" rx="' + bnF(h * 0.55) + '" ry="' + bnF(h * 0.13) + '" fill="none" stroke="#FFFFFF" stroke-width="1" opacity=".8" transform="rotate(-14 ' + bnF(cx) + ' ' + bnF(cy) + ')"/>';
+    } else if(kind === "wave"){
+      let d = "M" + bnF(x + 3) + " " + bnF(cy);
+      for(let k = 0; k < 4; k++) d += " Q" + bnF(x + 3 + (k + 0.5) * (w - 6) / 4) + " " + bnF(cy + (k % 2 ? 1 : -1) * h * 0.3) + " " + bnF(x + 3 + (k + 1) * (w - 6) / 4) + " " + bnF(cy);
+      pic = '<path d="' + d + '" fill="none" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" opacity=".9"/>';
     } else {
-      glyph = '<circle cx="' + (x + h * 0.5) + '" cy="' + (y + h / 2) + '" r="' + (h * 0.26) + '" fill="#FFFFFF" opacity=".85"/>' +
-        '<rect x="' + (x + h * 0.95) + '" y="' + (y + h * 0.3) + '" width="' + (w - h * 1.25) + '" height="' + (h * 0.14) + '" rx=".8" fill="#FFFFFF" opacity=".8"/>' +
-        '<rect x="' + (x + h * 0.95) + '" y="' + (y + h * 0.56) + '" width="' + ((w - h * 1.25) * 0.65) + '" height="' + (h * 0.12) + '" rx=".8" fill="#FFFFFF" opacity=".55"/>';
+      /* a sunset: half a sun on a horizon, cut by bands */
+      const r = h * 0.34, base = y + h * 0.72;
+      pic = '<path d="M' + bnF(cx - r) + ' ' + bnF(base) + ' A' + bnF(r) + ' ' + bnF(r) + ' 0 0 1 ' + bnF(cx + r) + ' ' + bnF(base) + 'Z" fill="#FFFFFF" opacity=".92"/>' +
+        [0.2, 0.42].map(f => '<rect x="' + bnF(cx - r) + '" y="' + bnF(base - r * f - 0.6) + '" width="' + bnF(2 * r) + '" height="1" fill="url(#' + u + id + ')"/>').join("") +
+        '<rect x="' + bnF(x + 2) + '" y="' + bnF(base) + '" width="' + bnF(w - 4) + '" height=".8" fill="#FFFFFF" opacity=".7"/>';
     }
-    return '<ellipse cx="' + (x + w / 2) + '" cy="' + (y + h / 2) + '" rx="' + (w * 0.95) + '" ry="' + (h * 1.05) + '" fill="' + col + '" opacity=".22"/>' +
-      '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="1.6" fill="url(#' + u + id + ')"/>' +
-      '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="1.6" fill="url(#' + u + 'bbH)"/>' +
-      '<rect x="' + (x + 0.5) + '" y="' + (y + 0.5) + '" width="' + (w - 1) + '" height="' + (h - 1) + '" rx="1.4" fill="none" stroke="#FFFFFF" stroke-width=".7" opacity=".7"/>' + glyph;
+    const legs = [x + w * 0.22, x + w * 0.78].map(lx => '<rect x="' + bnF(lx - 0.9) + '" y="' + bnF(y + h) + '" width="1.8" height="4.4" fill="#5A6488"/>').join("") +
+      '<rect x="' + bnF(x + w * 0.12) + '" y="' + bnF(y + h + 2) + '" width="' + bnF(w * 0.76) + '" height=".8" fill="#5A6488"/>';
+    return legs +
+      '<rect x="' + bnF(x - 1) + '" y="' + bnF(y - 1) + '" width="' + bnF(w + 2) + '" height="' + bnF(h + 2) + '" rx="1" fill="#0A0C1C"/>' +
+      '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx=".6" fill="url(#' + u + id + ')"/>' +
+      '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + bnF(h * 0.45) + '" fill="url(#' + u + 'bbH)"/>' + pic +
+      /* the light bar along the top, and the glow it throws down the face */
+      '<rect x="' + bnF(x - 1) + '" y="' + bnF(y - 2.2) + '" width="' + bnF(w + 2) + '" height="1.2" rx=".6" fill="' + col + '"/>';
   };
   /* tall neon signs down a tower's side: lit segments, like characters */
   const sign = (x, y, n, col) => {
@@ -45461,12 +45466,20 @@ function skylineFuture(u, HZ){
     { svg: defs + '<rect x="-10" y="101" width="500" height="1.6" fill="#3A4A8A" opacity=".9"/><rect x="-10" y="102.6" width="500" height=".6" fill="#2CF0FF" opacity=".45"/>' +
         [20, 90, 160, 230, 300, 370, 440].map(x => '<rect x="' + x + '" y="103" width="2.4" height="25" fill="#1A2048"/>').join("") },
     { svg: '<rect x="0" y="0" width="70" height="2.2" rx="1.1" fill="url(#' + u + 'train)"/>', box: [490, 99.4, 70, 2.2], cls: "bl-cross", style: "animation-duration:6.5s;animation-delay:-2s" },
-    /* the boards, in two groups breathing out of step, and one that glitches */
-    { svg: board(14, 60, 34, 16, "bbA", "#FF3DB4") + board(256, 70, 36, 15, "bbC", "#FF7A3D") + board(452, 58, 24, 32, "bbE", "#FF6AE6", "tall"),
-      cls: "bl-glow", style: "animation-duration:2.6s" },
-    { svg: board(196, 54, 22, 36, "bbB", "#2CF0FF", "tall") + board(368, 74, 30, 16, "bbD", "#3DFFC8"),
-      cls: "bl-glow", style: "animation-duration:3.4s;animation-delay:-1.7s" },
-    { svg: board(96, 46, 26, 14, "bbB", "#2CF0FF"), cls: "bl-blink", style: "animation-duration:3.1s;animation-timing-function:steps(2)" },
+    /* the billboards, on their roofs (see board above): two groups
+       breathing out of step, and one that flickers */
+    ...(() => {
+      const spots = (roofs || []).filter(t => t.w >= 20 && (t.x < 296 || t.x > 356) && t.x < 380 && t.x > 0)
+        .sort((a, b) => a.top - b.top).slice(0, 5).sort((a, b) => a.x - b.x);
+      const kinds = ["sun", "planet", "wave", "sun", "planet"], ids = ["bbA", "bbB", "bbC", "bbD", "bbE"], cols = ["#FF3DB4", "#2CF0FF", "#FF9A3D", "#3DFFC8", "#FF6AE6"];
+      const make = i => { const t = spots[i]; if(!t) return ""; const w = Math.min(34, t.w + 4), h = Math.round(w * 0.52);
+        return board(Math.round(t.x + t.w / 2 - w / 2), Math.round(t.top - 4 - h), w, h, ids[i], cols[i], kinds[i]); };
+      return [
+        { svg: make(0) + make(2) + make(4), cls: "bl-glow", style: "animation-duration:2.6s" },
+        { svg: make(3), cls: "bl-glow", style: "animation-duration:3.4s;animation-delay:-1.7s" },
+        { svg: make(1), cls: "bl-blink", style: "animation-duration:3.1s;animation-timing-function:steps(2)" }
+      ];
+    })(),
     /* the neon signs */
     { svg: sign(60, 40, 6, "#FF4FD0") + sign(238, 60, 5, "#5CF3FF") + sign(344, 52, 6, "#FFE36A"), cls: "bl-glow", style: "animation-duration:1.8s;animation-delay:-.6s" },
     /* the flying cars, crossing between the towers at three heights */
@@ -46139,7 +46152,7 @@ const BANNER_ART = {
          light running it, and flying cars streaking between the towers.
          All of it sits behind the balcony, so the desk is still the
          foreground and the moon still has its sky. */
-      ...skylineFuture(u, HZ),
+      ...skylineFuture(u, HZ, mid),
       /* the beacons on the needle and on the tallest roofs */
       { svg: beacon(NX, 3, 1.2) + mid.filter(t => HZ - t.top > 90 && (t.x < 300 || t.x > 352)).slice(0, 4).map(t => beacon(bnF(t.x + t.w / 2), bnF(t.top - 1), 0.9)).join(""), cls: "bl-blink", style: "animation-duration:2.2s" },
       /* the balcony: glass, posts, the rail, the floor */
@@ -47605,9 +47618,13 @@ const RANKING_BOARDS = [
      ever really moves. A board that resets on Monday is the only one a
      new person can win, and the only one where yesterday counts for
      something. */
+  /* ONE LINE EACH (build 313): "could the overall description and hundo
+     one be shortened some? Seems wordy, same with the this week". The
+     reasoning below stays here; the board says what it ranks by and
+     nothing else. */
   { key: "week",  tab: "This Week",  field: "weekPoints",
     unit: (n) => n.toLocaleString() + " XP this week",
-    blurb: "Ranked by XP earned since Monday. It starts everyone at zero each week, so this is the one board that is about what you are doing now rather than everything you have ever done." },
+    blurb: "XP earned since Monday. Everyone starts at zero each week." },
   /* LEVEL, back, and BADGES gone - "I don't think badges is the move
      either there either anymore. I think one for level and hundos is
      all there needs to be", with This Week kept on a follow-up ("the
@@ -47642,14 +47659,14 @@ const RANKING_BOARDS = [
   { key: "overall", tab: "Overall", field: "level",
     sort: overallCompare,
     unit: (n, e) => overallRowLine(e),
-    blurb: "Ranked by rank first \u2014 a higher rank always sits above a lower one, whatever the numbers. People on the same rank are ordered by how far they have got towards the next one, counting level and badges together." },
+    blurb: "Ranked by rank. On the same rank, whoever is closest to the next one is ahead." },
   /* "hundos", not "perfect tests". A run can cover several units at
      once, and "perfect test" reads as though every unit in it has to be
      clean - reported directly as confusing. The board's own name is the
      clearest label the row can carry. */
   { key: "hundos", tab: "Hundos", field: "hundos",
     unit: (n) => n + (n === 1 ? " hundo" : " hundos"),
-    blurb: "Ranked by hundos \u2014 units finished at 100%, in Drill, Exam or the Virtual Room alike. They count per unit, not per test, so a test covering three units has three hundos on the table." }
+    blurb: "Units finished at 100%, one hundo per unit, in any mode." }
 ];
 
 
@@ -69792,13 +69809,13 @@ function showAppearance(opts){
   autoFlagCb.addEventListener("change", () => {
     theme.autoFlagMissed = autoFlagCb.checked;
     saveTheme();
-    showToast(theme.autoFlagMissed ? "Questions you keep missing will be starred." : "Auto-flagging off.");
+    showToast(theme.autoFlagMissed ? "Questions you keep missing will be starred." : "Auto-star off.");
   });
   const autoFlagBox = document.createElement("span");
   autoFlagBox.className = "box"; autoFlagBox.setAttribute("aria-hidden", "true"); autoFlagBox.textContent = "\u2713";
   const autoFlagWrap = document.createElement("span");
   autoFlagWrap.className = "otext";
-  autoFlagWrap.appendChild(document.createTextNode("Auto-flag questions you keep missing"));
+  autoFlagWrap.appendChild(document.createTextNode("Auto-star questions you keep missing"));
   const autoFlagHint = document.createElement("span");
   autoFlagHint.className = "ohint";
   /* No threshold number and no explanation of the manual-un-flag
@@ -69838,13 +69855,13 @@ function showAppearance(opts){
       "Show class days remaining":      "Shows the countdown to graduation on your profile.",
       "Swipe to next question":         "Swipe left to move on instead of tapping Next.",
       "Auto-advance on correct":        "Moves on by itself once you're done.",
-      "Auto-flag questions you keep missing": "Stars it for review on every fifth miss.",
+      "Auto-star questions you keep missing": "Stars it for review on every fifth miss.",
       "Mute achievement banners":       "Skips the level-up and unlock banners after a test."
     };
     const GROUPS = [
       [motionDetails, ["Reduce motion", "Show class days remaining"]],
       [studyDetails,  ["Swipe to next question", "Auto-advance on correct",
-                       "Auto-flag questions you keep missing", "Mute achievement banners"]]
+                       "Auto-star questions you keep missing", "Mute achievement banners"]]
     ];
     GROUPS.forEach(([host, titles]) => {
       const card = document.createElement("div");
@@ -78705,11 +78722,12 @@ function badgeDetail(unit){
        unlocked, when clicking them, ensure it tells you how many hundos you
        got so it'd say the challenge." It said "Earned for mastering the
        unit", which is the one thing the badge itself already says. */
-    desc: has
-      /* just what it took (build 312): "it doesn't need to tell you how
-         many you have if it's the unlock, only the requirement" */
-      ? "The challenge: " + need + " hundo" + (need === 1 ? "" : "s") + " in this unit \u2014 the whole unit, every question right, " + need + " time" + (need === 1 ? "" : "s") + "."
-      : "Earn " + need + " hundo" + (need === 1 ? "" : "s") + " in this unit.",
+    /* THE SAME LINE EARNED OR NOT (build 313): "When clicking an unlocked
+       badge, I'm not a fan of that description, kind of confusing, should
+       be just like the challenge is displayed on the non unlocked ones".
+       The earned card already says it is earned; the line is the
+       challenge, worded once. */
+    desc: "Earn " + need + " hundo" + (need === 1 ? "" : "s") + " in this unit.",
     have: done, need: need };
 }
 function themeDetail(name){
@@ -82357,7 +82375,7 @@ function showRankings(defaultBoard){
     saveStore();
     startSimpleTour([
       { target: ".screen-rankings .navsegment", align: "left", vplacement: "below",
-        text: "Three boards, three different things. This Week is XP earned since Monday; Overall is your rank, with level and badges deciding who is ahead inside it; Hundos is units you have finished at 100%." },
+        text: "This Week is XP since Monday. Overall is your rank. Hundos is units finished at 100%." },
       { target: ".rank-search", align: "left", vplacement: "below",
         text: "Search for anyone in 26E by username." },
       { target: ".rank-me-btn", align: "right", vplacement: "below",
