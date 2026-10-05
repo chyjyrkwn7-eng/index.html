@@ -6761,6 +6761,23 @@ def check_b298(br):
           const last = o.map(x => pointer.test(ch[x])); const first = last.indexOf(true);
           if(first < 0 || last.slice(first).some(v => !v)) return true; } return false; })
         .map(i => QUESTIONS[i].topic + ' ' + QUESTIONS[i].src);
+      /* "always feels like questions are around the same area of a test and answer choices aren't always shuffled well" */
+      const pen = QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === 'Penal Code');
+      const sig = i => (QUESTIONS[i].choices || []).map(c => c.toLowerCase().replace(/[^a-z0-9]/g, '')).sort().join('|');
+      let near = 0, twins = 0; const R = 40;
+      for(let r = 0; r < R; r++){
+        const o = freshOrder(pen);
+        for(let k = 1; k < o.length; k++){
+          if(Math.abs(QUESTIONS[o[k]].src - QUESTIONS[o[k - 1]].src) <= 3) near++;
+          for(let j = Math.max(0, k - 20); j < k; j++) if(sig(o[j]) === sig(o[k])) twins++;
+        }
+      }
+      out.near = near / R; out.twins = twins / R;
+      let stay2 = 0, n4 = 0; const slots = [0, 0, 0, 0];
+      pen.forEach(i => { if(refers(i) || QUESTIONS[i].choices.length !== 4) return;
+        for(let t = 0; t < 8; t++){ delete layout[i]; const o = optionOrder(i); n4++;
+          if(o.filter((v, j) => v === j).length >= 2) stay2++; slots[o.indexOf(QUESTIONS[i].answer)]++; } });
+      out.stay2 = stay2 / n4; out.slots = slots.map(x => +(x / n4).toFixed(3));
       return out; }""")
     check("a question whose choices name other letters (\"Both A & B\") keeps the study guide's order on shuffle and in an exam",
           r["both"]["orders"] == ["0,1,2,3"] and r["exam"] == ["0,1,2,3"], r["both"])
@@ -6769,6 +6786,10 @@ def check_b298(br):
     check("about a hundred questions in the bank are held in order", 90 <= r["count"] <= 130, r["count"])
     check("on shuffle, an \"of the above\" / \"All the listed\" / \"All are true\" choice always lands at the bottom",
           r["astray"] == [], r["astray"])
+    check("a shuffled run never puts two questions from the same stretch of the guide side by side, or a repeated question near its twin",
+          r["near"] < 0.5 and r["twins"] < 0.5, (r["near"], r["twins"]))
+    check("a shuffled question leaves at most one choice where the guide had it, and the answer still lands on every letter about equally",
+          r["stay2"] == 0 and all(0.2 <= s <= 0.3 for s in r["slots"]), (r["stay2"], r["slots"]))
     check("and one whose choices name letters (\"A or B\", \"a and b are correct\") is never reordered",
           r["moved"] == [], r["moved"])
     ctx.close()

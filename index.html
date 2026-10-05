@@ -51157,12 +51157,53 @@ function rememberOpeners(order){
 function freshOrder(indexes){
   const arr = shuffle(indexes.slice());
   const recent = recentOpeners();
-  if(!recent.length || arr.length < 4) return arr;
+  if(!recent.length || arr.length < 4) return spreadOrder(arr);
   const age = new Map(recent.map((k, i) => [k, i]));
   const fresh = arr.filter(qi => !age.has(KEYS[qi]));
   const stale = arr.filter(qi => age.has(KEYS[qi])).sort((a, b) => age.get(KEYS[b]) - age.get(KEYS[a]));
   const half = Math.ceil(stale.length / 2);
-  return fresh.concat(shuffle(stale.slice(0, half)), shuffle(stale.slice(half)));
+  return spreadOrder(fresh.concat(shuffle(stale.slice(0, half)), shuffle(stale.slice(half))));
+}
+/* ---- SPREAD OUT, NOT JUST RANDOM (build 309) ----
+   "Always feels like questions are around the same area of a test." The
+   order was a fair shuffle - measured, 200 runs of Penal Code - and a
+   fair shuffle still puts two questions from the same stretch of the
+   study guide side by side about six times a run, and the bank's 22
+   repeated Penal Code questions within twenty of their twin one time in
+   nine. Random, and reads as clumped. So the shuffled order is walked
+   once more: each next question is the first one ahead (within a short
+   look-ahead, so the order stays the shuffle's) that is not from the same
+   stretch as either of the last two, and not a copy of one asked recently.
+   Applied in freshOrder() so every way into a run gets it; not to a
+   Virtual Room, whose seeded order has to match on every device. */
+let questionSigMemo = null;
+function questionSig(qi){
+  if(!questionSigMemo) questionSigMemo = new Map();
+  if(!questionSigMemo.has(qi)) questionSigMemo.set(qi, (QUESTIONS[qi].choices || []).map(c => String(c).toLowerCase().replace(/[^a-z0-9]/g, "")).sort().join("|"));
+  return questionSigMemo.get(qi);
+}
+function spreadOrder(order){
+  if(order.length < 6) return order;
+  const unitSize = {};
+  order.forEach(qi => { const t = (QUESTIONS[qi].topic || "").trim(); unitSize[t] = (unitSize[t] || 0) + 1; });
+  const near = (a, b) => {
+    const qa = QUESTIONS[a], qb = QUESTIONS[b], t = (qa.topic || "").trim();
+    if(t !== (qb.topic || "").trim() || typeof qa.src !== "number" || typeof qb.src !== "number") return false;
+    return Math.abs(qa.src - qb.src) <= Math.max(3, Math.round(unitSize[t] / 25));
+  };
+  const twinGap = Math.min(40, Math.floor(order.length / 3));
+  const rest = order.slice(), out = [];
+  while(rest.length){
+    let pick = 0;
+    for(let k = 0; k < Math.min(rest.length, 30); k++){
+      const qi = rest[k], sig = questionSig(qi);
+      if(out.slice(-2).some(p => near(p, qi))) continue;
+      if(out.slice(-twinGap).some(p => questionSig(p) === sig)) continue;
+      pick = k; break;
+    }
+    out.push(rest.splice(pick, 1)[0]);
+  }
+  return out;
 }
 
 /* THE SAME SHUFFLE ON EVERY DEVICE IN A ROOM. A race where each client
@@ -51235,11 +51276,16 @@ function optionOrder(qi){
     if(!choicesReferToEachOther(qi) && (runMode === "exam" || cfg.shuffle) && ids.length > 1){
       const answer = QUESTIONS[qi].answer, m = lastSlots(), k = KEYS[qi], prev = m[k];
       let out = ids;
-      for(let t = 0; t < 10; t++){
+      /* MOVED, NOT NUDGED (build 309): "answer choices aren't always
+         shuffled well." A fair shuffle of four leaves two of them exactly
+         where the study guide had them about a quarter of the time, which
+         reads as barely shuffled; so at most one may stay put. */
+      const maxStay = ids.length >= 3 ? 1 : 0;
+      for(let t = 0; t < 30; t++){
         out = shuffle(ids.slice());
         const slot = out.indexOf(answer);
-        const inBankOrder = out.every((v, i) => v === i);
-        if(!inBankOrder && slot !== prev) break;
+        const stay = out.filter((v, i) => v === i).length;
+        if(stay <= maxStay && slot !== prev) break;
       }
       m[k] = out.indexOf(answer);
       try{ localStorage.setItem(LAST_SLOT_KEY, JSON.stringify(m)); }catch(e){}

@@ -9950,6 +9950,27 @@ had been shuffled to B with the two answers it names at A and D.
   halves on six shuffles of every such question, and lists 11 + 1
   offenders on the previous build.
 
+**Shuffled means spread out, not merely random (build 309).** *"Always
+feels like questions are around the same area of a test and answer
+choices aren't always shuffled well."* Measured first, over 200 Penal Code
+runs: the order WAS a fair shuffle, and a fair shuffle still put two
+questions from the same stretch of the guide side by side ~5.7 times a
+run, the bank's 22 repeated Penal Code questions within 20 of their twin
+11% of the time, and left two of four choices exactly where the guide had
+them in 27% of shuffles. All three read as "not shuffled".
+- `spreadOrder()`, applied at the end of `freshOrder()`, walks the
+  shuffled order once more and takes, within a 30-question look-ahead,
+  the first question not within `max(3, unit/25)` source numbers of either
+  of the last two, and not a copy (same choices) of one in the last
+  `min(40, n/3)`. 5.7 → 0.02 neighbours a run; twins 11% → 0.6%.
+- **Not applied to a Virtual Room.** Its order comes from
+  `shuffleSeeded()` and must be identical on every device in the room; a
+  post-pass would make two builds in one room disagree.
+- `optionOrder()` lets at most ONE choice stay where the guide had it
+  (and still never the answer's last slot). The answer still lands on
+  A/B/C/D ~25% each. The held questions above never reach this branch.
+- `check-behaviour` b298 measures all of it and fails on the build before.
+
 **Editing notes are out of the question bank.** *"This one ... said at the
 top that it's a duplicate ... remove that stuff."* The study guides'
 editing notes had come into the app with the questions:
