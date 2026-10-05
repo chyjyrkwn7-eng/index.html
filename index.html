@@ -1658,6 +1658,9 @@
     box-shadow:0 0 6px rgba(0,0,0,.25);
   }
   #contextual-info-line.contextual-info-show, #contextual-info-line-dot.contextual-info-show{ opacity:1; }
+  /* Round a tiny secret flare: a ring, so the flare itself still shows
+     through it (build 313). */
+  #contextual-info-line-dot.is-ring{ background:transparent; border:2px solid #6A717B; box-shadow:0 0 6px rgba(0,0,0,.35), inset 0 0 4px rgba(0,0,0,.25); }
   .contextual-info-text{ font-size:.85rem; line-height:1.4; margin:0; color:#F3F5F7; }
 
   #welcomebonus-banner{
@@ -10010,21 +10013,19 @@
   .cosmic-hero-main{ position:relative; will-change:transform; }
   .cosmic-hero-glowbox{ position:absolute; inset:0; pointer-events:none; will-change:opacity; }
   .cosmic-hero-layer{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; will-change:transform; }
-  .cosmic-hero-orbitlayer{ transform-origin:50% 47.368%; }
+  /* The secret flares' two rings are divs (build 313) and sit ABOVE the
+     rank bubbles (z-index 2), so a flare that turns past a bubble crosses
+     in front of it and can still be tapped - under it, it could not. */
+  .cosmic-hero-orbitlayer{ transform-origin:50% 47.368%; z-index:2; }
   .cosmic-hero-orbitlayer .cosmic-badge-tappable{ pointer-events:auto; }
-  /* The five secret-flare dots answer a tap but were 11-15px targets. A
-     transparent stroke drawn at a fixed 40px (non-scaling, so the same on
-     every hero size) makes each one a ~44px target without painting
-     anything; the bubbles sit above the dots, so where the two overlap a
-     tap still reaches the bubble. */
-  .cosmic-hero-orbitlayer .cosmic-orbit-dot.cosmic-badge-tappable{
-    stroke:transparent; stroke-width:40px; vector-effect:non-scaling-stroke; pointer-events:all;
-  }
   @media (prefers-reduced-motion:no-preference){
     .cosmic-hero-glowbox{ animation:cosmic-glowbox-breathe 4.5s ease-in-out infinite; }
     .cosmic-hero-glowbox.is-legend{ animation:cosmic-glowbox-legend 3.4s ease-in-out infinite; }
     .cosmic-hero-orbitlayer{ animation:cosmic-hero-settle .22s ease-out both, cosmic-orbit-spin 120s linear infinite; }
-    .cosmic-hero-orbitlayer.cosmic-hero-orbitlayer-inner{ animation:cosmic-hero-settle .22s ease-out both, cosmic-orbit-spin 88s linear infinite; }
+    /* THE MIDDLE RING IS QUICKER (build 313): "Ensure the flares in the
+       middle are moving at a faster pace than the others." 88s against
+       120s was too close to see; 52s is well over twice as fast. */
+    .cosmic-hero-orbitlayer.cosmic-hero-orbitlayer-inner{ animation:cosmic-hero-settle .22s ease-out both, cosmic-orbit-spin 52s linear infinite; }
   }
   /* .3 to .42 on the main glow, as the per-circle breathe was. */
   @keyframes cosmic-glowbox-breathe{ 0%,100%{ opacity:.714; } 50%{ opacity:1; } }
@@ -10424,7 +10425,7 @@
      dissolve into it. */
   #supernova-cutscene.tier-cutscene.supernova-burst .rank-after .cosmic-icon-badge{ opacity:1; }
   /* Found secret flares, bigger and lit, so they read in the scene. */
-  .tier-cutscene .cosmic-orbit-dot-found{ scale:1.8; stroke:currentColor; stroke-opacity:.35; stroke-width:3px; }
+  .tier-cutscene .cosmic-orbit-dot-found{ scale:1.8; }
   /* The end: no words, the dark stays, every flare in view. */
   #supernova-cutscene.tier-cutscene.rank-outro .supernova-title,
   #supernova-cutscene.tier-cutscene.rank-outro .supernova-subtitle,
@@ -10697,8 +10698,112 @@
     84%{ transform:scale(1.05); opacity:.32; }
     100%{ transform:scale(1.7); opacity:0; }
   }
-  .cosmic-orbit-dot-found{ r:5; filter:drop-shadow(0 0 3px currentColor); }
-  .cosmic-orbit-rim{ fill:none; stroke:rgba(255,255,255,.6); stroke-width:.7px; }
+  /* ---- THE SECRET FLARES ON HOME (build 313) - see buildCosmicHero ----
+     A box 2.9% of the hero wide (the old r 5 bubble), centred on its
+     point; a 44px invisible disc round it takes the tap. Pressing it
+     moves nothing - the shared :active shrink is what used to throw the
+     dot out from under the finger. Every part is a small box that only
+     ever changes transform or opacity. */
+  .cosmic-flare-dot{
+    position:absolute; width:2.9%; aspect-ratio:1; translate:-50% -50%; display:block;
+    -webkit-tap-highlight-color:transparent; transition:none;
+  }
+  .cosmic-flare-dot.cosmic-badge-tappable:active{ transform:none; }
+  .cosmic-flare-dot::after{ content:""; position:absolute; left:50%; top:50%; width:44px; height:44px; translate:-50% -50%; border-radius:50%; }
+  .cosmic-flare-dot > i{ position:absolute; inset:0; border-radius:50%; pointer-events:none; }
+  /* Missing: the tiny glass bubble, clear in the middle and bright at the
+     rim, the same for every one (build 310). */
+  .cosmic-flare-dot .cof-body{
+    background:radial-gradient(circle, rgba(255,255,255,.10) 0 50%, rgba(238,242,250,.18) 60%, rgba(221,230,245,.46) 82%, rgba(255,255,255,.8) 100%);
+    box-shadow:0 0 0 .7px rgba(255,255,255,.6), 0 0 4px rgba(255,255,255,.18);
+  }
+  .cosmic-flare-dot :is(.cof-halo, .cof-ring, .cof-tint, .cof-core, .cof-spark){ opacity:0; }
+  /* The one the hunt is looking for next wears its colour, faintly - "the
+     umbra missing flare did not change at all". Once its level has come
+     (is-hunting) the colour is stronger and a ring of it goes out every
+     few seconds: that one can turn up in a test now. */
+  /* glass with colour IN it - clear-ish middle, coloured towards the rim,
+     no white-hot core: lit is a different thing (is-found) */
+  .cosmic-flare-dot .cof-tint{ background:radial-gradient(circle, color-mix(in srgb, var(--fc) 30%, transparent) 0%, color-mix(in srgb, var(--fc) 65%, transparent) 62%, color-mix(in srgb, var(--fc) 80%, #fff) 88%, transparent 100%); }
+  .cosmic-flare-dot.is-next .cof-tint{ opacity:.5; }
+  .cosmic-flare-dot.is-next .cof-body{ box-shadow:0 0 0 .7px color-mix(in srgb, var(--fc) 45%, #fff), 0 0 6px color-mix(in srgb, var(--fc) 40%, transparent); }
+  .cosmic-flare-dot.is-hunting .cof-tint{ opacity:.75; }
+  .cosmic-flare-dot .cof-ring{ inset:-10%; border:1.5px solid color-mix(in srgb, var(--fc) 75%, #fff); }
+  /* Found: lit in its own colour - a white-hot core, the colour round it,
+     a deeper rim - with its light pooled round it (a round gradient,
+     never a filter) and a glint now and then. */
+  .cosmic-flare-dot.is-found .cof-body{
+    background:radial-gradient(circle at 42% 40%, #FFFFFF 0 16%, color-mix(in srgb, var(--fc) 45%, #fff) 30%, var(--fc) 58%, color-mix(in srgb, var(--fc) 72%, #000) 100%);
+    box-shadow:0 0 0 .7px color-mix(in srgb, var(--fc) 40%, #fff), 0 0 7px var(--fc);
+  }
+  .cosmic-flare-dot .cof-halo{ inset:-190%; background:radial-gradient(circle, color-mix(in srgb, var(--fc) 62%, transparent) 0%, color-mix(in srgb, var(--fc) 24%, transparent) 30%, color-mix(in srgb, var(--fc) 7%, transparent) 50%, transparent 68%); }
+  .cosmic-flare-dot.is-found .cof-halo{ opacity:.9; }
+  .cosmic-flare-dot .cof-core{ inset:30%; background:radial-gradient(circle, #FFFFFF 0 40%, rgba(255,255,255,0) 100%); }
+  .cosmic-flare-dot.is-found .cof-core{ opacity:.95; }
+  /* The glint: a cross of light, its two streaks deliberately unequal (a
+     cross of equal arms reads as a plus sign, not a flare). */
+  .cosmic-flare-dot .cof-spark{ inset:-260%; border-radius:0;
+    background:
+      radial-gradient(closest-side, #FFFFFF, color-mix(in srgb, var(--fc) 50%, transparent) 40%, transparent) 50% 50% / 100% 9% no-repeat,
+      radial-gradient(closest-side, #FFFFFF, color-mix(in srgb, var(--fc) 50%, transparent) 40%, transparent) 50% 50% / 7% 62% no-repeat; }
+  @media (prefers-reduced-motion:no-preference){
+    .cosmic-flare-dot.is-found .cof-halo{ animation:cof-breathe 3.8s ease-in-out var(--fd, 0s) infinite; }
+    .cosmic-flare-dot.is-found .cof-core{ animation:cof-flicker 2.6s ease-in-out var(--fd, 0s) infinite; }
+    .cosmic-flare-dot.is-found .cof-spark{ animation:cof-glint var(--fg, 8s) ease-in-out var(--fd, 0s) infinite; }
+    .cosmic-flare-dot.is-next .cof-tint{ animation:cof-tint 4.6s ease-in-out infinite; }
+    .cosmic-flare-dot.is-hunting .cof-tint{ animation-name:cof-tint-hunt; }
+    .cosmic-flare-dot.is-hunting .cof-ring{ animation:cof-call 3.2s ease-out 1s infinite; }
+  }
+  @keyframes cof-breathe{ 0%,100%{ transform:scale(.86); opacity:.72; } 50%{ transform:scale(1.08); opacity:1; } }
+  @keyframes cof-flicker{ 0%,100%{ opacity:.95; transform:scale(1); } 40%{ opacity:.7; transform:scale(.85); } 70%{ opacity:1; transform:scale(1.08); } }
+  @keyframes cof-glint{ 0%,82%,100%{ opacity:0; transform:scale(.35) rotate(0deg); } 88%{ opacity:1; transform:scale(1) rotate(12deg); } 94%{ opacity:0; transform:scale(.6) rotate(20deg); } }
+  @keyframes cof-tint{ 0%,100%{ opacity:.3; } 50%{ opacity:.6; } }
+  @keyframes cof-tint-hunt{ 0%,100%{ opacity:.5; } 50%{ opacity:.9; } }
+  @keyframes cof-call{ 0%{ opacity:.9; transform:scale(.8); } 70%,100%{ opacity:0; transform:scale(3.2); } }
+  /* ---- The sixth, skimming the planet (build 313) ----
+     The planet is 104 units across at the hero's 50% / 47.368%; the orbit
+     is 124 across (r 62), tilted 18 degrees and squashed to .3 - a ring
+     seen from just above. The arm turns once every 14s; the flare at its
+     end turns back the other way and undoes the squash, so it stays round.
+     cco-occlude hides it on the stretch of the far side where the planet
+     is in front of it (the far half of the orbit is |sin| > .57 over the
+     disc: 59.7% to 90.3% of a turn), and dims and shrinks it as it goes
+     round the back. */
+  .cosmic-core-orbit{ position:absolute; left:50%; top:47.368%; width:34.44%; aspect-ratio:1; translate:-50% -50%; z-index:3; pointer-events:none; }
+  .cosmic-core-orbit .cosmic-badge-tappable{ pointer-events:auto; }
+  .cco-plane{ position:absolute; inset:0; transform:rotate(-18deg) scaleY(.3); }
+  .cco-spin{ position:absolute; inset:0; }
+  .cco-arm{ position:absolute; left:50%; top:50%; width:50%; height:0; }
+  /* The flare's box: 2.9% of the hero, which is 16.84% of the arm (the
+     arm is r 62 of 360) - a touch bigger, as the nearest thing to you. */
+  .cco-counter{ position:absolute; left:100%; top:0; width:17.5%; aspect-ratio:1; translate:-50% -50%; transform:scaleY(3.3333) rotate(18deg); }
+  .cco-counter > .cosmic-flare-dot{ left:50%; top:50%; width:100%; }
+  /* The tail lies in the orbit's plane, behind the flare (a clockwise turn
+     moves the arm's end towards its local +y, so behind is -y). */
+  .cco-tail{ position:absolute; left:98%; bottom:0; width:5%; aspect-ratio:1 / 11; translate:-50% 0; border-radius:999px; opacity:0;
+    background:linear-gradient(180deg, transparent, color-mix(in srgb, var(--cco-c, #fff) 75%, transparent)); }
+  .cosmic-core-orbit.is-found .cco-tail{ --cco-c:#FF5CA8; opacity:.85; }
+  .cosmic-core-orbit:not(.is-found) .cco-tail{ opacity:.35; }
+  @media (prefers-reduced-motion:no-preference){
+    .cco-spin{ animation:cco-turn 14s linear infinite; }
+    .cco-counter{ animation:cco-back 14s linear infinite; }
+    .cco-arm{ animation:cco-occlude 14s linear infinite; }
+    .cco-counter > .cosmic-flare-dot{ animation:cco-depth 14s linear infinite; }
+  }
+  /* at rest (reduce motion) it sits on the near side, in front of the planet */
+  .cco-spin{ rotate:62deg; }
+  .cco-counter{ rotate:-62deg; }
+  @keyframes cco-turn{ from{ rotate:0deg; } to{ rotate:360deg; } }
+  @keyframes cco-back{ from{ rotate:0deg; } to{ rotate:-360deg; } }
+  @keyframes cco-occlude{
+    0%, 58.6%{ opacity:1; visibility:visible; }
+    60.4%, 89.6%{ opacity:0; visibility:hidden; }
+    91.4%, 100%{ opacity:1; visibility:visible; }
+  }
+  @keyframes cco-depth{
+    0%{ scale:.96; animation-timing-function:ease-out; } 25%{ scale:1.16; animation-timing-function:ease-in; }
+    50%{ scale:.96; animation-timing-function:ease-out; } 75%{ scale:.78; animation-timing-function:ease-in; } 100%{ scale:.96; }
+  }
   /* A full orbit every two minutes \u2014 slow enough to read as graceful
      drift rather than a spinning wheel, since this sits right next to
      text people are meant to actually read. transform-origin uses the
@@ -34643,6 +34748,9 @@ const AVATAR_CHARACTERS = [
   { id: "voidwalker", kind: "voidwalker", feat: "flares", secret: true },
   { id: "umbra",       kind: "umbra",       feat: "flare4", secret: true },
   { id: "singularity", kind: "singularity", feat: "flare5", secret: true },
+  /* GENESIS (build 313), the last of them: the planet on Home, alive.
+     Found on the planet itself at level 78-80 - see MYSTERY_ORDER. */
+  { id: "genesis",     kind: "genesis",     feat: "flare6", secret: true },
   /* ---- RANK REWARDS (build 244) ----
      One per rank from Silver up, each a crowned sovereign of its rank's
      own element and colour, each more spectacular than the one below:
@@ -34717,7 +34825,7 @@ const AVATAR_DISPLAY_NAME = {
   grizzly: "Bear", alien: "Alien", samurai: "Samurai", dragon: "Dragon",
   officer: "Officer", clown: "Clown", robot: "Robot", astronaut: "Orion",
   detective: "Detective", zeus: "Zeus", masked: "The Masked One", voidwalker: "Void",
-  champion: "Champion", umbra: "Umbra", singularity: "Horizon",
+  champion: "Champion", umbra: "Umbra", singularity: "Horizon", genesis: "Genesis",
   poseidon: "Sheriff", spartan: "Spartan", pharaoh: "Pharaoh", marksman: "Marksman",
   blitz: "Blitz", hive: "Hive", zenith: "Zenith", astral: "Astral", celestial: "Celestial"
 };
@@ -34768,6 +34876,8 @@ const AVATAR_GLOW = {
      body gives off no light of its own, so the glow is the flares. */
   detective: "#D9A441", zeus: "#7FD4F5", masked: "#C6413F", voidwalker: "#F97316",
   champion: "#FF4D6D", umbra: "#8B5CF6", singularity: "#7FC8FF",
+  /* Worldheart's rose - the planet's own light (MYSTERY_COLOR.core) */
+  genesis: "#FF5CA8",
   poseidon: "#F2A23A", spartan: "#E0612F", pharaoh: "#E9B949", marksman: "#9CE85A",
   /* The visor's sunset. */
   blitz: "#F0643C",
@@ -34873,7 +34983,7 @@ const CHARACTER_FEATS = {
      three found without passing through foundMysteryFlare - a cloud
      document from another device, most obviously - holds the character
      just the same. */
-  flares:   { label: "Find all three Secret Flares",
+  flares:   { label: "Find the first three secret flares",
               done: () => voidFlaresAllFound(),
               have: () => VOID_FLARES.filter(k => (store.mysteryColorsFound || {})[k]).length, need: 3 },
   /* Build 220. The Game ones count the same `store.unitGameBeat` the
@@ -34973,12 +35083,16 @@ const CHARACTER_FEATS = {
                done: () => bestStudyRun() >= 7,
                have: () => Math.min(bestStudyRun(), 7), need: 7,
                note: "Any study time on a day counts it. Your best run so far counts, not just the one you are on." },
-  flare4:    { label: "Find Umbra, the first of Void's flares",
+  flare4:    { label: "Find Penumbra, the fourth secret flare",
                done: () => !!(store.mysteryColorsFound || {}).violet,
                have: () => ((store.mysteryColorsFound || {}).violet ? 1 : 0), need: 1 },
-  flare5:    { label: "Find Event Horizon, the last flare",
+  flare5:    { label: "Find Event Horizon, the fifth secret flare",
                done: () => !!(store.mysteryColorsFound || {}).white,
                have: () => ((store.mysteryColorsFound || {}).white ? 1 : 0), need: 1 },
+  /* build 313: the sixth, on the planet itself, from level 78 */
+  flare6:    { label: "Find Worldheart, the flare on the planet",
+               done: () => !!(store.mysteryColorsFound || {}).core,
+               have: () => ((store.mysteryColorsFound || {}).core ? 1 : 0), need: 1 },
   /* ASTRAL and CELESTIAL (build 312): the two ultimates under Zenith -
      every character, and every banner. See collectionProgress(). */
   allchars:   { label: "Unlock every other character",
@@ -35214,6 +35328,7 @@ function characterLockMessage(id){
        naming the next flare before you have the last one gives it away. */
     if(def.feat === "flare4" && isLockedCharacter("voidwalker")) return "Unlock Void to see how to unlock Umbra.";
     if(def.feat === "flare5" && isLockedCharacter("umbra")) return "Unlock Umbra to see how to unlock Horizon.";
+    if(def.feat === "flare6" && isLockedCharacter("singularity")) return "Unlock Horizon to see how to unlock Genesis.";
     const f = CHARACTER_FEATS[def.feat];
     if(!f) return "";
     /* The progress, not just the target. "0 of 10" and "7 of 10" are
@@ -39771,7 +39886,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               unitPerfects: {}, unitBlackStar: {}, flagged: {}, unflagged: {}, tally: {}, tallyBase: {},
               unitGameBeat: {}, gameFarthest: {}, unitBestPct: {}, unitBestMs: {}, flareLevels: {},
               unitExam: {}, gameHardcoreMs: {},
-              mysteryColorsFound: { red: false, orange: false, yellow: false, violet: false, white: false },
+              mysteryColorsFound: { red: false, orange: false, yellow: false, violet: false, white: false, core: false },
               testsUntilMystery: null, flareNextTestAt: 0, flareSchedRev: 0,
               savedCodePrompts: 0, savedCodeSaved: false,
               dailyCorrectStreak: 0, dailyCorrectBest: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, friendsBest: 0, koiRevoked295: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bigTest500Passed: false, bestTestStreak: 0,
@@ -39857,12 +39972,14 @@ function applyLoadedData(got){
       orange: got.mysteryColorsFound.orange === true,
       yellow: got.mysteryColorsFound.yellow === true,
       violet: got.mysteryColorsFound.violet === true,
-      white: got.mysteryColorsFound.white === true
+      white: got.mysteryColorsFound.white === true,
+      /* the sixth (build 313), on the planet itself - nobody has it yet */
+      core: got.mysteryColorsFound.core === true
     };
   } else if(got.mysteryFound === true){
-    store.mysteryColorsFound = { red: true, orange: true, yellow: true, violet: false, white: false };
+    store.mysteryColorsFound = { red: true, orange: true, yellow: true, violet: false, white: false, core: false };
   } else {
-    store.mysteryColorsFound = { red: false, orange: false, yellow: false, violet: false, white: false };
+    store.mysteryColorsFound = { red: false, orange: false, yellow: false, violet: false, white: false, core: false };
   }
   /* The catch-up gate for flares owed to somebody already past their
      level: the lifetime test count before which the next one may not
@@ -41463,7 +41580,7 @@ function wipeLocalProgressAndSettings(){
   store.gameFarthest = {};
   store.unitExam = {};
   store.gameHardcoreMs = {};
-  store.mysteryColorsFound = { red: false, orange: false, yellow: false };
+  store.mysteryColorsFound = { red: false, orange: false, yellow: false, violet: false, white: false, core: false };
   store.testsUntilMystery = null;
   store.dailyCorrectStreak = 0; store.dailyCorrectBest = 0; store.unitHundoStreakBest = 0; store.challengeSeed289 = true; store.dayAnswered = null; store.dayAnsweredBest = 0;
   store.unitHundoStreak = 0;
@@ -51819,9 +51936,16 @@ let mysteryColorThisRun = null;  // which of the 3 colors this run's appearance 
    VOID_FLARES is the first three and is what Void, the Home orbit's
    first three dots and the third-flare scene are all built from; the
    last two only exist for somebody who already holds Void. */
-const MYSTERY_ORDER = ["red", "orange", "yellow", "violet", "white"];
+/* SIX SINCE BUILD 313: "We are also going to add a 4th character here,
+   this flare will be a secret flare that is somehow placed in a cool way
+   on the planet ... you see this flare in a test when reaching level
+   78-80." The sixth is `core` - the planet's own - and it hands over
+   Genesis. Appended, never inserted: the hunt only ever looks for the
+   first colour still missing, so a new key at the end changes nothing for
+   anybody part-way through the first five. */
+const MYSTERY_ORDER = ["red", "orange", "yellow", "violet", "white", "core"];
 const VOID_FLARES = ["red", "orange", "yellow"];
-const MYSTERY_COLOR = { red: "#EF4444", orange: "#F97316", yellow: "#FACC15", violet: "#8B5CF6", white: "#7FC8FF" };
+const MYSTERY_COLOR = { red: "#EF4444", orange: "#F97316", yellow: "#FACC15", violet: "#8B5CF6", white: "#7FC8FF", core: "#FF5CA8" };
 /* THE FIFTH FLARE IS THE SINGULARITY'S ICE BLUE (build 276), not white.
    "I think the 4 flare is purple, so ensure the 5th flare matches
    singularity color." Umbra's flare is Umbra's violet; Event Horizon was
@@ -51829,9 +51953,44 @@ const MYSTERY_COLOR = { red: "#EF4444", orange: "#F97316", yellow: "#FACC15", vi
    hands over is drawn in ice blue - the visor's #7FC8FF, the hair's
    light tips, the blue nebula behind. The key stays "white": it is what
    store.mysteryColorsFound is keyed by, so renaming it is a migration. */
-const MYSTERY_NAME  = { red: "Red", orange: "Orange", yellow: "Yellow", violet: "Umbra", white: "Event Horizon" };
-/* The character each Void flare hands over. */
-const FLARE_CHARACTER = { violet: "umbra", white: "singularity" };
+/* EVERY FLARE HAS A NAME OF ITS OWN (build 313): "The flares names just
+   being their colors is kind of lame as well. Give each secret flare a
+   cool name, make sure they are relevant to what they go to though and
+   the color and stuff." Each is named for what it hands over and what
+   colour it is:
+     Redshift      - light stretched red as it falls away into the dark;
+     Accretion     - the orange disc of matter spiralling into a black hole;
+     Afterglow     - the gold left behind once a star has gone out.
+                     The three are the light Void swallowed.
+     Penumbra      - the violet half-shadow round the full shadow: Umbra's.
+     Event Horizon - the ice-blue edge nothing comes back from: Horizon's.
+     Worldheart    - the rose light at the planet's core: Genesis's.
+   Display only. The keys (red ... core) are what store.mysteryColorsFound
+   is keyed by, so they never change. */
+const MYSTERY_NAME  = { red: "Redshift", orange: "Accretion", yellow: "Afterglow", violet: "Penumbra", white: "Event Horizon", core: "Worldheart" };
+/* The character each flare after the first three hands over. */
+const FLARE_CHARACTER = { violet: "umbra", white: "singularity", core: "genesis" };
+/* Which flare hands over which secret character - the other way round. */
+const CHARACTER_FLARE = { voidwalker: "yellow", umbra: "violet", singularity: "white", genesis: "core" };
+/* WHAT HOME SHOWS, IN THREE STEPS (build 313): "there will be only be 3
+   at first, THE 4th and 5th flare will appear once void is unlocked."
+   And the sixth, the planet's own, once the fifth is found - the hunt is
+   in order, so a sixth light before the fifth would give the order away. */
+function homeFlareKeys(){
+  const f = (typeof store !== "undefined" && store.mysteryColorsFound) || {};
+  const out = VOID_FLARES.slice();
+  if(VOID_FLARES.every(k => f[k])){ out.push("violet", "white"); if(f.white) out.push("core"); }
+  return out;
+}
+/* The flare the hunt is looking for next, and whether its level has come:
+   "hunting" is the one a test can hide right now (bar the catch-up gap). */
+function flareHuntState(key){
+  const f = (typeof store !== "undefined" && store.mysteryColorsFound) || {};
+  if(f[key]) return "found";
+  if(nextNeededMysteryColor() !== key) return "missing";
+  try{ if(levelOf(store) >= mysteryLevelGate(key)) return "hunting"; }catch(e){}
+  return "next";
+}
 /* HOW HIDDEN, and it is measured in TESTS COMPLETED rather than in runs
    between appearances. Asked for by number: "a person should see the
    first flare when they get to 80-90 tests taken. The second one can be
@@ -51892,8 +52051,10 @@ let mysteryLeftFrac = .5;
    first time it is asked - nothing has to be migrated by hand.
    Lowering the levels makes a lot of people owed flares on the same day,
    so the catch-up for them is spread too - see applyFlareReschedule(). */
+/* The sixth (build 313): "you see this flare in a test when reaching
+   level 78-80". 80 is the level cap, so the window ends exactly there. */
 const FLARE_WINDOWS = {
-  red: [20, 20], orange: [34, 36], yellow: [47, 49], violet: [59, 61], white: [70, 72]
+  red: [20, 20], orange: [34, 36], yellow: [47, 49], violet: [59, 61], white: [70, 72], core: [78, 80]
 };
 /* ONE-TIME RESCHEDULE (build 302). Asked for with the new levels: "for
    the people who already meet these thresholds make them random for
@@ -52175,7 +52336,7 @@ function foundMysteryFlare(btn){
   if(mysteryFoundThisSession || !mysteryColorThisRun) return;
   const color = mysteryColorThisRun;
   mysteryFoundThisSession = true;
-  store.mysteryColorsFound = store.mysteryColorsFound || { red: false, orange: false, yellow: false, violet: false, white: false };
+  store.mysteryColorsFound = store.mysteryColorsFound || { red: false, orange: false, yellow: false, violet: false, white: false, core: false };
   const hadVoid = voidFlaresAllFound();
   store.mysteryColorsFound[color] = true;
   /* `all` is the moment the Void hunt completes - the third flare - and
@@ -54076,7 +54237,6 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
   const glowDefs = document.createElementNS(svgNS, "defs");
   glowLayer.appendChild(glowDefs);
   const animLayer = mkLayer("cosmic-hero-animlayer");
-  const orbitLayer = mkLayer("cosmic-hero-orbitlayer");
   const defs = document.createElementNS(svgNS, "defs");
   /* DEPTH (build 304): "the large planet, the flare bubbles, the tiny
      flares ... could look a little more 3d/legit". One light, from the
@@ -54441,101 +54601,115 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
   highlight.setAttribute("transform", "rotate(-25 163 132)");
   highlight.setAttribute("pointer-events", "none");
   svg.appendChild(highlight);
-  /* The 3 small orbit dots were purely decorative \u2014 now each one is
-     a real mystery-star tracker (red, orange, yellow, matching the
-     actual hidden stars) that lights up in its real color once found,
-     instead of a separate new element cluttering the scene. */
+  /* ---- THE SECRET FLARES ON HOME (rebuilt in build 313) ----
+     Each tiny flare is an HTML element now, not an svg circle, on two
+     div layers that turn as wholes (the outer ring and the faster inner
+     one) - so everything a flare does (the halo breathing, the glint,
+     the pulse of the one being hunted) is a transform or an opacity on
+     its own small box, on the compositor, instead of a repaint of a
+     full-size svg every frame.
+
+     Four things were wrong at once, all reported from one account:
+     - "None of my secret flares are lit up." A found dot set its colour
+       as a fill ATTRIBUTE, and `.cosmic-orbit-dot{ fill:... }` in the
+       stylesheet beats a presentation attribute - every found flare was
+       painted the same white as a missing one. The colour is a custom
+       property on the element now (--fc) and the lit look reads it.
+     - "Sometimes they and sometimes the text box won't show up." The
+       shared `.cosmic-badge-tappable:active{ transform:scale(.88) }`
+       scaled an svg circle about the svg's ORIGIN, not its own centre,
+       so a finger landing on a dot threw it 12% of the way to the top
+       left corner - the dot vanished from under the finger and the tap
+       landed on whatever was there instead. And a dot that had turned
+       under a rank bubble could not be tapped at all: the bubbles sat
+       above the dots. The layers are above the bubbles now and nothing
+       on a flare moves its box when pressed.
+     - "The umbra missing flare did not change at all." The flare the
+       hunt is looking for next carries its own colour, faintly, and
+       pulses once its level has come (flareHuntState).
+     - The positions: even spacing read as a pattern - "could look better
+       and more random ... kinda how they used to be". They sit at uneven
+       angles again, the way the first three did, and the inner ring
+       turns more than twice as fast as the outer one. */
   const mysteryColors = MYSTERY_COLOR;
-  /* All five, always (build 244): "The main menu has 3 tiny circle
-     flares, add the 2 more in the large ring for the other secret flare
-     characters. Make it look the same." The fourth and fifth - Void's
-     own flares, Umbra's and Singularity's - used to exist only for
-     somebody already holding Void; now they sit on the large ring from
-     the start, dark until found like the first three, and the same size
-     as them. */
-  const mysteryOrder = MYSTERY_ORDER.slice();
-  /* A slow, continuous rotation of the whole group (not each dot
-     independently) keeps their relative spacing intact while making
-     them genuinely orbit the ring, the way a real satellite would \u2014
-     rather than each one drifting on its own and passing through
-     each other. Respects reduced-motion like every other animation
-     in the app. */
-  const dotsGroup = document.createElementNS(svgNS, "g");
-  dotsGroup.setAttribute("class", "cosmic-orbit-dots-group");
-  const innerOrbitLayer = mkLayer("cosmic-hero-orbitlayer cosmic-hero-orbitlayer-inner");
-  const innerDots = document.createElementNS(svgNS, "g");
-  innerDots.setAttribute("class", "cosmic-orbit-dots-group");
-  /* SPREAD OUT (build 302): "some of them are close together, maybe 2 of
-     them need to be in the inner circle (maybe the 4th and 5th)". Red,
-     Umbra and Orange sat at 0, 43 and 90 degrees on the outer ring - one
-     quarter of it. Umbra and Event Horizon move to the inner ring, where
-     they and Yellow are an even 120 degrees apart (19.5, 139.5, 259.5),
-     and Red and Orange take opposite sides of the outer one (0 and 180).
-     Inner or outer is decided by distance from the centre below, so the
-     coordinates are the whole change. */
-  [[180, 150 - 152], [180, 150 + 152], [180 - 108, 150 + 20], [216.05, 48.2], [250.14, 232.12]]
-    .slice(0, mysteryOrder.length).forEach(([cx, cy], i) => {
-    const dot = document.createElementNS(svgNS, "circle");
-    dot.setAttribute("cx", cx); dot.setAttribute("cy", cy); dot.setAttribute("r", 4.5);
-    const colorKey = mysteryOrder[i];
-    const found = !!(typeof store !== "undefined" && store.mysteryColorsFound && store.mysteryColorsFound[colorKey]);
-    dot.setAttribute("class", "cosmic-orbit-dot" + (found ? " cosmic-orbit-dot-found" : ""));
-    if(found){ dot.setAttribute("fill", mysteryColors[colorKey]); dot.style.color = mysteryColors[colorKey]; }
-    /* ---- AND THESE ANSWER A TAP TOO ----
-       "When you click the secret flares on the Home Screen, ensure it
-       says something there too, like the other bubbles."
-       These three dots are what is left of the Secret Flares, which
-       were scrapped - they are decoration now, and the seven marks
-       around them all say something when tapped, so three that stay
-       silent read as broken rather than as scenery.
-       It says what they are rather than inventing a feature for them.
-       Home only, like the flares themselves: useTierIcons is true
-       nowhere else. */
-    if(useTierIcons){
-      dot.setAttribute("class", dot.getAttribute("class") + " cosmic-badge-tappable");
-      dot.setAttribute("role", "button");
-      dot.setAttribute("tabindex", "0");
-      /* The dots are the Secret Flares again (build 213 brought the
-         hunt back) - "Just a star" was left over from when they were
-         scrapped. A found one names itself; a missing one only hints. */
-      const sayDot = () => showContextualInfo(dot, found
-        ? (i >= 3 ? MYSTERY_NAME[colorKey] + " \u2014 a Void flare, found." : "A secret flare \u2014 found.")
-        : (i >= 3 ? "There appears to be a missing Void flare." : "There appears to be a missing flare."));
-      dot.addEventListener("click", sayDot);
-      dot.addEventListener("keydown", (e) => {
-        if(e.key === "Enter" || e.key === " "){ e.preventDefault(); sayDot(); }
-      });
+  const shownFlares = homeFlareKeys();
+  const orbitLayer = document.createElement("div");
+  orbitLayer.className = "cosmic-hero-layer cosmic-hero-orbitlayer";
+  const innerOrbitLayer = document.createElement("div");
+  innerOrbitLayer.className = "cosmic-hero-layer cosmic-hero-orbitlayer cosmic-hero-orbitlayer-inner";
+  /* [ring radius, degrees clockwise from the top], in the 0 -12 360 342
+     viewBox the planet is drawn in (centre 180,150; rings 108 and 152). */
+  const FLARE_SPOT = { red: [152, 337], orange: [152, 128], yellow: [108, 236], violet: [108, 32], white: [108, 141] };
+  /* Something to say when a flare is tapped. A found one names itself
+     and what it brought; a missing one only hints. */
+  const flareSays = (key, state) => {
+    const nm = MYSTERY_NAME[key];
+    if(state === "found"){
+      if(VOID_FLARES.indexOf(key) >= 0) return nm + " — found. One of the three that made Void.";
+      if(key === "core") return nm + " — found. The planet's own light. It woke Genesis.";
+      return nm + " — found. It brought " + (AVATAR_DISPLAY_NAME[FLARE_CHARACTER[key]] || "") + " out of the dark.";
     }
-    /* THE MIDDLE RING TURNS A LITTLE FASTER (build 267): "can the ones
-       in the middle circle move just slightly faster?" A dot on the
-       inner ring goes on its own layer with its own, quicker spin -
-       a whole svg, like the outer one, so it stays a compositor
-       transform. Nearer the planet, faster round it: what an orbit
-       does anyway. */
-    /* ---- TINY BUBBLES, ALL ALIKE (build 310) ----
-       "I kinda feel like they should be super tiny bubbles more than just
-       a white glow dot? I also really liked how they originally were."
-       Originally a crisp 4.5 dot; build 308 made them 7.5 blurs of light.
-       Now each is the original size again, drawn as a bubble: a clear
-       body bright at its rim and a hairline edge. Every one is built the same way
-       on both rings; a found one is the same bubble in its colour. */
-    dot.setAttribute("r", 5);
-    if(!found) dot.style.fill = "url(#" + depthId + "dot)";
-    else { dot.style.fillOpacity = ".82"; }
-    /* the rim is its own circle: the dot's stroke is its 44px tap target */
-    const rim = document.createElementNS(svgNS, "circle");
-    rim.setAttribute("cx", cx); rim.setAttribute("cy", cy); rim.setAttribute("r", 4.65);
-    rim.setAttribute("class", "cosmic-orbit-rim");
-    rim.setAttribute("pointer-events", "none");
-    /* No glint: the whole ring turns, so an off-centre glint would point
-       a different way on every bubble at once - the "they aren't all the
-       same" again. A bubble's light here is its rim, which looks the
-       same from every angle. */
-    const dotHome = Math.hypot(cx - 180, cy - 150) < 130 ? innerDots : dotsGroup;
-    dotHome.append(dot, rim);
+    if(state === "hunting") return "The next secret flare. It is out there now, hidden in one of your tests.";
+    if(state === "next") return "The next secret flare. It is not out there yet.";
+    return "A secret flare, still missing.";
+  };
+  const makeFlare = (key) => {
+    const state = (typeof store !== "undefined") ? flareHuntState(key) : "missing";
+    const el = document.createElement("span");
+    el.className = "cosmic-orbit-dot cosmic-flare-dot" + (state === "found" ? " cosmic-orbit-dot-found is-found" :
+      state === "hunting" ? " is-next is-hunting" : state === "next" ? " is-next" : "");
+    el.dataset.flare = key;
+    el.style.setProperty("--fc", mysteryColors[key]);
+    /* each on its own clock, so six never breathe or glint in step */
+    const k = MYSTERY_ORDER.indexOf(key);
+    el.style.setProperty("--fd", (-[0, 2.3, 4.1, 1.2, 3.4, .6][k] || 0) + "s");
+    el.style.setProperty("--fg", ([7.3, 9.1, 11.7, 8.3, 10.3, 6.7][k] || 8) + "s");
+    el.innerHTML = '<i class="cof-halo"></i><i class="cof-ring"></i><i class="cof-body"></i><i class="cof-tint"></i><i class="cof-core"></i><i class="cof-spark"></i>';
+    if(useTierIcons){
+      el.classList.add("cosmic-badge-tappable");
+      el.setAttribute("role", "button");
+      el.setAttribute("tabindex", "0");
+      el.setAttribute("aria-label", state === "found" ? MYSTERY_NAME[key] + ", a secret flare you have found" : "A secret flare");
+      const say = (e) => {
+        if(e) e.stopPropagation();
+        showContextualInfo(el, flareSays(key, state), { follow: true, ring: true,
+          refind: () => document.querySelector('.panel.home .cosmic-hero-wrap [data-flare="' + key + '"]') });
+      };
+      el.addEventListener("click", say);
+      el.addEventListener("keydown", (e) => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); say(); } });
+    }
+    return el;
+  };
+  shownFlares.forEach(key => {
+    const spot = FLARE_SPOT[key];
+    if(!spot) return;
+    const a = spot[1] * Math.PI / 180;
+    const cx = 180 + spot[0] * Math.sin(a), cy = 150 - spot[0] * Math.cos(a);
+    const el = makeFlare(key);
+    el.style.left = (cx / 360 * 100).toFixed(3) + "%";
+    el.style.top = ((cy + 12) / 342 * 100).toFixed(3) + "%";
+    (spot[0] < 130 ? innerOrbitLayer : orbitLayer).appendChild(el);
   });
-  orbitLayer.appendChild(dotsGroup);
-  innerOrbitLayer.appendChild(innerDots);
+  /* ---- THE SIXTH, ON THE PLANET (build 313) ----
+     "This flare will be a secret flare that is somehow placed in a cool
+     way on the planet ... that moves in a cool way." It skims the planet
+     in a low, tilted orbit - across the face, round the limb, and BEHIND
+     it, gone for a moment, then back round the other side. One orbit,
+     drawn with transforms only: a squashed, tilted plane turns an arm,
+     and the flare at the arm's end turns back the other way and is
+     un-squashed, so it stays a round bead moving on an ellipse. It hides
+     on the far side only where the planet is in front of it (see
+     cof-occlude), and its short tail lies in the orbit's own plane. */
+  let coreFlare = null;
+  if(shownFlares.indexOf("core") >= 0){
+    coreFlare = document.createElement("div");
+    coreFlare.className = "cosmic-core-orbit";
+    coreFlare.innerHTML = '<div class="cco-plane"><div class="cco-spin"><div class="cco-arm"><i class="cco-tail"></i><div class="cco-counter"></div></div></div></div>';
+    const fl = makeFlare("core");
+    fl.classList.add("is-core");
+    if(fl.classList.contains("is-found")) coreFlare.classList.add("is-found");
+    coreFlare.querySelector(".cco-counter").appendChild(fl);
+  }
   svg.classList.add("cosmic-hero-main");
   wrap.append(glowBox, svg, animLayer, orbitLayer, innerOrbitLayer);
   /* The sphere's life, on the compositor: two soft light pools drifting
@@ -54567,6 +54741,8 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
     });
   }
   wrap.appendChild(plasma);
+  /* above the plasma, so the sixth flare crosses in front of the planet */
+  if(coreFlare) wrap.appendChild(coreFlare);
   /* The planet's own shadow and edge light (build 304) came off in build
      310 - the planet is the original one again; see "DARK SMOKE ONLY". */
 
@@ -64763,7 +64939,9 @@ const LEVEL_CONFETTI = {
    viewport, auto-flipping above/below), and thin-triangle arrow as
    the tour tooltip, since all three are the same underlying idea:
    information anchored to a specific point on screen. */
-function showContextualInfo(targetEl, message){
+function showContextualInfo(targetEl, message, opts){
+  opts = opts || {};
+  if(showContextualInfo._raf){ cancelAnimationFrame(showContextualInfo._raf); showContextualInfo._raf = 0; }
   const existing = document.getElementById("contextual-info-popup");
   if(existing) existing.remove();
   const existingLine = document.getElementById("contextual-info-line");
@@ -64849,6 +65027,64 @@ function showContextualInfo(targetEl, message){
   lineDot.style.left = (targetCenterX - 4.5) + "px";
   lineDot.style.top = (targetCenterY - 4.5) + "px";
 
+  /* ---- IT FOLLOWS WHAT IT POINTS AT (build 313) ----
+     "If the text box does show up, ensure that it properly and smoothly
+     follows the selected flare while the text box is open with the arrow
+     like thing being placed in it correctly." A secret flare is on a ring
+     that turns, so the box was placed once and the flare left it behind.
+     With `follow`, every frame re-reads where the target is and moves the
+     box with it (a translate, so nothing reflows), keeps the side it
+     opened on (no flipping above and below as it goes round), and re-aims
+     the line from the nearest point of the box's edge to the target's
+     centre. `ring` draws a ring round the target in place of the dot,
+     which would otherwise sit on top of the very flare being explained.
+     If the screen is rebuilt under it, `refind` finds the same flare in
+     the new one rather than closing. */
+  if(opts.ring){
+    lineDot.classList.add("is-ring");
+    const tw = Math.max(rect.width, rect.height);
+    const d = Math.max(16, Math.min(28, tw + 9));
+    lineDot.style.width = lineDot.style.height = d + "px";
+    lineDot.style.left = (targetCenterX - d / 2) + "px";
+    lineDot.style.top = (targetCenterY - d / 2) + "px";
+  }
+  if(opts.follow){
+    const baseLeft = popupLeft;
+    const baseTop = pRect.top;
+    let tgt = targetEl;
+    const aim = () => {
+      if(!popup.isConnected){ showContextualInfo._raf = 0; return; }
+      if(!tgt.isConnected && opts.refind){ const again = opts.refind(); if(again) tgt = again; }
+      if(tgt.isConnected){
+        const r = tgt.getBoundingClientRect();
+        const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        const w = pRect.width, h = pRect.height;
+        let left = Math.max(margin, Math.min(cx - w / 2, window.innerWidth - w - margin));
+        let top = above ? r.top - 14 - h : r.bottom + 14;
+        top = Math.max(margin, Math.min(top, window.innerHeight - h - margin));
+        popup.style.translate = (left - baseLeft).toFixed(1) + "px " + (top - baseTop).toFixed(1) + "px";
+        const sy = above ? top + h - 6 : top + 6;
+        const sx = Math.max(left + 18, Math.min(cx, left + w - 18));
+        const ddx = cx - sx, ddy = cy - sy;
+        line.style.left = sx + "px";
+        line.style.top = (sy - 1.5) + "px";
+        /* in ring mode the line stops at the ring, not on the flare */
+        const ringR = opts.ring ? (parseFloat(lineDot.style.width) || 18) / 2 : 0;
+        line.style.width = Math.max(0, Math.sqrt(ddx * ddx + ddy * ddy) - ringR) + "px";
+        line.style.transform = "rotate(" + (Math.atan2(ddy, ddx) * 180 / Math.PI) + "deg)";
+        if(opts.ring){
+          const d = parseFloat(lineDot.style.width) || 18;
+          lineDot.style.left = (cx - d / 2) + "px";
+          lineDot.style.top = (cy - d / 2) + "px";
+        } else {
+          lineDot.style.left = (cx - 4.5) + "px";
+          lineDot.style.top = (cy - 4.5) + "px";
+        }
+      }
+      showContextualInfo._raf = requestAnimationFrame(aim);
+    };
+    aim();
+  }
   requestAnimationFrame(() => { popup.classList.add("contextual-info-show"); line.classList.add("contextual-info-show"); lineDot.classList.add("contextual-info-show"); });
   /* It lives on <body>, so a screen change does not take it: tapping a
      Home flare and then a tab left "Supernova rank - 56 more levels"
@@ -64858,6 +65094,8 @@ function showContextualInfo(targetEl, message){
   if(showContextualInfo._mo) showContextualInfo._mo.disconnect();
   const orphanWatch = showContextualInfo._mo = new MutationObserver(() => {
     if(targetEl.isConnected && popup.isConnected) return;
+    /* a followed flare whose screen was rebuilt is found again by aim() */
+    if(opts.follow && opts.refind && popup.isConnected && opts.refind()) return;
     orphanWatch.disconnect();
     popup.remove(); line.remove(); lineDot.remove();
   });
@@ -64868,7 +65106,7 @@ function showContextualInfo(targetEl, message){
     line.classList.remove("contextual-info-show");
     lineDot.classList.remove("contextual-info-show");
     setTimeout(() => { popup.remove(); line.remove(); lineDot.remove(); }, 250);
-  }, 3200);
+  }, opts.follow ? 4200 : 3200);
 }
 
 function showToast(msg, tone){
