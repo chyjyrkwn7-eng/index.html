@@ -1236,14 +1236,24 @@ def check_b313_sheet2(br):
       if(mb){ mb.click(); await wait(500); out.max1 = { on: mb.classList.contains('on'), mins: cfg.timerMinutes,
         val: (sheet.querySelector('.minutes-sect input.slider')||{}).value }; }
       const ms=sheet.querySelector('.minutes-sect input.slider');
-      if(ms && mb){ ms.value=30; ms.dispatchEvent(new Event('input',{bubbles:true})); await wait(80); out.max2 = { on: mb.classList.contains('on'), lit: mb.classList.contains('just-ready') }; }
+      const mid = b => { const r=b.getBoundingClientRect(), t=document.createRange(); t.selectNodeContents(b); const tr=[...t.getClientRects()].pop();
+        return tr ? Math.round((tr.left+tr.right)/2 - (r.left+r.right)/2) : 99; };
+      out.centre = [];
+      if(ms && mb){ ms.value=30; ms.dispatchEvent(new Event('input',{bubbles:true})); await wait(80); out.max2 = { on: mb.classList.contains('on'), lit: mb.classList.contains('just-ready') }; await wait(1200);
+        out.centre.push(mid(mb)); const ab=sheet.querySelector('.howmany-sect .slider-allbtn'); out.centre.push(mid(ab)); ab.click(); await wait(600); out.centre.push(mid(ab)); }
       return out; }""")
     ctx.close()
     check("the shuffle line says what it does and nothing about question order",
           r["shuffle"] and "random order" not in r["shuffle"], r["shuffle"])
     check("the No hundo chip is centred over the slider", abs(r["chip"]["off"]) <= 1, r["chip"])
-    check("and says it won't count, and its note names the hundo total and the badge count",
-          "count" in r["chip"]["text"].lower() and "hundo total" in r["why"] and "badge" in r["why"], [r["chip"], r["why"]])
+    check("and says No hundo, and its note names the hundo total and the badge count",
+          "hundo" in r["chip"]["text"].lower() and "hundo total" in r["why"] and "badge" in r["why"]
+          and "\u201cHow many\u201d" in r["why"] and "\u201cAll\u201d" in r["why"], [r["chip"], r["why"]])
+    # [Max unticked, All unticked, All ticked]. Ticked, the tick and the
+    # word are centred as a pair, so the word alone sits half a tick right.
+    ce = r.get("centre") or [9, 9, 99]
+    check("the word sits in the middle of Max and All when there is no tick",
+          abs(ce[0]) <= 1 and abs(ce[1]) <= 1 and 2 <= ce[2] <= 9, ce)
     m0, m1, m2 = r.get("max0") or {}, r.get("max1") or {}, r.get("max2") or {}
     check("the time limit has a Max button, lit while the limit is below the top",
           m0.get("text", "").strip().lower() == "max" and m0.get("on") is False, m0)

@@ -12573,11 +12573,11 @@ TouchEvent drag moves the panel, springs back, and advances) and fails on 312.
 
 #### The start sheet, last round
 
-- **The hundo chip is centred over the slider and says what it costs.**
-  "Won't count as a hundo" (just "No hundo" under 25rem, where the row
-  cannot hold both); tapped, the note leads with "won't count toward your
-  hundo total or your badge count", then why, then "slide How many to
-  All". Absolutely positioned in the How many row, so it still appears and
+- **The hundo chip is centred over the slider; its note says what it costs.**
+  It reads "No hundo" (the longer "Won't count as a hundo" was tried and
+  sent back); tapped, the note leads with "won't count toward your hundo
+  total or your badge count", then why, then Slide "How many" to "All" -
+  the controls it names are in quotation marks, as asked. Absolutely positioned in the How many row, so it still appears and
   goes without moving the slider (the build-291 rule).
 - **The shuffle line no longer mentions question order** ("Questions always
   come shuffled no matter what, that's dumb"): "Shuffles the order of the
@@ -12585,7 +12585,9 @@ TouchEvent drag moves the panel, springs back, and advances) and fails on 312.
 - **The time limit has a Max button** that behaves exactly like All:
   `syncTopButton()` is shared by both (white and raised below the top, a
   quiet tick at the top, Start's fill-and-pop the moment it lights). Pass
-  a 9th argument to `plainSlider()` to give any slider one.
+  a 9th argument to `plainSlider()` to give any slider one. The space
+  after the tick is the tick's own margin, never the button's `gap` - a
+  gap stays beside a 0-wide tick and pushed "MAX" 2-3px off centre.
 - **The question-bank halves are centred by eye, not by box** - both lines
   have no descenders, so equal line-box padding left the ink high. 52px,
   with the spare room at the top.

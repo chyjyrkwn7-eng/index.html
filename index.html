@@ -9591,7 +9591,6 @@
   .hundo-why[hidden]{ display:none; }
   @keyframes hundo-why-in{ from{ opacity:0; transform:translateY(-4px); } to{ opacity:1; transform:none; } }
   .hundo-chip + .sect-headval{ margin-left:0; }
-  .hundo-chip .hc-short{ display:none; }
   /* Centred over the slider, in the How many row (build 313). Out of the
      flow, so it still comes and goes without moving anything. */
   .unitoptions-modal-sheet .sect-headrow:has(> .hundo-chip){ position:relative; }
@@ -9599,10 +9598,7 @@
     position:absolute; left:50%; top:50%; transform:translate(-50%, -50%); margin:0;
     text-transform:none; letter-spacing:.02em;
   }
-  @media (max-width:25rem){
-    .hundo-chip .hc-long{ display:none; }
-    .hundo-chip .hc-short{ display:inline; }
-  }
+
   /* A question pushing in from the right must not scroll the page
      sideways for the moment it is off-screen (build 311, advanceWithSlide). */
   html.q-sliding, html.q-sliding body{ overflow-x:clip; }
@@ -16703,7 +16699,7 @@
      button in the start menu is blue for some reason") - filled it is
      the same glass as the selected "Your units" box above it. */
   .unitoptions-modal-sheet .slider-allbtn{
-    display:inline-flex; align-items:center; justify-content:center; gap:.3rem;
+    display:inline-flex; align-items:center; justify-content:center; gap:0;
     min-width:4.2rem; min-height:2.1rem; padding:.25rem .85rem;
     font-size:.78rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase;
     color:rgba(255,255,255,.82); background:rgba(255,255,255,.05);
@@ -16712,15 +16708,18 @@
     transition:background .2s ease, color .2s ease, border-color .2s ease, transform .12s ease, box-shadow .2s ease;
   }
   .unitoptions-modal-sheet .slider-allbtn::before{
-    content:"\2713"; font-size:.82em; width:0; overflow:hidden; opacity:0;
-    transition:width .2s ease, opacity .2s ease;
+    content:"\2713"; font-size:.82em; width:0; overflow:hidden; opacity:0; margin-right:0;
+    transition:width .2s ease, opacity .2s ease, margin-right .2s ease;
   }
+  /* The space after the tick lives on the tick, not as the row's gap
+     (build 313: "the word max is not centered in the max button") - a
+     gap is there even beside a 0-wide tick, so the word sat 5px right. */
   .unitoptions-modal-sheet .slider-allbtn.on{
     color:#fff; border-color:rgba(255,255,255,.14);
     background:rgba(255,255,255,.17);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
   }
-  .unitoptions-modal-sheet .slider-allbtn.on::before{ width:.8em; opacity:1; }
+  .unitoptions-modal-sheet .slider-allbtn.on::before{ width:.8em; opacity:1; margin-right:.3rem; }
   .unitoptions-modal-sheet .slider-allbtn:active{ transform:scale(.95); }
   /* ALL LIGHTS UP LIKE START (build 313): "if the [slider] is only on all
      it would already be [selected], but if you have anything set below
@@ -64996,7 +64995,9 @@ function showSetup(){
      says no hundo, could that centered above the slider? Could it also be
      a little less vague?" The long form on any phone with room for it,
      the short one on the narrowest, where the row cannot hold both. */
-  hundoNote.innerHTML = '<span class="hc-long">Won\u2019t count as a hundo</span><span class="hc-short">No hundo</span>';
+  /* Back to the short label, still centred ("could be no hundo how it
+     was actually but keep it centered"); the note says the rest. */
+  hundoNote.textContent = "No hundo";
   /* THE REASON OPENS BESIDE THE CHIP (build 313): "The description when
      hitting no hundo in the start menu is cool but it's at the top, again,
      put it near the button and make that description better." It was a
@@ -65590,10 +65591,10 @@ function showSetup(){
        note leads with what it costs - the hundo total AND the badge -
        then why, then the one thing to do about it. */
     hundoNote.dataset.why = cfg.source !== "all"
-      ? "A 100% here won't count toward your hundo total or your badge count - starred questions are only part of a unit. Pick All questions above and slide How many to All to make it count."
+      ? "A 100% here won't count toward your hundo total or your badge count - starred questions are only part of a unit. Pick \u201cAll questions\u201d above and slide \u201cHow many\u201d to \u201cAll\u201d to make it count."
       : cfg.units.length === 1
-        ? "A 100% here won't count toward your hundo total or your badge count - this test leaves out some of the unit's questions. Slide How many to All to make it count."
-        : "A 100% here won't count toward your hundo total or your badge count - this test leaves out some questions from these units. Slide How many to All to make it count.";
+        ? "A 100% here won't count toward your hundo total or your badge count - this test leaves out some of the unit's questions. Slide \u201cHow many\u201d to \u201cAll\u201d to make it count."
+        : "A 100% here won't count toward your hundo total or your badge count - this test leaves out some questions from these units. Slide \u201cHow many\u201d to \u201cAll\u201d to make it count.";
     if(!canCut || !partial) hideHundoWhy();
     /* The sheet's own primary button relabels to match what it will
        actually do while Review is on — the same swap its click handler
