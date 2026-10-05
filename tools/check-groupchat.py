@@ -173,7 +173,9 @@ def main(src, size):
                        kind: (r.querySelector('.chatdock-chatrow-kind')||{}).textContent,
                        faces: faces.length, chars: faces }; }""", code)
             check("the row names both of them", bool(row and "Alex" in row["name"] and "Kim" in row["name"]), row)
-            check("and says it is a group of three", bool(row and row["kind"] and row["kind"].endswith("3")), row)
+            # The number, not the words around it: "Group · 3" became
+            # "3 members" in build 313.
+            check("and says it is a group of three", bool(row and row["kind"] and re.search(r"\b3\b", row["kind"])), row)
             check("with both faces, in their own characters",
                   bool(row and sorted(str(c) for c in row["chars"]) == ["alien", "wizard"]), row)
 
@@ -240,6 +242,150 @@ def main(src, size):
     finally:
         srv.shutdown()
 
+
+# ---------------------------------------------------------------------------
+# BUILD 313: "The chat stuff, I thought we said that old chat messages delete
+# after 24 hours? I still see some.. fix this. Also, the display of group
+# chats when not in the group chat could have improvements ... The group
+# chats keep doing the 'loading who's in it' thing and then it takes
+# forever." One person, a room of classmates, three groups (one whose every
+# line is past its day, one live, one never opened), a friend chat with a
+# two-day-old line, stale pings, and an invite to a group she is not in.
+# Every check here fails on build 312.
+FIX_313 = r"""(()=>{
+  const now = Date.now(), H = 3600e3;
+  const rows = [
+    {pub:'pAlex',firstName:'Alex',avatarChar:'alien'}, {pub:'pKim',firstName:'Kim',avatarChar:'wizard'},
+    {pub:'pBen',firstName:'Ben',avatarChar:'ghost'}, {pub:'pCy',firstName:'Cy',avatarChar:'grizzly'},
+    {pub:'pDee',firstName:'Dee',avatarChar:'queen'}, {pub:'pEli',firstName:'Eli',avatarChar:'ninja'},
+    {pub:'pFay',firstName:'Fay',avatarChar:'alien'}, {pub:'pGus',firstName:'Gus',avatarChar:'ghost'},
+    {pub:'pHana',firstName:'Hana',avatarChar:'wizard'}];
+  leaderboardRows = rows.map(r => Object.assign({ facc: [store.publicId], freq: [], level: 4, badges: 1, hundos: 2, seenAt: now - 60e3 }, r));
+  store.friendsIn = rows.map(r => r.pub);
+  const me = store.publicId;
+  const P = (k, j) => ({ name: (rows.find(r=>r.pub===k)||{}).firstName || store.firstName,
+    avatarChar: (rows.find(r=>r.pub===k)||{}).avatarChar || store.avatarChar, joinedAt: now - 9*86400e3 + j, seen: now - 40*H });
+  const docs = {
+    GOLD1: { kind:'chat', createdAt: now - 9*86400e3, participants: { [me]: P(me,0), pAlex: P('pAlex',1), pKim: P('pKim',2) },
+      chatMessages: [ {id:'o1', key:'pAlex', name:'Alex', text:'study at 7 on tuesday?', ts: now - 3*86400e3},
+                      {id:'o0', key: me, name: store.firstName, type:'img', img:'img-old313', text:'Photo', ts: now - 3*86400e3},
+                      {id:'o2', key:'pKim', name:'Kim', text:'yes, library', ts: now - 30*H} ], typing:{} },
+    'img-old313': { kind:'chatimg', data:'data:image/png;base64,iVBORw0KGgo=', by: me, at: now - 3*86400e3 },
+    GFRESH: { kind:'chat', createdAt: now - 2*86400e3, participants: { [me]: P(me,0), pBen: P('pBen',1), pCy: P('pCy',2), pDee: P('pDee',3), pEli: P('pEli',4) },
+      chatMessages: [ {id:'f0', key:'pBen', name:'Ben', text:'old one from yesterday morning', ts: now - 26*H},
+                      {id:'f1', key:'pCy', name:'Cy', text:'anyone done the penal code unit?', ts: now - 2*H} ], typing:{} },
+    GNEW: { kind:'chat', createdAt: now - 3600e3, participants: { [me]: P(me,0), pDee: P('pDee',1), pEli: P('pEli',2) }, chatMessages: [], typing:{} },
+    GINV: { kind:'chat', createdAt: now - 3600e3, participants: { pFay: P('pFay',1), pGus: P('pGus',2), pHana: P('pHana',3) },
+      chatMessages: [ {id:'i1', key:'pFay', name:'Fay', text:'ok who is in', ts: now - 30*60e3} ], typing:{} },
+    VRCHAT: { status:'waiting', participants: { me313: { name:'Me', avatarChar:'ninja', joinedAt: 1 } },
+      chatMessages: [ {id:'v0', key:'x', name:'Old', text:'from the day before yesterday', ts: now - 50*H},
+                      {id:'v1', key:'x', name:'New', text:'from this morning', ts: now - 3*H} ] }
+  };
+  docs['inbox-' + me] = { kind:'inbox', msgs: {
+    pFay: { type:'chat', code:'GINV', pub:'pFay', at: now - 20*60e3, firstName:'Fay', avatarChar:'alien' },
+    'pKim~m': { type:'msgping', code:'GOLD1', pub:'pKim', at: now - 30*H, firstName:'Kim', text:'yes, library' } } };
+  localStorage.setItem('fakefs::vrooms', JSON.stringify(Object.assign(JSON.parse(localStorage.getItem('fakefs::vrooms')||'{}'), docs)));
+  store.chats = [ {code:'GOLD1', name:'Alex & Kim', at: now - 30*H, with:['pAlex','pKim']},
+                  {code:'GFRESH', name:'', at: now - 2*H, with:['pBen','pCy','pDee','pEli']},
+                  {code:'GNEW', name:'', at: now - 3600e3, with:[]} ];
+  try{ localStorage.removeItem('class26e.chatseen'); }catch(e){}
+  saveStore();
+})()"""
+
+def main_313(src, size):
+    vw, vh = size
+    srv, url = serve(src)
+    try:
+        with sync_playwright() as pw:
+            br = pw.chromium.launch(executable_path=CHROME, args=["--no-sandbox"])
+            ctx = br.new_context(viewport={"width": vw, "height": vh}, has_touch=True)
+            ctx.add_init_script(FAKE)
+            ctx.add_init_script(
+                "try{localStorage.setItem('class26e.frame.ok','go-live-1');"
+                "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');}catch(e){}")
+            errs = []
+
+            def boot(first):
+                pg = ctx.new_page()
+                pg.on("pageerror", lambda e: errs.append(str(e)[:160]))
+                pg.goto(url); pg.wait_for_timeout(2600)
+                pg.evaluate("""(a)=>{
+                  document.getElementById('splashscreen')?.remove(); __useFake();
+                  store.onboardingComplete = true; store.firstName = 'Madison'; store.publicId = 'pMad313';
+                  store.avatarChar = 'grizzly'; store.tourRev = 99; store.savedCodeSaved = true;
+                  ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour','seenRewardsTour',
+                   'seenSettingsTour','seenUnitOptionsTour','seenUnitSelectTour','seenMainMenuTour'].forEach(k=>store[k]=true);
+                  syncCode = 'SYNC-pMad313'; chatRoomCode = null; chatMyKey = null; }""", {})
+                if first:
+                    pg.evaluate("()=>" + FIX_313)
+                else:
+                    pg.evaluate("""()=>{ const now=Date.now(); const rows=['Alex','Kim','Ben','Cy','Dee','Eli','Fay','Gus','Hana'];
+                      leaderboardRows = rows.map(n=>({pub:'p'+n, firstName:n, avatarChar:'ghost', facc:[store.publicId], freq:[], seenAt: now-60e3}));
+                      store.friendsIn = rows.map(n=>'p'+n); }""")
+                pg.evaluate("()=>{ try{ inboxUnsub && inboxUnsub(); }catch(e){} inboxUnsub=null; attachInbox(); showHome(); }")
+                pg.wait_for_timeout(900)
+                return pg
+
+            print("\n8. (313) nothing older than a day is drawn, counted or kept")
+            M = boot(True)
+            M.evaluate("()=>{ chatDockTab='friends'; openChatDock(); }"); M.wait_for_timeout(500)
+            # FRIENDS FIRST, THEN GROUPS, inside the old shared 20s throttle.
+            M.evaluate("()=>document.querySelector('.chatdock-tab[data-tab=groups]').click()"); M.wait_for_timeout(1500)
+            rows = M.evaluate("""()=>[...document.querySelectorAll('.chatdock-chatrow')].map(r=>({code:r.dataset.code, t:r.innerText.replace(/\\n/g,' | ')}))""")
+            gold = next((r["t"] for r in rows if r["code"] == "GOLD1"), "")
+            fresh = next((r["t"] for r in rows if r["code"] == "GFRESH"), "")
+            check("a group row never quotes a message past its day", "library" not in gold and "Alex" in gold, gold)
+            check("Groups opened straight after Friends still knows every row - no loading line",
+                  rows and not any("Loading" in r["t"] for r in rows) and "anyone done" in fresh, rows)
+            check("an unnamed group is named from the people saved with it",
+                  "Ben" in fresh and "Cy" in fresh, fresh)
+            cnt = M.evaluate("()=>{ const g=document.getElementById('chatdock-groupscount'); return g && !g.hidden ? g.textContent : ''; }")
+            check("a ping from a day and a half ago lights nothing", cnt == "", cnt)
+            M.evaluate("()=>enterChatRoom('GOLD1')"); M.wait_for_timeout(1500)
+            shown = M.evaluate("()=>({n: document.querySelectorAll('.chatdock-chathost .vroom-chat-msg').length, t: (document.querySelector('.chatdock-chathost .vroom-chat-list')||{}).innerText||''})")
+            check("a group whose every line is old opens on none of them, and says why",
+                  shown["n"] == 0 and "day" in shown["t"], shown)
+            srv_after = M.evaluate("()=>{ const a=JSON.parse(localStorage.getItem('fakefs::vrooms')); return {n:(a.GOLD1.chatMessages||[]).length, img: !!a['img-old313']}; }")
+            check("and opening it takes them off the room for everyone", srv_after["n"] == 0, srv_after)
+            check("with your own old photo's document deleted too", srv_after["img"] is False, srv_after)
+            M.evaluate("()=>closeChatRoom()"); M.wait_for_timeout(300)
+            M.evaluate("()=>enterChatRoom('GFRESH')"); M.wait_for_timeout(1200)
+            t = M.evaluate("()=>(document.querySelector('.chatdock-chathost .vroom-chat-list')||{}).innerText||''")
+            check("a live group shows today's line and not yesterday morning's", "anyone done" in t and "yesterday morning" not in t, t)
+            M.evaluate("()=>closeChatRoom()"); M.wait_for_timeout(300)
+            v = M.evaluate("""()=>new Promise(res=>{ vroomCode='VRCHAT'; vroomMyKey='me313';
+              const box=document.createElement('div'); box.id='vr313'; document.body.appendChild(box);
+              const kill=buildVroomChatPanel(box);
+              setTimeout(()=>{ const t=box.innerText; kill(); box.remove(); vroomCode=null; vroomMyKey=null; res(t); }, 900); })""")
+            check("the Virtual Room's chat keeps a day too", "this morning" in v and "day before yesterday" not in v, v)
+
+            print("\n9. (313) a group you are not in, shown for what it is")
+            M.evaluate("()=>document.querySelector('.chatdock-tab[data-tab=notifs]').click()"); M.wait_for_timeout(1200)
+            inv = M.evaluate("()=>[...document.querySelectorAll('.chatdock-notif-chat')].map(r=>r.innerText.replace(/\\n/g,' | ')).join(' // ')")
+            check("the invite says it is a group, who is in it and how many",
+                  "group chat" in inv and "Gus" in inv and "3 members" in inv, inv)
+            M.close()
+
+            print("\n10. (313) the list is drawn complete at once, from what this device last knew")
+            M2 = boot(False)
+            M2.evaluate("""()=>{ const oc = fbDb.collection.bind(fbDb);
+              fbDb.collection = name => { const c = oc(name); const od = c.doc.bind(c);
+                c.doc = id => { const d = od(id); if(/^G/.test(id)){ d.get = () => new Promise(()=>{}); d.onSnapshot = () => () => {}; } return d; };
+                return c; }; }""")
+            M2.evaluate("()=>{ chatDockTab='groups'; openChatDock(); }"); M2.wait_for_timeout(700)
+            rows2 = M2.evaluate("""()=>[...document.querySelectorAll('.chatdock-chatrow')].map(r=>({code:r.dataset.code, t:r.innerText.replace(/\\n/g,' | '), faces:r.querySelectorAll('.chatdock-face:not(.chatdock-face-empty)').length}))""")
+            fr = next((r for r in rows2 if r["code"] == "GFRESH"), {"t": "", "faces": 0})
+            check("with no read ever coming back, a row still has its people and its last line",
+                  "anyone done" in fr["t"] and fr["faces"] >= 2 and not any("Loading" in r["t"] for r in rows2), rows2)
+            M2.evaluate("()=>enterChatRoom('GFRESH')"); M2.wait_for_timeout(600)
+            head = M2.evaluate("()=>({count:(document.getElementById('chatdock-roomcount')||{}).textContent||'', who:(document.getElementById('chatdock-roomwho')||{}).innerText||''})")
+            check("an opened group names its members before the room has answered",
+                  head["count"].startswith("5 members") and "Cy" in head["who"], head)
+            M2.close()
+            check("no JS errors (313)", not errs, errs[:4])
+    finally:
+        srv.shutdown()
+
 ap = argparse.ArgumentParser()
 ap.add_argument("--against")
 ap.add_argument("--size", default="440x956,834x1194")
@@ -249,6 +395,7 @@ for sz in args.size.split(","):
     w, h = (int(v) for v in sz.split("x"))
     print("\n=== %dx%d %s" % (w, h, "[against " + src + "]" if args.against else "[current]"))
     main(src, (w, h))
+    main_313(src, (w, h))
 if FAILS:
     print("\nFAILED: %s  (%d failure(s))" % (FAILS[0], len(FAILS)))
     sys.exit(1)

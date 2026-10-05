@@ -4037,6 +4037,13 @@
   .vroom-roster-head .vroom-readycount{ margin:0; font-size:.78rem; }
   .vroom-roster-list{ margin:0; }
   .vroom-roster-list .vroom-row:last-child{ border-bottom:none; }
+  .vroom-roster.is-crowded .vroom-roster-list .vroom-row{ padding-top:.32rem; padding-bottom:.32rem; min-height:0; }
+  .vroom-roster.is-crowded .vroom-avatar{ width:2.5rem; height:2.5rem; }
+  .vroom-roster.is-crowded .lb-name{ font-size:.88rem; }
+  @media (min-width:40rem){
+    .vroom-roster.is-crowded .vroom-roster-list{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); column-gap:.6rem; }
+    .vroom-roster.is-crowded .vroom-avatar{ width:2.9rem; height:2.9rem; }
+  }
   .vroom-setup-head{ margin-top:1.4rem; }
   @media (min-width:40rem){
     .vroom-roster{ padding:1.1rem 1.15rem; }
@@ -75466,6 +75473,11 @@ function showVirtualRoomLobby(){
         shownShape = shape;
         renderTestSummary(data);
         list.replaceChildren();
+        /* A FULL ROOM IS DRAWN SMALLER (build 313). Every person had a row
+           88px tall, so with twenty in the room Ready up sat almost two
+           thousand pixels down a phone, under everybody else. Past six,
+           the rows tighten and, on a tablet, go two across. */
+        roster.classList.toggle("is-crowded", entries.length > 6);
         entries.forEach(([key, p]) => {
         const row = document.createElement("div");
         row.className = "lb-row vroom-row" + (p.ready ? " is-ready" : "");
