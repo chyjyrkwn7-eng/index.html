@@ -1957,7 +1957,7 @@ def check_b234(br):
         const sw = sh.querySelectorAll('.timer-sect .opt input[type=checkbox]');
         res.timerSwitches = sw.length;
         /* the Countdown switch by name (build 310 put the Stopwatch first) */
-        const cd = [...sh.querySelectorAll('.timer-sect .opt')].find(r => /Countdown/.test(r.textContent));
+        const cd = [...sh.querySelectorAll('.timer-sect .opt')].find(r => /Countdown|Time limit/.test(r.textContent));
         const cdIn = cd && cd.querySelector('input[type=checkbox]');
         if(cdIn){ cdIn.checked = true; cdIn.dispatchEvent(new Event('change', { bubbles:true })); }
         res.timerAfter = cfg.timer;
@@ -2272,7 +2272,7 @@ def check_b235b(br):
     # don't show that ... If there's no timer, don't show that either ...
     # And if it's all questions, don't show that."
     check("the top box lists only the settings that are on, each with an icon, and no question count",
-          isinstance(t, dict) and t.get("icons") and "20 min countdown" in tx and ("Flagged" in tx or "Starred" in tx)
+          isinstance(t, dict) and t.get("icons") and ("20 min countdown" in tx or "20 min limit" in tx) and ("Flagged" in tx or "Starred" in tx)
           and not any(x in ("All questions", "In order", "No timer") for x in tx)
           and not any(x.startswith("All ") and x[4:].isdigit() for x in tx) and not any(" of " in x for x in tx), t)
     # (The Timer bar's own "20 min countdown" state went with the dropdown
@@ -6419,7 +6419,7 @@ def check_b291(br):
           [st, (r.get("midDrag") or {}).get("top"), na.get("h"), npart.get("h")])
     txt = r.get("sheetText") or ""
     check("the options say 'answer choices', and the timers say what they do",
-          all(s in txt for s in ["Shuffle answer choices", "Hide answer choices", "Countdown timer", "Stopwatch"])
+          all(s in txt for s in ["Shuffle answer choices", "Hide answer choices", "Time limit", "Stopwatch"])
           and "Track my time" not in txt, txt[:300])
     check("each of those four carries a one-line description",
           len([h for h in r.get("hints", []) if len(h) < 80]) >= 4, r.get("hints"))
@@ -7937,7 +7937,8 @@ def check_b304_polish(br):
           [...document.querySelectorAll('.screen-setup .pick')].find(p => /Identity Crimes/.test(p.textContent)).click(); await wait(100);
           out.pop = tab.classList.contains('just-ready');
           out.fill = getComputedStyle(tab, '::before').animationName;
-          await wait(900);
+          /* 1300 since 313: the fill is .6s and the pop and sheen follow it */
+          await wait(1300);
           out.popGone = !tab.classList.contains('just-ready');
           out.halo = getComputedStyle(tab, '::after').animationName;
           out.sweep = getComputedStyle(tab).animationName;
@@ -8286,7 +8287,7 @@ def check_b308_timer(br):
           m.querySelector('.more-toggle')?.click(); await wait(400);
           /* by name, not position: build 310 put the stopwatch first */
           const allRows = [...m.querySelectorAll('.timer-sect > .opt')];
-          const rows = [allRows.find(r => /Countdown/.test(r.textContent)), allRows.find(r => /Stopwatch|Track my time/.test(r.textContent))].filter(Boolean);
+          const rows = [allRows.find(r => /Countdown|Time limit/.test(r.textContent)), allRows.find(r => /Stopwatch|Track my time/.test(r.textContent))].filter(Boolean);
           const st = () => rows.map(r => (r.hidden || !r.offsetParent ? 'H' : '') + (r.querySelector('input').checked ? 'on' : 'off')).join('/');
           const out = { noteTxt, n: rows.length, start: st() };
           rows[1].querySelector('input').click(); await wait(150); out.watch = st() + ' ' + cfg.timer;
@@ -8603,7 +8604,7 @@ def check_b310_vroom(br):
           r.get("allBefore", 0) < r.get("allMid", 0) < r.get("allMax", 0) and r.get("allEnd") == r.get("allMax"),
           [r.get("allBefore"), r.get("allMid"), r.get("allEnd"), r.get("allMax")])
     check("at All the note says the hundo counts", r.get("noteAll") is True, r)
-    check("the start sheet lists Stopwatch first, then Countdown timer", r.get("timerRows") == ["Stopwatch", "Countdown timer"], r.get("timerRows"))
+    check("the start sheet lists Stopwatch first, then Time limit (renamed in 313)", r.get("timerRows") == ["Stopwatch", "Time limit"], r.get("timerRows"))
     check("the timer card is called Stopwatch & timer", "Stopwatch" in (r.get("fold") or ""), r.get("fold"))
     check("the toggles are 'Answer choice options', not 'Options'", r.get("optLab") == "Answer choice options", r.get("optLab"))
     check("the shuffle line mentions the question order", "order" in (r.get("shuffleHint") or "").lower() and "question" in (r.get("shuffleHint") or "").lower(), r.get("shuffleHint"))

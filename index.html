@@ -8039,7 +8039,7 @@
     content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:-1;
     background:linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,0) 58%), var(--accent);
     clip-path:circle(0% at 50% 50%);
-    animation:start-fill-in .34s cubic-bezier(.2,.8,.2,1) forwards;
+    animation:start-fill-in .6s cubic-bezier(.33,.7,.25,1) forwards;
   }
   /* ...and as it lands, one small press-out and a single sheen across it
      (build 311: "could be a little better ... it's just not good enough").
@@ -8050,11 +8050,13 @@
      the fill grows over, and it must come off at 420ms like it always
      has. The pop and the sheen are over by ~450ms too, so the button is
      back to its one shape and its full depth within half a second. */
-  .bottomtabs.has-start-tab .bottomtab-start.ready-pop{ animation:start-ready-pop .3s cubic-bezier(.3,1.4,.5,1) .12s both; overflow:hidden; }
+  .bottomtabs.has-start-tab .bottomtab-start.just-ready,
+  .bottomtabs.has-start-tab .bottomtab-start.ready-settle{ transition:none; }
+  .bottomtabs.has-start-tab .bottomtab-start.ready-pop{ animation:start-ready-pop .42s cubic-bezier(.3,1.35,.5,1) .5s both; overflow:hidden; }
   .bottomtabs.has-start-tab .bottomtab-start.ready-pop::after{
     content:""; position:absolute; top:0; bottom:0; left:0; width:40%; pointer-events:none; z-index:1;
     background:linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent);
-    animation:start-ready-sheen .32s ease-out .13s both;
+    animation:start-ready-sheen .5s ease-out .52s both;
   }
   [data-reduce-motion="true"] .bottomtabs.has-start-tab .bottomtab-start.just-ready::before{ animation:none; clip-path:none; }
   [data-reduce-motion="true"] .bottomtabs.has-start-tab .bottomtab-start.ready-pop,
@@ -9494,6 +9496,16 @@
     font-size:.7rem; font-weight:700; letter-spacing:.02em; color:#FFB4A8; background:rgba(255,107,91,.12);
     border:1px solid rgba(255,107,91,.35); white-space:nowrap; }
   .hundo-chip[hidden]{ display:none; }
+  /* The chip's reason, dropped from the chip over the slider (build 313). */
+  .howmany-sect{ position:relative; }
+  .hundo-why{ position:absolute; left:.2rem; right:.2rem; z-index:5; padding:.7rem .85rem; border-radius:.85rem;
+    font-size:.82rem; line-height:1.4; font-weight:600; color:#FFE3DE; text-align:left;
+    background:rgba(52,22,20,.96); border:1px solid rgba(255,107,91,.42);
+    box-shadow:0 10px 24px rgba(0,0,0,.45); animation:hundo-why-in .18s ease-out; }
+  .hundo-why::before{ content:""; position:absolute; top:-6px; left:calc(var(--tip-x, 50%) - 6px - .2rem); width:11px; height:11px;
+    transform:rotate(45deg); background:inherit; border-left:1px solid rgba(255,107,91,.42); border-top:1px solid rgba(255,107,91,.42); }
+  .hundo-why[hidden]{ display:none; }
+  @keyframes hundo-why-in{ from{ opacity:0; transform:translateY(-4px); } to{ opacity:1; transform:none; } }
   .hundo-chip + .sect-headval{ margin-left:0; }
   /* A question pushing in from the right must not scroll the page
      sideways for the moment it is off-screen (build 311, advanceWithSlide). */
@@ -16387,11 +16399,18 @@
   .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect .bank-opts{
     background:rgba(118,118,128,.24); border:none; border-radius:11px; padding:3px;
   }
-  .unitoptions-modal-sheet.is-setup .bank-opt{ border-radius:9px; min-height:40px; }
+  /* FLUSH, NOT A BOX ON TOP (build 313): "The two toggles of all
+     questions or starred, they look weird too idk. It's like the box is
+     sitting on it." The chosen half was a solid #636366 tile with a drop
+     shadow under it, lifted off a lighter track - a card resting on the
+     control. It is the same shape now, inset by the track's own 3px all
+     round, lit rather than raised: a lighter fill and a hairline, no
+     shadow, so it reads as the part of the control that is on. */
+  .unitoptions-modal-sheet.is-setup .bank-opt{ border-radius:9px; min-height:44px; border:1px solid transparent; }
   .unitoptions-modal-sheet.is-setup .bank-opt.on,
   .unitoptions-modal-sheet.is-setup .bank-opt[data-value="recent"].on,
   .unitoptions-modal-sheet.is-setup .bank-opt[data-value="flagged"].on{
-    background:#636366; border:none; box-shadow:0 3px 8px rgba(0,0,0,.25), 0 3px 1px rgba(0,0,0,.08);
+    background:rgba(255,255,255,.17); border:1px solid rgba(255,255,255,.14); box-shadow:none;
   }
   .unitoptions-modal-sheet.is-setup .bank-caption{ margin:.45rem .9rem 0; font-size:.78rem; color:rgba(255,255,255,.45); }
   /* How many: the slider and All on one plain group row. */
@@ -62168,8 +62187,21 @@ function syncStartInert(inert){
      set by showSetup) and only a person ticking the first unit gets it. */
   if(was && !inert && !tab.hidden && performance.now() >= startReadyQuietUntil){
     tab.classList.remove("just-ready", "ready-pop"); void tab.offsetWidth; tab.classList.add("just-ready", "ready-pop");
-    clearTimeout(tab._readyT); tab._readyT = setTimeout(() => tab.classList.remove("just-ready"), 420);
-    clearTimeout(tab._popT); tab._popT = setTimeout(() => tab.classList.remove("ready-pop"), 470);
+    /* NO FLICKER AS IT LANDS (build 313): "it kind of glitched at the
+       end, and that activation animation doesn't look smooth, it could
+       also be a tiny bit slowed down". The glitch was the hand-over:
+       taking .just-ready off removed the grown fill AND set the pill's
+       own background going from grey to lit through its .25s colour
+       transition - so for a quarter of a second the lit button dimmed
+       and came back. The hand-over now happens with transitions off for
+       one frame (.ready-settle), so the fill is simply replaced by the
+       identical lit pill underneath it. And it all takes a little longer:
+       the fill .6s, the pop and the sheen after it. */
+    clearTimeout(tab._readyT); tab._readyT = setTimeout(() => {
+      tab.classList.add("ready-settle"); tab.classList.remove("just-ready"); void tab.offsetWidth;
+      requestAnimationFrame(() => requestAnimationFrame(() => tab.classList.remove("ready-settle")));
+    }, 680);
+    clearTimeout(tab._popT); tab._popT = setTimeout(() => tab.classList.remove("ready-pop"), 1100);
   } else if(inert){ clearTimeout(tab._readyT); clearTimeout(tab._popT); tab.classList.remove("just-ready", "ready-pop"); }
 }
 /* PRECISE, BUT PULLED TOWARDS FIVES (build 308): "don't make it in
@@ -62725,7 +62757,15 @@ function showSetup(){
   const srcSect = document.createElement("div");
   srcSect.className = "sect drawfrom-sect bank-sect";
   const bankLab = document.createElement("p");
-  bankLab.className = "slab"; bankLab.textContent = "Question bank";
+  /* "QUESTIONS FROM" (build 313): "it says the whole unit but what if
+     you have multiple units? Also that box is confusing because it talks
+     about all questions and then you select an amount of questions under
+     it, there's gotta be a better way." The two rows asked "which
+     questions" and "how many" in words that both said ALL - "All
+     questions" over "All 28". The choice now names WHERE the questions
+     come from - the units you picked, or your starred ones in them - and
+     How many is the only place the word All appears. */
+  bankLab.className = "slab"; bankLab.textContent = "Questions from";
   srcSect.appendChild(bankLab);
   const bankList = document.createElement("div");
   bankList.className = "bank-opts";
@@ -62748,7 +62788,7 @@ function showSetup(){
      contradictory." Flagged is the one you choose; it stays. Misses are
      still recorded - hundos, stats and accuracy are built on them - there
      is simply no list of them to draw from any more. */
-  [["all", "All questions"], ["flagged", "Starred"]].forEach(([value, title]) => {
+  [["all", "Your units"], ["flagged", "Starred"]].forEach(([value, title]) => {
     const row = document.createElement("div");
     row.className = "bank-opt";
     row.dataset.value = value;
@@ -62806,8 +62846,9 @@ function showSetup(){
          line under the switch is gone. */
       /* All says WHAT, not how many - "All questions / 48" beside "All 48"
          under How many "doesn't even make sense" (build 250). */
-      b.count.textContent = !units ? "" : v === "all" ? (units === 1 ? "The whole unit" : "Every unit you picked")
+      b.count.textContent = !units ? "" : v === "all" ? (units === 1 ? "" : units + " units")
         : n ? n + " starred" : "None yet";
+      if(v === "all") b.row.querySelector(".bank-name").textContent = units === 1 ? "Your unit" : "Your units";
       b.desc.textContent = text;
       const empty = v !== "all" && n === 0;
       b.row.classList.toggle("is-empty", empty);
@@ -62880,10 +62921,34 @@ function showSetup(){
   hundoNote.className = "hundo-chip";
   hundoNote.hidden = true;
   hundoNote.textContent = "No hundo";
+  /* THE REASON OPENS BESIDE THE CHIP (build 313): "The description when
+     hitting no hundo in the start menu is cool but it's at the top, again,
+     put it near the button and make that description better." It was a
+     toast, which lands at the top of the screen, far from the chip that
+     was tapped. A bubble now drops from the chip itself, its pointer on
+     the chip, laid OVER the slider rather than in the flow, so it moves
+     nothing (the slider must not jump under a finger - build 291). Tap
+     anywhere or wait and it goes. */
+  const hundoWhy = document.createElement("div");
+  hundoWhy.className = "hundo-why";
+  hundoWhy.hidden = true;
+  hundoWhy.setAttribute("role", "status");
+  let hundoWhyTimer = 0;
+  const hideHundoWhy = () => { hundoWhy.hidden = true; clearTimeout(hundoWhyTimer); };
   hundoNote.addEventListener("click", e => {
     e.stopPropagation();
-    showToast(hundoNote.dataset.why || "Only a run of every question in a unit can earn a hundo.");
+    if(!hundoWhy.hidden){ hideHundoWhy(); return; }
+    hundoWhy.textContent = hundoNote.dataset.why || "Only a test with every question in a unit can earn a hundo.";
+    hundoWhy.hidden = false;
+    const sr = sizeSect.getBoundingClientRect(), cr = hundoNote.getBoundingClientRect();
+    hundoWhy.style.setProperty("--tip-x", Math.round(cr.left + cr.width / 2 - sr.left) + "px");
+    hundoWhy.style.top = Math.round(cr.bottom - sr.top + 8) + "px";
+    clearTimeout(hundoWhyTimer);
+    hundoWhyTimer = setTimeout(hideHundoWhy, 7000);
+    const away = ev => { if(ev.target !== hundoNote){ hideHundoWhy(); document.removeEventListener("pointerdown", away, true); } };
+    setTimeout(() => document.addEventListener("pointerdown", away, true), 0);
   });
+  sizeSect.appendChild(hundoWhy);
   { const hr = sizeSect.querySelector(".sect-headrow"), hv = hr && hr.querySelector(".sect-headval");
     if(hr) hr.insertBefore(hundoNote, hv || null); }
 
@@ -62983,11 +63048,16 @@ function showSetup(){
      fix that, and change the name ... Maybe it should be stopwatch. The
      description for countdown timer could be better as well." The
      simpler one leads; each says what you will see and what happens. */
-  const limitRow = toggle("Countdown timer",
-    "Counts down. The test ends when time is up.",
+  /* "TIME LIMIT", AND PLAIN (build 313): "The stop watch description
+     sucks, it mentions counting up or something? Just have it give a
+     simple description of a stop watch, same with the countdown timer.
+     The countdown timer could just be renamed to time limit couldn't
+     it?" */
+  const limitRow = toggle("Time limit",
+    "Set a time limit. The test ends when time runs out.",
     () => cfg.timer === "down", v => { cfg.timer = v ? "down" : (cfg.timer === "down" ? "off" : cfg.timer); timerSect.paint(); });
   const watchRow = toggle("Stopwatch",
-    "Counts up so you see your time. No limit.",
+    "Times how long the test takes.",
     () => cfg.timer === "up", v => { cfg.timer = v ? "up" : (cfg.timer === "up" ? "off" : cfg.timer); timerSect.paint(); });
   timerSect.append(watchRow, limitRow);
   timerSect.paint = () => {
@@ -63056,8 +63126,12 @@ function showSetup(){
      description of that one mentions it shuffles the question order").
      The question order is always shuffled - freshOrder() - and this
      switch adds the choices to it; the line says both, truthfully. */
+  /* ONE SENTENCE FOR BOTH (build 313): "Shuffle description could be
+     better also some questions aren't just A-D, and I feel like it could
+     mention shuffling the questions and answer choices in the same
+     sentence." */
   const shuffleRow = toggle("Shuffle answer choices",
-    "Questions always come in a new order. This mixes up the A–D choices too.",
+    "Questions always come in a random order, and this shuffles each question's answer choices too.",
     () => cfg.shuffle, v => { cfg.shuffle = v; });
   const recallRow = toggle("Hide answer choices",
     "Think of the answer first, then tap to show the choices.",
@@ -63365,7 +63439,7 @@ function showSetup(){
        is how this kind of check answers last render's question. */
     /* The fold holds the timer and nothing else (build 250). */
     moreWrap.hidden = timerSect.hidden;
-    moreToggleState.textContent = cfg.timer === "down" ? cfg.timerMinutes + " min countdown" : cfg.timer === "up" ? "Tracking time" : "Off";
+    moreToggleState.textContent = cfg.timer === "down" ? cfg.timerMinutes + " min limit" : cfg.timer === "up" ? "Stopwatch" : "Off";
     /* NOT the card (build 251): the whole Timer card turning green when a
        timer was on was "kinda weird" - only its pill in the top box goes
        green (see the tags below). */
@@ -63431,11 +63505,16 @@ function showSetup(){
        version) take it away. */
     const canCut = !reviewAllMode && cfg.units.length > 0 && wholeUnits > 0 && !allShort;
     hundoNote.hidden = !(canCut && partial);
+    /* "The part about setting to All for one is not clear whatsoever"
+       (build 313): it said "Set How many to All for one", which needs the
+       reader to know "one" means a hundo and where All is. It now says
+       what is left out, what that costs, and exactly what to do. */
     hundoNote.dataset.why = cfg.source !== "all"
-      ? "Starred questions are only part of a unit, so a 100% here won't count as a hundo. A hundo is every question in a unit, all right."
+      ? "Starred questions are only part of a unit, so a 100% won't count as a hundo. To earn one, pick Your " + (cfg.units.length === 1 ? "unit" : "units") + " above and slide How many all the way to All."
       : cfg.units.length === 1
-        ? "This is fewer than every question in the unit, so a 100% won't count as a hundo. Set How many to All for one."
-        : "This is fewer than every question in these units, so a 100% won't count toward any hundos. Set How many to All for them.";
+        ? "This test leaves out some of the unit's questions, so a 100% won't count as a hundo. To earn one, slide How many all the way to All."
+        : "This test leaves out some questions from these units, so a 100% won't count toward hundos. To earn them, slide How many all the way to All.";
+    if(!canCut || !partial) hideHundoWhy();
     /* The sheet's own primary button relabels to match what it will
        actually do while Review is on — the same swap its click handler
        above already makes, just reflected in the button's text too so
@@ -63478,7 +63557,7 @@ function showSetup(){
       if(!optSect.hidden && !recallRow.hidden && cfg.recall) tag("Answers hidden", "hidden");
       if(!optSect.hidden && !feedbackRow.hidden && cfg.examFeedback) tag("Instant feedback", "feedback");
       if(!timerSect.hidden && (cfg.timer === "down" || cfg.timer === "up"))
-        tag(cfg.timer === "down" ? cfg.timerMinutes + " min countdown" : "Tracking time", "timer", "is-set");
+        tag(cfg.timer === "down" ? cfg.timerMinutes + " min limit" : "Stopwatch", "timer", "is-set");
     }
     if(sheetSummaryTags.parentNode !== sheetSummary || sheetSummary.lastChild !== sheetSummaryTags) sheetSummary.appendChild(sheetSummaryTags);
 
