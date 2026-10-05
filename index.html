@@ -16702,6 +16702,34 @@
   }
   .unitoptions-modal-sheet .slider-allbtn.on::before{ width:.8em; opacity:1; }
   .unitoptions-modal-sheet .slider-allbtn:active{ transform:scale(.95); }
+  /* ALL LIGHTS UP LIKE START (build 313): "if the [slider] is only on all
+     it would already be [selected], but if you have anything set below
+     the max it would give the all look the white look and have that
+     similar activation effect to the start button". So All is the
+     sheet's white, raised button whenever it has something to do (the
+     slider is below the top), and the quiet glass with its tick when it
+     is already on. The moment it lights up it fills from its centre and
+     pops once, exactly as Start does (.just-ready / .ready-pop). */
+  .unitoptions-modal-sheet .slider-allbtn:not(.on):not(:disabled){
+    color:#0B1220; border-color:transparent; position:relative; isolation:isolate;
+    background:linear-gradient(180deg, #FFFFFF, #E6EAF0);
+    box-shadow:0 1px 1px rgba(255,255,255,.95) inset, 0 -2px 2px rgba(18,26,32,.22) inset,
+      0 1px 3px rgba(0,0,0,.24), 0 4px 10px rgba(0,0,0,.22);
+  }
+  .unitoptions-modal-sheet .slider-allbtn.just-ready{
+    background:rgba(255,255,255,.05) !important; color:rgba(255,255,255,.82) !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08) !important; transition:none;
+  }
+  .unitoptions-modal-sheet .slider-allbtn.just-ready::after{
+    content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:-1;
+    background:linear-gradient(180deg, #FFFFFF, #E6EAF0);
+    clip-path:circle(0% at 50% 50%);
+    animation:start-fill-in .6s cubic-bezier(.33,.7,.25,1) forwards;
+  }
+  .unitoptions-modal-sheet .slider-allbtn.ready-settle{ transition:none; }
+  .unitoptions-modal-sheet .slider-allbtn.ready-pop{ animation:start-ready-pop .42s cubic-bezier(.3,1.35,.5,1) .5s both; }
+  [data-reduce-motion="true"] .unitoptions-modal-sheet .slider-allbtn.just-ready::after{ animation:none; clip-path:none; }
+  [data-reduce-motion="true"] .unitoptions-modal-sheet .slider-allbtn.ready-pop{ animation:none; }
   /* the Timer card: the same card as the rest, the bar its header row,
      and what it opens inside it */
   .unitoptions-modal-sheet .optionsmodal-body > .sect:has(> .more-toggle){ padding:0; }
@@ -16813,12 +16841,30 @@
      control. It is the same shape now, inset by the track's own 3px all
      round, lit rather than raised: a lighter fill and a hairline, no
      shadow, so it reads as the part of the control that is on. */
-  .unitoptions-modal-sheet.is-setup .bank-opt{ border-radius:9px; min-height:44px; border:1px solid transparent; }
+  /* ONE THUMB THAT SLIDES (build 313, second pass): "the way those two
+     options look when selected is weird because the border sits weirdly
+     on top of the thing behind it". Each half drew its own lit box with
+     a hairline, so the chosen one looked laid on top of the track. Now
+     neither half has a box or a border: one rounded thumb sits UNDER
+     both and slides to the chosen side (--bank-i, set in paint), the way
+     iOS's own segmented control and this app's tab switchers move. */
+  .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect .bank-opts{ position:relative; isolation:isolate; gap:0; }
+  .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect .bank-opts::before{
+    content:""; position:absolute; z-index:-1; top:3px; bottom:3px; left:3px;
+    width:calc((100% - 6px) / 2); border-radius:9px; pointer-events:none;
+    background:rgba(255,255,255,.2);
+    box-shadow:0 1px 3px rgba(0,0,0,.28);
+    transform:translateX(calc(var(--bank-i, 0) * 100%));
+    transition:transform .3s cubic-bezier(.3,.8,.3,1);
+  }
+  [data-reduce-motion="true"] .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect .bank-opts::before{ transition:none; }
+  .unitoptions-modal-sheet.is-setup .bank-opt{ border-radius:9px; min-height:44px; border:0; }
   .unitoptions-modal-sheet.is-setup .bank-opt.on,
   .unitoptions-modal-sheet.is-setup .bank-opt[data-value="recent"].on,
   .unitoptions-modal-sheet.is-setup .bank-opt[data-value="flagged"].on{
-    background:rgba(255,255,255,.17); border:1px solid rgba(255,255,255,.14); box-shadow:none;
+    background:transparent; border:0; box-shadow:none;
   }
+  .unitoptions-modal-sheet.is-setup .bank-count{ font-family:inherit; font-size:.74rem; font-weight:600; letter-spacing:0; }
   .unitoptions-modal-sheet.is-setup .bank-caption{ margin:.45rem .9rem 0; font-size:.78rem; color:rgba(255,255,255,.45); }
   /* How many: the slider and All on one plain group row. */
   .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect .slider-row,
@@ -64307,8 +64353,20 @@ function buildEverythingSlider(labelText, everythingLabel, customLabel, min, get
     /* mid-drag the thumb stays under the finger; it snaps on release */
     if(!dragging) slider.value = noChoice ? 1 : every ? top : Math.min(get(), top);
     paintSliderFill(slider);
+    const wasOn = allBtn.classList.contains("on");
     allBtn.classList.toggle("on", every);
     allBtn.setAttribute("aria-pressed", every ? "true" : "false");
+    /* the moment All lights up (the count moved off the top): fill from
+       the centre and pop, as Start does - never on the first paint */
+    if(wasOn && !every && allBtn.isConnected && !allBtn.disabled){
+      allBtn.classList.remove("just-ready", "ready-pop"); void allBtn.offsetWidth;
+      allBtn.classList.add("just-ready", "ready-pop");
+      clearTimeout(allBtn._readyT); allBtn._readyT = setTimeout(() => {
+        allBtn.classList.add("ready-settle"); allBtn.classList.remove("just-ready"); void allBtn.offsetWidth;
+        requestAnimationFrame(() => requestAnimationFrame(() => allBtn.classList.remove("ready-settle")));
+      }, 680);
+      clearTimeout(allBtn._popT); allBtn._popT = setTimeout(() => allBtn.classList.remove("ready-pop"), 1000);
+    } else if(every){ clearTimeout(allBtn._readyT); clearTimeout(allBtn._popT); allBtn.classList.remove("just-ready", "ready-pop", "ready-settle"); }
     valDisplay.textContent = every ? "All " + pool : get() + " of " + pool;
   };
   return sect;
@@ -64720,7 +64778,12 @@ function showSetup(){
      contradictory." Flagged is the one you choose; it stays. Misses are
      still recorded - hundos, stats and accuracy are built on them - there
      is simply no list of them to draw from any more. */
-  [["all", "Your units"], ["flagged", "Starred"]].forEach(([value, title]) => {
+  /* SAYS WHAT AND WHERE FROM (build 313): "Where it says your unit, or
+     starred, I still think that's confusing, should it say all questions
+     from selected unit? Starred questions from selected unit?" The name
+     says which questions, the line under it says they come from the
+     units you selected (and, for Starred, how many). */
+  [["all", "All questions"], ["flagged", "Starred questions"]].forEach(([value, title]) => {
     const row = document.createElement("div");
     row.className = "bank-opt";
     row.dataset.value = value;
@@ -64746,6 +64809,22 @@ function showSetup(){
     bankList.appendChild(row);
     bankRows[value] = { row, desc, count };
   });
+  /* IT SWIPES, SINCE IT LOOKS LIKE IT DOES (build 313): "it looks like
+     it's a swipeable tab which is great if it swipeable". A sideways
+     flick across the switch picks the half it moves towards, through the
+     same pick() a tap uses, so an empty Starred still says why. */
+  {
+    let sx = null, sy = 0;
+    bankList.addEventListener("touchstart", e => { const t = e.touches[0]; sx = t.clientX; sy = t.clientY; }, { passive:true });
+    bankList.addEventListener("touchend", e => {
+      if(sx === null) return;
+      const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy; sx = null;
+      if(Math.abs(dx) < 28 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
+      const keys = Object.keys(bankRows), i = Math.max(0, keys.indexOf(cfg.source));
+      const to = keys[Math.min(keys.length - 1, Math.max(0, i + (dx > 0 ? 1 : -1)))];
+      if(to !== cfg.source){ e.preventDefault(); bankRows[to].row.click(); }
+    });
+  }
   const bankCaption = document.createElement("p");
   bankCaption.className = "bank-caption";
   srcSect.append(bankCaption);
@@ -64755,6 +64834,7 @@ function showSetup(){
       bankRows[v].row.classList.toggle("on", on);
       bankRows[v].row.setAttribute("aria-checked", on ? "true" : "false");
     });
+    bankList.style.setProperty("--bank-i", Math.max(0, Object.keys(bankRows).indexOf(cfg.source)));
     const cur = bankRows[cfg.source] || bankRows.all;
     bankCaption.replaceChildren(cur.desc);
     /* The counts in the boxes say it now (build 311). */
@@ -64778,9 +64858,10 @@ function showSetup(){
          line under the switch is gone. */
       /* All says WHAT, not how many - "All questions / 48" beside "All 48"
          under How many "doesn't even make sense" (build 250). */
-      b.count.textContent = !units ? "" : v === "all" ? (units === 1 ? "" : units + " units")
-        : n ? n + " starred" : "None yet";
-      if(v === "all") b.row.querySelector(".bank-name").textContent = units === 1 ? "Your unit" : "Your units";
+      const from = oneShort ? UNIT_TEST_VERSIONS[cfg.units[0]].short
+        : units === 1 ? "selected unit" : units + " selected units";
+      b.count.textContent = !units ? "" : v === "all" ? "from " + from
+        : n ? n + " from " + from : "None yet";
       b.desc.textContent = text;
       const empty = v !== "all" && n === 0;
       b.row.classList.toggle("is-empty", empty);

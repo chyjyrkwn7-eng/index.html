@@ -2018,9 +2018,13 @@ def check_b234(br):
     # REVISED IN 313: "it says the whole unit but what if you have
     # multiple units?" - the choice is "Your unit" / "Your units", and with
     # several it says how many UNITS (never how many questions).
-    check("the bank's first choice is Your unit(s), with no question count",
-          sh.get("name") in ("Your unit", "Your units")
-          and re.fullmatch(r"(\d+ units)?", sh.get("count", "")) is not None, sh)
+    # REVISED AGAIN IN 313: "should it say all questions from selected
+    # unit? Starred questions from selected unit?" - the name says which
+    # questions and the line says where from; still never a question count.
+    check("the bank's first choice is All questions, from the selected unit(s), with no question count",
+          sh.get("name") == "All questions"
+          and sh.get("count", "").startswith("from ")
+          and not re.search(r"\d+ question", sh.get("count", "")), sh)
     # Build 254: a default says nothing - no "All questions", "In order"
     # or "No timer" in the top box on an untouched run.
     check("on an untouched run the top box shows no defaults (All questions, In order, No timer)",
@@ -2205,7 +2209,7 @@ def check_b235b(br):
                  /* 313: with ONE unit "Your unit" needs no second line;
                     with several it says how many units */
                  oneLine: [...cap].every(c => c.hidden) && rows.every(r => { const t = ((r.querySelector('.bank-count') || {}).textContent || '').trim();
-                   return r.dataset.value === 'all' ? (t === '' || /^\d+ units$/.test(t)) : t.length > 2; }),
+                   return r.dataset.value === 'all' ? /^from /.test(t) : t.length > 2; }),
                  allSays: ((document.querySelector('.bank-opt[data-value="all"] .bank-count') || {}).textContent || ''),
                  label: (document.querySelector('.bank-sect .slab') || {}).textContent }; });
       document.querySelector('.bank-opt[data-value="flagged"]')?.click(); await wait(200);
