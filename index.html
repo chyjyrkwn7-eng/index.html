@@ -4050,6 +4050,30 @@
   .vroom-roster-head .vroom-readycount{ margin:0; font-size:.78rem; }
   .vroom-roster-list{ margin:0; }
   .vroom-roster-list .vroom-row:last-child{ border-bottom:none; }
+  /* Two across at every width; on a phone the level line goes and the
+     ready chip is a dot (the row's green edge says it too). */
+  .vroom-roster.is-crowded .vroom-roster-list{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); column-gap:.45rem; }
+  .vroom-roster.is-crowded .vroom-roster-list .vroom-row{ gap:.45rem; padding:.4rem .5rem; margin-bottom:.45rem; min-height:0; min-width:0; }
+  .vroom-roster.is-crowded .vroom-avatar{ width:2.2rem; height:2.2rem; flex:0 0 auto; }
+  .vroom-roster.is-crowded .lb-name-wrap{ flex:1 1 auto; min-width:0; }
+  .vroom-roster.is-crowded .lb-name{ font-size:.82rem; }
+  /* In a crowded room on a phone "(You)" would be cut off by the name;
+     your own row carries the accent edge instead. */
+  .vroom-roster.is-crowded .vroom-you-tag{ display:none; }
+  .vroom-roster.is-crowded .vroom-row.is-you{ border-color:var(--accent); }
+  .vroom-roster.is-crowded .vroom-row-sub{ display:none; }
+  .vroom-roster.is-crowded .vroom-ready-badge{
+    width:.62rem; height:.62rem; padding:0; font-size:0; border-radius:50%;
+    background:rgba(160,170,185,.35);
+  }
+  .vroom-roster.is-crowded .vroom-ready-badge.is-ready{ background:#3DD68C; }
+  @media (min-width:40rem){
+    .vroom-roster.is-crowded .vroom-roster-list .vroom-row{ padding:.5rem .7rem; }
+    .vroom-roster.is-crowded .vroom-avatar{ width:2.7rem; height:2.7rem; }
+    .vroom-roster.is-crowded .lb-name{ font-size:.9rem; }
+    .vroom-roster.is-crowded .vroom-row-sub{ display:block; }
+    .vroom-roster.is-crowded .vroom-you-tag{ display:inline; }
+  }
   .vroom-setup-head{ margin-top:1.4rem; }
   @media (min-width:40rem){
     .vroom-roster{ padding:1.1rem 1.15rem; }
@@ -5360,6 +5384,14 @@
     display:flex; gap:.4rem; margin-left:auto; flex-shrink:0;
     pointer-events:auto;
   }
+  /* A group invite says who is in it (build 313). */
+  .chatdock-notif-group{ display:flex; align-items:center; gap:.45rem; margin-top:.3rem; min-width:0; }
+  .chatdock-notif-faces{ display:inline-flex; flex:0 0 auto; }
+  .chatdock-notif-faces[hidden]{ display:none; }
+  .chatdock-notif-faces .chatdock-face{ width:1.45rem; height:1.45rem; border-width:1.5px; }
+  .chatdock-notif-faces .chatdock-face + .chatdock-face{ margin-left:-.45rem; }
+  .chatdock-notif-groupline{ font-size:.72rem; font-weight:600; color:#B9A6F5; line-height:1.3; min-width:0; }
+  .chatdock-notif-group.is-gone .chatdock-notif-groupline{ color:var(--soft); }
   /* 44px, like every other target in the app. These were 36 - small
      enough on a phone to read as not tappable, which is how they were
      reported. */
@@ -6014,6 +6046,33 @@
     column-gap:.7rem; row-gap:.05rem; align-items:center; min-height:56px;
   }
   .chatdock-chatrow.is-friend .chatdock-chatrow-avatar{ grid-row:1 / span 2; }
+  /* ---- A GROUP ROW IS THE SAME SHAPE AS A FRIEND ROW (build 313) ----
+     The faces are one round cluster where a friend's character sits, then
+     the name and when, the last line, and how many are in it. */
+  .chatdock-chatrow.is-group .chatdock-chatrow-open{
+    display:grid; grid-template-columns:auto minmax(0,1fr); grid-template-rows:auto auto auto;
+    column-gap:.7rem; row-gap:.08rem; align-items:center; min-height:60px;
+  }
+  .chatdock-chatrow.is-group .chatdock-chatrow-faces{ grid-row:1 / span 3; margin:0; }
+  .chatdock-chatrow.is-group .chatdock-chatrow-kind{
+    justify-self:start; padding:0; border:0; background:none; text-transform:none; letter-spacing:.01em;
+    font-size:.66rem; font-weight:700; color:#B9A6F5;
+  }
+  .chatdock-cluster{ position:relative; display:block; width:2.6rem; height:2.6rem; flex:0 0 auto; }
+  .chatdock-cluster .chatdock-face{ position:absolute; margin:0; width:1.72rem; height:1.72rem; }
+  .chatdock-cluster .chatdock-face + .chatdock-face{ margin-left:0; }
+  .chatdock-cluster.is-n1 .chatdock-face{ inset:0; width:2.6rem; height:2.6rem; }
+  .chatdock-cluster.is-n2 .chatdock-face:nth-child(1){ left:0; top:0; }
+  .chatdock-cluster.is-n2 .chatdock-face:nth-child(2){ right:0; bottom:0; }
+  .chatdock-cluster.is-n3 .chatdock-face:nth-child(1){ left:.44rem; top:-.08rem; }
+  .chatdock-cluster.is-n3 .chatdock-face:nth-child(2){ left:-.1rem; bottom:-.08rem; }
+  .chatdock-cluster.is-n3 .chatdock-face:nth-child(3){ right:-.1rem; bottom:-.08rem; }
+  .chatdock-cluster .chatdock-face-more{ font-size:.62rem; }
+  .chatdock-face-empty{ color:var(--soft); }
+  .chatdock-face-empty svg{ width:62% !important; height:62% !important; }
+  /* The leave x is quieter than the row it sits beside: it is the thing
+     you least want to hit. Still a 44px square. */
+  .chatdock-chatrow.is-group .chatdock-chatrow-del{ background:transparent; border-color:rgba(255,255,255,.07); }
   .chatdock-chatrow-avatar, .chatdock-friendhead-art{
     position:relative; width:2.6rem; height:2.6rem; border-radius:50%;
     background:#1B2129; display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto;
@@ -10297,8 +10356,15 @@
   }
   .vroom-cut-team.is-on{ opacity:1; transform:none; }
   .vroom-cut-mate{ display:flex; flex-direction:column; align-items:center; gap:.35rem; }
-  .vroom-cut-mate .vroom-cut-figure{ width:6.5rem; }
+  .vroom-cut-mate .vroom-cut-figure{ width:min(6.5rem, 26vw); }
   .vroom-cut-mate .vroom-cut-pname{ font-size:.9rem; }
+  .vroom-cut-team.is-many{ gap:.7rem; }
+  .vroom-cut-team.is-many .vroom-cut-figure{ width:min(5rem, 21vw); }
+  .vroom-cut-morenum{
+    display:grid; place-items:center; width:3.2rem; height:3.2rem; border-radius:50%;
+    font-weight:900; font-size:1.05rem; color:var(--ink);
+    background:color-mix(in srgb, var(--ink) 12%, transparent); border:1px solid color-mix(in srgb, var(--ink) 25%, transparent);
+  }
   /* Their end of the rope, drawn with the same twist the match itself
      used - the thing they were pulling, not a generic banner. */
   .vroom-cut-rope{
@@ -10334,6 +10400,7 @@
     .vroom-cut-pname{ font-size:1rem; }
     .vroom-cut-psub{ font-size:.85rem; }
     .vroom-cut-mate .vroom-cut-figure{ width:9rem; }
+    .vroom-cut-team.is-many .vroom-cut-figure{ width:7rem; }
   }
   #supernova-cutscene{
     position:fixed; inset:0; z-index:500; background:#050308;
@@ -19337,6 +19404,8 @@
     box-shadow:0 0 0 2px rgba(12,14,18,.9);
   }
   .battle-av.is-me{ box-shadow:0 0 0 2px rgba(255,255,255,.85); }
+  .battle-av-more{ font-size:.66rem; font-weight:800; color:var(--ink); background:rgba(40,46,56,.95); }
+  .battle-faces{ min-width:0; }
   .battle-av svg{ width:100%; height:100%; }
   .battle-side-label{ grid-area:label; display:flex; flex-direction:column; min-width:0; line-height:1.15; }
   .battle-side.is-theirs .battle-side-label{ text-align:right; }
@@ -22141,7 +22210,10 @@
   .tug-board-av svg{ width:100%; height:100%; display:block; }
   .tug-board-name{ flex:1 1 auto; min-width:0; font-size:.82rem; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .tug-board-row.is-me .tug-board-name{ color:#9CCBFF; }
-  .tug-board-n{ font-family:var(--mono); font-weight:800; font-size:.9rem; }
+  .tug-board-n{ font-family:var(--mono); font-weight:800; font-size:.9rem; white-space:nowrap; flex:0 0 auto; }
+  /* "125 dmg" wrapped onto two lines in a room of twelve and squeezed the
+     name to "Dee..." (build 313); the unit is the smaller half of it. */
+  .battle-result-cols .tug-board-n{ font-size:.8rem; }
 
   .vroom-prep.is-counting .vroom-prep-spin{ display:none; }
   .vrc-exits{ display:flex; gap:.6rem; margin-top:0; padding-top:1rem; opacity:0; transform:translateY(10px); transition:opacity .5s ease, transform .5s ease; pointer-events:none; }
@@ -42376,6 +42448,7 @@ function attachInbox(){
       accepted.forEach(k => { try{ celebrateNewFriend(k); }catch(e){} });
       try{ syncChatDockDot(); }catch(e){}
       try{ previewNewPings(); }catch(e){}
+      try{ if(snap && snap.metadata && snap.metadata.fromCache === false) pruneStalePings(); }catch(e){}
       try{ if(chatDockOpen && chatDockTab === "notifs") renderNotifications(); }catch(e){}
       try{ checkLobbyInvites(); checkFriendRequests(); checkChatInvites(); }catch(e){}
     });
@@ -48899,11 +48972,18 @@ function vroomTotalScore(p){
 const VROOM_PODIUM_MIN = 4;
 function vroomPlaces(n){ return n >= VROOM_PODIUM_MIN ? 3 : 1; }
 
-function recordVroomOutcome(code, sortedKeys, myKey){
+/* ONE RECORD PER MATCH, NOT PER ROOM (build 313). A room is played again
+   and again from its lobby - Return to lobby, ready up, another race - and
+   keyed by the room code alone only the first match in it ever counted.
+   The match is the room plus its shared start instant. Older records are
+   bare codes for matches that have long finished, so none can collide. */
+function recordVroomOutcome(code, sortedKeys, myKey, startAt){
   if(!code || !myKey || sortedKeys.indexOf(myKey) < 0) return;
   store.vrCounted = Array.isArray(store.vrCounted) ? store.vrCounted : [];
-  if(store.vrCounted.indexOf(code) >= 0) return;
-  store.vrCounted.push(code);
+  const matchId = startAt ? code + "@" + startAt : code;
+  if(store.vrCounted.indexOf(matchId) >= 0) return;
+  store.vrCounted.push(matchId);
+  code = matchId;
   if(store.vrCounted.length > 300) store.vrCounted = store.vrCounted.slice(-300);
   store.vrMatches = (store.vrMatches || 0) + 1;
   /* Top three, in a room big enough for a podium - see VROOM_PODIUM_MIN.
@@ -57638,8 +57718,12 @@ function playVroomWinnerCutscene(opts, done){
   let reveal;
   if(isTeam){
     reveal = document.createElement("div");
-    reveal.className = "vroom-cut-team";
-    list.slice(0, 4).forEach(p => {
+    /* THREE OF A BIG SIDE, AND A COUNT FOR THE REST (build 313). Four
+       figures at full size are 464px - wider than the phone - and a side
+       of ten showed four of them with nothing to say there were more. */
+    const many = list.length > 3;
+    reveal.className = "vroom-cut-team" + (many ? " is-many" : "");
+    list.slice(0, many ? 3 : list.length).forEach(p => {
       const mate = document.createElement("div");
       mate.className = "vroom-cut-mate";
       const fig = document.createElement("span");
@@ -57650,6 +57734,16 @@ function playVroomWinnerCutscene(opts, done){
       mate.append(fig, nm);
       reveal.appendChild(mate);
     });
+    if(many){
+      const more = document.createElement("div");
+      more.className = "vroom-cut-mate vroom-cut-more";
+      const n = document.createElement("span");
+      n.className = "vroom-cut-morenum"; n.textContent = "+" + (list.length - 3);
+      const nm = document.createElement("p");
+      nm.className = "vroom-cut-pname"; nm.textContent = "more";
+      more.append(n, nm);
+      reveal.appendChild(more);
+    }
   } else {
     reveal = document.createElement("div");
     reveal.className = "vroom-cut-podium";
@@ -59029,6 +59123,11 @@ const VROOM_CHAT_CTX = {
   colorFor: (key, parts) => vroomColorFor(key, parts),
   shouldTrim: () => vroomIsHost,
   cap: 160, keep: 100,
+  /* The same day-long history every other chat keeps (build 313). A room
+     can sit open for days between matches, and its chat had no age limit
+     at all. The host's trim takes the old ones off the document. */
+  staleBefore: () => chatHistoryCut(),
+  keepStale: 0,
   /* The room's unread count, for the Room chat button on the results
      screen and over the leaderboard (build 240). */
   onUnread: (n) => { roomChatUnread = n || 0; try{ paintRoomChatFab(); }catch(e){} },
@@ -59127,9 +59226,68 @@ function markChatSeen(code, ts){
    quota by lunchtime. Guarded on the dock being open on this tab, and
    on CHAT_LIST_REFRESH_MS since the last sweep. */
 const CHAT_LIST_REFRESH_MS = 20000;
-let chatListFetchAt = 0;
+/* PER TAB (build 313). One shared stamp meant opening Friends and then
+   Groups inside twenty seconds read nothing for Groups at all - every
+   group row sat on "Loading who is in it..." until something else
+   happened to rebuild the list, which is the "takes forever" that was
+   reported. Each tab is its own set of documents and keeps its own clock. */
+let chatListFetchAt = { friends: 0, groups: 0 };
+/* ---- WHAT THE LIST LAST KNEW, KEPT ON THIS DEVICE (build 313) ----
+   "The group chats keep doing the 'loading who's in it' thing and then
+   it takes forever." Each row only learned its people and its last line
+   from a fresh read of the room, so every launch opened on a list that
+   did not know anything yet. The last line and the members are kept in
+   localStorage (viewing state, like the read record - never `store`), so
+   the list is drawn complete the moment it opens and the reads only
+   bring it up to date. Kept to the chats on the list, and a cached line
+   past the chat's day is dropped like any other. */
+const CHAT_LIST_CACHE_KEY = "class26e.chatlistcache";
 let chatListLast = {};
 let chatListPeople = {};
+(function loadChatListCache(){
+  try{
+    const raw = JSON.parse(localStorage.getItem(CHAT_LIST_CACHE_KEY) || "{}") || {};
+    Object.keys(raw).forEach(code => {
+      const e = raw[code] || {};
+      if(e.last) chatListLast[code] = e.last;
+      if(Array.isArray(e.people)) chatListPeople[code] = e.people;
+    });
+  }catch(e){}
+})();
+let chatListCacheTimer = null;
+function saveChatListCache(){
+  clearTimeout(chatListCacheTimer);
+  chatListCacheTimer = setTimeout(() => {
+    try{
+      const keep = {};
+      const codes = new Set((Array.isArray(store.chats) ? store.chats : []).map(c => c && c.code).filter(Boolean));
+      (typeof friendPublicIds === "function" ? friendPublicIds() : []).forEach(p => { const c = friendChatCode(p); if(c) codes.add(c); });
+      codes.forEach(code => {
+        const last = chatListLast[code] || null;
+        const people = chatListPeople[code];
+        if(!last && !people) return;
+        keep[code] = { last: last, people: Array.isArray(people) ? people.map(p => ({ key: p.key, name: p.name, avatarChar: p.avatarChar })) : undefined };
+      });
+      localStorage.setItem(CHAT_LIST_CACHE_KEY, JSON.stringify(keep));
+    }catch(e){}
+  }, 400);
+}
+/* What a row says before any read has come back: the members it was saved
+   with, named from the rankings, then "Group chat". Never a loading line. */
+function groupChatNameNow(entry){
+  if(entry && entry.name) return entry.name;
+  const people = chatListPeople[entry && entry.code];
+  if(Array.isArray(people) && people.length){
+    const m = {}; people.forEach((p, i) => { m[p.key] = { name: p.name, joinedAt: i + 1 }; });
+    const nm = nameChatFrom(m);
+    if(nm) return nm;
+  }
+  const withs = ((entry && entry.with) || []).map(k => chatPersonOf(k, null).name).filter(Boolean);
+  if(withs.length === 1) return withs[0];
+  if(withs.length === 2) return withs[0] + " & " + withs[1];
+  if(withs.length > 2) return withs[0] + ", " + withs[1] + " +" + (withs.length - 2);
+  return "Group chat";
+}
 /* Up to three faces, overlapping, then "+n". Before the room has been
    read, the people recorded on the entry stand in, drawn plain. */
 /* The other members of a chat, in join order, as the list draws them -
@@ -59146,29 +59304,50 @@ function paintChatFaces(el, code){
   /* Before the room has been read, the people recorded on the entry
      stand in - drawn as they look NOW on the rankings, not as a row of
      default ninjas (build 307). */
-  const people = chatListPeople[code]
-    || ((chatEntry(code) || {}).with || []).map(k => Object.assign({ key: k }, chatPersonOf(k, null)));
+  /* Drawn as they look NOW on the rankings - a cached face keeps its key,
+     and the key is what is looked up. */
+  const people = (chatListPeople[code]
+    || ((chatEntry(code) || {}).with || []).map(k => ({ key: k })))
+    .map(p => Object.assign({}, p, chatPersonOf(p.key, p)));
   el.replaceChildren();
-  people.slice(0, 3).forEach(p => {
+  /* ---- ONE ROUND GROUP PICTURE, THE SIZE OF A FRIEND'S (build 313) ----
+     "The display of group chats when not in the group chat could have
+     improvements, it could be better." A group row was a strip of faces
+     stacked ABOVE its name, so every group was a two-storey box and the
+     two tabs looked like two different apps. The faces are a cluster in
+     the same 2.6rem circle a friend's character sits in: one, two side by
+     side, or two and a count. */
+  const n = people.length;
+  el.className = "chatdock-chatrow-faces chatdock-cluster is-n" + Math.min(3, Math.max(1, n));
+  const shown = n > 3 ? people.slice(0, 2) : people.slice(0, 3);
+  shown.forEach(p => {
     const f = document.createElement("span");
     f.className = "chatdock-face";
     try{ f.appendChild(avatarSpanFor({ avatarChar: p.avatarChar || "ninja" })); }catch(e){}
     el.appendChild(f);
   });
-  if(people.length > 3){
+  if(n > 3){
     const more = document.createElement("span");
     more.className = "chatdock-face chatdock-face-more";
-    more.textContent = "+" + (people.length - 3);
+    more.textContent = "+" + (n - 2);
     el.appendChild(more);
   }
-  el.hidden = people.length === 0;
+  if(!n){
+    /* Nobody else in it (yet): a plain group glyph rather than a hole. */
+    const f = document.createElement("span");
+    f.className = "chatdock-face chatdock-face-empty";
+    f.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="9" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="16.5" cy="10" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 19c.6-3 2.8-4.6 5.5-4.6s4.9 1.6 5.5 4.6M14 15c.7-.4 1.6-.6 2.5-.6 2.2 0 3.8 1.3 4.2 3.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+    el.appendChild(f);
+  }
+  el.hidden = false;
 }
 function refreshChatList(force){
   if(!fbDb) return;
   if(!chatDockOpen || !isChatTab()) return;
   const now = Date.now();
-  if(!force && now - chatListFetchAt < CHAT_LIST_REFRESH_MS) return;
-  chatListFetchAt = now;
+  const tabKey = chatDockTab === "friends" ? "friends" : "groups";
+  if(!force && now - (chatListFetchAt[tabKey] || 0) < CHAT_LIST_REFRESH_MS) return;
+  chatListFetchAt[tabKey] = now;
   /* Only the tab being looked at is read - a friend list and a group
      list are two sets of documents, and reading both on every open is
      paying twice for one screen. */
@@ -59197,12 +59376,9 @@ function refreshChatList(force){
       }
       if(!snap.exists) return;
       const data = snap.data() || {};
-      let msgs = data.chatMessages || [];
-      /* A friend chat's history is a day long, so the preview is too. */
-      if(isFriendChatCode(entry.code)){
-        const cut = Date.now() - FRIEND_CHAT_HISTORY_MS;
-        msgs = msgs.filter(m => (m && m.ts || 0) >= cut);
-      }
+      /* Every chat's history is a day long, so the preview is too - a
+         group's row used to quote a message from last week (build 313). */
+      const msgs = freshChatMessages(data.chatMessages);
       const last = msgs.length ? msgs[msgs.length - 1] : null;
       chatListLast[entry.code] = last
         ? { name: last.name || "Someone", text: last.text || "",
@@ -59221,6 +59397,7 @@ function refreshChatList(force){
         rememberChat(entry.code, nm, Object.keys(members).filter(k => k !== publicIdOf()).sort());
       }
       try{ chatListPeople[entry.code] = chatPeopleOf(members); }catch(e){}
+      saveChatListCache();
       paintChatRow(entry.code);
     }).catch(() => {});
   });
@@ -59232,19 +59409,25 @@ function paintChatRow(code){
   const row = document.querySelector('.chatdock-chatrow[data-code="' + code + '"]');
   if(!row) return;
   const entry = chatEntry(code) || {};
-  const last = chatListLast[code] || null;
+  /* A line past the chat's day is not shown, cached or not (build 313). */
+  let last = chatListLast[code] || null;
+  if(last && (last.ts || 0) < chatHistoryCut()) last = null;
+  /* Read and found nothing, as opposed to not read yet. */
+  const knownEmpty = !last && Object.prototype.hasOwnProperty.call(chatListLast, code);
   const nameEl = row.querySelector(".chatdock-chatrow-name");
   /* A GROUP NOBODY ELSE IS IN ANY MORE says so (build 307), rather than
      going on wearing the names of the people who have left it. Only once
      the room has actually been read - `with` alone is a guess. */
-  const alone = !isFriendChatCode(code) && Array.isArray(chatListPeople[code]) && !chatListPeople[code].length;
+  const isGroup = !isFriendChatCode(code);
+  const alone = isGroup && Array.isArray(chatListPeople[code]) && !chatListPeople[code].length;
   if(nameEl && alone) nameEl.textContent = "Just you";
+  else if(nameEl && isGroup) nameEl.textContent = groupChatNameNow(Object.assign({ code: code }, entry));
   else if(nameEl && entry.name) nameEl.textContent = entry.name;
   /* The size, from the same members the faces are drawn from. */
   const kindEl = row.querySelector(".chatdock-chatrow-kind.is-group");
   if(kindEl){
     const n = Array.isArray(chatListPeople[code]) ? chatListPeople[code].length : (entry.with || []).length;
-    kindEl.textContent = "Group · " + (n + 1);
+    kindEl.textContent = (n + 1) + " members";
   }
   row.classList.toggle("is-muted", isChatMuted(code));
   const facesEl = row.querySelector(".chatdock-chatrow-faces");
@@ -59258,9 +59441,14 @@ function paintChatRow(code){
       const mine = last.key && last.key === publicIdOf();
       subEl.textContent = mine ? "You: " + last.text
         : isFriendChatCode(code) ? last.text : last.name + ": " + last.text;
-    } else if(entry.name){
+    } else if(knownEmpty || !isGroup){
       subEl.classList.remove("is-code");
-      subEl.textContent = last ? "" : "No messages yet";
+      /* Nothing in the last day is the honest line for a chat whose
+         history clears - "No messages yet" on a chat that had a week of
+         them read as messages going missing. */
+      subEl.textContent = isGroup ? "No messages in the last day" : "Say hi";
+    } else {
+      subEl.textContent = "";
     }
   }
   const whenEl = row.querySelector(".chatdock-chatrow-when");
@@ -59490,14 +59678,13 @@ const CHAT_CTX = {
      which is exactly one device per event and is already the device
      that just wrote. */
   shouldTrim: (messages) => {
-    /* A friend chat's history is one day long, and anybody opening it
-       clears what has aged out - there may be nobody writing to it to
-       do the author's trim, and the transaction makes it safe for
-       either of the two to do it. */
-    if(isFriendChatCode(chatRoomCode)){
-      const cut = Date.now() - FRIEND_CHAT_HISTORY_MS;
-      return !!(messages && messages.some(m => (m && m.ts || 0) < cut));
-    }
+    /* Every chat's history is one day long (build 313; friend chats since
+       240), and anybody opening it clears what has aged out - there may be
+       nobody writing to it to do the author's trim, and the transaction
+       makes it safe for anyone in it to do it. Once trimmed nothing is
+       stale, so the next opener writes nothing. */
+    const cut = chatHistoryCut();
+    if(messages && messages.some(m => (m && m.ts || 0) < cut)) return true;
     const last = messages && messages[messages.length - 1];
     return !!(last && chatMyKey && last.key === chatMyKey);
   },
@@ -59515,14 +59702,14 @@ const CHAT_CTX = {
      Nothing is deleted while it is the only thing there: a room whose
      every message is old keeps the last few, so opening it shows a
      chat rather than an empty box with no explanation. */
-  staleBefore: () => {
-    if(isFriendChatCode(chatRoomCode)) return Date.now() - FRIEND_CHAT_HISTORY_MS;
-    const t = new Date();
-    return new Date(t.getFullYear(), t.getMonth(), t.getDate()).getTime();
-  },
-  /* A group keeps its last few so it never opens empty; a friend chat
-     keeps nothing older than a day, which is what was asked for. */
-  get keepStale(){ return isFriendChatCode(chatRoomCode) ? 0 : 3; },
+  /* A ROLLING DAY, FOR GROUPS AS WELL AS FRIENDS (build 313). Groups used
+     to reset at local midnight and keep their last three messages
+     whatever their age, so a group chat opened on a week-old line -
+     "I still see some". Nothing older than a day is kept now, and the
+     empty panel says why (renderMessages). */
+  staleBefore: () => chatHistoryCut(),
+  keepStale: 0,
+  historyNote: true,
   participantsOf: (data) => {
     /* A COUNT IS NOT A ROSTER. "2 in this chat" tells you somebody
        arrived and nothing about who, which is how "people aren't
@@ -59638,6 +59825,27 @@ const CHAT_CTX = {
 };
 const CHAT_PING_MIN_MS = 4000;
 const FRIEND_CHAT_HISTORY_MS = 24 * 60 * 60 * 1000;
+/* ---- EVERY CHAT KEEPS 24 HOURS, AND NOTHING OLDER IS EVER DRAWN (build 313) ----
+   "The chat stuff, I thought we said that old chat messages delete after
+   24 hours? I still see some." She was right, and there were four ways it
+   happened: a GROUP chat's history reset at local midnight, not after a
+   day, and kept its last three messages whatever their age so it never
+   opened empty; the trim only ran when the author of the newest message
+   wrote again, so a quiet group kept last week for good; the panel drew
+   whatever the document held, so an old message showed until a trim's
+   write came back; and the Virtual Room's chat had no age limit at all.
+   One window for all of them now, a rolling 24 hours, applied in two
+   places that cannot disagree: every reader filters on it (the panel,
+   the list's previews, the unread counts and the preview banners), and
+   anybody who opens a chat with something past it trims the document in
+   a transaction, so it also goes from the server. An empty chat says
+   why it is empty. */
+const CHAT_HISTORY_MS = FRIEND_CHAT_HISTORY_MS;
+function chatHistoryCut(){ return Date.now() - CHAT_HISTORY_MS; }
+function freshChatMessages(list){
+  const cut = chatHistoryCut();
+  return (Array.isArray(list) ? list : []).filter(m => m && (m.ts || 0) >= cut);
+}
 const chatPingAt = {};
 /* ---- A MESSAGE IN ANOTHER CHAT GETS A PREVIEW, AND THE PREVIEW OPENS IT ----
    "Tapping the preview should open the message." Only the chat you have
@@ -59697,7 +59905,34 @@ function showChatPreview(who, text, onTap){
    its history, are untouched. Every reader goes through this one
    function, so the dot, the per-tab counts, the list rows, re-adding a
    chat and the preview banner all agree. */
-const CHAT_PING_FRESH_MS = 2 * 24 * 60 * 60 * 1000;
+/* A DAY, NOT TWO (build 313): a ping is "something new in this chat",
+   and the chat keeps nothing older than a day now - a two-day ping lit
+   the dot for a message that had already been cleared. */
+const CHAT_PING_FRESH_MS = 24 * 60 * 60 * 1000;
+/* AND A STALE PING LEAVES THE MAILBOX (build 313). Nothing took one out
+   unless that chat was read on this device, so the inbox document only
+   ever grew. This device's OWN mailbox only, one write, only when there
+   is something past its day, and only on the server's copy - a cached
+   snapshot can be behind. The same FieldPath shape clearReadPings uses,
+   because a ping's slot has a "~" in it. */
+let pingPruneAt = 0;
+function pruneStalePings(){
+  if(!inboxMsgs || !fbDb) return;
+  const now = Date.now();
+  if(now - pingPruneAt < 60000) return;
+  const slots = Object.keys(inboxMsgs).filter(k => {
+    const m = inboxMsgs[k];
+    return m && m.type === "msgping" && now - (m.at || 0) >= CHAT_PING_FRESH_MS;
+  });
+  if(!slots.length) return;
+  pingPruneAt = now;
+  try{
+    const args = [];
+    slots.forEach(k => { args.push(new firebase.firestore.FieldPath("msgs", k), firebase.firestore.FieldValue.delete()); });
+    const ref = inboxDocFor(publicIdOf());
+    ref.update.apply(ref, args).catch(() => {});
+  }catch(e){}
+}
 /* The pings waiting for THIS device, newest per chat. */
 function chatPings(){
   const out = {};
@@ -59895,6 +60130,26 @@ function openChatMembers(){
   ov.appendChild(sh);
   document.body.appendChild(ov);
   requestAnimationFrame(() => ov.classList.add("invite-overlay-show"));
+}
+/* ---- THE HEADER KNOWS WHO IS IN IT BEFORE THE ROOM ANSWERS (build 313) ----
+   Opening a group drew "Chat" and an empty count until the room's first
+   snapshot arrived. The list already knows the members (from the last
+   read, or the device's own cache), so the roster is drawn from that at
+   once - everybody but you as away, which is what "not heard from yet"
+   honestly is - and the snapshot then puts it right. */
+function seedChatRosterFromList(code){
+  if(!code || isFriendChatCode(code) || !chatMyKey) return;
+  const people = chatListPeople[code]
+    || ((chatEntry(code) || {}).with || []).map(k => ({ key: k }));
+  const me = chatMyKey;
+  const all = {};
+  all[me] = Object.assign({ joinedAt: 0 }, chatPersonOf(me, null));
+  people.forEach((p, i) => {
+    const who = chatPersonOf(p.key, p);
+    if(p.key && who.name) all[p.key] = { name: who.name, avatarChar: who.avatarChar, joinedAt: i + 1 };
+  });
+  chatAllMembers = all;
+  renderChatRoster({ [me]: all[me] });
 }
 function renderChatRoster(participants){
   const el = document.getElementById("chatdock-roomwho");
@@ -60883,6 +61138,7 @@ function rebuildChatTab(){
     head.append(count, tools, who);
   }
   chatTabBody.appendChild(head);
+  if(!isDm){ try{ seedChatRosterFromList(chatRoomCode); }catch(e){} }
 
   const panelHost = document.createElement("div");
   panelHost.className = "chatdock-chathost";
@@ -60968,7 +61224,7 @@ function renderGroupChatList(){
     wrap.className = "chatdock-chatlist";
     list.forEach(entry => {
       const row = document.createElement("div");
-      row.className = "chatdock-chatrow";
+      row.className = "chatdock-chatrow is-group";
       const open = document.createElement("button");
       open.type = "button"; open.className = "chatdock-chatrow-open";
       /* WHO IS IN IT, AS FACES. "While looking at all chats, it needs
@@ -60981,7 +61237,8 @@ function renderGroupChatList(){
       open.appendChild(faces);
       const nm = document.createElement("span");
       nm.className = "chatdock-chatrow-name";
-      nm.textContent = entry.name || "New chat";
+      /* What is already known, at once (build 313) - see groupChatNameNow. */
+      nm.textContent = groupChatNameNow(entry);
       const when = document.createElement("span");
       when.className = "chatdock-chatrow-when";
       const top = document.createElement("span");
@@ -60993,8 +61250,8 @@ function renderGroupChatList(){
       /* Everything on this tab is a group now - one-to-one lives on the
          Friends tab - so the size is the useful part. */
       kind.className = "chatdock-chatrow-kind is-group";
-      kind.textContent = "Group \u00b7 " + (others + 1);
-      top.append(nm, kind, when);
+      kind.textContent = (others + 1) + " members";
+      top.append(nm, when);
       open.appendChild(top);
       /* The code is shown ONLY when there is no name yet - an invite
          accepted and never opened has nobody's name in it, and two
@@ -61012,8 +61269,13 @@ function renderGroupChatList(){
          later from the room itself. */
       const sub = document.createElement("span");
       sub.className = "chatdock-chatrow-sub";
-      sub.textContent = entry.name ? "" : "Loading who is in it\u2026";
+      /* NEVER A LOADING LINE (build 313). This said "Loading who is in
+         it..." until a read came back, and a read that was throttled away
+         never came back at all. The name above is already known; the last
+         line arrives from the cache or the read. */
+      sub.textContent = "";
       open.appendChild(sub);
+      open.appendChild(kind);
       open.addEventListener("click", () => enterChatRoom(entry.code));
       const del = document.createElement("button");
       del.type = "button"; del.className = "chatdock-chatrow-del";
@@ -61040,7 +61302,7 @@ function renderGroupChatList(){
   const n = document.createElement("p");
   n.className = "chatdock-note";
   n.textContent = list.length
-    ? "Start another group chat, or open one above. Anyone in a group can invite people. Invitations turn up in your Inbox."
+    ? "Start another group chat, or open one above. Anyone in a group can invite people. Messages clear after a day."
     : "Start a group chat and invite your friends - anyone in it can invite more. If somebody invites you, it turns up in your Inbox.";
   const start = document.createElement("button");
   start.type = "button"; start.className = "next chatdock-act";
@@ -61098,8 +61360,19 @@ function placeDockBesidePause(inTest, paused){
   const btn = document.getElementById("chatdock-btn");
   if(!btn) return;
   const pause = document.querySelector("#pausebtn:not([hidden])");
+  /* ---- PAUSED, IT TAKES PAUSE'S PLACE (build 313) ----
+     "When paused, the chat button needs to be put in the right not the
+     same spot, that open space on the right looks weird." Pause hides
+     itself while its own screen is up, so holding the button where it sat
+     BESIDE Pause left a Pause-sized hole at the right-hand end of the row.
+     It moves into that spot: the same line (build 311's "it looks like the
+     chat button is being lowered" still holds - the height does not
+     change), right-aligned where Pause's right edge was. Measured when
+     the run was last on a question; after a rotation the old measurement
+     belongs to another width, so the CSS corner takes over. */
   if(paused && dockBesidePause){
-    btn.style.top = dockBesidePause.top; btn.style.right = dockBesidePause.right;
+    btn.style.top = dockBesidePause.top;
+    btn.style.right = dockBesidePause.vw === window.innerWidth ? dockBesidePause.pausedRight : "";
     return;
   }
   if(!inTest || !pause){
@@ -61113,7 +61386,8 @@ function placeDockBesidePause(inTest, paused){
   /* Centred on Pause's own line, and one gap to its left. */
   btn.style.top = Math.max(0, Math.round(p.top + (p.height - b.height) / 2)) + "px";
   btn.style.right = Math.round(window.innerWidth - p.left + 10) + "px";
-  dockBesidePause = { top: btn.style.top, right: btn.style.right };
+  dockBesidePause = { top: btn.style.top, right: btn.style.right,
+                      pausedRight: Math.max(0, Math.round(window.innerWidth - p.right)) + "px", vw: window.innerWidth };
 }
 window.addEventListener("resize", () => {
   try{ if(typeof syncChatDock === "function") syncChatDock(); }catch(e){}
@@ -61345,7 +61619,7 @@ function notificationItems(){
        list with it. */
     kind: "chat", at: inv.from.at || ((inv.from.cinv || {})[store.publicId] || {}).at || 0,
     who: inv.from,
-    text: (inv.from.firstName || "Someone") + " invited you to a chat",
+    text: (inv.from.firstName || "Someone") + " invited you to a group chat",
     actLabel: "Join",
     /* ---- A FAILED JOIN KEEPS ITS ROW ----
        "If you try to join it should tell you it failed if it couldn't."
@@ -61427,6 +61701,60 @@ function notificationItems(){
   });
 }
 
+/* ---- A LOOK AT A GROUP BEFORE JOINING IT (build 313) ----
+   One read of the room per invite, only while the Inbox or the invite's
+   banner is showing, and remembered for the session. Members are named
+   and drawn from the rankings like everywhere else (chatMemberMap). */
+const chatInvitePeekMemo = {};
+function peekChatInvite(code, onDone){
+  if(!code || !fbDb) return;
+  const had = chatInvitePeekMemo[code];
+  if(had && had.done){ if(onDone) onDone(had); return; }
+  if(had && Date.now() - had.at < 15000) return;
+  chatInvitePeekMemo[code] = { at: Date.now(), done: false };
+  try{
+    fbDb.collection("vrooms").doc(code).get().then(snap => {
+      if(!snap || !snap.exists){
+        chatInvitePeekMemo[code] = { at: Date.now(), done: true, gone: true, people: [], n: 0 };
+      } else {
+        const data = snap.data() || {};
+        const members = chatMemberMap(data.participants || null, data);
+        chatInvitePeekMemo[code] = { at: Date.now(), done: true, gone: false,
+          people: chatPeopleOf(members), n: Object.keys(members).length };
+      }
+      if(onDone) onDone(chatInvitePeekMemo[code]);
+    }).catch(() => { chatInvitePeekMemo[code] = { at: 0, done: false }; });
+  }catch(e){}
+}
+function chatInvitePeekLine(code){
+  const p = chatInvitePeekMemo[code];
+  if(!p || !p.done) return null;
+  if(p.gone) return "That chat doesn't exist any more.";
+  const names = p.people.map(x => x.name).filter(Boolean);
+  const who = names.length <= 2 ? names.join(" & ")
+    : names.length === 3 ? names[0] + ", " + names[1] + " & " + names[2]
+    : names[0] + ", " + names[1] + " & " + (names.length - 2) + " others";
+  return (who ? "With " + who + " · " : "") + p.n + (p.n === 1 ? " member" : " members");
+}
+function paintChatInvitePeek(box, code){
+  if(!box || !box.isConnected && box.parentNode == null) return;
+  const p = chatInvitePeekMemo[code];
+  const line = box.querySelector(".chatdock-notif-groupline");
+  const faces = box.querySelector(".chatdock-notif-faces");
+  const said = chatInvitePeekLine(code);
+  if(line && said) line.textContent = said;
+  box.classList.toggle("is-gone", !!(p && p.gone));
+  if(faces){
+    faces.replaceChildren();
+    ((p && p.people) || []).slice(0, 4).forEach(x => {
+      const f = document.createElement("span");
+      f.className = "chatdock-face";
+      try{ f.appendChild(avatarSpanFor({ avatarChar: x.avatarChar || "ninja" })); }catch(e){}
+      faces.appendChild(f);
+    });
+    faces.hidden = !faces.childNodes.length;
+  }
+}
 function renderNotifications(){
   if(!notifTabBody) return;
   const items = notificationItems();
@@ -61453,6 +61781,23 @@ function renderNotifications(){
     art.appendChild(avatarSpanFor(it.who));
     const text = document.createElement("p");
     text.className = "chatdock-notif-text"; text.textContent = it.text;
+    /* A GROUP YOU ARE NOT IN, SHOWN FOR WHAT IT IS (build 313): who is in
+       it, how many, and that joining is how you read it. It used to be
+       "Fay invited you to a chat" and nothing else - no way to know which
+       chat, or with whom, before saying yes. */
+    if(it.kind === "chat" && it.code){
+      const box = document.createElement("span");
+      box.className = "chatdock-notif-group";
+      const faces = document.createElement("span");
+      faces.className = "chatdock-notif-faces";
+      const line = document.createElement("span");
+      line.className = "chatdock-notif-groupline";
+      line.textContent = "Join to see who is in it and read the messages.";
+      box.append(faces, line);
+      text.appendChild(box);
+      paintChatInvitePeek(box, it.code);
+      peekChatInvite(it.code, () => paintChatInvitePeek(box, it.code));
+    }
     /* WHEN IT GOT HERE, asked for by name. A friend request carries no
        timestamp anywhere in the row it is read from, so it gets nothing
        rather than a fabricated one - it already sorts to the top as the
@@ -61568,6 +61913,17 @@ function checkChatInvites(){
   placeTopBanner(el);
   clearBannerOnScreenChange(el);
   requestAnimationFrame(() => el.classList.add("show"));
+  /* Who it is with, once the room has been looked at (build 313). */
+  const name = newest.from.firstName || "A classmate";
+  const bt = el.querySelector(".app-banner-text");
+  if(bt) bt.textContent = name + " invited you to a group chat";
+  peekChatInvite(newest.code, p => {
+    if(!el.isConnected || !bt || !p || p.gone) return;
+    const others = (p.people || []).filter(x => x.key !== newest.from.pub).map(x => x.name).filter(Boolean);
+    if(!others.length) return;
+    bt.textContent = name + " invited you to a group chat with "
+      + (others.length <= 2 ? others.join(" & ") : others[0] + " & " + (others.length - 1) + " others");
+  });
 }
 
 /* ---- inviting somebody into the chat you are in ----
@@ -73123,7 +73479,18 @@ function vroomHostKeyOf(participants){
   return ks[0];
 }
 function syncVroomHost(data){
-  vroomIsHost = !!vroomMyKey && vroomHostKeyOf(data && data.participants) === vroomMyKey;
+  /* THE EARLIEST JOINER WHO IS STILL HERE (build 313). A host who walked
+     out was already replaced; a host whose phone DIED was not - the entry
+     stays on the document, so it stayed host, and the one device that
+     decides a Tug of War or a Battle is over was a dead one. Everybody
+     else played to the end of the bank and sat on "Waiting for the
+     others" for good. Presence knows (no heartbeat for PRESENCE_STALE_MS),
+     so the next person in join order takes over. With nobody judged
+     present - an older build that stamps nothing - it is everybody, as
+     before. */
+  const parts = (data && data.participants) || {};
+  const live = presentParticipants(parts) || {};
+  vroomIsHost = !!vroomMyKey && vroomHostKeyOf(Object.keys(live).length ? live : parts) === vroomMyKey;
   /* Read off the document rather than remembered locally: the host can
      change it, and a device that inherits the room when the host walks
      out must not carry a stale idea of whether it is listed. */
@@ -74570,6 +74937,20 @@ function tugTeamsFor(participants){
   keys.forEach((k, i) => { out[k] = (i % 2 === 0) ? "a" : "b"; });
   return out;
 }
+/* ---- A SIDE IS NAMED IN A FEW WORDS, HOWEVER BIG IT IS (build 313) ----
+   Every team label joined all its names with "&", which is fine for two
+   and is a paragraph for ten: "You & Ben & Dee & Fay & Hana & Jon & Lou &
+   Nia & Pia & Rae pulled it over the line." In a room of twenty the
+   Battle header ran off the side of the screen. Two names, then a count.
+   You first, as "You", wherever you are on the list. */
+function vroomNameList(keys, d){
+  const parts = (d && d.participants) || {};
+  const ks = (keys || []).slice().sort((a, b) => (a === vroomMyKey ? -1 : b === vroomMyKey ? 1 : 0));
+  const names = ks.map(k => k === vroomMyKey ? "You" : ((parts[k] || {}).name || "?"));
+  if(names.length <= 2) return names.join(" & ");
+  if(names.length === 3) return names[0] + ", " + names[1] + " & " + names[2];
+  return names[0] + ", " + names[1] + " & " + (names.length - 2) + " others";
+}
 function tugTeamOf(data, key){
   return ((data.tug && data.tug.teams) || {})[key] || "a";
 }
@@ -74675,15 +75056,27 @@ function tugCheckOver(d){
   /* Three ways a match ends, and the last two are the reason a draw
      has to be a real outcome rather than a rounding: one side pulls
      clear, everybody runs out of questions, or the pace runs out. */
-  const allDone = everyone.every(k => (Number((prog[k] || {}).pos) || 0) >= count);
+  /* SOMEBODY WHO HAS GONE IS NOT STILL PLAYING (build 313). A phone that
+     died mid-match never reaches the end of the bank, and "everybody is
+     out of questions" waited for it until the pace clock ran out - six
+     minutes and more of everybody else sitting on "Waiting for the
+     others". Presence already knows (no heartbeat for PRESENCE_STALE_MS),
+     the same rule the race's finale uses. */
+  const here = presentParticipants(d.participants || {}) || {};
+  const allDone = everyone.every(k => (Number((prog[k] || {}).pos) || 0) >= count || !here[k]);
+  /* A SIDE WITH NOBODY LEFT ON IT HAS LOST. Everybody on one end left or
+     went quiet, and the rope could only ever be pulled by the other. */
+  const sideHere = s => everyone.some(k => teams[k] === s && here[k]);
+  const forfeit = sideHere("a") !== sideHere("b") ? (sideHere("a") ? "a" : "b") : null;
   /* Plus the pause after every question (build 221), so a match that is
      still being played is never called on time. */
   const timeUp = Date.now() >= (Number(d.startAt) || 0) + tugPace(count).total + count * (3000 + TUG_ARM_MS) + 15000;
-  if(Math.abs(pos) < gap && !allDone && !timeUp) return;
+  if(Math.abs(pos) < gap && !allDone && !timeUp && !forfeit) return;
+  const winner = forfeit && Math.abs(pos) < gap ? forfeit : (pos > 0 ? "a" : (pos < 0 ? "b" : null));
   fbDb.collection("vrooms").doc(vroomCode).update({
     "tug.over": true,
     "tug.finalPos": pos,
-    "tug.winner": pos > 0 ? "a" : (pos < 0 ? "b" : null),
+    "tug.winner": winner,
     status: "finished"
   }).catch(() => {});
 }
@@ -74831,7 +75224,8 @@ function buildTugRope(d){
     el.className = "tug-side " + cls;
     const nm = document.createElement("span");
     nm.className = "tug-side-name";
-    const names = tugMembers(d, key).map(k => k === vroomMyKey ? "You" : ((d.participants[k] || {}).name || "?"));
+    const members = tugMembers(d, key);
+    const names = members.length ? [vroomNameList(members, d)] : [];
     nm.textContent = label + (names.length ? " \u00b7 " + names.join(" & ") : "");
     el.appendChild(nm);
     return el;
@@ -75293,8 +75687,7 @@ function showTugResult(d){
   const gap = Math.abs(Number(d.tug.finalPos) || 0);
   /* The rope is pull now, not a count, so "pulled it 3.4 clear" is a
      number nobody can picture. Say what happened to the rope instead. */
-  const winNames = drawn ? "" : tugMembers(d, winner)
-    .map(k => k === vroomMyKey ? "You" : ((d.participants[k] || {}).name || "?")).join(" & ");
+  const winNames = drawn ? "" : (vroomNameList(tugMembers(d, winner), d) || (winner === mine ? "Your side" : "Their side"));
   sub.textContent = drawn
     ? "Dead even at the end of " + tugMatchCount(d) + " questions."
     : winNames + (gap >= tugWinGap(tugMatchCount(d)) ? " pulled it over the line." : " had it on their side when the questions ran out.");
@@ -75319,6 +75712,12 @@ function showTugResult(d){
     tugPaidFor = paidKey;
     if(myXp > 0){ awardXp(myXp); saveStore(); }
     try{ setTimeout(publishNow, 800); }catch(e){}
+    /* A TUG MATCH COUNTS (build 313). Battle recorded its outcome and
+       Tug never did, so no Tug of War ever reached "Matches played" or the
+       Clown's five wins. The same shape Battle uses: a side's win is a
+       first place, a loss or a draw is a match. */
+    const others = Object.keys(teams).filter(k => k !== vroomMyKey);
+    try{ recordVroomOutcome(vroomCode, won ? [vroomMyKey].concat(others) : others.concat([vroomMyKey]), vroomMyKey, d.startAt); }catch(e){}
   }
   const xpCard = document.createElement("div");
   xpCard.className = "tug-xp" + (won ? " is-won" : drawn ? " is-draw" : " is-lost");
@@ -75363,7 +75762,8 @@ function showTugResult(d){
       av.appendChild(buildAvatarCharSVGSafe(pp.avatarChar || "ninja"));
       const nm = document.createElement("span");
       nm.className = "tug-board-name";
-      nm.textContent = (pp.name || "?") + (k === mvp && rightOf(k) > 0 ? "  ★" : "");
+      /* "You", as Battle's board and every side label say (build 313). */
+      nm.textContent = (k === vroomMyKey ? "You" : (pp.name || "?")) + (k === mvp && rightOf(k) > 0 ? "  ★" : "");
       const n = document.createElement("span");
       n.className = "tug-board-n"; n.textContent = rightOf(k);
       row.append(av, nm, n);
@@ -75506,7 +75906,7 @@ function battleNameOf(d, k){
 }
 function battleCap(s){ return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
 function battleSideNames(d, side){
-  return battleMembers(d, side).map(k => (d.participants[k] || {}).name || "?").join(" & ");
+  return vroomNameList(battleMembers(d, side), d) || (side === battleSideOf(d, vroomMyKey) ? "Your side" : "Their side");
 }
 
 /* ---- THE REPLAY ----
@@ -75582,10 +75982,16 @@ function battleCheckOver(d){
   const prog = b.progress || {};
   const everyone = battleMembers(d, "a").concat(battleMembers(d, "b"));
   if(!everyone.length) return;
-  const allDone = everyone.every(k => (Number((prog[k] || {}).pos) || 0) >= count);
+  /* Gone is not still playing, and a side with nobody left on it has
+     lost - the same two rules as Tug (build 313). */
+  const here = presentParticipants(d.participants || {}) || {};
+  const allDone = everyone.every(k => (Number((prog[k] || {}).pos) || 0) >= count || !here[k]);
+  const sideHere = s => battleMembers(d, s).some(k => here[k]);
+  const forfeit = sideHere("a") !== sideHere("b") ? (sideHere("a") ? "a" : "b") : null;
   const timeUp = Date.now() >= (Number(d.startAt) || 0) + count * (BATTLE_Q_MS + BATTLE_PAUSE_MS + 1500) + 15000;
-  if(!r.downed && !allDone && !timeUp) return;
+  if(!r.downed && !allDone && !timeUp && !forfeit) return;
   const winner = r.downed ? battleOther(r.downed)
+    : forfeit ? forfeit
     : (r.hp.a > r.hp.b ? "a" : r.hp.b > r.hp.a ? "b" : null);
   fbDb.collection("vrooms").doc(vroomCode).update({
     "battle.over": true,
@@ -75831,7 +76237,12 @@ function buildBattleBoard(d){
     top.className = "battle-side-top";
     const faces = document.createElement("span");
     faces.className = "battle-faces";
-    battleMembers(d, side).forEach(k => {
+    /* THREE FACES, THEN A COUNT (build 313). Every member was drawn, and
+       ten overlapping faces in half a phone's width pushed the side's card
+       past the edge of the screen - the whole match scrolled sideways in a
+       room of twenty. Yourself first, so you can always find your side. */
+    const sideKeys = battleMembers(d, side).sort((a, b) => (a === vroomMyKey ? -1 : b === vroomMyKey ? 1 : 0));
+    sideKeys.slice(0, 3).forEach(k => {
       const p = d.participants[k] || {};
       const av = document.createElement("span");
       av.className = "battle-av" + (k === vroomMyKey ? " is-me" : "");
@@ -75839,6 +76250,12 @@ function buildBattleBoard(d){
       av.appendChild(buildAvatarCharSVGSafe(p.avatarChar || "ninja"));
       faces.appendChild(av);
     });
+    if(sideKeys.length > 3){
+      const more = document.createElement("span");
+      more.className = "battle-av battle-av-more";
+      more.textContent = "+" + (sideKeys.length - 3);
+      faces.appendChild(more);
+    }
     const label = document.createElement("span");
     label.className = "battle-side-label";
     const lt = document.createElement("span");
@@ -75846,7 +76263,7 @@ function buildBattleBoard(d){
     lt.textContent = side === mine ? "Your side" : "Their side";
     const ln = document.createElement("span");
     ln.className = "battle-side-names";
-    ln.textContent = battleMembers(d, side).map(k => k === vroomMyKey ? "You" : ((d.participants[k] || {}).name || "?")).join(" & ");
+    ln.textContent = vroomNameList(battleMembers(d, side), d);
     label.append(lt, ln);
     const fx = document.createElement("span");
     fx.className = "battle-fx";
@@ -76184,7 +76601,7 @@ function showBattleResult(d){
     if(myXp > 0) awardXp(myXp);
     try{ setTimeout(publishNow, 800); }catch(e){}
     const others = Object.keys(battleTeams(d)).filter(k => k !== vroomMyKey);
-    try{ recordVroomOutcome(vroomCode, won ? [vroomMyKey].concat(others) : others.concat([vroomMyKey]), vroomMyKey); }catch(e){}
+    try{ recordVroomOutcome(vroomCode, won ? [vroomMyKey].concat(others) : others.concat([vroomMyKey]), vroomMyKey, d.startAt); }catch(e){}
     saveStore();
   }
   const xpCard = document.createElement("div");
@@ -77123,6 +77540,11 @@ function showVirtualRoomLobby(){
         shownShape = shape;
         renderTestSummary(data);
         list.replaceChildren();
+        /* A FULL ROOM IS DRAWN SMALLER (build 313). Every person had a row
+           88px tall, so with twenty in the room Ready up sat almost two
+           thousand pixels down a phone, under everybody else. Past six,
+           the rows tighten and, on a tablet, go two across. */
+        roster.classList.toggle("is-crowded", entries.length > 6);
         entries.forEach(([key, p]) => {
         const row = document.createElement("div");
         row.className = "lb-row vroom-row" + (p.ready ? " is-ready" : "");
@@ -77170,6 +77592,7 @@ function showVirtualRoomLobby(){
           const youTag = document.createElement("span");
           youTag.className = "vroom-you-tag"; youTag.textContent = "(You)";
           name.appendChild(youTag);
+          row.classList.add("is-you");
         }
         nameWrap.appendChild(name);
         /* ---- RANK AND LEVEL, UNDER THE NAME ----
@@ -77645,6 +78068,8 @@ const CHAT_EMOJI = ["\u{1F602}","\u{1F62D}","\u{1F480}","\u{1F60D}","\u{1F60E}",
   "\u{1F914}","\u{1F644}","\u{1FAE1}","\u{1F44D}","\u{1F64F}",
   "\u{1F595}","\u{1F525}","\u{1F4AF}","\u{1F389}","\u{2764}\u{FE0F}"];
 const chatImageCache = {};
+/* Photo documents this device has already deleted as aged out (build 313). */
+const chatPhotoDeleted = {};
 function loadChatImage(id){
   if(!id) return Promise.resolve(null);
   if(chatImageCache[id]) return Promise.resolve(chatImageCache[id]);
@@ -77959,9 +78384,22 @@ function buildVroomChatPanel(container, ctx){
     const isFirstRender = !announcedAny;
     const wasAtBottom = list.scrollTop + list.clientHeight >= list.scrollHeight - 20;
     list.replaceChildren();
+    /* NOTHING PAST THE CHAT'S HISTORY IS DRAWN (build 313), whether or not
+       anybody has trimmed the document yet - the trim is a write that
+       comes back a beat later, and until then a day-old message sat on
+       screen. Everything below (the count, the banner, reactions) works
+       from this list, so none of it can count an old message either. */
+    const all = messages || [];
+    if(CTX.staleBefore){
+      const cut = CTX.staleBefore();
+      messages = all.filter(m => m && (m.ts || 0) >= cut);
+    }
     if(!messages || messages.length === 0){
       const empty = document.createElement("p");
-      empty.className = "vroom-chat-empty"; empty.textContent = "No messages yet \u2014 say hi.";
+      empty.className = "vroom-chat-empty";
+      empty.textContent = all.length
+        ? "No messages in the last 24 hours. Messages clear after a day."
+        : (CTX.historyNote ? "No messages in the last day \u2014 say hi. Messages clear after 24 hours." : "No messages yet \u2014 say hi.");
       list.appendChild(empty);
     } else {
       /* ---- A REACTION BUMPS ITS MESSAGE TO THE BOTTOM ----
@@ -78573,6 +79011,23 @@ function buildVroomChatPanel(container, ctx){
     if(!messages || !messages.length) return;
     if(!CTX.shouldTrim(messages)) return;
     rewriteChat(trimmedChat);
+    /* A PHOTO LIVES IN A DOCUMENT OF ITS OWN (build 313), and a trimmed
+       message used to leave it behind for good, unreachable. Only your OWN
+       photos are deleted - the document says who sent it, and nobody's
+       device removes anybody else's data. The trim may not have written
+       yet, but a photo whose message has aged out is never drawn again
+       either way. */
+    try{
+      const cut = CTX.staleBefore ? CTX.staleBefore() : 0;
+      const me = CTX.myKey();
+      messages.forEach(m => {
+        if(!m || m.type !== "img" || !m.img || m.key !== me || (m.ts || 0) >= cut) return;
+        if(chatPhotoDeleted[m.img]) return;
+        chatPhotoDeleted[m.img] = 1;
+        delete chatImageCache[m.img];
+        fbDb.collection("vrooms").doc(m.img).delete().catch(() => {});
+      });
+    }catch(e){}
   }
   function trimmedChat(messages){
     if(!messages || !messages.length) return null;
@@ -78913,7 +79368,10 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
   if(onResults){
     /* ABOVE THE XP BOX, not at the very top: the grade stays the first
        thing on the screen and the wait sits where the eye goes next. */
-    const xpBox = host.querySelector(".results-level");
+    /* ITS OWN CARD, ABOVE THE XP CARD (build 313). The level bar moved
+       inside the XP card, and inserted before it this card landed in the
+       middle of another card - between "Total" and the level. */
+    const xpBox = host.querySelector(".rs-xp") || host.querySelector(".results-level");
     if(xpBox && xpBox.parentNode) xpBox.parentNode.insertBefore(wait, xpBox);
     else host.insertBefore(wait, host.firstChild);
     const slot = host.querySelector(".rs-endslot");
@@ -79042,7 +79500,15 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
     wCount.textContent = finishedN + "/" + totalN;
     setBarFill(wFill, totalN ? Math.round(finishedN / totalN * 100) : 0);
     if(totalN > 0 && finishedN === totalN){
-      if(!allInAt) allInAt = Date.now();
+      if(!allInAt){
+        allInAt = Date.now();
+        /* THE MATCH COUNTS HERE (build 313), the moment the standings are
+           settled. It used to be counted only by showVirtualRoomResults(),
+           which a race has not reached since build 240 - so no race had
+           counted towards "Matches played", first places or the top
+           three since then. Ranked the way the leaderboard ranks. */
+        try{ recordVroomOutcome(vroomCode, vroomRankedEntries(data).map(e => e.key), vroomMyKey, data.startAt); }catch(e){}
+      }
       wait.classList.add("is-all-in");
       wText.textContent = "Everyone's done — results coming up";
       /* THE WAY OUT STAYS (build 246). It used to go the moment the last
@@ -79053,7 +79519,12 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
          desktop as "can't leave back to main menu after a game with
          multiple participants concludes". Leaving here still banks the
          score (confirmLeaveWhileWaiting says so). */
-      if(!allRevealedAt && entries.every(p => p.revealDone === true)) allRevealedAt = Date.now();
+      /* Only the people still HERE are waited for (build 313). Somebody
+         whose phone died mid-race counts as in, above - and then held the
+         leaderboard for the whole of VROOM_REVEAL_WAIT_MS, because a
+         reveal that never ran never reports being done. Everybody else
+         sat on "Everyone's done - results coming up" for over a minute. */
+      if(!allRevealedAt && Object.keys(racing).every(k => racing[k].revealDone === true || !here[k])) allRevealedAt = Date.now();
     }
   });
 }
@@ -79340,8 +79811,11 @@ function playVroomRaceCutscene(ranked){
         if(add > 0) x.gain.classList.add("is-on");
         countTo(x, x.shown + add, quiet ? 0 : STEP_MS * .6);
       });
-      /* Once this step's numbers have landed, the board re-sorts. */
-      setTimeout(() => reshuffle(x => x.shown), quiet ? 0 : STEP_MS * .65);
+      /* Once this step's numbers have landed, the board re-sorts. NOT with
+         reduce motion (build 313): every step and the final order are all
+         due at once then, and these re-sorts landed AFTER the final one,
+         on half-counted numbers - the board ended 1st, 3rd, 2nd. */
+      if(!quiet) setTimeout(() => reshuffle(x => x.shown), STEP_MS * .65);
     });
     t += STEP_MS;
   });
@@ -79669,7 +80143,7 @@ function showVirtualRoomResults(){
        banner, first places for the Champion. Keyed by room code inside,
        so a rebuilt screen does not count it again. */
     if(allIn && !alreadyRevealed){
-      try{ recordVroomOutcome(vroomCode, entries.map(([k]) => k), vroomMyKey); }catch(e){}
+      try{ recordVroomOutcome(vroomCode, entries.map(([k]) => k), vroomMyKey, data.startAt); }catch(e){}
     }
     if(alreadyRevealed && allIn) return;
 

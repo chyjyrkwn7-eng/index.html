@@ -7331,7 +7331,11 @@ def check_b301_chat(br):
       /* E. a friend chat whose history has expired is still read by opening it */
       const fc = friendChatCode('bo00000000001');
       docs[fc] = { kind:'chat', chatMessages: [], participants: {} };
-      inboxMsgs = { 'bo00000000001~m': { type:'msgping', code: fc, pub:'bo00000000001', firstName:'Bo', text:'yo', at: Date.now() - 30 * 3600e3 } };
+      /* 23 hours, not 30: since build 313 a ping is a day long, the same as
+         the chat's own history, so a 30-hour ping is not unread at all.
+         The room is still empty - what is under test is that opening a
+         chat with nothing in it reads its ping. */
+      inboxMsgs = { 'bo00000000001~m': { type:'msgping', code: fc, pub:'bo00000000001', firstName:'Bo', text:'yo', at: Date.now() - 23 * 3600e3 } };
       syncChatDockDot();
       out.friendBefore = txt('chatdock-friendscount');
       chatDockTab = 'friends'; openChatDock(); await wait(200);
@@ -9469,6 +9473,39 @@ def check_b313_flares(br):
     ctx.close()
 
 
+def check_b313_pause(br):
+    """Build 313: "When paused, the chat button needs to be put in the right
+    not the same spot, that open space on the right looks weird." Pause hides
+    itself on its own screen, and the chat button stayed where it had sat
+    BESIDE Pause - leaving a Pause-sized hole at the end of the row. It now
+    takes Pause's spot: the same line, right-aligned to Pause's right edge.
+    Fails on 312, where it is one gap to Pause's left."""
+    print("\n313p. paused, the chat button takes Pause's place")
+    for label, w, h in (("phone", 440, 956), ("small phone", 375, 667), ("phone sideways", 956, 440), ("iPad", 834, 1194)):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        got = pg.evaluate("""async ()=>{
+          const wait = ms => new Promise(r => setTimeout(r, ms));
+          const U = topicsIn(QUESTIONS)[0]; const ix = QUESTIONS.map((q,i)=>i).filter(i=>(QUESTIONS[i].topic||'').trim()===U);
+          cfg.mode='drill'; cfg.units=[U]; cfg.source='all'; runMode='drill'; beginRun(ix, null);
+          for(let i = 0; i < 80 && !document.querySelector('.qpanel .choice'); i++) await wait(150);
+          await wait(900);
+          const R = e => { const b = e.getBoundingClientRect(); return { l: b.left, r: b.right, cy: b.top + b.height / 2, w: b.width }; };
+          const pause = R(document.getElementById('pausebtn'));
+          const dockQ = R(document.getElementById('chatdock-btn'));
+          document.getElementById('pausebtn').click(); await wait(700);
+          const dockP = R(document.getElementById('chatdock-btn'));
+          const panel = !!document.querySelector('#stage .pausepanel.is-pause');
+          document.getElementById('resumebtn')?.click(); await wait(600);
+          const dockR = R(document.getElementById('chatdock-btn'));
+          return { pause, dockQ, dockP, dockR, panel, vw: innerWidth }; }""")
+        p, q, d, r = got["pause"], got["dockQ"], got["dockP"], got["dockR"]
+        check("%s: on a question the chat button sits left of Pause" % label, q["r"] <= p["l"] + 1, got)
+        check("%s: paused, it moves to Pause's right edge, on the same line" % label,
+              got["panel"] and abs(d["r"] - p["r"]) <= 2 and abs(d["cy"] - p["cy"]) <= 2, {"pause": p, "paused": d})
+        check("%s: and back beside Pause on Resume" % label, abs(r["r"] - q["r"]) <= 2 and abs(r["cy"] - q["cy"]) <= 2, {"before": q, "after": r})
+        ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -9599,6 +9636,7 @@ def main():
             check_b313_alive(br)
             check_b313_grades(br)
             check_b313_flares(br)
+            check_b313_pause(br)
         finally:
             br.close()
     SERVER.shutdown()

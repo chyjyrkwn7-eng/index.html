@@ -761,6 +761,305 @@ def sections_246(ctx, open_tab, args):
         check("the retired-characters section ran at all", False, repr(e)[:240])
 
 
+
+# ---------------------------------------------------------------------------
+# BUILD 313: "please ensure all the virtual room modes work properly, test
+# this over and over ... check to see it works with like 20 people or 2 and
+# so on ... ensure the result screen works well for the virtual room
+# especially." One real device and up to nineteen simulated classmates, who
+# write to the room exactly what their own devices would: progress, a finish
+# with its XP lines, a reveal done, a heartbeat, a tug row, a battle hit.
+BOTS_313 = r"""
+(() => {
+  const B = window.__vrBots = { code: null, timers: [], gone: new Set(), parts: {} };
+  const NAMES = ["Ava","Ben","Cy","Dee","Eli","Fay","Gus","Hana","Ivy","Jon","Kim","Lou","Max","Nia","Oto","Pia","Quin","Rae","Sol","Tao"];
+  const AV = AVATAR_CHARACTERS.map(c => c.id);
+  B.room = (code, n, extra, mine) => {
+    B.stop(); B.code = code; B.gone = new Set();
+    const now = Date.now(); const parts = {};
+    parts.me = Object.assign({ name: store.firstName, avatarChar: store.avatarChar, joinedAt: now - 100000, ready: true,
+                               finished: false, progress: 0, seen: now }, mine || {});
+    for(let i = 1; i < n; i++){
+      parts["b" + i] = Object.assign({ name: NAMES[(i - 1) % NAMES.length], avatarChar: AV[i % AV.length],
+        joinedAt: now - 100000 + i * 10, ready: true, finished: false, progress: 0, seen: now, level: 5 + i, badges: i % 4 },
+        (extra && extra(i)) || {});
+    }
+    B.parts = parts;
+    return parts;
+  };
+  B.upd = f => fbDb.collection("vrooms").doc(B.code).update(f);
+  B.keys = () => Object.keys(B.parts).filter(k => k !== "me");
+  B.stop = () => { B.timers.forEach(t => { clearInterval(t); clearTimeout(t); }); B.timers = []; };
+  B.beat = () => B.timers.push(setInterval(() => {
+    const f = {}; B.keys().forEach(k => { if(!B.gone.has(k)) f["participants." + k + ".seen"] = Date.now(); });
+    if(Object.keys(f).length) B.upd(f).catch(() => {});
+  }, 2500));
+  B.finished = (i, xp) => ({ finished: true, progress: 100, score: 80, elapsedMs: 60000 + i * 500, xp: xp, totalScore: xp,
+    revealDone: true, xpLines: [{ key: "correct", label: "8 correct", value: Math.round(xp * .6) }, { key: "speed", label: "Speed", value: xp - Math.round(xp * .6) }] });
+  B.tug = (k, every, right, count) => {
+    let pos = 0, correct = 0, pull = 0;
+    B.timers.push(setInterval(() => {
+      if(B.gone.has(k) || pos >= count) return;
+      const ok = Math.random() < right; pos++; if(ok){ correct++; pull += 1; } else pull -= .25;
+      B.upd({ ["tug.progress." + k]: { pos, correct, pull: Math.round(pull * 1000) / 1000, done: pos >= count, at: Date.now() } }).catch(() => {});
+    }, every));
+  };
+  B.battle = (k, every, right, count) => {
+    let pos = 0, correct = 0;
+    B.timers.push(setInterval(() => {
+      if(B.gone.has(k) || pos >= count) return;
+      const ok = Math.random() < right; pos++; if(ok) correct++;
+      const f = { ["battle.progress." + k]: { pos, correct, done: pos >= count, at: Date.now() } };
+      if(ok) f["battle.log"] = firebase.firestore.FieldValue.arrayUnion({ id: k + "-" + pos + "-" + Math.random().toString(36).slice(2, 6), at: Date.now(), from: k, kind: "hit", dmg: 5 });
+      B.upd(f).catch(() => {});
+    }, every));
+  };
+  B.die = k => { B.gone.add(k); return B.upd({ ["participants." + k + ".seen"]: Date.now() - 10 * 60 * 1000 }); };
+})();
+"""
+
+
+def sections_313(ctx, open_tab, args):
+    """Build 313. Every check here was run against build 312 (--against
+    /tmp/claude-0/b313/old312.html) and fails there."""
+    def active(pg):
+        ctx.new_cdp_session(pg).send("Page.setWebLifecycleState", {"state": "active"})
+
+    def home(pg):
+        pg.evaluate("""()=>{ try{ __vrBots.stop(); }catch(e){} document.getElementById('vroom-race-cut')?.remove();
+          document.getElementById('vroom-prep')?.remove(); document.getElementById('vroom-cutscene')?.remove();
+          try{ stopQuestionTimer(); }catch(e){} try{ leaveVirtualRoom(); }catch(e){} testInProgress=false; showHome(); }""")
+        pg.wait_for_timeout(300)
+
+    # ---- 20. a race, at every size ----------------------------------------
+    print("\n20. (313) a race of 2, 3, 4, 8 and 20: it counts, it ranks, the screen fits")
+    try:
+        pg = open_tab("Rae", "ninja", 3000, "R313-0001", badges=1)
+        active(pg)
+        pg.evaluate(BOTS_313)
+        pg.evaluate("()=>{ theme.reduceMotion = true; }")
+        for n in (2, 3, 4, 8, 20):
+            code = "R313N%d" % n
+            before = pg.evaluate("()=>store.vrMatches || 0")
+            pg.evaluate("""([code, n])=>{ const parts = __vrBots.room(code, n, i => __vrBots.finished(i, 90 + i * 7));
+              return fbDb.collection('vrooms').doc(code).set({ status:'starting', game:'race', units:['Identity Crimes'],
+                startAt: Date.now() - 2000, chatMessages: [], participants: parts, racers: Object.keys(parts) }); }""", [code, n])
+            pg.wait_for_timeout(250)
+            pg.evaluate("""(code)=>{ vroomCode=code; vroomMyKey='me'; vroomIsHost=true; theme.autoAdvance=false;
+              beginVirtualRoomTest(['Identity Crimes'], null, null, 0); }""", code)
+            pg.wait_for_selector(".qpanel .choice", timeout=25000)
+            pg.evaluate("()=>{ order.forEach(qi=>{ picked[qi]=optionOrder(qi).indexOf(QUESTIONS[qi].answer); }); stopQuestionTimer(); summarize(); }")
+            try:
+                pg.wait_for_function("()=>!!document.querySelector('.vroom-waitcard.is-all-in')", timeout=20000)
+                allin = True
+            except Exception:
+                allin = False
+            pg.wait_for_timeout(300)
+            card = pg.evaluate("""(before)=>{ const w=document.querySelector('.vroom-waitcard');
+              return { inXp: !!(w && w.closest('.rs-xp')), matches: (store.vrMatches || 0) - before,
+                       count: (document.querySelector('.vroom-wait-count')||{}).textContent }; }""", before)
+            check("%d people: everyone in is seen" % n, allin and card["count"] == "%d/%d" % (n, n), card)
+            check("%d people: the waiting card is its own card, not inside the XP card" % n, not card["inXp"], card)
+            check("%d people: the match counts towards Matches played, once" % n, card["matches"] == 1, card)
+            pg.evaluate("()=>startVroomRaceCutscene()")
+            pg.wait_for_function("()=>document.querySelector('#vroom-race-cut.is-done')", timeout=20000)
+            pg.wait_for_timeout(1200)
+            b = pg.evaluate("""()=>{ const c=document.getElementById('vroom-race-cut');
+              const rows=[...c.querySelectorAll('.vrc-row')];
+              const btns=[...c.querySelectorAll('.vrc-exits button')].map(x=>{ const r=x.getBoundingClientRect();
+                const t=document.elementFromPoint(r.left+r.width/2, r.top+r.height/2);
+                return { ok: r.bottom <= innerHeight && r.right <= innerWidth && r.left >= 0 && (t===x || x.contains(t)) }; });
+              return { rows: rows.length, places: rows.map(r=>r.querySelector('.vrc-place').textContent).filter(Boolean),
+                       exits: btns, hs: document.documentElement.scrollWidth - innerWidth }; }""")
+            want = ["Winner"] if n < 4 else ["1st", "2nd", "3rd"]
+            check("%d people: everybody is on the leaderboard" % n, b["rows"] == n, b)
+            check("%d people: %s" % (n, "one winner, nobody else placed" if n < 4 else "a podium of three, top to bottom"),
+                  b["places"] == want, b["places"])
+            check("%d people: both ways out are on screen and tappable" % n,
+                  len(b["exits"]) == 2 and all(e["ok"] for e in b["exits"]) and b["hs"] <= 0, b)
+            home(pg)
+        # The same room, played again from its lobby: a second match.
+        before = pg.evaluate("()=>store.vrMatches || 0")
+        pg.evaluate("""()=>{ const parts = __vrBots.room('R313N4', 4, i => __vrBots.finished(i, 90 + i * 7));
+          return fbDb.collection('vrooms').doc('R313N4').set({ status:'starting', game:'race', units:['Identity Crimes'],
+            startAt: Date.now() - 1000, chatMessages: [], participants: parts, racers: Object.keys(parts) }); }""")
+        pg.wait_for_timeout(250)
+        pg.evaluate("()=>{ vroomCode='R313N4'; vroomMyKey='me'; vroomIsHost=true; beginVirtualRoomTest(['Identity Crimes'], null, null, 0); }")
+        pg.wait_for_selector(".qpanel .choice", timeout=25000)
+        pg.evaluate("()=>{ order.forEach(qi=>{ picked[qi]=optionOrder(qi).indexOf(QUESTIONS[qi].answer); }); stopQuestionTimer(); summarize(); }")
+        pg.wait_for_function("()=>!!document.querySelector('.vroom-waitcard.is-all-in')", timeout=20000)
+        pg.wait_for_timeout(300)
+        check("a second match in the same room counts too", pg.evaluate("(b)=>(store.vrMatches||0) - b", before) == 1)
+        home(pg)
+
+        # A racer whose phone died mid-race must not hold the leaderboard.
+        pg.evaluate("""()=>{ const parts = __vrBots.room('R313DEAD', 5, i => i === 1
+              ? { seen: Date.now() - 10 * 60 * 1000, progress: 40 } : __vrBots.finished(i, 90 + i * 7));
+          return fbDb.collection('vrooms').doc('R313DEAD').set({ status:'starting', game:'race', units:['Identity Crimes'],
+            startAt: Date.now() - 2000, chatMessages: [], participants: parts, racers: Object.keys(parts) }); }""")
+        pg.wait_for_timeout(250)
+        pg.evaluate("()=>{ vroomCode='R313DEAD'; vroomMyKey='me'; vroomIsHost=true; beginVirtualRoomTest(['Identity Crimes'], null, null, 0); }")
+        pg.wait_for_selector(".qpanel .choice", timeout=25000)
+        pg.evaluate("()=>{ order.forEach(qi=>{ picked[qi]=optionOrder(qi).indexOf(QUESTIONS[qi].answer); }); stopQuestionTimer(); summarize(); }")
+        pg.wait_for_function("()=>!!document.querySelector('.vroom-waitcard.is-all-in')", timeout=20000)
+        t0 = time.time()
+        try:
+            pg.wait_for_function("()=>!!document.getElementById('vroom-race-cut')", timeout=30000)
+            took = round(time.time() - t0, 1)
+        except Exception:
+            took = None
+        check("a racer whose phone died does not hold the leaderboard back (rolls within 30s of everyone in)",
+              took is not None, took)
+        if took is not None:
+            last = pg.evaluate("()=>[...document.querySelectorAll('#vroom-race-cut .vrc-row')].length")
+            check("and is still on it, last", last == 5, last)
+        home(pg)
+
+        # A LOBBY OF TWENTY: Ready up used to sit ~2,000px down a phone.
+        pg.evaluate("()=>createVirtualRoomLobby(['Identity Crimes'], null, 'race')")
+        pg.wait_for_function("()=>typeof vroomCode==='string' && vroomCode", timeout=20000)
+        pg.wait_for_selector(".vroom-readyup-btn", state="visible", timeout=20000)
+        pg.evaluate("""()=>{ const AV = AVATAR_CHARACTERS.map(c => c.id); const f = {};
+          for(let i = 1; i < 20; i++) f['participants.l' + i] = { name: 'P' + i, avatarChar: AV[i % AV.length], level: i,
+            joinedAt: Date.now() + i, seen: Date.now(), ready: i % 3 === 0, progress: 0, finished: false };
+          return fbDb.collection('vrooms').doc(vroomCode).update(f); }""")
+        pg.wait_for_function("()=>document.querySelectorAll('.vroom-row').length === 20", timeout=15000)
+        pg.wait_for_timeout(500)
+        lob = pg.evaluate("""()=>({ ready: Math.round(document.querySelector('.vroom-readyup-btn').getBoundingClientRect().top + scrollY),
+          vh: innerHeight, hs: document.documentElement.scrollWidth - innerWidth,
+          dots: document.querySelectorAll('.vroom-ready-badge.is-ready').length })""")
+        check("a lobby of twenty keeps Ready up within the first screen and a bit, with nothing off the side",
+              lob["ready"] <= lob["vh"] and lob["hs"] <= 0 and lob["dots"] == 6, lob)
+        home(pg)
+        pg.close()
+    except Exception as e:
+        check("the 313 race section ran at all", False, repr(e)[:300])
+
+    # ---- 21. Tug of War and Battle, at every size ---------------------------
+    print("\n21. (313) Tug of War and Battle of 2, 4 and 20: they end, they count, the result fits")
+    try:
+        pg = open_tab("Tam", "ninja", 3000, "T313-0001", badges=1)
+        active(pg)
+        pg.evaluate(BOTS_313)
+        pg.evaluate("()=>{ theme.muteBanners = true; theme.reduceMotion = true; }")
+        for game in ("tug", "battle"):
+            for n in (2, 4, 20):
+                code = ("TUG" if game == "tug" else "BAT") + "313N%d" % n
+                before = pg.evaluate("()=>store.vrMatches || 0")
+                pg.evaluate("""([code, n, game])=>{ const parts = __vrBots.room(code, n); const teams = tugTeamsFor(parts);
+                  const d = { status:'starting', game, units:['Identity Crimes'], count: 10, startAt: Date.now() + 1200,
+                              chatMessages: [], participants: parts, racers: Object.keys(parts) };
+                  if(game === 'tug') d.tug = { progress:{}, over:false, winner:null, finalPos:0, count:10, teams };
+                  else d.battle = { log:[], progress:{}, over:false, winner:null, count:0, teams };
+                  return fbDb.collection('vrooms').doc(code).set(d).then(()=>{ vroomCode=code; vroomMyKey='me';
+                    game === 'tug' ? beginTugMatch(d) : beginBattleMatch(d); __vrBots.beat(); }); }""", [code, n, game])
+                pg.wait_for_selector(".screen-%s .choice" % game, timeout=25000)
+                pg.wait_for_timeout(400)
+                if game == "battle":
+                    hdr = pg.evaluate("""()=>{ const sides=[...document.querySelectorAll('.screen-battle .battle-side')];
+                      return { faces: sides.map(s=>s.querySelectorAll('.battle-faces > *').length),
+                               out: sides.some(s=>{ const r=s.getBoundingClientRect(); return r.left < -1 || r.right > innerWidth + 1; }),
+                               hs: document.documentElement.scrollWidth - innerWidth }; }""")
+                    check("battle, %d people: each side's header fits on screen" % n,
+                          max(hdr["faces"]) <= 4 and not hdr["out"] and hdr["hs"] <= 0, hdr)
+                pg.evaluate("""([game, n])=>{ const d = game === 'tug' ? tugLastData : battleLastData; const teams = d[game].teams; const mine = teams.me;
+                  const cnt = game === 'tug' ? tugCount : battleCount;
+                  Object.keys(teams).filter(k => k !== 'me').forEach(k => { const ours = teams[k] === mine;
+                    const fast = n === 2 || ours;
+                    if(game === 'tug') __vrBots.tug(k, fast ? 300 : 900, fast ? 1 : .3, cnt);
+                    else __vrBots.battle(k, fast ? 250 : 900, fast ? 1 : .3, cnt); }); }""", [game, n])
+                try:
+                    pg.wait_for_selector(".screen-%s-result" % game, timeout=40000)
+                    ended = True
+                except Exception:
+                    ended = False
+                check("%s, %d people: the match ends on the result screen" % (game, n), ended)
+                if ended:
+                    pg.wait_for_timeout(600)
+                    r = pg.evaluate("""(before)=>{ const sub=document.querySelector('#stage .cal-sub');
+                      const bar=document.querySelector('.bottomtabs');
+                      const ex=[...document.querySelectorAll('#stage .vroom-exit-row button')].map(b=>b.getBoundingClientRect()).map(q=>q.right<=innerWidth+1&&q.left>=-1);
+                      return { sub: sub ? sub.textContent : '', hs: document.documentElement.scrollWidth - innerWidth,
+                               tabbar: !bar || bar.hidden || getComputedStyle(bar).display === 'none',
+                               exits: ex, rows: document.querySelectorAll('#stage .tug-board-row').length,
+                               matches: (store.vrMatches || 0) - before }; }""", before)
+                    check("%s, %d people: no sideways scroll and a one-line summary" % (game, n),
+                          r["hs"] <= 0 and len(r["sub"]) <= 70 and r["sub"].count("&") <= 1, r)
+                    check("%s, %d people: everybody is on the board" % (game, n), r["rows"] == n, r)
+                    check("%s, %d people: no tab bar, two ways out on screen" % (game, n),
+                          r["tabbar"] and len(r["exits"]) == 2 and all(r["exits"]), r)
+                    check("%s, %d people: the match counts towards Matches played" % (game, n), r["matches"] == 1, r)
+                home(pg)
+        # The same room twice: two matches.
+        before = pg.evaluate("()=>store.vrMatches || 0")
+        for _ in range(2):
+            pg.evaluate("""()=>{ const parts = __vrBots.room('BAT313TWICE', 2); const teams = tugTeamsFor(parts);
+              const d = { status:'starting', game:'battle', units:['Identity Crimes'], startAt: Date.now() + 800, chatMessages: [],
+                participants: parts, racers: Object.keys(parts), battle: { log:[], progress:{}, over:false, winner:null, count:0, teams } };
+              return fbDb.collection('vrooms').doc('BAT313TWICE').set(d).then(()=>{ vroomCode='BAT313TWICE'; vroomMyKey='me'; beginBattleMatch(d);
+                __vrBots.battle('b1', 200, 1, battleCount); }); }""")
+            pg.wait_for_selector(".screen-battle-result", timeout=40000)
+            pg.wait_for_timeout(400)
+            home(pg)
+        check("two matches in the same room are two matches", pg.evaluate("(b)=>(store.vrMatches||0) - b", before) == 2)
+        pg.close()
+    except Exception as e:
+        check("the 313 team-match section ran at all", False, repr(e)[:300])
+
+    # ---- 22. nobody can strand a team match ---------------------------------
+    print("\n22. (313) a team match cannot be held up by a phone that died")
+    try:
+        pg = open_tab("Gil", "ninja", 3000, "G313-0001", badges=1)
+        active(pg)
+        pg.evaluate(BOTS_313)
+        pg.evaluate("()=>{ theme.muteBanners = true; theme.reduceMotion = true; }")
+        # The HOST's phone dies: the one device that calls the match over.
+        pg.evaluate("""()=>{ const parts = __vrBots.room('TUG313HOST', 4, i => i === 1 ? { joinedAt: Date.now() - 999999 } : {});
+          const teams = tugTeamsFor(parts);
+          const d = { status:'starting', game:'tug', units:['Identity Crimes'], count: 3, startAt: Date.now() + 800, chatMessages: [],
+                      participants: parts, racers: Object.keys(parts), tug: { progress:{}, over:false, winner:null, finalPos:0, count:3, teams } };
+          return fbDb.collection('vrooms').doc('TUG313HOST').set(d).then(()=>{ vroomCode='TUG313HOST'; vroomMyKey='me'; beginTugMatch(d); __vrBots.beat(); }); }""")
+        pg.wait_for_selector(".screen-tug .choice", timeout=25000)
+        pg.evaluate("""()=>{ __vrBots.die('b1');
+          ['b2','b3'].forEach(k => __vrBots.upd({ ['tug.progress.' + k]: { pos: 3, correct: 0, pull: -.75, done: true, at: Date.now() } }));
+          tugMyPos = tugCount; tugMyDone = true; tugMyPull = -.75; tugPublishProgress(); }""")
+        try:
+            pg.wait_for_selector(".screen-tug-result", timeout=20000)
+            ok = True
+        except Exception:
+            ok = False
+        check("the host's phone dies: the next player calls the match, and it ends", ok,
+              pg.evaluate("()=>({host: vroomIsHost, over: tugLastData && tugLastData.tug && tugLastData.tug.over})"))
+        home(pg)
+        # A whole side goes quiet: the other side has won.
+        pg.evaluate("""()=>{ const parts = __vrBots.room('BAT313GONE', 2); const teams = tugTeamsFor(parts);
+          const d = { status:'starting', game:'battle', units:['Identity Crimes'], startAt: Date.now() + 800, chatMessages: [],
+            participants: parts, racers: Object.keys(parts), battle: { log:[], progress:{}, over:false, winner:null, count:0, teams } };
+          return fbDb.collection('vrooms').doc('BAT313GONE').set(d).then(()=>{ vroomCode='BAT313GONE'; vroomMyKey='me'; beginBattleMatch(d); }); }""")
+        pg.wait_for_selector(".screen-battle .choice", timeout=25000)
+        pg.evaluate("()=>__vrBots.die('b1')")
+        try:
+            pg.wait_for_selector(".screen-battle-result", timeout=20000)
+            won = pg.evaluate("()=>(document.querySelector('#stage h1')||{}).textContent")
+        except Exception:
+            won = None
+        check("the only player on the other side goes quiet: the match ends, and you have won",
+              won is not None and "won" in won.lower(), won)
+        home(pg)
+        # A side of ten, on the winner scene: three figures and a count, on the phone.
+        pg.evaluate("()=>{ theme.muteBanners = false; theme.reduceMotion = false; }")
+        fit = pg.evaluate("""()=>new Promise(res=>{ const es=[...Array(10)].map((_, i)=>({ name: 'P' + i, avatar: 'ninja' }));
+          playVroomWinnerCutscene({ kind:'team', entries: es }, ()=>{});
+          setTimeout(()=>{ const t=document.querySelector('#vroom-cutscene .vroom-cut-team'); const r=t.getBoundingClientRect();
+            const out={ figs: t.querySelectorAll('.vroom-cut-figure').length, more: (t.querySelector('.vroom-cut-morenum')||{}).textContent || '',
+                        left: Math.round(r.left), right: Math.round(r.right), vw: innerWidth };
+            document.getElementById('vroom-cutscene')?.remove(); res(out); }, 4200); })""")
+        check("a winning side of ten fits the phone: three figures and '+7'",
+              fit["figs"] == 3 and fit["more"] == "+7" and fit["left"] >= 0 and fit["right"] <= fit["vw"], fit)
+        pg.close()
+    except Exception as e:
+        check("the 313 stranding section ran at all", False, repr(e)[:300])
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--against", help="run against a different index.html")
@@ -768,6 +1067,8 @@ def main():
                     help="simulated one-way write latency, ms")
     ap.add_argument("--only-246", action="store_true",
                     help="run only the build-246 sections (13-19)")
+    ap.add_argument("--only-313", action="store_true",
+                    help="run only the build-313 sections (20-22)")
     args = ap.parse_args()
     src = args.against or os.path.join(ROOT, "index.html")
     body = INSET_RE.sub(lambda m: "0px", io.open(src, encoding="utf-8").read())
@@ -860,6 +1161,12 @@ def main():
                    "badges": badges, "rankKey": rank_key})
             return pg
 
+        if args.only_313:
+            sections_313(ctx, open_tab, args)
+            ctx.close(); br.close(); srv.shutdown()
+            print("\n%s  (%d failure(s))"
+                  % ("ALL PASS" if not FAILURES else "FAILED: " + ", ".join(FAILURES), len(FAILURES)))
+            return 1 if FAILURES else 0
         if args.only_246:
             sections_246(ctx, open_tab, args)
             ctx.close(); br.close(); srv.shutdown()
@@ -2035,6 +2342,7 @@ def main():
             check("the race-line section ran at all", False, repr(e)[:200])
 
         sections_246(ctx, open_tab, args)
+        sections_313(ctx, open_tab, args)
 
         ctx.close()
         br.close()
