@@ -9414,8 +9414,17 @@ def check_b313_flares(br):
     ok, missed = 0, []
     for i in range(15):
         k = keys[i % 5]
-        pos = pg.evaluate("""(k)=>{ const d = document.querySelector('.panel.home [data-flare="' + k + '"]') || [...document.querySelectorAll('.panel.home .cosmic-orbit-dot')][['red','orange','yellow','violet','white'].indexOf(k)];
-          if(!d) return null; const r = d.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }""", k)
+        # Build 313's second pass: a flare under a Liquid Glass bubble is
+        # meant to give the tap to the bubble (section 92), so wait until
+        # this one is in the clear before tapping it.
+        pos = None
+        for _ in range(20):
+            pos = pg.evaluate("""(k)=>{ const d = document.querySelector('.panel.home [data-flare="' + k + '"]') || [...document.querySelectorAll('.panel.home .cosmic-orbit-dot')][['red','orange','yellow','violet','white'].indexOf(k)];
+              if(!d) return null; const r = d.getBoundingClientRect(); const x = r.left + r.width / 2, y = r.top + r.height / 2;
+              const top = document.elementFromPoint(x, y); return [x, y, !!(top && top.closest && top.closest('.cosmic-icon-badge'))]; }""", k)
+            if not pos or not pos[2]:
+                break
+            pg.wait_for_timeout(400)
         if not pos:
             missed.append((k, "no dot")); continue
         pg.evaluate("()=>{ document.querySelectorAll('.app-banner, #save-code, .daily-alert, .rs-spot, #contextual-info-popup').forEach(e => e.remove()); }")
@@ -9505,6 +9514,108 @@ def check_b313_pause(br):
         check("%s: paused, it moves to Pause's right edge, on the same line" % label,
               got["panel"] and abs(d["r"] - p["r"]) <= 2 and abs(d["cy"] - p["cy"]) <= 2, {"pause": p, "paused": d})
         check("%s: and back beside Pause on Resume" % label, abs(r["r"] - q["r"]) <= 2 and abs(r["cy"] - q["cy"]) <= 2, {"before": q, "after": r})
+        ctx.close()
+
+
+GLASS_SEEK = """(want)=>{
+  /* Turn the inner ring (its animation re-timed by a negative delay) until
+     the violet flare's centre is under a bubble (want 'under') or well
+     clear of every bubble (want 'clear'), then freeze everything there. */
+  const wrap = document.querySelector('.panel.home .cosmic-hero-wrap');
+  const inner = wrap.querySelector('.cosmic-hero-orbitlayer-inner');
+  const flare = inner.querySelector('[data-flare="violet"]') || inner.querySelectorAll('.cosmic-orbit-dot')[1] || inner.querySelector('.cosmic-orbit-dot');
+  const bubbles = [...wrap.querySelectorAll(':scope > .cosmic-icon-badge')];
+  const dur = parseFloat(getComputedStyle(inner).animationDuration.split(',').pop()) || 60;
+  const at = () => { const f = flare.getBoundingClientRect(); return [f.left + f.width / 2, f.top + f.height / 2]; };
+  for(let s = 0; s < dur; s += .1){
+    inner.style.animationDelay = '0s, -' + s.toFixed(2) + 's';
+    const [fx, fy] = at();
+    const near = bubbles.map(b => { const r = b.getBoundingClientRect(); return { b, d: Math.hypot(fx - r.left - r.width / 2, fy - r.top - r.height / 2) - r.width / 2 }; })
+      .sort((a, c) => a.d - c.d)[0];
+    if((want === 'under' && near.d < -8) || (want === 'clear' && near.d > 34)){
+      wrap.querySelectorAll('*').forEach(e => { e.style.animationPlayState = 'paused'; });
+      inner.style.animationPlayState = 'paused';
+      return { x: fx, y: fy, tier: near.b.dataset.rankTier || '', d: Math.round(near.d) };
+    }
+  }
+  return null; }"""
+
+
+def check_b313_flares_glass(br):
+    """Build 313, second pass: "Ensure those go under the flare bubble when
+    passing through, that would look so so sick with the Liquid Glass flare
+    bubbles." The first pass put the secret flares ABOVE the rank bubbles;
+    they paint below them now and are seen through the glass. A flare under
+    a bubble must not take the bubble's tap; a flare in the clear still
+    names itself. Written against the first pass (flares on top), where the
+    paint-order and the under-a-bubble tap both fail; against 312 the
+    flare in the clear says nothing about which flare it is."""
+    print("\n93. build 313: the secret flares pass under the Liquid Glass bubbles (centred on their rings); taps stay right")
+    for label, w, h in DEVICES:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, init="try{localStorage.setItem('class26e.savecode.asked','1');}catch(e){}")
+        pg.evaluate("""()=>{ document.querySelectorAll('.app-banner, #save-code').forEach(e => e.remove());
+          store.mysteryColorsFound = { red: true, orange: true, yellow: true, violet: true, white: false };
+          try{ ensureUnlocksShown(); markUnlocksShown(announceableHeldCharacters(), BANNERS.filter(b => bannerEarned(b.id)).map(b => b.id)); }catch(e){}
+          store.flareHintsShown = ['umbra', 'singularity', 'genesis']; showHome(); }""")
+        pg.wait_for_timeout(2600)
+        pg.evaluate("()=>document.querySelectorAll('.rs-spot, .app-banner, #save-code, .daily-alert').forEach(e => e.remove())")
+        under = pg.evaluate(GLASS_SEEK, "under")
+        pg.wait_for_timeout(200)
+        order = pg.evaluate("""(p)=>{ if(!p) return null; const els = document.elementsFromPoint(p.x, p.y);
+          const bi = els.findIndex(e => e.classList && e.classList.contains('cosmic-icon-badge'));
+          const fi = els.findIndex(e => (e.classList && e.classList.contains('cosmic-orbit-dot')) || (e.getAttribute && /cosmic-orbit-dot/.test(e.getAttribute('class') || '')));
+          return { bubble: bi, flare: fi }; }""", under)
+        check(f"{label}: a flare under a bubble paints beneath it (the glass is on top)",
+              bool(order) and order["bubble"] >= 0 and order["flare"] >= 0 and order["bubble"] < order["flare"], [under, order])
+        if under:
+            pg.mouse.click(under["x"], under["y"])
+            pg.wait_for_timeout(200)
+        t = pg.evaluate("()=>{ const p = document.getElementById('contextual-info-popup'); return p ? p.textContent : ''; }")
+        rank = pg.evaluate("(t)=>RANK_DISPLAY_NAME[t] || ''", (under or {}).get("tier", ""))
+        check(f"{label}: a tap on a bubble with a flare under it opens the bubble's rank, not the flare",
+              bool(rank) and t.startswith(rank + " rank"), [rank, t[:60]])
+        pg.evaluate("()=>{ document.getElementById('contextual-info-popup')?.remove(); document.querySelectorAll('.panel.home .cosmic-hero-wrap *').forEach(e => { e.style.animationPlayState = ''; }); }")
+        clear = pg.evaluate(GLASS_SEEK, "clear")
+        pg.wait_for_timeout(200)
+        if clear:
+            pg.mouse.click(clear["x"], clear["y"])
+            pg.wait_for_timeout(200)
+        t2 = pg.evaluate("()=>{ const p = document.getElementById('contextual-info-popup'); return p ? p.textContent : ''; }")
+        nm = pg.evaluate("()=>MYSTERY_NAME.violet")
+        check(f"{label}: the same flare in the clear still takes the tap and names itself", bool(clear) and nm in t2, [clear, t2[:60]])
+        # THE BUBBLES SIT ON THE RINGS, BY THEIR CENTRES - and so a flare on
+        # a bubble's ring goes straight under its middle, not past its rim.
+        geo = pg.evaluate("""()=>{
+          const wrap = document.querySelector('.panel.home .cosmic-hero-wrap');
+          wrap.querySelectorAll('*').forEach(e => { e.style.animationPlayState = ''; });
+          const bubs = [...wrap.querySelectorAll(':scope > .cosmic-icon-badge')];
+          bubs.forEach(b => b.style.animation = 'none');
+          const W = wrap.getBoundingClientRect(), u = W.width / 360;
+          const cx = W.left + W.width / 2, cy = W.top + W.height * 162 / 342;
+          const outer = typeof HOME_OUTER_R === 'number' ? HOME_OUTER_R : 152;
+          const ctr = b => { const r = b.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
+          const off = bubs.map(b => { const [x, y] = ctr(b); const d = Math.hypot(x - cx, y - cy) / u;
+            return +Math.min(Math.abs(d - 108), Math.abs(d - outer)) * u; });
+          /* one revolution of the inner ring: the closest any inner flare comes to any bubble's centre */
+          const inner = wrap.querySelector('.cosmic-hero-orbitlayer-inner');
+          const flares = [...inner.querySelectorAll('.cosmic-orbit-dot')];
+          const dur = parseFloat(getComputedStyle(inner).animationDuration.split(',').pop()) || 60;
+          let best = 1e9;
+          for(let t = 0; t < dur; t += dur / 1440){
+            inner.style.animationDelay = '0s, -' + t.toFixed(3) + 's';
+            flares.forEach(f => { const r = f.getBoundingClientRect(); const fx = r.left + r.width / 2, fy = r.top + r.height / 2;
+              bubs.forEach(b => { const [x, y] = ctr(b); best = Math.min(best, Math.hypot(fx - x, fy - y)); }); });
+          }
+          inner.style.animationDelay = ''; bubs.forEach(b => b.style.animation = '');
+          return { off: off.map(v => +v.toFixed(2)), closest: +best.toFixed(2) }; }""")
+        check(f"{label}: every bubble's centre is on its ring (within 1.5px)", bool(geo["off"]) and max(geo["off"]) <= 1.5, geo["off"])
+        check(f"{label}: a flare passes within 3px of a bubble's centre - through it, not past the rim", geo["closest"] <= 3, geo["closest"])
+        # The glass is the glass it was: nothing about a bubble with nothing
+        # behind it changed (its fill, blur and rim are 312's).
+        g = pg.evaluate("""()=>{ const u = document.querySelector('.panel.home .cosmic-icon-badge.cosmic-badge-rank:not(.cosmic-badge-lit)');
+          if(!u) return null; const s = getComputedStyle(u); return [s.backgroundColor, s.backdropFilter || s.webkitBackdropFilter, s.borderTopColor, s.opacity]; }""")
+        check(f"{label}: an unreached bubble's glass is unchanged (fill, blur, rim, opacity)",
+              g == ["rgba(255, 255, 255, 0.09)", "blur(6px) saturate(1.4)", "rgba(255, 255, 255, 0.24)", "1"], g)
         ctx.close()
 
 
@@ -9638,6 +9749,7 @@ def main():
             check_b313_alive(br)
             check_b313_grades(br)
             check_b313_flares(br)
+            check_b313_flares_glass(br)
             check_b313_pause(br)
         finally:
             br.close()
