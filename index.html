@@ -51153,7 +51153,10 @@ function freshOrder(indexes){
   const fresh = arr.filter(qi => !age.has(KEYS[qi]));
   const stale = arr.filter(qi => age.has(KEYS[qi])).sort((a, b) => age.get(KEYS[b]) - age.get(KEYS[a]));
   const half = Math.ceil(stale.length / 2);
-  return spreadOrder(fresh.concat(shuffle(stale.slice(0, half)), shuffle(stale.slice(half))));
+  /* spread each part on its own: across the whole order the look-ahead
+     pulled a recent opener forward into the fresh part on a small unit,
+     which is the one thing this function exists to prevent */
+  return spreadOrder(fresh).concat(spreadOrder(shuffle(stale.slice(0, half))), spreadOrder(shuffle(stale.slice(half))));
 }
 /* ---- SPREAD OUT, NOT JUST RANDOM (build 309) ----
    "Always feels like questions are around the same area of a test." The

@@ -9962,7 +9962,12 @@ them in 27% of shuffles. All three read as "not shuffled".
   shuffled order once more and takes, within a 30-question look-ahead,
   the first question not within `max(3, unit/25)` source numbers of either
   of the last two, and not a copy (same choices) of one in the last
-  `min(40, n/3)`. 5.7 → 0.02 neighbours a run; twins 11% → 0.6%.
+  `min(40, n/3)`. **Each part of `freshOrder()`'s result is spread on its
+  own** (fresh, older openers, newest openers): spread across the whole
+  order, the look-ahead pulled a recent opener forward into the opening
+  slots on a 12-question unit and `check-behaviour` b229 ("consecutive
+  runs of a small unit open with different questions") went red. 5.7 →
+  ~0.1 neighbours a run; twins 11% → ~2%.
 - **Not applied to a Virtual Room.** Its order comes from
   `shuffleSeeded()` and must be identical on every device in the room; a
   post-pass would make two builds in one room disagree.
