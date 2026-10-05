@@ -1081,7 +1081,7 @@ def check_slide(br):
     is exactly when this check matters most. It already went stale once
     when the duration moved to .19s. Everything about the slide itself is the app's own code.
     """
-    print("\n8. the next question fades through cleanly, and then stops")
+    print("\n8. the next question pushes in cleanly, and then stops")
     for label, w, h in DEVICES:
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, touch=True)
         pg.evaluate("""()=>{ cfg.units=[topicsIn(QUESTIONS)[0]]; cfg.mode='drill';
@@ -1121,23 +1121,37 @@ def check_slide(br):
           window.setTimeout=function(fn,ms){ return (ms>=150&&ms<=400) ? 0 : st(fn,ms); };
           advanceWithSlide();
           window.setTimeout=st;
-          let worst=0, frames=0, sawOut=false, sawIn=false;
+          /* BUILD 311: A PUSH. "I see the next question as the old one is
+             going away" - so both ARE on screen together now, side by side.
+             What must stay true is the thing 296 was guarding: they are
+             never drawn over each other. That is geometry again (the
+             docstring above said so: the right test for a slide), plus
+             that the two really do share the screen for some frames. */
+          let overlap=0, frames=0, both=0, sawOut=false, sawIn=false, hScroll=0;
           for(let i=0;i<50;i++){
             await new Promise(r=>requestAnimationFrame(r));
             const c=document.querySelector('body > .panel');
             const n=document.querySelector('#stage > .panel');
             if(!c||!n) break;
             const oc=+getComputedStyle(c).opacity, on=+getComputedStyle(n).opacity;
+            const rc=c.getBoundingClientRect(), rn=n.getBoundingClientRect();
             if(oc > .9) sawOut = true;
             if(on > .9) sawIn = true;
-            worst=Math.max(worst, Math.min(oc,on));
+            const inView = r => r.right > 4 && r.left < innerWidth - 4;
+            if(oc > .15 && on > .15 && inView(rc) && inView(rn)){
+              both++;
+              overlap = Math.max(overlap, Math.min(rc.right, rn.right) - Math.max(rc.left, rn.left));
+            }
+            hScroll = Math.max(hScroll, document.documentElement.scrollWidth - document.documentElement.clientWidth);
             frames++;
-            if(sawIn && oc < .01) break;
+            if(sawIn && rn.left <= 1 && rn.left >= -1 && Math.abs(rc.right) < 1e6 && rc.right <= 0) break;
           }
-          return { worst: +worst.toFixed(2), frames, sawOut, sawIn }; }""")
-        check("%s the two questions are never readable at once" % label,
-              worst["frames"] > 3 and worst["sawOut"] and worst["sawIn"]
-              and worst["worst"] <= 0.15, worst)
+          return { overlap: Math.round(overlap), both, frames, sawOut, sawIn, hScroll }; }""")
+        check("%s the two questions share the screen side by side, never drawn over each other" % label,
+              worst["frames"] > 3 and worst["sawOut"] and worst["sawIn"] and worst["both"] >= 2
+              and worst["overlap"] <= 2, worst)
+        check("%s and the page never scrolls sideways while the next one pushes in" % label,
+              worst["hScroll"] <= 0, worst)
         ctx.close()
 
 
@@ -1934,12 +1948,16 @@ def check_b234(br):
                       count: (sh.querySelector('.drawfrom-sect .bank-opt.on .bank-count') || {}).textContent || '',
                       name: (sh.querySelector('.drawfrom-sect .bank-opt.on .bank-name') || {}).textContent || '' };
         cfg.size = 0; if(sl){ sl.value = sl.min; sl.dispatchEvent(new Event('input', { bubbles:true })); }
-        res.dragged = cfg.size; { const hn = sh.querySelector('.hundo-note'); res.warn = !hn.hidden && !hn.classList.contains('is-ok'); }
+        /* build 311: the warning is the "No hundo" chip in the How many row */
+        res.dragged = cfg.size; { const hn = sh.querySelector('.hundo-chip'); res.warn = !!hn && !hn.hidden; }
         if(sl){ sl.value = sl.max; sl.dispatchEvent(new Event('input', { bubbles:true })); }
-        res.atEnd = cfg.size; { const hn = sh.querySelector('.hundo-note'); /* build 291: the line stays at All, as the quiet .is-ok one */ res.warnAtEnd = !hn.hidden && !hn.classList.contains('is-ok'); }
+        res.atEnd = cfg.size; { const hn = sh.querySelector('.hundo-chip'); res.warnAtEnd = !!hn && !hn.hidden; }
         const sw = sh.querySelectorAll('.timer-sect .opt input[type=checkbox]');
         res.timerSwitches = sw.length;
-        if(sw[0]){ sw[0].checked = true; sw[0].dispatchEvent(new Event('change', { bubbles:true })); }
+        /* the Countdown switch by name (build 310 put the Stopwatch first) */
+        const cd = [...sh.querySelectorAll('.timer-sect .opt')].find(r => /Countdown/.test(r.textContent));
+        const cdIn = cd && cd.querySelector('input[type=checkbox]');
+        if(cdIn){ cdIn.checked = true; cdIn.dispatchEvent(new Event('change', { bubbles:true })); }
         res.timerAfter = cfg.timer;
         /* Build 250: Shuffle and Hide answers are their own card; the fold is the timer alone. */
         const mb = sh.querySelector('.more-body'), rows = sh.querySelector('.optionsmodal-body > .sect > .opt-rows');
@@ -1992,8 +2010,10 @@ def check_b234(br):
     # confusing" - the count moved out of the sentence and onto the choice).
     # Build 250: but not on "All questions" - "All questions / 48" beside
     # "All 48" under How many "doesn't even make sense".
+    # REVISED IN 311: the box carries what it draws ("The whole unit"),
+    # still never a number - the rule from 250 is the number.
     check("the Question bank's All questions carries no second count",
-          sh.get("name") == "All questions" and sh.get("count", "") == "", sh)
+          sh.get("name") == "All questions" and not any(ch.isdigit() for ch in sh.get("count", "")), sh)
     # Build 254: a default says nothing - no "All questions", "In order"
     # or "No timer" in the top box on an untouched run.
     check("on an untouched run the top box shows no defaults (All questions, In order, No timer)",
@@ -2172,12 +2192,16 @@ def check_b235b(br):
       document.getElementById('nextbtn')?.click(); await wait(600);
       await T('bank', () => { const rows = [...document.querySelectorAll('.bank-opt')];
         const cap = document.querySelectorAll('.bank-sect .bank-caption');
+        /* build 311: what each draws is IN its box ("should it just be in
+           those boxes?") and the line under the switch is gone */
         return { rows: rows.map(r => r.dataset.value), bare: rows.every(r => !r.querySelector('.bank-desc') && !r.querySelector('.bank-ico')),
-                 oneLine: cap.length === 1 && (cap[0].textContent || '').length > 12,
+                 oneLine: [...cap].every(c => c.hidden) && rows.every(r => ((r.querySelector('.bank-count') || {}).textContent || '').trim().length > 2),
+                 allSays: ((document.querySelector('.bank-opt[data-value="all"] .bank-count') || {}).textContent || ''),
                  label: (document.querySelector('.bank-sect .slab') || {}).textContent }; });
       document.querySelector('.bank-opt[data-value="flagged"]')?.click(); await wait(200);
       await T('bankInfo', () => { const c = document.querySelector('.bank-caption');
-        return { info: !!document.querySelector('.bank-info, .bank-infobody'), shown: !!c && !c.hidden, len: c ? (c.textContent || '').trim().length : 0 }; });
+        const fc = document.querySelector('.bank-opt[data-value="flagged"] .bank-count');
+        return { info: !!document.querySelector('.bank-info, .bank-infobody'), shown: !!fc, len: fc ? (fc.textContent || '').trim().length : 0 }; });
       cfg.timer = 'down'; cfg.timerMinutes = 20; document.querySelector('.bank-opt[data-value="flagged"]')?.click(); await wait(200);
       await T('tags', () => { const ts = [...document.querySelectorAll('.sheet-summary .sheet-summary-tags .sheet-tag')];
         const card = (document.querySelector('.unitoptions-modal-sheet .more-toggle') || {}).parentElement;
@@ -2228,7 +2252,9 @@ def check_b235b(br):
     # REVISED IN 309: the line names your selection ("could it be more
     # specific to clarify that is for the ones you have selected?"), so it
     # is allowed 60 characters, still one short line.
-    check("the Question bank: All questions and Flagged, one short line under Flagged - no info dot",
+    # REVISED IN 311: the words moved INTO the boxes and the line under
+    # the switch went - "should it just be in those boxes?"
+    check("the Question bank: All questions and Starred, each saying what it draws in its own box - no info dot",
           b.get("rows") == ["all", "flagged"] and b.get("bare") and b.get("oneLine")
           and bi.get("shown") and 0 < bi.get("len", 0) <= 60 and not bi.get("info")
           and b.get("label") == "Question bank", [b, bi])
@@ -2254,7 +2280,8 @@ def check_b235b(br):
     # the timer thing at the top is green though." The pill, not the card.
     check("a timer that is on turns its pill in the top box green, and not the Timer card",
           isinstance(t, dict) and t.get("green") is True and t.get("cardGreen") is False, t)
-    check("the fold is called Timer", str(r["timerLabel"]).startswith("Timer"), r["timerLabel"])
+    # build 310 renamed it "Stopwatch & timer": the shape is that it names the timers
+    check("the fold is named for the timers", "timer" in str(r["timerLabel"]).lower(), r["timerLabel"])
     d = r["detail"] if isinstance(r["detail"], dict) else {}
     check("holding a unit card opens its details without ticking it",
           d.get("unticked") is True and d.get("doors") == 1 and "Completed" in d.get("stats", []) and "Last score" in d.get("stats", [])
@@ -5623,8 +5650,12 @@ def check_b280_rankmap_still(br):
       out.grownClimb = !!document.querySelector('.rankmap-roadfill[data-progress-to]');
       }catch(e){ out.threw = String(e); }
       return out; }""")
-    check("opened with nothing changed, the Rank tab does not travel",
-          r.get("recorded") is not None and 0 < r["recorded"] < 1 and r.get("stillMax", 99) < 2 and not r.get("stillClimb"), r)
+    # Build 311 reversed the first half: "when opening the rank tab each
+    # time, you should follow the rank road map progress bar to your rank
+    # and then back to the top". Opened with nothing changed it now WALKS
+    # (travels and comes back) but does not re-run the climb.
+    check("opened with nothing changed, the Rank tab walks down to your progress (build 311) without re-running the climb",
+          r.get("recorded") is not None and 0 < r["recorded"] < 1 and r.get("stillMax", 0) > 40 and not r.get("stillClimb"), r)
     check("opened after the climb grew by a thousandth, it travels to it and runs the climb",
           r.get("grownClimb") is True and r.get("grownMax", 0) > 40, r)
     ctx.close()
@@ -5745,8 +5776,12 @@ def check_b282(br):
     check("the Profile card's two rings take the Rank tab's level and badge colours",
           r.get("profRings") == 2 and r.get("profLevelRing") == r.get("rankLevelRing") and r.get("profBadgeRing") == r.get("rankBadgeRing")
           and r.get("rankLevelRing") != r.get("rankBadgeRing"), r)
-    check("with no progress arc and nothing on them moving",
-          r.get("profArcs") == 0 and r.get("profRingAnims") == 0, (r.get("profArcs"), r.get("profRingAnims")))
+    # REVISED IN 311: the badge circle became a progress ring on request
+    # ("should the badge circle be a progress bar similar to the badge one
+    # in the badge tab"), drawn at its value - so exactly ONE arc, still
+    # with nothing on either ring moving.
+    check("with one progress arc (badges, drawn still) and nothing on them moving",
+          r.get("profArcs") == 1 and r.get("profRingAnims") == 0, (r.get("profArcs"), r.get("profRingAnims")))
     check("nothing running on Profile repaints per frame (transform and opacity only)",
           r.get("profPaint") == [], r.get("profPaint"))
     kf = r.get("kf") or {}
@@ -6309,7 +6344,7 @@ def check_b291(br):
         showSetup(); await wait(700);
         document.getElementById('nextbtn')?.click(); await wait(900);
         const sl = document.querySelector('.howmany-sect input.slider');
-        const note = document.querySelector('.unitoptions-modal-sheet .hundo-note');
+        const note = document.querySelector('.unitoptions-modal-sheet .hundo-chip');
         const box = el => { const b = el.getBoundingClientRect(); return [Math.round(b.top), Math.round(b.height)]; };
         out.noteAll = note ? { hidden: note.hidden, text: note.textContent, h: box(note)[1] } : null;
         const slTop0 = box(sl)[0];
@@ -6369,18 +6404,21 @@ def check_b291(br):
     check("and one earned while that card is up plays straight after it, still on Home",
           "Hive" in str(r.get("second")) and "500 questions" in str(r.get("second")) and r.get("stillHome"), [r.get("second"), r.get("stillHome")])
     na, npart = r.get("noteAll") or {}, r.get("notePartial") or {}
-    check("on All, the hundo line is already there (says the whole unit counts)",
-          na and not na.get("hidden") and "counts as a hundo" in na.get("text", ""), na)
+    # REVISED IN 311: "When you have the max questions on, that notice
+    # beneath it does not need to be there." Nothing at All; the warning
+    # is a chip in the How many row, so it still moves nothing.
+    check("on All, there is no hundo note at all",
+          na and na.get("hidden"), na)
     check("a touch on the track away from the thumb moves the count, first time, from All",
           r.get("sizeBefore") == 0 and 0 < (r.get("sizeAfter") or 0) < 12, [r.get("sizeBefore"), (r.get("midDrag") or {}).get("size"), r.get("sizeAfter")])
     st = r.get("slTop") or [0, 1]
-    check("the slider does not move while it is dragged below All, and the line keeps its height",
-          st[0] == st[1] == (r.get("midDrag") or {}).get("top") and npart.get("h") == na.get("h") and "won't count" in npart.get("text", ""),
+    check("the slider does not move while it is dragged below All, and the No hundo chip shows",
+          st[0] == st[1] == (r.get("midDrag") or {}).get("top") and not npart.get("hidden") and "hundo" in npart.get("text", "").lower(),
           [st, (r.get("midDrag") or {}).get("top"), na.get("h"), npart.get("h")])
     txt = r.get("sheetText") or ""
     check("the options say 'answer choices', and the timers say what they do",
-          all(s in txt for s in ["Shuffle answer choices", "Hide answer choices", "Countdown timer", "Track my time"])
-          and "Stopwatch" not in txt, txt[:300])
+          all(s in txt for s in ["Shuffle answer choices", "Hide answer choices", "Countdown timer", "Stopwatch"])
+          and "Track my time" not in txt, txt[:300])
     check("each of those four carries a one-line description",
           len([h for h in r.get("hints", []) if len(h) < 80]) >= 4, r.get("hints"))
     check("the loading screen is about half a second shorter (2.5s)",
@@ -6513,7 +6551,7 @@ def check_b297(br):
         document.querySelector('.pick-flagged-all').click(); await wait(700);
         const qs = [...document.querySelectorAll('.screen-answerreview .review-question')];
         out.list = { n: qs.length, all: want.every(i => qs.some(q => q.querySelector('.review-question-text').textContent === QUESTIONS[i].q)),
-                     title: (document.querySelector('.screen-answerreview .cal-title') || {}).textContent,
+                     title: (document.querySelector('.screen-answerreview .ar-head-title') || {}).textContent,
                      flags: qs.map(q => { const f = q.querySelector('.flagbtn.qflag'); return f ? f.classList.contains('on') : null; }) };
         /* unflag one there: it is unflagged, and stays on screen dimmed */
         const first = qs[0], ftext = first.querySelector('.review-question-text').textContent;
@@ -6565,7 +6603,7 @@ def check_b297(br):
           r.get("sheetOpen") is True and sw.get("closed") is True and sw.get("screen") == "setup", sw)
     ls = r.get("list") or {}
     check("the box lists exactly the flagged questions, each with the test's flag, on",
-          ls.get("n") == 3 and ls.get("all") and ls.get("title") in ("Flagged Questions", "Starred Questions") and ls.get("flags") == [True, True, True], ls)
+          ls.get("n") == 3 and ls.get("all") and (ls.get("title") or "").lower() in ("flagged questions", "starred questions") and ls.get("flags") == [True, True, True], ls)
     uh = r.get("unflagHere") or {}
     check("unflagging there takes the flag off and leaves the question, dimmed",
           uh.get("flagged") is False and uh.get("dimmed") is True and uh.get("still") is True, uh)
@@ -7135,7 +7173,10 @@ def check_b300(br):
                this cache under /__ch/. */
             const keys = window.caches ? (await (await caches.open('class26e.rk-sheets')).keys()).map(k => new URL(k.url).pathname).filter(p => p.indexOf('/__rk/') === 0) : [];
             out.keys = keys.length; out.buildKeyed = keys.some(k => k.indexOf(encodeURIComponent(APP_BUILD)) >= 0);
-            out.v3 = keys.filter(k => k.indexOf('/__rk/v4/') === 0).length;
+            /* The folder is whatever version the page says (ORBIT_ANIM_VER), not a
+               literal: build 310 moved it to v5 and a literal "v4" here failed
+               the build for being right. */
+            out.v3 = keys.filter(k => k.indexOf('/__rk/' + ORBIT_ANIM_VER + '/') === 0).length;
             /* a second Home reuses them: all playing again almost at once */
             showProfile('profile'); await wait(400); showHome();
             const t0 = performance.now();
@@ -7658,7 +7699,7 @@ def check_b303(br):
           /* 9. Learn's list, as cards with air between them */
           cfg.flashcards = false; showAnswerReview(['Identity Crimes'], 'all', {}); await wait(400);
           const qs = [...document.querySelectorAll('.screen-answerreview .review-question')];
-          out.listTitle = (document.querySelector('.screen-answerreview .cal-title') || {}).textContent;
+          out.listTitle = (document.querySelector('.screen-answerreview .ar-head-title') || {}).textContent;
           out.listGap = qs.length > 1 ? Math.round(R(qs[1]).top - R(qs[0]).bottom) : null;
           out.listCard = qs.length ? parseFloat(getComputedStyle(qs[0]).borderTopLeftRadius) : 0;
           /* 10. the words */
@@ -8144,7 +8185,15 @@ def check_b306_marks(br):
             import re
             n = [float(x) for x in re.findall(r"[\d.]+", c or "")]
             return len(n) >= 3 and n[1] > n[0] + 40 and n[1] > n[2] + 20
-        check(dev + ": the flashcard bar is green again (build 308)", green(r.get("cleanBg")), (r.get("cleanBg"), r.get("nowBg")))
+        # REVISED IN 311: "Maybe we don't make the color green for the progress
+        # bar ... white is boring and green kinda makes me think of test and
+        # xp." Its own colour now: a violet, neither green nor white nor grey.
+        def violet(c):
+            import re
+            n = [float(x) for x in re.findall(r"[\d.]+", c or "")]
+            return len(n) >= 3 and n[2] > n[1] + 40 and n[0] > n[1] + 10
+        check(dev + ": the flashcard bar is its own colour - violet, not green or white (build 311)",
+              violet(r.get("cleanBg")) and not green(r.get("cleanBg")), (r.get("cleanBg"), r.get("nowBg")))
         check(dev + ": a wordy card's first choice is clear of the star", (r.get("starGap") or 0) >= 8, r.get("starGap"))
 
 
@@ -8226,7 +8275,9 @@ def check_b308_timer(br):
           const noteTxt = note && !note.hidden ? note.textContent : '';
           const m = document.getElementById('unitoptions-modal'); m.hidden = false;
           m.querySelector('.more-toggle')?.click(); await wait(400);
-          const rows = [...m.querySelectorAll('.timer-sect > .opt')];
+          /* by name, not position: build 310 put the stopwatch first */
+          const allRows = [...m.querySelectorAll('.timer-sect > .opt')];
+          const rows = [allRows.find(r => /Countdown/.test(r.textContent)), allRows.find(r => /Stopwatch|Track my time/.test(r.textContent))].filter(Boolean);
           const st = () => rows.map(r => (r.hidden || !r.offsetParent ? 'H' : '') + (r.querySelector('input').checked ? 'on' : 'off')).join('/');
           const out = { noteTxt, n: rows.length, start: st() };
           rows[1].querySelector('input').click(); await wait(150); out.watch = st() + ' ' + cfg.timer;
@@ -8360,6 +8411,257 @@ def check_b308_unlocks(br):
     check("the results character's circle is bigger (at least 4.2rem)", ex["px"] >= 4.2 * 16 - 1, ex["px"])
 
 
+def check_b310(br):
+    """Build 310. Each of these was written against build 309 and fails
+    there: the streak pop was one colour and 1.9s, the Profile tab went
+    dark on Friends/Customize/Calendar/Test review, the top tab switchers
+    jumped, a leaderboard snapshot rebuilt every character (the shake),
+    leaving the app turned the online dot grey at once and an expired dot
+    never went grey on screen, the tiny flares were 7.5 glows, Platinum
+    swung, and Silver had no world going round it."""
+    print("\n83. build 310: streak colours, Profile tab lit in its sub-screens, sliding top tabs, steady board, online grace, flares, emblems")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms));
+      document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());
+      const out = {};
+      /* the streak pop: a colour per tier, and still up at 2.6s */
+      theme.muteBanners = false;
+      const cols = [10, 25, 50, 75, 100, 150, 250, 350].map(n => { showRunStreakBanner(n); const e = document.querySelector('.streak-pop');
+        return getComputedStyle(e).getPropertyValue('--sk').trim() + '|' + e.className; });
+      out.streakDistinct = new Set(cols.map(c => c.split('|')[0])).size;
+      /* different COLOURS, not eight greens: the hues have to span the wheel */
+      const hue = hex => { const n = parseInt(hex.replace('#', ''), 16), r = (n >> 16) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
+        const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn; if(!d) return 0;
+        let h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; return (h * 60 + 360) % 360; };
+      const hs = cols.map(c => hue(c.split('|')[0] || '#000000')).sort((a, b) => a - b);
+      let gap = 360 - hs[hs.length - 1] + hs[0]; for(let i = 1; i < hs.length; i++) gap = Math.max(gap, hs[i] - hs[i - 1]);
+      out.hueSpan = Math.round(360 - gap);
+      out.past50 = cols[3].indexOf('streak-lv4') >= 0 && cols[7].indexOf('streak-lv8') >= 0;
+      showRunStreakBanner(25); await wait(2600); out.streakStill = !!document.querySelector('.streak-pop');
+      await wait(900); out.streakGone = !document.querySelector('.streak-pop');
+      /* the Profile tab stays lit on every screen reached from Profile */
+      const lit = () => !!document.querySelector('#bottomtab-profile.active');
+      out.lit = {};
+      for(const [k, f] of [['friends', () => showFriends()], ['calendar', () => showCalendar && showCalendar()], ['testreview', () => showTestReviewList && showTestReviewList()]]){
+        try{ f(); }catch(e){ out.lit[k] = 'threw ' + e.message; continue; }
+        await wait(500); out.lit[k] = lit();
+      }
+      /* the top tabs slide: a slider, and it moves on its own transition */
+      showRankings('level'); await wait(700);
+      const seg = document.querySelector('.has-seg-slider'), sl = seg && seg.querySelector(':scope > .seg-slider');
+      out.slider = !!sl;
+      if(sl){
+        const x0 = sl.getBoundingClientRect().left;
+        const btns = [...seg.children].filter(b => b !== sl && b.tagName === 'BUTTON');
+        const target = btns.find(b => !b.classList.contains('active') && !b.classList.contains('is-on'));
+        target.click(); await wait(60);
+        const mid = sl.getBoundingClientRect().left; await wait(700);
+        const end = sl.getBoundingClientRect().left;
+        out.slide = { x0: Math.round(x0), mid: Math.round(mid), end: Math.round(end), tr: getComputedStyle(sl).transitionProperty };
+      }
+      /* a snapshot keeps each character: same node, before and after */
+      leaderboardRows = [0, 1, 2, 3].map(i => ({ pub: 'p' + i, firstName: 'N' + i, avatarChar: AVATAR_CHARACTERS[i].id, level: 40 - i, badges: 3, hundos: 9, xp: 9000 - i, correct: 900 - i, week: 100, lastModified: Date.now() }));
+      showRankings('level'); await wait(600);
+      const rowOf = n => [...document.querySelectorAll('.rank-row')].find(r => (r.querySelector('.rank-name') || {}).textContent === n);
+      const before = rowOf('N2') && rowOf('N2').querySelector('.rank-avatar-wrap');
+      leaderboardRows = leaderboardRows.map(e => Object.assign({}, e, { correct: e.correct + 1 }));
+      const rows = rowOf('N2').parentElement;
+      const board = RANKING_BOARDS.find(b => b.key === rankingsBoardKey);
+      if(board) renderRankingRows(rows, leaderboardRows, board, {});
+      await wait(200);
+      const after = rowOf('N2') && rowOf('N2').querySelector('.rank-avatar-wrap');
+      out.sameAvatar = !!before && before === after; out.boardFound = !!board;
+      out.noRowBanner = !document.querySelector('.lb-row-bnr') && typeof LB_ROW_BANNER !== 'undefined' && LB_ROW_BANNER === '';
+      /* online: a heartbeat is green, leaving is green for the grace, then grey */
+      const now = Date.now();
+      presenceMap = { a: now - 60000, b: -(now - 60000), c: -(now - 3 * 60000), d: 0 };
+      out.online = ['a', 'b', 'c', 'd'].map(p => isOnline({ pub: p }));
+      out.grace = typeof OFFLINE_GRACE_MS !== 'undefined' ? OFFLINE_GRACE_MS : 0;
+      /* the tiny flares are one bubble, all alike */
+      showHome(); await wait(900);
+      const dots = [...document.querySelectorAll('.cosmic-hero-wrap .cosmic-orbit-dot')];
+      out.dots = dots.length; out.dotR = [...new Set(dots.map(d => d.getAttribute('r')))];
+      out.rims = document.querySelectorAll('.cosmic-hero-wrap .cosmic-orbit-rim').length;
+      out.shade = !!document.querySelector('.cosmic-sphere-shade');
+      out.litSmoke = !!document.querySelector('.cosmic-smoke-lit');
+      /* emblems: Platinum's pair goes round and nothing swings; Silver has a world */
+      const pl = buildRankEmblemSVG('vanguard'), sv = buildRankEmblemSVG('ranger');
+      out.plat = ['.rk-bin-a', '.rk-bin-b', '.rk-bin-b-front'].every(c => pl.querySelector(c)) && !pl.querySelector('.rk-swing');
+      out.silver = !!sv.querySelector('.rk-orbit') && !!sv.querySelector('.rk-orbit-front');
+      /* a theme's page glow has its own triad */
+      document.documentElement.dataset.accent = 'rookie';
+      const cs = getComputedStyle(document.documentElement);
+      out.bg = [cs.getPropertyValue('--bg-c3').trim(), cs.getPropertyValue('--theme-c3').trim()];
+      document.documentElement.dataset.accent = 'ink';
+      return out; }""")
+    ctx.close()
+    check("the streak pop has eight different colours, one per tier, across the wheel", r["streakDistinct"] == 8 and r["hueSpan"] >= 180, r)
+    check("streaks past 50 get their own tiers (75 is the 4th, 350 the 8th)", r["past50"], r)
+    check("the streak pop is still up at 2.6s and gone by 3.5s", r["streakStill"] and r["streakGone"], r)
+    check("the Profile tab stays lit on Friends, Calendar and Test review", all(v is True for v in r["lit"].values()), r["lit"])
+    sl = r.get("slide") or {}
+    check("the leaderboard's top tabs have a sliding indicator", r["slider"], r)
+    check("the indicator glides between tabs rather than jumping", bool(sl) and sl["x0"] != sl["end"] and sl["mid"] != sl["end"] and "transform" in sl["tr"], sl)
+    check("a leaderboard snapshot keeps each character (no restart, no shake)", r["sameAvatar"] and r["boardFound"], r)
+    check("no banners on leaderboard rows until one is picked", r["noRowBanner"], r)
+    check("online: heartbeat green, just left green, left 3 min ago grey, 0 grey", r["online"] == [True, True, False, False] and r["grace"] == 120000, r)
+    check("the five tiny flares are all one size of bubble, each with a rim", r["dots"] == 5 and r["dotR"] == ["5"] and r["rims"] == 5, r)
+    check("the big planet is the original: no night-side layer, no pale smoke", not r["shade"] and not r["litSmoke"], r)
+    check("Platinum's two stars go round each other and nothing swings", r["plat"], r)
+    check("Silver has a world going round it", r["silver"], r)
+    check("Bronze's page glow has its own, brighter rim colour", r["bg"][0] and r["bg"][0].upper() != r["bg"][1].upper(), r["bg"])
+
+
+def check_b310_vroom(br):
+    """Build 310, second batch. Written against build 309, where: the
+    host's back link said "Leave lobby" and went to the mode menu; a host
+    whose create write hung sat on "Setting up your room" for good; Ready
+    up came after Invite friends; the game cards were the theme accent;
+    Match settings had a bare slider with no All pill and no hundo note;
+    the start sheet said "Track my time" under the countdown and its
+    toggles sat under "Options"."""
+    print("\n84. build 310: Virtual Room back link, a fast host, the lobby order, Match settings, the timer names")
+    import re as _re
+    vr = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "check-vroom.py")).read()
+    fake = _re.search(r'FAKE_FIRESTORE = """(.*?)"""', vr, _re.S).group(1)
+    keep = "window.addEventListener('DOMContentLoaded', function(){ try{ window.__osr = onSnapshotResilient; }catch(e){} });"
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, init=fake + "\n" + keep)
+    r = pg.evaluate("""async ()=>{ const out = {}; const wait = ms => new Promise(r => setTimeout(r, ms));
+      document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());
+      try{ __useFake(); if(window.__osr) onSnapshotResilient = window.__osr; }catch(e){}
+      /* a create write the server never acknowledges */
+      const realColl = fbDb.collection.bind(fbDb);
+      fbDb.collection = name => { const c = realColl(name); if(name !== 'vrooms') return c;
+        const realDoc = c.doc.bind(c);
+        c.doc = id => { const d = realDoc(id); const realSet = d.set.bind(d);
+          d.set = (...a) => { realSet(...a); return new Promise(() => {}); }; return d; };
+        return c; };
+      const t0 = Date.now();
+      const ok = await Promise.race([createVirtualRoomLobby([], null), wait(4000).then(() => 'timeout')]);
+      out.hostMs = Date.now() - t0; out.hostOk = ok;
+      fbDb.collection = realColl;
+      await wait(700);
+      const lobby = document.querySelector('.screen-vroom-lobby');
+      out.inLobby = !!lobby;
+      if(lobby){
+        const kids = [...lobby.children].map(c => c.className);
+        const iRoster = kids.findIndex(c => /vroom-roster/.test(c)), iReady = kids.findIndex(c => /vroom-readyup-btn/.test(c)), iInvite = kids.findIndex(c => /vroom-code-row/.test(c));
+        out.order = [iRoster, iReady, iInvite];
+        const back = lobby.querySelector('.back-link');
+        out.backText = back ? back.textContent.trim() : '';
+        /* Match settings: coloured games, the All pill, the hundo note */
+        document.querySelector('.vroom-settings-btn').click(); await wait(600);
+        document.querySelector('.picks .pick input').click(); await wait(150);
+        document.querySelector('.vroom-setup-go').click(); await wait(500);
+        const m = document.getElementById('unitoptions-modal');
+        out.modeColours = [...m.querySelectorAll('.vroom-host-mode')].map(b => getComputedStyle(b).getPropertyValue('--mc').trim());
+        out.allBtn = !!m.querySelector('.slider-allbtn');
+        const range = m.querySelector('input[type=range]');
+        range.value = 8; range.dispatchEvent(new Event('input')); range.dispatchEvent(new Event('change')); await wait(200);
+        const hn = m.querySelector('.hundo-note');
+        out.noteCut = hn && !hn.hidden && !hn.classList.contains('is-ok') ? hn.textContent : '';
+        const before = Number(range.value);
+        m.querySelector('.slider-allbtn').click(); await wait(80);
+        out.allMid = Number(range.value); out.allBefore = before; out.allMax = Number(range.max);
+        await wait(500);
+        out.allEnd = Number(range.value);
+        out.noteAll = hn && !hn.hidden && hn.classList.contains('is-ok');
+        m.hidden = true;
+        /* back out of the lobby: lands on the Virtual Room screen */
+        showVirtualRoomLobby(); await wait(400);
+        document.querySelector('.screen-vroom-lobby .back-link').click(); await wait(500);
+        out.after = !!document.querySelector('.vrc-modecards');
+      }
+      /* the start sheet: Stopwatch first, by name, and the section names */
+      cfg.mode = 'drill'; cfg.units = topicsIn(QUESTIONS).slice(0, 1); showSetup(); await wait(400);
+      const sh = document.getElementById('unitoptions-modal'); sh.hidden = false; await wait(200);
+      out.timerRows = [...sh.querySelectorAll('.timer-sect > .opt')].map(r => (r.querySelector('.otext') || r).firstChild.textContent.trim());
+      out.fold = (sh.querySelector('.more-toggle') || {}).textContent || '';
+      out.optLab = (sh.querySelector('.opt-tiles-sect > .slab') || {}).textContent || '';
+      out.shuffleHint = ([...sh.querySelectorAll('.opt')].find(r => /Shuffle/.test(r.textContent)) || { textContent: '' }).querySelector?.('.ohint')?.textContent || '';
+      return out; }""")
+    ctx.close()
+    check("a host goes into the lobby within 2s even if the server never answers", r.get("inLobby") and r.get("hostMs", 9999) < 2000, [r.get("hostMs"), r.get("hostOk")])
+    check("the lobby's back link says Virtual Room", r.get("backText") == "Virtual Room", r.get("backText"))
+    check("and goes back to the Virtual Room screen", r.get("after") is True, r.get("after"))
+    o = r.get("order") or [-1, -1, -1]
+    check("Ready up sits under the room list and above Invite friends", 0 <= o[0] < o[1] < o[2], o)
+    mc = r.get("modeColours") or []
+    check("each game in Match settings has its own colour", len(mc) == 3 and all(mc) and len(set(mc)) == 3, mc)
+    check("Match settings has the All pill", r.get("allBtn") is True, r)
+    check("fewer questions than the units hold says no hundo", "won't count" in (r.get("noteCut") or ""), r.get("noteCut"))
+    check("All slides the bar to the end rather than jumping",
+          r.get("allBefore", 0) < r.get("allMid", 0) < r.get("allMax", 0) and r.get("allEnd") == r.get("allMax"),
+          [r.get("allBefore"), r.get("allMid"), r.get("allEnd"), r.get("allMax")])
+    check("at All the note says the hundo counts", r.get("noteAll") is True, r)
+    check("the start sheet lists Stopwatch first, then Countdown timer", r.get("timerRows") == ["Stopwatch", "Countdown timer"], r.get("timerRows"))
+    check("the timer card is called Stopwatch & timer", "Stopwatch" in (r.get("fold") or ""), r.get("fold"))
+    check("the toggles are 'Answer choice options', not 'Options'", r.get("optLab") == "Answer choice options", r.get("optLab"))
+    check("the shuffle line mentions the question order", "order" in (r.get("shuffleHint") or "").lower() and "question" in (r.get("shuffleHint") or "").lower(), r.get("shuffleHint"))
+
+
+def check_b311_rank(br):
+    """Build 311, the Rank tab. Written against build 310, where each
+    fails: the light on the road was moved by a calc() mixing a
+    percentage with lengths (which WebKit jumps to the end of instead of
+    animating), the reward chips were sized to their own words and
+    started at different x on a left-hand card, the circles were not
+    tappable, the "To reach" word was the raw rank colour, and the
+    rings filled in 1.2s."""
+    print("\n85. build 311: the Rank tab - pixel-placed light, even chips, rank cards, slower rings")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      try{
+      const u = topicsIn(QUESTIONS); u.slice(0, 4).forEach(n => store.unitPerfects[n] = 999);
+      store.rankMapFx244 = true; store.rankMapSeen = 99; store.rankMapProg = null;
+      showProfile('ranks'); await wait(400);
+      const tips = [...document.querySelectorAll('.rankmap-roadtip')];
+      out.tips = tips.length;
+      out.tipPx = tips.every(t => /^translateY\\(-?[0-9.]+px\\)$/.test(t.style.transform));
+      out.ringDur = getComputedStyle(document.querySelector('.rankhero .rankhero-ringarc')).transitionDuration;
+      const b = document.querySelector('.rankhero-gaugehead b');
+      out.headEm = !!(b && b.querySelector('.rankhero-gaugehead-em svg'));
+      out.headCol = b ? getComputedStyle(b).color : '';
+      out.rawCol = (() => { const k = TIER_ORDER_FULL[TIER_ORDER_FULL.indexOf(rankOf(store)) + 1]; const d = document.createElement('i'); d.style.color = RANK_COLOR[k]; document.body.appendChild(d); const c = getComputedStyle(d).color; d.remove(); return c; })();
+      /* every chip in a card the same width and starting at the same x */
+      out.chips = [...document.querySelectorAll('.rankmap-stop')].map(st => {
+        const r = [...st.querySelectorAll('.rankmap-gift')].map(g => g.getBoundingClientRect());
+        return { n: r.length, w: Math.round(Math.max(...r.map(x => x.width)) - Math.min(...r.map(x => x.width))),
+                 x: Math.round(Math.max(...r.map(x => x.left)) - Math.min(...r.map(x => x.left))),
+                 h: Math.round(Math.max(...r.map(x => x.height)) - Math.min(...r.map(x => x.height))) }; });
+      out.note = document.querySelector('.ranks-note').textContent;
+      /* tap a reached circle, then a locked one */
+      const nodes = [...document.querySelectorAll('.rankmap-node')];
+      out.tappable = nodes.every(n => n.getAttribute('role') === 'button');
+      nodes[0].click(); await wait(500);
+      let c = document.querySelector('.ranklore-card');
+      out.reached = c ? { cls: c.className, lore: c.querySelector('.ranklore-text').textContent, reqs: c.querySelectorAll('.ranklore-req').length,
+                          gifts: c.querySelectorAll('.rankmap-gift').length } : null;
+      document.querySelector('.invite-overlay')?.remove();
+      nodes[nodes.length - 1].click(); await wait(500);
+      c = document.querySelector('.ranklore-card');
+      out.locked = c ? { cls: c.className, lore: c.querySelector('.ranklore-text').textContent,
+                         grey: getComputedStyle(c.querySelector('.ranklore-art svg')).filter } : null;
+      document.querySelector('.invite-overlay')?.remove();
+      }catch(e){ out.threw = String(e); }
+      return out; }""")
+    check("the road's light is placed in plain pixels, never a calc() with a percentage (WebKit jumps those)",
+          r.get("tips", 0) >= 1 and r.get("tipPx") is True, r)
+    check("the level and badge rings fill over 2.2s, not 1.2s", r.get("ringDur") == "2.2s", r)
+    check("'To reach' names the rank with its emblem, in the lifted colour the map uses rather than the raw one",
+          r.get("headEm") is True and r.get("headCol") and r.get("headCol") != r.get("rawCol"), r)
+    check("every reward chip on a card is one size and starts at one x",
+          r.get("chips") and all(c["n"] >= 2 and c["w"] <= 1 and c["x"] <= 1 and c["h"] <= 1 for c in r["chips"]), r.get("chips"))
+    check("the climb's description names what the ranks unlock", "unlock" in r.get("note", "") and "character" in r.get("note", "") and "banner" in r.get("note", ""), r.get("note"))
+    check("every rank circle is a button that opens its card", r.get("tappable") is True and r.get("reached") and r.get("locked"), r)
+    check("a reached rank's card tells its story, with both requirements and its unlocks",
+          r.get("reached") and "is-reached" in r["reached"]["cls"] and len(r["reached"]["lore"]) > 60 and "story" not in r["reached"]["lore"]
+          and r["reached"]["reqs"] == 2 and r["reached"]["gifts"] >= 2, r.get("reached"))
+    check("a locked rank's card is grey and keeps its story back",
+          r.get("locked") and "is-locked" in r["locked"]["cls"] and "read its story" in r["locked"]["lore"] and "grayscale" in r["locked"]["grey"], r.get("locked"))
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -8476,6 +8778,9 @@ def main():
             check_b306_fcmotion(br)
             check_b308_timer(br)
             check_b308_unlocks(br)
+            check_b310(br)
+            check_b310_vroom(br)
+            check_b311_rank(br)
         finally:
             br.close()
     SERVER.shutdown()

@@ -464,63 +464,50 @@ def main():
                         # enough to wrap (flex wraps on an item's base size,
                         # not its shrunk size), and the meta line ran 44-52px
                         # past the panel on a 320px phone.
+                        # Build 311 rebuilt the rows (.thx-row): a score ring,
+                        # the units, a mode chip and the stats, with the time
+                        # and chevron in a column of their own on the right,
+                        # centred on the row. Same questions as before, asked
+                        # of that shape: every row names its units and its
+                        # mode, the chevron is at the far end and level with
+                        # the row, nothing overflows, nothing scrolls sideways.
                         tr = pg.evaluate("""()=>{showTestReviewList();
-                          const rows=[...document.querySelectorAll('.testrow-clickable')];
+                          const rows=[...document.querySelectorAll('.thx-row')];
                           const doc=document.documentElement;
                           return {pageOverflow:Math.round(doc.scrollWidth-doc.clientWidth),
                             n:rows.length,
                             rows:rows.map(r=>{
-                              const n=r.querySelector('.testname'), c=r.querySelector('.testrow-chev'),
-                                    m=r.querySelector('.testmeta'), rr=r.getBoundingClientRect();
-                              let sameLine=null;
-                              if(n&&c){ const nb=n.getBoundingClientRect(), cb=c.getBoundingClientRect();
-                                const mid=(cb.top+cb.bottom)/2;
-                                sameLine = mid > nb.top-2 && mid < nb.bottom+2; }
-                              return {name:n?n.textContent:null, chev:!!c,
-                                sameLine:sameLine,
-                                chevRight:c?(function(){
-                                  /* THE ROW'S OWN CONTENT EDGE, NOT ITS BORDER BOX.
-                                     This measured rr.right and passed while the row
-                                     was a full-bleed ruled line with no side padding.
-                                     Build 197 made each row a recessed CARD, and a
-                                     chevron flush with a card's border would be the
-                                     defect - so the check went red for the row being
-                                     right. What it is actually asserting is that the
-                                     chevron is pushed to the far end of the row
-                                     rather than stranded mid-line, and that holds
-                                     whatever padding the row carries. */
-                                  const cs=getComputedStyle(r);
-                                  const edge = rr.right
-                                    - (parseFloat(cs.borderRightWidth)||0)
-                                    - (parseFloat(cs.paddingRight)||0);
-                                  return Math.round(edge - c.getBoundingClientRect().right);
-                                })():null,
+                              const n=r.querySelector('.thx-row-name'), c=r.querySelector('.thx-row-chev'),
+                                    m=r.querySelector('.thx-row-meta'), chip=r.querySelector('.thx-chip'),
+                                    rr=r.getBoundingClientRect();
+                              const cs=getComputedStyle(r);
+                              const edge = rr.right-(parseFloat(cs.borderRightWidth)||0)-(parseFloat(cs.paddingRight)||0);
+                              const cb=c?c.getBoundingClientRect():null;
+                              return {name:n?n.textContent:null, chev:!!c, mode:chip?chip.textContent:null,
+                                level: cb ? Math.round(Math.abs((cb.top+cb.bottom)/2-(rr.top+rr.bottom)/2)) : null,
+                                chevRight: cb ? Math.round(edge-cb.right) : null,
                                 metaBelow:(n&&m)?Math.round(m.getBoundingClientRect().top-n.getBoundingClientRect().bottom):null,
-                                overflow:Math.round(r.scrollWidth-r.clientWidth),
-                                h:Math.round(rr.height)};})};}""")
+                                overflow:Math.round(r.scrollWidth-r.clientWidth)};})};}""")
                         if not tr["n"]:
-                            fails.append(f"{tag}: recent test review is empty - the seed has no reviewable history")
+                            fails.append(f"{tag}: test history is empty - the seed has no history")
                         if tr["pageOverflow"] > 0:
-                            fails.append(f"{tag}: recent test review scrolls the page sideways by {tr['pageOverflow']}px")
+                            fails.append(f"{tag}: test history scrolls the page sideways by {tr['pageOverflow']}px")
                         for i, r in enumerate(tr["rows"]):
                             if not r["chev"]:
-                                fails.append(f"{tag}: test review row {i} has no chevron - nothing says it opens")
-                            elif not r["sameLine"]:
-                                fails.append(f"{tag}: test review row {i} chevron is not on the name's line")
+                                fails.append(f"{tag}: test history row {i} has no chevron - nothing says it opens")
+                            elif r["level"] is not None and r["level"] > 4:
+                                fails.append(f"{tag}: test history row {i} chevron is {r['level']}px off the row's centre line")
                             elif r["chevRight"] is not None and r["chevRight"] > 2:
-                                fails.append(f"{tag}: test review row {i} chevron sits {r['chevRight']}px in from the row's content edge")
+                                fails.append(f"{tag}: test history row {i} chevron sits {r['chevRight']}px in from the row's content edge")
                             if r["overflow"] > 0:
-                                fails.append(f"{tag}: test review row {i} overflows by {r['overflow']}px")
+                                fails.append(f"{tag}: test history row {i} overflows by {r['overflow']}px")
                             if r["metaBelow"] is not None and r["metaBelow"] < 0:
-                                fails.append(f"{tag}: test review row {i} meta line is not below the name")
+                                fails.append(f"{tag}: test history row {i} meta line is not below the name")
                             nm = r["name"] or ""
-                            # The seed's runs all carry units, so every row has
-                            # to name one. "undefined" is what this rendered
-                            # before, from an entry with no label at all.
                             if not nm or "undefined" in nm:
-                                fails.append(f"{tag}: test review row {i} name is {nm!r}")
-                            elif " \u00b7 " not in nm:
-                                fails.append(f"{tag}: test review row {i} does not name its units: {nm!r}")
+                                fails.append(f"{tag}: test history row {i} name is {nm!r}")
+                            if not r["mode"]:
+                                fails.append(f"{tag}: test history row {i} does not say its mode")
 
                         misc = pg.evaluate("""()=>{showReleaseHistory();
                           const back=!!document.querySelector('.panel .back-link');

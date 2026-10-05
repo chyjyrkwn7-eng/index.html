@@ -11419,3 +11419,251 @@ device, phone and iPad) fails 34 checks there and passes on 307.
   brightening `dq-sealed` beat. check-behaviour 39 times the burst
   against the sealed ring: ≥300ms now; it measured 60ms on the build
   before.
+
+### Build 310 - streak colours, sliding tabs, the original planet, an orbit that goes round
+
+**Held for Madison's go.** On the branch only. The leaderboard row banners
+are built but OFF (`LB_ROW_BANNER = ""`); three options went to her as
+screenshots and nothing turns on until she picks one.
+
+- **The streak pop climbs the colour wheel.** `.streak-lv2`..`lv8` each
+  set `--sk` (teal, sky, violet, gold, orange, rose, then a moving prism
+  on the number for 350+). Build 309 had eight GREENS, distinct only in
+  the hex: check-behaviour 83 measures the hue span (259 degrees now, 44
+  on 309), not the count. The tiers are `RUN_STREAK_TIERS`
+  (10/25/50/75/100/150/250/350, then every 50) and they always went past
+  50 - "it's not coming up past 50" was a 62 run. The pop is 3.2s and on
+  `<body>`, so Next never touches it.
+- **The bottom tab is lit on Profile's sub-screens.** `syncActive()`
+  treats `.screen-friends`, `.screen-customize`, `.screen-calendar` and
+  `.screen-testreview` as Profile (both test-review panels carry the
+  class now), and `.screen-bugreport` as Settings.
+- **The bubble moves by transform only.** `placeBubble()` FLIPs it: width
+  set once, the move a `translateX` + `scaleX` that transitions back.
+  Transitioning `width` relaid the bar every frame, which was the lag.
+- **Every top switcher has a sliding indicator** (`attachSegSlider(seg,
+  activeSel)`): one span copying the active button's computed look, the
+  button itself made transparent under `.has-seg-slider`, FLIP-placed
+  on a MutationObserver of the buttons' classes, so swipes and taps both
+  slide it. On Profile, the leaderboard, the calendar, the chat dock
+  tabs and the Virtual Room review tabs. A new switcher wants one call.
+- **A leaderboard snapshot no longer rebuilds characters** - the shake.
+  Rows carry `data-pub`/`data-av`; `renderRankingRows` lifts each
+  `.rank-avatar-wrap` out before `replaceChildren()` and puts it in the
+  new row. Every flip-book runs on a shared clock (`charFlipDelay`, a
+  per-element `flipPhase` chosen once), so a rebuilt one resumes rather
+  than restarting. Same-node is what check-behaviour 83 asserts.
+- **Leaderboard row banners: `edge` / `wash` / `tile`.** Only a REAL
+  banner (`bannerDef`), never the theme default, which would put a wash
+  on everyone and say nothing. Art is frozen (`.is-still`) - forty
+  animated SVGs in a list is the lag the board has already had once -
+  and carried over between snapshots like the characters. The podium's
+  ring, tint and medal sit above it in every option.
+- **Find me pulses where you can see it**: the row scales, rings and
+  glows three times, and a rebuild inside 3.3s of the press re-applies it
+  with a negative delay (`lbFindMeAt`) so a snapshot cannot cut it short.
+- **Profile cover**: taller (7.6rem / 9.6rem), and the fade is an eased
+  multi-stop mask (`--cover-fade`) rather than one linear ramp.
+- **Calendar "today" is matte**: the gradient is mixed half into the
+  panel colour and the glow is a 9px wisp.
+- **Home: the original planet.** Side by side with build 303 the dulling
+  was (a) the pale "lit" smoke layer washing the magenta pink-grey,
+  (b) the plasma at .9 opacity, (c) the night-side/atmosphere disc
+  (`.cosmic-sphere-shade`). (a) and (c) are gone, (b) is back to .55,
+  and the smoke is the dark layer only, a little deeper. Do not re-add a
+  light smoke layer: it is the thing she was describing.
+- **The tiny secret flares are tiny bubbles, all alike**: r 5 (the
+  original 4.5-ish size, not 308's 7.5 glow), a rim-bright gradient and
+  a separate `.cosmic-orbit-rim` circle - separate because the dot's own
+  stroke is its 44px tap target. **No glint**: the orbit layers rotate,
+  so an off-centre highlight would point a different way on each bubble.
+- **The page glow has its own triad**, `--bg-c1/2/3`, defaulting to
+  `--theme-c*` on `:root`. The theme triads were tuned for the PLANET
+  (a deep rim, a pale highlight); as glows those are invisible or grey,
+  which is why every theme but the default read as one colour. Bronze,
+  Silver, Gold, Platinum, Amethyst and Supernova set brighter, distinct
+  page triads; the default and Sapphire did not need one. The status bar
+  probe reads the same tokens, so it still matches the glow. The 11%
+  bottom ceiling is unchanged - colour, not strength.
+- **Rank emblems.** Platinum no longer swings: its broken ring (four
+  arcs, `rk-sym4`) turns in-plane and the pair ORBITS - generated
+  `rk-bin-a/-b/-b-front` keyframes, a 6s loop, the small star with a back
+  and a front copy like Gold's companion. Silver gets Gold's orbit (same
+  path and clock, `rk-orbit`) as a lit world on its disc. Gold's stars
+  are Platinum's lit bodies with a smaller flare, on solid broken arcs,
+  so it stops reading as Silver. Sapphire's dark shards have a hairline
+  of core light and are a third bigger. Amethyst's black is ringed with
+  short uneven points and an ember centre - Supernova's blast, barely
+  begun. `ORBIT_ANIM_VER` is `v5`.
+- **The phone version label** sits at `min(1.45rem, cap)` up (was 1.2rem).
+- **The daily "not yet" bubble**: the caret is two clipped triangles
+  (edge, then fill covering the bubble's border), not a rotated square
+  with two borders; text 16/14.7px.
+- **Open rooms**: 5s, looking every 1.25s (was 6.5s every 2s, ~8s to
+  "none").
+- **Online**: leaving writes `-Date.now()` (not 0) and `isOnline()` keeps
+  a negative stamp green for `OFFLINE_GRACE_MS` (2 min). An older build
+  reads it as long ago, as it read 0. Dots are re-asked every 20s while
+  a presence screen is up (`presenceTick`), so a dot whose owner's phone
+  died actually expires on screen.
+
+#### Build 310, second batch - the Virtual Room and the start sheet
+
+- **The lobby's back link is "Virtual Room" and goes to the Virtual Room
+  screen** (leaving the room on the way), the same as the open-rooms
+  list's. It said "Leave lobby" and went to the mode menu.
+- **A host is in the lobby within `HOST_ENTER_MS` (1.2s)**, whether or
+  not the server has acknowledged the create. The lobby used to wait for
+  `set()`'s promise, which is the SERVER's ack - seconds on a slow
+  connection, never with the write queued offline - while the card said
+  "Setting up your room...". The write is in the local cache the moment
+  `set()` is called and the lobby's listener reads it from there. A
+  REJECTED write takes the host back out with a toast. check-behaviour 84
+  stubs a `set()` that never resolves and holds entry under 2s (it never
+  entered on 309).
+- **Lobby order: room list, Ready up, the "waiting" line, then Invite
+  friends**, then Room setup.
+- **Match settings' games are coloured**: `--mc` per `[data-mode]`, the
+  same sky / amber / red as the Virtual Room screen's game rows. The
+  picked card fills with its colour instead of the theme accent.
+- **One "How many" control for both sheets: `buildEverythingSlider()`**,
+  global now (it was a closure inside `showSetup()`; `sliderWithEverything`
+  there is a one-line wrapper). Virtual Room's Questions slider was a
+  separate `plainSlider` with no All pill. `qCount === null` is still All.
+- **All slides there**: the thumb and fill run to the end over 260ms,
+  eased, then `paint()` takes over; reduce motion jumps.
+- **The All pill was restyled**: a slim outlined pill, filled light blue
+  with a tick when on, no 3D ledge.
+- **Match settings carries the hundo note** (`vrHundoNote`), with the test
+  sheet's readings, "match" instead of "run". A Virtual Room run credits
+  hundos like any other.
+- **Start sheet**: "Stopwatch" (was "Track my time") is the FIRST timer
+  row, then "Countdown timer" with its minutes; both lines rewritten. The
+  card is "Stopwatch & timer". The toggles' heading is "Answer choice
+  options" ("How to study" in Learn, where Flashcards is the only row).
+  The shuffle line says the question order is always shuffled and the
+  switch adds the choices - true: `freshOrder()` always shuffles questions,
+  `cfg.shuffle` only the A-D choices. check-behaviour's older sections
+  now find the timer rows BY NAME, not position.
+
+### Build 311 - history that keeps fifty, a Stats page, teaching order, a push between questions, a Rank tab you can open
+
+**Held for Madison's go, together with 310.** Neither was merged; 311
+is the build number both ship under. The leaderboard row banners are
+still OFF.
+
+**Test history**
+- **`TEST_HISTORY_MAX = 50`**, declared above `let store` (it is read by
+  `applyLoadedData()`, so below it is a temporal-dead-zone crash at
+  boot). Every slice of `testHistory` uses it - load, both sync merges,
+  `recordTestPlay`. "It all got deleted after a day" was three things:
+  a cap of 20, the daily question taking a slot every day, and 100% runs
+  hidden from the list. The daily question no longer writes an entry.
+- **An entry carries the run**, written in `summarize()`: `n`, `ok`,
+  `miss` (question KEYS, up to 60), `up` (per-unit %), `vr`, `hundos`,
+  and `xp` once it is known (`lastHistoryEntry`). Older entries have none
+  of it and every reader copes.
+- **`showTestReviewList()` is "Test history"**: a summary strip, filter
+  chips (All / Drill / Exam / Virtual Room), Today / Yesterday / weekday
+  / date groups, `.thx-row` rows with a score ring. `showTestHistoryDetail()`
+  has a hero ring, a verdict, tiles, units with bars and the missed
+  questions with their answers. check-fixes measures `.thx-row` now.
+
+**Stats** - At a glance (accuracy ring + four tiles), Recent tests (last
+3 + "All N tests"), Study time (a 7-day bar chart + four cards), Virtual
+Room. Ordered by what people look for, not by when each was added.
+
+**Units**
+- **Calendar teaching order**: `unitsInTeachingOrder()` is each unit's
+  first appearance in `CALENDAR_DATA`, then anything the calendar never
+  names. The setup grid, the badge case, the badge strip and the Virtual
+  Room picker all use it. Do not hand-type an order.
+- **Unit details are honest about hundos**: a hundo IS a 100% full-unit
+  run, so `bestPct` is 100 and `done` is at least the hundo count even
+  where the run history predates the fields. `unitLastScoreOf` reads `up`.
+- The select circle is a clean ring without `backdrop-filter` (the blur
+  was the soft edge). The "none starred" toast sits above unit details
+  (`html.unitdetail-lock .toast{z-index:340}`).
+- Learn's header is an `.ar-head` card ("Starred questions" / "Review",
+  "N questions · N units"), back link "Back to units".
+
+**Start sheets**
+- Bank counts live IN the All / Starred boxes; the caption under them is
+  gone. The hundo warning is a small `button.hundo-chip` "No hundo" in
+  the size header, only when the run is cut short; tapping it says why.
+  At All there is nothing.
+- **Exam has Starred** (`poolNow()` in the start handler and in refresh).
+- Section names: Exam "Feedback", Learn "How to study", otherwise
+  "Answer choice options". Shorter switch lines.
+- **The Start button's ready animation** is a pop and one sheen, and
+  `startReadyQuietUntil` holds it off for 700ms after the sheet opens, so
+  it plays when something changes rather than every time it is drawn.
+
+**Tests**
+- **The sticky top bar is deliberate** (build 308, asked for). Kept.
+- **Answer colour arrives** - a 60ms beat, then a wash, the bar and the
+  border ease in (`@starting-style` from `--rule`).
+- **The move between questions is a push**: old out left, new in from
+  the right, both moving at once over `SLIDE_MS` 240 with a `SLIDE_GAP`
+  of 24px, `html.q-sliding{overflow-x:clip}` while it runs. Swipe, Next
+  and auto-advance all use it. check-behaviour's `check_slide` asserts
+  side-by-side (overlap <= 2px), both visible for >= 2 frames, no
+  sideways scroll. This is the transition that has been broken before;
+  change it only with that check running on both devices.
+- **The chat button holds its spot while paused** (`placeDockBesidePause`,
+  `dockBesidePause` keeps the last position).
+- Flashcards: violet ticks (not green, which means XP), "Flashcard N of M"
+  when paused, a spring-back with no overshoot and an isolated mover (the
+  left-edge glitch on release).
+
+**Virtual Room** - "Inbox" in the invite copy. The lobby's lag on open
+was the character flip-book recorder running during the screen's
+entrance; `recordCharFrames` waits `CHAR_REC_SETTLE_MS` after the stage
+settles. **Leave notices** fire from every listener a match can be in
+(lobby, race, tug, battle, both results): "X left the lobby." before the
+start, "X left the match." after.
+
+**Badges and Profile**
+- An earned badge's card says the challenge: N hundos here, the whole unit
+  every question right, N times, and how many you have when it is more.
+  N is `badgeThresholdFor(unit)` - banded by unit size - not 35.
+- The Profile badge circle is a ring (`buildStatRing` with a part), drawn
+  at its value with no fill animation.
+
+**The Rank tab**
+- **The road's light is placed in pixels** (`placeRoadTip`). Its transform
+  was `translateY(calc(len + var * (100% - len)))`; WebKit does not
+  interpolate a calc() mixing % and lengths in a transform and JUMPS to the
+  end - "the circle at the end is already in the position before the
+  progress line gets there". Chromium animated it perfectly, which is why
+  every measurement passed. Starting point laid down without a transition,
+  then the move; re-laid on a width change. **Never put a %-plus-length
+  calc() in a transform that transitions.**
+- **Rings fill over 2.2s** (were 1.2s) and their numbers count up on the
+  same clock (`countUp`).
+- **"To reach X"** uses the map's lifted rank colour (58% + white) with the
+  emblem beside it; the raw `RANK_COLOR` read as a flat yellow for Gold.
+- **Reward chips are one size and one start** (`buildRankGifts`): full-width
+  rows, a fixed icon slot, labels "Theme" / "Flare" / the character's name /
+  "Banner" under an "Unlocks" heading. The card title already names the rank.
+- **The climb's note is built from the tables** (which rank first gives a
+  character, which give banners), so it cannot promise something that is
+  not there.
+- **Every circle opens the rank** (`showRankLore`): emblem, "Rank N of 7",
+  state, `RANK_LORE` (the life of a star the emblems draw - nebula,
+  protostar, sun, binary, spiral galaxy, quasar, supernova; no numbers in
+  it), both requirements against you, and its unlocks. A rank not yet
+  reached is grey and holds its story back.
+- **Down the road and back on EVERY open** - reverses build 280, on
+  request. `glideScrollTo` at a speed we choose (`glideMsFor`, 0.9-1.9s),
+  a 1.1s look, back to the top; any touch, wheel or key stops it. The
+  rank-up show uses the same glide. check-behaviour 53 was rewritten to
+  match; 85 is the new section, and every assertion in it fails on 310.
+
+**Gates revised in 311** (decisions changed, so the checks did): the test
+review rows (`.thx-row`), the Learn header (`.ar-head-title`), the hundo
+note (`.hundo-chip`), the bank captions (counts in the boxes), the
+flashcard bar colour, the slide (a push now), and build 280's still map.
+
+**Known and not this build's**: sweep-layout reports a GREY BAR on an
+SE 1st gen at 568x260 in a browser (landscape). It is red on 309 as well.
