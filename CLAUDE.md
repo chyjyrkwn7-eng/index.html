@@ -12532,3 +12532,18 @@ tracing `localStorage.setItem` stacks. **Anything that saves as a side
 effect of drawing a screen goes through `saveIfAccount()`**, which saves
 only once `store.onboardingComplete` is true. A save is a write to the
 recovery copy too, so "harmless bookkeeping" during a render is not.
+
+#### Answer choices: the colour fades in, nothing else
+
+**No glow, no sweep - the right/wrong look eases in over ~.45s.** "The
+answer choice when right or not does not need that glow effect when
+selecting it, it's too much, I was meaning something more like the stuff
+was already green could phase in instead of instantly." Build 311 read
+"the colour slowly hits" as a wash sweeping across the box plus a growing
+edge bar, and 306 had added a faint halo to both; all three are gone. The
+picked choice's border, edge bar, letter and tick/cross transition from
+neutral via `@starting-style` (the list is rebuilt for the result, so the
+element is fresh). Only `.is-right-pop` / `.is-wrong-flash` fade - a later
+rebuild of the same list must not fade an old answer in again.
+check-behaviour 80 (`check_b306_fcmotion`) samples the border and the bar
+every frame and asserts no `box-shadow` and no `::after`; it fails on 312.

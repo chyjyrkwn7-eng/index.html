@@ -8269,22 +8269,32 @@ def check_b306_fcmotion(br):
       beginRun(freshOrder(QUESTIONS.map((q,i)=>i).filter(i=>QUESTIONS[i].topic==='Identity Crimes')), null);
       for(let t=0; t<80 && !document.querySelector('.qpanel .choice'); t++) await wait(100);
       await wait(400); const r = correctSlot(order[pos]);
-      document.querySelector('.qpanel .choice[data-index="'+((r+1)%4)+'"]').click(); await wait(500);
-      const ws = getComputedStyle(document.querySelector('.qpanel .choice.is-wrong-flash')).boxShadow;
-      document.querySelector('.qpanel .choice[data-index="'+r+'"]').click(); await wait(800);
-      const rs = getComputedStyle(document.querySelector('.qpanel .choice.is-right')).boxShadow;
-      return { ws, rs }; }""")
+      /* sample the picked box's border every frame: build 313 wants the
+         colour to arrive over a few hundred ms, not land in one frame */
+      const trace = async (sel) => { const seen = []; const t0 = performance.now();
+        while(performance.now() - t0 < 900){ const e = document.querySelector(sel); if(e) seen.push(getComputedStyle(e).borderTopColor + ' | ' + getComputedStyle(e.querySelector('.bar')).backgroundColor); await new Promise(r => requestAnimationFrame(r)); }
+        return seen; };
+      document.querySelector('.qpanel .choice[data-index="'+((r+1)%4)+'"]').click();
+      const wt = await trace('.qpanel .choice.is-wrong-flash');
+      const wb = document.querySelector('.qpanel .choice.is-wrong-flash');
+      const ws = wb ? getComputedStyle(wb).boxShadow : 'missing';
+      const wa = wb ? getComputedStyle(wb, '::after').content : 'missing';
+      document.querySelector('.qpanel .choice[data-index="'+r+'"]').click();
+      const rt = await trace('.qpanel .choice.is-right');
+      const rb = document.querySelector('.qpanel .choice.is-right');
+      const rs = getComputedStyle(rb).boxShadow, ra = getComputedStyle(rb, '::after').content;
+      return { ws, rs, wa, ra, wt, rt }; }""")
     ctx.close()
-    import re
-    def parts(sh):
-        # color(srgb r g b / a) or rgba(r, g, b, a): the alpha of each shadow
-        alpha = [float(x) for x in re.findall(r"/\s*([\d.]+)\)", sh or "")]
-        alpha += [float(x.split(",")[3]) for x in re.findall(r"rgba\(([^)]*)\)", sh or "") if len(x.split(",")) > 3]
-        px = re.findall(r"(\d+(?:\.\d+)?)px", sh or "")
-        return alpha, [float(p) for p in px]
-    wa, wp = parts(g["ws"]); ra, rp = parts(g["rs"])
-    check("a right answer has a glow, the same size as a wrong one's", bool(rp) and bool(wp) and max(rp) == max(wp), (g["rs"], g["ws"]))
-    check("and both are faint", wa and ra and max(wa) <= 0.2 and max(ra) <= 0.2, (wa, ra))
+    # Build 313 reversed build 306's "a faint glow on both": "does not
+    # need that glow effect when selecting it, it's too much ... the stuff
+    # already green could phase in instead of instantly".
+    check("a picked answer has no glow, right or wrong", g["rs"] == "none" and g["ws"] == "none", (g["rs"], g["ws"]))
+    check("and no colour sweeps across it", g["ra"] in ("none", "normal") and g["wa"] in ("none", "normal"), (g["ra"], g["wa"]))
+    for name, tr in (("right", g["rt"]), ("wrong", g["wt"])):
+        borders = list(dict.fromkeys(x.split(" | ")[0] for x in tr))
+        bars = list(dict.fromkeys(x.split(" | ")[1] for x in tr))
+        check("the %s colour fades in over several frames, not in one (border and edge bar)" % name,
+              len(borders) >= 4 and len(bars) >= 4, (borders[:4], bars[:4]))
 
 
 def check_b308_timer(br):

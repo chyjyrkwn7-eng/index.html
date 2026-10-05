@@ -2941,11 +2941,8 @@
      plus an 18px 26% halo down to this. */
   .qpanel .choice.is-wrong-flash{
     border-color:var(--wrong);
-    box-shadow:0 0 12px color-mix(in srgb, var(--wrong) 12%, transparent);
     animation:choice-wrong-nudge .34s ease-out;
   }
-  .qpanel .choice.is-right{ box-shadow:0 0 12px color-mix(in srgb, var(--right) 12%, transparent); }
-  .qpanel .choice.is-wrong-pick{ box-shadow:0 0 12px color-mix(in srgb, var(--wrong) 12%, transparent); }
   .qpanel .choice.is-wrong-flash .bar{ background:var(--wrong); }
   .qpanel .choice.is-wrong-flash .key{ color:var(--wrong); }
   /* A wrong pick gets its cross, the way a right one gets its tick
@@ -2962,30 +2959,28 @@
      bar grows down its side, and the border eases from neutral to the
      colour (@starting-style, so a fresh element still transitions; a
      browser without it just shows the colour, as before). */
-  .qpanel .choice.is-right-pop, .qpanel .choice.is-wrong-flash{ position:relative; }
-  .qpanel .choice.is-right-pop::after, .qpanel .choice.is-wrong-flash::after{
-    content:""; position:absolute; inset:0; pointer-events:none; border-radius:inherit;
-    background:linear-gradient(90deg, color-mix(in srgb, var(--fx) 26%, transparent), color-mix(in srgb, var(--fx) 8%, transparent) 70%, transparent);
-    transform:translateX(-101%); opacity:0;
-    animation:choice-wash .62s cubic-bezier(.25,.8,.3,1) .06s both;
-  }
-  .qpanel .choice.is-right-pop{ --fx:var(--right); }
-  .qpanel .choice.is-wrong-flash{ --fx:var(--wrong); }
-  @keyframes choice-wash{
-    0%{ transform:translateX(-101%); opacity:1; }
-    55%{ transform:translateX(0); opacity:1; }
-    100%{ transform:translateX(0); opacity:0; }
-  }
-  @keyframes choice-bar-in{ from{ transform:scaleY(0); } to{ transform:scaleY(1); } }
-  .qpanel .choice.is-right-pop .bar, .qpanel .choice.is-wrong-flash .bar{
-    transform-origin:50% 0; animation:choice-bar-in .32s cubic-bezier(.25,.8,.3,1) .06s both;
-  }
-  .qpanel .choice.is-right-pop, .qpanel .choice.is-wrong-flash{ transition:transform .09s ease, border-color .34s ease .06s; }
+  /* BUILD 313: NO GLOW, NO SWEEP - THE COLOUR JUST FADES IN. "The
+     answer choice when right or not does not need that glow effect when
+     selecting it, it's too much, I was meaning something more like the
+     stuff was already green could phase in instead of instantly." The
+     wash that swept across the box, the edge bar growing down it and the
+     halo round right and wrong answers are all gone. What is left is the
+     plain right/wrong look the box always had - border, edge bar, letter
+     and tick or cross - easing in from neutral over ~.45s on the choice
+     you just picked (@starting-style, because the list is rebuilt for the
+     result, so the element is fresh; a browser without it shows the
+     colour at once). Only the fresh pick fades: a later rebuild of the
+     same list must not fade an old answer in a second time. */
+  .qpanel .choice.is-right-pop, .qpanel .choice.is-wrong-flash{ transition:transform .09s ease, border-color .45s ease .06s; }
+  .qpanel .choice.is-right-pop .bar, .qpanel .choice.is-wrong-flash .bar{ transition:background-color .45s ease .06s; }
+  .qpanel .choice.is-right-pop .key, .qpanel .choice.is-wrong-flash .key,
+  .qpanel .choice.is-right-pop .mark, .qpanel .choice.is-wrong-flash .mark{ transition:color .45s ease .06s; }
   @starting-style{
     .qpanel .choice.is-right-pop, .qpanel .choice.is-wrong-flash{ border-color:var(--rule); }
+    .qpanel .choice.is-right-pop .bar, .qpanel .choice.is-wrong-flash .bar{ background-color:var(--rule); }
+    .qpanel .choice.is-right-pop .key, .qpanel .choice.is-wrong-flash .key{ color:var(--soft); }
+    .qpanel .choice.is-right-pop .mark, .qpanel .choice.is-wrong-flash .mark{ color:transparent; }
   }
-  [data-reduce-motion="true"] .qpanel .choice.is-right-pop::after,
-  [data-reduce-motion="true"] .qpanel .choice.is-wrong-flash::after{ display:none; }
   @keyframes choice-pick-pop{ 0%{ transform:scale(.982); } 45%{ transform:scale(1.01); } 100%{ transform:scale(1); } }
   .qpanel .choice.is-pick-pop{ animation:choice-pick-pop .3s cubic-bezier(.2,.8,.2,1); }
   /* The line that says right or wrong had no space under it at all -
