@@ -10103,10 +10103,21 @@
   .cosmic-hero-main{ position:relative; will-change:transform; }
   .cosmic-hero-glowbox{ position:absolute; inset:0; pointer-events:none; will-change:opacity; }
   .cosmic-hero-layer{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; will-change:transform; }
-  /* The secret flares' two rings are divs (build 313) and sit ABOVE the
-     rank bubbles (z-index 2), so a flare that turns past a bubble crosses
-     in front of it and can still be tapped - under it, it could not. */
-  .cosmic-hero-orbitlayer{ transform-origin:50% 47.368%; z-index:2; }
+  /* ---- UNDER THE GLASS (build 313, second pass) ----
+     "Ensure those go under the flare bubble when passing through, that
+     would look so so sick with the Liquid Glass flare bubbles." The two
+     rings of secret flares paint BELOW the rank bubbles (no z-index: they
+     come before the bubbles in the hero, so the bubbles stack on top), and
+     each bubble's own backdrop-filter, tint, emblem and rim then draw a
+     passing flare THROUGH the glass - blurred, brightened, tinted - and it
+     comes out sharp on the other side.
+     Paint order is hit-test order, which is what keeps taps right with no
+     second layer to keep in step: while a flare is under a bubble the
+     bubble is what a finger lands on and it opens its rank; anywhere the
+     flare is clear of the glass its 44px disc takes the tap. (The first
+     pass put the flares on top to fix taps; the tap fault was the svg
+     :active shrink, gone now, not the order.) */
+  .cosmic-hero-orbitlayer{ transform-origin:50% 47.368%; }
   .cosmic-hero-orbitlayer .cosmic-badge-tappable{ pointer-events:auto; }
   @media (prefers-reduced-motion:no-preference){
     .cosmic-hero-glowbox{ animation:cosmic-glowbox-breathe 4.5s ease-in-out infinite; }
