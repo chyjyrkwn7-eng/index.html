@@ -71882,7 +71882,9 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
         void fill.offsetWidth;
         requestAnimationFrame(() => {
           if(finished) return;
-          if(lv < after.level){ requestAnimationFrame(fillOut); return; }
+          /* mid-climb, the line says where it is going rather than
+             holding the banked figure it started from */
+          if(lv < after.level){ line.textContent = "Climbing to level " + after.level; requestAnimationFrame(fillOut); return; }
           line.textContent = lineFor(after);
           fill.style.transition = prev || "";
           requestAnimationFrame(() => {
