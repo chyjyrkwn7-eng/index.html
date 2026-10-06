@@ -98,7 +98,7 @@ USED_ACCOUNT = (
     # An up-to-date account has had its unlock pop-ups: the record the
     # app would seed for it, with the hundo effects (build 313) marked
     # shown too, so no section is met by their Home pop-ups.
-    '"unlocksShown":{"chars":[],"banners":["hundos100"],"fx":["fireworks","aurora","worldtree","bubbles","ufo","starfall","galaxy"]}}')
+    '"unlocksShown":{"chars":[],"banners":["hundos100"],"fx":["neon","poppers","hologram","worldtree","bubbles","ufo"]}}')
 
 BODY = INSET_RE.sub(lambda m: "0px", io.open(SRC, encoding="utf-8").read()) \
     .replace("let fbDb = null;", "let fbDb = null;" + FIRESTORE_STUB, 1)
@@ -2318,7 +2318,18 @@ def check_b235(br):
         const st = sp.querySelector('.rs-spot-strip.is-rankreward');
         return { text: sp.textContent, strip: st ? st.textContent : null, emblem: !!(st && st.querySelector('svg')) }; });
       document.querySelector('.rs-spot') && document.querySelector('.rs-spot').click(); await wait(1400);
-      await T('after', () => ({ spots: document.querySelectorAll('.rs-spot').length, left: pendingHomeUnlocks().chars.length }));
+      /* Build 313: this account has 141 hundos and no record of the hundo
+         effects being announced, so it is owed Neon Trails and the World
+         Tree as well - they follow in the same sitting, each up long
+         enough to count as seen and then tapped away. */
+      out.fx = [];
+      for(let k = 0; k < 6; k++){
+        const sp = document.querySelector('.rs-spot.rs-spot-fx');
+        if(!sp){ await wait(400); continue; }
+        out.fx.push((sp.querySelector('.rs-spot-name') || {}).textContent);
+        await wait(1500); sp.click(); await wait(1400);
+      }
+      await T('after', () => ({ spots: document.querySelectorAll('.rs-spot').length, left: pendingHomeUnlocks().chars.length + pendingHomeUnlocks().fx.length }));
       showHome(); await wait(4200);
       await T('again', () => document.querySelectorAll('.rs-spot').length);
       // The Marksman: its bar in a row (100 until 246, 150 until 259, 200 until 291, 250 now), counted from the streak on record.
@@ -2368,6 +2379,8 @@ def check_b235(br):
     st = str(sc.get("text"))
     check("Zeus, won away from any results screen, follows as a finished challenge",
           "Zeus" in st and st.count("Challenge complete") == 1 and "Character unlocked" in st, r["second"])
+    check("the hundo effects this account already qualifies for follow in the same sitting (build 313)",
+          r.get("fx") == ["Neon Trails", "World Tree"], r.get("fx"))
     af = r["after"] if isinstance(r["after"], dict) else {}
     check("each plays once: nothing left afterwards, nothing on the next visit",
           af.get("spots") == 0 and af.get("left") == 0 and r["again"] == 0, [r["after"], r["again"]])
@@ -9887,9 +9900,11 @@ FX_RUN = """const wait = ms => new Promise(r => setTimeout(r, ms));
 # When to look: early (it should still be at the box) and late (it should
 # have spread). The UFO is the exception by design - it comes down out of
 # the dark - so it is checked for LANDING on the box instead.
-FX_EARLY = {"fireworks": .3, "aurora": .3, "worldtree": .35, "bubbles": .3, "starfall": .18, "galaxy": .3}
-FX_LATE = {"fireworks": 1.9, "aurora": 2.6, "worldtree": 2.8, "bubbles": 3.4, "starfall": 2.0, "galaxy": 3.2}
-FX_ALL = ["fireworks", "aurora", "worldtree", "bubbles", "ufo", "starfall", "galaxy"]
+# neon is the shipped 50; poppers and hologram are the two runners-up for
+# that slot, kept buildable so a swap is one line in HUNDO_FX.
+FX_EARLY = {"neon": .3, "poppers": .12, "hologram": .3, "worldtree": .35, "bubbles": .55}
+FX_LATE = {"neon": 2.2, "poppers": 2.0, "hologram": 2.6, "worldtree": 2.8, "bubbles": 3.4}
+FX_ALL = ["neon", "poppers", "hologram", "worldtree", "bubbles", "ufo"]
 
 
 def fx_spread(pg, fx):
@@ -9942,7 +9957,7 @@ def check_b313_fx(br):
     on Home, the rest on the results screen. Fails on 312, which has none
     of it."""
     print("\n313fx. hundo effects: the ladder, from the box, the box's colours, the slow tail, the pop-ups, Zenith")
-    LADDER = ["confetti", "fireworks", "aurora", "worldtree", "bubbles", "ufo"]
+    LADDER = ["confetti", "neon", "worldtree", "bubbles", "ufo"]
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
       const tiles = () => [...document.querySelectorAll('.hfx-opt')].map(b => ({ id: b.dataset.fx, locked: b.classList.contains('locked'),
@@ -9952,7 +9967,10 @@ def check_b313_fx(br):
       store.lifetime.perfectTests = 120; saveStore(); showCustomize(); await wait(400);
       out.mid = tiles();
       out.heads = [...document.querySelectorAll('.screen-customize .slab')].map(e => e.textContent.trim());
-      document.querySelector('.hfx-opt[data-fx="aurora"]')?.click(); await wait(200);
+      out.firstLive = !!document.querySelector('.hfx-opt[data-fx="confetti"] .hfx-stage');
+      document.querySelector('.hfx-opt[data-fx="confetti"]')?.scrollIntoView({ block: 'center', behavior: 'instant' });
+      await wait(2600); out.confettiPieces = document.querySelectorAll('.hfx-opt[data-fx="confetti"] .hfx-stage *').length;
+      document.querySelector('.hfx-opt[data-fx="worldtree"]')?.click(); await wait(200);
       out.picked = store.hundoFx;
       document.querySelector('.hfx-opt[data-fx="ufo"]')?.click(); await wait(500);
       out.cardText = (document.querySelector('.unlock-card-fx') || {}).textContent || '';
@@ -9962,22 +9980,24 @@ def check_b313_fx(br):
     mid = r.get("mid") or []
     nums = [int(re.sub(r"[^0-9]", "", t["need"] or "") or 0) for t in mid]
     check("Customize has a Hundo effect section", any("hundo effect" in h.lower() for h in r.get("heads") or []), r.get("heads"))
-    check("six tiles in order - Confetti, Fireworks, Aurora, World Tree, Bubbles, UFO - each a small 100% box",
+    check("five tiles in order - Confetti, Neon Trails, World Tree, Bubbles, UFO - each a small 100% box",
           [t["id"] for t in mid] == LADDER and all(t["stage"] for t in mid), [t["id"] for t in mid])
-    check("one ladder of hundos: 50, 100, 200, 350 (Bubbles), 500 (UFO)", nums[1:] == [50, 100, 200, 350, 500], [t["need"] for t in mid])
-    check("with no hundos only Confetti is held", [t["locked"] for t in r.get("zero") or []] == [False] + [True] * 5, r.get("zero"))
-    check("with 120 hundos Fireworks and Aurora are held, the rest are not", [t["locked"] for t in mid] == [False, False, False, True, True, True], mid)
+    check("four to earn, one ladder of hundos: 50, 100, 200, 350", nums[1:] == [50, 100, 200, 350], [t["need"] for t in mid])
+    check("Confetti comes first, held by everyone, and plays confetti in its own tile",
+          mid and mid[0]["id"] == "confetti" and not mid[0]["locked"] and r.get("firstLive") and r.get("confettiPieces", 0) > 5, {k: r.get(k) for k in ("firstLive", "confettiPieces")})
+    check("with no hundos only Confetti is held", [t["locked"] for t in r.get("zero") or []] == [False] + [True] * 4, r.get("zero"))
+    check("with 120 hundos Neon Trails and World Tree are held, the rest are not", [t["locked"] for t in mid] == [False, False, False, True, True], mid)
     check("tapping a held one picks it; a locked one opens its card (count and Preview) and picks nothing",
-          r.get("picked") == "aurora" and "500" in r.get("cardText", "") and r.get("preview") and r.get("stillPicked") == "aurora", r)
+          r.get("picked") == "worldtree" and "350" in r.get("cardText", "") and r.get("preview") and r.get("stillPicked") == "worldtree", r)
     r = pg.evaluate("""() => { const got = JSON.parse(JSON.stringify(store)); delete got.hundoFx;
       store.hundoFx = 'confetti'; loadStore(); const kept = store.hundoFx;
       applyLoadedData(got); const def = store.hundoFx;
-      applyLoadedData(Object.assign(JSON.parse(JSON.stringify(store)), { hundoFx: 'aurora' })); const cloud = store.hundoFx;
+      applyLoadedData(Object.assign(JSON.parse(JSON.stringify(store)), { hundoFx: 'worldtree' })); const cloud = store.hundoFx;
       store.lifetime.perfectTests = 10; store.hundoFx = 'bubbles';
       const fallback = typeof hundoFxInUse === 'function' ? hundoFxInUse() : null;
       return { kept, def, cloud, fallback }; }""")
     check("the pick is saved and read back at boot; a cloud copy without it is Confetti; one with it keeps it",
-          r.get("kept") == "aurora" and r.get("def") == "confetti" and r.get("cloud") == "aurora", r)
+          r.get("kept") == "worldtree" and r.get("def") == "confetti" and r.get("cloud") == "worldtree", r)
     check("a pick that is not held here falls back to Confetti", r.get("fallback") == "confetti", r)
     ctx.close()
 
@@ -9997,9 +10017,12 @@ def check_b313_fx(br):
           const scr = document.querySelector('.hfx-layer.hfx-' + fx), box = document.querySelector('.rs-grade .hfx-box.hfx-' + fx);
           out.screen = scr ? scr.querySelectorAll('*').length : 0;
           out.box = box ? box.querySelectorAll('*').length : 0;
-          out.border = getComputedStyle(g).borderTopColor;
+          const fill = () => { const f = document.querySelector('.rs-screen .unit-breakdown-fill.is-gold'); return f ? getComputedStyle(f).backgroundImage : null; };
+          out.border = getComputedStyle(g).borderTopColor; out.fill = fill();
           if(fx === 'ufo'){
+            out.beforeBeam = getComputedStyle(g).borderTopColor;
             await until(4700);
+            out.border = getComputedStyle(g).borderTopColor; out.fill = fill();
             const b = document.querySelector('.hfx-saucer .hfx-ufo-bob'), br = b && b.getBoundingClientRect(), gr = g.getBoundingClientRect();
             out.landed = br ? { feet: Math.round(br.bottom - gr.top), cx: Math.round(br.left + br.width / 2 - (gr.left + gr.width / 2)) } : null;
           }
@@ -10012,7 +10035,7 @@ def check_b313_fx(br):
           out.tailFading = parts.filter(o => o > .02 && o < .98).length;
           await until(T + 1300);
           out.after = document.querySelectorAll('.hfx-layer, .hfx-box.is-grade').length;
-          out.borderAfter = getComputedStyle(g).borderTopColor;
+          out.borderAfter = getComputedStyle(g).borderTopColor; out.fillAfter = fill();
           return out; }""", fx)
         yellow = "rgba(242, 211, 138, 0.2)"
         check("%s: a 100%% plays it, on the screen and in the box" % fx, r.get("id") == fx and r.get("screen", 0) > 3 and r.get("box", 0) > 2, r)
@@ -10020,7 +10043,11 @@ def check_b313_fx(br):
               r.get("border") not in (None, yellow) and r.get("borderAfter") == yellow, {"during": r.get("border"), "after": r.get("borderAfter")})
         check("%s: in its tail it is still on screen, fading - never cut" % fx, r.get("tailLayer") and r.get("tailFading", 0) >= 2, r)
         check("%s: and once it has faded every piece is gone" % fx, r.get("after") == 0 and r.get("total", 0) > 0, r)
+        gold = "rgb(217, 169, 58)"
+        check("%s: the box's progress bar takes the effect's colours too, and is gold again after" % fx,
+              r.get("fill") and gold not in r["fill"] and r.get("fillAfter") and gold in r["fillAfter"], {"during": r.get("fill"), "after": r.get("fillAfter")})
         if fx == "ufo":
+            check("ufo: the box does not light up before the beam reaches it", r.get("beforeBeam") == yellow, r.get("beforeBeam"))
             ld = r.get("landed") or {}
             check("ufo: it lands ON the 100% box - its feet on the box's top edge, over its middle",
                   ld and abs(ld.get("feet", 99)) <= 8 and abs(ld.get("cx", 99)) <= 30, ld)
@@ -10033,7 +10060,7 @@ def check_b313_fx(br):
         ctx.close()
 
     # --- the pop-ups. An account with no record of them, at 120 hundos:
-    # Fireworks then Aurora on Home, once; a live preview inside; gone after.
+    # Neon Trails then World Tree on Home, once; a live preview inside; gone after.
     acct = json.loads(USED_ACCOUNT)
     del acct["unlocksShown"]
     acct["lifetime"]["perfectTests"] = 120
@@ -10060,11 +10087,11 @@ def check_b313_fx(br):
       out.shown = (store.unlocksShown || {}).fx || [];
       out.store = JSON.stringify(store);
       return out; }""")
-    check("an account already at 120 hundos gets Fireworks then Aurora on Home", r.get("seen") == ["Fireworks", "Aurora"], r.get("seen"))
+    check("an account already at 120 hundos gets Neon Trails then World Tree on Home - two in a row", r.get("seen") == ["Neon Trails", "World Tree"], r.get("seen"))
     check("each pop-up plays the effect live in its own 100% box, says what it took, and offers to use it",
           r.get("live") and all(n >= 1 for n in r["live"]) and r.get("use") and r.get("need") == "Earn 50 hundos", {k: r.get(k) for k in ("live", "use", "need")})
     check("closing a pop-up stops and removes its preview", r.get("gone") and all(n == 0 for n in r["gone"]), r.get("gone"))
-    check("both are recorded as shown", r.get("shown") == ["fireworks", "aurora"], r.get("shown"))
+    check("both are recorded as shown", r.get("shown") == ["neon", "worldtree"], r.get("shown"))
     stored = r.get("store") or "{}"
     ctx.close()
     ctx, pg = booted(br, 440, 956, seed=stored)
@@ -10098,9 +10125,9 @@ def check_b313_fx(br):
       out.home = n; out.shown = store.unlocksShown.fx;
       return out; }""")
     check("a picked effect that is not held plays Confetti instead", r.get("confetti") and r.get("played") in ("confetti", None), r)
-    check("a run that takes you to 50 hundos announces Fireworks on the results screen - pop-up and a row in its slot",
-          r.get("popup") == "Fireworks" and r.get("fx") == ["fireworks"] and r.get("row") and "Fireworks" in r["row"] and r.get("slot"), r)
-    check("and Home does not announce it again", r.get("home") == 0 and r.get("shown") == ["fireworks"], r)
+    check("a run that takes you to 50 hundos announces Neon Trails on the results screen - pop-up and a row in its slot",
+          r.get("popup") == "Neon Trails" and r.get("fx") == ["neon"] and r.get("row") and "Neon Trails" in r["row"] and r.get("slot"), r)
+    check("and Home does not announce it again", r.get("home") == 0 and r.get("shown") == ["neon"], r)
     ctx.close()
 
     # --- Zenith counts the effects, the UFO included
@@ -10110,17 +10137,17 @@ def check_b313_fx(br):
       window.isLockedCharacter = id => id === 'zenith' ? realLocked(id) : false;
       window.bannerEarned = id => id === 'zenith' ? realEarned(id) : true;
       window.isLockedAccent = () => false;
-      store.lifetime.perfectTests = 400;
+      store.lifetime.perfectTests = 300;
       out.mid = ultimateProgress(); out.midZenith = !isLockedCharacter('zenith');
-      store.lifetime.perfectTests = 500;
+      store.lifetime.perfectTests = 350;
       out.all = ultimateProgress(); out.allZenith = !isLockedCharacter('zenith');
       window.isLockedCharacter = realLocked; window.bannerEarned = realEarned; window.isLockedAccent = realAccent;
       out.label = CHARACTER_FEATS.everything.label;
       return out; }""")
     md, al = r.get("mid") or {}, r.get("all") or {}
-    check("Zenith counts the hundo effects: one short at 400 hundos (no UFO yet)",
+    check("Zenith counts the hundo effects: one short at 300 hundos (no UFO yet)",
           md.get("need", 0) - md.get("have", 0) == 1 and "hundo effect" in (md.get("note") or "") and r.get("midZenith") is False, r)
-    check("and is held at 500, with everything else", al.get("have") == al.get("need") and r.get("allZenith") is True, r)
+    check("and is held at 350, with everything else", al.get("have") == al.get("need") and r.get("allZenith") is True, r)
     check("Zenith's requirement says so", "hundo effect" in (r.get("label") or ""), r.get("label"))
     ctx.close()
 
