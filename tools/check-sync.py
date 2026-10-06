@@ -1014,6 +1014,70 @@ with sync_playwright() as pw:
     check("a reset leaves no tallies behind", (r.get("afterReset") or {}).get("tally") == 0, str(r.get("afterReset")))
     ctx.close()
 
+    # ---- 8h. the board never runs ahead of the account ----
+    # Build 313. "I saw the cap account at level 34 earlier today, now
+    # it's 33." The row and the account were independent writes: the
+    # account waits for this device to have read the server's copy, the
+    # row never waited. Rod713's row said 11,075 XP with his account at
+    # 9,070 - a phone whose listener never delivered a server snapshot,
+    # publishing its numbers while holding its progress. Fails on 312:
+    # the row goes out unconfirmed and the progress never does.
+    print("\n8h. the board never runs ahead of the account, and a device that cannot confirm keeps asking")
+    ctx = br.new_context(viewport={"width": 834, "height": 1194})
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.drill.v1', '%s');"
+                        "localStorage.setItem('class26e.synccode','NOVA-2601');}catch(e){}" % STORE)
+    pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
+    pg.evaluate("()=>document.getElementById('splashscreen')?.remove()")
+    r = pg.evaluate("""async ()=>{
+      const wait = ms => new Promise(res => setTimeout(res, ms));
+      const clone = o => JSON.parse(JSON.stringify(o));
+      const prog = [], rows = [], order = []; let serverReads = 0;
+      /* the account on the server: 900 XP, written by the other device */
+      const cloud = clone(store); cloud.lifetime.points = 900; cloud.lifetime.correct = 70; cloud.lastModified = Date.now() - 60000;
+      if(cloud.tally){ cloud.tally = {}; cloud.tallyBase = {}; }
+      fbDb = { collection: name => ({
+        onSnapshot: () => () => {},
+        doc: id => ({
+          /* the listener is stuck: it only ever has the cache */
+          onSnapshot: next => { if(name === 'progress' && id === 'NOVA-2601') setTimeout(() => next({ exists: true, metadata: { fromCache: true }, data: () => clone(cloud) }), 50); return () => {}; },
+          get: opts => { if(name === 'progress' && id === 'NOVA-2601'){ if(opts && opts.source === 'server') serverReads++;
+              return Promise.resolve({ exists: true, metadata: { fromCache: false }, data: () => clone(cloud) }); }
+            return Promise.resolve({ exists: false, metadata: { fromCache: false } }); },
+          set: d => { if(name === 'progress' && id === 'NOVA-2601'){ prog.push(clone(d)); order.push('account'); }
+            if(name === 'leaderboard'){ rows.push(clone(d)); order.push('row'); } return Promise.resolve(); },
+          update: () => Promise.resolve(), delete: () => Promise.resolve()
+        }) }) };
+      /* the launch pull is the one other way in: it is offline here */
+      const realPull = pullFromCloud; pullFromCloud = (c, done) => { done && done(false, 'error'); };
+      syncCode = 'NOVA-2601'; store.leaderboardOptIn = true;
+      if(store.tally){ store.tally = {}; store.tallyBase = {}; }
+      store.lifetime.points = 1200; store.lifetime.correct = 95; store.lastModified = Date.now();
+      cloudConfirmedFor = ''; cloudPushPending = false;
+      try{ confirmRetryMs = 4000; clearTimeout(confirmRetryTimer); confirmRetryTimer = null; }catch(e){}
+      attachLiveListener('NOVA-2601');
+      await wait(400);
+      /* this device finishes a test: it saves and publishes */
+      saveStore(); try{ publishNow(); }catch(e){} try{ flushLeaderboardRow(); }catch(e){}
+      await wait(600);
+      const out = { rowsBefore: rows.map(r => r.xp), progBefore: prog.length };
+      await wait(9000);
+      const lastP = prog[prog.length - 1], lastR = rows[rows.length - 1];
+      out.serverReads = serverReads;
+      out.prog = lastP ? lastP.lifetime.points : null;
+      out.row = lastR ? lastR.xp : null;
+      out.rowLevel = lastR ? lastR.level : null;
+      out.rowsUnder = rows.filter(r => (r.xp || 0) < 1200).length;
+      out.accountFirst = order.indexOf('account') >= 0 && order.indexOf('account') < order.indexOf('row');
+      pullFromCloud = realPull;
+      return out; }""")
+    check("an unconfirmed device publishes nothing to the board, however it finishes",
+          r["rowsBefore"] == [] and r["progBefore"] == 0, str([r["rowsBefore"], r["progBefore"]]))
+    check("with the listener stuck on its cache, the device asks the server itself, and its progress lands",
+          r["serverReads"] >= 1 and r["prog"] == 1200, str([r["serverReads"], r["prog"]]))
+    check("then the board gets the saved number - after the account has it, never before",
+          r["row"] == 1200 and r["rowsUnder"] == 0 and r["accountFirst"], str([r["row"], r["rowLevel"], r["rowsUnder"], r["accountFirst"]]))
+    ctx.close()
+
     # ---- 7. the sync code never reaches a collection anyone can list ----
     # `leaderboard` and `vrooms` can both be ENUMERATED by anyone - this
     # repo's own firestore-admin.py lists them over plain REST with no

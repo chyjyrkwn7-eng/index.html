@@ -12934,3 +12934,43 @@ version is that set now; 0-85 is gone from the app.
 - `check_penal_versions` holds the 55-124 set as a typed list (it is
   what the app is checked AGAINST), and `check_b298`/`check_b300` assert
   the new shape; all three fail on 312.
+
+### The board never runs ahead of the account (build 313)
+
+"I know for a fact I saw the cap account at level 34 earlier today, now
+it's 33." The account audit that followed (`firestore-admin.py audit`)
+found Cap consistent everywhere - 30,740 XP, level 33 since Sep 25, in
+every backup, every Virtual Room record, the high-water mark and the row
+alike - and found the mechanism on somebody else: **Rod713's row said
+11,075 XP while his account held 9,070.** One of his phones had earned
+2,005 XP on Monday and never saved it.
+
+- **The row and the account were two independent writes.** The account
+  waits for `cloudConfirmedFor` (this device has read the server's copy,
+  so a stale phone cannot write over it); the row never waited for
+  anything. A device that never got that read published its numbers and
+  held its progress, and the next push from another of that person's
+  devices took the board back down - a level up, then down, which is
+  exactly what gets reported.
+- **`writeLeaderboardRow()` now refuses until the account is confirmed**,
+  and the held row goes out with the held save (`pushToCloud` publishes
+  after the account write), so the board only ever shows saved progress.
+- **A device that cannot confirm keeps asking.** Confirmation used to
+  come only from the listener's first server snapshot or the launch pull.
+  `ensureCloudConfirmed()` now reads the document from the server itself
+  (4s, 8s ... 60s, and again on `visibilitychange`/`online`), merges it
+  exactly as a snapshot would and confirms - a server "not there"
+  included, as the listener does before it has seen the account exist.
+- **Never hand-credit a "row ahead" account.** The missing progress is in
+  that device's own tally; adding it to the account by hand counts it
+  twice the moment the device merges. It arrives by itself the next time
+  that device opens the app online.
+- `check-sync` section 8h drives it: a listener stuck on its cache, a
+  device finishing a test. Fails on 312 (three rows published at 1,200,
+  the account never written, no server read).
+- `python3 tools/firestore-admin.py audit [--backup FILE]` is the
+  read-only check of every account: high-water mark above the account,
+  row ahead of the account, row level wrong for its XP, orphan rows,
+  opted-in accounts with no row, and with `--backup` anything that went
+  down since. It never prints a sync code. Run it before answering any
+  "accounts are messed up" report.

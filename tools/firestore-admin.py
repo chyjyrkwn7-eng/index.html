@@ -20,6 +20,7 @@ Usage
   python3 tools/firestore-admin.py list
   python3 tools/firestore-admin.py find <username>
   python3 tools/firestore-admin.py bugs [N]
+  python3 tools/firestore-admin.py audit [--backup FILE]
   python3 tools/firestore-admin.py prune [--days N] [--yes]
   python3 tools/firestore-admin.py purge --yes
   python3 tools/firestore-admin.py move <from-public-id> <to-public-id> [--yes]
@@ -907,6 +908,106 @@ def cmd_credit(argv):
     return 0
 
 
+# ---------------------------------------------------------------- audit
+#
+# "Check every single account and ensure everything is fixed and
+# everyone's credit and stuff is there." Read-only, and it never prints a
+# sync code: accounts are named by firstName, which is what anybody
+# reporting a problem calls them by.
+#
+# What it looks for, each one a way an account has actually gone wrong:
+#   - the high-water mark (progress/<code>__floor) holding MORE than the
+#     account: an old build's overwrite that no launch has put back yet;
+#   - the rankings row holding MORE XP or correct answers than the
+#     account: a device that published without saving (build 313 - Rod713,
+#     11,075 on the board, 9,070 saved) - that progress is on one phone;
+#   - a row whose level does not match its own XP, a row with no account
+#     behind it, an opted-in account with no row;
+#   - with --backup, anything that has gone DOWN since that backup.
+# A row slightly BEHIND its account is normal (rows wait up to 90s) and is
+# not reported.
+
+def _js_round(x):
+    import math
+    return int(math.floor(x + 0.5))
+
+
+def level_of(points):
+    """levelProgress() in index.html, step for step - keep the two in step."""
+    p = max(0, float(points or 0))
+    lvl, need, spent = 1, 300, 0
+    def growth(l):
+        if l <= 25: return 1.05
+        if l > 45: return 1.0835
+        if l == 26: return 2.0
+        return 1.0199
+    def ceiling(l):
+        return 9000 if l <= 25 else 150000
+    while lvl < 80 and p >= spent + need:
+        spent += need; lvl += 1
+        need = min(ceiling(lvl + 1), _js_round(need * growth(lvl + 1)))
+    return lvl
+
+
+def _acct_summary(f):
+    L = f.get("lifetime") or {}
+    up = f.get("unitPerfects") or {}
+    return {"xp": L.get("points") or 0, "correct": L.get("correct") or 0,
+            "answered": L.get("answered") or 0, "tests": L.get("fullTests") or 0,
+            "hundos": sum(v for v in up.values() if isinstance(v, (int, float))),
+            "chars": len(((f.get("seenUnlocks") or {}).get("chars")) or [])}
+
+
+def cmd_audit(argv):
+    if not admin_ready():
+        print("audit needs the admin key (NOVA_ADMIN_EMAIL / NOVA_ADMIN_PRIVATE_KEY): progress cannot be listed without it")
+        return 2
+    prog = docs("progress"); lb = dict(docs("leaderboard"))
+    main_docs, floors, notes = {}, {}, set()
+    for code, f in prog:
+        if code.endswith("__floor"): floors[code[:-7]] = f
+        elif "__" in code: notes.add(code.split("__")[0])
+        else: main_docs[code] = f
+    old = {}
+    if "--backup" in argv:
+        B = json.load(open(argv[argv.index("--backup") + 1]))
+        bp = B.get("progress") or []
+        for code, f in (bp.items() if isinstance(bp, dict) else bp):
+            if "__" not in code and f.get("publicId"): old[f["publicId"]] = _acct_summary(f)
+    problems, pids = [], set()
+    for code, f in main_docs.items():
+        if not f.get("onboardingComplete") or not f.get("publicId"): continue
+        pid = f["publicId"]; pids.add(pid)
+        name = f.get("firstName") or "?"
+        a = _acct_summary(f)
+        fl = floors.get(code)
+        if fl:
+            b = _acct_summary(fl)
+            for k in ("xp", "correct", "tests", "hundos"):
+                if b[k] > a[k]: problems.append("%s: its high-water mark holds more %s (%s) than the account (%s)" % (name, k, b[k], a[k]))
+        r = lb.get(pid)
+        moved = code in notes
+        if r:
+            if (r.get("xp") or 0) > a["xp"] or (r.get("correct") or 0) > a["correct"]:
+                problems.append("%s: the rankings row is AHEAD of the account - %s XP / %s correct on the board, %s / %s saved. A device has progress it has not saved."
+                                % (name, r.get("xp"), r.get("correct"), a["xp"], a["correct"]))
+            if r.get("level") is not None and r.get("level") != level_of(r.get("xp") or 0):
+                problems.append("%s: the row says level %s for %s XP (should be %s)" % (name, r.get("level"), r.get("xp"), level_of(r.get("xp") or 0)))
+        elif f.get("leaderboardOptIn") and not moved:
+            problems.append("%s: opted in to the rankings but has no row" % name)
+        o = old.get(pid)
+        if o:
+            for k in ("xp", "correct", "answered", "tests", "hundos", "chars"):
+                if o[k] > a[k]: problems.append("%s: %s went DOWN since the backup, %s -> %s" % (name, k, o[k], a[k]))
+    for pid, r in lb.items():
+        if pid not in pids and pid != "presence-v1":
+            problems.append("row with no account behind it: %s (level %s)" % (r.get("firstName"), r.get("level")))
+    print("%d accounts, %d rankings rows checked" % (len(pids), len(lb)))
+    for line in problems: print("  - " + line)
+    print("no problems found" if not problems else "%d problem(s)" % len(problems))
+    return 1 if problems else 0
+
+
 def main(argv):
     if len(argv) < 2:
         print(__doc__)
@@ -919,6 +1020,8 @@ def main(argv):
             print("usage: firestore-admin.py find <username>")
             return 2
         return cmd_find(" ".join(argv[2:]))
+    if cmd == "audit":
+        return cmd_audit(argv[2:])
     if cmd == "bugs":
         n = 20
         for a in argv[2:]:

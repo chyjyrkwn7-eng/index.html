@@ -41573,6 +41573,12 @@ let cloudPushTimer = null;
    has come down. */
 let cloudConfirmedFor = "";
 let cloudPushPending = false;
+/* build 313: see ensureCloudConfirmed and writeLeaderboardRow */
+const CONFIRM_RETRY_FIRST_MS = 4000;
+const CONFIRM_RETRY_MAX_MS = 60000;
+let confirmRetryTimer = null;
+let confirmRetryMs = CONFIRM_RETRY_FIRST_MS;
+let rowAwaitingConfirm = false;
 let storageOK = false;
 let storageHadData = false;
 /* THE LAST FIFTY TESTS, newest first; the fifty-first rotates the
@@ -43464,7 +43470,7 @@ function handleRemoteReset(){
 
 function scheduleCloudPush(){
   if(!fbDb || !syncCode) return;
-  if(cloudConfirmedFor !== syncCode){ cloudPushPending = true; return; }
+  if(cloudConfirmedFor !== syncCode){ cloudPushPending = true; ensureCloudConfirmed(); return; }
   clearTimeout(cloudPushTimer);
   cloudPushTimer = setTimeout(pushToCloud, 2500);
 }
@@ -43603,7 +43609,27 @@ function rowSignature(row, urgentOnly){
   try{ return JSON.stringify(out); }catch(e){ return String(Math.random()); }
 }
 
+/* ---- THE BOARD SHOWS WHAT IS SAVED, NOTHING ELSE (build 313) ----
+   "I know for a fact I saw the cap account at level 34 earlier today,
+   now it's 33." The row and the account were two independent writes.
+   The account waits until this device has read the server's copy
+   (cloudConfirmedFor - so a stale phone cannot write over it); the row
+   never waited for anything. So a device that never got that read -
+   offline, or a listener that never came back - went on publishing its
+   numbers while holding its progress back: Rod713's row said 11,075 XP
+   with his account at 9,070, the 2,005 he earned on Monday existing on
+   one phone and nowhere else. And the moment another of that person's
+   devices published, the board took it all back - a level up, then
+   down. A row is now only written once the account it describes has
+   been confirmed, so the board never runs ahead of what is saved; the
+   held one goes the moment it is (see markCloudConfirmed). */
 function writeLeaderboardRow(row){
+  if(cloudConfirmedFor !== syncCode){
+    rowAwaitingConfirm = true;
+    clearTimeout(rowPushTimer); rowPushTimer = null;
+    ensureCloudConfirmed();
+    return;
+  }
   clearTimeout(rowPushTimer); rowPushTimer = null;
   try{
     fbDb.collection("leaderboard").doc(publicIdOf()).set(row).catch(() => {});
@@ -43703,13 +43729,63 @@ function deleteAccountFloor(code){
   if(!fbDb || !code) return;
   try { floorRefFor(code).delete().catch(() => {}); } catch(e){}
 }
+/* ---- A DEVICE THAT CANNOT CONFIRM KEEPS ASKING (build 313) ----
+   Confirmation used to come only from the live listener's first
+   server-sourced snapshot, or a launch pull. A listener that never
+   delivered one left the device holding every save it made for the
+   whole session - and a session that ends that way leaves the progress
+   on the phone alone. So while anything is held, the device asks the
+   server itself: a plain read of its own document, merged exactly as a
+   listener snapshot is, then confirmed exactly as one would be - a
+   missing document included, which is what the listener does with a
+   server-sourced "not there" before it has seen the account exist.
+   Backs off (4s, 8s ... 60s) and stops the moment anything confirms. */
+function ensureCloudConfirmed(){
+  if(!fbDb || !syncCode || cloudConfirmedFor === syncCode || confirmRetryTimer) return;
+  const code = syncCode;
+  confirmRetryTimer = setTimeout(() => {
+    confirmRetryTimer = null;
+    if(code !== syncCode || cloudConfirmedFor === code || !fbDb) return;
+    const again = () => { confirmRetryMs = Math.min(CONFIRM_RETRY_MAX_MS, confirmRetryMs * 2); ensureCloudConfirmed(); };
+    /* a hidden page is suspended on iOS anyway; it is asked again on
+       the way back (visibilitychange below) */
+    if(document.visibilityState === "hidden") return;
+    try{
+      fbDb.collection("progress").doc(code).get({ source: "server" }).then(snap => {
+        if(code !== syncCode || cloudConfirmedFor === code) return;
+        if(snap && snap.metadata && snap.metadata.fromCache){ again(); return; }
+        if(snap && snap.exists){
+          if(syncSameAccount(snap.data())){ try{ onLiveUpdateApplied(); }catch(e){} }
+          markCloudConfirmed(true);
+        } else markCloudConfirmed(false);
+      }).catch(again);
+    } catch(e){ again(); }
+  }, confirmRetryMs);
+}
+document.addEventListener("visibilitychange", () => {
+  if(document.visibilityState === "visible" && syncCode && cloudConfirmedFor !== syncCode){
+    clearTimeout(confirmRetryTimer); confirmRetryTimer = null; confirmRetryMs = CONFIRM_RETRY_FIRST_MS;
+    ensureCloudConfirmed();
+  }
+});
+window.addEventListener("online", () => {
+  if(syncCode && cloudConfirmedFor !== syncCode){
+    clearTimeout(confirmRetryTimer); confirmRetryTimer = null; confirmRetryMs = CONFIRM_RETRY_FIRST_MS;
+    ensureCloudConfirmed();
+  }
+});
 function markCloudConfirmed(docExists){
   if(!syncCode || cloudConfirmedFor === syncCode) return;
   const code = syncCode;
   const confirm = () => {
     if(code !== syncCode || cloudConfirmedFor === code) return;
     cloudConfirmedFor = code;
-    if(cloudPushPending){ cloudPushPending = false; scheduleCloudPush(); }
+    clearTimeout(confirmRetryTimer); confirmRetryTimer = null; confirmRetryMs = CONFIRM_RETRY_FIRST_MS;
+    /* a held save carries the held row with it - pushToCloud publishes
+       the row after the account write, so the board is never ahead of
+       the account even for the 2.5s the save waits */
+    if(cloudPushPending){ cloudPushPending = false; rowAwaitingConfirm = false; scheduleCloudPush(); }
+    else if(rowAwaitingConfirm){ rowAwaitingConfirm = false; try{ if(store.leaderboardOptIn) pushLeaderboardRow(); }catch(e){} }
   };
   if(docExists === false || !fbDb){
     /* nothing to restore into: the next push writes the floor fresh */
@@ -43748,7 +43824,7 @@ function markCloudConfirmed(docExists){
 }
 function pushToCloud(){
   if(!fbDb || !syncCode) return;
-  if(cloudConfirmedFor !== syncCode){ cloudPushPending = true; return; }
+  if(cloudConfirmedFor !== syncCode){ cloudPushPending = true; ensureCloudConfirmed(); return; }
   try {
     fbDb.collection("progress").doc(syncCode).set(store).catch(() => {});
   } catch(e){}
@@ -43854,6 +43930,7 @@ function attachLiveListener(code){
      completely eliminating the false positive on a fresh account. */
   let hasSeenExist = false;
   checkAccountMove(code);
+  ensureCloudConfirmed();
   try {
     liveUnsubscribe = onSnapshotResilient(fbDb.collection("progress").doc(code), docSnap => {
       if(code !== syncCode) return; // stale callback from a code we've since moved on from
