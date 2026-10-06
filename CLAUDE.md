@@ -12958,6 +12958,13 @@ version is that set now; 0-85 is gone from the app.
   spelling, grammar, truncation or leftover slide text in QUESTIONS;
   report it instead. check_b313_shuffle fails if any question shows
   choices other than the ones it was stored under.
+  **The one accepted difference, by Madison's decision (6 Oct):** 35
+  questions carry `keyText` because the guide's citation clutter is
+  hidden from the stem - statute/section tags like "(PC 36.03 (a) (1);
+  ...)", a leftover "42." numbering, quizlet and web links, and on
+  Arrest/Search/Seizure 112 "(#57)" shown as "?". Asked directly whether
+  to show those exactly as the guide prints them, she chose to keep them
+  hidden. Do not strip anything further and do not put them back.
 - **That repair made #346 a seventh question on one answer set** (the
   "which offense is this" questions: murder, manslaughter and the rest),
   five of them inside the 58. `spreadOrder()`'s single fixed twin gap
