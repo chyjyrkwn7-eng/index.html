@@ -13191,7 +13191,22 @@ disagree with it.
   41 -> 29, ALFRED 35 -> 29; Sauce, OdinSavior, Cap and Otx are inside
   their caps and unchanged. Put to her in those terms before building:
   *"Yeah that makes sense. Make sure it makes sense."*
-- **The copy, the same everywhere** (`levelWallLine`): "Earn N (more)
+- **PROFILE IS POKEMON GO'S LAYOUT, AND THERE IS NO "NEXT GATE" BOX.**
+  *"how it says next gate is bad ... In Pokemon go this is how they
+  represent it."* The bar, and beside it a badge-challenge button (our
+  binoculars: a badge icon and "3/5 >", `buildLevelChallengeButton`)
+  that opens `showLevelChallenge` - the one requirement, the badges that
+  unlock the next band. Under the bar the XP numbers (`buildXpNumbers`)
+  flip which half is loud at the requirement: under it the requirement
+  leads, past it what you have leads. `nextGateOf`,
+  `buildNextGateSection` and `buildGateChips` are gone, and so is the
+  Rank tab's "Next gate" summary.
+- **THE ROAD MAP BOXES ARE BUILD 313'S, EXACTLY.** *"I don't like how the
+  road map boxes changed, that's a no go for sure."* The gate chips, the
+  wall line, the badge chip on the node and the gate outline all came
+  off; the only band wording on the Rank tab is one sentence in the
+  climb note and the rank pop-ups.
+- **The copy** (`levelWallLine`, results card and rank pop-ups): "Earn N (more)
   badge(s) to unlock levels X-Y · S levels saved", with a **Max** chip
   beside the level on Profile when it is held, and the XP numbers running
   on past what the level asks. The Next gate is the rank whose badges

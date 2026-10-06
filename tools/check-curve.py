@@ -586,10 +586,15 @@ def main():
             setAcct(xpForLevel(31) + 600, perfFor(0), 0);
             showProfile('identity'); await new Promise(r => setTimeout(r, 400));
             const q = sel => (document.querySelector(sel) || {}).textContent || null;
-            out.profile = { top: q('.profile-level-sidetop'), gate: q('.next-gate-name'), line: q('.next-gate-line'),
-                            chips: [...document.querySelectorAll('.next-gate .gate-chip')].map(e => e.textContent),
+            out.profile = { top: q('.profile-level-sidetop'), nums: q('.profile-xp-line .xpnums'),
+                            over: !!document.querySelector('.profile-xp-line .xpnums.is-over'),
+                            chal: q('.profile-xprow .level-chal-n'), nextGate: !!document.querySelector('.next-gate'),
                             banked: !!document.querySelector('.profile-xpbar.is-banked'),
                             max: !!document.querySelector('.level-max-tag') };
+            const cb = document.querySelector('.profile-xprow .level-chal');
+            if(cb){ cb.click(); await new Promise(r => setTimeout(r, 300));
+              out.profile.sheet = { name: q('.level-chal-sheet .unlock-card-name'), line: q('.level-chal-line') };
+              document.querySelectorAll('.invite-overlay').forEach(n => n.remove()); }
           } catch(e){ out.threw = String(e && e.stack || e); }
           return out; }""")
         if w.get("threw"):
@@ -647,10 +652,12 @@ def main():
             check("the rank is asked about the shown level", r["rank"] == "rookie" == r["rankOfCurve"], r)
             check("a reset clears the floor", w["resetFloor"] == 0, w["resetFloor"])
             pf = w["profile"]
-            check("Profile at a cap: Max, XP over what the level asks, Next gate, what unlocks",
-                  pf["top"] and re.match(r"^[0-9,]+ / [0-9,]+ XP$", pf["top"]) and pf["gate"] == "Bronze"
-                  and pf["line"] == "Earn 1 badge to unlock levels 30\u201339 \u00b7 2 levels saved" and pf["banked"]
-                  and pf["max"] and pf["chips"] == ["Level 21 \u2713", "Badges 0 / 1"], pf)
+            check("Profile at a cap: Max, levels saved, the XP numbers flipped to 'over', no Next gate box",
+                  pf["top"] == "2 levels saved" and pf["nums"] and re.match(r"^[0-9,]+ / [0-9,]+ XP$", pf["nums"])
+                  and pf["over"] and pf["banked"] and pf["max"] and not pf["nextGate"], pf)
+            check("the badge challenge sits beside the bar and opens what it asks",
+                  pf["chal"] == "0/1" and (pf.get("sheet") or {}).get("name") == "Unlock levels 30\u201339"
+                  and "2 saved levels arrive" in ((pf.get("sheet") or {}).get("line") or ""), pf)
 
         print("\n9. firestore-admin.py audits with the page's own numbers")
         import importlib.util

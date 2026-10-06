@@ -13921,18 +13921,6 @@
   .rankmap-req{ margin:.25rem 0 0; font-size:.8rem; font-weight:700; color:rgba(255,255,255,.72); }
   .rankmap-meter{ margin-top:.55rem; }
   .rankmap-togo{ margin:.35rem 0 0; font-size:.74rem; color:var(--soft); }
-  /* build 314: the badge wall your level is held at, in the rank's colour */
-  .rankmap-wall{ margin:.35rem 0 0; font-size:.74rem; font-weight:700; text-wrap:pretty; color:color-mix(in srgb, var(--rank-color) 55%, #fff); }
-  .rankmap-gatechip{ position:absolute; left:50%; top:100%; z-index:2; transform:translate(-50%, -45%);
-    padding:.12rem .42rem; border-radius:999px; white-space:nowrap; pointer-events:none;
-    font-size:.58rem; font-weight:800; letter-spacing:.02em; font-variant-numeric:tabular-nums;
-    color:#0B0D10; background:color-mix(in srgb, var(--rank-color) 72%, #fff); }
-  .rankmap-req .gate-chips{ margin-top:.1rem; }
-  .rankmap-stop.is-gate .rankmap-card{ box-shadow:0 0 0 1px color-mix(in srgb, var(--rank-color) 55%, transparent), 0 0 18px color-mix(in srgb, var(--rank-color) 22%, transparent); }
-  .rankhero-gate{ margin:.85rem 0 0; padding-top:.7rem; border-top:1px solid rgba(255,255,255,.08); text-align:center; }
-  .rankhero-gate-me{ margin:0; font-size:.8rem; font-weight:800; letter-spacing:.02em; color:rgba(255,255,255,.86); font-variant-numeric:tabular-nums; }
-  .rankhero-gate-next{ margin:.3rem 0 0; font-size:.8rem; line-height:1.4; color:var(--soft); }
-  .rankhero-gate-next b{ color:color-mix(in srgb, var(--rank-color) 55%, #fff); }
   .ranklore-wall{ margin:.55rem auto .1rem; max-width:20rem; font-size:.8rem; line-height:1.4; color:rgba(243,245,247,.75); }
   /* ONE SIZE, ONE START (build 311) - see buildRankGifts. Every chip is
      a full-width row with the same icon slot, so on either side of the
@@ -18722,31 +18710,45 @@
   .profile-level-total{ margin:.45rem 0 0; padding-top:.45rem; border-top:1px solid rgba(255,255,255,.07);
     font-size:.76rem; font-weight:600; color:var(--soft); font-variant-numeric:tabular-nums; }
   .profile-level-sidesub{ font-size:.76rem; font-weight:600; color:var(--soft); font-variant-numeric:tabular-nums; }
-  /* ---- THE NEXT GATE (build 314) ----
-     One idea on three surfaces: the next gate's rank, its two
-     requirements as chips (met ones ticked, in the rank's colour), and
-     when it is holding your level, the plain line that says what opens
-     it. Sits under the XP bar on Profile, in the same quiet type as the
-     line it sits beside; the chips wrap under the name on a 320px phone. */
-  .next-gate{ margin:.8rem 0 0; padding:.7rem .75rem .75rem; border-radius:.9rem;
-    background:rgba(0,0,0,.24); border:1px solid rgba(255,255,255,.07); }
-  .next-gate.is-holding{ border-color:color-mix(in srgb, var(--rank-color) 38%, transparent); }
-  .next-gate-kicker{ margin:0 0 .45rem; font-size:.62rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:var(--soft); }
-  .next-gate-row{ display:flex; align-items:center; gap:.65rem; min-width:0; }
-  .next-gate-emb{ flex:none; width:2.9rem; height:2.9rem; display:grid; place-items:center; }
-  .next-gate-emb > svg{ width:100%; height:100%; overflow:visible; filter:drop-shadow(0 0 6px color-mix(in srgb, var(--rank-color) 55%, transparent)); }
-  .next-gate-main{ flex:1 1 auto; min-width:0; display:flex; flex-wrap:wrap; align-items:center; gap:.35rem .6rem; }
-  .next-gate-name{ flex:1 0 100%; font-size:1rem; font-weight:800; color:color-mix(in srgb, var(--rank-color) 55%, #fff); }
-  .gate-chips{ display:inline-flex; flex-wrap:wrap; gap:.3rem; }
-  .next-gate > .gate-chips{ display:flex; margin-top:.55rem; }
-  .gate-chip{ padding:.16rem .5rem; border-radius:999px; font-size:.72rem; font-weight:800; white-space:nowrap;
-    font-variant-numeric:tabular-nums; color:rgba(255,255,255,.82); background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1); }
-  .gate-chip.is-met{ color:#0B0D10; border-color:transparent; background:color-mix(in srgb, var(--rank-color) 72%, #fff); }
-  .next-gate-line{ margin:.55rem 0 0; font-size:.82rem; font-weight:700; line-height:1.35; color:var(--ink); text-wrap:pretty; }
-  .next-gate-closest{ margin:.2rem 0 0; font-size:.76rem; font-weight:600; line-height:1.35; color:var(--soft);
-    font-variant-numeric:tabular-nums; overflow-wrap:break-word; }
-  .level-gate-line{ margin:.45rem 0 0; font-size:.8rem; font-weight:700; line-height:1.35; color:var(--ink); }
-  .results-level-gatename{ color:color-mix(in srgb, var(--rank-color, #9FACBA) 55%, #fff); }
+  /* ---- THE BAR ROW AND THE BADGE CHALLENGE (build 314) ----
+     Pokemon GO's layout: the bar, and beside it the one challenge that
+     stands between you and the next levels - their binoculars, our
+     badges. The button is a full 44px target pulled back into the row
+     by negative margins so the bar keeps its width. */
+  .profile-xprow{ display:flex; align-items:center; gap:.55rem; }
+  .profile-xprow > .profile-xpbar{ flex:1 1 auto; min-width:0; }
+  .level-chal{ flex:none; display:inline-flex; align-items:center; gap:.28rem; min-height:44px;
+    margin:-.5rem -.35rem -.5rem 0; padding:0 .35rem 0 .3rem; border:0; background:none; color:var(--ink);
+    font:inherit; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .level-chal-ic{ width:1.5rem; height:1.5rem; fill:#E8C77A; filter:drop-shadow(0 0 6px rgba(232,199,122,.35)); }
+  .level-chal-n{ font-size:.95rem; font-weight:700; color:var(--soft); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .level-chal-n b{ color:var(--ink); font-weight:800; }
+  .level-chal-chev{ font-size:1.5rem; line-height:1; color:#8FC1FF; margin-top:-.12rem; }
+  .level-chal:active{ opacity:.7; }
+  @media (min-width:40rem){ .level-chal-ic{ width:1.7rem; height:1.7rem; } .level-chal-n{ font-size:1.05rem; } }
+  /* The numbers under the bar. Which half is loud flips at the
+     requirement: below it the requirement leads, past it what you have
+     does - the flip Pokemon GO uses to say "over". */
+  .xpnums{ font-weight:800; font-variant-numeric:tabular-nums; }
+  .xpnums-have{ color:rgba(255,255,255,.6); }
+  .xpnums-need{ color:var(--ink); }
+  .xpnums.is-over .xpnums-have{ color:var(--ink); }
+  .xpnums.is-over .xpnums-need{ color:#8FC1FF; }
+  /* The challenge sheet */
+  .level-chal-sheet{ text-align:center; }
+  .level-chal-big{ margin:.7rem 0 .55rem; font-size:1rem; font-weight:700; color:var(--soft); font-variant-numeric:tabular-nums; }
+  .level-chal-big b{ font-size:2rem; font-weight:800; color:var(--ink); margin-right:.1rem; }
+  .level-chal-bar{ display:block; height:10px; margin:0 auto; max-width:18rem; border-radius:999px; overflow:hidden;
+    background:rgba(255,255,255,.1); box-shadow:inset 0 1px 2px rgba(0,0,0,.5); }
+  .level-chal-fill{ display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg, #C99A3E, #F2D58A);
+    box-shadow:0 0 10px rgba(232,199,122,.45); transition:width .9s cubic-bezier(.2,.8,.2,1); }
+  .level-chal-line{ margin:.85rem auto 0; max-width:21rem; font-size:.9rem; font-weight:600; line-height:1.4; color:var(--ink); text-wrap:pretty; }
+  .level-chal-near{ margin:.4rem auto 1rem; max-width:21rem; font-size:.8rem; line-height:1.35; color:var(--soft); }
+  .level-chal-sheet > .next{ width:100%; }
+  .level-chal-sheet > .next + .next{ margin-top:.5rem; }
+  .level-gate-line{ margin:.45rem 0 0; font-size:.8rem; font-weight:700; line-height:1.35; color:var(--ink);
+    display:flex; align-items:center; justify-content:center; gap:.4rem; text-align:left; }
+  .level-gate-line .level-chal-ic{ flex:none; width:1.2rem; height:1.2rem; }
   .level-gate-closest{ margin:.2rem 0 0; font-size:.74rem; font-weight:600; line-height:1.35; color:var(--soft);
     font-variant-numeric:tabular-nums; overflow-wrap:break-word; }
   .profile-level.is-held .profile-level-sidetop{ white-space:nowrap; overflow:hidden; text-overflow:clip; }
@@ -46338,6 +46340,105 @@ function levelOf(st){ return effectiveLevelOf(st); }
 function levelXpNumbers(s){
   return Math.max(0, Math.round(s.into)).toLocaleString() + " / " + Math.round(s.span).toLocaleString() + " XP";
 }
+/* "into / span XP" with the loud half flipped by whether you are past
+   the requirement - see the Profile bar. */
+function buildXpNumbers(into, span, over){
+  const w = document.createElement("span");
+  w.className = "xpnums" + (over ? " is-over" : "");
+  const a = document.createElement("span"); a.className = "xpnums-have";
+  a.textContent = Math.max(0, Math.round(Number(into) || 0)).toLocaleString();
+  const b = document.createElement("span"); b.className = "xpnums-need";
+  b.textContent = " / " + Math.max(0, Math.round(Number(span) || 0)).toLocaleString() + " XP";
+  w.append(a, b);
+  return w;
+}
+/* THE LEVEL CHALLENGE (build 314): our version of Pokemon GO's
+   binoculars beside the bar. Theirs are random tasks per level; ours is
+   one, the badges that open your next band of levels. Null once your
+   badges already open every level. */
+function levelChallengeOf(){
+  const s = levelStateFor(store);
+  const have = s.badges;
+  if(badgeWallLevel(have) >= LEVEL_CAP) return null;
+  const key = gateRankForBadges(have);
+  const r = key ? TIER_UNLOCKS[key] : null;
+  if(!r) return null;
+  const need = Number(r.badges) || 0;
+  return { key, have, need, from: badgeWallLevel(have) + 1, to: badgeWallLevel(need), state: s };
+}
+const LEVEL_CHALLENGE_ICON = "M12 2.4l7.6 3.4v5.4c0 4.7-3.2 8.7-7.6 10.4-4.4-1.7-7.6-5.7-7.6-10.4V5.8L12 2.4Zm0 4.1-1.4 2.9-3.2.4 2.3 2.2-.6 3.1 2.9-1.5 2.9 1.5-.6-3.1 2.3-2.2-3.2-.4L12 6.5Z";
+function buildLevelChallengeButton(){
+  const c = levelChallengeOf();
+  if(!c) return null;
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "level-chal" + (c.state.held ? " is-holding" : "");
+  btn.setAttribute("aria-label", "Badge challenge: " + c.have + " of " + c.need + " badges to unlock levels " + c.from + " to " + c.to);
+  const ic = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  ic.setAttribute("viewBox", "0 0 24 24"); ic.setAttribute("aria-hidden", "true"); ic.classList.add("level-chal-ic");
+  const pth = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  pth.setAttribute("d", LEVEL_CHALLENGE_ICON); pth.setAttribute("fill-rule", "evenodd");
+  ic.appendChild(pth);
+  const n = document.createElement("span");
+  n.className = "level-chal-n";
+  const h = document.createElement("b"); h.textContent = String(c.have);
+  n.append(h, "/" + c.need);
+  const chev = document.createElement("span");
+  chev.className = "level-chal-chev"; chev.setAttribute("aria-hidden", "true"); chev.textContent = "\u203A";
+  btn.append(ic, n, chev);
+  btn.addEventListener("click", showLevelChallenge);
+  return btn;
+}
+/* What the challenge button opens: the one requirement, against you. */
+function showLevelChallenge(){
+  const c = levelChallengeOf();
+  if(!c) return;
+  const overlay = document.createElement("div");
+  overlay.className = "invite-overlay";
+  const sheet = document.createElement("div");
+  sheet.className = "invite-sheet person-card level-chal-sheet";
+  const kick = document.createElement("p");
+  kick.className = "unlock-card-kicker";
+  kick.textContent = "Badge challenge";
+  const nm = document.createElement("h2");
+  nm.className = "unlock-card-name";
+  nm.textContent = "Unlock levels " + c.from + (c.to > c.from ? "\u2013" + c.to : "");
+  const big = document.createElement("p");
+  big.className = "level-chal-big";
+  const hb = document.createElement("b"); hb.textContent = String(c.have);
+  big.append(hb, " / " + c.need + " badges");
+  const bar = document.createElement("span"); bar.className = "level-chal-bar";
+  const fill = document.createElement("span"); fill.className = "level-chal-fill";
+  bar.appendChild(fill);
+  setBarFill(fill, 0);
+  setTimeout(() => requestAnimationFrame(() => setBarFill(fill, c.need ? Math.min(100, Math.round(c.have / c.need * 1000) / 10) : 100)), 200);
+  const left = c.need - c.have;
+  const line = document.createElement("p");
+  line.className = "level-chal-line";
+  line.textContent = "Earn " + left + (c.have > 0 ? " more" : "") + (left === 1 ? " badge" : " badges") +
+    " to climb past level " + (c.from - 1) + "." +
+    (c.state.saved > 0 ? " Your " + c.state.saved + (c.state.saved === 1 ? " saved level arrives" : " saved levels arrive") + " the moment you do." : "");
+  sheet.append(kick, nm, big, bar, line);
+  const near = levelClosestLine();
+  if(near){
+    const p = document.createElement("p");
+    p.className = "level-chal-near";
+    p.textContent = near;
+    sheet.appendChild(p);
+  }
+  const go = document.createElement("button");
+  go.type = "button"; go.className = "next";
+  go.textContent = "View badges";
+  go.addEventListener("click", () => { overlay.remove(); showRanksScreen("badges"); });
+  const close = document.createElement("button");
+  close.type = "button"; close.className = "next ghost person-sheet-close";
+  close.textContent = "Close";
+  close.addEventListener("click", () => overlay.remove());
+  sheet.append(go, close);
+  overlay.appendChild(sheet);
+  overlay.addEventListener("click", e => { if(e.target === overlay) overlay.remove(); });
+  mountSheetOverlay(overlay);
+}
 /* THE NEXT GATE, said plainly and the same way everywhere (build 314):
    "Earn 2 more badges to unlock levels 50-59 · 3 levels saved". */
 function levelWallLine(s){
@@ -46347,85 +46448,6 @@ function levelWallLine(s){
   return "Earn " + n + (s.badges > 0 ? " more" : "") + (n === 1 ? " badge" : " badges") +
     " to unlock " + (to > from ? "levels " + from + "\u2013" + to : "level " + from) +
     (s.saved > 0 ? " \u00b7 " + s.saved + (s.saved === 1 ? " level saved" : " levels saved") : "");
-}
-/* "The next gate" - the one idea the Profile card, the results screen and
-   the Rank tab all show. Levels, ranks and badges meet here: a rank's
-   level is a gate its badges open. When your level is held, the next
-   gate is the rank whose badges lift the cap (level 49 with 3 badges is
-   at the Gold gate, 5 badges); otherwise it is simply
-   the next rank, with its two requirements. Null at the top. */
-function nextGateOf(){
-  const s = levelStateFor(store);
-  let key = null;
-  if(s.held) key = s.gateKey;
-  else {
-    const held = rankOf(store);
-    key = TIER_ORDER_FULL[(held ? TIER_ORDER_FULL.indexOf(held) : -1) + 1] || null;
-  }
-  const r = key ? TIER_UNLOCKS[key] : null;
-  if(!r) return null;
-  return { key, name: RANK_DISPLAY_NAME[key] || key, level: r.level || 0, badges: r.badges || 0,
-           haveLevel: s.level, haveBadges: s.badges,
-           levelMet: s.level >= (r.level || 0), badgesMet: s.badges >= (r.badges || 0),
-           held: s.held, state: s, line: levelWallLine(s) };
-}
-/* The Next gate section: the rank's emblem and name, its two
-   requirements as chips, and when it is holding your level the line that
-   says what opens it, then the badge you are nearest. One builder for
-   the Profile card and the Rank tab's summary, so they cannot drift. */
-function buildNextGateSection(g, cls){
-  const sec = document.createElement("div");
-  sec.className = "next-gate " + (cls || "") + (g.held ? " is-holding" : "");
-  sec.style.setProperty("--rank-color", RANK_COLOR[g.key] || "#9FACBA");
-  const kick = document.createElement("p");
-  kick.className = "next-gate-kicker";
-  kick.textContent = "Next gate";
-  const row = document.createElement("div");
-  row.className = "next-gate-row";
-  const emb = document.createElement("span");
-  emb.className = "next-gate-emb";
-  try{ emb.appendChild(fitRankEmblem(buildRankEmblemSVG(g.key), g.key)); }catch(e){}
-  const main = document.createElement("span");
-  main.className = "next-gate-main";
-  const nm = document.createElement("span");
-  nm.className = "next-gate-name";
-  nm.textContent = g.name;
-  main.appendChild(nm);
-  row.append(emb, main);
-  /* the chips get the section's full width under the name: beside the
-     emblem they wrapped one above the other on every phone */
-  sec.append(kick, row, buildGateChips(g.level, g.haveLevel, g.badges, g.haveBadges));
-  if(g.held && g.line){
-    const l = document.createElement("p");
-    l.className = "next-gate-line";
-    l.textContent = g.line;
-    sec.appendChild(l);
-  }
-  if(!g.badgesMet){
-    const near = levelClosestLine();
-    if(near){
-      const c = document.createElement("p");
-      c.className = "next-gate-closest";
-      c.textContent = near;
-      sec.appendChild(c);
-    }
-  }
-  return sec;
-}
-/* The two requirements as chips: "Level 25 / 29" / "Level 29 \u2713",
-   "Badges 1 / 3" / "Badges 3 \u2713". `have`/`need` per side, so the road
-   map can draw any rank's gate, not only the next one. */
-function buildGateChips(level, haveLevel, badges, haveBadges){
-  const box = document.createElement("span");
-  box.className = "gate-chips";
-  [["Level", haveLevel, level], ["Badges", haveBadges, badges]].forEach(([lab, have, need]) => {
-    const c = document.createElement("span");
-    const met = have >= need;
-    c.className = "gate-chip" + (met ? " is-met" : "");
-    c.textContent = met ? lab + " " + need + " \u2713" : lab + " " + have + " / " + need;
-    box.appendChild(c);
-  });
-  return box;
 }
 /* The badge you are nearest: "Closest: Identity Crimes, 7 of 15 hundos".
    Your own account only - the hundos behind it are not published. */
@@ -71939,19 +71961,18 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
      (build 314) - the same two lines as the Profile card. Only where the
      run ENDS at a gate: a run whose badge opened the gate has none. */
   if(after.held){
+    /* The badge challenge, as on the Profile bar (build 314): the icon
+       and the one plain line - no "Next gate" box. */
     const g = document.createElement("p");
     g.className = "level-gate-line results-level-gate";
-    const ng = nextGateOf();
-    /* Two short lines rather than one that wraps mid-sentence: the gate
-       and its badges, then what opens it. */
-    if(ng){
-      const nb = document.createElement("span");
-      nb.className = "results-level-gatename";
-      nb.textContent = "Next gate: " + ng.name;
-      g.append(nb, " \u00b7 Badges " + ng.haveBadges + " / " + ng.badges, document.createElement("br"));
-    }
-    g.append(levelWallLine(after));
-    if(ng) g.style.setProperty("--rank-color", RANK_COLOR[ng.key] || "#9FACBA");
+    const ic = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    ic.setAttribute("viewBox", "0 0 24 24"); ic.setAttribute("aria-hidden", "true"); ic.classList.add("level-chal-ic");
+    const pth = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    pth.setAttribute("d", LEVEL_CHALLENGE_ICON); pth.setAttribute("fill-rule", "evenodd");
+    ic.appendChild(pth);
+    const tx = document.createElement("span");
+    tx.textContent = levelWallLine(after);
+    g.append(ic, tx);
     wrap.appendChild(g);
     const near = levelClosestLine();
     if(near){
@@ -88137,11 +88158,10 @@ function showProfile(defaultTab){
   }
   const levelSideTop = document.createElement("span");
   levelSideTop.className = "profile-level-sidetop";
-  /* AT A GATE (build 314) the numbers keep counting past what the level
-     asks - "the numbers would start collecting ... 700/100 or whatever
-     it'd be" - while the bar below stays full. */
+  /* Held at the band cap the line says what is waiting, not what is
+     left: the XP numbers under the bar carry the rest. */
   levelSideTop.textContent = prog.atCap ? "Level " + LEVEL_CAP + ", the cap"
-    : prog.held ? levelXpNumbers(prog)
+    : prog.held ? (prog.saved > 0 ? prog.saved + (prog.saved === 1 ? " level saved" : " levels saved") : "Max for your badges")
     : prog.toNext.toLocaleString() + " XP to level " + (prog.level + 1);
   /* THE TOTAL GOES AT THE BOTTOM (build 302). "Where it says how much xp
      you have earned ... shouldn't that be at the bottom and not in the
@@ -88156,6 +88176,14 @@ function showProfile(defaultTab){
   levelRow.append(levelNum, levelSide);
   levelSect.appendChild(levelRow);
 
+  /* ---- THE BAR, POKEMON GO STYLE (build 314) ----
+     "In Pokemon go this is how they represent it": the bar, and beside it
+     the challenge that stands between you and the next levels - theirs
+     are binoculars and random tasks, ours is one thing, the badges your
+     rank band asks for. It replaced a "Next gate" box under the bar that
+     was asked against ("how it says next gate is bad"). */
+  const xpRow = document.createElement("div");
+  xpRow.className = "profile-xprow";
   const xpTrack = document.createElement("div");
   xpTrack.className = "xpbar-track profile-xpbar" + (prog.stopped ? " is-banked" : "");
   const xpFill = document.createElement("div");
@@ -88163,29 +88191,33 @@ function showProfile(defaultTab){
   setBarFill(xpFill, 0);
   xpFill.dataset.target = String(Math.round(prog.fraction * 1000) / 10);
   xpTrack.appendChild(xpFill);
-  levelSect.appendChild(xpTrack);
+  xpRow.appendChild(xpTrack);
+  const chal = buildLevelChallengeButton();
+  if(chal) xpRow.appendChild(chal);
+  levelSect.appendChild(xpRow);
 
-  /* At a gate the line under the bar is the Next gate section below -
-     the numbers above the bar already say where the XP stands. */
-  if(!prog.held){
-    const xpLine = document.createElement("p");
-    xpLine.className = "profile-xp-line";
-    const xpLineMain = document.createElement("span");
-    xpLineMain.textContent = prog.atCap ? "Every level reached" : "Level " + prog.level + " \u2192 " + (prog.level + 1);
-    const xpLinePct = document.createElement("span");
-    xpLinePct.className = "profile-xp-pct";
-    xpLinePct.textContent = prog.atCap ? "100%" : Math.floor(prog.fraction * 100) + "%";
-    xpLine.append(xpLineMain, xpLinePct);
-    levelSect.appendChild(xpLine);
+  /* THE NUMBERS UNDER THE BAR, and which half is loud flips: under the
+     requirement the requirement leads ("1,200 / 3,997" with 3,997 bright);
+     past it the XP you have leads ("14,521 / 3,997" with 14,521 bright) -
+     the same flip Pokemon GO uses to say "over". */
+  const xpLine = document.createElement("p");
+  xpLine.className = "profile-xp-line";
+  if(prog.atCap){
+    const m = document.createElement("span");
+    m.textContent = "Every level reached";
+    const pc = document.createElement("span");
+    pc.className = "profile-xp-pct"; pc.textContent = "100%";
+    xpLine.append(m, pc);
+  } else {
+    xpLine.appendChild(buildXpNumbers(prog.into, prog.span, prog.stopped));
+    if(!prog.stopped){
+      const pc = document.createElement("span");
+      pc.className = "profile-xp-pct";
+      pc.textContent = Math.floor(prog.fraction * 100) + "%";
+      xpLine.appendChild(pc);
+    }
   }
-  /* ---- NEXT GATE (build 314) ----
-     "We really need the levels, ranks, badges to all be tied together
-     perfectly ... maybe in profile under the xp it would be its gate
-     requirement section." Directly under the bar: the next gate's rank,
-     its two requirements against yours, and - when it is what is holding
-     your level - what opens it, and the badge you are nearest. */
-  const gate = nextGateOf();
-  if(gate) levelSect.appendChild(buildNextGateSection(gate, "profile-gate"));
+  levelSect.appendChild(xpLine);
   levelSect.appendChild(levelSideSub);
 
   /* The badges as a count, and the ones you HAVE as a small overlapping
@@ -89813,29 +89845,6 @@ function buildRanksTab(){
                   gauge("is-badges", "Badges", badgesNow, null, 1));
   }
   hero.appendChild(gauges);
-  /* ONE SUMMARY OF WHERE YOU STAND (build 314): your rank, your level,
-     your badges, and the next gate - the rank whose badges open your
-     next levels - in the same words as the Profile card. */
-  {
-    const g = nextGateOf();
-    const sum = document.createElement("div");
-    sum.className = "rankhero-gate";
-    const a = document.createElement("p");
-    a.className = "rankhero-gate-me";
-    a.textContent = (held ? RANK_DISPLAY_NAME[held] + " \u00b7 " : "") + "Level " + levelNow + " \u00b7 " +
-      badgesNow + (badgesNow === 1 ? " badge" : " badges");
-    sum.appendChild(a);
-    if(g){
-      const b = document.createElement("p");
-      b.className = "rankhero-gate-next";
-      b.style.setProperty("--rank-color", RANK_COLOR[g.key] || "#9FACBA");
-      const nb = document.createElement("b"); nb.textContent = "Next gate: " + g.name;
-      b.append(nb, document.createElement("br"), g.held ? g.line
-        : "Level " + g.level + " and " + g.badges + (g.badges === 1 ? " badge" : " badges"));
-      sum.appendChild(b);
-    }
-    hero.appendChild(sum);
-  }
 
   /* No "1 badge to go until Bronze." under the rings (build 284): the
      rings already say it, and the box was asked to be simpler and
@@ -89868,10 +89877,10 @@ function buildRanksTab(){
      tables, it read "from Gold up, a character too, and Bronze, Silver
      and Gold each add a banner" - true, and a paragraph to parse. Each
      stop below already says exactly what it hands over. */
-  /* THE WALL, SAID ONCE (build 314): a rank's level is also the highest
-     level you can hold without its badges - "you can't get past that
-     next rank's level until you hit the badges needed". */
-  mapNote.textContent = "Each rank needs a level and a number of badges, and unlocks rewards along the way. Each rank owns a block of levels, and your badges decide how high you can climb. XP past that is saved and arrives when the badges do. Tap a rank to see what it gives.";
+  /* THE BANDS, SAID ONCE (build 314): the boxes below are exactly build
+     313's - "I don't like how the road map boxes changed, that's a no go"
+     - so the one new idea is a sentence here, not a change to the cards. */
+  mapNote.textContent = "Each rank needs a level and a number of badges, and unlocks rewards along the way. Your badges also decide how high your level can go. Tap a rank to see what it gives.";
   tab.appendChild(mapNote);
 
   /* ---- IRON AT THE TOP, SUPERNOVA AT THE BOTTOM (build 232) ----
@@ -89884,9 +89893,6 @@ function buildRanksTab(){
      you are heading for) and fills downwards from the one above. */
   const map = document.createElement("div");
   map.className = "rankmap";
-  /* The next gate (build 314) - see nextGateOf(). */
-  const nextGate = nextGateOf();
-  const wallKey = nextGate ? nextGate.key : null;
   const startLab = document.createElement("p");
   startLab.className = "rankmap-foot";
   startLab.textContent = held ? "Start" : "You start here";
@@ -90049,12 +90055,9 @@ function buildRanksTab(){
     if(pending){ state.dataset.after = state.textContent; state.textContent = "Locked"; }
     head.append(name, state);
     card.appendChild(head);
-    /* EVERY RANK IS A GATE (build 314): its two requirements as chips
-       against where you are - ticked once met - rather than as a line of
-       numbers to compare in your head. */
     const req = document.createElement("p");
     req.className = "rankmap-req";
-    req.appendChild(buildGateChips(rule.level, levelNow, rule.badges, badgesNow));
+    req.textContent = "Level " + rule.level + " \u00b7 " + rule.badges + (rule.badges === 1 ? " badge" : " badges");
     card.appendChild(req);
     if(isNext){
       const meter = document.createElement("div");
@@ -90069,28 +90072,7 @@ function buildRanksTab(){
       togo.className = "rankmap-togo";
       const parts = tierShortfall(rule).map(t => t.replace(" more ", " "));
       togo.textContent = parts.length ? parts.join(", ") + " to go" : "Ready to reach";
-      /* at the gate holding your level, the gate's own line says it */
-      if(!(nextGate && nextGate.held && key === nextGate.key)) card.appendChild(togo);
-    }
-    /* THE CURRENT GATE (build 314): highlighted, its circle carrying the
-       badge count, and - when it is what holds your level - the plain
-       line saying which part is holding you: "Badges 3 / 9 - earn 6 more
-       to unlock levels 50-59". */
-    if(key === wallKey){
-      stop.classList.add("is-gate");
-      if(!nextGate.badgesMet){
-        const chip = document.createElement("span");
-        chip.className = "rankmap-gatechip";
-        chip.textContent = nextGate.haveBadges + " / " + nextGate.badges + " badges";
-        node.appendChild(chip);
-      }
-      if(nextGate.held){
-        const st = nextGate.state;
-        const w = document.createElement("p");
-        w.className = "rankmap-wall";
-        w.textContent = levelWallLine(st);
-        card.appendChild(w);
-      }
+      card.appendChild(togo);
     }
     /* What it hands over - buildRankGifts (build 311: one size, one
        start, the same chips the rank's own card shows). */
