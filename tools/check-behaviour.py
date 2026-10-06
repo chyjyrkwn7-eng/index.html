@@ -98,7 +98,7 @@ USED_ACCOUNT = (
     # An up-to-date account has had its unlock pop-ups: the record the
     # app would seed for it, with the hundo effects (build 313) marked
     # shown too, so no section is met by their Home pop-ups.
-    '"unlocksShown":{"chars":[],"banners":["hundos100"],"fx":["neon","poppers","hologram","worldtree","bubbles","ufo"]}}')
+    '"unlocksShown":{"chars":[],"banners":["hundos100"],"fx":["blackhole","underwater","worldtree","bubbles","ufo"]}}')
 
 BODY = INSET_RE.sub(lambda m: "0px", io.open(SRC, encoding="utf-8").read()) \
     .replace("let fbDb = null;", "let fbDb = null;" + FIRESTORE_STUB, 1)
@@ -2355,7 +2355,7 @@ def check_b235(br):
         return { text: sp.textContent, strip: st ? st.textContent : null, emblem: !!(st && st.querySelector('svg')) }; });
       document.querySelector('.rs-spot') && document.querySelector('.rs-spot').click(); await wait(1400);
       /* Build 313: this account has 141 hundos and no record of the hundo
-         effects being announced, so it is owed Neon Trails and the World
+         effects being announced, so it is owed the Black Hole and the World
          Tree as well - they follow in the same sitting, each up long
          enough to count as seen and then tapped away. */
       out.fx = [];
@@ -2416,7 +2416,7 @@ def check_b235(br):
     check("Zeus, won away from any results screen, follows as a finished challenge",
           "Zeus" in st and st.count("Challenge complete") == 1 and "Character unlocked" in st, r["second"])
     check("the hundo effects this account already qualifies for follow in the same sitting (build 313)",
-          r.get("fx") == ["Neon Trails", "World Tree"], r.get("fx"))
+          r.get("fx") == ["Black Hole", "World Tree"], r.get("fx"))
     af = r["after"] if isinstance(r["after"], dict) else {}
     check("each plays once: nothing left afterwards, nothing on the next visit",
           af.get("spots") == 0 and af.get("left") == 0 and r["again"] == 0, [r["after"], r["again"]])
@@ -9936,11 +9936,13 @@ FX_RUN = """const wait = ms => new Promise(r => setTimeout(r, ms));
 # When to look: early (it should still be at the box) and late (it should
 # have spread). The UFO is the exception by design - it comes down out of
 # the dark - so it is checked for LANDING on the box instead.
-# neon is the shipped 50; poppers and hologram are the two runners-up for
-# that slot, kept buildable so a swap is one line in HUNDO_FX.
-FX_EARLY = {"neon": .3, "poppers": .12, "hologram": .3, "worldtree": .35, "bubbles": .55}
-FX_LATE = {"neon": 2.2, "poppers": 2.0, "hologram": 2.6, "worldtree": 2.8, "bubbles": 3.4}
-FX_ALL = ["neon", "poppers", "hologram", "worldtree", "bubbles", "ufo"]
+# The Black Hole is the shipped 50 and Underwater the other build for that
+# slot. Neither starts from the box by design - the hole darkens the whole
+# screen as it opens, the water floods up from the bottom - so each has
+# checks of its own instead of the spread from the box.
+FX_EARLY = {"worldtree": .6, "bubbles": .55}
+FX_LATE = {"worldtree": 2.8, "bubbles": 3.4}
+FX_ALL = ["blackhole", "underwater", "worldtree", "bubbles", "ufo"]
 
 
 def fx_spread(pg, fx):
@@ -9963,9 +9965,9 @@ def fx_spread(pg, fx):
           const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
           return [cx - g.offsetWidth / 2, cy - g.offsetHeight / 2, cx + g.offsetWidth / 2, cy + g.offsetHeight / 2]; }""", at * 1000)
         a = Image.open(io.BytesIO(pg.screenshot())).convert("RGB")
-        pg.evaluate("() => document.querySelectorAll('.hfx-layer, .hfx-box').forEach(e => e.style.visibility = 'hidden')")
+        pg.evaluate("() => document.querySelectorAll('.hfx-layer, .hfx-box, .hfx-pane').forEach(e => e.style.visibility = 'hidden')")
         b = Image.open(io.BytesIO(pg.screenshot())).convert("RGB")
-        pg.evaluate("() => { document.querySelectorAll('.hfx-layer, .hfx-box').forEach(e => e.style.visibility = ''); document.getAnimations().forEach(a => { try{ a.play(); }catch(e){} }); }")
+        pg.evaluate("() => { document.querySelectorAll('.hfx-layer, .hfx-box, .hfx-pane').forEach(e => e.style.visibility = ''); document.getAnimations().forEach(a => { try{ a.play(); }catch(e){} }); }")
         diff = ImageChops.difference(a, b).convert("L").point(lambda v: 255 if v > 30 else 0)
         px = diff.load(); W, H = diff.size
         n = inside = far = 0
@@ -9993,7 +9995,7 @@ def check_b313_fx(br):
     on Home, the rest on the results screen. Fails on 312, which has none
     of it."""
     print("\n313fx. hundo effects: the ladder, from the box, the box's colours, the slow tail, the pop-ups, Zenith")
-    LADDER = ["confetti", "neon", "worldtree", "bubbles", "ufo"]
+    LADDER = ["confetti", "blackhole", "worldtree", "bubbles", "ufo"]
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
       const tiles = () => [...document.querySelectorAll('.hfx-opt')].map(b => ({ id: b.dataset.fx, locked: b.classList.contains('locked'),
@@ -10006,8 +10008,17 @@ def check_b313_fx(br):
       out.firstLive = !!document.querySelector('.hfx-opt[data-fx="confetti"] .hfx-stage');
       document.querySelector('.hfx-opt[data-fx="confetti"]')?.scrollIntoView({ block: 'center', behavior: 'instant' });
       await wait(2600); out.confettiPieces = document.querySelectorAll('.hfx-opt[data-fx="confetti"] .hfx-stage *').length;
+      /* the tiles are the banners' size and shape */
+      const ta = document.querySelector('.hfx-opt .hfx-stage'), ba = document.querySelector('.banner-opt .banner-opt-art');
+      out.tile = ta ? [ta.offsetWidth, ta.offsetHeight] : null; out.banner = ba ? [ba.offsetWidth, ba.offsetHeight] : null;
       document.querySelector('.hfx-opt[data-fx="worldtree"]')?.click(); await wait(200);
       out.picked = store.hundoFx;
+      /* and a tap shows it: the card, with the effect playing on a results screen in miniature */
+      out.tapCard = !!document.querySelector('.unlock-card-fx .hfx-mock');
+      await wait(1600);
+      out.tapLive = document.querySelectorAll('.unlock-card-fx .hfx-mock .hfx-layer, .unlock-card-fx .hfx-mock .hfx-box').length;
+      out.tapHeld = !!document.querySelector('.unlock-card-fx.is-unlocked');
+      document.querySelectorAll('.invite-overlay').forEach(o => o.remove()); await wait(100);
       document.querySelector('.hfx-opt[data-fx="ufo"]')?.click(); await wait(500);
       out.cardText = (document.querySelector('.unlock-card-fx') || {}).textContent || '';
       out.preview = !!document.querySelector('.unlock-card-fx .unlock-card-preview');
@@ -10016,13 +10027,18 @@ def check_b313_fx(br):
     mid = r.get("mid") or []
     nums = [int(re.sub(r"[^0-9]", "", t["need"] or "") or 0) for t in mid]
     check("Customize has a Hundo effect section", any("hundo effect" in h.lower() for h in r.get("heads") or []), r.get("heads"))
-    check("five tiles in order - Confetti, Neon Trails, World Tree, Bubbles, UFO - each a small 100% box",
+    check("five tiles in order - Confetti, Black Hole, World Tree, Bubbles, UFO - each a small 100% box",
           [t["id"] for t in mid] == LADDER and all(t["stage"] for t in mid), [t["id"] for t in mid])
     check("four to earn, one ladder of hundos: 50, 100, 200, 350", nums[1:] == [50, 100, 200, 350], [t["need"] for t in mid])
     check("Confetti comes first, held by everyone, and plays confetti in its own tile",
           mid and mid[0]["id"] == "confetti" and not mid[0]["locked"] and r.get("firstLive") and r.get("confettiPieces", 0) > 5, {k: r.get(k) for k in ("firstLive", "confettiPieces")})
     check("with no hundos only Confetti is held", [t["locked"] for t in r.get("zero") or []] == [False] + [True] * 4, r.get("zero"))
-    check("with 120 hundos Neon Trails and World Tree are held, the rest are not", [t["locked"] for t in mid] == [False, False, False, True, True], mid)
+    check("with 120 hundos the Black Hole and World Tree are held, the rest are not", [t["locked"] for t in mid] == [False, False, False, True, True], mid)
+    tl, bn = r.get("tile") or [0, 1], r.get("banner") or [0, 1]
+    check("the effect tiles are the banner tiles' size and shape (round 3: \"slightly too big\")",
+          abs(tl[0] - bn[0]) <= 2 and abs(tl[1] - bn[1]) <= 3, {"tile": r.get("tile"), "banner": r.get("banner")})
+    check("tapping a held one opens its card, held, with the effect playing on a results screen in miniature",
+          r.get("tapCard") and r.get("tapLive", 0) >= 1 and r.get("tapHeld"), {k: r.get(k) for k in ("tapCard", "tapLive", "tapHeld")})
     check("tapping a held one picks it; a locked one opens its card (count and Preview) and picks nothing",
           r.get("picked") == "worldtree" and "350" in r.get("cardText", "") and r.get("preview") and r.get("stillPicked") == "worldtree", r)
     r = pg.evaluate("""() => { const got = JSON.parse(JSON.stringify(store)); delete got.hundoFx;
@@ -10055,6 +10071,27 @@ def check_b313_fx(br):
           out.box = box ? box.querySelectorAll('*').length : 0;
           const fill = () => { const f = document.querySelector('.rs-screen .unit-breakdown-fill.is-gold'); return f ? getComputedStyle(f).backgroundImage : null; };
           out.border = getComputedStyle(g).borderTopColor; out.fill = fill();
+          if(fx === 'worldtree'){
+            await until(3000);
+            out.panes = document.querySelectorAll('.rs-screen > .rs-card > .hfx-pane').length;
+            out.sharp = document.querySelectorAll('.hfx-layer.hfx-worldtree .hfx-seg.is-wood').length;
+          }
+          if(fx === 'underwater'){
+            await until(2600);
+            const sea = document.querySelector('.hfx-uw-sea'), sr = sea && sea.getBoundingClientRect(), gr = g.getBoundingClientRect();
+            out.flooded = !!sr && sr.top <= gr.top && sr.bottom >= gr.bottom;
+          }
+          if(fx === 'blackhole'){
+            const xp = document.querySelector('.rs-screen > .rs-xp');
+            await until(2650);
+            const cs = getComputedStyle(xp);
+            out.pulled = { translate: cs.translate, scale: cs.scale };
+            const hole = document.querySelector('.hfx-bh'), hr = hole && hole.getBoundingClientRect(), gr = g.getBoundingClientRect();
+            out.atBox = hr ? Math.round(Math.hypot(hr.left - (gr.left + gr.width / 2), hr.top - (gr.top + gr.height / 2))) : null;
+            await until(4800);
+            const c2 = getComputedStyle(xp);
+            out.back = { translate: c2.translate, scale: c2.scale };
+          }
           if(fx === 'ufo'){
             out.beforeBeam = getComputedStyle(g).borderTopColor;
             await until(4700);
@@ -10070,24 +10107,43 @@ def check_b313_fx(br):
           out.tailLayer = !!s2 && opac(s2) > .99;
           out.tailFading = parts.filter(o => o > .02 && o < .98).length;
           await until(T + 1300);
-          out.after = document.querySelectorAll('.hfx-layer, .hfx-box.is-grade').length;
+          out.after = document.querySelectorAll('.hfx-layer, .hfx-box.is-grade, .hfx-pane').length;
           out.borderAfter = getComputedStyle(g).borderTopColor; out.fillAfter = fill();
+          const tn = g.querySelector(':scope > .hfx-tintnum.hfx-keep');
+          out.numAfter = tn ? parseFloat(getComputedStyle(tn).opacity) : 0;
+          out.screenUp = !!document.querySelector('.rs-screen') && g.isConnected;
+          out.tintVars = ['--hfx-b', '--hfx-g1', '--hfx-g2'].map(k => g.style.getPropertyValue(k).trim());
           return out; }""", fx)
         yellow = "rgba(242, 211, 138, 0.2)"
         check("%s: a 100%% plays it, on the screen and in the box" % fx, r.get("id") == fx and r.get("screen", 0) > 3 and r.get("box", 0) > 2, r)
-        check("%s: the box takes the effect's colours while it plays, and is yellow again after" % fx,
-              r.get("border") not in (None, yellow) and r.get("borderAfter") == yellow, {"during": r.get("border"), "after": r.get("borderAfter")})
+        check("%s: the box takes the effect's colours while it plays" % fx, r.get("border") not in (None, yellow), r.get("border"))
+        rgb = lambda h: "rgb(%d, %d, %d)" % tuple(int(h.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4)) if h and h.startswith("#") else None
+        tv = r.get("tintVars") or [None, None, None]
+        check("%s: and KEEPS them once the effect has finished, the results screen still up (round 3: \"it stays yellow\")" % fx,
+              r.get("screenUp") and tv[0] and r.get("borderAfter") == rgb(tv[0]) and r.get("numAfter", 0) > .95, {k: r.get(k) for k in ("borderAfter", "numAfter", "screenUp", "tintVars")})
         check("%s: in its tail it is still on screen, fading - never cut" % fx, r.get("tailLayer") and r.get("tailFading", 0) >= 2, r)
         check("%s: and once it has faded every piece is gone" % fx, r.get("after") == 0 and r.get("total", 0) > 0, r)
         gold = "rgb(217, 169, 58)"
-        check("%s: the box's progress bar takes the effect's colours too, and is gold again after" % fx,
-              r.get("fill") and gold not in r["fill"] and r.get("fillAfter") and gold in r["fillAfter"], {"during": r.get("fill"), "after": r.get("fillAfter")})
+        check("%s: the box's progress bar takes the effect's colours too, and keeps them after" % fx,
+              r.get("fill") and gold not in r["fill"] and tv[2] and r.get("fillAfter") == "linear-gradient(90deg, %s, %s)" % (rgb(tv[2]), rgb(tv[1])), {"during": r.get("fill"), "after": r.get("fillAfter")})
+        if fx == "worldtree":
+            check("worldtree: the cards become glass - a pane in each card, the tree passing behind them", r.get("panes", 0) >= 2 and r.get("sharp", 0) >= 4, r)
+        if fx == "underwater":
+            check("underwater: the screen floods - the water is over the whole box", r.get("flooded"), r)
+        if fx == "blackhole":
+            pl, bk = r.get("pulled") or {}, r.get("back") or {}
+            sc = [float(v) for v in (pl.get("scale") or "1").split()]
+            ty = (pl.get("translate") or "0px 0px").replace("px", "").split()
+            check("blackhole: the hole opens at the box", r.get("atBox") is not None and r["atBox"] <= 4, r.get("atBox"))
+            check("blackhole: the XP card is pulled in towards it - moved down to the box and squeezed",
+                  len(ty) == 2 and float(ty[1]) > 60 and min(sc) < .8, pl)
+            check("blackhole: and springs back to exactly where it was", bk.get("scale") in ("none", "1", "1 1") and bk.get("translate") in ("none", "0px", "0px 0px"), bk)
         if fx == "ufo":
             check("ufo: the box does not light up before the beam reaches it", r.get("beforeBeam") == yellow, r.get("beforeBeam"))
             ld = r.get("landed") or {}
             check("ufo: it lands ON the 100% box - its feet on the box's top edge, over its middle",
                   ld and abs(ld.get("feet", 99)) <= 8 and abs(ld.get("cx", 99)) <= 30, ld)
-        else:
+        elif fx in FX_EARLY:
             sp = fx_spread(pg, fx)
             check("%s: it starts AT the 100%% box - its first visible pieces are on the box" % fx, sp and sp["early"]["n"] >= 150 and sp["early"]["inside"] >= .85, sp)
             # an absolute area far from the box, not a share: the box's own
@@ -10095,8 +10151,16 @@ def check_b313_fx(br):
             check("%s: and spreads out - later its pieces reach well beyond the box" % fx, sp and sp["late"]["farN"] >= 400, sp)
         ctx.close()
 
+    # --- Confetti, the default, leaves the box gold
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("async () => { store.lifetime.perfectTests = 600; store.hundoFx = 'confetti'; saveStore(); " + FX_RUN + """
+      await wait(4200); const g = document.querySelector('.rs-grade'), f = document.querySelector('.rs-screen .unit-breakdown-fill.is-gold');
+      return { border: getComputedStyle(g).borderTopColor, fill: f ? getComputedStyle(f).backgroundImage : null, tinted: g.classList.contains('hfx-tinted') }; }""")
+    check("Confetti, the default, leaves the box and its bar gold", r.get("border") == "rgba(242, 211, 138, 0.2)" and "rgb(217, 169, 58)" in (r.get("fill") or "") and not r.get("tinted"), r)
+    ctx.close()
+
     # --- the pop-ups. An account with no record of them, at 120 hundos:
-    # Neon Trails then World Tree on Home, once; a live preview inside; gone after.
+    # the Black Hole then World Tree on Home, once; a live preview inside; gone after.
     acct = json.loads(USED_ACCOUNT)
     del acct["unlocksShown"]
     acct["lifetime"]["perfectTests"] = 120
@@ -10123,11 +10187,11 @@ def check_b313_fx(br):
       out.shown = (store.unlocksShown || {}).fx || [];
       out.store = JSON.stringify(store);
       return out; }""")
-    check("an account already at 120 hundos gets Neon Trails then World Tree on Home - two in a row", r.get("seen") == ["Neon Trails", "World Tree"], r.get("seen"))
+    check("an account already at 120 hundos gets the Black Hole then World Tree on Home - two in a row", r.get("seen") == ["Black Hole", "World Tree"], r.get("seen"))
     check("each pop-up plays the effect live in its own 100% box, says what it took, and offers to use it",
           r.get("live") and all(n >= 1 for n in r["live"]) and r.get("use") and r.get("need") == "Earn 50 hundos", {k: r.get(k) for k in ("live", "use", "need")})
     check("closing a pop-up stops and removes its preview", r.get("gone") and all(n == 0 for n in r["gone"]), r.get("gone"))
-    check("both are recorded as shown", r.get("shown") == ["neon", "worldtree"], r.get("shown"))
+    check("both are recorded as shown", r.get("shown") == ["blackhole", "worldtree"], r.get("shown"))
     stored = r.get("store") or "{}"
     ctx.close()
     ctx, pg = booted(br, 440, 956, seed=stored)
@@ -10161,9 +10225,9 @@ def check_b313_fx(br):
       out.home = n; out.shown = store.unlocksShown.fx;
       return out; }""")
     check("a picked effect that is not held plays Confetti instead", r.get("confetti") and r.get("played") in ("confetti", None), r)
-    check("a run that takes you to 50 hundos announces Neon Trails on the results screen - pop-up and a row in its slot",
-          r.get("popup") == "Neon Trails" and r.get("fx") == ["neon"] and r.get("row") and "Neon Trails" in r["row"] and r.get("slot"), r)
-    check("and Home does not announce it again", r.get("home") == 0 and r.get("shown") == ["neon"], r)
+    check("a run that takes you to 50 hundos announces the Black Hole on the results screen - pop-up and a row in its slot",
+          r.get("popup") == "Black Hole" and r.get("fx") == ["blackhole"] and r.get("row") and "Black Hole" in r["row"] and r.get("slot"), r)
+    check("and Home does not announce it again", r.get("home") == 0 and r.get("shown") == ["blackhole"], r)
     ctx.close()
 
     # --- Zenith counts the effects, the UFO included
