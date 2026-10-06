@@ -8970,19 +8970,6 @@
      fading in and out over the first */
   .hfx-bb-film.is-shift{ animation:hfx-film-b var(--d) linear var(--dl) both; }
   @keyframes hfx-film-b{ 0%{ transform:rotate(0deg); opacity:0; } 30%{ opacity:.9; } 55%{ opacity:.15; } 80%{ opacity:.85; } 100%{ transform:rotate(calc(var(--sp) * -.8)); opacity:.3; } }
-  /* the showpiece: a giant bubble carries the 100% up and pops */
-  .hfx-carry{ position:absolute; width:0; height:0; opacity:0; animation:hfx-carry var(--d) linear var(--dl) both; }
-  @keyframes hfx-carry{ 0%{ transform:translate(0, 0); opacity:0; animation-timing-function:ease-out; } 8%{ opacity:1; }
-    15%{ transform:translate(0, 0); animation-timing-function:cubic-bezier(.45,0,.4,1); } 72%{ transform:translate(0, var(--rise)); } 100%{ transform:translate(0, var(--rise)); opacity:1; } }
-  .hfx-carry .hfx-bb-grow{ animation-duration:.6s; }
-  .hfx-carry-pop{ position:absolute; left:0; top:0; animation:hfx-bub-pop .28s ease-out calc(var(--dl) + var(--d) * .72) both; }
-  .hfx-carry-txt{ position:absolute; display:block; white-space:nowrap; color:#F6D58E; text-shadow:0 0 18px rgba(246,213,142,.45); opacity:0;
-    animation:hfx-carry-txt var(--d) linear var(--dl) both; }
-  @keyframes hfx-carry-txt{ 0%{ transform:translate(0, 0); opacity:0; } 10%{ opacity:0; } 13%{ opacity:1; }
-    15%{ transform:translate(0, 0); animation-timing-function:cubic-bezier(.45,0,.4,1); }
-    72%{ transform:translate(0, var(--rise)); animation-timing-function:cubic-bezier(.55,0,1,.6); }
-    84%{ transform:translate(0, 5px); animation-timing-function:ease-out; } 89%{ transform:translate(0, -4px); animation-timing-function:ease-in; }
-    93%{ transform:translate(0, 0); } 95%{ opacity:1; } 100%{ transform:translate(0, 0); opacity:0; } }
   .hfx-bb.is-pop .hfx-bb-popw, .hfx-bb.is-pop.is-mid .hfx-bb-shell{ animation:hfx-bub-pop .24s ease-out calc(var(--dl) + var(--d)) both; }
   .hfx-bb-bud{ position:absolute; width:var(--bs); height:var(--bs); margin:calc(var(--bs) / -2) 0 0 calc(var(--bs) / -2); border-radius:50%;
     background:center / 100% 100% no-repeat; opacity:0; animation:hfx-bud var(--bd) cubic-bezier(.3,.6,.4,1) var(--bt) both; }
@@ -9015,71 +9002,105 @@
   @keyframes hfx-fadeburst{ 0%{ opacity:0; } 10%{ opacity:1; } 100%{ opacity:0; } }
   @keyframes hfx-core{ 0%{ transform:scale(.2); opacity:0; } 15%{ opacity:1; } 100%{ transform:scale(1.4); opacity:0; } }
 
-  /* Fireworks: a rocket climbs (turned towards its apex, moved along
-     its own axis), the burst is one image scaled out, sagging as it
-     fades, and glitter crackles after it. */
-  .hfx-fw-rocket{ width:10px; height:62px; margin:-4px 0 0 -5px; transform-origin:50% 4px; background-size:100% 100%;
-    animation:hfx-fw-fly var(--d) cubic-bezier(.2,.65,.35,1) var(--t) both; }
-  @keyframes hfx-fw-fly{ 0%{ transform:rotate(var(--ra)) translateY(0) scaleY(.4); opacity:0; } 12%{ opacity:1; } 80%{ opacity:1; } 100%{ transform:rotate(var(--ra)) translateY(calc(var(--dist) * -1)) scaleY(1); opacity:0; } }
-  .hfx-fw-burst{ animation:hfx-fw-burst var(--d) cubic-bezier(.15,.75,.35,1) var(--t) both; }
-  @keyframes hfx-fw-burst{ 0%{ transform:scale(.06); opacity:0; } 5%{ opacity:1; } 50%{ transform:scale(1); opacity:.95; } 100%{ transform:translateY(38px) scale(1.12); opacity:0; } }
-  .hfx-fw-glitter{ animation:hfx-fw-glitter var(--d) linear var(--t) both; }
-  @keyframes hfx-fw-glitter{ 0%{ transform:scale(.55); opacity:0; } 12%{ opacity:1; } 28%{ opacity:.45; } 44%{ opacity:.95; } 60%{ opacity:.5; } 74%{ opacity:.8; } 100%{ transform:translateY(50px) scale(1.2); opacity:0; } }
-  .hfx-fw-flash{ position:absolute; width:150px; height:150px; margin:-75px 0 0 -75px; border-radius:50%; opacity:0;
-    background:radial-gradient(closest-side, rgba(255,255,255,.8), color-mix(in srgb, var(--c) 45%, transparent) 40%, transparent);
-    animation:hfx-fadeburst .7s ease-out var(--t) both; }
+  /* a little flare of light where something is fired from the box */
   .hfx-fw-launch{ position:absolute; width:52px; height:34px; margin:-17px 0 0 -26px; border-radius:50%; opacity:0;
     background:radial-gradient(closest-side, #fff, color-mix(in srgb, var(--c) 55%, transparent) 45%, transparent);
     animation:hfx-fuse 1.1s ease-out var(--t) both; }
   @keyframes hfx-fuse{ 0%{ opacity:0; transform:scale(.4); } 25%{ opacity:.9; transform:scale(.8); } 32%{ opacity:1; transform:scale(1.2); } 100%{ opacity:0; transform:scale(1); } }
-
-  /* Starfall: each meteor is turned to its heading once (a static
-     transform) and its image runs along that axis. */
+  /* a streak turned to its heading once and run along that axis (the UFO's exit) */
   .hfx-mt{ position:absolute; width:0; height:0; transform:rotate(var(--ra)); }
-  .hfx-mt-run{ position:absolute; left:calc(var(--ml) * -1); top:-5px; width:var(--ml); height:10px; background:center / 100% 100% no-repeat; opacity:0;
+  .hfx-mt-run{ position:absolute; left:calc(var(--ml) * -1); top:-7px; width:var(--ml); height:14px; background:center / 100% 100% no-repeat; opacity:0;
     animation:hfx-mt-run var(--d) cubic-bezier(.3,.2,.6,1) var(--t) both; }
-  .hfx-mt-run{ top:-7px; height:14px; }
   .hfx-mt-run.is-big{ top:-11px; height:22px; }
   @keyframes hfx-mt-run{ 0%{ transform:translateX(0); opacity:0; } 8%{ opacity:1; } 75%{ opacity:1; } 100%{ transform:translateX(var(--dist)); opacity:0; } }
   .hfx-glint{ animation:hfx-glint var(--d) ease-out var(--t) both; }
   @keyframes hfx-glint{ 0%{ transform:scale(.2) rotate(0deg); opacity:0; } 10%{ transform:scale(1.15) rotate(20deg); opacity:1; } 30%{ transform:scale(.85) rotate(35deg); opacity:.75; } 55%{ transform:scale(1) rotate(50deg); opacity:.9; } 100%{ transform:scale(.6) rotate(80deg); opacity:0; } }
-  .hfx-sf-core{ position:absolute; width:200px; height:200px; margin:-100px 0 0 -100px; border-radius:50%; opacity:0;
-    background:radial-gradient(closest-side, rgba(255,255,255,.7), rgba(170,190,255,.3) 40%, rgba(170,190,255,0));
-    animation:hfx-core 1.6s ease-out var(--t) both; }
-  .hfx-sf-glow{ position:absolute; width:180px; height:120px; margin:-60px 0 0 -90px; border-radius:50%; opacity:0;
-    background:radial-gradient(closest-side, rgba(220,230,255,.5), rgba(160,180,255,0)); animation:hfx-core 2s ease-out var(--t) both; }
 
-  /* Aurora: a curtain opens upward from its foot on the box, sways
-     (skewX - a transform) and fades. */
-  .hfx-ab{ position:absolute; transform-origin:50% 100%; opacity:0;
-    animation:hfx-ab-up 2.2s cubic-bezier(.45,0,.3,1) var(--t) both, hfx-ab-life 5.6s linear var(--t) both; }
-  @keyframes hfx-ab-up{ from{ transform:scaleY(0); } to{ transform:scaleY(1); } }
-  @keyframes hfx-ab-life{ 0%{ opacity:0; } 8%{ opacity:.82; } 70%{ opacity:.72; } 100%{ opacity:0; } }
-  .hfx-ab-sway{ position:absolute; inset:0; background:center bottom / 100% 100% no-repeat; transform-origin:50% 100%;
-    animation:hfx-ab-sway var(--sw) ease-in-out var(--t) 4 alternate both; }
-  @keyframes hfx-ab-sway{ from{ transform:skewX(calc(var(--sk) * -1)) translateX(-6px); } to{ transform:skewX(var(--sk)) translateX(6px); } }
-  .hfx-ab-ground{ position:absolute; width:var(--gw); height:50px; margin:-25px 0 0 calc(var(--gw) / -2); border-radius:50%; opacity:0;
-    background:radial-gradient(closest-side, rgba(140,255,200,.5), rgba(90,200,255,.15) 60%, rgba(90,200,255,0));
-    animation:hfx-ab-life 5.8s linear .05s both; }
-  .hfx-ab-edge{ position:absolute; left:0; right:0; top:0; height:55%; opacity:0;
-    background:linear-gradient(180deg, color-mix(in srgb, var(--c) 34%, transparent), color-mix(in srgb, var(--c2) 10%, transparent) 60%, transparent);
-    animation:hfx-ab-life 5.2s linear .1s both; }
-
-  /* Galaxy: one image turning and opening out; stars flung on a spiral
-     (a turning arm that lengthens). */
-  .hfx-gx{ animation:hfx-gx var(--d) cubic-bezier(.35,.1,.45,1) var(--t) both; }
-  @keyframes hfx-gx{ 0%{ transform:scale(.03) rotate(0deg); opacity:0; } 10%{ opacity:1; } 60%{ opacity:.85; } 100%{ transform:scale(var(--gs)) rotate(var(--gr)); opacity:0; } }
-  .hfx-gx-orb{ position:absolute; width:0; height:0; animation:hfx-gx-orb var(--d) cubic-bezier(.3,.3,.5,1) var(--t) both; }
-  @keyframes hfx-gx-orb{ from{ transform:rotate(var(--a0)); } to{ transform:rotate(calc(var(--a0) + var(--spin))); } }
-  .hfx-gx-arm{ position:absolute; left:0; top:0; animation:hfx-gx-arm var(--d) cubic-bezier(.4,0,.6,1) var(--t) both; }
-  @keyframes hfx-gx-arm{ from{ transform:translateX(0); } to{ transform:translateX(var(--R)); } }
-  .hfx-gx-star{ animation:hfx-gx-star var(--d) linear var(--t) both; }
-  @keyframes hfx-gx-star{ 0%{ opacity:0; } 12%{ opacity:1; } 70%{ opacity:.9; } 100%{ opacity:0; } }
+  /* A LINE DRAWN ALONG THE SCREEN'S OWN CARDS (hfxGrowLine): each straight
+     piece turned to its heading once and drawn out from its start. */
+  .hfx-seg{ position:absolute; display:block; transform-origin:0 50%; border-radius:var(--sh); transform:rotate(var(--sa)) scaleX(0);
+    animation:hfx-seg var(--gd) linear var(--gt) both; }
+  @keyframes hfx-seg{ from{ transform:rotate(var(--sa)) scaleX(0); } to{ transform:rotate(var(--sa)) scaleX(1); } }
+  .hfx-seg.is-wood{ background:linear-gradient(180deg, #24160F, #6B4A30 30%, #A7774B 50%, #4A3020 78%, #20130C); }
+  .hfx-seg.is-root{ background:linear-gradient(180deg, #2A1A10, #9A6A40 50%, #2A1A10); }
+  /* a light running along a line (a comet head, a pulse of sap) */
+  .hfx-runner{ left:0; top:0; opacity:0; }
+  .hfx-runner.is-sap{ mix-blend-mode:normal; }
+  /* neon: the line is light; it holds, flares once with everything else,
+     and fades - the flare is a rise to full, never a flash */
+  .hfx-seg.is-neon{ background:color-mix(in srgb, var(--c) 70%, #fff); box-shadow:0 0 5px var(--c), 0 0 14px color-mix(in srgb, var(--c) 65%, transparent);
+    animation:hfx-seg var(--gd) linear var(--gt) both, hfx-neon-life 4.9s linear both; }
+  @keyframes hfx-neon-life{ 0%, 58%{ opacity:.8; } 64%{ opacity:1; } 72%{ opacity:1; } 100%{ opacity:0; } }
+  .hfx-neon-inner{ position:absolute; inset:0; border-radius:inherit; opacity:0;
+    box-shadow:inset 0 0 0 1.5px var(--c), inset 0 0 26px color-mix(in srgb, var(--c2) 35%, transparent);
+    animation:hfx-neon-life 4.4s linear .1s both; }
+  /* party poppers */
+  .hfx-popper{ background-size:100% 100%; transform-origin:50% 100%; transform:rotate(var(--pa)) scale(0);
+    animation:hfx-popper 3.4s ease-out var(--t) both; }
+  @keyframes hfx-popper{ 0%{ transform:rotate(var(--pa)) scale(0); opacity:0; } 6%{ transform:rotate(var(--pa)) scale(1); opacity:1; }
+    10%{ transform:rotate(var(--pa)) translateY(5px) scale(1.06, .86); } 12.5%{ transform:rotate(var(--pa)) translateY(-9px) scale(.94, 1.12); }
+    20%{ transform:rotate(var(--pa)) translateY(0) scale(1); } 78%{ opacity:1; } 100%{ transform:rotate(var(--pa)) translateY(12px) scale(.9); opacity:0; } }
+  .hfx-puff-smoke{ position:absolute; width:70px; height:70px; margin:-35px 0 0 -35px; border-radius:50%; opacity:0;
+    background:radial-gradient(closest-side, rgba(255,240,250,.55), rgba(255,240,250,0)); animation:hfx-smoke 1.4s ease-out var(--t) both; }
+  @keyframes hfx-smoke{ 0%{ transform:scale(.3); opacity:0; } 12%{ opacity:1; } 100%{ transform:translateY(-30px) scale(1.8); opacity:0; } }
+  /* something thrown: up and out, then falling - one transform, a slow fade */
+  .hfx-arc{ position:absolute; width:0; height:0; opacity:0; animation:hfx-arc var(--d) linear var(--t) both; }
+  @keyframes hfx-arc{ 0%{ transform:translate(0, 0); opacity:0; animation-timing-function:cubic-bezier(.12,.7,.3,1); } 3%{ opacity:1; }
+    26%{ transform:translate(calc(var(--ax) * .85), var(--ay)); animation-timing-function:cubic-bezier(.45,0,.75,.7); }
+    76%{ opacity:1; } 100%{ transform:translate(var(--ax), calc(var(--ay) + var(--fall))); opacity:0; } }
+  .hfx-streamer{ position:absolute; width:26px; height:90px; margin:-45px 0 0 -13px; background:center / 100% 100% no-repeat;
+    transform-origin:50% 0; animation:hfx-streamer var(--d) ease-out var(--t) both; }
+  @keyframes hfx-streamer{ 0%{ transform:rotate(var(--rot)) scaleY(.15); } 18%{ transform:rotate(var(--rot)) scaleY(1); } 100%{ transform:rotate(calc(var(--rot) + var(--spin))) scaleY(.9); } }
+  .hfx-flutter{ position:absolute; left:0; top:0; animation:hfx-flutter calc(var(--fw) * 1s) ease-in-out var(--t) 7 alternate both; }
+  @keyframes hfx-flutter{ from{ transform:translateX(-7px) rotate(-24deg); } to{ transform:translateX(7px) rotate(24deg); } }
+  .hfx-paper{ position:absolute; width:var(--pw); height:var(--ph); margin:calc(var(--ph) / -2) 0 0 calc(var(--pw) / -2); background:var(--c); border-radius:1px;
+    animation:hfx-paper calc(var(--fr) * 1s) linear var(--t) 10 both; }
+  @keyframes hfx-paper{ from{ transform:perspective(60px) rotate3d(1, .4, 0, 0deg); } to{ transform:perspective(60px) rotate3d(1, .4, 0, 360deg); } }
+  /* hologram */
+  .hfx-holo-plane{ position:absolute; background:center bottom / 100% 100% no-repeat; transform-origin:50% 100%; opacity:0;
+    transform:perspective(420px) rotateX(58deg) scaleY(0); animation:hfx-holo-plane 4.8s ease both; }
+  @keyframes hfx-holo-plane{ 0%{ transform:perspective(420px) rotateX(58deg) scaleY(0); opacity:0; } 12%{ transform:perspective(420px) rotateX(58deg) scaleY(1); opacity:1; } 78%{ opacity:.9; } 100%{ transform:perspective(420px) rotateX(58deg) scaleY(1); opacity:0; } }
+  .hfx-holo-cone{ position:absolute; opacity:0; clip-path:polygon(0 100%, 100% 100%, 82% 0, 18% 0);
+    background:linear-gradient(0deg, rgba(46,230,255,.28), rgba(46,230,255,0) 85%); animation:hfx-holo-life 4.6s linear .2s both; }
+  .hfx-holo{ position:absolute; opacity:0; animation:hfx-holo-life 4.4s linear .35s both; }
+  @keyframes hfx-holo-life{ 0%{ opacity:0; transform:translateY(24px); } 10%{ opacity:.95; transform:translateY(0); } 40%{ opacity:.8; } 46%{ opacity:.95; } 76%{ opacity:.9; } 100%{ opacity:0; transform:translateY(-10px); } }
+  .hfx-holo::after{ content:""; position:absolute; inset:0; background:repeating-linear-gradient(0deg, rgba(0,20,30,.4) 0 2px, transparent 2px 4px); }
+  .hfx-holo-slice{ position:absolute; inset:0; display:block; text-align:center; white-space:nowrap; color:#A8F8FF;
+    text-shadow:0 0 14px rgba(46,230,255,.9), 0 0 2px #fff; clip-path:inset(var(--sl) 0 var(--sr) 0);
+    animation:hfx-holo-jit calc(var(--jd) * 1s) steps(1) .35s 4 both; }
+  @keyframes hfx-holo-jit{ 0%{ transform:translateX(0); } 8%{ transform:translateX(var(--j)); } 13%{ transform:translateX(0); } 52%{ transform:translateX(calc(var(--j) * -.6)); } 57%, 100%{ transform:translateX(0); } }
+  .hfx-holo-scan{ position:absolute; left:0; right:0; top:0; height:3px; background:#9FF7FF; opacity:0;
+    box-shadow:0 0 12px 3px rgba(124,246,255,.8), 0 0 40px 12px rgba(46,230,255,.28); animation:hfx-holo-scan var(--d) linear var(--t) both; }
+  @keyframes hfx-holo-scan{ 0%{ transform:translateY(0); opacity:0; } 5%{ opacity:1; } 92%{ opacity:1; } 100%{ transform:translateY(var(--vh)); opacity:0; } }
+  .hfx-holo-card{ position:absolute; border-radius:21px; border:1.5px solid rgba(124,246,255,.9); opacity:0;
+    box-shadow:inset 0 0 20px rgba(46,230,255,.22), 0 0 14px rgba(46,230,255,.35); animation:hfx-holo-card 2.4s ease-out var(--t) both; }
+  .hfx-holo-card.is-red{ border-color:rgba(255,61,203,.75); box-shadow:none; animation-name:hfx-holo-red; }
+  @keyframes hfx-holo-card{ 0%{ opacity:0; } 8%{ opacity:1; } 45%{ opacity:.85; } 100%{ opacity:0; } }
+  @keyframes hfx-holo-red{ 0%{ opacity:0; transform:translate(5px, -3px); } 8%{ opacity:.9; } 30%{ transform:translate(0, 0); opacity:.4; } 100%{ opacity:0; transform:translate(0, 0); } }
+  .hfx-holo-mote{ animation:hfx-holo-mote var(--d) ease-out var(--t) both; }
+  @keyframes hfx-holo-mote{ 0%{ transform:translateY(0) scale(.4); opacity:0; } 20%{ opacity:.9; } 100%{ transform:translateY(var(--up)) scale(1); opacity:0; } }
+  .hfx-holo-lines{ position:absolute; inset:0; opacity:0; background:repeating-linear-gradient(0deg, rgba(46,230,255,.1) 0 1px, transparent 1px 4px);
+    animation:hfx-holo-life 4.4s linear .15s both; }
+  /* Liquid Glass bubbles: a round window onto the screen behind */
+  .hfx-gb{ position:absolute; width:0; height:0; opacity:0; animation:hfx-gb-path var(--d) cubic-bezier(.22,.6,.42,1) var(--dl) both; }
+  .hfx-gb.is-pop{ animation-name:hfx-gb-path-pop; }
+  @keyframes hfx-gb-path{ 0%{ transform:translate(0, 0) scale(.15); opacity:0; } 8%{ opacity:1; } 16%{ transform:translate(calc(var(--mx) * .2), calc(var(--my) * .2)) scale(1); }
+    40%{ transform:translate(var(--mx), var(--my)) scale(1); } 84%{ opacity:1; } 100%{ transform:translate(var(--ex), var(--ey)) scale(1); opacity:0; } }
+  @keyframes hfx-gb-path-pop{ 0%{ transform:translate(0, 0) scale(.15); opacity:0; } 8%{ opacity:1; } 16%{ transform:translate(calc(var(--mx) * .2), calc(var(--my) * .2)) scale(1); }
+    40%{ transform:translate(var(--mx), var(--my)) scale(1); } 100%{ transform:translate(var(--ex), var(--ey)) scale(1); opacity:1; } }
+  .hfx-glass{ position:absolute; width:var(--sz); height:var(--sz); left:calc(var(--sz) / -2); top:calc(var(--sz) / -2); border-radius:50%;
+    -webkit-backdrop-filter:blur(2.5px) saturate(1.9) brightness(1.2) contrast(1.05); backdrop-filter:blur(2.5px) saturate(1.9) brightness(1.2) contrast(1.05);
+    background:radial-gradient(circle at 50% 58%, rgba(255,255,255,0) 50%, rgba(190,230,255,.1) 72%, rgba(255,255,255,.24) 92%, rgba(255,255,255,0) 100%);
+    box-shadow:inset 0 -8px 16px rgba(255,255,255,.12), inset 0 10px 18px rgba(0,0,0,.2), 0 8px 24px rgba(0,0,0,.2); }
+  .hfx-gb .hfx-bb-film{ opacity:.85; }
+  .hfx-bub-halo{ position:absolute; width:var(--hr); height:var(--hr); margin:calc(var(--hr) / -2) 0 0 calc(var(--hr) / -2); background:center / 100% 100% no-repeat; opacity:0;
+    animation:hfx-bub-halo 2.2s cubic-bezier(.15,.7,.3,1) var(--t) both; }
+  @keyframes hfx-bub-halo{ 0%{ transform:scale(.25); opacity:0; } 10%{ opacity:.95; } 100%{ transform:scale(1.15); opacity:0; } }
 
   /* UFO. One 7s timeline shared by the saucer's path, its rocking and
      settle, its beam and its lights, so they cannot drift apart. */
-  .hfx-ufo-dim{ position:absolute; inset:0; background:#020305; opacity:0; animation:hfx-ufo-dim 7.6s linear both; }
-  @keyframes hfx-ufo-dim{ 0%{ opacity:0; } 8%{ opacity:.93; } 16%{ opacity:.93; } 26%{ opacity:.55; } 74%{ opacity:.55; } 100%{ opacity:0; } }
+  .hfx-ufo-dim{ position:absolute; inset:0; background:#020305; opacity:0; animation:hfx-ufo-dim 8.4s linear both; }
+  @keyframes hfx-ufo-dim{ 0%{ opacity:0; } 7.2%{ opacity:.93; } 14.5%{ opacity:.93; } 23.6%{ opacity:.55; } 67%{ opacity:.55; } 100%{ opacity:0; } }
   .hfx-ufo-boxdim{ position:absolute; inset:0; background:#020305; opacity:0; animation:hfx-ufo-boxdim 2.2s linear both; }
   @keyframes hfx-ufo-boxdim{ 0%{ opacity:0; } 27%{ opacity:.93; } 55%{ opacity:.93; } 91%, 100%{ opacity:0; } }
   /* (not .hfx-ufo: the effect's own layers are named hfx-<id>) */
@@ -9132,18 +9153,30 @@
     animation:hfx-scan 1.6s cubic-bezier(.45,0,.55,1) var(--dl) both; }
   @keyframes hfx-scan{ 0%{ transform:translateY(0); opacity:0; } 10%{ opacity:1; } 80%{ opacity:.85; } 100%{ transform:translateY(var(--bh)); opacity:0; } }
 
-  /* THE BOX TAKES THE EFFECT'S COLOURS while it plays, and eases back:
-     the border by a transition, the wash and the numerals by an overlay
-     whose opacity fades in and out over the effect's own length. */
-  .rs-screen .rs-card.rs-grade, .hfx-stage{ transition:border-color 1s ease; }
-  .rs-screen .rs-card.rs-grade.is-perfect.hfx-tinted, .hfx-stage.hfx-tinted, .hfx-preview-card.hfx-tinted{ border-color:var(--hfx-b); }
+  /* THE BOX TAKES THE EFFECT'S COLOURS - ALL OF IT. "Ensure that gold
+     progress bar is color matched, you really got ensure that grade box
+     matches the effect well." One class on the card (.hfx-tinted), put on
+     and taken off by playHundoFx at each effect's own moments (the UFO's
+     when its beam reaches the box and when it cuts), turns every part:
+     the border, the card's wash, every unit bar's fill and glow, the
+     "12 of 12", and - by overlays that only fade - the numerals'
+     gradient and an inner glow. The colours are REGISTERED properties
+     (@property) so they transition like any colour; where @property is
+     missing they simply switch. */
+  .rs-screen .rs-card.rs-grade, .hfx-stage, .hfx-preview-card{
+    transition:border-color var(--hfx-ease, 1s) ease, --hfx-wash var(--hfx-ease, 1s) ease, --hfx-fa var(--hfx-ease, 1s) ease, --hfx-fb var(--hfx-ease, 1s) ease; }
+  .rs-screen .rs-card.rs-grade.is-perfect.hfx-tinted, .hfx-stage.hfx-tinted, .rs-screen .rs-card.hfx-preview-card.hfx-tinted{ border-color:var(--hfx-b);
+    --hfx-wash:color-mix(in srgb, var(--hfx-b) 20%, transparent); --hfx-fa:var(--hfx-g2); --hfx-fb:var(--hfx-g1); }
+  .hfx-fast{ --hfx-ease:.45s; }
+  .rs-grade .rs-grade-frac{ transition:color var(--hfx-ease, 1s) ease; }
+  .rs-grade.hfx-tinted .rs-grade-frac{ color:var(--hfx-g1); }
   .hfx-tint{ position:absolute; inset:0; border-radius:inherit; opacity:0;
-    background:linear-gradient(180deg, color-mix(in srgb, var(--hfx-b) 20%, transparent), transparent 62%);
-    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--hfx-b) 55%, transparent), inset 0 0 26px color-mix(in srgb, var(--hfx-b) 22%, transparent);
-    animation:hfx-tint var(--tot) linear both; }
-  @keyframes hfx-tint{ 0%{ opacity:0; } 9%{ opacity:1; } 80%{ opacity:1; } 96%, 100%{ opacity:0; } }
-  .hfx-tintnum{ position:absolute; display:block; white-space:nowrap; opacity:0; animation:hfx-tint var(--tot) linear both; }
-  .hfx-tintnum, .hfx-carry-txt.is-tinted{ color:transparent;
+    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--hfx-b) 55%, transparent), inset 0 0 30px color-mix(in srgb, var(--hfx-b) 26%, transparent);
+    transition:opacity var(--hfx-ease, 1s) ease; }
+  .hfx-tintnum{ position:absolute; display:block; white-space:nowrap; opacity:0; transition:opacity var(--hfx-ease, 1s) ease;
+    text-shadow:none; filter:none; }
+  .hfx-tinted .hfx-tint, .hfx-tinted .hfx-tintnum{ opacity:1; }
+  .hfx-tintnum{ color:transparent;
     background:linear-gradient(105deg, var(--hfx-g1), var(--hfx-g2) 55%, var(--hfx-g3, var(--hfx-g1)));
     -webkit-background-clip:text; background-clip:text; }
   /* World Tree. Each branch is a box rotated about the tip it grows
@@ -9152,6 +9185,7 @@
      whole tree fades as one at the end. */
   .hfx-tree{ position:absolute; inset:0; animation:hfx-tree-out var(--tot) linear both; }
   @keyframes hfx-tree-out{ 0%, 72%{ opacity:1; } 93%, 100%{ opacity:0; } }
+  .hfx-tree.is-inner{ animation:none; }
   .hfx-ground{ position:absolute; width:var(--gw); height:44px; margin:-22px 0 0 calc(var(--gw) / -2); border-radius:50%; opacity:0;
     background:radial-gradient(closest-side, rgba(255,214,150,.55), rgba(255,160,190,.18) 60%, rgba(255,160,190,0));
     animation:hfx-ground 6.8s ease both; }
@@ -9160,12 +9194,10 @@
     background:radial-gradient(closest-side, rgba(255,214,140,.3), rgba(255,140,190,.14) 45%, rgba(255,140,190,0));
     animation:hfx-halo 7.6s ease-in-out .9s both; }
   @keyframes hfx-halo{ 0%{ opacity:0; transform:scale(.4); } 30%{ opacity:1; transform:scale(1); } 70%{ opacity:.8; } 100%{ opacity:0; transform:scale(1.05); } }
-  .hfx-branch{ position:absolute; display:block; transform-origin:50% calc(100% - var(--ol));
-    background:linear-gradient(90deg, #24160F, #4E3323 30%, #8A6040 52%, #3A2619 80%, #20130C);
+  .hfx-branch{ position:absolute; display:block; transform-origin:50% calc(100% - var(--ol)); background-size:100% 100%; background-repeat:no-repeat;
     transform:rotate(var(--a)) scaleY(0); animation:hfx-grow var(--gd) cubic-bezier(.3,.55,.45,1) var(--gt) both; }
-  .hfx-branch::after{ content:""; position:absolute; top:0; bottom:0; left:42%; right:42%; opacity:.6;
-    background:linear-gradient(180deg, rgba(255,222,160,.75), rgba(255,170,120,.2)); }
-  .hfx-branch.is-pulse::after{ left:36%; right:36%; background:linear-gradient(180deg, #FFF3C8, #FFC27A 60%, rgba(255,170,120,.3));
+  .hfx-branch.is-pulse::after{ content:""; position:absolute; top:0; bottom:0; opacity:.6;
+    left:38%; right:38%; background:linear-gradient(180deg, #FFF3C8, #FFC27A 60%, rgba(255,170,120,.3));
     animation:hfx-sap 1s ease-out calc(var(--gt) + var(--gd) * .35) both; }
   @keyframes hfx-sap{ 0%{ opacity:.2; } 35%{ opacity:1; } 100%{ opacity:.5; } }
   @keyframes hfx-grow{ from{ transform:rotate(var(--a)) scaleY(0); } to{ transform:rotate(var(--a)) scaleY(1); } }
@@ -21666,15 +21698,19 @@
      is too much". */
   .rs-screen .rs-card.rs-grade.is-perfect{
     border-color:rgba(242,211,138,.2);
-    background:linear-gradient(180deg, rgba(226,178,60,.12), var(--rs-card) 60%);
+    /* --hfx-wash is this gold unless a hundo effect is playing (build 313) */
+    background:linear-gradient(180deg, var(--hfx-wash), var(--rs-card) 60%);
   }
+  @property --hfx-wash{ syntax:"<color>"; inherits:true; initial-value:rgba(226,178,60,.12); }
+  @property --hfx-fa{ syntax:"<color>"; inherits:true; initial-value:#D9A93A; }
+  @property --hfx-fb{ syntax:"<color>"; inherits:true; initial-value:#F6D58E; }
   /* The 100% in the XP total's manner: a lighter tone of the colour with
      a soft glow, not a saturated gold with a hard one. */
   .rs-screen .rs-grade.is-perfect .rs-pct.pct.perfect{
     color:#F6D58E; text-shadow:0 0 18px rgba(246,213,142,.32); animation:none;
   }
   /* Its bars gold, and gold wherever a unit was aced. */
-  .rs-byunit .unit-breakdown-fill.is-gold{ background:linear-gradient(90deg, #D9A93A, #F6D58E); box-shadow:0 0 10px rgba(246,213,142,.3); }
+  .rs-byunit .unit-breakdown-fill.is-gold{ background:linear-gradient(90deg, var(--hfx-fa), var(--hfx-fb)); box-shadow:0 0 10px color-mix(in srgb, var(--hfx-fb) 30%, transparent); }
   /* A retake: no score, only whether anything is left. */
   .rs-screen .rs-card.rs-grade.rs-retake-note{ padding:1rem 1.2rem 1.05rem; }
   .rs-retake-line{ margin:0; font-size:1.05rem; font-weight:800; color:var(--ink); }
@@ -36268,22 +36304,24 @@ const CHARACTER_FEATS = {
    biggest show of the four, and every one starts at the 100% box and
    spreads out from it ("make them start from the 100 box and spread
    out").
-   Raised once on review: "the first one now unlocks at 50 hundos" -
-   50, 100, 200, 300. Against the class as it stood (top two 158 and
-   143, then 59, 50, 46; median 1) two people hold two of them and three
-   more hold Laser Show the day this ships; nobody holds Bubbles yet. Nothing is stored
+   Settled on review: four to earn, at the numbers Madison named -
+   50, 100, 200, 350 - with the UFO on top. Against the class as it
+   stood (top two 158 and 143, then 59, 50, 46; median 1): two people
+   hold the first two the day this ships, three more hold the first;
+   nobody holds Bubbles or the UFO yet. Nothing is stored
    about holding one - it is read off the count, like a banner - only
    which one is picked (store.hundoFx). Declared up here, ahead of
    everything that runs at boot, because ultimateProgress() reads it. */
 const HUNDO_FX = [
   { id: "confetti",  name: "Confetti",   need: 0,   color: "#FFD37A" },
-  { id: "fireworks", name: "Fireworks",  need: 50,  color: "#FFB24A" },
-  { id: "aurora",    name: "Aurora",     need: 100, color: "#5CFFB0" },
-  { id: "worldtree", name: "World Tree", need: 200, color: "#FF9EC8" },
-  { id: "bubbles",   name: "Bubbles",    need: 350, color: "#9FE8FF" },
-  /* "Maybe the one after bubbles is ... a ufo landing on the grade box?"
-     500 by default; nobody is near it (the top is 158). */
-  { id: "ufo",       name: "UFO",        need: 500, color: "#6BFF8F" }
+  /* the first rung is still Madison's to pick from three (Neon Trails,
+     Party Poppers, Hologram - all in HUNDO_FX_BUILD); Neon Trails holds
+     it meanwhile. Swapping is this row's id and name. */
+  { id: "neon",      name: "Neon Trails", need: 50,  color: "#2EF2FF" },
+  { id: "worldtree", name: "World Tree",  need: 100, color: "#FF9EC8" },
+  { id: "bubbles",   name: "Bubbles",     need: 200, color: "#9FE8FF" },
+  /* "the one after bubbles is ... a ufo landing on the grade box" */
+  { id: "ufo",       name: "UFO",         need: 350, color: "#6BFF8F" }
 ];
 function hundoFxDef(id){ return HUNDO_FX.find(d => d.id === id) || null; }
 /* Held at `hundos` (this account's own count when left out). */
@@ -68731,23 +68769,23 @@ function celebrate(palette, origin){
 const HUNDO_FX_TAIL_MS = 1200;
 /* When each effect's layers are removed: every piece has faded out by
    then. The box-only play (Customize, the unlock card) runs shorter. */
-const HUNDO_FX_TOTAL = { fireworks: 5800, starfall: 5600, aurora: 6400, galaxy: 5200, worldtree: 8800, bubbles: 7000, ufo: 8600 };
-const HUNDO_FX_BOX_TOTAL = { confetti: 3000, fireworks: 4000, starfall: 4000, aurora: 4600, galaxy: 4000, worldtree: 6400, bubbles: 4600, ufo: 7400 };
+const HUNDO_FX_TOTAL = { neon: 5200, poppers: 6000, hologram: 5800, worldtree: 8800, bubbles: 7000, ufo: 8600 };
+const HUNDO_FX_BOX_TOTAL = { confetti: 3000, neon: 4400, poppers: 4000, hologram: 4400, worldtree: 6400, bubbles: 4600, ufo: 7400 };
 /* When the last tail starts, for the gate: everything is still on
    screen and part-way faded between this and the total. */
-const HUNDO_FX_TAIL_AT = { fireworks: 4300, starfall: 4000, aurora: 4800, galaxy: 3700, worldtree: 6600, bubbles: 5300, ufo: 7000 };
+const HUNDO_FX_TAIL_AT = { neon: 3600, poppers: 4600, hologram: 4200, worldtree: 6600, bubbles: 5300, ufo: 7000 };
 /* THE BOX'S COLOURS WHILE EACH ONE PLAYS (build 313): "Would be pretty
    cool if the themes matches the box, cause if the just stays yellow it
    would get kinda boring." Border, wash and the numerals' gradient;
    Confetti keeps the yellow. */
 const HFX_TINT = {
-  fireworks: { b: "#FF8FB8", g1: "#FFE08A", g2: "#FF5FA2", g3: "#FFB24A" },
-  starfall:  { b: "#A9C2FF", g1: "#FFFFFF", g2: "#9DB8FF", g3: "#E2EAFF" },
-  aurora:    { b: "#5CFFB0", g1: "#B6FFE0", g2: "#5CFFB0", g3: "#9DB2FF" },
-  galaxy:    { b: "#B49CFF", g1: "#FFD6F4", g2: "#B49CFF", g3: "#9FD0FF" },
+  neon:      { b: "#2EF2FF", g1: "#C8FFFF", g2: "#2EF2FF", g3: "#FF3DCB" },
+  poppers:   { b: "#FF4D6D", g1: "#FFE08A", g2: "#FF4D6D", g3: "#2EC4FF" },
+  hologram:  { b: "#2EE6FF", g1: "#E8FDFF", g2: "#2EE6FF", g3: "#9F7CFF" },
   worldtree: { b: "#7CD69A", g1: "#FFD1E4", g2: "#FF8FBF", g3: "#B8F2A0" },
   bubbles:   { b: "#9FE8FF", g1: "#B4F0FF", g2: "#FFB3E6", g3: "#C9B3FF" },
-  ufo:       { b: "#6BFF8F", g1: "#EAFFEE", g2: "#6BFF8F", g3: "#B8FFF2" }
+  /* beam full at 40.5% of the saucer's 7s, cut from 76% */
+  ufo:       { b: "#6BFF8F", g1: "#EAFFEE", g2: "#6BFF8F", g3: "#B8FFF2", on: 2800, off: 5330, fast: true }
 };
 function hfxMotionOff(){
   try{ if(theme.reduceMotion) return true; }catch(e){}
@@ -68962,71 +69000,7 @@ function hfxBB(parent, o){
 }
 function hfxBubbles(scr, bx, c){
   const hues = [190, 280, 320, 150, 45, 230];
-  if(scr){
-    const small = c.vw < 600, r = c.br;
-    if(c.pct) hfxCarry(scr, c);
-    const src = () => ({ x: r.left + r.width * hfxR(.14, .86), y: r.top + r.height * hfxR(.24, .58) });
-    const route = (s, a, dist, swirl) => {
-      const dx = Math.cos(a), dy = Math.sin(a), px = -dy * swirl, py = dx * swirl;
-      return { mx: dx * dist * .42 + px * dist * hfxR(.16, .3), my: dy * dist * .42 + py * dist * hfxR(.16, .3),
-               ex: dx * dist + px * dist * hfxR(0, .12), ey: dy * dist + py * dist * hfxR(0, .12) };
-    };
-    const far = (s, a, k) => Math.max(180, hfxToEdge(c, s.x, s.y, a) * k);
-    const pops = [];
-    /* heroes, spread over the upper half-circle */
-    const nH = small ? 5 : 6;
-    for(let i = 0; i < nH; i++){
-      const s = src(), a = -Math.PI + Math.PI * (i + .5) / nH + hfxR(-.18, .18);
-      const sz = small ? hfxR(78, 118) : hfxR(104, 156);
-      const pop = i === 1 || i === nH - 2;
-      const d = pop ? hfxR(3.1, 3.5) : hfxR(4.2, 4.9), dl = .45 + i * .2;
-      const rt = route(s, a, far(s, a, pop ? hfxR(.55, .7) : hfxR(.85, 1.05)), i % 2 ? 1 : -1);
-      hfxBB(scr, Object.assign({ kind: "hero", x: s.x, y: s.y, sz, d, dl, h: hues[i % hues.length], pop, spin: (i % 2 ? 1 : -1) * hfxR(140, 220) }, rt));
-      if(pop) pops.push({ x: s.x + rt.ex, y: s.y + rt.ey, t: dl + d, sz });
-    }
-    /* mids, everywhere outward (a few sideways and down) */
-    const nM = small ? 8 : 12;
-    for(let i = 0; i < nM; i++){
-      const s = src(), a = (i % 4 === 3) ? hfxR(.15, Math.PI - .15) : hfxR(-Math.PI + .05, -.05);
-      const d = hfxR(2.6, 3.6), dl = hfxR(.3, 1.8);
-      const rt = route(s, a, far(s, a, hfxR(.5, .95)), Math.random() < .5 ? 1 : -1);
-      hfxBB(scr, Object.assign({ kind: "mid", x: s.x, y: s.y, sz: small ? hfxR(26, 50) : hfxR(32, 62), d, dl, h: hues[i % hues.length] }, rt));
-    }
-    /* chain pops: three mids each meet a popping hero where it bursts,
-       going off one after another */
-    pops.forEach((q, j) => {
-      for(let k = 0; k < 2; k++){
-        const s = src(), T = q.t + .14 * (k + 1), dl = hfxR(.2, .6), d = Math.max(1.6, T - dl);
-        const tx = q.x + hfxR(-1, 1) * q.sz * .9, ty = q.y + hfxR(-1, 1) * q.sz * .7;
-        const ex = tx - s.x, ey = ty - s.y;
-        const sz = hfxR(26, 44);
-        hfxBB(scr, { kind: "mid", pop: true, x: s.x, y: s.y, sz, d, dl, h: hues[(j + k * 2) % hues.length],
-          mx: ex * .42 + hfxR(-60, 60), my: ey * .42, ex, ey });
-        hfxSpray(scr, tx, ty, sz, T, k === 1);
-      }
-      hfxSpray(scr, q.x, q.y, q.sz, q.t, true);
-    });
-    /* two pairs meet and merge into one bigger bubble */
-    for(let m = 0; m < 2; m++){
-      const a = m ? hfxR(-2.6, -2) : hfxR(-1.1, -.5);
-      const sA = src(), sB = src();
-      const P = { x: sA.x + Math.cos(a) * 170, y: sA.y + Math.sin(a) * 200 };
-      const d = hfxR(3.4, 3.9), dl = .35 + m * .5, h = hues[(m * 3 + 1) % hues.length];
-      const endD = far(P, a, .9);
-      hfxBB(scr, { kind: "mid", merge: "a", x: sA.x, y: sA.y, sz: small ? 44 : 54, d, dl, h,
-        mx: P.x - sA.x, my: P.y - sA.y, ex: P.x - sA.x + Math.cos(a) * endD, ey: P.y - sA.y + Math.sin(a) * endD });
-      hfxBB(scr, { kind: "mid", merge: "b", x: sB.x, y: sB.y, sz: small ? 36 : 44, d, dl, h: h + 40,
-        mx: P.x - sB.x, my: P.y - sB.y, ex: P.x - sB.x, ey: P.y - sB.y });
-    }
-    /* small ones, a steady stream */
-    const nS = small ? 12 : 16;
-    for(let i = 0; i < nS; i++){
-      const s = src(), a = hfxR(-Math.PI + .1, -.1);
-      const rt = route(s, a, far(s, a, hfxR(.35, .8)), Math.random() < .5 ? 1 : -1);
-      hfxBB(scr, Object.assign({ kind: "small", x: s.x, y: s.y, sz: hfxR(9, 20), d: hfxR(2, 3.1), dl: .45 + (i / nS) * 2.2 + hfxR(0, .2),
-        h: hues[i % hues.length] }, rt));
-    }
-  }
+  if(scr) hfxBubblesGlass(scr, c);
   if(bx){
     hfxMk(bx, "i", "hfx-bub-sheen", { "--dl": .05 });
     if(!c.boxOnly){
@@ -69056,36 +69030,6 @@ function hfxBubbles(scr, bx, c){
   }
 }
 
-/* THE SHOWPIECE: a giant bubble forms round the 100%, lifts it, and
-   pops; the number (a copy, laid exactly over the real one, which is
-   hidden by its own opacity for those seconds) drops back into place. */
-function hfxCarry(scr, c){
-  const pc = hfxPctAt(c), cs = getComputedStyle(c.pct);
-  const D = 3.4, T0 = .12;
-  const gs = Math.max(c.p.w * 1.35, c.p.h * 1.9);
-  const rise = -Math.round(Math.min(c.vw < 600 ? 170 : 210, Math.max(70, c.br.top + c.p.y - gs * .6)));
-  const txt = hfxMk(scr, "span", "hfx-carry-txt", { left: (c.br.left + c.p.x) + "px", top: (c.br.top + c.p.y) + "px", width: c.p.w + "px", height: c.p.h + "px",
-    "--rise": rise + "px", "--d": D, "--dl": T0 });
-  txt.textContent = c.pct.textContent;
-  txt.style.fontFamily = cs.fontFamily; txt.style.fontSize = cs.fontSize; txt.style.fontWeight = cs.fontWeight;
-  txt.style.letterSpacing = cs.letterSpacing; txt.style.lineHeight = cs.lineHeight;
-  const car = hfxMk(scr, "span", "hfx-carry", { left: pc.x + "px", top: pc.y + "px", "--sz": gs + "px", "--rise": rise + "px", "--d": D, "--dl": T0, "--h": 200, "--sp": "200deg" });
-  const g = hfxMk(car, "i", "hfx-bb-grow");
-  const pw = hfxMk(g, "i", "hfx-carry-pop");
-  const w = hfxMk(pw, "i", "hfx-bb-wob");
-  hfxMk(w, "i", "hfx-bb-film").style.backgroundImage = hfxFilmURL(200);
-  hfxMk(w, "i", "hfx-bb-film is-shift").style.backgroundImage = hfxFilmURL(350);
-  hfxMk(w, "i", "hfx-bb-shell").style.backgroundImage = hfxHeroShellURL();
-  const popAt = T0 + D * .72;
-  hfxSpray(scr, pc.x, pc.y + rise, gs * .7, popAt, true);
-  const r2 = hfxMk(scr, "span", "hfx-spray", { left: pc.x + "px", top: (pc.y + rise) + "px", "--sz": (gs * 1.1) + "px", "--dl": popAt + .12 });
-  hfxMk(r2, "i", "hfx-rainbow").style.backgroundImage = hfxRingURL();
-  if(c.tintNum) txt.classList.add("is-tinted");
-  try{ c.pct.animate([{ opacity: 1 }, { opacity: 1, offset: .1 }, { opacity: 0, offset: .13 }, { opacity: 0, offset: .95 }, { opacity: 1 }],
-    { duration: D * 1000, delay: T0 * 1000 }); }catch(e){}
-  /* its coloured copy stays down for the whole carry, then hands back */
-  if(c.tintNum){ try{ c.tintNum.animate([{ opacity: 0 }, { opacity: 0, offset: .95 }, { opacity: 1 }], { duration: D * 1000, delay: T0 * 1000 }); }catch(e){} }
-}
 
 /* ---- SPRITES ----
    Every picture an effect moves is drawn ONCE, as an svg image, cached
@@ -69142,12 +69086,10 @@ function hfxWarm(id){
   const urls = [];
   try{
     if(id === "bubbles"){ [190, 280, 320, 150, 45, 230].forEach(h => { urls.push(hfxBubbleURL(h), hfxFilmURL(h), hfxFilmURL(h + 150)); }); urls.push(hfxHeroShellURL(), hfxRingURL()); }
-    else if(id === "worldtree"){ [0, 1, 2, 3].forEach(i => urls.push(hfxBlossomURL(i))); urls.push(hfxLeafURL(), hfxFireflyURL()); HFX_BLOOM.forEach(cl => urls.push(hfxPetalURL(cl))); }
-    else if(id === "fireworks"){ HFX_FW_COLORS.forEach(cl => urls.push(hfxBurstURL(cl), hfxRocketURL(cl))); urls.push(hfxGlitterURL()); }
-    else if(id === "starfall"){ HFX_STAR_COLORS.forEach(cl => urls.push(hfxMeteorURL(cl))); urls.push(hfxGlintURL()); }
-    else if(id === "aurora"){ HFX_AURORA.forEach(p => urls.push(hfxRibbonURL(p[0], p[1]))); urls.push(hfxGlintURL()); }
-    else if(id === "ufo"){ urls.push(hfxUfoURL(), hfxUfoLightsURL(false), hfxUfoLightsURL(true), hfxBeamURL(), hfxBeamRingURL(), hfxGlintURL(), hfxMeteorURL("#9DFFB4")); }
-    else if(id === "galaxy"){ urls.push(hfxGalaxyURL("#9FB4FF", "#FF8FD8"), hfxGalaxyURL("#FFD27A", "#8FE8FF"), hfxGlintURL()); }
+    else if(id === "worldtree"){ [0, 1, 2, 3].forEach(i => urls.push(hfxBlossomURL(i))); urls.push(hfxLeafURL(), hfxFireflyURL(), hfxBranchURL(.5), hfxBranchURL(.64)); HFX_BLOOM.forEach(cl => urls.push(hfxPetalURL(cl))); }
+    else if(id === "neon"){ urls.push(hfxGlintURL()); }
+    else if(id === "poppers"){ urls.push(hfxPopperURL()); HFX_PARTY.forEach(cl => { urls.push(hfxStreamerURL(cl, 0), hfxStreamerURL(cl, 1)); }); }
+    else if(id === "hologram"){ urls.push(hfxGridURL(), hfxGlintURL()); }
   }catch(e){}
   /* every sprite made so far, this effect's included, to a bitmap */
   Object.keys(hfxSprites).forEach(k => hfxRasterise(hfxSprites[k]));
@@ -69181,206 +69123,500 @@ function hfxGlintURL(){
     '<circle r="30" fill="url(#g)"/><path d="M0 -48 Q5 -5 46 0 Q5 5 0 48 Q-5 5 -46 0 Q-5 -5 0 -48Z" fill="#fff" fill-opacity=".92"/></svg>', 128);
 }
 
-/* ============ THE FOUR CANDIDATES FOR THE FIRST TWO RUNGS ============
-   "The first two are ehh maybe try something else for those." Laser Show
-   and Lightning were replaced; four candidates were built so Madison can
-   pick two, and every one stays here, whole, behind HUNDO_FX_BUILD - to
-   swap one in, change the id and name in its HUNDO_FX row. Each starts
-   at the 100% box, spreads out across the screen and fades slowly, and
-   each is deliberately a step below the World Tree and Bubbles. */
-
-/* -- FIREWORKS: shells launch off the top of the box, climb, and burst
-   one after another into rings of streaks, a crackle of glitter after
-   each, the burst sagging as it fades. A burst is ONE image scaled up -
-   a real shell expands radially, which is exactly what a scale does. -- */
-const HFX_FW_COLORS = ["#FFD24A", "#FF5FA2", "#5CD8FF", "#9DFF6B", "#C38CFF", "#FF8A4C"];
-function hfxBurstURL(col){
-  return hfxSprite("fw" + col, () => {
-    let s = '<defs><radialGradient id="g"><stop offset="0" stop-color="#fff" stop-opacity=".85"/><stop offset=".3" stop-color="' + col + '" stop-opacity=".35"/><stop offset="1" stop-color="' + col + '" stop-opacity="0"/></radialGradient></defs><circle cx="100" cy="100" r="40" fill="url(#g)"/>';
-    const n = 28;
-    for(let i = 0; i < n; i++){
-      const a = i / n * Math.PI * 2 + (i % 2 ? .07 : 0), r1 = i % 2 ? 80 : 92;
-      const p = r => (100 + Math.cos(a) * r).toFixed(1) + " " + (100 + Math.sin(a) * r).toFixed(1);
-      s += '<path d="M' + p(16) + ' L' + p(r1) + '" stroke="' + col + '" stroke-width="1.6" stroke-opacity=".5" stroke-linecap="round"/>' +
-        '<path d="M' + p(r1 * .62) + ' L' + p(r1) + '" stroke="' + col + '" stroke-width="3" stroke-linecap="round"/>' +
-        '<circle cx="' + p(r1).split(" ")[0] + '" cy="' + p(r1).split(" ")[1] + '" r="3.2" fill="#fff"/>';
-    }
-    return 'viewBox="0 0 200 200">' + s + '</svg>';
-  }, 512);
-}
-function hfxRocketURL(col){
-  return hfxSprite("rk" + col, () => 'viewBox="0 0 12 70"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".25" stop-color="' + col + '"/><stop offset="1" stop-color="' + col + '" stop-opacity="0"/></linearGradient></defs>' +
-    '<path d="M6 2 L9 12 L6.6 70 L5.4 70 L3 12 Z" fill="url(#g)"/><circle cx="6" cy="5" r="4.2" fill="#fff"/></svg>', 160);
-}
-function hfxGlitterURL(){
-  return hfxSprite("glitter", () => {
-    const rnd = bnRand(313); let s = "";
-    for(let i = 0; i < 46; i++){
-      const a = rnd() * Math.PI * 2, r = 34 + rnd() * 62;
-      s += '<circle cx="' + (100 + Math.cos(a) * r).toFixed(1) + '" cy="' + (100 + Math.sin(a) * r).toFixed(1) + '" r="' + (.8 + rnd() * 1.6).toFixed(1) + '" fill="' + (i % 3 ? "#FFF6D8" : "#FFD27A") + '"/>';
-    }
-    return 'viewBox="0 0 200 200">' + s + '</svg>';
-  }, 512);
-}
-function hfxFireworks(scr, bx, c){
-  const cols = c.palette || HFX_FW_COLORS;
-  const r = c.br, n = c.vw < 600 ? 6 : 8;
-  const shells = [];
-  for(let i = 0; i < n; i++){
-    const lx = r.left + r.width * (.12 + .76 * (i + .5) / n) + hfxR(-10, 10), ly = r.top + 3;
-    const room = Math.max(150, r.top - 50);
-    shells.push({ lx, ly, ax: lx + hfxR(-1, 1) * c.vw * .16, ay: Math.max(60, ly - room * hfxR(.4, .95)),
-      t: .4 + i * .34 + hfxR(0, .1), fly: hfxR(.55, .75), col: cols[i % cols.length], sz: (c.vw < 600 ? 180 : 250) * hfxR(.8, 1.15) });
-  }
-  if(scr){
-    shells.forEach(s => {
-      const ang = Math.atan2(s.ay - s.ly, s.ax - s.lx), dist = Math.hypot(s.ax - s.lx, s.ay - s.ly);
-      hfxPiece(scr, "hfx-fw-rocket", hfxRocketURL(s.col), s.lx, s.ly, 0, { "--ra": (ang * 180 / Math.PI + 90).toFixed(1) + "deg", "--dist": dist + "px", "--t": s.t, "--d": s.fly });
-      hfxMk(scr, "i", "hfx-fw-flash", { left: s.ax + "px", top: s.ay + "px", "--c": s.col, "--t": s.t + s.fly });
-      hfxPiece(scr, "hfx-fw-burst", hfxBurstURL(s.col), s.ax, s.ay, s.sz, { "--t": s.t + s.fly, "--d": hfxR(1.8, 2.2) });
-      hfxPiece(scr, "hfx-fw-glitter", hfxGlitterURL(), s.ax, s.ay, s.sz * 1.15, { "--t": s.t + s.fly + .32, "--d": 1.7 });
-    });
-  }
-  if(bx){
-    /* each launch flares on the box's top edge; the number catches the first burst */
-    /* each shell's fuse lights on the box's top edge a beat before it goes */
-    shells.forEach(s => hfxMk(bx, "i", "hfx-fw-launch", { left: (c.boxOnly ? c.bw * (.15 + .7 * Math.random()) : s.lx - r.left) + "px", top: "0px", "--c": s.col, "--t": Math.max(0, s.t - .3) }));
-    hfxLitText(bx, c, { mode: "flash", color: "#FFF6E0", glow: cols[0], dl: shells[0].t + shells[0].fly, dur: 2.2 });
-    if(c.boxOnly){
-      shells.slice(0, 3).forEach((s, i) => hfxPiece(bx, "hfx-fw-burst", hfxBurstURL(s.col), c.bw * (.25 + i * .25), c.bh * hfxR(.3, .45), c.bh * .9, { "--t": .3 + i * .45, "--d": 1.6 }));
-    }
-  }
-}
-
-/* -- STARFALL: a meteor shower streaking OUT of the 100% - heads of
-   light with long tails, a few big fireballs among them, each leaving a
-   star twinkling where it passed, which is what lingers and fades. -- */
-const HFX_STAR_COLORS = ["#BFD4FF", "#FFE7A8", "#A8F0FF", "#FFC2E6"];
+/* a streak of light with a bright head - the UFO's trail as it goes */
 function hfxMeteorURL(col){
   return hfxSprite("mt" + col, () => 'viewBox="0 0 200 16"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="' + col + '" stop-opacity="0"/><stop offset=".7" stop-color="' + col + '" stop-opacity=".7"/><stop offset="1" stop-color="#fff"/></linearGradient>' +
     '<radialGradient id="h"><stop offset="0" stop-color="#fff"/><stop offset=".45" stop-color="' + col + '" stop-opacity=".6"/><stop offset="1" stop-color="' + col + '" stop-opacity="0"/></radialGradient></defs>' +
     '<path d="M0 8 L188 4.6 Q194 8 188 11.4 Z" fill="url(#g)"/><circle cx="190" cy="8" r="8" fill="url(#h)"/><circle cx="190" cy="8" r="2.6" fill="#fff"/></svg>', 600);
 }
-function hfxStarfall(scr, bx, c){
-  const cols = c.palette || HFX_STAR_COLORS;
-  if(scr){
-    const n = c.vw < 600 ? 24 : 30, pc = hfxPctAt(c);
-    for(let i = 0; i < n; i++){
-      const big = i % 6 === 2;
-      const sx = c.br.left + c.p.x + c.p.w * hfxR(.1, .9), sy = c.br.top + c.p.y + c.p.h * hfxR(.2, .8);
-      const a = i % 5 === 4 ? hfxR(-Math.PI, Math.PI) : hfxR(-Math.PI + .2, -.2);
-      const len = (big ? hfxR(200, 260) : hfxR(110, 190)) * (c.vw < 600 ? 1 : 1.25);
-      const dist = hfxToEdge(c, sx, sy, a) + len + 20, speed = big ? hfxR(520, 640) : hfxR(640, 880);
-      const t = .12 + (i / n) * 2.3 + hfxR(0, .12), d = dist / speed;
-      const w = hfxMk(scr, "span", "hfx-mt", { left: sx + "px", top: sy + "px", "--ra": (a * 180 / Math.PI).toFixed(1) + "deg" });
-      const m = hfxMk(w, "i", "hfx-mt-run" + (big ? " is-big" : ""), { "--ml": len + "px", "--dist": dist + "px", "--t": t, "--d": d });
-      m.style.backgroundImage = hfxMeteorURL(cols[i % cols.length]);
-      /* the star it leaves, a way along its path */
-      const f = hfxR(.25, .55) * Math.min(dist - len, hfxToEdge(c, sx, sy, a));
-      hfxPiece(scr, "hfx-glint", hfxGlintURL(), sx + Math.cos(a) * f, sy + Math.sin(a) * f, big ? 34 : hfxR(16, 26), { "--t": t + d * (f / dist) + .05, "--d": hfxR(2, 2.6) });
+
+/* ============ THE SCREEN THE EFFECT IS PLAYING ON (build 313) ============
+   "The tree one could kinda adapt to the rest of the screen." The results
+   screen's own boxes - the header, the XP card, the grade box, an unlock
+   card, each button - where they will REST (offsets, so a card still
+   landing is measured at its place, not mid-bounce), in the screen
+   layer's coordinates. Empty when the effect is not on a results screen
+   (a preview, a pop-up), and the effects fall back to what needs none. */
+function hfxLayout(c){
+  const panel = c.box && c.box.closest && c.box.closest(".rs-screen");
+  if(!panel || c.boxOnly) return null;
+  const sx = window.scrollX || 0, sy = window.scrollY || 0;
+  const at = el => {
+    if(!el || !el.offsetWidth) return null;
+    let x = 0, y = 0;
+    for(let e = el; e; e = e.offsetParent){ x += e.offsetLeft; y += e.offsetTop; }
+    return { left: x - sx, top: y - sy, width: el.offsetWidth, height: el.offsetHeight, right: x - sx + el.offsetWidth, bottom: y - sy + el.offsetHeight };
+  };
+  const L = { grade: c.br, xp: at(panel.querySelector(":scope > .rs-xp")), head: at(panel.querySelector(":scope > .rs-head")),
+    unlocked: at(panel.querySelector(":scope > .rs-unlocked")),
+    buttons: [...panel.querySelectorAll(".rs-actions button")].map(at).filter(Boolean) };
+  return L.xp ? L : null;
+}
+/* A rounded rectangle's outline, `out` px outside it, as points running
+   clockwise from the middle of its top edge; each corner is `k` short
+   steps of its arc. */
+function hfxRectLoop(r, out, rad, k){
+  const L = r.left - out, T = r.top - out, R = r.left + r.width + out, B = r.top + r.height + out;
+  const q = Math.min(rad + out, (R - L) / 2, (B - T) / 2), n = k || 3, pts = [[(L + R) / 2, T]];
+  const arc = (cx, cy, a0) => { for(let i = 1; i <= n; i++){ const a = a0 + (Math.PI / 2) * (i / n); pts.push([cx + Math.cos(a) * q, cy + Math.sin(a) * q]); } };
+  pts.push([R - q, T]); arc(R - q, T + q, -Math.PI / 2);
+  pts.push([R, B - q]); arc(R - q, B - q, 0);
+  pts.push([L + q, B]); arc(L + q, B - q, Math.PI / 2);
+  pts.push([L, T + q]); arc(L + q, T + q, Math.PI);
+  pts.push([(L + R) / 2, T]);
+  return pts;
+}
+/* Part of a loop: from the point nearest `from`, `dir` 1 clockwise or -1
+   anticlockwise, for `frac` of the way round. */
+function hfxLoopRun(loop, from, dir, frac){
+  const ring = loop.slice(0, -1), n = ring.length;
+  let best = 0, bd = Infinity;
+  ring.forEach((p, i) => { const d = Math.hypot(p[0] - from[0], p[1] - from[1]); if(d < bd){ bd = d; best = i; } });
+  const out = [], steps = Math.max(1, Math.round(n * (frac || 1)));
+  for(let s = 0; s <= steps; s++) out.push(ring[((best + dir * s) % n + n) % n]);
+  return out;
+}
+/* Gentle waves along a polyline: each long run is split into pieces, the
+   joints pushed off the line by a sine - a vine, not a ruler. */
+function hfxWavy(pts, step, amp){
+  const out = [pts[0]];
+  for(let i = 1; i < pts.length; i++){
+    const a = pts[i - 1], b = pts[i], len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const n = Math.max(1, Math.round(len / step)), nx = -(b[1] - a[1]) / (len || 1), ny = (b[0] - a[0]) / (len || 1);
+    for(let j = 1; j <= n; j++){
+      const f = j / n, w = j < n ? Math.sin((out.length) * 1.7) * amp : 0;
+      out.push([a[0] + (b[0] - a[0]) * f + nx * w, a[1] + (b[1] - a[1]) * f + ny * w]);
     }
-    hfxMk(scr, "i", "hfx-sf-core", { left: pc.x + "px", top: pc.y + "px", "--t": .05 });
   }
-  if(bx){
-    hfxMk(bx, "i", "hfx-sf-glow", { left: (c.p.x + c.p.w / 2) + "px", top: (c.p.y + c.p.h / 2) + "px", "--t": .05 });
-    hfxLitText(bx, c, { mode: "flash", color: "#F4F8FF", glow: "#9DB8FF", dl: .1, dur: 2.4 });
-    if(c.boxOnly){
-      for(let i = 0; i < 6; i++){
-        const sx = c.p.x + c.p.w * hfxR(.2, .8), sy = c.p.y + c.p.h * .5, a = hfxR(-Math.PI + .3, -.3), len = c.bh * .7;
-        const w = hfxMk(bx, "span", "hfx-mt", { left: sx + "px", top: sy + "px", "--ra": (a * 180 / Math.PI).toFixed(1) + "deg" });
-        const m = hfxMk(w, "i", "hfx-mt-run", { "--ml": len + "px", "--dist": (c.bw * .8 + len) + "px", "--t": .25 + i * .35, "--d": .9 });
-        m.style.backgroundImage = hfxMeteorURL(cols[i % cols.length]);
-      }
-    }
+  return out;
+}
+/* GROWS A LINE ALONG A POLYLINE: one box per straight piece, turned to
+   its heading once and drawn out from its start (scaleX - a transform),
+   each piece starting as the one before it finishes, at `speed` px/s.
+   Returns when each point was reached, for whatever follows the tip.
+   o.th (thickness, or [start, end] to taper), o.cls, o.vars. */
+function hfxGrowLine(parent, pts, t0, speed, o){
+  o = o || {};
+  const times = [t0];
+  let t = t0, total = 0;
+  for(let i = 1; i < pts.length; i++) total += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+  let run = 0;
+  for(let i = 1; i < pts.length; i++){
+    const a = pts[i - 1], b = pts[i], len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    if(len < .5){ times.push(t); continue; }
+    const f0 = run / (total || 1); run += len;
+    const th = Array.isArray(o.th) ? o.th[0] + (o.th[1] - o.th[0]) * f0 : (o.th || 3);
+    const d = len / speed;
+    hfxMk(parent, "i", "hfx-seg " + (o.cls || ""), Object.assign({ left: a[0] + "px", top: (a[1] - th / 2) + "px", width: (len + th * .6) + "px", height: th + "px",
+      "--sa": (Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI).toFixed(2) + "deg", "--gt": t, "--gd": d, "--sh": th / 2 + "px" }, o.vars || {}));
+    t += d; times.push(t);
   }
+  return times;
+}
+/* A light that runs along a polyline (a comet head, a pulse of sap):
+   one sprite, moved through the points by the Web Animations API, with
+   each point reached in proportion to the distance - a transform, so the
+   compositor runs it. */
+function hfxRunner(parent, pts, t0, speed, url, size, cls, fade){
+  const el = hfxPiece(parent, "hfx-runner " + (cls || ""), url, 0, 0, size);
+  let total = 0; const cum = [0];
+  for(let i = 1; i < pts.length; i++){ total += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); cum.push(total); }
+  const dur = Math.max(.05, total / speed);
+  const frames = pts.map((p, i) => ({ transform: "translate(" + p[0].toFixed(1) + "px," + p[1].toFixed(1) + "px)", offset: total ? cum[i] / total : i / (pts.length - 1) }));
+  try{
+    el.animate(frames, { duration: dur * 1000, delay: t0 * 1000, fill: "both", easing: "linear" });
+    el.animate([{ opacity: 0 }, { opacity: 1, offset: .04 }, { opacity: 1, offset: fade ? .8 : .97 }, { opacity: 0 }], { duration: dur * 1000, delay: t0 * 1000, fill: "both" });
+  }catch(e){}
+  return t0 + dur;
 }
 
-/* -- AURORA: curtains of light unfurl up out of the box's top edge and
-   sway, green into teal into violet, with stars coming out above them.
-   Each curtain is one tall image: it opens upward (scaleY from its
-   foot), sways (skewX) and fades - three transforms and an opacity. -- */
-const HFX_AURORA = [["#5CFFB0", "#3BC8FF"], ["#7CFFCB", "#B47CFF"], ["#4DFFD2", "#5C8CFF"], ["#B6FF7C", "#3BFFC0"], ["#FF7CD8", "#7C8CFF"]];
-function hfxRibbonURL(c1, c2){
-  return hfxSprite("ab" + c1 + c2, () => {
-    const rnd = bnRand(c1.charCodeAt(2) * 7 + 3);
-    let wave = "M0 390";
-    for(let x = 0; x <= 120; x += 10) wave += " Q" + (x + 5) + " " + (380 + rnd() * 20).toFixed(1) + " " + (x + 10) + " " + (386 + rnd() * 10).toFixed(1);
-    let stri = "";
-    for(let i = 0; i < 16; i++){ const x = 4 + i * 7.3 + rnd() * 3, h = 160 + rnd() * 200; stri += '<rect x="' + x.toFixed(1) + '" y="' + (392 - h).toFixed(1) + '" width="' + (1 + rnd() * 2.4).toFixed(1) + '" height="' + h.toFixed(1) + '" fill="url(#s)" opacity="' + (.25 + rnd() * .45).toFixed(2) + '"/>'; }
-    return 'viewBox="0 0 130 400"><defs><linearGradient id="b" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="' + c1 + '" stop-opacity=".95"/><stop offset=".22" stop-color="' + c1 + '" stop-opacity=".55"/>' +
-      '<stop offset=".55" stop-color="' + c2 + '" stop-opacity=".3"/><stop offset="1" stop-color="' + c2 + '" stop-opacity="0"/></linearGradient>' +
-      '<linearGradient id="s" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset=".5" stop-color="' + c1 + '" stop-opacity=".5"/><stop offset="1" stop-color="' + c2 + '" stop-opacity="0"/></linearGradient></defs>' +
-      '<path d="' + wave + ' L130 0 L0 0 Z" fill="url(#b)"/>' + stri + '<path d="' + wave + '" fill="none" stroke="#EFFFF8" stroke-opacity=".75" stroke-width="2.4"/></svg>';
-  }, 900);
-}
-function hfxAurora(scr, bx, c){
-  const pal = c.palette ? c.palette.map((x, i, a) => [x, a[(i + 1) % a.length]]) : HFX_AURORA;
-  const r = c.br;
-  if(scr){
-    const n = c.vw < 600 ? 4 : 5, H = Math.max(220, r.top - 6);
-    for(let i = 0; i < n; i++){
-      const w = r.width * hfxR(.5, .72), x = r.left + r.width * (i + .5) / n + hfxR(-14, 14);
-      const el = hfxMk(scr, "span", "hfx-ab", { left: (x - w / 2) + "px", top: (r.top + 8 - H) + "px", width: w + "px", height: H + "px", "--t": .1 + i * .22 });
-      const inner = hfxMk(el, "i", "hfx-ab-sway", { "--sk": hfxR(4, 8).toFixed(1) + "deg", "--sw": hfxR(1.4, 1.9) });
-      inner.style.backgroundImage = hfxRibbonURL(pal[i % pal.length][0], pal[i % pal.length][1]);
-    }
-    hfxMk(scr, "i", "hfx-ab-ground", { left: (r.left + r.width / 2) + "px", top: r.top + "px", "--gw": (r.width * 1.05) + "px" });
-    for(let i = 0; i < (c.vw < 600 ? 12 : 16); i++){
-      hfxPiece(scr, "hfx-glint", hfxGlintURL(), hfxR(.05, .95) * c.vw, hfxR(.05, .9) * Math.max(80, r.top - 60), hfxR(8, 16), { "--t": 1.1 + hfxR(0, 1.6), "--d": hfxR(2.2, 2.9) });
-    }
-  }
-  if(bx){
-    hfxMk(bx, "i", "hfx-ab-edge", { "--c": pal[0][0], "--c2": pal[1][1] });
-    hfxLitText(bx, c, { mode: "flash", color: "#EFFFF8", glow: pal[0][0], dl: .7, dur: 2.6 });
-    if(c.boxOnly){
-      for(let i = 0; i < 3; i++){
-        const w = c.bw * .38, el = hfxMk(bx, "span", "hfx-ab", { left: (c.bw * (.2 + i * .3) - w / 2) + "px", top: "0px", width: w + "px", height: c.bh + "px", "--t": .1 + i * .25 });
-        hfxMk(el, "i", "hfx-ab-sway", { "--sk": "6deg", "--sw": 1.5 }).style.backgroundImage = hfxRibbonURL(pal[i][0], pal[i][1]);
-      }
-    }
-  }
+/* ATTACHED WHEN THEY ARE DUE, NOT ALL AT ONCE. The World Tree on the
+   results screen is ~400 pieces, and putting every one into the page in
+   the first frame - each with its own style and animation to set up - was
+   a third of a second's stall at 4x CPU, then each of them ticking for
+   seconds before it had anything to show. Each direct child of `roots`
+   whose first piece starts after `lead` seconds is taken out and put back
+   a beat before it is due, with every start time inside it moved earlier
+   by exactly that much - so nothing moves on the clock, it simply does not
+   exist until it is needed. */
+const HFX_DELAY_VARS = ["--gt", "--bt", "--t"];
+function hfxStagger(roots, lead){
+  lead = lead == null ? .5 : lead;
+  const startOf = el => { let m = Infinity;
+    [el].concat([...el.querySelectorAll("*")]).forEach(e => HFX_DELAY_VARS.forEach(k => { const v = parseFloat(e.style.getPropertyValue(k)); if(v === v) m = Math.min(m, v); }));
+    return m; };
+  roots.forEach(root => {
+    [...root.children].forEach(ch => {
+      const t = startOf(ch);
+      if(!(t > lead + .1) || t === Infinity) return;
+      const shift = Math.max(0, t - lead);
+      [ch].concat([...ch.querySelectorAll("*")]).forEach(e => HFX_DELAY_VARS.forEach(k => {
+        const v = parseFloat(e.style.getPropertyValue(k)); if(v === v) e.style.setProperty(k, (Math.round((v - shift) * 1000) / 1000) + "s"); }));
+      const mark = document.createComment("");
+      root.replaceChild(mark, ch);
+      setTimeout(() => { if(mark.parentNode) mark.parentNode.replaceChild(ch, mark); }, shift * 1000);
+    });
+  });
 }
 
-/* -- GALAXY: a spiral galaxy spins up out of the 100% - born as a point
-   of light on the number, turning and opening out until its arms sweep
-   the whole screen, a second, fainter one counter-turning inside it,
-   and stars flung off along the spiral. The galaxy is one image, drawn
-   once at the size it ends at, so growing it never re-rasterises it. -- */
-function hfxGalaxyURL(a, b){
-  return hfxSprite("gx" + a + b, () => {
-    const rnd = bnRand(a.charCodeAt(1) * 13 + b.charCodeAt(2));
-    let s = '<defs><radialGradient id="c"><stop offset="0" stop-color="#fff"/><stop offset=".18" stop-color="' + a + '" stop-opacity=".8"/><stop offset=".55" stop-color="' + b + '" stop-opacity=".18"/><stop offset="1" stop-color="' + b + '" stop-opacity="0"/></radialGradient></defs>' +
-      '<circle r="46" fill="url(#c)"/>';
+/* ============ WORLD TREE, ON THE SCREEN IT IS PLAYING ON ============
+   "Tree one needs to be better, cooler, the tree one could kinda adapt
+   to the rest of the screen." It reads the results screen's own cards and
+   grows round THEM: a trunk out of the 100% box splits under the XP card,
+   the two limbs run along its bottom edge, curl round its corners and
+   climb its sides in the margins, branching out into the gaps and
+   flowering there, curl over its top corners and meet over it, and a
+   crown breaks out above, over the header. Roots go down from the box
+   round the buttons and, where there is room below (an iPad), spread into
+   it. Sap pulses up both limbs into the crown; leaves unfurl, blossoms
+   open, fireflies come out and petals blow off in the wind.
+   Everything is laid out once, from the rects, and only drawn out
+   (scaleX / scale) and faded - no geometry per frame. */
+function hfxTreeOnScreen(scr, c, L){
+  const cols = c.palette || HFX_BLOOM, small = c.vw < 600, sp = small ? 520 : 640;
+  const G = L.grade, X = L.xp, out = Math.min(7, Math.max(3, X.left / 5));
+  const tot = HUNDO_FX_TOTAL.worldtree / 1000;
+  const g = hfxMk(scr, "span", "hfx-tree", { "--tot": tot });
+  const leaf = hfxLeafURL(), bloomAt = (x, y, s, t, i) => hfxPiece(g, "hfx-bloom2", hfxBlossomURL(i % 4), x, y, s, { "--bt": t, "--r0": hfxR(-70, -30).toFixed(0) + "deg" });
+  const leafAt = (x, y, ang, t, s) => hfxPiece(g, "hfx-leaf2", leaf, x, y, s, { "--lr": ang.toFixed(0) + "deg", "--bt": t });
+  hfxMk(scr, "i", "hfx-ground", { left: (G.left + G.width / 2) + "px", top: G.top + "px", "--gw": (G.width * .9) + "px" });
+  /* the trunk: out of the box's top edge, up into the gap under the XP card */
+  const cx = G.left + G.width / 2, gapY = (X.bottom + G.top) / 2;
+  const trunk = [[cx, G.top + 10], [cx, gapY + 1]];
+  const tT = hfxGrowLine(g, trunk, .1, 160, { th: small ? 16 : 20, cls: "is-wood" });
+  const t1 = tT[tT.length - 1];
+  /* the two limbs: along the XP card's bottom edge, round, up, round, over */
+  const loop = hfxRectLoop(X, out, 18, 4);
+  const limbs = [1, -1].map(dir => {
+    /* from the bottom middle, half way round to the top middle */
+    const run = hfxLoopRun(loop, [cx, X.bottom + out], dir, .5);
+    const pts = hfxWavy([[cx, gapY]].concat(run), small ? 62 : 78, small ? 2.6 : 3.4);
+    const times = hfxGrowLine(g, pts, t1, sp, { th: small ? [9, 4] : [12, 5], cls: "is-wood is-pulse" });
+    return { pts, times, dir };
+  });
+  /* along each limb: leaves unfurling, and branches out into the gaps */
+  limbs.forEach((lb, li) => {
+    lb.pts.forEach((p, i) => {
+      if(i === 0 || i === lb.pts.length - 1) return;
+      const q = lb.pts[i + 1] || p, a = Math.atan2(q[1] - p[1], q[0] - p[0]) * 180 / Math.PI;
+      if(i % 2) leafAt(p[0], p[1], a + (i % 4 === 1 ? -60 : 60) - 90, lb.times[i] + .05, small ? 15 : 19);
+      /* a branch out sideways into the margin, where there is one */
+      const inMargin = p[0] < X.left - 2 || p[0] > X.right + 2;
+      if(inMargin && i % 3 === 0 && p[1] > X.top + 30 && p[1] < X.bottom - 20){
+        const side = p[0] < X.left ? -1 : 1, room = side < 0 ? X.left - out : c.vw - X.right - out;
+        const blen = Math.max(14, Math.min(room - 6, small ? 34 : 50));
+        const tip = [p[0] + side * blen * .8, p[1] - blen * .7];
+        hfxGrowLine(g, [p, tip], lb.times[i] + .05, 220, { th: [4, 2], cls: "is-wood" });
+        bloomAt(tip[0], tip[1], small ? 34 : 42, lb.times[i] + .3, i + li);
+      }
+    });
+    /* each corner of the card flowers as the limb passes it */
+    [X.left, X.right].forEach(xc => [X.top, X.bottom].forEach(yc => {
+      let bi = 0, bd = Infinity;
+      lb.pts.forEach((p, i) => { const d = Math.hypot(p[0] - xc, p[1] - yc); if(d < bd){ bd = d; bi = i; } });
+      if(bd < 40) bloomAt(lb.pts[bi][0], lb.pts[bi][1], small ? 40 : 50, lb.times[bi] + .2, bi + 2);
+    }));
+  });
+  /* the crown: where the limbs meet over the card, breaking out over the header */
+  const tMeet = Math.max(limbs[0].times[limbs[0].times.length - 1], limbs[1].times[limbs[1].times.length - 1]);
+  const crownY = X.top - out;
+  const room = Math.max(60, crownY - 8);
+  const crown = hfxTree(g, cx, crownY + 2, { maxD: 3, len: Math.min(room * .5, small ? 84 : 112), th: small ? 9 : 12, wide: 1.6, pulse: true, inner: true,
+    trunkDur: .45, t0: tMeet - .5, bloom: small ? 20 : 25, palette: c.palette, tot });
+  /* and a smaller one off each top corner, leaning out */
+  [X.left - out, X.right + out].forEach((x, k) => {
+    const tc = limbs[k === 0 ? 1 : 0].times[Math.round(limbs[0].times.length * .72)] || tMeet;
+    const t = hfxTree(g, x, X.top + 6, { maxD: 2, len: Math.min(room * .3, small ? 52 : 70), th: small ? 5 : 7, wide: 1.2, trunkDur: .35, t0: tc, bloom: small ? 14 : 18, palette: c.palette, tot });
+    t.group.style.setProperty("transform-origin", x + "px " + (X.top + 6) + "px");
+    t.group.style.setProperty("rotate", (k === 0 ? -24 : 24) + "deg");
+  });
+  /* sap: a light up each limb into the crown, once they have grown */
+  const sap = hfxFireflyURL();
+  limbs.forEach(lb => hfxRunner(g, lb.pts, tMeet + .1, sp * 1.4, sap, small ? 22 : 28, "is-sap", true));
+  /* roots: from the box's bottom corners, down round the buttons */
+  const B = L.buttons;
+  if(B.length){
+    const bl = B[0], brt = B[B.length - 1], below = c.vh - Math.max(bl.bottom, brt.bottom);
+    [[G.left + 16, -1, bl], [G.right - 16, 1, brt]].forEach(([x0, side, btn]) => {
+      const bx = side < 0 ? btn.left - 4 : btn.right + 4;
+      const pts = hfxWavy([[x0, G.bottom - 6], [x0 + side * 4, G.bottom + 4], [bx, btn.top + btn.height * .5], [bx + side * 2, btn.bottom + 6],
+        [side < 0 ? btn.left + btn.width * .4 : btn.right - btn.width * .4, btn.bottom + 10]], 30, 2);
+      const times = hfxGrowLine(g, pts, t1 + .1, 300, { th: [7, 2.5], cls: "is-root" });
+      bloomAt(pts[pts.length - 1][0], pts[pts.length - 1][1], small ? 26 : 32, times[times.length - 1] + .1, side < 0 ? 1 : 3);
+      /* room below (an iPad): the roots spread down into it, glowing */
+      if(below > 140){
+        const r = hfxTree(g, side < 0 ? btn.left + btn.width * .3 : btn.right - btn.width * .3, btn.bottom + 8,
+          { maxD: 3, len: Math.min(below * .32, 90), th: 5, wide: 1.4, trunkDur: .4, t0: times[times.length - 1], bloom: 12, palette: ["#FFD27A", "#FFE1EE", "#FFB3D1", "#C8FF5A"], tot });
+        r.group.style.setProperty("transform-origin", (side < 0 ? btn.left + btn.width * .3 : btn.right - btn.width * .3) + "px " + (btn.bottom + 8) + "px");
+        r.group.style.setProperty("scale", "1 -1");
+        r.group.classList.add("is-roots");
+      }
+    });
+  }
+  /* fireflies among the crown, and petals off it in the wind */
+  const fl = hfxFireflyURL(), tips = crown.tips;
+  for(let i = 0; i < (small ? 10 : 14); i++){
+    const tp = tips[(i * 3) % tips.length] || { x: cx, y: crownY }, j = () => hfxR(-70, 70);
+    hfxPiece(scr, "hfx-firefly", fl, i % 3 ? tp.x : hfxR(.05, .95) * c.vw, i % 3 ? tp.y : hfxR(X.top, X.bottom), hfxR(16, 26), { "--x1": j() + "px", "--y1": j() + "px", "--x2": j() + "px", "--y2": j() + "px", "--x3": j() + "px", "--y3": (j() - 30) + "px",
+      "--t": tMeet + .2 + hfxR(0, 1.6), "--d": hfxR(3.2, 4) });
+  }
+  const wind = Math.random() < .5 ? -1 : 1;
+  tips.forEach((tp, i) => {
+    if(i % 2) return;
+    hfxPiece(scr, "hfx-petal2", hfxPetalURL(cols[i % cols.length]), tp.x, tp.y, hfxR(10, 15), { "--w": (wind * hfxR(.25, .55) * c.vw) + "px", "--f": (hfxR(.35, .6) * c.vh) + "px",
+      "--t": tp.t + hfxR(.5, 1.8), "--d": hfxR(3, 3.8) });
+  });
+  hfxMk(scr, "i", "hfx-tree-halo", { left: cx + "px", top: Math.max(c.vh * .12, crownY - room * .4) + "px", "--hs": (Math.min(c.vw * 1.3, c.vh * .8)) + "px" });
+  hfxStagger([g, scr]);
+}
+
+/* ============ BUBBLES, LIQUID GLASS ============
+   "The bubbles could be so much cooler, ensure that behind the bubbles
+   and stuff you can see through them like Liquid Glass too." The big ones
+   are GLASS: each is a round window with backdrop-filter, so the results
+   screen is seen through it softened, brightened and saturated, under a
+   bright rim, a specular highlight and a film of colour turning round its
+   edge. Glass is the expensive kind, so only the heroes are glass (6 on
+   a phone, 9 on a tablet) and everything else is a sprite. They bud off
+   the box's top edge - no giant bubble out of the number - and swirl
+   out across the screen at three depths, merge, pop in chains with a
+   ring and droplets, and end on a flourish: a ring of bubbles thrown out
+   of the box all at once, popping together in a halo of rainbow rings.
+   A glass bubble is never given an opacity below 1 except while it fades
+   in or out: an ancestor with opacity < 1 becomes the backdrop's root and
+   the glass would see nothing through it. */
+function hfxGlassBubble(parent, o){
+  const p = hfxMk(parent, "span", "hfx-gb" + (o.pop ? " is-pop" : ""), { left: o.x + "px", top: o.y + "px", "--sz": o.sz + "px", "--d": o.d, "--dl": o.dl,
+    "--mx": o.mx + "px", "--my": o.my + "px", "--ex": o.ex + "px", "--ey": o.ey + "px", "--h": o.h, "--sp": (o.spin || 160) + "deg" });
+  const pw = o.pop ? hfxMk(p, "i", "hfx-bb-popw") : p;
+  const w = hfxMk(pw, "i", "hfx-bb-wob");
+  hfxMk(w, "i", "hfx-glass");
+  hfxMk(w, "i", "hfx-bb-film").style.backgroundImage = hfxFilmURL(o.h);
+  hfxMk(w, "i", "hfx-bb-film is-shift").style.backgroundImage = hfxFilmURL(o.h + 150);
+  hfxMk(w, "i", "hfx-bb-shell").style.backgroundImage = hfxHeroShellURL();
+  return p;
+}
+function hfxBubblesGlass(scr, c){
+  const hues = [190, 280, 320, 150, 45, 230], small = c.vw < 600, r = c.br;
+  const src = () => ({ x: r.left + r.width * hfxR(.1, .9), y: r.top + hfxR(2, 16) });
+  const route = (a, dist, swirl) => {
+    const dx = Math.cos(a), dy = Math.sin(a), px = -dy * swirl, py = dx * swirl;
+    return { mx: dx * dist * .42 + px * dist * hfxR(.14, .28), my: dy * dist * .42 + py * dist * hfxR(.14, .28),
+             ex: dx * dist + px * dist * hfxR(0, .1), ey: dy * dist + py * dist * hfxR(0, .1) };
+  };
+  const far = (s, a, k) => Math.max(160, hfxToEdge(c, s.x, s.y, a) * k);
+  const glass = typeof CSS !== "undefined" && CSS.supports && (CSS.supports("backdrop-filter", "blur(2px)") || CSS.supports("-webkit-backdrop-filter", "blur(2px)"));
+  /* the far layer: small, faint, slow */
+  for(let i = 0; i < (small ? 12 : 16); i++){
+    const s = src(), a = hfxR(-Math.PI + .1, -.1);
+    hfxBB(scr, Object.assign({ kind: "small", x: s.x, y: s.y, sz: hfxR(8, 18), d: hfxR(2.6, 3.6), dl: .25 + (i / 16) * 2.4, h: hues[i % hues.length] }, route(a, far(s, a, hfxR(.4, .85)), Math.random() < .5 ? 1 : -1)));
+  }
+  /* the heroes: glass, spread over the upper half-circle */
+  const nH = small ? 6 : 9, pops = [];
+  for(let i = 0; i < nH; i++){
+    const s = src(), a = -Math.PI + Math.PI * (i + .5) / nH + hfxR(-.16, .16);
+    const sz = small ? hfxR(76, 116) : hfxR(104, 160);
+    const pop = i % 3 === 1;
+    const d = pop ? hfxR(2.9, 3.3) : hfxR(4.2, 4.9), dl = .2 + i * .17;
+    const rt = route(a, far(s, a, pop ? hfxR(.5, .65) : hfxR(.8, 1)), i % 2 ? 1 : -1);
+    const o = Object.assign({ x: s.x, y: s.y, sz, d, dl, h: hues[i % hues.length], pop, spin: (i % 2 ? 1 : -1) * hfxR(150, 230) }, rt);
+    if(glass) hfxGlassBubble(scr, o); else hfxBB(scr, Object.assign({ kind: "hero" }, o));
+    if(pop) pops.push({ x: s.x + rt.ex, y: s.y + rt.ey, t: dl + d, sz });
+  }
+  /* mids, sprites, outward (a few sideways) */
+  for(let i = 0; i < (small ? 8 : 12); i++){
+    const s = src(), a = i % 4 === 3 ? (Math.random() < .5 ? hfxR(-.25, .15) : hfxR(Math.PI - .15, Math.PI + .25)) : hfxR(-Math.PI + .05, -.05);
+    hfxBB(scr, Object.assign({ kind: "mid", x: s.x, y: s.y, sz: small ? hfxR(26, 48) : hfxR(32, 60), d: hfxR(2.6, 3.4), dl: hfxR(.3, 1.8), h: hues[i % hues.length] },
+      route(a, far(s, a, hfxR(.5, .9)), Math.random() < .5 ? 1 : -1)));
+  }
+  /* chains: two mids meet each popping hero where it bursts */
+  pops.forEach((q, j) => {
     for(let k = 0; k < 2; k++){
-      for(let j = 0; j < 110; j++){
-        const r = 6 + j * .84, th = k * Math.PI + r * .062 + (rnd() - .5) * .22, rr = r + (rnd() - .5) * 5;
-        const x = Math.cos(th) * rr, y = Math.sin(th) * rr;
-        if(j % 2 === 0) s += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + (4 + r * .07).toFixed(1) + '" fill="' + (j % 4 ? a : b) + '" fill-opacity=".13"/>';
-        s += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + (.5 + rnd() * 1.5).toFixed(2) + '" fill="' + (rnd() < .5 ? "#fff" : (j % 2 ? a : b)) + '" fill-opacity="' + (.5 + rnd() * .5).toFixed(2) + '"/>';
-      }
+      const s = src(), T = q.t + .14 * (k + 1), dl = hfxR(.3, .7), d = Math.max(1.6, T - dl);
+      const tx = q.x + hfxR(-1, 1) * q.sz * .8, ty = q.y + hfxR(-1, 1) * q.sz * .6, ex = tx - s.x, ey = ty - s.y, sz = hfxR(24, 40);
+      hfxBB(scr, { kind: "mid", pop: true, x: s.x, y: s.y, sz, d, dl, h: hues[(j + k * 2) % hues.length], mx: ex * .42 + hfxR(-50, 50), my: ey * .42, ex, ey });
+      hfxSpray(scr, tx, ty, sz, T, k === 1);
     }
-    return 'viewBox="-100 -100 200 200">' + s + '</svg>';
-  }, 1024);
+    hfxSpray(scr, q.x, q.y, q.sz * .8, q.t, true);
+  });
+  /* two pairs meet and merge */
+  for(let m = 0; m < 2; m++){
+    const a = m ? hfxR(-2.6, -2) : hfxR(-1.1, -.5), sA = src(), sB = src();
+    const P = { x: sA.x + Math.cos(a) * 170, y: sA.y + Math.sin(a) * 210 }, d = hfxR(3.3, 3.8), dl = .5 + m * .5, h = hues[(m * 3 + 1) % hues.length];
+    const endD = far(P, a, .9);
+    hfxBB(scr, { kind: "mid", merge: "a", x: sA.x, y: sA.y, sz: small ? 44 : 54, d, dl, h, mx: P.x - sA.x, my: P.y - sA.y, ex: P.x - sA.x + Math.cos(a) * endD, ey: P.y - sA.y + Math.sin(a) * endD });
+    hfxBB(scr, { kind: "mid", merge: "b", x: sB.x, y: sB.y, sz: small ? 36 : 44, d, dl, h: h + 40, mx: P.x - sB.x, my: P.y - sB.y, ex: P.x - sB.x, ey: P.y - sB.y });
+  }
+  /* THE FLOURISH: a ring of bubbles thrown out of the box at once, popping
+     together into a halo of rainbow rings */
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2, nF = small ? 9 : 12, TF = 3.5, R = Math.min(c.vw * .42, small ? 170 : 300);
+  for(let i = 0; i < nF; i++){
+    const a = -Math.PI / 2 + (i / nF) * Math.PI * 2, ex = Math.cos(a) * R, ey = Math.sin(a) * R * .8, sz = small ? 30 : 40;
+    hfxBB(scr, { kind: "mid", pop: true, x: cx, y: cy, sz, d: .9, dl: TF - .9, h: hues[i % hues.length], mx: ex * .55, my: ey * .55, ex, ey });
+    hfxSpray(scr, cx + ex, cy + ey, sz, TF, true);
+  }
+  hfxMk(scr, "i", "hfx-bub-halo", { left: cx + "px", top: cy + "px", "--hr": (R * 2.4) + "px", "--t": TF - .05 }).style.backgroundImage = hfxRingURL();
 }
-function hfxGalaxy(scr, bx, c){
-  if(scr){
-    const pc = hfxPctAt(c), base = c.vw < 600 ? 520 : 680;
-    const reach = Math.max(Math.hypot(pc.x, pc.y), Math.hypot(c.vw - pc.x, pc.y), Math.hypot(pc.x, c.vh - pc.y), Math.hypot(c.vw - pc.x, c.vh - pc.y));
-    const gs = Math.min(1.9, (reach * 1.7) / base);
-    hfxPiece(scr, "hfx-gx", hfxGalaxyURL("#9FB4FF", "#FF8FD8"), pc.x, pc.y, base, { "--gs": gs.toFixed(2), "--gr": "-210deg", "--t": .05, "--d": 4.4 });
-    hfxPiece(scr, "hfx-gx is-inner", hfxGalaxyURL("#FFD27A", "#8FE8FF"), pc.x, pc.y, base * .7, { "--gs": (gs * .62).toFixed(2), "--gr": "150deg", "--t": .2, "--d": 4 });
-    hfxMk(scr, "i", "hfx-sf-core", { left: pc.x + "px", top: pc.y + "px", "--t": .02 });
-    const n = c.vw < 600 ? 14 : 18;
-    for(let i = 0; i < n; i++){
-      const o = hfxMk(scr, "span", "hfx-gx-orb", { left: pc.x + "px", top: pc.y + "px", "--a0": (i / n * 360).toFixed(0) + "deg", "--spin": (-hfxR(160, 280)).toFixed(0) + "deg", "--t": .3 + hfxR(0, .9), "--d": hfxR(2.8, 3.6) });
-      const arm = hfxMk(o, "i", "hfx-gx-arm", { "--R": (reach * hfxR(.45, .95)) + "px" });
-      hfxPiece(arm, "hfx-gx-star", hfxGlintURL(), 0, 0, hfxR(10, 20));
-    }
+
+/* ============ CANDIDATES FOR THE FIRST RUNG, ROUND TWO ============
+   "We need a better first." Three, each from the box and out across the
+   screen, each a clear step below World Tree, Bubbles and the UFO. */
+const HFX_NEON = ["#2EF2FF", "#FF3DCB", "#FFD23F", "#7CFF4F"];
+/* -- NEON TRAILS: light-trails race out of the 100% box and trace every
+   card on the screen - the box first, both ways round, then up to the
+   XP card and round it, down round the buttons, and out to the screen's
+   own edge - each a comet with a neon trail; then everything they drew
+   flares at once and fades. -- */
+function hfxNeonTrails(scr, bx, c){
+  const L = hfxLayout(c), cols = c.palette || HFX_NEON, small = c.vw < 600, sp = small ? 900 : 1150;
+  if(scr && L){
+    const G = L.grade, X = L.xp, head = hfxGlintURL();
+    const trail = (pts, t0, col, th) => {
+      const times = hfxGrowLine(scr, pts, t0, sp, { th: th || 3, cls: "is-neon", vars: { "--c": col } });
+      hfxRunner(scr, pts, t0, sp, head, small ? 26 : 32, "is-comet", false).toString();
+      return times[times.length - 1];
+    };
+    const gl = hfxRectLoop(G, 4, 18, 3), top = [G.left + G.width / 2, G.top - 4];
+    const tA = trail(hfxLoopRun(gl, top, 1, .5), .1, cols[0]);
+    trail(hfxLoopRun(gl, top, -1, .5), .1, cols[1]);
+    /* up from the box's top corners to the XP card and round it, both ways */
+    const xl = hfxRectLoop(X, 5, 18, 3), gap = (X.bottom + G.top) / 2;
+    [[G.left + 14, -1, cols[2]], [G.right - 14, 1, cols[3]]].forEach(([x0, dir, col], k) => {
+      const start = [x0, G.top - 4], up = [x0, X.bottom + 5];
+      const run = hfxLoopRun(xl, up, dir > 0 ? -1 : 1, .5);
+      trail([start, [x0, gap]].concat(run), .35 + k * .05, col);
+    });
+    /* down round each button */
+    L.buttons.forEach((b, k) => {
+      const bl = hfxRectLoop(b, 4, b.height / 2, 3), s = [b.left + b.width / 2, G.bottom + 4];
+      trail([s, [s[0], b.top - 4]].concat(hfxLoopRun(bl, [s[0], b.top - 4], k ? -1 : 1, 1)), .45 + k * .1, cols[(k + 1) % cols.length], 2.5);
+    });
+    /* out to the edge of the screen, and round it */
+    const frame = hfxRectLoop({ left: 6, top: 6, width: c.vw - 12, height: c.vh - 12, right: c.vw - 6, bottom: c.vh - 6 }, 0, small ? 44 : 30, 4);
+    const tEdge = 1.25;
+    [[1, cols[0]], [-1, cols[1]]].forEach(([dir, col]) => trail([[c.vw / 2, X.top - 5], [c.vw / 2, 6]].concat(hfxLoopRun(frame, [c.vw / 2, 6], dir, .5)), tEdge, col, 3.5));
+    /* the header, underlined */
+    if(L.head) trail([[L.head.left, L.head.bottom + 6], [L.head.right, L.head.bottom + 6]], 1.1, cols[2], 2);
+    /* and then everything flares together, and fades */
+    scr.style.setProperty("--flare", "3.05s");
   }
   if(bx){
-    hfxMk(bx, "i", "hfx-sf-glow", { left: (c.p.x + c.p.w / 2) + "px", top: (c.p.y + c.p.h / 2) + "px", "--t": .02 });
-    hfxLitText(bx, c, { mode: "flash", color: "#F4F0FF", glow: "#B49CFF", dl: .15, dur: 2.6 });
-    if(c.boxOnly) hfxPiece(bx, "hfx-gx", hfxGalaxyURL("#9FB4FF", "#FF8FD8"), c.p.x + c.p.w / 2, c.p.y + c.p.h / 2, c.bw * .8, { "--gs": "1.3", "--gr": "-200deg", "--t": .1, "--d": 3.4 });
+    hfxMk(bx, "i", "hfx-neon-inner", { "--c": cols[0], "--c2": cols[1] });
+    hfxLitText(bx, c, { mode: "sweep", color: "#FFFFFF", glow: cols[0], dl: .5, dur: 1 });
+    hfxLitText(bx, c, { mode: "sweep", color: "#FFFFFF", glow: cols[1], dl: 3, dur: 1 });
+    if(c.boxOnly){
+      const loop = hfxRectLoop({ left: 4, top: 4, width: c.bw - 8, height: c.bh - 8 }, 0, 10, 3);
+      [[1, cols[0]], [-1, cols[1]]].forEach(([dir, col], k) => {
+        const pts = hfxLoopRun(loop, [c.bw / 2, 4], dir, .5);
+        hfxGrowLine(bx, pts, .2, 300, { th: 2.5, cls: "is-neon", vars: { "--c": col } });
+        hfxRunner(bx, pts, .2, 300, hfxGlintURL(), 18, "is-comet", false);
+      });
+    }
+  }
+}
+
+/* -- PARTY POPPERS: a popper at each top corner of the box kicks and
+   bangs, firing streamers that uncurl as they fly and paper confetti that
+   tumbles and flutters down the whole screen, with a second, smaller pop
+   from the middle; a puff of smoke at each mouth. -- */
+const HFX_PARTY = ["#FF4D6D", "#FFD23F", "#2EC4FF", "#7CFF4F", "#B47CFF", "#FF8A3D"];
+function hfxPopperURL(){
+  return hfxSprite("popper", () => 'viewBox="0 0 60 80"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8E2DE2"/><stop offset=".5" stop-color="#FF4FB8"/><stop offset="1" stop-color="#8E2DE2"/></linearGradient></defs>' +
+    '<path d="M30 78 L6 8 Q30 0 54 8 Z" fill="url(#g)"/><path d="M14 30 L46 30 M11 50 L44 46 M18 66 L40 62" stroke="#FFD23F" stroke-width="4" stroke-linecap="round"/><ellipse cx="30" cy="8" rx="24" ry="6" fill="#FFE9F6"/></svg>', 160);
+}
+function hfxStreamerURL(col, k){
+  return hfxSprite("st" + col + k, () => {
+    let d = "M4 4";
+    for(let i = 1; i <= 9; i++) d += " Q" + (i % 2 ? 22 : -14) + " " + (i * 18 - 9) + " 4 " + (i * 18);
+    return 'viewBox="-20 0 50 170"><path d="' + d + '" fill="none" stroke="' + col + '" stroke-width="5" stroke-linecap="round"/><path d="' + d + '" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="1.5" stroke-linecap="round"/></svg>';
+  }, 220);
+}
+function hfxPartyPoppers(scr, bx, c){
+  const cols = c.palette || HFX_PARTY, small = c.vw < 600, r = c.br;
+  const guns = [{ x: r.left + 18, y: r.top + 4, a: -125, t: .25 }, { x: r.left + r.width - 18, y: r.top + 4, a: -55, t: .45 }, { x: r.left + r.width / 2, y: r.top + 2, a: -90, t: 1.4, small: true }];
+  if(scr){
+    guns.forEach((gn, gi) => {
+      const ps = gn.small ? (small ? 30 : 38) : (small ? 44 : 56);
+      const pop = hfxPiece(scr, "hfx-popper", hfxPopperURL(), gn.x, gn.y, ps, { "--pa": (gn.a + 90) + "deg", "--t": gn.t - .25 });
+      pop.style.height = (ps * 1.33) + "px"; pop.style.marginTop = (-ps * 1.33) + "px";
+      hfxMk(scr, "i", "hfx-puff-smoke", { left: gn.x + "px", top: (gn.y - ps * .9) + "px", "--t": gn.t });
+      const nS = gn.small ? 3 : (small ? 5 : 7), nC = gn.small ? (small ? 12 : 16) : (small ? 22 : 30);
+      const base = gn.a * Math.PI / 180;
+      for(let i = 0; i < nS; i++){
+        const a = base + hfxR(-.45, .45), v = hfxR(.55, .95) * (gn.small ? .7 : 1) * Math.min(c.vh * .62, gn.y - 30);
+        const el = hfxMk(scr, "span", "hfx-arc", { left: gn.x + "px", top: (gn.y - ps * .9) + "px", "--ax": (Math.cos(a) * v * .9) + "px", "--ay": (Math.sin(a) * v) + "px",
+          "--fall": (hfxR(.35, .6) * c.vh) + "px", "--t": gn.t, "--d": hfxR(3.1, 3.8) });
+        const s = hfxMk(el, "i", "hfx-streamer", { "--rot": (a * 180 / Math.PI + 90 + hfxR(-30, 30)).toFixed(0) + "deg", "--spin": hfxR(-200, 200).toFixed(0) + "deg" });
+        s.style.backgroundImage = hfxStreamerURL(cols[(i + gi) % cols.length], i % 2);
+      }
+      for(let i = 0; i < nC; i++){
+        const a = base + hfxR(-.6, .6), v = hfxR(.4, 1) * Math.min(c.vh * .65, gn.y - 20) * (gn.small ? .75 : 1);
+        const el = hfxMk(scr, "span", "hfx-arc is-paper", { left: gn.x + "px", top: (gn.y - ps * .9) + "px", "--ax": (Math.cos(a) * v * .95) + "px", "--ay": (Math.sin(a) * v) + "px",
+          "--fall": (hfxR(.4, .75) * c.vh) + "px", "--t": gn.t, "--d": hfxR(3.2, 4.2) });
+        hfxMk(hfxMk(el, "i", "hfx-flutter", { "--fw": hfxR(.5, .9) }), "i", "hfx-paper", { "--c": cols[i % cols.length], "--pw": hfxR(6, 10) + "px", "--ph": hfxR(9, 15) + "px", "--fr": hfxR(.35, .7) });
+      }
+    });
+  }
+  if(bx){
+    hfxLitText(bx, c, { mode: "flash", color: "#FFF6E0", glow: cols[1], dl: .3, dur: 2.2 });
+    guns.slice(0, 2).forEach(gn => hfxMk(bx, "i", "hfx-fw-launch", { left: (c.boxOnly ? (gn.a < -90 ? 18 : c.bw - 18) : gn.x - r.left) + "px", top: "0px", "--c": cols[0], "--t": gn.t - .2 }));
+    if(c.boxOnly){
+      for(let i = 0; i < 14; i++){
+        const a = (i % 2 ? -125 : -55) * Math.PI / 180 + hfxR(-.5, .5), v = c.bh * hfxR(.5, .9);
+        const el = hfxMk(bx, "span", "hfx-arc is-paper", { left: (i % 2 ? 14 : c.bw - 14) + "px", top: (c.bh * .45) + "px", "--ax": (Math.cos(a) * v) + "px", "--ay": (Math.sin(a) * v * .6) + "px",
+          "--fall": (c.bh * .9) + "px", "--t": .3 + (i % 2) * .2, "--d": 2.6 });
+        hfxMk(hfxMk(el, "i", "hfx-flutter", { "--fw": .6 }), "i", "hfx-paper", { "--c": cols[i % cols.length], "--pw": "5px", "--ph": "8px", "--fr": .5 });
+      }
+    }
+  }
+}
+
+/* -- HOLOGRAM: the box becomes a projector. A grid of light opens out of
+   its top edge, a hologram of the 100% rises over it, flickering and
+   slipping in slices like a signal finding itself, and a scan beam sweeps
+   the whole screen, rebuilding each card in outline as it passes. No
+   strobing: the slips are displacement, the brightness never flashes. -- */
+function hfxGridURL(){
+  return hfxSprite("grid", () => {
+    let s = '<defs><linearGradient id="f" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#7CF6FF" stop-opacity=".9"/><stop offset="1" stop-color="#7CF6FF" stop-opacity="0"/></linearGradient><mask id="m"><rect width="200" height="100" fill="url(#f)"/></mask></defs><g mask="url(#m)" stroke="#7CF6FF" stroke-width="1">';
+    for(let x = 0; x <= 200; x += 12.5) s += '<line x1="' + x + '" y1="0" x2="' + x + '" y2="100"/>';
+    for(let y = 4; y <= 100; y += 12) s += '<line x1="0" y1="' + y + '" x2="200" y2="' + y + '"/>';
+    return 'viewBox="0 0 200 100">' + s + '</g></svg>';
+  }, 512);
+}
+function hfxHologram(scr, bx, c){
+  const L = hfxLayout(c), small = c.vw < 600, r = c.br, cx = r.left + r.width / 2;
+  if(scr){
+    /* the projected plane, laid back, opening up out of the box */
+    const gw = r.width * 1.05, gh = small ? 120 : 160;
+    const plane = hfxMk(scr, "span", "hfx-holo-plane", { left: (cx - gw / 2) + "px", top: (r.top - gh) + "px", width: gw + "px", height: gh + "px" });
+    plane.style.backgroundImage = hfxGridURL();
+    hfxMk(scr, "i", "hfx-holo-cone", { left: (cx - gw / 2) + "px", top: (r.top - gh * 1.6) + "px", width: gw + "px", height: (gh * 1.6) + "px" });
+    /* the hologram: a copy of the 100%, big, in slices that slip */
+    if(c.pct){
+      const cs = getComputedStyle(c.pct), fs = parseFloat(cs.fontSize) * (small ? 1.5 : 1.7), hgt = fs * 1.05, top = r.top - gh * .55 - hgt / 2;
+      const holo = hfxMk(scr, "span", "hfx-holo", { left: (cx - 400) + "px", top: top + "px", width: "800px", height: hgt + "px" });
+      for(let k = 0; k < 4; k++){
+        const sl = hfxMk(holo, "i", "hfx-holo-slice", { "--sl": (k * 25) + "%", "--sr": (75 - k * 25) + "%", "--j": ((k % 2 ? 1 : -1) * hfxR(4, 9)).toFixed(1) + "px", "--jd": hfxR(.9, 1.4) });
+        sl.textContent = c.pct.textContent; sl.style.fontFamily = cs.fontFamily; sl.style.fontWeight = cs.fontWeight; sl.style.fontSize = fs + "px"; sl.style.lineHeight = hgt + "px";
+      }
+    }
+    /* the scan: down the whole screen, and each card rebuilt in outline as it passes */
+    const scanT = 1.5, scanD = 1.6;
+    hfxMk(scr, "i", "hfx-holo-scan", { "--vh": c.vh + "px", "--t": scanT, "--d": scanD });
+    if(L){
+      [L.head, L.xp, L.grade].concat(L.buttons).filter(Boolean).forEach(b => {
+        const t = scanT + scanD * Math.max(0, Math.min(1, (b.top + b.height / 2) / c.vh)) - .1;
+        hfxMk(scr, "i", "hfx-holo-card", { left: (b.left - 3) + "px", top: (b.top - 3) + "px", width: (b.width + 6) + "px", height: (b.height + 6) + "px", "--t": t });
+        hfxMk(scr, "i", "hfx-holo-card is-red", { left: (b.left - 3) + "px", top: (b.top - 3) + "px", width: (b.width + 6) + "px", height: (b.height + 6) + "px", "--t": t });
+      });
+    }
+    for(let i = 0; i < (small ? 14 : 20); i++) hfxPiece(scr, "hfx-holo-mote", hfxGlintURL(), cx + hfxR(-.5, .5) * gw, r.top - hfxR(10, gh * 1.4), hfxR(8, 14), { "--t": .5 + hfxR(0, 2), "--d": hfxR(1.8, 2.6), "--up": (-hfxR(40, 120)) + "px" });
+  }
+  if(bx){
+    hfxMk(bx, "i", "hfx-holo-lines");
+    hfxMk(bx, "i", "hfx-scan is-holo", { "--bh": c.bh + "px", "--c": "#7CF6FF", "--dl": .15 });
+    hfxLitText(bx, c, { mode: "flash", color: "#E8FDFF", glow: "#2EE6FF", dl: .2, dur: 3 });
   }
 }
 
@@ -69447,8 +69683,25 @@ function hfxWipe(parent, x, y, w, h, url, dir, t, d){
   hfxMk(win, "i", "hfx-wipe-in").style.backgroundImage = url;
   return win;
 }
+/* A BRANCH IS A PICTURE, NOT A CLIP. Each one was a gradient cut to a
+   taper by clip-path, plus a ::after for its highlight: the World Tree
+   on the results screen is 120 of them, and a clipped element that
+   animates is a layer AND a mask - at 4x CPU it held the tree to ~45fps
+   with frames of a third of a second. Now the taper, the wood and the
+   highlight are one sprite (two, by how much the branch narrows),
+   stretched to the branch; only the sap-carrying limbs keep a ::after,
+   for the pulse. */
+function hfxBranchURL(rr){
+  const k = rr < .57 ? 50 : 64, l = (100 - k) / 2, r = 100 - l, hl = l + k * .42, hr = l + k * .58;
+  return hfxSprite("branch" + k, () => 'viewBox="0 0 100 100" preserveAspectRatio="none"><defs><linearGradient id="w" x1="0" x2="1">' +
+    '<stop offset="0" stop-color="#24160F"/><stop offset=".3" stop-color="#4E3323"/><stop offset=".52" stop-color="#8A6040"/><stop offset=".8" stop-color="#3A2619"/><stop offset="1" stop-color="#20130C"/></linearGradient>' +
+    '<linearGradient id="h" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFDEA0" stop-opacity=".45"/><stop offset="1" stop-color="#FFAA78" stop-opacity=".12"/></linearGradient></defs>' +
+    '<polygon points="' + l + ',0 ' + r + ',0 100,100 0,100" fill="url(#w)"/><polygon points="' + hl + ',0 ' + hr + ',0 58,100 42,100" fill="url(#h)"/></svg>', 128);
+}
 function hfxTree(parent, ox, oy, o){
-  const group = hfxMk(parent, "span", "hfx-tree", { "--tot": o.tot || 8.8 });
+  /* a tree inside another tree's group is faded by that group: a second
+     opacity animation round it is a second surface for nothing */
+  const group = hfxMk(parent, "span", "hfx-tree" + (parent.classList && parent.classList.contains("hfx-tree") ? " is-inner" : ""), { "--tot": o.tot || 8.8 });
   const segs = [], tips = [], joints = [];
   (function grow(x, y, a, len, th, depth, t){
     const dur = depth === 0 ? o.trunkDur : Math.max(.24, .42 - depth * .04);
@@ -69481,11 +69734,10 @@ function hfxTree(parent, ox, oy, o){
   segs.forEach(s => {
     const lap = s.top * .6;
     const rr = Math.min(1, s.top / s.th);
-    const l = ((1 - rr) / 2 * 100).toFixed(1), r2 = ((1 + rr) / 2 * 100).toFixed(1);
     const el = hfxMk(group, "i", "hfx-branch" + (s.depth === 0 ? " is-trunk" : "") + (s.depth <= 2 && o.pulse ? " is-pulse" : ""), {
       left: (s.x - s.th / 2) + "px", top: (s.y - s.len) + "px", width: s.th + "px", height: (s.len + lap) + "px",
       "--a": (s.a * 180 / Math.PI).toFixed(1) + "deg", "--gt": s.t, "--gd": s.dur, "--ol": lap + "px" });
-    el.style.clipPath = "polygon(" + l + "% 0, " + r2 + "% 0, 100% 100%, 0 100%)";
+    el.style.backgroundImage = hfxBranchURL(rr);
   });
   const leaf = hfxLeafURL();
   joints.forEach((j, i) => {
@@ -69498,7 +69750,9 @@ function hfxTree(parent, ox, oy, o){
 }
 function hfxWorldTree(scr, bx, c){
   const cols = c.palette || HFX_BLOOM;
-  if(scr){
+  const lay = scr ? hfxLayout(c) : null;
+  if(scr && lay) hfxTreeOnScreen(scr, c, lay);
+  else if(scr){
     const small = c.vw < 600;
     const ox = c.br.left + c.br.width / 2, oy = c.br.top + 2;
     const len = Math.max(70, Math.min(oy * .27, c.vh * .2));
@@ -69606,8 +69860,11 @@ function hfxUfo(scr, bx, c){
   const L = { x: r.left + r.width / 2, y: r.top + 1 };
   if(scr){
     if(!c.noDim) hfxMk(scr, "i", "hfx-ufo-dim");
+    /* the stars it leaves behind are the tail: each twinkles out between
+       7.4s and 8.3s, after the saucer has gone, as the dark lifts */
     for(let i = 0; i < (small ? 14 : 20); i++){
-      hfxPiece(scr, "hfx-glint is-ufo", hfxGlintURL(), hfxR(.04, .96) * c.vw, hfxR(.03, .97) * c.vh, hfxR(8, 18), { "--t": .45 + hfxR(0, 1.1), "--d": hfxR(4.6, 6) });
+      const t = .45 + hfxR(0, 1.1);
+      hfxPiece(scr, "hfx-glint is-ufo", hfxGlintURL(), hfxR(.04, .96) * c.vw, hfxR(.03, .97) * c.vh, hfxR(8, 18), { "--t": t, "--d": 7.4 + hfxR(0, .9) - t });
     }
     const w = small ? 168 : 230, h = w * .62;
     const hov = -Math.round(Math.min(120, Math.max(60, r.top * .25)));
@@ -69680,7 +69937,7 @@ function hfxConfettiBox(bx, c){
 }
 /* Every effect that can play - the four candidates for the first two
    rungs included, whether or not HUNDO_FX lists them. */
-const HUNDO_FX_BUILD = { fireworks: hfxFireworks, starfall: hfxStarfall, aurora: hfxAurora, galaxy: hfxGalaxy,
+const HUNDO_FX_BUILD = { neon: hfxNeonTrails, poppers: hfxPartyPoppers, hologram: hfxHologram,
   worldtree: hfxWorldTree, bubbles: hfxBubbles, ufo: hfxUfo };
 
 /* The 100% in the effect's colours: a copy laid exactly over the real
@@ -69727,7 +69984,6 @@ function playHundoFx(id, opts){
   if(tint){
     [opts.box, scr].forEach(el => { if(el){ el.style.setProperty("--hfx-b", tint.b); el.style.setProperty("--hfx-g1", tint.g1); el.style.setProperty("--hfx-g2", tint.g2); el.style.setProperty("--hfx-g3", tint.g3); } });
     if(bx){
-      bx.style.setProperty("--tot", (total / 1000) + "s");
       hfxMk(bx, "i", "hfx-tint");
       c.tintNum = hfxTintNum(bx, c);
     }
@@ -69758,9 +70014,18 @@ function playHundoFx(id, opts){
   if((id === "worldtree" || id === "ufo") && scr && opts.box) opts.box.classList.add("hfx-over");
   /* the colours ease in now and back out before the end, so they are
      yellow again by the time the last pieces have gone */
-  let untintTimer = null;
+  /* WHEN: from `on` to `off` (ms) - by default at once and until the
+     tail; the UFO's from the moment its beam reaches the box until the
+     beam cuts ("the edge lights up before the alien doesn't beam") */
+  let untintTimer = null, tintTimer = null;
   const untint = () => { if(opts.box) opts.box.classList.remove("hfx-tinted"); };
-  if(tint && opts.box){ void opts.box.offsetWidth; opts.box.classList.add("hfx-tinted"); untintTimer = setTimeout(untint, Math.max(600, total - 1700)); }
+  if(tint && opts.box){
+    const on = tint.on || 0, off = tint.off || Math.max(600, total - 1700);
+    opts.box.classList.toggle("hfx-fast", !!tint.fast);
+    const go = () => { void opts.box.offsetWidth; opts.box.classList.add("hfx-tinted"); };
+    if(on) tintTimer = setTimeout(go, on); else go();
+    untintTimer = setTimeout(untint, off);
+  }
   /* The bubbles' box wobbles like the film they are blown from: its own
      `scale` property, through the Web Animations API, so the transform
      its landing animation holds is never touched and nothing restarts. */
@@ -69770,9 +70035,9 @@ function playHundoFx(id, opts){
   }
   const handle = { id, screen: scr, box: bx, total, startedAt: performance.now(), done: false };
   const lifted = () => { if(opts.box) opts.box.classList.remove("hfx-over"); };
-  const end = () => { if(handle.done) return; handle.done = true; if(scr) scr.remove(); if(bx) bx.remove(); if(mo) mo.disconnect(); lifted(); clearTimeout(untintTimer); untint(); };
+  const end = () => { if(handle.done) return; handle.done = true; if(scr) scr.remove(); if(bx) bx.remove(); if(mo) mo.disconnect(); lifted(); clearTimeout(tintTimer); clearTimeout(untintTimer); untint(); };
   handle.timer = setTimeout(end, total);
-  handle.stop = () => { if(handle.done) return; handle.done = true; clearTimeout(handle.timer); clearTimeout(untintTimer); untint(); if(mo) mo.disconnect(); hfxFadeOut(scr); hfxFadeOut(bx); setTimeout(lifted, 650); };
+  handle.stop = () => { if(handle.done) return; handle.done = true; clearTimeout(handle.timer); clearTimeout(tintTimer); clearTimeout(untintTimer); untint(); if(mo) mo.disconnect(); hfxFadeOut(scr); hfxFadeOut(bx); setTimeout(lifted, 650); };
   /* the screen changing under it: fade, don't leave it over the next one */
   let mo = null;
   if(scr && opts.box && !opts.preview && typeof stage !== "undefined" && stage){
@@ -69835,16 +70100,16 @@ function buildHundoFxStill(id){
   if(id === "bubbles"){
     body = '<defs><radialGradient id="' + g + 'a" cx="50%" cy="50%" r="50%"><stop offset=".62" stop-color="#9FE8FF" stop-opacity="0"/><stop offset=".82" stop-color="#C79BFF" stop-opacity=".55"/><stop offset=".94" stop-color="#FFB3D1" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity=".2"/></radialGradient></defs>' +
       [[17, 30, 12], [33, 17, 9], [34, 37, 6]].map(b => '<circle cx="' + b[0] + '" cy="' + b[1] + '" r="' + b[2] + '" fill="url(#' + g + 'a)" stroke="#fff" stroke-opacity=".45" stroke-width=".8"/><ellipse cx="' + (b[0] - b[2] * .38) + '" cy="' + (b[1] - b[2] * .42) + '" rx="' + (b[2] * .22) + '" ry="' + (b[2] * .14) + '" fill="#fff" opacity=".9" transform="rotate(-35 ' + (b[0] - b[2] * .38) + ' ' + (b[1] - b[2] * .42) + ')"/>').join("");
-  } else if(id === "fireworks"){
-    const ring = (cx, cy, r, col, n) => { let o = ""; for(let i = 0; i < n; i++){ const a = i / n * Math.PI * 2; o += '<line x1="' + (cx + Math.cos(a) * r * .3).toFixed(1) + '" y1="' + (cy + Math.sin(a) * r * .3).toFixed(1) + '" x2="' + (cx + Math.cos(a) * r).toFixed(1) + '" y2="' + (cy + Math.sin(a) * r).toFixed(1) + '" stroke="' + col + '" stroke-width="1.6" stroke-linecap="round"/><circle cx="' + (cx + Math.cos(a) * r).toFixed(1) + '" cy="' + (cy + Math.sin(a) * r).toFixed(1) + '" r="1.2" fill="#fff"/>'; } return o; };
-    body = ring(18, 18, 13, "#FFD24A", 12) + ring(34, 26, 10, "#FF5FA2", 10) + '<path d="M24 47 L22 34" stroke="#FFD24A" stroke-width="1.4" stroke-linecap="round" opacity=".7"/>';
-  } else if(id === "starfall"){
-    body = [[6, 42, 40, 8, "#BFD4FF"], [14, 46, 30, 22, "#FFE7A8"], [2, 30, 22, 14, "#A8F0FF"]].map(m => '<line x1="' + m[0] + '" y1="' + m[1] + '" x2="' + m[2] + '" y2="' + m[3] + '" stroke="' + m[4] + '" stroke-width="2.2" stroke-linecap="round" stroke-opacity=".55"/><circle cx="' + m[2] + '" cy="' + m[3] + '" r="2.8" fill="#fff"/>').join("") +
-      '<path d="M36 30 Q37 35 42 36 Q37 37 36 42 Q35 37 30 36 Q35 35 36 30Z" fill="#fff"/>';
-  } else if(id === "aurora"){
-    body = '<defs><linearGradient id="' + g + 'a" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#5CFFB0"/><stop offset=".6" stop-color="#3BC8FF" stop-opacity=".45"/><stop offset="1" stop-color="#B47CFF" stop-opacity="0"/></linearGradient></defs>' +
-      '<path d="M4 44 Q10 30 8 6 L20 6 Q22 30 16 44 Z M18 44 Q26 28 24 4 L36 4 Q36 28 30 44 Z M30 44 Q38 30 38 10 L46 10 Q46 30 42 44 Z" fill="url(#' + g + 'a)"/>' +
-      '<circle cx="12" cy="10" r="1" fill="#fff"/><circle cx="40" cy="6" r="1.2" fill="#fff"/>';
+  } else if(id === "neon"){
+    body = '<rect x="6" y="12" width="36" height="24" rx="6" fill="none" stroke="#2EF2FF" stroke-width="2.2"/><rect x="6" y="12" width="36" height="24" rx="6" fill="none" stroke="#2EF2FF" stroke-opacity=".35" stroke-width="6"/>' +
+      '<path d="M24 12 L24 4 M6 24 L1 24" stroke="#FF3DCB" stroke-width="2.2" stroke-linecap="round"/><circle cx="24" cy="4" r="2.6" fill="#fff"/><circle cx="42" cy="30" r="2.4" fill="#fff"/>';
+  } else if(id === "poppers"){
+    body = '<path d="M10 44 L4 22 Q10 19 16 22 Z" fill="#B44FE0"/><path d="M38 44 L32 22 Q38 19 44 22 Z" fill="#B44FE0"/>' +
+      '<path d="M10 20 Q4 14 12 10 Q20 6 14 2" fill="none" stroke="#FFD23F" stroke-width="2.2" stroke-linecap="round"/><path d="M38 20 Q44 13 36 9 Q28 5 34 1" fill="none" stroke="#2EC4FF" stroke-width="2.2" stroke-linecap="round"/>' +
+      '<rect x="20" y="8" width="4" height="6" fill="#FF4D6D" transform="rotate(20 22 11)"/><rect x="26" y="16" width="4" height="6" fill="#7CFF4F" transform="rotate(-30 28 19)"/><rect x="22" y="24" width="4" height="6" fill="#FFD23F"/>';
+  } else if(id === "hologram"){
+    body = '<path d="M6 44 L42 44 L34 30 L14 30 Z" fill="none" stroke="#7CF6FF" stroke-width="1.4" stroke-opacity=".8"/><path d="M14 30 L34 30 L40 6 L8 6 Z" fill="#2EE6FF" fill-opacity=".14"/>' +
+      '<text x="24" y="24" text-anchor="middle" font-family="serif" font-weight="700" font-size="13" fill="#9FF7FF">100</text><path d="M8 17 H40 M8 21 H40" stroke="#03141A" stroke-opacity=".5"/>';
   } else if(id === "ufo"){
     body = '<defs><linearGradient id="' + g + 'b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C8FFD4" stop-opacity=".7"/><stop offset="1" stop-color="#6BFF8F" stop-opacity="0"/></linearGradient></defs>' +
       '<path d="M20 26 L28 26 L40 47 L8 47 Z" fill="url(#' + g + 'b)"/>' +
