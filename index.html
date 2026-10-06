@@ -11357,7 +11357,8 @@
      the whole picture evenly; min() keeps the reference phone and every
      larger hero exactly as they were. Home only - Welcome and the
      cutscenes are not containers and keep their sizes. */
-  .panel.home.screen-home-actual .cosmic-hero-wrap{ container-type:inline-size; }
+  .panel.home.screen-home-actual .cosmic-hero-wrap{ container-type:inline-size;
+    translate:0 var(--notice-push, 0px); transition:translate .45s cubic-bezier(.2,.7,.2,1); }
   /* A floor of 1.75rem keeps a bubble big enough to read and to tap on
      the smallest heroes; `translate` then moves a floored bubble back by
      half of what the floor added, so its CENTRE stays where the scaled
@@ -68027,9 +68028,38 @@ function showNoticeBar(bar){
 
 function positionNotice(){
   const bar = document.getElementById("updatebanner");
-  if(!bar) return;
+  if(!bar){ pushHomeHeroForNotice(null); return; }
   const top = topNoticeOffset(bar);
   bar.style.top = top === null ? "" : Math.round(top) + "px";
+  clearNoticeOfChat(bar);
+  pushHomeHeroForNotice(bar);
+}
+/* THE NOTICE KEEPS OUT OF THE WAY OF HOME ITSELF (build 313). Measured
+   on Home, the full-width notice ran under the chat button in the top
+   right corner and over the top flare bubble - 13px of it on a 17 Pro
+   Max, 30px on an SE. So it stops short of the chat button, and while
+   it is up the planet system slides down just far enough to clear it
+   (there is 149px under the planet on a 17 Pro Max and 61px on an SE,
+   so nothing below moves), and slides back when it goes. `translate`,
+   not `transform`, so it composes with anything the hero already does. */
+function clearNoticeOfChat(bar){
+  bar.style.right = "";
+  const chat = document.querySelector(".chatdock-btn");
+  if(!chat) return;
+  const c = chat.getBoundingClientRect(), b = bar.getBoundingClientRect();
+  if(c.width <= 0 || c.bottom <= b.top || c.top >= b.bottom || c.left >= b.right || c.right <= b.left) return;
+  bar.style.right = Math.ceil(window.innerWidth - c.left + 8) + "px";
+}
+function pushHomeHeroForNotice(bar){
+  const hero = document.querySelector("#stage .panel.home.screen-home-actual .cosmic-hero-wrap");
+  if(!hero) return;
+  if(!bar || !bar.isConnected){ hero.style.setProperty("--notice-push", "0px"); return; }
+  const was = parseFloat(hero.style.getPropertyValue("--notice-push")) || 0;
+  let natural = hero.getBoundingClientRect().top;
+  hero.querySelectorAll(".cosmic-badge").forEach(e => { const r = e.getBoundingClientRect(); if(r.width > 0 && r.top < natural) natural = r.top; });
+  natural -= was;
+  const push = Math.max(0, Math.ceil(bar.getBoundingClientRect().bottom + 14 - natural));
+  hero.style.setProperty("--notice-push", push + "px");
 }
 
 /* Where a banner pinned to the top of the screen has to start so it clears
@@ -68459,6 +68489,7 @@ function hideBanner(){
   const bar = document.getElementById("updatebanner");
   if(!bar) return;
   bar.classList.remove("show");
+  pushHomeHeroForNotice(null);
   setTimeout(() => bar.remove(), 300);
 }
 

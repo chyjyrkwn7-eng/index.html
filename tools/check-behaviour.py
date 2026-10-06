@@ -1224,6 +1224,42 @@ def check_b313_qmotion(br):
     ctx.close()
 
 
+def check_b313_notice(br):
+    """Build 313: the update notice on Home ran under the chat button (its
+    own close button hidden beneath it) and over the top flare bubble -
+    13px on a 17 Pro Max, 30px on an SE. Now it stops short of the chat
+    button and the planet system slides down to clear it, and back when
+    it goes. Fails on 312."""
+    print("\n98. build 313: the update notice clears the chat button and the planet")
+    out = {}
+    for (w, h, tag) in [(440, 956, "pro max"), (375, 667, "se")]:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        out[tag] = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          try{ markUnlocksShown(AVATAR_CHARACTERS.map(c=>c.id), BANNERS.map(b=>b.id)); }catch(e){}
+          store.flareHintsShown = ['umbra','singularity','genesis']; store.hundoFxShown = Object.assign({}, store.hundoFxShown || {}); saveStore();
+          showHome(); await wait(900);
+          for(let i = 0; i < 12 && document.querySelector('.rs-spot'); i++){ document.querySelector('.rs-spot').click(); await wait(1100); }
+          const hero = () => document.querySelector('#stage .cosmic-hero-wrap');
+          const top = () => { let t = hero().getBoundingClientRect().top; hero().querySelectorAll('.cosmic-badge').forEach(e => { const r = e.getBoundingClientRect(); if(r.width > 0) t = Math.min(t, r.top); }); return t; };
+          const before = top();
+          showUpdateBanner('2099-01-01-999'); await wait(1400);
+          const bar = document.getElementById('updatebanner').getBoundingClientRect();
+          const chat = document.querySelector('.chatdock-btn').getBoundingClientRect();
+          const hit = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+          const res = { chatHit: hit(bar, chat), bubbleGap: Math.round(top() - bar.bottom),
+            closeVisible: (() => { const c = document.querySelector('#updatebanner .update-banner-close, #updatebanner button[aria-label*="lose"]'); if(!c) return null; const r = c.getBoundingClientRect(); return !hit(r, chat); })() };
+          hideBanner(); await wait(900);
+          res.back = Math.round(top() - before);
+          const greet = document.querySelector('.hometitle-wrap, .homegreet');
+          res.greetClear = greet ? Math.round(greet.getBoundingClientRect().top - hero().getBoundingClientRect().bottom) : null;
+          return res; }""")
+        ctx.close()
+    for tag, r in out.items():
+        check("%s: the notice does not run under the chat button" % tag, r.get("chatHit") is False and r.get("closeVisible") is not False, r)
+        check("%s: and it clears the top flare bubble" % tag, isinstance(r.get("bubbleGap"), int) and r["bubbleGap"] >= 4, r)
+        check("%s: the planet goes back when the notice goes" % tag, r.get("back") == 0, r)
+
+
 def check_b313_shuffle(br):
     """Build 313: "Can we double check that all the questions are being
     shuffled properly ... please please ensure this." Measured, the
@@ -10280,6 +10316,7 @@ def main():
             check_b313_qmotion(br)
             check_b313_sheet2(br)
             check_b313_shuffle(br)
+            check_b313_notice(br)
             check_b313_chars_centred(br)
             check_b313_no_sweep(br)
             check_b313_alive(br)
