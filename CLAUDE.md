@@ -1655,10 +1655,10 @@ for the future and took nothing back.
 
 ## Levels, badges and ranks
 
-> **Build 314 - read "Build 314 - the gate" near the end first.** A
-> rank's level is now a gate its badges open (`badgeWallLevel`,
-> `levelStateFor`, `store.levelFloor`) and the curve is one +3.65% rate
-> from 26 (71 ~ 138k, 80 ~ 197k); the curve numbers below are history.
+> **Build 314 - read "Build 314 - FINAL DECISIONS" near the end first.**
+> Levels are banded by rank and your badges cap the band
+> (`badgeWallLevel`, `levelStateFor`); the XP curve is build 313's,
+> unchanged.
 > The badge bands did NOT change - cheaper ones were proposed and
 > rejected ("DONT change the badge requirement").
 
@@ -13164,14 +13164,47 @@ disagree with it.
   badge-limited); the floor is for whoever sits exactly on an old line
   (e.g. level 29 with 3 badges) on the day it ships. Other people's view
   of that person is still computed from the published level and badges.
-- **The gate is strict**: a level cannot pass the next rank's level until
-  its badges are held (`badgeWallLevel`, read off `TIER_UNLOCKS`). XP keeps
-  counting and turns into levels the moment the badges arrive. On the
-  real backup (Oct 6) this holds 20 of the 22 most active players at
-  their current level on day one - Ht4l24 and Madison at 52-53 until 7
-  badges, BigSlim at 51 until 7, Napoleon and Z until 5, most of the 20s
-  until their first badge. Only Sauce and OdinSavior (5-6 badges) climb
-  freely, to 50. That consequence was put to her before shipping.
+- **LEVELS ARE BANDED BY RANK, AND YOUR BADGES CAP THE BAND** - the
+  last turn of the evening, and the one that shipped: *"people go back in
+  level (they still have the same xp just loaded at the gate) and their
+  max level is at their rank ... someone is level 80 but doesn't have a
+  single badge, their level would actually show as the max level in
+  bronze."* Each rank owns a block: Bronze 21-29, Silver 30-39, Gold
+  40-49, Platinum 50-59, Sapphire 60-69, Amethyst 70-79, Supernova 80.
+  With b badges you can climb to the top of the NEXT rank's block:
+
+  | badges | 0 | 1-2 | 3-4 | 5-6 | 7-8 | 9-11 | 12+ |
+  |---|---|---|---|---|---|---|---|
+  | level cap | 29 | 39 | 49 | 59 | 69 | 79 | 80 |
+
+  `badgeWallLevel()` reads it off `TIER_UNLOCKS` (the level of the rank
+  AFTER the next one you can hold, minus one), so moving a rank moves the
+  bands. The cap is always above the level of the highest rank your
+  badges hold, so the cap alone can never cost a rank.
+- **NO GRANDFATHERING. A level can show LOWER on the update; the XP
+  never does.** `levelFloor` defaults to 0 in `applyLoadedData()`; a
+  floor exists only where a merge's `bonusLevels` GAVE one. Everything
+  past the cap is `saved` (`levelStateOf().saved` = curve level - cap)
+  and arrives the moment the badges do - the results card climbs
+  through every saved level. On the Oct 6 backup: Ht4l24 53 -> 39 (14
+  saved), Madison 52 -> 49 (3), BigSlim 51 -> 29 (22), Napoleon 47 and Z
+  41 -> 29, ALFRED 35 -> 29; Sauce, OdinSavior, Cap and Otx are inside
+  their caps and unchanged. Put to her in those terms before building:
+  *"Yeah that makes sense. Make sure it makes sense."*
+- **The copy, the same everywhere** (`levelWallLine`): "Earn N (more)
+  badge(s) to unlock levels X-Y · S levels saved", with a **Max** chip
+  beside the level on Profile when it is held, and the XP numbers running
+  on past what the level asks. The Next gate is the rank whose badges
+  lift the cap (`gateRankForBadges`), not the next rank by level. The
+  What's New card adds a personal line for anybody held with saved
+  levels ("You're level X with S levels saved ..."), which is the
+  explanation she asked for for the people it moves.
+- `firestore-admin.py` `badge_wall`/`effective_level` mirror the bands
+  with no floor default; check-curve section 8 asserts the caps, the
+  saved count, no floor on load, no rank lost against build 313's
+  ladder, the Profile line, the rankings row, and the admin tool. The
+  sections below describe the strict gate and the grandfather floor and
+  are history wherever they disagree with this.
 
 ### Build 314 - the gate: levels, ranks and badges tied together
 

@@ -996,17 +996,20 @@ def badges_of(f):
 
 
 def badge_wall(badges):
-    return min([lv for lv, b in RANKS if b > badges] + [LEVEL_CAP])
+    """badgeWallLevel(): the level band cap. Each rank owns a block of
+    levels and you can climb to the top of the NEXT rank's block - 0
+    badges caps at 29, 1 at 39, 3 at 49 ... 12 or more at the cap."""
+    met = sum(1 for lv, b in RANKS if badges >= b)
+    return min(LEVEL_CAP, RANKS[met + 1][0] - 1) if met + 1 < len(RANKS) else LEVEL_CAP
 
 
 def effective_level(f):
-    """levelStateFor(): min(curve level, max(badge wall, floor)). An account
-    with no floor yet gets the one applyLoadedData would give it."""
+    """levelStateFor(): min(curve level, max(band cap, floor)). No
+    grandfathering - a floor exists only where a merge's bonus gave one."""
     pts = ((f.get("lifetime") or {}).get("points")) or 0
     fl = f.get("levelFloor")
-    if not isinstance(fl, (int, float)):
-        fl = legacy_level_of_points(pts) if pts > 0 else 0
-    return min(level_of(pts), max(badge_wall(badges_of(f)), int(fl)), LEVEL_CAP)
+    fl = int(fl) if isinstance(fl, (int, float)) else 0
+    return min(level_of(pts), max(badge_wall(badges_of(f)), fl), LEVEL_CAP)
 
 
 def _acct_summary(f):

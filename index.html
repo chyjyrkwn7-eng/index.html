@@ -18755,6 +18755,14 @@
      brighter breath, faster, and a ring of the same blue round the
      track (the track clips anything drawn by the fill). Reduce motion
      keeps the ring and drops the breath, via the rule above. */
+  .intro-gate-note{ margin:.2rem 0 .9rem; padding:.85rem 1rem; border-radius:16px;
+    background:linear-gradient(180deg, rgba(61,139,255,.16), rgba(61,139,255,.06));
+    border:1px solid rgba(143,193,255,.38); }
+  .intro-gate-title{ margin:0 0 .3rem; font-weight:700; font-size:.95rem; color:#CFE6FF; }
+  .intro-gate-body{ margin:0; font-size:.84rem; line-height:1.45; color:var(--ink); opacity:.9; }
+  .level-max-tag{ display:inline-block; margin-left:.45rem; padding:.05rem .42rem; border-radius:999px;
+    font-size:.62rem; letter-spacing:.08em; text-transform:uppercase; vertical-align:middle;
+    color:#0B1220; background:linear-gradient(180deg, #CFE6FF, #8FC1FF); box-shadow:0 0 10px rgba(61,139,255,.35); }
   .is-banked .xpbar-fill::after{ background:linear-gradient(90deg, rgba(214,236,255,.05), rgba(214,236,255,.42));
     animation-duration:2.6s; }
   .xpbar-track.is-banked{ box-shadow:inset 0 1px 2px rgba(0,0,0,.5), 0 0 0 1px rgba(143,193,255,.42), 0 0 12px rgba(61,139,255,.32); }
@@ -42121,7 +42129,11 @@ function applyLoadedData(got){
      max, so of two copies the higher floor wins. */
   store.levelFloor = (typeof got.levelFloor === "number" && isFinite(got.levelFloor))
     ? Math.max(0, Math.min(LEVEL_CAP, Math.floor(got.levelFloor)))
-    : ((got.lifetime && Number(got.lifetime.points) > 0) ? legacyLevelOfPoints(got.lifetime.points) : 0);
+    /* NO GRANDFATHERING (build 314, final): "people go back in level (they
+       still have the same xp just loaded at the gate)". The shown level is
+       the band cap; a floor exists only where something GAVE levels (a
+       merge's bonus), never as a copy of the old level. */
+    : 0;
   /* build 314: the rank this account held on build 313's ladder - see rankOf() */
   store.rankFloor = (typeof got.rankFloor === "number" && isFinite(got.rankFloor))
     ? Math.max(0, Math.min(TIER_ORDER_FULL.length, Math.floor(got.rankFloor)))
@@ -46227,51 +46239,45 @@ function preserveLegacyLevel(){
    is held. When the badge lands the level jumps straight to what the XP
    has earned, which is the ordinary level-up on the results screen
    doing a multi-level hop.
-   NOBODY LOSES A LEVEL. `store.levelFloor` is the level an account held
-   the day this shipped (its XP on the ungated curve, set once by
-   applyLoadedData for an account that has no floor yet) and it moves the
-   wall up to itself: an account already past its wall keeps its level
-   and simply climbs no further until its badges catch up.
-     effective level = min(curve level, max(badge wall, floor)), never
+   NOBODY LOSES A RANK - but a level can show lower. There is no
+   grandfathering: an account past its cap shows the cap, with the rest
+   counted as saved levels. `store.levelFloor` exists only where something
+   GAVE levels (a merge's bonus) and lifts the cap to itself.
+     effective level = min(curve level, max(band cap, floor)), never
      above LEVEL_CAP.
    EVERYTHING THAT SHOWS OR PUBLISHES A LEVEL ASKS levelStateFor() /
    levelOf(), so the bar, the number, the rankings row, the ranks and
    the unlocks can never disagree about where somebody is held. */
+/* THE LEVEL BANDS (build 314, final - Madison): "their max level is at
+   their rank ... someone is level 80 but doesn't have a single badge,
+   their level would actually show as the max level in bronze, they
+   would need to hit bronze in order to hit the next set of levels."
+   Each rank owns a block of levels - Bronze 21-29, Silver 30-39, Gold
+   40-49, Platinum 50-59, Sapphire 60-69, Amethyst 70-79, Supernova 80 -
+   and you can climb to the top of the NEXT rank's block; going past it
+   takes that rank's badges. So no badges caps at 29, Bronze's badge
+   (1) at 39, Silver's (3) at 49, Gold's (5) at 59, Platinum's (7) at
+   69, Sapphire's (9) at 79, Amethyst's (12) at the cap. The XP is never
+   touched: levels past the cap are SAVED and arrive the moment the
+   badges do. The cap is always above the level of the highest rank your
+   badges hold, so it can never cost anybody a rank. Read off
+   TIER_UNLOCKS, never typed. */
 function badgeWallLevel(badges){
   const b = Math.max(0, Number(badges) || 0);
-  let wall = LEVEL_CAP;
-  TIER_ORDER_FULL.forEach(k => {
-    const r = TIER_UNLOCKS[k];
-    const lv = r ? Number(r.level) || 0 : 0;
-    if(r && lv > 0 && (Number(r.badges) || 0) > b) wall = Math.min(wall, lv);
-  });
-  return wall;
+  const met = TIER_ORDER_FULL.filter(k => TIER_UNLOCKS[k] && b >= (Number(TIER_UNLOCKS[k].badges) || 0)).length;
+  const after = TIER_UNLOCKS[TIER_ORDER_FULL[met + 1]];
+  return after ? Math.min(LEVEL_CAP, (Number(after.level) || LEVEL_CAP) - 1) : LEVEL_CAP;
+}
+/* The rank whose badges lift the cap you are under: the first rank your
+   badges do not yet hold. */
+function gateRankForBadges(badges){
+  const b = Math.max(0, Number(badges) || 0);
+  return TIER_ORDER_FULL.find(k => TIER_UNLOCKS[k] && b < (Number(TIER_UNLOCKS[k].badges) || 0)) || null;
 }
 /* The highest level `badges` and a floor let you hold. */
 function levelWallOf(badges, floor){
   const f = Math.max(0, Math.floor(Number(floor) || 0));
   return Math.min(LEVEL_CAP, Math.max(badgeWallLevel(badges), f));
-}
-/* The badges it takes to climb past level W: every rank whose level is
-   W or lower has to be paid for in badges. */
-function badgesToPassLevel(W){
-  let need = 0;
-  TIER_ORDER_FULL.forEach(k => {
-    const r = TIER_UNLOCKS[k];
-    if(r && (Number(r.level) || 0) <= W) need = Math.max(need, Number(r.badges) || 0);
-  });
-  return need;
-}
-/* The rank whose badges open level W - "the gate". Of every rank at or
-   below W, the one asking the most badges (a grandfathered account held
-   at 52 with 3 badges is at the Sapphire gate, not the Gold one). */
-function gateRankForLevel(W){
-  let gate = null, most = -1;
-  TIER_ORDER_FULL.forEach(k => {
-    const r = TIER_UNLOCKS[k];
-    if(r && (Number(r.level) || 0) <= W && (Number(r.badges) || 0) >= most){ most = Number(r.badges) || 0; gate = k; }
-  });
-  return gate;
 }
 /* levelProgress() with the wall applied - the same fields, plus:
      curveLevel   what the XP alone would give
@@ -46290,8 +46296,15 @@ function levelStateOf(points, badges, floor){
                                       held: false, stopped: false, badgesToPass: 0, banked: 0 });
   if(wall >= LEVEL_CAP || lp.level < wall) return out;
   out.held = true;
-  out.gateKey = gateRankForLevel(wall);
-  out.badgesToPass = Math.max(1, badgesToPassLevel(wall) - have);
+  out.gateKey = gateRankForBadges(have);
+  {
+    const g = out.gateKey ? TIER_UNLOCKS[out.gateKey] : null;
+    out.badgesToPass = Math.max(1, (g ? Number(g.badges) || 0 : 0) - have);
+    /* the block those badges open, e.g. "levels 40-49" */
+    out.opensTo = g ? badgeWallLevel(Number(g.badges) || 0) : LEVEL_CAP;
+  }
+  /* levels the XP has already paid for past the cap - kept, not lost */
+  out.saved = Math.max(0, lp.level - wall);
   if(lp.level > wall){
     const start = xpForLevel(wall), end = xpForLevel(wall + 1);
     out.stopped = true;
@@ -46326,17 +46339,20 @@ function levelXpNumbers(s){
   return Math.max(0, Math.round(s.into)).toLocaleString() + " / " + Math.round(s.span).toLocaleString() + " XP";
 }
 /* THE NEXT GATE, said plainly and the same way everywhere (build 314):
-   "Earn 2 more badges to pass level 52". */
+   "Earn 2 more badges to unlock levels 50-59 · 3 levels saved". */
 function levelWallLine(s){
   if(!s || !s.held) return "";
   const n = s.badgesToPass;
-  return "Earn " + n + (s.badges > 0 ? " more" : "") + (n === 1 ? " badge" : " badges") + " to pass level " + s.wall;
+  const from = s.wall + 1, to = Math.max(from, s.opensTo || from);
+  return "Earn " + n + (s.badges > 0 ? " more" : "") + (n === 1 ? " badge" : " badges") +
+    " to unlock " + (to > from ? "levels " + from + "\u2013" + to : "level " + from) +
+    (s.saved > 0 ? " \u00b7 " + s.saved + (s.saved === 1 ? " level saved" : " levels saved") : "");
 }
 /* "The next gate" - the one idea the Profile card, the results screen and
    the Rank tab all show. Levels, ranks and badges meet here: a rank's
    level is a gate its badges open. When your level is held, the next
-   gate is the rank whose badges open it (a grandfathered level 52 with
-   3 badges is at the Sapphire gate, 9 badges); otherwise it is simply
+   gate is the rank whose badges lift the cap (level 49 with 3 badges is
+   at the Gold gate, 5 badges); otherwise it is simply
    the next rank, with its two requirements. Null at the top. */
 function nextGateOf(){
   const s = levelStateFor(store);
@@ -55932,8 +55948,8 @@ const RELEASE_NOTES = [
         { icon: buildPaletteIcon, color: "#C583FF", title: "New Banners And Pop-Ups", body: "New banners for the secret flare characters, and every unlock pop-up now matches the colours of what you unlocked. Silver looks like silver." }
       ]},
       { label: "Ranks, Levels & Badges", items: [
-        { icon: buildLadderIcon, color: "#E8B84A", title: "Every Rank Is A Gate", body: "Levels, badges and ranks now work as one: to level past a rank's level you need its badges as well. Your XP keeps counting at a gate, so nothing is lost, and nobody goes down a level or a rank." },
-        { icon: buildStarIcon, color: "#FFD84D", title: "A New Rank Ladder", body: "Ranks now step evenly to Supernova at level 80: Bronze 21, Silver 30, Gold 40, Platinum 50, Sapphire 60, Amethyst 70. Badge requirements are the same, nobody loses a level or a rank, and XP earned at a gate is saved: earn the badges and every banked level arrives at once." },
+        { icon: buildLadderIcon, color: "#E8B84A", title: "Every Rank Is A Gate", body: "Each rank now owns a band of levels: Bronze 21\u201329, Silver 30\u201339, up to Supernova at 80. Your badges decide the highest band you can reach, so if you were past it your level shows at the top of your band for now. Your XP is all still there, the extra levels are saved and arrive the moment you earn the badges, and nobody loses a rank." },
+        { icon: buildStarIcon, color: "#FFD84D", title: "A New Rank Ladder", body: "Each rank owns a block of levels: Bronze 21-29, Silver 30-39, Gold 40-49, Platinum 50-59, Sapphire 60-69, Amethyst 70-79, Supernova 80. You can level to the top of the next rank's block; past it takes that rank's badges. Your XP is never lost: levels past the cap are saved and arrive the moment you earn the badges. Badge requirements are the same, and nobody loses a rank." },
         { icon: buildBarStatsIcon, color: "#5CA8FF", title: "Stats, Profile And The Road Map", body: "Profile shows your next rank gate under the XP bar, the Stats page is clearer, and the rank road map shows exactly where you stand." }
       ]},
       { label: "Results", items: [
@@ -63657,6 +63673,28 @@ function showIntroPopup(){
   title.className = "intro-title"; title.textContent = "What's new";
   card.append(eyebrow, title);
   card.classList.add("intro-card-compact");
+  /* YOUR LEVEL, SAID TO YOU (build 314): the band cap can show a lower
+     level than yesterday, so anybody it caps is told exactly what
+     happened before anything else - "they still have the same xp just
+     loaded at the gate". Only when it applies. */
+  try{
+    const ls = levelStateFor(store);
+    if(ls.held && ls.saved > 0){
+      const note = document.createElement("div");
+      note.className = "intro-gate-note";
+      const h = document.createElement("p");
+      h.className = "intro-gate-title";
+      h.textContent = "Your level now follows your rank";
+      const b = document.createElement("p");
+      b.className = "intro-gate-body";
+      const n = ls.badgesToPass, from = ls.wall + 1, to = Math.max(from, ls.opensTo || from);
+      b.textContent = "You're level " + ls.level + " with " + ls.saved + (ls.saved === 1 ? " level" : " levels") +
+        " saved. All your XP is kept: earn " + n + (ls.badges > 0 ? " more" : "") + (n === 1 ? " badge" : " badges") +
+        " to unlock levels " + from + "\u2013" + to + ", and your saved levels arrive at once.";
+      note.append(h, b);
+      card.appendChild(note);
+    }
+  }catch(e){}
   [
     ["M12 2.5l1.9 5.9 5.9 1.9-5.9 1.9-1.9 5.9-1.9-5.9-5.9-1.9 5.9-1.9L12 2.5Zm6.5 12.5.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z",
      "#FFD84D", "Hundo effects",
@@ -63672,7 +63710,7 @@ function showIntroPopup(){
      "Quicker answer feedback, a smoother swipe to the next question, and a simpler start sheet."],
     ["M5 21V3.5h1.8v1h11.4l-2.2 4.2 2.2 4.2H6.8V21H5Z",
      "#E8B84A", "The rank road map",
-     "Ranks step evenly to Supernova at 80, and each one is a gate: a level and its badges. Profile shows exactly what your next gate needs."],
+     "Each rank owns a block of levels, up to Supernova at 80. Your badges decide how high your level can go; extra XP is saved until they do."],
     ["M4 19.6h16v1.8H4v-1.8Zm1.2-7.2h3v5.6h-3v-5.6Zm5.3-5h3v10.6h-3V7.4Zm5.3 3h3v7.6h-3v-7.6Z",
      "#5CA8FF", "Stats and Profile",
      "A clearer Stats page, a fuller test history, and your next rank gate under the XP bar."],
@@ -88089,6 +88127,14 @@ function showProfile(defaultTab){
   const levelSideLab = document.createElement("span");
   levelSideLab.className = "rankhero-gaugelab";
   levelSideLab.textContent = "Level";
+  /* "MAX" while the band cap holds it (build 314): the number is the
+     highest this rank's badges allow, not where the XP stops */
+  if(prog.stopped){
+    const mx = document.createElement("span");
+    mx.className = "level-max-tag";
+    mx.textContent = "Max";
+    levelSideLab.appendChild(mx);
+  }
   const levelSideTop = document.createElement("span");
   levelSideTop.className = "profile-level-sidetop";
   /* AT A GATE (build 314) the numbers keep counting past what the level
@@ -89519,17 +89565,22 @@ function showRankLore(key){
     req.appendChild(row);
   });
   sheet.appendChild(req);
-  /* THE WALL (build 314): this rank's level is the highest you can hold
-     without its badges. Said for every rank, and with your own standing
-     when it is the one holding you. */
+  /* THE BAND (build 314): what this rank's badges unlock. Said for every
+     rank, and with your own standing when it is the one holding you. */
   const wall = document.createElement("p");
   wall.className = "ranklore-wall";
   const ls = levelStateFor(store);
   const holdsYou = ls.held && ls.gateKey === key;
   wall.textContent = holdsYou
     ? levelWallLine(ls) + " \u00b7 " + levelXpNumbers(ls)
-    : "Level " + (rule.level || 0) + " is a gate: you climb past it once you hold " +
-      (rule.badges || 0) + ((rule.badges || 0) === 1 ? " badge." : " badges.");
+    : (() => {
+        /* the band its badges open: Bronze's 1 badge opens levels 30-39 */
+        const nb = rule.badges || 0, to = badgeWallLevel(nb), from = badgeWallLevel(Math.max(0, nb - 1)) + 1;
+        const word = nb + (nb === 1 ? " badge" : " badges");
+        return to >= from
+          ? "Its " + word + " unlock levels " + from + (to > from ? "\u2013" + to : "") + "."
+          : "Level " + (rule.level || 0) + " and " + word + " to hold it.";
+      })();
   sheet.appendChild(wall);
   sheet.append(buildRankGiftsLabel(), buildRankGifts(key));
   const close = document.createElement("button");
@@ -89820,7 +89871,7 @@ function buildRanksTab(){
   /* THE WALL, SAID ONCE (build 314): a rank's level is also the highest
      level you can hold without its badges - "you can't get past that
      next rank's level until you hit the badges needed". */
-  mapNote.textContent = "Each rank needs a level and a number of badges, and unlocks rewards along the way. Its level is a gate: you can reach it, but you only climb past it once you hold its badges. Tap a rank to see what it gives.";
+  mapNote.textContent = "Each rank needs a level and a number of badges, and unlocks rewards along the way. Each rank owns a block of levels, and your badges decide how high you can climb. XP past that is saved and arrives when the badges do. Tap a rank to see what it gives.";
   tab.appendChild(mapNote);
 
   /* ---- IRON AT THE TOP, SUPERNOVA AT THE BOTTOM (build 232) ----
@@ -90024,7 +90075,7 @@ function buildRanksTab(){
     /* THE CURRENT GATE (build 314): highlighted, its circle carrying the
        badge count, and - when it is what holds your level - the plain
        line saying which part is holding you: "Badges 3 / 9 - earn 6 more
-       to pass level 52". */
+       to unlock levels 50-59". */
     if(key === wallKey){
       stop.classList.add("is-gate");
       if(!nextGate.badgesMet){
