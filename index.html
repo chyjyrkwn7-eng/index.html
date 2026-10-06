@@ -18752,14 +18752,15 @@
   .results-level-chaltext{ display:flex; flex-direction:column; gap:.1rem; min-width:0; }
   .results-level-chalname{ color:color-mix(in srgb, var(--rank-color, #9FACBA) 55%, #fff); }
   .results-level-chalnote{ font-weight:600; color:var(--soft); }
-  /* The numbers under the bar. Which half is loud flips at the
-     requirement: below it the requirement leads, past it what you have
-     does - the flip Pokemon GO uses to say "over". */
+  /* The numbers under the bar keep their colours and just keep counting,
+     as Pokemon GO's do ("the color doesn't change it just keeps going
+     up"); the flip they replaced was asked against. */
   .xpnums{ font-weight:800; font-variant-numeric:tabular-nums; }
-  .xpnums-have{ color:rgba(255,255,255,.6); }
-  .xpnums-need{ color:var(--ink); }
-  .xpnums.is-over .xpnums-have{ color:var(--ink); }
-  .xpnums.is-over .xpnums-need{ color:#8FC1FF; }
+  .xpnums-have{ color:var(--ink); }
+  .xpnums-need{ color:#8FC1FF; }
+  /* Past the requirement only YOUR number changes: gold, the badge
+     challenge's colour - "full, finish your rank challenges". */
+  .xpnums.is-over .xpnums-have{ color:#F2C94C; text-shadow:0 0 10px rgba(242,201,76,.35); }
   /* The challenge sheet */
   .level-chal-sheet{ text-align:center; }
   .level-chal-bar{ display:block; height:10px; margin:0 auto; max-width:18rem; border-radius:999px; overflow:hidden;
@@ -18785,9 +18786,6 @@
     border:1px solid rgba(143,193,255,.38); }
   .intro-gate-title{ margin:0 0 .3rem; font-weight:700; font-size:.95rem; color:#CFE6FF; }
   .intro-gate-body{ margin:0; font-size:.84rem; line-height:1.45; color:var(--ink); opacity:.9; }
-  .level-max-tag{ display:inline-block; margin-left:.45rem; padding:.05rem .42rem; border-radius:999px;
-    font-size:.62rem; letter-spacing:.08em; text-transform:uppercase; vertical-align:middle;
-    color:#0B1220; background:linear-gradient(180deg, #CFE6FF, #8FC1FF); box-shadow:0 0 10px rgba(61,139,255,.35); }
   .is-banked .xpbar-fill::after{ background:linear-gradient(90deg, rgba(214,236,255,.05), rgba(214,236,255,.42));
     animation-duration:2.6s; }
   .xpbar-track.is-banked{ box-shadow:inset 0 1px 2px rgba(0,0,0,.5), 0 0 0 1px rgba(143,193,255,.42), 0 0 12px rgba(61,139,255,.32); }
@@ -46435,11 +46433,8 @@ function buildLevelChallengeButton(){
 function rankChallengeNote(c){
   if(!c) return "";
   const s = c.state;
-  if(s.held){
-    return "Your level is capped at " + s.level + " until you reach " + c.name +
-      (s.saved > 0 ? " \u00b7 " + s.saved + (s.saved === 1 ? " level saved" : " levels saved") : "");
-  }
-  return c.opens ? "Reach " + c.name + " to unlock levels " + c.opensFrom + (c.opensTo > c.opensFrom ? "\u2013" + c.opensTo : "") : "";
+  if(s.held) return "Your level stays at " + s.level + " until you rank up to " + c.name;
+  return "Complete both to rank up to " + c.name;
 }
 /* What the button opens: the two challenges against you. */
 function showLevelChallenge(){
@@ -46485,15 +46480,13 @@ function showLevelChallenge(){
   sheet.appendChild(rows);
   const line = document.createElement("p");
   line.className = "level-chal-line";
-  line.textContent = "Complete both to reach " + c.name + "." +
-    (c.opens ? " Its badges unlock levels " + c.opensFrom + (c.opensTo > c.opensFrom ? "\u2013" + c.opensTo : "") + "." : "");
+  line.textContent = "Complete both to rank up to " + c.name + ".";
   sheet.appendChild(line);
   if(c.state.held){
     const cap = document.createElement("p");
     cap.className = "level-chal-cap";
-    cap.textContent = "Until then your level is capped at " + c.state.level + "." +
-      (c.state.saved > 0 ? " Your XP keeps counting: " + c.state.saved + (c.state.saved === 1 ? " level is" : " levels are") +
-        " saved and arrive the moment you rank up." : " Your XP keeps counting.");
+    cap.textContent = "Until then your level stays at " + c.state.level +
+      ". Your XP keeps counting, and it all turns into levels the moment you rank up.";
     sheet.appendChild(cap);
   }
   const badgeCh = c.list.find(x => x.kind === "badges");
@@ -46523,11 +46516,7 @@ function showLevelChallenge(){
    "Earn 2 more badges to unlock levels 50-59 · 3 levels saved". */
 function levelWallLine(s){
   if(!s || !s.held) return "";
-  const n = s.badgesToPass;
-  const from = s.wall + 1, to = Math.max(from, s.opensTo || from);
-  return "Earn " + n + (s.badges > 0 ? " more" : "") + (n === 1 ? " badge" : " badges") +
-    " to unlock " + (to > from ? "levels " + from + "\u2013" + to : "level " + from) +
-    (s.saved > 0 ? " \u00b7 " + s.saved + (s.saved === 1 ? " level saved" : " levels saved") : "");
+  return rankChallengeNote(rankChallengesOf());
 }
 /* The badge you are nearest: "Closest: Identity Crimes, 7 of 15 hundos".
    Your own account only - the hundos behind it are not published. */
@@ -56050,8 +56039,8 @@ const RELEASE_NOTES = [
         { icon: buildPaletteIcon, color: "#C583FF", title: "New Banners And Pop-Ups", body: "New banners for the secret flare characters, and every unlock pop-up now matches the colours of what you unlocked. Silver looks like silver." }
       ]},
       { label: "Ranks, Levels & Badges", items: [
-        { icon: buildLadderIcon, color: "#E8B84A", title: "Every Rank Is A Gate", body: "Each rank now owns a band of levels: Bronze 21\u201329, Silver 30\u201339, up to Supernova at 80. Your badges decide the highest band you can reach, so if you were past it your level shows at the top of your band for now. Your XP is all still there, the extra levels are saved and arrive the moment you earn the badges, and nobody loses a rank." },
-        { icon: buildStarIcon, color: "#FFD84D", title: "A New Rank Ladder", body: "Each rank owns a block of levels: Bronze 21-29, Silver 30-39, Gold 40-49, Platinum 50-59, Sapphire 60-69, Amethyst 70-79, Supernova 80. You can level to the top of the next rank's block; past it takes that rank's badges. Your XP is never lost: levels past the cap are saved and arrive the moment you earn the badges. Badge requirements are the same, and nobody loses a rank." },
+        { icon: buildLadderIcon, color: "#E8B84A", title: "Every Rank Is A Gate", body: "Each rank now owns a band of levels: Bronze 21\u201329, Silver 30\u201339, up to Supernova at 80. Every rank has two challenges, a level and a number of badges. If your XP is ahead of your rank, your level stays at the top of your band until you complete the next rank's challenges; your XP is all still there and turns into levels the moment you rank up. Nobody loses a rank." },
+        { icon: buildStarIcon, color: "#FFD84D", title: "A New Rank Ladder", body: "Each rank owns a block of levels: Bronze 21-29, Silver 30-39, Gold 40-49, Platinum 50-59, Sapphire 60-69, Amethyst 70-79, Supernova 80. You can level to the top of the next rank's block; past it takes ranking up. Your XP is never lost: it keeps counting and turns into levels the moment you rank up. Badge requirements are the same, and nobody loses a rank." },
         { icon: buildBarStatsIcon, color: "#5CA8FF", title: "Stats, Profile And The Road Map", body: "Profile shows your next rank gate under the XP bar, the Stats page is clearer, and the rank road map shows exactly where you stand." }
       ]},
       { label: "Results", items: [
@@ -63782,6 +63771,7 @@ function showIntroPopup(){
   try{
     const ls = levelStateFor(store);
     if(ls.held && ls.saved > 0){
+      /* only for somebody the update actually moved down */
       const note = document.createElement("div");
       note.className = "intro-gate-note";
       const h = document.createElement("p");
@@ -63789,10 +63779,10 @@ function showIntroPopup(){
       h.textContent = "Your level now follows your rank";
       const b = document.createElement("p");
       b.className = "intro-gate-body";
-      const n = ls.badgesToPass, from = ls.wall + 1, to = Math.max(from, ls.opensTo || from);
-      b.textContent = "You're level " + ls.level + " with " + ls.saved + (ls.saved === 1 ? " level" : " levels") +
-        " saved. All your XP is kept: earn " + n + (ls.badges > 0 ? " more" : "") + (n === 1 ? " badge" : " badges") +
-        " to unlock levels " + from + "\u2013" + to + ", and your saved levels arrive at once.";
+      const rc = rankChallengesOf();
+      b.textContent = "Your level now stays at " + ls.level + " until you rank up" + (rc ? " to " + rc.name : "") +
+        ". All your XP is kept and keeps counting: complete the " + (rc ? rc.name + " " : "") +
+        "challenges and it all turns into levels at once.";
       note.append(h, b);
       card.appendChild(note);
     }
@@ -63812,10 +63802,10 @@ function showIntroPopup(){
      "Quicker answer feedback, a smoother swipe to the next question, and a simpler start sheet."],
     ["M5 21V3.5h1.8v1h11.4l-2.2 4.2 2.2 4.2H6.8V21H5Z",
      "#E8B84A", "The rank road map",
-     "Each rank owns a block of levels, up to Supernova at 80. Your badges decide how high your level can go; extra XP is saved until they do."],
+     "Every rank has two challenges: a level and its badges. Your level can climb to the top of the next rank's block, and ranking up lets it climb again."],
     ["M4 19.6h16v1.8H4v-1.8Zm1.2-7.2h3v5.6h-3v-5.6Zm5.3-5h3v10.6h-3V7.4Zm5.3 3h3v7.6h-3v-7.6Z",
      "#5CA8FF", "Stats and Profile",
-     "A clearer Stats page, a fuller test history, and your next rank gate under the XP bar."],
+     "A clearer Stats page, a fuller test history, and your rank challenges beside the XP bar."],
     ["M12 2.8l2.8 5.7 6.3.9-4.6 4.4 1.1 6.3L12 17.1l-5.6 3 1.1-6.3-4.6-4.4 6.3-.9L12 2.8Z",
      "#4ADE80", "Results, overhauled",
      "Your rewards revealed one at a time, then the full review."],
@@ -88267,20 +88257,15 @@ function showProfile(defaultTab){
   const levelSideLab = document.createElement("span");
   levelSideLab.className = "rankhero-gaugelab";
   levelSideLab.textContent = "Level";
-  /* "MAX" while the band cap holds it (build 314): the number is the
-     highest this rank's badges allow, not where the XP stops */
-  if(prog.stopped){
-    const mx = document.createElement("span");
-    mx.className = "level-max-tag";
-    mx.textContent = "Max";
-    levelSideLab.appendChild(mx);
-  }
   const levelSideTop = document.createElement("span");
   levelSideTop.className = "profile-level-sidetop";
   /* Held at the band cap the line says what is waiting, not what is
      left: the XP numbers under the bar carry the rest. */
   levelSideTop.textContent = prog.atCap ? "Level " + LEVEL_CAP + ", the cap"
-    : prog.held ? (prog.saved > 0 ? prog.saved + (prog.saved === 1 ? " level saved" : " levels saved") : "Max until your next rank")
+    /* "MAX LEVEL UNTIL BRONZE" (build 314) - what is holding it, in the
+       words of the challenge that lifts it. No saved-levels count: "I
+       like it but I don't". */
+    : prog.held ? "Max level until " + ((rankChallengesOf() || {}).name || "your next rank")
     : prog.toNext.toLocaleString() + " XP to level " + (prog.level + 1);
   /* THE TOTAL GOES AT THE BOTTOM (build 302). "Where it says how much xp
      you have earned ... shouldn't that be at the bottom and not in the
@@ -89723,14 +89708,12 @@ function showRankLore(key){
   const ls = levelStateFor(store);
   const holdsYou = ls.held && ls.gateKey === key;
   wall.textContent = holdsYou
-    ? levelWallLine(ls) + " \u00b7 " + levelXpNumbers(ls)
+    ? levelWallLine(ls)
     : (() => {
         /* the band its badges open: Bronze's 1 badge opens levels 30-39 */
-        const nb = rule.badges || 0, to = badgeWallLevel(nb), from = badgeWallLevel(Math.max(0, nb - 1)) + 1;
-        const word = nb + (nb === 1 ? " badge" : " badges");
-        return to >= from
-          ? "Its " + word + " unlock levels " + from + (to > from ? "\u2013" + to : "") + "."
-          : "Level " + (rule.level || 0) + " and " + word + " to hold it.";
+        const nb = rule.badges || 0;
+        return RANK_DISPLAY_NAME[key] + " challenges: reach level " + (rule.level || 0) + " and earn " +
+          nb + (nb === 1 ? " badge." : " badges.");
       })();
   sheet.appendChild(wall);
   sheet.append(buildRankGiftsLabel(), buildRankGifts(key));
@@ -90193,21 +90176,10 @@ function buildRanksTab(){
     req.className = "rankmap-req";
     req.textContent = "Level " + rule.level + " \u00b7 " + rule.badges + (rule.badges === 1 ? " badge" : " badges");
     card.appendChild(req);
-    if(isNext){
-      const meter = document.createElement("div");
-      meter.className = "rankcard-meter rankmap-meter";
-      const meterFill = document.createElement("span");
-      meterFill.className = "rankcard-meterfill";
-      setBarFill(meterFill, 0);
-      meter.appendChild(meterFill);
-      fillsToAnimate.push({ el: meterFill, prop: "width", value: (Math.round((heroStepPct != null ? heroStepPct : rankPct(key)) * 1000) / 10) + "%" });
-      card.appendChild(meter);
-      const togo = document.createElement("p");
-      togo.className = "rankmap-togo";
-      const parts = tierShortfall(rule).map(t => t.replace(" more ", " "));
-      togo.textContent = parts.length ? parts.join(", ") + " to go" : "Ready to reach";
-      card.appendChild(togo);
-    }
+    /* NO METER ON "UP NEXT" (build 314): the card at the top of this tab
+       already shows that rank's challenges against you, so the road map
+       is the overview - every card just its requirement, "Up next" by its
+       chip and highlight, the road filling towards it. */
     /* What it hands over - buildRankGifts (build 311: one size, one
        start, the same chips the rank's own card shows). */
     card.append(buildRankGiftsLabel(), buildRankGifts(key));

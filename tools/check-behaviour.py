@@ -576,9 +576,10 @@ def check_ranks(br):
     check("no avatar stands on the road map; the rank you hold still says so",
           [i for i, c in enumerate(cards) if c["you"]] == [] and "here" in cards[2]["state"],
           cards)
-    check("only the rank you are climbing to carries a meter",
-          [c["meter"] for c in cards] == [False, False, False, True, False, False, False],
-          [c["meter"] for c in cards])
+    # Build 314: the top card shows the next rank's challenges, so no road
+    # map card carries a meter any more - "Up next" keeps its chip.
+    check("no road map card carries a meter (the top card has the challenges)",
+          [c["meter"] for c in cards] == [False] * 7, [c["meter"] for c in cards])
     # Theme and flare on every rank; Gold and up hand over a character
     # too, and the top three a banner (a chip again since build 236).
     # Build 235: Gold hands over the Pharaoh, so it is the top FIVE now.

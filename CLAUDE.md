@@ -13207,6 +13207,19 @@ disagree with it.
   row equals the shown level, nobody below their build-313 rank.
   When capped, one blue line says so: "Your level is capped at 49 until
   you reach Gold · 3 levels saved" (`rankChallengeNote`).
+- **CHALLENGES RANK YOU UP; THEY DO NOT "UNLOCK LEVELS".** *"We aren't
+  unlocking levels, it's a challenge ... it would unlock the next
+  rank."* No copy names a level range any more, and there is no "N
+  levels saved" count anywhere (*"I like it but I don't"*). Capped, the
+  Profile line under LEVEL is **"Max level until <Rank>"** (no Max chip),
+  and everywhere else "Your level stays at 49 until you rank up to Gold".
+- **THE XP NUMBERS KEEP THEIR COLOURS** (white / soft blue) and only YOUR
+  number turns gold once it is past the requirement - *"the color doesn't
+  change it just keeps going up ... turns a different color when it's
+  going over"*. The old under/over flip was asked against.
+- **NO ROAD MAP CARD CARRIES A METER.** The top card shows the next
+  rank's challenges, so "Up next" is its chip and highlight only, and
+  the road line still fills towards it.
 - **AT THE CAP THE RESULTS NUMBER COUNTS UP.** *"The result screen when
   getting xp if you are full, that xp number would just keep going up."*
   The held line is `buildXpNumbers` and the reveal counts its first
