@@ -13008,3 +13008,28 @@ while reads still work.
   account can be credited exactly under its one tally key (Maddog, +545,
   Oct 6); a two-device one needs the right key (Rod713, +2,005, credited
   under the device that wrote the account last).
+
+### Reads are a quota too (build 312.2)
+
+The free plan is 20,000 writes **and 50,000 reads** a day for the whole
+class. A read is charged per document returned, and a live listener is
+charged again for every change to anything it watches - so the cost of a
+write is one write plus one read per phone watching it. A metered session
+(a recording stand-in for `fbDb` counting every operation by call site,
+`scratchpad/meter/meter.py` pattern) found three costs nobody could see:
+
+- **The open-rooms search** read every `vrooms` document - 148 of them,
+  chats and bug reports included - every 1.25s for five seconds: ~740
+  reads per search, again on every Refresh, to find the two marked open.
+  It now asks the server for `where("open", "==", true)`.
+- **Home re-read the whole leaderboard every two minutes**
+  (`BOARD_REFETCH_MS`): ~40 reads a time, ~1,200 an hour for somebody
+  going back and forth. It is the old-build invite fallback; now every
+  15 minutes. The Leaderboard and Friends screens still listen live.
+- **Race progress was written every 2s whether it had moved or not**, and
+  every player in the room read every write. Now only when it moves.
+
+**Before adding anything that reads a whole collection, listens to a
+shared document, or writes on a timer, multiply it out: per phone, per
+hour, times ~40.** `vrooms` only grows (rooms, chats, bug reports), so
+anything that lists it gets dearer every week.

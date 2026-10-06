@@ -77360,7 +77360,13 @@ function placeTopBanner(el){
    The Leaderboard and Friends screens still attach their own listeners
    while they are open, which is correct: somebody looking at a board
    wants it live. */
-const BOARD_REFETCH_MS = 2 * 60 * 1000;
+/* FIFTEEN MINUTES, NOT TWO (build 312.2). Every fetch is the whole
+   board - ~40 reads - and a student going back and forth to Home all
+   evening paid it every two minutes: ~1,200 reads an hour each, against
+   a free allowance of 50,000 a day for the whole class. Invites have
+   come through the mailbox for weeks; this is only the old-build
+   fallback, and the Leaderboard and Friends screens still listen live. */
+const BOARD_REFETCH_MS = 15 * 60 * 1000;
 let boardFetchedAt = 0;
 let boardFetchInFlight = false;
 
@@ -79684,7 +79690,14 @@ function showRoomBrowser(){
     const look = () => {
       if(!alive() || settled) return;
       try{
-        fbDb.collection("vrooms").get().then(snap => {
+        /* ONLY THE OPEN ONES (build 312.2). This read every Virtual Room
+           document there has ever been - 148 of them, chats and bug
+           reports included - every 1.25s for five seconds: ~740 reads a
+           search, again on every Refresh, to find the two marked open.
+           The server filters now; openRoomsFrom still judges who is
+           actually there. */
+        const vcol = fbDb.collection("vrooms");
+        (typeof vcol.where === "function" ? vcol.where("open", "==", true) : vcol).get().then(snap => {
           if(!alive() || settled) return;
           const rooms = [];
           snap.forEach(d => rooms.push(d));
@@ -81870,11 +81883,19 @@ function stopVroomRaceListener(){
   if(vroomRaceUnsubscribe){ vroomRaceUnsubscribe(); vroomRaceUnsubscribe = null; }
 }
 
+/* Only when it MOVED (build 312.2): this runs every 2s for every player
+   in a race, and every write is read by every other player in the room -
+   ten players sitting on one question each were 300 writes and 3,000
+   reads a minute saying nothing new. */
+let lastRoomProgressSent = "";
 function pushVirtualRoomProgress(){
   if(!vroomCode || !fbDb) return;
   const myKey = vroomMyKey;
   if(!myKey) return;
   const progress = order.length > 0 ? Math.round((pos / order.length) * 100) : 0;
+  const sig = vroomCode + "|" + myKey + "|" + progress;
+  if(sig === lastRoomProgressSent) return;
+  lastRoomProgressSent = sig;
   fbDb.collection("vrooms").doc(vroomCode).update({
     ["participants." + myKey + ".progress"]: progress
   }).catch(() => {});
