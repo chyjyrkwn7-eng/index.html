@@ -1297,7 +1297,7 @@ def check_b313_shuffle(br):
       const isRef = (q, k) => CHOICE_REFERS_RE.some(re => re.test(String(q.choices[k])));
       let few = [], slot = [0, 0, 0, 0], freeAns = 0;
       QUESTIONS.forEach((q, qi) => {
-        if(q.fixedOrder || (q.choices || []).length !== 4) return;
+        if(q.fixedOrder || (q.choices || []).length !== 4 || q.choices.some((c, k) => isRef(q, k) || /\\b(above|listed|these)\\b/i.test(String(c)))) return;
         const seen = new Set();
         for(let t = 0; t < 20; t++){ layout = {}; runMode = 'drill'; cfg.shuffle = true; const o = optionOrder(qi); seen.add(o.join());
           if(!isRef(q, q.answer)) slot[o.indexOf(q.answer)]++; }
@@ -1305,15 +1305,25 @@ def check_b313_shuffle(br):
         const movable = q.choices.filter((c, k) => !isRef(q, k)).length;
         if(movable >= 3 && seen.size < 3) few.push(q.topic.trim().slice(0, 12) + ' ' + q.src);
       });
-      // "Both A & C" names the right two after a shuffle
-      out.letters = [];
-      QUESTIONS.forEach((q, qi) => (q.choices || []).forEach((c, k) => {
-        if(!CHOICE_REFERS_RE[1].test(String(c)) || typeof choiceShown !== 'function') return;
-        for(let t = 0; t < 12; t++){ layout = {}; runMode = 'exam'; const o = optionOrder(qi);
-          const named = []; String(c).replace(CHOICE_LETTER_RE, (m, L) => { named.push(q.choices[L.toUpperCase().charCodeAt(0) - 65]); return m; });
-          const shown = choiceShown(qi, k, o); const now = []; shown.replace(CHOICE_LETTER_RE, (m, L) => { now.push(q.choices[o[L.toUpperCase().charCodeAt(0) - 65]]); return m; });
-          if(named.slice().sort().join('|') !== now.slice().sort().join('|')) out.letters.push(q.src + ': ' + c + ' -> ' + shown); }
-      }));
+      // 6 Oct: a question whose choices point at each other ("All of the
+      // above", "Both A & B", "A, B, and C") shows the study guide's exact
+      // order in every mode, shuffle on or off, and no choice is rewritten
+      out.letters = []; out.frozenN = 0;
+      const ptr = q => (q.choices || []).some((c, k) => isRef(q, k) || /\\b(above|listed|these)\\b/i.test(String(c)));
+      QUESTIONS.forEach((q, qi) => {
+        if(!ptr(q)) return; out.frozenN++;
+        const guide = q.choices.map((c, k) => k).join();
+        const orders = [];
+        for(let t = 0; t < 8; t++){
+          layout = {}; runMode = 'exam'; orders.push(optionOrder(qi).join());
+          layout = {}; runMode = 'drill'; cfg.shuffle = true; orders.push(optionOrder(qi).join());
+          layout = {}; runMode = 'drill'; cfg.shuffle = false; orders.push(optionOrder(qi).join());
+          orders.push(shuffledChoiceOrder(qi, false).join());
+        }
+        const rev = q.choices.map((c, k) => k).reverse();
+        const rewritten = typeof choiceShown === 'function' && q.choices.some((c, k) => choiceShown(qi, k, rev) !== String(c));
+        if(orders.some(o => o !== guide) || rewritten) out.letters.push(q.topic.trim().slice(0, 12) + ' ' + q.src + (rewritten ? ' (text rewritten)' : ' (moved)'));
+      });
       out.hasShown = typeof choiceShown === 'function';
       const tot = slot.reduce((a, b) => a + b, 0);
       out.slotPct = slot.map(x => +(100 * x / tot).toFixed(1)); out.few = few.slice(0, 8); out.fewN = few.length; out.freeAns = freeAns;
@@ -1343,8 +1353,8 @@ def check_b313_shuffle(br):
     check("the opening questions never repeat the last run's opening questions",
           r["units"] and all(u["reopen"] == 0 for u in r["units"]), [(u["u"], u["reopen"]) for u in r["units"] if u["reopen"]])
     check("every four-choice question that can move comes up in several orders", r["fewN"] == 0, r["few"])
-    check("a choice like \"Both A & C\" is rewritten to name the same two choices wherever they land",
-          r["hasShown"] is True and r["letters"] == [], r["letters"][:4] if r["hasShown"] else "no choiceShown")
+    check("every question with All of the above / Both A & B / A, B, and C keeps the study guide's exact order in every mode, shuffled or not, text never rewritten",
+          r["frozenN"] > 100 and r["letters"] == [], [r["frozenN"]] + r["letters"][:6])
     check("an ordinary right answer lands in A, B, C and D about equally (20-30% each)",
           r["freeAns"] > 500 and all(20 <= x <= 30 for x in r["slotPct"]), r["slotPct"])
     # REVISED 6 Oct: "these test questions are supposed to be exactly like
@@ -7137,22 +7147,26 @@ def check_b298(br):
     # three ordinary choices shuffle and its letters are rewritten to
     # follow them (section 97 proves they name the same two). What stays
     # is the pointing choice in its own place, and real movement.
-    both_ok = lambda os: all(o.split(",")[3] == "3" for o in os) and len(set(os)) >= 3
-    check("a question whose choices name other letters (\"Both A & B\"): every other choice shuffles, \"Both A & B\" stays put, on shuffle and in an exam",
-          both_ok(r["both"]["orders"]) and both_ok(r["exam"]), r["both"])
-    check("one with \"All of the above\" keeps it last, with the rest shuffling above it", len(r["above"]) > 1 and len({o.split(",")[-1] for o in r["above"]}) == 1, r["above"])
+    # REVISED 6 Oct, by instruction: these questions keep the study
+    # guide's EXACT order, shuffled or not - builds 312-313 are undone.
+    guide = lambda os: os == ["0,1,2,3"]
+    check("a question whose choices name other letters (\"Both A & B\") shows the study guide's exact order, on shuffle and in an exam",
+          guide(r["both"]["orders"]) and guide(r["exam"]), r["both"])
+    check("one with \"All of the above\" shows the study guide's exact order on shuffle", guide(r["above"]), r["above"])
     check("a plain question, and one whose answer only starts with \"All\", still shuffle", r["plain"] > 1 and r["prose"] > 1, (r["plain"], r["prose"]))
     check("about a hundred questions in the bank are held in order", 90 <= r["count"] <= 130, r["count"])
-    check("on shuffle, an \"of the above\" / \"All the listed\" / \"All are true\" choice always lands at the bottom",
-          r["astray"] == [], r["astray"])
+    # REVISED 6 Oct: exact guide order outranks "always at the bottom" -
+    # the one guide question with "All the listed" third keeps it third
+    check("on shuffle, an \"of the above\" / \"All the listed\" / \"All are true\" choice stays exactly where the study guide puts it",
+          r["astray"] == ["Sexual Assault and Family Violence 41"] or r["astray"] == [], r["astray"])
     check("a shuffled run never puts two questions from the same stretch of the guide side by side, or a repeated question near its twin",
           r["near"] < 0.5 and r["twins"] < 0.5, (r["near"], r["twins"]))
     check("the Penal slides 55-124 version: a repeated question is 15 or more questions from its twin, and no two on one answer set are ever side by side",
           r["verRepMin"] >= 15 and r["verSideBySide"] == 0, (r["verRepMin"], r["verSideBySide"]))
     check("a shuffled question leaves at most one choice where the guide had it, and the answer still lands on every letter about equally",
           r["stay2"] == 0 and all(0.2 <= s <= 0.3 for s in r["slots"]), (r["stay2"], r["slots"]))
-    check("and one whose choices name letters (\"A or B\", \"a and b are correct\") now moves around them (build 312: frozen whole before)",
-          len(r["moved"]) > 0, r["moved"])
+    check("and one whose choices name letters (\"A or B\", \"a and b are correct\") never moves (6 Oct: exact study guide order)",
+          r["moved"] == [], r["moved"])
     ctx.close()
     # "this one ... said at the top that it's a duplicate.. remove that stuff"
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
@@ -9035,14 +9049,17 @@ def check_b312_shuffle(br):
       let never = [], fixedMoved = [], checked = 0;
       QUESTIONS.forEach((q, qi) => {
         const n = (q.choices || []).length; if(n < 2) return;
-        const base = pointsUpLast(qi, ids(qi)).join();
+        /* REVISED 6 Oct: the guide's order, exactly, for any question whose
+           choices point at each other - not only the hand-fixed two */
+        const base = ids(qi).join();
+        const frozen = q.fixedOrder || (typeof choicesFrozen === 'function' ? choicesFrozen(qi) : choicesReferToEachOther(qi));
         let moved = false;
         for(let t = 0; t < 60 && !moved; t++) if(shuffledChoiceOrder(qi, false).join() !== base) moved = true;
-        if(q.fixedOrder){ if(moved) fixedMoved.push(qi); return; }
+        if(frozen){ if(moved) fixedMoved.push(qi); return; }
         checked++; if(!moved) never.push(q.src);
       });
       out.checked = checked; out.never = never.slice(0, 8); out.neverN = never.length; out.fixedMoved = fixedMoved.length;
-      out.fixedN = QUESTIONS.filter(q => q.fixedOrder).length;
+      out.fixedN = QUESTIONS.filter((q, qi) => q.fixedOrder || choicesReferToEachOther(qi)).length;
       /* a choice that points at the others still points at the same set */
       let bad = [], pointing = 0;
       QUESTIONS.forEach((q, qi) => {
@@ -9072,11 +9089,14 @@ def check_b312_shuffle(br):
         const a = flashcardDeck(fu, 'all', {}).join(), b = flashcardDeck(fu, 'all', {}).join(), c = flashcardDeck(fu, 'all', {}).join();
         out.fcDiffer = (a !== b) || (b !== c); out.fcLen = a.split(',').length; }catch(e){ out.fcErr = String(e); }
       return out; }""")
-    check("every question that is not hand-fixed can come up in a new choice order (build 311: 121 never moved)",
-          r.get("checked", 0) > 800 and r.get("neverN") == 0, {k: r.get(k) for k in ("checked", "neverN", "never")})
-    check("the hand-fixed questions (Constitution Q11 and Q37) never move", r.get("fixedN", 0) >= 2 and r.get("fixedMoved") == 0, r)
+    check("every question with no choice pointing at the others can come up in a new choice order",
+          r.get("checked", 0) > 700 and r.get("neverN") == 0, {k: r.get(k) for k in ("checked", "neverN", "never")})
+    check("the hand-fixed questions and every All of the above / Both A & B question never move (6 Oct: exact study guide order)",
+          r.get("fixedN", 0) > 100 and r.get("fixedMoved") == 0, {k: r.get(k) for k in ("fixedN", "fixedMoved")})
+    # REVISED 6 Oct: covered by the never-move check above; a frozen
+    # question's choices point exactly where the guide's do
     check("a choice that points at the others (all/none of the above, both A and B) keeps pointing at the same choices",
-          r.get("pointing", 0) > 50 and not r.get("bad"), {k: r.get(k) for k in ("pointing", "bad")})
+          r.get("pointing", 0) > 50 and all(b[2] == "".join(str(i) for i in range(len(b[2]))) for b in (r.get("bad") or [])), {k: r.get(k) for k in ("pointing", "bad")})
     check("asked again, the answer does not sit in the same slot as it did the time before", r.get("repeats") == 0, r.get("repeats"))
     check("flashcards come in a new order each time", r.get("fcDiffer") is True and r.get("fcLen", 0) > 5, r)
     ctx.close()

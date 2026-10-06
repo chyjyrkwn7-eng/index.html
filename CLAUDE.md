@@ -12907,6 +12907,18 @@ every unit, and through the real Begin button:
   study guide: 4-30% of a unit's answers are "All of the above" (30% of
   Sexual Assault and TCOLE), which Madison asked to keep at the bottom.
   That is the content, not the shuffle.
+- **SUPERSEDED 6 Oct - the next two bullets are history.** *"the questions
+  with the answer choices that say all the above or A and C or A and B or
+  whatever, those type of questions need the answer [choices] to just be
+  in the exact same order from the study guides whether shuffled or
+  not."* `choicesFrozen(qi)` (any choice pointing by letter, by place -
+  above/listed/these - or "none/all are correct") returns the guide's
+  order in EVERY mode, shuffle on or off, including flashcards, and
+  `choiceShown()` returns the guide's text unchanged. `pointsUpLast` no
+  longer reorders anything either: shuffle off is the guide's order
+  exactly. Builds 312-313 had moved the other choices around a pointing
+  one and rewritten its letters; that was wrong and is gone. Sections 86
+  and 97 assert the rule and fail on the 312/313 behaviour.
 - **"Both A & B" no longer pins A and B.** The 14 letter-pointing choices
   in the bank stay in their own slot, every ordinary choice shuffles, and
   `choiceShown(qi, orig, ord)` rewrites the letters to wherever the named

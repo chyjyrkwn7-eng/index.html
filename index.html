@@ -55065,7 +55065,7 @@ function optionOrder(qi){
     if((runMode === "exam" || cfg.shuffle) && ids.length > 1){
       layout[qi] = shuffledChoiceOrder(qi, true);
     } else {
-      layout[qi] = pointsUpLast(qi, ids);
+      layout[qi] = ids;
     }
   }
   return layout[qi];
@@ -55111,7 +55111,16 @@ const CHOICE_LETTER_RE = /(?:^|[^A-Za-z])([A-Ea-e])(?=$|[^A-Za-z])/g;
 function shuffledChoiceOrder(qi, remember){
   const q = QUESTIONS[qi], ch = q.choices || [];
   const ids0 = ch.map((c, k) => k);
-  if(q.fixedOrder || ids0.length < 2) return pointsUpLast(qi, ids0);
+  /* THE STUDY GUIDE'S ORDER, EXACTLY (6 Oct): "the questions with the
+     answer choices that say all the above or A and C or A and B or
+     whatever, those type of questions need the answer [choices] to just
+     be in the exact same order from the study guides whether shuffled or
+     not". Builds 312-313 shuffled the choices around a pointing choice
+     and rewrote its letters; that is undone. A question with any choice
+     that points at the others - by letter, by place ("above", "listed",
+     "these") or by "none/all are correct" - shows the guide's order in
+     every mode, and its text is never rewritten (choiceShown). */
+  if(choicesFrozen(qi) || ids0.length < 2) return ids0;
   /* "All of the above" reads last; then work in that order */
   const base = pointsUpLast(qi, ids0);
   const isLetterRef = k => CHOICE_REFERS_RE[1].test(String(ch[k]));
@@ -55162,6 +55171,10 @@ function shuffledChoiceOrder(qi, remember){
   }
   return out;
 }
+function choicesFrozen(qi){
+  const q = QUESTIONS[qi];
+  return !!(q && (choicesReferToEachOther(qi) || (q.choices || []).some(c => CHOICE_POINTS_UP_RE.test(String(c)))));
+}
 function correctSlot(qi){ return optionOrder(qi).indexOf(QUESTIONS[qi].answer); }
 /* A choice as it reads in the order `ord`: unchanged, unless it names
    other choices by letter ("Both A & C"). Those letters name the study
@@ -55172,6 +55185,10 @@ function correctSlot(qi){ return optionOrder(qi).indexOf(QUESTIONS[qi].answer); 
    order goes through here; a list in the guide's own order does not. */
 function choiceShown(qi, orig, ord){
   const q = QUESTIONS[qi], c = String((q.choices || [])[orig]);
+  /* Never rewritten (6 Oct): a choice reads exactly as the study guide
+     has it, and a question whose choices name each other never moves
+     (choicesFrozen), so its letters are already right. */
+  return c;
   if(!ord || !CHOICE_REFERS_RE[1].test(c)) return c;
   const named = [];
   c.replace(CHOICE_LETTER_RE, (m, L) => { named.push(L); return m; });
