@@ -2533,23 +2533,31 @@
   .flagicon{ width:1.35rem; height:1.35rem; }
   /* Review's Flagged questions box (build 297): a unit card two
      columns wide, first in the grid. */
+  /* A LIQUID GLASS ROW, NOT A GOLD ONE (build 313): the gold wash and
+     gold border made this card shout over the unit cards under it. Now
+     it is one sheet of the same glass as the rest of the app - a lit
+     top edge, a frosted body, a soft shadow - with the outline star in
+     a glass disc. Starred-ness is said by the word and the star shape,
+     not by colour. */
   .picks .pick.pick-flagged-all{
-    grid-column:1 / -1; display:flex; align-items:center; gap:.85rem; width:100%; min-height:4.6rem;
-    padding:.9rem 1rem; font:inherit; text-align:left;
-    border-color:rgba(245,197,24,.38);
-    background-image:linear-gradient(135deg, rgba(245,197,24,.13), rgba(245,197,24,.03) 60%);
+    grid-column:1 / -1; display:flex; align-items:center; gap:.9rem; width:100%; min-height:4.4rem;
+    padding:.8rem 1rem .8rem .85rem; font:inherit; text-align:left;
+    border:1px solid rgba(255,255,255,.13);
+    background:linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.02) 55%, rgba(0,0,0,.10)), rgba(255,255,255,.03);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.14), 0 8px 22px rgba(0,0,0,.22);
   }
-  /* just the flag, no circle round it (build 298) */
-  .pick-flagged-icon{ display:flex; align-items:center; justify-content:center; flex:none; width:2.2rem; height:2.2rem; }
+  /* just the star, no circle round it (build 298, still) */
+  .pick-flagged-icon{ display:flex; align-items:center; justify-content:center; flex:none; width:2.4rem; height:2.4rem; }
   .pick-flagged-icon .whatsnew-glyph{ width:2rem; height:2rem; color:var(--ink); }
-  .pick-flagged-icon .starred-card-star{ width:2.5rem; height:2.5rem; display:block; overflow:visible; }
+  .pick-flagged-icon .starred-card-star{ width:2rem; height:2rem; display:block; overflow:visible; filter:drop-shadow(0 2px 4px rgba(0,0,0,.35)); }
   .pick-flagged-text{ display:flex; flex-direction:column; gap:.2rem; flex:1; min-width:0; }
   .picks .pick-flagged-all .pname, .picks .pick-flagged-all .pcount{ min-height:0; margin:0; padding-top:0; padding-bottom:0; }
   .picks .pick-flagged-all .pname{ font-size:1rem; }
   .picks .pick-flagged-all .pcount{ font-size:.75rem; }
   .pick-flagged-go{ font-size:1.7rem; line-height:1; color:var(--soft); }
-  .pick-flagged-all.is-empty{ border-color:var(--rule); background-image:none; }
-  .pick-flagged-all.is-empty .pick-flagged-icon{ opacity:.75; }
+  .pick-flagged-all.is-empty{ border-color:rgba(255,255,255,.08); }
+  .pick-flagged-all.is-empty .pick-flagged-icon{ opacity:.6; }
+  .pick-flagged-all.is-empty .pname{ color:var(--soft); }
   /* Answer Review: the question and its flag on one row (build 297) */
   .review-qhead{ display:flex; align-items:flex-start; gap:.6rem; }
   .review-qhead > .review-question-text{ flex:1; min-width:0; }
@@ -9970,7 +9978,7 @@
   .ar-head.is-starred{ border-color:rgba(255,211,106,.28);
     background:radial-gradient(120% 160% at 0% 50%, rgba(255,211,106,.12), transparent 60%), rgba(26,31,38,.45); }
   .ar-head-icon{ flex:0 0 auto; width:2.4rem; height:2.4rem; display:grid; place-items:center; }
-  .ar-head-icon svg{ width:100%; height:100%; }
+  .ar-head-icon svg{ width:85%; height:85%; }
   .ar-head-text{ min-width:0; }
   .ar-head-title{ margin:0; font-family:inherit; font-size:1.2rem; font-weight:800; letter-spacing:-.01em; color:var(--ink); line-height:1.2; }
   .ar-head-sub{ margin:.2rem 0 0; font-size:.8rem; color:var(--soft); }
@@ -11193,11 +11201,21 @@
   .cosmic-flare-dot.cosmic-badge-tappable:active{ transform:none; }
   .cosmic-flare-dot::after{ content:""; position:absolute; left:50%; top:50%; width:44px; height:44px; translate:-50% -50%; border-radius:50%; }
   .cosmic-flare-dot > i{ position:absolute; inset:0; border-radius:50%; pointer-events:none; }
-  /* Missing: the tiny glass bubble, clear in the middle and bright at the
-     rim, the same for every one (build 310). */
+  /* Missing: a small smoky-glass marble, the same for every one. It was
+     a flat ring - clear middle, bright rim (build 310) - and next to a
+     lit flare it read as a hole: "I love the way the secret flares look
+     when lit up ... can the non lit up ones look that good? ... these
+     have that 3d look while the non lit ones look flat" (313). Now it is
+     lit the way the lit ones are, just without colour or light of its
+     own: a hard specular top-left, a soft bounce bottom-right, the body
+     darkening towards its far edge, a rim, and a contact shadow under
+     it. Still colourless, still unmistakably not found. */
   .cosmic-flare-dot .cof-body{
-    background:radial-gradient(circle, rgba(255,255,255,.10) 0 50%, rgba(238,242,250,.18) 60%, rgba(221,230,245,.46) 82%, rgba(255,255,255,.8) 100%);
-    box-shadow:0 0 0 .7px rgba(255,255,255,.6), 0 0 4px rgba(255,255,255,.18);
+    background:
+      radial-gradient(circle at 33% 29%, rgba(255,255,255,.98) 0 8%, rgba(255,255,255,.4) 15%, rgba(255,255,255,0) 27%),
+      radial-gradient(circle at 64% 74%, rgba(225,232,245,.30) 0 9%, rgba(225,232,245,0) 32%),
+      radial-gradient(circle at 42% 38%, rgba(206,214,230,.42) 0%, rgba(128,140,164,.46) 50%, rgba(56,62,80,.82) 86%, rgba(28,32,44,.9) 100%);
+    box-shadow:0 0 0 .6px rgba(255,255,255,.5), 0 1.5px 3px rgba(0,0,0,.5), 0 0 6px rgba(255,255,255,.14);
   }
   .cosmic-flare-dot :is(.cof-halo, .cof-ring, .cof-tint, .cof-core, .cof-spark){ opacity:0; }
   /* The one the hunt is looking for next wears its colour, faintly - "the
@@ -51955,6 +51973,13 @@ function buildFlagIcon(){
    star, made into an object: a gold ramp lit from the top, a rim of
    lighter gold, a soft highlight on the upper arms and a warm glow
    behind it. Gradient ids are per copy, like every generated svg here. */
+/* THE STARRED CARD'S STAR, AN OUTLINE NOW (build 313). "Still not a fan
+   of the starred question thing, maybe it's because the star is colored
+   in? ... Or if it were just the outline but white?" The gold-filled,
+   glowing star (308) was the loudest thing on a screen of quiet glass
+   cards. It is the test's own star shape, drawn as a white outline with
+   a faint inner fill so it still reads as an object - and still no circle
+   round it (298). Used on the card and on the screen it opens. */
 let starredCardSeq = 0;
 function buildStarredCardStar(){
   const NS = "http://www.w3.org/2000/svg", id = "scs" + (++starredCardSeq);
@@ -51962,16 +51987,12 @@ function buildStarredCardStar(){
   svg.setAttribute("viewBox", "0 0 32 32"); svg.setAttribute("class", "starred-card-star"); svg.setAttribute("aria-hidden", "true");
   const mk = (tag, attrs) => { const e = document.createElementNS(NS, tag); Object.keys(attrs).forEach(k => e.setAttribute(k, attrs[k])); return e; };
   const defs = mk("defs", {});
-  const glow = mk("radialGradient", { id: id + "g" });
-  [["0%", "#FFD84D", ".55"], ["60%", "#FFB800", ".14"], ["100%", "#FFB800", "0"]].forEach(([o, c, a]) => glow.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": a })));
   const body = mk("linearGradient", { id: id + "b", x1: "0", y1: "0", x2: "0", y2: "1" });
-  [["0%", "#FFF1A8"], ["38%", "#FFD233"], ["100%", "#E39400"]].forEach(([o, c]) => body.appendChild(mk("stop", { offset: o, "stop-color": c })));
-  defs.append(glow, body);
-  const star = "M16 4.2l3.6 7.6 8.3 1.05-6.1 5.7 1.6 8.2L16 22.7l-7.4 4.05 1.6-8.2-6.1-5.7 8.3-1.05z";
+  [["0%", "#FFFFFF", ".22"], ["100%", "#FFFFFF", ".04"]].forEach(([o, c, a]) => body.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": a })));
+  defs.append(body);
+  const star = "M16 4.6l3.5 7.4 8.1 1.02-5.95 5.56 1.56 8L16 22.66l-7.21 3.92 1.56-8-5.95-5.56 8.1-1.02z";
   svg.append(defs,
-    mk("circle", { cx: 16, cy: 16.4, r: 15.5, fill: "url(#" + id + "g)" }),
-    mk("path", { d: star, fill: "url(#" + id + "b)", stroke: "#FFE68A", "stroke-width": "1.1", "stroke-linejoin": "round" }),
-    mk("path", { d: "M16 7.2l2.5 5.3 5.6.75", fill: "none", stroke: "#FFFFFF", "stroke-width": "1.1", "stroke-linecap": "round", "stroke-linejoin": "round", opacity: ".7" }));
+    mk("path", { d: star, fill: "url(#" + id + "b)", stroke: "#F4F6F9", "stroke-width": "1.7", "stroke-linejoin": "round" }));
   return svg;
 }
 function buildClockIcon(){
@@ -65459,8 +65480,13 @@ function showSetup(){
          under How many "doesn't even make sense" (build 250). */
       const from = oneShort ? UNIT_TEST_VERSIONS[cfg.units[0]].short
         : units === 1 ? "selected unit" : units + " selected units";
-      b.count.textContent = !units ? "" : v === "all" ? "from " + from
-        : n ? n + " from " + from : "None yet";
+      /* STARRED SAYS IT THE SAME WAY (build 313): "I like how all
+         questions mentions it's from the units selected, ensure the word
+         unit turns to units if multiple. The starred button needs to be
+         conveyed the same way." Both boxes read "from selected unit(s)";
+         an empty Starred says where it looked, not "None yet". */
+      b.count.textContent = !units ? "" : (v === "all" || n) ? "from " + from
+        : "None in " + from;
       b.desc.textContent = text;
       const empty = v !== "all" && n === 0;
       b.row.classList.toggle("is-empty", empty);
