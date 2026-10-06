@@ -2038,6 +2038,19 @@ all keyed by them, so renaming a key is a migration for a cosmetic gain.
   26px on a rankings row, and the order escalates by kind rather than by
   size. `check-behaviour` asserts it structurally: no two ranks produce
   the same shape signature.
+- **SUPERNOVA THROWS ITS BLACK OUT IN PIECES (build 314).** *"Could the
+  supernova have a little more black? Like maybe black shooting out? In
+  fragmented pieces?"* Eleven jagged black shards (`.rk-nova-frag`) fly
+  out of the blast on the same 3.2s beat as the core flash and the shell,
+  and burn out past the star's tips. Black on a dark card disappears, so
+  each one carries a hot rim, and stays inside the red halo where there is
+  light behind it. The angles, reaches, sizes and spins are hand-listed and
+  uneven: evenly spaced pieces round a centre are the wheel this set
+  avoids. The base transform is mid-flight, so every place the emblem is
+  still (rows, reduce motion) shows the burst rather than nothing. The
+  first pass at 1x size read as specks and was scaled 1.7x after looking
+  at it; `check_b314_nova` measures count, outward travel, fade and the
+  still pose, and fails on 313.
 - **A circle reads as a world only if it has a terminator.** `litBody()`
   draws the whole disc in shadow and then the lit side as an offset
   circle clipped back to it. Without that step every one of the bottom

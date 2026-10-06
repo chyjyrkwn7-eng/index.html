@@ -1260,6 +1260,38 @@ def check_b313_notice(br):
         check("%s: the planet goes back when the notice goes" % tag, r.get("back") == 0, r)
 
 
+def check_b314_nova(br):
+    """Build 314: "Could the supernova have a little more black? Like maybe
+    black shooting out? In fragmented pieces?" Measured on a live Rank hero
+    emblem: at least ten separate black pieces, each moving OUTWARD from the
+    centre over the detonation (not spinning in place), fading out at the
+    far end, and held mid-flight - away from the core - when motion is off.
+    Written against 313, where there are no such pieces."""
+    print("\n314n. build 314: the Supernova throws black out in fragments")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    m = pg.evaluate("""()=>{ const host = document.createElement('div'); host.className = 'rankhero-art';
+      host.style.cssText = 'position:fixed;left:0;top:0;width:256px;height:256px'; document.body.appendChild(host);
+      const s = buildRankEmblemSVG('titan'); host.replaceChildren(s); s.classList.remove('rk-idle');
+      const frags = [...s.querySelectorAll('.rk-nova-frag')];
+      const hb = host.getBoundingClientRect(), cx = hb.left + hb.width / 2, cy = hb.top + hb.height / 2;
+      const at = t => frags.map(g => { g.getAnimations().forEach(a => { a.pause(); a.currentTime = t; });
+        const r = g.getBoundingClientRect(); return { d: Math.hypot(r.left + r.width / 2 - cx, r.top + r.height / 2 - cy), o: parseFloat(getComputedStyle(g).opacity) }; });
+      const black = frags.every(g => [...g.querySelectorAll('path')].some(p => /^#0[0-9]0/.test(p.getAttribute('fill') || '')));
+      const early = at(200), late = at(2200), gone = at(2700);
+      frags.forEach(g => g.style.animation = 'none');
+      const still = frags.map(g => { const r = g.getBoundingClientRect(); return Math.hypot(r.left + r.width / 2 - cx, r.top + r.height / 2 - cy); });
+      return { n: frags.length, black, out: early.map((e, i) => late[i].d - e.d), fade: gone.map(x => x.o), seen: early.map(x => x.o),
+               still, size: hb.width }; }""")
+    check("Supernova has at least ten black fragments", m["n"] >= 10 and m["black"], {k: m[k] for k in ("n", "black")})
+    check("every fragment flies outward over the blast (by more than a sixth of the emblem)",
+          m["n"] >= 10 and min(m["out"]) > m["size"] / 6, [round(x) for x in m["out"]])
+    check("they are visible as they leave and burnt out by the end of the beat",
+          m["n"] >= 10 and min(m["seen"]) > .5 and max(m["fade"]) < .05, {"seen": m["seen"][:4], "fade": m["fade"][:4]})
+    check("with motion off they hold mid-flight, clear of the core",
+          m["n"] >= 10 and min(m["still"]) > m["size"] * .2, [round(x) for x in m["still"]])
+    ctx.close()
+
+
 def check_b313_shuffle(br):
     """Build 313: "Can we double check that all the questions are being
     shuffled properly ... please please ensure this." Measured, the
@@ -6289,8 +6321,9 @@ def check_b284(br):
       return { whirl: whirl && whirl.dur, boom: boom.map(a => [a.name, a.dur, a.delay]), star: star && star.dur }; }""")
     check("Amethyst's whirl is slower than it was (more than 3s a turn)", (m.get("whirl") or 0) >= 5, m.get("whirl"))
     names = sorted({b[0] for b in m.get("boom") or []})
-    check("Supernova detonates: core, flares, light, cross-flare and blast shell on one clock, together",
-          names == ["rk-nova-core", "rk-nova-flare", "rk-nova-halo", "rk-nova-shock", "rk-nova-x"]
+    check("Supernova detonates: core, flares, light, cross-flare, blast shell and black fragments on one clock, together",
+          # build 314: the black fragments are thrown on the same beat
+          names == ["rk-nova-core", "rk-nova-flare", "rk-nova-frag", "rk-nova-halo", "rk-nova-shock", "rk-nova-x"]
           and len({(b[1], b[2]) for b in m["boom"]}) == 1, m.get("boom"))
     check("and its star turns faster than once a minute", 0 < (m.get("star") or 0) < 60, m.get("star"))
     ctx.close()
@@ -10491,6 +10524,7 @@ def main():
             check_b313_qmotion(br)
             check_b313_sheet2(br)
             check_b313_shuffle(br)
+            check_b314_nova(br)
             check_b313_notice(br)
             check_b313_chars_centred(br)
             check_b313_no_sweep(br)
