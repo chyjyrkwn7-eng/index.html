@@ -13910,6 +13910,19 @@
   .rankmap-req{ margin:.25rem 0 0; font-size:.8rem; font-weight:700; color:rgba(255,255,255,.72); }
   .rankmap-meter{ margin-top:.55rem; }
   .rankmap-togo{ margin:.35rem 0 0; font-size:.74rem; color:var(--soft); }
+  /* build 314: the badge wall your level is held at, in the rank's colour */
+  .rankmap-wall{ margin:.35rem 0 0; font-size:.74rem; font-weight:700; text-wrap:pretty; color:color-mix(in srgb, var(--rank-color) 55%, #fff); }
+  .rankmap-gatechip{ position:absolute; left:50%; top:100%; z-index:2; transform:translate(-50%, -45%);
+    padding:.12rem .42rem; border-radius:999px; white-space:nowrap; pointer-events:none;
+    font-size:.58rem; font-weight:800; letter-spacing:.02em; font-variant-numeric:tabular-nums;
+    color:#0B0D10; background:color-mix(in srgb, var(--rank-color) 72%, #fff); }
+  .rankmap-req .gate-chips{ margin-top:.1rem; }
+  .rankmap-stop.is-gate .rankmap-card{ box-shadow:0 0 0 1px color-mix(in srgb, var(--rank-color) 55%, transparent), 0 0 18px color-mix(in srgb, var(--rank-color) 22%, transparent); }
+  .rankhero-gate{ margin:.85rem 0 0; padding-top:.7rem; border-top:1px solid rgba(255,255,255,.08); text-align:center; }
+  .rankhero-gate-me{ margin:0; font-size:.8rem; font-weight:800; letter-spacing:.02em; color:rgba(255,255,255,.86); font-variant-numeric:tabular-nums; }
+  .rankhero-gate-next{ margin:.3rem 0 0; font-size:.8rem; line-height:1.4; color:var(--soft); }
+  .rankhero-gate-next b{ color:color-mix(in srgb, var(--rank-color) 55%, #fff); }
+  .ranklore-wall{ margin:.55rem auto .1rem; max-width:20rem; font-size:.8rem; line-height:1.4; color:rgba(243,245,247,.75); }
   /* ONE SIZE, ONE START (build 311) - see buildRankGifts. Every chip is
      a full-width row with the same icon slot, so on either side of the
      road the icons sit in one column and the words start on one line. */
@@ -18698,6 +18711,42 @@
   .profile-level-total{ margin:.45rem 0 0; padding-top:.45rem; border-top:1px solid rgba(255,255,255,.07);
     font-size:.76rem; font-weight:600; color:var(--soft); font-variant-numeric:tabular-nums; }
   .profile-level-sidesub{ font-size:.76rem; font-weight:600; color:var(--soft); font-variant-numeric:tabular-nums; }
+  /* ---- THE NEXT GATE (build 314) ----
+     One idea on three surfaces: the next gate's rank, its two
+     requirements as chips (met ones ticked, in the rank's colour), and
+     when it is holding your level, the plain line that says what opens
+     it. Sits under the XP bar on Profile, in the same quiet type as the
+     line it sits beside; the chips wrap under the name on a 320px phone. */
+  .next-gate{ margin:.8rem 0 0; padding:.7rem .75rem .75rem; border-radius:.9rem;
+    background:rgba(0,0,0,.24); border:1px solid rgba(255,255,255,.07); }
+  .next-gate.is-holding{ border-color:color-mix(in srgb, var(--rank-color) 38%, transparent); }
+  .next-gate-kicker{ margin:0 0 .45rem; font-size:.62rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:var(--soft); }
+  .next-gate-row{ display:flex; align-items:center; gap:.65rem; min-width:0; }
+  .next-gate-emb{ flex:none; width:2.9rem; height:2.9rem; display:grid; place-items:center; }
+  .next-gate-emb > svg{ width:100%; height:100%; overflow:visible; filter:drop-shadow(0 0 6px color-mix(in srgb, var(--rank-color) 55%, transparent)); }
+  .next-gate-main{ flex:1 1 auto; min-width:0; display:flex; flex-wrap:wrap; align-items:center; gap:.35rem .6rem; }
+  .next-gate-name{ flex:1 0 100%; font-size:1rem; font-weight:800; color:color-mix(in srgb, var(--rank-color) 55%, #fff); }
+  .gate-chips{ display:inline-flex; flex-wrap:wrap; gap:.3rem; }
+  .next-gate > .gate-chips{ display:flex; margin-top:.55rem; }
+  .gate-chip{ padding:.16rem .5rem; border-radius:999px; font-size:.72rem; font-weight:800; white-space:nowrap;
+    font-variant-numeric:tabular-nums; color:rgba(255,255,255,.82); background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1); }
+  .gate-chip.is-met{ color:#0B0D10; border-color:transparent; background:color-mix(in srgb, var(--rank-color) 72%, #fff); }
+  .next-gate-line{ margin:.55rem 0 0; font-size:.82rem; font-weight:700; line-height:1.35; color:var(--ink); text-wrap:pretty; }
+  .next-gate-closest{ margin:.2rem 0 0; font-size:.76rem; font-weight:600; line-height:1.35; color:var(--soft);
+    font-variant-numeric:tabular-nums; overflow-wrap:break-word; }
+  .level-gate-line{ margin:.45rem 0 0; font-size:.8rem; font-weight:700; line-height:1.35; color:var(--ink); }
+  .results-level-gatename{ color:color-mix(in srgb, var(--rank-color, #9FACBA) 55%, #fff); }
+  .level-gate-closest{ margin:.2rem 0 0; font-size:.74rem; font-weight:600; line-height:1.35; color:var(--soft);
+    font-variant-numeric:tabular-nums; overflow-wrap:break-word; }
+  .profile-level.is-held .profile-level-sidetop{ white-space:nowrap; overflow:hidden; text-overflow:clip; }
+  @media (max-width:22rem){ .profile-level.is-held .profile-level-sidetop{ font-size:.84rem; } }
+  /* BANKED: a full bar whose XP keeps collecting. Its own blue, with a
+     brighter breath, faster, and a ring of the same blue round the
+     track (the track clips anything drawn by the fill). Reduce motion
+     keeps the ring and drops the breath, via the rule above. */
+  .is-banked .xpbar-fill::after{ background:linear-gradient(90deg, rgba(214,236,255,.05), rgba(214,236,255,.42));
+    animation-duration:2.6s; }
+  .xpbar-track.is-banked{ box-shadow:inset 0 1px 2px rgba(0,0,0,.5), 0 0 0 1px rgba(143,193,255,.42), 0 0 12px rgba(61,139,255,.32); }
   .profile-badgesect{
     display:block; width:100%; text-align:left; font:inherit; color:inherit; cursor:pointer;
     -webkit-tap-highlight-color:transparent; border-radius:0;
@@ -21001,6 +21050,8 @@
     color:#fff; background:var(--xp-deep); box-shadow:0 0 14px var(--xp-glow);
     animation:rs-pop .5s cubic-bezier(.2,1.5,.4,1) both;
   }
+  /* build 314: a badge opening a wall is a hop of several levels at once */
+  .rs-xp .results-level.is-levelup .results-level-num[data-jump]::after{ content:"Up " attr(data-jump) " levels"; }
   @keyframes rs-pop{ 0%{ opacity:0; transform:scale(.3); } 100%{ opacity:1; transform:none; } }
   /* You, at the head of the level bar: avatar with the rank's coin on
      it, the level, and the rank's name in its own colour. */
@@ -41713,6 +41764,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               pendingBadgeUnlocks: [],
               pendingCharUnlocks: [],
               tourRev: 0,
+              levelFloor: 0,   /* build 314: no floor for a new account - see badgeWallLevel() */
               seenSettingsTour: false, seenProfileTour: false, seenRewardsTour: false,
               seenUnitOptionsTour: false, seenFirstResultsTour: false,
               /* On by default here as well as in applyLoadedData(): this
@@ -42043,6 +42095,17 @@ function applyLoadedData(got){
      A new account has no XP, so it tops up nothing. */
   store.levelPreserved = typeof got.levelPreserved === "boolean"
     ? got.levelPreserved : false;
+  /* THE GRANDFATHER FLOOR (build 314) - see badgeWallLevel(). An account
+     that has never had one gets the level its XP gives ungated - the
+     HIGHER of build 313's curve and this one's (levelFromPoints313), so
+     neither the curve change nor the badge wall can take a level off anybody:
+     whoever is already past their wall keeps the level they have and
+     only stops climbing. 0 for an account with no XP, which is every new
+     sign-up. Merged by max, so of two copies the higher floor wins. */
+  store.levelFloor = (typeof got.levelFloor === "number" && isFinite(got.levelFloor))
+    ? Math.max(0, Math.min(LEVEL_CAP, Math.floor(got.levelFloor)))
+    : ((got.lifetime && Number(got.lifetime.points) > 0)
+        ? Math.max(levelFromPoints(got.lifetime.points), levelFromPoints313(got.lifetime.points)) : 0);
   /* Defaults to 0 for an existing account, like levelPreserved and for
      the same reason: grantRetroBadgesOnce() is SUPPOSED to run once for
      people who are already here. */
@@ -43419,6 +43482,7 @@ function wipeLocalProgressAndSettings(){
   store.unitBlackStar = {};
   store.flagged = {};
   store.unflagged = {};
+  store.levelFloor = 0;   /* build 314: a reset starts under the badge wall like anybody new */
   store.tally = {}; store.tallyBase = {};
   store.unitGameBeat = {};
   store.unitBestPct = {}; store.unitBestMs = {}; store.flareLevels = {};
@@ -44327,6 +44391,9 @@ function mergeLeavingAccount(src, note){
   const orMap = (k) => { const d = store[k] || (store[k] = {}); Object.keys(src[k] || {}).forEach(u => { if(src[k][u]) d[u] = d[u] || src[k][u]; }); };
   sumMap("studyLog"); sumMap("unitPerfects");
   orMap("unitBlackStar"); orMap("flagged");
+  /* the grandfather floor (build 314): whichever account held the higher
+     level keeps it - neither side loses one by being merged */
+  store.levelFloor = Math.max(num(store.levelFloor), num(src.levelFloor));
   maxMap("unitBestPct"); minMap("unitBestMs"); maxMap("flareLevels");
   /* game records: per unit, per speed */
   ["unitGameBeat", "gameFarthest"].forEach(k => {
@@ -44376,6 +44443,12 @@ function mergeLeavingAccount(src, note){
   /* the gift, last: N whole levels up, the same way into the new one */
   const bonus = Math.max(0, Math.min(5, num(note && note.bonusLevels)));
   if(bonus){
+    /* The gift is LEVELS YOU CAN SEE (build 314). At a badge wall more XP
+       moves nothing, so the levels it gives are added to the effective
+       level and held by the floor as well - a gift is an admin's
+       correction, not a climb, and one that showed nothing would be no
+       gift at all. */
+    const shown = levelStateFor(store).level;
     const lp = levelProgress(L.points);
     if(!lp.atCap){
       const target = Math.min(LEVEL_CAP, lp.level + bonus);
@@ -44383,6 +44456,8 @@ function mergeLeavingAccount(src, note){
       const span = levelProgress(base).span || 0;
       L.points = Math.max(num(L.points), base + Math.round(lp.fraction * span));
     }
+    const giftTo = Math.min(LEVEL_CAP, shown + bonus);
+    if(levelStateFor(store).level < giftTo) store.levelFloor = Math.max(num(store.levelFloor), giftTo);
   }
   store.lastModified = Date.now();
 }
@@ -44652,6 +44727,9 @@ function mergeSameAccount(dst, src){
   maxMap("studyLog"); maxMap("unitPerfects"); maxMap("unitBestPct"); maxMap("flareLevels");
   minMap("unitBestMs"); minMap("gameHardcoreMs");
   orMap("unitBlackStar");
+  /* The grandfather floor (build 314): the higher of the two. A copy from
+     an older build carries none and changes nothing here. */
+  maxInto(dst, "levelFloor", src.levelFloor);
   /* Flags: per question, the later of its last flag and its last unflag
      (build 297 - see setFlag). */
   { const fd = mapOf(dst, "flagged"), ud = mapOf(dst, "unflagged");
@@ -45682,6 +45760,18 @@ const TIER_UNLOCKS = {
      new badge line measures, and every badge count is lower. The badge
      is the gate and the level is always already there: at 3 badges you
      are level 33 against the 29 asked, at 14 you are 73 against 71. */
+  /* ---- RE-MEASURED IN BUILD 314 (one-rate curve, 3/2/1-hundo bands) ----
+     The badge line, cheapest badges first at one flawless run per hundo,
+     is now 1 -> 6, 3 -> 13, 5 -> 19, 7 -> 24, 9 -> 28, 12 -> 33,
+     14 -> 36, 16 -> 40: every badge in the app costs about 36,000 XP of
+     work, less than Gold's level. So for anybody who sits whole units the
+     LEVEL is what gates every rank, and the badge wall below
+     (badgeWallLevel) only holds somebody who climbs on partial runs -
+     which is exactly who "you can't get past that next rank's level until
+     you hit the badges needed" is for. The numbers were kept as they are,
+     by decision; re-measure them with check-curve section 3 when the
+     curve, the bands or the bank move. Each rank's level is now ALSO a
+     wall its badges open - the same numbers, two jobs. */
   rookie:   { level: 21, badges: 1,  label: "Reach level 21 and 1 badge" },
   ranger:   { level: 29, badges: 3,  label: "Reach level 29 and 3 badges" },
   veteran:  { level: 36, badges: 5,  label: "Reach level 36 and 5 badges" },
@@ -45841,8 +45931,26 @@ const LEVEL_FREEZE_THROUGH = 25;
    whenever the bands, the bank or MASTERY_BONUS move - they are all
    upstream of this, and a rank asking for a level the badges no longer
    reach is the ladder quietly coming apart. */
-const LEVEL_STEP_UP = 2.0;
-const LEVEL_LATE_GROWTH = 1.0199;
+/* ---- ONE RATE FROM 26, FITTED TO JANUARY 1ST (build 314) ----------
+   "Level 71 needs about 140,000 total XP and level 80 about 200,000",
+   set against the class's measured pace: the median active player
+   projects to about 160,000 XP by January 1st (25th percentile ~85,000,
+   75th ~325,000), with a little allowed for a holiday slow-down.
+   Levels 1-25 are untouched (level 21 is still 9,912). Level 26 is a
+   modest step (x1.18, 1,087 against 25's 921) and every level after it
+   costs 3.65% more than the one before - ONE rate, no bands, so raising
+   LEVEL_CAP (100-120 is planned with new ranks) simply carries on the
+   same growth without re-fitting a single level below it.
+     level 21   9,912    level 45   44,567    level 71  138,431
+     level 29  17,933    level 52   61,965    level 80  197,370
+     level 36  27,739    level 65  108,478
+   NOBODY'S LEVEL GOES DOWN: every level from 2 to 80 costs at most what
+   build 313 charged, so every XP total reads the same level or higher
+   (check-curve section 2, and the real backup - see CLAUDE.md). The
+   numbers this replaced: a x2.0 step into 26, +1.99% to 45, +8.35%
+   past it, ~600,000 to the cap - kept as levelFromPoints313(). */
+const LEVEL_STEP_UP = 1.18;
+const LEVEL_LATE_GROWTH = 1.0365;
 /* A guard rather than a working value - the curve tops out at 77,649 a
    level, so this never binds. It exists so a future change to the
    growth rate cannot quietly produce a level nobody can afford. */
@@ -45943,11 +46051,13 @@ const LEVEL_CAP = 80;
    THIS ENDS "ALL SIXTEEN BADGES LAND ON THE CAP", on purpose - the top
    ranks now ask for study past what their badges pay, which is the
    complaint being answered (high levels, few badges). */
+/* RETIRED IN BUILD 314 with the one-rate curve above: the steep tail
+   past 45 is gone, so nothing reads these. Kept for levelFromPoints313()
+   and the record. */
 const LEVEL_STEEP_FROM = 45;
 const LEVEL_STEEP_GROWTH = 1.0835;   /* build 213: ~600,000 in all to level 80 (was 1.0601, ~375,000) - the new XP types pay a lot more */
 function levelGrowthAt(lvl){
   if(lvl <= LEVEL_FREEZE_THROUGH) return LEVEL_GROWTH;
-  if(lvl > LEVEL_STEEP_FROM) return LEVEL_STEEP_GROWTH;
   /* The one-off step into the first level past the freeze. A multiplier
      on the level before it rather than a flat cost, so it cannot drift
      out of step if the frozen curve is ever re-based. */
@@ -45987,6 +46097,23 @@ function levelProgress(points){
   };
 }
 function levelFromPoints(points){ return levelProgress(points).level; }
+/* BUILD 313'S CURVE, step for step (x2.0 into 26, +1.99% to 45, +8.35%
+   past it), for one job: the grandfather floor is the HIGHER of the
+   level an account's XP gave on the curve it was earned under and on
+   this one, so neither the curve change nor the badge wall can take a
+   level off anybody. */
+function levelFromPoints313(points){
+  const p = Math.max(0, Number(points) || 0);
+  const growth = l => l <= LEVEL_FREEZE_THROUGH ? LEVEL_GROWTH
+    : l === LEVEL_FREEZE_THROUGH + 1 ? 2.0 : l > LEVEL_STEEP_FROM ? LEVEL_STEEP_GROWTH : 1.0199;
+  const ceil = l => l <= LEVEL_FREEZE_THROUGH ? LEVEL_COST_MAX : LEVEL_COST_TOP;
+  let lvl = 1, need = LEVEL_BASE_POINTS, spent = 0;
+  while(lvl < LEVEL_CAP && p >= spent + need){
+    spent += need; lvl += 1;
+    need = Math.min(ceil(lvl + 1), Math.round(need * growth(lvl + 1)));
+  }
+  return lvl;
+}
 
 /* ---------- nobody's level goes backwards -------------------------------
    "Just to CLEAR! I don't want peoples current level to go backwards!!
@@ -46047,13 +46174,217 @@ function preserveLegacyLevel(){
   saveStore();
   return 0;
 }
-function levelOf(st){
-  const p = st && st.lifetime ? st.lifetime.points : 0;
+/* ---- THE BADGE WALL (build 314) ------------------------------------
+   "You can't get past that next rank's level until you hit the badges
+   needed."
+   Each rank's LEVEL is a wall that its BADGES open. With b badges the
+   highest level you can hold is the level of the first rank asking for
+   more than b badges - you can REACH that level, but not pass it, until
+   you hold that rank's badges. With every rank's badges the wall is the
+   cap. Read off TIER_UNLOCKS, never typed: move a rank and the wall
+   moves with it.
+   XP IS NEVER CAPPED. The total keeps counting at a wall; only the level
+   is held. When the badge lands the level jumps straight to what the XP
+   has earned, which is the ordinary level-up on the results screen
+   doing a multi-level hop.
+   NOBODY LOSES A LEVEL. `store.levelFloor` is the level an account held
+   the day this shipped (its XP on the ungated curve, set once by
+   applyLoadedData for an account that has no floor yet) and it moves the
+   wall up to itself: an account already past its wall keeps its level
+   and simply climbs no further until its badges catch up.
+     effective level = min(curve level, max(badge wall, floor)), never
+     above LEVEL_CAP.
+   EVERYTHING THAT SHOWS OR PUBLISHES A LEVEL ASKS levelStateFor() /
+   levelOf(), so the bar, the number, the rankings row, the ranks and
+   the unlocks can never disagree about where somebody is held. */
+function badgeWallLevel(badges){
+  const b = Math.max(0, Number(badges) || 0);
+  let wall = LEVEL_CAP;
+  TIER_ORDER_FULL.forEach(k => {
+    const r = TIER_UNLOCKS[k];
+    const lv = r ? Number(r.level) || 0 : 0;
+    if(r && lv > 0 && (Number(r.badges) || 0) > b) wall = Math.min(wall, lv);
+  });
+  return wall;
+}
+/* The highest level `badges` and a floor let you hold. */
+function levelWallOf(badges, floor){
+  const f = Math.max(0, Math.floor(Number(floor) || 0));
+  return Math.min(LEVEL_CAP, Math.max(badgeWallLevel(badges), f));
+}
+/* The badges it takes to climb past level W: every rank whose level is
+   W or lower has to be paid for in badges. */
+function badgesToPassLevel(W){
+  let need = 0;
+  TIER_ORDER_FULL.forEach(k => {
+    const r = TIER_UNLOCKS[k];
+    if(r && (Number(r.level) || 0) <= W) need = Math.max(need, Number(r.badges) || 0);
+  });
+  return need;
+}
+/* The rank whose badges open level W - "the gate". Of every rank at or
+   below W, the one asking the most badges (a grandfathered account held
+   at 52 with 3 badges is at the Sapphire gate, not the Gold one). */
+function gateRankForLevel(W){
+  let gate = null, most = -1;
+  TIER_ORDER_FULL.forEach(k => {
+    const r = TIER_UNLOCKS[k];
+    if(r && (Number(r.level) || 0) <= W && (Number(r.badges) || 0) >= most){ most = Number(r.badges) || 0; gate = k; }
+  });
+  return gate;
+}
+/* levelProgress() with the wall applied - the same fields, plus:
+     curveLevel   what the XP alone would give
+     wall         the highest level these badges and floor allow
+     held         at the wall (and the wall is not the cap): the bar for
+                  this level fills as normal and then stays full
+     stopped      past it: `into` runs on past `span` - "700 / 100 XP"
+     gateKey      the rank whose badges open the wall
+     badgesToPass how many more badges that takes
+     banked       XP earned since the bar filled */
+function levelStateOf(points, badges, floor){
+  const lp = levelProgress(points);
+  const have = Math.max(0, Number(badges) || 0);
+  const wall = levelWallOf(have, floor);
+  const out = Object.assign({}, lp, { curveLevel: lp.level, wall, badges: have, gateKey: null,
+                                      held: false, stopped: false, badgesToPass: 0, banked: 0 });
+  if(wall >= LEVEL_CAP || lp.level < wall) return out;
+  out.held = true;
+  out.gateKey = gateRankForLevel(wall);
+  out.badgesToPass = Math.max(1, badgesToPassLevel(wall) - have);
+  if(lp.level > wall){
+    const start = xpForLevel(wall), end = xpForLevel(wall + 1);
+    out.stopped = true;
+    out.level = wall;
+    out.atCap = false;
+    out.span = end - start;
+    /* NOT capped at span: the numbers keep collecting past the level's
+       requirement while the bar sits full. */
+    out.into = lp.total - start;
+    out.toNext = 0;
+    out.fraction = 1;
+    out.banked = Math.max(0, lp.total - end);
+  }
+  return out;
+}
+/* An account's level state. The one function that owns it. */
+function levelStateFor(st){
+  let p = st && st.lifetime ? Number(st.lifetime.points) || 0 : 0;
   /* the held level, only inside summarize()'s snapshot window after a
      merge - see mergeHidePoints */
   if(st === store && typeof mergeHidePoints !== "undefined" && mergeHidePoints != null)
-    return levelFromPoints(Math.min(Number(p) || 0, mergeHidePoints));
-  return levelFromPoints(p);
+    p = Math.min(p, Number(mergeHidePoints) || 0);
+  return levelStateOf(p, badgeCountOf(st), st ? st.levelFloor : 0);
+}
+function effectiveLevelOf(st){ return levelStateFor(st).level; }
+/* Every caller that asks "what level is this account" - the rankings
+   row, the ranks, the unlocks, the Virtual Room - goes through here. */
+function levelOf(st){ return effectiveLevelOf(st); }
+/* The numbers under a held bar: "700 / 100 XP" - the XP into this level
+   against what the level asks, still counting once the bar is full. */
+function levelXpNumbers(s){
+  return Math.max(0, Math.round(s.into)).toLocaleString() + " / " + Math.round(s.span).toLocaleString() + " XP";
+}
+/* THE NEXT GATE, said plainly and the same way everywhere (build 314):
+   "Earn 2 more badges to pass level 52". */
+function levelWallLine(s){
+  if(!s || !s.held) return "";
+  const n = s.badgesToPass;
+  return "Earn " + n + (s.badges > 0 ? " more" : "") + (n === 1 ? " badge" : " badges") + " to pass level " + s.wall;
+}
+/* "The next gate" - the one idea the Profile card, the results screen and
+   the Rank tab all show. Levels, ranks and badges meet here: a rank's
+   level is a gate its badges open. When your level is held, the next
+   gate is the rank whose badges open it (a grandfathered level 52 with
+   3 badges is at the Sapphire gate, 9 badges); otherwise it is simply
+   the next rank, with its two requirements. Null at the top. */
+function nextGateOf(){
+  const s = levelStateFor(store);
+  let key = null;
+  if(s.held) key = s.gateKey;
+  else {
+    const held = rankOf(store);
+    key = TIER_ORDER_FULL[(held ? TIER_ORDER_FULL.indexOf(held) : -1) + 1] || null;
+  }
+  const r = key ? TIER_UNLOCKS[key] : null;
+  if(!r) return null;
+  return { key, name: RANK_DISPLAY_NAME[key] || key, level: r.level || 0, badges: r.badges || 0,
+           haveLevel: s.level, haveBadges: s.badges,
+           levelMet: s.level >= (r.level || 0), badgesMet: s.badges >= (r.badges || 0),
+           held: s.held, state: s, line: levelWallLine(s) };
+}
+/* The Next gate section: the rank's emblem and name, its two
+   requirements as chips, and when it is holding your level the line that
+   says what opens it, then the badge you are nearest. One builder for
+   the Profile card and the Rank tab's summary, so they cannot drift. */
+function buildNextGateSection(g, cls){
+  const sec = document.createElement("div");
+  sec.className = "next-gate " + (cls || "") + (g.held ? " is-holding" : "");
+  sec.style.setProperty("--rank-color", RANK_COLOR[g.key] || "#9FACBA");
+  const kick = document.createElement("p");
+  kick.className = "next-gate-kicker";
+  kick.textContent = "Next gate";
+  const row = document.createElement("div");
+  row.className = "next-gate-row";
+  const emb = document.createElement("span");
+  emb.className = "next-gate-emb";
+  try{ emb.appendChild(fitRankEmblem(buildRankEmblemSVG(g.key), g.key)); }catch(e){}
+  const main = document.createElement("span");
+  main.className = "next-gate-main";
+  const nm = document.createElement("span");
+  nm.className = "next-gate-name";
+  nm.textContent = g.name;
+  main.appendChild(nm);
+  row.append(emb, main);
+  /* the chips get the section's full width under the name: beside the
+     emblem they wrapped one above the other on every phone */
+  sec.append(kick, row, buildGateChips(g.level, g.haveLevel, g.badges, g.haveBadges));
+  if(g.held && g.line){
+    const l = document.createElement("p");
+    l.className = "next-gate-line";
+    l.textContent = g.line;
+    sec.appendChild(l);
+  }
+  if(!g.badgesMet){
+    const near = levelClosestLine();
+    if(near){
+      const c = document.createElement("p");
+      c.className = "next-gate-closest";
+      c.textContent = near;
+      sec.appendChild(c);
+    }
+  }
+  return sec;
+}
+/* The two requirements as chips: "Level 25 / 29" / "Level 29 \u2713",
+   "Badges 1 / 3" / "Badges 3 \u2713". `have`/`need` per side, so the road
+   map can draw any rank's gate, not only the next one. */
+function buildGateChips(level, haveLevel, badges, haveBadges){
+  const box = document.createElement("span");
+  box.className = "gate-chips";
+  [["Level", haveLevel, level], ["Badges", haveBadges, badges]].forEach(([lab, have, need]) => {
+    const c = document.createElement("span");
+    const met = have >= need;
+    c.className = "gate-chip" + (met ? " is-met" : "");
+    c.textContent = met ? lab + " " + need + " \u2713" : lab + " " + have + " / " + need;
+    box.appendChild(c);
+  });
+  return box;
+}
+/* The badge you are nearest: "Closest: Identity Crimes, 7 of 15 hundos".
+   Your own account only - the hundos behind it are not published. */
+function levelClosestLine(){
+  try{
+    const perf = store.unitPerfects || {};
+    let best = null;
+    topicsIn(QUESTIONS).forEach(u => {
+      if(unitBadgeEarned(u)) return;
+      const need = badgeThresholdFor(u), have = Number(perf[u]) || 0;
+      const f = need > 0 ? have / need : 0;
+      if(!best || f > best.f) best = { u, have, need, f };
+    });
+    return best ? "Closest: " + best.u + ", " + best.have + " of " + best.need + (best.need === 1 ? " hundo" : " hundos") : "";
+  }catch(e){ return ""; }
 }
 
 /* One badge per unit, earned by mastering that unit. No longer
@@ -46137,12 +46468,16 @@ const BADGE_THRESHOLD = 35;
    at or below the one it replaces, so this only ADDS badges - and the
    ones it adds are celebrated on the next finished test, exactly as 210's
    were (grantRetroBadgesOnce, now version 3). */
+/* BUILD 314: three bands by unit size - 40 questions or fewer 3 hundos,
+   41-100 2, over 100 1 (the Penal Code and Arrest, Search and Seizure).
+   Keyed on unitQuestionCount, so a unit added later lands in its band
+   by itself. Every unit is at or below what build 279 asked, so this can
+   only ADD badges; the ones it adds are celebrated on the next test
+   (grantRetroBadgesOnce, BADGE_BANDS_VERSION 4). */
 const BADGE_THRESHOLD_BANDS = [
-  { max: 25,       hundos: 15 },
-  { max: 50,       hundos: 12 },
-  { max: 100,      hundos: 8  },
-  { max: 200,      hundos: 4  },
-  { max: Infinity, hundos: 2  }
+  { max: 40,       hundos: 3 },
+  { max: 100,      hundos: 2 },
+  { max: Infinity, hundos: 1 }
 ];
 /* `var`, not `let`, and that is deliberate. This file has now been taken
    down five separate times by a top-level `let` declared below its first
@@ -46164,6 +46499,16 @@ function unitQuestionCount(name){
 }
 /* A unit the bank does not know falls back to 35 rather than to 5 - an
    id from another build must never hand somebody a badge for nothing. */
+/* "1 to 3 hundos" - the spread the bands actually ask across the bank,
+   read off the function so no copy states a number that has moved
+   (build 314). */
+function badgeRangeText(){
+  try{
+    const v = topicsIn(QUESTIONS).map(badgeThresholdFor);
+    const lo = Math.min.apply(null, v), hi = Math.max.apply(null, v);
+    return lo === hi ? lo + (lo === 1 ? " hundo" : " hundos") : lo + " to " + hi + " hundos";
+  }catch(e){ return "a few hundos"; }
+}
 function badgeThresholdFor(name){
   const n = unitQuestionCount(name);
   if(!n) return BADGE_THRESHOLD;
@@ -46249,11 +46594,26 @@ function legacyBadgeThreshold210(name){
   }
   return BADGE_THRESHOLD;
 }
-var BADGE_BANDS_VERSION = 3;
+/* Build 279's bands, which 314 lowered: an account on version 3 is owed
+   whatever 314's bands hand it over these. */
+const LEGACY_BADGE_BANDS_279 = [
+  { max: 25, hundos: 15 }, { max: 50, hundos: 12 }, { max: 100, hundos: 8 },
+  { max: 200, hundos: 4 }, { max: Infinity, hundos: 2 }
+];
+function legacyBadgeThreshold279(name){
+  const n = unitQuestionCount(name);
+  if(!n) return BADGE_THRESHOLD;
+  for(let i = 0; i < LEGACY_BADGE_BANDS_279.length; i++){
+    if(n <= LEGACY_BADGE_BANDS_279[i].max) return LEGACY_BADGE_BANDS_279[i].hundos;
+  }
+  return BADGE_THRESHOLD;
+}
+var BADGE_BANDS_VERSION = 4;
 function grantRetroBadgesOnce(){
   if(store.badgeBandsVersion >= BADGE_BANDS_VERSION) return;
   const perf = store.unitPerfects || {};
-  const was = store.badgeBandsVersion >= 2 ? legacyBadgeThreshold210 : legacyBadgeThreshold209;
+  const was = store.badgeBandsVersion >= 3 ? legacyBadgeThreshold279
+    : store.badgeBandsVersion >= 2 ? legacyBadgeThreshold210 : legacyBadgeThreshold209;
   const owed = topicsIn(QUESTIONS).filter(u =>
     (perf[u] || 0) >= badgeThresholdFor(u) && (perf[u] || 0) < was(u));
   /* Added to whatever is still waiting, never in place of it: a badge
@@ -50130,7 +50490,10 @@ function rankStepProgress(){
   const prevRule = (held && TIER_UNLOCKS[held]) || {};
   const lvl = levelOf(store);
   let lvlExact = lvl;
-  try{ const lp = levelProgress(store.lifetime ? store.lifetime.points : 0); if(lp.level === lvl && !lp.atCap) lvlExact = lvl + lp.fraction; }catch(e){}
+  /* levelStateFor, not levelProgress (build 314): at a badge wall the bar
+     is full but the level is not one more, so a held level counts as
+     exactly itself. */
+  try{ const lp = levelStateFor(store); if(lp.level === lvl && !lp.atCap && !lp.stopped) lvlExact = lvl + lp.fraction; }catch(e){}
   const badges = badgeCountOf(store);
   const needLvl = nextRule.level || 0, needBdg = nextRule.badges || 0;
   let partials = 0;
@@ -51546,6 +51909,12 @@ function decorateAvatar(avatarSpan, level, badges, mystery){
    tab, the rows in the rankings and the Virtual Room lobby all ask it. */
 function rankOfStats(level, badges, mysteryFound){
   let held = null;
+  /* THE EFFECTIVE LEVEL (build 314): a row published by an older build
+     carries its ungated level, so it is held to the badge wall here too.
+     It cannot change an answer - a rank needs its badges, and with them
+     the wall is already past its level - but it means every rank in the
+     app is asked the same question about the same level. */
+  level = Math.min(Number(level) || 0, badgeWallLevel(badges));
   TIER_ORDER_FULL.forEach(key => {
     const rule = TIER_UNLOCKS[key];
     if(!rule) return;
@@ -66654,7 +67023,7 @@ function showSetup(){
     setTimeout(() => {
       startSimpleTour([
         { target: ".pick", align: "left", vplacement: "below",
-          text: "Tap a unit to add it to this test. The bar under each one is how close you are to its badge \u2014 2 to 15 hundos depending on the unit\u2019s size (the smaller the unit, the more it takes), and a unit you have mastered shows its badge instead." },
+          text: "Tap a unit to add it to this test. The bar under each one is how close you are to its badge \u2014 " + badgeRangeText() + " depending on the unit\u2019s size (the smaller the unit, the more it takes), and a unit you have mastered shows its badge instead." },
         { target: "#bottomtab-start", align: "right", vplacement: "above",
           text: "Once you've picked your units, tap here \u2014 it opens a quick summary and lets you set the timer and other options before you begin." }
       ]);
@@ -71331,8 +71700,17 @@ function previewHundoFx(id){
    one. */
 function buildResultsLevelBlock(earned, pointsAfter, opts){
   const gained = Math.max(0, Number(earned) || 0);
-  const after = levelProgress(pointsAfter);
-  const before = levelProgress(Math.max(0, pointsAfter - gained));
+  /* THE BADGE WALL (build 314): both ends are levelStateOf, each with the
+     badges held at that end, so a run that earned the badge opening a
+     wall hops straight from the held level to what the XP has earned -
+     the same single hop as any multi-level run, with the jump said on
+     the "Level up" tag. */
+  const nowBadges = (() => { try{ return badgeCountOf(store); }catch(e){ return 0; } })();
+  const bAfter = opts && typeof opts.badgesAfter === "number" ? opts.badgesAfter : nowBadges;
+  const bBefore = opts && typeof opts.badgesBefore === "number" ? opts.badgesBefore : bAfter;
+  const floor = store.levelFloor || 0;
+  const after = levelStateOf(pointsAfter, bAfter, floor);
+  const before = levelStateOf(Math.max(0, pointsAfter - gained), bBefore, floor);
 
   const wrap = document.createElement("div");
   wrap.className = "results-level";
@@ -71398,6 +71776,9 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
   line.className = "results-level-line";
   const lineFor = p => p.atCap
     ? p.total.toLocaleString() + " XP \u00b7 level " + LEVEL_CAP + ", the cap"
+    /* AT A GATE (build 314): the XP into this level against what it
+       asks, still counting past it once the bar is full - "700 / 100" */
+    : p.held ? levelXpNumbers(p)
     : p.total.toLocaleString() + " XP \u00b7 " + p.toNext.toLocaleString() +
       " to level " + (p.level + 1);
   /* The line under the bar follows the level ABOVE it (build 309). It was
@@ -71409,56 +71790,108 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
   line.textContent = lineFor(levelsUp ? before : after);
 
   wrap.append(head, trackWrap, line);
+  /* The gate's requirement under the numbers, and the nearest badge
+     (build 314) - the same two lines as the Profile card. Only where the
+     run ENDS at a gate: a run whose badge opened the gate has none. */
+  if(after.held){
+    const g = document.createElement("p");
+    g.className = "level-gate-line results-level-gate";
+    const ng = nextGateOf();
+    /* Two short lines rather than one that wraps mid-sentence: the gate
+       and its badges, then what opens it. */
+    if(ng){
+      const nb = document.createElement("span");
+      nb.className = "results-level-gatename";
+      nb.textContent = "Next gate: " + ng.name;
+      g.append(nb, " \u00b7 Badges " + ng.haveBadges + " / " + ng.badges, document.createElement("br"));
+    }
+    g.append(levelWallLine(after));
+    if(ng) g.style.setProperty("--rank-color", RANK_COLOR[ng.key] || "#9FACBA");
+    wrap.appendChild(g);
+    const near = levelClosestLine();
+    if(near){
+      const c = document.createElement("p");
+      c.className = "level-gate-closest results-level-closest";
+      c.textContent = near;
+      wrap.appendChild(c);
+    }
+  }
+  /* A bar already full at a gate is banked from the start; one that
+     reaches the gate this run turns banked when it gets there. */
+  const bank = () => { if(after.stopped) track.classList.add("is-banked"); };
+  if(before.stopped && after.stopped && !levelsUp) bank();
+  /* MORE THAN ONE LEVEL IN A RUN - which is what a badge opening a gate
+     usually is, with several levels banked behind it - climbs through
+     each of them, one fill after another (build 314: "the bar animates
+     through each banked level"), quicker per level the more there are,
+     and the tag says how many. One level is exactly as before. */
+  const steps = levelsUp ? after.level - before.level : 0;
+  const stepMs = steps <= 1 ? 900 : Math.max(220, Math.min(700, Math.round(2600 / steps)));
+  if(steps > 1){
+    lvl.dataset.jump = String(steps);
+    wrap.fillMs = 300 + steps * (stepMs + 90) + 900;
+  }
 
   /* Kicked off by the caller once the block is actually on screen, for
      the same reason the Profile bar is: a width set in the same tick as
      the element is created has nothing to transition from. */
   /* Straight to where the run ended, with no movement - the skipped and
      reduced-motion paths of the results reveal. */
+  let finished = false;
   wrap.setFinal = function(){
+    finished = true;
     fill.style.transition = "none";
     setBarFill(fill, after.atCap ? 100 : Math.round(after.fraction * 1000) / 10);
     lvl.textContent = "Level " + after.level;
     line.textContent = lineFor(after);
     if(after.level !== before.level && !before.atCap) wrap.classList.add("is-levelup");
+    bank();
   };
   wrap.runFill = function(){
     requestAnimationFrame(() => requestAnimationFrame(() => {
       const target = after.atCap ? 100 : Math.round(after.fraction * 1000) / 10;
-      if(after.level === before.level || before.atCap){
+      if(!levelsUp){
         setBarFill(fill, target);
+        if(after.stopped) setTimeout(bank, 900);
         return;
       }
-      setBarFill(fill, 100);
-      /* ONCE. The fallback timer below and transitionend both call this,
-         and without the guard the one that lost the race fired later
-         anyway and filled the bar a second time - "the level up bar
-         when leveling up loads a second time when the second box hits". */
-      let wrapped = false;
+      /* ONE STEP AT A TIME, each fill to the end of its level, a reset to
+         empty with the transition off for one committed frame (or the
+         browser coalesces the two writes and the bar simply jumps), and
+         the number moving on at the wrap. Timers rather than
+         transitionend: Reduce motion switches the transition off and
+         transitionend never fires, and the old guard against two
+         wrap-overs firing ("the level up bar when leveling up loads a
+         second time when the second box hits") is then structural. */
+      const prev = fill.style.transition;
+      let lv = before.level;
+      const fillOut = () => {
+        if(finished) return;
+        fill.style.transition = prev || "";
+        if(steps > 1) fill.style.transitionDuration = stepMs + "ms";
+        setBarFill(fill, 100);
+        setTimeout(wrapOver, steps > 1 ? stepMs + 60 : 1100);
+      };
       const wrapOver = () => {
-        if(wrapped) return;
-        wrapped = true;
-        lvl.textContent = "Level " + after.level;
-        line.textContent = lineFor(after);
+        if(finished) return;
+        lv += 1;
+        lvl.textContent = "Level " + lv;
         wrap.classList.add("is-levelup");
-        const prev = fill.style.transition;
         fill.style.transition = "none";
         setBarFill(fill, 0);
         void fill.offsetWidth;
-        /* One committed frame at zero before the transition goes back
-           on, or the browser coalesces the two writes and the bar
-           simply jumps. */
         requestAnimationFrame(() => {
+          if(finished) return;
+          if(lv < after.level){ requestAnimationFrame(fillOut); return; }
+          line.textContent = lineFor(after);
           fill.style.transition = prev || "";
-          requestAnimationFrame(() => { setBarFill(fill, target); });
+          requestAnimationFrame(() => {
+            setBarFill(fill, target);
+            if(after.stopped) setTimeout(bank, 900);
+          });
         });
       };
-      fill.addEventListener("transitionend", wrapOver, { once: true });
-      /* Reduce motion switches every transition off, so transitionend
-         never fires and the bar would sit at 100% on the old level. */
-      setTimeout(() => {
-        if(lvl.textContent !== "Level " + after.level) wrapOver();
-      }, 1100);
+      fillOut();
     }));
   };
   return wrap;
@@ -71472,6 +71905,10 @@ let lastRunXpEarned = 0;
    further down - can be added to it. */
 let lastHistoryEntry = null;
 let lastRunPointsAfter = 0;
+/* The badge count either side of that run (build 314), so the level bar
+   can show a badge opening a wall as the hop it is. */
+let lastRunBadgesBefore = null;
+let lastRunBadgesAfter = null;
 let lastRunXpLines = [];
 let lastRunRoomXp = null;   /* the run as the Virtual Room scores it: no bests, no badge */
 let lastRunResult = null;   /* the last run's numbers, for the Virtual Room's own review */
@@ -73742,7 +74179,8 @@ function showRunRewards(run, hooks, opts){
   const rankNow = rankOf(store);
   const rankGoingIn = (!quiet && tiersReached.length)
     ? (TIER_ORDER_FULL[TIER_ORDER_FULL.indexOf(tiersReached[0]) - 1] || null) : rankNow;
-  const levelBlock = buildResultsLevelBlock(run.xpTotal, run.pointsAfter, { me: true, rankBefore: rankGoingIn });
+  const levelBlock = buildResultsLevelBlock(run.xpTotal, run.pointsAfter, { me: true, rankBefore: rankGoingIn,
+    badgesBefore: run.badgesBefore, badgesAfter: run.badgesAfter });
   levelBlock.classList.add("rs-levelblock", "rs-land");
   xp.appendChild(levelBlock);
   panel.appendChild(xp);
@@ -74079,7 +74517,7 @@ function showRunRewards(run, hooks, opts){
   });
   /* The pop lands when the bar has finished, not part-way through a
      level-up's second fill (build 302): a wrap is two fills, ~1.9s. */
-  seq.add((levelBlock.matches && levelBlock.matches(".is-levelup, :has(.is-levelup)")) ? 2050 : 1250, () => { xp.classList.remove("is-charging"); xp.classList.add("is-charged"); });
+  seq.add(levelBlock.fillMs ? levelBlock.fillMs : (levelBlock.matches && levelBlock.matches(".is-levelup, :has(.is-levelup)")) ? 2050 : 1250, () => { xp.classList.remove("is-charging"); xp.classList.add("is-charged"); });
   boxes.forEach(b => {
     seq.add(420, instant => {
       rsLand(b, instant);
@@ -74953,6 +75391,8 @@ function summarize(){
   lastRunXpEarned = xpTotal;
   if(lastHistoryEntry){ lastHistoryEntry.xp = xpTotal; lastHistoryEntry = null; saveStore(); }
   lastRunPointsAfter = store.lifetime.points;
+  lastRunBadgesBefore = badgesBefore.size;
+  lastRunBadgesAfter = badgeCountOf(store);
   lastRunXpLines = xpLines.filter(l => !l.badge);
   if(!runXp || isMissedRetake) lastRunRoomXp = null;
   pendingXpFly = xpTotal;
@@ -75049,6 +75489,8 @@ function summarize(){
     vroom: !!inVirtualRoom, source: cfg.source,
     units: (cfg.units || []).slice(), unitsSat,
     xpLines, xpTotal, pointsAfter: store.lifetime.points,
+    /* build 314: the badges either side of the run, for the badge wall */
+    badgesBefore: lastRunBadgesBefore, badgesAfter: lastRunBadgesAfter,
     hundosEarned, leveledUpTo, newBest,
     progUnits, perfectsBefore,
     badges: badgesEarnedThisRun.slice(), retroBadges: retroBadges.slice(),
@@ -77709,7 +78151,7 @@ function showVirtualRoomSetup(editRoom){
         { target: ".pick", align: "left", vplacement: "below",
           /* Badges have not been a flat 35 since build 210: 3 to 20
              hundos by the unit's size (BADGE_THRESHOLD_BANDS). */
-          text: "Tap a unit to add it to this test. The bar under each one is how close you are to its badge \u2014 2 to 15 hundos depending on the unit\u2019s size (the smaller the unit, the more it takes), and a unit you have mastered shows its badge instead." },
+          text: "Tap a unit to add it to this test. The bar under each one is how close you are to its badge \u2014 " + badgeRangeText() + " depending on the unit\u2019s size (the smaller the unit, the more it takes), and a unit you have mastered shows its badge instead." },
         { target: "#bottomtab-start", align: "right", vplacement: "above",
           text: "Once you've picked your units, tap here \u2014 it opens a quick summary and lets you set the timer and other options before you begin." }
       ]);
@@ -83540,7 +83982,8 @@ function showVirtualRoomResults(){
      one, so the XP was genuinely awarded and simply never shown. The
      numbers come from that run rather than being recomputed, so the
      two screens cannot disagree. */
-  const vroomLevelBlock = buildResultsLevelBlock(lastRunXpEarned, lastRunPointsAfter);
+  const vroomLevelBlock = buildResultsLevelBlock(lastRunXpEarned, lastRunPointsAfter,
+    { badgesBefore: lastRunBadgesBefore, badgesAfter: lastRunBadgesAfter });
   panel.appendChild(vroomLevelBlock);
 
   const list = document.createElement("div");
@@ -87507,12 +87950,15 @@ function showProfile(defaultTab){
      screen exists as anything other than a settings page. Level in
      blue, badges in silver, both with the same shine, and a bar that
      fills on arrival rather than appearing already full. */
-  const prog = levelProgress(store.lifetime.points || 0);
+  /* levelStateFor (build 314): the level as the badge wall holds it. At
+     a wall the bar sits full, the line above it says which badges open
+     it, and the line below says what has been banked meanwhile. */
+  const prog = levelStateFor(store);
   const badgeCount = badgeCountOf(store);
   const totalUnitsForBadges = topicsIn(QUESTIONS).length;
 
   const levelSect = document.createElement("div");
-  levelSect.className = "profile-level";
+  levelSect.className = "profile-level" + (prog.held ? " is-held" : "") + (prog.stopped ? " is-stopped" : "");
 
   /* ---- LEVEL AND BADGES ARE TWO SECTIONS (build 241) ----
      "It being in the level section is kinda strange, it should be its
@@ -87536,7 +87982,12 @@ function showProfile(defaultTab){
   levelSideLab.textContent = "Level";
   const levelSideTop = document.createElement("span");
   levelSideTop.className = "profile-level-sidetop";
-  levelSideTop.textContent = prog.atCap ? "Level " + LEVEL_CAP + ", the cap" : prog.toNext.toLocaleString() + " XP to level " + (prog.level + 1);
+  /* AT A GATE (build 314) the numbers keep counting past what the level
+     asks - "the numbers would start collecting ... 700/100 or whatever
+     it'd be" - while the bar below stays full. */
+  levelSideTop.textContent = prog.atCap ? "Level " + LEVEL_CAP + ", the cap"
+    : prog.held ? levelXpNumbers(prog)
+    : prog.toNext.toLocaleString() + " XP to level " + (prog.level + 1);
   /* THE TOTAL GOES AT THE BOTTOM (build 302). "Where it says how much xp
      you have earned ... shouldn't that be at the bottom and not in the
      middle? Shouldn't it say total xp earned too?" It sat between the
@@ -87551,7 +88002,7 @@ function showProfile(defaultTab){
   levelSect.appendChild(levelRow);
 
   const xpTrack = document.createElement("div");
-  xpTrack.className = "xpbar-track profile-xpbar";
+  xpTrack.className = "xpbar-track profile-xpbar" + (prog.stopped ? " is-banked" : "");
   const xpFill = document.createElement("div");
   xpFill.className = "xpbar-fill";
   setBarFill(xpFill, 0);
@@ -87559,15 +88010,27 @@ function showProfile(defaultTab){
   xpTrack.appendChild(xpFill);
   levelSect.appendChild(xpTrack);
 
-  const xpLine = document.createElement("p");
-  xpLine.className = "profile-xp-line";
-  const xpLineMain = document.createElement("span");
-  xpLineMain.textContent = prog.atCap ? "Every level reached" : "Level " + prog.level + " \u2192 " + (prog.level + 1);
-  const xpLinePct = document.createElement("span");
-  xpLinePct.className = "profile-xp-pct";
-  xpLinePct.textContent = prog.atCap ? "100%" : Math.floor(prog.fraction * 100) + "%";
-  xpLine.append(xpLineMain, xpLinePct);
-  levelSect.appendChild(xpLine);
+  /* At a gate the line under the bar is the Next gate section below -
+     the numbers above the bar already say where the XP stands. */
+  if(!prog.held){
+    const xpLine = document.createElement("p");
+    xpLine.className = "profile-xp-line";
+    const xpLineMain = document.createElement("span");
+    xpLineMain.textContent = prog.atCap ? "Every level reached" : "Level " + prog.level + " \u2192 " + (prog.level + 1);
+    const xpLinePct = document.createElement("span");
+    xpLinePct.className = "profile-xp-pct";
+    xpLinePct.textContent = prog.atCap ? "100%" : Math.floor(prog.fraction * 100) + "%";
+    xpLine.append(xpLineMain, xpLinePct);
+    levelSect.appendChild(xpLine);
+  }
+  /* ---- NEXT GATE (build 314) ----
+     "We really need the levels, ranks, badges to all be tied together
+     perfectly ... maybe in profile under the xp it would be its gate
+     requirement section." Directly under the bar: the next gate's rank,
+     its two requirements against yours, and - when it is what is holding
+     your level - what opens it, and the badge you are nearest. */
+  const gate = nextGateOf();
+  if(gate) levelSect.appendChild(buildNextGateSection(gate, "profile-gate"));
   levelSect.appendChild(levelSideSub);
 
   /* The badges as a count, and the ones you HAVE as a small overlapping
@@ -88947,6 +89410,18 @@ function showRankLore(key){
     req.appendChild(row);
   });
   sheet.appendChild(req);
+  /* THE WALL (build 314): this rank's level is the highest you can hold
+     without its badges. Said for every rank, and with your own standing
+     when it is the one holding you. */
+  const wall = document.createElement("p");
+  wall.className = "ranklore-wall";
+  const ls = levelStateFor(store);
+  const holdsYou = ls.held && ls.gateKey === key;
+  wall.textContent = holdsYou
+    ? levelWallLine(ls) + " \u00b7 " + levelXpNumbers(ls)
+    : "Level " + (rule.level || 0) + " is a gate: you climb past it once you hold " +
+      (rule.badges || 0) + ((rule.badges || 0) === 1 ? " badge." : " badges.");
+  sheet.appendChild(wall);
   sheet.append(buildRankGiftsLabel(), buildRankGifts(key));
   const close = document.createElement("button");
   close.type = "button"; close.className = "next ghost person-sheet-close";
@@ -89178,6 +89653,29 @@ function buildRanksTab(){
                   gauge("is-badges", "Badges", badgesNow, null, 1));
   }
   hero.appendChild(gauges);
+  /* ONE SUMMARY OF WHERE YOU STAND (build 314): your rank, your level,
+     your badges, and the next gate - the rank whose badges open your
+     next levels - in the same words as the Profile card. */
+  {
+    const g = nextGateOf();
+    const sum = document.createElement("div");
+    sum.className = "rankhero-gate";
+    const a = document.createElement("p");
+    a.className = "rankhero-gate-me";
+    a.textContent = (held ? RANK_DISPLAY_NAME[held] + " \u00b7 " : "") + "Level " + levelNow + " \u00b7 " +
+      badgesNow + (badgesNow === 1 ? " badge" : " badges");
+    sum.appendChild(a);
+    if(g){
+      const b = document.createElement("p");
+      b.className = "rankhero-gate-next";
+      b.style.setProperty("--rank-color", RANK_COLOR[g.key] || "#9FACBA");
+      const nb = document.createElement("b"); nb.textContent = "Next gate: " + g.name;
+      b.append(nb, document.createElement("br"), g.held ? g.line
+        : "Level " + g.level + " and " + g.badges + (g.badges === 1 ? " badge" : " badges"));
+      sum.appendChild(b);
+    }
+    hero.appendChild(sum);
+  }
 
   /* No "1 badge to go until Bronze." under the rings (build 284): the
      rings already say it, and the box was asked to be simpler and
@@ -89210,7 +89708,10 @@ function buildRanksTab(){
      tables, it read "from Gold up, a character too, and Bronze, Silver
      and Gold each add a banner" - true, and a paragraph to parse. Each
      stop below already says exactly what it hands over. */
-  mapNote.textContent = "Each rank needs a level and a number of badges, and unlocks rewards along the way. Tap a rank to see what it gives.";
+  /* THE WALL, SAID ONCE (build 314): a rank's level is also the highest
+     level you can hold without its badges - "you can't get past that
+     next rank's level until you hit the badges needed". */
+  mapNote.textContent = "Each rank needs a level and a number of badges, and unlocks rewards along the way. Its level is a gate: you can reach it, but you only climb past it once you hold its badges. Tap a rank to see what it gives.";
   tab.appendChild(mapNote);
 
   /* ---- IRON AT THE TOP, SUPERNOVA AT THE BOTTOM (build 232) ----
@@ -89223,6 +89724,9 @@ function buildRanksTab(){
      you are heading for) and fills downwards from the one above. */
   const map = document.createElement("div");
   map.className = "rankmap";
+  /* The next gate (build 314) - see nextGateOf(). */
+  const nextGate = nextGateOf();
+  const wallKey = nextGate ? nextGate.key : null;
   const startLab = document.createElement("p");
   startLab.className = "rankmap-foot";
   startLab.textContent = held ? "Start" : "You start here";
@@ -89385,9 +89889,12 @@ function buildRanksTab(){
     if(pending){ state.dataset.after = state.textContent; state.textContent = "Locked"; }
     head.append(name, state);
     card.appendChild(head);
+    /* EVERY RANK IS A GATE (build 314): its two requirements as chips
+       against where you are - ticked once met - rather than as a line of
+       numbers to compare in your head. */
     const req = document.createElement("p");
     req.className = "rankmap-req";
-    req.textContent = "Level " + rule.level + " \u00b7 " + rule.badges + (rule.badges === 1 ? " badge" : " badges");
+    req.appendChild(buildGateChips(rule.level, levelNow, rule.badges, badgesNow));
     card.appendChild(req);
     if(isNext){
       const meter = document.createElement("div");
@@ -89402,7 +89909,28 @@ function buildRanksTab(){
       togo.className = "rankmap-togo";
       const parts = tierShortfall(rule).map(t => t.replace(" more ", " "));
       togo.textContent = parts.length ? parts.join(", ") + " to go" : "Ready to reach";
-      card.appendChild(togo);
+      /* at the gate holding your level, the gate's own line says it */
+      if(!(nextGate && nextGate.held && key === nextGate.key)) card.appendChild(togo);
+    }
+    /* THE CURRENT GATE (build 314): highlighted, its circle carrying the
+       badge count, and - when it is what holds your level - the plain
+       line saying which part is holding you: "Badges 3 / 9 - earn 6 more
+       to pass level 52". */
+    if(key === wallKey){
+      stop.classList.add("is-gate");
+      if(!nextGate.badgesMet){
+        const chip = document.createElement("span");
+        chip.className = "rankmap-gatechip";
+        chip.textContent = nextGate.haveBadges + " / " + nextGate.badges + " badges";
+        node.appendChild(chip);
+      }
+      if(nextGate.held){
+        const st = nextGate.state;
+        const w = document.createElement("p");
+        w.className = "rankmap-wall";
+        w.textContent = levelWallLine(st);
+        card.appendChild(w);
+      }
     }
     /* What it hands over - buildRankGifts (build 311: one size, one
        start, the same chips the rank's own card shows). */

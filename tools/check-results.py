@@ -349,7 +349,7 @@ with sync_playwright() as pw:
       characters:['robot'], justBeatSpeed:null, units:[], flare:null }).map(i=>i.kind)""")
     ck("unlocks run badge, rank, then what the rank handed over", order[:3] == ["badge", "rank", "theme"] and "character" in order[3:], order)
     # A run that missed one: the badge line, the avatar, the chip.
-    pg.evaluate("([u])=>{ store.unitPerfects = store.unitPerfects || {}; store.unitPerfects[u] = 3; __run(u,0,'drill'); }", [UNIT])
+    pg.evaluate("([u])=>{ store.unitPerfects = store.unitPerfects || {}; store.unitPerfects[u] = Math.max(0, badgeThresholdFor(u) - 2); __run(u,0,'drill'); }", [UNIT])
     wait_done(pg)
     got = pg.evaluate("""()=>{ const lb=document.getElementById('testscopelabel').getBoundingClientRect();
       const m=document.querySelector('.rs-mode').getBoundingClientRect();
@@ -377,7 +377,9 @@ with sync_playwright() as pw:
     # "Level 23 ... 815 to level 25" for the whole fill.
     lv = pg.evaluate("""async ()=>{ let p=0; while(levelProgress(p).level < 23) p+=25;
       const lo=p; while(levelProgress(p).level < 24) p+=25; p+=200;
-      const w=buildResultsLevelBlock(p-lo+50, p, {}); document.getElementById('stage').appendChild(w);
+      /* every badge there is (build 314): this is about the line, not
+         the badge gate, which would hold a badgeless account at 21 */
+      const w=buildResultsLevelBlock(p-lo+50, p, { badgesBefore: 16, badgesAfter: 16 }); document.getElementById('stage').appendChild(w);
       const read=()=>{ const n=+(w.querySelector('.results-level-num').textContent.match(/\\d+/)||[0])[0];
         const m=(w.querySelector('.results-level-line').textContent.match(/to level (\\d+)/)||[])[1]; return [n, m?+m:null]; };
       const start=read(); w.runFill(); await new Promise(r=>setTimeout(r,2600)); const end=read(); w.remove();

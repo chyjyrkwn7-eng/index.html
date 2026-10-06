@@ -1655,6 +1655,12 @@ for the future and took nothing back.
 
 ## Levels, badges and ranks
 
+> **Build 314 changed all three at once - read "Build 314 - the gate"
+> near the end first.** A rank's level is now a gate its badges open
+> (`badgeWallLevel`, `levelStateFor`, `store.levelFloor`), badges are
+> 3 / 2 / 1 hundos by unit size, and the curve is one +3.65% rate from 26
+> (71 ~ 138k, 80 ~ 197k). The band and curve numbers below are history.
+
 The three things the app measures are **XP → level**, **badges**, and
 **hundos**, and every screen that shows progress is built on those three.
 
@@ -13113,3 +13119,133 @@ write is one write plus one read per phone watching it. A metered session
 shared document, or writes on a timer, multiply it out: per phone, per
 hour, times ~40.** `vrooms` only grows (rooms, chats, bug reports), so
 anything that lists it gets dearer every week.
+
+### Build 314 - the gate: levels, ranks and badges tied together
+
+**The rule, Madison's words:** *"you can't get past that next ranks level
+until you hit the badges needed."* Each rank's LEVEL is a gate its BADGES
+open. With b badges the highest level you can hold is the level of the
+first rank asking for more than b badges: 0 badges -> 21, 1-2 -> 29,
+3-4 -> 36, 5-6 -> 45, 7-8 -> 52, 9-11 -> 65, 12-13 -> 71, 14+ -> the cap.
+You can REACH a gate's level; you cannot pass it until you hold its
+badges. `badgeWallLevel()` reads this off `TIER_UNLOCKS`, never a typed
+table, so moving a rank moves its gate.
+
+- **XP IS NEVER CAPPED.** The total keeps counting at a gate; only the
+  level is held. When the badge lands the level jumps straight to what
+  the XP has earned. *"When hitting max, the numbers would start
+  collecting ... 700/100 or whatever it'd be."* At a gate the bar for
+  that level fills as normal, then STAYS full in a brighter "banked"
+  blue with a ring round the track (`.is-banked`), and the numbers above
+  it run past what the level asks: `into / span XP`, e.g.
+  "44,475 / 5,085 XP". `levelStateOf()` deliberately does NOT cap `into`
+  at `span` when `stopped`.
+- **One function owns the level.** `levelStateFor(st)` (and `levelOf`,
+  now `effectiveLevelOf`) = `min(curve level, max(badge wall,
+  levelFloor))`, never above `LEVEL_CAP`. Everything that shows or
+  publishes a level goes through it: the rankings row
+  (`buildLeaderboardRow`), chat and Virtual Room presence, the ranks
+  (`rankOf`, `tierColorUnlocked`), the level-80 banner, the flare level
+  gates, the Profile card, the results card, the road map.
+  `rankOfStats()` also holds a published level to the badge wall, which
+  cannot change an answer (a rank needs its badges, and with them the
+  wall is already past its level) but means a row from an older build is
+  asked the same question.
+- **THE GRANDFATHER FLOOR - nobody loses a level.** `store.levelFloor`,
+  defaulted ONCE in `applyLoadedData()` for an account that has none to
+  the HIGHER of the level its XP gives on build 313's curve
+  (`levelFromPoints313`) and on this one. It lifts the gate to itself: an
+  account already past its gate keeps its level and only stops climbing.
+  0 for a new account and after a reset (`wipeLocalProgressAndSettings`);
+  max in `mergeSameAccount` and `mergeLeavingAccount`. A copy from an
+  older build has no floor and changes nothing in a merge. **Because the
+  new curve is cheaper everywhere, "the higher of the two" is in practice
+  the new curve's level, so nobody is held on the day this ships** - the
+  gate only starts holding from the first level anyone earns after it.
+  An older-build device still publishing during the roll-out can raise a
+  floor (its copy is defaulted again from its XP); that is accepted: it
+  only ever keeps a level somebody was shown.
+  **Lowering progress on purpose must lower `levelFloor` too**, like the
+  `__floor` document, or the floor hands the level straight back.
+  A merge's `bonusLevels` gift raises the floor to the gifted level: a
+  gift is an admin's correction, and at a gate more XP would show nothing.
+- **THE NEXT GATE is the one idea every surface shows** (*"we really
+  need the levels, ranks, badges to all be tied together perfectly"*).
+  `nextGateOf()`: when your level is held, the rank whose badges open it
+  (a grandfathered level 52 with 3 badges is at the SAPPHIRE gate, 9
+  badges, not Gold's); otherwise simply the next rank. Copy, plain and
+  the same everywhere: "Next gate", "Level", "Badges", and
+  **"Earn N more badge(s) to pass level L"** ("more" only when you hold
+  at least one).
+  - Profile: directly under the XP bar, a Next gate box
+    (`buildNextGateSection`): the rank's emblem and name, two chips
+    (`buildGateChips`: "Level 25 / 29" or "Level 29 ✓", "Badges 1 / 3"),
+    the line above when it is holding you, and "Closest: <unit>, X of Y
+    hundos". At a gate the old "Level N → N+1  43%" line is replaced by
+    it.
+  - Results card (every mode, the Virtual Room too): the overflow numbers
+    under the bar and one compact line, "Next gate: Silver · Badges 1 / 3
+    · Earn 2 more badges to pass level 29", then the closest badge.
+    `summarize()` hands the badge count either side of the run
+    (`lastRunBadgesBefore/After`) so a run that opens a gate climbs
+    through EVERY banked level, one fill after another (quicker per level
+    the more there are; timers, not transitionend, so Reduce motion
+    cannot stall it), and the tag reads "Up N levels".
+    `levelBlock.fillMs` tells the reveal sequence how long that takes.
+  - Rank tab: every stop's requirement line is the two chips against
+    you (ticked once met); the current gate is outlined, its circle
+    carries "X / Y badges" and its card the same "Earn N more ..." line;
+    the hero adds one summary - "Bronze · Level 25 · 1 badge" and "Next
+    gate: Silver" with what it takes. The climb's note says it once
+    ("... unlocks rewards along the way. Its level is a gate: you can
+    reach it, but you only climb past it once you hold its badges" - the
+    "unlocks" stays, check-behaviour asserts it), and a rank's own card
+    says "Level 29 is a gate: you climb past it once you hold 3 badges".
+    User-facing copy says GATE, never wall. Gate content only - the road's own
+    animation, end circle and colours are another builder's.
+- **RE-MEASURE: a rank's level and the gate are now the SAME number
+  doing two jobs.** Move a rank's level and you move a wall people are
+  standing at. Check the board (`firestore-admin.py audit`) first.
+
+### Build 314 - badges by unit size, 3 / 2 / 1
+
+Asked for directly: units over 100 questions 1 hundo (Penal Code, Arrest
+Search and Seizure), 41-100 2 (the Constitution, Missing and Exploited
+Children, Sexual Assault and Family Violence), 40 or fewer 3. Still a band
+table on `unitQuestionCount`, so new units land in their band by
+themselves. Every unit is at or below build 279, so nobody loses a badge;
+`BADGE_BANDS_VERSION` 4 and `legacyBadgeThreshold279` hand the new ones
+to the next test's celebration exactly the way 279 did. Copy reads the
+range off the bands (`badgeRangeText()` - "1 to 3 hundos"); nothing states
+a number. `MASTERY_THRESHOLDS` (the old Beginner/Intermediate/Advanced
+unit labels, 10/20/35) is a separate, older ladder and was left alone.
+
+### Build 314 - one rate from 26, fitted to January 1st
+
+*"Level 71 needs about 140,000 total XP and level 80 about 200,000"*,
+against the class's measured pace (median active player ~160,000 XP by
+January 1st; 25th percentile ~85k, 75th ~325k, a little allowed for the
+holidays). Levels 1-25 untouched (21 is still 9,912); x1.18 into 26 (1,087
+against 25's 921), then every level +3.65% (`LEVEL_LATE_GROWTH`), one rate
+with no bands: 29 17,933 · 36 27,739 · 45 44,567 · 52 61,965 · 65 108,478 ·
+71 138,431 · 80 197,370. **Raising LEVEL_CAP (100-120 is planned) just
+carries the same growth on; nothing below it is re-fitted.** The steep
+tail past 45 is retired (`LEVEL_STEEP_*` kept for `levelFromPoints313`).
+**Every level 2-80 is CHEAPER than build 313, so no XP total reads a lower
+level** - `check-curve` section 2 walks 0-600,000 in steps of 37 against
+313's curve rebuilt from its own constants, and on the Oct 6 backup no
+account's level went down (it went up for everyone above level 25).
+
+**What re-measuring the ranks found (TIER_UNLOCKS kept as they are, by
+decision):** with 3/2/1-hundo badges every badge in the app costs about
+36,000 XP of work, so the badge line is now 1 -> 6, 3 -> 13, 5 -> 19,
+7 -> 24, 9 -> 28, 12 -> 33, 14 -> 36. For anybody who sits whole units the
+LEVEL gates every rank and the badges are long since in hand; the gate
+only holds somebody who climbs on partial runs - which is who the rule is
+for. Worth looking at again before December's ranks.
+
+`tools/firestore-admin.py audit` now checks a row's level against the
+EFFECTIVE level (curve, gate, floor) worked out from the progress
+document's own XP, hundos and floor; its copies of the unit sizes, bands,
+ranks and both curves are compared with the page by `check-curve`
+section 9, so they cannot drift.
