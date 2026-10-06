@@ -1327,11 +1327,15 @@ def check_b313_shuffle(br):
         'Victims may \\u201cdeny or minimize\\u201d the impact of the assault or crime they\\'ve been subjected to. All of the Above'].join('\\u0001'));
       // a choice cut off mid-sentence ("...between them and the") with
       // its last word left over as the next choice ("event.")
-      out.damaged = QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].choices || []).some((c, k, all) => {
+      out.dupes = QUESTIONS.map((q, i) => i).filter(i => { const c = (QUESTIONS[i].choices || []).map(x => String(x).trim().toLowerCase()); return new Set(c).size !== c.length; })
+        .map(i => QUESTIONS[i].topic.trim().slice(0, 12) + ' ' + QUESTIONS[i].src);
+      // "writ of" alone was a wrong answer cut off in the guide (US and Texas 23)
+      out.damaged = QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].choices || []).some(c => /\\b(of|the|and|to)$/i.test(String(c).trim()) && String(c).trim().split(/\\s+/).length <= 3)).map(i => QUESTIONS[i].topic.trim().slice(0, 12) + ' ' + QUESTIONS[i].src)
+        .concat(QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].choices || []).some((c, k, all) => {
         const t = String(c).trim(), prev = k ? String(all[k - 1]).trim() : '';
         return (/.\\s(all|none) of the above\\s*\\.?$/i.test(t) && !/^(all|none|any)/i.test(t))
           || (/\\b(the|and|of|or|a|an|to|between)$/i.test(prev) && /^[a-z]/.test(t)); }))
-        .map(i => QUESTIONS[i].topic.trim().slice(0, 12) + ' ' + QUESTIONS[i].src);
+        .map(i => QUESTIONS[i].topic.trim().slice(0, 12) + ' ' + QUESTIONS[i].src));
       return out; }""")
     bad = [u for u in r["units"] if any(abs(c) > (0.15 if u["n"] >= 30 else 0.3) for c in u["c"])]
     check("a question's place in one run has nothing to do with its place 1-4 runs earlier, on every unit",
@@ -1346,11 +1350,9 @@ def check_b313_shuffle(br):
     check("the Victims of Crime question is four whole choices, with All of the Above on its own",
           r["victim"] and r["victim"][3] == "All of the Above" and r["victim"][1].endswith("the event.") and not r["victim"][2].endswith("Above"), r["victim"])
     check("and keeps its identity, so nobody's history on it moves", r["victimKeep"] is True, r["victimKeep"])
-    # US and Texas Constitution 23 has a wrong answer reading just "writ
-    # of" - cut off in the study guide itself, and what it said is not
-    # known, so it is left alone (asked about) rather than made up.
     check("no other choice in the bank is a cut-off fragment or has All of the Above glued on",
-          [d for d in r["damaged"] if d != "US and Texas 23"] == [], r["damaged"])
+          r["damaged"] == [], r["damaged"])
+    check("no question lists the same choice twice (Fitness 11 had \"20-25%\" twice)", r["dupes"] == [], r["dupes"])
     ctx.close()
 
 

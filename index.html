@@ -24070,10 +24070,19 @@ const QUESTIONS = [
     src: 11,
     q: "Protein should comprise approximately _________ of daily calories.",
     ref: "(Fitness, Section 3.7)",
-    choices: [
+    /* The guide listed "20-25%" twice; the second is now carbohydrates'
+       share from the same section (55-60%), unmistakably wrong for
+       protein (build 313). keyChoices keeps the stored identity. */
+    keyChoices: [
       "12-20%",
       "20-25%",
       "20-25%",
+      "12-15%",
+    ],
+    choices: [
+      "12-20%",
+      "20-25%",
+      "55-60%",
       "12-15%",
     ],
     answer: 3
@@ -25410,8 +25419,17 @@ const QUESTIONS = [
     src: 23,
     q: "The writ that is filed that seeks release from unlawful detention is called",
     ref: "(US & TX Constitution, 7.1 or CCP Art. 11.17)",
-    choices: [
+    /* "writ of" was a wrong answer cut off in the study guide itself;
+       repaired to a real writ that is plainly not the answer (build 313).
+       keyChoices keeps the identity it was stored under. */
+    keyChoices: [
       "writ of",
+      "writ of habeas corpus",
+      "corpus deficit",
+      "deces tectum",
+    ],
+    choices: [
+      "writ of mandamus",
       "writ of habeas corpus",
       "corpus deficit",
       "deces tectum",
