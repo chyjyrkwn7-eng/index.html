@@ -3429,16 +3429,18 @@ def check_b244(br):
 
 
 # --------------------------------------------------------------------------
-# The questions on slides 1-87 of "TEXAS PENAL CODE for 736 updated
-# 8-14-26" (Madison's "slides 0-85" - the deck has none past slide 79), by
+# The questions on slides 55-124 of "TEXAS PENAL CODE for 736 updated
+# 8-14-26" (build 313: the next test's slides, replacing slides 0-85), by
 # the bank's own `src`. Typed here on purpose: this is the reference the
 # app's PENAL_TEST_SRCS is checked AGAINST, not read back from it.
 PENAL_SLIDES_SRCS = sorted([
-    147, 60, 135, 6, 62, 139, 285, 57, 265, 32, 151, 77, 174, 210, 51, 172,
-    219, 259, 313, 44, 274, 191, 153, 7, 33, 53, 182, 303, 15, 218, 214, 84,
-    75, 289, 302, 314, 196, 40, 178, 80, 69, 185, 101, 130, 249, 213, 24,
-    121, 200, 262, 344, 128, 159, 61, 95, 183,
-    347])  # build 298: #84 again - the deck has it on slide 22 and slide 24
+    249, 213, 24, 121, 200, 262, 344, 128, 159, 61, 95, 183, 109, 117, 150,
+    158, 250, 304, 65, 70, 97, 178, 319, 236, 318, 346, 22, 209, 3, 204, 253,
+    290, 343, 321, 322, 324, 28, 41, 66, 68, 76, 141, 207, 323, 255, 83, 90,
+    100, 222, 299, 88, 230, 297, 338, 114,
+    348, 349, 350])  # #213, #128 and #183 again - the deck has each on two slides
+# The version-only copies, by the src each one repeats.
+PENAL_REPEATS = {348: 213, 349: 128, 350: 183}
 
 PENAL_CARD = ".picks .pick:has(.pname:text-is('Penal Code'))"
 
@@ -3465,7 +3467,7 @@ PENAL_STATE = """()=>{ const row = [...document.querySelectorAll('.picks .pick')
 
 def check_penal_versions(br):
     """The Penal Code has two versions: the whole unit, and the questions on
-    slides 0-85 of the instructor's PowerPoint. Selecting it asks which,
+    slides 55-124 of the instructor's PowerPoint. Selecting it asks which,
     EVERY time; nothing is remembered, and the card (which says the second
     version exists) does not change when one is chosen.
     The run draws only the chosen version, Re-run repeats it without asking,
@@ -3505,7 +3507,7 @@ def check_penal_versions(br):
     def choose(which):
         """which: 'short' (the one naming slides) or 'whole'."""
         pg.evaluate("""(w)=>{ const b = [...document.querySelectorAll('#unitver .unitver-opt')]
-          .find(x => /0\\u201385|0-85/.test(x.textContent) === (w === 'short')); if(b) b.click(); }""", which)
+          .find(x => /55\\u2013124|55-124/.test(x.textContent) === (w === 'short')); if(b) b.click(); }""", which)
         pg.wait_for_timeout(450)
         return pg.evaluate(PENAL_STATE)
 
@@ -3515,20 +3517,20 @@ def check_penal_versions(br):
           s1["pop"] and not s1["checked"] and s1["units"] == [], s1)
     opts = s1["opts"]
     # The whole unit is the study guide's 340 (build 300): the second #84,
-    # flagged versionOnly, belongs to the slides 0-85 version alone.
+    # flagged versionOnly, belongs to the slides 55-124 version alone.
     nums = pg.evaluate("""()=>({ whole: QUESTIONS.filter(q => (q.topic||'').trim() === 'Penal Code' && !q.versionOnly).length })""")
-    short = [o for o in opts if ("0–85" in o or "0-85" in o)]
+    short = [o for o in opts if ("55–124" in o or "55-124" in o)]
     whole = [o for o in opts if o not in short]
-    check("two choices: the whole unit, and the one from slides 0-85 of the PowerPoint",
+    check("two choices: the whole unit, and the one from slides 55-124 of the PowerPoint",
           len(opts) == 2 and len(short) == 1 and "PowerPoint" in short[0] and "Penal Code" in whole[0]
           and ("%d questions" % len(PENAL_SLIDES_SRCS)) in short[0]
           and ("%d questions" % nums["whole"]) in whole[0], opts)
     check("nothing on it says 'test version'", s1["pop"] and "test version" not in s1["popText"].lower(), s1["popText"])
     # Build 250: the short version's hundo warning lives here and only here.
     check("the short choice says on the pop-up that it earns no hundo, and the whole unit does not",
-          "hundo" in short[0].lower() and "hundo" not in whole[0].lower(), opts)
+          bool(short) and bool(whole) and "hundo" in short[0].lower() and "hundo" not in whole[0].lower(), opts)
     s2 = choose("short")
-    check("choosing slides 0-85 selects the card on that version",
+    check("choosing slides 55-124 selects the card on that version",
           not s2["pop"] and s2["checked"] and s2["units"] == ["Penal Code"]
           and s2["versions"] == '{"Penal Code":"test"}', s2)
     check("the card does not change when a version is chosen",
@@ -3541,8 +3543,8 @@ def check_penal_versions(br):
       return { text: t.textContent, passesTap: !!hit && c.contains(hit) && !t.contains(hit),
         hit: hit ? (hit.id || String(hit.className && hit.className.baseVal !== undefined ? hit.className.baseVal : hit.className)).slice(0, 60) : null,
         y: Math.round(b.top), vh: innerHeight, sy: Math.round(scrollY) }; }""")
-    check("the card says it carries the slides 0-85 version, and a tap on that line is a tap on the card",
-          bool(pill) and "0–85" in pill["text"] and pill["passesTap"], pill)
+    check("the card says it carries the slides 55-124 version, and a tap on that line is a tap on the card",
+          bool(pill) and "55–124" in pill["text"] and pill["passesTap"], pill)
     # 2. deselect never asks; the next select asks again
     s3 = tap()
     check("tapping it again deselects it, with no pop-up",
@@ -3564,9 +3566,9 @@ def check_penal_versions(br):
       out.cut = cfg.size;
       if(sl){ sl.value = sl.max; sl.dispatchEvent(new Event('input', { bubbles: true })); }
       return out; }""")
-    n56 = "%d questions" % len(PENAL_SLIDES_SRCS)
-    check("the start sheet and the Start button count the slides 0-85 questions",
-          n56 in sheet["line"] and n56 in sheet["start"], sheet)
+    n_ver = "%d questions" % len(PENAL_SLIDES_SRCS)
+    check("the start sheet and the Start button count the slides 55-124 questions",
+          n_ver in sheet["line"] and n_ver in sheet["start"], sheet)
     # Build 250: the version pop-up is where the short version says it
     # earns no hundo ("put the warning ... only at the pop up for which
     # version"); the sheet's note is for cutting it down further.
@@ -3578,7 +3580,7 @@ def check_penal_versions(br):
     pg.wait_for_timeout(200)
     run = pg.evaluate(PENAL_RUN)
     pg.evaluate(PENAL_HALT)
-    check("the run is exactly the %d questions on slides 0-85" % len(PENAL_SLIDES_SRCS),
+    check("the run is exactly the %d questions on slides 55-124" % len(PENAL_SLIDES_SRCS),
           run["allPenal"] and run["srcs"] == PENAL_SLIDES_SRCS, "%d questions" % run["n"])
     # 4. a perfect run of it earns XP and no hundo
     hundo = pg.evaluate("""()=>{ const u = 'Penal Code';
@@ -3588,7 +3590,7 @@ def check_penal_versions(br):
       summarize();
       return { before, after: { hundos: unitPerfectCount(u), perfect: store.lifetime.perfectTests || 0, xp: store.lifetime.points || 0 },
                rows: [...document.querySelectorAll('.badgeprogress-name')].map(e => e.textContent) }; }""")
-    check("a perfect slides 0-85 run is not a Penal Code hundo, and shows no badge progress for it",
+    check("a perfect slides 55-124 run is not a Penal Code hundo, and shows no badge progress for it",
           hundo["after"]["hundos"] == hundo["before"]["hundos"] and hundo["after"]["perfect"] == hundo["before"]["perfect"]
           and not any("Penal Code" in r for r in hundo["rows"]), hundo)
     check("it still earns XP", hundo["after"]["xp"] > hundo["before"]["xp"], hundo)
@@ -3601,7 +3603,7 @@ def check_penal_versions(br):
       return { found: true, pop: !!document.getElementById('unitver') }; }""")
     run2 = pg.evaluate(PENAL_RUN)
     pg.evaluate(PENAL_HALT)
-    check("Re-run repeats slides 0-85, and does not ask",
+    check("Re-run repeats slides 55-124, and does not ask",
           rr.get("found") and not rr.get("pop") and run2["srcs"] == PENAL_SLIDES_SRCS, [rr, run2["n"]])
     # 6. the whole unit
     pg.evaluate(setup)
@@ -3661,7 +3663,7 @@ def check_penal_versions(br):
     choose("short")
     rv = pg.evaluate("""()=>{ document.getElementById('nextbtn').click(); document.querySelector('.sheet-begin-btn').click();
       return document.querySelectorAll('.review-question').length; }""")
-    check("Review of slides 0-85 lists those questions only", rv == len(PENAL_SLIDES_SRCS), rv)
+    check("Review of slides 55-124 lists those questions only", rv == len(PENAL_SLIDES_SRCS), rv)
     # 10. the Virtual Room: the host's pick goes on the room, and only the room decides
     pg.evaluate("()=>{ window.__room = null; createVirtualRoomLobby = function(){ window.__room = [...arguments]; }; showVirtualRoomSetup(); }")
     pg.wait_for_timeout(700)
@@ -3676,7 +3678,7 @@ def check_penal_versions(br):
       return { line: txt, args: window.__room ? JSON.parse(JSON.stringify(window.__room)) : null }; }""")
     args = room.get("args") or []
     check("the Virtual Room's picker asks too, and the room is created with the version on it",
-          v1["pop"] and n56 in room["line"] and len(args) >= 4 and args[0] == ["Penal Code"]
+          v1["pop"] and n_ver in room["line"] and len(args) >= 4 and args[0] == ["Penal Code"]
           and args[3] == {"Penal Code": "test"}, [v1["pop"], room])
     vr = pg.evaluate("""()=>{ const out = {}; const srcs = () => order.map(i => Number(QUESTIONS[i].src)).sort((a, b) => a - b);
       const stop = () => { try{ clearInterval(vroomRevealHandle); }catch(e){} document.getElementById('vroom-reveal-overlay')?.remove(); };
@@ -3694,7 +3696,7 @@ def check_penal_versions(br):
       inVirtualRoom = false; testInProgress = false; window.forceHideBottomTabs = false;
       return out; }""")
     whole_n = nums["whole"]
-    check("a room runs what the ROOM says: the whole unit despite a player's last pick, and slides 0-85 when it is set",
+    check("a room runs what the ROOM says: the whole unit despite a player's last pick, and slides 55-124 when it is set",
           vr.get("wholeRoom") == whole_n and vr.get("shortRoom") == PENAL_SLIDES_SRCS,
           [vr.get("wholeRoom"), len(vr.get("shortRoom") or [])])
     check("Tug of War draws from the room's version too", vr.get("tug") == PENAL_SLIDES_SRCS,
@@ -5630,7 +5632,7 @@ def check_b275(br):
     its scene, its halo open. (3) The Marksman's face tapers to the chin
     and has the hood's shadow across the brow. Written against 274,
     where none of it held."""
-    print("\n56. build 275: the Hacker's round scene, Void restored, the Marksman refined")
+    print("\n_ver. build 275: the Hacker's round scene, Void restored, the Marksman refined")
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""async ()=>{ const out = {};
       try {
@@ -6097,7 +6099,7 @@ def check_b283(br):
     is gone from this gate.] (4) Phoenix is
     a perfect Exam of 100 or more questions, through summarize(), and 99
     is not enough. Written against 282, where every one of these fails."""
-    print("\n56. build 283: Game mode and the Practice Test retired, their rewards on Exam")
+    print("\n_ver. build 283: Game mode and the Practice Test retired, their rewards on Exam")
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""async ()=>{ const out = {};
       const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -7103,6 +7105,19 @@ def check_b298(br):
         }
       }
       out.near = near / R; out.twins = twins / R;
+      /* build 313: the slides 55-124 version carries three deliberate repeats
+         and five questions on one answer set ("which offense is this") */
+      const ver = pen.filter(i => inChosenVersion(i, { 'Penal Code': 'test' }));
+      let repMin = 1e9, sideBySide = 0;
+      for(let r = 0; r < R; r++){
+        const o = freshOrder(ver), at = {};
+        o.forEach((qi, k) => { const s = sig(qi);
+          if(at[s] != null){ if(k - at[s] === 1) sideBySide++;
+            const q = QUESTIONS[qi], twin = QUESTIONS[o[at[s]]];
+            if(q.repeatOf === twin.src || twin.repeatOf === q.src) repMin = Math.min(repMin, k - at[s]); }
+          at[s] = k; });
+      }
+      out.verRepMin = repMin; out.verSideBySide = sideBySide;
       let stay2 = 0, n4 = 0; const slots = [0, 0, 0, 0];
       pen.forEach(i => { if(refers(i) || QUESTIONS[i].choices.length !== 4) return;
         for(let t = 0; t < 8; t++){ delete layout[i]; const o = optionOrder(i); n4++;
@@ -7129,6 +7144,8 @@ def check_b298(br):
           r["astray"] == [], r["astray"])
     check("a shuffled run never puts two questions from the same stretch of the guide side by side, or a repeated question near its twin",
           r["near"] < 0.5 and r["twins"] < 0.5, (r["near"], r["twins"]))
+    check("the Penal slides 55-124 version: a repeated question is 15 or more questions from its twin, and no two on one answer set are ever side by side",
+          r["verRepMin"] >= 15 and r["verSideBySide"] == 0, (r["verRepMin"], r["verSideBySide"]))
     check("a shuffled question leaves at most one choice where the guide had it, and the answer still lands on every letter about equally",
           r["stay2"] == 0 and all(0.2 <= s <= 0.3 for s in r["slots"]), (r["stay2"], r["slots"]))
     check("and one whose choices name letters (\"A or B\", \"a and b are correct\") now moves around them (build 312: frozen whole before)",
@@ -7172,25 +7189,29 @@ def check_b298(br):
     # "if it's in that version, it also needs to be in the entire unit ... every single question from the guide"
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""()=>{ const all = QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === 'Penal Code');
-      /* the WHOLE unit, as a run draws it (build 300: the repeat is the 0-85 version's only) */
+      /* the WHOLE unit, as a run draws it (build 300: a repeat is the short version's only) */
       cfg.mode = 'drill'; cfg.units = ['Penal Code']; cfg.source = 'all'; cfg.versions = {};
       const pc = poolNow();
       const srcs = pc.map(i => QUESTIONS[i].src);
       const v = all.filter(i => inChosenVersion(i, { 'Penal Code': 'test' }));
-      const q84 = QUESTIONS.find(q => q.topic === 'Penal Code' && q.src === 84).q;
+      const reps = QUESTIONS.filter(q => q.topic === 'Penal Code' && q.repeatOf != null);
+      const twice = {}; [213, 128, 183].forEach(s => { const t = QUESTIONS.find(q => q.topic === 'Penal Code' && q.src === s).q; twice[s] = v.filter(i => QUESTIONS[i].q === t).length; });
       const days = []; for(let d = 0; d < 400; d++){ const k = new Date(2026, 9, 1 + d); days.push(dailyQuestionIndexFor(k.getFullYear() + '-' + String(k.getMonth() + 1).padStart(2, '0') + '-' + String(k.getDate()).padStart(2, '0'))); }
       return { n: pc.length, srcs, size: unitQuestionCount('Penal Code'), version: v.length,
-               versionIn: v.every(i => pc.indexOf(i) >= 0 || QUESTIONS[i].repeatOf === 84), twice84: v.filter(i => QUESTIONS[i].q === q84).length,
-               keysUnique: new Set(all.map(i => KEYS[i])).size === all.length, repeatLast: QUESTIONS[QUESTIONS.length - 1].repeatOf === 84,
+               versionIn: v.every(i => pc.indexOf(i) >= 0 || QUESTIONS[i].repeatOf != null), twice,
+               repeatsOnlyHere: reps.every(q => q.versionOnly === true),
+               keysUnique: new Set(all.map(i => KEYS[i])).size === all.length,
+               repeatLast: QUESTIONS.slice(-reps.length).every(q => q.repeatOf != null),
                dailyRepeat: days.some(i => QUESTIONS[i] && QUESTIONS[i].repeatOf != null) }; }""")
     guide = [n for n in range(1, 347) if n not in (122, 137, 148, 237, 256, 258)]
     # Build 300: "remove it from the entire unit one, the entire unit one
-    # should be 340 questions not 341" - the second #84 is the 0-85 version's only.
-    check("the whole Penal Code unit is exactly the study guide's 340 questions - #84 once, no repeat",
-          r["n"] == 340 and sorted(r["srcs"]) == guide and 347 not in r["srcs"] and r["size"] == 340, (r["n"], len(r["srcs"]), r["size"]))
-    check("the slides 0-85 version is the deck's 57, #84 twice, and every other one of them is in the whole unit too",
-          r["version"] == 57 and r["twice84"] == 2 and r["versionIn"], (r["version"], r["twice84"], r["versionIn"]))
-    check("the repeat has its own identity, sits at the end of the bank (no other question moves), and is never a daily question",
+    # should be 340 questions not 341" - a repeat is the short version's only.
+    check("the whole Penal Code unit is exactly the study guide's 340 questions - no repeat in it",
+          r["n"] == 340 and sorted(r["srcs"]) == guide and not ({347, 348, 349, 350} & set(r["srcs"])) and r["size"] == 340, (r["n"], len(r["srcs"]), r["size"]))
+    check("the slides 55-124 version is the deck's 58, #213, #128 and #183 twice each, and every other one is in the whole unit too",
+          r["version"] == len(PENAL_SLIDES_SRCS) == 58 and r["twice"] == {"213": 2, "128": 2, "183": 2} and r["versionIn"] and r["repeatsOnlyHere"],
+          (r["version"], r["twice"], r["versionIn"], r["repeatsOnlyHere"]))
+    check("the repeats have their own identity, sit at the end of the bank (no other question moves), and are never a daily question",
           r["keysUnique"] and r["repeatLast"] and not r["dailyRepeat"], r)
     ctx.close()
     # and no lag: with the flip-book playing, Home paints nothing per frame
@@ -7508,7 +7529,7 @@ def check_b300(br):
 
     # "Remove it from the entire unit one, the entire unit one should be 340
     # questions not 341" - the card says so, and a whole-unit run of 340
-    # is still a whole unit (its hundo counts); the 0-85 version keeps 57.
+    # is still a whole unit (its hundo counts); the slides 55-124 version has 58.
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
       try{
@@ -7520,7 +7541,7 @@ def check_b300(br):
         order = poolNow(); out.whole = order.length; out.full = isFullUnitRun();
         out.covered = unitsFullyCoveredBy(order);
         cfg.versions = { 'Penal Code': 'test' }; out.test = poolNow().length;
-        out.testHas347 = poolNow().some(i => QUESTIONS[i].src === 347);
+        out.testRepeats = poolNow().map(i => QUESTIONS[i].src).filter(s => s >= 347).sort();
         cfg.versions = {};
       } catch(e){ out.threw = String(e && e.stack || e); }
       return out; }""")
@@ -7528,8 +7549,8 @@ def check_b300(br):
     check("Penal Code: the unit card says 340 questions", r.get("card") == "340 questions", r.get("card"))
     check("Penal Code: a whole-unit run is 340 and counts as the full unit (its hundo still lands)",
           r.get("whole") == 340 and r.get("full") is True and r.get("covered") == ["Penal Code"], (r.get("whole"), r.get("full"), r.get("covered")))
-    check("Penal Code: the slides 0-85 version still has its 57, the second #84 included",
-          r.get("test") == 57 and r.get("testHas347"), (r.get("test"), r.get("testHas347")))
+    check("Penal Code: the slides 55-124 version has its 58, the three repeats included and the old #84 one not",
+          r.get("test") == 58 and r.get("testRepeats") == [348, 349, 350], (r.get("test"), r.get("testRepeats")))
     ctx.close()
 
 

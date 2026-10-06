@@ -7268,7 +7268,10 @@ what shipped, not every draft.
   placed even when an account's turn has come; a saved SWAT loads as the
   Ninja) rather than the hunt. The loading line "Calling the SWAT team"
   is unrelated copy and stays.
-- **PENAL CODE HAS TWO VERSIONS, AND IT ASKS EVERY TIME.** "Our next test
+- **PENAL CODE HAS TWO VERSIONS, AND IT ASKS EVERY TIME.** (The short
+  version is now **slides 55-124**, not 0-85 - see **The Penal Code's
+  short version moves with the next test** at the end of this file. The
+  history below is kept as it was written.) "Our next test
   is only over slides 0-85 of the penal code ... A lot of people have
   asked that I only put the questions that will be on test." Selecting
   the Penal Code card opens a pop-up with two choices: "Penal Code"
@@ -12891,6 +12894,43 @@ every unit, and through the real Begin button:
   in half ("...between them and the" / "event.") and "All of the Above"
   glued onto the last. Repaired; `keyChoices` keeps its old identity the
   way `keyText` does for cleaned wording. US & TX Constitution src 23
-  has a wrong answer that reads just "writ of" - cut off in the guide,
-  text unknown, left alone. Fitness src 11 lists "20-25%" twice.
+  had a wrong answer reading just "writ of" (now "writ of mandamus") and
+  Fitness src 11 listed "20-25%" twice (the second is now "55-60%"); both
+  repaired with `keyChoices`, so nobody's history on them moved.
 - `check_b313_shuffle` (section 97) holds all of it and fails on 312.
+
+### The Penal Code's short version moves with the next test (build 313)
+
+"Now she provided us with the next slides from the penal code pptx on
+what the next test will be over. It is slides 55 through 124." The short
+version is that set now; 0-85 is gone from the app.
+
+- **58 questions on 21 slides**, 55 different ones: #213, #128 and #183
+  each sit on two slides. Each second copy is a `versionOnly` question
+  with `repeatOf` (src 348 -> 213, 349 -> 128, 350 -> 183), appended at
+  the END of `QUESTIONS` so no index moves. The whole unit stays the
+  study guide's 340.
+- **#84's copy (src 347) stays in the bank** but is out of the version:
+  deleting it would drop anybody's history on it, and a future version
+  may want it again. A `versionOnly` question in no version is simply
+  never dealt.
+- **Every answer was checked against the deck's own highlight/bold
+  marks**, and all 58 agree with the bank. #346 carried a stray footnote
+  ("Manslaughter. 1"), repaired with `keyChoices`. **#203 (unborn child)
+  is flagged, not changed**: the deck and the bank both say "the
+  ancestor of an unborn child" cannot be charged, where PC 19.06 exempts
+  the mother. It is the instructor's key, so it stays until Madison says.
+- **That repair made #346 a seventh question on one answer set** (the
+  "which offense is this" questions: murder, manslaughter and the rest),
+  five of them inside the 58. `spreadOrder()`'s single fixed twin gap
+  could not be met by five, so the walk fell back to whatever came next
+  and they bunched at the end of the run. The gap now scales with how
+  many share an answer set (`n / (count + 1)`, capped at 40); a set that
+  will run out of room goes first; and when nothing fits, the twin rule
+  is kept before the "same stretch" rule. Measured over 200 runs: no two
+  on one answer set side by side anywhere, a deliberate repeat never
+  closer than 17 to its twin in the 58, and on the whole unit a repeat
+  inside 20 of its twin went from ~0.6 a run to 0.
+- `check_penal_versions` holds the 55-124 set as a typed list (it is
+  what the app is checked AGAINST), and `check_b298`/`check_b300` assert
+  the new shape; all three fail on 312.

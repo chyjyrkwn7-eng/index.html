@@ -30661,11 +30661,19 @@ const QUESTIONS = [
     src: 346,
     q: "Two young men are wrestling like their favorite TV wrestling stars. One throws the other over the couch and onto a glass table that shatters and cuts a major artery, causing the other person to bleed to death before help arrives. If a criminal homicide were charged, which would be most appropriate?",
     ref: "(PC 19.05 (a); PC Section 8.9)",
-    choices: [
+    /* a stray footnote "1" was imported onto the last choice (build 313,
+       found checking slides 55-124); keyChoices keeps its identity */
+    keyChoices: [
       "Criminally negligent homicide",
       "Murder.",
       "Capital murder.",
       "Manslaughter. 1",
+    ],
+    choices: [
+      "Criminally negligent homicide",
+      "Murder.",
+      "Capital murder.",
+      "Manslaughter.",
     ],
     answer: 0
   },
@@ -35083,6 +35091,57 @@ const QUESTIONS = [
       "Knowing",
       "Reckless",
       "Criminal intent",
+    ],
+    answer: 3
+  },
+  /* #128 again: the deck has it twice inside slides 55-124 (second on slide 88). Same treatment as
+     #84's copy (src 347): its own identity, the short version only. */
+  {
+    topic: "Penal Code",
+    src: 349,
+    repeatOf: 128,
+    versionOnly: true,
+    q: "What charges would be filed on a person who tried to poison another, and the person did not die following the ordeal?",
+    ref: "(PC 19.02 (b) (3), PC Section 8.9)",
+    choices: [
+      "Aiding suicide",
+      "Manslaughter",
+      "Attempted murder",
+      "Attempted manslaughter",
+    ],
+    answer: 2
+  },
+  /* #183 again: the deck has it twice inside slides 55-124 (second on slide 89). Same treatment as
+     #84's copy (src 347): its own identity, the short version only. */
+  {
+    topic: "Penal Code",
+    src: 350,
+    repeatOf: 183,
+    versionOnly: true,
+    q: "Mike offers Randy $10,000 to kill a rich uncle, Randy tells a detective about the plot. Randy agrees to work with the detective, and a “sting” operation is set up with the cooperation of the uncle. Randy gives a picture of the contrived murder as proof of the event and asks Mike for the money. When the money is exchanged, Mike is arrested. What will Mike be charged with?",
+    ref: "(PC Criminal Solicitation, 15.03; PC Section 8.8)",
+    choices: [
+      "Capital Murder",
+      "Conspiracy to commit murder",
+      "Solicitation of capital murder",
+      "None of the above – there was no murder.",
+    ],
+    answer: 2
+  },
+  /* #213 again: the deck has it twice inside slides 55-124 (second on slide 89). Same treatment as
+     #84's copy (src 347): its own identity, the short version only. */
+  {
+    topic: "Penal Code",
+    src: 348,
+    repeatOf: 213,
+    versionOnly: true,
+    q: "Capital Murder carries the below penalty:",
+    ref: "(PC 12.31 (a); PC Section 8.6)",
+    choices: [
+      "Death Penalty",
+      "Imprisonment without Parole",
+      "20 years",
+      "Both A & B",
     ],
     answer: 3
   },
@@ -44863,11 +44922,20 @@ function flaggedIndexes(){
    rememberConfig(), and dropped whenever the unit is deselected. A
    hundo still needs the whole unit (isFullUnitRun counts against the
    whole bank), so the short version is a shortened run like any other. */
-const PENAL_TEST_SRCS = [147, 60, 135, 6, 62, 139, 285, 57, 265, 32, 151, 77, 174, 210,
-  51, 172, 219, 259, 313, 44, 274, 191, 153, 7, 33, 53, 182, 303, 15, 218, 214, 84, 75,
-  289, 302, 314, 196, 40, 178, 80, 69, 185, 101, 130, 249, 213, 24, 121, 200, 262, 344,
-  128, 159, 61, 95, 183,
-  347 /* #84 again: slide 24, after slide 22 */];
+const PENAL_TEST_SRCS = [249, 213, 24, 121, 200, 262, 344, 128, 159, 61, 95, 183, 109, 117, 349, 150, 158, 250, 304,
+  65, 70, 97, 178, 350, 348, 319, 236, 318, 346, 22, 209, 3, 204, 253, 290, 343, 321, 322,
+  324, 28, 41, 66, 68, 76, 141, 207, 323, 255, 83, 90, 100, 222, 299, 88, 230, 297, 338, 114];
+/* ---- SLIDES 55-124 NOW (build 313) ----
+   "We had our test today and now she provided us with the next slides
+   from the penal code pptx on what the next test will be over. It is
+   slides 55 through 124 ... do the swap." Read off the same deck's
+   speaker notes: 58 questions on 21 slides, all already in the bank
+   (55 different questions - #213, #128 and #183 each appear twice, so
+   like #84 before them each second appearance is its own version-only
+   copy, srcs 348-350). Every deck answer was checked against the bank's;
+   where the deck marks it in bold rather than yellow (slides 58, 77, 95,
+   97, 99, 123) the bold one agrees too. The 0-85 list above is history;
+   #84's copy (347) stays in the bank so its history survives. */
 /* Keyed by unit name. `label` is what the pop-up calls the short
    version and `desc` is its one line; the whole unit is always the
    other choice. `tag` is the line on the unit's own card saying the
@@ -44877,10 +44945,10 @@ const PENAL_TEST_SRCS = [147, 60, 135, 6, 62, 139, 285, 57, 265, 32, 151, 77, 17
 const UNIT_TEST_VERSIONS = {
   "Penal Code": {
     srcs: new Set(PENAL_TEST_SRCS),
-    label: "Penal Code — Slides 0–85",
-    short: "slides 0–85",
-    desc: "Only the questions from slides 0–85 of the Penal Code PowerPoint.",
-    tag: "Slides 0–85 version available"
+    label: "Penal Code — Slides 55–124",
+    short: "slides 55–124",
+    desc: "Only the questions from slides 55–124 of the Penal Code PowerPoint.",
+    tag: "Slides 55–124 version available"
   }
 };
 function unitHasTestVersion(name){ return !!UNIT_TEST_VERSIONS[name]; }
@@ -54679,17 +54747,45 @@ function spreadOrder(order){
     if(t !== (qb.topic || "").trim() || typeof qa.src !== "number" || typeof qb.src !== "number") return false;
     return Math.abs(qa.src - qb.src) <= Math.max(3, Math.round(unitSize[t] / 25));
   };
-  const twinGap = Math.min(40, Math.floor(order.length / 3));
+  /* The gap a copy keeps from its twin scales with how many share its
+     choices (build 313): a pair in a 58-question run can sit 19 apart,
+     five "which offense is this" questions with one answer set cannot,
+     and a fixed gap they could never all meet left the walk falling back
+     to whatever came next - twins side by side at the end of the run. */
+  const sigCount = {};
+  order.forEach(qi => { const g = questionSig(qi); sigCount[g] = (sigCount[g] || 0) + 1; });
+  const gapFor = g => Math.min(40, Math.floor(order.length / (sigCount[g] + 1)));
+  const lastAt = {};
+  const twinOk = (qi, at) => { const g = questionSig(qi); return lastAt[g] == null || at - lastAt[g] > gapFor(g); };
+  const left = Object.assign({}, sigCount);
   const rest = order.slice(), out = [];
   while(rest.length){
-    let pick = 0;
-    for(let k = 0; k < Math.min(rest.length, 30); k++){
-      const qi = rest[k], sig = questionSig(qi);
-      if(out.slice(-2).some(p => near(p, qi))) continue;
-      if(out.slice(-twinGap).some(p => questionSig(p) === sig)) continue;
-      pick = k; break;
+    const at = out.length, look = Math.min(rest.length, 30);
+    let pick = -1;
+    /* A set that will run out of room unless one goes now goes now: r
+       copies still to place need (r - 1) gaps after this one. Without
+       this the walk keeps deferring them and they pile up at the end. */
+    for(let k = 0; k < rest.length && pick < 0; k++){
+      const g = questionSig(rest[k]);
+      if(left[g] > 1 && (left[g] - 1) * (gapFor(g) + 1) >= rest.length - 1 && twinOk(rest[k], at)) pick = k;
     }
-    out.push(rest.splice(pick, 1)[0]);
+    for(let k = 0; k < look && pick < 0; k++){
+      const qi = rest[k];
+      if(out.slice(-2).some(p => near(p, qi))) continue;
+      if(twinOk(qi, at)) pick = k;
+    }
+    /* Nothing ahead fits both: keep the twin apart before the stretch,
+       looking past the window if it has to - a repeat close to its twin
+       is the one a person notices. Failing even that, the one whose
+       twin is furthest back. */
+    for(let k = 0; k < rest.length && pick < 0; k++) if(twinOk(rest[k], at)) pick = k;
+    if(pick < 0){
+      let best = -1;
+      for(let k = 0; k < rest.length; k++){ const l = lastAt[questionSig(rest[k])]; const d = l == null ? Infinity : at - l; if(d > best){ best = d; pick = k; } }
+    }
+    const qi = rest.splice(pick, 1)[0], g = questionSig(qi);
+    lastAt[g] = at; left[g]--;
+    out.push(qi);
   }
   return out;
 }
@@ -85394,7 +85490,7 @@ function showCalendar(){
    looks pixel-for-pixel like it does mid-test, not an approximation.
    Drill-only, reached from the Options sheet's now-unlocked toggle. */
 /* `versions` is the unit-selection screen's cfg.versions: reviewing the
-   Penal Code's slides 0-85 shows those 56 and nothing else. */
+   Penal Code's slides 55-124 shows those 58 and nothing else. */
 function showAnswerReview(units, source, versions, opts){
   const allFlagged = !!(opts && opts.allFlagged);
   setActiveNav(null);
