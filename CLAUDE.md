@@ -13121,6 +13121,45 @@ shared document, or writes on a timer, multiply it out: per phone, per
 hour, times ~40.** `vrooms` only grows (rooms, chats, bug reports), so
 anything that lists it gets dearer every week.
 
+### Build 314 - FINAL DECISIONS (read this before the three sections below)
+
+Madison changed course three times in one evening; this is where it
+landed, and the sections after this one are history wherever they
+disagree with it.
+
+- **The XP curve is unchanged** - exactly build 313's. The re-fit
+  ("level 71 about 140,000, level 80 about 200,000") was built and then
+  rejected: *"140000 xp is all that's needed to reach level 80? That
+  doesn't even sound right."* Measured on the real class the same day,
+  the top players earn 4,000-6,000 XP a day, which reaches level 80 on
+  the live curve around January 1st; the median lands near 60.
+  `LEVEL_STEP_UP`/`LEVEL_LATE_GROWTH` are the live 2.0/1.0199 again and
+  `levelFromPoints` equals `legacyLevelOfPoints` for every total
+  (check-curve asserts it). Nobody's level moves on the update.
+- **Badge requirements are unchanged** - *"DONT change the badge
+  requirement."* `BADGE_BANDS_VERSION` stays 3, so nobody is handed a
+  badge.
+- **The rank ladder is 21 / 30 / 40 / 50 / 60 / 70 / 80** with the live
+  badge counts 1 / 3 / 5 / 7 / 9 / 12 / 14 - *"Let's make supernova level
+  80? And then fix the ones before it."* Asked because levels had run far
+  ahead of badges at the top.
+- **Nobody drops a rank.** `store.rankFloor` (1-based index into
+  `TIER_ORDER_FULL`, merged by max, reset by a reset) is the rank held on
+  build 313's ladder (`TIER_UNLOCKS_313`, `legacyRankFloorOf`), set once
+  on first load; `rankOf()` and `tierColorUnlocked()` never go below it.
+  On the real backup nobody would have dropped anyway (every rank held is
+  badge-limited); the floor is for whoever sits exactly on an old line
+  (e.g. level 29 with 3 badges) on the day it ships. Other people's view
+  of that person is still computed from the published level and badges.
+- **The gate is strict**: a level cannot pass the next rank's level until
+  its badges are held (`badgeWallLevel`, read off `TIER_UNLOCKS`). XP keeps
+  counting and turns into levels the moment the badges arrive. On the
+  real backup (Oct 6) this holds 20 of the 22 most active players at
+  their current level on day one - Ht4l24 and Madison at 52-53 until 7
+  badges, BigSlim at 51 until 7, Napoleon and Z until 5, most of the 20s
+  until their first badge. Only Sauce and OdinSavior (5-6 badges) climb
+  freely, to 50. That consequence was put to her before shipping.
+
 ### Build 314 - the gate: levels, ranks and badges tied together
 
 **The rule, Madison's words:** *"you can't get past that next ranks level

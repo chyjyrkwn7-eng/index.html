@@ -953,8 +953,9 @@ LEVEL_CAP = 80
 
 def level_of(points):
     """levelProgress() in index.html, step for step - keep the two in step.
-    Build 314: one rate from 26 (x1.18 into 26, then +3.65% a level)."""
-    return _curve_level(points, 1.18, 1.0365)
+    Build 314 kept the live curve (the re-fit was not shipped), so this is
+    the same curve as legacy_level_of_points."""
+    return _curve_level(points, 2.0, 1.0199, 45, 1.0835)
 
 
 def legacy_level_of_points(points):
@@ -980,7 +981,7 @@ UNIT_QUESTIONS = {
     "Civil Process and Liability": 22,
 }
 BADGE_BANDS = [(25, 15), (50, 12), (100, 8), (200, 4), (float("inf"), 2)]
-RANKS = [(21, 1), (29, 3), (36, 5), (45, 7), (52, 9), (65, 12), (71, 14)]
+RANKS = [(21, 1), (30, 3), (40, 5), (50, 7), (60, 9), (70, 12), (80, 14)]
 
 
 def badge_threshold(unit):

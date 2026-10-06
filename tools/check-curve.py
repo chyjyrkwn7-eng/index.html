@@ -235,7 +235,7 @@ def main():
             for n in ("the badge line only ever climbs",
                       "no rank asks for more badges than there are units",
                       "every rank's level is inside the cap",
-                      "no rank got harder than the live build",
+                      "the ranks are 21/30/40/50/60/70/80 with the live badge counts (1/3/5/7/9/12/14)",
                       "every rank's label says the numbers it actually checks"):
                 check(n, False, line["threw"])
             line = None
@@ -264,17 +264,18 @@ def main():
                           % (t["key"], t["level"], t["badges"], line["levels"][t["badges"] - 1]))
             beyond = [t for t in line["tiers"] if t["level"] > line["cap"]]
             check("every rank's level is inside the cap", not beyond, beyond)
-            """A rank is computed fresh from level and badges, so raising
-            either number takes a rank off somebody who holds it. Iron was
-            reached by a real person the day it shipped."""
-            LIVE = {"rookie": (21, 1), "ranger": (29, 3), "veteran": (36, 5),
-                    "vanguard": (45, 8), "adept": (52, 11), "elite": (65, 15),
-                    "titan": (80, 20)}
-            raised = [(t["key"], t["level"], t["badges"], LIVE[t["key"]])
-                      for t in line["tiers"]
-                      if t["key"] in LIVE
-                      and (t["level"] > LIVE[t["key"]][0] or t["badges"] > LIVE[t["key"]][1])]
-            check("no rank got harder than the live build", not raised, raised)
+            # BUILD 314, FINAL (Madison): "Let's make supernova level 80? And
+            # then fix the ones before it" - even steps to the cap, with the
+            # badge counts exactly as live ("DONT change the badge
+            # requirement"). Raising a rank's level could take it off
+            # somebody, so section 3b checks every real account keeps the
+            # rank it holds today.
+            WANT = {"rookie": (21, 1), "ranger": (30, 3), "veteran": (40, 5),
+                    "vanguard": (50, 7), "adept": (60, 9), "elite": (70, 12),
+                    "titan": (80, 14)}
+            got = {t["key"]: (t["level"], t["badges"]) for t in line["tiers"]}
+            check("the ranks are 21/30/40/50/60/70/80 with the live badge counts (1/3/5/7/9/12/14)",
+                  got == WANT, got)
             stale = [t["key"] for t in line["tiers"]
                      if str(t["level"]) not in t["label"] or str(t["badges"]) not in t["label"]]
             check("every rank's label says the numbers it actually checks", not stale, stale)
@@ -313,16 +314,13 @@ def main():
         # adjust levels past level 45 to be more and make the xp total
         # more than 450,000 then do it" once the new XP was made bigger.
         # Growth past 45 is 8.35%, about 600,000 in all.
-        # BUILD 314, FITTED TO JANUARY 1ST: "level 71 needs about 140,000
-        # total XP, level 80 about 200,000", from the class's measured
-        # pace (median active player ~160,000 XP by January 1st).
-        check("level 71 costs about 140,000 XP in all", abs(costs["to71"] - 140000) <= 7000, costs["to71"])
-        check("level 80 costs about 200,000 XP in all", abs(costs["toCap"] - 200000) <= 10000, costs["toCap"])
+        # BUILD 314, FINAL: the re-fitted curve was NOT shipped - "140000 xp
+        # is all that's needed to reach level 80? That doesn't even sound
+        # right". The live curve stays exactly as it is, so no level moves.
+        same = pg.evaluate("""()=>{ let bad = 0; for(let p = 0; p <= 700000; p += 37){ if(levelFromPoints(p) !== legacyLevelOfPoints(p)) bad++; } return bad; }""")
+        check("the XP curve is exactly the live one (every total from 0 to 700,000)", same == 0, same)
+        check("level 80 still costs what it does live (598,449)", costs["toCap"] == 598449, costs["toCap"])
         check("level 21 still costs about 10,000 (early levels stay quick)", 8000 <= costs["to21"] <= 10500, costs["to21"])
-        # ONE RATE from 27 on, and it carries on past the cap unchanged -
-        # raising LEVEL_CAP must not need a single earlier level re-fitted.
-        check("every level from 27 on is the same growth, past 80 too",
-              costs["rates"] and max(costs["rates"]) - min(costs["rates"]) < 0.002, costs["rates"] and (min(costs["rates"]), max(costs["rates"])))
         check("and a level still costs more the higher you are",
               costs["l80"] > costs["l60"] > costs["l50"] > costs["l26"], costs)
 
@@ -587,8 +585,8 @@ def main():
             got = [lv for b, bc, lv in w["walls"]]
             check("the wall per badge count is the first rank asking for more badges",
                   got == want and [bc for b, bc, lv in w["walls"]] == list(range(len(w["walls"]))), list(zip(want, got)))
-            check("...which is 21, 29, 29, 36, 36, 45, 45, 52, 52, 65, 65, 65, 71, 71, then the cap",
-                  got[:15] == [21, 29, 29, 36, 36, 45, 45, 52, 52, 65, 65, 65, 71, 71, 80], got)
+            check("...which is 21, 30, 30, 40, 40, 50, 50, 60, 60, 70, 70, 70, then the cap",
+                  got[:15] == [21, 30, 30, 40, 40, 50, 50, 60, 60, 70, 70, 70, 80, 80, 80], got)
             a0 = w["atWall"]
             check("at a wall the level is held and the bar is stopped, the XP past it still counted",
                   a0["level"] == 21 and a0["stopped"] and a0["into"] > a0["span"], a0)
@@ -599,24 +597,21 @@ def main():
                   ar["line"] and " / " in ar["line"] and ar["gate"] and "to pass level 21" in ar["gate"], ar)
             j = w["jump"]
             check("earning the badge jumps the level straight to what the XP earned",
-                  j["before"] == 21 and j["after"] == j["curve"] and 22 < j["after"] <= 29 and j["badges"] == 1, j)
+                  j["before"] == 21 and j["after"] == j["curve"] and 22 < j["after"] <= 30 and j["badges"] == 1, j)
             check("and the level-up says it was several levels", j["tag"] == str(j["after"] - j["before"]), j)
             fl = w["floor"]
             check("the grandfather floor is the level on the OLD curve, never the new one",
                   all(f["floor"] == f["old"] for f in fl), fl)
             check("nobody's level goes below what they hold now", all(f["held"] >= f["old"] and f["unheld"] >= f["old"] for f in fl), fl)
-            # 66,355 XP is level 47 now and 53 on the new curve: with no
-            # badges the gate (21) is below 47, so it stays at 47 exactly.
-            check("a held account (no badges) is NOT boosted by the cheaper curve",
-                  all(f["held"] == max(min(f["curve"], 21), f["old"]) for f in fl)
-                  and any(f["curve"] > f["old"] and f["held"] == f["old"] for f in fl), fl)
-            check("an account whose gate is not in the way IS boosted to the new curve",
-                  all(f["unheld"] == f["curve"] for f in fl) and any(f["curve"] > f["old"] for f in fl), fl)
+            # BUILD 314, FINAL: the curve is the live one, so the update moves
+            # nobody's level - a held account sits exactly where it is today.
+            check("nobody's level changes on the update (floor = curve = shown)",
+                  all(f["held"] == f["old"] == f["curve"] for f in fl), fl)
             check("a brand-new account has no floor", w["freshFloor"] == 0, w["freshFloor"])
             check("a merge takes the higher floor, either way round", w["merge"] == [40, 40, 40], w["merge"])
             r = w["row"]
             check("the rankings row publishes the effective level, not the curve's",
-                  r["level"] == r["eff"] == 29 and r["curve"] > 29, r)
+                  r["level"] == r["eff"] == 30 and r["curve"] > 30, r)
             check("the rank is asked about the effective level", r["rank"] == "rookie" == r["rankOfCurve"], r)
             check("a reset clears the floor", w["resetFloor"] == 0, w["resetFloor"])
             pf = w["profile"]

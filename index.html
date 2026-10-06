@@ -41765,6 +41765,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               pendingCharUnlocks: [],
               tourRev: 0,
               levelFloor: 0,   /* build 314: no floor for a new account - see badgeWallLevel() */
+              rankFloor: 0,    /* build 314: see rankOf() */
               seenSettingsTour: false, seenProfileTour: false, seenRewardsTour: false,
               seenUnitOptionsTour: false, seenFirstResultsTour: false,
               /* On by default here as well as in applyLoadedData(): this
@@ -42110,6 +42111,10 @@ function applyLoadedData(got){
   store.levelFloor = (typeof got.levelFloor === "number" && isFinite(got.levelFloor))
     ? Math.max(0, Math.min(LEVEL_CAP, Math.floor(got.levelFloor)))
     : ((got.lifetime && Number(got.lifetime.points) > 0) ? legacyLevelOfPoints(got.lifetime.points) : 0);
+  /* build 314: the rank this account held on build 313's ladder - see rankOf() */
+  store.rankFloor = (typeof got.rankFloor === "number" && isFinite(got.rankFloor))
+    ? Math.max(0, Math.min(TIER_ORDER_FULL.length, Math.floor(got.rankFloor)))
+    : legacyRankFloorOf(got);
   /* Defaults to 0 for an existing account, like levelPreserved and for
      the same reason: grantRetroBadgesOnce() is SUPPOSED to run once for
      people who are already here. */
@@ -43487,6 +43492,7 @@ function wipeLocalProgressAndSettings(){
   store.flagged = {};
   store.unflagged = {};
   store.levelFloor = 0;   /* build 314: a reset starts under the badge wall like anybody new */
+  store.rankFloor = 0;
   store.tally = {}; store.tallyBase = {};
   store.unitGameBeat = {};
   store.unitBestPct = {}; store.unitBestMs = {}; store.flareLevels = {};
@@ -44398,6 +44404,7 @@ function mergeLeavingAccount(src, note){
   /* the grandfather floor (build 314): whichever account held the higher
      level keeps it - neither side loses one by being merged */
   store.levelFloor = Math.max(num(store.levelFloor), num(src.levelFloor));
+  store.rankFloor = Math.max(num(store.rankFloor), num(src.rankFloor));
   maxMap("unitBestPct"); minMap("unitBestMs"); maxMap("flareLevels");
   /* game records: per unit, per speed */
   ["unitGameBeat", "gameFarthest"].forEach(k => {
@@ -44734,6 +44741,7 @@ function mergeSameAccount(dst, src){
   /* The grandfather floor (build 314): the higher of the two. A copy from
      an older build carries none and changes nothing here. */
   maxInto(dst, "levelFloor", src.levelFloor);
+  maxInto(dst, "rankFloor", src.rankFloor);
   /* Flags: per question, the later of its last flag and its last unflag
      (build 297 - see setFlag). */
   { const fd = mapOf(dst, "flagged"), ud = mapOf(dst, "unflagged");
@@ -45773,12 +45781,18 @@ const TIER_UNLOCKS = {
      the same numbers doing two jobs. Kept as they are, by decision;
      re-measure with check-curve section 3 when the curve, the bands or
      the bank move. */
+  /* BUILD 314, FINAL (Madison): "Let's make supernova level 80? And then
+     fix the ones before it". Even steps to the cap; badge counts are
+     exactly as before ("DONT change the badge requirement"). Checked on
+     the real backup before changing: every rank anyone holds is limited
+     by badges, not level, so nobody drops a rank - and holdRanks()
+     guards it anyway. */
   rookie:   { level: 21, badges: 1,  label: "Reach level 21 and 1 badge" },
-  ranger:   { level: 29, badges: 3,  label: "Reach level 29 and 3 badges" },
-  veteran:  { level: 36, badges: 5,  label: "Reach level 36 and 5 badges" },
-  vanguard: { level: 45, badges: 7,  label: "Reach level 45 and 7 badges" },
-  adept:    { level: 52, badges: 9,  label: "Reach level 52 and 9 badges" },
-  elite:    { level: 65, badges: 12, label: "Reach level 65 and 12 badges" },
+  ranger:   { level: 30, badges: 3,  label: "Reach level 30 and 3 badges" },
+  veteran:  { level: 40, badges: 5,  label: "Reach level 40 and 5 badges" },
+  vanguard: { level: 50, badges: 7,  label: "Reach level 50 and 7 badges" },
+  adept:    { level: 60, badges: 9,  label: "Reach level 60 and 9 badges" },
+  elite:    { level: 70, badges: 12, label: "Reach level 70 and 12 badges" },
   /* Supernova, the genuine top of the ladder, now also requires
      finding every Mystery Star \u2014 not just points and stars from
      studying, but having fully explored the app itself. Named
@@ -45791,7 +45805,7 @@ const TIER_UNLOCKS = {
      available but there will be eventually." Supernova is the thing
      the extra units unlock, and it is the only rank that asks for the
      max level itself. */
-  titan:    { level: 71, badges: 14, label: "Reach level 71 and 14 badges" }
+  titan:    { level: 80, badges: 14, label: "Reach level 80 and 14 badges" }
 };
 /* The full, ordered tier sequence — used anywhere code needs to walk
    every tier in climbing order (the ladder display, unlock checks,
@@ -45950,8 +45964,16 @@ const LEVEL_FREEZE_THROUGH = 25;
    (check-curve section 2, and the real backup - see CLAUDE.md). The
    numbers this replaced: a x2.0 step into 26, +1.99% to 45, +8.35%
    past it, ~600,000 to the cap - kept as legacyLevelOfPoints(). */
-const LEVEL_STEP_UP = 1.0295;
-const LEVEL_LATE_GROWTH = 1.0295;
+/* ^ BUILD 314, FINAL: THE CURVE ABOVE WAS PROPOSED AND NOT SHIPPED. The
+   live curve (build 313's, below) stays exactly as it is - "140000 xp is
+   all that's needed to reach level 80? That doesn't even sound right".
+   Measured on the real class (Oct 6): the top players earn 4,000-6,000
+   XP a day, which reaches level 80 on THIS curve around January 1st;
+   the median lands near level 60. Nobody's level changes. What changed
+   instead is the rank ladder (TIER_UNLOCKS: 21/30/40/50/60/70/80) and
+   the gate that ties levels to badges (badgeWallLevel). */
+const LEVEL_STEP_UP = 2.0;
+const LEVEL_LATE_GROWTH = 1.0199;
 /* A guard rather than a working value - the curve tops out at 77,649 a
    level, so this never binds. It exists so a future change to the
    growth rate cannot quietly produce a level nobody can afford. */
@@ -46052,13 +46074,13 @@ const LEVEL_CAP = 80;
    THIS ENDS "ALL SIXTEEN BADGES LAND ON THE CAP", on purpose - the top
    ranks now ask for study past what their badges pay, which is the
    complaint being answered (high levels, few badges). */
-/* RETIRED IN BUILD 314 with the one-rate curve above: the steep tail
-   past 45 is gone, so nothing reads these. Kept for legacyLevelOfPoints()
-   and the record. */
+/* Build 313's steep tail past 45 - LIVE, and still the curve in 314
+   (the one-rate re-fit above was not shipped). */
 const LEVEL_STEEP_FROM = 45;
 const LEVEL_STEEP_GROWTH = 1.0835;   /* build 213: ~600,000 in all to level 80 (was 1.0601, ~375,000) - the new XP types pay a lot more */
 function levelGrowthAt(lvl){
   if(lvl <= LEVEL_FREEZE_THROUGH) return LEVEL_GROWTH;
+  if(lvl > LEVEL_STEEP_FROM) return LEVEL_STEEP_GROWTH;
   /* The one-off step into the first level past the freeze. A multiplier
      on the level before it rather than a flat cost, so it cannot drift
      out of step if the frozen curve is ever re-based. */
@@ -50524,6 +50546,8 @@ function tierShortfall(rule){
 function tierColorUnlocked(name){
   const rule = TIER_UNLOCKS[name];
   if(!rule) return true;
+  /* a rank held under an older ladder keeps everything it handed over */
+  if(TIER_ORDER_FULL.indexOf(name) < (Number(store.rankFloor) || 0)) return true;
   const now = tierProgressNow();
   const starsOk = now.badges >= (rule.badges || 0);
   const pointsOk = now.level >= (rule.level || 0);
@@ -51914,8 +51938,27 @@ function rankOfStats(level, badges, mysteryFound){
   return held;
 }
 function rankOf(st){
-  return rankOfStats(levelOf(st), badgeCountOf(st),
-                     st === store ? mysteryColorsFoundCount() : 0);
+  const now = rankOfStats(levelOf(st), badgeCountOf(st),
+                          st === store ? mysteryColorsFoundCount() : 0);
+  /* NOBODY DROPS A RANK (build 314). The ladder moved to 21/30/40/50/60/
+     70/80 ("let's make supernova level 80"), and a rank is computed fresh
+     from level and badges - so somebody at exactly Silver's old level 29
+     would otherwise fall back to Bronze and lose what Silver handed over.
+     `rankFloor` (1-based index into TIER_ORDER_FULL, 0 = none) is the
+     rank an account held on the OLD ladder, set once on the first load of
+     this build and merged by max; it only ever raises. */
+  const floor = Number(st && st.rankFloor) || 0;
+  return floor > TIER_ORDER_FULL.indexOf(now) + 1 ? TIER_ORDER_FULL[floor - 1] : now;
+}
+/* Build 313's ladder, kept for one job: the rank floor above. */
+const TIER_UNLOCKS_313 = { rookie: [21, 1], ranger: [29, 3], veteran: [36, 5], vanguard: [45, 7],
+                           adept: [52, 9], elite: [65, 12], titan: [71, 14] };
+function legacyRankFloorOf(got){
+  const lvl = legacyLevelOfPoints(got && got.lifetime ? got.lifetime.points : 0);
+  let b = 0; try{ b = badgeCountOf(got); }catch(e){}
+  let held = 0;
+  TIER_ORDER_FULL.forEach((k, i) => { const r = TIER_UNLOCKS_313[k]; if(r && lvl >= r[0] && b >= r[1]) held = i + 1; });
+  return held;
 }
 
 function isLockedAccent(name){
@@ -54661,7 +54704,7 @@ let mysteryColorThisRun = null;  // which of the 3 colors this run's appearance 
    Three separate things went at once: the hunt, the Eclipse colour it
    unlocked, and the clause it put on the top rank's requirement line.
    Only the HUNT was asked back. The Eclipse colour is still gone and
-   `titan` is still plain "Reach level 70 and 14 badges" - reviving the
+   `titan` is still plain "Reach level 80 and 14 badges" - reviving the
    rank clause would put luck in front of a rank, which is the one thing
    the ladder must never ask for. What the hunt hands over now is a
    character, which is a thing you find rather than a thing you climb
@@ -54672,7 +54715,7 @@ let mysteryColorThisRun = null;  // which of the 3 colors this run's appearance 
 
    What came back is the HUNT and nothing else. The clause the old
    version put on the top rank's requirement line is NOT re-armed -
-   `titan` stays plain "Reach level 70 and 14 badges", and the
+   `titan` stays plain "Reach level 80 and 14 badges", and the
    `rule.mysteryStars` guard in rankOfStats stays permanently false.
    That separation is the whole reason this is safe to revive: a rank
    is a thing you climb to and must never depend on luck, while a
