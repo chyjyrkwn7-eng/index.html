@@ -12946,9 +12946,13 @@ version is that set now; 0-85 is gone from the app.
   ancestor of an unborn child" cannot be charged, where PC 19.06 exempts
   the mother. It is the instructor's key, and it stays: **"Keep the guide it is,
   don't be changing answers."** The bank's answers are the study guide's
-  answers, even where the law reads otherwise - repair a broken choice
-  (a cut-off word, a stray footnote) but never change which answer is
-  right.
+  answers, even where the law reads otherwise. **And the WORDING is the
+  study guide's too, typos and all: "The wording, idc if it's broken,
+  these test questions are supposed to be exactly like the study
+  guides."** A read-through on 6 Oct repaired 50 questions' typos and cut-off
+  choices (identity kept via keyText/keyChoices) and was reverted in full
+  the same day on that instruction. Do not fix spelling, grammar,
+  truncation or leftover slide text in QUESTIONS; report it instead.
 - **That repair made #346 a seventh question on one answer set** (the
   "which offense is this" questions: murder, manslaughter and the rest),
   five of them inside the 58. `spreadOrder()`'s single fixed twin gap
