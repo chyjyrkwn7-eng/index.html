@@ -13603,8 +13603,8 @@
     position:absolute; left:0; right:0; top:calc(var(--node) / 2); bottom:calc(var(--node) / 2);
     transform-origin:50% 0%; transform:scaleY(var(--lit, 0));
     /* From the rank above to the rank below (build 236). */
-    background:linear-gradient(to bottom, var(--from-color, var(--rank-color)), var(--rank-color));
-    box-shadow:0 0 10px color-mix(in srgb, var(--rank-color) 70%, transparent);
+    background:linear-gradient(to bottom, var(--from-color, var(--rank-color)), var(--end-color, var(--rank-color)));
+    box-shadow:0 0 10px color-mix(in srgb, var(--end-color, var(--rank-color)) 70%, transparent);
     transition:transform 2.4s cubic-bezier(.22,.7,.2,1) .25s;
   }
   /* The stretch carrying the light (build 309): its line runs over the
@@ -13914,7 +13914,11 @@
   .rankmap-stop.is-locked .rankmap-name{ color:rgba(255,255,255,.62); }
   .rankmap-state{
     flex:none; font-size:.6rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase;
-    padding:.2rem .5rem; border-radius:999px; color:rgba(255,255,255,.7); background:rgba(255,255,255,.07);
+    /* CENTRED (build 314): letter-spacing adds its gap after the last
+       letter too, so equal padding left the word sitting left of centre.
+       The left padding carries the same .12em back. */
+    display:inline-flex; align-items:center; justify-content:center; line-height:1.1;
+    padding:.24rem .5rem .22rem calc(.5rem + .12em); border-radius:999px; color:rgba(255,255,255,.7); background:rgba(255,255,255,.07);
   }
   .rankmap-stop.is-here .rankmap-state{ color:#0B0D10; background:color-mix(in srgb, var(--rank-color) 80%, #fff); }
   .rankmap-stop.is-next .rankmap-state{ color:color-mix(in srgb, var(--rank-color) 70%, #fff); background:color-mix(in srgb, var(--rank-color) 18%, transparent); }
@@ -18720,6 +18724,13 @@
   .level-chal{ flex:none; display:inline-flex; align-items:center; gap:.28rem; min-height:44px;
     margin:-.5rem -.35rem -.5rem 0; padding:0 .35rem 0 .3rem; border:0; background:none; color:var(--ink);
     font:inherit; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .level-chal-ic{ width:1.5rem; height:1.5rem; fill:#E8C77A; filter:drop-shadow(0 0 6px rgba(232,199,122,.35)); }
+  .level-chal.is-met .level-chal-ic{ fill:#F2D58A; }
+  .level-gate-line .level-chal-ic{ flex:none; width:1.6rem; height:1.6rem; }
+  .level-chal-art{ display:grid; place-items:center; margin:.2rem 0 .4rem; }
+  .level-chal-bigic{ width:4.2rem; height:4.2rem; fill:#E8C77A; filter:drop-shadow(0 0 14px rgba(232,199,122,.45)); }
+  .level-chal-big{ margin:.6rem 0 .55rem; font-size:1rem; font-weight:700; color:var(--soft); font-variant-numeric:tabular-nums; }
+  .level-chal-big b{ font-size:2rem; font-weight:800; color:var(--ink); margin-right:.1rem; }
   .level-chal-n{ font-size:.95rem; font-weight:700; color:var(--soft); font-variant-numeric:tabular-nums; white-space:nowrap; }
   .level-chal-n b{ color:var(--ink); font-weight:800; }
   .level-chal-chev{ font-size:1.5rem; line-height:1; color:#8FC1FF; margin-top:-.12rem; }
@@ -18745,8 +18756,6 @@
   .level-chal-row .level-chal-bar{ grid-column:2 / span 2; max-width:none; margin:0; height:7px; }
   .level-chal-row.is-level .level-chal-fill{ background:linear-gradient(90deg, #3D8BFF, #8FC1FF); box-shadow:0 0 8px rgba(61,139,255,.5); }
   .level-chal-cap{ margin:.4rem auto 0; max-width:21rem; font-size:.82rem; line-height:1.4; color:#8FC1FF; text-wrap:pretty; }
-  .rankhero-capnote{ margin:.8rem 0 0; padding-top:.65rem; border-top:1px solid rgba(255,255,255,.08);
-    text-align:center; font-size:.8rem; font-weight:700; line-height:1.4; color:#8FC1FF; text-wrap:pretty; }
   .results-level-gate{ text-align:left; }
   .results-level-gate .rank-chal-emb{ width:1.9rem; height:1.9rem; }
   .results-level-chaltext{ display:flex; flex-direction:column; gap:.1rem; min-width:0; }
@@ -18756,11 +18765,11 @@
      as Pokemon GO's do ("the color doesn't change it just keeps going
      up"); the flip they replaced was asked against. */
   .xpnums{ font-weight:800; font-variant-numeric:tabular-nums; }
-  .xpnums-have{ color:var(--ink); }
-  .xpnums-need{ color:#8FC1FF; }
-  /* Past the requirement only YOUR number changes: gold, the badge
-     challenge's colour - "full, finish your rank challenges". */
-  .xpnums.is-over .xpnums-have{ color:#F2C94C; text-shadow:0 0 10px rgba(242,201,76,.35); }
+  /* Darker than white ("feels like it should be darker"), and past the
+     requirement only a shade darker again - no new colour. */
+  .xpnums-have{ color:#B4C6DD; }
+  .xpnums-need{ color:#7FA6D6; }
+  .xpnums.is-over .xpnums-have{ color:#97ACC8; }
   /* The challenge sheet */
   .level-chal-sheet{ text-align:center; }
   .level-chal-bar{ display:block; height:10px; margin:0 auto; max-width:18rem; border-radius:999px; overflow:hidden;
@@ -46402,95 +46411,92 @@ function rankChallengesOf(){
            done: list.filter(c => c.met).length, total: list.length,
            opensFrom: from, opensTo: to, opens: to >= from, state: s };
 }
-function rankChallengeEmblem(key){
-  const w = document.createElement("span");
-  w.className = "rank-chal-emb";
-  try{ w.appendChild(buildRankEmblemSVG(key)); }catch(e){}
-  return w;
+/* THE BADGE CHALLENGE (build 314), beside the Profile bar: the gold
+   badge and "3/5" - the badges the next rank asks for. Only the badges:
+   "I kinda liked the gold badge a lot ... why would a level requirement
+   be there anyways? That's kinda confusing." The level half of the
+   rank's challenges is the bar itself. */
+const LEVEL_CHALLENGE_ICON = "M12 2.4l7.6 3.4v5.4c0 4.7-3.2 8.7-7.6 10.4-4.4-1.7-7.6-5.7-7.6-10.4V5.8L12 2.4Zm0 4.1-1.4 2.9-3.2.4 2.3 2.2-.6 3.1 2.9-1.5 2.9 1.5-.6-3.1 2.3-2.2-3.2-.4L12 6.5Z";
+function badgeChallengeIcon(cls){
+  const ic = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  ic.setAttribute("viewBox", "0 0 24 24"); ic.setAttribute("aria-hidden", "true"); ic.classList.add(cls || "level-chal-ic");
+  const pth = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  pth.setAttribute("d", LEVEL_CHALLENGE_ICON); pth.setAttribute("fill-rule", "evenodd");
+  ic.appendChild(pth);
+  return ic;
 }
-/* The button beside the Profile bar: the next rank's emblem and how many
-   of its challenges are done, "1/2 >". */
-function buildLevelChallengeButton(){
-  const c = rankChallengesOf();
+function badgeChallengeOf(c){
+  c = c || rankChallengesOf();
   if(!c) return null;
+  const b = c.list.find(x => x.kind === "badges");
+  const l = c.list.find(x => x.kind === "level");
+  return b ? { name: c.name, key: c.key, have: b.now, need: b.need, met: b.met, left: Math.max(0, b.need - b.now),
+               level: l ? l.need : 0, state: c.state } : null;
+}
+function buildLevelChallengeButton(){
+  const b = badgeChallengeOf();
+  if(!b) return null;
   const btn = document.createElement("button");
   btn.type = "button";
-  btn.className = "level-chal" + (c.state.held ? " is-holding" : "");
-  btn.style.setProperty("--rank-color", c.color);
-  btn.setAttribute("aria-label", c.name + " challenges: " + c.done + " of " + c.total + " done");
+  btn.className = "level-chal" + (b.met ? " is-met" : "");
+  btn.setAttribute("aria-label", "Badge challenge: " + b.have + " of " + b.need + " badges to rank up to " + b.name);
   const n = document.createElement("span");
   n.className = "level-chal-n";
-  const h = document.createElement("b"); h.textContent = String(c.done);
-  n.append(h, "/" + c.total);
+  const h = document.createElement("b"); h.textContent = String(Math.min(b.have, b.need));
+  n.append(h, "/" + b.need);
   const chev = document.createElement("span");
   chev.className = "level-chal-chev"; chev.setAttribute("aria-hidden", "true"); chev.textContent = "\u203A";
-  btn.append(rankChallengeEmblem(c.key), n, chev);
+  btn.append(badgeChallengeIcon(), n, chev);
   btn.addEventListener("click", showLevelChallenge);
   return btn;
 }
-/* "<Rank> challenges", the line under them on the results card and the
-   Rank tab: what completing them does, and what it is holding. */
+/* One plain line about the badges, for the results card and the rank
+   pop-up that holds you - never "your level stays at", which read as
+   "you can't earn XP". */
 function rankChallengeNote(c){
-  if(!c) return "";
-  const s = c.state;
-  if(s.held) return "Your level stays at " + s.level + " until you rank up to " + c.name;
-  return "Complete both to rank up to " + c.name;
+  const b = badgeChallengeOf(c);
+  if(!b) return "";
+  return b.met ? "Reach level " + b.level + " to rank up to " + b.name
+    : "Earn " + b.left + (b.have > 0 ? " more" : "") + (b.left === 1 ? " badge" : " badges") + " to rank up to " + b.name;
 }
-/* What the button opens: the two challenges against you. */
+/* What the badge opens: the one challenge, against you. No road map
+   button - "that's also redundant". */
 function showLevelChallenge(){
-  const c = rankChallengesOf();
-  if(!c) return;
+  const b = badgeChallengeOf();
+  if(!b) return;
   const overlay = document.createElement("div");
   overlay.className = "invite-overlay";
   const sheet = document.createElement("div");
   sheet.className = "invite-sheet person-card level-chal-sheet";
-  sheet.style.setProperty("--rank-color", c.color);
   const art = document.createElement("div");
-  art.className = "ranklore-art";
-  try{ art.appendChild(fitRankEmblem(buildRankEmblemSVG(c.key), c.key, true)); }catch(e){}
+  art.className = "level-chal-art";
+  art.appendChild(badgeChallengeIcon("level-chal-bigic"));
   const kick = document.createElement("p");
   kick.className = "unlock-card-kicker";
-  kick.textContent = "Rank challenges \u00b7 " + c.done + " of " + c.total + " done";
+  kick.textContent = "Badge challenge";
   const nm = document.createElement("h2");
-  nm.className = "unlock-card-name level-chal-name";
-  nm.textContent = c.name + " challenges";
-  sheet.append(art, kick, nm);
-  const rows = document.createElement("div");
-  rows.className = "level-chal-rows";
-  const fills = [];
-  c.list.forEach(ch => {
-    const row = document.createElement("div");
-    row.className = "level-chal-row is-" + ch.kind + (ch.met ? " is-met" : "");
-    const tick = document.createElement("span");
-    tick.className = "level-chal-tick"; tick.setAttribute("aria-hidden", "true");
-    tick.textContent = ch.met ? "\u2713" : "";
-    const lab = document.createElement("span");
-    lab.className = "level-chal-lab"; lab.textContent = ch.label;
-    const val = document.createElement("span");
-    val.className = "level-chal-val"; val.textContent = ch.met ? "Done" : ch.now + " / " + ch.need;
-    const bar = document.createElement("span"); bar.className = "level-chal-bar";
-    const fill = document.createElement("span"); fill.className = "level-chal-fill";
-    bar.appendChild(fill);
-    setBarFill(fill, 0);
-    fills.push([fill, ch.need ? Math.min(100, Math.round(ch.now / ch.need * 1000) / 10) : 100]);
-    row.append(tick, lab, val, bar);
-    rows.appendChild(row);
-  });
-  setTimeout(() => requestAnimationFrame(() => fills.forEach(([f, v]) => setBarFill(f, v))), 200);
-  sheet.appendChild(rows);
+  nm.className = "unlock-card-name";
+  nm.textContent = "Earn " + b.need + (b.need === 1 ? " badge" : " badges");
+  const big = document.createElement("p");
+  big.className = "level-chal-big";
+  const hb = document.createElement("b"); hb.textContent = String(Math.min(b.have, b.need));
+  big.append(hb, " / " + b.need);
+  const bar = document.createElement("span"); bar.className = "level-chal-bar";
+  const fill = document.createElement("span"); fill.className = "level-chal-fill";
+  bar.appendChild(fill);
+  setBarFill(fill, 0);
+  setTimeout(() => requestAnimationFrame(() => setBarFill(fill, b.need ? Math.min(100, Math.round(b.have / b.need * 1000) / 10) : 100)), 200);
   const line = document.createElement("p");
   line.className = "level-chal-line";
-  line.textContent = "Complete both to rank up to " + c.name + ".";
-  sheet.appendChild(line);
-  if(c.state.held){
+  line.textContent = b.met ? "Done - you have " + b.name + "'s badges. " + rankChallengeNote() + "." : rankChallengeNote() + ".";
+  sheet.append(art, kick, nm, big, bar, line);
+  if(b.state.held && !b.met){
     const cap = document.createElement("p");
     cap.className = "level-chal-cap";
-    cap.textContent = "Until then your level stays at " + c.state.level +
-      ". Your XP keeps counting, and it all turns into levels the moment you rank up.";
+    cap.textContent = "Your XP keeps counting, and turns into levels the moment you rank up.";
     sheet.appendChild(cap);
   }
-  const badgeCh = c.list.find(x => x.kind === "badges");
-  if(badgeCh && !badgeCh.met){
+  if(!b.met){
     const near = levelClosestLine();
     if(near){
       const p = document.createElement("p");
@@ -46499,15 +46505,11 @@ function showLevelChallenge(){
       sheet.appendChild(p);
     }
   }
-  const go = document.createElement("button");
-  go.type = "button"; go.className = "next";
-  go.textContent = "See the rank road map";
-  go.addEventListener("click", () => { overlay.remove(); showRanksScreen("ranks"); });
   const close = document.createElement("button");
   close.type = "button"; close.className = "next ghost person-sheet-close";
   close.textContent = "Close";
   close.addEventListener("click", () => overlay.remove());
-  sheet.append(go, close);
+  sheet.appendChild(close);
   overlay.appendChild(sheet);
   overlay.addEventListener("click", e => { if(e.target === overlay) overlay.remove(); });
   mountSheetOverlay(overlay);
@@ -72029,8 +72031,10 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
      up." Held, the line is the Profile's flipped numbers, and the reveal
      counts the first one up from where the run started to where it ended
      while the bar sits full. */
+  /* Not held either (build 314): the same "into / span XP" numbers as
+     the Profile bar, never "N to level X" - "I don't like that". */
   const setLine = (p, into) => {
-    if(p.held && !p.atCap){
+    if(!p.atCap){
       line.replaceChildren(buildXpNumbers(into == null ? p.into : into, p.span, (into == null ? p.into : into) > p.span));
     } else line.textContent = lineFor(p);
   };
@@ -72049,7 +72053,7 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
     setLine(after, from);
     requestAnimationFrame(tick);
   };
-  if(levelsUp) line.textContent = lineFor(before);
+  if(levelsUp) setLine(before);
   else if(after.held && !after.atCap){
     const start = xpForLevel(after.level);
     setLine(after, Math.max(0, Math.min(after.into, (pointsAfter - gained) - start)));
@@ -72067,17 +72071,17 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
     const g = document.createElement("p");
     g.className = "level-gate-line results-level-gate";
     if(rc){
-      g.style.setProperty("--rank-color", rc.color);
       const nb = document.createElement("b");
       nb.className = "results-level-chalname";
-      nb.textContent = rc.name + " challenges " + rc.done + "/" + rc.total;
+      const bc = badgeChallengeOf(rc);
+      nb.textContent = rc.name + ": " + (bc ? Math.min(bc.have, bc.need) + " / " + bc.need + " badges" : "");
       const tx = document.createElement("span");
       tx.className = "results-level-chalnote";
       tx.textContent = rankChallengeNote(rc);
       const col = document.createElement("span");
       col.className = "results-level-chaltext";
       col.append(nb, tx);
-      g.append(rankChallengeEmblem(rc.key), col);
+      g.append(badgeChallengeIcon(), col);
     } else {
       g.textContent = levelWallLine(after);
     }
@@ -88259,23 +88263,10 @@ function showProfile(defaultTab){
   levelSideLab.textContent = "Level";
   const levelSideTop = document.createElement("span");
   levelSideTop.className = "profile-level-sidetop";
-  /* Held at the band cap the line says what is waiting, not what is
-     left: the XP numbers under the bar carry the rest. */
-  levelSideTop.textContent = prog.atCap ? "Level " + LEVEL_CAP + ", the cap"
-    /* "MAX LEVEL UNTIL BRONZE" (build 314) - what is holding it, in the
-       words of the challenge that lifts it. No saved-levels count: "I
-       like it but I don't". */
-    : prog.held ? "Max level until " + ((rankChallengesOf() || {}).name || "your next rank")
-    : prog.toNext.toLocaleString() + " XP to level " + (prog.level + 1);
-  /* THE TOTAL GOES AT THE BOTTOM (build 302). "Where it says how much xp
-     you have earned ... shouldn't that be at the bottom and not in the
-     middle? Shouldn't it say total xp earned too?" It sat between the
-     next-level line and the bar, where it read as part of the climb to
-     the next level. It is the box's footnote now, under the bar, and it
-     says what it is. */
-  const levelSideSub = document.createElement("p");
-  levelSideSub.className = "profile-level-total";
-  levelSideSub.textContent = prog.total.toLocaleString() + " total XP earned";
+  /* THE TOTAL, AND NOTHING ELSE (build 314): no "XP to level N", no
+     percentage, no "Max level until" - the bar and the numbers under it
+     already say all of that ("redundant and makes it cluttered"). */
+  levelSideTop.textContent = prog.total.toLocaleString() + " total XP";
   levelSide.append(levelSideLab, levelSideTop);
   levelRow.append(levelNum, levelSide);
   levelSect.appendChild(levelRow);
@@ -88309,20 +88300,11 @@ function showProfile(defaultTab){
   if(prog.atCap){
     const m = document.createElement("span");
     m.textContent = "Every level reached";
-    const pc = document.createElement("span");
-    pc.className = "profile-xp-pct"; pc.textContent = "100%";
-    xpLine.append(m, pc);
+    xpLine.appendChild(m);
   } else {
     xpLine.appendChild(buildXpNumbers(prog.into, prog.span, prog.stopped));
-    if(!prog.stopped){
-      const pc = document.createElement("span");
-      pc.className = "profile-xp-pct";
-      pc.textContent = Math.floor(prog.fraction * 100) + "%";
-      xpLine.appendChild(pc);
-    }
   }
   levelSect.appendChild(xpLine);
-  levelSect.appendChild(levelSideSub);
 
   /* The badges as a count, and the ones you HAVE as a small overlapping
      stack (build 243). Build 242 put a sixteen-segment meter here and it
@@ -89950,19 +89932,6 @@ function buildRanksTab(){
                   gauge("is-badges", "Badges", badgesNow, null, 1));
   }
   hero.appendChild(gauges);
-  /* What the challenges are holding, said once, only when they are -
-     your level capped and the levels saved behind it (build 314). */
-  {
-    const rc = rankChallengesOf();
-    const note = rc && rc.state.held ? rankChallengeNote(rc) : "";
-    if(note){
-      const p = document.createElement("p");
-      p.className = "rankhero-capnote";
-      p.textContent = note;
-      hero.appendChild(p);
-    }
-  }
-
   /* No "1 badge to go until Bronze." under the rings (build 284): the
      rings already say it, and the box was asked to be simpler and
      smaller. */
@@ -90102,13 +90071,21 @@ function buildRanksTab(){
            (9px in from each node), with a fixed 9px stub joining it to the
            rank above - so the end of the line IS the light, every frame. */
         roadFill.classList.add("is-tipped");
+        /* THE COLOUR FOLLOWS THE PROGRESS (build 314): "shouldn't it be
+           closer to your current rank on that side and then as it's closer
+           it's closer to the next rank". The fill is scaled, so a plain
+           from-to gradient squeezed the WHOLE blend into a short line and
+           read as the next rank's colour at any progress. The line now
+           ends at the mix its progress has reached, and the light with it. */
+        const endMix = "color-mix(in srgb, " + RANK_COLOR[below] + " " + Math.round(lit * 100) + "%, " + RANK_COLOR[key] + ")";
+        road.style.setProperty("--end-color", endMix);
         const stub = document.createElement("span");
         stub.className = "rankmap-roadstub";
         road.insertBefore(stub, roadFill);
         const tip = document.createElement("span");
         tip.className = "rankmap-roadtip";
         tip.setAttribute("aria-hidden", "true");
-        tip.style.setProperty("--rank-color", RANK_COLOR[below]);
+        tip.style.setProperty("--rank-color", endMix);
         const dot = document.createElement("span");
         dot.className = "rankmap-roadtip-dot";
         tip.appendChild(dot);

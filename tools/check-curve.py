@@ -594,7 +594,7 @@ def main():
             const cb = document.querySelector('.profile-xprow .level-chal');
             if(cb){ cb.click(); await new Promise(r => setTimeout(r, 300));
               out.profile.sheet = { name: q('.level-chal-sheet .unlock-card-name'), line: q('.level-chal-line'), cap: q('.level-chal-cap'),
-                rows: [...document.querySelectorAll('.level-chal-row')].map(r => [r.querySelector('.level-chal-lab').textContent, r.classList.contains('is-met')]) };
+                big: q('.level-chal-big'), roadBtn: [...document.querySelectorAll('.level-chal-sheet button')].some(b => /road map/i.test(b.textContent)) };
               document.querySelectorAll('.invite-overlay').forEach(n => n.remove()); }
           } catch(e){ out.threw = String(e && e.stack || e); }
           return out; }""")
@@ -624,8 +624,8 @@ def main():
             check("XP keeps counting at a cap; the level does not move",
                   ar["gained"] > 0 and ar["level"] == 29, ar)
             check("the results card shows the overflow and the rank challenges holding it",
-                  ar["line"] and " / " in ar["line"] and ar["gate"] and "Bronze challenges 1/2" in ar["gate"]
-                  and "stays at 29 until you rank up to Bronze" in ar["gate"], ar)
+                  ar["line"] and " / " in ar["line"] and ar["gate"] and "Bronze: 0 / 1 badges" in ar["gate"]
+                  and "Earn 1 badge to rank up to Bronze" in ar["gate"] and "stays at" not in ar["gate"], ar)
             j = w["jump"]
             check("earning the badge jumps the level straight to what the XP earned",
                   j["before"] == 29 and j["after"] == j["curve"] and 29 < j["after"] <= 39 and j["badges"] == 1, j)
@@ -654,16 +654,16 @@ def main():
             check("the rank is asked about the shown level", r["rank"] == "rookie" == r["rankOfCurve"], r)
             check("a reset clears the floor", w["resetFloor"] == 0, w["resetFloor"])
             pf = w["profile"]
-            check("Profile at a cap: 'Max level until Bronze', the XP number marked over, no Next gate box",
-                  pf["top"] == "Max level until Bronze" and pf["nums"] and re.match(r"^[0-9,]+ / [0-9,]+ XP$", pf["nums"])
+            check("Profile at a cap: the total XP beside the level, the XP number marked over, no Next gate box",
+                  re.match(r"^[0-9,]+ total XP$", pf["top"] or "") and pf["nums"] and re.match(r"^[0-9,]+ / [0-9,]+ XP$", pf["nums"])
                   and pf["over"] and pf["banked"] and not pf["max"] and not pf["nextGate"], pf)
             sh = pf.get("sheet") or {}
-            check("the rank challenges sit beside the bar: the next rank's, 1 of 2 done",
-                  pf["chal"] == "1/2" and sh.get("name") == "Bronze challenges"
-                  and sh.get("rows") == [["Reach level 21", True], ["Earn 1 badge", False]], pf)
+            check("the gold badge sits beside the bar with the next rank's badge count, and opens only that (no road map button)",
+                  pf["chal"] == "0/1" and sh.get("name") == "Earn 1 badge" and (sh.get("big") or "").replace(" ", "") == "0/1"
+                  and not sh.get("roadBtn"), pf)
             check("and say they rank you up, and what your level does meanwhile - no level ranges, no saved count",
-                  sh.get("line") == "Complete both to rank up to Bronze." and "stays at 29" in (sh.get("cap") or "")
-                  and "saved" not in (sh.get("cap") or "") and "unlock" not in (sh.get("line") or ""), sh)
+                  sh.get("line") == "Earn 1 badge to rank up to Bronze." and "keeps counting" in (sh.get("cap") or "")
+                  and "saved" not in (sh.get("cap") or "") and "stays at" not in (sh.get("cap") or ""), sh)
 
         print("\n9. firestore-admin.py audits with the page's own numbers")
         import importlib.util

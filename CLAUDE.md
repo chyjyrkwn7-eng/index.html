@@ -13220,6 +13220,19 @@ disagree with it.
 - **NO ROAD MAP CARD CARRIES A METER.** The top card shows the next
   rank's challenges, so "Up next" is its chip and highlight only, and
   the road line still fills towards it.
+- **LATEST (supersedes the bullets above where they disagree):** the
+  button beside the Profile bar is the GOLD BADGE and the next rank's
+  badge count ("3/5") - not the rank emblem, not "1/2": *"why would a
+  level requirement be there anyways? That's kinda confusing."* Its sheet
+  is the badge challenge alone (no rows, no road map button). The level
+  box line is just "85,705 total XP": no "XP to level N", no percentage,
+  no "Max level until", no Max chip. XP numbers are a muted blue-grey,
+  only a shade darker past the requirement - no gold, no white. The
+  Rank tab's "your level stays at…" line is gone (it read as "you can't
+  earn XP"); the results card says "Gold: 3 / 5 badges · Earn 2 more
+  badges to rank up to Gold". The road map's partly-lit stretch ends at
+  the colour its progress has reached (silver blending to gold), and the
+  state pills are optically centred (letter-spacing carried on the left).
 - **AT THE CAP THE RESULTS NUMBER COUNTS UP.** *"The result screen when
   getting xp if you are full, that xp number would just keep going up."*
   The held line is `buildXpNumbers` and the reveal counts its first

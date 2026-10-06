@@ -381,7 +381,10 @@ with sync_playwright() as pw:
          the badge gate, which would hold a badgeless account at 21 */
       const w=buildResultsLevelBlock(p-lo+50, p, { badgesBefore: 16, badgesAfter: 16 }); document.getElementById('stage').appendChild(w);
       const read=()=>{ const n=+(w.querySelector('.results-level-num').textContent.match(/\\d+/)||[0])[0];
-        const m=(w.querySelector('.results-level-line').textContent.match(/to level (\\d+)/)||[])[1]; return [n, m?+m:null]; };
+        /* build 314: the line is "into / span XP" - the span names the level it is for */
+        const m=(w.querySelector('.results-level-line').textContent.match(/\\/ ([0-9,]+) XP/)||[])[1];
+        const span = m ? +m.replace(/,/g,'') : null;
+        return [n, span != null && span === xpForLevel(n + 1) - xpForLevel(n) ? n + 1 : null]; };
       const start=read(); w.runFill(); await new Promise(r=>setTimeout(r,2600)); const end=read(); w.remove();
       return {start, end}; }""")
     ck("the level line names the next level after the one shown, while filling and after",
