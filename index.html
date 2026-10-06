@@ -9109,6 +9109,25 @@
     box-shadow:inset 0 0 0 1.5px rgba(214,190,255,.85), inset 0 0 26px rgba(180,140,255,.4); animation:hfx-bh-rim var(--d) ease-in-out var(--t) both; }
   @keyframes hfx-bh-rim{ 0%{ opacity:0; } 20%{ opacity:1; } 80%{ opacity:1; } 100%{ opacity:0; } }
 
+  /* ===== round 4: fireworks - see hfxFireworks =====
+     The sky is one canvas; the dim, the light each burst throws across
+     the screen and the box's own pieces are plain layers. Nothing on the
+     screen itself moves. */
+  .hfx-fw-dim{ position:absolute; inset:0; opacity:0; background:radial-gradient(130% 75% at 50% 0%, #0C0A22, #040309 72%);
+    animation:hfx-fw-dim var(--tot) linear both; }
+  @keyframes hfx-fw-dim{ 0%{ opacity:0; } 6%{ opacity:.5; } 66%{ opacity:.5; } 92%, 100%{ opacity:0; } }
+  .hfx-fw-sky{ position:absolute; left:0; top:0; animation:hfx-fw-out var(--tot) linear both; }
+  @keyframes hfx-fw-out{ 0%, 76%{ opacity:1; } 97%, 100%{ opacity:0; } }
+  .hfx-fw-glow{ position:absolute; width:var(--gs); height:var(--gs); margin:calc(var(--gs) / -2) 0 0 calc(var(--gs) / -2); border-radius:50%; opacity:0;
+    background:radial-gradient(closest-side, var(--c), transparent); animation:hfx-fw-glow var(--d) ease-out var(--t) both; }
+  @keyframes hfx-fw-glow{ 0%{ opacity:0; transform:scale(.35); } 7%{ opacity:.55; transform:scale(.8); } 100%{ opacity:0; transform:scale(1); } }
+  .hfx-fw-rim{ position:absolute; inset:0; border-radius:inherit; opacity:0; pointer-events:none;
+    box-shadow:inset 0 0 0 1.5px var(--c), inset 0 0 30px var(--c); animation:hfx-fw-rim 1.1s ease-out var(--t) both; }
+  @keyframes hfx-fw-rim{ 0%{ opacity:0; } 10%{ opacity:.8; } 100%{ opacity:0; } }
+  .hfx-fw-mortar{ position:absolute; width:var(--ms); height:var(--ms); margin:calc(var(--ms) / -2) 0 0 calc(var(--ms) / -2); border-radius:50%; opacity:0;
+    background:radial-gradient(closest-side, rgba(255,250,240,.95), rgba(255,206,150,.5) 35%, rgba(255,92,214,0)); animation:hfx-fw-mortar .7s ease-out var(--t) both; }
+  @keyframes hfx-fw-mortar{ 0%{ opacity:0; transform:scale(.3); } 14%{ opacity:1; transform:scale(1); } 100%{ opacity:0; transform:scale(1.35); } }
+
   /* ===== round 3: bubbles on the cards, the UFO's searchlights ===== */
   .hfx-film-sheen{ position:absolute; inset:0; border-radius:inherit; overflow:hidden; clip-path:inset(0 round 18px); pointer-events:none; z-index:1; }
   .hfx-mock .hfx-film-sheen{ clip-path:inset(0 round 10px); }
@@ -36447,11 +36466,12 @@ const CHARACTER_FEATS = {
    everything that runs at boot, because ultimateProgress() reads it. */
 const HUNDO_FX = [
   { id: "confetti",  name: "Confetti",   need: 0,   color: "#FFD37A" },
-  /* the first rung (round 3): Black Hole, with Underwater built beside
-     it in HUNDO_FX_BUILD - "maybe make it like underwater? ... maybe make
-     the entire screen do like a black hole effect". Swapping is this
-     row's id and name. */
-  { id: "blackhole", name: "Black Hole",  need: 50,  color: "#B48CFF" },
+  /* the first rung (round 4): Fireworks - "Still not a fan of that giddy
+     one. Maybe the first one should just be fireworks or something?" The
+     Black Hole and Underwater stay built in HUNDO_FX_BUILD; swapping is
+     this row's id and name. A saved "blackhole" pick is no rung here, so
+     it plays Confetti until Fireworks is picked (hundoFxInUse). */
+  { id: "fireworks", name: "Fireworks",   need: 50,  color: "#FF5CD6" },
   { id: "worldtree", name: "World Tree",  need: 100, color: "#FF9EC8" },
   { id: "bubbles",   name: "Bubbles",     need: 200, color: "#9FE8FF" },
   /* "the one after bubbles is ... a ufo landing on the grade box" */
@@ -69186,16 +69206,19 @@ function celebrate(palette, origin){
 const HUNDO_FX_TAIL_MS = 1200;
 /* When each effect's layers are removed: every piece has faded out by
    then. The box-only play (Customize, the unlock card) runs shorter. */
-const HUNDO_FX_TOTAL = { blackhole: 5600, underwater: 7400, worldtree: 8800, bubbles: 7000, ufo: 8600 };
-const HUNDO_FX_BOX_TOTAL = { confetti: 3000, blackhole: 3600, underwater: 4800, worldtree: 6400, bubbles: 4600, ufo: 7400 };
+const HUNDO_FX_TOTAL = { fireworks: 7000, blackhole: 5600, underwater: 7400, worldtree: 8800, bubbles: 7000, ufo: 8600 };
+const HUNDO_FX_BOX_TOTAL = { confetti: 3000, fireworks: 3600, blackhole: 3600, underwater: 4800, worldtree: 6400, bubbles: 4600, ufo: 7400 };
 /* When the last tail starts, for the gate: everything is still on
    screen and part-way faded between this and the total. */
-const HUNDO_FX_TAIL_AT = { blackhole: 4000, underwater: 5900, worldtree: 6600, bubbles: 5300, ufo: 7000 };
+const HUNDO_FX_TAIL_AT = { fireworks: 5000, blackhole: 4000, underwater: 5900, worldtree: 6600, bubbles: 5300, ufo: 7000 };
 /* THE BOX'S COLOURS WHILE EACH ONE PLAYS (build 313): "Would be pretty
    cool if the themes matches the box, cause if the just stays yellow it
    would get kinda boring." Border, wash and the numerals' gradient;
    Confetti keeps the yellow. */
 const HFX_TINT = {
+  /* hot magenta, the 100% from pale gold through magenta to cyan; the box
+     lights as the first shell bursts */
+  fireworks: { b: "#FF5CD6", g1: "#FFE7B4", g2: "#FF5CD6", g3: "#5CE3FF", on: 950 },
   blackhole: { b: "#B48CFF", g1: "#F3EAFF", g2: "#B48CFF", g3: "#FF9A5C", on: 350 },
   underwater:{ b: "#46E0E8", g1: "#E6FFFC", g2: "#46E0E8", g3: "#FFD27A", on: 650 },
   worldtree: { b: "#7CD69A", g1: "#FFD1E4", g2: "#FF8FBF", g3: "#B8F2A0" },
@@ -69506,6 +69529,7 @@ function hfxWarm(id){
   try{
     if(id === "bubbles"){ [190, 280, 320, 150, 45, 230].forEach(h => { urls.push(hfxBubbleURL(h), hfxFilmURL(h), hfxFilmURL(h + 150)); }); urls.push(hfxHeroShellURL(), hfxRingURL()); }
     else if(id === "worldtree"){ [0, 1, 2, 3].forEach(i => urls.push(hfxBlossomURL(i))); urls.push(hfxLeafURL(), hfxFireflyURL(), hfxBranchURL(.5), hfxBranchURL(.64)); HFX_BLOOM.forEach(cl => urls.push(hfxPetalURL(cl))); }
+    else if(id === "fireworks"){ hfxFwHeads(); urls.push(hfxGlintURL()); }
     else if(id === "blackhole"){ urls.push(hfxDiscURL(), hfxSwirlURL(), hfxStreakURL(), hfxGlintURL()); }
     else if(id === "underwater"){ urls.push(hfxCausticURL(0), hfxCausticURL(1), hfxSurfaceURL(), hfxMantaURL(), hfxDropURL(), hfxGlintURL()); [0, 1, 2].forEach(k => urls.push(hfxFishURL(k), hfxKelpURL(k), hfxBubbleURL([190, 170, 210][k], true))); }
   }catch(e){}
@@ -70507,6 +70531,248 @@ function hfxBlackHole(scr, bx, c){
   }
 }
 
+/* ============ FIREWORKS (round 4) - the 50 ============
+   "Still not a fan of that giddy one. Maybe the first one should just be
+   fireworks or something?" The Black Hole pulled the whole screen in and
+   swirled it; this one leaves the screen exactly where it is. ALL THE
+   DRAMA IS IN THE SKY: the screen dims a little, shells leave the top
+   edge of the 100% box one after another, climb on sparking trails and
+   burst across the upper screen - a peony, a chrysanthemum that glitters
+   as it dies, one that changes colour, a gold willow that hangs - then
+   three go up together for the finale, it crackles, and the embers drift
+   down and fade slowly while the dim lifts. The box flashes with each
+   burst and keeps the colours.
+
+   THE SKY IS ONE CANVAS, the one effect drawn that way, because a burst
+   is a few hundred sparks with trails and as elements that is a few
+   hundred layers. Each spark is a closed-form path (drag and gravity), so
+   a frame is the same picture at any frame rate: a trail is the spark's
+   own path over the last fraction of a second, batched into one stroke
+   per colour, alpha and width, with a pre-drawn glow for its head, all
+   added ("lighter") so where sparks cross they burn white. The canvas
+   backing is capped at 2x. Nothing in it outlives the layer: the loop
+   ends at the effect's total, or when it is stopped. */
+const HFX_FW_COL = { m: [255, 92, 214], c: [92, 227, 255], g: [255, 211, 140], w: [255, 246, 236], v: [178, 146, 255] };
+const HFX_FW_TOT = 7, HFX_FW_BOX_TOT = 3.6;
+/* the head of a spark: white core, its colour round it, fading out */
+function hfxFwHeads(){
+  if(hfxFwHeads.c) return hfxFwHeads.c;
+  const out = {};
+  Object.keys(HFX_FW_COL).forEach(key => {
+    const q = HFX_FW_COL[key], cv = document.createElement("canvas"), S = 48, x = cv.getContext("2d");
+    cv.width = cv.height = S;
+    const rgb = a => "rgba(" + q[0] + "," + q[1] + "," + q[2] + "," + a + ")";
+    const gr = x.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+    gr.addColorStop(0, "rgba(255,255,255,1)"); gr.addColorStop(.16, "rgba(255,255,255,.95)");
+    gr.addColorStop(.3, rgb(.8)); gr.addColorStop(.58, rgb(.2)); gr.addColorStop(1, rgb(0));
+    x.fillStyle = gr; x.fillRect(0, 0, S, S);
+    out[key] = cv;
+  });
+  return (hfxFwHeads.c = out);
+}
+/* A show: a list of sparks, built up front, and the shells and bursts
+   that make them. Times in seconds from the start, sizes in px. */
+function hfxFwShow(kk){
+  const P = [];
+  const at = (p, a) => {
+    if(p.kind === 1){ const u = Math.max(0, Math.min(1, a / p.life)), e = 1 - (1 - u) * (1 - u);
+      return [p.x0 + (p.x1 - p.x0) * e + Math.sin(u * 9) * 1.5 * kk, p.y0 + (p.y1 - p.y0) * e]; }
+    if(p.kind === 2) return [p.x0 + p.vx * a + Math.sin(a * p.sw + p.ph) * p.amp, p.y0 + p.vy * a + .5 * p.gr * a * a];
+    const e = Math.exp(-p.k * a), f = (1 - e) / p.k;
+    return [p.x0 + p.vx * f, p.y0 + p.vy * f + p.gr / p.k * (a - f)];
+  };
+  const S = {
+    P, at,
+    /* a shell from (x0, y0) to (x1, y1), climbing for d, shedding sparks */
+    shell(t, d, x0, y0, x1, y1){
+      P.push({ kind: 1, t0: t, life: d, x0, y0, x1, y1, col: "g", w: 2.6 * kk, tr: .16, hs: 7 * kk });
+      for(let i = 0; i < 12; i++){
+        const ti = d * (i / 12) * .92, pp = at({ kind: 1, life: d, x0, y0, x1, y1 }, ti);
+        P.push({ kind: 0, t0: t + ti, life: hfxR(.3, .55), x0: pp[0], y0: pp[1], vx: hfxR(-30, 30) * kk, vy: hfxR(10, 50) * kk, k: 3, gr: 160 * kk,
+          col: i % 3 ? "g" : "w", w: 1.1 * kk, tr: .07, hs: 3.4 * kk });
+      }
+    },
+    /* a burst at (x, y) of radius R: type peony / chrys / willow / ring */
+    burst(t, x, y, R, o){
+      const n = o.n, cols = o.cols, type = o.type || "peony", k = type === "willow" ? 1.5 : 2.6;
+      const gr = (type === "willow" ? 150 : 55) * kk;
+      for(let i = 0; i < n; i++){
+        const a = (i / n) * Math.PI * 2 + hfxR(-.06, .06), inner = type !== "ring" && i % 4 === 3;
+        const sf = inner ? hfxR(.45, .78) : hfxR(.88, 1.02), v = R * k * sf * (type === "willow" ? .82 : 1);
+        P.push({ kind: 0, t0: t, life: (o.life || 1.6) * hfxR(.9, 1.08), x0: x, y0: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, k, gr,
+          col: cols[i % cols.length], col2: o.to || null, w: (type === "willow" ? 1.7 : 2.2) * kk,
+          tr: type === "willow" ? .5 : type === "chrys" ? .24 : .13, hs: (type === "willow" ? 5 : 6.5) * kk, strobe: type === "chrys" || !!o.strobe });
+      }
+      /* a white heart for the bigger ones */
+      if(o.pistil) for(let i = 0; i < o.pistil; i++){
+        const a = (i / o.pistil) * Math.PI * 2, v = R * 2.6 * .34;
+        P.push({ kind: 0, t0: t, life: .8, x0: x, y0: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, k: 2.6, gr: 40 * kk, col: "w", w: 1.6 * kk, tr: .1, hs: 5 * kk });
+      }
+    },
+    /* the crackle: a flash and a few tiny sparks, here and there */
+    crackle(t, x, y){
+      P.push({ kind: 3, t0: t, life: .14, x0: x, y0: y, vx: 0, vy: 0, k: 1, gr: 0, col: "w", w: 0, tr: 0, hs: 11 * kk });
+      for(let j = 0; j < 4; j++){ const a = hfxR(0, Math.PI * 2), v = hfxR(60, 120) * kk;
+        P.push({ kind: 0, t0: t, life: hfxR(.22, .36), x0: x, y0: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, k: 5, gr: 60 * kk, col: j % 2 ? "g" : "w", w: 1 * kk, tr: .05, hs: 3 * kk }); }
+    },
+    /* an ember, drifting down and fading slowly */
+    ember(t, x, y, life){
+      P.push({ kind: 2, t0: t, life, x0: x, y0: y, vx: hfxR(-8, 8) * kk, vy: hfxR(4, 16) * kk, gr: hfxR(6, 14) * kk, sw: hfxR(1.4, 2.6), ph: hfxR(0, 6.3), amp: hfxR(3, 9) * kk,
+        col: ["g", "m", "v", "g"][P.length % 4], w: 0, tr: 0, hs: hfxR(4, 6.5) * kk });
+    }
+  };
+  return S;
+}
+/* Draws show `S` on a new canvas W x H in `parent` until `end` seconds. */
+function hfxFwSky(parent, c, S, W, H, end){
+  const cv = document.createElement("canvas");
+  cv.className = "hfx-fw-sky";
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = Math.max(1, Math.round(W * dpr)); cv.height = Math.max(1, Math.round(H * dpr));
+  cv.style.width = W + "px"; cv.style.height = H + "px";
+  parent.appendChild(cv);
+  const g = cv.getContext("2d");
+  if(!g) return cv;
+  const heads = hfxFwHeads(), P = S.P, at = S.at, LV = [[.35, .22], [.62, .45], [.92, .8]];
+  const css = {}; Object.keys(HFX_FW_COL).forEach(k => { const q = HFX_FW_COL[k]; css[k] = "rgb(" + q[0] + "," + q[1] + "," + q[2] + ")"; });
+  let t0 = performance.now(), raf = 0, stopAt = end, dead = false;
+  const bright = (p, a) => {
+    const u = a / p.life;
+    if(p.kind === 3) return 1 - u;
+    if(p.kind === 2) return Math.pow(1 - u, 1.5) * (.75 + .25 * Math.sin(a * 9 + p.ph));
+    let b = u < .58 ? 1 : 1 - Math.pow((u - .58) / .42, 1.4);
+    if(p.strobe && u > .5) b *= ((Math.floor(a * 22 + p.x0 + p.vx) % 3) ? 1.15 : .12);
+    return Math.max(0, Math.min(1, b));
+  };
+  const draw = t => {
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.globalCompositeOperation = "source-over";
+    g.clearRect(0, 0, W, H);
+    g.globalCompositeOperation = "lighter";
+    g.lineCap = "round";
+    const paths = {}, live = [];
+    for(let i = 0; i < P.length; i++){
+      const p = P[i], a = t - p.t0;
+      if(a < 0 || a > p.life) continue;
+      const b = bright(p, a);
+      if(b <= .01) continue;
+      const col = p.col2 && a > p.life * .45 ? p.col2 : p.col, h = at(p, a);
+      live.push(p, h, b, col);
+      if(p.tr > 0){
+        const bq = Math.ceil(b * 4);
+        let prev = h;
+        for(let l = 2; l >= 0; l--){
+          const q = at(p, Math.max(0, a - p.tr * (3 - l) / 3)), wq = Math.round(p.w * 4) / 4, key = col + l + bq + "|" + wq;
+          (paths[key] || (paths[key] = { col, l, bq, w: wq, pts: [] })).pts.push(prev[0], prev[1], q[0], q[1]);
+          prev = q;
+        }
+      }
+    }
+    for(const key in paths){
+      const s = paths[key], pts = s.pts;
+      g.strokeStyle = css[s.col]; g.globalAlpha = LV[s.l][1] * s.bq / 4;
+      g.lineWidth = LV[s.l][0] * s.w;
+      g.beginPath();
+      for(let i = 0; i < pts.length; i += 4){ g.moveTo(pts[i], pts[i + 1]); g.lineTo(pts[i + 2], pts[i + 3]); }
+      g.stroke();
+    }
+    for(let i = 0; i < live.length; i += 4){
+      const p = live[i], h = live[i + 1], b = live[i + 2], hs = p.hs * (p.kind === 3 ? 1 + (t - p.t0) * 4 : 1);
+      g.globalAlpha = b;
+      g.drawImage(heads[live[i + 3]], h[0] - hs, h[1] - hs, hs * 2, hs * 2);
+    }
+    g.globalAlpha = 1;
+  };
+  const frame = () => {
+    raf = 0;
+    if(dead) return;
+    const t = (performance.now() - t0) / 1000;
+    if(t >= stopAt){ g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height); return; }
+    try{ draw(t); }catch(e){ return; }
+    raf = requestAnimationFrame(frame);
+  };
+  raf = requestAnimationFrame(frame);
+  /* stopped: it goes on drawing through the layer's fade, then stops */
+  hfxOnEnd(c, fade => { if(fade){ stopAt = Math.min(stopAt, (performance.now() - t0) / 1000 + .7); } else { dead = true; if(raf) cancelAnimationFrame(raf); } });
+  return cv;
+}
+function hfxFireworks(scr, bx, c){
+  const r = c.br, small = c.vw < 600, mini = !!c.frame, kk = mini ? .55 : small ? 1 : 1.15;
+  const rgba = (key, a) => { const q = HFX_FW_COL[key]; return "rgba(" + q[0] + "," + q[1] + "," + q[2] + "," + a + ")"; };
+  /* when each burst goes, for the box's flashes */
+  const flashes = [];
+  let litAt = 1;
+  if(scr){
+    const W = c.vw, H = c.vh, T = HFX_FW_TOT;
+    if(!c.noDim) hfxMk(scr, "i", "hfx-fw-dim", { "--tot": T });
+    const S = hfxFwShow(kk);
+    const R = Math.min(W * (small ? .3 : .22), H * .2, 230);
+    /* the sky above the box: where the bursts go */
+    const yTop = Math.max(R * .8, H * .1), yBot = Math.max(yTop + 30, r.top - R * .6 - 16);
+    const Y = f => yTop + (yBot - yTop) * f, X = f => R * .7 + (W - R * 1.4) * f;
+    const from = f => [r.left + r.width * f, r.top + 2];
+    const glow = (t, x, y, rr, key) => { hfxMk(scr, "i", "hfx-fw-glow", { left: x + "px", top: y + "px", "--gs": rr * 3.4, "--c": rgba(key, .5), "--t": t, "--d": 1.5 }); flashes.push([t, key]); };
+    const shots = [
+      /* launch, climb, from (across the box), to (x, y in the sky), radius, the burst */
+      [.25, .75, .32, .26, .55, 1, { type: "peony", cols: ["m"], n: small ? 44 : 56, pistil: 14, life: 1.6 }, "m"],
+      [.6,  .8,  .7,  .74, .32, .95, { type: "chrys", cols: ["c"], n: small ? 46 : 60, life: 1.9 }, "c"],
+      [1.0, .85, .5,  .5,  .05, 1.05, { type: "ring", cols: ["m"], to: "g", n: small ? 40 : 52, life: 1.7 }, "m"],
+      [1.45, .8, .18, .16, .72, .9, { type: "willow", cols: ["g"], n: small ? 36 : 46, life: 2.7 }, "g"],
+      [1.6, .75, .86, .86, .62, .7, { type: "peony", cols: ["c", "v"], n: small ? 30 : 40, life: 1.5 }, "c"],
+      /* the finale: three together, the biggest in the middle */
+      [2.55, .8, .25, .22, .42, 1, { type: "peony", cols: ["c"], n: small ? 44 : 56, life: 1.8, strobe: true }, "c"],
+      [2.5, .95, .5,  .5,  .12, 1.4, { type: "chrys", cols: ["m", "c", "w"], n: small ? 84 : 108, pistil: 18, life: 2 }, "m"],
+      [2.6, .8, .75, .78, .44, 1, { type: "peony", cols: ["m"], n: small ? 44 : 56, life: 1.8, strobe: true }, "m"]
+    ];
+    let fin = null;
+    shots.forEach((s, i) => {
+      const o = from(s[2]), x = X(s[3]), y = Y(s[4]), rr = R * s[5], tb = s[0] + s[1];
+      S.shell(s[0], s[1], o[0], o[1], x, y);
+      S.burst(tb, x, y, rr, s[6]);
+      glow(tb, x, y, rr, s[7]);
+      if(i === 6){ fin = { x, y, rr, t: tb }; litAt = tb; }
+      /* the box lights where each one leaves it */
+      if(bx) hfxMk(bx, "i", "hfx-fw-mortar", { left: (r.width * s[2]) + "px", top: "0px", "--ms": 54 * kk, "--t": s[0] });
+    });
+    /* it crackles, then the embers come down */
+    for(let i = 0; i < (small ? 26 : 36); i++){
+      const a = hfxR(0, Math.PI * 2), d = fin.rr * Math.sqrt(hfxR(.15, 1)) * .95;
+      S.crackle(fin.t + 1.05 + hfxR(0, .7), fin.x + Math.cos(a) * d, fin.y + Math.sin(a) * d + fin.rr * .2);
+    }
+    for(let i = 0; i < (small ? 34 : 48); i++){
+      const t = hfxR(3.9, 4.7);
+      S.ember(t, hfxR(R * .3, W - R * .3), Y(hfxR(.05, .8)) + hfxR(0, R * .5), Math.min(T - .25 - t, hfxR(2.1, 2.6)));
+    }
+    const sky = hfxFwSky(scr, c, S, W, H, T - .1);
+    sky.style.setProperty("--tot", T + "s");
+  }
+  if(bx){
+    if(c.boxOnly){
+      /* the box on its own: its own small show, out of the number */
+      const W = c.bw, H = c.bh, k2 = c.mini ? .42 : .62, S = hfxFwShow(k2), R = Math.min(H * .34, W * .2);
+      const top = Math.max(H * .12, R * .7);
+      const shots = [[.1, .45, .35, .3, .35, "m", "peony"], [.45, .45, .65, .74, .25, "c", "chrys"], [.85, .5, .5, .5, .2, "g", "willow"],
+        [1.45, .5, .3, .2, .3, "c", "peony"], [1.5, .5, .7, .82, .3, "m", "peony"], [1.55, .55, .5, .52, .15, "w", "chrys"]];
+      shots.forEach(s => {
+        const x0 = c.p.x + c.p.w * s[2], x = W * s[3], y = top + (H * .55 - top) * s[4], tb = s[0] + s[1];
+        S.shell(s[0], s[1], x0, c.p.y + 2, x, y);
+        S.burst(tb, x, y, R * (s[5] === "w" ? 1.25 : 1), { type: s[6], cols: s[5] === "w" ? ["m", "c", "w"] : [s[5]], n: s[5] === "w" ? 40 : 26, life: s[6] === "willow" ? 1.9 : 1.3 });
+        flashes.push([tb, s[5] === "w" ? "m" : s[5]]);
+        litAt = tb;
+      });
+      for(let i = 0; i < 12; i++) S.ember(hfxR(2.1, 2.4), hfxR(.1, .9) * W, hfxR(.1, .5) * H, hfxR(.9, 1.1));
+      const sky = hfxFwSky(bx, c, S, W, H, HFX_FW_BOX_TOT - .1);
+      sky.style.setProperty("--tot", HFX_FW_BOX_TOT + "s");
+    }
+    /* each burst flashes on the box's rim, in its colour */
+    flashes.forEach(f => hfxMk(bx, "i", "hfx-fw-rim", { "--t": f[0], "--c": rgba(f[1], .7) }));
+    hfxLitText(bx, c, { mode: "flash", color: "#FFF6FB", glow: "#FF5CD6", dl: litAt, dur: 2 });
+    for(let i = 0; i < (c.mini ? 3 : 6); i++){
+      hfxPiece(bx, "hfx-glint", hfxGlintURL(), c.p.x + c.p.w * hfxR(.05, .95), c.p.y + c.p.h * hfxR(.1, .9), (c.mini ? 9 : 15), { "--t": litAt + .3 + i * .3, "--d": 1.3 });
+    }
+  }
+}
+
 /* ---- BUBBLES, ON THE SCREEN'S OWN CARDS (round 3) ----
    "Improvements can be done for them all." The cards are part of it now:
    a soap film's rainbow sheen slides across every card as the bubbles
@@ -70757,9 +71023,10 @@ function hfxConfettiBox(bx, c){
     p.style.animationDuration = (1.4 + Math.random() * 1).toFixed(2) + "s";
   }
 }
-/* Every effect that can play - the four candidates for the first two
-   rungs included, whether or not HUNDO_FX lists them. */
-const HUNDO_FX_BUILD = { blackhole: hfxBlackHole, underwater: hfxUnderwater,
+/* Every effect that can play, whether or not HUNDO_FX lists it: the
+   Black Hole and Underwater (the 50 before Fireworks) stay built, so
+   bringing one back is a line in HUNDO_FX. */
+const HUNDO_FX_BUILD = { fireworks: hfxFireworks, blackhole: hfxBlackHole, underwater: hfxUnderwater,
   worldtree: hfxWorldTree, bubbles: hfxBubbles, ufo: hfxUfo };
 
 /* The 100% in the effect's colours: a copy laid exactly over the real
@@ -70863,10 +71130,11 @@ function playHundoFx(id, opts){
     }
   }
   if(bx) opts.box.appendChild(bx);
-  /* The UFO lands ON the box and the black hole opens BEHIND it: the box
-     is lifted over the screen layer while they play, so the number stays
-     clear of the dark. */
-  if((id === "ufo" || id === "blackhole") && scr && opts.box) opts.box.classList.add("hfx-over");
+  /* The UFO lands ON the box, the black hole opens BEHIND it and the
+     fireworks' shells leave from behind its top edge: the box is lifted
+     over the screen layer while they play, so the number stays clear of
+     the dark. */
+  if((id === "ufo" || id === "blackhole" || id === "fireworks") && scr && opts.box) opts.box.classList.add("hfx-over");
   /* WHEN the colours come on: at once, or (the UFO) as its beam reaches
      the box - "the edge lights up before the alien doesn't beam" - and
      they stay (above). */
@@ -70951,6 +71219,15 @@ function buildHundoFxStill(id){
   if(id === "bubbles"){
     body = '<defs><radialGradient id="' + g + 'a" cx="50%" cy="50%" r="50%"><stop offset=".62" stop-color="#9FE8FF" stop-opacity="0"/><stop offset=".82" stop-color="#C79BFF" stop-opacity=".55"/><stop offset=".94" stop-color="#FFB3D1" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity=".2"/></radialGradient></defs>' +
       [[17, 30, 12], [33, 17, 9], [34, 37, 6]].map(b => '<circle cx="' + b[0] + '" cy="' + b[1] + '" r="' + b[2] + '" fill="url(#' + g + 'a)" stroke="#fff" stroke-opacity=".45" stroke-width=".8"/><ellipse cx="' + (b[0] - b[2] * .38) + '" cy="' + (b[1] - b[2] * .42) + '" rx="' + (b[2] * .22) + '" ry="' + (b[2] * .14) + '" fill="#fff" opacity=".9" transform="rotate(-35 ' + (b[0] - b[2] * .38) + ' ' + (b[1] - b[2] * .42) + ')"/>').join("");
+  } else if(id === "fireworks"){
+    /* three bursts over a climbing trail */
+    const bursts = [[16, 17, 10, "#FF5CD6"], [33, 13, 8, "#5CE3FF"], [27, 29, 6, "#FFD38C"]];
+    body = '<defs><radialGradient id="' + g + 'f"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#FF5CD6" stop-opacity="0"/></radialGradient></defs>' +
+      '<circle cx="16" cy="17" r="11" fill="url(#' + g + 'f)" opacity=".5"/><path d="M24 47 Q25 40 27 31" stroke="#FFE7B4" stroke-width="1.4" stroke-linecap="round" fill="none" stroke-opacity=".8"/>' +
+      bursts.map(b => { let rays = ""; for(let i = 0; i < 12; i++){ const a = i / 12 * Math.PI * 2, r0 = b[2] * .35, r1 = b[2];
+        rays += '<path d="M' + (b[0] + Math.cos(a) * r0).toFixed(1) + ' ' + (b[1] + Math.sin(a) * r0).toFixed(1) + ' L' + (b[0] + Math.cos(a) * r1).toFixed(1) + ' ' + (b[1] + Math.sin(a) * r1).toFixed(1) + '"/>' +
+          '<circle cx="' + (b[0] + Math.cos(a) * r1).toFixed(1) + '" cy="' + (b[1] + Math.sin(a) * r1).toFixed(1) + '" r=".9" fill="#fff"/>'; }
+        return '<g stroke="' + b[3] + '" stroke-width="1.2" stroke-linecap="round">' + rays + '</g>'; }).join("");
   } else if(id === "blackhole"){
     body = '<defs><radialGradient id="' + g + 'd"><stop offset=".3" stop-color="#FFE7B8"/><stop offset=".55" stop-color="#FF9A4D" stop-opacity=".8"/><stop offset="1" stop-color="#5A2A9E" stop-opacity="0"/></radialGradient></defs>' +
       '<ellipse cx="24" cy="24" rx="22" ry="8" fill="url(#' + g + 'd)" transform="rotate(-12 24 24)"/><circle cx="24" cy="24" r="7.5" fill="#000"/><circle cx="24" cy="24" r="8.3" fill="none" stroke="#FFE8D2" stroke-width="1"/>' +

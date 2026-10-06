@@ -12661,31 +12661,51 @@ at the main menu. The others will get it in the result screen."*
 
 **The ladder: FOUR to earn.** `HUNDO_FX` (above `ULTIMATE_TOP`, ahead of
 everything that runs at boot, because `ultimateProgress()` reads it) is the
-ONE table: **Confetti 0** (everybody's - `celebrate()`, untouched), **Neon
-Trails 50, World Tree 100, Bubbles 200, UFO 350**, counted in
+ONE table: **Confetti 0** (everybody's - `celebrate()`, untouched),
+**Fireworks 50, World Tree 100, Bubbles 200, UFO 350**, counted in
 `hundosOf(store)` (= `lifetime.perfectTests`). Holding one is not stored - it
 is read off the count - only the pick is: `store.hundoFx`, default
 `"confetti"` in the fresh store, `applyLoadedData()` (any non-empty string is
 kept, so a later build's id survives) and the reset; like `store.banner` it is
 in no merge list. `hundoFxInUse()` falls back to Confetti when the pick is not
-held here (an old `"aurora"` or `"fireworks"` pick plays Confetti). Against
-the class as it stood (top 158, 143, then 59, 50, 46; median 1): two people
-hold Neon Trails and the World Tree the day this ships, three more hold Neon
-Trails; nobody holds Bubbles or the UFO.
+held here (an old `"aurora"` or `"blackhole"` pick plays Confetti, and
+Customize then shows Confetti picked, with the 50 held and one tap away).
+Against the class as it stood (top 158, 143, then 59, 50, 46; median 1): two
+people hold the 50 and the World Tree the day this ships, three more hold the
+50; nobody holds Bubbles or the UFO.
 
-**The 50 slot is still Madison's pick.** Fireworks, Starfall, Aurora and
-Galaxy are retired and their code is gone. Three new candidates were built
-and all three stay in the file, whole, behind `HUNDO_FX_BUILD`:
-- **Neon Trails** (shipped): light-trails race out of the box's corners,
-  trace every card on the screen and the screen's own edge, then flare and
-  fade.
-- **Party Poppers**: two poppers at the box's top corners bang - streamers
-  and fluttering paper confetti across the screen.
-- **Hologram**: the box projects a grid and a glitching holographic 100%; a
-  scan beam rebuilds each card in outline.
-
-Swapping is the id and name in the `HUNDO_FX` row. Each has its own
-`HFX_TINT`, still and `hfxWarm` sprites, so nothing else changes.
+**The 50 is Fireworks (round 4).** *"Still not a fan of that giddy one. Maybe
+the first one should just be fireworks or something?"* - about the Black
+Hole, which pulled every card on the screen into the box and swirled it.
+So **the screen does not move at all**; all the drama is in the sky
+(`hfxFireworks`). The screen dims a little (0.5, against the hole's 0.8+),
+shells leave the 100% box's top edge one after another on sparking trails
+(the box is lifted over the layer, `.hfx-over`, so they climb out from
+behind it) and burst across the upper screen - a magenta peony, a cyan
+chrysanthemum that glitters as it dies, a ring that turns from magenta to
+gold, a gold willow that hangs, a small cyan/violet one - then three go up
+together for the finale, it crackles, and embers drift down and fade slowly
+while the dim lifts (7s; tail from 5s). The box lights as the first shell
+bursts (`HFX_TINT.fireworks.on` 950), flashes on its rim with each burst and
+keeps the colours: hot magenta `#FF5CD6`, the 100% from pale gold through
+magenta to cyan, the bar magenta to pale gold. A step up from Confetti, a
+step below the Tree, Bubbles and the UFO.
+- **The sky is ONE CANVAS** (`hfxFwShow` builds the sparks up front,
+  `hfxFwSky` draws them) - the one effect not made of elements, because a
+  burst is a few hundred sparks with trails. Every spark is a closed-form
+  path (drag and gravity), so a frame is the same picture at any frame rate
+  and a trail is the spark's own path over the last fraction of a second;
+  trails are batched into one stroke per colour, alpha and width, heads are
+  one pre-drawn glow each (`hfxFwHeads`), all added (`lighter`) so crossings
+  burn white. Backing capped at 2x. The loop ends at the effect's total, or
+  is stopped (`hfxOnEnd`), drawing on through a stop's fade. The dim, the
+  light each burst throws (`.hfx-fw-glow`) and the box's pieces are plain
+  layers.
+- In Customize and the pop-up it plays a small show inside the box, out of
+  the number; on the miniature screen, the whole thing.
+- **The Black Hole and Underwater stay built** in `HUNDO_FX_BUILD` (not
+  listed); bringing one back is the id and name in the `HUNDO_FX` row.
+  Neon Trails, Party Poppers, Hologram and the first Fireworks are gone.
 
 **Every effect starts AT the 100% box and spreads out**, plays across the
 screen (a `.confetti-layer.hfx-layer`) and inside the box (`.hfx-box`). The
@@ -12830,8 +12850,9 @@ Preview. Reduce motion: each tile shows a still (`buildHundoFxStill`).
   sitting. **The record DEFAULTS TO NOT SHOWN, against the usual rule, on
   purpose**: missing in `applyLoadedData` it is `[]`, and
   `ensureUnlocksShown()` never seeds it with what is held. So every existing
-  account at 50+ hundos gets its pop-ups once (at 100+, Neon Trails then the
-  World Tree, back to back); a fresh account at 0 sees nothing. A card counts
+  account at 50+ hundos gets its pop-ups once (at 100+, Fireworks then the
+  World Tree, back to back); a fresh account at 0 sees nothing. Somebody
+  shown the Black Hole is owed Fireworks, which is right - it is new. A card counts
   as shown once it has been up for `SPOT_SEEN_MS` or was tapped away (the
   build 312 rule) - one cut short by leaving Home stays owed and comes back.
 - **Crossed in a run: the results screen** (`rsUnlockItems` ->
@@ -12854,22 +12875,28 @@ holding it without 350 hundos (the top is 158). Check the board before
 shipping (`tools/firestore-admin.py list`, anybody wearing `zenith`).
 
 **Gates.** `check_b313_fx`: five tiles in order with Confetti first and live;
-the ladder 50/100/200/350; locked by hundos (0: only Confetti; 120: Neon
-Trails and World Tree); picking; the field saved, read back, defaulted, and
-the fallback; for each of the three candidates, the Tree, Bubbles and the UFO
+the ladder 50/100/200/350, **its names and ids read off `HUNDO_FX`, never
+written into the gate** (so the next swap of the 50 does not fail the app for
+being right); locked by hundos (0: only Confetti; 120: the 50 and World
+Tree); picking; the field saved, read back, defaulted, and the fallback; a
+saved Black Hole pick plays Confetti with Confetti's tile picked and the 50
+one tap away; **Fireworks: the canvas lit only over the box's top edge at
+0.42s and across the sky above it by 3.9s, the dim between 0.3 and 0.6, and
+every card's page rect identical every 200ms from 0.4s to the end with no
+script animation on any card**; for Fireworks, the Black Hole, Underwater, the Tree, Bubbles and the UFO
 on a real 100%: it plays on screen and in the box, **the border is not gold
 during and gold after, and the unit progress bar's computed gradient is not
 gold during and gold (`rgb(217, 169, 58)`) after**, the tail fades rather than
 cuts, everything is gone after; pixel-measured spread from the box (every
 animation paused, the screen with and without the layers); for the UFO, the
 box still gold before the beam, and its feet on the box's top edge; the Home
-pop-ups at 120 hundos (Neon Trails then World Tree, live preview, gone on
-close, recorded, none next launch); none at 0; crossing 50 in a run (Neon
-Trails pop-up and row on results, not again on Home); Zenith one short at 300
+pop-ups at 120 hundos (the 50 then World Tree, live preview, gone on
+close, recorded, none next launch); none at 0; crossing 50 in a run (the 50's
+pop-up and row on results, not again on Home); Zenith one short at 300
 and held at 350. `USED_ACCOUNT` carries `unlocksShown.fx` for every effect (an
 up-to-date account has had its pop-ups). **`check_b235` plays the queue
 out**: its account has 141 hundos and `unlocksShown` set to null, so it is
-legitimately owed Neon Trails and the World Tree after Solar and Zeus; it now
+legitimately owed the 50 and the World Tree after Solar and Zeus; it now
 taps them through and asserts them, then that nothing is left and nothing
 comes back next visit.
 
