@@ -43468,11 +43468,30 @@ function handleRemoteReset(){
   showToast("This account was reset from another device.");
 }
 
+/* ---- FEWER WRITES: THE CLASS RAN OUT (build 312.1) ----
+   On Oct 5 the project hit Firestore's free daily quota - 20,000 writes -
+   at 21:58 UTC, and from then until midnight Pacific EVERY write from
+   every phone failed: progress, rows, presence. Every save pushed the
+   account 2.5s after the last answer, and since build 298 each push is
+   two writes (the account and its high-water mark), so a class studying
+   for a test spent a write pair per question. Now the account goes up
+   at most once a minute while somebody is answering - the first push
+   after a quiet spell still goes in 2.5s - and the high-water mark at
+   most every ten minutes. Leaving the app (publishNow, on hide) still
+   pushes both at once, so nothing waits on a closed app; progress was
+   never at risk in between, it is saved on the phone the whole time. */
+const CLOUD_PUSH_MIN_GAP_MS = 60 * 1000;
+const FLOOR_MIN_GAP_MS = 10 * 60 * 1000;
+let lastCloudPushAt = 0, lastFloorPushAt = 0, lastPushCode = "";
+/* the gaps are per account: a device that has just switched to another
+   code (a sign-up, a link) pushes that one at once */
+function sincePush(at){ return lastPushCode === syncCode ? Date.now() - at : Infinity; }
 function scheduleCloudPush(){
   if(!fbDb || !syncCode) return;
   if(cloudConfirmedFor !== syncCode){ cloudPushPending = true; ensureCloudConfirmed(); return; }
   clearTimeout(cloudPushTimer);
-  cloudPushTimer = setTimeout(pushToCloud, 2500);
+  const wait = Math.max(2500, CLOUD_PUSH_MIN_GAP_MS - sincePush(lastCloudPushAt));
+  cloudPushTimer = setTimeout(() => { cloudPushTimer = null; pushToCloud(); }, wait);
 }
 
 /* ---- THE ROW IS A SCOREBOARD, NOT A LOG ----
@@ -43657,7 +43676,15 @@ function writeLeaderboardRow(row){
    the end of every kind of run publishes rather than queues. */
 function publishNow(){
   if(!fbDb || !syncCode) return;
-  try{ if(cloudPushTimer){ clearTimeout(cloudPushTimer); cloudPushTimer = null; pushToCloud(); } }catch(e){}
+  try{
+    if(cloudPushTimer){ clearTimeout(cloudPushTimer); cloudPushTimer = null; pushToCloud(true); }
+    /* nothing queued, but the high-water mark is behind the account: it
+       goes now, so leaving never strands it ten minutes back */
+    else if(floorMergedFor === syncCode && cloudConfirmedFor === syncCode && lastFloorPushAt < lastCloudPushAt){
+      lastFloorPushAt = Date.now();
+      floorRefFor(syncCode).set(store).catch(() => {});
+    }
+  }catch(e){}
   try{ if(store.leaderboardOptIn) flushLeaderboardRow(); }catch(e){}
 }
 document.addEventListener("visibilitychange", () => {
@@ -43822,14 +43849,19 @@ function markCloudConfirmed(docExists){
     }).catch(() => settle(null));
   } catch(e){ settle(null); }
 }
-function pushToCloud(){
+function pushToCloud(leaving){
   if(!fbDb || !syncCode) return;
   if(cloudConfirmedFor !== syncCode){ cloudPushPending = true; ensureCloudConfirmed(); return; }
+  clearTimeout(cloudPushTimer); cloudPushTimer = null;
+  if(lastPushCode !== syncCode){ lastPushCode = syncCode; lastFloorPushAt = 0; }
+  lastCloudPushAt = Date.now();
   try {
     fbDb.collection("progress").doc(syncCode).set(store).catch(() => {});
   } catch(e){}
-  /* the high-water mark, once this launch has read it (see above) */
-  if(floorMergedFor === syncCode){
+  /* the high-water mark, once this launch has read it (see above) - at
+     most every ten minutes, and always on the way out */
+  if(floorMergedFor === syncCode && (leaving === true || sincePush(lastFloorPushAt) >= FLOOR_MIN_GAP_MS)){
+    lastFloorPushAt = Date.now();
     try { floorRefFor(syncCode).set(store).catch(() => {}); } catch(e){}
   }
   /* A separate, deliberately minimal collection \u2014 only what's needed
