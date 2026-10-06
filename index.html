@@ -42096,16 +42096,20 @@ function applyLoadedData(got){
   store.levelPreserved = typeof got.levelPreserved === "boolean"
     ? got.levelPreserved : false;
   /* THE GRANDFATHER FLOOR (build 314) - see badgeWallLevel(). An account
-     that has never had one gets the level its XP gives ungated - the
-     HIGHER of build 313's curve and this one's (levelFromPoints313), so
-     neither the curve change nor the badge wall can take a level off anybody:
-     whoever is already past their wall keeps the level they have and
-     only stops climbing. 0 for an account with no XP, which is every new
-     sign-up. Merged by max, so of two copies the higher floor wins. */
+     that has never had one gets the level it holds NOW, on the OLD curve
+     (legacyLevelOfPoints) - never the new, cheaper one: "by leveling us
+     up even more, the discrepancy of badges to levels WILL get even
+     more". Whoever is already past their gate keeps exactly the level
+     they have, and the XP the new curve would have turned into levels
+     shows as overflow on a full bar until their badges catch up; whoever
+     is inside their gate gets the new curve's boost. This also covers a
+     copy from an older build arriving with no floor: it is defaulted
+     from the old curve too, so the roll-out cannot leak a lift in.
+     0 for an account with no XP, which is every new sign-up. Merged by
+     max, so of two copies the higher floor wins. */
   store.levelFloor = (typeof got.levelFloor === "number" && isFinite(got.levelFloor))
     ? Math.max(0, Math.min(LEVEL_CAP, Math.floor(got.levelFloor)))
-    : ((got.lifetime && Number(got.lifetime.points) > 0)
-        ? Math.max(levelFromPoints(got.lifetime.points), levelFromPoints313(got.lifetime.points)) : 0);
+    : ((got.lifetime && Number(got.lifetime.points) > 0) ? legacyLevelOfPoints(got.lifetime.points) : 0);
   /* Defaults to 0 for an existing account, like levelPreserved and for
      the same reason: grantRetroBadgesOnce() is SUPPOSED to run once for
      people who are already here. */
@@ -45760,18 +45764,15 @@ const TIER_UNLOCKS = {
      new badge line measures, and every badge count is lower. The badge
      is the gate and the level is always already there: at 3 badges you
      are level 33 against the 29 asked, at 14 you are 73 against 71. */
-  /* ---- RE-MEASURED IN BUILD 314 (one-rate curve, 3/2/1-hundo bands) ----
+  /* ---- RE-MEASURED IN BUILD 314 (one-rate curve, live badge bands) ----
      The badge line, cheapest badges first at one flawless run per hundo,
-     is now 1 -> 6, 3 -> 13, 5 -> 19, 7 -> 24, 9 -> 28, 12 -> 33,
-     14 -> 36, 16 -> 40: every badge in the app costs about 36,000 XP of
-     work, less than Gold's level. So for anybody who sits whole units the
-     LEVEL is what gates every rank, and the badge wall below
-     (badgeWallLevel) only holds somebody who climbs on partial runs -
-     which is exactly who "you can't get past that next rank's level until
-     you hit the badges needed" is for. The numbers were kept as they are,
-     by decision; re-measure them with check-curve section 3 when the
-     curve, the bands or the bank move. Each rank's level is now ALSO a
-     wall its badges open - the same numbers, two jobs. */
+     is now 1 -> 12, 3 -> 25, 5 -> 33, 7 -> 40, 9 -> 46, 12 -> 53,
+     14 -> 57, 16 -> 62. Badge work alone still lands short of every
+     rank's level, so a rank asks for both, as it has since build 210.
+     Each rank's level is now ALSO a gate its badges open (badgeWallLevel):
+     the same numbers doing two jobs. Kept as they are, by decision;
+     re-measure with check-curve section 3 when the curve, the bands or
+     the bank move. */
   rookie:   { level: 21, badges: 1,  label: "Reach level 21 and 1 badge" },
   ranger:   { level: 29, badges: 3,  label: "Reach level 29 and 3 badges" },
   veteran:  { level: 36, badges: 5,  label: "Reach level 36 and 5 badges" },
@@ -45948,9 +45949,9 @@ const LEVEL_FREEZE_THROUGH = 25;
    build 313 charged, so every XP total reads the same level or higher
    (check-curve section 2, and the real backup - see CLAUDE.md). The
    numbers this replaced: a x2.0 step into 26, +1.99% to 45, +8.35%
-   past it, ~600,000 to the cap - kept as levelFromPoints313(). */
-const LEVEL_STEP_UP = 1.18;
-const LEVEL_LATE_GROWTH = 1.0365;
+   past it, ~600,000 to the cap - kept as legacyLevelOfPoints(). */
+const LEVEL_STEP_UP = 1.0295;
+const LEVEL_LATE_GROWTH = 1.0295;
 /* A guard rather than a working value - the curve tops out at 77,649 a
    level, so this never binds. It exists so a future change to the
    growth rate cannot quietly produce a level nobody can afford. */
@@ -46052,7 +46053,7 @@ const LEVEL_CAP = 80;
    ranks now ask for study past what their badges pay, which is the
    complaint being answered (high levels, few badges). */
 /* RETIRED IN BUILD 314 with the one-rate curve above: the steep tail
-   past 45 is gone, so nothing reads these. Kept for levelFromPoints313()
+   past 45 is gone, so nothing reads these. Kept for legacyLevelOfPoints()
    and the record. */
 const LEVEL_STEEP_FROM = 45;
 const LEVEL_STEEP_GROWTH = 1.0835;   /* build 213: ~600,000 in all to level 80 (was 1.0601, ~375,000) - the new XP types pay a lot more */
@@ -46097,12 +46098,18 @@ function levelProgress(points){
   };
 }
 function levelFromPoints(points){ return levelProgress(points).level; }
-/* BUILD 313'S CURVE, step for step (x2.0 into 26, +1.99% to 45, +8.35%
-   past it), for one job: the grandfather floor is the HIGHER of the
-   level an account's XP gave on the curve it was earned under and on
-   this one, so neither the curve change nor the badge wall can take a
-   level off anybody. */
-function levelFromPoints313(points){
+/* THE OLD CURVE - build 313's, step for step (x2.0 into 26, +1.99% to
+   45, +8.35% past it) - kept for ONE job: the grandfather floor. An
+   account's floor is the level it held on THIS curve, never the new one.
+   "By giving us at the top more levels, we are already under the badge
+   count needed to rank up, by leveling us up even more, the discrepancy
+   of badges to levels WILL get even more." So nobody loses a level, and
+   nobody is lifted past what their badges allow by the cheaper curve.
+   Floors merge by max, so a floor written from the new curve anywhere -
+   including a copy from an older build that arrives with none - would
+   leak that lift in for good. Everything that defaults a floor calls
+   this, and nothing else. */
+function legacyLevelOfPoints(points){
   const p = Math.max(0, Number(points) || 0);
   const growth = l => l <= LEVEL_FREEZE_THROUGH ? LEVEL_GROWTH
     : l === LEVEL_FREEZE_THROUGH + 1 ? 2.0 : l > LEVEL_STEEP_FROM ? LEVEL_STEEP_GROWTH : 1.0199;
@@ -46468,16 +46475,12 @@ const BADGE_THRESHOLD = 35;
    at or below the one it replaces, so this only ADDS badges - and the
    ones it adds are celebrated on the next finished test, exactly as 210's
    were (grantRetroBadgesOnce, now version 3). */
-/* BUILD 314: three bands by unit size - 40 questions or fewer 3 hundos,
-   41-100 2, over 100 1 (the Penal Code and Arrest, Search and Seizure).
-   Keyed on unitQuestionCount, so a unit added later lands in its band
-   by itself. Every unit is at or below what build 279 asked, so this can
-   only ADD badges; the ones it adds are celebrated on the next test
-   (grantRetroBadgesOnce, BADGE_BANDS_VERSION 4). */
 const BADGE_THRESHOLD_BANDS = [
-  { max: 40,       hundos: 3 },
-  { max: 100,      hundos: 2 },
-  { max: Infinity, hundos: 1 }
+  { max: 25,       hundos: 15 },
+  { max: 50,       hundos: 12 },
+  { max: 100,      hundos: 8  },
+  { max: 200,      hundos: 4  },
+  { max: Infinity, hundos: 2  }
 ];
 /* `var`, not `let`, and that is deliberate. This file has now been taken
    down five separate times by a top-level `let` declared below its first
@@ -46499,7 +46502,7 @@ function unitQuestionCount(name){
 }
 /* A unit the bank does not know falls back to 35 rather than to 5 - an
    id from another build must never hand somebody a badge for nothing. */
-/* "1 to 3 hundos" - the spread the bands actually ask across the bank,
+/* "2 to 15 hundos" - the spread the bands actually ask across the bank,
    read off the function so no copy states a number that has moved
    (build 314). */
 function badgeRangeText(){
@@ -46594,26 +46597,11 @@ function legacyBadgeThreshold210(name){
   }
   return BADGE_THRESHOLD;
 }
-/* Build 279's bands, which 314 lowered: an account on version 3 is owed
-   whatever 314's bands hand it over these. */
-const LEGACY_BADGE_BANDS_279 = [
-  { max: 25, hundos: 15 }, { max: 50, hundos: 12 }, { max: 100, hundos: 8 },
-  { max: 200, hundos: 4 }, { max: Infinity, hundos: 2 }
-];
-function legacyBadgeThreshold279(name){
-  const n = unitQuestionCount(name);
-  if(!n) return BADGE_THRESHOLD;
-  for(let i = 0; i < LEGACY_BADGE_BANDS_279.length; i++){
-    if(n <= LEGACY_BADGE_BANDS_279[i].max) return LEGACY_BADGE_BANDS_279[i].hundos;
-  }
-  return BADGE_THRESHOLD;
-}
-var BADGE_BANDS_VERSION = 4;
+var BADGE_BANDS_VERSION = 3;
 function grantRetroBadgesOnce(){
   if(store.badgeBandsVersion >= BADGE_BANDS_VERSION) return;
   const perf = store.unitPerfects || {};
-  const was = store.badgeBandsVersion >= 3 ? legacyBadgeThreshold279
-    : store.badgeBandsVersion >= 2 ? legacyBadgeThreshold210 : legacyBadgeThreshold209;
+  const was = store.badgeBandsVersion >= 2 ? legacyBadgeThreshold210 : legacyBadgeThreshold209;
   const owed = topicsIn(QUESTIONS).filter(u =>
     (perf[u] || 0) >= badgeThresholdFor(u) && (perf[u] || 0) < was(u));
   /* Added to whatever is still waiting, never in place of it: a badge

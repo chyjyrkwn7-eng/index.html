@@ -915,13 +915,10 @@ def check_update_and_cards(br):
       const all = topicsIn(QUESTIONS);
       store.unitPerfects = store.unitPerfects || {};
       store.unitPerfects[all[0]] = BADGE_THRESHOLD + 7;
-      /* one short of ITS badge (build 314: badges cost 1-3 hundos now, so
-         a typed 4 was already a badge) */
-      const goingU = all.slice(1).find(u => badgeThresholdFor(u) >= 2) || all[1];
-      store.unitPerfects[goingU] = Math.max(1, badgeThresholdFor(goingU) - 1);
+      store.unitPerfects[all[1]] = 4;
       const mk = n => { const row = document.createElement('label');
         row.className = 'pick'; appendUnitProgress(row, n); return row; };
-      const done = mk(all[0]), going = mk(goingU);
+      const done = mk(all[0]), going = mk(all[1]);
       out.badge = !!done.querySelector('.pick-badge.earned');
       out.masteredBar = !!done.querySelector('.pick-barrow');
       out.masteredCount = !!done.querySelector('.pick-bar-count');
@@ -4891,16 +4888,14 @@ def check_b258(br):
       try{
       let p = 0; while(levelProgress(p).level < 30) p += 500; store.lifetime.points = p + 900;
       const us = topicsIn(QUESTIONS); us.forEach(u => store.unitPerfects[u] = 0);
-      /* one short of us[3]'s badge, read off the page (build 314 made a
-         typed 11 a badge in itself) */
-      store.unitPerfects[us[0]] = badgeThresholdFor(us[0]); store.unitPerfects[us[3]] = Math.max(0, badgeThresholdFor(us[3]) - 1);
+      store.unitPerfects[us[0]] = badgeThresholdFor(us[0]); store.unitPerfects[us[3]] = 11;
       store.rankMapSeen = 99; store.rankMapFx244 = true;
       showProfile('profile'); await wait(1400);
       const thr = badgeThresholdFor(us[3]);
       /* build 266: the slower requirement, over the step from the rank held. */
       { const H = TIER_UNLOCKS[rankOf(store)] || {}, nk = TIER_ORDER_FULL[TIER_ORDER_FULL.indexOf(rankOf(store)) + 1], N = TIER_UNLOCKS[nk] || {};
         const b0 = Math.min(H.badges || 0, N.badges || 0);
-        const bdg = 1 >= (N.badges || 0) ? 1 : (1 + store.unitPerfects[us[3]] / thr - b0) / ((N.badges || 0) - b0);
+        const bdg = 1 >= (N.badges || 0) ? 1 : (1 + 11 / thr - b0) / ((N.badges || 0) - b0);
         const lvl = levelOf(store) >= (N.level || 0) ? 1 : 0;
         out.lvlMet = lvl === 1; out.expect = Math.min(lvl === 1 ? 1 : 0.999, bdg); }
       out.rank = rankOf(store); out.level = levelOf(store);
@@ -5798,15 +5793,13 @@ def check_b279_merge(br):
       /* the account being joined: its own name and id, 10 of 15 hundos */
       const main = Object.assign(JSON.parse(JSON.stringify(store)), {
         firstName: 'Main', publicId: 'pubmain00001', lastModified: 5, mergeHold: null,
-        /* one short of the badge on each side, read off the page (build
-           314's 3-hundo band made the typed 10 + 6 a badge already held) */
-        unitPerfects: { [U]: badgeThresholdFor(U) - 1 }, testHistory: [{ label: 'old', playedAt: 1000, pct: 50, units: [U], mode: 'drill' }],
+        unitPerfects: { [U]: 10 }, testHistory: [{ label: 'old', playedAt: 1000, pct: 50, units: [U], mode: 'drill' }],
         studyLog: { '2026-09-30': 60000 }, vrWins: 2 });
       main.lifetime = Object.assign({}, main.lifetime, { points: xpForLevel(20) + 100, correct: 900, answered: 1000 });
       main.stats = { [key0]: { n: 4, m: 1, r: [10] } };
       /* this device, the duplicate: 6 more hundos, its own history */
       store.firstName = 'Dup'; store.publicId = 'pubdup000002';
-      store.unitPerfects = { [U]: 1 };
+      store.unitPerfects = { [U]: 6 };
       store.lifetime = Object.assign({}, store.lifetime, { points: 2000, correct: 170, answered: 190 });
       store.stats = { [key0]: { n: 3, m: 2, r: [20, 30] } };
       store.testHistory = [{ label: 'new', playedAt: 2000, pct: 100, units: [U], mode: 'drill' }];
@@ -5832,7 +5825,7 @@ def check_b279_merge(br):
       const base = xpForLevel(20) + 100 + 2000 + 500;
       out.code = syncCode; out.name = store.firstName; out.pub = store.publicId; out.retired = retired;
       out.level = levelOf(store); out.levelNoBonus = levelFromPoints(base);
-      out.correct = store.lifetime.correct; out.hundos = store.unitPerfects[U]; out.thr = badgeThresholdFor(U);
+      out.correct = store.lifetime.correct; out.hundos = store.unitPerfects[U];
       out.stat = store.stats[key0]; out.hist = store.testHistory.map(h => h.label);
       out.day = store.studyLog['2026-09-30']; out.vrWins = store.vrWins;
       out.held = !!store.mergeHold; out.homeQuiet = pendingHomeUnlocks().chars.length + pendingHomeUnlocks().banners.length;
@@ -5857,7 +5850,7 @@ def check_b279_merge(br):
           r.get("code") == "JKLM-NPQR" and r.get("name") == "Main" and r.get("pub") == "pubmain00001"
           and (r.get("retired") or [None])[0] == "pubdup000002" and r.get("done") is True, r)
     check("its XP, right answers and hundos are added to the real account's",
-          r.get("correct") == 900 + 170 + 40 and r.get("hundos") == r.get("thr"), r)
+          r.get("correct") == 900 + 170 + 40 and r.get("hundos") == 16, r)
     check("so are its question stats, history and study time",
           (r.get("stat") or {}).get("n") == 7 and (r.get("stat") or {}).get("m") == 3
           and r.get("hist") == ["new", "old"] and r.get("day") == 90000 and r.get("vrWins") == 3, r)

@@ -957,8 +957,9 @@ def level_of(points):
     return _curve_level(points, 1.18, 1.0365)
 
 
-def level_of_313(points):
-    """levelFromPoints313(): build 313's curve, kept for the grandfather floor."""
+def legacy_level_of_points(points):
+    """legacyLevelOfPoints(): build 313's curve, kept for one job - the
+    grandfather floor is the level an account held on THIS curve."""
     return _curve_level(points, 2.0, 1.0199, 45, 1.0835)
 
 
@@ -978,7 +979,7 @@ UNIT_QUESTIONS = {
     "Sexual Assault and Family Violence": 46, "Verbal Communication": 29,
     "Civil Process and Liability": 22,
 }
-BADGE_BANDS = [(40, 3), (100, 2), (float("inf"), 1)]
+BADGE_BANDS = [(25, 15), (50, 12), (100, 8), (200, 4), (float("inf"), 2)]
 RANKS = [(21, 1), (29, 3), (36, 5), (45, 7), (52, 9), (65, 12), (71, 14)]
 
 
@@ -1003,7 +1004,7 @@ def effective_level(f):
     pts = ((f.get("lifetime") or {}).get("points")) or 0
     fl = f.get("levelFloor")
     if not isinstance(fl, (int, float)):
-        fl = max(level_of(pts), level_of_313(pts)) if pts > 0 else 0
+        fl = legacy_level_of_points(pts) if pts > 0 else 0
     return min(level_of(pts), max(badge_wall(badges_of(f)), int(fl)), LEVEL_CAP)
 
 

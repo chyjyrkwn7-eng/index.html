@@ -349,7 +349,7 @@ with sync_playwright() as pw:
       characters:['robot'], justBeatSpeed:null, units:[], flare:null }).map(i=>i.kind)""")
     ck("unlocks run badge, rank, then what the rank handed over", order[:3] == ["badge", "rank", "theme"] and "character" in order[3:], order)
     # A run that missed one: the badge line, the avatar, the chip.
-    pg.evaluate("([u])=>{ store.unitPerfects = store.unitPerfects || {}; store.unitPerfects[u] = Math.max(0, badgeThresholdFor(u) - 2); __run(u,0,'drill'); }", [UNIT])
+    pg.evaluate("([u])=>{ store.unitPerfects = store.unitPerfects || {}; store.unitPerfects[u] = 3; __run(u,0,'drill'); }", [UNIT])
     wait_done(pg)
     got = pg.evaluate("""()=>{ const lb=document.getElementById('testscopelabel').getBoundingClientRect();
       const m=document.querySelector('.rs-mode').getBoundingClientRect();
