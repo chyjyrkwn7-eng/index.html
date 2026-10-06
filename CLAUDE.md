@@ -1628,6 +1628,31 @@ Everything below follows from that.
 
 ---
 
+### A wrong unlock is taken back by a rule, never by an edit (build 312.3)
+
+*"odinsavior has the Zeus character, however he didn't finish for any of
+the weekly xp weeks. The only two users that should have already unlocked
+is Sauce and Maddog."* His phone settled the week of 21 Sep on a build
+before 248, which trusted the rank the phone last SAW (Odin first at 21:04
+that Sunday; Sauce passed him later that night). Build 248 stopped that
+for the future and took nothing back.
+
+- **Zeroing the field in Firestore does not stick.** `weeklyWins` merges
+  by taking the higher side, so the next copy still holding the 1 (his
+  phone, the `__floor` document) puts it straight back. The same is true
+  of every counter and every union list: an admin edit that lowers one is
+  undone by the first merge.
+- **So the correction is code: `WEEK_WIN_VOIDS`**, keyed by public id.
+  Wins recorded for weeks before `from` count up to `keep`; every win
+  settled for `from` onward still counts, from `store.weekWinWeeks`,
+  which `settleWeeklyWin()` writes and every merge carries. Applied on
+  every load and after both merges in `syncSameAccount()`, before
+  anything is saved. Somebody wearing the character it took away goes
+  into `wear` (Odin: Solar, his highest rank character).
+- **The cloud copy was corrected as well** (main, floor, rankings row),
+  so the board is right before he opens the app - but it only STAYS
+  right on a build carrying the void. `check-sync` 8j is the gate.
+
 ## Levels, badges and ranks
 
 The three things the app measures are **XP → level**, **badges**, and

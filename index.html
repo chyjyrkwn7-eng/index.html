@@ -36630,6 +36630,48 @@ function revokeRaisedCharacters(){
   });
   return changed;
 }
+/* A WEEKLY WIN THAT NEVER HAPPENED (build 312.3). "odinsavior has the
+   Zeus character, however he didn't finish for any of the weekly xp
+   weeks. The only two users that should have already unlocked is Sauce
+   and Maddog." His phone settled the week of 21 September on a build
+   before 248, which trusted the rank the phone last SAW: Odin was first
+   at 21:04 that Sunday and Sauce passed him later that night. Build 248
+   stopped that happening again and took nothing back.
+   Setting the cloud copy to zero is not enough on its own, because
+   weeklyWins merges by taking the higher side - the next device or
+   floor copy still holding the 1 would put it straight back. So the
+   correction is a rule rather than an edit: wins this account recorded
+   for weeks before `from` count up to `keep`, and every win settled for
+   `from` onward is still counted, from `weekWinWeeks`, which settling
+   writes and every merge carries. Somebody wearing the character the
+   void took away goes into `wear`, or the first starter if that is
+   somehow locked. Keyed by the public id, which is not a sync code and
+   is printed on the board anyway. */
+const WEEK_WIN_VOIDS = {
+  "kdxnp7smgcre": { from: "2026-09-28", keep: 0, wear: "solar" }
+};
+function applyWeekWinVoids(){
+  const v = WEEK_WIN_VOIDS[store && store.publicId];
+  if(!v) return false;
+  let changed = false;
+  const weeks = Array.isArray(store.weekWinWeeks) ? store.weekWinWeeks : [];
+  const allowed = v.keep + weeks.filter(w => typeof w === "string" && w >= v.from).length;
+  if((store.weeklyWins || 0) > allowed){ store.weeklyWins = allowed; changed = true; }
+  const zeus = AVATAR_CHARACTERS.find(c => c.feat === "weektop");
+  if(zeus && isLockedCharacter(zeus.id)){
+    if(store.avatarChar === zeus.id){
+      const wear = v.wear && !isLockedCharacter(v.wear) ? v.wear : null;
+      const free = AVATAR_CHARACTERS.find(c => !c.retired && !c.legacy && !c.feat && !c.unlock);
+      store.avatarChar = wear || (free ? free.id : null);
+      changed = true;
+    }
+    if(Array.isArray(store.pendingCharUnlocks) && store.pendingCharUnlocks.indexOf(zeus.id) >= 0){
+      store.pendingCharUnlocks = store.pendingCharUnlocks.filter(x => x !== zeus.id);
+      changed = true;
+    }
+  }
+  return changed;
+}
 function characterLockMessage(id){
   const def = AVATAR_CHARACTERS.find(c => c.id === id);
   /* A LOCK MESSAGE FOR SOMETHING THAT IS NOT LOCKED IS A TRAP, and this
@@ -41597,7 +41639,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               testsUntilMystery: null, flareNextTestAt: 0, flareSchedRev: 0,
               savedCodePrompts: 0, savedCodeSaved: false,
               dailyCorrectStreak: 0, dailyCorrectBest: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, friendsBest: 0, koiRevoked295: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bigTest500Passed: false, bestTestStreak: 0,
-              weeklyWins: 0, weeklyTop3: 0, retakenQuestions: 0, hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, unlocksShown: null, seenUnlocks: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
+              weeklyWins: 0, weeklyTop3: 0, weekWinWeeks: [], retakenQuestions: 0, hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, unlocksShown: null, seenUnlocks: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
               lateHundos: 0, lateHundosSeed312: true, flareHintsShown: [],
               vrMatches: 0, vrWins: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
               fullTestsSeeded: false, practiceExamPerfect: false, banner: "", hundoFx: "confetti", starfallKept: false, creditsApplied: [],
@@ -42018,9 +42060,11 @@ function applyLoadedData(got){
      be loaded first. */
   store.shadesFound = got.shadesFound === true;
   store.shadesAt = typeof got.shadesAt === "number" ? got.shadesAt : null;
+  store.weekWinWeeks = Array.isArray(got.weekWinWeeks) ? got.weekWinWeeks.filter(x => typeof x === "string").slice(-60) : [];
   store.legacyChars = Array.isArray(got.legacyChars) ? got.legacyChars.filter(x => typeof x === "string" && x !== "robot") : legacyCharsFromRanks();
   /* After everything the locks read (the streak, the study log) is in. */
   try{ revokeRaisedCharacters(); }catch(e){}
+  try{ applyWeekWinVoids(); }catch(e){}
   /* Per-device tallies (build 298). A copy without them - an older
      build, or one from before this - keeps empty ones and is read the
      old way in a merge; a copy with them has any count it holds beyond
@@ -43340,7 +43384,7 @@ function wipeLocalProgressAndSettings(){
   store.bigTest450Passed = false;
   store.bigTest500Passed = false;
   store.bestTestStreak = 0;
-  store.weeklyWins = 0; store.weeklyTop3 = 0; store.retakenQuestions = 0; store.hundoDay = null; store.hundoDayBest = 0; store.shadesFound = false; store.shadesAt = null; store.legacyChars = []; store.rankMapSeen = -1; store.rankMapFx244 = false; store.rankMapProg = null;
+  store.weeklyWins = 0; store.weeklyTop3 = 0; store.weekWinWeeks = []; store.retakenQuestions = 0; store.hundoDay = null; store.hundoDayBest = 0; store.shadesFound = false; store.shadesAt = null; store.legacyChars = []; store.rankMapSeen = -1; store.rankMapFx244 = false; store.rankMapProg = null;
   store.unlocksShown = { chars: [], banners: [], fx: [] };
   store.seenUnlocks = null;
   store.unitRuns = {};
@@ -44251,7 +44295,7 @@ function mergeLeavingAccount(src, note){
     .sort((a, b) => num(b && b.playedAt) - num(a && a.playedAt)).slice(0, TEST_HISTORY_MAX);
   ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "lateHundos"].forEach(k => { store[k] = num(store[k]) + num(src[k]); });
   ["dailyCorrectStreak", "hundoDayBest", "bestTestStreak", "unitHundoStreak", "dailyCorrectBest", "unitHundoStreakBest", "dayAnsweredBest", "friendsBest"].forEach(k => { store[k] = Math.max(num(store[k]), num(src[k])); });
-  ["vrCounted", "vrTop3Rooms", "flareHintsShown"].forEach(k => {
+  ["vrCounted", "vrTop3Rooms", "flareHintsShown", "weekWinWeeks"].forEach(k => {
     const a = Array.isArray(store[k]) ? store[k] : [];
     store[k] = a.concat((src[k] || []).filter(x => a.indexOf(x) < 0)).slice(-300);
   });
@@ -44604,7 +44648,7 @@ function mergeSameAccount(dst, src){
   ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "hundoDayBest", "bestTestStreak",
    "dailyCorrectBest", "unitHundoStreakBest", "dayAnsweredBest", "friendsBest", "lateHundos"]
     .forEach(k => maxInto(dst, k, src[k]));
-  ["vrCounted", "vrTop3Rooms", "legacyChars", "creditsApplied", "flareHintsShown"].forEach(k => unionArr(k));
+  ["vrCounted", "vrTop3Rooms", "legacyChars", "creditsApplied", "flareHintsShown", "weekWinWeeks"].forEach(k => unionArr(k));
   /* The "seen" marks behind the new-item dots (build 299): seen on one
      device is seen. */
   { const okSeen = o => o && SEEN_KINDS.every(k => Array.isArray(o[k]));
@@ -44649,11 +44693,13 @@ function syncSameAccount(cloud){
     const mine = JSON.parse(JSON.stringify(store));
     applyLoadedData(cloud);
     const r = mergeSameAccount(store, mine);
+    try{ if(applyWeekWinVoids()) r.gained = true; }catch(e){}
     /* `gained` here means this device brought something the cloud lacks */
     if(r.gained) saveStore(); else persistLocally();
     return true;
   }
   const r = mergeSameAccount(store, cloud);
+  try{ if(applyWeekWinVoids()){ r.gained = true; r.otherHadLess = true; } }catch(e){}
   if(r.gained) persistLocally();
   /* This device is the newer side, or holds something the cloud lacks:
      either way the cloud is behind it, so it goes up. */
@@ -47026,7 +47072,10 @@ function settleWeeklyWin(){
   const rank = final === null ? seen.rank : final;
   const won = rank === 1;
   store.weekRankSeen = null;
-  if(won) store.weeklyWins = (store.weeklyWins || 0) + 1;
+  if(won){
+    store.weeklyWins = (store.weeklyWins || 0) + 1;
+    store.weekWinWeeks = (Array.isArray(store.weekWinWeeks) ? store.weekWinWeeks : []).filter(w => w !== seen.week).concat([seen.week]).slice(-60);
+  }
   if(rank >= 1 && rank <= 3){
     const before = store.weeklyTop3 || 0;
     store.weeklyTop3 = before + 1;

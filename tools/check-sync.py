@@ -1113,6 +1113,51 @@ with sync_playwright() as pw:
           r["acctLast"] == r["want"] and r["floorLast"] == r["want"], str([r["acctLast"], r["floorLast"], r["want"]]))
     ctx.close()
 
+    # ---- 8j. a weekly win that never happened stays gone ----
+    # Build 312.3. OdinSavior's phone settled the week of 21 Sep as a win on
+    # a build before 248 (it trusted the rank it last saw; Sauce passed
+    # him later that night), so he held Zeus. weeklyWins merges by taking
+    # the higher side, so zeroing the cloud copy alone comes straight back
+    # from any copy still holding the 1. Fails on 312.2: nothing voids it.
+    print("\n8j. a weekly win that never happened stays gone; a real one still counts")
+    ctx = br.new_context(viewport={"width": 834, "height": 1194})
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % STORE)
+    pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
+    pg.evaluate("()=>document.getElementById('splashscreen')?.remove()")
+    r = pg.evaluate("""()=>{
+      const clone = o => JSON.parse(JSON.stringify(o));
+      const zeus = AVATAR_CHARACTERS.find(c => c.feat === 'weektop');
+      const solar = AVATAR_CHARACTERS.find(c => c.id === 'solar');
+      const odin = clone(store);
+      odin.publicId = 'kdxnp7smgcre'; odin.weeklyWins = 1; odin.avatarChar = zeus.id;
+      odin.pendingCharUnlocks = [zeus.id]; odin.weekWinWeeks = [];
+      applyLoadedData(clone(odin));
+      const load = { ww: store.weeklyWins, char: store.avatarChar, locked: isLockedCharacter(zeus.id),
+                     pend: (store.pendingCharUnlocks || []).indexOf(zeus.id) };
+      saveStore = () => {}; scheduleCloudPush = () => {}; persistLocally = () => {};
+      const stale = clone(odin); stale.lastModified = Date.now() + 99999;
+      syncSameAccount(stale);
+      const newer = { ww: store.weeklyWins, char: store.avatarChar };
+      stale.lastModified = 1; syncSameAccount(stale);
+      const older = { ww: store.weeklyWins, char: store.avatarChar };
+      const keep = finalRankForWeek; finalRankForWeek = () => 1;
+      store.weekRankSeen = { week: lastWeekKey(), rank: 1 }; settleWeeklyWin();
+      finalRankForWeek = keep;
+      applyLoadedData(clone(store));
+      const real = { ww: store.weeklyWins, locked: isLockedCharacter(zeus.id) };
+      const sauce = clone(odin); sauce.publicId = 'ew7hyxpg5j2y';
+      applyLoadedData(sauce);
+      const other = { ww: store.weeklyWins, char: store.avatarChar };
+      return { load, newer, older, real, other, zeus: zeus.id, solar: !!solar }; }""")
+    check("the voided win is gone on load, Zeus locks, and he is put in another character he holds",
+          r["load"]["ww"] == 0 and r["load"]["locked"] and r["load"]["char"] not in (r["zeus"], None) and r["load"]["pend"] < 0, str(r["load"]))
+    check("a stale copy still holding the win cannot bring it back, newer or older",
+          r["newer"]["ww"] == 0 and r["older"]["ww"] == 0 and r["newer"]["char"] != r["zeus"] and r["older"]["char"] != r["zeus"],
+          str([r["newer"], r["older"]]))
+    check("a week he really wins still counts and unlocks Zeus", r["real"]["ww"] == 1 and not r["real"]["locked"], str(r["real"]))
+    check("an account the void does not name keeps its win and its Zeus", r["other"]["ww"] == 1 and r["other"]["char"] == r["zeus"], str(r["other"]))
+    ctx.close()
+
     # ---- 7. the sync code never reaches a collection anyone can list ----
     # `leaderboard` and `vrooms` can both be ENUMERATED by anyone - this
     # repo's own firestore-admin.py lists them over plain REST with no
