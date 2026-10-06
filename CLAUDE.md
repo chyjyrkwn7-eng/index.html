@@ -12951,8 +12951,13 @@ version is that set now; 0-85 is gone from the app.
   these test questions are supposed to be exactly like the study
   guides."** A read-through on 6 Oct repaired 50 questions' typos and cut-off
   choices (identity kept via keyText/keyChoices) and was reverted in full
-  the same day on that instruction. Do not fix spelling, grammar,
-  truncation or leftover slide text in QUESTIONS; report it instead.
+  the same day on that instruction, together with four older choice
+  repairs (US/TX 23 "writ of", Fitness 11's doubled "20-25%", Victims of
+  Crime 5's split choice, Penal 346's "Manslaughter. 1"). Every question
+  is now word for word what main had before build 313. Do not fix
+  spelling, grammar, truncation or leftover slide text in QUESTIONS;
+  report it instead. check_b313_shuffle fails if any question shows
+  choices other than the ones it was stored under.
 - **That repair made #346 a seventh question on one answer set** (the
   "which offense is this" questions: murder, manslaughter and the rest),
   five of them inside the 58. `spreadOrder()`'s single fixed twin gap

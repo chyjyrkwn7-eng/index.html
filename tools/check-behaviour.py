@@ -1347,12 +1347,15 @@ def check_b313_shuffle(br):
           r["hasShown"] is True and r["letters"] == [], r["letters"][:4] if r["hasShown"] else "no choiceShown")
     check("an ordinary right answer lands in A, B, C and D about equally (20-30% each)",
           r["freeAns"] > 500 and all(20 <= x <= 30 for x in r["slotPct"]), r["slotPct"])
-    check("the Victims of Crime question is four whole choices, with All of the Above on its own",
-          r["victim"] and r["victim"][3] == "All of the Above" and r["victim"][1].endswith("the event.") and not r["victim"][2].endswith("Above"), r["victim"])
-    check("and keeps its identity, so nobody's history on it moves", r["victimKeep"] is True, r["victimKeep"])
-    check("no other choice in the bank is a cut-off fragment or has All of the Above glued on",
-          r["damaged"] == [], r["damaged"])
-    check("no question lists the same choice twice (Fitness 11 had \"20-25%\" twice)", r["dupes"] == [], r["dupes"])
+    # REVISED 6 Oct: "these test questions are supposed to be exactly like
+    # the study guides" - the bank keeps the guide's wording, damage and
+    # all, so the four choice repairs (US/TX 23, Fitness 11, Victims of
+    # Crime 5, Penal 346) were undone. What is asserted now is the rule:
+    # no question shows choices other than the ones it was stored under.
+    check("the Victims of Crime question reads exactly as the study guide has it, identity unchanged",
+          r["victimKeep"] is True and r["victim"] and r["victim"][2] == "event.", r["victim"])
+    kc = pg.evaluate("()=>QUESTIONS.map((q, i) => i).filter(i => Array.isArray(QUESTIONS[i].keyChoices) && QUESTIONS[i].keyChoices.join('|') !== QUESTIONS[i].choices.join('|')).map(i => QUESTIONS[i].topic.trim().slice(0, 12) + ' ' + QUESTIONS[i].src)")
+    check("no question's choices are reworded from the study guide (no keyChoices that differ)", kc == [], kc)
     ctx.close()
 
 
