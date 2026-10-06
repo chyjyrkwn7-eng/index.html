@@ -493,7 +493,11 @@ def run_intro(src_dir, label):
                       saysChat: txt.indexOf('chat') >= 0,
                       saysFriends: txt.indexOf('friend') >= 0,
                       saysPrivate: txt.indexOf('only the people you invite') >= 0,
-                      says73: ['character', 'virtual room', 'chat', 'hold', 'rank', 'results', 'fix'].every(w => txt.indexOf(w) >= 0),
+                      /* 7.7 (build 314): the list asked for - hundo effects,
+                         flashcards, characters and banners, test mode, the
+                         app as a whole, stats and profile, the rank road
+                         map, the results screen. */
+                      says73: ['hundo effect', 'flashcard', 'character', 'banner', 'test', 'stats', 'profile', 'road map', 'results', 'everywhere'].every(w => txt.indexOf(w) >= 0) && txt.indexOf('7.7') >= 0,
                       go: !!el.querySelector('.intro-go')};}""")
             if not out:
                 fails.append("the introduction never opened")
@@ -510,7 +514,7 @@ def run_intro(src_dir, label):
                 # the list asked for: characters, the Virtual Room mode,
                 # chat, holding a unit, the Rank tab, results and fixes.
                 if not out["says73"]:
-                    fails.append("the what's new card is missing one of the seven things it was asked to say")
+                    fails.append("the what's new card is missing one of the things it was asked to say, or is not 7.7")
                 if not out["go"]:
                     fails.append("there is no way to dismiss the introduction")
 

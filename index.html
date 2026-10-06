@@ -55473,6 +55473,37 @@ function poolNow(){
    now reads directly from RELEASE_NOTES[0].groups below, so there is
    only one place this content can ever be edited. */
 const RELEASE_NOTES = [
+  /* 7.7 (build 314) - "the version becomes 7.7". The What's New card
+     says the headline of each group; this is the full list. */
+  {
+    version: "7.7",
+    groups: [
+      { label: "Hundo Effects", items: [
+        { icon: buildSparkleIcon, color: "#FFD84D", title: "Effects For Your Hundos", body: "A screen effect plays when you score 100%, and you earn new ones as your hundos climb: Fireworks at 50, the World Tree at 100, Bubbles at 200 and a UFO at 350, plus Confetti from the start. Choose yours in Customize, and tap one there to see it play." }
+      ]},
+      { label: "Studying", items: [
+        { icon: buildChecklistIcon, color: "#4DD0E1", title: "Flashcards", body: "Learn has a Flashcards option for any unit: tap a card to flip it, swipe to move on, and starred questions come with you." },
+        { icon: buildSwipeIcon, color: "#F5804D", title: "A Better Test", body: "Answer feedback is quicker, a small swipe bounces back until you mean it, the Next button arrives at a steadier pace, and Review and Flashcards get their own short loading screen." },
+        { icon: buildClipboardIcon, color: "#5CA8FF", title: "A Simpler Start Sheet", body: "The question bank is all questions by default, with one switch for starred questions only, and the slider tells you when it is already at the most it can be." }
+      ]},
+      { label: "Characters & Banners", items: [
+        { icon: buildPersonIcon, color: "#FF2E88", title: "Characters, Refined", body: "Characters animate in Customize and on the tab bar, nothing is cut off, and locked ones stay a silhouette until you earn them." },
+        { icon: buildPaletteIcon, color: "#C583FF", title: "New Banners And Pop-Ups", body: "New banners for the secret flare characters, and every unlock pop-up now matches the colours of what you unlocked. Silver looks like silver." }
+      ]},
+      { label: "Ranks, Levels & Badges", items: [
+        { icon: buildLadderIcon, color: "#E8B84A", title: "Every Rank Is A Gate", body: "Levels, badges and ranks now work as one: to level past a rank you need its badges as well. Your XP keeps counting at a gate, so nothing is lost, and nobody goes down a level." },
+        { icon: buildStarIcon, color: "#FFD84D", title: "Badges Are Much Easier", body: "A badge takes 1, 2 or 3 hundos depending on the size of the unit, and the level curve has been re-set so the top ranks are in reach by the new year." },
+        { icon: buildBarStatsIcon, color: "#5CA8FF", title: "Stats, Profile And The Road Map", body: "Profile shows your next rank gate under the XP bar, the Stats page is clearer, and the rank road map shows exactly where you stand." }
+      ]},
+      { label: "Results", items: [
+        { icon: buildTrophyIcon, color: "#4ADE80", title: "Results, Overhauled", body: "Your rewards first, revealed one at a time, with your character reacting to the score, then the full review." }
+      ]},
+      { label: "Fixes & polish", items: [
+        { icon: buildSmoothCurveIcon, color: "#C583FF", title: "Smoother Everywhere", body: "Faster tabs, screens that load every time, smoother chat, a calmer Virtual Room start, and a more accurate leaderboard." },
+        { icon: buildRetryIcon, color: "#4DD0E1", title: "Bug Fixes", body: "A long list of smaller fixes from your reports." }
+      ]}
+    ]
+  },
   /* 7.3 (build 279) - "Update the version history, call this version 7.3
      and include the new stuff". Everything since 6.9 (build 170) that a
      classmate would notice. The one-time "New in this update" card says
@@ -63132,7 +63163,9 @@ const INTRO_MAX_TRIES = 20;
 /* 2 = the 7.3 update (build 279): "give a what's new update thing
    again". Bumping it shows the card once more to every device that saw
    rev 1, and to every device that never saw anything. */
-const INTRO_REV = 2;
+/* 3 = the 7.7 update (build 314): "put a what's new thing on the main
+   menu". */
+const INTRO_REV = 3;
 function introSeen(){
   try{ return (Number(localStorage.getItem(INTRO_KEY)) || 0) >= INTRO_REV; }
   catch(e){ return true; }
@@ -63171,13 +63204,12 @@ function showIntroPopup(){
   const card = document.createElement("div");
   card.className = "intro-card";
 
-  /* VERSION 7.3. The rows are the headline version of RELEASE_NOTES[0]
-     - "mention the new and redesigned characters, new virtual room mode,
-     chat upgrades, the ability to view unit details by holding them
-     down, ... the new rank tab and result screen refresh and ...
-     bug fixes and overall smoothness improvements". Short on purpose:
-     seven things on one card, and the full list is a tap away under
-     the version number on Home. */
+  /* VERSION 7.7 (build 314). The rows are the list asked for, in the
+     order asked: "hundo effect addition, flash card addition, characters
+     refinement and banners addition. Refinements and improvement to test
+     mode. Refinements to the app as a whole. Stats page and profile page
+     improvement, rank road map. Result screen overhaul." Eight things,
+     one line each; the full list is under the version number on Home. */
   const eyebrow = document.createElement("p");
   eyebrow.className = "intro-eyebrow"; eyebrow.textContent = "New in version " + RELEASE_NOTES[0].version;
   const title = document.createElement("h2");
@@ -63185,27 +63217,30 @@ function showIntroPopup(){
   card.append(eyebrow, title);
   card.classList.add("intro-card-compact");
   [
-    ["M12 12a4.2 4.2 0 1 0 0-8.4 4.2 4.2 0 0 0 0 8.4Zm0 2c-4.6 0-8.2 2.3-8.2 5.2V20h16.4v-.8c0-2.9-3.6-5.2-8.2-5.2Z",
-     "#FF2E88", "New and redesigned characters",
-     "Every character redrawn with a scene of its own, new ones to earn, and three secret ones you have to find."],
-    ["M13.2 2 4.4 13.6h6.1L9.6 22l8.8-11.6h-6.1L13.2 2Z",
-     "#F5804D", "Battle, a new Virtual Room mode",
-     "Two teams, one health bar each. Every right answer hits the other side."],
-    ["M20.5 11.3a7.8 7.8 0 0 1-8.4 7.8 9.2 9.2 0 0 1-2.7-.4L4 20.7l1.5-4.3a7.6 7.6 0 0 1-1-4.1 7.8 7.8 0 0 1 8-7.8 7.8 7.8 0 0 1 8 7.8Z",
-     "#8E7CF5", "Chat upgrades",
-     "Group chats, photos, polls, reactions, and a green dot for whoever is online."],
-    ["M12 6.5a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11Zm0-4.5a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm0 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16Z",
-     "#5CA8FF", "Hold a unit for its details",
-     "Press and hold any unit to see your scores in every mode, and the questions you miss most."],
-    ["M5 21V3.5h1.8v1h11.4l-2.2 4.2 2.2 4.2H6.8V21H5Z",
-     "#FFD84D", "The Rank tab",
-     "A road map of every rank, with your progress lit along it and what each one hands over."],
-    ["M4 19.6h16v1.8H4v-1.8Zm1.2-7.2h3v5.6h-3v-5.6Zm5.3-5h3v10.6h-3V7.4Zm5.3 3h3v7.6h-3v-7.6Z",
-     "#4ADE80", "A fresh results screen",
-     "Your rewards first, revealed one at a time, then the full review."],
     ["M12 2.5l1.9 5.9 5.9 1.9-5.9 1.9-1.9 5.9-1.9-5.9-5.9-1.9 5.9-1.9L12 2.5Zm6.5 12.5.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z",
-     "#4DD0E1", "Smoother, with lots of fixes",
-     "Less lag, quicker screens, and a long list of bug fixes from your reports."]
+     "#FFD84D", "Hundo effects",
+     "Earn a screen effect for your hundos: Fireworks at 50, then the World Tree, Bubbles and a UFO. Pick yours in Customize."],
+    ["M8 3h11a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2ZM3 7h1.8v12.2H17V21H5a2 2 0 0 1-2-2V7Z",
+     "#4DD0E1", "Flashcards",
+     "Study any unit as flashcards from Learn. Tap to flip, swipe to move on."],
+    ["M12 12a4.2 4.2 0 1 0 0-8.4 4.2 4.2 0 0 0 0 8.4Zm0 2c-4.6 0-8.2 2.3-8.2 5.2V20h16.4v-.8c0-2.9-3.6-5.2-8.2-5.2Z",
+     "#FF2E88", "Characters and banners",
+     "Characters refined and animating everywhere, and new banners to earn."],
+    ["M13.2 2 4.4 13.6h6.1L9.6 22l8.8-11.6h-6.1L13.2 2Z",
+     "#F5804D", "Better test mode",
+     "Quicker answer feedback, a smoother swipe to the next question, and a simpler start sheet."],
+    ["M5 21V3.5h1.8v1h11.4l-2.2 4.2 2.2 4.2H6.8V21H5Z",
+     "#E8B84A", "The rank road map",
+     "Every rank is a gate: a level and a number of badges. Badges take fewer hundos now, and you can see exactly what your next gate needs."],
+    ["M4 19.6h16v1.8H4v-1.8Zm1.2-7.2h3v5.6h-3v-5.6Zm5.3-5h3v10.6h-3V7.4Zm5.3 3h3v7.6h-3v-7.6Z",
+     "#5CA8FF", "Stats and Profile",
+     "A clearer Stats page, a fuller test history, and your next rank gate under the XP bar."],
+    ["M12 2.8l2.8 5.7 6.3.9-4.6 4.4 1.1 6.3L12 17.1l-5.6 3 1.1-6.3-4.6-4.4 6.3-.9L12 2.8Z",
+     "#4ADE80", "Results, overhauled",
+     "Your rewards revealed one at a time, then the full review."],
+    ["M12 6.5a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11Zm0-4.5a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm0 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16Z",
+     "#C583FF", "Refined everywhere",
+     "Faster tabs, smoother screens, and a long list of fixes from your reports."]
   ].forEach(([glyph, color, t, b]) => card.appendChild(introRow(glyph, color, t, b)));
 
   const go = document.createElement("button");
