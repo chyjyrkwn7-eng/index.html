@@ -13191,6 +13191,27 @@ disagree with it.
   41 -> 29, ALFRED 35 -> 29; Sauce, OdinSavior, Cap and Otx are inside
   their caps and unchanged. Put to her in those terms before building:
   *"Yeah that makes sense. Make sure it makes sense."*
+- **RANK CHALLENGES ARE THE ONE NAME FOR IT, EVERYWHERE.** *"It would
+  need to say ... those are rank challenges, like bronze challenges or
+  silver challenges ... tie it all together perfectly."* The next rank's
+  two requirements (reach its level, earn its badges) are "<Rank>
+  challenges": the button beside the Profile bar (that rank's emblem and
+  "1/2 >"), the sheet it opens (`showLevelChallenge`), the head over the
+  Rank tab's rings (was "To reach <Rank>"), and the results card.
+  `rankChallengesOf()` is the one builder. It is the NEXT RANK on purpose,
+  not "the badges for your cap": whenever a level is capped they are the
+  same rank, because the cap is the top of the band after the next
+  rank's, so a capped account has always met the next rank's level and is
+  only missing its badges. Verified on all 37 real accounts
+  (scratchpad acctaudit.py): no account where they differ, the rankings
+  row equals the shown level, nobody below their build-313 rank.
+  When capped, one blue line says so: "Your level is capped at 49 until
+  you reach Gold · 3 levels saved" (`rankChallengeNote`).
+- **AT THE CAP THE RESULTS NUMBER COUNTS UP.** *"The result screen when
+  getting xp if you are full, that xp number would just keep going up."*
+  The held line is `buildXpNumbers` and the reveal counts its first
+  number from where the run started to where it ended while the bar sits
+  full.
 - **PROFILE IS POKEMON GO'S LAYOUT, AND THERE IS NO "NEXT GATE" BOX.**
   *"how it says next gate is bad ... In Pokemon go this is how they
   represent it."* The bar, and beside it a badge-challenge button (our
