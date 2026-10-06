@@ -12978,3 +12978,33 @@ alike - and found the mechanism on somebody else: **Rod713's row said
   opted-in accounts with no row, and with `--backup` anything that went
   down since. It never prints a sync code. Run it before answering any
   "accounts are messed up" report.
+
+### The class ran out of writes (build 312.1)
+
+**On Oct 5 the project used up Firestore's free daily quota - 20,000
+writes - at 21:58 UTC, and every write from every phone failed until it
+reset at midnight Pacific (07:00 UTC).** Progress, rows, presence: all of
+it. Nothing was lost, because every phone keeps its progress locally,
+but nothing reached the server for nine hours, and the board froze at
+whatever it said at 4:58pm Texas time. The tell is a 429
+`RESOURCE_EXHAUSTED` "Quota exceeded." on any write, admin key or not,
+while reads still work.
+
+- **The cost was per answer.** `saveStore()` runs on every answer and
+  pushed the account 2.5s later, and since build 298 each push is two
+  writes (the account and `__floor`). Ten answers were 22 writes.
+- **Now:** the account goes up at most once a minute while somebody is
+  answering (`CLOUD_PUSH_MIN_GAP_MS`, per account - a new sign-up still
+  pushes at once), the high-water mark at most every ten minutes
+  (`FLOOR_MIN_GAP_MS`), and `publishNow()` on hide pushes both
+  immediately. Ten answers are 2 writes. `check-sync` 8i.
+- **Anything new that writes per answer, per keystroke or per second
+  has to be weighed against 20,000 a day across ~40 people** - that is
+  500 each. Upgrading the Firebase project to the Blaze plan keeps the
+  same free allowance and charges about $0.18 per 100,000 writes past
+  it; it is Madison's call and her card.
+- After an outage, `firestore-admin.py audit` shows anybody whose phone
+  republished a row on launch without its save landing. A single-device
+  account can be credited exactly under its one tally key (Maddog, +545,
+  Oct 6); a two-device one needs the right key (Rod713, +2,005, credited
+  under the device that wrote the account last).

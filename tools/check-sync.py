@@ -1078,6 +1078,41 @@ with sync_playwright() as pw:
           r["row"] == 1200 and r["rowsUnder"] == 0 and r["accountFirst"], str([r["row"], r["rowLevel"], r["rowsUnder"], r["accountFirst"]]))
     ctx.close()
 
+    # ---- 8i. answering spends a write a minute, not a write pair per question ----
+    # Build 312.1. On Oct 5 the class used up Firestore's free 20,000
+    # writes at 21:58 UTC and every save from every phone failed until
+    # midnight Pacific. Each answer pushed the account and its
+    # high-water mark 2.5s later. Fails on 312: 22 writes for ten answers.
+    print("\n8i. answering spends a write a minute, not two per question; leaving saves everything at once")
+    ctx = br.new_context(viewport={"width": 834, "height": 1194})
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.drill.v1', '%s');"
+                        "localStorage.setItem('class26e.synccode','NOVA-2601');}catch(e){}" % STORE)
+    pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
+    pg.evaluate("()=>document.getElementById('splashscreen')?.remove()")
+    r = pg.evaluate("""async ()=>{
+      const wait = ms => new Promise(res => setTimeout(res, ms));
+      const clone = o => JSON.parse(JSON.stringify(o));
+      const acct = [], floor = [];
+      fbDb = { collection: name => ({ onSnapshot: () => () => {},
+        doc: id => ({ onSnapshot: () => () => {}, get: () => Promise.resolve({ exists: false, metadata: { fromCache: false } }),
+          set: d => { if(name === 'progress' && id === 'NOVA-2601') acct.push(clone(d)); if(name === 'progress' && id === 'NOVA-2601__floor') floor.push(clone(d)); return Promise.resolve(); },
+          update: () => Promise.resolve(), delete: () => Promise.resolve() }) }) };
+      syncCode = 'NOVA-2601'; cloudConfirmedFor = 'NOVA-2601'; floorMergedFor = 'NOVA-2601';
+      try{ clearTimeout(cloudPushTimer); cloudPushTimer = null; }catch(e){}
+      /* ten answers, one every three seconds */
+      for(let i = 0; i < 10; i++){ store.lifetime.correct += 1; saveStore(); await wait(3000); }
+      const during = { acct: acct.length, floor: floor.length };
+      /* then the app goes to the background */
+      store.lifetime.correct += 1; saveStore(); publishNow();
+      await wait(300);
+      const want = store.lifetime.correct, la = acct[acct.length - 1], lf = floor[floor.length - 1];
+      return { during, acctLast: la && la.lifetime.correct, floorLast: lf && lf.lifetime.correct, want }; }""")
+    check("ten answers in thirty seconds write the account at most twice and its high-water mark at most once",
+          r["during"]["acct"] <= 2 and r["during"]["floor"] <= 1, str(r["during"]))
+    check("leaving the app puts the latest progress in both, at once",
+          r["acctLast"] == r["want"] and r["floorLast"] == r["want"], str([r["acctLast"], r["floorLast"], r["want"]]))
+    ctx.close()
+
     # ---- 7. the sync code never reaches a collection anyone can list ----
     # `leaderboard` and `vrooms` can both be ENUMERATED by anyone - this
     # repo's own firestore-admin.py lists them over plain REST with no
