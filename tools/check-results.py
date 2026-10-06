@@ -377,7 +377,9 @@ with sync_playwright() as pw:
     # "Level 23 ... 815 to level 25" for the whole fill.
     lv = pg.evaluate("""async ()=>{ let p=0; while(levelProgress(p).level < 23) p+=25;
       const lo=p; while(levelProgress(p).level < 24) p+=25; p+=200;
-      const w=buildResultsLevelBlock(p-lo+50, p, {}); document.getElementById('stage').appendChild(w);
+      /* every badge there is (build 314): this is about the line, not
+         the badge gate, which would hold a badgeless account at 21 */
+      const w=buildResultsLevelBlock(p-lo+50, p, { badgesBefore: 16, badgesAfter: 16 }); document.getElementById('stage').appendChild(w);
       const read=()=>{ const n=+(w.querySelector('.results-level-num').textContent.match(/\\d+/)||[0])[0];
         const m=(w.querySelector('.results-level-line').textContent.match(/to level (\\d+)/)||[])[1]; return [n, m?+m:null]; };
       const start=read(); w.runFill(); await new Promise(r=>setTimeout(r,2600)); const end=read(); w.remove();

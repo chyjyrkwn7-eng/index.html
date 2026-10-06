@@ -340,8 +340,13 @@ def check_flares(pg):
     # window. The windows are read off the page (FLARE_WINDOWS) for the
     # same reason the old thresholds were: they are decisions.
     win = pg.evaluate("()=>FLARE_WINDOWS")
+    # BUILD 314: a level is held at the badge gate (a rank's level until
+    # its badges are in), so an account driven to level 34 or 48 by XP
+    # alone would sit at 21. These checks are about the flares, not the
+    # gate: every badge there is, so the XP's level is the level.
     pg.evaluate("""()=>{ store.mysteryColorsFound = { red:false, orange:false, yellow:false, violet:false, white:false };
-      store.flareNextTestAt = 0; store.flareLevels = {}; }""")
+      store.flareNextTestAt = 0; store.flareLevels = {};
+      try{ store.unitPerfects = Object.fromEntries(topicsIn(QUESTIONS).map(u => [u, badgeThresholdFor(u)])); }catch(e){} }""")
     pg.evaluate(SET_TESTS, 9999)
     red_lv = pg.evaluate("()=>mysteryLevelGate('red')")
     pg.evaluate("(l)=>{ store.lifetime.points = xpForLevel(l) - 1; }", red_lv); short = pg.evaluate(ARM)
@@ -429,6 +434,8 @@ GLINT = """()=>{
   store.mysteryColorsFound = { red:false, orange:false, yellow:false };
   store.lifetime.drillPlays = 9999;
   store.lifetime.points = Math.max(store.lifetime.points || 0, xpForLevel(70));
+  /* build 314: every badge, so the badge gate does not hold this at 21 */
+  try{ store.unitPerfects = Object.fromEntries(topicsIn(QUESTIONS).map(u => [u, badgeThresholdFor(u)])); }catch(e){}
   beginRun(pool, null, null);
   mysteryAppearsAtPos = 0; pos = 0;
   render();
@@ -497,6 +504,8 @@ REARM = """()=>{
      when it is already owed - this check is about finding, not pacing. */
   store.flareNextTestAt = 0;
   store.lifetime.points = Math.max(store.lifetime.points || 0, xpForLevel(70));
+  /* build 314: every badge, so the badge gate does not hold this at 21 */
+  try{ store.unitPerfects = Object.fromEntries(topicsIn(QUESTIONS).map(u => [u, badgeThresholdFor(u)])); }catch(e){}
   beginRun(pool, null, null);
   mysteryAppearsAtPos = 0; pos = 0;
   render();

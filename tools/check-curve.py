@@ -121,12 +121,11 @@ def main():
             check("badgeThresholdFor exists", True)
             check("an unknown unit falls back to 35, never to 5",
                   r["unknown"] == 35, r["unknown"])
-        # Madison's bands as of build 279: "Make the ones that are 10x, 8x.
-        # Make all the 15x 12x. Make all the 20x 15x. Make penal code 2x.
-        # Arrest search and seizure, make it 4x." - the last two being the
-        # only units over 200 and in 101-200.
-        bands = [(0, 25, 15), (26, 50, 12), (51, 100, 8),
-                 (101, 200, 4), (201, 10 ** 6, 2)]
+        # The LIVE bands, as build 279 set them and build 313 shipped them.
+        # Build 314 proposed 3/2/1 and it was rejected outright: "DONT
+        # change the badge requirement" - so these are asserted as the
+        # numbers on dd6cfae, not as a decision this build may revisit.
+        bands = [(0, 25, 15), (26, 50, 12), (51, 100, 8), (101, 200, 4), (201, 10 ** 6, 2)]
         wrong = []
         for u, v in units.items():
             want = next(h for lo, hi, h in bands if lo <= v["q"] <= hi)
@@ -141,56 +140,70 @@ def main():
         above = [(u, v["need"]) for u, v in units.items() if v["need"] > OLD_BADGE_THRESHOLD]
         check("no band asks for more than the 35 the live build charged",
               not above, above)
-        # AND NO UNIT GOT DEARER THAN BUILD 209 CHARGED IT - the same rule,
-        # unit by unit, against the bands that were live before 210.
-        old_bands = [(0, 19, 35), (20, 40, 25), (41, 60, 15),
-                     (61, 100, 10), (101, 200, 7), (201, 10 ** 6, 5)]
+        # AND NO UNIT GOT DEARER THAN BUILD 279 CHARGED IT - lowering can
+        # only add a badge; raising one takes it off whoever holds it.
+        old_bands = [(0, 25, 15), (26, 50, 12), (51, 100, 8),
+                     (101, 200, 4), (201, 10 ** 6, 2)]
         raised = [(u, v["q"], v["need"], next(h for lo, hi, h in old_bands if lo <= v["q"] <= hi))
                   for u, v in units.items()
                   if v["need"] > next(h for lo, hi, h in old_bands if lo <= v["q"] <= hi)]
-        check("no unit needs more hundos than it did on build 209", not raised, raised)
+        check("no unit needs more hundos than it did on build 279", not raised, raised)
+        lowered = [(u, v["q"], v["need"]) for u, v in units.items()
+                   if v["need"] < next(h for lo, hi, h in old_bands if lo <= v["q"] <= hi)]
+        check("...nor fewer: the badge requirement did not change", not lowered, lowered)
+        live = pg.evaluate("""()=>({ bands: JSON.parse(JSON.stringify(BADGE_THRESHOLD_BANDS, (k, v) => v === Infinity ? 'inf' : v)),
+          ver: BADGE_BANDS_VERSION })""")
+        check("BADGE_THRESHOLD_BANDS is byte-for-byte the live table (dd6cfae)",
+              live["bands"] == [{"max": 25, "hundos": 15}, {"max": 50, "hundos": 12}, {"max": 100, "hundos": 8},
+                                {"max": 200, "hundos": 4}, {"max": "inf", "hundos": 2}], live["bands"])
+        check("no new badge hand-out: BADGE_BANDS_VERSION is still 3", live["ver"] == 3, live["ver"])
+        # the per-unit numbers dd6cfae computes, so no unit's badge costs
+        # a hundo more or less than live
+        LIVE_313 = {"Professionalism and Ethics": 12, "Professional Policing": 15,
+                    "Fitness, Wellness, and Stress Management": 12, "TCOLE Rules": 15,
+                    "Multiculturalism and Human Relations": 12, "Racial Profiling": 15,
+                    "US and Texas Constitution and Rights": 8, "Penal Code": 2,
+                    "Code of Criminal Procedure and Bill of Rights": 12, "Arrest, Search, and Seizure": 4,
+                    "Victims of Crime": 15, "Missing and Exploited Children": 8, "Identity Crimes": 15,
+                    "Sexual Assault and Family Violence": 12, "Verbal Communication": 12,
+                    "Civil Process and Liability": 15}
+        diff = {u: (v["need"], LIVE_313.get(u)) for u, v in units.items() if v["need"] != LIVE_313.get(u)}
+        check("every unit's badge costs exactly what it does on dd6cfae", not diff and len(units) == 16, diff)
+        rng = pg.evaluate("()=> typeof badgeRangeText === 'function' ? badgeRangeText() : null")
+        check("the copy states the range the bands actually ask", rng == "2 to 15 hundos", rng)
 
         print("\n2. nobody's level drops, for any XP total")
-        drop = pg.evaluate("""([oldStep, oldLate, unchangedThrough])=>{
-          /* The old curve rebuilt from its own two constants, stepping
-             exactly the way levelProgress() does - including the
-             Math.round and the ceiling - so this compares curves rather
-             than two different ways of writing one. */
+        drop = pg.evaluate("""()=>{
+          /* BUILD 313'S CURVE rebuilt here from its own constants (x2.0
+             into 26, +1.99% to 45, +8.35% past it), stepping exactly the
+             way levelProgress() does - not the page's legacyLevelOfPoints,
+             so this compares the curve with the record rather than with
+             itself. Build 314 makes every level CHEAPER, so every XP
+             total must read the same level or higher. */
           function oldLevel(p){
-            let lvl = 1, need = LEVEL_BASE_POINTS, spent = 0;
-            const growth = l => l <= LEVEL_FREEZE_THROUGH ? LEVEL_GROWTH
-                               : (l === LEVEL_FREEZE_THROUGH + 1 ? oldStep : oldLate);
-            const ceil = l => l <= LEVEL_FREEZE_THROUGH ? LEVEL_COST_MAX : LEVEL_COST_TOP;
-            while(lvl < LEVEL_CAP && p >= spent + need){
+            let lvl = 1, need = 300, spent = 0;
+            const growth = l => l <= 25 ? 1.05 : l === 26 ? 2.0 : l > 45 ? 1.0835 : 1.0199;
+            const ceil = l => l <= 25 ? 9000 : 150000;
+            while(lvl < 80 && p >= spent + need){
               spent += need; lvl += 1;
               need = Math.min(ceil(lvl + 1), Math.round(need * growth(lvl + 1)));
             }
             return lvl;
           }
-          /* EVERY TOTAL THAT PUTS SOMEBODY AT OR BELOW 45 on the curve
-             the class is on reads the same level on this one. Above 45
-             it is dearer by design (build 210) - nobody held more than
-             43 when it shipped - so the sweep stops where the old curve
-             reaches 46. */
-          let worst = null, n = 0;
-          for(let p = 0; p <= 600000; p += 137){
-            const a = oldLevel(p);
-            if(a > unchangedThrough) break;
-            const b = levelFromPoints(p);
-            if(b !== a){ n++; if(!worst) worst = { p, was: a, now: b }; }
+          let worst = null, n = 0, frozenDiff = null, n313 = 0;
+          for(let p = 0; p <= 600000; p += 37){
+            const a = oldLevel(p), b = levelFromPoints(p);
+            if(b < a){ n++; if(!worst) worst = { p, was: a, now: b }; }
+            if(typeof legacyLevelOfPoints === 'function' && legacyLevelOfPoints(p) !== a) n313++;
           }
-          /* The frozen stretch has to be byte-identical, not merely not
-             worse - that is what "do not change anyone's current level
-             what so ever" asks for, and every account in the class is
-             inside it. */
-          let frozenDiff = null;
-          for(let p = 0; p <= 15000; p += 31){
+          for(let p = 0; p <= 14306; p += 1){
             if(oldLevel(p) !== levelFromPoints(p)){ frozenDiff = p; break; }
           }
-          return { n, worst, frozenDiff, cap: LEVEL_CAP };}""", [OLD_STEP, OLD_LATE, UNCHANGED_THROUGH])
-        check("no level at or below 45 moves by a single point", drop["n"] == 0, drop["worst"])
-        check("levels 1-25 are byte-identical to the live build",
+          return { n, worst, frozenDiff, n313 };}""")
+        check("no XP total from 0 to 600,000 reads a lower level than on build 313", drop["n"] == 0, drop["worst"])
+        check("levels 1-25 are byte-identical (every XP total to 14,306)",
               drop["frozenDiff"] is None, drop["frozenDiff"])
+        check("legacyLevelOfPoints is build 313's curve, step for step", drop["n313"] == 0, drop["n313"])
 
         print("\n3. the badge line, and the ranks read off it")
         line = pg.evaluate("""()=>{
@@ -222,7 +235,7 @@ def main():
             for n in ("the badge line only ever climbs",
                       "no rank asks for more badges than there are units",
                       "every rank's level is inside the cap",
-                      "no rank got harder than the live build",
+                      "the ranks are 21/30/40/50/60/70/80 with the live badge counts (1/3/5/7/9/12/14)",
                       "every rank's label says the numbers it actually checks"):
                 check(n, False, line["threw"])
             line = None
@@ -251,17 +264,18 @@ def main():
                           % (t["key"], t["level"], t["badges"], line["levels"][t["badges"] - 1]))
             beyond = [t for t in line["tiers"] if t["level"] > line["cap"]]
             check("every rank's level is inside the cap", not beyond, beyond)
-            """A rank is computed fresh from level and badges, so raising
-            either number takes a rank off somebody who holds it. Iron was
-            reached by a real person the day it shipped."""
-            LIVE = {"rookie": (21, 1), "ranger": (29, 3), "veteran": (36, 5),
-                    "vanguard": (45, 8), "adept": (52, 11), "elite": (65, 15),
-                    "titan": (80, 20)}
-            raised = [(t["key"], t["level"], t["badges"], LIVE[t["key"]])
-                      for t in line["tiers"]
-                      if t["key"] in LIVE
-                      and (t["level"] > LIVE[t["key"]][0] or t["badges"] > LIVE[t["key"]][1])]
-            check("no rank got harder than the live build", not raised, raised)
+            # BUILD 314, FINAL (Madison): "Let's make supernova level 80? And
+            # then fix the ones before it" - even steps to the cap, with the
+            # badge counts exactly as live ("DONT change the badge
+            # requirement"). Raising a rank's level could take it off
+            # somebody, so section 3b checks every real account keeps the
+            # rank it holds today.
+            WANT = {"rookie": (21, 1), "ranger": (30, 3), "veteran": (40, 5),
+                    "vanguard": (50, 7), "adept": (60, 9), "elite": (70, 12),
+                    "titan": (80, 14)}
+            got = {t["key"]: (t["level"], t["badges"]) for t in line["tiers"]}
+            check("the ranks are 21/30/40/50/60/70/80 with the live badge counts (1/3/5/7/9/12/14)",
+                  got == WANT, got)
             stale = [t["key"] for t in line["tiers"]
                      if str(t["level"]) not in t["label"] or str(t["badges"]) not in t["label"]]
             check("every rank's label says the numbers it actually checks", not stale, stale)
@@ -271,8 +285,11 @@ def main():
           const at = L => xpForLevel(L) - xpForLevel(L - 1);
           let minRatioPast45 = Infinity;
           for(let L = 47; L <= LEVEL_CAP; L++) minRatioPast45 = Math.min(minRatioPast45, at(L) / at(L - 1));
+          /* the growth the curve would keep past the cap - levelGrowthAt
+             is what levelProgress steps by, so LEVEL_CAP is only a bound */
+          const rates = []; for(let L = 27; L <= 120; L++) rates.push(levelGrowthAt(L));
           return { l26: at(26), l50: at(50), l60: at(60), l61: at(61), l80: at(80),
-                   toCap: xpForLevel(LEVEL_CAP), minRatioPast45 };}""")
+                   toCap: xpForLevel(LEVEL_CAP), to71: xpForLevel(71), to21: xpForLevel(21), minRatioPast45, rates };}""")
         print("     ", json.dumps(costs))
         """"If you are level 60 I don't want you to have to play for a
         week straight to earn 2 levels." Two levels at 60 against a
@@ -297,10 +314,13 @@ def main():
         # adjust levels past level 45 to be more and make the xp total
         # more than 450,000 then do it" once the new XP was made bigger.
         # Growth past 45 is 8.35%, about 600,000 in all.
-        check("past 45 every level is at least 8.3% dearer than the last",
-              costs["minRatioPast45"] >= 1.083, round(costs["minRatioPast45"], 4))  # 8.35%, less whole-XP rounding
-        check("the whole climb to 80 is about 600,000 XP",
-              abs(costs["toCap"] - 600000) <= 6000, costs["toCap"])
+        # BUILD 314, FINAL: the re-fitted curve was NOT shipped - "140000 xp
+        # is all that's needed to reach level 80? That doesn't even sound
+        # right". The live curve stays exactly as it is, so no level moves.
+        same = pg.evaluate("""()=>{ let bad = 0; for(let p = 0; p <= 700000; p += 37){ if(levelFromPoints(p) !== legacyLevelOfPoints(p)) bad++; } return bad; }""")
+        check("the XP curve is exactly the live one (every total from 0 to 700,000)", same == 0, same)
+        check("level 80 still costs what it does live (598,449)", costs["toCap"] == 598449, costs["toCap"])
+        check("level 21 still costs about 10,000 (early levels stay quick)", 8000 <= costs["to21"] <= 10500, costs["to21"])
         check("and a level still costs more the higher you are",
               costs["l80"] > costs["l60"] > costs["l50"] > costs["l26"], costs)
 
@@ -424,7 +444,14 @@ def main():
             store.unitPerfects = {'TCOLE Rules': 16, 'Penal Code': 2, 'Professionalism and Ethics': 12, 'Identity Crimes': 20};
             grantRetroBadgesOnce();
             const b279 = store.retroBadgePending.slice();
-            return { listed, first, second, fresh, b279 };
+            /* BUILD 314 HANDS NOTHING OUT: the bands did not move, so an
+               account already on version 3 - every live account - is not
+               re-listed, whatever its hundos. */
+            store.badgeBandsVersion = 3; store.retroBadgePending = [];
+            store.unitPerfects = {'Identity Crimes': 5, 'Penal Code': 2, 'US and Texas Constitution and Rights': 2, 'Victims of Crime': 15};
+            grantRetroBadgesOnce();
+            const b314 = store.retroBadgePending.slice();
+            return { listed, first, second, fresh, b279, b314 };
           } catch(e){ return { threw: String(e) }; }}""")
         if retro.get("threw"):
             check("handed-out badges are listed once, on launch", False, retro["threw"])
@@ -445,6 +472,174 @@ def main():
             check("build 279's lower bands hand out what they newly qualify, and keep what 210 still owed",
                   sorted(retro.get("b279") or []) == ['Penal Code', 'Professionalism and Ethics', 'TCOLE Rules', 'Victims of Crime'],
                   retro.get("b279"))
+
+            check("build 314 hands no badge out to a live account (version 3)",
+                  retro.get("b314") == [], retro.get("b314"))
+
+        print("\n8. the badge wall: a rank's level is a gate its badges open (build 314)")
+        """ "You can't get past that next rank's level until you hit the
+        badges needed." Every one of these fails on build 313, which had
+        no wall: its level was the curve's, whatever the badges."""
+        w = pg.evaluate("""async ()=>{
+          const out = {};
+          try{
+            const tiers = TIER_ORDER_FULL.map(k => [TIER_UNLOCKS[k].level, TIER_UNLOCKS[k].badges]);
+            out.tiers = tiers;
+            const setAcct = (pts, perf, floor) => {
+              store.lifetime = Object.assign({}, store.lifetime, { points: pts });
+              store.unitPerfects = perf || {}; store.levelFloor = floor || 0;
+              retroHideBadges = null; mergeHidePoints = null;
+            };
+            /* a badge count, made of real units at their real thresholds */
+            const units = topicsIn(QUESTIONS);
+            const perfFor = n => Object.fromEntries(units.slice(0, n).map(u => [u, badgeThresholdFor(u)]));
+            out.walls = [];
+            for(let b = 0; b <= units.length; b++){
+              setAcct(xpForLevel(LEVEL_CAP) + 5000, perfFor(b), 0);
+              out.walls.push([b, badgeCountOf(store), levelOf(store)]);
+            }
+            /* XP keeps counting at a wall, and the bar says so */
+            setAcct(xpForLevel(30), {}, 0);
+            const s0 = levelStateFor(store);
+            out.atWall = { level: s0.level, stopped: s0.stopped, into: s0.into, span: s0.span, xp: s0.total };
+            const idx = t => QUESTIONS.map((q,i)=>[q,i]).filter(([q]) => (q.topic||'').trim() === t && inWholeUnit(q)).map(([,i]) => i);
+            const runOf = (unit, n) => {
+              cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = [unit];
+              order = n ? idx(unit).slice(0, n) : idx(unit);
+              runTrackable = true; timedOut = false; runMode = 'drill'; runLabel = null;
+              attempts = {}; picked = {}; timedOutSet = {};
+              order.forEach(qi => { attempts[qi] = 1; picked[qi] = optionOrder(qi).indexOf(QUESTIONS[qi].answer); });
+              summarize();
+            };
+            store.pendingBadgeUnlocks = []; store.pendingTierCutscene = null;
+            const xp0 = store.lifetime.points;
+            runOf('Victims of Crime', 6);
+            out.afterRun = { gained: store.lifetime.points - xp0, level: levelOf(store),
+              line: (document.querySelector('#stage .results-level-line') || {}).textContent || null,
+              gate: (document.querySelector('#stage .results-level-gate') || {}).textContent || null };
+            /* the badge arrives: the level jumps to what the XP has earned */
+            const U = 'Identity Crimes';
+            /* XP for level 26 - past the 21 wall, short of the 29 one a
+               single badge moves it to */
+            setAcct(xpForLevel(26) + 100, { [U]: badgeThresholdFor(U) - 1 }, 0);
+            store.pendingBadgeUnlocks = []; store.pendingTierCutscene = null;
+            const lv0 = levelOf(store);
+            runOf(U, 0);
+            const num = document.querySelector('#stage .results-level-num');
+            out.jump = { before: lv0, after: levelOf(store), curve: levelFromPoints(store.lifetime.points),
+                         badges: badgeCountOf(store), tag: num ? num.dataset.jump || null : null };
+            /* THE GRANDFATHER FLOOR IS THE OLD CURVE'S LEVEL (build 314):
+               "by leveling us up even more, the discrepancy of badges to
+               levels WILL get even more." Build 313's curve rebuilt here
+               from its own constants, not the page's helper. */
+            const oldLevel = p => {
+              let lvl = 1, need = 300, spent = 0;
+              const growth = l => l <= 25 ? 1.05 : l === 26 ? 2.0 : l > 45 ? 1.0835 : 1.0199;
+              const ceil = l => l <= 25 ? 9000 : 150000;
+              while(lvl < 80 && p >= spent + need){ spent += need; lvl += 1;
+                need = Math.min(ceil(lvl + 1), Math.round(need * growth(lvl + 1))); }
+              return lvl;
+            };
+            const allBadges = Object.fromEntries(units.map(u => [u, badgeThresholdFor(u)]));
+            out.floor = [5000, 20000, 39395, 66355, 87480, 160000].map(p => {
+              applyLoadedData({ lifetime: { points: p }, unitPerfects: {}, onboardingComplete: true });
+              retroHideBadges = null;
+              const held0 = { floor: store.levelFloor, level: levelOf(store) };
+              applyLoadedData({ lifetime: { points: p }, unitPerfects: allBadges, onboardingComplete: true });
+              retroHideBadges = null;
+              return { p, old: oldLevel(p), curve: levelFromPoints(p), floor: held0.floor, held: held0.level,
+                       unheld: levelOf(store) };
+            });
+            applyLoadedData({ lifetime: { points: 0 }, onboardingComplete: true });
+            out.freshFloor = store.levelFloor;
+            /* the floor merges by max, both ways, and survives a copy that has none */
+            const m1 = { levelFloor: 30, lifetime: {} }; mergeSameAccount(m1, { levelFloor: 40, lifetime: {} });
+            const m2 = { levelFloor: 40, lifetime: {} }; mergeSameAccount(m2, { levelFloor: 30, lifetime: {} });
+            const m3 = { levelFloor: 40, lifetime: {} }; mergeSameAccount(m3, { lifetime: {} });
+            out.merge = [m1.levelFloor, m2.levelFloor, m3.levelFloor];
+            /* the rankings row publishes the effective level, and the rank
+               is asked about that level */
+            setAcct(xpForLevel(40), perfFor(1), 0);
+            const row = buildLeaderboardRow();
+            out.row = { level: row && row.level, eff: levelOf(store), curve: levelFromPoints(store.lifetime.points),
+                        rank: rankOf(store), rankOfCurve: rankOfStats(levelFromPoints(store.lifetime.points), 1, 0) };
+            /* a reset starts under the wall like anybody new */
+            store.levelFloor = 44; wipeLocalProgressAndSettings(); out.resetFloor = store.levelFloor;
+            /* the Profile card at a gate: the numbers run past the level,
+               and the Next gate section says what opens it */
+            setAcct(xpForLevel(22) + 600, perfFor(0), 0);
+            showProfile('identity'); await new Promise(r => setTimeout(r, 400));
+            const q = sel => (document.querySelector(sel) || {}).textContent || null;
+            out.profile = { top: q('.profile-level-sidetop'), gate: q('.next-gate-name'), line: q('.next-gate-line'),
+                            chips: [...document.querySelectorAll('.next-gate .gate-chip')].map(e => e.textContent),
+                            banked: !!document.querySelector('.profile-xpbar.is-banked') };
+          } catch(e){ out.threw = String(e && e.stack || e); }
+          return out; }""")
+        if w.get("threw"):
+            check("the badge wall exists", False, w["threw"][:300])
+        else:
+            want = []
+            for b in range(len(w["walls"])):
+                levels = [lv for lv, bd in w["tiers"] if bd > b]
+                want.append(min(levels) if levels else 80)
+            got = [lv for b, bc, lv in w["walls"]]
+            check("the wall per badge count is the first rank asking for more badges",
+                  got == want and [bc for b, bc, lv in w["walls"]] == list(range(len(w["walls"]))), list(zip(want, got)))
+            check("...which is 21, 30, 30, 40, 40, 50, 50, 60, 60, 70, 70, 70, then the cap",
+                  got[:15] == [21, 30, 30, 40, 40, 50, 50, 60, 60, 70, 70, 70, 80, 80, 80], got)
+            a0 = w["atWall"]
+            check("at a wall the level is held and the bar is stopped, the XP past it still counted",
+                  a0["level"] == 21 and a0["stopped"] and a0["into"] > a0["span"], a0)
+            ar = w["afterRun"]
+            check("XP keeps counting at a wall; the level does not move",
+                  ar["gained"] > 0 and ar["level"] == 21, ar)
+            check("the results card shows the overflow and the gate",
+                  ar["line"] and " / " in ar["line"] and ar["gate"] and "to pass level 21" in ar["gate"], ar)
+            j = w["jump"]
+            check("earning the badge jumps the level straight to what the XP earned",
+                  j["before"] == 21 and j["after"] == j["curve"] and 22 < j["after"] <= 30 and j["badges"] == 1, j)
+            check("and the level-up says it was several levels", j["tag"] == str(j["after"] - j["before"]), j)
+            fl = w["floor"]
+            check("the grandfather floor is the level on the OLD curve, never the new one",
+                  all(f["floor"] == f["old"] for f in fl), fl)
+            check("nobody's level goes below what they hold now", all(f["held"] >= f["old"] and f["unheld"] >= f["old"] for f in fl), fl)
+            # BUILD 314, FINAL: the curve is the live one, so the update moves
+            # nobody's level - a held account sits exactly where it is today.
+            check("nobody's level changes on the update (floor = curve = shown)",
+                  all(f["held"] == f["old"] == f["curve"] for f in fl), fl)
+            check("a brand-new account has no floor", w["freshFloor"] == 0, w["freshFloor"])
+            check("a merge takes the higher floor, either way round", w["merge"] == [40, 40, 40], w["merge"])
+            r = w["row"]
+            check("the rankings row publishes the effective level, not the curve's",
+                  r["level"] == r["eff"] == 30 and r["curve"] > 30, r)
+            check("the rank is asked about the effective level", r["rank"] == "rookie" == r["rankOfCurve"], r)
+            check("a reset clears the floor", w["resetFloor"] == 0, w["resetFloor"])
+            pf = w["profile"]
+            check("Profile at a gate: XP into the level over what it asks, Next gate, what opens it",
+                  pf["top"] and re.match(r"^[0-9,]+ / [0-9,]+ XP$", pf["top"]) and pf["gate"] == "Bronze"
+                  and pf["line"] == "Earn 1 badge to pass level 21" and pf["banked"]
+                  and pf["chips"] == ["Level 21 \u2713", "Badges 0 / 1"], pf)
+
+        print("\n9. firestore-admin.py audits with the page's own numbers")
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("fadmin", os.path.join(ROOT, "tools", "firestore-admin.py"))
+        fa = importlib.util.module_from_spec(spec)
+        try:
+            spec.loader.exec_module(fa)
+            page = pg.evaluate("""()=>({ q: Object.fromEntries(topicsIn(QUESTIONS).map(u => [u, unitQuestionCount(u)])),
+              need: Object.fromEntries(topicsIn(QUESTIONS).map(u => [u, badgeThresholdFor(u)])),
+              ranks: TIER_ORDER_FULL.map(k => [TIER_UNLOCKS[k].level, TIER_UNLOCKS[k].badges]),
+              lv: [0, 300, 9912, 14306, 14427, 30000, 61965, 99999, 138431, 197370, 250000].map(p => [p, levelFromPoints(p), legacyLevelOfPoints(p)]) })""")
+            check("its unit sizes and badge bands are the page's",
+                  fa.UNIT_QUESTIONS == page["q"] and all(fa.badge_threshold(u) == n for u, n in page["need"].items()),
+                  [u for u, n in page["need"].items() if fa.badge_threshold(u) != n])
+            check("its ranks are the page's", [list(x) for x in fa.RANKS] == page["ranks"], page["ranks"])
+            check("its two curves are the page's",
+                  all(fa.level_of(p) == a and fa.legacy_level_of_points(p) == b for p, a, b in page["lv"]), page["lv"])
+            f = {"lifetime": {"points": 30000}, "unitPerfects": {}, "levelFloor": 0}
+            check("its effective level holds a no-badge account at 21", fa.effective_level(f) == 21, fa.effective_level(f))
+        except Exception as e:
+            check("firestore-admin.py loads and has the badge wall", False, repr(e))
 
         check("no uncaught JS along the way", not errs, errs[:3])
         ctx.close(); br.close()

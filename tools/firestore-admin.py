@@ -932,21 +932,81 @@ def _js_round(x):
     return int(math.floor(x + 0.5))
 
 
-def level_of(points):
-    """levelProgress() in index.html, step for step - keep the two in step."""
+def _curve_level(points, step, late, steep_from=None, steep=None):
     p = max(0, float(points or 0))
     lvl, need, spent = 1, 300, 0
     def growth(l):
         if l <= 25: return 1.05
-        if l > 45: return 1.0835
-        if l == 26: return 2.0
-        return 1.0199
+        if steep_from is not None and l > steep_from: return steep
+        if l == 26: return step
+        return late
     def ceiling(l):
         return 9000 if l <= 25 else 150000
-    while lvl < 80 and p >= spent + need:
+    while lvl < LEVEL_CAP and p >= spent + need:
         spent += need; lvl += 1
         need = min(ceiling(lvl + 1), _js_round(need * growth(lvl + 1)))
     return lvl
+
+
+LEVEL_CAP = 80
+
+
+def level_of(points):
+    """levelProgress() in index.html, step for step - keep the two in step.
+    Build 314 kept the live curve (the re-fit was not shipped), so this is
+    the same curve as legacy_level_of_points."""
+    return _curve_level(points, 2.0, 1.0199, 45, 1.0835)
+
+
+def legacy_level_of_points(points):
+    """legacyLevelOfPoints(): build 313's curve, kept for one job - the
+    grandfather floor is the level an account held on THIS curve."""
+    return _curve_level(points, 2.0, 1.0199, 45, 1.0835)
+
+
+# ---- THE BADGE WALL (build 314) ----
+# A copy of what the page asks, so audit can work out the level a row
+# MUST say. check-curve.py compares every table here with the page, so
+# they cannot drift without a gate going red.
+# Questions per unit (unitQuestionCount), the bands (BADGE_THRESHOLD_BANDS)
+# and the ranks (TIER_UNLOCKS: level, badges).
+UNIT_QUESTIONS = {
+    "Professionalism and Ethics": 29, "Professional Policing": 19,
+    "Fitness, Wellness, and Stress Management": 28, "TCOLE Rules": 20,
+    "Multiculturalism and Human Relations": 35, "Racial Profiling": 13,
+    "US and Texas Constitution and Rights": 77, "Penal Code": 340,
+    "Code of Criminal Procedure and Bill of Rights": 35, "Arrest, Search, and Seizure": 120,
+    "Victims of Crime": 15, "Missing and Exploited Children": 54, "Identity Crimes": 12,
+    "Sexual Assault and Family Violence": 46, "Verbal Communication": 29,
+    "Civil Process and Liability": 22,
+}
+BADGE_BANDS = [(25, 15), (50, 12), (100, 8), (200, 4), (float("inf"), 2)]
+RANKS = [(21, 1), (30, 3), (40, 5), (50, 7), (60, 9), (70, 12), (80, 14)]
+
+
+def badge_threshold(unit):
+    n = UNIT_QUESTIONS.get(unit, 0)
+    if not n: return 35
+    return next(h for mx, h in BADGE_BANDS if n <= mx)
+
+
+def badges_of(f):
+    up = f.get("unitPerfects") or {}
+    return sum(1 for u in UNIT_QUESTIONS if (up.get(u) or 0) >= badge_threshold(u))
+
+
+def badge_wall(badges):
+    return min([lv for lv, b in RANKS if b > badges] + [LEVEL_CAP])
+
+
+def effective_level(f):
+    """levelStateFor(): min(curve level, max(badge wall, floor)). An account
+    with no floor yet gets the one applyLoadedData would give it."""
+    pts = ((f.get("lifetime") or {}).get("points")) or 0
+    fl = f.get("levelFloor")
+    if not isinstance(fl, (int, float)):
+        fl = legacy_level_of_points(pts) if pts > 0 else 0
+    return min(level_of(pts), max(badge_wall(badges_of(f)), int(fl)), LEVEL_CAP)
 
 
 def _acct_summary(f):
@@ -991,8 +1051,15 @@ def cmd_audit(argv):
             if (r.get("xp") or 0) > a["xp"] or (r.get("correct") or 0) > a["correct"]:
                 problems.append("%s: the rankings row is AHEAD of the account - %s XP / %s correct on the board, %s / %s saved. A device has progress it has not saved."
                                 % (name, r.get("xp"), r.get("correct"), a["xp"], a["correct"]))
-            if r.get("level") is not None and r.get("level") != level_of(r.get("xp") or 0):
-                problems.append("%s: the row says level %s for %s XP (should be %s)" % (name, r.get("level"), r.get("xp"), level_of(r.get("xp") or 0)))
+            # build 314: the row publishes the EFFECTIVE level - the curve,
+            # held at the badge wall, never below the grandfather floor -
+            # worked out from the progress document's own XP, hundos and
+            # floor. Only checked when the row is level with the account
+            # (a row waits up to 90s, and an older build publishes the
+            # ungated level until it updates).
+            if r.get("level") is not None and (r.get("xp") or 0) == a["xp"] and r.get("level") != effective_level(f):
+                problems.append("%s: the row says level %s for %s XP, %s badges (should be %s)"
+                                % (name, r.get("level"), r.get("xp"), badges_of(f), effective_level(f)))
         elif f.get("leaderboardOptIn") and not moved:
             problems.append("%s: opted in to the rankings but has no row" % name)
         o = old.get(pid)
