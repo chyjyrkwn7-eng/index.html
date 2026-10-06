@@ -12919,7 +12919,11 @@ version is that set now; 0-85 is gone from the app.
   ("Manslaughter. 1"), repaired with `keyChoices`. **#203 (unborn child)
   is flagged, not changed**: the deck and the bank both say "the
   ancestor of an unborn child" cannot be charged, where PC 19.06 exempts
-  the mother. It is the instructor's key, so it stays until Madison says.
+  the mother. It is the instructor's key, and it stays: **"Keep the guide it is,
+  don't be changing answers."** The bank's answers are the study guide's
+  answers, even where the law reads otherwise - repair a broken choice
+  (a cut-off word, a stray footnote) but never change which answer is
+  right.
 - **That repair made #346 a seventh question on one answer set** (the
   "which offense is this" questions: murder, manslaughter and the rest),
   five of them inside the 58. `spreadOrder()`'s single fixed twin gap
