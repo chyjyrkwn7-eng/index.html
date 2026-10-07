@@ -24,6 +24,17 @@ button. What is held here is the SHAPE of that, not its words:
      retake = right answers only); Re-run is back. (Game's bonuses and
      its lost-game screen went with Game mode in build 283.)
   6. Reduce motion gets everything at once and no banners.
+  9. (build 315) One type system, set by the grade: no serif and no
+     old-style figures anywhere on the results screens - the rewards
+     screen, the review, a retake, a no-XP run, the daily question's
+     verdict, the Virtual Room's results and its leaderboard - and every
+     number in the grade's own sans with tabular figures, pseudo-element
+     text included. Then the measured rules that make it one screen: one
+     size per role (kicker, label, caption), one text edge for every card,
+     every right-hand number ending on the content edge, the same gap
+     under every card's heading, landed XP lines in their own slots, every
+     pair written "N / M", and no half-width button label on two lines at
+     320px or 375px. Fails on f543e95 and on 94a3108^ (the serif grade).
 
 Drives summarize() directly with a real unit's questions, the way
 check-behaviour's badge routes do, so it is fast and deterministic.
@@ -35,6 +46,98 @@ CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
 _VR = open(os.path.join(ROOT, "tools", "check-vroom.py"), encoding="utf-8").read()
 FAKE = re.search(r'FAKE_FIRESTORE = """(.*?)"""', _VR, re.S).group(1)
 AGAINST = sys.argv[sys.argv.index("--against") + 1] if "--against" in sys.argv else None
+BOTS = re.search(r'BOTS_313 = r"""(.*?)"""', _VR, re.S).group(1)
+
+# ---- build 315: the results screens in one type system ----------------
+# Every piece of text under the given roots (and every ::before/::after
+# that says something), checked against what the grade number set: never
+# a serif, never old-style figures, and a number is the --sans stack's own
+# face with tabular figures. SVG artwork is not text and is skipped.
+TYPE_AUDIT = r"""(sel)=>{
+  const SERIF = /^(georgia|iowan old style|palatino linotype|palatino|times new roman|times|new york|charter|serif)$/i;
+  const first = ff => (ff || '').split(',')[0].trim().replace(/^["']|["']$/g, '');
+  const SANS = first(getComputedStyle(document.documentElement).getPropertyValue('--sans'));
+  const issues = []; let n = 0, nums = 0;
+  const audit = (cs, text, where, numeric) => {
+    const fam = first(cs.fontFamily);
+    if(SERIF.test(fam)) issues.push(['serif', where, text, fam]);
+    if(/oldstyle-nums/.test(cs.fontVariantNumeric) || /["']onum["'](?!\s*(0|off))/.test(cs.fontFeatureSettings)) issues.push(['old-style figures', where, text]);
+    if(numeric){
+      nums++;
+      if(fam !== SANS) issues.push(['a number not in the sans', where, text, fam]);
+      if(!/tabular-nums/.test(cs.fontVariantNumeric)) issues.push(['a number not tabular', where, text, cs.fontVariantNumeric]);
+    }
+  };
+  const nameOf = el => el.tagName.toLowerCase() + '.' + String(el.getAttribute('class') || '').trim().split(/\s+/)
+    .filter(c => !/^rs-(land|in|in-now)$/.test(c)).slice(0, 2).join('.');
+  [...document.querySelectorAll(sel)].forEach(root => [root, ...root.querySelectorAll('*')].forEach(el => {
+    if(el.closest('svg') || !el.getClientRects().length) return;
+    const cs = getComputedStyle(el);
+    if(cs.visibility === 'hidden' || cs.display === 'none' || +cs.opacity === 0) return;
+    const own = [...el.childNodes].filter(t => t.nodeType === 3 && t.textContent.trim()).map(t => t.textContent.trim()).join(' ');
+    if(own){ n++; audit(cs, own.slice(0, 40), nameOf(el), /\d/.test(own)); }
+    ['::before', '::after'].forEach(p => {
+      const ps = getComputedStyle(el, p), c = ps.content || '';
+      if(!c || c === 'none' || c === 'normal' || ps.display === 'none') return;
+      const lit = (c.match(/"[^"]*"/g) || []).join('').replace(/"/g, '');
+      const attrs = (c.match(/attr\(([^)]+)\)/g) || []).map(a => el.getAttribute(a.slice(5, -1).trim()) || '').join('');
+      const text = (lit + ' ' + attrs).trim();
+      if(!/[A-Za-z0-9]/.test(text)) return;
+      n++; audit(ps, text.slice(0, 40), nameOf(el) + p, /\d/.test(text));
+    });
+  }));
+  return { n, nums, issues };
+}"""
+# The shape of the screen, measured: one size per role, one text edge, the
+# numbers on the right edge, the same gap under every heading (heading
+# baseline to the first line's cap top, from the font's own metrics), the
+# cards evenly spaced, landed XP lines untransformed, the header on one
+# edge, and every pair "N / M".
+SHAPE_AUDIT = r"""()=>{
+  const R = v => Math.round(v * 10) / 10;
+  const panel = document.querySelector('#stage .rs-screen'); if(!panel) return null;
+  const shown = e => e.getClientRects().length && getComputedStyle(e).display !== 'none';
+  const sizes = sel => [...new Set([...panel.querySelectorAll(sel)].filter(shown).map(e => getComputedStyle(e).fontSize))];
+  const roles = {
+    kicker: sizes('.rs-kicker, .rs-unlocked .unlockbanner-kicker, .rs-xp .results-level-rank, .rs-stamp, .rs-q-tag, .rs-q-answers p > span'),
+    label: sizes('.rs-xpline-name, .rs-xpline-val, .rs-xptotal-label, .rs-byunit .unit-breakdown-name, .rs-byunit .unit-breakdown-score, .rs-badges .badgeprogress-name, .rs-unlocked .unlockbanner-name, .vroom-wait-line, .rs-unitlist li'),
+    caption: sizes('.rs-xpline-sub, .rs-grade-sub, .rs-badges .badgeprogress-line, .rs-xp .results-level-line, .rs-q-ref, .vroom-wait-leave')
+  };
+  const cards = [...panel.querySelectorAll(':scope > .rs-card')].filter(shown);
+  const box = c => { const r = c.getBoundingClientRect(), cs = getComputedStyle(c);
+    return { t: r.top, b: r.bottom, cl: r.left + parseFloat(cs.borderLeftWidth) + parseFloat(cs.paddingLeft),
+             cr: r.right - parseFloat(cs.borderRightWidth) - parseFloat(cs.paddingRight) }; };
+  const B = cards.map(box);
+  const left = el => { const rg = document.createRange(); rg.selectNodeContents(el); const q = rg.getClientRects()[0]; return q ? q.left : el.getBoundingClientRect().left; };
+  const kickLeft = cards.map((c, i) => { const k = c.querySelector(':scope > .rs-kicker'); return k ? R(left(k) - B[i].cl) : 0; });
+  const shortOfRight = [...panel.querySelectorAll('.rs-xpline-val, .rs-xptotal-unit, .rs-byunit .unit-breakdown-score, .vroom-wait-count')].filter(shown)
+    .map(e => R(box(e.closest('.rs-card')).cr - e.getBoundingClientRect().right));
+  const cv = document.createElement('canvas').getContext('2d');
+  const met = el => { const cs = getComputedStyle(el); cv.font = cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
+    const m = cv.measureText('H0'); return { asc: m.fontBoundingBoxAscent, cap: m.actualBoundingBoxAscent }; };
+  const lines = root => { const out = []; const walk = n => {
+      if(n.nodeType === 3 && n.textContent.trim()){ const p = n.parentElement; if(!shown(p) || getComputedStyle(p).visibility === 'hidden') return;
+        const m = met(p), rg = document.createRange(); rg.selectNodeContents(n);
+        [...rg.getClientRects()].forEach(q => { if(q.width > 1) out.push({ cap: q.top + m.asc - m.cap, base: q.top + m.asc }); }); }
+      else if(n.nodeType === 1 && getComputedStyle(n).display !== 'none') [...n.childNodes].forEach(walk); };
+    walk(root); return out.sort((a, b) => a.cap - b.cap); };
+  const headingGaps = cards.map(c => { const k = c.querySelector(':scope > .rs-kicker'); if(!k) return null;
+    const kl = lines(k); if(!kl.length) return null; const kb = kl[kl.length - 1].base;
+    const after = lines(c).filter(l => l.cap > kb + 1); return after.length ? R(after[0].cap - kb) : null; }).filter(v => v != null);
+  const head = []; const chip = panel.querySelector(':scope > .rs-head .rs-mode'); if(chip) head.push(R(chip.getBoundingClientRect().left));
+  const ttl = panel.querySelector(':scope > .rs-head .rs-units'); if(ttl) head.push(R(left(ttl)));
+  const lab = document.getElementById('testscopelabel'); if(lab && lab.textContent.trim() && shown(lab)) head.push(R(left(lab)));
+  return { roles, contentLefts: B.map(b => R(b.cl)), contentRights: B.map(b => R(b.cr)), kickLeft, shortOfRight, headingGaps,
+    cardGaps: B.slice(1).map((b, i) => R(b.t - B[i].b)),
+    lifted: [...panel.querySelectorAll('.rs-xpline')].map(e => getComputedStyle(e).transform).filter(t => t && t !== 'none'),
+    head, pairs: [...panel.querySelectorAll('.rs-grade-frac, .rs-byunit .unit-breakdown-score, .vroom-wait-count')].filter(shown).map(e => e.textContent) };
+}"""
+# Lines of text in each matching button's own label.
+ONE_LINE = r"""(sel)=>[...document.querySelectorAll(sel)].filter(b => b.getClientRects().length).map(b => {
+  const tops = new Set(); const walk = n => { if(n.nodeType === 3 && n.textContent.trim()){ const rg = document.createRange(); rg.selectNodeContents(n);
+    [...rg.getClientRects()].forEach(q => { if(q.width > 1) tops.add(Math.round(q.top / 3)); }); } else if(n.nodeType === 1) [...n.childNodes].forEach(walk); };
+  walk(b); return [b.textContent.trim(), tops.size]; })"""
+spread = lambda xs: (max(xs) - min(xs)) if xs else 0
 
 s = socket.socket(); s.bind(("127.0.0.1", 0)); port = s.getsockname()[1]; s.close()
 class Q(http.server.SimpleHTTPRequestHandler):
@@ -389,6 +492,129 @@ with sync_playwright() as pw:
       return {start, end}; }""")
     ck("the level line names the next level after the one shown, while filling and after",
        lv["start"][1] == lv["start"][0] + 1 and lv["end"][1] == lv["end"][0] + 1 and lv["end"][0] > lv["start"][0], lv)
+
+    print("9. build 315: the results screens in one type system")
+    def fresh(w, h):
+        c = br.new_context(viewport={"width": w, "height": h})
+        c.add_init_script(FAKE)
+        c.add_init_script("try{localStorage.setItem('class26e.frame.ok','go-live-1');"
+                          "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.daily.seen','x');}catch(e){}")
+        p = c.new_page()
+        p.on("pageerror", lambda e: errors.append(str(e)))
+        if AGAINST:
+            p.route("**/index.html", lambda r, q=None: r.fulfill(status=200, content_type="text/html", body=_html))
+        p.route("**/version.json*", lambda r, q=None: r.fulfill(status=200, content_type="application/json",
+                body='{"build":"%s","frameId":""}' % _bld))
+        p.goto("http://127.0.0.1:%d/index.html" % port); p.wait_for_timeout(2500)
+        p.evaluate(SETUP); p.wait_for_timeout(300)
+        # any units, any misses, Drill or Exam, a retake - the real summarize()
+        p.evaluate("""()=>{ window.__run9 = (units, missN, mode, retake) => {
+          cfg.mode = mode; cfg.source = 'all'; cfg.units = units.slice(); cfg.size = 0;
+          order = QUESTIONS.map((q, i) => i).filter(i => units.indexOf((QUESTIONS[i].topic || '').trim()) >= 0 && inWholeUnit(QUESTIONS[i]));
+          if(retake) order = order.slice(0, 3);
+          runTrackable = !retake; timedOut = false; runMode = mode; runLabel = retake ? 'Missed questions' : null; isMissedRetake = !!retake;
+          practiceTestMinutes = null; inVirtualRoom = false; attempts = {}; picked = {}; timedOutSet = {}; try{ firstPick = {}; }catch(e){}
+          order.forEach((qi, k) => { const oo = optionOrder(qi), right = oo.indexOf(QUESTIONS[qi].answer), miss = k % 2 === 1 && k < missN * 2;
+            attempts[qi] = miss ? 2 : 1; picked[qi] = miss ? (right + 1) % oo.length : right; try{ if(miss) firstPick[qi] = (right + 1) % oo.length; }catch(e){} });
+          runStartTime = Date.now() - order.length * 7000; testInProgress = true; pos = order.length - 1; summarize(); }; }""")
+        return c, p
+
+    def audit(p, sel, label, shape=True):
+        t = p.evaluate(TYPE_AUDIT, sel)
+        ck("%s: no serif and no old-style figures; every number (%d) the grade's sans, tabular" % (label, t["nums"]),
+           t["n"] > 0 and not t["issues"], t["issues"][:6])
+        if not shape: return
+        sh = p.evaluate(SHAPE_AUDIT)
+        if not sh:
+            ck("%s: the results screen is up" % label, False); return
+        ck("%s: one size per role - kicker, label, caption" % label,
+           all(len(v) <= 1 for v in sh["roles"].values()), sh["roles"])
+        ck("%s: every card's text on one edge, every heading on it" % label,
+           spread(sh["contentLefts"]) <= .6 and all(abs(v) <= .6 for v in sh["kickLeft"]), (sh["contentLefts"], sh["kickLeft"]))
+        ck("%s: every right-hand number ends on the content edge" % label,
+           spread(sh["contentRights"]) <= .6 and all(abs(v) <= .6 for v in sh["shortOfRight"]), (sh["contentRights"], sh["shortOfRight"]))
+        ck("%s: the same gap under every card's heading (within 3.5px)" % label,
+           spread(sh["headingGaps"]) <= 3.5 and all(g >= 14 for g in sh["headingGaps"]), sh["headingGaps"])
+        ck("%s: the cards evenly spaced, and the XP lines resting in their own slots" % label,
+           spread(sh["cardGaps"]) <= .6 and not sh["lifted"], (sh["cardGaps"], sh["lifted"][:2]))
+        ck("%s: Test results, the mode chip and the title on one edge" % label, spread(sh["head"]) <= 1, sh["head"])
+        ck("%s: every pair is 'N / M'" % label, all(re.match(r"^[\d,]+ / [\d,]+$", x) for x in sh["pairs"]), sh["pairs"])
+
+    c9, p9 = fresh(440, 956)
+    # the animated path once, for the landing itself
+    p9.evaluate("([u])=>{ store.unitPerfects = {}; store.unitPerfects[u] = 3; saveStore(); __run9([u], 2, 'drill'); }", [UNIT])
+    wait_done(p9, 60000); p9.wait_for_timeout(600)
+    audit(p9, "#stage .rs-screen", "a drill with two missed")
+    p9.evaluate("()=>document.querySelector('#stage .rs-continue').click()"); p9.wait_for_timeout(500)
+    audit(p9, "#stage .rs-screen", "its review", shape=False)
+    p9.evaluate("()=>{ theme.reduceMotion = true; }")
+    p9.evaluate("""()=>{ store.unitPerfects = { 'Racial Profiling': badgeThresholdFor('Racial Profiling') - 1, 'Identity Crimes': 2 }; saveStore();
+      __run9(['Identity Crimes', 'Racial Profiling', 'Victims of Crime'], 0, 'drill'); }""")
+    p9.wait_for_timeout(500)
+    audit(p9, "#stage .rs-screen", "a three-unit 100% that earns a badge")
+    p9.evaluate("([u])=>__run9([u], 1, 'exam')", [UNIT]); p9.wait_for_timeout(400)
+    audit(p9, "#stage .rs-screen", "an exam")
+    p9.evaluate("([u])=>__run9([u], 1, 'drill', true)", [UNIT]); p9.wait_for_timeout(400)
+    audit(p9, "#stage .rs-screen", "a retake")
+    p9.evaluate("""([u])=>{ cfg.mode='drill'; cfg.source='flagged'; cfg.units=[u]; order=QUESTIONS.map((q,i)=>i).filter(i=>QUESTIONS[i].topic===u).slice(0,4);
+      runTrackable=false; timedOut=false; runMode='drill'; runLabel=null; isMissedRetake=false; inVirtualRoom=false; attempts={}; picked={}; timedOutSet={};
+      order.forEach(qi=>{ attempts[qi]=1; picked[qi]=optionOrder(qi).indexOf(QUESTIONS[qi].answer); }); runStartTime=Date.now()-20000; testInProgress=true; pos=order.length-1; summarize(); }""", [UNIT])
+    p9.wait_for_timeout(400)
+    audit(p9, "#stage .rs-screen", "a Starred run (no XP)")
+    p9.evaluate("()=>{ theme.reduceMotion = false; store.dailyQuestionDate = null; saveStore(); startDailyQuestion(); }")
+    p9.wait_for_selector(".qpanel .choice", timeout=25000); p9.wait_for_timeout(300)
+    p9.evaluate("()=>{ const r = correctSlot(order[pos]); [...document.querySelectorAll('.qpanel .choice')].find(c => +c.dataset.index === r).click(); }")
+    p9.wait_for_timeout(1200)
+    audit(p9, "#stage .dailyq-outro", "the daily question's verdict", shape=False)
+    c9.close()
+
+    # The same screen on an iPad: the tablet sizes are one per role too, and
+    # the grade card's own padding (which outranked the tablet rule) is gone.
+    c9, p9 = fresh(834, 1194)
+    p9.evaluate("""()=>{ theme.reduceMotion = true; store.unitPerfects = { 'Racial Profiling': badgeThresholdFor('Racial Profiling') - 1 }; saveStore();
+      __run9(['Identity Crimes', 'Racial Profiling'], 2, 'drill'); }""")
+    p9.wait_for_timeout(500)
+    audit(p9, "#stage .rs-screen", "a two-unit drill on an iPad (834px)")
+    c9.close()
+
+    # Two buttons share a row only when both fit in equal halves - never a
+    # label broken in its pill - on the two small phones.
+    for w, h in ((320, 568), (375, 667)):
+        c9, p9 = fresh(w, h)
+        p9.evaluate("()=>{ theme.reduceMotion = true; }")
+        got = []
+        for args in (([UNIT], 2, "drill", False), ([UNIT], 1, "drill", True)):
+            p9.evaluate("(a)=>__run9(a[0], a[1], a[2], a[3])", list(args)); p9.wait_for_timeout(400)
+            got += p9.evaluate(ONE_LINE, "#stage .actions.rs-final > button:not(.rs-wide)")
+        ck("%dpx: Re-run, Re-run the full test and Main menu each on one line" % w,
+           len(got) >= 4 and all(n == 1 for _, n in got), got)
+        c9.close()
+
+    # The Virtual Room: its results, its review tabs, and its leaderboard.
+    c9, p9 = fresh(375, 667)
+    p9.evaluate(BOTS)
+    p9.evaluate("""()=>{ theme.reduceMotion = true; syncCode = 'VR15-0001'; store.publicId = 'pub-vr15';
+      const parts = __vrBots.room('R315TYPE', 4, i => __vrBots.finished(i, [0, 11480, 1190, 860][i]));
+      return fbDb.collection('vrooms').doc('R315TYPE').set({ status:'starting', game:'race', units:['Identity Crimes'],
+        startAt: Date.now() - 2000, chatMessages: [], participants: parts, racers: Object.keys(parts) }); }""")
+    p9.wait_for_timeout(300)
+    p9.evaluate("()=>{ vroomCode = 'R315TYPE'; vroomMyKey = 'me'; vroomIsHost = true; theme.autoAdvance = false; beginVirtualRoomTest(['Identity Crimes'], null, null, 0); }")
+    try:
+        p9.wait_for_selector(".qpanel .choice", timeout=25000)
+        p9.evaluate("""()=>{ order.forEach((qi, k) => { const oo = optionOrder(qi), r = oo.indexOf(QUESTIONS[qi].answer); picked[qi] = k === 2 ? (r + 1) % oo.length : r; });
+          stopQuestionTimer(); summarize(); }""")
+        p9.wait_for_function("()=>!!document.querySelector('.vroom-waitcard.is-all-in') && !!document.querySelector('.rs-rewards.rs-done')", timeout=20000)
+        p9.wait_for_timeout(400)
+        audit(p9, "#stage .rs-screen", "a Virtual Room race's results (375px)")
+        p9.evaluate("()=>{ document.getElementById('vroom-prep')?.remove(); startVroomRaceCutscene(); }")
+        p9.wait_for_function("()=>!!document.querySelector('#vroom-race-cut.is-done')", timeout=20000)
+        p9.wait_for_timeout(300)
+        audit(p9, "#vroom-race-cut", "its leaderboard", shape=False)
+        ex = p9.evaluate(ONE_LINE, "#vroom-race-cut .vrc-exits button")
+        ck("375px: the leaderboard's Return to lobby and Main menu each on one line", len(ex) == 2 and all(n == 1 for _, n in ex), ex)
+    except Exception as e:
+        ck("the Virtual Room part of section 9 ran", False, repr(e)[:200])
+    c9.close()
 
     ck("no page errors", not errors, errors[:3])
     br.close()

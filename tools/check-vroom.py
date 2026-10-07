@@ -589,7 +589,7 @@ def sections_246(ctx, open_tab, args):
         ha.wait_for_timeout(1500)
         wc = ha.evaluate("()=>(document.querySelector('.vroom-wait-count')||{}).textContent")
         check("the finale counts the people racing, so it is not waiting on somebody who left",
-              wc == "2/2", wc)
+              re.sub(r"\s", "", wc or "") == "2/2", wc)   # "2 / 2" since build 315 - the numbers, not the spacing
         # The guest comes back first.
         gb.evaluate("()=>{ document.getElementById('vroom-race-cut')?.remove(); vroomReturnToLobby(); }")
         gb.wait_for_timeout(3500)
@@ -858,7 +858,7 @@ def sections_313(ctx, open_tab, args):
             card = pg.evaluate("""(before)=>{ const w=document.querySelector('.vroom-waitcard');
               return { inXp: !!(w && w.closest('.rs-xp')), matches: (store.vrMatches || 0) - before,
                        count: (document.querySelector('.vroom-wait-count')||{}).textContent }; }""", before)
-            check("%d people: everyone in is seen" % n, allin and card["count"] == "%d/%d" % (n, n), card)
+            check("%d people: everyone in is seen" % n, allin and re.sub(r"\s", "", card["count"] or "") == "%d/%d" % (n, n), card)
             check("%d people: the waiting card is its own card, not inside the XP card" % n, not card["inXp"], card)
             check("%d people: the match counts towards Matches played, once" % n, card["matches"] == 1, card)
             pg.evaluate("()=>startVroomRaceCutscene()")

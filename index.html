@@ -21682,7 +21682,20 @@
   .rs-screen{
     --xp:#8FC1FF; --xp-deep:#3D8BFF; --xp-glow:rgba(61,139,255,.55);
     --rs-card:rgba(24,29,37,.62); --rs-line:rgba(255,255,255,.09);
+    /* ONE TYPE SYSTEM, SET BY THE GRADE (build 315): "The result screen
+       numbers nice, let's ensure all other things on the result screen
+       is up to par with that cleanliness." Every number here is the
+       grade's own face - the system sans, lining, tabular - and every
+       piece of text is one of five roles, each one size everywhere it
+       appears: hero (the grade), display (the XP total, the units
+       title), label (a row's name and its value), caption (the line
+       under a label or a bar) and kicker (a card's heading, a chip).
+       The numerals are set here once and inherited, so nothing added
+       later can come up in old-style or proportional figures. */
+    --rs-label:.92rem; --rs-cap:.78rem; --rs-kick:.68rem;
+    font-variant-numeric:lining-nums tabular-nums;
   }
+  @media (min-width:40rem){ .rs-screen{ --rs-label:1rem; --rs-cap:.84rem; --rs-kick:.72rem; } }
   .wrap:has(#stage > .rs-screen) .test-scopelabel{
     display:block; flex:1 1 0%; min-width:0; margin:0;
     font-size:1.12rem; font-weight:800; color:var(--ink); letter-spacing:.005em;
@@ -21706,8 +21719,8 @@
      look on its own - a touch more opaque to stand in for the blur. */
   .rs-screen{ --rs-card:rgba(24,29,37,.7); }
   .rs-kicker{
-    margin:0 0 .65rem; font-size:.68rem; font-weight:800; letter-spacing:.14em;
-    text-transform:uppercase; color:rgba(255,255,255,.52);
+    margin:0 0 .75rem; font-size:var(--rs-kick, .68rem); font-weight:800; letter-spacing:.14em;
+    line-height:1.2; text-transform:uppercase; color:rgba(255,255,255,.52);
   }
 
   /* Landing. Every card waits invisible until the reveal puts it down;
@@ -21747,6 +21760,13 @@
   @keyframes rs-impact{ 0%{ opacity:1; } 100%{ opacity:0; } }
   .rs-xpline.rs-land{ transform:translateY(-12px); }
   .rs-xpline.rs-land.rs-in{ animation:rs-drop .34s cubic-bezier(.2,1.3,.4,1) both; }
+  /* AND IT RESTS IN ITS OWN SLOT (build 315). The line above outranks
+     .rs-land.rs-in-now by coming later at the same weight, so a landed
+     XP line kept that -12px for good: each one jumped 12px up the moment
+     its drop ended, the first sat on top of "XP earned" (10px under it,
+     against ~20px in every other card) and the last left a gap over the
+     Total rule nearly twice the one under it. Measured, not read. */
+  .rs-xpline.rs-land.rs-in-now{ transform:none; }
   @keyframes rs-drop{
     0%{ opacity:0; transform:translateY(-14px); }
     70%{ opacity:1; transform:translateY(2px); }
@@ -21769,7 +21789,14 @@
      to the left so it's inline with the word test results". Measured,
      the panel's own padding put it 20px right of the header and 24px
      below it on both reference devices. */
-  .rs-screen > .rs-head .rs-chiprow{ margin-left:-1.25rem; margin-top:-1rem; }
+  .rs-screen > .rs-head .rs-chiprow{ margin-top:-1rem; }
+  /* ONE LEFT EDGE FOR THE HEADER (build 315). The chip was pulled out to
+     "Test results" (above) and the title and the unit list under it were
+     left 20px further in, so the header read as a step: chip, then the
+     title indented under it. The whole block is pulled out together now -
+     "Test results", the chip, "1 unit" and every unit on one edge - and
+     the cards keep theirs, below it. */
+  .rs-screen > .rs-head{ margin-left:-1.25rem; }
   .rs-mode{
     --mode-c:#B8C2CF;
     display:inline-flex; align-items:center; gap:.4rem;
@@ -21786,9 +21813,11 @@
   .rs-mode-vroom{ --mode-c:#7CC0F4; }
   .rs-mode-review{ --mode-c:#4ADE80; }
   .rs-mode-src{ padding-left:.72rem; }
+  /* The grade's face, not Georgia (build 315): its figures are old-style,
+     so the "1" of "1 unit" sat at lowercase height on a phone. */
   .rs-units{
-    margin:0; font-family:var(--serif); font-size:1.7rem; line-height:1.15;
-    font-weight:700; color:var(--ink); letter-spacing:-.01em;
+    margin:0; font-family:var(--sans); font-size:1.7rem; line-height:1.15;
+    font-weight:800; color:var(--ink); letter-spacing:-.025em;
   }
   .rs-unitlist{ display:flex; flex-wrap:wrap; gap:.35rem; margin:.6rem 0 0; }
   .rs-unitchip{
@@ -21812,31 +21841,56 @@
     border-color:rgba(143,193,255,.2);
     background:linear-gradient(180deg, rgba(46,135,240,.13), var(--rs-card) 60%);
   }
+  /* A ROW IS A LABEL AND A VALUE ON ONE LINE (build 315): a two-column
+     grid, the value right-aligned on the label's baseline, and the line
+     under the label (the time, the tiers, the bests) spanning BOTH
+     columns. As a column of its own beside the value it was squeezed to
+     ~150px on a 320-375px phone and wrapped "1:24 total · 11s a /
+     question". The label wrapper is display:contents so the markup is
+     unchanged. */
   .rs-xpline{
-    display:flex; justify-content:space-between; gap:1rem; margin:0 0 .5rem;
-    font-size:.92rem; color:rgba(255,255,255,.74); font-variant-numeric:tabular-nums;
+    display:grid; grid-template-columns:minmax(0, 1fr) auto; column-gap:1rem; align-items:baseline;
+    margin:0 0 .6rem; font-size:var(--rs-label, .92rem); line-height:1.35; color:rgba(255,255,255,.74);
   }
-  .rs-xpline-val{ font-weight:800; color:var(--xp); white-space:nowrap; }
-  .rs-xpline-none{ color:var(--soft); }
+  .rs-xpline-label{ display:contents; }
+  .rs-xpline-name{ grid-column:1; grid-row:1; min-width:0; text-wrap:balance; }
+  .rs-xpline-val{ grid-column:2; grid-row:1; font-weight:800; color:var(--xp); white-space:nowrap; text-align:right; }
+  .rs-xpline-none{ display:block; color:var(--soft); }
   .rs-xptotal{
     display:flex; align-items:baseline; justify-content:space-between; gap:1rem;
-    margin:.8rem 0 .95rem; padding-top:.8rem; border-top:1px solid rgba(255,255,255,.08);
+    margin:.95rem 0 1rem; padding-top:1rem; border-top:1px solid rgba(255,255,255,.08);
   }
-  .rs-xptotal-label{ font-size:.95rem; font-weight:800; color:var(--ink); }
+  .rs-xptotal-label{ font-size:var(--rs-label, .95rem); font-weight:800; color:var(--ink); }
+  /* The grade's face (build 315). It was the mono, whose comma takes a
+     whole figure's width - "+2,085" read "+2 ,085" - and whose figures
+     are not the grade's. Tabular, so the count-up never jitters. */
   .rs-xptotal-num{
     contain:layout paint;
-    font-family:var(--mono); font-size:2.1rem; font-weight:800; line-height:1;
-    color:var(--xp); text-shadow:0 0 18px var(--xp-glow); letter-spacing:-.02em;
-    font-variant-numeric:tabular-nums;
+    font-family:var(--sans); font-size:2.1rem; font-weight:800; line-height:1;
+    color:var(--xp); text-shadow:0 0 18px var(--xp-glow); letter-spacing:-.035em;
   }
-  .rs-xptotal-unit{ margin-left:.35rem; font-size:.9rem; font-weight:800; color:var(--xp); opacity:.8; }
+  .rs-xptotal-unit{ margin-left:.3rem; font-size:.85rem; font-weight:800; letter-spacing:.02em; color:var(--xp); opacity:.8; }
   .rs-screen .rs-xp .results-level.rs-levelblock{
     margin:0; padding:0; background:none; border:0; box-shadow:none;
     backdrop-filter:none; -webkit-backdrop-filter:none; will-change:auto;
   }
   .rs-xp .results-level-gain{ display:none; }
   .rs-xp .results-level-head{ margin:0 0 .5rem; }
-  .rs-xp .results-level-line{ text-align:left; margin-top:.5rem; }
+  /* The line under the bar is a caption like the one under the badge bar
+     (build 315): the same size, the same weight. */
+  .rs-xp .results-level-line{ text-align:left; margin-top:.55rem; font-size:var(--rs-cap, .78rem); line-height:1.35; }
+  .rs-xp .results-level-line .xpnums{ font-weight:700; }
+  /* THE LEVEL IS A NUMBER, SET LIKE THE GRADE (build 315): "Level 33" in
+     the heavy sans, not "LEVEL 33" spaced out in capitals, which pulled
+     the 3s apart. The rank under it keeps the small capitals - it is the
+     kicker to the number - at the kicker's size. */
+  .rs-xp .results-level-num{
+    display:inline-flex; align-items:center; flex-wrap:wrap; gap:.3rem .55rem;
+    font-size:1.05rem; line-height:1.2; letter-spacing:-.01em; text-transform:none;
+  }
+  .rs-xp .results-level-rank{ font-size:var(--rs-kick, .68rem); line-height:1.2; }
+  .rs-xp .results-level-metext{ gap:.3rem; }
+  @media (min-width:40rem){ .rs-xp .results-level-num{ font-size:1.15rem; } }
   /* Charging is a ring of light round the track that breathes by
      OPACITY (build 282) - it was the track's box-shadow, alternating
      forever while the XP counted in. The ring sits on the level block,
@@ -21861,9 +21915,13 @@
     0%{ opacity:1; transform:scale(1); } 30%{ opacity:1; transform:scale(1.015, 1.5); } 100%{ opacity:0; transform:scale(1.03, 2.2); }
   }
   .rs-xp .results-level.is-levelup .results-level-num{ color:var(--xp); }
+  /* A chip like the screen's other chips (build 315): a pill, the
+     kicker's size and capitals, centred on the number beside it by the
+     row it sits in rather than nudged up by .12em. */
   .rs-xp .results-level.is-levelup .results-level-num::after{
-    content:"Level up"; display:inline-block; vertical-align:.12em; margin-left:.55rem;
-    padding:.18rem .5rem; border-radius:6px; font-size:.62rem; letter-spacing:.12em;
+    content:"Level up"; display:inline-block; margin:0;
+    padding:.24rem .6rem; border-radius:999px; font-size:var(--rs-kick, .68rem); font-weight:800;
+    line-height:1.15; letter-spacing:.1em; text-transform:uppercase;
     color:#fff; background:var(--xp-deep); box-shadow:0 0 14px var(--xp-glow);
     animation:rs-pop .5s cubic-bezier(.2,1.5,.4,1) both;
   }
@@ -23432,21 +23490,36 @@
   }
 
   /* Badge progress, Game difficulty, personal best. */
+  /* The heading sits on the same .75rem as every other card's (build 315):
+     a flex gap here put the badge row further under its heading than the
+     XP card's first line sits under its own. */
   .rs-screen .rs-badges.badgeprogress-wrap{
-    display:flex; flex-direction:column; gap:.6rem;
+    display:flex; flex-direction:column; gap:0;
     margin:0 0 .85rem; padding:1rem 1.1rem 1.05rem; border-radius:18px;
     background:var(--rs-card); border:1px solid var(--rs-line);
   }
-  .rs-badges .rs-kicker{ margin-bottom:.1rem; }
   .rs-badges .badgeprogress-fill{ transition:width 1s cubic-bezier(.2,.8,.25,1); }
+  /* The badge's name is a name and its line is a caption (build 315) -
+     the same two sizes as the unit rows and the XP card, where they were
+     .78rem and .72rem, the smallest type on the screen. The line breaks
+     only at its dot (.rs-seg), never inside "11 more to go". */
+  .rs-screen .rs-badges .badgeprogress-name{ font-size:var(--rs-label, .92rem); font-weight:700; line-height:1.3;
+    white-space:normal; overflow:visible; text-overflow:clip; text-wrap:balance; }
+  .rs-screen .rs-badges .badgeprogress-track{ margin:.45rem 0 .4rem; }
+  .rs-screen .rs-badges .badgeprogress-line{ font-size:var(--rs-cap, .78rem); font-weight:700; line-height:1.35; }
+  .rs-screen .rs-seg{ white-space:nowrap; }
   .rs-screen .game-beat-box{ margin:0 0 .85rem; border-radius:18px; padding:1rem 1.1rem; }
   .rs-pb-time{
     margin:0; font-family:var(--mono); font-size:1.6rem; font-weight:800; line-height:1;
     color:#FFD37A; text-shadow:0 0 16px rgba(255,211,122,.35); font-variant-numeric:tabular-nums;
   }
 
-  /* The grade, last and loudest. */
-  .rs-screen .rs-grade{ padding:1.15rem 1.2rem 1.2rem; margin-bottom:.85rem; }
+  /* The grade, last and loudest. Its padding is every card's (build 315):
+     it had its own, 1.6px further in on a phone and - because this rule
+     outranked the tablet one - 2.4px further in on an iPad, so its
+     heading, its unit names and their scores sat off the line every other
+     card's text and numbers share. */
+  .rs-screen .rs-grade{ margin-bottom:.85rem; }
   .rs-grade.rs-land.rs-in{
     animation:rs-slam .62s cubic-bezier(.16,1.3,.3,1) both;
   }
@@ -23486,17 +23559,33 @@
     margin:0; font-size:1.4rem; font-weight:800; color:var(--ink);
     font-variant-numeric:tabular-nums; line-height:1.1;
   }
-  .rs-screen .rs-grade-sub.slabel{ margin:.2rem 0 0; font-size:.86rem; }
+  /* "10 / 12", not "10 of 12" (build 315): every pair on the screen is
+     what you have over what it is out of, with a slash - the level's
+     "216 / 2,156 XP", each unit's score, the room's "3 / 4" - and the
+     "out of" half is quieter, as it is under the level bar. An opacity
+     of the number's own colour rather than a grey, so the hundo
+     effect's tint (hfx-tinted) still reaches the whole figure. */
+  .rs-screen .rs-grade-frac{ letter-spacing:-.02em; }
+  .rs-screen .rs-frac-of{ font-weight:700; opacity:.62; }
+  .rs-screen .rs-grade-sub.slabel{ margin:.3rem 0 0; font-size:var(--rs-cap); font-weight:500; line-height:1.35; text-wrap:balance; }
   .rs-stamps{ display:flex; flex-wrap:wrap; gap:.4rem; margin:.95rem 0 0; }
   .rs-stamp{
     padding:.28rem .62rem; border-radius:999px; border:1px solid rgba(255,255,255,.14);
-    font-size:.68rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase;
+    font-size:var(--rs-kick, .68rem); font-weight:800; letter-spacing:.1em; text-transform:uppercase;
     color:rgba(255,255,255,.75); background:rgba(255,255,255,.05);
   }
   .rs-stamp.is-perfect{ color:#E6C34A; border-color:rgba(230,195,74,.45); background:rgba(230,195,74,.12); }
   .rs-stamp.is-made{ color:var(--right); border-color:color-mix(in srgb, var(--right) 45%, transparent); background:color-mix(in srgb, var(--right) 12%, transparent); }
   .rs-stamp.is-short{ color:var(--wrong); border-color:color-mix(in srgb, var(--wrong) 45%, transparent); background:color-mix(in srgb, var(--wrong) 12%, transparent); }
   .rs-screen .rs-byunit{ margin:1rem 0 0; padding-top:.95rem; border-top:1px solid rgba(255,255,255,.08); }
+  /* A unit's row is the screen's row (build 315): its name at the label
+     size and a name's weight, its score at the same size, heavy, on one
+     line hard right - the XP card's rows set the size; this one had the
+     name at .88rem and the score in small grey that could wrap. */
+  .rs-byunit .unit-breakdown-row{ margin-bottom:.85rem; }
+  .rs-byunit .unit-breakdown-top{ gap:1rem; margin-bottom:.45rem; }
+  .rs-byunit .unit-breakdown-name{ min-width:0; font-size:var(--rs-label, .92rem); font-weight:700; line-height:1.3; text-wrap:balance; }
+  .rs-byunit .unit-breakdown-score{ flex:none; white-space:nowrap; font-size:var(--rs-label, .92rem); font-weight:800; line-height:1.3; color:var(--ink); }
   .rs-byunit .unit-breakdown-row:last-child{ margin-bottom:0; }
 
   /* What it unlocked, left on the page after the banners. */
@@ -23531,11 +23620,14 @@
      the row's size it came out half the size of the badge beside it -
      "the rank up icon in unlocks looks too small". */
   .rs-unlock-rank .rs-unlock-art svg{ transform:scale(1.6); }
-  .rs-unlock-text{ display:flex; flex-direction:column; }
-  .rs-unlock-detail{ margin-top:.1rem; font-size:.78rem; color:var(--soft); line-height:1.3; }
+  .rs-unlock-text{ display:flex; flex-direction:column; gap:.2rem; }
+  .rs-unlock-detail{ font-size:var(--rs-cap, .78rem); color:var(--soft); line-height:1.35; }
   .rs-unlock-text{ min-width:0; }
-  .rs-unlocked .unlockbanner-kicker{ color:var(--spot-color); opacity:1; font-size:.62rem; letter-spacing:.13em; text-transform:uppercase; }
-  .rs-unlocked .unlockbanner-name{ font-size:1.02rem; color:var(--ink); }
+  /* A row's heading is a kicker and its name is a name, as in every other
+     card (build 315). The name was .unlockbanner's Georgia, at a size of
+     its own; the heading a size and a spacing of its own as well. */
+  .rs-unlocked .unlockbanner-kicker{ color:var(--spot-color); opacity:1; font-size:var(--rs-kick, .68rem); letter-spacing:.14em; line-height:1.2; text-transform:uppercase; }
+  .rs-unlocked .unlockbanner-name{ font-family:var(--sans); font-size:var(--rs-label, .92rem); font-weight:700; line-height:1.3; letter-spacing:-.005em; color:var(--ink); text-wrap:balance; }
   /* A THEME IS SHOWN AS A LIT WORLD IN ITS OWN THREE COLOURS (build
      309), not a flat disc. The dot carries data-accent, and every
      [data-accent] block declares --theme-c1/2/3 on whatever element
@@ -23949,7 +24041,7 @@
 
   /* The review. */
   .rs-review .rs-head{ margin-bottom:1.2rem; }
-  .rs-review-summary{ margin:.65rem 0 0; font-size:.95rem; font-weight:700; color:rgba(255,255,255,.72); }
+  .rs-review-summary{ margin:.65rem 0 0; font-size:var(--rs-label, .95rem); font-weight:700; color:rgba(255,255,255,.72); }
   .rs-qlist{ list-style:none; margin:0 0 1.25rem; padding:0; display:flex; flex-direction:column; gap:.8rem; }
   .rs-q{
     padding:1rem 1.1rem 1.05rem; border-radius:18px;
@@ -23963,12 +24055,16 @@
     font-size:.78rem; font-weight:800; color:#fff; font-variant-numeric:tabular-nums;
     background:rgba(232,104,124,.18); border:1px solid rgba(232,104,124,.45);
   }
-  .rs-q-tag{ font-size:.66rem; font-weight:800; letter-spacing:.11em; text-transform:uppercase; color:#E8687C; }
-  .rs-q-text{ font-family:var(--serif); font-size:1.08rem; line-height:1.45; color:var(--ink); }
+  .rs-q-tag{ font-size:var(--rs-kick, .66rem); font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:#E8687C; }
+  /* The question in the sans, as the test shows it (build 315). It drew
+     in the sans already - [data-layout="modern"] .rq outranks this rule -
+     and said Georgia here; it says what is drawn now, so the screen does
+     not depend on that override to keep old-style figures off it. */
+  .rs-q-text{ font-family:var(--sans); font-size:1.08rem; font-weight:600; line-height:1.45; color:var(--ink); }
   .rs-q-answers{ margin:.85rem 0 0; display:flex; flex-direction:column; gap:.45rem; }
-  .rs-q-answers p{ margin:0; padding:.55rem .75rem; border-radius:12px; font-size:.92rem; line-height:1.4; color:var(--ink); }
+  .rs-q-answers p{ margin:0; padding:.55rem .75rem; border-radius:12px; font-size:var(--rs-label, .92rem); line-height:1.4; color:var(--ink); }
   .rs-q-answers p span{
-    display:block; margin:0 0 .12rem; font-size:.62rem; font-weight:800;
+    display:block; margin:0 0 .15rem; font-size:var(--rs-kick, .62rem); font-weight:800;
     letter-spacing:.12em; text-transform:uppercase;
   }
   .rs-q-yours{ background:rgba(232,104,124,.09); border:1px solid rgba(232,104,124,.24); }
@@ -24011,6 +24107,8 @@
     background:rgba(255,255,255,.1); color:inherit; font-variant-numeric:tabular-nums;
   }
   .rs-tab-empty{ margin:.4rem 0 1rem; text-align:center; font-size:.92rem; color:var(--soft); }
+  .rs-tab{ white-space:nowrap; }
+  @media (max-width:27.99rem){ .rs-tab-more{ display:none; } }
 
   /* "Preparing leaderboard", pinned to the bottom of the screen. */
   .vroom-prep{
@@ -24036,7 +24134,7 @@
     animation:vroom-prep-bar 1.4s ease-in-out infinite;
   }
   @keyframes vroom-prep-bar{ from{ background-position:-40% 0; } to{ background-position:140% 0; } }
-  .rs-q-ref{ margin:.65rem 0 0; font-size:.76rem; color:var(--soft); }
+  .rs-q-ref{ margin:.65rem 0 0; font-size:var(--rs-cap, .76rem); color:var(--soft); }
 
   @media (min-width:40rem){
     .rs-card, .rs-screen .rs-badges.badgeprogress-wrap, .rs-q{ padding:1.2rem 1.35rem 1.25rem; border-radius:20px; }
@@ -24044,8 +24142,6 @@
     .rs-screen .rs-pct.pct{ font-size:5rem; }
     .rs-grade-frac{ font-size:1.6rem; }
     .rs-xptotal-num{ font-size:2.5rem; }
-    .rs-xpline{ font-size:1rem; }
-    .rs-kicker{ font-size:.72rem; }
     .rs-spot-card{ width:min(26rem, 100%); padding:2.1rem 1.8rem 1.4rem; }
     .rs-spot-art{ width:8rem; height:8rem; }
     .rs-spot-name{ font-size:2.1rem; }
@@ -24079,7 +24175,7 @@
   }
   .rs-unitlist li{
     position:relative; padding-left:1rem;
-    font-size:.92rem; font-weight:600; color:rgba(255,255,255,.82); line-height:1.35;
+    font-size:var(--rs-label, .92rem); font-weight:600; color:rgba(255,255,255,.82); line-height:1.35;
   }
   /* White dots - "let's change those yellow dots to white". */
   .rs-unitlist li::before{
@@ -24087,10 +24183,9 @@
     background:#fff; opacity:.85;
   }
 
-  /* XP lines that carry detail under them - the time, the bests. */
-  .rs-xpline{ align-items:flex-start; }
-  .rs-xpline-label{ display:flex; flex-direction:column; min-width:0; }
-  .rs-xpline-sub{ font-size:.76rem; color:var(--soft); margin-top:.12rem; line-height:1.3; }
+  /* XP lines that carry detail under them - the time, the bests. The
+     line spans the row (build 315, see .rs-xpline). */
+  .rs-xpline-sub{ grid-column:1 / -1; grid-row:2; font-size:var(--rs-cap, .78rem); color:var(--soft); margin-top:.1rem; line-height:1.35; }
   .rs-xpline.is-multi{ margin-top:.55rem; padding-top:.55rem; border-top:1px dashed rgba(143,193,255,.22); }
   .rs-xpline.is-multi .rs-xpline-name{ font-weight:800; color:var(--xp); }
 
@@ -24125,9 +24220,10 @@
   }
   /* Its bars gold, and gold wherever a unit was aced. */
   .rs-byunit .unit-breakdown-fill.is-gold{ background:linear-gradient(90deg, var(--hfx-fa), var(--hfx-fb)); box-shadow:0 0 10px color-mix(in srgb, var(--hfx-fb) 30%, transparent); }
-  /* A retake: no score, only whether anything is left. */
-  .rs-screen .rs-card.rs-grade.rs-retake-note{ padding:1rem 1.2rem 1.05rem; }
-  .rs-retake-line{ margin:0; font-size:1.05rem; font-weight:800; color:var(--ink); }
+  /* A retake: no score, only whether anything is left. Every card's
+     padding (build 315), and a sentence that breaks evenly on a narrow
+     phone rather than leaving "over" on a line of its own. */
+  .rs-retake-line{ margin:0; font-size:1.05rem; font-weight:800; line-height:1.3; letter-spacing:-.01em; color:var(--ink); text-wrap:balance; }
   .rs-screen .rs-card.rs-grade.is-retake-clear{
     border-color:rgba(92,214,146,.24);
     background:linear-gradient(180deg, rgba(46,170,106,.13), var(--rs-card) 60%);
@@ -24159,7 +24255,8 @@
     border-color:rgba(176,190,210,.24);
     background:linear-gradient(180deg, rgba(150,168,194,.15), var(--rs-card) 60%);
   }
-  .rs-badges:not(.is-earned) .rs-kicker{ color:#D5DCE6; }
+  /* (Its heading is every card's grey since build 315 - in near-white it
+     read louder than "XP earned" and "Grade" either side of it.) */
   .rs-badges:not(.is-earned) .badgeprogress-fill{ background:linear-gradient(90deg, #8E99A8, #E3E8EF); }
   .rs-screen .rs-badges.badgeprogress-wrap.is-earned{
     border-color:color-mix(in srgb, var(--bt) 42%, transparent);
@@ -24224,6 +24321,18 @@
      and a taller target each. */
   .actions.rs-final{ gap:1.15rem .9rem; align-items:center; }
   .actions.rs-final > button{ min-height:3.15rem; }
+  /* NO BUTTON LABEL ON TWO LINES (build 315). Two buttons share a row
+     only when BOTH fit in equal halves - each half is at least as wide as
+     its own label - and otherwise each takes a row of its own, full
+     width. Squeezed, "Re-run the full test" stood on three lines beside a
+     one-line Main menu on a 320px phone, and Main menu itself broke in
+     two. The wide one (Continue to review) may still need two lines on a
+     320px phone, and then breaks evenly. A little less side padding on a
+     small phone, so it usually does not. */
+  .actions.rs-final > button{ white-space:nowrap; font-variant-numeric:inherit; }
+  .actions.rs-final > button:not(.rs-wide){ flex:1 1 calc(50% - .45rem); min-width:max-content; }
+  .actions.rs-final > button.rs-wide{ white-space:normal; text-wrap:balance; }
+  @media (max-width:24rem){ .actions.rs-final > button{ padding-left:1rem; padding-right:1rem; } }
 
   /* ---- ANSWER STREAKS, DURING A TEST ----
      At the TOP, asked for directly, just under the top bar - below where
@@ -24371,10 +24480,13 @@
     font-size:1.3rem; font-weight:900; color:#0B0D10; background:var(--dq);
     box-shadow:0 0 22px color-mix(in srgb, var(--dq) 55%, transparent);
   }
-  .dailyq-outro-head{ margin:.6rem 0 0; font-family:var(--serif); font-size:1.9rem; font-weight:700; color:#fff; }
-  .dailyq-outro-xp{ margin:.2rem 0 0; font-size:1rem; font-weight:800; color:#8FC1FF; letter-spacing:.02em; }
+  /* The results' type (build 315): the verdict in the grade's heavy sans,
+     not Georgia, and the XP in the screen's figures. */
+  .dailyq-outro{ font-variant-numeric:lining-nums tabular-nums; }
+  .dailyq-outro-head{ margin:.6rem 0 0; font-family:var(--sans); font-size:1.9rem; font-weight:800; line-height:1.15; letter-spacing:-.025em; color:#fff; }
+  .dailyq-outro-xp{ margin:.3rem 0 0; font-size:1rem; font-weight:800; color:#8FC1FF; }
   .dailyq-outro.is-wrong .dailyq-outro-xp{ color:var(--soft); }
-  .dailyq-outro-next{ margin:.6rem 0 0; font-size:1.02rem; font-weight:600; color:rgba(255,255,255,.88); }
+  .dailyq-outro-next{ margin:.6rem 0 0; font-size:1.02rem; font-weight:600; color:rgba(255,255,255,.88); text-wrap:balance; }
   .dailyq-outro-streak{ margin:.55rem 0 0; font-size:.8rem; color:#D9A441; font-weight:700; }
   [data-reduce-motion="true"] .dailyq-outro{ animation:none; }
   @media (min-width:40rem){ .dailyq-outro-head{ font-size:2.3rem; } .dailyq-outro-next{ font-size:1.12rem; } }
@@ -24981,21 +25093,26 @@
     border-color:rgba(74,159,232,.32);
     background:linear-gradient(180deg, rgba(74,159,232,.16), var(--rs-card) 70%);
     /* margin-top clears the chat button, which sits over the top-right
-       corner of the first card on a phone. */
-    padding:.85rem 1rem .9rem; margin-top:.9rem; margin-bottom:1rem;
+       corner of the first card on a phone. Every card's padding and gap
+       (build 315) - its own put its text 1.6px off the cards below. */
+    margin-top:.9rem; margin-bottom:.85rem;
   }
-  .vroom-wait-line{ margin:0; display:flex; align-items:center; gap:.55rem; font-size:.9rem; font-weight:700; color:var(--ink); }
-  .vroom-wait-text{ flex:1 1 auto; min-width:0; }
-  .vroom-wait-count{ font-family:var(--mono); font-weight:800; color:#7CC0F4; }
+  .vroom-wait-line{ margin:0; display:flex; align-items:center; gap:.55rem; font-size:var(--rs-label, .9rem); font-weight:700; line-height:1.3; color:var(--ink); }
+  .vroom-wait-text{ flex:1 1 auto; min-width:0; text-wrap:balance; }
+  /* "3 / 4" in the screen's figures, not the mono (build 315) */
+  .vroom-wait-count{ flex:none; white-space:nowrap; font-family:var(--sans); font-weight:800; color:#7CC0F4; }
   .vroom-wait-dots{ width:.6rem; height:.6rem; border-radius:50%; background:#7CC0F4; box-shadow:0 0 10px #4A9FE8; animation:vroom-wait-pulse 1.2s ease-in-out infinite; flex-shrink:0; }
   @keyframes vroom-wait-pulse{ 50%{ opacity:.3; transform:scale(.7); } }
   .vroom-wait-bar{ height:.35rem; margin:.6rem 0 0; border-radius:999px; background:rgba(255,255,255,.08); overflow:hidden; }
   .vroom-wait-fill{ height:100%; width:0; border-radius:999px; background:linear-gradient(90deg, #4A9FE8, #7CC8FF); transition:width .6s ease; }
   .vroom-waitcard.is-all-in .vroom-wait-dots{ background:#5CD692; box-shadow:0 0 10px #5CD692; }
   .vroom-waitcard.is-all-in .vroom-wait-fill{ background:linear-gradient(90deg, #2EAA6A, #5CD692); }
+  /* A 44px target still, but pulled into the card's padding (build 315):
+     its own height plus the padding under it made the card's foot twice
+     every other card's, and it sat .2rem in from the text edge. */
   .vroom-wait-leave{
-    margin:.55rem 0 0; padding:.55rem .2rem; min-height:44px; background:none; border:0; cursor:pointer;
-    font:inherit; font-size:.8rem; font-weight:700; color:var(--soft); text-decoration:underline;
+    margin:.35rem 0 -.75rem; padding:.55rem 0; min-height:44px; background:none; border:0; cursor:pointer;
+    font:inherit; font-size:var(--rs-cap, .8rem); font-weight:700; color:var(--soft); text-decoration:underline;
   }
 
   /* ---- THE RACE CUTSCENE: A SHIP'S WINDOW ON DEEP SPACE ---- */
@@ -25037,7 +25154,11 @@
   .vrc-head, .vrc-board, .vrc-exits{ position:relative; z-index:1; width:min(100%, 34rem); }
   .vrc-head{ text-align:center; margin:1.5vh 0 1.2rem; }
   .vrc-kicker{ margin:0; font-size:.74rem; font-weight:800; letter-spacing:.24em; color:#7CC0F4; }
-  .vrc-step{ margin:.35rem 0 0; font-family:var(--serif); font-size:1.6rem; font-weight:700; color:#fff; min-height:2rem; }
+  /* The leaderboard in the results' type (build 315): its step in the
+     grade's heavy sans, not Georgia, and every count in the screen's
+     lining, tabular figures - set once, here. */
+  .vrc{ font-variant-numeric:lining-nums tabular-nums; }
+  .vrc-step{ margin:.35rem 0 0; font-family:var(--sans); font-size:1.6rem; font-weight:800; line-height:1.2; letter-spacing:-.025em; color:#fff; min-height:2rem; }
   .vrc-step.is-new{ animation:vrc-step .5s cubic-bezier(.2,1.3,.3,1) both; }
   @keyframes vrc-step{ 0%{ opacity:0; transform:translateY(-10px) scale(1.06); } 100%{ opacity:1; transform:none; } }
   .vrc-board{ display:flex; flex-direction:column; gap:.85rem; margin:auto 0; }
@@ -25061,6 +25182,9 @@
   }
   .vrc-mid{ flex:1 1 auto; min-width:0; }
   .vrc-name{ margin:0 0 .3rem; font-size:.88rem; font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .vrc-name{ display:flex; gap:.3em; }
+  .vrc-name-text{ min-width:0; overflow:hidden; text-overflow:ellipsis; }
+  .vrc-you{ flex:none; }
   .vrc-track{ position:relative; height:.7rem; border-radius:999px; background:rgba(255,255,255,.07); overflow:visible; }
   .vrc-fill{
     height:100%; width:0; border-radius:999px;
@@ -25072,7 +25196,7 @@
   }
   .vrc-gain.is-on{ animation:vrc-gain 1.4s ease-out both; }
   @keyframes vrc-gain{ 0%{ opacity:0; transform:translateY(6px); } 20%{ opacity:1; transform:none; } 80%{ opacity:1; } 100%{ opacity:0; transform:translateY(-4px); } }
-  .vrc-num{ font-family:var(--mono); font-size:1.15rem; font-weight:800; color:#8FC1FF; min-width:4.2rem; text-align:right; }
+  .vrc-num{ font-family:var(--sans); font-size:1.15rem; font-weight:800; letter-spacing:-.015em; color:#8FC1FF; min-width:3.6rem; text-align:right; white-space:nowrap; }
   .vrc-row.place-1{ --pc:#FFD37A; border-color:rgba(255,211,122,.7); box-shadow:0 0 28px -4px rgba(255,200,80,.75), inset 0 0 20px rgba(255,200,80,.12); }
   .vrc-row.place-2{ --pc:#DCDDDF; border-color:rgba(220,221,223,.6); box-shadow:0 0 24px -6px rgba(220,221,223,.6); }
   .vrc-row.place-3{ --pc:#E0A36C; border-color:rgba(224,163,108,.6); box-shadow:0 0 24px -6px rgba(224,163,108,.6); }
@@ -25126,7 +25250,12 @@
   .vroom-prep.is-counting .vroom-prep-spin{ display:none; }
   .vrc-exits{ display:flex; gap:.6rem; margin-top:0; padding-top:1rem; opacity:0; transform:translateY(10px); transition:opacity .5s ease, transform .5s ease; pointer-events:none; }
   .vrc.is-done .vrc-exits{ opacity:1; transform:none; pointer-events:auto; }
-  .vrc-exits .next{ flex:1 1 0; min-width:0; }
+  /* Side by side only when both fit in equal halves, else a row each
+     (build 315) - "Return to lobby" broke onto two lines beside Main menu
+     on 320 and 375px phones. The pills' side padding is a little less here,
+     so on most phones they still share the row. */
+  .vrc-exits{ flex-wrap:wrap; }
+  .vrc-exits .next{ flex:1 1 calc(50% - .3rem); min-width:max-content; white-space:nowrap; padding-left:1rem; padding-right:1rem; }
   /* ---- THE WAY OUT IS ALWAYS ON SCREEN (build 246) ----
      The scene is a fixed, overflow:hidden layer, and the board grows a
      row per player - so in a room of eight on a 320x568 phone, Return to
@@ -78175,6 +78304,20 @@ function playUnlockSpotlight(item, n, of, release){
   };
 }
 
+/* ---- NUMBERS ON THE RESULTS (build 315) ----
+   One format for every count on the end-of-run screens: thousands
+   separated, as every XP figure already was ("1500 of 1500" was the one
+   place a big run printed bare), and a pair is always what you have over
+   what it is out of with a slash, the "out of" half quieter
+   (.rs-frac-of) - the level bar's "216 / 2,156 XP" set the pattern. */
+function rsNum(n){ return (Number(n) || 0).toLocaleString(); }
+function rsPair(el, have, of){
+  const o = document.createElement("span");
+  o.className = "rs-frac-of"; o.textContent = " / " + rsNum(of);
+  el.replaceChildren(document.createTextNode(rsNum(have)), o);
+  return el;
+}
+
 function showRunRewards(run, hooks, opts){
   endResultsReveal();
   /* the 100%'s effect parses its pictures while the screen lands (build 313) */
@@ -78310,9 +78453,11 @@ function showRunRewards(run, hooks, opts){
     line.className = "badgeprogress-line";
     /* Just the +1 and what is left - "it says 1 of 20 and 19 to go or
        whatever, just have it say how many more to go and the +1". */
-    line.textContent = earned
-      ? have + " of " + need + " hundos · badge earned"
-      : "+1 hundo · " + (need - have) + " more to go";
+    /* in two pieces that each stay whole, so a narrow phone breaks it
+       at the dot and never inside "11 more to go" (build 315) */
+    const seg = t => { const sp = document.createElement("span"); sp.className = "rs-seg"; sp.textContent = t; return sp; };
+    if(earned) line.append(seg(rsNum(have) + " / " + rsNum(need) + " hundos"), " \u00b7 ", seg("badge earned"));
+    else line.append(seg("+1 hundo"), " \u00b7 ", seg(rsNum(need - have) + " more to go"));
     body.append(nm, track, line);
     row.append(art, body);
     card.appendChild(row);
@@ -78376,7 +78521,7 @@ function showRunRewards(run, hooks, opts){
     const t = document.createElement("p");
     t.className = "rs-retake-line";
     t.textContent = run.missed.length
-      ? run.missed.length + (run.missed.length === 1 ? " question" : " questions") + " still to go over"
+      ? rsNum(run.missed.length) + (run.missed.length === 1 ? " question" : " questions") + " still to go over"
       : "Every question you missed, answered right";
     grade.append(gk, t);
   } else {
@@ -78392,7 +78537,7 @@ function showRunRewards(run, hooks, opts){
     gSide.className = "rs-grade-side";
     const frac = document.createElement("p");
     frac.className = "rs-grade-frac";
-    frac.textContent = run.good + " of " + run.total;
+    rsPair(frac, run.good, run.total);
     const fracSub = document.createElement("p");
     fracSub.className = "rs-grade-sub slabel";
     fracSub.textContent = run.total === 0 ? "Time ran out before you answered any questions."
@@ -78412,7 +78557,7 @@ function showRunRewards(run, hooks, opts){
     if(run.timedOut) stamp("Time's up", "is-short");
     if(run.practice && !run.retake) stamp(run.pct >= PASS_MARK ? "Passed" : "Below the " + PASS_MARK + "% pass mark",
       run.pct >= PASS_MARK ? "is-made" : "is-short");
-    if(run.missed.length && !run.vroom) stamp(run.missed.length + " to review", "is-review");
+    if(run.missed.length && !run.vroom) stamp(rsNum(run.missed.length) + " to review", "is-review");
     if(stamps.children.length) grade.appendChild(stamps);
     /* A bar per unit, on a single-unit test too - "I'm a huge fan of how
        you have it showing results for each unit ... do include it on
@@ -78427,7 +78572,11 @@ function showRunRewards(run, hooks, opts){
       });
       const wrap = document.createElement("div");
       wrap.className = "unit-breakdown rs-byunit";
-      Object.keys(byUnit).forEach(nm => {
+      /* In the order the header lists them (build 315) - they came in
+         the order the run's first question from each happened to fall. */
+      const sat = run.unitsSat || [];
+      const at = u => { const i = sat.indexOf(u); return i < 0 ? sat.length : i; };
+      Object.keys(byUnit).sort((x, y) => at(x) - at(y)).forEach(nm => {
         const st = byUnit[nm];
         const right = st.total - st.wrong;
         const up = st.total ? Math.round(right / st.total * 100) : 0;
@@ -78436,7 +78585,7 @@ function showRunRewards(run, hooks, opts){
         const top = document.createElement("div");
         top.className = "unit-breakdown-top";
         const a = document.createElement("span"); a.className = "unit-breakdown-name"; a.textContent = nm;
-        const b = document.createElement("span"); b.className = "unit-breakdown-score"; b.textContent = right + "/" + st.total;
+        const b = document.createElement("span"); b.className = "unit-breakdown-score"; rsPair(b, right, st.total);
         top.append(a, b);
         const track = document.createElement("div"); track.className = "unit-breakdown-track";
         /* A unit's bar is its OWN verdict: gold at 100, green at a pass,
@@ -78830,8 +78979,8 @@ function showRunReview(run, hooks){
   /* nothing missed: the whole run, every question marked right (build 312) */
   const allRight = run.missed.length === 0;
   summary.textContent = allRight
-    ? "All " + run.order.length + (run.order.length === 1 ? " question" : " questions") + " right"
-    : run.missed.length + (run.missed.length === 1 ? " question" : " questions") + " to go over";
+    ? "All " + rsNum(run.order.length) + (run.order.length === 1 ? " question" : " questions") + " right"
+    : rsNum(run.missed.length) + (run.missed.length === 1 ? " question" : " questions") + " to go over";
   if(allRight) panel.classList.add("is-all-right");
   head.appendChild(summary);
   panel.appendChild(head);
@@ -79430,7 +79579,7 @@ function summarize(){
       head.className = "dailyq-outro-head"; head.textContent = gotIt ? "Correct" : "Not this time";
       const xpLine = document.createElement("p");
       xpLine.className = "dailyq-outro-xp";
-      xpLine.textContent = gotIt ? "+" + DAILY_XP + " XP" : "No XP today";
+      xpLine.textContent = gotIt ? "+" + DAILY_XP.toLocaleString() + " XP" : "No XP today";
       const next = document.createElement("p");
       next.className = "dailyq-outro-next";
       next.textContent = gotIt ? "Come back tomorrow for the next daily question."
@@ -79524,7 +79673,7 @@ function summarize(){
     if(where.where === "review"){
       const canRetake = missed.length > 0 && runMode === "drill";
       if(canRetake){
-        actions.appendChild(mk("Retake missed questions (" + missed.length + ")", "next rs-wide", () => {
+        actions.appendChild(mk("Retake missed questions (" + rsNum(missed.length) + ")", "next rs-wide", () => {
           beginRun(freshOrder(missed), "Missed questions", null, true);
         }, "nextbtn"));
       }
@@ -79535,7 +79684,7 @@ function summarize(){
     /* THE RESULTS: Continue to review first when anything was missed. */
     const stillMissed = missed.length > 0;
     if(stillMissed){
-      actions.appendChild(mk("Continue to review (" + missed.length + " missed)", "next rs-wide rs-continue", where.toReview, "nextbtn"));
+      actions.appendChild(mk("Continue to review (" + rsNum(missed.length) + " missed)", "next rs-wide rs-continue", where.toReview, "nextbtn"));
     }
     const rerun = mk(isMissedRetake ? "Re-run the full test" : "Re-run", stillMissed ? "next ghost" : "next", () => {
       if(rerunMinutes != null){
@@ -87578,7 +87727,8 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
        the room up; the board ranks them where their score puts them. */
     const here = presentParticipants(racing) || {};
     const finishedN = Object.keys(racing).filter(k => racing[k].finished || !here[k]).length;
-    wCount.textContent = finishedN + "/" + totalN;
+    /* a pair like every other on the results (build 315, see rsPair) */
+    wCount.textContent = finishedN + " / " + totalN;
     setBarFill(wFill, totalN ? Math.round(finishedN / totalN * 100) : 0);
     if(totalN > 0 && finishedN === totalN){
       if(!allInAt){
@@ -87650,7 +87800,7 @@ function buildRoomReviewTabs(run){
   const missedSet = new Set(run.missed);
   const panes = {};
   const defs = [
-    { key: "missed", label: "Missed questions", count: run.missed.length, list: run.missed.slice() },
+    { key: "missed", label: "Missed", more: " questions", count: run.missed.length, list: run.missed.slice() },
     { key: "all", label: "Entire test", count: run.order.length, list: run.order.slice() }
   ];
   const btns = {};
@@ -87658,8 +87808,12 @@ function buildRoomReviewTabs(run){
     const b = document.createElement("button");
     b.type = "button"; b.className = "rs-tab"; b.setAttribute("role", "tab");
     b.dataset.tab = d.key;
+    /* "Missed questions" broke onto two lines in its half of the switch
+       on every phone (build 315): a phone says "Missed", with its count,
+       and a tablet says it in full. */
     const l = document.createElement("span"); l.textContent = d.label;
-    const c = document.createElement("span"); c.className = "rs-tab-count"; c.textContent = d.count;
+    if(d.more){ const m = document.createElement("span"); m.className = "rs-tab-more"; m.textContent = d.more; l.appendChild(m); }
+    const c = document.createElement("span"); c.className = "rs-tab-count"; c.textContent = rsNum(d.count);
     b.append(l, c);
     btns[d.key] = b;
     tabs.appendChild(b);
@@ -87795,7 +87949,17 @@ function playVroomRaceCutscene(ranked){
     const mid = document.createElement("div");
     mid.className = "vrc-mid";
     const nm = document.createElement("p");
-    nm.className = "vrc-name"; nm.textContent = (r.p.name || "?") + (r.key === me ? " (you)" : "");
+    nm.className = "vrc-name";
+    /* "(you)" never gives way to a long name on a narrow phone - the name
+       does (build 315: "Madison (y..." at 320px) */
+    const nmText = document.createElement("span");
+    nmText.className = "vrc-name-text"; nmText.textContent = r.p.name || "?";
+    nm.appendChild(nmText);
+    if(r.key === me){
+      const you = document.createElement("span");
+      you.className = "vrc-you"; you.textContent = "(you)";
+      nm.append(" ", you);
+    }
     const track = document.createElement("div");
     track.className = "vrc-track";
     const fill = document.createElement("div");
