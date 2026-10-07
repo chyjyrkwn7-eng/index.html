@@ -14658,6 +14658,63 @@ disagree with it.
     does). Fixtures that put a held rank past a NUMBER `rankMapSeen` and
     then go to Home or Profile now meet the lock or the scene; the shared
     `USED_ACCOUNT` leaves `rankMapSeen` null, so it does not.
+- **THE RANK-UP CUTSCENE WHIRLS, AND ITS FLARE LIGHTS FROM THE MIDDLE
+  (build 317).** Madison: *"the planet lights up instantly, all the
+  planets need to spin on their axis ring thing in a circle, during this
+  part, that's when the unlocked flare rank will start lighting up
+  instantly the middle of it, they will spin fast and then when it stops
+  it's fully lit and goes into the rest. The beginning is great the end
+  of it is great. ... the unlocked rank flare does look massive within
+  the cutscene ... Needs to look like the main menu"*, and of the pop-ups
+  after it: *"the theme one looks like a ball, and it doesn't animate,
+  the character also doesn't animate, fix that."*
+  - **The whirl** (`playRankUpScene`, `.is-cutspin`): both planets'
+    carriers take a `transform: rotate(RANK_CUTSPIN_TURNS turns)`
+    transition on an ease-in-out curve while each slot turns back by the
+    same amount on the same curve. `transform` composes with the slow
+    `rotate` orbit about the same origin, and whole turns land every
+    bubble exactly where the slow orbit has it - so nothing jumps, and
+    the two planets stay in step for the swap.
+  - **The light** is a lit copy of the bubble (`.rank-litwipe`) over the
+    dark one, its `clip-path: circle()` opening from 0 to past its halo on
+    the whirl's clock, the colour pool rising with it. It hands over to
+    the bubble itself on the carrier's own `transitionend` (a timer before
+    the flash is the fallback): the transition can start a frame late on a
+    slow device, and a timer alone lit it mid-spin on a loaded machine.
+  - **Timing**: tier `ignite 3000, spin 3500, burst 7000, settle 8500,
+    outro 12000` - the burst and everything after it moved 800ms; the
+    beginning and the end are untouched. Supernova keeps its times; its
+    spin is `burst - ignite - 500`.
+  - **Size**: no swell (`scale:1.4` is gone), and the bubbles are Home's
+    size against the planet. The scene's hero was narrower than Home's
+    with the same 2.9rem bubbles, so a flare was 2x its Home share before
+    it swelled. `homeFlareFrac()` mounts a hidden Home-shaped probe (the
+    real classes, so every Home rule and media query applies) and reads a
+    bubble's share of the hero; the scene's hero is a size container and
+    sets `--flare-size` from it. Measured: 0.105 Home / 0.104 scene on a
+    17 Pro Max, 0.081 / 0.080 on an iPad Pro 11".
+  - **The reward card's theme tile is the theme's swatch** (`buildThemeDot`,
+    the Customize/Profile circle: swirl under it, sheen across it), and
+    **its character does its winner's move** (`char-react-win`) once the
+    tile lands, then lives (`setCharState(live, solo)`) - `rsCharCelebrate`,
+    on both the rank-reward tile and a lone character card. The idle loop
+    alone is a blink every few seconds, which read as not animating. A
+    banner tile is left still on purpose (build 314: "not a fan of" a
+    banner doing an effect).
+  - **Order.** On the results screen the order was already right: badge
+    case (it tips the rank - build 308's explicit ask), rank cutscene, the
+    rank-reward card, then everything else; the scene hands back to the
+    results (`onDone`), nothing navigates to Home, and Home's rank-up lock
+    arms only once you tap Main menu yourself. On Home it was not: a rank
+    reached there played its cutscene, then a badge cutscene from the same
+    run, then the rank's card. `rankRewardsFirstOnHome()` now holds the
+    badge queue until that card has played, and `rankUpLockWaits()` waits
+    on a pending badge queue too.
+  - **Gate: `check_b317_cutspin`** - the carrier and the slots turn over
+    the beat and are at rest when the flare is fully lit, the light's clip
+    passes through several sizes in order, the flare is within 15% of
+    Home's share (phone and tablet), the theme tile runs its animations,
+    the character does its hop and then lives. Fails 10 ways on 57212ce.
 - **STUDY TIME IS TIME SPENT STUDYING (build 314).** It was "now minus
   when the run started", so a run left open with the phone locked banked
   every hour on the day it ended: live tests of 117h and 50h, days of 68h

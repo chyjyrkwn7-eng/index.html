@@ -267,7 +267,7 @@ def rank_cutscene(key):
         rec.start(); pg.wait_for_timeout(400)
         pg.evaluate("(k)=>{store.pendingTierCutscene=k; playTierCutscene(k)}",
                     key)
-        pg.wait_for_timeout(15200)   # build 308: ~13.8s - orbit, ignite, flash, name
+        pg.wait_for_timeout(16000)   # build 317: ~15.3s - orbit, whirl + light (3-6.5s), flash 7s, name
     return body
 
 
