@@ -14754,6 +14754,17 @@ disagree with it.
     over the question and the card arrives on Home; it runs on a page of
     its own, because the shared page's earlier sections leave it in a
     state Home will not mount over.
+  - **Two leftovers of the move to Submit (317 touch-up).** The off pill
+    was `rgba(245,246,247,.22)` - and it is FIXED over a page that
+    scrolls, so on an SE the choice under it printed straight through
+    ("Submit answer" over "performing an act of sexual ..."). It is
+    `#44474B` now, that same 22% white flattened onto `#12161B`: identical
+    on an empty background, opaque over text. And Enter did nothing on a
+    laptop, since the document's Enter handler only knew `#nextbtn`, which
+    the daily always hides - under a hint saying "Press Enter to
+    continue". Enter now presses the daily's own pill (Submit once a
+    choice is picked, then Exit); a disabled Submit is left alone.
+    `check_b317_daily`'s keyboard block fails 3 of 5 on 1888b11.
   - Gates that answer the daily question click the choice and then
     `#dailyq-submitbtn`; `check_b317_daily` holds all of the above and
     fails 10 of 12 against build 316. Its banner regex is the banner's

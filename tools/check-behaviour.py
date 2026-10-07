@@ -12904,6 +12904,37 @@ def check_b317_daily(br):
         check("%s: no Detective progress banner, on the question or on Home" % dev,
               r.get("pending") in (None,) and r.get("seen") == "" and r.get("home") is True,
               [r.get("pending"), r.get("seen"), r.get("home")])
+    # THE PILL OFF, AND FROM A KEYBOARD (build 317 touch-up). Written against
+    # 1888b11, where both fail: the off Submit was 22% white, so the choice
+    # scrolling under it read through it; and Enter did nothing at all, the
+    # hint under the question saying "Press Enter to continue".
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      store.dailyCorrectStreak = 3; store.dailyQuestionDate = null; saveStore();
+      document.querySelectorAll('#pushing-update,#intro-pop').forEach(n => n.remove());
+      startDailyQuestion();
+      for(let t = 0; t < 80 && !document.querySelector('.qpanel .choice'); t++) await wait(100);
+      await wait(400); }""")
+    bg = pg.evaluate("() => { const b = document.getElementById('dailyq-submitbtn'); return b ? [b.disabled, getComputedStyle(b).backgroundColor] : null; }")
+    alpha = 1.0
+    m = re.match(r"rgba\([^)]*,\s*([\d.]+)\)$", (bg or [0, ""])[1])
+    if m:
+        alpha = float(m.group(1))
+    check("the daily's Submit, off, is opaque - nothing scrolling under it shows through", bool(bg) and bg[0] is True and alpha >= 0.999, bg)
+    pg.keyboard.press("Enter"); pg.wait_for_timeout(300)
+    k0 = pg.evaluate("() => ({ locked: dailyQuestionLocked, exit: !!document.getElementById('dailyq-exitbtn') })")
+    slot = pg.evaluate("() => correctSlot(order[pos])")
+    pg.keyboard.press(str(slot + 1)); pg.wait_for_timeout(300)
+    k1 = pg.evaluate("() => ({ locked: dailyQuestionLocked, picked: !!document.querySelector('.qpanel .choice.is-picked') })")
+    pg.keyboard.press("Enter"); pg.wait_for_timeout(1500)
+    k2 = pg.evaluate("() => ({ locked: dailyQuestionLocked, exit: !!document.getElementById('dailyq-exitbtn'), correct: !!store.dailyQuestionCorrect })")
+    pg.keyboard.press("Enter"); pg.wait_for_timeout(1500)
+    home = pg.evaluate("() => !!document.querySelector('[data-screen=\"home\"]')")
+    ctx.close()
+    check("keyboard: Enter with nothing picked does nothing", k0["locked"] is False and k0["exit"] is False, k0)
+    check("keyboard: a number key picks, and does not answer", k1["locked"] is False and k1["picked"] is True, k1)
+    check("keyboard: Enter submits the pick", k2["exit"] is True and k2["correct"] is True, k2)
+    check("keyboard: and Enter again is Exit to main menu", home is True, home)
 
 
 def check_b316_tiles(br):

@@ -3197,9 +3197,14 @@
   .next[hidden]{ display:none; }
   .next:disabled{ opacity:.35; cursor:default; }
   /* The daily question's Submit answer before a choice is picked: the
-     pill's own 3D shadows otherwise keep it reading as live. */
+     pill's own 3D shadows otherwise keep it reading as live. OPAQUE
+     (build 317 touch-up): it is fixed over a page that scrolls under it,
+     and at 22% white the choice under it read straight through - "Submit
+     answer" printed over "performing an act of ..." on an SE. #44474B is
+     that 22% white over the app's own #12161B, so it looks the same with
+     nothing behind it. */
   .foot > .floatbtn.qnext.dailyq-btn:disabled{
-    opacity:1; background-color:rgba(245,246,247,.22); background-image:none; color:rgba(255,255,255,.55);
+    opacity:1; background-color:#44474B; background-image:none; color:rgba(255,255,255,.55);
     box-shadow:0 0 0 1px rgba(255,255,255,.14) inset;
   }
   /* build 308: a reset with nothing to reset - looks off, still explains
@@ -98768,7 +98773,14 @@ document.addEventListener("keydown", (e) => {
     /* Not a results button that has not landed yet - the same hole as
        the tap, from a keyboard. */
     if(next && next.closest(".rs-land:not(.rs-in):not(.rs-in-now)")) return;
-    if(next && !next.hidden && !next.disabled){ e.preventDefault(); next.click(); }
+    if(next && !next.hidden && !next.disabled){ e.preventDefault(); next.click(); return; }
+    /* THE DAILY QUESTION'S OWN PILL (build 317 touch-up). #nextbtn is
+       always hidden there, so Enter did nothing at all on a laptop while
+       the hint under the question said "Press Enter to continue": a key
+       picks, Enter submits, and once answered Enter is Exit. A pick
+       still needs a choice first - a disabled Submit is left alone. */
+    const dq = document.getElementById("dailyq-submitbtn") || document.getElementById("dailyq-exitbtn");
+    if(dq && stage.contains(dq) && !dq.disabled){ e.preventDefault(); dq.click(); }
   }
 });
 
