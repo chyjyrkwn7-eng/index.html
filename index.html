@@ -11383,7 +11383,39 @@
   }
   .rank-orbit-slot.is-igniting{ z-index:2; }
   .rank-orbit-slot.is-igniting::before{ opacity:1; transform:scale(1); animation:rank-ignite-breathe 1.5s ease-in-out 1.1s infinite alternate; }
-  .rank-orbit-slot.is-igniting > .cosmic-icon-badge{ scale:1.4; }
+  /* ---- THE WHIRL AND THE LIGHT FROM THE MIDDLE (build 317) ----
+     No swell any more: "the unlocked rank flare does look massive within
+     the cutscene ... Needs to look like the main menu". The bubbles are
+     the size Home draws them RELATIVE TO THE PLANET - the hero is a
+     container here as it is on Home, and --flare-cqw is Home's own
+     measured bubble-to-planet ratio (homeFlareFrac), with Home's rule as
+     the fallback. The slot is the same size, so it turns about the
+     bubble's centre. */
+  .tier-cutscene .cosmic-hero-wrap{ container-type:inline-size; }
+  .tier-cutscene .rank-orbit-slot,
+  .tier-cutscene .rank-orbit-slot > .cosmic-icon-badge.cosmic-badge-rank{
+    width:var(--flare-size, min(2.9rem, 10.7cqw)); height:var(--flare-size, min(2.9rem, 10.7cqw)); }
+  /* The whirl: whole turns of the carrier, each slot turning back by the
+     same amount on the same curve so the emblems stay upright. It
+     composes with the slow `rotate` orbit (transform applies after it,
+     about the same origin). */
+  .tier-cutscene .rank-orbit{ transform:rotate(0deg);
+    transition:transform var(--cutspin-ms, 3.5s) cubic-bezier(.62,0,.24,1); }
+  .tier-cutscene .rank-orbit-slot{ transform:rotate(0deg);
+    transition:opacity 1s ease, transform var(--cutspin-ms, 3.5s) cubic-bezier(.62,0,.24,1); }
+  .tier-cutscene.is-cutspin .rank-orbit{ transform:rotate(var(--cutspin-turns, 1080deg)); }
+  .tier-cutscene.is-cutspin .rank-orbit-slot{ transform:rotate(calc(-1 * var(--cutspin-turns, 1080deg))); }
+  /* The light from the middle: a lit copy over the dark bubble, its clip
+     opening from a point to past its own halo while the spin runs, and
+     brightening as it goes. */
+  .rank-orbit-slot > .rank-litwipe{ position:absolute; left:0; top:0; z-index:1; pointer-events:none;
+    clip-path:circle(0% at 50% 50%); opacity:.45;
+    transition:clip-path var(--cutspin-ms, 3.5s) cubic-bezier(.45,.05,.35,1), opacity var(--cutspin-ms, 3.5s) ease-in; }
+  .tier-cutscene.is-cutspin .rank-orbit-slot > .rank-litwipe{ clip-path:circle(160% at 50% 50%); opacity:1; }
+  /* the pool of colour rises on the same clock, and only breathes once lit */
+  .tier-cutscene .rank-before .rank-orbit-slot.is-igniting::before{
+    transition:opacity var(--cutspin-ms, 3.5s) ease-in, transform var(--cutspin-ms, 3.5s) cubic-bezier(.45,.05,.35,1);
+    animation-delay:var(--cutspin-ms, 3.5s); }
   @keyframes rank-ignite-breathe{ from{ scale:1; opacity:1; } to{ scale:1.22; opacity:.7; } }
   /* Only the ranks you do NOT hold step back while yours lights (build
      309) - dimming every other flare made the ones you already hold read
@@ -24170,6 +24202,16 @@
   }
   .rs-reward-art > svg{ width:4rem; height:4rem; display:block; }
   .rs-reward-art .rs-themedot{ width:3.2rem; height:3.2rem; font-size:1.9rem; }
+  /* The theme as its moving swatch (build 317, themeUnlockItem): the
+     swatch box is only a frame here, the dot is the size the old ball
+     was in each place, and it keeps the ring and glow in the theme's
+     colour. */
+  .swatch.pf-swatch.rs-themeswatch{ width:auto; height:auto; display:block; border:0; background:none; }
+  .swatch.pf-swatch.rs-themeswatch .dot{ display:block; width:1.7rem; height:1.7rem;
+    box-shadow:0 0 0 2px color-mix(in srgb, var(--spot-color) 40%, transparent),
+      0 0 1.1em color-mix(in srgb, var(--spot-color) 45%, transparent); }
+  .rs-spot-art .swatch.pf-swatch.rs-themeswatch .dot{ width:4.6rem; height:4.6rem; font-size:2.7rem; }
+  .rs-reward-art .swatch.pf-swatch.rs-themeswatch .dot{ width:3.2rem; height:3.2rem; font-size:1.9rem; }
   .rs-reward-tile.is-banner .rs-reward-art{ width:min(15rem, 100%); height:auto; aspect-ratio:16 / 6; overflow:hidden; border-radius:12px; background:none; }
   .rs-reward-tile.is-banner .rs-reward-art > *{ position:absolute; inset:0; width:100%; height:100%; }
   .rs-reward-kind{ font-size:.6rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:color-mix(in srgb, var(--rank-color, #fff) 60%, #fff); opacity:.85; }
@@ -63232,6 +63274,9 @@ function rankTierBadge(hero, tierKey){
    swap and the colour change does not jump the flares. Transform-only:
    the whole orbit is one compositor layer. */
 const RANK_ORBIT_MS = 30000;
+/* The whirl at the unlock beat (build 317): whole turns, so every bubble
+   comes to rest exactly where the slow orbit would have it. */
+const RANK_CUTSPIN_TURNS = 3;
 function rankOrbitFlares(hero){
   if(!hero) return null;
   const orbit = document.createElement("div");
@@ -63298,6 +63343,30 @@ function syncSceneFlares(hero, tierKey, includeSelf){
     else b.style.removeProperty("--tier-glow");
   });
 }
+/* HOME'S BUBBLE, AS A SHARE OF HOME'S PLANET (build 317). The scene's
+   hero is narrower than Home's and its bubbles were a fixed 2.9rem, so a
+   flare sat twice its Home size against the planet before it swelled
+   ("the unlocked rank flare does look massive within the cutscene").
+   A hidden Home-shaped probe - the same classes, so every Home rule and
+   media query applies - says what fraction of the hero's width Home
+   gives a bubble on this screen; the scene sizes its own by it. */
+function homeFlareFrac(){
+  let panel = null;
+  try{
+    const host = (typeof stage !== "undefined" && stage && stage.parentElement) || document.body;
+    panel = document.createElement("section");
+    panel.className = "panel home screen-home-actual";
+    panel.setAttribute("aria-hidden", "true");
+    panel.style.cssText = "position:fixed;left:-300vw;top:0;visibility:hidden;pointer-events:none;width:" +
+      ((typeof stage !== "undefined" && stage && stage.clientWidth) || innerWidth) + "px";
+    const wrap = document.createElement("div"); wrap.className = "cosmic-hero-wrap";
+    const b = document.createElement("div"); b.className = "cosmic-icon-badge cosmic-badge-rank";
+    wrap.appendChild(b); panel.appendChild(wrap); host.appendChild(panel);
+    const f = b.offsetWidth / wrap.clientWidth;
+    panel.remove();
+    return f > 0 && f < 1 ? f : null;
+  }catch(e){ if(panel) panel.remove(); return null; }
+}
 function playRankUpScene(tierKey, opts, spec){
   opts = opts || {};
   const inline = !!opts.onDone;
@@ -63305,6 +63374,8 @@ function playRankUpScene(tierKey, opts, spec){
   const overlay = document.createElement("div");
   overlay.id = "supernova-cutscene";
   overlay.classList.add("tier-cutscene");
+  const flareFrac = homeFlareFrac();
+  if(flareFrac) overlay.style.setProperty("--flare-size", (flareFrac * 100).toFixed(3) + "cqw");
   if(tierKey === "titan") overlay.classList.add("is-top");
   const theme0 = document.documentElement.dataset.theme || "dark";
   const realAccent = document.documentElement.dataset.accent;
@@ -63403,24 +63474,65 @@ function playRankUpScene(tierKey, opts, spec){
     stageWrap.classList.add("is-arrive");
   }));
   at(T.zoom, () => stageWrap.classList.add("supernova-zoom"));
-  /* THE EMPHASIS: this rank's flare lights while everything is turning -
-     it takes its colour and its glow, swells, and the other six step
-     back - and only then does the flash come. */
-  at(T.ignite, () => {
-    overlay.classList.add("is-igniting");
+  /* THE EMPHASIS, SPUN UP (build 317): "the planet lights up instantly,
+     all the planets need to spin on their axis ring thing in a circle,
+     during this part, that's when the unlocked flare rank will start
+     lighting up instantly the middle of it, they will spin fast and then
+     when it stops it's fully lit and goes into the rest." So the flare no
+     longer lights in one step. Every bubble on BOTH planets is whirled
+     round its ring - RANK_CUTSPIN_TURNS turns on an ease-in-out curve, so
+     it speeds up, runs fast and slows to the exact place it would have
+     been, the 30s orbit carrying on underneath - and while it turns, the
+     rank's flare lights from its centre outward (a lit copy of the bubble
+     on top, its circular clip growing from nothing; the pool of colour
+     behind it rising on the same clock). When the spin stops the flare is
+     fully lit, the copy hands over to the bubble itself, and the flash
+     comes as it always did. The other six step back as before. */
+  const spinMs = Math.max(1200, spec.times.spin || (T.burst - T.ignite - 500));
+  overlay.style.setProperty("--cutspin-ms", spinMs + "ms");
+  overlay.style.setProperty("--cutspin-turns", (RANK_CUTSPIN_TURNS * 360) + "deg");
+  let litWipe = null;
+  const lightFully = () => {
     const b0 = rankTierBadge(heroBefore, tierKey);
     if(b0){
       b0.style.setProperty("--tier-glow", flareColorOf(tierKey));
       b0.classList.add("cosmic-badge-lit");
       if(FLARE_NOIR[tierKey]) b0.classList.add("cosmic-badge-noir");
+    }
+    if(litWipe){ litWipe.remove(); litWipe = null; }
+    overlay.classList.add("is-cutlit");
+  };
+  at(T.ignite, () => {
+    overlay.classList.add("is-igniting");
+    const b0 = rankTierBadge(heroBefore, tierKey);
+    if(b0){
       const slot = b0.closest(".rank-orbit-slot");
       if(slot){ slot.style.setProperty("--ignite", flareColorOf(tierKey)); slot.classList.add("is-igniting"); }
+      /* the lit copy, its clip at nothing; the next frame opens it */
+      if(slot && !theme.reduceMotion){
+        litWipe = b0.cloneNode(true);
+        litWipe.classList.add("rank-litwipe", "cosmic-badge-lit");
+        litWipe.classList.remove("cosmic-badge-newly-lit");
+        if(FLARE_NOIR[tierKey]) litWipe.classList.add("cosmic-badge-noir");
+        litWipe.style.setProperty("--tier-glow", flareColorOf(tierKey));
+        litWipe.setAttribute("aria-hidden", "true");
+        slot.appendChild(litWipe);
+      } else lightFully();
     }
+    void overlay.offsetWidth;
+    requestAnimationFrame(() => overlay.classList.add("is-cutspin"));
     const b1 = rankTierBadge(heroAfter, tierKey);
     if(b1){ b1.style.setProperty("--tier-glow", flareColorOf(tierKey)); b1.classList.add("cosmic-badge-lit"); if(FLARE_NOIR[tierKey]) b1.classList.add("cosmic-badge-noir"); }
     const s1 = b1 && b1.closest(".rank-orbit-slot");
     if(s1){ s1.style.setProperty("--ignite", flareColorOf(tierKey)); s1.classList.add("is-igniting"); }
   });
+  /* The spin has stopped: fully lit, and on into the flash. Keyed to the
+     whirl's own end (its transition can start a frame or two after the
+     class goes on), with the flash itself as the latest it can be. */
+  if(orbitBefore) orbitBefore.addEventListener("transitionend", e => {
+    if(e.target === orbitBefore && e.propertyName === "transform") lightFully();
+  });
+  at(Math.max(T.ignite + spinMs + 300, T.burst - 60), lightFully);
   at(T.burst, () => overlay.classList.add("supernova-burst"));
   /* Under the peak of the flash (35% of its 2.6s). */
   at(T.burst + 850, () => {
@@ -63442,7 +63554,9 @@ function playTierCutscene(tierKey, opts){
   return playRankUpScene(tierKey, opts, {
     title: RANK_DISPLAY_NAME[tierKey].toUpperCase(),
     subtitle: inline ? rankCutFromTo(opts.from, tierKey) : "A new rank, reached.",
-    times: { zoom: 1200, ignite: 3000, burst: 6200, settle: 7700, outro: 11200, hold: 2600 },
+    /* build 317: the burst and everything after it 800ms later, to make
+       room for the spin (ignite 3000 -> spin 3500ms -> 500ms lit -> burst) */
+    times: { zoom: 1200, ignite: 3000, spin: 3500, burst: 7000, settle: 8500, outro: 12000, hold: 2600 },
     onFinish: () => { store.pendingTierCutscene = null; saveStore(); }
   });
 }
@@ -68409,6 +68523,10 @@ function playQueuedBadgeCutscenes(){
      construction rather than by a list somebody has to maintain. */
   const homeRoot = stage.querySelector('[data-screen="home"]');
   if(!homeRoot) return;
+  /* a rank reached on Home shows its rewards first (build 317) */
+  if(!document.getElementById("badge-cutscene") && (homeUnlockPlaying || rankRewardsFirstOnHome())){
+    setTimeout(playQueuedBadgeCutscenes, 1000); return;
+  }
 
   /* Muting achievement banners mutes this too - it is the loudest
      banner in the app. The queue is cleared either way, so a muted
@@ -78282,11 +78400,37 @@ function themeUnlockItem(c){
     sub: "Set as your theme \u00b7 change it any time in Settings",
     need: "Reach " + (RANK_DISPLAY_NAME[c] || c) + " rank",
     color: ACCENT_SWATCH[c], art: () => {
-      const d = document.createElement("span");
-      d.className = "rs-themedot"; d.style.setProperty("--spot-color", ACCENT_SWATCH[c]);
+      /* THE THEME AS ITS SWATCH, MOVING (build 317): "the theme one looks
+         like a ball, and it doesn't animate". It is the circle Customize
+         and Profile show for this theme - its own swirl sliding under it
+         and the gloss sweeping across - so the card reads as a theme you
+         now have, and it moves. */
+      const d = buildThemeDot(c);
+      d.classList.add("rs-themeswatch");
+      d.style.setProperty("--spot-color", ACCENT_SWATCH[c]);
       d.dataset.accent = c;
       return d; } };
 }
+/* THE CHARACTER ARRIVES CELEBRATING (build 317): "the character also
+   doesn't animate, fix that". Its idle loop is a blink every few seconds
+   - right for a board of forty faces, nothing at all on a reward card. So
+   once its tile has landed it does its winner's move (char-react-win, the
+   Virtual Room's), then settles into its live loop the way every solo
+   character does (setCharState live: the drawing, then its flip-book). */
+function rsCharCelebrate(el, landMs){
+  if(!el) return;
+  el.classList.add("char-live");
+  setTimeout(() => {
+    if(!el.isConnected) return;
+    el.classList.add("char-react-win");
+    setTimeout(() => {
+      if(!el.isConnected) return;
+      el.classList.remove("char-react-win");
+      try{ setCharState(el, "live", { solo: true }); }catch(e){ el.classList.add("char-live"); }
+    }, RS_CHAR_CELEBRATE_MS);
+  }, landMs || 0);
+}
+const RS_CHAR_CELEBRATE_MS = 3800;
 /* Home's queue, grouped the same way: each rank's rewards as one card,
    ahead of anything a challenge handed over. */
 function groupRankRewards(raw){
@@ -78330,6 +78474,8 @@ function rankRewardsItem(rank, parts){
           if(p.kind === "banner"){ a.appendChild(buildBannerArt(p.banner)); }
           else a.appendChild(p.art());
         }catch(e){}
+        /* lands at 1s + .32s a tile (rs-reward-in, .7s) */
+        if(p.kind === "character") rsCharCelebrate(a, 1700 + i * 320);
         const k = document.createElement("span");
         k.className = "rs-reward-kind";
         k.textContent = p.kind === "theme" ? "Theme" : p.kind === "character" ? "Character" : "Banner";
@@ -78645,7 +78791,18 @@ function homeUnlockBlocked(){
     /* A run waiting to be resumed (build 304) holds anything it earned
        for its own results; if it is turned down, the queue plays then. */
     document.getElementById("resume-offer") || !!readRunSession() ||
-    (store.pendingBadgeUnlocks || []).length || whatsNewHolds());
+    ((store.pendingBadgeUnlocks || []).length && !rankRewardsFirstOnHome()) || whatsNewHolds());
+}
+/* A RANK'S OWN POP-UP BEFORE ANYTHING ELSE (build 317): "Assuming you
+   unlock anything else, those would come after the rank pop ups and
+   stuff by the way." On the results screen that was already the order.
+   On Home it was not: the rank cutscene played, then any badge cutscene
+   queued from the same run, and only then the card with what the rank
+   handed over - a badge wedged between a rank and its rewards. While a
+   rank reached on Home still has its card owed, the badge queue waits
+   for that card (and the cards no longer wait for the badges). */
+function rankRewardsFirstOnHome(){
+  try{ return !!(rankJustReachedOnHome && homeUnlocksOwed(pendingHomeUnlocks())); }catch(e){ return false; }
 }
 /* A beat after Home settles - long enough that the screen is read as
    Home first and the unlock arrives as news, not as part of the load. */
@@ -78929,6 +79086,8 @@ function playUnlockSpotlight(item, n, of, release){
   } else {
     /* a hundo effect plays in its own small 100% box (build 313) */
     try{ art.appendChild((item.liveArt || item.art)()); }catch(e){}
+    /* the art lands at .75s + .8s (rs-artpop) */
+    if(item.kind === "character" && !item.secret) rsCharCelebrate(art, 1500);
   }
   const kicker = document.createElement("p");
   kicker.className = "rs-spot-kicker"; kicker.textContent = item.kicker;
@@ -95975,7 +96134,7 @@ function scheduleRankUpLock(ms){
    cards wait on, the cards themselves and their flight, and the daily
    question's XP on its way in. */
 function rankUpLockWaits(){
-  try{ if(homeUnlockBlocked() || homeUnlockPlaying || homeUnlockTimer) return true; }catch(e){ return true; }
+  try{ if(homeUnlockBlocked() || homeUnlockPlaying || homeUnlockTimer || (store.pendingBadgeUnlocks || []).length) return true; }catch(e){ return true; }
   if(document.querySelector(".rs-fly, .scene-bridge, #teststart-overlay, #intro-pop, #tour-overlay, #splashscreen")) return true;
   return Date.now() < (Number(dailyXpFlyEndsAt) || 0);
 }
