@@ -11157,35 +11157,43 @@
     stroke:rgba(194,59,122,.5); stroke-width:1.4;
     filter:drop-shadow(0 0 3px rgba(194,59,122,.4));
   }
-  /* THE ECLIPSE (build 317) - the second ring tier, homeRingTier():
-     Supernova AND every secret flare. "if you get all the secret flares
-     AND the rank ones, then it's like black?" A near-black hoop that
-     still reads against a dark sky because its light is on its EDGES:
-     a hairline rim either side of the body in a cold violet-white, and
-     a soft dark shadow round it built from stacked strokes. No filter
-     of any kind - every piece is a plain stroke, so iOS draws exactly
-     what Chromium does. Static, like the orange tier. */
-  /* ROUND TWO: "I can't see the black ones ... could be better". A
-     wider black band (5.2), a rim twice as bright that never fades
-     below .78 anywhere round the ring (white at the upper left to an
-     icy cyan), and a corona - three soft strokes of violet and blue
-     light coming off the black, outside and in - so it is a dark core
-     with a halo: an eclipse, readable at a glance on the dark sky. */
-  .cosmic-orbit-ring.cosmic-orbit-ring-eclipse{
-    stroke:#030207; stroke-width:5.2;
+  /* THE TOP RING TIER (build 317) - homeRingTier() "eclipse": Supernova
+     AND every secret flare. Round three, after "they don't look like the
+     other orange, they are thicker, they just look different": the same
+     construction as .cosmic-orbit-ring-supernova above, rule for rule -
+     stroke-width 1.4, the paint at .55 alpha, opacity 1, and a
+     drop-shadow(0 0 3px) at .5 for the glow. No extra circles, no
+     corona strokes, no shadow band (the black version had seven circles
+     a ring, about 13 units across). Only the colour is its own, and
+     RING_ECLIPSE_STYLE picks it:
+       .is-flares - the six secret flares' colours round the ring (the
+         stroke is a pattern set inline, ringFlaresURL(); the pink here is
+         only the fallback if that picture could not be drawn), with a
+         pearl glow, turning slowly.
+       .is-black - a near-black ring whose glow is ember: an eclipse
+         corona. Static, like the orange. */
+  .cosmic-orbit-ring.cosmic-orbit-ring-eclipse{ stroke-width:1.4; }
+  .cosmic-orbit-ring.cosmic-orbit-ring-eclipse.is-flares{
+    stroke:rgba(255,92,168,.55);
+    filter:drop-shadow(0 0 3px rgba(255,226,242,.5));
   }
-  .cosmic-orbit-eclipse-shade{
-    fill:none; stroke:rgba(2,1,6,.42); stroke-width:13;
+  .cosmic-orbit-ring.cosmic-orbit-ring-eclipse.is-black{
+    stroke:rgba(5,3,8,.55);
+    filter:drop-shadow(0 0 3px rgba(255,112,52,.5));
   }
-  .cosmic-orbit-eclipse-haze{
-    fill:none; stroke:rgba(168,140,255,.26); stroke-width:3.4;
+  /* The flares' sweep: the whole ring layer turns about the planet's
+     centre (180,150 in the 0 -12 360 342 viewBox = 50% 47.368%), so the
+     colours travel round the ring while the circle itself never moves.
+     A transform on its own layer - nothing repaints, and turning a
+     circle about its centre leaves the stroke exactly where it was. A
+     full turn (cosmic-orbit-spin), so the loop is seamless; on the
+     shared loop clock with the rest of Home (syncLoopClock), so a return
+     to Home does not restart it. Reduce motion stops it (the media query
+     here and the global data-reduce-motion rule). */
+  .cosmic-hero-ringlayer{ transform-origin:50% 47.368%; }
+  @media (prefers-reduced-motion:no-preference){
+    .cosmic-hero-ringlayer.is-flares{ animation:cosmic-hero-settle .22s ease-out both, cosmic-orbit-spin 96s linear infinite; }
   }
-  .cosmic-orbit-eclipse-haze.is-far{ stroke:rgba(120,190,255,.10); stroke-width:6; }
-  .cosmic-orbit-eclipse-haze.is-in{ stroke:rgba(168,140,255,.14); stroke-width:3; }
-  /* the stroke itself is this copy's rim gradient, set inline */
-  .cosmic-orbit-eclipse-rim{ fill:none; stroke:rgba(226,218,255,.85); }
-  .cosmic-orbit-eclipse-rim.is-outer{ stroke-width:1.15; opacity:1; }
-  .cosmic-orbit-eclipse-rim.is-inner{ stroke-width:.85; opacity:.8; }
   .cosmic-sphere-glow{ fill:var(--theme-c2); opacity:.4; }
   /* ---------- Supernova cutscene ---------- */
   /* THE END-OF-MATCH CUTSCENE. Asked for directly - "a 5 second
@@ -59502,11 +59510,66 @@ function secretFlaresAllFound(){
    orange but if you get all the secret flares AND the rank ones, then
    it's like black?" "" - plain rings; "supernova" - every rank flare
    lit (store.supernovaAchieved), the orange rings; "eclipse" - that AND
-   every secret flare, the black rings. Every secret flare without
-   Supernova is plain: tier two needs both. */
+   every secret flare, the top rings (RING_ECLIPSE_STYLE). Every secret
+   flare without Supernova is plain: tier two needs both. */
 function homeRingTier(){
   if(!store || !store.supernovaAchieved) return "";
   return secretFlaresAllFound() ? "eclipse" : "supernova";
+}
+/* WHAT THE TOP RING TIER LOOKS LIKE (build 317, round three). Either way
+   it is built exactly like the orange tier - one circle a ring, 1.4 wide,
+   paint at .55, the same 3px drop-shadow - and only the colour changes.
+     "flares" - the default. The six secret flares' own colours
+                (MYSTERY_COLOR) running round the ring, turning slowly: the
+                ring says "every flare found" in the flares' own light.
+     "black"  - the eclipse Madison first pictured: a near-black ring with
+                an ember corona (the drop-shadow), static like the orange.
+   A let, not a const, only so a gate can draw both. */
+let RING_ECLIPSE_STYLE = "flares";
+/* The flare colours round a circle, drawn once onto a canvas and used as
+   the "flares" ring's stroke (a pattern - SVG has no conic gradient). In
+   hue order rather than MYSTERY_ORDER, so each colour runs into a near
+   neighbour (violet after the ice blue, then the core's pink back round
+   to red), and blended in OKLab so no join goes muddy. The .55 the orange
+   stroke carries is baked into every pixel's alpha. "" if it cannot be
+   drawn; the CSS then strokes the ring in the core's pink. */
+const RING_FLARE_ORDER = ["red", "orange", "yellow", "white", "violet", "core"];
+let ringFlaresUrlCache = null;
+function ringFlaresURL(){
+  if(ringFlaresUrlCache !== null) return ringFlaresUrlCache;
+  ringFlaresUrlCache = "";
+  try{
+    const lin = v => { v /= 255; return v <= .04045 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); };
+    const gam = v => { v = v <= .0031308 ? v * 12.92 : 1.055 * Math.pow(v, 1 / 2.4) - .055; return Math.max(0, Math.min(255, Math.round(v * 255))); };
+    const toLab = hex => {
+      const n = parseInt(hex.slice(1), 16), r = lin(n >> 16 & 255), g = lin(n >> 8 & 255), b = lin(n & 255);
+      const l = Math.cbrt(.4122214708 * r + .5363325363 * g + .0514459929 * b);
+      const m = Math.cbrt(.2119034982 * r + .6806995451 * g + .1073969566 * b);
+      const q = Math.cbrt(.0883024619 * r + .2817188376 * g + .6299787005 * b);
+      return [.2104542553 * l + .7936177850 * m - .0040720468 * q, 1.9779984951 * l - 2.4285922050 * m + .4505937099 * q, .0259040371 * l + .7827717662 * m - .8086757660 * q];
+    };
+    const toRgb = ([L, A, B]) => {
+      const l = Math.pow(L + .3963377774 * A + .2158037573 * B, 3), m = Math.pow(L - .1055613458 * A - .0638541728 * B, 3), q = Math.pow(L - .0894841775 * A - 1.2914855480 * B, 3);
+      return [gam(4.0767416621 * l - 3.3077115913 * m + .2309699292 * q), gam(-1.2684380046 * l + 2.6097574011 * m - .3413193965 * q), gam(-.0041960863 * l - .7034186147 * m + 1.7076147010 * q)];
+    };
+    const labs = RING_FLARE_ORDER.map(k => toLab(MYSTERY_COLOR[k]));
+    const N = 256, cv = document.createElement("canvas");
+    cv.width = cv.height = N;
+    const cx = cv.getContext("2d"), img = cx.createImageData(N, N), d = img.data, K = labs.length;
+    for(let y = 0; y < N; y++) for(let x = 0; x < N; x++){
+      /* 0 at the top, clockwise */
+      let t = Math.atan2(x + .5 - N / 2, N / 2 - (y + .5)) / (2 * Math.PI);
+      t = (t + 1) % 1 * K;
+      const i = Math.floor(t) % K, j = (i + 1) % K;
+      let f = t - Math.floor(t); f = f * f * (3 - 2 * f);
+      const c = toRgb([0, 1, 2].map(n => labs[i][n] + (labs[j][n] - labs[i][n]) * f));
+      const o = (y * N + x) * 4;
+      d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 140;
+    }
+    cx.putImageData(img, 0, 0);
+    ringFlaresUrlCache = cv.toDataURL("image/png");
+  }catch(e){ ringFlaresUrlCache = ""; }
+  return ringFlaresUrlCache;
 }
 
 /* ---- THE SWAT ITEM (build 243, reworked in 244) ----
@@ -62294,6 +62357,47 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
   defs.appendChild(grad); defs.appendChild(rimGrad);
   svg.appendChild(defs);
   /* Home's outer ring is HOME_OUTER_R (build 313) - see homePositions */
+  /* TWO TIERS (build 317) - homeRingTier(): orange for Supernova, and the
+     top tier for Supernova AND every secret flare. The top tier is never
+     ALSO orange.
+     THE TOP TIER IS BUILT EXACTLY LIKE THE ORANGE (build 317, round
+     three). "they don't look like the other orange, they are thicker,
+     they just look different." The black version was seven circles a
+     ring - a 5.2-wide body, a 13-wide shadow, three corona strokes and
+     two rims - a band about 13 units across against the orange's 1.4.
+     Now each ring is ONE circle, the same one the orange tier draws:
+     stroke-width 1.4, its paint at .55 alpha, element opacity 1, and the
+     same CSS drop-shadow(0 0 3px) at .5 for its glow. Only the colour
+     differs, and RING_ECLIPSE_STYLE picks it (see there). The one other
+     difference is where it sits: in a layer of its own under the sphere
+     (where the orange paints, first in the main svg), so the "flares"
+     sweep can turn as a compositor transform without repainting the
+     sphere's filters. */
+  const ringTier = homeRingTier();
+  const ringStyle = ringTier === "eclipse" ? (RING_ECLIPSE_STYLE === "black" ? "black" : "flares") : "";
+  let ringLayer = null, ringPaint = "";
+  if(ringStyle){
+    ringLayer = mkLayer("cosmic-hero-ringlayer is-" + ringStyle);
+    const url = ringStyle === "flares" ? ringFlaresURL() : "";
+    if(url){
+      /* the six flare colours round the ring: a conic picture, laid over
+         the whole ring as a pattern so a single stroke carries it */
+      const P = 160, ld = document.createElementNS(svgNS, "defs");
+      const pat = document.createElementNS(svgNS, "pattern");
+      pat.setAttribute("id", depthId + "flares");
+      pat.setAttribute("patternUnits", "userSpaceOnUse");
+      pat.setAttribute("x", 180 - P); pat.setAttribute("y", 150 - P);
+      pat.setAttribute("width", 2 * P); pat.setAttribute("height", 2 * P);
+      const im = document.createElementNS(svgNS, "image");
+      im.setAttribute("x", 0); im.setAttribute("y", 0);
+      im.setAttribute("width", 2 * P); im.setAttribute("height", 2 * P);
+      im.setAttribute("preserveAspectRatio", "none");
+      im.setAttribute("href", url);
+      try{ im.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", url); }catch(e){}
+      pat.appendChild(im); ld.appendChild(pat); ringLayer.appendChild(ld);
+      ringPaint = "url(#" + depthId + "flares)";
+    }
+  }
   [108, useTierIcons ? HOME_OUTER_R : 152].forEach(r => {
     const ring = document.createElementNS(svgNS, "circle");
     ring.setAttribute("cx", 180); ring.setAttribute("cy", 150); ring.setAttribute("r", r);
@@ -62302,49 +62406,11 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
        one every account starts with, so reaching the top of the
        ladder visibly changes the sphere itself, not just one badge
        among six. */
-    /* TWO TIERS (build 317) - homeRingTier(): orange for Supernova, and
-       black (the eclipse) for Supernova AND every secret flare. The
-       black tier is never ALSO orange. */
-    const ringTier = homeRingTier();
     ring.setAttribute("class", "cosmic-orbit-ring" +
-      (ringTier === "eclipse" ? " cosmic-orbit-ring-eclipse" : ringTier === "supernova" ? " cosmic-orbit-ring-supernova" : ""));
-    if(ringTier === "eclipse"){
-      /* The eclipse is a black hoop with light caught on its edges: a
-         wide soft shadow under it, the near-black body, and a hairline
-         rim either side of the body. All plain strokes - the rim is
-         its own circle, not a filter. */
-      /* The rim light comes from the upper left, the one light the
-         whole system is lit from: brightest there, a cold violet down
-         the far side. Its id is this copy's own (depthId). */
-      const rimId = depthId + "eclipse";
-      if(!defs.querySelector("#" + rimId)){
-        const eg = document.createElementNS(svgNS, "linearGradient");
-        eg.setAttribute("id", rimId);
-        eg.setAttribute("x1", "0.12"); eg.setAttribute("y1", "0"); eg.setAttribute("x2", "0.88"); eg.setAttribute("y2", "1");
-        [["0%", "#FFFFFF", "1"], ["45%", "#D2C4FF", ".9"], ["100%", "#86D8FF", ".78"]].forEach(([o, c, a]) => {
-          const st = document.createElementNS(svgNS, "stop");
-          st.setAttribute("offset", o); st.setAttribute("stop-color", c); st.setAttribute("stop-opacity", a);
-          eg.appendChild(st);
-        });
-        defs.appendChild(eg);
-      }
-      const piece = (rr, cls) => {
-        const c = document.createElementNS(svgNS, "circle");
-        c.setAttribute("cx", 180); c.setAttribute("cy", 150); c.setAttribute("r", rr);
-        c.setAttribute("class", cls);
-        return c;
-      };
-      /* the corona: light coming off the black, outside and in */
-      svg.appendChild(piece(r + 7, "cosmic-orbit-eclipse-haze is-far"));
-      svg.appendChild(piece(r + 4.6, "cosmic-orbit-eclipse-haze"));
-      svg.appendChild(piece(r - 4.6, "cosmic-orbit-eclipse-haze is-in"));
-      svg.appendChild(piece(r, "cosmic-orbit-eclipse-shade"));
-      svg.appendChild(ring);
-      [r - 2.7, r + 2.7].forEach((rr, i) => {
-        const rim = piece(rr, "cosmic-orbit-eclipse-rim" + (i ? " is-outer" : " is-inner"));
-        rim.style.stroke = "url(#" + rimId + ")";
-        svg.appendChild(rim);
-      });
+      (ringStyle ? " cosmic-orbit-ring-eclipse is-" + ringStyle : ringTier === "supernova" ? " cosmic-orbit-ring-supernova" : ""));
+    if(ringLayer){
+      if(ringPaint) ring.style.stroke = ringPaint;
+      ringLayer.appendChild(ring);
       return;
     }
     svg.appendChild(ring);
@@ -62690,7 +62756,9 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
     coreFlare.querySelector(".cco-counter").appendChild(fl);
   }
   svg.classList.add("cosmic-hero-main");
-  wrap.append(glowBox, svg, animLayer, orbitLayer, innerOrbitLayer);
+  wrap.append(glowBox);
+  if(ringLayer) wrap.appendChild(ringLayer);
+  wrap.append(svg, animLayer, orbitLayer, innerOrbitLayer);
   /* The sphere's life, on the compositor: two soft light pools drifting
      over the surface inside a circular window the exact size of the
      sphere. Transform and opacity only, so it costs nothing per frame

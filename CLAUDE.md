@@ -14989,7 +14989,7 @@ disagree with it.
     offset from when its class went on), so a loaded machine gives the
     same frames as a quiet one. The 100% hundo trigger is not covered by
     the gate.
-- **HOME'S RINGS HAVE TWO TIERS: ORANGE, THEN BLACK (build 317).** *"I
+- **HOME'S RINGS HAVE TWO TIERS: ORANGE, THEN THE SIX FLARES (build 317).** *"I
   noticed that the orange glowing rings light up when you hit max rank.
   Let's do it so that that happens once every one of flares and secret
   flares are lit up. OR make it where the rank one is all orange but if
@@ -15005,25 +15005,53 @@ disagree with it.
     `mysteryAllFound()`: that one means the three Void flares and has
     since build 302. `.cosmic-orbit-ring-eclipse` and NOT the orange
     class. Every secret flare without Supernova is plain - tier two
-    needs both.
-  - The black is a near-black body whose light is on its edges. Round
-    one (3.4 wide, a hairline rim fading to .42, one faint haze) came
-    back *"I can't see the black ones ... could be better"*: on the dark
-    sky a dim rim is no rim. Now: `#030207` at 5.2 wide, a rim either
-    side at 1.15/.85 in a per-hero gradient (`depthId + "eclipse"`,
-    white at the upper left - the system's one light - to icy cyan,
-    never below .78), a stacked-stroke dark shadow under it, and a
-    CORONA - three soft strokes of violet/blue light off the black,
-    outside and in. Dark core plus halo is what reads as an eclipse.
-    **A dark ring is seen by its light, so the light has to be strong
-    and continuous.** Every piece is a
-    plain stroke - **no filter at all**, so iOS paints what Chromium
-    does. Static, like the orange tier (the orange rings never moved),
-    so Reduce motion has nothing to stop; the rings live in the static
-    sphere layer, and animating anything there repaints the turbulence.
+    needs both. The key is still `"eclipse"` whatever it looks like.
+  - **THE TOP TIER IS BUILT EXACTLY LIKE THE ORANGE, AND ONLY ITS COLOUR
+    IS ITS OWN.** Round three, after *"I don't like the black rings on the
+    main menu, they don't look like the other orange, they are thicker,
+    they just look different.. maybe black isn't the move but I figured
+    black would be sick."* What was wrong, measured: the orange is ONE
+    circle a ring, stroke-width 1.4, paint at .55 alpha, opacity 1,
+    `filter:drop-shadow(0 0 3px)` at .5. The black was SEVEN circles a
+    ring - a 5.2-wide near-black body, a 13-wide shadow, three corona
+    strokes (6, 3.4, 3) and two rims (.85, 1.15) - a band about 13 units
+    across, with no glow at all. Two rounds of making a dark ring
+    readable on a dark sky had each added light and width round it, so
+    it stopped being the same object as the orange. Now both styles are
+    one circle with those exact numbers; the gate compares them property
+    by property.
+  - **`RING_ECLIPSE_STYLE` picks the colour** (a `let` beside
+    `homeRingTier()`, only so the gate can draw both):
+    - `"flares"` (the default) - the six secret flares' own colours
+      (`MYSTERY_COLOR`) round the ring. SVG has no conic gradient, so
+      `ringFlaresURL()` draws one once onto a canvas (in hue order -
+      red, orange, yellow, ice blue, violet, pink - blended in OKLab so
+      no join goes muddy, the .55 baked into every pixel's alpha) and the
+      stroke is a `<pattern>` carrying it. A pearl drop-shadow, and the
+      whole ring layer turns once every 96s (`cosmic-orbit-spin`, a full
+      turn, so the loop is seamless; on the shared loop clock; off under
+      Reduce motion). Turning a circle about its own centre moves the
+      colours and not the stroke.
+    - `"black"` - a near-black ring (`rgba(5,3,8,.55)`) whose drop-shadow
+      is ember: an eclipse corona, still, the same width as the orange.
+  - **The top tier's rings sit in a layer of their own**
+    (`.cosmic-hero-ringlayer`), placed UNDER the main svg - where the
+    orange paints, first in that svg - so the sweep is a compositor
+    transform and never repaints the sphere's turbulence filters. No SVG
+    filter anywhere (those break on real iOS); the drop-shadow is the
+    same CSS filter the orange has always used.
+  - There is no separate "ring-colouring" cutscene on Home: the rings
+    change tier when Home next mounts (after the Supernova cutscene, or
+    after the Genesis scene for the last secret flare), with the hero's
+    own .22s settle-in.
   - **Gate: `check_b317_rings`** - all four states on both reference
-    devices, read off the rings Home really builds; fails 74cc518 (the
-    max-everything account is still orange there).
+    devices, read off the rings Home really builds: the top tier matches
+    the orange's stroke-width, opacity, stroke-opacity, glow shape and
+    alpha and paint alpha, with no extra circles; by default its paint
+    is light and carries all six flare hues round the ring (sampled off
+    the pattern's picture at 24 angles); the sweep turns and stops under
+    Reduce motion; and `"black"` is built the same way, near-black with
+    an ember glow. Fails 1888b11 (5.2 wide, six extra circles, black).
 - **STUDY TIME IS TIME SPENT STUDYING (build 314).** It was "now minus
   when the run started", so a run left open with the phone locked banked
   every hour on the day it ended: live tests of 117h and 50h, days of 68h

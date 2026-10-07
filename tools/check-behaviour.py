@@ -13728,62 +13728,126 @@ def check_b317_rings(br):
     """Build 317. "I noticed that the orange glowing rings light up when you
     hit max rank ... make it where the rank one is all orange but if you get
     all the secret flares AND the rank ones, then it's like black?" Two
-    tiers on Home's orbit rings: orange for Supernova, black (the eclipse)
-    for Supernova AND every secret flare - never both, and every secret
-    flare without Supernova is plain. Read off the rings Home really builds,
-    not off a helper. Written against 74cc518, where the black tier did not
-    exist and the max-everything account was still orange."""
-    print("\n317. Home's rings: orange at Supernova, black at Supernova plus every secret flare")
+    tiers on Home's orbit rings: orange for Supernova, the top tier for
+    Supernova AND every secret flare - never both, and every secret flare
+    without Supernova is plain. Read off the rings Home really builds, not
+    off a helper. Written against 74cc518, where the top tier did not exist
+    and the max-everything account was still orange.
+
+    Round three: "I don't like the black rings on the main menu, they don't
+    look like the other orange, they are thicker, they just look different
+    .. maybe black isn't the move". The top tier is now built EXACTLY like
+    the orange - one circle a ring, the same stroke-width, paint alpha,
+    opacity and drop-shadow - and only its colour differs: by default the
+    six secret flares' own colours round the ring (RING_ECLIPSE_STYLE
+    "flares"), with "black" (a near-black ring, an ember glow) behind the
+    flag. Those assertions fail on 1888b11, whose black ring was 5.2 wide
+    with six more circles round it and no glow."""
+    print("\n317. Home's rings: orange at Supernova, the top tier at Supernova plus every secret flare, built like the orange")
     for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
         r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
-          const rings = () => [...document.querySelectorAll('.screen-home-actual .cosmic-orbit-ring')];
+          const hue = (r, g, b) => { r /= 255; g /= 255; b /= 255; const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+            if(d < .08) return -1; let h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h *= 60; return h < 0 ? h + 360 : h; };
+          /* what a ring's stroke actually paints: a flat colour, or the
+             picture its pattern carries, sampled round the ring itself */
+          const paint = async (ring) => {
+            const s = getComputedStyle(ring).stroke, m = s.match(/url\\("?#([^")]+)"?\\)/);
+            if(!m){ const v = (s.match(/[\\d.]+/g) || []).map(Number); return v.length >= 3 ? [[v[0], v[1], v[2], v.length > 3 ? v[3] : 1]] : []; }
+            const pat = ring.ownerSVGElement.querySelector('[id="' + m[1] + '"]');
+            if(!pat || pat.tagName.toLowerCase() !== 'pattern') return [];
+            const im = pat.querySelector('image'); if(!im) return [];
+            const img = new Image(); img.src = im.getAttribute('href') || im.getAttribute('xlink:href'); await img.decode();
+            const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
+            const g = c.getContext('2d'); g.drawImage(img, 0, 0);
+            const px = +pat.getAttribute('x'), py = +pat.getAttribute('y'), pw = +pat.getAttribute('width'), ph = +pat.getAttribute('height');
+            const cx = +ring.getAttribute('cx'), cy = +ring.getAttribute('cy'), rr = +ring.getAttribute('r');
+            const out = [];
+            for(let k = 0; k < 24; k++){ const a = k / 24 * 2 * Math.PI;
+              const x = Math.floor((cx + rr * Math.sin(a) - px) / pw * c.width), y = Math.floor((cy - rr * Math.cos(a) - py) / ph * c.height);
+              const d = g.getImageData(Math.min(c.width - 1, Math.max(0, x)), Math.min(c.height - 1, Math.max(0, y)), 1, 1).data;
+              out.push([d[0], d[1], d[2], +(d[3] / 255).toFixed(3)]); }
+            return out;
+          };
+          const shape = f => String(f || 'none').replace(/rgba?\\([^)]*\\)/g, '').replace(/\\s+/g, ' ').trim();
+          const glowA = f => { const m = String(f || '').match(/rgba\\(([^)]*)\\)/); return m ? +m[1].split(',')[3] : (/rgb\\(/.test(f || '') ? 1 : 0); };
+          const glowC = f => { const m = String(f || '').match(/rgba?\\(([^)]*)\\)/); return m ? m[1].split(',').slice(0, 3).map(Number) : []; };
           const look = async (supernova, flares) => {
             store.supernovaAchieved = supernova; store.pendingSupernovaCutscene = false;
             store.mysteryColorsFound = {}; MYSTERY_ORDER.forEach(k => store.mysteryColorsFound[k] = flares === 'all' || (flares === 'five' && k !== 'core'));
             showHome(); await wait(500);
-            const rs = rings(), hero = document.querySelector('.screen-home-actual .cosmic-hero-wrap');
-            const rims = hero ? [...hero.querySelectorAll('.cosmic-orbit-eclipse-rim')] : [];
-            const body = rs[0] ? getComputedStyle(rs[0]) : null;
-            const lum = c => { const m = String(c).match(/[\\d.]+/g) || []; return m.length >= 3 ? (+m[0] + +m[1] + +m[2]) / 3 : -1; };
+            const hero = document.querySelector('.screen-home-actual .cosmic-hero-wrap');
+            const rs = [...document.querySelectorAll('.screen-home-actual .cosmic-orbit-ring')];
+            /* anything else drawn for the rings: the old shadow, corona and rims */
+            const extras = hero ? [...hero.querySelectorAll('circle, path, ellipse')].filter(x => /orbit-(eclipse|ring)/.test(x.getAttribute('class') || '') && !x.classList.contains('cosmic-orbit-ring')).length : -1;
+            const per = [];
+            for(const x of rs){ const cs = getComputedStyle(x), p = await paint(x);
+              per.push({ sw: parseFloat(cs.strokeWidth), op: +cs.opacity, so: +cs.strokeOpacity, shape: shape(cs.filter), glowA: glowA(cs.filter), glowC: glowC(cs.filter),
+                svgFilter: x.hasAttribute('filter') || /url\\(/.test(cs.filter), ownAnim: cs.animationName,
+                alphas: [...new Set(p.map(q => q[3]))], lum: p.length ? Math.round(p.reduce((t, q) => t + (q[0] + q[1] + q[2]) / 3, 0) / p.length) : -1,
+                hues: p.map(q => hue(q[0], q[1], q[2])).filter(hh => hh >= 0).map(Math.round) }); }
+            const layer = rs[0] && rs[0].ownerSVGElement;
             return { n: rs.length,
               orange: rs.filter(x => x.classList.contains('cosmic-orbit-ring-supernova')).length,
-              black: rs.filter(x => x.classList.contains('cosmic-orbit-ring-eclipse')).length,
-              rims: rims.length, rimLum: rims.map(x => { const s = getComputedStyle(x).stroke, id = (s.match(/url\\("?#([^")]+)"?\\)/) || [])[1];
-                if(!id) return Math.round(lum(s));
-                const g = hero.querySelector('[id="' + id + '"]');
-                return g ? Math.max(...[...g.querySelectorAll('stop')].map(st => lum(getComputedStyle(st).stopColor))) : -1; }),
-              bodyLum: body ? Math.round(lum(body.stroke)) : -1, bodyW: body ? parseFloat(body.strokeWidth) : 0,
-              filtered: [...(hero ? hero.querySelectorAll('.cosmic-orbit-ring, .cosmic-orbit-eclipse-rim, .cosmic-orbit-eclipse-shade') : [])]
-                .filter(x => { const cs = getComputedStyle(x); return (cs.filter && cs.filter !== 'none') || x.hasAttribute('filter') || (cs.animationName && cs.animationName !== 'none'); }).length,
+              top: rs.filter(x => x.classList.contains('cosmic-orbit-ring-eclipse')).length,
+              extras, per, layerAnim: layer ? getComputedStyle(layer).animationName : '',
               bubbles: hero ? hero.querySelectorAll('.cosmic-badge-rank').length : 0,
               dots: hero ? hero.querySelectorAll('.cosmic-flare-dot').length : 0 };
           };
           try{
+            out.style = typeof RING_ECLIPSE_STYLE !== 'undefined' ? RING_ECLIPSE_STYLE : '(none)';
+            out.flareHues = MYSTERY_ORDER.map(k => { const n = parseInt(MYSTERY_COLOR[k].slice(1), 16); return Math.round(hue(n >> 16 & 255, n >> 8 & 255, n & 255)); });
             out.plain = await look(false, 'none');
             out.orange = await look(true, 'five');
-            out.black = await look(true, 'all');
+            out.top = await look(true, 'all');
             out.flaresOnly = await look(false, 'all');
+            document.documentElement.dataset.reduceMotion = 'true';
+            out.topStill = await look(true, 'all');
+            delete document.documentElement.dataset.reduceMotion;
+            try{ RING_ECLIPSE_STYLE = 'black'; out.black = await look(true, 'all'); RING_ECLIPSE_STYLE = out.style; }catch(e){ out.black = { err: String(e) }; }
           }catch(e){ out.threw = String(e && e.stack || e); }
           return out; }""")
         check(dev + ": nothing threw", not r.get("threw"), r.get("threw"))
-        p, o, b, f = (r.get(k) or {} for k in ("plain", "orange", "black", "flaresOnly"))
+        p, o, t, f, ts, bk = (r.get(k) or {} for k in ("plain", "orange", "top", "flaresOnly", "topStill", "black"))
+        op_ = (o.get("per") or [{}])[0]
+        def built_like_orange(x):
+            if x.get("n") != 2 or x.get("extras") != 0 or len(x.get("per") or []) != 2: return False
+            for q in x["per"]:
+                if not (abs(q["sw"] - op_.get("sw", -9)) < 1e-6 and q["op"] == op_.get("op") and q["so"] == op_.get("so")
+                        and q["shape"] == op_.get("shape") and abs(q["glowA"] - op_.get("glowA", -9)) < 1e-6
+                        and not q["svgFilter"] and q["ownAnim"] == "none"
+                        and q["alphas"] and all(abs(a - op_["alphas"][0]) <= .01 for a in q["alphas"])):
+                    return False
+            return True
         check(dev + ": a non-max account has neither treatment",
-              p.get("n") == 2 and p.get("orange") == 0 and p.get("black") == 0 and p.get("rims") == 0, p)
-        check(dev + ": max rank without every secret flare: the orange tier, not the black",
-              o.get("n") == 2 and o.get("orange") == 2 and o.get("black") == 0 and o.get("rims") == 0, o)
-        check(dev + ": max rank AND every secret flare: the black tier and NOT the orange one",
-              b.get("n") == 2 and b.get("black") == 2 and b.get("orange") == 0, b)
-        check(dev + ": the black tier is a near-black body with a lit rim either side of it, so it reads on the sky",
-              0 <= b.get("bodyLum", -1) < 24 and b.get("bodyW", 0) >= 2.5 and b.get("rims") == 4
-              and all(x > 150 for x in b.get("rimLum") or [0]), b)
+              p.get("n") == 2 and p.get("orange") == 0 and p.get("top") == 0 and p.get("extras") == 0, p)
+        check(dev + ": max rank without every secret flare: the orange tier, unchanged (1.4 wide, .55, a 3px glow at .5)",
+              o.get("n") == 2 and o.get("orange") == 2 and o.get("top") == 0 and o.get("extras") == 0
+              and op_.get("sw") == 1.4 and op_.get("alphas") == [0.55] and op_.get("shape") == "drop-shadow( 0px 0px 3px)" and op_.get("glowA") == 0.5, o)
+        check(dev + ": max rank AND every secret flare: the top tier and NOT the orange one",
+              t.get("n") == 2 and t.get("top") == 2 and t.get("orange") == 0, {k: t.get(k) for k in ("n", "top", "orange")})
+        check(dev + ": the top tier is built exactly like the orange: one circle a ring, same stroke-width, paint alpha, opacity and glow",
+              built_like_orange(t), {"orange": op_, "top": t.get("per"), "extras": t.get("extras")})
+        tp = t.get("per") or [{}]
+        fh = r.get("flareHues") or []
+        near = lambda a, b: min(abs(a - b), 360 - abs(a - b)) <= 25
+        check(dev + ": by default it is NOT black - it carries all six secret flares' colours round the ring",
+              r.get("style") == "flares" and all(q.get("lum", -1) > 100 for q in tp)
+              and len(fh) == 6 and all(all(any(near(h0, hh) for hh in q.get("hues") or []) for h0 in fh) for q in tp),
+              {"style": r.get("style"), "lum": [q.get("lum") for q in tp], "hues": [q.get("hues") for q in tp], "flareHues": fh})
+        check(dev + ": the flares sweep turns as a layer (a full turn, compositor only) and Reduce motion stops it",
+              "cosmic-orbit-spin" in (t.get("layerAnim") or "") and "cosmic-orbit-spin" not in (ts.get("layerAnim") or "x")
+              and built_like_orange(ts), [t.get("layerAnim"), ts.get("layerAnim")])
+        bp = bk.get("per") or [{}]
+        check(dev + ": the \"black\" alternative is built the same way: near-black, with an ember glow, and still",
+              built_like_orange(bk) and all(0 <= q.get("lum", -1) < 24 for q in bp)
+              and all(len(q.get("glowC") or []) == 3 and q["glowC"][0] > 200 and q["glowC"][0] > q["glowC"][2] + 100 for q in bp)
+              and "cosmic-orbit-spin" not in (bk.get("layerAnim") or ""), bk)
         check(dev + ": every secret flare without max rank: neither treatment",
-              f.get("n") == 2 and f.get("orange") == 0 and f.get("black") == 0 and f.get("rims") == 0, f)
-        check(dev + ": the black tier uses no filter and does not move (nothing for reduce motion to stop)",
-              b.get("filtered") == 0, b.get("filtered"))
-        check(dev + ": the flare bubbles and the tiny flares are all still there in the black tier",
-              b.get("bubbles") == o.get("bubbles") and b.get("bubbles", 0) >= 7 and b.get("dots") == 6,
-              [o.get("bubbles"), b.get("bubbles"), b.get("dots")])
+              f.get("n") == 2 and f.get("orange") == 0 and f.get("top") == 0 and f.get("extras") == 0, f)
+        check(dev + ": the flare bubbles and the tiny flares are all still there in the top tier",
+              t.get("bubbles") == o.get("bubbles") and t.get("bubbles", 0) >= 7 and t.get("dots") == 6,
+              [o.get("bubbles"), t.get("bubbles"), t.get("dots")])
         ctx.close()
 
 
