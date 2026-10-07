@@ -14852,10 +14852,30 @@ disagree with it.
     ~10.6s, each later beat at its old distance from the flash), so the
     pause is a pause on a slow phone too. A fallback timer fires it if the
     animation never ends.
-  - **The lag and the "placed off" flares.** Two causes, both fixed. The
-    orbiting bubbles carried a `backdrop-filter` blur, re-sampled every
-    frame while they move (build 230's rule for Home); inside a scene
-    they carry none. And the carrier turned about the AVERAGE of the
+  - **THIRD ROUND - a snap and a pop, and the secret flares whirl under
+    the glass.** *"when the change happens to the flare color, ensure it's
+    moving faster and make it cooler like maybe it gets a quick flash, also
+    the secret flares need to spin, and the secret flares need to be
+    showing under the large flares."* The light lands
+    `RANK_CUTLIGHT_LEAD_MS` (120ms) before the top speed and snaps in
+    `RANK_CUTLIGHT_MS` (140ms, was a 420ms fade), with `.rank-litpop` on
+    that bubble: a white-hot core and a ring in the rank colour bursting
+    off it over ~220ms (transform/opacity, no filter). The two rings of
+    secret flares (`.cosmic-hero-orbitlayer`) ride the same curve on the
+    individual `rotate` property - their own slow `transform` spin keeps
+    running underneath - and stop on whole turns. **The bubbles keep their
+    backdrop blur in the scene again**: the secret flares paint under the
+    bubbles' carrier (earlier siblings, lower z) and are seen THROUGH the
+    glass as on Home; the second round had taken the blur off for speed,
+    which left them sharp dots behind clear discs. A found flare is Home's
+    size (the scene's 1.8x is gone). `check_b317_cutspin` asserts the
+    secret flares are in the scene, under the glass, and whirl (fails on
+    1888b11).
+  - **The lag and the "placed off" flares.** The second round took the
+    bubbles' `backdrop-filter` blur off inside a scene (re-sampled every
+    frame while they move); the third round put it back, because the
+    secret flares need the glass, and it costs no more per frame than
+    Home's own moving bubbles. The real fault: the carrier turned about the AVERAGE of the
     seven bubbles, which is not the rings' centre (two rings, uneven
     spacing): each bubble swung off its ring and back once a lap,
     invisible at 30s a lap and a wobble at full speed. `rankOrbitCentre()`
