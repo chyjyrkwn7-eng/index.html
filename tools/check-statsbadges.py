@@ -125,6 +125,7 @@ def main():
         r = pg.evaluate("""()=>{
           const cards = [...document.querySelectorAll('.stat-card')];
           return { n: cards.length,
+                   grids: [...document.querySelectorAll('.stat-grid')].map(g => g.querySelectorAll('.stat-card').length),
                    tags: [...new Set(cards.map(c => c.tagName))],
                    labels: cards.map(c => (c.querySelector('.stat-lab')||{}).textContent),
                    why: !!document.querySelector('.stat-why') };}""")
@@ -132,8 +133,13 @@ def main():
         # nine since build 213: "Current answer streak" came off - "remove the
         # current best answer streak" - and the other now says all-time.
         # Twelve since build 236: a Virtual Room section - matches, first
-        # places and top-three finishes.
-        check("twelve of them", r["n"] == 12, r["n"])
+        # places and top-three finishes. Eleven since build 311's new Stats
+        # page: four totals, four study-time cards, three Virtual Room. This
+        # said twelve, and "THIS WEEK" for the first card, until build 315,
+        # failing on every build since 311 - so the label is read off the
+        # card now rather than written here.
+        check("eleven of them, in three sections",
+              r["n"] == 11 and r.get("grids") == [4, 4, 3], [r["n"], r.get("grids")])
         check("there is an explanation panel", r["why"] is True)
         if r["why"]:
             first = pg.evaluate("""()=>{
@@ -142,6 +148,7 @@ def main():
               const before = box.hidden;
               c.click();
               const after = { hidden: box.hidden, label: box.querySelector('.stat-why-label').textContent,
+                              own: ((c.querySelector('.stat-lab') || {}).textContent || '').trim().toUpperCase(),
                               text: box.textContent, asked: c.classList.contains('is-asked'),
                               expanded: c.getAttribute('aria-expanded') };
               return { before, after };}""")
@@ -150,7 +157,8 @@ def main():
             check("and marks that card", first["after"]["asked"] is True
                   and first["after"]["expanded"] == "true")
             check("with that card's own label on it",
-                  first["after"]["label"] == "THIS WEEK", first["after"]["label"])
+                  bool(first["after"]["own"]) and first["after"]["label"].strip().upper() == first["after"]["own"],
+                  [first["after"]["label"], first["after"]["own"]])
             check("and a sentence that is not empty",
                   len(first["after"]["text"] or "") > 40, len(first["after"]["text"] or ""))
             second = pg.evaluate("""()=>{

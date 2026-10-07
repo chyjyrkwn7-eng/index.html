@@ -37,6 +37,8 @@ KNOWN = {
     # Build 304 layered banners (bnLayerHTML).
     "bl-blink": "a beacon blinking - steps(1), on then off, a flash by design",
     "bl-cross": "a plane from off the right edge to off the left (-1150% of its 48px box)",
+    "bl-in": "a ring that closes in from large to small and fades to nothing at both ends",
+    "bl-slide": "fog drawn as copies one 480 period apart in a 960 box, moved by exactly one period (-50%)",
     "bl-fall": "petals moved by exactly one tile (40 across, 180 down) of a tile stacked over itself",
     "bl-meteor": "a streak that is invisible at both ends",
     "bl-pour": "streaks moved by exactly one 14px period (20% of a 70px box)",
