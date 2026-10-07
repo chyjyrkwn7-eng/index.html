@@ -8962,6 +8962,10 @@
      layers are removed only after it. */
   .hfx-out{ opacity:0 !important; transition:opacity .6s ease !important; }
   .rs-card.hfx-over{ z-index:61; }
+  .rs-head.hfx-over{ position:relative; z-index:61; text-shadow:0 1px 6px rgba(8,10,14,.85); }
+  .hfx-mock > .rs-head.hfx-over{ z-index:3; }
+  .wrap > .top.hfx-over{ z-index:61; }
+  .wrap > .top.hfx-over .test-scopelabel{ text-shadow:0 1px 6px rgba(8,10,14,.85); }
   .confetti-layer.hfx-layer.is-page{ position:absolute; right:auto; bottom:auto; }
   .hfx-box{ position:absolute; inset:0; border-radius:inherit; overflow:hidden; pointer-events:none; z-index:2;
     clip-path:inset(0 round var(--hfx-r, 18px)); }
@@ -9027,7 +9031,11 @@
      fading in and out over the first */
   .hfx-bb-film.is-shift{ animation:hfx-film-b var(--d) linear var(--dl) both; }
   @keyframes hfx-film-b{ 0%{ transform:rotate(0deg); opacity:0; } 30%{ opacity:.9; } 55%{ opacity:.15; } 80%{ opacity:.85; } 100%{ transform:rotate(calc(var(--sp) * -.8)); opacity:.3; } }
-  .hfx-bb.is-pop .hfx-bb-popw, .hfx-bb.is-pop.is-mid .hfx-bb-shell{ animation:hfx-bub-pop .24s ease-out calc(var(--dl) + var(--d)) both; }
+  /* the glass heroes pop too (build 314): this rule named only .hfx-bb, so
+     a glass hero meant to pop (.hfx-gb.is-pop) never did - two of them sat
+     on the XP card over "+395" from 3.5s until the layer was cut away at
+     7s, the one hard cut in the effect */
+  .hfx-bb.is-pop .hfx-bb-popw, .hfx-gb.is-pop .hfx-bb-popw, .hfx-bb.is-pop.is-mid .hfx-bb-shell{ animation:hfx-bub-pop .24s ease-out calc(var(--dl) + var(--d)) both; }
   .hfx-bb-bud{ position:absolute; width:var(--bs); height:var(--bs); margin:calc(var(--bs) / -2) 0 0 calc(var(--bs) / -2); border-radius:50%;
     background:center / 100% 100% no-repeat; opacity:0; animation:hfx-bud var(--bd) cubic-bezier(.3,.6,.4,1) var(--bt) both; }
   @keyframes hfx-bud{ 0%{ transform:translate(var(--bx), var(--by)) scale(.1); opacity:0; } 12%{ opacity:1; } 30%{ transform:translate(var(--bx), var(--by)) scale(1); } 72%{ opacity:1; } 100%{ transform:translate(var(--bx2), var(--by2)) scale(1); opacity:0; } }
@@ -9253,16 +9261,17 @@
     48.6%{ transform:translate(0, var(--hov)) scale(1); animation-timing-function:cubic-bezier(.45,0,.35,1); }
     58.6%{ transform:translate(0, 0) scale(1); }
     77.1%{ transform:translate(0, 0) scale(1); animation-timing-function:cubic-bezier(.45,0,.4,1); }
-    85.7%{ transform:translate(0, -70px) scale(1); animation-timing-function:cubic-bezier(.6,0,.9,.6); }
-    94.3%{ transform:translate(var(--ox), var(--oy)) scale(.25); opacity:1; }
-    100%{ transform:translate(var(--ox), var(--oy)) scale(.25); opacity:0; } }
+    85.7%{ transform:translate(0, -70px) scale(1); }
+    86.5%{ transform:translate(0, -72px) scale(1); animation-timing-function:cubic-bezier(.55,0,1,.5); }
+    90.7%{ transform:translate(var(--ox), var(--oy)) scale(.2); opacity:1; }
+    91.6%, 100%{ transform:translate(var(--ox), var(--oy)) scale(.2); opacity:0; } }
   .hfx-ufo-bob{ position:absolute; left:calc(var(--uw) / -2); top:calc(var(--uh) * -1); width:var(--uw); height:var(--uh); transform-origin:50% 100%;
     animation:hfx-ufo-bob 7s linear both; }
   @keyframes hfx-ufo-bob{ 0%, 14.3%{ transform:rotate(-8deg); } 22%{ transform:rotate(6deg); } 30%{ transform:rotate(-4deg); } 37.1%{ transform:rotate(2deg); }
     43%{ transform:translateY(-3px) rotate(-1.5deg); } 48.6%{ transform:translateY(0) rotate(0deg); }
     58.6%{ transform:translateY(0) scale(1, 1); } 60.5%{ transform:translateY(2px) scale(1.05, .9); } 63%{ transform:translateY(-6px) scale(.98, 1.03); }
     65.5%{ transform:translateY(0) scale(1, 1); } 70%{ transform:translateY(-2px); } 74%{ transform:translateY(0); } 77.1%{ transform:rotate(0deg); }
-    85.7%{ transform:rotate(-4deg); } 94.3%, 100%{ transform:rotate(14deg); } }
+    85.7%{ transform:rotate(-4deg); } 90.7%, 100%{ transform:rotate(14deg) scale(1.35, .7); } }
   .hfx-ufo-body, .hfx-ufo-lights{ position:absolute; inset:0; background:center / 100% 100% no-repeat; }
   .hfx-ufo-lights{ animation:hfx-chase .45s ease-in-out 1s 13 alternate both; }
   .hfx-ufo-lights.is-odd{ animation-name:hfx-chase-b; }
@@ -9272,7 +9281,7 @@
     background:radial-gradient(closest-side, rgba(150,255,175,.55), rgba(107,255,143,0)); }
   .hfx-ufo-beam{ position:absolute; left:calc(var(--bw) / -2); width:var(--bw); top:calc(var(--uh) * -.2); height:var(--bh); transform-origin:50% 0;
     background:center / 100% 100% no-repeat; opacity:0; animation:hfx-ufo-beam 7s linear both; }
-  @keyframes hfx-ufo-beam{ 0%, 37%{ transform:scaleY(0); opacity:0; } 40.5%{ transform:scaleY(1); opacity:1; } 76%{ transform:scaleY(1); opacity:1; } 80%, 100%{ transform:scaleY(0); opacity:0; } }
+  @keyframes hfx-ufo-beam{ 0%, 37%{ transform:scaleY(0); opacity:0; } 40.5%{ transform:scaleY(1); opacity:1; } 84%{ transform:scaleY(1); opacity:1; } 86.5%, 100%{ transform:scaleY(0); opacity:0; } }
   .hfx-ufo-ring{ position:absolute; left:calc(var(--rw) / -2); width:var(--rw); height:calc(var(--rw) * .3); top:calc(var(--rw) * -.15);
     background:center / 100% 100% no-repeat; opacity:0; animation:hfx-ufo-ring .75s ease-in var(--t) both; }
   @keyframes hfx-ufo-ring{ 0%{ transform:translateY(calc(var(--uh) * -.2)) scale(.5); opacity:0; } 20%{ opacity:1; } 100%{ transform:translateY(var(--fall)) scale(1.15); opacity:0; } }
@@ -9281,13 +9290,42 @@
   @keyframes hfx-ufo-dust{ 0%{ transform:translate(0, 0) scale(.3); opacity:0; } 15%{ opacity:1; } 100%{ transform:translate(var(--dx), -12px) scale(1.5); opacity:0; } }
   .hfx-ufo-inbeam{ position:absolute; top:0; width:var(--iw); height:var(--ih); margin-left:calc(var(--iw) / -2); transform-origin:50% 0;
     background:center / 100% 100% no-repeat; opacity:0; animation:hfx-ufo-inbeam 7s linear both; }
-  @keyframes hfx-ufo-inbeam{ 0%, 37%{ transform:scaleY(0); opacity:0; } 41%{ transform:scaleY(1); opacity:.45; } 58%{ opacity:.45; } 61%{ opacity:.7; } 76%{ transform:scaleY(1); opacity:.7; } 80%, 100%{ transform:scaleY(.2); opacity:0; } }
+  @keyframes hfx-ufo-inbeam{ 0%, 37%{ transform:scaleY(0); opacity:0; } 41%{ transform:scaleY(1); opacity:.45; } 58%{ opacity:.45; } 61%{ opacity:.7; } 84%{ transform:scaleY(1); opacity:.7; } 87%, 100%{ transform:scaleY(.2); opacity:0; } }
   .hfx-ufo-landglow{ position:absolute; inset:0; border-radius:inherit; opacity:0;
     box-shadow:inset 0 0 0 1.5px rgba(150,255,175,.8), inset 0 0 30px rgba(107,255,143,.35);
     animation:hfx-ufo-landglow 2.4s ease-out var(--t) both; }
   @keyframes hfx-ufo-landglow{ 0%{ opacity:0; } 10%{ opacity:1; } 60%{ opacity:.6; } 100%{ opacity:0; } }
-  .hfx-ufo-spark{ animation:hfx-ufo-spark 1.3s ease-in var(--t) both; }
-  @keyframes hfx-ufo-spark{ 0%{ transform:scale(.2); opacity:0; } 15%{ transform:scale(1.25); opacity:1; } 30%{ transform:translateY(0) scale(1); } 88%{ transform:translateY(var(--up)) scale(.6); opacity:1; } 100%{ transform:translateY(var(--up)) scale(.1); opacity:0; } }
+  /* build 314: the scan, the lock, the score taken up, the warp, the marks */
+  .hfx-ufo-scanbar{ position:absolute; width:44px; margin-left:-44px; opacity:0; transform-origin:100% 50%;
+    background:linear-gradient(90deg, rgba(107,255,143,0), rgba(107,255,143,.18) 62%, rgba(200,255,214,.75) 93%, #F4FFF6 97%, rgba(244,255,246,0));
+    animation:hfx-ufo-scanbar 1.24s cubic-bezier(.45,0,.55,1) var(--t) both; }
+  @keyframes hfx-ufo-scanbar{ 0%{ transform:translateX(0); opacity:0; } 8%{ opacity:1; } 50%{ transform:translateX(var(--sw)); }
+    50.01%{ transform:translateX(var(--sw)) scaleX(-1); } 90%{ opacity:1; } 100%{ transform:translateX(0) scaleX(-1); opacity:0; } }
+  .hfx-ufo-lock{ position:absolute; opacity:0; --lc:#B8FFC8;
+    background:linear-gradient(var(--lc), var(--lc)) 0 0 / var(--lk) 2px, linear-gradient(var(--lc), var(--lc)) 0 0 / 2px var(--lk),
+      linear-gradient(var(--lc), var(--lc)) 100% 0 / var(--lk) 2px, linear-gradient(var(--lc), var(--lc)) 100% 0 / 2px var(--lk),
+      linear-gradient(var(--lc), var(--lc)) 0 100% / var(--lk) 2px, linear-gradient(var(--lc), var(--lc)) 0 100% / 2px var(--lk),
+      linear-gradient(var(--lc), var(--lc)) 100% 100% / var(--lk) 2px, linear-gradient(var(--lc), var(--lc)) 100% 100% / 2px var(--lk);
+    background-repeat:no-repeat; animation:hfx-ufo-lock .9s ease-out var(--t) both; }
+  @keyframes hfx-ufo-lock{ 0%{ opacity:0; transform:scale(1.22); } 26%{ opacity:1; transform:scale(1); } 36%{ opacity:.35; } 46%{ opacity:1; }
+    78%{ opacity:1; transform:scale(1); } 100%{ opacity:0; transform:scale(1); } }
+  .hfx-ufo-ghost{ position:absolute; display:block; white-space:nowrap; opacity:0; color:rgba(240,255,242,.92);
+    text-shadow:0 0 10px rgba(107,255,143,.9), 0 0 22px rgba(107,255,143,.5); transform-origin:50% 50%;
+    animation:hfx-ufo-ghost .6s cubic-bezier(.35,.1,.6,1) var(--t) both; }
+  @keyframes hfx-ufo-ghost{ 0%{ opacity:0; transform:translate(0, 0) scale(1); } 10%{ opacity:.95; }
+    40%{ transform:translate(calc(var(--ux) * .62), calc(var(--up) * .3)) scale(.72); }
+    75%{ opacity:.9; } 100%{ opacity:0; transform:translate(var(--ux), var(--up)) scale(.14, .24); } }
+  .hfx-ufo-warp{ position:absolute; width:120px; height:120px; margin:-60px 0 0 -60px; border-radius:50%; opacity:0;
+    background:radial-gradient(closest-side, #FFFFFF, rgba(190,255,205,.85) 18%, rgba(107,255,143,.22) 48%, rgba(107,255,143,0));
+    animation:hfx-ufo-warp .42s ease-out var(--t) both; }
+  @keyframes hfx-ufo-warp{ 0%{ opacity:0; transform:scale(.3, .16); } 22%{ opacity:1; transform:scale(1, .42); } 100%{ opacity:0; transform:scale(1.25, .3); } }
+  .hfx-ufo-marks{ position:absolute; top:-7px; height:14px; opacity:0;
+    background:radial-gradient(closest-side, rgba(220,255,228,.95), rgba(107,255,143,.55) 45%, rgba(107,255,143,0)) 22% 50% / 18% 100% no-repeat,
+      radial-gradient(closest-side, rgba(220,255,228,.95), rgba(107,255,143,.55) 45%, rgba(107,255,143,0)) 78% 50% / 18% 100% no-repeat,
+      radial-gradient(closest-side, rgba(220,255,228,.9), rgba(107,255,143,.5) 45%, rgba(107,255,143,0)) 50% 50% / 16% 100% no-repeat,
+      radial-gradient(closest-side, rgba(107,255,143,.32), rgba(107,255,143,0));
+    animation:hfx-ufo-marks 2.9s ease-out var(--t) both; }
+  @keyframes hfx-ufo-marks{ 0%{ opacity:0; } 8%{ opacity:1; } 35%{ opacity:.8; } 100%{ opacity:0; } }
   .hfx-scan{ position:absolute; left:0; right:0; top:0; height:2px; background:var(--c); opacity:0;
     box-shadow:0 0 8px 2px var(--c), 0 0 18px 6px color-mix(in srgb, var(--c) 40%, transparent);
     animation:hfx-scan 1.6s cubic-bezier(.45,0,.55,1) var(--dl) both; }
@@ -9380,19 +9418,26 @@
     --hfx-r:12px; border-radius:12px; clip-path:inset(0 round 12px);
     background:linear-gradient(180deg, rgba(226,178,60,.16), rgba(24,29,37,.96) 72%), #141820;
     border:1px solid rgba(242,211,138,.2); }
-  .hfx-stage-pct{ display:block; font-family:var(--serif); font-weight:700; font-size:1.4rem; line-height:1; letter-spacing:-.02em;
+  /* the grade's own face and small raised % (build 315, gradePctMarkup) */
+  .hfx-stage-pct{ display:block; font-family:var(--sans); font-weight:800; font-size:1.4rem; line-height:1; letter-spacing:-.045em; font-variant-numeric:lining-nums tabular-nums;
     color:#F6D58E; text-shadow:0 0 14px rgba(246,213,142,.32); }
   .hfx-stage.is-big .hfx-stage-pct{ font-size:2.7rem; }
   .hfx-stage.is-still{ justify-items:start; padding-left:12%; }
   .hfx-stage-still{ position:absolute; right:7%; top:12%; bottom:12%; aspect-ratio:1; }
   .hfx-stage-still svg{ display:block; width:100%; height:100%; }
-  .hfx-preview{ position:fixed; inset:0; z-index:59; background:rgba(4,6,10,.62); opacity:0; transition:opacity .35s ease; }
-  .hfx-preview-hold{ position:fixed; left:50%; top:50%; z-index:59; width:min(28rem, calc(100% - 2rem));
-    transform:translate(-50%, -50%); opacity:0; transition:opacity .35s ease; }
-  .hfx-preview-hold.is-over{ z-index:61; }
-  .hfx-preview.is-up, .hfx-preview-hold.is-up{ opacity:1; }
-  .rs-screen .rs-card.rs-grade.is-perfect.hfx-preview-card{ margin:0;
-    background:linear-gradient(180deg, rgba(226,178,60,.12), #181D25 60%), #181D25; }
+  /* a Customize tile: the effect's still round a box in its colours (build 314) */
+  .hfx-stage.is-poster{ isolation:isolate;
+    background:linear-gradient(180deg, color-mix(in srgb, var(--hfx-b, #E2B23C) 16%, transparent), rgba(18,22,30,.96) 74%), #10141B; }
+  .hfx-stage.is-poster.hfx-stage-confetti{ background:linear-gradient(180deg, rgba(226,178,60,.18), rgba(24,29,37,.96) 72%), #141820; }
+  .hfx-stage.is-poster.hfx-stage-ufo{ background:linear-gradient(180deg, #05080A, #0B1410 70%, #0E1A13); }
+  .hfx-poster{ position:absolute; inset:0; width:100%; height:100%; display:block; z-index:0; pointer-events:none; }
+  .hfx-stage.is-poster .hfx-tint{ z-index:1; }
+  .hfx-stage.is-poster .hfx-stage-pct{ position:relative; z-index:2; }
+  .hfx-stage.is-poster.hfx-tinted .hfx-stage-pct{ color:transparent; text-shadow:none;
+    background:linear-gradient(105deg, var(--hfx-g1), var(--hfx-g2) 55%, var(--hfx-g3, var(--hfx-g1)));
+    -webkit-background-clip:text; background-clip:text;
+    filter:drop-shadow(0 0 10px color-mix(in srgb, var(--hfx-b) 45%, transparent)); }
+  /* (the Preview's own layers went with previewHundoFx in build 314) */
 
   /* ---------- level-up / personal-best callouts ---------- */
   .levelup{
@@ -17871,7 +17916,13 @@
     .bn-stage .bl-mote{ animation:bl-mote 6s ease-in-out infinite; }
     .bn-stage .bl-crownwave{ animation:bl-crownwave 3s ease-in-out infinite; }
     .bn-stage .bl-crackle{ animation:bl-crackle 2.4s linear infinite; opacity:0; }
+    /* build 314: the secret flare banners - light falling into Void, and
+       Umbra's cloud sea sliding one tile */
+    .bn-stage .bl-in{ animation:bl-in 7s linear infinite; opacity:0; }
+    .bn-stage .bl-slide{ animation:bl-slide 60s linear infinite; }
   }
+  @keyframes bl-in{ 0%{ transform:scale(1.25); opacity:0; } 18%{ opacity:1; } 80%{ opacity:.9; } 100%{ transform:scale(.42); opacity:0; } }
+  @keyframes bl-slide{ from{ transform:translateX(0); } to{ transform:translateX(-50%); } }
   /* build 313: Celestial's crown igniting star by star, and Astral's arcs */
   @keyframes bl-crownwave{ 0%, 30%, 100%{ transform:scale(.72); opacity:.6; } 10%{ transform:scale(1.55) rotate(45deg); opacity:1; } }
   @keyframes bl-crackle{ 0%, 56%, 100%{ opacity:0; } 58%{ opacity:1; } 60%{ opacity:.15; } 62%{ opacity:1; } 65%{ opacity:.6; } 70%{ opacity:0; } 84%{ opacity:0; } 85.5%{ opacity:.9; } 88%{ opacity:0; } }
@@ -18010,13 +18061,47 @@
   .banner-opt-art > .bnr{ border-radius:inherit; clip-path:inset(0 round 11px); }
   .banner-opt:active .banner-opt-art{ transform:scale(.98); }
   .banner-opt.locked .banner-opt-art > .bnr{ filter:grayscale(.85) brightness(.45); }
-  /* A secret flare character's banner is darker than locked: no colour,
-     only the shapes of the brightest things in it, like a cut-out held up
-     to the light (build 313). The banner is an opaque box, so a filter on
-     it cannot light a square. */
-  .banner-opt.locked.is-secret .banner-opt-art > .bnr{ filter:grayscale(1) brightness(.34) contrast(1.7); }
-  .banner-opt.locked.is-secret .banner-opt-art::after{ content:"?"; position:absolute; inset:0; display:grid; place-items:center;
-    font:800 1.6rem/1 var(--serif, serif); color:rgba(255,255,255,.22); pointer-events:none; }
+  /* A SECRET FLARE BANNER YOU DO NOT HOLD IS FROSTED GLASS (build 314).
+     It was a black cut-out with a "?" (build 313): "umbra, horizon, and
+     genesis, when scrolling through the banners, just making them dark
+     like that is not the move it just looks bad ... blur them maybe? With
+     a thing over it that says unlock to see?" The real banner, still
+     moving, behind a pane of Liquid Glass: blurred far past knowing what
+     it is (its colours come through, its subject does not), a lit rim and
+     sheen, and a pill on the glass that says so. One look for the
+     Customize tile and the card a tap or a hold opens (veilBanner). The
+     blur is on the banner's own box, overscanned so its soft edge is
+     outside the tile, and the tile's rounded clip is on the art. */
+  .is-veiled{ background:radial-gradient(70% 90% at 50% 50%, color-mix(in srgb, var(--veil-a) 38%, #0B0D14), #0B0D14) !important; }
+  .bnr-veil-still{ position:absolute; inset:-14%; background:center / 100% 100% no-repeat; opacity:0; transition:opacity .5s ease;
+    animation:bnr-veil-drift 11s ease-in-out infinite alternate; }
+  .bnr-veil-still.is-ready{ opacity:1; }
+  @keyframes bnr-veil-drift{ 0%{ transform:translate(-2.5%, 1%) scale(1); } 50%{ transform:translate(1.5%, -1.5%) scale(1.06); } 100%{ transform:translate(2.5%, 1.5%) scale(1.02); } }
+  .bnr-veil-glow{ position:absolute; inset:0; pointer-events:none; opacity:.25;
+    background:radial-gradient(55% 80% at 38% 45%, color-mix(in srgb, var(--veil-a) 70%, #fff), transparent 70%),
+      radial-gradient(45% 70% at 70% 60%, var(--veil-b), transparent 70%);
+    animation:bnr-veil-glow 5.5s ease-in-out infinite alternate; }
+  @keyframes bnr-veil-glow{ from{ opacity:.12; } to{ opacity:.38; } }
+  .bnr-veil{ position:absolute; inset:0; z-index:2; display:grid; place-items:center; pointer-events:none; border-radius:inherit;
+    background:linear-gradient(158deg, rgba(255,255,255,.17), rgba(255,255,255,.04) 42%, rgba(255,255,255,0) 62%, rgba(255,255,255,.06)),
+      radial-gradient(120% 90% at 50% 120%, rgba(8,10,16,.28), rgba(8,10,16,0) 70%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.42), inset 0 0 0 1px rgba(255,255,255,.14), inset 0 -1px 0 rgba(255,255,255,.08); }
+  .bnr-veil-pill{ display:inline-flex; align-items:center; gap:.38em; padding:.38em .8em .38em .66em; border-radius:999px;
+    font-size:.62rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:#fff; white-space:nowrap;
+    background:rgba(10,12,18,.42); border:1px solid rgba(255,255,255,.24);
+    box-shadow:0 4px 14px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.18); text-shadow:0 1px 2px rgba(0,0,0,.5); }
+  .bnr-veil-pill svg{ width:.95em; height:.95em; display:block; }
+  .unlock-card-art .bnr-veil-pill{ font-size:.74rem; }
+  /* a narrow tile (a 320-375px phone: 114-142px) takes a tighter pill -
+     at full size it was 136px wide and ran off a 114px tile. The tile is
+     a grid cell, so measuring it as a container changes nothing about it. */
+  .banner-opt-art.is-veiled{ container-type:inline-size; }
+  @container (max-width:9.5rem){
+    .bnr-veil-pill{ font-size:.56rem; letter-spacing:.07em; gap:0; padding:.36em .66em; }
+    .bnr-veil-pill svg{ display:none; }
+  }
+  /* the pill says it, so the corner padlock steps aside */
+  .banner-opt.locked.is-secret .banner-opt-lock, .unlock-card-banner.is-veiled-card .unlock-card-lock{ display:none; }
   .banner-opt-lock{
     position:absolute; right:.45rem; top:.45rem; width:1.5rem; height:1.5rem; border-radius:50%;
     display:flex; align-items:center; justify-content:center;
@@ -18050,9 +18135,6 @@
   .hfx-opt-need{ font-size:.7rem; color:var(--soft); line-height:1.3; }
   .hfx-opt.locked .hfx-opt-name{ color:var(--soft); }
   .hfx-opt > .new-dot{ top:.35rem; right:.35rem; z-index:5; }
-  /* its card and its results pop-up */
-  .unlock-card-preview{ margin-top:1rem; }
-  .rs-spot-use{ margin:.9rem auto 0; display:block; min-height:2.9rem; padding:0 1.4rem; }
   /* an effect's whole play inside a pop-up: the pop-up is its screen */
   .rs-spot > .hfx-layer.is-inset{ position:absolute; z-index:0; }
   .rs-spot > .rs-spot-card{ position:relative; z-index:1; }
@@ -21486,6 +21568,13 @@
     background:rgba(6,8,12,0); transition:background .3s ease; cursor:pointer;
   }
   .rs-spot.is-up{ background:rgba(6,8,12,.72); transition:background .6s ease; }
+  /* the dim carries a pool of the unlock's own colour behind the card
+     (build 314) - an opacity, so it fades with the dim */
+  .rs-spot::before{
+    content:""; position:absolute; inset:0; pointer-events:none; opacity:0; transition:opacity .3s ease;
+    background:radial-gradient(70% 50% at 50% 50%, color-mix(in srgb, var(--spot-color2, var(--spot-color)) 16%, transparent), transparent 72%);
+  }
+  .rs-spot.is-up::before{ opacity:1; transition:opacity .9s ease .2s; }
   .rs-spot.is-held{ display:none; }
   /* Straight out of a cutscene (build 268 - see openSceneBridge): the dim
      is already there, so it starts full rather than fading in again, and
@@ -21511,28 +21600,37 @@
   .rs-spot-card{
     position:relative; width:min(22rem, 100%); overflow:hidden;
     padding:1.7rem 1.4rem 1.2rem; border-radius:24px; text-align:center;
+    /* THE UNLOCK'S OWN GROUND (build 314) - see unlockSpotLook: its colour
+       sunk almost to black unless it names its own (Void's is black), with
+       its colour pooled at the top and its second colour along the bottom */
+    --spot-ground-c:var(--spot-ground, color-mix(in srgb, var(--spot-color) 9%, #0D1118));
     background:
       radial-gradient(120% 75% at 50% 0%, color-mix(in srgb, var(--spot-color) 30%, transparent), transparent 62%),
-      rgba(20,25,33,.97);
+      radial-gradient(110% 55% at 50% 112%, color-mix(in srgb, var(--spot-color2, var(--spot-color)) 16%, transparent), transparent 70%),
+      var(--spot-ground-c);
     border:1px solid color-mix(in srgb, var(--spot-color) 42%, rgba(255,255,255,.12));
     box-shadow:0 24px 60px rgba(0,0,0,.55),
                0 0 44px -8px color-mix(in srgb, var(--spot-color) 60%, transparent),
                inset 0 1px 0 rgba(255,255,255,.12);
     opacity:0;
   }
-  /* THE ANTICIPATION: the screen dims first, then the card arrives out
-     of a point of light, then the thing itself, then the words - "they
-     can pop up slower so people are excited to see what the pop up is". */
-  .rs-spot.is-up .rs-spot-card{ animation:rs-spot-in 1s cubic-bezier(.16,1.15,.3,1) .45s both; }
+  /* THE ANTICIPATION: the screen dims first, then the card, then the
+     thing itself, then the words - "they can pop up slower so people are
+     excited to see what the pop up is". CALM, NOT POPPED (build 314):
+     "Not sure about the unlock stuff within the pops should do that type
+     of effect where they start off tiny ... and then getting big". The
+     card came out of a point of light at 55% with a blur and the thing in
+     it from 20% with a spin; both now fade in at their full size with a
+     short rise, the same on every kind of pop-up. */
+  .rs-spot.is-up .rs-spot-card{ animation:rs-spot-in .8s cubic-bezier(.22,.8,.3,1) .45s both; }
   .rs-spot.is-leaving .rs-spot-card{ opacity:1; animation:rs-spot-out .3s ease-in both; }
   @keyframes rs-spot-in{
-    0%{ opacity:0; transform:scale(.55); filter:blur(10px) brightness(2.2); }
-    45%{ opacity:1; transform:scale(1.04); filter:blur(0) brightness(1.3); }
-    100%{ opacity:1; transform:none; filter:none; }
+    0%{ opacity:0; transform:translateY(16px); }
+    100%{ opacity:1; transform:none; }
   }
   .rs-spot-kicker, .rs-spot-name, .rs-spot-sub, .rs-spot-need, .rs-spot-was, .rs-spot-foot{ opacity:0; }
   .rs-spot.is-up .rs-spot-kicker{ animation:rs-spot-word .55s ease-out 1.2s both; }
-  .rs-spot.is-up .rs-spot-name{ animation:rs-spot-word .6s cubic-bezier(.2,1.3,.4,1) 1.35s both; }
+  .rs-spot.is-up .rs-spot-name{ animation:rs-spot-word .6s cubic-bezier(.22,.8,.3,1) 1.35s both; }
   .rs-spot.is-up .rs-spot-was{ animation:rs-spot-word .55s ease-out 1.5s both; }
   .rs-spot.is-up .rs-spot-sub{ animation:rs-spot-word .55s ease-out 1.55s both; }
   .rs-spot.is-up .rs-spot-need{ animation:rs-spot-word .6s ease-out 1.75s both; }
@@ -21618,8 +21716,8 @@
     border-color:color-mix(in srgb, var(--rank-color) 55%, rgba(255,255,255,.12));
     background:
       radial-gradient(120% 75% at 50% 0%, color-mix(in srgb, var(--rank-color) 30%, transparent), transparent 62%),
-      linear-gradient(180deg, transparent 60%, color-mix(in srgb, var(--rank-color) 10%, transparent)),
-      rgba(20,25,33,.97);
+      linear-gradient(180deg, transparent 60%, color-mix(in srgb, var(--spot-color, var(--rank-color)) 12%, transparent)),
+      var(--spot-ground-c);
   }
   .rs-spot-strip.is-rankreward{
     gap:.55rem; left:.9rem; right:.9rem; top:.7rem; height:2.2rem;
@@ -21641,43 +21739,19 @@
   .rs-spot.is-rankreward .rs-spot-need-label{ color:color-mix(in srgb, var(--rank-color) 70%, #fff); }
   .rs-spot.is-rankreward .rs-spot-kicker{ color:color-mix(in srgb, var(--rank-color) 60%, #fff); }
 
-  /* ---- A BANNER ARRIVES (build 235) ----
-     "Ensure the banner unlock pop ups are cool." The banner is unrolled
-     rather than popped: it comes in as a thin bright line, opens to full
-     height, and a sheen crosses it. A hard one lands like it has weight -
-     the card jolts, the screen flashes once in the banner's light. */
-  /* THE SAME CARD AS EVERY OTHER POP-UP (build 242): "the pop up for the
+  /* ---- A BANNER ARRIVES ----
+     It used to be unrolled out of a bright line with a sheen across it,
+     and a hard one jolted the card and flashed the screen (build 235).
+     Build 314: "it like made the banner do an effect when the pop up came
+     up, not a fan of that". The banner arrives with its card, the same
+     calm fade as every other pop-up's art, and moves only as it moves
+     everywhere else.
+     THE SAME CARD AS EVERY OTHER POP-UP (build 242): "the pop up for the
      banner one is kinda big, looks a lot bigger than the other pop ups."
      It was 24rem wide around a 19rem picture; it is the shared 22rem
      now, and the picture is sized to sit in it the way a character does. */
-  .rs-spot.is-bannerup .rs-spot-art.is-banner{ animation:none; opacity:0; }
-  .rs-spot.is-bannerup.is-up .rs-spot-art.is-banner{ animation:rs-banner-unroll .9s cubic-bezier(.2,.9,.25,1) .85s both; }
-  @keyframes rs-banner-unroll{
-    0%{ opacity:0; transform:scaleY(.04) scaleX(.3); filter:brightness(3); }
-    35%{ opacity:1; transform:scaleY(.04) scaleX(1.02); filter:brightness(2.4); }
-    75%{ transform:scaleY(1.06) scaleX(1); filter:brightness(1.2); }
-    100%{ opacity:1; transform:none; filter:none; }
-  }
   .rs-spot.is-bannerup .rs-spot-bannerart{ width:min(14.5rem, 64vw);
     box-shadow:0 12px 44px rgba(0,0,0,.55), 0 0 36px -6px color-mix(in srgb, var(--spot-color) 55%, transparent); }
-  .rs-spot.is-bannerup .rs-spot-bannerart::after{
-    content:""; position:absolute; inset:0; pointer-events:none;
-    background:linear-gradient(105deg, transparent 35%, rgba(255,255,255,.45) 50%, transparent 65%);
-    transform:translateX(-130%);
-  }
-  .rs-spot.is-bannerup.is-up .rs-spot-bannerart::after{ animation:tierup-sweep 1.1s cubic-bezier(.3,0,.2,1) 1.7s 1 forwards; }
-  .rs-spot.is-epic.is-up .rs-spot-card{ animation:rs-spot-in 1s cubic-bezier(.16,1.15,.3,1) .45s both, rs-epic-jolt .5s ease-out 1.55s 1; }
-  @keyframes rs-epic-jolt{
-    0%,100%{ translate:0 0; } 15%{ translate:-5px 2px; } 30%{ translate:6px -3px; } 45%{ translate:-4px 3px; }
-    60%{ translate:3px -1px; } 80%{ translate:-1px 1px; }
-  }
-  .rs-spot.is-epic::before{
-    content:""; position:absolute; inset:0; pointer-events:none; opacity:0;
-    background:radial-gradient(60% 45% at 50% 45%, color-mix(in srgb, var(--spot-color) 60%, #fff), transparent 70%);
-  }
-  .rs-spot.is-epic.is-up::before{ animation:rs-epic-flash .7s ease-out 1.55s 1 both; }
-  @keyframes rs-epic-flash{ 0%{ opacity:0; } 12%{ opacity:.55; } 100%{ opacity:0; } }
-  [data-reduce-motion="true"] .rs-spot.is-bannerup .rs-spot-art.is-banner{ opacity:1; }
 
   /* ---- THE FLIGHT TO PROFILE (build 235) ---- */
   /* body > : .rs-spot-art.is-character sets position:relative later in
@@ -21694,18 +21768,12 @@
     from{ opacity:1; transform:none; }
     to{ opacity:0; transform:translateY(-26px) scale(.96); }
   }
-  .rs-spot-card::after{
-    content:""; position:absolute; inset:0; pointer-events:none;
-    background:linear-gradient(100deg, transparent 36%, rgba(255,255,255,.18) 50%, transparent 64%);
-    transform:translateX(-120%);
-  }
-  .rs-spot.is-up .rs-spot-card::after{ animation:tierup-sweep 1.3s cubic-bezier(.3,0,.2,1) 1.4s 1 forwards; }
   .rs-spot-art{
     width:6.6rem; height:6.6rem; margin:0 auto .95rem;
     display:flex; align-items:center; justify-content:center;
     filter:drop-shadow(0 0 20px color-mix(in srgb, var(--spot-color) 55%, transparent));
   }
-  .rs-spot.is-up .rs-spot-art{ animation:rs-artpop .8s cubic-bezier(.2,1.5,.4,1) .85s both; }
+  .rs-spot.is-up .rs-spot-art{ animation:rs-artpop .8s cubic-bezier(.22,.8,.3,1) .75s both; }
   .rs-spot-art.is-banner{ width:auto; height:auto; filter:none; }
   /* A FLARE IS ALREADY LIGHT (build 312). The drop-shadow above, on an
      orb whose own bloom fills its whole square box, came out on iOS as a
@@ -21732,7 +21800,7 @@
     border-radius:50%;
     background:radial-gradient(closest-side, color-mix(in srgb, var(--spot-color) 42%, transparent), transparent);
   }
-  @keyframes rs-artpop{ 0%{ opacity:0; transform:scale(.2) rotate(-12deg); } 100%{ opacity:1; transform:none; } }
+  @keyframes rs-artpop{ 0%{ opacity:0; transform:translateY(8px); } 100%{ opacity:1; transform:none; } }
   .rs-spot-art svg{ width:100%; height:100%; display:block; }
   /* the shading is in em, so a bigger orb carries a bigger font-size */
   .rs-spot-art .rs-themedot{ width:4.6rem; height:4.6rem; font-size:2.7rem; }
@@ -21754,8 +21822,8 @@
   .rs-reward-tile.is-banner .rs-reward-art > *{ position:absolute; inset:0; width:100%; height:100%; }
   .rs-reward-kind{ font-size:.6rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:color-mix(in srgb, var(--rank-color, #fff) 60%, #fff); opacity:.85; }
   .rs-reward-name{ font-size:.86rem; font-weight:800; color:#fff; line-height:1.15; text-align:center; }
-  .rs-spot.is-up .rs-reward-tile{ animation:rs-reward-in .7s cubic-bezier(.2,1.4,.4,1) both; animation-delay:calc(1s + var(--i, 0) * .32s); }
-  @keyframes rs-reward-in{ 0%{ opacity:0; transform:translateY(10px) scale(.6); } 100%{ opacity:1; transform:none; } }
+  .rs-spot.is-up .rs-reward-tile{ animation:rs-reward-in .7s cubic-bezier(.22,.8,.3,1) both; animation-delay:calc(1s + var(--i, 0) * .32s); }
+  @keyframes rs-reward-in{ 0%{ opacity:0; transform:translateY(10px); } 100%{ opacity:1; transform:none; } }
   [data-reduce-motion="true"] .rs-reward-tile{ animation:none !important; opacity:1; }
   .rs-spot-kicker{
     margin:0; font-size:.72rem; font-weight:800; letter-spacing:.18em;
@@ -21781,7 +21849,7 @@
     background:
       radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--spot-color) 38%, transparent), transparent 64%),
       radial-gradient(90% 60% at 50% 110%, color-mix(in srgb, var(--spot-color) 18%, transparent), transparent 70%),
-      rgba(16,20,28,.94);
+      var(--spot-ground-c);
     border-color:color-mix(in srgb, var(--spot-color) 60%, rgba(255,255,255,.14));
   }
   .rs-spot-art.rs-morph{ position:relative; width:9rem; height:9rem; margin-bottom:1.1rem; filter:none; }
@@ -21798,7 +21866,7 @@
   }
   .rs-spot.is-up .rs-morph-from{ animation:rs-morph-charge .95s ease-in both, rs-morph-burn .42s cubic-bezier(.6,0,.9,.4) .95s both; }
   @keyframes rs-morph-charge{
-    0%{ opacity:0; transform:scale(.7); }
+    0%{ opacity:0; transform:none; }
     25%{ opacity:1; transform:scale(1); }
     60%{ transform:scale(1.02) translateX(-1px); }
     70%{ transform:scale(1.03) translateX(1.5px); }
@@ -21806,9 +21874,11 @@
     90%{ transform:scale(1.05) translateX(1px); }
     100%{ opacity:1; transform:scale(1.06); }
   }
+  /* the old emblem burns off into light where it stands (build 314: no
+     shrinking away into a point - see rs-spot-in) */
   @keyframes rs-morph-burn{
-    0%{ opacity:1; transform:scale(1.06) rotate(0); filter:brightness(1) blur(0); }
-    100%{ opacity:0; transform:scale(.18) rotate(200deg); filter:brightness(4) blur(3px); }
+    0%{ opacity:1; transform:scale(1.06); filter:brightness(1); }
+    100%{ opacity:0; transform:scale(1.06); filter:brightness(3); }
   }
   .rs-morph-flash{
     border-radius:50%; opacity:0;
@@ -21833,10 +21903,10 @@
   @keyframes rs-morph-rays-in{ from{ opacity:0; } to{ opacity:.85; } }
   @keyframes rs-morph-spin{ to{ rotate:360deg; } }
   .rs-morph-to{ opacity:0; filter:drop-shadow(0 0 22px color-mix(in srgb, var(--spot-color) 75%, transparent)); }
-  .rs-spot.is-up .rs-morph-to{ animation:rs-morph-form .75s cubic-bezier(.2,1.6,.35,1) 1.3s both, rs-morph-glow 2.4s ease-in-out 2.1s infinite; }
+  .rs-spot.is-up .rs-morph-to{ animation:rs-morph-form .9s cubic-bezier(.22,.8,.3,1) 1.3s both, rs-morph-glow 2.4s ease-in-out 2.2s infinite; }
+  /* the new one forms out of the light AT ITS OWN SIZE (build 314) */
   @keyframes rs-morph-form{
-    0%{ opacity:0; transform:scale(.15) rotate(-160deg); filter:brightness(4) blur(3px) drop-shadow(0 0 22px var(--spot-color)); }
-    60%{ opacity:1; transform:scale(1.14) rotate(8deg); filter:brightness(1.4) blur(0) drop-shadow(0 0 30px var(--spot-color)); }
+    0%{ opacity:0; transform:translateY(6px); filter:brightness(2.6) drop-shadow(0 0 30px var(--spot-color)); }
     100%{ opacity:1; transform:none; filter:brightness(1) drop-shadow(0 0 22px color-mix(in srgb, var(--spot-color) 75%, transparent)); }
   }
   @keyframes rs-morph-glow{ 50%{ transform:scale(1.035); } }
@@ -49602,221 +49672,313 @@ const BANNER_ART = {
     ] }];
   },
 
-  /* ---- THE SECRET FLARE BANNERS (build 313) ----
+  /* ---- THE SECRET FLARE BANNERS (build 313, redrawn in 314) ----
      "Give the secret flare characters banners ... Include unlock banners
      for all the secret flare characters, same concept though, greyed out
      or silhouette till it's actually unlocked." One per character, held
-     the moment the character is (bannerEarned reads isLockedCharacter, so
-     an account that already has Void has its banner too), each named for
-     its character the way the ultimates' are, and each its character's
-     own sky - none of them another black hole with jets (that is
-     Amethyst's):
-       Void    - the three lights it was made of, joined like the stars on
-                 its face, over a slow dark vortex;
-       Umbra   - a total eclipse with a violet corona, the moon's phases
-                 strung across the sky and a dark ridge under it;
-       Horizon - a black hole seen edge-on: the disc across its front, the
-                 far side lensed over the top, light pulled up and in;
-       Genesis - the planet on Home rising over the bottom edge, its seams
-                 glowing, its ring across the frame, embers going up.
+     the moment the character is (bannerEarned reads isLockedCharacter).
+
+     REDRAWN (build 314): "The void, umbra, horizon and genesis banners are
+     pretty mid. Fix this." Each was a busy sky with a small subject in it
+     - Void a spiral of beads over an orange glow, Umbra a small eclipse
+     with a row of phases, Horizon a thin ring and a hairline, Genesis a
+     muddy cap of a planet - and none of them read at the size a banner
+     mostly lives at (a rankings row, the Profile card). Each is now ONE
+     big subject, lit hard, in its own character's colours:
+       Void    - BLACK. A sphere of nothing with a cold rim of light, the
+                 stars falling into it, and inside it Void's own face: the
+                 three flares joined like a constellation.
+       Umbra   - its moon. A huge violet crescent over a sea of cloud, the
+                 dark side faintly lit, Umbra's flare on the horn.
+       Horizon - its colours, white and ice blue. The event horizon seen
+                 the way it really looks: the disc across the front, its
+                 far side bent up over the top in a halo.
+       Genesis - its look, the planet on Home: gold to rose, ringed, its
+                 seams glowing, its moon, the first light breaking over it.
      All layered (bnLayerHTML), every motion a transform or an opacity. */
   flare_void(u){
     const rnd = bnRand(31113);
-    const st = bnStarsSplit(rnd, 120, 180);
-    const CX = 240, CY = 92;
-    const P = [[148, 58, "#EF4444", "#FFB4B4"], [322, 44, "#F97316", "#FFD2A8"], [262, 138, "#FACC15", "#FFF0A8"]];
-    /* the dark vortex: three lanes of dust winding in, drawn round (0,0) */
-    let lanes = "";
-    for(let arm = 0; arm < 3; arm++){
-      const ph = arm * Math.PI * 2 / 3;
-      for(let t = 0.4; t < 6.4; t += 0.1){
-        const r = 22 * Math.exp(0.3 * t), a = -t + ph;
-        if(r > 200) break;
-        lanes += '<circle cx="' + bnF(Math.cos(a) * r) + '" cy="' + bnF(Math.sin(a) * r) + '" r="' + bnF(3 + r * .07 + rnd() * 3) + '" fill="#030207" opacity="' + bnF(.55 + rnd() * .35) + '"/>';
-      }
+    const CX = 240, CY = 90, R = 60;
+    /* a sky with nothing near the hole: stars thin out towards it and
+       none sit on it */
+    let still = "", twA = "", twB = "";
+    for(let i = 0; i < 170; i++){
+      const x = rnd() * 480, y = rnd() * 180, r = .35 + rnd() * 1, o = .3 + rnd() * .6, tw = rnd();
+      const d = Math.hypot(x - CX, y - CY);
+      if(d < R * 1.18 || rnd() > Math.min(1, (d - R) / 90)) continue;
+      const c = '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(r) + '" fill="' + (tw < .12 ? "#CFD8F0" : "#FFFFFF") + '" opacity="' + bnF(o) + '"/>';
+      if(tw < .2) twA += c; else if(tw < .38) twB += c; else still += c;
     }
-    const spark = (x, y, h, v) => 'M' + x + ' ' + bnF(y - v) + ' Q' + bnF(x + h * .06) + ' ' + bnF(y - v * .06) + ' ' + bnF(x + h) + ' ' + y +
-      ' Q' + bnF(x + h * .06) + ' ' + bnF(y + v * .06) + ' ' + x + ' ' + bnF(y + v) + ' Q' + bnF(x - h * .06) + ' ' + bnF(y + v * .06) + ' ' + bnF(x - h) + ' ' + y +
-      ' Q' + bnF(x - h * .06) + ' ' + bnF(y - v * .06) + ' ' + x + ' ' + bnF(y - v) + 'Z';
+    /* light falling in: short streaks along the radius, drawn round (0,0) */
+    const fall = seed => {
+      const r2 = bnRand(seed); let s = "";
+      for(let i = 0; i < 46; i++){
+        const a = r2() * Math.PI * 2, r = R * 1.3 + r2() * 190, L = 3 + r / 22 + r2() * 5;
+        const ca = Math.cos(a), sa = Math.sin(a);
+        s += '<path d="M' + bnF(ca * r) + ' ' + bnF(sa * r) + ' L' + bnF(ca * (r - L)) + ' ' + bnF(sa * (r - L)) + '" stroke="#E6ECFF" stroke-width="' + bnF(.6 + r2() * .7) + '" stroke-linecap="round" opacity="' + bnF(.3 + r2() * .55) + '"/>';
+      }
+      return s;
+    };
+    /* the dust winding in: smooth spiral strands, never beads */
+    let dust = "";
+    for(let arm = 0; arm < 4; arm++){
+      const ph = arm * Math.PI / 2 + rnd() * .4;
+      let d = "";
+      for(let t = 0; t <= 5.2; t += .08){
+        const r = 228 * Math.exp(-.28 * t), a = t + ph;
+        d += (d ? " L" : "M") + bnF(Math.cos(a) * r) + " " + bnF(Math.sin(a) * r);
+      }
+      dust += '<path d="' + d + '" fill="none" stroke="#8E9CC4" stroke-width="' + bnF(9 + arm % 2 * 8) + '" stroke-linecap="round" opacity=".045"/>' +
+              '<path d="' + d + '" fill="none" stroke="#C9D3F0" stroke-width=".8" stroke-linecap="round" stroke-dasharray="1 9 2 14" opacity=".22"/>';
+    }
+    /* Void's face, inside the dark: a few dim stars and the three flares */
+    let inner = "";
+    for(let i = 0; i < 16; i++){
+      const a = rnd() * Math.PI * 2, r = Math.sqrt(rnd()) * R * .82;
+      inner += '<circle cx="' + bnF(CX + Math.cos(a) * r) + '" cy="' + bnF(CY + Math.sin(a) * r) + '" r="' + bnF(.4 + rnd() * .6) + '" fill="#C9D3F5" opacity="' + bnF(.25 + rnd() * .4) + '"/>';
+    }
+    const P = [[CX - 6, CY - 26, "#F97316", "#FFD2A8"], [CX - 26, CY + 12, "#EF4444", "#FFB4B4"], [CX + 25, CY + 2, "#FACC15", "#FFF0A8"]];
+    const spark = (x, y, h, v) => 'M' + x + ' ' + bnF(y - v) + ' Q' + bnF(x + h * .08) + ' ' + bnF(y - v * .08) + ' ' + bnF(x + h) + ' ' + y +
+      ' Q' + bnF(x + h * .08) + ' ' + bnF(y + v * .08) + ' ' + x + ' ' + bnF(y + v) + ' Q' + bnF(x - h * .08) + ' ' + bnF(y + v * .08) + ' ' + bnF(x - h) + ' ' + y +
+      ' Q' + bnF(x - h * .08) + ' ' + bnF(y - v * .08) + ' ' + x + ' ' + bnF(y - v) + 'Z';
     const defs = '<defs>' +
-      bnRad(u + "sp", [[0, "#140A1E"], [0.55, "#07060F"], [1, "#020206"]], "50%", "50%", "75%") +
-      bnRad(u + "glow", [[0, "#FFE0B0", 0.0], [0.14, "#FFD08A", 0.55], [0.3, "#F97316", 0.4], [0.55, "#EF4444", 0.24], [0.8, "#FACC15", 0.08], [1, "#FACC15", 0]]) +
-      bnRad(u + "n1", [[0, "#7A1F1F", 0.4], [1, "#7A1F1F", 0]]) +
-      bnRad(u + "n2", [[0, "#7A4A0A", 0.34], [1, "#7A4A0A", 0]]) +
-      P.map((p, i) => bnRad(u + "f" + i, [[0, "#FFFFFF"], [0.12, p[3]], [0.3, p[2], 0.7], [0.62, p[2], 0.18], [1, p[2], 0]])).join("") +
+      bnRad(u + "sky", [[0, "#000000"], [0.4, "#010103"], [0.8, "#07080E"], [1, "#10121B"]], "50%", "50%", "70%") +
+      bnRad(u + "halo", [[0, "#000000", 0], [0.5, "#000000", 0], [0.53, "#F2F5FF", 0.7], [0.57, "#B8C4E4", 0.32], [0.68, "#5B6890", 0.12], [0.85, "#2A3250", 0.04], [1, "#2A3250", 0]]) +
+      bnRad(u + "disc", [[0, "#0B0C18"], [0.7, "#030308"], [1, "#000000"]]) +
+      bnLin(u + "rim", [[0, "#FFFFFF"], [0.3, "#D6DEF5", 0.85], [0.62, "#55607E", 0.18], [1, "#55607E", 0]], 0, 0, 1, 1) +
+      bnLin(u + "glint", [[0, "#FFFFFF", 0], [0.5, "#FFFFFF", 1], [1, "#FFFFFF", 0]], 0, 0, 1, 0) +
+      P.map((p, i) => bnRad(u + "f" + i, [[0, "#FFFFFF"], [0.14, p[3]], [0.32, p[2], 0.75], [0.62, p[2], 0.2], [1, p[2], 0]])).join("") +
       P.map((p, i) => bnLin(u + "s" + i, [[0, p[2], 0], [0.5, p[3], 0.9], [1, p[2], 0]], 0, 0, 1, 0)).join("") +
-      bnRad(u + "core", [[0, "#000000"], [0.7, "#000000"], [1, "#000000", 0]]) +
       '</defs>';
-    /* the hairlines between them: the constellation on Void's face */
-    const line = (a, b) => '<path d="M' + a[0] + ' ' + a[1] + ' L' + b[0] + ' ' + b[1] + '" stroke="#F2F4FF" stroke-width="1.3" stroke-dasharray="3 4" stroke-linecap="round" opacity=".8"/>';
-    const flare = (p, i) => '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="34" fill="url(#' + u + 'f' + i + ')"/>' +
-      '<rect x="' + (p[0] - 44) + '" y="' + (p[1] - .9) + '" width="88" height="1.8" fill="url(#' + u + 's' + i + ')"/>' +
-      '<path d="' + spark(p[0], p[1], 3.2, 14) + '" fill="' + p[3] + '" opacity=".85"/>' +
-      '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="3.4" fill="#FFFFFF"/>';
+    const line = (a, b) => '<path d="M' + a[0] + ' ' + a[1] + ' L' + b[0] + ' ' + b[1] + '" stroke="#EEF2FF" stroke-width="1" stroke-dasharray="2.4 3.2" stroke-linecap="round" opacity=".75"/>';
+    const flare = (p, i) => '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="15" fill="url(#' + u + 'f' + i + ')"/>' +
+      '<rect x="' + (p[0] - 22) + '" y="' + (p[1] - .6) + '" width="44" height="1.2" fill="url(#' + u + 's' + i + ')"/>' +
+      '<path d="' + spark(p[0], p[1], 2.2, 9) + '" fill="' + p[3] + '" opacity=".9"/>' +
+      '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="2.3" fill="#FFFFFF"/>';
+    /* a glint travelling round the rim: a 70-degree arc, bright in the middle */
+    const ga = -2.4, gb = ga + 1.2, GR = R + .6;
+    const glint = '<path d="M' + bnF(Math.cos(ga) * GR) + ' ' + bnF(Math.sin(ga) * GR) + ' A' + GR + ' ' + GR + ' 0 0 1 ' + bnF(Math.cos(gb) * GR) + ' ' + bnF(Math.sin(gb) * GR) + '" fill="none" stroke="url(#' + u + 'glint)" stroke-width="2.4" stroke-linecap="round"/>';
+    const HB = R * 1.9;
     return [
-      { svg: defs + '<rect x="-10" y="-10" width="500" height="200" fill="url(#' + u + 'sp)"/>' + st.still },
-      { svg: st.a, cls: "bl-tw", style: "animation-duration:2.6s" },
-      { svg: st.b, cls: "bl-tw", style: "animation-duration:3.7s;animation-delay:-1.6s" },
-      { svg: '<ellipse cx="60" cy="150" rx="150" ry="60" fill="url(#' + u + 'n1)"/><ellipse cx="430" cy="30" rx="150" ry="56" fill="url(#' + u + 'n2)"/>',
-        box: [-20, -20, 520, 220], cls: "bl-drift", style: "animation-duration:18s" },
-      /* the faint light of everything it has swallowed, in the three colours */
-      { svg: '<ellipse cx="' + CX + '" cy="' + CY + '" rx="210" ry="110" fill="url(#' + u + 'glow)"/>', box: [CX - 210, CY - 110, 420, 220], cls: "bl-breathe", style: "animation-duration:6s" },
-      /* the dark winding in */
-      { svg: lanes, box: [CX - 200, CY - 200, 400, 400], vb: [-200, -200, 400, 400], o: [CX, CY], wrap: "rotate(-12deg) scaleY(.5)", cls: "bl-spin-r", style: "animation-duration:40s" },
-      { svg: '<circle cx="' + CX + '" cy="' + CY + '" r="30" fill="url(#' + u + 'core)"/>' },
+      { svg: defs + '<rect x="-10" y="-10" width="500" height="200" fill="url(#' + u + 'sky)"/>' + still },
+      { svg: twA, cls: "bl-tw", style: "animation-duration:2.8s" },
+      { svg: twB, cls: "bl-tw", style: "animation-duration:3.9s;animation-delay:-1.7s" },
+      /* the dust, turning in its tilted plane */
+      { svg: dust, box: [CX - 230, CY - 230, 460, 460], vb: [-230, -230, 460, 460], o: [CX, CY], wrap: "rotate(-10deg) scaleY(.36)", cls: "bl-spin", style: "animation-duration:70s" },
+      /* the light falling in, two waves out of step, swallowed by the dark */
+      { svg: fall(5151), box: [CX - 260, CY - 260, 520, 520], vb: [-260, -260, 520, 520], o: [CX, CY], cls: "bl-in", style: "animation-duration:7s" },
+      { svg: fall(6262), box: [CX - 260, CY - 260, 520, 520], vb: [-260, -260, 520, 520], o: [CX, CY], cls: "bl-in", style: "animation-duration:7s;animation-delay:-3.5s" },
+      /* the cold halo the edge throws */
+      { svg: '<circle cx="' + CX + '" cy="' + CY + '" r="' + HB + '" fill="url(#' + u + 'halo)"/>', box: [CX - HB, CY - HB, 2 * HB, 2 * HB], o: [CX, CY], cls: "bl-breathe", style: "animation-duration:5.5s" },
+      /* the void itself, its rim, and the stars of its face */
+      { svg: '<circle cx="' + CX + '" cy="' + CY + '" r="' + R + '" fill="url(#' + u + 'disc)"/>' + inner +
+          '<circle cx="' + CX + '" cy="' + CY + '" r="' + (R - .6) + '" fill="none" stroke="url(#' + u + 'rim)" stroke-width="1.6"/>' +
+          '<circle cx="' + CX + '" cy="' + CY + '" r="' + (R - 3) + '" fill="none" stroke="url(#' + u + 'rim)" stroke-width="5" opacity=".12"/>' },
+      { svg: glint, box: [CX - R - 4, CY - R - 4, 2 * R + 8, 2 * R + 8], vb: [-R - 4, -R - 4, 2 * R + 8, 2 * R + 8], o: [CX, CY], cls: "bl-spin", style: "animation-duration:9s" },
       { svg: line(P[0], P[1]) + line(P[1], P[2]) + line(P[2], P[0]), cls: "bl-glow", style: "animation-duration:3.2s;animation-delay:-1s" },
-      /* the three, each breathing on its own beat */
-      ...P.map((p, i) => ({ svg: flare(p, i), box: [p[0] - 46, p[1] - 36, 92, 72], o: [p[0], p[1]], cls: "bl-pulse",
+      ...P.map((p, i) => ({ svg: flare(p, i), box: [p[0] - 23, p[1] - 16, 46, 32], o: [p[0], p[1]], cls: "bl-pulse",
         style: "animation-duration:" + [2.4, 3.1, 2.8][i] + "s;animation-delay:-" + [0, 1.3, .6][i] + "s" }))
     ];
   },
   flare_umbra(u){
     const rnd = bnRand(40404);
-    const st = bnStarsSplit(rnd, 110, 120);
-    const EX = 306, EY = 74, ER = 30;
-    /* the corona: soft streamers of uneven length, never a ring of spokes */
-    let streams = "";
-    for(let i = 0; i < 11; i++){
-      const a = i / 11 * Math.PI * 2 + rnd() * .35, L = ER * (1.5 + rnd() * 1.6), w = .16 + rnd() * .12;
-      const p = (t, r) => bnF(Math.cos(t) * r) + " " + bnF(Math.sin(t) * r);
-      streams += '<path d="M' + p(a - w, ER * .9) + ' Q' + p(a - w * .4, L * .7) + ' ' + p(a, L) + ' Q' + p(a + w * .4, L * .7) + ' ' + p(a + w, ER * .9) + ' Z" fill="url(#' + u + 'str)" opacity="' + bnF(.35 + rnd() * .4) + '"/>';
+    const MX = 290, MY = 98, MR = 76, DX = 32, DY = 14;
+    /* where the shadow's edge meets the moon's: the two horns */
+    const horn = (() => {
+      const d = Math.hypot(DX, DY), a = d / 2, h = Math.sqrt(MR * MR - a * a), ux = DX / d, uy = DY / d;
+      return [[MX + ux * a - uy * h, MY + uy * a + ux * h], [MX + ux * a + uy * h, MY + uy * a - ux * h]];
+    })();
+    const top = horn[0][1] < horn[1][1] ? horn[0] : horn[1];
+    let still = "", twA = "", twB = "";
+    for(let i = 0; i < 150; i++){
+      const x = rnd() * 480, y = rnd() * 150, r = .35 + rnd() * 1, o = .3 + rnd() * .6, tw = rnd();
+      if(Math.hypot(x - MX, y - MY) < MR * 1.15) continue;
+      const c = '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(r) + '" fill="' + (tw < .15 ? "#E4DAFF" : "#FFFFFF") + '" opacity="' + bnF(o) + '"/>';
+      if(tw < .2) twA += c; else if(tw < .38) twB += c; else still += c;
     }
-    /* the moon's phases strung across the sky, crescent to full */
-    const phases = [.86, .55, .1, -.4, -1].map((k, i) => {
-      const x = 46 + i * 46, y = 46 + Math.sin(i / 4 * Math.PI) * -16, r = 9;
-      const lit = '<path d="M' + x + ' ' + (y - r) + ' A' + r + ' ' + r + ' 0 0 1 ' + x + ' ' + (y + r) + ' Z" fill="#D9CCFF"/>';
-      const ell = '<ellipse cx="' + x + '" cy="' + y + '" rx="' + bnF(r * Math.abs(k)) + '" ry="' + (r + .2) + '" fill="' + (k > 0 ? "#1C1432" : "#D9CCFF") + '"/>';
-      return '<g><circle cx="' + x + '" cy="' + y + '" r="' + (r * 2.2) + '" fill="url(#' + u + 'mh)"/><circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="#1C1432"/>' + lit + ell + '</g>';
-    }).join("");
-    let ridge = "M-10 180 L-10 148";
-    for(let x = -10; x <= 490; x += 14) ridge += " L" + x + " " + bnF(150 - Math.abs(Math.sin(x / 60)) * 16 - rnd() * 10 - (x > 380 && x < 440 ? 14 : 0));
-    ridge += " L490 180 Z";
+    /* craters: pale on the lit side, a shade darker than the dark side on it */
+    let craters = "", dark = "";
+    [[-34, -30, 9], [-48, 4, 6], [-18, 40, 11], [-56, -12, 4], [-40, 30, 5], [6, -46, 7], [14, 18, 13], [32, -10, 8], [-6, -4, 6], [40, 30, 6]].forEach(c => {
+      const x = MX + c[0], y = MY + c[1];
+      craters += '<circle cx="' + x + '" cy="' + y + '" r="' + c[2] + '" fill="#8A72DE" opacity=".16"/><circle cx="' + bnF(x + c[2] * .18) + '" cy="' + bnF(y + c[2] * .18) + '" r="' + bnF(c[2] * .7) + '" fill="#6A50C8" opacity=".12"/>';
+      dark += '<circle cx="' + x + '" cy="' + y + '" r="' + c[2] + '" fill="#2B2055" opacity=".35"/>';
+    });
+    /* the sea of cloud the moon is rising over: soft banks of mist, lit
+       from above, each band drawn on a 480-wide tile twice so it can
+       slide exactly one tile */
+    const fog = (y0, n, ry, seed, gid) => {
+      const r2 = bnRand(seed); let one = "";
+      for(let i = 0; i < n; i++){
+        const x = (i + r2() * .6) * 480 / n, rx = 50 + r2() * 70, yy = y0 + (r2() - .5) * 6;
+        one += '<ellipse cx="' + bnF(x) + '" cy="' + bnF(yy) + '" rx="' + bnF(rx) + '" ry="' + bnF(ry * (.7 + r2() * .6)) + '" fill="url(#' + gid + ')"/>';
+      }
+      return one + '<g transform="translate(480 0)">' + one + '</g>' + '<g transform="translate(-480 0)">' + one + '</g>';
+    };
+    const sp = (x, y, h, v) => 'M' + bnF(x) + ' ' + bnF(y - v) + ' Q' + bnF(x + h * .1) + ' ' + bnF(y - v * .1) + ' ' + bnF(x + h) + ' ' + bnF(y) +
+      ' Q' + bnF(x + h * .1) + ' ' + bnF(y + v * .1) + ' ' + bnF(x) + ' ' + bnF(y + v) + ' Q' + bnF(x - h * .1) + ' ' + bnF(y + v * .1) + ' ' + bnF(x - h) + ' ' + bnF(y) +
+      ' Q' + bnF(x - h * .1) + ' ' + bnF(y - v * .1) + ' ' + bnF(x) + ' ' + bnF(y - v) + 'Z';
     const defs = '<defs>' +
-      bnLin(u + "sky", [[0, "#0B0618"], [0.6, "#1A0F38"], [1, "#2A1650"]]) +
-      bnRad(u + "cor", [[0, "#FFFFFF", 0], [0.4, "#FFFFFF", 0], [0.47, "#F3EEFF", 1], [0.56, "#C4B5FD", 0.6], [0.75, "#8B5CF6", 0.22], [1, "#8B5CF6", 0]]) +
-      bnRad(u + "str", [[0, "#EDE4FF", 0.9], [0.6, "#A78BFA", 0.35], [1, "#8B5CF6", 0]], "50%", "50%", "60%") +
-      bnRad(u + "dia", [[0, "#FFFFFF"], [0.2, "#F5F3FF", 0.9], [0.5, "#C4B5FD", 0.35], [1, "#8B5CF6", 0]]) +
-      bnRad(u + "mh", [[0, "#C4B5FD", 0.4], [1, "#C4B5FD", 0]]) +
-      bnLin(u + "mist", [[0, "#8B5CF6", 0], [0.5, "#8B5CF6", 0.3], [1, "#4C1D95", 0.05]]) +
-      bnLin(u + "rid", [[0, "#120A22"], [1, "#05030A"]]) +
+      bnLin(u + "sky", [[0, "#05030F"], [0.5, "#120A2C"], [0.82, "#2A1756"], [1, "#3B2170"]]) +
+      bnRad(u + "glow", [[0, "#FFFFFF", 0], [0.48, "#FFFFFF", 0], [0.5, "#EDE6FF", 0.55], [0.56, "#B9A4FA", 0.3], [0.7, "#7C4FE6", 0.13], [1, "#5B2FC0", 0]]) +
+      bnRad(u + "wash", [[0, "#8B5CF6", 0.34], [0.5, "#6D3FD6", 0.12], [1, "#3B1F80", 0]]) +
+      bnRad(u + "lit", [[0, "#FBF8FF"], [0.35, "#E2D7FF"], [0.7, "#B6A0F7"], [1, "#8C6FE8"]], "26%", "24%", "90%") +
+      bnRad(u + "drk", [[0, "#1C1440"], [0.6, "#0F0A26"], [1, "#0A0619"]], "70%", "60%", "75%") +
+      bnRad(u + "fl", [[0, "#FFFFFF"], [0.16, "#EDE4FF"], [0.36, "#A78BFA", 0.7], [0.7, "#8B5CF6", 0.16], [1, "#8B5CF6", 0]]) +
+      bnRad(u + "fa", [[0, "#D4C6FF", 0.5], [0.45, "#9C82EE", 0.28], [1, "#5B3FB8", 0]], "50%", "40%", "50%") +
+      bnRad(u + "fb", [[0, "#B7A3F7", 0.55], [0.5, "#6E52CC", 0.3], [1, "#3A2482", 0]], "50%", "40%", "50%") +
+      bnRad(u + "fc", [[0, "#8E76E4", 0.55], [0.5, "#43308E", 0.4], [1, "#1E1248", 0]], "50%", "40%", "50%") +
+      bnLin(u + "deck", [[0, "#1A0F3C", 0], [0.4, "#170D36", 0.85], [1, "#0B0620"]]) +
+      '<clipPath id="' + u + 'moon"><circle cx="' + MX + '" cy="' + MY + '" r="' + MR + '"/></clipPath>' +
+      '<clipPath id="' + u + 'drkc"><circle cx="' + (MX + DX) + '" cy="' + (MY + DY) + '" r="' + MR + '"/></clipPath>' +
       '</defs>';
-    const ev = "animation-duration:8s;animation-delay:-2.5s;";
+    const GR = MR * 1.95;
     return [
-      { svg: defs + '<rect x="-10" y="-10" width="500" height="200" fill="url(#' + u + 'sky)"/>' + st.still },
-      { svg: st.a, cls: "bl-tw", style: "animation-duration:2.9s" },
-      { svg: st.b, cls: "bl-tw", style: "animation-duration:4.1s;animation-delay:-2s" },
-      { svg: phases },
-      /* the corona turning, very slowly, and breathing */
-      { svg: streams, box: [EX - 110, EY - 110, 220, 220], vb: [-110, -110, 220, 220], o: [EX, EY], cls: "bl-spin", style: "animation-duration:90s" },
-      { svg: '<circle cx="' + EX + '" cy="' + EY + '" r="' + (ER * 2.1) + '" fill="url(#' + u + 'cor)"/>', box: [EX - ER * 2.1, EY - ER * 2.1, ER * 4.2, ER * 4.2], o: [EX, EY], cls: "bl-breathe", style: "animation-duration:4.5s" },
-      { svg: '<circle cx="' + EX + '" cy="' + EY + '" r="' + ER + '" fill="#06040C"/>' },
-      /* the diamond ring: one bead of light on the edge, now and then */
-      { svg: '<circle cx="' + (EX - ER * .62) + '" cy="' + (EY - ER * .78) + '" r="16" fill="url(#' + u + 'dia)"/>' +
-          '<rect x="' + (EX - ER * .62 - 30) + '" y="' + (EY - ER * .78 - .8) + '" width="60" height="1.6" fill="#F5F3FF" opacity=".8"/>',
-        box: [EX - ER * .62 - 30, EY - ER * .78 - 16, 60, 32], cls: "bl-spike", style: ev + "opacity:0" },
-      /* the mist in the valley, drifting, and the dark ridge over it */
-      { svg: '<rect x="-20" y="118" width="520" height="50" fill="url(#' + u + 'mist)"/>', box: [-20, 110, 520, 70], cls: "bl-drift", style: "animation-duration:16s" },
-      { svg: '<path d="' + ridge + '" fill="url(#' + u + 'rid)"/><path d="' + ridge.replace(/ L490 180 Z$/, "").replace(/^M-10 180 L-10 148/, "M-10 148") + '" fill="none" stroke="#A78BFA" stroke-width=".8" opacity=".45"/>' }
+      { svg: defs + '<rect x="-10" y="-10" width="500" height="200" fill="url(#' + u + 'sky)"/>' +
+          '<ellipse cx="' + (MX - 20) + '" cy="' + MY + '" rx="260" ry="120" fill="url(#' + u + 'wash)"/>' + still },
+      { svg: twA, cls: "bl-tw", style: "animation-duration:2.9s" },
+      { svg: twB, cls: "bl-tw", style: "animation-duration:4.1s;animation-delay:-2s" },
+      /* a shooting star, now and then */
+      { svg: '<path d="M0 0 L46 -26" stroke="#E9E1FF" stroke-width="1.2" stroke-linecap="round" opacity=".85"/><circle cx="0" cy="0" r="1.5" fill="#FFFFFF"/>', box: [120, 20, 50, 30], vb: [-2, -28, 50, 30], cls: "bl-meteor", style: "animation-duration:9s;animation-delay:-2s" },
+      /* the moon's light in the air round it */
+      { svg: '<circle cx="' + MX + '" cy="' + MY + '" r="' + GR + '" fill="url(#' + u + 'glow)"/>', box: [MX - GR, MY - GR, 2 * GR, 2 * GR], o: [MX, MY], cls: "bl-breathe", style: "animation-duration:6s" },
+      /* the moon: lit, then the umbra over it, its dark side just visible */
+      { svg: '<circle cx="' + MX + '" cy="' + MY + '" r="' + MR + '" fill="url(#' + u + 'lit)"/>' +
+          '<g clip-path="url(#' + u + 'moon)">' + craters +
+          '<circle cx="' + (MX + DX) + '" cy="' + (MY + DY) + '" r="' + MR + '" fill="url(#' + u + 'drk)"/>' +
+          '<g clip-path="url(#' + u + 'drkc)">' + dark + '</g></g>' +
+          '<circle cx="' + MX + '" cy="' + MY + '" r="' + (MR - .5) + '" fill="none" stroke="#D9CCFF" stroke-width=".8" opacity=".25"/>' },
+      /* Umbra's flare, on the upper horn */
+      { svg: '<circle cx="' + bnF(top[0]) + '" cy="' + bnF(top[1]) + '" r="16" fill="url(#' + u + 'fl)"/>' +
+          '<rect x="' + bnF(top[0] - 30) + '" y="' + bnF(top[1] - .6) + '" width="60" height="1.2" fill="#F0E9FF" opacity=".75"/>' +
+          '<path d="' + sp(top[0], top[1], 2.4, 12) + '" fill="#FFFFFF"/><circle cx="' + bnF(top[0]) + '" cy="' + bnF(top[1]) + '" r="2.2" fill="#FFFFFF"/>',
+        box: [top[0] - 30, top[1] - 16, 60, 32], o: [top[0], top[1]], cls: "bl-pulse", style: "animation-duration:2.6s" },
+      /* the cloud sea: a far bank and a near one sliding at two speeds */
+      { svg: fog(150, 7, 16, 7777, u + "fa"), box: [0, 0, 960, 200], vb: [0, 0, 960, 200], cls: "bl-slide", style: "animation-duration:120s" },
+      { svg: '<rect x="0" y="150" width="960" height="50" fill="url(#' + u + 'deck)"/>' },
+      { svg: fog(162, 6, 15, 8888, u + "fb"), box: [0, 0, 960, 200], vb: [0, 0, 960, 200], cls: "bl-slide", style: "animation-duration:80s;animation-delay:-30s" },
+      { svg: fog(178, 6, 14, 9999, u + "fc"), box: [0, 0, 960, 200], vb: [0, 0, 960, 200], cls: "bl-slide", style: "animation-duration:54s" }
     ];
   },
   flare_horizon(u){
     const rnd = bnRand(70272);
-    const st = bnStarsSplit(rnd, 140, 180);
-    const CX = 240, CY = 94, HR = 24;
-    /* light drawn up and in: thin streaks rising on a 180 tile, drawn twice */
-    let pull = "";
-    for(let i = 0; i < 26; i++){
-      const x = rnd() * 480, y = rnd() * 180, h = 8 + rnd() * 18;
-      [0, 180].forEach(dy => { pull += '<rect x="' + bnF(x) + '" y="' + bnF(y + dy) + '" width=".9" height="' + bnF(h) + '" rx=".45" fill="url(#' + u + 'pl)" opacity="' + bnF(.3 + rnd() * .4) + '"/>'; });
+    const CX = 240, CY = 88, HR = 26;
+    let still = "", twA = "", twB = "";
+    for(let i = 0; i < 170; i++){
+      const x = rnd() * 480, y = rnd() * 180, r = .35 + rnd() * 1, o = .3 + rnd() * .6, tw = rnd();
+      if(Math.abs(y - CY) < 18 && Math.abs(x - CX) < 200) continue;
+      if(Math.hypot(x - CX, (y - CY) * 1.2) < 70) continue;
+      const c = '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(r) + '" fill="' + (tw < .2 ? "#CFEAFF" : "#FFFFFF") + '" opacity="' + bnF(o) + '"/>';
+      if(tw < .2) twA += c; else if(tw < .38) twB += c; else still += c;
     }
     /* the disc's grains, round in their own plane */
     let grains = "";
-    for(let i = 0; i < 90; i++){
-      const a = rnd() * Math.PI * 2, r = 40 + rnd() * 170;
-      grains += '<circle cx="' + bnF(Math.cos(a) * r) + '" cy="' + bnF(Math.sin(a) * r) + '" r="' + bnF(.8 + rnd() * 1.6) + '" fill="' + (rnd() < .5 ? "#FFFFFF" : "#BFE6FF") + '" opacity="' + bnF(.4 + rnd() * .5) + '"/>';
+    for(let i = 0; i < 110; i++){
+      const a = rnd() * Math.PI * 2, r = HR * 1.6 + Math.pow(rnd(), .7) * 190;
+      grains += '<circle cx="' + bnF(Math.cos(a) * r) + '" cy="' + bnF(Math.sin(a) * r) + '" r="' + bnF(.7 + rnd() * 1.4) + '" fill="' + (rnd() < .5 ? "#FFFFFF" : "#BFE6FF") + '" opacity="' + bnF(.35 + rnd() * .55) + '"/>';
     }
     const defs = '<defs>' +
-      bnRad(u + "sp", [[0, "#0D1A3A"], [0.5, "#060B1C"], [1, "#02040A"]], "50%", "52%", "75%") +
-      bnRad(u + "halo", [[0, "#7FC8FF", 0.4], [0.35, "#4A7ACC", 0.18], [1, "#141A44", 0]]) +
-      bnLin(u + "disc", [[0, "#7FC8FF", 0], [0.18, "#BFE6FF", 0.7], [0.42, "#FFFFFF", 1], [0.58, "#DDF4FF", 0.85], [0.85, "#7FC8FF", 0.45], [1, "#7FC8FF", 0]], 0, 0, 1, 0) +
-      bnRad(u + "lens", [[0.8, "#FFFFFF", 0], [0.88, "#DDF4FF", 0.85], [0.94, "#FFFFFF", 1], [1, "#7FC8FF", 0]]) +
-      bnRad(u + "ring", [[0.86, "#FFFFFF", 0], [0.93, "#FFFFFF", 1], [1, "#7FC8FF", 0]]) +
-      bnLin(u + "pl", [[0, "#DDF4FF", 0], [1, "#FFFFFF", 0.9]]) +
+      bnRad(u + "sp", [[0, "#10264E"], [0.35, "#081530"], [0.75, "#040A18"], [1, "#02040A"]], "50%", "49%", "70%") +
+      bnRad(u + "bloom", [[0, "#BFE6FF", 0.5], [0.25, "#7FC8FF", 0.22], [0.6, "#2D5DA8", 0.08], [1, "#0B1A3A", 0]]) +
+      /* the far side of the disc, lensed into a ring over and under the hole */
+      bnRad(u + "lens", [[0, "#FFFFFF", 0], [0.6, "#FFFFFF", 0], [0.66, "#FFFFFF", 1], [0.73, "#E4F4FF", 0.85], [0.84, "#9AD4FF", 0.4], [1, "#4A8FE0", 0]]) +
+      bnLin(u + "disc", [[0, "#4A8FE0", 0], [0.12, "#7FC8FF", 0.5], [0.32, "#E9F7FF", 0.95], [0.46, "#FFFFFF", 1], [0.6, "#CFEAFF", 0.9], [0.84, "#6FB4F2", 0.45], [1, "#4A8FE0", 0]], 0, 0, 1, 0) +
+      bnLin(u + "core", [[0, "#FFFFFF", 0], [0.3, "#FFFFFF", 0.9], [0.5, "#FFFFFF", 1], [0.75, "#FFFFFF", 0.7], [1, "#FFFFFF", 0]], 0, 0, 1, 0) +
+      bnLin(u + "under", [[0, "#7FC8FF", 0], [0.5, "#DDF2FF", 0.6], [1, "#7FC8FF", 0]], 0, 0, 1, 0) +
       '</defs>';
+    const LB = HR * 2.2;
     return [
-      { svg: defs + '<rect x="-10" y="-10" width="500" height="200" fill="url(#' + u + 'sp)"/>' + st.still },
-      { svg: st.a, cls: "bl-tw", style: "animation-duration:2.4s" },
-      { svg: st.b, cls: "bl-tw", style: "animation-duration:3.3s;animation-delay:-1.2s" },
-      /* the pull: everything rising towards the dark */
-      { svg: pull, box: [0, 0, 480, 360], cls: "bl-rise", style: "animation-duration:9s" },
-      { svg: '<ellipse cx="' + CX + '" cy="' + CY + '" rx="230" ry="90" fill="url(#' + u + 'halo)"/>', box: [CX - 230, CY - 90, 460, 180], cls: "bl-breathe", style: "animation-duration:5s" },
-      /* the far side of the disc, bent up over the top of the hole and under it */
-      { svg: '<ellipse cx="' + CX + '" cy="' + CY + '" rx="' + (HR * 2.05) + '" ry="' + (HR * 1.8) + '" fill="url(#' + u + 'lens)"/>', box: [CX - HR * 2.1, CY - HR * 1.9, HR * 4.2, HR * 3.8], o: [CX, CY], cls: "bl-pulse", style: "animation-duration:2.6s" },
+      { svg: defs + '<rect x="-10" y="-10" width="500" height="200" fill="url(#' + u + 'sp)"/>' + still },
+      { svg: twA, cls: "bl-tw", style: "animation-duration:2.4s" },
+      { svg: twB, cls: "bl-tw", style: "animation-duration:3.3s;animation-delay:-1.2s" },
+      { svg: '<ellipse cx="' + CX + '" cy="' + CY + '" rx="250" ry="120" fill="url(#' + u + 'bloom)"/>', box: [CX - 250, CY - 120, 500, 240], o: [CX, CY], cls: "bl-breathe", style: "animation-duration:5s" },
+      /* the lensed halo, a little higher than the hole so it is thicker over the top */
+      { svg: '<ellipse cx="' + CX + '" cy="' + (CY - 5) + '" rx="' + LB + '" ry="' + (LB * .97) + '" fill="url(#' + u + 'lens)"/>', box: [CX - LB, CY - 5 - LB, 2 * LB, 2 * LB], o: [CX, CY], cls: "bl-pulse", style: "animation-duration:3.4s" },
+      /* the hole and its photon ring */
+      { svg: '<circle cx="' + CX + '" cy="' + CY + '" r="' + (HR + 1.6) + '" fill="none" stroke="#FFFFFF" stroke-width="1.3" opacity=".9"/><circle cx="' + CX + '" cy="' + CY + '" r="' + HR + '" fill="#000000"/>' },
+      /* under the hole, the thin lensed underside of the disc */
+      { svg: '<ellipse cx="' + CX + '" cy="' + (CY + HR * 1.12) + '" rx="' + (HR * 1.3) + '" ry="1.6" fill="url(#' + u + 'under)"/>' },
       /* the disc's grains turning, in its edge-on plane */
-      { svg: grains, box: [CX - 210, CY - 210, 420, 420], vb: [-210, -210, 420, 420], o: [CX, CY], wrap: "rotate(-4deg) scaleY(.07)", cls: "bl-spin-r", style: "animation-duration:9s" },
-      { svg: '<circle cx="' + CX + '" cy="' + CY + '" r="' + (HR * 1.22) + '" fill="url(#' + u + 'ring)"/><circle cx="' + CX + '" cy="' + CY + '" r="' + HR + '" fill="#010205"/>' },
-      /* the near side of the disc, across the front of the hole */
-      { svg: '<ellipse cx="' + CX + '" cy="' + CY + '" rx="220" ry="6.5" fill="url(#' + u + 'disc)" transform="rotate(-4 ' + CX + ' ' + CY + ')"/>' +
-          '<ellipse cx="' + CX + '" cy="' + CY + '" rx="200" ry="1.4" fill="#FFFFFF" opacity=".7" transform="rotate(-4 ' + CX + ' ' + CY + ')"/>',
-        box: [CX - 220, CY - 22, 440, 44], cls: "bl-shimmer", style: "animation-duration:3s" }
+      { svg: grains, box: [CX - 230, CY - 230, 460, 460], vb: [-230, -230, 460, 460], o: [CX, CY], wrap: "rotate(-3deg) scaleY(.075)", cls: "bl-spin-r", style: "animation-duration:10s" },
+      /* the near side of the disc, across the front of the hole: brighter
+         on the left, the side coming towards you */
+      { svg: '<ellipse cx="' + CX + '" cy="' + CY + '" rx="232" ry="11" fill="url(#' + u + 'disc)" transform="rotate(-3 ' + CX + ' ' + CY + ')" opacity=".9"/>' +
+          '<ellipse cx="' + (CX - 10) + '" cy="' + CY + '" rx="190" ry="2.2" fill="url(#' + u + 'core)" transform="rotate(-3 ' + CX + ' ' + CY + ')"/>',
+        box: [CX - 232, CY - 24, 464, 48], o: [CX, CY], cls: "bl-shimmer", style: "animation-duration:3.2s" }
     ];
   },
   flare_genesis(u){
     const rnd = bnRand(80080);
-    const st = bnStarsSplit(rnd, 120, 110);
-    const PX = 240, PY = 330, PR = 236;
-    /* the seams: cracks across the visible cap of the world */
-    let seams = "";
-    for(let k = 0; k < 7; k++){
-      let x = 40 + k * 66 + rnd() * 20, y = 170, d = "M" + bnF(x) + " " + y;
-      for(let s = 0; s < 6; s++){
-        x += (rnd() - .5) * 26; y -= 6 + rnd() * 10;
-        if(Math.hypot(x - PX, y - PY) > PR - 4) break;
-        d += " L" + bnF(x) + " " + bnF(y);
-      }
-      seams += '<path d="' + d + '" fill="none" stroke="#FF5CA8" stroke-width="6" stroke-linejoin="round" stroke-linecap="round" opacity=".3"/>' +
-        '<path d="' + d + '" fill="none" stroke="#FFD0A0" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>';
+    const PX = 236, PY = 92, PR = 58, TILT = -13;
+    let still = "", twA = "", twB = "";
+    for(let i = 0; i < 140; i++){
+      const x = rnd() * 480, y = rnd() * 180, r = .35 + rnd() * 1, o = .3 + rnd() * .6, tw = rnd();
+      if(Math.hypot(x - PX, y - PY) < PR * 1.2) continue;
+      const c = '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(r) + '" fill="' + (tw < .15 ? "#FFE0EE" : "#FFFFFF") + '" opacity="' + bnF(o) + '"/>';
+      if(tw < .2) twA += c; else if(tw < .38) twB += c; else still += c;
     }
+    /* the bands of a young world, gently curved round it */
     let bands = "";
-    for(let i = 0; i < 6; i++){
-      const y = 104 + i * 13 + rnd() * 5;
-      bands += '<ellipse cx="' + bnF(PX + (rnd() - .5) * 60) + '" cy="' + bnF(y) + '" rx="' + bnF(200 + rnd() * 60) + '" ry="' + bnF(2 + rnd() * 2.5) + '" fill="' + (i % 2 ? "#5A0F3E" : "#FFE2B0") + '" opacity="' + bnF(i % 2 ? .22 : .1) + '"/>';
-    }
+    [[-34, 5, "#FFE9B8", .22], [-18, 3.5, "#B8325F", .28], [-4, 6, "#FFD08A", .16], [12, 4, "#7A1650", .32], [27, 5, "#FF8FA8", .14], [40, 4, "#5A0E3E", .3]].forEach(b => {
+      bands += '<ellipse cx="' + PX + '" cy="' + (PY + b[0]) + '" rx="' + (PR + 6) + '" ry="' + b[1] + '" fill="' + b[2] + '" opacity="' + b[3] + '" transform="rotate(-6 ' + PX + ' ' + PY + ')"/>';
+    });
+    /* its seams: molten cracks across the lower half, as on Genesis */
+    const seamPaths = ["M246 140 L252 131 L249 124 L257 116 L262 108 L271 103 L276 94",
+      "M257 116 L266 119 L272 114", "M224 146 L231 138 L239 136 L244 129", "M268 128 L276 126 L281 119 L289 117", "M271 103 L279 106"];
+    const seams = seamPaths.map(d => '<path d="' + d + '" fill="none" stroke="#FF5A4A" stroke-width="4" stroke-linejoin="round" stroke-linecap="round" opacity=".22"/>' +
+      '<path d="' + d + '" fill="none" stroke="#FFB070" stroke-width=".8" stroke-linejoin="round" stroke-linecap="round" opacity=".8"/>').join("");
     let embers = "";
-    for(let i = 0; i < 30; i++){
-      const x = 60 + rnd() * 360, y = rnd() * 180, r = .8 + rnd() * 1.5, c = rnd() < .5 ? "#FFB86B" : "#FF5CA8";
-      [0, 180].forEach(dy => { embers += '<circle cx="' + bnF(x) + '" cy="' + bnF(y + dy) + '" r="' + bnF(r) + '" fill="' + c + '" opacity="' + bnF(.4 + rnd() * .5) + '"/>'; });
+    for(let i = 0; i < 34; i++){
+      const x = 30 + rnd() * 420, y = rnd() * 180, r = .7 + rnd() * 1.4, c = rnd() < .5 ? "#FFB86B" : "#FF5CA8";
+      [0, 180].forEach(dy => { embers += '<circle cx="' + bnF(x) + '" cy="' + bnF(y + dy) + '" r="' + bnF(r) + '" fill="' + c + '" opacity="' + bnF(.35 + rnd() * .5) + '"/>'; });
     }
-    const ringBack = '<path d="M-60 ' + (PY - PR + 34) + ' A300 34 0 0 1 540 ' + (PY - PR + 34) + '" fill="none" stroke="url(#' + u + 'ring)" stroke-width="7" opacity=".5" transform="rotate(-6 240 ' + (PY - PR + 34) + ')"/>';
-    const ringFront = '<path d="M540 ' + (PY - PR + 34) + ' A300 34 0 0 1 -60 ' + (PY - PR + 34) + '" fill="none" stroke="url(#' + u + 'ring)" stroke-width="7" opacity=".85" transform="rotate(-6 240 ' + (PY - PR + 34) + ')"/>' +
-      '<path d="M540 ' + (PY - PR + 34) + ' A300 34 0 0 1 -60 ' + (PY - PR + 34) + '" fill="none" stroke="#FFF0E0" stroke-width="1.2" opacity=".9" transform="rotate(-6 240 ' + (PY - PR + 34) + ')"/>';
+    /* the ring: an ellipse about the planet, its far half behind it */
+    const RX = 120, RY = 21;
+    const half = far => '<path d="M' + (PX - RX) + ' ' + PY + ' A' + RX + ' ' + RY + ' 0 0 ' + (far ? 1 : 0) + ' ' + (PX + RX) + ' ' + PY + '" fill="none" stroke="url(#' + u + 'ring)" stroke-width="6" opacity="' + (far ? .45 : .8) + '" transform="rotate(' + TILT + ' ' + PX + ' ' + PY + ')"/>' +
+      '<path d="M' + (PX - RX + 8) + ' ' + PY + ' A' + (RX - 8) + ' ' + (RY - 2) + ' 0 0 ' + (far ? 1 : 0) + ' ' + (PX + RX - 8) + ' ' + PY + '" fill="none" stroke="#FFF1E2" stroke-width="1" opacity="' + (far ? .35 : .85) + '" transform="rotate(' + TILT + ' ' + PX + ' ' + PY + ')"/>';
+    /* the moon, on the near side of the ring at the right */
+    const mt = TILT * Math.PI / 180, ma = .5, MXo = Math.cos(ma) * RX, MYo = Math.sin(ma) * RY;
+    const MX = PX + MXo * Math.cos(mt) - MYo * Math.sin(mt), MY = PY + MXo * Math.sin(mt) + MYo * Math.cos(mt), MR = 7;
+    /* first light breaking over the upper-left limb */
+    const la = -2.35, LX = PX + Math.cos(la) * (PR + 1), LY = PY + Math.sin(la) * (PR + 1);
     const defs = '<defs>' +
-      bnLin(u + "sky", [[0, "#07030C"], [0.55, "#1A0820"], [1, "#3A0F2E"]]) +
-      bnRad(u + "pl", [[0, "#FFF1CF"], [0.1, "#FFD37A"], [0.22, "#F5804D"], [0.38, "#D9467F"], [0.6, "#8A1E5A"], [1, "#22061C"]], "34%", "2%", "80%") +
-      bnRad(u + "atm", [[0, "#FF5CA8", 0], [0.88, "#FF5CA8", 0], [0.93, "#FF8FC0", 0.6], [0.97, "#FF5CA8", 0.25], [1, "#FF5CA8", 0]]) +
-      bnRad(u + "neb1", [[0, "#FF5CA8", 0.32], [1, "#FF5CA8", 0]]) +
-      bnRad(u + "neb2", [[0, "#FFB86B", 0.24], [1, "#FFB86B", 0]]) +
-      bnLin(u + "ring", [[0, "#FFB0D2", 0.1], [0.3, "#FFE3C4", 0.9], [0.7, "#FF8FC0", 0.85], [1, "#FFB0D2", 0.1]], 0, 0, 1, 0) +
-      bnRad(u + "erupt", [[0, "#FFFFFF"], [0.25, "#FFC08A", 0.8], [0.6, "#FF5CA8", 0.3], [1, "#FF5CA8", 0]]) +
+      bnLin(u + "sky", [[0, "#07020D"], [0.5, "#160619"], [1, "#2A0A24"]]) +
+      bnRad(u + "neb1", [[0, "#FF5CA8", 0.36], [0.5, "#C2337A", 0.14], [1, "#C2337A", 0]]) +
+      bnRad(u + "neb2", [[0, "#FFB86B", 0.28], [1, "#FFB86B", 0]]) +
+      bnRad(u + "atm", [[0, "#FF5CA8", 0], [0.55, "#FF5CA8", 0], [0.58, "#FFC2DA", 0.7], [0.63, "#FF5CA8", 0.32], [0.78, "#C2337A", 0.1], [1, "#C2337A", 0]]) +
+      bnRad(u + "pl", [[0, "#FFF4D6"], [0.12, "#FFD98A"], [0.3, "#F7934F"], [0.52, "#E0507F"], [0.75, "#9E2266"], [1, "#4A0C36"]], "30%", "24%", "92%") +
+      bnLin(u + "shade", [[0, "#1A0418", 0], [0.55, "#1A0418", 0], [1, "#12020F", 0.78]], 0, 0, 1, 1) +
+      bnLin(u + "ring", [[0, "#FFB0D2", 0.15], [0.3, "#FFE6C8", 0.95], [0.7, "#FF9CC6", 0.9], [1, "#FFB0D2", 0.15]], 0, 0, 1, 0) +
+      bnRad(u + "moon", [[0, "#FFF4FA"], [0.5, "#F7C6DC"], [1, "#B85A8A"]], "35%", "30%", "75%") +
+      bnRad(u + "dawn", [[0, "#FFFFFF"], [0.12, "#FFF2CC", 0.95], [0.32, "#FFC27A", 0.45], [0.6, "#FF7A9C", 0.14], [1, "#FF5CA8", 0]]) +
+      bnLin(u + "streak", [[0, "#FFE7B8", 0], [0.5, "#FFF6E0", 0.95], [1, "#FFE7B8", 0]], 0, 0, 1, 0) +
       '<clipPath id="' + u + 'clip"><circle cx="' + PX + '" cy="' + PY + '" r="' + PR + '"/></clipPath>' +
       '</defs>';
-    const ev = "animation-duration:7.6s;animation-delay:-3s;";
+    const AT = PR * 1.75;
     return [
-      { svg: defs + '<rect x="-10" y="-10" width="500" height="200" fill="url(#' + u + 'sky)"/>' + st.still },
-      { svg: st.a, cls: "bl-tw", style: "animation-duration:2.7s" },
-      { svg: st.b, cls: "bl-tw", style: "animation-duration:3.9s;animation-delay:-1.7s" },
-      { svg: '<ellipse cx="90" cy="40" rx="140" ry="50" fill="url(#' + u + 'neb1)"/><ellipse cx="400" cy="56" rx="130" ry="46" fill="url(#' + u + 'neb2)"/>', box: [-20, -20, 520, 160], cls: "bl-drift", style: "animation-duration:20s" },
-      { svg: ringBack },
+      { svg: defs + '<rect x="-10" y="-10" width="500" height="200" fill="url(#' + u + 'sky)"/>' + still },
+      { svg: twA, cls: "bl-tw", style: "animation-duration:2.7s" },
+      { svg: twB, cls: "bl-tw", style: "animation-duration:3.9s;animation-delay:-1.7s" },
+      /* the nebula it was born in */
+      { svg: '<ellipse cx="110" cy="60" rx="170" ry="80" fill="url(#' + u + 'neb1)"/><ellipse cx="380" cy="130" rx="160" ry="70" fill="url(#' + u + 'neb2)"/><ellipse cx="420" cy="30" rx="110" ry="50" fill="url(#' + u + 'neb1)"/>',
+        box: [-60, -40, 600, 260], cls: "bl-drift", style: "animation-duration:22s" },
       /* the world's air, breathing */
-      { svg: '<circle cx="' + PX + '" cy="' + PY + '" r="' + (PR + 22) + '" fill="url(#' + u + 'atm)"/>', box: [PX - PR - 22, PY - PR - 22, 2 * PR + 44, 2 * PR + 44], o: [PX, PY], cls: "bl-breathe", style: "animation-duration:5.5s" },
-      { svg: '<circle cx="' + PX + '" cy="' + PY + '" r="' + PR + '" fill="url(#' + u + 'pl)"/><g clip-path="url(#' + u + 'clip)">' + bands + '</g>' },
-      /* the seams glowing with the heat underneath */
-      { svg: '<g clip-path="url(#' + u + 'clip)">' + seams + '</g>', cls: "bl-glow", style: "animation-duration:2.2s" },
-      /* now and then the crown erupts */
-      { svg: '<ellipse cx="300" cy="' + (PY - PR + 4) + '" rx="10" ry="22" fill="url(#' + u + 'erupt)"/>', box: [288, PY - PR - 20, 24, 48], o: [300, PY - PR + 4], cls: "bl-spike", style: ev + "opacity:0" },
-      { svg: ringFront },
+      { svg: '<circle cx="' + PX + '" cy="' + PY + '" r="' + AT + '" fill="url(#' + u + 'atm)"/>', box: [PX - AT, PY - AT, 2 * AT, 2 * AT], o: [PX, PY], cls: "bl-breathe", style: "animation-duration:5.5s" },
+      { svg: half(true) },
+      /* the world */
+      { svg: '<circle cx="' + PX + '" cy="' + PY + '" r="' + PR + '" fill="url(#' + u + 'pl)"/><g clip-path="url(#' + u + 'clip)">' + bands +
+          '<rect x="' + (PX - PR) + '" y="' + (PY - PR) + '" width="' + 2 * PR + '" height="' + 2 * PR + '" fill="url(#' + u + 'shade)"/></g>' },
+      /* its seams glowing with the heat underneath */
+      { svg: '<g clip-path="url(#' + u + 'clip)">' + seams + '</g>', cls: "bl-glow", style: "animation-duration:2.4s" },
+      { svg: half(false) },
+      { svg: '<circle cx="' + bnF(MX) + '" cy="' + bnF(MY) + '" r="' + (MR * 2.2) + '" fill="url(#' + u + 'neb1)"/><circle cx="' + bnF(MX) + '" cy="' + bnF(MY) + '" r="' + MR + '" fill="url(#' + u + 'moon)"/>',
+        box: [MX - MR * 2.2, MY - MR * 2.2, MR * 4.4, MR * 4.4], o: [MX, MY], cls: "bl-float", style: "animation-duration:3.6s" },
+      /* first light, breaking over the edge of the world */
+      { svg: '<circle cx="' + bnF(LX) + '" cy="' + bnF(LY) + '" r="34" fill="url(#' + u + 'dawn)"/>' +
+          '<rect x="' + bnF(LX - 70) + '" y="' + bnF(LY - .9) + '" width="140" height="1.8" fill="url(#' + u + 'streak)"/>' +
+          '<circle cx="' + bnF(LX) + '" cy="' + bnF(LY) + '" r="2.6" fill="#FFFFFF"/>',
+        box: [LX - 70, LY - 34, 140, 68], o: [LX, LY], cls: "bl-pulse", style: "animation-duration:3s" },
       /* embers going up off the world, on a 180 tile drawn twice */
-      { svg: embers, box: [0, 0, 480, 360], cls: "bl-rise", style: "animation-duration:11s" }
+      { svg: embers, box: [0, 0, 480, 360], cls: "bl-rise", style: "animation-duration:12s" }
     ];
   },
 
@@ -50354,9 +50516,13 @@ const BANNER_TINT = {
   /* measured per look - see ZENITH_LOOKS */
   zenith: ZENITH_LOOK.tint,
   astral: ZENITH_LOOKS.c.tint, celestial: ZENITH_LOOKS.b.tint,
-  /* build 313, the secret flare banners - read off their renders */
-  flare_void: ["#E0662A", "#C9383A"], flare_umbra: ["#7A55D8", "#A58BF0"],
-  flare_horizon: ["#4E8FD8", "#8FCBF5"], flare_genesis: ["#D9467F", "#F08A4E"]
+  /* the secret flare banners, redrawn in build 314 and read off the new
+     renders' hue buckets, lifted to read on a dark card: Void is steel
+     and black with its flares' orange (the old pair was the orange glow
+     it no longer has), Umbra its moon's violet, Horizon its ice blue,
+     Genesis its planet's rose and gold */
+  flare_void: ["#9AA6C8", "#F97316"], flare_umbra: ["#8B6CF0", "#CDBDFB"],
+  flare_horizon: ["#6FB4F2", "#CFEAFF"], flare_genesis: ["#E0507F", "#F7934F"]
 };
 const bannerTintCache = {};
 function bannerTintOf(id){
@@ -70917,24 +71083,42 @@ function hfxLineTimes(pts, t0, speed){
    it, each with where it starts (d0, px from the start) and the fraction
    of the whole it starts and ends at (f0, f1), found by walking it in
    3px steps. */
+/* MEETS THE EDGE EXACTLY (build 314): "ensure it meets the edges of stuff
+   perfectly". A run used to start and stop at the first 3px step on the
+   far side of a card's edge, so the wood stopped up to 3px short of the
+   glass - a sliver of nothing between the trunk and the card it passes
+   behind. The crossing is now found to a hundredth of a pixel (halving
+   the last step), and each run says which of its ends is cut by an edge
+   (cut0 / cut1) so the line drawn there ends square on it. */
 function hfxClipOut(pts, rects){
-  const inside = (x, y) => rects.some(q => x > q.left + 1 && x < q.right - 1 && y > q.top + 1 && y < q.bottom - 1);
+  const inside = (x, y) => rects.some(q => x > q.left && x < q.right && y > q.top && y < q.bottom);
+  const edge = (x0, y0, x1, y1, from) => { let lo = 0, hi = 1;
+    for(let i = 0; i < 14; i++){ const m = (lo + hi) / 2; if(inside(x0 + (x1 - x0) * m, y0 + (y1 - y0) * m) === from) lo = m; else hi = m; }
+    return (lo + hi) / 2; };
   let total = 0;
   for(let i = 1; i < pts.length; i++) total += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
   const runs = []; let cur = null, d = 0;
-  const close = (p, dd) => { if(cur){ cur.pts.push(p); cur.f1 = dd / (total || 1); if(cur.pts.length > 1) runs.push(cur); cur = null; } };
-  if(!inside(pts[0][0], pts[0][1])) cur = { pts: [pts[0]], d0: 0, f0: 0 };
+  const close = (p, dd, cut) => { if(cur){ cur.pts.push(p); cur.f1 = dd / (total || 1); cur.cut1 = !!cut; if(cur.pts.length > 1) runs.push(cur); cur = null; } };
+  if(!inside(pts[0][0], pts[0][1])) cur = { pts: [pts[0]], d0: 0, f0: 0, cut0: false };
   for(let i = 1; i < pts.length; i++){
     const a = pts[i - 1], b = pts[i], len = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.ceil(len / 3));
     for(let k = 1; k <= n; k++){
-      const t = k / n, x = a[0] + (b[0] - a[0]) * t, y = a[1] + (b[1] - a[1]) * t, dd = d + len * t, inn = inside(x, y);
-      if(inn && cur) close([x, y], dd);
-      else if(!inn && !cur) cur = { pts: [[x, y]], d0: dd, f0: dd / (total || 1) };
+      const tp = (k - 1) / n, t = k / n, x = a[0] + (b[0] - a[0]) * t, y = a[1] + (b[1] - a[1]) * t, inn = inside(x, y);
+      if(inn === !cur) continue;
+      /* the exact crossing between the last step and this one */
+      const px = a[0] + (b[0] - a[0]) * tp, py = a[1] + (b[1] - a[1]) * tp;
+      const m = edge(px, py, x, y, !inn), ex = px + (x - px) * m, ey = py + (y - py) * m, dd = d + len * (tp + (t - tp) * m);
+      /* which way that edge runs: a card's top or bottom ("h") or a side ("v") */
+      const ix = inn ? x : px, iy = inn ? y : py;
+      const q = rects.find(r => ix > r.left && ix < r.right && iy > r.top && iy < r.bottom);
+      const way = q ? (Math.min(Math.abs(ex - q.left), Math.abs(ex - q.right)) < Math.min(Math.abs(ey - q.top), Math.abs(ey - q.bottom)) ? "v" : "h") : "h";
+      if(inn){ if(cur) cur.way1 = way; close([ex, ey], dd, true); }
+      else cur = { pts: [[ex, ey]], d0: dd, f0: dd / (total || 1), cut0: true, way0: way };
     }
     d += len;
     if(cur && i < pts.length - 1) cur.pts.push(b);
   }
-  close(pts[pts.length - 1], total);
+  close(pts[pts.length - 1], total, false);
   return runs;
 }
 /* a smooth curve through `pts` (Catmull-Rom), `n` points per span */
@@ -70967,21 +71151,51 @@ function hfxCurl(x, y, a, r0, turns, dir){
    its heading once and drawn out from its start (scaleX - a transform),
    each piece starting as the one before it finishes, at `speed` px/s.
    Returns when each point was reached, for whatever follows the tip.
-   o.th (thickness, or [start, end] to taper), o.cls, o.vars. */
+   o.th (thickness, or [start, end] to taper), o.cls, o.vars; o.flat0 /
+   o.flat1 end the line square at its start / end and not a hair past it
+   (build 314: where it meets a card's edge), cut along that edge - o.way0 /
+   o.way1 "h" for a card's top or bottom, "v" for a side - so a branch
+   that crosses it at a slant ends flush on it, both corners on the line. */
 function hfxGrowLine(parent, pts, t0, speed, o){
   o = o || {};
   const times = [t0];
   let t = t0, total = 0;
   for(let i = 1; i < pts.length; i++) total += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
   let run = 0;
+  /* the first and last pieces that are drawn at all (a piece under half
+     a pixel is skipped, and must not leave its neighbour unsquared) */
+  let iFirst = 0, iLast = 0;
+  for(let i = 1; i < pts.length; i++) if(Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]) >= .5){ if(!iFirst) iFirst = i; iLast = i; }
   for(let i = 1; i < pts.length; i++){
     const a = pts[i - 1], b = pts[i], len = Math.hypot(b[0] - a[0], b[1] - a[1]);
     if(len < .5){ times.push(t); continue; }
     const f0 = run / (total || 1); run += len;
     const th = Array.isArray(o.th) ? o.th[0] + (o.th[1] - o.th[0]) * f0 : (o.th || 3);
     const d = len / speed;
-    hfxMk(parent, "i", "hfx-seg " + (o.cls || ""), Object.assign({ left: a[0] + "px", top: (a[1] - th / 2) + "px", width: (len + th * .6) + "px", height: th + "px",
-      "--sa": (Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI).toFixed(2) + "deg", "--gt": t, "--gd": d, "--sh": th / 2 + "px" }, o.vars || {}));
+    const first = i === iFirst, last = i === iLast;
+    const ang = Math.atan2(b[1] - a[1], b[0] - a[0]), ux = Math.cos(ang), uy = Math.sin(ang);
+    /* the slope of an edge's line across the piece, along its length per
+       px across it: -cot for a horizontal edge, tan for a vertical one */
+    const slope = way => { const m = way === "v" ? Math.tan(ang) : -1 / Math.tan(ang); return Math.max(-3, Math.min(3, isFinite(m) ? m : 0)); };
+    const cut0 = first && o.flat0, cut1 = last && o.flat1;
+    const m0 = cut0 ? slope(o.way0) : 0, m1 = cut1 ? slope(o.way1) : 0;
+    /* and half a pixel past the edge, under the card's own border: the
+       layout is measured in whole pixels (the offset chain) and a card
+       can sit half a pixel off that, which left a hairline of nothing */
+    const e0 = Math.abs(m0) * th / 2 + (cut0 ? .6 : 0), e1 = Math.abs(m1) * th / 2 + (cut1 ? .6 : 0);
+    const tail = cut1 ? e1 : o.flat1 ? Math.min(th * .6, total - run) : th * .6;
+    const W = e0 + len + tail;
+    const seg = hfxMk(parent, "i", "hfx-seg " + (o.cls || ""), Object.assign({ left: (a[0] - ux * e0) + "px", top: (a[1] - uy * e0 - th / 2) + "px", width: W + "px", height: th + "px",
+      "--sa": (ang * 180 / Math.PI).toFixed(2) + "deg", "--gt": t, "--gd": d, "--sh": th / 2 + "px" }, o.vars || {}));
+    if(cut0 || cut1){
+      const r = th / 2 + "px";
+      seg.style.borderRadius = (cut0 ? "0 " : r + " ") + (cut1 ? "0 0 " : r + " " + r + " ") + (cut0 ? "0" : r);
+      /* y = 0 is the side at v = -th/2, y = th the side at v = +th/2 */
+      const x0 = v => cut0 ? e0 - .6 + v * m0 : 0, x1 = v => cut1 ? e0 + len + .6 + v * m1 : W;
+      const f = v => v.toFixed(2) + "px";
+      const poly = "polygon(" + f(x0(-th / 2)) + " 0, " + f(x1(-th / 2)) + " 0, " + f(x1(th / 2)) + " " + f(th) + ", " + f(x0(th / 2)) + " " + f(th) + ")";
+      seg.style.clipPath = poly; seg.style.webkitClipPath = poly;
+    }
     t += d; times.push(t);
   }
   return times;
@@ -71123,13 +71337,16 @@ function hfxTreeGlass(scr, c, L){
   ops.forEach(o => {
     if(o.kind === "line") hfxClipOut(o.pts, occl).forEach(run => {
       const f = d => o.th[0] + (o.th[1] - o.th[0]) * d;
-      hfxGrowLine(gB, run.pts, o.t0 + run.d0 / o.sp, o.sp, { th: [f(run.f0), f(run.f1)], cls: o.cls });
+      hfxGrowLine(gB, run.pts, o.t0 + run.d0 / o.sp, o.sp, { th: [f(run.f0), f(run.f1)], cls: o.cls, flat0: run.cut0, flat1: run.cut1, way0: run.way0, way1: run.way1 });
     });
     else if(!covered(o.x, o.y)) hfxPiece(gB, o.cls, o.url, o.x, o.y, o.s, o.vars);
   });
   /* the crown: over the header, the tree's top, in full blossom */
   const room = Math.max(54 * k, X.top - 6);
-  const crown = hfxTree(gB, cx, topY - 2, { maxD: 3, len: Math.min(room * .52 + X.height * .1, (small ? 96 : 124) * k), th: (small ? 12 : 15) * k, wide: 1.75, inner: true,
+  /* from the XP card's top edge, square on it (build 314) - it used to
+     root 18% of the way down the card, so its first length of wood was
+     drawn over the card's own text */
+  const crown = hfxTree(gB, cx, X.top, { maxD: 3, len: Math.min(room * .52 + X.height * .1, (small ? 96 : 124) * k), th: (small ? 13 : 17) * k, wide: 1.75, inner: true, flatBase: true,
     trunkDur: .5, t0: tTop - .35, bloom: (small ? 21 : 27) * k, palette: c.palette, tot });
   limbs.forEach(lb => {
     const tip = lb.pts[lb.pts.length - 1];
@@ -71138,6 +71355,16 @@ function hfxTreeGlass(scr, c, L){
   });
   hfxMk(gB, "i", "hfx-tree-halo", { left: cx + "px", top: Math.max(c.vh * .1, topY - room * .5) + "px", "--hs": (Math.min(c.vw * 1.3, c.vh * .8)) + "px" });
 
+  /* THE HEADER OVER THE CROWN (build 314): the crown fills the space over
+     the XP card, and that is where the screen's title is - its blossom
+     was drawn over "Test results" and the units line. The header is
+     lifted over the effect's layer while it plays, so the crown grows
+     behind the words, the way the trunk passes behind the cards. */
+  [L.head && L.head.el, !c.frame && document.querySelector(".wrap > .top")].forEach(hd => {
+    if(!hd) return;
+    hd.classList.add("hfx-over");
+    hfxOnEnd(c, fade => setTimeout(() => hd.classList.remove("hfx-over"), fade ? 650 : 0));
+  });
   /* ---- the glass: a pane in every card, holding the tree behind it softened ---- */
   L.cards.forEach(r => {
     const card = r.el;
@@ -71167,7 +71394,7 @@ function hfxTreeGlass(scr, c, L){
         if(!hit) return;
         const d = "M" + op.pts.map(p => fx(p[0] - ox) + " " + fx(p[1] - oy)).join(" L");
         const th = (op.th[0] + op.th[1]) / 2;
-        [[3.4, .1], [2.4, .16], [1.5, .26], [.8, .3]].forEach(([m, a]) => { svg += '<path d="' + d + '" fill="none" stroke="' + (op.cls.indexOf("root") >= 0 ? "#B07A4C" : "#B88A5C") + '" stroke-opacity="' + a + '" stroke-width="' + fx(th * m) + '" stroke-linecap="round" stroke-linejoin="round"/>'; });
+        [[2.6, .08], [1.8, .14], [1.3, .22], [1, .34]].forEach(([m, a]) => { svg += '<path d="' + d + '" fill="none" stroke="' + (op.cls.indexOf("root") >= 0 ? "#B07A4C" : "#B88A5C") + '" stroke-opacity="' + a + '" stroke-width="' + fx(th * m) + '" stroke-linecap="round" stroke-linejoin="round"/>'; });
       } else if(op.x > ox - op.s && op.x < ox + pw + op.s && op.y > oy - op.s && op.y < oy + ph + op.s){
         svg += '<circle cx="' + fx(op.x - ox) + '" cy="' + fx(op.y - oy) + '" r="' + fx(op.s * .5) + '" fill="url(#b' + (op.cls.indexOf("leaf") >= 0 ? "l" : "p") + ')"/>';
       }
@@ -71468,7 +71695,8 @@ function hfxTree(parent, ox, oy, o){
     }
   })(ox, oy, 0, o.len, o.th, 0, o.t0);
   segs.forEach(s => {
-    const lap = s.top * .6;
+    /* a flat base sits ON an edge: no overlap below it (build 314) */
+    const lap = s.depth === 0 && o.flatBase && s.y === oy ? 0 : s.top * .6;
     const rr = Math.min(1, s.top / s.th);
     const el = hfxMk(group, "i", "hfx-branch" + (s.depth === 0 ? " is-trunk" : "") + (s.depth <= 2 && o.pulse ? " is-pulse" : ""), {
       left: (s.x - s.th / 2) + "px", top: (s.y - s.len) + "px", width: s.th + "px", height: (s.len + lap) + "px",
@@ -71915,8 +72143,16 @@ function hfxFwShow(kk){
   };
   return S;
 }
-/* Draws show `S` on a new canvas W x H in `parent` until `end` seconds. */
-function hfxFwSky(parent, c, S, W, H, end){
+/* Draws show `S` on a new canvas W x H in `parent` until `end` seconds.
+   `floor` (build 314): the y of the 100% box's top edge. Nothing of the
+   show is drawn below it, and it fades out over the last few px above it.
+   The box is lifted over the sky, but its glass is see-through, so a gold
+   willow hanging low, or an ember drifting down, read as streaks running
+   down behind the number - "no stray particles". The shells still leave
+   from behind the box's top edge; they fade in as they clear it. One
+   erase per frame, on the canvas itself (no CSS mask on a canvas that
+   repaints every frame). */
+function hfxFwSky(parent, c, S, W, H, end, floor){
   const cv = document.createElement("canvas");
   cv.className = "hfx-fw-sky";
   const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -71928,6 +72164,10 @@ function hfxFwSky(parent, c, S, W, H, end){
   const heads = hfxFwHeads(), P = S.P, at = S.at, LV = [[.35, .22], [.62, .45], [.92, .8]];
   const css = {}; Object.keys(HFX_FW_COL).forEach(k => { const q = HFX_FW_COL[k]; css[k] = "rgb(" + q[0] + "," + q[1] + "," + q[2] + ")"; });
   let t0 = performance.now(), raf = 0, stopAt = end, dead = false;
+  const FADE = 10, cut = floor != null && floor < H ? (() => {
+    const gr = g.createLinearGradient(0, floor - FADE, 0, floor);
+    gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(1, "rgba(0,0,0,1)");
+    return gr; })() : null;
   const bright = (p, a) => {
     const u = a / p.life;
     if(p.kind === 3) return 1 - u;
@@ -71974,6 +72214,11 @@ function hfxFwSky(parent, c, S, W, H, end){
       g.drawImage(heads[live[i + 3]], h[0] - hs, h[1] - hs, hs * 2, hs * 2);
     }
     g.globalAlpha = 1;
+    if(cut){
+      g.globalCompositeOperation = "destination-out";
+      g.fillStyle = cut; g.fillRect(0, floor - FADE, W, FADE);
+      g.fillStyle = "#000"; g.fillRect(0, floor, W, H - floor);
+    }
   };
   const frame = () => {
     raf = 0;
@@ -72035,7 +72280,7 @@ function hfxFireworks(scr, bx, c){
       const t = hfxR(3.9, 4.7);
       S.ember(t, hfxR(R * .3, W - R * .3), Y(hfxR(.05, .8)) + hfxR(0, R * .5), Math.min(T - .25 - t, hfxR(2.1, 2.6)));
     }
-    const sky = hfxFwSky(scr, c, S, W, H, T - .1);
+    const sky = hfxFwSky(scr, c, S, W, H, T - .1, r.top);
     sky.style.setProperty("--tot", T + "s");
   }
   if(bx){
@@ -72111,7 +72356,7 @@ function hfxBubblesOnCards(scr, c){
 function hfxUfoOnCards(scr, c){
   const S = c.scene, k = c.frame ? .55 : 1;
   if(!S) return;
-  const on = 2.85, off = 5.3;
+  const on = 2.85, off = 6.0;
   S.warp.forEach((el, i) => {
     const rc = S.at(el); if(!rc) return;
     if(rc.bottom > c.br.top + 4) return;
@@ -72190,11 +72435,21 @@ function buildHundoFxMock(id, o){
    100% box, and a saucer comes down out of the dark: rocking on its way,
    landing lights chasing round its rim, it hovers and throws a tractor
    beam down onto the box, sets down on the box's top edge with a little
-   settle and bob, sweeps the 100% with its light and lifts a spark out
-   of it, then lifts off and streaks away, and everything fades slowly.
-   The card is lifted over the dim (hfx-over), so the number is never
-   dimmed once the screen comes back; the black over the card in the
-   first second is the box layer's own. */
+   settle and bob, then lifts off and streaks away, and everything fades
+   slowly. The card is lifted over the dim (hfx-over), so the number is
+   never dimmed once the screen comes back; the black over the card in
+   the first second is the box layer's own.
+   EVEN COOLER (build 314): "I feel like the ufo could be even cooler,
+   like maybe it scans the grade and does something else on the way out?"
+   Once it has set down it SCANS the grade: a bar of its light sweeps the
+   100% one way and back, the number lighting as it passes, and four
+   corner brackets lock on round it. On the way out it TAKES THE SCORE
+   WITH IT - a copy of the 100% in its light rises up the beam and into
+   the saucer (the real one stays) - and goes in a WARP: a flash where it
+   was and a streak, leaving its landing marks glowing on the box's edge,
+   fading with the stars. The screen still never moves: the cards above
+   the box rise a few pixels into the beam, as before, and drop back as
+   it cuts. */
 function hfxUfoURL(){
   return hfxSprite("ufo", () => 'viewBox="0 0 200 124"><defs>' +
     '<linearGradient id="d" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E9FFFB" stop-opacity=".95"/><stop offset=".55" stop-color="#7FE9FF" stop-opacity=".45"/><stop offset="1" stop-color="#2A6F86" stop-opacity=".6"/></linearGradient>' +
@@ -72264,10 +72519,16 @@ function hfxUfo(scr, bx, c){
     hfxMk(bob, "i", "hfx-ufo-lights is-odd").style.backgroundImage = hfxUfoLightsURL(true);
     /* dust where the feet touch the box */
     [-1, 1].forEach(s => hfxMk(scr, "i", "hfx-ufo-dust", { left: (L.x + s * w * .32) + "px", top: L.y + "px", "--dx": (s * 26) + "px" }));
-    /* the trail it leaves going, and a last glint where it went */
+    /* on the way out it takes the score with it (build 314): the copy
+       here is under the card, so it shows only once it is clear of the
+       box's top edge; the one in the box (below) carries it up to there
+       on the same path, so the two meet at the edge without a seam */
+    hfxUfoAbduct(scr, c, r.left, r.top, h);
+    /* and it goes in a warp: a flash where it was, then the streak */
+    hfxMk(scr, "i", "hfx-ufo-warp", { left: L.x + "px", top: (L.y - 72 - h * .45) + "px", "--t": 6.04 });
     const ang = Math.atan2(exit.y + 70, exit.x) * 180 / Math.PI;
-    const tr = hfxMk(scr, "span", "hfx-mt", { left: L.x + "px", top: (L.y - 70) + "px", "--ra": ang.toFixed(1) + "deg" });
-    const run = hfxMk(tr, "i", "hfx-mt-run is-big hfx-ufo-trail", { "--ml": "260px", "--dist": (Math.hypot(exit.x, exit.y + 70) + 200) + "px", "--t": 6.05, "--d": .7 });
+    const tr = hfxMk(scr, "span", "hfx-mt", { left: L.x + "px", top: (L.y - 72 - h * .45) + "px", "--ra": ang.toFixed(1) + "deg" });
+    const run = hfxMk(tr, "i", "hfx-mt-run is-big hfx-ufo-trail", { "--ml": "300px", "--dist": (Math.hypot(exit.x, exit.y + 70) + 240) + "px", "--t": 6.12, "--d": .42 });
     run.style.backgroundImage = hfxMeteorURL("#9DFFB4");
   }
   if(bx){
@@ -72289,11 +72550,40 @@ function hfxUfo(scr, bx, c){
       hfxMk(bob, "i", "hfx-ufo-lights").style.backgroundImage = hfxUfoLightsURL(false);
       hfxMk(bob, "i", "hfx-ufo-lights is-odd").style.backgroundImage = hfxUfoLightsURL(true);
     }
-    /* the beam sweeps the number, and lifts a spark out of it */
-    hfxMk(bx, "i", "hfx-scan is-ufo", { "--bh": (c.p.y + c.p.h) + "px", "--c": "#6BFF8F", "--dl": 4.25 });
-    hfxLitText(bx, c, { mode: "sweep", color: "#F0FFF2", glow: "#6BFF8F", dl: 4.4, dur: 1 });
-    hfxPiece(bx, "hfx-ufo-spark", hfxGlintURL(), c.p.x + c.p.w / 2, c.p.y + c.p.h / 2, c.mini ? 14 : 24, { "--up": (-(c.p.y + c.p.h / 2) - 6) + "px", "--t": 4.8 });
+    /* THE SCAN (build 314): a bar of its light sweeps the number one way
+       and back, lighting it as it passes, and the brackets lock on */
+    const pad = Math.round(c.p.h * .3);
+    hfxMk(bx, "i", "hfx-ufo-scanbar", { left: (c.p.x - 6) + "px", top: (c.p.y - pad) + "px", height: (c.p.h + pad * 2) + "px",
+      "--sw": (c.p.w + 12) + "px", "--t": 4.3 });
+    hfxLitText(bx, c, { mode: "sweep", color: "#F0FFF2", glow: "#6BFF8F", dl: 4.3, dur: .62 });
+    hfxMk(bx, "i", "hfx-ufo-lock", { left: (c.p.x - 9) + "px", top: (c.p.y - pad - 2) + "px", width: (c.p.w + 18) + "px", height: (c.p.h + pad * 2 + 4) + "px",
+      "--lk": (c.mini ? 7 : 12) + "px", "--t": 4.95 });
+    if(!c.boxOnly){
+      /* the score up the beam, from the number to the box's top edge */
+      hfxUfoAbduct(bx, c, 0, 0, (c.frame ? c.vw * .42 : c.vw < 600 ? 168 : 230) * .62);
+      /* where its feet stood, glowing as it goes */
+      const w = c.frame ? c.vw * .42 : c.vw < 600 ? 168 : 230;
+      hfxMk(bx, "i", "hfx-ufo-marks", { left: (cx - w * .36) + "px", width: (w * .72) + "px", "--t": 5.4 });
+    }
   }
+}
+/* The score taken up into the saucer (build 314): a copy of the 100% in
+   the saucer's light, laid exactly over the number, rising up the beam to
+   the saucer's underside and shrinking into it. `ox, oy` is where the box
+   is in the parent's coordinates (0, 0 inside the box itself). */
+function hfxUfoAbduct(parent, c, ox, oy, uh){
+  if(!c.pct) return null;
+  const cs = getComputedStyle(c.pct);
+  /* up the beam to the saucer's underside, over the middle of the box */
+  const up = -(c.p.y + c.p.h / 2) - 70 - uh * .12, ux = c.bw / 2 - (c.p.x + c.p.w / 2);
+  const g = hfxMk(parent, "span", "hfx-ufo-ghost", { left: (ox + c.p.x) + "px", top: (oy + c.p.y) + "px", width: c.p.w + "px", height: c.p.h + "px",
+    "--up": Math.round(up) + "px", "--ux": Math.round(ux) + "px", "--t": 5.38 });
+  /* children, not textContent, as hfxLitText does: a grade drawn as a
+     number and a smaller % span keeps its shape in the copy */
+  c.pct.childNodes.forEach(n => g.appendChild(n.cloneNode(true)));
+  g.style.fontFamily = cs.fontFamily; g.style.fontSize = cs.fontSize; g.style.fontWeight = cs.fontWeight;
+  g.style.letterSpacing = cs.letterSpacing; g.style.lineHeight = cs.lineHeight;
+  return g;
 }
 
 /* A small nova for the box-only play (Customize, the unlock card):
@@ -72470,7 +72760,7 @@ function buildHundoFxStage(id, o){
   st.className = "hfx-stage hfx-stage-" + id + (o.big ? " is-big" : "");
   st.dataset.fx = id;
   const pct = document.createElement("span");
-  pct.className = "hfx-stage-pct"; pct.textContent = "100%";
+  pct.className = "hfx-stage-pct"; gradePctMarkup(pct, 100);
   st.appendChild(pct);
   if(hfxMotionOff()){
     const still = document.createElement("span");
@@ -72501,6 +72791,124 @@ function buildHundoFxStage(id, o){
     const first = () => { if(st.isConnected) tick(); else if(++tries < 12) setTimeout(first, 300); };
     setTimeout(first, o.delay != null ? o.delay : 900);
   }
+  return st;
+}
+/* ---- CUSTOMIZE'S TILES ARE STILL (build 314) ----
+   "The hundo effect unlocks, when looking at them all side by side, all
+   those effects and animations seems like a lot, don't do the effects
+   there, only do them when you click them to check them out." Each tile
+   is a still of its effect at its best moment, drawn once: the 100% box
+   in the effect's own colours (as the results screen leaves it) with the
+   effect's peak painted round it - Confetti's burst, the Fireworks in the
+   sky above it, the World Tree's vines and blossom framing it, Bubbles
+   floating over it, the UFO's beam on it. Nothing in a tile moves; a tap
+   opens its card, where the whole effect plays on a results screen in
+   miniature - "When clicking them though, that preview how it is, is
+   perfect." A seeded generator, so a tile looks the same every time. */
+function hundoFxPosterSVG(id){
+  const n = ++hfxSeq, g = "hfxp" + n, rnd = bnRand(9000 + id.length * 131 + id.charCodeAt(0));
+  const F = bnF;
+  let defs = "", body = "";
+  const glow = (cx, cy, r, col, o) => '<circle cx="' + F(cx) + '" cy="' + F(cy) + '" r="' + F(r) + '" fill="url(#' + g + col + ')" opacity="' + (o == null ? 1 : o) + '"/>';
+  const rg = (k, stops) => { defs += bnRad(g + k, stops); };
+  if(id === "confetti"){
+    rg("n", [[0, "#FFF6DA", 0.75], [0.35, "#FFD37A", 0.32], [1, "#FFD37A", 0]]);
+    body += glow(80, 30, 44, "n");
+    const cols = ["#FFD37A", "#F5804D", "#C23B7A", "#FFFFFF", "#FFE7A8"];
+    for(let i = 0; i < 46; i++){
+      const a = rnd() * Math.PI * 2, r = 26 + rnd() * 52, x = 80 + Math.cos(a) * r * 1.15, y = 30 + Math.sin(a) * r * .55;
+      if(Math.abs(x - 80) < 27 && Math.abs(y - 30) < 10) continue;
+      const c = cols[i % cols.length], o = F(.55 + rnd() * .45), rot = F(rnd() * 180);
+      body += i % 3 ? '<rect x="' + F(x - 1.4) + '" y="' + F(y - .6) + '" width="2.8" height="1.2" rx=".3" fill="' + c + '" opacity="' + o + '" transform="rotate(' + rot + ' ' + F(x) + ' ' + F(y) + ')"/>'
+                    : '<circle cx="' + F(x) + '" cy="' + F(y) + '" r="' + F(.7 + rnd() * .7) + '" fill="' + c + '" opacity="' + o + '"/>';
+    }
+  } else if(id === "fireworks"){
+    rg("m", [[0, "#FF5CD6", 0.5], [1, "#FF5CD6", 0]]);
+    rg("c", [[0, "#5CE3FF", 0.45], [1, "#5CE3FF", 0]]);
+    rg("y", [[0, "#FFE7B4", 0.45], [1, "#FFE7B4", 0]]);
+    /* bursts: a magenta peony, a cyan chrysanthemum, a gold willow */
+    const burst = (cx, cy, R, col, k, n, droop) => {
+      let s = glow(cx, cy, R * 1.3, k, .9);
+      for(let i = 0; i < n; i++){
+        const a = i / n * Math.PI * 2 + rnd() * .1, r0 = R * .25, r1 = R * (.85 + rnd() * .2);
+        const x0 = cx + Math.cos(a) * r0, y0 = cy + Math.sin(a) * r0, x1 = cx + Math.cos(a) * r1, y1 = cy + Math.sin(a) * r1 + (droop ? droop * (r1 / R) * (r1 / R) : 0);
+        const mx = cx + Math.cos(a) * (r0 + r1) / 2, my = cy + Math.sin(a) * (r0 + r1) / 2;
+        s += '<path d="M' + F(x0) + ' ' + F(y0) + ' Q' + F(mx) + ' ' + F(my + (droop ? droop * .3 : 0)) + ' ' + F(x1) + ' ' + F(y1) + '" stroke="' + col + '" stroke-width=".7" stroke-linecap="round" fill="none" opacity=".85"/>' +
+             '<circle cx="' + F(x1) + '" cy="' + F(y1) + '" r=".75" fill="#FFFFFF"/>';
+      }
+      return s;
+    };
+    body += burst(36, 15, 13, "#FF7BE0", "m", 18, 0) + burst(126, 13, 11, "#7FEBFF", "c", 16, 0) + burst(104, 7, 6, "#FFE7B4", "y", 12, 5);
+    /* a shell still climbing on its trail, out of the box's top edge */
+    body += '<path d="M58 22 Q57 15 55 8" stroke="#FFE7B4" stroke-width=".9" stroke-linecap="round" fill="none" opacity=".75" stroke-dasharray="1.2 1.4"/><circle cx="55" cy="7.6" r="1.1" fill="#FFFFFF"/>';
+    for(let i = 0; i < 20; i++){ const x = rnd() * 160, y = 40 + rnd() * 20; if(Math.abs(x - 80) < 30 && y < 44) continue;
+      body += '<circle cx="' + F(x) + '" cy="' + F(y) + '" r="' + F(.35 + rnd() * .5) + '" fill="' + (i % 2 ? "#FFB3EE" : "#B3F3FF") + '" opacity="' + F(.4 + rnd() * .4) + '"/>'; }
+  } else if(id === "worldtree"){
+    rg("h", [[0, "#FFD27A", 0.3], [1, "#FFD27A", 0]]);
+    body += glow(80, 30, 40, "h");
+    /* vines along the top and bottom edges, curling in at the corners */
+    const vine = (y, dir) => {
+      let d = "M-4 " + y, leaves = "";
+      for(let x = -4; x < 164; x += 12){
+        const yy = y + (x / 12 % 2 ? 2.2 : -2.2) * dir;
+        d += " Q" + F(x + 6) + " " + F(yy) + " " + F(x + 12) + " " + y;
+        const lx = x + 6, ly = yy, a = (x / 12 % 2 ? 30 : -30) * dir + (dir > 0 ? 180 : 0);
+        leaves += '<ellipse cx="' + F(lx) + '" cy="' + F(ly) + '" rx="2.6" ry="1.1" fill="' + (x / 12 % 3 ? "#5FBF6A" : "#8FDB7A") + '" transform="rotate(' + a + ' ' + F(lx) + ' ' + F(ly) + ')"/>';
+      }
+      return '<path d="' + d + '" stroke="#4E8A43" stroke-width="1.3" fill="none"/>' + leaves;
+    };
+    body += vine(3.4, 1) + vine(56.6, -1);
+    /* blossom on them, thicker at the corners */
+    const bloom = (x, y, r, c) => { let p = ""; for(let k = 0; k < 5; k++){ const a = k / 5 * Math.PI * 2; p += '<circle cx="' + F(x + Math.cos(a) * r * .55) + '" cy="' + F(y + Math.sin(a) * r * .55) + '" r="' + F(r * .55) + '" fill="' + c + '"/>'; }
+      return p + '<circle cx="' + F(x) + '" cy="' + F(y) + '" r="' + F(r * .32) + '" fill="#FFF3C4"/>'; };
+    [[6, 6, 3.4], [16, 2.5, 2.4], [30, 4.5, 2], [130, 3, 2.2], [146, 5.5, 2.8], [156, 2, 2.2], [8, 55, 2.6], [24, 57, 2], [138, 56, 2.2], [154, 53, 3.2]].forEach((b, i) => { body += bloom(b[0], b[1], b[2], HFX_BLOOM[i % HFX_BLOOM.length]); });
+    /* the tree to the right of the number, in full blossom */
+    body += '<path d="M128 58 Q127 46 129 38 M129 44 Q122 38 118 30 M129 40 Q136 33 140 26 M129 38 Q130 28 128 20 M118 30 Q115 26 113 21 M140 26 Q143 22 146 18" stroke="#6B4A35" stroke-width="2" stroke-linecap="round" fill="none"/>' +
+            '<path d="M128 58 Q127 46 129 38" stroke="#C89A6A" stroke-width=".6" stroke-linecap="round" fill="none" opacity=".6"/>';
+    [[113, 20, 3.6], [118, 27, 3], [128, 18, 4], [134, 22, 3.2], [146, 17, 3.6], [140, 25, 2.8], [123, 22, 2.6], [151, 23, 2.4], [109, 26, 2.4]].forEach((b, i) => { body += bloom(b[0], b[1], b[2], HFX_BLOOM[(i + 1) % HFX_BLOOM.length]); });
+    for(let i = 0; i < 8; i++){ const x = 20 + rnd() * 120, y = 12 + rnd() * 38; if(Math.abs(x - 80) < 28 && Math.abs(y - 30) < 10) continue;
+      body += '<ellipse cx="' + F(x) + '" cy="' + F(y) + '" rx="1.2" ry=".7" fill="#FFB3D1" opacity=".8" transform="rotate(' + F(rnd() * 180) + ' ' + F(x) + ' ' + F(y) + ')"/>'; }
+    [[44, 16], [100, 46], [60, 48]].forEach(p => { body += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="2.4" fill="#FFF3A0" opacity=".25"/><circle cx="' + p[0] + '" cy="' + p[1] + '" r=".8" fill="#FFF8C8"/>'; });
+  } else if(id === "bubbles"){
+    rg("b", [[0, "#9FE8FF", 0], [0.62, "#9FE8FF", 0.04], [0.8, "#C79BFF", 0.4], [0.92, "#FFB3D1", 0.8], [1, "#FFFFFF", 0.25]]);
+    rg("w", [[0, "#9FE8FF", 0.28], [1, "#9FE8FF", 0]]);
+    body += glow(80, 30, 42, "w");
+    const bub = (x, y, r) => '<circle cx="' + F(x) + '" cy="' + F(y) + '" r="' + F(r) + '" fill="url(#' + g + 'b)" stroke="#FFFFFF" stroke-opacity=".4" stroke-width=".5"/>' +
+      '<ellipse cx="' + F(x - r * .38) + '" cy="' + F(y - r * .42) + '" rx="' + F(r * .26) + '" ry="' + F(r * .14) + '" fill="#FFFFFF" opacity=".85" transform="rotate(-35 ' + F(x - r * .38) + ' ' + F(y - r * .42) + ')"/>' +
+      '<circle cx="' + F(x + r * .45) + '" cy="' + F(y + r * .4) + '" r="' + F(r * .07) + '" fill="#FFFFFF" opacity=".6"/>';
+    [[24, 34, 13], [44, 12, 7], [118, 14, 10], [140, 40, 12], [102, 47, 5], [60, 52, 4], [152, 12, 4], [12, 10, 4], [88, 8, 3.2], [132, 26, 3]].forEach(b => { body += bub(b[0], b[1], b[2]); });
+  } else if(id === "ufo"){
+    rg("bm", [[0, "#EAFFEE", 0.5], [1, "#6BFF8F", 0]]);
+    defs += '<linearGradient id="' + g + 'cone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C8FFD4" stop-opacity=".75"/><stop offset=".7" stop-color="#6BFF8F" stop-opacity=".28"/><stop offset="1" stop-color="#6BFF8F" stop-opacity=".1"/></linearGradient>' +
+      '<linearGradient id="' + g + 'hull" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E4EAF4"/><stop offset=".55" stop-color="#9AA6B8"/><stop offset="1" stop-color="#5A6478"/></linearGradient>' +
+      '<linearGradient id="' + g + 'dome" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D8FBFF" stop-opacity=".95"/><stop offset="1" stop-color="#58CFE8" stop-opacity=".55"/></linearGradient>';
+    for(let i = 0; i < 26; i++){ const x = rnd() * 160, y = rnd() * 60; if(Math.abs(x - 80) < 40) continue;
+      body += '<circle cx="' + F(x) + '" cy="' + F(y) + '" r="' + F(.3 + rnd() * .5) + '" fill="#FFFFFF" opacity="' + F(.3 + rnd() * .5) + '"/>'; }
+    /* the beam on the number, and the scan line across it */
+    body += '<path d="M73 16 L87 16 L106 60 L54 60 Z" fill="url(#' + g + 'cone)"/>' + glow(80, 36, 30, "bm", .8) +
+      '<rect x="52" y="41.5" width="56" height=".7" fill="#EAFFEE" opacity=".75"/><rect x="52" y="40.2" width="56" height="3.2" fill="#6BFF8F" opacity=".16"/>';
+    /* the saucer, a little down from the tile's top edge so its dome is
+       whole inside the tile's rounded clip */
+    body += '<g transform="translate(0 5)"><path d="M71 7 A9 7.4 0 0 1 89 7 Z" fill="url(#' + g + 'dome)"/><circle cx="80" cy="3.8" r="1.6" fill="#7BE27A"/>' +
+      '<ellipse cx="80" cy="8.4" rx="17" ry="3.6" fill="url(#' + g + 'hull)"/><ellipse cx="80" cy="10.8" rx="8.5" ry="1.9" fill="#3C4352"/>' +
+      [[66, 9.3, "#6BFF8F"], [72.5, 10.6, "#FFE45C"], [80, 11.1, "#6BFF8F"], [87.5, 10.6, "#FFE45C"], [94, 9.3, "#6BFF8F"]].map(l => '<circle cx="' + l[0] + '" cy="' + l[1] + '" r=".9" fill="' + l[2] + '"/>').join("") + '</g>';
+  }
+  return '<svg class="hfx-poster" viewBox="0 0 160 60" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs>' + defs + '</defs>' + body + '</svg>';
+}
+function buildHundoFxTile(id){
+  const st = document.createElement("span");
+  st.className = "hfx-stage hfx-stage-" + id + " is-poster";
+  st.dataset.fx = id;
+  const tint = HFX_TINT[id];
+  if(tint){
+    ["--hfx-b", "--hfx-g1", "--hfx-g2", "--hfx-g3"].forEach((k, i) => st.style.setProperty(k, [tint.b, tint.g1, tint.g2, tint.g3][i]));
+    st.classList.add("hfx-tinted");
+  }
+  st.insertAdjacentHTML("afterbegin", hundoFxPosterSVG(id));
+  if(tint){ const t = document.createElement("i"); t.className = "hfx-tint"; t.setAttribute("aria-hidden", "true"); st.appendChild(t); }
+  const pct = document.createElement("span");
+  pct.className = "hfx-stage-pct"; gradePctMarkup(pct, 100);
+  st.appendChild(pct);
   return st;
 }
 /* A still of each effect, for the unlock row and for reduce motion. Ids
@@ -72557,51 +72965,9 @@ function buildHundoFxStill(id){
   w.innerHTML = '<svg viewBox="0 0 48 48" aria-hidden="true">' + body + '</svg>';
   return w.firstChild;
 }
-/* PREVIEW, from the effect's card in Customize: the whole effect, once,
-   over a stand-in 100% box. A tap ends it early, fading. */
-function previewHundoFx(id){
-  document.querySelectorAll(".hfx-preview, .hfx-preview-hold").forEach(p => p.remove());
-  /* the dim and the box are two fixed layers, so the effect's screen
-     layer can sit between them - over the dim, and (the World Tree)
-     under the box, the way it plays on the results screen */
-  const dim = document.createElement("div");
-  dim.className = "hfx-preview";
-  const hold = document.createElement("div");
-  hold.className = "hfx-preview-hold rs-screen" + (id === "worldtree" ? " is-over" : "");
-  const card = document.createElement("div");
-  card.className = "rs-card rs-grade is-perfect hfx-preview-card";
-  const k = document.createElement("p"); k.className = "rs-kicker"; k.textContent = "Grade";
-  const row = document.createElement("div"); row.className = "rs-grade-row";
-  const pct = document.createElement("span"); pct.className = "rs-pct pct perfect"; gradePctMarkup(pct, 100);
-  const side = document.createElement("div"); side.className = "rs-grade-side";
-  const nm = document.createElement("p"); nm.className = "rs-grade-frac"; nm.textContent = (hundoFxDef(id) || {}).name || "";
-  const sb = document.createElement("p"); sb.className = "rs-grade-sub slabel"; sb.textContent = "Preview";
-  side.append(nm, sb); row.append(pct, side); card.append(k, row);
-  hold.appendChild(card);
-  document.body.append(dim, hold);
-  void dim.offsetHeight;
-  dim.classList.add("is-up"); hold.classList.add("is-up");
-  let h = null, gone = false;
-  const close = () => {
-    if(gone) return; gone = true;
-    if(h && h.stop) h.stop();
-    else document.querySelectorAll(".confetti-layer").forEach(l => l.remove());
-    dim.classList.remove("is-up"); hold.classList.remove("is-up");
-    setTimeout(() => { dim.remove(); hold.remove(); }, 420);
-  };
-  dim.addEventListener("click", close); hold.addEventListener("click", close);
-  setTimeout(() => {
-    if(gone) return;
-    h = playHundoFx(id, { box: card, pct, preview: true });
-    setTimeout(close, h ? h.total : 3000);
-  }, 380);
-  /* a screen change takes it with it */
-  try{
-    const mo = new MutationObserver(() => { mo.disconnect(); close(); });
-    mo.observe(stage, { childList: true });
-  }catch(e){}
-  return hold;
-}
+/* The Preview that played an effect over a stand-in box (previewHundoFx)
+   went with its button in build 314 - the card's miniature results
+   screen is the preview. */
 
 /* THE LEVEL BAR AT THE END OF A TEST, on every mode - "let's make it so
    at the end of each test on any mode, you get your level bar or
@@ -74298,7 +74664,6 @@ function bannerUnlockItem(id){
      242): "the banner unlock doesn't have the reward thing like the
      other rewards pop ups have." */
   return { kind: "banner", banner: id, rankReward: def.rank || null, feat: !def.rank, secret: !!(def.secret || def.flareChar),
-    epic: BANNER_EPIC.indexOf(id) >= 0,
     kicker: "Banner unlocked", name: def.name,
     sub: "Wear it in Customize", need: def.label,
     color: def.rank ? (RANK_COLOR[def.rank] || "#E9EEF6") : "#E9EEF6",
@@ -74839,6 +75204,48 @@ function claimSceneBridge(){
 }
 function sceneBridgeOpen(){ return !!sceneBridge; }
 
+/* ---- EVERY POP-UP IN ITS OWN COLOURS (build 314) ----
+   "The pop up for void for that banner did not match the banner, it
+   probably should have been black toned? I thought all the unlocks would
+   match their color theme ... but also different unlocks had a similar but
+   different type of pop up." Every banner's pop-up was the same pale grey
+   (#E9EEF6) and every badge's the same steel, whatever the thing itself
+   looked like. Now each card takes the unlock's own palette - its colour
+   (the glow, the strip, the kicker, the border), a second colour (the
+   wash along the bottom) and a GROUND, the card's own surface, which by
+   default is that colour sunk almost to black and, for the four secret
+   flare characters and their banners, is their own night: Void's is
+   black. The KIND still decides the shape - the challenge strip from the
+   left, the rank-reward chevron from the right, the rank's emblem
+   changing over, a badge on its own - so a banner and a character in the
+   same colours are still two different kinds of card. */
+const UNLOCK_SPOT_LOOK = {
+  "banner:flare_void":     { c2: "#F97316", g: "#030305" },
+  /* Void's character card comes straight after the Void cutscene with its
+     banner's card right behind it, so the two are one look: black, its
+     cold rim's steel, its flares' orange - not an orange card then a
+     steel one for the same secret */
+  "character:voidwalker":  { c: "#9AA6C8", c2: "#F97316", g: "#030305" },
+  "banner:flare_umbra":    { g: "#0B061D" },
+  "character:umbra":       { c2: "#D9CCFF", g: "#0B061D" },
+  "banner:flare_horizon":  { g: "#030B19" },
+  "character:singularity": { c2: "#E9F7FF", g: "#030B19" },
+  "banner:flare_genesis":  { g: "#140516" },
+  "character:genesis":     { c2: "#FFB86B", g: "#140516" }
+};
+function unlockSpotLook(item){
+  let c = item.color || "#6FC2FF", c2 = null;
+  const id = item.banner || item.character || item.fx || item.unit || item.rank || item.flare || item.hint || "";
+  if(item.kind === "banner"){ const t = bannerTintOf(item.banner); if(t){ c = t[0]; c2 = t[1]; } }
+  else if(item.kind === "fx"){ const t = HFX_TINT[item.fx]; if(t) c2 = t.g3 || t.g1; }
+  else if(item.kind === "badge"){ try{ const bt = badgeThemeFor(item.unit); if(bt && bt.p){ c = bt.p; c2 = bt.s || bt.p; } }catch(e){} }
+  else if(item.kind === "theme" || item.kind === "rank" || item.kind === "rankrewards"){
+    const k = item.kind === "theme" ? item.rankReward : item.rank;
+    c2 = (k && RANK_COLOR[k]) || null;
+  }
+  const o = UNLOCK_SPOT_LOOK[item.kind + ":" + id] || {};
+  return { c: o.c || c, c2: o.c2 || c2 || o.c || c, g: o.g || null };
+}
 /* The centre-screen banner. Holds for a few seconds, or until tapped,
    then leaves and releases the timeline for the next one. */
 const SPOT_SEEN_MS = 1200;
@@ -74872,7 +75279,10 @@ function playUnlockSpotlight(item, n, of, release){
      and on the results screen alike. The picture is .rs-spot-bannerart
      now, and nothing may be named rs-spot-<a kind>. */
   spot.className = "rs-spot rs-spot-" + item.kind;
-  spot.style.setProperty("--spot-color", item.color || "#6FC2FF");
+  const look = unlockSpotLook(item);
+  spot.style.setProperty("--spot-color", look.c);
+  spot.style.setProperty("--spot-color2", look.c2);
+  if(look.g) spot.style.setProperty("--spot-ground", look.g);
   if(claimSceneBridge()) spot.classList.add("is-bridged");
   spot.setAttribute("role", "status");
   const card = document.createElement("div");
@@ -74965,10 +75375,12 @@ function playUnlockSpotlight(item, n, of, release){
     strip.append(em, st, rk);
     card.appendChild(strip);
   }
-  if(item.kind === "banner"){
-    spot.classList.add("is-bannerup");
-    if(item.epic) spot.classList.add("is-epic");
-  }
+  /* A banner's card shows the banner and nothing else happens to it
+     (build 314): "it like made the banner do an effect when the pop up
+     came up, not a fan of that". It used to unroll out of a bright line,
+     a sheen crossed it, and a hard one jolted the card and flashed the
+     screen. It arrives with its card now, the way everything else does. */
+  if(item.kind === "banner") spot.classList.add("is-bannerup");
   if(item.kind === "rank" && item.from){
     const was = document.createElement("p");
     was.className = "rs-spot-was";
@@ -74978,20 +75390,11 @@ function playUnlockSpotlight(item, n, of, release){
     card.append(art, kicker, name, sub);
   }
   if(need) card.appendChild(need);
-  /* A HUNDO EFFECT CAN BE PUT ON FROM ITS POP-UP (build 313) */
-  if(item.kind === "fx" && item.fx){
-    const use = document.createElement("button");
-    use.type = "button"; use.className = "next rs-spot-use";
-    const set = () => { use.textContent = "In use"; use.disabled = true; };
-    use.textContent = "Use this effect";
-    if(store.hundoFx === item.fx) set();
-    use.addEventListener("click", e => {
-      e.stopPropagation();
-      store.hundoFx = item.fx; saveStore(); set();
-      try{ markUnlockSeen("fx", item.fx); }catch(err){}
-    });
-    card.appendChild(use);
-  }
+  /* NO "USE THIS EFFECT" (build 314): "one of the pops I just got was for
+     the hundo effect and the pop up showed the button to 'use this
+     effect' let's remove that." A hundo effect's card is the same as
+     every other unlock's - tap to continue - and it is picked in
+     Customize, like a banner or a character. */
   card.appendChild(foot);
   spot.appendChild(card);
   document.body.appendChild(spot);
@@ -75431,6 +75834,15 @@ function showRunRewards(run, hooks, opts){
 
   if(quiet){
     [head, xp, ...lineEls, totalRow, levelBlock, ...boxes, grade, unlocked, ...unlockRows, actions].forEach(el => rsLand(el, true));
+    /* THE BOX IN ITS EFFECT'S COLOURS, STILL (build 314). With reduce
+       motion (or coming back from the review) the reveal is skipped and
+       with it the effect - and so the colours, which the notes promised
+       stay: "with reduce motion nothing moves but the box still takes the
+       colours". Nothing plays; the box is simply tinted. */
+    if(run.isPerfect && !run.retake){
+      const fx = hundoFxInUse(), o = { box: grade, pct: grade.querySelector(".rs-pct") };
+      try{ if(fx !== "confetti" && HFX_TINT[fx] && hfxApplyTint(fx, o, hfxContext(o))) grade.classList.add("hfx-tinted"); }catch(e){}
+    }
     countUp(true);
     if(levelBlock.setFinal) levelBlock.setFinal();
     fillBars(".rs-badges .badgeprogress-fill[data-to]");
@@ -86155,7 +86567,8 @@ function showUnlockDetail(o){
   const art = document.createElement("div");
   art.className = "unlock-card-art";
   if(o.kind === "banner"){
-    art.appendChild(o.id ? buildBannerArt(o.id) : buildThemeBannerArt(theme.accent));
+    if(!o.unlocked && isVeiledBanner(o.id)){ veilBanner(art, o.id); sheet.classList.add("is-veiled-card"); }
+    else art.appendChild(o.id ? buildBannerArt(o.id) : buildThemeBannerArt(theme.accent));
   } else if(o.kind === "character"){
     art.style.setProperty("--char-glow", avatarGlowColor(o.id));
     /* ALIVE ON ITS CARD (build 269): "when you hold it down to see the
@@ -86258,14 +86671,11 @@ function showUnlockDetail(o){
     n.className = "unlock-card-note"; n.textContent = o.note;
     sheet.appendChild(n);
   }
-  /* a hundo effect can be seen whole, held or not (build 313) */
-  if(o.kind === "fx" && !hfxMotionOff()){
-    const pv = document.createElement("button");
-    pv.type = "button"; pv.className = "next unlock-card-preview";
-    pv.textContent = "Preview";
-    pv.addEventListener("click", () => { overlay.remove(); previewHundoFx(o.id); });
-    sheet.appendChild(pv);
-  }
+  /* NO PREVIEW BUTTON (build 314): "The preview button also can be
+     removed.. we don't need that." The card already plays the whole
+     effect on its results screen in miniature, which is the preview she
+     meant to keep: "When clicking them though, that preview how it is,
+     is perfect." */
   const close = document.createElement("button");
   close.type = "button"; close.className = "next ghost person-sheet-close";
   close.textContent = "Close";
@@ -86603,7 +87013,9 @@ function showCustomize(){
     b.dataset.banner = id;
     const art = document.createElement("span");
     art.className = "banner-opt-art";
-    if(id) bannerArtQueue.push({ art, id }); else art.appendChild(buildThemeBannerArt(theme.accent));
+    /* a veiled secret is never drawn live under its glass (veilBanner) */
+    if(locked && isVeiledBanner(id)) veilBanner(art, id);
+    else if(id) bannerArtQueue.push({ art, id }); else art.appendChild(buildThemeBannerArt(theme.accent));
     if(locked){
       const lk = document.createElement("span");
       lk.className = "banner-opt-lock";
@@ -86714,9 +87126,9 @@ function showCustomize(){
      What plays on a 100%, after the banners, laid out the same way: a
      tile each, its requirement under it, locked ones dimmed with a
      padlock, a tap on a locked one (or a hold on a held one) for its
-     card. Each tile is a small 100% box that plays its effect now and
-     again while it is on screen - started a beat after the screen is up,
-     one tile after another, so opening Customize costs nothing more. */
+     card. Each tile is a STILL of its effect (build 314 - see
+     buildHundoFxTile): they used to play, all five side by side, which
+     was "a lot". The effect plays only on its card, when it is tapped. */
   const fxSect = document.createElement("div");
   fxSect.className = "sect hfx-sect";
   const fxLab = document.createElement("p");
@@ -86740,9 +87152,7 @@ function showCustomize(){
     b.dataset.fx = d.id;
     const art = document.createElement("span");
     art.className = "hfx-opt-art";
-    /* after the banner scenes are drawn (fillDeferredBannerArt), so
-       Customize opens and fills exactly as fast as it did */
-    art.appendChild(buildHundoFxStage(d.id, { live: true, delay: 1800 + i * 600 }));
+    art.appendChild(buildHundoFxTile(d.id));
     if(locked){
       const lk = document.createElement("span");
       lk.className = "hfx-opt-lock";
@@ -86755,19 +87165,25 @@ function showCustomize(){
     nd.className = "hfx-opt-need"; nd.textContent = hundoFxNeedText(d);
     b.append(art, nm, nd);
     const clearNew = (locked || !d.need) ? () => {} : attachNewDot(b, "fx", d.id);
-    if(!locked) attachHoldDetail(b, () => { clearNew(); return hundoFxDetail(d.id); });
-    /* A TAP SHOWS IT (round 3): "maybe when you click it there it gives
-       a quick preview". A held one is picked AND its card opens with the
-       effect playing on a results screen in miniature; a locked one opens
-       the same card with what it takes. */
+    const openHeld = locked ? null : attachHoldDetail(b, () => { clearNew(); return hundoFxDetail(d.id); });
+    /* THE SAME TAPS AS EVERYTHING ELSE IN CUSTOMIZE (build 314): "it's
+       hard to select one because when clicking any of them it opens it,
+       remember it should work like the other stuff, where if you click it
+       when it's selected that's when the popup shows, if it's not selected
+       and you tap it, that's selecting, holding it down always does the
+       details." A tap on one that is not picked picks it; a tap on the
+       picked one opens its card - the effect playing on its results screen
+       in miniature, unchanged ("that preview how it is, is perfect"); a
+       hold always opens the card (attachHoldDetail, the characters' and
+       banners' own); a locked one opens the card with what it takes, as a
+       locked character or banner does. Round 3 had every tap pick AND open. */
     b.addEventListener("click", () => {
       if(locked){ showUnlockDetail(hundoFxDetail(d.id)); return; }
       clearNew();
+      if(b.classList.contains("selected") && openHeld){ openHeld(); return; }
       store.hundoFx = d.id;
       saveStore();
       fxGrid.querySelectorAll(".hfx-opt").forEach(x => x.classList.toggle("selected", x === b));
-      const o = hundoFxDetail(d.id); o.unlocked = true;
-      showUnlockDetail(o);
     });
     fxGrid.appendChild(b);
   });
@@ -86791,8 +87207,6 @@ function showCustomize(){
        they cost more than the banners: measured, the eight of them alone
        took the screen from 55fps to 27. */
     swatches.querySelectorAll(".swatch").forEach(b => { b.classList.add("is-offscreen"); io.observe(b); });
-    /* the hundo effect tiles play only while they can be seen */
-    fxSect.querySelectorAll(".hfx-opt").forEach(b => { b.classList.add("is-offscreen"); io.observe(b); });
   }
 
   function paintAccents(){
@@ -86821,6 +87235,95 @@ function showCustomize(){
    frames after, a few milliseconds' worth per frame and NEAREST THE
    SCREEN FIRST, so a fast scroll down finds them drawn rather than
    waiting. */
+/* THE FROSTED GLASS OVER A SECRET FLARE BANNER NOBODY HOLDS YET (build 314,
+   see .bnr-veil). `art` is the box the banner would be drawn into.
+   A PRE-BLURRED STILL, NOT A LIVE BLUR. A CSS blur over the live, layered
+   banner was measured first: on the Customize scroll it cost 10-15% more
+   frame time and twice the frames over 50ms (Chromium, 440x956), and a
+   filter over animated content is exactly what iOS repaints every frame.
+   So the banner is drawn ONCE, as one picture of its layers at rest,
+   shrunk to 40 x 15 and softened (two box-blur passes), then scaled back
+   up - a blur nobody can see through, for the cost of one image - and the
+   picture moves gently (a slow drift and breathe, transform only) with a
+   light in the banner's own colour rising and falling over it, so it still
+   reads as alive. The live banner is never built under it. */
+const bannerVeilCache = {};
+function bannerStaticSVG(id){
+  let art; try{ art = BANNER_ART[id]("bv" + id.replace(/[^A-Za-z0-9]/g, "") + "-"); }catch(e){ return null; }
+  if(!Array.isArray(art)) return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 180" preserveAspectRatio="xMidYMid slice">' + art + '</svg>';
+  const num = v => +v;
+  const one = p => {
+    if(/opacity:\s*0(;|$)/.test(p.style || "")) return "";
+    const b = p.box || [0, 0, 480, 180], vb = p.vb || b;
+    let out = p.svg != null ? '<svg x="' + b[0] + '" y="' + b[1] + '" width="' + b[2] + '" height="' + b[3] + '" viewBox="' + vb.join(" ") + '" preserveAspectRatio="none" overflow="visible">' + p.svg + '</svg>' : "";
+    if(p.kids) out += p.kids.map(one).join("");
+    if(p.wrap && p.o){
+      const r = /rotate\(([-\d.]+)deg\)/.exec(p.wrap), sy = /scaleY\(([-\d.]+)\)/.exec(p.wrap), sc = /scale\(([-\d.]+)(?:,\s*([-\d.]+))?\)/.exec(p.wrap);
+      const t = "translate(" + p.o[0] + " " + p.o[1] + ")" + (r ? " rotate(" + num(r[1]) + ")" : "") +
+        (sy ? " scale(1 " + num(sy[1]) + ")" : sc ? " scale(" + num(sc[1]) + " " + num(sc[2] || sc[1]) + ")" : "") + " translate(" + (-p.o[0]) + " " + (-p.o[1]) + ")";
+      out = '<g transform="' + t + '">' + out + '</g>';
+    }
+    return out;
+  };
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 180" preserveAspectRatio="xMidYMid slice">' + art.map(one).join("") + '</svg>';
+}
+function bannerVeilStill(id){
+  if(bannerVeilCache[id]) return bannerVeilCache[id];
+  return (bannerVeilCache[id] = new Promise(resolve => {
+    const svg = bannerStaticSVG(id);
+    if(!svg){ resolve(null); return; }
+    const im = new Image();
+    im.onload = () => {
+      try{
+        const w = 40, h = 15, a = document.createElement("canvas"); a.width = w; a.height = h;
+        const ax = a.getContext("2d"); ax.drawImage(im, 0, 0, w, h);
+        /* two passes of a 3 x 3 box blur on the small picture */
+        const img = ax.getImageData(0, 0, w, h), d = img.data;
+        for(let pass = 0; pass < 2; pass++){
+          const src = new Uint8ClampedArray(d);
+          for(let y = 0; y < h; y++) for(let x = 0; x < w; x++) for(let c = 0; c < 4; c++){
+            let sum = 0, n = 0;
+            for(let dy = -1; dy <= 1; dy++) for(let dx = -1; dx <= 1; dx++){ const xx = x + dx, yy = y + dy; if(xx < 0 || yy < 0 || xx >= w || yy >= h) continue; sum += src[(yy * w + xx) * 4 + c]; n++; }
+            d[(y * w + x) * 4 + c] = sum / n;
+          }
+        }
+        ax.putImageData(img, 0, 0);
+        /* back up in two smooth steps, so the softness has no grid in it */
+        const b = document.createElement("canvas"); b.width = 120; b.height = 45;
+        const bx = b.getContext("2d"); bx.imageSmoothingEnabled = true; bx.imageSmoothingQuality = "high"; bx.drawImage(a, 0, 0, 120, 45);
+        const c2 = document.createElement("canvas"); c2.width = 320; c2.height = 120;
+        const cx = c2.getContext("2d"); cx.imageSmoothingEnabled = true; cx.imageSmoothingQuality = "high"; cx.drawImage(b, 0, 0, 320, 120);
+        resolve(c2.toDataURL("image/png"));
+      }catch(e){ resolve(null); }
+    };
+    im.onerror = () => resolve(null);
+    im.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  }));
+}
+function veilBanner(art, id){
+  if(!art || art.querySelector(":scope > .bnr-veil")) return art;
+  art.classList.add("is-veiled");
+  const tint = bannerTintOf(id) || ["#6A7590", "#3A4256"];
+  art.style.setProperty("--veil-a", tint[0]); art.style.setProperty("--veil-b", tint[1]);
+  const still = document.createElement("span");
+  still.className = "bnr-veil-still"; still.setAttribute("aria-hidden", "true");
+  const glow = document.createElement("span");
+  glow.className = "bnr-veil-glow"; glow.setAttribute("aria-hidden", "true");
+  const v = document.createElement("span");
+  v.className = "bnr-veil"; v.setAttribute("aria-hidden", "true");
+  const pill = document.createElement("span");
+  pill.className = "bnr-veil-pill";
+  try{ pill.appendChild(buildLockIcon()); }catch(e){}
+  pill.appendChild(document.createTextNode("Unlock to see"));
+  v.appendChild(pill);
+  art.append(still, glow, v);
+  bannerVeilStill(id).then(url => { if(url){ still.style.backgroundImage = 'url("' + url + '")'; still.classList.add("is-ready"); } });
+  return art;
+}
+function isVeiledBanner(id){
+  const d = id && bannerDef(id);
+  return !!(d && d.flareChar && !bannerEarned(id));
+}
 function fillDeferredBannerArt(queue){
   if(!queue || !queue.length) return;
   const fill = q => {

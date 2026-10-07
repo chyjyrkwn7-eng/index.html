@@ -13111,6 +13111,127 @@ flashcards" both landed on the units screen with the sheet shut;
 `showSetupWithSheet()` reopens it. Plus the four above (stale How many,
 stale Starred box, the copy replaying its colour, the adopted drag).
 
+### Build 314 - unlock pop-ups in their own colours, the secret flare banners, still effect tiles
+
+**The four secret flare banners are ONE BIG SUBJECT each.** *"The void,
+umbra, horizon and genesis banners are pretty mid. Fix this."* Each was a
+busy sky with a small subject in it, and none read at the size a banner
+mostly lives at (the Profile card, a classmate's card, a lobby row). Now:
+**Void** is black - a sphere of nothing with a cold rim, stars falling into
+it, Void's face (the three flares joined) inside; **Umbra** is its moon, a
+huge violet crescent over a sliding cloud sea, Umbra's flare on the horn;
+**Horizon** is its colours, white and ice blue, an event horizon with the
+disc across its front; **Genesis** is the planet on Home, gold to rose,
+ringed, seams glowing, its moon and first light. `BANNER_TINT` for all four
+was re-read off the new renders - Void's pair is steel and its flares'
+orange (`check_b314_unlocks` asserts the banner is >60% near-black and its
+tint is not the old orange glow).
+
+**A locked secret flare banner is frosted glass, not a dark cut-out.**
+*"just making them dark like that is not the move it just looks bad ...
+blur them maybe? With a thing over it that says unlock to see?"* The tile
+(and the card a tap or a hold opens - one `veilBanner()` for both) shows a
+blurred picture of the real banner, a lit Liquid Glass rim and sheen, and an
+"Unlock to see" pill; the corner padlock steps aside because the pill says
+it. **It is a pre-blurred still, never a live blur**: the banner's layers
+are flattened once (`bannerStaticSVG`), drawn at 40x15, box-blurred twice
+and scaled back up, then given a slow drift and a breathing light in its own
+colour - transform and opacity only, so it still reads as alive. A CSS blur
+over a live animated banner is exactly what iOS repaints every frame.
+Measured per tile: **12 elements, 2 compositor-only animations, no filter**,
+against 212-405 elements, 6-9 animations and a full-tile `filter` before.
+(Frame timings could not be compared this session: the sandbox was at load
+~18 on 4 cores and both builds read 400ms+ a frame.) **The pill is tighter
+on a narrow tile** (`@container`, the tile is a grid cell): at full size it
+was 136px on a 114px tile on a 320px phone. Under 9.5rem it drops its
+icon and tracking - 102px.
+
+**Every unlock pop-up is in the unlock's own colours; the KIND decides the
+shape.** *"the pop up for void for that banner did not match the banner, it
+probably should have been black toned? I thought all the unlocks would
+match their color theme ... but also different unlocks had a similar but
+different type of pop up"*. Every banner's card was one pale grey and every
+badge's one steel. `unlockSpotLook(item)` gives each card its colour (a
+banner's tint, a badge's enamel, a theme's or rank's colour), a second
+colour (the wash along the bottom) and a GROUND, the card's own surface -
+by default its colour sunk almost to black; for the four secret flares
+(`UNLOCK_SPOT_LOOK`) their own night, **Void's black**. The shape still
+says the kind: the challenge strip from the left, the rank-reward chevron,
+the rank emblem changing over, a badge bare. **Void's character card and
+Void's banner card are one look** (black, steel, orange): they arrive back
+to back after the Void cutscene, and an orange card then a steel one for the
+same secret read as two different things.
+
+**Pop-ups arrive calm and whole.** *"it like made the banner do an effect
+when the pop up came up, not a fan of that ... Not sure about the unlock
+stuff within the pops should do that type of effect where they start off
+tiny ... and then getting big"*. The card came out of a point of light at
+55% with a blur, the art from 20% with a spin, a banner unrolled out of a
+bright line with a sheen, and an "epic" banner jolted the card and flashed
+the screen. Now every card and everything in it fades in at full size with
+a short rise; a banner does nothing but move as it moves everywhere else;
+`BANNER_EPIC`/`is-epic` no longer reach the pop-up; the rank emblem burns
+off where it stands and the new one forms at its own size. **Don't bring a
+scale-from-small back** - `check_b314_unlocks` samples the card's and the
+art's transform every 70ms through the entrance and fails on any scale.
+
+**No "Use this effect" on a hundo effect's pop-up, and no Preview button on
+its card.** *"the pop up showed the button to 'use this effect' let's
+remove that"*; *"The preview button also can be removed.. we don't need
+that."* An effect is picked in Customize like everything else.
+`previewHundoFx()` is deleted; the card's miniature results screen IS the
+preview (*"that preview how it is, is perfect"*) and is unchanged.
+
+**Customize's effect tiles are stills.** *"all those effects and animations
+seems like a lot, don't do the effects there, only do them when you click
+them"*. `buildHundoFxTile()` paints each effect's best moment round a 100%
+in its colours (`hundoFxPosterSVG`, seeded, so a tile is the same every
+time) - nothing in a tile animates and no effect layer is ever in one. The
+UFO's saucer sits 5 units down so its dome is inside the tile's rounded
+clip; at the top edge it read as a cut-off.
+
+**The effect tiles take taps like the characters, banners and themes.**
+*"when clicking any of them it opens it, remember it should work like the
+other stuff"*: a tap on one not picked picks it and opens nothing; a tap on
+the picked one opens its card (the effect playing); a hold always opens the
+card (`attachHoldDetail`, the same handler); a locked one opens its card
+and picks nothing.
+
+**The UFO scans and takes the score.** *"maybe it scans the grade and does
+something else on the way out?"* Once down, a bar of its light sweeps the
+100% one way and back (the number lit as it passes) and four brackets lock
+on; on the way out a copy of the 100% in its light rises up the beam into
+the saucer (the real one stays), it goes in a warp flash and a streak, and
+its landing marks glow on the box's edge as the stars fade. Nothing on the
+screen moves that did not before.
+
+**Perfection passes.** *The World Tree*: a branch's crossing of a card's
+edge is found to a hundredth of a pixel and the wood ends square ON the
+edge, cut along it (a slanted branch ends flush, both corners on the line,
+half a pixel under the border) - it used to stop up to 3px short; the crown
+roots on the XP card's top edge, not 18% down it over the card's text; and
+the screen's title is lifted over the crown while it plays (the blossom
+was drawn over "Test results"). Pixel-measured at 440x956 (one unit and
+three), 834x1194 and 375x667: no wood inside a card deeper than 1px, wood
+on both rows touching every gap. *Bubbles*: the glass heroes meant to pop
+never did (the pop rule named only `.hfx-bb`), so two sat on the XP card
+until the layer was cut at 7s. *Fireworks*: the sky stops at the 100%
+box's top edge (`hfxFwSky(..., floor)`, one erase per frame on the canvas)
+- the box is lifted over the sky but its glass is see-through, and the gold
+willow's drips ran down behind the number. *Reduce motion / coming back
+from the review*: the box still takes the effect's colours, as promised.
+
+**Gates.** `check_b314_unlocks` (and the build 314 lines in
+`check_b313_fx`): the Void pop-up's ground near-black, every banner's and
+badge's pop-up in its own colours, the kinds' shapes, nothing done to a
+banner, full size through every entrance, no blur, no Use button; the Void
+banner black; the effect tiles' taps; the veil at both reference devices
+(pre-blurred still, no live banner under it, moving, "Unlock to see", the
+tap card the same, a held one not veiled); reduce motion; the UFO's scan,
+lock, score, warp and marks; the Bubbles pops; the Tree's edges (pixel
+diff); the Fireworks floor (canvas pixels); the UFO tile's dome. Written to
+fail on `dd6cfae`.
+
 ### Shuffling, measured (build 313)
 
 "Can we double check that all the questions are being shuffled properly
