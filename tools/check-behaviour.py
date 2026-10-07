@@ -4674,13 +4674,21 @@ def check_b246(br):
       const cs = svg ? getComputedStyle(svg) : null;
       return { masked: !!cs && ((cs.maskImage || cs.webkitMaskImage || 'none') !== 'none'),
                drawingGlow: !!cs && /drop-shadow/.test(cs.filter),
-               buttonGlow: !!o && /drop-shadow/.test(getComputedStyle(o).filter) }; }""")
+               buttonGlow: !!o && /drop-shadow/.test(getComputedStyle(o).filter),
+               /* build 314: a tile playing its flip-book carries no filter
+                  (a drop-shadow re-drawn 24 times a second doubled
+                  Customize's frame time); its light is the pool behind it
+                  and the selection ring, neither of which is masked */
+               flipping: !!o && o.classList.contains('char-flip'),
+               poolGlow: !!o && /gradient/.test(getComputedStyle(o, '::before').backgroundImage),
+               ring: !!o && getComputedStyle(o, '::after').opacity === '1' }; }""")
     # The cause, checked directly: CSS applies an element's filter before
     # its mask, so a glow on the masked drawing is cut to the mask's
     # rectangle. Pixel tests at the box edge could not tell the two apart
     # reliably (the round glow is steep there too); this can.
     check("a selected character's glow is not on the masked drawing (which cuts it square), but on its button",
-          g["masked"] and not g["drawingGlow"] and g["buttonGlow"], g)
+          g["masked"] and not g["drawingGlow"]
+          and (g["buttonGlow"] or (g.get("flipping") and g.get("poolGlow") and g.get("ring"))), g)
     r = pg.evaluate("""()=>{ const H = 3600000, out = {}; store.legacyChars = [];
       /* Build 314 caps a day of the study log at 6 hours up to the leak
          fix (normalizeStudyLog, run on every load), so 30 hours on one
@@ -9594,7 +9602,7 @@ def check_b313_chars_centred(br):
           try{ __useFake(); if(window.__osr) onSnapshotResilient = window.__osr; }catch(e){}
           for(let i = 0; i < chars.length; i++) await fbDb.collection('leaderboard').doc('c' + i).set({ pub: 'c' + i, firstName: chars[i], avatarChar: chars[i], accent: 'ink', level: 40 - i, badges: 3, hundos: 20 - i, xp: 40000 - i * 900, tests: 30, week: weekKeyNow(), weekPoints: 900 - i * 50, lastModified: Date.now(), seenAt: Date.now() });
           showRankings(); const out = { rows: [] };
-          for(let t = 0; t < 200; t++){ await wait(250); if(document.querySelectorAll('.rank-row .char-flip-play').length >= 4) break; }
+          for(let t = 0; t < 400; t++){ await wait(250); if(document.querySelectorAll('.rank-row .char-flip-play').length >= 4) break; }
           const read = () => [...document.querySelectorAll('.rank-row .rank-avatar-wrap')].filter(wr => wr.querySelector('.char-flip-play')).map(wr => {
             const c = wr.querySelector('.rank-avatar').getBoundingClientRect(), s = wr.querySelector('svg.avatarchar-svg').getBoundingClientRect(), f = wr.querySelector('.char-flip-play').getBoundingClientRect();
             return { dx: +((f.left + f.width / 2) - (s.left + s.width / 2)).toFixed(2), dy: +((f.top + f.height / 2) - (s.top + s.height / 2)).toFixed(2),
@@ -9671,6 +9679,11 @@ def check_b313_alive(br):
     before = {"astronaut": 24, "poseidon": 13, "ronin": 8, "astral": 15, "celestial": 21, "zenith": 26}
     for cid, b in before.items():
         need = b + (8 if cid in ("astral", "celestial", "zenith") else 4)
+        # Build 314 redrew Celestial and calmed it on request ("a smidge
+        # toned down ... could look better"): it moves 27 parts, still more
+        # than every earnable character but Orion (asserted below).
+        if cid == "celestial":
+            need = 25
         check("%s moves at least %d parts (was %d)" % (cid, need, b), n.get(cid, 0) >= need, n.get(cid))
     others = {k: v for k, v in n.items() if k not in ("astral", "celestial", "zenith", "voidwalker", "umbra", "singularity", "astronaut")}
     check("each ultimate moves more parts than every challenge, rank and starter character but Orion",
@@ -9746,6 +9759,364 @@ def check_b313_grades(br):
     ctx.close()
 
 
+# The characters and Customize stream of build 314.
+B314_TRANSPARENT = ("()=>{const st=document.createElement('style'); st.textContent='html,body{background:transparent!important;background-image:none!important}"
+                    " html::before,html::after,body::before,body::after{display:none!important} #stage,#bottomtabs,.topbar,header{display:none!important}'; document.head.appendChild(st);}")
+
+
+def _b314_extent(pg, cid, sil=False):
+    """Rasterise one still drawing, figure only (no scenery, no halo), at 10px a
+    unit on a transparent page, and return the opaque (alpha>80) pixels as
+    (x, y) in the drawing's own units."""
+    import io as _io
+    from PIL import Image as _Im
+    pg.evaluate("""([cid, sil]) => { document.getElementById('b314h')?.remove();
+      const host = document.createElement('div'); host.id = 'b314h'; host.style.cssText = 'position:fixed;left:0;top:0;width:540px;height:540px;z-index:99999';
+      /* (build 313 drew a silhouette as two stacked svgs in a span) */
+      const el = sil ? (typeof charSilhouetteSVG === 'function' ? charSilhouetteSVG(cid) : buildCharSilhouette(cid)) : buildAvatarCharSVGSafe(cid);
+      if(el.tagName !== 'svg'){ host.className = 'char-live'; el.style.cssText = 'position:absolute;inset:0;display:block'; }
+      (el.tagName === 'svg' ? [el] : [...el.querySelectorAll('svg')]).forEach(s => {
+        s.setAttribute('viewBox', '-7 -7 54 54'); s.style.cssText = 'position:absolute;left:0;top:0;width:540px;height:540px;overflow:visible;-webkit-mask-image:none;mask-image:none;filter:none';
+        s.querySelectorAll('.cx-bg').forEach(n => n.remove());
+        s.querySelectorAll('circle').forEach(n => { if(/url\\(#(aura|halo)-/.test(n.getAttribute('fill') || '')) n.remove(); }); });
+      host.appendChild(el); document.body.appendChild(host); }""", [cid, sil])
+    png = pg.screenshot(clip={"x": 0, "y": 0, "width": 540, "height": 540}, omit_background=True)
+    A = _Im.open(_io.BytesIO(png)).convert("RGBA").getchannel("A").load()
+    pts = []
+    for y in range(0, 540, 2):
+        for x in range(0, 540, 2):
+            if A[x, y] > 80:
+                pts.append((x / 10 - 7, y / 10 - 7))
+    return pts
+
+
+def check_b314_chars(br):
+    """Build 314, the characters and Customize. Every assertion here was
+    run against build 313 and fails there:
+    - "Some of the characters when looking at them in their rows, edges of
+      them look to be cut off": a still drawing never rises above build
+      272's top line (y 4.35 of 3..37) or within 4 units of the sides
+      (Marksman's rifle runs off on purpose), and every drawing carries the
+      edge feather; Umbra and Horizon sit inside a round frame (313: the
+      hood and the crown ran into every circle).
+    - "remove the colors from their outline when not unlocked": a locked
+      secret's silhouette, as drawn in Customize, has no hue in it.
+    - "All the characters when looking at them in the customize thing, the
+      unlocked ones should be doing their animations": held characters on
+      Customize play a running flip-book; locked ones stay still.
+    - "My character on the bottom tab is not moving": the tab's character
+      moves from the first frame, keeps its loop through a live update,
+      and a recording that fails falls back to the live drawing instead
+      of leaving it still for good.
+    - "The silver rank looks a little blue" / "silver on the leaderboard
+      doesn't look good": every Silver colour is neutral and the ranks
+      stay apart.
+    - "The badges you have not unlocked yet ... grey them out": an
+      unearned badge, in the case and on its card, shows its form and no
+      unit colour.
+    - "it's hard to tell which character is selected": exactly one tile
+      wears the ring and the tick, and a picker drawing's own halo is down.
+    - "that text box is a smidge cramped": the name row goes while the
+      field is open, and the field has room, on a 320px phone too."""
+    print("\n95. build 314: characters fit their frames, play everywhere, silhouettes and Silver have no hue, unearned badges are grey")
+    import math as _m
+    import re as _re
+    ctx, pg = booted(br, 700, 700, seed=USED_ACCOUNT, dpr=1)
+    pg.evaluate(B314_TRANSPARENT)
+    ids = pg.evaluate("()=>AVATAR_CHARACTERS.filter(c => !c.retired).map(c => c.id)")
+    high, sides = [], []
+    feather = pg.evaluate("""()=>{ const sv = buildAvatarCharSVGSafe('ninja'); document.body.appendChild(sv);
+      const m = getComputedStyle(sv).webkitMaskImage || getComputedStyle(sv).maskImage || ''; sv.remove();
+      const layers = m.split(/,\\s*(?=linear-gradient)/);
+      return { n: layers.length, side: layers.some(l => /to right|90deg/.test(l)), top: /linear-gradient\\((to bottom, |180deg, )?(transparent|rgba\\(0, 0, 0, 0\\)) 0%/.test(m) }; }""")
+    for cid in ids:
+        pts = _b314_extent(pg, cid)
+        if not pts:
+            continue
+        top = min(p[1] for p in pts)
+        upper = [p[0] for p in pts if p[1] < 28]
+        if top < 4.15:
+            high.append("%s %.1f" % (cid, top))
+        if cid != "marksman" and upper and (min(upper) < 3.9 or max(upper) > 36.1):
+            sides.append("%s %.1f..%.1f" % (cid, min(upper), max(upper)))
+    check("no still character rises above y 4.35 (build 272's line)", high == [], high)
+    check("no character runs into the sides of its frame", sides == [], sides)
+    check("every drawing feathers out at its top and sides (a second mask layer)", feather["n"] >= 2 and feather["side"] and feather["top"], feather)
+    for cid in ("umbra", "singularity"):
+        for sil in (False, True):
+            pts = _b314_extent(pg, cid, sil)
+            out = [p for p in pts if p[1] < 26 and _m.hypot(p[0] - 20, p[1] - 20) > 16.6]
+            check("%s%s sits inside a round frame" % ("Horizon" if cid == "singularity" else "Umbra", " (silhouette)" if sil else ""),
+                  len(out) == 0, "%d px outside" % len(out))
+    # a locked secret's silhouette, drawn on its own over nothing: no pixel
+    # of it (outline, flare, the pool behind it) has a hue
+    import io as _io
+    from PIL import Image as _Im
+    for cid in ("voidwalker", "umbra", "singularity", "genesis"):
+        pg.evaluate("""cid => { document.getElementById('b314h')?.remove();
+          const host = document.createElement('div'); host.id = 'b314h'; host.className = 'char-live'; host.style.cssText = 'position:fixed;left:0;top:0;width:300px;height:300px;z-index:99999';
+          host.appendChild(buildCharSilhouette(cid)); document.body.appendChild(host); }""", cid)
+        pg.wait_for_timeout(300)
+        im = _Im.open(_io.BytesIO(pg.screenshot(clip={"x": 0, "y": 0, "width": 300, "height": 300}, omit_background=True))).convert("RGBA")
+        px = [q for q in im.getdata() if q[3] > 40]
+        hue = sum(1 for (a, b, c, al) in px if max(a, b, c) - min(a, b, c) > 14)
+        check("%s's silhouette gives away no colour (pixels with a hue)" % cid, len(px) > 500 and hue <= len(px) * 0.003, "%d of %d" % (hue, len(px)))
+    ctx.close()
+
+    # Customize: held characters play, silhouettes have no hue
+    for label, w, h, dpr in [("iPhone 17 Pro Max", 440, 956, 3), ('iPad Pro 11"', 834, 1194, 2)]:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=dpr)
+        r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+          store.mysteryColorsFound = { red: true, orange: true, yellow: true };
+          showCustomize(); await wait(400);
+          const opts = [...document.querySelectorAll('.screen-customize .avatarchar-option')];
+          const near = o => { const b = o.getBoundingClientRect(); return b.bottom > 0 && b.top < innerHeight; };
+          const held = opts.filter(o => !o.classList.contains('locked'));
+          out.held = held.length; out.locked = opts.filter(o => o.classList.contains('locked') && !o.classList.contains('is-silhouette')).length;
+          out.heldFlip = held.filter(o => o.classList.contains('char-flip') || o.classList.contains('char-live')).length;
+          out.lockedMoving = opts.filter(o => o.classList.contains('locked') && !o.classList.contains('is-silhouette') && (o.classList.contains('char-flip') || o.classList.contains('char-live'))).length;
+          for(let t = 0; t < 600; t++){ if(held.filter(near).every(o => o.querySelector('.char-flip-play img'))) break; await wait(250); }
+          const playing = o => { const img = o.querySelector('.char-flip-play img'); return !!img && img.getAnimations().some(a => a.playState === 'running'); };
+          out.nearHeld = held.filter(near).length; out.nearPlaying = held.filter(near).filter(playing).length;
+          /* a silhouette scrolled into view plays too */
+          const sil = opts.find(o => o.classList.contains('is-silhouette'));
+          sil.scrollIntoView({ block: 'center', behavior: 'instant' });
+          for(let t = 0; t < 400; t++){ if(sil.querySelector('.char-flip-play img')) break; await wait(250); }
+          out.silPlaying = playing(sil);
+          const sb = sil.getBoundingClientRect(); out.silBox = [sb.left, sb.top, sb.width, sb.height];
+          out.silGlow = getComputedStyle(sil).getPropertyValue('--char-glow').trim();
+          return out; }""")
+        check("%s: every held character on Customize is set to play" % label, r["held"] > 0 and r["heldFlip"] == r["held"], (r["heldFlip"], r["held"]))
+        check("%s: every held character on screen is playing its loop" % label, r["nearHeld"] > 0 and r["nearPlaying"] == r["nearHeld"], (r["nearPlaying"], r["nearHeld"]))
+        check("%s: a locked (non-secret) character stays still" % label, r["locked"] > 0 and r["lockedMoving"] == 0, (r["lockedMoving"], r["locked"]))
+        check("%s: a locked secret's silhouette plays as well" % label, r["silPlaying"] is True)
+        g = r["silGlow"]
+        check("%s: and its tile's glow is no colour" % label, bool(_re.match(r"#([0-9A-F]{2})\1\1|#A7AAAF", g, _re.I)) or g.upper() == "#A7AAAF", g)
+        ctx.close()
+
+    # which one is selected (build 314: "it's hard to tell which character
+    # is selected because some of the characters have the glow effect on
+    # them at all times") and the name editor ("a smidge cramped")
+    for label, w, h, dpr in [("iPhone 17 Pro Max", 440, 956, 3), ('iPad Pro 11"', 834, 1194, 2), ("iPhone SE 1st gen", 320, 568, 2)]:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=dpr)
+        r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+          showCustomize(); await wait(600);
+          const opts = [...document.querySelectorAll('.screen-customize .avatarchar-option')];
+          const ring = o => { const a = getComputedStyle(o, '::after'); return parseFloat(a.opacity) > .9 && parseFloat(a.borderTopWidth) >= 1; };
+          const tick = o => { const c = o.querySelector('.avatarchar-check'); return !!c && parseFloat(getComputedStyle(c).opacity) > .9; };
+          out.rings = opts.filter(ring).length; out.ticks = opts.filter(tick).length;
+          out.selRing = opts.filter(o => o.classList.contains('selected')).every(o => ring(o) && tick(o));
+          /* the picker's own drawing has its halo turned down */
+          const held = opts.find(o => !o.classList.contains('locked') && !o.classList.contains('selected'));
+          const aura = held && [...held.querySelectorAll('svg.avatarchar-svg circle')].find(c => /url\\(#(aura|halo)-/.test(c.getAttribute('fill') || ''));
+          out.halo = aura ? parseFloat(aura.getAttribute('opacity') || '1') : null;
+          /* the name editor */
+          document.querySelector('.customize-namerow .profile-edit-btn').click(); await wait(300);
+          const row = document.querySelector('.customize-namerow'), inp = document.querySelector('.screen-customize input.searchbox');
+          const save = [...document.querySelectorAll('.screen-customize button')].find(b => b.textContent.trim() === 'Save');
+          const ir = inp.getBoundingClientRect(), sr = save.getBoundingClientRect(), ics = getComputedStyle(inp);
+          out.rowGone = getComputedStyle(row).display === 'none';
+          out.padIn = Math.min(parseFloat(ics.paddingLeft), parseFloat(ics.paddingTop));
+          out.font = parseFloat(ics.fontSize); out.fieldToBtn = Math.round(sr.top - ir.bottom);
+          out.inView = ir.left >= 8 && ir.right <= innerWidth - 8 && sr.right <= innerWidth - 8;
+          return out; }""")
+        check("%s: exactly one character wears the selection ring and the tick" % label, r["rings"] == 1 and r["ticks"] == 1 and r["selRing"] is True, (r["rings"], r["ticks"], r["selRing"]))
+        if label != "iPhone SE 1st gen":
+            check("%s: a picker character's own halo is turned down (it read as selected)" % label, r["halo"] is not None and r["halo"] <= .5, r["halo"])
+        check("%s: changing your name, the name row goes away while the field is open" % label, r["rowGone"] is True)
+        check("%s: the name field has room inside it (>= 14px), 16px+ text, 10px+ to its buttons, clear of the screen edges" % label,
+              r["padIn"] >= 14 and r["font"] >= 16 and r["fieldToBtn"] >= 10 and r["inView"], r)
+        ctx.close()
+
+    # the tab: moves at once, keeps its loop, falls back when a recording fails
+    for fail in (False, True):
+        init = None
+        if fail:
+            init = ("(()=>{ const d = HTMLImageElement.prototype.decode; HTMLImageElement.prototype.decode = function(){"
+                    " if(String(this.src).indexOf('data:image/svg+xml') === 0) return Promise.reject(new Error('no')); return d.call(this); }; })();")
+        ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, dpr=3, init=init)
+        r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+          const tab = () => document.querySelector('#bottomtab-profile .bottomtab-icon');
+          const moving = () => { const t = tab(); if(!t) return false;
+            const img = t.querySelector('.char-flip-play img');
+            if(img && img.getAnimations().some(a => a.playState === 'running')) return 'flip';
+            const sv = t.querySelector('svg.avatarchar-svg');
+            if(t.classList.contains('char-live') && sv && sv.getAnimations({ subtree: true }).some(a => a.playState === 'running')) return 'live';
+            return false; };
+          showHome(); await wait(1000); out.at1s = moving();
+          const svg0 = tab().querySelector('svg.avatarchar-svg');
+          for(let i = 0; i < 4; i++){ try{ onLiveUpdateApplied(); }catch(e){} updateHeaderTitle(); await wait(100); }
+          out.kept = tab().querySelector('svg.avatarchar-svg') === svg0;
+          await wait(25000); out.at25s = moving();
+          return out; }""")
+        tag = "with recording broken" if fail else "normally"
+        check("the tab's character is moving a second after Home opens (%s)" % tag, bool(r["at1s"]), r["at1s"])
+        check("and is still moving 25s later (%s)" % tag, bool(r["at25s"]), r["at25s"])
+        if not fail:
+            check("a live update or a save does not throw away the tab's loop", r["kept"] is True)
+            check("the tab plays its recorded flip-book once the sheet is made", r["at25s"] == "flip", r["at25s"])
+        ctx.close()
+
+    # Silver, and the badges
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      const rgb = s => { const m = String(s).match(/#([0-9a-f]{6})/i); if(m) return [0, 2, 4].map(i => parseInt(m[1].slice(i, i + 2), 16));
+        const n = String(s).match(/rgba?\\(([^)]+)\\)/); return n ? n[1].split(',').slice(0, 3).map(Number) : null; };
+      const spread = s => { const c = rgb(s); return c ? Math.max(...c) - Math.min(...c) : 999; };
+      const probe = document.createElement('div'); probe.setAttribute('data-accent', 'ranger'); probe.setAttribute('data-theme', 'dark'); document.body.appendChild(probe);
+      const cs = getComputedStyle(probe);
+      const vals = { rank: RANK_COLOR.ranger, swatch: ACCENT_SWATCH.ranger };
+      ['--theme-c1', '--theme-c2', '--theme-c3', '--bg-c1', '--bg-c2', '--bg-c3', '--rank-accent'].forEach(v => vals[v] = cs.getPropertyValue(v).trim());
+      const dot = document.createElement('span'); dot.className = 'dot tier-ranger'; document.body.appendChild(dot);
+      vals.dot = (getComputedStyle(dot).backgroundImage.match(/(#[0-9a-f]{6}|rgba?\\([^)]+\\))/gi) || []).join(' ');
+      const med = document.createElement('span'); med.className = 'lb-rank-medal lb-rank-2'; document.documentElement.setAttribute('data-theme', 'dark'); document.body.appendChild(med);
+      vals.medal = (getComputedStyle(med).backgroundImage.match(/rgba?\\([^)]+\\)/gi) || []).join(' ');
+      const row = document.createElement('div'); row.className = 'rank-row rank-podium-2'; document.body.appendChild(row);
+      vals.podium = getComputedStyle(row).borderTopColor;
+      const em = buildRankEmblemSVG('ranger'); vals.emblem = [...em.querySelectorAll('[fill],[stop-color]')].map(n => n.getAttribute('stop-color') || n.getAttribute('fill')).filter(c => /^#[0-9a-f]{6}$/i.test(c)).join(' ');
+      out.silver = {}; Object.keys(vals).forEach(k => { const cols = String(vals[k]).match(/(#[0-9a-f]{6}|rgba?\\([^)]+\\))/gi) || []; out.silver[k] = cols.length ? Math.max(...cols.map(spread)) : 999; });
+      const keys = Object.keys(RANK_COLOR); out.close = [];
+      keys.forEach((a, i) => keys.slice(i + 1).forEach(b => { const x = rgb(RANK_COLOR[a]), y = rgb(RANK_COLOR[b]); const d = Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]); if(d < 60) out.close.push(a + '/' + b + ' ' + Math.round(d)); }));
+      /* the badges */
+      const units = unitsInTeachingOrder(); const u = units.find(x => !unitBadgeEarned(x));
+      const unitCols = un => { const t = badgeThemeFor(un); return [t.p, t.s].filter(Boolean).map(c => String(c).toLowerCase()); };
+      const leaks = (svg, un) => { const mk = svg.outerHTML.toLowerCase(); return unitCols(un).filter(c => mk.indexOf(c) >= 0 || (c.indexOf('#') === 0 && mk.indexOf(c.slice(1)) >= 0)); };
+      showProfile('badges'); await wait(900);
+      const tiles = [...document.querySelectorAll('.badge-tile.is-locked')];
+      out.lockedTiles = tiles.length;
+      out.tileLeaks = tiles.map((t, i) => leaks(t.querySelector('svg'), units.filter(x => !unitBadgeEarned(x))[i] || u)).filter(l => l.length).length;
+      out.tileForm = tiles.filter(t => t.querySelectorAll('svg path').length > 12).length;
+      out.tileGlowNeutral = tiles.every(t => spread(getComputedStyle(t.querySelector('.badge-tile-art')).getPropertyValue('--badge-glow').trim()) < 10);
+      showUnlockDetail(badgeDetail(u)); await wait(400);
+      const card = document.querySelector('.unlock-card-badge .unlock-card-art');
+      out.cardLeaks = card ? leaks(card.querySelector('svg'), u) : ['missing'];
+      out.cardForm = card ? card.querySelectorAll('svg path').length > 12 : false;
+      out.cardGlow = card ? spread(getComputedStyle(card).getPropertyValue('--badge-glow').trim()) : 999;
+      document.querySelectorAll('.invite-overlay').forEach(n => n.remove());
+      /* an earned one keeps its colour */
+      const e = units[0]; const was = store.unitPerfects; store.unitPerfects = Object.assign({}, was || {}); store.unitPerfects[e] = 999;
+      const sv = buildUnitBadgeSVG(e, unitBadgeEarned(e) ? true : 'grey'); out.earnedColour = leaks(sv, e).length > 0;
+      store.unitPerfects = was;
+      return out; }""")
+    bad = {k: v for k, v in r["silver"].items() if v > 8}
+    check("every Silver colour is neutral (no channel more than 8 levels off another)", bad == {}, bad)
+    check("the seven rank colours stay apart", r["close"] == [], r["close"])
+    check("an unearned badge in the case shows no unit colour", r["lockedTiles"] > 0 and r["tileLeaks"] == 0, (r["tileLeaks"], r["lockedTiles"]))
+    check("an unearned badge in the case shows its form, not an empty hole", r["tileForm"] == r["lockedTiles"], (r["tileForm"], r["lockedTiles"]))
+    check("an unearned tile's light is no colour", r["tileGlowNeutral"] is True)
+    check("an unearned badge's card shows its form and no unit colour", r["cardLeaks"] == [] and r["cardForm"] is True, (r["cardLeaks"], r["cardForm"]))
+    check("and its card's light is no colour", r["cardGlow"] < 10, r["cardGlow"])
+    check("an earned badge keeps its own colour", r["earnedColour"] is True)
+    ctx.close()
+
+
+B314_LIGHT = ['cx-fx-umaura', 'cx-fx-umaura2', 'cx-fx-wisps', 'cx-fx-umcglow', 'cx-fx-umcglint', 'cx-fx-umrim', 'cx-fx-sgsparks', 'cx-fx-sglight',
+              'cx-fx-sgsurgew', 'cx-fx-sgsurgeb', 'cx-fx-sgaurora', 'cx-fx-gnatm', 'cx-fx-gnleak', 'cx-fx-gnerupt', 'cx-fx-gnseam', 'cx-fx-starfield', 'cx-fx-sparkles']
+# Orion's head group draws its whole cloak as well; its head is the hood,
+# which ends here.
+B314_HEAD_FLOOR = {"astronaut": 26}
+
+
+def _b314_size(pg, cid, head):
+    """One still drawing at 10px a unit on a transparent page, scene, halo
+    and light left out, nothing else of the page showing. Returns the ink
+    box (x, y, w, h in the drawing's units) and the ink area (square units)
+    of the head (head=True) or the whole figure."""
+    import io as _io
+    from PIL import Image as _Im
+    pg.evaluate("""([cid, head, light]) => { document.getElementById('b314sz')?.remove();
+      const host = document.createElement('div'); host.id = 'b314sz'; host.style.cssText = 'position:fixed;left:0;top:0;width:340px;height:340px;z-index:99999';
+      const s = buildAvatarCharSVGSafe(cid);
+      s.style.cssText = 'width:340px;height:340px;-webkit-mask-image:none;mask-image:none;filter:none';
+      host.appendChild(s); document.body.appendChild(host);
+      document.querySelectorAll('body > *:not(#b314sz)').forEach(e => { if(e.style) e.style.visibility = 'hidden'; });
+      s.querySelectorAll('.cx-bg').forEach(n => n.remove());
+      s.querySelectorAll('circle').forEach(n => { if(/url\\(#(aura|halo)-/.test(n.getAttribute('fill') || '')) n.remove(); });
+      light.forEach(c => s.querySelectorAll('.' + c).forEach(n => n.remove()));
+      if(head){
+        s.querySelectorAll('*').forEach(n => n.style && (n.style.visibility = 'hidden'));
+        const h = s.querySelector('.cx-head');
+        if(h){ h.style.visibility = 'visible'; h.querySelectorAll('*').forEach(n => n.style && (n.style.visibility = 'visible')); }
+      } }""", [cid, head, B314_LIGHT])
+    png = pg.screenshot(clip={"x": 0, "y": 0, "width": 340, "height": 340}, omit_background=True)
+    A = _Im.open(_io.BytesIO(png)).convert("RGBA").getchannel("A").point(lambda v: 255 if v > 110 else 0)
+    if head and cid in B314_HEAD_FLOOR:
+        A = A.crop((0, 0, 340, int((B314_HEAD_FLOOR[cid] - 3) * 10))).crop((0, 0, 340, 340))
+    bb = A.getbbox()
+    if not bb:
+        return None
+    area = sum(1 for v in A.getdata() if v) / 100.0
+    return {"x": bb[0] / 10 + 3, "y": bb[1] / 10 + 3, "w": (bb[2] - bb[0]) / 10, "h": (bb[3] - bb[1]) / 10, "area": area}
+
+
+def check_b314_sizes(br):
+    """Build 314: "The masked one character looks bigger than the rest when
+    looking at them all. Ensure all the characters are the same size, some
+    of the secret flare characters had the problem."
+    What reads as a character's size is its head - every one of them is a
+    bust whose shoulders run off the bottom of the frame, so the whole
+    figure's box is nearly the same for all thirty and says nothing (it is
+    checked here too, to a tight tolerance). The head is measured as the
+    ink it covers - its silhouette, hats, hoods and hair included, light and
+    glow left out - which is what made the Masked One (solid mask, spiked
+    hood: 38% over the median at build 313), the Hive (31%), Umbra (20%)
+    and Void (16%) read as big. Then, in each place a character is drawn -
+    the Customize grid, the sign-up picker, the Profile card and a
+    leaderboard row - every character's drawing is the same size in its
+    tile, so what holds for the drawing holds there.
+    Fails on build 313 for the Masked One, the Hive, Umbra and Void."""
+    import statistics as _st
+    print("\n97. build 314: every character the same size - the head no more than 15% over the set's median, in every place it is drawn")
+    ctx, pg = booted(br, 400, 400, seed=USED_ACCOUNT, dpr=1)
+    pg.evaluate(B314_TRANSPARENT)
+    ids = pg.evaluate("()=>AVATAR_CHARACTERS.filter(c => !c.retired).map(c => c.id)")
+    head = {c: _b314_size(pg, c, True) for c in ids}
+    ctx.close()
+    med = _st.median(v["area"] for v in head.values())
+    over = {c: round(100 * (v["area"] / med - 1)) for c, v in head.items() if v["area"] > med * 1.15}
+    check("no character's head covers more than 15%% more than the set's median (%.0f sq units)" % med, not over, over)
+    mw, mh = _st.median(v["w"] for v in head.values()), _st.median(v["h"] for v in head.values())
+    small = {c: (round(100 * (v["w"] / mw - 1)), round(100 * (v["h"] / mh - 1))) for c, v in head.items() if v["w"] < mw * .85 and v["h"] < mh * .85}
+    check("and no character's head is more than 15% narrower AND shorter than the median", not small, small)
+
+    # the same size in every place a character is drawn: every drawing in
+    # a context renders at one size, with nothing scaling one character
+    import re as _re
+    vr = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "check-vroom.py")).read()
+    fake = _re.search(r'FAKE_FIRESTORE = """(.*?)"""', vr, _re.S).group(1)
+    keep = "window.addEventListener('DOMContentLoaded', function(){ try{ window.__osr = onSnapshotResilient; }catch(e){} });"
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, dpr=1, init=fake + "\n" + keep)
+    r = pg.evaluate("""async (ids) => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      /* the drawing's laid-out size, not its box on screen: the picked tile
+         grows 4% on purpose and that is not the drawing's size */
+      const sz = svg => svg ? +parseFloat(getComputedStyle(svg).width).toFixed(1) : 0;
+      const one = (list) => { const v = list.filter(x => x[1] > 0); const s = new Set(v.map(x => x[1])); return { n: v.length, sizes: [...s], who: v }; };
+      /* Customize, everything held */
+      store.legacyChars = ids.slice(); showCustomize(); await wait(900);
+      out.customize = one([...document.querySelectorAll('.screen-customize .avatarchar-option')].map(o => [o.dataset.char || '', sz(o.querySelector('svg.avatarchar-svg') || o.querySelector('svg'))]));
+      /* the sign-up picker */
+      try{ showWelcomeCharacterPrompt(); await wait(700);
+        out.signup = one([...document.querySelectorAll('.avatarchar-option')].map(o => [o.dataset.char || '', sz(o.querySelector('svg'))])); }catch(e){ out.signup = { n: 0, err: String(e) }; }
+      /* the Profile card, each character in turn */
+      const prof = [];
+      for(const id of ids){ store.avatarChar = id; showProfile(); await wait(120);
+        const sv = document.querySelector('.profile-hero svg.avatarchar-svg, .profile-avatar svg.avatarchar-svg, .profilecard svg.avatarchar-svg') || document.querySelector('#stage svg.avatarchar-svg');
+        prof.push([id, sv ? sz(sv) : 0]); }
+      out.profile = one(prof);
+      /* a leaderboard row, each character on one */
+      try{ __useFake(); if(window.__osr) onSnapshotResilient = window.__osr; }catch(e){}
+      for(let i = 0; i < ids.length; i++) await fbDb.collection('leaderboard').doc('s' + i).set({ pub: 's' + i, firstName: 'P' + i, avatarChar: ids[i], accent: 'ink', level: 60 - i, badges: 3, hundos: 20, xp: 50000 - i * 900, tests: 30, week: weekKeyNow(), weekPoints: 900 - i * 10, lastModified: Date.now(), seenAt: Date.now() });
+      showRankings(); for(let t = 0; t < 60 && document.querySelectorAll('.rank-row .rank-avatar svg').length < ids.length; t++) await wait(200);
+      out.board = one([...document.querySelectorAll('.rank-row')].filter(r => r.dataset.av).map(r => [r.dataset.av, sz(r.querySelector('.rank-avatar svg.avatarchar-svg') || r.querySelector('.rank-avatar svg'))]));
+      return out; }""", ids)
+    for k, label in (("customize", "the Customize grid"), ("signup", "the sign-up picker"), ("profile", "the Profile card"), ("board", "a leaderboard row")):
+        v = r.get(k) or {}
+        sizes = v.get("sizes") or []
+        check("%s: every character's drawing is the same size (%d drawn)" % (label, v.get("n", 0)),
+              v.get("n", 0) >= (4 if k == "signup" else 20) and len(sizes) == 1, {"sizes": sizes, "err": v.get("err")})
+    ctx.close()
+
+
 def check_b313_flares(br):
     """Build 313, the secret flares: "None of my secret flares are lit up";
     "when tapping the tiny secret flares, sometimes they and sometimes the
@@ -9811,7 +10182,9 @@ def check_b313_flares(br):
             const p = o.querySelector('.char-sil-body .cx-head :is(path, circle, ellipse):not([fill="none"])');
             return o.classList.contains('is-silhouette') && p ? getComputedStyle(p).fill : 'not-silhouette'; });
           out.voidShown = (() => { const o = opt('voidwalker'); return !!o && !o.classList.contains('is-silhouette'); })();
-          out.silLive = !!document.querySelector('.avatarchar-option.is-silhouette .char-sil.char-live');
+          /* build 314: the silhouette is a flip-book on its tile (char-flip),
+             or live if its sheet cannot be made */
+          out.silLive = !!document.querySelector('.avatarchar-option.is-silhouette:is(.char-flip, .char-live), .avatarchar-option.is-silhouette .char-sil.char-live');
           /* 7. banners: one per secret character, held with it */
           out.banners = ['flare_void', 'flare_umbra', 'flare_horizon', 'flare_genesis'].map(id => !!bannerDef(id) && typeof BANNER_ART[id] === 'function');
           out.bannerHeld = [bannerEarned('flare_void'), bannerEarned('flare_umbra')];
@@ -11381,6 +11754,8 @@ def main():
             check_b313_no_sweep(br)
             check_b313_alive(br)
             check_b313_grades(br)
+            check_b314_chars(br)
+            check_b314_sizes(br)
             check_b313_flares(br)
             check_b313_flares_glass(br)
             check_b313_pause(br)

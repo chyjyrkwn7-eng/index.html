@@ -12411,6 +12411,216 @@ picks wrong once and then right; `#nextbtn` stays hidden until then.
 
 Screenshots and GIFs: `/tmp/claude-0/b313/shots/chars/`.
 
+#### Build 314 - characters that move everywhere, nothing cut off, silhouettes and Silver with no hue, grey badges
+
+**Why characters stood still app-wide ("My character on the bottom tab
+is not moving either, seems like that's a problem app wide").** A small
+tile (80 CSS px or less) is a STILL drawing until its flip-book sheet is
+recorded, and the recorder was the problem, three ways at once:
+- **It was slow and strictly first come, first served.** A recording is
+  144 svg frames decoded and drawn - measured 14-52s per character at 4x
+  CPU here, 2-5s unthrottled - and the queue took them in the order
+  asked. A board of twenty characters, or Customize's thirty, queued
+  minutes of recording, and every tile behind them stood still. Now the
+  queue (`charRecPump`) picks what is wanted most each time: your own
+  tab first, then tiles on or near the screen, then the rest; a tile no
+  longer on the page is dropped, not recorded.
+- **A sheet already saved waited in the same queue.** The Cache Storage
+  read was inside the queued job, so a cached character waited behind
+  every uncached one. It is read at once, out of turn.
+- **A failed or hung recording left its tile still for good.** The tile
+  kept `char-flip` with nothing playing. Now every await in a recording
+  has a time limit (`charRecWithin`, `CHAR_REC_LIMIT_MS`) and a tile whose
+  sheet cannot be made falls back to its live drawing
+  (`charFlipFallback` - the tab bar always, anything else only while
+  fewer than four have, so a board never becomes forty live svgs).
+  check-behaviour 95 breaks recording on purpose (svg decode rejects)
+  and asserts the tab still moves.
+- Also: `syncBottomTabAvatar()` rebuilt the drawing on every live update,
+  every Home and every save, throwing its loop away each time. The same
+  character is left alone now (`tabIcon.dataset.char`).
+- The tab's character is **solo** (`setCharState(el, "live", { solo:
+  true })`): it plays its live drawing from the first frame while its
+  sheet records and hands over to the sheet when it lands.
+- The yield between frames (`charRecYield`): idle callbacks where they
+  exist, as before; on iOS, which has none, a 10ms slice just after each
+  frame instead of 8ms behind a 16ms timer. **Never back-to-back slices**
+  (a first draft, on a MessageChannel): fastest, but it left no idle time
+  at all, so everything waiting on an idle callback - the rank emblems'
+  recorder, the road map's rank-up - was pushed to its timeout, and
+  check-behaviour 18's rank-up on the map went red.
+**We could not run WebKit here** (its download is blocked), so whether
+iOS also failed a recording outright is not known; the fallback covers
+that case either way.
+
+**Customize plays every character you hold.** Nothing there ever called
+`setCharState`. Held characters and a secret's silhouette are flip-books
+now; a locked (non-secret) character stays still and greyed - a preview,
+not something you hold. One IntersectionObserver for every flip-book
+tile (`charFlipWatch`, rootMargin one screen): near the screen a tile
+asks for its sheet and plays; far away it lets its sheet go
+(`charFlipPark`), so a long page holds the sheets of what is near it,
+not thirty decoded images. Measured: four LIVE silhouettes on Customize
+cost 83ms a frame at 4x CPU on 313 (twelve live tiles ~33-50ms); as
+flip-books the screen idles at 16.7ms.
+
+**Nothing stops at a straight line.** Measured on every character over
+its whole loop, the frame cut something on most of them - scenery drawn
+to the edge (Ronin's red moon, Ninja's bamboo), things in flight (Orion's
+shooting star, the Sheriff's tumbleweed, the Ronin's slash) and crowns
+and hats that rose above the frame. Two fixes:
+- The `.avatarchar-svg` mask has a second layer: the top and both sides
+  fade out over 1.6 of the 34 units (4.7%), as the bottom already did
+  (build 233), and `recordCharSheet` bakes the same mask into every
+  sheet. **Not an svg `<mask>` inside the drawing** - the first version
+  was, and a masked group made a live Zenith cost 52ms a frame to draw
+  (7 before); a CSS mask is the compositor's.
+- Characters drawn since build 272 had drifted above its top line (y
+  4.35 of the 3..37 frame) - Frost, Inferno, the Clown, the Oracle,
+  Zenith, Astral and more, up to 2.6 units over. `AVATAR_ART_SCALE` below
+  1 is a FIT now, each one just enough that its still drawing tops out
+  at 4.35 and stays 4 units in from the sides (the Marksman's rifle runs
+  off the corner on purpose). **Re-measure after redrawing anybody** -
+  check-behaviour 95 rasterises every character and fails on any above
+  the line.
+
+**Umbra and Horizon "cut off when looking at them" - it was mostly their
+silhouettes.** The silhouette blacked in EVERY part of the figure,
+including the light it gives off: Umbra's two flames of shadow off the
+hood became a solid black hood half again as tall as the real one, which
+filled the card's circle edge to edge; Horizon's rising light thickened
+its crown into the frame. Light, not shape (`SIL_LIGHT`), is left out of
+a silhouette now. The real drawings were fitted too: Horizon's head
+comes down onto its shoulders (`AVATAR_HEAD_SCALE.singularity`) and both
+are scaled a little, so every lock and the hood's point sit inside a
+round frame (Profile, the card, a board row); Umbra's flames stop short
+of the frame top at their largest breath.
+
+**A silhouette gives away no colour.** The outline was the character's
+glow colour, the pool behind it too, and the card's circle and glow were
+the character's own. Now the outline is a plain light grey (`SIL_RIM`),
+the pool white, the card glow grey, and the flare it wears is lit in
+greys (`silGreyPaint` - the same lightness, no hue). It is also ONE svg
+(the outline copy of the figure under the black one, `charSilhouetteSVG`)
+with its fills set on the parts, so it records as a flip-book
+(`charAnimDrawing("<id>~sil")`). check-behaviour 95 reads the tile's
+pixels: no hue.
+
+**The ultimates, a smidge calmer** ("Astral, zenith and celestial
+effects are little too much"). Nothing removed: Zenith's orbit and comet
+at half speed, its star breathes 7% not 12%, its stardust softer; Astral's
+counter-ring at half speed, its pulses and shard flashes smaller and
+dimmer, its wings beat half as often through less of an arc. Zenith's
+eight rays could NOT be slowed: they alternate long and short, so only a
+quarter turn is seamless, and a 12s loop cannot be a 6s flip-book. Every
+period still divides 6s.
+
+**Celestial, redrawn** ("Celestial also could look better, not a huge
+fan"). Same idea - midnight and platinum, a crown of seven stars,
+platinum wings, the night sky - new drawing: a VEIL rather than a flat
+royal-blue helmet (the night sky inside it, platinum light on one edge),
+a serene platinum face with calm eyes of pale light and a constellation
+traced on its cheeks, the crown on a fine circlet, wings of three swept
+quills a side, and a soft light behind the head instead of six trail
+arcs three times the size of the frame (which every frame cut off).
+Calmer motion: the crown's stars wake one after another on a 6s wave,
+one meteor every 3s (it was one a second), the veil's and cape's stars
+twinkle, the wings breathe. It still moves more parts (27) than every
+earnable character but Orion - section 93 now asks for 25, not 29.
+
+**Silver is silver** ("The silver rank looks a little blue";
+"silver on the leaderboard doesn't look good"). Every Silver colour had
+blue in it - the rank colour #A9B7C6 (+29 blue), a slate planet rim, sky
+and violet page glows, a steel-blue second-place medal, row ring and
+name - left from build 219, when Silver was pushed off Iron's grey. Iron
+is long gone. Neutral now everywhere (rank colour #C8CACC, swatch,
+theme triad, page glows, the theme dot, the emblem's light, the Home
+bubble tint, the leaderboard's second-place medal, row and name, the
+podiums): no channel more than a few levels off the others, made to read
+as METAL by its ramps (white highlight, dark mid-band, second catch), not
+by a tint. check-behaviour 95 asserts every one is within 8 levels and
+the seven rank colours stay at least 60 apart.
+
+**An unearned badge is its form in grey** ("The badges you have not
+unlocked yet ... grey them out ... You can still see what the badge would
+kind of look like but without revealing them"). The card drew it in full
+enamel and the case showed only the hole. `buildUnitBadgeSVG(unit,
+"grey")` draws the whole piece - metal, bevels, channels, in its slot -
+in neutral greys at .7, no shine; the tile's and the card's light are
+grey too. Earned badges are untouched. check-behaviour 95 asserts no unit
+colour in any unearned tile or card.
+
+**Which character is selected, at a glance** ("it's hard to tell which
+character is selected because some of the characters have the glow effect
+on them at all times"). Two halves:
+- every character carries a soft halo in its own colour and most stand in
+  a lit scene - right on a board, but in a picker it is the same light the
+  selection glow makes, so a Ghost, a Lunar or a Solar read half-picked. In
+  the two pickers (Customize, sign-up) the drawing is `pickerCharSVG()`:
+  halo at .4, scene at .78. Its flip-book is its own recording
+  (`"<id>~pick"`) - a picker tile is a size no board uses, so it costs
+  nothing extra;
+- the picked tile wears a crisp ring (a hairline of its own colour lifted
+  towards white, a glass sheen inside its top edge, a faint second halo -
+  `.avatarchar-option::after`) and a white tick on its top-left corner
+  (`addPickCheck()`; top-right is the "new" dot's, bottom-right the
+  padlock's), besides the glow. It grows 4%, not 12%, so ring and all it
+  stays in its column, and the ring stops short of the bottom so it never
+  crosses the name.
+
+**The name editor has room** ("that text box is a smidge cramped"). The
+name row stayed on screen over the field - `.customize-namerow`'s
+`display:flex` beat the `[hidden]` attribute - and the field sat .6rem
+over a lone Save. Now a block of its own (`.customize-nameedit`): a "Your
+name" label, a roomier field (17px text, ~15px padding), Save and Cancel
+side by side, capped at 28rem on a tablet. **An element with its own
+`display` needs a `[hidden]{display:none}` rule** - the same trap as
+`.searchbox`.
+
+**Gate budgets, not decisions.** Measured on a quiet machine: check-behaviour 91's board flip-books (4 rows within 50s)
+measured 4 at 52s on build 313 itself here, so its wait is 100s now; it
+was a harness budget, not a decision.
+
+`CHAR_ANIM_VER` is `c4` (the motion and the edges changed). Screenshots:
+`/tmp/claude-0/b314/chars/`, Genesis: `/tmp/claude-0/b314/genesis/`.
+
+#### Every character the same size (build 314)
+
+"The masked one character looks bigger than the rest when looking at them
+all. Ensure all the characters are the same size, some of the secret flare
+characters had the problem." **What reads as a character's size is its
+head**, not its figure's box: every character is a bust whose shoulders run
+off the bottom of the frame, so the whole figure's box is nearly the same
+for all thirty, and the box of the head is mostly a statement about hats
+(the Sheriff's brim, the Clown's points, the Ronin's cone) rather than size.
+The measure that matched what Madison saw is the INK the head covers - its
+silhouette, hats, hoods and hair included, light and glow left out
+(`SIL_LIGHT`), Orion counted down to the bottom of its hood (its head group
+draws the cloak too). At build 313 that put the Masked One 38% over the
+set's median (a solid mask in a spiked hood), the Hive 31%, Umbra 20% and
+Void 16%; the Alien was 12-16% depending on the build's fits.
+
+- Each came down about its own chin with `AVATAR_HEAD_SCALE` (masked .92,
+  hive .9, voidwalker .945, umbra .965, alien .83 -> .8), to within 8-10% of
+  the median, so it stays on its shoulders and nothing else about it
+  moves. **Genesis went up** (1.1): its planet sat low (its top at 11.7,
+  the next lowest 9.7) and covered 19% less than the median.
+- **Not everybody below the median can come up.** Zeus, Solar, Astral,
+  Zenith and the Clown are under it on ink, but their crowns and hats
+  already touch the top line the frame allows (y 4.35 - see
+  `AVATAR_ART_SCALE`); Horizon's crown is thin rays, which cover little
+  ink and span as much as anybody's head; the Koi's bowl is glass.
+- **Every place draws every character at one size**: the Customize grid,
+  the sign-up picker, the Profile card and a board row each lay out every
+  drawing at the same width, so a drawing's proportions are what you see
+  everywhere. (Measure the laid-out width, not the box on screen: the
+  picked Customize tile grows 4% on purpose.)
+- check-behaviour 97: no head more than 15% over the median, none more than
+  15% narrower AND shorter, and every context draws every character at one
+  size. It fails on 313 for the Masked One, the Hive, Umbra and Void.
+  **Re-measure after redrawing anybody** - a new hood or hat moves the
+  median as well as the character.
+
 #### Chat history that really is a day, group chats you can read at a glance, Pause hands its spot over, and the Virtual Room at 2 to 20 people
 
 **The chat keeps 24 hours, everywhere, and nothing older is ever drawn.**
