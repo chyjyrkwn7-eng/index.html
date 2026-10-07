@@ -8271,6 +8271,31 @@
       width:2rem; height:2rem;
     }
   }
+  /* THE TAB CHARACTER SITS ON ITS OWN PLATE (build 317). "They got a
+     smidge smaller so let's ensure they are still a nice size AND
+     let's ensure you can see their backgrounds because right now their
+     backgrounds are hard to see there." A bare 28px drawing on the bar's
+     glass lost its scene to the edge fade and read small once the wide
+     characters got their AVATAR_VIEWBOX room. It is the Profile plate in
+     miniature now: a disc lit in the character's own colour, a ring of
+     it, the drawing clipped round. 20% bigger than the box the bar lays
+     out, the difference taken back as negative margin (mostly above, so
+     the ring clears the label) - the bar's height does not move. The
+     flip-book keeps playing inside it: the clip is on the drawing and
+     the play layer, not on the icon, so the new dot can still sit out. */
+  #bottomtab-profile > .bottomtab-icon-avatar{
+    width:2.1rem; height:2.1rem; margin:-.3rem 0 -.05rem; border-radius:50%;
+    background:radial-gradient(circle at 50% 38%,
+      color-mix(in srgb, var(--char-glow, var(--accent)) 34%, #1C212B), #11141B 74%);
+    box-shadow:0 0 0 1.5px color-mix(in srgb, var(--char-glow, var(--accent)) 60%, transparent),
+      0 2px 8px rgba(0,0,0,.4);
+  }
+  #bottomtab-profile > .bottomtab-icon-avatar > svg,
+  #bottomtab-profile > .bottomtab-icon-avatar > .char-flip-play{ clip-path:circle(50% at 50% 50%); }
+  .bottomtabs.has-options-tab #bottomtab-profile > .bottomtab-icon-avatar{ width:1.92rem; height:1.92rem; margin:-.27rem 0 -.05rem; }
+  @media (min-width:40rem){
+    .bottomtabs:not(.has-options-tab) #bottomtab-profile > .bottomtab-icon-avatar{ width:2.64rem; height:2.64rem; margin:-.34rem 0 -.1rem; }
+  }
   .bottomtab-start{
     display:none; flex-direction:column; align-items:center; gap:.15rem;
     background-image:linear-gradient(180deg, rgba(255,255,255,.25), rgba(255,255,255,0) 60%), linear-gradient(var(--accent), var(--accent));
@@ -18620,7 +18645,7 @@
      the drawing itself (clip-path: the same box) and the icon lets the
      dot out. */
   #bottomtab-profile.has-new .bottomtab-icon-avatar{ overflow:visible; }
-  #bottomtab-profile.has-new .bottomtab-icon-avatar > svg{ clip-path:inset(0); }
+  #bottomtab-profile.has-new .bottomtab-icon-avatar > svg{ clip-path:circle(50% at 50% 50%); }
   #bottomtab-profile.has-new .bottomtab-icon::after{
     content:""; position:absolute; top:-.15rem; right:-.2rem; width:10px; height:10px; aspect-ratio:1 / 1; border-radius:50%;
     background:radial-gradient(circle at 34% 30%, #FFF7C9 0 14%, var(--new-dot) 46%, #F0A81C 100%);
@@ -44416,7 +44441,10 @@ function syncBottomTabAvatar(){
     const svg = buildAvatarCharSVG(store.avatarChar);
     /* Alive in the tab bar too (build 304): "your character needs to
        have its animations displayed as well." */
-    if(svg){ tabIcon.replaceChildren(svg); tabIcon.dataset.char = want; setCharState(tabIcon, "live", { solo: true }); return; }
+    if(svg){ tabIcon.replaceChildren(svg); tabIcon.dataset.char = want;
+      /* the plate under it is lit in the character's own colour */
+      try{ tabIcon.style.setProperty("--char-glow", avatarGlowColor(want)); }catch(e){}
+      setCharState(tabIcon, "live", { solo: true }); return; }
   }
   delete tabIcon.dataset.char;
   tabIcon.textContent = getInitials(store.firstName) || "";

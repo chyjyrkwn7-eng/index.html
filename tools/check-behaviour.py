@@ -12988,6 +12988,35 @@ def check_b317_volume(br):
     ctx.close()
 
 
+def check_b317_tabplate(br):
+    """Build 317. "They got a smidge smaller so let's ensure they are still a
+    nice size AND let's ensure you can see their backgrounds because right
+    now their backgrounds are hard to see there and ensure they still get
+    animations on the tab." The Profile tab's character sits on a lit disc
+    in its own colour, 20% bigger than the other tab icons, without the bar
+    growing, and still animates. Written against build 317's first cut,
+    where it was a bare 28px drawing on the glass."""
+    print("\n317. the Profile tab's character: on its own plate, bigger, bar unchanged, still alive")
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          store.avatarChar = 'ronin'; const t = document.querySelector('#bottomtab-profile .bottomtab-icon');
+          delete t.dataset.char; syncBottomTabAvatar(); showHome(); await wait(2500);
+          const home = document.querySelector('#bottomtab-home .bottomtab-icon').getBoundingClientRect();
+          const ic = t.getBoundingClientRect(), cs = getComputedStyle(t);
+          const lab = document.querySelector('#bottomtab-profile .bottomtab-label').getBoundingClientRect();
+          const homeLab = document.querySelector('#bottomtab-home .bottomtab-label').getBoundingClientRect();
+          const anims = document.getAnimations().filter(a => a.effect && a.effect.target && t.contains(a.effect.target) && a.playState === 'running').length;
+          return { ratio: ic.width / home.width, bg: cs.backgroundImage, radius: cs.borderTopLeftRadius,
+                   glow: t.style.getPropertyValue('--char-glow'), gap: lab.top - ic.bottom,
+                   labelsLevel: Math.abs(lab.top - homeLab.top), anims }; }""")
+        check(f"{dev}: the character is ~20% bigger than the other tab icons", r["ratio"] >= 1.15, round(r["ratio"], 3))
+        check(f"{dev}: on a disc lit in its own colour", "gradient" in r["bg"] and r["radius"] == "50%" and bool(r["glow"]), [r["bg"][:40], r["radius"], r["glow"]])
+        check(f"{dev}: the labels stay level - the bar did not grow round it", r["labelsLevel"] <= 1 and r["gap"] >= 0, [r["labelsLevel"], r["gap"]])
+        check(f"{dev}: and it still animates in the tab", r["anims"] > 0, r["anims"])
+        ctx.close()
+
+
 def check_b317_rankup(br):
     """Build 317. "When you rank up, the next time you open the Profile tab
     it should be a cool thing. After a second, a black loading screen that
@@ -13371,6 +13400,7 @@ def main():
             check_b316_tiles(br)
             check_b317_daily(br)
             check_b317_volume(br)
+            check_b317_tabplate(br)
             check_b317_rankup(br)
         finally:
             br.close()
