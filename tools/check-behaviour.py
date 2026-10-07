@@ -7542,7 +7542,12 @@ def check_b299(br):
             store.lifetime.points = 0; topicsIn(QUESTIONS).forEach(x => store.unitPerfects[x] = 0);
             showHome();
             const all = () => document.querySelectorAll('.cosmic-badge-rank').length;
-            for(let k = 0; k < 400 && document.querySelectorAll('.cosmic-rank-anim').length < all(); k++) await wait(100);
+            /* 60s, not 40 (build 315): seven sheets recorded from nothing
+               on a software-drawn iPad Home take 30-45s here, and the home
+               stream's own build missed 40 one run in two. What this
+               guards is "the locked ones move too" - on 298 they never
+               do, at any budget. */
+            for(let k = 0; k < 600 && document.querySelectorAll('.cosmic-rank-anim').length < all(); k++) await wait(100);
             out.flares = all();
             out.locked = document.querySelectorAll('.cosmic-badge-rank:not(.cosmic-badge-lit)').length;
             out.lockedPlaying = document.querySelectorAll('.cosmic-badge-rank:not(.cosmic-badge-lit) .cosmic-rank-anim').length;
@@ -9139,18 +9144,20 @@ def check_b314h_tabs(br):
       (function f(t){ __frames.push(t); requestAnimationFrame(f); })(0); }""")
     tabs = ["home", "profile", "rewards", "settings"]
     times = []; blank = 0
-    for a in tabs:
-        for b in tabs:
-            if a == b:
-                continue
-            for d in (a, b):
-                xy = pg.evaluate("d => { const r = document.querySelector('.bottomtab[data-dest=\"' + d + '\"]').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }", d)
-                pg.evaluate("() => { __mounts.length = 0; __frames.length = 0; }")
-                pg.touchscreen.tap(xy[0], xy[1])
-                pg.wait_for_timeout(1100)
-            m = pg.evaluate("""() => { const m = __mounts.find(x => x >= __tap); const f = m ? __frames.find(x => x > m) : null;
-              const st = document.getElementById('stage'); return { paint: f ? f - __tap : 9999, blank: !st.firstElementChild }; }""")
-            times.append(m["paint"]); blank += 1 if m["blank"] else 0
+    # three rounds of the twelve switches (build 315): a median of twelve
+    # swung 280-350ms run to run on one build here; of thirty-six it holds
+    # within a few ms, and 313 (~390) still fails it.
+    for a, b in [(a, b) for _ in range(3) for a in tabs for b in tabs]:
+        if a == b:
+            continue
+        for d in (a, b):
+            xy = pg.evaluate("d => { const r = document.querySelector('.bottomtab[data-dest=\"' + d + '\"]').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }", d)
+            pg.evaluate("() => { __mounts.length = 0; __frames.length = 0; }")
+            pg.touchscreen.tap(xy[0], xy[1])
+            pg.wait_for_timeout(1100)
+        m = pg.evaluate("""() => { const m = __mounts.find(x => x >= __tap); const f = m ? __frames.find(x => x > m) : null;
+          const st = document.getElementById('stage'); return { paint: f ? f - __tap : 9999, blank: !st.firstElementChild }; }""")
+        times.append(m["paint"]); blank += 1 if m["blank"] else 0
     times.sort()
     med = times[len(times) // 2]
     check("every switch between the four tabs paints its screen, median tap-to-paint under 300ms at 4x CPU (313: ~390 warm)",
@@ -11724,11 +11731,48 @@ def check_b313_fx(br):
           }
           const T = (typeof HUNDO_FX_TOTAL === 'object' && HUNDO_FX_TOTAL[fx]) || 0, tail = (typeof HUNDO_FX_TAIL_AT === 'object' && HUNDO_FX_TAIL_AT[fx]) || 0;
           out.total = T;
-          await until(tail + (T - tail) * .45);
-          const s2 = document.querySelector('.hfx-layer.hfx-' + fx), b2 = document.querySelector('.rs-grade .hfx-box.hfx-' + fx);
-          const parts = (s2 ? [...s2.querySelectorAll('*')].map(e => shown(e, s2)) : []).concat(b2 ? [...b2.querySelectorAll('*')].map(e => shown(e, b2)) : []);
-          out.tailLayer = !!s2 && opac(s2) > .99;
-          out.tailFading = parts.filter(o => o > .02 && o < .98).length;
+          /* build 315: the tail is watched from its start to the moment the
+             layer goes, not read once at 45% of it. A single read passed
+             the build where four bubbles sat fully shown until the layer
+             was cut away at 7s (they were not "fading", so nothing looked
+             at them) and failed the build that fixed it, whose bubbles had
+             all faded out by 6s - before the one read. What "never cut"
+             means is the LAST look before the layer goes: no piece of it
+             (a leaf, and some of it in sight) still fully shown. */
+          await until(tail);
+          /* what of a piece can be SEEN: its box cut down by every ancestor
+             that clips (overflow) and by the viewport. The Underwater sea
+             drains its water below its own clipped box, so the water's raw
+             box is still on the page while none of it shows. */
+          const seen = (el, root) => {
+            const q = el.getBoundingClientRect();
+            let l = Math.max(q.left, 0), t = Math.max(q.top, 0), r = Math.min(q.right, innerWidth), b = Math.min(q.bottom, innerHeight);
+            for(let a = el.parentElement; a && l < r && t < b; a = a.parentElement){
+              const cs = getComputedStyle(a);
+              if(cs.overflowX !== 'visible' || cs.overflowY !== 'visible'){
+                const w = a.getBoundingClientRect();
+                l = Math.max(l, w.left); t = Math.max(t, w.top); r = Math.min(r, w.right); b = Math.min(b, w.bottom);
+              }
+              if(a === root) break;
+            }
+            return l < r && t < b;
+          };
+          let firstTail = null, lastLive = null;
+          while(since() < T + 400){
+            const s2 = document.querySelector('.hfx-layer.hfx-' + fx), b2 = document.querySelector('.rs-grade .hfx-box.hfx-' + fx);
+            if(!s2 && !b2) break;
+            const parts = (s2 ? [...s2.querySelectorAll('*')].map(e => [shown(e, s2), e]) : []).concat(b2 ? [...b2.querySelectorAll('*')].map(e => [shown(e, b2), e]) : []);
+            const look = { t: Math.round(since()), layer: !!s2 && opac(s2) > .99,
+              fading: parts.filter(p => p[0] > .02 && p[0] < .98).length,
+              full: parts.filter(p => p[0] >= .98 && !p[1].children.length && seen(p[1], p[1].closest('.hfx-layer, .hfx-box') || document.body)).map(p => String(p[1].className && p[1].className.baseVal !== undefined ? p[1].className.baseVal : p[1].className).split(' ')[0]) };
+            if(!firstTail) firstTail = look;
+            lastLive = look;
+            await wait(50);
+          }
+          out.tailLayer = !!firstTail && firstTail.layer;
+          out.tailFading = firstTail ? firstTail.fading : 0;
+          out.cutAt = lastLive ? lastLive.t : null;
+          out.cutFull = lastLive ? lastLive.full : null;
           await until(T + 1300);
           out.after = document.querySelectorAll('.hfx-layer, .hfx-box.is-grade, .hfx-pane').length;
           out.borderAfter = getComputedStyle(g).borderTopColor; out.fillAfter = fill();
@@ -11745,7 +11789,8 @@ def check_b313_fx(br):
         tv = r.get("tintVars") or [None, None, None]
         check("%s: and KEEPS them once the effect has finished, the results screen still up (round 3: \"it stays yellow\")" % fx,
               r.get("screenUp") and tv[0] and r.get("borderAfter") == rgb(tv[0]) and r.get("numAfter", 0) > .95, {k: r.get(k) for k in ("borderAfter", "numAfter", "screenUp", "tintVars")})
-        check("%s: in its tail it is still on screen, fading - never cut" % fx, r.get("tailLayer") and r.get("tailFading", 0) >= 2, r)
+        check("%s: in its tail it is still on screen, fading - never cut (nothing fully shown at the last look before the layer goes)" % fx,
+              r.get("tailLayer") and r.get("tailFading", 0) >= 2 and r.get("cutFull") == [], {k: r.get(k) for k in ("tailLayer", "tailFading", "cutAt", "cutFull", "total")})
         check("%s: and once it has faded every piece is gone" % fx, r.get("after") == 0 and r.get("total", 0) > 0, r)
         gold = "rgb(217, 169, 58)"
         check("%s: the box's progress bar takes the effect's colours too, and keeps them after" % fx,

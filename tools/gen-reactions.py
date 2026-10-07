@@ -275,8 +275,17 @@ def build():
                 continue
             b2 = {"perfect": "pf", "great": "gr", "pass": "ps", "fail": "fl"}[band]
             for p in spec["parts"]:
-                sel = ":is(#rx,%s)" % ",".join(cls(s) for s in p.sel)
-                scope = ".rx-%s.rx-%s %s" % (cid, band, sel)
+                # THE SELECTOR CHROMIUM CAN FILE (build 315). This was
+                # `.rx-<id>.rx-<band> :is(#rx,.part)` - the #rx (nothing has
+                # that id) only lifts the rule to id weight, over the idle
+                # loops. But a rule that ends in :is() of several things has
+                # no class to be filed under, so Chromium tested all ~800 of
+                # them against every element of every screen it drew: measured
+                # at 4x CPU, tab switches went from 230ms to 262ms median.
+                # `.part:not(#rx)` ends in a class, and :where() makes the
+                # band free, so the weight is still (1,2,0) and the same
+                # elements match. Several parts make a list of the same rule.
+                scope = ", ".join(".rx-%s:where(.rx-%s) %s:not(#rx)" % (cid, band, cls(s)) for s in p.sel)
                 base = "rx-%s-%s-%s" % (cid, b2, slug(p.sel[0]))
                 while base in names_seen:
                     base += "x"

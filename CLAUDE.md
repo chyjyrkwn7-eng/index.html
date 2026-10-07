@@ -14756,3 +14756,92 @@ merge. A server-side restore from the 21:05 backup (merging, never
 replacing) is the alternative if either phone is gone, and it needs
 Madison's go.
 
+### Build 315 - one flip-book recording at a time, for the screen that is up
+
+Three gates went red on the merged 315 build that were green on the home
+stream's own (d9a116f): every flare on Home moving within 40s, the
+tab-switch timing, and the Bubbles tail. Each had a different cause, and
+only one of them was the gate.
+
+- **The rank emblems had no queue.** Home was the only screen that
+  recorded them until 315 put flare bubbles on Profile and on the road
+  map's chips, each at its own size (Home's are 46px on an iPad, Profile's
+  50 and 70, the chips smaller). Every `startOrbitEmblemAnims` call ran its
+  own loop, so three screens' recordings shared the same idle time, and a
+  recording asked for by a screen that had gone went on to the end.
+  Measured in the gate's own order of screens: Home's seven sheets took
+  39s against 33s on d9a116f. `orbitRecPump` is the character recorder's
+  queue for them: a saved sheet is read at once, one recording at a time,
+  oldest first, only for a screen still up; what a gone screen asked for
+  is dropped and asked for again when it comes back. 39s became 30s.
+- **An unwanted recording stops for a wanted one.** `recordingWantedNow()`
+  looks at both queues; a rank sheet or a character sheet that nobody can
+  see any more stops at its next batch when the screen that is up is
+  waiting on one. In the gate that started Home's first sheet at 20.7s
+  instead of 24.0s (a Profile bubble and a Customize picker tile had been
+  finishing first). A stopped character recording returns `false`, which
+  the tile reads as "dropped, ask again" - never `null`, which is "cannot
+  be made" and sends the tile live.
+- **A hidden tab bar made your own character a live drawing for the rest
+  of the session.** Picking a character in Customize redraws the tab's
+  avatar while the bar is hidden; `charFlipAttach` read the width of an
+  element with no box, which is its declared `100%`, as 100px - over
+  `CHAR_FLIP_MAX_CSS` - and the tile went live for good: nine animations
+  repainting inside an svg on every screen afterwards, the thing the
+  flip-books exist to stop. No box now means later: the attach returns
+  `null`, the retry loop leaves it to the watcher, and the watcher
+  attaches it when the bar is shown. Look for this whenever a tile is
+  drawn while something hides it.
+- **Tried and measured, not shipped: serialising the emblem once.** The
+  character recorder's template (one serialisation, a marker per moving
+  part) makes an emblem snapshot 2-4x cheaper and every sheet came out
+  pixel-identical - but the whole recording got SLOWER, 20s to 27s for
+  the six, with three times as many idle callbacks timing out: six images
+  made in one slice load in one burst and leave no idle time behind them.
+  The per-frame clone stays. The work per frame was never the cost; the
+  waits between slices are.
+- **Where the time goes in this sandbox.** At 834x1194, Home renders at
+  about 11 frames a second in software compositing after the gate's
+  earlier screens, and every idle callback times out, so the recorder runs
+  in its 8ms timeout slices and seven sheets take 30-45s. The home
+  stream's own build fails the 40s flare check one run in two here. It
+  is a gate sitting on the edge of its budget on this machine, not a
+  phone that waits 40s: on a device with a GPU, Home leaves real idle
+  time and the slices are 4-12ms. The budget is 60s now. What the check
+  guards is "the locked ones move too", and on 298 they never do at any
+  budget.
+- **The tab-switch gate takes three rounds.** A median of its twelve
+  switches swung between 280 and 350ms on one build here; a median of
+  thirty-six holds within a few ms. 313 (~390) still fails it. Over
+  thirty-six the merged build is 230ms against the home stream's 203; the
+  difference is Profile's new card, whose first frame lays out, paints and
+  layers about 45ms more each at 4x CPU - the design itself, not a fault.
+- **Half the tab-switch regression was 800 CSS rules nobody could file.**
+  The characters' results reactions (`tools/gen-reactions.py`) wrote each
+  rule as `.rx-<id>.rx-<band> :is(#rx,.part)` - the `#rx` matches
+  nothing and is only there to lift the rule to id weight over the idle
+  loops. A rule whose last compound is an `:is()` of several things has
+  no class or id for Chromium to file it under, so all ~800 were tried
+  against every element of every screen drawn, on every screen, though
+  they only ever apply on a results screen. The merge took the rules
+  ending in `:is()` from 52 to 856. Rewritten as
+  `.rx-<id>:where(.rx-<band>) .part:not(#rx)`: the same elements, the
+  same weight (1,2,0) - `:where()` costs nothing, `:not(#rx)` is the id -
+  and it ends in a class. Tab switches at 4x CPU, median of 36: 262ms
+  before, 230ms after (the home stream's own build: 203; the rest of that
+  gap is painting the richer Profile card). Proven equal, not assumed:
+  every character, every grade, motion on and off, every part's computed
+  animation, transform and opacity - 42,320 rows, 0 different, 745 of
+  them animating. **Never end a selector in a multi-argument `:is()` in
+  anything generated by the hundred**; put the weight on the right of a
+  class with `:not(#id)` instead.
+- **The Bubbles tail check measured the wrong moment.** It read the
+  effect once, at 45% of its tail, and wanted two part-faded pieces.
+  That passed d9a116f, where four bubbles sat fully shown until the layer
+  was cut away at 7s - the hard cut the unlocks stream's pop fix (7b32502)
+  removed - and failed the fixed build, whose bubbles have all faded out
+  by 6s. It now watches the tail from its start to the moment the layer
+  goes: fading at the start, and nothing (a leaf, with a box) fully shown
+  at the last look. Fails d9a116f (four shown at 6.97s), passes every
+  effect here.
+
