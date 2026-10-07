@@ -9535,11 +9535,15 @@ def check_b313_lead(br):
       /* Customize goes up before its banner scenes are drawn, and every
          one of them is drawn a moment later */
       showCustomize('banner');
-      const tiles = () => [...document.querySelectorAll('.screen-customize .banner-opt:not(.is-none)')];
+      /* a locked secret banner is veiled - a blurred still under glass,
+         never drawn live (veilBanner, build 313) - so it is not one to wait
+         for. Counting the four of them is why this failed on every build
+         since the veil went in: 19 of 23, however long it waited. */
+      const tiles = () => [...document.querySelectorAll('.screen-customize .banner-opt:not(.is-none)')].filter(t => !t.querySelector('.banner-opt-art.is-veiled'));
       out.custNow = { tiles: tiles().length, drawn: tiles().filter(t => t.querySelector('.bnr')).length };
       /* drawn a frame or two at a time, so how long that takes is the
-         machine's frame rate: wait for it (up to 8s) rather than a fixed
-         1.5s, which a loaded runner misses on every build */
+         machine's frame rate: wait for it, up to 8s, rather than a fixed
+         1.5s that a loaded 4-core runner does not always make */
       for(let i = 0; i < 32 && tiles().filter(t => t.querySelector('.bnr')).length < tiles().length; i++) await wait(250);
       out.custLater = { tiles: tiles().length, drawn: tiles().filter(t => t.querySelector('.bnr')).length };
       showHome(); await wait(300);
