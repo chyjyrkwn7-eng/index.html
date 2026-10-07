@@ -13062,6 +13062,13 @@ def check_b317_hundobox(br):
             const hd = playHundoFx(id, { box: g, pct });
             await wait((t.on || 0) + 2200);
             const cs = e => getComputedStyle(e);
+            /* on a loaded machine the colours can still be on their way:
+               read them once they have stopped moving */
+            for(let i = 0, last = ''; i < 30; i++){
+              const now = cs(g.querySelector('.rs-grade-frac')).color + cs(g.querySelector('.rs-kicker')).color;
+              if(now === last && now.indexOf('oklab') < 0) break;
+              last = now; await wait(300);
+            }
             const tn = g.querySelector('.hfx-tintnum'), sign = pct.querySelector('.rs-pct-sign');
             const tsign = tn && tn.querySelector('.rs-pct-sign');
             const fr = g.querySelector('.rs-grade-frac');
