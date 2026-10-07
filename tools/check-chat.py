@@ -185,7 +185,7 @@ def run_class(src_dir, label):
                 # The introduction card opens two seconds after Home and
                 # would land on top of everything below. It has its own
                 # section.
-                "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');}catch(e){}")
+                "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');}catch(e){}")
             pg = ctx.new_page()
             errs = []
             pg.on("pageerror", lambda e: errs.append(str(e)[:200]))
@@ -497,7 +497,7 @@ def run_intro(src_dir, label):
                          flashcards, characters and banners, test mode, the
                          app as a whole, stats and profile, the rank road
                          map, the results screen. */
-                      says73: ['hundo effect', 'flashcard', 'character', 'banner', 'test', 'stats', 'profile', 'road map', 'results', 'everywhere'].every(w => txt.indexOf(w) >= 0) && txt.indexOf('7.7') >= 0,
+                      says73: ['hundo effect', 'flashcard', 'character', 'banner', 'test', 'stats', 'profile', 'ranks and levels', 'penal code', 'results', 'everywhere'].every(w => txt.indexOf(w) >= 0) && txt.indexOf('7.7') >= 0,
                       go: !!el.querySelector('.intro-go')};}""")
             if not out:
                 fails.append("the introduction never opened")

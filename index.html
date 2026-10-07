@@ -4920,6 +4920,10 @@
     margin:0 0 1.1rem; font-family:var(--serif); font-size:1.5rem;
     font-weight:800; color:var(--ink); line-height:1.15;
   }
+  /* Centred (build 314): "the word what's new is offset". The eyebrow's
+     letter-spacing trails the last letter, so it carries it back. */
+  .intro-card .intro-eyebrow, .intro-card .intro-title{ text-align:center; }
+  .intro-card .intro-eyebrow{ padding-left:.1em; }
   .intro-row{
     display:flex; gap:.8rem; align-items:flex-start;
     padding:.75rem 0; border-top:1px solid rgba(255,255,255,.09);
@@ -18772,6 +18776,8 @@
   .xpnums.is-over .xpnums-have{ color:#97ACC8; }
   /* The challenge sheet */
   .level-chal-sheet{ text-align:center; }
+  .penal-note-sheet{ text-align:center; }
+  .penal-note-body{ margin:.7rem auto 1.1rem; max-width:21rem; font-size:.92rem; line-height:1.45; color:var(--soft); text-wrap:pretty; }
   .level-chal-bar{ display:block; height:10px; margin:0 auto; max-width:18rem; border-radius:999px; overflow:hidden;
     background:rgba(255,255,255,.1); box-shadow:inset 0 1px 2px rgba(0,0,0,.5); }
   .level-chal-fill{ display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg, #C99A3E, #F2D58A);
@@ -63735,6 +63741,7 @@ function introRow(glyph, color, title, body){
   const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
   path.setAttribute("d", glyph);
   path.setAttribute("fill", "currentColor");
+  path.setAttribute("fill-rule", "evenodd");
   icon.appendChild(path);
   const text = document.createElement("div");
   text.className = "intro-row-text";
@@ -63782,9 +63789,15 @@ function showIntroPopup(){
       const b = document.createElement("p");
       b.className = "intro-gate-body";
       const rc = rankChallengesOf();
-      b.textContent = "Your level now stays at " + ls.level + " until you rank up" + (rc ? " to " + rc.name : "") +
-        ". All your XP is kept and keeps counting: complete the " + (rc ? rc.name + " " : "") +
-        "challenges and it all turns into levels at once.";
+      /* WHAT HAPPENED, not what "stays" (build 314): "people above their
+         next rank's level went back to the gate's allowed level and have
+         extra xp". */
+      const bc = badgeChallengeOf(rc);
+      b.textContent = "You were level " + ls.curveLevel + ". Levels now follow your rank, and without " +
+        (rc ? rc.name + "'s " + (bc ? bc.need + (bc.need === 1 ? " badge" : " badges") : "badges") : "the next rank's badges") +
+        " the highest level you can hold is " + ls.level + ", so your level moved back to " + ls.level +
+        ". None of your XP was lost: earn " + (bc ? bc.left + (bc.have > 0 ? " more" : "") + (bc.left === 1 ? " badge" : " badges") : "the badges") +
+        " to reach " + (rc ? rc.name : "the next rank") + " and your extra XP turns straight back into levels.";
       note.append(h, b);
       card.appendChild(note);
     }
@@ -63799,19 +63812,26 @@ function showIntroPopup(){
     ["M12 12a4.2 4.2 0 1 0 0-8.4 4.2 4.2 0 0 0 0 8.4Zm0 2c-4.6 0-8.2 2.3-8.2 5.2V20h16.4v-.8c0-2.9-3.6-5.2-8.2-5.2Z",
      "#FF2E88", "Characters and banners",
      "Characters refined and animating everywhere, and new banners to earn."],
-    ["M13.2 2 4.4 13.6h6.1L9.6 22l8.8-11.6h-6.1L13.2 2Z",
+    /* ICONS THAT SAY THE THING (build 314): "some of the icons are bad
+       there and don't match what's being talked about" - a lightning bolt
+       for test mode, a flag for ranks, a star for results (the star is
+       the app's mark for a starred question) and a target for fixes. */
+    ["M9 2h6a1 1 0 0 1 1 1v1h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2V3a1 1 0 0 1 1-1Zm1 2v1.6h4V4h-4Zm5.7 6.2-4.9 4.9-2.5-2.5-1.3 1.3 3.8 3.8 6.2-6.2-1.3-1.3Z",
      "#F5804D", "Better test mode",
      "Quicker answer feedback, a smoother swipe to the next question, and a simpler start sheet."],
-    ["M5 21V3.5h1.8v1h11.4l-2.2 4.2 2.2 4.2H6.8V21H5Z",
-     "#E8B84A", "The rank road map",
-     "Every rank has two challenges: a level and its badges. Your level can climb to the top of the next rank's block, and ranking up lets it climb again."],
+    ["M12 2l8 3.2v6.3c0 5-3.4 9.3-8 10.5-4.6-1.2-8-5.5-8-10.5V5.2L12 2Zm-4.5 8.4L12 7.8l4.5 2.6v2.1L12 9.9l-4.5 2.6v-2.1Zm0 4.1 4.5-2.6 4.5 2.6v2.1L12 14l-4.5 2.6v-2.1Z",
+     "#E8B84A", "Ranks and levels",
+     "Your level now follows your rank. Every rank has two challenges, a level and a number of badges, and your badges decide how high your level can go. Extra XP is never lost."],
+    ["M6 2h8.5L20 7.5V20a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm8 1.8V8h4.2L14 3.8ZM7.5 11v1.6h9V11h-9Zm0 3.4V16h9v-1.6h-9Zm0 3.4v1.6h6v-1.6h-6Z",
+     "#FF7A59", "Penal Code: slides 55\u2013124",
+     "Penal Code has a second version with only the questions from slides 55\u2013124. Pick it when you choose the unit."],
     ["M4 19.6h16v1.8H4v-1.8Zm1.2-7.2h3v5.6h-3v-5.6Zm5.3-5h3v10.6h-3V7.4Zm5.3 3h3v7.6h-3v-7.6Z",
      "#5CA8FF", "Stats and Profile",
-     "A clearer Stats page, a fuller test history, and your rank challenges beside the XP bar."],
-    ["M12 2.8l2.8 5.7 6.3.9-4.6 4.4 1.1 6.3L12 17.1l-5.6 3 1.1-6.3-4.6-4.4 6.3-.9L12 2.8Z",
+     "A clearer Stats page, a fuller test history, and your badge challenge beside the XP bar."],
+    ["M7 3h10v2h3v3a4 4 0 0 1-4 4h-.4A5 5 0 0 1 13 14.9V17h3v2H8v-2h3v-2.1A5 5 0 0 1 8.4 12H8a4 4 0 0 1-4-4V5h3V3ZM6 7v1a2 2 0 0 0 1.4 1.9L7 7H6Zm11 0-.4 2.9A2 2 0 0 0 18 8V7h-1ZM7 20.2h10V22H7v-1.8Z",
      "#4ADE80", "Results, overhauled",
      "Your rewards revealed one at a time, then the full review."],
-    ["M12 6.5a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11Zm0-4.5a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm0 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16Z",
+    ["M21.7 6.3a5.6 5.6 0 0 1-7.6 6.3L7.4 19.3a2.2 2.2 0 1 1-3.1-3.1l6.7-6.7A5.6 5.6 0 0 1 17.3 1.9l-3.4 3.4.8 3.4 3.4.8 3.4-3.4c.1.1.1.2.2.2Z",
      "#C583FF", "Refined everywhere",
      "Faster tabs, smoother screens, and a long list of fixes from your reports."]
   ].forEach(([glyph, color, t, b]) => card.appendChild(introRow(glyph, color, t, b)));
@@ -65971,6 +65991,47 @@ function plainSlider(labelText, min, max, step, get, set, formatVal, onChange, t
   return sect;
 }
 
+/* "THE NEW PENAL CODE VERSION IS AVAILABLE" (build 314): "when entering
+   any unit screen in any mode for the first time put a pop up saying the
+   new penal code version is available". Once per device, on the first
+   unit screen after this ships, whatever the mode. Waits for a tour or a
+   loading screen to clear rather than sitting on top of one. */
+const PENAL_VERSION_NOTE_KEY = "class26e.penal55124.seen";
+function maybeShowPenalVersionNote(tries){
+  try{ if(localStorage.getItem(PENAL_VERSION_NOTE_KEY)) return; }catch(e){ return; }
+  const tv = UNIT_TEST_VERSIONS["Penal Code"];
+  if(!tv) return;
+  const onSetup = () => !!document.querySelector("#stage .screen-setup");
+  if(!onSetup()) return;
+  /* never on top of anything else: a tour, a loading screen, a reward
+     pop-up still being tapped through, What's New, a cutscene */
+  if(document.querySelector("#tour-overlay, #splashscreen, #genprofile-overlay, .invite-overlay, .rs-spot, " +
+       "#intro-pop, .bc-scene, #contextual-info-popup, .installguide-overlay, #void-cutscene")){
+    if((tries || 0) < 120) setTimeout(() => maybeShowPenalVersionNote((tries || 0) + 1), 750);
+    return;
+  }
+  try{ localStorage.setItem(PENAL_VERSION_NOTE_KEY, "1"); }catch(e){}
+  const n = QUESTIONS.reduce((k, q, i) => k + ((q.topic || "").trim() === "Penal Code" && inChosenVersion(i, { "Penal Code": "test" }) ? 1 : 0), 0);
+  const overlay = document.createElement("div");
+  overlay.className = "invite-overlay";
+  const sheet = document.createElement("div");
+  sheet.className = "invite-sheet person-card penal-note-sheet";
+  const kick = document.createElement("p");
+  kick.className = "unlock-card-kicker"; kick.textContent = "New";
+  const nm = document.createElement("h2");
+  nm.className = "unlock-card-name"; nm.textContent = "Penal Code: slides 55\u2013124";
+  const p = document.createElement("p");
+  p.className = "penal-note-body";
+  p.textContent = "There's a second version of Penal Code with only the " + n + " questions from slides 55\u2013124 of the PowerPoint. Tap Penal Code and choose which version you want.";
+  const close = document.createElement("button");
+  close.type = "button"; close.className = "next";
+  close.textContent = "Got it";
+  close.addEventListener("click", () => overlay.remove());
+  sheet.append(kick, nm, p, close);
+  overlay.appendChild(sheet);
+  overlay.addEventListener("click", e => { if(e.target === overlay) overlay.remove(); });
+  mountSheetOverlay(overlay);
+}
 function showSetup(){
   /* Arriving with no units picked (from the mode menu, which clears them)
      is a new test: defaults. Arriving WITH units picked is a round trip -
@@ -65990,6 +66051,7 @@ function showSetup(){
   const all = unitsInTeachingOrder();
   startReadyQuietUntil = performance.now() + 700;
   countEl.textContent = "Choose your units";
+  setTimeout(() => maybeShowPenalVersionNote(0), 900);
 
   const panel = document.createElement("section");
   panel.className = "panel screen-setup";
