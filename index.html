@@ -11391,7 +11391,10 @@
     animation:rank-orbit var(--orbit-ms, 30s) linear infinite; will-change:transform; }
   .rank-orbit-slot{ position:absolute; width:2.9rem; height:2.9rem;
     animation:rank-orbit-back var(--orbit-ms, 30s) linear infinite; transition:opacity 1s ease; }
-  .rank-orbit-slot > .cosmic-icon-badge{ transition:scale 1.1s cubic-bezier(.2,1.4,.4,1); }
+  /* opacity too (build 317): without it the bubbles vanished in the
+     flash's first frame, before the wash had covered them; they fade
+     under its peak instead */
+  .rank-orbit-slot > .cosmic-icon-badge{ transition:scale 1.1s cubic-bezier(.2,1.4,.4,1), opacity .9s ease .45s; }
   @keyframes rank-orbit{ to{ rotate:360deg; } }
   @keyframes rank-orbit-back{ to{ rotate:-360deg; } }
   /* The rank's own flare lighting: a pool of its colour behind it that
@@ -64609,7 +64612,22 @@ function playRankUpScene(tierKey, opts, spec){
     lightFully();
     overlay.classList.add("is-cutrest");
     const b = (spec.times.pause == null ? RANK_CUTSPIN_PAUSE_MS : spec.times.pause);
-    at(b, () => overlay.classList.add("supernova-burst"));
+    at(b, () => {
+      /* THE FLASH IS A CIRCLE FROM THE PLANET (build 317). It was the
+         whole overlay with border-radius:50% - a tall ellipse, so its
+         first frames were a teal capsule under the planet. Now a square
+         as big as the longer side, centred on the planet's middle, so it
+         grows as a disc out of the planet and its keyframes (to 5.5x)
+         still flood every corner. */
+      try{
+        const m = (heroBefore && heroBefore.querySelector(".cosmic-hero-main")) || stageWrap;
+        const r = m.getBoundingClientRect(), o = overlay.getBoundingClientRect();
+        const cx = r.left + r.width / 2 - o.left, cy = r.top + r.height * (m === stageWrap ? .5 : 162 / 342) - o.top;
+        const sz = Math.max(o.width, o.height);
+        Object.assign(flash.style, { inset: "auto", left: (cx - sz / 2) + "px", top: (cy - sz / 2) + "px", width: sz + "px", height: sz + "px" });
+      }catch(e){}
+      overlay.classList.add("supernova-burst");
+    });
     /* Under the peak of the flash (35% of its 2.6s). */
     at(b + 850, () => {
       overlay.classList.add("is-swapped");
