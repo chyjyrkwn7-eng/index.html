@@ -11975,7 +11975,8 @@ perfectly and smoothly")
   per frame and nearest the screen first; the art slot is a fixed 16:6,
   so nothing moves when one lands. 880 -> 290ms to build, 2.1 -> 0.74s to
   first paint (throttled). **Anything that reads a banner tile's art right
-  after `showCustomize()` has to wait for it.**
+  after `showCustomize("banner")` has to wait for it** (build 315: the
+  banners are their own page now; the summary draws one banner).
 - `--vv-shift` is written only when it changes. It runs on every scroll
   event, and a custom property on `<html>` is the one write that can
   restyle the whole document; Chromium skips a same-value write, so this
@@ -13882,6 +13883,36 @@ disagree with it.
     hours on one day; build 314's leak fix loads that as 6, so the Hacker
     re-locked and the "nothing is taken" check failed on a correct app.
     The hours go in at 5 a day now.
+  - **CUSTOMIZE IS A SUMMARY AND A PAGE PER THING YOU WEAR** ("I like the
+    customize thing with the 4 openable tabs"). `showCustomize()` is your
+    name and four rows - Character, Banner, Theme color, Hundo effect -
+    each a button showing what you have on: the character live in its own
+    glow, the banner as a 16:6 banner about the character's footprint, the
+    theme as its swatch (the composited swirl), and the hundo effect as its
+    own still tile with the 100 in it. `showCustomize("character" |
+    "banner" | "theme" | "fx")` is that page, under the Name's own header
+    bar with its count ("the title of all those tabs needs a header
+    thing"); "Your look" wears that bar on the summary too. Anything that
+    is not one of those four strings - including the click event
+    Profile's button hands it - is the summary.
+  - **One section is built per page** (`buildCustomize*Sect()`), never all
+    four: the old single page was the slowest screen in the app to open.
+    The only thing the sections ever shared - a theme tap repainting the
+    default banner tile - needs nothing now, because the banner page is
+    built fresh with the current theme.
+  - **A row's count is its page's grid**, on the row and on the page's
+    bar (`customizeTally`), and `check_b315_customize` asserts all three
+    agree. Every gate that opened Customize and looked for a grid opens
+    that grid's page now; the build 242 check that the colours came
+    before the banners asserts the summary's row order instead.
+  - **On a phone a row's count sits UNDER the name, not beside it.**
+    Beside it, the count column took the width the label needed and
+    "THEME COLOR" and "HUNDO EFFECT" broke onto two lines on every phone
+    up to a 16 (measured at 320 through 393). The picks are a size up from
+    24rem ("the character preview ... is cool but it's small": 62 -> 72px
+    on a Pro Max, 83 on an iPad) and a 320px phone narrows the art column
+    instead, so the label still fits on one line there. From 40rem the
+    count goes back to the right, where a tablet has the room.
 - **STUDY TIME IS TIME SPENT STUDYING (build 314).** It was "now minus
   when the run started", so a run left open with the phone locked banked
   every hour on the day it ended: live tests of 117h and 50h, days of 68h

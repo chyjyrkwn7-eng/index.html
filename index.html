@@ -18607,6 +18607,90 @@
   .screen-customize .customize-nameedit .searchbox{ padding:.95rem 1.15rem; min-height:3.3rem; font-size:max(17px, 1.05rem); }
   .customize-namebtns{ display:flex; gap:.65rem; margin-top:.25rem; }
   .customize-namebtns .next{ flex:1 1 0; min-width:0; margin:0; min-height:48px; }
+  /* ---- CUSTOMIZE: THE SUMMARY ROWS AND THE PAGE BARS (build 315) ----
+     "Your look" and each section's page title wear the Name's own header
+     bar (.slab.motion-summary); a page's bar carries its count on the
+     right. A row is one button: what you have on, big, then what it is
+     called, then how many you hold. */
+  .cz-bar{ justify-content:space-between; }
+  .cz-bar-count{ margin-left:auto; font-size:.76rem; font-weight:800; letter-spacing:.02em; text-transform:none;
+    color:rgba(255,255,255,.66); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .cz-page-note{ margin:-.3rem 0 1.15rem; }
+  .cz-list{ display:grid; gap:.7rem; }
+  .cz-list > .cz-bar{ margin-bottom:.3rem; }
+  /* On a phone the count sits under the name, so the label and the name
+     get the whole middle of the row: beside them, "THEME COLOR" and
+     "HUNDO EFFECT" broke onto two lines on every phone up to a 16. A
+     tablet has the width to put the count on the right. */
+  .cz-row{ all:unset; box-sizing:border-box; display:grid; grid-template-columns:5.6rem minmax(0, 1fr) auto; align-items:center;
+    grid-template-areas:"art tx chev" "art meta chev"; row-gap:.38rem;
+    column-gap:.85rem; width:100%; min-height:5.4rem; padding:.8rem .85rem .8rem .75rem; border-radius:1.1rem; cursor:pointer;
+    background:rgba(0,0,0,.26); border:1px solid rgba(255,255,255,.08); font-family:var(--sans); -webkit-tap-highlight-color:transparent; }
+  .cz-row:active{ background:rgba(255,255,255,.05); }
+  .cz-row:focus-visible{ outline:2px solid rgba(255,255,255,.6); outline-offset:2px; }
+  .cz-art{ grid-area:art; display:grid; place-items:center; width:5.6rem; height:3.9rem; }
+  .cz-tx{ grid-area:tx; align-self:end; display:flex; flex-direction:column; gap:.2rem; min-width:0; }
+  .cz-label{ font-size:.64rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,.55); }
+  .cz-value{ font-size:1.12rem; font-weight:800; line-height:1.15; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cz-meta{ grid-area:meta; align-self:start; display:flex; flex-direction:row; align-items:center; gap:.5rem; min-width:0; }
+  .cz-meta .cz-new{ order:2; }
+  .cz-new{ display:inline-block; padding:.2rem .55rem; border-radius:999px; background:#FFD43B; color:#1A1405;
+    font-size:.66rem; font-weight:900; letter-spacing:.06em; text-transform:uppercase; white-space:nowrap; }
+  .cz-bar-count + .cz-new, .cz-bar .cz-new{ margin-left:.5rem; }
+  .cz-count{ font-size:.82rem; font-weight:800; color:rgba(255,255,255,.62); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .cz-chev{ grid-area:chev; font-size:1.4rem; line-height:1; color:rgba(255,255,255,.4); }
+  /* the picks: about one footprint each, each the shape of what it is */
+  .cz-pick{ position:relative; display:grid; place-items:center; }
+  .cz-pick-character{ width:3.9rem; height:3.9rem; border-radius:50%;
+    background:radial-gradient(circle at 50% 60%, color-mix(in srgb, var(--char-glow, #9FACBA) 34%, transparent), transparent 70%);
+    box-shadow:0 0 22px -6px color-mix(in srgb, var(--char-glow, #9FACBA) 70%, transparent); }
+  .cz-pick-character .rank-avatar{ display:block; width:100%; height:100%; border-radius:50%; overflow:hidden; }
+  .cz-pick-character .rank-avatar svg{ display:block; width:100%; height:100%; }
+  .cz-pick-banner{ width:5.6rem; aspect-ratio:16 / 6; border-radius:.6rem; overflow:hidden; background:#10131A;
+    border:1px solid rgba(255,255,255,.14); box-shadow:0 4px 14px -6px rgba(0,0,0,.6); }
+  .cz-pick-banner .bnr{ position:absolute; inset:0; }
+  .cz-pick-banner .bnr svg{ display:block; width:100%; height:100%; }
+  .cz-pick-theme .swatch.pf-swatch{ width:3.5rem; height:3.5rem; }
+  .cz-pick-theme .swatch.pf-swatch .dot{ width:3rem; height:3rem;
+    box-shadow:0 0 0 2px rgba(255,255,255,.16), 0 0 22px -3px var(--pick-glow, rgba(255,255,255,.5)); }
+  .cz-pick-fx{ width:3.9rem; height:3.9rem; }
+  .cz-pick-fx .hfx-stage{ width:3.9rem; aspect-ratio:1 / 1; --hfx-r:14px; border-radius:14px; clip-path:inset(0 round 14px); }
+  .cz-pick-fx .hfx-stage-pct{ font-size:1.05rem; }
+  /* a 320px phone: the art column gives up a little width so "HUNDO
+     EFFECT" still fits on one line beside it */
+  @media (max-width:22rem){
+    .cz-row{ grid-template-columns:4.8rem minmax(0, 1fr) auto; column-gap:.7rem; }
+    .cz-art, .cz-pick-banner{ width:4.8rem; }
+    .cz-label{ letter-spacing:.1em; }
+  }
+  /* "The character preview of what you have set is cool but it's small":
+     every phone with the width for it gets the picks a size up. The base
+     sizes above are what a 320px phone can carry beside "Hundo effect"
+     and its count without the label wrapping. */
+  @media (min-width:24rem){
+    .cz-row{ grid-template-columns:6.2rem minmax(0, 1fr) auto; min-height:6rem; }
+    .cz-art{ width:6.2rem; height:4.5rem; }
+    .cz-pick-character, .cz-pick-fx, .cz-pick-fx .hfx-stage{ width:4.5rem; height:4.5rem; }
+    .cz-pick-fx .hfx-stage-pct{ font-size:1.18rem; }
+    .cz-pick-banner{ width:6.2rem; }
+    .cz-pick-theme .swatch.pf-swatch{ width:4rem; height:4rem; }
+    .cz-pick-theme .swatch.pf-swatch .dot{ width:3.5rem; height:3.5rem; }
+  }
+  @media (min-width:40rem){
+    .cz-row{ grid-template-columns:7.2rem minmax(0, 1fr) auto auto; grid-template-areas:"art tx meta chev"; row-gap:0;
+      min-height:6.8rem; padding:.95rem 1.1rem .95rem 1rem; column-gap:1.1rem; }
+    .cz-tx{ align-self:center; }
+    .cz-meta{ align-self:center; flex-direction:column; align-items:flex-end; gap:.32rem; }
+    .cz-meta .cz-new{ order:0; }
+    .cz-count{ font-size:.86rem; }
+    .cz-art{ width:7.2rem; height:5.2rem; }
+    .cz-value{ font-size:1.3rem; }
+    .cz-pick-character, .cz-pick-fx, .cz-pick-fx .hfx-stage{ width:5.2rem; height:5.2rem; }
+    .cz-pick-fx .hfx-stage-pct{ font-size:1.35rem; }
+    .cz-pick-banner{ width:7.2rem; }
+    .cz-pick-theme .swatch.pf-swatch{ width:4.6rem; height:4.6rem; }
+    .cz-pick-theme .swatch.pf-swatch .dot{ width:4rem; height:4rem; }
+  }
   /* One line under the name, in the rank's own colour. The emblem is on
      the character where it sits everywhere else in the app, so this only
      has to name it. */
@@ -87349,22 +87433,169 @@ function glowOff(opt){
   clearTimeout(opt._unglow);
   opt._unglow = setTimeout(() => opt.classList.remove("is-unglowing"), 260);
 }
-function showCustomize(){
+/* ---- CUSTOMIZE: A SUMMARY, THEN A PAGE FOR EACH THING YOU WEAR (build 315) ----
+   From a mock-up Madison liked ("I like the customize thing with the 4
+   openable tabs"). The first page is your name and four rows - Character,
+   Banner, Theme color, Hundo effect - each showing what you have on, big
+   enough to read: the character live and in its own light ("cool but
+   it's small"), the banner as a banner ("give the small banner preview
+   ... to the shape of a banner"), the theme as its swirling swatch, and
+   the hundo effect as its own tile with the 100 in its sky ("there's
+   gotta be a way to do it"). A row opens that thing's own page with the
+   grid it always had, under the same header bar the Name has ("the title
+   of all those tabs needs a header thing") - and "Your look" carries it
+   too. One section is built per page, never all four: Customize was the
+   slowest screen in the app to open (build 313). */
+const CUSTOMIZE_PAGES = {
+  character: { title: "Character", note: "Tap one to wear it. Press and hold any to see how it's earned." },
+  banner: { title: "Banner", note: "Across the top of your profile, and behind your name in a Virtual Room." },
+  theme: { title: "Theme color", note: "The color the app runs in. Each rank hands one over." },
+  fx: { title: "Hundo effect", note: "Plays on your results when you score 100%. Tap the one you have on to watch it." }
+};
+const CUSTOMIZE_ORDER = ["character", "banner", "theme", "fx"];
+/* What a page holds, counted the way its grid shows it. */
+function customizeTally(key){
+  if(key === "character"){
+    const shown = AVATAR_CHARACTERS.filter(c => !(c.retired && store.avatarChar !== c.id) && !(c.legacy && isLockedCharacter(c.id)));
+    return { have: shown.filter(c => !isLockedCharacter(c.id)).length, total: shown.length, fresh: newCountOf(["chars"]) };
+  }
+  if(key === "banner"){
+    /* "Default" is a tile of its own, and always yours */
+    const shown = BANNERS.filter(d => !(d.secret && !bannerEarned(d.id)));
+    return { have: 1 + shown.filter(d => bannerEarned(d.id)).length, total: 1 + shown.length, fresh: newCountOf(["banners"]) };
+  }
+  if(key === "theme") return { have: ACCENTS.filter(a => !isLockedAccent(a)).length, total: ACCENTS.length, fresh: newCountOf(["themes"]) };
+  return { have: HUNDO_FX.filter(d => hundoFxEarned(d.id)).length, total: HUNDO_FX.length, fresh: newCountOf(["fx"]) };
+}
+function customizePickName(key){
+  if(key === "character") return AVATAR_DISPLAY_NAME[store.avatarChar] || store.avatarChar || "";
+  if(key === "banner"){ const id = wornBanner(); return id ? ((bannerDef(id) || {}).name || id) : "Default"; }
+  if(key === "theme") return !theme.accent || theme.accent === "ink" ? "Default" : (ACCENT_DISPLAY_NAME[theme.accent] || theme.accent);
+  const d = hundoFxDef(hundoFxInUse());
+  return d ? d.name : "";
+}
+/* What you have on, drawn for its row. */
+function buildCustomizePick(key){
+  const art = document.createElement("span");
+  art.className = "cz-pick cz-pick-" + key;
+  art.setAttribute("aria-hidden", "true");
+  if(key === "character"){
+    art.style.setProperty("--char-glow", avatarGlowColor(store.avatarChar));
+    art.appendChild(avatarSpanFor({ avatarChar: store.avatarChar }));
+    afterFirstPaint(() => { try{ setCharState(art, "live"); }catch(e){} });
+  } else if(key === "banner"){
+    const id = wornBanner();
+    if(id) afterFirstPaint(() => { try{ art.appendChild(buildBannerArt(id)); }catch(e){} });
+    else art.appendChild(buildThemeBannerArt(theme.accent));
+  } else if(key === "theme"){
+    const a = theme.accent || "ink";
+    art.style.setProperty("--pick-glow", a === "ink" ? "rgba(255,255,255,.5)" : (ACCENT_SWATCH[a] || "#FFFFFF"));
+    art.appendChild(buildThemeDot(a));
+  } else {
+    art.appendChild(buildHundoFxTile(hundoFxInUse()));
+  }
+  return art;
+}
+/* The header bar - the Name's own, a title and, on a page, its count. */
+function buildCustomizeBar(title, count){
+  const bar = document.createElement("p");
+  bar.className = "slab motion-summary cz-bar";
+  const t = document.createElement("span");
+  t.className = "cz-bar-title"; t.textContent = title;
+  bar.appendChild(t);
+  if(count){
+    const c = document.createElement("span");
+    c.className = "cz-bar-count"; c.textContent = count;
+    bar.appendChild(c);
+  }
+  return bar;
+}
+function buildCustomizeSummary(){
+  const wrap = document.createElement("div");
+  wrap.className = "sect cz-list";
+  wrap.appendChild(buildCustomizeBar("Your look"));
+  CUSTOMIZE_ORDER.forEach(key => {
+    const t = customizeTally(key);
+    const row = document.createElement("button");
+    row.type = "button";
+    row.className = "cz-row cz-row-" + key;
+    row.dataset.page = key;
+    const box = document.createElement("span");
+    box.className = "cz-art";
+    box.appendChild(buildCustomizePick(key));
+    const tx = document.createElement("span");
+    tx.className = "cz-tx";
+    const k = document.createElement("span");
+    k.className = "cz-label"; k.textContent = CUSTOMIZE_PAGES[key].title;
+    const v = document.createElement("span");
+    v.className = "cz-value"; v.textContent = customizePickName(key);
+    tx.append(k, v);
+    const meta = document.createElement("span");
+    meta.className = "cz-meta";
+    if(t.fresh){
+      const n = document.createElement("span");
+      n.className = "cz-new"; n.textContent = t.fresh + " new";
+      meta.appendChild(n);
+    }
+    const c = document.createElement("span");
+    c.className = "cz-count"; c.textContent = t.have + " of " + t.total;
+    meta.appendChild(c);
+    const chev = document.createElement("span");
+    chev.className = "cz-chev"; chev.setAttribute("aria-hidden", "true"); chev.textContent = "›";
+    row.append(box, tx, meta, chev);
+    row.setAttribute("aria-label", CUSTOMIZE_PAGES[key].title + ": " + customizePickName(key) + ". " +
+      t.have + " of " + t.total + " unlocked" + (t.fresh ? ", " + t.fresh + " new" : "") + ".");
+    row.addEventListener("click", () => showCustomize(key));
+    wrap.appendChild(row);
+  });
+  return wrap;
+}
+/* `section` is one of CUSTOMIZE_ORDER for that page; anything else - no
+   argument, or the click event from Profile's button - is the summary. */
+function showCustomize(section){
+  const only = (typeof section === "string" && CUSTOMIZE_PAGES[section]) ? section : null;
   setActiveNav(null);
-  countEl.textContent = "Customize";
+  countEl.textContent = only ? CUSTOMIZE_PAGES[only].title : "Customize";
+  /* A character is required (the initials option is long gone), and the
+     summary draws the one you wear. */
+  if(!store.avatarChar){ store.avatarChar = AVATAR_CHARACTERS[0].id; saveStore(); }
+  try{ seedBannerCounters(); seedChallenges289(); }catch(e){}
 
   const panel = document.createElement("section");
-  panel.className = "panel screen-customize";
-  panel.appendChild(buildBackLink("Back to Profile", () => showProfile()));
-
-  const title = document.createElement("h1");
-  title.className = "cal-title"; title.textContent = "Customize";
-  panel.appendChild(title);
-  const sub = document.createElement("p");
-  sub.className = "cal-sub";
-  sub.textContent = "Your name, your character and the colour the app runs in. Press and hold anything to see how it's earned.";
-  panel.appendChild(sub);
-
+  panel.className = "panel screen-customize" + (only ? " cz-page cz-page-" + only : " cz-summary");
+  panel.appendChild(only ? buildBackLink("Back to Customize", () => showCustomize())
+                         : buildBackLink("Back to Profile", () => showProfile()));
+  let after = null;
+  if(!only){
+    const title = document.createElement("h1");
+    title.className = "cal-title"; title.textContent = "Customize";
+    panel.appendChild(title);
+    const sub = document.createElement("p");
+    sub.className = "cal-sub";
+    sub.textContent = "Your name, and what you wear across the app. Press and hold anything to see how it's earned.";
+    panel.appendChild(sub);
+    panel.appendChild(buildCustomizeNameSect());
+    panel.appendChild(buildCustomizeSummary());
+  } else {
+    const t = customizeTally(only);
+    panel.appendChild(buildCustomizeBar(CUSTOMIZE_PAGES[only].title, t.have + " of " + t.total));
+    const note = document.createElement("p");
+    note.className = "cal-sub cz-page-note";
+    note.textContent = CUSTOMIZE_PAGES[only].note;
+    panel.appendChild(note);
+    if(only === "character") panel.appendChild(buildCustomizeCharacterSect());
+    else if(only === "theme") panel.appendChild(buildCustomizeThemeSect());
+    else {
+      const built = only === "banner" ? buildCustomizeBannerSect() : buildCustomizeFxSect();
+      panel.appendChild(built.sect);
+      after = built.after;
+    }
+  }
+  stage.replaceChildren(panel);
+  toTop();
+  if(after) after();
+}
+function buildCustomizeNameSect(){
   /* ---- name, with Change beside it ---- */
   const nameSect = document.createElement("div");
   nameSect.className = "sect";
@@ -87445,22 +87676,15 @@ function showCustomize(){
   nameSaveBtn.addEventListener("click", saveNameEdit);
   nameInput.addEventListener("keydown", (e) => { if(e.key === "Enter") saveNameEdit(); });
   nameSect.append(nameRow, nameEdit);
-  panel.appendChild(nameSect);
-
+  return nameSect;
+}
+function buildCustomizeCharacterSect(){
   const avatarSect = document.createElement("div");
   avatarSect.className = "sect";
-  const avatarLab = document.createElement("p");
-  avatarLab.className = "slab motion-summary"; avatarLab.textContent = "Character";
-  avatarSect.appendChild(avatarLab);
 
   const avatarGrid = document.createElement("div");
   avatarGrid.className = "avatarchar-grid avatarchar-grid-appearance";
 
-  /* No initials fallback \u2014 a character is required. Anyone who still
-     has no character saved from before this was required (the initials
-     option used to be the default) gets defaulted to the first
-     character here rather than leaving the grid with nothing selected. */
-  if(!store.avatarChar){ store.avatarChar = AVATAR_CHARACTERS[0].id; saveStore(); }
 
   /* GROUPED BY HOW YOU GET THEM - "Character unlocks need to be organized
      by how they are unlocked in the profile customization thing". The
@@ -87586,27 +87810,16 @@ function showCustomize(){
   });
   charGrids.forEach(g => avatarSect.append(g.head, g.grid));
   if(avatarGrid.children.length) avatarSect.appendChild(avatarGrid);
-  panel.appendChild(avatarSect);
-
+  return avatarSect;
+}
+function buildCustomizeBannerSect(){
   /* ---- BANNERS ----
      Every one shown, earned or not, the way the characters are: a
      locked one is dimmed with a padlock and says what it takes and how
      far along you are, so the list is also the list of things to go
      and do. "Theme" is the default cover, in the app's own colours. */
-  try{ seedBannerCounters(); seedChallenges289(); }catch(e){}
   const bannerSect = document.createElement("div");
   bannerSect.className = "sect";
-  const bannerLab = document.createElement("p");
-  bannerLab.className = "slab motion-summary"; bannerLab.textContent = "Banner";
-  bannerSect.appendChild(bannerLab);
-  const bannerNote = document.createElement("p");
-  bannerNote.className = "avatarchar-group-title";
-  bannerNote.textContent = "";
-  const bnNote = document.createElement("span");
-  bnNote.className = "avatarchar-group-note";
-  bnNote.textContent = "Across the top of your profile, and behind your name in a Virtual Room";
-  bannerNote.appendChild(bnNote);
-  bannerSect.appendChild(bannerNote);
   const bannerGrid = document.createElement("div");
   bannerGrid.className = "banner-grid";
   const current = wornBanner();
@@ -87667,15 +87880,23 @@ function showCustomize(){
     bannerOpt(def.id, def.name, def.label, !bannerEarned(def.id));
   });
   bannerSect.appendChild(bannerGrid);
-  /* The banners go on AFTER the theme colours (build 242): eight colours
-     are a quick choice and forty-odd banners are a long browse, and the
-     long one belongs last, where it can scroll without burying anything. */
-
+  /* BANNERS OFF SCREEN HOLD STILL (build 290). Every banner tile is a
+     live animated scene; together with the swatches they held the old
+     all-in-one screen to ~30fps on a throttled phone. A tile scrolled out
+     of view pauses, one in view plays, so nothing anybody can see
+     changes. Disconnects itself once the page is gone. */
+  if(typeof IntersectionObserver === "function"){
+    const io = new IntersectionObserver(entries => {
+      if(!document.contains(bannerSect)){ io.disconnect(); return; }
+      entries.forEach(e => e.target.classList.toggle("is-offscreen", !e.isIntersecting));
+    }, { rootMargin: "120px 0px" });
+    bannerSect.querySelectorAll(".banner-opt").forEach(b => { b.classList.add("is-offscreen"); io.observe(b); });
+  }
+  return { sect: bannerSect, after: () => fillDeferredBannerArt(bannerArtQueue) };
+}
+function buildCustomizeThemeSect(){
   const accentSect = document.createElement("div");
   accentSect.className = "sect";
-  const accentLab = document.createElement("p");
-  accentLab.className = "slab motion-summary"; accentLab.textContent = "App theme color";
-  accentSect.appendChild(accentLab);
   const swatches = document.createElement("div");
   swatches.className = "swatches";
   ACCENTS.forEach(name => {
@@ -87713,7 +87934,6 @@ function showCustomize(){
       clearNew();
       if(theme.accent === name && openHeld){ openHeld(); return; }
       theme.accent = name; applyTheme(); saveTheme(); paintAccents();
-      bannerGrid.querySelectorAll(".bnr-theme").forEach(e => { e.dataset.accent = name; });
     });
     /* ITS NAME UNDER IT (build 241): "the theme colors need the names
        underneath them" - a rank's theme is named after the rank. */
@@ -87728,9 +87948,28 @@ function showCustomize(){
     swatches.appendChild(cell);
   });
   accentSect.appendChild(swatches);
-  panel.appendChild(accentSect);
-  panel.appendChild(bannerSect);
+  /* The swatches swirl and sheen by repainting every frame, and they
+     cost more than the banners: measured, the eight of them alone took
+     the old all-in-one screen from 55fps to 27. Off screen, they hold
+     still (build 290). */
+  if(typeof IntersectionObserver === "function"){
+    const io = new IntersectionObserver(entries => {
+      if(!document.contains(accentSect)){ io.disconnect(); return; }
+      entries.forEach(e => e.target.classList.toggle("is-offscreen", !e.isIntersecting));
+    }, { rootMargin: "120px 0px" });
+    swatches.querySelectorAll(".swatch").forEach(b => { b.classList.add("is-offscreen"); io.observe(b); });
+  }
 
+  function paintAccents(){
+    [...swatches.querySelectorAll(".swatch")].forEach((b, i) => {
+      b.classList.toggle("on", ACCENTS[i] === theme.accent);
+    });
+  }
+
+  paintAccents();
+  return accentSect;
+}
+function buildCustomizeFxSect(){
   /* ---- HUNDO EFFECT (build 313) ----
      What plays on a 100%, after the banners, laid out the same way: a
      tile each, its requirement under it, locked ones dimmed with a
@@ -87740,16 +87979,6 @@ function showCustomize(){
      was "a lot". The effect plays only on its card, when it is tapped. */
   const fxSect = document.createElement("div");
   fxSect.className = "sect hfx-sect";
-  const fxLab = document.createElement("p");
-  fxLab.className = "slab motion-summary"; fxLab.textContent = "Hundo effect";
-  fxSect.appendChild(fxLab);
-  const fxNoteRow = document.createElement("p");
-  fxNoteRow.className = "avatarchar-group-title";
-  const fxNote = document.createElement("span");
-  fxNote.className = "avatarchar-group-note";
-  fxNote.textContent = "Plays when you score 100%";
-  fxNoteRow.appendChild(fxNote);
-  fxSect.appendChild(fxNoteRow);
   const fxGrid = document.createElement("div");
   fxGrid.className = "hfx-grid";
   const fxNow = hundoFxInUse();
@@ -87797,39 +88026,7 @@ function showCustomize(){
     fxGrid.appendChild(b);
   });
   fxSect.appendChild(fxGrid);
-  panel.appendChild(fxSect);
-  /* BANNERS AND SWATCHES OFF SCREEN HOLD STILL (build 290). Every banner
-     tile is a live animated scene and every theme swatch repaints its
-     swirl each frame; together they held this screen to ~30fps on a
-     throttled phone - which is what made picking
-     a character feel slow to light up: "the glow has a delay when
-     triggering". A tile scrolled out of view pauses, one in view plays,
-     so nothing anybody can see changes. Disconnects itself once the
-     screen is gone. */
-  if(typeof IntersectionObserver === "function"){
-    const io = new IntersectionObserver(entries => {
-      if(!document.contains(panel)){ io.disconnect(); return; }
-      entries.forEach(e => e.target.classList.toggle("is-offscreen", !e.isIntersecting));
-    }, { rootMargin: "120px 0px" });
-    bannerSect.querySelectorAll(".banner-opt").forEach(b => { b.classList.add("is-offscreen"); io.observe(b); });
-    /* The theme swatches swirl and sheen by repainting every frame, and
-       they cost more than the banners: measured, the eight of them alone
-       took the screen from 55fps to 27. */
-    swatches.querySelectorAll(".swatch").forEach(b => { b.classList.add("is-offscreen"); io.observe(b); });
-  }
-
-  function paintAccents(){
-    [...swatches.querySelectorAll(".swatch")].forEach((b, i) => {
-      b.classList.toggle("on", ACCENTS[i] === theme.accent);
-    });
-  }
-
-  paintAccents();
-
-  stage.replaceChildren(panel);
-  toTop();
-  fillDeferredBannerArt(bannerArtQueue);
-  setTimeout(() => { if(panel.isConnected) HUNDO_FX.forEach(d => { if(d.need) hfxWarm(d.id); }); }, 1500);
+  return { sect: fxSect, after: () => setTimeout(() => { if(fxSect.isConnected) HUNDO_FX.forEach(d => { if(d.need) hfxWarm(d.id); }); }, 1500) };
 }
 
 /* ---- CUSTOMIZE OPENS FIRST AND DRAWS ITS BANNERS AFTER (build 313) ----

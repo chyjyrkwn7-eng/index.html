@@ -383,9 +383,14 @@ def main():
                   if(b) b.click(); else showCustomize();}""")
                 page.wait_for_timeout(900)
                 shot(page, 28, 'customize', bar_ok=True)
-                page.evaluate("()=>window.scrollTo(0, document.documentElement.scrollHeight)")
-                page.wait_for_timeout(500)
-                shot(page, 28.5, 'customize-scrolled', bar_ok=True)
+                # build 315: each row opens its own page - tapped, as a
+                # person would, then Back to Customize
+                for n, key in enumerate(["character", "banner", "theme", "fx"]):
+                    page.evaluate("(k)=>{const r=document.querySelector('.cz-row[data-page=\"'+k+'\"]'); if(r) r.click(); else showCustomize(k);}", key)
+                    page.wait_for_timeout(900)
+                    shot(page, 28.1 + n / 10, 'customize-' + key, bar_ok=True)
+                    page.evaluate("()=>{const b=document.querySelector('.screen-customize .back-link'); if(b) b.click(); else showCustomize();}")
+                    page.wait_for_timeout(500)
                 page.evaluate("()=>window.scrollTo(0,0)"); page.wait_for_timeout(300)
 
                 # settings, top and bottom

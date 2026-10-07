@@ -118,7 +118,11 @@ SCREENS = [
     "showProfile('stats')",
     "showRanksScreen", "showRanksScreen('badges')",
     "showLeaderboard", "showSetup", "showModeSelect", "showClassSelection",
-    "showCustomize", "showCalendar", "showFriends", "showTestReviewList",
+    # Customize is a summary and a page per thing you wear (build 315);
+    # a bare call lays out only the summary.
+    "showCustomize", "showCustomize('character')", "showCustomize('banner')",
+    "showCustomize('theme')", "showCustomize('fx')",
+    "showCalendar", "showFriends", "showTestReviewList",
     # the rest
     "showInstallGuide", "showInstallPlatformPicker", "showResetWarning",
     "showWhatsNew", "showReleaseHistory",

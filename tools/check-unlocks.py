@@ -703,7 +703,7 @@ def _locked_art_body(pg):
     # this check is about. The locked class is also applied by hand
     # below, so what is under test is the CSS filter on `.locked`
     # whatever the fixture has unlocked.
-    pg.evaluate("()=>{ store.retakenQuestions = 0; store.unitGameBeat = {}; showCustomize(); }")
+    pg.evaluate("()=>{ store.retakenQuestions = 0; store.unitGameBeat = {}; showCustomize('character'); }")
     pg.wait_for_timeout(900)
     # WAIT FOR THE SCREEN TO FINISH ARRIVING, not for a fixed 900ms. The
     # capture below reads pixels, and a busy machine could still be

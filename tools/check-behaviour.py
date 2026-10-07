@@ -1599,7 +1599,7 @@ def check_b220(br):
       out.seeded = fullTestsOf(); out.plays = testsCompletedOf(store);
       store.lifetime.fullTests = 120; store.practiceExamPerfect = true; store.banner = 'exam100';
       out.earned = BANNERS.filter(x => bannerEarned(x.id)).map(x => x.id);
-      showCustomize();
+      showCustomize('banner');
       out.opts = document.querySelectorAll('.banner-opt').length; out.nBanners = BANNERS.length;
       out.selected = (document.querySelector('.banner-opt.selected')||{}).dataset;
       out.selected = out.selected ? out.selected.banner : null;
@@ -2137,7 +2137,7 @@ def check_b232(br):
       T('chip', () => !!document.querySelector('.screen-setup .rs-mode.rs-mode-drill'));
       T('glow', () => { const b = document.querySelector('.pick-badge.earned');
         return b ? [b.style.getPropertyValue('--badge-glow').trim().toUpperCase(), String(badgeThemeFor(u).p).toUpperCase()] : null; });
-      showCustomize();
+      showCustomize('character');
       T('fade', () => { const svg = document.querySelector('.avatarchar-option .avatarchar-svg');
         const cs = svg && getComputedStyle(svg); return cs ? (cs.maskImage || cs.webkitMaskImage || '') : null; });
       showAppearance();
@@ -3009,7 +3009,7 @@ def check_b241b(br):
       out.corona = (svg.querySelector('.cx-fig').getAttribute('class') || '').indexOf('cx-k-' + (AVATAR_CHARACTERS.find(c => c.id === 'astronaut') || {}).kind) >= 0 ? 7 : 0;
       out.parts = ['cx-head', 'cx-eyes'].filter(c => svg.querySelector('.' + c)).length * 2;
       /* 4. theme swatches carry their names (Profile > Customize) */
-      showCustomize(); await wait(500);
+      showCustomize('theme'); await wait(500);
       const names = [...document.querySelectorAll('.swatch-cell .swatch-name')].map(e => e.textContent);
       out.names = names;
       out.swatches = document.querySelectorAll('.swatch-cell').length;
@@ -3157,12 +3157,15 @@ def check_b242(br):
       showWelcomeCharacterPrompt(); await wait(500);
       out.starters = [...document.querySelectorAll('.charselect-panel .avatarchar-option')].filter(o => o.offsetParent).length;
       out.starterCols = getComputedStyle(document.querySelector('.charselect-panel .avatarchar-grid')).gridTemplateColumns.split(' ').length;
-      /* 10. Customize: colours before banners, and big enough to sit beside them */
+      /* 10. Customize: colours before banners, and big enough to sit beside them.
+         Build 315: each is its own page off a summary, so the order is the
+         summary's rows, and no grid sits on the summary at all */
       store.onboardingComplete = true;
       showCustomize(); await wait(600);
-      const sw = document.querySelector('.screen-customize .swatches'), bg = document.querySelector('.screen-customize .banner-grid');
-      out.custom = { order: sw && bg ? !!(sw.compareDocumentPosition(bg) & Node.DOCUMENT_POSITION_FOLLOWING) : null,
-        swatch: Math.round(document.querySelector('.screen-customize .swatch').getBoundingClientRect().width) };
+      out.custom = { rows: [...document.querySelectorAll('.screen-customize .cz-row')].map(r => r.dataset.page),
+        grids: document.querySelectorAll('.screen-customize :is(.swatches, .banner-grid, .avatarchar-grid, .hfx-grid)').length };
+      showCustomize('theme'); await wait(400);
+      out.custom.swatch = Math.round(document.querySelector('.screen-customize .swatch').getBoundingClientRect().width);
       } catch(e){ out.threw = String(e) + ' ' + (e.stack || '').split('\\n')[1]; }
       return out; }""")
     check("what friends are doing is one colour, whatever they are doing",
@@ -3215,8 +3218,10 @@ def check_b242(br):
     check("sign-up offers five starters, three across",
           r.get("starters") == 5 and r.get("starterCols") == 3, [r.get("starters"), r.get("starterCols")])
     cu = r.get("custom") or {}
-    check("Customize puts the colours before the banners, at a size that holds up beside them",
-          cu.get("order") is True and cu.get("swatch", 0) >= 56, cu)
+    # REVISED IN 315: the long page became a summary of four rows, each
+    # opening its own page - so no grid is buried under another any more.
+    check("Customize is four rows - Character, Banner, Theme color, Hundo effect - with no grid on it, and the swatches hold up on their page",
+          cu.get("rows") == ["character", "banner", "theme", "fx"] and cu.get("grids") == 0 and cu.get("swatch", 0) >= 56, cu)
     ctx.close()
 
     # 11. the account move
@@ -3288,7 +3293,7 @@ def check_b243(br):
       out.robotNew = (buildAvatarCharSVG('robot').querySelector('.cx-fig').getAttribute('class') || '').indexOf('cx-k-ninja') >= 0;
       /* 3. Customize: groups, five across, names on one line */
       store.onboardingComplete = true;
-      showCustomize(); await wait(700);
+      showCustomize('character'); await wait(700);
       out.groups = [...document.querySelectorAll('.screen-customize .avatarchar-group-title')]
         .filter(h => h.nextElementSibling && h.nextElementSibling.classList.contains('avatarchar-grid'))
         .map(h => h.firstChild && h.firstChild.textContent);
@@ -3296,19 +3301,24 @@ def check_b243(br):
       out.cols = getComputedStyle(grid).gridTemplateColumns.split(' ').length;
       out.twoLine = [...document.querySelectorAll('.screen-customize .avatarchar-name')].filter(n => n.getBoundingClientRect().height > 18).map(n => n.textContent);
       out.robotShown = !!document.querySelector('.screen-customize .avatarchar-option[aria-label="Robot"]');
+      /* build 315: each thing you wear has its own Customize page */
+      showCustomize('banner'); await wait(500);
       out.tileNeeds = [...document.querySelectorAll('.screen-customize .banner-opt-need')].map(e => e.textContent);
       out.defaultTile = (document.querySelector('.screen-customize .banner-opt.is-none .banner-opt-name') || {}).textContent;
       out.shadesTile = !!document.querySelector('.screen-customize .banner-opt[data-banner="shades"]');
       /* 4. the swatches preview what they are */
+      showCustomize('theme'); await wait(400);
       const dot = n => { const d = document.querySelectorAll('.screen-customize .swatch .dot')[ACCENTS.indexOf(n)]; return d ? getComputedStyle(d).backgroundImage : ''; };
       out.defaultDot = dot('ink'); out.goldDot = dot('veteran');
       /* 5. a locked thing opens a card with a bar */
+      showCustomize('banner'); await wait(400);
       const lockedBanner = document.querySelector('.screen-customize .banner-opt.locked[data-banner="tests100"]');
       lockedBanner.click(); await wait(400);
       out.bannerCard = { card: !!document.querySelector('.unlock-card'), bar: !!document.querySelector('.unlock-card .unlock-card-bar'),
         fill: getComputedStyle(document.querySelector('.unlock-card .unlock-card-fill') || document.body).backgroundImage,
         count: (document.querySelector('.unlock-card-count') || {}).textContent || '' };
       document.querySelectorAll('.invite-overlay').forEach(e => e.remove());
+      showCustomize('theme'); await wait(400);
       [...document.querySelectorAll('.screen-customize .swatch.locked')].pop().click(); await wait(400);
       out.themeCard = { desc: (document.querySelector('.unlock-card-desc') || {}).textContent || '',
         note: (document.querySelector('.unlock-card-note') || {}).textContent || '' };
@@ -4669,7 +4679,7 @@ def check_b246(br):
     print("\n42-43. build 246: the character glow, the raised bars, the Ranks tab, Umbra/Singularity, rank banners, banner requirements")
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     g = pg.evaluate("""async ()=>{ store.legacyChars = AVATAR_CHARACTERS.map(c => c.id); store.avatarChar = 'zeus';
-      showCustomize(); await new Promise(r => setTimeout(r, 1500));
+      showCustomize('character'); await new Promise(r => setTimeout(r, 1500));
       const o = document.querySelector('.avatarchar-option.selected'); const svg = o && o.querySelector('.avatarchar-svg');
       const cs = svg ? getComputedStyle(svg) : null;
       return { masked: !!cs && ((cs.maskImage || cs.webkitMaskImage || 'none') !== 'none'),
@@ -4727,7 +4737,7 @@ def check_b246(br):
                          !!document.querySelector('.screen-ranks'));
       out.hiddenArt = ['umbra', 'singularity'].map(id => !!characterDetail(id).hideArt);
       out.animated = ['adept_rank', 'elite_rank', 'titan_rank'].map(id => !buildBannerArt(id).classList.contains('is-still'));
-      showCustomize(); await wait(900);
+      showCustomize('banner'); await wait(900);
       out.needs = BANNERS.filter(b => !b.secret).map(b => { const o = document.querySelector('.banner-opt[data-banner="' + b.id + '"] .banner-opt-need');
         return !!o && o.textContent === b.label; });
       return out; }""")
@@ -5013,7 +5023,7 @@ def check_b258(br):
       const hex = RANK_COLOR[out.rank]; const n = parseInt(hex.slice(1), 16);
       out.rankRgb = 'rgb(' + (n >> 16) + ', ' + ((n >> 8) & 255) + ', ' + (n & 255) + ')';
       /* 5. the banner pop-up */
-      showCustomize(); await wait(500);
+      showCustomize('banner'); await wait(500);
       showUnlockDetail(bannerDetail('study50')); await wait(700);
       const sh = document.querySelector('.unlock-card'), art = document.querySelector('.unlock-card-art');
       const a = sh.getBoundingClientRect(), b = art.getBoundingClientRect();
@@ -5038,7 +5048,7 @@ def check_b258(br):
       out.astro = f.hundo7day.need;
       out.marks = f.streak100.need;
       /* 9. hold something you already have: the same card, marked held */
-      store.avatarChar = 'ghost'; showCustomize(); await wait(700);
+      store.avatarChar = 'ghost'; showCustomize('character'); await wait(700);
       const nj = [...document.querySelectorAll('.screen-customize .avatarchar-option')].find(b => b.title === 'Ninja');
       nj.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 5, clientY: 5, pointerId: 1 }));
       await wait(650);
@@ -5174,7 +5184,7 @@ def check_b266(br):
       const chip = document.querySelector('.setup-modechip .rs-mode');
       out.chip = chip ? chip.className : '';
       /* 2 */
-      showCustomize(); await wait(500);
+      showCustomize('character'); await wait(500);
       const sel = document.querySelector('.screen-customize .avatarchar-option.selected');
       if(sel){ sel.click(); await wait(500); }
       const card = document.querySelector('.invite-sheet.unlock-card');
@@ -6666,7 +6676,7 @@ def check_b290(br):
     r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
       try{
         document.getElementById('pushing-update')?.remove();
-        showCustomize(); await wait(900);
+        showCustomize('character'); await wait(900);
         const o = [...document.querySelectorAll('.screen-customize .avatarchar-option:not(.locked):not(.selected)')][0];
         let saves = 0; const realSave = window.saveStore; window.saveStore = function(){ saves++; return realSave.apply(this, arguments); };
         o.click();
@@ -6678,9 +6688,28 @@ def check_b290(br):
         let hasRule = false;
         [...document.styleSheets].forEach(sh => { try{ [...sh.cssRules].forEach(r => { if(r.selectorText && /avatarchar-cell:has\(/.test(r.selectorText)) hasRule = true; }); }catch(e){} });
         out.hasRule = hasRule;
-        const sw = document.querySelector('.screen-customize .swatch'), bo = document.querySelector('.screen-customize .banner-opt');
-        out.offscreen = { swatch: !!(sw && sw.classList.contains('is-offscreen')), banner: !!(bo && bo.classList.contains('is-offscreen')) };
-        const dot = sw && sw.querySelector('.dot'); out.dotPaused = dot ? getComputedStyle(dot).animationPlayState : null;
+        /* Since build 315 the swatches and the banners have pages of their
+           own, where most of them are on screen. So each page has a tall
+           spacer put in above its grid: the first tile must play where it
+           can be seen, pause once it is pushed out of view, and play again
+           when the spacer goes - the page's own observer doing all three. */
+        const pushOut = async (page, sel) => {
+          showCustomize(page); await wait(800);
+          const panel = document.querySelector('#stage > .screen-customize'), first = document.querySelector('.screen-customize ' + sel);
+          if(!panel || !first) return { missing: true };
+          const res = { onBefore: !first.classList.contains('is-offscreen') };
+          const sp = document.createElement('div'); sp.style.height = '5000px'; panel.insertBefore(sp, panel.firstChild);
+          window.scrollTo({ top: 0, behavior: 'instant' }); await wait(500);
+          res.offAfter = first.classList.contains('is-offscreen');
+          const dot = first.querySelector('.dot'); if(dot) res.dotPaused = getComputedStyle(dot).animationPlayState;
+          sp.remove(); await wait(500);
+          res.backOn = !first.classList.contains('is-offscreen');
+          return res;
+        };
+        out.swatch = await pushOut('theme', '.swatch');
+        out.banner = await pushOut('banner', '.banner-opt');
+        out.offscreen = { swatch: !!(out.swatch.onBefore && out.swatch.offAfter && out.swatch.backOn), banner: !!(out.banner.onBefore && out.banner.offAfter && out.banner.backOn) };
+        out.dotPaused = out.swatch.dotPaused === undefined ? null : out.swatch.dotPaused;
       } catch(e){ out.threw = String(e && e.stack || e); }
       return out; }""")
     s = r.get("sync") or {}
@@ -6690,7 +6719,7 @@ def check_b290(br):
     check("the glow comes up in a short ease-out, the pool on its own layer",
           g.get("k") is not None and g["k"] <= 0.25 and g.get("pool") is not None and g["pool"] <= 0.3 and "opacity" in str(g.get("poolLayer")), g)
     check("no :has(.selected) on the character cells", r.get("hasRule") is False, r.get("hasRule"))
-    check("Customize pauses the swatches and banner tiles it cannot see",
+    check("Customize pauses the swatches and banner tiles it cannot see, and plays the ones it can",
           (r.get("offscreen") or {}) == {"swatch": True, "banner": True} and r.get("dotPaused") in ("paused", None), r)
     ctx.close()
 
@@ -7384,7 +7413,7 @@ def check_b299(br):
             if(store.seenUnlocks) store.seenUnlocks.chars = store.seenUnlocks.chars.filter(x => x !== ch);
             showProfile('profile'); await wait(600);
             out.profileDot = !!document.querySelector('.profile-hero .new-dot, .namedisplay-row .new-dot');
-            showCustomize(); await wait(700);
+            showCustomize('character'); await wait(700);
             const dots = [...document.querySelectorAll('.screen-customize .new-dot')];
             out.custDots = dots.length; out.onChar = dots.length === 1 && dots[0].parentElement.classList.contains('avatarchar-option');
             const opt = document.querySelector('.screen-customize .avatarchar-option.is-new');
@@ -8278,7 +8307,7 @@ def check_b304(br):
           out.withNote = withNote;
           out.rankNote = themeDetail('veteran').note;
           /* the Default banner tile: no theme colour bleeding as a rim */
-          showCustomize(); await wait(700);
+          showCustomize('banner'); await wait(700);
           const art = document.querySelector('.banner-opt.is-none .banner-opt-art');
           out.noneBg = art ? getComputedStyle(art).backgroundImage : 'missing';
           /* your own row, your own card */
@@ -9505,10 +9534,13 @@ def check_b313_lead(br):
       document.querySelector('#unitoptions-modal')?.remove(); document.querySelector('.unitoptions-scrim')?.remove();
       /* Customize goes up before its banner scenes are drawn, and every
          one of them is drawn a moment later */
-      showCustomize();
+      showCustomize('banner');
       const tiles = () => [...document.querySelectorAll('.screen-customize .banner-opt:not(.is-none)')];
       out.custNow = { tiles: tiles().length, drawn: tiles().filter(t => t.querySelector('.bnr')).length };
-      await wait(1500);
+      /* drawn a frame or two at a time, so how long that takes is the
+         machine's frame rate: wait for it (up to 8s) rather than a fixed
+         1.5s, which a loaded runner misses on every build */
+      for(let i = 0; i < 32 && tiles().filter(t => t.querySelector('.bnr')).length < tiles().length; i++) await wait(250);
       out.custLater = { tiles: tiles().length, drawn: tiles().filter(t => t.querySelector('.bnr')).length };
       showHome(); await wait(300);
       /* the in-test streak: every tier keeps the last one's extras and adds one */
@@ -9868,7 +9900,7 @@ def check_b314_chars(br):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=dpr)
         r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
           store.mysteryColorsFound = { red: true, orange: true, yellow: true };
-          showCustomize(); await wait(400);
+          showCustomize('character'); await wait(400);
           const opts = [...document.querySelectorAll('.screen-customize .avatarchar-option')];
           const near = o => { const b = o.getBoundingClientRect(); return b.bottom > 0 && b.top < innerHeight; };
           const held = opts.filter(o => !o.classList.contains('locked'));
@@ -9900,7 +9932,7 @@ def check_b314_chars(br):
     for label, w, h, dpr in [("iPhone 17 Pro Max", 440, 956, 3), ('iPad Pro 11"', 834, 1194, 2), ("iPhone SE 1st gen", 320, 568, 2)]:
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=dpr)
         r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
-          showCustomize(); await wait(600);
+          showCustomize('character'); await wait(600);
           const opts = [...document.querySelectorAll('.screen-customize .avatarchar-option')];
           const ring = o => { const a = getComputedStyle(o, '::after'); return parseFloat(a.opacity) > .9 && parseFloat(a.borderTopWidth) >= 1; };
           const tick = o => { const c = o.querySelector('.avatarchar-check'); return !!c && parseFloat(getComputedStyle(c).opacity) > .9; };
@@ -9910,7 +9942,8 @@ def check_b314_chars(br):
           const held = opts.find(o => !o.classList.contains('locked') && !o.classList.contains('selected'));
           const aura = held && [...held.querySelectorAll('svg.avatarchar-svg circle')].find(c => /url\\(#(aura|halo)-/.test(c.getAttribute('fill') || ''));
           out.halo = aura ? parseFloat(aura.getAttribute('opacity') || '1') : null;
-          /* the name editor */
+          /* the name editor - on the summary page since build 315 */
+          showCustomize(); await wait(500);
           document.querySelector('.customize-namerow .profile-edit-btn').click(); await wait(300);
           const row = document.querySelector('.customize-namerow'), inp = document.querySelector('.screen-customize input.searchbox');
           const save = [...document.querySelectorAll('.screen-customize button')].find(b => b.textContent.trim() === 'Save');
@@ -10092,7 +10125,7 @@ def check_b314_sizes(br):
       const sz = svg => svg ? +parseFloat(getComputedStyle(svg).width).toFixed(1) : 0;
       const one = (list) => { const v = list.filter(x => x[1] > 0); const s = new Set(v.map(x => x[1])); return { n: v.length, sizes: [...s], who: v }; };
       /* Customize, everything held */
-      store.legacyChars = ids.slice(); showCustomize(); await wait(900);
+      store.legacyChars = ids.slice(); showCustomize('character'); await wait(900);
       out.customize = one([...document.querySelectorAll('.screen-customize .avatarchar-option')].map(o => [o.dataset.char || '', sz(o.querySelector('svg.avatarchar-svg') || o.querySelector('svg'))]));
       /* the sign-up picker */
       try{ showWelcomeCharacterPrompt(); await wait(700);
@@ -10176,7 +10209,7 @@ def check_b313_flares(br):
           out.items = rsUnlockItems({ badges: [], retroBadges: [], colors: [], characters: [], banners: ['flare_genesis'], justBeatSpeed: null, units: [], flare: 'core', flareAll: false, flareCount: 6 })
             .map(i => i.kind + ':' + (i.flare || i.character || i.banner || '') + ':' + (i.name || ''));
           /* 6. silhouettes: with only Void held, the other three are black cut-outs in Customize */
-          store.mysteryColorsFound = JSON.parse(F.void); showCustomize(); await wait(900);
+          store.mysteryColorsFound = JSON.parse(F.void); showCustomize('character'); await wait(900);
           const opt = id => [...document.querySelectorAll('.avatarchar-option')].find(o => o.title === (AVATAR_DISPLAY_NAME[id] || id));
           out.sil = ['umbra', 'singularity', 'genesis'].map(id => { const o = opt(id); if(!o) return 'missing';
             const p = o.querySelector('.char-sil-body .cx-head :is(path, circle, ellipse):not([fill="none"])');
@@ -10188,6 +10221,7 @@ def check_b313_flares(br):
           /* 7. banners: one per secret character, held with it */
           out.banners = ['flare_void', 'flare_umbra', 'flare_horizon', 'flare_genesis'].map(id => !!bannerDef(id) && typeof BANNER_ART[id] === 'function');
           out.bannerHeld = [bannerEarned('flare_void'), bannerEarned('flare_umbra')];
+          showCustomize('banner'); await wait(900);   /* the banners' own page since build 315 */
           out.secretLocked = !!document.querySelector('.banner-opt.locked.is-secret[data-banner="flare_umbra"]');
           /* an account already holding Void is handed its banner on Home */
           shownNow(); store.unlocksShown.banners = store.unlocksShown.banners.filter(x => x !== 'flare_void');
@@ -10531,9 +10565,9 @@ def check_b313_fx(br):
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
       const tiles = () => [...document.querySelectorAll('.hfx-opt')].map(b => ({ id: b.dataset.fx, locked: b.classList.contains('locked'),
         sel: b.classList.contains('selected'), need: (b.querySelector('.hfx-opt-need') || {}).textContent, stage: !!b.querySelector('.hfx-stage') }));
-      store.lifetime.perfectTests = 0; saveStore(); showCustomize(); await wait(400);
+      store.lifetime.perfectTests = 0; saveStore(); showCustomize('fx'); await wait(400);
       out.zero = tiles();
-      store.lifetime.perfectTests = 120; saveStore(); showCustomize(); await wait(400);
+      store.lifetime.perfectTests = 120; saveStore(); showCustomize('fx'); await wait(400);
       out.mid = tiles();
       out.heads = [...document.querySelectorAll('.screen-customize .slab')].map(e => e.textContent.trim());
       out.firstLive = !!document.querySelector('.hfx-opt[data-fx="confetti"] .hfx-stage');
@@ -10545,8 +10579,13 @@ def check_b313_fx(br):
       out.tileFx = document.querySelectorAll('.hfx-opt .hfx-box, .hfx-opt .hfx-layer').length;
       out.posters = document.querySelectorAll('.hfx-opt .hfx-stage.is-poster svg').length;
       /* the tiles are the banners' size and shape */
-      const ta = document.querySelector('.hfx-opt .hfx-stage'), ba = document.querySelector('.banner-opt .banner-opt-art');
-      out.tile = ta ? [ta.offsetWidth, ta.offsetHeight] : null; out.banner = ba ? [ba.offsetWidth, ba.offsetHeight] : null;
+      const ta = document.querySelector('.hfx-opt .hfx-stage');
+      out.tile = ta ? [ta.offsetWidth, ta.offsetHeight] : null;
+      /* the banners have a page of their own since build 315 */
+      showCustomize('banner'); await wait(400);
+      const ba = document.querySelector('.banner-opt .banner-opt-art');
+      out.banner = ba ? [ba.offsetWidth, ba.offsetHeight] : null;
+      showCustomize('fx'); await wait(400);
       document.querySelector('.hfx-opt[data-fx="worldtree"]')?.click(); await wait(200);
       out.picked = store.hundoFx;
       /* build 314: a first tap only picks it ("if it's not selected and you
@@ -10570,7 +10609,7 @@ def check_b313_fx(br):
          and one tap away */
       store.hundoFx = 'blackhole'; saveStore();
       out.oldInUse = hundoFxInUse();
-      showCustomize(); await wait(400);
+      showCustomize('fx'); await wait(400);
       out.oldSel = [...document.querySelectorAll('.hfx-opt.selected')].map(b => b.dataset.fx);
       const t50 = document.querySelector('.hfx-opt[data-fx="' + HUNDO_FX[1].id + '"]');
       out.old50Held = !!t50 && !t50.classList.contains('locked');
@@ -11401,7 +11440,7 @@ def check_b314_unlocks(br):
     # --- the hundo effect tiles take taps like everything else in Customize
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
-      store.lifetime.perfectTests = 120; store.hundoFx = 'confetti'; saveStore(); showCustomize(); await wait(500);
+      store.lifetime.perfectTests = 120; store.hundoFx = 'confetti'; saveStore(); showCustomize('fx'); await wait(500);
       const tile = id => document.querySelector('.hfx-opt[data-fx="' + id + '"]');
       const cards = () => document.querySelectorAll('.unlock-card').length;
       const fw = HUNDO_FX[1].id;
@@ -11431,7 +11470,7 @@ def check_b314_unlocks(br):
     for w, h in ((440, 956), (834, 1194)):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=1)
         r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
-          showCustomize(); await wait(400);
+          showCustomize('banner'); await wait(400);
           const t = document.querySelector('.banner-opt[data-banner="flare_umbra"]');
           t.scrollIntoView({ block: 'center', behavior: 'instant' }); await wait(1800);
           const art = t.querySelector('.banner-opt-art'), still = art.querySelector('.bnr-veil-still');
@@ -11449,7 +11488,7 @@ def check_b314_unlocks(br):
           out.cardVeiled = !!ca && ca.classList.contains('is-veiled') && !cb && !!ca.querySelector('.bnr-veil-still') && /unlock to see/i.test(ca.textContent);
           document.querySelectorAll('.invite-overlay').forEach(o => o.remove());
           /* a held one is not veiled */
-          window.isLockedCharacter = id => false; showCustomize(); await wait(300);
+          window.isLockedCharacter = id => false; showCustomize('banner'); await wait(300);
           const t2 = document.querySelector('.banner-opt[data-banner="flare_umbra"]');
           out.heldVeiled = !!t2 && t2.querySelector('.banner-opt-art').classList.contains('is-veiled');
           return out; }""")
@@ -11525,7 +11564,7 @@ def check_b314_unlocks(br):
 
     # --- the UFO's tile: the saucer is whole inside the tile, not cut by its top edge
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
-    r = pg.evaluate("""async () => { showCustomize(); await new Promise(r => setTimeout(r, 400));
+    r = pg.evaluate("""async () => { showCustomize('fx'); await new Promise(r => setTimeout(r, 400));
       const st = document.querySelector('.hfx-opt[data-fx="ufo"] .hfx-stage'), svg = st && st.querySelector('svg');
       if(!svg) return null; const dome = [...svg.querySelectorAll('path')].find(p => /url\\(#[^)]*dome\\)/.test(p.getAttribute('fill') || ''));
       if(!dome) return { dome: false }; const a = st.getBoundingClientRect(), b = dome.getBoundingClientRect();
@@ -11617,6 +11656,120 @@ def check_b314_unlocks(br):
               gaps and all(g[0] >= 6 and g[1] >= 6 for g in gaps), gaps)
         check("World Tree %s: the crown rises from the XP card's top edge, not from inside it, and the header is over the crown" % tag,
               r["headOver"] and r["crownBase"] and all(-3 <= b <= 2.5 for b in r["crownBase"][:1]), {k: r[k] for k in ("headOver", "crownBase")})
+        ctx.close()
+
+
+def check_b315_customize(br):
+    """Build 315: Customize is a summary - your name, then "Your look" in
+    the Name's own header bar and four rows (Character, Banner, Theme
+    color, Hundo effect) showing what you have on - and each row opens
+    that thing's own page under the same bar, with its count. Written
+    against build 314's single long page, where every check here fails."""
+    print("\n315cz. Customize: a summary of what you wear, a page for each")
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate("""async () => { const out = {}; const wait = ms => new Promise(r => setTimeout(r, ms));
+          try{
+          /* one character held but never looked at, so exactly one row is "new" */
+          const held = AVATAR_CHARACTERS.filter(c => !c.retired && !c.legacy && !isLockedCharacter(c.id)).map(c => c.id);
+          ensureSeenUnlocks();
+          const fresh = held.find(id => id !== store.avatarChar);
+          store.seenUnlocks.chars = held.filter(id => id !== fresh);
+          store.seenUnlocks.banners = BANNERS.filter(b => bannerEarned(b.id)).map(b => b.id);
+          store.seenUnlocks.themes = ACCENTS.filter(a => !isLockedAccent(a));
+          store.seenUnlocks.fx = HUNDO_FX.filter(d => hundoFxEarned(d.id)).map(d => d.id);
+          out.fresh = fresh;
+          /* Profile's own button - it hands showCustomize its click event */
+          showProfile('profile'); await wait(500);
+          const btn = [...document.querySelectorAll('.profile-edit-btn')].find(b => /custom/i.test(b.textContent));
+          if(btn) btn.click(); else showCustomize(new Event('click'));
+          await wait(900);
+          const panel = () => document.querySelector('#stage > .screen-customize');
+          const rows = () => [...document.querySelectorAll('.screen-customize .cz-row')];
+          out.back = (document.querySelector('.screen-customize .back-link') || {}).textContent || '';
+          out.rows = rows().map(r => r.dataset.page);
+          out.grids = document.querySelectorAll('.screen-customize :is(.swatches, .banner-grid, .avatarchar-grid, .hfx-grid)').length;
+          const bars = [...document.querySelectorAll('.screen-customize .slab.motion-summary')];
+          out.bars = bars.map(b => b.textContent.trim());
+          const bg = b => getComputedStyle(b).backgroundImage + '|' + getComputedStyle(b).borderRadius;
+          out.sameBar = bars.length === 2 && bg(bars[0]) === bg(bars[1]);
+          const box = el => { if(!el) return null; const r = el.getBoundingClientRect(); return { w: Math.round(r.width), h: Math.round(r.height) }; };
+          const pick = k => document.querySelector('.cz-row[data-page="' + k + '"] .cz-pick');
+          out.char = { box: box(pick('character')), avatar: !!(pick('character') || document).querySelector('.rank-avatar[data-char="' + store.avatarChar + '"]') };
+          out.banner = box(pick('banner'));
+          const tdot = pick('theme') && pick('theme').querySelector('.dot');
+          out.theme = { box: box(pick('theme')), swirl: !!tdot && document.getAnimations().some(a => a.animationName === 'pf-swirl' && a.effect && a.effect.target === tdot && a.effect.pseudoElement === '::before') };
+          const st = pick('fx') && pick('fx').querySelector('.hfx-stage');
+          out.fx = { box: box(pick('fx')), id: st ? st.dataset.fx : null, inUse: hundoFxInUse(), pct: st ? (st.querySelector('.hfx-stage-pct') || {}).textContent : null };
+          out.values = rows().map(r => (r.querySelector('.cz-value') || {}).textContent);
+          out.counts = rows().map(r => (r.querySelector('.cz-count') || {}).textContent);
+          out.news = rows().map(r => (r.querySelector('.cz-new') || {}).textContent || '');
+          /* each row opens its page, under the bar, and Back comes home */
+          const OPT = { character: '.avatarchar-option', banner: '.banner-opt', theme: '.swatch', fx: '.hfx-opt' };
+          /* the character page is one grid per group (free, ranks, secrets...),
+             so "only its grid" is no grid of any OTHER kind, and at least one of its own */
+          const GRID = { character: '.avatarchar-grid', banner: '.banner-grid', theme: '.swatches', fx: '.hfx-grid' };
+          out.pages = [];
+          for(const k of ['character', 'banner', 'theme', 'fx']){
+            const row = document.querySelector('.cz-row[data-page="' + k + '"]');
+            const want = row ? (row.querySelector('.cz-count') || {}).textContent : null;
+            const label = row ? (row.querySelector('.cz-label') || {}).textContent : null;
+            if(row) row.click(); await wait(700);
+            const p = panel();
+            const opts = [...document.querySelectorAll('.screen-customize ' + OPT[k])];
+            const barEl = document.querySelector('.screen-customize .cz-bar');
+            out.pages.push({ k, isPage: !!p && p.classList.contains('cz-page-' + k),
+              title: barEl ? (barEl.querySelector('.cz-bar-title') || {}).textContent : null, label,
+              barCount: barEl ? (barEl.querySelector('.cz-bar-count') || {}).textContent : null, rowCount: want,
+              grid: opts.filter(o => !o.classList.contains('locked')).length + ' of ' + opts.length,
+              own: document.querySelectorAll('.screen-customize ' + GRID[k]).length,
+              others: document.querySelectorAll('.screen-customize :is(' + Object.keys(GRID).filter(g => g !== k).map(g => GRID[g]).join(', ') + ')').length,
+              back: (document.querySelector('.screen-customize .back-link') || {}).textContent || '' });
+            const bl = document.querySelector('.screen-customize .back-link'); if(bl) bl.click(); await wait(500);
+          }
+          out.backHome = rows().length;
+          /* a new pick shows on its row */
+          document.querySelector('.cz-row[data-page="character"]').click(); await wait(700);
+          const other = [...document.querySelectorAll('.screen-customize .avatarchar-option:not(.locked):not(.selected)')][0];
+          if(other){ other.click(); await wait(400); }
+          out.picked = store.avatarChar;
+          document.querySelector('.screen-customize .back-link').click(); await wait(500);
+          out.pickedRow = (document.querySelector('.cz-row[data-page="character"] .cz-value') || {}).textContent;
+          out.pickedName = AVATAR_DISPLAY_NAME[store.avatarChar] || store.avatarChar;
+          } catch(e){ out.threw = String(e && e.stack || e); }
+          return out; }""")
+        check(f"{dev}: Customize: no error", not r.get("threw"), r.get("threw", ""))
+        check(f"{dev}: Profile's button opens the summary - four rows in order, no grid on it, Back to Profile",
+              r.get("rows") == ["character", "banner", "theme", "fx"] and r.get("grids") == 0 and "Back to Profile" in r.get("back", ""), r)
+        # "The title of all those tabs needs a header thing"
+        check(f"{dev}: \"Your look\" wears the Name's own header bar",
+              [b.lower() for b in r.get("bars") or []] == ["name", "your look"] and r.get("sameBar"), (r.get("bars"), r.get("sameBar")))
+        ch, bn, th, fx = r.get("char") or {}, r.get("banner") or {}, r.get("theme") or {}, r.get("fx") or {}
+        cb = ch.get("box") or {"w": 0, "h": 0}
+        # "The character preview of what you have set is cool but it's small"
+        check(f"{dev}: the character row shows the one you wear, at least 56px",
+              ch.get("avatar") and min(cb["w"], cb["h"]) >= 56, ch)
+        # "give the small banner preview (about the same total size as the
+        # other ones) but to the shape of a banner"
+        bb = bn or {"w": 0, "h": 1}
+        ratio, area = bb["w"] / max(1, bb["h"]), bb["w"] * bb["h"] / max(1, cb["w"] * cb["h"])
+        check(f"{dev}: the banner row's preview is banner-shaped (16:6) and about the character's size",
+              2.4 <= ratio <= 3.0 and 0.6 <= area <= 1.6, {"banner": bn, "ratio": round(ratio, 2), "area": round(area, 2)})
+        check(f"{dev}: the theme row's swatch swirls (the composited swirl), at least 48px",
+              th.get("swirl") and min((th.get("box") or {"w": 0, "h": 0}).values()) >= 48, th)
+        # "The hundo effect one is tough to represent ... there's gotta be a way"
+        check(f"{dev}: the hundo effect row shows the effect in use as its own tile, 100% in it",
+              fx.get("id") and fx.get("id") == fx.get("inUse") and fx.get("pct") == "100%", fx)
+        check(f"{dev}: only the character row carries a \"new\" pill, for the one character not yet seen",
+              (r.get("news") or [None])[0] == "1 new" and all(n == "" for n in (r.get("news") or [])[1:]), r.get("news"))
+        pages = r.get("pages") or []
+        check(f"{dev}: each row opens its own page, under the bar with its name and count, and only its grid",
+              len(pages) == 4 and all(p["isPage"] and p["title"] == p["label"] and p["own"] >= 1 and p["others"] == 0 for p in pages), pages)
+        check(f"{dev}: every count is the page's own grid, on the row and on the bar",
+              len(pages) == 4 and all(p["rowCount"] == p["barCount"] == p["grid"] for p in pages), [(p["k"], p["rowCount"], p["barCount"], p["grid"]) for p in pages])
+        check(f"{dev}: Back to Customize comes back to the summary",
+              all("Back to Customize" in p["back"] for p in pages) and r.get("backHome") == 4, (r.get("backHome"), [p["back"] for p in pages]))
+        check(f"{dev}: a new pick shows on its row", r.get("pickedRow") == r.get("pickedName") and r.get("picked"), (r.get("picked"), r.get("pickedRow"), r.get("pickedName")))
         ctx.close()
 
 
@@ -11767,6 +11920,7 @@ def main():
             check_b314_dragselect(br)
             check_b314_slider_release(br)
             check_b314_unlocks(br)
+            check_b315_customize(br)
         finally:
             br.close()
     SERVER.shutdown()
