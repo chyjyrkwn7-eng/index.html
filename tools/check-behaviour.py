@@ -10060,12 +10060,22 @@ def check_b313_fx(br):
       out.firstLive = !!document.querySelector('.hfx-opt[data-fx="confetti"] .hfx-stage');
       document.querySelector('.hfx-opt[data-fx="confetti"]')?.scrollIntoView({ block: 'center', behavior: 'instant' });
       await wait(2600); out.confettiPieces = document.querySelectorAll('.hfx-opt[data-fx="confetti"] .hfx-stage *').length;
+      /* build 314: the tiles are STILL - nothing in any tile is animating
+         and no effect's layers are in them, 2.6s after the screen opened */
+      out.tileAnims = [...document.querySelectorAll('.hfx-opt')].reduce((n, b) => n + b.getAnimations({ subtree: true }).filter(a => a.playState === 'running').length, 0);
+      out.tileFx = document.querySelectorAll('.hfx-opt .hfx-box, .hfx-opt .hfx-layer').length;
+      out.posters = document.querySelectorAll('.hfx-opt .hfx-stage.is-poster svg').length;
       /* the tiles are the banners' size and shape */
       const ta = document.querySelector('.hfx-opt .hfx-stage'), ba = document.querySelector('.banner-opt .banner-opt-art');
       out.tile = ta ? [ta.offsetWidth, ta.offsetHeight] : null; out.banner = ba ? [ba.offsetWidth, ba.offsetHeight] : null;
       document.querySelector('.hfx-opt[data-fx="worldtree"]')?.click(); await wait(200);
       out.picked = store.hundoFx;
-      /* and a tap shows it: the card, with the effect playing on a results screen in miniature */
+      /* build 314: a first tap only picks it ("if it's not selected and you
+         tap it, that's selecting") - no card */
+      out.firstTapCard = document.querySelectorAll('.unlock-card').length;
+      out.firstTapSel = !!document.querySelector('.hfx-opt[data-fx="worldtree"].selected');
+      /* and a tap on the picked one shows it: the card, with the effect playing on a results screen in miniature */
+      document.querySelector('.hfx-opt[data-fx="worldtree"]')?.click(); await wait(200);
       out.tapCard = !!document.querySelector('.unlock-card-fx .hfx-mock');
       await wait(1600);
       out.tapLive = document.querySelectorAll('.unlock-card-fx .hfx-mock .hfx-layer, .unlock-card-fx .hfx-mock .hfx-box').length;
@@ -10098,18 +10108,23 @@ def check_b313_fx(br):
           len(IDS) == 5 and IDS[0] == "confetti" and [t["id"] for t in mid] == IDS and all(t["stage"] for t in mid), [t["id"] for t in mid])
     check("every rung on the ladder is a built effect - the 50 is %s" % NAMES[1], all(d["built"] for d in LADDER), LADDER)
     check("four to earn, one ladder of hundos: 50, 100, 200, 350", nums[1:] == [50, 100, 200, 350], [t["need"] for t in mid])
-    check("Confetti comes first, held by everyone, and plays confetti in its own tile",
-          mid and mid[0]["id"] == "confetti" and not mid[0]["locked"] and r.get("firstLive") and r.get("confettiPieces", 0) > 5, {k: r.get(k) for k in ("firstLive", "confettiPieces")})
+    check("Confetti comes first and is held by everyone", mid and mid[0]["id"] == "confetti" and not mid[0]["locked"] and r.get("firstLive"), {k: r.get(k) for k in ("firstLive",)})
+    check("build 314: every tile is a STILL of its effect - nothing animating in any tile, no effect playing in one (\"all those effects and animations seems like a lot, don't do the effects there\")",
+          r.get("tileAnims") == 0 and r.get("tileFx") == 0 and r.get("posters") == len(IDS), {k: r.get(k) for k in ("tileAnims", "tileFx", "posters")})
     check("with no hundos only Confetti is held", [t["locked"] for t in r.get("zero") or []] == [False] + [True] * 4, r.get("zero"))
     check("with 120 hundos %s and %s are held, the rest are not" % (NAMES[1], NAMES[2]), [t["locked"] for t in mid] == [False, False, False, True, True], mid)
     tl, bn = r.get("tile") or [0, 1], r.get("banner") or [0, 1]
     check("the effect tiles are the banner tiles' size and shape (round 3: \"slightly too big\")",
           abs(tl[0] - bn[0]) <= 2 and abs(tl[1] - bn[1]) <= 3, {"tile": r.get("tile"), "banner": r.get("banner")})
-    check("tapping a held one opens its card, held, with the effect playing on a results screen in miniature",
+    check("build 314: tapping a held one that is not picked PICKS it and opens nothing (like a character or a banner)",
+          r.get("firstTapCard") == 0 and r.get("firstTapSel") and r.get("picked") == "worldtree", {k: r.get(k) for k in ("firstTapCard", "firstTapSel", "picked")})
+    check("tapping the picked one opens its card, held, with the effect playing on a results screen in miniature",
           r.get("tapCard") and r.get("tapLive", 0) >= 1 and r.get("tapHeld"), {k: r.get(k) for k in ("tapCard", "tapLive", "tapHeld")})
-    check("tapping a held one picks it; a locked one opens its card (count and Preview) and picks nothing",
-          r.get("picked") == "worldtree" and "350" in r.get("cardText", "") and r.get("preview") and r.get("stillPicked") == "worldtree",
-          {k: r.get(k) for k in ("picked", "cardText", "preview", "stillPicked")})
+    check("tapping a held one picks it; a locked one opens its card (its count) and picks nothing",
+          r.get("picked") == "worldtree" and "350" in r.get("cardText", "") and r.get("stillPicked") == "worldtree",
+          {k: r.get(k) for k in ("picked", "cardText", "stillPicked")})
+    check("build 314: the card has no Preview button (\"The preview button also can be removed\") - the miniature results screen is the preview",
+          not r.get("preview") and "Preview" not in r.get("cardText", ""), {k: r.get(k) for k in ("preview",)})
     r = pg.evaluate("""() => { const got = JSON.parse(JSON.stringify(store)); delete got.hundoFx;
       store.hundoFx = 'confetti'; loadStore(); const kept = store.hundoFx;
       applyLoadedData(got); const def = store.hundoFx;
@@ -10286,7 +10301,7 @@ def check_b313_fx(br):
             out.seen.push(name);
             await wait(3200);
             out.live.push(document.querySelectorAll('.rs-spot-fx .hfx-stage .hfx-box').length);
-            out.use = out.use || !!sp.querySelector('.rs-spot-use');
+            out.use = !!out.use || !!sp.querySelector('.rs-spot-use') || /use this effect/i.test(sp.textContent);
             out.need = out.need || (sp.querySelector('.rs-spot-need-text') || {}).textContent;
             sp.click(); await wait(1100);
             out.gone.push(document.querySelectorAll('.rs-spot-fx, .hfx-box, .hfx-layer').length);
@@ -10299,8 +10314,9 @@ def check_b313_fx(br):
       out.store = JSON.stringify(store);
       return out; }""")
     check("an account already at 120 hundos gets %s then %s on Home - two in a row" % (NAMES[1], NAMES[2]), r.get("seen") == NAMES[1:3], r.get("seen"))
-    check("each pop-up plays the effect live in its own 100% box, says what it took, and offers to use it",
-          r.get("live") and all(n >= 1 for n in r["live"]) and r.get("use") and r.get("need") == "Earn 50 hundos", {k: r.get(k) for k in ("live", "use", "need")})
+    check("each pop-up plays the effect live in its own 100% box and says what it took",
+          r.get("live") and all(n >= 1 for n in r["live"]) and r.get("need") == "Earn 50 hundos", {k: r.get(k) for k in ("live", "need")})
+    check("build 314: and has NO \"Use this effect\" button (\"let's remove that\")", r.get("use") is False, {k: r.get(k) for k in ("use",)})
     check("closing a pop-up stops and removes its preview", r.get("gone") and all(n == 0 for n in r["gone"]), r.get("gone"))
     check("both are recorded as shown", r.get("shown") == IDS[1:3], r.get("shown"))
     stored = r.get("store") or "{}"
@@ -10361,6 +10377,324 @@ def check_b313_fx(br):
     check("and is held at 350, with everything else", al.get("have") == al.get("need") and r.get("allZenith") is True, r)
     check("Zenith's requirement says so", "hundo effect" in (r.get("label") or ""), r.get("label"))
     ctx.close()
+
+
+# --------------------------------------------------------------------------
+SPOT_PROBE = """async (expr) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+  document.querySelectorAll('.rs-spot').forEach(s => s.remove());
+  const item = (0, eval)('(' + expr + ')');
+  const h = playUnlockSpotlight(item, 1, 1, () => {});
+  const spot = document.querySelector('.rs-spot'), card = spot.querySelector('.rs-spot-card'), art = spot.querySelector('.rs-spot-art');
+  const scaleOf = el => { const t = getComputedStyle(el).transform; if(!t || t === 'none') return [1, 1];
+    const m = t.match(/matrix\\(([^)]+)\\)/); if(!m) return [9, 9]; const v = m[1].split(',').map(Number); return [Math.hypot(v[0], v[1]), Math.hypot(v[2], v[3])]; };
+  const samples = [];
+  const t0 = performance.now();
+  for(let i = 0; i < 26; i++){ await wait(70);
+    samples.push({ t: Math.round(performance.now() - t0), card: scaleOf(card), art: scaleOf(art), cf: getComputedStyle(card).filter, ao: +getComputedStyle(art).opacity }); }
+  await wait(600);
+  const cs = getComputedStyle(card), ba = spot.querySelector('.rs-spot-bannerart');
+  const out = { samples,
+    color: spot.style.getPropertyValue('--spot-color').trim(), color2: spot.style.getPropertyValue('--spot-color2').trim(),
+    ground: cs.backgroundColor, cls: spot.className,
+    strip: (spot.querySelector('.rs-spot-strip') || {}).className || null,
+    artAnims: art.getAnimations().map(a => a.animationName || a.id),
+    cardAnims: card.getAnimations().map(a => a.animationName || a.id),
+    sheen: ba ? getComputedStyle(ba, '::after').animationName : null,
+    spotBefore: getComputedStyle(spot, '::before').animationName,
+    use: !!spot.querySelector('.rs-spot-use') || /use this effect/i.test(spot.textContent) };
+  h.stop(); return out; }"""
+
+
+def check_b314_unlocks(br):
+    """Build 314: "the void, umbra, horizon and genesis banners are pretty
+    mid ... the pop up for void for that banner did not match the banner,
+    it probably should have been black toned? I thought all the unlocks
+    would match their color theme ... but also different unlocks had a
+    similar but different type of pop up? ... it like made the banner do
+    an effect when the pop up came up, not a fan of that ... Not sure about
+    the unlock stuff within the pops should do that type of effect where
+    they start off tiny ... and then getting big"; "the pop up showed the
+    button to 'use this effect' let's remove that"; and the UFO, the tree,
+    the bubbles. Fails on 313, which has none of it."""
+    print("\n314u. unlock pop-ups in their own colours and calm; the flare banners; the UFO's scan and exit; the tree's edges; the bubbles' pops")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    # everything held and already announced, on a screen with no unlock
+    # queue of its own, so nothing but the card under test is ever up
+    pg.evaluate("""() => { window.isLockedCharacter = id => false; store.lifetime.perfectTests = 600;
+      const u = ensureUnlocksShown(); u.banners = BANNERS.map(b => b.id); u.chars = AVATAR_CHARACTERS.map(c => c.id); u.fx = HUNDO_FX.map(d => d.id);
+      store.flareHintsShown = ['umbra', 'singularity', 'genesis']; saveStore(); showAppearance(); }""")
+    pg.wait_for_timeout(600)
+    probe = lambda expr: pg.evaluate(SPOT_PROBE, expr)
+    void = probe("bannerUnlockItem('flare_void')")
+    koi = probe("bannerUnlockItem('tests500')")
+    umbra = probe("bannerUnlockItem('flare_umbra')")
+    rankb = probe("bannerUnlockItem('adept_rank')")
+    badge = probe("({ kind: 'badge', unit: 'Identity Crimes', kicker: 'Badge earned', name: 'Identity Crimes badge', sub: '', color: '#D8E2EC', art: () => buildUnitBadgeSVG('Identity Crimes', true) })")
+    fx = probe("hundoFxUnlockItem('fireworks')")
+    char = probe("characterUnlockItem('voidwalker')")
+    exp = pg.evaluate("""() => ({ void: bannerTintOf('flare_void'), koi: bannerTintOf('tests500'), umbra: bannerTintOf('flare_umbra'),
+      badge: badgeThemeFor('Identity Crimes').p }).valueOf()""")
+    lum = lambda c: (lambda v: (.2126 * v[0] + .7152 * v[1] + .0722 * v[2]) / 255)([float(x) for x in re.findall(r"[\d.]+", c)[:3]]) if c else 1
+    hexlow = lambda h: (h or "").strip().lower()
+    check("the Void banner's pop-up is BLACK-toned - its card's own ground near black (\"it probably should have been black toned\")",
+          lum(void.get("ground")) < .03, void.get("ground"))
+    check("and every banner's pop-up takes that banner's own colours (not one pale grey for all): Void, Koi Pond, Umbra",
+          hexlow(void.get("color")) == hexlow(exp["void"][0]) and hexlow(koi.get("color")) == hexlow(exp["koi"][0]) and hexlow(umbra.get("color")) == hexlow(exp["umbra"][0])
+          and hexlow(koi.get("color")) != "#e9eef6", {"void": void.get("color"), "koi": koi.get("color"), "umbra": umbra.get("color"), "expected": exp})
+    check("a badge's pop-up is in that badge's enamel colour", hexlow(badge.get("color")) == hexlow(exp["badge"]), {"got": badge.get("color"), "want": exp["badge"]})
+    check("the Void character's pop-up is black-toned too, in the same colours as its banner's (the two arrive back to back)",
+          lum(char.get("ground")) < .03 and hexlow(char.get("color")) == hexlow(void.get("color")) and hexlow(char.get("color2")) == hexlow(void.get("color2")),
+          {k: (char.get(k), void.get(k)) for k in ("ground", "color", "color2")})
+    check("each KIND keeps its own shape: a challenge banner the striped strip, a rank banner the rank-reward chevron, a badge none",
+          koi.get("strip") == "rs-spot-strip" and "is-rankreward" in (rankb.get("strip") or "") and badge.get("strip") is None,
+          {"koi": koi.get("strip"), "rank": rankb.get("strip"), "badge": badge.get("strip")})
+    check("a banner's pop-up does nothing TO the banner: no unroll, no sheen across it, no jolt, no flash",
+          all(a in ("rs-artpop",) for a in void.get("artAnims") or []) and (void.get("sheen") in (None, "none"))
+          and "is-epic" not in (void.get("cls") or "") and not any("jolt" in a for a in void.get("cardAnims") or []),
+          {k: void.get(k) for k in ("artAnims", "sheen", "cls", "cardAnims")})
+    worst = lambda r, k: max(max(abs(s[k][0] - 1), abs(s[k][1] - 1)) for s in r.get("samples") or [{"card": [9, 9], "art": [9, 9]}])
+    check("every pop-up's card and the thing in it arrive at FULL SIZE - no growing from small (sampled every 70ms through the entrance)",
+          all(worst(r, "card") < .002 and worst(r, "art") < .002 for r in (void, koi, badge, fx, char)),
+          {n: (round(worst(r, "card"), 3), round(worst(r, "art"), 3)) for n, r in (("void", void), ("koi", koi), ("badge", badge), ("fx", fx), ("char", char))})
+    check("and they still arrive - the card and the art fade in", all((r.get("samples") or [{}])[-1].get("ao", 0) > .95 for r in (void, koi, badge, fx, char)),
+          [round((r.get("samples") or [{}])[-1].get("ao", 0), 2) for r in (void, koi, badge, fx, char)])
+    check("no blur or brightness filter on the card's way in", all(s["cf"] in ("none", "") for r in (void, koi, badge) for s in r["samples"]), void["samples"][:3])
+    check("a hundo effect's pop-up has no \"Use this effect\" button", fx.get("use") is False, fx.get("use"))
+    # the flare banners: Void is black, and its colours on the Profile card follow
+    r = pg.evaluate("""async () => { const out = {};
+      const box = document.createElement('div'); box.style.cssText = 'position:fixed;left:0;top:0;width:480px;height:180px;z-index:9999';
+      const a = buildBannerArt('flare_void'); a.style.cssText = 'position:absolute;inset:0;'; box.appendChild(a); document.body.appendChild(box);
+      return true; }""")
+    pg.wait_for_timeout(900)
+    from PIL import Image
+    im = Image.open(io.BytesIO(pg.screenshot(clip={"x": 0, "y": 0, "width": 480, "height": 180}))).convert("L")
+    px = list(im.getdata()); dark = sum(1 for v in px if v < 22) / len(px)
+    tint = pg.evaluate("() => bannerTintOf('flare_void')")
+    sat = (lambda h: (lambda r, g, b: (max(r, g, b) - min(r, g, b)) / max(1, max(r, g, b)))(*[int(h[i:i + 2], 16) for i in (1, 3, 5)]))(tint[0])
+    check("the Void banner is black: most of it near-black (%.0f%% under 22/255)" % (dark * 100), dark > .6, round(dark, 3))
+    check("and the colours it hands the Profile card are steel, not the old orange glow", sat < .3, tint)
+    ctx.close()
+
+    # --- the hundo effect tiles take taps like everything else in Customize
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      store.lifetime.perfectTests = 120; store.hundoFx = 'confetti'; saveStore(); showCustomize(); await wait(500);
+      const tile = id => document.querySelector('.hfx-opt[data-fx="' + id + '"]');
+      const cards = () => document.querySelectorAll('.unlock-card').length;
+      const fw = HUNDO_FX[1].id;
+      tile(fw).scrollIntoView({ block: 'center', behavior: 'instant' }); await wait(100);
+      tile(fw).click(); await wait(250);
+      out.firstPick = store.hundoFx; out.firstCards = cards();
+      tile(fw).click(); await wait(500);
+      out.secondCards = cards(); out.secondLive = !!document.querySelector('.unlock-card-fx .hfx-mock');
+      document.querySelectorAll('.invite-overlay').forEach(o => o.remove()); await wait(100);
+      /* a hold on one that is not picked: its card, and the pick stays */
+      const t = tile('worldtree'), rc = t.getBoundingClientRect(), x = rc.left + rc.width / 2, y = rc.top + rc.height / 3;
+      const ev = (type) => t.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1, button: 0, isPrimary: true }));
+      ev('pointerdown'); await wait(UNIT_HOLD_MS + 200); ev('pointerup'); t.click(); await wait(300);
+      out.holdCards = cards(); out.holdPick = store.hundoFx;
+      document.querySelectorAll('.invite-overlay').forEach(o => o.remove()); await wait(100);
+      tile('ufo').click(); await wait(300);
+      out.lockedCard = cards(); out.lockedPick = store.hundoFx;
+      return out; }""")
+    check("hundo effect tiles: a tap on one that is not picked PICKS it and opens nothing (\"if it's not selected and you tap it, that's selecting\")",
+          r.get("firstCards") == 0 and r.get("firstPick") == pg.evaluate("() => HUNDO_FX[1].id"), r)
+    check("a tap on the picked one opens its card, the effect playing on its miniature results screen, as before", r.get("secondCards") == 1 and r.get("secondLive"), r)
+    check("a hold always opens the card, and picks nothing (\"holding it down always does the details\")", r.get("holdCards") == 1 and r.get("holdPick") == r.get("firstPick"), r)
+    check("a locked one opens its card and picks nothing, as a locked character or banner does", r.get("lockedCard") == 1 and r.get("lockedPick") == r.get("firstPick"), r)
+    ctx.close()
+
+    # --- a secret flare banner nobody holds: frosted glass, still moving, "Unlock to see"
+    for w, h in ((440, 956), (834, 1194)):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=1)
+        r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+          showCustomize(); await wait(400);
+          const t = document.querySelector('.banner-opt[data-banner="flare_umbra"]');
+          t.scrollIntoView({ block: 'center', behavior: 'instant' }); await wait(1800);
+          const art = t.querySelector('.banner-opt-art'), still = art.querySelector('.bnr-veil-still');
+          out.veiled = art.classList.contains('is-veiled');
+          out.label = ((art.querySelector('.bnr-veil') || {}).textContent || '').trim();
+          /* a pre-blurred picture of the banner (40 x 15, softened, scaled up), never the live banner under glass */
+          out.still = !!still && still.classList.contains('is-ready') && /^url\("data:image\/png/.test(getComputedStyle(still).backgroundImage);
+          out.live = art.querySelectorAll('.bnr').length;
+          out.moving = [...art.querySelectorAll('.bnr-veil-still, .bnr-veil-glow')].reduce((n, e) => n + e.getAnimations().filter(a => a.playState === 'running').length, 0);
+          out.qmark = getComputedStyle(art, '::after').content;
+          const rc = art.getBoundingClientRect(); out.rect = [rc.left, rc.top, rc.width, rc.height];
+          /* the tap card */
+          t.click(); await wait(700);
+          const ca = document.querySelector('.unlock-card-banner .unlock-card-art'), cb = ca && ca.querySelector('.bnr');
+          out.cardVeiled = !!ca && ca.classList.contains('is-veiled') && !cb && !!ca.querySelector('.bnr-veil-still') && /unlock to see/i.test(ca.textContent);
+          document.querySelectorAll('.invite-overlay').forEach(o => o.remove());
+          /* a held one is not veiled */
+          window.isLockedCharacter = id => false; showCustomize(); await wait(300);
+          const t2 = document.querySelector('.banner-opt[data-banner="flare_umbra"]');
+          out.heldVeiled = !!t2 && t2.querySelector('.banner-opt-art').classList.contains('is-veiled');
+          return out; }""")
+        tag = "%dx%d" % (w, h)
+        check("secret flare banner, locked, %s: frosted glass over a blurred picture of it (no live banner under the glass), moving gently, labelled \"Unlock to see\", no \"?\"" % tag,
+              r.get("veiled") and r.get("still") and r.get("live") == 0 and r.get("moving", 0) >= 2 and r.get("label", "").lower() == "unlock to see" and r.get("qmark") in ("none", "normal", ""), r)
+        check("secret flare banner, locked, %s: the card a tap opens shows it the same way" % tag, r.get("cardVeiled"), r.get("cardVeiled"))
+        check("secret flare banner, held, %s: no veil" % tag, r.get("heldVeiled") is False, r.get("heldVeiled"))
+        ctx.close()
+
+    # --- reduce motion: the UFO plays nothing and still leaves the box in its colours; a pop-up is there at once
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("async () => { store.lifetime.perfectTests = 600; store.hundoFx = 'ufo'; theme.reduceMotion = true; try{ applyTheme(); }catch(e){} saveStore(); " + FX_RUN + """
+      await wait(1500); const g = document.querySelector('.rs-grade');
+      const out = { layers: document.querySelectorAll('.hfx-layer, .hfx-box').length, tinted: !!g && g.classList.contains('hfx-tinted') };
+      showAppearance(); await wait(200);
+      const h = playUnlockSpotlight(bannerUnlockItem('flare_genesis'), 1, 1, () => {}); await wait(150);
+      const c = document.querySelector('.rs-spot-card'); out.cardOpacity = c ? parseFloat(getComputedStyle(c).opacity) : 0; h.stop();
+      return out; }""")
+    check("reduce motion: the UFO plays nothing on a 100%, the box still takes its colours, and a pop-up's card is there at once",
+          r.get("layers") == 0 and r.get("tinted") and r.get("cardOpacity", 0) > .99, r)
+    ctx.close()
+
+    # --- the UFO: the scan, the lock, the score taken up, the warp, the marks
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("async () => { store.lifetime.perfectTests = 600; store.hundoFx = 'ufo'; saveStore(); " + FX_RUN + """
+      const out = {}; if(!window.__fxAt) return out;
+      /* timed by the saucer's own animation clock: on a loaded machine the
+         page's timers and its animations drift apart by a few hundred ms */
+      for(let i = 0; i < 40 && !document.querySelector('.hfx-saucer'); i++) await wait(50);
+      const sa = document.querySelector('.hfx-saucer').getAnimations()[0];
+      const until = async ms => { for(let i = 0; i < 400 && (sa.currentTime || 0) < ms; i++) await wait(16); };
+      const op = el => { if(!el) return -1; let o = 1; for(let e = el; e && e !== document.body; e = e.parentElement) o *= parseFloat(getComputedStyle(e).opacity); return o; };
+      await until(4650); out.scan = op(document.querySelector('.rs-grade .hfx-ufo-scanbar'));
+      await until(5450); out.lock = op(document.querySelector('.rs-grade .hfx-ufo-lock'));
+      await until(5820);
+      const gs = [...document.querySelectorAll('.hfx-ufo-ghost')], g = document.querySelector('.rs-grade'), gr = g.getBoundingClientRect();
+      out.ghosts = gs.length;
+      out.ghostUp = gs.map(e => { const r = e.getBoundingClientRect(); return Math.round(r.top + r.height / 2 - gr.top); });
+      await until(6120); out.warp = op(document.querySelector('.hfx-ufo-warp'));
+      await until(6500); out.marks = op(document.querySelector('.rs-grade .hfx-ufo-marks'));
+      const u = document.querySelector('.hfx-saucer'); out.saucerGone = u ? op(u) : 0;
+      return out; }""")
+    check("UFO: once down, a bar of its light SCANS the 100%%, and brackets lock on round it", r.get("scan", -1) > .5 and r.get("lock", -1) > .5, r)
+    check("UFO: on the way out it takes the score up the beam - a copy of the 100%% rising above the box's top edge", r.get("ghosts") == 2 and min(r.get("ghostUp") or [99]) < -10, r)
+    check("UFO: and goes in a warp, leaving its landing marks glowing on the box", r.get("warp", -1) > .3 and r.get("marks", -1) > .3 and r.get("saucerGone", 1) < .05, r)
+    ctx.close()
+
+    # --- Fireworks: nothing of the show is drawn below the 100% box's top
+    # edge. The box is lifted over the sky but its glass is see-through, so
+    # the gold willow's drips and the embers read as streaks down behind the
+    # number. Read off the canvas's own pixels, every 150ms through the part
+    # of the show that hangs low.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("async () => { store.lifetime.perfectTests = 600; store.hundoFx = 'fireworks'; theme.muteBanners = true; saveStore(); " + FX_RUN + """
+      if(!window.__fxAt) return null;
+      const out = { below: [], above: [] };
+      for(let i = 0; i < 40; i++){
+        const t = performance.now() - window.__fxAt; if(t > 6200) break;
+        const cv = document.querySelector('.hfx-layer .hfx-fw-sky'), g = document.querySelector('.rs-grade');
+        if(cv && g && t > 2600){
+          const cr = cv.getBoundingClientRect(), gr = g.getBoundingClientRect(), k = cv.width / cr.width;
+          const y0 = Math.ceil((gr.top - cr.top + 1) * k), y1 = Math.floor((gr.bottom - cr.top) * k), x0 = Math.ceil((gr.left - cr.left) * k), x1 = Math.floor((gr.right - cr.left) * k);
+          const lit = (ya, yb) => { if(yb <= ya) return 0; const d = cv.getContext('2d').getImageData(x0, ya, x1 - x0, yb - ya).data; let n = 0; for(let j = 3; j < d.length; j += 4) if(d[j] > 8) n++; return n; };
+          out.below.push(lit(y0, y1)); out.above.push(lit(Math.max(0, y0 - Math.round(260 * k)), y0 - Math.round(12 * k)));
+        }
+        await wait(150);
+      }
+      return out; }""")
+    check("Fireworks: nothing of the show is drawn over the 100%% box (willow drips, embers) - the sky stops at its top edge, and is still lit above it",
+          r and r["below"] and max(r["below"]) == 0 and max(r["above"]) > 50, r and {"below": max(r["below"] or [0]), "above": max(r["above"] or [0]), "n": len(r["below"])})
+    ctx.close()
+
+    # --- the UFO's tile: the saucer is whole inside the tile, not cut by its top edge
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async () => { showCustomize(); await new Promise(r => setTimeout(r, 400));
+      const st = document.querySelector('.hfx-opt[data-fx="ufo"] .hfx-stage'), svg = st && st.querySelector('svg');
+      if(!svg) return null; const dome = [...svg.querySelectorAll('path')].find(p => /url\\(#[^)]*dome\\)/.test(p.getAttribute('fill') || ''));
+      if(!dome) return { dome: false }; const a = st.getBoundingClientRect(), b = dome.getBoundingClientRect();
+      return { dome: true, gap: Math.round((b.top - a.top) * 10) / 10 }; }""")
+    check("the UFO's Customize tile shows its saucer whole - the dome clear of the tile's top edge", r and r.get("dome") and r.get("gap", 0) >= 4, r)
+    ctx.close()
+
+    # --- Bubbles: every glass hero meant to pop does pop
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("async () => { store.lifetime.perfectTests = 600; store.hundoFx = 'bubbles'; saveStore(); " + FX_RUN + """
+      if(!window.__fxAt) return null;
+      /* each one's own clock: its path has run and it has had its pop */
+      for(let i = 0; i < 40 && !document.querySelector('.hfx-gb.is-pop'); i++) await wait(50);
+      const heroes = [...document.querySelectorAll('.hfx-gb.is-pop')];
+      const op = el => { let o = 1; for(let e = el; e && e !== document.body; e = e.parentElement) o *= parseFloat(getComputedStyle(e).opacity); return o; };
+      /* watched while they are in the page: each must go out (its pop)
+         before the layer is taken away */
+      const popped = heroes.map(() => false), seen = heroes.map(() => false), lastO = heroes.map(() => 1);
+      for(let i = 0; i < 240 && heroes.some((h, j) => !popped[j] && h.isConnected); i++){
+        heroes.forEach((h, j) => { if(!h.isConnected || popped[j]) return; const g = h.querySelector('.hfx-glass'); const o = g ? op(g) : 1;
+          lastO[j] = Math.round(o * 100) / 100; if(o > .6) seen[j] = true; else if(o < .05 && seen[j]) popped[j] = true; });
+        await wait(40); }
+      return { n: heroes.length, popped, seen, last: lastO, at: Math.round(performance.now() - window.__fxAt) }; }""")
+    check("Bubbles: the glass bubbles that pop DO pop once their path has run - none left sitting on the cards until the layer is cut",
+          r and r.get("n", 0) >= 1 and all(r.get("popped") or [False]), r)
+    ctx.close()
+
+    # --- World Tree: the wood meets every card's edge and never crosses into
+    # one. Measured in PIXELS: at 5.8s every animation is held, the page is
+    # shot with only the tree's wood showing and again with nothing, and the
+    # difference is the wood as drawn - clip-paths, rotations and all.
+    from PIL import Image, ImageChops
+    for w, h, units in ((440, 956, "single"), (834, 1194, "single"), (440, 956, "multi"), (375, 667, "single")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        run = FX_RUN if units == "single" else FX_RUN.replace("cfg.units = ['Identity Crimes']", "cfg.units = ['Identity Crimes', 'Racial Profiling', 'Victims of Crime']") \
+            .replace("QUESTIONS[i].topic.trim() === 'Identity Crimes'", "['Identity Crimes', 'Racial Profiling', 'Victims of Crime'].indexOf(QUESTIONS[i].topic.trim()) >= 0")
+        # muteBanners: an unrelated unlock (a time-of-day banner) must not
+        # cover the screen being measured; the effect does not read it
+        r = pg.evaluate("async () => { store.lifetime.perfectTests = 600; store.hundoFx = 'worldtree'; theme.muteBanners = true; saveStore(); " + run + """
+          for(let i = 0; i < 300 && !window.__fxAt; i++) await wait(100);
+          if(!window.__fxAt) return null; const d = 5800 - (performance.now() - window.__fxAt); if(d > 0) await wait(d);
+          document.getAnimations().forEach(a => { try{ a.pause(); }catch(e){} });
+          /* and the reveal's scroll held where it is, so the shots and the rects agree */
+          window.scrollTo({ top: window.scrollY, behavior: 'instant' }); window.__holdY = window.scrollY;
+          window.addEventListener('scroll', () => window.scrollTo({ top: window.__holdY, behavior: 'instant' }));
+          await wait(120);
+          const layer = document.querySelector('.hfx-layer.hfx-worldtree');
+          if(!layer) return { missing: true, fx: window.__fxId, at: Math.round(performance.now() - window.__fxAt), spot: (document.querySelector('.rs-spot') || {}).className || null,
+            others: [...document.querySelectorAll('.hfx-layer, .confetti-layer')].map(e => e.className) };
+          const cards = [...document.querySelectorAll('.rs-screen > .rs-card')].map(e => { const r = e.getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; });
+          const gr = document.querySelector('.rs-screen > .rs-grade').getBoundingClientRect();
+          const head = document.querySelector('.rs-screen > .rs-head');
+          const xp = document.querySelector('.rs-screen > .rs-xp').getBoundingClientRect();
+          const crownBase = [...document.querySelectorAll('.hfx-layer.hfx-worldtree .hfx-branch.is-trunk')].map(e => Math.round((e.getBoundingClientRect().bottom - xp.top) * 10) / 10);
+          const st = document.createElement('style'); st.id = '__woodonly';
+          st.textContent = 'body *{ visibility:hidden !important; } .hfx-seg.is-wood{ visibility:visible !important; }';
+          document.head.appendChild(st);
+          return { cards, gradeTop: gr.top, headOver: !!head && head.classList.contains('hfx-over'), crownBase, n: document.querySelectorAll('.hfx-layer.hfx-worldtree .hfx-seg.is-wood').length }; }""")
+        tag = "%dx%d %s" % (w, h, units)
+        if not r or r.get("missing"):
+            check("World Tree %s: it plays" % tag, False, r); ctx.close(); continue
+        A = Image.open(io.BytesIO(pg.screenshot())).convert("RGB")
+        pg.evaluate("() => { document.getElementById('__woodonly').textContent = 'body *{ visibility:hidden !important; }'; }")
+        B = Image.open(io.BytesIO(pg.screenshot())).convert("RGB")
+        m = ImageChops.difference(A, B).convert("L").point(lambda v: 255 if v > 24 else 0)
+        px = m.load(); W, H = m.size
+        worst = 0; bad = 0
+        for c in r["cards"]:
+            x0, y0, x1, y1 = [int(round(v)) for v in c]
+            for y in range(max(0, y0 + 1), min(H, y1 - 1)):
+                for x in range(max(0, x0 + 1), min(W, x1 - 1)):
+                    if px[x, y]:
+                        bad += 1; worst = max(worst, min(x - x0, x1 - 1 - x, y - y0, y1 - 1 - y))
+        # the trunk in each gap between two stacked cards: wood on the row
+        # touching the upper card and on the row touching the lower one
+        gaps = []
+        cs = sorted(r["cards"], key=lambda c: c[1])
+        for a, b in zip(cs, cs[1:]):
+            # the trunk climbs from the 100% box to the XP card: the gaps between those
+            if b[1] - a[3] < 4 or b[1] > r["gradeTop"] + 1: continue
+            # only a gap that is on the screen can be read off the shot (the
+            # reveal's scroll can leave the lowest one under the fold)
+            if a[3] < 0 or b[1] >= H - 1: continue
+            cx = int((a[0] + a[2]) / 2)
+            row = lambda y: sum(1 for x in range(max(0, cx - 60), min(W, cx + 60)) if 0 <= y < H and px[x, y])
+            gaps.append([max(row(int(a[3])), row(int(a[3]) + 1)), max(row(int(b[1]) - 1), row(int(b[1])))])
+        check("World Tree %s: no wood is drawn inside a card - %d pixel(s), deepest %dpx" % (tag, bad, worst), r["n"] > 3 and worst <= 1, {"pieces": r["n"], "bad": bad, "worst": worst})
+        check("World Tree %s: in every gap between cards the trunk reaches both edges (wood pixels on the rows touching each)" % tag,
+              gaps and all(g[0] >= 6 and g[1] >= 6 for g in gaps), gaps)
+        check("World Tree %s: the crown rises from the XP card's top edge, not from inside it, and the header is over the crown" % tag,
+              r["headOver"] and r["crownBase"] and all(-3 <= b <= 2.5 for b in r["crownBase"][:1]), {k: r[k] for k in ("headOver", "crownBase")})
+        ctx.close()
 
 
 def main():
@@ -10500,6 +10834,7 @@ def main():
             check_b313_flares_glass(br)
             check_b313_pause(br)
             check_b313_fx(br)
+            check_b314_unlocks(br)
         finally:
             br.close()
     SERVER.shutdown()
