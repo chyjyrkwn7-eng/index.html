@@ -44307,6 +44307,10 @@ const CONFIRM_RETRY_MAX_MS = 60000;
 let confirmRetryTimer = null;
 let confirmRetryMs = CONFIRM_RETRY_FIRST_MS;
 let rowAwaitingConfirm = false;
+/* build 315: the account's transaction in flight, and what was asked for
+   while it was (see writeAccount) */
+const ACCOUNT_WRITE_STUCK_MS = 30000;
+let accountWriteAt = 0, accountWriteNext = null, accountWriteFails = 0;
 let storageOK = false;
 let storageHadData = false;
 /* THE LAST FIFTY TESTS, newest first; the fifty-first rotates the
@@ -46434,16 +46438,22 @@ function writeLeaderboardRow(row){
    the end of every kind of run publishes rather than queues. */
 function publishNow(){
   if(!fbDb || !syncCode) return;
+  let rowFollows = false;
   try{
-    if(cloudPushTimer){ clearTimeout(cloudPushTimer); cloudPushTimer = null; pushToCloud(true); }
+    if(cloudPushTimer){
+      clearTimeout(cloudPushTimer); cloudPushTimer = null;
+      /* the row goes once the account has it (afterAccountWrite) */
+      rowFollows = cloudConfirmedFor === syncCode;
+      pushToCloud(true);
+    }
     /* nothing queued, but the high-water mark is behind the account: it
        goes now, so leaving never strands it ten minutes back */
     else if(floorMergedFor === syncCode && cloudConfirmedFor === syncCode && lastFloorPushAt < lastCloudPushAt){
       lastFloorPushAt = Date.now();
-      floorRefFor(syncCode).set(store).catch(() => {});
+      writeAccount(syncCode, false, true, false);
     }
   }catch(e){}
-  try{ if(store.leaderboardOptIn) flushLeaderboardRow(); }catch(e){}
+  try{ if(store.leaderboardOptIn && !rowFollows) flushLeaderboardRow(); }catch(e){}
 }
 document.addEventListener("visibilitychange", () => {
   if(document.visibilityState === "hidden") publishNow();
@@ -46613,15 +46623,174 @@ function pushToCloud(leaving){
   clearTimeout(cloudPushTimer); cloudPushTimer = null;
   if(lastPushCode !== syncCode){ lastPushCode = syncCode; lastFloorPushAt = 0; }
   lastCloudPushAt = Date.now();
-  try {
-    fbDb.collection("progress").doc(syncCode).set(store).catch(() => {});
-  } catch(e){}
   /* the high-water mark, once this launch has read it (see above) - at
      most every ten minutes, and always on the way out */
-  if(floorMergedFor === syncCode && (leaving === true || sincePush(lastFloorPushAt) >= FLOOR_MIN_GAP_MS)){
-    lastFloorPushAt = Date.now();
-    try { floorRefFor(syncCode).set(store).catch(() => {}); } catch(e){}
+  const withFloor = floorMergedFor === syncCode && (leaving === true || sincePush(lastFloorPushAt) >= FLOOR_MIN_GAP_MS);
+  if(withFloor) lastFloorPushAt = Date.now();
+  writeAccount(syncCode, true, withFloor, leaving === true);
+}
+
+/* ---- THE ACCOUNT IS WRITTEN BY A TRANSACTION (build 315) ----
+   Overnight on Oct 6-7 Rogelio lost 2,590 XP and Alfred Lake a full
+   test and three hundos, and neither was an old build. Both were a device
+   writing its WHOLE copy over the account from a stale view of it. Build 296
+   made a launch read the server's copy before its first push, and that
+   one read was then trusted for the rest of the session - but a session
+   on a phone lasts days. Rogelio's phone saved at 22:33 on Oct 5 and was
+   put away before the write left it; Firestore keeps a write it could
+   not send and sends it when the app wakes, and it woke the next night,
+   after his other phone had played 2,590 XP into the account. The old
+   copy landed on the account and on its high-water mark together.
+   Alfred's was the same thing from the other side: a phone that had last
+   heard from the server before his Oct 6 test played a session on top of
+   that copy and wrote it up, and the test and its hundos were gone. The
+   merge could catch neither, because it runs when a snapshot arrives,
+   and a device that is offline, asleep, or whose listener has gone quiet
+   gets no snapshot - only its own write, shown back to it.
+   So every write of the account is a transaction: the server's copy is
+   read in the same round trip, and where it holds progress this copy
+   lacks (accountAhead), the two are merged exactly as a snapshot would
+   merge them and the merge is what goes up. Firestore never queues a
+   transaction while offline and never replays one later: it commits only
+   if the account has not changed since it was read, and otherwise runs
+   it again against the new copy. Where the server holds nothing new,
+   what goes up is this device's copy exactly as before, so a change only
+   a device can make - a voided win, a cleared list - still reaches the
+   account. A write that fails leaves nothing behind to land later; it
+   drops the session's confirmation, so the next one waits for a fresh
+   read of the server. The row goes once the account write has landed
+   (afterAccountWrite), so the board never runs ahead of it. */
+/* Does copy `a` hold progress copy `b` lacks? Only what grows by play and
+   is never lowered by a load or a merge - so a write that brings one in
+   is never undone by the device that receives it, and two devices cannot
+   go on trading the same write. */
+function accountAhead(a, b){
+  const n = v => (typeof v === "number" && isFinite(v)) ? v : (Number(v) || 0);
+  const La = (a && a.lifetime) || {}, Lb = (b && b.lifetime) || {};
+  if(TALLY_LIFETIME.some(k => n(La[k]) > n(Lb[k]))) return true;
+  const Ua = (a && a.unitPerfects) || {}, Ub = (b && b.unitPerfects) || {};
+  if(Object.keys(Ua).some(u => n(Ua[u]) > n(Ub[u]))) return true;
+  const Ta = (a && a.tally && typeof a.tally === "object") ? a.tally : {};
+  const Tb = (b && b.tally && typeof b.tally === "object") ? b.tally : {};
+  if(Object.keys(Ta).some(d => Object.keys(Ta[d] || {}).some(k => k.charAt(0) !== "W" && n(Ta[d][k]) > n((Tb[d] || {})[k])))) return true;
+  const Sa = (a && a.studyLog) || {}, Sb = (b && b.studyLog) || {};
+  if(Object.keys(Sa).some(day => n(Sa[day]) > n(Sb[day]))) return true;
+  const key = h => h ? String(h.playedAt || h.ts || "") + "|" + String(h.label || "") + "|" + String(h.pct) : "";
+  const had = new Set(((b && b.testHistory) || []).map(key));
+  return ((a && a.testHistory) || []).some(h => h && !had.has(key(h)));
+}
+function writeAccount(code, withMain, withFloor, leaving){
+  if(!fbDb || !code || (!withMain && !withFloor)) return;
+  /* one at a time: a second transaction from this device would only
+     contend with its own first. What was asked for in the meantime goes
+     the moment the first lands. A write that never settles stops holding
+     the next one up after half a minute. */
+  if(accountWriteAt && Date.now() - accountWriteAt < ACCOUNT_WRITE_STUCK_MS){
+    const q = accountWriteNext || {};
+    accountWriteNext = { main: !!(q.main || withMain), floor: !!(q.floor || withFloor), leaving: !!(q.leaving || leaving) };
+    return;
   }
+  try{ tallyCapture(store); }catch(e){}
+  const usable = s => {
+    if(!s || !s.exists) return null;
+    const d = typeof s.data === "function" ? s.data() : null;
+    if(!d || typeof d !== "object") return null;
+    if(FRESH_START_CUTOFF && (Number(d.lastModified) || 0) < FRESH_START_CUTOFF) return null;
+    return d;
+  };
+  /* The account is always read; the high-water mark only when the
+     account exists. A missing account is brand new or reset, and a floor
+     left behind must never bring a reset one back (markCloudConfirmed
+     skips it for the same reason) - so it is written over unread. */
+  let ref = null, fref = null;
+  try{ ref = fbDb.collection("progress").doc(code); fref = withFloor ? floorRefFor(code) : null; }catch(e){}
+  /* A stand-in with no way to read at all (the friends and chat gates,
+     which measure the row) gets the plain write it always had. The real
+     SDK always has transactions. */
+  if(ref && typeof fbDb.runTransaction !== "function" && typeof ref.get !== "function"){
+    const put = r => { try{ const p = r.set(JSON.parse(JSON.stringify(store))); if(p && p.catch) p.catch(() => {}); }catch(e){} };
+    if(withMain) put(ref);
+    if(fref) put(fref);
+    if(withMain) afterAccountWrite(leaving);
+    return;
+  }
+  accountWriteAt = Date.now();
+  const readBoth = get => get(ref).then(snap => (fref && usable(snap)) ? get(fref).then(fsnap => [snap, fsnap]) : [snap, null]);
+  /* What goes up, built afresh on every attempt: this device's copy, or
+     where the server's copy (or the high-water mark) holds progress it
+     lacks, the two merged - with the newer side's preferences, as a
+     snapshot would have left them (syncSameAccount). */
+  const build = (snap, fsnap) => {
+    if(code !== syncCode) throw new Error("the account changed");
+    let doc = JSON.parse(JSON.stringify(store)), ahead = false;
+    const cloud = usable(snap);
+    [[cloud, true], [cloud ? usable(fsnap) : null, false]].forEach(([c, isMain]) => {
+      if(!c) return;
+      const probe = JSON.parse(JSON.stringify(doc));
+      mergeSameAccount(probe, JSON.parse(JSON.stringify(c)));
+      if(!accountAhead(probe, doc)) return;
+      ahead = true;
+      if(isMain && (Number(c.lastModified) || 0) > (Number(doc.lastModified) || 0)){
+        const fromCloud = JSON.parse(JSON.stringify(c));
+        mergeSameAccount(fromCloud, doc);
+        doc = fromCloud;
+      } else doc = probe;
+    });
+    return { doc, ahead };
+  };
+  let run;
+  try{
+    if(typeof fbDb.runTransaction === "function"){
+      run = fbDb.runTransaction(tx => readBoth(r => tx.get(r)).then(([snap, fsnap]) => {
+        const b = build(snap, fsnap);
+        if(withMain) tx.set(ref, b.doc);
+        if(fref) tx.set(fref, b.doc);
+        return b;
+      }));
+    } else {
+      /* an SDK without transactions (the gates' stand-ins): read, merge, write */
+      run = readBoth(r => r.get()).then(([snap, fsnap]) => {
+        const b = build(snap, fsnap);
+        return Promise.all([withMain ? ref.set(b.doc) : null, fref ? fref.set(b.doc) : null]).then(() => b);
+      });
+    }
+  }catch(e){ run = Promise.reject(e); }
+  Promise.resolve(run).then(b => {
+    accountWriteAt = 0;
+    if(code === syncCode){
+      accountWriteFails = 0;
+      /* the server held progress this device did not: it is in the
+         account now, and comes down here as a snapshot would have brought it */
+      if(b && b.ahead){ try{ if(syncSameAccount(JSON.parse(JSON.stringify(b.doc)))) onLiveUpdateApplied(); }catch(e){} }
+      if(withMain){ try{ afterAccountWrite(leaving); }catch(e){} }
+    }
+    const q = accountWriteNext; accountWriteNext = null;
+    if(q && syncCode){
+      if(cloudConfirmedFor === syncCode) writeAccount(syncCode, q.main, q.floor, q.leaving);
+      else { cloudPushPending = true; ensureCloudConfirmed(); }
+    }
+  }, () => {
+    accountWriteAt = 0;
+    accountWriteNext = null;
+    if(code !== syncCode) return;
+    /* offline, or the account would not take it: nothing went up and
+       nothing is waiting to go up later. The first failure retries as
+       soon as the server answers again; a run of them keeps to the
+       minute between pushes. The high-water mark goes with the retry. */
+    accountWriteFails++;
+    if(accountWriteFails === 1) lastCloudPushAt = 0;
+    lastFloorPushAt = 0;
+    if(cloudConfirmedFor === code) cloudConfirmedFor = "";
+    cloudPushPending = true;
+    ensureCloudConfirmed();
+  });
+}
+
+/* After the account is written, its row - so the board never shows a
+   number the account does not hold (build 313; check-sync 8h). On the
+   way out of the app the row goes at once rather than waiting out its
+   usual deferral. */
+function afterAccountWrite(leaving){
   /* A separate, deliberately minimal collection \u2014 only what's needed
      to render a leaderboard entry (name, avatar, points, stars), never
      the full progress document, and only written at all when the
@@ -46630,7 +46799,7 @@ function pushToCloud(leaving){
      off later just means this one stops being written/read \u2014 it
      never touches the person's own private progress doc. */
   if(fbDb && syncCode && store.leaderboardOptIn){
-    pushLeaderboardRow();
+    if(leaving === true) flushLeaderboardRow(); else pushLeaderboardRow();
   } else if(fbDb && syncCode && store.leaderboardOptIn === false && store.leaderboardOptInChanged){
     /* Explicitly opted out after previously being in \u2014 removes the
        entry entirely rather than leaving a stale one visible to

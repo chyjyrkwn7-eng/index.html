@@ -1225,6 +1225,19 @@ it as the document id, there is no sign-in of any kind, and anybody holding
 a code can link a device and read or overwrite that person's progress.
 Everything below follows from that.
 
+- **EVERY WRITE OF THE ACCOUNT IS A TRANSACTION (build 315).** Never
+  write `progress/<code>` or its `__floor` with a plain `set()`; go
+  through `pushToCloud()`, which calls `writeAccount()`. Build 296's rule
+  ("read the server's copy before the first push") was a one-time latch
+  per launch, and a launch on a phone lasts days: Rogelio lost 2,590 XP
+  to a write Firestore had held since his phone was put away offline the
+  night before, and Alfred Lake a test and three hundos to a phone that had
+  last heard from the server before that test. A transaction reads the
+  server's copy in the same round trip as the write, merges it first
+  wherever it holds progress this copy lacks (`accountAhead`), and is
+  never queued offline or replayed later. See **Build 315 - every account
+  write is a transaction**, and `check-sync` 8k.
+
 - **A FRIEND CODE IS NOT THE SYNC CODE, AND THAT IS A DECISION, NOT AN
   IMPLEMENTATION DETAIL.** Asked and answered directly: *"The friend
   code, this would need to be a different code then the sync code btw.
@@ -14641,3 +14654,105 @@ display face and were not touched.
   first paint) and check_penal_versions (a tap on the unit card) failed on
   this build and passed alone; check_b282's ring arc fails on f543e95 under
   load and passes alone. They measure timing, and a loaded box moves it.
+
+### Build 315 - every account write is a transaction
+
+**Two accounts went down overnight on Oct 6-7, on current builds.** The
+read-only audit against the 21:05 backup (`firestore-admin.py audit
+--backup`) caught both:
+- **Rogelio.salcedo, -2,590 XP.** The account AND its high-water mark
+  were replaced by a copy last saved at 22:33 on Oct 5 - one the server
+  had never seen (every backup through Oct 6 13:43 still had the 21:55
+  copy). His other phone's tally went back from 4,210 to 1,620. That phone
+  had played the 2,590 on Oct 6.
+- **Alfred Lake, -1 full test, -1,640 XP, -3 hundos.** A phone with a
+  new tally id wrote at 05:57 on Oct 7 from a copy that predated his Oct 6
+  17:55 test: the test, its hundos in TCOLE Rules, Racial Profiling and
+  Multiculturalism, and the other phone's tally (6,180 back to 4,540) were
+  gone, its own 2,345 XP and Constitution hundo kept - which is why the
+  hundo count only went down by two.
+
+**Why the gates were green.** Build 296's gate (`cloudConfirmedFor`)
+waits for one server read per launch and then trusts it. But a merge only
+runs when a snapshot ARRIVES, and a phone that is offline, asleep, or
+whose listener has gone quiet gets none - only its own write shown back
+to it. Two ways in, both seen here: a write made as the app was hidden
+(`publishNow`) that Firestore could not send before iOS suspended the
+page, which Firestore keeps and sends when the app wakes, a day later,
+over whatever was played since (Rogelio - and it wrote the floor too,
+because the floor goes out on the way out); and a phone that played on a
+copy the server had moved past (Alfred). The per-device tallies (298)
+cannot help with either: they only work when the writer has merged.
+
+**The fix: `writeAccount()`, a transaction.**
+- It reads the account (and `__floor` when that goes too) in the same
+  round trip as the write. Where the server's copy holds progress this
+  copy lacks, the two are merged exactly as a snapshot would merge them
+  (`mergeSameAccount`; the newer side's preferences, as
+  `syncSameAccount` does) and the merge is what goes up; the device then
+  takes the merge itself.
+- **"Holds progress this copy lacks" is `accountAhead()`, and it is
+  deliberately narrow**: lifetime counts, hundos per unit, the per-device
+  tallies (not the week's), study time per day, test history. Only
+  things that grow by play and that no load or merge ever lowers. Where
+  the server holds nothing new, this device's copy goes up exactly as
+  before - which is what still lets a voided weekly win, a cleared list
+  or a reset flag reach the account. Merging on every write instead
+  would bring a voided win straight back each time and two devices would
+  trade the same write forever.
+- **The high-water mark is read and merged only when the account
+  exists.** A missing account is brand new or reset, and a floor left
+  behind must never bring a reset one back - the same rule
+  `markCloudConfirmed` follows at launch - so there the floor is written
+  over unread. The first version of this read it regardless, and
+  `check-sync` 8f's reset case caught it.
+- Firestore never queues a transaction offline and never replays one
+  late; it commits only if what it read is unchanged and otherwise runs
+  it again against the new copy. A write that fails leaves nothing behind:
+  it drops `cloudConfirmedFor`, so the next one waits for a fresh server
+  read (`ensureCloudConfirmed`, which retries on `online` and on becoming
+  visible), and the row waits with it. The first failure retries as soon
+  as the server answers; a run of them keeps the minute between pushes.
+- One at a time per device (`accountWriteAt`); what is asked for in the
+  meantime goes when the first lands.
+- **The row goes once the account write has landed** (`afterAccountWrite`),
+  so the board never runs ahead of the account - `check-sync` 8h failed
+  the first version of this, which still sent the row in the same tick as
+  the push. On the way out of the app it goes at once (`flushLeaderboardRow`)
+  rather than waiting out its 90s deferral. A failed account write drops
+  the confirmation, and `writeLeaderboardRow` holds every row until the
+  account is confirmed again.
+- Cost: one extra read per push, two when the floor goes with it. With
+  pushes at most once a minute while answering, that is a few thousand
+  reads a day across the class against the 50,000 free.
+- `writeAccount` has two paths that exist only for the gates' stand-ins:
+  read-merge-write for one with no `runTransaction`, and the old plain
+  write (row straight after) for one that cannot read at all - the
+  friends and chat gates, which measure the row, not the account. The
+  real SDK always takes the transaction.
+
+**Gates.**
+- `check-sync` 8k replays both incidents against a stand-in server that
+  keeps versions, holds writes made offline and sends them when the
+  network returns, and commits a transaction only if what it read is
+  unchanged: (A) a quiet listener and the other phone's test, (B) a save
+  made offline and sent a day late, (C) the other phone's write landing
+  between this phone's read and its commit, (D) the server holding
+  nothing new. A, B and C fail on 313 and on 315 before this
+  (32,345 / 20,000 / 10,500), D passes everywhere.
+- `check-sync` 8e's server answered a direct read with "no such
+  document" while its listener said otherwise, so build 313's own server
+  read (`ensureCloudConfirmed`) confirmed an account that did not exist.
+  It passed on 313 only because the push happened to land just after the
+  snapshot, and failed on 315 when boot got a little slower. Its server is
+  now unreachable until its snapshot arrives. It still fails on 295.
+
+**The two accounts heal themselves when the right phone opens** - on any
+build from 298 on: Rogelio's phone that played on Oct 6, and Alfred's
+phone that played his Oct 6 test, both still hold that progress in their
+own tallies, and merging the server's copy into them pushes it back.
+Never hand-credit them: that counts it twice the moment those phones
+merge. A server-side restore from the 21:05 backup (merging, never
+replacing) is the alternative if either phone is gone, and it needs
+Madison's go.
+

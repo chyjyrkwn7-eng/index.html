@@ -800,6 +800,11 @@ with sync_playwright() as pw:
     # progress wrote it over the account every time it opened. The merge
     # could not catch it: Firestore shows a device its own pending write,
     # so the newer server copy never reached it. Fails on 295.
+    # Build 315: the server here is unreachable until its snapshot comes
+    # - it used to answer a direct read with "no such document" while its
+    # listener said otherwise, and build 313's own server read then
+    # confirmed an account that did not exist. That passed on 313 only
+    # because its push happened to land after the snapshot.
     print("\n8e. a stale device opening does not overwrite the account")
     ctx = br.new_context(viewport={"width": 834, "height": 1194})
     ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.drill.v1', '%s');"
@@ -810,10 +815,15 @@ with sync_playwright() as pw:
       const wait = ms => new Promise(res => setTimeout(res, ms));
       const clone = o => JSON.parse(JSON.stringify(o));
       const writes = []; let cb = null;
+      /* the account on the server, which this device cannot reach until
+         its snapshot comes through */
+      let server = null, serverUp = false;
       fbDb = { collection: name => ({
         onSnapshot: () => () => {},
         doc: id => ({
-          get: () => Promise.resolve({ exists: false, metadata: { fromCache: false } }),
+          get: () => (name === 'progress' && id === 'NOVA-2601')
+            ? (serverUp ? Promise.resolve({ exists: !!server, metadata: { fromCache: false }, data: () => clone(server) }) : Promise.reject(new Error('unavailable')))
+            : Promise.resolve({ exists: false, metadata: { fromCache: false } }),
           set: d => { if(name === 'progress' && (id === 'NOVA-2601' || id === 'NOVA-NEW1')) writes.push(clone(d)); return Promise.resolve(); },
           update: () => Promise.resolve(), delete: () => Promise.resolve(),
           onSnapshot: next => { if(name === 'progress' && (id === 'NOVA-2601' || id === 'NOVA-NEW1')) cb = next; return () => {}; }
@@ -824,6 +834,7 @@ with sync_playwright() as pw:
       /* the account in the cloud: the other device's 900 points, 5 hundos */
       const cloud = clone(store); cloud.lifetime.points = 900; cloud.unitPerfects = { U: 5 };
       cloud.lastModified = Date.now() - 60000;
+      server = cloud;
       writes.length = 0;
       fbReadyDrained = false; firebaseBecameReady();
       await wait(3200);
@@ -833,6 +844,7 @@ with sync_playwright() as pw:
       await wait(3200);
       out.afterCache = writes.map(w => w.lifetime.points);
       /* then the server's */
+      serverUp = true;
       if(cb) cb({ exists: true, metadata: { fromCache: false }, data: () => clone(cloud) });
       await wait(3200);
       const last = writes[writes.length - 1] || null;
@@ -1158,6 +1170,159 @@ with sync_playwright() as pw:
     check("an account the void does not name keeps its win and its Zeus", r["other"]["ww"] == 1 and r["other"]["char"] == r["zeus"], str(r["other"]))
     ctx.close()
 
+    # ---- 8k. a device with a stale view of the account cannot write over it ----
+    # Build 315. Overnight on Oct 6-7 two accounts lost progress to phones
+    # on current builds. Rogelio's phone saved on the evening of Oct 5 and
+    # was put away before the write left it; Firestore sent it when the app
+    # woke the next night, over the 2,590 XP his other phone had played
+    # since - the account and its high-water mark both. Alfred's phone had
+    # last heard from the server before his Oct 6 test, played a session on
+    # top of that copy and wrote it up, and the test and three hundos were
+    # gone. A launch read the server once and trusted it all session; every
+    # account write is a transaction now. The stand-in server here keeps
+    # versions, holds writes made offline and sends them when the network
+    # returns (as Firestore does), and commits a transaction only if what it
+    # read is unchanged. Fails on 313 and on 315 before this.
+    print("\n8k. a device with a stale view of the account cannot write over it")
+    ctx = br.new_context(viewport={"width": 834, "height": 1194})
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.drill.v1', '%s');"
+                        "localStorage.setItem('class26e.synccode','NOVA-2611');}catch(e){}" % STORE)
+    pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
+    pg.evaluate("()=>document.getElementById('splashscreen')?.remove()")
+    r = pg.evaluate("""async ()=>{
+      const wait = ms => new Promise(res => setTimeout(res, ms));
+      const clone = o => JSON.parse(JSON.stringify(o));
+      const out = {};
+      try{
+      const S = {}, V = {}, queued = []; let online = true, beforeCommit = null, txRuns = 0;
+      const put = (k, d) => { S[k] = clone(d); V[k] = (V[k] || 0) + 1; };
+      const snapOf = k => ({ exists: k in S, metadata: { fromCache: false }, data: () => clone(S[k]) });
+      const ref = k => ({ _k: k,
+        get: () => online ? Promise.resolve(snapOf(k)) : Promise.reject(new Error('unavailable')),
+        set: (d, o) => { const n = (o && o.merge) ? Object.assign(clone(S[k] || {}), clone(d)) : clone(d);
+                         if(online) put(k, n); else queued.push([k, n]); return Promise.resolve(); },
+        update: d => { const n = Object.assign(clone(S[k] || {}), clone(d)); if(online) put(k, n); else queued.push([k, n]); return Promise.resolve(); },
+        delete: () => { delete S[k]; V[k] = (V[k] || 0) + 1; return Promise.resolve(); },
+        /* the listener has gone quiet */
+        onSnapshot: () => () => {} });
+      fbDb = {
+        collection: name => ({ onSnapshot: () => () => {}, doc: id => ref(name + '/' + id) }),
+        runTransaction: async fn => {
+          for(let i = 0; i < 5; i++){
+            if(!online) throw new Error('unavailable');
+            txRuns++;
+            const read = {}, writes = [];
+            const tx = { get: r => { read[r._k] = V[r._k] || 0; return Promise.resolve(snapOf(r._k)); },
+                         set: (r, d) => { writes.push([r._k, clone(d)]); return tx; },
+                         update: (r, d) => { writes.push([r._k, Object.assign(clone(S[r._k] || {}), clone(d))]); return tx; } };
+            const res = await fn(tx);
+            if(beforeCommit){ const f = beforeCommit; beforeCommit = null; f(); }
+            if(Object.keys(read).every(k => (V[k] || 0) === read[k])){ writes.forEach(([k, d]) => put(k, d)); return res; }
+          }
+          throw new Error('aborted');
+        } };
+      /* a device id per phone (build 298's tallies), and copies built the
+         way the app builds them; no account is live while they are made */
+      const as = id => { tallyDeviceIdMemo = id; };
+      const quiet = () => { syncCode = ''; cloudConfirmedFor = ''; try{ clearTimeout(cloudPushTimer); cloudPushTimer = null; clearTimeout(confirmRetryTimer); confirmRetryTimer = null; }catch(e){} };
+      const load = d => { applyLoadedData(clone(d)); };
+      const save = () => { persistLocally(); return clone(store); };
+      /* each scenario is its own account: nothing carries over, tallies least of all */
+      const fresh = () => { quiet(); store.tally = {}; store.tallyBase = {}; store.unitPerfects = {}; store.testHistory = []; store.studyLog = {};
+        store.weeklyWins = 0; Object.keys(store.lifetime || {}).forEach(k => { store.lifetime[k] = 0; }); };
+      /* this phone, confirmed against the server long ago this session */
+      const confirmedLongAgo = code => {
+        syncCode = code; cloudConfirmedFor = code; floorMergedFor = code; lastPushCode = code; lastCloudPushAt = 0; lastFloorPushAt = 0;
+        try{ accountWriteAt = 0; accountWriteNext = null; accountWriteFails = 0; }catch(e){}
+        try{ clearTimeout(cloudPushTimer); cloudPushTimer = null; clearTimeout(confirmRetryTimer); confirmRetryTimer = null; confirmRetryMs = 4000; }catch(e){}
+      };
+      const view = k => { const d = S[k] || {}; return { points: (d.lifetime || {}).points, full: (d.lifetime || {}).fullTests,
+        tcole: (d.unitPerfects || {})['TCOLE Rules'] || 0, hist: (d.testHistory || []).length, ww: d.weeklyWins }; };
+      store.leaderboardOptIn = false;
+
+      /* A. Alfred: the listener went quiet before the other phone's test */
+      fresh();
+      as('phoneA'); load(store);
+      store.lifetime.points = 30000; store.lifetime.correct = 2000; store.lifetime.answered = 2200; store.lifetime.fullTests = 9;
+      store.unitPerfects = { 'Racial Profiling': 5, 'TCOLE Rules': 0 }; store.testHistory = []; store.weeklyWins = 0;
+      store.lastModified = Date.now() - 86400000;
+      const X = save();
+      put('progress/NOVA-2611', X); put('progress/NOVA-2611__floor', X);
+      /* the other phone plays a full test overnight: a hundo, 1,640 XP */
+      as('phoneA'); load(X); awardXp(1640); store.lifetime.fullTests += 1; store.unitPerfects['TCOLE Rules'] = 1;
+      store.testHistory = [{ playedAt: Date.now() - 3600000, label: 'TCOLE Rules', pct: 100 }]; store.lastModified = Date.now() - 3600000;
+      const A = save(); quiet();
+      put('progress/NOVA-2611', A); put('progress/NOVA-2611__floor', A);
+      /* this phone still holds X, plays 2,345 XP on top of it, and leaves */
+      as('phoneB'); load(X); awardXp(2345); store.lifetime.correct += 240; store.lifetime.answered += 250;
+      quiet(); confirmedLongAgo('NOVA-2611');
+      saveStore(); publishNow();
+      await wait(900);
+      out.A = { acct: view('progress/NOVA-2611'), floor: view('progress/NOVA-2611__floor'),
+                local: { points: store.lifetime.points, tcole: (store.unitPerfects || {})['TCOLE Rules'] || 0, full: store.lifetime.fullTests } };
+
+      /* B. Rogelio: a save made offline, sent when the phone wakes a day later */
+      fresh();
+      as('phoneR1'); store.lifetime.points = 20000; store.lifetime.correct = 1400; store.lifetime.fullTests = 8;
+      store.unitPerfects = { 'Racial Profiling': 2 }; store.testHistory = []; store.lastModified = Date.now() - 172800000;
+      const X2 = save();
+      put('progress/NOVA-2612', X2); put('progress/NOVA-2612__floor', X2);
+      as('phoneR2'); load(X2); awardXp(2590); store.lifetime.correct += 142; store.lastModified = Date.now() - 7200000;
+      const R2 = save(); quiet();
+      as('phoneR1'); load(X2);
+      confirmedLongAgo('NOVA-2612');
+      online = false;
+      store.seenProfileTour = !store.seenProfileTour; saveStore(); publishNow();
+      await wait(500);
+      /* while it sleeps, the other phone plays 2,590 XP into the account */
+      put('progress/NOVA-2612', R2); put('progress/NOVA-2612__floor', R2);
+      /* and the network comes back */
+      online = true; queued.splice(0).forEach(([k, d]) => put(k, d));
+      window.dispatchEvent(new Event('online'));
+      await wait(10000);
+      out.B = { acct: view('progress/NOVA-2612'), floor: view('progress/NOVA-2612__floor'), local: store.lifetime.points };
+
+      /* C. the other phone's write lands between this one's read and its commit */
+      fresh(); txRuns = 0;
+      as('phoneC1'); store.lifetime.points = 10000; store.unitPerfects = {}; store.testHistory = []; store.lastModified = Date.now() - 86400000;
+      const X3 = save();
+      as('phoneC2'); load(X3); awardXp(700); store.lastModified = Date.now() - 1000; const C2 = save();
+      as('phoneC1'); load(X3); awardXp(500); quiet();
+      put('progress/NOVA-2613', X3);
+      confirmedLongAgo('NOVA-2613');
+      beforeCommit = () => put('progress/NOVA-2613', C2);
+      pushToCloud();
+      await wait(900);
+      out.C = { acct: view('progress/NOVA-2613'), txRuns, local: store.lifetime.points };
+
+      /* D. the server holds nothing new: this phone's copy goes up as it is */
+      fresh();
+      as('phoneD'); store.lifetime.points = 5000; store.weeklyWins = 1; store.lastModified = Date.now() - 86400000;
+      const X4 = save(); put('progress/NOVA-2614', X4);
+      load(X4); store.weeklyWins = 0; quiet(); confirmedLongAgo('NOVA-2614');
+      saveStore(); pushToCloud();
+      await wait(900);
+      out.D = view('progress/NOVA-2614');
+      } catch(e){ out.threw = String(e && e.stack || e); }
+      return out; }""")
+    check("no error", not r.get("threw"), r.get("threw", ""))
+    A = r.get("A") or {}
+    check("a phone whose listener went quiet keeps what the other phone played: the test, its hundo, and both phones' XP",
+          (A.get("acct") or {}).get("points") == 33985 and (A.get("acct") or {}).get("full") == 10 and (A.get("acct") or {}).get("tcole") == 1,
+          str(A.get("acct")))
+    check("and the high-water mark holds the same", (A.get("floor") or {}).get("points") == 33985 and (A.get("floor") or {}).get("tcole") == 1,
+          str(A.get("floor")))
+    check("and the phone that wrote it catches up", (A.get("local") or {}).get("points") == 33985 and (A.get("local") or {}).get("tcole") == 1,
+          str(A.get("local")))
+    B = r.get("B") or {}
+    check("a save made offline and sent when the phone wakes cannot land over what was played since - account and high-water mark",
+          (B.get("acct") or {}).get("points") == 22590 and (B.get("floor") or {}).get("points") == 22590 and B.get("local") == 22590, str(B))
+    C = r.get("C") or {}
+    check("a write that lands between this phone's read and its commit is kept, not written over",
+          (C.get("acct") or {}).get("points") == 11200 and (C.get("txRuns") or 0) >= 2, str(C))
+    check("where the server holds nothing new, this phone's copy goes up as it is", (r.get("D") or {}).get("ww") == 0, str(r.get("D")))
+    ctx.close()
+
     # ---- 7. the sync code never reaches a collection anyone can list ----
     # `leaderboard` and `vrooms` can both be ENUMERATED by anyone - this
     # repo's own firestore-admin.py lists them over plain REST with no
@@ -1174,7 +1339,7 @@ with sync_playwright() as pw:
     ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % STORE)
     pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
     pg.evaluate("()=>document.getElementById('splashscreen')?.remove()")
-    r = pg.evaluate("""()=>{
+    r = pg.evaluate("""async ()=>{
       const wrote = [];
       fbDb = { collection: name => ({
           doc: id => ({
@@ -1190,6 +1355,8 @@ with sync_playwright() as pw:
          a confirmed session */
       if(typeof markCloudConfirmed === 'function') markCloudConfirmed(false);
       pushToCloud();
+      /* build 315: the row goes once the account write has landed */
+      await new Promise(res => setTimeout(res, 400));
       /* And a Virtual Room, which keys its PARTICIPANTS by the same id
          and lives in a collection that is just as listable. */
       try { createVirtualRoom(['Identity Crimes']); } catch(e){}
