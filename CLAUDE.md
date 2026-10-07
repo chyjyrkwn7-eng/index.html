@@ -13289,9 +13289,19 @@ disagree with it.
   than `STUDY_IDLE_MS` (5 min) with no touch/key/scroll counts as 5 min,
   and no day holds more than `STUDY_DAY_MAX_MS` (16h). The run's own
   elapsed time (results, best times) is unchanged. `tools/check-study-time.py`
-  is the gate. **The days already inflated are NOT repaired** - capping
-  them takes the Hacker character and the Midnight Oil banners off people
-  who got them from the leak, and that is Madison's call.
+  is the gate. **The days already inflated ARE capped, and what they
+  unlocked goes back** - Madison's call ("cap old days, take rewards
+  back"). `normalizeStudyLog()` holds every day up to `leakUntil` (in
+  `studyLogCaps()`, a function so boot can read it before its line) at 4h,
+  on load and after both merges, so a copy still holding 118h cannot bring
+  it back. `revokeLeakedStudyRewards()` takes Midnight Oil / Skyline off
+  anyone no longer over 35/60h (worn banner cleared, out of "shown" so a
+  real re-earn announces again); `revokeRaisedCharacters()` already does
+  the Hacker at 25h. Measured on the Oct 6 backup: Dell Wyble 124h->14h,
+  AWilliams 118h->4h, Napoleon 74h->20h, Rogelio 64h->16h, Otx 57h->16h,
+  ALFRED 45h->18h, Maddog 46h->27h, BigSlim 37h->25h; Maddog and Otx were
+  wearing Midnight Oil. **`leakUntil` must be the ship date** - move it if
+  the build ships later than 2026-10-07.
 - **AT THE CAP THE RESULTS NUMBER COUNTS UP.** *"The result screen when
   getting xp if you are full, that xp number would just keep going up."*
   The held line is `buildXpNumbers` and the reveal counts its first

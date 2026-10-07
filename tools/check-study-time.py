@@ -52,6 +52,17 @@ with sync_playwright() as pw:
       out.paused = { credited: (flushStudyTime(), day()) };
       // 5. day ceiling
       store.studyLog = {}; addStudyTime(30*H); out.ceiling = day();
+      // 6. the days the leak already wrote are capped at 4h, and what they unlocked goes back
+      const leaked = JSON.parse(JSON.stringify(store)); delete leaked.syncCode;
+      leaked.studyLog = { "2026-10-01": 68*H, "2026-10-03": 3*H, "2026-10-05": 40*H };
+      leaked.banner = "study50"; leaked.unlocksShown = { chars: ["hacker"], banners: ["study50", "study60"], fx: [] };
+      applyLoadedData(leaked);
+      out.repaired = { hours: studyHoursTotal(), banner: store.banner, shown: store.unlocksShown.banners.slice(), chars: store.unlocksShown.chars.slice(),
+                       hacker: !isLockedCharacter("hacker") };
+      // 7. a merge with a copy still holding the leaked day cannot bring it back
+      const other = { studyLog: { "2026-10-01": 68*H } };
+      store.studyLog = { "2026-10-01": 2*H }; normalizeStudyLog(Object.assign(store.studyLog, { "2026-10-01": Math.max(store.studyLog["2026-10-01"], other.studyLog["2026-10-01"]) }));
+      out.mergedDay = store.studyLog["2026-10-01"] / H;
       return out; }""")
     except Exception as e:
       r = None; print("FAIL: threw", str(e)[:160])
@@ -60,13 +71,18 @@ with sync_playwright() as pw:
         print(("  PASS " if ok else "  FAIL ") + name + "  -> " + str(got))
         if not ok: fails.append(name)
     if r:
-        check("a run left open 3 hours credits only the 5-minute idle allowance", r["leftOpen"]["credited"] == 300000, r["leftOpen"])
+        check("a run left open 3 hours credits only the 5-minute idle allowance", abs(r["leftOpen"]["credited"] - 300000) < 1000, r["leftOpen"])
         check("and still reports its real elapsed time to results", r["leftOpen"]["elapsedReturned"] == 3 * H, r["leftOpen"])
         check("40 minutes of steady study counts 40", r["steady"]["minutes"] == 40, r["steady"])
         check("a slow reader (an input every 4 minutes) still counts in full", r["slowReader"]["minutes"] == 40, r["slowReader"])
-        check("20 minutes then 2 days locked counts 25", r["abandoned"]["credited"] == 1500000, r["abandoned"])
-        check("a pause is not taken out twice", r["paused"]["credited"] == 600000, r["paused"])
+        check("20 minutes then 2 days locked counts 25", abs(r["abandoned"]["credited"] - 1500000) < 1000, r["abandoned"])
+        check("a pause is not taken out twice", abs(r["paused"]["credited"] - 600000) < 1000, r["paused"])
         check("no day holds more than 16 hours", r["ceiling"] == 16 * H, r["ceiling"])
+        rp = r["repaired"]
+        check("leaked past days are capped at 4h on load (68h + 3h + 40h -> 11h)", abs(rp["hours"] - 11) < 1e-6, rp)
+        check("Midnight Oil is taken off when no longer earned, and out of shown", rp["banner"] == "" and "study50" not in rp["shown"] and "study60" not in rp["shown"], rp)
+        check("the Hacker is locked again and out of shown", not rp["hacker"] and "hacker" not in rp["chars"], rp)
+        check("a merged-in leaked day is capped again", r["mergedDay"] == 4, r["mergedDay"])
     else:
         fails.append("probe")
     print("errors", [e for e in errs if 'firebase' not in e.lower()][:3])

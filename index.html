@@ -41868,7 +41868,7 @@ function applyLoadedData(got){
   store.opts         = got.opts || null;
   store.units        = Array.isArray(got.units) ? got.units : null;
   store.testStats    = got.testStats    && typeof got.testStats    === "object" ? got.testStats    : {};
-  store.studyLog     = got.studyLog     && typeof got.studyLog     === "object" ? got.studyLog     : {};
+  store.studyLog     = normalizeStudyLog(got.studyLog && typeof got.studyLog === "object" ? got.studyLog : {});
   store.theme        = got.theme && typeof got.theme === "object" ? got.theme : null;
   store.dailyQuestionDate = typeof got.dailyQuestionDate === "string" ? got.dailyQuestionDate : null;
   store.dailyQuestionCorrect = typeof got.dailyQuestionCorrect === "boolean" ? got.dailyQuestionCorrect : false;
@@ -42272,6 +42272,7 @@ function applyLoadedData(got){
   store.legacyChars = Array.isArray(got.legacyChars) ? got.legacyChars.filter(x => typeof x === "string" && x !== "robot") : legacyCharsFromRanks();
   /* After everything the locks read (the streak, the study log) is in. */
   try{ revokeRaisedCharacters(); }catch(e){}
+  try{ revokeLeakedStudyRewards(); }catch(e){}
   try{ applyWeekWinVoids(); }catch(e){}
   /* Per-device tallies (build 298). A copy without them - an older
      build, or one from before this - keeps empty ones and is read the
@@ -44484,6 +44485,7 @@ function mergeLeavingAccount(src, note){
     const v = num(src[k][u]); if(v > 0) d[u] = d[u] ? Math.min(num(d[u]), v) : v; }); };
   const orMap = (k) => { const d = store[k] || (store[k] = {}); Object.keys(src[k] || {}).forEach(u => { if(src[k][u]) d[u] = d[u] || src[k][u]; }); };
   sumMap("studyLog"); sumMap("unitPerfects");
+  normalizeStudyLog(store.studyLog);
   orMap("unitBlackStar"); orMap("flagged");
   /* the grandfather floor (build 314): whichever account held the higher
      level keeps it - neither side loses one by being merged */
@@ -44820,6 +44822,7 @@ function mergeSameAccount(dst, src){
     } else if(num(a.lastPlayedAt) > num(b.lastPlayedAt)) res.otherHadLess = true;
   });
   maxMap("studyLog"); maxMap("unitPerfects"); maxMap("unitBestPct"); maxMap("flareLevels");
+  normalizeStudyLog(dst.studyLog);
   minMap("unitBestMs"); minMap("gameHardcoreMs");
   orMap("unitBlackStar");
   /* The grandfather floor (build 314): the higher of the two. A copy from
@@ -53718,14 +53721,13 @@ function buildPillTabBarIcon(){
      touch, key, scroll or swipe counts as STUDY_IDLE_MS and no more. A
      locked phone or a backgrounded app produces no input, so this one
      rule covers those too - a question read slowly still counts in full.
-   - NO DAY HOLDS MORE THAN STUDY_DAY_MAX_MS, as a backstop.
+   - NO DAY HOLDS MORE THAN studyLogCaps().dayMax (16h), as a backstop.
    Paused time was already taken out (cancelPauseTiming moves the start
    forward); the idle clock restarts on resume so it is not taken out
    twice. The run's own elapsed time - the "time taken" on results and
    best times - is unchanged: this only decides what the study log is
    credited. */
 const STUDY_IDLE_MS = 5 * 60 * 1000;
-const STUDY_DAY_MAX_MS = 16 * 3600 * 1000;
 let studyActiveAt = null;   // last input during the current run
 let studyIdleMs = 0;        // idle time beyond the allowance, this run
 function startStudyClock(){ studyActiveAt = Date.now(); studyIdleMs = 0; }
@@ -53741,8 +53743,50 @@ function noteStudyActivity(){
 function addStudyTime(ms){
   if(!(ms > 0)) return;
   const key = dayKey(new Date());
-  store.studyLog[key] = Math.min(STUDY_DAY_MAX_MS, (Number(store.studyLog[key]) || 0) + ms);
+  store.studyLog[key] = Math.min(studyLogCaps().dayMax, (Number(store.studyLog[key]) || 0) + ms);
   saveStore();
+}
+/* THE DAYS THE LEAK ALREADY WROTE (build 314). Madison's call: "cap old
+   days, take rewards back". Every day up to leakUntil - the last
+   day the old clock could have run - holds at most oldDayMax;
+   the median study day in the class is 0.7h, so four hours keeps every
+   honest day and stops the 68h and 118h ones. A RULE, NOT AN EDIT, and
+   applied wherever a log arrives (load, both merges): the per-day merge
+   takes the higher side, so a copy still holding 118h on another device
+   or in the cloud would otherwise put it straight back.
+   leakUntil (studyLogCaps) MUST BE THE DAY THIS BUILD SHIPS - move it if the
+   ship date moves, or the days in between keep their leaked hours. */
+/* A FUNCTION, NOT CONSTS: applyLoadedData runs during boot, above this
+   point in the file, and a const read before its line is a TDZ throw
+   that would take the whole load down with it. */
+function studyLogCaps(){ return { leakUntil: "2026-10-07", oldDayMax: 4 * 3600 * 1000, dayMax: 16 * 3600 * 1000 }; }
+function normalizeStudyLog(log){
+  if(!log || typeof log !== "object") return log;
+  const c = studyLogCaps();
+  Object.keys(log).forEach(k => {
+    const v = Number(log[k]) || 0;
+    const cap = k <= c.leakUntil ? c.oldDayMax : c.dayMax;
+    if(v > cap) log[k] = cap;
+  });
+  return log;
+}
+/* ...and what those hours unlocked goes back with them: the Hacker
+   (revokeRaisedCharacters, which reads the same log) and the two
+   Midnight banners. Taken out of "shown" too, so earning one again for
+   real announces it again. Changes only what is no longer earned. */
+const STUDY_HOUR_BANNERS = ["study50", "study60"];
+function revokeLeakedStudyRewards(){
+  let changed = false;
+  const u = store.unlocksShown;
+  STUDY_HOUR_BANNERS.forEach(id => {
+    if(bannerEarned(id)) return;
+    if(u && Array.isArray(u.banners) && u.banners.indexOf(id) >= 0){ u.banners = u.banners.filter(x => x !== id); changed = true; }
+    if(store.banner === id){ store.banner = ""; changed = true; }
+  });
+  if(isLockedCharacter("hacker") && u && Array.isArray(u.chars) && u.chars.indexOf("hacker") >= 0){
+    u.chars = u.chars.filter(x => x !== "hacker"); changed = true;
+  }
+  return changed;
 }
 
 /* Flushes the run's STUDIED time into the study log and returns the
