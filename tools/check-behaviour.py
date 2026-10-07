@@ -12935,6 +12935,24 @@ def check_b317_daily(br):
     check("keyboard: a number key picks, and does not answer", k1["locked"] is False and k1["picked"] is True, k1)
     check("keyboard: Enter submits the pick", k2["exit"] is True and k2["correct"] is True, k2)
     check("keyboard: and Enter again is Exit to main menu", home is True, home)
+    # ...and on an SE the back-to-top button came up over the result card's
+    # corner, the card having been scrolled up past 320px (1888b11: 22x30px).
+    ctx, pg = booted(br, 375, 667, seed=USED_ACCOUNT)
+    bt = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      store.dailyCorrectStreak = 3; store.dailyQuestionDate = null; saveStore();
+      document.querySelectorAll('#pushing-update,#intro-pop').forEach(n => n.remove());
+      startDailyQuestion();
+      for(let t = 0; t < 80 && !document.querySelector('.qpanel .choice'); t++) await wait(100);
+      await wait(400);
+      [...document.querySelectorAll('.qpanel .choice')][0].click(); await wait(200);
+      document.getElementById('dailyq-submitbtn').click(); await wait(2500);
+      const o = document.querySelector('.dailyq-outro'), b = document.querySelector('.backtotop.show');
+      const ov = (o && b) ? (() => { const x = o.getBoundingClientRect(), y = b.getBoundingClientRect();
+        return Math.max(0, Math.min(x.right, y.right) - Math.max(x.left, y.left)) * Math.max(0, Math.min(x.bottom, y.bottom) - Math.max(x.top, y.top)); })() : 0;
+      return { card: !!o, scrolled: Math.round(scrollY), overlap: Math.round(ov) }; }""")
+    ctx.close()
+    check("SE: the back-to-top button does not sit on the answered daily's result card",
+          bt["card"] and bt["overlap"] == 0, bt)
 
 
 def check_b316_tiles(br):

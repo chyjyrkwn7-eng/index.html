@@ -14765,6 +14765,11 @@ disagree with it.
     continue". Enter now presses the daily's own pill (Submit once a
     choice is picked, then Exit); a disabled Submit is left alone.
     `check_b317_daily`'s keyboard block fails 3 of 5 on 1888b11.
+    A third: scrolling the result card up clear of the pill takes an SE
+    past back-to-top's 320px, so the button came up over the card's
+    corner (22x30px; the card is not tappable, so its "never on the last
+    control" rule let it). `.dailyq-outro` is in that rule's selector now;
+    the SE check beside the keyboard block fails on 1888b11.
   - Gates that answer the daily question click the choice and then
     `#dailyq-submitbtn`; `check_b317_daily` holds all of the above and
     fails 10 of 12 against build 316. Its banner regex is the banner's

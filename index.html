@@ -97765,7 +97765,12 @@ if(backToTopBtn){
      rather than padded, because extra room at the bottom would make
      every screen that fits exactly start to scroll. */
   const BACKTOTOP_END_ZONE = 260;
-  const TAPPABLE = 'button, a[href], [role="button"], input, select, textarea, label, summary, .is-tappable, [tabindex]:not([tabindex="-1"])';
+  /* `.dailyq-outro` is not tappable but is the same case (build 317
+     touch-up): the answered daily scrolls its result card up to sit just
+     over the pill, which on an SE or a 320 phone is past 320px - so the
+     button came up over the card's corner (22x30px). The card is the
+     answer; the button steps aside for it. */
+  const TAPPABLE = 'button, a[href], [role="button"], input, select, textarea, label, summary, .is-tappable, [tabindex]:not([tabindex="-1"]), .dailyq-outro';
   const backToTopBlocked = () => {
     const left = document.documentElement.scrollHeight - window.innerHeight - window.scrollY;
     if(left > BACKTOTOP_END_ZONE) return false;
