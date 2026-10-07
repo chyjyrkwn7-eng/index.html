@@ -123,6 +123,12 @@ SCREENS = [
     "showInstallGuide", "showInstallPlatformPicker", "showResetWarning",
     "showWhatsNew", "showReleaseHistory",
     "showVirtualRoomChoice", "showVirtualRoomSetup",
+    # The end of a run (build 315). It needs a run behind it, which is why
+    # it was never here - so RESULTS_STAGE puts a real one through
+    # summarize(): three whole units with two missed (every card, the unit
+    # rows, Continue to review), and a retake (the long "Re-run the full
+    # test" beside Main menu). Last, because a run changes the account.
+    "__sweepResults('drill')", "__sweepResults('retake')",
 ]
 
 # Reached only from Welcome, and only before the account exists.
@@ -177,6 +183,25 @@ Object.defineProperty(navigator,'standalone',{get:()=>true,configurable:true});
     ? {matches:true, media:q, addListener(){}, removeListener(){},
        addEventListener(){}, removeEventListener(){}, onchange:null, dispatchEvent(){return false;}}
     : mm(q); })();"""
+
+# A real run through summarize(), at once (reduce motion), for the results
+# entries in SCREENS. Defined before the page's own scripts; it reads their
+# globals only when it is called.
+RESULTS_STAGE = """
+window.__sweepResults = function(kind){
+  theme.reduceMotion = true; theme.muteBanners = true;
+  const units = ['Identity Crimes', 'Racial Profiling', 'Victims of Crime'], retake = kind === 'retake';
+  cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = units.slice(); cfg.size = 0;
+  order = QUESTIONS.map((q, i) => i).filter(i => units.indexOf((QUESTIONS[i].topic || '').trim()) >= 0 && inWholeUnit(QUESTIONS[i]));
+  if(retake) order = order.slice(0, 3);
+  runTrackable = !retake; timedOut = false; runMode = 'drill'; runLabel = retake ? 'Missed questions' : null; isMissedRetake = retake;
+  practiceTestMinutes = null; inVirtualRoom = false; attempts = {}; picked = {}; timedOutSet = {};
+  try{ firstPick = {}; }catch(e){}
+  order.forEach((qi, k) => { const oo = optionOrder(qi), r = oo.indexOf(QUESTIONS[qi].answer), miss = k === 1 || k === 4;
+    attempts[qi] = miss ? 2 : 1; picked[qi] = miss ? (r + 1) % oo.length : r; try{ if(miss) firstPick[qi] = (r + 1) % oo.length; }catch(e){} });
+  runStartTime = Date.now() - order.length * 7000; testInProgress = true; pos = order.length - 1;
+  summarize();
+};"""
 
 EXPECTED_ERRORS = ("firebase", "firestore", "gstatic", "Failed to fetch", "net::")
 
@@ -337,6 +362,7 @@ def main():
             for label, orientation, mode, vw, vh, insets in combos:
                 ctx = browser.new_context(viewport={"width": vw, "height": vh})
                 ctx.add_init_script(SEED)
+                ctx.add_init_script(RESULTS_STAGE)
                 if mode == "home screen":
                     ctx.add_init_script(STANDALONE)
                 page = ctx.new_page()

@@ -13804,3 +13804,112 @@ EFFECTIVE level (curve, gate, floor) worked out from the progress
 document's own XP, hundos and floor; its copies of the unit sizes, bands,
 ranks and both curves are compared with the page by `check-curve`
 section 9, so they cannot drift.
+
+### Build 315 - the results screens at the grade number's standard
+
+*"The result screen numbers nice, let's ensure all other things on the
+result screen is up to par with that cleanliness."* The grade (build 314:
+the system sans, heavy, lining figures, a small raised %) set the standard,
+and every end-of-run screen is one type system now: the rewards screen, the
+review, a retake, a no-XP (Starred) run, the daily question's verdict, the
+Virtual Room's results and its leaderboard. Pop-ups and cutscenes over the
+results (`.rs-spot`, the badge case, the flare scenes) keep their own
+display face and were not touched.
+
+- **ONE FACE, ONE KIND OF FIGURE.** Every number is `--sans` with lining,
+  tabular figures, set ONCE on `.rs-screen`, `.vrc` and `.dailyq-outro`
+  and inherited, so nothing added later can come up old-style or
+  proportional. What was not, measured: the units title ("1 unit", Georgia
+  - an old-style "1" on a phone), the XP total (the mono, where a comma is
+  a whole figure wide: "+2,085" read "+2 ,085"), the Unlocked rows' names
+  (`.unlockbanner`'s Georgia), the room's "4/4" (mono), the leaderboard's
+  step ("Final standings", Georgia) and its scores (mono), and the daily
+  verdict ("Correct", Georgia). A `<button>` does not inherit the figures -
+  the UA's `font` shorthand resets them - so the results' buttons say
+  `font-variant-numeric:inherit`. (The review's question text drew in the
+  sans all along - `[data-layout="modern"] .rq` outranks `.rs-q-text` -
+  and now says so itself.)
+- **FIVE ROLES, ONE SIZE EACH**, as variables on `.rs-screen`: kicker
+  (.68 / .72rem tablet - card headings, the stamps, the rank under the
+  level, an unlock row's heading, the review's tags), label (.92 / 1rem - an
+  XP line and its value, "Total", a unit's name and score, a badge's name,
+  an unlock's name, the room's status line), caption (.78 / .84rem - the
+  line under a label or a bar). The hero (the grade) and the display sizes
+  (the XP total, the units title) are unchanged. Before, measured: as many
+  as four kicker sizes, six label sizes and four caption sizes on one
+  screen (a three-unit run; a Virtual Room race).
+- **A PAIR IS "N / M"**, never "N of M" or "N/M": the grade's "10 / 12",
+  each unit's "10 / 12", the room's "3 / 4" - the level bar's
+  "216 / 2,156 XP" (Profile's own `buildXpNumbers`, unchanged) set the
+  pattern. The "out of" half is quieter (`.rs-frac-of`): an opacity of the
+  number's own colour, not a grey, so a hundo effect's tint still reaches
+  the whole figure. `rsNum()` / `rsPair()` format every count on these
+  screens, thousands separated - "1500 of 1500" was the one bare count.
+  **Not done, and flagged:** the hundo-effect miniature
+  (`buildHundoFxMock`, another builder's) still prints "12 of 12" and
+  "12/12" - two strings to bring in line after the merge.
+- **THE LEVEL IS A NUMBER, SET LIKE THE GRADE**: "Level 33" in the heavy
+  sans, not "LEVEL 33" in spaced capitals (which pulled the 3s apart); the
+  rank under it is a kicker; "Level up" is a pill like the stamps, centred
+  on the number by the flex row rather than nudged up .12em.
+- **ONE TEXT EDGE.** Every card takes `.rs-card`'s padding. The grade card
+  had its own - 1.6px further in on a phone and, because its rule
+  outranked the tablet one, 2.4px on an iPad - and so did the retake note
+  and the room's waiting card, so their headings, names and right-hand
+  numbers sat off the line the others share. The header ("Test results",
+  the chip, the units title, the unit list) is one column: the title used
+  to sit 20px in from the chip above it.
+- **THE XP LINES FLOATED 12px HIGH, FOREVER.** `.rs-xpline.rs-land{
+  transform:translateY(-12px) }` comes later than `.rs-land.rs-in-now{
+  transform:none }` at the same weight, so a landed line kept its -12px:
+  each jumped up as its drop ended, the first sat 10px under "XP earned"
+  (every other card's heading ~20px over its first line) and the rule over
+  Total had 30px above it and 17 below. `.rs-xpline.rs-land.rs-in-now{
+  transform:none }`; now every heading is 18-21px over its first line and
+  the rule is 20 / 20 - measured off the ink (font metrics on each text
+  node's rect), never off the element boxes.
+- **NO LABEL BREAKS INSIDE ITS PILL.** Two buttons share a row only when
+  both fit in equal halves (`flex-basis:calc(50% - gap)` +
+  `min-width:max-content`), else each takes a row: "Re-run the full test"
+  stood on three lines beside a one-line Main menu at 320px, and Main menu
+  itself broke in two there. The leaderboard's Return to lobby / Main menu
+  the same. The wide button ("Continue to review (N missed)") can still
+  need two lines at 320px and then breaks evenly (`text-wrap:balance`, as
+  do the retake line, the room's status and the daily verdict's last line).
+- An XP row is a two-column grid with its caption across both columns: as
+  a column beside the value it was ~150px on a 320-375px phone and broke
+  "1:24 total · 11s a / question". The unit rows follow the header's order
+  (they came in whichever unit's question fell first). Badge names wrap
+  evenly instead of ending "Identity Crimes ba..." at 320px, and the badge
+  line breaks only at its dot. The room's review tabs say "Missed" on a
+  phone ("Missed questions" broke in two on every phone; the full words on
+  a tablet). On the leaderboard "(you)" never gives way to a long name.
+- **Measuring here, a caveat:** Chromium in the sandbox draws the system
+  sans as DejaVu Sans, 15-20% wider than SF Pro (and Liberation Sans a
+  little narrower), so a wrap seen here may not happen on an iPhone. The
+  layouts above are wrap-SAFE - they stack or break evenly when they must -
+  rather than tuned to fit one font.
+- **Gate: check-results section 9** - `TYPE_AUDIT` (no serif, no
+  old-style figures, every number the --sans with tabular figures,
+  pseudo-element text included) on a drill, its review, a three-unit 100%
+  that earns a badge, an exam, a retake, a Starred run, the daily verdict,
+  a Virtual Room race and its leaderboard; `SHAPE_AUDIT` (one size per
+  role, one text edge, numbers on the content edge, equal heading gaps,
+  even card gaps, no lifted XP line, the header on one edge, every pair
+  "N / M"); `ONE_LINE` at 320 and 375px. It fails in every scenario on
+  f543e95 and, on 94a3108^, catches the serif grade itself ("83%", "92%",
+  "100%" in Georgia). It also runs one scenario at 834px, so the tablet
+  sizes are held to one per role as well. check-vroom compares the room's
+  count by its digits, not its spacing.
+- **The sweep looks at the results screen now.** It was never in `SCREENS`
+  because it needs a run behind it; `RESULTS_STAGE` (an init script) gives
+  the sweep `__sweepResults('drill')` - three whole units with two missed -
+  and `__sweepResults('retake')`, both put through the real `summarize()`
+  with reduce motion, last in the list because a run changes the account.
+  Every combination in the matrix (74 today) now audits the results
+  screen for overflow, insets and collisions like every other screen.
+- **Run these gates one at a time.** With a sweep running beside it,
+  check-behaviour's check_b232 (a banner drawn into its chip after the
+  first paint) and check_penal_versions (a tap on the unit card) failed on
+  this build and passed alone; check_b282's ring arc fails on f543e95 under
+  load and passes alone. They measure timing, and a loaded box moves it.

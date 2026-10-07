@@ -18,7 +18,7 @@ Every check here was written against a build where it failed:
   4. Review mode's sheet counts the bank it will list (Flagged since 284, not the
      whole unit).
   5. The Supernova results say "Main menu" like every other run.
-  6. The grade's "12 of 12 / right on the first try" is never squeezed into
+  6. The grade's "12 / 12 / right on the first try" is never squeezed into
      a one-word column beside a 100% on a small phone.
   7. The last row to land on the results is not under the back-to-top
      button in the corner.
@@ -201,7 +201,7 @@ with sync_playwright() as pw:
         g = pg.evaluate("""()=>{ const g=document.querySelector('.rs-grade'); const sd=g.querySelector('.rs-grade-side').getBoundingClientRect();
           const f=g.querySelector('.rs-grade-frac'); const lh=parseFloat(getComputedStyle(f).lineHeight)||20;
           return {pct:g.querySelector('.rs-pct').textContent, side:Math.round(sd.width), fracLines:Math.round(f.getBoundingClientRect().height/lh)}; }""")
-        ck("%dpx: '12 of 12' sits on one line in a column at least 100px wide" % w, g["side"] >= 100 and g["fracLines"] == 1, g)
+        ck("%dpx: '12 / 12' sits on one line in a column at least 100px wide" % w, g["side"] >= 100 and g["fracLines"] == 1, g)
         ctx.close()
 
     print("7. the last row to land is clear of the back-to-top button")
