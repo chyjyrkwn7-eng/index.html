@@ -19663,30 +19663,53 @@
   .pf-standing:focus-visible, .pf-goal:focus-visible, .pf-case:focus-visible{ outline:2px solid rgba(255,255,255,.6); outline-offset:2px; }
   .pf-kick{ display:block; margin:0; font-size:.64rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,.55); }
   .pf-chev{ margin-left:auto; font-size:1.4rem; line-height:1; color:rgba(255,255,255,.4); }
-  /* where you stand */
-  .pf-standing{ position:relative; margin:1rem 0 0; padding:.95rem 1rem 1rem; border-radius:1.1rem;
-    background:linear-gradient(160deg, color-mix(in srgb, var(--rank-color) 12%, rgba(0,0,0,.28)), rgba(0,0,0,.3) 60%);
-    border:1px solid color-mix(in srgb, var(--rank-color) 30%, rgba(255,255,255,.08)); }
-  .pf-standing.is-unranked{ background:rgba(0,0,0,.26); border-color:rgba(255,255,255,.08); }
-  .pf-standing:active{ filter:brightness(1.08); }
-  .pf-standing-top{ display:flex; align-items:center; gap:.95rem; }
-  .pf-standing .flare-solo{ width:3.7rem; height:3.7rem; }
-  .pf-standing-tx{ display:flex; flex-direction:column; gap:.12rem; min-width:0; }
-  .pf-rankname{ font-family:var(--serif); font-size:1.85rem; font-weight:700; line-height:1.02;
-    color:color-mix(in srgb, var(--rank-color) 60%, #fff); text-shadow:0 0 18px color-mix(in srgb, var(--rank-color) 38%, transparent); }
-  .pf-standing.is-unranked .pf-rankname{ color:rgba(255,255,255,.72); text-shadow:none; }
-  /* the level is blue, the bar's own light blue - never the rank's colour
+  /* where you stand (build 316): the mockup's one line under the name,
+     and the level's bar under it - no box, so it reads as part of the
+     profile rather than as a card inside it */
+  .pf-standing{ position:relative; margin:.75rem 0 0; padding:.2rem 0; border-radius:.6rem; }
+  .pf-standing:active{ opacity:.82; }
+  .pf-idline{ display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:.4rem;
+    font-size:.95rem; font-weight:700; line-height:1.3; color:rgba(255,255,255,.72); text-align:center; }
+  .pf-emb{ width:1.55rem; height:1.55rem; display:inline-flex; flex:none; }
+  .pf-emb svg{ display:block; width:100%; height:100%; }
+  .pf-standing .new-dot-anchor > .new-dot{ top:-.22rem; right:-.3rem; width:.62rem; height:.62rem; }
+  .pf-rankname{ font-weight:800; color:color-mix(in srgb, var(--rank-color) 55%, #fff); }
+  .pf-idsep{ opacity:.35; }
+  /* the XP is blue, the bar's own light blue - never the rank's colour
      (build 259: "I don't like the bronze all the way through") */
-  .pf-level{ font-size:.98rem; font-weight:800; color:#8FC1FF; }
-  .pf-xp{ display:block; margin-top:.9rem; }
+  .pf-xp-total{ color:#8FC1FF; white-space:nowrap; }
+  .pf-xp{ display:block; margin-top:.85rem; }
   .pf-xpbar.xpbar-track{ display:block; }
   .pf-xpbar .xpbar-fill{ display:block; height:100%; border-radius:inherit; }
-  .pf-xpnums{ display:flex; justify-content:space-between; align-items:baseline; gap:.6rem; margin-top:.5rem;
-    font-size:.92rem; font-weight:800; font-variant-numeric:tabular-nums; }
-  .pf-xp-total{ font-size:.78rem; font-weight:700; color:var(--soft); white-space:nowrap; }
+  .pf-xpnums{ display:flex; justify-content:space-between; align-items:baseline; gap:.6rem; margin-top:.45rem;
+    font-size:.86rem; font-weight:800; font-variant-numeric:tabular-nums; }
+  .pf-xp-next{ font-size:.8rem; font-weight:700; color:var(--soft); white-space:nowrap; }
+  .pf-xpnums{ flex-wrap:wrap; row-gap:.15rem; }
+  .pf-xpnums .xpnums{ white-space:nowrap; }
+  .pf-idline > *{ white-space:nowrap; }
+  .pf-idline.is-two-rows{ row-gap:.1rem; }
+  .pf-idline.is-two-rows .pf-idsep-b{ display:none; }
+  .pf-idline.is-two-rows .pf-xp-total{ flex-basis:100%; text-align:center; }
+  /* Measured: "Silver · Level 35 · 34,999 XP" is 276px at the Pro Max's
+     size, and a 393/402px phone has 265/274px for it, a 375px one 247px;
+     the numbers under the bar miss by 3px. A hair tighter on those
+     phones keeps the usual line on one row; a longer one (a 6-digit XP,
+     "Platinum") still falls back to the two rows above, never a dot. */
+  @media (max-width:26rem){
+    .pf-idline{ font-size:.88rem; gap:.32rem; }
+    .pf-xpnums{ font-size:.82rem; }
+    .pf-xp-next{ font-size:.76rem; }
+  }
+  @media (max-width:24rem){
+    .pf-idline{ font-size:.84rem; }
+    .pf-emb{ width:1.45rem; height:1.45rem; }
+    .pf-xpnums{ font-size:.78rem; }
+    .pf-xp-next{ font-size:.72rem; }
+  }
   .pf-xp-cap{ color:#8FC1FF; }
-  .pf-xp-note{ display:block; margin-top:.4rem; font-size:.8rem; line-height:1.35; color:rgba(255,255,255,.62); }
+  .pf-xp-note{ display:block; margin-top:.35rem; font-size:.8rem; line-height:1.35; color:rgba(255,255,255,.62); }
   .pf-xp-note.is-wall{ color:#E8C770; }
+  .pf-standing + .pf-goal{ margin-top:1.05rem; }
   /* the flare bubble, out of Home's orbit */
   .flare-solo.cosmic-icon-badge.cosmic-badge-rank{ position:relative; top:auto; left:auto; flex:none; translate:none; }
   .flare-solo.cosmic-icon-badge.cosmic-badge-rank.is-empty{ border-style:dashed; }
@@ -19710,10 +19733,10 @@
     display:grid; place-items:center; font-size:.78rem; font-weight:900; line-height:1; color:#0B0D10; }
   .pf-task.is-met .pf-check{ background:#5CD692; border-color:#5CD692; }
   .pf-task-label{ font-size:.98rem; font-weight:800; color:var(--ink); min-width:0; }
-  .pf-task-val{ font-size:.95rem; font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap; }
-  .pf-task-val .pf-now{ font-weight:800; color:rgba(255,255,255,.55); }
-  .pf-task-val .pf-sep{ color:rgba(255,255,255,.38); }
-  .pf-task-val .pf-need, .pf-task.is-met .pf-task-val .pf-now{ color:color-mix(in srgb, var(--tc) 80%, #fff); }
+  /* your count in the colour, the goal plain (build 316, the mockup's) */
+  .pf-task-val{ font-size:.95rem; font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap; color:rgba(255,255,255,.55); }
+  .pf-task-val .pf-now{ font-weight:800; color:color-mix(in srgb, var(--tc) 80%, #fff); }
+  .pf-task-val .pf-sep, .pf-task-val .pf-need{ font-weight:800; color:rgba(255,255,255,.55); }
   .pf-bar{ grid-column:2 / 4; display:block; height:.42rem; border-radius:99px; background:rgba(255,255,255,.08); overflow:hidden; }
   .pf-bar > i{ display:block; height:100%; width:var(--w); border-radius:inherit;
     background:linear-gradient(90deg, color-mix(in srgb, var(--tc) 78%, #000), var(--tc));
@@ -19753,6 +19776,16 @@
     50%{ transform:translate(-54.5455%, -50%); }
   }
   .pf-rw .flare-solo{ width:2.7rem; height:2.7rem; }
+  /* LEVEL WITH ITS NEIGHBOURS (build 316). Home's float only ever lifts
+     a bubble (0 to -8px and back), so in a tile it spent its life above
+     the theme and the character beside it - "it looks a smidge higher
+     than the other stuff in some of the screenshots". Here it floats
+     about its own centre instead, the same slow six seconds and a
+     smaller swing, so on average it sits exactly on their line. */
+  @media (prefers-reduced-motion:no-preference){
+    .pf-rw .flare-solo.cosmic-icon-badge-0{ animation:pf-float 6s ease-in-out infinite; }
+  }
+  @keyframes pf-float{ 0%, 100%{ transform:translateY(2.5px); } 50%{ transform:translateY(-2.5px); } }
   /* the character that is waiting to be unlocked: it leans in and taps
      the glass twice, every five seconds */
   .pf-rw-char{ position:relative; display:block; width:2.9rem; height:2.9rem; border-radius:50%; }
@@ -19782,10 +19815,10 @@
   .pf-strip.badge-strip .badge-strip-cell{ width:auto; height:auto; aspect-ratio:1; display:block; margin:0; }
   .pf-strip.badge-strip .badge-strip-cell svg{ display:block; width:100%; height:100%; }
   @media (min-width:40rem){
-    .pf-standing, .pf-goal{ padding:1.2rem 1.35rem 1.15rem; }
-    /* the rank you hold and the next one, one size (check_b302) */
-    .pf-standing .flare-solo{ width:4.4rem; height:4.4rem; }
-    .pf-rankname{ font-size:2.25rem; }
+    .pf-goal{ padding:1.2rem 1.35rem 1.15rem; }
+    .pf-idline{ font-size:1.05rem; }
+    .pf-emb{ width:1.8rem; height:1.8rem; }
+    .pf-xpnums{ font-size:.92rem; }
     .pf-goal-emb{ width:4.4rem; height:4.4rem; }
     .pf-goal-name{ font-size:2.05rem; }
     .pf-rw-art, .pf-rw-char, .pf-rw-banner{ width:3.4rem; height:3.4rem; }
@@ -92440,10 +92473,11 @@ function showRanksScreen(defaultTab){
    replacing build 314's "path" of three rows joined by lines, which read
    as three buttons to somebody new to the app and as "you can't level
    up" at a badge wall. Three blocks, each one tap into its own screen:
-     buildProfileStanding  the rank you hold, big and lit, your level, and
-                           the XP bar with the numbers under it - "how
-                           much over you are, how much till the next
-                           level" - and the total folded in there
+     buildProfileStanding  the rank you hold, your level and your XP as
+                           one line under the name, and the level's own
+                           bar under it with "how much over you are, how
+                           much till the next level" - unboxed since
+                           build 316, so it reads as part of the profile
      buildProfileGoal      the next rank as a checklist, Pokemon GO's
                            level-up tasks (which is what a rank's
                            requirements are), and what that rank unlocks
@@ -92542,33 +92576,50 @@ function profileXpNote(prog){
   const left = Math.max(0, Math.round((Number(prog.span) || 0) - (Number(prog.into) || 0)));
   return left.toLocaleString() + " XP to level " + (prog.level + 1);
 }
+/* ---- WHO YOU ARE, THEN HOW FAR INTO THE LEVEL (build 316) ----
+   Build 315 put this in a box of its own - "YOUR RANK", the emblem in a
+   bubble, the rank name large, the bar and three numbers - and it read
+   as one box too many: "the new xp stuff is in its own box and it
+   shouldn't be so it feels more of your profile ... I prefer how your
+   current level and rank looked but I also wanted your own level bar and
+   stuff too." So the rank is back to the one line it was in the mockup
+   that was picked (the emblem, the rank, the level, the XP), straight
+   under the name, and the level's own bar sits under that line with no
+   box round it: what you have into this level against what it asks on
+   the left, what is left to the next level on the right. At a badge wall
+   the right side gives way to the gold line saying what opens the next
+   levels. Still one button to the road map, with no chrome of its own. */
 function buildProfileStanding(prog, rankNow){
   const box = document.createElement("button");
   box.type = "button";
   box.className = "pf-standing" + (rankNow ? "" : " is-unranked");
-  const key = rankNow || TIER_ORDER_FULL[0];
-  box.style.setProperty("--rank-color", RANK_COLOR[key]);
-  const top = document.createElement("span");
-  top.className = "pf-standing-top";
-  const bub = buildFlareBubble(key, { lit: !!rankNow, bounce: !!rankNow, empty: !rankNow });
-  const tx = document.createElement("span");
-  tx.className = "pf-standing-tx";
-  const k = document.createElement("span");
-  k.className = "pf-kick"; k.textContent = rankNow ? "Your rank" : "No rank yet";
-  const nm = document.createElement("span");
-  nm.className = "pf-rankname"; nm.textContent = rankNow ? RANK_DISPLAY_NAME[rankNow] : "Unranked";
-  const lv = document.createElement("span");
-  lv.className = "pf-level"; lv.textContent = "Level " + prog.level;
-  tx.append(k, nm, lv);
-  const chev = document.createElement("span");
-  chev.className = "pf-chev"; chev.setAttribute("aria-hidden", "true"); chev.textContent = "›";
+  if(rankNow) box.style.setProperty("--rank-color", RANK_COLOR[rankNow]);
+  const sep = which => {
+    const s = document.createElement("span");
+    s.className = "pf-idsep pf-idsep-" + which; s.setAttribute("aria-hidden", "true"); s.textContent = "·";
+    return s;
+  };
+  const line = document.createElement("span");
+  line.className = "pf-idline";
   /* A rank the Rank tab has not walked you through yet keeps its dot
-     (build 299), now on the bubble. */
+     (build 299), on the emblem. */
   let rankNew = false;
   try{ rankNew = rankIsNew(); }catch(e){}
-  top.append(rankNew ? wrapWithNewDot(bub) : bub, tx, chev);
-  if(rankNew) box.classList.add("has-new");
-  box.appendChild(top);
+  if(rankNow){
+    const emb = document.createElement("span");
+    emb.className = "pf-emb";
+    try{ emb.appendChild(fitRankEmblem(buildRankEmblemSVG(rankNow), rankNow)); }catch(e){}
+    const nm = document.createElement("b");
+    nm.className = "pf-rankname"; nm.textContent = RANK_DISPLAY_NAME[rankNow];
+    line.append(rankNew ? wrapWithNewDot(emb) : emb, nm, sep("a"));
+    if(rankNew) box.classList.add("has-new");
+  }
+  const lv = document.createElement("span");
+  lv.className = "pf-level"; lv.textContent = "Level " + prog.level;
+  const tot = document.createElement("span");
+  tot.className = "pf-xp-total"; tot.textContent = prog.total.toLocaleString() + " XP";
+  line.append(lv, sep("b"), tot);
+  box.appendChild(line);
   const xp = document.createElement("span");
   xp.className = "pf-xp";
   const track = document.createElement("span");
@@ -92580,33 +92631,65 @@ function buildProfileStanding(prog, rankNow){
   track.appendChild(fill);
   const nums = document.createElement("span");
   nums.className = "pf-xpnums";
+  const noteText = profileXpNote(prog);
+  const wall = !prog.atCap && (prog.stopped || prog.held);
   if(prog.atCap){
     const c = document.createElement("span");
     c.className = "pf-xp-cap"; c.textContent = "Every level reached";
     nums.appendChild(c);
-  } else nums.appendChild(buildXpNumbers(prog.into, prog.span, prog.stopped));
-  const tot = document.createElement("span");
-  tot.className = "pf-xp-total"; tot.textContent = prog.total.toLocaleString() + " XP total";
-  nums.appendChild(tot);
+  } else {
+    nums.appendChild(buildXpNumbers(prog.into, prog.span, prog.stopped));
+    if(!wall && noteText){
+      const nx = document.createElement("span");
+      nx.className = "pf-xp-next"; nx.textContent = noteText;
+      nums.appendChild(nx);
+    }
+  }
   xp.append(track, nums);
-  const noteText = profileXpNote(prog);
-  if(noteText){
+  if(wall && noteText){
     const note = document.createElement("span");
-    note.className = "pf-xp-note" + (prog.stopped || prog.held ? " is-wall" : "");
+    note.className = "pf-xp-note is-wall";
     note.textContent = noteText;
     xp.appendChild(note);
   }
   box.appendChild(xp);
-  box.setAttribute("aria-label", (rankNow ? RANK_DISPLAY_NAME[rankNow] + " rank" : "No rank yet") +
-    ", level " + prog.level + ". " + (noteText || "") + " Open the Rank screen.");
+  box.setAttribute("aria-label", (rankNow ? RANK_DISPLAY_NAME[rankNow] + " rank, " : "No rank yet, ") +
+    "level " + prog.level + ", " + prog.total.toLocaleString() + " XP. " + (noteText || "") + " Open the Rank screen.");
   box.addEventListener("click", () => showRanksScreen("ranks"));
   return box;
 }
-/* One requirement as a checklist row. The numbers: while it is not met
-   the GOAL carries the colour and the count is grey; once it is met both
-   take the colour, with the tick - "the goal number and moving level
-   number should swap colors ... once you do it ... that's when it would
-   also turn blue". */
+/* A LINE THAT DOES NOT FIT BREAKS AT THE XP, NOT AT A DOT (build 316).
+   The rank line is a flex row that wraps, and a wrap can strand a "·"
+   at the end of a line - measured on a 375px phone, where "Silver ·
+   Level 35 ·" sat over "34,999 XP". So once the line is laid out, if
+   the XP has dropped below the rank, the line becomes two rows on
+   purpose: the rank and level, then the XP on its own, with the dot
+   between them gone. Measured after the tab is shown (a hidden tab has no
+   layout to read) and again on a resize, never inside the tab switch. */
+function fitProfileIdLine(root){
+  (root || document).querySelectorAll(".pf-idline").forEach(line => {
+    line.classList.remove("is-two-rows");
+    const first = line.firstElementChild, tot = line.querySelector(".pf-xp-total");
+    if(!first || !tot || !line.getClientRects().length) return;
+    if(tot.getBoundingClientRect().top > first.getBoundingClientRect().top + 4) line.classList.add("is-two-rows");
+  });
+}
+let profileIdFitBound = false;
+function bindProfileIdFit(){
+  if(profileIdFitBound) return;
+  profileIdFitBound = true;
+  let t = null;
+  window.addEventListener("resize", () => {
+    clearTimeout(t);
+    t = setTimeout(() => { if(document.querySelector(".pf-idline")) fitProfileIdLine(); }, 150);
+  });
+}
+/* One requirement as a checklist row. The numbers are the mockup's
+   again (build 316): your count in the requirement's colour, the goal
+   after it in plain grey, met or not. Build 315 swapped them on request
+   ("the goal number and moving level number should swap colors") and the
+   swap was then asked against: "I preferred how the leveling requirement
+   looked too". */
 function buildProfileTask(c, color, noteText){
   const t = document.createElement("span");
   t.className = "pf-task" + (c.met ? " is-met" : "");
@@ -93209,6 +93292,7 @@ function showProfile(defaultTab){
   function runXpBarFill(){
     requestAnimationFrame(() => requestAnimationFrame(() => {
       setBarFill(xpFill, Number(xpFill.dataset.target) || 0);
+      try{ fitProfileIdLine(heroSect); bindProfileIdFit(); }catch(e){}
     }));
     /* the flare bubbles' recorded motion, started the way Home starts
        its own once the screen is up (build 315) */

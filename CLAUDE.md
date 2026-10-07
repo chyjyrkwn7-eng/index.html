@@ -14243,7 +14243,8 @@ disagree with it.
     `hfxLitText` clones the children so the hundo effects' lit copy keeps
     the small %. Chromium here has no Georgia, so screenshots never showed
     the old-style figures a phone did.
-- **ROUND FIVE, build 315 (supersedes ROUND FOUR's Profile bullets):**
+- **ROUND FIVE, build 315 (supersedes ROUND FOUR's Profile bullets; its
+  first and fourth bullets are superseded in turn by ROUND SIX):**
   - **PROFILE IS THREE BLOCKS, picked from three mock-ups** ("I'm liking
     the profile box"): `buildProfileStanding` (the rank you hold in a lit,
     slowly bouncing flare bubble, its name large in its colour, "Level N"
@@ -14300,6 +14301,43 @@ disagree with it.
     (`buildLevelChallengeButton`, `showLevelChallenge`, `levelClosestLine`,
     `badgeChallengeIcon`); `badgeChallengeOf` and `rankChallengeNote` stay
     for the results card and the level-change notice.
+- **ROUND SIX, build 316 (supersedes ROUND FIVE's first and fourth
+  bullets):** *"The profile box though, seems like it's cluttered ...
+  Maybe this is because the new xp stuff is in its own box and it
+  shouldn't be so it feels more of your profile ... I preferred how the
+  leveling requirement looked too ... I also prefer how your current level
+  and rank looked but I also wanted your own level bar and stuff too."*
+  - **WHERE YOU STAND IS NO BOX.** `buildProfileStanding` is the mock-up's
+    one line straight under the name - the held rank's small emblem
+    (`.pf-emb`, `fitRankEmblem`, the line's own size), the rank in its
+    colour, "Level N", the total XP in the bar's blue - and under it the
+    level's own bar with no box round it: `buildXpNumbers` on the left,
+    "N XP to level N+1" on the right, and at a badge wall the gold "Earn N
+    more badge(s) ..." line under the bar instead. Still one chrome-less
+    button to the climb; still `.pf-standing`, so the tour step and the
+    tap gates find it. **Don't box it again, and don't move the total back
+    under the bar** - both were 315's and both were asked against.
+  - **THE LINE IS ONE ROW FROM 375px UP, AND NEVER STRANDS A DOT.**
+    Measured: "Silver · Level 35 · 34,999 XP" is 276px at the Pro Max's
+    size; a 402/393/375px phone has 274/265/247px. Below 26rem and 24rem
+    the line and the bar's numbers step down a hair (.88/.84rem) and fit.
+    A longer line (a 6-digit XP, "Platinum") or a 320px phone wraps, and a
+    flex wrap would leave "Silver · Level 35 ·" over the XP - so
+    `fitProfileIdLine()` measures after the tab is SHOWN (inside
+    `runXpBarFill`'s second frame, never in the tab switch) and on a
+    resize, and a wrapped line becomes `.is-two-rows`: rank and level,
+    then the XP alone, the dot between them gone. The bar's numbers never
+    break inside "1,500 / 2,243 XP" (`white-space:nowrap`); when they
+    cannot share a row, "N XP to level M" drops under them.
+  - **A TASK'S COUNT CARRIES THE COLOUR AND ITS GOAL IS PLAIN GREY, met or
+    not** - the mock-up's numbers. 315's swap (goal coloured, count grey)
+    was asked for and then asked back.
+  - **THE UNLOCK TILE'S FLARE FLOATS ABOUT ITS CENTRE** (`pf-float`,
+    ±2.5px over 6s). Home's `cosmic-float-a` only ever lifts a bubble (0 to
+    -8px), so in a tile it spent its life above the theme and the
+    character - "a smidge higher than the other stuff in some of the
+    screenshots"; "some" was the giveaway that it moved. Measured: centred
+    on its neighbours' line to within the swing.
   - **A REBUILD HAS TO GREP THE GATES FOR ITS OLD CLASS NAMES, NOT JUST
     RUN THEM.** Eighteen check-behaviour sections read `.profile-rankplate`,
     `.profile-badgesect` or `.profile-level`. The ones asserting that

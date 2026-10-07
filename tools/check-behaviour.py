@@ -2381,15 +2381,16 @@ def check_b235(br):
         store.lifetime.points = Math.max(store.lifetime.points, xpForLevel(25)); }
       showProfile('profile'); await wait(700);
       /* Build 315: the level ring is gone (build 282 put the number in
-         it). The card now leads with the rank's flare in its glass
-         bubble, the level beside it - so: the emblem is centred in its
-         bubble, and the level sits beside the bubble, not inside it. */
-      await T('plate', () => { const f = document.querySelector('.pf-standing .flare-solo');
-        const v = f && f.querySelector('svg.cosmic-rank-emblem'); const lab = document.querySelector('.pf-standing .pf-level');
-        if(!f || !v) return 'no bubble or no emblem';
-        const a = f.getBoundingClientRect(), b = v.getBoundingClientRect();
-        const off = Math.round(Math.max(Math.abs((a.left + a.width / 2) - (b.left + b.width / 2)), Math.abs((a.top + a.height / 2) - (b.top + b.height / 2))));
-        return lab && lab.getBoundingClientRect().left >= a.right ? off : 'level not beside the bubble'; });
+         it). Build 316: the rank is one line under the name again - the
+         emblem, the rank, the level, the XP - so: the emblem sits on that
+         line, centred on the rank's name, with the name after it. */
+      await T('plate', () => { const e = document.querySelector('.pf-standing .pf-emb');
+        const v = e && e.querySelector('svg'); const nm = document.querySelector('.pf-standing .pf-rankname');
+        const lab = document.querySelector('.pf-standing .pf-level');
+        if(!e || !v || !nm) return 'no emblem or no rank name on the line';
+        const a = e.getBoundingClientRect(), b = nm.getBoundingClientRect();
+        const off = Math.round(Math.abs((a.top + a.height / 2) - (b.top + b.height / 2)));
+        return b.left >= a.right && lab && lab.getBoundingClientRect().left >= b.right ? off : 'not emblem, rank, level in that order'; });
       await T('heroLive', () => document.querySelector('.profile-hero-avatar').classList.contains('char-live'));
       // An existing account on Gold, opening this build for the first
       // time, then winning a week off-screen.
@@ -2460,7 +2461,7 @@ def check_b235(br):
         const v = getComputedStyle(document.documentElement).getPropertyValue('--theme-c3').trim();
         document.documentElement.dataset.accent = theme.accent || 'ink'; return v; });
       return out; }""")
-    check("the rank's flare sits centred in its bubble on the Profile card, the level beside it (build 315; the level ring before it)",
+    check("the held rank's emblem sits on the rank line, centred on its name, then the level (build 316; a bubble in 315, the level ring before it)",
           isinstance(r["plate"], int) and r["plate"] <= 2, r["plate"])
     check("your own character is alive on the Profile card", r["heroLive"] is True, r["heroLive"])
     sd = r["seed"] if isinstance(r["seed"], dict) else {}
@@ -2746,21 +2747,23 @@ def check_b237(br):
       const wait = ms => new Promise(r => setTimeout(r, ms));
       const u = topicsIn(QUESTIONS); u.slice(2, 8).forEach(n => store.unitPerfects[n] = 999); levelOf = () => 40;
       showProfile('profile'); await wait(2000);
-      /* Build 315: the plate became the standing block - the same idea
-         (the rank, large, across the card, one button), now leading with
-         the rank's lit flare bubble. */
+      /* Build 315: the plate became the standing block - the rank, large,
+         in its lit flare bubble, in a box. Build 316: "the new xp stuff is
+         in its own box and it shouldn't be so it feels more of your
+         profile" - the rank is the mockup's one line under the name again
+         and the box is gone; still one button across the card. */
       const p = document.querySelector('.pf-standing');
       if(!p) return null;
-      const bub = p.querySelector('.flare-solo');
+      const cs = getComputedStyle(p);
       return { word: (p.querySelector('.pf-rankname') || {}).textContent,
                rankBar: !!p.querySelector('.profile-rankplate-fill, .profile-rankplate-next, .pf-bar'),
                xpBar: !!p.querySelector('.pf-xpbar .xpbar-fill'),
                w: Math.round(p.getBoundingClientRect().width),
-               coin: bub ? Math.round(bub.getBoundingClientRect().width) : 0,
-               lit: !!(bub && bub.classList.contains('cosmic-badge-lit')),
+               emb: !!p.querySelector('.pf-idline .pf-emb svg'), bubble: !!p.querySelector('.flare-solo'),
+               boxed: cs.backgroundImage !== 'none' || !/rgba\\(0, 0, 0, 0\\)|transparent/.test(cs.backgroundColor) || parseFloat(cs.borderTopWidth) > 0,
                button: p.tagName }; }""")
-    check("the rank leads the card, across it, in its lit flare bubble, as one button",
-          isinstance(r, dict) and r.get("w", 0) > 300 and r.get("coin", 0) >= 50 and r.get("lit") and r.get("button") == "BUTTON", r)
+    check("the rank leads the card as one line under the name - its emblem, the rank, the level, the XP - with no box round it, as one button across the card",
+          isinstance(r, dict) and r.get("w", 0) > 300 and r.get("emb") and not r.get("bubble") and r.get("boxed") is False and r.get("button") == "BUTTON", r)
     # REVISED IN 267: "the current rank in the profile box has a progress
     # bar, let's remove that". REVISED IN 315: the bar under the rank is
     # the XP bar, asked back ("how do we still get that nice xp stuff");
@@ -3486,15 +3489,16 @@ def check_b244(br):
          measured on an account that holds a rank */
       const rk0 = rankOf; rankOf = () => 'ranger';
       showProfile('profile'); await wait(900); document.getAnimations().forEach(a => a.pause());
-      /* Build 315: the coin is the standing block's flare bubble - Home's
-         own bubble, so it is held to Home's centring */
-      const coin = document.querySelector('.pf-standing .flare-solo'), held = 'ranger';
-      const csvg = coin && coin.querySelector('svg.cosmic-rank-emblem');
-      out.coin = csvg ? { bubble: coin.classList.contains('cosmic-badge-rank'), tier: coin.dataset.rankTier, off: off(coin, csvg, held) } : null;
+      /* Build 315: the coin was the standing block's flare bubble. Build
+         316: it is the emblem on the rank line, the held rank's own,
+         fitted the way every emblem is - held to the same centring */
+      const coin = document.querySelector('.pf-standing .pf-emb'), held = 'ranger';
+      const csvg = coin && coin.querySelector('svg');
+      out.coin = csvg ? { name: (document.querySelector('.pf-standing .pf-rankname') || {}).textContent, want: RANK_DISPLAY_NAME[held], off: off(coin, csvg, held) } : null;
       rankOf = rk0;
       showProfile('profile'); await wait(500);
-      const cu = document.querySelector('.pf-standing .flare-solo');
-      out.unrankedEmpty = !rankOf(store) ? (!!cu && cu.classList.contains('is-empty') && !cu.querySelector('svg') && !cu.dataset.rankTier) : true;
+      out.unrankedEmpty = !rankOf(store) ? (!document.querySelector('.pf-standing .pf-emb') && !document.querySelector('.pf-standing .pf-rankname')
+        && /^Level \\d+$/.test((document.querySelector('.pf-standing .pf-level') || {}).textContent || '')) : true;
       } catch(e){ out.threw = String(e) + ' ' + (e.stack || '').split('\\n')[1]; }
       return out; }""")
     check("the ladder is Bronze, Silver, Gold, Platinum, Sapphire, Amethyst, Supernova - ranks and themes alike",
@@ -3514,9 +3518,9 @@ def check_b244(br):
     # boxes on purpose, and no further), not to show the change.
     check("every Home bubble's emblem is centred in it (within 1.5px)", len(home) == 7 and max(home) <= 1.5, home)
     coin = r.get("coin") or {}
-    check("the Profile card's rank bubble is Home's, the held rank's emblem centred in it (within 1.5px, as on Home)",
-          coin.get("bubble") is True and coin.get("tier") == "ranger" and coin.get("off", 9) <= 1.5, coin)
-    check("an unranked card's bubble is empty glass - no rank's emblem in it (268)", r.get("unrankedEmpty") is True, r.get("unrankedEmpty"))
+    check("the Profile card's rank line carries the held rank's emblem, centred in its box (within 1.5px, as on Home), and its name",
+          coin.get("name") == coin.get("want") and coin.get("off", 9) <= 1.5, coin)
+    check("an unranked card names no rank and draws no emblem - just the level (268)", r.get("unrankedEmpty") is True, r.get("unrankedEmpty"))
     ctx.close()
 
 
@@ -5014,8 +5018,9 @@ def check_b258(br):
       const fill = document.querySelector('.profile-hero .profile-xpbar .xpbar-fill');
       out.fillBg = fill ? getComputedStyle(fill).backgroundImage : '';
       /* build 282: the level is the Rank tab's blue ring; its colour is the stroke.
-         Build 315: the ring is gone; the level is said in the bar's blue */
-      const lv = document.querySelector('.profile-hero .pf-standing .pf-level');
+         Build 315: the ring is gone; the level is said in the bar's blue.
+         Build 316: the mockup's line - the XP is the blue on it */
+      const lv = document.querySelector('.profile-hero .pf-standing .pf-xp-total');
       out.levelBg = lv ? getComputedStyle(lv).color : '';
       out.coverMark = document.querySelectorAll('.profile-cover .profile-cover-mark').length;
       const cov = document.querySelector('.profile-cover:not(.has-banner)');
@@ -5106,7 +5111,7 @@ def check_b258(br):
     # REVERSED IN 259: "No no no, the profile change is bad there. I don't
     # like the bronze all the way through." The level is blue again and
     # the default cover is the theme, with no rank on it.
-    check("the level and XP bar are blue again, and the cover carries no rank",
+    check("the XP and its bar are blue again, and the cover carries no rank",
           # REVISED IN 270: the level number is the blue coin (#3D8BFF at its
           # deepest stop), not the older #3F7FD0 - blue is what is asserted.
           # REVISED IN 282: the level is the Rank tab's ring, so blue is
@@ -6626,13 +6631,15 @@ def check_b289(br):
         out.tip = tip ? tip.textContent : '';
         document.querySelectorAll('#tour-overlay, #tour-tooltip, #tour-line, #tour-line-dot').forEach(x => x.remove());
         /* Build 315: the three blocks are the standing block, the Next
-           rank card and the badge case. Each carries its own tint (the
-           rank's, the next rank's, none) - one family by shape, not fill */
+           rank card and the badge case. Build 316: the standing block is
+           no box any more (it reads as part of the profile), so the family
+           is the two boxes - and the rank line runs the same width */
         const bl = ['.pf-standing', '.pf-goal', '.pf-case'].map(q => document.querySelector('.profile-hero ' + q));
         if(bl.every(Boolean)){
           const cs = bl.map(b => getComputedStyle(b)), rs = bl.map(b => b.getBoundingClientRect());
-          out.box = { radius: cs.every(c => c.borderTopLeftRadius === cs[0].borderTopLeftRadius),
+          out.box = { radius: cs[1].borderTopLeftRadius === cs[2].borderTopLeftRadius,
             width: rs.every(q => Math.abs(q.width - rs[0].width) < 1), shadow: cs.every(c => c.boxShadow === 'none'),
+            unboxed: cs[0].backgroundImage === 'none' && parseFloat(cs[0].borderTopWidth) === 0,
             wm: !document.querySelector('.profile-hero .profile-rankplate-wm') };
         }
         const eb = document.querySelector('.profile-hero .profile-edit-btn');
@@ -6659,7 +6666,7 @@ def check_b289(br):
           r.get("congrats") == 3 and r.get("congratsAgain") is False, r)
     check("tourRev 3 arms the three Profile tips, starting with Customize",
           r.get("tourRev") == 3 and "Customize" in str(r.get("tip")), r.get("tip"))
-    check("the rank block is one of three: same radius, same width, no glow, no watermark",
+    check("the rank line is no box; the next rank and the badge case are one family: same radius, same width, no glow, no watermark",
           isinstance(r.get("box"), dict) and all(r["box"].values()), r.get("box"))
     check("Customize is a little bigger", r.get("edit", 0) > 13, r.get("edit"))
     ctx.close()
@@ -7890,15 +7897,24 @@ def check_b302(br):
           out.sleepN = av.getAnimations ? av.getAnimations({ subtree: true }).filter(a => !(a.effect && a.effect.target && a.effect.target.closest && a.effect.target.closest('.char-zzz'))).length : 0;
           out.liveN = liveN;
           av.remove();
-          /* 4. three rings, one size; 5. the total at the bottom */
+          /* 4. three rings, one size; 5. the total at the bottom.
+             Build 316: an unranked line has no emblem to measure, so the
+             fixture holds Bronze (one badge, level 25) for this part */
+          const keepU0 = topicsIn(QUESTIONS)[0], keepPerf = store.unitPerfects[keepU0], keepPts = store.lifetime.points;
+          store.unitPerfects[keepU0] = Math.max(keepPerf || 0, badgeThresholdFor(keepU0));
+          store.lifetime.points = Math.max(keepPts || 0, xpForLevel(25));
           showProfile('profile'); await wait(700);
           const wOf = sel => { const e = document.querySelector(sel); return e ? Math.round(e.getBoundingClientRect().width) : null; };
-          /* build 315: the rings are gone; the two rank marks left - the
-             one you hold and the next one - are drawn the same size */
-          out.rings = [wOf('.pf-standing .flare-solo'), wOf('.pf-goal .pf-goal-emb')];
+          /* build 315: the rings are gone. Build 316: the rank you hold is
+             an emblem on its line, the line's own size - not a ring, and
+             not a second big mark beside the next rank's */
+          out.rings = [wOf('.pf-standing .pf-emb'), wOf('.pf-goal .pf-goal-emb')];
           const tot = document.querySelector('.pf-standing .pf-xp-total'), bar = document.querySelector('.pf-standing .profile-xpbar');
           out.total = tot ? tot.textContent : '';
-          out.totalBelowBar = !!(tot && bar && (bar.compareDocumentPosition(tot) & Node.DOCUMENT_POSITION_FOLLOWING));
+          out.totalOnLine = !!(tot && tot.closest('.pf-idline') && bar && (bar.compareDocumentPosition(tot) & Node.DOCUMENT_POSITION_PRECEDING));
+          out.barNums = (document.querySelector('.pf-standing .pf-xpnums') || {}).textContent || '';
+          if(keepPerf === undefined) delete store.unitPerfects[keepU0]; else store.unitPerfects[keepU0] = keepPerf;
+          store.lifetime.points = keepPts;
           const fill = document.querySelector('.profile-xpbar .xpbar-fill');
           out.glide = fill ? getComputedStyle(fill, '::before').animationName : '';
           /* 6. Home's bubbles on the way back */
@@ -7935,11 +7951,18 @@ def check_b302(br):
         check(f"{dev}: a sleeping character is still live and still animating",
               r.get("sleepLive") is True and r.get("sleepN", 0) >= max(3, r.get("liveN", 0) // 2), [r.get("sleepLive"), r.get("liveN"), r.get("sleepN")])
         rings = r.get("rings") or []
-        check(f"{dev}: the rank you hold and the next rank are drawn one size", len(rings) == 2 and None not in rings and max(rings) - min(rings) <= 1, rings)
+        # REVISED IN 316: the held rank is the mockup's small emblem on the
+        # rank line ("I prefer how your current level and rank looked"), so
+        # it is the line's size and the next rank's emblem is the big one.
+        check(f"{dev}: the rank you hold is an emblem the size of its line, the next rank's the big one",
+              len(rings) == 2 and None not in rings and 20 <= rings[0] <= 32 and rings[1] >= 2 * rings[0], rings)
         # REVISED IN 315: "we wouldn't need that total xp there because it'd
         # be with all the xp stuff" - the total joined the bar's numbers.
-        check(f"{dev}: the total XP sits under the bar, with its numbers, and says so",
-              r.get("totalBelowBar") is True and re.match(r"^[0-9,]+ XP total$", r.get("total") or ""), r.get("total"))
+        # REVISED IN 316: back on the rank line, as the mockup had it; the
+        # bar's numbers are this level's and what is left to the next.
+        check(f"{dev}: the total XP is on the rank line above the bar; under the bar, this level's XP and what is left",
+              r.get("totalOnLine") is True and re.match(r"^[0-9,]+ XP$", r.get("total") or "")
+              and re.match(r"^[0-9,]+ / [0-9,]+ XP[0-9,]+ XP to level \d+$", r.get("barNums") or ""), [r.get("total"), r.get("barNums")])
         check(f"{dev}: the XP bar carries its slow light", r.get("glide") == "xp-glide", r.get("glide"))
         check(f"{dev}: back on Home, no flare bubble is empty", r.get("bubbles", 0) >= 7 and r.get("blank") == 0, [r.get("bubbles"), r.get("blank")])
         check(f"{dev}: Sapphire turns on a half-turn loop, Platinum has its spiral, Silver's star glints",

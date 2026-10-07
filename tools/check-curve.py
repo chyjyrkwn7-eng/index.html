@@ -712,9 +712,11 @@ def main():
             # "How do we still get that nice xp stuff where it shows how much
             # over you are, how much till the next level ... we wouldn't need
             # that total xp there because it'd be with all the xp stuff"
-            check("Profile at a cap: this level's XP marked over, the total beside it, the bar banked, and no Next gate box",
+            # REVISED IN 316: the total is back on the rank line ("Silver ·
+            # Level 49 · 85,705 XP"), the mockup that was preferred.
+            check("Profile at a cap: this level's XP marked over under the bar, the total on the rank line, the bar banked, and no Next gate box",
                   pf["nums"] and re.match(r"^[0-9,]+ / [0-9,]+ XP$", pf["nums"]) and pf["over"]
-                  and re.match(r"^[0-9,]+ XP total$", pf["total"] or "") and pf["banked"]
+                  and re.match(r"^[0-9,]+ XP$", pf["total"] or "") and pf["banked"]
                   and not pf["max"] and not pf["nextGate"] and pf["level"] == "Level 29", pf)
             # "I don't like how it means that 5th badge part": a count, not an
             # ordinal, and the XP is said to be kept.
@@ -725,11 +727,13 @@ def main():
             check("the next rank is Bronze, 1 of 2 done, with what is left listed first",
                   pf["goal"] == "Bronze" and pf["sub"] == "1 of 2 done" and len(t) == 2
                   and t[0]["label"] == "Earn 1 badge" and not t[0]["met"] and t[1]["label"] == "Reach level 21" and t[1]["met"], pf)
-            # "the goal number and moving level number should swap colors,
-            # HOWEVER, once you do it ... that's when it would also turn blue"
-            check("an unmet task's goal is coloured and its count grey; a met one is coloured on both sides, with a tick",
-                  len(t) == 2 and grey(t[0]["now"]) and gold(t[0]["need"]) and t[0]["tick"] == ""
-                  and blue(t[1]["now"]) and t[1]["now"] == t[1]["need"] and t[1]["tick"] == "✓", t)
+            # 315 swapped them on request ("the goal number and moving level
+            # number should swap colors"); REVISED IN 316, asked back: "I
+            # preferred how the leveling requirement looked too" - your count
+            # in the colour, the goal plain, met or not.
+            check("a task's count is in its colour and its goal plain grey, met or not; a met one has a tick",
+                  len(t) == 2 and gold(t[0]["now"]) and grey(t[0]["need"]) and t[0]["tick"] == ""
+                  and blue(t[1]["now"]) and grey(t[1]["need"]) and t[1]["tick"] == "✓", t)
             check("what Bronze unlocks is shown as tiles: its theme and its flare",
                   pf["tiles"][:2] == ["Theme", "Flare"], pf["tiles"])
             p49 = w["profile49"]
