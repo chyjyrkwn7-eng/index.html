@@ -13233,6 +13233,24 @@ disagree with it.
   badges to rank up to Gold". The road map's partly-lit stretch ends at
   the colour its progress has reached (silver blending to gold), and the
   state pills are optically centred (letter-spacing carried on the left).
+- **WHAT'S NEW SAYS WHAT HAPPENED, WITH ICONS THAT MATCH THE ROW.**
+  *"some of the icons are bad there and don't match what's being talked
+  about."* Every row's icon depicts its own subject (a shield with
+  chevrons for ranks, a document for Penal Code, a clipboard for test
+  mode), paths are `fill-rule:evenodd`, and the title and eyebrow are
+  centred. The blue box appears only for an account the bands moved
+  (`held && saved > 0`) and says exactly that: you were level N, without
+  the next rank's badges the highest you can hold is M, so your level
+  moved back to M, and none of your XP was lost - not "stays at", which
+  described something that never happened to anybody.
+- **THE PENAL CODE NOTE SHOWS ONCE, ON THE FIRST UNIT SCREEN IN ANY
+  MODE.** `maybeShowPenalVersionNote()` from `showSetup()`, keyed on
+  `class26e.penal55124.seen` (a device key, like `daily.seen`). It WAITS
+  behind any tour, splash, generating overlay, sheet, reward spotlight,
+  intro pop-up or cutscene rather than stacking on one, and sets the key
+  only once it actually mounts. The question count in it is computed, not
+  typed. Every tool fixture sets the key, or the sheet sits over whatever
+  a gate is measuring - the same reason fixtures carry `tourRev`.
 - **AT THE CAP THE RESULTS NUMBER COUNTS UP.** *"The result screen when
   getting xp if you are full, that xp number would just keep going up."*
   The held line is `buildXpNumbers` and the reveal counts its first
