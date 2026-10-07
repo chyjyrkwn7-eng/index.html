@@ -1219,9 +1219,13 @@ def check_b313_qmotion(br):
           abs(drag["back"]["x"]) <= 1 and drag["back"]["pos"], drag)
     check("let go past it, the next question comes in", drag["advanced"] and not drag["clone"], drag)
     pv = drag.get("pv") or {}
-    check("mid-drag the next question is already there, out of focus, and sharpens the further it comes",
-          pv.get("n") == drag.get("want") and "blur" in (pv.get("blur") or "") and pv.get("sharp", 1) < .4
-          and (drag.get("pv2") or 0) > pv.get("sharp", 1) and drag.get("left") == 0, drag)
+    # REVISED IN 314: "even at the halfway point it should still be hard
+    # to read" - nothing of the sharp copy shows during a drag at all now
+    # (it sharpened from the first pixel in 313). Section 99 holds the
+    # rest of the new swipe.
+    check("mid-drag the next question is already there, out of focus, and stays out of focus",
+          pv.get("n") == drag.get("want") and "blur" in (pv.get("blur") or "") and pv.get("sharp", 1) == 0
+          and (drag.get("pv2") if drag.get("pv2") is not None else 1) == 0 and drag.get("left") == 0, drag)
     ctx.close()
 
 
@@ -2252,9 +2256,9 @@ def check_b234(br):
         const sl = hm && hm.querySelector('.slider');
         const defaults = [...sh.querySelectorAll('.sheet-summary-tags .sheet-tag')].map(t => t.textContent);
         const res = { defaults, chips: hm ? hm.querySelectorAll('.chip').length : -1, all: !!(hm && hm.querySelector('.slider-allbtn')),
-                      caption: (sh.querySelector('.drawfrom-sect .bank-caption') || {}).textContent || '',
-                      count: (sh.querySelector('.drawfrom-sect .bank-opt.on .bank-count') || {}).textContent || '',
-                      name: (sh.querySelector('.drawfrom-sect .bank-opt.on .bank-name') || {}).textContent || '' };
+                      star: (() => { const r = sh.querySelector('.drawfrom-sect .bank-starred'); if(!r) return null;
+                        return { text: (r.querySelector('.otext') || {}).firstChild ? r.querySelector('.otext').firstChild.textContent : '',
+                                 hint: (r.querySelector('.ohint') || {}).textContent || '', on: r.querySelector('input').checked }; })() };
         cfg.size = 0; if(sl){ sl.value = sl.min; sl.dispatchEvent(new Event('input', { bubbles:true })); }
         /* build 311: the warning is the "No hundo" chip in the How many row */
         res.dragged = cfg.size; { const hn = sh.querySelector('.hundo-chip'); res.warn = !!hn && !hn.hidden; }
@@ -2326,10 +2330,16 @@ def check_b234(br):
     # REVISED AGAIN IN 313: "should it say all questions from selected
     # unit? Starred questions from selected unit?" - the name says which
     # questions and the line says where from; still never a question count.
-    check("the bank's first choice is All questions, from the selected unit(s), with no question count",
-          sh.get("name") == "All questions"
-          and sh.get("count", "").startswith("from ")
-          and not re.search(r"\d+ question", sh.get("count", "")), sh)
+    # REVISED IN 314: "Maybe all questions should be default and the
+    # starred thing should be a button?" - All questions is simply the
+    # default with no control of its own; the bank is ONE switch,
+    # "Starred questions only", off, saying how many are starred (or that
+    # none are) and never the unit's question count.
+    st = sh.get("star") or {}
+    check("the bank is one switch, Starred questions only, off by default, saying what is starred - no question count",
+          st.get("text") == "Starred questions only" and st.get("on") is False
+          and re.search(r"starred in |No starred questions in ", st.get("hint", ""))
+          and not re.search(r"\d+ question", st.get("hint", "")), sh)
     # Build 254: a default says nothing - no "All questions", "In order"
     # or "No timer" in the top box on an untouched run.
     check("on an untouched run the top box shows no defaults (All questions, In order, No timer)",
@@ -2520,22 +2530,14 @@ def check_b235b(br):
       const box = [...document.querySelectorAll('.pick input')].find(x => x.value === unit);
       if(box){ box.checked = true; box.dispatchEvent(new Event('change', { bubbles: true })); } await wait(200);
       document.getElementById('nextbtn')?.click(); await wait(600);
-      await T('bank', () => { const rows = [...document.querySelectorAll('.bank-opt')];
-        const cap = document.querySelectorAll('.bank-sect .bank-caption');
-        /* build 311: what each draws is IN its box ("should it just be in
-           those boxes?") and the line under the switch is gone */
-        return { rows: rows.map(r => r.dataset.value), bare: rows.every(r => !r.querySelector('.bank-desc') && !r.querySelector('.bank-ico')),
-                 /* 313: with ONE unit "Your unit" needs no second line;
-                    with several it says how many units */
-                 oneLine: [...cap].every(c => c.hidden) && rows.every(r => { const t = ((r.querySelector('.bank-count') || {}).textContent || '').trim();
-                   return r.dataset.value === 'all' ? /^from /.test(t) : t.length > 2; }),
-                 allSays: ((document.querySelector('.bank-opt[data-value="all"] .bank-count') || {}).textContent || ''),
+      /* REVISED IN 314: one switch, not two boxes - see check_b314_bank */
+      await T('bank', () => { const rows = [...document.querySelectorAll('.bank-sect .opt')];
+        return { rows: rows.length, bare: rows.every(r => !r.querySelector('.bank-desc') && !r.querySelector('.bank-ico')),
+                 oneLine: rows.every(r => ((r.querySelector('.ohint') || {}).textContent || '').trim().length > 2),
                  label: (document.querySelector('.bank-sect .slab') || {}).textContent }; });
-      document.querySelector('.bank-opt[data-value="flagged"]')?.click(); await wait(200);
-      await T('bankInfo', () => { const c = document.querySelector('.bank-caption');
-        const fc = document.querySelector('.bank-opt[data-value="flagged"] .bank-count');
+      await T('bankInfo', () => { const fc = document.querySelector('.bank-starred .ohint');
         return { info: !!document.querySelector('.bank-info, .bank-infobody'), shown: !!fc, len: fc ? (fc.textContent || '').trim().length : 0 }; });
-      cfg.timer = 'down'; cfg.timerMinutes = 20; document.querySelector('.bank-opt[data-value="flagged"]')?.click(); await wait(200);
+      cfg.timer = 'down'; cfg.timerMinutes = 20; document.querySelector('.bank-starred')?.click(); await wait(200);
       await T('tags', () => { const ts = [...document.querySelectorAll('.sheet-summary .sheet-summary-tags .sheet-tag')];
         const card = (document.querySelector('.unitoptions-modal-sheet .more-toggle') || {}).parentElement;
         return { tags: ts.length, texts: ts.map(t => t.textContent), icons: ts.every(t => !!t.querySelector('svg')),
@@ -2587,10 +2589,13 @@ def check_b235b(br):
     # is allowed 60 characters, still one short line.
     # REVISED IN 311: the words moved INTO the boxes and the line under
     # the switch went - "should it just be in those boxes?"
-    check("Questions from: Your units and Starred, each saying what it draws in its own box - no info dot",
-          b.get("rows") == ["all", "flagged"] and b.get("bare") and b.get("oneLine")
+    # REVISED IN 314: "There's gotta be a better way to do the starred
+    # question and all questions thing" - one switch row under "Questions",
+    # its one short line saying how many are starred.
+    check("Questions: one Starred switch with one short line under it - no info dot",
+          b.get("rows") == 1 and b.get("bare") and b.get("oneLine")
           and bi.get("shown") and 0 < bi.get("len", 0) <= 60 and not bi.get("info")
-          and b.get("label") == "Questions from", [b, bi])
+          and b.get("label") == "Questions", [b, bi])
     t = r["tags"] if isinstance(r["tags"], dict) else {}
     # Build 250: the settings are back in the top box ("still needs to
     # say the settings of the test from that menu, in the top like
@@ -3708,7 +3713,10 @@ def check_penal_versions(br):
     pg.wait_for_timeout(600)
     tap()
     choose("short")
-    rv = pg.evaluate("""()=>{ document.getElementById('nextbtn').click(); document.querySelector('.sheet-begin-btn').click();
+    # build 314: Review opens through LOADING REVIEW (~2s)
+    rv = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms));
+      document.getElementById('nextbtn').click(); document.querySelector('.sheet-begin-btn').click();
+      await wait(100); while(document.getElementById('teststart-overlay')) await wait(30); await wait(300);
       return document.querySelectorAll('.review-question').length; }""")
     check("Review of slides 55-124 lists those questions only", rv == len(PENAL_SLIDES_SRCS), rv)
     # 10. the Virtual Room: the host's pick goes on the room, and only the room decides
@@ -6268,7 +6276,8 @@ def check_b284(br):
       const box = [...document.querySelectorAll('.pick input')].find(x => x.value === unit);
       if(box){ box.checked = true; box.dispatchEvent(new Event('change', { bubbles: true })); } await wait(200);
       document.getElementById('nextbtn')?.click(); await wait(600);
-      out.banks = [...document.querySelectorAll('.bank-opt')].map(r => r.dataset.value);
+      /* REVISED IN 314: the bank is one Starred switch (All is the default) */
+      out.banks = document.querySelector('.bank-starred') && !document.querySelector('.bank-opt') ? ['all', 'flagged'] : [...document.querySelectorAll('.bank-opt')].map(r => r.dataset.value);
       document.querySelector('.unitoptions-modal-scrim')?.click(); await wait(400);
       const row = [...document.querySelectorAll('.pick')].find(r => (r.querySelector('input') || {}).value === unit);
       if(row){ row.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 50, clientY: 50, button: 0 }));
@@ -6347,9 +6356,11 @@ def check_b285(br):
           store.seenUnitSelectTour = true; cfg.mode = 'drill'; const unit = topicsIn(QUESTIONS)[0]; cfg.units = [unit];
           showSetup(); await wait(700);
           document.getElementById('nextbtn')?.click(); await wait(800);
-          const l = document.querySelector('.unitoptions-modal-sheet .bank-opts'), lr = l.getBoundingClientRect();
-          const os = [...l.querySelectorAll('.bank-opt')].map(o => o.getBoundingClientRect());
-          out.bank = { inner: Math.round(lr.width), used: Math.round(os[os.length - 1].right - os[0].left), n: os.length };
+          /* REVISED IN 314: the two-box bar became one switch row, which
+             fills the sheet's column like every other card */
+          const l = document.querySelector('.unitoptions-modal-sheet .bank-rows'), lr = l.getBoundingClientRect();
+          const col = document.querySelector('.unitoptions-modal-sheet .howmany-sect').getBoundingClientRect();
+          out.bank = { inner: Math.round(col.width), used: Math.round(lr.width), n: l.querySelectorAll('.opt').length };
           document.querySelector('.unitoptions-modal-scrim')?.click(); await wait(500);
           const row = [...document.querySelectorAll('.pick')].find(r => (r.querySelector('input') || {}).value === unit);
           row.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 50, clientY: 50, button: 0 }));
@@ -6361,8 +6372,8 @@ def check_b285(br):
           } catch(e){ out.threw = String(e && e.stack || e); }
           return out; }""")
         b, d = r.get("bank") or {}, r.get("door") or {}
-        check("%s: All and Flagged fill the Question bank bar" % label,
-              b.get("n") == 2 and b.get("inner", 0) - b.get("used", 0) <= 12, r.get("bank") or r.get("threw"))
+        check("%s: the Starred switch row fills the sheet's column (build 314)" % label,
+              b.get("n") == 1 and b.get("inner", 0) - b.get("used", 0) <= 12, r.get("bank") or r.get("threw"))
         check("%s: the Flagged button spans its row, is taller, and its title is centred" % label,
               d.get("w") == d.get("row") and d.get("h", 0) >= 56 and d.get("off", 99) <= 3, r.get("door") or r.get("threw"))
         ctx.close()
@@ -6893,7 +6904,8 @@ def check_b297(br):
         modal.hidden = true;
 
         /* 3. the box opens exactly the flagged ones, each with the test's flag, on */
-        document.querySelector('.pick-flagged-all').click(); await wait(700);
+        /* build 314: through LOADING REVIEW first */
+        document.querySelector('.pick-flagged-all').click(); await wait(200); while(document.getElementById('teststart-overlay')) await wait(30); await wait(300);
         const qs = [...document.querySelectorAll('.screen-answerreview .review-question')];
         out.list = { n: qs.length, all: want.every(i => qs.some(q => q.querySelector('.review-question-text').textContent === QUESTIONS[i].q)),
                      title: (document.querySelector('.screen-answerreview .ar-head-title') || {}).textContent,
@@ -7920,8 +7932,14 @@ def check_b302_flagnote(br):
     is over it." On every matrix size, upright and on its side: no toast,
     a label on the flag's own line, inside the screen, clear of the flag,
     Pause, the chat button and the top bar, and with no fill of its own
-    in a test. Written against build 301; fails there."""
-    print("\n72. build 302: the flag says so beside the flag, on every device")
+    in a test. Written against build 301; fails there.
+
+    REVISED IN 314: "Star removed/and starred wording when hitting the
+    button, we don't need that anymore." The label is gone; what is held
+    on every size now is that a tap on the star says NOTHING - no label,
+    no toast - and the star itself still turns on. Fails on 313, where
+    every size shows "Starred"."""
+    print("\n72. build 314: tapping the star shows no words, on every device")
     sizes = []
     for (w, h) in FLAGNOTE_VIEWPORTS:
         sizes.append((w, h))
@@ -7944,7 +7962,8 @@ def check_b302_flagnote(br):
               f.click(); await wt(260);
               const R = e => e && e.getBoundingClientRect();
               const n = document.querySelector('.flag-note'), t = document.getElementById('toast');
-              if(!n) return { noNote: true, toast: !!(t && t.textContent) };
+              const on = f.classList.contains('on') && isFlagged(order[pos]);
+              if(!n) return { noNote: true, on, toast: !!(t && t.textContent && t.classList.contains('show')) };
               const nr = R(n), fr = R(f);
               const hit = (a, b) => !!(a && b && b.width && !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom));
               const cs = getComputedStyle(n);
@@ -7965,20 +7984,13 @@ def check_b302_flagnote(br):
         tag = "%dx%d" % (w, h)
         if r.get("err") or r.get("noFlag"):
             bad.append("%s: %s" % (tag, r)); continue
-        if r.get("noNote"):
-            bad.append("%s: no label beside the flag (toast: %s)" % (tag, r.get("toast"))); continue
-        for k, what in (("toast", "the old top bar still shows"), ("hitsFlag", "covers the flag"),
-                        ("hitsPause", "covers Pause"), ("hitsChat", "is under the chat button"),
-                        ("hitsTop", "sits in the top bar"), ("filled", "has a fill, like a button")):
-            if r.get(k):
-                bad.append("%s: label %s" % (tag, what))
-        if not r.get("inView"):
-            bad.append("%s: label is off the screen" % tag)
-        if not r.get("onLine"):
-            bad.append("%s: label is not on the flag's line" % tag)
-        if r.get("text") not in ("Flagged", "Starred"):
-            bad.append("%s: label reads %r" % (tag, r.get("text")))
-    check("the flag label lands beside the flag on all %d sizes" % len(sizes), not bad, bad[:6])
+        if not r.get("noNote"):
+            bad.append("%s: a label still says %r" % (tag, r.get("text"))); continue
+        if r.get("toast"):
+            bad.append("%s: a toast says it instead" % tag)
+        if not r.get("on"):
+            bad.append("%s: the star did not turn on" % tag)
+    check("a tap on the star turns it on and says nothing, on all %d sizes" % len(sizes), not bad, bad[:6])
 
 
 def check_b303(br):
@@ -8065,7 +8077,8 @@ def check_b303(br):
           cfg.mode = 'review'; cfg.flashcards = true; showSetup(); await wait(300); document.getElementById('nextbtn').click(); await wait(400);
           out.sheetTitle = (document.querySelector('.unitoptions-modal-title') || {}).textContent;
           out.beginText = document.querySelector('.sheet-begin-btn').textContent;
-          document.querySelector('.sheet-begin-btn').click(); await wait(700);
+          /* build 314: through LOADING FLASHCARDS first */
+          document.querySelector('.sheet-begin-btn').click(); await wait(200); while(document.getElementById('teststart-overlay')) await wait(30); await wait(300);
           const card = document.querySelector('.fc-card');
           out.fcCard = !!card;
           out.fcCount = document.getElementById('testqcounter').textContent;
@@ -8110,7 +8123,8 @@ def check_b303(br):
         check(dev + ": Next rises, as a pill clear of the edges",
               r.get("nextRising") is True and np_.get("w", 9999) < np_.get("vw", 0) - 30 and np_.get("gapBottom", 0) >= 12 and np_.get("radius", "0px") != "0px", np_)
         check(dev + ": the flag is a star, and fills when tapped", r.get("star") is True and r.get("starOn") is True, (r.get("star"), r.get("starOn")))
-        check(dev + ": and says Starred", r.get("starNote") == "Starred", r.get("starNote"))
+        # REVISED IN 314: the "Starred" / "Star removed" words are gone.
+        check(dev + ": and shows no words beside it (build 314)", r.get("starNote") == "", r.get("starNote"))
         check(dev + ": paused, the timer stays up in its paused colour", r.get("pausedTimer") is True and r.get("resumedTimer") is True)
         check(dev + ": Instant feedback is not offered in Drill", r.get("drillHasFeedback") is False)
         check(dev + ": in Exam with it on, a pick is judged and locked",
@@ -10400,6 +10414,450 @@ def check_b313_fx(br):
     ctx.close()
 
 
+
+# --------------------------------------------------------------------------
+# Build 314: the test and study flow
+# --------------------------------------------------------------------------
+
+B314_RUN = """()=>{ cfg.units=[topicsIn(QUESTIONS)[1]]; cfg.mode='drill'; cfg.size=30; cfg.source='all';
+  const u=topicsIn(QUESTIONS)[1], idx=[]; QUESTIONS.forEach((q,i)=>{ if(q.topic===u && idx.length<30) idx.push(i); });
+  beginRun(idx); }"""
+
+B314_TOUCH = """()=>{
+  window.__wait = ms => new Promise(r => setTimeout(r, ms));
+  window.__raf = () => new Promise(r => requestAnimationFrame(r));
+  window.__ensure = async () => { const n=document.getElementById('nextbtn');
+    if(!n || n.hidden){ const all=[...document.querySelectorAll('#stage .choice')]; const qi=order[pos], oo=optionOrder(qi);
+      all[oo.indexOf(QUESTIONS[qi].answer)].click(); await __wait(1300); } };
+  window.__fire = (type, x, y) => { const p = document.querySelector('#stage > .panel');
+    const t = new Touch({ identifier: 9, target: p, clientX: x, clientY: y });
+    p.dispatchEvent(new TouchEvent(type, { bubbles: true, cancelable: true,
+      touches: type === 'touchend' ? [] : [t], targetTouches: type === 'touchend' ? [] : [t], changedTouches: [t] })); };
+  window.__px = () => { const p = document.querySelector('#stage > .panel'); const m = getComputedStyle(p).transform.match(/matrix\\(([^)]+)\\)/);
+    return m ? +m[1].split(',')[4] : 0; };
+  /* drag from x0 to x1 in n moves, `gap` ms apart, then hold `hold` ms; returns what the preview looked like */
+  window.__drag = async (x0, x1, n, gap, hold) => {
+    __fire('touchstart', x0, 600); await __raf();
+    for(let i = 1; i <= n; i++){ __fire('touchmove', x0 + (x1 - x0) * i / n, 602); if(gap) await __wait(gap); else await __raf(); }
+    if(hold) await __wait(hold);
+    const pair = document.querySelector('.q-blurpair');
+    return pair ? { sharp: +getComputedStyle(pair.children[1]).opacity, soft: +getComputedStyle(pair.children[0]).opacity,
+      blur: parseFloat((getComputedStyle(pair.children[0]).filter.match(/blur\\(([\\d.]+)px/) || [0, 0])[1]),
+      n: (pair.querySelector('.qnum') || {}).textContent } : null; };
+}"""
+
+
+def check_b314_swipe(br):
+    """Build 314: a swipe has a line to cross, and the next question stays
+    unreadable until it is crossed. "if I only swipe a little, it [should
+    not] move to the next question, it would kinda bounce back ... even at
+    the halfway point it should still be hard to read", and Next / auto /
+    a full-speed flick "still smooth and that blurry stuff doesn't kinda
+    make it look bad". Written against 313, where a 40px swipe advanced,
+    the stand-in sharpened from the first pixel and Next arrived through
+    a blurred copy; fails there."""
+    print("\n99. build 314: the swipe - a line to cross, blurred until it is crossed, clean fast paths")
+    for label, w, h in DEVICES:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, touch=True)
+        pg.evaluate(B314_RUN)
+        pg.wait_for_selector(".choice", timeout=20000)
+        pg.wait_for_timeout(800)
+        pg.evaluate(B314_TOUCH)
+        r = pg.evaluate("""async ()=>{ const out = {};
+          const push = document.querySelector('#stage > .panel').getBoundingClientRect().width + 28;
+          const X0 = innerWidth - 24;
+          /* 1. a slow drag to a fifth of the way, let go: back, same question */
+          await __ensure(); let q0 = pos;
+          await __drag(X0, X0 - push * .2, 8, 40, 120); __fire('touchend', X0 - push * .2, 602); await __wait(120);
+          const mid = __px(); await __wait(420);
+          out.small = { advanced: pos !== q0, x: Math.round(__px()), midReturn: Math.round(mid), pairs: document.querySelectorAll('.q-blurpair').length };
+          /* 2. a quick nudge, 10% of the way in two frames: still a bounce */
+          await __drag(X0, X0 - push * .1, 2, 0, 0); __fire('touchend', X0 - push * .1, 602); await __wait(500);
+          out.nudge = { advanced: pos !== q0, x: Math.round(__px()) };
+          /* 3. held at half way and at three quarters: blurred, nothing sharp */
+          out.half = await __drag(X0, X0 - push * .5, 10, 30, 200);
+          for(let i = 1; i <= 5; i++){ __fire('touchmove', X0 - push * (.5 + .25 * i / 5), 602); await __wait(30); }
+          await __wait(200);
+          const pr = document.querySelector('.q-blurpair');
+          out.threeq = pr ? { sharp: +getComputedStyle(pr.children[1]).opacity } : null;
+          out.want = 'Question ' + (pos + 2);
+          /* 4. let go there, slowly: it commits, and the arrival sharpens while it moves */
+          const frames = []; let done = false;
+          (async () => { while(!done){ await __raf(); const n = document.querySelector('#stage > .panel');
+            const m = getComputedStyle(n).transform.match(/matrix\\(([^)]+)\\)/);
+            frames.push({ x: m ? +m[1].split(',')[4] : 0, o: +getComputedStyle(n).opacity, q: pos }); } })();
+          __fire('touchend', X0 - push * .75, 602);
+          await __wait(600); done = true;
+          out.commit = { advanced: pos !== q0, left: document.querySelectorAll('.q-blurpair, body > .panel').length };
+          const arriving = frames.filter(f => f.q !== q0);
+          /* let go at 3/4: sharp by the last fifth of the quarter still to go */
+          out.lateSoft = arriving.filter(f => f.x < push * .25 * .2 && f.o < .97).length;
+          out.arrivingN = arriving.length;
+          /* 5. a full-speed flick a quarter of the way: commits */
+          await __ensure(); q0 = pos;
+          __fire('touchstart', X0, 600); for(let i = 1; i <= 3; i++){ await __wait(16); __fire('touchmove', X0 - push * .25 * i / 3, 602); }
+          __fire('touchend', X0 - push * .25, 602); await __wait(600);
+          out.flick = { advanced: pos !== q0 };
+          /* 6. Next: a solid push, nothing blurred, nothing re-fading in the copy */
+          await __ensure(); await __wait(300);
+          const right = document.querySelector('#stage .choice.is-right');
+          const want = right ? getComputedStyle(right).borderTopColor : null;
+          const nf = []; let nd = false;
+          document.getElementById('nextbtn').click();
+          const anims = document.getAnimations().filter(a => a.effect && a.effect.target && (a.effect.target.closest('body > .panel') || a.effect.target.matches('#stage > .panel')));
+          out.animProps = [...new Set(anims.flatMap(a => a.effect.getKeyframes().flatMap(k => Object.keys(k).filter(x => !['offset','easing','composite','computedOffset'].includes(x)))))].sort();
+          out.cssTransitionsInCopy = document.getAnimations().filter(a => a.effect && a.effect.target && a.effect.target.closest && a.effect.target.closest('body > .panel') && a.constructor.name !== 'Animation').length;
+          for(let i = 0; i < 14; i++){ await __raf(); const c = document.querySelector('body > .panel'), n = document.querySelector('#stage > .panel');
+            const cr = c && c.querySelector('.choice.is-right');
+            nf.push({ blur: !!document.querySelector('.q-blurpair'), o: n ? +getComputedStyle(n).opacity : 1,
+                      copyRight: cr ? getComputedStyle(cr).borderTopColor : null }); }
+          out.next = { blurred: nf.filter(f => f.blur).length, minOpacity: Math.min(...nf.map(f => f.o)),
+                       copyRightChanged: nf.filter(f => f.copyRight && want && f.copyRight !== want).length, want };
+          await __wait(400);
+          /* 7. a spring-back caught by a new touch is held where it is, no snap */
+          await __ensure(); q0 = pos;
+          await __drag(X0, X0 - push * .3, 6, 30, 50); __fire('touchend', X0 - push * .3, 602);
+          await __wait(90); const before = __px(); __fire('touchstart', X0, 600); await __raf(); const after = __px();
+          __fire('touchend', X0, 600); await __wait(500);
+          out.catch = { before: Math.round(before), after: Math.round(after), advanced: pos !== q0, x: Math.round(__px()) };
+          return out; }""")
+        ctx.close()
+        check("%s a slow drag a fifth of the way springs back to the same question" % label,
+              not r["small"]["advanced"] and abs(r["small"]["x"]) <= 1 and r["small"]["midReturn"] < -2 and r["small"]["pairs"] == 0, r["small"])
+        check("%s a quick short nudge springs back too" % label,
+              not r["nudge"]["advanced"] and abs(r["nudge"]["x"]) <= 1, r["nudge"])
+        hf, tq = r.get("half") or {}, r.get("threeq") or {}
+        check("%s held at halfway the next question is there, heavily blurred, with nothing sharp" % label,
+              hf.get("n") == r["want"] and hf.get("sharp") == 0 and hf.get("blur", 0) >= 8 and hf.get("soft", 0) > .9, hf)
+        check("%s and at three quarters still nothing sharp" % label, tq.get("sharp") == 0, tq)
+        check("%s released past the line it goes, and sharpens while moving - fully sharp before it slows into place" % label,
+              r["commit"]["advanced"] and r["commit"]["left"] == 0 and r["arrivingN"] >= 2 and r["lateSoft"] == 0,
+              (r["commit"], r["lateSoft"], r["arrivingN"]))
+        check("%s a full-speed flick a quarter of the way commits" % label, r["flick"]["advanced"], r["flick"])
+        check("%s Next is a solid push: no blurred copy, the new question never below 85%%" % label,
+              r["next"]["blurred"] == 0 and r["next"]["minOpacity"] >= .84, r["next"])
+        check("%s the moves animate transform and opacity only, and the leaving copy replays nothing" % label,
+              r["animProps"] == ["opacity", "transform"] and r["cssTransitionsInCopy"] == 0 and r["next"]["copyRightChanged"] == 0,
+              (r["animProps"], r["cssTransitionsInCopy"], r["next"]["copyRightChanged"]))
+        c = r["catch"]
+        check("%s a spring-back caught by a new touch stays where it was" % label,
+              c["before"] < -2 and abs(c["after"] - c["before"]) <= 3 and not c["advanced"] and abs(c["x"]) <= 1, c)
+
+
+def check_b314_feel(br):
+    """Build 314: the answer lands sooner and the Next pill rises later.
+    "The incorrect one looks good but that delay is too long, could be cut
+    in half, and then the vibration effect could be slightly toned down.
+    The correct answer, the delay is too strong as well" and "The next
+    question button that comes up is now JUST slightly too quick ... it
+    was better before." Measured on 313: the colour was half there 282ms
+    after a right tap and 284ms after a wrong one, the nudge was 4px, and
+    Next began rising 500ms after the tap (build 311: 849ms). Fails there."""
+    print("\n100. build 314: the answer lands in half the time, the nudge is softer, Next rises at 311's pace")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate(B314_RUN)
+    pg.wait_for_selector(".choice", timeout=20000)
+    pg.wait_for_timeout(900)
+    meas = """async (want) => {
+      const qi=order[pos], oo=optionOrder(qi), right=oo.indexOf(QUESTIONS[qi].answer);
+      const slot = want==='right' ? right : (right+1)%oo.length;
+      const btn=()=>document.querySelector('#stage .qpanel .choice[data-index="'+slot+'"]');
+      const parse=c=>c.match(/[\\d.]+/g).map(Number);
+      const b0=btn(); const neutral=parse(getComputedStyle(b0).borderTopColor);
+      const t0=performance.now(); b0.click(); const out=[]; let rise=null;
+      for(let i=0;i<75;i++){ await new Promise(r=>requestAnimationFrame(r)); const b=btn(); const n=document.getElementById('nextbtn');
+        if(rise===null && n && !n.hidden && +getComputedStyle(n).opacity>.02) rise=performance.now()-t0;
+        if(!b) continue; const cs=getComputedStyle(b); out.push({t:performance.now()-t0, c:parse(cs.borderTopColor), tf:cs.transform}); }
+      const fin=out[out.length-1].c, d=c=>Math.hypot(c[0]-neutral[0],c[1]-neutral[1],c[2]-neutral[2]), D=d(fin)||1;
+      const half=out.find(o=>d(o.c)/D>=.5);
+      let dx=0; out.forEach(o=>{ const m=o.tf.match(/matrix\\(([^)]+)\\)/); if(m) dx=Math.max(dx,Math.abs(+m[1].split(',')[4])); });
+      return { half: half?Math.round(half.t):null, dx: +dx.toFixed(2), rise: rise===null?null:Math.round(rise) }; }"""
+    res = {"wrong": [], "right": []}
+    for _ in range(3):
+        res["wrong"].append(pg.evaluate(meas, "wrong")); pg.wait_for_timeout(2800)
+        res["right"].append(pg.evaluate(meas, "right")); pg.wait_for_timeout(600)
+        pg.evaluate("()=>advance()"); pg.wait_for_timeout(700)
+    ctx.close()
+    med = lambda xs: sorted(xs)[len(xs) // 2]
+    wh = med([x["half"] for x in res["wrong"] if x["half"] is not None] or [999])
+    rh = med([x["half"] for x in res["right"] if x["half"] is not None] or [999])
+    rise = med([x["rise"] for x in res["right"] if x["rise"] is not None] or [0])
+    ndx = max(x["dx"] for x in res["wrong"])
+    check("a wrong pick's red is half there within 170ms of the tap (313: 284)", wh <= 170, wh)
+    check("a right pick's green is half there within 170ms of the tap (313: 282)", rh <= 170, rh)
+    check("the wrong nudge is a quarter softer - 3px at most (313: 4)", 1.5 <= ndx <= 3.2, ndx)
+    check("Next starts rising 780-920ms after the tap, as in 311 (313: 500)", 780 <= rise <= 920, rise)
+
+
+def check_b314_study(br):
+    """Build 314: Review's Starred questions star is filled only once there
+    is something starred, and stays true after a unit's details change it;
+    Learn and Flashcards get their own loading screen, half a second
+    shorter than a test's. "that star, just fill it in with color ONCE
+    someone actually has a flagged question" and "give flashcards or
+    regular review a loading screen ... take the loading time down by half
+    a second". Fails on 313: no filled star, no loading screen."""
+    print("\n101. build 314: the starred box's star, and LOADING REVIEW / LOADING FLASHCARDS")
+    for label, w, h in DEVICES:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate("""async ()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); const out={};
+          document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());
+          store.flagged = {}; cfg.mode='review'; cfg.units=[]; showSetup(); await wait(700);
+          const box=()=>document.querySelector('#stage .pick-flagged-all');
+          const star=()=>box().querySelector('.starred-card-star');
+          out.empty = { filled: star().classList.contains('is-filled'), fill: (star().querySelector('path')||{}).getAttribute && star().querySelector('path').getAttribute('fill') };
+          /* starred inside a unit's details: the box catches up when they close */
+          const u = topicsIn(QUESTIONS)[1]; const qi = QUESTIONS.findIndex(q => (q.topic||'').trim() === u.trim());
+          const row = [...document.querySelectorAll('#stage label.pick')].find(p => p.querySelector('.pname').textContent.trim() === u.trim());
+          openUnitDetail(row, u.trim(), 'review'); await wait(500);
+          toggleFlag(qi);
+          document.querySelector('.unitdetail-scrim, .unitdetail-backdrop') ? document.querySelector('.unitdetail-scrim, .unitdetail-backdrop').click() : null; await wait(600);
+          out.after = { filled: star().classList.contains('is-filled'), sub: box().querySelector('.pcount').textContent, empty: box().classList.contains('is-empty') };
+          /* the filled star is the in-test gold, not 308's saturated one */
+          const st = [...star().querySelectorAll('stop')].map(s => s.getAttribute('stop-color'));
+          out.stops = st;
+          /* LOADING REVIEW, from the box */
+          const t0 = performance.now(); box().click(); await wait(80);
+          const tabs = document.querySelector('.bottomtabs');
+          out.rv = { label: (document.getElementById('teststart-label')||{}).textContent, tabsHidden: !tabs || tabs.hidden };
+          while(document.getElementById('teststart-overlay')) await wait(15);
+          out.rv.ms = Math.round(performance.now() - t0);
+          out.rv.screen = !!document.querySelector('.screen-answerreview');
+          /* LOADING FLASHCARDS, from the sheet */
+          cfg.units=[]; showSetup(); await wait(600);
+          row && [...document.querySelectorAll('#stage label.pick')][1].click(); await wait(300);
+          document.getElementById('nextbtn').click(); await wait(900);
+          cfg.flashcards = true;
+          const t1 = performance.now(); document.querySelector('.sheet-begin-btn').click(); await wait(80);
+          out.fc = { label: (document.getElementById('teststart-label')||{}).textContent };
+          while(document.getElementById('teststart-overlay')) await wait(15);
+          out.fc.ms = Math.round(performance.now() - t1); out.fc.screen = !!document.querySelector('.fc-screen');
+          cfg.flashcards = false;
+          /* a test still has its own 2.5s LOADING TEST */
+          cfg.mode='drill'; cfg.units=[topicsIn(QUESTIONS)[1]]; cfg.size=0; cfg.source='all';
+          const t2 = performance.now(); beginRun(QUESTIONS.map((q,i)=>i).filter(i=>(QUESTIONS[i].topic||'')===topicsIn(QUESTIONS)[1]).slice(0,5)); await wait(80);
+          out.test = { label: (document.getElementById('teststart-label')||{}).textContent };
+          while(document.getElementById('teststart-overlay')) await wait(15);
+          out.test.ms = Math.round(performance.now() - t2);
+          return out; }""")
+        ctx.close()
+        check("%s with nothing starred, the box's star is the white outline" % label,
+              r["empty"]["filled"] is False, r["empty"])
+        check("%s starred in a unit's details, the box fills its star and counts it when they close" % label,
+              r["after"]["filled"] is True and not r["after"]["empty"] and r["after"]["sub"].startswith("1 question"), r["after"])
+        check("%s the filled star is the in-test star's soft gold (#E8C770), not 308's #FFD233" % label,
+              "#E8C770" in r["stops"] and "#FFD233" not in r["stops"], r["stops"])
+        check("%s the Starred box opens through LOADING REVIEW, ~2s, with the tab bar off it" % label,
+              r["rv"]["label"] == "LOADING REVIEW" and r["rv"]["tabsHidden"] and 1850 <= r["rv"]["ms"] <= 2350 and r["rv"]["screen"], r["rv"])
+        check("%s flashcards open through LOADING FLASHCARDS, ~2s" % label,
+              r["fc"]["label"] == "LOADING FLASHCARDS" and 1850 <= r["fc"]["ms"] <= 2350 and r["fc"]["screen"], r["fc"])
+        check("%s and a test keeps LOADING TEST at ~2.5s - half a second longer" % label,
+              r["test"]["label"] == "LOADING TEST" and r["test"]["ms"] >= 2400 and r["test"]["ms"] - r["fc"]["ms"] >= 250, (r["test"], r["fc"]["ms"]))
+
+
+def check_b314_sheet(br):
+    """Build 314, the start sheet: the question bank is one switch, Start's
+    lighting-up is one crisp beat, and Max says so when it is already
+    there. "There's gotta be a better way to do the starred question and
+    all questions thing ... Maybe all questions should be default and the
+    starred thing should be a button?", "the timing of that pulse is bad
+    and it's weak" and "if it's already at that, give a small thing that
+    says max time set". On 313 the bank was two boxes, the pop was a
+    1.06 scale waiting .5s behind a .6s fill, and a tap on Max at 90 did
+    nothing. Fails there."""
+    print("\n102. build 314: the bank is one Starred switch; Start lights in one beat; Max says it is set")
+    for label, w, h in DEVICES:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate("""async ()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); const out={};
+          document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());
+          store.seenUnitSelectTour = true; store.seenUnitHoldTip = true; store.flagged = {};
+          cfg.mode='drill'; cfg.units=[]; cfg.size=0; cfg.source='all'; cfg.timer='none'; showSetup(); await wait(1000);
+          const tab=document.getElementById('bottomtab-start');
+          const pick=[...document.querySelectorAll('.screen-setup .pick')].find(p => /Identity Crimes/.test(p.textContent));
+          pick.click(); await wait(30);
+          /* the beat, read off the animations themselves (wall-clock frame
+             sampling is at the mercy of a loaded machine) */
+          const an = tab.getAnimations({ subtree: true });
+          const fill = an.find(a => a.animationName === 'start-fill-in'), punch = an.find(a => a.animationName === 'start-ready-punch');
+          const tm = a => a ? a.effect.getComputedTiming() : null;
+          const peak = punch ? Math.max(...punch.effect.getKeyframes().map(k => { const m = String(k.transform || '').match(/scale\\(([\\d.]+)/); return m ? +m[1] : 1; })) : 0;
+          out.start = { fillMs: fill ? tm(fill).duration : null, punchDelay: punch ? tm(punch).delay : null,
+                        punchMs: punch ? tm(punch).duration : null, peak };
+          await wait(1000);
+          /* the sheet: no bank boxes, one switch, off */
+          tab.click(); await wait(1000);
+          const sheet=document.querySelector('#unitoptions-modal');
+          const row=sheet.querySelector('.bank-starred');
+          out.bank = { boxes: sheet.querySelectorAll('.bank-opt').length, row: !!row,
+                       text: row ? row.querySelector('.otext').firstChild.textContent : null,
+                       hint: row ? row.querySelector('.ohint').textContent : null,
+                       disabled: row ? row.querySelector('input').disabled : null, source: cfg.source };
+          /* starred in this unit: the switch takes the run to them, How many follows */
+          const u = 'Identity Crimes', ids = QUESTIONS.map((q,i)=>i).filter(i=>(QUESTIONS[i].topic||'').trim()===u);
+          [0, 3, 6].forEach(k => toggleFlag(ids[k]));
+          document.querySelector('.unitoptions-modal-scrim')?.click(); await wait(600); tab.click(); await wait(1000);
+          const sh2 = document.querySelector('#unitoptions-modal'), row2 = sh2 && sh2.querySelector('.bank-starred');
+          out.bank2 = {};
+          if(row2){
+          out.bank2 = { hint: row2.querySelector('.ohint').textContent, disabled: row2.querySelector('input').disabled };
+          row2.click(); await wait(400);
+          out.bank2.source = cfg.source;
+          out.bank2.howMany = (sh2.querySelector('.howmany-sect .sect-headval') || {}).textContent;
+          out.bank2.summary = (sh2.querySelector('.sheet-summary-line') || {}).textContent;
+          row2.click(); await wait(400); out.bank2.back = cfg.source;
+          out.bank2.howManyBack = (sh2.querySelector('.howmany-sect .sect-headval') || {}).textContent;
+          }
+          /* All at All: the note was dropped with the bank boxes */
+          const note=()=>sh2.querySelector('.slider-topnote');
+          sh2.querySelector('.howmany-sect .slider-allbtn').click(); await wait(300); out.allNote = !!note();
+          /* Max: a tap that changes the value says nothing; at the top it says so */
+          const inp=[...sh2.querySelectorAll('input[type=checkbox]')].find(x=>{ let e=x; for(let k=0;k<4&&e;k++){ e=e.parentElement; if(e && /Time limit/.test(e.textContent) && !/Stopwatch/.test(e.textContent)) return true; } return false; });
+          inp && inp.click(); await wait(500);
+          const mb=sh2.querySelector('.minutes-sect .slider-maxbtn'); mb.click(); await wait(500); out.maxOnChange = !!note();
+          await wait(2400); mb.scrollIntoView({block:'center'}); await wait(300); mb.click(); await wait(300);
+          const n2=note(); out.max = n2 ? n2.innerText.replace(/\\n/g,' | ') : null;
+          if(n2){ n2.style.pointerEvents='auto'; const rr=n2.getBoundingClientRect(); const hit=document.elementFromPoint((rr.left+rr.right)/2,(rr.top+rr.bottom)/2);
+            out.maxVisible = !!hit && (hit===n2 || n2.contains(hit)) && rr.left >= 0 && rr.right <= innerWidth; n2.style.pointerEvents=''; }
+          await wait(2600); out.maxGone = !note();
+          return out; }""")
+        ctx.close()
+        s0 = r["start"]
+        check("%s Start's beat: a .3s fill, the punch from 180ms, to 1.08+ (313: .6s, .5s, 1.06)" % label,
+              s0["fillMs"] is not None and s0["fillMs"] <= 320 and s0["punchDelay"] is not None and s0["punchDelay"] <= 220
+              and s0["peak"] >= 1.08, s0)
+        b0, b2 = r["bank"], r["bank2"]
+        check("%s the bank is one switch, Starred questions only - no All / Starred boxes - off by default" % label,
+              b0["boxes"] == 0 and b0["row"] and b0["text"] == "Starred questions only" and b0["source"] == "all", b0)
+        check("%s with nothing starred it is greyed and says so" % label,
+              b0["disabled"] is True and b0["hint"] == "No starred questions in the selected unit yet", b0)
+        check("%s with three starred it says so, turns the run to them, and How many follows" % label,
+              b2.get("hint") == "3 starred in the selected unit" and b2.get("disabled") is False and b2.get("source") == "flagged"
+              and b2.get("howMany") == "All 3" and b2.get("back") == "all" and b2.get("howManyBack") not in ("All 3", None), b2)
+        check("%s All at All shows no note (dropped with the bank boxes)" % label, r.get("allNote") is False, r.get("allNote"))
+        check("%s a tap on Max that changes the value shows nothing" % label, r.get("maxOnChange") is False, r.get("maxOnChange"))
+        check("%s Max at the top says 'Max time set / 90 minutes', in view and not clipped by its card, then goes" % label,
+              r.get("max") == "Max time set | 90 minutes" and r.get("maxVisible") is True and r.get("maxGone") is True,
+              (r.get("max"), r.get("maxVisible"), r.get("maxGone")))
+
+
+
+def _b314_touch(ctx, pg):
+    cdp = ctx.new_cdp_session(pg)
+    def T(kind, pts):
+        cdp.send("Input.dispatchTouchEvent", {"type": kind, "touchPoints": [{"x": x, "y": y} for x, y in pts]})
+    return T
+
+
+def check_b314_dragselect(br):
+    """Build 314: drag across the unit cards to select them. "being able to
+    hold and drop on units to select multiple faster, would be pretty
+    sick. Let's do it. Ensure it's done right." Real touch input (CDP),
+    so the browser's own scrolling takes part: a drag from a card's circle
+    selects every card from it to the finger, a drag from a ticked one
+    unticks, a sideways-first drag from a card's body selects too, the
+    list scrolls itself near the bottom edge - and a vertical swipe still
+    scrolls, a hold still opens the details, a tap still ticks one.
+    Fails on 313 (dd6cfae), where a drag selects nothing."""
+    import time
+    print("\n103. build 314: drag to select units, and nothing that worked before stops working")
+    for label, w, h in DEVICES:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, touch=True)
+        T = _b314_touch(ctx, pg)
+        pg.evaluate("""async ()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());
+          store.seenUnitSelectTour = true; store.seenUnitHoldTip = true; localStorage.setItem('class26e.unithold.tip','1');
+          cfg.mode='drill'; cfg.units=[]; showSetup(); await wait(900); }""")
+        st = lambda: pg.evaluate("()=>[...document.querySelectorAll('.picks label.pick')].map(r=>r.querySelector('input').checked?1:0).join('')")
+        clear = lambda: pg.evaluate("()=>{ document.querySelectorAll('.picks label.pick input').forEach(c=>{ c.checked=false; c.closest('.pick').classList.remove('pick-checked'); }); }")
+        def to(i, y=260):
+            pg.evaluate("([i,y])=>{ const r=[...document.querySelectorAll('.picks label.pick')][i]; window.scrollBy({ top: r.getBoundingClientRect().top - y, behavior: 'instant' }); }", [i, y]); time.sleep(0.3)
+        def pt(i, part):
+            return pg.evaluate("""([i,part])=>{ const r=[...document.querySelectorAll('.picks label.pick')][i];
+              const b=(part==='box'?r.querySelector('.box'):r).getBoundingClientRect(); return part==='box'?[b.left+b.width/2,b.top+b.height/2]:[b.left+b.width*.6,b.top+b.height*.5]; }""", [i, part])
+        def line(a, b, n): return [(a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n) for k in range(n + 1)]
+        def drag(pts, hold=0):
+            T("touchStart", [pts[0]])
+            for p in pts[1:]:
+                time.sleep(0.016); T("touchMove", [p])
+            if hold: time.sleep(hold)
+            T("touchEnd", []); time.sleep(0.4)
+        r = {}
+        clear(); to(0, 200)
+        drag(line(pt(0, "box"), pt(3, "body"), 12)); r["select"] = st()
+        to(0, 200); drag(line(pt(0, "box"), pt(1, "body"), 8)); r["deselect"] = st()
+        clear(); to(6, 160)
+        a = pt(7, "body"); side = (a[0] - 40, a[1])
+        drag(line(a, side, 4) + line(side, pt(9, "body"), 8)[1:]); r["body"] = st()
+        clear(); to(4); y0 = pg.evaluate("()=>scrollY"); a = pt(5, "body")
+        drag(line(a, (a[0], a[1] - 240), 12)); time.sleep(0.5)
+        r["scroll"] = { "dy": round(pg.evaluate("()=>scrollY") - y0), "st": st() }
+        to(4); a = pt(4, "body"); T("touchStart", [a]); time.sleep(0.7)
+        r["hold"] = { "open": pg.evaluate("()=>document.querySelectorAll('.unitdetail').length") > 0 }
+        T("touchEnd", []); time.sleep(0.4); r["hold"]["st"] = st()
+        pg.evaluate("()=>document.querySelector('.unitdetail-scrim')?.click()"); time.sleep(0.7)
+        to(4); a = pt(4, "body"); T("touchStart", [a]); time.sleep(0.05); T("touchEnd", []); time.sleep(0.5); r["tap"] = st()
+        clear(); pg.evaluate("()=>window.scrollTo({ top: 0, behavior: 'instant' })"); time.sleep(0.3)
+        a = pt(0, "box"); y0 = pg.evaluate("()=>scrollY")
+        drag(line(a, (a[0], h - 50), 12), hold=1.3)
+        r["auto"] = { "dy": round(pg.evaluate("()=>scrollY") - y0), "n": st().count("1") }
+        ctx.close()
+        n = len(r["select"])
+        check("%s a drag from a card's circle to the fourth card ticks those four" % label, r["select"] == "1111" + "0" * (n - 4), r["select"])
+        check("%s a drag from a ticked card unticks back to where the finger is" % label, r["deselect"] == "0011" + "0" * (n - 4), r["deselect"])
+        check("%s a sideways-first drag from a card's body selects too" % label,
+              r["body"] == "0" * 7 + "111" + "0" * (n - 10), r["body"])
+        check("%s a vertical swipe on the cards still scrolls and ticks nothing" % label,
+              abs(r["scroll"]["dy"]) > 100 and r["scroll"]["st"] == "0" * n, r["scroll"])
+        check("%s a hold still opens the unit's details and ticks nothing" % label,
+              r["hold"]["open"] and r["hold"]["st"] == "0" * n, r["hold"])
+        check("%s a tap still ticks the one card" % label, r["tap"] == "0" * 4 + "1" + "0" * (n - 5), r["tap"])
+        check("%s held at the bottom edge the list scrolls itself and keeps selecting" % label,
+              r["auto"]["dy"] > 40 and r["auto"]["n"] >= 4, r["auto"])
+
+
+def check_b314_slider_release(br):
+    """Build 314: All and Max light up when the finger LETS GO, at once.
+    "just make sure it's a little better so it activates right when I stop
+    touching it ... and not that delay thing it has". On 313 the effect
+    fired on the first move below the top, under the finger, and its punch
+    waited .5s after that. Real touch input (CDP). Fails there."""
+    import time
+    print("\n104. build 314: All and Max light up on the release, with no delay")
+    for label, w, h in DEVICES:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, touch=True)
+        T = _b314_touch(ctx, pg)
+        pg.evaluate("""async ()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());
+          store.seenUnitSelectTour = true; cfg.mode='drill'; cfg.units=[]; cfg.size=0; showSetup(); await wait(800);
+          [...document.querySelectorAll('.picks label.pick')].slice(0,2).forEach(p=>p.click()); await wait(300); document.getElementById('nextbtn').click(); await wait(1000);
+          const sheet=document.querySelector('#unitoptions-modal');
+          const inp=[...sheet.querySelectorAll('input[type=checkbox]')].find(x=>{ let e=x; for(let k=0;k<4&&e;k++){ e=e.parentElement; if(e && /Time limit/.test(e.textContent) && !/Stopwatch/.test(e.textContent)) return true; } return false; });
+          inp && inp.click(); await wait(400); sheet.querySelector('.minutes-sect .slider-maxbtn').click(); await wait(700); }""")
+        out = {}
+        for name, sel, bsel in [("All", ".howmany-sect input.slider", ".howmany-sect .slider-allbtn"),
+                                ("Max", ".minutes-sect input.slider", ".minutes-sect .slider-maxbtn")]:
+            g = pg.evaluate("""([sel,bsel])=>{ const s=document.querySelector('#unitoptions-modal '+sel); s.scrollIntoView({block:'center'});
+              const r=s.getBoundingClientRect(); const b=document.querySelector('#unitoptions-modal '+bsel);
+              /* the first thing the release dispatches is pointerup; read the button just before the app hears it */
+              window.__rel={}; document.addEventListener('pointerup', ()=>{ __rel.t=performance.now(); __rel.before={ lit:b.classList.contains('just-ready'), on:b.classList.contains('on') };
+                setTimeout(()=>{ const a=b.getAnimations({subtree:true}); const p=a.find(x=>x.animationName==='start-ready-punch');
+                  __rel.after={ lit:b.classList.contains('just-ready')||b.classList.contains('ready-pop'), on:b.classList.contains('on'), delay:p?p.effect.getComputedTiming().delay:null }; }, 30); }, { capture:true, once:true });
+              return [r.right-12, r.top+r.height/2, r.left, r.width]; }""", [sel, bsel])
+            time.sleep(0.4)
+            x0, y = g[0], g[1]; x1 = g[2] + g[3] * .5
+            T("touchStart", [(x0, y)])
+            for k in range(1, 11):
+                time.sleep(0.016); T("touchMove", [(x0 + (x1 - x0) * k / 10, y)])
+            time.sleep(0.2); T("touchEnd", []); time.sleep(0.5)
+            out[name] = pg.evaluate("()=>__rel")
+        ctx.close()
+        for name in ("All", "Max"):
+            o = out.get(name) or {}
+            b, a = o.get("before") or {}, o.get("after") or {}
+            check("%s %s stays quiet while the finger is still down below the top" % (label, name),
+                  b.get("lit") is False and b.get("on") is True, o)
+            check("%s %s lights the moment the finger lets go, its punch with no delay" % (label, name),
+                  a.get("lit") is True and a.get("on") is False and a.get("delay") == 0, o)
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -10538,6 +10996,12 @@ def main():
             check_b313_flares_glass(br)
             check_b313_pause(br)
             check_b313_fx(br)
+            check_b314_swipe(br)
+            check_b314_feel(br)
+            check_b314_study(br)
+            check_b314_sheet(br)
+            check_b314_dragselect(br)
+            check_b314_slider_release(br)
         finally:
             br.close()
     SERVER.shutdown()

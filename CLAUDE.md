@@ -12931,6 +12931,186 @@ with `muteBanners` on so an unrelated unlock (a time-of-day banner) does not
 cover the end of one; the effect does not read it. The candidates are also
 in `shots/fx/candidates2/`.
 
+### Build 314 - the test and study flow
+
+**The swipe has a line to cross** (`Q_SWIPE_COMMIT`, `qSwipeCommits`).
+*"If I only swipe a little, it [should not] move to the next question, it
+would kinda bounce back ... similar to the flash cards."* Build 313 went at
+40px. Now a drag commits only past 45% of the push (the flashcards' rule
+is 42% of a card) or as a real flick - 0.6px/ms leftward over the last
+~100ms AND at least 15% of the way; a fast flick back to the right cancels
+even past the line. Short of it, it springs back on the flashcards' own
+curve and time (`.22,1,.36,1`, 340ms, no overshoot), and a new touch
+catches a spring-back where it is (`qReturnHalt`) instead of snapping it
+home. Velocity is read off the events' own `timeStamp`, not arrival time:
+a busy main thread delivers touches bunched, which read a flick as slow.
+
+**The next question stays unreadable until the move is committed.**
+*"You can still kinda read the question at any point of the slide ...
+even at the halfway point it should still be hard to read."* During a
+drag the stand-in is a 10px-blurred copy and NOTHING of the sharp copy, at
+every position; what grows as it comes in is its strength (`qSoftAlpha`,
+dim at the side, full from the line), never its focus. A first try let it
+sharpen a little past the line: at 17% sharp the words were already
+legible. It turns sharp only once committed, over the first 80% of the
+distance still to go - while it is MOVING, where a soft and a sharp copy
+over each other cannot be caught - and is done before it slows in.
+**Next and auto-advance have no blur at all** (*"ensure the fast paced
+stuff is still smooth and that blurry stuff doesn't kinda make it look
+bad"*): a solid push from p=0, the new question at 85%+ - build 313's soft
+arrival read as a smear at that pace. *"If you swipe full speed and then
+stop ... it'd be blurry"* - and it is, because everything is a function of
+POSITION (`p`, 0 = in place, 1 = gone): where both questions are, how far
+the outgoing one has stepped back (`qOutFrame`) and how sharp the incoming
+one is. A finger that stops anywhere leaves the same picture whatever
+speed it got there at.
+
+**Every move is a Web Animation of transform and opacity** (`qRun`),
+sampled ~10ms apart from the same curve so the position-tied values ride
+one clock on the compositor. A CDP trace (`Animation` events,
+`compositeFailed`) shows every one composited. A committed swipe starts
+moving the instant the finger lifts, on the stand-in already showing; the
+real question (`advance()`, the expensive part - ~6-10ms here) takes its
+place a frame later on the same `startTime` and while still blurred, so
+the swap cannot be seen (`qCommitFromPreview`). The stand-in is built
+where the finger LANDS (`qDragPrepare` on touchstart), so the first frame
+of the drag does not pay for it. Measured: 313's touchend did 7-11ms of
+work before anything moved; 314's does 1-3ms.
+**A copy is a picture** (`.q-slide-clone *, .q-blurpair *{transition:none;
+animation:none}`): the slide's copies are fresh elements, so the answer's
+`@starting-style` colour fade replayed INSIDE the leaving copy - the right
+answer went grey and turned green again on its way off - and the trace
+showed six uncomposited colour transitions in every slide, 313 included.
+Auto-advance landing mid-drag carries the drag on (and spends the gesture,
+or lifting the finger past the line would advance twice).
+Gate: check-behaviour 99 (`check_b314_swipe`); 95 revised to "stays out of
+focus" (it asserted sharpening from the first pixel).
+
+**The answer lands in half the time** (*"the incorrect one looks good but
+that delay is too long, could be cut in half ... The correct answer, the
+delay is too strong as well"*). Tap to colour half there: 284ms wrong /
+282ms right on 313 (a 70ms press, a 60ms hold, a .45s ease that only got
+going at its end); 129 / 138ms now (`CHOICE_PRESS_MS` 40, no hold, .36s
+`cubic-bezier(.25,.6,.3,1)`), 90% at ~250 against 434. It still phases in,
+as 313 asked. **The nudge is a quarter softer** (*"the vibration effect
+could be slightly toned down"*): 4 / 3 / 1.5px became 3 / 2.2 / 1 over .3s.
+**Next rises at build 311's pace again** (*"now JUST slightly too quick ...
+it was better before"*): .62s rise after .78s - 311's .75s after a 70ms
+press, re-timed for the 40ms press. Measured from the tap: 311 starts 849ms,
+313 501ms, 314 833ms. Gate 100 (`check_b314_feel`).
+
+**No words beside the star** (*"Star removed/and starred wording when
+hitting the button, we don't need that anymore"*). `showFlagNote()` is
+deleted with its call (it appended to `<body>`); the star's fill, ripple
+and `aria-pressed` say it. Gate 72 revised (no label, no toast, star on)
+and 73's "says Starred" now asserts nothing is said.
+
+**Review's Starred questions star fills only when something is starred**
+(*"just fill it in with color ONCE someone actually has a flagged question
+... the colored in star before was not it"*). `buildStarredCardStar(true)`
+is the in-test star's own gold (#E8C770, the colour a starred question's
+star turns) on a gentle ramp lit from the top, a rim one step lighter and a
+thin highlight along the upper arms clipped inside - NOT 308's saturated
+#FFD233-to-#E39400 with a glow disc. The warm glow is a CSS drop-shadow.
+Nothing starred: the white outline (313). The box also **repaints when a
+unit's details close** (`box._paint`): starring there left it saying
+"Tap the star..." over a list that had questions in it.
+
+**LOADING REVIEW and LOADING FLASHCARDS** (*"give flashcards or regular
+review a loading screen ... take the loading time down by half a second"*).
+`showStudyLoading()` is the test's screen word for word in its own voice
+(`buildLoadingOverlay`, shared with LOADING TEST, same element id so the
+chat dock and forced updates already keep off it) for `STUDY_LOADING_MS`
+2.0s against the test's 2.5, tab bar held off it. The sheet's Begin, the
+Starred box and "Review again" go through it; an empty deck goes straight
+to its message instead. Gate 101.
+
+**The question bank is one switch** (*"There's gotta be a better way to do
+the starred question and all questions thing ... Maybe all questions should
+be default and the starred thing should be a button?"*). The two boxes
+under "Questions from" are gone: every question in the units is simply the
+default with no control, and one switch row under "Questions" -
+"Starred questions only", with "12 starred in the selected units" under it,
+or greyed with "No starred questions in the selected units yet" (a tap says
+how to star) - is the whole choice. Styled as the sheet's other switches.
+`cfg.source` is still "all" / "flagged"; counts, the No hundo chip, the
+summary and Begin are untouched underneath. Same sheet in Drill, Exam and
+Learn. **Found doing it: How many never followed the bank** - `refresh()`
+does not repaint it, so turning Starred on read "All 28" over a pool of 4,
+on 313's boxes too. The switch repaints it. Gates 18/20/57/58 and
+check-studyflow 4 revised to the one switch.
+
+**Max says it is set** (*"When hitting the all button or max button on
+slider, if it's already at that, give a small thing that says max time
+set"*). `showSliderTopNote()`: a tap on Max at 90 drops a box from the
+button - "Max time set / 90 minutes", the bank boxes' look (white glass, a
+bold line and a smaller one) - gone after 2.2s or at the next touch. Hung
+on the sheet's body, not the Minutes row: that sits in a card that clips,
+and the first box was cut off at its edge. Above the button where below
+would run under the pinned Begin bar. A tap that changes the value shows
+nothing. **The All note was built and then dropped** with the bank boxes,
+by the coordinator's call in the same round; How many's All still does
+nothing when already on, and wiring the note back is one line.
+
+**Start lights in one beat** (*"the timing of that pulse is bad and it's
+weak"*). Measured on 313: the fill took .6s on a curve done by ~.35s, then
+nothing for 160ms, then a 6% pop peaking at 665ms. Now the fill is .3s, the
+pill punches to 1.1 from 180ms (`start-ready-punch`, peak ~350ms, settling
+through .985 rather than wobbling), the play mark nudges forward and a
+brighter sheen crosses in the same moment; done by ~.6s. All shares the
+timing. Gate 102 reads the beat off the animations themselves - wall-clock
+frame sampling was at the mercy of a loaded machine.
+
+**Never stamp `document.timeline.currentTime` on a fresh animation.**
+It is the START of the current frame, so animations made after a long
+task (`advance()` builds the next question) were backdated by that task
+and the first painted frame of a Next was already a third of the way
+across - a jump the frame sampler showed as x=-339 on the first frame.
+Animations made in one task start together on their own; `qSync` only
+puts late ones (the handover) onto a running animation's own `startTime`.
+
+**Drag to select units** (*"being able to hold and drop on units to
+select multiple faster, would be pretty sick. Let's do it. Ensure it's
+done right."*) - `attachDragSelect(list, onChange)`, the Photos /
+Reminders gesture. The first card touched decides (unticked ticks, ticked
+unticks) and every card between it and the one under the finger, in the
+grid's order, takes that state; drag back and the cards you leave return
+to what they were - a RANGE, so a fast drag cannot skip a card. It starts
+on a card's select circle at once in any direction (the circle is
+`touch-action:none` and `attachUnitHold` ignores presses on it), or on a
+card's body with a SIDEWAYS first move (cards are `touch-action:pan-y`, so
+the browser never claims that move; the grid never scrolled sideways, so
+it meant nothing before). A vertical first move is still the page's
+scroll, holding still is still the 420ms hold that opens the details, a
+tap still ticks one card. Once selecting, `touchmove` is cancelled so the
+page cannot take the finger, the list scrolls itself near the top or above
+the tab bar (`behavior:"instant"` - the app's smooth scrolling turned each
+nudge into its own animation and the list crawled), each card that flips
+pops its circle, and `refresh()` runs at most once a frame - no list
+re-render. A shorter-version unit is taken whole, as Select all takes it.
+The click ending a mouse drag is swallowed. Gate 103 drives it with real
+CDP touch input (so the browser's own scrolling takes part) on both
+reference devices: circle drag, untick drag, body drag, scroll, hold, tap,
+edge auto-scroll; every selecting assertion fails on dd6cfae.
+
+**All and Max light up on the release** (*"so it activates right when I
+stop touching it or whatever and not that delay thing it has"*). It fired
+on the first input below the top - under the finger, half-way through the
+slide - and its punch then waited .5s (313) / .18s (this build's first
+pass). Both sliders now mark their button `_held` from pointerdown /
+touchstart to pointerup / touchend / change; `syncTopButton` keeps the
+quiet "on" look while held and the release calls back in, so the class
+lands on the pointerup itself and the punch has no delay. Measured with
+CDP touch: 313 lit on the first move below the top, long before the
+release, with the punch ~.6s after that; now the class lands at 0ms from the release and the punch is in the
+next frame. Per-input cost of the How many slider is 1.6ms (median) - the
+"slight lag" was the wait, not the work. Gate 104 (fails on dd6cfae).
+
+**Sweep fixes**: Learn's "Back to Options" and the flashcards' "Exit
+flashcards" both landed on the units screen with the sheet shut;
+`showSetupWithSheet()` reopens it. Plus the four above (stale How many,
+stale Starred box, the copy replaying its colour, the adopted drag).
+
 ### Shuffling, measured (build 313)
 
 "Can we double check that all the questions are being shuffled properly

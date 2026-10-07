@@ -168,11 +168,14 @@ with sync_playwright() as pw:
     pg.wait_for_timeout(600)
     pg.evaluate("()=>[...document.querySelectorAll('.pick')].find(p=>p.textContent.includes('Identity Crimes')).click()"); pg.wait_for_timeout(300)
     pg.evaluate("()=>document.getElementById('nextbtn').click()"); pg.wait_for_timeout(400)
-    pg.evaluate("()=>[...document.querySelectorAll('.bank-opt')].find(r=>/Flagged|Starred/.test(r.textContent)).click()"); pg.wait_for_timeout(300)
+    # build 314: the bank is one "Starred questions only" switch
+    pg.evaluate("()=>(document.querySelector('.bank-starred')||[...document.querySelectorAll('.bank-opt')].find(r=>/Flagged|Starred/.test(r.textContent))).click()"); pg.wait_for_timeout(300)
     sheet = pg.evaluate("()=>({line:document.querySelector('.sheet-summary-line').textContent, start:document.getElementById('nextbtn').textContent,"
                         " missed:flaggedIndexes().filter(i=>QUESTIONS[i].topic==='Identity Crimes').length})")
     ck("the sheet counts the flagged questions, not the unit", sheet["line"].endswith(" %d question%s" % (sheet["missed"], "" if sheet["missed"] == 1 else "s")), sheet)
     pg.evaluate("()=>document.querySelector('.sheet-begin-btn').click()"); pg.wait_for_timeout(800)
+    # build 314: Review opens through LOADING REVIEW (~2s)
+    pg.wait_for_function("()=>!document.getElementById('teststart-overlay')", timeout=6000); pg.wait_for_timeout(400)
     listed = pg.evaluate("()=>document.querySelectorAll('.screen-answerreview .review-question').length")
     ck("and the list it opens is that many", listed == sheet["missed"], (listed, sheet["missed"]))
     ctx.close()
