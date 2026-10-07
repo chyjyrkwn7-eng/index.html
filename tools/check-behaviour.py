@@ -13105,6 +13105,25 @@ def check_b317_specials(br):
           sc.get("hero") and sc.get("at") is not None and 7000 <= sc["at"] <= 35000, sc)
     check("... and it ends by itself", sc.get("off") is not None and sc["off"] > (sc.get("at") or 0), sc)
 
+    # back on Profile after a rank-up scene: the special plays at once
+    ru = pg.evaluate("""async () => {
+      if(typeof rankUpSceneEnd !== 'function') return { missing: true };
+      showProfile();
+      await new Promise(r => setTimeout(r, Math.max(0, charSpecialBusyUntil - Date.now()) + 300));
+      const hero = document.querySelector('.profile-hero-avatar');
+      let seen = false;
+      const mo = new MutationObserver(() => { if(hero.classList.contains('char-special')) seen = true; });
+      mo.observe(hero, { attributes: true, attributeFilter: ['class'] });
+      const scene = { watch: 0 };
+      rankUpScene = scene;
+      rankUpSceneEnd(scene, true);
+      await new Promise(r => setTimeout(r, 1500));
+      mo.disconnect();
+      return { seen };
+    }""")
+    check("a rank-up scene ending on Profile plays the character's special",
+          not ru.get("missing") and ru.get("seen"), ru)
+
     # hidden page and Reduce motion: nothing fires
     rm = pg.evaluate("""async () => {
       if(typeof playCharSpecial !== 'function') return { missing: true };

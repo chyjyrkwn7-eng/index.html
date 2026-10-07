@@ -14744,8 +14744,16 @@ disagree with it.
     Silver, Void > Umbra, Zenith > Astral); `playCharSpecial` on and off,
     a flip-book stepped aside and restored with the idle running; the
     scheduler fires on the Profile card by itself between 7s and 35s and
-    ends by itself; nothing while hidden; nothing under Reduce motion. It
-    fails on 57212ce.
+    ends by itself; a rank-up scene ending plays it on the Profile card;
+    nothing while hidden; nothing under Reduce motion. It fails on
+    57212ce. **Cost, measured:** the parts are in every copy of those
+    thirteen drawings (30-60% more nodes for each, e.g. Zenith 224 ->
+    336), all at opacity 0 and none animated outside a special.
+  - **Videos are recorded by seeking, not in real time:** every animation
+    paused and its `currentTime` set per frame (a special's animations
+    offset from when its class went on), so a loaded machine gives the
+    same frames as a quiet one. The 100% hundo trigger is not covered by
+    the gate.
 - **STUDY TIME IS TIME SPENT STUDYING (build 314).** It was "now minus
   when the run started", so a run left open with the phone locked banked
   every hour on the day it ended: live tests of 117h and 50h, days of 68h
