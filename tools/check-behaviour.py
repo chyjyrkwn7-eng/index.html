@@ -9627,17 +9627,18 @@ def check_b313_grades(br):
         return res;
       };
       for(const [band, wrong] of [['perfect', 0], ['great', 1], ['pass', 3], ['fail', 6]]) out.runs[band] = await run(wrong);
-      /* every character, every band: its own move runs */
-      const want = { perfect: 'cx-hop-big', great: 'cx-hop', pass: 'cx-r3-nod2', fail: 'cx-r3-slump' };
+      /* every character, every band: its OWN move runs (build 314: each
+         character's keyframes are named rx-<id>-..., see
+         tools/gen-reactions.py) - and a per-character idle rule must not
+         win over it */
+      const want = { perfect: 1, great: 1, pass: 1, fail: 1 };
       const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:0;top:0'; document.body.appendChild(host);
       for(const c of AVATAR_CHARACTERS.filter(c => !c.retired)) for(const band of Object.keys(want)){
         const av = document.createElement('span'); av.className = 'results-level-avatar char-live'; av.appendChild(buildAvatarCharSVG(c.id)); host.appendChild(av);
         if(typeof reactCharacter === 'function') reactCharacter(av, band); else { av.classList.remove('char-live'); av.classList.add('char-react-' + band); }
         await new Promise(r => requestAnimationFrame(r));
         const names = av.getAnimations({ subtree: true }).map(a => a.animationName);
-        /* a hundo plays the character's own winning move on its figure,
-           which for the Ghost is its turn and float rather than the hop */
-        if(names.indexOf(want[band]) < 0 && !(band === 'perfect' && names.indexOf('cx-turn') >= 0)) out.chars.push(c.id + '/' + band);
+        if(!names.some(n => n.indexOf('rx-' + c.id + '-') === 0)) out.chars.push(c.id + '/' + band);
         av.remove();
       }
       host.remove();
@@ -9645,7 +9646,9 @@ def check_b313_grades(br):
     runs = r["runs"]
     for band, sign in [("perfect", "char-emote-perfect"), ("great", "char-emote-great"), ("pass", "char-emote-pass"), ("fail", "char-emote-fail")]:
         x = runs.get(band) or {}
-        want_cls = "char-react-perfect char-react-win" if band == "perfect" else "char-react-" + band
+        # build 314: a 100 is the character's own move now, not the
+        # Virtual Room win's (char-react-win) on top of a generic hop
+        want_cls = "char-react-" + band
         check("a %s run lands %s on the results character" % (band, want_cls), x.get("cls") == want_cls, x)
         check("a %s run shows its sign round the character" % band, sign in (x.get("front") or ""), x.get("front"))
     check("the four grades look four different ways", len({(runs.get(b) or {}).get("front") for b in runs}) == 4, [(runs.get(b) or {}).get("front") for b in runs])
@@ -9904,6 +9907,131 @@ def check_b314_chars(br):
     ctx.close()
 
 
+
+def check_b314_reactions(br):
+    """Build 314: "The hundo effect to the character is eh ... I was hoping
+    for more of a character animation, something the character does so
+    it's cooler, all the characters can have somewhat different ones, and
+    the reaction is based on the grade." Every live character, every band,
+    mounted the way the results screen mounts it (a live drawing in a
+    .results-level-avatar) and handed to reactCharacter():
+      - its own keyframes run (rx-<id>-..., written by
+        tools/gen-reactions.py), for every band;
+      - a 100 and a fail are different moves, and all four bands are four
+        different moves (what animates where, minus the idle it had
+        already);
+      - no two characters' 100s are the same move with the name changed;
+      - nothing a move shows leaves the drawing's frame (sampled through
+        the move) - the drawing's edges clip, and a flame scaled past the
+        top came out cut flat on the first draft;
+      - the sign round the circle stepped back: no stars, sparkles or rain
+        cloud; a pass keeps its tick and a fail its dimming;
+      - with Reduce motion on, nothing moves and a 100 and a fail still land
+        on two different pictures.
+    Written against build 313, where every character ran the same hop, nod
+    and slump: no character's own keyframes exist there and every 100 is
+    the same move."""
+    print("\n96. build 314: every character its own grade reaction - four bands, all different, inside its frame")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, dpr=1)
+    r = pg.evaluate("""async () => {
+      const out = { sig: {}, own: {}, outside: [], front: {}, rm: {}, rmMoving: [] };
+      const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:40px;top:40px;z-index:99999'; document.body.appendChild(host);
+      const mount = id => { const av = document.createElement('span'); av.className = 'results-level-avatar char-live'; av.appendChild(buildAvatarCharSVGSafe(id)); host.appendChild(av); return av; };
+      const cls = t => t && t.getAttribute ? (t.getAttribute('class') || '').split(/\\s+/).filter(x => /^cx-/.test(x) && x !== 'cx-fx').join('.') : '';
+      const frame = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const shown = (el, svg) => { let o = 1; for(let e = el; e && e !== svg.parentNode; e = e.parentNode) o *= parseFloat(getComputedStyle(e).opacity); return o; };
+      const chars = AVATAR_CHARACTERS.filter(c => !c.retired).map(c => c.id);
+      for(const id of chars){
+        const idle = mount(id); await frame();
+        const base = new Set(idle.getAnimations({ subtree: true }).map(a => cls(a.effect.target) + ':' + a.animationName)); idle.remove();
+        for(const band of ['perfect', 'great', 'pass', 'fail']){
+          const av = mount(id);
+          reactCharacter(av, band);
+          await frame();
+          const svg = av.querySelector('svg');
+          const anims = av.getAnimations({ subtree: true }).filter(a => a.effect && svg.contains(a.effect.target));
+          out.sig[id + '/' + band] = [...new Set(anims.map(a => cls(a.effect.target) + ':' + a.animationName.split('rx-' + id + '-').join('rx-*-')))].filter(k => !base.has(k)).sort();
+          out.own[id + '/' + band] = anims.some(a => a.animationName.indexOf('rx-' + id + '-') === 0);
+          const fr = av.querySelector(':scope > .char-emote-front'); out.front[id + '/' + band] = fr ? fr.children.length : 0;
+          /* inside the frame: every part this reaction moves, that sits
+             inside the frame at rest, stays inside it while it is seen */
+          const all = av.getAnimations({ subtree: true });
+          const movers = [...new Set(anims.filter(a => /^rx-/.test(a.animationName)).map(a => a.effect.target))];
+          const R = svg.getBoundingClientRect(), tol = R.width / 34 * 1.0, LEAF = 'path, circle, ellipse, rect, polygon, polyline, line, text';
+          const inside = b => b.left >= R.left - tol && b.right <= R.right + tol && b.top >= R.top - tol && b.bottom <= R.bottom + tol;
+          all.forEach(a => { a.pause(); a.currentTime = 0; });
+          /* a shape's real outline, through every transform on the way
+             (getScreenCTM carries the CSS ones): a box would grow at the
+             corners of anything turned and call it out of frame */
+          const outline = k => { const m = k.getScreenCTM(); if(!m) return [];
+            let ps = [];
+            if(typeof k.getTotalLength === 'function' && k.tagName !== 'text'){ const L = k.getTotalLength(); for(let i = 0; i <= 32; i++){ const q = k.getPointAtLength(L * i / 32); ps.push([q.x, q.y]); } }
+            else { const b = k.getBBox(); ps = [[b.x, b.y], [b.x + b.width, b.y], [b.x, b.y + b.height], [b.x + b.width, b.y + b.height]]; }
+            return ps.map(([x, y]) => [m.a * x + m.c * y + m.e, m.b * x + m.d * y + m.f]); };
+          const inPts = k => outline(k).every(([x, y]) => x >= R.left - tol && x <= R.right + tol && y >= R.top - tol && y <= R.bottom + tol);
+          const drawn = k => !k.classList.contains('rxpv') && !(getComputedStyle(k).fill === 'none' && getComputedStyle(k).stroke === 'none');
+          const LEAFOK = t => (t.matches(LEAF) ? [t] : [...t.querySelectorAll(LEAF)]).filter(drawn).every(inPts);
+          const ok = new Set(movers.filter(t => t.classList.contains('cx-rx') || LEAFOK(t)));
+          for(const t of [.25, .5, .8, 1.1, 1.4, 1.8, 2.2, 2.8, 3.6]){
+            all.forEach(a => { a.currentTime = t * 1000; });
+            for(const el of ok){
+              /* what it DRAWS: every visible shape in it, each by its own
+                 box - not the group's box, which a turn inflates at its
+                 corners, and not the invisible disc (.rxpv) a prop turns
+                 about. The drawing's edges feather out over 1.6 units, so
+                 a shape may reach into that band; past it, it is cut. */
+              const leaves = (el.matches(LEAF) ? [el] : [...el.querySelectorAll(LEAF)]).filter(k => drawn(k) && shown(k, svg) > .08);
+              const bad = leaves.find(k => !inPts(k));
+              if(bad) out.outside.push(id + '/' + band + ' ' + cls(el) + ' @' + t + 's');
+            }
+          }
+          av.remove();
+        }
+      }
+      /* Reduce motion: the final pose, still */
+      theme.reduceMotion = true; applyTheme();
+      for(const id of chars){
+        const pose = {};
+        for(const band of ['perfect', 'fail']){
+          const av = mount(id); reactCharacter(av, band); await frame();
+          const svg = av.querySelector('svg');
+          if(av.getAnimations({ subtree: true }).some(a => a.playState === 'running' && svg.contains(a.effect && a.effect.target))) out.rmMoving.push(id + '/' + band);
+          pose[band] = [...svg.querySelectorAll('[class*="cx-"]')].map(e => { const c = getComputedStyle(e); return c.transform + '|' + c.opacity; }).join(';');
+          av.remove();
+        }
+        out.rm[id] = pose.perfect !== pose.fail;
+      }
+      theme.reduceMotion = false; applyTheme();
+      host.remove();
+      return out; }""")
+    chars = sorted({k.split("/")[0] for k in r["own"]})
+    bands = ["perfect", "great", "pass", "fail"]
+    check("there is a reaction to check for every live character (%d)" % len(chars), len(chars) >= 30, chars)
+    check("every character plays its OWN move (keyframes named for it) for every grade",
+          all(r["own"].values()), [k for k, v in r["own"].items() if not v][:8])
+    check("for every character a 100 and a fail are different moves, and neither is empty",
+          all(r["sig"][c + "/perfect"] and r["sig"][c + "/fail"] and r["sig"][c + "/perfect"] != r["sig"][c + "/fail"] for c in chars),
+          [c for c in chars if not (r["sig"][c + "/perfect"] and r["sig"][c + "/fail"] and r["sig"][c + "/perfect"] != r["sig"][c + "/fail"])][:8])
+    check("for every character the four grades are four different moves",
+          all(len({tuple(r["sig"][c + "/" + b]) for b in bands}) == 4 for c in chars),
+          [c for c in chars if len({tuple(r["sig"][c + "/" + b]) for b in bands}) != 4][:8])
+    perf = {}
+    for c in chars:
+        perf.setdefault(tuple(r["sig"][c + "/perfect"]), []).append(c)
+    check("no two characters' 100s are the same move with the name changed", all(len(v) == 1 for v in perf.values()),
+          [v for v in perf.values() if len(v) > 1][:4])
+    check("nothing a move shows leaves the drawing's frame, all the way through the move", r["outside"] == [],
+          sorted({o.split(" @")[0] for o in r["outside"]})[:40])
+    check("the sign round the circle steps back: no stars on a 100, no sparkles on a 90, no rain cloud on a fail; a pass keeps its tick",
+          all(r["front"][c + "/perfect"] == 0 and r["front"][c + "/great"] == 0 and r["front"][c + "/pass"] == 1 and r["front"][c + "/fail"] == 1 for c in chars),
+          {c: [r["front"][c + "/" + b] for b in bands] for c in chars[:3]})
+    check("with Reduce motion on, nothing in the drawing moves", r["rmMoving"] == [], r["rmMoving"][:6])
+    check("with Reduce motion on, a 100 and a fail still land on two different pictures", all(r["rm"].values()),
+          [c for c, v in r["rm"].items() if not v][:8])
+    ctx.close()
+
+
+
 B314_LIGHT = ['cx-fx-umaura', 'cx-fx-umaura2', 'cx-fx-wisps', 'cx-fx-umcglow', 'cx-fx-umcglint', 'cx-fx-umrim', 'cx-fx-sgsparks', 'cx-fx-sglight',
               'cx-fx-sgsurgew', 'cx-fx-sgsurgeb', 'cx-fx-sgaurora', 'cx-fx-gnatm', 'cx-fx-gnleak', 'cx-fx-gnerupt', 'cx-fx-gnseam', 'cx-fx-starfield', 'cx-fx-sparkles']
 # Orion's head group draws its whole cloak as well; its head is the hood,
@@ -10009,7 +10137,6 @@ def check_b314_sizes(br):
         check("%s: every character's drawing is the same size (%d drawn)" % (label, v.get("n", 0)),
               v.get("n", 0) >= (4 if k == "signup" else 20) and len(sizes) == 1, {"sizes": sizes, "err": v.get("err")})
     ctx.close()
-
 
 def check_b313_flares(br):
     """Build 313, the secret flares: "None of my secret flares are lit up";
@@ -10870,6 +10997,7 @@ def main():
             check_b313_alive(br)
             check_b313_grades(br)
             check_b314_chars(br)
+            check_b314_reactions(br)
             check_b314_sizes(br)
             check_b313_flares(br)
             check_b313_flares_glass(br)

@@ -29,6 +29,11 @@ disagreed, the repo won and the difference is called out.
   iOS section. `--check` fails if the block in `index.html` is stale.
 - `tools/gen-app-icon.py` — draws the app icon and writes it into all three
   places it lives. `--check` fails if they drift. See **The app icon**.
+- `tools/gen-reactions.py` — every character's four grade reactions on the
+  results screen (100 / 90+ / pass / fail), written as a table in
+  `tools/reactions-table.py`. Writes the `RX:CSS` and `RX:JS` blocks in
+  `index.html`; **never edit those blocks by hand**. `--check` fails if they
+  drift. See **Every character acts**.
 - `tools/sim-safe-area.py` — bakes real safe-area insets into a copy for
   local testing. See **Verifying**.
 - `tools/sweep-layout.py` — every main screen on every supported form
@@ -12600,6 +12605,77 @@ Void 16%; the Alien was 12-16% depending on the build's fits.
   size. It fails on 313 for the Masked One, the Hive, Umbra and Void.
   **Re-measure after redrawing anybody** - a new hood or hat moves the
   median as well as the character.
+
+#### Every character acts (build 314)
+
+"The hundo effect to the character is eh, it's kinda eh, I was hoping for
+more of a character animation, something the character does so it's
+cooler, all the characters can have somewhat different ones, and the
+reaction is based on the grade." Until now every character did the same
+hop, nod or slump and wore a sign round its circle. Now each of the thirty
+plays its OWN move, four ways over: a 100 its proudest (~2s, then a happy
+loop), 90+ a pleased version, a pass a small satisfied gesture, a fail its
+own sorry one. Zeus throws a bolt that flashes the circle and gets rained on
+when he fails; the Ghost spins and fades in and out, and fades and sinks;
+the Koi leaps out of the bowl, and sinks to the bottom; the Hacker's screen
+says ACCESS, or DENIED; Inferno roars, or shrinks to an ember; Timekeeper's
+hands race round and chime, or droop to half past six; and so on.
+
+- **It is a table, not hand-written CSS.** `tools/reactions-table.py` holds
+  every move (parts of the drawing, props, a circle flash);
+  `tools/gen-reactions.py` writes it into the `RX:CSS` / `RX:JS` blocks.
+  The generator fills in every keyframe's ends from the pose, so an intro
+  always starts where the drawing rests and lands on its pose, a loop always
+  starts and ends on it (seamless by construction), and the pose is ALSO
+  written as a plain rule, which is what Reduce motion shows.
+- **The idle keeps running underneath** (`char-live` stays on): the scenery
+  and every part a move leaves alone stay alive. The move's rules are lifted
+  with `:is(#rx, ...)` so they beat every class-only idle rule however
+  specific; the generic build 313 band rules are scoped `:not(.char-rx)`
+  and only reach an id the table does not know.
+- **Props** (Zeus's bolt, the Ninja's shuriken, the UFO, ACCESS...) are
+  drawn into the svg by `reactCharacter()` in the drawing's own units,
+  hidden until a move shows them. A prop that turns or scales carries an
+  invisible `.rxpv` disc so its box is centred on the point it turns about.
+- **The sign stepped back.** A 100 keeps a soft light (no rays), a fail
+  keeps the dimming (softer), a pass keeps its tick - it says "passed" on a
+  character whose move is small. The stars, the sparkles and the rain cloud
+  are gone: they competed with the character.
+- **Nothing may leave the drawing's frame.** The svg clips at 3..37 and
+  feathers out over 1.6 units; the first Inferno scaled its flames past the
+  top and they came out cut flat. Big things near an edge (Umbra's shadow
+  flames, Solar's corona, Zenith's rays) grow sideways or brighten instead.
+  check-behaviour 96 samples every moved shape's OUTLINE through the move,
+  via `getScreenCTM()` (which carries CSS transforms) - a bounding box grows
+  at the corners of anything turned and called half the set out of frame.
+- **A part whose PARENT already moves must not be moved as well.** The
+  Sheriff's tumbleweed rolls inside `cx-fx-sh4weed`, which carries it across
+  in the idle; moving the inner roll too sent it off the edge. Drive the
+  parent's own keyframes faster instead.
+- **A part with a transform of its own keeps it in every frame**
+  (`BASE_TRANSFORM`: Genesis's ring stands at `rotate(38deg)`).
+- **The generator has to be deterministic** - it built property lists from
+  Python sets, whose order changes run to run, and `--check` called a
+  freshly written file stale.
+- Gates: check-behaviour 96 (every character's own keyframes for every
+  band; a 100 and a fail differ; all four bands differ; no two characters'
+  100s are the same move with the name changed; nothing leaves the frame; a
+  pass keeps its tick and nothing else is drawn round the circle; Reduce
+  motion still and still two different pictures) - it fails on 313: no own
+  keyframes, the same move for Celestial and Zenith, eight stars round a 100.
+  Section 94 asserted 313's generic names (`cx-hop-big` ...) and asserts the
+  character's own now. check-loops accepts a `rx-...-turn` loop only when it
+  is exactly one whole turn.
+- Cost: measured against build 313 on the same machine, frame times with a
+  reacting Zenith, Genesis, Inferno or Astral are within noise of the old
+  generic reaction - the price is the live drawing repainting, which the
+  idle already paid. (The machine was loaded - load ~12 on 4 cores - so the
+  absolute numbers are not phone numbers.)
+
+Sheets: `/tmp/claude-0/b314/chars/reactions/` - `<id>_perfect.png` (six
+frames across each 100, at each character's own beats),
+`all_final_perfect_fail.png`, and real results screens
+`results_<iphone|ipad>_<band>_<id>.png`.
 
 #### Chat history that really is a day, group chats you can read at a glance, Pause hands its spot over, and the Virtual Room at 2 to 20 people
 
