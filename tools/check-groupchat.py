@@ -123,7 +123,8 @@ def main(src, size):
                        count: (document.getElementById('chatdock-roomcount')||{}).textContent || '' }; }""")
             check("the roster still shows Kim", "Kim" in r["names"], r)
             check("and counts three members", r["count"].startswith("3 members"), r)
-            mem = M.evaluate("""()=>{ document.getElementById('chatdock-roomwho').click();
+            # build 314: only the Members button opens the list
+            mem = M.evaluate("""()=>{ document.querySelector('#chatdock-roomwho .chatdock-who-more').click();
               const rows=[...document.querySelectorAll('.chat-members .chat-member-name')].map(e=>e.textContent);
               const head=(document.querySelector('.chat-members .invite-sheet-title')||{}).textContent||'';
               document.querySelectorAll('.invite-overlay').forEach(o=>o.remove());
@@ -189,6 +190,23 @@ def main(src, size):
                        more: !!w.querySelector('.chatdock-who-more') }; }""")
             check("tapping blank chat does not grey the panel", hl["ok"], hl)
             check("the roster carries a Members label", hl["more"], hl)
+            # BUILD 314: "that button activates if click anywhere in like that
+            # 'row' ... Ensure it's only when I hit that button." A real tap on
+            # the row away from the button opens nothing; a tap on the button
+            # opens the list, and its target is at least 44px tall.
+            pts = M.evaluate("""()=>{ const w=document.getElementById('chatdock-roomwho'), m=w.querySelector('.chatdock-who-more');
+              const wr=w.getBoundingClientRect(), mr=m.getBoundingClientRect();
+              const hit = M => { let n=0; for(let y=mr.top-30;y<mr.bottom+30;y++){ const e=document.elementFromPoint(mr.left+mr.width/2,y); if(e===m) n++; } return n; };
+              return { row:[wr.left+6, wr.top+wr.height/2], btn:[mr.left+mr.width/2, mr.top+mr.height/2], target:hit(), isButton:m.tagName }; }""")
+            M.mouse.click(pts["row"][0], pts["row"][1]); M.wait_for_timeout(400)
+            rowOpened = M.evaluate("()=>!!document.querySelector('.chat-members')")
+            M.evaluate("()=>document.querySelectorAll('.invite-overlay').forEach(o=>o.remove())")
+            M.mouse.click(pts["btn"][0], pts["btn"][1]); M.wait_for_timeout(400)
+            btnOpened = M.evaluate("()=>!!document.querySelector('.chat-members')")
+            M.evaluate("()=>document.querySelectorAll('.invite-overlay').forEach(o=>o.remove())")
+            check("a tap on the roster row away from Members opens nothing", rowOpened is False, pts)
+            check("a tap on Members opens the member list, a real button with a 44px target",
+                  btnOpened is True and pts["isButton"] == "BUTTON" and pts["target"] >= 44, pts)
 
             print("\n6. leaving on one device takes you out on the other")
             A2 = ctx.new_page()
