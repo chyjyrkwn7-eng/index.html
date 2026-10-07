@@ -362,8 +362,17 @@
      build 232 rule), and nothing like Platinum's teal or Sapphire's violet. */
   [data-accent="rookie"]{ --rank-accent:#A4602A; --rank-accent-ink:#FFF6EE; --theme-c1:#FFE7C2; --theme-c2:#CD7F32; --theme-c3:#6B2140; }
   [data-theme="dark"][data-accent="rookie"]{ --rank-accent:#E3A064; --rank-accent-ink:#221208; }
-  [data-accent="ranger"]{ --rank-accent:#6B7A8C; --rank-accent-ink:#F7F9FB; --theme-c1:#FFF1DE; --theme-c2:#AFC0D3; --theme-c3:#4E5A8A; }
-  [data-theme="dark"][data-accent="ranger"]{ --rank-accent:#D3DCE6; --rank-accent-ink:#141A21; }
+  /* BUILD 314: SILVER IS SILVER. "The silver rank looks a little blue,
+     could be more silver somehow." Every Silver colour had blue in it -
+     a pale steel blue (#A9B7C6, +29 blue over red), a slate-blue planet
+     rim, sky-blue and violet page glows - kept from build 219, when
+     Silver was pushed away from Iron's grey. Iron is long gone, so the
+     reason went with it. Silver is neutral now (no channel more than a
+     few levels off the others), bright, and made to read as METAL by
+     its ramps - white highlight, dark mid-band, a second catch - not by
+     a tint. Still nothing like Platinum's teal or Gold's yellow. */
+  [data-accent="ranger"]{ --rank-accent:#76797D; --rank-accent-ink:#F7F7F7; --theme-c1:#FAF8F4; --theme-c2:#C4C6C9; --theme-c3:#5C5E63; }
+  [data-theme="dark"][data-accent="ranger"]{ --rank-accent:#DEDFE0; --rank-accent-ink:#161718; }
   /* Build 219: SILVER moved off Iron's grey - "the silver icon looks cool,
      but the color looks too much like iron" - to a bright, cool, pearly
      silver with blue in it; and the Gold rank became EMERALD - "maybe gold
@@ -404,7 +413,7 @@
      banners keep the triad above. The default and Sapphire already
      had three bright, distinct hues and are left alone. */
   [data-accent="rookie"]{ --bg-c1:#F2A24E; --bg-c2:#D98A3C; --bg-c3:#C9406A; }
-  [data-accent="ranger"]{ --bg-c1:#7FC4F2; --bg-c2:#9DB4DE; --bg-c3:#7A68D8; }
+  [data-accent="ranger"]{ --bg-c1:#ECECEC; --bg-c2:#BDBFC2; --bg-c3:#8E9095; }
   [data-accent="veteran"]{ --bg-c1:#FFB52E; --bg-c2:#FFCB1F; --bg-c3:#E0502A; }
   [data-accent="vanguard"]{ --bg-c1:#55E3A2; --bg-c2:#2EC4B6; --bg-c3:#2A8EE0; }
   [data-accent="elite"]{ --bg-c1:#F0B23E; --bg-c2:#A855F7; --bg-c3:#5A44E6; }
@@ -479,8 +488,8 @@
     box-shadow:0 0 7px rgba(200,128,63,.55);
   }
   .dot.tier-ranger{
-    background-image:linear-gradient(135deg, #FFFFFF, #B9C6D4 22%, #56627A 48%, #98A7BA 64%, #F4F8FF 82%, #A9B7C6); background-size:220% 220%;
-    box-shadow:0 0 7px rgba(190,205,222,.55);
+    background-image:linear-gradient(135deg, #FFFFFF, #C9CBCE 22%, #5D5F63 48%, #A4A7AA 64%, #F7F7F7 82%, #C8CACC); background-size:220% 220%;
+    box-shadow:0 0 7px rgba(214,216,219,.55);
   }
   /* GOLD IS GOLD (build 243). This was white into a pale steel blue - a
      leftover from when this tier was a silver - so the circle labelled
@@ -2229,6 +2238,45 @@
            drop-shadow(0 0 calc(16px * var(--char-glow-k)) color-mix(in srgb, var(--char-glow) calc(45% * var(--char-glow-k)), transparent));
   }
   .avatarchar-option.selected:not(.locked){ --char-glow-k:1; }
+  /* ---- THE SELECTED ONE IS UNMISTAKABLE (build 314) ----
+     "How could it be easier to see which character you selected?" A glow
+     alone was the answer before, and a character whose own art glows read
+     the same. Now the picked tile also wears a crisp ring - a hairline of
+     its own colour lifted towards white, a glass sheen inside its top
+     edge and a faint second halo, Liquid Glass rather than a drawn box -
+     and a white tick on its top-left corner (top-right is the "new" dot's,
+     bottom-right the padlock's). The ring stops short of the bottom so it
+     never crosses the name. It grows 4% rather than 12%, so ring and all
+     it stays inside its own column. */
+  .avatarchar-option::after{
+    content:""; position:absolute; inset:-2px -2px 3px; border-radius:24%; pointer-events:none; z-index:3;
+    border:1.5px solid color-mix(in srgb, var(--char-glow) 68%, #FFFFFF);
+    background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,0) 32%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.3), 0 0 0 3px color-mix(in srgb, var(--char-glow) 18%, transparent);
+    opacity:0; transition:opacity .22s cubic-bezier(.2,.8,.2,1); will-change:opacity;
+  }
+  .avatarchar-option.selected:not(.locked)::after{ opacity:1; }
+  .avatarchar-option.selected{ transform:scale(1.04) translateZ(0); }
+  .avatarchar-check{
+    position:absolute; left:-5px; top:-5px; width:1.1rem; height:1.1rem; border-radius:50%; z-index:4;
+    display:grid; place-items:center; pointer-events:none;
+    background:#FFFFFF; color:#0E1116;
+    box-shadow:0 0 0 2px color-mix(in srgb, var(--char-glow) 72%, #FFFFFF), 0 2px 6px rgba(0,0,0,.45);
+    opacity:0; transform:scale(.6); transition:opacity .2s ease, transform .26s cubic-bezier(.3,1.5,.5,1);
+  }
+  .avatarchar-check svg{ width:.66rem; height:.66rem; display:block; }
+  .avatarchar-option.selected:not(.locked) .avatarchar-check{ opacity:1; transform:none; }
+  /* A PLAYING TILE CARRIES NO FILTER (build 314). The drop-shadows above
+     are re-drawn every time what is under them changes, and a flip-book
+     changes 24 times a second: measured at 4x CPU, the selected tile alone
+     took Customize from 16.7ms a frame to 33. On a playing tile the light
+     comes from the pool behind it, a little stronger, and the ring. */
+  .avatarchar-option.char-flip:not(.locked):is(.selected, .is-unglowing){ filter:none; }
+  .avatarchar-option.char-flip::before{
+    background:radial-gradient(circle,
+      color-mix(in srgb, var(--char-glow) 52%, transparent) 0%,
+      color-mix(in srgb, var(--char-glow) 22%, transparent) 40%,
+      transparent 70%); }
   /* ---- THE SHOULDERS FADE OUT, THEY DO NOT STOP (build 233) ----
      "Ensure the characters where it shows underneath their shoulders
      isn't such a hard cutoff ... where the bottom stops could be
@@ -2249,11 +2297,30 @@
      .avatarchar-svg, so the fade rides on the drawing itself and a
      circle, a row, a podium or a card all get the same dissolve instead
      of a ruler-straight cut where the frame stops the body. */
+  /* NO DRAWING STOPS AT A STRAIGHT LINE (build 314). "Some of the
+     characters when looking at them in their rows, edges of them look to
+     be cut off." Measured on every character over its whole loop, the
+     frame cut something on most of them: scenery drawn to the edge (the
+     Ronin's red moon, the Ninja's bamboo) sliced flat at the top and
+     sides, and things in flight (Orion's shooting star, the Sheriff's
+     tumbleweed, the Ronin's slash) leaving the frame mid-flight. The top
+     and both sides now feather out over 1.6 of the drawing's 34 units
+     (4.7%), the way the bottom already dissolved - a second mask layer
+     intersected with the first. A character's own outline is kept inside
+     the feather by FITTING it (AVATAR_ART_SCALE below 1), never by
+     letting the feather eat it. The flip-book recorder bakes the same
+     mask (recordCharSheet). It is a CSS mask, not an svg <mask> in the
+     drawing: the first version was one, and a masked group made a live
+     Zenith cost 52ms a frame to draw (7 before). */
   .avatarchar-svg,
   .avatarchar-option .avatarchar-svg,
   .rs-spot-art.is-character svg{
-    -webkit-mask-image:linear-gradient(to bottom, #000 0%, #000 70%, rgba(0,0,0,.45) 86%, transparent 100%);
-            mask-image:linear-gradient(to bottom, #000 0%, #000 70%, rgba(0,0,0,.45) 86%, transparent 100%);
+    -webkit-mask-image:linear-gradient(to bottom, transparent 0%, #000 4.7%, #000 70%, rgba(0,0,0,.45) 86%, transparent 100%),
+                       linear-gradient(to right, transparent 0%, #000 4.7%, #000 95.3%, transparent 100%);
+    -webkit-mask-composite:source-in;
+            mask-image:linear-gradient(to bottom, transparent 0%, #000 4.7%, #000 70%, rgba(0,0,0,.45) 86%, transparent 100%),
+                       linear-gradient(to right, transparent 0%, #000 4.7%, #000 95.3%, transparent 100%);
+            mask-composite:intersect;
   }
   /* A locked one is a preview, not something you hold, so it gives off
      nothing even while it is the one being looked at. */
@@ -2262,20 +2329,14 @@
   /* ---- THE SECRET SILHOUETTE (build 313) - see buildCharSilhouette ---- */
   .char-sil{ position:relative; display:block; width:100%; height:100%; }
   .char-sil > svg{ position:absolute; inset:0; width:100%; height:100%; display:block; }
-  /* a soft pool of its colour behind the cut-out - round, never a filter */
+  /* a soft pool behind the cut-out - round, never a filter, and WHITE
+     (build 314): in the character's colour it gave the colour away */
   .char-sil::before{ content:""; position:absolute; inset:8% 10% 18%; border-radius:50%; pointer-events:none;
-    background:radial-gradient(closest-side, color-mix(in srgb, var(--sil-rim) 34%, transparent), color-mix(in srgb, var(--sil-rim) 10%, transparent) 60%, transparent); }
+    background:radial-gradient(closest-side, rgba(255,255,255,.13), rgba(255,255,255,.04) 60%, transparent); }
   .avatarchar-option.locked.is-silhouette{ opacity:1; }
-  .avatarchar-option.locked .char-sil > svg, .avatarchar-option.locked.selected .char-sil > svg{ filter:none; }
-  .char-sil .cx-bg, .char-sil > svg > circle, .char-sil .cx-fx-sparkles{ display:none; }
-  .char-sil-body .cx-fig *:not(:is(.cx-fx-flares, .cx-fx-umflare, .cx-fx-sgstar, .cx-fx-gnheart, .cx-fx-wfrings, .cx-fx-wforbit), :is(.cx-fx-flares, .cx-fx-umflare, .cx-fx-sgstar, .cx-fx-gnheart, .cx-fx-wfrings, .cx-fx-wforbit) *){ fill:#05060A !important; stroke:none !important; }
-  .char-sil-body .cx-fig [fill="none"]:not(:is(.cx-fx-flares, .cx-fx-umflare, .cx-fx-sgstar, .cx-fx-gnheart, .cx-fx-wfrings, .cx-fx-wforbit), :is(.cx-fx-flares, .cx-fx-umflare, .cx-fx-sgstar, .cx-fx-gnheart, .cx-fx-wfrings, .cx-fx-wforbit) *){ fill:none !important; stroke:#05060A !important; }
-  .char-sil-rim .cx-fig *{ fill:var(--sil-rim) !important; stroke:var(--sil-rim) !important; stroke-width:1.7px !important; stroke-linejoin:round; }
-  .char-sil-rim .cx-fig [fill="none"]{ fill:none !important; }
-  .char-sil-rim{ opacity:.9; }
-  /* the worn flare stays lit on the black (left out of the rule above),
-     and has no outline of its own */
-  .char-sil-rim .cx-fig :is(.cx-fx-flares, .cx-fx-umflare, .cx-fx-sgstar, .cx-fx-gnheart, .cx-fx-wfrings, .cx-fx-wforbit){ visibility:hidden; }
+  .char-sil > svg, .avatarchar-option.locked .char-sil > svg, .avatarchar-option.locked.selected .char-sil > svg{ filter:none; }
+  /* the fills and the grey outline are set on the parts by
+     charSilhouetteSVG(), so a recorded sheet carries them */
   /* Genuinely bigger on a tablet-width screen, not just the same
      phone-tuned 4.6rem cap sitting in the middle of much bigger grid
      cells \u2014 per explicit report that the picker "doesn't enlarge"
@@ -4254,10 +4315,15 @@
     background:linear-gradient(180deg, rgba(214,168,58,.16), rgba(214,168,58,.05));
     box-shadow:0 2px 14px rgba(214,168,58,.14), inset 0 1px 0 rgba(255,255,255,.10);
   }
+  /* Second place is SILVER, not steel blue (build 314: "silver on the
+     leaderboard doesn't look good, I feel like it's color is off"). The
+     ring was rgb(176,190,201) - 25 levels of blue - over a dark blue-grey
+     card, so the row read as a cold blue one. Neutral now, a brighter
+     ring, and a sheen across the top of the card like light on metal. */
   [data-layout="modern"] .rank-row.rank-podium-2{
-    border:1.5px solid rgba(176,190,201,.5);
-    background:linear-gradient(180deg, rgba(176,190,201,.14), rgba(176,190,201,.04));
-    box-shadow:0 2px 14px rgba(176,190,201,.12), inset 0 1px 0 rgba(255,255,255,.10);
+    border:1.5px solid rgba(206,208,211,.6);
+    background:linear-gradient(180deg, rgba(220,222,225,.17), rgba(200,202,205,.05) 55%, rgba(220,222,225,.08));
+    box-shadow:0 2px 14px rgba(205,207,210,.13), inset 0 1px 0 rgba(255,255,255,.16);
   }
   [data-layout="modern"] .rank-row.rank-podium-3{
     border:1.5px solid rgba(186,120,66,.5);
@@ -4382,7 +4448,7 @@
      legible as text on a dark background rather than reusing the fill
      colours, which are meant to sit behind dark text. */
   .lb-place-1 .lb-name, .lb-place-1 .lb-stats{ color:#B8860B; }
-  .lb-place-2 .lb-name, .lb-place-2 .lb-stats{ color:#6E7A84; }
+  .lb-place-2 .lb-name, .lb-place-2 .lb-stats{ color:#73767A; }
   .lb-place-3 .lb-name, .lb-place-3 .lb-stats{ color:#9C5B2E; }
   [data-theme="dark"] .lb-place-1 .lb-name, [data-theme="dark"] .lb-place-1 .lb-stats{ color:#FFE58A; }
   /* #C9D6E0, not the #EEF2F5 from the medal gradient. That value is
@@ -4390,7 +4456,7 @@
      second place rendered indistinguishable from everyone below it -
      caught in a screenshot, not in the numbers. A cooler, slightly
      desaturated tone reads as silver precisely because it is NOT white. */
-  [data-theme="dark"] .lb-place-2 .lb-name, [data-theme="dark"] .lb-place-2 .lb-stats{ color:#C9D6E0; }
+  [data-theme="dark"] .lb-place-2 .lb-name, [data-theme="dark"] .lb-place-2 .lb-stats{ color:#D2D4D6; }
   [data-theme="dark"] .lb-place-3 .lb-name, [data-theme="dark"] .lb-place-3 .lb-stats{ color:#E8B583; }
   /* Gold/silver/bronze top-3 styling, per explicit request. Shared by
      BOTH rank markers in the app — .lb-rank here (Virtual Room's
@@ -4417,7 +4483,7 @@
     box-shadow:0 2px 6px rgba(138,98,0,.4), inset 0 1px 0 rgba(255,255,255,.55);
   }
   .lb-rank-2{
-    background:linear-gradient(155deg, #E7ECF0, #9AA7B0); color:#262C31;
+    background:linear-gradient(155deg, #F2F2F3 0%, #C2C4C7 45%, #8F9296 70%, #D6D8DA 100%); color:#25272A;
     box-shadow:0 2px 6px rgba(60,70,80,.35), inset 0 1px 0 rgba(255,255,255,.6);
   }
   .lb-rank-3{
@@ -4429,7 +4495,7 @@
     box-shadow:0 2px 8px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"] .lb-rank-2, [data-theme="party"] .lb-rank-2{
-    background:linear-gradient(155deg, #EEF2F5, #A9B4BD); color:#20262B;
+    background:linear-gradient(155deg, #F7F7F8 0%, #C9CBCE 45%, #95989C 70%, #DCDEE0 100%); color:#202224;
     box-shadow:0 2px 8px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.55);
   }
   [data-theme="dark"] .lb-rank-3, [data-theme="party"] .lb-rank-3{
@@ -8766,7 +8832,7 @@
   .lw-podium-spot.is-tappable{ cursor:pointer; -webkit-tap-highlight-color:transparent; border-radius:14px; transition:transform .15s ease; }
   .lw-podium-spot.is-tappable:active{ transform:scale(.96); }
   .lw-podium-spot.is-tappable:focus-visible{ outline:2px solid rgba(255,255,255,.5); outline-offset:3px; }
-  .lw-place-2{ --pc:#D7DEE8; } .lw-place-3{ --pc:#E09A5B; }
+  .lw-place-2{ --pc:#DADBDD; } .lw-place-3{ --pc:#E09A5B; }
   .lw-podium-av{ width:2.6rem; height:2.6rem; border-radius:50%; display:grid; place-items:center;
     background:radial-gradient(circle, color-mix(in srgb, var(--pc) 30%, rgba(20,24,30,.9)), rgba(20,24,30,.9) 72%);
     box-shadow:0 0 0 2px var(--pc); }
@@ -10813,7 +10879,7 @@
     box-shadow:inset 0 2px 0 rgba(255,255,255,.35), 0 -2px 10px rgba(0,0,0,.35);
   }
   .vroom-cut-plinth[data-place="1"] .vroom-cut-block{ height:6.5rem; background:linear-gradient(180deg,#FFD97A,#E0A81F); }
-  .vroom-cut-plinth[data-place="2"] .vroom-cut-block{ height:4.6rem; background:linear-gradient(180deg,#E6ECF2,#A9B6C4); }
+  .vroom-cut-plinth[data-place="2"] .vroom-cut-block{ height:4.6rem; background:linear-gradient(180deg,#ECEDEE,#A9ACB0); }
   .vroom-cut-plinth[data-place="3"] .vroom-cut-block{ height:3.4rem; background:linear-gradient(180deg,#E3A877,#A96A38); }
   .vroom-cut-plinth[data-place="1"] .vroom-cut-figure{ filter:drop-shadow(0 0 22px rgba(255,214,120,.55)); }
   /* The floor the blocks stand on, so they are not three shapes
@@ -11536,7 +11602,7 @@
      wash. So Silver keeps the shared recipe exactly and only TINTS it with
      a deeper silver-blue, through --flare-tint; every other rank falls
      through to its own --rank-color. */
-  .cosmic-icon-badge.cosmic-badge-rank[data-rank-tier="ranger"]{ --flare-tint:#7D97BC; }
+  .cosmic-icon-badge.cosmic-badge-rank[data-rank-tier="ranger"]{ --flare-tint:#8F9297; }
   .cosmic-icon-badge.cosmic-badge-rank svg.cosmic-rank-emblem{ position:relative; z-index:0; }
   /* The lens, above the emblem. It was a crescent of light across the
      top third, and its edge was the "weird circle like thing at the top"
@@ -15706,6 +15772,10 @@
   [class*="char-react-"] .char-flip-play, .char-sleep .char-flip-play{ display:none; }
   [class*="char-react-"] .char-under-flip, .char-sleep .char-under-flip{ visibility:visible; }
   [data-reduce-motion="true"] .char-flip-play img{ animation-play-state:paused !important; }
+  /* a locked character is a still, greyed preview (build 314): never its
+     recorded loop, which would carry none of the locked filter */
+  .avatarchar-option.locked:not(.is-silhouette) .char-flip-play{ display:none; }
+  .avatarchar-option.locked:not(.is-silhouette) .char-under-flip{ visibility:visible; }
   .avatarchar-svg [class*="cx-"]{ transform-box:fill-box; transform-origin:50% 50%; }
   .avatarchar-svg .cx-fig{ transform-origin:50% 100%; }
   .avatarchar-svg .cx-head{ transform-origin:50% 92%; }
@@ -16322,7 +16392,7 @@
   /* build 308: Umbra's shadow breathing off the hood, light rising up
      Horizon's hair (pathLength 10, a 2.4 dash), and Zenith's corona,
      star flare, shockwave and stardust */
-  @keyframes cx-um-aura{ 0%, 100%{ transform:scale(.97, .95); opacity:.35; } 50%{ transform:scale(1.03, 1.06); opacity:.85; } }
+  @keyframes cx-um-aura{ 0%, 100%{ transform:scale(.97, .95); opacity:.35; } 50%{ transform:scale(1.03, 1.04); opacity:.85; } }
   @keyframes cx-sg-rise{ 0%{ stroke-dashoffset:2.4; opacity:0; } 12%{ opacity:.95; } 70%{ opacity:.8; } 86%, 100%{ stroke-dashoffset:-10; opacity:0; } }
   @keyframes cx-za-rays{ from{ transform:none; } to{ transform:rotate(30deg); } }
   @keyframes cx-za-breathe{ 0%, 100%{ transform:none; } 50%{ transform:scale(1.12); } }
@@ -16658,6 +16728,64 @@
   @keyframes cx-za2-cy{ from{ transform:translateY(-3.6px); } to{ transform:translateY(3.6px); } }
   @keyframes cx-za2-near{ 0%, 100%{ opacity:.5; } 4%, 46%{ opacity:1; } 54%, 96%{ opacity:0; } }
   @keyframes cx-za2-far{ 0%, 100%{ opacity:.5; } 4%, 46%{ opacity:0; } 54%, 96%{ opacity:1; } }
+  /* ---- BUILD 314: THE ULTIMATES, A SMIDGE CALMER; CELESTIAL REDRAWN ----
+     "Astral, zenith and celestial effects are little too much, needs to
+     be a smidge toned down. Celestial also could look better, not a huge
+     fan." Nothing taken away - every effect each one had is still there -
+     but slower and softer: the fast spins go at half speed, the pulses and
+     flashes swell less far and less bright, the wings beat half as often
+     and through less of an arc. Celestial is a new drawing (see the
+     drawing) with calmer motion of its own. Every period still divides
+     the 6s flip-book loop. */
+  .avatarchar-svg .cx-fx-zb2wingl{ transform-origin:100% 96%; }
+  .avatarchar-svg .cx-fx-zb2wingr{ transform-origin:0% 96%; }
+  @media (prefers-reduced-motion:no-preference){
+    /* Zenith */
+    .char-live .avatarchar-svg .cx-fx-zaorbit{ animation:cx-spin 6s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-zastar{ animation:cx-zb4-breathe 3s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-zadust{ animation:cx-zb4-dust 3s ease-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-zastreak{ animation:cx-zb4-streak 6s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-zasatx{ animation:cx-za-satx 3s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-zasaty{ animation:cx-za-saty 3s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-za2cx{ animation:cx-za2-cx 3s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-za2cy{ animation:cx-za2-cy 3s ease-in-out -1.5s infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-za2near{ animation:cx-za2-near 6s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-za2far{ animation:cx-za2-far 6s linear infinite; }
+    /* Astral */
+    .char-live .avatarchar-svg .cx-fx-zc2ringb{ animation:cx-spin-back 6s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-zc2shard{ animation:cx-zb4-shard 3s ease-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-zc2flow{ animation:cx-zc2-flow 1.5s linear infinite; }
+    .char-live .avatarchar-svg .cx-fx-zc2pulse{ animation:cx-zb4-pulse 3s ease-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-zccore{ animation:cx-zb4-core 3s ease-out infinite; }
+    .char-live .avatarchar-svg .cx-k-zenith .cx-fx-wing-l{ animation:cx-zb4-wingl 3s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-k-zenith .cx-fx-wing-r{ animation:cx-zb4-wingr 3s ease-in-out infinite alternate; }
+    /* Celestial */
+    .char-live .avatarchar-svg .cx-fx-zb3halo{ animation:cx-zb3-halo 6s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-zbveil0{ animation:cx-bg-tw 3s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-zbveil1{ animation:cx-bg-tw 3s ease-in-out -1.5s infinite; }
+    .char-live .avatarchar-svg .cx-fx-zbstar{ animation:cx-zb3-star 6s ease-in-out infinite; }
+    .char-live .avatarchar-svg .cx-fx-zb2line{ animation:cx-zb2-line 6s ease-in-out -.3s infinite; }
+    .char-live .avatarchar-svg .cx-fx-zb2glow{ animation:cx-zb3-glow 6s ease-in-out -.3s infinite; }
+    .char-live .avatarchar-svg .cx-fx-zb2met{ animation:cx-zb3-met 6s ease-in infinite; }
+    .char-live .avatarchar-svg .cx-fx-zb2wingl{ animation:cx-zb3-wingl 3s ease-in-out infinite alternate; }
+    .char-live .avatarchar-svg .cx-fx-zb2wingr{ animation:cx-zb3-wingr 3s ease-in-out infinite alternate; }
+    .char-react-win .avatarchar-svg .cx-fx-zbstar{ animation:cx-zb3-star 1.5s ease-in-out infinite; }
+    .char-react-win .avatarchar-svg .cx-fx-zb2met{ animation:cx-zb3-met 1.5s ease-in infinite; }
+  }
+  @keyframes cx-zb4-breathe{ 0%, 100%{ transform:none; } 50%{ transform:scale(1.07); } }
+  @keyframes cx-zb4-dust{ 0%{ transform:none; opacity:0; } 15%{ opacity:.7; } 85%{ opacity:.35; } 100%{ transform:translateY(-7px) scale(.5); opacity:0; } }
+  @keyframes cx-zb4-streak{ 0%, 100%{ opacity:.45; transform:scale(.85, 1); } 50%{ opacity:.8; transform:scale(1.08, 1); } }
+  @keyframes cx-zb4-shard{ 0%, 100%{ opacity:0; } 18%{ opacity:.6; } 60%{ opacity:0; } }
+  @keyframes cx-zb4-pulse{ 0%, 100%{ opacity:0; transform:scale(.6); } 8%{ opacity:.6; } 80%{ opacity:0; transform:scale(2.6); } 81%{ opacity:0; transform:scale(.6); } }
+  @keyframes cx-zb4-core{ 0%, 100%{ scale:1; } 10%{ scale:1.15; } 40%{ scale:.98; } }
+  @keyframes cx-zb4-wingl{ from{ rotate:2deg; } to{ rotate:-7deg; } }
+  @keyframes cx-zb4-wingr{ from{ rotate:-2deg; } to{ rotate:7deg; } }
+  @keyframes cx-zb3-halo{ 0%, 100%{ opacity:.7; transform:scale(.97); } 50%{ opacity:1; transform:scale(1.03); } }
+  @keyframes cx-zb3-star{ 0%, 14%, 100%{ transform:none; opacity:.85; } 5%{ transform:scale(1.35) rotate(45deg); opacity:1; } }
+  @keyframes cx-zb3-glow{ 0%, 40%, 100%{ opacity:.08; } 16%{ opacity:.32; } }
+  @keyframes cx-zb3-met{ 0%, 100%{ opacity:0; transform:translate(1.4px, -.9px); } 5%{ opacity:.85; } 26%{ opacity:0; transform:translate(-4px, 2.6px); } 27%{ opacity:0; transform:translate(1.4px, -.9px); } }
+  @keyframes cx-zb3-wingl{ from{ rotate:2deg; } to{ rotate:-4deg; } }
+  @keyframes cx-zb3-wingr{ from{ rotate:-2deg; } to{ rotate:4deg; } }
   [data-reduce-motion="true"] .avatarchar-svg,
   [data-reduce-motion="true"] .avatarchar-svg *{ animation:none !important; }
 
@@ -18251,6 +18379,14 @@
     display:flex; align-items:center; justify-content:flex-start; gap:.7rem;
     flex-wrap:wrap;
   }
+  /* build 314: [hidden] has to win over display:flex, or the row stays
+     up over the editor - see showCustomize */
+  .customize-namerow[hidden], .customize-nameedit[hidden]{ display:none; }
+  .customize-nameedit{ display:flex; flex-direction:column; gap:.7rem; margin-top:.4rem; padding:0 .1rem; max-width:28rem; }
+  .customize-namelabel{ font-size:.78rem; font-weight:700; letter-spacing:.04em; color:var(--soft); padding-left:.25rem; }
+  .screen-customize .customize-nameedit .searchbox{ padding:.95rem 1.15rem; min-height:3.3rem; font-size:max(17px, 1.05rem); }
+  .customize-namebtns{ display:flex; gap:.65rem; margin-top:.25rem; }
+  .customize-namebtns .next{ flex:1 1 0; min-width:0; margin:0; min-height:48px; }
   /* One line under the name, in the rank's own colour. The emblem is on
      the character where it sits everywhere else in the app, so this only
      has to name it. */
@@ -22761,7 +22897,7 @@
   @keyframes vrc-gain{ 0%{ opacity:0; transform:translateY(6px); } 20%{ opacity:1; transform:none; } 80%{ opacity:1; } 100%{ opacity:0; transform:translateY(-4px); } }
   .vrc-num{ font-family:var(--mono); font-size:1.15rem; font-weight:800; color:#8FC1FF; min-width:4.2rem; text-align:right; }
   .vrc-row.place-1{ --pc:#FFD37A; border-color:rgba(255,211,122,.7); box-shadow:0 0 28px -4px rgba(255,200,80,.75), inset 0 0 20px rgba(255,200,80,.12); }
-  .vrc-row.place-2{ --pc:#DCE4EE; border-color:rgba(220,228,238,.6); box-shadow:0 0 24px -6px rgba(220,228,238,.6); }
+  .vrc-row.place-2{ --pc:#DCDDDF; border-color:rgba(220,221,223,.6); box-shadow:0 0 24px -6px rgba(220,221,223,.6); }
   .vrc-row.place-3{ --pc:#E0A36C; border-color:rgba(224,163,108,.6); box-shadow:0 0 24px -6px rgba(224,163,108,.6); }
   .vrc-row[class*="place-"] .vrc-place{ opacity:1; animation:rs-pop .5s cubic-bezier(.2,1.5,.4,1) both; }
   .vrc-row[class*="place-"] .vrc-fill{ background:linear-gradient(90deg, color-mix(in srgb, var(--pc) 70%, #000), var(--pc)); box-shadow:0 0 14px color-mix(in srgb, var(--pc) 70%, transparent); }
@@ -36806,14 +36942,138 @@ function isSecretSilhouette(id){
   const def = AVATAR_CHARACTERS.find(c => c.id === id);
   return !!(def && def.secret && isLockedCharacter(id));
 }
+/* NO COLOUR, AND ONE DRAWING (build 314). "Umbra and horizon characters
+   are cutoff when looking at them, also, remove the colors from their
+   outline when not unlocked." Both were the silhouette's own doing:
+   - the outline was the character's glow colour and the pool behind it
+     too, so a cut-out told you exactly what colour it would be. The
+     outline is a plain light grey now, the pool white, and the flare it
+     wears is lit in greys (silGreyPaint) - nothing on it has a hue;
+   - EVERY part of the figure was blacked in, the light it gives off
+     included: Umbra's two flames of shadow off the hood became a solid
+     black hood half again as tall as the real one, which ran off the top
+     of its tile and filled the card's circle edge to edge, and Horizon's
+     rising light and sparks thickened its crown into the frame's edge.
+     The parts that are light, not shape (SIL_LIGHT) are left out now.
+   It is also one svg rather than two stacked copies - the outline copy
+   of the figure laid under the black one inside the same drawing - so it
+   can be recorded as a flip-book like any other small character
+   (charAnimDrawing's "~sil"): four live silhouettes cost a phone 83ms a
+   frame on Customize. The fills are set on the parts themselves (inline),
+   not by a stylesheet, because a recording carries the drawing and
+   nothing else. */
+const SIL_LIGHT = ["cx-fx-umaura", "cx-fx-umaura2", "cx-fx-wisps", "cx-fx-umcglow", "cx-fx-umcglint", "cx-fx-umrim",
+  "cx-fx-sgsparks", "cx-fx-sglight", "cx-fx-sgsurgew", "cx-fx-sgsurgeb", "cx-fx-sgaurora",
+  "cx-fx-gnatm", "cx-fx-gnleak", "cx-fx-gnerupt", "cx-fx-gnseam", "cx-fx-starfield", "cx-fx-sparkles"];
+const SIL_FLARE = ["cx-fx-flares", "cx-fx-umflare", "cx-fx-sgstar", "cx-fx-gnheart", "cx-fx-wfrings", "cx-fx-wforbit"];
+const SIL_RIM = "#C9CBCE";
+const SIL_BLACK = "#05060A";
+/* a paint with its hue taken out: the same lightness, in grey */
+function silGreyOf(c){
+  const m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(String(c || "").trim());
+  let r, g, b;
+  if(m){
+    const h = m[1].length === 3 ? m[1].split("").map(x => x + x).join("") : m[1];
+    r = parseInt(h.slice(0, 2), 16); g = parseInt(h.slice(2, 4), 16); b = parseInt(h.slice(4, 6), 16);
+  } else {
+    const n = /rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)/i.exec(String(c || ""));
+    if(!n) return /^white$/i.test(String(c).trim()) ? "#FFFFFF" : null;
+    r = +n[1]; g = +n[2]; b = +n[3];
+  }
+  const y = Math.round(Math.min(255, 0.2126 * r + 0.7152 * g + 0.0722 * b + 18));
+  const hx = y.toString(16).padStart(2, "0");
+  return "#" + hx + hx + hx;
+}
+function silGreyPaint(svg, v){
+  const u = /^url\(#([^)]+)\)$/.exec(String(v || "").trim());
+  if(u){
+    const src = svg.querySelector("[id='" + u[1] + "']");
+    if(!src) return v;
+    const gid = u[1] + "-sil";
+    if(!svg.querySelector("[id='" + gid + "']")){
+      const cp = src.cloneNode(true);
+      cp.setAttribute("id", gid);
+      cp.querySelectorAll("stop").forEach(st => { const g = silGreyOf(st.getAttribute("stop-color")); if(g) st.setAttribute("stop-color", g); });
+      src.parentNode.appendChild(cp);
+    }
+    return "url(#" + gid + ")";
+  }
+  return silGreyOf(v) || v;
+}
+function charSilhouetteSVG(id){
+  const svg = buildAvatarCharSVGSafe(id);
+  svg.classList.add("char-sil-svg");
+  svg.setAttribute("data-char", id + "~sil");
+  /* the scenery and the halo are left out; so is the light */
+  svg.querySelectorAll(".cx-bg").forEach(n => n.remove());
+  [...svg.querySelectorAll("circle")].forEach(n => { if(/url\(#(aura|halo)-/.test(n.getAttribute("fill") || "")) n.remove(); });
+  SIL_LIGHT.forEach(c => svg.querySelectorAll("." + c).forEach(n => n.remove()));
+  const isFlare = n => SIL_FLARE.some(c => n.classList && n.classList.contains(c));
+  const inFlare = n => { for(let x = n; x && x !== svg; x = x.parentNode) if(isFlare(x)) return true; return false; };
+  /* the figure is everything that is not defs; it may sit inside the
+     art-scale wrapper (AVATAR_ART_SCALE), which is kept */
+  const body = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  body.setAttribute("class", "char-sil-body");
+  [...svg.childNodes].forEach(n => { if(n.nodeName !== "defs") body.appendChild(n); });
+  const rim = body.cloneNode(true);
+  rim.setAttribute("class", "char-sil-rim");
+  rim.setAttribute("opacity", ".78");
+  const shapes = "path, circle, ellipse, rect, polygon, polyline, line";
+  body.querySelectorAll(shapes).forEach(n => {
+    if(inFlare(n)) return;
+    const none = n.getAttribute("fill") === "none";
+    n.style.fill = none ? "none" : SIL_BLACK;
+    n.style.stroke = none ? SIL_BLACK : "none";
+  });
+  rim.querySelectorAll(shapes).forEach(n => {
+    if(inFlare(n)){ n.style.visibility = "hidden"; return; }
+    const none = n.getAttribute("fill") === "none";
+    n.style.fill = none ? "none" : SIL_RIM;
+    n.style.stroke = SIL_RIM;
+    n.style.strokeWidth = "1.5px";
+    n.style.strokeLinejoin = "round";
+  });
+  /* the worn flare stays lit on the black - in greys */
+  body.querySelectorAll(SIL_FLARE.map(c => "." + c).join(",")).forEach(f => {
+    [f, ...f.querySelectorAll("*")].forEach(n => {
+      ["fill", "stroke"].forEach(a => { const v = n.getAttribute(a); if(v && v !== "none") n.setAttribute(a, silGreyPaint(svg, v)); });
+    });
+  });
+  svg.append(rim, body);
+  return svg;
+}
+/* THE PICKER'S DRAWING (build 314). "It's hard to tell which character is
+   selected because some of the characters have the glow effect on them at
+   all times." Every character carries a soft halo in its own colour and
+   most stand in a lit scene - right on a board row, where nothing is
+   being chosen, but in a picker it is the same light the selection glow
+   makes, so a Ghost, a Lunar or a Solar read as half-picked. In the two
+   pickers (Customize, sign-up) the halo is turned well down and the
+   scene a little, so the selection is the only thing that glows. Its
+   flip-book is its own recording ("<id>~pick") - a picker tile is a size
+   no board uses, so this costs no extra recording. */
+function pickerCharSVG(id){
+  const svg = buildAvatarCharSVGSafe(id);
+  svg.querySelectorAll("circle").forEach(n => { if(/url\(#(aura|halo)-/.test(n.getAttribute("fill") || "")) n.setAttribute("opacity", ".4"); });
+  svg.querySelectorAll(".cx-bg").forEach(n => n.setAttribute("opacity", ".78"));
+  svg.setAttribute("data-char", (RETIRED_CHARACTER_TO[id] || id) + "~pick");
+  return svg;
+}
+/* ...and the selection says itself: a crisp ring and a tick (build 314),
+   besides the glow. The tick is a child of the option, shown only on the
+   selected one. */
+function addPickCheck(opt){
+  const c = document.createElement("span");
+  c.className = "avatarchar-check";
+  c.setAttribute("aria-hidden", "true");
+  c.innerHTML = '<svg viewBox="0 0 16 16"><path d="M3.6 8.4 L6.7 11.3 L12.4 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  opt.appendChild(c);
+  return c;
+}
 function buildCharSilhouette(id){
   const wrap = document.createElement("span");
   wrap.className = "char-sil";
-  wrap.style.setProperty("--sil-rim", avatarGlowColor(id));
-  const rim = buildAvatarCharSVGSafe(id), body = buildAvatarCharSVGSafe(id);
-  rim.classList.add("char-sil-rim");
-  body.classList.add("char-sil-body");
-  wrap.append(rim, body);
+  wrap.appendChild(charSilhouetteSVG(id));
   return wrap;
 }
 
@@ -36846,8 +37106,34 @@ function buildCharSilhouette(id){
    uses. Applied inside cx-head, on a wrapper, so the head's own
    nod/sway animation (a CSS transform on cx-head) still runs. */
 const AVATAR_HEAD_SCALE = {
-  ninja: [.76, 20, 31], ghost: [.74, 20, 35], wizard: [.84, 20, 33],
-  grizzly: [.76, 20, 32], alien: [.83, 20, 31.5],
+  /* ninja and grizzly .745 (were .76) in build 314: the fit below took
+     the earned set's median head from 19.9 to 19.6 units, and these two
+     would have come out 13% over it - the very complaint this table
+     exists for - so they come down by the same 2% */
+  ninja: [.745, 20, 31], ghost: [.74, 20, 35], wizard: [.84, 20, 33],
+  grizzly: [.745, 20, 32], alien: [.8, 20, 31.5],
+  /* EVERY HEAD THE SAME SIZE (build 314): "The masked one character looks
+     bigger than the rest when looking at them all. Ensure all the
+     characters are the same size, some of the secret flare characters had
+     the problem." Measured as the ink the head covers (its silhouette,
+     light and glow left out), these were 16-35% over the set's median:
+     the Masked One's solid mask and spiked hood (+28%), the Hive (+35%),
+     Void's hood (+21%), Umbra's (+16%) and the Alien's head (+16%). Each
+     comes down about its own chin, to within 8% of the median, so it
+     stays on its shoulders; nothing else about it moves. check-behaviour
+     97 holds every character to 15% over. The Alien was .83. */
+  masked: [.92, 20, 30], hive: [.9, 20, 29.5], voidwalker: [.945, 20, 31.5], umbra: [.965, 20, 32],
+  /* ...and Genesis went the other way: its planet sat low on its
+     shoulders (the head's top at 11.7, the next lowest at 9.7) and covered
+     19% less than the median. Up about its base, which still leaves its
+     ring 6 units inside the frame. */
+  genesis: [1.1, 20, 31.5],
+  /* Horizon's crown of hair ran out of every round frame - the card, the
+     Profile circle, a board row (build 314: "Umbra and horizon characters
+     are cutoff"). The head comes down onto its shoulders a little and
+     the whole figure a little more (AVATAR_ART_SCALE), which keeps the
+     crown's spread and puts every lock inside the circle. */
+  singularity: [.86, 20, 27],
   /* the Marksman's ghillie hood, build 272: its shag made it a head that filled the frame too */
   marksman: [.8, 20, 30]
 };
@@ -36857,7 +37143,21 @@ const AVATAR_HEAD_SCALE = {
    appear larger throughout the app. Like detective for example looks much
    bigger on the leaderboard." Back to 1 (build 308). */
 const AVATAR_ART_SCALE = {
-  dragon: 1.09, detective: 1, masked: 1.08, zeus: 1.05,
+  /* BUILD 314: BELOW 1 IS A FIT. Build 272's rule is that a character's
+     top sits ~row 8 of 200 (y 4.35 in the 3..37 frame); everything drawn
+     since - the rank characters, the ultimates, the challenge ones - had
+     drifted above it, up to the frame itself, and with the new edge
+     feather (the .avatarchar-svg mask) a crown or a hat would have faded.
+     Each is scaled about the bottom centre just enough that its still
+     drawing tops out at 4.35 and stays 4 units in from the sides,
+     measured by rasterising every one (the Marksman's rifle runs off the
+     corner on purpose and is left). Re-measure after redrawing anybody.
+     Horizon and Umbra are fitted to round frames as well - see
+     AVATAR_HEAD_SCALE.singularity. */
+  singularity: .95, umbra: .965,
+  ghost: .986, wizard: .97, clown: .925, astronaut: .955, timekeeper: .965, ronin: .964,
+  solar: .965, tempest: .963, frost: .928, oracle: .946, inferno: .972, astral: .925, zenith: .933,
+  dragon: 1.09, detective: 1, masked: 1.02, zeus: 1.024,
   officer: 1.06,
   marksman: 1.06, pharaoh: 1.03
 };
@@ -38468,157 +38768,162 @@ function drawAvatarCharSVG(charId){
     const poly = pts => "M" + pts.map(([x, y]) => x + " " + y).join(" L") + " Z";
 
     if(ZS === "b"){
-      /* ---- B: CELESTIAL. Midnight and platinum. ---- */
-      const plat = headGrad("#FFFFFF", "#C9D2DF", "#5E6A80");
-      const platFace = headGrad("#FFFFFF", "#DCE3EE", "#7C889E");
-      const night = headGrad("#2F4AA8", "#121F5E", "#050A24");
-      const nightDk = headGrad("#1E2F78", "#0B1440", "#03061A");
+      /* ---- B: CELESTIAL, REDRAWN (build 314). "Celestial also could look
+         better, not a huge fan." The idea is kept - midnight and platinum,
+         a crown of seven stars, platinum wings, the night sky round him -
+         and the drawing is new. What did not work, looked at side by side
+         with the other two: a flat royal-blue helmet with a square visor
+         plate on it read as a toy knight, not as anything celestial; the
+         wings were six identical spikes; and the "sky" was six faint arcs
+         three times the size of the frame, so every tile and circle cut
+         them off. Now:
+         - a VEIL, not a helmet: deep midnight fading to indigo at its
+           edges, drawn to fall round the face onto the shoulders, with
+           the night sky inside it (its stars twinkle) and platinum light
+           along one edge - the night is what he is wearing;
+         - a serene platinum face, oval and smooth, two calm eyes of pale
+           blue light and a star on the brow;
+         - the crown of seven stars on a fine circlet over the veil, the
+           middle one brightest, its constellation line drawn in light;
+         - wings of two long swept feathers a side, curved like a quill,
+           platinum shading to blue;
+         - a soft light behind his head instead of the trails, so nothing
+           runs off the frame.
+         Motion, a smidge calmer than before: the crown's stars wake one
+         after another and the line draws through them, the veil's stars
+         and the cape's twinkle, the wings breathe, one meteor falls behind
+         him now and then, the light behind him swells. */
+      const plat = headGrad("#FFFFFF", "#CDD6E4", "#6E7B94");
+      const faceG = headGrad("#FFFFFF", "#E6ECF6", "#8D9BB6");
+      const veilG = rad([["0%", "#22327E"], ["45%", "#141E5E"], ["80%", "#0B1240"], ["100%", "#1E1652"]], 18.4, 13.4, 17);
+      const veilDk = headGrad("#1C2A72", "#0D1546", "#040820");
       const capeG = lin([["0%", "#1A2A72"], ["60%", "#0B1240"], ["100%", "#04071C"]], 0, 27, 0, 40);
       const lineC = "#CFE0FF";
-      /* the trails: the sky turning round the pole star over its head.
-         BUILD 313 ("Celestial is cool but also kinda eh"): they turned
-         once in 90s, which on a 6s loop is standing still. They are laid
-         out six-fold now - each ring of trails repeats every 60deg - so a
-         sixth of a turn in 6s is a whole loop and the sky visibly wheels. */
-      open("cx-fx cx-fx-zbtrails");
-      svg.appendChild(pivot(20, 9.4, 26));
-      [[10.2, 8, 34, .34, .26], [13, 30, 50, .3, .24], [16.4, 14, 42, .26, .22], [19.6, 40, 58, .24, .2], [22.4, 4, 30, .2, .18], [25, 26, 52, .16, .16]].forEach(([r, a0, a1, op, w]) => {
-        const p = a => f2(20 + Math.cos(a * Math.PI / 180) * r) + " " + f2(9.4 + Math.sin(a * Math.PI / 180) * r);
-        let d = "";
-        for(let k = 0; k < 6; k++) d += "M" + p(a0 + k * 60) + " A" + r + " " + r + " 0 0 1 " + p(a1 + k * 60) + " ";
-        svg.appendChild(mk("path", { d, fill: "none", stroke: "#BFD0FF", "stroke-width": w, "stroke-linecap": "round", opacity: op }));
-      });
-      close();
-      /* a meteor shower behind him: three streaks falling across the sky
-         in turn, each invisible at both ends of its fall */
-      [[31.4, 3.4, 0], [8.6, 5.2, -1], [35, 13, -2]].forEach(([x, y, d]) => {
+      /* the light behind his head */
+      svg.appendChild(mk("ellipse", { cx: 20, cy: 15.4, rx: 13, ry: 12, fill: rad([["0%", "#8EA6FF", ".42"], ["55%", "#5568D8", ".16"], ["100%", "#2A3590", "0"]], 20, 15.4, 13), class: "cx-fx cx-fx-zb3halo" }));
+      /* one meteor at a time behind him (there were three a second) */
+      [[30.6, 6.2, 0], [9.4, 7.4, -3]].forEach(([x, y, d]) => {
         const g = mk("g", { class: "cx-fx cx-fx-zb2met", opacity: "0", style: "animation-delay:" + d + "s" });
-        g.appendChild(mk("path", { d: "M" + x + " " + y + " L" + f2(x + 3.6) + " " + f2(y - 2.4), stroke: "#DCE6FF", "stroke-width": ".3", "stroke-linecap": "round", opacity: ".7" }));
-        g.appendChild(mk("circle", { cx: x, cy: y, r: .36, fill: "#FFFFFF" }));
+        g.appendChild(mk("path", { d: "M" + x + " " + y + " L" + f2(x + 3.2) + " " + f2(y - 2.1), stroke: "#DCE6FF", "stroke-width": ".3", "stroke-linecap": "round", opacity: ".65" }));
+        g.appendChild(mk("circle", { cx: x, cy: y, r: .34, fill: "#FFFFFF" }));
         svg.appendChild(g);
       });
       /* the cape of night, wider than the shoulders, full of stars */
       open("cx-fx cx-fx-zbcape");
-      const capeD = "M12.6 27.2 Q5.2 30.4 3.2 40 L36.8 40 Q34.8 30.4 27.4 27.2 Z";
-      svg.appendChild(mk("path", { d: capeD, fill: capeG }));
-      svg.appendChild(mk("path", { d: "M3.4 39.6 Q5.4 30.6 12.6 27.4 M36.6 39.6 Q34.6 30.6 27.4 27.4", fill: "none", stroke: "#DDE5F2", "stroke-width": ".42", opacity: ".8" }));
-      /* build 313: starlight running down the cape's edges */
-      svg.appendChild(mk("path", { d: "M12.6 27.4 Q5.4 30.6 3.4 39.6 M27.4 27.4 Q34.6 30.6 36.6 39.6", fill: "none", stroke: "#FFFFFF", "stroke-width": ".7", "stroke-linecap": "round",
-        pathLength: "10", "stroke-dasharray": "1.6 30", "stroke-dashoffset": "1.6", opacity: "0", class: "cx-fx cx-fx-zb2edge" }));
+      svg.appendChild(mk("path", { d: "M12.6 27.2 Q5.6 30.4 3.8 40 L36.2 40 Q34.4 30.4 27.4 27.2 Z", fill: capeG }));
+      svg.appendChild(mk("path", { d: "M4 39.6 Q5.8 30.6 12.6 27.4 M36 39.6 Q34.2 30.6 27.4 27.4", fill: "none", stroke: "#DDE5F2", "stroke-width": ".4", opacity: ".7" }));
       close();
       [0, 1].forEach(k => {
         const g = mk("g", { class: "cx-fx cx-fx-zbcapestars cx-fx-zbcapestars" + k });
-        (k ? [[6.2, 36.4, .26], [33.4, 35.2, .3], [8.6, 32.6, .22], [31.6, 38.4, .22]] : [[5, 38.6, .22], [34.8, 37.2, .24], [7.4, 34.8, .3], [32.8, 33, .22], [10, 38.8, .2]])
+        (k ? [[6.6, 36.4, .24], [33.2, 35.4, .28], [9, 33, .2], [31.4, 38.4, .2]] : [[5.6, 38.6, .2], [34.4, 37.4, .22], [7.8, 35, .28], [32.6, 33.2, .2], [10.2, 38.8, .18]])
           .forEach(([x, y, r]) => g.appendChild(mk("circle", { cx: x, cy: y, r, fill: "#FFFFFF" })));
         svg.appendChild(g);
       });
       open("cx-body");
-      /* the breastplate: midnight, platinum at its edges */
-      const chestD = "M8.4 40 Q8.8 31.8 14.2 29.4 L25.8 29.4 Q31.2 31.8 31.6 40 Z";
-      svg.appendChild(mk("path", { d: chestD, fill: night }));
-      svg.appendChild(mk("path", { d: "M20 29.6 L20 40", stroke: "#5D74C8", "stroke-width": ".26", opacity: ".7" }));
-      /* a constellation etched across the plate */
+      /* the breastplate: midnight, platinum at its edges, a constellation on it */
+      svg.appendChild(mk("path", { d: "M8.6 40 Q9 31.8 14.4 29.4 L25.6 29.4 Q31 31.8 31.4 40 Z", fill: veilDk }));
       open("cx-fx cx-fx-zbetch");
-      const etch = [[14.6, 33.2], [17.6, 35.6], [20, 34.2], [22.8, 36.4], [25.6, 33.4], [23.6, 38.8]];
-      svg.appendChild(mk("path", { d: "M" + etch.slice(0, 5).map(p => p.join(" ")).join(" L") + " M22.8 36.4 L23.6 38.8", fill: "none", stroke: lineC, "stroke-width": ".2", opacity: ".55" }));
-      etch.forEach(([x, y], i) => svg.appendChild(mk("circle", { cx: x, cy: y, r: i === 2 ? .5 : .32, fill: "#FFFFFF" })));
+      const etch = [[14.8, 33.4], [17.6, 35.6], [20, 34.4], [22.6, 36.4], [25.2, 33.6]];
+      svg.appendChild(mk("path", { d: "M" + etch.map(p => p.join(" ")).join(" L"), fill: "none", stroke: lineC, "stroke-width": ".18", opacity: ".5" }));
+      etch.forEach(([x, y], i) => svg.appendChild(mk("circle", { cx: x, cy: y, r: i === 2 ? .46 : .3, fill: "#FFFFFF" })));
       close();
-      /* the platinum gorget and pauldrons */
-      svg.appendChild(mk("path", { d: "M13.4 28.8 Q20 33.4 26.6 28.8 L25.6 31 Q20 34.6 14.4 31 Z", fill: plat }));
-      const pauL = "M6.6 35.6 Q6.6 30.4 11.4 28.6 Q14.6 28.2 15.6 29.6 Q12.2 30.4 10.6 33 Q9 34.6 6.6 35.6 Z";
-      const pauR = "M33.4 35.6 Q33.4 30.4 28.6 28.6 Q25.4 28.2 24.4 29.6 Q27.8 30.4 29.4 33 Q31 34.6 33.4 35.6 Z";
-      svg.appendChild(mk("path", { d: pauL, fill: plat, stroke: "#4A5670", "stroke-width": ".22" }));
-      svg.appendChild(mk("path", { d: pauR, fill: plat, stroke: "#4A5670", "stroke-width": ".22" }));
-      svg.appendChild(mk("path", { d: "M7.8 33.4 Q8.6 30.4 11.8 29.2", fill: "none", stroke: "#FFFFFF", "stroke-width": ".45", "stroke-linecap": "round", opacity: ".9" }));
+      /* pauldrons: smooth platinum shells */
+      [-1, 1].forEach(s => {
+        const X = v => f2(20 + s * (v - 20));
+        svg.appendChild(mk("path", { d: "M" + X(6.8) + " 35.4 Q" + X(6.6) + " 30.6 " + X(11.4) + " 28.8 Q" + X(14.4) + " 28.2 " + X(15.4) + " 29.6 Q" + X(12.2) + " 30.6 " + X(10.6) + " 33.2 Q" + X(9.2) + " 34.8 " + X(6.8) + " 35.4 Z",
+          fill: plat, stroke: "#4A5670", "stroke-width": ".2" }));
+      });
+      svg.appendChild(mk("path", { d: "M8 33.2 Q8.8 30.4 11.8 29.3", fill: "none", stroke: "#FFFFFF", "stroke-width": ".42", "stroke-linecap": "round", opacity: ".85" }));
       /* the star at the throat */
       open("cx-fx cx-fx-zbclasp");
-      svg.appendChild(mk("circle", { cx: 20, cy: 31.6, r: 1.7, fill: "#BFD0FF", opacity: ".3" }));
-      svg.appendChild(star4(20, 31.6, 1, 1.5, "#FFFFFF"));
+      svg.appendChild(mk("circle", { cx: 20, cy: 31.2, r: 1.6, fill: "#BFD0FF", opacity: ".26" }));
+      svg.appendChild(star4(20, 31.2, .9, 1.35, "#FFFFFF"));
       close();
       close();
       open("cx-head");
-      /* wings at the temples: three platinum feathers a side, swept back */
-      const feather = (x0, y0, x1, y1, w) => {
-        const dx = x1 - x0, dy = y1 - y0, L = Math.hypot(dx, dy), nx = -dy / L * w, ny = dx / L * w;
-        const mx = x0 + dx * .45, my = y0 + dy * .45;
-        return "M" + x0 + " " + y0 + " Q" + f2(mx + nx) + " " + f2(my + ny) + " " + x1 + " " + y1 + " Q" + f2(mx - nx * .4) + " " + f2(my - ny * .4) + " " + x0 + " " + y0 + " Z";
+      /* wings: two long swept feathers a side, curved like a quill */
+      const quill = (x0, y0, x1, y1, bow, w) => {
+        const dx = x1 - x0, dy = y1 - y0, L = Math.hypot(dx, dy), nx = -dy / L, ny = dx / L;
+        const mx = x0 + dx * .5 + nx * bow, my = y0 + dy * .5 + ny * bow;
+        return "M" + x0 + " " + y0 + " Q" + f2(mx + nx * w) + " " + f2(my + ny * w) + " " + x1 + " " + y1 + " Q" + f2(mx - nx * w * .35) + " " + f2(my - ny * w * .35) + " " + x0 + " " + y0 + " Z";
       };
-      /* each wing its own group (build 313), beating from the temple */
+      const wingG = lin([["0%", "#FFFFFF"], ["50%", "#DCE3F1"], ["100%", "#8C9FDC"]], 0, 8, 0, 19);
       [-1, 1].forEach(side => {
         open("cx-fx " + (side < 0 ? "cx-fx-zb2wingl" : "cx-fx-zb2wingr"));
-        [[6.6, 8.6, 1.3], [5.8, 11.6, 1.2], [6.6, 14.6, 1]].forEach(([tx, ty, w]) => {
-          if(side < 0) svg.appendChild(mk("path", { d: feather(12.6, 16.4, tx, ty, w), fill: plat, stroke: "#4A5670", "stroke-width": ".18", "stroke-linejoin": "round" }));
-          else svg.appendChild(mk("path", { d: feather(27.4, 16.4, f2(40 - tx), ty, -w), fill: plat, stroke: "#4A5670", "stroke-width": ".18", "stroke-linejoin": "round" }));
+        [[6.8, 17.4, .5, .95, .8], [5.6, 12.8, .9, 1.15, .9], [7.2, 8.4, 1.3, 1.3, 1]].forEach(([tx, ty, bow, w, op]) => {
+          const x0 = side < 0 ? 13.2 : 26.8, X1 = side < 0 ? tx : f2(40 - tx);
+          svg.appendChild(mk("path", { d: quill(x0, 18.6, X1, ty, side < 0 ? bow : -bow, side < 0 ? w : -w), fill: wingG, stroke: "#55638A", "stroke-width": ".15", "stroke-linejoin": "round", opacity: op }));
+          /* the quill's spine */
+          svg.appendChild(mk("path", { d: "M" + x0 + " 18.6 Q" + f2((x0 + X1) / 2 + (side < 0 ? -bow * .55 : bow * .55)) + " " + f2((18.6 + ty) / 2 - .4) + " " + X1 + " " + ty, fill: "none", stroke: "#FFFFFF", "stroke-width": ".18", opacity: ".65" }));
         });
         close();
       });
-      /* the helm, midnight, lit along its edge */
-      const helmD = "M20 6.8 Q28.6 7.2 28.8 16.4 L28 23.8 Q26 28.4 20 29.4 Q14 28.4 12 23.8 L11.2 16.4 Q11.4 7.2 20 6.8 Z";
-      svg.appendChild(mk("path", { d: helmD, fill: night }));
-      svg.appendChild(mk("path", { d: "M12.2 18 Q11.8 9.4 19 7.2", fill: "none", stroke: "#B9C8FF", "stroke-width": ".4", "stroke-linecap": "round", opacity: ".55" }));
-      svg.appendChild(mk("path", { d: "M20.4 7 Q28.4 7.6 28.6 16.4 L27.8 23.8 Q26 28 21 29.2", fill: "none", stroke: "#9DB2FF", "stroke-width": ".3", opacity: ".4" }));
-      /* the stars etched on the helm */
-      open("cx-fx cx-fx-zbetch2");
-      svg.appendChild(mk("path", { d: "M14.2 12 L16.4 9.8 L18.6 10.6 M24.4 9.6 L25.8 12.4", fill: "none", stroke: lineC, "stroke-width": ".18", opacity: ".6" }));
-      [[14.2, 12], [16.4, 9.8], [18.6, 10.6], [24.4, 9.6], [25.8, 12.4]].forEach(([x, y]) => svg.appendChild(mk("circle", { cx: x, cy: y, r: .3, fill: "#FFFFFF" })));
-      close();
-      /* the face: a platinum guard, sharp at the brow and the jaw */
-      const maskD = "M14.8 15.6 Q20 14 25.2 15.6 L24.8 21.8 L21.8 26.2 L20 26.9 L18.2 26.2 L15.2 21.8 Z";
-      svg.appendChild(mk("path", { d: maskD, fill: platFace, stroke: "#C9D4E6", "stroke-width": ".3", "stroke-linejoin": "round" }));
-      /* the far half of the guard turned from the light */
-      svg.appendChild(mk("path", { d: "M20 14.6 Q22.8 14.6 25.2 15.6 L24.8 21.8 L21.8 26.2 L20 26.9 Z", fill: "#5E6A86", opacity: ".32" }));
-      svg.appendChild(mk("path", { d: "M20 15.2 L20 26.4", stroke: "#FFFFFF", "stroke-width": ".3", opacity: ".7" }));
-      svg.appendChild(mk("path", { d: "M15.6 16.6 Q17 15.4 19.2 15.2", fill: "none", stroke: "#FFFFFF", "stroke-width": ".45", "stroke-linecap": "round", opacity: ".9" }));
-      /* the sculpting: a brow over each eye, the cheekbones, the lips */
-      svg.appendChild(mk("path", { d: "M15.3 16.9 L19.5 17.9 L19.7 17.1 L15.5 16.1 Z M24.7 16.9 L20.5 17.9 L20.3 17.1 L24.5 16.1 Z", fill: "#8C98B0", opacity: ".55" }));
-      svg.appendChild(mk("path", { d: "M15.9 21.2 L17.6 22 M24.1 21.2 L22.4 22", fill: "none", stroke: "#7C889E", "stroke-width": ".26", "stroke-linecap": "round", opacity: ".6" }));
-      svg.appendChild(mk("path", { d: "M19 25.1 L21 25.1", fill: "none", stroke: "#6A768C", "stroke-width": ".26", "stroke-linecap": "round" }));
-      /* the eye slits are night, and the eyes are light in them */
-      [[17.5, 18.9, -1], [22.5, 18.9, 1]].forEach(([x, y, s]) =>
-        svg.appendChild(mk("path", { d: "M" + f2(x - 2 * -s) + " " + f2(y - .9) + " L" + f2(x + 1.9 * -s) + " " + f2(y + .5) + " L" + f2(x + 1.6 * -s) + " " + f2(y + 1.1) + " L" + f2(x - 1.9 * -s) + " " + f2(y + .1) + " Z", fill: "#0A1236" })));
-      /* the jewel at the brow */
-      svg.appendChild(star4(20, 15.2, .7, 1.1, "#FFFFFF"));
-      open("cx-fx cx-fx-zbeyeglow");
-      [[17.5, 19.1], [22.5, 19.1]].forEach(([x, y]) => svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 1.7, ry: .75, fill: "#8FB0FF", opacity: ".75" })));
-      close();
-      open("cx-eyes");
-      [[17.5, 19.1, -1], [22.5, 19.1, 1]].forEach(([x, y, s]) => svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 1.05, ry: .38, fill: "#FFFFFF", transform: "rotate(" + (-s * 14) + " " + x + " " + y + ")" })));
-      close();
-      closedEyes([[17.5, 19.3, 1.3], [22.5, 19.3, 1.3]], "#8FB0FF", .35);
-      /* THE CROWN OF SEVEN STARS: an arc of them over the head, the
-         middle one the brightest, on a faint line like a constellation */
-      const CR = 10.8, CY0 = 16.4;
-      const crown = [-66, -44, -22, 0, 22, 44, 66].map(d => { const a = (d - 90) * Math.PI / 180; return [f2(20 + Math.cos(a) * CR), f2(CY0 + Math.sin(a) * CR), d]; });
-      /* a soft arc of light under the crown that swells with each wave (build 313) */
-      svg.appendChild(mk("path", { d: "M" + crown.map(([x, y]) => x + " " + y).join(" L"), fill: "none", stroke: "#AFC4FF", "stroke-width": "2.2", "stroke-linecap": "round", "stroke-linejoin": "round", opacity: ".1", class: "cx-fx cx-fx-zb2glow" }));
-      svg.appendChild(mk("path", { d: "M" + crown.map(([x, y]) => x + " " + y).join(" L"), fill: "none", stroke: lineC, "stroke-width": ".16", opacity: ".45" }));
-      /* build 313: the constellation draws itself in light along the
-         crown, left to right, on the stars' own wave */
-      { let L = 0; for(let i = 1; i < crown.length; i++) L += Math.hypot(crown[i][0] - crown[i - 1][0], crown[i][1] - crown[i - 1][1]);
-        const LL = f2(L + .1);
-        svg.appendChild(mk("path", { d: "M" + crown.map(([x, y]) => x + " " + y).join(" L"), fill: "none", stroke: "#FFFFFF", "stroke-width": ".34", "stroke-linecap": "round", "stroke-linejoin": "round",
-          "stroke-dasharray": LL + " " + LL, "stroke-dashoffset": LL, opacity: "0", style: "--zb-len:" + LL, class: "cx-fx cx-fx-zb2line" })); }
-      crown.forEach(([x, y, d], i) => {
-        const big = d === 0 ? 1.7 : (Math.abs(d) === 22 ? 1.2 : (Math.abs(d) === 44 ? 1 : .85));
-        const g = mk("g", { class: "cx-fx cx-fx-zbstar", style: "animation-delay:" + (-i * .38).toFixed(2) + "s" });
-        g.appendChild(mk("circle", { cx: x, cy: y, r: f2(big * 1.05), fill: "#C9D8FF", opacity: ".16" }));
-        g.appendChild(star4(x, y, f2(big * .72), big, "#FFFFFF"));
+      /* THE VEIL, which is the night: a hood that falls round the face onto
+         the shoulders, the sky inside it */
+      const veilD = "M20 7.6 Q27.6 8.2 28.9 16.4 Q29.6 22.6 27.6 27.8 Q24.4 29.6 20 29.8 Q15.6 29.6 12.4 27.8 Q10.4 22.6 11.1 16.4 Q12.4 8.2 20 7.6 Z";
+      svg.appendChild(mk("path", { d: veilD, fill: veilG }));
+      [0, 1].forEach(k => {
+        const g = mk("g", { class: "cx-fx cx-fx-zbveil cx-fx-zbveil" + k });
+        (k ? [[13.6, 13.8, .2], [26.2, 12.2, .22], [12.6, 21.6, .18], [27.4, 23.4, .2], [23.4, 9.6, .16]]
+           : [[15.8, 10.4, .18], [27.8, 18.6, .2], [12.4, 17.4, .22], [25.6, 26.4, .18], [14.4, 25.8, .2], [21.4, 9.2, .14]])
+          .forEach(([x, y, r]) => g.appendChild(mk("circle", { cx: x, cy: y, r, fill: "#E8EEFF" })));
         svg.appendChild(g);
       });
-      /* a crescent moon in orbit round the crown (build 313): two nested
-         pendulums, across and up-and-down a quarter-beat apart, so it
-         goes round on a flattened ellipse. Hidden when still. */
-      open("cx-fx cx-fx-zb2moon", { opacity: "0" });
-      { const gx = mk("g", { class: "cx-fx-zb2mx" }), gy = mk("g", { class: "cx-fx-zb2my" });
-        const mx = 20, my = 6.6, cut = uid + "-zbm";
-        const cm = mk("mask", { id: cut, maskUnits: "userSpaceOnUse", x: mx - 3, y: my - 3, width: 6, height: 6 });
-        cm.appendChild(mk("rect", { x: mx - 3, y: my - 3, width: 6, height: 6, fill: "#FFFFFF" }));
-        cm.appendChild(mk("circle", { cx: f2(mx + .62), cy: f2(my - .42), r: 1.02, fill: "#000000" }));
-        defs.appendChild(cm);
-        gy.appendChild(mk("circle", { cx: mx, cy: my, r: 2.2, fill: "#C9D8FF", opacity: ".18" }));
-        gy.appendChild(mk("circle", { cx: mx, cy: my, r: 1.15, fill: "#F2F6FF", mask: "url(#" + cut + ")" }));
-        gx.appendChild(gy); svg.appendChild(gx); }
+      /* a faint band of the milky way across the veil */
+      svg.appendChild(mk("path", { d: "M12.2 20.6 Q16 12.4 26.8 10.6", fill: "none", stroke: "#AFC2FF", "stroke-width": "1.6", "stroke-linecap": "round", opacity: ".08" }));
+      /* platinum light down the lit edge, a cool one down the other */
+      svg.appendChild(mk("path", { d: "M19.4 7.7 Q12.6 8.6 11.3 16.4 Q10.7 22.4 12.6 27.6", fill: "none", stroke: "#E6ECFF", "stroke-width": ".42", "stroke-linecap": "round", opacity: ".7" }));
+      svg.appendChild(mk("path", { d: "M20.6 7.7 Q27.4 8.6 28.7 16.4 Q29.3 22.4 27.4 27.6", fill: "none", stroke: "#8EA4FF", "stroke-width": ".3", "stroke-linecap": "round", opacity: ".45" }));
+      /* the opening in the veil, and the face in it */
+      svg.appendChild(mk("path", { d: "M20 11.4 Q26 11.8 26.3 18.8 Q26 25.6 20 28 Q14 25.6 13.7 18.8 Q14 11.8 20 11.4 Z", fill: "#050A24" }));
+      const faceD = "M20 12.8 Q24.7 13.1 24.9 18.8 Q24.7 24.2 20 26.7 Q15.3 24.2 15.1 18.8 Q15.3 13.1 20 12.8 Z";
+      svg.appendChild(mk("path", { d: faceD, fill: faceG }));
+      /* the far side of the face turned from the light, and the veil's
+         shadow across the brow */
+      svg.appendChild(mk("path", { d: "M20 12.8 Q24.7 13.1 24.9 18.8 Q24.7 24.2 20 26.7 Q22.5 22.6 22.7 18.8 Q22.7 14.4 20 12.8 Z", fill: "#6F7FAA", opacity: ".32" }));
+      svg.appendChild(mk("path", { d: "M15.3 15.2 Q15.9 13 20 12.8 Q24.1 13 24.7 15.2 Q22.6 14 20 14 Q17.4 14 15.3 15.2 Z", fill: "#3A4A8E", opacity: ".35" }));
+      svg.appendChild(mk("path", { d: "M16 24 Q17.6 26 20 26.7 Q22.4 26 24 24 Q22 25 20 25.2 Q18 25 16 24 Z", fill: "#7F8FC4", opacity: ".25" }));
+      svg.appendChild(mk("path", { d: "M16.2 15.6 Q17.4 13.8 19.6 13.5", fill: "none", stroke: "#FFFFFF", "stroke-width": ".42", "stroke-linecap": "round", opacity: ".9" }));
+      /* brows and a quiet mouth */
+      svg.appendChild(mk("path", { d: "M15.9 17.2 Q17.4 16.4 19 17 M24.1 17.2 Q22.6 16.4 21 17", fill: "none", stroke: "#8A97B2", "stroke-width": ".32", "stroke-linecap": "round", opacity: ".75" }));
+      svg.appendChild(mk("path", { d: "M19.2 23.7 L20.8 23.7", fill: "none", stroke: "#8E9AB4", "stroke-width": ".26", "stroke-linecap": "round", opacity: ".8" }));
+      /* platinum tracery from the brow star down each cheek, like the
+         lines that join the stars of a constellation */
+      svg.appendChild(mk("path", { d: "M20 15.9 L20 16.9 M16.2 21.4 L17 23 L18.4 24.4 M23.8 21.4 L23 23 L21.6 24.4", fill: "none", stroke: "#9FB2E6", "stroke-width": ".2", "stroke-linecap": "round", opacity: ".65" }));
+      [[16.2, 21.4], [18.4, 24.4], [23.8, 21.4], [21.6, 24.4]].forEach(([x, y]) => svg.appendChild(mk("circle", { cx: x, cy: y, r: .22, fill: "#C9D6FF" })));
+      /* the star on the brow */
+      svg.appendChild(star4(20, 14.8, .6, .95, "#FFFFFF"));
+      /* calm eyes of pale light */
+      open("cx-fx cx-fx-zbeyeglow");
+      [[17.6, 19.1], [22.4, 19.1]].forEach(([x, y]) => svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 1.7, ry: .85, fill: "#8FB0FF", opacity: ".55" })));
       close();
+      open("cx-eyes");
+      [[17.6, 19.1, -1], [22.4, 19.1, 1]].forEach(([x, y, s]) => {
+        /* an almond of night, lifted at the outer corner, with light in it */
+        const o = s * 1.3, i = -s * 1.2;
+        svg.appendChild(mk("path", { d: "M" + f2(x + i) + " " + f2(y + .2) + " Q" + x + " " + f2(y - .85) + " " + f2(x + o) + " " + f2(y - .35) + " Q" + x + " " + f2(y + .62) + " " + f2(x + i) + " " + f2(y + .2) + " Z", fill: "#0B1550" }));
+        svg.appendChild(mk("ellipse", { cx: f2(x + s * .08), cy: f2(y - .08), rx: .82, ry: .36, fill: "#EEF4FF", transform: "rotate(" + (-s * 9) + " " + x + " " + y + ")" }));
+        svg.appendChild(mk("circle", { cx: f2(x + s * .08), cy: f2(y - .1), r: .22, fill: "#9DBBFF" }));
+      });
+      close();
+      closedEyes([[17.5, 19.3, 1.2], [22.5, 19.3, 1.2]], "#6C7FB8", .32);
+      /* THE CROWN OF SEVEN STARS, on a fine circlet over the veil */
+      const CR = 9.8, CY0 = 16.4;
+      const crown = [-60, -40, -20, 0, 20, 40, 60].map(d => { const a = (d - 90) * Math.PI / 180; return [f2(20 + Math.cos(a) * CR), f2(CY0 + Math.sin(a) * CR), d]; });
+      const arcD = "M" + crown[0][0] + " " + crown[0][1] + " A" + CR + " " + CR + " 0 0 1 " + crown[6][0] + " " + crown[6][1];
+      svg.appendChild(mk("path", { d: arcD, fill: "none", stroke: "#AFC4FF", "stroke-width": "1.8", "stroke-linecap": "round", opacity: ".1", class: "cx-fx cx-fx-zb2glow" }));
+      svg.appendChild(mk("path", { d: arcD, fill: "none", stroke: "#E4EAF6", "stroke-width": ".26", "stroke-linecap": "round", opacity: ".7" }));
+      { let L = 0; for(let i = 1; i < crown.length; i++) L += Math.hypot(crown[i][0] - crown[i - 1][0], crown[i][1] - crown[i - 1][1]);
+        const LL = f2(L + .1);
+        svg.appendChild(mk("path", { d: "M" + crown.map(([x, y]) => x + " " + y).join(" L"), fill: "none", stroke: "#FFFFFF", "stroke-width": ".3", "stroke-linecap": "round", "stroke-linejoin": "round",
+          "stroke-dasharray": LL + " " + LL, "stroke-dashoffset": LL, opacity: "0", style: "--zb-len:" + LL, class: "cx-fx cx-fx-zb2line" })); }
+      crown.forEach(([x, y, d], i) => {
+        const big = d === 0 ? 1.5 : (Math.abs(d) === 20 ? 1.08 : (Math.abs(d) === 40 ? .9 : .76));
+        const g = mk("g", { class: "cx-fx cx-fx-zbstar", style: "animation-delay:" + (-i * .5).toFixed(2) + "s" });
+        g.appendChild(mk("circle", { cx: x, cy: y, r: f2(big * 1.05), fill: "#C9D8FF", opacity: ".18" }));
+        g.appendChild(star4(x, y, f2(big * .7), big, "#FFFFFF"));
+        svg.appendChild(g);
+      });
       return done();
     }
 
@@ -40807,7 +41112,11 @@ function drawAvatarCharSVG(charId){
     const cloak = headGrad("#3A2A5E", "#1E1636", "#0C0916");
     /* the shadow breathing off the hood: two soft violet flames licking
        up behind the point, on their own beats */
-    { const ag = uid + "-uma"; const rg = mk("radialGradient", { id: ag, gradientUnits: "userSpaceOnUse", cx: 20, cy: 14, r: 13 });
+    /* build 314: the flames stop short of the frame. They reached y -0.6
+       and grew 6% from the hem, so the top of every tile cut them off in a
+       straight line; the light now runs out (r 11.5 round y 16.5) before
+       the top edge at the largest the breath gets. */
+    { const ag = uid + "-uma"; const rg = mk("radialGradient", { id: ag, gradientUnits: "userSpaceOnUse", cx: 20, cy: 16.5, r: 11.5 });
       [["0%", "#8B5CF6", ".55"], ["55%", "#6D28D9", ".22"], ["100%", "#4C1D95", "0"]].forEach(([o, c, op]) => rg.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
       defs.appendChild(rg);
       [["M20 1.2 Q25.6 6.4 27.2 14 Q28.8 22 26 30 L14 30 Q11.2 22 12.8 14 Q14.4 6.4 20 1.2 Z", "cx-fx-umaura"],
@@ -41527,11 +41836,19 @@ function syncBottomTabAvatar(){
   if(!tabIcon) return;
   tabIcon.classList.add("bottomtab-icon-avatar");
   if(store.avatarChar){
+    /* THE SAME CHARACTER IS LEFT ALONE (build 314). Every live update,
+       every Home and every save of a name ran this, and each time the
+       drawing was rebuilt and its loop thrown away - the tab started
+       over as a still drawing, again and again. Only a different
+       character redraws it. */
+    const want = RETIRED_CHARACTER_TO[store.avatarChar] || store.avatarChar;
+    if(tabIcon.dataset.char === want && tabIcon.querySelector(":scope > svg.avatarchar-svg")) return;
     const svg = buildAvatarCharSVG(store.avatarChar);
     /* Alive in the tab bar too (build 304): "your character needs to
        have its animations displayed as well." */
-    if(svg){ tabIcon.replaceChildren(svg); setCharState(tabIcon, "live"); return; }
+    if(svg){ tabIcon.replaceChildren(svg); tabIcon.dataset.char = want; setCharState(tabIcon, "live", { solo: true }); return; }
   }
+  delete tabIcon.dataset.char;
   tabIcon.textContent = getInitials(store.firstName) || "";
 }
 /* During the sign-up screens specifically, there's no identity yet to put
@@ -46589,16 +46906,29 @@ setTimeout(() => {
   const go = () => { warmBadgeViewBoxes(); try{ buildAvatarCharSVGSafe((store && store.avatarChar) || AVATAR_CHARACTERS[0].id); }catch(e){} };
   if(typeof window.requestIdleCallback === "function") window.requestIdleCallback(go, { timeout: 4000 }); else go();
 }, 4000);
+/* earned: true draws the badge, false the empty slot, and "grey" (build
+   314) the badge's FORM with nothing of its colour - see below. */
 function buildUnitBadgeSVG(unitName, earned){
   const NS = "http://www.w3.org/2000/svg";
   const shape = badgeShapeFor(unitName);
-  const theme = badgeThemeFor(unitName);
+  /* A BADGE NOT YET EARNED IS SEEN, NOT SHOWN (build 314). "The badges
+     you have not unlocked yet in badges, when clicking them, they
+     shouldn't be visible ... grey them out. Make it so you only see the
+     3d and stuff but color and make it greyed out? You can still see what
+     the badge would kind of look like but without revealing them." The
+     card drew the badge in full enamel (build 269's "should look like
+     the prize") and the case showed only the hole. Now both show the
+     piece itself - its metal, its bevels, its channels, sitting in its
+     slot - struck in plain grey and dimmed: the shape is a hint, the
+     colour is the reward. No unit colour reaches the drawing at all. */
+  const grey = earned === "grey";
+  const theme = grey ? { p: "#6B6E73" } : badgeThemeFor(unitName);
   const outline = shape.d;
   const cx = shape.c[0], cy = shape.c[1];
   const uid = "bdg" + (++badgeSvgSeq);
   const svg = document.createElementNS(NS, "svg");
   svg.setAttribute("viewBox", badgeViewBoxFor(outline));
-  svg.setAttribute("class", "badge-art" + (earned ? " is-earned" : " is-locked"));
+  svg.setAttribute("class", "badge-art" + (earned === true ? " is-earned" : " is-locked") + (grey ? " is-grey" : ""));
   svg.setAttribute("aria-hidden", "true");
 
   const defs = document.createElementNS(NS, "defs");
@@ -46737,7 +47067,7 @@ function buildUnitBadgeSVG(unitName, earned){
   add(outline, { fill: "rgba(0,0,0,.30)", stroke: "rgba(0,0,0,.18)", "stroke-width": "9", "stroke-linejoin": "round",
                  transform: "translate(3.4 4.2) " + TOK }, castShade);
   add(outline, { fill: "rgba(0,0,0,.42)", transform: "translate(1.6 2.1) " + TOK }, castShade);
-  const token = group({ transform: TOK });
+  const token = group(grey ? { transform: TOK, opacity: ".7" } : { transform: TOK });
 
   /* The metal. Lit from the top-left, through shadow, back up at the
      bottom edge - a flat grey band is a drawn line, a ramp is a piece of
@@ -46745,8 +47075,9 @@ function buildUnitBadgeSVG(unitName, earned){
   /* POLISHED, not satin (build 242): a real struck pin's metal has a
      hard highlight, a dark mid-band and a second catch at the bottom -
      the contrast is what makes it read as metal and not grey paint. */
-  const AG = ramp(uid + "-ag",
-    [[0, "#FFFFFF"], [0.16, "#E6ECF2"], [0.38, "#A7B2BE"], [0.55, "#6F7B88"], [0.72, "#8A96A3"],
+  const AG = ramp(uid + "-ag", grey
+    ? [[0, "#D9DADB"], [0.16, "#BFC1C3"], [0.38, "#8C8F93"], [0.55, "#5C5F63"], [0.72, "#737679"], [0.86, "#B3B5B8"], [1, "#838689"]]
+    : [[0, "#FFFFFF"], [0.16, "#E6ECF2"], [0.38, "#A7B2BE"], [0.55, "#6F7B88"], [0.72, "#8A96A3"],
      [0.86, "#D9E1E9"], [1, "#9AA6B3"]],
     "0", "0", ".35", "1");
   /* The plate. The reference's colour fields are not flat - they carry a
@@ -46866,8 +47197,8 @@ function buildUnitBadgeSVG(unitName, earned){
     const cuts = group({ "clip-path": cutClip }, token);
     shape.cuts.forEach(c => {
       add(c, { fill: "none", stroke: "#14171C", "stroke-width": "13" }, cuts);
-      add(c, { fill: "none", stroke: "#9FACBA", "stroke-width": "9" }, cuts);
-      add(c, { fill: "none", stroke: "#E4ECF4", "stroke-width": "2.6", opacity: ".45",
+      add(c, { fill: "none", stroke: grey ? "#86898D" : "#9FACBA", "stroke-width": "9" }, cuts);
+      add(c, { fill: "none", stroke: grey ? "#D4D5D7" : "#E4ECF4", "stroke-width": "2.6", opacity: ".45",
                transform: "translate(-1 -1.2)" }, cuts);
     });
   }
@@ -46877,6 +47208,7 @@ function buildUnitBadgeSVG(unitName, earned){
      box it's on, ensure that effect is only to the badges". It was a
      ::after sweeping the whole square slot. Invisible until something
      animates it (the badge case's .bc-glisten). */
+  if(grey) return svg;
   const shineGrad = ramp(uid + "-shn", [[0, "#FFFFFF", 0], [0.5, "#FFFFFF", 0.8], [1, "#FFFFFF", 0]], "0", "0", "1", "0");
   const shineClip = group({ "clip-path": "url(#" + uid + "-band)", class: "badge-shine" }, token);
   const shineTilt = group({ transform: "rotate(24 50 50)" }, shineClip);
@@ -50189,7 +50521,7 @@ function tierColorUnlocked(name){
 const ACCENT_SWATCH = {
   ink:"#5C6E78", teal:"#0A7A8C", indigo:"#4438A8",
   /* Build 244: rookie is BRONZE, ranger SILVER, and Gold a clear yellow. */
-  rookie:"#E3A064", ranger:"#D3DCE6", veteran:"#FFD43B", vanguard:"#5EEAD4",
+  rookie:"#E3A064", ranger:"#DEDFE0", veteran:"#FFD43B", vanguard:"#5EEAD4",
   adept:"#6E9CFF", elite:"#C084FC", titan:"#FF3B30"
 };
 /* THE FLARES ON HOME CAN HAVE THEIR OWN COLOURS, because ACCENT_SWATCH
@@ -50320,7 +50652,7 @@ const RANK_DISPLAY_NAME = {
    it could look as good as the platinum color". #E9B43A was an ochre
    that went brown wherever it was mixed down into a dark card. */
 const RANK_COLOR = {
-  rookie: "#C8803F", ranger: "#A9B7C6", veteran: "#F5C21B", vanguard: "#2EC4B6",
+  rookie: "#C8803F", ranger: "#C8CACC", veteran: "#F5C21B", vanguard: "#2EC4B6",
   adept: "#3D74E8", elite: "#A855F7", titan: "#E23B3B"
 };
 /* SEVEN DIFFERENT MARKS, not one mark at seven sizes.
@@ -50834,15 +51166,15 @@ function buildRankEmblemSVG(rankKey){
     /* an annulus of light: dark at the star, brightest part-way out,
        gone at the rim - which is what makes it read as a DISC round the
        star rather than a smear through it */
-    const discG = ramp(uid + "a", [[0, "#E6F0FF", 0.25], [0.3, "#F4F8FF", 0.95], [0.5, badgeShade(base, 0.45), 0.8],
+    const discG = ramp(uid + "a", [[0, "#F0F1F2", 0.25], [0.3, "#F8F8F8", 0.95], [0.5, badgeShade(base, 0.45), 0.8],
                                    [0.78, base, 0.35], [1, badgeShade(base, -0.3), 0]], "50%", "50%", "50%");
     inLayer("rk-breathe", C, C, 0, () => halo(46));
     inLayer("rk-flare", C, C, 0, () => {
       const up = (d) => [C + Math.sin(T * Math.PI / 180) * -d, C - Math.cos(T * Math.PI / 180) * d];
       const [ax, ay] = up(10), [bx, by] = up(54), [cx2, cy2] = up(-10), [dx2, dy2] = up(-42);
-      add(lens(ax, ay, bx, by, 3.6), { fill: "#CFE0FF", opacity: ".45" });
+      add(lens(ax, ay, bx, by, 3.6), { fill: "#E0E2E4", opacity: ".45" });
       add(lens(ax, ay, bx, by, 1.4), { fill: "#FFFFFF", opacity: ".6" });
-      add(lens(cx2, cy2, dx2, dy2, 3.2), { fill: "#CFE0FF", opacity: ".38" });
+      add(lens(cx2, cy2, dx2, dy2, 3.2), { fill: "#E0E2E4", opacity: ".38" });
       add(lens(cx2, cy2, dx2, dy2, 1.2), { fill: "#FFFFFF", opacity: ".5" });
     });
     const back = group({ transform: flat });
@@ -51429,9 +51761,10 @@ setInterval(() => { _rkSeen.forEach(t => { if(!t.isConnected){ try { _rkIO && _r
      char-react-win   the Virtual Room winner doing its thing
    Only friends can be seen asleep: presence is a friend's thing, so a
    classmate opened from the Leaderboard is simply live. */
-function setCharState(el, state){
+function setCharState(el, state, opts){
   if(!el) return el;
-  el.classList.remove("char-live", "char-sleep", "char-flip");
+  el.classList.remove("char-live", "char-sleep", "char-flip", "char-flip-fallback");
+  delete el.dataset.flipSolo; delete el.dataset.flipArmed;
   const old = el.querySelector(":scope > .char-zzz");
   if(old) old.remove();
   el.querySelectorAll(".char-flip-play").forEach(n => n.remove());
@@ -51444,10 +51777,17 @@ function setCharState(el, state){
        (build 308, see charFlipAttach); anything that turns out too big,
        or cannot be recorded, falls back to the live drawing. */
     el.classList.add("char-flip");
+    /* A SOLO TILE MOVES FROM THE START (build 314): one character on its
+       own - your own in the tab bar - plays its live drawing while its
+       sheet is recorded, and hands over to the sheet once it exists. One
+       live drawing is affordable; it is a board of them that is not. */
+    if(opts && opts.solo){ el.dataset.flipSolo = "1"; el.classList.add("char-live"); }
+    charFlipWatch(el);
     const goLive = () => { if(el.classList.contains("char-flip")){ el.classList.remove("char-flip"); el.classList.add("char-live"); } };
     let tries = 0;
     const attach = () => {
       if(!el.classList.contains("char-flip") || el.classList.contains("char-sleep")) return;
+      el.dataset.flipArmed = "1";
       if(!el.isConnected){ if(++tries < 40) setTimeout(attach, 150); return; }
       const r = charFlipAttach(el);
       if(r === false) goLive();
@@ -56346,16 +56686,23 @@ const CHAR_ANIM_COLS = 12;
    motion alone (new keyframes, a new period) would have played last
    build's recording; the version clears every old sheet at once. Bump it
    whenever character CSS motion changes without the drawing changing. */
-const CHAR_ANIM_VER = "c3";
+/* c4 (build 314): the ultimates' motion was toned down and the edges
+   of every drawing changed (the .avatarchar-svg mask). */
+const CHAR_ANIM_VER = "c4";
 const CHAR_FLIP_MAX_CSS = 80;
 const charAnimSheets = new Map();
 const charAnimDrawings = new Map();
 function charAnimDrawing(charId){
   if(!charAnimDrawings.has(charId)){
-    const svg = buildAvatarCharSVGSafe(charId);
+    /* "<id>~sil" is that character's silhouette (build 314): a locked
+       secret character plays as a flip-book too, drawn without the depth
+       shading, as it is on the page */
+    const sil = /~sil$/.test(charId);
+    const svg = sil ? charSilhouetteSVG(charId.replace(/~sil$/, ""))
+      : /~pick$/.test(charId) ? pickerCharSVG(charId.replace(/~pick$/, "")) : buildAvatarCharSVGSafe(charId);
     const uid = svg.getAttribute("data-cx-uid") || "\u0000";
-    const id = charId + "-" + hashOf(new XMLSerializer().serializeToString(svg).split(uid).join("u"));
-    charAnimDrawings.set(charId, { svg, id });
+    const id = charId.replace(/~/g, "_") + "-" + hashOf(new XMLSerializer().serializeToString(svg).split(uid).join("u"));
+    charAnimDrawings.set(charId, { svg, id, depth: !sil });
   }
   return charAnimDrawings.get(charId);
 }
@@ -56398,19 +56745,115 @@ async function charAnimSheetFromBlob(blob, px){
 const CHAR_ANIM_PROPS = ["transform", "transformOrigin", "transformBox", "rotate", "scale", "translate", "opacity", "strokeDashoffset"];
 /* One recording at a time: a board asks for a dozen characters at once,
    and twelve recorders interleaving would make the first one wait for
-   all of them. */
-let charAnimQueue = Promise.resolve();
+   all of them (see charRecPump for which one goes first). */
 /* When #stage last got a new screen, for recordCharFrames to wait out. */
 const CHAR_REC_SETTLE_MS = 700;
 let stageMountedAt = 0;
 try{ new MutationObserver(() => { stageMountedAt = performance.now(); }).observe(document.getElementById("stage"), { childList: true }); }catch(e){}
-function recordCharFrames(charId, px){
+/* THE RECORDER IS A QUEUE THAT LOOKS AT THE SCREEN (build 314). "My
+   character on the bottom tab is not moving either, seems like that's a
+   problem app wide." It was. A small tile is STILL until its sheet is
+   recorded, and a recording is several seconds of main-thread work on a
+   phone (14-52s each at 4x CPU here; 144 svg frames decoded and drawn),
+   one at a time, first come first served - so a board of twenty
+   characters, or Customize's thirty, queued minutes of recording ahead of
+   whatever the person was actually looking at, and every tile waiting
+   behind them stood still. Three things made it worse: a sheet already
+   SAVED was read inside the queue too (a cached character waited behind
+   every uncached one), a recording that failed or hung left its tile
+   still for good (nothing fell back to the live drawing), and the yield
+   between frames waited for an idle callback that a busy page rarely
+   gives. So:
+   - a saved sheet is read at once, out of turn;
+   - the queue picks what is wanted most each time: your own character in
+     the tab bar first, then tiles on screen, then tiles further down the
+     page; a tile nobody can see any more is dropped, not recorded;
+   - a recording has a time limit, and a tile whose sheet cannot be made
+     falls back to its live drawing (a few at most - see charFlipFallback);
+   - on iOS (no idle callbacks) the work runs in a 10ms slice every
+     frame (charRecYield), not 8ms behind a 16ms timer. */
+const charRecPending = new Map();
+const charRecWaiters = new Map();
+let charRecBusy = false;
+const CHAR_REC_LIMIT_MS = 60000;
+function charRecWant(key, el){
+  if(!el) return;
+  let set = charRecWaiters.get(key);
+  if(!set){ set = new Set(); charRecWaiters.set(key, set); }
+  set.add(el);
+}
+/* 0 your own tab, 1 on (or near) the screen, 2 further down the page,
+   3 gone - see charFlipWatch for flipNear */
+function charRecPriority(key){
+  const set = charRecWaiters.get(key);
+  let best = 3;
+  if(set) set.forEach(el => {
+    if(!el.isConnected || !el.classList.contains("char-flip")){ set.delete(el); return; }
+    const p = (el.dataset.flipSolo || el.closest(".bottomtabs")) ? 0 : (el.dataset.flipNear === "0" ? 2 : 1);
+    if(p < best) best = p;
+  });
+  return best;
+}
+/* THE YIELD BETWEEN FRAMES OF A RECORDING. Where the browser has idle
+   callbacks, the orbit recorder's own yield (work only in idle time, so
+   nothing that is drawing waits for us). Where it has none - iOS Safari -
+   that yield fell back to a 16ms timer and 8ms of work, a third of the
+   time; here it is a 10ms slice just after each frame is drawn, the rest
+   of the frame left to the page. A first draft ran slices back to back on
+   a MessageChannel: fastest, but it left the page no idle time at all, so
+   everything waiting on an idle callback (the rank emblems' recorder, the
+   road map's rank-up) was pushed to its timeout. The 50ms timer covers a
+   page that is not drawing frames. */
+let charRecSliceEnd = 0;
+function charRecYield(){
+  if(window.requestIdleCallback) return orbitAnimYield();
+  if(performance.now() < charRecSliceEnd) return Promise.resolve();
+  return new Promise(res => {
+    let done = false;
+    const go = () => { if(done) return; done = true; charRecSliceEnd = performance.now() + 10; res(); };
+    requestAnimationFrame(() => setTimeout(go, 0));
+    setTimeout(go, 50);
+  });
+}
+function charRecWithin(p, ms){ return Promise.race([p, new Promise(r => setTimeout(() => r("__timeout"), ms))]); }
+function recordCharFrames(charId, px, el){
   const drawing = charAnimDrawing(charId);
   const key = drawing.id + "|" + px;
+  charRecWant(key, el);
   if(charAnimSheets.has(key)) return charAnimSheets.get(key);
-  const job = charAnimQueue.then(async () => {
-    const cached = await charAnimCacheGet(drawing.id, px);
-    if(cached){ const sp = await charAnimSheetFromBlob(cached, px); if(sp) return sp; }
+  let settle;
+  const job = new Promise(r => { settle = r; });
+  charAnimSheets.set(key, job);
+  job.then(v => { if(!v) charAnimSheets.delete(key); charRecWaiters.delete(key); });
+  /* a sheet already saved is read at once, out of turn */
+  charAnimCacheGet(drawing.id, px).then(async blob => {
+    const sp = blob ? await charAnimSheetFromBlob(blob, px) : null;
+    if(sp){ settle(sp); return; }
+    charRecPending.set(key, { drawing, px, settle });
+    charRecPump();
+  }, () => { charRecPending.set(key, { drawing, px, settle }); charRecPump(); });
+  return job;
+}
+async function charRecPump(){
+  if(charRecBusy) return;
+  charRecBusy = true;
+  try{
+    while(charRecPending.size){
+      let pick = null, pickP = 9;
+      charRecPending.forEach((j, key) => { const p = charRecPriority(key); if(p < pickP){ pick = key; pickP = p; } });
+      const job = charRecPending.get(pick);
+      charRecPending.delete(pick);
+      /* nobody on the page wants it any more: nothing recorded, and no
+         failure remembered - the next tile to ask starts again */
+      if(pickP >= 3){ job.settle(false); continue; }
+      let sp = null;
+      try{ sp = await recordCharSheet(job.drawing, job.px); }catch(e){ sp = null; }
+      job.settle(sp);
+    }
+  } finally { charRecBusy = false; }
+}
+async function recordCharSheet(drawing, px){
+    const t0 = performance.now();
     /* NOT WHILE A SCREEN IS ARRIVING (build 311): "When opening up a hosted
        lobby, it lags when the page comes up." Profiled at 4x CPU, the lobby
        itself builds in 14ms; what landed on top of its entrance was this -
@@ -56430,7 +56873,7 @@ function recordCharFrames(charId, px){
     host.appendChild(live);
     document.body.appendChild(host);
     try{
-      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      await charRecWithin(new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))), 1500);
       const anims = live.getAnimations ? live.getAnimations({ subtree: true }) : [];
       if(!anims.length) return null;
       const L = CHAR_ANIM_LOOP_MS, N = CHAR_ANIM_FRAMES;
@@ -56466,7 +56909,8 @@ function recordCharFrames(charId, px){
       /* The depth shading is a CSS filter on the svg pointing at a
          filter in the page; an image cannot see the page, so the sheet
          carries its own copy, applied to a group round the art. */
-      const depth = document.getElementById("avatarDepth");
+      /* (a silhouette is drawn without it, as on the page) */
+      const depth = drawing.depth !== false && document.getElementById("avatarDepth");
       if(depth){
         let defs = tpl.querySelector(":scope > defs");
         if(!defs){ defs = document.createElementNS(svgNS, "defs"); tpl.insertBefore(defs, tpl.firstChild); }
@@ -56487,7 +56931,8 @@ function recordCharFrames(charId, px){
         if(!defs){ defs = document.createElementNS(svgNS, "defs"); tpl.insertBefore(defs, tpl.firstChild); }
         const lg = document.createElementNS(svgNS, "linearGradient");
         lg.setAttribute("id", "cxfadeg"); lg.setAttribute("x1", "0"); lg.setAttribute("y1", "0"); lg.setAttribute("x2", "0"); lg.setAttribute("y2", "1");
-        [["0", "#FFFFFF"], [".7", "#FFFFFF"], [".86", "#737373"], ["1", "#000000"]].forEach(([o, c]) => {
+        /* build 314: the top and the sides feather too, as in the CSS */
+        [["0", "#000000"], [".047", "#FFFFFF"], [".7", "#FFFFFF"], [".86", "#737373"], ["1", "#000000"]].forEach(([o, c]) => {
           const st = document.createElementNS(svgNS, "stop"); st.setAttribute("offset", o); st.setAttribute("stop-color", c); lg.appendChild(st);
         });
         const mk = document.createElementNS(svgNS, "mask");
@@ -56497,6 +56942,19 @@ function recordCharFrames(charId, px){
         r.setAttribute("x", vb[0]); r.setAttribute("y", vb[1]); r.setAttribute("width", vb[2]); r.setAttribute("height", vb[3]);
         r.setAttribute("fill", "url(#cxfadeg)");
         mk.appendChild(r);
+        /* the sides: black strips fading in over the white, which in a
+           luminance mask multiplies the vertical fade by the horizontal */
+        [["cxfadel", 0, 1], ["cxfader", 1, 0]].forEach(([id, a0, a1], k) => {
+          const hg = document.createElementNS(svgNS, "linearGradient");
+          hg.setAttribute("id", id); hg.setAttribute("x1", "0"); hg.setAttribute("y1", "0"); hg.setAttribute("x2", "1"); hg.setAttribute("y2", "0");
+          [["0", a0], ["1", a1]].forEach(([o, op]) => { const st = document.createElementNS(svgNS, "stop"); st.setAttribute("offset", o); st.setAttribute("stop-color", "#000000"); st.setAttribute("stop-opacity", String(op)); hg.appendChild(st); });
+          defs.appendChild(hg);
+          const sr = document.createElementNS(svgNS, "rect");
+          const sw = vb[2] * 0.047;
+          sr.setAttribute("x", k ? vb[0] + vb[2] - sw : vb[0]); sr.setAttribute("y", vb[1]); sr.setAttribute("width", sw); sr.setAttribute("height", vb[3]);
+          sr.setAttribute("fill", "url(#" + id + ")");
+          mk.appendChild(sr);
+        });
         defs.appendChild(lg); defs.appendChild(mk);
         const outer = document.createElementNS(svgNS, "g");
         outer.setAttribute("mask", "url(#cxfade)");
@@ -56525,7 +56983,7 @@ function recordCharFrames(charId, px){
          once held a throttled phone for most of a second. */
       const B = 4;
       for(let f0 = 0; f0 < N; f0 += B){
-        if(!host.isConnected) return null;
+        if(!host.isConnected || performance.now() - t0 > CHAR_REC_LIMIT_MS) return null;
         const batch = [];
         for(let f = f0; f < Math.min(N, f0 + B); f++){
           const tau = f * L / N;
@@ -56533,26 +56991,22 @@ function recordCharFrames(charId, px){
           const img = new Image();
           img.src = frameSrc();
           batch.push({ f, img });
-          await orbitAnimYield();
+          await charRecYield();
         }
-        await Promise.all(batch.map(b => b.img.decode()));
+        /* a decode that never answers must not hold the queue for good */
+        if(await charRecWithin(Promise.all(batch.map(b => b.img.decode())), 8000) === "__timeout") return null;
         for(const b of batch){
-          await orbitAnimYield();
+          await charRecYield();
           g.drawImage(b.img, (b.f % cols) * px, Math.floor(b.f / cols) * px, px, px);
         }
       }
-      const blob = await new Promise(r => sheet.toBlob(r, "image/png"));
+      const blob = await charRecWithin(new Promise(r => sheet.toBlob(r, "image/png")), 10000);
       sheet.width = sheet.height = 0;
-      if(!blob) return null;
+      if(!blob || blob === "__timeout") return null;
       charAnimCachePut(drawing.id, px, blob);
       return await charAnimSheetFromBlob(blob, px);
     } catch(e){ return null; }
     finally { host.remove(); }
-  });
-  charAnimQueue = job.catch(() => null);
-  charAnimSheets.set(key, job);
-  job.then(v => { if(!v) charAnimSheets.delete(key); });
-  return job;
 }
 /* Which character a drawing is: the span's data-char when the builder
    set one, else the cx-k-<kind> on its figure. */
@@ -56579,6 +57033,49 @@ function charFlipResync(el){
   const img = el && el.querySelector(".char-flip-play img");
   if(img && el.dataset.flipPhase != null) img.style.animationDelay = charFlipDelay(el) + "ms";
 }
+/* A TILE WHOSE SHEET CANNOT BE MADE IS LIVE, NOT STILL (build 314).
+   It used to keep char-flip with nothing playing - a still drawing for
+   good. The live drawing is the costly kind (build 308), so a board does
+   not turn into forty of them: the tab bar and a solo tile always fall
+   back, anything else only while a handful have. */
+function charFlipFallback(el){
+  if(!el || !el.isConnected || !el.classList.contains("char-flip") || el.classList.contains("char-sleep")) return;
+  if(el.querySelector(".char-flip-play")) return;
+  const solo = el.dataset.flipSolo || el.closest(".bottomtabs");
+  if(!solo && document.querySelectorAll(".char-flip-fallback").length >= 4) return;
+  el.classList.remove("char-flip");
+  el.classList.add("char-live", "char-flip-fallback");
+}
+/* WHAT IS NEAR THE SCREEN PLAYS (build 314). One observer for every
+   flip-book tile: near the screen (within a screen of it) a tile asks
+   for its sheet and plays it; far away it lets its sheet go, which is
+   what keeps a long board or Customize from holding thirty decoded
+   sheets at once. flipNear also tells the recorder what to do first.
+   The tab bar's own character never parks. */
+let charFlipIO = null;
+const charFlipWatched = new Set();
+function charFlipWatch(el){
+  if(!el || typeof IntersectionObserver !== "function") return;
+  if(!charFlipIO){
+    charFlipIO = new IntersectionObserver(list => list.forEach(e => {
+      const t = e.target;
+      if(!t.isConnected || !t.classList.contains("char-flip")){ charFlipIO.unobserve(t); charFlipWatched.delete(t); return; }
+      t.dataset.flipNear = e.isIntersecting ? "1" : "0";
+      if(e.isIntersecting){ if(t.dataset.flipArmed && !t.querySelector(".char-flip-play")) charFlipAttach(t); }
+      else charFlipPark(t);
+    }), { rootMargin: "100% 0px" });
+  }
+  /* the observer cannot see a tile leave the page while it is already
+     off screen, so the set is swept as it grows */
+  if(charFlipWatched.size > 60) charFlipWatched.forEach(t => { if(!t.isConnected){ charFlipIO.unobserve(t); charFlipWatched.delete(t); } });
+  charFlipWatched.add(el);
+  charFlipIO.observe(el);
+}
+function charFlipPark(el){
+  if(!el || el.dataset.flipSolo || el.closest(".bottomtabs")) return;
+  el.querySelectorAll(".char-flip-play").forEach(n => n.remove());
+  el.querySelectorAll(".char-under-flip").forEach(n => n.classList.remove("char-under-flip"));
+}
 function charFlipAttach(el){
   if(!el || !el.isConnected || !el.classList.contains("char-flip") || el.classList.contains("char-sleep")) return false;
   const svg = el.querySelector("svg.avatarchar-svg");
@@ -56593,9 +57090,15 @@ function charFlipAttach(el){
   let px = Math.round(layoutW * scale);
   px += px % 2;
   if(px < 12) return false;
-  recordCharFrames(charId, px).then(sp => {
-    if(!sp || !el.isConnected || !el.classList.contains("char-flip") || el.classList.contains("char-sleep")) return;
+  recordCharFrames(charId, px, el).then(sp => {
+    /* false: dropped because nobody wanted it at the time - a tile that
+       is here after all asks again; null: it could not be made */
+    if(sp === false){ setTimeout(() => { if(el.isConnected && !el.querySelector(".char-flip-play")) charFlipAttach(el); }, 0); return; }
+    if(!sp){ charFlipFallback(el); return; }
+    if(!el.isConnected || !el.classList.contains("char-flip") || el.classList.contains("char-sleep")) return;
     if(!svg.isConnected || el.querySelector(".char-flip-play")) return;
+    /* parked while it was being recorded: it plays when it comes back */
+    if(el.dataset.flipNear === "0" && !el.dataset.flipSolo && !el.closest(".bottomtabs")) return;
     const cellCss = sp.px / scale;
     const play = document.createElement("span");
     play.className = "char-flip-play";
@@ -56642,6 +57145,8 @@ function charFlipAttach(el){
     if(getComputedStyle(svg.parentNode).position === "static") svg.parentNode.style.position = "relative";
     svg.after(play);
     svg.classList.add("char-under-flip");
+    /* a solo tile was live while it waited (setCharState) */
+    if(el.dataset.flipSolo) el.classList.remove("char-live");
   });
   return true;
 }
@@ -57870,7 +58375,8 @@ function showWelcomeCharacterPrompt(){
        value written at the same moment as the class would transition
        from the previous character's colour. */
     opt.style.setProperty("--char-glow", avatarGlowColor(charDef.id));
-    opt.appendChild(buildAvatarCharSVG(charDef.id));
+    opt.appendChild(pickerCharSVG(charDef.id));
+    addPickCheck(opt);
     if(locked){
       const lockMark = document.createElement("span");
       lockMark.className = "avatarchar-lockmark";
@@ -81030,6 +81536,9 @@ function showVirtualRoomLobby(){
            drop-shadow - see .vroom-avatar.has-glow > .rank-avatar. */
         avatarWrap.appendChild(avatarSpanFor({ avatarChar: p.avatarChar || "ninja" }));
         decorateAvatar(avatarWrap, p.level, p.badges, p.mystery);
+        /* alive in the lobby (build 314: "make sure the ones that are meant
+           to animate do") - a flip-book, like a board row */
+        setCharState(avatarWrap, "live");
         /* IN A LOBBY ONLY: the rank emblem, top-left on its coin. The
            boards lost theirs in this same build ("remove the rank icon
            that's showing on the character while looking at character in
@@ -83637,6 +84146,7 @@ function showVirtualRoomResults(){
         avatarGlowColor(p.avatarChar || AVATAR_CHARACTERS[0].id));
       avatarWrap.appendChild(avatarSpanFor({ avatarChar: p.avatarChar || "ninja" }));
       decorateAvatar(avatarWrap, p.level, p.badges, p.mystery);
+      setCharState(avatarWrap, "live");
       if(key !== vroomMyKey){
         row.classList.add("vroom-row", "is-tappable");
         row.setAttribute("role", "button");
@@ -84534,6 +85044,7 @@ function renderLeaderboardRows(rows, entries){
        box for an entry written before avatarChar was published. */
     avatar.appendChild(buildAvatarCharSVGSafe(entry.avatarChar));
     decorateAvatar(avatar, entry.level, entry.badges, entry.mystery);
+    setCharState(avatar, "live");
 
     const nameWrap = document.createElement("div");
     nameWrap.className = "lb-name-wrap";
@@ -84784,15 +85295,20 @@ function showUnlockDetail(o){
        card that exists to show it off. A locked one moves too, as its
        silhouette: what you are working towards should look alive. */
     art.classList.add("char-live");
-    if(isSecretSilhouette(o.id)){ art.classList.add("is-silhouette"); try{ art.appendChild(buildCharSilhouette(o.id)); }catch(e){} }
+    /* a silhouette's card gives off no colour either (build 314) - its
+       circle and glow were the character's own */
+    if(isSecretSilhouette(o.id)){ art.classList.add("is-silhouette"); art.style.setProperty("--char-glow", "#A7AAAF"); try{ art.appendChild(buildCharSilhouette(o.id)); }catch(e){} }
     else { try{ art.appendChild(buildAvatarCharSVG(o.id)); }catch(e){} }
     if(o.hideArt) art.classList.add("is-hidden-art");
   } else if(o.kind === "badge"){
     /* the badge itself, in its own enamel, even while it is still to
        earn - what you are working towards should look like the prize,
        not like the empty slot the case shows */
-    try{ const bt = badgeThemeFor(o.id); if(bt && bt.p) art.style.setProperty("--badge-glow", bt.p); }catch(e){}
-    try{ art.appendChild(buildUnitBadgeSVG(o.id, true)); }catch(e){}
+    /* NOT ITS COLOUR UNTIL IT IS EARNED (build 314): the form in grey,
+       and a plain white light behind it rather than the unit's */
+    if(o.unlocked){ try{ const bt = badgeThemeFor(o.id); if(bt && bt.p) art.style.setProperty("--badge-glow", bt.p); }catch(e){} }
+    else art.style.setProperty("--badge-glow", "#8E9196");
+    try{ art.appendChild(buildUnitBadgeSVG(o.id, o.unlocked ? true : "grey")); }catch(e){}
   } else if(o.kind === "fx"){
     /* the whole effect, on a results screen in miniature (round 3) */
     art.appendChild(buildHundoFxMock(o.id, { delay: 380 }));
@@ -85032,15 +85548,40 @@ function showCustomize(){
   nameInput.value = store.firstName || "";
   nameInput.hidden = true;
 
+  /* ROOM TO TYPE (build 314): "When you go to the change your username,
+     that text box is a smidge cramped, fix that spacing." It was: the
+     name row stayed on screen over the field (its display:flex beat the
+     [hidden] attribute), and the field and a lone Save sat .6rem apart
+     against the section's edge. The editor is its own block now - a
+     label, a roomier field, then Save and Cancel side by side - and the
+     name row really goes while it is open. */
+  const nameEdit = document.createElement("div");
+  nameEdit.className = "customize-nameedit";
+  nameEdit.hidden = true;
+  const nameLabel = document.createElement("label");
+  nameLabel.className = "customize-namelabel";
+  nameLabel.textContent = "Your name";
+  nameInput.id = "customize-name-input";
+  nameLabel.htmlFor = nameInput.id;
+  nameInput.hidden = false;
+  const nameBtns = document.createElement("div");
+  nameBtns.className = "customize-namebtns";
   const nameSaveBtn = document.createElement("button");
   nameSaveBtn.type = "button"; nameSaveBtn.className = "next";
-  nameSaveBtn.style.cssText = "margin-top:.6rem;";
   nameSaveBtn.textContent = "Save";
-  nameSaveBtn.hidden = true;
+  const nameCancelBtn = document.createElement("button");
+  nameCancelBtn.type = "button"; nameCancelBtn.className = "next ghost";
+  nameCancelBtn.textContent = "Cancel";
+  nameBtns.append(nameSaveBtn, nameCancelBtn);
+  nameEdit.append(nameLabel, nameInput, nameBtns);
 
   nameChangeBtn.addEventListener("click", () => {
-    nameRow.hidden = true; nameInput.hidden = false; nameSaveBtn.hidden = false;
+    nameRow.hidden = true; nameEdit.hidden = false;
     nameInput.focus({ preventScroll: true });
+  });
+  nameCancelBtn.addEventListener("click", () => {
+    nameInput.value = store.firstName || "";
+    nameRow.hidden = false; nameEdit.hidden = true;
   });
   function saveNameEdit(){
     const trimmed = nameInput.value.trim();
@@ -85054,11 +85595,11 @@ function showCustomize(){
       showToast("Saved.");
     }
     nameText.textContent = store.firstName || "No name set";
-    nameRow.hidden = false; nameInput.hidden = true; nameSaveBtn.hidden = true;
+    nameRow.hidden = false; nameEdit.hidden = true;
   }
   nameSaveBtn.addEventListener("click", saveNameEdit);
   nameInput.addEventListener("keydown", (e) => { if(e.key === "Enter") saveNameEdit(); });
-  nameSect.append(nameRow, nameInput, nameSaveBtn);
+  nameSect.append(nameRow, nameEdit);
   panel.appendChild(nameSect);
 
   const avatarSect = document.createElement("div");
@@ -85126,16 +85667,30 @@ function showCustomize(){
     const locked = isLockedCharacter(charDef.id);
     opt.className = "avatarchar-option" + (store.avatarChar === charDef.id ? " selected" : "") +
       (locked ? " locked" : "");
-    opt.style.setProperty("--char-glow", avatarGlowColor(charDef.id));
+    opt.style.setProperty("--char-glow", locked && isSecretSilhouette(charDef.id) ? "#A7AAAF" : avatarGlowColor(charDef.id));
     opt.title = AVATAR_DISPLAY_NAME[charDef.id] || charDef.id;
     opt.setAttribute("aria-label", opt.title);
     /* a secret flare character is a live black cut-out until it is yours */
+    /* EVERY CHARACTER YOU HOLD IS ALIVE HERE (build 314). "All the
+       characters when looking at them in the customize thing, the
+       unlocked ones should be doing their animations ... neither is
+       happening." They were plain drawings - nothing here ever called
+       setCharState. Now each one you hold plays its idle loop as a
+       flip-book (one stepped image per tile, recorded once and kept),
+       and so does a secret's silhouette; a locked character you can
+       see stays still, greyed - a preview, not something you hold. Only
+       tiles near the screen play (charFlipWatch), so thirty of them cost
+       what the ten on screen cost. */
     if(locked && isSecretSilhouette(charDef.id)){
       opt.classList.add("is-silhouette");
-      const sil = buildCharSilhouette(charDef.id);
-      sil.classList.add("char-live");
-      opt.appendChild(sil);
-    } else opt.appendChild(buildAvatarCharSVG(charDef.id));
+      opt.appendChild(buildCharSilhouette(charDef.id));
+      setCharState(opt, "live");
+    } else {
+      /* a locked one is never the selected one, so it keeps its halo -
+         the locked treatment's grey hood reads by that light */
+      opt.appendChild(locked ? buildAvatarCharSVG(charDef.id) : pickerCharSVG(charDef.id));
+      if(!locked){ addPickCheck(opt); setCharState(opt, "live"); }
+    }
     if(locked){
       const lockMark = document.createElement("span");
       lockMark.className = "avatarchar-lockmark";
@@ -88708,9 +89263,10 @@ function buildBadgesTab(){
        from the next time this grid is built. */
     try {
       const bt = badgeThemeFor(unit);
-      if(bt && bt.p) art.style.setProperty("--badge-glow", bt.p);
+      /* an unearned tile's light is no colour (build 314) */
+      if(bt && bt.p) art.style.setProperty("--badge-glow", has ? bt.p : "#8E9196");
     } catch(e){}
-    art.appendChild(buildUnitBadgeSVG(unit, has));
+    art.appendChild(buildUnitBadgeSVG(unit, has ? true : "grey"));
     tile.appendChild(art);
 
     const name = document.createElement("span");

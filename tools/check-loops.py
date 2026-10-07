@@ -112,6 +112,8 @@ KNOWN = {
     "cx-zc2-flow": "Astral's plasma in its veins: a .6 1.8 dash moved by exactly one period (2.4)",
     "cx-za2-dots": "the dots along Zenith's orbit: a .2 .9 dash moved by exactly one period (1.1)",
     "char-emote-spin": "a 100's gold rays: a 30deg repeating conic, so 30deg lands on the same picture",
+    # Build 314: the ultimates a smidge calmer, Celestial redrawn.
+    "cx-zb4-dust": "Zenith's stardust, softer - each mote fades to nothing at both ends",
 }
 s = open(SRC, encoding="utf-8").read()
 kf = {}

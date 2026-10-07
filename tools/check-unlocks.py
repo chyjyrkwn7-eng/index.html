@@ -785,7 +785,14 @@ def _locked_art_body(pg):
     # bottom tenth is transparent by design now. The band moved up to
     # the last rows the fade leaves fully drawn, on the hood BESIDE the
     # mask (x .12-.32) so the pale mask cannot lift the reading.
-    hood = band(.62, .70, .12, .32)
+    # Build 314 fitted the Masked One inside the frame's top line (its art
+    # scale 1.08 -> 1.02, about the bottom centre), so the same patch of
+    # hood moved in and down: the band follows it rather than sampling the
+    # tile beside the hood (x .12-.32 -> .14-.33, y .62-.70 -> .64-.72).
+    # Then its head came down to the set's size (AVATAR_HEAD_SCALE .92
+    # about its chin, "the masked one character looks bigger than the
+    # rest"), and the band follows it again (-> x .17-.34, y .65-.73).
+    hood = band(.65, .73, .17, .34)
     mask = band(.40, .70, .40, .60)
     bg = band(.00, .18, .00, .18)
     """Levels, not ratios, for the first one: the question is whether
