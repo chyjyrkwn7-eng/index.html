@@ -588,7 +588,9 @@ def main():
           const tab = [...document.querySelectorAll(".screen-rankings .iconbtn")]
             .find(b => b.textContent === "Level");
           if(tab) tab.click();
-          const rows = [...document.querySelectorAll(".rank-row")];
+          /* build 314: the board opens on Overall, whose column header is a
+             .rank-row too - it is words, not a person, so it is not counted */
+          const rows = [...document.querySelectorAll(".rank-row:not(.rank-row-head)")];
           const mine = rows.filter(r => r.dataset.me === "1");
           const others = rows.filter(r => r.dataset.me !== "1");
           return { rows: rows.length,

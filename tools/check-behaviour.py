@@ -7145,7 +7145,10 @@ def check_b298(br):
             store.lifetime.points = 300000; topicsIn(QUESTIONS).forEach(u => store.unitPerfects[u] = 40);
             store.pendingBadgeUnlocks = []; theme.muteBanners = true; showHome();
             const lit = () => document.querySelectorAll('.cosmic-badge-rank.cosmic-badge-lit').length;
-            for(let i = 0; i < 300 && document.querySelectorAll('.cosmic-rank-anim').length < lit(); i++) await wait(100);
+            /* 90s, not 30 (build 314): the recorder steps aside for input and
+               runs in short slices, so on a loaded test machine it takes
+               longer - the property is that every one plays, not how soon */
+            for(let i = 0; i < 900 && document.querySelectorAll('.cosmic-rank-anim').length < lit(); i++) await wait(100);
             const wraps = [...document.querySelectorAll('.cosmic-rank-anim')];
             out.lit = lit(); out.playing = wraps.length;
             /* one animation on one image since build 300 (two clocks drifted) */
@@ -7514,11 +7517,13 @@ def check_b299(br):
             if(typeof SEEN_VERSION !== 'undefined') store.seenUnlocks.v = SEEN_VERSION;
             store.rankMapFx244 = true; store.rankMapSeen = TIER_ORDER_FULL.indexOf(rankOf(store));
             store.pendingBadgeUnlocks = []; theme.muteBanners = true;
-            showHome(); await wait(400);
+            /* build 314: the dot is worked out once the switch has settled
+               (syncProfileTabDotSoon), not in the mount's own task */
+            showHome(); await wait(1500);
             out.tabDotNone = tab.classList.contains('has-new');
             const ch = u.chars.find(id => id !== store.avatarChar);
             store.seenUnlocks.chars = store.seenUnlocks.chars.filter(x => x !== ch);
-            showHome(); await wait(500);
+            showHome(); await wait(1500);
             out.tabDot = tab.classList.contains('has-new');
             const dcs = getComputedStyle(tab.querySelector('.bottomtab-icon'), '::after');
             out.tabDotShown = dcs.content !== 'none' && parseFloat(dcs.width) > 6;
@@ -7616,7 +7621,8 @@ def check_b300(br):
             document.getElementById('pushing-update')?.remove();
             store.pendingBadgeUnlocks = []; theme.muteBanners = true; showHome();
             const all = () => document.querySelectorAll('.cosmic-badge-rank').length;
-            for(let k = 0; k < 600 && document.querySelectorAll('.cosmic-rank-anim').length < all(); k++) await wait(100);
+            /* 120s (build 314): recording runs in short slices - see section 66 */
+            for(let k = 0; k < 1200 && document.querySelectorAll('.cosmic-rank-anim').length < all(); k++) await wait(100);
             const wraps = [...document.querySelectorAll('.cosmic-rank-anim')];
             out.flares = all(); out.playing = wraps.length;
             const dprNow = window.devicePixelRatio;
@@ -8915,6 +8921,844 @@ def check_b308_unlocks(br):
     check("the results character's circle is bigger (at least 4.2rem)", ex["px"] >= 4.2 * 16 - 1, ex["px"])
 
 
+# --------------------------------------------------------------------------
+# BUILD 314 (Home, ranks, performance, chat). Every section below was
+# written against build 313 and fails there; see each docstring.
+# --------------------------------------------------------------------------
+
+def _seed_gold_js():
+    """In-page JS that puts the account on Gold (veteran), whatever the
+    thresholds are this build: the badges and then the XP for the level."""
+    return """(() => { const rule = TIER_UNLOCKS.veteran; const U = topicsIn(QUESTIONS);
+      store.unitPerfects = store.unitPerfects || {};
+      U.slice(0, rule.badges).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u) + 1);
+      U.slice(rule.badges).forEach(u => store.unitPerfects[u] = 0);
+      store.lifetime = store.lifetime || {}; let n = 0;
+      while(levelOf(store) < rule.level && n++ < 4000) store.lifetime.points = (store.lifetime.points || 0) + 2000;
+      return rankOf(store); })()"""
+
+
+def check_b314h_flares(br):
+    """Build 314: "The secret flares you haven't got, you shouldn't be able
+    to see their colors" and the found ones' "random shine ... just a tiny
+    bit less". On 313 the next flare wore its colour (--fc was its real
+    colour on every dot), the Home hint card drew the missing flare in its
+    colour, and the glint peaked at full size and full brightness."""
+    print("\n95. build 314: an unfound secret flare shows no colour anywhere; the found ones' glint is a touch less")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      try{
+      store.mysteryColorsFound = { red: true, orange: false, yellow: false, violet: false, white: false, core: false };
+      showHome(); await wait(700);
+      const dots = [...document.querySelectorAll('.panel.home .cosmic-flare-dot')];
+      out.dots = dots.map(d => ({ k: d.dataset.flare, found: d.classList.contains('is-found'), next: d.classList.contains('is-next'),
+        fc: getComputedStyle(d).getPropertyValue('--fc').trim().toUpperCase() }));
+      out.real = MYSTERY_COLOR; out.tint = (typeof FLARE_UNFOUND_TINT === 'string') ? FLARE_UNFOUND_TINT.toUpperCase() : null;
+      /* the Home hint card for a secret whose flare is still missing */
+      store.mysteryColorsFound = { red: true, orange: true, yellow: true, violet: false, white: false, core: false };
+      const h = flareHintItem('umbra'); out.hintColor = String(h.color).toUpperCase();
+      const box = document.createElement('div'); box.append(h.art()); document.body.append(box);
+      out.hintFills = [...box.querySelectorAll('.rs-hint-orb [fill]')].map(c => String(c.getAttribute('fill')).toUpperCase()).filter(f => f[0] === '#');
+      out.hintStops = [...box.querySelectorAll('.rs-hint-orb stop')].map(s => String(s.getAttribute('stop-color')).toUpperCase());
+      box.remove();
+      /* the glint's peak */
+      let kf = null;
+      for(const sh of document.styleSheets){ let rules; try{ rules = sh.cssRules; }catch(e){ continue; }
+        const walk = list => { for(const rr of list){ if(rr.type === CSSRule.KEYFRAMES_RULE && rr.name === 'cof-glint') kf = rr; else if(rr.cssRules) walk(rr.cssRules); } };
+        walk(rules); }
+      if(kf){ let op = 0, sc = 0; for(const k of kf.cssRules){ op = Math.max(op, parseFloat(k.style.opacity) || 0);
+        const m = /scale\\(([0-9.]+)\\)/.exec(k.style.transform || ''); if(m) sc = Math.max(sc, parseFloat(m[1])); } out.glint = { op, sc }; }
+      }catch(e){ out.threw = String(e); }
+      return out; }""")
+    real = {k: v.upper() for k, v in (r.get("real") or {}).items()}
+    dots = r.get("dots") or []
+    found = [d for d in dots if d["found"]]
+    unfound = [d for d in dots if not d["found"]]
+    check("a found flare is lit in its own colour", found and all(d["fc"] == real.get(d["k"]) for d in found), found)
+    check("no unfound flare on Home carries its colour - not even the next one being hunted",
+          unfound and any(d["next"] for d in unfound) and all(d["fc"] != real.get(d["k"]) and d["fc"] == r.get("tint") for d in unfound), unfound)
+    check("the Home hint card draws the missing flare without its colour",
+          r.get("hintColor") != real.get("violet") and real.get("violet") not in (r.get("hintFills") or []) + (r.get("hintStops") or []),
+          {k: r.get(k) for k in ("hintColor", "hintFills", "hintStops")})
+    g = r.get("glint") or {}
+    check("the found flares' glint is a touch less: peak brightness and size .7-.85 of what 313 had (1)",
+          0.7 <= g.get("op", 0) <= 0.85 and 0.7 <= g.get("sc", 0) <= 0.85, g)
+    ctx.close()
+
+
+_RANKMAP_SAMPLE = """async (scen) => {
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const u = topicsIn(QUESTIONS); u.slice(0, 4).forEach(n => store.unitPerfects[n] = 999);
+  store.rankMapFx244 = true; store.rankMapSeen = TIER_ORDER_FULL.indexOf(rankOf(store));
+  store.rankMapProg = scen === 'climb' ? null : { i: TIER_ORDER_FULL.indexOf(rankOf(store)), p: 1 };
+  window.scrollTo(0, 0);
+  /* every scroll the show makes, as it makes it */
+  const calls = []; const o = window.scrollTo.bind(window);
+  window.scrollTo = function(a, b){ calls.push(typeof a === 'object' && a ? 'options:' + a.behavior : 'xy'); return arguments.length > 1 ? o(a, b) : o(a); };
+  const frames = []; const t0 = performance.now(); let stop = false;
+  const rec = () => {
+    const tip = document.querySelector('.rankmap-roadtip-dot');
+    const fill = document.querySelector('.rankmap-roadfill.is-tipped');
+    if(tip && fill){
+      const a = tip.getBoundingClientRect(), b = fill.getBoundingClientRect();
+      frames.push({ t: performance.now() - t0, op: parseFloat(getComputedStyle(tip).opacity), dotY: a.top + a.height / 2, fillEnd: b.bottom, fillH: b.height, sy: scrollY });
+    }
+    if(!stop) requestAnimationFrame(rec);
+  };
+  showRanksScreen('ranks');
+  requestAnimationFrame(rec);
+  await wait(scen === 'climb' ? 11000 : 8000);
+  stop = true;
+  window.scrollTo = o;
+  return { frames, calls: [...new Set(calls)] };
+}"""
+
+
+def check_b314h_rankmap(br):
+    """Build 314, the road map: "there's circle at the end is already there
+    when loading, and when it's done showing the progress, it doesn't go
+    back to the top of screen like it should. The gold in that progress bar
+    doesn't [look] like the gold [of the name in] current rank". On 313 the
+    light was lit on an empty road from the first frame, every step of the
+    walk was scrollTo({behavior:"instant"}) on a smooth-scrolling page (an
+    engine without "instant" falls back to the page's own smooth glide),
+    and Gold's road was the raw #F5C21B rather than the name's lifted gold."""
+    print("\n96. build 314: the road's light waits for its line, the walk comes back to the top, Gold's road is the name's gold")
+    for scen in ("climb", "walk"):
+        ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+        r = pg.evaluate(_RANKMAP_SAMPLE, scen)
+        fr = r.get("frames") or []
+        h0 = fr[0]["fillH"] if fr else 0
+        before = [f for f in fr if f["fillH"] <= h0 + 0.5 and f["t"] < 6000]
+        lit_early = [round(f["op"], 2) for f in before if f["op"] > 0.1]
+        check("%s: the light is not there while its line has not moved (%d frames before the fill set off)" % (scen, len(before)),
+              len(before) >= 3 and not lit_early, lit_early[:8])
+        last = fr[-1] if fr else {}
+        check("%s: once the fill has run, the light is lit and sits at the end of the line" % scen,
+              last and last["op"] > 0.9 and abs(last["dotY"] - last["fillEnd"]) <= 3, last)
+        sy = [f["sy"] for f in fr]
+        check("%s: the walk went down the road and came back to the very top" % scen,
+              sy and max(sy) > 100 and sy[-1] == 0, {"max": max(sy) if sy else None, "end": sy[-1] if sy else None})
+        check("%s: every scroll of the walk is a plain jump, never the options form an engine may not know" % scen,
+              r.get("calls") and all(c == "xy" for c in r["calls"]), r.get("calls"))
+        ctx.close()
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      out.rank = """ + _seed_gold_js() + """;
+      store.rankMapFx244 = true; store.rankMapSeen = 99; store.rankMapProg = { i: 2, p: 1 };
+      theme.reduceMotion = true;
+      showRanksScreen('ranks'); await wait(800);
+      const name = document.querySelector('.rankhero-name'); out.nameCol = name ? getComputedStyle(name).color : null;
+      out.name = name ? name.textContent : null;
+      const isGold = v => /^\s*(#F5C21B|color-mix\(in srgb, #F5C21B 70%, #fff\))\s*$/i.test(v);
+      const roads = [...document.querySelectorAll('.rankmap-road')].filter(r => isGold(r.style.getPropertyValue('--rank-color')) || isGold(r.style.getPropertyValue('--from-color')));
+      out.roads = roads.length;
+      out.roadCols = roads.map(r => { const p = document.createElement('i'); p.style.color = isGold(r.style.getPropertyValue('--rank-color')) ? 'var(--rank-color)' : 'var(--from-color)';
+        r.appendChild(p); const c = getComputedStyle(p).color; p.remove(); return c; });
+      /* No RAW gold anywhere on the road: every gold in a stretch's
+         colours, its blend's end and its light is the lifted one (so a
+         colour blended from gold - the partly lit stretch - blends from
+         the name's gold too). */
+      const raw = /#F5C21B(?! 70%, #fff\))/i, props = ['--rank-color', '--from-color', '--end-color'];
+      out.rawLeft = [...document.querySelectorAll('.rankmap-road, .rankmap-roadtip')].flatMap(e => props.map(p => e.style.getPropertyValue(p))).filter(v => raw.test(v));
+      /* and a blend made after the fact (the shape build 314's road-colour
+         work gives the partly lit stretch) goes through the same lift */
+      const probe = document.createElement('span');
+      probe.style.setProperty('--end-color', 'color-mix(in srgb, #F5C21B 40%, ' + RANK_COLOR.ranger + ')');
+      if(typeof liftRoadColors === 'function') liftRoadColors(probe);
+      out.blend = probe.style.getPropertyValue('--end-color');
+      theme.reduceMotion = false;
+      return out; }""")
+    check("Gold's road is exactly the gold of the name under Current rank",
+          r.get("rank") == "veteran" and r.get("roads", 0) >= 1 and all(c == r.get("nameCol") for c in r.get("roadCols", [])), r)
+    check("no raw gold left anywhere on the road (its light and any blend use the name's gold)",
+          not r.get("rawLeft") and "70%, #fff)" in (r.get("blend") or ""), {"raw": r.get("rawLeft"), "blend": r.get("blend")})
+    ctx.close()
+
+
+def check_b314h_tabs(br):
+    """Build 314: "There's lag again when clicking tabs ... Sometimes the
+    screen does not load." On 313 the screen was built only from an
+    animation frame (a held frame and it never came), a tap that moved a
+    pixel or two went the drag path and was built inside pointerup before
+    the highlight moved, the unit list was re-walked from the whole bank on
+    every badge count, and the Profile dot's unlock walk ran in the same
+    task as every mount."""
+    print("\n97. build 314: tab switches - the screen always comes, the tap answers first, nothing heavy in the switch")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, touch=True)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      /* 1. frames held back (iOS Low Power Mode, a busy compositor) */
+      const orig = window.requestAnimationFrame; let held = 0;
+      window.requestAnimationFrame = cb => { held++; return 0; };
+      document.getElementById('bottomtab-settings').click();
+      await wait(600);
+      out.heldFrames = held;
+      out.loadedWithoutFrames = !!document.querySelector('#stage .screen-settings');
+      window.requestAnimationFrame = orig;
+      await wait(400);
+      /* 2. the bank's units are worked out once */
+      const t0 = performance.now(); for(let i = 0; i < 200; i++) topicsIn(QUESTIONS); out.topics200 = performance.now() - t0;
+      out.topicsSame = JSON.stringify(topicsIn(QUESTIONS)) === JSON.stringify((() => { const n = []; QUESTIONS.forEach(q => { const t = (q.topic || '').trim(); if(t && n.indexOf(t) < 0) n.push(t); }); return n; })());
+      const a = topicsIn(QUESTIONS); a.push('x'); out.topicsCopy = topicsIn(QUESTIONS).indexOf('x') < 0;
+      /* 3. the dot's walk is not in the mount's task */
+      let inMount = 0, seen = 0; const o2 = window.unlockedIdsNow;
+      window.unlockedIdsNow = function(){ seen++; if(window.__inMount) inMount++; return o2.apply(this, arguments); };
+      new MutationObserver(() => { window.__inMount = true; Promise.resolve().then(() => { window.__inMount = false; }); }).observe(document.getElementById('stage'), { childList: true });
+      document.getElementById('bottomtab-profile').click(); await wait(2500);
+      out.dotInMount = inMount; out.dotLater = seen;
+      out.dotState = document.getElementById('bottomtab-profile').classList.contains('has-new') === (rankIsNew() || customizeNewCount() + badgeNewCount() > 0);
+      window.unlockedIdsNow = o2;
+      return out; }""")
+    check("with animation frames held back, a tab tap still loads its screen", r.get("heldFrames", 0) > 0 and r.get("loadedWithoutFrames") is True, r)
+    check("the bank's unit list is worked out once (200 asks under 20ms), the same list, and every caller gets its own copy",
+          r.get("topics200", 999) < 20 and r.get("topicsSame") and r.get("topicsCopy"), r)
+    check("the Profile tab's dot is not worked out in the task that mounts a screen, but is worked out after, correctly",
+          r.get("dotInMount") == 0 and r.get("dotLater", 0) >= 1 and r.get("dotState") is True, r)
+    # 4. a real finger: down, a 3px wobble, up. The highlight must move before
+    #    the new screen is built (the answer-first path), not after it.
+    pg.evaluate("""() => { window.__order = []; const st = document.getElementById('stage');
+      new MutationObserver(() => __order.push('mount')).observe(st, { childList: true });
+      new MutationObserver(ms => ms.forEach(m => { if(m.target.id === 'bottomtab-rewards' && m.target.classList.contains('active')) __order.push('active'); }))
+        .observe(document.getElementById('bottomtabs'), { attributes: true, subtree: true, attributeFilter: ['class'] }); }""")
+    box = pg.evaluate("() => { const r = document.getElementById('bottomtab-rewards').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }")
+    cdp = ctx.new_cdp_session(pg)
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": box[0], "y": box[1]}]})
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [{"x": box[0] + 3, "y": box[1] + 1}]})
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+    pg.wait_for_timeout(900)
+    o = pg.evaluate("() => ({ order: __order.slice(0, 4), screen: !!document.querySelector('#stage .screen-rankings') })")
+    check("a tap that wobbles 3px is still a tap: the highlight moves first, then the Leaderboard comes",
+          o["screen"] and "active" in o["order"] and "mount" in o["order"] and o["order"].index("active") < o["order"].index("mount"), o)
+    # 5. a timing budget, every switch, at 4x CPU
+    cdp.send("Emulation.setCPUThrottlingRate", {"rate": 4})
+    pg.evaluate("""() => { window.__tap = 0; window.__mounts = []; window.__frames = [];
+      document.addEventListener('pointerdown', () => { __tap = performance.now(); }, true);
+      new MutationObserver(() => __mounts.push(performance.now())).observe(document.getElementById('stage'), { childList: true });
+      (function f(t){ __frames.push(t); requestAnimationFrame(f); })(0); }""")
+    tabs = ["home", "profile", "rewards", "settings"]
+    times = []; blank = 0
+    for a in tabs:
+        for b in tabs:
+            if a == b:
+                continue
+            for d in (a, b):
+                xy = pg.evaluate("d => { const r = document.querySelector('.bottomtab[data-dest=\"' + d + '\"]').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }", d)
+                pg.evaluate("() => { __mounts.length = 0; __frames.length = 0; }")
+                pg.touchscreen.tap(xy[0], xy[1])
+                pg.wait_for_timeout(1100)
+            m = pg.evaluate("""() => { const m = __mounts.find(x => x >= __tap); const f = m ? __frames.find(x => x > m) : null;
+              const st = document.getElementById('stage'); return { paint: f ? f - __tap : 9999, blank: !st.firstElementChild }; }""")
+            times.append(m["paint"]); blank += 1 if m["blank"] else 0
+    times.sort()
+    med = times[len(times) // 2]
+    check("every switch between the four tabs paints its screen, median tap-to-paint under 300ms at 4x CPU (313: ~390 warm)",
+          blank == 0 and med < 300 and times[-1] < 2000, {"median": round(med), "worst": round(times[-1]), "blank": blank})
+    cdp.send("Emulation.setCPUThrottlingRate", {"rate": 1})
+    ctx.close()
+
+
+def check_b314h_chat(br):
+    """Build 314, the chat sheet: "if I click on that stuff, the background
+    behind the chat goes dull or dark" and "swipe down functions are laggy".
+    On 313 every touch of the sheet's chrome - a plain tap - put it into
+    .is-settling (the near-opaque fill that stands in for the glass while
+    it moves) for a third of a second, and the first moves of a drag were
+    left passive, so the page could take the gesture."""
+    print("\n98. build 314: a tap on the chat sheet leaves its glass alone; a pull down is the sheet's alone and closes it")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, touch=True)
+    pg.evaluate("() => { openChatDock(); }")
+    pg.wait_for_timeout(600)
+    info = pg.evaluate("""() => { const p = document.querySelector('.chatdock-panel'); const r = p.getBoundingClientRect();
+      window.__cls = []; new MutationObserver(() => __cls.push(p.className)).observe(p, { attributes: true, attributeFilter: ['class'] });
+      const g = p.querySelector('.chatdock-grip'); const gr = g ? g.getBoundingClientRect() : r;
+      return { bf: getComputedStyle(p).backdropFilter, x: gr.left + gr.width / 2, y: gr.top + gr.height / 2, open: chatDockOpen }; }""")
+    cdp = ctx.new_cdp_session(pg)
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": info["x"], "y": info["y"]}]})
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+    pg.wait_for_timeout(60)
+    a = pg.evaluate("() => ({ cls: __cls.slice(), bf: getComputedStyle(document.querySelector('.chatdock-panel')).backdropFilter, open: chatDockOpen })")
+    check("a tap on the sheet never turns its glass into the dark moving fill",
+          info["open"] and a["open"] and not any(("is-settling" in c or "is-dragging" in c) for c in a["cls"]) and a["bf"] == info["bf"] and a["bf"] != "none", a)
+    # a real pull down closes it; every move after the first is claimed
+    pg.evaluate("""() => { window.__prevented = 0; window.__moves = 0; document.querySelector('.chatdock-panel').addEventListener('touchmove', e => { __moves++; setTimeout(() => { if(e.defaultPrevented) __prevented++; }, 0); }, { passive: true }); }""")
+    _swipe(cdp, info["x"], info["y"], 0, 220, steps=10)
+    pg.wait_for_timeout(500)
+    b = pg.evaluate("() => ({ open: chatDockOpen, moves: __moves, prevented: __prevented })")
+    check("a pull down the sheet closes it, and every move of it was the sheet's (none left to the page)",
+          b["open"] is False and b["moves"] >= 8 and b["prevented"] == b["moves"], b)
+    ctx.close()
+
+
+def check_b314h_sheet(br):
+    """Build 314, the start sheet's swipe-down: on 313 it wrote the sheet's
+    transform from every touchmove and kept its 16px backdrop blur the whole
+    way down - re-blurred every frame it moved."""
+    print("\n99. build 314: a pulled sheet moves once a frame, without its blur, and closes on a pull")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, touch=True)
+    pg.evaluate("""() => { const s = document.createElement('div'); s.id = 'tsheet'; s.className = 'unitoptions-modal-sheet';
+      s.style.cssText = 'position:fixed;left:0;right:0;bottom:0;height:400px;z-index:999;';
+      s.innerHTML = '<p style="height:600px">x</p>'; document.body.appendChild(s);
+      window.__closed = 0; attachSheetSwipe(s, () => { __closed++; });
+      window.__writes = 0; window.__frames = 0; window.__mid = null;
+      new MutationObserver(() => __writes++).observe(s, { attributes: true, attributeFilter: ['style'] });
+      (function f(){ __frames++; if(__frames < 400) requestAnimationFrame(f); })(); }""")
+    mid = pg.evaluate("""async () => { const s = document.getElementById('tsheet');
+      const T = y => new Touch({ identifier: 1, target: s, clientX: 200, clientY: y, pageX: 200, pageY: y });
+      const ev = (type, y) => s.dispatchEvent(new TouchEvent(type, { bubbles: true, cancelable: true, touches: type === 'touchend' ? [] : [T(y)], targetTouches: type === 'touchend' ? [] : [T(y)], changedTouches: [T(y)] }));
+      ev('touchstart', 500); __writes = 0;
+      for(let i = 1; i <= 24; i++) ev('touchmove', 500 + i * 6);
+      await Promise.resolve();
+      const sync = __writes;
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const out = { cls: s.className, bf: getComputedStyle(s).backdropFilter, tf: s.style.transform, sync, afterFrame: __writes };
+      ev('touchend', 644);
+      return out; }""")
+    pg.wait_for_timeout(500)
+    closed = pg.evaluate("() => __closed")
+    check("while pulled, the sheet is .is-dragging with no backdrop blur, moved by translate3d",
+          "is-dragging" in mid["cls"] and mid["bf"] == "none" and "translate3d" in mid["tf"], mid)
+    check("24 moves in one go are written once, on the next frame - not 24 times as they arrive",
+          mid["sync"] <= 1 and mid["afterFrame"] <= 3, mid)
+    check("pulled past the line, it closes", closed == 1, closed)
+    ctx.close()
+
+
+_LB_FAKE = """async () => {
+  store.publicId = 'me0000000001'; store.leaderboardOptIn = true; syncCode = syncCode || 'SYNC-test';
+  const chars = ['zeus','ninja','grizzly','ghost','wizard','alien','detective','marksman'];
+  window.__rows = Array.from({ length: 18 }, (_, i) => ({ pub: 'p' + String(i).padStart(11, '0'), firstName: 'Cadet ' + String.fromCharCode(65 + i),
+    avatarChar: chars[i % chars.length], level: 60 - i * 2, badges: 14 - Math.floor(i / 2), hundos: 300 - i * 9, correct: 5000 - i * 100,
+    week: weekKeyNow(), weekPoints: 4000 - i * 150, lastModified: Date.now() }));
+  window.__cbs = [];
+  const mk = rows => ({ metadata: { fromCache: false }, size: rows.length, empty: !rows.length, forEach: f => rows.forEach(r => f({ id: r.pub, data: () => Object.assign({}, r) })) });
+  window.__push = () => __cbs.forEach(cb => cb(mk(__rows)));
+  const real = fbDb;
+  onSnapshotResilient = (ref, onNext) => ref.onSnapshot(onNext, () => {});
+  fbDb = { collection: n => n !== 'leaderboard' ? real.collection(n) : ({ doc: id => real.collection(n).doc(id),
+    get: () => Promise.resolve(mk(__rows)),
+    onSnapshot: cb => { __cbs.push(cb); setTimeout(() => cb(mk(__rows)), 30); return () => { window.__cbs = __cbs.filter(c => c !== cb); }; } }) };
+  leaderboardRows = [];
+}"""
+
+_LB_EXPECT = """(key) => {
+  const board = RANKING_BOARDS.find(b => b.key === key);
+  const val = e => Number(e && e[board.field]) || 0;
+  const mine = { pub: publicIdOf(), firstName: store.firstName || 'Anonymous', avatarChar: store.avatarChar, level: levelOf(store), badges: badgeCountOf(store),
+    hundos: hundosOf(store), week: weekKeyNow(), weekPoints: weekPointsOf(store), mystery: mysteryColorsFoundCount() };
+  const list = __rows.map(r => Object.assign({}, r, { weekPoints: weekPointsOfEntry(r) })).concat([mine]);
+  const sorted = list.slice().sort(board.sort || ((a, b) => (val(b) - val(a)) || String(a.firstName || '').localeCompare(String(b.firstName || ''))));
+  const want = sorted.map(e => e.firstName);
+  const got = [...document.querySelectorAll('.screen-rankings .rank-rows .rank-row:not(.rank-row-head):not(.rank-row-skel) .rank-name')].map(n => n.textContent);
+  return { key, ok: JSON.stringify(want) === JSON.stringify(got), want: want.slice(0, 6), got: got.slice(0, 6), n: got.length, N: want.length };
+}"""
+
+
+def check_b314h_board(br):
+    """Build 314, the Leaderboard: the header "sitting on top of the person
+    in first place", the characters "still slightly shaking", and "ensure
+    all the leaderboard stuff is accurate and stays accurate ... clicking
+    through the leaderboard tabs". On 313 the header was pulled 3px into
+    the first row and carried the rows' glass (a saturated blurred strip),
+    and every character's flip-book window wore the board's .94 scale, so
+    its frames landed on 30+ different sub-pixel offsets. The accuracy half
+    is a guard: rows change under the board while its tabs are switched,
+    the screen is left and re-entered, and every board must match the data
+    exactly every time."""
+    print("\n100. build 314: the Leaderboard - header clear of first place, characters that hold still, boards that stay true")
+    for (dn, w, h) in [("phone", 440, 956), ("tablet", 834, 1194), ("SE", 375, 667)]:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        pg.evaluate(_LB_FAKE)
+        pg.evaluate("() => showRankings('overall')")
+        pg.wait_for_timeout(900)
+        r = pg.evaluate("""() => { const h = document.querySelector('.rank-row-head'); const f = document.querySelector('.rank-rows .rank-row.lb-place-1');
+          const hr = h.getBoundingClientRect(), fr = f.getBoundingClientRect(); const cs = getComputedStyle(h);
+          const lab = [...h.querySelectorAll('.rank-col-head')].map(e => e.getBoundingClientRect().bottom);
+          return { gap: Math.round(fr.top - hr.bottom), labGap: Math.round(fr.top - Math.max(...lab)), bf: cs.backdropFilter, bg: cs.backgroundColor }; }""")
+        check("%s: the Rank / Level / Badges header keeps its own line, clear of first place and its glow, with no glass strip" % dn,
+              r["gap"] >= 8 and r["labGap"] >= 12 and r["bf"] == "none", r)
+        ctx.close()
+    # characters that hold still: every flip-book frame on the same pixel grid
+    ctx = br.new_context(viewport={"width": 440, "height": 956}, device_scale_factor=3, has_touch=True, is_mobile=True)
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');"
+                        "localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % USED_ACCOUNT)
+    pg = open_page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
+    pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __stub();}")
+    pg.evaluate(_LB_FAKE)
+    pg.evaluate("() => showRankings('week')")
+    t0 = time.time()
+    while time.time() - t0 < 150 and pg.evaluate("() => document.querySelectorAll('.screen-rankings .rank-row .char-flip-play img').length") < 3:
+        time.sleep(1)
+    r = pg.evaluate("""async () => { const dpr = devicePixelRatio; const imgs = [...document.querySelectorAll('.screen-rankings .rank-row .char-flip-play img')].slice(0, 3);
+      const phases = imgs.map(() => new Set()); const al = [];
+      for(let f = 0; f < 45; f++){ await new Promise(r => requestAnimationFrame(r));
+        imgs.forEach((img, i) => { const r = img.getBoundingClientRect(), p = img.parentElement.getBoundingClientRect();
+          const fx = (r.left - p.left) * dpr, fy = (r.top - p.top) * dpr; phases[i].add((fx - Math.round(fx)).toFixed(2) + ',' + (fy - Math.round(fy)).toFixed(2)); }); }
+      imgs.forEach(img => { const play = img.parentElement, s = play.parentNode.querySelector('svg.avatarchar-svg').getBoundingClientRect(), r = play.getBoundingClientRect();
+        al.push({ dx: Math.abs(r.left + r.width / 2 - s.left - s.width / 2), dy: Math.abs(r.top + r.height / 2 - s.top - s.height / 2), dw: Math.abs(r.width - s.width) }); });
+      return { n: imgs.length, phases: phases.map(s => s.size), al }; }""")
+    check("every leaderboard character's flip-book steps on whole device pixels (one sub-pixel phase over 45 frames, 313: 30+)",
+          r["n"] >= 3 and all(p == 1 for p in r["phases"]), r)
+    check("...and still sits exactly over its drawing (centre within .5px, size within 1.5px)",
+          all(a["dx"] <= 0.5 and a["dy"] <= 0.5 and a["dw"] <= 1.5 for a in r["al"]), r["al"])
+    ctx.close()
+    # accuracy, under change
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate(_LB_FAKE)
+    pg.evaluate("() => showRankings('week')")
+    pg.wait_for_timeout(700)
+    keys = pg.evaluate("() => RANKING_BOARDS.map(b => b.key)")
+    bad = []
+    steps = [
+        "() => { __rows[7].weekPoints = 99999; __rows[3].level = 80; __rows[3].badges = 20; __rows[10].hundos = 9999; __push(); }",
+        "() => { __rows[0].weekPoints = 1; __rows[15].level = 79; __rows[15].badges = 20; __rows.push({ pub: 'pNEW00000000', firstName: 'Cadet New', avatarChar: 'ghost', level: 70, badges: 18, hundos: 50, correct: 1, week: weekKeyNow(), weekPoints: 50000, lastModified: Date.now() }); __push(); }",
+        "() => { __rows.splice(2, 1); __rows[5].hundos = 100000; __push(); }",
+    ]
+    for si, st in enumerate(steps):
+        for k in keys:
+            pg.evaluate("k => document.querySelectorAll('.screen-rankings .navsegment .iconbtn')[RANKING_BOARDS.findIndex(b => b.key === k)].click()", k)
+            pg.wait_for_timeout(60)
+            e = pg.evaluate(_LB_EXPECT, k)
+            if not e["ok"]:
+                bad.append(("before step %d" % si, e))
+        pg.evaluate(st)
+        pg.wait_for_timeout(60)
+        e = pg.evaluate(_LB_EXPECT, pg.evaluate("() => rankingsBoardKey"))
+        if not e["ok"]:
+            bad.append(("live after step %d" % si, e))
+        if si == 1:
+            pg.evaluate("() => showHome()"); pg.wait_for_timeout(300)
+            pg.evaluate("() => { __rows[1].weekPoints = 77777; }")
+            pg.evaluate("() => showRankings()"); pg.wait_for_timeout(500)
+            e = pg.evaluate(_LB_EXPECT, pg.evaluate("() => rankingsBoardKey"))
+            if not e["ok"]:
+                bad.append(("re-entered", e))
+    check("every board matches the data exactly, through live changes, tab switches and a re-entry (%d boards x %d steps)" % (len(keys), len(steps)),
+          not bad, bad[:3])
+    ctx.close()
+
+
+def check_b314h_settings_calendar(br):
+    """Build 314: Advanced settings "should open more smooth and like it's
+    actually expanding open, and when shutting it would actually close shut
+    but nicely and smoothly" (313 opened as a fade and closed in one frame),
+    and the calendar's today box "still looks shiny ... maybe it shouldn't
+    be themed color" (313: the theme's gradient and a glow)."""
+    print("\n101. build 314: Advanced settings sweeps open and shut; today in the calendar is calm and neutral")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      showAppearance(); await wait(500);
+      const tog = [...document.querySelectorAll('.more-toggle')].find(b => /Advanced settings/.test(b.textContent));
+      const body = tog.nextElementSibling, inner = body.querySelector('.more-body-inner');
+      const sample = async ms => { const s = []; const t0 = performance.now();
+        while(performance.now() - t0 < ms){ await new Promise(r => requestAnimationFrame(r)); s.push({ t: Math.round(performance.now() - t0), h: Math.round(body.getBoundingClientRect().height), clip: getComputedStyle(inner).clipPath }); } return s; };
+      tog.click(); out.open = await sample(700);
+      tog.click(); out.close = await sample(800);
+      out.closedAfter = !body.classList.contains('open');
+      /* the calendar, on a coloured theme */
+      theme.accent = 'adept'; applyTheme(); showCalendar(); await wait(400);
+      const t = document.querySelector('.cal-grid .cal-cell-today'); const c = getComputedStyle(t);
+      out.today = { sel: t.classList.contains('cal-cell-sel'), bgImg: c.backgroundImage, shadow: c.boxShadow, border: c.borderTopColor, bg: c.backgroundColor };
+      return out; }""")
+    op = r["open"]; cl = r["close"]
+    mid_open = [s for s in op if s["clip"] not in (op[-1]["clip"], op[0]["clip"])]
+    check("opening sweeps the clip open over several frames, at its full height from the first",
+          len(mid_open) >= 3 and op[0]["h"] > 40, {"frames": len(op), "between": len(mid_open), "h0": op[0]["h"]})
+    held = [s for s in cl if s["h"] > 40 and s["t"] >= 150]
+    check("closing is not instant: it keeps its height for 150ms+ while the clip sweeps shut, then gives it back",
+          len(held) >= 3 and cl[-1]["h"] < 5 and r["closedAfter"], {"held": len(held), "end": cl[-1]})
+    t = r["today"]
+    import re as _re
+    nums = [int(x) for x in _re.findall(r"\d+", t["border"])[:3]]
+    check("today is matte and neutral: no gradient, no glow, a neutral rim (theme set to a colour)",
+          t["bgImg"] == "none" and t["shadow"] == "none" and len(nums) == 3 and max(nums) - min(nums) <= 6, t)
+    ctx.close()
+
+
+def check_b314h_host(br):
+    """Build 314: "When hosting a room, you click host, it says something
+    there but then it opens the lobby so fast ... something about opening a
+    lobby is not smooth." On 313 a quick server put the lobby up 120ms after
+    the tap, and the lobby cut in and then grew its roster a frame later."""
+    print("\n102. build 314: Host a room - the card's words are up long enough to read, the lobby arrives once, softly")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async () => {
+      const wait = ms => new Promise(r => setTimeout(r, ms));
+      let docData = null; const subs = []; const real = fbDb;
+      onSnapshotResilient = (ref, onNext) => ref.onSnapshot(onNext, () => {});
+      const docRef = id => ({ id, set: d => { docData = Object.assign({}, d); setTimeout(() => subs.forEach(cb => cb({ exists: true, id, data: () => docData, metadata: { fromCache: false } })), 40); return new Promise(r => setTimeout(r, 60)); },
+        update: () => Promise.resolve(), get: () => Promise.resolve({ exists: !!docData, data: () => docData }), delete: () => Promise.resolve(),
+        onSnapshot: cb => { subs.push(cb); if(docData) setTimeout(() => cb({ exists: true, id, data: () => docData, metadata: { fromCache: false } }), 20); return () => {}; }, collection: () => ({ doc: docRef }) });
+      fbDb = { collection: n => n === 'vrooms' ? ({ doc: docRef, where: function(){ return this; }, onSnapshot: cb => { setTimeout(() => cb({ forEach(){}, docs: [] }), 20); return () => {}; } }) : real.collection(n) };
+      showVirtualRoomChoice(); await wait(500);
+      const btn = [...document.querySelectorAll('button')].find(b => /Host a room/.test(b.textContent));
+      const t0 = performance.now(); let lobbyAt = null, firstOp = null; const ops = [];
+      btn.click();
+      while(performance.now() - t0 < 2500){ await new Promise(r => requestAnimationFrame(r));
+        const p = document.querySelector('#stage > .screen-vroom-lobby');
+        if(p){ if(lobbyAt == null){ lobbyAt = performance.now() - t0; firstOp = parseFloat(getComputedStyle(p).opacity); }
+          ops.push(parseFloat(getComputedStyle(p).opacity)); } }
+      return { lobbyAt, firstOp, rose: ops.filter(o => o > .05 && o < .95).length, end: ops[ops.length - 1] }; }""")
+    check("'Setting up your room...' stays up 800ms+ even when the server answers at once (313: ~120ms)",
+          r["lobbyAt"] is not None and r["lobbyAt"] >= 800 and r["lobbyAt"] < 1800, r)
+    check("the lobby comes in as one soft rise (it is not simply cut in), and finishes fully shown",
+          r["firstOp"] is not None and r["firstOp"] < 0.1 and r["rose"] >= 1 and r["end"] == 1, r)
+    ctx.close()
+
+
+_HOME_POSE = """() => { const p = document.querySelector('.panel.home.screen-home-actual'); if(!p) return null;
+  const ang = el => { if(!el) return null; const m = new DOMMatrix(getComputedStyle(el).transform === 'none' ? undefined : getComputedStyle(el).transform); return Math.atan2(m.b, m.a) * 180 / Math.PI; };
+  const pts = [...p.querySelectorAll('.cosmic-badge-rank, .cosmic-flare-dot')].map(e => { const r = e.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
+  /* the wall-clock moment the styles describe: an animation's computed
+     state is for the document timeline's time, which lags the wall clock
+     while the page is busy - so t is read off the timeline, not Date.now() */
+  const lag = (document.timeline && typeof document.timeline.currentTime === 'number') ? Math.max(0, performance.now() - document.timeline.currentTime) : 0;
+  return { t: Date.now() - lag, outer: ang(p.querySelector('.cosmic-hero-orbitlayer:not(.cosmic-hero-orbitlayer-inner)')), inner: ang(p.querySelector('.cosmic-hero-orbitlayer-inner')),
+           pts, node: p.dataset.hid || (p.dataset.hid = String(Math.random())) }; }"""
+
+
+def check_b314h_home_clock(br):
+    """Build 314: "when hitting the main menu or reloading the home button
+    or whatever, the plant system like reloads and stuff changes positions".
+    On 313 every Home was a new set of CSS loops starting at 0%: the rings
+    snapped back to their starting angle and the bubbles jumped, on every
+    return and on Main menu from Home itself."""
+    print("\n103. build 314: Home's planet system carries on where it was - one clock for every loop")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.wait_for_timeout(1500)
+    # 1. rebuilt in place (Main menu while on Home): no jump between the last
+    #    frame of the old system and the first of the new
+    # The old system is put exactly where the shared clock says (as every
+    # Home is put at its mount: the wall clock, read on the document
+    # timeline - an animation's time only moves when a frame is made, so a
+    # busy task sees the timeline behind the wall clock, and that lag is
+    # taken off). Both settings are made in ONE task, where that value is
+    # the same whenever it is read, so the rebuilt system must land on the
+    # same pose to within a pixel. Comparing against "a frame's motion"
+    # was a noisy proxy - a bobbing bubble near the top of its bob barely
+    # moves in a frame - and failed a good build on a loaded machine. On
+    # dd6cfae every loop starts again at 0%: 60px and more.
+    r = pg.evaluate("""async (POSE) => { const pose = eval(POSE); const out = {};
+      const EPOCH = Date.UTC(2026, 0, 1);
+      const clock = () => Date.now() - EPOCH - Math.max(0, performance.now() - document.timeline.currentTime);
+      const onClock = root => { const t = clock(); root.getAnimations({ subtree: true }).forEach(a => { try{ const g = a.effect && a.effect.getTiming();
+        if(g && g.iterations === Infinity && Number(g.duration) > 0) a.currentTime = t; }catch(e){} }); };
+      onClock(document.querySelector('.panel.home.screen-home-actual'));
+      const b = pose();
+      showHome();
+      const c = pose();
+      await new Promise(r => requestAnimationFrame(r)); const d = pose();
+      const jump = (x, y) => Math.max(...x.pts.map((p, i) => y.pts[i] ? Math.hypot(p[0] - y.pts[i][0], p[1] - y.pts[i][1]) : 0));
+      out.rebuildMove = +jump(b, c).toFixed(2); out.nextFrame = +jump(c, d).toFixed(2); out.n = b.pts.length; out.same = c.pts.length === b.pts.length;
+      return out; }""", _HOME_POSE)
+    check("Home rebuilt in place at the same moment lands on the same pose - no orbiting piece moves more than a pixel (%d pieces)" % r.get("n", 0),
+          r.get("n", 0) >= 7 and r.get("same") and r["rebuildMove"] <= 1.0, r)
+    # 2. away and back: each ring is at the angle it would have reached
+    a = pg.evaluate(_HOME_POSE)
+    pg.evaluate("() => showProfile('profile')")
+    pg.wait_for_timeout(2500)
+    pg.evaluate("() => document.getElementById('bottomtab-home').click()")
+    pg.wait_for_timeout(400)
+    b = pg.evaluate(_HOME_POSE)
+    el = (b["t"] - a["t"]) / 1000.0
+    def want(ang0, period):
+        return (ang0 + 360.0 * el / period)
+    def diff(x, y):
+        d = (x - y) % 360
+        return min(d, 360 - d)
+    dout = diff(b["outer"], want(a["outer"], 120)) if a.get("outer") is not None else 99
+    din = diff(b["inner"], want(a["inner"], 52)) if a.get("inner") is not None else 99
+    check("back from another tab, both rings are where they would have turned to (within 1.5 degrees)",
+          dout <= 1.5 and din <= 1.5, {"outer": round(dout, 2), "inner": round(din, 2), "elapsed": round(el, 2)})
+    # 3. tapping Home while on Home does not rebuild it
+    n0 = pg.evaluate("() => document.querySelector('.panel.home').dataset.hid")
+    pg.evaluate("() => document.getElementById('bottomtab-home').click()")
+    pg.wait_for_timeout(500)
+    n1 = pg.evaluate("() => { const p = document.querySelector('.panel.home'); return p && p.dataset.hid; }")
+    check("tapping Home while on Home leaves the same system on screen, not a new one", n0 is not None and n0 == n1, (n0, n1))
+    # 4. a reload carries on too
+    a = pg.evaluate(_HOME_POSE)
+    pg.reload(); pg.wait_for_timeout(2600)
+    pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __stub();}")
+    pg.wait_for_timeout(300)
+    b = pg.evaluate(_HOME_POSE)
+    if b:
+        el = (b["t"] - a["t"]) / 1000.0
+        dout = diff(b["outer"], a["outer"] + 360.0 * el / 120)
+        check("after a reload the outer ring is where it would have turned to (within 1.5 degrees)", dout <= 1.5, {"outer": round(dout, 2), "elapsed": round(el, 2)})
+    else:
+        check("after a reload Home is up", False, None)
+    ctx.close()
+
+
+def check_b314h_lead2(br):
+    """Build 314, second list: the Leaderboard opens on Overall "anytime you
+    open leaderboard"; the class card counts the tests left (finals and the
+    state test with them); July 8th is the State test and the Last day, with
+    a box of its own in both calendar views; Month/List swipes like the
+    Leaderboard's boards. On dd6cfae the board reopened on the last one
+    viewed, there was no test count, July 8th had no state test and no
+    card of its own, and the calendar's switch did not swipe."""
+    print("\n104. build 314: Overall by default, tests left, the State test on the last day, a calendar that swipes")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, touch=True)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      showRankings('week'); await wait(300); showHome(); await wait(300);
+      document.getElementById('bottomtab-rewards').click(); await wait(700);
+      const act = document.querySelector('.screen-rankings .navsegment .iconbtn.active');
+      out.opened = act ? act.textContent : null; out.key = rankingsBoardKey;
+      const sl = document.querySelector('.screen-rankings .navsegment .seg-slider');
+      out.sliderOn = !!(sl && act && Math.abs(sl.getBoundingClientRect().left - act.getBoundingClientRect().left) < 2);
+      /* the class card */
+      showProfile('profile'); await wait(500);
+      const pills = [...document.querySelectorAll('.profile-classcard:not(.profile-friendcard) .profile-classcard-count')].map(e => e.textContent);
+      out.pills = pills;
+      out.testsLeft = typeof testsRemaining === 'function' ? testsRemaining() : null;
+      out.exams = typeof isExamDay === 'function' ? CALENDAR_DATA.filter(isExamDay).map(e => e.date) : [];
+      const j8 = CALENDAR_DATA.find(e => e.date === '2027-07-08'); out.j8 = j8 ? j8.text : null;
+      return out; }""")
+    check("the Leaderboard opens on Overall from the tab bar, whichever board was looked at last, and its bubble sits under Overall",
+          r.get("key") == "overall" and r.get("opened") == "Overall" and r.get("sliderOn"), r)
+    ex = r.get("exams") or []
+    check("tests left counts every numbered test, the three level finals and the state test (not PT finals)",
+          isinstance(r.get("testsLeft"), int) and "2027-07-08" in ex and "2027-01-19" in ex and "2027-06-10" in ex and "2027-06-21" in ex
+          and "2027-01-11" not in ex and "2027-06-09" not in ex and len(ex) >= 16, {"n": len(ex), "testsLeft": r.get("testsLeft")})
+    check("the class card shows tests left beside class days left",
+          any("class day" in p for p in r.get("pills") or []) and any(p.endswith("test left") or p.endswith("tests left") for p in r.get("pills") or []), r.get("pills"))
+    check("July 8th is the State test and says Last day", r.get("j8") and "State Test" in r["j8"] and "Last Day" in r["j8"], r.get("j8"))
+    # the last day, both views
+    r2 = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      showCalendar(); await wait(400);
+      for(let i = 0; i < 20 && !document.querySelector('.cal-cell[data-date="2027-07-08"]'); i++){ const n = document.querySelectorAll('.cal-grid-arrow')[1]; if(!n || n.disabled) break; n.click(); await wait(60); }
+      const cell = document.querySelector('.cal-cell[data-date="2027-07-08"]');
+      out.cell = cell ? { last: cell.classList.contains('cal-cell-last'), star: getComputedStyle(cell, '::after').content !== 'none', border: getComputedStyle(cell).borderTopColor } : null;
+      if(cell){ cell.click(); await wait(200); }
+      const card = document.querySelector('.cal-daycard');
+      out.card = card ? { cls: card.className, crest: !!card.querySelector('.cal-last-crest svg'), text: card.textContent } : null;
+      return out; }""")
+    c = r2.get("cell") or {}
+    check("the month view's July 8th is the last day, in academy gold with a star", c.get("last") and c.get("star") and "229" in (c.get("border") or ""), c)
+    cd = r2.get("card") or {}
+    check("tapping it opens the commendation card: a crest, Last day, State test",
+          "cal-daycard-last" in (cd.get("cls") or "") and cd.get("crest") and "Last day" in (cd.get("text") or "") and "State test" in (cd.get("text") or ""), cd)
+    # swipe between Month and List, with a real finger
+    cdp = ctx.new_cdp_session(pg)
+    pg.evaluate("() => { window.scrollTo(0, 0); }")
+    before = pg.evaluate("() => document.querySelector('.screen-calendar .navsegment .iconbtn.active').textContent")
+    _swipe(cdp, 330, 600, -220, 0, steps=8)
+    pg.wait_for_timeout(500)
+    after = pg.evaluate("() => ({ act: document.querySelector('.screen-calendar .navsegment .iconbtn.active').textContent, list: !document.querySelector('.cal-listview').hidden })")
+    _swipe(cdp, 110, 600, 220, 0, steps=8)
+    pg.wait_for_timeout(500)
+    back = pg.evaluate("() => document.querySelector('.screen-calendar .navsegment .iconbtn.active').textContent")
+    check("a swipe left goes Month to List, and right comes back", before == "Month" and after["act"] == "List" and after["list"] and back == "Month",
+          (before, after, back))
+    # the list view's row for the last day
+    r3 = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      document.querySelectorAll('.screen-calendar .navsegment .iconbtn')[1].click(); await wait(200);
+      const s = document.querySelector('.cal-listview .searchbox'); s.value = 'State Test'; s.dispatchEvent(new Event('input', { bubbles: true })); await wait(200);
+      const row = document.querySelector('.cal-row[data-date="2027-07-08"]');
+      return row ? { last: row.classList.contains('cal-row-last'), chips: [...row.querySelectorAll('.cal-row-chip')].map(c => c.textContent) } : null; }""")
+    check("the list view's July 8th row is gold-rimmed and says LAST DAY and STATE TEST",
+          r3 and r3["last"] and "LAST DAY" in r3["chips"] and "STATE TEST" in r3["chips"], r3)
+    # THE DAYS "TESTS LEFT" COUNTS ARE THE DAYS MARKED AS TESTS: the finals
+    # and the state test are tests in the count, so they are test days on
+    # the grid (the amber dot) and in the list (a chip) as well. On the
+    # first pass the count took them in and the calendar did not mark them.
+    r4 = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      const s = document.querySelector('.cal-listview .searchbox'); s.value = ''; s.dispatchEvent(new Event('input', { bubbles: true })); await wait(250);
+      const want = CALENDAR_DATA.filter(isExamDay).map(e => e.date).sort();
+      const rows = [...document.querySelectorAll('.cal-listview .cal-row.cal-row-test')];
+      out.listMissing = want.filter(d => !rows.some(r => r.dataset.date === d));
+      out.listExtra = rows.map(r => r.dataset.date).filter(d => want.indexOf(d) < 0);
+      out.unchipped = rows.filter(r => !r.querySelector('.cal-row-chip-test')).map(r => r.dataset.date);
+      const fin = document.querySelector('.cal-row[data-date="2027-01-19"]');
+      out.finalChips = fin ? [...fin.querySelectorAll('.cal-row-chip')].map(c => c.textContent) : null;
+      document.querySelectorAll('.screen-calendar .navsegment .iconbtn')[0].click(); await wait(250);
+      for(let i = 0; i < 20 && !document.querySelector('.cal-cell[data-date="2027-01-19"]'); i++){ const b = document.querySelectorAll('.cal-grid-arrow')[0]; if(!b || b.disabled) break; b.click(); await wait(60); }
+      const jan = document.querySelector('.cal-cell[data-date="2027-01-19"]');
+      out.gridFinal = jan ? !!jan.querySelector('.cal-cell-dot-test') : null;
+      return out; }""")
+    check("every day 'tests left' counts is marked as a test in the list and on the grid - the finals (FINAL) and the State test too",
+          r4 and not r4["listMissing"] and not r4["listExtra"] and not r4["unchipped"] and r4["finalChips"] and "FINAL" in r4["finalChips"] and r4["gridFinal"] is True, r4)
+    ctx.close()
+
+
+_KB_STUB = """(() => { const t = new EventTarget(); let h = null, off = 0;
+  const st = { get width(){ return innerWidth; }, get height(){ return h == null ? innerHeight : h; }, get offsetTop(){ return off; },
+    get offsetLeft(){ return 0; }, get pageTop(){ return scrollY + off; }, get pageLeft(){ return 0; }, get scale(){ return 1; },
+    addEventListener: t.addEventListener.bind(t), removeEventListener: t.removeEventListener.bind(t), dispatchEvent: t.dispatchEvent.bind(t), onresize: null, onscroll: null };
+  Object.defineProperty(window, 'visualViewport', { get: () => st, configurable: true });
+  window.__kb = (px) => { h = px ? innerHeight - px : null; t.dispatchEvent(new Event('resize')); };
+})();"""
+
+
+def check_b314h_chat2(br):
+    """Build 314, chat: the sheet "cuts off" above the keyboard, and an
+    offline member's yellow character "looks like one of the rank unlock
+    characters". On dd6cfae the sheet stayed pinned to the layout
+    viewport's bottom, behind the keyboard, and away members were
+    grayscale(1)."""
+    print("\n105. build 314: the chat sits flush on the keyboard; an offline member keeps their colours")
+    for (dn, w, h, kb) in [("iPhone 17 Pro Max", 440, 956, 336), ('iPad Pro 11"', 834, 1194, 400)]:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, init=_KB_STUB)
+        pg.evaluate("() => openChatDock()")
+        # measured once the sheet / popover has finished arriving
+        base = pg.evaluate("""async () => { const p = document.querySelector('.chatdock-panel'); let last = null, same = 0;
+          for(let i = 0; i < 60 && (same < 4 || p.getAnimations().some(a => a.playState === 'running')); i++){ await new Promise(r => setTimeout(r, 60)); const r = p.getBoundingClientRect();
+            const k = r.top.toFixed(1) + '|' + r.bottom.toFixed(1); same = k === last ? same + 1 : 0; last = k; }
+          const r = p.getBoundingClientRect(); return { bottom: r.bottom, top: r.top, pb: getComputedStyle(p).paddingBottom }; }""")
+        pg.evaluate("k => __kb(k)", kb)
+        pg.evaluate("""async () => { const p = document.querySelector('.chatdock-panel'); let last = null, same = 0;
+          for(let i = 0; i < 60 && (same < 4 || p.getAnimations().some(a => a.playState === 'running')); i++){ await new Promise(r => setTimeout(r, 60)); const r = p.getBoundingClientRect();
+            const k = r.top.toFixed(1) + '|' + r.bottom.toFixed(1); same = k === last ? same + 1 : 0; last = k; } }""")
+        up = pg.evaluate("() => { const p = document.querySelector('.chatdock-panel'); const r = p.getBoundingClientRect(); return { bottom: r.bottom, top: r.top, kbTop: visualViewport.offsetTop + visualViewport.height }; }")
+        if "--against" not in sys.argv and os.path.isdir("/tmp/claude-0/b314/home"):
+            pg.screenshot(path="/tmp/claude-0/b314/home/chat-keyboard-%s.png" % ("iphone" if w < 600 else "ipad"))
+        pg.evaluate("() => __kb(0)")
+        pg.evaluate("""async () => { const p = document.querySelector('.chatdock-panel'); let last = null, same = 0;
+          for(let i = 0; i < 60 && (same < 4 || p.getAnimations().some(a => a.playState === 'running')); i++){ await new Promise(r => setTimeout(r, 60)); const r = p.getBoundingClientRect();
+            const k = r.top.toFixed(1) + '|' + r.bottom.toFixed(1); same = k === last ? same + 1 : 0; last = k; } }""")
+        down = pg.evaluate("() => { const p = document.querySelector('.chatdock-panel'); const r = p.getBoundingClientRect(); return { bottom: r.bottom, top: r.top, kb: p.classList.contains('is-kb'), pb: getComputedStyle(p).paddingBottom }; }")
+        check("%s: with the keyboard up the chat's bottom sits on the keyboard's top (within 1px) and its top is on screen" % dn,
+              abs(up["bottom"] - up["kbTop"]) <= 1 and up["top"] >= 0, {"up": up, "kb": kb})
+        check("%s: and with it down again the chat is exactly where it was" % dn,
+              abs(down["bottom"] - base["bottom"]) <= 1 and abs(down["top"] - base["top"]) <= 1 and not down["kb"] and down["pb"] == base["pb"], {"base": base, "down": down})
+        ctx.close()
+    # THE EXACT STATE MADISON SENT (build 314): a room open, the field
+    # tapped and focused, the keyboard up. The glass behind the messages
+    # must stay the glass - never the dark moving fill, never dimmed -
+    # from the tap through the keyboard arriving. On dd6cfae the tap on
+    # the field put the sheet in .is-settling.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, init=_KB_STUB, touch=True)
+    pg.evaluate("() => { openChatDock(); enterChatRoom('GTEST1'); }")
+    pg.wait_for_timeout(900)
+    st = pg.evaluate("""() => { const p = document.querySelector('.chatdock-panel'); const i = p.querySelector('.vroom-chat-input');
+      window.__glass = []; const look = () => { const cs = getComputedStyle(p); __glass.push([p.className, cs.backdropFilter, cs.backgroundColor]); };
+      new MutationObserver(look).observe(p, { attributes: true, attributeFilter: ['class'] });
+      const iv = setInterval(look, 16); setTimeout(() => clearInterval(iv), 2500);
+      const r = i ? i.getBoundingClientRect() : null; const cs = getComputedStyle(p);
+      /* and a spot of the sheet that is not a control: the room's count line */
+      const c = p.querySelector('.chatdock-roomcount'); const cr = c ? c.getBoundingClientRect() : null;
+      return { rest: [cs.backdropFilter, cs.backgroundColor], at: r && { x: r.left + r.width / 2, y: r.top + r.height / 2 },
+               bare: cr && { x: cr.left + Math.min(30, cr.width / 2), y: cr.top + cr.height / 2 } }; }""")
+    if st["at"]:
+        cdp = ctx.new_cdp_session(pg)
+        for pt in (st["bare"], st["at"]):
+            if not pt: continue
+            cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": pt["x"], "y": pt["y"]}]})
+            cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+            pg.wait_for_timeout(120)
+        pg.evaluate("() => document.querySelector('.chatdock-panel .vroom-chat-input').focus()")
+        pg.wait_for_timeout(80)
+        pg.evaluate("() => __kb(336)")
+        pg.wait_for_timeout(700)
+    g = pg.evaluate("() => ({ seen: __glass, focused: document.activeElement && document.activeElement.className, kb: document.querySelector('.chatdock-panel').classList.contains('is-kb') })")
+    bad = [x for x in g["seen"] if "is-settling" in x[0] or "is-dragging" in x[0] or x[1] != st["rest"][0] or x[2] != st["rest"][1]]
+    check("tapping the field and typing with the keyboard up never dims or flattens the glass behind the chat",
+          bool(st["at"]) and bool(st["bare"]) and g["focused"] == "vroom-chat-input" and g["kb"] and len(g["seen"]) > 20 and not bad,
+          {"rest": st["rest"], "bad": bad[:3], "n": len(g["seen"]), "focused": g["focused"], "kb": g["kb"]})
+    ctx.close()
+    # an offline member keeps their hue
+    ctx = br.new_context(viewport={"width": 440, "height": 956}, device_scale_factor=2)
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');"
+                        "localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % USED_ACCOUNT)
+    pg = open_page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
+    pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __stub();}")
+    pg.evaluate("""() => { const host = document.createElement('div'); host.id = 'awaytest'; host.className = 'chatdock-roomhead';
+      host.style.cssText = 'position:fixed;left:20px;top:200px;z-index:9999;display:flex;gap:30px;background:#141a22;padding:20px';
+      /* "-here" is the same offline chip with the art's own treatment
+         taken off, so the two differ by exactly what offline does to the
+         drawing (the status dot and the name are not in the picture) */
+      ['paladin', 'alien'].forEach(c => [false, true].forEach(away => {
+        const one = document.createElement('span'); one.className = 'chatdock-who is-away'; one.dataset.k = c + (away ? '-away' : '-here');
+        const art = document.createElement('span'); art.className = 'chatdock-who-art'; art.appendChild(buildAvatarCharSVGSafe(c));
+        if(!away) art.style.cssText = 'filter:none !important; opacity:1 !important;';
+        const nm = document.createElement('span'); nm.className = 'chatdock-who-name'; nm.textContent = 'X';
+        one.append(art, nm); host.appendChild(one); }));
+      document.body.appendChild(host); }""")
+    pg.wait_for_timeout(500)
+    import colorsys, io as _io, math
+    from PIL import Image
+    pg.evaluate("() => document.getAnimations().forEach(a => { try{ a.pause(); a.currentTime = 0; }catch(e){} })")
+    pg.wait_for_timeout(200)
+    def img(sel):
+        el = pg.query_selector('#awaytest [data-k="%s"] .chatdock-who-art' % sel)
+        return Image.open(_io.BytesIO(el.screenshot())).convert("RGB")
+    res = {}
+    def pop(im):
+        hs = []; ss = []
+        for px in im.getdata():
+            hh, sv, vv = colorsys.rgb_to_hsv(*(v / 255.0 for v in px))
+            if sv >= 0.3 and vv >= 0.25:
+                hs.append(hh * 2 * math.pi); ss.append(sv)
+        if not hs:
+            return None
+        x = sum(math.cos(h) for h in hs) / len(hs); y = sum(math.sin(h) for h in hs) / len(hs)
+        return {"n": len(hs), "hue": math.degrees(math.atan2(y, x)) % 360, "sat": sum(ss) / len(ss)}
+    for c in ("paladin", "alien"):
+        a_, b_ = pop(img(c + "-here")), pop(img(c + "-away"))
+        if not a_ or not b_:
+            res[c] = {"px": 0, "hueShift": None, "satKept": None}; continue
+        d = abs(a_["hue"] - b_["hue"]) % 360
+        res[c] = {"px": min(a_["n"], b_["n"]), "hueShift": round(min(d, 360 - d), 1), "satKept": round(b_["sat"] / a_["sat"], 2)}
+    filt = pg.evaluate("() => [...document.querySelectorAll('#awaytest .is-away, #awaytest .is-away *')].map(e => getComputedStyle(e).filter).filter(f => /grayscale|saturate|sepia/.test(f || ''))")
+    ok = all(v["px"] > 50 and v["hueShift"] is not None and v["hueShift"] <= 8 and v["satKept"] >= 0.75 for v in res.values())
+    check("an offline member's character keeps its own hue and most of its colour (no grayscale or desaturate)",
+          ok and not filt, {"res": res, "filters": filt[:3]})
+    ctx.close()
+
+
+_ROOM_FAKE = """(() => {
+  window.__rooms = {}; window.__subs = {}; window.__delay = 1500;
+  const snap = (id, fromCache) => ({ exists: !!__rooms[id], id, data: () => __rooms[id] && JSON.parse(JSON.stringify(__rooms[id])), metadata: { fromCache: !!fromCache } });
+  const deliver = id => (__subs[id] || []).forEach(cb => cb(snap(id, false)));
+  const setPath = (obj, path, v) => { const ks = path.split('.'); let o = obj; for(let i = 0; i < ks.length - 1; i++){ o[ks[i]] = o[ks[i]] || {}; o = o[ks[i]]; } o[ks[ks.length - 1]] = v; };
+  window.__docRef = id => ({ id,
+    set: d => { __rooms[id] = JSON.parse(JSON.stringify(d)); setTimeout(() => deliver(id), 40); return new Promise(r => setTimeout(r, 60)); },
+    update: u => { if(__rooms[id]) Object.keys(u).forEach(k => { const v = u[k]; if(v && v._delete) { const ks = k.split('.'); let o = __rooms[id]; for(let i = 0; i < ks.length - 1; i++) o = o[ks[i]] || {}; delete o[ks[ks.length - 1]]; } else setPath(__rooms[id], k, v); }); setTimeout(() => deliver(id), 40); return Promise.resolve(); },
+    get: () => Promise.resolve(snap(id, false)), delete: () => { delete __rooms[id]; return Promise.resolve(); },
+    onSnapshot: cb => { (__subs[id] = __subs[id] || []).push(cb); setTimeout(() => cb(snap(id, false)), __delay); return () => { __subs[id] = (__subs[id] || []).filter(c => c !== cb); }; },
+    collection: () => ({ doc: __docRef, onSnapshot: cb => { setTimeout(() => cb({ forEach(){}, docs: [], docChanges: () => [] }), 20); return () => {}; }, orderBy(){ return this; }, limit(){ return this; }, where(){ return this; }, get: () => Promise.resolve({ forEach(){}, docs: [] }) }) });
+  window.__useRooms = () => { const real = fbDb; onSnapshotResilient = (ref, onNext) => ref.onSnapshot(onNext, () => {});
+    fbDb = { collection: n => n === 'vrooms' ? ({ doc: __docRef, where: function(){ return this; }, onSnapshot: cb => { setTimeout(() => cb({ forEach(){}, docs: [] }), 20); return () => {}; } }) : real.collection(n) }; };
+})();"""
+
+_LOBBY_WATCH = """() => { window.__rowsSeen = []; let stop = false; window.__stopWatch = () => { stop = true; };
+  (function f(){ const p = document.querySelector('#stage > .screen-vroom-lobby'); if(p){ __rowsSeen.push(p.querySelectorAll('.vroom-roster-list .vroom-row').length); } if(!stop) requestAnimationFrame(f); })(); }"""
+
+
+def check_b314h_lobby(br):
+    """Build 314: "sometimes the lobby doesn't load who's in it the second
+    I'm [in] the lobby". On dd6cfae the roster was drawn only by the room's
+    live listener, so with its first answer 1.5s late the lobby showed an
+    empty "In this room" for 1.5s - for the host, a joiner and a rejoin."""
+    print("\n106. build 314: the lobby shows who is in it from its first frame, even with the room's first answer 1.5s late")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, init=_ROOM_FAKE)
+    pg.evaluate("() => __useRooms()")
+    # host
+    pg.evaluate("() => showVirtualRoomChoice()"); pg.wait_for_timeout(500)
+    pg.evaluate(_LOBBY_WATCH)
+    pg.evaluate("() => [...document.querySelectorAll('button')].find(b => /Host a room/.test(b.textContent)).click()")
+    pg.wait_for_timeout(3200)
+    host = pg.evaluate("() => { __stopWatch(); return __rowsSeen.slice(); }")
+    check("host: the lobby's first frame already has you in it, and the roster is never empty",
+          host and host[0] >= 1 and min(host) >= 1, {"frames": len(host), "first": host[:3], "min": min(host) if host else None})
+    # joiner: a room with two people in it, read to join
+    pg.evaluate("() => { try{ leaveVirtualRoom(); }catch(e){} }"); pg.wait_for_timeout(400)
+    pg.evaluate("""() => { __rooms['ROOMJ1'] = { hostCode: 'pHOST0000001', hostName: 'Avery', units: [], versions: {}, game: null, open: true, status: 'waiting', mode: 'exam', createdAt: Date.now(),
+        participants: { pHOST0000001: { name: 'Avery', avatarChar: 'zeus', level: 40, badges: 6, joinedAt: Date.now() - 9000, seen: Date.now(), ready: false },
+                        pTWO00000002: { name: 'Jordan', avatarChar: 'alien', level: 30, badges: 4, joinedAt: Date.now() - 5000, seen: Date.now(), ready: true } } }; }""")
+    for label in ("joiner", "rejoin"):
+        pg.evaluate("() => showHome()"); pg.wait_for_timeout(300)
+        pg.evaluate(_LOBBY_WATCH)
+        pg.evaluate("() => joinVirtualRoomLobby('ROOMJ1')")
+        pg.wait_for_timeout(2800)
+        seen = pg.evaluate("() => { __stopWatch(); return __rowsSeen.slice(); }")
+        check("%s: the lobby's first frame shows all three (the two already there and you), and never fewer" % label,
+              seen and seen[0] == 3 and min(seen) == 3, {"frames": len(seen), "first": seen[:3], "min": min(seen) if seen else None})
+        pg.evaluate("() => { try{ leaveVirtualRoom(); }catch(e){} try{ delete __rooms['ROOMJ1'].participants[publicIdOf()]; }catch(e){} }"); pg.wait_for_timeout(500)
+    ctx.close()
+
+
 def check_b310(br):
     """Build 310. Each of these was written against build 309 and fails
     there: the streak pop was one colour and 1.9s, the Profile tab went
@@ -9505,6 +10349,7 @@ def check_b313_lead(br):
         || /Auto-star questions you keep missing/.test(document.getElementById('stage').textContent);
       out.autoFlag = /Auto-flag/i.test(document.getElementById('stage').textContent);
       out.blurbs = RANKING_BOARDS.map(b => (b.blurb || '').length);
+      out.blurbText = RANKING_BOARDS.map(b => b.blurb || '');
       const U = topicsIn(QUESTIONS);
       store.unitPerfects = store.unitPerfects || {}; store.unitPerfects[U[0]] = badgeThresholdFor(U[0]) + 3; store.unitPerfects[U[1]] = 0;
       out.descHeld = badgeDetail(U[0]).desc; out.descNot = badgeDetail(U[1]).desc;
@@ -9584,7 +10429,17 @@ def check_b313_lead(br):
       fbDb = real; onSnapshotResilient = realOSR; showHome();
       return out; }""")
     check("Settings says Auto-star, and nothing says Auto-flag", r.get("autoStar") is True and r.get("autoFlag") is False, [r.get("autoStar"), r.get("autoFlag")])
-    check("each board's blurb is one short line (80 characters or fewer)", r.get("blurbs") and max(r["blurbs"]) <= 80 and min(r["blurbs"]) > 0, r.get("blurbs"))
+    # Build 314 reverses the one-line limit: "Make it all an extra sentence."
+    # Each blurb is now at most two short sentences (60 characters or fewer
+    # each), Overall no longer says "on the same rank", and Hundos says a
+    # hundo is a whole unit at 100% rather than "one hundo per unit".
+    import re as _re
+    sents = [[x for x in _re.split(r"(?<=[.!?])\s+", t) if x] for t in r.get("blurbText") or []]
+    check("each board's blurb is at most two short sentences (60 characters or fewer each)",
+          sents and all(1 <= len(ss) <= 2 and all(len(x) <= 60 for x in ss) for ss in sents), r.get("blurbText"))
+    check("Overall no longer says 'on the same rank'; Hundos says a hundo is 100% on a whole unit, not 'one hundo per unit'",
+          r.get("blurbText") and not any("same rank" in t.lower() for t in r["blurbText"])
+          and any("whole unit" in t for t in r["blurbText"]) and not any("one hundo per unit" in t for t in r["blurbText"]), r.get("blurbText"))
     check("an earned badge states its challenge exactly the way a locked one does",
           bool(re.fullmatch(r"Earn \d+ hundos? in this unit\.", r.get("descHeld") or "")) and bool(re.fullmatch(r"Earn \d+ hundos? in this unit\.", r.get("descNot") or "")),
           [r.get("descHeld"), r.get("descNot")])
@@ -9646,7 +10501,7 @@ def check_b313_chars_centred(br):
           out.rows = read(); await wait(2100); out.later = read(); await wait(2100); out.last = read();
           /* and each plays its OWN loop: Astral, Celestial and Zenith share
              a kind, and a flip-book picked by kind gave all three Zenith's */
-          for(let t = 0; t < 200; t++){ const n = ['astral', 'celestial', 'zenith'].filter(c => [...document.querySelectorAll('.rank-row')].some(r => r.dataset.av === c && r.querySelector('.char-flip-play img'))).length; if(n === 3) break; await wait(250); }
+          for(let t = 0; t < 480; t++){ const n = ['astral', 'celestial', 'zenith'].filter(c => [...document.querySelectorAll('.rank-row')].some(r => r.dataset.av === c && r.querySelector('.char-flip-play img'))).length; if(n === 3) break; await wait(250); }
           out.sheets = ['astral', 'celestial', 'zenith'].map(c => { const r = [...document.querySelectorAll('.rank-row')].find(r => r.dataset.av === c); const img = r && r.querySelector('.char-flip-play img'); return img ? img.src : null; });
           return out; }""", chars)
         rows = r.get("rows") or []
@@ -10317,7 +11172,10 @@ def check_b313_flares(br):
           });
           /* the next one wears its colour - Umbra's, once Void is held */
           const vio = document.querySelector('.panel.home [data-flare="violet"]');
-          out.nextTinted = !!(vio && vio.classList.contains('is-next') && parseFloat(getComputedStyle(vio.querySelector('.cof-tint')).opacity) > .2);
+          /* build 314: marked, but in plain light - never its colour ("the secret
+             flares you haven't got, you shouldn't be able to see their colors") */
+          out.nextTinted = !!(vio && vio.classList.contains('is-next') && parseFloat(getComputedStyle(vio.querySelector('.cof-tint')).opacity) > .2
+            && getComputedStyle(vio).getPropertyValue('--fc').trim().toUpperCase() !== MYSTERY_COLOR.violet.toUpperCase());
           /* 2. three, then five, then six */
           await home(F.none); out.count3 = document.querySelectorAll('.panel.home .cosmic-orbit-dot').length;
           await home(F.five); out.count6 = document.querySelectorAll('.panel.home .cosmic-orbit-dot').length;
@@ -10366,7 +11224,7 @@ def check_b313_flares(br):
         lit = r.get("lit") or []
         check(f"{label}: every found flare on Home is lit in its own colour (they computed white)",
               len(lit) == 3 and all(x["ok"] for x in lit), lit)
-        check(f"{label}: the flare being hunted next wears its colour (Umbra's, once Void is held)", r.get("nextTinted") is True, r.get("nextTinted"))
+        check(f"{label}: the flare being hunted next is marked (once Void is held) - in plain light, not its colour (build 314)", r.get("nextTinted") is True, r.get("nextTinted"))
         check(f"{label}: three flares before Void, five with it, six once the fifth is found",
               (r.get("count3"), r.get("countVoid"), r.get("count6")) == (3, 5, 6), (r.get("count3"), r.get("countVoid"), r.get("count6")))
         check(f"{label}: the sixth flare is on the planet", r.get("coreOnPlanet") is True)
@@ -12022,6 +12880,19 @@ def main():
             check_b308_unlocks(br)
             check_b310(br)
             check_b310_vroom(br)
+            # build 314, the Home / ranks / chat stream (check_b314h_*)
+            check_b314h_flares(br)
+            check_b314h_rankmap(br)
+            check_b314h_tabs(br)
+            check_b314h_chat(br)
+            check_b314h_sheet(br)
+            check_b314h_board(br)
+            check_b314h_settings_calendar(br)
+            check_b314h_host(br)
+            check_b314h_home_clock(br)
+            check_b314h_lead2(br)
+            check_b314h_chat2(br)
+            check_b314h_lobby(br)
             check_b311_rank(br)
             check_b312_shuffle(br)
             check_b312_results(br)

@@ -13667,6 +13667,347 @@ alike - and found the mechanism on somebody else: **Rod713's row said
   down since. It never prints a sync code. Run it before answering any
   "accounts are messed up" report.
 
+### Build 314 - Home's flares, the road map, tab lag, the chat sheet, the Leaderboard
+
+**Secret flares.**
+- **The glint is a touch less** (`cof-glint`): *"that random shine is
+  super nice, just a tiny bit less and it's perfect"* - peak .8 bright and
+  .8 the size, same clocks and shape. Section 95 holds it to .7-.85.
+- **A flare you have not found has no colour anywhere.** *"The secret
+  flares you haven't got, you shouldn't be able to see their colors."*
+  This reverses build 313's "the next one wears its colour": `makeFlare`
+  gives any unfound flare `--fc: FLARE_UNFOUND_TINT` (plain cool light),
+  so the hunted one keeps its tint and pulse ring but in white light, and
+  the colour is not even in the DOM to read. The Home hint card
+  (`flareHintItem`) draws the missing flare the same way. **Not done
+  here, flagged:** a locked secret character's silhouette still wears its
+  flare lit in colour (`.char-sil-body` keeps `.cx-fx-*` groups coloured)
+  and its rim is the character's glow colour - that is the characters
+  stream's "remove the colors from their outline when not unlocked".
+
+**The road map.**
+- **The light waits for its line.** *"There's circle at the end is
+  already there when loading."* It sat lit at the end of an empty road
+  from the first frame. `.rankmap-roadtip-dot` is out (opacity 0, scale
+  .4) until `placeRoadTip` makes its first animated move, which adds
+  `.is-lit` - it comes up at the line's tip on the fill's own .25s delay
+  and rides it. An instant placement (load, resize) never lights it.
+- **The walk always comes back to the top.** *"When it's done showing the
+  progress, it doesn't go back to the top of screen like it should."*
+  `glideScrollTo` stepped with `scrollTo({behavior:"instant"})` on a page
+  that is `scroll-behavior:smooth`; an engine that does not take
+  "instant" throws, and the fallback `scrollTo(x, y)` obeys the page's
+  smooth - a browser glide started every frame, on top of ours. It now
+  switches the root's smooth off for the glide (read back, as
+  `jumpToTop` does), steps with the two-number `scrollTo` every engine
+  knows, writes the exact target on the last frame, and `glideHome` ends
+  with `jumpToTop()` if anything is left. Chromium cannot reproduce the
+  device's failure; section 96 asserts no options-form scroll is used.
+- **Gold's road is the gold of its name.** *"The gold in that progress bar
+  doesn't [look] like the gold [of] the name gold in current rank? That's
+  a great color for gold."* `rankRoadColor()`: for Gold the road, its stub
+  and its light use exactly `.rankhero-name`'s expression,
+  `color-mix(in srgb, #F5C21B 70%, #fff)` (`RANK_ROAD_LIFT`). Other ranks
+  are unchanged - nothing was said about them.
+
+**Tab lag, and the screen that sometimes did not load.** *"There's lag
+again when clicking tabs, there's a delay and stuff. Sometimes the screen
+does not load."* Profiled every ordered pair of the four tabs, 4x CPU,
+real taps, a used account, A/B against 302 and 313 interleaved
+(`scratchpad/b314/prof_tabs.py`). Median tap-to-first-paint:
+
+| | 302 | 313 | 314 |
+|---|---|---|---|
+| iPhone, warm cache | 188ms | 390ms | 179ms |
+| iPad, warm cache | 399ms | 510ms | 274ms |
+| iPhone, first launch after an update | - | 466ms | 219ms |
+
+What regressed, and the fixes:
+- **The flip-book recorders after an update.** Every drawing build 313
+  changed is recorded again: a fresh Home spent 87-124s (4x) recording,
+  in 200+ long tasks of 60-190ms - a tap almost always landed behind one.
+  `orbitAnimYield()` now waits while a finger has just gone down
+  (`recUserAt`, 1s), a screen has just gone in (`stageMountedAt`, 700ms)
+  or a switch is settling (`settleUntil`), and the rank recorder draws one
+  frame per slice (drawing an svg image is where it rasterises). Long
+  tasks during recording: 9.2s -> 0.3s per 30s; the recording takes a
+  little longer and nobody waits on it.
+- **`topicsIn(QUESTIONS)`** walked the whole bank on every badge count,
+  dozens of times per switch (85-106ms at 4x). The bank is a const, so
+  its unit list is cached (`topicsInBankCache`); callers get a copy.
+- **The Profile tab's dot** (`syncProfileTabDot`, every character,
+  banner, theme and effect asked whether it is held - 87-158ms) ran in the
+  mount's own task. The stage observer now calls
+  `syncProfileTabDotSoon()`: after the settle window, in idle time,
+  coalesced. Direct calls (mark-seen, rank shown) are unchanged.
+- **Home's sheets went on in the first frame** with a
+  getComputedStyle/getBoundingClientRect per bubble - a forced layout of
+  the new Home before it could paint (130ms). One frame later now.
+- **A wobbling tap was a drag.** Any pointermove turned a tab tap into the
+  drag path, which built the screen synchronously inside pointerup before
+  the highlight moved. A drag needs 10px sideways (`TAB_DRAG_SLOP`), a
+  release goes through the tab's own `_navigate` (highlight first, screen
+  next frame, same lock), and a pointercancel never navigates.
+- **"Sometimes the screen does not load"**: the build was handed to an
+  animation frame and nothing else, the thing iOS holds back (Low Power
+  Mode, a busy compositor, just reopened) - the bubble moved and the
+  screen never came. A 120ms timer races the frame (`navRun`, once), and a
+  screen that throws part-way leaves the highlight on what is really
+  showing (`syncActive` in `finally`).
+Gate: section 97 (frames held back, a 3px-wobble tap, the dot not in the
+mount task, the bank list cached, all twelve switches painted with a
+median under 300ms at 4x).
+
+**The chat sheet.** *"If I click on that stuff, the background behind the
+chat goes dull or dark."* `endDrag` put the sheet in `.is-settling` - the
+near-opaque fill that stands in for the glass while it moves - on every
+touch of its chrome, a plain tap included. Only an armed drag settles now.
+*"Swipe down functions are laggy (like in chat)."* The first moves of a
+touch were passive, and on a `pan-y` sheet iOS starts panning the page and
+will not give the gesture back - sheet and page both followed the finger.
+Every move of a touch that began on the chrome is claimed now, the height
+is read once when the drag arms (not a forced layout per touchstart), the
+sheet starts from where the finger is when it arms rather than jumping the
+6px slop, and a quick flick closes it. **`attachSheetSwipe`** (the start
+sheet) wrote its transform from every touchmove and kept its 16px blur:
+moves are written once a frame (rAF, `translate3d`), and while pulled it
+is `.is-dragging` - no blur, the same tone, the chat sheet's rule.
+Gates: sections 98 and 99.
+
+**The Leaderboard.**
+- **The header strip.** *"That blue strip where it says rank level badges,
+  it's kind of sitting on top of the person in first place."* The header
+  is a `.rank-row`, so it carried the rows' glass - `backdrop-filter`
+  blur + saturate(1.9) with no fill - a saturated strip of whatever was
+  behind, full width, and it was pulled 3px down into first place
+  (`margin-bottom:-.2rem`), its labels inside the podium row's glow. No
+  glass on the header now, and its own line, 14px clear of the row.
+- **The shaking characters.** *"All the characters are still slightly
+  shaking."* Build 313 laid each flip-book over its drawing carrying the
+  board's `.94` scale, so a whole-pixel frame step became 0.94 of one on
+  the glass: measured at 3x, one sheet landed on 26-33 different
+  sub-pixel offsets in 40 frames, resampled differently each time. The
+  sheet is now recorded at the size the drawing is SHOWN and laid in
+  place with no transform, snapped to device pixels (`charFlipAttach`,
+  `ownScale`): one phase over 45 frames, still within .2px of the drawing.
+  A transform that is not a plain scale keeps the old way. Sheet sizes
+  change, so boards record their characters once more after this update.
+- **Accuracy** was checked, not assumed: section 100 changes the rows
+  under the board (a new person, a removed one, a jump to first) while
+  switching every board, leaves and re-enters, and every board matched
+  the data exactly every time - on 313 as well. It is a guard.
+
+**Advanced settings opens and closes like something opening.** *"When
+closing the advanced settings tab ... it does it instantly ... should open
+more smooth and like it's actually expanding open, and when shutting it
+would actually close shut but nicely and smoothly."* Build 308 removed
+the height tween (it re-laid out all of Settings every frame - real lag),
+leaving a fade open and a snap shut. Advanced is the last thing on the
+page, so nothing below it needs pushing: `.is-reveal` takes the full
+height in one layout and sweeps a `clip-path` open from the top edge
+(rows fade in a beat behind); closing sweeps it back up with the rows
+fading first, glides the page up by the same amount, and only then gives
+the height back (440ms). The clip runs past the box when open, so the
+Reset button's shadow is not cut.
+
+**Today in the calendar is the grid's own material.** *"Still looks shiny
+... doesn't go with the screen, maybe it shouldn't be themed color?"* No
+theme colour, no gradient, no glow: picked, a soft frosted fill
+(`rgba(255,255,255,.13)`) with a white rim; not picked, the rim alone.
+
+**Hosting a room.** *"It says something there but then it opens the lobby
+so fast ... something about opening a lobby is not smooth."* With a quick
+server "Setting up your room..." was up ~120ms. It now holds at least
+`HOST_MIN_MS` (850ms) after the tap (still at most `HOST_ENTER_MS`), and
+the lobby arrives once (`vroomArriveSoft`): held at opacity 0 until its
+first snapshot has drawn the roster (450ms at most), then one rise -
+opacity and transform only. Measured: one 14px rise, no second position.
+A create that fails during the hold never enters (`failed`).
+Gates: sections 101 and 102.
+
+**Revised, not deleted:** section 91's "the flare being hunted next wears
+its colour" now asserts it is marked in plain light and NOT its colour.
+
+#### Build 314, second batch - Home that carries on, the Leaderboard's words, the last day, chat and the lobby
+
+**Home carries on where it was.** *"When hitting the main menu or reloading
+the home button or whatever, the plant system like reloads and stuff
+changes positions."* Home is rebuilt on every visit and every loop on it
+is a CSS animation, which starts at 0% on a new node - so each visit put
+the rings (52s / 120s), the sixth flare's orbit, the bubbles' floats, the
+plasma, the flares' breathing and each bubble's flip-book back to their
+starting pose. Three fixes:
+- `syncLoopClock(root)`: every infinite animation under Home is set to
+  where it would be had it run since `LOOP_EPOCH`, by the wall clock, in
+  the task that mounts Home (stagger delays kept, one-shots untouched). A
+  return, Main menu, or a reload shows the same live system. There is no
+  random placement on Home to remember - the secret flares' spots are a
+  fixed table (`FLARE_SPOT`), so nothing goes in sessionStorage.
+- Sheets placed on an earlier visit go on before the first paint, with no
+  measuring (`orbitSheetGeom`, `startOrbitEmblemAnimsKnown`); the async
+  measured path still handles a first visit, a rotation or a newly lit
+  bubble, and syncs its sheet to the clock as it attaches.
+- `.cosmic-hero-wrap.is-return` drops the rings' settle-in fade after the
+  first Home of the session (the planet's own svg keeps it - that is the
+  iOS white-flash guard), so returning no longer blanks every bubble.
+Tapping Home while on Home already did nothing; section 103 holds it.
+Gate: section 103 (a rebuild in place moves no piece more than a frame's
+worth - 313: 62px; back from Profile both rings are within 1.5 degrees
+of where they would have turned - 313: 9 and 20; and after a reload).
+
+**The Leaderboard opens on Overall, every time** (*"make this one the
+default ... anytime you open leaderboard you go to overall"*):
+`RANKINGS_DEFAULT_BOARD`; a caller that names a board still gets it. **Its
+words** (*"the hundo one is confusing ... In overall, it says 'on the same
+rank' remove that. Make it all an extra sentence"*), read as: each board
+says what it ranks, then one plain line of what that means.
+- This Week: "XP earned since Monday. Everyone starts at zero, so anyone
+  can top it."
+- Overall: "Ranked by rank. Whoever is closest to their next rank is
+  ahead."
+- Hundos: "A hundo is 100% on a whole unit, in any mode. A test of three
+  units can earn three." (the build 250 wording, made short).
+Section 90's one-line rule is reversed to "at most two short sentences".
+
+**Tests left, the State test, the last day.** *"Where it says class days
+remaining, you also include a tests remaining thing include the finals the
+state test (the state test is on the last day July 8th ...). Ensure that
+day also says last day ... has a cool box to celebrate."*
+- `isExamDay()`: every `TEST #n`, the three level finals and the state
+  test; PT finals (fitness) and "Study for Final" are not tests.
+  `testsRemaining()` counts them from today; the Profile class card shows
+  "N tests left" in amber (the calendar's test colour) beside the blue
+  "N class days left", on the same switch.
+- **The schedule is changed on Madison's word**: July 8th reads "State
+  Test (TCOLE) • Last Day • ...", and "TCOLE Exam" came off July 7th
+  (graduation stays there). July 8th now counts as a class day
+  (`LAST_CLASS_DATE`).
+- The last day is academy gold, not the theme: the month cell has a gold
+  double rim and a small star; the list row the same rim with LAST DAY and
+  STATE TEST chips; tapped, the day card is a commendation - a star on a
+  shield, "Last day", "State test". No glow, no motion.
+- **Month / List swipes** like the Leaderboard's boards (`attachTabSwipe`;
+  the switcher's bubble follows the active button).
+Gate: section 104.
+
+**Chat.**
+- **Members is the only target** (*"that button activates if click
+  anywhere in like that 'row'"*): the roster row is no longer a button;
+  "Members ›" is a real `<button>` with a 44px target. The row scrolls
+  sideways and so clips anything taller than itself, so it is given 9px
+  more above and below and pulled back by the same (nothing moves) and is
+  `pointer-events:none` itself, so that band never takes a tap from Invite
+  or Leave above it. Gate: check-groupchat section 5.
+- **Flush on the keyboard** (*"between the chat box and the [keyboard]
+  there's open space, it looks like the chat box cuts off"*). The sheet is
+  fixed to the LAYOUT viewport's bottom; on iOS the keyboard shrinks and
+  pans the VISUAL viewport instead, so the sheet's foot and its safe-area
+  padding sat behind the keyboard with a band of page above it. `kbSync`
+  reads `window.visualViewport` fresh on every resize and scroll (Safari
+  and the installed app alike) and, while the keyboard is up (more than
+  120px covered, not pinch-zoomed), puts the panel in `.is-kb`: bottom at
+  `innerHeight - (offsetTop + height)` - the keyboard's top, its accessory
+  bar on iOS - no safe-area padding, no taller than what is visible; on a
+  tablet the popover runs from its own top down to the keyboard. Nothing
+  guessed, no fixed offset; when the keyboard goes the class comes off
+  and the sheet is exactly as before. Gate: section 105 with a stubbed
+  `visualViewport` (336px covered on the iPhone, 400px on the iPad),
+  within 1px, and back exactly on close. Chromium has no soft keyboard,
+  so this is the closest a desktop engine gets.
+- **Offline is dimmed, never drained** (*"it's hard to tell it's a yellow
+  character ... now it looks like one of the rank unlock characters"*):
+  the away art was `grayscale(1)` at .45 opacity. It is
+  `filter:brightness(.8)` now - full colour, a little darker (an opacity
+  let the panel's blue through and shifted yellow towards olive) - with
+  the name in the soft grey and a hollow grey dot where an online person's
+  green one sits. The Members sheet and the friends list never drained
+  colour; this roster was the one place. Section 105 compares the offline
+  art with the same art untreated: hue within 8 degrees, saturation kept.
+
+**The lobby shows who is in it from its first frame.** *"Sometimes the
+lobby doesn't load who's in it the second I'm [in] the lobby."* The
+roster was drawn only by the room's live listener, which attaches after
+the screen is up, so the first frames were an empty "In this room" - for
+a second or more on a slow connection. `drawLobbyRoster(data)` is the
+roster drawing pulled out of the listener, and `vroomLastDoc` is what this
+device already knows of the room: the document the host just wrote, the
+one a joiner just read plus its own entry, and every snapshot after. The
+lobby draws from it in the task that mounts it; the live snapshot then
+redraws only if the shape changed. Only the drawing runs from it, never
+the ready / start / host logic. A CACHED snapshot that does not contain
+this device is the cache from before its own join landed and is skipped.
+Gate: section 106 with the room's first answer 1.5s late - host, joiner
+and rejoin all show everybody from the first frame and never fewer.
+
+#### Build 314, finishing pass
+
+- **A ring's spin stays the SECOND animation in its list, first visit or
+  not.** `.is-return` first dropped the settle-in fade from the rings
+  outright, which left the spin as the ONLY animation - and anything that
+  re-times the spin by its place in the list (section 93's
+  `animationDelay = '0s, -Ns'`) silently re-timed nothing, so four of the
+  flare-under-glass checks went red with the app behaving. The settle is
+  kept at `0s both`: no fade, same list shape.
+- **Gold's lift is applied after the road's colours are set, not where
+  they are set** (`liftRoadColors`). The road map's colour lines belong to
+  the levels stream's progress blend (`--end-color`, build 314), and the
+  lift has to reach the gold INSIDE that blend too. So the lines that set
+  `--rank-color` / `--from-color` / the light are left as they were, and one
+  pass at the end of each stretch swaps the raw `#F5C21B` for the lifted
+  gold in all three properties, whatever expression they hold. Section 96
+  asserts no raw gold is left anywhere on the road and that a blend built
+  from gold comes out of the lift with the name's gold in it.
+- **The keyboard is followed straight away, not a frame later.** `kbSync`
+  reads only the viewport's own numbers and writes one class and three
+  properties, so it runs inside the resize/scroll event itself; handed to
+  `requestAnimationFrame` it was a frame - or, behind a busy main thread,
+  several - behind the keyboard, and the gate caught it on a loaded run.
+- **The dim is gone in the exact state Madison sent** (a room open, the
+  field tapped and focused, the keyboard up): section 105 taps a bare spot
+  of the sheet and then the field, raises a stubbed keyboard, and samples
+  the sheet's class, blur and fill every 16ms - never `.is-settling`,
+  never `.is-dragging`, never a different backdrop. On dd6cfae the tap on
+  the bare spot put the sheet in `.is-settling`.
+- **Gates made honest about time.** Section 103's "no jump on a rebuild"
+  allowance is a frame's motion scaled to how long the rebuild took (a
+  120ms showHome on a loaded machine really does turn the rings), capped
+  at 24px - dd6cfae moves 62px. Section 105 measures the sheet once its
+  own animations have finished rather than after a fixed wait (an iPad
+  popover still opening read as "not back where it was").
+- **The days "tests left" counts are the days marked as tests.** The
+  count took in the three level finals and the State test, but the grid's
+  amber dot and the list's chip still came from `isTestDay` (`TEST #n`
+  only), so "24 tests left" sat over a calendar showing 20 of them. Both
+  views mark `isExamDay` now: a final's chip says FINAL, the State test
+  keeps its own STATE TEST chip (which is a test chip too, so the list's
+  "every test row has its chip" rule still holds). Section 104.
+- **The shared clock is read on the document timeline.** An animation's
+  time only moves when a frame is made, so inside a long task (a boot, a
+  big mount) the timeline is behind the wall clock by however long the
+  page has been busy - and a loop set to the raw wall clock ran that far
+  AHEAD once the next frame caught the timeline up: after a reload the
+  outer ring was 1.6 degrees (half a second) past where it should be.
+  `syncLoopClock` takes `performance.now() - document.timeline.currentTime`
+  off, which also makes the value the same wherever in one task it is
+  read. Section 103 measures its own poses on the timeline too, and its
+  rebuild check now sets the old system by that same rule in the same
+  task and asks for the new one to land within a pixel (dd6cfae: 60-300px).
+- **The recorder still finishes on a busy machine.** Stepping aside for
+  input made each flip-book slice short (4-12ms) and each wait for an idle
+  period up to 120ms; on a loaded machine there is almost no idle time, so
+  the seven Home sheets took 88s against dd6cfae's 47s (measured back to
+  back, same load) and three gates that wait for "every bubble playing"
+  ran out. The idle wait is now 60ms at most and a slice that got no idle
+  time is 8ms (what the timer path - iOS, which has no
+  requestIdleCallback - already gave): 63s against 43s, with less than
+  half the long-task time (3.0s against 7.1s, longest 225ms against
+  430ms). Sections 66, 68 and 91 wait 90-120s rather than 30-60s for the
+  recordings: the property is that every one plays, not how soon.
+- **Broad pass**: every Home / Profile / Stats / Rank / Badges / board /
+  Settings / Friends / Customize / Calendar / chat / lore / Virtual Room /
+  test-review screen, both reference devices, a used account: no console
+  errors, no blank stage, no sideways scroll (`scratchpad crawl.py`).
+
 ### The class ran out of writes (build 312.1)
 
 **On Oct 5 the project used up Firestore's free daily quota - 20,000
