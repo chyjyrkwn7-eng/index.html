@@ -14658,6 +14658,94 @@ disagree with it.
     does). Fixtures that put a held rank past a NUMBER `rankMapSeen` and
     then go to Home or Profile now meet the lock or the scene; the shared
     `USED_ACCOUNT` leaves `rankMapSeen` null, so it does not.
+- **A CHARACTER'S SPECIAL: THE RARE MOVE IF YOU KEEP LOOKING (build 317).**
+  *"Let's give each rank character a unique animation ... characters will
+  have multiple animations so typically they will be still, if you look at
+  them long enough and few seconds or 30 seconds idk they could do cooler
+  stuff but it's random. Anyways, the rank ones need one that goes with
+  their flare, maybe they all form their flare in their hands or it shoots
+  by? ... the harder ones get the coolest ones.. The secret flare ones get
+  a similar thing but for their secret flares ... it could be like the
+  secret flare moves they grab or it randomly goes dark or it randomly
+  flickers ... Void could be cool ... similar to the ultimates, each get
+  cooler but they could have one to do with their signature thing ...
+  Remember how I said that rank road map cutscene thing would happen and
+  then you go back to profile? That'd be a good time for animations."*
+  - **The contract** (shared with the challenge characters' block, which
+    adds its own entries): the element holding a live drawing gets
+    `char-special` for `CHAR_SPECIAL_MS[id] || CHAR_SPECIAL_MS[kind] ||
+    CHAR_SPECIAL_DEFAULT_MS` (2800), then loses it. Parts that exist only
+    for the special are `cx-sp` + their own class, drawn with
+    `opacity="0"` - a still drawing, a board row, a silhouette and a
+    flip-book recording never show them. They move only under
+    `.char-special`; every animation is finite (check-loops ignores
+    them). The table is a `const` before `drawAvatarCharSVG`, keyed by id
+    first because the three ultimates share the `zenith` kind.
+  - **How this block draws them:** `CHAR_SPECIAL_DRAW[id](T)` runs from
+    `done()` (via `charSpecialParts`) once the figure is closed; `T.back`
+    sits behind the figure, `T.front` over everything. Each moving piece
+    carries its own animation in an inline `--a` (plus its numbers as
+    custom properties: `--dx`, `--rs` ...), and ONE rule,
+    `.char-special .avatarchar-svg .cx-spa{ animation:var(--a) }`, runs
+    them - so nothing moves without the class. The keyframes are the
+    shared `sp-*` set beside it. An orbit is two nested pendulums with a
+    front copy and a behind copy that hand over (`spOrbit`). Fills,
+    transforms and opacity only; no filter.
+  - **The scheduler** (`playCharSpecial(el)`, `charSpecialTick`): only a
+    PROMINENT character - `.profile-hero-avatar`, `.person-card-art`,
+    `.cz-pick-character`, `.results-level-avatar`
+    (`CHAR_SPECIAL_PROMINENT`), never a board row, the race line or the
+    tab bar. First one no sooner than 8-16s after it is on screen, then
+    every 12-30s (`charSpecialTiming`, which a gate may shorten), one at a
+    time app-wide, nothing while the page is hidden (the clocks move on by
+    the time away), nothing under Reduce motion. A flip-book steps aside
+    for it: `.char-special` hides `.char-flip-play`, shows the drawing
+    under it and adds `char-live` for the length of the special so the
+    idle runs too (`data-sp-live` says it was added, and it comes off
+    again). `setCharState` clears all of it. It also plays 0.5s after a
+    rank-up scene hands back to Profile (`rankUpSceneEnd(scene, true)`)
+    and 2.6s after a 100 lands on the results character.
+  - **The thirteen, escalating within each group:**
+    - Lunar (Silver): silver motes gather in its hands into a crescent
+      cradling a star, which lifts away.
+    - Solar (Gold): gold gathers into a small sun with a turning corona,
+      which lets go a ring of light and a burst of sparks.
+    - Tempest (Platinum): its teal flare circles it twice like a storm
+      front, comes to its hands and cracks out as lightning.
+    - Frost (Sapphire): a comet streaks past behind it, a second comes in
+      low and lands in its hands, blooms into a snowflake and shatters.
+    - Oracle (Amethyst): a ring of runes turns round it while light
+      spirals into its hands as a turning galaxy that flings out.
+    - Inferno (Supernova): embers rush in, a star forms, burns white,
+      shudders as it collapses and goes off - frame-wide flash,
+      shockwaves, rays, sparks.
+    - Umbra: the light goes out and only its Penumbra flare is left,
+      flickering like a failing lamp until it catches and pulses twice.
+    - Horizon: its flare slips the brow, leaving a black hole there,
+      circles it with a tail and is pulled back in through a closing
+      event horizon.
+    - Genesis: the Worldheart rises out of its chest, laps the planet
+      twice like a moon (in front and behind) and dives in - the planet
+      flashes rose.
+    - Void (the coolest secret): the lights go out, its three flares tear
+      loose into an accretion disc, spiral back into its face and go off
+      in white.
+    - Astral: the plasma core overloads - rings thrown off it, arcs
+      cracking over the body, a cyan discharge.
+    - Celestial: meteors behind it, the crown's seven stars rise into a
+      ring round its head and draw their constellation, then fold back
+      in starlight.
+    - Zenith (the most): a corona opens and turns behind it, the comet
+      laps its shoulders, rings ring out, stardust falls and the whole
+      frame goes to light.
+  - **Gate: `check_b317_specials`** - all thirteen have `cx-sp` parts at
+    opacity 0 and more animations with the class on than off (at least
+    8 each), all finite, no filter, the hard ones busier (Supernova >
+    Silver, Void > Umbra, Zenith > Astral); `playCharSpecial` on and off,
+    a flip-book stepped aside and restored with the idle running; the
+    scheduler fires on the Profile card by itself between 7s and 35s and
+    ends by itself; nothing while hidden; nothing under Reduce motion. It
+    fails on 57212ce.
 - **STUDY TIME IS TIME SPENT STUDYING (build 314).** It was "now minus
   when the run started", so a run left open with the phone locked banked
   every hour on the day it ended: live tests of 117h and 50h, days of 68h
