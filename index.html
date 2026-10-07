@@ -18760,20 +18760,19 @@
   .level-chal-row .level-chal-bar{ grid-column:2 / span 2; max-width:none; margin:0; height:7px; }
   .level-chal-row.is-level .level-chal-fill{ background:linear-gradient(90deg, #3D8BFF, #8FC1FF); box-shadow:0 0 8px rgba(61,139,255,.5); }
   .level-chal-cap{ margin:.4rem auto 0; max-width:21rem; font-size:.82rem; line-height:1.4; color:#8FC1FF; text-wrap:pretty; }
-  .results-level-gate{ text-align:left; }
-  .results-level-gate .rank-chal-emb{ width:1.9rem; height:1.9rem; }
-  .results-level-chaltext{ display:flex; flex-direction:column; gap:.1rem; min-width:0; }
-  .results-level-chalname{ color:color-mix(in srgb, var(--rank-color, #9FACBA) 55%, #fff); }
-  .results-level-chalnote{ font-weight:600; color:var(--soft); }
   /* The numbers under the bar keep their colours and just keep counting,
      as Pokemon GO's do ("the color doesn't change it just keeps going
      up"); the flip they replaced was asked against. */
   .xpnums{ font-weight:800; font-variant-numeric:tabular-nums; }
   /* Darker than white ("feels like it should be darker"), and past the
      requirement only a shade darker again - no new colour. */
-  .xpnums-have{ color:#B4C6DD; }
-  .xpnums-need{ color:#7FA6D6; }
-  .xpnums.is-over .xpnums-have{ color:#97ACC8; }
+  /* (build 314, third pass) "the colors of the 110/200 xp thing isn't
+     good still": what you have in the bar's own light blue, what the
+     level asks for in plain grey - two jobs, two colours that do not
+     compete - and past the requirement your number only a shade deeper. */
+  .xpnums-have{ color:#8FC1FF; }
+  .xpnums-need{ color:#9AA3AE; }
+  .xpnums.is-over .xpnums-have{ color:#6FA8EE; }
   /* The challenge sheet */
   .level-chal-sheet{ text-align:center; }
   .penal-note-sheet{ text-align:center; }
@@ -19046,6 +19045,27 @@
     .profile-hero .profile-rankplate .profile-rankcoin{ width:3.9rem; height:3.9rem; }
     .profile-hero .profile-rankplate .profile-rankword{ font-size:1.05rem; }
   }
+  /* ---- ONE PATH: RANK, BADGES, LEVEL (build 314) ----
+     One box; the rows inside lose their own boxes, and the links between
+     them are a line through the rings' centre (row padding .8rem + half a
+     3.9rem ring), running from the bottom of one ring to the top of the
+     next. Each link is a dim track lit from the bottom by --litn. */
+  .profile-hero .profile-path{ margin:.75rem 0 0; padding:0; border-radius:1rem;
+    background:rgba(0,0,0,.28); border:1px solid rgba(255,255,255,.07); }
+  .profile-hero .profile-path > .profile-ranklineup.profile-rankplate,
+  .profile-hero .profile-path > .statbox.profile-level-joined{
+    margin:0; background:transparent; border:0; border-radius:1rem; box-shadow:none; }
+  .profile-hero .profile-path > .profile-ranklineup.profile-rankplate:active,
+  .profile-hero .profile-path > .profile-badgesect.statbox:active{ background:rgba(255,255,255,.04); }
+  .profile-path-link{ display:block; position:relative; height:.3rem; pointer-events:none; }
+  .profile-path-link::before, .profile-path-link::after{
+    content:""; position:absolute; left:calc(2.75rem - 2px); width:4px; top:-.7rem; bottom:-.75rem; border-radius:2px; }
+  .profile-path-link::before{ background:rgba(255,255,255,.1); }
+  .profile-path-link::after{ transform-origin:50% 100%; transform:scaleY(var(--litn, 0)); }
+  .profile-path-link.is-lower::after{ background:linear-gradient(to top, #3D8BFF, #8FC1FF); box-shadow:0 0 8px rgba(61,139,255,.45); }
+  .profile-path-link.is-upper::after{ background:linear-gradient(to top, #E8B84A, color-mix(in srgb, var(--path-next, #E8B84A) 70%, #fff));
+    box-shadow:0 0 8px rgba(232,184,74,.4); }
+  .profile-xp-total{ font-size:.8rem; font-weight:700; color:var(--soft); font-variant-numeric:tabular-nums; }
   /* ---- THREE RINGS, ONE SIZE (build 302) ----
      "The circles around badge and level are bigger than the rank one."
      On a tablet they were: 4.6rem against the rank coin's 3.9rem. And on
@@ -35846,7 +35866,7 @@ function showResumeOffer(tries){
   if(!stage.querySelector('[data-screen="home"]')) return;
   /* After a splash, a loading overlay or a tour - never on top of one. */
   if(document.getElementById("splashscreen") || document.getElementById("genprofile-overlay") ||
-     document.getElementById("tour-overlay") || document.querySelector(".rs-spot")){
+     document.getElementById("tour-overlay") || document.querySelector(".rs-spot") || whatsNewHolds()){
     if(tries < 30) setTimeout(() => showResumeOffer(tries + 1), 800);
     return;
   }
@@ -43098,7 +43118,7 @@ function celebrateNewFriend(pub, tries){
   if(friendMomentShown()[pub]) return;
   let busy = !!(document.getElementById("splashscreen") || document.getElementById("tour-overlay")
     || document.getElementById("genprofile-overlay") || document.querySelector(".friend-moment")
-    || document.querySelector(".rs-spot") || document.getElementById("supernova-cutscene"));
+    || document.querySelector(".rs-spot") || document.getElementById("supernova-cutscene") || whatsNewHolds());
   try{ if(testInProgress) busy = true; }catch(e){}
   if(busy){
     if((tries || 0) < 60) setTimeout(() => celebrateNewFriend(pub, (tries || 0) + 1), 2000);
@@ -56038,7 +56058,7 @@ const RELEASE_NOTES = [
         { icon: buildSparkleIcon, color: "#FFD84D", title: "Effects For Your Hundos", body: "A screen effect plays when you score 100%, and you earn new ones as your hundos climb: Fireworks at 50, the World Tree at 100, Bubbles at 200 and a UFO at 350, plus Confetti from the start. Choose yours in Customize, and tap one there to see it play." }
       ]},
       { label: "Studying", items: [
-        { icon: buildChecklistIcon, color: "#4DD0E1", title: "Flashcards", body: "Learn has a Flashcards option for any unit: tap a card to flip it, swipe to move on, and starred questions come with you." },
+        { icon: buildChecklistIcon, color: "#4DD0E1", title: "Flashcards", body: "Review has a Flashcards option for any unit: tap a card to flip it, swipe to move on, and starred questions come with you." },
         { icon: buildSwipeIcon, color: "#F5804D", title: "A Better Test", body: "Answer feedback is quicker, a small swipe bounces back until you mean it, the Next button arrives at a steadier pace, and Review and Flashcards get their own short loading screen." },
         { icon: buildClipboardIcon, color: "#5CA8FF", title: "A Simpler Start Sheet", body: "The question bank is all questions by default, with one switch for starred questions only, and the slider tells you when it is already at the most it can be." }
       ]},
@@ -56049,7 +56069,7 @@ const RELEASE_NOTES = [
       { label: "Ranks, Levels & Badges", items: [
         { icon: buildLadderIcon, color: "#E8B84A", title: "Every Rank Is A Gate", body: "Each rank now owns a band of levels: Bronze 21\u201329, Silver 30\u201339, up to Supernova at 80. Every rank has two challenges, a level and a number of badges. If your XP is ahead of your rank, your level stays at the top of your band until you complete the next rank's challenges; your XP is all still there and turns into levels the moment you rank up. Nobody loses a rank." },
         { icon: buildStarIcon, color: "#FFD84D", title: "A New Rank Ladder", body: "Each rank owns a block of levels: Bronze 21-29, Silver 30-39, Gold 40-49, Platinum 50-59, Sapphire 60-69, Amethyst 70-79, Supernova 80. You can level to the top of the next rank's block; past it takes ranking up. Your XP is never lost: it keeps counting and turns into levels the moment you rank up. Badge requirements are the same, and nobody loses a rank." },
-        { icon: buildBarStatsIcon, color: "#5CA8FF", title: "Stats, Profile And The Road Map", body: "Profile shows your next rank gate under the XP bar, the Stats page is clearer, and the rank road map shows exactly where you stand." }
+        { icon: buildBarStatsIcon, color: "#5CA8FF", title: "Stats, Profile And The Road Map", body: "Profile shows your next badge challenge beside the XP bar, the Stats page is clearer, and the rank road map shows exactly where you stand." }
       ]},
       { label: "Results", items: [
         { icon: buildTrophyIcon, color: "#4ADE80", title: "Results, Overhauled", body: "Your rewards first, revealed one at a time, with your character reacting to the score, then the full review." }
@@ -63785,7 +63805,9 @@ function showIntroPopup(){
       note.className = "intro-gate-note";
       const h = document.createElement("p");
       h.className = "intro-gate-title";
-      h.textContent = "Your level now follows your rank";
+      /* what HAPPENED, not the idea behind it (build 314): "your level
+         now follows your rank" was the purpose of the change */
+      h.textContent = "Your level was adjusted";
       const b = document.createElement("p");
       b.className = "intro-gate-body";
       const rc = rankChallengesOf();
@@ -63793,11 +63815,14 @@ function showIntroPopup(){
          next rank's level went back to the gate's allowed level and have
          extra xp". */
       const bc = badgeChallengeOf(rc);
-      b.textContent = "You were level " + ls.curveLevel + ". Levels now follow your rank, and without " +
-        (rc ? rc.name + "'s " + (bc ? bc.need + (bc.need === 1 ? " badge" : " badges") : "badges") : "the next rank's badges") +
-        " the highest level you can hold is " + ls.level + ", so your level moved back to " + ls.level +
-        ". None of your XP was lost: earn " + (bc ? bc.left + (bc.have > 0 ? " more" : "") + (bc.left === 1 ? " badge" : " badges") : "the badges") +
-        " to reach " + (rc ? rc.name : "the next rank") + " and your extra XP turns straight back into levels.";
+      /* Plain, and about badges and XP only - "mentions rank a lot". */
+      const have = bc ? bc.have : 0;
+      const left = bc ? bc.left : 0;
+      b.textContent = "You were level " + ls.curveLevel + " and are now level " + ls.level + ". " +
+        (have > 0 ? "With " + have + (have === 1 ? " badge" : " badges") : "Without any badges yet") +
+        ", the highest level you can be is " + ls.level + ". You didn't lose any XP: earn " +
+        (left > 0 ? left + (have > 0 ? " more" : "") + (left === 1 ? " badge" : " badges") : "more badges") +
+        " and it turns back into levels.";
       note.append(h, b);
       card.appendChild(note);
     }
@@ -63805,32 +63830,29 @@ function showIntroPopup(){
   [
     ["M12 2.5l1.9 5.9 5.9 1.9-5.9 1.9-1.9 5.9-1.9-5.9-5.9-1.9 5.9-1.9L12 2.5Zm6.5 12.5.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z",
      "#FFD84D", "Hundo effects",
-     "Earn a screen effect for your hundos: Fireworks at 50, then the World Tree, Bubbles and a UFO. Pick yours in Customize."],
+     "Earn new screen effects as your hundos climb: Fireworks, the World Tree, Bubbles and a UFO. Pick yours in Customize."],
     ["M8 3h11a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2ZM3 7h1.8v12.2H17V21H5a2 2 0 0 1-2-2V7Z",
      "#4DD0E1", "Flashcards",
-     "Study any unit as flashcards from Learn. Tap to flip, swipe to move on."],
+     "Review has a new Flashcards option for any unit. Tap a card to flip it, swipe to move on."],
     ["M12 12a4.2 4.2 0 1 0 0-8.4 4.2 4.2 0 0 0 0 8.4Zm0 2c-4.6 0-8.2 2.3-8.2 5.2V20h16.4v-.8c0-2.9-3.6-5.2-8.2-5.2Z",
      "#FF2E88", "Characters and banners",
      "Characters refined and animating everywhere, and new banners to earn."],
     /* ICONS THAT SAY THE THING (build 314): "some of the icons are bad
        there and don't match what's being talked about" - a lightning bolt
-       for test mode, a flag for ranks, a star for results (the star is
+       for test mode, a star for results (the star is
        the app's mark for a starred question) and a target for fixes. */
     ["M9 2h6a1 1 0 0 1 1 1v1h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2V3a1 1 0 0 1 1-1Zm1 2v1.6h4V4h-4Zm5.7 6.2-4.9 4.9-2.5-2.5-1.3 1.3 3.8 3.8 6.2-6.2-1.3-1.3Z",
      "#F5804D", "Better test mode",
      "Quicker answer feedback, a smoother swipe to the next question, and a simpler start sheet."],
-    ["M12 2l8 3.2v6.3c0 5-3.4 9.3-8 10.5-4.6-1.2-8-5.5-8-10.5V5.2L12 2Zm-4.5 8.4L12 7.8l4.5 2.6v2.1L12 9.9l-4.5 2.6v-2.1Zm0 4.1 4.5-2.6 4.5 2.6v2.1L12 14l-4.5 2.6v-2.1Z",
-     "#E8B84A", "Ranks and levels",
-     "Your level now follows your rank. Every rank has two challenges, a level and a number of badges, and your badges decide how high your level can go. Extra XP is never lost."],
     ["M6 2h8.5L20 7.5V20a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm8 1.8V8h4.2L14 3.8ZM7.5 11v1.6h9V11h-9Zm0 3.4V16h9v-1.6h-9Zm0 3.4v1.6h6v-1.6h-6Z",
      "#FF7A59", "Penal Code: slides 55\u2013124",
      "Penal Code has a second version with only the questions from slides 55\u2013124. Pick it when you choose the unit."],
     ["M4 19.6h16v1.8H4v-1.8Zm1.2-7.2h3v5.6h-3v-5.6Zm5.3-5h3v10.6h-3V7.4Zm5.3 3h3v7.6h-3v-7.6Z",
      "#5CA8FF", "Stats and Profile",
-     "A clearer Stats page, a fuller test history, and your badge challenge beside the XP bar."],
+     "A clearer Stats page, a fuller test history, and a cleaner Profile."],
     ["M7 3h10v2h3v3a4 4 0 0 1-4 4h-.4A5 5 0 0 1 13 14.9V17h3v2H8v-2h3v-2.1A5 5 0 0 1 8.4 12H8a4 4 0 0 1-4-4V5h3V3ZM6 7v1a2 2 0 0 0 1.4 1.9L7 7H6Zm11 0-.4 2.9A2 2 0 0 0 18 8V7h-1ZM7 20.2h10V22H7v-1.8Z",
      "#4ADE80", "Results, overhauled",
-     "Your rewards revealed one at a time, then the full review."],
+     "Your grade, XP and badge progress land one at a time while your character reacts to your score, your unlocks play right there, and then the full answer review."],
     ["M21.7 6.3a5.6 5.6 0 0 1-7.6 6.3L7.4 19.3a2.2 2.2 0 1 1-3.1-3.1l6.7-6.7A5.6 5.6 0 0 1 17.3 1.9l-3.4 3.4.8 3.4 3.4.8 3.4-3.4c.1.1.1.2.2.2Z",
      "#C583FF", "Refined everywhere",
      "Faster tabs, smoother screens, and a long list of fixes from your reports."]
@@ -63865,6 +63887,7 @@ function showIntroPopup(){
 function closeIntroPopup(el){
   markIntroSeen();
   introPending = false;
+  popupGapUntil = Date.now() + 260 + POPUP_GAP_MS;
   const btn = document.getElementById("chatdock-btn");
   if(btn) btn.classList.remove("is-introduced");
   /* The re-check is not optional. The card closing is not a screen
@@ -63874,7 +63897,7 @@ function closeIntroPopup(el){
   setTimeout(() => {
     checkLobbyInvites(); checkFriendRequests(); checkChatInvites();
     checkSaveCodeReminder();
-  }, 500);
+  }, 260 + POPUP_GAP_MS);
   if(!el || !el.parentNode) return;
   el.classList.remove("show");
   setTimeout(() => { if(el.parentNode) el.remove(); }, 260);
@@ -63899,6 +63922,18 @@ let introTimer = null;
    or deciding not to; anything that puts something on screen checks it,
    and closeIntroPopup() calls the checks again on the way out. */
 let introPending = false;
+/* WHAT'S NEW GOES FIRST, AND EVERY OTHER POP-UP WAITS A BEAT AFTER IT.
+   "Ensure if anyone gets a pop up that isn't what's new, it's after and
+   there's 2 or so second delay." The Home reward cards were timed at
+   2.2s against What's New's 2s and never asked about it, so the two
+   landed together. Anything that puts a pop-up up checks this: true
+   while What's New is pending or open, and for POPUP_GAP_MS after it
+   closes. */
+const POPUP_GAP_MS = 2000;
+let popupGapUntil = 0;
+function whatsNewHolds(){
+  return introPending || !!document.getElementById("intro-pop") || Date.now() < popupGapUntil;
+}
 function maybeShowIntro(){
   if(introSeen()){ introPending = false; return; }
   clearTimeout(introTimer);
@@ -63927,7 +63962,8 @@ function maybeShowIntro(){
        overlay. Come back and look again. */
     const busy = document.getElementById("splashscreen")
       || document.getElementById("tour-overlay")
-      || document.getElementById("genprofile-overlay");
+      || document.getElementById("genprofile-overlay")
+      || document.querySelector(".rs-spot, #badge-cutscene, #supernova-cutscene, #void-cutscene, #vroom-cutscene, #resume-offer");
     if(busy){
       if(++tries > INTRO_MAX_TRIES){ introPending = false; return; }
       introTimer = setTimeout(attempt, 900);
@@ -64552,6 +64588,9 @@ function playQueuedBadgeCutscenes(){
   if(document.getElementById("genprofile-overlay") ||
      document.getElementById("splashscreen") ||
      document.getElementById("tour-overlay")) return;
+  /* After What's New and a beat after it - it re-arms itself, because
+     nothing else would call it again until the next visit to Home. */
+  if(whatsNewHolds()){ setTimeout(playQueuedBadgeCutscenes, 1000); return; }
   /* Not on any screen but Home. dataset.screen is set in exactly two
      places in the file, so every other screen fails this by
      construction rather than by a list somebody has to maintain. */
@@ -65997,6 +66036,7 @@ function plainSlider(labelText, min, max, step, get, set, formatVal, onChange, t
    unit screen after this ships, whatever the mode. Waits for a tour or a
    loading screen to clear rather than sitting on top of one. */
 const PENAL_VERSION_NOTE_KEY = "class26e.penal55124.seen";
+let penalNoteBusyAt = 0;
 function maybeShowPenalVersionNote(tries){
   try{ if(localStorage.getItem(PENAL_VERSION_NOTE_KEY)) return; }catch(e){ return; }
   const tv = UNIT_TEST_VERSIONS["Penal Code"];
@@ -66005,9 +66045,13 @@ function maybeShowPenalVersionNote(tries){
   if(!onSetup()) return;
   /* never on top of anything else: a tour, a loading screen, a reward
      pop-up still being tapped through, What's New, a cutscene */
-  if(document.querySelector("#tour-overlay, #splashscreen, #genprofile-overlay, .invite-overlay, .rs-spot, " +
-       "#intro-pop, .bc-scene, #contextual-info-popup, .installguide-overlay, #void-cutscene")){
-    if((tries || 0) < 120) setTimeout(() => maybeShowPenalVersionNote((tries || 0) + 1), 750);
+  const busy = whatsNewHolds() || !!document.querySelector("#tour-overlay, #splashscreen, #genprofile-overlay, .invite-overlay, .rs-spot, .rs-fly, " +
+       "#intro-pop, .bc-scene, #contextual-info-popup, .installguide-overlay, #void-cutscene, #badge-cutscene, " +
+       "#supernova-cutscene, #vroom-cutscene, #resume-offer, .friend-moment");
+  if(busy) penalNoteBusyAt = Date.now();
+  /* and a beat after whatever it waited for, never straight on its heels */
+  if(busy || Date.now() - penalNoteBusyAt < POPUP_GAP_MS){
+    if((tries || 0) < 160) setTimeout(() => maybeShowPenalVersionNote((tries || 0) + 1), 500);
     return;
   }
   try{ localStorage.setItem(PENAL_VERSION_NOTE_KEY, "1"); }catch(e){}
@@ -72122,40 +72166,10 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
   } else setLine(after);
 
   wrap.append(head, trackWrap, line);
-  /* The gate's requirement under the numbers, and the nearest badge
-     (build 314) - the same two lines as the Profile card. Only where the
-     run ENDS at a gate: a run whose badge opened the gate has none. */
-  if(after.held){
-    /* The rank challenges, as beside the Profile bar (build 314): the
-       next rank's emblem, its name and how many are done, and what they
-       are holding. */
-    const rc = rankChallengesOf();
-    const g = document.createElement("p");
-    g.className = "level-gate-line results-level-gate";
-    if(rc){
-      const nb = document.createElement("b");
-      nb.className = "results-level-chalname";
-      const bc = badgeChallengeOf(rc);
-      nb.textContent = rc.name + ": " + (bc ? Math.min(bc.have, bc.need) + " / " + bc.need + " badges" : "");
-      const tx = document.createElement("span");
-      tx.className = "results-level-chalnote";
-      tx.textContent = rankChallengeNote(rc);
-      const col = document.createElement("span");
-      col.className = "results-level-chaltext";
-      col.append(nb, tx);
-      g.append(badgeChallengeIcon(), col);
-    } else {
-      g.textContent = levelWallLine(after);
-    }
-    wrap.appendChild(g);
-    const near = levelClosestLine();
-    if(near){
-      const c = document.createElement("p");
-      c.className = "level-gate-closest results-level-closest";
-      c.textContent = near;
-      wrap.appendChild(c);
-    }
-  }
+  /* NOTHING UNDER THE NUMBERS (build 314): the badge challenge and the
+     closest badge were shown here and taken off - "not a fan of the
+     challenge stuff under the xp there at all. Remove it". The bar and
+     the counting number say it; Profile has the challenge. */
   /* A bar already full at a gate is banked from the start; one that
      reaches the gate this run turns banked when it gets there. */
   const bank = () => { if(after.stopped) track.classList.add("is-banked"); };
@@ -74085,7 +74099,7 @@ function homeUnlockBlocked(){
     /* A run waiting to be resumed (build 304) holds anything it earned
        for its own results; if it is turned down, the queue plays then. */
     document.getElementById("resume-offer") || !!readRunSession() ||
-    (store.pendingBadgeUnlocks || []).length);
+    (store.pendingBadgeUnlocks || []).length || whatsNewHolds());
 }
 /* A beat after Home settles - long enough that the screen is read as
    Home first and the unlock arrives as news, not as part of the load. */
@@ -74111,7 +74125,10 @@ function playHomeUnlocks(tries){
   const p = pendingHomeUnlocks();
   if(!homeUnlocksOwed(p)) return;
   if(homeUnlockBlocked()){
-    if(tries < 40) homeUnlockTimer = setTimeout(() => playHomeUnlocks(tries + 1), 1000);
+    /* Reading What's New takes as long as it takes - that wait does not
+       spend the budget, or a slow reader would lose their cards. */
+    const t = whatsNewHolds() ? tries : tries + 1;
+    if(t < 40) homeUnlockTimer = setTimeout(() => playHomeUnlocks(t), 1000);
     return;
   }
   /* Muted: recorded as shown and never played, the same as the badge
@@ -88208,7 +88225,8 @@ function showProfile(defaultTab){
      theme (or the banner you wear) and nothing else; the rank already has
      its plate directly under the name. */
   heroSect.appendChild(cover);
-  heroId.append(nameDisplayRow, rankLine, nameInput, nameSaveBtn);
+  /* the rank plate rides in the path below (build 314), not under the name */
+  heroId.append(nameDisplayRow, nameInput, nameSaveBtn);
   heroTop.append(heroAvatar, heroId);
   heroSect.appendChild(heroTop);
 
@@ -88325,10 +88343,12 @@ function showProfile(defaultTab){
   levelSideLab.textContent = "Level";
   const levelSideTop = document.createElement("span");
   levelSideTop.className = "profile-level-sidetop";
-  /* THE TOTAL, AND NOTHING ELSE (build 314): no "XP to level N", no
-     percentage, no "Max level until" - the bar and the numbers under it
-     already say all of that ("redundant and makes it cluttered"). */
-  levelSideTop.textContent = prog.total.toLocaleString() + " total XP";
+  /* THIS LEVEL'S XP ON TOP, THE TOTAL UNDER THE BAR (build 314): "should
+     the xp of the current level be on top? And the total be beneath
+     instead?" Still no "XP to level N", no percentage, no "Max level
+     until" - "redundant and makes it cluttered". */
+  if(prog.atCap) levelSideTop.textContent = "Every level reached";
+  else levelSideTop.appendChild(buildXpNumbers(prog.into, prog.span, prog.stopped));
   levelSide.append(levelSideLab, levelSideTop);
   levelRow.append(levelNum, levelSide);
   levelSect.appendChild(levelRow);
@@ -88359,13 +88379,10 @@ function showProfile(defaultTab){
      the same flip Pokemon GO uses to say "over". */
   const xpLine = document.createElement("p");
   xpLine.className = "profile-xp-line";
-  if(prog.atCap){
-    const m = document.createElement("span");
-    m.textContent = "Every level reached";
-    xpLine.appendChild(m);
-  } else {
-    xpLine.appendChild(buildXpNumbers(prog.into, prog.span, prog.stopped));
-  }
+  const xpTotal = document.createElement("span");
+  xpTotal.className = "profile-xp-total";
+  xpTotal.textContent = prog.total.toLocaleString() + " total XP";
+  xpLine.appendChild(xpTotal);
   levelSect.appendChild(xpLine);
 
   /* The badges as a count, and the ones you HAVE as a small overlapping
@@ -88433,8 +88450,38 @@ function showProfile(defaultTab){
   levelSect.classList.add("profile-level-joined", "rankhero-gauge", "statbox", "is-level");
   badgeStat.classList.add("profile-level-joined", "rankhero-gauge", "statbox", "is-badges");
   if(allBadges) badgeStat.classList.add("is-met");
-  heroSect.appendChild(badgeStat);
-  heroSect.appendChild(levelSect);
+  /* ---- ONE PATH, NOT THREE BOXES (build 314) ----
+     "I feel like tying all 3 of these together is missing ... like
+     pathways I guess?" Rank, Badges and Level are one box, their rings
+     joined by a line that climbs from Level through Badges to Rank. The
+     line is the way to the next rank and it is LIT as far as you have
+     come: the lower stretch by your level towards the next rank's level,
+     the upper by your badges towards its badges. Both challenges met is
+     a path lit all the way up; the top rank is lit throughout. */
+  const path = document.createElement("div");
+  path.className = "profile-path";
+  const pathLink = (cls, frac) => {
+    const l = document.createElement("span");
+    l.className = "profile-path-link " + cls;
+    l.setAttribute("aria-hidden", "true");
+    l.style.setProperty("--litn", String(Math.round(Math.max(0, Math.min(1, frac)) * 1000) / 1000));
+    return l;
+  };
+  let litLevel = 1, litBadges = 1;
+  try{
+    const rc = rankChallengesOf();
+    if(rc){
+      const held = rankOf(store);
+      const cur = held && TIER_UNLOCKS[held] ? TIER_UNLOCKS[held] : { level: 0, badges: 0 };
+      const lv = rc.list.find(x => x.kind === "level"), bd = rc.list.find(x => x.kind === "badges");
+      const frac = (now, from, need) => need <= from ? (now >= need ? 1 : 0) : (now - from) / (need - from);
+      litLevel = lv ? frac(lv.now, Number(cur.level) || 0, lv.need) : 1;
+      litBadges = bd ? frac(bd.now, Number(cur.badges) || 0, bd.need) : 1;
+      path.style.setProperty("--path-next", rc.color);
+    }
+  }catch(e){}
+  path.append(rankLine, pathLink("is-upper", litBadges), badgeStat, pathLink("is-lower", litLevel), levelSect);
+  heroSect.appendChild(path);
   /* The class no longer rides at the foot of the identity card. It was
      one line there because it was one line of content; now that it is
      today's schedule, the next class day and a count, it is its own box
@@ -89964,13 +90011,13 @@ function buildRanksTab(){
        now, glowing the way the emblem does, with the emblem beside it. */
     /* THE NAME ONLY (build 313): "it says to reach gold and has golds
        icon, remove the icon, keep just the name". */
-    /* "<RANK> CHALLENGES" (build 314): the same two requirements the
-       button beside the Profile bar counts, under the same name - "it
-       would need to say ... those are rank challenges, like bronze
-       challenges or silver challenges". */
+    /* "TO REACH <RANK>" again (build 314): "<Rank> challenges" was
+       tried here and Madison preferred the original - "I prefer in the
+       current rank card when it said 'to reach gold'". */
+    gaugeHead.append("To reach ");
     const gn = document.createElement("b");
     gn.textContent = RANK_DISPLAY_NAME[nextKey];
-    gaugeHead.append(gn, " challenges");
+    gaugeHead.appendChild(gn);
   } else {
     gaugeHead.textContent = "Your totals";
   }

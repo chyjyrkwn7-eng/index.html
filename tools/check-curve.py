@@ -520,7 +520,8 @@ def main():
             runOf('Victims of Crime', 6);
             out.afterRun = { gained: store.lifetime.points - xp0, level: levelOf(store),
               line: (document.querySelector('#stage .results-level-line') || {}).textContent || null,
-              gate: (document.querySelector('#stage .results-level-gate') || {}).textContent || null };
+              gate: (document.querySelector('#stage .results-level-gate') || {}).textContent || null,
+              closest: !!document.querySelector('#stage .results-level-closest, #stage .level-chal') };
             /* the badge arrives: the level jumps to what the XP has earned */
             const U = 'Identity Crimes';
             /* XP for level 33 - past the 29 cap, short of the 39 one a
@@ -586,8 +587,11 @@ def main():
             setAcct(xpForLevel(31) + 600, perfFor(0), 0);
             showProfile('identity'); await new Promise(r => setTimeout(r, 400));
             const q = sel => (document.querySelector(sel) || {}).textContent || null;
-            out.profile = { top: q('.profile-level-sidetop'), nums: q('.profile-xp-line .xpnums'),
-                            over: !!document.querySelector('.profile-xp-line .xpnums.is-over'),
+            out.profile = { top: q('.profile-level-sidetop'), nums: q('.profile-level-sidetop .xpnums'),
+                            over: !!document.querySelector('.profile-level-sidetop .xpnums.is-over'),
+                            total: q('.profile-xp-line .profile-xp-total'),
+                            path: [...document.querySelectorAll('.profile-path > *')].map(n => n.classList.contains('profile-path-link') ? 'link' : n.classList.contains('profile-rankplate') ? 'rank' : n.classList.contains('profile-badgesect') ? 'badges' : n.classList.contains('profile-level') ? 'level' : '?'),
+                            lit: [...document.querySelectorAll('.profile-path-link')].map(n => n.style.getPropertyValue('--litn')),
                             chal: q('.profile-xprow .level-chal-n'), nextGate: !!document.querySelector('.next-gate'),
                             banked: !!document.querySelector('.profile-xpbar.is-banked'),
                             max: !!document.querySelector('.level-max-tag') };
@@ -623,9 +627,11 @@ def main():
             ar = w["afterRun"]
             check("XP keeps counting at a cap; the level does not move",
                   ar["gained"] > 0 and ar["level"] == 29, ar)
-            check("the results card shows the overflow and the rank challenges holding it",
-                  ar["line"] and " / " in ar["line"] and ar["gate"] and "Bronze: 0 / 1 badges" in ar["gate"]
-                  and "Earn 1 badge to rank up to Bronze" in ar["gate"] and "stays at" not in ar["gate"], ar)
+            # Build 314: "not a fan of the challenge stuff under the xp there
+            # at all. Remove it" - the numbers alone, nothing under them.
+            check("the results card shows the overflow, with no challenge lines under it",
+                  ar["line"] and " / " in ar["line"] and ar["gate"] is None
+                  and not ar.get("closest"), ar)
             j = w["jump"]
             check("earning the badge jumps the level straight to what the XP earned",
                   j["before"] == 29 and j["after"] == j["curve"] and 29 < j["after"] <= 39 and j["badges"] == 1, j)
@@ -654,9 +660,16 @@ def main():
             check("the rank is asked about the shown level", r["rank"] == "rookie" == r["rankOfCurve"], r)
             check("a reset clears the floor", w["resetFloor"] == 0, w["resetFloor"])
             pf = w["profile"]
-            check("Profile at a cap: the total XP beside the level, the XP number marked over, no Next gate box",
-                  re.match(r"^[0-9,]+ total XP$", pf["top"] or "") and pf["nums"] and re.match(r"^[0-9,]+ / [0-9,]+ XP$", pf["nums"])
+            # Build 314: this level's XP on top, the total under the bar.
+            check("Profile at a cap: this level's XP beside the level and marked over, the total under the bar, no Next gate box",
+                  pf["nums"] and re.match(r"^[0-9,]+ / [0-9,]+ XP$", pf["nums"]) and pf["top"] == pf["nums"]
+                  and re.match(r"^[0-9,]+ total XP$", pf["total"] or "")
                   and pf["over"] and pf["banked"] and not pf["max"] and not pf["nextGate"], pf)
+            # Build 314: "tying all 3 of these together" - one path, lit by
+            # how far each challenge has come (no badges yet: the badge
+            # stretch dark; level 29 against Bronze's 21: the level stretch lit).
+            check("Profile's rank, badges and level are one path, lit by the next rank's challenges",
+                  pf["path"] == ["rank", "link", "badges", "link", "level"] and pf["lit"] == ["0", "1"], pf)
             sh = pf.get("sheet") or {}
             check("the gold badge sits beside the bar with the next rank's badge count, and opens only that (no road map button)",
                   pf["chal"] == "0/1" and sh.get("name") == "Earn 1 badge" and (sh.get("big") or "").replace(" ", "") == "0/1"

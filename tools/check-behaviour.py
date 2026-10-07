@@ -4699,10 +4699,10 @@ def check_b246(br):
       const body = tg.nextElementSibling.getBoundingClientRect(), bar = document.getElementById('bottomtabs').getBoundingClientRect();
       out.adv = { bodyBottom: Math.round(body.bottom), barTop: Math.round(bar.top), toggleTop: Math.round(tg.getBoundingClientRect().top) };
       return out; }""")
-    # Build 314: the head reads "<Rank> challenges" - the same name the
-    # button beside the Profile bar and the results card use.
-    check("the Rank screen's rings are headed with the rank they are for", bool(k["head"]) and k["head"].endswith(" challenges")
-          and k["head"] != " challenges", k)
+    # Build 314: back to "To reach <Rank>" after "<Rank> challenges" was
+    # tried and Madison preferred the original.
+    check("the Rank screen's rings are headed with the rank they are for", bool(k["head"]) and k["head"].startswith("To reach ")
+          and len(k["head"]) > len("To reach "), k)
     check("a requirement already met says Met, not Done", "Done" not in k["targets"], k["targets"])
     # Build 248: "the next rank thing is redundant and shows it twice".
     check("the next rank is named once in the hero - by the rings' head, with no Next pill as well",

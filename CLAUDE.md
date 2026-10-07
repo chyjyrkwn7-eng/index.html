@@ -13251,6 +13251,36 @@ disagree with it.
   only once it actually mounts. The question count in it is computed, not
   typed. Every tool fixture sets the key, or the sheet sits over whatever
   a gate is measuring - the same reason fixtures carry `tourRev`.
+- **ROUND FOUR (supersedes anything above that disagrees):**
+  - **Profile is ONE PATH.** *"tying all 3 of these together is missing
+    ... like pathways"*. Rank, Badges and Level sit in one `.profile-path`
+    box (the rank plate moved out of the name block into it), their rings
+    joined by `.profile-path-link`s. Each link is lit by `--litn`: the
+    lower one by the level towards the next rank's level, the upper one by
+    the badges towards its badges, both measured FROM the current rank's
+    requirement. Both lit means both challenges are met.
+  - **This level's XP is on top** (`buildXpNumbers` in
+    `.profile-level-sidetop`) and the **total sits under the bar**. XP
+    numbers are the bar's light blue (`#8FC1FF`) over a plain grey
+    requirement, and only a shade deeper past it.
+  - **Rank tab head is "To reach Gold" again**; "Gold challenges" was
+    tried and turned down.
+  - **The results card has nothing under the XP numbers.** The badge
+    challenge and the closest-badge line came off: *"not a fan of the
+    challenge stuff under the xp there at all"*. The count-up stays.
+  - **What's New**: no Ranks and levels row. Hundo effects names no
+    threshold. Flashcards says Review, not Learn. The blue box is titled
+    "Your level was adjusted" and talks about badges and XP only (no
+    rank words): you were N, now M, with B badges the highest is M, earn
+    K more and it turns back into levels.
+  - **POP-UPS TAKE TURNS, WHAT'S NEW FIRST.** `whatsNewHolds()` is true
+    while What's New is pending or open and for `POPUP_GAP_MS` (2s) after
+    it closes. The Home reward cards, badge cutscenes, the resume offer,
+    the friend moment and the Penal note all wait on it. This was a real
+    bug: the reward queue (2.2s) never asked about What's New (2s), so
+    the two stacked. Waiting on What's New does not spend the reward
+    queue's retry budget. The Penal note also waits 2s after ANY other
+    pop-up clears.
 - **AT THE CAP THE RESULTS NUMBER COUNTS UP.** *"The result screen when
   getting xp if you are full, that xp number would just keep going up."*
   The held line is `buildXpNumbers` and the reveal counts its first
