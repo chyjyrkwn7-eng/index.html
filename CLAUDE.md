@@ -14514,19 +14514,19 @@ disagree with it.
     silhouette note describes. Scenery and non-`headGrad` fills are left
     alone, so nobody's own gloss is doubled. `check_b317_volume` asserts
     the layers on every character and no `filter` attribute anywhere.
-  - **The Profile tab's character sits on its own plate.** *"They got a
-    smidge smaller ... ensure you can see their backgrounds ... and ensure
-    they still get animations on the tab."* A bare 28px drawing on the
-    bar's glass lost its scene to the edge fade, and read small once the
-    wide characters had their `AVATAR_VIEWBOX` room. It is the Profile
-    plate in miniature now: a disc lit in the character's own colour
-    (`--char-glow`, set in `syncBottomTabAvatar()`), a 1.5px ring of it, and
-    the drawing clipped round. It is 20% bigger than the other tab icons
-    (34px vs 28 on a phone, 42 vs 35 on an iPad). The extra comes back as
-    negative margin, mostly above so the ring clears the label, so the
-    bar height is unchanged (79 / 101). The clip sits on the svg and
-    `.char-flip-play`, not the icon, so the new-dot can still sit outside
-    it. The `.has-new` clip is a circle too. `check_b317_tabplate`.
+  - **The Profile tab's character: bigger, with its colour behind it, and
+    NOT circled.** *"They got a smidge smaller ... ensure you can see their
+    backgrounds ... and ensure they still get animations on the tab."* A
+    bare 28px drawing on the bar's glass lost its scene and read small once
+    the wide characters had their `AVATAR_VIEWBOX` room. A lit disc with a
+    ring was built first and turned down on sight: *"the character is
+    circled in, let's not do that."* So it is a soft radial pool of the
+    character's own colour (`--char-glow`, set in `syncBottomTabAvatar()`)
+    fading to nothing with no edge. The character is 20% bigger than the other
+    tab icons (34px vs 28 on a phone, 42 vs 35 on an iPad). The extra comes
+    back as negative margin, mostly above so it clears the label, so the
+    bar height is unchanged (79 / 101). `check_b317_tabplate` asserts the
+    pool, and the absence of a radius or ring.
   - **The grade card's fractions are white both sides** (`.rs-grade
     .rs-frac-of{opacity:1}`). Its unit bar was never broken: it fills red
     ~350ms after the card lands, and the screenshot that showed it empty
