@@ -39686,12 +39686,35 @@ function buildAvatarCharSVGFresh(charId){
   return svg;
 }
 
+/* ROOM AT THE EDGES FOR THE ONES THAT REACH THEM (build 317). Every
+   character is drawn on a 40-unit square and shown through the same
+   34-unit window, 3 to 37 - and a few reach that window's edge or past it:
+   the Ronin's hat brim and scarf, the Clown's bells, the Hive's bees, the
+   Wizard's staff, Umbra's moon, Zeus's crown, the Marksman's scope ring,
+   the Timekeeper's halo and Solar's rays. In a frame with no border of its
+   own - the Profile tab - those read as cut off: "One of the ones I've
+   mentioned that gets cut off around the edges. Ensure all characters are
+   properly displayed". Each of these gets a wider window, still centred on
+   x = 20 and still ending at 37 so the bust is cut at the same line; the
+   drawing comes out a few percent smaller, nothing else moves. The flip-
+   books are cut from the same drawing, so they follow. */
+const AVATAR_VIEWBOX = {
+  ronin:      "1.5 0 37 37",
+  clown:      "0.5 -2 39 39",
+  hive:       "1.5 0 37 37",
+  wizard:     "1 -1 38 38",
+  umbra:      "1 -1 38 38",
+  zeus:       "1.5 0 37 37",
+  marksman:   "1 -1 38 38",
+  timekeeper: "1.5 0 37 37",
+  solar:      "1 -1 38 38"
+};
 function drawAvatarCharSVG(charId){
   const svgNS = "http://www.w3.org/2000/svg";
   const def = AVATAR_CHARACTERS.find(c => c.id === charId);
   if(!def) return null;
   const svg = document.createElementNS(svgNS, "svg");
-  svg.setAttribute("viewBox", "3 3 34 34");
+  svg.setAttribute("viewBox", AVATAR_VIEWBOX[charId] || "3 3 34 34");
   svg.setAttribute("class", "avatarchar-svg");
   svg.setAttribute("aria-hidden", "true");
   const mk = (tag, attrs) => {

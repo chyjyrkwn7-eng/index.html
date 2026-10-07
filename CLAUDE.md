@@ -14487,6 +14487,16 @@ disagree with it.
     fills its box is now centred by CSS (`left/top:50%` + negative
     margins) in `charFlipAttach()`; scaled drawings keep the measured
     path. An SVG has no offsetLeft, so layout offsets were not an option.
+  - **`AVATAR_VIEWBOX`: a wider window for the characters that reach
+    the edge** (Ronin, Clown, Hive, Wizard, Umbra, Zeus, Marksman,
+    Timekeeper, Solar). Everyone else keeps "3 3 34 34". Each override is
+    square, centred on x = 20 and ends at y = 37, so the bust is cut on
+    the same line and the character is only a few percent smaller.
+    Measured, not guessed: leaf-shape boxes through their transforms,
+    scenery and the halo left out (the bottom running to 40 is the bust
+    and is meant to be cut). Hacker, Orion and Genesis measure far past
+    the edge only because of animated pieces that start off-frame - they
+    look whole and were left alone.
   - **The grade card's fractions are white both sides** (`.rs-grade
     .rs-frac-of{opacity:1}`). Its unit bar was never broken: it fills red
     ~350ms after the card lands, and the screenshot that showed it empty
