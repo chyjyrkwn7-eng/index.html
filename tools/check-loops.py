@@ -134,9 +134,20 @@ def ends(body):
             k = {"from": "0%", "to": "100%"}.get(k.strip(), k.strip())
             out[k] = out.get(k, "") + re.sub(r"\s+", "", m.group(2))
     return out
+def whole_turn(a, b):
+    """Build 314's reactions (tools/gen-reactions.py) name a loop that
+    turns once `rx-...-turn`. Accepted only when it IS one whole turn: the
+    two ends identical but for their last rotate(), which differs by
+    exactly 360deg either way."""
+    ma = re.search(r"rotate\((-?[\d.]+)deg\);?$", a)
+    mb = re.search(r"rotate\((-?[\d.]+)deg\);?$", b)
+    return bool(ma and mb and a[:ma.start()] == b[:mb.start()]
+                and abs(abs(float(mb.group(1)) - float(ma.group(1))) - 360) < 1e-6)
 bad = []
 for n in sorted(loops):
     e = ends(kf[n])
+    if re.match(r"rx-.+-turn$", n) and "0%" in e and "100%" in e and whole_turn(e["0%"], e["100%"]):
+        continue
     if "0%" in e and "100%" in e and e["0%"] != e["100%"] and n not in KNOWN:
         bad.append((n, e["0%"][:80], e["100%"][:80]))
 for n, a, b in bad:
