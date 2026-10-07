@@ -12947,6 +12947,224 @@ def check_b316_tiles(br):
         ctx.close()
 
 
+def check_b317_rankup(br):
+    """Build 317. "When you rank up, the next time you open the Profile tab
+    it should be a cool thing. After a second, a black loading screen that
+    says 'Loading rank up adjustments' ... Then the rank road map plays ...
+    Then the screen automatically switches back to the Profile screen ...
+    While this is all going on you can't click anything ... when you do rank
+    up, the next time you go to Home, the Profile tab in the bottom tab bar
+    starts pulsing/ringing, and you can't use anything else except that -
+    if you try to hit Start Studying or another tab, it says something like
+    'Your profile needs you'. The buttons on the planet system ... and the
+    chat button still work." Written against build 316 (the w316snap copy),
+    where Home is never locked, Profile opens straight onto the new rank and
+    nothing plays."""
+    print("\n317r. a rank-up locks Home to the Profile tab, and Profile plays it: loading, the road map, back to Profile")
+    SCENE = "(typeof rankUpScene !== 'undefined' ? rankUpScene : null)"
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        held = pg.evaluate("() => " + _seed_gold_js())
+        r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+          const scene = () => %s;
+          try{
+          /* Gold reached, the map last showed Silver; Gold's character card still owed */
+          store.rankFloor = 0; store.rankMapFx244 = true; store.rankMapSeen = 1; store.pendingTierCutscene = null;
+          store.savedCodeSaved = true; saveStore();
+          document.querySelectorAll('.app-banner, #pushing-update, #intro-pop').forEach(n => n.remove());
+          showHome(); await wait(1500);
+          /* the reward cards play first; the lock waits for them */
+          let cards = 0, lockedUnderCard = false;
+          for(let i = 0; i < 90 && !document.body.classList.contains('rankup-lock'); i++){
+            const sp = document.querySelector('.rs-spot');
+            if(sp){ await wait(1300); if(document.body.classList.contains('rankup-lock')) lockedUnderCard = true; sp.click(); cards++; await wait(300); }
+            await wait(200);
+          }
+          out.cards = cards; out.lockedUnderCard = lockedUnderCard;
+          const tab = document.getElementById('bottomtab-profile');
+          out.lock = document.body.classList.contains('rankup-lock');
+          out.ring = getComputedStyle(tab, '::before').animationName;
+          out.ringColor = getComputedStyle(tab).getPropertyValue('--ru-color').trim();
+          /* refused: Start Studying, the daily question, Leaderboard, Settings */
+          const onHome = () => !!document.querySelector('[data-screen="home"]');
+          const alertText = () => (document.getElementById('dailyalert') || {}).textContent || '';
+          document.getElementById('dailyalert')?.remove();
+          document.getElementById('nextbtn').click(); await wait(400);
+          out.start = { home: onHome(), alert: alertText(), mode: !!document.querySelector('.screen-modeselect, .modesel') };
+          document.getElementById('dailyalert')?.remove();
+          const fab = document.querySelector('.daily-question-fab'); if(fab) fab.click(); await wait(400);
+          out.daily = { home: onHome(), alert: alertText(), q: !!document.querySelector('.qpanel') };
+          document.getElementById('bottomtab-rewards').click(); await wait(500);
+          out.board = { home: onHome(), alert: alertText() };
+          document.getElementById('bottomtab-settings').click(); await wait(500);
+          out.settings = { home: onHome(), alert: alertText() };
+          /* allowed: a flare bubble, the chat, the Home tab */
+          const fl = document.querySelector('.panel.home .cosmic-badge-tappable');
+          if(fl) fl.click(); await wait(500);
+          out.flare = !!document.getElementById('contextual-info-popup');
+          document.getElementById('contextual-info-popup')?.remove();
+          const cb = document.getElementById('chatdock-btn'); if(cb) cb.click(); await wait(700);
+          out.chat = !!document.querySelector('.chatdock.is-open');
+          if(out.chat){ cb.click(); await wait(500); }
+          document.getElementById('bottomtab-home').click(); await wait(400);
+          out.homeTab = { home: onHome(), lock: document.body.classList.contains('rankup-lock') };
+          /* Profile: the card as it was, every input already taken */
+          const t0 = performance.now();
+          tab.click(); await wait(400);
+          const pan = document.querySelector('.screen-profile');
+          out.p0 = { profile: !!pan, blocker: !!document.querySelector('.ru-blocker'),
+            rank: (document.querySelector('.pf-standing .pf-rankname') || {}).textContent || null,
+            next: (document.querySelector('.pf-goal .pf-goal-name') || {}).textContent || null,
+            unlocked: !document.body.classList.contains('rankup-lock') };
+          const g = document.querySelector('.pf-goal');
+          if(g){ const b = g.getBoundingClientRect(); const top = document.elementFromPoint(b.left + b.width / 2, b.top + 20);
+            out.p0.topIsBlocker = !!(top && top.classList.contains('ru-blocker')); g.click(); }
+          await wait(300);
+          out.p0.stayed = !!(pan && pan.isConnected);
+          /* watch the classes the scene moves through */
+          const seenCls = {}; const mo = new MutationObserver(ms => ms.forEach(m => { const c = m.target.className;
+            if(typeof c === 'string') ['ru-zoom','ru-shake','ru-ride','is-celebrating','ru-rankup','ru-arrive'].forEach(k => { if(c.indexOf(k) >= 0) seenCls[k] = true; }); }));
+          mo.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
+          const at = {};
+          let tried = false;
+          for(let i = 0; i < 260; i++){
+            const ov = document.getElementById('teststart-overlay');
+            if(ov && !at.loading){ at.loading = Math.round(performance.now() - t0); out.loadText = (ov.textContent || '').trim(); }
+            if(document.querySelector('.screen-ranks .rankmap') && !at.map) at.map = Math.round(performance.now() - t0);
+            if(at.map && !tried && performance.now() - t0 > at.map + 1500){
+              tried = true; const bl = document.querySelector('.screen-ranks .back-link, .screen-ranks a, .screen-ranks button');
+              if(bl) bl.click(); window.scrollTo(0, 0); await wait(200);
+              out.mapHeld = { ranks: !!document.querySelector('.screen-ranks'), blocker: !!document.querySelector('.ru-blocker') };
+            }
+            if(at.map && !at.revealed && !document.querySelector('.rankmap-stop.is-celebrate-pending')) at.revealed = Math.round(performance.now() - t0);
+            const hk = document.querySelector('.rankhero-kicker.ru-kick');
+            if(hk && !at.hero){ at.hero = Math.round(performance.now() - t0); out.heroKick = hk.textContent; out.heroName = (document.querySelector('.rankhero-name') || {}).textContent; }
+            if(at.map && document.querySelector('.screen-profile') && !at.back) at.back = Math.round(performance.now() - t0);
+            if(at.back && !scene() && !document.querySelector('.ru-blocker')){ at.done = Math.round(performance.now() - t0); break; }
+            await wait(100);
+          }
+          mo.disconnect();
+          out.at = at; out.cls = seenCls;
+          out.after = { rank: (document.querySelector('.pf-standing .pf-rankname') || {}).textContent || null,
+            next: (document.querySelector('.pf-goal .pf-goal-name') || {}).textContent || null,
+            seen: store.rankMapSeen, held: TIER_ORDER_FULL.indexOf(rankOf(store)), blocker: !!document.querySelector('.ru-blocker'),
+            dot: tab.classList.contains('has-new') && rankIsNew() };
+          /* the lock is gone, and it plays once */
+          showHome(); await wait(3200);
+          out.home2 = { lock: document.body.classList.contains('rankup-lock'), ring: tab.classList.contains('ru-call') };
+          document.getElementById('nextbtn').click(); await wait(500);
+          out.home2.left = !document.querySelector('[data-screen="home"]');
+          showProfile(); await wait(1600);
+          out.again = { scene: !!scene(), loading: !!document.getElementById('teststart-overlay'), blocker: !!document.querySelector('.ru-blocker') };
+          /* never opened the map (rankMapSeen null): no lock, no scene */
+          store.rankMapSeen = null; store.rankMapFx244 = false; saveStore();
+          showHome(); await wait(3200);
+          out.nullLock = document.body.classList.contains('rankup-lock');
+          showProfile(); await wait(1500);
+          out.nullScene = !!scene() || !!document.getElementById('teststart-overlay');
+          } catch(e){ out.threw = String(e && e.stack || e); }
+          return out; }""" % SCENE)
+        check(f"{dev}: the fixture holds Gold", held == "veteran", held)
+        check(f"{dev}: nothing threw", not r.get("threw"), r.get("threw"))
+        check(f"{dev}: Gold's reward card plays first, and Home locks only once it has gone",
+              (r.get("cards") or 0) >= 1 and r.get("lockedUnderCard") is False and r.get("lock") is True,
+              [r.get("cards"), r.get("lockedUnderCard"), r.get("lock")])
+        check(f"{dev}: the Profile tab rings, in Gold", r.get("ring") == "ru-tab-ring" and bool(r.get("ringColor")),
+              [r.get("ring"), r.get("ringColor")])
+        for k, label in (("start", "Start Studying"), ("daily", "the daily question"), ("board", "Leaderboard"), ("settings", "Settings")):
+            v = r.get(k) or {}
+            check(f"{dev}: {label} is refused with 'Your profile needs you'",
+                  v.get("home") is True and v.get("alert") == "Your profile needs you" and not v.get("mode") and not v.get("q"), v)
+        check(f"{dev}: a flare bubble on Home still answers", r.get("flare") is True, r.get("flare"))
+        check(f"{dev}: the chat button still opens the chat", r.get("chat") is True, r.get("chat"))
+        check(f"{dev}: the Home tab is a no-op and keeps the lock", (r.get("homeTab") or {}) == {"home": True, "lock": True}, r.get("homeTab"))
+        p0 = r.get("p0") or {}
+        check(f"{dev}: Profile opens as it was - Silver, Next rank Gold - with the lock off and input already blocked",
+              p0.get("profile") and p0.get("blocker") and p0.get("rank") == "Silver" and p0.get("next") == "Gold" and p0.get("unlocked"), p0)
+        check(f"{dev}: a tap on the card lands on the input layer and goes nowhere",
+              p0.get("topIsBlocker") is True and p0.get("stayed") is True, [p0.get("topIsBlocker"), p0.get("stayed")])
+        at = r.get("at") or {}
+        check(f"{dev}: after a second, LOADING RANK UP ADJUSTMENTS",
+              800 <= (at.get("loading") or 0) <= 2500 and r.get("loadText", "").endswith("LOADING RANK UP ADJUSTMENTS"), [at.get("loading"), r.get("loadText")])
+        check(f"{dev}: about three seconds later, the road map", 2500 <= (at.get("map") or 0) - (at.get("loading") or 0) <= 4500,
+              [at.get("loading"), at.get("map")])
+        mh = r.get("mapHeld") or {}
+        check(f"{dev}: the road map cannot be left mid-show", mh.get("ranks") is True and mh.get("blocker") is True, mh)
+        cls = r.get("cls") or {}
+        check(f"{dev}: it zooms in, a light rides into Gold, Gold shakes and its colour comes out",
+              all(cls.get(k) for k in ("ru-zoom", "ru-ride", "ru-shake", "is-celebrating")) and bool(at.get("revealed")), [cls, at.get("revealed")])
+        check(f"{dev}: the current-rank card turns over to Gold and says Rank up",
+              r.get("heroKick") == "Rank up" and r.get("heroName") == "Gold" and cls.get("ru-rankup"), [r.get("heroKick"), r.get("heroName")])
+        af = r.get("after") or {}
+        check(f"{dev}: then back to Profile, fading into Gold and Platinum's challenges",
+              bool(at.get("back")) and bool(at.get("done")) and af.get("rank") == "Gold" and af.get("next") == "Platinum" and cls.get("ru-arrive"),
+              [at.get("back"), at.get("done"), af.get("rank"), af.get("next")])
+        check(f"{dev}: rankMapSeen ends at the rank held, the input layer is gone, and no dot is left",
+              af.get("seen") == af.get("held") == 2 and af.get("blocker") is False and not af.get("dot"), af)
+        h2 = r.get("home2") or {}
+        check(f"{dev}: Home is unlocked afterwards", h2.get("lock") is False and h2.get("ring") is False and h2.get("left") is True, h2)
+        check(f"{dev}: it plays once only", r.get("again") == {"scene": False, "loading": False, "blocker": False}, r.get("again"))
+        check(f"{dev}: an account that has never opened the map (rankMapSeen null) is never locked",
+              r.get("nullLock") is False and r.get("nullScene") is False, [r.get("nullLock"), r.get("nullScene")])
+        ctx.close()
+    # Reduce motion, a reload half-way, and the watchdog - on the phone.
+    # Seeded ONCE (not on every load, as booted() does), so the reload
+    # below comes back to what the app itself saved.
+    once = ("try{ if(!localStorage.getItem('__seeded317')){ localStorage.setItem('__seeded317','1');"
+            "localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');"
+            "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');"
+            "localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.drill.v1', '%s'); } }catch(e){}" % USED_ACCOUNT)
+    ctx, pg = booted(br, 440, 956, init=once)
+    pg.evaluate("() => " + _seed_gold_js())
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      const scene = () => %s;
+      try{
+      store.rankFloor = 0; store.rankMapFx244 = true; store.rankMapSeen = 1; store.savedCodeSaved = true;
+      const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); saveStore();
+      theme.reduceMotion = true; applyTheme && applyTheme();
+      const seenCls = {}; const mo = new MutationObserver(ms => ms.forEach(m => { const c = m.target.className;
+        if(typeof c === 'string') ['ru-zoom','ru-shake','ru-ride'].forEach(k => { if(c.indexOf(k) >= 0) seenCls[k] = true; }); }));
+      mo.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
+      showProfile(); const t0 = performance.now(); let loading = false, map = false;
+      for(let i = 0; i < 200; i++){
+        if(document.getElementById('teststart-overlay')) loading = true;
+        if(document.querySelector('.screen-ranks')) map = true;
+        if(map && !scene() && !document.querySelector('.ru-blocker')) break;
+        await wait(100);
+      }
+      mo.disconnect();
+      out.rm = { ms: Math.round(performance.now() - t0), loading, map, cls: seenCls, seen: store.rankMapSeen,
+        profile: !!document.querySelector('.screen-profile'), rank: (document.querySelector('.pf-standing .pf-rankname') || {}).textContent };
+      theme.reduceMotion = false; applyTheme && applyTheme();
+      /* the watchdog: whatever stalls, the layer comes off */
+      store.rankMapSeen = 1; saveStore();
+      showProfile(); for(let i = 0; i < 80 && !document.querySelector('.screen-ranks'); i++) await wait(100);
+      const s = scene(); if(s) rankUpSceneWatch(s, 200); await wait(900);
+      out.dog = { scene: !!scene(), blocker: !!document.querySelector('.ru-blocker'), seen: store.rankMapSeen, profile: !!document.querySelector('.screen-profile') };
+      /* half-way, then the app is closed: it plays again, with nothing left stuck */
+      store.rankMapSeen = 1; saveStore();
+      showProfile(); for(let i = 0; i < 80 && !document.querySelector('.screen-ranks'); i++) await wait(100);
+      out.midMap = !!document.querySelector('.screen-ranks') && !!document.querySelector('.ru-blocker');
+      } catch(e){ out.threw = String(e && e.stack || e); }
+      return out; }""" % SCENE)
+    check("reduce motion: nothing threw", not r.get("threw"), r.get("threw"))
+    rm = r.get("rm") or {}
+    check("reduce motion: loading, the map, back on Profile as Gold - shorter, no zoom, ride or shake",
+          rm.get("loading") and rm.get("map") and rm.get("profile") and rm.get("rank") == "Gold" and rm.get("seen") == 2
+          and not rm.get("cls") and (rm.get("ms") or 99999) < 11000, rm)
+    check("the watchdog ends a stalled scene: the layer comes off, it is marked, Profile is up",
+          r.get("dog") == {"scene": False, "blocker": False, "seen": 2, "profile": True}, r.get("dog"))
+    check("a reload half-way: the scene was on the map", r.get("midMap") is True, r.get("midMap"))
+    pg.reload(); pg.wait_for_timeout(2600)
+    pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __stub();}")
+    rl = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      return { blocker: !!document.querySelector('.ru-blocker'), seen: store.rankMapSeen,
+               owed: (typeof rankUpSceneOwed === 'function') ? rankUpSceneOwed() : null }; }""")
+    check("after the reload nothing is stuck and the rank-up is still owed (it plays again)",
+          rl == {"blocker": False, "seen": 1, "owed": True}, rl)
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -13111,6 +13329,7 @@ def main():
             check_b315_customize(br)
             check_b316_tiles(br)
             check_b317_daily(br)
+            check_b317_rankup(br)
         finally:
             br.close()
     SERVER.shutdown()
