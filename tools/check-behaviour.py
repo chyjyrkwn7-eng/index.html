@@ -12988,6 +12988,69 @@ def check_b317_volume(br):
     ctx.close()
 
 
+def check_b317_rings(br):
+    """Build 317. "I noticed that the orange glowing rings light up when you
+    hit max rank ... make it where the rank one is all orange but if you get
+    all the secret flares AND the rank ones, then it's like black?" Two
+    tiers on Home's orbit rings: orange for Supernova, black (the eclipse)
+    for Supernova AND every secret flare - never both, and every secret
+    flare without Supernova is plain. Read off the rings Home really builds,
+    not off a helper. Written against 74cc518, where the black tier did not
+    exist and the max-everything account was still orange."""
+    print("\n317. Home's rings: orange at Supernova, black at Supernova plus every secret flare")
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+          const rings = () => [...document.querySelectorAll('.screen-home-actual .cosmic-orbit-ring')];
+          const look = async (supernova, flares) => {
+            store.supernovaAchieved = supernova; store.pendingSupernovaCutscene = false;
+            store.mysteryColorsFound = {}; MYSTERY_ORDER.forEach(k => store.mysteryColorsFound[k] = flares === 'all' || (flares === 'five' && k !== 'core'));
+            showHome(); await wait(500);
+            const rs = rings(), hero = document.querySelector('.screen-home-actual .cosmic-hero-wrap');
+            const rims = hero ? [...hero.querySelectorAll('.cosmic-orbit-eclipse-rim')] : [];
+            const body = rs[0] ? getComputedStyle(rs[0]) : null;
+            const lum = c => { const m = String(c).match(/[\\d.]+/g) || []; return m.length >= 3 ? (+m[0] + +m[1] + +m[2]) / 3 : -1; };
+            return { n: rs.length,
+              orange: rs.filter(x => x.classList.contains('cosmic-orbit-ring-supernova')).length,
+              black: rs.filter(x => x.classList.contains('cosmic-orbit-ring-eclipse')).length,
+              rims: rims.length, rimLum: rims.map(x => { const s = getComputedStyle(x).stroke, id = (s.match(/url\\("?#([^")]+)"?\\)/) || [])[1];
+                if(!id) return Math.round(lum(s));
+                const g = hero.querySelector('[id="' + id + '"]');
+                return g ? Math.max(...[...g.querySelectorAll('stop')].map(st => lum(getComputedStyle(st).stopColor))) : -1; }),
+              bodyLum: body ? Math.round(lum(body.stroke)) : -1, bodyW: body ? parseFloat(body.strokeWidth) : 0,
+              filtered: [...(hero ? hero.querySelectorAll('.cosmic-orbit-ring, .cosmic-orbit-eclipse-rim, .cosmic-orbit-eclipse-shade') : [])]
+                .filter(x => { const cs = getComputedStyle(x); return (cs.filter && cs.filter !== 'none') || x.hasAttribute('filter') || (cs.animationName && cs.animationName !== 'none'); }).length,
+              bubbles: hero ? hero.querySelectorAll('.cosmic-badge-rank').length : 0,
+              dots: hero ? hero.querySelectorAll('.cosmic-flare-dot').length : 0 };
+          };
+          try{
+            out.plain = await look(false, 'none');
+            out.orange = await look(true, 'five');
+            out.black = await look(true, 'all');
+            out.flaresOnly = await look(false, 'all');
+          }catch(e){ out.threw = String(e && e.stack || e); }
+          return out; }""")
+        check(dev + ": nothing threw", not r.get("threw"), r.get("threw"))
+        p, o, b, f = (r.get(k) or {} for k in ("plain", "orange", "black", "flaresOnly"))
+        check(dev + ": a non-max account has neither treatment",
+              p.get("n") == 2 and p.get("orange") == 0 and p.get("black") == 0 and p.get("rims") == 0, p)
+        check(dev + ": max rank without every secret flare: the orange tier, not the black",
+              o.get("n") == 2 and o.get("orange") == 2 and o.get("black") == 0 and o.get("rims") == 0, o)
+        check(dev + ": max rank AND every secret flare: the black tier and NOT the orange one",
+              b.get("n") == 2 and b.get("black") == 2 and b.get("orange") == 0, b)
+        check(dev + ": the black tier is a near-black body with a lit rim either side of it, so it reads on the sky",
+              0 <= b.get("bodyLum", -1) < 24 and b.get("bodyW", 0) >= 2.5 and b.get("rims") == 4
+              and all(x > 150 for x in b.get("rimLum") or [0]), b)
+        check(dev + ": every secret flare without max rank: neither treatment",
+              f.get("n") == 2 and f.get("orange") == 0 and f.get("black") == 0 and f.get("rims") == 0, f)
+        check(dev + ": the black tier uses no filter and does not move (nothing for reduce motion to stop)",
+              b.get("filtered") == 0, b.get("filtered"))
+        check(dev + ": the flare bubbles and the tiny flares are all still there in the black tier",
+              b.get("bubbles") == o.get("bubbles") and b.get("bubbles", 0) >= 7 and b.get("dots") == 6,
+              [o.get("bubbles"), b.get("bubbles"), b.get("dots")])
+        ctx.close()
+
+
 def check_b317_rankup(br):
     """Build 317. "When you rank up, the next time you open the Profile tab
     it should be a cool thing. After a second, a black loading screen that
@@ -13371,6 +13434,7 @@ def main():
             check_b316_tiles(br)
             check_b317_daily(br)
             check_b317_volume(br)
+            check_b317_rings(br)
             check_b317_rankup(br)
         finally:
             br.close()

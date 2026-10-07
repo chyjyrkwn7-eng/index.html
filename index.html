@@ -11104,6 +11104,27 @@
     stroke:rgba(194,59,122,.5); stroke-width:1.4;
     filter:drop-shadow(0 0 3px rgba(194,59,122,.4));
   }
+  /* THE ECLIPSE (build 317) - the second ring tier, homeRingTier():
+     Supernova AND every secret flare. "if you get all the secret flares
+     AND the rank ones, then it's like black?" A near-black hoop that
+     still reads against a dark sky because its light is on its EDGES:
+     a hairline rim either side of the body in a cold violet-white, and
+     a soft dark shadow round it built from stacked strokes. No filter
+     of any kind - every piece is a plain stroke, so iOS draws exactly
+     what Chromium does. Static, like the orange tier. */
+  .cosmic-orbit-ring.cosmic-orbit-ring-eclipse{
+    stroke:#050409; stroke-width:3.4;
+  }
+  .cosmic-orbit-eclipse-shade{
+    fill:none; stroke:rgba(2,1,6,.36); stroke-width:12;
+  }
+  .cosmic-orbit-eclipse-haze{
+    fill:none; stroke:rgba(150,124,255,.10); stroke-width:3;
+  }
+  /* the stroke itself is this copy's rim gradient, set inline */
+  .cosmic-orbit-eclipse-rim{ fill:none; stroke:rgba(226,218,255,.78); }
+  .cosmic-orbit-eclipse-rim.is-outer{ stroke-width:.8; opacity:1; }
+  .cosmic-orbit-eclipse-rim.is-inner{ stroke-width:.6; opacity:.6; }
   .cosmic-sphere-glow{ fill:var(--theme-c2); opacity:.4; }
   /* ---------- Supernova cutscene ---------- */
   /* THE END-OF-MATCH CUTSCENE. Asked for directly - "a 5 second
@@ -58307,6 +58328,21 @@ function voidFlaresAllFound(){
 }
 /* "All found" in the sense the Void hunt has always meant: the three. */
 function mysteryAllFound(){ return voidFlaresAllFound(); }
+/* EVERY secret flare, all of MYSTERY_ORDER - not the three above. */
+function secretFlaresAllFound(){
+  const f = (store && store.mysteryColorsFound) || {};
+  return MYSTERY_ORDER.every(k => f[k]);
+}
+/* HOME'S RING TIERS (build 317). "make it where the rank one is all
+   orange but if you get all the secret flares AND the rank ones, then
+   it's like black?" "" - plain rings; "supernova" - every rank flare
+   lit (store.supernovaAchieved), the orange rings; "eclipse" - that AND
+   every secret flare, the black rings. Every secret flare without
+   Supernova is plain: tier two needs both. */
+function homeRingTier(){
+  if(!store || !store.supernovaAchieved) return "";
+  return secretFlaresAllFound() ? "eclipse" : "supernova";
+}
 
 /* ---- THE SWAT ITEM (build 243, reworked in 244) ----
    Build 243 hid a pair of sunglasses for the Officer. Build 244 took the
@@ -61101,7 +61137,48 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
        one every account starts with, so reaching the top of the
        ladder visibly changes the sphere itself, not just one badge
        among six. */
-    ring.setAttribute("class", "cosmic-orbit-ring" + (store.supernovaAchieved ? " cosmic-orbit-ring-supernova" : ""));
+    /* TWO TIERS (build 317) - homeRingTier(): orange for Supernova, and
+       black (the eclipse) for Supernova AND every secret flare. The
+       black tier is never ALSO orange. */
+    const ringTier = homeRingTier();
+    ring.setAttribute("class", "cosmic-orbit-ring" +
+      (ringTier === "eclipse" ? " cosmic-orbit-ring-eclipse" : ringTier === "supernova" ? " cosmic-orbit-ring-supernova" : ""));
+    if(ringTier === "eclipse"){
+      /* The eclipse is a black hoop with light caught on its edges: a
+         wide soft shadow under it, the near-black body, and a hairline
+         rim either side of the body. All plain strokes - the rim is
+         its own circle, not a filter. */
+      /* The rim light comes from the upper left, the one light the
+         whole system is lit from: brightest there, a cold violet down
+         the far side. Its id is this copy's own (depthId). */
+      const rimId = depthId + "eclipse";
+      if(!defs.querySelector("#" + rimId)){
+        const eg = document.createElementNS(svgNS, "linearGradient");
+        eg.setAttribute("id", rimId);
+        eg.setAttribute("x1", "0.12"); eg.setAttribute("y1", "0"); eg.setAttribute("x2", "0.88"); eg.setAttribute("y2", "1");
+        [["0%", "#F4F0FF", ".95"], ["45%", "#C9BCFF", ".62"], ["100%", "#8E78F0", ".42"]].forEach(([o, c, a]) => {
+          const st = document.createElementNS(svgNS, "stop");
+          st.setAttribute("offset", o); st.setAttribute("stop-color", c); st.setAttribute("stop-opacity", a);
+          eg.appendChild(st);
+        });
+        defs.appendChild(eg);
+      }
+      const piece = (rr, cls) => {
+        const c = document.createElementNS(svgNS, "circle");
+        c.setAttribute("cx", 180); c.setAttribute("cy", 150); c.setAttribute("r", rr);
+        c.setAttribute("class", cls);
+        return c;
+      };
+      svg.appendChild(piece(r + 3.4, "cosmic-orbit-eclipse-haze"));
+      svg.appendChild(piece(r, "cosmic-orbit-eclipse-shade"));
+      svg.appendChild(ring);
+      [r - 1.9, r + 1.9].forEach((rr, i) => {
+        const rim = piece(rr, "cosmic-orbit-eclipse-rim" + (i ? " is-outer" : " is-inner"));
+        rim.style.stroke = "url(#" + rimId + ")";
+        svg.appendChild(rim);
+      });
+      return;
+    }
     svg.appendChild(ring);
   });
   const glowFilter = document.createElementNS(svgNS, "filter");
