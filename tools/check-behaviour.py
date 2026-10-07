@@ -8909,6 +8909,11 @@ def check_b308_unlocks(br):
           const rot1 = getComputedStyle(o).rotate;
           await wait(1800);
           const rot2 = getComputedStyle(o).rotate;
+          /* build 317: the flare lights at the whirl's top speed (~4.5s
+             into it), not at once - wait for that beat, then look */
+          const ovx = document.getElementById('supernova-cutscene');
+          for(let k = 0; k < 120 && !ovx.classList.contains('is-cutlight'); k++) await wait(100);
+          await wait(250);
           const lit = document.querySelector('#supernova-cutscene .rank-before .rank-orbit-slot.is-igniting .cosmic-badge-lit');
           const burst = document.getElementById('supernova-cutscene').classList.contains('supernova-burst');
           return { planetStill: getComputedStyle(spin).transform === 'none', rot1, rot2, off: +off.toFixed(3), slots: slots.length, lit: !!lit, burstYet: burst };}""")
