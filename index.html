@@ -63901,14 +63901,16 @@ function showIntroPopup(){
          next rank's level went back to the gate's allowed level and have
          extra xp". */
       const bc = badgeChallengeOf(rc);
-      /* Plain, and about badges and XP only - "mentions rank a lot". */
+      /* WHAT CHANGED, THEN WHAT IT DID TO YOU (build 314): "needs to explain
+         the ranking system has been updated, you must now meet the rank
+         requirements in order to keep leveling up". */
       const have = bc ? bc.have : 0;
       const left = bc ? bc.left : 0;
-      b.textContent = "You were level " + ls.curveLevel + " and are now level " + ls.level + ". " +
-        (have > 0 ? "With " + have + (have === 1 ? " badge" : " badges") : "Without any badges yet") +
-        ", the highest level you can be is " + ls.level + ". You didn't lose any XP: earn " +
-        (left > 0 ? left + (have > 0 ? " more" : "") + (left === 1 ? " badge" : " badges") : "more badges") +
-        " and it turns back into levels.";
+      b.textContent = "The rank system has been updated: to keep leveling up, you now need the badges your next rank requires. " +
+        "You were level " + ls.curveLevel + ", so your level moved back to " + ls.level + ", the highest you can be " +
+        (have > 0 ? "with " + have + (have === 1 ? " badge" : " badges") : "without any badges yet") + ". " +
+        "You didn't lose any XP: earn " + (left > 0 ? left + (have > 0 ? " more" : "") + (left === 1 ? " badge" : " badges") : "the badges") +
+        (rc ? " to reach " + rc.name : "") + " and it turns back into levels.";
       note.append(h, b);
       card.appendChild(note);
     }
@@ -63917,6 +63919,9 @@ function showIntroPopup(){
     ["M12 2.5l1.9 5.9 5.9 1.9-5.9 1.9-1.9 5.9-1.9-5.9-5.9-1.9 5.9-1.9L12 2.5Zm6.5 12.5.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z",
      "#FFD84D", "Hundo effects",
      "Earn new screen effects as your hundos climb: Fireworks, the World Tree, Bubbles and a UFO. Pick yours in Customize."],
+    ["M6 2h8.5L20 7.5V20a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm8 1.8V8h4.2L14 3.8ZM7.5 11v1.6h9V11h-9Zm0 3.4V16h9v-1.6h-9Zm0 3.4v1.6h6v-1.6h-6Z",
+     "#FF7A59", "Penal Code: slides 55\u2013124",
+     "Penal Code has a second version with only the questions from slides 55\u2013124. Pick it when you choose the unit."],
     ["M8 3h11a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2ZM3 7h1.8v12.2H17V21H5a2 2 0 0 1-2-2V7Z",
      "#4DD0E1", "Flashcards",
      "Review has a new Flashcards option for any unit. Tap a card to flip it, swipe to move on."],
@@ -63924,21 +63929,15 @@ function showIntroPopup(){
      "#FF2E88", "Characters and banners",
      "Characters refined and animating everywhere, and new banners to earn."],
     /* ICONS THAT SAY THE THING (build 314): "some of the icons are bad
-       there and don't match what's being talked about" - a lightning bolt
-       for test mode, a star for results (the star is
-       the app's mark for a starred question) and a target for fixes. */
+       there and don't match what's being talked about" - each row's icon
+       is its own subject. Penal Code sits second and "Results,
+       overhauled" is gone, both asked for. */
     ["M9 2h6a1 1 0 0 1 1 1v1h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2V3a1 1 0 0 1 1-1Zm1 2v1.6h4V4h-4Zm5.7 6.2-4.9 4.9-2.5-2.5-1.3 1.3 3.8 3.8 6.2-6.2-1.3-1.3Z",
      "#F5804D", "Better test mode",
      "Quicker answer feedback, a smoother swipe to the next question, and a simpler start sheet."],
-    ["M6 2h8.5L20 7.5V20a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm8 1.8V8h4.2L14 3.8ZM7.5 11v1.6h9V11h-9Zm0 3.4V16h9v-1.6h-9Zm0 3.4v1.6h6v-1.6h-6Z",
-     "#FF7A59", "Penal Code: slides 55\u2013124",
-     "Penal Code has a second version with only the questions from slides 55\u2013124. Pick it when you choose the unit."],
     ["M4 19.6h16v1.8H4v-1.8Zm1.2-7.2h3v5.6h-3v-5.6Zm5.3-5h3v10.6h-3V7.4Zm5.3 3h3v7.6h-3v-7.6Z",
      "#5CA8FF", "Stats and Profile",
      "A clearer Stats page, a fuller test history, and a cleaner Profile."],
-    ["M7 3h10v2h3v3a4 4 0 0 1-4 4h-.4A5 5 0 0 1 13 14.9V17h3v2H8v-2h3v-2.1A5 5 0 0 1 8.4 12H8a4 4 0 0 1-4-4V5h3V3ZM6 7v1a2 2 0 0 0 1.4 1.9L7 7H6Zm11 0-.4 2.9A2 2 0 0 0 18 8V7h-1ZM7 20.2h10V22H7v-1.8Z",
-     "#4ADE80", "Results, overhauled",
-     "Your grade, XP and badge progress land one at a time while your character reacts to your score, your unlocks play right there, and then the full answer review."],
     ["M21.7 6.3a5.6 5.6 0 0 1-7.6 6.3L7.4 19.3a2.2 2.2 0 1 1-3.1-3.1l6.7-6.7A5.6 5.6 0 0 1 17.3 1.9l-3.4 3.4.8 3.4 3.4.8 3.4-3.4c.1.1.1.2.2.2Z",
      "#C583FF", "Refined everywhere",
      "Faster tabs, smoother screens, and a long list of fixes from your reports."]

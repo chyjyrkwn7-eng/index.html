@@ -497,7 +497,8 @@ def run_intro(src_dir, label):
                          flashcards, characters and banners, test mode, the
                          app as a whole, stats and profile, the rank road
                          map, the results screen. */
-                      says73: ['hundo effect', 'flashcard', 'character', 'banner', 'test', 'stats', 'profile', 'penal code', 'results', 'everywhere'].every(w => txt.indexOf(w) >= 0) && txt.indexOf('7.7') >= 0
+                      says73: ['hundo effect', 'flashcard', 'character', 'banner', 'test', 'stats', 'profile', 'penal code', 'everywhere'].every(w => txt.indexOf(w) >= 0) && txt.indexOf('7.7') >= 0
+                        && txt.indexOf('results, overhauled') < 0
                         /* build 314: "Ranks and levels box in the what's new stuff does not need to be there",
                            and Review is what the mode is called, not Learn */
                         && txt.indexOf('ranks and levels') < 0 && txt.indexOf('from learn') < 0 && txt.indexOf('at 50') < 0,
