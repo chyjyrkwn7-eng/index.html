@@ -14544,10 +14544,11 @@ disagree with it.
       toward those levels when they are added." check-curve holds the
       shape (top level, which rank's challenges, "still counts"), not the
       prose.
-    - **Total XP is a deeper blue** (`--xptotal`, #3F6CB6, weight 700)
+    - **Total XP is a deeper blue** (`--xptotal`, #3B64C8, weight 700)
       - *"needs to be a darker blue or something, looks too much like the
       others to the left"*. Same family as `--xpnum` (#5A9BEF), clearly a
-      step down; about 3.3:1 on the dark card, bold.
+      step down (deeper and more saturated, blue channel kept over 200 so
+      check_b258 still reads it as blue); about 3.2:1 on the dark card, bold.
     - **THE KNOCK** (`xpBarBump`, `.is-xpbump`): *"Anytime you see an xp
       bar WHILE earning xp ... still do the up thing but like a 'failure'
       effect happens and then it goes to the overflow number."* XP earned
@@ -14568,6 +14569,9 @@ disagree with it.
       (Reduce motion just settles the numbers). `check_b317_xpcap` holds
       all of it and fails 9 of 13 against 74cc518. Headless Chromium runs
       this page's rAF at a few frames a second, so its waits are long.
+      (check-results' "the level line names the next level" gives a
+      two-level climb a flat 2600ms and fails now and then under the same
+      starvation, on either build - it passed alone, and against 74cc518.)
 - **THE DAILY QUESTION IS ANSWERED, NOT TAPPED (build 317).** *"When
   you submit your answer, ensure it's not just clicking, let's put a
   submit answer so that quality seems to hold a little more weight.
