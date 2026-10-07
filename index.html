@@ -9226,6 +9226,16 @@
   .wrap > .top.hfx-over{ z-index:61; }
   .wrap > .top.hfx-over .test-scopelabel{ text-shadow:0 1px 6px rgba(8,10,14,.85); }
   .confetti-layer.hfx-layer.is-page{ position:absolute; right:auto; bottom:auto; }
+  /* THE DIM IS THE SCREEN'S, NOT THE PAGE'S (build 317). The layer is
+     pinned to the page at the scroll it started at, so everything moves
+     with the box - but the results reveal goes on scrolling (the buttons
+     land after the box), and a dim one screen tall then stopped short of
+     the bottom edge: an undimmed grey band under the buttons for the
+     whole of the Fireworks, the UFO and the Black Hole. A fixed child is
+     not clipped by the layer's overflow (it has no transform), so the
+     dim stays on the whole screen whatever the page does. */
+  .confetti-layer.hfx-layer.is-page > .hfx-fw-dim, .confetti-layer.hfx-layer.is-page > .hfx-ufo-dim,
+  .confetti-layer.hfx-layer.is-page > .hfx-bh-dim{ position:fixed; }
   .hfx-box{ position:absolute; inset:0; border-radius:inherit; overflow:hidden; pointer-events:none; z-index:2;
     clip-path:inset(0 round var(--hfx-r, 18px)); }
   .hfx-box > *, .hfx-layer > *{ pointer-events:none; }
@@ -9479,7 +9489,12 @@
   .hfx-mk-row{ display:flex; align-items:center; gap:.5rem; margin:.1rem 0 .3rem; }
   .hfx-mock .rs-pct{ position:relative; font-family:var(--sans); font-weight:800; font-size:1.65rem; line-height:1; letter-spacing:-.045em; color:#F6D58E; text-shadow:0 0 14px rgba(246,213,142,.3); }
   .hfx-mock .rs-grade-frac{ font-size:.6rem; font-weight:800; color:var(--ink); margin:0; transition:color var(--hfx-ease, 1s) ease; }
-  .hfx-mock .rs-grade.hfx-tinted .rs-grade-frac{ color:var(--hfx-g1); }
+  .hfx-mock .rs-grade.hfx-tinted .rs-grade-frac{ color:var(--hfx-t, var(--hfx-g1)); }
+  /* the miniature's box the way the real one is (build 317): its label in
+     the effect's colour, and its gold number giving way to the copy */
+  .hfx-mock .rs-grade .hfx-mk-kicker, .hfx-mock .rs-grade .rs-pct{ transition:color var(--hfx-ease, 1s) ease, text-shadow var(--hfx-ease, 1s) ease; }
+  .hfx-mock .rs-grade.hfx-tinted .hfx-mk-kicker{ color:color-mix(in srgb, var(--hfx-t, var(--hfx-g1)) 80%, transparent); }
+  .hfx-mock .rs-grade.hfx-tinted:has(> .hfx-tintnum) .rs-pct{ color:transparent; text-shadow:none; }
   .hfx-mock > .rs-actions{ display:flex; gap:.35rem; margin-top:auto; }
   /* `inherit` is not a family inside the `font` shorthand, so the whole
      declaration was dropped and these drew in the browser's own button
@@ -9608,13 +9623,30 @@
   .rs-screen .rs-card.rs-grade.is-perfect.hfx-tinted, .hfx-stage.hfx-tinted, .rs-screen .rs-card.hfx-preview-card.hfx-tinted, .hfx-mock > .rs-card.rs-grade.hfx-tinted{ border-color:var(--hfx-b);
     --hfx-wash:color-mix(in srgb, var(--hfx-b) 20%, transparent); --hfx-fa:var(--hfx-g2); --hfx-fb:var(--hfx-g1); }
   .hfx-fast{ --hfx-ease:.45s; }
-  .rs-grade .rs-grade-frac{ transition:color var(--hfx-ease, 1s) ease; }
-  .rs-grade.hfx-tinted .rs-grade-frac{ color:var(--hfx-g1); }
+  .rs-grade .rs-grade-frac, .rs-grade > .rs-kicker, .rs-grade .rs-grade-sub{ transition:color var(--hfx-ease, 1s) ease; }
+  /* EVERY WORD IN THE BOX TOO (build 317): "the 10/10 is still gold and
+     not matching the theme, ensure all effects are good to go for those
+     boxes." The fraction is the effect's text colour (HFX_TINT's `t`),
+     the GRADE label that colour a little faded, and the line under the
+     fraction the caption grey leaning to it - never g1, which on
+     Fireworks was a pale gold. */
+  .rs-grade.hfx-tinted .rs-grade-frac{ color:var(--hfx-t, var(--hfx-g1)); }
+  .rs-grade.hfx-tinted > .rs-kicker{ color:color-mix(in srgb, var(--hfx-t, var(--hfx-g1)) 80%, transparent); }
+  .rs-grade.hfx-tinted .rs-grade-sub{ color:color-mix(in srgb, var(--hfx-t, var(--hfx-g1)) 60%, #8E9BA5); }
+  /* The gold number gives way to its copy in the effect's colours rather
+     than sitting under it: a gold fringe round every glyph, and a gold
+     glow behind a magenta 100%. Only when the copy is there (:has), so a
+     box with no copy keeps a number. The copy carries the glow instead. */
+  .rs-screen .rs-grade.is-perfect .rs-pct.pct.perfect{ transition:color var(--hfx-ease, 1s) ease, text-shadow var(--hfx-ease, 1s) ease; }
+  .rs-screen .rs-grade.is-perfect.hfx-tinted:has(> .hfx-tintnum) .rs-pct.pct.perfect{ color:transparent; text-shadow:none; }
   .hfx-tint{ position:absolute; inset:0; border-radius:inherit; opacity:0;
     box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--hfx-b) 55%, transparent), inset 0 0 30px color-mix(in srgb, var(--hfx-b) 26%, transparent);
     transition:opacity var(--hfx-ease, 1s) ease; }
   .hfx-tintnum{ position:absolute; display:block; white-space:nowrap; opacity:0; transition:opacity var(--hfx-ease, 1s) ease;
-    text-shadow:none; filter:none; }
+    text-shadow:none; filter:drop-shadow(0 0 12px color-mix(in srgb, var(--hfx-b) 40%, transparent)); }
+  /* the small % is an inline-block, which background-clip:text does not
+     reach into: it takes the gradient's last stop, the colour it sits by */
+  .hfx-tintnum .rs-pct-sign{ color:var(--hfx-g3, var(--hfx-g1)); }
   .hfx-tinted .hfx-tint, .hfx-tinted .hfx-tintnum{ opacity:1; }
   .hfx-tintnum{ color:transparent;
     background:linear-gradient(105deg, var(--hfx-g1), var(--hfx-g2) 55%, var(--hfx-g3, var(--hfx-g1)));
@@ -75372,17 +75404,29 @@ const HUNDO_FX_TAIL_AT = { fireworks: 5000, blackhole: 4000, underwater: 5900, w
    cool if the themes matches the box, cause if the just stays yellow it
    would get kinda boring." Border, wash and the numerals' gradient;
    Confetti keeps the yellow. */
+/* `t` is the box's TEXT colour (build 317): the "12 / 12", the GRADE
+   label and, faded, the line under the fraction. "the 10/10 is still
+   gold and not matching the theme" - the fraction was g1, the 100%'s
+   palest stop, and Fireworks' g1 was a pale gold, so a magenta box
+   carried a gold fraction. Every `t` is the effect's own colour lifted
+   for legibility, and no box but Confetti's has a gold stop left in it. */
 const HFX_TINT = {
-  /* hot magenta, the 100% from pale gold through magenta to cyan; the box
+  /* hot magenta, the 100% from pale pink through magenta to cyan; the box
      lights as the first shell bursts */
-  fireworks: { b: "#FF5CD6", g1: "#FFE7B4", g2: "#FF5CD6", g3: "#5CE3FF", on: 950 },
-  blackhole: { b: "#B48CFF", g1: "#F3EAFF", g2: "#B48CFF", g3: "#FF9A5C", on: 350 },
-  underwater:{ b: "#46E0E8", g1: "#E6FFFC", g2: "#46E0E8", g3: "#FFD27A", on: 650 },
-  worldtree: { b: "#7CD69A", g1: "#FFD1E4", g2: "#FF8FBF", g3: "#B8F2A0" },
-  bubbles:   { b: "#9FE8FF", g1: "#B4F0FF", g2: "#FFB3E6", g3: "#C9B3FF" },
+  fireworks: { b: "#FF5CD6", g1: "#FFD6F5", g2: "#FF5CD6", g3: "#5CE3FF", t: "#FF9DE8", on: 950 },
+  blackhole: { b: "#B48CFF", g1: "#F3EAFF", g2: "#B48CFF", g3: "#FF9A5C", t: "#D2BDFF", on: 350 },
+  underwater:{ b: "#46E0E8", g1: "#E6FFFC", g2: "#46E0E8", g3: "#8FD0FF", t: "#93F0F4", on: 650 },
+  worldtree: { b: "#7CD69A", g1: "#FFD1E4", g2: "#FF8FBF", g3: "#B8F2A0", t: "#FFB3D3" },
+  bubbles:   { b: "#9FE8FF", g1: "#B4F0FF", g2: "#FFB3E6", g3: "#C9B3FF", t: "#B4F0FF" },
   /* beam full at 40.5% of the saucer's 7s: the box lights as it lands */
-  ufo:       { b: "#6BFF8F", g1: "#EAFFEE", g2: "#6BFF8F", g3: "#B8FFF2", on: 2800, fast: true }
+  ufo:       { b: "#6BFF8F", g1: "#EAFFEE", g2: "#6BFF8F", g3: "#B8FFF2", t: "#9DFFB5", on: 2800, fast: true }
 };
+/* The box's colours as custom properties on `el` (the card, the effect's
+   layer, a tile): one place, so a new one reaches all three. */
+const HFX_TINT_VARS = [["--hfx-b", "b"], ["--hfx-g1", "g1"], ["--hfx-g2", "g2"], ["--hfx-g3", "g3"], ["--hfx-t", "t"]];
+function hfxTintVars(el, tint){
+  HFX_TINT_VARS.forEach(([k, f]) => { if(tint[f]) el.style.setProperty(k, tint[f]); });
+}
 function hfxMotionOff(){
   try{ if(theme.reduceMotion) return true; }catch(e){}
   return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
@@ -75467,7 +75511,7 @@ function hfxLitText(bx, c, o){
     "--band": band + "px", "--pw": c.p.w + "px", "--dl": o.dl, "--d": o.dur, "--lc": o.color, "--lg": o.glow });
   const t = hfxMk(win, "span", "hfx-lit-in");
   /* children, not textContent: the % is its own smaller span */
-  c.pct.childNodes.forEach(n => t.appendChild(n.cloneNode(true)));
+  hfxCloneNum(t, c.pct);
   t.style.width = c.p.w + "px"; t.style.height = c.p.h + "px"; t.style.top = pad + "px";
   t.style.fontFamily = cs.fontFamily; t.style.fontSize = cs.fontSize; t.style.fontWeight = cs.fontWeight;
   t.style.letterSpacing = cs.letterSpacing; t.style.lineHeight = cs.lineHeight;
@@ -77327,10 +77371,25 @@ function hfxTintNum(bx, c){
   if(!c.pct) return null;
   const cs = getComputedStyle(c.pct);
   const t = hfxMk(bx, "span", "hfx-tintnum", { left: c.p.x + "px", top: c.p.y + "px", width: c.p.w + "px", height: c.p.h + "px" });
-  t.textContent = c.pct.textContent;
+  /* CHILDREN, not textContent (build 317): "the number 100 is cutout at
+     the percentage part". textContent made the copy "100%" with a
+     full-size % - 195px of text in the real number's 163px box, so the
+     gradient, which only paints the box, stopped half-way through a %
+     that also stood over the real one's small raised sign. The clone is
+     the same markup as the number, so it is the same width. */
+  hfxCloneNum(t, c.pct);
   t.style.fontFamily = cs.fontFamily; t.style.fontSize = cs.fontSize; t.style.fontWeight = cs.fontWeight;
   t.style.letterSpacing = cs.letterSpacing; t.style.lineHeight = cs.lineHeight;
   return t;
+}
+/* The number's markup into a copy laid over it. The copy is given the
+   number's line-height in PIXELS (getComputedStyle), which its small %
+   would inherit as pixels too - a 64px line round a 28px glyph, which
+   set the raised % down level with the digits. So the % keeps its own. */
+function hfxCloneNum(t, pct){
+  pct.childNodes.forEach(n => t.appendChild(n.cloneNode(true)));
+  const real = pct.querySelector(".rs-pct-sign"), copy = t.querySelector(".rs-pct-sign");
+  if(real && copy) copy.style.lineHeight = getComputedStyle(real).lineHeight;
 }
 /* Fades a layer out over 0.6s and then removes it - for a scene going
    up over it, or the screen changing under it. Never a cut. */
@@ -77362,7 +77421,7 @@ function hfxApplyTint(id, opts, c){
   const tint = HFX_TINT[id];
   if(!tint || !opts.box) return null;
   const box = opts.box;
-  ["--hfx-b", "--hfx-g1", "--hfx-g2", "--hfx-g3"].forEach((k, i) => box.style.setProperty(k, [tint.b, tint.g1, tint.g2, tint.g3][i]));
+  hfxTintVars(box, tint);
   box.querySelectorAll(":scope > .hfx-keep").forEach(e => e.remove());
   const t = hfxMk(box, "i", "hfx-tint hfx-keep");
   t.setAttribute("aria-hidden", "true");
@@ -77397,7 +77456,7 @@ function playHundoFx(id, opts){
     bx.setAttribute("aria-hidden", "true");
   }
   if(tint){
-    if(scr) ["--hfx-b", "--hfx-g1", "--hfx-g2", "--hfx-g3"].forEach((k, i) => scr.style.setProperty(k, [tint.b, tint.g1, tint.g2, tint.g3][i]));
+    if(scr) hfxTintVars(scr, tint);
     if(opts.box) hfxApplyTint(id, opts, c);
   }
   const undo = fade => { c.anims.forEach(a => { try{ a.cancel(); }catch(e){} }); c.anims.length = 0; c.cleanup.forEach(f => { try{ f(fade); }catch(e){} }); c.cleanup.length = 0; };
@@ -77611,7 +77670,7 @@ function buildHundoFxTile(id){
   st.dataset.fx = id;
   const tint = HFX_TINT[id];
   if(tint){
-    ["--hfx-b", "--hfx-g1", "--hfx-g2", "--hfx-g3"].forEach((k, i) => st.style.setProperty(k, [tint.b, tint.g1, tint.g2, tint.g3][i]));
+    hfxTintVars(st, tint);
     st.classList.add("hfx-tinted");
   }
   st.insertAdjacentHTML("afterbegin", hundoFxPosterSVG(id));
