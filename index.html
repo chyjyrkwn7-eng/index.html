@@ -60647,6 +60647,20 @@ function charFlipAttach(el){
       play.style.left = snap(cx - cellCss / 2) + "px";
       play.style.top = snap(cy - cellCss / 2) + "px";
       play.style.width = play.style.height = cellCss + "px";
+      /* AN UNTRANSFORMED DRAWING IS PLACED BY ITS LAYOUT (build 317). The
+         tab bar's Profile icon was measured while the bar was still coming
+         back after a test, and the sheet landed 14px up and left of the
+         drawing - the tab showed a zoomed-in corner of the character,
+         reported as the Profile tab "looks broken". A drawing with no
+         transform that fills its box exactly is centred by CSS, which no
+         transition can catch half-way; the measured centre above stays
+         for a scaled one (the boards' .94), which is what it was written
+         for. (An SVG element has no offsetLeft to read instead.) */
+      if((!svgT || svgT === "none") && Math.abs(svg.clientWidth - par.clientWidth) < 1 && Math.abs(svg.clientHeight - par.clientHeight) < 1){
+        /* the drawing fills its box exactly, so its centre IS the box's */
+        play.style.left = play.style.top = "50%";
+        play.style.marginLeft = play.style.marginTop = (-cellCss / 2) + "px";
+      }
     } else {
     play.style.left = ((sr.left - pr.left) / S - par.clientLeft + inset) + "px";
     play.style.top = ((sr.top - pr.top) / S - par.clientTop + inset) + "px";
