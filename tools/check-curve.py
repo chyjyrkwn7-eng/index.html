@@ -582,24 +582,67 @@ def main():
                         rank: rankOf(store), rankOfCurve: rankOfStats(levelFromPoints(store.lifetime.points), 1, 0) };
             /* a reset starts under the wall like anybody new */
             store.levelFloor = 44; wipeLocalProgressAndSettings(); out.resetFloor = store.levelFloor;
-            /* the Profile card at a gate: the numbers run past the level,
-               and the Next gate section says what opens it */
+            /* THE PROFILE CARD AT A CAP (build 315): three blocks - where
+               you stand (rank, level, the XP bar and its numbers), the next
+               rank as tasks, the badge case - each one tap into its screen. */
+            const q = sel => (document.querySelector(sel) || {}).textContent || null;
+            /* a colour-mix() comes back as color(srgb 0-1 0-1 0-1), not 0-255 - see
+               CLAUDE.md's status bar note; both are read as 0-255 */
+            const rgb = el => { if(!el) return null; const c = getComputedStyle(el).color; const m = c.match(/[\\d.]+/g);
+              if(!m) return null; const v = m.slice(0, 3).map(Number); return /^color\\(/.test(c) ? v.map(x => Math.round(x * 255)) : v; };
+            const readProfile = () => {
+              const tasks = [...document.querySelectorAll('.pf-goal .pf-task')];
+              const order = ['.pf-standing', '.pf-goal', '.pf-case'].map(sel => document.querySelector('.profile-hero ' + sel));
+              return {
+                blocks: order.map(n => !!n),
+                inOrder: order.every(Boolean) && !!(order[0].compareDocumentPosition(order[1]) & 4) && !!(order[1].compareDocumentPosition(order[2]) & 4),
+                nested: document.querySelectorAll('.pf-standing button, .pf-goal button, .pf-case button').length,
+                study: /\bStudy\b/.test(q('.pf-goal') || ''),
+                level: q('.pf-standing .pf-level'), rank: q('.pf-standing .pf-rankname'),
+                nums: q('.pf-standing .pf-xpnums .xpnums'), over: !!document.querySelector('.pf-standing .xpnums.is-over'),
+                total: q('.pf-standing .pf-xp-total'), banked: !!document.querySelector('.pf-standing .pf-xpbar.is-banked'),
+                note: q('.pf-standing .pf-xp-note'), noteWall: !!document.querySelector('.pf-standing .pf-xp-note.is-wall'),
+                nextGate: !!document.querySelector('.next-gate'), max: !!document.querySelector('.level-max-tag'),
+                goal: q('.pf-goal .pf-goal-name'), sub: q('.pf-goal .pf-goal-sub'), goalText: q('.pf-goal'),
+                tasks: tasks.map(t => ({ label: (t.querySelector('.pf-task-label') || {}).textContent, met: t.classList.contains('is-met'),
+                  tick: (t.querySelector('.pf-check') || {}).textContent, note: (t.querySelector('.pf-task-note') || {}).textContent || null,
+                  val: (t.querySelector('.pf-task-val') || {}).textContent,
+                  now: rgb(t.querySelector('.pf-now')), need: rgb(t.querySelector('.pf-need')) })),
+                tiles: [...document.querySelectorAll('.pf-goal .pf-rw .pf-rw-lab')].map(n => n.textContent),
+                caseCount: q('.pf-case .pf-case-count') };
+            };
             setAcct(xpForLevel(31) + 600, perfFor(0), 0);
             showProfile('identity'); await new Promise(r => setTimeout(r, 400));
-            const q = sel => (document.querySelector(sel) || {}).textContent || null;
-            out.profile = { top: q('.profile-level-sidetop'), nums: q('.profile-level-sidetop .xpnums'),
-                            over: !!document.querySelector('.profile-level-sidetop .xpnums.is-over'),
-                            total: q('.profile-xp-line .profile-xp-total'),
-                            path: [...document.querySelectorAll('.profile-path > *')].map(n => n.classList.contains('profile-path-link') ? 'link' : n.classList.contains('profile-rankplate') ? 'rank' : n.classList.contains('profile-badgesect') ? 'badges' : n.classList.contains('profile-level') ? 'level' : '?'),
-                            lit: [...document.querySelectorAll('.profile-path-link')].map(n => n.style.getPropertyValue('--litn')),
-                            chal: q('.profile-xprow .level-chal-n'), nextGate: !!document.querySelector('.next-gate'),
-                            banked: !!document.querySelector('.profile-xpbar.is-banked'),
-                            max: !!document.querySelector('.level-max-tag') };
-            const cb = document.querySelector('.profile-xprow .level-chal');
-            if(cb){ cb.click(); await new Promise(r => setTimeout(r, 300));
-              out.profile.sheet = { name: q('.level-chal-sheet .unlock-card-name'), line: q('.level-chal-line'), cap: q('.level-chal-cap'),
-                big: q('.level-chal-big'), roadBtn: [...document.querySelectorAll('.level-chal-sheet button')].some(b => /road map/i.test(b.textContent)) };
-              document.querySelectorAll('.invite-overlay').forEach(n => n.remove()); }
+            out.profile = readProfile();
+            /* Madison's screenshot: level 49 at the four-badge wall, Gold
+               next. The level task asks for 40 and must not talk about 49,
+               or about "your 5th badge". */
+            setAcct(xpForLevel(52) + 200, perfFor(4), 0);
+            showProfile('identity'); await new Promise(r => setTimeout(r, 400));
+            out.profile49 = readProfile();
+            /* Every block opens its screen from wherever it is tapped: the
+               point is found by hit-testing, so anything laid over a block
+               (or a control inside it) would catch the tap instead. */
+            const tapAt = async (sel, inner) => {
+              showProfile('identity'); await new Promise(r => setTimeout(r, 300));
+              const box = document.querySelector('.profile-hero ' + sel);
+              const t = box && (box.querySelector(inner) || box);
+              if(!t) return { hit: false, screen: null };
+              t.scrollIntoView({ block: 'center', behavior: 'instant' });
+              const r = t.getBoundingClientRect();
+              const el = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+              const hit = !!(el && el.closest(sel) === box);
+              /* the point can land on an SVG, which has no click() - a real
+                 bubbling click is what a finger sends anyway */
+              if(hit) el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+              await new Promise(r => setTimeout(r, 300));
+              return { hit, screen: (document.querySelector('#stage > .panel') || {}).className || null,
+                       map: !!document.querySelector('.rankmap-stop'), badges: !!document.querySelector('.badges-tab'),
+                       title: (document.getElementById('count') || {}).textContent || null };
+            };
+            out.taps = { standing: await tapAt('.pf-standing', '.pf-xpbar'), goalTile: await tapAt('.pf-goal', '.pf-rw.is-flare'),
+                         goalTask: await tapAt('.pf-goal', '.pf-task .pf-bar'), caseStrip: await tapAt('.pf-case', '.badge-strip-cell:nth-child(9)') };
+            document.querySelectorAll('.invite-overlay').forEach(n => n.remove());
           } catch(e){ out.threw = String(e && e.stack || e); }
           return out; }""")
         if w.get("threw"):
@@ -660,23 +703,53 @@ def main():
             check("the rank is asked about the shown level", r["rank"] == "rookie" == r["rankOfCurve"], r)
             check("a reset clears the floor", w["resetFloor"] == 0, w["resetFloor"])
             pf = w["profile"]
-            # Build 314: this level's XP on top, the total under the bar.
-            check("Profile at a cap: this level's XP beside the level and marked over, the total under the bar, no Next gate box",
-                  pf["nums"] and re.match(r"^[0-9,]+ / [0-9,]+ XP$", pf["nums"]) and pf["top"] == pf["nums"]
-                  and re.match(r"^[0-9,]+ total XP$", pf["total"] or "")
-                  and pf["over"] and pf["banked"] and not pf["max"] and not pf["nextGate"], pf)
-            # Build 314: "tying all 3 of these together" - one path, lit by
-            # how far each challenge has come (no badges yet: the badge
-            # stretch dark; level 29 against Bronze's 21: the level stretch lit).
-            check("Profile's rank, badges and level are one path, lit by the next rank's challenges",
-                  pf["path"] == ["rank", "link", "badges", "link", "level"] and pf["lit"] == ["0", "1"], pf)
-            sh = pf.get("sheet") or {}
-            check("the gold badge sits beside the bar with the next rank's badge count, and opens only that (no road map button)",
-                  pf["chal"] == "0/1" and sh.get("name") == "Earn 1 badge" and (sh.get("big") or "").replace(" ", "") == "0/1"
-                  and not sh.get("roadBtn"), pf)
-            check("and say they rank you up, and what your level does meanwhile - no level ranges, no saved count",
-                  sh.get("line") == "Earn 1 badge to rank up to Bronze." and "keeps counting" in (sh.get("cap") or "")
-                  and "saved" not in (sh.get("cap") or "") and "stays at" not in (sh.get("cap") or ""), sh)
+            grey = lambda c: c is not None and max(c) - min(c) <= 14
+            blue = lambda c: c is not None and c[2] - c[0] >= 80
+            gold = lambda c: c is not None and c[0] - c[2] >= 80
+            # Build 315: Madison picked option A - standing, next rank, case.
+            check("Profile's card is three blocks in order: where you stand, the next rank, the badge case - nothing tappable nested in them, no Study button",
+                  pf["blocks"] == [True, True, True] and pf["inOrder"] and pf["nested"] == 0 and not pf["study"], pf)
+            # "How do we still get that nice xp stuff where it shows how much
+            # over you are, how much till the next level ... we wouldn't need
+            # that total xp there because it'd be with all the xp stuff"
+            check("Profile at a cap: this level's XP marked over, the total beside it, the bar banked, and no Next gate box",
+                  pf["nums"] and re.match(r"^[0-9,]+ / [0-9,]+ XP$", pf["nums"]) and pf["over"]
+                  and re.match(r"^[0-9,]+ XP total$", pf["total"] or "") and pf["banked"]
+                  and not pf["max"] and not pf["nextGate"] and pf["level"] == "Level 29", pf)
+            # "I don't like how it means that 5th badge part": a count, not an
+            # ordinal, and the XP is said to be kept.
+            check("...and the line under the bar says how many badges open the next levels, as a count, not an ordinal",
+                  pf["noteWall"] and pf["note"] == "Earn 1 more badge to keep leveling up. Your XP is saved."
+                  and not re.search(r"\b\d+(st|nd|rd|th)\b", pf["note"] or ""), pf["note"])
+            t = pf["tasks"]
+            check("the next rank is Bronze, 1 of 2 done, with what is left listed first",
+                  pf["goal"] == "Bronze" and pf["sub"] == "1 of 2 done" and len(t) == 2
+                  and t[0]["label"] == "Earn 1 badge" and not t[0]["met"] and t[1]["label"] == "Reach level 21" and t[1]["met"], pf)
+            # "the goal number and moving level number should swap colors,
+            # HOWEVER, once you do it ... that's when it would also turn blue"
+            check("an unmet task's goal is coloured and its count grey; a met one is coloured on both sides, with a tick",
+                  len(t) == 2 and grey(t[0]["now"]) and gold(t[0]["need"]) and t[0]["tick"] == ""
+                  and blue(t[1]["now"]) and t[1]["now"] == t[1]["need"] and t[1]["tick"] == "✓", t)
+            check("what Bronze unlocks is shown as tiles: its theme and its flare",
+                  pf["tiles"][:2] == ["Theme", "Flare"], pf["tiles"])
+            p49 = w["profile49"]
+            t49 = p49["tasks"]
+            # "talks about you being level 49 but it's asking for level 40"
+            check("at level 49 behind the four-badge wall, Gold's level task reads 40 / 40, done, and says nothing about 49",
+                  p49["level"] == "Level 49" and p49["goal"] == "Gold" and len(t49) == 2
+                  and t49[1]["label"] == "Reach level 40" and t49[1]["met"] and (t49[1]["val"] or "").replace(" ", "") == "40/40"
+                  and t49[1]["note"] is None and "49" not in (p49["goalText"] or "")
+                  and not re.search(r"\b\d+(st|nd|rd|th)\b", p49["goalText"] or ""), p49)
+            check("...and the line under the bar says one more badge opens the next levels",
+                  p49["note"] == "Earn 1 more badge to keep leveling up. Your XP is saved.", p49["note"])
+            tp = w["taps"]
+            check("tapping where you stand opens the climb", tp["standing"]["hit"] and tp["standing"]["map"], tp["standing"])
+            # "assuming you click anywhere in that box, it opens up the rank road map"
+            check("tapping the next rank anywhere - a reward tile or a task's bar - opens the climb",
+                  tp["goalTile"]["hit"] and tp["goalTile"]["map"] and tp["goalTask"]["hit"] and tp["goalTask"]["map"], tp)
+            # "ensure if you click anywhere on that, it opens up the larger one"
+            check("tapping any badge in the strip opens the badge case",
+                  tp["caseStrip"]["hit"] and tp["caseStrip"]["badges"] and not tp["caseStrip"]["map"], tp["caseStrip"])
 
         print("\n9. firestore-admin.py audits with the page's own numbers")
         import importlib.util

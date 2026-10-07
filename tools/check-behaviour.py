@@ -2375,15 +2375,21 @@ def check_b235(br):
       const T = async (k, f) => { try{ out[k] = await f(); }catch(e){ out[k] = 'THREW ' + e.message; } };
       const wait = ms => new Promise(r => setTimeout(r, ms));
       // The Profile card: "level" under its number, like "badges".
+      /* the fixture has no badge, so no rank and an empty bubble - give
+         it Bronze (one badge, level 21+) so there is an emblem to centre */
+      { const u0 = topicsIn(QUESTIONS)[0]; store.unitPerfects[u0] = badgeThresholdFor(u0);
+        store.lifetime.points = Math.max(store.lifetime.points, xpForLevel(25)); }
       showProfile('profile'); await wait(700);
-      /* Build 282: the level is the Rank tab's ring with its number in
-         the middle and "Level" in the box beside it - so: the number is
-         centred in its ring, and the label is the box's, not the ring's. */
-      await T('plate', () => { const f = document.querySelector('.profile-level-num.statring');
-        const v = f.querySelector('.statring-num'); const lab = document.querySelector('.profile-level .rankhero-gaugelab');
+      /* Build 315: the level ring is gone (build 282 put the number in
+         it). The card now leads with the rank's flare in its glass
+         bubble, the level beside it - so: the emblem is centred in its
+         bubble, and the level sits beside the bubble, not inside it. */
+      await T('plate', () => { const f = document.querySelector('.pf-standing .flare-solo');
+        const v = f && f.querySelector('svg.cosmic-rank-emblem'); const lab = document.querySelector('.pf-standing .pf-level');
+        if(!f || !v) return 'no bubble or no emblem';
         const a = f.getBoundingClientRect(), b = v.getBoundingClientRect();
         const off = Math.round(Math.max(Math.abs((a.left + a.width / 2) - (b.left + b.width / 2)), Math.abs((a.top + a.height / 2) - (b.top + b.height / 2))));
-        return lab && lab.getBoundingClientRect().left >= a.right ? off : 'label not beside the ring'; });
+        return lab && lab.getBoundingClientRect().left >= a.right ? off : 'level not beside the bubble'; });
       await T('heroLive', () => document.querySelector('.profile-hero-avatar').classList.contains('char-live'));
       // An existing account on Gold, opening this build for the first
       // time, then winning a week off-screen.
@@ -2454,7 +2460,7 @@ def check_b235(br):
         const v = getComputedStyle(document.documentElement).getPropertyValue('--theme-c3').trim();
         document.documentElement.dataset.accent = theme.accent || 'ink'; return v; });
       return out; }""")
-    check("the level number sits centred in its ring on the Profile card, \"Level\" beside it (build 282)",
+    check("the rank's flare sits centred in its bubble on the Profile card, the level beside it (build 315; the level ring before it)",
           isinstance(r["plate"], int) and r["plate"] <= 2, r["plate"])
     check("your own character is alive on the Profile card", r["heroLive"] is True, r["heroLive"])
     sd = r["seed"] if isinstance(r["seed"], dict) else {}
@@ -2740,20 +2746,27 @@ def check_b237(br):
       const wait = ms => new Promise(r => setTimeout(r, ms));
       const u = topicsIn(QUESTIONS); u.slice(2, 8).forEach(n => store.unitPerfects[n] = 999); levelOf = () => 40;
       showProfile('profile'); await wait(2000);
-      const p = document.querySelector('.profile-rankplate');
+      /* Build 315: the plate became the standing block - the same idea
+         (the rank, large, across the card, one button), now leading with
+         the rank's lit flare bubble. */
+      const p = document.querySelector('.pf-standing');
       if(!p) return null;
-      const fill = p.querySelector('.profile-rankplate-fill');
-      return { word: (p.querySelector('.profile-rankword') || {}).textContent,
-               next: (p.querySelector('.profile-rankplate-next') || {}).textContent,
-               fill: fill ? Math.round(fill.getBoundingClientRect().width) : -1,
+      const bub = p.querySelector('.flare-solo');
+      return { word: (p.querySelector('.pf-rankname') || {}).textContent,
+               rankBar: !!p.querySelector('.profile-rankplate-fill, .profile-rankplate-next, .pf-bar'),
+               xpBar: !!p.querySelector('.pf-xpbar .xpbar-fill'),
                w: Math.round(p.getBoundingClientRect().width),
-               coin: Math.round((p.querySelector('.profile-rankcoin') || { getBoundingClientRect: () => ({ width: 0 }) }).getBoundingClientRect().width),
+               coin: bub ? Math.round(bub.getBoundingClientRect().width) : 0,
+               lit: !!(bub && bub.classList.contains('cosmic-badge-lit')),
                button: p.tagName }; }""")
-    check("the rank is a plate across the card, not a pill", isinstance(r, dict) and r.get("w", 0) > 300 and r.get("coin", 0) >= 50 and r.get("button") == "BUTTON", r)
+    check("the rank leads the card, across it, in its lit flare bubble, as one button",
+          isinstance(r, dict) and r.get("w", 0) > 300 and r.get("coin", 0) >= 50 and r.get("lit") and r.get("button") == "BUTTON", r)
     # REVISED IN 267: "the current rank in the profile box has a progress
-    # bar, let's remove that" - the plate names the rank and nothing else.
-    check("it names the rank, with no bar under it", isinstance(r, dict) and r.get("word") == "Gold"
-          and not r.get("next") and r.get("fill", 0) == -1, r)
+    # bar, let's remove that". REVISED IN 315: the bar under the rank is
+    # the XP bar, asked back ("how do we still get that nice xp stuff");
+    # the climb to the next rank is the Next rank card's, never here.
+    check("it names the rank; the bar under it is the XP bar, not a bar to the next rank", isinstance(r, dict) and r.get("word") == "Gold"
+          and r.get("xpBar") and not r.get("rankBar"), r)
     ctx.close()
 
 
@@ -2910,12 +2923,15 @@ def check_b241(br):
       out.coin = a.childNodes.length;
       /* 3. profile: one level plate, a badges section, a one-colour rank bar */
       showProfile('profile'); await wait(900);
-      /* build 282: the plate is the Rank tab's ring, plain */
-      out.plates = document.querySelectorAll('.profile-level .statring').length;
-      /* Build 243: the badge row is the badges themselves, no meter. */
-      out.badgeCells = document.querySelectorAll('.profile-badgesect .badge-meter-seg').length;
-      out.badgeEarned = document.querySelectorAll('.profile-badgesect .profile-badgestack-token').length;
-      const fill = document.querySelector('.profile-rankplate-fill');
+      /* build 315: the level is said once, in the standing block */
+      out.plates = document.querySelectorAll('.profile-hero .pf-level').length;
+      /* Build 243: the badge row is the badges themselves, no meter.
+         Build 315: as the badge case strip, every slot, earned or not. */
+      out.badgeCells = document.querySelectorAll('.profile-hero .badge-meter-seg').length;
+      out.caseCells = document.querySelectorAll('.profile-hero .pf-case .badge-strip-cell').length;
+      out.caseEarned = document.querySelectorAll('.profile-hero .pf-case .badge-strip-cell.is-earned').length;
+      out.units = units.length;
+      const fill = document.querySelector('.pf-standing .pf-bar i, .profile-rankplate-fill');
       out.fillBg = fill ? getComputedStyle(fill).backgroundImage : '';
       out.nextColor = RANK_COLOR.vanguard;
       /* 4. a banner pop-up is centred on the screen */
@@ -2932,9 +2948,12 @@ def check_b241(br):
           and r.get("lens") not in (None, "none", "normal"), r)
     check("no rank coin is hung on any character", isinstance(r, dict) and r.get("coin") == 0, r)
     # REVERSED IN 258: "I don't want to see my badge icons there at all."
-    # The section stays; the earned badges drawn in it do not.
-    check("Profile: one level plate, and badges are their own section, with no badge icons in it",
-          isinstance(r, dict) and r.get("plates") == 1 and r.get("badgeCells") == 0 and r.get("badgeEarned") == 0, r)
+    # REVERSED AGAIN IN 315: Madison picked the Profile mock-up with the
+    # badge case as a strip ("the mini badge case is nice"): every slot,
+    # the earned ones filled - and still no meter.
+    check("Profile: the level said once, and the badges their own block - the case as a strip, no meter",
+          isinstance(r, dict) and r.get("plates") == 1 and r.get("badgeCells") == 0
+          and r.get("caseCells") == r.get("units") and r.get("caseEarned") == 6, r)
     def hexrgb(h):
         h = h.lstrip("#"); return "rgb(%d, %d, %d)" % (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16))
     # REVISED IN 267: there is no rank bar on the plate any more.
@@ -3083,15 +3102,19 @@ def check_b242(br):
       out.codeBoxBg = getComputedStyle(document.querySelector('.friend-mycode')).backgroundColor;
       /* 3. Profile: a meter and the closest badge, not the whole set */
       showProfile('profile'); await wait(900);
-      out.profile = { strip: document.querySelectorAll('.profile-badgesect .badge-strip-cell').length,
-        segs: document.querySelectorAll('.profile-badgesect .badge-meter-seg').length,
-        stack: document.querySelectorAll('.profile-badgesect .profile-badgestack-token').length };
-      /* 4. the rank box: a full-width bar, the next rank as a chip, what is left */
-      const bar = document.querySelector('.profile-rankplate-bar'), col = document.querySelector('.profile-rankplate-text');
-      out.rankBox = { bar: !!bar,
-        chip: !!document.querySelector('.profile-rankplate-next .profile-rankplate-nextmark svg'),
-        need: !!document.querySelector('.profile-rankplate-need'),
-        label: (document.querySelector('.profile-rankplate-next') || {}).textContent || '' };
+      out.profile = { strip: document.querySelectorAll('.profile-hero .pf-case .badge-strip-cell').length,
+        segs: document.querySelectorAll('.profile-hero .badge-meter-seg').length,
+        count: (document.querySelector('.profile-hero .pf-case .pf-case-count') || {}).textContent || '',
+        units: topicsIn(QUESTIONS).length };
+      /* 4. the rank box: a full-width bar, the next rank as a chip, what is left.
+         Build 315: the rank box is the standing block, and the next rank
+         and what is left are the Next rank card's - so none of it here. */
+      const sb = document.querySelector('.pf-standing') || document.createElement('i');
+      out.rankBox = { bar: !!sb.querySelector('.pf-bar, .profile-rankplate-bar'),
+        chip: !!sb.querySelector('.pf-goal-emb, .profile-rankplate-nextmark'),
+        need: !!sb.querySelector('.pf-task, .profile-rankplate-need'),
+        label: (sb.querySelector('.pf-goal-name, .profile-rankplate-next') || {}).textContent || '',
+        standing: !!document.querySelector('.pf-standing') };
       /* 5. the Badges tab: a meter at the top, and a case with a lid and clasps */
       showProfile('badges'); await wait(900);
       out.badgesTab = { strip: document.querySelectorAll('.badges-head .badge-strip-cell').length,
@@ -3157,14 +3180,17 @@ def check_b242(br):
     # thing. There doesn't need to be a progress bar like that." A count
     # and the badges you hold, and no meter.
     # AND AGAIN IN 258: no badge icons on the card at all.
-    check("Profile shows the count with no meter, no set and no badge icons",
-          p.get("strip") == 0 and p.get("segs") == 0 and p.get("stack") == 0, p)
+    # AND BACK IN 315, by choice: the Profile mock-up Madison picked has
+    # the badge case as a strip - "the mini badge case is nice". Still no
+    # meter, and the count beside it.
+    check("Profile shows the count and the badge case as a strip, with no meter",
+          p.get("strip") == p.get("units") and p.get("segs") == 0 and re.match(r"^\d+ of \d+", p.get("count", "")), p)
     rb = r.get("rankBox") or {}
     # REVERSED IN 243: "the profile box got worse somehow ... it was so
     # good before" - back to the 241 plate: one bar and "Gold · 35%".
     # REVISED IN 267: the bar came off the plate ("no need for that").
-    check("the rank plate carries no bar, no chip and no to-do line",
-          not rb.get("bar") and not rb.get("chip") and not rb.get("need") and rb.get("label", "") == "", rb)
+    check("the rank block carries no bar to the next rank, no chip and no to-do line (those are the Next rank card's)",
+          rb.get("standing") and not rb.get("bar") and not rb.get("chip") and not rb.get("need") and rb.get("label", "") == "", rb)
     bt = r.get("badgesTab") or {}
     # REVERSED IN 243: the meter was "terrible, all I wanted was a better
     # way to show it than the 0/16" - a medal with the number in it.
@@ -3450,12 +3476,15 @@ def check_b244(br):
          measured on an account that holds a rank */
       const rk0 = rankOf; rankOf = () => 'ranger';
       showProfile('profile'); await wait(900); document.getAnimations().forEach(a => a.pause());
-      const coin = document.querySelector('.profile-rankplate .profile-rankcoin'), held = 'ranger';
-      out.coin = coin && coin.querySelector('svg') ? { fitted: coin.querySelector('svg').classList.contains('is-fitted'), off: off(coin, coin.querySelector('svg'), held) } : null;
+      /* Build 315: the coin is the standing block's flare bubble - Home's
+         own bubble, so it is held to Home's centring */
+      const coin = document.querySelector('.pf-standing .flare-solo'), held = 'ranger';
+      const csvg = coin && coin.querySelector('svg.cosmic-rank-emblem');
+      out.coin = csvg ? { bubble: coin.classList.contains('cosmic-badge-rank'), tier: coin.dataset.rankTier, off: off(coin, csvg, held) } : null;
       rankOf = rk0;
       showProfile('profile'); await wait(500);
-      const cu = document.querySelector('.profile-rankplate .profile-rankcoin');
-      out.unrankedEmpty = !rankOf(store) ? (!!cu && !cu.querySelector('svg') && !document.querySelector('.profile-rankplate-wm svg')) : true;
+      const cu = document.querySelector('.pf-standing .flare-solo');
+      out.unrankedEmpty = !rankOf(store) ? (!!cu && cu.classList.contains('is-empty') && !cu.querySelector('svg') && !cu.dataset.rankTier) : true;
       } catch(e){ out.threw = String(e) + ' ' + (e.stack || '').split('\\n')[1]; }
       return out; }""")
     check("the ladder is Bronze, Silver, Gold, Platinum, Sapphire, Amethyst, Supernova - ranks and themes alike",
@@ -3475,8 +3504,9 @@ def check_b244(br):
     # boxes on purpose, and no further), not to show the change.
     check("every Home bubble's emblem is centred in it (within 1.5px)", len(home) == 7 and max(home) <= 1.5, home)
     coin = r.get("coin") or {}
-    check("the Profile plate's coin is cut to fit and centred (within 1px)", coin.get("fitted") is True and coin.get("off", 9) <= 1, coin)
-    check("an unranked plate shows no rank's emblem, in the coin or behind it (268)", r.get("unrankedEmpty") is True, r.get("unrankedEmpty"))
+    check("the Profile card's rank bubble is Home's, the held rank's emblem centred in it (within 1.5px, as on Home)",
+          coin.get("bubble") is True and coin.get("tier") == "ranger" and coin.get("off", 9) <= 1.5, coin)
+    check("an unranked card's bubble is empty glass - no rank's emblem in it (268)", r.get("unrankedEmpty") is True, r.get("unrankedEmpty"))
     ctx.close()
 
 
@@ -4652,15 +4682,22 @@ def check_b246(br):
     check("a selected character's glow is not on the masked drawing (which cuts it square), but on its button",
           g["masked"] and not g["drawingGlow"] and g["buttonGlow"], g)
     r = pg.evaluate("""()=>{ const H = 3600000, out = {}; store.legacyChars = [];
-      const set = (st, h) => { store.bestTestStreak = st; /* build 267: one test */ store.studyLog = { '2026-09-01': h * H }; };
+      /* Build 314 caps a day of the study log at 6 hours up to the leak
+         fix (normalizeStudyLog, run on every load), so 30 hours on one
+         day loads as 6 and the Hacker re-locks. The hours go in at 5 a
+         day, as somebody would really have studied them. */
+      const spread = h => { const o = {}; let left = h, d = 1;
+        while(left > 1e-9){ const t = Math.min(5, left); o['2026-09-' + String(d).padStart(2, '0')] = t * H; left -= t; d++; }
+        return o; };
+      const set = (st, h) => { store.bestTestStreak = st; /* build 267: one test */ store.studyLog = spread(h); };
       const N = CHARACTER_FEATS.streak100.need;
       set(N - 1, 24.9); out.under = [isLockedCharacter('marksman'), isLockedCharacter('hacker')];
       set(N, 25); out.at = [isLockedCharacter('marksman'), isLockedCharacter('hacker')];
-      const d = JSON.parse(JSON.stringify(store)); d.avatarChar = 'hacker'; d.studyLog = { '2026-09-01': 22 * H };
+      const d = JSON.parse(JSON.stringify(store)); d.avatarChar = 'hacker'; d.studyLog = spread(22);
       d.bestTestStreak = 120; d.pendingCharUnlocks = ['marksman', 'clown'];
       applyLoadedData(d); out.revoked = [store.avatarChar, store.pendingCharUnlocks.slice()];
       const e = JSON.parse(JSON.stringify(store)); e.avatarChar = 'marksman'; e.bestTestStreak = N + 10;
-      e.studyLog = { '2026-09-01': 30 * H }; e.pendingCharUnlocks = ['hacker'];
+      e.studyLog = spread(30); e.pendingCharUnlocks = ['hacker'];
       applyLoadedData(e); out.kept = [store.avatarChar, store.pendingCharUnlocks.slice()];
       return out; }""")
     check("the Marksman needs its bar in a row and the Hacker 25 hours", r["under"] == [True, True] and r["at"] == [False, False], r)
@@ -4678,7 +4715,7 @@ def check_b246(br):
         out[id] = !!now && now !== before && !now.classList.contains('screen-home-actual');
       }
       /* build 284: no Progress tab - the Profile card's rank row opens it */
-      out.ranksScreen = (showProfile(), await wait(700), (document.querySelector('.profile-rankplate') || document.querySelector('[class*=rankplate]') || {click(){}}).click(), await wait(900),
+      out.ranksScreen = (showProfile(), await wait(700), (document.querySelector('.pf-standing') || {click(){}}).click(), await wait(900),
                          !!document.querySelector('.screen-ranks'));
       out.hiddenArt = ['umbra', 'singularity'].map(id => !!characterDetail(id).hideArt);
       out.animated = ['adept_rank', 'elite_rank', 'titan_rank'].map(id => !buildBannerArt(id).classList.contains('is-still'));
@@ -4686,7 +4723,7 @@ def check_b246(br):
       out.needs = BANNERS.filter(b => !b.secret).map(b => { const o = document.querySelector('.banner-opt[data-banner="' + b.id + '"] .banner-opt-need');
         return !!o && o.textContent === b.label; });
       return out; }""")
-    check("every tab on the bar opens its screen when TAPPED, and the Profile card's rank row opens the climb",
+    check("every tab on the bar opens its screen when TAPPED, and the Profile card's rank block opens the climb",
           all(t[k] for k in ("bottomtab-rewards", "bottomtab-profile", "bottomtab-settings")) and t["ranksScreen"], t)
     check("Umbra and Singularity are drawn in their pop-ups, not blacked out", t["hiddenArt"] == [False, False], t["hiddenArt"])
     check("all three rank banners animate", t["animated"] == [True, True, True], t["animated"])
@@ -4946,17 +4983,20 @@ def check_b258(br):
       /* build 267: the plate lost its bar and label; the exact figure is
          still the one the Rank tab and the unlock cards read. */
       out.label = RANK_DISPLAY_NAME[rankStepProgress().next] + ' · ' + rankStepPctLabel(rankStepProgress().pct);
-      out.plateBar = !!document.querySelector('.profile-rankplate-bar, .profile-rankplate-next');
-      const sect = document.querySelector('.profile-badgesect');
-      /* the ring is the count's own drawing (282); badge ART is anything else */
-      out.badgeSvgs = sect ? sect.querySelectorAll('svg:not(.rankhero-ring)').length : -1;
+      out.plateBar = !!document.querySelector('.pf-standing .pf-bar, .profile-rankplate-bar, .profile-rankplate-next');
+      /* Build 315: the badges are the badge case - its strip IS badge art,
+         by choice; what it must not grow back is a ring, or a unit and
+         its hundos (those belong to the Next rank card's badge task) */
+      const sect = document.querySelector('.pf-case');
+      out.badgeSvgs = sect ? sect.querySelectorAll('.badge-strip-cell.is-earned').length : -1;
       out.badgeText = sect ? sect.textContent : '';
-      out.badgeMedal = sect ? sect.querySelectorAll('.statring').length : -1;
+      out.badgeMedal = sect ? sect.querySelectorAll('.statring, .rankhero-ring').length : -1;
       const fill = document.querySelector('.profile-hero .profile-xpbar .xpbar-fill');
       out.fillBg = fill ? getComputedStyle(fill).backgroundImage : '';
-      /* build 282: the level is the Rank tab's blue ring; its colour is the stroke */
-      const lv = document.querySelector('.profile-hero .profile-level-num.statring .rankhero-ringtrack');
-      out.levelBg = lv ? getComputedStyle(lv).stroke : '';
+      /* build 282: the level is the Rank tab's blue ring; its colour is the stroke.
+         Build 315: the ring is gone; the level is said in the bar's blue */
+      const lv = document.querySelector('.profile-hero .pf-standing .pf-level');
+      out.levelBg = lv ? getComputedStyle(lv).color : '';
       out.coverMark = document.querySelectorAll('.profile-cover .profile-cover-mark').length;
       const cov = document.querySelector('.profile-cover:not(.has-banner)');
       out.coverHasTheme = !!cov && /color-mix|rgb/.test(getComputedStyle(cov).backgroundImage) && !cov.style.getPropertyValue('--card-accent');
@@ -5037,9 +5077,12 @@ def check_b258(br):
     # REVISED IN 262: "I don't like how it says what I'm closest to" - the
     # medal and a count, no unit and no hundos.
     # AND IN 282: the medal is the Rank tab's gold ring with the count in it.
-    check("no badge icons on the Profile card - the count in its ring, not the closest unit",
-          r.get("badgeSvgs") == 0 and r.get("badgeMedal") == 1 and "hundo" not in r.get("badgeText", "")
-          and "of 16" in r.get("badgeText", ""), r)
+    # AND IN 315: the count beside the badge case's strip - which is badge
+    # art, by choice ("the mini badge case is nice") - with no ring; the
+    # closest unit is the Next rank card's badge task, not the case's.
+    check("the badge case says its count over the strip of earned badges - no ring, no unit, no hundos",
+          r.get("badgeSvgs", 0) >= 1 and r.get("badgeMedal") == 0 and "hundo" not in r.get("badgeText", "")
+          and "of 16" in r.get("badgeText", "") and not r.get("plateBar"), r)
     # REVERSED IN 259: "No no no, the profile change is bad there. I don't
     # like the bronze all the way through." The level is blue again and
     # the default cover is the theme, with no rank on it.
@@ -5241,8 +5284,9 @@ def check_b267(br):
                  sheen: (()=>{ const a = getComputedStyle(f, '::after');
                    return a.content === 'none' || a.content === 'normal' ? 'none'
                      : (/gradient/.test(a.backgroundImage) || a.animationName === 'xp-sheen') ? 'sheen' : 'none'; })() };
-      out.plate = { bar: !!document.querySelector('.profile-rankplate .profile-rankplate-bar, .profile-rankplate .profile-rankplate-next') };
-      const lv = document.querySelector('.profile-level-num');
+      /* build 315: the plate is the standing block, the level a line in it */
+      out.plate = { bar: !!document.querySelector('.pf-standing .pf-bar, .profile-rankplate .profile-rankplate-bar, .profile-rankplate .profile-rankplate-next') };
+      const lv = document.querySelector('.pf-standing .pf-level');
       out.level = { bg: getComputedStyle(lv).backgroundColor, border: getComputedStyle(lv).borderTopWidth,
                     round: Math.abs(lv.getBoundingClientRect().width - lv.getBoundingClientRect().height) < 1 && parseFloat(getComputedStyle(lv).borderTopLeftRadius) >= lv.getBoundingClientRect().width / 2 - 1 };
       cfg.mode = 'drill'; cfg.units = [topicsIn(QUESTIONS)[0]]; showSetup(); await wait(600);
@@ -5450,7 +5494,8 @@ def check_b270(br):
       /* the rank plate */
       document.querySelectorAll('.unitdetail-scrim, .unitdetail').forEach(e => e.remove());
       showProfile('profile'); await wait(900);
-      const plate = document.querySelector('.profile-rankplate');
+      /* build 315: the plate is the standing block */
+      const plate = document.querySelector('.pf-standing');
       out.plateAfter = plate ? getComputedStyle(plate, '::after').content : 'missing';
       } catch(e){ out.threw = String(e && e.stack || e); }
       return out; }""")
@@ -5468,7 +5513,7 @@ def check_b270(br):
     check("Back from a list puts the card back to its own size", abs((r.get("h1") or 0) - (r.get("h0") or -99)) <= 4, (r.get("h0"), r.get("h1")))
     check("a back link's chevron and word share a centre line", r.get("backOff", 99) <= 1, r.get("backOff"))
     check("no unit badge's drawing leaves its box", r.get("clipped") == [], r.get("clipped"))
-    check("the Profile rank plate has no white flash", r.get("plateAfter") in ("none", "normal"), r.get("plateAfter"))
+    check("the Profile rank block has no white flash", r.get("plateAfter") in ("none", "normal"), r.get("plateAfter"))
     check("no exception", not r.get("threw"), r.get("threw"))
     ctx.close()
 
@@ -6081,13 +6126,13 @@ def check_b282(br):
       out.headWant = Math.round((1 - badgesEarnedList().length / topicsIn(QUESTIONS).length) * 1000) / 10;
       out.headMedal = document.querySelectorAll('.badges-head .badges-medal').length;
       showProfile(); await wait(1600);
-      const lv = document.querySelector('.profile-level.rankhero-gauge'), bd = document.querySelector('.profile-badgesect.rankhero-gauge');
-      out.profLevelRing = ringOf(lv); out.profBadgeRing = ringOf(bd);
-      const rings = [...document.querySelectorAll('.profile-level .rankhero-ringface, .profile-badgesect .rankhero-ringface')];
-      out.profRings = rings.length;
-      out.profArcs = rings.reduce((n, f) => n + f.querySelectorAll('.rankhero-ringarc').length, 0);
-      out.profRingAnims = rings.reduce((n, f) => n + f.getAnimations({ subtree:true }).length, 0)
-        + (document.querySelector('.profile-level-num') ? document.querySelector('.profile-level-num').getAnimations().length : 0);
+      /* Build 315: the two rings are gone - the level and the badges are
+         the Next rank card's two tasks now, in the same two colours */
+      const tasks = [...document.querySelectorAll('.pf-goal .pf-task')];
+      const tcOf = re => { const t = tasks.find(x => re.test((x.querySelector('.pf-task-label') || {}).textContent || ''));
+        return t ? t.style.getPropertyValue('--tc').trim() : null; };
+      out.profLevelRing = tcOf(/^Reach level/); out.profBadgeRing = tcOf(/^Earn /);
+      out.profRings = tasks.length;
       /* every HTML-element animation running on Profile: transform/opacity only */
       const paintProps = [];
       document.getAnimations().forEach(a => { const t = a.effect && a.effect.target; if(!t || a.playState !== 'running') return;
@@ -6125,15 +6170,13 @@ def check_b282(br):
           and r.get("headMedal") == 0, r)
     check("and its arc stands at the share of the badges held",
           r.get("headArc") is not None and abs(r["headArc"] - r["headWant"]) < 1.5, (r.get("headArc"), r.get("headWant")))
-    check("the Profile card's two rings take the Rank tab's level and badge colours",
-          r.get("profRings") == 2 and r.get("profLevelRing") == r.get("rankLevelRing") and r.get("profBadgeRing") == r.get("rankBadgeRing")
-          and r.get("rankLevelRing") != r.get("rankBadgeRing"), r)
-    # REVISED IN 311: the badge circle became a progress ring on request
-    # ("should the badge circle be a progress bar similar to the badge one
-    # in the badge tab"), drawn at its value - so exactly ONE arc, still
-    # with nothing on either ring moving.
-    check("with one progress arc (badges, drawn still) and nothing on them moving",
-          r.get("profArcs") == 1 and r.get("profRingAnims") == 0, (r.get("profArcs"), r.get("profRingAnims")))
+    # REVISED IN 315: the rings came off the Profile card with the rebuild
+    # (311's "progress ring" check went with them); the level and the
+    # badges are the Next rank card's two tasks, and they keep the colours.
+    up = lambda v: (v or "").strip().upper()
+    check("the Next rank card's level and badge tasks take the Rank tab's level and badge colours",
+          r.get("profRings") == 2 and up(r.get("profLevelRing")) == up(r.get("rankLevelRing")) and up(r.get("profBadgeRing")) == up(r.get("rankBadgeRing"))
+          and r.get("rankLevelRing") and up(r.get("rankLevelRing")) != up(r.get("rankBadgeRing")), r)
     check("nothing running on Profile repaints per frame (transform and opacity only)",
           r.get("profPaint") == [], r.get("profPaint"))
     kf = r.get("kf") or {}
@@ -6243,7 +6286,8 @@ def check_b284(br):
       /* 2. the bar and the Profile card */
       out.tabs = [...document.querySelectorAll('#bottomtabs .bottomtab:not(.bottomtab-start)')].map(t => t.dataset.dest);
       showProfile(); await wait(900);
-      const plate = document.querySelector('.profile-rankplate');
+      /* build 315: the rank row is the standing block */
+      const plate = document.querySelector('.pf-standing');
       if(plate) plate.click(); await wait(900);
       out.rankOpens = !!document.querySelector('.screen-ranks .rankmap-stop');
       out.profileLit = !!document.querySelector('#bottomtab-profile.active');
@@ -6251,7 +6295,8 @@ def check_b284(br):
       const back = document.querySelector('.screen-ranks .back-link');
       if(back) back.click(); await wait(900);
       out.backToProfile = !!document.querySelector('.screen-profile');
-      const badgeRow = document.querySelector('.screen-profile .profile-badgesect');
+      /* build 315: the badge row is the badge case */
+      const badgeRow = document.querySelector('.screen-profile .pf-case');
       if(badgeRow) badgeRow.click(); await wait(1200);
       out.badgesOpen = !!document.querySelector('.screen-ranks .badges-tab:not([hidden])');
       out.closest = !!document.querySelector('.badge-next');
@@ -6298,10 +6343,10 @@ def check_b284(br):
     check("nothing asks for a wake lock, even where an older build saved it on", r.get("wake") == 0, r.get("wake"))
     check("four tabs on the bar and none of them Progress",
           r.get("tabs") == ["home", "profile", "rewards", "settings"], r.get("tabs"))
-    check("the Profile card's rank row opens the climb, with Profile lit on the bar",
+    check("the Profile card's rank block opens the climb, with Profile lit on the bar",
           r.get("rankOpens") is True and r.get("profileLit") is True, (r.get("rankOpens"), r.get("profileLit")))
     check("and its back link goes to Profile", r.get("backToProfile") is True, r.get("backToProfile"))
-    check("the badge row opens the badge case", r.get("badgesOpen") is True, r.get("badgesOpen"))
+    check("the badge case opens the badge case", r.get("badgesOpen") is True, r.get("badgesOpen"))
     check("the rank box has no 'N to go until X' line, the badge box no 'Closest' line",
           r.get("noteLine") is False and r.get("closest") is False, (r.get("noteLine"), r.get("closest")))
     # REVERSED IN 302: "Bring back the correct answer streak thing you get
@@ -6560,12 +6605,15 @@ def check_b289(br):
         const tip = document.getElementById('tour-text');
         out.tip = tip ? tip.textContent : '';
         document.querySelectorAll('#tour-overlay, #tour-tooltip, #tour-line, #tour-line-dot').forEach(x => x.remove());
-        const rb = document.querySelector('.profile-hero .profile-rankplate'), lb = document.querySelector('.profile-hero .profile-level.statbox');
-        if(rb && lb){
-          const a = getComputedStyle(rb), c = getComputedStyle(lb);
-          out.box = { bg: a.backgroundColor === c.backgroundColor && a.backgroundImage === 'none', radius: a.borderTopLeftRadius === c.borderTopLeftRadius,
-            width: Math.abs(rb.getBoundingClientRect().width - lb.getBoundingClientRect().width) < 1, shadow: a.boxShadow === 'none',
-            wm: !document.querySelector('.profile-hero .profile-rankplate-wm') || getComputedStyle(document.querySelector('.profile-hero .profile-rankplate-wm')).display === 'none' };
+        /* Build 315: the three blocks are the standing block, the Next
+           rank card and the badge case. Each carries its own tint (the
+           rank's, the next rank's, none) - one family by shape, not fill */
+        const bl = ['.pf-standing', '.pf-goal', '.pf-case'].map(q => document.querySelector('.profile-hero ' + q));
+        if(bl.every(Boolean)){
+          const cs = bl.map(b => getComputedStyle(b)), rs = bl.map(b => b.getBoundingClientRect());
+          out.box = { radius: cs.every(c => c.borderTopLeftRadius === cs[0].borderTopLeftRadius),
+            width: rs.every(q => Math.abs(q.width - rs[0].width) < 1), shadow: cs.every(c => c.boxShadow === 'none'),
+            wm: !document.querySelector('.profile-hero .profile-rankplate-wm') };
         }
         const eb = document.querySelector('.profile-hero .profile-edit-btn');
         out.edit = eb ? parseFloat(getComputedStyle(eb).fontSize) : 0;
@@ -6591,7 +6639,7 @@ def check_b289(br):
           r.get("congrats") == 3 and r.get("congratsAgain") is False, r)
     check("tourRev 3 arms the three Profile tips, starting with Customize",
           r.get("tourRev") == 3 and "Customize" in str(r.get("tip")), r.get("tip"))
-    check("the rank box is one of three: same box, radius, width, no glow, no watermark",
+    check("the rank block is one of three: same radius, same width, no glow, no watermark",
           isinstance(r.get("box"), dict) and all(r["box"].values()), r.get("box"))
     check("Customize is a little bigger", r.get("edit", 0) > 13, r.get("edit"))
     ctx.close()
@@ -7363,9 +7411,10 @@ def check_b299(br):
             out.unit = u0;
             const held = TIER_ORDER_FULL.indexOf(rankOf(store)); out.held = held;
             store.rankMapFx244 = true; store.rankMapSeen = held;
+            /* build 315: the medal is the badge case, the coin the standing block's bubble */
             showProfile('profile'); await wait(600);
-            out.badgeDot = !!document.querySelector('.profile-badgesect .new-dot');
-            out.rankDotBefore = !!document.querySelector('.profile-rankplate .new-dot');
+            out.badgeDot = !!document.querySelector('.pf-case .new-dot');
+            out.rankDotBefore = !!document.querySelector('.pf-standing .new-dot');
             /* each opens on its own - no Rank/Badges switcher (build 299) */
             showRanksScreen('ranks'); await wait(800);
             out.rankScreen = { switcher: document.querySelectorAll('.screen-ranks .navsegment, .screen-ranks .iconbtn').length,
@@ -7384,17 +7433,17 @@ def check_b299(br):
             out.badgeSaved = store.seenUnlocks.badges.indexOf(u0) >= 0;
             document.querySelectorAll('.unlock-detail, .unlockdetail-overlay, [class*="unlock-detail"]').forEach(n => n.remove());
             showProfile('profile'); await wait(600);
-            out.badgeDotAfter = !!document.querySelector('.profile-badgesect .new-dot');
+            out.badgeDotAfter = !!document.querySelector('.pf-case .new-dot');
             /* now a rank-up the road map has not shown yet */
             if(held >= 0){
               store.rankMapSeen = held - 1;
               showProfile('profile'); await wait(600);
-              out.rankDot = !!document.querySelector('.profile-rankplate .new-dot');
+              out.rankDot = !!document.querySelector('.pf-standing .new-dot');
               showRanksScreen('ranks');
               for(let k = 0; k < 40 && store.rankMapSeen !== held; k++) await wait(250);
               out.rankSeenNow = store.rankMapSeen === held;
               showProfile('profile'); await wait(600);
-              out.rankDotAfter = !!document.querySelector('.profile-rankplate .new-dot');
+              out.rankDotAfter = !!document.querySelector('.pf-standing .new-dot');
             }
           } catch(e){ out.threw = String(e && e.stack || e); }
           return out; }""")
@@ -7404,7 +7453,7 @@ def check_b299(br):
         check(f"{dev}: Rank and Badges each open on their own, with no switcher at the top",
               rs.get("switcher") == 0 and bs.get("switcher") == 0 and rs.get("map") and not rs.get("badges")
               and bs.get("badges") and not bs.get("map") and rs.get("head") == "Rank" and bs.get("head") == "Badges", (rs, bs))
-        check(f"{dev}: a new badge puts a dot on Profile's badge medal", r2.get("badgeDot"), r2.get("badgeDot"))
+        check(f"{dev}: a new badge puts a dot on Profile's badge case", r2.get("badgeDot"), r2.get("badgeDot"))
         check(f"{dev}: in the case the dot is on that one badge",
               r2.get("tileDots") == 1 and r2.get("tileName") == r2.get("unit"),
               (r2.get("tileDots"), r2.get("tileName"), r2.get("unit")))
@@ -7412,7 +7461,7 @@ def check_b299(br):
               r2.get("tileAfter") == 0 and r2.get("badgeSaved") and not r2.get("badgeDotAfter"),
               (r2.get("tileAfter"), r2.get("badgeSaved"), r2.get("badgeDotAfter")))
         check(f"{dev}: the fixture holds a rank, so the rank-up case is exercised", (r2.get("held") if r2.get("held") is not None else -1) >= 0, r2.get("held"))
-        check(f"{dev}: a rank-up the road map has not shown puts a dot on Profile's rank coin", r2.get("rankDot"), r2.get("rankDot"))
+        check(f"{dev}: a rank-up the road map has not shown puts a dot on Profile's rank bubble", r2.get("rankDot"), r2.get("rankDot"))
         check(f"{dev}: opening Rank plays the map, and that clears it",
               r2.get("rankSeenNow") and not r2.get("rankDotAfter"), (r2.get("rankSeenNow"), r2.get("rankDotAfter")))
         # "What if the dot was also on the bottom tab for profile as well",
@@ -7506,10 +7555,12 @@ def check_b299(br):
         # "Level at the bottom, badges between the other two."
         order = pg.evaluate("""async ()=>{ showProfile('profile'); await new Promise(r => setTimeout(r, 600));
           const hero = document.querySelector('.profile-hero');
-          const pick = el => el.matches('.profile-rankplate') ? 'rank' : el.matches('.profile-badgesect') ? 'badges' : el.matches('.profile-level') ? 'level' : null;
-          const tops = [...hero.querySelectorAll('.profile-rankplate, .profile-badgesect, .profile-level')].map(el => [pick(el), el.getBoundingClientRect().top]);
+          /* build 315: the mock-up Madison picked - where you stand (rank
+             and level), the next rank, the badge case */
+          const pick = el => el.matches('.pf-standing') ? 'standing' : el.matches('.pf-goal') ? 'next' : el.matches('.pf-case') ? 'case' : null;
+          const tops = [...hero.querySelectorAll('.pf-standing, .pf-goal, .pf-case')].map(el => [pick(el), el.getBoundingClientRect().top]);
           return tops.sort((a, b) => a[1] - b[1]).map(x => x[0]).join(','); }""")
-        check(f"{dev}: the Profile card reads Rank, Badges, Level from the top", order == "rank,badges,level", order)
+        check(f"{dev}: the Profile card reads where you stand, the next rank, the badge case from the top", order == "standing,next,case", order)
         ctx.close()
 
 
@@ -7792,8 +7843,10 @@ def check_b302(br):
           /* 4. three rings, one size; 5. the total at the bottom */
           showProfile('profile'); await wait(700);
           const wOf = sel => { const e = document.querySelector(sel); return e ? Math.round(e.getBoundingClientRect().width) : null; };
-          out.rings = [wOf('.profile-rankplate .profile-rankcoin'), wOf('.profile-level-row .statring'), wOf('.profile-badgesect .statring')];
-          const tot = document.querySelector('.profile-level-total'), bar = document.querySelector('.profile-xpbar');
+          /* build 315: the rings are gone; the two rank marks left - the
+             one you hold and the next one - are drawn the same size */
+          out.rings = [wOf('.pf-standing .flare-solo'), wOf('.pf-goal .pf-goal-emb')];
+          const tot = document.querySelector('.pf-standing .pf-xp-total'), bar = document.querySelector('.pf-standing .profile-xpbar');
           out.total = tot ? tot.textContent : '';
           out.totalBelowBar = !!(tot && bar && (bar.compareDocumentPosition(tot) & Node.DOCUMENT_POSITION_FOLLOWING));
           const fill = document.querySelector('.profile-xpbar .xpbar-fill');
@@ -7832,9 +7885,11 @@ def check_b302(br):
         check(f"{dev}: a sleeping character is still live and still animating",
               r.get("sleepLive") is True and r.get("sleepN", 0) >= max(3, r.get("liveN", 0) // 2), [r.get("sleepLive"), r.get("liveN"), r.get("sleepN")])
         rings = r.get("rings") or []
-        check(f"{dev}: the rank, level and badge rings are one size", len(rings) == 3 and None not in rings and max(rings) - min(rings) <= 1, rings)
-        check(f"{dev}: the total XP sits under the bar and says so",
-              r.get("totalBelowBar") is True and (r.get("total") or "").endswith("total XP earned"), r.get("total"))
+        check(f"{dev}: the rank you hold and the next rank are drawn one size", len(rings) == 2 and None not in rings and max(rings) - min(rings) <= 1, rings)
+        # REVISED IN 315: "we wouldn't need that total xp there because it'd
+        # be with all the xp stuff" - the total joined the bar's numbers.
+        check(f"{dev}: the total XP sits under the bar, with its numbers, and says so",
+              r.get("totalBelowBar") is True and re.match(r"^[0-9,]+ XP total$", r.get("total") or ""), r.get("total"))
         check(f"{dev}: the XP bar carries its slow light", r.get("glide") == "xp-glide", r.get("glide"))
         check(f"{dev}: back on Home, no flare bubble is empty", r.get("bubbles", 0) >= 7 and r.get("blank") == 0, [r.get("bubbles"), r.get("blank")])
         check(f"{dev}: Sapphire turns on a half-turn loop, Platinum has its spiral, Silver's star glints",

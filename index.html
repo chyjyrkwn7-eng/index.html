@@ -19265,7 +19265,9 @@
   .pf-rankname{ font-family:var(--serif); font-size:1.85rem; font-weight:700; line-height:1.02;
     color:color-mix(in srgb, var(--rank-color) 60%, #fff); text-shadow:0 0 18px color-mix(in srgb, var(--rank-color) 38%, transparent); }
   .pf-standing.is-unranked .pf-rankname{ color:rgba(255,255,255,.72); text-shadow:none; }
-  .pf-level{ font-size:.98rem; font-weight:800; color:var(--ink); }
+  /* the level is blue, the bar's own light blue - never the rank's colour
+     (build 259: "I don't like the bronze all the way through") */
+  .pf-level{ font-size:.98rem; font-weight:800; color:#8FC1FF; }
   .pf-xp{ display:block; margin-top:.9rem; }
   .pf-xpbar.xpbar-track{ display:block; }
   .pf-xpbar .xpbar-fill{ display:block; height:100%; border-radius:inherit; }
@@ -19317,6 +19319,29 @@
   .pf-rw-lock svg{ display:block; width:100%; height:100%; }
   .pf-swatch.swatch{ width:2.6rem; height:2.6rem; border:0; background:none; cursor:inherit; }
   .pf-swatch.swatch .dot{ width:2.2rem; height:2.2rem; }
+  /* THE SWIRL, COMPOSITED (build 315). Customize's swatches swirl by
+     animating background-position, which repaints the dot every frame;
+     Profile is held to transform and opacity (build 282's "nothing that
+     repaints per frame"). So here, and on the road map's chip, the dot's
+     own gradient is copied onto an oversized layer that slides under
+     the circle - the same travel as legend-swirl's 0% to 100% across a
+     220% image, as a transform. The sheen (::after) still sweeps over
+     the top. */
+  .swatch.pf-swatch .dot, .swatch.rankmap-swatch .dot{ animation:none; }
+  .swatch.pf-swatch .dot::before, .swatch.rankmap-swatch .dot::before{
+    content:""; position:absolute; left:0; top:50%; width:220%; height:220%;
+    background-image:inherit; background-size:100% 100%; background-repeat:no-repeat;
+    transform:translate(0, -50%); will-change:transform; pointer-events:none; }
+  @media (prefers-reduced-motion:no-preference){
+    .swatch.pf-swatch .dot::before, .swatch.rankmap-swatch .dot::before{ animation:pf-swirl 3s ease-in-out infinite; }
+  }
+  /* the in-app Reduce motion rule is `*`, which never matches a pseudo-element */
+  [data-reduce-motion="true"] .swatch.pf-swatch .dot::before,
+  [data-reduce-motion="true"] .swatch.rankmap-swatch .dot::before{ animation:none; }
+  @keyframes pf-swirl{
+    0%, 100%{ transform:translate(0, -50%); }
+    50%{ transform:translate(-54.5455%, -50%); }
+  }
   .pf-rw .flare-solo{ width:2.7rem; height:2.7rem; }
   /* the character that is waiting to be unlocked: it leans in and taps
      the glass twice, every five seconds */
@@ -19348,9 +19373,10 @@
   .pf-strip.badge-strip .badge-strip-cell svg{ display:block; width:100%; height:100%; }
   @media (min-width:40rem){
     .pf-standing, .pf-goal{ padding:1.2rem 1.35rem 1.15rem; }
+    /* the rank you hold and the next one, one size (check_b302) */
     .pf-standing .flare-solo{ width:4.4rem; height:4.4rem; }
     .pf-rankname{ font-size:2.25rem; }
-    .pf-goal-emb{ width:4.6rem; height:4.6rem; }
+    .pf-goal-emb{ width:4.4rem; height:4.4rem; }
     .pf-goal-name{ font-size:2.05rem; }
     .pf-rw-art, .pf-rw-char, .pf-rw-banner{ width:3.4rem; height:3.4rem; }
     .pf-rw .flare-solo{ width:3.2rem; height:3.2rem; }
@@ -46675,20 +46701,12 @@ function rankChallengesOf(){
            done: list.filter(c => c.met).length, total: list.length,
            opensFrom: from, opensTo: to, opens: to >= from, state: s };
 }
-/* THE BADGE CHALLENGE (build 314), beside the Profile bar: the gold
-   badge and "3/5" - the badges the next rank asks for. Only the badges:
-   "I kinda liked the gold badge a lot ... why would a level requirement
-   be there anyways? That's kinda confusing." The level half of the
-   rank's challenges is the bar itself. */
-const LEVEL_CHALLENGE_ICON = "M12 2.4l7.6 3.4v5.4c0 4.7-3.2 8.7-7.6 10.4-4.4-1.7-7.6-5.7-7.6-10.4V5.8L12 2.4Zm0 4.1-1.4 2.9-3.2.4 2.3 2.2-.6 3.1 2.9-1.5 2.9 1.5-.6-3.1 2.3-2.2-3.2-.4L12 6.5Z";
-function badgeChallengeIcon(cls){
-  const ic = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  ic.setAttribute("viewBox", "0 0 24 24"); ic.setAttribute("aria-hidden", "true"); ic.classList.add(cls || "level-chal-ic");
-  const pth = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  pth.setAttribute("d", LEVEL_CHALLENGE_ICON); pth.setAttribute("fill-rule", "evenodd");
-  ic.appendChild(pth);
-  return ic;
-}
+/* The badges half of the next rank's challenges, as one record: what
+   you have, what the rank asks for, what is left. The results card's
+   level note and the level-change notice both read it. (Build 315: the
+   gold badge button beside the Profile bar and its sheet were retired
+   with the Profile rebuild - the badges are a task on the Next rank
+   card now.) */
 function badgeChallengeOf(c){
   c = c || rankChallengesOf();
   if(!c) return null;
@@ -46696,23 +46714,6 @@ function badgeChallengeOf(c){
   const l = c.list.find(x => x.kind === "level");
   return b ? { name: c.name, key: c.key, have: b.now, need: b.need, met: b.met, left: Math.max(0, b.need - b.now),
                level: l ? l.need : 0, state: c.state } : null;
-}
-function buildLevelChallengeButton(){
-  const b = badgeChallengeOf();
-  if(!b) return null;
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = "level-chal" + (b.met ? " is-met" : "");
-  btn.setAttribute("aria-label", "Badge challenge: " + b.have + " of " + b.need + " badges to rank up to " + b.name);
-  const n = document.createElement("span");
-  n.className = "level-chal-n";
-  const h = document.createElement("b"); h.textContent = String(Math.min(b.have, b.need));
-  n.append(h, "/" + b.need);
-  const chev = document.createElement("span");
-  chev.className = "level-chal-chev"; chev.setAttribute("aria-hidden", "true"); chev.textContent = "\u203A";
-  btn.append(badgeChallengeIcon(), n, chev);
-  btn.addEventListener("click", showLevelChallenge);
-  return btn;
 }
 /* One plain line about the badges, for the results card and the rank
    pop-up that holds you - never "your level stays at", which read as
@@ -46723,83 +46724,12 @@ function rankChallengeNote(c){
   return b.met ? "Reach level " + b.level + " to rank up to " + b.name
     : "Earn " + b.left + (b.have > 0 ? " more" : "") + (b.left === 1 ? " badge" : " badges") + " to rank up to " + b.name;
 }
-/* What the badge opens: the one challenge, against you. No road map
-   button - "that's also redundant". */
-function showLevelChallenge(){
-  const b = badgeChallengeOf();
-  if(!b) return;
-  const overlay = document.createElement("div");
-  overlay.className = "invite-overlay";
-  const sheet = document.createElement("div");
-  sheet.className = "invite-sheet person-card level-chal-sheet";
-  const art = document.createElement("div");
-  art.className = "level-chal-art";
-  art.appendChild(badgeChallengeIcon("level-chal-bigic"));
-  const kick = document.createElement("p");
-  kick.className = "unlock-card-kicker";
-  kick.textContent = "Badge challenge";
-  const nm = document.createElement("h2");
-  nm.className = "unlock-card-name";
-  nm.textContent = "Earn " + b.need + (b.need === 1 ? " badge" : " badges");
-  const big = document.createElement("p");
-  big.className = "level-chal-big";
-  const hb = document.createElement("b"); hb.textContent = String(Math.min(b.have, b.need));
-  big.append(hb, " / " + b.need);
-  const bar = document.createElement("span"); bar.className = "level-chal-bar";
-  const fill = document.createElement("span"); fill.className = "level-chal-fill";
-  bar.appendChild(fill);
-  setBarFill(fill, 0);
-  setTimeout(() => requestAnimationFrame(() => setBarFill(fill, b.need ? Math.min(100, Math.round(b.have / b.need * 1000) / 10) : 100)), 200);
-  const line = document.createElement("p");
-  line.className = "level-chal-line";
-  line.textContent = b.met ? "Done - you have " + b.name + "'s badges. " + rankChallengeNote() + "." : rankChallengeNote() + ".";
-  sheet.append(art, kick, nm, big, bar, line);
-  if(b.state.held && !b.met){
-    const cap = document.createElement("p");
-    cap.className = "level-chal-cap";
-    cap.textContent = "Your XP keeps counting, and turns into levels the moment you rank up.";
-    sheet.appendChild(cap);
-  }
-  if(!b.met){
-    const near = levelClosestLine();
-    if(near){
-      const p = document.createElement("p");
-      p.className = "level-chal-near";
-      p.textContent = near;
-      sheet.appendChild(p);
-    }
-  }
-  const close = document.createElement("button");
-  close.type = "button"; close.className = "next ghost person-sheet-close";
-  close.textContent = "Close";
-  close.addEventListener("click", () => overlay.remove());
-  sheet.appendChild(close);
-  overlay.appendChild(sheet);
-  overlay.addEventListener("click", e => { if(e.target === overlay) overlay.remove(); });
-  mountSheetOverlay(overlay);
-}
 /* THE NEXT GATE, said plainly and the same way everywhere (build 314):
    "Earn 2 more badges to unlock levels 50-59 · 3 levels saved". */
 function levelWallLine(s){
   if(!s || !s.held) return "";
   return rankChallengeNote(rankChallengesOf());
 }
-/* The badge you are nearest: "Closest: Identity Crimes, 7 of 15 hundos".
-   Your own account only - the hundos behind it are not published. */
-function levelClosestLine(){
-  try{
-    const perf = store.unitPerfects || {};
-    let best = null;
-    topicsIn(QUESTIONS).forEach(u => {
-      if(unitBadgeEarned(u)) return;
-      const need = badgeThresholdFor(u), have = Number(perf[u]) || 0;
-      const f = need > 0 ? have / need : 0;
-      if(!best || f > best.f) best = { u, have, need, f };
-    });
-    return best ? "Closest: " + best.u + ", " + best.have + " of " + best.need + (best.need === 1 ? " hundo" : " hundos") : "";
-  }catch(e){ return ""; }
-}
-
 /* One badge per unit, earned by mastering that unit. No longer
    provisional: this used to count Mastery Ladder tiers, as the nearest
    thing the app had to an award you either hold or do not.
@@ -89330,9 +89260,12 @@ function buildProfileGoal(prog){
   const lv = rc.list.find(c => c.kind === "level"), bd = rc.list.find(c => c.kind === "badges");
   let closest = null;
   try{ closest = bd && !bd.met ? closestBadge() : null; }catch(e){}
+  /* the Rank tab's own two colours (.rankhero-gauge's --ring): the level
+     blue and the badge gold, so a requirement reads the same everywhere
+     it is drawn (build 282: "make those circles the same") */
   const rows = [
-    lv ? buildProfileTask(lv, "#5AA2FF", null) : null,
-    bd ? buildProfileTask(bd, "#E8B84A", closest ? "Closest: " + closest.unit + " (" + closest.done + "/" + closest.need + " hundos)" : null) : null
+    lv ? buildProfileTask(lv, "#6FC2FF", null) : null,
+    bd ? buildProfileTask(bd, "#E3C77A", closest ? "Closest: " + closest.unit + " (" + closest.done + "/" + closest.need + " hundos)" : null) : null
   ].filter(Boolean);
   /* what is still to do first; what is done sinks */
   rows.sort((a, b) => (a.classList.contains("is-met") ? 1 : 0) - (b.classList.contains("is-met") ? 1 : 0));

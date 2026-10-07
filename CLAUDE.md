@@ -13602,6 +13602,76 @@ disagree with it.
     `hfxLitText` clones the children so the hundo effects' lit copy keeps
     the small %. Chromium here has no Georgia, so screenshots never showed
     the old-style figures a phone did.
+- **ROUND FIVE, build 315 (supersedes ROUND FOUR's Profile bullets):**
+  - **PROFILE IS THREE BLOCKS, picked from three mock-ups** ("I'm liking
+    the profile box"): `buildProfileStanding` (the rank you hold in a lit,
+    slowly bouncing flare bubble, its name large in its colour, "Level N"
+    in the bar's blue - never the rank's, build 259 - then the XP bar with
+    `buildXpNumbers` and "N XP total" on one line under it, and one note),
+    `buildProfileGoal` (the next rank, "1 of 2 done", its two requirements
+    as tasks, what it unlocks) and `buildProfileCase` (the strip of all
+    sixteen). The one-path box, its links and the rings are gone.
+  - **EACH BLOCK IS ONE BUTTON WITH NOTHING TAPPABLE INSIDE IT**, so a
+    tap anywhere opens its screen: "assuming you click anywhere in that
+    box, it opens up the rank road map". Standing and Next rank open the
+    climb, the case opens the case. check-curve hit-tests a point on a
+    reward tile, a task's bar and a strip cell - a nested control, or
+    anything laid over a block, would catch the tap. The Study button came
+    off ("not needed, also cluttered it").
+  - **THE NOTE UNDER THE BAR COUNTS, IT NEVER NUMBERS.** "X XP to level
+    N+1", or at a badge wall "Earn N more badge(s) to keep leveling up.
+    Your XP is saved." - not "Level 50 opens with your 5th badge" ("I
+    don't like how it means that 5th badge part"). The level TASK carries
+    no note and shows min(now, need), so at level 49 behind the wall it
+    reads "Reach level 40 · 40 / 40 ✓" and says nothing about 49 - the
+    screenshot that asked "shouldn't that mean your max level is 40?".
+  - **A TASK'S GOAL IS COLOURED AND ITS COUNT GREY UNTIL IT IS MET, THEN
+    BOTH TAKE THE COLOUR** ("the goal number and moving level number
+    should swap colors ... once you do it ... that's when it would also
+    turn blue"). The two colours are the Rank tab's own `--ring` blue and
+    gold, so a requirement looks the same wherever it is drawn. Unmet
+    tasks are listed first.
+  - **"<Rank> unlocks" is tiles**: the theme as its animated swatch, the
+    flare in its lit bubble (bouncing - on Profile only), the character
+    WAITING behind the glass (`.pf-rw-char.is-waiting`: leans in and taps
+    twice every 5.2s - the one thing a character only does while locked),
+    and the banner.
+  - **`buildFlareBubble(key, {lit, bounce, empty})` is Home's own bubble
+    out of the orbit** (`.flare-solo` undoes the orbit positioning). An
+    unranked bubble is empty glass with no emblem (build 268). Whoever
+    mounts one starts its flip-book with `startOrbitEmblemAnims(root)`:
+    Profile after the XP fill, the road map 2.2s after mount.
+  - **PROFILE MOVES ONLY TRANSFORM AND OPACITY, AND THE SWATCH BROKE IT.**
+    A swatch swirls by animating `background-position` (`legend-swirl`),
+    which repaints every frame - check_b282 caught it. On Profile and the
+    road map chip the dot's gradient is copied onto an oversized `::before`
+    (`background-image:inherit`) that slides by transform (`pf-swirl`) -
+    the same travel across a 220% image. The in-app Reduce motion rule is
+    `*`, which never matches a pseudo-element, so that `::before` carries
+    its own `[data-reduce-motion="true"]` rule.
+  - **EVERY REACHED ROAD MAP CARD GLOWS** like the current one once its
+    colour is available ("the silver one is super nice ... bronze, no
+    glow"); its Theme chip is the animated swatch and its Flare chip the
+    lit bubble - animated, never bouncing ("it will not bounce in the road
+    map") - both frosted until the rank is reached. A card waiting for
+    its first-open celebration stays dark until its moment.
+  - **The badge-challenge button and its sheet were deleted**
+    (`buildLevelChallengeButton`, `showLevelChallenge`, `levelClosestLine`,
+    `badgeChallengeIcon`); `badgeChallengeOf` and `rankChallengeNote` stay
+    for the results card and the level-change notice.
+  - **A REBUILD HAS TO GREP THE GATES FOR ITS OLD CLASS NAMES, NOT JUST
+    RUN THEM.** Eighteen check-behaviour sections read `.profile-rankplate`,
+    `.profile-badgesect` or `.profile-level`. The ones asserting that
+    something exists failed, as they should; the ones asserting ABSENCE
+    ("no dot", "no bar", "no badge icons") went on passing, because a
+    selector that matches nothing makes every "no" true. Each now reads
+    the block that carries the same decision, or says which decision 315
+    reversed (badge icons on the card: 258 said none, the mock-up Madison
+    picked has the strip).
+  - **A fixture can be broken by an app fix.** check_b246 put 30 study
+    hours on one day; build 314's leak fix loads that as 6, so the Hacker
+    re-locked and the "nothing is taken" check failed on a correct app.
+    The hours go in at 5 a day now.
 - **STUDY TIME IS TIME SPENT STUDYING (build 314).** It was "now minus
   when the run started", so a run left open with the phone locked banked
   every hour on the day it ended: live tests of 117h and 50h, days of 68h
