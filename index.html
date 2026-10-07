@@ -39992,7 +39992,53 @@ function drawAvatarCharSVG(charId){
     if(fig) Array.from(fig.children).forEach(n => {
       if(n.nodeName === "circle" && /url\(#(aura|halo)-/.test(n.getAttribute("fill") || "")) svg.insertBefore(n, fig);
     });
+    if(fig) giveVolume(fig);
     return svg;
+  }
+  /* EVERY SURFACE IS ROUND (build 317). "In profile some characters have
+     a nice 3d look but some don't, fix that as well." The ones that did
+     (Alien, Ghost, the Bear, the fishbowl) carry their own highlight in
+     the drawing; the rest were one headGrad light field across the
+     whole figure, which shades the SET but leaves each piece - a face,
+     a hat crown, a coat - reading as one flat colour. The avatarDepth
+     filter cannot help: it works in CSS pixels off the svg's alpha, and
+     every character has a scene behind it now, so the alpha is solid
+     and there is no edge for it to light.
+     So every surface painted with headGrad gets two copies of itself
+     laid straight on top of it (features drawn later stay above):
+     edges falling into shade, and a soft light upper-left. Both are
+     objectBoundingBox gradients, so each piece is lit across its OWN
+     shape at any size, and they are plain fills - no filter, the one
+     SVG feature that has bitten this app on iOS. The scenery and
+     anything not drawn with headGrad (glows, eyes, flat accents) are
+     left alone, which is what keeps the Alien's own gloss from being
+     doubled into plastic. */
+  function giveVolume(root){
+    const head = new RegExp("^url\\(#" + uid.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "-head\\d+\\)$");
+    const shapes = [...root.querySelectorAll("path, ellipse, circle, rect, polygon")]
+      .filter(n => head.test(n.getAttribute("fill") || "") && !n.closest(".cx-bg"));
+    if(!shapes.length) return;
+    const grad = (id, cx, cy, r, stops) => {
+      const g = mk("radialGradient", { id, cx, cy, r });
+      stops.forEach(([o, c, op]) => g.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
+      defs.appendChild(g);
+      return "url(#" + id + ")";
+    };
+    const shade = grad(uid + "-vshade", "44%", "36%", "72%", [["0%", "#000", "0"], ["58%", "#000", "0"], ["100%", "#000", ".42"]]);
+    const gloss = grad(uid + "-vgloss", "34%", "24%", "62%", [["0%", "#fff", ".30"], ["45%", "#fff", ".08"], ["100%", "#fff", "0"]]);
+    shapes.forEach(n => {
+      const layer = fill => {
+        const c = n.cloneNode(false);
+        c.removeAttribute("id");
+        ["stroke", "stroke-width", "stroke-linecap", "stroke-linejoin"].forEach(a => c.removeAttribute(a));
+        c.style.removeProperty("fill");
+        c.setAttribute("fill", fill);
+        c.setAttribute("pointer-events", "none");
+        return c;
+      };
+      const s = layer(shade), g = layer(gloss);
+      n.after(s); s.after(g);
+    });
   }
   /* A soft, separate glossy highlight blob over the upper-left of the
      head, on top of the base gradient rather than replacing it \u2014

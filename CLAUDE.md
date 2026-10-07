@@ -14497,6 +14497,23 @@ disagree with it.
     and is meant to be cut). Hacker, Orion and Genesis measure far past
     the edge only because of animated pieces that start off-frame - they
     look whole and were left alone.
+  - **Every character's surfaces are lit round (`giveVolume()`, called
+    from `done()`).** *"In profile some characters have a nice 3d look but
+    some don't, fix that as well."* The 3D-looking ones (Alien, Ghost,
+    Bear, Koi) draw their own highlight; the rest were one `headGrad`
+    light field across the whole figure, so a face, a hat crown or a coat
+    read as flat colour. `avatarDepth` cannot fix that: it works in CSS
+    pixels off the svg's alpha, and with a scene behind every character
+    the alpha is solid, so there is no edge to light (measured: filter
+    on and off render the same). Each `headGrad`-filled shape now gets
+    two clones laid straight after it: edges falling into shade, then a
+    soft light upper-left, both `objectBoundingBox` radial gradients so
+    each piece is lit across its own shape at any size. Fills only, no
+    filter. Applying a filter to the figure group was tried and looked
+    like glossy plastic; it also risks the iOS full-box lighting bug the
+    silhouette note describes. Scenery and non-`headGrad` fills are left
+    alone, so nobody's own gloss is doubled. `check_b317_volume` asserts
+    the layers on every character and no `filter` attribute anywhere.
   - **The grade card's fractions are white both sides** (`.rs-grade
     .rs-frac-of{opacity:1}`). Its unit bar was never broken: it fills red
     ~350ms after the card lands, and the screenshot that showed it empty

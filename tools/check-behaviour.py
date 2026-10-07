@@ -12947,6 +12947,47 @@ def check_b316_tiles(br):
         ctx.close()
 
 
+def check_b317_volume(br):
+    """Build 317. "It appears in profile some characters have a nice 3d look
+    but some don't, fix that as well." Every surface a character paints with
+    its headGrad light gets a shade layer and a light layer straight on top
+    of it, the same shape, so each piece reads round rather than flat - and
+    it is done with fills, never an SVG filter. Written against build 316,
+    where only the characters that drew their own highlight had one."""
+    print("\n317. every character's surfaces are lit round, with no filter")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""() => {
+      const out = { chars: 0, lit: 0, bare: [], filtered: [], threw: null };
+      try {
+        AVATAR_CHARACTERS.filter(c => !c.retired).forEach(c => {
+          const s = drawAvatarCharSVG(c.id); if(!s) return;
+          out.chars++;
+          const uid = s.getAttribute('data-cx-uid');
+          const head = [...s.querySelectorAll('path, ellipse, circle, rect, polygon')]
+            .filter(n => (n.getAttribute('fill') || '').startsWith('url(#' + uid + '-head') && !n.closest('.cx-bg'));
+          let ok = head.length > 0 || ['voidwalker', 'genesis', 'zenith'].includes(c.id);
+          head.forEach(n => {
+            const a = n.nextElementSibling, b = a && a.nextElementSibling;
+            const same = x => x && x.nodeName === n.nodeName && ['d', 'cx', 'cy', 'rx', 'ry', 'r', 'points', 'transform']
+              .every(k => x.getAttribute(k) === n.getAttribute(k));
+            if(!(same(a) && same(b) && /-vshade\\)$/.test(a.getAttribute('fill')) && /-vgloss\\)$/.test(b.getAttribute('fill')))) ok = false;
+          });
+          if(ok && head.length) out.lit++;
+          if(!ok) out.bare.push(c.id);
+          if(s.querySelector('[filter]')) out.filtered.push(c.id);
+        });
+      } catch(e) { out.threw = String(e); }
+      return out;
+    }""")
+    check("every character with lit surfaces has a shade and a light layer on each of them",
+          r["chars"] >= 25 and not r["bare"], [r["chars"], r["lit"], r["bare"]])
+    check("the flat ones included: Detective, Sheriff, Hive, Zeus, Timekeeper, Masked One",
+          r["lit"] >= 25, r["lit"])
+    check("no SVG filter inside any drawing", not r["filtered"], r["filtered"])
+    check("nothing threw", not r["threw"], r["threw"])
+    ctx.close()
+
+
 def check_b317_rankup(br):
     """Build 317. "When you rank up, the next time you open the Profile tab
     it should be a cool thing. After a second, a black loading screen that
@@ -13329,6 +13370,7 @@ def main():
             check_b315_customize(br)
             check_b316_tiles(br)
             check_b317_daily(br)
+            check_b317_volume(br)
             check_b317_rankup(br)
         finally:
             br.close()
