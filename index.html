@@ -9437,6 +9437,9 @@
     background:linear-gradient(105deg, var(--hfx-g1), var(--hfx-g2) 55%, var(--hfx-g3, var(--hfx-g1)));
     -webkit-background-clip:text; background-clip:text;
     filter:drop-shadow(0 0 10px color-mix(in srgb, var(--hfx-b) 45%, transparent)); }
+  /* the small % is an inline-block, and background-clip:text does not
+     reach into one - it gets the same gradient of its own */
+  .hfx-stage.is-poster.hfx-tinted .hfx-stage-pct .rs-pct-sign{ color:transparent; background:inherit; -webkit-background-clip:text; background-clip:text; }
   /* (the Preview's own layers went with previewHundoFx in build 314) */
 
   /* ---------- level-up / personal-best callouts ---------- */
