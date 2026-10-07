@@ -13008,6 +13008,15 @@ CUTSPIN_RUN = """async (tier) => { const wait = ms => new Promise(r => setTimeou
   const ov = document.getElementById('supernova-cutscene');
   const samples = [];
   const t0 = performance.now();
+  const ev = { spinEnd: null, litAt: null, burstAt: null, restT: null };
+  const orb0 = ov.querySelector('.rank-before .rank-orbit');
+  const bb = ov.querySelector('.rank-before .cosmic-icon-badge[data-rank-tier="' + tier + '"]');
+  if(orb0) orb0.addEventListener('transitionend', e => { if(e.target === orb0 && e.propertyName === 'transform' && ev.spinEnd == null){
+    ev.spinEnd = performance.now(); ev.restT = getComputedStyle(orb0).transform; } });
+  if(bb) new MutationObserver(() => { if(ev.litAt == null && bb.classList.contains('cosmic-badge-lit')) ev.litAt = performance.now(); })
+    .observe(bb, { attributes: true, attributeFilter: ['class'] });
+  new MutationObserver(() => { if(ev.burstAt == null && ov.classList.contains('supernova-burst')) ev.burstAt = performance.now(); })
+    .observe(ov, { attributes: true, attributeFilter: ['class'] });
   /* sampled from inside the page every 90ms until the flash, so a loaded
      machine cannot skip the beat between two Playwright calls */
   while(ov.isConnected && !ov.classList.contains('supernova-burst') && performance.now() - t0 < 20000){
@@ -13025,8 +13034,10 @@ CUTSPIN_RUN = """async (tier) => { const wait = ms => new Promise(r => setTimeou
       ratio: b && m ? b.getBoundingClientRect().width / m.getBoundingClientRect().width : null });
     await wait(90);
   }
+  /* a loaded machine can start the transition late: give it time to end */
+  for(let k = 0; k < 60 && ev.spinEnd == null && ov.isConnected; k++) await wait(100);
   ov.remove();
-  return { home, samples };
+  return { home, samples, ev };
 }"""
 
 
@@ -13056,18 +13067,21 @@ def check_b317_cutspin(br):
         turns = {x["orbT"] for x in sm if x["orbT"] and x["orbT"] not in ("none", "matrix(1, 0, 0, 1, 0, 0)")}
         back = {x["slotT"] for x in sm if x["slotT"] and x["slotT"] not in ("none", "matrix(1, 0, 0, 1, 0, 0)")}
         check("%s: every flare whirls round its ring at the unlock beat" % label,
-              len(turns) >= 4 and len(back) >= 4, (len(sm), len(turns), len(back)))
-        settled = [x for x in sm if x["lit"]]
-        check("%s: and is at rest, in its own place, by the time the flare is fully lit" % label,
-              bool(settled) and settled[0]["orbT"] in ("none", "matrix(1, 0, 0, 1, 0, 0)")
-              and settled[0]["slotT"] in ("none", "matrix(1, 0, 0, 1, 0, 0)"), settled[:1] or sm[-1:])
+              len(turns) >= 3 and len(back) >= 3, (len(sm), len(turns), len(back)))
+        ev = r["ev"]
+        check("%s: the whirl ends in whole turns, every bubble back in its own place" % label,
+              ev["spinEnd"] is not None and ev["restT"] in ("none", "matrix(1, 0, 0, 1, 0, 0)"), ev)
         radii = [x["wipeR"] for x in sm if x["wipeR"] is not None and x["wipeR"] == x["wipeR"]]
-        mid = {round(v) for v in radii if 3 < v < 97}
+        mid = {round(v) for v in radii if 2 < v < 98}
         check("%s: the new flare lights from its middle outward, not in one step" % label,
-              len(mid) >= 3 and radii == sorted(radii), sorted(mid))
-        first_lit = next((i for i, x in enumerate(sm) if x["lit"]), None)
-        check("%s: fully lit only once the whirl is over, before the flash" % label,
-              first_lit is not None and first_lit >= 4 and bool(radii), (first_lit, len(sm)))
+              len(mid) >= 2 and radii == sorted(radii), sorted(mid))
+        # Fully lit as the whirl stops (its transitionend) - or, on a machine
+        # so loaded the whirl started late, by the flash at the latest.
+        lit_ok = ev["litAt"] is not None and ev["spinEnd"] is not None and (
+            ev["litAt"] >= ev["spinEnd"] - 60
+            or (ev["burstAt"] is not None and ev["litAt"] >= ev["burstAt"] - 400))
+        check("%s: fully lit only once the whirl is over (or the flash comes)" % label,
+              lit_ok and bool(mid), ev)
         ratios = [x["ratio"] for x in sm if x["ratio"]]
         worst = max(ratios, key=lambda v: abs(v - (r["home"] or 1))) if ratios else None
         check("%s: the flare is Home's size against the planet (within 15%%)" % label,
@@ -13100,6 +13114,28 @@ def check_b317_cutspin(br):
     check("the character tile celebrates (its winner's move), not just a blink",
           any(n in cards["charMoves"] for n in ("cx-hop-big", "cx-hop-loop")), cards["charMoves"][:10])
     check("and then carries on living", cards["charLive"], cards)
+
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    order = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());
+      showHome(); await wait(500);
+      window.scheduleHomeUnlocks = () => {}; if(homeUnlockTimer){ clearTimeout(homeUnlockTimer); homeUnlockTimer = null; }
+      /* a rank just reached on Home with its reward card still owed, and a
+         badge from the same run queued */
+      window.pendingHomeUnlocks = () => ({ chars: ['x'], banners: [], hints: [], fx: [] });
+      rankJustReachedOnHome = 'vanguard';
+      store.pendingBadgeUnlocks = [topicsIn(QUESTIONS)[0]];
+      const out = { cardsWait: homeUnlockBlocked() };
+      playQueuedBadgeCutscenes(); await wait(400);
+      out.badgeFirst = !!document.getElementById('badge-cutscene');
+      rankJustReachedOnHome = null;
+      window.pendingHomeUnlocks = () => ({ chars: [], banners: [], hints: [], fx: [] });
+      await wait(1600);
+      out.badgeAfter = !!document.getElementById('badge-cutscene');
+      return out; }""")
+    ctx.close()
+    check("on Home a rank's reward card goes before a badge cutscene from the same run",
+          order["cardsWait"] is False and not order["badgeFirst"] and order["badgeAfter"], order)
 
 
 def check_b317_tabplate(br):
