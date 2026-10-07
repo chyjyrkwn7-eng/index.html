@@ -14338,6 +14338,33 @@ disagree with it.
     character - "a smidge higher than the other stuff in some of the
     screenshots"; "some" was the giveaway that it moved. Measured: centred
     on its neighbours' line to within the swing.
+  - **ROAD MAP CHIPS: ONE SLOT, ONE START.** 315 gave the flare's bubble
+    and the theme's swatch a 1.6rem icon slot and left the character and
+    banner chips in the old 1.4rem one, so their labels started 3.2px left
+    on every card - "it just needed the same starting point". Every chip's
+    slot is one size now (`--gift-slot` on `.rankmap-gifts`, which also
+    sets the chip's height, so the two cannot drift); icons keep their own
+    sizes, centred in it. **Size the icon inside the slot, never the slot
+    by kind of chip.** The chips still run the card's full inner width.
+    The chip gate measured boxes only, which is how this passed; the
+    number that catches it is where each label's text starts.
+  - **THE PICKED CHARACTER WEARS A RING, NOT A BOX** ("maybe it could just
+    be a circle?"). Every character is drawn for a round frame, so a
+    rounded square round it read as a box round a round thing.
+    `.avatarchar-option::after` is a 2px ring on the art's own circle in
+    its glow colour lifted towards white, a thin dark gap inside, no fill;
+    the tick sits ON the ring at half past four - the padlock's corner,
+    clear of the "new" dot. The gap is 0 because the scaled tile sits only
+    ~1.8px above its name. Ring and tick live on the tile, so no grid item
+    moves; shared with the sign-up picker on purpose. Don't bring back the
+    box or the corner tick.
+  - **THE STATE TEST CARD'S CREST IS A GRADUATION CAP, NOT A SHIELD**
+    ("The state test thing on the calendar is a badge emblem, fix that").
+    In this app a badge is one of the sixteen unit awards and a shield
+    with a star reads as one. The cap is drawn in the shield's own terms
+    (same 40x44 box, 2.6rem, gold outline over a 16% fill). Keep shields
+    and stars-in-frames off the calendar; the July 8 cell's corner star is
+    a star, not the shield, and stays.
   - **A REBUILD HAS TO GREP THE GATES FOR ITS OLD CLASS NAMES, NOT JUST
     RUN THEM.** Eighteen check-behaviour sections read `.profile-rankplate`,
     `.profile-badgesect` or `.profile-level`. The ones asserting that
