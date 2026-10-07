@@ -14456,6 +14456,39 @@ disagree with it.
     on a Pro Max, 83 on an iPad) and a 320px phone narrows the art column
     instead, so the label still fits on one line there. From 40rem the
     count goes back to the right, where a tablet has the room.
+- **THE DAILY QUESTION IS ANSWERED, NOT TAPPED (build 317).** *"When
+  you submit your answer, ensure it's not just clicking, let's put a
+  submit answer so that quality seems to hold a little more weight.
+  Let's also ensure the buttons on the bottom of that screen stay in the
+  same place so they don't feel randomly placed?"*
+  - A tap on a choice only PICKS it (`dailyPickSlot`, drawn with the
+    exam's `is-picked` dot); `choose()` returns early for the daily
+    question unless `dailySubmitting` is set, which only the Submit
+    answer button sets. You can change your mind as often as you like.
+  - **One button, one spot.** The test's own `.qnext` pill is the
+    daily's only button: `#dailyq-submitbtn` ("Submit answer", disabled
+    until a choice is picked, drawn flat and dim so it reads as off),
+    then `#dailyq-exitbtn` ("Exit to main menu") in the identical rect
+    once answered. The old in-flow Exit bar under the result card is
+    gone, so the button no longer lands wherever the question's length
+    leaves it. summarize() focuses the footer's Exit and scrolls the
+    result card up clear of the pill.
+  - The subtitle "One question, one attempt." is kept with
+    `visibility:hidden` once answered, not removed, so nothing above the
+    choices jumps on submit. The status line says "Pick an answer, then
+    submit it."
+  - **No Detective progress banner.** *"You get a banner notification at
+    the top for the progression towards the character, we don't need
+    that, we'd want the pop up when unlocking it though."* Nothing sets
+    `pendingDailyProgress` now (Home's reader is a harmless no-op);
+    `announceCharacterUnlocks()` still pops the Detective on the tenth
+    in a row.
+  - Gates that answer the daily question click the choice and then
+    `#dailyq-submitbtn`; `check_b317_daily` holds all of the above and
+    fails 10 of 12 against build 316. Its banner regex is the banner's
+    exact shape ("N of 10 daily questions right in a row" / "Back to 0
+    of 10") - Home also carries the "Four More You Have to Go and Earn"
+    copy, which contains the bare phrase.
 - **STUDY TIME IS TIME SPENT STUDYING (build 314).** It was "now minus
   when the run started", so a run left open with the phone locked banked
   every hour on the day it ended: live tests of 117h and 50h, days of 68h

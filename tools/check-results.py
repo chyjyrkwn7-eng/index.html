@@ -563,7 +563,7 @@ with sync_playwright() as pw:
     audit(p9, "#stage .rs-screen", "a Starred run (no XP)")
     p9.evaluate("()=>{ theme.reduceMotion = false; store.dailyQuestionDate = null; saveStore(); startDailyQuestion(); }")
     p9.wait_for_selector(".qpanel .choice", timeout=25000); p9.wait_for_timeout(300)
-    p9.evaluate("()=>{ const r = correctSlot(order[pos]); [...document.querySelectorAll('.qpanel .choice')].find(c => +c.dataset.index === r).click(); }")
+    p9.evaluate("()=>{ const r = correctSlot(order[pos]); [...document.querySelectorAll('.qpanel .choice')].find(c => +c.dataset.index === r).click(); const sb=document.getElementById('dailyq-submitbtn'); if(sb && !sb.disabled) sb.click(); }")
     p9.wait_for_timeout(1200)
     audit(p9, "#stage .dailyq-outro", "the daily question's verdict", shape=False)
     c9.close()

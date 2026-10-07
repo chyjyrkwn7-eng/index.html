@@ -87,7 +87,7 @@ def page(br, w=440, h=956):
 # Answers the question on screen right (or wrong) through the real buttons.
 ANSWER = """(bad)=>{ const rv=document.querySelector('.recall-reveal button'); if(rv) rv.click();
   const r=correctSlot(order[pos]); const cs=[...document.querySelectorAll('.qpanel .choice')];
-  const t = bad ? cs.find(c=>+c.dataset.index!==r) : cs.find(c=>+c.dataset.index===r); if(t) t.click(); return !!t; }"""
+  const t = bad ? cs.find(c=>+c.dataset.index!==r) : cs.find(c=>+c.dataset.index===r); if(t) t.click(); const sb=document.getElementById('dailyq-submitbtn'); if(sb && !sb.disabled) sb.click(); return !!t; }"""
 RUN_UNIT = """async ([unit, perfect])=>{ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   cfg.mode='drill'; cfg.source='all'; cfg.units=[unit]; cfg.size=0; cfg.recall=false;
   beginRun(QUESTIONS.map((q,i)=>i).filter(i=>(QUESTIONS[i].topic||'').trim()===unit));
@@ -270,7 +270,7 @@ with sync_playwright() as pw:
     ctx, pg = page(br)
     pg.evaluate("()=>{ store.dailyQuestionDate=null; saveStore(); startDailyQuestion(); }")
     pg.wait_for_selector(".qpanel .choice", timeout=25000); pg.wait_for_timeout(300)
-    pick = pg.evaluate("()=>{ const r=correctSlot(order[pos]); const c=[...document.querySelectorAll('.qpanel .choice')].find(c=>+c.dataset.index!==r); c.click(); return +c.dataset.index; }")
+    pick = pg.evaluate("()=>{ const r=correctSlot(order[pos]); const c=[...document.querySelectorAll('.qpanel .choice')].find(c=>+c.dataset.index!==r); c.click(); const sb=document.getElementById('dailyq-submitbtn'); if(sb && !sb.disabled) sb.click(); return +c.dataset.index; }")
     pg.wait_for_timeout(1000)
     d = pg.evaluate("(pick)=>{ const cs=[...document.querySelectorAll('.qpanel .choice')]; const p=cs.find(c=>+c.dataset.index===pick), r=cs.find(c=>+c.dataset.index===correctSlot(order[pos]));"
                     " const bc=e=>getComputedStyle(e).borderTopColor; const plain=cs.find(c=>c!==p && c!==r);"

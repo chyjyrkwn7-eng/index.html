@@ -8538,7 +8538,7 @@ def check_b304_noxpfly(br):
       for(let t = 0; t < 60 && !document.querySelector('.qpanel .choice'); t++) await w(100);
       const c = document.querySelector('.qpanel .choice[data-index="' + correctSlot(order[pos]) + '"]');
       if(!c) return { noQuestion: true };
-      c.click();
+      c.click(); const sb=document.getElementById('dailyq-submitbtn'); if(sb && !sb.disabled) sb.click();
       for(let t = 0; t < 60 && !document.getElementById('dailyq-exitbtn'); t++) await w(100);
       let flew = false;
       const mo = new MutationObserver(() => { if(document.getElementById('welcomebonus-banner')) flew = true; });
@@ -12832,6 +12832,68 @@ def check_b315_customize(br):
         ctx.close()
 
 
+def check_b317_daily(br):
+    """Build 317. "When you submit your answer, ensure it's not just
+    clicking, let's put a submit answer ... Let's also ensure the buttons on
+    the bottom of that screen stay in the same place so they don't feel
+    randomly placed", and of the Detective: "you get a banner notification at
+    the top for the progression towards the character, we don't need that,
+    we'd want the pop up when unlocking it though". Written against build
+    316, where a tap answered outright, Exit sat under the result card, and
+    a correct answer queued "N of 10 daily questions right in a row"."""
+    print("\n317. the daily question: pick, then Submit answer; one button spot; no Detective progress banner")
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          const R = e => { if(!e) return null; const b = e.getBoundingClientRect(); return [Math.round(b.left), Math.round(b.top), Math.round(b.width), Math.round(b.height)]; };
+          const out = {};
+          store.dailyCorrectStreak = 3; store.dailyQuestionDate = null; saveStore();
+          document.querySelectorAll('#pushing-update,#intro-pop').forEach(n => n.remove());
+          startDailyQuestion();
+          for(let t = 0; t < 80 && !document.querySelector('.qpanel .choice'); t++) await wait(100);
+          await wait(400);
+          const sb0 = document.getElementById('dailyq-submitbtn');
+          out.submit0 = sb0 ? { text: sb0.textContent.trim(), disabled: sb0.disabled, rect: R(sb0) } : null;
+          const r = correctSlot(order[pos]);
+          const wrong = [...document.querySelectorAll('.qpanel .choice')].find(c => +c.dataset.index !== r);
+          wrong.click(); await wait(300);
+          out.afterTap = { locked: dailyQuestionLocked, outro: !!document.querySelector('.dailyq-outro'),
+                           picked: !!document.querySelector('.qpanel .choice.is-picked'),
+                           submitLive: !!(document.getElementById('dailyq-submitbtn') && !document.getElementById('dailyq-submitbtn').disabled) };
+          [...document.querySelectorAll('.qpanel .choice')].find(c => +c.dataset.index === r).click(); await wait(200);
+          const sb1 = document.getElementById('dailyq-submitbtn'); out.submit1 = R(sb1); if(sb1) sb1.click();
+          await wait(1500);
+          const ex = document.getElementById('dailyq-exitbtn');
+          out.exit = ex ? { text: ex.textContent.trim(), rect: R(ex) } : null;
+          out.exits = document.querySelectorAll('#dailyq-exitbtn').length;
+          out.correct = !!store.dailyQuestionCorrect;
+          const o = document.querySelector('.dailyq-outro');
+          out.outroClear = !!(o && ex && o.getBoundingClientRect().bottom <= ex.getBoundingClientRect().top);
+          out.pending = (typeof pendingDailyProgress === 'undefined') ? null : pendingDailyProgress;
+          let seen = '';
+          const mo = new MutationObserver(() => { const t = document.body.textContent || ''; const m = t.match(/\\d+ of \\d+ daily questions right in a row|Back to 0 of \\d+/); if(m) seen = m[0]; });
+          mo.observe(document.body, { childList: true, subtree: true, characterData: true });
+          if(ex) ex.click(); await wait(3500); mo.disconnect();
+          out.home = !!document.querySelector('[data-screen="home"]'); out.seen = seen;
+          return out; }""")
+        ctx.close()
+        s0 = r.get("submit0") or {}
+        check("%s: the daily question opens with Submit answer, off until a choice is picked" % dev,
+              s0.get("text") == "Submit answer" and s0.get("disabled") is True, s0)
+        a = r.get("afterTap") or {}
+        check("%s: tapping a choice picks it and does not answer" % dev,
+              a.get("locked") is False and a.get("outro") is False and a.get("picked") is True and a.get("submitLive") is True, a)
+        check("%s: changing your mind before Submit still lets you get it right" % dev, r.get("correct") is True, r.get("correct"))
+        ex = r.get("exit") or {}
+        check("%s: Exit to main menu takes Submit answer's exact spot, once" % dev,
+              ex.get("text") == "Exit to main menu" and ex.get("rect") == s0.get("rect") == r.get("submit1") and r.get("exits") == 1,
+              [s0.get("rect"), r.get("submit1"), ex.get("rect"), r.get("exits")])
+        check("%s: the result card is not under the button" % dev, r.get("outroClear") is True, r.get("outroClear"))
+        check("%s: no Detective progress banner, on the question or on Home" % dev,
+              r.get("pending") in (None,) and r.get("seen") == "" and r.get("home") is True,
+              [r.get("pending"), r.get("seen"), r.get("home")])
+
+
 def check_b316_tiles(br):
     """Build 316, round two. "The size of the themed circle in the profile
     box unlocks is perfect ... all three (or 4 because there will be a
@@ -13048,6 +13110,7 @@ def main():
             check_b314_unlocks(br)
             check_b315_customize(br)
             check_b316_tiles(br)
+            check_b317_daily(br)
         finally:
             br.close()
     SERVER.shutdown()

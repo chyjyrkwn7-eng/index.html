@@ -3196,6 +3196,12 @@
   .next:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
   .next[hidden]{ display:none; }
   .next:disabled{ opacity:.35; cursor:default; }
+  /* The daily question's Submit answer before a choice is picked: the
+     pill's own 3D shadows otherwise keep it reading as live. */
+  .foot > .floatbtn.qnext.dailyq-btn:disabled{
+    opacity:1; background-color:rgba(245,246,247,.22); background-image:none; color:rgba(255,255,255,.55);
+    box-shadow:0 0 0 1px rgba(255,255,255,.14) inset;
+  }
   /* build 308: a reset with nothing to reset - looks off, still explains
      itself on a tap (markOffButton). */
   .restart.is-off, .next.is-off{ opacity:.4; cursor:default; }
@@ -24564,9 +24570,8 @@
   .avatarchar-group-note{ font-size:.74rem; font-weight:500; letter-spacing:0; text-transform:none; color:var(--soft); }
   .avatarchar-group-title:first-of-type{ margin-top:.4rem; }
 
-  /* The daily question's way out is a full-width bar, not a pill. */
-  .settings-done-bar:has(.dailyq-exit-wide){ display:block; }
-  .next.dailyq-exit-wide{ display:block; width:100%; max-width:none; }
+  /* The daily question's Submit answer / Exit pill is the test's own
+     .qnext pill (build 317), so it needs no rule of its own here. */
   .dailyq-outro{
     --dq:#5CD692;
     margin:1.3rem 0 1rem; padding:1.2rem 1.1rem 1.1rem; border-radius:20px; text-align:center;
@@ -57877,6 +57882,14 @@ let cleared = false;
    same guard as cleared/paused) without touching any of that
    existing correct/wrong display logic at all. */
 let dailyQuestionLocked = false;
+/* THE DAILY QUESTION IS ANSWERED, NOT TAPPED (build 317): "When you
+   submit your answer, ensure it's not just clicking, let's put a submit
+   answer so that quality seems to hold a little more weight." A tap on a
+   choice only picks it (dailyPickSlot); the Submit answer button is what
+   sends it through choose(). dailySubmitting lets that one call past the
+   pick-only gate at the top of choose(). */
+let dailyPickSlot = null;
+let dailySubmitting = false;
 let hinted = false;
 let revealed = false;
 let runLabel = null;
@@ -71423,6 +71436,7 @@ function openQuestion(instant){
   lastWrong = false;
   cleared = false;
   dailyQuestionLocked = false;
+  dailyPickSlot = null;
   hinted = false;
   revealed = runMode === "exam" ? true : !cfg.recall;
   render();
@@ -71593,10 +71607,13 @@ function render(){
        clarifying. attempts[qi] alone is the right check: daily
        question always runs in Drill mode, where picked[] is never
        set at all (that's an Exam-only mechanism). */
-    if(attempts[qi] === undefined){
+    {
+      /* Kept in place once answered, only hidden (build 317), so the
+         question and choices do not jump up when the result arrives. */
       const sub = document.createElement("p");
       sub.className = "qnum-daily-sub";
       sub.textContent = "One question, one attempt.";
+      if(attempts[qi] !== undefined) sub.style.visibility = "hidden";
       dailyTitleBlock.appendChild(sub);
     }
   } else {
@@ -71699,7 +71716,8 @@ function render(){
     ];
     status.textContent = wrongMessages[(attempts[qi] - 1) % wrongMessages.length];
   } else {
-    status.textContent = "Pick the correct answer to continue.";
+    status.textContent = isDaily ? "Pick an answer, then submit it."
+                                 : "Pick the correct answer to continue.";
   }
   panel.appendChild(status);
 
@@ -71766,6 +71784,10 @@ function render(){
       btn.disabled = true;
     } else {
       if((hinted || cfg.revealCorrect) && slot === right){ btn.classList.add("hinted"); }
+      if(isDaily && dailyPickSlot === slot){
+        btn.classList.add("is-picked"); mark.textContent = "\u25CF";
+        if(fx && fx.kind === "pick" && fx.slot === slot) btn.classList.add("is-pick-pop");
+      }
       /* The wrong pick lights up red for a moment and lets go on its own
          (build 303) - long enough to register, not long enough to turn
          the next try into elimination, which is what the no-strike-out
@@ -71835,10 +71857,9 @@ function render(){
   next.type = "button"; next.className = "next floatbtn playbtn"; next.id = "nextbtn";
   next.textContent = pos === order.length - 1 ? "See results" : "Next question";
   /* Always hidden for daily question, correct or wrong \u2014 its own
-     dedicated Exit button (appended separately in summarize()) fully
-     replaces this one, so this needs to actually be gone, not just
-     styled differently, regardless of what cleared/dailyQuestionLocked
-     say about it. */
+     Submit answer / Exit pill (built just below, build 317) replaces
+     this one, so this needs to actually be gone, not just styled
+     differently, regardless of what cleared/dailyQuestionLocked say. */
   next.hidden = (runLabel === "Daily question") ? true
     : runMode === "exam" ? (picked[qi] === undefined) : !cleared;
   next.classList.add("qnext");
@@ -71866,6 +71887,30 @@ function render(){
   }
   next.addEventListener("click", advanceWithSlide);
   foot.appendChild(next);
+  /* THE DAILY QUESTION'S BUTTON NEVER MOVES (build 317): "ensure the
+     buttons on the bottom of that screen stay in the same place so they
+     don't feel randomly placed". It is the test's own Next pill, pinned
+     at the bottom of the screen: Submit answer until it is answered (off
+     until a choice is picked), then Exit to main menu in the same spot.
+     It used to sit under the result card, wherever the question's length
+     happened to leave it. */
+  if(isDaily){
+    const answered = cleared || dailyQuestionLocked;
+    const dq = document.createElement("button");
+    dq.type = "button"; dq.className = "next floatbtn playbtn qnext dailyq-btn";
+    dq.id = answered ? "dailyq-exitbtn" : "dailyq-submitbtn";
+    dq.textContent = answered ? "Exit to main menu" : "Submit answer";
+    if(answered) dq.addEventListener("click", showHome);
+    else {
+      dq.disabled = dailyPickSlot == null;
+      dq.addEventListener("click", () => {
+        if(dailyPickSlot == null) return;
+        dailySubmitting = true;
+        try{ choose(dailyPickSlot); } finally { dailySubmitting = false; }
+      });
+    }
+    foot.appendChild(dq);
+  }
 
   /* after enough wrong tries, offer to point at the answer */
   if(runMode === "drill" && !cleared && !hinted && attempts[qi] >= HINT_AFTER){
@@ -71881,6 +71926,7 @@ function render(){
 
   stage.replaceChildren(...(dailyTitleBlock ? [dailyTitleBlock, panel, foot] : [panel, foot]));
   if(!next.hidden) next.focus({ preventScroll: true });
+  if(isDaily) panel.classList.add("is-dailyq");
 }
 
 function scheduleAutoAdvance(qi){
@@ -71953,6 +71999,12 @@ function choose(slot){
   }
 
   if(cleared || paused || dailyQuestionLocked) return;
+  if(runLabel === "Daily question" && !dailySubmitting){
+    dailyPickSlot = slot;
+    choiceFx = { qi, slot, kind: "pick", at: Date.now() };
+    render();
+    return;
+  }
   attempts[qi] = (attempts[qi] || 0) + 1;
   /* What was picked FIRST, so the review can show the answer you gave
      and not only the one you finally landed on. */
@@ -72847,7 +72899,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-07-316";
+const APP_BUILD = "2026-10-07-317";
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
    pushing when I open the app?" Because this gap is shared by every way
@@ -79940,30 +79992,29 @@ function summarize(){
       next.textContent = gotIt ? "Come back tomorrow for the next daily question."
                                : "Come back tomorrow and try again.";
       outro.append(mark, head, xpLine, next);
-      /* THE DETECTIVE'S PROGRESS IS NOT IN THIS BOX (build 228) - it goes
-         to the main menu as a top banner once you are back there: the
-         box says how you did today, and nothing else. */
-      try{
-        const f = CHARACTER_FEATS.daily10;
-        if(f && isLockedCharacter("detective")){
-          const n = Math.min(f.have(), f.need);
-          pendingDailyProgress = {
-            text: gotIt ? n + " of " + f.need + " daily questions right in a row"
-                        : "Back to 0 of " + f.need + " - the run starts again tomorrow"
-          };
-        }
-      }catch(e){}
+      /* NO PROGRESS BANNER FOR THE DETECTIVE (build 317) - "when you are
+         working towards that, you get a banner notification at the top for
+         the progression towards the character, we don't need that, we'd
+         want the pop up when unlocking it though". The unlock pop-up is
+         announceCharacterUnlocks() above; nothing sets pendingDailyProgress
+         now, and Home's reader of it is left as a harmless no-op. */
       existingPanel.appendChild(outro);
-      const exitBar = document.createElement("div");
-      exitBar.className = "startbar settings-done-bar";
-      const exitBtn = document.createElement("button");
-      exitBtn.type = "button"; exitBtn.className = "next playbtn dailyq-exit-wide"; exitBtn.id = "dailyq-exitbtn";
-      exitBtn.textContent = "Exit to main menu";
-      exitBtn.addEventListener("click", showHome);
-      exitBar.appendChild(exitBtn);
-      existingPanel.appendChild(exitBar);
+      /* Exit is the footer pill render() just built, in the exact spot
+         Submit answer was - the button does not move when you answer. */
       toTop();
-      exitBtn.focus({ preventScroll: true });
+      const exitBtn = document.getElementById("dailyq-exitbtn");
+      if(exitBtn) exitBtn.focus({ preventScroll: true });
+      /* The card is the answer, so it must not sit behind the pill: on a
+         phone a long question leaves it under the button, half read.
+         Bring its bottom edge up to just above the pill. */
+      requestAnimationFrame(() => {
+        if(!outro.isConnected || !exitBtn) return;
+        const over = outro.getBoundingClientRect().bottom - (exitBtn.getBoundingClientRect().top - 16);
+        if(over <= 0) return;
+        const smooth = theme.smoothScroll && !theme.reduceMotion;
+        try{ window.scrollTo({ top: window.scrollY + over, left: 0, behavior: smooth ? "smooth" : "instant" }); }
+        catch(e){ window.scrollTo(0, window.scrollY + over); }
+      });
     }
     pendingXpFly = pointsEarned;
     pendingXpFlyDaily = true;
