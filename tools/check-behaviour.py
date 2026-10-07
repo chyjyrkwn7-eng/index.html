@@ -7541,14 +7541,15 @@ def check_b299(br):
             out.tabDot = tab.classList.contains('has-new');
             const dcs = getComputedStyle(tab.querySelector('.bottomtab-icon'), '::after');
             out.tabDotShown = dcs.content !== 'none' && parseFloat(dcs.width) > 6;
-            out.tabDotColor = dcs.backgroundColor;
+            /* the dot is a lit ball now (build 317) - its yellow is in the gradient, not the flat colour */
+            out.tabDotColor = (dcs.backgroundImage.match(/rgb\(255, 212, 59\)/) || [dcs.backgroundColor])[0];
             markUnlockSeen('chars', ch); await wait(50);
             out.tabDotAfter = tab.classList.contains('has-new');
             /* the dot inside, same colour */
             store.seenUnlocks.chars = store.seenUnlocks.chars.filter(x => x !== ch);
             showProfile('profile'); await wait(600);
             const d = document.querySelector('.namedisplay-row .new-dot');
-            out.dotColor = d ? getComputedStyle(d).backgroundColor : null;
+            out.dotColor = d ? ((getComputedStyle(d).backgroundImage.match(/rgb\(255, 212, 59\)/) || [getComputedStyle(d).backgroundColor])[0]) : null;
             markUnlockSeen('chars', ch);
             /* every flare moves, locked ones included */
             store.lifetime.points = 0; topicsIn(QUESTIONS).forEach(x => store.unitPerfects[x] = 0);
