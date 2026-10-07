@@ -19525,6 +19525,25 @@
   .is-banked .xpbar-fill::after{ background:linear-gradient(90deg, rgba(214,236,255,.05), rgba(214,236,255,.42));
     animation-duration:2.6s; }
   .xpbar-track.is-banked{ box-shadow:inset 0 1px 2px rgba(0,0,0,.5), 0 0 0 1px rgba(143,193,255,.42), 0 0 12px rgba(61,139,255,.32); }
+  /* THE BLOCKED BUMP (build 317, xpBarBump): XP arriving at a bar that
+     cannot go further knocks it against its end - right, back, settle -
+     and a light flares at the right end and fades. Transform and opacity
+     only; ~520ms; only ever added while XP is being earned into it. */
+  .is-xpbump{ animation:xp-bump .52s cubic-bezier(.3,.6,.3,1); }
+  @keyframes xp-bump{
+    0%{ transform:translate3d(0,0,0); } 14%{ transform:translate3d(4px,0,0); }
+    34%{ transform:translate3d(-3px,0,0); } 54%{ transform:translate3d(2px,0,0); }
+    74%{ transform:translate3d(-1px,0,0); } 100%{ transform:translate3d(0,0,0); }
+  }
+  .is-xpbump::after{ content:""; position:absolute; z-index:2; right:-6px; top:50%; width:28px; height:28px; margin-top:-14px;
+    border-radius:50%; pointer-events:none; opacity:0;
+    background:radial-gradient(circle, rgba(232,244,255,.95) 0%, rgba(111,178,255,.6) 34%, rgba(90,155,239,0) 70%);
+    animation:xp-bump-flash .52s ease-out; }
+  .pf-xpbarwrap{ position:relative; display:block; }
+  @keyframes xp-bump-flash{
+    0%{ opacity:0; transform:scale(.4); } 16%{ opacity:1; transform:scale(1); } 100%{ opacity:0; transform:scale(1.7); }
+  }
+  [data-reduce-motion="true"] .is-xpbump, [data-reduce-motion="true"] .is-xpbump::after{ animation:none !important; }
   .profile-badgesect{
     display:block; width:100%; text-align:left; font:inherit; color:inherit; cursor:pointer;
     -webkit-tap-highlight-color:transparent; border-radius:0;
@@ -19789,7 +19808,12 @@
   .pf-idsep{ opacity:.35; }
   /* the XP is blue, the bar's own light blue - never the rank's colour
      (build 259: "I don't like the bronze all the way through") */
-  .pf-xp-total{ color:var(--xpnum, #5A9BEF); white-space:nowrap; font-weight:800; }
+  /* THE TOTAL IS A DEEPER BLUE THAN THE LEVEL'S NUMBERS (build 317):
+     "Total xp, this needs to be a darker blue or something, looks too
+     much like the others to the left." Same family, clearly a step
+     down, and a lighter weight, so it reads as a running total rather
+     than a third number about this level. */
+  .pf-xp-total{ color:var(--xptotal, #3F6CB6); white-space:nowrap; font-weight:700; }
   .pf-xp{ display:block; margin-top:.85rem; }
   .pf-xpbar.xpbar-track{ display:block; }
   .pf-xpbar .xpbar-fill{ display:block; height:100%; border-radius:inherit; }
@@ -19818,7 +19842,6 @@
     .pf-xpnums{ font-size:.78rem; }
     .pf-xp-next{ font-size:.72rem; }
   }
-  .pf-xp-cap{ color:var(--xpnum, #5A9BEF); }
   .pf-xp-note{ display:block; margin-top:.35rem; font-size:.8rem; line-height:1.35; color:rgba(255,255,255,.62); }
   .pf-xp-note.is-wall{ color:#E8C770; }
   .pf-standing + .pf-goal{ margin-top:1.05rem; }
@@ -49089,7 +49112,15 @@ function levelProgress(points){
     span: atCap ? 0 : need,
     toNext: atCap ? 0 : (spent + need - p),
     fraction: atCap ? 1 : Math.min(1, Math.max(0, (p - spent) / need)),
-    atCap: atCap
+    atCap: atCap,
+    /* AT LEVEL 80 THE XP STILL TRACKS (build 317): "make it so that xp
+       earned beyond that level still tracks, it would almost work
+       identical to crossing a max level gate". The XP since reaching the
+       cap, against what the curve would charge for the level after it -
+       read by levelBarOf() only; into/span/fraction above stay 0/0/1 at
+       the cap, so nothing that already reads them moves. */
+    topInto: atCap ? p - spent : 0,
+    topSpan: atCap ? need : 0
   };
 }
 function levelFromPoints(points){ return levelProgress(points).level; }
@@ -49287,6 +49318,43 @@ function levelOf(st){ return effectiveLevelOf(st); }
    against what the level asks, still counting once the bar is full. */
 function levelXpNumbers(s){
   return Math.max(0, Math.round(s.into)).toLocaleString() + " / " + Math.round(s.span).toLocaleString() + " XP";
+}
+/* WHAT ANY XP BAR SHOWS FOR A LEVEL STATE (build 317). One answer for
+   the Profile bar and the results card, so level 80 behaves exactly like
+   a rank wall: the bar fills toward what the next level would cost, then
+   sits full while the numbers run on past it (`over`, both blue).
+     capped  the bar cannot go further: held at a wall, or at level 80
+     over    past the requirement - the bar is full and the XP is overflow
+     top     level 80, the last level there is for now */
+function levelBarOf(s){
+  if(!s) return { into: 0, span: 0, fraction: 0, capped: false, over: false, top: false };
+  if(s.atCap){
+    const span = Math.max(1, Math.round(Number(s.topSpan) || 0)), into = Math.max(0, Number(s.topInto) || 0);
+    return { into, span, fraction: Math.min(1, into / span), capped: true, over: into >= span, top: true };
+  }
+  return { into: Number(s.into) || 0, span: Number(s.span) || 0, fraction: Number(s.fraction) || 0,
+           capped: !!(s.held || s.stopped), over: !!s.stopped, top: false };
+}
+/* THE BLOCKED BUMP (build 317): "Anytime you see an xp bar WHILE earning
+   xp, can there be a subtle effect that the xp bar is full? ... still do
+   the up thing but like a 'failure' effect happens and then it goes to
+   the overflow number. Quickly subtly still noticeable but also smooth."
+   Called by whoever animated XP into a capped bar, at the moment the
+   fill lands at the end: the bar knocks against its end twice (a
+   translate, ~520ms) and a light flares and fades at the right end. A
+   bar merely SHOWN full never calls this. Reduce motion: nothing moves,
+   `onSettle` still runs. Transform and opacity only. */
+const XP_BUMP_MS = 520;
+function xpBarBump(host, onSettle){
+  if(!host){ if(onSettle) onSettle(); return; }
+  let still = false;
+  try{ still = resultsMotionOff(); }catch(e){}
+  if(still){ if(onSettle) onSettle(); return; }
+  host.classList.remove("is-xpbump"); void host.offsetWidth; host.classList.add("is-xpbump");
+  host.dataset.xpbump = String((Number(host.dataset.xpbump) || 0) + 1);
+  /* the numbers move over a beat after the knock, while it is settling */
+  setTimeout(() => { if(onSettle) onSettle(); }, 170);
+  setTimeout(() => host.classList.remove("is-xpbump"), XP_BUMP_MS + 40);
 }
 /* "into / span XP" with the loud half flipped by whether you are past
    the requirement - see the Profile bar. */
@@ -76484,7 +76552,9 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
   track.className = "xpbar-track results-level-track";
   const fill = document.createElement("div");
   fill.className = "xpbar-fill";
-  setBarFill(fill, before.atCap ? 100 : Math.round(before.fraction * 1000) / 10);
+  /* level 80 is a wall like any other (build 317): levelBarOf */
+  const barBefore = levelBarOf(before), barAfter = levelBarOf(after);
+  setBarFill(fill, Math.round(barBefore.fraction * 1000) / 10);
   track.appendChild(fill);
   /* The charging ring (build 282): a sibling the track cannot clip, so
      its light can breathe by opacity alone. */
@@ -76496,13 +76566,6 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
 
   const line = document.createElement("p");
   line.className = "results-level-line";
-  const lineFor = p => p.atCap
-    ? p.total.toLocaleString() + " XP \u00b7 level " + LEVEL_CAP + ", the cap"
-    /* AT A GATE (build 314): the XP into this level against what it
-       asks, still counting past it once the bar is full - "700 / 100" */
-    : p.held ? levelXpNumbers(p)
-    : p.total.toLocaleString() + " XP \u00b7 " + p.toNext.toLocaleString() +
-      " to level " + (p.level + 1);
   /* The line under the bar follows the level ABOVE it (build 309). It was
      written from where the run ENDED the moment the card was built, while
      the number above still showed where it STARTED until the bar wrapped -
@@ -76516,16 +76579,51 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
      while the bar sits full. */
   /* Not held either (build 314): the same "into / span XP" numbers as
      the Profile bar, never "N to level X" - "I don't like that". */
-  const setLine = (p, into) => {
-    if(!p.atCap){
-      line.replaceChildren(buildXpNumbers(into == null ? p.into : into, p.span, (into == null ? p.into : into) > p.span));
-    } else line.textContent = lineFor(p);
+  /* Level 80 included (build 317): "make it so that xp earned beyond
+     that level still tracks" - the same numbers as a wall, never "level
+     80, the cap". */
+  const setLine = (p, into, overNow) => {
+    const v = levelBarOf(p);
+    const n = into == null ? v.into : into;
+    line.replaceChildren(buildXpNumbers(n, v.span, overNow == null ? n > v.span : overNow));
   };
+  /* Where the "have" number started this run, on the level the run ended
+     in - for the count-up at a wall or at 80. */
+  const fromInto = () => Math.max(0, Math.min(barAfter.into, (pointsAfter - gained) - xpForLevel(after.level)));
+  /* THE BLOCKED BUMP (build 317): XP that ran into a full bar. The fill
+     lands at the end, the bar knocks against it (xpBarBump), and only
+     then does the number run on to the overflow, both halves blue. One
+     that was full before the run knocks as soon as the XP arrives. */
+  const bumps = gained > 0 && barAfter.over && !resultsMotionOff();
   const countUp = () => {
-    if(!after.held || after.atCap) return setLine(after);
-    const start = xpForLevel(after.level);
-    const from = Math.max(0, Math.min(after.into, (pointsAfter - gained) - start));
-    if(from >= after.into || resultsMotionOff()) return setLine(after);
+    if(!barAfter.capped) return setLine(after);
+    const from = fromInto();
+    if(from >= barAfter.into || resultsMotionOff()) return setLine(after);
+    if(bumps){
+      /* up to the full mark with the fill, knock, then the overflow */
+      const full = Math.max(from, Math.min(barAfter.span, barAfter.into));
+      const lead = from >= barAfter.span ? 120 : 900;
+      const run = (a, z, ms, over, then) => {
+        const t0 = performance.now();
+        const tick = () => {
+          if(finished) return;
+          const k = Math.min(1, (performance.now() - t0) / ms), e = 1 - Math.pow(1 - k, 3);
+          setLine(after, Math.round(a + (z - a) * e), over);
+          if(k < 1) requestAnimationFrame(tick); else if(then) then();
+        };
+        setLine(after, a, over);
+        requestAnimationFrame(tick);
+      };
+      run(from, full, lead, from >= barAfter.span, null);
+      setTimeout(() => {
+        if(finished) return;
+        xpBarBump(trackWrap, () => {
+          if(finished) return;
+          run(full, barAfter.into, Math.min(900, 380 + gained / 6), true, null);
+        });
+      }, lead);
+      return;
+    }
     const t0 = performance.now(), dur = Math.min(1600, 600 + gained / 4);
     const tick = now => {
       if(finished) return;
@@ -76537,10 +76635,8 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
     requestAnimationFrame(tick);
   };
   if(levelsUp) setLine(before);
-  else if(after.held && !after.atCap){
-    const start = xpForLevel(after.level);
-    setLine(after, Math.max(0, Math.min(after.into, (pointsAfter - gained) - start)));
-  } else setLine(after);
+  else if(barAfter.capped) setLine(after, fromInto());
+  else setLine(after);
 
   wrap.append(head, trackWrap, line);
   /* NOTHING UNDER THE NUMBERS (build 314): the badge challenge and the
@@ -76549,8 +76645,8 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
      the counting number say it; Profile has the challenge. */
   /* A bar already full at a gate is banked from the start; one that
      reaches the gate this run turns banked when it gets there. */
-  const bank = () => { if(after.stopped) track.classList.add("is-banked"); };
-  if(before.stopped && after.stopped && !levelsUp) bank();
+  const bank = () => { if(barAfter.over) track.classList.add("is-banked"); };
+  if(barBefore.over && barAfter.over && !levelsUp) bank();
   /* MORE THAN ONE LEVEL IN A RUN - which is what a badge opening a gate
      usually is, with several levels banked behind it - climbs through
      each of them, one fill after another (build 314: "the bar animates
@@ -76562,6 +76658,12 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
     lvl.dataset.jump = String(steps);
     wrap.fillMs = 300 + steps * (stepMs + 90) + 900;
   }
+  /* the results reveal's pop waits for the knock (build 317) */
+  if(bumps){
+    const base = wrap.fillMs || (levelsUp ? 2050 : 1250);
+    wrap.fillMs = base + XP_BUMP_MS + (levelsUp || barBefore.fraction < 1 ? 0 : -500) + 200;
+  }
+  wrap.bumps = bumps;
 
   /* Kicked off by the caller once the block is actually on screen, for
      the same reason the Profile bar is: a width set in the same tick as
@@ -76572,18 +76674,18 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
   wrap.setFinal = function(){
     finished = true;
     fill.style.transition = "none";
-    setBarFill(fill, after.atCap ? 100 : Math.round(after.fraction * 1000) / 10);
+    setBarFill(fill, Math.round(barAfter.fraction * 1000) / 10);
     lvl.textContent = "Level " + after.level;
     setLine(after);
-    if(after.level !== before.level && !before.atCap) wrap.classList.add("is-levelup");
+    if(levelsUp) wrap.classList.add("is-levelup");
     bank();
   };
   wrap.runFill = function(){
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      const target = after.atCap ? 100 : Math.round(after.fraction * 1000) / 10;
+      const target = Math.round(barAfter.fraction * 1000) / 10;
       if(!levelsUp){
         setBarFill(fill, target);
-        if(after.stopped) setTimeout(bank, 900);
+        if(barAfter.over) setTimeout(bank, 900);
         countUp();
         return;
       }
@@ -76627,7 +76729,7 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
           fill.style.transition = prev || "";
           requestAnimationFrame(() => {
             setBarFill(fill, target);
-            if(after.stopped) setTimeout(bank, 900);
+            if(barAfter.over) setTimeout(bank, 900);
           });
         });
       };
@@ -92888,14 +92990,28 @@ function buildRankRewardTiles(key){
    is the one whose challenges open the wall (gateKey), which at a wall is
    always the next rank - see rankChallengesOf. */
 function profileXpNote(prog){
-  if(prog.atCap) return "";
+  /* REWRITTEN (build 317): "could be worded better and easier to
+     understand ... needs to say something that easier to understand and
+     explains to the user that the overflow xp will be used towards the
+     next levels once unlocked but simple ... but not vague either." Three
+     short sentences: where you are stopped, what opens more, what
+     happens to the XP. Level 80 says the same thing about the cap: "for
+     the max level right now, there's nothing to get past it until we get
+     more levels and units." */
+  if(prog.atCap){
+    return "You've reached level " + LEVEL_CAP + ", the top level for now. More levels are coming with new units. " +
+      "XP you earn now still counts and goes toward those levels when they are added.";
+  }
   if(prog.stopped || prog.held){
     let held = null, next = null;
     try{ held = rankOf(store); }catch(e){}
     try{ next = prog.gateKey || (rankChallengesOf() || {}).key || null; }catch(e){}
-    const nextName = next ? RANK_DISPLAY_NAME[next] || next : "next rank";
-    return (held ? "This is the max level at " + RANK_DISPLAY_NAME[held] + ". " : "This is the max level before your first rank. ") +
-      "Complete the " + nextName + " challenges to unlock the next set of levels. The XP you earn until then is kept.";
+    const nextName = next ? RANK_DISPLAY_NAME[next] || next : "next";
+    /* no number in it: the level is printed right above the bar */
+    return "You've reached the top level " +
+      (held ? "for " + RANK_DISPLAY_NAME[held] : "before your first rank") + ". " +
+      "Finish the " + nextName + " rank challenges to unlock more levels. " +
+      "XP you earn now still counts and goes toward those levels as soon as they unlock.";
   }
   const left = Math.max(0, Math.round((Number(prog.span) || 0) - (Number(prog.into) || 0)));
   return left.toLocaleString() + " XP to level " + (prog.level + 1);
@@ -92947,29 +93063,34 @@ function buildProfileStanding(prog, rankNow){
   const xp = document.createElement("span");
   xp.className = "pf-xp";
   const track = document.createElement("span");
-  track.className = "xpbar-track profile-xpbar pf-xpbar" + (prog.stopped ? " is-banked" : "");
+  /* level 80 is a wall too (build 317) - see levelBarOf */
+  const bar = levelBarOf(prog);
+  track.className = "xpbar-track profile-xpbar pf-xpbar" + (bar.over ? " is-banked" : "");
   const fill = document.createElement("span");
   fill.className = "xpbar-fill";
   setBarFill(fill, 0);
-  fill.dataset.target = String(Math.round((Number(prog.fraction) || 0) * 1000) / 10);
+  fill.dataset.target = String(Math.round((Number(bar.fraction) || 0) * 1000) / 10);
   track.appendChild(fill);
+  const trackWrap = document.createElement("span");
+  trackWrap.className = "pf-xpbarwrap";
+  trackWrap.appendChild(track);
   const nums = document.createElement("span");
   nums.className = "pf-xpnums";
   const noteText = profileXpNote(prog);
-  const wall = !prog.atCap && (prog.stopped || prog.held);
-  if(prog.atCap){
-    const c = document.createElement("span");
-    c.className = "pf-xp-cap"; c.textContent = "Every level reached";
-    nums.appendChild(c);
-  } else {
-    nums.appendChild(buildXpNumbers(prog.into, prog.span, prog.stopped));
-  }
+  const wall = prog.atCap || prog.stopped || prog.held;
+  nums.appendChild(buildXpNumbers(bar.into, bar.span, bar.over));
+  /* for runXpBarFill: whether this bar is full and still collecting, and
+     the total it was built with */
+  box.dataset.xpOver = bar.over ? "1" : "0";
+  box.dataset.xpTotal = String(Math.round(Number(prog.total) || 0));
+  box.dataset.xpInto = String(Math.round(bar.into));
+  box.dataset.xpSpan = String(Math.round(bar.span));
   /* THE TOTAL UNDER THE BAR, BOTTOM RIGHT (build 317): "The total xp you
      have earned should be on the bottom right under the xp bar not above
      it". It takes the place "N XP to level X" had; the two numbers on
      the left already say how far into the level you are. */
   nums.appendChild(tot);
-  xp.append(track, nums);
+  xp.append(trackWrap, nums);
   if(wall && noteText){
     const note = document.createElement("span");
     note.className = "pf-xp-note";
@@ -92981,6 +93102,50 @@ function buildProfileStanding(prog, rankNow){
     "level " + prog.level + ", " + prog.total.toLocaleString() + " total XP. " + (noteText || "") + " Open the Rank screen.");
   box.addEventListener("click", () => showRanksScreen("ranks"));
   return box;
+}
+/* THE PROFILE BAR AFTER XP WAS EARNED INTO A FULL BAR (build 317). The
+   bar fills from empty every time the tab is shown, which is not earning
+   anything; but XP that arrived since this DEVICE last showed the bar,
+   into a bar that is full and still collecting (a wall, or level 80), is
+   the case Madison asked about - so the "have" number starts where it
+   was, the fill lands, the bar knocks (xpBarBump) and the number runs on
+   to the overflow. `class26e.pfxp.seen` is viewing history, not progress
+   (the same reasoning as class26e.daily.seen): never synced; null on a
+   fresh install records and plays nothing. Returns the function to call
+   once the fill has been set, or null. */
+const PF_XP_SEEN_KEY = "class26e.pfxp.seen";
+function profileXpEarnedSince(box){
+  if(!box || !box.dataset) return null;
+  const total = Number(box.dataset.xpTotal) || 0;
+  let seen = null;
+  try{ const v = localStorage.getItem(PF_XP_SEEN_KEY); seen = v == null ? null : Number(v); }catch(e){}
+  try{ localStorage.setItem(PF_XP_SEEN_KEY, String(total)); }catch(e){}
+  if(seen == null || !isFinite(seen) || total <= seen || box.dataset.xpOver !== "1") return null;
+  const into = Number(box.dataset.xpInto) || 0, span = Number(box.dataset.xpSpan) || 0;
+  const from = Math.max(0, into - (total - seen));
+  const xn = box.querySelector(".pf-xpnums .xpnums"), have = xn && xn.querySelector(".xpnums-have");
+  const host = box.querySelector(".pf-xpbarwrap");
+  if(!xn || !have || !host) return null;
+  const show = v => { have.textContent = Math.max(0, Math.round(v)).toLocaleString(); };
+  show(from);
+  if(from < span) xn.classList.remove("is-over");
+  return () => {
+    /* the fill's own .9s glide, then the knock */
+    setTimeout(() => {
+      if(!box.isConnected) return show(into);
+      xpBarBump(host, () => {
+        xn.classList.add("is-over");
+        if(resultsMotionOff()) return show(into);
+        const t0 = performance.now(), dur = 450;
+        const tick = () => {
+          const k = Math.min(1, (performance.now() - t0) / dur);
+          show(from + (into - from) * (1 - Math.pow(1 - k, 3)));
+          if(k < 1 && box.isConnected) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      });
+    }, resultsMotionOff() ? 0 : 900);
+  };
 }
 /* A LINE THAT DOES NOT FIT BREAKS AT THE XP, NOT AT A DOT (build 316).
    The rank line is a flex row that wraps, and a wrap can strand a "·"
@@ -93636,8 +93801,10 @@ function showProfile(defaultTab){
      0% width is a committed style before the transition target lands
      on it; one frame is not reliably enough for that. */
   function runXpBarFill(){
+    const earnedInto = profileXpEarnedSince(standing);
     requestAnimationFrame(() => requestAnimationFrame(() => {
       setBarFill(xpFill, Number(xpFill.dataset.target) || 0);
+      if(earnedInto) earnedInto();
       try{ fitProfileIdLine(heroSect); bindProfileIdFit(); }catch(e){}
     }));
     /* the flare bubbles' recorded motion, started the way Home starts

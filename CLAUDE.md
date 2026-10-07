@@ -14518,6 +14518,56 @@ disagree with it.
     .rs-frac-of{opacity:1}`). Its unit bar was never broken: it fills red
     ~350ms after the card lands, and the screenshot that showed it empty
     was taken before that.
+  - **A FULL BAR, SECOND PASS: level 80, the note, the total, the knock.**
+    - *"The level 80 xp bar, it says every level reached, make it so that
+      xp earned beyond that level still tracks, it would almost work
+      identical to crossing a max level gate."* Level 80 IS a wall now.
+      `levelProgress()` carries `topInto`/`topSpan` at the cap (the XP
+      since 80, and what the curve would charge for an 81st level - the
+      `need` the loop already computed); `into/span/fraction` stay 0/0/1 so
+      nothing that read them moves. `levelBarOf(state)` is the one answer
+      for what a bar shows - `capped` (held at a wall or at 80), `over`
+      (full and collecting) - and both the Profile bar and
+      `buildResultsLevelBlock` read it. So at 80 the bar fills toward that
+      cost and then sits full with "52,343 / 48,022 XP", both blue; "Every
+      level reached" and "level 80, the cap" are gone. No level and no XP
+      changed.
+    - **The note under the bar** (`profileXpNote`), asked to be easier and
+      not vague: *"explains to the user that the overflow xp will be used
+      towards the next levels once unlocked"*. At a wall: "You've reached
+      the top level for Silver. Finish the Gold rank challenges to unlock
+      more levels. XP you earn now still counts and goes toward those
+      levels as soon as they unlock." (unranked: "...the top level before
+      your first rank..."; still no number, the level is printed above).
+      At 80: "You've reached level 80, the top level for now. More levels
+      are coming with new units. XP you earn now still counts and goes
+      toward those levels when they are added." check-curve holds the
+      shape (top level, which rank's challenges, "still counts"), not the
+      prose.
+    - **Total XP is a deeper blue** (`--xptotal`, #3F6CB6, weight 700)
+      - *"needs to be a darker blue or something, looks too much like the
+      others to the left"*. Same family as `--xpnum` (#5A9BEF), clearly a
+      step down; about 3.3:1 on the dark card, bold.
+    - **THE KNOCK** (`xpBarBump`, `.is-xpbump`): *"Anytime you see an xp
+      bar WHILE earning xp ... still do the up thing but like a 'failure'
+      effect happens and then it goes to the overflow number."* XP earned
+      into a capped bar: the fill runs to full with the number counting to
+      the requirement, the bar knocks against its end (translateX
+      4/-3/2/-1px over 520ms) while a light flares and fades at the right
+      end (`::after`, opacity/scale), and 170ms in the number runs on to
+      the overflow with both halves blue. Already full before the run: it
+      knocks 120ms after the XP arrives. Results card: on the
+      `.results-level-trackwrap` (the track itself has the `is-charged`
+      scaleY pop), and `fillMs` is lengthened so the pop waits for it;
+      every mode's results use it. Profile: the bar fills from empty every
+      time it is shown, which is not earning anything, so it knocks only
+      when XP arrived since this DEVICE last showed it
+      (`class26e.pfxp.seen`, viewing history in `localStorage`, never
+      synced; null records and plays nothing). A bar merely shown full,
+      a run with no XP, a bar with room left and Reduce motion never knock
+      (Reduce motion just settles the numbers). `check_b317_xpcap` holds
+      all of it and fails 9 of 13 against 74cc518. Headless Chromium runs
+      this page's rAF at a few frames a second, so its waits are long.
 - **THE DAILY QUESTION IS ANSWERED, NOT TAPPED (build 317).** *"When
   you submit your answer, ensure it's not just clicking, let's put a
   submit answer so that quality seems to hold a little more weight.

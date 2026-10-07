@@ -735,9 +735,16 @@ def main():
             # what's shown under the xp challenge" - and the end reworded:
             # "your earned xp is still here, rank up to unlock the new set of
             # levels", combined with the second sentence.
-            check("...and the plain line under the bar says this is the max level before a first rank, the Bronze challenges unlock the next set of levels, and the XP is kept - no number in it",
-                  not pf["noteWall"] and pf["note"] == "This is the max level before your first rank. Complete the Bronze challenges to unlock the next set of levels. "
-                  "The XP you earn until then is kept."
+            # REWRITTEN IN 317 (second pass): "could be worded better and easier
+            # to understand ... explains to the user that the overflow xp will
+            # be used towards the next levels once unlocked but simple". The
+            # SHAPE is held, not the prose: top level, which rank's
+            # challenges open more, and that the XP still counts toward them.
+            note_shape = lambda n, held, nxt: bool(n) and n.startswith("You've reached the top level " + held + ". ") \
+                and ("Finish the " + nxt + " rank challenges to unlock more levels.") in n \
+                and "still counts" in n and "toward those levels" in n and "is kept" not in n
+            check("...and the plain line under the bar says this is the top level before a first rank, the Bronze rank challenges unlock more levels, and the XP still counts toward them - no number in it",
+                  not pf["noteWall"] and note_shape(pf["note"], "before your first rank", "Bronze")
                   and not re.search(r"\d", pf["note"] or ""), pf["note"])
             t = pf["tasks"]
             check("the next rank is Bronze, 1 of 2 done, with what is left listed first",
@@ -772,9 +779,8 @@ def main():
             check("...and at the wall the level task says, in one short line, where the XP goes - no badge count",
                   t49[1]["note"] == "Your XP from here goes toward the next levels you unlock."
                   and not re.search(r"\d", t49[1]["note"] or ""), t49[1]["note"])
-            check("...and the line under the bar says this is the max level at Silver and the Gold challenges unlock the next set",
-                  p49["note"] == "This is the max level at Silver. Complete the Gold challenges to unlock the next set of levels. "
-                  "The XP you earn until then is kept.", p49["note"])
+            check("...and the line under the bar says this is the top level for Silver and the Gold rank challenges unlock more",
+                  note_shape(p49["note"], "for Silver", "Gold"), p49["note"])
             tp = w["taps"]
             check("tapping where you stand opens the climb", tp["standing"]["hit"] and tp["standing"]["map"], tp["standing"])
             # "assuming you click anywhere in that box, it opens up the rank road map"

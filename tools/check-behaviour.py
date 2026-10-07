@@ -12988,6 +12988,112 @@ def check_b317_volume(br):
     ctx.close()
 
 
+def check_b317_xpcap(br):
+    """Build 317. Four of Madison's asks about a full XP bar, in one gate:
+    "The level 80 xp bar, it says every level reached, make it so that xp
+    earned beyond that level still tracks, it would almost work identical
+    to crossing a max level gate"; the wall note "could be worded better
+    and easier to understand ... explains to the user that the overflow xp
+    will be used towards the next levels once unlocked"; "Total xp, this
+    needs to be a darker blue"; and "Anytime you see an xp bar WHILE
+    earning xp, can there be a subtle effect that the xp bar is full? ...
+    a 'failure' effect happens and then it goes to the overflow number".
+    The bump is asserted by its class appearing on the bar while XP is
+    added, and NOT appearing on a bar merely shown full. Written against
+    build 317's first cut (74cc518), where every one of these fails."""
+    print("\n317. a full XP bar: level 80 keeps counting, the wall note, the total's blue, the knock")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate("""() => {
+      window.__acct = (pts, nb) => { const units = topicsIn(QUESTIONS);
+        store.lifetime = Object.assign({}, store.lifetime, { points: pts });
+        store.unitPerfects = Object.fromEntries(units.slice(0, nb).map(u => [u, badgeThresholdFor(u)]));
+        store.levelFloor = 0; retroHideBadges = null; mergeHidePoints = null; };
+      window.__bumps = 0;
+      new MutationObserver(ms => ms.forEach(m => { const c = m.target.classList;
+        if(c && [...c].some(k => /bump/.test(k))) window.__bumps++; }))
+        .observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
+      const q = s => (document.querySelector(s) || {}).textContent || null;
+      window.__pf = () => ({ level: q('.pf-standing .pf-level'), nums: q('.pf-standing .pf-xpnums .xpnums'),
+        over: !!document.querySelector('.pf-standing .xpnums.is-over'), cap: q('.pf-standing .pf-xp-cap'),
+        note: q('.pf-standing .pf-xp-note'), text: q('.pf-standing'),
+        tot: document.querySelector('.pf-standing .pf-xp-total') && getComputedStyle(document.querySelector('.pf-standing .pf-xp-total')).color,
+        need: document.querySelector('.pf-standing .xpnums-need') && getComputedStyle(document.querySelector('.pf-standing .xpnums-need')).color });
+    }""")
+    # Generous: headless Chromium runs this page's rAF at a few frames a
+    # second, and the knock is a fill, a timer and a count-up in a row.
+    wait = "await new Promise(r => setTimeout(r, %d));"
+    # 1. level 80, well past what a level 81 would cost
+    l80 = pg.evaluate("""async () => { try{ localStorage.removeItem('class26e.pfxp.seen'); }catch(e){}
+      __acct(xpForLevel(LEVEL_CAP) + 60000, 16); showProfile('identity'); %s return __pf(); }""" % (wait % 1500))
+    check("level 80 no longer says every level reached",
+          l80["level"] == "Level 80" and not re.search(r"every level reached", l80["text"] or "", re.I), l80)
+    m = re.match(r"^([0-9,]+) / ([0-9,]+) XP$", l80["nums"] or "")
+    check("...it shows the XP since level 80 against a level's cost, past it, both numbers blue",
+          bool(m) and int(m.group(1).replace(",", "")) > int(m.group(2).replace(",", "")) and l80["over"], l80["nums"])
+    check("...and the note says 80 is the top level for now and the XP counts toward new levels when they are added",
+          bool(l80["note"]) and "top level for now" in l80["note"] and "still counts" in l80["note"]
+          and "when they are added" in l80["note"], l80["note"])
+    # 2. the wall note, Silver held at 49 behind the four-badge wall
+    wall = pg.evaluate("""async () => { __acct(xpForLevel(52) + 200, 4); showProfile('identity'); %s return __pf(); }""" % (wait % 900))
+    check("the wall note is the plain new copy: top level for Silver, Gold rank challenges, XP still counts toward those levels",
+          bool(wall["note"]) and wall["note"].startswith("You've reached the top level for Silver.")
+          and "Finish the Gold rank challenges to unlock more levels." in wall["note"]
+          and "still counts" in wall["note"] and "is kept" not in wall["note"], wall["note"])
+    def rgb(c):
+        v = [float(x) for x in re.findall(r"[\d.]+", c or "")[:3]]
+        return [round(x * 255) for x in v] if (c or "").startswith("color(") else v
+    t, n = rgb(wall["tot"]), rgb(wall["need"])
+    lum = lambda c: 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+    check("the total XP is a clearly deeper blue than the level's numbers, and still blue",
+          len(t) == 3 and len(n) == 3 and t[2] - t[0] >= 80 and lum(n) - lum(t) >= 25, [t, n])
+    # 3. the knock: results card, XP added into a bar at a wall
+    res = pg.evaluate("""async () => {
+      const out = {};
+      const block = (earned, pts, nb) => { __acct(pts, nb);
+        const b = buildResultsLevelBlock(earned, pts, { badgesBefore: nb, badgesAfter: nb });
+        const host = document.createElement('div'); host.className = 'rs-xp'; host.appendChild(b);
+        document.querySelector('.panel').appendChild(host); b.runFill(); return b; };
+      const line = b => (b.querySelector('.results-level-line') || {}).textContent;
+      __bumps = 0; let b = block(300, xpForLevel(50) + 150, 4); %s
+      out.fill = { bumps: __bumps, line: line(b), over: !!b.querySelector('.xpnums.is-over') }; b.parentNode.remove();
+      __bumps = 0; b = block(300, xpForLevel(52) + 200, 4); %s
+      out.full = { bumps: __bumps, line: line(b), over: !!b.querySelector('.xpnums.is-over') }; b.parentNode.remove();
+      __bumps = 0; b = block(300, xpForLevel(LEVEL_CAP) + 60000, 16); %s
+      out.top = { bumps: __bumps, line: line(b), over: !!b.querySelector('.xpnums.is-over') }; b.parentNode.remove();
+      __bumps = 0; b = block(0, xpForLevel(52) + 200, 4); %s
+      out.none = { bumps: __bumps }; b.parentNode.remove();
+      __bumps = 0; b = block(300, xpForLevel(30) - 2000, 0); %s
+      out.room = { bumps: __bumps }; b.parentNode.remove();
+      theme.reduceMotion = true; applyTheme();
+      __bumps = 0; b = block(300, xpForLevel(52) + 200, 4); %s
+      out.still = { bumps: __bumps, line: line(b), over: !!b.querySelector('.xpnums.is-over') }; b.parentNode.remove();
+      theme.reduceMotion = false; applyTheme();
+      return out; }""" % ((wait % 4500,) * 6))
+    check("XP filling a wall's bar to full knocks it, then the numbers sit on the overflow",
+          res["fill"]["bumps"] >= 1 and res["fill"]["over"], res["fill"])
+    check("XP added to a bar already full at a wall knocks it, and the numbers run on",
+          res["full"]["bumps"] >= 1 and res["full"]["over"], res["full"])
+    check("XP added at level 80 past a level's cost knocks the bar and shows the overflow, not 'the cap'",
+          res["top"]["bumps"] >= 1 and res["top"]["over"] and "cap" not in (res["top"]["line"] or ""), res["top"])
+    check("a full bar with no XP this run does not knock", res["none"]["bumps"] == 0, res["none"])
+    check("a bar with room left does not knock", res["room"]["bumps"] == 0, res["room"])
+    check("Reduce motion: no knock, the numbers still settle on the overflow",
+          res["still"]["bumps"] == 0 and res["still"]["over"], res["still"])
+    # 4. Profile: shown full with nothing new -> still; XP arrived since -> knock
+    pf = pg.evaluate("""async () => { const out = {};
+      __acct(xpForLevel(52) + 200, 4);
+      try{ localStorage.setItem('class26e.pfxp.seen', String(store.lifetime.points)); }catch(e){}
+      __bumps = 0; showProfile('identity'); %s out.same = __bumps;
+      try{ localStorage.setItem('class26e.pfxp.seen', String(store.lifetime.points - 400)); }catch(e){}
+      __bumps = 0; showProfile('identity'); %s out.earned = __bumps; out.over = !!document.querySelector('.pf-standing .xpnums.is-over');
+      out.again = 0; __bumps = 0; showProfile('identity'); %s out.again = __bumps;
+      return out; }""" % ((wait % 4000,) * 3))
+    check("Profile: a full bar shown with no new XP does not knock", pf["same"] == 0, pf)
+    check("Profile: XP earned into a full bar since it was last shown knocks it, then shows the overflow",
+          pf["earned"] >= 1 and pf["over"] and pf["again"] == 0, pf)
+    ctx.close()
+
+
 def check_b317_rankup(br):
     """Build 317. "When you rank up, the next time you open the Profile tab
     it should be a cool thing. After a second, a black loading screen that
@@ -13371,6 +13477,7 @@ def main():
             check_b316_tiles(br)
             check_b317_daily(br)
             check_b317_volume(br)
+            check_b317_xpcap(br)
             check_b317_rankup(br)
         finally:
             br.close()
