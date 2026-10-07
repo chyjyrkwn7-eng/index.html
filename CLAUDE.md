@@ -13281,6 +13281,17 @@ disagree with it.
     the two stacked. Waiting on What's New does not spend the reward
     queue's retry budget. The Penal note also waits 2s after ANY other
     pop-up clears.
+- **STUDY TIME IS TIME SPENT STUDYING (build 314).** It was "now minus
+  when the run started", so a run left open with the phone locked banked
+  every hour on the day it ended: live tests of 117h and 50h, days of 68h
+  and 118h, and a "most time on the app" list led by people who had
+  barely used it. `flushStudyTime()` now subtracts idle: any gap of more
+  than `STUDY_IDLE_MS` (5 min) with no touch/key/scroll counts as 5 min,
+  and no day holds more than `STUDY_DAY_MAX_MS` (16h). The run's own
+  elapsed time (results, best times) is unchanged. `tools/check-study-time.py`
+  is the gate. **The days already inflated are NOT repaired** - capping
+  them takes the Hacker character and the Midnight Oil banners off people
+  who got them from the leak, and that is Madison's call.
 - **AT THE CAP THE RESULTS NUMBER COUNTS UP.** *"The result screen when
   getting xp if you are full, that xp number would just keep going up."*
   The held line is `buildXpNumbers` and the reveal counts its first

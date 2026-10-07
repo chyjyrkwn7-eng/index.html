@@ -35832,6 +35832,9 @@ function resumeRunSession(s){
   pauseBtn.hidden = false;
   raceBarEl.hidden = true;
   runStartTime = Date.now() - (s.elapsedMs || 0);
+  /* a resumed run's saved elapsed time is from before it was put away,
+     and the time it spent closed is not in it */
+  startStudyClock();
   if(s.timerLeftMs != null) timerDeadline = Date.now() + s.timerLeftMs;
   startTimer(true);
   /* The question it stopped on, as it was: openQuestion() draws it fresh,
@@ -53704,21 +53707,57 @@ function buildPillTabBarIcon(){
   return svg;
 }
 
+/* ---- STUDY TIME IS TIME SPENT STUDYING, NOT TIME A RUN WAS OPEN (build 314) ----
+   It was Date.now() minus the run's start, so a test left open with the
+   phone locked, or the app sitting in the background, banked every hour
+   until it was finished - all of it on the day it finished. Measured on
+   the live class: one test of 117 hours, one of 50, days of 68 and 118
+   hours, and the "time on the app" ranking led by two people who had
+   barely used it. Two rules now:
+   - IDLE DOES NOT COUNT. Any stretch of more than STUDY_IDLE_MS with no
+     touch, key, scroll or swipe counts as STUDY_IDLE_MS and no more. A
+     locked phone or a backgrounded app produces no input, so this one
+     rule covers those too - a question read slowly still counts in full.
+   - NO DAY HOLDS MORE THAN STUDY_DAY_MAX_MS, as a backstop.
+   Paused time was already taken out (cancelPauseTiming moves the start
+   forward); the idle clock restarts on resume so it is not taken out
+   twice. The run's own elapsed time - the "time taken" on results and
+   best times - is unchanged: this only decides what the study log is
+   credited. */
+const STUDY_IDLE_MS = 5 * 60 * 1000;
+const STUDY_DAY_MAX_MS = 16 * 3600 * 1000;
+let studyActiveAt = null;   // last input during the current run
+let studyIdleMs = 0;        // idle time beyond the allowance, this run
+function startStudyClock(){ studyActiveAt = Date.now(); studyIdleMs = 0; }
+function noteStudyActivity(){
+  if(runStartTime == null || paused || studyActiveAt == null) return;
+  const now = Date.now(), gap = now - studyActiveAt;
+  if(gap > STUDY_IDLE_MS) studyIdleMs += gap - STUDY_IDLE_MS;
+  studyActiveAt = now;
+}
+["pointerdown", "keydown", "touchmove", "wheel", "scroll"].forEach(t =>
+  document.addEventListener(t, noteStudyActivity, { capture: true, passive: true }));
+
 function addStudyTime(ms){
   if(!(ms > 0)) return;
   const key = dayKey(new Date());
-  store.studyLog[key] = (Number(store.studyLog[key]) || 0) + ms;
+  store.studyLog[key] = Math.min(STUDY_DAY_MAX_MS, (Number(store.studyLog[key]) || 0) + ms);
   saveStore();
 }
 
-/* Flushes elapsed time on the run in progress into the study log and
-   returns the elapsed milliseconds. Safe to call more than once; only
-   the first call after a run starts has any effect. */
+/* Flushes the run's STUDIED time into the study log and returns the
+   run's elapsed milliseconds (unchanged - results and best times use
+   it). Safe to call more than once; only the first call after a run
+   starts has any effect. */
 function flushStudyTime(){
   if(runStartTime == null) return 0;
-  const ms = Date.now() - runStartTime;
+  const now = Date.now();
+  const ms = now - runStartTime;
+  let idle = studyIdleMs;
+  if(studyActiveAt != null && now - studyActiveAt > STUDY_IDLE_MS) idle += now - studyActiveAt - STUDY_IDLE_MS;
   runStartTime = null;
-  addStudyTime(ms);
+  studyActiveAt = null; studyIdleMs = 0;
+  addStudyTime(Math.max(0, ms - idle));
   return ms;
 }
 
@@ -54693,6 +54732,8 @@ function cancelPauseTiming(){
   if(qClockQi != null) qClockAt += pausedMs;
   paused = false;
   pauseStartedAt = null;
+  /* the pause is already out of the run's time - not idle as well */
+  if(studyActiveAt != null) studyActiveAt = Date.now();
 }
 
 function resumeRun(){
@@ -67575,6 +67616,7 @@ function startRunNow(){
   raceBarEl.hidden = !inVirtualRoom;
   if(inVirtualRoom) startVroomRaceListener();
   runStartTime = Date.now();
+  startStudyClock();
   if(raceTimed) timerlineEl.hidden = true;
   else if(runMode !== "game") startTimer();
   openQuestion();
@@ -67624,6 +67666,7 @@ function beginVroomSyncedReveal(){
     raceBarEl.hidden = !inVirtualRoom;
     if(inVirtualRoom) startVroomRaceListener();
     runStartTime = Date.now();
+    startStudyClock();
     /* A race's only clock is the one on the question (build 246). */
     if(raceTimed) timerlineEl.hidden = true;
     else if(runMode !== "game") startTimer();
