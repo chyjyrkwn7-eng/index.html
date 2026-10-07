@@ -16288,6 +16288,43 @@
   .avatarchar-option.locked:not(.is-silhouette) .char-under-flip{ visibility:visible; }
   .avatarchar-svg [class*="cx-"]{ transform-box:fill-box; transform-origin:50% 50%; }
   .avatarchar-svg .cx-fig{ transform-origin:50% 100%; }
+  /* CHARACTER SPECIALS (build 317, see CHAR_SPECIAL_DRAW and
+     playCharSpecial). A special's parts are `.cx-sp` groups drawn at
+     opacity 0; each moving piece carries its own animation in `--a`, and
+     it runs only while the element holding the drawing has .char-special.
+     Every animation here is finite. A flip-book steps aside for it: the
+     live drawing is shown (and kept alive) for the special's length. */
+  .char-special .avatarchar-svg .cx-sp{ opacity:1; }
+  .char-special .avatarchar-svg .cx-spa{ animation:var(--a); }
+  .char-special .char-flip-play{ display:none; }
+  .char-special .char-under-flip{ visibility:visible; }
+  [data-reduce-motion="true"] .avatarchar-svg .cx-sp{ opacity:0 !important; }
+  @keyframes sp-gather{ 0%{ opacity:0; transform:none; } 20%{ opacity:1; } 80%{ opacity:1; transform:translate(var(--dx), var(--dy)) scale(.6); } 100%{ opacity:0; transform:translate(var(--dx), var(--dy)) scale(.2); } }
+  @keyframes sp-fly{ 0%{ opacity:0; transform:none; } 12%{ opacity:1; } 100%{ opacity:0; transform:translate(var(--dx), var(--dy)) scale(.3); } }
+  @keyframes sp-in{ from{ opacity:0; transform:scale(.05); } to{ opacity:1; transform:none; } }
+  @keyframes sp-out{ from{ opacity:1; transform:none; } to{ opacity:0; transform:scale(var(--os, 1.6)); } }
+  @keyframes sp-fadein{ from{ opacity:0; } to{ opacity:1; } }
+  @keyframes sp-fadeout{ from{ opacity:1; } to{ opacity:0; } }
+  @keyframes sp-ring{ 0%{ opacity:0; transform:scale(.3); } 15%{ opacity:1; } 100%{ opacity:0; transform:scale(var(--rs, 4)); } }
+  @keyframes sp-spin{ from{ transform:rotate(0deg); } to{ transform:rotate(var(--rot, 360deg)); } }
+  @keyframes sp-flash{ 0%{ opacity:0; } 20%{ opacity:var(--fo, .8); } 100%{ opacity:0; } }
+  @keyframes sp-flick{ 0%{ opacity:0; } 10%{ opacity:.9; } 16%{ opacity:.15; } 26%{ opacity:1; } 33%{ opacity:.3; } 45%{ opacity:1; } 58%{ opacity:.55; } 66%, 100%{ opacity:1; } }
+  @keyframes sp-pulse{ 0%, 100%{ transform:none; } 50%{ transform:scale(var(--ps, 1.35)); } }
+  @keyframes sp-pendx{ from{ transform:translateX(calc(-1 * var(--rx))); } to{ transform:translateX(var(--rx)); } }
+  @keyframes sp-pendy{ from{ transform:translateY(calc(-1 * var(--ry))); } to{ transform:translateY(var(--ry)); } }
+  @keyframes sp-half{ 0%{ opacity:1; } 50%, 100%{ opacity:0; } }
+  @keyframes sp-half2{ 0%{ opacity:0; } 50%, 100%{ opacity:1; } }
+  @keyframes sp-move{ from{ transform:translate(var(--x0, 0px), var(--y0, 0px)); } to{ transform:translate(var(--x1, 0px), var(--y1, 0px)); } }
+  @keyframes sp-draw{ from{ stroke-dashoffset:var(--len); } to{ stroke-dashoffset:0; } }
+  @keyframes sp-dash{ from{ stroke-dashoffset:0; } to{ stroke-dashoffset:var(--len); } }
+  @keyframes sp-jitter{ 0%, 100%{ transform:none; } 25%{ transform:translate(.35px, -.25px); } 50%{ transform:translate(-.3px, .3px); } 75%{ transform:translate(.25px, .35px); } }
+  @keyframes sp-veil{ 0%{ opacity:0; } 16%, 80%{ opacity:var(--vo, .85); } 100%{ opacity:0; } }
+  @keyframes sp-rise{ from{ opacity:1; transform:none; } to{ opacity:0; transform:translateY(-7px) scale(.75); } }
+  @keyframes sp-crush{ from{ transform:none; } to{ transform:scale(.45); } }
+  @keyframes sp-collapse{ 0%{ opacity:0; transform:scale(3); } 60%{ opacity:1; } 100%{ opacity:0; transform:scale(.35); } }
+  @keyframes sp-fall{ 0%{ opacity:0; transform:none; } 20%{ opacity:1; } 100%{ opacity:0; transform:translateY(var(--fy, 12px)); } }
+  @keyframes sp-hzdrift{ 0%{ transform:none; } 25%{ transform:translate(8.5px, -2px); } 45%{ transform:translate(9.5px, 10.5px); } 70%{ transform:translate(-9.5px, 10.5px); } 86%{ transform:translate(-8px, 0px); } 100%{ transform:none; } }
+  @keyframes sp-voidout{ 0%{ opacity:1; transform:none; } 40%{ transform:translate(var(--dx), var(--dy)); } 88%{ opacity:1; transform:translate(var(--ex), var(--ey)) scale(.6); } 100%{ opacity:0; transform:translate(var(--ex), var(--ey)) scale(.1); } }
   .avatarchar-svg .cx-head{ transform-origin:50% 92%; }
   .avatarchar-svg .cx-body{ transform-origin:50% 100%; }
   .avatarchar-svg .cx-fx-tail1, .avatarchar-svg .cx-fx-tail2{ transform-origin:0% 25%; }
@@ -39844,6 +39881,415 @@ function buildAvatarCharSVGFresh(charId){
   return svg;
 }
 
+/* ---- SPECIALS (build 317): THE RARE MOVE A CHARACTER MAKES IF YOU WATCH ----
+   "characters will have multiple animations so typically they will be
+   still, if you look at them long enough ... they could do cooler stuff
+   but it's random ... the rank ones need one that goes with their flare
+   ... the harder ones get the coolest ones." See playCharSpecial() for
+   when one plays, and the CHARACTER SPECIALS block in the stylesheet.
+   THE CONTRACT (shared by every character that has one):
+   - the element holding a live drawing gets `char-special` for
+     CHAR_SPECIAL_MS[id or kind] (CHAR_SPECIAL_DEFAULT_MS otherwise), then
+     loses it;
+   - parts that exist only for the special are `cx-sp` + a class of their
+     own, drawn with opacity="0", so a still drawing, a board row and a
+     flip-book recording never show them;
+   - they move only under `.char-special`, and every animation is finite.
+   Keyed by id first, then kind (the three ultimates share the zenith
+   kind). Other blocks add their own entries with Object.assign. */
+const CHAR_SPECIAL_DEFAULT_MS = 2800;
+const CHAR_SPECIAL_MS = {
+  /* the six rank characters, Silver up to Supernova */
+  lunar: 2600, solar: 2800, tempest: 3000, frost: 3200, oracle: 3400, inferno: 3800,
+  /* the secret-flare characters, Void the coolest of them */
+  umbra: 2800, singularity: 3000, genesis: 3300, voidwalker: 4000,
+  /* the three ultimates, Zenith last and most */
+  astral: 3300, celestial: 3700, zenith: 4300
+};
+/* What each of those draws: called from drawAvatarCharSVG's done() with a
+   small kit (T) once the figure is closed. T.back sits behind the figure,
+   T.front over everything. Every part is drawn in the 40-unit drawing and
+   kept inside the 3..37 window. */
+function spMotes(T, p, cx, cy, n, R, cols, t0, dur, r){
+  for(let i = 0; i < n; i++){
+    const a = (i / n) * Math.PI * 2 + .4, x = cx + Math.cos(a) * R, y = cy + Math.sin(a) * R * .85;
+    T.add(p, "circle", { cx: x.toFixed(2), cy: y.toFixed(2), r: r || .62, fill: cols[i % cols.length] },
+      "sp-gather " + dur + "s cubic-bezier(.45,0,.7,.45) " + (t0 + i * .05).toFixed(2) + "s both",
+      { dx: (cx - x).toFixed(2) + "px", dy: (cy - y).toFixed(2) + "px" });
+  }
+}
+function spSparks(T, p, cx, cy, n, R, cols, t0, dur, r){
+  for(let i = 0; i < n; i++){
+    const a = (i / n) * Math.PI * 2 + .2 * (i % 3), rr = R * (.75 + .25 * ((i * 7) % 4) / 3);
+    const dx = Math.cos(a) * rr, dy = Math.sin(a) * rr;
+    const e = (i % 2) ? T.mk("circle", { cx, cy, r: (r || .4) * .8, fill: cols[i % cols.length] })
+      : T.sparkle(cx, cy, (r || .4) * 2.4, cols[i % cols.length]);
+    T.anim(e, "sp-fly " + dur + "s cubic-bezier(.15,.7,.3,1) " + (t0 + (i % 3) * .04).toFixed(2) + "s both", { dx: dx.toFixed(2) + "px", dy: dy.toFixed(2) + "px" });
+    p.appendChild(e);
+  }
+}
+function spRing(T, p, cx, cy, r, col, sw, t0, dur, scale){
+  return T.add(p, "circle", { cx, cy, r, fill: "none", stroke: col, "stroke-width": sw },
+    "sp-ring " + dur + "s cubic-bezier(.2,.7,.3,1) " + t0 + "s both", { rs: scale });
+}
+/* a soft light that comes up, holds and goes */
+function spGlow(T, p, cx, cy, r, col, t0, tin, tOut, dOut, op){
+  return T.add(p, "circle", { cx, cy, r, fill: T.glow(col, [["0%", col, String(op || .85)], ["45%", col, String((op || .85) * .4)], ["100%", col, "0"]]) },
+    "sp-fadein " + tin + "s ease-out " + t0 + "s both, sp-fadeout " + dOut + "s ease-in " + tOut + "s forwards");
+}
+function spFlash(T, p, cx, cy, r, inner, outer, t0, dur, peak){
+  return T.add(p, "circle", { cx, cy, r, fill: T.glow(inner, [["0%", "#FFFFFF", "1"], ["30%", inner, ".8"], ["70%", outer, ".35"], ["100%", outer, "0"]]) },
+    "sp-flash " + dur + "s ease-out " + t0 + "s both", { fo: String(peak || .8) });
+}
+/* the character's own light swelling behind it for the whole special -
+   what makes one readable at a glance on a 100px card */
+function spAura(T, col, dur, op){
+  return T.add(T.back, "circle", { cx: 20, cy: 21, r: 16.5, fill: T.glow(col, [["0%", col, String(op || .55)], ["50%", col, String((op || .55) * .45)], ["100%", col, "0"]]) },
+    "sp-veil " + dur + "s ease-in-out 0s both", { vo: "1" });
+}
+/* a group that pops in and goes, turning about (cx, cy) */
+function spPop(T, p, cx, cy, R, tin, din, tout, dout, os, ease){
+  const g = T.g(p, "sp-in " + din + "s " + (ease || "cubic-bezier(.3,1.5,.5,1)") + " " + tin + "s both, sp-out " + dout + "s ease-in " + tout + "s forwards", { os: String(os == null ? 1.6 : os) });
+  g.appendChild(T.pivot(cx, cy, R));
+  return g;
+}
+function spSpin(T, p, cx, cy, R, rot, t0, dur, ease){
+  const g = T.g(p, "sp-spin " + dur + "s " + (ease || "linear") + " " + t0 + "s both", { rot: rot + "deg" });
+  g.appendChild(T.pivot(cx, cy, R));
+  return g;
+}
+/* spikes out of (cx, cy) - flat fills, never a stroked line with a ramp */
+function spRays(T, p, cx, cy, n, r0, rLong, rShort, w, fill, op, rot0){
+  for(let i = 0; i < n; i++){
+    /* lengths stepped unevenly, so a burst never reads as a wheel */
+    const a = (i / n) * Math.PI * 2 + (rot0 || 0), L = ((i % 2) ? rShort : rLong) * (1 - .16 * (((i * 5) % 7) / 6));
+    const px = -Math.sin(a) * w, py = Math.cos(a) * w;
+    const bx = cx + Math.cos(a) * r0, by = cy + Math.sin(a) * r0;
+    const tx = cx + Math.cos(a) * L, ty = cy + Math.sin(a) * L;
+    p.appendChild(T.mk("path", { d: "M" + (bx + px).toFixed(2) + " " + (by + py).toFixed(2) + " L" + tx.toFixed(2) + " " + ty.toFixed(2)
+      + " L" + (bx - px).toFixed(2) + " " + (by - py).toFixed(2) + " Z", fill, opacity: String(op) }));
+  }
+}
+/* a flare as the secret characters wear it (glow, rimmed disc, white core) */
+function spFlare(T, p, cx, cy, col, rim, k){
+  p.appendChild(T.mk("circle", { cx, cy, r: (3.6 * k).toFixed(2), fill: T.glow(col) }));
+  p.appendChild(T.mk("circle", { cx, cy, r: (1.45 * k).toFixed(2), fill: col, stroke: rim, "stroke-width": (.3 * k).toFixed(2) }));
+  p.appendChild(T.mk("circle", { cx, cy, r: (.62 * k).toFixed(2), fill: "#FFFFFF" }));
+}
+/* an elliptical orbit as two nested pendulums: x swings, y swings a quarter
+   behind, so the point goes round. Its front half is drawn in front of the
+   figure and its back half behind - the two copies hand over at the ends. */
+function spOrbit(T, cx, cy, rx, ry, period, t0, turns, draw){
+  const n = turns * 2;
+  [T.front, T.back].forEach((layer, back) => {
+    const vis = T.g(layer, "sp-fadein .2s ease-out " + t0 + "s both, sp-fadeout .25s ease-in " + (t0 + period * turns - .1).toFixed(2) + "s forwards");
+    const px = T.g(vis, "sp-pendx " + (period / 2) + "s ease-in-out " + t0 + "s " + n + " alternate both", { rx: rx + "px" });
+    const py = T.g(px, "sp-pendy " + (period / 2) + "s ease-in-out " + (t0 - period / 4).toFixed(3) + "s " + (n + 1) + " alternate both", { ry: ry + "px" });
+    const half = T.g(py, (back ? "sp-half2 " : "sp-half ") + period + "s steps(1,end) " + t0 + "s " + turns + " both");
+    draw(half, cx, cy, !!back);
+  });
+}
+const CHAR_SPECIAL_DRAW = {
+  /* SILVER - the moon: silver motes gather in its hands into a crescent
+     cradling a star, which lifts away and is gone. */
+  lunar(T){
+    const H = [20, 31.4];
+    spAura(T, "#DDE2EA", 2.6, .5);
+    spMotes(T, T.front, H[0], H[1], 8, 11, ["#FFFFFF", "#C8CACC"], 0, 1.0);
+    spGlow(T, T.front, H[0], H[1], 7.5, "#E9ECF0", .7, .4, 2.0, .5, .75);
+    const moon0 = T.g(T.front, "sp-in .5s cubic-bezier(.3,1.5,.5,1) .85s both, sp-rise .6s ease-in 1.95s forwards");
+    moon0.appendChild(T.pivot(H[0], H[1], 5.2));
+    const moon = T.scaled(moon0, H[0], H[1], 1.75);
+    moon.appendChild(T.mk("path", { d: "M20.9 28.75 A2.75 2.75 0 1 0 22.65 32.25 A2.2 2.2 0 0 1 20.9 28.75 Z", fill: "#EEF1F5", stroke: "#9AA2AC", "stroke-width": ".18" }));
+    moon.appendChild(T.sparkle(22.1, 30.5, 1.05, "#FFFFFF"));
+    spRing(T, T.front, H[0], H[1], 3.6, "#F4F6F8", ".45", 1.3, .9, 3.2);
+    spSparks(T, T.front, H[0], H[1], 6, 8, ["#FFFFFF", "#C8CACC"], 1.35, .8);
+  },
+  /* GOLD - the sun: gold gathers into a small sun in its hands, its corona
+     turning, and it lets go a ring of light and a burst of sparks. */
+  solar(T){
+    const H = [20, 31.4];
+    spAura(T, "#FFD43B", 2.8, .55);
+    spMotes(T, T.front, H[0], H[1], 9, 11, ["#FFE48A", "#F5C21B"], 0, 1.0);
+    spGlow(T, T.front, H[0], H[1], 8.5, "#FFD43B", .7, .4, 2.3, .45, .85);
+    const sun = T.scaled(spPop(T, T.front, H[0], H[1], 6.6, .85, .45, 2.35, .4, .2), H[0], H[1], 1.5);
+    const cor = spSpin(T, sun, H[0], H[1], 4.4, 120, .85, 1.9);
+    spRays(T, cor, H[0], H[1], 12, 2.0, 4.3, 3.3, .5, "#FFD43B", .9);
+    sun.appendChild(T.mk("circle", { cx: H[0], cy: H[1], r: 2.3, fill: T.glow("#F5C21B", [["0%", "#FFF6D8", "1"], ["55%", "#FFD43B", "1"], ["100%", "#F5A21B", "1"]]) }));
+    sun.appendChild(T.mk("circle", { cx: H[0], cy: H[1], r: .9, fill: "#FFFFFF" }));
+    spRing(T, T.front, H[0], H[1], 3.4, "#FFD43B", ".5", 1.25, .9, 3.8);
+    spRing(T, T.front, H[0], H[1], 3.4, "#FFF6D8", ".3", 1.7, .8, 3.2);
+    spSparks(T, T.front, H[0], H[1], 10, 11, ["#FFF6D8", "#FFD43B"], 1.25, .85);
+  },
+  /* PLATINUM - the storm: its flare circles it twice like a storm front,
+     comes to its hands and cracks out as lightning. */
+  tempest(T){
+    const H = [20, 31.4];
+    spAura(T, "#2EC4B6", 3.0, .6);
+    spOrbit(T, 20, 27.6, 11.5, 3.2, 1.0, .1, 2, (p, cx, cy) => {
+      p.appendChild(T.mk("circle", { cx, cy, r: 4, fill: T.glow("#5EEAD4") }));
+      p.appendChild(T.mk("circle", { cx, cy, r: 1.7, fill: "#5EEAD4", stroke: "#D9FFF8", "stroke-width": ".35" }));
+      p.appendChild(T.mk("circle", { cx, cy, r: .75, fill: "#FFFFFF" }));
+    });
+    spGlow(T, T.front, H[0], H[1], 7.5, "#5EEAD4", 1.95, .25, 2.55, .4, .95);
+    const bolts = T.scaled(T.g(T.front, "sp-flick .5s linear 2.05s both, sp-fadeout .3s ease-in 2.6s forwards"), H[0], H[1], 1.45);
+    [["M20 31.4 L17.6 28.2 L18.8 27.6 L15.6 23.6", ""], ["M20 31.4 L22.6 28.6 L21.4 27.8 L24.8 24.2", ""], ["M20 31.4 L24.4 31 L23.8 32.2 L28.6 31.4", ""], ["M20 31.4 L15.6 32 L16.4 33 L11.6 32.6", ""]]
+      .forEach(([d]) => { bolts.appendChild(T.mk("path", { d, fill: "none", stroke: "#5EEAD4", "stroke-width": ".95", "stroke-linejoin": "round", "stroke-linecap": "round", opacity: ".6" }));
+        bolts.appendChild(T.mk("path", { d, fill: "none", stroke: "#F2FFFC", "stroke-width": ".36", "stroke-linejoin": "round", "stroke-linecap": "round" })); });
+    spRing(T, T.front, H[0], H[1], 3, "#5EEAD4", ".55", 2.05, .8, 4.6);
+    spRing(T, T.front, H[0], H[1], 3, "#D9FFF8", ".3", 2.25, .7, 3.6);
+    spSparks(T, T.front, H[0], H[1], 10, 12, ["#D9FFF8", "#5EEAD4"], 2.1, .8);
+  },
+  /* SAPPHIRE - the comet: one streaks past behind it, then a second comes
+     in low and lands in its hands, where it blooms into frost and shatters. */
+  frost(T){
+    const H = [20, 31.4];
+    const lg = (x1, y1, x2, y2, col) => T.lin(x1, y1, x2, y2, [["0%", col, ".95"], ["100%", col, "0"]]);
+    spAura(T, "#3D74E8", 3.2, .6);
+    const c1 = T.g(T.back, "sp-move .75s cubic-bezier(.4,0,.6,1) .1s both, sp-flash .75s linear .1s both", { x0: "15px", y0: "-9px", x1: "-17px", y1: "10px", fo: "1" });
+    c1.appendChild(T.mk("path", { d: "M18.9 12.1 L32 4.2 L21.1 13.9 Z", fill: lg(20, 13, 32, 4.2, "#9DBBFF") }));
+    c1.appendChild(T.mk("circle", { cx: 20, cy: 13, r: 3.2, fill: T.glow("#6E9CFF") }));
+    c1.appendChild(T.mk("circle", { cx: 20, cy: 13, r: 1.05, fill: "#FFFFFF" }));
+    const c2 = T.g(T.front, "sp-move .7s cubic-bezier(.2,.6,.3,1) 1.0s both", { x0: "-15px", y0: "-4px", x1: "0px", y1: "0px" });
+    const tail = T.g(c2, "sp-fadein .12s linear 1.0s both, sp-fadeout .3s ease-in 1.6s forwards");
+    tail.appendChild(T.mk("path", { d: "M20 30.2 L7.6 27 L20 32.6 Z", fill: lg(20, 31.4, 7.6, 27, "#9DBBFF") }));
+    const head = T.g(c2, "sp-fadein .12s linear 1.0s both, sp-fadeout .25s ease-in 1.8s forwards");
+    head.appendChild(T.mk("circle", { cx: H[0], cy: H[1], r: 3.4, fill: T.glow("#6E9CFF") }));
+    head.appendChild(T.mk("circle", { cx: H[0], cy: H[1], r: 1.1, fill: "#FFFFFF" }));
+    spGlow(T, T.front, H[0], H[1], 8, "#6E9CFF", 1.6, .3, 2.7, .45, .9);
+    const flake = T.scaled(spPop(T, T.front, H[0], H[1], 6, 1.65, .4, 2.75, .35, 1.5), H[0], H[1], 1.5);
+    const spin = spSpin(T, flake, H[0], H[1], 4, 60, 1.65, 1.4, "cubic-bezier(.2,.7,.4,1)");
+    for(let i = 0; i < 6; i++){
+      const a = i * Math.PI / 3, x = H[0] + Math.cos(a) * 3.3, y = H[1] + Math.sin(a) * 3.3;
+      const mx = H[0] + Math.cos(a) * 2.1, my = H[1] + Math.sin(a) * 2.1;
+      const d = "M" + H[0] + " " + H[1] + " L" + x.toFixed(2) + " " + y.toFixed(2)
+        + " M" + mx.toFixed(2) + " " + my.toFixed(2) + " L" + (mx + Math.cos(a + .7) * .9).toFixed(2) + " " + (my + Math.sin(a + .7) * .9).toFixed(2)
+        + " M" + mx.toFixed(2) + " " + my.toFixed(2) + " L" + (mx + Math.cos(a - .7) * .9).toFixed(2) + " " + (my + Math.sin(a - .7) * .9).toFixed(2);
+      spin.appendChild(T.mk("path", { d, fill: "none", stroke: "#EAF2FF", "stroke-width": ".34", "stroke-linecap": "round" }));
+    }
+    spin.appendChild(T.mk("circle", { cx: H[0], cy: H[1], r: .7, fill: "#FFFFFF" }));
+    spRing(T, T.front, H[0], H[1], 3.4, "#9DBBFF", ".5", 1.7, .8, 4);
+    spSparks(T, T.front, H[0], H[1], 14, 12, ["#EAF2FF", "#6E9CFF"], 2.05, .9, .5);
+  },
+  /* AMETHYST - the galaxy: a ring of runes turns round it while light
+     spirals into its hands and becomes a turning galaxy, which flings out. */
+  oracle(T){
+    const H = [20, 31.4];
+    spAura(T, "#A855F7", 3.4, .6);
+    const runes = T.g(T.back, "sp-fadein .5s ease-out .15s both, sp-fadeout .5s ease-in 2.8s forwards");
+    const rs = spSpin(T, runes, 20, 19.5, 14, -100, .15, 3.2, "linear");
+    rs.appendChild(T.mk("circle", { cx: 20, cy: 19.5, r: 13.2, fill: "none", stroke: "#C084FC", "stroke-width": ".55", "stroke-dasharray": "1 1.3", opacity: ".9" }));
+    for(let i = 0; i < 6; i++){ const a = i * Math.PI / 3; rs.appendChild(T.sparkle(+(20 + Math.cos(a) * 13.2).toFixed(2), +(19.5 + Math.sin(a) * 13.2).toFixed(2), .9, "#F0DDFF")); }
+    spMotes(T, T.front, H[0], H[1], 8, 10, ["#F0DDFF", "#C084FC", "#A855F7"], 0, 1.1);
+    spGlow(T, T.front, H[0], H[1], 8, "#A855F7", .9, .4, 2.75, .45, .9);
+    const gal = T.g(T.front, "sp-in .6s ease-out 1.0s both, sp-out .5s ease-in 2.8s forwards", { os: "1.8" });
+    gal.appendChild(T.pivot(H[0], H[1], 7));
+    const sp = T.scaled(spSpin(T, gal, H[0], H[1], 7, -560, 1.0, 2.3, "cubic-bezier(.3,0,.6,1)"), H[0], H[1], 1.5);
+    [0, 180].forEach(r => {
+      sp.appendChild(T.mk("path", { d: "M20 31.4 C21.6 29.6 24.2 30.2 24.4 32.4 C24.5 33.8 23.2 35 21.8 34.8", fill: "none", stroke: "#E7C8FF", "stroke-width": ".6", "stroke-linecap": "round", transform: "rotate(" + r + " 20 31.4)" }));
+      sp.appendChild(T.mk("circle", { cx: 24.4, cy: 32.4, r: .32, fill: "#FFFFFF", transform: "rotate(" + r + " 20 31.4)" }));
+    });
+    sp.appendChild(T.mk("circle", { cx: H[0], cy: H[1], r: 1.8, fill: T.glow("#F0DDFF") }));
+    sp.appendChild(T.mk("circle", { cx: H[0], cy: H[1], r: .6, fill: "#FFFFFF" }));
+    spRing(T, T.front, H[0], H[1], 3.4, "#C084FC", ".55", 2.8, .8, 4.4);
+    spSparks(T, T.front, H[0], H[1], 12, 13, ["#F0DDFF", "#C084FC"], 2.8, .85, .5);
+  },
+  /* SUPERNOVA - embers rush into its hands, a star forms, burns white,
+     shudders as it collapses, and goes off: a flash across the whole frame,
+     shockwaves, rays and sparks. */
+  inferno(T){
+    const H = [20, 31.2];
+    spGlow(T, T.back, 20, 23, 16.5, "#E23B3B", .2, 1.4, 2.6, 1.0, .7);
+    spMotes(T, T.front, H[0], H[1], 12, 12, ["#FF3B30", "#FF8A3D", "#FFD27A"], 0, 1.2);
+    spGlow(T, T.front, H[0], H[1], 7.5, "#FF3B30", .8, .5, 2.05, .1, .9);
+    const star = T.g(T.front, "sp-in .5s ease-out .9s both, sp-crush .6s cubic-bezier(.6,0,.9,.5) 1.45s forwards, sp-fadeout .08s linear 2.05s forwards");
+    star.appendChild(T.pivot(H[0], H[1], 3.6));
+    const shake = T.scaled(T.g(star, "sp-jitter .1s linear 1.45s 6"), H[0], H[1], 1.6);
+    shake.appendChild(T.mk("circle", { cx: H[0], cy: H[1], r: 3.5, fill: T.glow("#FF3B30") }));
+    shake.appendChild(T.mk("circle", { cx: H[0], cy: H[1], r: 1.8, fill: T.glow("#FF8A3D", [["0%", "#FFFFFF", "1"], ["50%", "#FFD27A", "1"], ["100%", "#FF5A2A", "1"]]) }));
+    shake.appendChild(T.sparkle(H[0], H[1], 3.2, "#FFE3C2"));
+    spFlash(T, T.front, H[0], 27, 19, "#FFB070", "#E23B3B", 2.05, .9, .92);
+    const rays = T.g(T.front, "sp-in .22s ease-out 2.05s both, sp-out .55s ease-in 2.35s forwards", { os: "1.5" });
+    rays.appendChild(T.pivot(H[0], H[1], 11));
+    spRays(T, rays, H[0], H[1], 12, 1.4, 11, 7.5, .5, "#FFE3C2", .9, .13);
+    spRing(T, T.front, H[0], H[1], 2.2, "#FF3B30", ".7", 2.05, 1.0, 7.5);
+    spRing(T, T.front, H[0], H[1], 2.2, "#FF8A3D", ".45", 2.22, .95, 6);
+    spRing(T, T.front, H[0], H[1], 2.2, "#FFF3E0", ".25", 2.38, .9, 8.5);
+    spRing(T, T.back, 20, 22, 7, "#E23B3B", ".6", 2.1, 1.2, 2.2);
+    spSparks(T, T.front, H[0], H[1], 14, 14, ["#FFD27A", "#FF3B30", "#FF8A3D", "#FFF3E0"], 2.08, 1.2, .45);
+  },
+  /* UMBRA - the light goes out and only its flare is left, flickering like
+     a struggling lamp until it catches and pulses twice. */
+  umbra(T){
+    const F = [20, 30.2];
+    T.add(T.front, "circle", { cx: 20, cy: 20, r: 20, fill: "#05030B" }, "sp-veil 2.8s ease-in-out 0s both", { vo: ".84" });
+    const fl = T.g(T.front, "sp-flick 1.15s linear .4s both, sp-fadeout .4s ease-in 2.35s forwards");
+    const pl = T.g(fl, "sp-pulse .55s ease-in-out 1.55s 2", { ps: "1.35" });
+    pl.appendChild(T.pivot(F[0], F[1], 6));
+    spFlare(T, pl, F[0], F[1], "#8B5CF6", "#C4B5FD", 1.6);
+    spMotes(T, T.front, F[0], F[1], 8, 12, ["#C4B5FD", "#8B5CF6"], .45, 1.1, .5);
+    spRing(T, T.front, F[0], F[1], 2.4, "#C4B5FD", ".45", 1.55, .8, 5);
+    spRing(T, T.front, F[0], F[1], 2.4, "#8B5CF6", ".6", 2.1, .8, 6);
+    spSparks(T, T.front, F[0], F[1], 8, 10, ["#E2D8FF", "#8B5CF6"], 2.1, .7);
+  },
+  /* HORIZON - its flare slips its socket, leaving a black hole in its brow,
+     drifts round it with a tail of light, and is pulled back in through an
+     event horizon that closes over it. */
+  singularity(T){
+    const F = [20, 15];
+    spAura(T, "#7FC8FF", 3.0, .5);
+    T.add(T.front, "circle", { cx: F[0], cy: F[1], r: 1.75, fill: "#060918", stroke: "#7FC8FF", "stroke-width": ".16" },
+      "sp-fadein .2s ease-out .3s both, sp-fadeout .25s ease-in 2.35s forwards");
+    [[.1, .45], [.05, .7], [0, 1]].forEach(([lag, k]) => {
+      const d = T.g(T.front, "sp-hzdrift 2.0s cubic-bezier(.45,.05,.55,.95) " + (.3 + lag).toFixed(2) + "s both");
+      d.appendChild(T.pivot(F[0], F[1], 4.8));
+      const s = T.g(d, "sp-fadein .15s linear " + (.3 + lag).toFixed(2) + "s both, sp-fadeout .2s ease-in " + (2.2 + lag).toFixed(2) + "s forwards");
+      const dim = T.mk("g", { opacity: String(k) });
+      s.appendChild(dim);
+      spFlare(T, dim, F[0], F[1], "#7FC8FF", "#DDF4FF", (k < 1 ? .7 * k + .3 : 1) * 1.35);
+    });
+    T.add(T.front, "ellipse", { cx: F[0], cy: F[1], rx: 4.2, ry: 1.5, fill: "none", stroke: "#BFE6FF", "stroke-width": ".3" }, "sp-collapse .55s ease-in 1.95s both");
+    spFlash(T, T.front, F[0], F[1], 6, "#BFE6FF", "#7FC8FF", 2.35, .6, .9);
+    spRing(T, T.front, F[0], F[1], 1.6, "#DDF4FF", ".3", 2.35, .7, 5);
+    spRing(T, T.front, F[0], F[1], 1.6, "#7FC8FF", ".45", 2.5, .6, 3.6);
+    spSparks(T, T.front, F[0], F[1], 10, 10, ["#FFFFFF", "#BFE6FF", "#7FC8FF"], 2.38, .75);
+  },
+  /* GENESIS - the world's heart rises out of its chest, goes round the
+     planet twice like a moon, and dives into it: the planet flashes rose. */
+  genesis(T){
+    const F = [20, 31.4], P = [20, 19.6];
+    spAura(T, "#FF5CA8", 3.3, .55);
+    const rise = T.g(T.front, "sp-move .5s cubic-bezier(.4,0,.6,1) .05s both, sp-fadein .15s linear .05s both, sp-fadeout .1s linear .55s forwards", { x0: "0px", y0: "0px", x1: "-11px", y1: "-11.8px" });
+    spFlare(T, rise, F[0], F[1], "#FF5CA8", "#FFC2DE", 1.2);
+    spOrbit(T, P[0], P[1], 11, 3.2, 1.0, .55, 2, (p, cx, cy) => spFlare(T, p, cx, cy, "#FF5CA8", "#FFC2DE", 1.2));
+    const dive = T.g(T.front, "sp-move .35s cubic-bezier(.5,0,.8,.4) 2.5s both, sp-fadein .05s linear 2.5s both, sp-fadeout .1s linear 2.8s forwards", { x0: "-11px", y0: "0px", x1: "0px", y1: "0px" });
+    spFlare(T, dive, P[0], P[1], "#FF5CA8", "#FFC2DE", 1.2);
+    spFlash(T, T.front, P[0], P[1], 10, "#FFB3D6", "#FF5CA8", 2.82, .8, .85);
+    spRing(T, T.front, P[0], P[1], 4, "#FFC2DE", ".4", 2.85, .9, 3.6);
+    spSparks(T, T.front, P[0], P[1], 10, 13, ["#FFE3F0", "#FF5CA8", "#FFB86B"], 2.85, .9);
+  },
+  /* VOID - the coolest of the secrets: the lights go out, its three flares
+     tear loose and swirl out round it in an accretion disc, spiral back
+     into the dark of its face and go off in white. */
+  voidwalker(T){
+    const C = [20, 20];
+    T.add(T.front, "circle", { cx: 20, cy: 20, r: 20, fill: "#020205" }, "sp-veil 4.0s ease-in-out 0s both", { vo: ".88" });
+    spMotes(T, T.front, C[0], C[1], 12, 14, ["#EF4444", "#F97316", "#FACC15", "#E4ECFF"], .1, 1.3, .5);
+    const disc = T.g(T.front, "sp-fadein .5s ease-out .5s both, sp-fadeout .4s ease-in 2.9s forwards");
+    disc.appendChild(T.mk("ellipse", { cx: 20, cy: 20, rx: 12, ry: 3.6, fill: "none", stroke: "#F97316", "stroke-width": ".9", opacity: ".35" }));
+    T.add(disc, "ellipse", { cx: 20, cy: 20, rx: 12, ry: 3.6, fill: "none", stroke: "#FFD9A8", "stroke-width": ".3", "stroke-dasharray": "2 1.4 .6 1.6" }, "sp-dash 2.6s linear .5s both", { len: "-34px" });
+    T.add(disc, "ellipse", { cx: 20, cy: 20, rx: 8.4, ry: 2.4, fill: "none", stroke: "#EF4444", "stroke-width": ".3", "stroke-dasharray": "1.2 1.8", opacity: ".8" }, "sp-dash 2.6s linear .5s both", { len: "26px" });
+    const sw = spSpin(T, T.front, C[0], C[1], 16, 760, .35, 2.8, "cubic-bezier(.4,0,.7,1)");
+    [[16.4, 20, "#EF4444", "#FFB4B4"], [20.6, 17.2, "#F97316", "#FFD2A8"], [23.4, 22.6, "#FACC15", "#FFF0A8"]].forEach(([x, y, col, rim]) => {
+      const a = Math.atan2(y - C[1], x - C[0]), R = 10.5;
+      const g = T.g(sw, "sp-voidout 2.8s cubic-bezier(.45,0,.55,1) .35s both", {
+        dx: (C[0] + Math.cos(a) * R - x).toFixed(2) + "px", dy: (C[1] + Math.sin(a) * R * .55 - y).toFixed(2) + "px",
+        ex: (C[0] - x).toFixed(2) + "px", ey: (C[1] - y).toFixed(2) + "px" });
+      g.appendChild(T.pivot(x, y, 4));
+      spFlare(T, g, x, y, col, rim, 1.1);
+    });
+    T.add(T.front, "circle", { cx: 20, cy: 20, r: 11, fill: "none", stroke: "#FFE6CC", "stroke-width": ".25" }, "sp-collapse .8s ease-in 2.4s both");
+    spFlash(T, T.front, C[0], C[1], 17, "#FFE6CC", "#F97316", 3.12, .85, .95);
+    const rays = T.g(T.front, "sp-in .2s ease-out 3.12s both, sp-out .5s ease-in 3.35s forwards", { os: "1.4" });
+    rays.appendChild(T.pivot(C[0], C[1], 12));
+    spRays(T, rays, C[0], C[1], 10, 1.2, 12, 8, .45, "#FFF4E0", .85, .3);
+    spRing(T, T.front, C[0], C[1], 2.4, "#F97316", ".5", 3.3, .9, 6);
+    spSparks(T, T.front, C[0], C[1], 15, 14, ["#EF4444", "#F97316", "#FACC15", "#FFFFFF"], 3.14, 1.0, .42);
+  },
+  /* ASTRAL - the plasma core overloads: light pumps into it, rings throw
+     off it one after another, arcs crack out over the body and it discharges
+     in a cyan flash. */
+  astral(T){
+    const H = [20, 32.6];
+    spAura(T, "#22D3EE", 3.3, .6);
+    const halo = T.g(T.back, "sp-in .6s ease-out .3s both, sp-out .5s ease-in 2.6s forwards", { os: "1.3" });
+    halo.appendChild(T.pivot(20, 14, 11.5));
+    const hs = spSpin(T, halo, 20, 14, 11.5, 140, .3, 2.8);
+    hs.appendChild(T.mk("circle", { cx: 20, cy: 14, r: 10.6, fill: "none", stroke: "#3DF5FF", "stroke-width": ".45", "stroke-dasharray": "3 1.2 .6 1.2", opacity: ".85" }));
+    hs.appendChild(T.mk("circle", { cx: 20, cy: 14, r: 9.4, fill: "none", stroke: "#CFFFFF", "stroke-width": ".2", "stroke-dasharray": ".6 1.6" }));
+    spMotes(T, T.front, H[0], H[1], 9, 10, ["#CFFFFF", "#3DF5FF"], 0, 1.0);
+    const core = T.g(T.front, "sp-fadein .3s ease-out .8s both, sp-pulse .3s ease-in-out 1.0s 4, sp-fadeout .4s ease-in 2.55s forwards", { ps: "1.45" });
+    core.appendChild(T.pivot(H[0], H[1], 5.6));
+    core.appendChild(T.mk("circle", { cx: H[0], cy: H[1], r: 5.4, fill: T.glow("#3DF5FF") }));
+    core.appendChild(T.mk("circle", { cx: H[0], cy: H[1], r: 1.6, fill: "#FFFFFF" }));
+    [1.05, 1.35, 1.65, 1.95].forEach((t, i) => spRing(T, T.front, H[0], H[1], 1.9, i % 2 ? "#CFFFFF" : "#3DF5FF", ".4", t, .8, 5.5));
+    [[-1.1, 9], [-.5, 10], [-2.0, 8.5], [-2.6, 9.5], [-.9, 7], [-2.3, 7.5]].forEach(([a, L], i) => {
+      let d = "M" + H[0] + " " + H[1], x = H[0], y = H[1];
+      for(let s = 1; s <= 4; s++){
+        const r = L * s / 4, j = (s % 2 ? .9 : -.9) * (s < 4 ? 1 : 0);
+        x = H[0] + Math.cos(a) * r - Math.sin(a) * j; y = H[1] + Math.sin(a) * r + Math.cos(a) * j;
+        d += " L" + x.toFixed(2) + " " + y.toFixed(2);
+      }
+      const arc = T.g(T.front, "sp-flick .32s linear " + (1.2 + i * .19).toFixed(2) + "s 2 both, sp-fadeout .12s linear " + (1.84 + i * .19).toFixed(2) + "s forwards");
+      arc.appendChild(T.mk("path", { d, fill: "none", stroke: "#3DF5FF", "stroke-width": "1", "stroke-linejoin": "round", opacity: ".55" }));
+      arc.appendChild(T.mk("path", { d, fill: "none", stroke: "#F0FFFF", "stroke-width": ".38", "stroke-linejoin": "round" }));
+    });
+    spFlash(T, T.front, H[0], 26, 19, "#9FFCFF", "#22C7E0", 2.5, .8, .85);
+    spSparks(T, T.front, H[0], H[1], 12, 14, ["#CFFFFF", "#3DF5FF"], 2.52, .9);
+  },
+  /* CELESTIAL - meteors fall behind it, the crown's seven stars rise into a
+     ring round its head and draw their constellation as the sky turns,
+     then fold back into the crown in a flash of starlight. */
+  celestial(T){
+    const C = [20, 18];
+    spAura(T, "#9DB4FF", 3.7, .5);
+    const lg = (col) => T.lin(20, 10, 27, 3, [["0%", col, ".95"], ["100%", col, "0"]]);
+    [[.15, 0, 0], [.55, -6, 5], [.95, 6, 9], [1.9, -9, 2]].forEach(([t, ox, oy]) => {
+      const m = T.g(T.back, "sp-move .65s linear " + t + "s both, sp-flash .65s linear " + t + "s both", { x0: (10 + ox) + "px", y0: (-9 + oy) + "px", x1: (-14 + ox) + "px", y1: (15 + oy) + "px", fo: "1" });
+      m.appendChild(T.mk("path", { d: "M19.6 9.6 L27 3 L20.4 10.4 Z", fill: lg("#E8EEFF") }));
+      m.appendChild(T.mk("circle", { cx: 20, cy: 10, r: .55, fill: "#FFFFFF" }));
+    });
+    const ring = T.g(T.front, "sp-in .7s cubic-bezier(.3,1.3,.5,1) .3s both, sp-out .5s ease-in 2.9s forwards", { os: ".15" });
+    ring.appendChild(T.pivot(C[0], C[1], 13));
+    const turn = spSpin(T, ring, C[0], C[1], 13, 77, .3, 3.1, "cubic-bezier(.3,0,.7,1)");
+    const pts = [];
+    for(let i = 0; i < 7; i++){ const a = -Math.PI / 2 + i * Math.PI * 2 / 7; pts.push([C[0] + Math.cos(a) * 12, C[1] + Math.sin(a) * 12]); }
+    T.add(turn, "path", { d: "M" + pts.map(p => p[0].toFixed(2) + " " + p[1].toFixed(2)).join(" L") + " Z", fill: "none", stroke: "#DDE6FF", "stroke-width": ".35", opacity: ".9", "stroke-dasharray": "73", "stroke-dashoffset": "73" },
+      "sp-draw 1.0s ease-in-out .9s both", { len: "73px" });
+    pts.forEach((p, i) => {
+      const st = T.g(turn, "sp-in .35s cubic-bezier(.3,1.8,.5,1) " + (.55 + i * .08).toFixed(2) + "s both, sp-pulse .5s ease-in-out " + (1.9 + i * .06).toFixed(2) + "s 1 both", { ps: "1.6" });
+      st.appendChild(T.pivot(+p[0].toFixed(2), +p[1].toFixed(2), 1.6));
+      st.appendChild(T.mk("circle", { cx: p[0].toFixed(2), cy: p[1].toFixed(2), r: 2.2, fill: T.glow("#C9D8FF") }));
+      st.appendChild(T.sparkle(+p[0].toFixed(2), +p[1].toFixed(2), 1.6, "#FFFFFF"));
+    });
+    spFlash(T, T.front, 20, 9, 9, "#E8EEFF", "#9DB4FF", 3.15, .6, .85);
+    spRing(T, T.front, 20, 9, 2, "#FFFFFF", ".3", 3.15, .7, 4.5);
+    spSparks(T, T.front, 20, 9, 9, 9, ["#FFFFFF", "#C9D8FF"], 3.18, .8);
+  },
+  /* ZENITH - everything: a corona of light opens behind it and turns, the
+     comet laps its shoulders, rings ring out, stardust falls, and the
+     whole frame goes to light and settles back. */
+  zenith(T){
+    const C = [20, 15.5];
+    spAura(T, "#FFD86B", 4.3, .6);
+    const cor = T.g(T.back, "sp-in .8s ease-out .15s both, sp-out .7s ease-in 3.5s forwards", { os: "1.25" });
+    cor.appendChild(T.pivot(C[0], C[1], 16));
+    const cs = spSpin(T, cor, C[0], C[1], 16, 50, .15, 4.0);
+    spRays(T, cs, C[0], C[1], 16, 3, 15.5, 10.5, .75, "#FFE7A0", .5);
+    cs.appendChild(T.mk("circle", { cx: C[0], cy: C[1], r: 9, fill: T.glow("#FFD86B", [["0%", "#FFF6D8", ".7"], ["60%", "#FFD86B", ".25"], ["100%", "#FFD86B", "0"]]) }));
+    spOrbit(T, 20, 30.4, 14, 3.4, 1.2, .5, 2, (p, cx, cy) => {
+      p.appendChild(T.mk("circle", { cx, cy, r: 3.6, fill: T.glow("#FFD86B") }));
+      p.appendChild(T.mk("circle", { cx, cy, r: 1.2, fill: "#FFFFFF" }));
+    });
+    [1.0, 1.3, 1.6].forEach((t, i) => spRing(T, T.back, C[0], C[1], 3, i === 1 ? "#FFFFFF" : "#FFD86B", ".4", t, 1.0, 4.4));
+    for(let i = 0; i < 12; i++){
+      const x = 6.5 + ((i * 37) % 27), y = 4.5 + ((i * 13) % 8);
+      const s = T.sparkle(x, y, .55 + (i % 3) * .2, i % 2 ? "#FFE7A0" : "#FFFFFF");
+      T.anim(s, "sp-fall 1.5s ease-in " + (.8 + ((i * 7) % 12) * .12).toFixed(2) + "s both", { fy: (12 + (i % 4) * 2) + "px" });
+      T.front.appendChild(s);
+    }
+    spFlash(T, T.front, 20, 18, 20, "#FFE7A0", "#FFD86B", 2.55, 1.0, .92);
+    for(let i = 0; i < 8; i++){
+      const a = i * Math.PI / 4 + .39, x = +(C[0] + Math.cos(a) * 12).toFixed(2), y = +(C[1] + 2 + Math.sin(a) * 12).toFixed(2);
+      const g = T.g(T.front, "sp-in .3s cubic-bezier(.3,1.8,.5,1) " + (2.6 + (i % 4) * .07).toFixed(2) + "s both, sp-out .4s ease-in " + (3.3 + (i % 4) * .07).toFixed(2) + "s forwards", { os: ".2" });
+      g.appendChild(T.pivot(x, y, 1.4));
+      g.appendChild(T.sparkle(x, y, 1.3, "#FFFFFF"));
+    }
+    spRing(T, T.front, C[0], C[1] + 3, 3, "#FFF6D8", ".5", 2.6, 1.0, 5.5);
+    spSparks(T, T.front, C[0], C[1] + 3, 14, 14, ["#FFFFFF", "#FFD86B", "#FFE7A0"], 2.62, 1.1, .45);
+  }
+};
+
 /* ROOM AT THE EDGES FOR THE ONES THAT REACH THEM (build 317). Every
    character is drawn on a 40-unit square and shown through the same
    34-unit window, 3 to 37 - and a few reach that window's edge or past it:
@@ -40091,7 +40537,49 @@ function drawAvatarCharSVG(charId){
       if(n.nodeName === "circle" && /url\(#(aura|halo)-/.test(n.getAttribute("fill") || "")) svg.insertBefore(n, fig);
     });
     if(fig) giveVolume(fig);
+    if(fig) charSpecialParts(fig);
     return svg;
+  }
+  /* THE SPECIAL'S PARTS (build 317, see CHAR_SPECIAL_DRAW): drawn last,
+     behind the figure and over everything, hidden until .char-special. */
+  function charSpecialParts(fig){
+    const draw = CHAR_SPECIAL_DRAW[charId];
+    if(!draw) return;
+    const back = mk("g", { class: "cx-sp cx-sp-back cx-sp-" + charId, opacity: "0" });
+    const front = mk("g", { class: "cx-sp cx-sp-front cx-sp-" + charId, opacity: "0" });
+    let seq = 0;
+    const T = {
+      mk, sparkle, pivot, back, front,
+      anim(e, a, vars){
+        e.setAttribute("class", ((e.getAttribute("class") || "") + " cx-spa").trim());
+        let st = "--a:" + a;
+        if(vars) Object.keys(vars).forEach(k => { st += ";--" + k + ":" + vars[k]; });
+        e.setAttribute("style", st);
+        return e;
+      },
+      add(parent, tag, attrs, a, vars){ const e = mk(tag, attrs || {}); if(a) T.anim(e, a, vars); parent.appendChild(e); return e; },
+      /* a still group drawn k times bigger about (cx, cy) */
+      scaled(parent, cx, cy, k){ const e = mk("g", { transform: "translate(" + cx + " " + cy + ") scale(" + k + ") translate(" + (-cx) + " " + (-cy) + ")" }); parent.appendChild(e); return e; },
+      g(parent, a, vars, attrs){ return T.add(parent, "g", attrs, a, vars); },
+      glow(col, stops){
+        const id = uid + "-sp" + (seq++);
+        const g = mk("radialGradient", { id });
+        (stops || [["0%", col, ".9"], ["45%", col, ".36"], ["100%", col, "0"]]).forEach(([o, c, op]) =>
+          g.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
+        defs.appendChild(g);
+        return "url(#" + id + ")";
+      },
+      lin(x1, y1, x2, y2, stops){
+        const id = uid + "-sp" + (seq++);
+        const g = mk("linearGradient", { id, gradientUnits: "userSpaceOnUse", x1, y1, x2, y2 });
+        stops.forEach(([o, c, op]) => g.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
+        defs.appendChild(g);
+        return "url(#" + id + ")";
+      }
+    };
+    draw(T);
+    if(back.childNodes.length) svg.insertBefore(back, fig);
+    if(front.childNodes.length) svg.appendChild(front);
   }
   /* EVERY SURFACE IS ROUND (build 317). "In profile some characters have
      a nice 3d look but some don't, fix that as well." The ones that did
@@ -55042,8 +55530,9 @@ setInterval(() => { _rkSeen.forEach(t => { if(!t.isConnected){ try { _rkIO && _r
    classmate opened from the Leaderboard is simply live. */
 function setCharState(el, state, opts){
   if(!el) return el;
-  el.classList.remove("char-live", "char-sleep", "char-flip", "char-flip-fallback");
-  delete el.dataset.flipSolo; delete el.dataset.flipArmed;
+  el.classList.remove("char-live", "char-sleep", "char-flip", "char-flip-fallback", "char-special");
+  delete el.dataset.flipSolo; delete el.dataset.flipArmed; delete el.dataset.spLive;
+  el.__charSpecial = null;
   const old = el.querySelector(":scope > .char-zzz");
   if(old) old.remove();
   el.querySelectorAll(".char-flip-play").forEach(n => n.remove());
@@ -55078,6 +55567,8 @@ function setCharState(el, state, opts){
     };
     const wait = (typeof settleUntil === "number") ? settleUntil - Date.now() : 0;
     setTimeout(attach, Math.max(0, wait));
+    /* a prominent character gets a special now and then (build 317) */
+    if(el.matches && el.matches(CHAR_SPECIAL_PROMINENT)) charSpecialWake();
   }
   if(state === "sleep"){
     /* Live as well as asleep (build 302): the idle loops and the
@@ -55094,6 +55585,94 @@ function setCharState(el, state, opts){
   }
   return el;
 }
+/* A CHARACTER'S SPECIAL (build 317). "Typically they will be still, if you
+   look at them long enough ... they could do cooler stuff but it's
+   random." playCharSpecial(el) plays the special on an element holding a
+   live drawing (see CHAR_SPECIAL_DRAW for the contract); the idle
+   scheduler below fires one now and then on a PROMINENT character only -
+   the Profile card, the Customize pick, the person card and the results
+   character - never on a list row, the race line or the tab bar. One at a
+   time, never while the page is hidden, never with Reduce motion. It also
+   plays when a rank-up scene hands back to Profile and on a hundo. */
+var CHAR_SPECIAL_PROMINENT = ".profile-hero-avatar, .person-card-art, .cz-pick-character, .results-level-avatar";
+/* first special no sooner than ~8s after a character is on screen, then
+   every 12-30s; a gate may shorten these */
+var charSpecialTiming = { first: [8000, 16000], gap: [12000, 30000] };
+var charSpecialTimer = null, charSpecialBusyUntil = 0, charSpecialIdle = 0, charSpecialLastTick = 0;
+function charSpecialMsFor(svg){
+  const id = svg && svg.getAttribute("data-char");
+  const def = id && AVATAR_CHARACTERS.find(c => c.id === id);
+  return CHAR_SPECIAL_MS[id] || (def && CHAR_SPECIAL_MS[def.kind]) || CHAR_SPECIAL_DEFAULT_MS;
+}
+function charHasSpecial(el){
+  const svg = el && el.querySelector("svg.avatarchar-svg");
+  if(!svg) return false;
+  const id = svg.getAttribute("data-char");
+  const def = id && AVATAR_CHARACTERS.find(c => c.id === id);
+  return !!(svg.querySelector(".cx-sp") || (id && CHAR_SPECIAL_MS[id]) || (def && CHAR_SPECIAL_MS[def.kind]));
+}
+function playCharSpecial(el){
+  if(!el || !el.isConnected) return false;
+  if(document.documentElement.dataset.reduceMotion === "true") return false;
+  if(el.classList.contains("char-special") || el.classList.contains("char-sleep")) return false;
+  if(el.closest(".locked, .is-silhouette")) return false;
+  const svg = el.querySelector("svg.avatarchar-svg");
+  if(!svg || !charHasSpecial(el)) return false;
+  const ms = charSpecialMsFor(svg);
+  /* a flip-book is stepped aside for it, and the drawing under it has to
+     be alive while it plays */
+  if(!el.classList.contains("char-live")){ el.classList.add("char-live"); el.dataset.spLive = "1"; }
+  el.classList.add("char-special");
+  const tok = {};
+  el.__charSpecial = tok;
+  charSpecialBusyUntil = Date.now() + ms + 400;
+  setTimeout(() => {
+    if(el.__charSpecial !== tok) return;
+    el.__charSpecial = null;
+    el.classList.remove("char-special");
+    if(el.dataset.spLive){ delete el.dataset.spLive; if(el.classList.contains("char-flip")) el.classList.remove("char-live"); }
+  }, ms);
+  return true;
+}
+/* a special asked for by an event (a rank-up, a hundo): still one at a time */
+function charSpecialFire(el, delay){
+  setTimeout(() => {
+    if(!el || !el.isConnected || Date.now() < charSpecialBusyUntil) return;
+    if(playCharSpecial(el)) el.dataset.spNext = String(Date.now() + charSpecialMsFor(el.querySelector("svg.avatarchar-svg")) + charSpecialRand(charSpecialTiming.gap));
+  }, delay || 0);
+}
+function charSpecialRand(r){ return r[0] + Math.random() * (r[1] - r[0]); }
+function charSpecialWake(){
+  charSpecialIdle = 0;
+  if(!charSpecialTimer) charSpecialTimer = setTimeout(charSpecialTick, 1000);
+}
+function charSpecialTick(){
+  charSpecialTimer = null;
+  const now = Date.now();
+  const els = Array.from(document.querySelectorAll(CHAR_SPECIAL_PROMINENT)).filter(el => {
+    if(!el.isConnected || el.classList.contains("char-sleep") || !el.getClientRects().length) return false;
+    const r = el.getBoundingClientRect();
+    return r.width > 0 && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth;
+  });
+  /* the page was hidden (or held) for a while: nothing was due in that
+     time, so every clock moves on by the gap */
+  const elapsed = charSpecialLastTick ? now - charSpecialLastTick : 0;
+  charSpecialLastTick = now;
+  if(elapsed && (document.hidden || elapsed > 3000)) els.forEach(el => { if(el.dataset.spNext) el.dataset.spNext = String(+el.dataset.spNext + elapsed); });
+  if(!els.length){ if(++charSpecialIdle < 6) charSpecialTimer = setTimeout(charSpecialTick, 1000); else charSpecialLastTick = 0; return; }
+  charSpecialIdle = 0;
+  charSpecialTimer = setTimeout(charSpecialTick, 1000);
+  if(document.hidden || document.documentElement.dataset.reduceMotion === "true" || now < charSpecialBusyUntil) return;
+  const due = els.filter(el => {
+    if(!charHasSpecial(el)) return false;
+    if(!el.dataset.spNext) el.dataset.spNext = String(now + charSpecialRand(charSpecialTiming.first));
+    return +el.dataset.spNext <= now && !el.classList.contains("char-special");
+  });
+  if(!due.length) return;
+  const el = due[Math.floor(Math.random() * due.length)];
+  if(playCharSpecial(el)) el.dataset.spNext = String(now + charSpecialMsFor(el.querySelector("svg.avatarchar-svg")) + charSpecialRand(charSpecialTiming.gap));
+}
+document.addEventListener("visibilitychange", () => { if(!document.hidden) charSpecialWake(); });
 function isFriendPub(pub){
   try{ return !!pub && friendPublicIds().indexOf(pub) >= 0; }catch(e){ return false; }
 }
@@ -79388,6 +79967,9 @@ function showRunRewards(run, hooks, opts){
       /* the class, the hundo's own move and the sign round it - see
          reactCharacter */
       reactCharacter(av, g);
+      /* a hundo: the character's special once the reaction has landed
+         (build 317) */
+      if(g === "perfect"){ charSpecialWake(); charSpecialFire(av, 2600); }
       /* A HUNDO GETS THE CHARACTER'S OWN MOVE (build 241) - "the cooler
          animations/happy for the hundo and then lower for that." The
          perfect hop and joy on top of the move each character makes when
@@ -96493,6 +97075,8 @@ function rankUpSceneEnd(scene, played){
   document.documentElement.classList.remove("ru-scene");
   if(scene.overlay && scene.overlay.isConnected) scene.overlay.remove();
   document.querySelectorAll(".rankmap.ru-zoom").forEach(m => m.classList.remove("ru-zoom"));
+  /* back on Profile after the rank-up: the character's special (build 317) */
+  if(played){ const hero = stage.querySelector(".profile-hero-avatar"); if(hero){ charSpecialWake(); charSpecialFire(hero, 500); } }
   if(typeof syncChatDock === "function") syncChatDock();
 }
 

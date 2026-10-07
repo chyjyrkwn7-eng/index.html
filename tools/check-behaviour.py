@@ -13232,6 +13232,161 @@ def check_b317_cutspin(br):
     ctx.close()
     check("on Home a rank's reward card goes before a badge cutscene from the same run",
           order["cardsWait"] is False and not order["badgeFirst"] and order["badgeAfter"], order)
+SPECIAL_CHARS = ["lunar", "solar", "tempest", "frost", "oracle", "inferno",
+                 "umbra", "singularity", "genesis", "voidwalker",
+                 "astral", "celestial", "zenith"]
+
+
+def check_b317_specials(br):
+    """Build 317. "The rank characters ... characters will have multiple
+    animations so typically they will be still, if you look at them long
+    enough ... they could do cooler stuff but it's random ... the rank
+    ones need one that goes with their flare ... The secret flare ones get
+    a similar thing ... similar to the ultimates." Every rank, secret-flare
+    and ultimate character has a special: parts of its own (`cx-sp`) that
+    only move under `.char-special`, finite, no filter. playCharSpecial()
+    puts the class on and takes it off, steps a flip-book aside, refuses
+    under Reduce motion, and the idle scheduler fires one on the Profile
+    card by itself. Written against 57212ce, which has none of it."""
+    print("\n317. rank, secret and ultimate characters each have a special")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""(ids) => {
+      const out = { rows: [], threw: null };
+      try {
+        ids.forEach(id => {
+          const h = document.createElement('div');
+          h.style.cssText = 'position:fixed;left:10px;top:10px;width:110px;height:110px;z-index:9';
+          h.appendChild(avatarSpanFor({ avatarChar: id }));
+          const svg = h.querySelector('svg'); svg.style.width = svg.style.height = '110px';
+          h.classList.add('char-live');
+          document.body.appendChild(h);
+          const n0 = h.getAnimations({ subtree: true }).length;
+          h.classList.add('char-special');
+          const an = h.getAnimations({ subtree: true });
+          const sp = an.filter(a => a.effect && a.effect.target && a.effect.target.closest('.cx-sp'));
+          const infinite = sp.filter(a => a.effect.getComputedTiming().iterations === Infinity).length;
+          out.rows.push({ id, parts: svg.querySelectorAll('.cx-sp').length, n0, n1: an.length, sp: sp.length, infinite,
+            hiddenStill: [...svg.querySelectorAll('.cx-sp')].every(g => g.getAttribute('opacity') === '0'),
+            filter: !!svg.querySelector('[filter]') });
+          h.remove();
+        });
+      } catch(e) { out.threw = String(e); }
+      return out;
+    }""", SPECIAL_CHARS)
+    rows = r["rows"]
+    check("all thirteen drawn", len(rows) == 13 and not r["threw"], r["threw"] or len(rows))
+    check("each has special parts of its own (cx-sp), drawn at opacity 0",
+          all(x["parts"] >= 1 and x["hiddenStill"] for x in rows),
+          [x["id"] for x in rows if not (x["parts"] >= 1 and x["hiddenStill"])])
+    check("each special moves only under .char-special (more animations with the class on)",
+          all(x["n1"] > x["n0"] and x["sp"] >= 8 for x in rows),
+          [(x["id"], x["n0"], x["n1"], x["sp"]) for x in rows if not (x["n1"] > x["n0"] and x["sp"] >= 8)])
+    check("every special animation is finite", all(x["infinite"] == 0 for x in rows),
+          [(x["id"], x["infinite"]) for x in rows if x["infinite"]])
+    check("no filter in any drawing", not any(x["filter"] for x in rows))
+    tiers = [x["sp"] for x in rows]
+    check("the harder ones get more: Supernova over Silver, Void over Umbra, Zenith over Astral",
+          len(rows) == 13 and tiers[5] > tiers[0] and tiers[9] > tiers[6] and tiers[12] > tiers[10],
+          dict((x["id"], x["sp"]) for x in rows))
+
+    # playCharSpecial: on, then off; a flip-book steps aside for it
+    pc = pg.evaluate("""async () => {
+      if(typeof playCharSpecial !== 'function') return { missing: true };
+      const h = document.createElement('div');
+      h.style.cssText = 'position:fixed;left:10px;top:10px;width:60px;height:60px;z-index:9';
+      h.appendChild(avatarSpanFor({ avatarChar: 'lunar' }));
+      const svg = h.querySelector('svg'); svg.style.width = svg.style.height = '60px';
+      h.classList.add('char-flip');
+      svg.classList.add('char-under-flip');
+      const play = document.createElement('span'); play.className = 'char-flip-play';
+      h.appendChild(play);
+      document.body.appendChild(h);
+      const ok = playCharSpecial(h);
+      const during = { cls: h.classList.contains('char-special'), live: h.classList.contains('char-live'),
+        play: getComputedStyle(play).display, svg: getComputedStyle(svg).visibility,
+        idle: [...svg.querySelectorAll('.cx-fx')].some(n => n.getAnimations().length > 0) };
+      const twice = playCharSpecial(h);
+      await new Promise(r => setTimeout(r, CHAR_SPECIAL_MS.lunar + 400));
+      const after = { cls: h.classList.contains('char-special'), live: h.classList.contains('char-live'),
+        play: getComputedStyle(play).display, svg: getComputedStyle(svg).visibility };
+      h.remove();
+      return { ok, twice, during, after };
+    }""")
+    check("playCharSpecial exists", not pc.get("missing"))
+    if not pc.get("missing"):
+        check("playCharSpecial adds .char-special (and not twice at once)",
+              pc["ok"] and pc["during"]["cls"] and not pc["twice"], pc)
+        check("during it the flip-book is hidden and the live drawing shown, idle running",
+              pc["during"]["play"] == "none" and pc["during"]["svg"] == "visible" and pc["during"]["live"]
+              and pc["during"]["idle"], pc["during"])
+        check("afterwards the class is gone and the flip-book is back",
+              not pc["after"]["cls"] and not pc["after"]["live"] and pc["after"]["play"] != "none"
+              and pc["after"]["svg"] == "hidden", pc["after"])
+
+    # the idle scheduler fires on the Profile card by itself, real timings
+    sc = pg.evaluate("""async () => {
+      store.avatarChar = 'solar'; saveStore();
+      showProfile();
+      const hero = document.querySelector('.profile-hero-avatar');
+      if(!hero) return { hero: false };
+      const t0 = Date.now(); let at = null, off = null;
+      const mo = new MutationObserver(() => {
+        if(at === null && hero.classList.contains('char-special')) at = Date.now() - t0;
+        if(at !== null && off === null && !hero.classList.contains('char-special')) off = Date.now() - t0;
+      });
+      mo.observe(hero, { attributes: true, attributeFilter: ['class'] });
+      while(Date.now() - t0 < 36000 && off === null) await new Promise(r => setTimeout(r, 250));
+      mo.disconnect();
+      return { hero: true, at, off };
+    }""")
+    check("the scheduler plays a special on the Profile card within ~35s, not in the first ~7s",
+          sc.get("hero") and sc.get("at") is not None and 7000 <= sc["at"] <= 35000, sc)
+    check("... and it ends by itself", sc.get("off") is not None and sc["off"] > (sc.get("at") or 0), sc)
+
+    # back on Profile after a rank-up scene: the special plays at once
+    ru = pg.evaluate("""async () => {
+      if(typeof rankUpSceneEnd !== 'function') return { missing: true };
+      showProfile();
+      await new Promise(r => setTimeout(r, Math.max(0, charSpecialBusyUntil - Date.now()) + 300));
+      const hero = document.querySelector('.profile-hero-avatar');
+      let seen = false;
+      const mo = new MutationObserver(() => { if(hero.classList.contains('char-special')) seen = true; });
+      mo.observe(hero, { attributes: true, attributeFilter: ['class'] });
+      const scene = { watch: 0 };
+      rankUpScene = scene;
+      rankUpSceneEnd(scene, true);
+      await new Promise(r => setTimeout(r, 1500));
+      mo.disconnect();
+      return { seen };
+    }""")
+    check("a rank-up scene ending on Profile plays the character's special",
+          not ru.get("missing") and ru.get("seen"), ru)
+
+    # hidden page and Reduce motion: nothing fires
+    rm = pg.evaluate("""async () => {
+      if(typeof playCharSpecial !== 'function') return { missing: true };
+      charSpecialTiming = { first: [300, 600], gap: [300, 600] };
+      showProfile();
+      const hero = document.querySelector('.profile-hero-avatar');
+      let fired = 0;
+      const mo = new MutationObserver(() => { if(hero.classList.contains('char-special')) fired++; });
+      mo.observe(hero, { attributes: true, attributeFilter: ['class'] });
+      Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+      charSpecialWake();
+      await new Promise(r => setTimeout(r, 3500));
+      const hiddenFired = fired;
+      delete document.hidden;
+      document.documentElement.dataset.reduceMotion = 'true';
+      const direct = playCharSpecial(hero);
+      await new Promise(r => setTimeout(r, 3500));
+      const rmFired = fired - hiddenFired;
+      mo.disconnect();
+      return { hiddenFired, direct, rmFired, cls: hero.classList.contains('char-special') };
+    }""")
+    check("nothing fires while the page is hidden", not rm.get("missing") and rm.get("hiddenFired") == 0, rm)
+    check("with Reduce motion playCharSpecial refuses and the scheduler stays quiet",
+          not rm.get("missing") and rm.get("direct") is False and rm.get("rmFired") == 0 and not rm.get("cls"), rm)
+    ctx.close()
 
 
 def check_b317_tabplate(br):
@@ -13753,6 +13908,7 @@ def main():
             check_b317_daily(br)
             check_b317_volume(br)
             check_b317_cutspin(br)
+            check_b317_specials(br)
             check_b317_tabplate(br)
             check_b317_xpcap(br)
             check_b317_pfcard(br)
