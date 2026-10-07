@@ -53749,8 +53749,9 @@ function addStudyTime(ms){
 /* THE DAYS THE LEAK ALREADY WROTE (build 314). Madison's call: "cap old
    days, take rewards back". Every day up to leakUntil - the last
    day the old clock could have run - holds at most oldDayMax;
-   the median study day in the class is 0.7h, so four hours keeps every
-   honest day and stops the 68h and 118h ones. A RULE, NOT AN EDIT, and
+   the median study day in the class is 0.7h, so six hours keeps every
+   honest day and stops the 68h and 118h ones (four was proposed first;
+   six was chosen so a long genuine day is not cut). A RULE, NOT AN EDIT, and
    applied wherever a log arrives (load, both merges): the per-day merge
    takes the higher side, so a copy still holding 118h on another device
    or in the cloud would otherwise put it straight back.
@@ -53759,7 +53760,7 @@ function addStudyTime(ms){
 /* A FUNCTION, NOT CONSTS: applyLoadedData runs during boot, above this
    point in the file, and a const read before its line is a TDZ throw
    that would take the whole load down with it. */
-function studyLogCaps(){ return { leakUntil: "2026-10-07", oldDayMax: 4 * 3600 * 1000, dayMax: 16 * 3600 * 1000 }; }
+function studyLogCaps(){ return { leakUntil: "2026-10-07", oldDayMax: 6 * 3600 * 1000, dayMax: 16 * 3600 * 1000 }; }
 function normalizeStudyLog(log){
   if(!log || typeof log !== "object") return log;
   const c = studyLogCaps();

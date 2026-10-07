@@ -13292,15 +13292,18 @@ disagree with it.
   is the gate. **The days already inflated ARE capped, and what they
   unlocked goes back** - Madison's call ("cap old days, take rewards
   back"). `normalizeStudyLog()` holds every day up to `leakUntil` (in
-  `studyLogCaps()`, a function so boot can read it before its line) at 4h,
+  `studyLogCaps()`, a function so boot can read it before its line) at 6h
+  (4h was proposed; Madison chose 6h so a long genuine day is not cut),
   on load and after both merges, so a copy still holding 118h cannot bring
   it back. `revokeLeakedStudyRewards()` takes Midnight Oil / Skyline off
   anyone no longer over 35/60h (worn banner cleared, out of "shown" so a
   real re-earn announces again); `revokeRaisedCharacters()` already does
-  the Hacker at 25h. Measured on the Oct 6 backup: Dell Wyble 124h->14h,
-  AWilliams 118h->4h, Napoleon 74h->20h, Rogelio 64h->16h, Otx 57h->16h,
-  ALFRED 45h->18h, Maddog 46h->27h, BigSlim 37h->25h; Maddog and Otx were
-  wearing Midnight Oil. **`leakUntil` must be the ship date** - move it if
+  the Hacker at 25h. Measured live at 6h: Dell Wyble 124h->20h,
+  AWilliams 118h->6h, Napoleon 74h->26h, Rogelio 63h->17h, Otx 57h->21h
+  (was wearing Midnight Oil), ALFRED 45h->23h, Maddog 46h->36h (keeps
+  everything), BigSlim 37h->32h. The leak happened on phones too, not
+  only to devices left open: a test running when the phone locks keeps
+  counting until it is finished - Maddog has a 324-minute test on Oct 3. **`leakUntil` must be the ship date** - move it if
   the build ships later than 2026-10-07.
 - **AT THE CAP THE RESULTS NUMBER COUNTS UP.** *"The result screen when
   getting xp if you are full, that xp number would just keep going up."*

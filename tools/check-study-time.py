@@ -79,10 +79,10 @@ with sync_playwright() as pw:
         check("a pause is not taken out twice", abs(r["paused"]["credited"] - 600000) < 1000, r["paused"])
         check("no day holds more than 16 hours", r["ceiling"] == 16 * H, r["ceiling"])
         rp = r["repaired"]
-        check("leaked past days are capped at 4h on load (68h + 3h + 40h -> 11h)", abs(rp["hours"] - 11) < 1e-6, rp)
+        check("leaked past days are capped at 6h on load (68h + 3h + 40h -> 15h)", abs(rp["hours"] - 15) < 1e-6, rp)
         check("Midnight Oil is taken off when no longer earned, and out of shown", rp["banner"] == "" and "study50" not in rp["shown"] and "study60" not in rp["shown"], rp)
         check("the Hacker is locked again and out of shown", not rp["hacker"] and "hacker" not in rp["chars"], rp)
-        check("a merged-in leaked day is capped again", r["mergedDay"] == 4, r["mergedDay"])
+        check("a merged-in leaked day is capped again", r["mergedDay"] == 6, r["mergedDay"])
     else:
         fails.append("probe")
     print("errors", [e for e in errs if 'firebase' not in e.lower()][:3])
