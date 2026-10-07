@@ -79962,6 +79962,9 @@ function homeUnlockBlocked(){
     document.getElementById("tour-overlay") || document.getElementById("badge-cutscene") ||
     document.getElementById("supernova-cutscene") || document.getElementById("void-cutscene") ||
     document.getElementById("vroom-cutscene") || document.querySelector(".rs-spot") ||
+    /* nor under a secret-flare scene (build 317): Home's card started 1.4s
+       into an Umbra scene played on Home and showed through it */
+    document.querySelector(".fl-scene, .ff-scene") ||
     /* Not over an open chat (build 242): the screenshot pass caught an
        unlock landing on top of the dock somebody had just opened. It
        waits until they close it. */
