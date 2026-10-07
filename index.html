@@ -64371,6 +64371,22 @@ function rankOrbitCentre(orbit){
   x /= slots.length; y /= slots.length;
   const m = main.getBoundingClientRect();
   const px = m.left + m.width / 2, py = m.top + m.height * (162 / 342);
+  /* ABOUT THE PLANET, NOT ABOUT THE BUBBLES (build 317, second round).
+     Every bubble is centred on its point now (is-centred, build 313), so
+     the rings ARE concentric with the planet - but the average of seven
+     bubbles on two rings is not the rings' centre, and turning about it
+     swung each bubble off its ring and back once a lap: invisible at 30s
+     a lap, a visible wobble at the whirl's top speed ("the flares seem
+     placed laggy or off"). The carrier now turns about the planet's own
+     centre and is not shifted at all, so a bubble at rest is exactly
+     where Home draws it. The old centroid fallback stays for a hero whose
+     bubbles are not centred. */
+  const centred = [...slots].every(sl => sl.classList.contains("is-centred"));
+  if(centred){
+    orbit.style.transformOrigin = ((px - o.left) / o.width * 100).toFixed(3) + "% " + ((py - o.top) / o.height * 100).toFixed(3) + "%";
+    orbit.style.translate = "";
+    return;
+  }
   orbit.style.transformOrigin = ((x - o.left) / o.width * 100).toFixed(2) + "% " + ((y - o.top) / o.height * 100).toFixed(2) + "%";
   orbit.style.translate = ((px - x) / o.width * 100).toFixed(2) + "% " + ((py - y) / o.height * 100).toFixed(2) + "%";
 }
