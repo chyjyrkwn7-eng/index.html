@@ -14956,6 +14956,35 @@ disagree with it.
     offset from when its class went on), so a loaded machine gives the
     same frames as a quiet one. The 100% hundo trigger is not covered by
     the gate.
+- **HOME'S RINGS HAVE TWO TIERS: ORANGE, THEN BLACK (build 317).** *"I
+  noticed that the orange glowing rings light up when you hit max rank.
+  Let's do it so that that happens once every one of flares and secret
+  flares are lit up. OR make it where the rank one is all orange but if
+  you get all the secret flares AND the rank ones, then it's like black?
+  Could be sick but idk."* The second option, as two tiers, decided in
+  `homeRingTier()` and nowhere else:
+  - `""` - plain rings.
+  - `"supernova"` - `store.supernovaAchieved` (every rank flare lit; set
+    when the Supernova cutscene finishes). The orange
+    `.cosmic-orbit-ring-supernova`, unchanged.
+  - `"eclipse"` - that AND `secretFlaresAllFound()`, which is every key
+    of `MYSTERY_ORDER` in `store.mysteryColorsFound` (all SIX). Not
+    `mysteryAllFound()`: that one means the three Void flares and has
+    since build 302. `.cosmic-orbit-ring-eclipse` and NOT the orange
+    class. Every secret flare without Supernova is plain - tier two
+    needs both.
+  - The black is a near-black body (`#050409`, 3.4 wide) whose light is
+    on its edges: a hairline rim either side in a per-hero gradient
+    (`depthId + "eclipse"`, bright violet-white at the upper left, the
+    system's one light, falling to cold violet), a stacked-stroke dark
+    shadow under it and a faint violet haze outside it. Every piece is a
+    plain stroke - **no filter at all**, so iOS paints what Chromium
+    does. Static, like the orange tier (the orange rings never moved),
+    so Reduce motion has nothing to stop; the rings live in the static
+    sphere layer, and animating anything there repaints the turbulence.
+  - **Gate: `check_b317_rings`** - all four states on both reference
+    devices, read off the rings Home really builds; fails 74cc518 (the
+    max-everything account is still orange there).
 - **STUDY TIME IS TIME SPENT STUDYING (build 314).** It was "now minus
   when the run started", so a run left open with the phone locked banked
   every hour on the day it ended: live tests of 117h and 50h, days of 68h
