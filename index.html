@@ -2550,6 +2550,7 @@
   .pick-flagged-icon{ display:flex; align-items:center; justify-content:center; flex:none; width:2.4rem; height:2.4rem; }
   .pick-flagged-icon .whatsnew-glyph{ width:2rem; height:2rem; color:var(--ink); }
   .pick-flagged-icon .starred-card-star{ width:2rem; height:2rem; display:block; overflow:visible; filter:drop-shadow(0 2px 4px rgba(0,0,0,.35)); }
+  .starred-card-star.is-filled{ filter:drop-shadow(0 2px 3px rgba(0,0,0,.35)) drop-shadow(0 0 6px rgba(232,199,112,.28)); }
   .pick-flagged-text{ display:flex; flex-direction:column; gap:.2rem; flex:1; min-width:0; }
   .picks .pick-flagged-all .pname, .picks .pick-flagged-all .pcount{ min-height:0; margin:0; padding-top:0; padding-bottom:0; }
   .picks .pick-flagged-all .pname{ font-size:1rem; }
@@ -2946,9 +2947,12 @@
     0%{ transform:scale(.978); } 40%{ transform:scale(1.016); } 100%{ transform:scale(1); }
   }
   .qpanel .choice.is-right-pop{ animation:choice-right-pop .44s cubic-bezier(.2,.8,.2,1); }
+  /* A quarter softer (build 314): "the vibration effect could be
+     slightly toned down" - 4px, 3px, 1.5px became 3, 2.2 and 1, over
+     .3s rather than .34, so it settles a beat sooner too. */
   @keyframes choice-wrong-nudge{
-    0%{ transform:translateX(0) scale(.982); } 22%{ transform:translateX(-4px); } 46%{ transform:translateX(3px); }
-    70%{ transform:translateX(-1.5px); } 100%{ transform:translateX(0); }
+    0%{ transform:translateX(0) scale(.982); } 22%{ transform:translateX(-3px); } 46%{ transform:translateX(2.2px); }
+    70%{ transform:translateX(-1px); } 100%{ transform:translateX(0); }
   }
   /* ONE GLOW FOR RIGHT AND WRONG, AND BARELY THERE (build 306): "It
      looks like the incorrect answers has a glow, ensure the right answer
@@ -2957,7 +2961,7 @@
      plus an 18px 26% halo down to this. */
   .qpanel .choice.is-wrong-flash{
     border-color:var(--wrong);
-    animation:choice-wrong-nudge .34s ease-out;
+    animation:choice-wrong-nudge .3s ease-out;
   }
   .qpanel .choice.is-wrong-flash .bar{ background:var(--wrong); }
   .qpanel .choice.is-wrong-flash .key{ color:var(--wrong); }
@@ -2987,10 +2991,19 @@
      result, so the element is fresh; a browser without it shows the
      colour at once). Only the fresh pick fades: a later rebuild of the
      same list must not fade an old answer in a second time. */
-  .qpanel .choice.is-right-pop, .qpanel .choice.is-wrong-flash{ transition:transform .09s ease, border-color .45s ease .06s; }
-  .qpanel .choice.is-right-pop .bar, .qpanel .choice.is-wrong-flash .bar{ transition:background-color .45s ease .06s; }
+  /* HALF THE WAIT (build 314): "The incorrect one looks good but that
+     delay is too long, could be cut in half ... The correct answer, the
+     delay is too strong as well." Measured from the tap to the colour
+     being half there: 282ms right, 284ms wrong - a 70ms press, a 60ms
+     hold, then a .45s ease that only gets going at the end of it. Now a
+     40ms press (CHOICE_PRESS_MS), no hold, and .36s on an ease-out that
+     moves at once: 129-138ms to half and ~250 to 90%, against 434. It
+     still phases in, which is what 313 asked for - it just starts
+     when you tap. */
+  .qpanel .choice.is-right-pop, .qpanel .choice.is-wrong-flash{ transition:transform .09s ease, border-color .36s cubic-bezier(.25,.6,.3,1); }
+  .qpanel .choice.is-right-pop .bar, .qpanel .choice.is-wrong-flash .bar{ transition:background-color .36s cubic-bezier(.25,.6,.3,1); }
   .qpanel .choice.is-right-pop .key, .qpanel .choice.is-wrong-flash .key,
-  .qpanel .choice.is-right-pop .mark, .qpanel .choice.is-wrong-flash .mark{ transition:color .45s ease .06s; }
+  .qpanel .choice.is-right-pop .mark, .qpanel .choice.is-wrong-flash .mark{ transition:color .36s cubic-bezier(.25,.6,.3,1); }
   @starting-style{
     .qpanel .choice.is-right-pop, .qpanel .choice.is-wrong-flash{ border-color:var(--rule); }
     .qpanel .choice.is-right-pop .bar, .qpanel .choice.is-wrong-flash .bar{ background-color:var(--rule); }
@@ -3086,7 +3099,12 @@
      0.50 faster? Still not immediately." It waited .75s and rose over
      .62s; it waits .4s and rises over .5s now - in place about half a
      second sooner, and still after the answer's colour has landed. */
-  .foot > .floatbtn.qnext.is-rising{ animation:qnext-rise .5s cubic-bezier(.16,.84,.3,1) .4s both; }
+  /* BACK TO THE EARLIER PACE (build 314): "The next question button that
+     comes up is now JUST slightly too quick, I feel like it was better
+     before." It is build 311's rise again - .62s - and it starts at the
+     same moment after the tap as it did then: 311 waited .75s after a
+     70ms press, the press is 40ms now, so it waits .78s. */
+  .foot > .floatbtn.qnext.is-rising{ animation:qnext-rise .62s cubic-bezier(.16,.84,.3,1) .78s both; }
   [data-reduce-motion="true"] .foot > .floatbtn.qnext.is-rising{ animation:none; }
   .next.ghost:active{ background:rgba(128,128,128,.15); opacity:1; }
   .next:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
@@ -3385,6 +3403,16 @@
      in dark mode even for :has(), well before pick-checked existed.
      Same fix already used elsewhere in this file for an identical
      specificity fight (see .navsegment.profiletabs). */
+  /* Drag to select (build 314): the circle is the handle, so it never
+     scrolls; each card that flips pops its circle once. */
+  .picks label.pick > .box{ touch-action:none; }
+  /* a card hands only the vertical to the page, so a sideways first move
+     is drag-select's to claim rather than a pan the browser cancels */
+  .picks label.pick{ touch-action:pan-y; }
+  .picks.is-dragselecting label.pick{ -webkit-user-select:none; user-select:none; }
+  @keyframes pick-drag-flip{ 0%{ transform:scale(1); } 45%{ transform:scale(1.22); } 100%{ transform:scale(1); } }
+  .picks label.pick.drag-flip > .box{ animation:pick-drag-flip .24s cubic-bezier(.3,.7,.3,1); }
+  [data-reduce-motion="true"] .picks label.pick.drag-flip > .box{ animation:none; }
   .pick:has(input:checked), .pick.pick-checked{
     border-color:var(--accent) !important; border-width:1.5px !important;
     background:var(--pick-selected-bg, var(--panel)) !important;
@@ -8131,12 +8159,11 @@
     content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:-1;
     background:linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,0) 58%), var(--accent);
     clip-path:circle(0% at 50% 50%);
-    animation:start-fill-in .6s cubic-bezier(.33,.7,.25,1) forwards;
+    animation:start-fill-in .3s cubic-bezier(.3,.8,.3,1) forwards;
   }
   /* ...and as it lands, one small press-out and a single sheen across it
      (build 311: "could be a little better ... it's just not good enough").
      Both run once, both on the compositor, and both stop. */
-  @keyframes start-ready-pop{ 0%{ transform:scale(1); } 55%{ transform:scale(1.06); } 100%{ transform:scale(1); } }
   @keyframes start-ready-sheen{ from{ transform:translateX(-120%) skewX(-18deg); opacity:0; } 30%{ opacity:.9; } to{ transform:translateX(220%) skewX(-18deg); opacity:0; } }
   /* On its own class, not on .just-ready: .just-ready is the unlit look
      the fill grows over, and it must come off at 420ms like it always
@@ -8144,14 +8171,32 @@
      back to its one shape and its full depth within half a second. */
   .bottomtabs.has-start-tab .bottomtab-start.just-ready,
   .bottomtabs.has-start-tab .bottomtab-start.ready-settle{ transition:none; }
-  .bottomtabs.has-start-tab .bottomtab-start.ready-pop{ animation:start-ready-pop .42s cubic-bezier(.3,1.35,.5,1) .5s both; overflow:hidden; }
-  .bottomtabs.has-start-tab .bottomtab-start.ready-pop::after{
-    content:""; position:absolute; top:0; bottom:0; left:0; width:40%; pointer-events:none; z-index:1;
-    background:linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent);
-    animation:start-ready-sheen .5s ease-out .52s both;
+  /* ONE BEAT, AND IT LANDS (build 314): "The start menu effect when the
+     start button is activated, could be a smidge better, the timing of
+     that pulse is bad and it's weak." Measured, it was three things in a
+     row with gaps between them: the fill took .6s on a curve that had
+     done its work by ~.35s, then nothing for 150ms, then a 6% pop at
+     .5s and the sheen after it - a pause in the middle of one gesture.
+     Now it is one beat: the fill grows from the centre in .3s, the pill
+     punches out to 1.1 as the fill arrives (from 180ms, peaking at
+     ~340ms) and settles through a hair under 1 rather than wobbling,
+     the play mark nudges forward with it, and a brighter sheen crosses
+     in the same moment. All transform and opacity; done by ~.65s. */
+  @keyframes start-ready-punch{
+    0%{ transform:scale(1); } 36%{ transform:scale(1.1); } 68%{ transform:scale(.985); } 100%{ transform:scale(1); }
   }
+  @keyframes start-ready-nudge{ 0%, 100%{ transform:translateX(0); } 40%{ transform:translateX(3px); } }
+  .bottomtabs.has-start-tab .bottomtab-start.ready-pop{ animation:start-ready-punch .45s cubic-bezier(.3,.7,.3,1) .18s both; overflow:hidden; }
+  .bottomtabs.has-start-tab .bottomtab-start.ready-pop .bottomtab-icon{ animation:start-ready-nudge .45s cubic-bezier(.3,.7,.3,1) .18s both; }
+  .bottomtabs.has-start-tab .bottomtab-start.ready-pop::after{
+    content:""; position:absolute; top:0; bottom:0; left:0; width:45%; pointer-events:none; z-index:1;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,.8), transparent);
+    animation:start-ready-sheen .46s cubic-bezier(.3,.6,.4,1) .2s both;
+  }
+  .bottomtabs.has-start-tab .bottomtab-start:not(.is-inert):not(:disabled):active{ transform:scale(.96); }
   [data-reduce-motion="true"] .bottomtabs.has-start-tab .bottomtab-start.just-ready::before{ animation:none; clip-path:none; }
   [data-reduce-motion="true"] .bottomtabs.has-start-tab .bottomtab-start.ready-pop,
+  [data-reduce-motion="true"] .bottomtabs.has-start-tab .bottomtab-start.ready-pop .bottomtab-icon,
   [data-reduce-motion="true"] .bottomtabs.has-start-tab .bottomtab-start.ready-pop::after{ animation:none; }
   /* THE BEGIN BUTTON ON THE START SHEET wears the same raised recipe as
      the tab bar's Start - fill, top highlight, a bright inset hairline, a
@@ -10044,6 +10089,25 @@
   .hundo-why[hidden]{ display:none; }
   @keyframes hundo-why-in{ from{ opacity:0; transform:translateY(-4px); } to{ opacity:1; transform:none; } }
   .hundo-chip + .sect-headval{ margin-left:0; }
+  /* ALREADY THERE (build 314) - see showSliderTopNote. The lit half of the
+     question-bank switch, solid over the sheet, with a tip at the button. */
+  .has-topnote{ position:relative; }
+  .slider-topnote{ position:absolute; z-index:6; display:flex; flex-direction:column; align-items:center; gap:.12rem;
+    max-width:calc(100% - .4rem); padding:.5rem .95rem .52rem; border-radius:11px; text-align:center; pointer-events:none;
+    background:linear-gradient(rgba(255,255,255,.2), rgba(255,255,255,.2)), #15181D;
+    border:1px solid rgba(255,255,255,.12); box-shadow:0 1px 3px rgba(0,0,0,.28), 0 10px 24px rgba(0,0,0,.4);
+    animation:slider-topnote-in .2s cubic-bezier(.3,.8,.3,1); transform-origin:var(--tip-x, 50%) 0; }
+  .slider-topnote::before{ content:""; position:absolute; top:-6px; left:calc(var(--tip-x, 50%) - 6px); width:11px; height:11px;
+    transform:rotate(45deg); background:inherit; border-left:1px solid rgba(255,255,255,.12); border-top:1px solid rgba(255,255,255,.12); }
+  .slider-topnote-title{ font-size:.86rem; font-weight:800; color:#fff; line-height:1.15; white-space:nowrap; }
+  .slider-topnote-sub{ font-size:.74rem; font-weight:600; color:rgba(255,255,255,.72); line-height:1.15; white-space:nowrap; }
+  .slider-topnote.is-above{ transform-origin:var(--tip-x, 50%) 100%; animation-name:slider-topnote-up; }
+  .slider-topnote.is-above::before{ top:auto; bottom:-6px; border:0; border-right:1px solid rgba(255,255,255,.12); border-bottom:1px solid rgba(255,255,255,.12); }
+  .slider-topnote.is-going{ opacity:0; transform:translateY(-3px); transition:opacity .18s ease, transform .18s ease; }
+  .slider-topnote.is-above.is-going{ transform:translateY(3px); }
+  @keyframes slider-topnote-up{ from{ opacity:0; transform:translateY(4px) scale(.97); } to{ opacity:1; transform:none; } }
+  @keyframes slider-topnote-in{ from{ opacity:0; transform:translateY(-4px) scale(.97); } to{ opacity:1; transform:none; } }
+  [data-reduce-motion="true"] .slider-topnote{ animation:none; }
   /* Centred over the slider, in the How many row (build 313). Out of the
      flow, so it still comes and goes without moving anything. */
   .unitoptions-modal-sheet .sect-headrow:has(> .hundo-chip){ position:relative; }
@@ -10055,6 +10119,15 @@
   /* A question pushing in from the right must not scroll the page
      sideways for the moment it is off-screen (build 311, advanceWithSlide). */
   html.q-sliding, html.q-sliding body{ overflow-x:clip; }
+  /* A COPY IS A PICTURE OF WHAT WAS ALREADY THERE (build 314). The slide's
+     copies are fresh elements, so the answer's colour fade
+     (@starting-style) and the Next pill's rise played again inside the
+     outgoing copy as it left - the right answer went grey and turned
+     green a second time on its way off, and a CDP trace showed six
+     uncomposited colour transitions in every slide. Nothing inside a
+     copy transitions or animates; its own move is a Web Animation on
+     the copy itself, which this does not touch. */
+  .q-slide-clone *, .q-blurpair *{ transition:none !important; animation:none !important; }
   .ar-head{ display:flex; align-items:center; gap:.9rem; margin:.6rem 0 1rem; padding:.95rem 1.1rem; border-radius:16px;
     background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.45);
     border:1px solid rgba(255,255,255,.11); box-shadow:inset 0 1px 0 rgba(255,255,255,.12); }
@@ -17056,7 +17129,7 @@
     color:rgba(255,255,255,.82); background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.08); }
   .sheet-tag.is-bank{ color:#0B0D10; background:#FFD7C9; border-color:transparent; }
   /* The two options, side by side as tiles. */
-  .unitoptions-modal-sheet .opt-rows .opt{ padding:.35rem 0; }
+  .unitoptions-modal-sheet .opt-rows .opt, .unitoptions-modal-sheet .bank-rows .opt{ padding:.35rem 0; }
   .opt-tiles{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:.55rem; }
   .opt-tiles .opt.opt-tile[hidden]{ display:none; }
   .opt-tiles:has(.opt-tile[hidden]) { grid-template-columns:1fr; }
@@ -17207,10 +17280,12 @@
     content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:-1;
     background:linear-gradient(180deg, #FFFFFF, #E6EAF0);
     clip-path:circle(0% at 50% 50%);
-    animation:start-fill-in .6s cubic-bezier(.33,.7,.25,1) forwards;
+    animation:start-fill-in .3s cubic-bezier(.3,.8,.3,1) forwards;
   }
   .unitoptions-modal-sheet .slider-allbtn.ready-settle{ transition:none; }
-  .unitoptions-modal-sheet .slider-allbtn.ready-pop{ animation:start-ready-pop .42s cubic-bezier(.3,1.35,.5,1) .5s both; }
+  /* Start's beat, same timing (build 314). */
+  /* On the release, at once (build 314): no delay, the punch rides the fill. */
+  .unitoptions-modal-sheet .slider-allbtn.ready-pop{ animation:start-ready-punch .42s cubic-bezier(.3,.7,.3,1) both; }
   [data-reduce-motion="true"] .unitoptions-modal-sheet .slider-allbtn.just-ready::after{ animation:none; clip-path:none; }
   [data-reduce-motion="true"] .unitoptions-modal-sheet .slider-allbtn.ready-pop{ animation:none; }
   /* the Timer card: the same card as the rest, the bar its header row,
@@ -17363,11 +17438,15 @@
   /* Switches: grouped rows, divided by hairlines, no explanations - the
      names say it ("Shuffle answers", "Hide answers", "Time limit"). */
   .unitoptions-modal-sheet.is-setup .opt-rows,
+  .unitoptions-modal-sheet.is-setup .bank-rows,
   .unitoptions-modal-sheet.is-setup .timer-sect{
     background:rgba(255,255,255,.07); border-radius:13px; padding:0 .9rem;
   }
   .unitoptions-modal-sheet.is-setup .opt-tiles-sect .opt-rows .opt,
+  .unitoptions-modal-sheet.is-setup .bank-rows .opt,
   .unitoptions-modal-sheet.is-setup .timer-sect .opt{ padding:.72rem 0; min-height:48px; align-items:center; }
+  /* The starred switch with nothing to draw (build 314): there, greyed. */
+  .unitoptions-modal-sheet .bank-starred.is-disabled{ opacity:.45; cursor:default; }
   .unitoptions-modal-sheet.is-setup .opt-rows .opt + .opt,
   .unitoptions-modal-sheet.is-setup .timer-sect > * + *{ border-top:1px solid rgba(255,255,255,.09); }
   /* One quick line under each switch again (build 291). */
@@ -45022,81 +45101,17 @@ function buildQuestionFlag(qi, opts){
       b.classList.remove("just-on"); void b.offsetWidth; b.classList.add("just-on");
       clearTimeout(b._jo); b._jo = setTimeout(() => b.classList.remove("just-on"), 800);
     }
-    showFlagNote(b, isFlagged(qi));
     if(opts.onChange) opts.onChange(isFlagged(qi));
   });
   paint();
   return b;
 }
 
-/* THE FLAG'S CONFIRMATION SITS BESIDE THE FLAG (build 302). It was a
-   full-width yellow bar pinned to the top of the screen: "it looks like a
-   button but the color is nice ... being at the very top of the screen
-   isn't the move ... the chat button is over it". Up there it covered the
-   top bar - pause and the chat button, which painted over it - and a
-   solid filled bar with a border is exactly what a button looks like. So
-   it is plain text now - no fill, no outline, no pill - said where the tap happened: to the LEFT of
-   the flag, on its centre line, in the header row that is otherwise empty
-   (the same gap the flare glint uses). The yellow survives as the TEXT
-   and the little flag, not as a fill. pointer-events:none, so it can
-   never take a tap meant for anything under it. It is fixed-position on
-   <body> (a test's #stage animates, and a transform there re-parents a
-   fixed child), so it goes the moment the page scrolls or the screen
-   changes - a label that stays put while its flag moves is pointing at
-   nothing. If there is no room to the left (a flag near the left edge)
-   it drops below the flag instead. */
-function showFlagNote(btn, on){
-  document.querySelectorAll(".flag-note").forEach(n => n.remove());
-  if(!btn || !btn.isConnected) return;
-  const note = document.createElement("div");
-  note.className = "flag-note" + (on ? " is-on" : "");
-  note.setAttribute("role", "status");
-  const ns = "http://www.w3.org/2000/svg";
-  const sv = document.createElementNS(ns, "svg");
-  sv.setAttribute("viewBox", "0 0 24 24"); sv.setAttribute("aria-hidden", "true");
-  const ban = document.createElementNS(ns, "path");
-  ban.setAttribute("d", "M12 2.7l2.83 5.95 6.5.82-4.8 4.47 1.24 6.45L12 17.22 6.23 20.4l1.24-6.45-4.8-4.47 6.5-.82z");
-  ban.setAttribute("class", "fn-banner");
-  sv.append(ban);
-  const t = document.createElement("span");
-  t.textContent = on ? "Starred" : "Star removed";
-  note.append(sv, t);
-  document.body.appendChild(note);
-  const r = btn.getBoundingClientRect(), nr = note.getBoundingClientRect();
-  const vw = document.documentElement.clientWidth, gap = 8;
-  if(r.left - gap - nr.width >= 8){
-    note.style.left = Math.round(r.left - gap - nr.width) + "px";
-    note.style.top = Math.round(r.top + r.height / 2 - nr.height / 2) + "px";
-  } else {
-    note.style.left = Math.round(Math.min(Math.max(8, r.left + r.width / 2 - nr.width / 2), vw - nr.width - 8)) + "px";
-    note.style.top = Math.round(r.bottom + gap) + "px";
-  }
-  /* In a test the row left of the flag is empty. In a unit's Flagged
-     list and in Answer Review the question's own text runs up to the
-     flag, so there the words get a backing to sit on rather than being
-     printed over a sentence. */
-  const nb = note.getBoundingClientRect();
-  const overText = [...(btn.parentElement ? btn.parentElement.children : [])].some(c => {
-    if(c === btn || !(c.textContent || "").trim()) return false;
-    const cr = c.getBoundingClientRect();
-    return !(cr.right <= nb.left || cr.left >= nb.right || cr.bottom <= nb.top || cr.top >= nb.bottom);
-  });
-  if(overText) note.classList.add("has-back");
-  requestAnimationFrame(() => note.classList.add("show"));
-  let gone = false;
-  const drop = () => {
-    if(gone) return; gone = true;
-    window.removeEventListener("scroll", drop, true);
-    mo.disconnect(); clearTimeout(tm);
-    note.classList.remove("show");
-    setTimeout(() => note.remove(), 220);
-  };
-  const mo = new MutationObserver(() => { if(!btn.isConnected) drop(); });
-  mo.observe(stage, { childList: true, subtree: true });
-  window.addEventListener("scroll", drop, { capture: true, passive: true });
-  const tm = setTimeout(drop, 1800);
-}
-
+/* NO WORDS BESIDE THE STAR (build 314): "Star removed/and starred wording
+   when hitting the button, we don't need that anymore." showFlagNote() -
+   the "Starred" / "Star removed" label build 302 put beside the star - is
+   gone with its call; the star's own fill, ripple and aria-pressed say it.
+   (It appended to <body>, so it is deleted rather than left unreachable.) */
 function flaggedIndexes(){
   return QUESTIONS.map((q, i) => i).filter(isFlagged);
 }
@@ -52258,19 +52273,43 @@ function buildFlagIcon(){
    cards. It is the test's own star shape, drawn as a white outline with
    a faint inner fill so it still reads as an object - and still no circle
    round it (298). Used on the card and on the screen it opens. */
+/* FILLED ONCE THERE IS SOMETHING IN IT (build 314): "that star, just fill
+   it in with color ONCE someone actually has a flagged question ... I feel
+   like it needs to be good though, the colored in star before was not it."
+   buildStarredCardStar(true) is the same star in the in-test star's own
+   gold (#E8C770, the colour a starred question's star turns), not 308's
+   saturated #FFD233-to-#E39400 with a glow disc behind it: a gentle ramp
+   lit from the top, a crisp rim one step lighter, and a thin highlight
+   along the two upper arms clipped inside the shape so it reads as one
+   lit object rather than a sticker. The faint warm glow is CSS
+   (.is-filled), a drop-shadow on the svg, never an svg filter. With
+   nothing starred it stays the white outline (313). */
 let starredCardSeq = 0;
-function buildStarredCardStar(){
+function buildStarredCardStar(filled){
   const NS = "http://www.w3.org/2000/svg", id = "scs" + (++starredCardSeq);
   const svg = document.createElementNS(NS, "svg");
-  svg.setAttribute("viewBox", "0 0 32 32"); svg.setAttribute("class", "starred-card-star"); svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("viewBox", "0 0 32 32"); svg.setAttribute("class", "starred-card-star" + (filled ? " is-filled" : "")); svg.setAttribute("aria-hidden", "true");
   const mk = (tag, attrs) => { const e = document.createElementNS(NS, tag); Object.keys(attrs).forEach(k => e.setAttribute(k, attrs[k])); return e; };
   const defs = mk("defs", {});
   const body = mk("linearGradient", { id: id + "b", x1: "0", y1: "0", x2: "0", y2: "1" });
-  [["0%", "#FFFFFF", ".22"], ["100%", "#FFFFFF", ".04"]].forEach(([o, c, a]) => body.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": a })));
+  const stops = filled
+    ? [["0%", "#F6E3A6", "1"], ["45%", "#E8C770", "1"], ["100%", "#C9A04A", "1"]]
+    : [["0%", "#FFFFFF", ".22"], ["100%", "#FFFFFF", ".04"]];
+  stops.forEach(([o, c, a]) => body.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": a })));
   defs.append(body);
   const star = "M16 4.6l3.5 7.4 8.1 1.02-5.95 5.56 1.56 8L16 22.66l-7.21 3.92 1.56-8-5.95-5.56 8.1-1.02z";
+  if(!filled){
+    svg.append(defs,
+      mk("path", { d: star, fill: "url(#" + id + "b)", stroke: "#F4F6F9", "stroke-width": "1.7", "stroke-linejoin": "round" }));
+    return svg;
+  }
+  const clip = mk("clipPath", { id: id + "c" });
+  clip.appendChild(mk("path", { d: star }));
+  defs.append(clip);
   svg.append(defs,
-    mk("path", { d: star, fill: "url(#" + id + "b)", stroke: "#F4F6F9", "stroke-width": "1.7", "stroke-linejoin": "round" }));
+    mk("path", { d: star, fill: "url(#" + id + "b)", stroke: "#F0D58F", "stroke-width": "1.2", "stroke-linejoin": "round" }),
+    mk("path", { d: "M9.6 13.6l4.4-.56L16 8.3l2 4.74 4.4.56", fill: "none", stroke: "#FFFFFF", "stroke-width": "1.1",
+      "stroke-linecap": "round", "stroke-linejoin": "round", opacity: ".32", "clip-path": "url(#" + id + "c)" }));
   return svg;
 }
 function buildClockIcon(){
@@ -54262,7 +54301,7 @@ let lastWrong = false;  // the previous pick on this question was wrong
 /* Build 303's answer feel - see the .is-pressing CSS. choiceFx is the
    one effect the NEXT render should play (and only the next one), and
    nextRisenFor the question whose Next has already risen into place. */
-const CHOICE_PRESS_MS = 70;   /* build 308: was 110 - "a little lag" */
+const CHOICE_PRESS_MS = 40;   /* build 308: was 110 - "a little lag"; build 314: was 70, see the colour note in the CSS */
 const WRONG_FLASH_MS = 2600;
 let choiceFx = null;
 let choicePressTimer = null;
@@ -64430,6 +64469,8 @@ function attachUnitHold(row, name, mode){
     if(e.button && e.button !== 0) return;
     fired = false; sx = e.clientX; sy = e.clientY;
     cancel();
+    /* the select circle is drag-select's handle (build 314), not a hold */
+    if(e.target.closest && e.target.closest(".box")) return;
     row.classList.add("is-pressing");
     timer = setTimeout(() => {
       timer = null; fired = true;
@@ -64452,6 +64493,149 @@ function attachUnitHold(row, name, mode){
   row.addEventListener("click", () => {
     if(!fired) setTimeout(() => maybeShowUnitHoldTip(row), 350);
   });
+}
+
+/* ---- DRAG TO SELECT UNITS (build 314) ----
+   "For the unit selection, another great function, being able to hold
+   and drop on units to select multiple faster, would be pretty sick.
+   Let's do it. Ensure it's done right." The Photos / Reminders gesture:
+   the first card touched decides - an unticked one ticks, a ticked one
+   unticks - and everything between it and the card under the finger, in
+   the grid's own order, takes that state; drag back and the cards you
+   leave go back to what they were. A RANGE, not a trail, so a fast drag
+   that skips a card between two samples cannot leave a hole.
+   HOW IT STARTS, so nothing that worked stops working:
+   - on a card's select circle (.box, touch-action:none): at once, in any
+     direction - the circle is the "selecting" handle and never scrolls
+     and never opens the details (attachUnitHold leaves it alone);
+   - anywhere else on a card: only a SIDEWAYS first move (the grid never
+     scrolls sideways, so that move meant nothing before). A vertical
+     first move is the page's scroll, untouched; holding still is still
+     the 420ms hold that opens the unit's details; a tap still ticks one.
+   Once selecting, touchmove is cancelled so the page cannot take the
+   gesture over, and the list scrolls itself when the finger nears the
+   top or the bottom (above the tab bar). Each card flips in place - the
+   checkbox, .pick-checked, a short pop of its circle - and refresh() runs
+   at most once a frame, so nothing re-renders the list. A shorter-version
+   unit (the Penal Code) is taken whole, as Select all takes it. The click
+   that ends a mouse drag is swallowed, or it would tick the last card a
+   second time. */
+const DRAG_SELECT_LOCK = 10;
+function attachDragSelect(list, onChange){
+  let st = null, rafPending = false, scrollRaf = 0;
+  const rowsNow = () => [...list.querySelectorAll("label.pick")].filter(r => !r.hidden && r.querySelector("input[type=checkbox]"));
+  const rowAt = (x, y) => {
+    const el = document.elementFromPoint(x, y);
+    const r = el && el.closest ? el.closest("label.pick") : null;
+    return r && list.contains(r) && r.querySelector("input[type=checkbox]") ? r : null;
+  };
+  const flush = () => {
+    if(rafPending) return;
+    rafPending = true;
+    requestAnimationFrame(() => { rafPending = false; onChange(); });
+  };
+  const setRow = (r, on) => {
+    const cb = r.querySelector("input[type=checkbox]");
+    if(!cb || cb.checked === on) return false;
+    cb.checked = on;
+    r.classList.toggle("pick-checked", on);
+    if(on && typeof cfg !== "undefined" && cfg.versions && cb.value) delete cfg.versions[cb.value];
+    r.classList.remove("drag-flip"); void r.offsetWidth; r.classList.add("drag-flip");
+    clearTimeout(r._flipT); r._flipT = setTimeout(() => r.classList.remove("drag-flip"), 260);
+    return true;
+  };
+  const paintRange = () => {
+    if(!st || !st.rows) return;
+    const cur = st.rows.indexOf(st.over);
+    if(cur < 0) return;
+    const lo = Math.min(st.anchor, cur), hi = Math.max(st.anchor, cur);
+    let changed = false;
+    st.rows.forEach((r, i) => {
+      const want = (i >= lo && i <= hi) ? st.target : st.orig[i];
+      if(setRow(r, want)) changed = true;
+    });
+    if(changed) flush();
+  };
+  const begin = () => {
+    st.mode = "select";
+    st.rows = rowsNow();
+    st.anchor = st.rows.indexOf(st.row);
+    if(st.anchor < 0){ st = null; return; }
+    st.orig = st.rows.map(r => r.querySelector("input[type=checkbox]").checked);
+    st.target = !st.orig[st.anchor];
+    st.over = st.row;
+    st.moved = true;
+    st.row.classList.remove("is-pressing");
+    list.classList.add("is-dragselecting");
+    paintRange();
+  };
+  const autoScroll = () => {
+    cancelAnimationFrame(scrollRaf); scrollRaf = 0;
+    if(!st || st.mode !== "select") return;
+    const top = 90, bottom = window.innerHeight - 150;
+    let v = 0;
+    if(st.y < top) v = -Math.ceil(14 * Math.min(1, (top - st.y) / top));
+    else if(st.y > bottom) v = Math.ceil(14 * Math.min(1, (st.y - bottom) / 150));
+    if(!v) return;
+    const before = window.scrollY;
+    /* instant: the app's smooth scrolling would turn each nudge into an
+       animation of its own and the list would crawl */
+    window.scrollBy({ top: v, behavior: "instant" });
+    if(window.scrollY !== before){
+      const r = rowAt(st.x, st.y);
+      if(r && r !== st.over){ st.over = r; paintRange(); }
+    }
+    scrollRaf = requestAnimationFrame(autoScroll);
+  };
+  const end = () => {
+    cancelAnimationFrame(scrollRaf); scrollRaf = 0;
+    if(st && st.mode === "select"){
+      list.classList.remove("is-dragselecting");
+      onChange();
+      const until = performance.now() + 450;
+      const swallow = e => { if(performance.now() < until){ e.preventDefault(); e.stopPropagation(); } list.removeEventListener("click", swallow, true); };
+      list.addEventListener("click", swallow, true);
+      setTimeout(() => list.removeEventListener("click", swallow, true), 460);
+    }
+    st = null;
+  };
+  list.addEventListener("pointerdown", e => {
+    if(e.button && e.button !== 0) return;
+    const row = e.target.closest && e.target.closest("label.pick");
+    if(!row || !list.contains(row) || !row.querySelector("input[type=checkbox]")) return;
+    st = { id: e.pointerId, sx: e.clientX, sy: e.clientY, x: e.clientX, y: e.clientY, row,
+           fromCircle: !!e.target.closest(".box"), mode: "pending" };
+  });
+  list.addEventListener("pointermove", e => {
+    if(!st || e.pointerId !== st.id) return;
+    st.x = e.clientX; st.y = e.clientY;
+    const dx = e.clientX - st.sx, dy = e.clientY - st.sy;
+    if(st.mode === "pending"){
+      if(st.fromCircle){ if(Math.hypot(dx, dy) > 6) begin(); }
+      else if(Math.abs(dx) > DRAG_SELECT_LOCK && Math.abs(dx) > Math.abs(dy)) begin();
+      else if(Math.abs(dy) > DRAG_SELECT_LOCK){ st = null; return; }
+      if(!st || st.mode !== "select") return;
+    }
+    const r = rowAt(e.clientX, e.clientY);
+    if(r && r !== st.over){ st.over = r; paintRange(); }
+    if(!scrollRaf) autoScroll();
+  });
+  ["pointerup", "pointercancel"].forEach(t => list.addEventListener(t, e => { if(st && e.pointerId === st.id) end(); }));
+  /* the page must not take a selecting finger for a scroll */
+  list.addEventListener("touchmove", e => {
+    if(st && (st.mode === "select" || st.fromCircle) && e.cancelable) e.preventDefault();
+  }, { passive: false });
+}
+
+/* BACK TO THE SHEET, AS IT SAYS (build 314). Learn's "Back to Options"
+   and the flashcards' "Exit flashcards" both landed on the units screen
+   with the sheet shut - the options they named were one more tap away.
+   With the units still picked, the sheet opens again over them. */
+function showSetupWithSheet(){
+  showSetup();
+  if(!cfg.units.length) return;
+  const b = document.getElementById("nextbtn");
+  if(b && !b.hidden && !b.disabled && document.querySelector("#stage .screen-setup")) b.click();
 }
 
 /* ---- "HOLD A UNIT" - ONCE, ON THE FIRST UNIT TAPPED (build 279) ----
@@ -64929,6 +65113,9 @@ function openUnitDetail(row, name, mode){
       card.remove(); scrim.remove(); shadow.remove();
       document.documentElement.classList.remove("unitdetail-lock");
     }, 420);
+    /* Review's Starred questions box says what is starred now (build 314). */
+    const sb = document.querySelector("#stage .pick-flagged-all");
+    if(sb && typeof sb._paint === "function") sb._paint();
   }
   scrim.addEventListener("click", close);
   /* Leaving the screen under it closes it too. */
@@ -65088,8 +65275,8 @@ function syncStartInert(inert){
     clearTimeout(tab._readyT); tab._readyT = setTimeout(() => {
       tab.classList.add("ready-settle"); tab.classList.remove("just-ready"); void tab.offsetWidth;
       requestAnimationFrame(() => requestAnimationFrame(() => tab.classList.remove("ready-settle")));
-    }, 680);
-    clearTimeout(tab._popT); tab._popT = setTimeout(() => tab.classList.remove("ready-pop"), 1100);
+    }, 340);
+    clearTimeout(tab._popT); tab._popT = setTimeout(() => tab.classList.remove("ready-pop"), 760);
   } else if(inert){ clearTimeout(tab._readyT); clearTimeout(tab._popT); tab.classList.remove("just-ready", "ready-pop"); }
 }
 /* PRECISE, BUT PULLED TOWARDS FIVES (build 308): "don't make it in
@@ -65245,6 +65432,12 @@ function buildEverythingSlider(labelText, everythingLabel, customLabel, min, get
   wrap.append(slider, allBtn);
   sect.appendChild(wrap);
 
+  /* held from the touch to the release (see syncTopButton) */
+  const holdOn = () => { allBtn._held = true; };
+  const holdOff = () => { if(!allBtn._held) return; allBtn._held = false; sect.paint(); };
+  slider.addEventListener("pointerdown", holdOn);
+  slider.addEventListener("touchstart", holdOn, { passive: true });
+  ["pointerup", "pointercancel", "touchend", "touchcancel", "change"].forEach(t => slider.addEventListener(t, holdOff));
   sect.paint = () => {
     const pool = getMax();
     const top = topStopFor(pool);
@@ -65269,11 +65462,81 @@ function buildEverythingSlider(labelText, everythingLabel, customLabel, min, get
   return sect;
 }
 
+/* ---- ALREADY THERE, SAID IN A BOX (build 314) ----
+   "When hitting the all button or max button on slider, if it's already
+   at that, give a small thing that says max time set or all questions
+   from "starred from selected units" or all questions from selected
+   units or whatever. Similar to the two boxes at the top of menu." A tap
+   on Max that would change nothing used to do nothing. Now it drops a
+   small box from the button - "Max time set / 90 minutes", in the look
+   the question-bank boxes had (white glass, a bold line and a smaller
+   one) - and it goes by itself after 2.2s or at the next touch anywhere.
+   Only Max, by the coordinator's call in the same round: the two bank
+   boxes became one Starred switch (see the start sheet), and the All
+   note went with them; How many's All still does nothing when it is
+   already on. Wiring it back is one line in its click handler. Absolutely placed in
+   the slider's own section, so nothing under it moves (the build-291
+   rule the hundo chip follows). A tap that changes the value never
+   shows it. */
+function showSliderTopNote(sect, btn, title, sub){
+  if(!sect || !btn || !btn.isConnected) return;
+  /* Hung on the sheet's body, not the slider's own section: the time
+     limit's Minutes row sits inside a card that clips, and the box was
+     cut off at the card's edge. Above the button instead of below where
+     below would run under the pinned Begin bar. */
+  const host = btn.closest(".optionsmodal-body") || sect;
+  if(host._topNoteDrop) host._topNoteDrop(true);
+  sect = host;
+  sect.classList.add("has-topnote");
+  const note = document.createElement("div");
+  note.className = "slider-topnote";
+  note.setAttribute("role", "status");
+  const t = document.createElement("span"); t.className = "slider-topnote-title"; t.textContent = title;
+  note.appendChild(t);
+  if(sub){ const s2 = document.createElement("span"); s2.className = "slider-topnote-sub"; s2.textContent = sub; note.appendChild(s2); }
+  sect.appendChild(note);
+  const sr = sect.getBoundingClientRect(), br = btn.getBoundingClientRect();
+  const nw = note.offsetWidth, nh = note.offsetHeight;
+  const cx = br.left + br.width / 2 - sr.left;
+  const left = Math.max(0, Math.min(sr.width - nw, cx - nw / 2));
+  const bar = sect.querySelector(".sheet-begin-bar");
+  const floor = Math.min(window.innerHeight, bar ? bar.getBoundingClientRect().top + 14 : window.innerHeight) - 6;
+  const above = br.bottom + 9 + nh > floor && br.top - 9 - nh > 0;
+  note.classList.toggle("is-above", above);
+  note.style.top = Math.round((above ? br.top - 9 - nh : br.bottom + 9) - sr.top + (sect.scrollTop || 0)) + "px";
+  note.style.left = Math.round(left) + "px";
+  note.style.setProperty("--tip-x", Math.round(cx - left) + "px");
+  let gone = false, timer = 0;
+  const onDown = e => { if(!note.contains(e.target) && !btn.contains(e.target)) drop(); };
+  const drop = now => {
+    if(gone) return; gone = true;
+    clearTimeout(timer);
+    document.removeEventListener("pointerdown", onDown, true);
+    if(sect._topNoteDrop === drop) sect._topNoteDrop = null;
+    if(now){ note.remove(); return; }
+    note.classList.add("is-going");
+    setTimeout(() => note.remove(), 200);
+  };
+  sect._topNoteDrop = drop;
+  timer = setTimeout(drop, 2200);
+  setTimeout(() => { if(!gone) document.addEventListener("pointerdown", onDown, true); }, 0);
+}
 /* All (How many) and Max (Minutes) are one button (build 313): white and
    raised whenever the slider is below the top, the quiet glass with a tick
    at the top, and at the moment it lights up it fills from its centre and
    pops, as Start does - never on a first paint. */
+/* ON THE RELEASE, NOT PART-WAY THROUGH THE DRAG (build 314): "When
+   sliding off all or max in the slider, the buttons do a cool effect
+   where it like activates, just make sure it's a little better so it
+   activates right when I stop touching it ... and not that delay thing
+   it has." It fired on the first input event below the top - under the
+   finger, half-way through the slide - and then waited out its own
+   delays. While the slider is held (btn._held, set by both sliders) the
+   button keeps its quiet "on" look; the release calls back in here, and
+   the fill and the punch start that frame (no delay in the CSS any more). */
 function syncTopButton(btn, atTop){
+  if(btn._held && !atTop && btn.classList.contains("on")){ btn._pendingOff = true; return; }
+  btn._pendingOff = false;
   const wasOn = btn.classList.contains("on");
   btn.classList.toggle("on", atTop);
   btn.setAttribute("aria-pressed", atTop ? "true" : "false");
@@ -65283,8 +65546,8 @@ function syncTopButton(btn, atTop){
     clearTimeout(btn._readyT); btn._readyT = setTimeout(() => {
       btn.classList.add("ready-settle"); btn.classList.remove("just-ready"); void btn.offsetWidth;
       requestAnimationFrame(() => requestAnimationFrame(() => btn.classList.remove("ready-settle")));
-    }, 680);
-    clearTimeout(btn._popT); btn._popT = setTimeout(() => btn.classList.remove("ready-pop"), 1000);
+    }, 340);
+    clearTimeout(btn._popT); btn._popT = setTimeout(() => btn.classList.remove("ready-pop"), 760);
   } else if(atTop){ clearTimeout(btn._readyT); clearTimeout(btn._popT); btn.classList.remove("just-ready", "ready-pop", "ready-settle"); }
 }
 function plainSlider(labelText, min, max, step, get, set, formatVal, onChange, topLabel){
@@ -65334,6 +65597,8 @@ function plainSlider(labelText, min, max, step, get, set, formatVal, onChange, t
     topBtn.type = "button"; topBtn.className = "slider-allbtn slider-maxbtn";
     topBtn.textContent = topLabel;
     topBtn.addEventListener("click", () => {
+      /* Already at the top: say so rather than do nothing (build 314). */
+      if(get() >= max){ const n = typeof sect.topNote === "function" ? sect.topNote() : null; showSliderTopNote(sect, topBtn, n ? n.title : "Max set", n ? n.sub : formatVal(max)); return; }
       const from = Number(slider.value);
       set(max); valDisplay.textContent = formatVal(max);
       if(typeof onChange === "function") onChange();
@@ -65349,6 +65614,12 @@ function plainSlider(labelText, min, max, step, get, set, formatVal, onChange, t
       requestAnimationFrame(step);
     });
     slider.addEventListener("input", () => syncTopButton(topBtn, get() >= max));
+    /* held from the touch to the release (see syncTopButton) */
+    const holdOn = () => { topBtn._held = true; };
+    const holdOff = () => { if(!topBtn._held) return; topBtn._held = false; syncTopButton(topBtn, get() >= max); };
+    slider.addEventListener("pointerdown", holdOn);
+    slider.addEventListener("touchstart", holdOn, { passive: true });
+    ["pointerup", "pointercancel", "touchend", "touchcancel", "change"].forEach(t => slider.addEventListener(t, holdOff));
     wrap.appendChild(topBtn);
     syncTopButton(topBtn, get() >= max);
   }
@@ -65482,25 +65753,38 @@ function showSetup(){
      in every unit. Unit cards themselves never say how many are flagged
      - "hell no". */
   if(cfg.mode === "review"){
-    const fl = flaggedIndexes();
-    const fUnits = all.filter(u => fl.some(i => (QUESTIONS[i].topic || "").trim() === u));
+    /* KEPT CURRENT (build 314). Starring or unstarring inside a unit's
+       details (press and hold) left this box saying what it said when the
+       screen was drawn - "Tap the star on any question" over a list that
+       now had questions in it, or a count and a gold star for a list
+       that was empty. paint() redraws it from the store, and the details
+       card calls it as it closes. */
     const box = document.createElement("button");
     box.type = "button";
-    box.className = "pick pick-flagged-all" + (fl.length ? "" : " is-empty");
     const ic = document.createElement("span"); ic.className = "pick-flagged-icon"; ic.setAttribute("aria-hidden", "true");
-    ic.appendChild(buildStarredCardStar());
     const txt = document.createElement("span"); txt.className = "pick-flagged-text";
     const nm = document.createElement("span"); nm.className = "pname"; nm.textContent = "Starred questions";
     const sub = document.createElement("span"); sub.className = "pcount";
-    sub.textContent = fl.length
-      ? fl.length + (fl.length === 1 ? " question" : " questions") + " \u00b7 " + fUnits.length + (fUnits.length === 1 ? " unit" : " units")
-      : "Tap the star on any question to save it here";
     txt.append(nm, sub);
-    box.append(ic, txt);
-    if(fl.length){ const go = document.createElement("span"); go.className = "pick-flagged-go"; go.setAttribute("aria-hidden", "true"); go.textContent = "\u203A"; box.appendChild(go); }
+    const go = document.createElement("span"); go.className = "pick-flagged-go"; go.setAttribute("aria-hidden", "true"); go.textContent = "\u203A";
+    box.append(ic, txt, go);
+    const starredUnits = fl => all.filter(u => fl.some(i => (QUESTIONS[i].topic || "").trim() === u));
+    box._paint = () => {
+      const fl = flaggedIndexes();
+      const fUnits = starredUnits(fl);
+      box.className = "pick pick-flagged-all" + (fl.length ? "" : " is-empty");
+      ic.replaceChildren(buildStarredCardStar(fl.length > 0));
+      sub.textContent = fl.length
+        ? fl.length + (fl.length === 1 ? " question" : " questions") + " \u00b7 " + fUnits.length + (fUnits.length === 1 ? " unit" : " units")
+        : "Tap the star on any question to save it here";
+      go.hidden = !fl.length;
+    };
+    box._paint();
     box.addEventListener("click", () => {
-      if(!flaggedIndexes().length){ showToast("Nothing starred yet. Tap the star on any question to save it here."); return; }
-      showAnswerReview(fUnits, "flagged", {}, { allFlagged: true });
+      const fl = flaggedIndexes();
+      if(!fl.length){ showToast("Nothing starred yet. Tap the star on any question to save it here."); return; }
+      const fUnits = starredUnits(fl);
+      showStudyLoading("LOADING REVIEW", () => showAnswerReview(fUnits, "flagged", {}, { allFlagged: true }));
     });
     list.appendChild(box);
   }
@@ -65698,136 +65982,70 @@ function showSetup(){
      questions" over "All 28". The choice now names WHERE the questions
      come from - the units you picked, or your starred ones in them - and
      How many is the only place the word All appears. */
-  bankLab.className = "slab"; bankLab.textContent = "Questions from";
+  /* ONE SWITCH, ALL BY DEFAULT (build 314): "The question bank in the
+     test start menu, still kind of confusing ... It says question from
+     but like maybe that needs a different title? Maybe these two buttons
+     shouldn't be two buttons? Maybe all questions should be default and
+     the starred thing should be a button? ... I just want people to be
+     able to choose if they want to the rest of the started questions or
+     not." Every question in the units is simply what a run draws from;
+     the one thing to decide is whether to narrow it to your starred
+     ones, so that is the one control - a switch row like the sheet's
+     other switches, saying how many starred there are, or, greyed, that
+     there are none yet. cfg.source is still "all" or "flagged". */
+  bankLab.className = "slab"; bankLab.textContent = "Questions";
   srcSect.appendChild(bankLab);
-  const bankList = document.createElement("div");
-  bankList.className = "bank-opts";
-  bankList.setAttribute("role", "radiogroup");
-  bankList.setAttribute("aria-label", "Question bank");
-  srcSect.appendChild(bankList);
-  /* ONE SWITCH AND ONE LINE (build 249): "The question bank stuff looks
-     super confusing." It was three big cards, each with an icon, a
-     count and a paragraph - including the two that were empty, which
-     explained themselves at length about having nothing in them. It is
-     a three-way switch now, like every other switch in the app: the
-     name and how many it holds, and under it ONE short line about the
-     choice that is on. An empty choice is dimmed and says why when
-     tapped. Most missed's rule (30 days, a cap per unit) is behind the
-     "i" on that line, only while Most missed is on. Same cfg.source
-     values underneath. */
-  const bankRows = {};
-  /* TWO BANKS SINCE BUILD 284: "I feel like people even including myself
-     won't and don't use [most missed] ... most missed and flagged are
-     contradictory." Flagged is the one you choose; it stays. Misses are
-     still recorded - hundos, stats and accuracy are built on them - there
-     is simply no list of them to draw from any more. */
-  /* SAYS WHAT AND WHERE FROM (build 313): "Where it says your unit, or
-     starred, I still think that's confusing, should it say all questions
-     from selected unit? Starred questions from selected unit?" The name
-     says which questions, the line under it says they come from the
-     units you selected (and, for Starred, how many). */
-  [["all", "All questions"], ["flagged", "Starred questions"]].forEach(([value, title]) => {
-    const row = document.createElement("div");
-    row.className = "bank-opt";
-    row.dataset.value = value;
-    row.setAttribute("role", "radio");
-    row.tabIndex = 0;
-    const nm = document.createElement("span");
-    nm.className = "bank-name"; nm.textContent = title;
-    const count = document.createElement("span");
-    count.className = "bank-count";
-    row.append(nm, count);
-    /* the line this choice shows under the switch while it is on */
-    const desc = document.createElement("span");
-    desc.className = "bank-desc";
-    const pick = () => {
-      if(row.classList.contains("is-empty")){
-        showToast(value === "recent" ? "Nothing missed lately in these units." : "Nothing starred in these units yet.");
-        return;
-      }
-      cfg.source = value; srcSect.paint(); refresh();
-    };
-    row.addEventListener("click", pick);
-    row.addEventListener("keydown", e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); pick(); } });
-    bankList.appendChild(row);
-    bankRows[value] = { row, desc, count };
+  const starCard = document.createElement("div");
+  starCard.className = "bank-rows";
+  const starRow = document.createElement("label");
+  starRow.className = "opt bank-starred";
+  const starCb = document.createElement("input");
+  starCb.type = "checkbox";
+  const starBox = document.createElement("span");
+  starBox.className = "box"; starBox.setAttribute("aria-hidden", "true"); starBox.textContent = "\u2713";
+  const starText = document.createElement("span");
+  starText.className = "otext";
+  starText.appendChild(document.createTextNode("Starred questions only"));
+  const starHint = document.createElement("span");
+  starHint.className = "ohint";
+  starText.appendChild(starHint);
+  starRow.append(starCb, starBox, starText);
+  starCard.appendChild(starRow);
+  srcSect.appendChild(starCard);
+  starCb.addEventListener("change", () => {
+    if(starCb.disabled) return;
+    cfg.source = starCb.checked ? "flagged" : "all";
+    /* How many follows the bank (build 314 fix): refresh() never
+       repainted it, so turning Starred on left it reading "All 28" over
+       a pool of 4 - and the same with the old two boxes. */
+    srcSect.paint(); refresh(); sizeSect.paint();
   });
-  /* IT SWIPES, SINCE IT LOOKS LIKE IT DOES (build 313): "it looks like
-     it's a swipeable tab which is great if it swipeable". A sideways
-     flick across the switch picks the half it moves towards, through the
-     same pick() a tap uses, so an empty Starred still says why. */
-  {
-    let sx = null, sy = 0;
-    bankList.addEventListener("touchstart", e => { const t = e.touches[0]; sx = t.clientX; sy = t.clientY; }, { passive:true });
-    bankList.addEventListener("touchend", e => {
-      if(sx === null) return;
-      const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy; sx = null;
-      if(Math.abs(dx) < 28 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
-      const keys = Object.keys(bankRows), i = Math.max(0, keys.indexOf(cfg.source));
-      const to = keys[Math.min(keys.length - 1, Math.max(0, i + (dx > 0 ? 1 : -1)))];
-      if(to !== cfg.source){ e.preventDefault(); bankRows[to].row.click(); }
-    });
-  }
-  const bankCaption = document.createElement("p");
-  bankCaption.className = "bank-caption";
-  srcSect.append(bankCaption);
+  /* greyed: a tap says how to get some, rather than doing nothing */
+  starRow.addEventListener("click", e => {
+    if(!starCb.disabled) return;
+    e.preventDefault();
+    showToast("Nothing starred in these units yet. Tap the star on any question to save it.");
+  });
   srcSect.paint = () => {
-    Object.keys(bankRows).forEach(v => {
-      const on = cfg.source === v;
-      bankRows[v].row.classList.toggle("on", on);
-      bankRows[v].row.setAttribute("aria-checked", on ? "true" : "false");
-    });
-    bankList.style.setProperty("--bank-i", Math.max(0, Object.keys(bankRows).indexOf(cfg.source)));
-    const cur = bankRows[cfg.source] || bankRows.all;
-    bankCaption.replaceChildren(cur.desc);
-    /* The counts in the boxes say it now (build 311). */
-    bankCaption.hidden = true;
+    starCb.checked = cfg.source === "flagged";
+    starRow.classList.toggle("on", starCb.checked);
   };
   /* Counts and words for the units picked right now. */
   srcSect.update = (counts) => {
     const units = cfg.units.length;
-    /* One unit on a shorter version is not "this unit": the count is
-       the version's, so the words are too. */
+    /* One unit on a shorter version names the version (its count is the
+       version's), as the boxes did. */
     const oneShort = units === 1 && cfg.versions && cfg.versions[cfg.units[0]] === "test" && UNIT_TEST_VERSIONS[cfg.units[0]];
-    const whose = oneShort ? UNIT_TEST_VERSIONS[cfg.units[0]].short : units === 1 ? "this unit" : "these units";
-    const set = (v, n, text) => {
-      const b = bankRows[v];
-      /* "All questions / 48" read as nonsense beside "All 48" under
-         How many (build 250): the whole set needs no number, only the
-         two that can be small or empty do. */
-      /* THE DESCRIPTION IS IN THE BOX (build 311): "The descriptions
-         underneath the all questions or starred aren't the move. Should it
-         just be in those boxes?" Each box says how many it holds, and the
-         line under the switch is gone. */
-      /* All says WHAT, not how many - "All questions / 48" beside "All 48"
-         under How many "doesn't even make sense" (build 250). */
-      const from = oneShort ? UNIT_TEST_VERSIONS[cfg.units[0]].short
-        : units === 1 ? "selected unit" : units + " selected units";
-      /* STARRED SAYS IT THE SAME WAY (build 313): "I like how all
-         questions mentions it's from the units selected, ensure the word
-         unit turns to units if multiple. The starred button needs to be
-         conveyed the same way." Both boxes read "from selected unit(s)";
-         an empty Starred says where it looked, not "None yet". */
-      b.count.textContent = !units ? "" : (v === "all" || n) ? "from " + from
-        : "None in " + from;
-      b.desc.textContent = text;
-      const empty = v !== "all" && n === 0;
-      b.row.classList.toggle("is-empty", empty);
-      b.row.setAttribute("aria-disabled", empty ? "true" : "false");
-    };
-    /* SAYS IT IS YOUR SELECTION (build 309): "where it says all questions,
-       and starred, could it be more specific to clarify that is for the
-       ones you have selected? Simple of course though very simple." One
-       line under the switch, for both choices now. */
-    const picked = oneShort ? UNIT_TEST_VERSIONS[cfg.units[0]].short
-      : units === 1 ? "the unit you selected" : "the " + units + " units you selected";
-    set("all", counts.all, units ? "Every question in " + picked + "." : "Every question in the units you pick.");
-    /* ONE SHORT LINE (build 250): "the description for most missed is
-       way too much." The count is already on the switch, and the rule
-       behind it (30 days, a cap per unit) is not something anybody
-       needs before pressing Begin, so the "i" and its paragraph are
-       gone too. */
-    set("flagged", counts.flagged, units ? "Only your starred questions in " + picked + "." : "Questions you starred.");
+    const where = oneShort ? UNIT_TEST_VERSIONS[cfg.units[0]].short
+      : units === 1 ? "the selected unit" : "the selected units";
+    const n = counts.flagged || 0;
+    const empty = units > 0 && n === 0;
+    starCb.disabled = empty;
+    starRow.classList.toggle("is-disabled", empty);
+    starRow.setAttribute("aria-disabled", empty ? "true" : "false");
+    starHint.textContent = !units ? "Only the questions you have starred."
+      : n ? n + " starred in " + where
+      : "No starred questions in " + where + " yet";
     srcSect.paint();
   };
   const optionsModalBody = document.createElement("div");
@@ -66037,6 +66255,7 @@ function showSetup(){
   const minutesSect = plainSlider("Minutes", 5, 90, 5,
     () => cfg.timerMinutes, v => { cfg.timerMinutes = v; },
     v => v + " min", refresh, "Max");
+  minutesSect.topNote = () => ({ title: "Max time set", sub: cfg.timerMinutes + " minutes" });
   minutesSect.classList.add("minutes-sect");
   timerSect.appendChild(minutesSect);
 
@@ -66176,8 +66395,14 @@ function showSetup(){
        while reviewing, so there's nothing new here worth persisting. */
     if(reviewAllMode){
       rememberConfig();
-      if(cfg.flashcards) showFlashcards(cfg.units.slice(), cfg.source, cfg.versions);
-      else showAnswerReview(cfg.units.slice(), cfg.source, cfg.versions);
+      /* Through the study loading screen (build 314). An empty deck goes
+         straight to its own message rather than loading nothing. */
+      const units = cfg.units.slice(), src = cfg.source, vers = cfg.versions;
+      if(cfg.flashcards){
+        if(!flashcardDeck(units, src, vers).length){ showFlashcards(units, src, vers); return; }
+        showStudyLoading("LOADING FLASHCARDS", () => showFlashcards(units, src, vers));
+      }
+      else showStudyLoading("LOADING REVIEW", () => showAnswerReview(units, src, vers));
       return;
     }
     rememberConfig();
@@ -66594,6 +66819,7 @@ function showSetup(){
   }
 
   list.addEventListener("change", () => { refresh(); paint(); });
+  attachDragSelect(list, () => { refresh(); paint(); });
   selAll.addEventListener("click", () => {
     const on = chosenUnits().length < all.length;
     /* Setting .checked directly like this never fires a change event
@@ -66766,33 +66992,84 @@ function beginRun(indexes, label, practiceMinutes, missedRetake){
    studied yet — runStartTime stays null until it finishes. */
 let countdownHandle = null;
 
-function showCountdown(n){
-  pauseBtn.hidden = true;
-  timerlineEl.hidden = true;
-
+/* The loading screen itself - wordmark, one line, a bar - shared by a
+   test's LOADING TEST and the study screens' LOADING REVIEW / LOADING
+   FLASHCARDS (build 314). Same element id, so everything that already
+   knows to keep off a loading screen (the chat dock, a forced update,
+   the tours) knows about both. */
+function buildLoadingOverlay(text){
   const overlay = document.createElement("div");
   overlay.id = "teststart-overlay";
-
   const wordmark = document.createElement("p");
   wordmark.id = "teststart-wordmark";
   wordmark.textContent = "NOVA";
-  overlay.appendChild(wordmark);
-
-  /* One static line under the wordmark, matching the startup splash
-     and generating-profile screens exactly \u2014 not a separate bold
-     caption plus a rotating technical-sounding message feed. */
   const label = document.createElement("p");
   label.id = "teststart-label";
-  label.textContent = "LOADING TEST";
-  overlay.appendChild(label);
-
+  label.textContent = text;
   const barTrack = document.createElement("div");
   barTrack.id = "teststart-track";
   const barFill = document.createElement("div");
   barFill.id = "teststart-fill";
   setBarFill(barFill, 0);
   barTrack.appendChild(barFill);
-  overlay.appendChild(barTrack);
+  overlay.append(wordmark, label, barTrack);
+  return { overlay, barFill };
+}
+
+/* ---- LOADING REVIEW / LOADING FLASHCARDS (build 314) ----
+   "When in review, similar to tests how it says loading test, give
+   flashcards or regular review a loading screen but instead of it saying
+   loading test itd say loading review or loading questions but take the
+   loading time down by half a second or so." The test's screen, word for
+   word in its own style (upper case, the app's plain voice), for
+   STUDY_LOADING_MS - 2.0s against the test's 2.5. The tab bar is held off
+   it (it sits above z-index 120), and the screen it opens is built when
+   the bar is full, as a test's first question is. Clock-based like the
+   test's, so a busy moment cannot stall it. */
+const STUDY_LOADING_MS = 2000;
+let studyLoadingHandle = null;
+function showStudyLoading(text, then){
+  clearInterval(studyLoadingHandle); studyLoadingHandle = null;
+  document.getElementById("teststart-overlay")?.remove();
+  setActiveNav(null);
+  window.forceHideBottomTabs = true;
+  pauseBtn.hidden = true; meterEl.hidden = true; timerlineEl.hidden = true;
+  testQCounterEl.textContent = ""; testModeLabelEl.textContent = "";
+  const { overlay, barFill } = buildLoadingOverlay(text);
+  stage.replaceChildren();
+  document.body.appendChild(overlay);
+  if(typeof syncChatDock === "function") syncChatDock();
+  const startedAt = Date.now();
+  let done = false;
+  const tick = () => {
+    if(done) return;
+    if(!overlay.isConnected){ done = true; clearInterval(studyLoadingHandle); studyLoadingHandle = null; return; }
+    const frac = Math.min(1, (Date.now() - startedAt) / (STUDY_LOADING_MS - 300));
+    setBarFill(barFill, Math.round(frac * 1000) / 10);
+    if(Date.now() - startedAt >= STUDY_LOADING_MS){
+      done = true;
+      clearInterval(studyLoadingHandle); studyLoadingHandle = null;
+      overlay.remove();
+      window.forceHideBottomTabs = false;
+      then();
+      if(typeof syncChatDock === "function") syncChatDock();
+    }
+  };
+  tick();
+  studyLoadingHandle = setInterval(tick, 100);
+}
+
+function showCountdown(n){
+  pauseBtn.hidden = true;
+  timerlineEl.hidden = true;
+
+  const built = buildLoadingOverlay("LOADING TEST");
+  const overlay = built.overlay;
+  /* (built by buildLoadingOverlay since build 314). The one static line
+     under the wordmark matches the startup splash and generating-profile
+     screens exactly - not a separate bold caption plus a rotating
+     technical-sounding message feed. */
+  const barFill = built.barFill;
 
   /* Skip button removed entirely, per explicit request \u2014 the loading
      screen now always plays out in full, with no way to bypass it. */
@@ -67656,7 +67933,7 @@ function correctLine(qi){
      the whole question each frame on a phone.
    On release the real next question takes over at exactly the same
    place and the same mix of sharp and soft, and finishes the trip. */
-const Q_BLUR_PX = 6;
+const Q_BLUR_PX = 10;
 function buildQuestionPreviewPanel(cur, nextPos){
   const qi = order[nextPos], item = QUESTIONS[qi];
   if(!item || !cur) return null;
@@ -67685,7 +67962,7 @@ function buildQuestionPreviewPanel(cur, nextPos){
   return pv;
 }
 /* A fixed layer at a panel's measured rect holding a soft and a sharp
-   copy of it; mix(k) shows k of the sharp one and the rest of the soft. */
+   copy of it; mix(s) shows s of the sharp one and the rest of the soft. */
 function blurPair(panel, rect){
   const wrap = document.createElement("div");
   wrap.className = "q-blurpair";
@@ -67696,216 +67973,394 @@ function blurPair(panel, rect){
   soft.style.cssText = "margin:0; animation:none; filter:blur(" + Q_BLUR_PX + "px); will-change:opacity;";
   sharp.style.cssText = "margin:0; animation:none; position:absolute; top:0; left:0; width:100%; will-change:opacity;";
   wrap.append(soft, sharp);
-  const mix = k => { const e = Math.pow(Math.max(0, Math.min(1, k)), 1.4); sharp.style.opacity = String(e); soft.style.opacity = String(1 - e); return e; };
+  const mix = (s, a) => { s = Math.max(0, Math.min(1, s)); sharp.style.opacity = s.toFixed(4); soft.style.opacity = ((1 - s) * (a == null ? 1 : a)).toFixed(4); return s; };
   return { wrap, soft, sharp, mix };
 }
-let qPreview = null;
-function dropQPreview(){ if(qPreview){ qPreview.wrap.remove(); qPreview = null; } }
 const SLIDE_MS = 280;
 const SLIDE_GAP = 28;
 const SLIDE_EASE = "cubic-bezier(.3,.7,.2,1)";
 let slideTransitionInFlight = false;
-function advanceWithSlide(fromDx, sharpness){
-  fromDx = Math.min(0, Number(fromDx) || 0);
-  sharpness = Math.max(0, Math.min(1, Number(sharpness) || 0));
+/* ---- A LINE TO CROSS, AND A BLUR THAT BELONGS TO A PLACE (build 314) ----
+   "If I only swipe a little, it [should not] move to the next question,
+   it would kinda bounce back to the question you were on similar to the
+   flash cards ... You really shouldn't be able to read the question much
+   until the actual swipe transition (past halfway or whatever)
+   initiates." And: "since hitting next question is quicker paced
+   transition, or automatic is gonna be that same pace, and swiping at
+   full speed is fast paced, ensure the fast paced stuff is still smooth
+   and that blurry stuff doesn't kinda make it look bad ... but if you
+   swipe full speed and then stop ya know it'd be blurry".
+   - THE LINE. A drag commits only past Q_SWIPE_COMMIT of the push (about
+     halfway, the flashcards' rule) or as a real flick - Q_FLICK_V px/ms
+     to the left over the last ~100ms AND at least Q_FLICK_MIN of the way.
+     Short of that it springs back on the flashcards' own curve and time
+     (.22,1,.36,1 over 340ms, no overshoot), and a new touch catches it
+     where it is rather than letting it snap home. A fast flick back to
+     the right cancels even past the line.
+   - EVERYTHING IS A FUNCTION OF POSITION, NOT OF TIME OR SPEED. One
+     number p (0 = the question in place, 1 = pushed all the way off)
+     decides where both questions are, how much the outgoing one has
+     stepped back (qOutFrame) and how sharp the incoming one is - during
+     the drag, the spring-back and the commit alike. A finger that stops
+     anywhere leaves the same picture whatever speed it got there at.
+   - BLURRED FOR AS LONG AS IT IS HELD. While dragging, the next
+     question is a heavily blurred copy (Q_BLUR_PX) and nothing else, at
+     every position: what grows as it comes in is its strength
+     (qSoftAlpha, dim at the side, full from the line), never its focus -
+     so holding it at halfway, or three quarters, is still not readable.
+     A first try let it sharpen a little past the line, and at 17% sharp
+     the words were already legible. It turns sharp only once the move is
+     committed, over the first 80% of the distance still to go: the
+     cross-fade happens while it is MOVING, where the eye cannot catch a
+     soft and a sharp copy over each other, and it is finished before it
+     slows into place.
+   - NEXT AND AUTO-ADVANCE HAVE NO BLUR AT ALL. They are a quick, solid
+     push from p=0 (build 313's soft arrival read as a smear at that
+     pace). The blur is the drag's - a question you are holding back.
+   - Every frame is the compositor's: the moves are Web Animations of
+     transform and opacity, sampled from the same curve (qRun), so a busy
+     main thread cannot stall them, and the blur is a filter set once and
+     never animated. A committed swipe starts moving the instant the
+     finger lifts - on the stand-in it was already showing - and the real
+     next question (advance(), the expensive part) takes the stand-in's
+     place a frame later, on the same clock and while it is still blurred,
+     so the swap cannot be seen. The stand-in is built when the finger
+     lands, not on its first move, so the drag's first frame is not the
+     one that pays for it. */
+const Q_SWIPE_COMMIT = 0.45;
+const Q_FLICK_V = 0.6;
+const Q_FLICK_MIN = 0.15;
+const Q_RETURN_MS = 340;
+function qBezier(x1, y1, x2, y2){
+  const ax = 1 + 3 * x1 - 3 * x2, bx = 3 * x2 - 6 * x1, cx = 3 * x1;
+  const ay = 1 + 3 * y1 - 3 * y2, by = 3 * y2 - 6 * y1, cy = 3 * y1;
+  const X = t => ((ax * t + bx) * t + cx) * t, Y = t => ((ay * t + by) * t + cy) * t;
+  const dX = t => (3 * ax * t + 2 * bx) * t + cx;
+  return x => {
+    if(x <= 0) return 0;
+    if(x >= 1) return 1;
+    let t = x;
+    for(let i = 0; i < 8; i++){
+      const e = X(t) - x, d = dX(t);
+      if(Math.abs(e) < 1e-6 || Math.abs(d) < 1e-6) break;
+      t -= e / d;
+    }
+    if(!(t >= 0 && t <= 1) || Math.abs(X(t) - x) > 1e-4){
+      let lo = 0, hi = 1; t = x;
+      for(let i = 0; i < 40; i++){ if(X(t) < x) lo = t; else hi = t; t = (lo + hi) / 2; }
+    }
+    return Y(t);
+  };
+}
+const qEaseSlide = qBezier(.3, .7, .2, 1);
+const qEaseReturn = qBezier(.22, 1, .36, 1);
+function qSmoothstep(a, b, x){ const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
+/* The blurred copy's strength while it is dragged in: dimmer while it is
+   mostly off to the side, full from the line on. Nothing of the sharp copy
+   shows during a drag at all - see the note above. */
+function qSoftAlpha(p){ return .55 + .45 * qSmoothstep(0, Q_SWIPE_COMMIT, p); }
+/* The outgoing question at p: with the finger, stepping back a little and
+   holding most of its strength until it is nearly gone. A rightward pull
+   (p below 0) only moves it. */
+function qOutFrame(p, push){
+  const q = Math.max(0, p);
+  return { transform: "translateX(" + (-p * push).toFixed(2) + "px) scale(" + (1 - .04 * q).toFixed(4) + ")",
+           opacity: (1 - .45 * q * q * q).toFixed(4) };
+}
+function qInFrame(p, push){ return { transform: "translateX(" + ((1 - Math.max(0, p)) * push).toFixed(2) + "px)" }; }
+/* p0 to p1 over dur on `ease`, as linear keyframes ~10ms apart: the curve
+   and every position-tied value ride one clock on the compositor. */
+function qRun(el, frame, p0, p1, dur, ease){
+  if(!el || typeof el.animate !== "function") return null;
+  const n = Math.max(6, Math.ceil(dur / 10)), kf = [];
+  for(let i = 0; i <= n; i++){ const t = i / n, f = frame(p0 + (p1 - p0) * ease(t)); f.offset = t; kf.push(f); }
+  try{ return el.animate(kf, { duration: dur, easing: "linear", fill: "both" }); }catch(e){ return null; }
+}
+/* Puts late-made animations on the clock of ones already running (the
+   handover). NEVER used to start a fresh set: document.timeline's time is
+   the START of the current frame, so stamping it on animations made after
+   a long task (advance() is one) backdates them by that task, and the
+   first painted frame was already a third of the way across - a jump at
+   the start of every Next. Animations made in the same task start
+   together at the next frame on their own. */
+function qSync(anims, ref){
+  if(!ref) return;
+  anims.forEach(a => {
+    if(!a) return;
+    try{
+      if(ref.startTime != null) a.startTime = ref.startTime;
+      else if(ref.currentTime != null) a.currentTime = ref.currentTime;
+    }catch(e){}
+  });
+}
+/* Long enough to read as a move, never slower than the finger that
+   threw it: the curve's opening speed (2.33x the average) is matched to
+   the release speed where that is quicker. */
+function qCommitMs(p0, push, v){
+  const rest = Math.max(0, 1 - p0) * push;
+  const most = Math.round(180 + (SLIDE_MS - 180) * Math.max(0, 1 - p0));
+  if(!(v > 0)) return most;
+  return Math.max(150, Math.min(most, Math.round(2.33 * rest / v)));
+}
+function qStripClone(el){
+  el.classList.add("q-slide-clone");
+  el.removeAttribute("id");
+  el.querySelectorAll("[id]").forEach(e => e.removeAttribute("id"));
+  el.setAttribute("aria-hidden", "true"); el.setAttribute("inert", "");
+  return el;
+}
+let qDrag = null, qReturning = null;
+function qDropPair(pair){ if(pair && pair.wrap) pair.wrap.remove(); }
+function qClearPanel(panel){
+  if(!panel) return;
+  ["transform", "opacity", "willChange", "transformOrigin", "transition"].forEach(k => { panel.style[k] = ""; });
+}
+/* Where the finger lands (touchstart): the stand-in of the next question,
+   built now and kept hidden, so the first frame of the drag has nothing
+   to build. A spring-back still under way is caught where it is. */
+function qDragPrepare(){
+  if(qDrag || slideTransitionInFlight || theme.reduceMotion) return;
+  const nb = document.getElementById("nextbtn");
+  if(!nb || nb.hidden || nb.disabled) return;
+  const panel = stage.querySelector(".panel");
+  if(!panel || !panel.querySelector(".choices")) return;
+  let p = 0, pair = null, rect = null;
+  if(qReturning){
+    const h = qReturnHalt();
+    if(h && h.panel === panel){ p = h.p; pair = h.pair; rect = h.rect; }
+    else if(h){ qDropPair(h.pair); qClearPanel(h.panel); }
+  }
+  if(!rect) rect = panel.getBoundingClientRect();
+  const push = Math.round(rect.width + SLIDE_GAP);
+  if(!pair && Array.isArray(order) && pos + 1 < order.length){
+    try{
+      const pv = buildQuestionPreviewPanel(panel, pos + 1);
+      if(pv){
+        pair = blurPair(pv, rect);
+        pair.wrap.style.visibility = "hidden";
+        pair.wrap.style.transform = "translateX(" + push + "px)";
+        pair.mix(0, qSoftAlpha(0));
+        document.body.appendChild(pair.wrap);
+      }
+    }catch(e){ qDropPair(pair); pair = null; }
+  }
+  qDrag = { panel, rect, push, pair, base: -p * push, dx: -p * push, p, live: p !== 0 };
+  if(qDrag.live) qPaintDrag(qDrag);
+}
+function qPaintDrag(s){
+  if(!s.live){
+    s.live = true;
+    s.panel.style.animation = "none"; s.panel.style.transition = "none";
+    s.panel.style.willChange = "transform, opacity"; s.panel.style.transformOrigin = "100% 40%";
+    document.documentElement.classList.add("q-sliding");
+    if(s.pair) s.pair.wrap.style.visibility = "";
+  }
+  const f = qOutFrame(s.p, s.push);
+  s.panel.style.transform = f.transform; s.panel.style.opacity = f.opacity;
+  if(s.pair){ s.pair.wrap.style.transform = qInFrame(s.p, s.push).transform; s.pair.mix(0, qSoftAlpha(s.p)); }
+}
+/* THE QUESTION FOLLOWS THE THUMB (build 313): all the way to the left,
+   only a little to the right (there is nothing that way). */
+function swipeDragTo(dx){
+  const s = qDrag;
+  if(!s || slideTransitionInFlight || theme.reduceMotion || !s.panel.isConnected) return;
+  const raw = s.base + dx;
+  s.dx = raw < 0 ? raw : raw * .18;
+  s.p = -s.dx / s.push;
+  qPaintDrag(s);
+}
+/* The finger's last ~100ms, kept whether or not the question is being
+   dragged (reduce motion has no drag but still has flicks). */
+let qSamples = [];
+function qNoteSample(x, fresh, ts){
+  if(fresh) qSamples = [];
+  /* the event's own time where it has one: a busy main thread delivers
+     touches late and bunched, and timing them on arrival would read a
+     flick as slow (or a slow drag as a flick) */
+  const t = ts > 0 ? ts : performance.now();
+  qSamples.push({ t, x });
+  while(qSamples.length > 2 && t - qSamples[0].t > 100) qSamples.shift();
+}
+/* Leftward speed in px/ms over the last ~100ms of the gesture. */
+function qDragVelocity(x, ts){
+  if(x != null) qNoteSample(x, false, ts);
+  if(qSamples.length < 2) return 0;
+  const a = qSamples[0], b = qSamples[qSamples.length - 1];
+  const dt = b.t - a.t;
+  return dt > 0 ? -(b.x - a.x) / dt : 0;
+}
+/* Short of the line: back where it was, on the flashcards' spring. */
+function swipeDragRelease(){
+  const s = qDrag; qDrag = null;
+  if(!s) return;
+  if(!s.live || !s.panel.isConnected){
+    qDropPair(s.pair); if(s.live) qClearPanel(s.panel);
+    if(!slideTransitionInFlight) document.documentElement.classList.remove("q-sliding");
+    return;
+  }
+  const from = s.p, dur = Q_RETURN_MS, push = s.push;
+  const anims = [qRun(s.panel, p => qOutFrame(p, push), from, 0, dur, qEaseReturn)];
+  if(s.pair){
+    anims.push(qRun(s.pair.wrap, p => qInFrame(p, push), from, 0, dur, qEaseReturn),
+      qRun(s.pair.soft, p => ({ opacity: qSoftAlpha(p).toFixed(4) }), from, 0, dur, qEaseReturn));
+  }
+  const r = { panel: s.panel, pair: s.pair, rect: s.rect, push, from, dur, anims };
+  r.timer = setTimeout(() => qReturnEnd(r), dur + 20);
+  qReturning = r;
+}
+function qReturnEnd(r){
+  if(qReturning !== r) return;
+  qReturning = null;
+  qClearPanel(r.panel);
+  r.anims.forEach(a => { if(a) a.cancel(); });
+  qDropPair(r.pair);
+  if(!slideTransitionInFlight && !qDrag) document.documentElement.classList.remove("q-sliding");
+}
+/* A spring-back caught mid-way: where it had got to, held there. */
+function qReturnHalt(){
+  const r = qReturning; if(!r) return null;
+  qReturning = null; clearTimeout(r.timer);
+  const a = r.anims[0];
+  const k = a && a.currentTime != null ? Math.min(1, a.currentTime / r.dur) : 1;
+  const p = r.from + (0 - r.from) * qEaseReturn(k);
+  const f = qOutFrame(p, r.push);
+  r.panel.style.transform = f.transform; r.panel.style.opacity = f.opacity;
+  if(r.pair){ r.pair.wrap.style.transform = qInFrame(p, r.push).transform; r.pair.mix(0, qSoftAlpha(p)); }
+  r.anims.forEach(x => { if(x) x.cancel(); });
+  return { p, pair: r.pair, rect: r.rect, push: r.push, panel: r.panel };
+}
+/* Did the drag cross the line - far enough, or thrown hard enough? */
+function qSwipeCommits(p, v){
+  if(!(p > 0) || v <= -Q_FLICK_V) return false;
+  return p >= Q_SWIPE_COMMIT || (v >= Q_FLICK_V && p >= Q_FLICK_MIN);
+}
+function qSlideDone(clone, extra, incoming, anims){
+  if(clone) clone.remove();
+  if(extra) extra.remove();
+  if(incoming){ incoming.style.opacity = ""; incoming.style.transform = ""; incoming.style.transition = ""; incoming.style.willChange = ""; }
+  anims.forEach(a => { if(a) a.cancel(); });
+  document.documentElement.classList.remove("q-sliding");
+  slideTransitionInFlight = false;
+}
+function advanceWithSlide(fromDx, opts){
+  opts = (opts && typeof opts === "object") ? opts : {};
   /* The actual root cause of the reported "glitchy/buggy, slow"
      transition, confirmed directly by reading this function —
      nothing stopped it from re-entering while a previous call's own
-     .32s slide was still in flight. The Next button, the swipe
-     gesture, the Enter key, and the auto-advance timer all funnel
-     through this one function, and the INCOMING panel's own button
-     becomes tappable again well before its slide finishes settling.
-     A normal fast double-tap — exactly what someone does when a
-     transition feels slow — fired this a second time, stacking a
-     second clone on top of an animation already in progress. Worse,
-     advance() runs synchronously, so that second call also silently
-     incremented pos a second time: not just a visual glitch but a
-     genuinely skipped question. This guard makes a re-entrant call a
-     clean no-op instead, cleared the moment the in-flight slide
-     actually finishes (see the cleanup below) — which is also
-     exactly what makes the button itself feel more solid/"smoother"
-     to use: it can no longer be fired into a half-finished state. */
+     slide was still in flight. The Next button, the swipe gesture, the
+     Enter key and the auto-advance timer all funnel through this one
+     function, and a normal fast double-tap fired it a second time -
+     which also ran advance() twice, a genuinely skipped question. This
+     guard makes a re-entrant call a clean no-op, cleared the moment the
+     slide in flight actually finishes. */
   if(slideTransitionInFlight) return;
-  const outgoing = stage.querySelector(".panel");
-  if(!outgoing || theme.reduceMotion){ dropQPreview(); advance(); return; }
-  slideTransitionInFlight = true;
-  const rect = outgoing.getBoundingClientRect();
-  const clone = outgoing.cloneNode(true);
-  /* A real bug caught in regression, not just polish: cloneNode(true)
-     duplicates every id in the subtree too, so for the ~340ms this
-     clone and the real incoming panel coexist, there were briefly two
-     elements with id="nextbtn" (and every other id in the panel) in
-     the DOM at once \u2014 invalid HTML, and a genuine risk that
-     document.getElementById() or a CSS id-selector picks the dead,
-     inert clone instead of the real, live panel during that window.
-     pointer-events:none keeps clicks off it, but that never addressed
-     the id collision itself. Stripping every id from the clone (and
-     marking it inert for assistive tech, since it's a purely visual
-     stand-in) removes the duplication entirely rather than just
-     hiding its symptoms. */
-  clone.removeAttribute("id");
-  clone.querySelectorAll("[id]").forEach(el => el.removeAttribute("id"));
-  clone.setAttribute("aria-hidden", "true"); clone.setAttribute("inert", "");
-  /* will-change:transform on both the clone and (below) the incoming
-     panel is the actual fix for the reported laggy/janky slide \u2014
-     neither element was ever promoted to its own compositor layer
-     ahead of time, so the browser had to decide whether to promote
-     one mid-animation, and absent that promotion a "transform"
-     animation on an element with real nested content (question text,
-     several choice buttons, each with their own borders/radii) can
-     fall back to repainting that whole subtree on every single frame
-     for the full .32s instead of just re-positioning one cached
-     bitmap layer \u2014 which is exactly what reads as laggy/stuttery
-     rather than a smooth slide. Setting it here, well before the
-     transform actually changes (advance() rebuilding the next
-     question panel is real work that happens in between), gives the
-     browser the most possible lead time to do that promotion off the
-     animation's own critical path. */
-  /* animation:none IS THE GLITCH FIX, and it is the same fix the
-     INCOMING panel already had for the same reason - it simply never
-     got applied to the outgoing clone.
-     The panel being cloned is usually still running screen-fade-in (a
-     translateY settle). A running animation beats a transition on the
-     same property, so the clone ignored the translateX(-100%) set
-     below and instead played out the tail of that vertical settle -
-     measured frame by frame, its transform went (0,6) to (0,2.4) to
-     (0,0.87) to (0,0.07) over about 100ms and only THEN snapped to
-     -400. So the outgoing question did not slide away at all: it sat
-     there, wobbled a pixel, and vanished.
-     And .panel has a fully transparent background - measured
-     rgba(0,0,0,0) - so while it sat there the incoming question was
-     sliding in UNDERNEATH it, and both questions were legible on top
-     of each other for those ~100ms. That is the reported glitching:
-     not a slow animation, two questions drawn over each other. */
-  clone.style.cssText =
-    "position:fixed; top:" + rect.top + "px; left:" + rect.left + "px; " +
-    "width:" + rect.width + "px; margin:0; z-index:250; animation:none; " +
-    "transition:opacity " + SLIDE_MS + "ms cubic-bezier(.6,0,.9,.6), transform " + SLIDE_MS + "ms " + SLIDE_EASE + "; " +
-    "pointer-events:none; will-change:opacity, transform; transform-origin:100% 40%;";
-  document.body.appendChild(clone);
-  document.documentElement.classList.add("q-sliding");
-  const push = Math.round(rect.width + SLIDE_GAP);
-
-  advance();
-
-  const incoming = stage.querySelector(".panel");
-  if(!incoming){ clone.remove(); dropQPreview(); document.documentElement.classList.remove("q-sliding"); slideTransitionInFlight = false; return; }
-  /* the soft copy of the real next question, laid exactly over it and
-     travelling with it; the two crossfade as it arrives */
-  incoming.style.animation = "none";
-  let haze = null, startMix = sharpness;
-  if(incoming.classList.contains("qpanel") && outgoing.classList.contains("qpanel")){
-    try{
-      const ir = incoming.getBoundingClientRect();
-      const copy = incoming.cloneNode(true);
-      copy.removeAttribute("id"); copy.querySelectorAll("[id]").forEach(e => e.removeAttribute("id"));
-      haze = blurPair(copy, ir);
-      haze.sharp.remove();
-      haze.wrap.style.transition = "transform " + SLIDE_MS + "ms " + SLIDE_EASE;
-      haze.wrap.style.transform = "translateX(" + (push + fromDx) + "px)";
-      haze.soft.style.transition = "opacity " + SLIDE_MS + "ms cubic-bezier(.35,0,.55,1)";
-      haze.soft.style.opacity = String(1 - Math.pow(startMix, 1.4));
-      document.body.appendChild(haze.wrap);
-    }catch(e){ haze = null; }
+  /* A drag under way when auto-advance or a key fires is carried on from
+     where it is rather than snapped back first; a spring-back likewise. */
+  let s = opts.drag || qDrag || null;
+  /* adopted from under a finger still down: that gesture is spent, or
+     lifting it past the line would advance a second time */
+  if(!opts.drag && qDrag) endSwipeGesture();
+  if(s === qDrag) qDrag = null;
+  if(!s && qReturning){
+    const h = qReturnHalt();
+    if(h) s = { panel: h.panel, rect: h.rect, push: h.push, p: h.p, pair: h.pair, live: true };
   }
-  dropQPreview();
-  /* The actual fix for a real, separate bug found while verifying this
-     \u2014 the incoming panel is a brand-new direct child of #stage, so it
-     also picks up the screen-fade-in CSS animation (a translateY
-     settle, added for the earlier Liquid Glass color-shift fix), and
-     that animation was winning control of this same element's
-     transform property over the transform this code sets directly,
-     which meant the intended slide was being computed correctly but
-     never actually rendering. Explicitly turning the animation off
-     here removes that competition. */
-  incoming.style.opacity = haze ? String(Math.pow(startMix, 1.4)) : ".85";
-  incoming.style.transform = "translateX(" + (push + fromDx) + "px)";
-  incoming.style.transition = "none";
-  incoming.style.willChange = "opacity, transform";
-  // Force layout so the starting position is actually committed before
-  // the transition below is allowed to animate toward its own target.
-  void incoming.offsetWidth;
-  /* THE CURVE IS WHAT WAS LEFT OF THE "LAG", and it was measurable.
-     cubic-bezier(.32,.72,0,1) is an extremely aggressive ease-out. Over
-     a 200ms slide its tail is long enough to watch: sampled frame by
-     frame at 4x CPU throttle, the question covered 78% of the distance
-     in the first 3 moving frames and then spent EIGHT MORE - 60% of
-     the whole duration - creeping through the last 22%. It rushes and
-     then crawls to a stop, and the crawl is what reads as not smooth.
-     easeOutQuad spreads the same distance evenly: still decelerating,
-     so it does not stop dead, but with no long creep at the end. The
-     duration comes down a notch with it because an even curve does not
-     need the extra time the old tail was spending.
-     Both halves must carry the SAME curve and duration or the two
-     questions travel at different speeds and visibly separate - the
-     clone's is set in its cssText above. */
-  /* The incoming half waits for the outgoing one to be GONE before it
-     starts. That delay is what keeps this a fade-THROUGH rather than a
-     cross-fade: two pieces of body text dissolving through each other
-     at 50% opacity is unreadable mush, and this screen has already
-     been reported once for showing two questions at once. */
-  incoming.style.transition =
-    "opacity " + SLIDE_MS + "ms cubic-bezier(.35,0,.55,1), transform " + SLIDE_MS + "ms " + SLIDE_EASE;
-  /* NO rAF AT ALL, AND THAT IS THE REST OF THE "LAG". This used to
-     wait TWO frames before setting the final transforms. Measured at
-     4x CPU throttle: the tap did nothing whatsoever for 46.6ms - four
-     whole frames - of which only 13ms was real work (advance()
-     rebuilding the next question, plus the clone). The other ~33ms
-     was these two rAFs burning frames on purpose. A screen that sits
-     frozen for three frames and THEN starts moving reads as lag no
-     matter how smooth the movement after it is; the eye times the
-     gesture from the tap, not from the first frame of animation.
-     The two frames were bought to stop the slide dropping frames at
-     its start, and that was a real symptom - but its cause was the
-     outgoing clone still running screen-fade-in and fighting this
-     transform, which is fixed above. With that gone the animation has
-     nothing to contend with and does not need a head start.
-     What it does need is for both starting positions to be COMMITTED
-     before the final ones are set, or the browser coalesces the two
-     and there is no transition at all. That is what the forced
-     layout reads are for - one per element, since the clone was
-     never flushed and only the incoming one was. A forced layout is
-     synchronous and costs a fraction of a frame; a rAF costs a whole
-     one. */
-  void clone.offsetWidth;
-  void incoming.offsetWidth;
-  clone.style.opacity = ".55";
-  clone.style.transform = "translateX(" + (-push - fromDx) + "px) scale(.96)";
-  incoming.style.opacity = "1";
-  incoming.style.transform = "translateX(0)";
-  if(haze){ void haze.wrap.offsetWidth; haze.wrap.style.transform = "translateX(0)"; haze.soft.style.opacity = "0"; }
-  setTimeout(() => {
-    clone.remove();
-    if(haze) haze.wrap.remove();
-    incoming.style.opacity = "";
-    incoming.style.transform = "";
-    /* THE ANIMATION STAYS OFF, and clearing it here was a second,
-       separate hiccup at the end of every single transition.
-       screen-fade-in is `#stage > *{animation:screen-fade-in .3s}` --
-       a 6px translateY settle every mounted screen plays. Setting
-       style.animation back to "" does not mean "it already ran, leave
-       it"; it un-suppresses the CSS rule, and an animation that has
-       been suppressed for its whole duration then starts from frame
-       zero AT THAT MOMENT. Measured: the question finished sliding in
-       at ~200ms and at 215ms jumped 6px down and settled again over
-       the next 300ms. So every question arrived, stopped, and then
-       bumped -- which is the other half of what "the screen was like
-       glitching" was pointing at.
-       This panel does not want a mount animation at all: it was not
-       mounted, it was slid in, and the slide IS its entrance. Nothing
-       else animates .qpanel (the only shake in the app is on the sync
-       code field), so leaving the inline none on it costs nothing and
-       it goes away with the panel at the next question. */
-    incoming.style.transition = "";
-    /* Cleared once the slide is actually over, not left on
-       indefinitely -- will-change keeps a compositor layer (real GPU
-       memory) alive for as long as it's set, which is the right
-       trade during these .32s but wasteful sitting there permanently
-       on every future static render of this same panel. */
-    incoming.style.willChange = "";
+  const outgoing = stage.querySelector(".panel");
+  const live = !!(s && s.live && s.panel === outgoing && outgoing && outgoing.isConnected);
+  if(s && !live){ qDropPair(s.pair); if(s.live) qClearPanel(s.panel); s = null; }
+  if(!outgoing || theme.reduceMotion){
+    if(s){ qDropPair(s.pair); qClearPanel(s.panel); }
     document.documentElement.classList.remove("q-sliding");
-    slideTransitionInFlight = false;
-  }, SLIDE_MS + 30);
+    advance(); return;
+  }
+  slideTransitionInFlight = true;
+  document.documentElement.classList.add("q-sliding");
+  const p0 = live ? Math.max(0, Math.min(1, s.p)) : 0;
+  const rect = live ? s.rect : outgoing.getBoundingClientRect();
+  const push = live ? s.push : Math.round(rect.width + SLIDE_GAP);
+  const dur = p0 > 0 ? qCommitMs(p0, push, opts.v) : SLIDE_MS;
+  /* A fixed copy of the outgoing question, carried off on the clock.
+     Ids stripped: two id="nextbtn" in the document for the length of a
+     slide picked the dead copy more than once. animation:none because a
+     running animation beats anything set on the same property - the copy
+     of a question still settling in sat there, wobbled and vanished,
+     with the next one arriving UNDER it (.panel is transparent). */
+  const makeClone = () => {
+    const c = qStripClone(outgoing.cloneNode(true));
+    c.style.cssText =
+      "position:fixed; top:" + rect.top + "px; left:" + rect.left + "px; " +
+      "width:" + rect.width + "px; margin:0; z-index:250; animation:none; " +
+      "pointer-events:none; will-change:opacity, transform; transform-origin:100% 40%;";
+    return c;
+  };
+  if(live && s.pair){ qCommitFromPreview(s, p0, dur, makeClone); return; }
+  if(live){ qDropPair(s.pair); }
+  const clone = makeClone();
+  document.body.appendChild(clone);
+  advance();
+  const incoming = stage.querySelector(".panel");
+  if(!incoming){ clone.remove(); qSlideDone(null, null, null, []); return; }
+  /* The incoming panel would otherwise play screen-fade-in (#stage > *),
+     which wins the transform outright; and it stays off afterwards - the
+     slide IS its entrance, and clearing it restarted the settle at the
+     end of every move (a 6px bump). */
+  incoming.style.animation = "none";
+  incoming.style.willChange = "opacity, transform";
+  const anims = [
+    qRun(clone, p => qOutFrame(p, push), p0, 1, dur, qEaseSlide),
+    qRun(incoming, p => ({ transform: qInFrame(p, push).transform, opacity: (.85 + .15 * p).toFixed(4) }), p0, 1, dur, qEaseSlide)
+  ];
+  if(live) qClearPanel(s.panel);
+  setTimeout(() => qSlideDone(clone, null, incoming, anims), dur + 30);
+}
+/* A committed swipe: the stand-in that was already showing carries on
+   at once, and the real question takes its place a frame later. */
+function qCommitFromPreview(s, p0, dur, makeClone){
+  const outgoing = s.panel, pair = s.pair, push = s.push;
+  const pSharp = p0 + (1 - p0) * .8;
+  const sharpAt = p => qSmoothstep(p0, pSharp, p);
+  const softAt = p => (1 - sharpAt(p)) * qSoftAlpha(p);
+  const run = (el, frame) => qRun(el, frame, p0, 1, dur, qEaseSlide);
+  const aOut = run(outgoing, p => qOutFrame(p, push));
+  const pre = [run(pair.wrap, p => qInFrame(p, push)),
+    run(pair.sharp, p => ({ opacity: sharpAt(p).toFixed(4) })),
+    run(pair.soft, p => ({ opacity: softAt(p).toFixed(4) }))];
+  const ref = aOut || pre.find(Boolean) || null;
+  let handed = false, clone = null, haze = null, incoming = null, anims = [aOut].concat(pre);
+  const handover = () => {
+    if(handed) return;
+    handed = true;
+    clone = makeClone();
+    document.body.appendChild(clone);
+    const aC = run(clone, p => qOutFrame(p, push));
+    advance();
+    incoming = stage.querySelector(".panel");
+    const now = [aC];
+    if(incoming){
+      incoming.style.animation = "none";
+      const ir = incoming.getBoundingClientRect();
+      incoming.style.willChange = "opacity, transform";
+      if(incoming.classList.contains("qpanel")){
+        now.push(run(incoming, p => ({ transform: qInFrame(p, push).transform, opacity: sharpAt(p).toFixed(4) })));
+        try{
+          haze = blurPair(qStripClone(incoming.cloneNode(true)), ir);
+          haze.sharp.remove();
+          document.body.appendChild(haze.wrap);
+          now.push(run(haze.wrap, p => qInFrame(p, push)),
+            run(haze.soft, p => ({ opacity: softAt(p).toFixed(4) })));
+        }catch(e){ if(haze) haze.wrap.remove(); haze = null; }
+      } else {
+        now.push(run(incoming, p => ({ transform: qInFrame(p, push).transform, opacity: (.85 + .15 * p).toFixed(4) })));
+      }
+    }
+    qSync(now, ref);
+    pre.forEach(a => { if(a) a.cancel(); });
+    if(aOut) aOut.cancel();
+    qDropPair(pair);
+    anims = now;
+  };
+  requestAnimationFrame(() => setTimeout(handover, 0));
+  setTimeout(() => { handover(); qSlideDone(clone, haze && haze.wrap, incoming, anims); }, dur + 30);
 }
 
 function advance(){
@@ -86447,7 +86902,7 @@ function showAnswerReview(units, source, versions, opts){
   const panel = document.createElement("section");
   panel.className = "panel screen-answerreview";
   /* The starred list is opened from the units screen, not the sheet. */
-  panel.appendChild(buildBackLink(allFlagged ? "Back to units" : "Back to Options", showSetup));
+  panel.appendChild(buildBackLink(allFlagged ? "Back to units" : "Back to Options", allFlagged ? showSetup : showSetupWithSheet));
 
   /* ---- A HEADER CARD, NOT A SERIF TITLE (build 311) ----
      "I don't like how it says starred questions at the top like it does
@@ -86464,7 +86919,7 @@ function showAnswerReview(units, source, versions, opts){
   head.className = "ar-head" + (source === "flagged" ? " is-starred" : source === "recent" ? " is-missed" : "");
   if(source === "flagged"){
     const ic = document.createElement("span"); ic.className = "ar-head-icon"; ic.setAttribute("aria-hidden", "true");
-    try{ ic.appendChild(buildStarredCardStar()); }catch(e){}
+    try{ ic.appendChild(buildStarredCardStar(howMany > 0)); }catch(e){}
     head.appendChild(ic);
   }
   const headText = document.createElement("div"); headText.className = "ar-head-text";
@@ -86964,7 +87419,7 @@ function showFlashcardsDone(){
   const actions = document.createElement("div"); actions.className = "actions fc-done-actions";
   const again = document.createElement("button"); again.type = "button"; again.className = "next"; again.textContent = "Go again";
   const units = fc.units, source = fc.source, versions = fc.versions;
-  again.addEventListener("click", () => { fcLeave(); showFlashcards(units, source, versions); });
+  again.addEventListener("click", () => { fcLeave(); showStudyLoading("LOADING FLASHCARDS", () => showFlashcards(units, source, versions)); });
   /* "Main menu", not "Done" (build 305): Done went back to the test
      setup, which read as going nowhere. */
   const done = document.createElement("button"); done.type = "button"; done.className = "next ghost"; done.textContent = "Main menu";
@@ -86999,7 +87454,7 @@ function pauseFlashcards(){
   });
   const leaveBtn = document.createElement("button"); leaveBtn.type = "button"; leaveBtn.className = "next ghost";
   leaveBtn.textContent = "Exit flashcards";
-  leaveBtn.addEventListener("click", () => { fcLeave(); showSetup(); });
+  leaveBtn.addEventListener("click", () => { fcLeave(); showSetupWithSheet(); });
   actions.append(resumeBtn, leaveBtn);
   mountPausePanel(panel, [h, info, actions], resumeBtn);
 }
@@ -90499,77 +90954,19 @@ SWIPE_SURFACE.addEventListener("touchstart", (e) => {
     swipeStartX = null; swipeStartY = null; swipeTouchId = null; swipeLocked = false;
     return;
   }
-  if(e.touches.length !== 1){ swipeStartX = null; swipeStartY = null; swipeTouchId = null; swipeLocked = false; return; }
+  if(e.touches.length !== 1){ swipeStartX = null; swipeStartY = null; swipeTouchId = null; swipeLocked = false; swipeDragRelease(); return; }
   const t = e.touches[0];
   swipeTouchId = t.identifier;
   swipeStartX = t.clientX;
   swipeStartY = t.clientY;
   swipeLocked = false;
+  /* the stand-in is built where the finger lands (build 314) */
+  qDragPrepare();
+  qNoteSample(t.clientX, true, e.timeStamp);
 }, { passive: true });
 
 function endSwipeGesture(){
   swipeStartX = null; swipeStartY = null; swipeTouchId = null; swipeLocked = false;
-}
-/* THE QUESTION FOLLOWS THE THUMB (build 313). Once a drag is clearly
-   sideways, the question panel moves with it - all the way to the left,
-   only a little to the right (there is nothing that way) - so a swipe
-   is something you are visibly doing to the question rather than a
-   gesture that fires a transition afterwards. Released past the
-   threshold, advanceWithSlide() carries it on from where it is; short
-   of it, it springs back. Transform only, and the panel's own entrance
-   animation is switched off first because a running animation beats an
-   inline transform on the same property. */
-let swipeDragPanel = null, swipeDragDx = 0;
-function swipeDragTo(dx){
-  if(slideTransitionInFlight || theme.reduceMotion) return;
-  if(!swipeDragPanel){
-    const p = stage.querySelector(".panel");
-    if(!p || !p.querySelector(".choices")) return;
-    swipeDragPanel = p;
-    p.style.animation = "none"; p.style.transition = "none"; p.style.willChange = "transform";
-    document.documentElement.classList.add("q-sliding");
-    dropQPreview();
-    if(Array.isArray(order) && pos + 1 < order.length){
-      try{
-        const r = p.getBoundingClientRect();
-        const pv = buildQuestionPreviewPanel(p, pos + 1);
-        if(pv){
-          const pair = blurPair(pv, r);
-          pair.push = Math.round(r.width + SLIDE_GAP);
-          pair.wrap.style.transform = "translateX(" + pair.push + "px)";
-          pair.mix(0); pair.p = 0;
-          document.body.appendChild(pair.wrap);
-          qPreview = pair;
-        }
-      }catch(e){ dropQPreview(); }
-    }
-  }
-  swipeDragDx = dx < 0 ? dx : dx * .18;
-  swipeDragPanel.style.transform = "translateX(" + swipeDragDx + "px)";
-  if(qPreview){
-    const d = Math.min(0, swipeDragDx);
-    qPreview.wrap.style.transform = "translateX(" + (qPreview.push + d) + "px)";
-    qPreview.k = qPreview.mix(-d / qPreview.push) ;
-    qPreview.p = -d / qPreview.push;
-  }
-}
-function swipeDragRelease(){
-  const p = swipeDragPanel; swipeDragPanel = null; swipeDragDx = 0;
-  if(qPreview){
-    const q = qPreview; qPreview = null;
-    q.wrap.style.transition = "transform .22s cubic-bezier(.3,.7,.2,1)";
-    q.wrap.style.transform = "translateX(" + q.push + "px)";
-    q.sharp.style.transition = q.soft.style.transition = "opacity .22s ease";
-    q.mix(0);
-    setTimeout(() => q.wrap.remove(), 240);
-  }
-  if(!p || !p.isConnected){ if(!slideTransitionInFlight) document.documentElement.classList.remove("q-sliding"); return; }
-  p.style.transition = "transform .22s cubic-bezier(.3,.7,.2,1)";
-  p.style.transform = "translateX(0)";
-  setTimeout(() => {
-    if(p.isConnected){ p.style.transition = ""; p.style.transform = ""; p.style.willChange = ""; }
-    if(!slideTransitionInFlight && !swipeDragPanel) document.documentElement.classList.remove("q-sliding");
-  }, 240);
 }
 SWIPE_SURFACE.addEventListener("touchcancel", () => { endSwipeGesture(); swipeDragRelease(); }, { passive: true });
 
@@ -90595,6 +90992,7 @@ SWIPE_SURFACE.addEventListener("touchmove", (e) => {
   if(!t) return;
   const dx = t.clientX - swipeStartX, dy = t.clientY - swipeStartY;
   if(!swipeLocked && Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) swipeLocked = true;
+  qNoteSample(t.clientX, false, e.timeStamp);
   if(swipeLocked){
     e.preventDefault();
     const nb = document.getElementById("nextbtn");
@@ -90621,13 +91019,17 @@ SWIPE_SURFACE.addEventListener("touchend", (e) => {
      to replace. That is why "the swipe still isn't working". */
   const wasLocked = swipeLocked;
   endSwipeGesture();
-  /* A clear, mostly-horizontal left swipe, and only while an actual
-     question (with its answer choices) is on screen. */
-  /* A locked drag has already proved itself horizontal, so it only has
-     to clear a shorter distance; an unlocked one still has to pass the
-     old, stricter test. */
-  if(dx < (wasLocked ? -40 : -55)
-     && (wasLocked || Math.abs(dx) > Math.abs(dy) * 3)
+  /* A clear, mostly-horizontal left swipe, only while an actual
+     question (with its answer choices) is on screen - and, since build
+     314, only past the line or as a real flick (qSwipeCommits). "If I
+     only swipe a little, it [should not] move to the next question, it
+     would kinda bounce back." It used to go at 40px. */
+  const drag = qDrag;
+  const v = qDragVelocity(t.clientX, e.timeStamp);
+  const push = drag ? drag.push : Math.round((((document.querySelector("#stage > .panel") || {}).offsetWidth) || window.innerWidth) + SLIDE_GAP);
+  const p = drag && drag.live ? drag.p : -dx / push;
+  if((wasLocked || Math.abs(dx) > Math.abs(dy) * 3)
+     && qSwipeCommits(p, v)
      && document.querySelector(".choices")){
     const next = document.getElementById("nextbtn");
     /* advanceWithSlide() directly rather than next.click(): the button
@@ -90636,10 +91038,8 @@ SWIPE_SURFACE.addEventListener("touchend", (e) => {
        well as visible. Its own re-entry guard still covers a double
        swipe. */
     if(next && !next.hidden && !next.disabled){
-      const from = swipeDragPanel ? swipeDragDx : 0;
-      const sharp = qPreview ? Math.min(1, qPreview.p || 0) : 0;
-      swipeDragPanel = null; swipeDragDx = 0;
-      advanceWithSlide(from, sharp);
+      qDrag = null;
+      advanceWithSlide(0, { drag, v });
       return;
     }
   }
