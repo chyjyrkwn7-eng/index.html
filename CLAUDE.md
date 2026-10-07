@@ -14813,23 +14813,35 @@ disagree with it.
   the cutscene ... Needs to look like the main menu"*, and of the pop-ups
   after it: *"the theme one looks like a ball, and it doesn't animate,
   the character also doesn't animate, fix that."*
-  - **The whirl** (`playRankUpScene`, `.is-cutspin`): both planets'
-    carriers take a `transform: rotate(RANK_CUTSPIN_TURNS turns)`
-    transition on an ease-in-out curve while each slot turns back by the
-    same amount on the same curve. `transform` composes with the slow
-    `rotate` orbit about the same origin, and whole turns land every
-    bubble exactly where the slow orbit has it - so nothing jumps, and
-    the two planets stay in step for the swap.
-  - **The light** is a lit copy of the bubble (`.rank-litwipe`) over the
-    dark one, its `clip-path: circle()` opening from 0 to past its halo on
-    the whirl's clock, the colour pool rising with it. It hands over to
-    the bubble itself on the carrier's own `transitionend` (a timer before
-    the flash is the fallback): the transition can start a frame late on a
-    slow device, and a timer alone lit it mid-spin on a loaded machine.
-  - **Timing**: tier `ignite 3000, spin 3500, burst 7000, settle 8500,
-    outro 12000` - the burst and everything after it moved 800ms; the
-    beginning and the end are untouched. Supernova keeps its times; its
-    spin is `burst - ignite - 500`.
+  - **SECOND ROUND - faster and faster, lit at the top speed.** *"it could
+    get faster and faster and that part could last another 3-4 seconds ...
+    you can tell it's not lit up while spinning ... when it's gets so fast
+    that's when the color change light up affect happens, and then it
+    slows down and you see the lit up flare. When it comes to a stop.
+    There's a half second pause, the flash and then the planet changes
+    colour."* The whirl is a Web Animation of `transform` on both ring
+    carriers and a counter-turn on every slot, all given ONE `startTime`:
+    `RANK_CUTSPIN_ACCEL_MS` (4.5s, t-squared) with the flare dark, the
+    light at the peak (`.is-cutlight`: a lit copy whose clip opens from
+    the middle in `RANK_CUTLIGHT_MS`), `RANK_CUTSPIN_DECEL_MS` (2s, the
+    mirror curve, so speed is continuous at the peak), `RANK_CUTSPIN_TURNS`
+    (10) whole turns so every bubble stops exactly where the slow orbit
+    has it (`.is-cutrest`), then `RANK_CUTSPIN_PAUSE_MS` (0.5s) and the
+    flash. **The flash and everything after it are timed off the spin's
+    own `finished`**, not the clock (the times in `playTierCutscene` and
+    `playSupernovaCutscene` are nominal: tier flash ~10s, Supernova
+    ~10.6s, each later beat at its old distance from the flash), so the
+    pause is a pause on a slow phone too. A fallback timer fires it if the
+    animation never ends.
+  - **The lag and the "placed off" flares.** Two causes, both fixed. The
+    orbiting bubbles carried a `backdrop-filter` blur, re-sampled every
+    frame while they move (build 230's rule for Home); inside a scene
+    they carry none. And the carrier turned about the AVERAGE of the
+    seven bubbles, which is not the rings' centre (two rings, uneven
+    spacing): each bubble swung off its ring and back once a lap,
+    invisible at 30s a lap and a wobble at full speed. `rankOrbitCentre()`
+    now turns it about the planet's own centre with no shift when every
+    bubble is `is-centred`; at rest the bubbles sit on Home's two rings.
   - **Size**: no swell (`scale:1.4` is gone), and the bubbles are Home's
     size against the planet. The scene's hero was narrower than Home's
     with the same 2.9rem bubbles, so a flare was 2x its Home share before
@@ -14855,11 +14867,13 @@ disagree with it.
     run, then the rank's card. `rankRewardsFirstOnHome()` now holds the
     badge queue until that card has played, and `rankUpLockWaits()` waits
     on a pending badge queue too.
-  - **Gate: `check_b317_cutspin`** - the carrier and the slots turn over
-    the beat and are at rest when the flare is fully lit, the light's clip
-    passes through several sizes in order, the flare is within 15% of
-    Home's share (phone and tablet), the theme tile runs its animations,
-    the character does its hop and then lives. Fails 10 ways on 57212ce.
+  - **Gate: `check_b317_cutspin`** - the carrier and the slots turn, dark
+    while speeding up (>= 3.5s), lit by the time they stop, ~2s slowing,
+    whole turns, ~0.5s still before the flash (all read off the scene's
+    own class changes, so a loaded machine cannot fake a pass or a fail),
+    the flare within 15% of Home's share (phone and tablet), the theme
+    tile animating, the character's hop then its live loop, and on Home a
+    rank's card before a badge cutscene. Fails on 57212ce.
 - **A CHARACTER'S SPECIAL: THE RARE MOVE IF YOU KEEP LOOKING (build 317).**
   *"Let's give each rank character a unique animation ... characters will
   have multiple animations so typically they will be still, if you look at
