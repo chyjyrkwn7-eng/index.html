@@ -7622,7 +7622,8 @@ def check_b299(br):
           const pick = el => el.matches('.pf-standing') ? 'standing' : el.matches('.pf-goal') ? 'next' : el.matches('.pf-case') ? 'case' : null;
           const tops = [...hero.querySelectorAll('.pf-standing, .pf-goal, .pf-case')].map(el => [pick(el), el.getBoundingClientRect().top]);
           return tops.sort((a, b) => a[1] - b[1]).map(x => x[0]).join(','); }""")
-        check(f"{dev}: the Profile card reads where you stand, the next rank, the badge case from the top", order == "standing,next,case", order)
+        # REVISED IN 317: the case moved above the Next rank card.
+        check(f"{dev}: the Profile card reads where you stand, the badge case, the next rank from the top", order == "standing,case,next", order)
         ctx.close()
 
 
@@ -12953,6 +12954,101 @@ def check_b316_tiles(br):
         ctx.close()
 
 
+def check_b317_pfcard(br):
+    """Build 317, round two of the Profile card. "The badge case yellow dot
+    ... it blends in with the badges now and it doesn't look like a
+    notification thing, should be near the arrow still somehow"; "nothing
+    there mentions rank challenges but it should for clarity. Supernova
+    would need to say no rank challenges available, max rank reached";
+    "Would it make more sense if the badge case was put above the rank
+    challenge box thing?"; "the flare and the theme unlock box thing in
+    profile should swap". Written against 74cc518, where every check fails
+    but 'nothing threw' and 'it goes once the new badge is seen' - that one
+    guards what was kept, not what changed."""
+    print("\n317p. Profile: the new-badge dot by the case's arrow, 'Rank challenges' on the Next rank card, the max-rank state, the case above it")
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate("""async () => { const out = {}; const wait = ms => new Promise(r => setTimeout(r, ms));
+          try{
+          document.getElementById('pushing-update')?.remove();
+          theme.muteBanners = true; store.pendingBadgeUnlocks = [];
+          const units = topicsIn(QUESTIONS).slice().sort((a, b) => badgeThresholdFor(a) - badgeThresholdFor(b));
+          const seat = (n, pts) => {
+            store.unitPerfects = {}; units.slice(0, n).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u));
+            store.lifetime.points = pts; store.rankFloor = 0; store.levelFloor = 0;
+            store.pendingSupernovaCutscene = false; store.pendingTierCutscene = null;
+            store.rankMapFx244 = true; store.rankMapSeen = TIER_ORDER_FULL.indexOf(rankOf(store));
+          };
+          const clean = () => document.querySelectorAll('#tour-overlay, #tour-tooltip, #tour-line, #tour-line-dot').forEach(x => x.remove());
+          const box = el => { if(!el) return null; const b = el.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom }; };
+          /* three badges, the third one new */
+          seat(3, xpForLevel(33) + 400);
+          if(!store.seenUnlocks) store.seenUnlocks = { chars: [], banners: [], themes: [], badges: [] };
+          store.seenUnlocks.badges = units.slice(0, 2);
+          showProfile('profile'); await wait(900); clean();
+          const cs = document.querySelector('.profile-hero .pf-case');
+          const dot = cs && cs.querySelector('.new-dot');
+          out.dot = box(dot); out.arrow = box(cs && cs.querySelector('.pf-case-arrow'));
+          out.strip = box(cs && cs.querySelector('.pf-strip'));
+          out.inKick = !!(dot && dot.closest('.pf-kick'));
+          out.newWord = ((cs && cs.querySelector('.pf-case-new')) || {}).textContent || null;
+          const st = document.querySelector('.profile-hero .pf-standing'), gl = document.querySelector('.profile-hero .pf-goal');
+          out.caseFirst = !!(cs && gl && (cs.compareDocumentPosition(gl) & 4));
+          out.gaps = (st && cs && gl) ? [Math.round(cs.getBoundingClientRect().top - st.getBoundingClientRect().bottom),
+            Math.round(gl.getBoundingClientRect().top - cs.getBoundingClientRect().bottom)] : null;
+          out.rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+          const kicks = gl ? [...gl.querySelectorAll('.pf-kick')].map(k => k.textContent.trim()) : [];
+          out.kicks = kicks;
+          out.tiles = gl ? [...gl.querySelectorAll('.pf-rw')].map(t => t.classList.contains('is-flare') ? 'flare' : t.classList.contains('is-theme') ? 'theme' : 'other') : [];
+          const ck = gl && [...gl.querySelectorAll('.pf-kick')].find(k => /^rank challenges$/i.test(k.textContent.trim()));
+          const t0 = gl && gl.querySelector('.pf-task');
+          out.kickBeforeTasks = !!(ck && t0 && (ck.compareDocumentPosition(t0) & 4));
+          /* the dot still goes once the new badge is seen */
+          showRanksScreen('badges'); await wait(900);
+          const tile = document.querySelector('.badges-tab .badge-tile.is-new, .badges-tab .badge-tile .new-dot');
+          const t = tile && (tile.closest('.badge-tile') || tile);
+          if(t){ t.click(); await wait(500); }
+          document.querySelectorAll('.unlock-detail, .unlockdetail-overlay, [class*="unlock-detail"]').forEach(n => n.remove());
+          showProfile('profile'); await wait(700); clean();
+          out.dotAfter = !!document.querySelector('.profile-hero .pf-case .new-dot');
+          out.newAfter = !!document.querySelector('.profile-hero .pf-case .pf-case-new');
+          /* Supernova */
+          seat(units.length, xpForLevel(80) + 4000);
+          store.seenUnlocks.badges = units.slice();
+          showProfile('profile'); await wait(900); clean();
+          out.top = rankOf(store);
+          const tg = document.querySelector('.profile-hero .pf-goal');
+          out.topCls = tg ? tg.className : null;
+          out.topText = tg ? tg.textContent : null;
+          out.topTasks = tg ? tg.querySelectorAll('.pf-task').length : -1;
+          } catch(e){ out.threw = String(e && e.stack || e); }
+          return out; }""")
+        check(f"{dev}: nothing threw", not r.get("threw"), r.get("threw"))
+        d, a, sp = r.get("dot"), r.get("arrow"), r.get("strip")
+        adj = bool(d and a) and d["r"] <= a["l"] + 0.5 and a["l"] - d["r"] <= 12 \
+            and min(d["b"], a["b"]) - max(d["t"], a["t"]) >= (d["b"] - d["t"]) * 0.5
+        check(f"{dev}: the new-badge dot sits right beside the case's arrow, not over it", adj, [d, a])
+        check(f"{dev}: ...on the head row, clear of the badge strip and not in the 'Badge case' label",
+              bool(d and sp) and d["b"] <= sp["t"] and not r.get("inKick"), [d, sp, r.get("inKick")])
+        check(f"{dev}: ...with the word New beside it", (r.get("newWord") or "").strip() == "New", r.get("newWord"))
+        check(f"{dev}: ...and it goes once the new badge is seen", r.get("dotAfter") is False and r.get("newAfter") is False,
+              [r.get("dotAfter"), r.get("newAfter")])
+        check(f"{dev}: the badge case comes before the Next rank card", r.get("caseFirst") is True, r.get("caseFirst"))
+        g, rem = r.get("gaps"), r.get("rem") or 16
+        check(f"{dev}: ...with the card's usual gaps (1.05rem under the bar, .8rem between the boxes)",
+              bool(g) and abs(g[0] - 1.05 * rem) <= 1.5 and abs(g[1] - 0.8 * rem) <= 1.5, [g, rem])
+        check(f"{dev}: the Next rank card heads its rows 'Rank challenges', above them",
+              any(k.lower() == "rank challenges" for k in r.get("kicks", [])) and r.get("kickBeforeTasks"), [r.get("kicks"), r.get("kickBeforeTasks")])
+        check(f"{dev}: what the rank unlocks leads with its flare, then its theme",
+              (r.get("tiles") or [])[:2] == ["flare", "theme"], r.get("tiles"))
+        tt = r.get("topText") or ""
+        check(f"{dev}: at Supernova the card says max rank, still under 'Rank challenges', and that none are left",
+              r.get("top") == "titan" and "is-top" in (r.get("topCls") or "") and r.get("topTasks") == 0
+              and re.search(r"rank challenges", tt, re.I) and re.search(r"no rank challenges left", tt, re.I) and re.search(r"max rank", tt, re.I),
+              [r.get("top"), r.get("topCls"), tt])
+        ctx.close()
+
+
 def check_b317_volume(br):
     """Build 317. "It appears in profile some characters have a nice 3d look
     but some don't, fix that as well." Every surface a character paints with
@@ -13514,6 +13610,7 @@ def main():
             check_b317_volume(br)
             check_b317_tabplate(br)
             check_b317_xpcap(br)
+            check_b317_pfcard(br)
             check_b317_rankup(br)
         finally:
             br.close()
