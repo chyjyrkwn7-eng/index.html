@@ -7487,7 +7487,12 @@ def check_b299(br):
             if(held >= 0){
               store.rankMapSeen = held - 1;
               showProfile('profile'); await wait(600);
-              out.rankDot = !!document.querySelector('.pf-standing .new-dot');
+              /* build 317: Profile now plays the rank-up (check_b317_rankup)
+                 and is drawn as it was - so the dot is on the old rank's
+                 bubble, or, coming up from no rank, the scene itself is the
+                 notice. Either says "something new about your rank". */
+              out.rankDot = !!document.querySelector('.pf-standing .new-dot') ||
+                (typeof rankUpScene !== 'undefined' && !!rankUpScene && store.rankMapSeen === held - 1);
               showRanksScreen('ranks');
               for(let k = 0; k < 40 && store.rankMapSeen !== held; k++) await wait(250);
               out.rankSeenNow = store.rankMapSeen === held;
@@ -7510,7 +7515,7 @@ def check_b299(br):
               r2.get("tileAfter") == 0 and r2.get("badgeSaved") and not r2.get("badgeDotAfter"),
               (r2.get("tileAfter"), r2.get("badgeSaved"), r2.get("badgeDotAfter")))
         check(f"{dev}: the fixture holds a rank, so the rank-up case is exercised", (r2.get("held") if r2.get("held") is not None else -1) >= 0, r2.get("held"))
-        check(f"{dev}: a rank-up the road map has not shown puts a dot on Profile's rank bubble", r2.get("rankDot"), r2.get("rankDot"))
+        check(f"{dev}: a rank-up the road map has not shown puts a dot on Profile's rank bubble (or, from 317, plays the rank-up)", r2.get("rankDot"), r2.get("rankDot"))
         check(f"{dev}: opening Rank plays the map, and that clears it",
               r2.get("rankSeenNow") and not r2.get("rankDotAfter"), (r2.get("rankSeenNow"), r2.get("rankDotAfter")))
         # "What if the dot was also on the bottom tab for profile as well",
