@@ -12994,6 +12994,114 @@ def check_b317_volume(br):
     ctx.close()
 
 
+CUTSPIN_RUN = """async (tier) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+  document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());
+  const idx = TIER_ORDER_FULL.indexOf(tier);
+  /* Home's own bubble against Home's own planet, for this flare */
+  let home = null;
+  const hw = document.querySelector('[data-screen="home"] .cosmic-hero-wrap');
+  if(hw){
+    const b = hw.querySelectorAll('.cosmic-icon-badge')[idx], m = hw.querySelector('.cosmic-hero-main');
+    if(b && m) home = b.getBoundingClientRect().width / m.getBoundingClientRect().width;
+  }
+  playTierCutscene(tier, { from: TIER_ORDER_FULL[idx - 1], onDone(){} });
+  const ov = document.getElementById('supernova-cutscene');
+  const samples = [];
+  const t0 = performance.now();
+  /* sampled from inside the page every 90ms until the flash, so a loaded
+     machine cannot skip the beat between two Playwright calls */
+  while(ov.isConnected && !ov.classList.contains('supernova-burst') && performance.now() - t0 < 20000){
+    const orb = ov.querySelector('.rank-before .rank-orbit');
+    const slot = ov.querySelector('.rank-before .rank-orbit-slot');
+    const wipe = ov.querySelector('.rank-before .rank-litwipe');
+    const b = ov.querySelector('.rank-before .cosmic-icon-badge[data-rank-tier="' + tier + '"]:not(.rank-litwipe)');
+    const m = ov.querySelector('.rank-before .cosmic-hero-main');
+    const cp = wipe ? getComputedStyle(wipe).clipPath : '';
+    samples.push({ ign: ov.classList.contains('is-igniting'),
+      orbT: orb ? getComputedStyle(orb).transform : null,
+      slotT: slot ? getComputedStyle(slot).transform : null,
+      wipeR: wipe ? parseFloat((cp.match(/circle\\(([\\d.]+)%/) || [, 'NaN'])[1]) : null,
+      lit: !!(b && b.classList.contains('cosmic-badge-lit')),
+      ratio: b && m ? b.getBoundingClientRect().width / m.getBoundingClientRect().width : null });
+    await wait(90);
+  }
+  ov.remove();
+  return { home, samples };
+}"""
+
+
+def check_b317_cutspin(br):
+    """Build 317. "The planet lights up instantly, all the planets need to
+    spin on their axis ring thing in a circle, during this part, that's when
+    the unlocked flare rank will start lighting up instantly the middle of
+    it, they will spin fast and then when it stops it's fully lit ... the
+    unlocked rank flare does look massive within the cutscene ... Needs to
+    look like the main menu" - and of the pop-ups after it: "the theme one
+    looks like a ball, and it doesn't animate, the character also doesn't
+    animate". Asserts the whirl (the carrier's transform turns over the
+    unlock beat while each slot turns back), a light that RAMPS from the
+    middle (several clip sizes between nothing and full, then the bubble
+    itself lit before the flash), the flare at Home's size against the
+    planet (within 15%, phone and tablet), and the theme and character
+    tiles of the rank-reward card moving. Written against build 317's
+    first cut (57212ce), where all of these fail."""
+    print("\n317b. the rank-up whirl, the light from the middle, Home-sized flares, live reward cards")
+    for label, w, h in DEVICES:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        pg.evaluate("()=>{ try{ showHome(); }catch(e){} }")
+        pg.wait_for_timeout(900)
+        r = pg.evaluate(CUTSPIN_RUN, "vanguard")
+        ctx.close()
+        sm = [x for x in r["samples"] if x["ign"]]
+        turns = {x["orbT"] for x in sm if x["orbT"] and x["orbT"] not in ("none", "matrix(1, 0, 0, 1, 0, 0)")}
+        back = {x["slotT"] for x in sm if x["slotT"] and x["slotT"] not in ("none", "matrix(1, 0, 0, 1, 0, 0)")}
+        check("%s: every flare whirls round its ring at the unlock beat" % label,
+              len(turns) >= 4 and len(back) >= 4, (len(sm), len(turns), len(back)))
+        settled = [x for x in sm if x["lit"]]
+        check("%s: and is at rest, in its own place, by the time the flare is fully lit" % label,
+              bool(settled) and settled[0]["orbT"] in ("none", "matrix(1, 0, 0, 1, 0, 0)")
+              and settled[0]["slotT"] in ("none", "matrix(1, 0, 0, 1, 0, 0)"), settled[:1] or sm[-1:])
+        radii = [x["wipeR"] for x in sm if x["wipeR"] is not None and x["wipeR"] == x["wipeR"]]
+        mid = {round(v) for v in radii if 3 < v < 97}
+        check("%s: the new flare lights from its middle outward, not in one step" % label,
+              len(mid) >= 3 and radii == sorted(radii), sorted(mid))
+        first_lit = next((i for i, x in enumerate(sm) if x["lit"]), None)
+        check("%s: fully lit only once the whirl is over, before the flash" % label,
+              first_lit is not None and first_lit >= 4 and bool(radii), (first_lit, len(sm)))
+        ratios = [x["ratio"] for x in sm if x["ratio"]]
+        worst = max(ratios, key=lambda v: abs(v - (r["home"] or 1))) if ratios else None
+        check("%s: the flare is Home's size against the planet (within 15%%)" % label,
+              bool(r["home"]) and worst is not None and abs(worst / r["home"] - 1) <= 0.15,
+              (r["home"] and round(r["home"], 4), worst and round(worst, 4)))
+
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    cards = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());
+      const r = TIER_ORDER_FULL.find(k => AVATAR_CHARACTERS.some(c => c.unlock === k && !c.feat));
+      const ch = AVATAR_CHARACTERS.find(c => c.unlock === r && !c.feat);
+      playUnlockSpotlight(rankRewardsItem(r, [themeUnlockItem(r), characterUnlockItem(ch.id)]), 1, 1, ()=>{});
+      const out = { theme: 0, charMoves: [], charLive: false };
+      const t0 = performance.now();
+      while(performance.now() - t0 < 9000){
+        const th = document.querySelector('.rs-reward-tile.is-theme .rs-reward-art');
+        const ca = document.querySelector('.rs-reward-tile.is-character .rs-reward-art');
+        if(th) out.theme = Math.max(out.theme, th.getAnimations({ subtree: true }).filter(a => a.playState === 'running').length);
+        if(ca){
+          ca.getAnimations({ subtree: true }).filter(a => a.playState === 'running' && a.animationName)
+            .forEach(a => { if(out.charMoves.indexOf(a.animationName) < 0) out.charMoves.push(a.animationName); });
+          if(/char-(live|flip)/.test(ca.className) && !/char-react/.test(ca.className) && out.charMoves.length) out.charLive = true;
+        }
+        await wait(150);
+      }
+      out.rank = r;
+      return out; }""")
+    ctx.close()
+    check("the theme tile is the theme's swatch, swirling and sweeping", cards["theme"] >= 2, cards["theme"])
+    check("the character tile celebrates (its winner's move), not just a blink",
+          any(n in cards["charMoves"] for n in ("cx-hop-big", "cx-hop-loop")), cards["charMoves"][:10])
+    check("and then carries on living", cards["charLive"], cards)
+
+
 def check_b317_tabplate(br):
     """Build 317. "They got a smidge smaller so let's ensure they are still a
     nice size AND let's ensure you can see their backgrounds because right
@@ -13406,6 +13514,7 @@ def main():
             check_b316_tiles(br)
             check_b317_daily(br)
             check_b317_volume(br)
+            check_b317_cutspin(br)
             check_b317_tabplate(br)
             check_b317_rankup(br)
         finally:
