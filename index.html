@@ -9427,7 +9427,10 @@
   .hfx-mock .rs-grade-frac{ font-size:.6rem; font-weight:800; color:var(--ink); margin:0; transition:color var(--hfx-ease, 1s) ease; }
   .hfx-mock .rs-grade.hfx-tinted .rs-grade-frac{ color:var(--hfx-g1); }
   .hfx-mock > .rs-actions{ display:flex; gap:.35rem; margin-top:auto; }
-  .hfx-mk-btn{ flex:1; height:1.35rem; border-radius:999px; border:none; font:800 .5rem/1 inherit; color:#fff; background:#05060A; }
+  /* `inherit` is not a family inside the `font` shorthand, so the whole
+     declaration was dropped and these drew in the browser's own button
+     face at its own size (build 315) */
+  .hfx-mk-btn{ flex:1; height:1.35rem; border-radius:999px; border:none; font:800 .5rem/1 var(--sans); color:#fff; background:#05060A; }
   .hfx-mk-btn.is-light{ background:#E9EEF4; color:#0B0E14; }
   .hfx-mk-still{ position:absolute; right:6%; top:16%; width:28%; aspect-ratio:1; }
   .hfx-mk-still svg{ display:block; width:100%; height:100%; }
@@ -21159,6 +21162,11 @@
     display:grid; place-items:center; background:#0E1116; border:1.5px solid rgba(255,255,255,.28); color:#E6EAF0; z-index:2;
     box-shadow:0 0 0 3px rgba(14,17,22,.9), 0 4px 10px rgba(0,0,0,.5); }
   .unlock-card-banner .unlock-card-lock{ right:1rem; bottom:auto; top:.8rem; }
+  /* A hundo effect's art is a little results screen with its buttons
+     along the bottom, so its padlock or tick goes in the top corner,
+     beside "Test results", where nothing is (build 315: in the bottom
+     corner it sat on "Main menu"). */
+  .unlock-card-fx .unlock-card-lock{ bottom:auto; top:-.15rem; }
   .unlock-card-lock svg{ width:.9rem; height:.9rem; }
   /* Held (build 259): a tick in green where the padlock goes, a green bar. */
   .unlock-card-lock.is-held{ color:#7CF0A8; border-color:rgba(124,240,168,.55); }
@@ -75245,9 +75253,9 @@ function buildHundoFxMock(id, o){
   el("p", "hfx-mk-kicker", "Grade", gr);
   const row = el("div", "hfx-mk-row", null, gr);
   const pct = el("span", "rs-pct pct perfect", null, row); gradePctMarkup(pct, 100);
-  el("span", "rs-grade-frac", "12 of 12", row);
+  rsPair(el("span", "rs-grade-frac", null, row), 12, 12);
   const bu = el("div", "rs-byunit", null, gr);
-  const ul = el("p", "hfx-mk-line", null, bu); el("span", "", "Identity Crimes", ul); el("b", "", "12/12", ul);
+  const ul = el("p", "hfx-mk-line", null, bu); el("span", "", "Identity Crimes", ul); rsPair(el("b", "", null, ul), 12, 12);
   const tr = el("span", "hfx-mk-bar is-unit", null, bu); el("i", "unit-breakdown-fill is-gold", null, tr);
   const acts = el("div", "rs-actions");
   el("button", "hfx-mk-btn is-light", "Re-run", acts).tabIndex = -1;
