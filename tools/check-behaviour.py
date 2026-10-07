@@ -13052,6 +13052,49 @@ def check_b317_pfcard(br):
               and re.search(r"rank challenges", tt, re.I) and re.search(r"no rank challenges left", tt, re.I) and re.search(r"max rank", tt, re.I),
               [r.get("top"), r.get("topCls"), tt])
         ctx.close()
+    # THE SAME CARD SQUEEZED (build 317 touch-up). Written against 1888b11,
+    # where every one of these fails: on a 375 phone "BADGE CASE" and "3 of
+    # 16" touched with NEW up, and at level 80 the total XP dropped to the
+    # LEFT under the numbers; on a 320 one the count stood three lines tall
+    # and "Reach level 40" ran into "33 / 40"; and four unlock tiles cut
+    # their labels to "Th..." on every phone up to 402px.
+    SQUEEZE = """async (st) => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      try{
+      document.getElementById('pushing-update')?.remove(); theme.muteBanners = true; store.pendingBadgeUnlocks = [];
+      const units = topicsIn(QUESTIONS).slice().sort((a, b) => badgeThresholdFor(a) - badgeThresholdFor(b));
+      const [n, lvl, fresh] = st;
+      store.unitPerfects = {}; units.slice(0, n).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u));
+      store.lifetime.points = xpForLevel(lvl) + (lvl >= LEVEL_CAP ? 60000 : 400); store.rankFloor = 0; store.levelFloor = 0;
+      store.pendingSupernovaCutscene = false; store.pendingTierCutscene = null; store.rankMapSeen = TIER_ORDER_FULL.indexOf(rankOf(store));
+      if(!store.seenUnlocks) store.seenUnlocks = { chars: [], banners: [], themes: [], badges: [] };
+      store.seenUnlocks.badges = units.slice(0, Math.max(0, n - fresh));
+      showProfile('profile'); await wait(900);
+      const B = s => { const e = document.querySelector('.profile-hero ' + s); if(!e) return null; const b = e.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom }; };
+      out.kick = B('.pf-case-head > .pf-kick'); out.num = B('.pf-case-num'); out.nums = B('.pf-xpnums'); out.xn = B('.pf-xpnums .xpnums'); out.tot = B('.pf-xp-total');
+      out.tasks = [...document.querySelectorAll('.profile-hero .pf-task')].map(t => { const a = t.querySelector('.pf-task-label').getBoundingClientRect(), v = t.querySelector('.pf-task-val').getBoundingClientRect();
+        const lab = t.querySelector('.pf-task-label');
+        /* the label's TEXT, not its box: squeezed, the box was 28px and the words ran out of it into the count */
+        return { clear: lab.scrollWidth <= lab.clientWidth + 0.5 && (v.left >= a.right - 0.5 || v.top >= a.bottom - 0.5), txt: lab.textContent, sw: lab.scrollWidth, cw: lab.clientWidth }; });
+      out.cut = [...document.querySelectorAll('.profile-hero .pf-rw-lab')].filter(l => l.scrollWidth > l.clientWidth + 0.5).map(l => l.textContent);
+      out.tiles = document.querySelectorAll('.profile-hero .pf-rw').length;
+      } catch(e){ out.threw = String(e && e.stack || e); }
+      return out; }"""
+    for (w, h, dev, st) in ((375, 667, "SE 2/3, a new badge", (3, 33, 1)), (375, 667, "SE 2/3, level 80", (16, 80, 0)),
+                            (320, 568, "320 phone, a new badge", (3, 33, 1)), (393, 852, "393 phone, four unlock tiles", (9, 64, 0)),
+                            (320, 568, "320 phone, four unlock tiles", (9, 64, 0))):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate(SQUEEZE, list(st))
+        ctx.close()
+        check(f"squeeze, {dev}: nothing threw", not r.get("threw"), r.get("threw"))
+        k, n_ = r.get("kick"), r.get("num")
+        check(f"squeeze, {dev}: 'Badge case' and its count have a gap, and the count is one line",
+              bool(k and n_) and (n_["l"] - k["r"] >= 4 or n_["t"] >= k["b"] - 0.5) and n_["b"] - n_["t"] <= 26, [k, n_])
+        nm, xn, tot = r.get("nums"), r.get("xn"), r.get("tot")
+        check(f"squeeze, {dev}: the total XP sits at the right, wrapped or not",
+              bool(nm and tot) and abs(tot["r"] - nm["r"]) <= 1.5 and (tot["t"] >= xn["b"] - 0.5 or tot["l"] >= xn["r"]), [nm, xn, tot])
+        check(f"squeeze, {dev}: no challenge row's count runs into its label",
+              r.get("tasks") is not None and all(t["clear"] for t in r["tasks"]), r.get("tasks"))
+        check(f"squeeze, {dev}: no unlock tile's label is cut short ({r.get('tiles')} tiles)", not r.get("cut"), r.get("cut"))
 
 
 def check_b317_volume(br):

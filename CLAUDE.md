@@ -14591,6 +14591,25 @@ disagree with it.
     - `check_b317_pfcard` holds all five on both reference devices and
       fails 8 of 10 against 74cc518 (the two that pass are "nothing threw"
       and the dot clearing, which guards what was kept).
+    - **THE SAME CARD, SQUEEZED (317 touch-up).** Fine on both reference
+      devices and broken below them, which is why nobody saw it: on a 375
+      phone with NEW up "BADGE CASE3 of 16" touched (2px), and at level 80
+      the total XP wrapped and dropped to the LEFT, reading as a second
+      line of the same numbers; on a 320 one "3 / of / 16" stood three
+      lines tall and a challenge label got 28px beside its count, so
+      "Reach level 40" ran into "33 / 40"; and four unlock tiles (a rank
+      that hands over a banner) cut "Theme"/"Oracle" to "Th..." on every
+      phone up to 402px. Now: `.pf-xp-total{margin-left:auto}` (right,
+      wrapped or not); the case head wraps as two whole halves with a gap,
+      the count right; four tiles are two by two up to 26rem (only
+      `:has(> .pf-rw:nth-child(4))`, so three stay a row); under 22rem a
+      challenge's count drops under its label and the tile type steps
+      down. **The label check reads `scrollWidth`, not the box**: the old
+      label's BOX ended clear of the count - it was the words that ran out
+      of it, so a rect comparison passed the broken build. The squeeze
+      block at the end of `check_b317_pfcard` fails 11 times on 1888b11.
+      This machine's DejaVu is wider than SF, so an SE with NEW wraps the
+      case head here and probably not on the phone; either is correct.
   - **The grade card's fractions are white both sides** (`.rs-grade
     .rs-frac-of{opacity:1}`). Its unit bar was never broken: it fills red
     ~350ms after the card lands, and the screenshot that showed it empty

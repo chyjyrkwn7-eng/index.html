@@ -20311,6 +20311,36 @@
     .pf-swatch.swatch .dot{ width:2.7rem; height:2.7rem; }
     .pf-strip.badge-strip{ grid-template-columns:repeat(16, minmax(0, 1fr)); }
   }
+  /* SQUEEZE CASES (build 317 touch-up), measured at 375 and 320:
+     - the total XP wraps under the numbers once the two do not fit (a
+       6-digit total, level 80, any 320px phone); it keeps to the RIGHT
+       there, where it sits on one row, instead of dropping to the left
+       as a second line of the same blue numbers;
+     - the case's head always has a gap, and its two halves never wrap
+       inside themselves: "BADGE CASE3 of 16" touched on a 375 phone with
+       NEW up, and on a 320 one "3 / of / 16" stood three lines tall. If
+       they do not fit side by side the count takes its own row, right;
+     - on a 320 phone a challenge row's label had 28px beside its count,
+       so "Reach level 40" ran into "33 / 40"; there the count goes under
+       the label, over its bar;
+     - four unlock tiles (a rank that hands over a banner) left each label
+       34-38px on a 375-402 phone and 22px on a 320 one: "Th...", "Or...",
+       "F...". Up to 26rem the four sit two by two instead, ~100px each.
+       Three tiles are fine down to 375; on a 320 phone the type comes down
+       a step and the side padding goes, so "Theme" is whole. */
+  .pf-xp-total{ margin-left:auto; }
+  .pf-case-head{ flex-wrap:wrap; gap:.3rem .6rem; }
+  .pf-case-head > .pf-kick, .pf-case-num{ white-space:nowrap; }
+  .pf-case-count{ margin-left:auto; }
+  @media (max-width:26rem){
+    .pf-rewards:has(> .pf-rw:nth-child(4)){ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width:22rem){
+    .pf-task{ grid-template-columns:1.45rem minmax(0, 1fr); }
+    .pf-task-val, .pf-bar, .pf-task-note{ grid-column:2; }
+    .pf-rw{ padding-left:.05rem; padding-right:.05rem; }
+    .pf-rw-lab{ font-size:.68rem; }
+  }
   .profile-xp-total{ font-size:.8rem; font-weight:700; color:var(--soft); font-variant-numeric:tabular-nums; }
   /* ---- THREE RINGS, ONE SIZE (build 302) ----
      "The circles around badge and level are bigger than the rank one."
