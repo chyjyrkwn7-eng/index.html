@@ -9165,7 +9165,7 @@
   .hfx-mk-bar.is-unit > i{ width:100%; }
   .hfx-mock > .rs-card.rs-grade.is-perfect{ border-color:rgba(242,211,138,.2); background:linear-gradient(180deg, var(--hfx-wash), rgba(24,29,37,.8) 60%); }
   .hfx-mk-row{ display:flex; align-items:center; gap:.5rem; margin:.1rem 0 .3rem; }
-  .hfx-mock .rs-pct{ position:relative; font-family:var(--serif); font-weight:700; font-size:1.65rem; line-height:1; letter-spacing:-.02em; color:#F6D58E; text-shadow:0 0 14px rgba(246,213,142,.3); }
+  .hfx-mock .rs-pct{ position:relative; font-family:var(--sans); font-weight:800; font-size:1.65rem; line-height:1; letter-spacing:-.045em; color:#F6D58E; text-shadow:0 0 14px rgba(246,213,142,.3); }
   .hfx-mock .rs-grade-frac{ font-size:.6rem; font-weight:800; color:var(--ink); margin:0; transition:color var(--hfx-ease, 1s) ease; }
   .hfx-mock .rs-grade.hfx-tinted .rs-grade-frac{ color:var(--hfx-g1); }
   .hfx-mock > .rs-actions{ display:flex; gap:.35rem; margin-top:auto; }
@@ -13923,6 +13923,16 @@
        The left padding carries the same .12em back. */
     display:inline-flex; align-items:center; justify-content:center; line-height:1.1;
     padding:.24rem .5rem .22rem calc(.5rem + .12em); border-radius:999px; color:rgba(255,255,255,.7); background:rgba(255,255,255,.07);
+  }
+  /* AND CENTRED UP AND DOWN (build 315). The words are all capitals, and
+     a line box keeps room for descenders capitals never use, so the word
+     sat ~2px above the middle of a 19px pill. Trimming the line to cap
+     height and baseline makes the box exactly the letters, so equal
+     padding is equal space above and below in any font. Trim applies to
+     a block container, hence inline-block here; where text-box is
+     unsupported the rule above still applies. */
+  @supports (text-box: trim-both cap alphabetic){
+    .rankmap-state{ display:inline-block; text-align:center; text-box:trim-both cap alphabetic; padding-top:.37rem; padding-bottom:.37rem; }
   }
   .rankmap-stop.is-here .rankmap-state{ color:#0B0D10; background:color-mix(in srgb, var(--rank-color) 80%, #fff); }
   .rankmap-stop.is-next .rankmap-state{ color:color-mix(in srgb, var(--rank-color) 70%, #fff); background:color-mix(in srgb, var(--rank-color) 18%, transparent); }
@@ -21276,6 +21286,21 @@
   }
   .rs-grade-row{ display:flex; align-items:center; gap:1.1rem; }
   .rs-screen .rs-pct.pct{ font-size:4.2rem; line-height:.95; flex-shrink:0; }
+  /* THE GRADE NUMBER IS SET, NOT TYPED (build 315): "something about the
+     number 100 doesn't look that clean." It was Georgia, whose figures
+     are old-style - the 1 and 0s sit at lowercase height and the 9 drops
+     below the line - with a % as tall as the digits. It is the system
+     sans now, heavy, lining and tightly spaced, and the % is a small
+     raised mark beside it (.rs-pct-sign, built by gradePctMarkup) so the
+     number is what reads. Shared with the hundo-effect previews. */
+  .rs-pct.pct{
+    font-family:var(--sans); font-weight:800; letter-spacing:-.045em;
+    font-variant-numeric:lining-nums tabular-nums; font-feature-settings:"lnum" 1, "tnum" 1;
+  }
+  .rs-pct-sign{
+    display:inline-block; font-size:.42em; font-weight:700; letter-spacing:0;
+    vertical-align:top; margin:.2em 0 0 .12em; opacity:.82;
+  }
   .rs-screen .rs-pct.pct.retake-badge{ font-size:3.4rem; }
   .rs-grade-side{ min-width:0; }
   /* THE WORDS GO UNDER THE NUMBER WHEN THEY HAVE NO ROOM BESIDE IT. A
@@ -70090,6 +70115,16 @@ function hfxContext(opts){
    all at once, decaying (a flash). The sweep is a window and its
    contents moving in opposite directions, so the copy holds still while
    the window crosses it - two transforms, nothing re-laid out. */
+/* The grade as a number and a small raised % (see .rs-pct-sign). The
+   label still reads "100%" to a screen reader. */
+function gradePctMarkup(el, pct){
+  el.textContent = String(pct);
+  const sign = document.createElement("span");
+  sign.className = "rs-pct-sign"; sign.textContent = "%";
+  el.appendChild(sign);
+  el.setAttribute("aria-label", pct + "%");
+}
+
 function hfxLitText(bx, c, o){
   if(!c.pct) return;
   const cs = getComputedStyle(c.pct);
@@ -70100,7 +70135,8 @@ function hfxLitText(bx, c, o){
     left: c.p.x + "px", top: (c.p.y - pad) + "px", width: band + "px", height: (c.p.h + pad * 2) + "px",
     "--band": band + "px", "--pw": c.p.w + "px", "--dl": o.dl, "--d": o.dur, "--lc": o.color, "--lg": o.glow });
   const t = hfxMk(win, "span", "hfx-lit-in");
-  t.textContent = c.pct.textContent;
+  /* children, not textContent: the % is its own smaller span */
+  c.pct.childNodes.forEach(n => t.appendChild(n.cloneNode(true)));
   t.style.width = c.p.w + "px"; t.style.height = c.p.h + "px"; t.style.top = pad + "px";
   t.style.fontFamily = cs.fontFamily; t.style.fontSize = cs.fontSize; t.style.fontWeight = cs.fontWeight;
   t.style.letterSpacing = cs.letterSpacing; t.style.lineHeight = cs.lineHeight;
@@ -71663,7 +71699,7 @@ function buildHundoFxMock(id, o){
   const gr = el("div", "rs-card rs-grade is-perfect");
   el("p", "hfx-mk-kicker", "Grade", gr);
   const row = el("div", "hfx-mk-row", null, gr);
-  const pct = el("span", "rs-pct pct perfect", "100%", row);
+  const pct = el("span", "rs-pct pct perfect", null, row); gradePctMarkup(pct, 100);
   el("span", "rs-grade-frac", "12 of 12", row);
   const bu = el("div", "rs-byunit", null, gr);
   const ul = el("p", "hfx-mk-line", null, bu); el("span", "", "Identity Crimes", ul); el("b", "", "12/12", ul);
@@ -72081,7 +72117,7 @@ function previewHundoFx(id){
   card.className = "rs-card rs-grade is-perfect hfx-preview-card";
   const k = document.createElement("p"); k.className = "rs-kicker"; k.textContent = "Grade";
   const row = document.createElement("div"); row.className = "rs-grade-row";
-  const pct = document.createElement("span"); pct.className = "rs-pct pct perfect"; pct.textContent = "100%";
+  const pct = document.createElement("span"); pct.className = "rs-pct pct perfect"; gradePctMarkup(pct, 100);
   const side = document.createElement("div"); side.className = "rs-grade-side";
   const nm = document.createElement("p"); nm.className = "rs-grade-frac"; nm.textContent = (hundoFxDef(id) || {}).name || "";
   const sb = document.createElement("p"); sb.className = "rs-grade-sub slabel"; sb.textContent = "Preview";
@@ -74755,7 +74791,7 @@ function showRunRewards(run, hooks, opts){
     gRow.className = "rs-grade-row";
     const pctEl = document.createElement("span");
     pctEl.className = "rs-pct pct " + (run.isPerfect ? "perfect" : run.pct >= PASS_MARK ? "made" : "short");
-    pctEl.textContent = run.pct + "%";
+    gradePctMarkup(pctEl, run.pct);
     const gSide = document.createElement("div");
     gSide.className = "rs-grade-side";
     const frac = document.createElement("p");

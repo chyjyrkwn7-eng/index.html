@@ -13281,6 +13281,26 @@ disagree with it.
     the two stacked. Waiting on What's New does not spend the reward
     queue's retry budget. The Penal note also waits 2s after ANY other
     pop-up clears.
+  - **THE ROAD MAP CHIPS ARE CENTRED BOTH WAYS, AND IT IS MEASURED.**
+    Asked for "numerous times". Side to side was fixed in 314 (the
+    letter-spacing gap after the last letter, paid back on the left);
+    what was still wrong was VERTICAL: the words are all capitals and a
+    line box keeps room for descenders capitals never use, so the word
+    sat 1.5-2px above the middle of a 19px pill. `text-box:trim-both cap
+    alphabetic` (inside `@supports`, on an inline-block) trims the line
+    to the letters, so equal padding is equal space in any font. Measured
+    by diffing the pill with its text transparent against the pill with
+    it drawn: ink centre within 0.5px of the box centre on every chip,
+    both reference devices and a 320px phone. Measure ink, never the
+    element box: the box was always "centred".
+  - **THE GRADE NUMBER IS THE SYSTEM SANS, HEAVY, WITH A SMALL RAISED %.**
+    *"something about the number 100 doesn't look that clean"*. It was
+    Georgia, whose figures are old-style (the 1 and 0s at lowercase
+    height), with a % as tall as the digits. `gradePctMarkup()` builds the
+    number plus `.rs-pct-sign`; `textContent` is still "100%", and
+    `hfxLitText` clones the children so the hundo effects' lit copy keeps
+    the small %. Chromium here has no Georgia, so screenshots never showed
+    the old-style figures a phone did.
 - **STUDY TIME IS TIME SPENT STUDYING (build 314).** It was "now minus
   when the run started", so a run left open with the phone locked banked
   every hour on the day it ended: live tests of 117h and 50h, days of 68h
