@@ -600,7 +600,8 @@ def main():
                 study: /\bStudy\b/.test(q('.pf-goal') || ''),
                 level: q('.pf-standing .pf-level'), rank: q('.pf-standing .pf-rankname'),
                 nums: q('.pf-standing .pf-xpnums .xpnums'), over: !!document.querySelector('.pf-standing .xpnums.is-over'),
-                total: q('.pf-standing .pf-xp-total'), banked: !!document.querySelector('.pf-standing .pf-xpbar.is-banked'),
+                total: q('.pf-standing .pf-xp-total'), totalUnder: !!document.querySelector('.pf-standing .pf-xpnums .pf-xp-total'),
+                totalCol: rgb(document.querySelector('.pf-standing .pf-xp-total')), haveCol: rgb(document.querySelector('.pf-standing .xpnums-have')), needCol: rgb(document.querySelector('.pf-standing .xpnums-need')), banked: !!document.querySelector('.pf-standing .pf-xpbar.is-banked'),
                 note: q('.pf-standing .pf-xp-note'), noteWall: !!document.querySelector('.pf-standing .pf-xp-note.is-wall'),
                 nextGate: !!document.querySelector('.next-gate'), max: !!document.querySelector('.level-max-tag'),
                 goal: q('.pf-goal .pf-goal-name'), sub: q('.pf-goal .pf-goal-sub'), goalText: q('.pf-goal'),
@@ -716,9 +717,13 @@ def main():
             # Level 49 · 85,705 XP"), the mockup that was preferred - and it
             # says what it is: "Where it shows your total xp, I feel like that
             # should say total xp."
-            check("Profile at a cap: this level's XP marked over under the bar, the total on the rank line saying 'total XP', the bar banked, and no Next gate box",
+            # REVISED IN 317: "The total xp you have earned should be on the
+            # bottom right under the xp bar not above it", in a deeper blue;
+            # and over at a cap both numbers are the same blue.
+            check("Profile at a cap: this level's XP marked over under the bar (both numbers blue), the total under the bar saying 'total XP', the bar banked, and no Next gate box",
                   pf["nums"] and re.match(r"^[0-9,]+ / [0-9,]+ XP$", pf["nums"]) and pf["over"]
-                  and re.match(r"^[0-9,]+ total XP$", pf["total"] or "") and pf["banked"]
+                  and pf["haveCol"] == pf["needCol"] and blue(pf["needCol"])
+                  and re.match(r"^[0-9,]+ total XP$", pf["total"] or "") and pf["totalUnder"] and blue(pf["totalCol"]) and pf["banked"]
                   and not pf["max"] and not pf["nextGate"] and pf["level"] == "Level 29", pf)
             # "I don't like how it means that 5th badge part": no ordinal.
             # REVISED IN 316: no count either - it says this is as high as the
@@ -726,9 +731,13 @@ def main():
             # the XP is kept: "this is the max level you can achieve at this
             # rank, complete the challenges to keep leveling up, your xp still
             # goes up and will be given to you when the levels or ranks unlock".
-            check("...and the gold line under the bar says this is the max level before a first rank, the Bronze challenges open more, and the XP still counts - no number in it",
-                  pf["noteWall"] and pf["note"] == "This is the max level before your first rank. Complete the Bronze challenges to keep leveling up. "
-                  "Your XP still counts and turns into levels when you rank up."
+            # REVISED IN 317: not gold - "make it like the wording and color of
+            # what's shown under the xp challenge" - and the end reworded:
+            # "your earned xp is still here, rank up to unlock the new set of
+            # levels", combined with the second sentence.
+            check("...and the plain line under the bar says this is the max level before a first rank, the Bronze challenges unlock the next set of levels, and the XP is kept - no number in it",
+                  not pf["noteWall"] and pf["note"] == "This is the max level before your first rank. Complete the Bronze challenges to unlock the next set of levels. "
+                  "The XP you earn until then is kept."
                   and not re.search(r"\d", pf["note"] or ""), pf["note"])
             t = pf["tasks"]
             check("the next rank is Bronze, 1 of 2 done, with what is left listed first",
@@ -738,9 +747,11 @@ def main():
             # number should swap colors"); REVISED IN 316, asked back: "I
             # preferred how the leveling requirement looked too" - your count
             # in the colour, the goal plain, met or not.
-            check("a task's count is in its colour and its goal plain grey, met or not; a met one has a tick",
-                  len(t) == 2 and gold(t[0]["now"]) and grey(t[0]["need"]) and t[0]["tick"] == ""
-                  and blue(t[1]["now"]) and grey(t[1]["need"]) and t[1]["tick"] == "✓", t)
+            # REVISED IN 317: "Grey on left, gold on right, both gold if met,
+            # and if it goes over, just the same gold" - the XP bar's rule.
+            check("a task's count is grey and its goal in its colour; met, both are in its colour; a met one has a tick",
+                  len(t) == 2 and grey(t[0]["now"]) and gold(t[0]["need"]) and t[0]["tick"] == ""
+                  and blue(t[1]["now"]) and blue(t[1]["need"]) and t[1]["tick"] == "✓", t)
             check("what Bronze unlocks is shown as tiles: its theme and its flare",
                   pf["tiles"][:2] == ["Theme", "Flare"], pf["tiles"])
             p49 = w["profile49"]
@@ -756,12 +767,14 @@ def main():
             # complete rank challenges or something. Don't specifically mention
             # the badges amount there ... I like how it mentions the 'your saved
             # xp turns into levels' but could that be better?"
-            check("...and at the wall the level task says the rank challenges open more levels and the saved XP is waiting - no badge count",
-                  t49[1]["note"] == "Complete the rank challenges to unlock more levels. Your saved XP is waiting and turns into levels the moment you rank up."
+            # REVISED IN 317: "could be simpler ... redundant to what's
+            # underneath the xp bar ... less wordy".
+            check("...and at the wall the level task says, in one short line, where the XP goes - no badge count",
+                  t49[1]["note"] == "Your XP from here goes toward the next levels you unlock."
                   and not re.search(r"\d", t49[1]["note"] or ""), t49[1]["note"])
-            check("...and the line under the bar says this is the max level at Silver and the Gold challenges open more",
-                  p49["note"] == "This is the max level at Silver. Complete the Gold challenges to keep leveling up. "
-                  "Your XP still counts and turns into levels when you rank up.", p49["note"])
+            check("...and the line under the bar says this is the max level at Silver and the Gold challenges unlock the next set",
+                  p49["note"] == "This is the max level at Silver. Complete the Gold challenges to unlock the next set of levels. "
+                  "The XP you earn until then is kept.", p49["note"])
             tp = w["taps"]
             check("tapping where you stand opens the climb", tp["standing"]["hit"] and tp["standing"]["map"], tp["standing"])
             # "assuming you click anywhere in that box, it opens up the rank road map"

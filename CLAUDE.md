@@ -14456,6 +14456,41 @@ disagree with it.
     on a Pro Max, 83 on an iPad) and a 320px phone narrows the art column
     instead, so the label still fits on one line there. From 40rem the
     count goes back to the right, where a tablet has the room.
+- **PROFILE, ROUND SEVEN (build 317)** - from one long message:
+  - **XP numbers: what you have grey, what the level asks blue**
+    (`--xpnum:#5A9BEF`, deeper than the old #8FC1FF - "should be a darker
+    blue"). Over a cap (`.is-over`) both are that blue. On the results
+    card the "have" number flashes blue for ~1s (`.is-flash`) when the
+    final level-up wrap lands. Same rule wherever `buildXpNumbers` is
+    used.
+  - **The total XP is under the bar, bottom right** (`.pf-xp-total` inside
+    `.pf-xpnums`), not on the rank line; it took the place of "N XP to
+    level X". `fitProfileIdLine()` still runs and is now a no-op there.
+  - **Challenge rows: count grey, goal in the row's colour, both in it
+    once met** - badge gold, level blue. The badge row shows the real
+    count, so it can read 4 / 3; the level row still stops at its goal
+    (316: "talks about you being level 49 but it's asking for level 40").
+  - **Copy:** the goal card always says "Next rank" (never "Your first
+    rank"); the top says "Max rank". The wall line under the bar is plain
+    grey like the task notes, not gold: "This is the max level at
+    <rank>. Complete the <next> challenges to unlock the next set of
+    levels. The XP you earn until then is kept." The level task's wall
+    note is one line: "Your XP from here goes toward the next levels you
+    unlock." check-curve holds all of it.
+  - **The new-dot is whole pixels** (11px, 10px on the tab and the rank
+    line) with a fixed aspect and a soft highlight - .78rem was 12.48px
+    and read as an oval. The badge case's dot sits after the words "Badge
+    case", not on the count's arrow.
+  - **The Profile tab's character was drawn as a zoomed-in corner** after
+    a test: its flip-book was placed from a reading taken while the tab
+    bar was still coming back, 14px off. A drawing with no transform that
+    fills its box is now centred by CSS (`left/top:50%` + negative
+    margins) in `charFlipAttach()`; scaled drawings keep the measured
+    path. An SVG has no offsetLeft, so layout offsets were not an option.
+  - **The grade card's fractions are white both sides** (`.rs-grade
+    .rs-frac-of{opacity:1}`). Its unit bar was never broken: it fills red
+    ~350ms after the card lands, and the screenshot that showed it empty
+    was taken before that.
 - **THE DAILY QUESTION IS ANSWERED, NOT TAPPED (build 317).** *"When
   you submit your answer, ensure it's not just clicking, let's put a
   submit answer so that quality seems to hold a little more weight.

@@ -18543,9 +18543,16 @@
      with its own glow is the one thing on the card that is not
      already a colour the card uses. */
   :root{ --new-dot:#FFD43B; --new-dot-glow:rgba(255,212,59,.65); }
+  /* ROUND AND A LITTLE NICER (build 317): "I feel like that could look a
+     smidge better btw, and it also doesn't look like a perfect circle". It
+     was .78rem - 12.48px - and a fractional box with a 2px ring rounds to
+     an oval on some screens; whole pixels and a fixed aspect keep it a
+     circle, and a soft light from the top-left gives it a body. */
   .new-dot{
-    position:absolute; top:-.2rem; right:-.2rem; width:.78rem; height:.78rem; border-radius:50%;
-    background:var(--new-dot); box-shadow:0 0 0 2px var(--paper, #12161B), 0 0 12px var(--new-dot-glow);
+    position:absolute; top:-.2rem; right:-.2rem; width:11px; height:11px; aspect-ratio:1 / 1; flex:none; box-sizing:border-box;
+    border-radius:50%;
+    background:radial-gradient(circle at 34% 30%, #FFF7C9 0 14%, var(--new-dot) 46%, #F0A81C 100%);
+    box-shadow:0 0 0 2px var(--paper, #12161B), 0 0 9px var(--new-dot-glow);
     pointer-events:none; z-index:3;
   }
   /* The avatar icon clips its character with overflow:hidden, which
@@ -18555,8 +18562,9 @@
   #bottomtab-profile.has-new .bottomtab-icon-avatar{ overflow:visible; }
   #bottomtab-profile.has-new .bottomtab-icon-avatar > svg{ clip-path:inset(0); }
   #bottomtab-profile.has-new .bottomtab-icon::after{
-    content:""; position:absolute; top:-.15rem; right:-.2rem; width:.66rem; height:.66rem; border-radius:50%;
-    background:var(--new-dot); box-shadow:0 0 0 2px #0E1116, 0 0 10px var(--new-dot-glow);
+    content:""; position:absolute; top:-.15rem; right:-.2rem; width:10px; height:10px; aspect-ratio:1 / 1; border-radius:50%;
+    background:radial-gradient(circle at 34% 30%, #FFF7C9 0 14%, var(--new-dot) 46%, #F0A81C 100%);
+    box-shadow:0 0 0 2px #0E1116, 0 0 9px var(--new-dot-glow);
     pointer-events:none; z-index:2;
   }
   .new-dot-anchor{ position:relative; display:inline-flex; flex-shrink:0; }
@@ -19417,9 +19425,16 @@
      good still": what you have in the bar's own light blue, what the
      level asks for in plain grey - two jobs, two colours that do not
      compete - and past the requirement your number only a shade deeper. */
-  .xpnums-have{ color:#8FC1FF; }
-  .xpnums-need{ color:#9AA3AE; }
-  .xpnums.is-over .xpnums-have{ color:#6FA8EE; }
+  /* WHAT YOU HAVE GREY, WHAT IT ASKS BLUE (build 317): "the left is blue
+     and right is grey, if anything the right should be blue and the left
+     is grey, once you level up the level animation would show it turn
+     blue for a second ... If you are going over cause you are at max,
+     that's when both would be blue, the same blue." A deeper blue than
+     the old #8FC1FF - "should be a darker blue". */
+  :root{ --xpnum:#5A9BEF; }
+  .xpnums-have{ color:rgba(255,255,255,.55); transition:color .6s ease; }
+  .xpnums-need{ color:var(--xpnum); }
+  .xpnums.is-over .xpnums-have, .xpnums.is-flash .xpnums-have{ color:var(--xpnum); transition-duration:.15s; }
   /* The challenge sheet */
   .level-chal-sheet{ text-align:center; }
   .penal-note-sheet{ text-align:center; }
@@ -19709,12 +19724,12 @@
     font-size:.95rem; font-weight:700; line-height:1.3; color:rgba(255,255,255,.72); text-align:center; }
   .pf-emb{ width:1.55rem; height:1.55rem; display:inline-flex; flex:none; }
   .pf-emb svg{ display:block; width:100%; height:100%; }
-  .pf-standing .new-dot-anchor > .new-dot{ top:-.22rem; right:-.3rem; width:.62rem; height:.62rem; }
+  .pf-standing .new-dot-anchor > .new-dot{ top:-.22rem; right:-.3rem; width:10px; height:10px; }
   .pf-rankname{ font-weight:800; color:color-mix(in srgb, var(--rank-color) 55%, #fff); }
   .pf-idsep{ opacity:.35; }
   /* the XP is blue, the bar's own light blue - never the rank's colour
      (build 259: "I don't like the bronze all the way through") */
-  .pf-xp-total{ color:#8FC1FF; white-space:nowrap; }
+  .pf-xp-total{ color:var(--xpnum, #5A9BEF); white-space:nowrap; font-weight:800; }
   .pf-xp{ display:block; margin-top:.85rem; }
   .pf-xpbar.xpbar-track{ display:block; }
   .pf-xpbar .xpbar-fill{ display:block; height:100%; border-radius:inherit; }
@@ -19743,7 +19758,7 @@
     .pf-xpnums{ font-size:.78rem; }
     .pf-xp-next{ font-size:.72rem; }
   }
-  .pf-xp-cap{ color:#8FC1FF; }
+  .pf-xp-cap{ color:var(--xpnum, #5A9BEF); }
   .pf-xp-note{ display:block; margin-top:.35rem; font-size:.8rem; line-height:1.35; color:rgba(255,255,255,.62); }
   .pf-xp-note.is-wall{ color:#E8C770; }
   .pf-standing + .pf-goal{ margin-top:1.05rem; }
@@ -19772,8 +19787,13 @@
   .pf-task-label{ font-size:.98rem; font-weight:800; color:var(--ink); min-width:0; }
   /* your count in the colour, the goal plain (build 316, the mockup's) */
   .pf-task-val{ font-size:.95rem; font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap; color:rgba(255,255,255,.55); }
-  .pf-task-val .pf-now{ font-weight:800; color:color-mix(in srgb, var(--tc) 80%, #fff); }
-  .pf-task-val .pf-sep, .pf-task-val .pf-need{ font-weight:800; color:rgba(255,255,255,.55); }
+  /* WHAT YOU HAVE GREY, THE GOAL IN THE ROW'S COLOUR, BOTH IN IT ONCE
+     MET OR PAST (build 317): "Grey on left, gold on right, both gold if
+     met, and if it goes over, just the same gold" - the badge row's gold
+     and the level row's blue, the XP bar's own rule. */
+  .pf-task-val .pf-now, .pf-task-val .pf-sep{ font-weight:800; color:rgba(255,255,255,.55); }
+  .pf-task-val .pf-need{ font-weight:800; color:color-mix(in srgb, var(--tc) 85%, #fff); }
+  .pf-task.is-met .pf-task-val .pf-now{ color:color-mix(in srgb, var(--tc) 85%, #fff); }
   .pf-bar{ grid-column:2 / 4; display:block; height:.42rem; border-radius:99px; background:rgba(255,255,255,.08); overflow:hidden; }
   .pf-bar > i{ display:block; height:100%; width:var(--w); border-radius:inherit;
     background:linear-gradient(90deg, color-mix(in srgb, var(--tc) 78%, #000), var(--tc));
@@ -19872,7 +19892,8 @@
   .pf-case:active{ filter:brightness(1.08); }
   .pf-case-head{ position:relative; display:flex; justify-content:space-between; align-items:center; margin-bottom:.65rem; }
   .pf-case-count{ font-size:.88rem; font-weight:800; color:rgba(255,255,255,.8); font-variant-numeric:tabular-nums; }
-  .pf-case-head .new-dot{ position:absolute; right:-.4rem; top:-.35rem; }
+  .pf-case-head .pf-kick{ display:inline-flex; align-items:center; gap:.45rem; }
+  .pf-case-head .pf-kick > .new-dot{ position:relative; top:auto; right:auto; }
   .pf-strip.badge-strip{ display:grid; grid-template-columns:repeat(8, minmax(0, 1fr)); gap:.35rem; }
   .pf-strip.badge-strip .badge-strip-cell{ width:auto; height:auto; aspect-ratio:1; display:block; margin:0; }
   .pf-strip.badge-strip .badge-strip-cell svg{ display:block; width:100%; height:100%; }
@@ -23675,6 +23696,10 @@
      effect's tint (hfx-tinted) still reaches the whole figure. */
   .rs-screen .rs-grade-frac{ letter-spacing:-.02em; }
   .rs-screen .rs-frac-of{ font-weight:700; opacity:.62; }
+  /* the grade card's "8 / 12" is one colour, white, both sides (build
+     317): "I'm not sure why the right side is grey there. Should all be
+     white." */
+  .rs-screen .rs-grade .rs-frac-of{ opacity:1; }
   .rs-screen .rs-grade-sub.slabel{ margin:.3rem 0 0; font-size:var(--rs-cap); font-weight:500; line-height:1.35; text-wrap:balance; }
   .rs-stamps{ display:flex; flex-wrap:wrap; gap:.4rem; margin:.95rem 0 0; }
   .rs-stamp{
@@ -76455,6 +76480,12 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
              holding the banked figure it started from */
           if(lv < after.level){ line.textContent = "Climbing to level " + after.level; requestAnimationFrame(fillOut); return; }
           countUp();
+          /* the new level's number lights blue for a second, then settles */
+          const xn = line.querySelector(".xpnums");
+          if(xn && !xn.classList.contains("is-over")){
+            xn.classList.add("is-flash");
+            setTimeout(() => { const x2 = line.querySelector(".xpnums"); if(x2) x2.classList.remove("is-flash"); }, 1100);
+          }
           fill.style.transition = prev || "";
           requestAnimationFrame(() => {
             setBarFill(fill, target);
@@ -92725,7 +92756,7 @@ function profileXpNote(prog){
     try{ next = prog.gateKey || (rankChallengesOf() || {}).key || null; }catch(e){}
     const nextName = next ? RANK_DISPLAY_NAME[next] || next : "next rank";
     return (held ? "This is the max level at " + RANK_DISPLAY_NAME[held] + ". " : "This is the max level before your first rank. ") +
-      "Complete the " + nextName + " challenges to keep leveling up. Your XP still counts and turns into levels when you rank up.";
+      "Complete the " + nextName + " challenges to unlock the next set of levels. The XP you earn until then is kept.";
   }
   const left = Math.max(0, Math.round((Number(prog.span) || 0) - (Number(prog.into) || 0)));
   return left.toLocaleString() + " XP to level " + (prog.level + 1);
@@ -92772,7 +92803,7 @@ function buildProfileStanding(prog, rankNow){
   lv.className = "pf-level"; lv.textContent = "Level " + prog.level;
   const tot = document.createElement("span");
   tot.className = "pf-xp-total"; tot.textContent = prog.total.toLocaleString() + " total XP";
-  line.append(lv, sep("b"), tot);
+  line.append(lv);
   box.appendChild(line);
   const xp = document.createElement("span");
   xp.className = "pf-xp";
@@ -92793,16 +92824,16 @@ function buildProfileStanding(prog, rankNow){
     nums.appendChild(c);
   } else {
     nums.appendChild(buildXpNumbers(prog.into, prog.span, prog.stopped));
-    if(!wall && noteText){
-      const nx = document.createElement("span");
-      nx.className = "pf-xp-next"; nx.textContent = noteText;
-      nums.appendChild(nx);
-    }
   }
+  /* THE TOTAL UNDER THE BAR, BOTTOM RIGHT (build 317): "The total xp you
+     have earned should be on the bottom right under the xp bar not above
+     it". It takes the place "N XP to level X" had; the two numbers on
+     the left already say how far into the level you are. */
+  nums.appendChild(tot);
   xp.append(track, nums);
   if(wall && noteText){
     const note = document.createElement("span");
-    note.className = "pf-xp-note is-wall";
+    note.className = "pf-xp-note";
     note.textContent = noteText;
     xp.appendChild(note);
   }
@@ -92854,7 +92885,12 @@ function buildProfileTask(c, color, noteText){
   lab.className = "pf-task-label"; lab.textContent = c.label;
   const val = document.createElement("span");
   val.className = "pf-task-val";
-  const now = document.createElement("b"); now.className = "pf-now"; now.textContent = String(Math.min(c.now, c.need));
+  /* A BADGE COUNT PAST ITS GOAL SAYS SO (build 317): "Ensure the
+     challenge for badge would show you are over if you are too" - 4 / 3.
+     The level row still stops at its goal: "talks about you being level
+     49 but it's asking for level 40" (build 316) was asked against. */
+  const shownNow = c.kind === "badges" ? c.now : Math.min(c.now, c.need);
+  const now = document.createElement("b"); now.className = "pf-now"; now.textContent = String(shownNow);
   const sep = document.createElement("span"); sep.className = "pf-sep"; sep.textContent = " / ";
   const need = document.createElement("b"); need.className = "pf-need"; need.textContent = String(c.need);
   val.append(now, sep, need);
@@ -92869,7 +92905,7 @@ function buildProfileTask(c, color, noteText){
     n.className = "pf-task-note"; n.textContent = noteText;
     t.appendChild(n);
   }
-  t.setAttribute("aria-label", c.label + ", " + Math.min(c.now, c.need) + " of " + c.need + (c.met ? ", done" : ""));
+  t.setAttribute("aria-label", c.label + ", " + shownNow + " of " + c.need + (c.met ? ", done" : ""));
   return t;
 }
 function buildProfileGoal(prog){
@@ -92884,7 +92920,7 @@ function buildProfileGoal(prog){
     const emb = document.createElement("span"); emb.className = "pf-goal-emb";
     try{ emb.appendChild(fitRankEmblem(buildRankEmblemSVG("titan"), "titan")); }catch(e){}
     const tx = document.createElement("span"); tx.className = "pf-goal-tx";
-    const k = document.createElement("span"); k.className = "pf-kick"; k.textContent = "Top rank";
+    const k = document.createElement("span"); k.className = "pf-kick"; k.textContent = "Max rank";
     const nm = document.createElement("span"); nm.className = "pf-goal-name"; nm.textContent = RANK_DISPLAY_NAME.titan;
     const sub = document.createElement("span"); sub.className = "pf-goal-sub"; sub.textContent = "Every rank reached";
     tx.append(k, nm, sub); h.append(emb, tx); box.appendChild(h);
@@ -92901,7 +92937,7 @@ function buildProfileGoal(prog){
   const tx = document.createElement("span");
   tx.className = "pf-goal-tx";
   const k = document.createElement("span");
-  k.className = "pf-kick"; k.textContent = rankOf(store) ? "Next rank" : "Your first rank";
+  k.className = "pf-kick"; k.textContent = "Next rank";
   const nm = document.createElement("span");
   nm.className = "pf-goal-name"; nm.textContent = rc.name;
   const sub = document.createElement("span");
@@ -92925,9 +92961,11 @@ function buildProfileGoal(prog){
      all at once. Only once XP is actually banked past the wall does it
      call it saved. */
   const atWall = !prog.atCap && (prog.stopped || prog.held);
-  const lvNote = !atWall ? null : "Complete the rank challenges to unlock more levels. " +
-    (prog.stopped ? "Your saved XP is waiting and turns into levels the moment you rank up."
-                  : "XP past this level is saved and turns into levels the moment you rank up.");
+  /* ONE SHORT LINE (build 317): "could be simpler ... sounds redundant to
+     what's underneath the xp bar ... needs to be less wordy" - the line
+     under the bar says what opens the levels; this one only says where
+     the XP goes, in the words asked for. */
+  const lvNote = !atWall ? null : "Your XP from here goes toward the next levels you unlock.";
   const rows = [
     lv ? buildProfileTask(lv, "#6FC2FF", lvNote) : null,
     bd ? buildProfileTask(bd, "#E3C77A", closest ? "Closest: " + closest.unit + " (" + closest.done + "/" + closest.need + " hundos)" : null) : null
@@ -92943,7 +92981,7 @@ function buildProfileGoal(prog){
   const foot = document.createElement("span");
   foot.className = "pf-goal-foot"; foot.textContent = "See every rank ›";
   box.appendChild(foot);
-  box.setAttribute("aria-label", (rankOf(store) ? "Next rank, " : "Your first rank, ") + rc.name + ": " +
+  box.setAttribute("aria-label", "Next rank, " + rc.name + ": " +
     rc.list.map(c => c.label + " " + Math.min(c.now, c.need) + " of " + c.need + (c.met ? " done" : "")).join(", ") + ". Open the Rank screen.");
   box.addEventListener("click", () => showRanksScreen("ranks"));
   return box;
@@ -92959,11 +92997,13 @@ function buildProfileCase(have, total){
   const n = document.createElement("span");
   n.className = "pf-case-count"; n.textContent = have + " of " + total + " ›";
   head.append(k, n);
+  /* the dot sits after the words, not on the count's arrow (build 317):
+     "the placement is bad because you can't see the arrow" */
   box.appendChild(head);
   try{ box.appendChild(buildBadgeStrip("pf-strip")); }catch(e){}
   let fresh = 0;
   try{ fresh = badgeNewCount(); }catch(e){}
-  if(fresh){ box.classList.add("has-new"); head.appendChild(buildNewDot()); }
+  if(fresh){ box.classList.add("has-new"); k.appendChild(buildNewDot()); }
   box.setAttribute("aria-label", "Badge case, " + have + " of " + total + " earned" + (fresh ? ", " + fresh + " new" : "") + ". Open the badge case.");
   box.addEventListener("click", () => showRanksScreen("badges"));
   return box;
