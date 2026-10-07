@@ -592,7 +592,9 @@ def main():
               if(!m) return null; const v = m.slice(0, 3).map(Number); return /^color\\(/.test(c) ? v.map(x => Math.round(x * 255)) : v; };
             const readProfile = () => {
               const tasks = [...document.querySelectorAll('.pf-goal .pf-task')];
-              const order = ['.pf-standing', '.pf-goal', '.pf-case'].map(sel => document.querySelector('.profile-hero ' + sel));
+              /* build 317: the case moved above the Next rank card - what
+                 you are, what you have, what's next */
+              const order = ['.pf-standing', '.pf-case', '.pf-goal'].map(sel => document.querySelector('.profile-hero ' + sel));
               return {
                 blocks: order.map(n => !!n),
                 inOrder: order.every(Boolean) && !!(order[0].compareDocumentPosition(order[1]) & 4) && !!(order[1].compareDocumentPosition(order[2]) & 4),
@@ -708,7 +710,9 @@ def main():
             blue = lambda c: c is not None and c[2] - c[0] >= 80
             gold = lambda c: c is not None and c[0] - c[2] >= 80
             # Build 315: Madison picked option A - standing, next rank, case.
-            check("Profile's card is three blocks in order: where you stand, the next rank, the badge case - nothing tappable nested in them, no Study button",
+            # REVISED IN 317: "Would it make more sense if the badge case was
+            # put above the rank challenge box thing?" - standing, case, next.
+            check("Profile's card is three blocks in order: where you stand, the badge case, the next rank - nothing tappable nested in them, no Study button",
                   pf["blocks"] == [True, True, True] and pf["inOrder"] and pf["nested"] == 0 and not pf["study"], pf)
             # "How do we still get that nice xp stuff where it shows how much
             # over you are, how much till the next level ... we wouldn't need
@@ -752,8 +756,10 @@ def main():
             check("a task's count is grey and its goal in its colour; met, both are in its colour; a met one has a tick",
                   len(t) == 2 and grey(t[0]["now"]) and gold(t[0]["need"]) and t[0]["tick"] == ""
                   and blue(t[1]["now"]) and blue(t[1]["need"]) and t[1]["tick"] == "✓", t)
-            check("what Bronze unlocks is shown as tiles: its theme and its flare",
-                  pf["tiles"][:2] == ["Theme", "Flare"], pf["tiles"])
+            # REVISED IN 317, round two: "the flare and the theme unlock box
+            # thing in profile should swap" - the rank's own flare first.
+            check("what Bronze unlocks is shown as tiles: its flare, then its theme",
+                  pf["tiles"][:2] == ["Flare", "Theme"], pf["tiles"])
             p49 = w["profile49"]
             t49 = p49["tasks"]
             # "talks about you being level 49 but it's asking for level 40"
@@ -769,8 +775,11 @@ def main():
             # xp turns into levels' but could that be better?"
             # REVISED IN 317: "could be simpler ... redundant to what's
             # underneath the xp bar ... less wordy".
-            check("...and at the wall the level task says, in one short line, where the XP goes - no badge count",
-                  t49[1]["note"] == "Your XP from here goes toward the next levels you unlock."
+            # REVISED IN 317, round two: "the description under the level
+            # challenge, I'm not in love with it ... could be better" - the bar's
+            # note says where the XP goes; this one says what is left for the rank.
+            check("...and at the wall the level task says, in one short line, it is done and the badge challenge is left for Gold - no badge count",
+                  t49[1]["note"] == "Done. Finish the badge challenge to reach Gold."
                   and not re.search(r"\d", t49[1]["note"] or ""), t49[1]["note"])
             check("...and the line under the bar says this is the max level at Silver and the Gold challenges unlock the next set",
                   p49["note"] == "This is the max level at Silver. Complete the Gold challenges to unlock the next set of levels. "

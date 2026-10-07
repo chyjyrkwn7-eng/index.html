@@ -14514,6 +14514,51 @@ disagree with it.
     silhouette note describes. Scenery and non-`headGrad` fills are left
     alone, so nobody's own gloss is doubled. `check_b317_volume` asserts
     the layers on every character and no `filter` attribute anywhere.
+  - **ROUND SEVEN, SECOND PASS - the card's order and its last pieces
+    (supersedes the new-dot placement above and ROUND FIVE's block
+    order):**
+    - **WHAT YOU ARE, WHAT YOU HAVE, WHAT'S NEXT.** *"Would it make more
+      sense if the badge case was put above the rank challenge box thing?
+      ... I feel like it being at the bottom is weird."* The card is now
+      the standing line, then the badge case, then the Next rank card -
+      identity and level, the badges you hold, the challenges ahead. Still
+      inside the one Profile card (not a box of its own); the gaps are the
+      same two numbers as before (1.05rem under the bar, .8rem between the
+      boxes). The Profile tour's case and Next rank steps swapped to match.
+      The rank-up scene swaps `.pf-standing` and `.pf-goal` in place with
+      `replaceWith`, so it needed nothing.
+    - **THE NEW-BADGE DOT SITS AGAINST THE CASE'S ARROW, WITH "NEW".**
+      *"it blends in with the badges now and it doesn't look like a
+      notification thing, should be near the arrow still somehow."* On
+      the arrow (316) it hid it; after "Badge case" it sat in a row of
+      gold badges. `.pf-case-count` is now two spans, `.pf-case-num`
+      ("3 of 16") and `.pf-case-arrow` ("›"), and a new badge puts
+      `.pf-case-new` - the word NEW in the dot's yellow and the dot -
+      between them, touching the arrow: "3 of 16 NEW ● ›". It still
+      clears exactly as before (`badgeNewCount()`).
+    - **THE NEXT RANK CARD SAYS "RANK CHALLENGES".** *"nothing there
+      mentions rank challenges but it should for clarity."* A kicker
+      above the task rows, the same style and gap as "<Rank> unlocks"
+      below them. At Supernova the card keeps the heading and says "No
+      rank challenges left. You have reached the max rank. Check back for
+      more." in a dashed empty row (*"Supernova would need to say no rank
+      challenges available, max rank reached, come back for more"*), and
+      gets the "See every rank ›" foot the other cards have.
+    - **THE LEVEL ROW'S WALL NOTE SAYS WHAT IS LEFT FOR THE RANK**: "Done.
+      Finish the badge challenge to reach <Next>." (*"I'm not in love with
+      it. I like it but could be better."*) The line under the bar already
+      says where the XP goes, so this one no longer does. Still no badge
+      count (316), and away from a wall the row still has no note.
+    - **THE FLARE LEADS THE UNLOCK TILES, THEN THE THEME.** *"the flare and
+      the theme unlock box thing in profile should swap ... your call."*
+      Kept after looking at both: the flare is the rank's own mark (what
+      reaching it lights on Home), and the theme's flat disc between the
+      two ringed pieces balances the row. The road map's chips still read
+      Theme, Flare (`buildRankGifts`) - not changed
+      here.
+    - `check_b317_pfcard` holds all five on both reference devices and
+      fails 8 of 10 against 74cc518 (the two that pass are "nothing threw"
+      and the dot clearing, which guards what was kept).
   - **The grade card's fractions are white both sides** (`.rs-grade
     .rs-frac-of{opacity:1}`). Its unit bar was never broken: it fills red
     ~350ms after the card lands, and the screenshot that showed it empty

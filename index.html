@@ -19821,7 +19821,7 @@
   .pf-xp-cap{ color:var(--xpnum, #5A9BEF); }
   .pf-xp-note{ display:block; margin-top:.35rem; font-size:.8rem; line-height:1.35; color:rgba(255,255,255,.62); }
   .pf-xp-note.is-wall{ color:#E8C770; }
-  .pf-standing + .pf-goal{ margin-top:1.05rem; }
+  .pf-standing + .pf-goal, .pf-standing + .pf-case{ margin-top:1.05rem; }
   /* the flare bubble, out of Home's orbit */
   .flare-solo.cosmic-icon-badge.cosmic-badge-rank{ position:relative; top:auto; left:auto; flex:none; translate:none; }
   .flare-solo.cosmic-icon-badge.cosmic-badge-rank.is-empty{ border-style:dashed; }
@@ -19838,7 +19838,14 @@
   .pf-goal-tx{ display:flex; flex-direction:column; gap:.12rem; min-width:0; }
   .pf-goal-name{ font-family:var(--serif); font-size:1.65rem; font-weight:700; line-height:1.05; color:color-mix(in srgb, var(--nx) 62%, #fff); }
   .pf-goal-sub{ font-size:.82rem; font-weight:700; color:rgba(255,255,255,.62); }
-  .pf-tasks{ display:grid; gap:.6rem; margin:.9rem 0 0; }
+  .pf-tasks{ display:grid; gap:.6rem; margin:.55rem 0 0; }
+  /* "Rank challenges", the same kicker and gap as "<Rank> unlocks" */
+  .pf-tasks-kick{ margin-top:1rem; }
+  .pf-tasks-none{ display:block; margin-top:.55rem; padding:.75rem .8rem; border-radius:.9rem;
+    font-size:.82rem; font-weight:600; line-height:1.4; color:rgba(255,255,255,.62);
+    background:rgba(255,255,255,.045); border:1px dashed rgba(255,255,255,.14); }
+  .pf-tasks-none > b{ display:block; margin-bottom:.15rem; font-size:.95rem; font-weight:800; color:var(--ink); }
+  .pf-tasks-none > span{ display:block; }
   .pf-task{ display:grid; grid-template-columns:1.45rem 1fr auto; column-gap:.65rem; row-gap:.45rem; align-items:center;
     padding:.75rem .8rem .8rem; border-radius:.9rem; background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.07); }
   .pf-check{ width:1.3rem; height:1.3rem; box-sizing:border-box; border-radius:50%; border:2px solid rgba(255,255,255,.28);
@@ -19951,9 +19958,13 @@
     border:1px solid color-mix(in srgb, var(--case-tint) 34%, rgba(255,255,255,.08)); }
   .pf-case:active{ filter:brightness(1.08); }
   .pf-case-head{ position:relative; display:flex; justify-content:space-between; align-items:center; margin-bottom:.65rem; }
-  .pf-case-count{ font-size:.88rem; font-weight:800; color:rgba(255,255,255,.8); font-variant-numeric:tabular-nums; }
-  .pf-case-head .pf-kick{ display:inline-flex; align-items:center; gap:.45rem; }
-  .pf-case-head .pf-kick > .new-dot{ position:relative; top:auto; right:auto; }
+  .pf-case-count{ display:inline-flex; align-items:center; font-size:.88rem; font-weight:800; color:rgba(255,255,255,.8); font-variant-numeric:tabular-nums; }
+  .pf-case-arrow{ margin-left:.35rem; font-size:1.15em; line-height:1; }
+  /* "New" and the dot, against the arrow - see buildProfileCase */
+  .pf-case-new{ display:inline-flex; align-items:center; gap:.3rem; margin-left:.6rem; }
+  .pf-case-new-word{ font-size:.66rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--new-dot); }
+  .pf-case-new > .new-dot{ position:relative; top:auto; right:auto; }
+  .pf-case-new + .pf-case-arrow{ margin-left:.3rem; }
   .pf-strip.badge-strip{ display:grid; grid-template-columns:repeat(8, minmax(0, 1fr)); gap:.35rem; }
   .pf-strip.badge-strip .badge-strip-cell{ width:auto; height:auto; aspect-ratio:1; display:block; margin:0; }
   .pf-strip.badge-strip .badge-strip-cell svg{ display:block; width:100%; height:100%; }
@@ -62470,10 +62481,10 @@ const PROFILE_TIPS_289 = [
     text: "Customize changes your name, your character, your banner and the app\u2019s colour. More of each unlock as you climb the ranks and finish challenges." },
   { target: ".profile-hero .pf-standing", align: "left", vplacement: "below",
     text: "Your rank and your level. XP fills the bar; your badges decide how high your level can go." },
-  { target: ".profile-hero .pf-goal", align: "left", vplacement: "above",
-    text: "What your next rank needs, ticked off as you get there, and what it unlocks. Tap to see every rank." },
   { target: ".profile-hero .pf-case", align: "left", vplacement: "above",
-    text: "Your badges \u2014 one per unit, earned with enough hundos (100% on the whole unit) in it. Tap to open your badge case and see how close each one is." }
+    text: "Your badges \u2014 one per unit, earned with enough hundos (100% on the whole unit) in it. Tap to open your badge case and see how close each one is." },
+  { target: ".profile-hero .pf-goal", align: "left", vplacement: "above",
+    text: "The rank challenges for your next rank, ticked off as you get there, and what it unlocks. Tap to see every rank." }
 ];
 
 function startSimpleTour(steps, onComplete, _waitedMs){
@@ -92858,8 +92869,12 @@ function buildRankRewardTiles(key){
     row.appendChild(t);
     return t;
   };
-  tile(buildThemeDot(key), "Theme", "is-theme");
+  /* THE FLARE FIRST (build 317, round two): "I feel like the flare and
+     the theme unlock box thing in profile should swap". The flare is the
+     rank's own mark - what reaching it lights on Home - so it leads, and
+     the theme's flat disc sits between the two ringed pieces. */
   tile(buildFlareBubble(key, { lit: true, bounce: true }), "Flare", "is-flare");
+  tile(buildThemeDot(key), "Theme", "is-theme");
   const ch = AVATAR_CHARACTERS.find(c => c.unlock === key && !c.retired);
   if(ch){
     const holder = document.createElement("span");
@@ -93063,6 +93078,21 @@ function buildProfileGoal(prog){
     const nm = document.createElement("span"); nm.className = "pf-goal-name"; nm.textContent = RANK_DISPLAY_NAME.titan;
     const sub = document.createElement("span"); sub.className = "pf-goal-sub"; sub.textContent = "Every rank reached";
     tx.append(k, nm, sub); h.append(emb, tx); box.appendChild(h);
+    /* THE TOP SAYS SO UNDER THE SAME HEADING (build 317): "Supernova
+       would need to say no rank challenges available, max rank reached,
+       come back for more or something" */
+    const ck = document.createElement("span");
+    ck.className = "pf-kick pf-tasks-kick"; ck.textContent = "Rank challenges";
+    const none = document.createElement("span");
+    none.className = "pf-tasks-none";
+    const n1 = document.createElement("b"); n1.textContent = "No rank challenges left.";
+    const n2 = document.createElement("span"); n2.textContent = "You have reached the max rank. Check back for more.";
+    none.append(n1, " ", n2);
+    box.append(ck, none);
+    const foot = document.createElement("span");
+    foot.className = "pf-goal-foot"; foot.textContent = "See every rank ›";
+    box.appendChild(foot);
+    box.setAttribute("aria-label", "Max rank, " + RANK_DISPLAY_NAME.titan + ". No rank challenges left. Open the Rank screen.");
     box.addEventListener("click", () => showRanksScreen("ranks"));
     return box;
   }
@@ -93084,6 +93114,12 @@ function buildProfileGoal(prog){
   tx.append(k, nm, sub);
   head.append(emb, tx);
   box.appendChild(head);
+  /* "nothing there mentions rank challenges but it should for clarity"
+     (build 317): the rows are headed the way the tiles are ("Gold
+     unlocks"), so the card reads the rank, its challenges, its rewards */
+  const ck = document.createElement("span");
+  ck.className = "pf-kick pf-tasks-kick"; ck.textContent = "Rank challenges";
+  box.appendChild(ck);
   const tasks = document.createElement("span");
   tasks.className = "pf-tasks";
   const lv = rc.list.find(c => c.kind === "level"), bd = rc.list.find(c => c.kind === "badges");
@@ -93101,10 +93137,14 @@ function buildProfileGoal(prog){
      call it saved. */
   const atWall = !prog.atCap && (prog.stopped || prog.held);
   /* ONE SHORT LINE (build 317): "could be simpler ... sounds redundant to
-     what's underneath the xp bar ... needs to be less wordy" - the line
-     under the bar says what opens the levels; this one only says where
-     the XP goes, in the words asked for. */
-  const lvNote = !atWall ? null : "Your XP from here goes toward the next levels you unlock.";
+     what's underneath the xp bar ... needs to be less wordy". Round two:
+     "the description under the level challenge, I'm not in love with it.
+     I like it but could be better." The line under the bar already says
+     where the XP goes, so this one says what the level means for the
+     rank: this half is done, the badge challenge is what is left. Still
+     no badge count (316), and away from a wall still no note. */
+  const lvNote = !atWall ? null
+    : (bd && !bd.met ? "Done. Finish the badge challenge to reach " + rc.name + "." : "Done.");
   const rows = [
     lv ? buildProfileTask(lv, "#6FC2FF", lvNote) : null,
     bd ? buildProfileTask(bd, "#E3C77A", closest ? "Closest: " + closest.unit + " (" + closest.done + "/" + closest.need + " hundos)" : null) : null
@@ -93133,16 +93173,34 @@ function buildProfileCase(have, total){
   head.className = "pf-case-head";
   const k = document.createElement("span");
   k.className = "pf-kick"; k.textContent = "Badge case";
+  /* THE NEW-BADGE DOT SITS BESIDE THE ARROW (build 317, round two). On
+     the arrow it hid it ("you can't see the arrow"); after the words
+     "Badge case" it sat in a row of gold badges and "blends in with the
+     badges now and it doesn't look like a notification thing, should be
+     near the arrow still somehow". So the count and its arrow are two
+     spans, and a new badge puts the word "New" and the dot between them,
+     right up against the arrow: a notification that says where to tap. */
   const n = document.createElement("span");
-  n.className = "pf-case-count"; n.textContent = have + " of " + total + " ›";
+  n.className = "pf-case-count";
+  const num = document.createElement("span");
+  num.className = "pf-case-num"; num.textContent = have + " of " + total;
+  const arrow = document.createElement("span");
+  arrow.className = "pf-case-arrow"; arrow.setAttribute("aria-hidden", "true"); arrow.textContent = "›";
+  n.append(num, arrow);
   head.append(k, n);
-  /* the dot sits after the words, not on the count's arrow (build 317):
-     "the placement is bad because you can't see the arrow" */
   box.appendChild(head);
   try{ box.appendChild(buildBadgeStrip("pf-strip")); }catch(e){}
   let fresh = 0;
   try{ fresh = badgeNewCount(); }catch(e){}
-  if(fresh){ box.classList.add("has-new"); k.appendChild(buildNewDot()); }
+  if(fresh){
+    box.classList.add("has-new");
+    const tag = document.createElement("span");
+    tag.className = "pf-case-new";
+    const word = document.createElement("span");
+    word.className = "pf-case-new-word"; word.textContent = "New";
+    tag.append(word, buildNewDot());
+    n.insertBefore(tag, arrow);
+  }
   box.setAttribute("aria-label", "Badge case, " + have + " of " + total + " earned" + (fresh ? ", " + fresh + " new" : "") + ". Open the badge case.");
   box.addEventListener("click", () => showRanksScreen("badges"));
   return box;
@@ -93543,8 +93601,12 @@ function showProfile(defaultTab){
   const standing = buildProfileStanding(prog, rankNow);
   const xpFill = standing.querySelector(".xpbar-fill");
   heroSect.appendChild(standing);
-  heroSect.appendChild(buildProfileGoal(prog));
+  /* WHAT YOU ARE, WHAT YOU HAVE, WHAT'S NEXT (build 317): the case sits
+     above the Next rank card - "I feel like it being at the bottom is
+     weird". Identity and level, then the badges you hold, then the
+     challenges ahead. */
   heroSect.appendChild(buildProfileCase(badgeCount, totalUnitsForBadges));
+  heroSect.appendChild(buildProfileGoal(prog));
   /* The class no longer rides at the foot of the identity card. It was
      one line there because it was one line of content; now that it is
      today's schedule, the next class day and a count, it is its own box
