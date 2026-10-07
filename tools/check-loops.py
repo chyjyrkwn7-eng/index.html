@@ -14,6 +14,7 @@ that differs fails until it is either fixed or added there with a reason.
 import re, sys
 SRC = sys.argv[1] if len(sys.argv) > 1 else __file__.rsplit("/tools/", 1)[0] + "/index.html"
 KNOWN = {
+    "ru-tab-ring": "a ripple, invisible at both ends of its cycle - it grows and fades, then the next one fades in",
     "avatar-scan": "a visor sweep that rests, then restarts under the mask",
     "bnr-grid": "shifted by exactly one 16px grid cell",
     "bnr-holo": "shifted by whole periods of a 300% background",

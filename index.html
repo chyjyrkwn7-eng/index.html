@@ -14620,7 +14620,8 @@
   }
   #bottomtab-profile.ru-call .bottomtab-icon{ animation:ru-tab-bob 1.7s ease-in-out infinite; }
   #bottomtab-profile.ru-call .bottomtab-label{ color:color-mix(in srgb, var(--ru-color, var(--accent)) 55%, #fff); }
-  @keyframes ru-tab-ring{ 0%{ transform:scale(.92); opacity:1; } 65%{ opacity:.15; } 100%{ transform:scale(1.22); opacity:0; } }
+  /* a ripple: invisible at both ends, so each new ring fades in rather than popping on (check-loops) */
+  @keyframes ru-tab-ring{ 0%{ transform:scale(.92); opacity:0; } 12%{ opacity:1; } 65%{ opacity:.15; } 100%{ transform:scale(1.22); opacity:0; } }
   @keyframes ru-tab-bob{ 0%, 44%, 100%{ transform:scale(1); } 14%{ transform:scale(1.16); } 28%{ transform:scale(.97); } }
   /* Reduce motion: a ring that stays lit instead of one that rings. The
      in-app rule is `*`, which never matches a pseudo-element. */
