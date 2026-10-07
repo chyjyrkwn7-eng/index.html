@@ -11460,20 +11460,32 @@
   .tier-cutscene .rank-orbit-slot > .cosmic-icon-badge.cosmic-badge-rank{
     width:var(--flare-size, min(2.9rem, 10.7cqw)); height:var(--flare-size, min(2.9rem, 10.7cqw)); }
   /* The whirl is a Web Animation of `transform` (playRankUpScene), which
-     composes with the slow `rotate` orbit about the same origin. While
-     the bubbles orbit in a scene they carry NO backdrop blur: a blur
-     behind a moving element is re-sampled every frame, the costliest
-     thing there is (build 230's rule for Home), and at full speed it was
-     the lag. The lit glass reads the same over the scene's dark. */
+     composes with the slow `rotate` orbit about the same origin. The
+     bubbles KEEP their glass (build 317, third round): the secret flares
+     turn under them and are seen through it, blurred and tinted, exactly
+     as on Home (build 313's "under the glass") - a blur that costs no
+     more per frame here than Home's own moving bubbles. */
   .tier-cutscene .rank-orbit, .tier-cutscene .rank-orbit-slot{ will-change:transform; }
-  .tier-cutscene .rank-orbit-slot > .cosmic-icon-badge.cosmic-badge-rank{
-    -webkit-backdrop-filter:none !important; backdrop-filter:none !important; }
   /* The light from the middle at the top speed: a lit copy over the dark
      bubble, its clip opening from a point to past its halo. */
   .rank-orbit-slot > .rank-litwipe{ position:absolute; left:0; top:0; z-index:1; pointer-events:none;
-    clip-path:circle(0% at 50% 50%); opacity:.6;
-    transition:clip-path var(--cutlight-ms, .42s) cubic-bezier(.3,.6,.35,1), opacity var(--cutlight-ms, .42s) ease-out; }
+    clip-path:circle(0% at 50% 50%); opacity:.85;
+    transition:clip-path var(--cutlight-ms, .14s) cubic-bezier(.2,.7,.3,1), opacity var(--cutlight-ms, .14s) linear; }
   .rank-orbit-slot > .rank-litwipe.is-open{ clip-path:circle(160% at 50% 50%); opacity:1; }
+  /* THE POP AS IT LIGHTS (build 317, third round): "when the change
+     happens to the flare color, ensure it's moving faster and make it
+     cooler like maybe it gets a quick flash". A white-hot core and a ring
+     in the rank's colour bursting off the bubble, 220ms, transform and
+     opacity only, no filter. */
+  .rank-litpop{ position:absolute; inset:0; z-index:3; pointer-events:none; border-radius:50%; }
+  .rank-litpop::before, .rank-litpop::after{ content:""; position:absolute; inset:0; border-radius:50%; opacity:0; }
+  .rank-litpop::before{ background:radial-gradient(circle, #fff 0 22%, color-mix(in srgb, var(--ignite, #fff) 70%, #fff) 40%, transparent 70%);
+    animation:rank-litpop-core .22s cubic-bezier(.2,.8,.3,1) both; }
+  .rank-litpop::after{ border:3px solid color-mix(in srgb, var(--ignite, #fff) 75%, #fff);
+    box-shadow:0 0 10px 2px color-mix(in srgb, var(--ignite, #fff) 70%, transparent);
+    animation:rank-litpop-ring .24s cubic-bezier(.15,.7,.3,1) both; }
+  @keyframes rank-litpop-core{ 0%{ opacity:0; transform:scale(.4); } 30%{ opacity:1; transform:scale(1.5); } 100%{ opacity:0; transform:scale(2.2); } }
+  @keyframes rank-litpop-ring{ 0%{ opacity:1; transform:scale(.7); } 100%{ opacity:0; transform:scale(2.6); } }
   /* the pool of colour floods in with it, and only breathes once lit */
   .tier-cutscene .rank-before .rank-orbit-slot.is-igniting::before{
     transition:opacity var(--cutlight-ms, .42s) ease-out, transform calc(var(--cutlight-ms, .42s) * 2) cubic-bezier(.2,.8,.2,1);
@@ -11489,8 +11501,8 @@
   /* The new planet's flares stay in view after the burst; the old one's
      dissolve into it. */
   #supernova-cutscene.tier-cutscene.supernova-burst .rank-after .cosmic-icon-badge{ opacity:1; }
-  /* Found secret flares, bigger and lit, so they read in the scene. */
-  .tier-cutscene .cosmic-orbit-dot-found{ scale:1.8; }
+  /* The secret flares are Home's size (build 317, third round) - the
+     bubbles are, and a found one at 1.8x stood out of proportion. */
   /* The end: no words, the dark stays, every flare in view. */
   #supernova-cutscene.tier-cutscene.rank-outro .supernova-title,
   #supernova-cutscene.tier-cutscene.rank-outro .supernova-subtitle,
@@ -64378,7 +64390,7 @@ const RANK_ORBIT_MS = 30000;
 const RANK_CUTSPIN_TURNS = 10;
 /* build 317, second round: faster and faster for 4.5s, lit at the top
    speed, slowing for 2s, still for half a second, then the flash */
-const RANK_CUTSPIN_ACCEL_MS = 4500, RANK_CUTSPIN_DECEL_MS = 2000, RANK_CUTSPIN_PAUSE_MS = 500, RANK_CUTLIGHT_MS = 420;
+const RANK_CUTSPIN_ACCEL_MS = 4500, RANK_CUTSPIN_DECEL_MS = 2000, RANK_CUTSPIN_PAUSE_MS = 500, RANK_CUTLIGHT_MS = 140, RANK_CUTLIGHT_LEAD_MS = 120;
 function rankOrbitFlares(hero){
   if(!hero) return null;
   const orbit = document.createElement("div");
@@ -64644,7 +64656,11 @@ function playRankUpScene(tierKey, opts, spec){
       slot.appendChild(litWipe);
       void litWipe.offsetWidth;
       litWipe.classList.add("is-open");
-      setTimeout(lightFully, RANK_CUTLIGHT_MS + 60);
+      const pop = document.createElement("span");
+      pop.className = "rank-litpop"; pop.setAttribute("aria-hidden", "true");
+      slot.appendChild(pop);
+      setTimeout(() => pop.remove(), 400);
+      setTimeout(lightFully, RANK_CUTLIGHT_MS + 40);
     } else lightFully();
   };
   /* After the spin has STOPPED: the half-second, the flash, and the rest,
@@ -64700,13 +64716,26 @@ function playRankUpScene(tierKey, opts, spec){
       spins.push(o.animate(kf(1), opts2));
       o.querySelectorAll(":scope > .rank-orbit-slot").forEach(sl => spins.push(sl.animate(kf(-1), opts2)));
     });
+    /* THE SECRET FLARES WHIRL TOO (build 317, third round): their two
+       rings ride the same curve on the individual `rotate` property, so
+       their own slow `transform` spin carries on underneath untouched and
+       they stop, on whole turns, where they would have been. */
+    const rkf = [
+      { rotate: "0deg", easing: "cubic-bezier(.333,0,.667,.333)" },
+      { rotate: PEAK_DEG.toFixed(2) + "deg", offset: PEAK_AT, easing: "cubic-bezier(.333,.667,.667,1)" },
+      { rotate: TURNS + "deg" }];
+    [heroBefore, heroAfter].forEach(h => {
+      if(h) h.querySelectorAll(":scope > .cosmic-hero-orbitlayer").forEach(l => spins.push(l.animate(rkf, opts2)));
+    });
     /* one instant for every layer, so the carriers and their slots can
        never drift apart by a frame */
     const t0 = document.timeline.currentTime;
     spins.forEach(an => { an.startTime = t0; });
     const lead = spins[0];
     if(lead){
-      setTimeout(ignitePeak, ACC);
+      /* a beat before the very top, so the snap and its pop land while
+         the whirl is still at full speed */
+      setTimeout(ignitePeak, Math.max(0, ACC - RANK_CUTLIGHT_LEAD_MS));
       lead.finished.then(afterRest, afterRest);
     }
   });

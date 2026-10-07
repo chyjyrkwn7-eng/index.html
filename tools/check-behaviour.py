@@ -13129,7 +13129,9 @@ CUTSPIN_RUN = """async (tier) => { const wait = ms => new Promise(r => setTimeou
     const b = ov.querySelector('.rank-before .cosmic-icon-badge[data-rank-tier="' + tier + '"]:not(.rank-litwipe)');
     const m = ov.querySelector('.rank-before .cosmic-hero-main');
     const cp = wipe ? getComputedStyle(wipe).clipPath : '';
+    const fl = ov.querySelector('.rank-before .cosmic-hero-orbitlayer');
     samples.push({ ign: ov.classList.contains('is-igniting'), t: performance.now(), light: ov.classList.contains('is-cutlight'),
+      flRot: fl ? getComputedStyle(fl).rotate : null,
       orbT: orb ? getComputedStyle(orb).transform : null,
       slotT: slot ? getComputedStyle(slot).transform : null,
       wipeR: wipe ? parseFloat((cp.match(/circle\\(([\\d.]+)%/) || [, 'NaN'])[1]) : null,
@@ -13137,6 +13139,18 @@ CUTSPIN_RUN = """async (tier) => { const wait = ms => new Promise(r => setTimeou
       ratio: b && m ? b.getBoundingClientRect().width / m.getBoundingClientRect().width : null });
     await wait(90);
   }
+  /* the secret flares: in the scene, painted under the glass bubbles (an
+     earlier sibling of the bubbles' carrier, which stacks above), the
+     bubbles still glass (a backdrop blur to see them through) */
+  const shw = ov.querySelector('.rank-before .cosmic-hero-wrap') || ov.querySelector('.rank-before');
+  const kids = shw ? [...shw.children] : [];
+  const ro = shw && shw.querySelector(':scope > .rank-orbit');
+  const layers = shw ? [...shw.querySelectorAll(':scope > .cosmic-hero-orbitlayer')] : [];
+  const glass = ov.querySelector('.rank-before .rank-orbit-slot > .cosmic-icon-badge.cosmic-badge-rank:not(.cosmic-badge-lit)');
+  ev.secret = { dots: shw ? shw.querySelectorAll('.cosmic-flare-dot').length : 0,
+    under: !!ro && layers.length > 0 && layers.every(l => kids.indexOf(l) < kids.indexOf(ro)
+      && (parseInt(getComputedStyle(l).zIndex) || 0) < (parseInt(getComputedStyle(ro).zIndex) || 0)),
+    glass: glass ? getComputedStyle(glass).backdropFilter : null };
   /* a loaded machine can start the transition late: give it time to end */
   for(let k = 0; k < 60 && ev.burstAt == null && ov.isConnected; k++) await wait(100);
   ov.remove();
@@ -13189,6 +13203,11 @@ def check_b317_cutspin(br):
         pause = (ev["burstAt"] or 0) - (ev["restAt"] or 0)
         check("%s: it slows for ~2s, then holds still ~0.5s before the flash" % label,
               dec >= 1500 and 420 <= pause <= 1500, (round(dec), round(pause)))
+        sec = ev.get("secret") or {}
+        check("%s: the secret flares are in the scene, under the glass bubbles, seen through them" % label,
+              sec.get("dots", 0) >= 3 and sec.get("under") and sec.get("glass") not in (None, "none"), sec)
+        flr = {x["flRot"] for x in sm if x.get("flRot") not in (None, "none", "0deg")}
+        check("%s: and they whirl with the bubbles" % label, len(flr) >= 3, len(flr))
         ratios = [x["ratio"] for x in sm if x["ratio"]]
         worst = max(ratios, key=lambda v: abs(v - (r["home"] or 1))) if ratios else None
         check("%s: the flare is Home's size against the planet (within 15%%)" % label,
