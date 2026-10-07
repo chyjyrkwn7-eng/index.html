@@ -14992,11 +14992,17 @@ disagree with it.
     since build 302. `.cosmic-orbit-ring-eclipse` and NOT the orange
     class. Every secret flare without Supernova is plain - tier two
     needs both.
-  - The black is a near-black body (`#050409`, 3.4 wide) whose light is
-    on its edges: a hairline rim either side in a per-hero gradient
-    (`depthId + "eclipse"`, bright violet-white at the upper left, the
-    system's one light, falling to cold violet), a stacked-stroke dark
-    shadow under it and a faint violet haze outside it. Every piece is a
+  - The black is a near-black body whose light is on its edges. Round
+    one (3.4 wide, a hairline rim fading to .42, one faint haze) came
+    back *"I can't see the black ones ... could be better"*: on the dark
+    sky a dim rim is no rim. Now: `#030207` at 5.2 wide, a rim either
+    side at 1.15/.85 in a per-hero gradient (`depthId + "eclipse"`,
+    white at the upper left - the system's one light - to icy cyan,
+    never below .78), a stacked-stroke dark shadow under it, and a
+    CORONA - three soft strokes of violet/blue light off the black,
+    outside and in. Dark core plus halo is what reads as an eclipse.
+    **A dark ring is seen by its light, so the light has to be strong
+    and continuous.** Every piece is a
     plain stroke - **no filter at all**, so iOS paints what Chromium
     does. Static, like the orange tier (the orange rings never moved),
     so Reduce motion has nothing to stop; the rings live in the static

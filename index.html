@@ -11165,19 +11165,27 @@
      a soft dark shadow round it built from stacked strokes. No filter
      of any kind - every piece is a plain stroke, so iOS draws exactly
      what Chromium does. Static, like the orange tier. */
+  /* ROUND TWO: "I can't see the black ones ... could be better". A
+     wider black band (5.2), a rim twice as bright that never fades
+     below .78 anywhere round the ring (white at the upper left to an
+     icy cyan), and a corona - three soft strokes of violet and blue
+     light coming off the black, outside and in - so it is a dark core
+     with a halo: an eclipse, readable at a glance on the dark sky. */
   .cosmic-orbit-ring.cosmic-orbit-ring-eclipse{
-    stroke:#050409; stroke-width:3.4;
+    stroke:#030207; stroke-width:5.2;
   }
   .cosmic-orbit-eclipse-shade{
-    fill:none; stroke:rgba(2,1,6,.36); stroke-width:12;
+    fill:none; stroke:rgba(2,1,6,.42); stroke-width:13;
   }
   .cosmic-orbit-eclipse-haze{
-    fill:none; stroke:rgba(150,124,255,.10); stroke-width:3;
+    fill:none; stroke:rgba(168,140,255,.26); stroke-width:3.4;
   }
+  .cosmic-orbit-eclipse-haze.is-far{ stroke:rgba(120,190,255,.10); stroke-width:6; }
+  .cosmic-orbit-eclipse-haze.is-in{ stroke:rgba(168,140,255,.14); stroke-width:3; }
   /* the stroke itself is this copy's rim gradient, set inline */
-  .cosmic-orbit-eclipse-rim{ fill:none; stroke:rgba(226,218,255,.78); }
-  .cosmic-orbit-eclipse-rim.is-outer{ stroke-width:.8; opacity:1; }
-  .cosmic-orbit-eclipse-rim.is-inner{ stroke-width:.6; opacity:.6; }
+  .cosmic-orbit-eclipse-rim{ fill:none; stroke:rgba(226,218,255,.85); }
+  .cosmic-orbit-eclipse-rim.is-outer{ stroke-width:1.15; opacity:1; }
+  .cosmic-orbit-eclipse-rim.is-inner{ stroke-width:.85; opacity:.8; }
   .cosmic-sphere-glow{ fill:var(--theme-c2); opacity:.4; }
   /* ---------- Supernova cutscene ---------- */
   /* THE END-OF-MATCH CUTSCENE. Asked for directly - "a 5 second
@@ -62312,7 +62320,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
         const eg = document.createElementNS(svgNS, "linearGradient");
         eg.setAttribute("id", rimId);
         eg.setAttribute("x1", "0.12"); eg.setAttribute("y1", "0"); eg.setAttribute("x2", "0.88"); eg.setAttribute("y2", "1");
-        [["0%", "#F4F0FF", ".95"], ["45%", "#C9BCFF", ".62"], ["100%", "#8E78F0", ".42"]].forEach(([o, c, a]) => {
+        [["0%", "#FFFFFF", "1"], ["45%", "#D2C4FF", ".9"], ["100%", "#86D8FF", ".78"]].forEach(([o, c, a]) => {
           const st = document.createElementNS(svgNS, "stop");
           st.setAttribute("offset", o); st.setAttribute("stop-color", c); st.setAttribute("stop-opacity", a);
           eg.appendChild(st);
@@ -62325,10 +62333,13 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
         c.setAttribute("class", cls);
         return c;
       };
-      svg.appendChild(piece(r + 3.4, "cosmic-orbit-eclipse-haze"));
+      /* the corona: light coming off the black, outside and in */
+      svg.appendChild(piece(r + 7, "cosmic-orbit-eclipse-haze is-far"));
+      svg.appendChild(piece(r + 4.6, "cosmic-orbit-eclipse-haze"));
+      svg.appendChild(piece(r - 4.6, "cosmic-orbit-eclipse-haze is-in"));
       svg.appendChild(piece(r, "cosmic-orbit-eclipse-shade"));
       svg.appendChild(ring);
-      [r - 1.9, r + 1.9].forEach((rr, i) => {
+      [r - 2.7, r + 2.7].forEach((rr, i) => {
         const rim = piece(rr, "cosmic-orbit-eclipse-rim" + (i ? " is-outer" : " is-inner"));
         rim.style.stroke = "url(#" + rimId + ")";
         svg.appendChild(rim);
