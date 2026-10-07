@@ -14390,6 +14390,10 @@
   .rankmap-giftav{ width:1.2rem; height:1.2rem; display:grid; place-items:center; }
   /* the flare's bubble and the theme's swatch in a chip (build 315) */
   .rankmap-gift.is-flare .rankmap-giftico, .rankmap-gift.is-theme .rankmap-giftico{ width:1.6rem; height:1.6rem; }
+  /* every chip on a card one height: the bubble's 1.6rem box plus the
+     chip's padding and border, so the character and banner chips match
+     the flare and theme ones rather than sitting 4px shorter */
+  .rankmap-gift{ min-height:calc(1.6rem + .4rem + 2px); }
   .rankmap-giftav.rankmap-giftbubble{ width:1.55rem; height:1.55rem; }
   .rankmap-giftbubble .flare-solo.cosmic-icon-badge.cosmic-badge-rank{ width:1.55rem; height:1.55rem; }
   .rankmap-giftbubble .flare-solo svg{ width:100%; height:100%; }

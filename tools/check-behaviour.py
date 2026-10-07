@@ -4900,7 +4900,9 @@ def check_b250(br):
       const e = buildRankEmblemSVG('elite');
       out.hole = [...e.querySelectorAll('path')].some(p => p.getAttribute('fill') === '#030208') && !!e.querySelector('.rk-flare');
       const t = buildRankEmblemSVG('titan');
-      const dark = [...t.querySelectorAll('path')].filter(p => p.getAttribute('fill') === '#000000');
+      /* the heart, not the shards build 314 throws out of it (rk-nova-frag,
+         check_b314_nova): eleven black triangles on purpose */
+      const dark = [...t.querySelectorAll('path')].filter(p => p.getAttribute('fill') === '#000000' && !p.closest('.rk-nova-frag'));
       /* dark, but not a disc: an 8-point star is 8 curves, a circle 2-4 arcs */
       out.darkStar = dark.length > 0 && dark.every(p => (p.getAttribute('d') || '').split(/[MLQAZ]/i).length > 7);
       const html = id => buildBannerArt(id).innerHTML;
