@@ -19774,7 +19774,11 @@
     box-shadow:0 0 10px color-mix(in srgb, var(--tc) 45%, transparent); }
   .pf-task-note{ grid-column:2 / 4; font-size:.8rem; line-height:1.35; color:rgba(255,255,255,.62); }
   .pf-rewards-kick{ margin-top:1rem; }
-  .pf-rewards{ display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0, 1fr); gap:.5rem; margin-top:.55rem; }
+  .pf-rewards{ display:flex; gap:.5rem; margin-top:.55rem; }
+  .pf-rewards > .pf-rw{ flex:1 1 0; }
+  /* the banner's tile is half as wide again, so a banner keeps its size
+     on a narrow phone instead of shrinking to fit a circle's tile */
+  .pf-rewards > .pf-rw.is-banner{ flex-grow:1.5; }
   .pf-rw{ position:relative; display:flex; flex-direction:column; align-items:center; gap:.4rem; min-width:0;
     padding:.65rem .2rem .55rem; border-radius:.85rem; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06); }
   .pf-rw-art{ width:2.9rem; height:2.9rem; display:grid; place-items:center; }
@@ -19806,7 +19810,15 @@
     0%, 100%{ transform:translate(0, -50%); }
     50%{ transform:translate(-54.5455%, -50%); }
   }
-  .pf-rw .flare-solo{ width:2.7rem; height:2.7rem; }
+  /* ONE SIZE FOR EVERY UNLOCK (build 316): "The size of the themed circle
+     in the profile box unlocks is perfect ... all three (or 4 because there
+     will be a banner one) would need to be the same size in totality". The
+     theme's circle is 2.2rem, so the flare's bubble and the character are
+     2.2rem across too (they were 2.7 and 2.9, which is why the row read as
+     three sizes). The banner is a banner - 8 by 3, its own proportions -
+     sized so its box covers what a circle's box covers, and moving: rank
+     banners are animated ones (BANNER_ANIMATED). */
+  .pf-rw .flare-solo{ width:2.2rem; height:2.2rem; }
   /* LEVEL WITH ITS NEIGHBOURS (build 316). Home's float only ever lifts
      a bubble (0 to -8px and back), so in a tile it spent its life above
      the theme and the character beside it - "it looks a smidge higher
@@ -19819,7 +19831,7 @@
   @keyframes pf-float{ 0%, 100%{ transform:translateY(2.5px); } 50%{ transform:translateY(-2.5px); } }
   /* the character that is waiting to be unlocked: it leans in and taps
      the glass twice, every five seconds */
-  .pf-rw-char{ position:relative; display:block; width:2.9rem; height:2.9rem; border-radius:50%; }
+  .pf-rw-char{ position:relative; display:block; width:2.2rem; height:2.2rem; border-radius:50%; }
   .pf-rw-char .rank-avatar{ display:block; width:100%; height:100%; border-radius:50%; overflow:hidden; transform-origin:50% 85%; }
   .pf-rw-char .rank-avatar svg{ display:block; width:100%; height:100%; }
   .pf-rw-char::after{ content:""; position:absolute; inset:-3px; border-radius:50%; pointer-events:none; opacity:0;
@@ -19833,12 +19845,25 @@
   @keyframes pf-knock{ 0%, 60%{ opacity:0; transform:scale(.92); } 63%{ opacity:.85; transform:scale(1); }
     68%{ opacity:0; transform:scale(1.16); } 71%{ opacity:.85; transform:scale(1); } 78%{ opacity:0; transform:scale(1.2); } 100%{ opacity:0; transform:scale(.92); } }
   [data-reduce-motion="true"] .pf-rw-char .rank-avatar, [data-reduce-motion="true"] .pf-rw-char::after{ animation:none !important; }
-  .pf-rw-banner{ display:block; width:2.9rem; height:2.9rem; border-radius:.55rem; overflow:hidden; }
+  .pf-rw.is-banner .pf-rw-art{ width:100%; }
+  .pf-rw-banner{ position:relative; display:block; width:min(100%, 3.6rem); height:auto; aspect-ratio:8 / 3; border-radius:.4rem;
+    overflow:hidden; box-shadow:0 0 0 1px rgba(255,255,255,.22), 0 4px 10px -4px rgba(0,0,0,.65); }
   .pf-rw-banner > *{ width:100% !important; height:100% !important; }
+  /* a little glass over the top edge, the way the theme dot has its sheen */
+  .pf-rw-banner::after{ content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+    background:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,0) 48%); }
   .pf-goal-foot{ display:block; margin:.9rem 0 0; text-align:center; font-size:.85rem; font-weight:800; color:color-mix(in srgb, var(--nx) 60%, #fff); }
   /* the badge case */
-  .pf-case{ margin:.8rem 0 0; padding:.85rem 1rem .95rem; border-radius:1.1rem; background:rgba(0,0,0,.26); border:1px solid rgba(255,255,255,.08); }
-  .pf-case:active{ background:rgba(255,255,255,.05); }
+  /* THE CASE HAS THE NEXT RANK CARD'S FLOW (build 316): "should the
+     outline of that have a flow similar to the rank one does not color
+     matching the rank but something so that entire box of stuff is
+     cohesive". The same diagonal light and tinted edge as .pf-goal, in the
+     silver the badges are set in (the slot lining's family) rather than a
+     rank's colour, so it sits with any rank card above it. */
+  .pf-case{ --case-tint:#AEBBCB; margin:.8rem 0 0; padding:.85rem 1rem .95rem; border-radius:1.1rem;
+    background:linear-gradient(160deg, color-mix(in srgb, var(--case-tint) 14%, rgba(0,0,0,.3)), rgba(0,0,0,.34) 58%);
+    border:1px solid color-mix(in srgb, var(--case-tint) 34%, rgba(255,255,255,.08)); }
+  .pf-case:active{ filter:brightness(1.08); }
   .pf-case-head{ position:relative; display:flex; justify-content:space-between; align-items:center; margin-bottom:.65rem; }
   .pf-case-count{ font-size:.88rem; font-weight:800; color:rgba(255,255,255,.8); font-variant-numeric:tabular-nums; }
   .pf-case-head .new-dot{ position:absolute; right:-.4rem; top:-.35rem; }
@@ -19852,8 +19877,9 @@
     .pf-xpnums{ font-size:.92rem; }
     .pf-goal-emb{ width:4.4rem; height:4.4rem; }
     .pf-goal-name{ font-size:2.05rem; }
-    .pf-rw-art, .pf-rw-char, .pf-rw-banner{ width:3.4rem; height:3.4rem; }
-    .pf-rw .flare-solo{ width:3.2rem; height:3.2rem; }
+    .pf-rw-art{ width:3.4rem; height:3.4rem; }
+    .pf-rw-char, .pf-rw .flare-solo{ width:2.7rem; height:2.7rem; }
+    .pf-rw-banner{ width:min(100%, 4.4rem); }
     .pf-swatch.swatch{ width:3.1rem; height:3.1rem; }
     .pf-swatch.swatch .dot{ width:2.7rem; height:2.7rem; }
     .pf-strip.badge-strip{ grid-template-columns:repeat(16, minmax(0, 1fr)); }
@@ -92607,14 +92633,25 @@ function buildRankRewardTiles(key){
   });
   return row;
 }
-/* The line under the XP bar. At a badge wall it says what opens the next
-   levels in a count, not an ordinal - "I don't like how it means that
-   5th badge part" - and that the XP is kept. */
+/* The line under the XP bar. At a wall it says three things, in the
+   order Madison put them (build 316): this is as high as your rank goes,
+   the next rank's challenges are what open more, and the XP is not lost -
+   "this is the max level you can achieve at this rank, complete the
+   challenges to keep leveling up, your xp still goes up and will be given
+   to you when the levels or ranks unlock". No badge count, no ordinal
+   ("I don't like how it means that 5th badge part"): the Next rank card
+   right under it lists the challenges with their numbers. The rank named
+   is the one whose challenges open the wall (gateKey), which at a wall is
+   always the next rank - see rankChallengesOf. */
 function profileXpNote(prog){
   if(prog.atCap) return "";
   if(prog.stopped || prog.held){
-    const n = Math.max(1, Number(prog.badgesToPass) || 1);
-    return "Earn " + n + " more " + (n === 1 ? "badge" : "badges") + " to keep leveling up. Your XP is saved.";
+    let held = null, next = null;
+    try{ held = rankOf(store); }catch(e){}
+    try{ next = prog.gateKey || (rankChallengesOf() || {}).key || null; }catch(e){}
+    const nextName = next ? RANK_DISPLAY_NAME[next] || next : "next rank";
+    return (held ? "This is the max level at " + RANK_DISPLAY_NAME[held] + ". " : "This is the max level before your first rank. ") +
+      "Complete the " + nextName + " challenges to keep leveling up. Your XP still counts and turns into levels when you rank up.";
   }
   const left = Math.max(0, Math.round((Number(prog.span) || 0) - (Number(prog.into) || 0)));
   return left.toLocaleString() + " XP to level " + (prog.level + 1);
@@ -92660,7 +92697,7 @@ function buildProfileStanding(prog, rankNow){
   const lv = document.createElement("span");
   lv.className = "pf-level"; lv.textContent = "Level " + prog.level;
   const tot = document.createElement("span");
-  tot.className = "pf-xp-total"; tot.textContent = prog.total.toLocaleString() + " XP";
+  tot.className = "pf-xp-total"; tot.textContent = prog.total.toLocaleString() + " total XP";
   line.append(lv, sep("b"), tot);
   box.appendChild(line);
   const xp = document.createElement("span");
@@ -92697,7 +92734,7 @@ function buildProfileStanding(prog, rankNow){
   }
   box.appendChild(xp);
   box.setAttribute("aria-label", (rankNow ? RANK_DISPLAY_NAME[rankNow] + " rank, " : "No rank yet, ") +
-    "level " + prog.level + ", " + prog.total.toLocaleString() + " XP. " + (noteText || "") + " Open the Rank screen.");
+    "level " + prog.level + ", " + prog.total.toLocaleString() + " total XP. " + (noteText || "") + " Open the Rank screen.");
   box.addEventListener("click", () => showRanksScreen("ranks"));
   return box;
 }
@@ -92806,8 +92843,19 @@ function buildProfileGoal(prog){
   /* the Rank tab's own two colours (.rankhero-gauge's --ring): the level
      blue and the badge gold, so a requirement reads the same everywhere
      it is drawn (build 282: "make those circles the same") */
+  /* AT A WALL THE LEVEL CHALLENGE SAYS WHAT OPENS MORE LEVELS (build 316),
+     in words rather than a badge count - "make that say something more
+     along the lines of there, complete rank challenges or something. Don't
+     specifically mention the badges amount". The saved-XP half was liked
+     and asked to be better: it says the XP is waiting, and that it lands
+     all at once. Only once XP is actually banked past the wall does it
+     call it saved. */
+  const atWall = !prog.atCap && (prog.stopped || prog.held);
+  const lvNote = !atWall ? null : "Complete the rank challenges to unlock more levels. " +
+    (prog.stopped ? "Your saved XP is waiting and turns into levels the moment you rank up."
+                  : "XP past this level is saved and turns into levels the moment you rank up.");
   const rows = [
-    lv ? buildProfileTask(lv, "#6FC2FF", null) : null,
+    lv ? buildProfileTask(lv, "#6FC2FF", lvNote) : null,
     bd ? buildProfileTask(bd, "#E3C77A", closest ? "Closest: " + closest.unit + " (" + closest.done + "/" + closest.need + " hundos)" : null) : null
   ].filter(Boolean);
   /* what is still to do first; what is done sinks */

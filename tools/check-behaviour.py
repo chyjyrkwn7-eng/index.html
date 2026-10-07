@@ -7961,7 +7961,7 @@ def check_b302(br):
         # REVISED IN 316: back on the rank line, as the mockup had it; the
         # bar's numbers are this level's and what is left to the next.
         check(f"{dev}: the total XP is on the rank line above the bar; under the bar, this level's XP and what is left",
-              r.get("totalOnLine") is True and re.match(r"^[0-9,]+ XP$", r.get("total") or "")
+              r.get("totalOnLine") is True and re.match(r"^[0-9,]+ total XP$", r.get("total") or "")
               and re.match(r"^[0-9,]+ / [0-9,]+ XP[0-9,]+ XP to level \d+$", r.get("barNums") or ""), [r.get("total"), r.get("barNums")])
         check(f"{dev}: the XP bar carries its slow light", r.get("glide") == "xp-glide", r.get("glide"))
         check(f"{dev}: back on Home, no flare bubble is empty", r.get("bubbles", 0) >= 7 and r.get("blank") == 0, [r.get("bubbles"), r.get("blank")])
@@ -12832,6 +12832,59 @@ def check_b315_customize(br):
         ctx.close()
 
 
+def check_b316_tiles(br):
+    """Build 316, round two. "The size of the themed circle in the profile
+    box unlocks is perfect ... all three (or 4 because there will be a
+    banner one) would need to be the same size in totality ... The banner
+    one will obviously be the shape of a banner ... The banner animate there
+    too of course." And the badge case: "should the outline of that have a
+    flow similar to the rank one does not color matching the rank". Written
+    against the first 316 build - flare 2.7rem, character 2.9rem, a square
+    banner, a flat case - where every check here fails."""
+    print("\n316t. Profile: one size for every unlock, a banner-shaped banner that moves, a case with the card's flow")
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate("""async () => { const out = {}; const wait = ms => new Promise(r => setTimeout(r, ms));
+          try{
+          /* Platinum held at its wall, so the next rank is Sapphire - the
+             first one that hands over a banner */
+          const units = topicsIn(QUESTIONS).slice().sort((a, b) => badgeThresholdFor(a) - badgeThresholdFor(b));
+          store.unitPerfects = {}; units.slice(0, TIER_UNLOCKS.vanguard.badges).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u));
+          store.lifetime.points = xpForLevel(75) + 900; store.rankFloor = 0; store.levelFloor = 0;
+          showProfile('profile'); await wait(1500);
+          const box = sel => { const e = document.querySelector(sel); if(!e) return null; const b = e.getBoundingClientRect();
+            return [Math.round(b.width * 10) / 10, Math.round(b.height * 10) / 10, Math.round((b.top + b.height / 2) * 10) / 10]; };
+          out.next = (rankChallengesOf() || {}).key;
+          out.theme = box('.pf-rw.is-theme .pf-swatch .dot');
+          out.flare = box('.pf-rw.is-flare .flare-solo');
+          out.char = box('.pf-rw.is-char .pf-rw-char');
+          out.banner = box('.pf-rw.is-banner .pf-rw-banner');
+          const bn = document.querySelector('.pf-rw.is-banner .bnr');
+          out.bnStill = bn ? bn.classList.contains('is-still') : null;
+          out.bnAnims = bn ? bn.getAnimations({ subtree: true }).filter(a => a.playState === 'running').length : 0;
+          const cs = getComputedStyle(document.querySelector('.pf-case'));
+          out.caseBg = cs.backgroundImage;
+          const m = cs.borderTopColor.match(/[\\d.]+/g) || [];
+          out.caseBorderAlpha = m.length >= 4 ? Number(m[3]) : 1;
+          out.caseBorderChan = m.slice(0, 3).map(Number);
+          } catch(e){ out.threw = String(e && e.stack || e); }
+          return out; }""")
+        circ = [r.get(k) for k in ("theme", "flare", "char")]
+        check(f"{dev}: the theme, the flare and the character are one size - the theme circle's", None not in circ
+              and max(c[0] for c in circ) - min(c[0] for c in circ) <= 0.6 and max(c[1] for c in circ) - min(c[1] for c in circ) <= 0.6, circ)
+        b, c0 = r.get("banner"), (r.get("theme") or [0, 0, 0])
+        check(f"{dev}: the banner is banner-shaped (8 by 3), no taller than the circles and wider than them, on their line",
+              r.get("next") == "adept" and b is not None and 2.4 <= b[0] / max(1, b[1]) <= 2.95 and b[1] < c0[1] and b[0] > c0[0]
+              and abs(b[2] - c0[2]) <= 2, [r.get("next"), b, c0])
+        check(f"{dev}: and it moves", r.get("bnStill") is False and r.get("bnAnims", 0) > 0, [r.get("bnStill"), r.get("bnAnims")])
+        ch = r.get("caseBorderChan") or [255, 255, 255]
+        check(f"{dev}: the badge case has the Next rank card's flow - a diagonal light and a tinted edge, not a flat box",
+              "gradient" in (r.get("caseBg") or "") and r.get("caseBorderAlpha", 0) >= 0.2
+              and not all(abs(x - 1) < 0.01 or abs(x - 255) < 1 for x in ch), [r.get("caseBg", "")[:70], r.get("caseBorderAlpha"), ch])
+        check(f"{dev}: nothing threw", not r.get("threw"), r.get("threw"))
+        ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -12994,6 +13047,7 @@ def main():
             check_b314_slider_release(br)
             check_b314_unlocks(br)
             check_b315_customize(br)
+            check_b316_tiles(br)
         finally:
             br.close()
     SERVER.shutdown()

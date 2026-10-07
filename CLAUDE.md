@@ -14378,6 +14378,54 @@ disagree with it.
     hours on one day; build 314's leak fix loads that as 6, so the Hacker
     re-locked and the "nothing is taken" check failed on a correct app.
     The hours go in at 5 a day now.
+- **ROUND SIX, SECOND PASS (still build 316; supersedes the wall-note
+  half of ROUND FIVE's "THE NOTE UNDER THE BAR COUNTS" and the one-row
+  claim in ROUND SIX's "THE LINE IS ONE ROW FROM 375px UP"):**
+  - **THE TOTAL SAYS "total XP"** ("Where it shows your total xp, I feel
+    like that should say total xp"). That costs ~40px, so on every phone
+    the line now takes `fitProfileIdLine()`'s two rows - rank and level,
+    then "N total XP" alone under them - and only a tablet (or a short
+    unranked line) keeps one row. That is the fallback working as built,
+    not a wrap to fix; don't shrink the type to force one row, because a
+    6-digit total or "Platinum" would wrap again anyway.
+  - **AT A WALL THE GOLD LINE SAYS WHY, NOT HOW MANY**: "This is the max
+    level at <held rank>. Complete the <next rank> challenges to keep
+    leveling up. Your XP still counts and turns into levels when you rank
+    up." (unranked: "...before your first rank. Complete the Bronze
+    challenges..."). Her words: "this is the max level you can achieve at
+    this rank, complete the challenges to keep leveling up, your xp still
+    goes up and will be given to you when the levels or ranks unlock". No
+    badge count and no ordinal - the Next rank card right under it lists
+    the challenges with their numbers. The rank named is `gateKey`, which
+    at a wall is always the next rank.
+  - **AT A WALL THE LEVEL TASK HAS A NOTE AGAIN, AND IT NAMES NO BADGES**:
+    "Complete the rank challenges to unlock more levels. Your saved XP is
+    waiting and turns into levels the moment you rank up." ("make that
+    say something more along the lines of there, complete rank challenges
+    ... Don't specifically mention the badges amount there"). It says
+    "saved" only once XP is actually banked past the wall (`stopped`); at
+    the wall with the bar still filling it says XP past this level is
+    saved. Away from a wall the task carries no note, as before.
+  - **EVERY UNLOCK TILE'S ART IS THE THEME CIRCLE'S SIZE** - 2.2rem on a
+    phone, 2.7rem from 40rem ("The size of the themed circle ... is
+    perfect ... all three (or 4 ...) would need to be the same size in
+    totality"). The flare's bubble was 2.7rem and the character 2.9rem.
+    The banner is a BANNER: 8 by 3 (the art's own 480x180), `width:
+    min(100%, 3.6rem)` (4.4rem on a tablet), a thin ring and a little
+    glass on its top edge, and it moves - the rank banners are in
+    `BANNER_ANIMATED`. Its tile is half as wide again (`.pf-rewards` is
+    flex now, `.is-banner` grows 1.5), or on a 375px phone the banner
+    shrank to 39px to fit a circle's tile. Only Sapphire, Amethyst and
+    Supernova hand over a banner, so nobody in the class sees one yet.
+  - **THE BADGE CASE HAS THE NEXT RANK CARD'S FLOW, IN SILVER** ("should
+    the outline of that have a flow similar to the rank one does not color
+    matching the rank"): the same 160-degree light and tinted edge as
+    `.pf-goal`, from `--case-tint:#AEBBCB` - the metal the badges are set
+    in - so it sits under any rank's card. Its `:active` is the card's
+    `filter:brightness`, since a background swap would drop the gradient.
+  - **check_b316_tiles** holds all three, and fails six ways on the first
+    316 build. Its "and it moves" passed there too - that banner already
+    animated - so it guards the ask rather than proving a fix.
   - **CUSTOMIZE IS A SUMMARY AND A PAGE PER THING YOU WEAR** ("I like the
     customize thing with the 4 openable tabs"). `showCustomize()` is your
     name and four rows - Character, Banner, Theme color, Hundo effect -
