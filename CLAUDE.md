@@ -13045,6 +13045,25 @@ was (`#D9A93A` -> `#F6D58E`), so a card with no effect is unchanged. Eases in
 and out over `--hfx-ease` (1s; 0.45s for the UFO, `fast`), and is gold again
 before the last pieces go. Confetti keeps the gold.
 
+**The whole 100% shows, and no themed box has gold in it (build 317).**
+*"the number 100 is cutout at the percentage part, and the 10/10 is still
+gold and not matching the theme, ensure all effects are good to go for those
+boxes."* Two faults, every effect. (1) `hfxTintNum` built the coloured copy of
+the number from `textContent`, so it read "100%" with a FULL-SIZE % - 195px of
+text in the real number's 163px box; the gradient only paints the box, so the
+% was cut off half-way and stood over the real one's small raised %. It clones
+the children now (`hfxCloneNum`, shared with `hfxLitText`), and gives the
+clone's % its own line-height - the copy carries the number's line-height in
+pixels, which a 28px % inherited as a 64px line and sank level with the
+digits. The gold number underneath goes transparent while the copy is there
+(`:has(> .hfx-tintnum)`), so no gold fringe, and the copy carries the glow.
+(2) The "12 / 12" was `g1`, the 100%'s palest stop, and Fireworks' `g1` was a
+pale gold. `HFX_TINT` has a `t` (text colour) per effect now - the fraction,
+the GRADE label (faded) and the caption under the fraction (leaning to it) -
+set with the other four by `hfxTintVars()`, and Fireworks' `g1` is a pale
+pink (Underwater's `g3` lost its gold too). `check_b317_hundobox` holds it on
+every built effect at 320, 440 and 834 wide, and fails on 57212ce.
+
 **The UFO's box lights only when its beam reaches it.** `HFX_TINT.ufo` has
 `on` 2800 / `off` 5330 (ms): the saucer arrives, the beam switches on and
 reaches the box, THEN the box goes green; it lets go as the beam cuts. It

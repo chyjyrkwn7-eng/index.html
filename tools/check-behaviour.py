@@ -12994,6 +12994,128 @@ def check_b317_volume(br):
     ctx.close()
 
 
+def check_b317_hundobox(br):
+    """Build 317. "One thing about the hundo effects, the firework one or
+    whatever, the number 100 is cutout at the percentage part, and the 10/10
+    is still gold and not matching the theme, ensure all effects are good to
+    go for those boxes." On a real 100% results screen, for EVERY effect that
+    can play (the ladder and the two still built off it), on the narrowest
+    phone and both reference devices: the 100% in the effect's colours is
+    not clipped (its copy is no wider than the number, and its % sits on the
+    real one's small raised %, inside the box), the gold number underneath
+    has given way to it, and the "12 / 12" and the GRADE label are in the
+    effect's own colours - not gold, and near the effect's hue. Written
+    against build 317 before this, where the copy was "100%" with a
+    full-size % (195px of text in a 163px box) and Fireworks' fraction was a
+    pale gold."""
+    print("\n317. every hundo effect's box: the whole 100% shows, and every word is in the effect's colours")
+    import colorsys
+
+    def rgb(c):
+        m = re.match(r"rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)", c or "")
+        if m:
+            return [float(m.group(i)) / 255 for i in (1, 2, 3)] + [float(m.group(4) or 1)]
+        m = re.match(r"color\(srgb ([\d.]+) ([\d.]+) ([\d.]+)(?: / ([\d.]+))?\)", c or "")
+        if m:
+            return [float(m.group(i)) for i in (1, 2, 3)] + [float(m.group(4) or 1)]
+        m = re.match(r"oklab\(([-\d.]+) ([-\d.]+) ([-\d.]+)(?: / ([\d.]+))?\)", c or "")
+        if m:   # a colour caught mid-transition is serialised in oklab
+            L, A, B = (float(m.group(i)) for i in (1, 2, 3))
+            l_, m_, s_ = ((L + .3963377774 * A + .2158037573 * B) ** 3, (L - .1055613458 * A - .0638541728 * B) ** 3,
+                          (L - .0894841775 * A - 1.2914855480 * B) ** 3)
+            lin = (4.0767416621 * l_ - 3.3077115913 * m_ + .2309699292 * s_, -1.2684380046 * l_ + 2.6097574011 * m_ - .3413193965 * s_,
+                   -.0041960863 * l_ - .7034186147 * m_ + 1.7076147010 * s_)
+            g = lambda x: max(0.0, min(1.0, 12.92 * x if x <= .0031308 else 1.055 * x ** (1 / 2.4) - .055))
+            return [g(x) for x in lin] + [float(m.group(4) or 1)]
+        h = (c or "").lstrip("#")
+        if len(h) == 6:
+            return [int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)] + [1.0]
+        return None
+
+    def hue(c):
+        v = rgb(c)
+        if not v:
+            return None, 0
+        h, l, sat = colorsys.rgb_to_hls(*v[:3])
+        return h * 360, sat
+
+    def near(a, b, tol=40):
+        d = abs(a - b) % 360
+        return min(d, 360 - d) <= tol
+
+    def lum(c):
+        v = rgb(c)
+        f = lambda x: x / 12.92 if x <= .03928 else ((x + .055) / 1.055) ** 2.4
+        return .2126 * f(v[0]) + .7152 * f(v[1]) + .0722 * f(v[2])
+
+    for label, w, h in (("SE 1st gen", 320, 568), PHONE, TABLET):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate("async () => { store.lifetime.perfectTests = 600; store.hundoFx = HUNDO_FX[1].id; saveStore(); " + FX_RUN + """
+          const out = { started: !!window.__fxAt, fx: [] };
+          await wait((HUNDO_FX_TOTAL[HUNDO_FX[1].id] || 7000) + 500);
+          const g = document.querySelector('.rs-grade'); if(!g) return out;
+          const pct = g.querySelector('.rs-pct');
+          const ids = Object.keys(HUNDO_FX_BUILD);
+          const R = e => { const b = e.getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom]; };
+          for(const id of ids){
+            const t = HFX_TINT[id] || {};
+            const hd = playHundoFx(id, { box: g, pct });
+            await wait((t.on || 0) + 2200);
+            const cs = e => getComputedStyle(e);
+            const tn = g.querySelector('.hfx-tintnum'), sign = pct.querySelector('.rs-pct-sign');
+            const tsign = tn && tn.querySelector('.rs-pct-sign');
+            const fr = g.querySelector('.rs-grade-frac');
+            out.fx.push({ id, tint: t, tinted: g.classList.contains('hfx-tinted'),
+              grade: R(g), pct: R(pct), pctScroll: [pct.scrollWidth, pct.clientWidth], sign: sign ? R(sign) : null,
+              tn: tn ? R(tn) : null, tnScroll: tn ? [tn.scrollWidth, tn.clientWidth] : null, tsign: tsign ? R(tsign) : null,
+              tnOpacity: tn ? cs(tn).opacity : null, realColor: cs(pct).color,
+              frac: cs(fr).color, fracOf: [...fr.querySelectorAll('.rs-frac-of')].map(e => cs(e).color),
+              kicker: cs(g.querySelector('.rs-kicker')).color, sub: cs(g.querySelector('.rs-grade-sub')).color });
+            /* the dim is the screen's: scroll the page under it and it
+               still covers the viewport edge to edge */
+            const dim = document.querySelector('.hfx-layer > .hfx-fw-dim, .hfx-layer > .hfx-ufo-dim, .hfx-layer > .hfx-bh-dim');
+            if(dim){ const y0 = scrollY; const dy = y0 > 90 ? -90 : 90;
+              window.scrollTo({ top: y0 + dy, behavior: 'instant' }); await wait(60);
+              const b = dim.getBoundingClientRect(); out.fx[out.fx.length - 1].dim = { moved: scrollY - y0, rect: [b.left, b.top, b.right, b.bottom], vw: innerWidth, vh: innerHeight };
+              window.scrollTo({ top: y0, behavior: 'instant' }); await wait(60); }
+            if(hd && hd.stop) hd.stop();
+            await wait(800);
+          }
+          return out; }""")
+        ctx.close()
+        fx = r.get("fx") or []
+        check("%s: a real 100%% played an effect and every built effect was measured on its box" % label,
+              r.get("started") and len(fx) >= 6, [f["id"] for f in fx])
+        for f in fx:
+            t, tag = f["tint"], "%s, %s" % (label, f["id"])
+            g, tn, ts, s = f["grade"], f["tn"], f["tsign"], f["sign"]
+            sc = f["tnScroll"] or [999, 0]
+            check("%s: the 100%% in the effect's colours is all there - no wider than the number, %% inside the box and on the real raised %%" % tag,
+                  f["tinted"] and tn and sc[0] <= sc[1] + 1 and f["pctScroll"][0] <= f["pctScroll"][1] + 1
+                  and ts and s and ts[2] <= tn[2] + 1.5 and ts[2] <= g[2] and ts[0] >= g[0]
+                  and abs(ts[0] - s[0]) <= 2 and abs(ts[1] - s[1]) <= 2 and abs(ts[3] - s[3]) <= 2,
+                  {"tnScroll": f["tnScroll"], "copy%": ts, "real%": s, "copy": tn, "box": g})
+            check("%s: the gold number under it has given way (no gold fringe)" % tag,
+                  (rgb(f["realColor"]) or [0, 0, 0, 1])[3] < .05, f["realColor"])
+            fh, fs = hue(f["frac"])
+            keys = [k for k in ("b", "g2") if t.get(k)]
+            check("%s: the 12 / 12 is in the effect's colour, not gold - near %s's hue, readable" % (tag, "/".join(t.get(k) for k in keys)),
+                  fh is not None and not (fs > .3 and 28 <= fh <= 62)
+                  and any(near(fh, hue(t[k])[0]) for k in keys) and (lum(f["frac"]) + .05) / (.012 + .05) >= 7
+                  and all(c == f["frac"] for c in f["fracOf"]),
+                  {"frac": f["frac"], "of": f["fracOf"]})
+            if f["id"] in ("fireworks", "ufo", "blackhole"):
+                d = f.get("dim") or {}
+                rr = d.get("rect") or [9, 9, 0, 0]
+                check("%s: the dim still covers the whole screen when the page scrolls under it (no grey band)" % tag,
+                      d and (d.get("moved", 0) == 0 and label == TABLET[0] or abs(d.get("moved", 0)) >= 20 and rr[0] <= 0.5 and rr[1] <= 0.5 and rr[2] >= d["vw"] - .5 and rr[3] >= d["vh"] - .5), d)
+            kh, ks = hue(f["kicker"])
+            check("%s: the GRADE label and the line under the fraction lean to it too" % tag,
+                  kh is not None and ks > .3 and any(near(kh, hue(t[k])[0]) for k in keys)
+                  and hue(f["sub"])[1] > .15,
+                  {"kicker": f["kicker"], "sub": f["sub"]})
+
+
 def check_b317_tabplate(br):
     """Build 317. "They got a smidge smaller so let's ensure they are still a
     nice size AND let's ensure you can see their backgrounds because right
@@ -13406,6 +13528,7 @@ def main():
             check_b316_tiles(br)
             check_b317_daily(br)
             check_b317_volume(br)
+            check_b317_hundobox(br)
             check_b317_tabplate(br)
             check_b317_rankup(br)
         finally:
