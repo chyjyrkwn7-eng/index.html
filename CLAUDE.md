@@ -14630,6 +14630,52 @@ disagree with it.
       (check-results' "the level line names the next level" gives a
       two-level climb a flat 2600ms and fails now and then under the same
       starvation, on either build - it passed alone, and against 74cc518.)
+- **THE CHALLENGE CHARACTERS EACH HAVE A SPECIAL (build 317).** *"The
+  challenge ones could be grabbing their weapon or spiking their head or
+  multiple bees coming out or the hacker could be randomly turns red you
+  see what I'm saying? Creativity, do it."* and *"typically they will be
+  still, if you look at them long enough ... they could do cooler stuff
+  but it's random."* A special plays while the live element carries
+  `char-special`; WHEN it plays (the random idle firing) and
+  `CHAR_SPECIAL_MS` belong to the specials scheduler. The challenge
+  lengths go into that table from one top-level `Object.assign` line
+  straight after `drawAvatarCharSVG`, a no-op where the table is absent.
+  - Parts drawn only for a special are `.cx-sp` groups with
+    `opacity="0"`, so a still, a flip-book recording and Reduce motion
+    never show them; the CSS is the `CHALLENGE CHARACTER SPECIALS
+    (build 317)` block, every animation finite, `cxsp-*` keyframes, no
+    filter.
+  - **Detective** (2.8s): a magnifier comes up, reads one eye then the
+    other (each looming in the glass), glints; a "!" pops.
+  - **Masked One** (2.6s): a red mane bristles out behind the spikes
+    (drawn before the body), the crack flares, the slots burn, a shock ring.
+  - **Zeus** (3s): the stone eyes charge white, a bolt is hurled corner
+    to corner (drawn in by dash offset), a flash, it flickers out.
+  - **Sheriff** (2.8s): the quick draw - a six-shooter up at the
+    shoulder, one shot in the air (flash and kick), smoke, spun away.
+  - **Clown** (3s): the nose honks twice, a HONK burst, sound rings,
+    confetti up and raining down.
+  - **Koi** (3s): the fish leaps out over the bowl in an arc and back
+    in, a splash at each end.
+  - **Marksman** (2.6s): a frame-sized reticle closes in, locks red with
+    a ping, a muzzle flash at the suppressor.
+  - **Orion** (3s): the emitter flares and a stroke of light sweeps over
+    his head; stars off its end.
+  - **Hacker** (3s): SYSTEM BREACH - glitch bars, everything goes red
+    (rain, face, lenses, deck edge, a red wash), a skull on the laptop,
+    glitches back to green.
+  - **Timekeeper** (3s): the hands race backwards (`cxsp-tk-back*`
+    composited `add` onto their own `cx-spin`, so they carry on from
+    wherever they were), a rewind arrow round the rim, ripples.
+  - **Ronin** (2.8s): a glint on the hilt, an X of two katana cuts,
+    petals off them.
+  - **Hive** (3.2s): eight bees pour out of the door, loop round and
+    file back in.
+  - `check_b317_challenge_specials`: on each of the twelve, the class
+    starts more animations than the idle, the `.cx-sp` parts are hidden
+    without it and show part-way through, everything it starts is
+    finite, removing it restores the idle, and (once merged)
+    `CHAR_SPECIAL_MS` covers each special's length. Fails on 57212ce.
 - **THE DAILY QUESTION IS ANSWERED, NOT TAPPED (build 317).** *"When
   you submit your answer, ensure it's not just clicking, let's put a
   submit answer so that quality seems to hold a little more weight.
