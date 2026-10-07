@@ -14032,6 +14032,22 @@
   }
   .rankmap-stop.is-locked .rankmap-card{ background:rgba(20,24,30,.55); border-color:rgba(255,255,255,.07); }
   .rankmap-stop.is-here .rankmap-card{ border-color:color-mix(in srgb, var(--rank-color) 70%, #fff); box-shadow:0 0 22px -6px color-mix(in srgb, var(--rank-color) 70%, transparent); }
+  /* EVERY RANK YOU HOLD GLOWS LIKE THE ONE YOU ARE ON (build 315). "You
+     see how the silver one is super nice, great glow? And then you see
+     bronze.. no glow, not shiny.. all the boxes need that super nice
+     glowing look, when the color is available." Only the card for the
+     rank you are on had the light; a rank behind you fell back to the
+     plain wash. Every reached card now takes the same rim and halo, a
+     richer wash and a catch-light along the top; "You are here" is still
+     told by its chip and the node's ping. A rank reached since you last
+     looked stays dark until its celebration lights it. */
+  .rankmap-card{ transition:border-color .7s ease, box-shadow .7s ease, background .7s ease; }
+  .rankmap-stop.is-reached .rankmap-card{
+    border-color:color-mix(in srgb, var(--rank-color) 70%, #fff);
+    background:linear-gradient(135deg, color-mix(in srgb, var(--rank-color) 22%, rgba(22,27,34,.72)), rgba(18,22,28,.72) 70%);
+    box-shadow:0 0 22px -6px color-mix(in srgb, var(--rank-color) 70%, transparent), inset 0 1px 0 rgba(255,255,255,.12);
+  }
+  .rankmap-stop.is-celebrate-pending .rankmap-card{ border-color:rgba(255,255,255,.07); background:rgba(20,24,30,.55); box-shadow:none; }
   /* wraps only when the chip cannot fit beside the name - a 320px phone
      clipped "You are here" off the card's edge (build 312 audit) */
   .rankmap-head{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.25rem .5rem; }
@@ -14139,6 +14155,16 @@
   }
   .rankmap-dot{ width:.85rem; height:.85rem; border-radius:50%; box-shadow:0 0 6px currentColor; }
   .rankmap-giftav{ width:1.2rem; height:1.2rem; display:grid; place-items:center; }
+  /* the flare's bubble and the theme's swatch in a chip (build 315) */
+  .rankmap-gift.is-flare .rankmap-giftico, .rankmap-gift.is-theme .rankmap-giftico{ width:1.6rem; height:1.6rem; }
+  .rankmap-giftav.rankmap-giftbubble{ width:1.55rem; height:1.55rem; }
+  .rankmap-giftbubble .flare-solo.cosmic-icon-badge.cosmic-badge-rank{ width:1.55rem; height:1.55rem; }
+  .rankmap-giftbubble .flare-solo svg{ width:100%; height:100%; }
+  .rankmap-gift .rankmap-swatch.swatch{ width:1.35rem; height:1.35rem; border:0; background:none; cursor:inherit; }
+  .rankmap-gift .rankmap-swatch.swatch .dot{ width:1.1rem; height:1.1rem; }
+  .rankmap-stop:not(.is-reached) .rankmap-giftbubble .flare-solo,
+  .rankmap-stop.is-celebrate-pending .rankmap-giftbubble .flare-solo{ filter:grayscale(1) brightness(.85); opacity:.6; box-shadow:none; }
+  .rankmap-giftbubble .flare-solo{ transition:filter .7s ease, opacity .7s ease; }
   .rankmap-giftav svg{ width:100%; height:100%; }
   .rankmap-giftav svg.is-fitted{ border-radius:50%; clip-path:circle(50% at 50% 50%); }
   .rankmap-stop.is-locked .rankmap-gift{ opacity:.7; }
@@ -19219,26 +19245,119 @@
     .profile-hero .profile-rankplate .profile-rankcoin{ width:3.9rem; height:3.9rem; }
     .profile-hero .profile-rankplate .profile-rankword{ font-size:1.05rem; }
   }
-  /* ---- ONE PATH: RANK, BADGES, LEVEL (build 314) ----
-     One box; the rows inside lose their own boxes, and the links between
-     them are a line through the rings' centre (row padding .8rem + half a
-     3.9rem ring), running from the bottom of one ring to the top of the
-     next. Each link is a dim track lit from the bottom by --litn. */
-  .profile-hero .profile-path{ margin:.75rem 0 0; padding:0; border-radius:1rem;
-    background:rgba(0,0,0,.28); border:1px solid rgba(255,255,255,.07); }
-  .profile-hero .profile-path > .profile-ranklineup.profile-rankplate,
-  .profile-hero .profile-path > .statbox.profile-level-joined{
-    margin:0; background:transparent; border:0; border-radius:1rem; box-shadow:none; }
-  .profile-hero .profile-path > .profile-ranklineup.profile-rankplate:active,
-  .profile-hero .profile-path > .profile-badgesect.statbox:active{ background:rgba(255,255,255,.04); }
-  .profile-path-link{ display:block; position:relative; height:.3rem; pointer-events:none; }
-  .profile-path-link::before, .profile-path-link::after{
-    content:""; position:absolute; left:calc(2.75rem - 2px); width:4px; top:-.7rem; bottom:-.75rem; border-radius:2px; }
-  .profile-path-link::before{ background:rgba(255,255,255,.1); }
-  .profile-path-link::after{ transform-origin:50% 100%; transform:scaleY(var(--litn, 0)); }
-  .profile-path-link.is-lower::after{ background:linear-gradient(to top, #3D8BFF, #8FC1FF); box-shadow:0 0 8px rgba(61,139,255,.45); }
-  .profile-path-link.is-upper::after{ background:linear-gradient(to top, #E8B84A, color-mix(in srgb, var(--path-next, #E8B84A) 70%, #fff));
-    box-shadow:0 0 8px rgba(232,184,74,.4); }
+  /* ---- PROFILE: STANDING, NEXT RANK, BADGE CASE (build 315) ----
+     See buildProfileStanding. Three tappable blocks, all buttons with no
+     button chrome, each opening its own screen. */
+  .pf-standing, .pf-goal, .pf-case{ all:unset; box-sizing:border-box; display:block; width:100%; cursor:pointer;
+    text-align:left; -webkit-tap-highlight-color:transparent; font-family:var(--sans); }
+  .pf-standing:focus-visible, .pf-goal:focus-visible, .pf-case:focus-visible{ outline:2px solid rgba(255,255,255,.6); outline-offset:2px; }
+  .pf-kick{ display:block; margin:0; font-size:.64rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,.55); }
+  .pf-chev{ margin-left:auto; font-size:1.4rem; line-height:1; color:rgba(255,255,255,.4); }
+  /* where you stand */
+  .pf-standing{ position:relative; margin:1rem 0 0; padding:.95rem 1rem 1rem; border-radius:1.1rem;
+    background:linear-gradient(160deg, color-mix(in srgb, var(--rank-color) 12%, rgba(0,0,0,.28)), rgba(0,0,0,.3) 60%);
+    border:1px solid color-mix(in srgb, var(--rank-color) 30%, rgba(255,255,255,.08)); }
+  .pf-standing.is-unranked{ background:rgba(0,0,0,.26); border-color:rgba(255,255,255,.08); }
+  .pf-standing:active{ filter:brightness(1.08); }
+  .pf-standing-top{ display:flex; align-items:center; gap:.95rem; }
+  .pf-standing .flare-solo{ width:3.7rem; height:3.7rem; }
+  .pf-standing-tx{ display:flex; flex-direction:column; gap:.12rem; min-width:0; }
+  .pf-rankname{ font-family:var(--serif); font-size:1.85rem; font-weight:700; line-height:1.02;
+    color:color-mix(in srgb, var(--rank-color) 60%, #fff); text-shadow:0 0 18px color-mix(in srgb, var(--rank-color) 38%, transparent); }
+  .pf-standing.is-unranked .pf-rankname{ color:rgba(255,255,255,.72); text-shadow:none; }
+  .pf-level{ font-size:.98rem; font-weight:800; color:var(--ink); }
+  .pf-xp{ display:block; margin-top:.9rem; }
+  .pf-xpbar.xpbar-track{ display:block; }
+  .pf-xpbar .xpbar-fill{ display:block; height:100%; border-radius:inherit; }
+  .pf-xpnums{ display:flex; justify-content:space-between; align-items:baseline; gap:.6rem; margin-top:.5rem;
+    font-size:.92rem; font-weight:800; font-variant-numeric:tabular-nums; }
+  .pf-xp-total{ font-size:.78rem; font-weight:700; color:var(--soft); white-space:nowrap; }
+  .pf-xp-cap{ color:#8FC1FF; }
+  .pf-xp-note{ display:block; margin-top:.4rem; font-size:.8rem; line-height:1.35; color:rgba(255,255,255,.62); }
+  .pf-xp-note.is-wall{ color:#E8C770; }
+  /* the flare bubble, out of Home's orbit */
+  .flare-solo.cosmic-icon-badge.cosmic-badge-rank{ position:relative; top:auto; left:auto; flex:none; translate:none; }
+  .flare-solo.cosmic-icon-badge.cosmic-badge-rank.is-empty{ border-style:dashed; }
+  /* the next rank */
+  .pf-goal{ margin:.8rem 0 0; padding:1rem 1rem .85rem; border-radius:1.1rem;
+    background:linear-gradient(160deg, color-mix(in srgb, var(--nx) 18%, rgba(0,0,0,.3)), rgba(0,0,0,.34) 58%);
+    border:1px solid color-mix(in srgb, var(--nx) 38%, rgba(255,255,255,.08)); }
+  .pf-goal:active{ filter:brightness(1.08); }
+  .pf-goal-head{ display:flex; align-items:center; gap:.95rem; }
+  .pf-goal-emb{ width:3.7rem; height:3.7rem; flex:none; display:grid; place-items:center; border-radius:50%;
+    background:radial-gradient(circle, color-mix(in srgb, var(--nx) 28%, transparent), transparent 70%);
+    filter:drop-shadow(0 0 10px color-mix(in srgb, var(--nx) 55%, transparent)); }
+  .pf-goal-emb svg{ width:100%; height:100%; }
+  .pf-goal-tx{ display:flex; flex-direction:column; gap:.12rem; min-width:0; }
+  .pf-goal-name{ font-family:var(--serif); font-size:1.65rem; font-weight:700; line-height:1.05; color:color-mix(in srgb, var(--nx) 62%, #fff); }
+  .pf-goal-sub{ font-size:.82rem; font-weight:700; color:rgba(255,255,255,.62); }
+  .pf-tasks{ display:grid; gap:.6rem; margin:.9rem 0 0; }
+  .pf-task{ display:grid; grid-template-columns:1.45rem 1fr auto; column-gap:.65rem; row-gap:.45rem; align-items:center;
+    padding:.75rem .8rem .8rem; border-radius:.9rem; background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.07); }
+  .pf-check{ width:1.3rem; height:1.3rem; box-sizing:border-box; border-radius:50%; border:2px solid rgba(255,255,255,.28);
+    display:grid; place-items:center; font-size:.78rem; font-weight:900; line-height:1; color:#0B0D10; }
+  .pf-task.is-met .pf-check{ background:#5CD692; border-color:#5CD692; }
+  .pf-task-label{ font-size:.98rem; font-weight:800; color:var(--ink); min-width:0; }
+  .pf-task-val{ font-size:.95rem; font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .pf-task-val .pf-now{ font-weight:800; color:rgba(255,255,255,.55); }
+  .pf-task-val .pf-sep{ color:rgba(255,255,255,.38); }
+  .pf-task-val .pf-need, .pf-task.is-met .pf-task-val .pf-now{ color:color-mix(in srgb, var(--tc) 80%, #fff); }
+  .pf-bar{ grid-column:2 / 4; display:block; height:.42rem; border-radius:99px; background:rgba(255,255,255,.08); overflow:hidden; }
+  .pf-bar > i{ display:block; height:100%; width:var(--w); border-radius:inherit;
+    background:linear-gradient(90deg, color-mix(in srgb, var(--tc) 78%, #000), var(--tc));
+    box-shadow:0 0 10px color-mix(in srgb, var(--tc) 45%, transparent); }
+  .pf-task-note{ grid-column:2 / 4; font-size:.8rem; line-height:1.35; color:rgba(255,255,255,.62); }
+  .pf-rewards-kick{ margin-top:1rem; }
+  .pf-rewards{ display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0, 1fr); gap:.5rem; margin-top:.55rem; }
+  .pf-rw{ position:relative; display:flex; flex-direction:column; align-items:center; gap:.4rem; min-width:0;
+    padding:.65rem .2rem .55rem; border-radius:.85rem; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06); }
+  .pf-rw-art{ width:2.9rem; height:2.9rem; display:grid; place-items:center; }
+  .pf-rw-lab{ max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.72rem; font-weight:700; color:rgba(255,255,255,.78); }
+  .pf-rw-lock{ position:absolute; top:.32rem; right:.36rem; width:.72rem; height:.72rem; opacity:.55; color:#fff; }
+  .pf-rw-lock svg{ display:block; width:100%; height:100%; }
+  .pf-swatch.swatch{ width:2.6rem; height:2.6rem; border:0; background:none; cursor:inherit; }
+  .pf-swatch.swatch .dot{ width:2.2rem; height:2.2rem; }
+  .pf-rw .flare-solo{ width:2.7rem; height:2.7rem; }
+  /* the character that is waiting to be unlocked: it leans in and taps
+     the glass twice, every five seconds */
+  .pf-rw-char{ position:relative; display:block; width:2.9rem; height:2.9rem; border-radius:50%; }
+  .pf-rw-char .rank-avatar{ display:block; width:100%; height:100%; border-radius:50%; overflow:hidden; transform-origin:50% 85%; }
+  .pf-rw-char .rank-avatar svg{ display:block; width:100%; height:100%; }
+  .pf-rw-char::after{ content:""; position:absolute; inset:-3px; border-radius:50%; pointer-events:none; opacity:0;
+    border:1.5px solid color-mix(in srgb, var(--char-glow, #fff) 70%, #fff); }
+  @media (prefers-reduced-motion:no-preference){
+    .pf-rw-char.is-waiting .rank-avatar{ animation:pf-wait 5.2s ease-in-out infinite; }
+    .pf-rw-char.is-waiting::after{ animation:pf-knock 5.2s ease-out infinite; }
+  }
+  @keyframes pf-wait{ 0%, 56%, 100%{ transform:none; } 62%{ transform:translateY(-1px) scale(1.09); }
+    66%{ transform:scale(1.03); } 70%{ transform:translateY(-1px) scale(1.09); } 78%{ transform:none; } }
+  @keyframes pf-knock{ 0%, 60%{ opacity:0; transform:scale(.92); } 63%{ opacity:.85; transform:scale(1); }
+    68%{ opacity:0; transform:scale(1.16); } 71%{ opacity:.85; transform:scale(1); } 78%{ opacity:0; transform:scale(1.2); } 100%{ opacity:0; } }
+  [data-reduce-motion="true"] .pf-rw-char .rank-avatar, [data-reduce-motion="true"] .pf-rw-char::after{ animation:none !important; }
+  .pf-rw-banner{ display:block; width:2.9rem; height:2.9rem; border-radius:.55rem; overflow:hidden; }
+  .pf-rw-banner > *{ width:100% !important; height:100% !important; }
+  .pf-goal-foot{ display:block; margin:.9rem 0 0; text-align:center; font-size:.85rem; font-weight:800; color:color-mix(in srgb, var(--nx) 60%, #fff); }
+  /* the badge case */
+  .pf-case{ margin:.8rem 0 0; padding:.85rem 1rem .95rem; border-radius:1.1rem; background:rgba(0,0,0,.26); border:1px solid rgba(255,255,255,.08); }
+  .pf-case:active{ background:rgba(255,255,255,.05); }
+  .pf-case-head{ position:relative; display:flex; justify-content:space-between; align-items:center; margin-bottom:.65rem; }
+  .pf-case-count{ font-size:.88rem; font-weight:800; color:rgba(255,255,255,.8); font-variant-numeric:tabular-nums; }
+  .pf-case-head .new-dot{ position:absolute; right:-.4rem; top:-.35rem; }
+  .pf-strip.badge-strip{ display:grid; grid-template-columns:repeat(8, minmax(0, 1fr)); gap:.35rem; }
+  .pf-strip.badge-strip .badge-strip-cell{ width:auto; height:auto; aspect-ratio:1; display:block; margin:0; }
+  .pf-strip.badge-strip .badge-strip-cell svg{ display:block; width:100%; height:100%; }
+  @media (min-width:40rem){
+    .pf-standing, .pf-goal{ padding:1.2rem 1.35rem 1.15rem; }
+    .pf-standing .flare-solo{ width:4.4rem; height:4.4rem; }
+    .pf-rankname{ font-size:2.25rem; }
+    .pf-goal-emb{ width:4.6rem; height:4.6rem; }
+    .pf-goal-name{ font-size:2.05rem; }
+    .pf-rw-art, .pf-rw-char, .pf-rw-banner{ width:3.4rem; height:3.4rem; }
+    .pf-rw .flare-solo{ width:3.2rem; height:3.2rem; }
+    .pf-swatch.swatch{ width:3.1rem; height:3.1rem; }
+    .pf-swatch.swatch .dot{ width:2.7rem; height:2.7rem; }
+    .pf-strip.badge-strip{ grid-template-columns:repeat(16, minmax(0, 1fr)); }
+  }
   .profile-xp-total{ font-size:.8rem; font-weight:700; color:var(--soft); font-variant-numeric:tabular-nums; }
   /* ---- THREE RINGS, ONE SIZE (build 302) ----
      "The circles around badge and level are bigger than the rank one."
@@ -59181,9 +59300,11 @@ const TOUR_REV = 3;
 const PROFILE_TIPS_289 = [
   { target: ".profile-edit-btn", align: "right", vplacement: "below",
     text: "Customize changes your name, your character, your banner and the app\u2019s colour. More of each unlock as you climb the ranks and finish challenges." },
-  { target: ".profile-hero .profile-rankplate", align: "left", vplacement: "below",
-    text: "Your rank. It rises with your level and your badges together \u2014 tap it to see every rank, what the next one needs, and what each one unlocks." },
-  { target: ".profile-hero .profile-badgesect", align: "left", vplacement: "above",
+  { target: ".profile-hero .pf-standing", align: "left", vplacement: "below",
+    text: "Your rank and your level. XP fills the bar; your badges decide how high your level can go." },
+  { target: ".profile-hero .pf-goal", align: "left", vplacement: "above",
+    text: "What your next rank needs, ticked off as you get there, and what it unlocks. Tap to see every rank." },
+  { target: ".profile-hero .pf-case", align: "left", vplacement: "above",
     text: "Your badges \u2014 one per unit, earned with enough hundos (100% on the whole unit) in it. Tap to open your badge case and see how close each one is." }
 ];
 
@@ -88967,6 +89088,289 @@ function showRanksScreen(defaultTab){
   requestAnimationFrame(() => { if(body.runFill) body.runFill(); });
 }
 
+/* ---- PROFILE: WHERE YOU STAND, WHAT IS NEXT, WHAT YOU HOLD (build 315) ----
+   Picked by Madison from three mock-ups ("I'm liking the profile box"),
+   replacing build 314's "path" of three rows joined by lines, which read
+   as three buttons to somebody new to the app and as "you can't level
+   up" at a badge wall. Three blocks, each one tap into its own screen:
+     buildProfileStanding  the rank you hold, big and lit, your level, and
+                           the XP bar with the numbers under it - "how
+                           much over you are, how much till the next
+                           level" - and the total folded in there
+     buildProfileGoal      the next rank as a checklist, Pokemon GO's
+                           level-up tasks (which is what a rank's
+                           requirements are), and what that rank unlocks
+     buildProfileCase      the sixteen badges as a strip, into the case
+   The rank and the road map open from the first two; the badge case
+   from the third. */
+
+/* A rank's flare in Home's own glass bubble, outside Home - the same
+   classes, so it is the same object: lit in its colour, or frosted.
+   `bounce` borrows Home's slow float (Profile only: "it will not bounce
+   in the road map, just animate"). The emblem's recorded motion is
+   started by whoever puts it on screen, with startOrbitEmblemAnims, the
+   way Home starts its own. */
+function buildFlareBubble(key, o){
+  o = o || {};
+  const b = document.createElement("span");
+  b.className = "cosmic-icon-badge cosmic-badge-rank flare-solo" +
+    (o.lit ? " cosmic-badge-lit" : "") + (o.bounce ? " cosmic-icon-badge-0" : "") + (o.empty ? " is-empty" : "");
+  b.setAttribute("aria-hidden", "true");
+  /* No rank, no emblem (build 268): an unranked bubble is empty glass,
+     not Bronze's - "the bronze rank is visible for some reason". */
+  if(o.empty) return b;
+  b.dataset.rankTier = key;
+  b.style.setProperty("--rank-color", RANK_COLOR[key]);
+  if(o.lit){
+    b.style.setProperty("--tier-glow", flareColorOf(key));
+    if(FLARE_NOIR[key]) b.classList.add("cosmic-badge-noir");
+  }
+  b.appendChild(homeRankEmblem(key));
+  return b;
+}
+/* A theme as its swatch in Customize draws it: the swirl and the sheen
+   that sweeps across it ("ensure the theme is the animated look"). */
+function buildThemeDot(key){
+  const sw = document.createElement("span");
+  sw.className = "swatch pf-swatch";
+  sw.setAttribute("aria-hidden", "true");
+  const dot = document.createElement("span");
+  const tier = TIER_UNLOCKS[key] ? " tier-" + key : "";
+  dot.className = "dot" + (key === "titan" ? " legend-dot" : "") + tier + (key === "ink" ? " theme-default" : "");
+  if(key !== "titan" && !tier && key !== "ink") dot.style.background = ACCENT_SWATCH[key];
+  sw.appendChild(dot);
+  return sw;
+}
+/* What a rank hands over, as tiles: its theme, its flare, its character
+   and its banner, whichever it has. Shown before you hold them, so each
+   carries a padlock - and the character is not simply idle: it is
+   WAITING, leaning in to tap on the glass every few seconds, which is
+   the one thing in the app a character only does while it is locked
+   ("this animation while locked there needs to be unique"). */
+function buildRankRewardTiles(key){
+  const row = document.createElement("div");
+  row.className = "pf-rewards";
+  const tile = (art, label, cls) => {
+    const t = document.createElement("span");
+    t.className = "pf-rw " + cls;
+    const a = document.createElement("span");
+    a.className = "pf-rw-art"; a.appendChild(art);
+    const l = document.createElement("span");
+    l.className = "pf-rw-lab"; l.textContent = label;
+    const lk = document.createElement("span");
+    lk.className = "pf-rw-lock"; lk.setAttribute("aria-hidden", "true");
+    try{ lk.appendChild(buildLockIcon()); }catch(e){}
+    t.append(a, l, lk);
+    row.appendChild(t);
+    return t;
+  };
+  tile(buildThemeDot(key), "Theme", "is-theme");
+  tile(buildFlareBubble(key, { lit: true, bounce: true }), "Flare", "is-flare");
+  const ch = AVATAR_CHARACTERS.find(c => c.unlock === key && !c.retired);
+  if(ch){
+    const holder = document.createElement("span");
+    holder.className = "pf-rw-char is-waiting";
+    holder.style.setProperty("--char-glow", avatarGlowColor(ch.id));
+    holder.appendChild(avatarSpanFor({ avatarChar: ch.id }));
+    tile(holder, AVATAR_DISPLAY_NAME[ch.id] || ch.id, "is-char");
+    afterFirstPaint(() => { try{ setCharState(holder, "live"); }catch(e){} });
+  }
+  BANNERS.filter(b => b.rank === key && !b.retired).slice(0, 1).forEach(b => {
+    const th = document.createElement("span");
+    th.className = "pf-rw-banner";
+    afterFirstPaint(() => { try{ th.appendChild(buildBannerArt(b.id)); }catch(e){} });
+    tile(th, "Banner", "is-banner");
+  });
+  return row;
+}
+/* The line under the XP bar. At a badge wall it says what opens the next
+   levels in a count, not an ordinal - "I don't like how it means that
+   5th badge part" - and that the XP is kept. */
+function profileXpNote(prog){
+  if(prog.atCap) return "";
+  if(prog.stopped || prog.held){
+    const n = Math.max(1, Number(prog.badgesToPass) || 1);
+    return "Earn " + n + " more " + (n === 1 ? "badge" : "badges") + " to keep leveling up. Your XP is saved.";
+  }
+  const left = Math.max(0, Math.round((Number(prog.span) || 0) - (Number(prog.into) || 0)));
+  return left.toLocaleString() + " XP to level " + (prog.level + 1);
+}
+function buildProfileStanding(prog, rankNow){
+  const box = document.createElement("button");
+  box.type = "button";
+  box.className = "pf-standing" + (rankNow ? "" : " is-unranked");
+  const key = rankNow || TIER_ORDER_FULL[0];
+  box.style.setProperty("--rank-color", RANK_COLOR[key]);
+  const top = document.createElement("span");
+  top.className = "pf-standing-top";
+  const bub = buildFlareBubble(key, { lit: !!rankNow, bounce: !!rankNow, empty: !rankNow });
+  const tx = document.createElement("span");
+  tx.className = "pf-standing-tx";
+  const k = document.createElement("span");
+  k.className = "pf-kick"; k.textContent = rankNow ? "Your rank" : "No rank yet";
+  const nm = document.createElement("span");
+  nm.className = "pf-rankname"; nm.textContent = rankNow ? RANK_DISPLAY_NAME[rankNow] : "Unranked";
+  const lv = document.createElement("span");
+  lv.className = "pf-level"; lv.textContent = "Level " + prog.level;
+  tx.append(k, nm, lv);
+  const chev = document.createElement("span");
+  chev.className = "pf-chev"; chev.setAttribute("aria-hidden", "true"); chev.textContent = "›";
+  /* A rank the Rank tab has not walked you through yet keeps its dot
+     (build 299), now on the bubble. */
+  let rankNew = false;
+  try{ rankNew = rankIsNew(); }catch(e){}
+  top.append(rankNew ? wrapWithNewDot(bub) : bub, tx, chev);
+  if(rankNew) box.classList.add("has-new");
+  box.appendChild(top);
+  const xp = document.createElement("span");
+  xp.className = "pf-xp";
+  const track = document.createElement("span");
+  track.className = "xpbar-track profile-xpbar pf-xpbar" + (prog.stopped ? " is-banked" : "");
+  const fill = document.createElement("span");
+  fill.className = "xpbar-fill";
+  setBarFill(fill, 0);
+  fill.dataset.target = String(Math.round((Number(prog.fraction) || 0) * 1000) / 10);
+  track.appendChild(fill);
+  const nums = document.createElement("span");
+  nums.className = "pf-xpnums";
+  if(prog.atCap){
+    const c = document.createElement("span");
+    c.className = "pf-xp-cap"; c.textContent = "Every level reached";
+    nums.appendChild(c);
+  } else nums.appendChild(buildXpNumbers(prog.into, prog.span, prog.stopped));
+  const tot = document.createElement("span");
+  tot.className = "pf-xp-total"; tot.textContent = prog.total.toLocaleString() + " XP total";
+  nums.appendChild(tot);
+  xp.append(track, nums);
+  const noteText = profileXpNote(prog);
+  if(noteText){
+    const note = document.createElement("span");
+    note.className = "pf-xp-note" + (prog.stopped || prog.held ? " is-wall" : "");
+    note.textContent = noteText;
+    xp.appendChild(note);
+  }
+  box.appendChild(xp);
+  box.setAttribute("aria-label", (rankNow ? RANK_DISPLAY_NAME[rankNow] + " rank" : "No rank yet") +
+    ", level " + prog.level + ". " + (noteText || "") + " Open the Rank screen.");
+  box.addEventListener("click", () => showRanksScreen("ranks"));
+  return box;
+}
+/* One requirement as a checklist row. The numbers: while it is not met
+   the GOAL carries the colour and the count is grey; once it is met both
+   take the colour, with the tick - "the goal number and moving level
+   number should swap colors ... once you do it ... that's when it would
+   also turn blue". */
+function buildProfileTask(c, color, noteText){
+  const t = document.createElement("span");
+  t.className = "pf-task" + (c.met ? " is-met" : "");
+  t.style.setProperty("--tc", color);
+  const ck = document.createElement("span");
+  ck.className = "pf-check"; ck.setAttribute("aria-hidden", "true"); ck.textContent = c.met ? "✓" : "";
+  const lab = document.createElement("span");
+  lab.className = "pf-task-label"; lab.textContent = c.label;
+  const val = document.createElement("span");
+  val.className = "pf-task-val";
+  const now = document.createElement("b"); now.className = "pf-now"; now.textContent = String(Math.min(c.now, c.need));
+  const sep = document.createElement("span"); sep.className = "pf-sep"; sep.textContent = " / ";
+  const need = document.createElement("b"); need.className = "pf-need"; need.textContent = String(c.need);
+  val.append(now, sep, need);
+  const bar = document.createElement("span");
+  bar.className = "pf-bar";
+  const fill = document.createElement("i");
+  fill.style.setProperty("--w", Math.round(Math.min(1, c.now / Math.max(1, c.need)) * 1000) / 10 + "%");
+  bar.appendChild(fill);
+  t.append(ck, lab, val, bar);
+  if(noteText){
+    const n = document.createElement("span");
+    n.className = "pf-task-note"; n.textContent = noteText;
+    t.appendChild(n);
+  }
+  t.setAttribute("aria-label", c.label + ", " + Math.min(c.now, c.need) + " of " + c.need + (c.met ? ", done" : ""));
+  return t;
+}
+function buildProfileGoal(prog){
+  const rc = rankChallengesOf();
+  const box = document.createElement("button");
+  box.type = "button";
+  if(!rc){
+    /* The top rank: nothing left to climb. */
+    box.className = "pf-goal is-top";
+    box.style.setProperty("--nx", RANK_COLOR.titan);
+    const h = document.createElement("span"); h.className = "pf-goal-head";
+    const emb = document.createElement("span"); emb.className = "pf-goal-emb";
+    try{ emb.appendChild(fitRankEmblem(buildRankEmblemSVG("titan"), "titan")); }catch(e){}
+    const tx = document.createElement("span"); tx.className = "pf-goal-tx";
+    const k = document.createElement("span"); k.className = "pf-kick"; k.textContent = "Top rank";
+    const nm = document.createElement("span"); nm.className = "pf-goal-name"; nm.textContent = RANK_DISPLAY_NAME.titan;
+    const sub = document.createElement("span"); sub.className = "pf-goal-sub"; sub.textContent = "Every rank reached";
+    tx.append(k, nm, sub); h.append(emb, tx); box.appendChild(h);
+    box.addEventListener("click", () => showRanksScreen("ranks"));
+    return box;
+  }
+  box.className = "pf-goal";
+  box.style.setProperty("--nx", rc.color);
+  const head = document.createElement("span");
+  head.className = "pf-goal-head";
+  const emb = document.createElement("span");
+  emb.className = "pf-goal-emb";
+  try{ emb.appendChild(fitRankEmblem(buildRankEmblemSVG(rc.key), rc.key)); }catch(e){}
+  const tx = document.createElement("span");
+  tx.className = "pf-goal-tx";
+  const k = document.createElement("span");
+  k.className = "pf-kick"; k.textContent = rankOf(store) ? "Next rank" : "Your first rank";
+  const nm = document.createElement("span");
+  nm.className = "pf-goal-name"; nm.textContent = rc.name;
+  const sub = document.createElement("span");
+  sub.className = "pf-goal-sub"; sub.textContent = rc.done + " of " + rc.total + " done";
+  tx.append(k, nm, sub);
+  head.append(emb, tx);
+  box.appendChild(head);
+  const tasks = document.createElement("span");
+  tasks.className = "pf-tasks";
+  const lv = rc.list.find(c => c.kind === "level"), bd = rc.list.find(c => c.kind === "badges");
+  let closest = null;
+  try{ closest = bd && !bd.met ? closestBadge() : null; }catch(e){}
+  const rows = [
+    lv ? buildProfileTask(lv, "#5AA2FF", null) : null,
+    bd ? buildProfileTask(bd, "#E8B84A", closest ? "Closest: " + closest.unit + " (" + closest.done + "/" + closest.need + " hundos)" : null) : null
+  ].filter(Boolean);
+  /* what is still to do first; what is done sinks */
+  rows.sort((a, b) => (a.classList.contains("is-met") ? 1 : 0) - (b.classList.contains("is-met") ? 1 : 0));
+  rows.forEach(r => tasks.appendChild(r));
+  box.appendChild(tasks);
+  const rk = document.createElement("span");
+  rk.className = "pf-kick pf-rewards-kick"; rk.textContent = rc.name + " unlocks";
+  box.appendChild(rk);
+  box.appendChild(buildRankRewardTiles(rc.key));
+  const foot = document.createElement("span");
+  foot.className = "pf-goal-foot"; foot.textContent = "See every rank ›";
+  box.appendChild(foot);
+  box.setAttribute("aria-label", (rankOf(store) ? "Next rank, " : "Your first rank, ") + rc.name + ": " +
+    rc.list.map(c => c.label + " " + Math.min(c.now, c.need) + " of " + c.need + (c.met ? " done" : "")).join(", ") + ". Open the Rank screen.");
+  box.addEventListener("click", () => showRanksScreen("ranks"));
+  return box;
+}
+function buildProfileCase(have, total){
+  const box = document.createElement("button");
+  box.type = "button";
+  box.className = "pf-case";
+  const head = document.createElement("span");
+  head.className = "pf-case-head";
+  const k = document.createElement("span");
+  k.className = "pf-kick"; k.textContent = "Badge case";
+  const n = document.createElement("span");
+  n.className = "pf-case-count"; n.textContent = have + " of " + total + " ›";
+  head.append(k, n);
+  box.appendChild(head);
+  try{ box.appendChild(buildBadgeStrip("pf-strip")); }catch(e){}
+  let fresh = 0;
+  try{ fresh = badgeNewCount(); }catch(e){}
+  if(fresh){ box.classList.add("has-new"); head.appendChild(buildNewDot()); }
+  box.setAttribute("aria-label", "Badge case, " + have + " of " + total + " earned" + (fresh ? ", " + fresh + " new" : "") + ". Open the badge case.");
+  box.addEventListener("click", () => showRanksScreen("badges"));
+  return box;
+}
+
 function showProfile(defaultTab){
   /* The Profile card counts how many friends are online, so it needs
      presence too - and like Friends it detaches on the next screen. */
@@ -89225,57 +89629,8 @@ function showProfile(defaultTab){
      rank's colour. The emblem sits huge and faint behind it all as a
      watermark, the way the rank cards on the Rank tab do. Still a
      button to the Rank tab. */
-  const rankLine = document.createElement("button");
-  rankLine.type = "button";
-  rankLine.className = "profile-ranklineup profile-rankplate" + (rankNow ? "" : " is-unranked");
-  rankLine.addEventListener("click", () => showRanksScreen("ranks"));
-  {
-    const step = rankStepProgress();
-    /* No rank, no emblem (build 268): "The no rank yet thing in the
-       profile box, the bronze rank is visible for some reason." It drew
-       the NEXT rank's emblem in the coin and as the watermark, so an
-       unranked card wore Bronze. The coin stays an empty dashed ring. */
-    const shownKey = rankNow || null;
-    rankLine.style.setProperty("--rank-color", rankNow ? RANK_COLOR[rankNow] : "#8A94A3");
-    if(step.next) rankLine.style.setProperty("--next-color", RANK_COLOR[step.next]);
-    const wm = document.createElement("span");
-    wm.className = "profile-rankplate-wm"; wm.setAttribute("aria-hidden", "true");
-    try{ if(shownKey) wm.appendChild(buildRankEmblemSVG(shownKey)); }catch(e){}
-    const coin = document.createElement("span");
-    coin.className = "profile-rankcoin";
-    try{ if(shownKey) coin.appendChild(fitRankEmblem(buildRankEmblemSVG(shownKey), shownKey)); }catch(e){}
-    const txt = document.createElement("span");
-    txt.className = "profile-rankplate-text";
-    const kick = document.createElement("span");
-    kick.className = "profile-rankplate-kicker";
-    kick.textContent = rankNow ? "Rank" : "No rank yet";
-    const word = document.createElement("span");
-    word.className = "profile-rankword";
-    word.textContent = rankNow ? RANK_DISPLAY_NAME[rankNow] : "Unranked";
-    /* BACK TO THE BUILD 241 PLATE (build 243): the 242 rework - the next
-       rank as a chip beside the name, a full-width bar, a line of what is
-       left - was reported as "the profile box got worse somehow ... it
-       was so good before". This is that plate again: name, then one bar
-       in the next rank's colour with "Gold · 35%" beside it. */
-    txt.append(kick, word);
-    /* NO BAR ON THE PLATE (build 267): "the current rank in the profile
-       box has a progress bar, let's remove that, no need for that." The
-       plate says which rank you hold and opens the Rank tab, where the
-       climb to the next one is shown in full; the name alone now sits
-       centred beside its coin. */
-    if(!step.next) rankLine.classList.add("is-top");
-    const chev = document.createElement("span");
-    chev.className = "profile-rankplate-chev"; chev.setAttribute("aria-hidden", "true");
-    chev.textContent = "\u203a";
-    /* A rank the Rank tab has not walked you through yet carries the
-       same dot as Customize (build 299), on the coin itself. */
-    const rankNew = rankIsNew();
-    rankLine.append(wm, rankNew ? wrapWithNewDot(coin) : coin, txt, chev);
-    if(rankNew) rankLine.classList.add("has-new");
-    rankLine.setAttribute("aria-label", (rankNow ? RANK_DISPLAY_NAME[rankNow] + " rank" : "No rank yet") +
-      (step.next ? ", " + rankStepPctLabel(step.pct) + " of the way to " + RANK_DISPLAY_NAME[step.next] : ", the top rank") +
-      (rankNew ? ", new" : "") + ". Open the Rank tab.");
-  }
+  /* The rank plate that sat here became the standing block (build 315,
+     buildProfileStanding), placed under the name with the XP bar. */
 
   /* THE COVER. A strip across the top of the card, the character
      standing over its lower edge, and everything under it centred -
@@ -89390,182 +89745,16 @@ function showProfile(defaultTab){
 
   classSect.appendChild(classBtns);
 
-  /* ---------- level and badges ----------------------------------------
-     The level bar, per explicit request, and it is the reason this
-     screen exists as anything other than a settings page. Level in
-     blue, badges in silver, both with the same shine, and a bar that
-     fills on arrival rather than appearing already full. */
-  /* levelStateFor (build 314): the level as the badge wall holds it. At
-     a wall the bar sits full, the line above it says which badges open
-     it, and the line below says what has been banked meanwhile. */
+  /* ---- WHERE YOU STAND, WHAT IS NEXT, WHAT YOU HOLD (build 315) ----
+     See buildProfileStanding. */
   const prog = levelStateFor(store);
   const badgeCount = badgeCountOf(store);
   const totalUnitsForBadges = topicsIn(QUESTIONS).length;
-
-  const levelSect = document.createElement("div");
-  levelSect.className = "profile-level" + (prog.held ? " is-held" : "") + (prog.stopped ? " is-stopped" : "");
-
-  /* ---- LEVEL AND BADGES ARE TWO SECTIONS (build 241) ----
-     "It being in the level section is kinda strange, it should be its
-     own section I'd think there on the profile box." The badge count sat
-     as the right half of the level row, in a silver shine that was "not
-     that good looking". The level keeps the row to itself - the number,
-     what it takes to reach the next, the bar - and the badges get their
-     own section under it, showing the badges themselves rather than a
-     silver number. */
-  const levelRow = document.createElement("div");
-  levelRow.className = "profile-level-row";
-  /* THE RANK TAB'S RING, PLAIN (build 282) - see buildStatRing. The
-     glowing coin that pumped on a 4.4s beat is gone: "make those circles
-     the same, not the glowy ones ... don't need the progress circles". */
-  const levelNum = buildStatRing(prog.level, "", null);
-  levelNum.classList.add("profile-level-num");
-  const levelSide = document.createElement("div");
-  levelSide.className = "profile-level-side";
-  const levelSideLab = document.createElement("span");
-  levelSideLab.className = "rankhero-gaugelab";
-  levelSideLab.textContent = "Level";
-  const levelSideTop = document.createElement("span");
-  levelSideTop.className = "profile-level-sidetop";
-  /* THIS LEVEL'S XP ON TOP, THE TOTAL UNDER THE BAR (build 314): "should
-     the xp of the current level be on top? And the total be beneath
-     instead?" Still no "XP to level N", no percentage, no "Max level
-     until" - "redundant and makes it cluttered". */
-  if(prog.atCap) levelSideTop.textContent = "Every level reached";
-  else levelSideTop.appendChild(buildXpNumbers(prog.into, prog.span, prog.stopped));
-  levelSide.append(levelSideLab, levelSideTop);
-  levelRow.append(levelNum, levelSide);
-  levelSect.appendChild(levelRow);
-
-  /* ---- THE BAR, POKEMON GO STYLE (build 314) ----
-     "In Pokemon go this is how they represent it": the bar, and beside it
-     the challenge that stands between you and the next levels - theirs
-     are binoculars and random tasks, ours is one thing, the badges your
-     rank band asks for. It replaced a "Next gate" box under the bar that
-     was asked against ("how it says next gate is bad"). */
-  const xpRow = document.createElement("div");
-  xpRow.className = "profile-xprow";
-  const xpTrack = document.createElement("div");
-  xpTrack.className = "xpbar-track profile-xpbar" + (prog.stopped ? " is-banked" : "");
-  const xpFill = document.createElement("div");
-  xpFill.className = "xpbar-fill";
-  setBarFill(xpFill, 0);
-  xpFill.dataset.target = String(Math.round(prog.fraction * 1000) / 10);
-  xpTrack.appendChild(xpFill);
-  xpRow.appendChild(xpTrack);
-  const chal = buildLevelChallengeButton();
-  if(chal) xpRow.appendChild(chal);
-  levelSect.appendChild(xpRow);
-
-  /* THE NUMBERS UNDER THE BAR, and which half is loud flips: under the
-     requirement the requirement leads ("1,200 / 3,997" with 3,997 bright);
-     past it the XP you have leads ("14,521 / 3,997" with 14,521 bright) -
-     the same flip Pokemon GO uses to say "over". */
-  const xpLine = document.createElement("p");
-  xpLine.className = "profile-xp-line";
-  const xpTotal = document.createElement("span");
-  xpTotal.className = "profile-xp-total";
-  xpTotal.textContent = prog.total.toLocaleString() + " total XP";
-  xpLine.appendChild(xpTotal);
-  levelSect.appendChild(xpLine);
-
-  /* The badges as a count, and the ones you HAVE as a small overlapping
-     stack (build 243). Build 242 put a sixteen-segment meter here and it
-     was asked against: "still not a fan of the badge thing. There doesn't
-     need to be a progress bar like that." The set itself is the Badges
-     tab's, one tap away - the whole section opens it. */
-  const badgeStat = document.createElement("button");
-  badgeStat.type = "button";
-  badgeStat.className = "profile-badgesect";
-  /* THE MEDAL, NOT A LIST (build 262). "The badge thing in profile box
-     still not good enough and I don't like how it says what I'm closest
-     to." The row said which unit was nearest its badge and how many
-     hundos it still needed - a to-do list on a card about you. It is the
-     Badges tab's own medal now, the count struck into it (silver, gold
-     once the set is complete), with one plain line beside it and the
-     arrow into the tab where the detail lives. */
-  const allBadges = badgeCount >= totalUnitsForBadges;
-  const badgeRow = document.createElement("span");
-  badgeRow.className = "profile-badgerow";
-  /* A RING THAT SAYS HOW FAR (build 311): "should the badge circle be a
-     progress bar similar to the badge one in the badge tab ... I'm not
-     sure if the circle there should move when opening the screen." It is
-     the Badges tab's ring now - its arc is the share of the sixteen you
-     hold - and it is simply drawn there, not filled on open: this card
-     already has the XP bar moving, and two things filling at once on the
-     first screen of Profile is one too many. */
-  const pMedal = buildStatRing(badgeCount, "", totalUnitsForBadges ? badgeCount / totalUnitsForBadges : 0);
-  pMedal.classList.add("profile-badgemedal");
-  pMedal.querySelectorAll(".rankhero-ringarc[data-target]").forEach(a => { a.style.transition = "none"; a.style.strokeDashoffset = a.dataset.target; });
-  const badgeText = document.createElement("span");
-  badgeText.className = "profile-badgerow-text";
-  const badgeKick = document.createElement("span");
-  badgeKick.className = "profile-badgesect-kicker rankhero-gaugelab";
-  badgeKick.textContent = "Badges";
-  const badgeLine = document.createElement("span");
-  badgeLine.className = "profile-badgerow-line";
-  badgeLine.textContent = allBadges ? "Every badge earned" : badgeCount + " of " + totalUnitsForBadges + " earned";
-  badgeText.append(badgeKick, badgeLine);
-  const badgeChev = document.createElement("span");
-  badgeChev.className = "profile-badgesect-chev"; badgeChev.setAttribute("aria-hidden", "true");
-  badgeChev.textContent = "\u203a";
-  /* a badge not yet looked at in the case (build 299) */
-  let badgesNew = 0;
-  try{ badgesNew = badgeNewCount(); }catch(e){}
-  badgeRow.append(badgesNew ? wrapWithNewDot(pMedal) : pMedal, badgeText, badgeChev);
-  if(badgesNew) badgeStat.classList.add("has-new");
-  badgeStat.appendChild(badgeRow);
-  badgeStat.setAttribute("aria-label", "Badges, " + badgeCount + " of " + totalUnitsForBadges + " earned" +
-    (badgesNew ? ", " + badgesNew + " new" : "") + ". Open the Badges tab.");
-  badgeStat.addEventListener("click", () => showRanksScreen("badges"));
-  /* One card, not two. "Maybe the top two boxes, the one with the level
-     and the other with the name, could be joined instead of appearing as
-     two separate boxes" - they are two halves of the same statement, so
-     the level block goes inside the identity card with a rule between
-     them rather than beside it as a second slab.
-     The class calendar line keeps its own row BELOW the card rather than
-     inside it: it is a destination, not a fact about you, and inside the
-     card it was the one tappable thing in a block of read-only text. */
-  /* Rank, then Badges, then Level (build 299): "the position of badges
-     and levels needs to be swapped here, level at the bottom, badges
-     between the other two". The rank is made of level AND badges, and
-     the two achievements now sit together under it with the long XP bar
-     closing the card. */
-  levelSect.classList.add("profile-level-joined", "rankhero-gauge", "statbox", "is-level");
-  badgeStat.classList.add("profile-level-joined", "rankhero-gauge", "statbox", "is-badges");
-  if(allBadges) badgeStat.classList.add("is-met");
-  /* ---- ONE PATH, NOT THREE BOXES (build 314) ----
-     "I feel like tying all 3 of these together is missing ... like
-     pathways I guess?" Rank, Badges and Level are one box, their rings
-     joined by a line that climbs from Level through Badges to Rank. The
-     line is the way to the next rank and it is LIT as far as you have
-     come: the lower stretch by your level towards the next rank's level,
-     the upper by your badges towards its badges. Both challenges met is
-     a path lit all the way up; the top rank is lit throughout. */
-  const path = document.createElement("div");
-  path.className = "profile-path";
-  const pathLink = (cls, frac) => {
-    const l = document.createElement("span");
-    l.className = "profile-path-link " + cls;
-    l.setAttribute("aria-hidden", "true");
-    l.style.setProperty("--litn", String(Math.round(Math.max(0, Math.min(1, frac)) * 1000) / 1000));
-    return l;
-  };
-  let litLevel = 1, litBadges = 1;
-  try{
-    const rc = rankChallengesOf();
-    if(rc){
-      const held = rankOf(store);
-      const cur = held && TIER_UNLOCKS[held] ? TIER_UNLOCKS[held] : { level: 0, badges: 0 };
-      const lv = rc.list.find(x => x.kind === "level"), bd = rc.list.find(x => x.kind === "badges");
-      const frac = (now, from, need) => need <= from ? (now >= need ? 1 : 0) : (now - from) / (need - from);
-      litLevel = lv ? frac(lv.now, Number(cur.level) || 0, lv.need) : 1;
-      litBadges = bd ? frac(bd.now, Number(cur.badges) || 0, bd.need) : 1;
-      path.style.setProperty("--path-next", rc.color);
-    }
-  }catch(e){}
-  path.append(rankLine, pathLink("is-upper", litBadges), badgeStat, pathLink("is-lower", litLevel), levelSect);
-  heroSect.appendChild(path);
+  const standing = buildProfileStanding(prog, rankNow);
+  const xpFill = standing.querySelector(".xpbar-fill");
+  heroSect.appendChild(standing);
+  heroSect.appendChild(buildProfileGoal(prog));
+  heroSect.appendChild(buildProfileCase(badgeCount, totalUnitsForBadges));
   /* The class no longer rides at the foot of the identity card. It was
      one line there because it was one line of content; now that it is
      today's schedule, the next class day and a count, it is its own box
@@ -89660,6 +89849,9 @@ function showProfile(defaultTab){
     requestAnimationFrame(() => requestAnimationFrame(() => {
       setBarFill(xpFill, Number(xpFill.dataset.target) || 0);
     }));
+    /* the flare bubbles' recorded motion, started the way Home starts
+       its own once the screen is up (build 315) */
+    setTimeout(() => { try{ if(heroSect.isConnected) startOrbitEmblemAnims(heroSect); }catch(e){} }, 450);
   }
 
 
@@ -90796,12 +90988,22 @@ function buildRankGifts(key){
     g.append(ico, t);
     gifts.appendChild(g);
   };
-  const dot = document.createElement("span");
-  dot.className = "rankmap-dot"; dot.style.background = ACCENT_SWATCH[key];
+  /* THE FLARE IN ITS BUBBLE, THE THEME AS ITS SWATCH (build 315): "the
+     flare there should probably be in a flare bubble, so it'd look like
+     what you see on home ... All the flares shown in the road map need
+     this. They obviously won't be lit till color is available for the
+     rank." The bubble is built lit and the stop's own state frosts it
+     (CSS), so the first-open celebration can light it like the rest. It
+     animates (startOrbitEmblemAnims) but does not float - "it will not
+     bounce in the road map". */
+  const reachedNow = (() => { try{ return tierColorUnlocked(key); }catch(e){ return false; } })();
+  let dot;
+  if(reachedNow){ dot = buildThemeDot(key); dot.classList.remove("pf-swatch"); dot.classList.add("rankmap-swatch"); }
+  else { dot = document.createElement("span"); dot.className = "rankmap-dot"; dot.style.background = ACCENT_SWATCH[key]; }
   gift("is-theme", dot, "Theme");
   const fl = document.createElement("span");
-  fl.className = "rankmap-giftav";
-  try{ fl.appendChild(fitRankEmblem(buildRankEmblemSVG(key), key)); }catch(e){}
+  fl.className = "rankmap-giftav rankmap-giftbubble";
+  fl.appendChild(buildFlareBubble(key, { lit: true }));
   gift("is-flare", fl, "Flare");
   const charForRank = AVATAR_CHARACTERS.find(c => c.unlock === key && !c.retired);
   if(charForRank){
@@ -91388,6 +91590,9 @@ function buildRanksTab(){
   summit.textContent = "Summit";
   map.appendChild(summit);
   tab.appendChild(map);
+  /* the reward chips' flare bubbles move like Home's (build 315), once
+     the screen and its opening scroll have settled */
+  setTimeout(() => { try{ if(stopsWrap.isConnected) startOrbitEmblemAnims(stopsWrap); }catch(e){} }, 2200);
 
   /* The Secret Flares box used to sit here and is gone per explicit
      request - "you can remove the eclipse color information from the
