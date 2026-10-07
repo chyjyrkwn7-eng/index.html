@@ -595,12 +595,24 @@ BANNER_RUN = """()=>{
   runLabel = 'Daily question';
   attempts = {}; picked = {}; timedOutSet = {}; attempts[qi] = 1;
   dailyQuestionLocked = false; store.dailyQuestionDate = null;
+  /* Only the Detective is news here: whatever else this account already
+     holds is marked shown, and no rank cutscene is owed, so Home's queue
+     has the one card to play. */
+  try{ const p = pendingHomeUnlocks(); markUnlocksShown(p.chars, p.banners, p.fx); }catch(e){}
+  store.pendingTierCutscene = null; store.pendingSupernovaCutscene = false;
   summarize();
+  store.pendingTierCutscene = null; store.pendingSupernovaCutscene = false;
   /* Build 218: a CHALLENGE character is announced with the centre-screen
-     challenge card, a beat after the answer lands, and it names the
-     challenge - "make the banner cooler, and ensure that the banner says
-     what the challenge was". */
+     challenge card, and it names the challenge - "make the banner cooler,
+     and ensure that the banner says what the challenge was". Build 317:
+     on HOME, after the XP has flown into Profile - "do that on the Home
+     Screen not within the daily question, after the xp gets to profile" -
+     so nothing may be up over the question, and Home plays it. */
   return new Promise(res => setTimeout(() => {
+    const onQuestion = !!document.querySelector('.rs-spot');
+    let homeErr = null;
+    try{ showHome(); }catch(e){ homeErr = String(e && e.stack || e).slice(0, 300); }
+    setTimeout(() => {
     const b = document.querySelector('.rs-spot.is-challenge');
     const need = b && b.querySelector('.rs-spot-need-text');
     res({ streak: store.dailyCorrectStreak,
@@ -609,11 +621,13 @@ BANNER_RUN = """()=>{
           drawsCharacter: !!(b && b.querySelector('.avatarchar-svg')),
           challenge: need ? need.textContent : '',
           feat: CHARACTER_FEATS.daily10.label,
-          says: b ? b.textContent : '' });
+          says: b ? b.textContent : '', onQuestion,
+          why: { home: !!document.querySelector('[data-screen="home"]'), stage: [...stage.children].map(e=>e.className+':'+(e.dataset.screen||'')).join('|').slice(0,160), onb: !!store.onboardingComplete, splash: !!document.getElementById('splashscreen'), homeErr, voidc: !!store.pendingVoidCutscene, pending: (pendingHomeUnlocks().chars || []).join(','), blocked: homeUnlockBlocked(), whatsNew: whatsNewHolds(), mute: !!theme.muteBanners, hold: !!store.mergeHold } });
+    }, 4500);
   }, 1800));}"""
 
 
-def check_unlock_banner(pg):
+def check_unlock_banner(br):
     """The banner shows the CHARACTER, not a generic mark.
 
     Same fault the rank-up banner had and was corrected for: it
@@ -621,10 +635,15 @@ def check_unlock_banner(pg):
     structurally - that the banner contains a real .avatarchar-svg built
     by the app's own builder - rather than by matching any string."""
     print("\n7b. unlocking a character shows that character in the banner")
+    # Its own page (build 317): it ends on Home now, and the sections
+    # before it leave that shared page in states Home will not mount over.
+    ctx, pg = booted(br)
     r = pg.evaluate(BANNER_RUN)
+    ctx.close()
     check("the tenth daily in a row unlocks the Detective",
           r["streak"] == 10 and r["locked"] is False, r["streak"])
-    check("a challenge card appears at the end of that run", r["banner"] is True)
+    check("nothing pops over the daily question itself", r["onQuestion"] is False)
+    check("a challenge card appears on Home after that run", r["banner"] is True, r.get("why"))
     check("and the character is drawn in it", r["drawsCharacter"] is True, r["says"][:60])
     check("and it says what the challenge was", r["challenge"] == r["feat"] and bool(r["feat"]),
           [r["challenge"], r["feat"]])
@@ -828,14 +847,14 @@ def main():
         errs = []
         pg.on("pageerror", lambda e: errs.append(str(e)))
         for fn in (check_table, check_daily_streak, check_hardcore, check_flares, check_glint, check_find,
-                   check_unlock_banner, check_art):
+                   check_art):
             try:
                 fn(pg)
             except Exception as exc:                      # noqa: BLE001
                 check(fn.__name__, False, "threw: %s" % exc)
         check("no uncaught JS along the way", not errs, errs[:3])
         ctx.close()
-        for fn in (check_glint_everywhere, check_locked_art):
+        for fn in (check_unlock_banner, check_glint_everywhere, check_locked_art):
             try:
                 fn(br)
             except Exception as exc:                      # noqa: BLE001

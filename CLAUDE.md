@@ -14483,6 +14483,19 @@ disagree with it.
     `pendingDailyProgress` now (Home's reader is a harmless no-op);
     `announceCharacterUnlocks()` still pops the Detective on the tenth
     in a row.
+  - **THE DETECTIVE'S POP-UP PLAYS ON HOME, AFTER THE XP.** *"The
+    detective pop up, do that on the Home Screen not within the daily
+    question, after the xp gets to profile."* summarize()'s daily branch
+    no longer calls `announceCharacterUnlocks()` at all; a character
+    earned there stays held-and-unshown, so Home's own unlock queue
+    (`playHomeUnlocks`) plays the same Challenge complete card.
+    `dailyXpFlyEndsAt` is set when Home starts the "+N XP" fly (450 +
+    900 + 500 ms to land, + 800 of the tab's pulse) and
+    `scheduleHomeUnlocks` waits for it: measured, the XP lands at 1.9s
+    and the card opens at 3.0s. check-unlocks 7b asserts nothing pops
+    over the question and the card arrives on Home; it runs on a page of
+    its own, because the shared page's earlier sections leave it in a
+    state Home will not mount over.
   - Gates that answer the daily question click the choice and then
     `#dailyq-submitbtn`; `check_b317_daily` holds all of the above and
     fails 10 of 12 against build 316. Its banner regex is the banner's

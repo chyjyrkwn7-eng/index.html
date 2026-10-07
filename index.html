@@ -67990,6 +67990,9 @@ function showHome(){
   if(pendingXpFly > 0 && pendingXpFlyDaily){
     const n = pendingXpFly;
     setTimeout(() => showPointsFlyEffect("+" + n.toLocaleString() + " XP"), 450);
+    /* 450 to start, 900 on show, 500 in flight, 800 of the tab's pulse:
+       the XP is in Profile by then, and the unlock cards wait for it. */
+    dailyXpFlyEndsAt = Date.now() + 450 + 900 + 500 + 800;
   }
   pendingXpFly = 0;
   pendingXpFlyDaily = false;
@@ -68076,7 +68079,8 @@ function showHome(){
        badges - see playHomeUnlocks. Straight away when a cutscene has
        just handed over (build 268): the bridge it left is holding the
        dim for this card. */
-    scheduleHomeUnlocks(sceneBridgeOpen() ? 380 : undefined);
+    scheduleHomeUnlocks(sceneBridgeOpen() ? 380
+      : Math.max(HOME_UNLOCK_DELAY_MS, dailyXpFlyEndsAt - Date.now() + 250));
     try{ scheduleResumeOffer(); }catch(e){}
   }
 }
@@ -77414,6 +77418,9 @@ let pendingXpFlyDaily = false;
 /* The Detective's daily-question run, said as a top banner on the main
    menu after the daily question rather than inside its result box. */
 let pendingDailyProgress = null;
+/* When the daily question's "+N XP" has landed in Profile (build 317) -
+   Home's unlock cards start after it, not over it. */
+let dailyXpFlyEndsAt = 0;
 let qClockQi = null, qClockAt = 0;
 function qClockStart(qi){
   qClockStop();
@@ -79945,12 +79952,14 @@ function summarize(){
        here put "Character unlocked" and "Theme unlocked" on top of each
        other over the question, before the rank they came from. A
        challenge character (the Detective) still announces here. */
+    /* A CHARACTER EARNED HERE IS TOLD ON HOME TOO (build 317): "The
+       detective pop up, do that on the Home Screen not within the daily
+       question, after the xp gets to profile". Nothing is announced over
+       the question any more; the character is held and not yet shown, so
+       Home's unlock queue (playHomeUnlocks) plays its Challenge complete
+       card once the XP has flown into Profile - see dailyXpFlyEndsAt. */
     const rankPending = !!(store.pendingTierCutscene || store.pendingSupernovaCutscene);
-    if(rankPending){
-      const feats = new Set(AVATAR_CHARACTERS.filter(c => c.feat && lockedBefore.has(c.id)).map(c => c.id));
-      announceCharacterUnlocks(feats);
-    } else {
-      announceCharacterUnlocks(lockedBefore);
+    if(!rankPending){
       newlyUnlockedColors.forEach((c, i) => {
         setTimeout(() => showThemeUnlockBanner(c), 1400 + i * 900);
       });
