@@ -14580,6 +14580,66 @@
     .rankmap-req{ font-size:.8rem; }
     .rankmap-gift{ font-size:.68rem; }
   }
+  /* ---- THE RANK-UP, SHOWN ON PROFILE (build 317) ----
+     See playRankUpProfileScene. Everything here is a new rule on the
+     scene's own classes (ru-*); the road map's, Profile's and the tab
+     bar's own rules are untouched. */
+  /* Home, locked: the Profile tab rings in the new rank's colour - a
+     pill outline breathing out from the tab, and the character bobbing. */
+  #bottomtab-profile.ru-call::before{
+    content:""; position:absolute; inset:1px; border-radius:999px; pointer-events:none; z-index:-1;
+    border:2px solid var(--ru-color, var(--accent));
+    box-shadow:0 0 14px color-mix(in srgb, var(--ru-color, var(--accent)) 65%, transparent),
+      inset 0 0 10px color-mix(in srgb, var(--ru-color, var(--accent)) 35%, transparent);
+    animation:ru-tab-ring 1.7s ease-out infinite;
+  }
+  #bottomtab-profile.ru-call .bottomtab-icon{ animation:ru-tab-bob 1.7s ease-in-out infinite; }
+  #bottomtab-profile.ru-call .bottomtab-label{ color:color-mix(in srgb, var(--ru-color, var(--accent)) 55%, #fff); }
+  @keyframes ru-tab-ring{ 0%{ transform:scale(.92); opacity:1; } 65%{ opacity:.15; } 100%{ transform:scale(1.22); opacity:0; } }
+  @keyframes ru-tab-bob{ 0%, 44%, 100%{ transform:scale(1); } 14%{ transform:scale(1.16); } 28%{ transform:scale(.97); } }
+  /* Reduce motion: a ring that stays lit instead of one that rings. The
+     in-app rule is `*`, which never matches a pseudo-element. */
+  [data-reduce-motion="true"] #bottomtab-profile.ru-call::before{ animation:none; transform:none; opacity:.95; }
+  /* While it plays nothing can be pressed: this layer takes every touch,
+     and the scene swallows keys, wheels and clicks on the window. */
+  .ru-blocker{ position:fixed; inset:0; z-index:2147483000; background:transparent; touch-action:none; -webkit-tap-highlight-color:rgba(0,0,0,0); }
+  /* The loading screen is LOADING TEST's own, a touch above the tab bar
+     and the chat button, and it fades in and out rather than cutting. */
+  #teststart-overlay.ru-loading{ z-index:410; animation:ru-fade-in .35s ease both; transition:opacity .42s ease; }
+  #teststart-overlay.ru-loading.is-leaving{ opacity:0; }
+  @keyframes ru-fade-in{ from{ opacity:0; } to{ opacity:1; } }
+  /* The zoom scales the map past its own edges; nothing may scroll sideways. */
+  html.ru-scene, html.ru-scene body{ overflow-x:clip; }
+  html.ru-scene .rankmap{ transition:transform .8s cubic-bezier(.3,.7,.2,1); will-change:transform; }
+  html.ru-scene .rankmap.ru-zoom{ transform:scale(1.14); }
+  /* The light rides the road into the new rank, speeding up, so it HITS. */
+  .rankmap-stop.ru-ride .rankmap-roadfill,
+  .rankmap-stop.ru-ride .rankmap-roadtip{ transition:transform 1.7s cubic-bezier(.42,0,.78,.62) .1s; }
+  .rankmap-stop.ru-ride .rankmap-roadtip-dot{ transition-delay:0s, 0s; }
+  .rankmap-roadtip.ru-hit .rankmap-roadtip-dot{ opacity:0; transform:scale(2.4); transition:opacity .35s ease, transform .35s ease-out; }
+  .rankmap-roadtip.ru-ridetip .rankmap-roadtip-dot::after{ animation:none; }
+  /* ...and the rank shakes before its colour comes out. */
+  .rankmap-stop .rankmap-node.ru-shake{ animation:ru-shake .52s cubic-bezier(.36,.07,.19,.97) both; }
+  @keyframes ru-shake{
+    10%, 90%{ transform:translateX(-1px) rotate(-1deg); }
+    20%, 80%{ transform:translateX(2px) rotate(2deg); }
+    30%, 50%, 70%{ transform:translateX(-3px) rotate(-3deg); }
+    40%, 60%{ transform:translateX(3px) rotate(3deg); }
+  }
+  /* The current-rank card at the top: the rank you were, its rings out of
+     sight, until the map has shown the new one - then it turns over to
+     the new rank, says so, and grows a little. */
+  .rankhero.ru-hold .rankhero-gaugehead, .rankhero.ru-hold .rankhero-gauges{ display:none; }
+  .rankhero.ru-reveal .rankhero-gaugehead, .rankhero.ru-reveal .rankhero-gauges{ animation:ru-gauges-in .7s ease .25s both; }
+  @keyframes ru-gauges-in{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:none; } }
+  .rankhero-kicker.ru-kick{ color:color-mix(in srgb, var(--rank-color, var(--accent)) 60%, #fff); }
+  .rankhero.ru-rankup{ animation:ru-hero-up 1.1s cubic-bezier(.2,1.2,.35,1) both; }
+  .rankhero.ru-rankup .rankhero-art{ animation:ru-hero-art .9s cubic-bezier(.2,1.5,.4,1) both; }
+  @keyframes ru-hero-up{ 0%{ transform:scale(1); } 40%{ transform:scale(1.05); box-shadow:0 0 44px -6px var(--rank-color, var(--accent)); } 100%{ transform:scale(1.02); } }
+  @keyframes ru-hero-art{ 0%{ transform:scale(.55) rotate(-25deg); opacity:.3; } 60%{ transform:scale(1.14) rotate(5deg); opacity:1; } 100%{ transform:none; } }
+  /* Back on Profile: the new rank's emblem arrives with a small pop. */
+  .pf-standing.ru-arrive .pf-emb{ animation:ru-emb-arrive .9s cubic-bezier(.2,1.5,.4,1) .1s both; }
+  @keyframes ru-emb-arrive{ 0%{ transform:scale(.5); opacity:.2; } 60%{ transform:scale(1.2); opacity:1; } 100%{ transform:none; } }
   .ranktrack{
     display:flex; flex-wrap:wrap; justify-content:center;
     --rank-gap:.6rem; gap:var(--rank-gap); margin:0 0 1.6rem;
@@ -55083,7 +55143,14 @@ function rankOfStats(level, badges, mysteryFound){
   });
   return held;
 }
+/* The rank Profile is drawn with for its first second after a rank-up
+   (build 317, playRankUpProfileScene): the one you held before, so the
+   card can fade into the new one at the end. Set only while showProfile
+   builds, cleared by a microtask behind it; `var`, so it is never in a
+   temporal dead zone when rankOf runs at boot. */
+var rankOfStandIn, rankOfStandInReal;
 function rankOf(st){
+  if(rankOfStandIn !== undefined && st === store) return rankOfStandIn;
   const now = rankOfStats(levelOf(st), badgeCountOf(st),
                           st === store ? mysteryColorsFoundCount() : 0);
   /* NOBODY DROPS A RANK (build 314). The ladder moved to 21/30/40/50/60/
@@ -68101,6 +68168,8 @@ function showHome(){
   stage.appendChild(versionTag);
 
   toTop();
+  /* a rank-up not yet shown locks Home to the Profile tab (build 317) */
+  scheduleRankUpLock();
   if(pendingMainMenuTour){
     pendingMainMenuTour = false;
     /* The genuine completion point for a fresh signup \\u2014 flipped here
@@ -78231,7 +78300,8 @@ function badgeNewCount(){ return newCountOf(["badges"]); }
    walk-through waiting for it, so it gets the dot too. */
 function rankIsNew(){
   try{
-    const i = TIER_ORDER_FULL.indexOf(rankOf(store));
+    /* the rank really held, even while Profile is drawn as before (317) */
+    const i = TIER_ORDER_FULL.indexOf(rankOfStandIn !== undefined ? rankOfStandInReal : rankOf(store));
     if(i < 0) return false;
     if(!store.rankMapFx244) return true;
     return typeof store.rankMapSeen === "number" && i > store.rankMapSeen;
@@ -93065,6 +93135,8 @@ function showProfile(defaultTab){
   timerlineEl.hidden = true;
   setActiveNav("profile");
   countEl.textContent = "Profile";
+  /* A rank-up the road map has not shown: built as it was before (317). */
+  armRankUpProfileScene(initialTab);
 
   const panel = document.createElement("section");
   panel.className = "panel screen-profile";
@@ -93762,6 +93834,8 @@ function showProfile(defaultTab){
   stage.replaceChildren(panel);
   toTop();
   if(initialTab === "profile") runXpBarFill();
+  /* a rank-up waiting to be shown plays from here; no tour over it (317) */
+  if(rankUpScene && playRankUpProfileScene(rankUpScene, panel)) return;
   if(!store.seenProfileTour){
     store.seenProfileTour = true;
     /* The full tour includes the three tips below, so it settles them. */
@@ -95394,6 +95468,8 @@ function buildRanksTab(){
     if(celebrated) return;
     celebrated = true;
     armTakeOver();
+    /* the Profile rank-up cutscene (build 317) owns this map, or null */
+    const scene = rankUpSceneTakesMap(map);
     const progFill = map.querySelector(".rankmap-roadfill[data-progress-to]");
     if(nowProg != null){ store.rankMapProg = { i: heldIndex, p: nowProg }; saveStore(); }
     /* ---- DOWN THE ROAD AND BACK, EVERY TIME (build 311) ----
@@ -95408,6 +95484,7 @@ function buildRanksTab(){
        pick, not the browser's - and a touch, a wheel or a key stops it
        where it is. */
     if(!celebrateStops.length && !progFill){
+      if(scene){ rankUpSceneMapDone(scene); return; }
       if(theme.reduceMotion) return;
       const wait = ms => new Promise(r => setTimeout(r, ms));
       (async () => {
@@ -95420,8 +95497,8 @@ function buildRanksTab(){
       })();
       return;
     }
-    store.rankMapSeen = heldIndex; saveStore();
-    syncProfileTabDot();
+    /* the cutscene marks it once it has played to the end (build 317) */
+    if(!scene){ store.rankMapSeen = heldIndex; saveStore(); syncProfileTabDot(); }
     const runProgress = () => {
       if(!progFill) return;
       if(progressStop) progressStop.classList.add("is-climbing");
@@ -95435,7 +95512,7 @@ function buildRanksTab(){
       c.stop.classList.remove("is-celebrate-pending");
       if(c.state.dataset.after) c.state.textContent = c.state.dataset.after;
     };
-    if(theme.reduceMotion){ celebrateStops.forEach(finish); runProgress(); return; }
+    if(theme.reduceMotion){ celebrateStops.forEach(finish); runProgress(); if(scene) rankUpSceneStill(scene, celebrateStops); return; }
     const wait = ms => new Promise(r => setTimeout(r, ms));
     /* Several in a row keep the same beats but tighter, so six ranks do
        not become half a minute of waiting. */
@@ -95452,13 +95529,16 @@ function buildRanksTab(){
         await glideCentre(r.top + window.scrollY + r.height / 2);
         await wait(many ? 250 : 350);
         const rf = map.querySelector('.rankmap-roadfill[data-celebrate-for="' + c.key + '"]');
-        if(rf){ rf.style.setProperty("--lit", "1"); await wait(many ? 1500 : 1800); }
+        /* the cutscene zooms in, rides a light down the road and shakes the rank (317) */
+        if(scene) await rankUpSceneArrive(scene, c.stop, rf, many);
+        else if(rf){ rf.style.setProperty("--lit", "1"); await wait(many ? 1500 : 1800); }
         c.stop.classList.add("is-celebrating");
         finish(c);
         await wait(many ? 1500 : 1900);
         c.stop.classList.remove("is-celebrating");
+        if(scene) await rankUpSceneLeave(scene, c.stop);
       }
-      if(progFill && progressStop && progressStop.isConnected){
+      if(!scene && progFill && progressStop && progressStop.isConnected){
         await glideCentre(focusOf());
         await wait(350);
         runProgress();
@@ -95467,6 +95547,7 @@ function buildRanksTab(){
       }
       /* ...and back up to where the tab opened (build 279). */
       await glideHome();
+      if(scene) rankUpSceneMapDone(scene);
     })();
   }
   /* (Build 280's "no glance when nothing moved" is reversed in build 311 -
@@ -95530,6 +95611,430 @@ function buildRanksTab(){
   };
 
   return tab;
+}
+
+/* ---- THE RANK-UP, SHOWN ON PROFILE (build 317) ----
+   "When you rank up, the next time you open the Profile tab it should be
+   a cool thing ... technically a cutscene ... the next time you go to
+   Home, the Profile tab in the bottom tab bar starts pulsing/ringing,
+   and you can't use anything else except that." Madison's words; the
+   pieces, in the order they happen:
+   1. HOME LOCKS (scheduleRankUpLock, from showHome). Once nothing else
+      owns the screen - the rank-up cutscene, the reward cards and their
+      flight to Profile, What's New, a tour, the splash, the badge
+      cutscenes - the Profile tab rings in the new rank's colour, and
+      Start Studying, the daily question, the version button, Leaderboard
+      and Settings answer "Your profile needs you" (the plain top banner)
+      instead. The flares on Home, the chat and the Home tab still work.
+   2. PROFILE, AS IT WAS (armRankUpProfileScene, from showProfile). For
+      its first second the card is built with the rank you held before
+      (rankOfStandIn), every input already blocked.
+   3. LOADING RANK UP ADJUSTMENTS - LOADING TEST's own screen, three
+      seconds - and under it the road map is built.
+   4. THE ROAD MAP'S OWN CELEBRATION (runRankMapCelebration), with three
+      hooks: it zooms in on the new rank, a light rides the road into it
+      and hits, the rank shakes, and then its colour comes out exactly as
+      it always has. No climb of the next stretch - the scene moves on.
+      The current-rank card at the top showed the old rank all along; it
+      turns over to the new one, says "Rank up" and grows a little.
+   5. BACK TO PROFILE, the old Where-you-stand line and Next rank card in
+      place for a beat, then each fades out and the new one fades in (the
+      new rank's colour, the next rank's challenges).
+   It is one fact with the road map's own celebration and the yellow dot:
+   rankIsNew(). The scene marks store.rankMapSeen only at the END, so an
+   app closed half-way plays it again, and a watchdog ends it whatever
+   happens, so the input layer can never be left up. An account whose
+   rankMapSeen is still null (never opened the map) is never locked:
+   there is nothing to compare against. Reduce motion: the same steps,
+   shorter, without the zoom, the ride, the shake or the fades. */
+var rankUpScene = null;
+var rankUpLockTimer = null, rankUpLockWired = false, rankUpRefusedAt = 0;
+var rankUpBlockEl = null;
+var RANKUP_LOADING_MS = 3000;
+/* Home's own buttons that a lock refuses; the tabs are refused in the
+   bottom bar's navigateTab (it is also reached by a drag, not a click). */
+var RANKUP_LOCK_BLOCKS = "#nextbtn.playbtn, .daily-question-fab, .homeversion-btn, .daily-alert.is-live";
+var RANKUP_SWALLOW = ["pointerdown", "pointerup", "mousedown", "mouseup", "click", "dblclick", "touchstart", "touchmove", "touchend", "wheel", "keydown", "contextmenu"];
+
+function rankUpSceneOwed(){
+  try{
+    if(!store || !store.onboardingComplete) return false;
+    if(typeof store.rankMapSeen !== "number") return false;
+    if(store.pendingTierCutscene || store.pendingSupernovaCutscene || store.pendingVoidCutscene) return false;
+    if(typeof testInProgress !== "undefined" && testInProgress) return false;
+    return rankIsNew();
+  }catch(e){ return false; }
+}
+
+/* ---- 1. Home ---- */
+function scheduleRankUpLock(ms){
+  clearTimeout(rankUpLockTimer);
+  rankUpLockTimer = setTimeout(rankUpLockCheck, ms == null ? 1200 : ms);
+}
+/* Anything that already owns Home goes first: the same list the reward
+   cards wait on, the cards themselves and their flight, and the daily
+   question's XP on its way in. */
+function rankUpLockWaits(){
+  try{ if(homeUnlockBlocked() || homeUnlockPlaying || homeUnlockTimer) return true; }catch(e){ return true; }
+  if(document.querySelector(".rs-fly, .scene-bridge, #teststart-overlay, #intro-pop, #tour-overlay, #splashscreen")) return true;
+  return Date.now() < (Number(dailyXpFlyEndsAt) || 0);
+}
+function rankUpLockCheck(){
+  rankUpLockTimer = null;
+  if(!stage.querySelector('[data-screen="home"]') || rankUpScene || !rankUpSceneOwed()){ setRankUpLock(false); return; }
+  const on = document.body.classList.contains("rankup-lock");
+  if(!on && rankUpLockWaits()){ rankUpLockTimer = setTimeout(rankUpLockCheck, 700); return; }
+  if(!on) setRankUpLock(true);
+  /* still asked while Home is up: a synced device may have shown it */
+  rankUpLockTimer = setTimeout(rankUpLockCheck, 2000);
+}
+function setRankUpLock(on){
+  if(!document.body) return;
+  const tab = document.getElementById("bottomtab-profile");
+  if(on){
+    wireRankUpLock();
+    document.body.classList.add("rankup-lock");
+    if(tab){
+      let held = null;
+      try{ held = rankOf(store); }catch(e){}
+      if(held) tab.style.setProperty("--ru-color", rankRoadColor(held));
+      tab.classList.add("ru-call");
+      tab.setAttribute("aria-label", "Profile - your new rank");
+    }
+  } else {
+    document.body.classList.remove("rankup-lock");
+    if(tab && tab.classList.contains("ru-call")){ tab.classList.remove("ru-call"); tab.removeAttribute("aria-label"); }
+  }
+}
+function wireRankUpLock(){
+  if(rankUpLockWired) return;
+  rankUpLockWired = true;
+  document.addEventListener("click", e => {
+    if(!document.body.classList.contains("rankup-lock")) return;
+    const t = e.target && e.target.closest ? e.target.closest(RANKUP_LOCK_BLOCKS) : null;
+    if(!t) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    rankUpLockRefused();
+  }, true);
+  /* the lock belongs to Home: any other screen takes it off */
+  try{
+    new MutationObserver(() => {
+      if(document.body.classList.contains("rankup-lock") && !stage.querySelector('[data-screen="home"]')) setRankUpLock(false);
+    }).observe(stage, { childList: true });
+  }catch(e){}
+}
+/* The bottom bar asks this first; true means "refused, and said so". */
+function rankUpLockRefuses(dest){
+  if(dest === "profile" || dest === "home") return false;
+  if(!document.body.classList.contains("rankup-lock")) return false;
+  rankUpLockRefused();
+  return true;
+}
+function rankUpLockRefused(){
+  const tab = document.getElementById("bottomtab-profile");
+  if(tab){
+    tab.classList.remove("avatar-pulse"); void tab.offsetWidth; tab.classList.add("avatar-pulse");
+    /* 800, matching .avatar-pulse's own .8s */
+    setTimeout(() => tab.classList.remove("avatar-pulse"), 800);
+  }
+  const now = Date.now();
+  if(now - rankUpRefusedAt < 700 && document.getElementById("dailyalert")) return;
+  rankUpRefusedAt = now;
+  showDailyAlert("Your profile needs you");
+}
+
+/* ---- the input layer ---- */
+function rankUpSwallow(e){
+  e.stopPropagation();
+  if(e.cancelable) e.preventDefault();
+}
+function rankUpBlockInput(on){
+  if(on){
+    if(!rankUpBlockEl){
+      rankUpBlockEl = document.createElement("div");
+      rankUpBlockEl.className = "ru-blocker";
+      rankUpBlockEl.setAttribute("aria-hidden", "true");
+    }
+    if(!rankUpBlockEl.isConnected) document.body.appendChild(rankUpBlockEl);
+    RANKUP_SWALLOW.forEach(t => window.addEventListener(t, rankUpSwallow, { capture: true, passive: false }));
+    try{ if(document.activeElement && document.activeElement !== document.body) document.activeElement.blur(); }catch(e){}
+  } else {
+    RANKUP_SWALLOW.forEach(t => window.removeEventListener(t, rankUpSwallow, { capture: true }));
+    if(rankUpBlockEl) rankUpBlockEl.remove();
+  }
+}
+
+/* ---- 2. Profile, as it was ---- */
+function armRankUpProfileScene(tab){
+  if(tab !== "profile" || rankUpScene || !rankUpSceneOwed()) return null;
+  if(document.querySelector("#tour-overlay, #splashscreen, #genprofile-overlay, .rs-spot, #badge-cutscene, #supernova-cutscene, #void-cutscene, #intro-pop")) return null;
+  let held = null;
+  try{ held = rankOf(store); }catch(e){}
+  const heldIdx = TIER_ORDER_FULL.indexOf(held);
+  if(heldIdx < 0) return null;
+  /* The map celebrates everything past rankMapSeen - or, for an account
+     that has never had build 244's show, everything held. */
+  const fromIdx = store.rankMapFx244 ? Math.max(-1, Math.min(store.rankMapSeen, heldIdx - 1)) : -1;
+  const scene = { phase: "armed", from: TIER_ORDER_FULL[fromIdx] || null, to: held, toIdx: heldIdx,
+                  count: heldIdx - fromIdx, tips: [] };
+  rankUpScene = scene;
+  setRankUpLock(false);
+  rankUpBlockInput(true);
+  rankOfStandInReal = held;
+  rankOfStandIn = scene.from;
+  /* never outlives the build that asked for it, even one that throws */
+  Promise.resolve().then(() => { rankOfStandIn = undefined; });
+  rankUpSceneWatch(scene, 4000);
+  return scene;
+}
+function rankUpSceneWatch(scene, ms){
+  clearTimeout(scene.watch);
+  scene.watch = setTimeout(() => {
+    if(rankUpScene !== scene) return;
+    const played = scene.phase !== "armed";
+    rankUpSceneEnd(scene, played);
+    if(played && !stage.querySelector(".screen-profile")){ try{ showProfile(); }catch(e){} }
+  }, ms);
+}
+function playRankUpProfileScene(scene, panel){
+  rankOfStandIn = undefined;
+  if(!scene || rankUpScene !== scene || scene.phase !== "armed") return false;
+  scene.phase = "profile";
+  scene.panel = panel;
+  scene.oldStanding = panel.querySelector(".pf-standing");
+  scene.oldGoal = panel.querySelector(".pf-goal");
+  /* generous: a slow phone, several ranks at once */
+  rankUpSceneWatch(scene, 24000 + 11000 * Math.max(1, scene.count));
+  setTimeout(() => rankUpSceneLoading(scene), theme.reduceMotion ? 700 : 1000);
+  return true;
+}
+
+/* ---- 3. LOADING RANK UP ADJUSTMENTS ---- */
+function rankUpSceneLoading(scene){
+  if(rankUpScene !== scene) return;
+  /* something else took the screen in that second: stand down, unplayed */
+  if(!scene.panel.isConnected){ rankUpSceneEnd(scene, false); return; }
+  scene.phase = "loading";
+  const total = theme.reduceMotion ? 1500 : RANKUP_LOADING_MS;
+  const { overlay, barFill } = buildLoadingOverlay("LOADING RANK UP ADJUSTMENTS");
+  overlay.classList.add("ru-loading");
+  document.body.appendChild(overlay);
+  scene.overlay = overlay;
+  if(typeof syncChatDock === "function") syncChatDock();
+  const t0 = Date.now();
+  let mounted = false;
+  const tick = () => {
+    if(rankUpScene !== scene || !overlay.isConnected) return;
+    const el = Date.now() - t0;
+    setBarFill(barFill, Math.min(100, Math.round(el / (total - 300) * 1000) / 10));
+    /* the map is built under the screen, a beat before it lifts */
+    if(!mounted && el >= total - 250){ mounted = true; rankUpSceneMap(scene); }
+    if(el >= total){
+      overlay.classList.add("is-leaving");
+      setTimeout(() => { overlay.remove(); }, theme.reduceMotion ? 0 : 440);
+      return;
+    }
+    setTimeout(tick, 100);
+  };
+  tick();
+}
+
+/* ---- 4. the road map ---- */
+function rankUpSceneMap(scene){
+  if(rankUpScene !== scene) return;
+  scene.phase = "map";
+  scene.wantsMap = true;
+  document.documentElement.classList.add("ru-scene");
+  showRanksScreen("ranks");
+  const tab = stage.querySelector(".ranks-tab");
+  if(!tab){ rankUpSceneEnd(scene, true); return; }
+  rankUpHeroHold(scene, tab.querySelector(".rankhero"));
+}
+/* Asked once by runRankMapCelebration: is this map the scene's? */
+function rankUpSceneTakesMap(map){
+  const s = rankUpScene;
+  if(!s || !s.wantsMap || s.map || !map || !map.isConnected) return null;
+  s.map = map;
+  return s;
+}
+function rankUpWait(ms){ return new Promise(r => setTimeout(r, ms)); }
+async function rankUpSceneArrive(scene, stop, rf, many){
+  if(rankUpScene !== scene) return;
+  const map = stop.closest(".rankmap");
+  const node = stop.querySelector(".rankmap-node");
+  /* zoom in on the rank: about the middle of its stop, at its circle */
+  if(map && node){
+    const mr = map.getBoundingClientRect(), nr = node.getBoundingClientRect(), sr = stop.getBoundingClientRect();
+    map.style.transformOrigin = Math.round(sr.left + sr.width / 2 - mr.left) + "px " + Math.round(nr.top + nr.height / 2 - mr.top) + "px";
+    map.classList.add("ru-zoom");
+    await rankUpWait(many ? 550 : 850);
+  }
+  /* a light rides the road into it - the road map's own light and line,
+     measured the way the stretch you are climbing is (placeRoadTip) */
+  if(rf){
+    const above = rf.closest(".rankmap-stop"), road = rf.parentElement;
+    let tip = null, stub = null;
+    if(above && road){
+      above.classList.add("ru-ride");
+      rf.classList.add("is-tipped");
+      if(!road.querySelector(".rankmap-roadstub")){
+        stub = document.createElement("span");
+        stub.className = "rankmap-roadstub";
+        road.insertBefore(stub, rf);
+      }
+      tip = document.createElement("span");
+      tip.className = "rankmap-roadtip ru-ridetip";
+      tip.setAttribute("aria-hidden", "true");
+      tip.style.setProperty("--rank-color", road.style.getPropertyValue("--rank-color") || RANK_COLOR[scene.to]);
+      const dot = document.createElement("span");
+      dot.className = "rankmap-roadtip-dot";
+      tip.appendChild(dot);
+      above.appendChild(tip);
+      placeRoadTip(tip, 0, true);
+      void tip.offsetHeight;
+    }
+    rf.style.setProperty("--lit", "1");
+    if(tip) placeRoadTip(tip, 1);
+    await rankUpWait(1850);
+    /* it hits: the light flares into the circle, the line closes up */
+    if(tip) tip.classList.add("ru-hit");
+    rf.classList.remove("is-tipped");
+    if(stub) stub.remove();
+    scene.tips.push({ tip, above });
+  }
+  /* the rank shakes, and then (the caller) its colour comes out */
+  if(node){
+    node.classList.add("ru-shake");
+    await rankUpWait(540);
+    node.classList.remove("ru-shake");
+  }
+}
+async function rankUpSceneLeave(scene, stop){
+  const map = stop.closest(".rankmap");
+  if(map && map.classList.contains("ru-zoom")){ map.classList.remove("ru-zoom"); await rankUpWait(750); }
+  (scene.tips || []).forEach(t => { if(t.tip) t.tip.remove(); if(t.above) t.above.classList.remove("ru-ride"); });
+  scene.tips = [];
+}
+/* Reduce motion: the map has already put the colour on every new rank;
+   look at the highest for a moment, then the card at the top. */
+function rankUpSceneStill(scene, stops){
+  const last = stops && stops[stops.length - 1];
+  if(last && last.stop.isConnected){
+    const r = last.stop.getBoundingClientRect();
+    glideScrollTo(r.top + window.scrollY + r.height / 2 - window.innerHeight / 2, 1);
+  }
+  setTimeout(() => {
+    if(rankUpScene !== scene) return;
+    jumpToTop();
+    rankUpSceneMapDone(scene);
+  }, 2600);
+}
+/* The current-rank card shows where you WERE until the map has shown
+   where you are. Read back off the card itself, so nothing about how it
+   is built has to know. */
+function rankUpHeroHold(scene, hero){
+  if(!hero) return;
+  const art = hero.querySelector(".rankhero-art"), kick = hero.querySelector(".rankhero-kicker"), name = hero.querySelector(".rankhero-name");
+  scene.hero = hero;
+  scene.heroNow = { color: hero.style.getPropertyValue("--rank-color"), unranked: hero.classList.contains("is-unranked"),
+                    art: art ? [...art.childNodes] : [], kick: kick ? kick.textContent : "", name: name ? name.textContent : "" };
+  const f = scene.from;
+  hero.style.setProperty("--rank-color", RANK_COLOR[f || "rookie"]);
+  hero.classList.toggle("is-unranked", !f);
+  if(art){ art.replaceChildren(); if(f){ try{ art.appendChild(fitRankEmblem(buildRankEmblemSVG(f), f)); }catch(e){} } }
+  if(kick) kick.textContent = f ? "Your rank" : "Unranked";
+  if(name) name.textContent = f ? RANK_DISPLAY_NAME[f] : "No rank yet";
+  hero.classList.add("ru-hold");
+}
+function rankUpHeroReveal(scene){
+  const hero = scene.hero, now = scene.heroNow;
+  if(!hero || !now || !hero.isConnected) return;
+  const art = hero.querySelector(".rankhero-art"), kick = hero.querySelector(".rankhero-kicker"), name = hero.querySelector(".rankhero-name");
+  hero.style.setProperty("--rank-color", now.color);
+  hero.classList.toggle("is-unranked", now.unranked);
+  if(art) art.replaceChildren(...now.art);
+  if(name) name.textContent = now.name;
+  if(kick){ kick.textContent = "Rank up"; kick.classList.add("ru-kick"); }
+  hero.classList.remove("ru-hold");
+  hero.classList.add("ru-reveal", "ru-rankup");
+}
+function rankUpSceneMapDone(scene){
+  if(rankUpScene !== scene || scene.phase !== "map") return;
+  scene.phase = "hero";
+  rankUpHeroReveal(scene);
+  setTimeout(() => rankUpSceneBack(scene), theme.reduceMotion ? 1500 : 2100);
+}
+
+/* ---- 5. back to Profile ---- */
+function rankUpMarkSeen(){
+  try{
+    const i = TIER_ORDER_FULL.indexOf(rankOf(store));
+    if(i >= 0 && (typeof store.rankMapSeen !== "number" || store.rankMapSeen < i)){ store.rankMapSeen = i; saveStore(); }
+  }catch(e){}
+  try{ syncProfileTabDot(); }catch(e){}
+}
+function rankUpSceneBack(scene){
+  if(rankUpScene !== scene) return;
+  scene.phase = "back";
+  scene.wantsMap = false;
+  rankUpMarkSeen();
+  document.documentElement.classList.remove("ru-scene");
+  showProfile();
+  const panel = stage.querySelector(".screen-profile");
+  if(!panel){ rankUpSceneEnd(scene, true); return; }
+  rankUpProfileFade(scene, panel);
+}
+/* The card comes back as it was - the old Where-you-stand line and the
+   old Next rank card put back where the new ones go - and then each
+   fades out and the new one fades in, in the new rank's colour and with
+   the next rank's challenges. */
+function rankUpProfileFade(scene, panel){
+  const pairs = [[scene.oldStanding, panel.querySelector(".pf-standing")], [scene.oldGoal, panel.querySelector(".pf-goal")]]
+    .filter(p => p[0] && p[1]);
+  if(theme.reduceMotion || !pairs.length){ rankUpSceneEnd(scene, true); return; }
+  pairs.forEach(([o, n]) => n.replaceWith(o));
+  setTimeout(() => {
+    if(rankUpScene !== scene) return;
+    pairs.forEach(([o]) => {
+      o.style.transition = "opacity .42s ease, transform .42s ease";
+      o.style.opacity = "0"; o.style.transform = "translateY(-6px)";
+    });
+    setTimeout(() => {
+      if(rankUpScene !== scene) return;
+      pairs.forEach(([o, n]) => {
+        const h0 = o.offsetHeight;
+        if(!o.isConnected) return;
+        o.replaceWith(n);
+        const h1 = n.offsetHeight;
+        n.style.opacity = "0"; n.style.transform = "translateY(8px)";
+        const grow = Math.abs(h1 - h0) > 2;
+        if(grow){ n.style.height = h0 + "px"; n.style.overflow = "hidden"; }
+        void n.offsetHeight;
+        n.style.transition = "opacity .65s ease, transform .65s cubic-bezier(.2,.8,.2,1)" + (grow ? ", height .5s cubic-bezier(.3,.7,.2,1)" : "");
+        n.style.opacity = ""; n.style.transform = "";
+        if(grow) n.style.height = h1 + "px";
+        if(n.classList.contains("pf-standing")) n.classList.add("ru-arrive");
+        setTimeout(() => { n.style.transition = ""; n.style.height = ""; n.style.overflow = ""; }, 720);
+      });
+      /* the swapped-in card's flare bubbles start the way Profile starts them */
+      try{ const hs = panel.querySelector(".profile-hero"); if(hs) startOrbitEmblemAnims(hs); }catch(e){}
+      setTimeout(() => rankUpSceneEnd(scene, true), 1000);
+    }, 440);
+  }, 750);
+}
+/* The one way out, played or not. Safe to call twice. */
+function rankUpSceneEnd(scene, played){
+  if(rankUpScene !== scene) return;
+  if(played) rankUpMarkSeen();
+  rankUpScene = null;
+  clearTimeout(scene.watch);
+  rankOfStandIn = undefined;
+  scene.wantsMap = false;
+  rankUpBlockInput(false);
+  document.documentElement.classList.remove("ru-scene");
+  if(scene.overlay && scene.overlay.isConnected) scene.overlay.remove();
+  document.querySelectorAll(".rankmap.ru-zoom").forEach(m => m.classList.remove("ru-zoom"));
+  if(typeof syncChatDock === "function") syncChatDock();
 }
 
 
@@ -95805,6 +96310,8 @@ function applyGlassRefraction(el, mapImgId){
          taken to settle anyway. */
       if(bar.dataset.navigating === "1") return;
       if(dest === "home" && !testInProgress && stage.querySelector(".screen-home-actual")) return;
+      /* Home locked to the Profile tab after a rank-up (build 317) */
+      if(rankUpLockRefuses(dest)) return;
       bar.dataset.navigating = "1";
       setTimeout(() => { bar.dataset.navigating = "0"; }, 130);
       /* THE TAP ANSWERS FIRST, THE SCREEN FOLLOWS (build 279): "the bottom

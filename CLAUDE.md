@@ -14547,6 +14547,87 @@ disagree with it.
     exact shape ("N of 10 daily questions right in a row" / "Back to 0
     of 10") - Home also carries the "Four More You Have to Go and Earn"
     copy, which contains the bare phrase.
+- **A RANK-UP IS A CUTSCENE ON PROFILE, AND HOME WAITS FOR IT (build 317).**
+  *"When you rank up, the next time you open the Profile tab it should be a
+  cool thing ... technically a cutscene ... the Profile tab in the bottom
+  tab bar starts pulsing/ringing, and you can't use anything else except
+  that."* The whole mechanism is one block after `buildRanksTab()`
+  (`rankUpScene` and friends, all `var`, so nothing is in a TDZ at boot);
+  everything else is a one-line hook.
+  - **It is the same fact as the road map's show and the yellow dot:
+    `rankIsNew()`.** `rankUpSceneOwed()` adds only: onboarded, no tier/
+    Supernova/Void cutscene pending, no test running, and
+    `store.rankMapSeen` is a NUMBER. An account whose `rankMapSeen` is still
+    null (never opened the map) is never locked - there is nothing to
+    compare against, and `applyLoadedData()` leaves it null on purpose.
+    (So a brand-new account that ranks up before ever opening the Rank
+    screen gets the map's ordinary show, not the lock. Seeding it was
+    considered and left: a linking device seeding -1 could push it over a
+    real value.)
+  - **Home locks last** (`scheduleRankUpLock()` from `showHome()`, polled
+    while Home is up): it waits for the rank-up cutscene (which hands to
+    Home first, as always), the reward cards and their flight to Profile,
+    What's New, a tour, the splash, badge cutscenes, the daily XP fly -
+    `homeUnlockBlocked()` plus `homeUnlockPlaying`/`homeUnlockTimer`.
+    Locked: `body.rankup-lock`, and `#bottomtab-profile.ru-call` rings (a
+    pill outline in the new rank's colour, the character bobbing; a still
+    ring under Reduce motion). Refused with the plain top banner "Your
+    profile needs you" (`showDailyAlert`): Start Studying, the "?", the
+    version button and a live daily banner (a capture-phase click
+    listener, `RANKUP_LOCK_BLOCKS`), Leaderboard and Settings
+    (`rankUpLockRefuses(dest)` at the top of the bottom bar's
+    `navigateTab`, which a drag also reaches). The flares, the chat and the
+    Home tab still work. A stage observer drops the lock off Home.
+  - **Profile is first drawn as it WAS.** `armRankUpProfileScene()` (top of
+    `showProfile`, after the cutscene redirects) sets `rankOfStandIn` to
+    the old rank, which `rankOf(store)` returns for that one synchronous
+    build (a microtask clears it even if the build throws); `rankIsNew()`
+    reads the real rank (`rankOfStandInReal`) so the old card still has
+    its dot. The input layer goes up here: `.ru-blocker` plus capture
+    listeners on window that swallow pointer, touch, wheel and key events -
+    which is also why the road map's own "you took over" listeners never
+    fire during it. `playRankUpProfileScene()` (one line after the mount)
+    keeps the old `.pf-standing` and `.pf-goal` nodes and skips the tours
+    for this open. **No Profile builder was changed**; the fade at the end
+    swaps DOM nodes that already exist.
+  - **1s, then LOADING RANK UP ADJUSTMENTS** - `buildLoadingOverlay()`, 3s,
+    `.ru-loading` lifts it over the tab bar and fades it. The road map is
+    built under it 250ms before it lifts, with `rankUpScene.wantsMap` set:
+    `runRankMapCelebration` asks `rankUpSceneTakesMap(map)` ONCE, so only
+    the map the scene opened plays in scene mode - a map somebody else
+    opens is ordinary. In scene mode: the celebration does NOT mark
+    `rankMapSeen` at its start; each new rank is `rankUpSceneArrive` (zoom
+    the map 1.14x about the stop, a road light rides the dark stretch in on
+    an accelerating curve - the map's own `.rankmap-roadtip` and
+    `placeRoadTip`, so line and light are the same number - hits, the node
+    shakes) and then the map's own pop and colour, then
+    `rankUpSceneLeave` (unzoom); no climb of the next stretch; back to the
+    top, and `rankUpSceneMapDone`. A two-rank jump walks both and ends on
+    the highest.
+  - **The current-rank card ("Your rank") shows the old rank all along**
+    (`rankUpHeroHold`, its rings `display:none`), then turns over to the new
+    one, kicker "Rank up", a small zoom (`rankUpHeroReveal`).
+  - **Back to Profile** (`rankUpSceneBack`): `rankMapSeen` is marked, the
+    real Profile is built, the old standing line and Next rank card are put
+    in its place for 750ms, fade out, and the new ones fade in (height
+    eased, the emblem pops - `.ru-arrive`). Then the layer comes off.
+  - **It can never be left stuck.** `rankUpSceneEnd()` is the one way out;
+    a watchdog (4s until Profile has mounted, then 24s + 11s a rank) calls
+    it whatever stalls, marks the rank shown and puts Profile up. A reload
+    half-way loses the layer with the page and, because nothing was marked,
+    plays it again - asked for as acceptable. If Profile is replaced in its
+    first second by something else, the scene stands down unplayed.
+  - Reduce motion: 0.7s, 1.5s of loading, the map's own still reveal, a
+    look at the highest new rank, the card, Profile swapped without a fade.
+  - **Gate: `check_b317_rankup`** - the cards first, the ring, the four
+    refusals, flare/chat/Home still working, the old card under the layer,
+    the timings, zoom/ride/shake/pop, "Rank up" on the card, Gold and
+    Platinum on the way back, `rankMapSeen` at the held index, Home free
+    afterwards, once only, null never locked, Reduce motion, the watchdog,
+    and a reload half-way (seeded once, not on every load as `booted()`
+    does). Fixtures that put a held rank past a NUMBER `rankMapSeen` and
+    then go to Home or Profile now meet the lock or the scene; the shared
+    `USED_ACCOUNT` leaves `rankMapSeen` null, so it does not.
 - **STUDY TIME IS TIME SPENT STUDYING (build 314).** It was "now minus
   when the run started", so a run left open with the phone locked banked
   every hour on the day it ended: live tests of 117h and 50h, days of 68h
